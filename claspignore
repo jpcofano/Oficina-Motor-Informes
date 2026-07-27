@@ -1,0 +1,14 @@
+# Ignorar todo, y volver a incluir solo el código de la raíz.
+**/**
+
+!appsscript.json
+!Codigo.gs
+!Instalar.gs
+!Config.gs
+!Fuentes.gs
+!Marcadores.gs
+!Generador.gs
+!PanelBackend.gs
+!Snapshot.gs
+!Automatizacion.gs
+!Panel.html
