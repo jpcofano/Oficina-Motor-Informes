@@ -1,48 +1,61 @@
 /**
  * Instalar.gs — Setup inicial.
- * Crea las hojas de configuración (CONFIG, INFORMES, MARCADORES, MAPEO)
- * con encabezados + filas de ejemplo, y deja el menú instalado.
+ * Crea las hojas de configuración por registros (CONFIG, BASES, INFORMES,
+ * MARCADORES, MAPEO, CAMPANAS) con encabezados + filas de ejemplo, y deja
+ * el menú instalado.
  * Idempotente: si una hoja ya existe, no la pisa.
- * Se completa en: Paso 0.
+ * Se completa en: Paso 0 (v2) — ver docs/Prompts/Paso-0-v2.md y
+ * Plan Inicial/ARQUITECTURA_registros.md.
  */
 
 var HOJAS_CONFIG_ = {
   CONFIG: {
     headers: ['clave', 'valor'],
     ejemplos: [
-      ['periodo_desde', ''],
-      ['periodo_hasta', ''],
-      ['id_base_rdv', ''],
-      ['id_base_digital', ''],
-      ['id_base_looker', ''],
-      ['id_plantilla_slides', ''],
+      ['periodo_desde', '2026-06-26'],
+      ['periodo_hasta', '2026-07-03'],
+      ['informe_activo', ''],
       ['carpeta_salida', '']
     ]
   },
-  INFORMES: {
-    headers: ['informe_id', 'nombre', 'plantilla_slides_id', 'familias_marcadores', 'activo'],
+  BASES: {
+    headers: ['base_id', 'nombre', 'sheet_id', 'hoja_default', 'tipo', 'activo', 'notas'],
     ejemplos: [
-      ['jm_semanal', 'JM semanal', '', 'ecv,mail,enc', 'SI']
+      ['rdv', 'RDV JM CM ES', '', 'RVD JM-CM - ES', 'google_sheets', 'sí', 'Encuentros'],
+      ['digital', 'Seguimiento Digital', '', 'Digital', 'google_sheets', 'sí', 'Campaña por canal'],
+      ['looker', 'Base Looker', '', 'resumen_metricas', 'google_sheets', 'sí', 'Consolidado'],
+      ['m2', 'M2 Reporte 2026', '', '(a confirmar)', 'google_sheets', 'sí', 'Familia m2_*'],
+      ['miba', 'Integración MiBA', '', '', 'google_sheets', 'no', 'Parqueada']
+    ]
+  },
+  INFORMES: {
+    headers: ['informe_id', 'nombre', 'plantilla_id', 'periodicidad', 'familias', 'activo', 'notas'],
+    ejemplos: [
+      ['jm', 'Informe semanal JM', '', 'semanal', 'ecv,enc,m2,camp,mail,gcba,rrss', 'sí', '22 slides'],
+      ['secco', 'Seguimiento SECCO-SSCDI', '', 'mensual', 'ecv,et,emin,m2,camp,conv,rep,rrss', 'sí', '29 slides']
     ]
   },
   MARCADORES: {
-    headers: ['marcador', 'familia', 'fuente', 'calculo', 'formato', 'notas'],
+    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'campo_logico', 'calculo', 'formato', 'notas'],
     ejemplos: [
-      ['ecv_total', 'ecv', 'rdv', 'calcularEcvTotal', '#,##0', 'Ejemplo familia ecv_*'],
-      ['mail_enviados', 'mail', 'digital', 'calcularMailEnviados', '#,##0', 'Ejemplo familia mail_*'],
-      ['enc_respuestas', 'enc', 'looker', 'calcularEncRespuestas', '#,##0', 'Ejemplo familia enc_*']
+      ['ecv_inscriptos', 'ecv', '*', 'rdv', 'inscriptos', 'calcInscriptos', 'numero', '* = compartido'],
+      ['camp_alcance', 'camp', '*', 'looker', 'alcance', 'calcAlcance', 'miles', ''],
+      ['m2_envios', 'm2', 'jm', 'm2', 'envios', 'calcEnvios', 'numero', '']
     ]
   },
   MAPEO: {
-    headers: ['base', 'campo_logico', 'hoja', 'columna', 'notas'],
+    headers: ['base_id', 'campo_logico', 'hoja', 'columna', 'notas'],
     ejemplos: [
-      ['rdv', 'fecha', 'Hoja1', 'A', 'Ejemplo de mapeo']
+      ['rdv', 'inscriptos', 'RVD JM-CM - ES', 'H', ''],
+      ['digital', 'alcance', 'Digital', 'E', '']
     ]
   },
   CAMPANAS: {
-    headers: ['campana_id', 'nombre', 'base', 'mostrar', 'orden'],
+    headers: ['campana_id', 'nombre', 'informe_id', 'base_id', 'tipo', 'mostrar', 'orden'],
     ejemplos: [
-      ['camp_01', 'Campaña ejemplo', 'digital', 'SI', 1]
+      ['serv_esenciales', 'Servicios esenciales', 'secco', 'looker', 'destacada', 'sí', 1],
+      ['encuentros_min', 'Encuentros de ministros', 'secco', 'rdv', 'encuentro_ministros', 'sí', 2],
+      ['prov_uber', 'Uber', 'secco', 'digital', 'proveedor', 'no', 3]
     ]
   }
 };
