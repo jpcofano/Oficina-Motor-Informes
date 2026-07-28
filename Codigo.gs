@@ -6,8 +6,26 @@
  */
 
 function onOpen() {
-  // TODO (Paso 0): menú "▶ Motor de Informes":
-  //   - Abrir panel
-  //   - Generar informe
-  //   - Configuración › (Instalar / Cargar ejemplo)
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('▶ Motor de Informes')
+    .addItem('Abrir panel', 'menuAbrirPanel_')
+    .addItem('Generar informe', 'menuGenerarInforme_')
+    .addSubMenu(
+      ui.createMenu('Configuración')
+        .addItem('Instalar / reparar hojas', 'instalar')
+        .addItem('Cargar ejemplo', 'menuCargarEjemplo_')
+    )
+    .addToUi();
+}
+
+function menuAbrirPanel_() {
+  SpreadsheetApp.getActiveSpreadsheet().toast('próximamente', 'Abrir panel');
+}
+
+function menuGenerarInforme_() {
+  SpreadsheetApp.getActiveSpreadsheet().toast('próximamente', 'Generar informe');
+}
+
+function menuCargarEjemplo_() {
+  SpreadsheetApp.getActiveSpreadsheet().toast('próximamente', 'Cargar ejemplo');
 }

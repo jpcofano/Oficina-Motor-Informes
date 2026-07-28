@@ -1,0 +1,5 @@
+# Ignorar todo y pushear solo el código Apps Script
+**/**
+!appsscript.json
+!*.gs
+!*.html
