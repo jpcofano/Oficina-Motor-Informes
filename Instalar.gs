@@ -204,8 +204,48 @@ var SEED_BASES_ = [
 ];
 
 var SEED_MAPEO_ = [
-  { base_id: 'rdv', campo_logico: 'inscriptos', hoja: 'RVD JM-CM - ES', columna: '', notas: 'verificar col real' },
-  { base_id: 'rdv', campo_logico: 'fecha', hoja: 'RVD JM-CM - ES', columna: '', notas: 'col de fecha para filtrar' },
+  // rdv — hoja 'RVD JM-CM - ES'
+  { base_id: 'rdv', campo_logico: 'figura', hoja: 'RVD JM-CM - ES', columna: 'A', notas: 'filtro por figura' },
+  { base_id: 'rdv', campo_logico: 'barrio', hoja: 'RVD JM-CM - ES', columna: 'B', notas: '' },
+  { base_id: 'rdv', campo_logico: 'evento', hoja: 'RVD JM-CM - ES', columna: 'C', notas: '' },
+  { base_id: 'rdv', campo_logico: 'fecha', hoja: 'RVD JM-CM - ES', columna: 'E', notas: 'filtro de período' },
+  { base_id: 'rdv', campo_logico: 'status', hoja: 'RVD JM-CM - ES', columna: 'I', notas: 'filtro (Realizada)' },
+  { base_id: 'rdv', campo_logico: 'inscriptos', hoja: 'RVD JM-CM - ES', columna: 'K', notas: '(resuelto)' },
+  { base_id: 'rdv', campo_logico: 'insc_mail', hoja: 'RVD JM-CM - ES', columna: 'L', notas: '' },
+  { base_id: 'rdv', campo_logico: 'insc_cc', hoja: 'RVD JM-CM - ES', columna: 'M', notas: '' },
+  { base_id: 'rdv', campo_logico: 'insc_ivr', hoja: 'RVD JM-CM - ES', columna: 'N', notas: '' },
+  { base_id: 'rdv', campo_logico: 'insc_digital', hoja: 'RVD JM-CM - ES', columna: 'O', notas: 'header real "RRSS" — duda resuelta' },
+  { base_id: 'rdv', campo_logico: 'insc_dif', hoja: 'RVD JM-CM - ES', columna: 'P', notas: '' },
+  { base_id: 'rdv', campo_logico: 'asistentes', hoja: 'RVD JM-CM - ES', columna: 'Q', notas: '' },
+  { base_id: 'rdv', campo_logico: 'comuna', hoja: 'RVD JM-CM - ES', columna: 'AA', notas: '' },
+  { base_id: 'rdv', campo_logico: 'poblacion', hoja: 'RVD JM-CM - ES', columna: 'AB', notas: 'habitantes' },
+
+  // looker — hoja 'resumen_metricas' (una fila por campaña; prefijos = canal, no familia)
+  { base_id: 'looker', campo_logico: 'campana', hoja: 'resumen_metricas', columna: 'B', notas: '' },
+  { base_id: 'looker', campo_logico: 'fecha_inicio', hoja: 'resumen_metricas', columna: 'C', notas: '' },
+  { base_id: 'looker', campo_logico: 'fecha_fin', hoja: 'resumen_metricas', columna: 'D', notas: '' },
+  { base_id: 'looker', campo_logico: 'eje', hoja: 'resumen_metricas', columna: 'E', notas: '' },
+  { base_id: 'looker', campo_logico: 'area', hoja: 'resumen_metricas', columna: 'F', notas: '' },
+  { base_id: 'looker', campo_logico: 'estado', hoja: 'resumen_metricas', columna: 'G', notas: '' },
+  { base_id: 'looker', campo_logico: 'dig_impresiones', hoja: 'resumen_metricas', columna: 'H', notas: '' },
+  { base_id: 'looker', campo_logico: 'dig_visualizaciones', hoja: 'resumen_metricas', columna: 'I', notas: '' },
+  { base_id: 'looker', campo_logico: 'dig_clics', hoja: 'resumen_metricas', columna: 'J', notas: '' },
+  { base_id: 'looker', campo_logico: 'alcance', hoja: 'resumen_metricas', columna: 'K', notas: '' },
+  { base_id: 'looker', campo_logico: 'frecuencia', hoja: 'resumen_metricas', columna: 'M', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_enviados', hoja: 'resumen_metricas', columna: 'N', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_entregados', hoja: 'resumen_metricas', columna: 'O', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_aperturas', hoja: 'resumen_metricas', columna: 'P', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_clics', hoja: 'resumen_metricas', columna: 'Q', notas: '' },
+  { base_id: 'looker', campo_logico: 'cc_contactados', hoja: 'resumen_metricas', columna: 'T', notas: '' },
+  { base_id: 'looker', campo_logico: 'cc_efectivos', hoja: 'resumen_metricas', columna: 'U', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_audiencia', hoja: 'resumen_metricas', columna: 'V', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_atendidos', hoja: 'resumen_metricas', columna: 'X', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_escucha75', hoja: 'resumen_metricas', columna: 'Y', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_marque1', hoja: 'resumen_metricas', columna: 'Z', notas: '' },
+  { base_id: 'looker', campo_logico: 'sms_enviados', hoja: 'resumen_metricas', columna: 'AA', notas: '' },
+  { base_id: 'looker', campo_logico: 'sms_entregados', hoja: 'resumen_metricas', columna: 'AB', notas: '' },
+
+  // m2 — DIRECTA en 'M2 periodo DIRECTA', DIGITAL en 'M2 periodo DIGITAL'
   { base_id: 'm2', campo_logico: 'campana', hoja: 'M2 periodo DIRECTA', columna: 'B', notas: '' },
   { base_id: 'm2', campo_logico: 'fecha', hoja: 'M2 periodo DIRECTA', columna: 'C', notas: '' },
   { base_id: 'm2', campo_logico: 'envios', hoja: 'M2 periodo DIRECTA', columna: 'D', notas: '' },
@@ -218,7 +258,11 @@ var SEED_MAPEO_ = [
   { base_id: 'm2', campo_logico: 'alcance_dig', hoja: 'M2 periodo DIGITAL', columna: 'G', notas: '' },
   { base_id: 'm2', campo_logico: 'views', hoja: 'M2 periodo DIGITAL', columna: 'I', notas: '' },
   { base_id: 'm2', campo_logico: 'clics_dig', hoja: 'M2 periodo DIGITAL', columna: 'K', notas: '' },
-  { base_id: 'm2', campo_logico: 'campana_dig', hoja: 'M2 periodo DIGITAL', columna: 'B', notas: '' }
+  { base_id: 'm2', campo_logico: 'campana_dig', hoja: 'M2 periodo DIGITAL', columna: 'B', notas: '' },
+  { base_id: 'm2', campo_logico: 'estado', hoja: 'M2 periodo DIGITAL', columna: 'E', notas: '' }
+
+  // digital (Seguimiento Digital) — NO sembrado a propósito: decisión de fuente
+  // de verdad digital (Looker vs Seguimiento Digital) pendiente para el Paso 3.
 ];
 
 var SEED_CONFIG_DEFAULTS_ = {
