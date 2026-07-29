@@ -13,6 +13,9 @@ function onOpen() {
     .addSubMenu(
       ui.createMenu('Configuración')
         .addItem('Instalar / reparar hojas', 'instalar')
+        .addItem('Cargar config inicial', 'seedConfiguracion')
+        .addItem('Registrar plantillas', 'menuRegistrarPlantillas_')
+        .addItem('Probar conexión a bases', 'probarConexionBases')
         .addItem('Cargar ejemplo', 'menuCargarEjemplo_')
     )
     .addToUi();
