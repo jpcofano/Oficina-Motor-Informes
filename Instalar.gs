@@ -187,7 +187,8 @@ var SEED_CONFIG_DEFAULTS_ = {
   informe_activo: 'jm',
   periodo_desde: '',
   periodo_hasta: '',
-  carpeta_salida: ''
+  carpeta_plantillas: '1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi',
+  carpeta_salida: '1EyTlfg16vpyrftpUXgacShFk8iSbX_fJ'
 };
 
 function seedConfiguracion() {
@@ -264,10 +265,10 @@ function upsertPorClave_(hoja, clavesNombres, filaObjetos) {
 
 /**
  * Paso 1.6 — registrar plantillas desde la carpeta de Drive.
- * Ver docs/Prompts/Paso-1.6.md.
+ * Ver docs/Prompts/Paso-1.6.md y docs/Prompts/Paso-1.6-v2.md.
+ * El folderId sale de CONFIG.carpeta_plantillas (leerConfig()), no de una
+ * constante: agregar una base/carpeta no debe pedir clasp push.
  */
-
-var CARPETA_PLANTILLAS_ID_ = '1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi';
 
 // Matcheo nombre de Slides -> informe_id. El primero que matchee gana, así que
 // SECCO va antes de JM (un nombre con ambas palabras cae en SECCO).
@@ -340,7 +341,14 @@ function registrarPlantillasDesdeCarpeta(folderId) {
 
 function menuRegistrarPlantillas_() {
   var ui = SpreadsheetApp.getUi();
-  var resultado = registrarPlantillasDesdeCarpeta(CARPETA_PLANTILLAS_ID_);
+  var folderId = leerConfig().carpeta_plantillas;
+
+  if (!folderId) {
+    ui.alert('Falta configuración', 'Cargá "carpeta_plantillas" en CONFIG antes de registrar plantillas.', ui.ButtonSet.OK);
+    return;
+  }
+
+  var resultado = registrarPlantillasDesdeCarpeta(folderId);
 
   if (!resultado.ok) {
     ui.alert('No se pudo registrar', resultado.motivo, ui.ButtonSet.OK);

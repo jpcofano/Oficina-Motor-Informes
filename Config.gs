@@ -7,8 +7,8 @@
  *   escribirConfig(k, v)  -> setea una clave en CONFIG
  *   resolverPeriodo(cfg)  -> { desde, hasta, etiqueta, prevDesde, prevHasta }
  * Regla: NADIE hace cuentas de fechas fuera de este módulo.
- * leerBases/leerInformes se completan en: Paso 1.
- * leerConfig/escribirConfig/resolverPeriodo: pendientes (fuera de alcance del Paso 1 v2).
+ * leerBases/leerInformes se completan en: Paso 1. leerConfig: Paso 1.6 v2.
+ * escribirConfig/resolverPeriodo: pendientes (fuera de alcance por ahora).
  */
 
 function leerBases() {
@@ -17,6 +17,25 @@ function leerBases() {
 
 function leerInformes() {
   return leerRegistro_('INFORMES', 'informe_id');
+}
+
+function leerConfig() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CONFIG');
+  if (!hoja) return {};
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos.shift();
+  var idxClave = headers.indexOf('clave');
+  var idxValor = headers.indexOf('valor');
+
+  var config = {};
+  datos.forEach(function (fila) {
+    var clave = fila[idxClave];
+    if (!clave) return;
+    config[clave] = fila[idxValor];
+  });
+
+  return config;
 }
 
 function leerRegistro_(nombreHoja, clavePrimaria) {
