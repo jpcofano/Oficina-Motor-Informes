@@ -137,9 +137,30 @@ filas de config.
 
 ### 4.1 Fuente de verdad digital/directa
 
-**[?] DECISIÓN PENDIENTE.** Looker y Seguimiento Digital cubren lo mismo. Se define en
-el **Paso 3**, como columna `base_id` de los marcadores `camp_*`/`mail_*`/`ivr_*`/`cc_*`.
-Reversible (filas, no código). Recomendación: Looker, por venir consolidado por campaña.
+**✅ RESUELTO (29/07/2026).** **Seguimiento Digital (SD) es la fuente de fila** para los
+marcadores `camp_*`/`mail_*`/`ivr_*`/`cc_*`. Looker **no** es una fuente independiente:
+es el rollup exacto de SD, verificado número por número en dos campañas reales
+(`HALLAZGOS_validacion_decks.md` §4 — esenciales y personas mayores, cuatro métricas
+cada una, coinciden al valor). La razón para elegir SD y no Looker: el desagregado por
+envío que piden dos slides del deck (16 y 25) **solo existe en SD** — Looker no lo puede
+reconstruir, solo trae el total por campaña.
+
+Precedencia de merge cuando dos bases traen el mismo campo lógico para una campaña:
+**RDV → Seguimiento Digital → Looker** (gana la fuente más a la izquierda). `m2` va
+aparte, familia `m2_*`, no entra en este merge. Esta precedencia es lógica del agregador
+(`Marcadores.gs`, Paso 3) — no se codea en `Fuentes.gs`. `digital` (SD) ya está sembrado
+completo en `MAPEO` desde el Paso 2.3 (6 solapas, join por `*_id_cuenta`) y en modo
+`snapshot`.
+
+**Dos excepciones a tener en cuenta al cablear `MARCADORES` (Paso 3):**
+- El digital total de Looker puede estar **inflado por doble conteo** (filas DV360
+  mensuales acumuladas, no incrementales) — no lo resuelve el motor, es de quien carga
+  la planilla (`HALLAZGOS` §4.1).
+- `alcance`/`frecuencia` **no son sumables** — hay una hoja `ALCANCE` aparte con valor
+  único por campaña; van como `ULTIMO`/lookup, nunca `SUMA` (`HALLAZGOS` §4.2).
+
+Este es el **único lugar del repo** donde vive el detalle de esta decisión — los demás
+docs que la mencionan apuntan acá en vez de repetir el argumento.
 
 ### 4.2 MiBA
 

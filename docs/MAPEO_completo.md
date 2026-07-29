@@ -63,12 +63,9 @@ Una fila por campaña, todos los canales ya agregados (31 columnas).
 
 ---
 
-## SEGUIMIENTO DIGITAL — varias hojas (**la otra candidata a fuente de verdad**)
+## SEGUIMIENTO DIGITAL — varias hojas (**fuente de fila para digital/directa**)
 
-> ⚠ **Decisión pendiente clave:** Looker y Seguimiento Digital **cubren lo mismo**
-> (métricas digital + directa por campaña). Hay que elegir **una** como fuente de
-> verdad para los marcadores digital/directa; mapear las dos como canónicas genera
-> doble verdad. Recomiendo decidirlo antes de cablear MARCADORES.
+> Decisión de fuente resuelta — ver `docs/CONFIG_INFORMES.md` §4.1. No repetido acá.
 
 **Hoja `Digital`** (campaña digital):
 | campo_logico | col | header |
@@ -114,8 +111,5 @@ impresiones F, alcance_dig G, views I, clics_dig K.
 - **RDV** → familias `ecv_*` (y demográficos). Sin ambigüedad. **Duda RRSS resuelta:
   `ecv_insc_digital` = columna O (RRSS).**
 - **M2** → familia `m2_*`. Sin ambigüedad (snapshot).
-- **Looker vs Seguimiento Digital** → **cubren lo mismo**; elegir una como fuente de
-  verdad para digital/directa (`camp_*`, `mail_*`, `ivr_*`, `cc_*`). Looker viene ya
-  consolidado por campaña en una sola hoja → más simple para el motor. Seguimiento
-  Digital tiene el detalle por canal en hojas separadas → más control. **Decisión del
-  usuario.**
+- **Digital/directa** (`camp_*`, `mail_*`, `ivr_*`, `cc_*`) → fuente resuelta, ver
+  `docs/CONFIG_INFORMES.md` §4.1.
