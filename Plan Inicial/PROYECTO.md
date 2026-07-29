@@ -149,9 +149,11 @@ BASES/MAPEO/CONFIG) · Paso 1.6 + 1.6 v2 (registrar plantillas, robusto) · Paso
 `fila_encabezado`/`modo_periodo`).
 
 **Bloque 2 — Motor headless**
-- Paso 2 ✅ — lectura por ventana: `resolverCampo`/`resolverVentana`/`leerFuente` en
+- Paso 2 + 2.1 ✅ — lectura por ventana: `resolverCampo`/`resolverVentana`/`leerFuente` en
   `Fuentes.gs` (maneja `modo_periodo`/`fila_encabezado`, parseo de fecha sin ambigüedad
-  mm/dd, ventana con bordes inclusivos). Menú "Probar lectura por ventana".
+  mm/dd, ventana con bordes inclusivos, filas vacías fuera del diagnóstico, columna de
+  fecha por convención de MAPEO). Menú "Probar lectura por ventana". Falta que el usuario
+  corra la prueba real y cierre P1–P5/A1–A10 de `VERIFICACION_Paso-2.md`.
 - Paso 3 — primer cálculo en `Marcadores.gs` + trazabilidad.
 - Paso 4 — motor de reemplazo (tokens fijos).
 - Paso 5 — campañas repetibles + end-to-end.
