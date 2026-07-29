@@ -61,13 +61,13 @@ var HOJAS_CONFIG_ = {
     ]
   },
   BASES: {
-    headers: ['base_id', 'nombre', 'sheet_id', 'hoja_default', 'tipo', 'activo', 'notas'],
+    headers: ['base_id', 'nombre', 'sheet_id', 'hoja_default', 'fila_encabezado', 'modo_periodo', 'tipo', 'activo', 'notas'],
     ejemplos: [
-      ['rdv', 'RDV JM CM ES', '', 'RVD JM-CM - ES', 'google_sheets', 'sí', 'Encuentros'],
-      ['digital', 'Seguimiento Digital', '', 'Digital', 'google_sheets', 'sí', 'Campaña por canal'],
-      ['looker', 'Base Looker', '', 'resumen_metricas', 'google_sheets', 'sí', 'Consolidado'],
-      ['m2', 'M2 Reporte 2026', '', '(a confirmar)', 'google_sheets', 'sí', 'Familia m2_*'],
-      ['miba', 'Integración MiBA', '', '', 'google_sheets', 'no', 'Parqueada']
+      ['rdv', 'RDV JM CM ES', '', 'RVD JM-CM - ES', 1, 'filtrar', 'google_sheets', 'sí', 'Encuentros'],
+      ['digital', 'Seguimiento Digital', '', 'Digital', 1, 'filtrar', 'google_sheets', 'sí', 'Campaña por canal'],
+      ['looker', 'Base Looker', '', 'resumen_metricas', 1, 'filtrar', 'google_sheets', 'sí', 'Consolidado'],
+      ['m2', 'M2 Reporte 2026', '', 'M2 periodo DIRECTA', 3, 'snapshot', 'google_sheets', 'sí', 'Familia m2_*'],
+      ['miba', 'Integración MiBA', '', '', 1, 'filtrar', 'google_sheets', 'no', 'Parqueada']
     ]
   },
   INFORMES: {
@@ -119,6 +119,10 @@ var COLUMNAS_DELTA_ = {
   CAMPANAS: [
     { nombre: 'desde', indice: 6 },
     { nombre: 'hasta', indice: 7 }
+  ],
+  BASES: [
+    { nombre: 'fila_encabezado', indice: 5 },
+    { nombre: 'modo_periodo', indice: 6 }
   ]
 };
 
@@ -192,11 +196,11 @@ function limpiarHojaPorDefecto_(ss) {
  */
 
 var SEED_BASES_ = [
-  { base_id: 'rdv', nombre: 'RDV JM CM ES + funcionarios', sheet_id: '1ZpHO6Ru1uY2r9WfBF_yFtu5z7ip7F3Q6VOoRJN5vLAo', hoja_default: 'RVD JM-CM - ES', tipo: 'google_sheets', activo: 'sí', notas: 'Encuentros' },
-  { base_id: 'digital', nombre: 'Seguimiento Digital', sheet_id: '1LadILzFpyCrZRapxgDOFOldSoRawjKkWMaFci_ilhPY', hoja_default: 'Digital', tipo: 'google_sheets', activo: 'sí', notas: 'Campaña por canal' },
-  { base_id: 'looker', nombre: 'Base Looker', sheet_id: '1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ', hoja_default: 'resumen_metricas', tipo: 'google_sheets', activo: 'sí', notas: 'Consolidado' },
-  { base_id: 'm2', nombre: 'M2 Reporte para Fede 2026', sheet_id: '1_GS01-TXrhez0GlpFf4bUjWLNQPfaW9BOFFXz0hZNvY', hoja_default: 'M2 periodo DIRECTA', tipo: 'google_sheets', activo: 'sí', notas: 'Directa + Digital en hojas separadas' },
-  { base_id: 'miba', nombre: 'Integración MiBA', sheet_id: '', hoja_default: '', tipo: 'google_sheets', activo: 'no', notas: 'Parqueada' }
+  { base_id: 'rdv', nombre: 'RDV JM CM ES + funcionarios', sheet_id: '1ZpHO6Ru1uY2r9WfBF_yFtu5z7ip7F3Q6VOoRJN5vLAo', hoja_default: 'RVD JM-CM - ES', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Encuentros' },
+  { base_id: 'digital', nombre: 'Seguimiento Digital', sheet_id: '1LadILzFpyCrZRapxgDOFOldSoRawjKkWMaFci_ilhPY', hoja_default: 'Digital', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Campaña por canal' },
+  { base_id: 'looker', nombre: 'Base Looker', sheet_id: '1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ', hoja_default: 'resumen_metricas', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Consolidado' },
+  { base_id: 'm2', nombre: 'M2 Reporte para Fede 2026', sheet_id: '1_GS01-TXrhez0GlpFf4bUjWLNQPfaW9BOFFXz0hZNvY', hoja_default: 'M2 periodo DIRECTA', fila_encabezado: 3, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Directa + Digital en hojas separadas' },
+  { base_id: 'miba', nombre: 'Integración MiBA', sheet_id: '', hoja_default: '', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'no', notas: 'Parqueada' }
 ];
 
 var SEED_MAPEO_ = [
