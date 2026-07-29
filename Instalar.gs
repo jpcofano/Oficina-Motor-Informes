@@ -11,13 +11,44 @@
  * lista sin filtrar qué hay en la carpeta de plantillas; y
  * registrarPlantillasDesdeCarpeta(): recorre esa carpeta (hasta 2 niveles de
  * subcarpetas), matchea los Slides nativos contra INFORMES y completa
- * plantilla_id, reportando .pptx sin convertir y accesos directos.
+ * plantilla_id, reportando .pptx sin convertir y accesos directos; y
+ * diagnosticoDrive(): confirma cuenta efectiva + contenido crudo de la
+ * carpeta de plantillas por ID fijo, para descartar problemas de scope/
+ * autorización antes de tocar registrarPlantillasDesdeCarpeta.
  * Se completa en: Paso 0 (v2) + Paso 0.5 + Paso 1.6 + Paso 1.6 (v2) + Paso 1.7
- * — ver docs/Prompts/Paso-0-v2.md, docs/Prompts/Paso-0.5.md,
+ * + Paso 1.8-B — ver docs/Prompts/Paso-0-v2.md, docs/Prompts/Paso-0.5.md,
  * docs/Prompts/Paso-1.6.md, docs/Prompts/Paso-1.6-v2.md, docs/Prompts/Paso-1.7.md,
- * Plan Inicial/_archivo/ARQUITECTURA_registros.md y
+ * docs/Prompts/Paso-1.8-B.md, Plan Inicial/_archivo/ARQUITECTURA_registros.md y
  * Plan Inicial/_archivo/Periodos_y_campanias.md.
  */
+
+/**
+ * Paso 1.8-B — diagnóstico de scopes/autorización.
+ * Ver docs/Prompts/Paso-1.8-B.md. Temporal: cuando el registro de plantillas
+ * funcione de punta a punta, se puede borrar o dejar como herramienta de
+ * soporte.
+ */
+function diagnosticoDrive() {
+  Logger.log('Cuenta efectiva: ' + Session.getEffectiveUser().getEmail());
+
+  var id = '1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi'; // carpeta_plantillas
+  var carpeta = DriveApp.getFolderById(id);
+  Logger.log('Carpeta: ' + carpeta.getName());
+
+  var n = 0;
+  var it = carpeta.getFiles();
+  while (it.hasNext()) {
+    var f = it.next();
+    n++;
+    Logger.log(f.getName() + ' | ' + f.getMimeType() + ' | ' + f.getId());
+  }
+  Logger.log('Total archivos: ' + n);
+
+  var c = 0;
+  var itc = carpeta.getFolders();
+  while (itc.hasNext()) { c++; Logger.log('Subcarpeta: ' + itc.next().getName()); }
+  Logger.log('Total subcarpetas: ' + c);
+}
 
 var HOJAS_CONFIG_ = {
   CONFIG: {
