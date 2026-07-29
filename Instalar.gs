@@ -224,6 +224,8 @@ var SEED_MAPEO_ = [
   { base_id: 'looker', campo_logico: 'campana', hoja: 'resumen_metricas', columna: 'B', notas: '' },
   { base_id: 'looker', campo_logico: 'fecha_inicio', hoja: 'resumen_metricas', columna: 'C', notas: '' },
   { base_id: 'looker', campo_logico: 'fecha_fin', hoja: 'resumen_metricas', columna: 'D', notas: '' },
+  { base_id: 'looker', campo_logico: 'fecha', hoja: 'resumen_metricas', columna: 'C',
+    notas: 'apunta a fecha_inicio. Es el arranque de la pauta de convocatoria, entre 3 y 7 días antes del encuentro (DISENO_match_temario.md §5). Sirve para acotar la lectura, NO para elegir qué campaña entra al informe.' },
   { base_id: 'looker', campo_logico: 'eje', hoja: 'resumen_metricas', columna: 'E', notas: '' },
   { base_id: 'looker', campo_logico: 'area', hoja: 'resumen_metricas', columna: 'F', notas: '' },
   { base_id: 'looker', campo_logico: 'estado', hoja: 'resumen_metricas', columna: 'G', notas: '' },

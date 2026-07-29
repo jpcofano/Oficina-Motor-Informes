@@ -39,6 +39,7 @@ Una fila por campaña, todos los canales ya agregados (31 columnas).
 | campana | B | nombre_campaña | selector `CAMPANAS` / `camp_*` |
 | fecha_inicio | C | fecha_inicio | ventana de campaña |
 | fecha_fin | D | fecha_fin | ventana de campaña |
+| fecha | C | fecha_inicio | **Paso 2.1** — columna que usa el lector para filtrar la ventana (convención: `campo_logico='fecha'`). Apunta a `fecha_inicio`: el arranque de la pauta de convocatoria, entre 3 y 7 días antes del encuentro (`DISENO_match_temario.md` §5). Sirve para acotar la lectura, **no** para elegir qué campaña entra al informe. |
 | eje | E | eje | `camp_eje` |
 | area | F | area | |
 | estado | G | estado | |

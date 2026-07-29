@@ -15,6 +15,18 @@
  * NADIE hace cuentas de fechas fuera de este módulo y Config.gs.
  * abrirBase/abrirHoja/probarConexionBases se completan en: Paso 1.
  * resolverCampo/resolverVentana/leerFuente/probarLecturaPeriodo se completan en: Paso 2.
+ *
+ * Convención de columna de fecha (Paso 2.1): la columna que filtra la ventana
+ * de una base es la fila de MAPEO con `campo_logico = 'fecha'` para ese
+ * `base_id` — nunca una constante ni una columna nueva en BASES. Si la base
+ * tiene más de una fecha candidata (p. ej. Looker: `fecha_inicio`/`fecha_fin`),
+ * igual se agrega una fila `fecha` apuntando a la columna elegida, con la
+ * justificación en `notas` de esa fila — el registro ya tiene dónde decirlo,
+ * duplicarlo en BASES es invitar a que se desincronice. Si `modo_periodo=
+ * snapshot`, no se busca columna de fecha (no aplica ventana, no hay
+ * advertencia). Si falta la fila en MAPEO, el motivo es siempre exactamente
+ * `falta MAPEO: <base_id>/fecha`, distinto del caso "la fila existe pero la
+ * columna está vacía".
  */
 
 var cacheBases_ = {};
@@ -94,10 +106,10 @@ function resolverCampo(baseId, campoLogico) {
   var fila = porBase && porBase[campoLogico];
 
   if (!fila) {
-    return { ok: false, motivo: 'No hay fila en MAPEO para "' + baseId + '/' + campoLogico + '"' };
+    return { ok: false, motivo: 'falta MAPEO: ' + baseId + '/' + campoLogico };
   }
   if (!fila.columna) {
-    return { ok: false, motivo: 'MAPEO "' + baseId + '/' + campoLogico + '" no tiene columna cargada' };
+    return { ok: false, motivo: 'MAPEO "' + baseId + '/' + campoLogico + '" existe pero no tiene columna cargada' };
   }
 
   return { ok: true, hoja: fila.hoja, columna: fila.columna };
@@ -267,7 +279,7 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
 
   var campoFecha = resolverCampo(baseId, 'fecha');
   if (!campoFecha.ok) {
-    return { ok: false, base_id: baseId, motivo: 'Sin columna de fecha mapeada para filtrar — ' + campoFecha.motivo };
+    return { ok: false, base_id: baseId, motivo: campoFecha.motivo };
   }
 
   var idxFecha = columnaLetraAIndice_(campoFecha.columna);
