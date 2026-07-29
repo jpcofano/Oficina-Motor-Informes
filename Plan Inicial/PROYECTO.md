@@ -186,8 +186,9 @@ historia, pero de acá en adelante:
 1. Se termina un paso → se avisa y se espera que el usuario lo pruebe. No se sigue al
    siguiente paso por cuenta propia.
 2. El usuario confirma que pasó la prueba.
-3. Recién ahí se actualiza la doc (`HANDOFF.md`, y `PROYECTO.md` si el paso cambió algo
-   estructural) y se commitea.
+3. Recién ahí se actualiza la doc (`docs/Sesiones/HANDOFF AAAA-MM-DD.md` de la sesión —
+   ver convención abajo —, y `PROYECTO.md` si el paso cambió algo estructural) y se
+   commitea.
 4. Mensaje de commit: `Paso N ✅ — <resumen corto>`. Un paso por commit, sin bundles.
 5. Si un paso toca los mismos archivos que el anterior, igual va en su propio commit:
    alcanza el orden temporal, no hace falta separar por archivo.
@@ -196,3 +197,17 @@ historia, pero de acá en adelante:
 
 Excepción explícita: un mismo prompt puede pedir varios commits internos (p. ej. este
 mismo Paso 1.8, con Partes A/B/C) cuando el propio prompt lo indica.
+
+### Convención de HANDOFF: un archivo nuevo por sesión, fechado
+
+Instaurada el 2026-07-29, tras un conflicto de sincronización de OneDrive: el usuario
+edita este repo desde dos herramientas (esta sesión de Code, con git, y claude.ai, que
+sube/edita archivos directo en la carpeta sin git), y un `HANDOFF.md` único editado desde
+las dos a la vez generó dos versiones simultáneas.
+
+- Cada sesión que necesite dejar un handoff escribe un archivo **nuevo**:
+  `docs/Sesiones/HANDOFF AAAA-MM-DD.md`. Si ya hay uno de ese día, sumar `-N`
+  (`HANDOFF AAAA-MM-DD-2.md`).
+- **Nunca se edita un HANDOFF de una sesión anterior.** Son snapshots, no un doc vivo.
+- El HANDOFF más reciente por fecha es el punto de partida para la próxima conversación;
+  los anteriores quedan como historial.
