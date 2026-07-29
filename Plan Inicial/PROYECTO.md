@@ -105,14 +105,28 @@ las hojas `M2 periodo DIRECTA` / `M2 periodo DIGITAL` **ya vienen al corte del p
 (no se filtran por fecha) y tienen el **encabezado en la fila 3** (fila 1 = período,
 fila 2 = vacía, datos desde fila 4). Config M2: `modo_periodo=snapshot`, `fila_encabezado=3`.
 
-**MAPEO — completo en código desde el Paso 1.9** (`SEED_MAPEO_` en `Instalar.gs`, 51
-filas): **rdv** (14, hoja `RVD JM-CM - ES`), **looker** (23, hoja `resumen_metricas`) y
-**m2** (14, DIRECTA + DIGITAL). **`digital` (Seguimiento Digital) deliberadamente sin
-sembrar** — ver decisión abierta abajo. Detalle de columnas en
+**MAPEO — completo en código** (`SEED_MAPEO_` en `Instalar.gs`, 105 filas): **rdv** (14,
+hoja `RVD JM-CM - ES`), **looker** (24, hoja `resumen_metricas`, incluye `fecha` →
+`fecha_inicio`), **m2** (14, DIRECTA + DIGITAL) y **digital** (53, Paso 2.3: `Digital` +
+`Directa Mail` + `Directa SMS` + `Directa IVR` + `Alcance` + `Seguimiento digital`
+maestra, unidas por `*_id_cuenta`). `digital` pasó a `modo_periodo=snapshot` (mismo
+motivo que looker: la fecha de campaña tiene lead de 3–7 días respecto del encuentro,
+ventanearla contra la semana del encuentro descarta casi todo). Detalle de columnas en
 `docs/MAPEO_completo.md` y en el propio `SEED_MAPEO_`.
 
-**Decisión aún abierta:** `Seguimiento_Digital` vs `Looker` como fuente de verdad
-digital/directa (ver Paso 3). Otras pendientes: ECV block, columna de campaña canónica.
+**Precedencia de merge digital/directa para el Paso 3** (decidida, documentada acá para
+que el agregador la use — NO se codea en `Fuentes.gs`, es lógica de `Marcadores.gs`):
+**RDV → Seguimiento Digital → Looker**. Las tres bases pueden traer el mismo campo lógico
+para una campaña; si se pisan, gana la fuente más a la izquierda. `m2` va aparte, familia
+`m2_*`, no entra en este merge. `HALLAZGOS_validacion_decks.md` §4 verificó que Looker es
+el rollup exacto de Seguimiento Digital (no una fuente independiente) — por eso SD pesa
+más: tiene el desagregado por envío que Looker no puede reconstruir.
+
+**Decisión que sigue sin cerrar formalmente (aunque tiene recomendación fuerte):**
+varios docs (`MAPEO_completo.md`, `CONFIG_INFORMES.md` §4.1, `Paso-1.9.md`, `Paso-3-v2.md`)
+todavía listan Looker-vs-SD como abierta y recomiendan Looker; la precedencia de arriba
+la resuelve a favor de SD. Homogeneizar esos docs cuando se cablee `MARCADORES` (Paso 3).
+Otras pendientes: ECV block, columna de campaña canónica.
 
 ---
 
@@ -149,11 +163,14 @@ BASES/MAPEO/CONFIG) · Paso 1.6 + 1.6 v2 (registrar plantillas, robusto) · Paso
 `fila_encabezado`/`modo_periodo`).
 
 **Bloque 2 — Motor headless**
-- Paso 2 + 2.1 ✅ — lectura por ventana: `resolverCampo`/`resolverVentana`/`leerFuente` en
-  `Fuentes.gs` (maneja `modo_periodo`/`fila_encabezado`, parseo de fecha sin ambigüedad
-  mm/dd, ventana con bordes inclusivos, filas vacías fuera del diagnóstico, columna de
-  fecha por convención de MAPEO). Menú "Probar lectura por ventana". Falta que el usuario
-  corra la prueba real y cierre P1–P5/A1–A10 de `VERIFICACION_Paso-2.md`.
+- Paso 2 + 2.1 + 2.3 ✅ — lectura por ventana: `resolverCampo`/`resolverVentana`/
+  `leerFuente` en `Fuentes.gs` (maneja `modo_periodo`/`fila_encabezado`, parseo de fecha
+  sin ambigüedad mm/dd, ventana con bordes inclusivos, columna de fecha y columna clave
+  por convención de MAPEO, filas basura fuera del conteo, diagnóstico honesto que
+  degrada a ⚠️ si no hay filas en ventana o >50% sin fecha). `digital` sembrado completo
+  (Paso 2.3). Menú "Probar lectura por ventana". Falta que el usuario corra la prueba
+  real y cierre P1–P5/A1–A10 de `VERIFICACION_Paso-2.md`.
+- Paso 2.2 — pendiente (armonizar tokens de plantillas antes de sembrar MARCADORES).
 - Paso 3 — primer cálculo en `Marcadores.gs` + trazabilidad.
 - Paso 4 — motor de reemplazo (tokens fijos).
 - Paso 5 — campañas repetibles + end-to-end.
