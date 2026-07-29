@@ -14,6 +14,7 @@ function onOpen() {
       ui.createMenu('Configuración')
         .addItem('Instalar / reparar hojas', 'instalar')
         .addItem('Cargar config inicial', 'seedConfiguracion')
+        .addItem('Diagnosticar carpeta de plantillas', 'menuDiagnosticarCarpetaPlantillas_')
         .addItem('Registrar plantillas', 'menuRegistrarPlantillas_')
         .addItem('Probar conexión a bases', 'probarConexionBases')
         .addItem('Cargar ejemplo', 'menuCargarEjemplo_')

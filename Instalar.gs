@@ -339,6 +339,63 @@ function registrarPlantillasDesdeCarpeta(folderId) {
   return { ok: true, asignados: asignados, sinInforme: sinInforme, sinAsignar: sinAsignar };
 }
 
+/**
+ * Paso 1.6 v2 (Parte B) — diagnóstico de la carpeta de plantillas.
+ * `getFilesByType(GOOGLE_SLIDES)` falla en silencio si hay .pptx sin convertir,
+ * accesos directos, o si las plantillas están en una subcarpeta. Este helper
+ * recorre TODO (sin filtrar por tipo) para ver qué hay realmente antes de
+ * intentar registrar.
+ */
+function diagnosticarCarpetaPlantillas_(folderId) {
+  var carpeta;
+  try {
+    carpeta = DriveApp.getFolderById(folderId);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo abrir la carpeta "' + folderId + '": ' + e.message };
+  }
+
+  var archivos = [];
+  var iterArchivos = carpeta.getFiles();
+  while (iterArchivos.hasNext()) {
+    var archivo = iterArchivos.next();
+    archivos.push(archivo.getName() + ' · ' + archivo.getMimeType() + ' · ' + archivo.getId());
+  }
+
+  var subcarpetas = [];
+  var iterCarpetas = carpeta.getFolders();
+  while (iterCarpetas.hasNext()) {
+    var sub = iterCarpetas.next();
+    subcarpetas.push(sub.getName() + ' · ' + sub.getId());
+  }
+
+  return { ok: true, nombreCarpeta: carpeta.getName(), archivos: archivos, subcarpetas: subcarpetas };
+}
+
+function menuDiagnosticarCarpetaPlantillas_() {
+  var ui = SpreadsheetApp.getUi();
+  var folderId = leerConfig().carpeta_plantillas;
+
+  if (!folderId) {
+    ui.alert('Falta configuración', 'Cargá "carpeta_plantillas" en CONFIG antes de diagnosticar.', ui.ButtonSet.OK);
+    return;
+  }
+
+  var resultado = diagnosticarCarpetaPlantillas_(folderId);
+  if (!resultado.ok) {
+    ui.alert('No se pudo diagnosticar', resultado.motivo, ui.ButtonSet.OK);
+    return;
+  }
+
+  var lineas = ['Carpeta: ' + resultado.nombreCarpeta, ''];
+  lineas.push('Archivos (' + resultado.archivos.length + '):');
+  lineas = lineas.concat(resultado.archivos.length ? resultado.archivos : ['(ninguno)']);
+  lineas.push('');
+  lineas.push('Subcarpetas (' + resultado.subcarpetas.length + '):');
+  lineas = lineas.concat(resultado.subcarpetas.length ? resultado.subcarpetas : ['(ninguna)']);
+
+  ui.alert('Diagnóstico de carpeta de plantillas', lineas.join('\n'), ui.ButtonSet.OK);
+}
+
 function menuRegistrarPlantillas_() {
   var ui = SpreadsheetApp.getUi();
   var folderId = leerConfig().carpeta_plantillas;
