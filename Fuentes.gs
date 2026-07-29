@@ -148,6 +148,22 @@ function resolverVentana(opciones) {
 }
 
 /**
+ * Fila completamente vacía (todas las celdas '', null, undefined o solo
+ * espacios) — se descarta antes de clasificar por fecha, para que
+ * `filas_sin_fecha` sirva para lo único que tiene que servir: filas con
+ * datos pero sin fecha, no el resto en blanco de la hoja.
+ */
+function filaVacia_(fila) {
+  for (var i = 0; i < fila.length; i++) {
+    var valor = fila[i];
+    if (valor === null || valor === undefined) continue;
+    if (typeof valor === 'string' && valor.trim() === '') continue;
+    return false;
+  }
+  return true;
+}
+
+/**
  * Convierte letra de columna (A, B, ..., Z, AA, AB, ...) a índice 0-based.
  */
 function columnaLetraAIndice_(letra) {
@@ -215,7 +231,9 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
   }
 
   var headers = datos[filaEncabezado - 1];
-  var filasDatos = datos.slice(filaEncabezado);
+  var filasCrudas = datos.slice(filaEncabezado);
+  var filasDatos = filasCrudas.filter(function (fila) { return !filaVacia_(fila); });
+  var filasVaciasDescartadas = filasCrudas.length - filasDatos.length;
 
   function filaAObjeto(fila) {
     var obj = {};
@@ -234,6 +252,7 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
     columna_fecha: null,
     ventana_aplicada: null,
     filas_totales: filasDatos.length,
+    filas_vacias_descartadas: filasVaciasDescartadas,
     filas_en_ventana: 0,
     filas_sin_fecha: 0,
     filas_fecha_invalida: 0,
