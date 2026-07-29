@@ -171,3 +171,23 @@ definir si `enc_*` y `et_*` se fusionan.
   refresca (estado, decisiones resueltas, deltas de esquema).
 - Prompts `Paso-*.md` en `docs/Prompts/` — no van acá.
 - Docs viejos consolidados acá quedan archivados en `Plan Inicial/_archivo/`.
+
+### Convención de trabajo: un commit por paso
+
+Instaurada en el Paso 1.8, porque el commit `8f76cc5` bundleó cuatro pasos (0.5, 1,
+1.6, 1.7) al encimarse en los mismos archivos sin commit intermedio. No se rehace esa
+historia, pero de acá en adelante:
+
+1. Se termina un paso → se avisa y se espera que el usuario lo pruebe. No se sigue al
+   siguiente paso por cuenta propia.
+2. El usuario confirma que pasó la prueba.
+3. Recién ahí se actualiza la doc (`HANDOFF.md`, y `PROYECTO.md` si el paso cambió algo
+   estructural) y se commitea.
+4. Mensaje de commit: `Paso N ✅ — <resumen corto>`. Un paso por commit, sin bundles.
+5. Si un paso toca los mismos archivos que el anterior, igual va en su propio commit:
+   alcanza el orden temporal, no hace falta separar por archivo.
+6. Si al momento de commitear el working tree tiene cambios de más de un paso, se para
+   y se pregunta en vez de bundlear.
+
+Excepción explícita: un mismo prompt puede pedir varios commits internos (p. ej. este
+mismo Paso 1.8, con Partes A/B/C) cuando el propio prompt lo indica.
