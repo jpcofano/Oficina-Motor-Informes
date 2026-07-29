@@ -27,6 +27,15 @@
  * advertencia). Si falta la fila en MAPEO, el motivo es siempre exactamente
  * `falta MAPEO: <base_id>/fecha`, distinto del caso "la fila existe pero la
  * columna está vacía".
+ *
+ * Convención de columna clave (Paso 2.3): igual mecánica que la de fecha, pero
+ * con `campo_logico = 'clave'` (o `'campana'` como fallback si no hay `clave`
+ * explícita). Sirve para descartar del conteo filas basura (fórmulas que
+ * devuelven '', colas de la hoja) sin depender de que TODA la fila esté vacía.
+ * Sin clave resoluble, `leerFuente` cae al criterio anterior (fila 100%
+ * vacía). El descarte por clave cuenta en `filas_descartadas_sin_clave`; el
+ * descarte por fila 100% vacía, en `filas_vacias_descartadas` — nunca los dos
+ * a la vez para una misma base.
  */
 
 var cacheBases_ = {};
@@ -113,6 +122,18 @@ function resolverCampo(baseId, campoLogico) {
   }
 
   return { ok: true, hoja: fila.hoja, columna: fila.columna };
+}
+
+/**
+ * Columna clave de una base para descartar filas basura del conteo (Paso
+ * 2.3): `campo_logico='clave'` en MAPEO si existe; si no, `campo_logico=
+ * 'campana'` como fallback; si no hay ninguna, `{ ok:false }` — el llamador
+ * cae al criterio de fila 100% vacía.
+ */
+function resolverClave_(baseId) {
+  var clave = resolverCampo(baseId, 'clave');
+  if (clave.ok) return clave;
+  return resolverCampo(baseId, 'campana');
 }
 
 /**
@@ -244,8 +265,6 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
 
   var headers = datos[filaEncabezado - 1];
   var filasCrudas = datos.slice(filaEncabezado);
-  var filasDatos = filasCrudas.filter(function (fila) { return !filaVacia_(fila); });
-  var filasVaciasDescartadas = filasCrudas.length - filasDatos.length;
 
   function filaAObjeto(fila) {
     var obj = {};
@@ -253,6 +272,29 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
       if (h) obj[h] = fila[i];
     });
     return obj;
+  }
+
+  function celdaVacia_(valor) {
+    return valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === '');
+  }
+
+  // Tarea 3 (Paso 2.3): si la base declara una columna clave en MAPEO (campo
+  // "clave", o "campana" como fallback), una fila solo cuenta como dato si esa
+  // celda no está vacía — más preciso que "toda la fila vacía" (fórmulas que
+  // devuelven '', colas de la hoja). Bases sin clave definida siguen con el
+  // criterio anterior (fila 100% vacía) para no romper lo que ya andaba.
+  var filasDatos, filasVaciasDescartadas, filasDescartadasSinClave;
+  var clave = resolverClave_(baseId);
+
+  if (clave.ok) {
+    var idxClave = columnaLetraAIndice_(clave.columna);
+    filasDatos = filasCrudas.filter(function (fila) { return !celdaVacia_(fila[idxClave]); });
+    filasVaciasDescartadas = 0;
+    filasDescartadasSinClave = filasCrudas.length - filasDatos.length;
+  } else {
+    filasDatos = filasCrudas.filter(function (fila) { return !filaVacia_(fila); });
+    filasVaciasDescartadas = filasCrudas.length - filasDatos.length;
+    filasDescartadasSinClave = 0;
   }
 
   var resultado = {
@@ -265,6 +307,7 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
     ventana_aplicada: null,
     filas_totales: filasDatos.length,
     filas_vacias_descartadas: filasVaciasDescartadas,
+    filas_descartadas_sin_clave: filasDescartadasSinClave,
     filas_en_ventana: 0,
     filas_sin_fecha: 0,
     filas_fecha_invalida: 0,
@@ -365,15 +408,27 @@ function menuProbarLectura_() {
       return;
     }
 
+    var sufijoClave = r.filas_descartadas_sin_clave > 0
+      ? ' (' + r.filas_descartadas_sin_clave + ' sin clave descartadas)'
+      : '';
+
     if (r.modo === 'snapshot') {
-      lineas.push('✅ ' + r.base_id + ' (' + r.hoja + ', snapshot) — ' + r.filas_totales + ' filas (todas, sin ventana)');
+      lineas.push('✅ ' + r.base_id + ' (' + r.hoja + ', snapshot) — ' + r.filas_totales + ' filas (todas, sin ventana)' + sufijoClave);
       return;
     }
 
+    // Diagnóstico honesto (Paso 2.3): el ✅ solo dice "pude leer y resolver la
+    // columna", no "la data sirve". Se degrada a ⚠️ si no cayó nada en la
+    // ventana, o si más de la mitad de las filas no tienen fecha.
+    var icono = '✅';
+    if (r.filas_en_ventana === 0 || (r.filas_totales > 0 && (r.filas_sin_fecha / r.filas_totales) > 0.5)) {
+      icono = '⚠️';
+    }
+
     lineas.push(
-      '✅ ' + r.base_id + ' (' + r.hoja + ', col fecha "' + r.columna_fecha + '") — ' +
+      icono + ' ' + r.base_id + ' (' + r.hoja + ', col fecha "' + r.columna_fecha + '") — ' +
       r.filas_totales + ' totales, ' + r.filas_en_ventana + ' en ventana, ' +
-      r.filas_sin_fecha + ' sin fecha, ' + r.filas_fecha_invalida + ' fecha inválida'
+      r.filas_sin_fecha + ' sin fecha, ' + r.filas_fecha_invalida + ' fecha inválida' + sufijoClave
     );
   });
 
