@@ -80,6 +80,30 @@ detallado nunca se había hecho, solo el análisis de estructura). Detalle en
 
 ## Bitácora por paso
 
+## Paso 1.6 v2 — carpetas por CONFIG + registro de plantillas robusto (2026-07-28)
+- **Qué hace el prompt:** "Registrar plantillas" no encontraba ningún Slides aunque el
+  ID de carpeta era correcto. Reemplaza al Paso 1.6: saca los IDs de carpeta del
+  código, agrega un diagnóstico y reescribe el registro para que sea recursivo y
+  distinga por MIME.
+- **Qué se hizo:**
+  - `Config.gs` — nueva `leerConfig()` (clave→valor desde `CONFIG`).
+  - `Instalar.gs` — `SEED_CONFIG_DEFAULTS_` suma `carpeta_plantillas` y completa
+    `carpeta_salida`; eliminada la constante `CARPETA_PLANTILLAS_ID_`;
+    `menuRegistrarPlantillas_` lee la carpeta desde `CONFIG` vía `leerConfig()`.
+  - `Instalar.gs` — nuevas `diagnosticarCarpetaPlantillas_()` / menú "Diagnosticar
+    carpeta de plantillas" (lista archivos y subcarpetas sin filtrar por tipo).
+  - `Instalar.gs` — `registrarPlantillasDesdeCarpeta()` reescrita: recorre hasta 2
+    niveles de subcarpetas (`recorrerCarpetaPlantillas_`), clasifica cada archivo por
+    MIME (`clasificarArchivoPlantilla_`: Slides / `.pptx` sin convertir / acceso
+    directo / otro), no pisa un `plantilla_id` distinto ya cargado (reporta
+    conflicto), y distingue "carpeta vacía" de "sin Slides que matcheen".
+  - `Codigo.gs` — ítem de menú nuevo "Diagnosticar carpeta de plantillas".
+- **Prueba:** pendiente del usuario — `clasp push` → menú → "Diagnosticar carpeta de
+  plantillas" (ver qué MIME salen JM/SECCO) → convertir/mover si hace falta → "Registrar
+  plantillas" → verificar `plantilla_id` en `INFORMES` y `carpeta_plantillas` /
+  `carpeta_salida` en `CONFIG` → correr de nuevo y confirmar que no duplica ni pisa.
+- **Pendientes/decisiones:** ninguno.
+
 ## Paso 1.8B — timeZone Buenos Aires + oauthScopes (2026-07-28)
 - **Qué hace el prompt:** cerrar higiene de proyecto antes del Paso 2: zona horaria y
   scopes explícitos en `appsscript.json`.

@@ -7,12 +7,15 @@
  * si ya existen con el esquema viejo, inserta las columnas nuevas
  * (periodo_ref / desde / hasta) en su posición sin tocar filas cargadas.
  * También expone seedConfiguracion(): carga (upsert) los valores reales de
- * BASES/MAPEO/CONFIG para no cargarlos a mano; y registrarPlantillasDesdeCarpeta():
- * matchea los Slides de una carpeta de Drive contra INFORMES y completa
- * plantilla_id.
- * Se completa en: Paso 0 (v2) + Paso 0.5 + Paso 1.6 + Paso 1.7 — ver
- * docs/Prompts/Paso-0-v2.md, docs/Prompts/Paso-0.5.md, docs/Prompts/Paso-1.6.md,
- * docs/Prompts/Paso-1.7.md, Plan Inicial/_archivo/ARQUITECTURA_registros.md y
+ * BASES/MAPEO/CONFIG para no cargarlos a mano; diagnosticarCarpetaPlantillas_():
+ * lista sin filtrar qué hay en la carpeta de plantillas; y
+ * registrarPlantillasDesdeCarpeta(): recorre esa carpeta (hasta 2 niveles de
+ * subcarpetas), matchea los Slides nativos contra INFORMES y completa
+ * plantilla_id, reportando .pptx sin convertir y accesos directos.
+ * Se completa en: Paso 0 (v2) + Paso 0.5 + Paso 1.6 + Paso 1.6 (v2) + Paso 1.7
+ * — ver docs/Prompts/Paso-0-v2.md, docs/Prompts/Paso-0.5.md,
+ * docs/Prompts/Paso-1.6.md, docs/Prompts/Paso-1.6-v2.md, docs/Prompts/Paso-1.7.md,
+ * Plan Inicial/_archivo/ARQUITECTURA_registros.md y
  * Plan Inicial/_archivo/Periodos_y_campanias.md.
  */
 
@@ -286,6 +289,14 @@ function matchearInformeId_(nombreArchivo) {
   return null;
 }
 
+// Profundidad máxima de recorrido de subcarpetas (getFilesByType no es
+// recursivo; las plantillas a veces terminan en una subcarpeta al compartir
+// entre las dos cuentas).
+var PROFUNDIDAD_MAX_PLANTILLAS_ = 2;
+
+// MIME de acceso directo de Drive: no tiene constante en el enum MimeType.
+var MIME_SHORTCUT_ = 'application/vnd.google-apps.shortcut';
+
 function registrarPlantillasDesdeCarpeta(folderId) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var hojaInformes = ss.getSheetByName('INFORMES');
@@ -311,32 +322,74 @@ function registrarPlantillasDesdeCarpeta(folderId) {
     if (id) filaPorInformeId[id] = f + 1;
   }
 
-  var asignados = [];
-  var sinInforme = [];
-  var sinAsignar = [];
+  var resultado = {
+    ok: true,
+    asignados: [],
+    sinInforme: [],
+    sinAsignar: [],
+    pptxSinConvertir: [],
+    accesosDirectos: [],
+    conflictos: [],
+    totalArchivosVistos: 0
+  };
 
-  var archivos = carpeta.getFilesByType(MimeType.GOOGLE_SLIDES);
+  recorrerCarpetaPlantillas_(carpeta, 0, filaPorInformeId, hojaInformes, idxPlantillaId, resultado);
+
+  return resultado;
+}
+
+function recorrerCarpetaPlantillas_(carpeta, profundidad, filaPorInformeId, hojaInformes, idxPlantillaId, resultado) {
+  var archivos = carpeta.getFiles();
   while (archivos.hasNext()) {
     var archivo = archivos.next();
-    var nombre = archivo.getName();
-    var informeId = matchearInformeId_(nombre);
-
-    if (!informeId) {
-      sinAsignar.push(nombre);
-      continue;
-    }
-
-    var filaNum = filaPorInformeId[informeId];
-    if (!filaNum) {
-      sinInforme.push(informeId + ' (' + nombre + ')');
-      continue;
-    }
-
-    hojaInformes.getRange(filaNum, idxPlantillaId + 1).setValue(archivo.getId());
-    asignados.push({ informeId: informeId, nombre: nombre, plantillaId: archivo.getId() });
+    resultado.totalArchivosVistos++;
+    clasificarArchivoPlantilla_(archivo, filaPorInformeId, hojaInformes, idxPlantillaId, resultado);
   }
 
-  return { ok: true, asignados: asignados, sinInforme: sinInforme, sinAsignar: sinAsignar };
+  if (profundidad < PROFUNDIDAD_MAX_PLANTILLAS_) {
+    var subcarpetas = carpeta.getFolders();
+    while (subcarpetas.hasNext()) {
+      recorrerCarpetaPlantillas_(subcarpetas.next(), profundidad + 1, filaPorInformeId, hojaInformes, idxPlantillaId, resultado);
+    }
+  }
+}
+
+function clasificarArchivoPlantilla_(archivo, filaPorInformeId, hojaInformes, idxPlantillaId, resultado) {
+  var nombre = archivo.getName();
+  var mime = archivo.getMimeType();
+
+  if (mime === MimeType.MICROSOFT_POWERPOINT) {
+    resultado.pptxSinConvertir.push(nombre);
+    return;
+  }
+  if (mime === MIME_SHORTCUT_) {
+    resultado.accesosDirectos.push(nombre);
+    return;
+  }
+  if (mime !== MimeType.GOOGLE_SLIDES) {
+    return; // cualquier otro tipo: ignorar en silencio
+  }
+
+  var informeId = matchearInformeId_(nombre);
+  if (!informeId) {
+    resultado.sinAsignar.push(nombre);
+    return;
+  }
+
+  var filaNum = filaPorInformeId[informeId];
+  if (!filaNum) {
+    resultado.sinInforme.push(informeId + ' (' + nombre + ')');
+    return;
+  }
+
+  var idActual = hojaInformes.getRange(filaNum, idxPlantillaId + 1).getValue();
+  if (idActual && idActual !== archivo.getId()) {
+    resultado.conflictos.push(informeId + ' — ya tiene "' + idActual + '", se encontró "' + archivo.getId() + '" (' + nombre + ')');
+    return;
+  }
+
+  hojaInformes.getRange(filaNum, idxPlantillaId + 1).setValue(archivo.getId());
+  resultado.asignados.push({ informeId: informeId, nombre: nombre, plantillaId: archivo.getId() });
 }
 
 /**
@@ -412,18 +465,32 @@ function menuRegistrarPlantillas_() {
     return;
   }
 
+  if (resultado.totalArchivosVistos === 0) {
+    ui.alert('Plantillas registradas', 'La carpeta está vacía o el robot no ve su contenido.', ui.ButtonSet.OK);
+    return;
+  }
+
   var lineas = [];
   resultado.asignados.forEach(function (item) {
     lineas.push('✅ ' + item.informeId + ' ← ' + item.nombre);
   });
-  resultado.sinInforme.forEach(function (item) {
-    lineas.push('⚠️ Sin fila en INFORMES para: ' + item);
+  resultado.pptxSinConvertir.forEach(function (nombre) {
+    lineas.push('⚠ ' + nombre + ' es .pptx — convertir a Google Slides nativo (Drive → Abrir con Presentaciones de Google → Archivo → Guardar como Presentaciones de Google)');
+  });
+  resultado.accesosDirectos.forEach(function (nombre) {
+    lineas.push('⚠ ' + nombre + ' es un acceso directo — poner el archivo real en la carpeta o compartirlo directo con el robot');
+  });
+  resultado.conflictos.forEach(function (item) {
+    lineas.push('⚠ conflicto de ID en ' + item);
   });
   resultado.sinAsignar.forEach(function (nombre) {
-    lineas.push('— Sin asignar (nombre no matchea ningún informe): ' + nombre);
+    lineas.push('— Sin match de nombre: ' + nombre);
+  });
+  resultado.sinInforme.forEach(function (item) {
+    lineas.push('— Sin fila en INFORMES para: ' + item);
   });
 
-  var resumen = lineas.length ? lineas.join('\n') : 'No se encontraron Slides en la carpeta.';
+  var resumen = lineas.length ? lineas.join('\n') : 'No se encontraron Slides, .pptx ni accesos directos en la carpeta.';
   ui.alert('Plantillas registradas', resumen, ui.ButtonSet.OK);
 }
 

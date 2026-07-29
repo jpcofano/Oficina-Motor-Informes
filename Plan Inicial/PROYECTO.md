@@ -51,7 +51,7 @@ y las referencia por ID lógico (`base_id`, `informe_id`).
 Las **6 hojas de config** (+ `PERIODOS`):
 
 - **CONFIG** (clave/valor global): `periodo_desde`, `periodo_hasta`, `informe_activo`,
-  `carpeta_salida`.
+  `carpeta_plantillas`, `carpeta_salida`.
 - **BASES** (una fila por fuente viva): `base_id | nombre | sheet_id | hoja_default |
   tipo | activo | notas` (+ `fila_encabezado`, `modo_periodo` — ver §5).
 - **INFORMES** (una fila por plantilla/informe): `informe_id | nombre | plantilla_id |
@@ -118,8 +118,12 @@ hoja real (se ven con "Probar conexión"). Decisiones de fuente aún abiertas: E
 ## 6. Fuente de verdad — PLANTILLAS
 
 - Plantillas **marcadas** convertidas a **Google Slides nativas**, en la carpeta de Drive
-  `1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi`. Sus IDs se cargan en `INFORMES.plantilla_id` con
-  el helper del `Paso 1.6` (matchea por nombre: "JM"→jm, "SECCO"→secco).
+  cargada en `CONFIG.carpeta_plantillas` (`Paso 1.6 v2`; antes hardcodeada en el código —
+  `1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi`). Sus IDs se cargan en `INFORMES.plantilla_id` con
+  `registrarPlantillasDesdeCarpeta()` (matchea por nombre: "JM"→jm, "SECCO"→secco;
+  recorre hasta 2 niveles de subcarpetas y distingue Slides nativas de `.pptx` sin
+  convertir y accesos directos). `diagnosticarCarpetaPlantillas_()` lista el contenido
+  crudo de la carpeta para depurar cuando el registro no encuentra nada.
 - Informes: `jm` (semanal, 22 slides) y `secco` (mensual, 29 slides).
 - Convención de token: **`{{doble_llave}}`**, snake_case, por familia. El motor
   reemplaza solo **texto** (datos en imágenes no son tokenizables).
