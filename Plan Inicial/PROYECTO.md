@@ -141,15 +141,17 @@ definir si `enc_*` y `et_*` se fusionan.
 
 ## 7. Plan por pasos y estado
 
-**Bloque 1 — Fundación y config**
-- Paso 0 ✅ hojas registro + menú · Paso 1 ✅ lector + `abrirBase` con caché.
-- Paso 1.5 — re-anclar a `jpcofanogcba1` (clasp create + push + permisos). *(RUNBOOK)*
-- Paso 0.5 — esquema de períodos (PERIODOS + periodo_ref + desde/hasta).
-- Paso 1.7 — seed de BASES/MAPEO/CONFIG por código.
-- Paso 1.6 — registrar plantillas desde la carpeta.
+**Bloque 1 — Fundación y config — ✅ completo**
+Paso 0 (hojas registro + menú) · Paso 1 (lector + `abrirBase` con caché) · Paso 1.5
+(re-anclado a `jpcofanogcba1`) · Paso 0.5 (esquema de períodos) · Paso 1.7 (seed
+BASES/MAPEO/CONFIG) · Paso 1.6 + 1.6 v2 (registrar plantillas, robusto) · Paso 1.8 + 1.8-B
+(convención de commits, timeZone/scopes, diagnóstico Drive) · Paso 1.9 (MAPEO completo +
+`fila_encabezado`/`modo_periodo`).
 
 **Bloque 2 — Motor headless**
-- Paso 2 — lectura por ventana (MAPEO + período; maneja `modo_periodo`/`fila_encabezado`).
+- Paso 2 ✅ — lectura por ventana: `resolverCampo`/`resolverVentana`/`leerFuente` en
+  `Fuentes.gs` (maneja `modo_periodo`/`fila_encabezado`, parseo de fecha sin ambigüedad
+  mm/dd, ventana con bordes inclusivos). Menú "Probar lectura por ventana".
 - Paso 3 — primer cálculo en `Marcadores.gs` + trazabilidad.
 - Paso 4 — motor de reemplazo (tokens fijos).
 - Paso 5 — campañas repetibles + end-to-end.
@@ -211,3 +213,16 @@ las dos a la vez generó dos versiones simultáneas.
 - **Nunca se edita un HANDOFF de una sesión anterior.** Son snapshots, no un doc vivo.
 - El HANDOFF más reciente por fecha es el punto de partida para la próxima conversación;
   los anteriores quedan como historial.
+
+### Riesgo real: los `.gs` comparten un único namespace global
+
+Las dos herramientas (esta sesión y claude.ai) escriben archivos `.gs` en la misma
+carpeta sin verse entre sí. Apps Script concatena **todos** los `.gs` en un solo scope
+global: dos funciones o `var` con el mismo nombre en archivos distintos no dan error de
+sintaxis, pero una pisa a la otra en silencio (gana la que carga después, típicamente por
+orden alfabético de archivo). Pasó en el Paso 2: `Fuentes.gs` y el nuevo `Parseo.gs`
+(de claude.ai) definieron cada uno su propio `parsearFecha_` con firmas incompatibles —
+se detectó a tiempo y se renombró el de `Fuentes.gs` a `parsearFechaCelda_`.
+**Antes de nombrar una función o `var` global nueva, greppear el nombre en todo el
+repo** (`grep -rn "function nombre_" *.gs`), sobre todo si el otro archivo pudo haber
+sido escrito por la otra herramienta sin avisar.
