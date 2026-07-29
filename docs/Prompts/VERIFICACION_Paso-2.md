@@ -1,6 +1,6 @@
 # VERIFICACIÓN — Paso 2 (lectura con ventana de fechas)
 
-> Ubicación en el repo: `docs/VERIFICACION_Paso-2.md`
+> Ubicación en el repo: `docs/Prompts/VERIFICACION_Paso-2.md`
 > El paso no se commitea hasta que **todos** los criterios de aceptación pasan.
 
 ---
