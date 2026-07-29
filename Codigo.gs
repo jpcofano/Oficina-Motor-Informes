@@ -17,6 +17,7 @@ function onOpen() {
         .addItem('Diagnosticar carpeta de plantillas', 'menuDiagnosticarCarpetaPlantillas_')
         .addItem('Registrar plantillas', 'menuRegistrarPlantillas_')
         .addItem('Probar conexión a bases', 'probarConexionBases')
+        .addItem('Probar lectura por ventana', 'menuProbarLectura_')
         .addItem('Cargar ejemplo', 'menuCargarEjemplo_')
     )
     .addToUi();
