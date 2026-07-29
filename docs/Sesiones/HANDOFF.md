@@ -2,6 +2,20 @@
 
 > Para arrancar una conversación nueva con contexto completo. Trabajamos en español.
 
+## Plantilla de entrada por paso
+
+Antes de cada commit de paso (convención instaurada en el Paso 1.8, ver
+`Plan Inicial/PROYECTO.md` §9), agregar una entrada con este formato en
+**Bitácora por paso** (más abajo):
+
+```
+## Paso <N> — <nombre corto> (<AAAA-MM-DD>)
+- **Qué hace el prompt:** <1–2 líneas, el objetivo>.
+- **Qué se hizo:** <archivos/funciones editados, hojas/columnas/menús tocados>.
+- **Prueba:** <cómo se probó y resultado>.
+- **Pendientes/decisiones:** <si quedó algo abierto; si no, "ninguno">.
+```
+
 ## Qué es
 Motor **Google Sheets → Apps Script → Google Slides** que genera presentaciones
 configurables sin tocar código. Diseño por **registros**: agregar base o plantilla =
@@ -63,6 +77,28 @@ detallado nunca se había hecho, solo el análisis de estructura). Detalle en
 6. Cargar MAPEO completo (desde `MAPEO_completo.md`) y cablear MARCADORES.
 7. Motor headless: `Paso-2` → `3` → `4` → `5`.
 8. Panel: `Paso-6` (web app) → 7–9. Automatización: 10–12.
+
+## Bitácora por paso
+
+## Paso 1.8B — timeZone Buenos Aires + oauthScopes (2026-07-28)
+- **Qué hace el prompt:** cerrar higiene de proyecto antes del Paso 2: zona horaria y
+  scopes explícitos en `appsscript.json`.
+- **Qué se hizo:** `appsscript.json` — `timeZone` de `America/New_York` a
+  `America/Argentina/Buenos_Aires`; agregado `oauthScopes` explícito
+  (`spreadsheets`, `drive`, `presentations`, `script.container.ui`).
+- **Prueba:** pendiente del usuario — `clasp push`, re-autorizar desde el menú y correr
+  `probarConexionBases()`.
+- **Pendientes/decisiones:** ninguno.
+
+## Paso 1.8A — Convención un commit por paso (2026-07-28)
+- **Qué hace el prompt:** dejar fija la regla de un commit por paso (sin bundles), para
+  no repetirla en cada prompt.
+- **Qué se hizo:** `Plan Inicial/PROYECTO.md` §9 — nueva sub-sección "Convención de
+  trabajo: un commit por paso" con las 6 reglas y la excepción de commits internos por
+  partes cuando el prompt lo pide explícitamente (como este mismo Paso 1.8).
+- **Prueba:** `git log --oneline` debe mostrar los commits de este paso separados, no
+  bundleados.
+- **Pendientes/decisiones:** ninguno.
 
 ## Docs vivos (fuente de verdad)
 - `Plan Inicial/PROYECTO.md` — maestro (se actualiza siempre).
