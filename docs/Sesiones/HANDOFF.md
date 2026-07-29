@@ -80,6 +80,33 @@ detallado nunca se había hecho, solo el análisis de estructura). Detalle en
 
 ## Bitácora por paso
 
+## Paso 1.9 — MAPEO completo + fila_encabezado/modo_periodo en BASES (2026-07-29)
+- **Qué hace el prompt:** cerrar dos huecos entre `Instalar.gs` y el diseño: `BASES` no
+  tenía `fila_encabezado`/`modo_periodo` (necesarias para que el Paso 2 sepa leer M2 como
+  snapshot con encabezado en fila 3) y `SEED_MAPEO_` tenía las columnas de `rdv` vacías y
+  `looker` sin sembrar.
+- **Qué se hizo:**
+  - `Instalar.gs` — `HOJAS_CONFIG_.BASES.headers` suma `fila_encabezado`/`modo_periodo`
+    (después de `hoja_default`); `COLUMNAS_DELTA_.BASES` las inserta de forma idempotente
+    sobre hojas ya instaladas (mismo mecanismo que Paso 0.5); `ejemplos` actualizado y
+    corregido `hoja_default` de `m2` (ya no "(a confirmar)").
+  - `SEED_BASES_` — los 5 objetos suman `fila_encabezado`/`modo_periodo` (m2:
+    `fila_encabezado=3`, `modo_periodo=snapshot`; el resto `1`/`filtrar`).
+  - `SEED_MAPEO_` reescrito: **14 filas `rdv`** (resuelve `inscriptos`=K y `fecha`=E, antes
+    vacías), **23 filas `looker`**, **14 filas `m2`** (13 que ya estaban + `estado`→E de
+    `M2 periodo DIGITAL`). `digital` (Seguimiento Digital) deliberadamente sin sembrar —
+    ver decisión abierta. 51 filas totales, ninguna con `columna` vacía.
+  - `Plan Inicial/PROYECTO.md` §5 — actualizado: MAPEO completo en código, pendiente de
+    MAPEO por RDV ya resuelto.
+- **Prueba:** pendiente del usuario — `clasp push` → "Instalar / reparar hojas" (columnas
+  nuevas en `BASES` sin perder `sheet_id` cargados) → "Cargar config inicial" → verificar
+  `BASES` (m2 en `3`/`snapshot`) y `MAPEO` (14 rdv, 23 looker, 14 m2, sin ⚠ de pendientes)
+  → correr de nuevo y confirmar que no duplica.
+- **Pendientes/decisiones:** Looker vs Seguimiento Digital como fuente de verdad
+  digital/directa sigue abierta — se resuelve al arrancar el Paso 3, no antes. Nota: el
+  prompt original estimaba 14 filas de `m2` ya cargadas + 1 nueva = 15; el conteo real
+  del array existente era 13, así que el total quedó en 14, no 15.
+
 ## Paso 1.6 v2 — carpetas por CONFIG + registro de plantillas robusto (2026-07-28)
 - **Qué hace el prompt:** "Registrar plantillas" no encontraba ningún Slides aunque el
   ID de carpeta era correcto. Reemplaza al Paso 1.6: saca los IDs de carpeta del

@@ -105,13 +105,14 @@ las hojas `M2 periodo DIRECTA` / `M2 periodo DIGITAL` **ya vienen al corte del p
 (no se filtran por fecha) y tienen el **encabezado en la fila 3** (fila 1 = período,
 fila 2 = vacía, datos desde fila 4). Config M2: `modo_periodo=snapshot`, `fila_encabezado=3`.
 
-**MAPEO de M2** (directa en `M2 periodo DIRECTA`, digital en `M2 periodo DIGITAL`):
-directa → campana B, fecha C, envios D, entregados E, aperturas F, or G, clics H, ctor I.
-digital → campana_dig B, estado E, impresiones F, alcance_dig G, views I, clics_dig K.
+**MAPEO — completo en código desde el Paso 1.9** (`SEED_MAPEO_` en `Instalar.gs`, 51
+filas): **rdv** (14, hoja `RVD JM-CM - ES`), **looker** (23, hoja `resumen_metricas`) y
+**m2** (14, DIRECTA + DIGITAL). **`digital` (Seguimiento Digital) deliberadamente sin
+sembrar** — ver decisión abierta abajo. Detalle de columnas en
+`docs/MAPEO_completo.md` y en el propio `SEED_MAPEO_`.
 
-**Pendiente de MAPEO:** columnas de **RDV** (`inscriptos`, `fecha`) a confirmar contra la
-hoja real (se ven con "Probar conexión"). Decisiones de fuente aún abiertas: ECV block,
-`Seguimiento_Digital` vs `Looker` como verdad digital, columna de campaña canónica.
+**Decisión aún abierta:** `Seguimiento_Digital` vs `Looker` como fuente de verdad
+digital/directa (ver Paso 3). Otras pendientes: ECV block, columna de campaña canónica.
 
 ---
 
