@@ -7,7 +7,11 @@
 Contexto: `CAMPANAS` define campañas seleccionables con su `tipo`
 (destacada / encuentro_ministros / proveedor), sus fechas propias (`desde`/`hasta`),
 `mostrar` y `orden`. Cada `tipo` consume una plantilla de slide repetible dentro del
-Slides del informe. Ver `Plan Inicial/Periodos_y_campanias.md` y `docs/CAMPANAS.md`.
+Slides del informe. Ver `Plan Inicial/PROYECTO.md` §4 y §6 (bloque de encuentro
+repetible) y `docs/TOKENS.md` §3 — reemplazan a
+`Plan Inicial/_archivo/Periodos_y_campanias.md` y `Plan Inicial/_archivo/CAMPANAS.md`
+(DOC-1 los archivó; **son documentos archivados**: si contradicen `docs/TOKENS.md` o
+`PROYECTO.md`, manda el vivo).
 
 1. **Identificar el bloque plantilla de cada tipo** (en `Generador.gs`):
    - En el Slides plantilla, el bloque de campaña es un conjunto de slides "modelo"

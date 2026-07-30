@@ -6,11 +6,19 @@
 
 Contexto: cada informe (`INFORMES`) apunta a un `plantilla_id` (un Google Slides marcado
 con `{{tokens}}`). Convención de token: `{{doble_llave}}`. Las plantillas marcadas ya
-existen (JM y SECCO). Ver `docs/JM_tokens_marcados.md` y `docs/SECCO_tokens_marcados.md`.
+existen (JM y SECCO). Ver `docs/TOKENS.md` — fusiona (y reemplaza) los inventarios que
+estaban en `Plan Inicial/_archivo/JM_tokens_marcados.md` y
+`Plan Inicial/_archivo/SECCO_tokens_marcados.md` (DOC-1 los archivó; **son
+documentos archivados**: si contradicen `docs/TOKENS.md` o `PROYECTO.md`, manda el
+vivo).
 
-> Nota: las plantillas que te entregué están como `.pptx`. Para que Slides las use como
-> plantilla nativa, deben estar subidas a Drive **como Google Slides** y su ID va en la
-> columna `plantilla_id` de `INFORMES`. (Igual que las bases deben ser Sheets nativas.)
+> Estado actual (Paso 2.2.2, regla **C-01** en `docs/REGLAS_NEGOCIO.md`): `INFORMES.
+> plantilla_id` **ya apunta a la plantilla canónica** de cada informe (Google Slides
+> nativo, en la carpeta de `CONFIG.carpeta_plantillas`) — no hace falta convertir ni
+> subir nada. **No copiar la plantilla para "ordenarla" o probar algo:** copiar un
+> archivo de Drive genera un ID nuevo, y ese ID no es el que está en `INFORMES.
+> plantilla_id` — un cambio hecho sobre la copia no se ve nunca. Cualquier edición de
+> diseño va sobre el archivo cuyo ID está en `INFORMES`, punto.
 
 1. **Copia de la plantilla** (en `Generador.gs`):
    - `generarInforme(informe_id)`:
@@ -21,7 +29,9 @@ existen (JM y SECCO). Ver `docs/JM_tokens_marcados.md` y `docs/SECCO_tokens_marc
 
 2. **Recolección de valores**:
    - Filtrar `MARCADORES` por `informe_id` = el informe + los `*` (compartidos).
-   - Para cada uno, `calcularMarcador` (Paso 3) → junta un mapa `{ '{{token}}': valor_formateado }`.
+   - Para cada uno, `resolverMarcadores(informe_id, periodoGlobal)` (`Paso-3-v2.md`,
+     no `calcularMarcador` — ese nombre quedó del `Paso-3.md` viejo, ya reemplazado) →
+     junta un mapa `{ '{{token}}': valor_formateado }`.
    - Guardá también la trazabilidad de cada token para el reporte final.
 
 3. **Reemplazo** (en `Generador.gs`, sobre la copia):
