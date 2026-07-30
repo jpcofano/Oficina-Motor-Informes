@@ -77,12 +77,17 @@ var HOJAS_CONFIG_ = {
       ['secco', 'Seguimiento SECCO-SSCDI', '', 'mensual', 'ecv,et,emin,m2,camp,conv,rep,rrss', 'sí', '29 slides']
     ]
   },
+  // solapa/operacion/valor_fijo (DOC-2 Parte A): operacion reemplaza a calculo
+  // (migración idempotente en migrarCalculoAOperacion_); valor_fijo es para
+  // operacion=TEXTO; solapa entra en la clave de MAPEO y, si viene vacía, la
+  // regla de resolución (docs/TOKENS.md, PROYECTO.md §3) decide si se infiere
+  // o se exige.
   MARCADORES: {
-    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'campo_logico', 'periodo_ref', 'calculo', 'formato', 'notas'],
+    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'solapa', 'campo_logico', 'periodo_ref', 'operacion', 'valor_fijo', 'formato', 'notas'],
     ejemplos: [
-      ['ecv_inscriptos', 'ecv', '*', 'rdv', 'inscriptos', '', 'calcInscriptos', 'numero', '* = compartido'],
-      ['camp_alcance', 'camp', '*', 'looker', 'alcance', '', 'calcAlcance', 'miles', ''],
-      ['m2_envios', 'm2', 'jm', 'm2', 'envios', 'm2_mensual', 'calcEnvios', 'numero', '']
+      ['ecv_inscriptos', 'ecv', '*', 'rdv', '', 'inscriptos', '', 'calcInscriptos', '', 'numero', '* = compartido; solapa vacía: rdv tiene una sola'],
+      ['camp_alcance', 'camp', '*', 'looker', '', 'alcance', '', 'calcAlcance', '', 'miles', 'solapa vacía: looker tiene una sola'],
+      ['m2_envios', 'm2', 'jm', 'm2', 'M2 periodo DIRECTA', 'envios', 'm2_mensual', 'calcEnvios', '', 'numero', 'solapa cargada: m2 tiene DIRECTA + DIGITAL']
     ]
   },
   // solapa (Paso 2.3.2): entra en la clave junto con base_id + campo_logico.
@@ -119,7 +124,12 @@ var HOJAS_CONFIG_ = {
 // en su posición sin recrear la hoja ni tocar las filas ya cargadas.
 var COLUMNAS_DELTA_ = {
   MARCADORES: [
-    { nombre: 'periodo_ref', indice: 6 }
+    { nombre: 'periodo_ref', indice: 6 },
+    // Orden importa: solapa se inserta antes de valor_fijo porque corre
+    // primero en el forEach — desplaza campo_logico/periodo_ref/calculo una
+    // posición, y valor_fijo asume esa posición ya corrida (ver DOC-2 Parte A).
+    { nombre: 'solapa', indice: 5 },
+    { nombre: 'valor_fijo', indice: 9 }
   ],
   CAMPANAS: [
     { nombre: 'desde', indice: 6 },
@@ -174,6 +184,9 @@ function instalar() {
   var hojaMapeo = ss.getSheetByName('MAPEO');
   var backfill = hojaMapeo ? backfillSolapaMapeo_(hojaMapeo) : { rellenadas: 0, sinHoja: [] };
 
+  var hojaMarcadores = ss.getSheetByName('MARCADORES');
+  var migroOperacion = hojaMarcadores ? migrarCalculoAOperacion_(hojaMarcadores) : false;
+
   limpiarHojaPorDefecto_(ss);
 
   var resumen =
@@ -182,8 +195,26 @@ function instalar() {
     (backfill.rellenadas ? '\nMAPEO.solapa completada en ' + backfill.rellenadas + ' fila(s) desde MAPEO.hoja' : '') +
     (backfill.sinHoja.length
       ? '\n⚠️ MAPEO sin "hoja" cargada, no se pudo determinar solapa: ' + backfill.sinHoja.join(', ')
-      : '');
+      : '') +
+    (migroOperacion ? '\nMARCADORES.calculo renombrada a operacion (valores conservados)' : '');
   SpreadsheetApp.getUi().alert('Instalación completa', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+/**
+ * DOC-2 Parte A — migración idempotente `calculo` → `operacion` en MARCADORES.
+ * Renombra el encabezado **en su lugar** (misma columna, mismos valores
+ * cargados): no crea una columna nueva al lado, que dejaría dos verdades. Si
+ * la hoja ya dice `operacion`, no hace nada; si nunca tuvo `calculo` (hoja
+ * instalada de cero con el esquema nuevo), tampoco.
+ */
+function migrarCalculoAOperacion_(hoja) {
+  var ultimaColumna = Math.max(hoja.getLastColumn(), 1);
+  var headers = hoja.getRange(1, 1, 1, ultimaColumna).getValues()[0];
+  var idxCalculo = headers.indexOf('calculo');
+  if (idxCalculo === -1) return false; // ya migrada o instalación nueva
+
+  hoja.getRange(1, idxCalculo + 1).setValue('operacion');
+  return true;
 }
 
 /**
