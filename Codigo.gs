@@ -24,6 +24,7 @@ function onOpen() {
         .addItem('Validar MAPEO (duplicados)', 'menuValidarMapeo_')
         .addItem('Listar solapas y tipos', 'menuDiagnosticarBases_')
         .addItem('Auditoría de solapas (AUD-1)', 'menuAuditarSolapas_')
+        .addItem('Inventariar solapas', 'menuInventariarSolapas_')
         .addItem('Cargar ejemplo', 'menuCargarEjemplo_')
     )
     .addSubMenu(
