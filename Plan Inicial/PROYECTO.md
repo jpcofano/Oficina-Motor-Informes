@@ -218,11 +218,16 @@ BASES/MAPEO/CONFIG) · Paso 1.6 + 1.6 v2 (registrar plantillas, robusto) · Paso
   degrada a ⚠️ si no hay filas en ventana o >50% sin fecha). `digital` sembrado completo
   (Paso 2.3). Menú "Probar lectura por ventana". Falta que el usuario corra la prueba
   real y cierre P1–P5/A1–A10 de `VERIFICACION_Paso-2.md`.
-- Paso 2.2 — código listo (`Armonizar.gs`), **sin correr contra la plantilla real
-  todavía**. Falta: correr desde el menú, verificar (sobre todo la Parte B.1, que no se
-  puede chequear leyendo texto), y recién ahí sacar la advertencia de `docs/TOKENS.md`
-  (Parte D). Ojo con `enc_audiencia_ivr`→`enc_base_total`: sigue siendo pregunta abierta
-  en `PLANTILLAS_QA_y_armonizacion.md` §9, no confirmada.
+- Paso 2.2 + 2.2.1 — primera corrida ya confirmada por el usuario (JM slide 5 y slide 6
+  correctas). El parche 2.2.1 corrigió dos problemas que aparecieron en esa corrida: los
+  renombres de texto pasaron a ser **por `informe_id`** (`RENOMBRES_ARMONIZACION_POR_INFORME_`
+  en `Armonizar.gs`) porque un renombre global rompió `enc_audiencia` en SECCO; y se
+  agregaron los 16 renombres de M2 slide 10 (nunca se habían codeado) + una limpieza de
+  caja fuera de canvas más robusta (recorre `Group`, la versión anterior solo miraba
+  elementos de primer nivel — por eso los 14 números viejos seguían apareciendo). **El
+  parche todavía no se corrió contra la plantilla real.** Sigue pendiente sacar la
+  advertencia de `docs/TOKENS.md` (Parte D del 2.2). `enc_audiencia_ivr`→`enc_base_total`
+  sigue siendo pregunta abierta en `PLANTILLAS_QA_y_armonizacion.md` §9, no confirmada.
 - Paso 3 — primer cálculo en `Marcadores.gs` + trazabilidad.
 - Paso 4 — motor de reemplazo (tokens fijos).
 - Paso 5 — campañas repetibles + end-to-end.
