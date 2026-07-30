@@ -468,6 +468,127 @@ var SEED_MAPEO_ = [
 // acá en vez de tipearlo dos veces por fila.
 SEED_MAPEO_.forEach(function (fila) { fila.solapa = fila.hoja; });
 
+/**
+ * Paso 2.6 Parte D — clasificación PROPUESTA de las ~86 solapas reales de las
+ * cuatro bases (relevamiento manual sobre los archivos vivos,
+ * docs/Prompts/Paso-2.6_registro_solapas.md Parte D). **No es una decisión**:
+ * todo lo que queda en `revisar` lo confirma el usuario, y cualquier fila se
+ * puede reclasificar a mano después — por eso se aplica con
+ * `sembrarClasificacionSolapas()`, una siembra explícita y separada de
+ * `inventariarSolapas()` (Solapas.gs), que nunca toca `uso`.
+ *
+ * `fila_encabezado` por defecto toma el de la base (`FILA_ENCABEZADO_POR_BASE_`,
+ * espejo de `SEED_BASES_`); se pisa puntualmente donde el relevamiento encontró
+ * otra cosa (m2 / `Cuentas` y `Cuentas M2`: fila 1, aunque la base tiene
+ * `fila_encabezado=3` — DOC-3 Parte D, PROYECTO.md §5bis regla 2).
+ *
+ * ⚠ Consecuencia real, no cosmética: sembrar esto deja `M2 periodo DIRECTA` /
+ * `M2 periodo DIGITAL` (banner de período en fila 1 — viola el criterio de fuente
+ * cruda) y las dos hojas de `looker` (`resumen_metricas_dinamico` /
+ * `resumen_metricas`, ambigüedad sin resolver — Parte G) en `uso=revisar` aunque
+ * HOY están mapeadas y en uso. `buscarMapeo()` va a fallar para esos campos
+ * hasta que alguien reclasifique esas filas a mano.
+ */
+var FILA_ENCABEZADO_POR_BASE_ = { rdv: 1, digital: 1, looker: 1, m2: 3 };
+
+function filaSolapa_(baseId, solapa, uso, notas, opciones) {
+  opciones = opciones || {};
+  return {
+    base_id: baseId,
+    solapa: solapa,
+    uso: uso,
+    fila_encabezado: 'fila_encabezado' in opciones ? opciones.fila_encabezado : FILA_ENCABEZADO_POR_BASE_[baseId],
+    firma_encabezado: '',
+    filas_datos: 'filas_datos' in opciones ? opciones.filas_datos : '',
+    notas: notas
+  };
+}
+
+function filasSolapa_(baseId, solapas, uso, notas) {
+  return solapas.map(function (solapa) { return filaSolapa_(baseId, solapa, uso, notas); });
+}
+
+var SEED_SOLAPAS_ = [].concat(
+  // rdv — "RDV JM CM ES + funcionarios"
+  [
+    filaSolapa_('rdv', 'RVD JM-CM - ES', 'fuente', 'base de encuentros, hoja_default'),
+    filaSolapa_('rdv', 'RDV_otros_ministros', 'fuente', 'mapeada; base ajena, ojo con la firma'),
+    filaSolapa_('rdv', 'RVD JM-CM - ES Back Up', 'ignorar', 'backup'),
+    filaSolapa_('rdv', 'RDV_JM_CM_ES', 'revisar', 'nombre casi idéntico al default — ¿duplicado?')
+  ],
+  filasSolapa_('rdv', ['Para Revisar', 'Copia de Para Revisar', 'Copia de Para Revisar 1'], 'ignorar', 'copias de trabajo'),
+  filasSolapa_('rdv', ['Tabla dinámica 4', 'Tabla dinámica 14', 'Tabla dinámica 16', 'Tabla dinámica 18', 'Tabla dinámica 19', 'Tabla dinámica 20', 'Tabla dinámica 23'], 'ignorar', 'pivots'),
+  filasSolapa_('rdv', ['Hoja 56', 'Hoja 59', 'Hoja 68', 'Hoja 78'], 'ignorar', 'hojas sueltas'),
+  filasSolapa_('rdv', ['Aux_Maximos', 'Datos_Unpivot'], 'derivada', 'auxiliares de cálculo'),
+  filasSolapa_('rdv', ['Visualiz_respuestas_GCBA', 'Visualiz_respuestas_JM', 'Visualiz_mail', 'Visualiz_SMS'], 'derivada', 'vistas'),
+  filasSolapa_('rdv', ['Cantidad de reuniones por franja horaria'], 'derivada', 'agregado'),
+  filasSolapa_('rdv', ['Desplegables', 'Organigrama', 'Mail propuesta'], 'ignorar', 'validaciones y material suelto'),
+  filasSolapa_('rdv', ['Backup respuestas'], 'ignorar', 'backup'),
+  filasSolapa_('rdv', ['Funcionarios / Ministros'], 'revisar', 'posible catálogo de personas — cruzar con PERSONAS_equivalencias.csv'),
+  filasSolapa_('rdv', ['PPTS', 'RDV CONJUNTO', 'Agenda', 'Comunas', 'Seguimiento', 'Respuestas JM 📩'], 'revisar', 'sin decidir'),
+
+  // digital — "Seguimiento Digital"
+  [filaSolapa_('digital', 'Digital', 'fuente', 'hoja_default')],
+  filasSolapa_('digital', ['Directa Mail', 'Directa IVR', 'Directa SMS'], 'fuente', 'canales de directa'),
+  [filaSolapa_('digital', 'Seguimiento digital', 'fuente', 'maestra de la unión del Paso 2.4')],
+  [filaSolapa_('digital', 'Alcance', 'fuente', 'usada por Union.gs')],
+  [filaSolapa_('digital', 'RDV', 'ignorar', '⚠ duplica la base rdv — si se lee, hay doble conteo')],
+  filasSolapa_('digital', ['Buscador por periodo digital', 'Buscador por periodo directa'], 'ignorar', 'período tipeado a mano: violan el criterio de fuente cruda'),
+  filasSolapa_('digital', ['Digital 2026 acumulado', 'm2 digital'], 'derivada', 'acumulados'),
+  [filaSolapa_('digital', 'RDV JM 2 VECES', 'referencia', '⭐ ver Parte F', { filas_datos: 37 })],
+  filasSolapa_('digital', ['Metricas informe', 'INFORME'], 'referencia', 'el informe manual actual'),
+  filasSolapa_('digital', ['Nomalización de barrios', 'Barrio Hab', 'Limpia Fun'], 'referencia', 'catálogos de normalización — útiles para el scoring del anclaje'),
+  filasSolapa_('digital', ['Cuentas', 'Filter unificado', 'EDV', 'CAMPAÑAS_DESGLOCE_DIGITAL', 'Mail per'], 'revisar', 'sin decidir'),
+
+  // looker — "Base Looker"
+  [
+    filaSolapa_('looker', 'resumen_metricas_dinamico', 'revisar', '⚠ ver Parte G — hoja_default apunta a la otra'),
+    filaSolapa_('looker', 'resumen_metricas', 'revisar', '⚠ ídem'),
+    filaSolapa_('looker', 'MAIL', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 5748 }),
+    filaSolapa_('looker', 'IVR', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 190 }),
+    filaSolapa_('looker', 'SMS', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 86 }),
+    filaSolapa_('looker', 'CC', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 1299 }),
+    filaSolapa_('looker', 'DIGITAL', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 4563 }),
+    filaSolapa_('looker', 'ALCANCE', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 727 })
+  ],
+  filasSolapa_('looker', ['Desglose Alcance', 'Audiencias', 'Audiencias Conectadas', 'URLs', 'Cuentas'], 'revisar', 'sin decidir'),
+  [filaSolapa_('looker', 'Desplegables', 'ignorar', 'validaciones')],
+
+  // m2 — "M2 Reporte para Fede 2026"
+  [
+    filaSolapa_('m2', 'Cuentas M2', 'fuente', '353 filas, encabezado fila 1 — dimensión de campañas M2', { fila_encabezado: 1, filas_datos: 353 }),
+    filaSolapa_('m2', 'Cuentas', 'revisar', '3453 filas, mismo encabezado — parece el universo completo, no solo M2', { fila_encabezado: 1, filas_datos: 3453 })
+  ],
+  filasSolapa_('m2', ['M2 periodo DIGITAL', 'M2 periodo DIRECTA'], 'revisar', 'el nombre sugiere vista por período; sin confirmar'),
+  filasSolapa_('m2', ['Directa mail', 'Seguimiento digital', 'Alcance', 'CAMPAÑAS_DESGLOCE_DIGITAL', 'Mail per'], 'revisar', '⚠ mismos nombres que solapas de digital — hay que saber cuál manda antes de mapear ninguna'),
+  filasSolapa_('m2', ['Digital acumulado', 'M2 Directa', 'M2 digital'], 'derivada', 'acumulados')
+);
+
+/**
+ * Aplica SEED_SOLAPAS_ sobre la hoja SOLAPAS. A diferencia de `inventariarSolapas()`
+ * (Solapas.gs), esto SÍ pisa `uso`/`fila_encabezado`/`notas` de las filas que toca:
+ * es una siembra explícita, pensada para correr una vez, después de la primera
+ * corrida de "Inventariar solapas". Si se corre de nuevo después de que alguien
+ * reclasificó algo a mano, esa reclasificación se pierde — por eso vive en su
+ * propio ítem de menú, separado de "Cargar config inicial".
+ */
+function sembrarClasificacionSolapas() {
+  var ui = SpreadsheetApp.getUi();
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SOLAPAS');
+  if (!hoja) {
+    ui.alert('No se pudo sembrar', 'La hoja SOLAPAS no existe. Corré "Instalar / reparar hojas" primero.', ui.ButtonSet.OK);
+    return;
+  }
+
+  var resultado = upsertPorClave_(hoja, ['base_id', 'solapa'], SEED_SOLAPAS_);
+  ui.alert(
+    'Clasificación inicial sembrada',
+    'SOLAPAS — nuevas: ' + resultado.escritas + ', actualizadas: ' + resultado.actualizadas +
+      '\n\nEs una propuesta, no una decisión: las filas en uso=revisar quedan pendientes de que el usuario decida.',
+    ui.ButtonSet.OK
+  );
+}
+
 var SEED_CONFIG_DEFAULTS_ = {
   informe_activo: 'jm',
   periodo_desde: '',

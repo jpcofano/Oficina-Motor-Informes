@@ -25,6 +25,7 @@ function onOpen() {
         .addItem('Listar solapas y tipos', 'menuDiagnosticarBases_')
         .addItem('Auditoría de solapas (AUD-1)', 'menuAuditarSolapas_')
         .addItem('Inventariar solapas', 'menuInventariarSolapas_')
+        .addItem('Sembrar clasificación inicial de solapas', 'sembrarClasificacionSolapas')
         .addItem('Cargar ejemplo', 'menuCargarEjemplo_')
     )
     .addSubMenu(
