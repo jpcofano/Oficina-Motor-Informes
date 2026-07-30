@@ -65,7 +65,7 @@ var HOJAS_CONFIG_ = {
     ejemplos: [
       ['rdv', 'RDV JM CM ES', '', 'RVD JM-CM - ES', 1, 'filtrar', 'google_sheets', 'sí', 'Encuentros'],
       ['digital', 'Seguimiento Digital', '', 'Digital', 1, 'filtrar', 'google_sheets', 'sí', 'Campaña por canal'],
-      ['looker', 'Base Looker', '', 'resumen_metricas', 1, 'filtrar', 'google_sheets', 'sí', 'Consolidado'],
+      ['looker', 'Base Looker', '', 'resumen_metricas_dinamico', 1, 'filtrar', 'google_sheets', 'sí', 'Consolidado'],
       ['m2', 'M2 Reporte 2026', '', 'M2 periodo DIRECTA', 3, 'snapshot', 'google_sheets', 'sí', 'Familia m2_*'],
       ['miba', 'Integración MiBA', '', '', 1, 'filtrar', 'google_sheets', 'no', 'Parqueada']
     ]
@@ -282,7 +282,7 @@ function limpiarHojaPorDefecto_(ss) {
 var SEED_BASES_ = [
   { base_id: 'rdv', nombre: 'RDV JM CM ES + funcionarios', sheet_id: '1ZpHO6Ru1uY2r9WfBF_yFtu5z7ip7F3Q6VOoRJN5vLAo', hoja_default: 'RVD JM-CM - ES', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Encuentros' },
   { base_id: 'digital', nombre: 'Seguimiento Digital', sheet_id: '1LadILzFpyCrZRapxgDOFOldSoRawjKkWMaFci_ilhPY', hoja_default: 'Digital', fila_encabezado: 1, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Campaña por canal. Paso 2.3: snapshot — sus solapas usan fecha de inicio de campaña (lead 3-7 días), el recorte por período lo hace el agregador vía link campaña↔encuentro, no ventana de fecha cruda.' },
-  { base_id: 'looker', nombre: 'Base Looker', sheet_id: '1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ', hoja_default: 'resumen_metricas', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Consolidado. VERIFICAR — DIAG_FECHAS detectó resumen_metricas_dinamico, no resumen_metricas; no se cambia el valor sin confirmar cuál es la solapa real (DOC-2 Parte C).' },
+  { base_id: 'looker', nombre: 'Base Looker', sheet_id: '1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ', hoja_default: 'resumen_metricas_dinamico', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Consolidado. confirmado 30/07 contra la base viva (metadata de Drive) — DOC-3 Parte A.' },
   { base_id: 'm2', nombre: 'M2 Reporte para Fede 2026', sheet_id: '1_GS01-TXrhez0GlpFf4bUjWLNQPfaW9BOFFXz0hZNvY', hoja_default: 'M2 periodo DIRECTA', fila_encabezado: 3, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Directa + Digital en hojas separadas' },
   { base_id: 'miba', nombre: 'Integración MiBA', sheet_id: '', hoja_default: '', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'no', notas: 'Parqueada' }
 ];
@@ -308,32 +308,35 @@ var SEED_MAPEO_ = [
   { base_id: 'rdv', campo_logico: 'comuna', hoja: 'RVD JM-CM - ES', columna: 'AA', notas: '' },
   { base_id: 'rdv', campo_logico: 'poblacion', hoja: 'RVD JM-CM - ES', columna: 'AB', notas: 'habitantes' },
 
-  // looker — hoja 'resumen_metricas' (una fila por campaña; prefijos = canal, no familia)
-  { base_id: 'looker', campo_logico: 'campana', hoja: 'resumen_metricas', columna: 'B', notas: '' },
-  { base_id: 'looker', campo_logico: 'fecha_inicio', hoja: 'resumen_metricas', columna: 'C', notas: '' },
-  { base_id: 'looker', campo_logico: 'fecha_fin', hoja: 'resumen_metricas', columna: 'D', notas: '' },
-  { base_id: 'looker', campo_logico: 'fecha', hoja: 'resumen_metricas', columna: 'C',
+  // looker — hoja 'resumen_metricas_dinamico' (DOC-3 Parte A: confirmado 30/07 contra
+  // la base viva, metadata de Drive — el nombre estaba desactualizado, las letras no:
+  // el mapeo ya se había armado contra esta hoja). Una fila por campaña; prefijos = canal,
+  // no familia.
+  { base_id: 'looker', campo_logico: 'campana', hoja: 'resumen_metricas_dinamico', columna: 'B', notas: '' },
+  { base_id: 'looker', campo_logico: 'fecha_inicio', hoja: 'resumen_metricas_dinamico', columna: 'C', notas: '' },
+  { base_id: 'looker', campo_logico: 'fecha_fin', hoja: 'resumen_metricas_dinamico', columna: 'D', notas: '' },
+  { base_id: 'looker', campo_logico: 'fecha', hoja: 'resumen_metricas_dinamico', columna: 'C',
     notas: 'apunta a fecha_inicio. Es el arranque de la pauta de convocatoria, entre 3 y 7 días antes del encuentro (DISENO_match_temario.md §5). Sirve para acotar la lectura, NO para elegir qué campaña entra al informe.' },
-  { base_id: 'looker', campo_logico: 'eje', hoja: 'resumen_metricas', columna: 'E', notas: '' },
-  { base_id: 'looker', campo_logico: 'area', hoja: 'resumen_metricas', columna: 'F', notas: '' },
-  { base_id: 'looker', campo_logico: 'estado', hoja: 'resumen_metricas', columna: 'G', notas: '' },
-  { base_id: 'looker', campo_logico: 'dig_impresiones', hoja: 'resumen_metricas', columna: 'H', notas: '' },
-  { base_id: 'looker', campo_logico: 'dig_visualizaciones', hoja: 'resumen_metricas', columna: 'I', notas: '' },
-  { base_id: 'looker', campo_logico: 'dig_clics', hoja: 'resumen_metricas', columna: 'J', notas: '' },
-  { base_id: 'looker', campo_logico: 'alcance', hoja: 'resumen_metricas', columna: 'K', notas: '' },
-  { base_id: 'looker', campo_logico: 'frecuencia', hoja: 'resumen_metricas', columna: 'M', notas: '' },
-  { base_id: 'looker', campo_logico: 'mail_enviados', hoja: 'resumen_metricas', columna: 'N', notas: '' },
-  { base_id: 'looker', campo_logico: 'mail_entregados', hoja: 'resumen_metricas', columna: 'O', notas: '' },
-  { base_id: 'looker', campo_logico: 'mail_aperturas', hoja: 'resumen_metricas', columna: 'P', notas: '' },
-  { base_id: 'looker', campo_logico: 'mail_clics', hoja: 'resumen_metricas', columna: 'Q', notas: '' },
-  { base_id: 'looker', campo_logico: 'cc_contactados', hoja: 'resumen_metricas', columna: 'T', notas: '' },
-  { base_id: 'looker', campo_logico: 'cc_efectivos', hoja: 'resumen_metricas', columna: 'U', notas: '' },
-  { base_id: 'looker', campo_logico: 'ivr_audiencia', hoja: 'resumen_metricas', columna: 'V', notas: '' },
-  { base_id: 'looker', campo_logico: 'ivr_atendidos', hoja: 'resumen_metricas', columna: 'X', notas: '' },
-  { base_id: 'looker', campo_logico: 'ivr_escucha75', hoja: 'resumen_metricas', columna: 'Y', notas: '' },
-  { base_id: 'looker', campo_logico: 'ivr_marque1', hoja: 'resumen_metricas', columna: 'Z', notas: '' },
-  { base_id: 'looker', campo_logico: 'sms_enviados', hoja: 'resumen_metricas', columna: 'AA', notas: '' },
-  { base_id: 'looker', campo_logico: 'sms_entregados', hoja: 'resumen_metricas', columna: 'AB', notas: '' },
+  { base_id: 'looker', campo_logico: 'eje', hoja: 'resumen_metricas_dinamico', columna: 'E', notas: '' },
+  { base_id: 'looker', campo_logico: 'area', hoja: 'resumen_metricas_dinamico', columna: 'F', notas: '' },
+  { base_id: 'looker', campo_logico: 'estado', hoja: 'resumen_metricas_dinamico', columna: 'G', notas: '' },
+  { base_id: 'looker', campo_logico: 'dig_impresiones', hoja: 'resumen_metricas_dinamico', columna: 'H', notas: '' },
+  { base_id: 'looker', campo_logico: 'dig_visualizaciones', hoja: 'resumen_metricas_dinamico', columna: 'I', notas: '' },
+  { base_id: 'looker', campo_logico: 'dig_clics', hoja: 'resumen_metricas_dinamico', columna: 'J', notas: '' },
+  { base_id: 'looker', campo_logico: 'alcance', hoja: 'resumen_metricas_dinamico', columna: 'K', notas: '' },
+  { base_id: 'looker', campo_logico: 'frecuencia', hoja: 'resumen_metricas_dinamico', columna: 'M', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_enviados', hoja: 'resumen_metricas_dinamico', columna: 'N', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_entregados', hoja: 'resumen_metricas_dinamico', columna: 'O', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_aperturas', hoja: 'resumen_metricas_dinamico', columna: 'P', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_clics', hoja: 'resumen_metricas_dinamico', columna: 'Q', notas: '' },
+  { base_id: 'looker', campo_logico: 'cc_contactados', hoja: 'resumen_metricas_dinamico', columna: 'T', notas: '' },
+  { base_id: 'looker', campo_logico: 'cc_efectivos', hoja: 'resumen_metricas_dinamico', columna: 'U', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_audiencia', hoja: 'resumen_metricas_dinamico', columna: 'V', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_atendidos', hoja: 'resumen_metricas_dinamico', columna: 'X', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_escucha75', hoja: 'resumen_metricas_dinamico', columna: 'Y', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_marque1', hoja: 'resumen_metricas_dinamico', columna: 'Z', notas: '' },
+  { base_id: 'looker', campo_logico: 'sms_enviados', hoja: 'resumen_metricas_dinamico', columna: 'AA', notas: '' },
+  { base_id: 'looker', campo_logico: 'sms_entregados', hoja: 'resumen_metricas_dinamico', columna: 'AB', notas: '' },
 
   // m2 — DIRECTA en 'M2 periodo DIRECTA', DIGITAL en 'M2 periodo DIGITAL'
   { base_id: 'm2', campo_logico: 'campana', hoja: 'M2 periodo DIRECTA', columna: 'B', notas: '' },
