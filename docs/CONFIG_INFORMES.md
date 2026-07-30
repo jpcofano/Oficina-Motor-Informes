@@ -65,6 +65,14 @@ como ejemplo — confirmar si es real.)
   automático de asistentes? **[?]**
 - **[MANUAL]** Conclusiones y lecturas del período.
 
+### 1.5 Token huérfano resuelto — "Marque 1" (JM slide 6)
+
+**[DOC-3, 30/07]** El `135` literal de la caja "Marque 1" (`docs/PLANTILLAS_QA_y_armonizacion.md`,
+reemplazado por el token nuevo `{{ivr_marque1}}`) ya tenía fuente: `looker` la trae
+como `ivr_marque1` (columna Z, `MAPEO`, ya sembrado desde antes de esta sesión). No
+requiere cablear nada nuevo — solo confirma que el token no queda huérfano una vez que
+la armonización de plantillas lo cree.
+
 ---
 
 ## 2. Informe mensual SECCO-SSCDI
@@ -89,6 +97,10 @@ decirle al motor *cuál* es. Probablemente una fila en `CAMPANAS` con
 
 **[MANUAL]** `post_camp1-3` y `post_estado1-3` — hasta 3 campañas con su estado.
 **[?]** ¿"Estado" es un valor libre o una lista cerrada?
+**[DOC-3, 30/07]** Fuente encontrada para el dinámico: `looker` tiene `pieza_meta`
+(columna AD, `MAPEO`), la URL del posteo de Facebook de la campaña — candidato directo
+para `post_camp1-3`. También existe `pieza_mail` (AE), sin cablear. No se cablea en
+`MARCADORES` todavía (Paso 3).
 
 ### 2.4 Encuentros de ministros (slide 12)
 
