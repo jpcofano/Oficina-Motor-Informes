@@ -26,6 +26,7 @@ function onOpen() {
         .addItem('Auditoría de solapas (AUD-1)', 'menuAuditarSolapas_')
         .addItem('Inventariar solapas', 'menuInventariarSolapas_')
         .addItem('Sembrar clasificación inicial de solapas', 'sembrarClasificacionSolapas')
+        .addItem('Comparar resúmenes de looker (Parte G)', 'menuCompararResumenesLooker_')
         .addItem('Cargar ejemplo', 'menuCargarEjemplo_')
     )
     .addSubMenu(

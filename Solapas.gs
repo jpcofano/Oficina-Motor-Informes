@@ -157,3 +157,82 @@ function menuInventariarSolapas_() {
 
   ui.alert('Inventario de solapas', lineas.join('\n'), ui.ButtonSet.OK);
 }
+
+/**
+ * Paso 2.6 Parte G — `looker` tiene DOS hojas de resumen conviviendo en el mismo
+ * archivo: `resumen_metricas_dinamico` y `resumen_metricas`. `hoja_default` (BASES)
+ * apunta a `resumen_metricas`, pero `DIAG_FECHAS` del 30/07 y la metadata de Drive
+ * vieron `_dinamico` como primera solapa, y las letras de columna que carga `MAPEO`
+ * (`SEED_MAPEO_`, Instalar.gs) corresponden a `_dinamico`. Antes de aplicar DOC-3
+ * Parte A hace falta saber si tienen el mismo orden de columnas: si no, `MAPEO` está
+ * leyendo la solapa equivocada por letra, sin fallar. Esta función solo describe
+ * (fila 1 + conteo de filas de las dos) — no decide cuál queda `fuente` en SOLAPAS,
+ * esa decisión es del usuario (ver Plan Inicial/PROYECTO.md §5).
+ */
+function compararResumenesLooker_() {
+  var bases = leerBases();
+  var base = bases.looker;
+  if (!base || !base.sheet_id) {
+    return { ok: false, motivo: 'La base "looker" no está configurada (sin sheet_id).' };
+  }
+
+  var libro;
+  try {
+    libro = SpreadsheetApp.openById(base.sheet_id);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo abrir looker: ' + e.message };
+  }
+
+  var nombres = ['resumen_metricas_dinamico', 'resumen_metricas'];
+  var filas = nombres.map(function (nombre) {
+    var hoja = libro.getSheetByName(nombre);
+    if (!hoja) return { solapa: nombre, estado: 'no existe' };
+
+    var ultimaCol = hoja.getLastColumn();
+    var headers = ultimaCol ? hoja.getRange(1, 1, 1, ultimaCol).getValues()[0] : [];
+    return {
+      solapa: nombre,
+      estado: 'existe',
+      es_hoja_default: nombre === base.hoja_default ? 'sí' : '',
+      filas_de_datos: Math.max(hoja.getLastRow() - 1, 0),
+      encabezado_fila1: headers.join(' | ')
+    };
+  });
+
+  var existen = filas.filter(function (f) { return f.estado === 'existe'; });
+  var mismoOrdenColumnas = existen.length === 2 ? (existen[0].encabezado_fila1 === existen[1].encabezado_fila1) : null;
+
+  return { ok: true, filas: filas, mismoOrdenColumnas: mismoOrdenColumnas };
+}
+
+function menuCompararResumenesLooker_() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = compararResumenesLooker_();
+
+  if (!resultado.ok) {
+    ui.alert('No se pudo comparar', resultado.motivo, ui.ButtonSet.OK);
+    return;
+  }
+
+  var lineas = [];
+  resultado.filas.forEach(function (f) {
+    if (f.estado !== 'existe') {
+      lineas.push('⚠ ' + f.solapa + ' — ' + f.estado);
+      return;
+    }
+    lineas.push((f.es_hoja_default === 'sí' ? '★ ' : '  ') + f.solapa +
+      ' (hoja_default=' + (f.es_hoja_default || 'no') + ') — ' + f.filas_de_datos + ' filas de datos');
+    lineas.push('    ' + f.encabezado_fila1);
+  });
+
+  lineas.push('');
+  if (resultado.mismoOrdenColumnas === true) {
+    lineas.push('✅ Mismo orden de columnas en las dos — MAPEO por letra apunta a la solapa correcta en cualquiera de las dos.');
+  } else if (resultado.mismoOrdenColumnas === false) {
+    lineas.push('⚠ Orden de columnas DISTINTO entre las dos — si MAPEO sigue leyendo por letra la solapa equivocada, ' +
+      'todo lo leído de looker hasta hoy salió de la columna de al lado, sin fallar. Falta decidir cuál queda ' +
+      'uso=fuente en SOLAPAS antes de tocar DOC-3 Parte A.');
+  }
+
+  ui.alert('looker: resumen_metricas vs resumen_metricas_dinamico', lineas.join('\n'), ui.ButtonSet.OK);
+}

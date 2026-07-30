@@ -151,6 +151,22 @@ para una campaña; si se pisan, gana la fuente más a la izquierda. `m2` va apar
 el rollup exacto de Seguimiento Digital (no una fuente independiente) — por eso SD pesa
 más: tiene el desagregado por envío que Looker no puede reconstruir.
 
+**⚠ Paso 2.6 Parte G — abierto, bloquea DOC-3 Parte A:** `resumen_metricas_dinamico` y
+`resumen_metricas` existen **las dos** en el archivo `looker`. `hoja_default` (tabla de
+arriba) apunta a `resumen_metricas`, pero `DIAG_FECHAS` del 30/07 y la metadata de Drive
+vieron `_dinamico` como primera solapa, y las letras de columna que carga `MAPEO`
+corresponden a `_dinamico`. Si las dos hojas no tienen el mismo orden de columnas, todo
+lo leído de `looker` hasta hoy salió de la columna de al lado, sin fallar. Antes de tocar
+nada: correr "Comparar resúmenes de looker (Parte G)" (`compararResumenesLooker_`,
+Solapas.gs) — vuelca fila 1 + conteo de filas de las dos — y que el usuario decida cuál
+queda `uso=fuente` y cuál `derivada` en `SOLAPAS`. Las dos quedaron sembradas en
+`revisar` (Paso 2.6 Parte D), así que `buscarMapeo()` no lee ninguna hasta que se decida.
+**Pregunta abierta, sin resolver (no cambia la precedencia de arriba):** `looker` tiene
+el desglose por canal (`MAIL`/`IVR`/`SMS`/`CC`/`DIGITAL`/`ALCANCE`, cada una con su
+`ID cuentas`) como solapas propias — ¿`unirDigitalPorCuenta()` (Paso 2.4) está
+reconstruyendo un join que Looker ya trae hecho río arriba? Puede explicar el timeout de
+~6 minutos de `menuProbarUnionYAnclaje_` (Tarea 7 de AUD-1, todavía sin diagnosticar).
+
 **Decisión resuelta (DOC-1, 29/07/2026):** escrita una sola vez en
 `docs/CONFIG_INFORMES.md` §4.1; `MAPEO_completo.md` (congelado) apunta ahí en vez de
 repetirla. Queda pendiente actualizar `docs/Prompts/Paso-3-v2.md` en el mismo sentido —
