@@ -15,10 +15,16 @@
 
 ---
 
-## Parte A — Columna `operacion` en `MARCADORES`
+## Parte A — Esquema de `MARCADORES` (ya hecho en DOC-2)
 
-El esquema actual tiene `calculo` (nombre de función). Renombrala a **`operacion`** e
-insertala idempotentemente (mismo mecanismo que `asegurarColumna_`). Valores:
+**Obsoleta.** El rename `calculo`→`operacion`, la columna `valor_fijo` y la columna
+`solapa` ya los hizo `DOC-2_alineacion_prompts.md` Parte A, directamente en
+`Instalar.gs` (migración idempotente `migrarCalculoAOperacion_`). Verificá que el
+esquema vivo tenga `['marcador','familia','informe_id','base_id','solapa',
+'campo_logico','periodo_ref','operacion','valor_fijo','formato','notas']` y seguí a la
+Parte B — no hay commit propio para esta parte.
+
+La tabla de operaciones sigue siendo el contrato:
 
 | operacion | qué hace |
 |---|---|
@@ -33,11 +39,8 @@ insertala idempotentemente (mismo mecanismo que `asegurarColumna_`). Valores:
 `numerador/denominador` — p. ej. `aperturas/entregados` para un OR. Sin sintaxis nueva
 ni columna extra.
 
-**`TEXTO`** toma el valor de la columna `notas`… **no**: agregá una columna
-**`valor_fijo`** al final de `MARCADORES`. Mezclar contenido con notas se vuelve
-ilegible enseguida.
-
-→ **Commit A:** `Paso 3 ✅ — MARCADORES: columna operacion + valor_fijo`
+**`TEXTO`** lee la columna **`valor_fijo`** (no `notas`: mezclar contenido con notas se
+vuelve ilegible enseguida).
 
 ---
 
@@ -82,19 +85,37 @@ En `Generador.gs`:
 1. Lee las filas de `MARCADORES` del informe.
 2. **Resuelve la ventana por token, en tres capas** (prioridad de mayor a menor):
    campaña (`CAMPANAS.desde/hasta`) → `periodo_ref` (`PERIODOS`) → período global (`CONFIG`).
-3. Pide los datos a `Fuentes.gs` respetando `modo_periodo` de la base
-   (`snapshot` = se lee entera, sin filtrar).
-4. Despacha a la operación por nombre (mapa explícito, no `eval`).
-5. Aplica `formato` (numero / miles / porcentaje / fecha / texto).
-6. Devuelve `{ marcador, valor, valor_formateado, estado, traza }` con
+3. **Resuelve `solapa`** (regla de `docs/TOKENS.md` §4 / DOC-2 Parte B) como paso previo
+   a pedir los datos: si el marcador la trae cargada, se usa tal cual; si viene vacía y
+   la base tiene una sola solapa en `MAPEO`, se infiere; si tiene varias, error
+   `«FALTA:token@sin_solapa»`. La traza tiene que decir de qué solapa salió el número —
+   `"SUMA de 'inscriptos' (col K)"` no alcanza cuando la base tiene seis hojas, hace
+   falta `"SUMA de 'inscriptos' (col K) en solapa 'RVD JM-CM - ES'"`.
+4. Pide los datos a `Fuentes.gs` respetando `modo_periodo` de la base
+   (`snapshot` = se lee entera, sin filtrar). **Excepción — `base_id=digital`:** los
+   datos **no** se piden a `leerFuente` directo. Se piden al proveedor del Paso 2.4,
+   `filasDigitalDeEncuentro(idCuenta | encuentro)` — el `ctx.filas` plano de
+   `leerFuente` no alcanza para las seis solapas ya unidas por cuenta.
+5. Despacha a la operación por nombre (mapa explícito, no `eval`).
+6. Aplica `formato` (numero / miles / porcentaje / fecha / texto).
+7. Devuelve `{ marcador, valor, valor_formateado, estado, traza }` con
    `estado ∈ {ok, sin_datos, error}`.
 
 **Resiliencia:** un token que falla no corta la corrida. Se marca `error` con motivo y
 en el deck sale `«FALTA:token»` (Paso 4). Un informe con tres huecos visibles es útil;
 una corrida que aborta, no.
 
-**Caché:** dos marcadores de la misma base y la misma ventana no deben releer la hoja.
-Cacheá por `(base_id, hoja, desde, hasta)` dentro de la corrida.
+**Caché:** dos marcadores de la misma base, solapa y ventana no deben releer la hoja.
+Cacheá por `(base_id, solapa, desde, hasta)` dentro de la corrida — no `hoja`: es el
+mismo dato cuando `hoja` cumple ese rol, pero conviene que el nombre sea uno solo en
+todo el repo (`Config.gs`/`Fuentes.gs` ya usan `solapa`).
+
+**Precedencia RDV→SD→Looker (`PROYECTO.md` §5):** es **criterio de cableado** — qué
+`base_id` se escribe en cada fila de `MARCADORES` para los marcadores compartidos
+(`camp_*`, `mail_*`, `ivr_*`, `cc_*`) —, **no** un motor de merge automático. Este
+despachador no compara ni mergea entre bases: lee la fila de `MARCADORES` tal cual está
+cableada. Si dos bases traen el mismo campo lógico para una campaña, la decisión de
+cuál gana ya quedó tomada al elegir el `base_id` de esa fila, no en tiempo de corrida.
 
 → **Commit C:** `Paso 3 ✅ — despachador con ventana por token`
 
@@ -117,12 +138,15 @@ tiene un problema, aparece con 5 tokens igual que con 200 — y sale mucho más 
 
 ---
 
-## Antes de empezar — decisión del usuario
+## Antes de empezar — decisión ya tomada (no reabrir)
 
-**Looker vs. Seguimiento Digital como fuente digital/directa.** Acá es donde se define:
-es la columna `base_id` de los marcadores `camp_*`, `mail_*`, `ivr_*`, `cc_*`.
-**Preguntale al usuario y no decidas vos.** Es reversible (cambiar filas, no código).
-
-Argumento a favor de Looker: viene consolidado por campaña en una sola hoja, que calza
-con "una fila por campaña → `camp_*`". Seguimiento Digital da más detalle por canal,
-pero son 5 hojas y más joins. Las columnas de ambas están en `docs/MAPEO_completo.md`.
+**Seguimiento Digital (SD) es la fuente primaria; Looker es su rollup.** Cerrado, no es
+una pregunta al usuario. Evidencia: `PROYECTO.md` §5 (precedencia
+**RDV → Seguimiento Digital → Looker**) y `docs/HALLAZGOS_validacion_decks.md` §4, que
+verificó que Looker es el rollup exacto de Seguimiento Digital (no una fuente
+independiente) — por eso SD pesa más: tiene el desagregado por envío que Looker no
+puede reconstruir. El Paso 2.3 ya sembró `digital` completo sobre esa base (53 filas de
+`MAPEO`, 6 solapas). Es la columna `base_id` de los marcadores `camp_*`, `mail_*`,
+`ivr_*`, `cc_*` — cableá contra `digital` (vía el proveedor del Paso 2.4, ver Parte C),
+no contra `looker`. `looker` sigue disponible para lo que solo Looker tiene (o para
+verificación cruzada), pero no es la fuente por defecto.
