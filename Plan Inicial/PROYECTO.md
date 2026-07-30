@@ -150,19 +150,52 @@ no duplicar el trabajo. Otras pendientes: ECV block, columna de campaña canóni
   recorre hasta 2 niveles de subcarpetas y distingue Slides nativas de `.pptx` sin
   convertir y accesos directos). `diagnosticarCarpetaPlantillas_()` lista el contenido
   crudo de la carpeta para depurar cuando el registro no encuentra nada.
-- Informes: `jm` (semanal, 22 slides) y `secco` (mensual, 29 slides). IDs de Drive:
-  JM `1JrHvs_pdvdwWGZ1CQNmuJr9Bi3XvqyOMJhRweeJAzbE` · SECCO
-  `1_ZKjWhL-bhCP8yHQ8PJ33ymyjSXu3thh7MKMOxB4-n8` · deck comentado (referencia, no se
-  toca) `1yIlCIBGJHsJBNLaMDqBNf75b2gzyMVnlwB5JJArNZv0`.
+- Informes: `jm` (semanal, 22 slides) y `secco` (mensual, 29 slides).
 - Convención de token: **`{{doble_llave}}`**, snake_case, por familia. El motor
   reemplaza solo **texto** (datos en imágenes no son tokenizables).
 - Inventario de tokens y diccionario canónico: **`docs/TOKENS.md`** (fusiona los
   inventarios por slide de JM/SECCO + el diccionario de renombres — `enc_*` vs `et_*`
   resuelto, `camp_*` verificado idéntico entre plantillas). ⚠ los renombres son el
-  estado objetivo: **todavía no aplicados** en las Slides vivas. `armonizarPlantillas()`
-  (`Armonizar.gs`, Paso 2.2) ya está implementada pero no se corrió contra la plantilla
-  real — falta que el usuario la corra desde el menú y confirme.
+  estado objetivo: la primera corrida de `armonizarPlantillas()` (`Armonizar.gs`) ya
+  confirmó JM slide 5/6 correctas, pero se aplicó sobre la plantilla equivocada (ver
+  regla y tabla canónica abajo) — sigue sin correr sobre la canónica.
 - `.pptx` marcados (referencia) en `Plan Inicial/_archivo/Plantillas/`.
+
+### Regla: la plantilla es del equipo, el motor se adapta (Paso 2.2.2)
+
+El equipo edita el diseño en Slides; el motor lee lo que el equipo tiene. Nunca al revés.
+Se fijó tras encontrar dos presentaciones JM distintas en Drive (mismo nombre, distinto
+orden de slides — venían divergiendo desde antes de la armonización) y que
+`INFORMES.plantilla_id` apuntaba a la que no usa el equipo.
+
+1. **`INFORMES.plantilla_id` es la única verdad** sobre qué archivo usa cada informe. Si
+   hay dos candidatos, no se elige por criterio técnico: se pregunta.
+2. **El motor solo escribe sobre la plantilla en una migración explícita** (una
+   armonización de tokens), nunca en una corrida normal. La generación semanal **copia**
+   la plantilla y escribe sobre la copia (Paso 4, `Generador.gs`, todavía stub).
+3. **Toda migración que escribe sobre la plantilla hace backup antes** — es un archivo
+   compartido y editado por otras personas. `armonizarPlantillas()` aborta esa
+   presentación si el backup falla, en vez de armonizar sin red.
+
+**Plantillas canónicas (única fuente de verdad, `INFORMES.plantilla_id`):**
+
+| informe_id | ID canónico | estado |
+|---|---|---|
+| `jm` | `117I0qn1XP1JCiz2mU32hUY1iiMUmrAAvHOsczd7u6jI` | sin armonizar todavía (Parte D del 2.2.2, bloqueada — ver abajo) |
+| `secco` | `1_ZKjWhL-bhCP8yHQ8PJ33ymyjSXu3thh7MKMOxB4-n8` | parcialmente armonizada (Paso 2.2, antes de corregir el 2.2.1) |
+
+Deck comentado (referencia, no se toca): `1yIlCIBGJHsJBNLaMDqBNf75b2gzyMVnlwB5JJArNZv0`.
+
+**`1JrHvs_pdvdwWGZ1CQNmuJr9Bi3XvqyOMJhRweeJAzbE` queda marcada `[OBSOLETA — no usar]` en
+Drive** (no se borra: tiene la armonización del 2.2/2.2.1 aplicada y sirve de referencia
+de cómo tiene que quedar la canónica).
+
+**Bloqueante para correr la armonización sobre la canónica (sin resolver):** en la matriz
+digital de M2 hay una caja `{{m2_salud_camp}}` huérfana, visible, que no está en la
+columna de Salud — si además se renombra `m2_camp4`→`m2_salud_camp` (como pide el
+diccionario), quedan dos cajas con el mismo token, el mismo problema que `enc_audiencia`.
+El usuario tiene que decidir si esa caja es un sobrante para borrar o si hay que sacar ese
+renombre de la lista, antes de correr "Armonizar tokens de plantillas" sobre `117I0qn1…`.
 
 **Familias:** `ecv_*`, `enc_*` (incluye lo que era `et_*`/`emin_*`/`u1_*` — ver "bloque
 de encuentro repetible" abajo), `m2_*`, `camp_*` (bloque único de campaña, idéntico

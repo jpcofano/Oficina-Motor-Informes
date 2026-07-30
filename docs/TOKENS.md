@@ -1,11 +1,14 @@
 # TOKENS — diccionario canónico, inventario por slide y bloque de encuentro
 
 > ⚠️ **Los renombres de este documento describen el estado OBJETIVO, todavía no
-> aplicado.** Verificado el 29/07/2026 contra la plantilla JM viva
-> (`1JrHvs_pdvdwWGZ1CQNmuJr9Bi3XvqyOMJhRweeJAzbE`): los tokens en Slides siguen
-> con los nombres viejos. La armonización la aplica `armonizarPlantillas()` del
-> **Paso 2.2**, que sigue pendiente. **No sembrar `MARCADORES` asumiendo que las
-> plantillas ya están armonizadas.**
+> aplicado sobre la plantilla canónica.** JM canónica (Paso 2.2.2):
+> `117I0qn1XP1JCiz2mU32hUY1iiMUmrAAvHOsczd7u6jI` — sin armonizar. La corrida del
+> 29/07 se aplicó por error sobre `1JrHvs_p…`, una plantilla JM distinta y ya
+> obsoleta (marcada `[OBSOLETA — no usar]` en Drive; ver `PROYECTO.md` §6). La
+> armonización la aplica `armonizarPlantillas()` (`Armonizar.gs`, Paso 2.2 +
+> 2.2.1 + 2.2.2), que sigue sin correr sobre la canónica — hay un bloqueante sin
+> resolver (caja `{{m2_salud_camp}}` huérfana, ver `PROYECTO.md` §6). **No
+> sembrar `MARCADORES` asumiendo que las plantillas ya están armonizadas.**
 >
 > Fusiona (y reemplaza) `TOKENS_diccionario_canonico.md`, `JM_tokens_marcados.md`
 > y `SECCO_tokens_marcados.md` — archivados en `Plan Inicial/_archivo/`. Derivado
