@@ -72,3 +72,27 @@ corrija el `20206` en la base) tienen que salir `no`.
 
 **Si falla (una columna elegida sale `no`):** no promoverla tal cual — corregir el dato de
 origen (el tipeo) o descartar la columna como candidata de `fecha_periodo` y buscar otra.
+
+## C-01 — La plantilla es del equipo, el motor se adapta
+
+**Enunciado:** el equipo edita el diseño en Google Slides; el motor lee lo que el
+equipo tiene, nunca al revés. `INFORMES.plantilla_id` es la única verdad sobre qué
+archivo usa cada informe — si hay dos candidatos, no se elige por criterio técnico: se
+pregunta. El motor solo escribe sobre la plantilla en una migración explícita (una
+armonización de tokens), nunca en una corrida normal — la generación semanal copia la
+plantilla y escribe sobre la copia. Toda migración que escribe sobre la plantilla hace
+backup antes: es un archivo compartido y editado por otras personas.
+
+**Origen:** Paso 2.2.2, tras encontrar dos presentaciones JM distintas en Drive (mismo
+nombre, distinto orden de slides) donde `INFORMES.plantilla_id` apuntaba a la que no
+usa el equipo. Detalle completo en `Plan Inicial/PROYECTO.md` §6.
+
+**Cómo se verifica:** `INFORMES.plantilla_id` coincide con el ID que el equipo
+reconoce como su plantilla viva (confirmarlo con el equipo, no por inspección técnica
+del archivo). Toda función que escribe sobre una plantilla (`armonizarPlantillas()`)
+aborta esa presentación si el backup falla, en vez de escribir sin red.
+
+**Si falla:** si aparece una plantilla nueva o dudosa en la carpeta de
+`CONFIG.carpeta_plantillas`, no se asigna a `INFORMES.plantilla_id` por descarte —
+se pregunta cuál es la real y la otra se marca `[OBSOLETA — no usar]` en Drive (no se
+borra: puede servir de referencia).
