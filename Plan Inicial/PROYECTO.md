@@ -5,7 +5,7 @@
 > Para *ejecutar* (comandos, permisos, orden de corrida) → `docs/RUNBOOK.md`.
 > Para los prompts de Code → `docs/Prompts/Paso-*.md`.
 >
-> Última actualización: 28/07/2026.
+> Última actualización: 30/07/2026.
 
 ---
 
@@ -290,11 +290,17 @@ BASES/MAPEO/CONFIG) · Paso 1.6 + 1.6 v2 (registrar plantillas, robusto) · Paso
 - **Firma de encabezados** (paso propio, antes del `Paso-3-v2`) — DOC-3 generalizó el
   riesgo que estaba anotado como específico de `RDV_otros_ministros` (dueño ajeno inserta
   una columna, el mapeo por letra sigue leyendo sin fallar, devuelve la de al lado): **las
-  cuatro bases están mapeadas por letra de columna y ninguna es propia**, así que aplica a
-  todo el motor. Guardar la fila de encabezado de cada solapa mapeada (columna nueva en
-  `MAPEO` o una hoja `FIRMAS`) y fallar ruidosamente si cambió. `diagnosticarBases()`
-  (`Fechas.gs`, DOC-3 Parte B) ya lee esa fila para tipar columnas — mitad del trabajo
-  hecho. Detalle: `docs/RDV_otros_ministros_riesgo.md`. **Sin implementar.**
+  cuatro bases están mapeadas por letra de columna y ninguna es propia** (`rdv` y `digital`
+  del equipo, `Base Looker` de `dgples.comunicacion@gmail.com`, `M2` de
+  `tarnowski.jp@gmail.com`) — así que aplica a todo el motor. Guardar la fila de
+  encabezado de cada solapa mapeada y fallar ruidosamente si cambió. **Decisión del Paso
+  2.6:** la columna vive en `SOLAPAS.firma_encabezado` (creada, reservada y vacía —
+  no en `MAPEO` ni en una hoja `FIRMAS` aparte, esa alternativa queda descartada), porque
+  la firma es un atributo de la solapa, mismo criterio que `SOLAPAS.fila_encabezado`.
+  `inventariarSolapas()` (`Solapas.gs`) ya abre cada solapa `fuente` en cada corrida, así
+  que la mitad del trabajo de este paso va a estar hecho. `diagnosticarBases()`
+  (`Fechas.gs`, DOC-3 Parte B) ya lee la fila de encabezado para tipar columnas — otra
+  mitad ya resuelta. Detalle: `docs/RDV_otros_ministros_riesgo.md`. **Sin implementar.**
 - Paso 3 — primer cálculo en `Marcadores.gs` + trazabilidad.
 - Paso 4 — motor de reemplazo (tokens fijos).
 - Paso 5 — campañas repetibles + end-to-end.
