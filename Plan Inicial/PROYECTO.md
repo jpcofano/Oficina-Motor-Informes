@@ -228,10 +228,31 @@ BASES/MAPEO/CONFIG) · Paso 1.6 + 1.6 v2 (registrar plantillas, robusto) · Paso
 
 ## 9. Convenciones de mantenimiento
 
-- **Este `PROYECTO.md` es el único doc que se actualiza.** Al cerrar cada bloque, se
-  refresca (estado, decisiones resueltas, deltas de esquema).
+- **Este `PROYECTO.md` es el único doc "vivo" sin restricción.** Al cerrar cada bloque,
+  se refresca (estado, decisiones resueltas, deltas de esquema). Ver la taxonomía de
+  abajo: no todos los docs de `docs/` se actualizan a mano de la misma forma.
 - Prompts `Paso-*.md` en `docs/Prompts/` — no van acá.
 - Docs viejos consolidados acá quedan archivados en `Plan Inicial/_archivo/`.
+
+### Taxonomía de documentos (DOC-1, 29/07/2026)
+
+La regla "`PROYECTO.md` es el único doc que se actualiza" es buena pero hasta el 29/07
+no se cumplía: había al menos seis docs que se seguían editando a mano y divergían entre
+sí (ver `docs/PENDIENTES_consistencia.md`). Tres estados, explícitos:
+
+- **Vivos** — se editan cuando cambia algo: `PROYECTO.md`, `docs/RUNBOOK.md`,
+  `docs/TOKENS.md`, `docs/PENDIENTES_consistencia.md`.
+- **Congelados** — se leen, no se editan; son relevamientos o hallazgos fechados que
+  describen un momento, no el estado actual: `docs/MAPEO_completo.md`,
+  `docs/HALLAZGOS_validacion_decks.md`, `docs/DISENO_match_temario.md`,
+  `docs/CONFIG_INFORMES.md`, `docs/PLANTILLAS_QA_y_armonizacion.md`.
+- **Archivados** — `Plan Inicial/_archivo/`: superados, ya no se leen para trabajar,
+  solo como historial.
+
+Si un documento **congelado** necesita cambiar: o el cambio va a `PROYECTO.md` (que sí
+es vivo), o el doc pasa a vivo explícitamente (se anota acá). Lo que no puede pasar es
+que se edite en silencio y quede contradiciendo a otro — eso es exactamente lo que costó
+la mitad del trabajo de `DOC-1`.
 
 ### Convención de trabajo: un commit por paso
 
@@ -280,3 +301,18 @@ se detectó a tiempo y se renombró el de `Fuentes.gs` a `parsearFechaCelda_`.
 **Antes de nombrar una función o `var` global nueva, greppear el nombre en todo el
 repo** (`grep -rn "function nombre_" *.gs`), sobre todo si el otro archivo pudo haber
 sido escrito por la otra herramienta sin avisar.
+
+### Aprendizaje: el diagnóstico no distingue config vieja de config mal armada
+
+En el Paso 2.1, tres ⚠ y un ✅ engañoso de "Probar lectura por ventana" llevaron a
+diagnosticar un bug de seed que no existía: el código estaba bien (`SEED_MAPEO_` ya
+tenía `rdv/fecha` y `looker` sembrado, `SEED_BASES_` ya tenía `m2` en snapshot/fila 3) y
+lo que estaba viejo era **la planilla**, porque nadie había corrido "Cargar config
+inicial" después del `clasp push`. Se leyó el código buscando un problema que estaba en
+la hoja.
+
+**Mejora concreta pendiente (no implementada en `DOC-1` — ese prompt no toca código):**
+que "Probar lectura por ventana" muestre cuándo fue la última carga de config, guardando
+un `ultima_carga` en `CONFIG` al correr `seedConfiguracion()`. Tres líneas, evita repetir
+este diagnóstico equivocado cada vez que cambie un seed. Queda anotado para el próximo
+paso que toque `Instalar.gs`/`Fuentes.gs`.
