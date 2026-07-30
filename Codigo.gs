@@ -23,6 +23,7 @@ function onOpen() {
     .addSubMenu(
       ui.createMenu('Mantenimiento')
         .addItem('Inventario de plantillas', 'menuInventarioPlantillas_')
+        .addItem('Fijar plantilla canónica de JM (una vez)', 'menuRepuntarPlantillaCanonicaJM_')
         .addItem('Armonizar tokens de plantillas', 'menuArmonizarPlantillas_')
     )
     .addToUi();

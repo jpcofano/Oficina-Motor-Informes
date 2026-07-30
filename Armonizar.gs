@@ -577,3 +577,73 @@ function menuInventarioPlantillas_() {
   Logger.log(lineas.join('\n'));
   ui.alert('Inventario de plantillas', lineas.join('\n'), ui.ButtonSet.OK);
 }
+
+/* ========================= Paso 2.2.2 — plantilla canónica de JM ========================= */
+
+/**
+ * Migración puntual, correr una sola vez: había dos presentaciones JM en
+ * Drive con distinto orden de slides. `INFORMES.jm.plantilla_id` apuntaba a
+ * la que NO usa el equipo (`1JrHvs_p…`, que además ya tiene la armonización
+ * del Paso 2.2.1 aplicada por error). La canónica es `117I0qn1…`.
+ * Ver docs/Prompts/Paso-2.2.2.md.
+ *
+ * Regla que queda fija (Plan Inicial/PROYECTO.md §6): la plantilla es del
+ * equipo, el motor se adapta — `INFORMES.plantilla_id` es la única verdad
+ * sobre qué archivo usa cada informe.
+ */
+var PLANTILLA_JM_CANONICA_ = '117I0qn1XP1JCiz2mU32hUY1iiMUmrAAvHOsczd7u6jI';
+var PLANTILLA_JM_OBSOLETA_ = '1JrHvs_pdvdwWGZ1CQNmuJr9Bi3XvqyOMJhRweeJAzbE';
+
+function repuntarPlantillaCanonicaJM_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('INFORMES');
+  if (!hoja) return { ok: false, motivo: 'La hoja INFORMES no existe' };
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxInformeId = headers.indexOf('informe_id');
+  var idxPlantillaId = headers.indexOf('plantilla_id');
+  var filaJM = null;
+
+  for (var f = 1; f < datos.length; f++) {
+    if (datos[f][idxInformeId] === 'jm') { filaJM = f + 1; break; }
+  }
+  if (!filaJM) return { ok: false, motivo: 'No hay fila "jm" en INFORMES' };
+
+  var pasos = [];
+  var anterior = hoja.getRange(filaJM, idxPlantillaId + 1).getValue();
+
+  if (anterior === PLANTILLA_JM_CANONICA_) {
+    pasos.push('INFORMES.jm.plantilla_id ya apuntaba a la canónica — no se tocó');
+  } else {
+    hoja.getRange(filaJM, idxPlantillaId + 1).setValue(PLANTILLA_JM_CANONICA_);
+    pasos.push('INFORMES.jm.plantilla_id: "' + anterior + '" → "' + PLANTILLA_JM_CANONICA_ + '"');
+  }
+
+  try {
+    var archivoObsoleto = DriveApp.getFileById(PLANTILLA_JM_OBSOLETA_);
+    var nombreActual = archivoObsoleto.getName();
+    if (nombreActual.indexOf('[OBSOLETA') === 0) {
+      pasos.push('La plantilla vieja ya estaba marcada como obsoleta en Drive — no se tocó');
+    } else {
+      archivoObsoleto.setName('[OBSOLETA — no usar] ' + nombreActual);
+      pasos.push('Renombrada en Drive: "' + nombreActual + '" → "[OBSOLETA — no usar] ' + nombreActual + '"');
+    }
+  } catch (e) {
+    pasos.push('⚠️ No se pudo renombrar la plantilla obsoleta en Drive: ' + e.message);
+  }
+
+  return { ok: true, pasos: pasos };
+}
+
+function menuRepuntarPlantillaCanonicaJM_() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = repuntarPlantillaCanonicaJM_();
+
+  if (!resultado.ok) {
+    ui.alert('No se pudo repuntar la plantilla canónica', resultado.motivo, ui.ButtonSet.OK);
+    return;
+  }
+
+  ui.alert('Plantilla canónica de JM', resultado.pasos.join('\n'), ui.ButtonSet.OK);
+}
