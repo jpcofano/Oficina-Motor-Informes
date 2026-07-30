@@ -389,3 +389,136 @@ function menuArmonizarPlantillas_() {
 
   ui.alert('Armonizar tokens de plantillas', lineas.join('\n'), ui.ButtonSet.OK);
 }
+
+/* ========================= Paso 2.2.2 — inventario de plantillas ========================= */
+
+/**
+ * Tokens que solo deberían aparecer en una plantilla sin armonizar. Sirve
+ * para responder de un vistazo "¿esta está armonizada o no?" — surgió porque
+ * había dos presentaciones JM parecidas y ninguna forma rápida de saber cuál
+ * era cuál (docs/Prompts/Paso-2.2.2.md).
+ */
+var TOKENS_VIEJOS_DIAGNOSTICO_ = [
+  '{{enc_audiencia_ivr}}', '{{enc_audiencia_pauta}}', '{{enc_clics}}',
+  '{{rrss_prom}}', '{{m2_clics_a}}'
+];
+
+function inventarioPlantillas() {
+  var informes = leerInformes();
+  var reporte = [];
+
+  Object.keys(informes).forEach(function (informeId) {
+    var informe = informes[informeId];
+    if (!informe.plantilla_id) {
+      reporte.push({ informeId: informeId, ok: false, motivo: 'sin plantilla_id cargado en INFORMES' });
+      return;
+    }
+    reporte.push(inventariarPresentacion_(informeId, informe.plantilla_id));
+  });
+
+  return reporte;
+}
+
+function inventariarPresentacion_(informeId, plantillaId) {
+  var archivo, presentacion;
+
+  try {
+    archivo = DriveApp.getFileById(plantillaId);
+  } catch (e) {
+    return { informeId: informeId, ok: false, motivo: 'No se pudo abrir el archivo de Drive "' + plantillaId + '": ' + e.message };
+  }
+  try {
+    presentacion = SlidesApp.openById(plantillaId);
+  } catch (e) {
+    return { informeId: informeId, ok: false, motivo: 'No se pudo abrir como presentación "' + plantillaId + '": ' + e.message };
+  }
+
+  var slides = presentacion.getSlides();
+  var titulos = slides.map(function (slide, i) {
+    return (i + 1) + '. ' + (primerTextoDeSlide_(slide) || '(sin texto)');
+  });
+
+  var tokens = contarTokensDistintos_(presentacion);
+  var tokensViejosEncontrados = TOKENS_VIEJOS_DIAGNOSTICO_.filter(function (t) {
+    return tokens.textoCompleto.indexOf(t) !== -1;
+  });
+  if (/(^|[^0-9{])135([^0-9}]|$)/.test(tokens.textoCompleto)) {
+    tokensViejosEncontrados.push('135 (literal suelto, sin llaves)');
+  }
+
+  var carpetas = archivo.getParents();
+  var carpeta = carpetas.hasNext() ? carpetas.next().getName() : '(sin carpeta)';
+
+  return {
+    informeId: informeId,
+    ok: true,
+    nombre: archivo.getName(),
+    id: plantillaId,
+    url: archivo.getUrl(),
+    carpeta: carpeta,
+    modificado: archivo.getLastUpdated(),
+    slides: slides.length,
+    titulos: titulos,
+    tokensDistintosCount: tokens.cantidad,
+    tokensViejosEncontrados: tokensViejosEncontrados
+  };
+}
+
+function primerTextoDeSlide_(slide) {
+  var shapes = slide.getShapes();
+  for (var i = 0; i < shapes.length; i++) {
+    if (typeof shapes[i].getText !== 'function') continue;
+    var texto = shapes[i].getText().asString().trim();
+    if (texto) return texto.split('\n')[0];
+  }
+  return '';
+}
+
+function contarTokensDistintos_(presentacion) {
+  var vistos = {};
+  var partes = [];
+
+  presentacion.getSlides().forEach(function (slide) {
+    slide.getShapes().forEach(function (shape) {
+      if (typeof shape.getText !== 'function') return;
+      var texto = shape.getText().asString();
+      partes.push(texto);
+      var encontrados = texto.match(/\{\{[a-zA-Z0-9_]+\}\}/g);
+      if (encontrados) encontrados.forEach(function (t) { vistos[t] = true; });
+    });
+  });
+
+  return { cantidad: Object.keys(vistos).length, textoCompleto: partes.join('\n') };
+}
+
+function menuInventarioPlantillas_() {
+  var ui = SpreadsheetApp.getUi();
+  var reporte = inventarioPlantillas();
+
+  if (!reporte.length) {
+    ui.alert('Inventario de plantillas', 'No hay filas en INFORMES.', ui.ButtonSet.OK);
+    return;
+  }
+
+  var lineas = [];
+  reporte.forEach(function (item) {
+    if (!item.ok) {
+      lineas.push('⚠️ ' + item.informeId + ' — ' + item.motivo);
+      lineas.push('');
+      return;
+    }
+
+    lineas.push('— ' + item.informeId + ': ' + item.nombre);
+    lineas.push('   ID: ' + item.id);
+    lineas.push('   URL: ' + item.url);
+    lineas.push('   Carpeta: ' + item.carpeta + ' · modificado: ' + formatearFecha_(item.modificado));
+    lineas.push('   Slides: ' + item.slides + ' · tokens {{...}} distintos: ' + item.tokensDistintosCount);
+    lineas.push('   Tokens viejos: ' + (item.tokensViejosEncontrados.length ? item.tokensViejosEncontrados.join(', ') : 'ninguno — parece armonizada'));
+    lineas.push('   Títulos:');
+    item.titulos.forEach(function (t) { lineas.push('     ' + t); });
+    lineas.push('');
+  });
+
+  Logger.log(lineas.join('\n'));
+  ui.alert('Inventario de plantillas', lineas.join('\n'), ui.ButtonSet.OK);
+}

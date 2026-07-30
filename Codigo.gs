@@ -22,6 +22,7 @@ function onOpen() {
     )
     .addSubMenu(
       ui.createMenu('Mantenimiento')
+        .addItem('Inventario de plantillas', 'menuInventarioPlantillas_')
         .addItem('Armonizar tokens de plantillas', 'menuArmonizarPlantillas_')
     )
     .addToUi();
