@@ -11,17 +11,36 @@
  */
 
 // Parte A — renombres de texto puros (mismo concepto, nombre viejo → nuevo).
-// Array ORDENADO, no objeto: el orden importa. `enc_audiencia`→`enc_alcance`
-// tiene que correr antes de que la Parte B escriba `{{enc_audiencia}}` en la
-// caja de IVR de la slide 6 — si no, el segundo renombre se lleva puesto al
-// primero. Siempre con llaves: `enc_clics` es prefijo de `enc_clics_ctor`.
-var RENOMBRES_ARMONIZACION_ = [
-  { viejo: '{{enc_audiencia}}', nuevo: '{{enc_alcance}}' },
-  { viejo: '{{enc_audiencia_pct}}', nuevo: '{{enc_alcance_pct}}' },
-  { viejo: '{{enc_clics}}', nuevo: '{{enc_clics_ctor}}' },
-  { viejo: '{{enc_audiencia_ivr}}', nuevo: '{{enc_base_total}}' },
-  { viejo: '{{rrss_prom}}', nuevo: '{{rrss_prom_general}}' }
-];
+// Listas POR `informe_id` (Paso 2.2.1), no un array único aplicado a todas
+// las presentaciones: los nombres de token pueden colisionar entre
+// plantillas. `enc_audiencia` en JM significaba "audiencia de pauta" (había
+// que renombrarlo a `enc_alcance`); en SECCO ese mismo texto ya significaba
+// "alcance digital" de la columna IVR — aplicarle el mismo renombre global
+// rompió esa caja (regresión real, corregida en Paso-2.2.md → Paso-2.2.1.md).
+// Si un `informe_id` no tiene lista acá, `armonizarPresentacion_` no le
+// aplica NINGÚN renombre y lo avisa en el reporte: mejor no tocar nada que
+// aplicar la lista de otra plantilla.
+//
+// Cada lista es un array ORDENADO, no objeto: el orden importa dentro de JM
+// — `enc_audiencia`→`enc_alcance` tiene que correr antes de que la Parte B
+// escriba `{{enc_audiencia}}` en la caja de IVR de la slide 6, si no el
+// segundo renombre se lleva puesto al primero. Siempre con llaves:
+// `enc_clics` es prefijo de `enc_clics_ctor`.
+var RENOMBRES_ARMONIZACION_POR_INFORME_ = {
+  jm: [
+    { viejo: '{{enc_audiencia}}', nuevo: '{{enc_alcance}}' },
+    { viejo: '{{enc_audiencia_pct}}', nuevo: '{{enc_alcance_pct}}' },
+    { viejo: '{{enc_clics}}', nuevo: '{{enc_clics_ctor}}' },
+    { viejo: '{{enc_audiencia_ivr}}', nuevo: '{{enc_base_total}}' },
+    { viejo: '{{rrss_prom}}', nuevo: '{{rrss_prom_general}}' }
+    // M2 slide 10 (nombres por categoría) se agrega en el Problema 2.
+  ],
+  secco: [
+    { viejo: '{{rrss_prom}}', nuevo: '{{rrss_prom_general}}' }
+    // enc_audiencia → enc_alcance NO va acá: en SECCO ese texto ya era
+    // correcto (columna IVR de la slide 8). Ver Paso-2.2.1.md, Problema 1.
+  ]
+};
 
 function armonizarPlantillas() {
   var informes = leerInformes();
@@ -46,11 +65,16 @@ function armonizarPresentacion_(informeId, plantillaId) {
     return { ok: false, motivo: 'No se pudo abrir la presentación "' + plantillaId + '": ' + e.message };
   }
 
+  var listaRenombres = RENOMBRES_ARMONIZACION_POR_INFORME_[informeId];
   var renombres = [];
-  RENOMBRES_ARMONIZACION_.forEach(function (par) {
-    var ocurrencias = presentacion.replaceAllText(par.viejo, par.nuevo, true);
-    renombres.push({ viejo: par.viejo, nuevo: par.nuevo, ocurrencias: ocurrencias });
-  });
+  var renombresOmitidos = !listaRenombres;
+
+  if (listaRenombres) {
+    listaRenombres.forEach(function (par) {
+      var ocurrencias = presentacion.replaceAllText(par.viejo, par.nuevo, true);
+      renombres.push({ viejo: par.viejo, nuevo: par.nuevo, ocurrencias: ocurrencias });
+    });
+  }
 
   // Parte B corre siempre DESPUÉS de los renombres de texto de la Parte A,
   // sobre la misma presentación ya abierta — el orden es a propósito (ver
@@ -62,6 +86,7 @@ function armonizarPresentacion_(informeId, plantillaId) {
     id: presentacion.getId(),
     nombre: presentacion.getName(),
     renombres: renombres,
+    renombres_omitidos: renombresOmitidos,
     cajas: cajas
   };
 }
@@ -242,6 +267,13 @@ function corregirCajasPresentacion_(informeId, presentacion) {
     } else if (informeId === 'secco') {
       var slide8 = slideEn_(slides, 8);
       if (slide8) {
+        // Paso 2.2.1, Problema 1: restaurar la caja "Audiencia" (columna
+        // IVR) a {{enc_audiencia}} — la Parte A global del 2.2 la había
+        // renombrado por error a {{enc_alcance}}, dejando dos cajas
+        // ("Audiencia" y "Alcance") con el mismo token. Por etiqueta, no por
+        // valor: hay dos cajas con {{enc_alcance}} y buscar por valor actual
+        // sería ambiguo — mismo criterio que la Parte B.1.
+        corregirCajaPorEtiqueta_(slide8, 'Audiencia', '{{enc_audiencia}}', reporte);
         agregarLineaCaja_(slide8, 'Difusión', 'IVR: {{ecv_insc_ivr}} ({{ecv_insc_ivr_pct}}%)', reporte, 'SECCO slide 8 — línea IVR');
       } else {
         reporte.push({ ok: false, etiqueta: 'SECCO slide 8', motivo: 'la presentación no tiene slide 8' });
@@ -270,6 +302,9 @@ function menuArmonizarPlantillas_() {
       return;
     }
     lineas.push('— ' + item.informeId + ' (' + item.resultado.nombre + ' · ' + item.resultado.id + ')');
+    if (item.resultado.renombres_omitidos) {
+      lineas.push('   ⚠️ sin lista de renombres definida para "' + item.informeId + '" — no se tocó texto');
+    }
     item.resultado.renombres.forEach(function (r) {
       var marca = r.ocurrencias === 0 ? ' ⚠️ 0 — ya aplicado, token no existe, o plantilla equivocada' : '';
       lineas.push('   ' + r.viejo + ' → ' + r.nuevo + ': ' + r.ocurrencias + marca);
