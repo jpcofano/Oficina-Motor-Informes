@@ -359,6 +359,21 @@ var SEED_MAPEO_ = [
   { base_id: 'm2', campo_logico: 'campana_dig', hoja: 'M2 periodo DIGITAL', columna: 'B', notas: '' },
   { base_id: 'm2', campo_logico: 'estado', hoja: 'M2 periodo DIGITAL', columna: 'E', notas: '' },
 
+  // DOC-3 Parte D — solapa 'Cuentas': pasa el criterio de fuente cruda (encabezado en
+  // fila 1, sin banner), pero es la tabla de ATRIBUTOS de campaña, no la fuente de los
+  // tokens m2_*: no tiene ninguna métrica (clics, visualizaciones, etc.). Se registra
+  // como dimensión, no reemplaza a M2 periodo DIRECTA/DIGITAL.
+  // ⚠ Conflicto sin resolver: BASES.fila_encabezado de m2 es 3 (vale para las hojas con
+  // banner de período); 'Cuentas' tiene el encabezado en la fila 1. fila_encabezado es
+  // por base, no por solapa — no se resuelve acá (ver docs/Prompts/DOC-3_verificacion_bases_vivas.md
+  // Parte D punto 2, "Lo que este prompt NO decide").
+  { base_id: 'm2', campo_logico: 'id_cuenta', hoja: 'Cuentas', columna: 'A', notas: '' },
+  { base_id: 'm2', campo_logico: 'campana', hoja: 'Cuentas', columna: 'D', notas: '' },
+  // 'Estado campaña' (J) y 'Estado' (V) coexisten en esta solapa; se mapea J.
+  { base_id: 'm2', campo_logico: 'estado', hoja: 'Cuentas', columna: 'J', notas: 'mapeada "Estado campaña" (J), no "Estado" (V) — las dos columnas coexisten en la hoja' },
+  { base_id: 'm2', campo_logico: 'eje', hoja: 'Cuentas', columna: 'K', notas: '' },
+  { base_id: 'm2', campo_logico: 'area', hoja: 'Cuentas', columna: 'L', notas: '' },
+
   // digital (Seguimiento Digital) — sembrado en el Paso 2.3. Snapshot: el
   // recorte por período lo hace el agregador (Paso 3) vía el link
   // campaña↔encuentro, no por ventana de fecha cruda (ver SEED_BASES_.digital).
