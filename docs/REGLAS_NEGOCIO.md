@@ -96,3 +96,36 @@ aborta esa presentación si el backup falla, en vez de escribir sin red.
 `CONFIG.carpeta_plantillas`, no se asigna a `INFORMES.plantilla_id` por descarte —
 se pregunta cuál es la real y la otra se marca `[OBSOLETA — no usar]` en Drive (no se
 borra: puede servir de referencia).
+
+## R-04 — El temario define el universo, no la fecha
+
+**Enunciado:** una campaña está activa todos los días de su tramo, pero el proceso
+arranca **seleccionando las reuniones del temario** — la fecha no decide qué campañas
+entran al informe. Qué campañas entran lo decide la selección humana de encuentros
+(temario); la fecha de inicio de campaña se usa **únicamente** para resolver el match
+campaña↔encuentro. **Ninguna base digital se filtra por ventana para decidir
+contenido.**
+
+**Corolario:** `digital` y `looker` se leen en modo `snapshot`; sus columnas de fecha
+elegidas el 30/07 (`docs/FECHAS_seleccion.md`) sirven para acotar lectura y
+diagnóstico, no para seleccionar filas del informe.
+
+**Origen:** respuesta del usuario, 30/07/2026, a la pregunta que dejó abierta el Paso
+2.4 ("¿una campaña se reporta en el período en que arranca, o en todos los que estuvo
+activa?"). Detalle en `docs/Prompts/DOC-3_verificacion_bases_vivas.md` Parte E.
+
+> Nota de numeración: esta regla se documentó primero como "R-02" en el prompt de
+> origen, pero **`R-02` ya estaba tomado** por "Criterio de fuente cruda" (arriba). Se
+> asigna `R-04` para no romper el ID estable de la regla existente — cada ID se asigna
+> una sola vez y no se reutiliza.
+
+**Cómo se verifica:** el diseño del Paso 2.4 (anclaje RDV + link por `id_cuenta`) no
+depende de las ventanas de fecha de `digital`/`looker` para decidir qué campaña entra;
+si un cambio futuro empieza a filtrar `digital`/`looker` por ventana para ese fin,
+contradice esta regla.
+
+**Si falla:** si el equipo corrige esta respuesta (p. ej. "en realidad sí importa el
+tramo completo de la campaña"), esta regla se marca derogada con fecha y el diseño del
+Paso 2.4 vuelve a abrirse — las seis elecciones de fecha de `digital`/`looker` dejan de
+ser solo diagnóstico y pasan a necesitar `fecha_desde`/`fecha_hasta` + condición de
+solapamiento.

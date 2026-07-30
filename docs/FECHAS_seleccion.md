@@ -39,10 +39,11 @@ Filtrar por la fecha de inicio deja afuera toda campaña que empezó antes del p
 **estuvo activa durante** el período — una campaña de marzo a agosto no aparecería en el
 informe de julio.
 
-Decisión pendiente con el equipo: ¿una campaña se reporta en el período **en que
-arranca**, o en **todos aquellos en que estuvo activa**? Si es lo segundo, el filtro
-necesita dos columnas (`fecha_desde` / `fecha_hasta`) y una condición de solapamiento, no
-un `fecha_periodo` único. **Estas cinco elecciones son provisorias hasta que se resuelva.**
+**Resuelto (R-04, `docs/REGLAS_NEGOCIO.md`, DOC-3, 30/07/2026):** el temario define el
+universo de campañas — la selección humana de encuentros, no una ventana de fecha. La
+fecha de inicio solo sirve para el match campaña↔encuentro (Paso 2.4). **Estas cinco
+elecciones dejan de ser provisorias:** pasan a "no críticas — diagnóstico y acotado de
+lectura, por R-04", no filtro de contenido del informe.
 
 ### Cobertura incompleta
 

@@ -118,7 +118,7 @@ Bases vivas (Google Sheets nativas), cargadas en `BASES`:
 |---|---|---|---|---|
 | rdv | RDV JM CM ES + funcionarios | `1ZpHO6Ru1uY2r9WfBF_yFtu5z7ip7F3Q6VOoRJN5vLAo` | RVD JM-CM - ES | filtrar |
 | digital | Seguimiento Digital | `1LadILzFpyCrZRapxgDOFOldSoRawjKkWMaFci_ilhPY` | Digital | filtrar |
-| looker | Base Looker | `1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ` | resumen_metricas | filtrar |
+| looker | Base Looker | `1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ` | resumen_metricas_dinamico | filtrar |
 | m2 | M2 Reporte para Fede 2026 | `1_GS01-TXrhez0GlpFf4bUjWLNQPfaW9BOFFXz0hZNvY` | M2 periodo DIRECTA | **snapshot** |
 | miba | Integración MiBA | *(vacío)* | | parqueada (activo=no) |
 
@@ -127,14 +127,21 @@ las hojas `M2 periodo DIRECTA` / `M2 periodo DIGITAL` **ya vienen al corte del p
 (no se filtran por fecha) y tienen el **encabezado en la fila 3** (fila 1 = período,
 fila 2 = vacía, datos desde fila 4). Config M2: `modo_periodo=snapshot`, `fila_encabezado=3`.
 
-**MAPEO — completo en código** (`SEED_MAPEO_` en `Instalar.gs`, 105 filas): **rdv** (14,
-hoja `RVD JM-CM - ES`), **looker** (24, hoja `resumen_metricas`, incluye `fecha` →
-`fecha_inicio`), **m2** (14, DIRECTA + DIGITAL) y **digital** (53, Paso 2.3: `Digital` +
-`Directa Mail` + `Directa SMS` + `Directa IVR` + `Alcance` + `Seguimiento digital`
-maestra, unidas por `*_id_cuenta`). `digital` pasó a `modo_periodo=snapshot` (mismo
-motivo que looker: la fecha de campaña tiene lead de 3–7 días respecto del encuentro,
-ventanearla contra la semana del encuentro descarta casi todo). Detalle de columnas en
+**MAPEO — completo en código** (`SEED_MAPEO_` en `Instalar.gs`): **rdv** (hoja
+`RVD JM-CM - ES`), **looker** (hoja `resumen_metricas_dinamico` — confirmado contra la
+base viva el 30/07, DOC-3 Parte A; incluye `fecha` → `fecha_inicio` e `id_cuenta` para
+el join con Seguimiento Digital), **m2** (DIRECTA + DIGITAL + `Cuentas` como dimensión
+de atributos, DOC-3 Parte D) y **digital** (Paso 2.3: `Digital` + `Directa Mail` +
+`Directa SMS` + `Directa IVR` + `Alcance` + `Seguimiento digital` maestra, unidas por
+`*_id_cuenta`). `digital` pasó a `modo_periodo=snapshot` (mismo motivo que looker: la
+fecha de campaña tiene lead de 3–7 días respecto del encuentro, ventanearla contra la
+semana del encuentro descarta casi todo). Detalle de columnas en
 `docs/MAPEO_completo.md` y en el propio `SEED_MAPEO_`.
+
+**R-04 (`docs/REGLAS_NEGOCIO.md`, DOC-3):** el temario define el universo de campañas
+del informe (selección humana de encuentros), no una ventana de fecha — por eso
+`digital`/`looker` se leen en `snapshot` y sus columnas de fecha son diagnóstico/acotado
+de lectura, no filtro de contenido.
 
 **Precedencia de merge digital/directa para el Paso 3** (decidida, documentada acá para
 que el agregador la use — NO se codea en `Fuentes.gs`, es lógica de `Marcadores.gs`):

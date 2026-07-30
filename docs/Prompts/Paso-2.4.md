@@ -19,19 +19,18 @@
 
 ---
 
-## Precondición de negocio sin resolver
+## R-04 — el temario define el universo, no la fecha (diseño confirmado)
 
 `digital` está registrada como `modo_periodo=snapshot` (ver `SEED_BASES_` en
-`Instalar.gs`), así que hoy **las cinco columnas de fecha elegidas para sus solapas
-(`docs/FECHAS_seleccion.md`) no las usa nadie** — el recorte por período lo hace el
-link campaña↔encuentro de este mismo paso (Parte B), no una ventana de fecha cruda.
-Eso está bien **mientras** el equipo confirme que una campaña se reporta en el período
-en que arranca. Si en cambio responde que **una campaña se reporta en todos los
-períodos en que estuvo activa**, hace falta `fecha_desde`/`fecha_hasta` y una condición
-de solapamiento en vez de una fecha puntual, y las seis elecciones de fecha de
-`digital`/`looker` (todas marcadas `⚠ rango` en `FECHAS_seleccion.md`) se quedan
-cortas. **La respuesta del equipo puede invalidar el diseño de este paso — no asumir
-que el link campaña↔encuentro alcanza sin esa confirmación.**
+`Instalar.gs`): las cinco columnas de fecha elegidas para sus solapas
+(`docs/FECHAS_seleccion.md`) no seleccionan contenido — el recorte lo hace el link
+campaña↔encuentro de este mismo paso (Parte B). **`R-04` (`docs/REGLAS_NEGOCIO.md`,
+DOC-3) confirma que este diseño es correcto:** el temario define el universo de
+campañas (selección humana de encuentros), no una ventana de fecha; la fecha de inicio
+de campaña solo sirve para el match campaña↔encuentro. El diseño de este paso queda
+**confirmado, no invalidado** — las seis elecciones de fecha de `digital`/`looker`
+siguen siendo útiles como diagnóstico y acotado de lectura, no como filtro de
+contenido.
 
 ## Contexto (lo que dejó 2.3)
 
