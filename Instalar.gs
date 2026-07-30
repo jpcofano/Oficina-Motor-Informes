@@ -100,6 +100,19 @@ var HOJAS_CONFIG_ = {
       ['digital', 'Digital', 'alcance', 'Digital', 'E', '']
     ]
   },
+  // SOLAPAS (Paso 2.6): declara el uso de CADA solapa de cada base — el motor solo
+  // sabía de las que aparecían en MAPEO, y el resto (backups, pivots, vistas con
+  // período tipeado a mano) eran invisibles. `uso=fuente` es requisito para que
+  // `buscarMapeo()` la deje leer (Config.gs); `fila_encabezado` vive acá (no en BASES)
+  // porque es un atributo de la solapa, no de la base — ver docs/Prompts/Paso-2.6_registro_solapas.md
+  // Parte B. `firma_encabezado` queda reservada, sin implementar todavía (Parte E).
+  SOLAPAS: {
+    headers: ['base_id', 'solapa', 'uso', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'notas'],
+    ejemplos: [
+      ['rdv', 'RVD JM-CM - ES', 'fuente', 1, '', '', 'base de encuentros, hoja_default'],
+      ['rdv', 'RVD JM-CM - ES Back Up', 'ignorar', 1, '', '', 'backup']
+    ]
+  },
   // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
   // ministros, proveedor — ver Plan Inicial/PROYECTO.md §4.
   CAMPANAS: {

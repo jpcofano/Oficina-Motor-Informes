@@ -9,14 +9,20 @@
  *   buscarMapeo(base_id, solapa, campo_logico) -> { ok, hoja, columna } o { ok:false, motivo }
  *     Única vía de resolución de MAPEO (Paso 2.3.2) — `solapa` es obligatoria, sin
  *     default a `hoja_default`: un default silencioso ahí devuelve la fila de otra
- *     solapa sin avisar.
+ *     solapa sin avisar. Paso 2.6: además exige `SOLAPAS.uso = fuente` para esa
+ *     (base_id, solapa) — ver `usoSolapa_` abajo.
  *   validarMapeo()        -> detecta tríos (base_id, solapa, campo_logico) duplicados
+ *   leerSolapas()         -> { base_id: { solapa: {uso, fila_encabezado, firma_encabezado,
+ *                               filas_datos, notas} } } — registro `SOLAPAS` (Paso 2.6)
+ *   usoSolapa_(base_id, solapa) -> 'fuente'/'derivada'/'referencia'/'ignorar'/'revisar', o
+ *     '' si la solapa no está registrada en SOLAPAS (mismo trato que 'revisar': no se lee)
  *   leerPeriodos()        -> { periodo_id: {desde, hasta, notas} }
  *   leerCampanas()        -> { campana_id: {nombre, informe_id, base_id, tipo, desde, hasta, mostrar, orden} }
  *   escribirConfig(k, v)  -> setea una clave en CONFIG
  * Regla: NADIE hace cuentas de fechas fuera de este módulo y Fuentes.gs.
  * leerBases/leerInformes: Paso 1. leerConfig: Paso 1.6 v2.
  * leerMapeo/leerPeriodos/leerCampanas: Paso 2. buscarMapeo/validarMapeo: Paso 2.3.2.
+ * leerSolapas/usoSolapa_: Paso 2.6 (ver Solapas.gs para inventariarSolapas()).
  * escribirConfig: pendiente (fuera de alcance por ahora).
  */
 
@@ -95,14 +101,68 @@ function leerMapeo() {
 }
 
 /**
+ * Registro SOLAPAS (Paso 2.6): declara el uso de cada solapa de cada base —
+ * `fuente` / `derivada` / `referencia` / `ignorar` / `revisar`. Clave
+ * compuesta (base_id, solapa), igual criterio que `leerMapeo()`.
+ */
+function leerSolapas() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SOLAPAS');
+  if (!hoja) return {};
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos.shift();
+  var idx = {};
+  headers.forEach(function (h, i) { idx[h] = i; });
+
+  var registro = {};
+  datos.forEach(function (fila) {
+    var baseId = fila[idx.base_id];
+    var solapa = fila[idx.solapa];
+    if (!baseId || !solapa) return;
+
+    if (!registro[baseId]) registro[baseId] = {};
+    registro[baseId][solapa] = {
+      uso: fila[idx.uso],
+      fila_encabezado: fila[idx.fila_encabezado],
+      firma_encabezado: fila[idx.firma_encabezado],
+      filas_datos: fila[idx.filas_datos],
+      notas: fila[idx.notas]
+    };
+  });
+
+  return registro;
+}
+
+/**
+ * `uso` de una (base_id, solapa) registrada en SOLAPAS. Devuelve '' si la
+ * solapa no está registrada — mismo trato práctico que 'revisar': no es
+ * `fuente`, así que `buscarMapeo` la rechaza igual.
+ */
+function usoSolapa_(baseId, solapa) {
+  var solapas = leerSolapas();
+  var fila = solapas[baseId] && solapas[baseId][solapa];
+  return fila ? fila.uso : '';
+}
+
+/**
  * Única vía de resolución de MAPEO (Paso 2.3.2). `solapa` es obligatoria: sin
  * ella no hay forma de saber a cuál de las varias solapas posibles de una base
  * se refiere `campo_logico`, y devolver un default silencioso ahí es
  * exactamente el modo de falla que esto reemplaza (ver Paso-2.3.2.md).
+ *
+ * Paso 2.6, Parte B regla 1: `uso=fuente` en SOLAPAS es requisito para mapear.
+ * Una solapa `derivada`/`referencia`/`ignorar`/`revisar` (o ni siquiera
+ * registrada todavía) falla acá, ANTES de tocar MAPEO — así una hoja marcada
+ * `revisar` (el default de todo lo nuevo) nunca se lee sola.
  */
 function buscarMapeo(baseId, solapa, campoLogico) {
   if (!solapa) {
     return { ok: false, motivo: 'buscarMapeo requiere solapa (base_id="' + baseId + '", campo_logico="' + campoLogico + '")' };
+  }
+
+  var uso = usoSolapa_(baseId, solapa);
+  if (uso !== 'fuente') {
+    return { ok: false, motivo: '«FALTA:' + campoLogico + '@solapa_no_fuente(' + baseId + '/' + solapa + ')»' };
   }
 
   var mapa = leerMapeo();
