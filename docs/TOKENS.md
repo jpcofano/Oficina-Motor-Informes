@@ -240,3 +240,38 @@ diseñado para `camp_*`.
 
 Primera persona, además, hay que marcarla: hoy son tres slides enteras en `xx` (deck
 comentado, sin equivalente en la plantilla base — ver `PROYECTO.md` §6).
+
+---
+
+## 4. Esquema de `MARCADORES` — resolución de `solapa` (DOC-2)
+
+`MARCADORES` (esquema en `Instalar.gs`, Parte A del DOC-2):
+
+```
+['marcador','familia','informe_id','base_id','solapa','campo_logico',
+ 'periodo_ref','operacion','valor_fijo','formato','notas']
+```
+
+**El problema que resuelve `solapa`:** un marcador declara `base_id=digital`,
+`campo_logico=mail_enviados`. Con la clave de `MAPEO` `(base_id, solapa, campo_logico)`
+(Paso 2.3.2) eso no alcanza para encontrar la fila: `digital` tiene seis solapas. Los
+prefijos `dig_*`/`mail_*`/`sms_*` hoy tapan el agujero, pero **no son una convención**:
+son la solapa metida adentro del nombre, y quedaron marcados para limpieza (Paso 2.3.2).
+Si `MARCADORES` sigue dependiendo de ellos, esa limpieza rompe ~200 filas.
+
+**Regla de resolución** (la implementa el resolvedor de `Paso-3-v2` Parte C; acá solo se
+documenta el contrato):
+
+| caso | qué hace |
+|---|---|
+| `solapa` cargada | se usa tal cual |
+| `solapa` vacía y la base tiene **exactamente una** solapa en `MAPEO` | se usa esa, y **la traza dice que fue inferida** |
+| `solapa` vacía y la base tiene **más de una** | error → `«FALTA:token@sin_solapa»` |
+
+Es deliberadamente distinto de un default silencioso (rechazado en el Paso 2.3.2 para
+`buscarMapeo`): acá la inferencia **queda escrita en la traza**, y el caso ambiguo falla
+ruidosamente en vez de devolver la fila de al lado.
+
+⚠ **`rdv` ya tiene dos solapas mapeadas** (`RVD JM-CM - ES` y `RDV_otros_ministros`), así
+que la fila "solapa vacía + una sola solapa" de la tabla aplica a menos bases de las que
+parece — verificar contra `MAPEO` antes de asumir que una base es de solapa única.

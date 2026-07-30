@@ -57,8 +57,19 @@ Las **6 hojas de config** (+ `PERIODOS`):
 - **INFORMES** (una fila por plantilla/informe): `informe_id | nombre | plantilla_id |
   periodicidad | familias | activo | notas`.
 - **MARCADORES** (un token por fila): `marcador | familia | informe_id | base_id |
-  campo_logico | periodo_ref | calculo | formato | notas`.
-- **MAPEO** (campo lógico → columna, por base): `base_id | campo_logico | hoja | columna | notas`.
+  solapa | campo_logico | periodo_ref | operacion | valor_fijo | formato | notas`
+  (DOC-2: `calculo`→`operacion`, se suman `solapa` y `valor_fijo` — `operacion=TEXTO`
+  usa `valor_fijo` en vez de calcular).
+- **MAPEO** (campo lógico → columna, por base y solapa): `base_id | solapa | campo_logico |
+  hoja | columna | notas` (Paso 2.3.2: `solapa` entra en la clave junto a `base_id` +
+  `campo_logico` — una base con varias solapas, como `digital`, necesita las tres para no
+  pisarse en silencio).
+
+**Resolución de `solapa` en `MARCADORES` (DOC-2, detalle en `docs/TOKENS.md` §4):** si
+`solapa` viene vacía y la base tiene una sola solapa en `MAPEO`, se infiere (y la traza lo
+dice); si tiene más de una, error `«FALTA:token@sin_solapa»` en vez de adivinar. `rdv` ya
+tiene dos solapas mapeadas (`RVD JM-CM - ES` y `RDV_otros_ministros`), así que el caso de
+inferencia aplica a menos bases de las que parece.
 - **CAMPANAS** (campañas seleccionables): `campana_id | nombre | informe_id | base_id |
   tipo | desde | hasta | mostrar | orden`. `tipo` acepta (Paso 2.2): `campana`,
   `uno_a_uno`, `tematico`, `primera_persona`, `ministros`, `proveedor`.
