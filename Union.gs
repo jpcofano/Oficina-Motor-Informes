@@ -169,3 +169,205 @@ function unirDigitalPorCuenta(ventana) {
 
   return { ok: true, porCuenta: porCuenta, diagnostico: diagnostico };
 }
+
+/**
+ * Parte B — anclarEncuentros(ventana). Implementa `docs/DISENO_match_temario.md`
+ * §5 bis: la hoja ancla es `RVD JM-CM - ES`, se filtra `STATUS REUNIÓN =
+ * Realizada`, y la columna `FECHA` de RDV le gana a la fecha del nombre de la
+ * campaña digital — el nombre de campaña se usa SOLO para llegar al
+ * `Id cuentas`; la similitud se puntúa contra `EVENTO` + `Barrio` de RDV.
+ *
+ * Precondición explícita (docs/Prompts/Paso-2.4.md Parte B punto 1): requiere
+ * `rdv/RVD JM-CM - ES/fecha_periodo` cargado en MAPEO y R-01 verificado
+ * (docs/REGLAS_NEGOCIO.md) — agrupar por (Figura, fecha_periodo) y contar
+ * grupos con más de una fila tiene que dar cero. Si no, este paso no corre.
+ */
+var SOLAPA_ANCLA_RDV_ = 'RVD JM-CM - ES';
+var VALOR_STATUS_REALIZADA_ = 'Realizada';
+var HOJA_COMUNAS_RDV_ = 'Comunas';
+
+// Umbral de confianza (docs/DISENO_match_temario.md §6.4: banda 0,60–0,85 es
+// el piso para asumir un link sin marcarlo para revisión humana). Por debajo,
+// mejor un huérfano visible en `bajaConfianza` que un número pegado a la
+// campaña equivocada (Parte B punto 5 del prompt).
+var UMBRAL_CONFIANZA_ANCLAJE_ = 0.6;
+
+function verificarPrecondicionAnclaje_() {
+  var campoFecha = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'fecha_periodo');
+  if (!campoFecha.ok) {
+    return {
+      ok: false,
+      motivo: 'Precondición no cumplida: falta MAPEO rdv/' + SOLAPA_ANCLA_RDV_ + '/fecha_periodo — ' +
+        'sin esa columna no se puede verificar R-01. anclarEncuentros() no corre.'
+    };
+  }
+
+  var campoFigura = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'figura');
+  if (!campoFigura.ok) {
+    return { ok: false, motivo: 'Precondición no cumplida: falta MAPEO rdv/' + SOLAPA_ANCLA_RDV_ + '/figura.' };
+  }
+
+  var abierto = abrirHoja('rdv', SOLAPA_ANCLA_RDV_);
+  if (!abierto.ok) return { ok: false, motivo: abierto.motivo };
+
+  var filaEncabezado = Number(abierto.base.fila_encabezado) || 1;
+  var idxFigura = columnaLetraAIndice_(campoFigura.columna);
+  var idxFecha = columnaLetraAIndice_(campoFecha.columna);
+  var datos = abierto.hoja.getDataRange().getValues().slice(filaEncabezado);
+
+  var conteoPorClave = {};
+  datos.forEach(function (fila) {
+    var figura = fila[idxFigura];
+    var fecha = fila[idxFecha];
+    if (!figura || !fecha) return;
+    var claveFecha = (fecha instanceof Date) ? fecha.getTime() : String(fecha).trim();
+    var clave = String(figura).trim() + '||' + claveFecha;
+    conteoPorClave[clave] = (conteoPorClave[clave] || 0) + 1;
+  });
+
+  var gruposConDuplicados = Object.keys(conteoPorClave).filter(function (k) { return conteoPorClave[k] > 1; }).length;
+  if (gruposConDuplicados > 0) {
+    return {
+      ok: false,
+      motivo: 'R-01 no se cumple: ' + gruposConDuplicados + ' grupo(s) con más de un encuentro por ' +
+        '(Figura, fecha) en rdv/' + SOLAPA_ANCLA_RDV_ + '. anclarEncuentros() no corre hasta resolverlo ' +
+        '(ver R-01 en docs/REGLAS_NEGOCIO.md).'
+    };
+  }
+
+  return { ok: true };
+}
+
+function anioDefectoDesdeVentana_(ventana) {
+  return (ventana && ventana.desde) ? ventana.desde.getFullYear() : new Date().getFullYear();
+}
+
+function tokenizarTexto_(texto) {
+  return normalizar_(texto).split(/[^a-z0-9]+/).filter(function (t) { return t.length > 2; });
+}
+
+function solapamientoTokens_(a, b) {
+  var tokensA = tokenizarTexto_(a);
+  var tokensB = tokenizarTexto_(b);
+  if (!tokensA.length || !tokensB.length) return 0;
+
+  var setB = {};
+  tokensB.forEach(function (t) { setB[t] = true; });
+  var comunes = tokensA.filter(function (t) { return setB[t]; }).length;
+  return comunes / Math.max(tokensA.length, tokensB.length);
+}
+
+/**
+ * Score de similitud entre una cuenta digital (candidato, ya parseado con
+ * `parsearNombreCampana_`) y un encuentro de RDV (`evento` + `barrio`).
+ * Reusa los parsers de Parseo.gs (barrio/comuna/eje/tipo) — no reescribe
+ * parseo de fecha ni de tipo (docs/Prompts/Paso-2.4.md, namespace §9).
+ *
+ * Señales, igual criterio que docs/DISENO_match_temario.md §6.3:
+ *   - barrio/comuna/eje del nombre de campaña == el del encuentro -> señal alta
+ *     (es lo que salva los casos de fecha cruzada del nombre, §4.1);
+ *   - tipo de encuentro compatible -> señal media;
+ *   - solapamiento de tokens del texto completo -> desempate residual.
+ */
+function scoreMatchDigitalRdv_(candidato, evento, barrio) {
+  var parseado = candidato.parseado;
+  var barrioEncuentroNorm = normalizar_(barrio);
+  var comunaEncuentro = parsearComuna_(barrio) || parsearComuna_(evento);
+  var ejeEncuentro = parsearEje_(evento);
+
+  var score = 0;
+
+  if (parseado.barrio && barrioEncuentroNorm && normalizar_(parseado.barrio) === barrioEncuentroNorm) {
+    score += 0.5;
+  } else if (parseado.comuna && comunaEncuentro && parseado.comuna === comunaEncuentro) {
+    score += 0.5;
+  } else if (parseado.eje && ejeEncuentro && parseado.eje === ejeEncuentro) {
+    score += 0.4;
+  }
+
+  var tipoEncuentro = parsearTipoEncuentro_(evento);
+  if (parseado.tipo && tipoEncuentro && parseado.tipo === tipoEncuentro) {
+    score += 0.2;
+  }
+
+  score += 0.3 * solapamientoTokens_(candidato.nombreCampana, (evento || '') + ' ' + (barrio || ''));
+
+  return Math.min(score, 1);
+}
+
+function anclarEncuentros(ventana) {
+  var precondicion = verificarPrecondicionAnclaje_();
+  if (!precondicion.ok) return { ok: false, motivo: precondicion.motivo };
+
+  var rdvLeido = leerFuente('rdv', ventana);
+  if (!rdvLeido.ok) return { ok: false, motivo: rdvLeido.motivo };
+
+  var campoEvento = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'evento');
+  var campoBarrio = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'barrio');
+  var campoStatus = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'status');
+  var campoFecha = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'fecha_periodo');
+  if (!campoEvento.ok || !campoBarrio.ok || !campoStatus.ok || !campoFecha.ok) {
+    return {
+      ok: false,
+      motivo: 'Falta MAPEO de evento/barrio/status/fecha_periodo para rdv/' + SOLAPA_ANCLA_RDV_
+    };
+  }
+
+  var realizadas = rdvLeido.filas.filter(function (fila) {
+    var status = valorPorColumna_(fila, 'rdv', SOLAPA_ANCLA_RDV_, campoStatus.columna);
+    return String(status || '').trim() === VALOR_STATUS_REALIZADA_;
+  });
+
+  var digitalUnido = unirDigitalPorCuenta(ventana);
+  if (!digitalUnido.ok) return { ok: false, motivo: digitalUnido.motivo };
+
+  var catalogo = catalogoBarriosDesdeBase_('rdv', HOJA_COMUNAS_RDV_);
+  var anioDefecto = anioDefectoDesdeVentana_(ventana);
+
+  var candidatos = Object.keys(digitalUnido.porCuenta).map(function (idCuenta) {
+    var registro = digitalUnido.porCuenta[idCuenta];
+    var nombreCampana = registro.sd_campana_digital || registro.sd_campana_cuentas || '';
+    return {
+      idCuenta: idCuenta,
+      registro: registro,
+      nombreCampana: nombreCampana,
+      parseado: parsearNombreCampana_(nombreCampana, { catalogoBarrios: catalogo.barrios, anioDefecto: anioDefecto })
+    };
+  });
+
+  var encuentros = [];
+  var sinLink = [];
+  var bajaConfianza = [];
+
+  realizadas.forEach(function (fila) {
+    var evento = valorPorColumna_(fila, 'rdv', SOLAPA_ANCLA_RDV_, campoEvento.columna);
+    var barrio = valorPorColumna_(fila, 'rdv', SOLAPA_ANCLA_RDV_, campoBarrio.columna);
+    // La fecha del encuentro sale de RDV, nunca del nombre de campaña (§5 bis).
+    var fecha = valorPorColumna_(fila, 'rdv', SOLAPA_ANCLA_RDV_, campoFecha.columna);
+
+    var ranking = candidatos
+      .map(function (c) { return { candidato: c, score: scoreMatchDigitalRdv_(c, evento, barrio) }; })
+      .sort(function (a, b) { return b.score - a.score; });
+
+    var mejor = ranking[0];
+    var item = {
+      fecha: fecha,
+      barrio: barrio,
+      evento: evento,
+      idCuenta: mejor ? mejor.candidato.idCuenta : '',
+      score: mejor ? mejor.score : 0,
+      registroDigital: mejor ? mejor.candidato.registro : null,
+      candidatoNombre: mejor ? mejor.candidato.nombreCampana : ''
+    };
+
+    if (!mejor || mejor.score <= 0) {
+      sinLink.push(item);
+    } else if (mejor.score < UMBRAL_CONFIANZA_ANCLAJE_) {
+      bajaConfianza.push(item);
+    } else {
+      encuentros.push(item);
+    }
+  });
+
+  return { ok: true, encuentros: encuentros, sinLink: sinLink, bajaConfianza: bajaConfianza };
+}
