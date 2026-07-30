@@ -20,6 +20,10 @@ function onOpen() {
         .addItem('Probar lectura por ventana', 'menuProbarLectura_')
         .addItem('Cargar ejemplo', 'menuCargarEjemplo_')
     )
+    .addSubMenu(
+      ui.createMenu('Mantenimiento')
+        .addItem('Armonizar tokens de plantillas', 'menuArmonizarPlantillas_')
+    )
     .addToUi();
 }
 
