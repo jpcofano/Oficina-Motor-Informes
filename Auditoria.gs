@@ -1,0 +1,250 @@
+/**
+ * Auditoria.gs — AUD-1: auditoría de solapas, `sheet_id` y origen de los
+ * nombres. Ver docs/Prompts/AUD-1_auditoria_solapas.md.
+ *
+ * SOLO LECTURA: no corrige nada, no toca MAPEO, no toca BASES, no modifica
+ * Union.gs. `DIAG_BASES` (Fechas.gs, DOC-3) devolvió, para las cuatro bases,
+ * solapas que faltan justo donde el motor las tiene cableadas (Union.gs,
+ * docs/FECHAS_seleccion.md) — antes de corregir nada hace falta saber de qué
+ * archivo salió cada nombre.
+ *
+ * Expone:
+ *   auditarSolapas() -> vuelca el inventario en la hoja AUD_SOLAPAS (la crea
+ *     si no existe, la limpia y reescribe en cada corrida) + devuelve el
+ *     detalle en el objeto de retorno.
+ * Menú: "Auditoría de solapas (AUD-1)".
+ */
+
+// Tarea 4 — las 8 filas "Elegidas" de docs/FECHAS_seleccion.md, copiadas acá
+// tal cual para poder chequearlas contra el inventario en vivo sin abrir el
+// doc a mano. Si ese doc se actualiza, actualizar esta lista también.
+var FECHAS_SELECCION_CONGELADAS_ = [
+  { base_id: 'rdv', solapa: 'RVD JM-CM - ES' },
+  { base_id: 'rdv', solapa: 'RDV_otros_ministros' },
+  { base_id: 'digital', solapa: 'Digital' },
+  { base_id: 'digital', solapa: 'Directa SMS' },
+  { base_id: 'digital', solapa: 'Directa Mail' },
+  { base_id: 'digital', solapa: 'Directa IVR' },
+  { base_id: 'digital', solapa: 'Seguimiento digital' },
+  { base_id: 'looker', solapa: 'resumen_metricas_dinamico' }
+];
+
+// Tarea 5 — solapas puntuales a describir (encabezado fila 1 + conteo de
+// filas), sin mapear nada.
+var SOLAPAS_A_DESCRIBIR_AUD1_ = [
+  { base_id: 'digital', solapa: 'RDV JM 2 VECES' },
+  { base_id: 'looker', solapa: 'MAIL' },
+  { base_id: 'looker', solapa: 'IVR' },
+  { base_id: 'looker', solapa: 'SMS' },
+  { base_id: 'looker', solapa: 'CC' },
+  { base_id: 'looker', solapa: 'DIGITAL' },
+  { base_id: 'looker', solapa: 'ALCANCE' },
+  { base_id: 'looker', solapa: 'Desglose Alcance' },
+  { base_id: 'looker', solapa: 'Audiencias' },
+  { base_id: 'm2', solapa: 'Cuentas M2' },
+  { base_id: 'm2', solapa: 'Cuentas' }
+];
+
+/**
+ * Tarea 1 + Tarea 2: por cada base activa, abre por el `sheet_id` que tiene
+ * la hoja BASES **en vivo** (no el del seed), compara ese `sheet_id` contra
+ * `SEED_BASES_` (Instalar.gs), lee el título real del archivo en Drive
+ * (`getName()`) y lista TODAS sus solapas.
+ */
+function auditarSolapas() {
+  var bases = leerBases();
+  var seedPorBase = {};
+  SEED_BASES_.forEach(function (s) { seedPorBase[s.base_id] = s; });
+
+  var inventario = [];
+  var basesSinAcceso = [];
+  var solapasVivas = {}; // 'base_id||solapa' -> true, para la Tarea 4
+
+  Object.keys(bases).forEach(function (baseId) {
+    var base = bases[baseId];
+    if (!base.activo || !base.sheet_id) return;
+
+    var seed = seedPorBase[baseId];
+    var seedSheetId = seed ? seed.sheet_id : '';
+    var coincideSeed = !seed
+      ? '(sin fila en SEED_BASES_)'
+      : (seedSheetId === base.sheet_id ? 'sí' : 'NO — difiere de SEED_BASES_');
+
+    var libro;
+    try {
+      libro = SpreadsheetApp.openById(base.sheet_id);
+    } catch (e) {
+      basesSinAcceso.push(baseId + ': ' + e.message);
+      return;
+    }
+
+    var titulo = libro.getName();
+    var nombresSolapas = libro.getSheets().map(function (h) { return h.getName(); });
+    var hojaDefaultExiste = nombresSolapas.indexOf(base.hoja_default) !== -1;
+
+    nombresSolapas.forEach(function (nombre) {
+      solapasVivas[baseId + '||' + nombre] = true;
+      inventario.push({
+        base_id: baseId,
+        sheet_id_vivo: base.sheet_id,
+        sheet_id_coincide_seed: coincideSeed,
+        titulo_drive: titulo,
+        solapa: nombre,
+        es_hoja_default: nombre === base.hoja_default ? 'sí' : ''
+      });
+    });
+
+    if (!hojaDefaultExiste) {
+      inventario.push({
+        base_id: baseId,
+        sheet_id_vivo: base.sheet_id,
+        sheet_id_coincide_seed: coincideSeed,
+        titulo_drive: titulo,
+        solapa: '⚠ hoja_default "' + base.hoja_default + '" NO existe en este archivo',
+        es_hoja_default: ''
+      });
+    }
+  });
+
+  // Tarea 4 — ¿la fila congelada existe en el inventario en vivo? Si no,
+  // buscar un candidato parecido dentro de la misma base (informativo, no se
+  // promueve ni se corrige nada acá).
+  var filasFechas = FECHAS_SELECCION_CONGELADAS_.map(function (f) {
+    var existe = !!solapasVivas[f.base_id + '||' + f.solapa];
+    var candidato = '';
+    if (!existe) {
+      var buscado = normalizar_(f.solapa);
+      var enMismaBase = inventario
+        .filter(function (i) { return i.base_id === f.base_id; })
+        .map(function (i) { return i.solapa; });
+      candidato = enMismaBase.filter(function (nombre) {
+        var n = normalizar_(nombre);
+        return n === buscado || n.indexOf(buscado) !== -1 || buscado.indexOf(n) !== -1;
+      }).join(' | ');
+    }
+    return { base_id: f.base_id, solapa_congelada: f.solapa, existe: existe ? 'sí' : 'NO', candidato_parecido: candidato };
+  });
+
+  // Tarea 5 — describir encabezado (fila 1) + conteo de filas de solapas
+  // puntuales que aparecieron en DIAG_BASES sin estar en el radar del motor.
+  var filasHallazgos = SOLAPAS_A_DESCRIBIR_AUD1_.map(function (h) {
+    var base = bases[h.base_id];
+    if (!base || !base.sheet_id) return { base_id: h.base_id, solapa: h.solapa, estado: 'base sin sheet_id' };
+
+    var libro;
+    try {
+      libro = SpreadsheetApp.openById(base.sheet_id);
+    } catch (e) {
+      return { base_id: h.base_id, solapa: h.solapa, estado: 'sin acceso: ' + e.message };
+    }
+
+    var hoja = libro.getSheetByName(h.solapa);
+    if (!hoja) return { base_id: h.base_id, solapa: h.solapa, estado: 'no existe' };
+
+    var ultimaCol = hoja.getLastColumn();
+    var headers = ultimaCol ? hoja.getRange(1, 1, 1, ultimaCol).getValues()[0] : [];
+    return {
+      base_id: h.base_id,
+      solapa: h.solapa,
+      estado: 'existe',
+      filas_de_datos: Math.max(hoja.getLastRow() - 1, 0),
+      encabezado_fila1: headers.join(' | ')
+    };
+  });
+
+  // Tarea 6 — reusa el tipado que ya hace diagnosticarBases() (Fechas.gs,
+  // DOC-3 Parte B); no se reimplementa la clasificación de tipos acá.
+  var tiposExistentes = (typeof diagnosticarBases === 'function') ? diagnosticarBases() : null;
+
+  escribirAuditoriaSolapas_(
+    obtenerOCrearHojaAuditoriaSolapas_(SpreadsheetApp.getActiveSpreadsheet()),
+    inventario, filasFechas, filasHallazgos
+  );
+
+  return {
+    ok: true,
+    inventario: inventario,
+    filasFechas: filasFechas,
+    filasHallazgos: filasHallazgos,
+    tiposExistentes: tiposExistentes,
+    basesSinAcceso: basesSinAcceso
+  };
+}
+
+function obtenerOCrearHojaAuditoriaSolapas_(ss) {
+  var hoja = ss.getSheetByName('AUD_SOLAPAS');
+  if (!hoja) hoja = ss.insertSheet('AUD_SOLAPAS');
+  return hoja;
+}
+
+var HEADERS_AUD_INVENTARIO_ = ['base_id', 'sheet_id_vivo', 'sheet_id_coincide_seed', 'titulo_drive', 'solapa', 'es_hoja_default'];
+var HEADERS_AUD_FECHAS_ = ['base_id', 'solapa_congelada', 'existe', 'candidato_parecido'];
+var HEADERS_AUD_HALLAZGOS_ = ['base_id', 'solapa', 'estado', 'filas_de_datos', 'encabezado_fila1'];
+
+function escribirAuditoriaSolapas_(hoja, inventario, filasFechas, filasHallazgos) {
+  hoja.clear();
+  var fila = 1;
+
+  fila = escribirBloqueAud_(hoja, fila, 'Tarea 1/2 — inventario de solapas por sheet_id vivo (vs SEED_BASES_)', HEADERS_AUD_INVENTARIO_, inventario);
+  fila = escribirBloqueAud_(hoja, fila, 'Tarea 4 — FECHAS_seleccion.md contra el inventario en vivo', HEADERS_AUD_FECHAS_, filasFechas);
+  escribirBloqueAud_(hoja, fila, 'Tarea 5 — solapas puntuales a describir', HEADERS_AUD_HALLAZGOS_, filasHallazgos);
+
+  hoja.setFrozenRows(1);
+}
+
+function escribirBloqueAud_(hoja, filaInicio, titulo, headers, filas) {
+  hoja.getRange(filaInicio, 1).setValue(titulo);
+  filaInicio++;
+  hoja.getRange(filaInicio, 1, 1, headers.length).setValues([headers]);
+  filaInicio++;
+  if (filas.length) {
+    var valores = filas.map(function (f) {
+      return headers.map(function (h) { return f[h] !== undefined ? f[h] : ''; });
+    });
+    hoja.getRange(filaInicio, 1, valores.length, headers.length).setValues(valores);
+    filaInicio += valores.length;
+  }
+  return filaInicio + 1; // fila en blanco antes del próximo bloque
+}
+
+function menuAuditarSolapas_() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = auditarSolapas();
+
+  var lineas = [
+    'Solapas relevadas: ' + resultado.inventario.length,
+    'Bases sin acceso: ' + resultado.basesSinAcceso.length
+  ];
+  if (resultado.basesSinAcceso.length) {
+    lineas.push('');
+    lineas = lineas.concat(resultado.basesSinAcceso.map(function (m) { return '⚠ ' + m; }));
+  }
+
+  lineas.push('', 'sheet_id vivo (BASES) vs SEED_BASES_:');
+  var difierenSeed = {};
+  resultado.inventario.forEach(function (f) {
+    if (f.sheet_id_coincide_seed !== 'sí') difierenSeed[f.base_id] = f.sheet_id_coincide_seed;
+  });
+  if (!Object.keys(difierenSeed).length) {
+    lineas.push('  (ninguna base difiere — BASES en vivo coincide con SEED_BASES_)');
+  } else {
+    Object.keys(difierenSeed).forEach(function (baseId) {
+      lineas.push('  ⚠ ' + baseId + ' — ' + difierenSeed[baseId]);
+    });
+  }
+
+  lineas.push('', 'FECHAS_seleccion.md — filas que NO existen en el archivo vivo:');
+  var faltantes = resultado.filasFechas.filter(function (f) { return f.existe === 'NO'; });
+  if (!faltantes.length) {
+    lineas.push('  (ninguna — las 8 filas congeladas existen tal cual)');
+  } else {
+    faltantes.forEach(function (f) {
+      lineas.push('  ⚠ ' + f.base_id + '/' + f.solapa_congelada +
+        (f.candidato_parecido ? ' → candidato: ' + f.candidato_parecido : ' (sin candidato parecido)'));
+    });
+  }
+
+  lineas.push('', 'Detalle completo (título de Drive por base, hallazgos de la Tarea 5) en la hoja AUD_SOLAPAS.');
+
+  ui.alert('Auditoría de solapas (AUD-1)', lineas.join('\n'), ui.ButtonSet.OK);
+}
