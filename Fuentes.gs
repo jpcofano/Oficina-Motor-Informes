@@ -4,29 +4,30 @@
  *   abrirBase(baseId)             -> { ok, base, libro } o { ok:false, motivo }
  *   abrirHoja(baseId, nombreHoja?) -> { ok, base, libro, hoja } o { ok:false, motivo }
  *   probarConexionBases()         -> reporte de estado por base (ítem de menú)
- *   resolverCampo(baseId, campoLogico) -> { ok, hoja, columna } o { ok:false, motivo }
  *   resolverVentana({informe_id, periodo_ref, campana}) -> { ok, desde, hasta, origen }
  *     Prioridad: campaña > periodo_ref (PERIODOS) > período principal (CONFIG).
  *   leerFuente(baseId, ventana, nombreHojaOverride?) -> diagnóstico + filas de esa
  *     ventana (ver docs/Prompts/VERIFICACION_Paso-2.md §1 para el contrato exacto).
  *     Si `modo_periodo=snapshot` (BASES), ignora la ventana y devuelve todas las filas.
  *   probarLecturaPeriodo() -> corre leerFuente sobre las bases activas, para diagnóstico.
+ * La resolución de columnas de MAPEO (fecha, clave) pasa por `buscarMapeo`
+ * (Config.gs), no por una función propia de este módulo (Paso 2.3.2 — antes
+ * había una `resolverCampo` acá que duplicaba esa lógica).
  * abrirBase/abrirHoja cachean la base ya abierta por corrida (no reabren).
  * NADIE hace cuentas de fechas fuera de este módulo y Config.gs.
  * abrirBase/abrirHoja/probarConexionBases se completan en: Paso 1.
- * resolverCampo/resolverVentana/leerFuente/probarLecturaPeriodo se completan en: Paso 2.
+ * resolverVentana/leerFuente/probarLecturaPeriodo se completan en: Paso 2.
  *
- * Convención de columna de fecha (Paso 2.1): la columna que filtra la ventana
- * de una base es la fila de MAPEO con `campo_logico = 'fecha'` para ese
- * `base_id` — nunca una constante ni una columna nueva en BASES. Si la base
- * tiene más de una fecha candidata (p. ej. Looker: `fecha_inicio`/`fecha_fin`),
- * igual se agrega una fila `fecha` apuntando a la columna elegida, con la
- * justificación en `notas` de esa fila — el registro ya tiene dónde decirlo,
- * duplicarlo en BASES es invitar a que se desincronice. Si `modo_periodo=
- * snapshot`, no se busca columna de fecha (no aplica ventana, no hay
- * advertencia). Si falta la fila en MAPEO, el motivo es siempre exactamente
- * `falta MAPEO: <base_id>/fecha`, distinto del caso "la fila existe pero la
- * columna está vacía".
+ * Convención de columna de fecha (Paso 2.3.1): la columna que filtra la ventana
+ * de una base es la fila de MAPEO con `campo_logico = 'fecha_periodo'` para ese
+ * `base_id` — nunca una constante ni una columna nueva en BASES. Esa fila la
+ * puebla `promoverFechasElegidas()` (Fechas.gs) a partir de una elección humana
+ * en `DIAG_FECHAS`, no una adivinanza del código: detección automática,
+ * elección humana. Si `modo_periodo=snapshot`, no se busca columna de fecha
+ * (no aplica ventana, no hay advertencia). Si falta la fila en MAPEO,
+ * `leerFuente` nunca devuelve la base sin filtrar: falla con
+ * `«FALTA:fecha_periodo@{base_id}/{solapa}»` — ese es el modo de falla caro
+ * que hay que evitar, no un silencio.
  *
  * Convención de columna clave (Paso 2.3): igual mecánica que la de fecha, pero
  * con `campo_logico = 'clave'` (o `'campana'` como fallback si no hay `clave`
@@ -109,31 +110,18 @@ function probarConexionBases() {
  * Ver docs/Prompts/Paso-2.md y docs/Prompts/VERIFICACION_Paso-2.md.
  */
 
-function resolverCampo(baseId, campoLogico) {
-  var mapa = leerMapeo();
-  var porBase = mapa[baseId];
-  var fila = porBase && porBase[campoLogico];
-
-  if (!fila) {
-    return { ok: false, motivo: 'falta MAPEO: ' + baseId + '/' + campoLogico };
-  }
-  if (!fila.columna) {
-    return { ok: false, motivo: 'MAPEO "' + baseId + '/' + campoLogico + '" existe pero no tiene columna cargada' };
-  }
-
-  return { ok: true, hoja: fila.hoja, columna: fila.columna };
-}
-
 /**
  * Columna clave de una base para descartar filas basura del conteo (Paso
- * 2.3): `campo_logico='clave'` en MAPEO si existe; si no, `campo_logico=
- * 'campana'` como fallback; si no hay ninguna, `{ ok:false }` — el llamador
- * cae al criterio de fila 100% vacía.
+ * 2.3): `campo_logico='clave'` en MAPEO si existe para esa solapa; si no,
+ * `campo_logico='campana'` como fallback; si no hay ninguna, `{ ok:false }` —
+ * el llamador cae al criterio de fila 100% vacía. `solapa` es obligatoria
+ * (Paso 2.3.2, `buscarMapeo`): la resuelve el llamador, que ya sabe qué hoja
+ * está leyendo.
  */
-function resolverClave_(baseId) {
-  var clave = resolverCampo(baseId, 'clave');
+function resolverClave_(baseId, solapa) {
+  var clave = buscarMapeo(baseId, solapa, 'clave');
   if (clave.ok) return clave;
-  return resolverCampo(baseId, 'campana');
+  return buscarMapeo(baseId, solapa, 'campana');
 }
 
 /**
@@ -283,19 +271,25 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
   // celda no está vacía — más preciso que "toda la fila vacía" (fórmulas que
   // devuelven '', colas de la hoja). Bases sin clave definida siguen con el
   // criterio anterior (fila 100% vacía) para no romper lo que ya andaba.
-  var filasDatos, filasVaciasDescartadas, filasDescartadasSinClave;
-  var clave = resolverClave_(baseId);
+  // Se guarda el índice original (dentro de `filasCrudas`) de cada fila que
+  // pasa el filtro, para poder ir a buscar su valor mostrado en pantalla más
+  // abajo (`filasCrudasDisplay`).
+  var filasDatos, filasVaciasDescartadas, filasDescartadasSinClave, indicesDatos;
+  var clave = resolverClave_(baseId, hoja.getName());
 
   if (clave.ok) {
     var idxClave = columnaLetraAIndice_(clave.columna);
-    filasDatos = filasCrudas.filter(function (fila) { return !celdaVacia_(fila[idxClave]); });
+    indicesDatos = [];
+    filasCrudas.forEach(function (fila, i) { if (!celdaVacia_(fila[idxClave])) indicesDatos.push(i); });
     filasVaciasDescartadas = 0;
-    filasDescartadasSinClave = filasCrudas.length - filasDatos.length;
+    filasDescartadasSinClave = filasCrudas.length - indicesDatos.length;
   } else {
-    filasDatos = filasCrudas.filter(function (fila) { return !filaVacia_(fila); });
-    filasVaciasDescartadas = filasCrudas.length - filasDatos.length;
+    indicesDatos = [];
+    filasCrudas.forEach(function (fila, i) { if (!filaVacia_(fila)) indicesDatos.push(i); });
+    filasVaciasDescartadas = filasCrudas.length - indicesDatos.length;
     filasDescartadasSinClave = 0;
   }
+  filasDatos = indicesDatos.map(function (i) { return filasCrudas[i]; });
 
   var resultado = {
     ok: true,
@@ -320,20 +314,38 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
     return resultado;
   }
 
-  var campoFecha = resolverCampo(baseId, 'fecha');
+  var campoFecha = buscarMapeo(baseId, hoja.getName(), 'fecha_periodo');
   if (!campoFecha.ok) {
-    return { ok: false, base_id: baseId, motivo: campoFecha.motivo };
+    return { ok: false, base_id: baseId, motivo: '«FALTA:fecha_periodo@' + baseId + '/' + hoja.getName() + '»' };
   }
 
   var idxFecha = columnaLetraAIndice_(campoFecha.columna);
   resultado.columna_fecha = headers[idxFecha] || campoFecha.columna;
   resultado.ventana_aplicada = { desde: ventana.desde, hasta: ventana.hasta };
 
-  var desdeMs = new Date(ventana.desde.getFullYear(), ventana.desde.getMonth(), ventana.desde.getDate(), 0, 0, 0, 0).getTime();
-  var hastaMs = new Date(ventana.hasta.getFullYear(), ventana.hasta.getMonth(), ventana.hasta.getDate(), 23, 59, 59, 999).getTime();
+  // Fallback a texto renderizado (Paso 2.3, hallazgo `looker`): una columna
+  // de fecha armada con `QUERY()` puede devolver "" en `getValues()` para
+  // celdas que sí muestran una fecha en pantalla — es la celda derramada de
+  // la fórmula, no una celda propia. `getDisplayValues()` lee lo que se ve,
+  // no lo que `getValues()` cree que hay. Solo se usa cuando el valor crudo
+  // vino vacío, así que no cambia nada para bases sin ese problema.
+  var filasCrudasDisplay = hoja.getDataRange().getDisplayValues().slice(filaEncabezado);
 
-  filasDatos.forEach(function (fila) {
+  // Comparación por string yyyy-MM-dd (Paso 2.3.1), no por epoch ms: el
+  // runtime V8 de Apps Script construye `Date` en UTC aunque el spreadsheet
+  // tenga otro huso horario, así que comparar timestamps crudos puede correr
+  // un día en los bordes. Formatear con el huso del spreadsheet y comparar
+  // strings evita esa ambigüedad. Bordes inclusivos de los dos lados.
+  var ssTz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  var desdeStr = Utilities.formatDate(ventana.desde, ssTz, 'yyyy-MM-dd');
+  var hastaStr = Utilities.formatDate(ventana.hasta, ssTz, 'yyyy-MM-dd');
+
+  filasDatos.forEach(function (fila, j) {
     var crudo = fila[idxFecha];
+    if (celdaVacia_(crudo)) {
+      var mostrado = filasCrudasDisplay[indicesDatos[j]][idxFecha];
+      if (mostrado && mostrado.trim() !== '') crudo = mostrado;
+    }
     if (crudo === '' || crudo === null || crudo === undefined) {
       resultado.filas_sin_fecha++;
       return;
@@ -345,8 +357,8 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
       return;
     }
 
-    var ms = fecha.getTime();
-    if (ms >= desdeMs && ms <= hastaMs) {
+    var fechaStr = Utilities.formatDate(fecha, ssTz, 'yyyy-MM-dd');
+    if (fechaStr >= desdeStr && fechaStr <= hastaStr) {
       resultado.filas_en_ventana++;
       resultado.filas.push(filaAObjeto(fila));
     }
@@ -381,6 +393,45 @@ function probarLecturaPeriodo() {
 
 function formatearFecha_(fecha) {
   return Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+}
+
+/**
+ * Diagnóstico manual (no lo llama el menú): para cuando `probarLecturaPeriodo`
+ * cuenta filas "sin fecha" que a simple vista sí tienen fecha en la hoja —
+ * caso real (Paso 2.3): `looker`, cuya hoja `resumen_metricas` se arma con
+ * `QUERY()` y `getValues()` devuelve "" en filas que sí muestran fecha en
+ * pantalla (celda derramada de la fórmula). Loguea, por fila, el valor crudo
+ * de `getValues()` junto con el valor mostrado de `getDisplayValues()`: si
+ * difieren (crudo vacío, mostrado con texto), es este caso — `leerFuente` ya
+ * tiene el fallback a `getDisplayValues()` para eso. Ej.: `diagnosticoColumnaFecha_('looker')`.
+ */
+function diagnosticoColumnaFecha_(baseId, nombreHojaOverride) {
+  var abierto = abrirHoja(baseId, nombreHojaOverride);
+  if (!abierto.ok) { Logger.log('No se pudo abrir: ' + abierto.motivo); return; }
+
+  var campoFecha = buscarMapeo(baseId, abierto.hoja.getName(), 'fecha_periodo');
+  if (!campoFecha.ok) { Logger.log('No se pudo resolver la columna fecha_periodo: ' + campoFecha.motivo); return; }
+
+  var filaEncabezado = Number(abierto.base.fila_encabezado) || 1;
+  var idxFecha = columnaLetraAIndice_(campoFecha.columna);
+  var datos = abierto.hoja.getDataRange().getValues();
+  var datosDisplay = abierto.hoja.getDataRange().getDisplayValues();
+  var headers = datos[filaEncabezado - 1];
+
+  Logger.log('Hoja: ' + abierto.hoja.getName() + ' · fila_encabezado: ' + filaEncabezado +
+    ' · columna fecha: ' + campoFecha.columna + ' (idx ' + idxFecha + ', header "' + headers[idxFecha] + '")');
+
+  for (var f = filaEncabezado; f < Math.min(datos.length, filaEncabezado + 20); f++) {
+    var crudo = datos[f][idxFecha];
+    var mostrado = datosDisplay[f][idxFecha];
+    Logger.log('fila ' + (f + 1) + ': crudo(typeof=' + typeof crudo + ' esDate=' + (crudo instanceof Date) + ')=' + JSON.stringify(crudo) + ' · mostrado="' + mostrado + '"');
+  }
+}
+
+// Sin argumentos para poder correrla con el botón ▶ del editor de Apps
+// Script (que no permite pasar parámetros a mano).
+function diagnosticoLooker_() {
+  diagnosticoColumnaFecha_('looker');
 }
 
 function menuProbarLectura_() {

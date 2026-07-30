@@ -85,11 +85,14 @@ var HOJAS_CONFIG_ = {
       ['m2_envios', 'm2', 'jm', 'm2', 'envios', 'm2_mensual', 'calcEnvios', 'numero', '']
     ]
   },
+  // solapa (Paso 2.3.2): entra en la clave junto con base_id + campo_logico.
+  // Antes de esto, dos solapas de la misma base no podían mapear el mismo
+  // campo_logico sin pisarse en silencio (ver docs/Prompts/Paso-2.3.2.md).
   MAPEO: {
-    headers: ['base_id', 'campo_logico', 'hoja', 'columna', 'notas'],
+    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'notas'],
     ejemplos: [
-      ['rdv', 'inscriptos', 'RVD JM-CM - ES', 'H', ''],
-      ['digital', 'alcance', 'Digital', 'E', '']
+      ['rdv', 'RVD JM-CM - ES', 'inscriptos', 'RVD JM-CM - ES', 'H', ''],
+      ['digital', 'Digital', 'alcance', 'Digital', 'E', '']
     ]
   },
   // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
@@ -125,6 +128,9 @@ var COLUMNAS_DELTA_ = {
   BASES: [
     { nombre: 'fila_encabezado', indice: 5 },
     { nombre: 'modo_periodo', indice: 6 }
+  ],
+  MAPEO: [
+    { nombre: 'solapa', indice: 2 }
   ]
 };
 
@@ -165,12 +171,57 @@ function instalar() {
     }
   });
 
+  var hojaMapeo = ss.getSheetByName('MAPEO');
+  var backfill = hojaMapeo ? backfillSolapaMapeo_(hojaMapeo) : { rellenadas: 0, sinHoja: [] };
+
   limpiarHojaPorDefecto_(ss);
 
   var resumen =
     'Hojas creadas: ' + (creadas.length ? creadas.join(', ') : 'ninguna') +
-    '\nHojas actualizadas: ' + (actualizadas.length ? actualizadas.join(', ') : 'ninguna');
+    '\nHojas actualizadas: ' + (actualizadas.length ? actualizadas.join(', ') : 'ninguna') +
+    (backfill.rellenadas ? '\nMAPEO.solapa completada en ' + backfill.rellenadas + ' fila(s) desde MAPEO.hoja' : '') +
+    (backfill.sinHoja.length
+      ? '\n⚠️ MAPEO sin "hoja" cargada, no se pudo determinar solapa: ' + backfill.sinHoja.join(', ')
+      : '');
   SpreadsheetApp.getUi().alert('Instalación completa', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+/**
+ * Paso 2.3.2 — backfill de la columna `solapa` en MAPEO. Regla: `solapa` toma el
+ * mismo valor que `hoja` de esa fila — es el dato real de qué solapa mapea esa
+ * fila, ya cargado por el Paso 2.3 (incluidas las filas `dig_*`/`mail_*`/`sms_*`,
+ * que ya apuntaban a su solapa real, no a `hoja_default`). Nunca cae a
+ * `hoja_default`: una fila sin `hoja` cargada queda sin `solapa` y se reporta,
+ * no se adivina (ver Paso-2.3.2.md, sección A). Idempotente: no toca filas que
+ * ya tengan `solapa`.
+ */
+function backfillSolapaMapeo_(hoja) {
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxBaseId = headers.indexOf('base_id');
+  var idxSolapa = headers.indexOf('solapa');
+  var idxHoja = headers.indexOf('hoja');
+  var idxCampo = headers.indexOf('campo_logico');
+  if (idxSolapa === -1 || idxHoja === -1) return { rellenadas: 0, sinHoja: [] };
+
+  var rellenadas = 0;
+  var sinHoja = [];
+
+  for (var f = 1; f < datos.length; f++) {
+    var fila = datos[f];
+    if (!fila[idxBaseId]) continue; // fila vacía
+    if (fila[idxSolapa] !== '' && fila[idxSolapa] !== null && fila[idxSolapa] !== undefined) continue;
+
+    var valorHoja = fila[idxHoja];
+    if (!valorHoja) {
+      sinHoja.push(fila[idxBaseId] + '/' + fila[idxCampo]);
+      continue;
+    }
+    hoja.getRange(f + 1, idxSolapa + 1).setValue(valorHoja);
+    rellenadas++;
+  }
+
+  return { rellenadas: rellenadas, sinHoja: sinHoja };
 }
 
 function asegurarColumna_(hoja, nombreColumna, indiceDestino) {
@@ -336,6 +387,13 @@ var SEED_MAPEO_ = [
   { base_id: 'digital', campo_logico: 'sd_pauta_meta', hoja: 'Seguimiento digital', columna: 'V', notas: 'conteo de contenidos pauteados en Meta, no monto' }
 ];
 
+// Paso 2.3.2: `solapa` entra en la clave de MAPEO junto a `base_id` +
+// `campo_logico`. Cada fila de arriba ya declara su `hoja` real (incluidas las
+// `dig_*`/`mail_*`/`sms_*`, que ya apuntaban a su solapa real, no a
+// `hoja_default`) — `solapa` es exactamente ese mismo valor, así que se deriva
+// acá en vez de tipearlo dos veces por fila.
+SEED_MAPEO_.forEach(function (fila) { fila.solapa = fila.hoja; });
+
 var SEED_CONFIG_DEFAULTS_ = {
   informe_activo: 'jm',
   periodo_desde: '',
@@ -352,7 +410,7 @@ function seedConfiguracion() {
   var resultadoBases = hojaBases ? upsertPorClave_(hojaBases, ['base_id'], SEED_BASES_) : vacio;
 
   var hojaMapeo = ss.getSheetByName('MAPEO');
-  var resultadoMapeo = hojaMapeo ? upsertPorClave_(hojaMapeo, ['base_id', 'campo_logico'], SEED_MAPEO_) : vacio;
+  var resultadoMapeo = hojaMapeo ? upsertPorClave_(hojaMapeo, ['base_id', 'solapa', 'campo_logico'], SEED_MAPEO_) : vacio;
 
   var hojaConfig = ss.getSheetByName('CONFIG');
   var resultadoConfig = hojaConfig ? seedConfigConfig_(hojaConfig) : vacio;
