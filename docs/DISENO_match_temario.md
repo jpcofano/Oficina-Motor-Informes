@@ -290,3 +290,40 @@ pintar con un `Id cuentas` puesto a mano. El match por confianza es la capa que
 Recomendación: seguir con 1.9 y el corte vertical, y dejar esto documentado. Si se
 adelanta el match antes de tener el corte de punta a punta, se corre el riesgo de tener
 un matcher fino alimentando un motor que todavía no pinta una slide.
+
+---
+
+## 9. Addendum (Paso 2.6, 30/07/2026) — `digital / RDV JM 2 VECES` es el conjunto de control
+
+> Este doc quedó "congelado" tras la verificación de la semana 24–30/07 (§9 de
+> `PROYECTO.md`). Esta sección se agrega al final, sin tocar lo de arriba, porque el
+> relevamiento de solapas del Paso 2.6 (`docs/Prompts/Paso-2.6_registro_solapas.md`
+> Parte F) encontró una pieza que corresponde directamente a este diseño.
+
+La solapa `RDV JM 2 VECES` de la base `digital` (37 filas) tiene este encabezado:
+
+`Funcionario | Barrio | Fecha | Estado | Enviados | Entregados | Aperturas | % OR |
+Clics | % CTOR | Habitantes | Alcance manual | Alcance potencial | % Cobertura |
+Frecuencia Meta | Impresiones Totales | Impresiones Social | Impresiones Google |
+Impresiones Programm | Clics | % CTR | Base total | Base discada | Contactados |
+% Cont. | Efectivos | % Efect. | Audiencia | Llamados realizados | Llamados atendidos |
+% Atendidos | Escucharon +75% | % Escucha +75% | Marque 1`
+
+Eso es **exactamente la salida que el Paso 2.4 intenta construir**: un encuentro con
+todos sus canales al lado (RDV + digital + mail + IVR + call center). Alguien del equipo
+ya lo armó a mano, probablemente como el mismo tipo de verificación manual que dio
+origen a este documento (§0).
+
+**No se mapea** — registrada en `SOLAPAS` con `uso=referencia`, no `fuente`. Sirve para
+dos cosas, ninguna de las cuales pasa por leerla en una corrida normal:
+
+1. **Es el test del anclaje.** Correr `anclarEncuentros()` (`Union.gs`, Paso 2.4) sobre
+   esos 37 encuentros y comparar el resultado contra el link que ya hizo una persona acá.
+   Es la única validación real que existe hoy del scoring y del umbral 0,6 de §6.4 —
+   mucho mejor que mirar cuántos casos caen en `bajaConfianza` sin saber si el resto está
+   bien.
+2. **La clave del match humano es `(Funcionario, Barrio, Fecha)`, no `Id Cuentas`**: la
+   tabla no tiene columna de cuenta. El scoring de `Union.gs`/`anclarEncuentros()` (§5
+   bis, §6.3 de este doc) usa señales de entidad/similitud/fecha — vale contrastar esas
+   señales contra esta clave de tres campos antes de asumir que el diseño actual las
+   captura todas.

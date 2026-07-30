@@ -535,7 +535,11 @@ var SEED_SOLAPAS_ = [].concat(
   [filaSolapa_('digital', 'RDV', 'ignorar', '⚠ duplica la base rdv — si se lee, hay doble conteo')],
   filasSolapa_('digital', ['Buscador por periodo digital', 'Buscador por periodo directa'], 'ignorar', 'período tipeado a mano: violan el criterio de fuente cruda'),
   filasSolapa_('digital', ['Digital 2026 acumulado', 'm2 digital'], 'derivada', 'acumulados'),
-  [filaSolapa_('digital', 'RDV JM 2 VECES', 'referencia', '⭐ ver Parte F', { filas_datos: 37 })],
+  [filaSolapa_('digital', 'RDV JM 2 VECES', 'referencia',
+    'conjunto de control del anclaje: 37 encuentros con el link (Funcionario, Barrio, Fecha) ' +
+    'ya hecho a mano, misma salida que busca Union.gs/anclarEncuentros(). No mapear — usar para ' +
+    'validar el scoring/umbral 0.6. Detalle: docs/DISENO_match_temario.md §9.',
+    { filas_datos: 37 })],
   filasSolapa_('digital', ['Metricas informe', 'INFORME'], 'referencia', 'el informe manual actual'),
   filasSolapa_('digital', ['Nomalización de barrios', 'Barrio Hab', 'Limpia Fun'], 'referencia', 'catálogos de normalización — útiles para el scoring del anclaje'),
   filasSolapa_('digital', ['Cuentas', 'Filter unificado', 'EDV', 'CAMPAÑAS_DESGLOCE_DIGITAL', 'Mail per'], 'revisar', 'sin decidir'),
