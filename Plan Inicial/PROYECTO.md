@@ -159,7 +159,9 @@ no duplicar el trabajo. Otras pendientes: ECV block, columna de campaña canóni
 - Inventario de tokens y diccionario canónico: **`docs/TOKENS.md`** (fusiona los
   inventarios por slide de JM/SECCO + el diccionario de renombres — `enc_*` vs `et_*`
   resuelto, `camp_*` verificado idéntico entre plantillas). ⚠ los renombres son el
-  estado objetivo: **todavía no aplicados** en las Slides vivas (Paso 2.2, pendiente).
+  estado objetivo: **todavía no aplicados** en las Slides vivas. `armonizarPlantillas()`
+  (`Armonizar.gs`, Paso 2.2) ya está implementada pero no se corrió contra la plantilla
+  real — falta que el usuario la corra desde el menú y confirme.
 - `.pptx` marcados (referencia) en `Plan Inicial/_archivo/Plantillas/`.
 
 **Familias:** `ecv_*`, `enc_*` (incluye lo que era `et_*`/`emin_*`/`u1_*` — ver "bloque
@@ -216,7 +218,11 @@ BASES/MAPEO/CONFIG) · Paso 1.6 + 1.6 v2 (registrar plantillas, robusto) · Paso
   degrada a ⚠️ si no hay filas en ventana o >50% sin fecha). `digital` sembrado completo
   (Paso 2.3). Menú "Probar lectura por ventana". Falta que el usuario corra la prueba
   real y cierre P1–P5/A1–A10 de `VERIFICACION_Paso-2.md`.
-- Paso 2.2 — pendiente (armonizar tokens de plantillas antes de sembrar MARCADORES).
+- Paso 2.2 — código listo (`Armonizar.gs`), **sin correr contra la plantilla real
+  todavía**. Falta: correr desde el menú, verificar (sobre todo la Parte B.1, que no se
+  puede chequear leyendo texto), y recién ahí sacar la advertencia de `docs/TOKENS.md`
+  (Parte D). Ojo con `enc_audiencia_ivr`→`enc_base_total`: sigue siendo pregunta abierta
+  en `PLANTILLAS_QA_y_armonizacion.md` §9, no confirmada.
 - Paso 3 — primer cálculo en `Marcadores.gs` + trazabilidad.
 - Paso 4 — motor de reemplazo (tokens fijos).
 - Paso 5 — campañas repetibles + end-to-end.
