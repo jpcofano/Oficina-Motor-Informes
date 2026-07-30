@@ -312,6 +312,10 @@ var SEED_MAPEO_ = [
   // la base viva, metadata de Drive — el nombre estaba desactualizado, las letras no:
   // el mapeo ya se había armado contra esta hoja). Una fila por campaña; prefijos = canal,
   // no familia.
+  // DOC-3 Parte C: faltaba id_cuenta (col A) — clave de join con Seguimiento Digital
+  // que el Paso 2.4 necesita. Sin prefijo de canal (a diferencia de dig_id_cuenta,
+  // mail_id_cuenta, …): looker tiene una sola solapa, no seis, no hace falta desambiguar.
+  { base_id: 'looker', campo_logico: 'id_cuenta', hoja: 'resumen_metricas_dinamico', columna: 'A', notas: 'join con Seguimiento Digital (Paso 2.4)' },
   { base_id: 'looker', campo_logico: 'campana', hoja: 'resumen_metricas_dinamico', columna: 'B', notas: '' },
   { base_id: 'looker', campo_logico: 'fecha_inicio', hoja: 'resumen_metricas_dinamico', columna: 'C', notas: '' },
   { base_id: 'looker', campo_logico: 'fecha_fin', hoja: 'resumen_metricas_dinamico', columna: 'D', notas: '' },
@@ -324,7 +328,8 @@ var SEED_MAPEO_ = [
   { base_id: 'looker', campo_logico: 'dig_visualizaciones', hoja: 'resumen_metricas_dinamico', columna: 'I', notas: '' },
   { base_id: 'looker', campo_logico: 'dig_clics', hoja: 'resumen_metricas_dinamico', columna: 'J', notas: '' },
   { base_id: 'looker', campo_logico: 'alcance', hoja: 'resumen_metricas_dinamico', columna: 'K', notas: '' },
-  { base_id: 'looker', campo_logico: 'frecuencia', hoja: 'resumen_metricas_dinamico', columna: 'M', notas: '' },
+  { base_id: 'looker', campo_logico: 'frecuencia', hoja: 'resumen_metricas_dinamico', columna: 'M',
+    notas: 'M=frecuencia_total; existe también meta_frecuencia en L — elección sin confirmar con el equipo (DOC-3 Parte C)' },
   { base_id: 'looker', campo_logico: 'mail_enviados', hoja: 'resumen_metricas_dinamico', columna: 'N', notas: '' },
   { base_id: 'looker', campo_logico: 'mail_entregados', hoja: 'resumen_metricas_dinamico', columna: 'O', notas: '' },
   { base_id: 'looker', campo_logico: 'mail_aperturas', hoja: 'resumen_metricas_dinamico', columna: 'P', notas: '' },
