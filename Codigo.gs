@@ -18,6 +18,7 @@ function onOpen() {
         .addItem('Registrar plantillas', 'menuRegistrarPlantillas_')
         .addItem('Probar conexión a bases', 'probarConexionBases')
         .addItem('Probar lectura por ventana', 'menuProbarLectura_')
+        .addItem('Probar unión y anclaje', 'menuProbarUnionYAnclaje_')
         .addItem('Detectar columnas de fecha', 'menuDetectarColumnasFecha_')
         .addItem('Promover fechas elegidas', 'menuPromoverFechasElegidas_')
         .addItem('Validar MAPEO (duplicados)', 'menuValidarMapeo_')

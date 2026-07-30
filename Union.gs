@@ -371,3 +371,97 @@ function anclarEncuentros(ventana) {
 
   return { ok: true, encuentros: encuentros, sinLink: sinLink, bajaConfianza: bajaConfianza };
 }
+
+/**
+ * Parte C — proveedor con contrato estable para el Paso 3.
+ *
+ * filasDigitalDeEncuentro(idCuenta | encuentro, ventana?) -> registro | null
+ *
+ * Acepta un `id_cuenta` (string) o un encuentro ya anclado (objeto con
+ * `.idCuenta`, tal como devuelve `anclarEncuentros().encuentros`). Devuelve el
+ * registro unido de `unirDigitalPorCuenta()` para esa cuenta — la dimensión
+ * (`sd_*`) más un arreglo `<prefijo>_filas` por canal con datos — listo para
+ * que una operación de `Marcadores.gs` lo sume. `null` si la cuenta no está
+ * en la unión de esa ventana (huérfana o sin datos). El Paso 3 debe llamar
+ * a esta función para digital en vez de `leerFuente` directo: `ctx.filas`
+ * plano no alcanza para reconstruir las 6 solapas unidas.
+ */
+function filasDigitalDeEncuentro(idCuentaOEncuentro, ventana) {
+  var idCuenta = (typeof idCuentaOEncuentro === 'string')
+    ? idCuentaOEncuentro
+    : (idCuentaOEncuentro && idCuentaOEncuentro.idCuenta);
+  if (!idCuenta) return null;
+
+  var ventanaResuelta = ventana || resolverVentana({});
+  if (!ventanaResuelta.ok) return null;
+
+  var union = unirDigitalPorCuenta(ventanaResuelta);
+  if (!union.ok) return null;
+
+  return union.porCuenta[normalizarIdCuenta_(idCuenta)] || null;
+}
+
+/**
+ * Ítem de menú "Probar unión y anclaje" (submenú Configuración, al lado de
+ * "Probar lectura por ventana"). Corre Parte A y B sobre el período de CONFIG
+ * y muestra el diagnóstico — no persiste nada, es solo lectura.
+ */
+function menuProbarUnionYAnclaje_() {
+  var ui = SpreadsheetApp.getUi();
+  var ventana = resolverVentana({});
+  if (!ventana.ok) {
+    ui.alert('No se pudo resolver el período', ventana.motivo, ui.ButtonSet.OK);
+    return;
+  }
+
+  var union = unirDigitalPorCuenta(ventana);
+  if (!union.ok) {
+    ui.alert('No se pudo unir digital', union.motivo, ui.ButtonSet.OK);
+    return;
+  }
+
+  var lineas = [
+    'Ventana (' + ventana.origen + '): ' + formatearFecha_(ventana.desde) + ' → ' + formatearFecha_(ventana.hasta),
+    '',
+    'Unión digital por cuenta (' + BASE_DIGITAL_ + '):'
+  ];
+
+  Object.keys(union.diagnostico).forEach(function (solapa) {
+    var d = union.diagnostico[solapa];
+    if (!d.ok) {
+      lineas.push('  ⚠ ' + solapa + ' — ' + d.motivo);
+      return;
+    }
+    if (solapa === SOLAPA_MAESTRA_DIGITAL_) {
+      lineas.push('  ' + solapa + ' (maestra): ' + d.filas_leidas + ' filas, ' + d.cuentas + ' cuentas');
+    } else {
+      lineas.push(
+        '  ' + solapa + ': ' + d.filas_leidas + ' filas, ' + d.cuentas_matcheadas + ' matcheadas, ' +
+        d.huerfanas_en_canal.length + ' huérfanas en canal, ' + d.cuentas_sin_este_canal.length + ' cuentas sin este canal'
+      );
+    }
+  });
+
+  lineas.push('', 'Anclaje RDV (' + SOLAPA_ANCLA_RDV_ + ', ' + VALOR_STATUS_REALIZADA_ + '):');
+
+  var anclaje = anclarEncuentros(ventana);
+  if (!anclaje.ok) {
+    lineas.push('  ⚠ ' + anclaje.motivo);
+  } else {
+    lineas.push('  Encuentros linkeados: ' + anclaje.encuentros.length);
+    lineas.push('  Sin candidato (sinLink): ' + anclaje.sinLink.length);
+    lineas.push('  Baja confianza (< ' + UMBRAL_CONFIANZA_ANCLAJE_ + '): ' + anclaje.bajaConfianza.length);
+
+    if (anclaje.bajaConfianza.length) {
+      lineas.push('', '  Baja confianza — candidato y score, para ver por qué no cerró:');
+      anclaje.bajaConfianza.slice(0, 15).forEach(function (item) {
+        lineas.push(
+          '    · ' + formatearFecha_(item.fecha) + ' "' + item.evento + '" / ' + item.barrio +
+          ' → ' + (item.candidatoNombre || '(sin candidato)') + ' (score ' + item.score.toFixed(2) + ')'
+        );
+      });
+    }
+  }
+
+  ui.alert('Probar unión y anclaje', lineas.join('\n'), ui.ButtonSet.OK);
+}
