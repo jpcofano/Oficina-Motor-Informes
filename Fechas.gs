@@ -504,6 +504,16 @@ function menuPromoverFechasElegidas_() {
  * texto o mixto: no se sabe todavía cuál de ellas un marcador va a sumar (MARCADORES no
  * está sembrado, Paso 2.5 bloqueado), así que se marca de forma amplia y el Paso 3
  * decide cuáles importan.
+ *
+ * Paso 2.6 Parte A — clasificación exhaustiva: toda solapa real del archivo sale con
+ * exactamente una etiqueta (`hoja_default ok` / `mapeada` / `sin mapear (informativo)`).
+ * Antes faltaba la categoría `mapeada`: una solapa mapeada en MAPEO que no fuera
+ * hoja_default no caía en ninguna de las otras dos y desaparecía del reporte sin avisar
+ * — así se perdieron `RDV_otros_ministros`, `Directa Mail/IVR/SMS`, `Seguimiento
+ * digital`, `Alcance`, `resumen_metricas_dinamico` y `M2 periodo DIGITAL` el 30/07 (AUD-1
+ * confirmó que esas solapas sí existen; el bug estaba en el reporte, no en los datos). El
+ * reporte cierra con una fila `TOTAL` que compara solapas reales contra filas emitidas —
+ * si no coinciden, ⚠.
  */
 var HEADERS_DIAG_BASES_SOLAPAS_ = ['base_id', 'solapa', 'estado'];
 var HEADERS_DIAG_BASES_TIPOS_ = ['base_id', 'solapa', 'campo_logico', 'columna', 'tipo', 'muestra', 'alerta'];
@@ -517,6 +527,8 @@ function diagnosticarBases() {
   var filasSolapas = [];
   var filasTipos = [];
   var basesSinAcceso = [];
+  var totalSolapasArchivo = 0;
+  var totalFilasClasificadas = 0;
 
   Object.keys(bases).forEach(function (baseId) {
     var base = bases[baseId];
@@ -534,25 +546,38 @@ function diagnosticarBases() {
     var solapasMapeadas = mapa[baseId] ? Object.keys(mapa[baseId]) : [];
     var filaEncabezado = Number(base.fila_encabezado) || 1;
 
-    filasSolapas.push({
-      base_id: baseId,
-      solapa: base.hoja_default,
-      estado: nombresSolapas.indexOf(base.hoja_default) !== -1
-        ? 'hoja_default ok'
-        : '⚠ hoja_default no existe en el archivo — la base se lee vacía o lee otra cosa'
-    });
-
+    // Referencias de config que no corresponden a ninguna solapa real del archivo.
+    // No cuentan en el control de totales de abajo, que es sobre solapas reales.
+    if (nombresSolapas.indexOf(base.hoja_default) === -1) {
+      filasSolapas.push({
+        base_id: baseId,
+        solapa: base.hoja_default,
+        estado: '⚠ hoja_default no existe en el archivo — la base se lee vacía o lee otra cosa'
+      });
+    }
     solapasMapeadas.forEach(function (solapa) {
       if (nombresSolapas.indexOf(solapa) === -1) {
         filasSolapas.push({ base_id: baseId, solapa: solapa, estado: '⚠ mapeada en MAPEO pero no existe en el archivo' });
       }
     });
 
+    // Clasificación exhaustiva: toda solapa real del archivo sale con exactamente
+    // una etiqueta. Antes, una solapa mapeada en MAPEO que no fuera hoja_default no
+    // caía en ninguna de las dos categorías y desaparecía del reporte en silencio
+    // (Paso 2.6 Parte A).
     nombresSolapas.forEach(function (nombre) {
-      if (solapasMapeadas.indexOf(nombre) === -1 && nombre !== base.hoja_default) {
-        filasSolapas.push({ base_id: baseId, solapa: nombre, estado: 'sin mapear (informativo)' });
+      var estado;
+      if (nombre === base.hoja_default) {
+        estado = 'hoja_default ok';
+      } else if (solapasMapeadas.indexOf(nombre) !== -1) {
+        estado = 'mapeada';
+      } else {
+        estado = 'sin mapear (informativo)';
       }
+      filasSolapas.push({ base_id: baseId, solapa: nombre, estado: estado });
+      totalFilasClasificadas++;
     });
+    totalSolapasArchivo += nombresSolapas.length;
 
     solapasMapeadas.forEach(function (solapa) {
       var hojaSheet = libro.getSheetByName(solapa);
@@ -576,6 +601,18 @@ function diagnosticarBases() {
     });
   });
 
+  // Línea de control (Paso 2.6 Parte A): un diagnóstico que puede omitir filas de
+  // solapas reales en silencio no sirve para lo que se usa. Compara el total de
+  // solapas reales de los archivos contra el total de filas que la clasificación
+  // exhaustiva de arriba efectivamente emitió — tienen que coincidir siempre.
+  var totalesCoinciden = totalSolapasArchivo === totalFilasClasificadas;
+  filasSolapas.push({
+    base_id: 'TOTAL',
+    solapa: '',
+    estado: (totalesCoinciden ? '' : '⚠ ') + 'solapas del archivo: ' + totalSolapasArchivo +
+      ' vs. filas emitidas: ' + totalFilasClasificadas
+  });
+
   escribirDiagBases_(obtenerOCrearHojaDiagBases_(ss), filasSolapas, filasTipos);
 
   return {
@@ -584,7 +621,10 @@ function diagnosticarBases() {
     filasTipos: filasTipos,
     basesSinAcceso: basesSinAcceso,
     advertenciasSolapas: filasSolapas.filter(function (f) { return f.estado.indexOf('⚠') === 0; }).length,
-    advertenciasTipos: filasTipos.filter(function (f) { return f.alerta === '⚠'; }).length
+    advertenciasTipos: filasTipos.filter(function (f) { return f.alerta === '⚠'; }).length,
+    totalSolapasArchivo: totalSolapasArchivo,
+    totalFilasClasificadas: totalFilasClasificadas,
+    totalesCoinciden: totalesCoinciden
   };
 }
 
@@ -665,7 +705,9 @@ function menuDiagnosticarBases_() {
 
   var lineas = [
     'Solapas revisadas: ' + resultado.filasSolapas.length + ' (⚠ ' + resultado.advertenciasSolapas + ')',
-    'Columnas mapeadas tipadas: ' + resultado.filasTipos.length + ' (⚠ texto/mixto: ' + resultado.advertenciasTipos + ')'
+    'Columnas mapeadas tipadas: ' + resultado.filasTipos.length + ' (⚠ texto/mixto: ' + resultado.advertenciasTipos + ')',
+    (resultado.totalesCoinciden ? '✅' : '⚠') + ' Control de totales — solapas del archivo: ' +
+      resultado.totalSolapasArchivo + ' vs. filas emitidas: ' + resultado.totalFilasClasificadas
   ];
 
   if (resultado.basesSinAcceso.length) {
