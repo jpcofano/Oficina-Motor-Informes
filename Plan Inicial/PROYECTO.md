@@ -60,7 +60,8 @@ Las **6 hojas de config** (+ `PERIODOS`):
   campo_logico | periodo_ref | calculo | formato | notas`.
 - **MAPEO** (campo lógico → columna, por base): `base_id | campo_logico | hoja | columna | notas`.
 - **CAMPANAS** (campañas seleccionables): `campana_id | nombre | informe_id | base_id |
-  tipo | desde | hasta | mostrar | orden`.
+  tipo | desde | hasta | mostrar | orden`. `tipo` acepta (Paso 2.2): `campana`,
+  `uno_a_uno`, `tematico`, `primera_persona`, `ministros`, `proveedor`.
 - **PERIODOS** (ventanas con nombre): `periodo_id | desde | hasta | notas`.
 
 **Recetas:**
@@ -82,9 +83,19 @@ El período no es global; se resuelve **por token** en este orden de prioridad:
 2. ¿el marcador tiene `periodo_ref`? → esa ventana de `PERIODOS`;
 3. si no → período principal de `CONFIG`.
 
-Selección de campañas: el motor emite un bloque por cada `CAMPANAS` con `mostrar=sí`,
-ordenado por `orden`; cada `tipo` (destacada / encuentro_ministros / proveedor) consume
-su plantilla de slide repetible. Varía por edición (no siempre entran las mismas).
+**Dos clases de bloque repetible, misma mecánica (Paso 2.2):** el motor itera `CAMPANAS`
+filtrando `mostrar=sí`, ordenado por `orden`, y emite el bloque de slides del `tipo`
+correspondiente usando la ventana propia de cada fila. Varía por edición (no siempre
+entran las mismas filas). Las dos clases:
+- **Campaña** (`tipo=campana`) — bloque único `camp_*`, idéntico JM/SECCO.
+- **Encuentro** (`tipo` = `uno_a_uno` / `tematico` / `primera_persona` / `proveedor`) —
+  separador + estrategia + iceberg, familia `enc_*` (ver `docs/TOKENS.md` §3: unifica lo
+  que antes eran `u1_*`/`et_*`/`pp_*` sueltos). `ministros` (`emin_*`) **no** entra en este
+  mecanismo: su slide es un agregado semanal de varios encuentros, no un bloque por
+  encuentro — no se toca.
+
+**No implementado todavía — es el Paso 5.** El Paso 2.2 solo deja el registro (`tipo`
+ampliado) y esta documentación; la emisión de los bloques sigue sin cablear.
 
 ---
 

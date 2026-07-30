@@ -92,11 +92,13 @@ var HOJAS_CONFIG_ = {
       ['digital', 'alcance', 'Digital', 'E', '']
     ]
   },
+  // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
+  // ministros, proveedor — ver Plan Inicial/PROYECTO.md §4.
   CAMPANAS: {
     headers: ['campana_id', 'nombre', 'informe_id', 'base_id', 'tipo', 'desde', 'hasta', 'mostrar', 'orden'],
     ejemplos: [
-      ['serv_esenciales', 'Servicios esenciales', 'secco', 'looker', 'destacada', '2026-06-02', '2026-06-15', 'sí', 1],
-      ['encuentros_min', 'Encuentros de ministros', 'secco', 'rdv', 'encuentro_ministros', '2026-06-01', '2026-06-30', 'sí', 2],
+      ['serv_esenciales', 'Servicios esenciales', 'secco', 'looker', 'campana', '2026-06-02', '2026-06-15', 'sí', 1],
+      ['encuentros_min', 'Encuentros de ministros', 'secco', 'rdv', 'ministros', '2026-06-01', '2026-06-30', 'sí', 2],
       ['prov_uber', 'Uber', 'secco', 'digital', 'proveedor', '2026-06-01', '2026-06-30', 'no', 3]
     ]
   },
