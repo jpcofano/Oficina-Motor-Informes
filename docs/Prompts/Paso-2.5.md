@@ -7,6 +7,16 @@
 
 ---
 
+## ⚠ Bloqueo — no correr todavía
+
+**Este paso no se corre hasta que la armonización de plantillas (`Paso-2.2.2` Parte D,
+sobre la JM canónica) esté verificada.** Sembrar `MARCADORES` antes lee tokens de una
+plantilla que todavía puede cambiar de nombre (renombres pendientes del diccionario
+canónico, `docs/TOKENS.md` §1) — sembrar antes es sembrar ~200 filas de tokens rotos, y
+deshacerlo es a mano, fila por fila.
+
+---
+
 ## Por qué
 
 `MARCADORES` tiene hoy 3 filas de ejemplo y necesita ~200 (JM ≈110 tokens, SECCO
@@ -51,18 +61,22 @@ Agregala a `Instalar.gs` (junto a `seedConfiguracion`) y sumala al menú como
    | `familia` | el prefijo hasta el primer `_` (`ecv_inscriptos` → `ecv`). Si no tiene `_`, familia = el token entero (`periodo`, `frecuencia`) |
    | `informe_id` | el `informe_id` de la plantilla |
    | `base_id` | **vacío** |
+   | `solapa` | **vacío** (criterio humano, igual que `base_id` — ver regla de resolución en `docs/TOKENS.md` §4) |
    | `campo_logico` | **vacío** |
    | `periodo_ref` | **vacío** |
-   | `calculo` | **vacío** |
+   | `operacion` | **vacío** (esquema DOC-2: `calculo` ya se renombró a `operacion` en `Instalar.gs`) |
+   | `valor_fijo` | **vacío** |
    | `formato` | **vacío** |
    | `notas` | `slide N` (dónde aparece — sirve para el QA) |
 
-   ⚠ **Crítico:** `upsertPorClave_` reescribe la fila entera con
-   `headers.map(h => (h in obj) ? obj[h] : '')`. Si un token ya existe y un humano ya
-   le cargó `base_id`/`campo_logico`, **el upsert se lo borra**. Modificá el helper (o
-   usá una variante) para que, en filas existentes, **solo complete celdas vacías y
-   nunca pise valores cargados**. Este paso tiene que poder correrse muchas veces sin
-   destruir trabajo manual.
+   **Usá `upsertSoloVacias_` (variante nueva, a implementar acá), no `upsertPorClave_`.**
+   `upsertPorClave_` reescribe la fila entera con `headers.map(h => (h in obj) ? obj[h] :
+   '')`: si un token ya existe y un humano ya le cargó `base_id`/`campo_logico`, el
+   upsert se lo borra. **No modifiques `upsertPorClave_`**: `seedConfiguracion` depende
+   de que pise la fila entera, y tocarlo acá rompe ese contrato (ya anotado en
+   `Paso-2.4.md`, Reconciliación 4). `upsertSoloVacias_` es una función nueva que, en
+   filas existentes, solo completa celdas vacías y nunca pisa valores cargados. Este
+   paso tiene que poder correrse muchas veces sin destruir trabajo manual.
 
 4. **Reporte final** (alert + log):
    - Por informe: tokens encontrados, filas nuevas, filas ya existentes.
@@ -80,6 +94,14 @@ Agregala a `Instalar.gs` (junto a `seedConfiguracion`) y sumala al menú como
 Agregá **"Ver cobertura de configuración"** al menú: recorre `MARCADORES` y muestra,
 por informe, cuántos marcadores están **completos** (con `base_id` + `campo_logico` +
 `operacion`) y cuántos **pendientes**, con la lista de los primeros ~20 pendientes.
+
+**`solapa` entra en la condición de "completo" solo cuando la base tenga más de una
+solapa mapeada en `MAPEO`** (misma regla que la resolución de solapa en `MARCADORES`,
+`docs/TOKENS.md` §4): si la base tiene una sola solapa, `solapa` vacía se infiere y no
+cuenta como pendiente; si tiene varias (p. ej. `digital`, y `rdv` desde que tiene
+`RDV_otros_ministros`), un marcador de esa base sin `solapa` cargada **sí** cuenta como
+pendiente — sin eso, el reporte de cobertura miente diciendo "completo" sobre un
+marcador que en runtime va a fallar con `«FALTA:token@sin_solapa»`.
 
 Es el tablero de avance del cableado: al principio va a decir "0 de 110" y el trabajo
 del Paso 3 es llevarlo a verde. También sirve para detectar tokens que **nunca** van a
