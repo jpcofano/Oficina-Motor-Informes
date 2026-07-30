@@ -83,12 +83,58 @@ function armonizarPlantillas() {
   return reporte;
 }
 
+/**
+ * Backup obligatorio (Paso 2.2.2): la armonización escribe directo sobre la
+ * plantilla del equipo (SlidesApp.openById(), sin copiar — el que copia y
+ * escribe sobre la copia es el Paso 4, en la generación semanal, todavía sin
+ * hacer). Sin backup, cada corrida es destructiva y sin vuelta atrás — ya
+ * costó una regresión real en SECCO (Paso 2.2.1). Si el backup falla, se
+ * aborta esa presentación: mejor no armonizar que armonizar sin red.
+ */
+function asegurarCarpetaBackups_() {
+  var carpetaPlantillasId = leerConfig().carpeta_plantillas;
+  if (!carpetaPlantillasId) {
+    return { ok: false, motivo: 'CONFIG.carpeta_plantillas no está cargado' };
+  }
+
+  var carpetaPlantillas;
+  try {
+    carpetaPlantillas = DriveApp.getFolderById(carpetaPlantillasId);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo abrir la carpeta de plantillas: ' + e.message };
+  }
+
+  var existentes = carpetaPlantillas.getFoldersByName('_backups');
+  var carpetaBackups = existentes.hasNext() ? existentes.next() : carpetaPlantillas.createFolder('_backups');
+  return { ok: true, carpeta: carpetaBackups };
+}
+
+function backupPlantilla_(plantillaId, nombreOriginal, carpetaBackups) {
+  try {
+    var timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm');
+    var copia = DriveApp.getFileById(plantillaId).makeCopy(nombreOriginal + ' — backup ' + timestamp, carpetaBackups);
+    return { ok: true, id: copia.getId(), url: copia.getUrl(), nombre: copia.getName() };
+  } catch (e) {
+    return { ok: false, motivo: e.message };
+  }
+}
+
 function armonizarPresentacion_(informeId, plantillaId) {
   var presentacion;
   try {
     presentacion = SlidesApp.openById(plantillaId);
   } catch (e) {
     return { ok: false, motivo: 'No se pudo abrir la presentación "' + plantillaId + '": ' + e.message };
+  }
+
+  var carpetaBackups = asegurarCarpetaBackups_();
+  if (!carpetaBackups.ok) {
+    return { ok: false, motivo: 'Backup abortado (no se tocó la plantilla): ' + carpetaBackups.motivo };
+  }
+
+  var backup = backupPlantilla_(plantillaId, presentacion.getName(), carpetaBackups.carpeta);
+  if (!backup.ok) {
+    return { ok: false, motivo: 'Backup abortado (no se tocó la plantilla): ' + backup.motivo };
   }
 
   var listaRenombres = RENOMBRES_ARMONIZACION_POR_INFORME_[informeId];
@@ -111,6 +157,7 @@ function armonizarPresentacion_(informeId, plantillaId) {
     ok: true,
     id: presentacion.getId(),
     nombre: presentacion.getName(),
+    backup: backup,
     renombres: renombres,
     renombres_omitidos: renombresOmitidos,
     cajas: cajas
@@ -365,7 +412,15 @@ function menuArmonizarPlantillas_() {
     return;
   }
 
-  var lineas = [];
+  // Backups arriba de todo: si algo sale mal, es lo primero que hace falta.
+  var lineas = ['Backups:'];
+  reporte.forEach(function (item) {
+    if (!item.resultado.ok || !item.resultado.backup) return;
+    lineas.push('  ' + item.informeId + ': ' + item.resultado.backup.nombre);
+    lineas.push('    ' + item.resultado.backup.url);
+  });
+  lineas.push('');
+
   reporte.forEach(function (item) {
     if (!item.resultado.ok) {
       lineas.push('⚠️ ' + item.informeId + ' — ' + item.resultado.motivo);
