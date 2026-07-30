@@ -19,6 +19,20 @@
 
 ---
 
+## Precondición de negocio sin resolver
+
+`digital` está registrada como `modo_periodo=snapshot` (ver `SEED_BASES_` en
+`Instalar.gs`), así que hoy **las cinco columnas de fecha elegidas para sus solapas
+(`docs/FECHAS_seleccion.md`) no las usa nadie** — el recorte por período lo hace el
+link campaña↔encuentro de este mismo paso (Parte B), no una ventana de fecha cruda.
+Eso está bien **mientras** el equipo confirme que una campaña se reporta en el período
+en que arranca. Si en cambio responde que **una campaña se reporta en todos los
+períodos en que estuvo activa**, hace falta `fecha_desde`/`fecha_hasta` y una condición
+de solapamiento en vez de una fecha puntual, y las seis elecciones de fecha de
+`digital`/`looker` (todas marcadas `⚠ rango` en `FECHAS_seleccion.md`) se quedan
+cortas. **La respuesta del equipo puede invalidar el diseño de este paso — no asumir
+que el link campaña↔encuentro alcanza sin esa confirmación.**
+
 ## Contexto (lo que dejó 2.3)
 
 - `digital` quedó en `modo_periodo=snapshot`, con 6 solapas mapeadas en `MAPEO`,
@@ -31,11 +45,20 @@
   | Directa Mail | `mail_id_cuenta` | A | hechos mail |
   | Directa SMS | `sms_id_cuenta` | A | hechos SMS |
   | Directa IVR | `ivr_id_cuenta` | A | hechos IVR |
-  | Alcance | `alc_id_cuenta` | A | alcance/frecuencia |
+  | Alcance | `alc_id_cuenta` | A | alcance/frecuencia — ⚠ **verificar que exista**: no aparece en el `DIAG_FECHAS` del 30/07 (`docs/FECHAS_seleccion.md`), a diferencia de las otras cinco. |
 
-- `Fuentes.gs` ya expone `leerFuente(baseId, ventana, nombreHojaOverride)`,
-  `resolverCampo`, `resolverClave_` y el parseo de fecha. `leerFuente` lee **una**
-  hoja por llamada — este paso lo llama una vez por solapa y arma el join encima.
+  ⚠ **`digital` tiene además una solapa `RDV`** con el mismo contenido que la base
+  `rdv` (ver `docs/FECHAS_seleccion.md`, "sin decidir"). Si el join de este paso la
+  levanta además de la base `rdv`, hay **doble conteo** — verificar cuál es la buena
+  antes de sumar nada en el Paso 3.
+
+- `Fuentes.gs` expone `leerFuente(baseId, ventana, nombreHojaOverride)` y
+  `resolverClave_(baseId, solapa)`. La resolución de columnas de `MAPEO` (fecha, clave)
+  pasa por **`buscarMapeo(base_id, solapa, campo_logico)`** (`Config.gs`, Paso 2.3.2) —
+  **`resolverCampo` ya no existe**, se eliminó a favor de `buscarMapeo`. `solapa` es
+  obligatoria: `buscarMapeo` no tiene default a `hoja_default`, un default silencioso
+  ahí devuelve la fila de otra solapa sin avisar. `leerFuente` lee **una** hoja por
+  llamada — este paso lo llama una vez por solapa y arma el join encima.
 - Regla de anclaje ya fijada en `docs/DISENO_match_temario.md §5 bis` (leerla, es
   corta y es el contrato): **la hoja ancla es `RVD JM-CM - ES`, se filtra
   `STATUS REUNIÓN = Realizada`, y la columna `FECHA` de RDV le gana a la fecha del
@@ -57,9 +80,12 @@ En `Union.gs`. Arma **un registro por `Id Cuentas`** uniendo las 6 solapas.
    Indexá por `sd_id_cuenta` (col A). Esa es la dimensión: nombre de campaña
    (`sd_campana_digital` C, `sd_campana_cuentas` B) y pauta (`sd_pauta_google/prog/meta`).
 2. Para cada una de las otras 5 solapas: `leerFuente('digital', ventana, '<hoja>')`,
-   indexá por su `*_id_cuenta` y **left-join** contra la dimensión. Prefijá los campos
-   por solapa (los `campo_logico` ya vienen prefijados: `dig_*`, `mail_*`, …), así no
-   se pisan entre canales.
+   indexá por su `*_id_cuenta` y **left-join** contra la dimensión. Los `campo_logico`
+   ya vienen prefijados por canal (`dig_*`, `mail_*`, …) desde el Paso 2.3, pero **lo
+   que evita que se pisen entre solapas es la `solapa` en la clave de `MAPEO`** (Paso
+   2.3.2), no el prefijo — el prefijo es residual y está marcado para limpieza (ver
+   `docs/Prompts/Paso-2.3.2.md`, "Fuera de alcance"). El join no debe depender de que
+   el prefijo exista.
 3. Normalizá la clave de join: `String(id).trim()`. Si una solapa trae **varias filas
    por cuenta** (p. ej. Mail: varios envíos de una misma campaña), **NO sumes** —
    guardá el arreglo de filas crudas bajo `mail_filas: [...]`. Sumar es Paso 3; acá
@@ -81,6 +107,10 @@ En `Union.gs`. Implementa la regla de `DISENO §5 bis`.
 
 1. Leé RDV con `leerFuente('rdv', ventana)` (rdv es `filtrar`: ya viene ventaneado por
    `FECHA` real). Filtrá `status === 'Realizada'` (campo `rdv/status`, col I).
+   **Precondición explícita:** requiere `rdv/RVD JM-CM - ES/fecha_periodo = E` cargado
+   en `MAPEO` y verificado con **R-01** (`docs/REGLAS_NEGOCIO.md`) — agrupar por
+   (columna A `Figura`, columna E) y contar grupos con más de una fila, tiene que dar
+   cero. **Si no está cargado o R-01 no se verificó, este paso no corre.**
 2. Traé el resultado de `unirDigitalPorCuenta(ventana)`.
 3. Para cada encuentro de RDV, encontrá la(s) cuenta(s) digital cuyo **nombre de
    campaña** (`sd_campana_digital` / `sd_campana_cuentas`) mejor matchea contra
