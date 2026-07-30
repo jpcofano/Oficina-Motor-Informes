@@ -37,49 +37,15 @@ hace falta duplicarlo.
 
 ## 2. Equivalencia entre el deck comentado y `SECCO_marcada`
 
-**Recomendación de fondo: dejar de anclar en números de slide.** Ya se movieron una vez
-en un día. El ancla estable es la **sección + el token**, que es justamente lo que el
-motor usa.
-
-| sección | en `SECCO_marcada` | en el comentado |
-|---|---|---|
-| Portada · Índice · separadores | 1–4 | 1–4 |
-| Uno a uno — resultados por plataforma | 5 | **5 y 6** (uno por encuentro) |
-| Encuentro temático (sep · estrategia · iceberg) | 6–8 | 7–9 |
-| **Primera persona** (sep · estrategia · iceberg · antecedente) | **no existe** | **10–12** |
-| Comunicaciones post | 9–10 | 13–14 |
-| Ministros | 11–12 | 15–16 |
-| M2 | 13–15 | 17–19 |
-| Campaña destacada | 16–23 | 20–27 |
-| Análisis (conv/rep/rrss) | 24–28 | 28–32 |
-| Gracias | 29 | 33 |
-
-Con eso cierra el misterio de las slides "29 a 32": son las de Análisis del comentado,
-que en la plantilla marcada son 25 a 28.
+Movido a `Plan Inicial/PROYECTO.md` §6 (DOC-1, 29/07/2026) — es donde alguien lo va a
+buscar junto con el resto de la fuente de verdad de plantillas. No repetido acá.
 
 ---
 
 ## 3. Tres hallazgos de diseño que salen del comentado
 
-**a) El uno a uno es un bloque repetible, no una sección fija.** El comentado tiene
-**dos** slides de plataformas, una por encuentro de la semana (San Cristóbal y Retiro), y
-tenía dos más para los POST antes de que se borrara la hoja. La plantilla marcada tiene
-una sola. Es el mismo patrón que `camp_*`: se emite una por cada encuentro seleccionado,
-con su propia ventana. Los `ecv_comuna`, `ecv_fecha`, `ecv_asistentes`, `ecv_minutos` son
-**por encuentro**, no globales del período.
-
-**b) "Primera persona" es un tipo de encuentro más, y está sin marcar.** Tres slides
-enteras en `xx` (estrategia + iceberg + un antecedente hardcodeado: *"Mismo dispositivo:
-27/04 (Pauls) | 727 inscriptos y 128 asistentes (18%)"*). Su estructura es idéntica a la
-del encuentro temático.
-
-Esto refuerza no cablear familias por sección (`u1_*`, `et_*`, `pp_*`) sino **una familia
-de encuentro con un tipo**: la slide es la misma, cambia qué encuentro la alimenta. Es
-exactamente lo que ya se decidió para `emin_*` y los proveedores.
-
-**c) El bloque de post tiene que ser dinámico.** El comentario 5 lo dice sin vueltas: la
-plantilla trae 3 filas y esa semana había 2. `post_camp1-3` / `post_estado1-3` fijos van a
-dejar una fila con `«FALTA:token»` cada vez que haya menos de tres.
+Movido a `Plan Inicial/PROYECTO.md` §6 (DOC-1, 29/07/2026): uno a uno como bloque
+repetible, Primera persona sin marcar, bloque de post dinámico. No repetido acá.
 
 ---
 

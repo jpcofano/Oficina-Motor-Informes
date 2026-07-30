@@ -104,22 +104,10 @@ es alto en alguna base, es un hallazgo para revisar con el equipo, no un detalle
 
 ## 4. Preguntas a validar contra los informes de muestra
 
-Estas **no** se resuelven por criterio técnico. Los informes los escribe el equipo, así
-que cada una se contesta mirando un deck real de referencia y confirmando con quien lo
-arma. Anotar acá la respuesta y la fuente (qué deck, qué slide, quién confirmó).
-
-| # | Pregunta | Por qué cambia el resultado | Dónde se ve en el deck | Respuesta / fuente |
-|---|---|---|---|---|
-| V1 | Campañas que cruzan semanas: ¿el número es **acumulado desde el inicio** o **solo el tramo del período**? | cambia el número, no la presentación | comparar el mismo indicador de una campaña en dos decks consecutivos: si crece siempre, es acumulado | |
-| V2 | ¿Cuál es la columna de fecha correcta por base cuando hay más de una candidata (carga vs. evento vs. envío)? | dos columnas dan dos totales distintos y ambos "parecen" bien | pedir un total conocido de un deck y ver cuál columna lo reproduce | |
-| V3 | Fuente de verdad digital/directa: **Looker** o **Seguimiento Digital** | cubren lo mismo con números que pueden no coincidir | tomar una campaña de un deck y ver qué base reproduce el número publicado | |
-| V4 | `conv_*`, `rep_*`, `rrss_*`, `camp_resp_*` de SECCO: ¿de dónde salen? | no están en ninguna de las 4 bases — 3 slides sin fuente | preguntar por esas slides específicas: ¿hay quinta base o es carga manual? | |
-| V5 | Encuentro temático (SECCO 6–8): ¿cómo se sabe **cuál** encuentro es el del período? | el motor no tiene forma de deducirlo | ver cómo se elige hoy a mano | |
-| V6 | ¿Las filas sin fecha cuentan o no cuentan en los totales publicados? | si el equipo hoy las incluye a mano, el motor va a dar de menos | comparar total del deck vs. `filas_en_ventana` | |
-
-**Regla de trabajo:** ninguna de estas se resuelve por default en el código. Mientras no
-haya respuesta, el marcador afectado sale `«FALTA:token»` — visible — en vez de un número
-plausible pero inventado.
+Tabla V1–V6 contestada en `docs/HALLAZGOS_validacion_decks.md` §6 — no se duplica acá
+para que no diverjan. **Regla de trabajo (se mantiene):** ninguna de estas se resuelve
+por default en el código. Mientras no haya respuesta, el marcador afectado sale
+`«FALTA:token»` — visible — en vez de un número plausible pero inventado.
 
 ---
 

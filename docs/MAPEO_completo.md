@@ -1,5 +1,12 @@
 # MAPEO completo — las 4 bases
 
+> **Relevamiento original — congelado.** La fuente de verdad es la hoja `MAPEO` de la
+> planilla de control (105 filas al 29/07: 14 `rdv`, 24 `looker`, 14 `m2`, 53 `digital`
+> en sus 6 solapas). Este documento no se actualiza a mano para seguirle el paso a lo
+> que se descubre después — mantener los dos sincronizados es garantía de divergencia.
+> Los `campo_logico` de acá están escritos **con** prefijo de familia (`ecv_inscriptos`);
+> en la hoja `MAPEO` van **sin** prefijo (`inscriptos`) — ver `Paso-1.9.md`.
+>
 > Columnas exactas relevadas de los `.xlsx` vivos (28/07/2026). Las letras son las de
 > la hoja inspeccionada; verificá con "Probar lectura" por si la Sheet viva difiere.
 > El campo `campo_logico` debe ser único por `base_id`.

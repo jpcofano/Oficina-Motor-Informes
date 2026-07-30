@@ -122,11 +122,11 @@ para una campaña; si se pisan, gana la fuente más a la izquierda. `m2` va apar
 el rollup exacto de Seguimiento Digital (no una fuente independiente) — por eso SD pesa
 más: tiene el desagregado por envío que Looker no puede reconstruir.
 
-**Decisión que sigue sin cerrar formalmente (aunque tiene recomendación fuerte):**
-varios docs (`MAPEO_completo.md`, `CONFIG_INFORMES.md` §4.1, `Paso-1.9.md`, `Paso-3-v2.md`)
-todavía listan Looker-vs-SD como abierta y recomiendan Looker; la precedencia de arriba
-la resuelve a favor de SD. Homogeneizar esos docs cuando se cablee `MARCADORES` (Paso 3).
-Otras pendientes: ECV block, columna de campaña canónica.
+**Decisión resuelta (DOC-1, 29/07/2026):** escrita una sola vez en
+`docs/CONFIG_INFORMES.md` §4.1; `MAPEO_completo.md` (congelado) apunta ahí en vez de
+repetirla. Queda pendiente actualizar `docs/Prompts/Paso-3-v2.md` en el mismo sentido —
+asignado a `docs/Prompts/Paso-2.4.md` (Reconciliación 1), no se toca desde otro lado para
+no duplicar el trabajo. Otras pendientes: ECV block, columna de campaña canónica.
 
 ---
 
@@ -139,17 +139,52 @@ Otras pendientes: ECV block, columna de campaña canónica.
   recorre hasta 2 niveles de subcarpetas y distingue Slides nativas de `.pptx` sin
   convertir y accesos directos). `diagnosticarCarpetaPlantillas_()` lista el contenido
   crudo de la carpeta para depurar cuando el registro no encuentra nada.
-- Informes: `jm` (semanal, 22 slides) y `secco` (mensual, 29 slides).
+- Informes: `jm` (semanal, 22 slides) y `secco` (mensual, 29 slides). IDs de Drive:
+  JM `1JrHvs_pdvdwWGZ1CQNmuJr9Bi3XvqyOMJhRweeJAzbE` · SECCO
+  `1_ZKjWhL-bhCP8yHQ8PJ33ymyjSXu3thh7MKMOxB4-n8` · deck comentado (referencia, no se
+  toca) `1yIlCIBGJHsJBNLaMDqBNf75b2gzyMVnlwB5JJArNZv0`.
 - Convención de token: **`{{doble_llave}}`**, snake_case, por familia. El motor
   reemplaza solo **texto** (datos en imágenes no son tokenizables).
-- Inventarios de tokens: `docs/JM_tokens_marcados.md`, `docs/SECCO_tokens_marcados.md`.
-- `.pptx` marcados (referencia) en `docs/Plantillas/`.
+- Inventario de tokens y diccionario canónico: **`docs/TOKENS.md`** (fusiona los
+  inventarios por slide de JM/SECCO + el diccionario de renombres — `enc_*` vs `et_*`
+  resuelto, `camp_*` verificado idéntico entre plantillas). ⚠ los renombres son el
+  estado objetivo: **todavía no aplicados** en las Slides vivas (Paso 2.2, pendiente).
+- `.pptx` marcados (referencia) en `Plan Inicial/_archivo/Plantillas/`.
 
-**Familias:** `ecv_*`, `enc_*`, `et_*`, `emin_*`, `m2_*`, `camp_*` (bloque único de
-campaña, idéntico JM/SECCO), `mail_/ivr_/cc_/imp_/pauta_*`, `gcba_*`,
-`conv_/rep_/rrss_*`, `post_/u1_*`, `miba_*`.
-Decisiones de nombres abiertas: confirmar `camp_*` (se propagan a ambas plantillas);
-definir si `enc_*` y `et_*` se fusionan.
+**Familias:** `ecv_*`, `enc_*` (incluye lo que era `et_*`/`emin_*`/`u1_*` — ver "bloque
+de encuentro repetible" abajo), `m2_*`, `camp_*` (bloque único de campaña, idéntico
+JM/SECCO, verificado: 53 tokens, cero diferencias), `mail_/ivr_/cc_/imp_/pauta_*`,
+`gcba_*`, `conv_/rep_/rrss_*`, `post_/u1_*`, `miba_*`.
+
+**Anclaje: sección + token, no número de slide.** Los números se movieron una vez en un
+solo día (se borró una hoja del deck comentado). Equivalencia de referencia entre el
+deck comentado y `SECCO_marcada` (la plantilla real):
+
+| sección | en `SECCO_marcada` | en el comentado |
+|---|---|---|
+| Portada · Índice · separadores | 1–4 | 1–4 |
+| Uno a uno — resultados por plataforma | 5 | 5 y 6 (uno por encuentro) |
+| Encuentro temático (sep · estrategia · iceberg) | 6–8 | 7–9 |
+| Primera persona (sep · estrategia · iceberg · antecedente) | no existe | 10–12 |
+| Comunicaciones post | 9–10 | 13–14 |
+| Ministros | 11–12 | 15–16 |
+| M2 | 13–15 | 17–19 |
+| Campaña destacada | 16–23 | 20–27 |
+| Análisis (conv/rep/rrss) | 24–28 | 28–32 |
+| Gracias | 29 | 33 |
+
+**Bloque de encuentro repetible (confirmado, detalle en `docs/TOKENS.md` §3):** el uno a
+uno **no es una sección fija**, es un bloque repetible — el comentado tiene dos slides de
+plataforma, una por encuentro de la semana; la plantilla marcada tiene una sola porque esa
+semana hubo un solo encuentro. Mismo patrón que `camp_*`: se emite una instancia por cada
+encuentro seleccionado, con su propia ventana (`ecv_comuna`/`ecv_fecha`/`ecv_asistentes`/
+`ecv_minutos` son por encuentro, no globales del período). **"Primera persona" es un tipo
+de encuentro más y está sin marcar** (tres slides en `xx` en el comentado, sin
+equivalente en la plantilla base). Refuerza no cablear familias por sección (`u1_*`,
+`et_*`, `pp_*`) sino una familia de encuentro con un `tipo` — ya decidido para `emin_*` y
+para proveedores. **El bloque de post tiene que ser dinámico:** la plantilla trae 3 filas
+fijas (`post_camp1-3`/`post_estado1-3`) y una semana real tuvo 2 — fijo deja
+`«FALTA:token»` de más. Implementación de estos tres puntos: Paso 5.
 
 ---
 
