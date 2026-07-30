@@ -491,3 +491,204 @@ function menuPromoverFechasElegidas_() {
     ui.ButtonSet.OK
   );
 }
+
+/**
+ * DOC-3 Parte B — diagnóstico de solapas y tipo de columna. Clasificación de tipos, no
+ * aritmética de negocio (mismo criterio que detectarColumnasFecha()): la regla de oro
+ * de Marcadores.gs sigue intacta.
+ *
+ * Motivo concreto (ver docs/Prompts/DOC-3_verificacion_bases_vivas.md): los números de
+ * `looker` vienen formateados con punto de miles ("201.273.767"). Si en la hoja son
+ * texto en vez de número nativo, una operación SUMA (Paso 3) va a devolver 0 o
+ * concatenar, sin lanzar error — por eso se marca ⚠ toda columna mapeada que salga
+ * texto o mixto: no se sabe todavía cuál de ellas un marcador va a sumar (MARCADORES no
+ * está sembrado, Paso 2.5 bloqueado), así que se marca de forma amplia y el Paso 3
+ * decide cuáles importan.
+ */
+var HEADERS_DIAG_BASES_SOLAPAS_ = ['base_id', 'solapa', 'estado'];
+var HEADERS_DIAG_BASES_TIPOS_ = ['base_id', 'solapa', 'campo_logico', 'columna', 'tipo', 'muestra', 'alerta'];
+var FILAS_MUESTRA_TIPO_ = 20;
+
+function diagnosticarBases() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var bases = leerBases();
+  var mapa = leerMapeo();
+
+  var filasSolapas = [];
+  var filasTipos = [];
+  var basesSinAcceso = [];
+
+  Object.keys(bases).forEach(function (baseId) {
+    var base = bases[baseId];
+    if (!base.activo || !base.sheet_id) return;
+
+    var libro;
+    try {
+      libro = SpreadsheetApp.openById(base.sheet_id);
+    } catch (e) {
+      basesSinAcceso.push(baseId + ': ' + e.message);
+      return;
+    }
+
+    var nombresSolapas = libro.getSheets().map(function (h) { return h.getName(); });
+    var solapasMapeadas = mapa[baseId] ? Object.keys(mapa[baseId]) : [];
+    var filaEncabezado = Number(base.fila_encabezado) || 1;
+
+    filasSolapas.push({
+      base_id: baseId,
+      solapa: base.hoja_default,
+      estado: nombresSolapas.indexOf(base.hoja_default) !== -1
+        ? 'hoja_default ok'
+        : '⚠ hoja_default no existe en el archivo — la base se lee vacía o lee otra cosa'
+    });
+
+    solapasMapeadas.forEach(function (solapa) {
+      if (nombresSolapas.indexOf(solapa) === -1) {
+        filasSolapas.push({ base_id: baseId, solapa: solapa, estado: '⚠ mapeada en MAPEO pero no existe en el archivo' });
+      }
+    });
+
+    nombresSolapas.forEach(function (nombre) {
+      if (solapasMapeadas.indexOf(nombre) === -1 && nombre !== base.hoja_default) {
+        filasSolapas.push({ base_id: baseId, solapa: nombre, estado: 'sin mapear (informativo)' });
+      }
+    });
+
+    solapasMapeadas.forEach(function (solapa) {
+      var hojaSheet = libro.getSheetByName(solapa);
+      if (!hojaSheet) return; // ya reportada como ⚠ arriba, no hay de dónde tipar
+
+      Object.keys(mapa[baseId][solapa]).forEach(function (campoLogico) {
+        var fila = mapa[baseId][solapa][campoLogico];
+        if (!fila.columna) return;
+
+        var tipo = tipificarColumna_(hojaSheet, fila.columna, filaEncabezado);
+        filasTipos.push({
+          base_id: baseId,
+          solapa: solapa,
+          campo_logico: campoLogico,
+          columna: fila.columna,
+          tipo: tipo.tipo,
+          muestra: tipo.muestra,
+          alerta: (tipo.tipo === 'texto' || tipo.tipo === 'mixto') ? '⚠' : ''
+        });
+      });
+    });
+  });
+
+  escribirDiagBases_(obtenerOCrearHojaDiagBases_(ss), filasSolapas, filasTipos);
+
+  return {
+    ok: true,
+    filasSolapas: filasSolapas,
+    filasTipos: filasTipos,
+    basesSinAcceso: basesSinAcceso,
+    advertenciasSolapas: filasSolapas.filter(function (f) { return f.estado.indexOf('⚠') === 0; }).length,
+    advertenciasTipos: filasTipos.filter(function (f) { return f.alerta === '⚠'; }).length
+  };
+}
+
+/**
+ * Clasifica hasta FILAS_MUESTRA_TIPO_ celdas no vacías de una columna:
+ * 'numero' / 'fecha' / 'texto' (todas del mismo tipo) o 'mixto' (tipos mezclados).
+ * `columnaLetra` usa la misma convención que MAPEO.columna (letra, no índice).
+ */
+function tipificarColumna_(hoja, columnaLetra, filaEncabezado) {
+  var idx = columnaLetraAIndice_(columnaLetra);
+  var filaInicio = filaEncabezado + 1;
+  var ultimaFila = hoja.getLastRow();
+  if (ultimaFila < filaInicio) return { tipo: 'vacio', muestra: '' };
+
+  var muestraFilas = Math.min(ultimaFila - filaInicio + 1, FILAS_MUESTRA_TIPO_);
+  var valores = hoja.getRange(filaInicio, idx + 1, muestraFilas, 1).getValues();
+
+  var nNumero = 0, nFecha = 0, nTexto = 0;
+  var muestra = '';
+
+  for (var i = 0; i < valores.length; i++) {
+    var v = valores[i][0];
+    if (v === '' || v === null || v === undefined) continue;
+    if (!muestra) muestra = String(v);
+
+    if (v instanceof Date) nFecha++;
+    else if (typeof v === 'number') nNumero++;
+    else nTexto++;
+  }
+
+  var nNoVacios = nNumero + nFecha + nTexto;
+  if (nNoVacios === 0) return { tipo: 'vacio', muestra: '' };
+
+  var tipo;
+  if (nNumero === nNoVacios) tipo = 'numero';
+  else if (nFecha === nNoVacios) tipo = 'fecha';
+  else if (nTexto === nNoVacios) tipo = 'texto';
+  else tipo = 'mixto';
+
+  return { tipo: tipo, muestra: muestra };
+}
+
+function obtenerOCrearHojaDiagBases_(ss) {
+  var hoja = ss.getSheetByName('DIAG_BASES');
+  if (!hoja) hoja = ss.insertSheet('DIAG_BASES');
+  return hoja;
+}
+
+function escribirDiagBases_(hoja, filasSolapas, filasTipos) {
+  hoja.clear();
+
+  hoja.getRange(1, 1, 1, HEADERS_DIAG_BASES_SOLAPAS_.length).setValues([HEADERS_DIAG_BASES_SOLAPAS_]);
+  var filaSiguiente = 2;
+  if (filasSolapas.length) {
+    var valoresSolapas = filasSolapas.map(function (f) {
+      return HEADERS_DIAG_BASES_SOLAPAS_.map(function (h) { return f[h] !== undefined ? f[h] : ''; });
+    });
+    hoja.getRange(filaSiguiente, 1, valoresSolapas.length, HEADERS_DIAG_BASES_SOLAPAS_.length).setValues(valoresSolapas);
+    filaSiguiente += valoresSolapas.length;
+  }
+
+  filaSiguiente += 1; // fila en blanco entre las dos tablas
+  hoja.getRange(filaSiguiente, 1, 1, HEADERS_DIAG_BASES_TIPOS_.length).setValues([HEADERS_DIAG_BASES_TIPOS_]);
+  filaSiguiente += 1;
+  if (filasTipos.length) {
+    var valoresTipos = filasTipos.map(function (f) {
+      return HEADERS_DIAG_BASES_TIPOS_.map(function (h) { return f[h] !== undefined ? f[h] : ''; });
+    });
+    hoja.getRange(filaSiguiente, 1, valoresTipos.length, HEADERS_DIAG_BASES_TIPOS_.length).setValues(valoresTipos);
+  }
+
+  hoja.setFrozenRows(1);
+}
+
+function menuDiagnosticarBases_() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = diagnosticarBases();
+
+  var lineas = [
+    'Solapas revisadas: ' + resultado.filasSolapas.length + ' (⚠ ' + resultado.advertenciasSolapas + ')',
+    'Columnas mapeadas tipadas: ' + resultado.filasTipos.length + ' (⚠ texto/mixto: ' + resultado.advertenciasTipos + ')'
+  ];
+
+  if (resultado.basesSinAcceso.length) {
+    lineas.push('', 'Bases sin acceso:');
+    lineas = lineas.concat(resultado.basesSinAcceso.map(function (m) { return '⚠️ ' + m; }));
+  }
+
+  if (resultado.advertenciasSolapas > 0) {
+    lineas.push('', '⚠️ Hay solapas con problema (hoja_default o mapeo apuntando a una solapa que no existe):');
+    lineas = lineas.concat(resultado.filasSolapas
+      .filter(function (f) { return f.estado.indexOf('⚠') === 0; })
+      .map(function (f) { return '  · ' + f.base_id + '/' + f.solapa + ' — ' + f.estado; }));
+  }
+
+  if (resultado.advertenciasTipos > 0) {
+    lineas.push('', '⚠️ Columnas mapeadas que salieron texto/mixto (revisar antes de sumarlas en el Paso 3):');
+    lineas = lineas.concat(resultado.filasTipos
+      .filter(function (f) { return f.alerta === '⚠'; })
+      .slice(0, 20)
+      .map(function (f) { return '  · ' + f.base_id + '/' + f.solapa + '/' + f.campo_logico + ' (col ' + f.columna + ') = ' + f.tipo + ', ej. "' + f.muestra + '"'; }));
+  }
+
+  lineas.push('', 'Detalle completo en la hoja DIAG_BASES.');
+
+  ui.alert('Solapas y tipos de columnas mapeadas', lineas.join('\n'), ui.ButtonSet.OK);
+}

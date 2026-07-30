@@ -21,6 +21,7 @@ function onOpen() {
         .addItem('Detectar columnas de fecha', 'menuDetectarColumnasFecha_')
         .addItem('Promover fechas elegidas', 'menuPromoverFechasElegidas_')
         .addItem('Validar MAPEO (duplicados)', 'menuValidarMapeo_')
+        .addItem('Listar solapas y tipos', 'menuDiagnosticarBases_')
         .addItem('Cargar ejemplo', 'menuCargarEjemplo_')
     )
     .addSubMenu(
