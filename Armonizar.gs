@@ -294,6 +294,46 @@ function limpiarCajasFueraDeCanvas_(slide, reporte) {
 }
 
 /**
+ * JM slide 10, matriz de M2: hay una caja `{{m2_salud_camp}}` de más, resto
+ * de una disposición anterior — no está fuera de canvas, así que
+ * `limpiarCajasFueraDeCanvas_` no la toca. Decisión del usuario (HANDOFF
+ * 2026-07-30-2, "La caja huérfana: resuelta"): es un sobrante, se borra; el
+ * renombre `m2_camp4 → m2_salud_camp` de la Parte A queda como está.
+ *
+ * Esta función corre DESPUÉS de la Parte A, así que la celda real de la
+ * columna Salud ya se llama `{{m2_salud_camp}}` igual que la huérfana — no
+ * se puede distinguir por texto. Se distinguen por ancho: la celda de
+ * columna mide ~1.14", la huérfana es una franja de ancho completo (~7.13").
+ * Comparar por proporción (no por pulgadas/puntos absolutos) para no
+ * depender de la unidad que use `getWidth()`.
+ */
+function eliminarCajaHuerfanaM2Salud_(slide, reporte) {
+  var candidatas = slide.getShapes().filter(function (shape) {
+    return typeof shape.getText === 'function' && shape.getText().asString().trim() === '{{m2_salud_camp}}';
+  });
+
+  if (candidatas.length < 2) {
+    reporte.push({ ok: true, etiqueta: 'JM slide 10 — caja huérfana M2 Salud', motivo: candidatas.length + ' caja(s) con ese token — ya estaba limpia o la celda de columna no existe' });
+    return;
+  }
+  if (candidatas.length > 2) {
+    reporte.push({ ok: false, etiqueta: 'JM slide 10 — caja huérfana M2 Salud', motivo: candidatas.length + ' cajas con ese token — no se borra nada, revisar a mano' });
+    return;
+  }
+
+  candidatas.sort(function (a, b) { return b.getWidth() - a.getWidth(); });
+  var huerfana = candidatas[0];
+  var columna = candidatas[1];
+  if (huerfana.getWidth() < columna.getWidth() * 2) {
+    reporte.push({ ok: false, etiqueta: 'JM slide 10 — caja huérfana M2 Salud', motivo: 'las dos cajas tienen ancho parecido (' + huerfana.getWidth() + ' vs ' + columna.getWidth() + ') — no se puede distinguir cuál es la huérfana, no se borra nada' });
+    return;
+  }
+
+  huerfana.remove();
+  reporte.push({ ok: true, etiqueta: 'JM slide 10 — caja huérfana M2 Salud', motivo: 'borrada (ancho ' + huerfana.getWidth() + ' vs celda de columna ' + columna.getWidth() + ')' });
+}
+
+/**
  * Diagnóstico manual (no lo llama el menú ni `armonizarPlantillas`): lista
  * cada elemento de una slide con tipo, posición y texto si tiene, recursando
  * en grupos. Para cuando `limpiarCajasFueraDeCanvas_` no encuentra lo que se
@@ -378,6 +418,7 @@ function corregirCajasPresentacion_(informeId, presentacion) {
 
       if (slide10) {
         limpiarCajasFueraDeCanvas_(slide10, reporte);
+        eliminarCajaHuerfanaM2Salud_(slide10, reporte);
       } else {
         reporte.push({ ok: false, etiqueta: 'JM slide 10', motivo: 'la presentación no tiene slide 10' });
       }
