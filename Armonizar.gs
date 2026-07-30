@@ -32,8 +32,34 @@ var RENOMBRES_ARMONIZACION_POR_INFORME_ = {
     { viejo: '{{enc_audiencia_pct}}', nuevo: '{{enc_alcance_pct}}' },
     { viejo: '{{enc_clics}}', nuevo: '{{enc_clics_ctor}}' },
     { viejo: '{{enc_audiencia_ivr}}', nuevo: '{{enc_base_total}}' },
-    { viejo: '{{rrss_prom}}', nuevo: '{{rrss_prom_general}}' }
-    // M2 slide 10 (nombres por categoría) se agrega en el Problema 2.
+    { viejo: '{{rrss_prom}}', nuevo: '{{rrss_prom_general}}' },
+    // M2 slide 10 — nombres por categoría (docs/TOKENS.md §1, tabla
+    // "M2 slide 10"; mapeo verificado contra la Sheet viva en
+    // docs/Prompts/Paso-2.2.1.md, Problema 2). Cada texto viejo es único en
+    // la presentación (a diferencia de `enc_audiencia` en la slide 5, acá no
+    // hay colisión), así que el renombre 1 a 1 es seguro pese a que el mapeo
+    // real no sigue un patrón simple: `m2_vis_e` está en Desalojos (no en la
+    // "e" que sugeriría el sufijo) y `m2_camp1`/`m2_camp2` están cruzados.
+    // Si alguna ya está aplicada (p. ej. `m2_camp4` ya es `m2_salud_camp`),
+    // el reemplazo da 0 ocurrencias — no rompe nada, es idempotente.
+    { viejo: '{{m2_clics_a}}', nuevo: '{{m2_subtes_clics}}' },
+    { viejo: '{{m2_aud_a}}', nuevo: '{{m2_subtes_aud}}' },
+    { viejo: '{{m2_vis_a}}', nuevo: '{{m2_subtes_vis}}' },
+    { viejo: '{{m2_clics_b}}', nuevo: '{{m2_transito_clics}}' },
+    { viejo: '{{m2_aud_b}}', nuevo: '{{m2_transito_aud}}' },
+    { viejo: '{{m2_clics_c}}', nuevo: '{{m2_desalojos_clics}}' },
+    { viejo: '{{m2_aud_c}}', nuevo: '{{m2_desalojos_aud}}' },
+    { viejo: '{{m2_vis_e}}', nuevo: '{{m2_desalojos_vis}}' },
+    { viejo: '{{m2_clics_d}}', nuevo: '{{m2_salud_clics}}' },
+    { viejo: '{{m2_aud_d}}', nuevo: '{{m2_salud_aud}}' },
+    { viejo: '{{m2_clics_e}}', nuevo: '{{m2_seguridad_clics}}' },
+    { viejo: '{{m2_camp2}}', nuevo: '{{m2_subtes_camp}}' },
+    { viejo: '{{m2_camp1}}', nuevo: '{{m2_desalojos_camp}}' },
+    { viejo: '{{m2_camp3}}', nuevo: '{{m2_transito_camp}}' },
+    { viejo: '{{m2_camp4}}', nuevo: '{{m2_salud_camp}}' },
+    { viejo: '{{m2_camp5}}', nuevo: '{{m2_seguridad_camp}}' }
+    // No se crean m2_transito_vis / m2_salud_vis / m2_seguridad_vis: esas
+    // columnas no tienen caja de Visualizaciones en la plantilla viva.
   ],
   secco: [
     { viejo: '{{rrss_prom}}', nuevo: '{{rrss_prom_general}}' }
@@ -190,19 +216,63 @@ function agregarLineaCaja_(slide, textoAncla, lineaNueva, reporte, etiquetaRepor
  * (`top` negativo) — no se imprimen, pero ensucian cualquier búsqueda de
  * texto. Se identifican por posición, no por contenido: no hace falta saber
  * qué número tiene cada uno para saber que no debería estar ahí.
+ *
+ * Paso 2.2.1: la primera versión usaba `slide.getShapes()`, que solo trae
+ * elementos de primer nivel — si los números viejos están agrupados (Group),
+ * no aparecen ahí y la limpieza no encontraba nada (síntoma real: seguían
+ * los 14 números tras correr la armonización). Ahora recorre
+ * `getPageElements()` y entra un nivel en cada Group.
  */
-function limpiarCajasFueraDeCanvas_(slide, reporte) {
-  var shapes = slide.getShapes();
+function eliminarElementosFueraDeCanvas_(elementos) {
   var eliminados = 0;
+  var lista = elementos.slice(); // copia: remove() muta la colección en vivo
 
-  shapes.forEach(function (shape) {
-    if (shape.getTop() < 0) {
-      shape.remove();
+  lista.forEach(function (el) {
+    if (el.getTop() < 0) {
+      el.remove(); // si es un Group entero fuera de canvas, se va con todo su contenido
       eliminados++;
+      return;
+    }
+    if (el.getPageElementType && el.getPageElementType() === SlidesApp.PageElementType.GROUP) {
+      eliminados += eliminarElementosFueraDeCanvas_(el.asGroup().getChildren());
     }
   });
 
+  return eliminados;
+}
+
+function limpiarCajasFueraDeCanvas_(slide, reporte) {
+  var eliminados = eliminarElementosFueraDeCanvas_(slide.getPageElements());
   reporte.push({ ok: true, etiqueta: 'JM slide 10 — limpieza', eliminados: eliminados });
+}
+
+/**
+ * Diagnóstico manual (no lo llama el menú ni `armonizarPlantillas`): lista
+ * cada elemento de una slide con tipo, posición y texto si tiene, recursando
+ * en grupos. Para cuando `limpiarCajasFueraDeCanvas_` no encuentra lo que se
+ * espera — correr esto y mirar el log antes de ajustar el código a ciegas.
+ * Ej.: `diagnosticoElementosSlide_('<id de la plantilla JM>', 10)`.
+ */
+function diagnosticoElementosSlide_(plantillaId, numeroSlideUnoIndexado) {
+  var presentacion = SlidesApp.openById(plantillaId);
+  var slide = slideEn_(presentacion.getSlides(), numeroSlideUnoIndexado);
+  if (!slide) {
+    Logger.log('No existe la slide ' + numeroSlideUnoIndexado);
+    return;
+  }
+  logElementosSlide_(slide.getPageElements(), 0);
+}
+
+function logElementosSlide_(elementos, profundidad) {
+  var sangria = new Array(profundidad + 1).join('  ');
+  elementos.forEach(function (el) {
+    var tipo = el.getPageElementType ? el.getPageElementType() : '?';
+    var texto = (typeof el.getText === 'function') ? el.getText().asString().replace(/\n/g, ' ⏎ ').slice(0, 40) : '';
+    Logger.log(sangria + tipo + ' · top=' + el.getTop() + ' left=' + el.getLeft() + ' · "' + texto + '"');
+    if (tipo === SlidesApp.PageElementType.GROUP) {
+      logElementosSlide_(el.asGroup().getChildren(), profundidad + 1);
+    }
+  });
 }
 
 function slideEn_(slides, numeroUnoIndexado) {
