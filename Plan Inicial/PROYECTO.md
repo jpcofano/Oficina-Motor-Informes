@@ -279,6 +279,14 @@ BASES/MAPEO/CONFIG) · Paso 1.6 + 1.6 v2 (registrar plantillas, robusto) · Paso
   parche todavía no se corrió contra la plantilla real.** Sigue pendiente sacar la
   advertencia de `docs/TOKENS.md` (Parte D del 2.2). `enc_audiencia_ivr`→`enc_base_total`
   sigue siendo pregunta abierta en `PLANTILLAS_QA_y_armonizacion.md` §9, no confirmada.
+- Paso 2.4 ✅ — capa de ensamblado (`Union.gs`), en paralelo a la vía de plantillas
+  (2.2 → 2.5): `unirDigitalPorCuenta()` (join de las 6 solapas de `digital` por
+  `id_cuenta`, snapshot) + `anclarEncuentros()` (anclaje RDV → cuenta digital,
+  `docs/DISENO_match_temario.md` §5 bis, con precondición R-01 y umbral de
+  confianza) + `filasDigitalDeEncuentro()` como proveedor estable que el Paso 3
+  usa en vez de `leerFuente` directo para digital. El join por `id_cuenta` y el
+  anclaje RDV **no son aritmética** y por eso viven acá, no en `Marcadores.gs`.
+  Menú: "Probar unión y anclaje".
 - **Firma de encabezados** (paso propio, antes del `Paso-3-v2`) — DOC-3 generalizó el
   riesgo que estaba anotado como específico de `RDV_otros_ministros` (dueño ajeno inserta
   una columna, el mapeo por letra sigue leyendo sin fallar, devuelve la de al lado): **las
