@@ -139,6 +139,7 @@ handoff de claude.ai más reciente dice qué se verificó y qué se decidió.
 ## 6. Mapa del repo
 
 ```
+CLAUDE.md                           este archivo — convenciones y ruteo, raíz del repo
 *.gs, Panel.html, appsscript.json   código Apps Script (raíz — así lo espera clasp)
 Plan Inicial/PROYECTO.md            documento maestro
 Plan Inicial/_archivo/              historial: docs superados, plantillas .pptx espejo
