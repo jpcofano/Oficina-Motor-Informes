@@ -601,6 +601,13 @@ function diagnosticarBases() {
     });
   });
 
+  // Paso 2.7 Parte E: contar ⚠ y "solapas revisadas" ANTES de agregar la fila TOTAL
+  // de abajo — si no, la fila de control se cuenta a sí misma como si fuera una
+  // solapa más (por eso el resumen decía "85" con SOLAPAS en 84: la fila TOTAL sumaba
+  // uno de más). `advertenciasSolapas` son las ⚠ de config (hoja_default/mapeada que
+  // no existen), no la clasificación exhaustiva en sí, que nunca lleva ⚠.
+  var advertenciasSolapas = filasSolapas.filter(function (f) { return f.estado.indexOf('⚠') === 0; }).length;
+
   // Línea de control (Paso 2.6 Parte A): un diagnóstico que puede omitir filas de
   // solapas reales en silencio no sirve para lo que se usa. Compara el total de
   // solapas reales de los archivos contra el total de filas que la clasificación
@@ -620,7 +627,7 @@ function diagnosticarBases() {
     filasSolapas: filasSolapas,
     filasTipos: filasTipos,
     basesSinAcceso: basesSinAcceso,
-    advertenciasSolapas: filasSolapas.filter(function (f) { return f.estado.indexOf('⚠') === 0; }).length,
+    advertenciasSolapas: advertenciasSolapas,
     advertenciasTipos: filasTipos.filter(function (f) { return f.alerta === '⚠'; }).length,
     totalSolapasArchivo: totalSolapasArchivo,
     totalFilasClasificadas: totalFilasClasificadas,
@@ -704,7 +711,7 @@ function menuDiagnosticarBases_() {
   var resultado = diagnosticarBases();
 
   var lineas = [
-    'Solapas revisadas: ' + resultado.filasSolapas.length + ' (⚠ ' + resultado.advertenciasSolapas + ')',
+    'Solapas revisadas: ' + resultado.totalFilasClasificadas + ' (⚠ ' + resultado.advertenciasSolapas + ')',
     'Columnas mapeadas tipadas: ' + resultado.filasTipos.length + ' (⚠ texto/mixto: ' + resultado.advertenciasTipos + ')',
     (resultado.totalesCoinciden ? '✅' : '⚠') + ' Control de totales — solapas del archivo: ' +
       resultado.totalSolapasArchivo + ' vs. filas emitidas: ' + resultado.totalFilasClasificadas
@@ -718,7 +725,7 @@ function menuDiagnosticarBases_() {
   if (resultado.advertenciasSolapas > 0) {
     lineas.push('', '⚠️ Hay solapas con problema (hoja_default o mapeo apuntando a una solapa que no existe):');
     lineas = lineas.concat(resultado.filasSolapas
-      .filter(function (f) { return f.estado.indexOf('⚠') === 0; })
+      .filter(function (f) { return f.base_id !== 'TOTAL' && f.estado.indexOf('⚠') === 0; })
       .map(function (f) { return '  · ' + f.base_id + '/' + f.solapa + ' — ' + f.estado; }));
   }
 
