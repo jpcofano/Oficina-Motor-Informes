@@ -127,42 +127,13 @@ function opTEXTO(ctx) {
 
 /**
  * Encuentra, dentro de `rdv/RVD JM-CM - ES`, la fila `Realizada` cuyo barrio
- * contiene "Retiro" en la ventana del 24/07/2026 — el caso cableado a mano de
- * Paso 2.9E. Reusa `leerFuente`/`buscarMapeo` (Fuentes.gs, Config.gs) y
- * `valorPorColumna_`/`normalizar_` (Union.gs, Parseo.gs) en vez de reimplementar
- * la resolución de columnas o la normalización de texto (namespace, PROYECTO.md §9).
+ * contiene "Retiro" el 24/07/2026 — el caso cableado a mano de Paso 2.9E.
+ * Delega en `encontrarFilaRdvDeReunion_()` (Union.gs), la misma función que usa
+ * el anclaje (Paso 2.9F) para no duplicar el matching REUNIONES→rdv en dos
+ * archivos.
  */
 function encontrarEncuentroRetiro2407_() {
-  var fecha = new Date(2026, 6, 24, 12, 0, 0);
-  var ventana = { ok: true, desde: fecha, hasta: fecha, origen: 'corte_vertical:retiro_24-07' };
-
-  var lectura = leerFuente('rdv', ventana);
-  if (!lectura.ok) return { ok: false, motivo: lectura.motivo };
-
-  var campoBarrio = buscarMapeo('rdv', lectura.hoja, 'barrio');
-  var campoStatus = buscarMapeo('rdv', lectura.hoja, 'status');
-  if (!campoBarrio.ok || !campoStatus.ok) {
-    return { ok: false, motivo: 'Falta MAPEO de barrio/status para rdv/' + lectura.hoja };
-  }
-
-  var encontrada = null;
-  lectura.filas.forEach(function (fila) {
-    if (encontrada) return;
-    var barrio = valorPorColumna_(fila, 'rdv', lectura.hoja, campoBarrio.columna);
-    var status = valorPorColumna_(fila, 'rdv', lectura.hoja, campoStatus.columna);
-    if (normalizar_(barrio).indexOf('retiro') !== -1 && String(status || '').trim() === 'Realizada') {
-      encontrada = fila;
-    }
-  });
-
-  if (!encontrada) {
-    return {
-      ok: false,
-      motivo: 'No se encontró un encuentro "Realizada" con barrio "Retiro" el 24/07/2026 en rdv/' + lectura.hoja +
-        ' (' + lectura.filas.length + ' fila(s) en la ventana).'
-    };
-  }
-  return { ok: true, hoja: lectura.hoja, fila: encontrada, filasEnVentana: lectura.filas.length };
+  return encontrarFilaRdvDeReunion_({ nombre: 'Retiro', fecha: new Date(2026, 6, 24, 12, 0, 0) });
 }
 
 /**

@@ -190,7 +190,55 @@ var HOJA_COMUNAS_RDV_ = 'Comunas';
 // el piso para asumir un link sin marcarlo para revisión humana). Por debajo,
 // mejor un huérfano visible en `bajaConfianza` que un número pegado a la
 // campaña equivocada (Parte B punto 5 del prompt).
-var UMBRAL_CONFIANZA_ANCLAJE_ = 0.6;
+// Paso 2.9F: el umbral sale del código y va a CONFIG (`umbral_anclaje_reunion`).
+// Esta constante queda solo como default si CONFIG no lo tiene cargado —
+// nunca se usa directo, siempre pasa por `umbralAnclajeReunion_()`.
+var UMBRAL_CONFIANZA_ANCLAJE_DEFECTO_ = 0.6;
+
+function umbralAnclajeReunion_() {
+  var valor = Number(leerConfig().umbral_anclaje_reunion);
+  return isNaN(valor) ? UMBRAL_CONFIANZA_ANCLAJE_DEFECTO_ : valor;
+}
+
+// Paso 2.9F, punto 1 del algoritmo: "filtrar candidatos" reduce el universo de
+// cuentas digitales antes de puntuar contra cada reunión — es lo que disuelve
+// el timeout (puntuar 500 encuentros × 1297 cuentas nunca terminaba en 6
+// minutos; puntuar contra 5-20 candidatos cercanos en fecha, sí). Una cuenta
+// sin fecha parseable en el nombre no se puede descartar por este criterio:
+// pasa como candidata siempre (fallback), igual que antes.
+var VENTANA_DIAS_CANDIDATOS_ANCLAJE_ = 14;
+
+function candidatosCercanosPorFecha_(candidatos, fechaObjetivo, ventanaDias) {
+  if (!fechaObjetivo) return candidatos;
+  var msVentana = ventanaDias * 24 * 60 * 60 * 1000;
+  return candidatos.filter(function (c) {
+    var fechaCandidato = c.parseado && c.parseado.fecha;
+    if (!fechaCandidato) return true;
+    return Math.abs(fechaCandidato.getTime() - fechaObjetivo.getTime()) <= msVentana;
+  });
+}
+
+/**
+ * Paso 2.9F, punto 1 — `anclar_()`: una sola función para rankear candidatos
+ * contra un objetivo, sin importar si el llamador busca una reunión o una
+ * campaña. Lo único que cambia entre esos dos casos es cómo se arma la lista
+ * de `candidatos` (ya filtrada por el llamador) y qué `funcionScore` se pasa —
+ * hoy `scoreMatchDigitalRdv_` para reuniones; una campaña podría reusar
+ * `solapamientoTokens_` de arriba sin tocar esta función.
+ */
+function anclar_(candidatos, contexto, umbral, funcionScore) {
+  var ranking = candidatos
+    .map(function (c) { return { candidato: c, score: funcionScore(c, contexto) }; })
+    .sort(function (a, b) { return b.score - a.score; });
+
+  var mejor = ranking[0];
+  return {
+    mejor: mejor ? mejor.candidato : null,
+    score: mejor ? mejor.score : 0,
+    pasaUmbral: !!mejor && mejor.score >= umbral,
+    top3: ranking.slice(0, 3)
+  };
+}
 
 function verificarPrecondicionAnclaje_() {
   var campoFecha = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'fecha_periodo');
@@ -295,28 +343,139 @@ function scoreMatchDigitalRdv_(candidato, evento, barrio) {
   return Math.min(score, 1);
 }
 
+/**
+ * Encuentra la fila de `rdv` (Realizada) que corresponde a una fila de
+ * `REUNIONES` (match por nombre~barrio/evento + fecha, mismo día). Generaliza
+ * el matching cableado a mano del corte vertical (Paso 2.9E,
+ * `encontrarEncuentroRetiro2407_` en Marcadores.gs) para que el anclaje
+ * (Paso 2.9F) lo reuse en vez de reimplementarlo.
+ */
+function encontrarFilaRdvDeReunion_(reunion) {
+  var fecha = (reunion.fecha instanceof Date) ? reunion.fecha : parsearFechaCelda_(reunion.fecha);
+  if (!fecha) return { ok: false, motivo: 'REUNIONES "' + reunion.nombre + '" no tiene fecha válida.' };
+
+  var mediodia = new Date(fecha.getFullYear(), fecha.getMonth(), fecha.getDate(), 12, 0, 0);
+  var ventanaDia = { ok: true, desde: mediodia, hasta: mediodia, origen: 'reunion:' + reunion.nombre };
+
+  var lectura = leerFuente('rdv', ventanaDia);
+  if (!lectura.ok) return { ok: false, motivo: lectura.motivo };
+
+  var campoBarrio = buscarMapeo('rdv', lectura.hoja, 'barrio');
+  var campoEvento = buscarMapeo('rdv', lectura.hoja, 'evento');
+  var campoStatus = buscarMapeo('rdv', lectura.hoja, 'status');
+  if (!campoBarrio.ok || !campoStatus.ok) {
+    return { ok: false, motivo: 'Falta MAPEO de barrio/status para rdv/' + lectura.hoja };
+  }
+
+  var nombreBuscado = normalizar_(reunion.nombre);
+  var encontrada = null;
+  lectura.filas.forEach(function (fila) {
+    if (encontrada) return;
+    var barrio = valorPorColumna_(fila, 'rdv', lectura.hoja, campoBarrio.columna);
+    var evento = campoEvento.ok ? valorPorColumna_(fila, 'rdv', lectura.hoja, campoEvento.columna) : '';
+    var status = valorPorColumna_(fila, 'rdv', lectura.hoja, campoStatus.columna);
+    var coincide = normalizar_(barrio).indexOf(nombreBuscado) !== -1 || normalizar_(evento).indexOf(nombreBuscado) !== -1;
+    if (coincide && String(status || '').trim() === VALOR_STATUS_REALIZADA_) encontrada = fila;
+  });
+
+  if (!encontrada) {
+    return {
+      ok: false,
+      motivo: 'No se encontró un encuentro "' + VALOR_STATUS_REALIZADA_ + '" para "' + reunion.nombre + '" (' +
+        Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy') + ') en rdv/' + lectura.hoja
+    };
+  }
+  return { ok: true, hoja: lectura.hoja, fila: encontrada, filasEnVentana: lectura.filas.length };
+}
+
+/**
+ * Paso 2.9F, punto 4/5 — hoja `ANCLAJE_PENDIENTE`: los candidatos por debajo
+ * del umbral se registran acá, con sus tres mejores opciones y una columna
+ * `elegido` que completa la persona. Una vez completada, no se vuelve a
+ * preguntar en la corrida siguiente (`anclajeYaConfirmado_`) — si cada corrida
+ * repreguntara lo mismo, el paso humano deja de ser control y pasa a trámite.
+ */
+var HEADERS_ANCLAJE_PENDIENTE_ = ['tipo', 'nombre_buscado', 'candidato_1', 'puntaje_1', 'candidato_2', 'puntaje_2', 'candidato_3', 'puntaje_3', 'elegido'];
+
+function obtenerHojaAnclajePendiente_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('ANCLAJE_PENDIENTE');
+  if (!hoja) {
+    hoja = ss.insertSheet('ANCLAJE_PENDIENTE');
+    hoja.getRange(1, 1, 1, HEADERS_ANCLAJE_PENDIENTE_.length).setValues([HEADERS_ANCLAJE_PENDIENTE_]);
+    hoja.setFrozenRows(1);
+  }
+  return hoja;
+}
+
+function indiceAnclajePendiente_(hoja) {
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idx = {};
+  headers.forEach(function (h, i) { idx[h] = i; });
+
+  var porClave = {};
+  for (var f = 1; f < datos.length; f++) {
+    var clave = datos[f][idx.tipo] + '||' + datos[f][idx.nombre_buscado];
+    porClave[clave] = { fila: f + 1, elegido: datos[f][idx.elegido] };
+  }
+  return porClave;
+}
+
+function anclajeYaConfirmado_(indice, tipo, nombreBuscado) {
+  var entrada = indice[tipo + '||' + nombreBuscado];
+  if (entrada && entrada.elegido !== '' && entrada.elegido !== null && entrada.elegido !== undefined) {
+    return entrada.elegido;
+  }
+  return null;
+}
+
+/**
+ * Registra (o actualiza) una fila de candidatos de baja confianza. Si ya
+ * existe con `elegido` cargado, no la toca — la decisión humana no se pisa.
+ */
+function registrarAnclajePendiente_(hoja, indice, tipo, nombreBuscado, top3) {
+  var clave = tipo + '||' + nombreBuscado;
+  var existente = indice[clave];
+  if (existente && existente.elegido) return;
+
+  var fila = [tipo, nombreBuscado];
+  for (var i = 0; i < 3; i++) {
+    var item = top3[i];
+    fila.push(item ? (item.candidato.nombreCampana || item.candidato.idCuenta || '') : '');
+    fila.push(item ? Number(item.score.toFixed(2)) : '');
+  }
+  fila.push(existente ? existente.elegido : '');
+
+  if (existente) {
+    hoja.getRange(existente.fila, 1, 1, fila.length).setValues([fila]);
+  } else {
+    hoja.appendRow(fila);
+    indice[clave] = { fila: hoja.getLastRow(), elegido: '' };
+  }
+  SpreadsheetApp.flush();
+}
+
+/**
+ * Paso 2.9F — reescrito sobre `REUNIONES` (Paso 2.9D), no sobre un recorte por
+ * fecha de `rdv`: R-02 dice que el temario define el universo, así que el
+ * anclaje corre sobre las reuniones con `mostrar=sí` (excluidas las de
+ * `tipo=Agregado` — Ministros/M2 no son encuentros individuales que anclar).
+ * Acotado así, y con los candidatos digitales pre-filtrados por cercanía de
+ * fecha (`candidatosCercanosPorFecha_`), el timeout de `menuProbarUnionYAnclaje_`
+ * desaparece sin tocar el scoring (`scoreMatchDigitalRdv_` no cambia).
+ * Deja rastro mientras corre (Logger + `SpreadsheetApp.flush()` por reunión):
+ * si el script se corta, `ANCLAJE_PENDIENTE` y el log ya tienen lo que se
+ * alcanzó a procesar.
+ */
 function anclarEncuentros(ventana) {
   var precondicion = verificarPrecondicionAnclaje_();
   if (!precondicion.ok) return { ok: false, motivo: precondicion.motivo };
 
-  var rdvLeido = leerFuente('rdv', ventana);
-  if (!rdvLeido.ok) return { ok: false, motivo: rdvLeido.motivo };
-
-  var campoEvento = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'evento');
-  var campoBarrio = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'barrio');
-  var campoStatus = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'status');
-  var campoFecha = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'fecha_periodo');
-  if (!campoEvento.ok || !campoBarrio.ok || !campoStatus.ok || !campoFecha.ok) {
-    return {
-      ok: false,
-      motivo: 'Falta MAPEO de evento/barrio/status/fecha_periodo para rdv/' + SOLAPA_ANCLA_RDV_
-    };
+  var reuniones = leerReuniones_().filter(function (r) { return r.tipo !== 'Agregado'; });
+  if (!reuniones.length) {
+    return { ok: false, motivo: 'REUNIONES no tiene filas con mostrar=sí para anclar (excluidas las de tipo Agregado).' };
   }
-
-  var realizadas = rdvLeido.filas.filter(function (fila) {
-    var status = valorPorColumna_(fila, 'rdv', SOLAPA_ANCLA_RDV_, campoStatus.columna);
-    return String(status || '').trim() === VALOR_STATUS_REALIZADA_;
-  });
 
   var digitalUnido = unirDigitalPorCuenta(ventana);
   if (!digitalUnido.ok) return { ok: false, motivo: digitalUnido.motivo };
@@ -324,7 +483,7 @@ function anclarEncuentros(ventana) {
   var catalogo = catalogoBarriosDesdeBase_('rdv', HOJA_COMUNAS_RDV_);
   var anioDefecto = anioDefectoDesdeVentana_(ventana);
 
-  var candidatos = Object.keys(digitalUnido.porCuenta).map(function (idCuenta) {
+  var candidatosTodos = Object.keys(digitalUnido.porCuenta).map(function (idCuenta) {
     var registro = digitalUnido.porCuenta[idCuenta];
     var nombreCampana = registro.sd_campana_digital || registro.sd_campana_cuentas || '';
     return {
@@ -335,41 +494,69 @@ function anclarEncuentros(ventana) {
     };
   });
 
+  var umbral = umbralAnclajeReunion_();
+  var hojaPendiente = obtenerHojaAnclajePendiente_();
+  var indicePendiente = indiceAnclajePendiente_(hojaPendiente);
+
   var encuentros = [];
   var sinLink = [];
   var bajaConfianza = [];
 
-  realizadas.forEach(function (fila) {
-    var evento = valorPorColumna_(fila, 'rdv', SOLAPA_ANCLA_RDV_, campoEvento.columna);
-    var barrio = valorPorColumna_(fila, 'rdv', SOLAPA_ANCLA_RDV_, campoBarrio.columna);
-    // La fecha del encuentro sale de RDV, nunca del nombre de campaña (§5 bis).
-    var fecha = valorPorColumna_(fila, 'rdv', SOLAPA_ANCLA_RDV_, campoFecha.columna);
+  Logger.log('anclarEncuentros: arranca — ' + reuniones.length + ' reunión(es), ' + candidatosTodos.length +
+    ' cuenta(s) digital · umbral=' + umbral + ' · ' + new Date());
 
-    var ranking = candidatos
-      .map(function (c) { return { candidato: c, score: scoreMatchDigitalRdv_(c, evento, barrio) }; })
-      .sort(function (a, b) { return b.score - a.score; });
+  reuniones.forEach(function (reunion, i) {
+    var fecha = (reunion.fecha instanceof Date) ? reunion.fecha : parsearFechaCelda_(reunion.fecha);
+    var nombreBuscado = normalizar_(reunion.nombre) + '|' +
+      (fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd') : 'sin_fecha') +
+      '|' + (reunion.etapa || '');
 
-    var mejor = ranking[0];
-    var item = {
-      fecha: fecha,
-      barrio: barrio,
-      evento: evento,
-      idCuenta: mejor ? mejor.candidato.idCuenta : '',
-      score: mejor ? mejor.score : 0,
-      registroDigital: mejor ? mejor.candidato.registro : null,
-      candidatoNombre: mejor ? mejor.candidato.nombreCampana : ''
-    };
+    var item = { reunion: reunion.nombre, fecha: reunion.fecha, etapa: reunion.etapa, idCuenta: '', score: 0, registroDigital: null, candidatoNombre: '' };
+    var confirmado = anclajeYaConfirmado_(indicePendiente, 'reunion', nombreBuscado);
+    var filaRdv = encontrarFilaRdvDeReunion_(reunion);
 
-    if (!mejor || mejor.score <= 0) {
+    if (!filaRdv.ok) {
+      item.motivo = filaRdv.motivo;
       sinLink.push(item);
-    } else if (mejor.score < UMBRAL_CONFIANZA_ANCLAJE_) {
-      bajaConfianza.push(item);
-    } else {
+    } else if (confirmado) {
+      var candidatoConfirmado = candidatosTodos.filter(function (c) { return c.idCuenta === confirmado || c.nombreCampana === confirmado; })[0];
+      item.idCuenta = candidatoConfirmado ? candidatoConfirmado.idCuenta : confirmado;
+      item.registroDigital = candidatoConfirmado ? candidatoConfirmado.registro : null;
+      item.candidatoNombre = confirmado;
+      item.score = 1;
+      item.confirmadoAMano = true;
       encuentros.push(item);
+    } else {
+      var candidatosCercanos = candidatosCercanosPorFecha_(candidatosTodos, fecha, VENTANA_DIAS_CANDIDATOS_ANCLAJE_);
+      var campoEvento = buscarMapeo('rdv', filaRdv.hoja, 'evento');
+      var campoBarrio = buscarMapeo('rdv', filaRdv.hoja, 'barrio');
+      var evento = campoEvento.ok ? valorPorColumna_(filaRdv.fila, 'rdv', filaRdv.hoja, campoEvento.columna) : '';
+      var barrio = campoBarrio.ok ? valorPorColumna_(filaRdv.fila, 'rdv', filaRdv.hoja, campoBarrio.columna) : '';
+
+      var resultado = anclar_(candidatosCercanos, null, umbral, function (c) { return scoreMatchDigitalRdv_(c, evento, barrio); });
+
+      item.idCuenta = resultado.mejor ? resultado.mejor.idCuenta : '';
+      item.score = resultado.score;
+      item.registroDigital = resultado.mejor ? resultado.mejor.registro : null;
+      item.candidatoNombre = resultado.mejor ? resultado.mejor.nombreCampana : '';
+
+      if (!resultado.mejor || resultado.score <= 0) {
+        sinLink.push(item);
+      } else if (!resultado.pasaUmbral) {
+        item.pendiente = true;
+        bajaConfianza.push(item);
+        registrarAnclajePendiente_(hojaPendiente, indicePendiente, 'reunion', nombreBuscado, resultado.top3);
+      } else {
+        encuentros.push(item);
+      }
     }
+
+    Logger.log('anclarEncuentros: ' + (i + 1) + '/' + reuniones.length + ' — "' + reunion.nombre + '" → ' +
+      (item.idCuenta ? item.idCuenta + ' (score ' + item.score.toFixed(2) + ')' : 'sin link') + ' · ' + new Date());
+    SpreadsheetApp.flush();
   });
 
-  return { ok: true, encuentros: encuentros, sinLink: sinLink, bajaConfianza: bajaConfianza };
+  return { ok: true, encuentros: encuentros, sinLink: sinLink, bajaConfianza: bajaConfianza, umbral: umbral };
 }
 
 /**
@@ -442,24 +629,26 @@ function menuProbarUnionYAnclaje_() {
     }
   });
 
-  lineas.push('', 'Anclaje RDV (' + SOLAPA_ANCLA_RDV_ + ', ' + VALOR_STATUS_REALIZADA_ + '):');
+  lineas.push('', 'Anclaje (Paso 2.9F — sobre REUNIONES, no sobre un recorte por fecha de rdv):');
 
   var anclaje = anclarEncuentros(ventana);
   if (!anclaje.ok) {
     lineas.push('  ⚠ ' + anclaje.motivo);
   } else {
-    lineas.push('  Encuentros linkeados: ' + anclaje.encuentros.length);
-    lineas.push('  Sin candidato (sinLink): ' + anclaje.sinLink.length);
-    lineas.push('  Baja confianza (< ' + UMBRAL_CONFIANZA_ANCLAJE_ + '): ' + anclaje.bajaConfianza.length);
+    lineas.push('  Umbral (CONFIG.umbral_anclaje_reunion): ' + anclaje.umbral);
+    lineas.push('  Reuniones linkeadas: ' + anclaje.encuentros.length);
+    lineas.push('  Sin candidato/sin fila en rdv (sinLink): ' + anclaje.sinLink.length);
+    lineas.push('  Baja confianza (en ANCLAJE_PENDIENTE): ' + anclaje.bajaConfianza.length);
 
     if (anclaje.bajaConfianza.length) {
       lineas.push('', '  Baja confianza — candidato y score, para ver por qué no cerró:');
       anclaje.bajaConfianza.slice(0, 15).forEach(function (item) {
         lineas.push(
-          '    · ' + formatearFecha_(item.fecha) + ' "' + item.evento + '" / ' + item.barrio +
+          '    · ' + item.reunion + (item.etapa ? ' (' + item.etapa + ')' : '') +
           ' → ' + (item.candidatoNombre || '(sin candidato)') + ' (score ' + item.score.toFixed(2) + ')'
         );
       });
+      lineas.push('', '  Completá "elegido" en ANCLAJE_PENDIENTE y volvé a correr: no se vuelve a preguntar.');
     }
   }
 

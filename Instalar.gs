@@ -934,7 +934,11 @@ var SEED_CONFIG_DEFAULTS_ = {
   periodo_desde: '',
   periodo_hasta: '',
   carpeta_plantillas: '1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi',
-  carpeta_salida: '1EyTlfg16vpyrftpUXgacShFk8iSbX_fJ'
+  carpeta_salida: '1EyTlfg16vpyrftpUXgacShFk8iSbX_fJ',
+  // Paso 2.9F: el umbral de confianza del anclaje sale del código (era una
+  // constante en Union.gs) y pasa a ser parámetro de negocio — cambiarlo ya no
+  // exige clasp push. Ver umbralAnclajeReunion_() en Union.gs.
+  umbral_anclaje_reunion: '0.6'
 };
 
 function seedConfiguracion() {
