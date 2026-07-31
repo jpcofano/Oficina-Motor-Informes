@@ -222,6 +222,7 @@ function instalar() {
   var hojaMapeo = ss.getSheetByName('MAPEO');
   var backfill = hojaMapeo ? backfillSolapaMapeo_(hojaMapeo) : { rellenadas: 0, sinHoja: [] };
   var eliminoAlcance = hojaMapeo ? eliminarMapeoAlcanceDigitalObsoleto_(hojaMapeo) : false;
+  var movioFechaPeriodoLooker = hojaMapeo ? moverFechaPeriodoLookerAResumenMetricas_(hojaMapeo) : false;
 
   var hojaMarcadores = ss.getSheetByName('MARCADORES');
   var migroOperacion = hojaMarcadores ? migrarCalculoAOperacion_(hojaMarcadores) : false;
@@ -236,6 +237,7 @@ function instalar() {
       ? '\n⚠️ MAPEO sin "hoja" cargada, no se pudo determinar solapa: ' + backfill.sinHoja.join(', ')
       : '') +
     (eliminoAlcance ? '\nMAPEO: eliminada la fila digital/Digital/alcance (col E era Fecha de inicio, Paso 2.8 Parte A)' : '') +
+    (movioFechaPeriodoLooker ? '\nMAPEO: looker/fecha_periodo movida a resumen_metricas (provisorio, Paso 2.8 Parte B)' : '') +
     (migroOperacion ? '\nMARCADORES.calculo renombrada a operacion (valores conservados)' : '');
   SpreadsheetApp.getUi().alert('Instalación completa', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
 }
@@ -261,6 +263,52 @@ function eliminarMapeoAlcanceDigitalObsoleto_(hoja) {
   for (var f = datos.length - 1; f >= 1; f--) {
     if (datos[f][idxBaseId] === 'digital' && datos[f][idxSolapa] === 'Digital' && datos[f][idxCampo] === 'alcance') {
       hoja.deleteRow(f + 1);
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Paso 2.8 Parte B — migración idempotente: destraba «FALTA:fecha_periodo@looker/
+ * resumen_metricas». De los ~25 mapeos de looker, 24 cuelgan en vivo de la solapa
+ * `resumen_metricas` (seed viejo, previo a DOC-3 Parte A) y `fecha_periodo` quedó
+ * sola en `resumen_metricas_dinamico` (la escribió `promoverFechasElegidas()`,
+ * Fechas.gs, a partir de la elección congelada en `docs/FECHAS_seleccion.md`).
+ * Ninguna de las dos solapas tiene el juego completo, así que `buscarMapeo()`
+ * nunca encuentra `fecha_periodo` en la solapa que `BASES.hoja_default` señala hoy
+ * (`resumen_metricas`). Mueve SOLO esa fila de solapa — no toca `columna`: las dos
+ * hojas tienen el mismo orden de columnas (Paso 2.7 Parte D / `compararResumenesLooker_`),
+ * así que sigue apuntando a la celda correcta.
+ * PROVISORIO: si la Parte C decide que la fuente real es `resumen_metricas_dinamico`,
+ * hay que revertir con `consolidarMapeoLooker_()` (Solapas.gs), que mueve los 25
+ * mapeos completos para allá. Si la fila ya está en `resumen_metricas`, o no existe,
+ * no hace nada.
+ */
+function moverFechaPeriodoLookerAResumenMetricas_(hoja) {
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxBaseId = headers.indexOf('base_id');
+  var idxSolapa = headers.indexOf('solapa');
+  var idxCampo = headers.indexOf('campo_logico');
+  var idxHoja = headers.indexOf('hoja');
+  var idxNotas = headers.indexOf('notas');
+  if (idxBaseId === -1 || idxSolapa === -1 || idxCampo === -1 || idxHoja === -1) return false;
+
+  var NOTA_PROVISORIA_ =
+    'Paso 2.8 Parte B: movida de resumen_metricas_dinamico a resumen_metricas para ' +
+    'destrabar «FALTA:fecha_periodo» y juntar los 25 mapeos — PROVISORIO, revertir si ' +
+    'la Parte C confirma que la fuente real es resumen_metricas_dinamico.';
+
+  for (var f = 1; f < datos.length; f++) {
+    if (datos[f][idxBaseId] === 'looker' && datos[f][idxCampo] === 'fecha_periodo' &&
+        datos[f][idxSolapa] === 'resumen_metricas_dinamico') {
+      hoja.getRange(f + 1, idxSolapa + 1).setValue('resumen_metricas');
+      hoja.getRange(f + 1, idxHoja + 1).setValue('resumen_metricas');
+      if (idxNotas !== -1) {
+        var notaActual = datos[f][idxNotas];
+        hoja.getRange(f + 1, idxNotas + 1).setValue(notaActual ? notaActual + ' | ' + NOTA_PROVISORIA_ : NOTA_PROVISORIA_);
+      }
       return true;
     }
   }
@@ -379,6 +427,16 @@ var SEED_MAPEO_ = [
   // la base viva, metadata de Drive — el nombre estaba desactualizado, las letras no:
   // el mapeo ya se había armado contra esta hoja). Una fila por campaña; prefijos = canal,
   // no familia.
+  // ⚠ Paso 2.8 Parte B: la hoja MAPEO EN VIVO no coincide todavía con este bloque. Los 24
+  // campos de abajo se sembraron hace tiempo contra la solapa 'resumen_metricas' (antes de
+  // la confirmación DOC-3 Parte A) y esa siembra no se volvió a correr; `fecha_periodo` la
+  // escribió por separado `promoverFechasElegidas()` (Fechas.gs) contra 'resumen_metricas_dinamico'
+  // (la elegida en FECHAS_seleccion.md). `moverFechaPeriodoLookerAResumenMetricas_()` (abajo)
+  // mueve esa fila en vivo a 'resumen_metricas' para que los 25 quedan juntos — PROVISORIO,
+  // hasta que la Parte C decida cuál de las dos hojas es la fuente real (getFormulas()).
+  // Si gana 'resumen_metricas_dinamico', usar `consolidarMapeoLooker_()` (Solapas.gs) para
+  // mover los 25 para allá; si gana 'resumen_metricas', este bloque de SEED_MAPEO_ queda
+  // desactualizado y hay que re-apuntarlo.
   // DOC-3 Parte C: faltaba id_cuenta (col A) — clave de join con Seguimiento Digital
   // que el Paso 2.4 necesita. Sin prefijo de canal (a diferencia de dig_id_cuenta,
   // mail_id_cuenta, …): looker tiene una sola solapa, no seis, no hace falta desambiguar.
