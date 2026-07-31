@@ -252,19 +252,26 @@ function menuCompararResumenesLooker_() {
 }
 
 /**
- * Paso 2.7 Parte D — `MAPEO` tiene los 25 campos de `looker` partidos entre las dos
- * solapas: 24 cuelgan de `resumen_metricas` y `fecha_periodo` cuelga de
- * `resumen_metricas_dinamico`. Encabezados y conteos son idénticos (903 filas, mismo
- * orden de columnas — `compararResumenesLooker_` de arriba lo confirma), así que no
- * hay riesgo de leer la columna equivocada, pero obliga a declarar `fuente` a las
- * dos, justo lo que `SOLAPAS` busca evitar.
+ * Paso 2.7 Parte D / Paso 2.8 Parte C — `MAPEO` tiene los ~25 campos de `looker`
+ * partidos entre las dos solapas (Parte B de Paso 2.8: 24 en `resumen_metricas`,
+ * `fecha_periodo` movida ahí también, provisorio). Encabezados y conteos son
+ * idénticos (903 filas, mismo orden de columnas — `compararResumenesLooker_` de
+ * arriba lo confirma), así que no hay riesgo de leer la columna equivocada, pero
+ * obliga a declarar `fuente` a las dos, justo lo que `SOLAPAS` busca evitar.
  *
- * Test para decidir cuál es la fuente real: `getFormulas()` sobre la fila 2 de cada
- * una. La que tiene fórmulas es la derivada (se recalcula a partir de la otra); la
- * que tiene valores planos es la fuente. Si las DOS tienen valores planos, no hay
- * vínculo entre ellas — no se puede decidir por código, hay que preguntarle al
- * dueño (`dgples.comunicacion@gmail.com`) cuál actualiza.
+ * Test para decidir cuál es la fuente real: `getFormulas()` sobre las filas **2 a
+ * 4** de cada una (Paso 2.8 Parte C amplía de "solo fila 2", Paso 2.7 Parte D, para
+ * no decidir con una sola fila que puede ser una excepción). La que tiene fórmulas
+ * es la derivada (se recalcula a partir de la otra); la que tiene valores planos es
+ * la fuente. Si las DOS tienen valores planos, no hay vínculo entre ellas — no se
+ * puede decidir por código, hay que preguntarle al dueño
+ * (`dgples.comunicacion@gmail.com`) cuál actualiza. Cada celda con fórmula se
+ * registra con su literal (`celdasConFormula`) y se vuelca completo a Logger.log
+ * — el resumen de la UI solo lista las celdas que tienen fórmula, no las ~30×3
+ * que no.
  */
+var FILAS_TEST_FORMULAS_LOOKER_ = [2, 3, 4];
+
 function auditarFormulasResumenesLooker_() {
   var bases = leerBases();
   var base = bases.looker;
@@ -287,11 +294,26 @@ function auditarFormulasResumenesLooker_() {
     if (hoja.getLastRow() < 2) return { ok: false, motivo: 'La solapa "' + nombres[i] + '" no tiene fila 2 (sin datos).' };
 
     var ultimaCol = hoja.getLastColumn();
-    var formulasFila2 = hoja.getRange(2, 1, 1, ultimaCol).getFormulas()[0];
-    info[nombres[i]] = {
-      hoja: hoja,
-      tieneFormulas: formulasFila2.some(function (f) { return f && f.length > 0; })
-    };
+    var headers = hoja.getRange(1, 1, 1, ultimaCol).getValues()[0];
+    var celdasConFormula = [];
+
+    FILAS_TEST_FORMULAS_LOOKER_.forEach(function (fila) {
+      if (fila > hoja.getLastRow()) return; // menos de 4 filas de datos
+      var formulasFila = hoja.getRange(fila, 1, 1, ultimaCol).getFormulas()[0];
+      formulasFila.forEach(function (formula, col) {
+        if (formula && formula.length > 0) {
+          celdasConFormula.push({ fila: fila, columna: indiceAColumnaLetra_(col), header: headers[col], formula: formula });
+        }
+      });
+    });
+
+    Logger.log('auditarFormulasResumenesLooker_ — ' + nombres[i] + ': ' +
+      (celdasConFormula.length
+        ? celdasConFormula.length + ' celda(s) con fórmula — ' +
+          celdasConFormula.map(function (c) { return 'fila' + c.fila + '/' + c.columna + '(' + c.header + ')=' + c.formula; }).join(' | ')
+        : 'sin fórmulas en filas ' + FILAS_TEST_FORMULAS_LOOKER_.join(',')));
+
+    info[nombres[i]] = { hoja: hoja, celdasConFormula: celdasConFormula, tieneFormulas: celdasConFormula.length > 0 };
   }
 
   var dinamico = info['resumen_metricas_dinamico'];
@@ -300,13 +322,15 @@ function auditarFormulasResumenesLooker_() {
   if (dinamico.tieneFormulas && !plana.tieneFormulas) {
     return {
       ok: true, estado: 'una_es_derivada', derivada: 'resumen_metricas_dinamico', fuente: 'resumen_metricas',
-      recomendacion: '"resumen_metricas_dinamico" tiene fórmulas en la fila 2 (derivada); "resumen_metricas" tiene valores planos (fuente).'
+      celdasConFormula: dinamico.celdasConFormula,
+      recomendacion: '"resumen_metricas_dinamico" tiene fórmulas en filas 2-4 (derivada); "resumen_metricas" tiene valores planos (fuente).'
     };
   }
   if (plana.tieneFormulas && !dinamico.tieneFormulas) {
     return {
       ok: true, estado: 'una_es_derivada', derivada: 'resumen_metricas', fuente: 'resumen_metricas_dinamico',
-      recomendacion: '"resumen_metricas" tiene fórmulas en la fila 2 (derivada); "resumen_metricas_dinamico" tiene valores planos (fuente).'
+      celdasConFormula: plana.celdasConFormula,
+      recomendacion: '"resumen_metricas" tiene fórmulas en filas 2-4 (derivada); "resumen_metricas_dinamico" tiene valores planos (fuente).'
     };
   }
   if (!dinamico.tieneFormulas && !plana.tieneFormulas) {
@@ -320,7 +344,7 @@ function auditarFormulasResumenesLooker_() {
       muestraDinamico: muestraDinamico,
       muestraPlana: muestraPlana,
       difierenYa: difierenYa,
-      recomendacion: 'Las dos hojas tienen valores planos en la fila 2 — no hay vínculo de fórmula entre ellas. ' +
+      recomendacion: 'Las dos hojas tienen valores planos en filas 2-4 — no hay vínculo de fórmula entre ellas. ' +
         (difierenYa
           ? '⚠ Los primeros id_cuentas YA difieren entre las dos — la pregunta de cuál actualiza es urgente.'
           : 'Los primeros id_cuentas coinciden hoy, pero eso no prueba que se actualicen juntas.') +
@@ -328,7 +352,13 @@ function auditarFormulasResumenesLooker_() {
     };
   }
 
-  return { ok: true, estado: 'ambas_formulas', recomendacion: 'Las dos hojas tienen fórmulas en la fila 2 — caso no previsto por el prompt. Revisar a mano.' };
+  return {
+    ok: true,
+    estado: 'ambas_formulas',
+    celdasConFormulaDinamico: dinamico.celdasConFormula,
+    celdasConFormulaPlana: plana.celdasConFormula,
+    recomendacion: 'Las dos hojas tienen fórmulas en filas 2-4 — caso no previsto por el prompt. Revisar a mano (detalle en Logger).'
+  };
 }
 
 function menuAuditarFormulasResumenesLooker_() {
@@ -342,13 +372,18 @@ function menuAuditarFormulasResumenesLooker_() {
 
   var lineas = [resultado.recomendacion];
   if (resultado.estado === 'una_es_derivada') {
+    lineas.push('', 'Celdas con fórmula en "' + resultado.derivada + '":');
+    resultado.celdasConFormula.forEach(function (c) {
+      lineas.push('  fila ' + c.fila + ', ' + c.columna + ' (' + c.header + '): ' + c.formula);
+    });
     lineas.push('', 'Correr "Consolidar mapeos de looker (Parte D)" para aplicar esta decisión.');
   } else if (resultado.estado === 'ambas_valores_planos') {
     lineas.push('', 'Primeros id_cuentas de resumen_metricas_dinamico: ' + resultado.muestraDinamico.join(', '));
     lineas.push('Primeros id_cuentas de resumen_metricas: ' + resultado.muestraPlana.join(', '));
   }
+  lineas.push('', 'Detalle completo (todas las celdas revisadas, filas 2-4) en Ver → Registros de ejecución.');
 
-  ui.alert('Auditoría de fórmulas — resúmenes de looker (Parte D)', lineas.join('\n'), ui.ButtonSet.OK);
+  ui.alert('Auditoría de fórmulas — resúmenes de looker (Parte C/D)', lineas.join('\n'), ui.ButtonSet.OK);
 }
 
 /**
