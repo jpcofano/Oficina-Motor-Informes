@@ -221,7 +221,7 @@ function instalar() {
 
   var hojaMapeo = ss.getSheetByName('MAPEO');
   var backfill = hojaMapeo ? backfillSolapaMapeo_(hojaMapeo) : { rellenadas: 0, sinHoja: [] };
-  var eliminoAlcance = hojaMapeo ? eliminarMapeoAlcanceDigitalObsoleto_(hojaMapeo) : false;
+  var eliminadasAlcance = hojaMapeo ? eliminarMapeoAlcanceDigitalObsoleto_(hojaMapeo) : 0;
   var movidasLooker = hojaMapeo ? alinearMapeoLookerADinamico_(hojaMapeo) : 0;
 
   var hojaSolapas = ss.getSheetByName('SOLAPAS');
@@ -242,7 +242,7 @@ function instalar() {
     (backfill.sinHoja.length
       ? '\n⚠️ MAPEO sin "hoja" cargada, no se pudo determinar solapa: ' + backfill.sinHoja.join(', ')
       : '') +
-    (eliminoAlcance ? '\nMAPEO: eliminada la fila digital/Digital/alcance (col E era Fecha de inicio, Paso 2.8 Parte A)' : '') +
+    (eliminadasAlcance ? '\nMAPEO: eliminada(s) ' + eliminadasAlcance + ' fila(s) digital/Digital/alcance (col E era Fecha de inicio, Paso 2.8/2.9)' : '') +
     (movidasLooker ? '\nMAPEO: ' + movidasLooker + ' fila(s) de looker alineadas a resumen_metricas_dinamico (S-01, Paso 2.9 Parte C)' : '') +
     (tocadasSolapasLooker ? '\nSOLAPAS: looker resumen_metricas_dinamico=fuente / resumen_metricas=derivada (S-01)' : '') +
     (alineoHojaDefaultLooker ? '\nBASES: looker.hoja_default = resumen_metricas_dinamico (S-01)' : '') +
@@ -260,21 +260,32 @@ function instalar() {
  * digital ya está mapeado en `digital/Alcance/alc_alcance`. Si la fila no está
  * (ya se borró, o la hoja es nueva), no hace nada.
  */
+// Paso 2.9 Parte E: comparación tolerante a mayúsculas/acentos/espacios
+// (`normalizar_`, Parseo.gs) — el reporte del Paso 2.8 mostró la fila viva con
+// `columna` vacía después de correr la migración anterior, señal de que el
+// match exacto (`===`) no la encontró (probablemente espacios sueltos cargados
+// a mano en algún momento).
 function eliminarMapeoAlcanceDigitalObsoleto_(hoja) {
   var datos = hoja.getDataRange().getValues();
   var headers = datos[0];
   var idxBaseId = headers.indexOf('base_id');
   var idxSolapa = headers.indexOf('solapa');
   var idxCampo = headers.indexOf('campo_logico');
-  if (idxBaseId === -1 || idxSolapa === -1 || idxCampo === -1) return false;
+  if (idxBaseId === -1 || idxSolapa === -1 || idxCampo === -1) return 0;
 
+  var eliminadas = 0;
+  // De abajo hacia arriba y sin cortar en el primer match: si quedó más de una
+  // fila duplicada (p. ej. de una corrida anterior de la migración que solo
+  // borraba la primera), esta versión las borra todas en la misma corrida.
   for (var f = datos.length - 1; f >= 1; f--) {
-    if (datos[f][idxBaseId] === 'digital' && datos[f][idxSolapa] === 'Digital' && datos[f][idxCampo] === 'alcance') {
+    if (normalizar_(datos[f][idxBaseId]) === 'digital' &&
+        normalizar_(datos[f][idxSolapa]) === 'digital' &&
+        normalizar_(datos[f][idxCampo]) === 'alcance') {
       hoja.deleteRow(f + 1);
-      return true;
+      eliminadas++;
     }
   }
-  return false;
+  return eliminadas;
 }
 
 /**
