@@ -26,6 +26,7 @@ function onOpen() {
         .addItem('Probar conexión a bases', 'probarConexionBases')
         .addItem('Probar lectura por ventana', 'menuProbarLectura_')
         .addItem('Probar unión y anclaje', 'menuProbarUnionYAnclaje_')
+        .addItem('Calcular corte vertical (Paso 2.9E)', 'menuCorteVerticalRetiro2407_')
         .addSeparator()
         .addItem('Diagnosticar carpeta de plantillas', 'menuDiagnosticarCarpetaPlantillas_')
         .addItem('Listar solapas y tipos', 'menuDiagnosticarBases_')
