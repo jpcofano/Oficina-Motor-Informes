@@ -305,3 +305,27 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
 - **Qué se hizo:** ver el propio commit `c1081a6` y los siguientes de esta misma serie.
 - **Prueba:** ver "Prueba del usuario" de `docs/Prompts/DOC-4_taxonomia_y_bitacora.md`.
 - **Pendientes/decisiones:** se completa con las Partes B/C/D de este mismo prompt.
+
+## REGLAS_R09_R10 — R-05 a R-10 en REGLAS_NEGOCIO.md (2026-07-31) — commit `pendiente`
+- **Qué pedía el prompt:** `docs/Prompts/REGLAS_R09_R10.md` pedía agregar R-09 ("lo
+  cancelado no entra al informe") y R-10 ("encabezados se normalizan por espacios, nunca
+  por mayúsculas"), asumiendo que R-05 a R-08 ya existían en `REGLAS_NEGOCIO.md`.
+- **Qué se hizo:** R-05 a R-08 **no existían todavía** — estaban descriptas, con
+  numeración distinta (R-03/R-04/R-05 y una R-06 propuesta), dentro de
+  `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` Parte F y
+  `docs/Prompts/Paso-2.10_PartesBC_verificado.md` ("hallazgo lateral"). Se reconciliaron
+  los dos numerados para no dejar un salto: R-05 (agregado JM/GCBA, hipótesis sin
+  confirmar), R-06 (`id_cuenta` manda), R-07 (`fecha_corte` obligatoria), R-08 (vínculo
+  reunión↔cuenta curado), R-09 y R-10 (las dos del prompt pedido, completas). Las seis
+  quedaron escritas en `docs/REGLAS_NEGOCIO.md` con el mismo formato que R-01 a R-04
+  (Enunciado/Origen/Cómo se verifica/Si falla). Entrada nueva en
+  `docs/PENDIENTES_consistencia.md` (P0) para las tres que piden código nuevo (R-06, R-09,
+  R-10) y todavía no lo tienen.
+- **Prueba:** documental — cada regla cita el caso medido contra las cuatro bases del
+  31/07 (`docs/VALIDACION_2026-07-31.md`/`casos_validacion_2026-07-31.csv`), no se
+  reverificó de nuevo acá.
+- **Pendientes/decisiones:** ninguna regla se implementó en código en este commit — es
+  documentación pura, igual que pedía el prompt de origen. R-06/R-09/R-10 quedan
+  pendientes de implementar (`PENDIENTES_consistencia.md`). El resto de `Paso-2.10`
+  (Partes B-E, G: correcciones a `SOLAPAS`, hoja `VALIDACION`, corte vertical a Orden
+  Público) sigue sin ejecutar.

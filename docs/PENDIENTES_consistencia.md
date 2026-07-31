@@ -34,6 +34,28 @@
 
 ## Sigue abierto
 
+### P0 · Tres reglas de negocio nuevas (R-06, R-09, R-10) sin implementar en código
+
+Escritas en `docs/REGLAS_NEGOCIO.md` (31/07/2026, `docs/Prompts/REGLAS_R09_R10.md` +
+`docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md`/`Paso-2.10_PartesBC_verificado.md`),
+verificadas contra las cuatro bases del 31/07, pero la mitigación de cada una **todavía no
+está en el código**:
+
+- **R-06** (`id_cuenta` manda): falta el control de "filas con métricas y sin `id_cuenta`
+  válido" en el diagnóstico, por base y por solapa.
+- **R-09** (lo cancelado no entra): falta que el match por confianza (Paso 2.9 Parte F,
+  `anclar_()`/`ANCLAJE_PENDIENTE` en `Union.gs`) nunca auto-seleccione un candidato cuyo
+  último envío sea `Cancelación`/`Reprogramación`, lo marque visible en la lista, y registre
+  el motivo en `REUNIONES.notas` si la persona lo elige igual.
+- **R-10** (encabezados por espacios, no por mayúsculas): falta aplicar `normalizar()`
+  (colapsar espacios/saltos de línea, preservar mayúsculas y acentos) en `Fuentes.gs` donde
+  hoy se hace `trim()` sobre encabezados y en `buscarMapeo()`; guardar
+  `SOLAPAS.firma_encabezado` con el encabezado crudo, no normalizado; y agregar al
+  diagnóstico un control de encabezados duplicados tras normalizar, por solapa.
+
+R-05, R-07 y R-08 son constataciones/decisiones de diseño (no piden código nuevo por sí
+mismas, aunque R-07 hace que `Snapshot.gs` deje de ser opcional).
+
 ### P1 · Firma de encabezados (de `docs/RDV_otros_ministros_riesgo.md`, congelado)
 
 **La firma de encabezados** — registrar la fila de encabezado de cada solapa mapeada, y
