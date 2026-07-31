@@ -23,6 +23,10 @@ function onOpen() {
         .addItem('Cargar ejemplo', 'menuCargarEjemplo_')
     )
     .addSubMenu(
+      ui.createMenu('Valores (Paso 2.9H)')
+        .addItem('Revisar divergencias pendientes', 'menuRevisarDivergenciasValores_')
+    )
+    .addSubMenu(
       ui.createMenu('Diagnóstico y pruebas')
         .addItem('Probar conexión a bases', 'probarConexionBases')
         .addItem('Probar lectura por ventana', 'menuProbarLectura_')

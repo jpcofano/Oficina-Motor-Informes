@@ -171,6 +171,21 @@ var HOJAS_CONFIG_ = {
   SECCIONES: {
     headers: ['seccion_id', 'padre', 'orden', 'nombre', 'informes', 'modo', 'itera_sobre', 'filtro', 'opcional', 'condicion', 'familia_tokens', 'estado', 'falta', 'notas'],
     ejemplos: []
+  },
+  // Paso 2.9H — la "foto" de cada token calculado. Nunca se pisa: cada corrida
+  // agrega una fila, así un informe pasado se puede reproducir (punteo del
+  // 30/07). Ver Valores.gs.
+  VALORES: {
+    headers: ['periodo', 'informe_id', 'seccion_id', 'item', 'token', 'valor', 'fecha_calculo', 'origen_valor', 'parcial'],
+    ejemplos: []
+  },
+  // Paso 2.9H — un token calculado para el mismo (periodo, item) ya dio un
+  // valor distinto antes: no se decide sola (recalcular calla la divergencia
+  // entre informes; congelar publica un número viejo). Queda acá hasta que la
+  // persona completa `decision` (reusar/actualizar).
+  VALORES_DIVERGENTES: {
+    headers: ['item', 'token', 'valor_anterior', 'fecha_anterior', 'valor_nuevo', 'diferencia', 'parcial', 'decision'],
+    ejemplos: []
   }
 };
 
