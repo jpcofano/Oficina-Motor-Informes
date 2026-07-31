@@ -387,7 +387,7 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   Parte D (`Paso-2.10_ParteD_con_R10.md`: `normalizar_()` + hoja `VALIDACION`) sigue sin
   ejecutar.
 
-## Paso 2.11 Parte A — `HOJAS_CONFIG_.ejemplos` deja de sembrar datos (2026-07-31) — commit `<pendiente>`
+## Paso 2.11 Parte A — `HOJAS_CONFIG_.ejemplos` deja de sembrar datos (2026-07-31) — commit `52e129a`
 - **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md` Parte
   A. Explica, con evidencia, la causa raíz de "falta la vuelta de prueba" que quedó
   pendiente en el Paso 2.10 Parte C: `BASES.m2.hoja_default` estaba escrito dos veces
@@ -422,3 +422,36 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   funciona contra las filas reales ya cargadas.
 - **Pendientes/decisiones:** ninguna nueva. Sigue la Parte B del mismo prompt
   (`fila_encabezado` por solapa, no por base, en `m2`).
+
+## Paso 2.11 Parte B — `fila_encabezado` es por solapa, no por base (2026-07-31) — commit `<pendiente>`
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md` Parte
+  B — `BASES.m2.fila_encabezado=3` se aplicaba a toda la base, pero solo es correcto
+  para `M2 periodo DIRECTA`/`DIGITAL`. Siete solapas de `m2` decían 3 y son 1 (`Directa
+  mail`, `M2 Directa`, `M2 digital`, `Seguimiento digital`, `CAMPAÑAS_DESGLOCE_DIGITAL`,
+  `Alcance`, `Digital acumulado`), y `Mail per` (`m2` y `digital`) no tiene fila de
+  títulos. Leer con encabezado en fila 3 donde no corresponde no falla: toma una fila de
+  datos como si fueran títulos, columnas con nombres raros y números plausibles — el modo
+  de falla caro otra vez.
+- **Qué se hizo:** `Fuentes.gs` — `resolverFilaEncabezado_(baseId, solapa,
+  filaEncabezadoBase)`: busca primero en `SOLAPAS.fila_encabezado`, cae al default de
+  `BASES` solo si la solapa no está declarada; `0` es un valor explícito ("sin fila de
+  títulos") y se respeta tal cual. `leerFuente` ya la usa, con guardarraíl (`ok:false`)
+  si da 0 — ninguna solapa `fuente` puede tener `0`, pero se cubre por si algo llama
+  `leerFuente` directo. `Instalar.gs` — `SEED_SOLAPAS_` corregido con la tabla del
+  prompt (las siete de `m2` a `fila_encabezado:1`, `Mail per` ×2 a `0`);
+  `filasSolapa_()` ahora acepta `opciones` para pasar el override a un lote.
+  `Solapas.gs` — `firma_encabezado` (columna reservada desde el Paso 2.6, nunca
+  implementada) ahora la escribe `inventariarSolapas()` vía `leerFirmaEncabezado_()`:
+  vuelca el contenido real de la fila que señala `fila_encabezado`, para que una
+  fila mal puesta se vea a simple vista en la propia hoja `SOLAPAS`.
+- **Prueba:** confirmada indirectamente — el usuario corrió "Sembrar clasificación
+  inicial de solapas" + "Inventariar solapas" contra la planilla en vivo y usó los
+  `filas_datos`/`filas_crudas` resultantes (ya con `fila_encabezado` corregido) para el
+  análisis que motivó el Paso 2.12 (ver entrada siguiente): quince de las dieciséis
+  solapas `fuente` dieron 100% o 99,8% de cobertura, patrón que solo es posible si el
+  encabezado se está leyendo donde corresponde.
+- **Pendientes/decisiones:** queda anotado, sin resolver acá, que `Auditoria.gs`,
+  `Fechas.gs` y `Union.gs` tienen sus propios `Number(base.fila_encabezado) || 1` que NO
+  pasan por `resolverFilaEncabezado_()` — el prompt de esta parte solo pedía corregir
+  `leerFuente`. Si alguno de esos diagnósticos corre sobre una de las siete solapas
+  corregidas, puede repetir el síntoma viejo.

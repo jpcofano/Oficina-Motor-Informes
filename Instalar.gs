@@ -96,7 +96,9 @@ var HOJAS_CONFIG_ = {
   // período tipeado a mano) eran invisibles. `uso=fuente` es requisito para que
   // `buscarMapeo()` la deje leer (Config.gs); `fila_encabezado` vive acá (no en BASES)
   // porque es un atributo de la solapa, no de la base — ver docs/Prompts/Paso-2.6_registro_solapas.md
-  // Parte B. `firma_encabezado` queda reservada, sin implementar todavía (Parte E).
+  // Parte B. `firma_encabezado` (Paso 2.11 Parte B): contenido legible de la fila que
+  // `fila_encabezado` señala, lo escribe `inventariarSolapas()` (Solapas.gs) — sirve
+  // para ver a simple vista si `fila_encabezado` apunta a títulos o a datos.
   // `origen` (Paso 2.7 Parte A): 'auto' (lo escribió inventariarSolapas) / 'seed'
   // (lo escribió la siembra propuesta) / 'manual' (lo tipeó una persona) — sin esto,
   // la siembra no puede distinguir un `uso=revisar` automático de uno elegido a mano,
@@ -627,10 +629,12 @@ var SEED_MAPEO_ = [
   // fila 1, sin banner), pero es la tabla de ATRIBUTOS de campaña, no la fuente de los
   // tokens m2_*: no tiene ninguna métrica (clics, visualizaciones, etc.). Se registra
   // como dimensión, no reemplaza a M2 periodo DIRECTA/DIGITAL.
-  // ⚠ Conflicto sin resolver: BASES.fila_encabezado de m2 es 3 (vale para las hojas con
-  // banner de período); 'Cuentas' tiene el encabezado en la fila 1. fila_encabezado es
-  // por base, no por solapa — no se resuelve acá (ver docs/Prompts/DOC-3_verificacion_bases_vivas.md
-  // Parte D punto 2, "Lo que este prompt NO decide").
+  // Conflicto resuelto en Paso 2.11 Parte B: BASES.fila_encabezado de m2 es 3 (vale
+  // para las dos hojas con banner de período), pero 'Cuentas' tiene el encabezado en la
+  // fila 1 — antes era un conflicto sin resolver porque fila_encabezado era por base,
+  // no por solapa (ver docs/Prompts/DOC-3_verificacion_bases_vivas.md Parte D punto 2).
+  // Ahora `leerFuente` resuelve por `SOLAPAS.fila_encabezado` (`resolverFilaEncabezado_`,
+  // Fuentes.gs), que para 'Cuentas' ya está en 1 desde el Paso 2.6 Parte D.
   { base_id: 'm2', campo_logico: 'id_cuenta', hoja: 'Cuentas', columna: 'A', notas: '' },
   { base_id: 'm2', campo_logico: 'campana', hoja: 'Cuentas', columna: 'D', notas: '' },
   // 'Estado campaña' (J) y 'Estado' (V) coexisten en esta solapa; se mapea J.
@@ -824,8 +828,20 @@ var SEED_REUNIONES_EJEMPLO_ = [
  * en Paso 2.8 Parte C — ver `filaSolapa_('looker', ...)` más abajo, ya con
  * `uso=fuente`/`derivada`.)
  */
+// m2: 3 es el default histórico (acertaba para las dos vistas "M2 periodo *", que
+// tienen banner de período en fila 1 y encabezados reales en fila 3), pero Paso 2.11
+// Parte B midió que es la EXCEPCIÓN, no la regla — el resto de las solapas de m2 tiene
+// encabezado en fila 1, como cualquier otra base. Por eso `SOLAPAS.fila_encabezado` es
+// la fuente real (ver `resolverFilaEncabezado_`, Fuentes.gs); esto queda solo como
+// default para una solapa de m2 que todavía no está declarada en `SOLAPAS`.
 var FILA_ENCABEZADO_POR_BASE_ = { rdv: 1, digital: 1, looker: 1, m2: 3 };
 
+// Paso 2.11 Parte B — `fila_encabezado = 0` significa "esta solapa no tiene fila de
+// títulos, los datos arrancan en la fila 1" (caso `Mail per`, m2 y digital: es un
+// recorte de columnas de otra tabla, pegado sin encabezado propio). Solo válido para
+// solapas que NO son `fuente` — una fuente sin fila de títulos no tiene de dónde sacar
+// nombres de columna para MAPEO. `resolverFilaEncabezado_` (Fuentes.gs) lo respeta tal
+// cual (no cae al default de la base): un cero puesto a propósito no es "sin dato".
 function filaSolapa_(baseId, solapa, uso, notas, opciones) {
   opciones = opciones || {};
   return {
@@ -839,8 +855,8 @@ function filaSolapa_(baseId, solapa, uso, notas, opciones) {
   };
 }
 
-function filasSolapa_(baseId, solapas, uso, notas) {
-  return solapas.map(function (solapa) { return filaSolapa_(baseId, solapa, uso, notas); });
+function filasSolapa_(baseId, solapas, uso, notas, opciones) {
+  return solapas.map(function (solapa) { return filaSolapa_(baseId, solapa, uso, notas, opciones); });
 }
 
 // Paso 2.10 Parte C — nota compartida por las seis solapas "periodo" (ver más abajo).
@@ -892,8 +908,15 @@ var SEED_SOLAPAS_ = [].concat(
   // no es el que hace falta y no se puede reproducir sin retipear las celdas a mano.
   // No son destino de MAPEO. m2/Mail per y digital/Mail per son hojas DISTINTAS con
   // el mismo nombre (una por base) — la clave compuesta (base_id, solapa) las separa.
-  filasSolapa_('m2', ['M2 periodo DIRECTA', 'M2 periodo DIGITAL', 'Mail per'], 'referencia', NOTA_PERIODO_MANUAL_),
-  filasSolapa_('digital', ['Mail per', 'Buscador por periodo digital', 'Buscador por periodo directa'], 'referencia', NOTA_PERIODO_MANUAL_),
+  // 'M2 periodo DIRECTA'/'DIGITAL' sí tienen encabezado real en fila 3 (banner de
+  // período en fila 1) — usan el default de FILA_ENCABEZADO_POR_BASE_, no se pisa acá.
+  filasSolapa_('m2', ['M2 periodo DIRECTA', 'M2 periodo DIGITAL'], 'referencia', NOTA_PERIODO_MANUAL_),
+  // Paso 2.11 Parte B — 'Mail per' (m2 y digital) no tiene fila de títulos: la fila 1
+  // ya es dato (recorte de columnas de 'Directa mail'/'Directa Mail', pegado sin
+  // encabezado propio). fila_encabezado=0, ver la nota de más arriba.
+  [filaSolapa_('m2', 'Mail per', 'referencia', NOTA_PERIODO_MANUAL_, { fila_encabezado: 0 })],
+  filasSolapa_('digital', ['Buscador por periodo digital', 'Buscador por periodo directa'], 'referencia', NOTA_PERIODO_MANUAL_),
+  [filaSolapa_('digital', 'Mail per', 'referencia', NOTA_PERIODO_MANUAL_, { fila_encabezado: 0 })],
 
   // looker — "Base Looker"
   [
@@ -920,13 +943,22 @@ var SEED_SOLAPAS_ = [].concat(
   // para looker). 'M2 periodo DIRECTA'/'DIGITAL' salieron de este grupo en el Paso 2.10
   // Parte C: no son un "detalle invertido", son las seis solapas "periodo" de más
   // arriba — reclasificarSolapasM2Invertidas_() (abajo) ya no las toca.
-  filasSolapa_('m2', ['M2 Directa', 'M2 digital'], 'revisar', 'clasificación invertida, pendiente de confirmar (Paso 2.9 Parte C.5)'),
-  filasSolapa_('m2', ['Seguimiento digital', 'Alcance', 'CAMPAÑAS_DESGLOCE_DIGITAL'], 'revisar', '⚠ mismos nombres que solapas de digital — hay que saber cuál manda antes de mapear ninguna'),
+  // Paso 2.11 Parte B — fila_encabezado: 1, no el default de m2 (3). Medido contra el
+  // archivo del 31/07: primeras celdas reales 'ID cuentas · ID MailUp · Listado de
+  // Mail' (M2 Directa) / 'ID Cuentas · Nombre campaña…' (M2 digital) en la fila 1.
+  // Con encabezado en fila 3 (el default viejo), leerFuente tomaba una fila de DATOS
+  // como si fueran títulos — no fallaba, devolvía columnas con nombres raros.
+  filasSolapa_('m2', ['M2 Directa', 'M2 digital'], 'revisar', 'clasificación invertida, pendiente de confirmar (Paso 2.9 Parte C.5)', { fila_encabezado: 1 }),
+  // Paso 2.11 Parte B — mismo caso: encabezado real en fila 1 ('ID Cuentas · Nombre
+  // campaña…' / 'ID Cuentas · Alcance · Frecuencia' / 'Id accion · Id cuentas · Año').
+  filasSolapa_('m2', ['Seguimiento digital', 'Alcance', 'CAMPAÑAS_DESGLOCE_DIGITAL'], 'revisar', '⚠ mismos nombres que solapas de digital — hay que saber cuál manda antes de mapear ninguna', { fila_encabezado: 1 }),
   // Paso 2.10 Parte C: espejo de digital/Directa Mail (2.106 vs 2.107 filas, mismas
   // métricas) — declarada 'derivada' para que no queden las dos vivas dando números
   // casi iguales. MAPEO sigue apuntando a digital/Directa Mail, no se toca acá.
-  [filaSolapa_('m2', 'Directa mail', 'derivada', 'espejo de digital/Directa Mail — ver Paso 2.10 Parte C')],
-  filasSolapa_('m2', ['Digital acumulado'], 'derivada', 'acumulados')
+  // Paso 2.11 Parte B — fila_encabezado: 1 ('ID Cuentas · ID MailUp · Listado de Mail').
+  [filaSolapa_('m2', 'Directa mail', 'derivada', 'espejo de digital/Directa Mail — ver Paso 2.10 Parte C', { fila_encabezado: 1 })],
+  // Paso 2.11 Parte B — fila_encabezado: 1 ('Id · Nombre de la campaña…').
+  filasSolapa_('m2', ['Digital acumulado'], 'derivada', 'acumulados', { fila_encabezado: 1 })
 );
 
 /**

@@ -245,6 +245,26 @@ function parsearFechaCelda_(valor) {
 }
 
 /**
+ * Paso 2.11 Parte B — `fila_encabezado` es un atributo de la SOLAPA, no de la base
+ * (`BASES.fila_encabezado=3` acertaba para las dos vistas "M2 periodo *" de `m2` y
+ * fallaba en silencio para las otras siete: leía una fila de datos como si fueran
+ * títulos, sin fallar — devolvía columnas con nombres raros y números plausibles).
+ * `SOLAPAS.fila_encabezado` es la fuente; `filaEncabezadoBase` (`BASES.fila_encabezado`)
+ * es solo el default para una solapa que todavía no está declarada en `SOLAPAS`.
+ * `0` es un valor explícito ("sin fila de títulos", ver `filaSolapa_`, Instalar.gs) y
+ * se respeta tal cual — no cae al default de la base, que sería tratarlo como "sin dato".
+ */
+function resolverFilaEncabezado_(baseId, solapa, filaEncabezadoBase) {
+  var solapas = leerSolapas();
+  var fila = solapas[baseId] && solapas[baseId][solapa];
+  if (fila && fila.fila_encabezado !== '' && fila.fila_encabezado !== null && fila.fila_encabezado !== undefined) {
+    var n = Number(fila.fila_encabezado);
+    if (!isNaN(n)) return n;
+  }
+  return Number(filaEncabezadoBase) || 1;
+}
+
+/**
  * Lee una base filtrando por ventana de fechas (o todas las filas si
  * `modo_periodo=snapshot`). No suma ni promedia — eso es del Paso 3.
  * `nombreHojaOverride` permite leer una hoja distinta a `hoja_default` de la
@@ -257,8 +277,16 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
 
   var base = abierto.base;
   var hoja = abierto.hoja;
-  var filaEncabezado = Number(base.fila_encabezado) || 1;
+  var filaEncabezado = resolverFilaEncabezado_(baseId, hoja.getName(), base.fila_encabezado);
   var modo = base.modo_periodo || 'filtrar';
+
+  // Paso 2.11 Parte B: fila_encabezado=0 ("sin fila de títulos") no tiene de dónde
+  // sacar nombres de columna — MAPEO no puede apuntar acá (buscarMapeo ya exige
+  // uso=fuente, y ninguna solapa fuente puede tener 0), pero se guarda explícito por
+  // si alguna vez se llama leerFuente directo sobre una de estas, sin pasar por MAPEO.
+  if (filaEncabezado <= 0) {
+    return { ok: false, base_id: baseId, motivo: 'La hoja "' + hoja.getName() + '" no tiene fila de encabezado (fila_encabezado=0 en SOLAPAS)' };
+  }
 
   var datos = hoja.getDataRange().getValues();
   if (datos.length < filaEncabezado) {

@@ -24,6 +24,25 @@
  * Expone inventariarSolapas() y el menú "Inventariar solapas".
  */
 
+/**
+ * Paso 2.11 Parte B — contenido legible de la fila que `fila_encabezado` señala, para
+ * que una fila_encabezado mal puesta se vea a simple vista en `SOLAPAS.firma_encabezado`
+ * (ej. "3387-JULJDGGC · 44043 · ..." en vez de "ID Cuentas · ID MailUp · ...") en vez de
+ * fallar en silencio río abajo. `fila<=0` es "sin fila de títulos" (ver `filaSolapa_`,
+ * Instalar.gs) — no hay nada que leer, se documenta así, no como vacío.
+ */
+function leerFirmaEncabezado_(hojaSheet, fila) {
+  if (!fila || fila <= 0) return '(sin fila de títulos)';
+  if (fila > hojaSheet.getLastRow()) return '';
+  var ultimaCol = hojaSheet.getLastColumn();
+  if (!ultimaCol) return '';
+  var valores = hojaSheet.getRange(fila, 1, 1, ultimaCol).getValues()[0];
+  return valores
+    .map(function (v) { return (v === null || v === undefined) ? '' : String(v).trim(); })
+    .filter(function (v) { return v !== ''; })
+    .join(' · ');
+}
+
 function inventariarSolapas() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var hoja = ss.getSheetByName('SOLAPAS');
@@ -76,20 +95,30 @@ function inventariarSolapas() {
       var existente = existentes[clave];
 
       if (!existente) {
+        // Sin fila_encabezado declarada todavía: se lee la 1 como mejor default para
+        // dar una primera pista (el clasificador humano corrige si hace falta).
         nuevas.push({
           base_id: baseId,
           solapa: nombre,
           uso: 'revisar',
           origen: 'auto',
           fila_encabezado: '',
-          firma_encabezado: '',
+          firma_encabezado: leerFirmaEncabezado_(hojaSheet, 1),
           filas_datos: filasDatos,
           filas_crudas: filasCrudas,
           notas: 'detectada ' + fecha
         });
       } else {
+        // Paso 2.11 Parte B: se lee la fila_encabezado YA declarada en SOLAPAS, no un
+        // default — es lo que hace visible una fila_encabezado mal puesta. Blanco
+        // (todavía sin clasificar) cae a la fila 1 como mejor pista, igual que una
+        // solapa nueva; 0 explícito SÍ se respeta como "sin fila de títulos".
+        var feDeclarada = existente.fila_encabezado;
+        var feParaFirma = (feDeclarada === '' || feDeclarada === null || feDeclarada === undefined) ? 1 : Number(feDeclarada);
+        var firma = leerFirmaEncabezado_(hojaSheet, feParaFirma);
         hoja.getRange(existente.fila, existente.idx.filas_datos + 1).setValue(filasDatos);
         hoja.getRange(existente.fila, existente.idx.filas_crudas + 1).setValue(filasCrudas);
+        hoja.getRange(existente.fila, existente.idx.firma_encabezado + 1).setValue(firma);
         actualizadas++;
       }
     });
@@ -153,6 +182,7 @@ function leerFilasSolapas_(hoja) {
       idx: idx,
       uso: fila[idx.uso],
       origen: fila[idx.origen],
+      fila_encabezado: fila[idx.fila_encabezado],
       notas: fila[idx.notas]
     };
   }

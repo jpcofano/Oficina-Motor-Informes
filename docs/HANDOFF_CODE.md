@@ -4,63 +4,68 @@
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 > Los handoffs de `docs/Sesiones/` son de claude.ai — se leen, no se tocan.
 
-**Última actualización:** 2026-07-31 · último commit al escribirlo: `fa1d595`
+**Última actualización:** 2026-07-31 · último commit al escribirlo: `52e129a`
 
 ## Dónde estamos
 
-`Paso 2.11` (`docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md`) — paso de
-consolidación, **sin agregar funcionalidad**, que las Partes D/E/G de `Paso-2.10` esperan
-mientras dura. Nació de un hecho concreto: el `Paso-2.10` Parte C se commiteó y pusheó,
-pero `m2` seguía leyendo `M2 periodo DIRECTA` — no un bug de Code, sino que el mismo dato
-(`BASES.m2.hoja_default`) estaba escrito dos veces en el repo (`HOJAS_CONFIG_.ejemplos` y
-`SEED_BASES_`, con valores contradictorios) y cuál ganaba dependía de qué ítem de menú se
-corría último.
+`Paso 2.11` (`docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md`) — consolidación,
+sin agregar funcionalidad. Partes A y B hechas y probadas contra la planilla en vivo:
 
-**Parte A hecha y probada contra la planilla en vivo:** `HOJAS_CONFIG_` pasó a ser solo
-esquema (`headers`, sin `ejemplos`); `instalar()` ya no escribe filas de datos. Los datos
-reales que vivían en `ejemplos` de `INFORMES`/`PERIODOS` se cablearon a
-`seedConfiguracion()` (misma categoría durable que `BASES`/`MAPEO`); los de
-`CAMPANAS`/`REUNIONES` se movieron a `SEED_CAMPANAS_EJEMPLO_`/`SEED_REUNIONES_EJEMPLO_`
-sin sembrador automático (son curados a mano, cambian cada semana — un upsert automático
-podría pisar la campaña/reunión real). Test confirmado: "Instalar / reparar hojas" ya no
-toca `BASES`/`MAPEO`/`MARCADORES`. Ver `docs/BITACORA.md` "Paso 2.11 Parte A".
+- **A:** `HOJAS_CONFIG_` es solo esquema (sin `ejemplos`); `instalar()` ya no escribe
+  filas de datos. `INFORMES`/`PERIODOS` cableados a `seedConfiguracion()`;
+  `CAMPANAS`/`REUNIONES` movidos a `SEED_*_EJEMPLO_` sin sembrador automático.
+- **B:** `SOLAPAS.fila_encabezado` es la fuente (`resolverFilaEncabezado_()`,
+  Fuentes.gs), `BASES.fila_encabezado` solo default. Siete solapas de `m2` corregidas
+  de 3→1, `Mail per` (×2) a `0` ("sin fila de títulos"). `firma_encabezado` implementada
+  por fin: `inventariarSolapas()` vuelca la fila real que señala `fila_encabezado`.
+
+Ver `docs/BITACORA.md` "Paso 2.11 Parte A" y "Paso 2.11 Parte B".
+
+**Reordenamiento en curso (pedido del usuario):** antes de seguir con la Parte C de
+2.11, se abrió `Paso-2.12` porque el análisis de cobertura post-Parte B encontró un bug
+bloqueante: en `Solapas.gs` (`inventariarSolapas()`), `filas_crudas =
+Math.max(getLastRow()-1, 0)` resta un encabezado que `filas_datos` (el conteo "no
+vacías", Paso 2.10 Parte B) ya incluye — 65 de las 84 filas de `SOLAPAS` dan
+`filas_datos = filas_crudas + 1` exactamente, así que el cociente de cobertura pasa de
+100%, el guardarraíl del 90% (`UMBRAL_COBERTURA_LECTURA_`, Fuentes.gs) nunca se dispara,
+y cualquier diff que arme la Parte C de 2.11 iba a mostrar números incoherentes sin poder
+distinguir si es el diff o el dato de base.
+
+**`Paso-2.12` Parte 1 — un commit de una línea, corriendo en este momento:** sacar el
+`- 1` de `filas_crudas` en `Solapas.gs` (`hojaSheet.getLastRow()` a secas). Con la
+clasificación actual (sin la Parte 2 de 2.12), el criterio de aceptación es que dispare
+**una sola** ⚠ de cobertura (`rdv/RVD JM-CM - ES`, 721/1363 ≈ 53%, relleno de fórmula
+sobre 720 encuentros reales) — la segunda (`digital/Cuentas`, 79%) aparece recién con la
+Parte 2. Falta verificar el invariante `filas_datos <= filas_crudas` en las 84 filas
+antes de dar la Parte 1 por cerrada.
 
 ## Qué sigue
 
-Orden del prompt, un commit por parte, verificando en la planilla entre una y otra:
+Orden confirmado por el usuario:
 
-1. **Parte B — `fila_encabezado` es por solapa, no por base.** `BASES.m2.fila_encabezado
-   = 3` se aplica hoy a toda la base, pero solo es correcto para las dos vistas
-   `M2 periodo *`. Ocho solapas de `m2` (`Directa mail`, `M2 Directa`, `M2 digital`,
-   `Seguimiento digital`, `CAMPAÑAS_DESGLOCE_DIGITAL`, `Alcance`, `Digital acumulado`)
-   están mal en `SOLAPAS` (dicen 3, es 1) — leer con encabezado en la fila 3 toma datos
-   de la fila 2 como títulos, sin fallar. Además `Mail per` (`m2` y `digital`) no tiene
-   fila de títulos: `fila_encabezado = 0` con el significado "sin fila de títulos" —
-   ninguna solapa `fuente` puede tener `0`. Tareas: corregir `SEED_SOLAPAS_` con la tabla
-   del prompt §Parte B; `SOLAPAS.fila_encabezado` pasa a ser la fuente, `BASES.fila_encabezado`
-   solo el default para solapas no declaradas; `leerFuente` usa `SOLAPAS.fila_encabezado`
-   y cae a `BASES` solo si no encuentra fila.
-2. **Parte C — un solo "Aplicar configuración", con diff.** `menuAplicarConfiguracion_()`
-   corre los cuatro sembradores (`instalar`, `seedConfiguracion`,
-   `sembrarClasificacionSolapas`, `menuSembrarSecciones_`) en orden fijo y reporta diff
-   real (de qué valor a qué valor), no un conteo. `menuEstadoConfiguracion_()` de solo
-   lectura: filas, distribución de `origen`, discrepancias código↔planilla. Nota de la
-   Parte A: los sembradores existentes reportan "actualizada" aunque el valor no haya
-   cambiado (no comparan antes de escribir) — es exactamente lo que esta parte corrige.
-3. **Parte D — menú por función, migraciones con vencimiento.** Renombrar los 32 ítems
-   de menú por lo que hacen (no por el paso que los pidió), agrupar en submenús
+1. **`Paso-2.12` Parte 1** — en curso (ver arriba). Commitear solo, probar en la
+   planilla, confirmar la única ⚠ esperada y el invariante `filas_datos <= filas_crudas`.
+2. **`Paso-2.11` Parte C** — un solo "Aplicar configuración" (`menuAplicarConfiguracion_`,
+   corre los cuatro sembradores en orden fijo, reporta diff real de valor a valor, no
+   conteo) + `menuEstadoConfiguracion_()` de solo lectura (discrepancias código↔planilla).
+3. **`Paso-2.11` Parte D** — menú por función (no por número de paso), submenús
    (`Configuración`/`Correr`/`Verificar`/`Diagnósticos`/`Avanzado`), retirar diagnósticos
-   de hipótesis ya cerradas (`menuDiagnosticarColapso_`), documentar en cada migración
-   one-off en qué commit se introdujo y qué la vuelve innecesaria, borrar las que ya no
-   pueden dispararse. `docs/RUNBOOK.md`: tabla ítem de menú → qué hace → cuándo se usa.
+   de hipótesis cerradas, `docs/RUNBOOK.md` con la tabla ítem→qué hace→cuándo. **Dentro
+   de esta parte va también `Paso-2.12` Parte 3** (retirar
+   `reclasificarSolapasM2Invertidas_()` — caso de ejemplo de "migración con premisa
+   vencida", ya no puede dispararse desde que `SOLAPAS_M2_INVERTIDAS_` perdió las dos
+   `M2 periodo *` en el Paso 2.10 Parte C).
+4. **`Paso-2.12` Parte 2** — las 17 disposiciones de cobertura (qué hacer con cada ⚠ de
+   `SOLAPAS`/`filas_datos` vs `filas_crudas`), al final, cuando el diff de la Parte C de
+   2.11 ya exista para apoyarse en él.
 
-Después de cerrar Parte D, retoma el orden lineal de `Paso-2.10`: Parte B
-(`filas_datos`/`filas_crudas`, verificar contra la tabla de doce valores medidos —
-"quedó a medias: la columna existe pero ningún sembrador la llena" según el propio
-`Paso-2.11`), `Paso-2.10_ParteD_con_R10` (R-10 + hoja `VALIDACION`), Parte E (corte
-vertical a Orden Público), Partes G y A (`REUNIONES` + handoff). R-06 y R-09 (anclaje)
-quedan fuera, son Paso 3 — ver `docs/PENDIENTES_consistencia.md`.
+Después de cerrar todo lo anterior, retoma el orden lineal de `Paso-2.10`: Parte B
+(verificar contra la tabla de doce valores medidos, ahora que `filas_datos`/
+`filas_crudas` están corregidas de punta a punta), `Paso-2.10_ParteD_con_R10` (R-10 +
+hoja `VALIDACION`), Parte E (corte vertical a Orden Público), Partes G y A (`REUNIONES` +
+handoff). R-06 y R-09 (anclaje) quedan fuera, son Paso 3.
 
 ## Trabado
 
-Nada bloqueando. Retomar por la Parte B del Paso 2.11.
+Nada bloqueando. Retomar por `Paso-2.12` Parte 1: commitear la línea, pedir al usuario
+que corra "Inventariar solapas" y confirme la única ⚠ esperada + el invariante.
