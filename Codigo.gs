@@ -37,6 +37,7 @@ function onOpen() {
         .addItem('Auditar digital/Digital/alcance (Parte B)', 'menuAuditarAlcanceDigital_')
         .addItem('Auditar fórmulas de looker (Parte D)', 'menuAuditarFormulasResumenesLooker_')
         .addItem('Diagnosticar corte de filas en m2 (Paso 2.8 Parte D)', 'menuDiagnosticarCorteFilasM2_')
+        .addItem('Diagnosticar filas sin clave en digital (Paso 2.8 Parte E)', 'menuDiagnosticarFilasSinClaveDigital_')
     )
     .addSubMenu(
       ui.createMenu('Consolidaciones (decisión + escritura)')

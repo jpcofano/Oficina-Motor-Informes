@@ -426,3 +426,97 @@ function menuDiagnosticarCorteFilasM2_() {
 
   ui.alert('Diagnóstico: corte de filas en m2 (Paso 2.8 Parte D)', lineas.join('\n'), ui.ButtonSet.OK);
 }
+
+/**
+ * Paso 2.8 Parte E — auditoría de solo lectura: de 1297 filas de `digital/Digital`,
+ * 337 (26%) se descartan del conteo por no tener `clave` (columna A, campo_logico
+ * `clave` en MAPEO). Puede ser correcto (campañas sin `id_cuenta` asignado) o puede
+ * ser que la columna clave esté mal elegida — AUD-2 concluyó que
+ * `unirDigitalPorCuenta` une por `*_id_cuenta` (columna T, `dig_id_cuenta`), no por
+ * `clave`, así que el descarte del conteo y el join de verdad podrían estar usando
+ * dos columnas distintas. Vuelca hasta 10 filas descartadas (columnas A y T) para
+ * ver si están vacías en A, en T, o en las dos, y si son filas reales o relleno del
+ * final de la hoja. NO corrige nada — decide el usuario.
+ */
+function diagnosticoFilasSinClaveDigital_() {
+  var abierto = abrirHoja('digital', 'Digital');
+  if (!abierto.ok) { Logger.log('No se pudo abrir: ' + abierto.motivo); return { ok: false, motivo: abierto.motivo }; }
+
+  var hoja = abierto.hoja;
+  var filaEncabezado = Number(abierto.base.fila_encabezado) || 1;
+
+  var clave = resolverClave_('digital', hoja.getName());
+  var idCuenta = buscarMapeo('digital', hoja.getName(), 'dig_id_cuenta');
+  if (!clave.ok) { Logger.log('Sin clave resoluble: ' + clave.motivo); return { ok: false, motivo: clave.motivo }; }
+  if (!idCuenta.ok) { Logger.log('Sin dig_id_cuenta resoluble: ' + idCuenta.motivo); return { ok: false, motivo: idCuenta.motivo }; }
+
+  var idxClave = columnaLetraAIndice_(clave.columna);
+  var idxIdCuenta = columnaLetraAIndice_(idCuenta.columna);
+
+  function celdaVacia_(valor) {
+    return valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === '');
+  }
+
+  var datos = hoja.getDataRange().getValues();
+  var totalFilas = datos.length - filaEncabezado;
+  var descartadas = [];
+
+  for (var f = filaEncabezado; f < datos.length && descartadas.length < 10; f++) {
+    var fila = datos[f];
+    if (celdaVacia_(fila[idxClave])) {
+      descartadas.push({
+        filaHoja: f + 1,
+        valorA: fila[idxClave],
+        valorT: fila[idxIdCuenta],
+        vaciaA: true,
+        vaciaT: celdaVacia_(fila[idxIdCuenta])
+      });
+    }
+  }
+
+  Logger.log('digital/Digital — clave: columna ' + clave.columna + ', dig_id_cuenta: columna ' + idCuenta.columna +
+    ' · ' + totalFilas + ' filas tras fila_encabezado');
+  descartadas.forEach(function (d) {
+    Logger.log('fila ' + d.filaHoja + ': A(clave)=' + JSON.stringify(d.valorA) + ' · T(dig_id_cuenta)=' + JSON.stringify(d.valorT) +
+      (d.vaciaT ? ' [T también vacía]' : ' [T tiene valor]'));
+  });
+
+  var conTVacia = descartadas.filter(function (d) { return d.vaciaT; }).length;
+  var conTValor = descartadas.length - conTVacia;
+  Logger.log('De las ' + descartadas.length + ' volcadas: ' + conTVacia + ' con T también vacía, ' + conTValor + ' con T con valor (A vacía pero T no).');
+
+  return {
+    ok: true,
+    columnaClave: clave.columna,
+    columnaIdCuenta: idCuenta.columna,
+    totalFilas: totalFilas,
+    descartadas: descartadas,
+    conTVacia: conTVacia,
+    conTValor: conTValor
+  };
+}
+
+function menuDiagnosticarFilasSinClaveDigital_() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = diagnosticoFilasSinClaveDigital_();
+
+  if (!resultado.ok) {
+    ui.alert('No se pudo diagnosticar', resultado.motivo, ui.ButtonSet.OK);
+    return;
+  }
+
+  var lineas = [
+    'digital/Digital — clave: col ' + resultado.columnaClave + ' · dig_id_cuenta: col ' + resultado.columnaIdCuenta,
+    'Filas volcadas (primeras ' + resultado.descartadas.length + ' sin clave en A):',
+    ''
+  ];
+  resultado.descartadas.forEach(function (d) {
+    lineas.push('  fila ' + d.filaHoja + ': A=' + JSON.stringify(d.valorA) + ' · T=' + JSON.stringify(d.valorT) +
+      (d.vaciaT ? ' [T también vacía]' : ' [T con valor]'));
+  });
+  lineas.push('', resultado.conTValor + ' de ' + resultado.descartadas.length + ' tienen T (dig_id_cuenta) CON valor mientras A (clave) está vacía' +
+    (resultado.conTValor > 0 ? ' — son dos claves distintas para la misma solapa.' : '.'));
+  lineas.push('', 'Detalle completo en Ver → Registros de ejecución. No se corrigió nada — es un reporte.');
+
+  ui.alert('Diagnóstico: filas sin clave en digital (Paso 2.8 Parte E)', lineas.join('\n'), ui.ButtonSet.OK);
+}
