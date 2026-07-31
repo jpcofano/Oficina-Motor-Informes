@@ -93,11 +93,16 @@ var HOJAS_CONFIG_ = {
   // solapa (Paso 2.3.2): entra en la clave junto con base_id + campo_logico.
   // Antes de esto, dos solapas de la misma base no podían mapear el mismo
   // campo_logico sin pisarse en silencio (ver docs/Prompts/Paso-2.3.2.md).
+  // `tipo_esperado` (Paso 2.7 Parte F): numero/texto/fecha, o vacío = sin declarar
+  // (no se chequea). `DIAG_BASES` solo avisa ⚠ cuando el tipo real difiere del
+  // declarado — antes avisaba ⚠ toda columna texto/mixto sin importar si eso era
+  // lo esperado, y con 35 avisos casi todos inocentes (`figura`, `*_id_cuenta`, …)
+  // la gente aprendía a ignorarlos.
   MAPEO: {
-    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'notas'],
+    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'tipo_esperado', 'notas'],
     ejemplos: [
-      ['rdv', 'RVD JM-CM - ES', 'inscriptos', 'RVD JM-CM - ES', 'H', ''],
-      ['digital', 'Digital', 'alcance', 'Digital', 'E', '']
+      ['rdv', 'RVD JM-CM - ES', 'inscriptos', 'RVD JM-CM - ES', 'H', 'numero', ''],
+      ['digital', 'Digital', 'alcance', 'Digital', 'E', '', '']
     ]
   },
   // SOLAPAS (Paso 2.6): declara el uso de CADA solapa de cada base — el motor solo
@@ -158,7 +163,10 @@ var COLUMNAS_DELTA_ = {
     { nombre: 'modo_periodo', indice: 6 }
   ],
   MAPEO: [
-    { nombre: 'solapa', indice: 2 }
+    { nombre: 'solapa', indice: 2 },
+    // Paso 2.7 Parte F: se inserta antes de `notas` (que para MAPEO instalado sin
+    // este delta está en la columna 6 antes de correr esto).
+    { nombre: 'tipo_esperado', indice: 6 }
   ],
   // Paso 2.7 Parte A: `origen` se inserta después de `uso` (columna 3) para una
   // hoja SOLAPAS instalada con el esquema del Paso 2.6, que todavía no la tenía.
@@ -477,6 +485,51 @@ var SEED_MAPEO_ = [
 // `hoja_default`) — `solapa` es exactamente ese mismo valor, así que se deriva
 // acá en vez de tipearlo dos veces por fila.
 SEED_MAPEO_.forEach(function (fila) { fila.solapa = fila.hoja; });
+
+/**
+ * Paso 2.7 Parte F — `tipo_esperado` por `campo_logico`, no por fila: el mismo
+ * campo lógico tiene el mismo tipo de dato sin importar en qué base/solapa viva
+ * (`campana` es texto en las cuatro bases). Solo cubre lo "obvio" que pidió el
+ * prompt — identificadores/categóricos → texto, `fecha*` → fecha, lo que un
+ * marcador va a sumar → numero. Lo que no está acá queda sin declarar (`''`) a
+ * propósito: `DIAG_BASES` no avisa ⚠ sobre lo no declarado, solo lo lista aparte
+ * como informativo — no hace falta adivinar el resto para que esto sirva.
+ */
+var TIPO_ESPERADO_POR_CAMPO_ = {
+  // identificadores y categóricos — texto
+  figura: 'texto', barrio: 'texto', evento: 'texto', status: 'texto', estado: 'texto',
+  comuna: 'texto', eje: 'texto', area: 'texto', campana: 'texto', campana_dig: 'texto',
+  clave: 'texto', id_cuenta: 'texto', dig_jm_gcba: 'texto', post_meta: 'texto', mail_area: 'texto',
+  dig_campana: 'texto', mail_campana: 'texto', sms_campana: 'texto', ivr_campana: 'texto',
+  sd_campana_cuentas: 'texto', sd_campana_digital: 'texto',
+  dig_id_cuenta: 'texto', mail_id_cuenta: 'texto', sms_id_cuenta: 'texto',
+  ivr_id_cuenta: 'texto', alc_id_cuenta: 'texto', sd_id_cuenta: 'texto',
+
+  // fecha
+  fecha_periodo: 'fecha', fecha_inicio: 'fecha', fecha_fin: 'fecha', fecha: 'fecha',
+  dig_fecha_inicio: 'fecha', dig_fecha_fin: 'fecha', mail_fecha: 'fecha', sms_fecha: 'fecha',
+  ivr_inicio: 'fecha', ivr_fin: 'fecha', sd_fecha_inicio: 'fecha',
+
+  // métricas que un marcador va a sumar — numero
+  inscriptos: 'numero', insc_mail: 'numero', insc_cc: 'numero', insc_ivr: 'numero',
+  insc_digital: 'numero', insc_dif: 'numero', asistentes: 'numero', poblacion: 'numero',
+  dig_impresiones: 'numero', dig_visualizaciones: 'numero', dig_clics: 'numero',
+  alcance: 'numero', frecuencia: 'numero',
+  mail_enviados: 'numero', mail_entregados: 'numero', mail_aperturas: 'numero',
+  mail_clics: 'numero', mail_or: 'numero', mail_ctor: 'numero',
+  cc_contactados: 'numero', cc_efectivos: 'numero',
+  ivr_audiencia: 'numero', ivr_atendidos: 'numero', ivr_escucha75: 'numero',
+  ivr_marque1: 'numero', ivr_llamados: 'numero', ivr_at_pct: 'numero', ivr_e75: 'numero',
+  ivr_e75_pct: 'numero', ivr_marque1_pct: 'numero',
+  sms_enviados: 'numero', sms_entregados: 'numero', sms_ent_pct: 'numero', sms_clics: 'numero',
+  envios: 'numero', entregados: 'numero', aperturas: 'numero', or: 'numero', clics: 'numero',
+  ctor: 'numero', impresiones: 'numero', alcance_dig: 'numero', views: 'numero', clics_dig: 'numero',
+  dig_alcance: 'numero', dig_frecuencia: 'numero', dig_views: 'numero', dig_vtr: 'numero',
+  dig_ctr: 'numero', dig_impresiones_social: 'numero',
+  alc_alcance: 'numero', alc_frecuencia: 'numero',
+  sd_pauta_google: 'numero', sd_pauta_prog: 'numero', sd_pauta_meta: 'numero'
+};
+SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAMPO_[fila.campo_logico] || ''; });
 
 /**
  * Paso 2.6 Parte D — clasificación PROPUESTA de las ~86 solapas reales de las

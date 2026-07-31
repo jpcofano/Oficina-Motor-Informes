@@ -500,10 +500,15 @@ function menuPromoverFechasElegidas_() {
  * Motivo concreto (ver docs/Prompts/DOC-3_verificacion_bases_vivas.md): los números de
  * `looker` vienen formateados con punto de miles ("201.273.767"). Si en la hoja son
  * texto en vez de número nativo, una operación SUMA (Paso 3) va a devolver 0 o
- * concatenar, sin lanzar error — por eso se marca ⚠ toda columna mapeada que salga
- * texto o mixto: no se sabe todavía cuál de ellas un marcador va a sumar (MARCADORES no
- * está sembrado, Paso 2.5 bloqueado), así que se marca de forma amplia y el Paso 3
- * decide cuáles importan.
+ * concatenar, sin lanzar error.
+ *
+ * Paso 2.7 Parte F — el aviso ⚠ ahora compara contra `MAPEO.tipo_esperado`, no contra
+ * una regla fija ("texto o mixto es sospechoso"). Esa regla fija marcaba 35 columnas de
+ * las cuales la enorme mayoría eran texto **a propósito** (`figura`, `barrio`,
+ * `*_id_cuenta`, …) — un aviso que salta siempre y casi nunca es nada entrena a
+ * ignorarlo. Ahora: si `tipo_esperado` está declarado y el tipo real difiere, ⚠ real.
+ * Si no está declarado, sale en una sección informativa aparte, sin ⚠ — no bloquea nada,
+ * es simplemente lo que todavía no se clasificó (`TIPO_ESPERADO_POR_CAMPO_`, Instalar.gs).
  *
  * Paso 2.6 Parte A — clasificación exhaustiva: toda solapa real del archivo sale con
  * exactamente una etiqueta (`hoja_default ok` / `mapeada` / `sin mapear (informativo)`).
@@ -516,7 +521,7 @@ function menuPromoverFechasElegidas_() {
  * si no coinciden, ⚠.
  */
 var HEADERS_DIAG_BASES_SOLAPAS_ = ['base_id', 'solapa', 'estado'];
-var HEADERS_DIAG_BASES_TIPOS_ = ['base_id', 'solapa', 'campo_logico', 'columna', 'tipo', 'muestra', 'alerta'];
+var HEADERS_DIAG_BASES_TIPOS_ = ['base_id', 'solapa', 'campo_logico', 'columna', 'tipo_esperado', 'tipo', 'muestra', 'alerta'];
 var FILAS_MUESTRA_TIPO_ = 20;
 
 function diagnosticarBases() {
@@ -588,14 +593,19 @@ function diagnosticarBases() {
         if (!fila.columna) return;
 
         var tipo = tipificarColumna_(hojaSheet, fila.columna, filaEncabezado);
+        var tipoEsperado = fila.tipo_esperado || '';
+        // Paso 2.7 Parte F: ⚠ solo si hay tipo_esperado declarado Y el real difiere.
+        // Sin declarar, no se chequea — informativo aparte (menuDiagnosticarBases_).
+        var alerta = (tipoEsperado && tipo.tipo !== tipoEsperado) ? '⚠' : '';
         filasTipos.push({
           base_id: baseId,
           solapa: solapa,
           campo_logico: campoLogico,
           columna: fila.columna,
+          tipo_esperado: tipoEsperado,
           tipo: tipo.tipo,
           muestra: tipo.muestra,
-          alerta: (tipo.tipo === 'texto' || tipo.tipo === 'mixto') ? '⚠' : ''
+          alerta: alerta
         });
       });
     });
@@ -712,7 +722,7 @@ function menuDiagnosticarBases_() {
 
   var lineas = [
     'Solapas revisadas: ' + resultado.totalFilasClasificadas + ' (⚠ ' + resultado.advertenciasSolapas + ')',
-    'Columnas mapeadas tipadas: ' + resultado.filasTipos.length + ' (⚠ texto/mixto: ' + resultado.advertenciasTipos + ')',
+    'Columnas mapeadas tipadas: ' + resultado.filasTipos.length + ' (⚠ difieren de tipo_esperado: ' + resultado.advertenciasTipos + ')',
     (resultado.totalesCoinciden ? '✅' : '⚠') + ' Control de totales — solapas del archivo: ' +
       resultado.totalSolapasArchivo + ' vs. filas emitidas: ' + resultado.totalFilasClasificadas
   ];
@@ -730,11 +740,19 @@ function menuDiagnosticarBases_() {
   }
 
   if (resultado.advertenciasTipos > 0) {
-    lineas.push('', '⚠️ Columnas mapeadas que salieron texto/mixto (revisar antes de sumarlas en el Paso 3):');
+    lineas.push('', '⚠️ Columnas mapeadas cuyo tipo real difiere de tipo_esperado (revisar antes de sumarlas en el Paso 3):');
     lineas = lineas.concat(resultado.filasTipos
       .filter(function (f) { return f.alerta === '⚠'; })
       .slice(0, 20)
-      .map(function (f) { return '  · ' + f.base_id + '/' + f.solapa + '/' + f.campo_logico + ' (col ' + f.columna + ') = ' + f.tipo + ', ej. "' + f.muestra + '"'; }));
+      .map(function (f) {
+        return '  · ' + f.base_id + '/' + f.solapa + '/' + f.campo_logico + ' (col ' + f.columna + ') esperado=' +
+          f.tipo_esperado + ', real=' + f.tipo + ', ej. "' + f.muestra + '"';
+      }));
+  }
+
+  var sinTipoEsperado = resultado.filasTipos.filter(function (f) { return !f.tipo_esperado; }).length;
+  if (sinTipoEsperado > 0) {
+    lineas.push('', 'ℹ️ ' + sinTipoEsperado + ' columna(s) mapeada(s) sin tipo_esperado declarado (informativo, no se chequean).');
   }
 
   lineas.push('', 'Detalle completo en la hoja DIAG_BASES.');

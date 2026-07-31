@@ -79,6 +79,7 @@ function leerMapeo() {
   var idxCampoLogico = headers.indexOf('campo_logico');
   var idxHoja = headers.indexOf('hoja');
   var idxColumna = headers.indexOf('columna');
+  var idxTipoEsperado = headers.indexOf('tipo_esperado');
   var idxNotas = headers.indexOf('notas');
 
   var mapa = {};
@@ -93,6 +94,7 @@ function leerMapeo() {
     mapa[baseId][solapa][campoLogico] = {
       hoja: fila[idxHoja],
       columna: fila[idxColumna],
+      tipo_esperado: idxTipoEsperado !== -1 ? fila[idxTipoEsperado] : '',
       notas: fila[idxNotas]
     };
   });
