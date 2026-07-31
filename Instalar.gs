@@ -102,7 +102,14 @@ var HOJAS_CONFIG_ = {
     headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'tipo_esperado', 'notas'],
     ejemplos: [
       ['rdv', 'RVD JM-CM - ES', 'inscriptos', 'RVD JM-CM - ES', 'H', 'numero', ''],
-      ['digital', 'Digital', 'alcance', 'Digital', 'E', '', '']
+      // Paso 2.8 Parte A: el ejemplo original era 'digital'/'Digital'/'alcance' apuntando
+      // a la columna E — esa fila se instaló en MAPEO y quedó viva ahí porque `instalar()`
+      // nunca pisa filas cargadas. La columna E de esa solapa es "Fecha de inicio"
+      // (`dig_fecha_inicio`, ya mapeada más abajo), no alcance — confirmado por
+      // `auditarAlcanceDigital_()` (Paso 2.7 Parte B). Corregido acá para que una
+      // instalación nueva no repita el error; `eliminarMapeoAlcanceDigitalObsoleto_()`
+      // limpia la fila vieja en instalaciones ya existentes.
+      ['digital', 'Digital', 'dig_fecha_inicio', 'Digital', 'E', 'fecha', '']
     ]
   },
   // SOLAPAS (Paso 2.6): declara el uso de CADA solapa de cada base — el motor solo
@@ -214,6 +221,7 @@ function instalar() {
 
   var hojaMapeo = ss.getSheetByName('MAPEO');
   var backfill = hojaMapeo ? backfillSolapaMapeo_(hojaMapeo) : { rellenadas: 0, sinHoja: [] };
+  var eliminoAlcance = hojaMapeo ? eliminarMapeoAlcanceDigitalObsoleto_(hojaMapeo) : false;
 
   var hojaMarcadores = ss.getSheetByName('MARCADORES');
   var migroOperacion = hojaMarcadores ? migrarCalculoAOperacion_(hojaMarcadores) : false;
@@ -227,8 +235,36 @@ function instalar() {
     (backfill.sinHoja.length
       ? '\n⚠️ MAPEO sin "hoja" cargada, no se pudo determinar solapa: ' + backfill.sinHoja.join(', ')
       : '') +
+    (eliminoAlcance ? '\nMAPEO: eliminada la fila digital/Digital/alcance (col E era Fecha de inicio, Paso 2.8 Parte A)' : '') +
     (migroOperacion ? '\nMARCADORES.calculo renombrada a operacion (valores conservados)' : '');
   SpreadsheetApp.getUi().alert('Instalación completa', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
+}
+
+/**
+ * Paso 2.8 Parte A — migración idempotente: borra la fila digital/Digital/alcance
+ * de MAPEO si existe. Esa fila salía del ejemplo sembrado por HOJAS_CONFIG_.MAPEO
+ * al crear la hoja de cero (ya corregido arriba) y nunca estuvo en SEED_MAPEO_, así
+ * que `seedConfiguracion()` no la iba a pisar ni a borrar por su cuenta. La columna
+ * E de esa solapa es "Fecha de inicio" (`dig_fecha_inicio`), no alcance —
+ * confirmado por `auditarAlcanceDigital_()` (Paso 2.7 Parte B); el alcance real de
+ * digital ya está mapeado en `digital/Alcance/alc_alcance`. Si la fila no está
+ * (ya se borró, o la hoja es nueva), no hace nada.
+ */
+function eliminarMapeoAlcanceDigitalObsoleto_(hoja) {
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxBaseId = headers.indexOf('base_id');
+  var idxSolapa = headers.indexOf('solapa');
+  var idxCampo = headers.indexOf('campo_logico');
+  if (idxBaseId === -1 || idxSolapa === -1 || idxCampo === -1) return false;
+
+  for (var f = datos.length - 1; f >= 1; f--) {
+    if (datos[f][idxBaseId] === 'digital' && datos[f][idxSolapa] === 'Digital' && datos[f][idxCampo] === 'alcance') {
+      hoja.deleteRow(f + 1);
+      return true;
+    }
+  }
+  return false;
 }
 
 /**

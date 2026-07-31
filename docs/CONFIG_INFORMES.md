@@ -73,6 +73,21 @@ como `ivr_marque1` (columna Z, `MAPEO`, ya sembrado desde antes de esta sesión)
 requiere cablear nada nuevo — solo confirma que el token no queda huérfano una vez que
 la armonización de plantillas lo cree.
 
+### 1.6 "Audiencia Alcanzada" (JM 5) — dos candidatas, sin elegir
+
+**[?]** El token sigue sin fuente (`docs/PLANTILLAS_QA_y_armonizacion.md` §4). La
+auditoría de la Parte B del Paso 2.7 (columna E de `digital/Digital`) dejó dos
+candidatas a mano, ninguna confirmada:
+
+- `digital/Digital` columna **D** ("Audiencia") — vecina de la columna E que motivó
+  la auditoría; sin mapear todavía.
+- `looker/Audiencias` (303 filas: `Segmentacion | Tipo | Audiencias Potenciales | Área`)
+  — solapa entera sin registrar en `SOLAPAS` más allá de `uso=revisar`.
+
+Ninguna de las dos está confirmada como la fuente real de "Audiencia Alcanzada" de
+JM 5 — la pregunta 4 de `PLANTILLAS_QA_y_armonizacion.md` §7 sigue abierta
+("¿es el mismo número que el `alcance` de Looker, o se calcula aparte?").
+
 ---
 
 ## 2. Informe mensual SECCO-SSCDI
