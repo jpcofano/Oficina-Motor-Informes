@@ -306,7 +306,7 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
 - **Prueba:** ver "Prueba del usuario" de `docs/Prompts/DOC-4_taxonomia_y_bitacora.md`.
 - **Pendientes/decisiones:** se completa con las Partes B/C/D de este mismo prompt.
 
-## REGLAS_R09_R10 — R-05 a R-10 en REGLAS_NEGOCIO.md (2026-07-31) — commit `pendiente`
+## REGLAS_R09_R10 — R-05 a R-10 en REGLAS_NEGOCIO.md (2026-07-31) — commit `764dc1e`
 - **Qué pedía el prompt:** `docs/Prompts/REGLAS_R09_R10.md` pedía agregar R-09 ("lo
   cancelado no entra al informe") y R-10 ("encabezados se normalizan por espacios, nunca
   por mayúsculas"), asumiendo que R-05 a R-08 ya existían en `REGLAS_NEGOCIO.md`.
