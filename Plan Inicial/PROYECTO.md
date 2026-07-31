@@ -166,6 +166,11 @@ el desglose por canal (`MAIL`/`IVR`/`SMS`/`CC`/`DIGITAL`/`ALCANCE`, cada una con
 `ID cuentas`) como solapas propias — ¿`unirDigitalPorCuenta()` (Paso 2.4) está
 reconstruyendo un join que Looker ya trae hecho río arriba? Puede explicar el timeout de
 ~6 minutos de `menuProbarUnionYAnclaje_` (Tarea 7 de AUD-1, todavía sin diagnosticar).
+**Una hipótesis alternativa para el mismo timeout quedó descartada (AUD-2,
+`docs/AUD-2_union_digital_clave.md`, Paso 2.7 Parte C):** `unirDigitalPorCuenta()` ya une
+por `*_id_cuenta` en las seis solapas (`Union.gs:81-93`), nunca por `clave` — no está
+comparando nombre de campaña contra código de cuenta. El candidato que queda en pie es el
+scoring `O(realizadas × candidatos)` de `anclarEncuentros()`/`scoreMatchDigitalRdv_()`.
 
 **Decisión resuelta (DOC-1, 29/07/2026):** escrita una sola vez en
 `docs/CONFIG_INFORMES.md` §4.1; `MAPEO_completo.md` (congelado) apunta ahí en vez de
