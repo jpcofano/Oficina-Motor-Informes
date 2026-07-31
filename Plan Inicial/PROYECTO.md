@@ -328,62 +328,31 @@ fijas (`post_camp1-3`/`post_estado1-3`) y una semana real tuvo 2 — fijo deja
 
 ---
 
-## 7. Plan por pasos y estado
+## 7. Plan por pasos
 
-**Bloque 1 — Fundación y config — ✅ completo**
-Paso 0 (hojas registro + menú) · Paso 1 (lector + `abrirBase` con caché) · Paso 1.5
-(re-anclado a `jpcofanogcba1`) · Paso 0.5 (esquema de períodos) · Paso 1.7 (seed
-BASES/MAPEO/CONFIG) · Paso 1.6 + 1.6 v2 (registrar plantillas, robusto) · Paso 1.8 + 1.8-B
-(convención de commits, timeZone/scopes, diagnóstico Drive) · Paso 1.9 (MAPEO completo +
-`fila_encabezado`/`modo_periodo`).
+> **Un documento de arquitectura no lleva estado (DOC-5 Parte 2, 31/07/2026).** Esta
+> sección listaba "✅ completo" y "Sin implementar" por bloque; llegó a describir el Paso
+> 2.4 como el más reciente y "firma de encabezados" como sin implementar cuando el
+> proyecto ya iba por el Paso 2.11 Parte C con `firma_encabezado` hecha — diez sub-pasos
+> de atraso sin que nadie lo notara, porque el estado tenía dos casas. Corrección: el
+> estado tiene un solo dueño (ver pointer abajo) y no es esta sección; acá solo queda el
+> roadmap. Hallazgo original: `docs/PROPUESTA_orden_documental.md`, Tarea 4.1.
 
-**Bloque 2 — Motor headless**
-- Paso 2 + 2.1 + 2.3 ✅ — lectura por ventana: `resolverCampo`/`resolverVentana`/
-  `leerFuente` en `Fuentes.gs` (maneja `modo_periodo`/`fila_encabezado`, parseo de fecha
-  sin ambigüedad mm/dd, ventana con bordes inclusivos, columna de fecha y columna clave
-  por convención de MAPEO, filas basura fuera del conteo, diagnóstico honesto que
-  degrada a ⚠️ si no hay filas en ventana o >50% sin fecha). `digital` sembrado completo
-  (Paso 2.3). Menú "Probar lectura por ventana". Falta que el usuario corra la prueba
-  real y cierre P1–P5/A1–A10 de `VERIFICACION_Paso-2.md`.
-- Paso 2.2 + 2.2.1 — primera corrida ya confirmada por el usuario (JM slide 5 y slide 6
-  correctas). El parche 2.2.1 corrigió dos problemas que aparecieron en esa corrida: los
-  renombres de texto pasaron a ser **por `informe_id`** (`RENOMBRES_ARMONIZACION_POR_INFORME_`
-  en `Armonizar.gs`) porque un renombre global rompió `enc_audiencia` en SECCO; y se
-  agregaron los 16 renombres de M2 slide 10 (nunca se habían codeado) + una limpieza de
-  caja fuera de canvas más robusta (recorre `Group`, la versión anterior solo miraba
-  elementos de primer nivel — por eso los 14 números viejos seguían apareciendo). **El
-  parche todavía no se corrió contra la plantilla real.** Sigue pendiente sacar la
-  advertencia de `docs/TOKENS.md` (Parte D del 2.2). `enc_audiencia_ivr`→`enc_base_total`
-  sigue siendo pregunta abierta en `PLANTILLAS_QA_y_armonizacion.md` §9, no confirmada.
-- Paso 2.4 ✅ — capa de ensamblado (`Union.gs`), en paralelo a la vía de plantillas
-  (2.2 → 2.5): `unirDigitalPorCuenta()` (join de las 6 solapas de `digital` por
-  `id_cuenta`, snapshot) + `anclarEncuentros()` (anclaje RDV → cuenta digital,
-  `docs/DISENO_match_temario.md` §5 bis, con precondición R-01 y umbral de
-  confianza) + `filasDigitalDeEncuentro()` como proveedor estable que el Paso 3
-  usa en vez de `leerFuente` directo para digital. El join por `id_cuenta` y el
-  anclaje RDV **no son aritmética** y por eso viven acá, no en `Marcadores.gs`.
-  Menú: "Probar unión y anclaje".
-- **Firma de encabezados** (paso propio, antes del `Paso-3-v2`) — DOC-3 generalizó el
-  riesgo que estaba anotado como específico de `RDV_otros_ministros` (dueño ajeno inserta
-  una columna, el mapeo por letra sigue leyendo sin fallar, devuelve la de al lado): **las
-  cuatro bases están mapeadas por letra de columna y ninguna es propia** (`rdv` y `digital`
-  del equipo, `Base Looker` de `dgples.comunicacion@gmail.com`, `M2` de
-  `tarnowski.jp@gmail.com`) — así que aplica a todo el motor. Guardar la fila de
-  encabezado de cada solapa mapeada y fallar ruidosamente si cambió. **Decisión del Paso
-  2.6:** la columna vive en `SOLAPAS.firma_encabezado` (creada, reservada y vacía —
-  no en `MAPEO` ni en una hoja `FIRMAS` aparte, esa alternativa queda descartada), porque
-  la firma es un atributo de la solapa, mismo criterio que `SOLAPAS.fila_encabezado`.
-  `inventariarSolapas()` (`Solapas.gs`) ya abre cada solapa `fuente` en cada corrida, así
-  que la mitad del trabajo de este paso va a estar hecho. `diagnosticarBases()`
-  (`Fechas.gs`, DOC-3 Parte B) ya lee la fila de encabezado para tipar columnas — otra
-  mitad ya resuelta. Detalle: `docs/RDV_otros_ministros_riesgo.md`. **Sin implementar.**
-- Paso 3 — primer cálculo en `Marcadores.gs` + trazabilidad.
-- Paso 4 — motor de reemplazo (tokens fijos).
-- Paso 5 — campañas repetibles + end-to-end.
+Roadmap por bloques, sin marca de avance:
 
-**Bloque 3 — Panel** · Paso 6 web app (`doGet`) · 7 período · 8 campañas · 9 preview+trazabilidad.
-**Bloque 4 — Automatización** · 10 auto-convertir plantillas · 11 triggers · 12 entrega por mail.
+- **Bloque 1 — Fundación y config**: hojas de registro y menú, lector con `abrirBase`
+  cacheado, esquema de períodos, seed inicial (`BASES`/`MAPEO`/`CONFIG`), registro de
+  plantillas, convención de commits y diagnóstico de Drive, `MAPEO` completo.
+- **Bloque 2 — Motor headless**: lectura por ventana (`Fuentes.gs`), armonización de
+  tokens de plantillas, capa de ensamblado (`Union.gs`: join de `digital` + anclaje RDV),
+  firma de encabezados (`SOLAPAS.firma_encabezado`), cálculo en `Marcadores.gs`, motor de
+  reemplazo de tokens en Slides, campañas repetibles + corrida end-to-end.
+- **Bloque 3 — Panel**: web app (`doGet`), selección de período, selección de campañas,
+  preview + trazabilidad.
+- **Bloque 4 — Automatización**: auto-convertir plantillas, triggers, entrega por mail.
 
+**Dónde estamos ahora mismo → `docs/HANDOFF_CODE.md`.**
+**Qué se hizo, paso por paso, desde el scaffold inicial → `docs/BITACORA.md`.**
 **Orden de corrida detallado → `docs/RUNBOOK.md`.**
 
 ---
@@ -416,71 +385,71 @@ va algo nuevo, lo más barato es crear un archivo nuevo, y así se llegó de 8 a
 días. La corrección no es archivar (la mayoría están citados desde otros documentos):
 es declararlos todos.
 
-**Vivos — se editan cuando cambia lo que describen**
+**Taxonomía de `docs/` (DOC-5 Parte 2, 31/07/2026 — corrige el criterio de `DOC-1`/`DOC-4`)**
 
-| documento | qué contiene | quién lo edita |
+Esta tabla es un índice de ruteo — ruta, qué contiene, quién edita — **no** un registro
+central de qué documento está vivo o congelado. Esa distinción la declara **cada
+documento en su propio encabezado**, cuando aplica; un índice central se desactualiza sin
+que nadie lo note, que es justo lo que le pasó a `docs/CONFIG_INFORMES.md` (este índice lo
+tenía como congelado mientras su propio encabezado decía "vivo/borrador" — ver
+`docs/PROPUESTA_orden_documental.md`, Tarea 2). Los tres estados posibles siguen siendo
+los de `CLAUDE.md` §3 (vivo / congelado / archivado); acá no se repiten por documento.
+
+| documento | qué contiene | quién edita |
 |---|---|---|
 | `CLAUDE.md` (raíz) | convenciones de repo y ruteo documental para las herramientas | ambas |
-| `Plan Inicial/PROYECTO.md` | maestro: arquitectura, decisiones, estado, convenciones | ambas |
+| `Plan Inicial/PROYECTO.md` | maestro: arquitectura, decisiones, convenciones (no estado de avance — ver §7) | ambas |
 | `docs/RUNBOOK.md` | cómo se opera y se corre | ambas |
 | `docs/TOKENS.md` | diccionario de tokens | ambas |
 | `docs/PENDIENTES_consistencia.md` | inconsistencias abiertas, sin resolver | ambas |
 | `docs/REGLAS_NEGOCIO.md` | reglas del dominio con ID estable `R-NN` | ambas |
 | `docs/SUPUESTOS.md` | supuestos asumidos con ID estable `S-NN` | ambas |
 | `docs/OBJETIVO_lamina_nueva.md` | objetivo de láminas por prompt; se refina | ambas |
+| `docs/CONFIG_INFORMES.md` | decisiones editoriales de configuración por informe — curado a mano por diseño, vivo de forma permanente, no transitoria | ambas |
 | `docs/BITACORA.md` | qué hizo cada paso, append-only | **solo Code** |
 | `docs/HANDOFF_CODE.md` | estado actual del trabajo, se reescribe | **solo Code** |
+| `docs/MAPEO_completo.md` | relevamiento original del mapeo (28-29/07); la verdad viva es la hoja `MAPEO` | nadie — se autodeclara congelado |
+| `docs/HALLAZGOS_validacion_decks.md` | validación contra decks publicados (29/07) | nadie |
+| `docs/DISENO_match_temario.md` | diseño del match de temario | nadie, salvo addendum fechado y marcado (ver ejemplo del 31/07 en el propio archivo) |
+| `docs/PLANTILLAS_QA_y_armonizacion.md` | QA y equivalencia de slides entre plantillas (29/07) | nadie |
+| `docs/FECHAS_seleccion.md` | selección de columnas de fecha por solapa (30/07) | nadie — se autodeclara congelado |
+| `docs/AUD-2_union_digital_clave.md` | auditoría de solo lectura (30/07) | nadie |
+| `docs/RDV_otros_ministros_riesgo.md` | hallazgo + generalización DOC-3 (30/07) | nadie — se autodeclara congelado |
+| `docs/SECCIONES.md` | inventario verificado contra informes publicados | nadie |
+| `docs/INFORMES_relacion.md` | verificación token por token de ambas plantillas | nadie |
+| `docs/GRANO_TEMPORAL.md` | doctrina: por qué la fecha de reunión no filtra canales | nadie |
+| `docs/TEMARIO_Y_PLANTILLA_2026-07-31.md` | temario y diff de plantilla (31/07) | nadie |
+| `docs/VALIDACION_2026-07-31.md` | validación del informe SECCO publicado contra las cuatro bases (31/07) | nadie |
 
 `REGLAS_NEGOCIO` y `SUPUESTOS` son **append-only**: se agregan filas, nunca se reutiliza
 un ID, y una regla o supuesto que se cae se marca **derogado con fecha** en vez de
 borrarse.
 
-**Congelados — se leen, no se editan**
-
-Relevamientos, auditorías y hallazgos fechados: describen un momento, no el estado
-actual. Si uno necesita cambiar, el cambio va a `PROYECTO.md`, o el documento pasa a
-vivo explícitamente anotándolo acá.
-
-| documento | qué relevó |
-|---|---|
-| `docs/MAPEO_completo.md` | relevamiento original del mapeo; la verdad viva es la hoja `MAPEO` |
-| `docs/HALLAZGOS_validacion_decks.md` | validación contra decks publicados |
-| `docs/DISENO_match_temario.md` | diseño del match de temario |
-| `docs/CONFIG_INFORMES.md` | decisiones de configuración por informe |
-| `docs/PLANTILLAS_QA_y_armonizacion.md` | QA y equivalencia de slides entre plantillas |
-| `docs/FECHAS_seleccion.md` | 30/07 — ya se autodeclara congelado |
-| `docs/AUD-2_union_digital_clave.md` | 30/07 — auditoría de solo lectura |
-| `docs/RDV_otros_ministros_riesgo.md` | 30/07 — hallazgo + generalización DOC-3 |
-| `docs/SECCIONES.md` | inventario verificado contra informes publicados |
-| `docs/INFORMES_relacion.md` | verificación token por token de ambas plantillas |
-| `docs/GRANO_TEMPORAL.md` | doctrina: por qué la fecha de reunión no filtra canales |
-| `docs/TEMARIO_Y_PLANTILLA_2026-07-31.md` | 31/07 — temario y diff de plantilla |
-| `docs/VALIDACION_2026-07-31.md` | 31/07 — validación del informe SECCO publicado contra las cuatro bases |
-
-**Tablas de referencia — ni vivas ni congeladas**
+**Tablas de datos**
 
 | archivo | qué es |
 |---|---|
-| `docs/PERSONAS_equivalencias.csv` | tabla de equivalencias. Se actualiza cuando cambia el padrón, no es prosa y no lleva estado |
+| `docs/PERSONAS_equivalencias.csv` | tabla de equivalencias. Se actualiza cuando cambia el padrón, no es prosa |
 | `docs/casos_validacion_2026-07-31.csv` | casos puntuales de `VALIDACION_2026-07-31.md`, detalle fila por fila |
 
 **Directorios**
 
 | directorio | quién escribe | regla |
 |---|---|---|
-| `docs/Prompts/` | ambas | un archivo por paso, auditoría o trabajo documental: `Paso-N.md`, `AUD-N_*.md`, `DOC-N_*.md`. No se editan una vez ejecutados |
-| `docs/Sesiones/` | **solo claude.ai** | buzón donde el usuario deja los handoffs que baja de sus conversaciones. Code lee de ahí y **no escribe nunca**. Solo queda el más reciente; el resto en `_archivo/` |
+| `docs/Prompts/` | ambas | un archivo por paso, auditoría o trabajo documental: `Paso-N.md`, `AUD-N_*.md`, `DOC-N_*.md`. No se editan una vez ejecutados; un prompt que reemplaza a otro lo declara con un campo `reemplaza:` en su propio encabezado (DOC-5 Parte 2) — el original no se toca. Nada que no sea un prompt (con Partes y protocolo de prueba) vive acá — lo que llegó a colarse va a `docs/Prompts/_archivo/` |
+| `docs/Prompts/_archivo/` | ambas | contenido que se coló en `docs/Prompts/` sin ser un prompt y ya se fusionó a su lugar correcto (ej. `REGLAS_R09_R10.md`, fusionado a `docs/REGLAS_NEGOCIO.md`) |
+| `docs/Sesiones/` | **solo claude.ai** | buzón donde el usuario deja los handoffs que baja de sus conversaciones. Code lee de ahí y **no escribe nunca**. El handoff vivo es el que **ningún otro handoff declara como su propio predecesor** (cadena "Continúa a..." en el encabezado) — no el que esté fuera de `_archivo/` por ubicación, que puede desalinearse (pasó una vez: `docs/PROPUESTA_orden_documental.md`, Tarea 2 Caso 5) |
 | `Plan Inicial/_archivo/` | ambas | historial: documentos superados, plantillas espejo |
 
-**Nota sobre `RDV_otros_ministros_riesgo.md`:** el documento queda congelado, pero su
-sección "Qué falta" (el mecanismo de firma de encabezados, todavía sin implementar) está
+**Nota sobre `RDV_otros_ministros_riesgo.md`:** el documento se autodeclara congelado, pero
+su sección "Qué falta" (el mecanismo de firma de encabezados, todavía sin implementar) está
 copiada a `docs/PENDIENTES_consistencia.md` — un pendiente vivo no puede vivir dentro de
 un documento congelado.
 
-Si un documento **congelado** necesita cambiar: o el cambio va a `PROYECTO.md` (que sí
-es vivo), o el doc pasa a vivo explícitamente (se anota acá). Lo que no puede pasar es
-que se edite en silencio y quede contradiciendo a otro — eso es exactamente lo que costó
-la mitad del trabajo de `DOC-1`.
+Si un documento que se autodeclara **congelado** necesita cambiar: o el cambio va a
+`PROYECTO.md` (que sí es vivo), o el doc pasa a vivo explícitamente **en su propio
+encabezado**. Lo que no puede pasar es que se edite en silencio y quede contradiciendo a
+otro — eso es exactamente lo que costó la mitad del trabajo de `DOC-1`.
 
 ### Convención de trabajo: un commit por paso
 

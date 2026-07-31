@@ -1,5 +1,8 @@
 # Paso 2.10 — R-10 en código + Parte D (hoja `VALIDACION`)
 
+**reemplaza:** `Paso-2.10_anclar_a_numeros_verificados.md` (Parte D — el original no se
+edita, ver `docs/PROPUESTA_orden_documental.md` Tarea 2 Caso 3, corrección DOC-5 Parte 2)
+
 > Destino: `docs/Prompts/Paso-2.10_ParteD_con_R10.md`
 > Corre **después** de las Partes B y C. Reemplaza a la Parte D del prompt original,
 > a la que le antepone la implementación de R-10 porque D depende de ella.

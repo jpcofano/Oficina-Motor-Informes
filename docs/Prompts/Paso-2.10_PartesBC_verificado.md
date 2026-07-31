@@ -1,5 +1,8 @@
 # Paso 2.10 — Partes B y C, verificadas contra el repo y contra los archivos del 31/07
 
+**reemplaza:** `Paso-2.10_anclar_a_numeros_verificados.md` (Partes B y C — el original no
+se edita, ver `docs/PROPUESTA_orden_documental.md` Tarea 2 Caso 3, corrección DOC-5 Parte 2)
+
 > Reemplaza las Partes B y C de `Paso-2.10_anclar_a_numeros_verificados.md`.
 > Repo leído en `852f79b`. Bases: las cuatro descargadas el 31/07.
 > **Trabajamos en español.**
