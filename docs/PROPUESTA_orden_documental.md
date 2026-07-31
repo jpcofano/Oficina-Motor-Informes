@@ -443,6 +443,15 @@ Paso-2.10_PartesBC_verificado.md` y `Paso-2.10_ParteD_con_R10.md`). El vigente e
 siempre el que **nadie más declara haber reemplazado**. Esto no es parte de la regla de
 precedencia — es lo que hace que la mayoría de los casos nunca lleguen a necesitarla.
 
+**Excepción — addenda fechados (DOC-5 Parte 2, corrección de la propia sesión).** "No se
+edita" significa que no se altera una sola línea del texto original — no que el documento
+quede mudo ante un error propio. Un prompt ejecutado admite un addendum fechado y marcado
+que corrige una premisa sin tocar el párrafo original, mismo patrón que ya usa
+`docs/DISENO_match_temario.md` y que se aplicó acá mismo en `docs/Prompts/
+DOC-5_orden_documental.md` (el propio prompt cargaba un hecho desactualizado). Sin esta
+excepción escrita, la regla se contradice la primera vez que hace falta corregir un
+prompt vigente.
+
 **La forma correcta no es un ranking.** Un orden lineal de 1 a 7 implica que cualquier
 par de documentos es comparable, y no lo es: "qué dice R-07" y "qué se hizo el 28/07" no
 compiten nunca, tienen dueños distintos. La regla es **una pregunta → un dueño único**;

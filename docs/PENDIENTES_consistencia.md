@@ -101,6 +101,18 @@ Es el único doc con instrucciones ejecutables paso a paso — si algo tiene que
 día, es este. No se tocó en `DOC-1` (fuera de alcance: ese prompt no toca código ni
 `RUNBOOK.md`).
 
+### P1 · Una instrucción emitida fuera del alcance de un paso desaparece sin dejar rastro
+
+Descubierto en `DOC-5` Parte 2 (31/07/2026): en el mismo mensaje en que se pidió corregir
+una línea de `docs/Prompts/DOC-5_orden_documental.md`, se acotó la tarea siguiente a
+"D-1, y sólo D-1". La corrección, al quedar fuera del alcance declarado del paso, no se
+aplicó — no por descuido de quien ejecutó (hizo lo correcto al no tocar nada fuera de
+alcance), sino porque **no existe ningún lugar donde una instrucción así sobreviva entre
+pasos.** No hay lista de pendientes-entre-turnos: lo único que persiste es lo que alguien
+recuerda y repite en el mensaje siguiente. Sin decidir todavía cómo mitigarlo (¿toda
+instrucción que quede fuera de alcance se anota acá mismo, como fila nueva, en vez de
+perderse?) — queda registrado como el hallazgo, no la solución.
+
 ### P2 · Referencias rotas a `Plan Inicial/*.md` (movidos a `_archivo/` sin actualizar el prompt que los cita)
 
 | doc que referencia | archivo | ubicación real |
