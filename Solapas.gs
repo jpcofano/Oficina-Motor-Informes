@@ -86,7 +86,7 @@ function inventariarSolapas() {
       // separar eso depende de detectar encabezado por solapa (no todas lo
       // tienen, ej. `Mail per`). La diferencia entre las dos columnas ES el
       // diagnóstico: no perderla resumiéndola en una sola.
-      var filasCrudas = Math.max(hojaSheet.getLastRow() - 1, 0);
+      var filasCrudas = hojaSheet.getLastRow();
       var valoresHoja = hojaSheet.getDataRange().getValues();
       var filasDatos = 0;
       valoresHoja.forEach(function (fila) {

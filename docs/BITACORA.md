@@ -423,7 +423,7 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
 - **Pendientes/decisiones:** ninguna nueva. Sigue la Parte B del mismo prompt
   (`fila_encabezado` por solapa, no por base, en `m2`).
 
-## Paso 2.11 Parte B — `fila_encabezado` es por solapa, no por base (2026-07-31) — commit `<pendiente>`
+## Paso 2.11 Parte B — `fila_encabezado` es por solapa, no por base (2026-07-31) — commit `429a719`
 - **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md` Parte
   B — `BASES.m2.fila_encabezado=3` se aplicaba a toda la base, pero solo es correcto
   para `M2 periodo DIRECTA`/`DIGITAL`. Siete solapas de `m2` decían 3 y son 1 (`Directa
@@ -455,3 +455,27 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   pasan por `resolverFilaEncabezado_()` — el prompt de esta parte solo pedía corregir
   `leerFuente`. Si alguno de esos diagnósticos corre sobre una de las siete solapas
   corregidas, puede repetir el síntoma viejo.
+
+## Paso 2.12 Parte 1 — `filas_crudas` deja de restar el encabezado (2026-07-31) — commit `<pendiente>`
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.12_conteos_y_clasificacion.md` Parte 1
+  — de las 84 filas de `SOLAPAS`, 65 dan `filas_datos = filas_crudas + 1`, exactamente
+  +1 sin excepción: `filas_datos` (Paso 2.10 Parte B) cuenta el encabezado, `filas_crudas`
+  seguía restándolo (`getLastRow() - 1`, el valor viejo). Un subconjunto no puede ser
+  mayor que el conjunto — el guardarraíl del 90% de cobertura (`UMBRAL_COBERTURA_LECTURA_`,
+  Fuentes.gs) no podía dispararse nunca, con el cociente pasado de 100% en 65 de 84 filas.
+- **Qué se hizo:** `Solapas.gs` — `filasCrudas = hojaSheet.getLastRow()`, sin el `- 1`.
+  Una línea, nada más; el prompt lo pide explícito como commit aislado, bloqueante para
+  la Parte C del Paso 2.11 (cualquier diff que arme esa parte sobre `SOLAPAS` iba a
+  mostrar números incoherentes sin poder distinguir si era el diff o el dato de base).
+- **Prueba:** pendiente de que el usuario corra "Inventariar solapas" contra la planilla
+  en vivo y confirme: (1) invariante `filas_datos <= filas_crudas` en las 84 filas — si
+  alguna lo viola, es otra definición desalineada, no se ajusta el número; (2) con la
+  clasificación ACTUAL (sin la Parte 2 de este mismo prompt, que todavía no corrió),
+  dispara **una sola** ⚠ de cobertura entre las `fuente`: `rdv/RVD JM-CM - ES`,
+  721/1363 ≈ 53% (relleno de fórmula, 720 encuentros reales). La segunda del criterio
+  completo (`digital/Cuentas`, 79%) recién aparece cuando `digital/Cuentas` pase a
+  `fuente` en la Parte 2.
+- **Pendientes/decisiones:** Parte 2 (17 disposiciones de `SOLAPAS.uso`, queda para
+  después de la Parte C del Paso 2.11 — necesita el diff de esa parte) y Parte 3
+  (retirar `reclasificarSolapasM2Invertidas_`, entra dentro de la Parte D del Paso 2.11)
+  siguen sin ejecutar.
