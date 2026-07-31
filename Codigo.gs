@@ -19,6 +19,7 @@ function onOpen() {
         .addItem('Promover fechas elegidas', 'menuPromoverFechasElegidas_')
         .addItem('Sembrar clasificación inicial de solapas', 'sembrarClasificacionSolapas')
         .addItem('Cargar temario de reuniones (Paso 2.9D)', 'menuCargarTemarioReuniones_')
+        .addItem('Sembrar árbol de secciones (Paso 2.9G)', 'menuSembrarSecciones_')
         .addItem('Cargar ejemplo', 'menuCargarEjemplo_')
     )
     .addSubMenu(

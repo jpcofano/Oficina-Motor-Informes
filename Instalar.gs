@@ -163,6 +163,14 @@ var HOJAS_CONFIG_ = {
       [6, 'Ministros', 'Agregado', 'Reuniones de la semana', '2026-07-24', '', 'sí', 'Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)', '24/07 al 30/07 inclusive'],
       [7, 'M2', 'Agregado', 'Campañas y enviados de la semana', '2026-07-24', '', 'sí', '6) M2 | Campañas y enviados de la semana del 24/07 al 30/07', '']
     ]
+  },
+  // Paso 2.9G v2 — registro jerárquico de secciones (docs/SECCIONES.md, v2,
+  // verificada contra tres informes publicados). Sin ejemplos acá: se siembra
+  // con SEED_SECCIONES_ + sembrarSecciones_() (abajo), no con filas sueltas —
+  // el árbol completo es demasiado para "ejemplos" de instalación.
+  SECCIONES: {
+    headers: ['seccion_id', 'padre', 'orden', 'nombre', 'informes', 'modo', 'itera_sobre', 'filtro', 'opcional', 'condicion', 'familia_tokens', 'estado', 'falta', 'notas'],
+    ejemplos: []
   }
 };
 
@@ -1278,4 +1286,122 @@ function seedConfigConfig_(hoja) {
   });
 
   return { escritas: escritas, actualizadas: actualizadas };
+}
+
+/**
+ * Paso 2.9G v2 — árbol de `SECCIONES`, verificado contra tres informes
+ * publicados (docs/SECCIONES.md). `laminas` NO es una columna: cuántas
+ * láminas salen es el resultado de qué sub-secciones se activaron, no un dato
+ * de configuración fijo.
+ * `estado`: `activa` (el motor la emite) / `manual` (existe en informes
+ * reales, hoy la llena una persona) / `revisar` (registrada, atributo sin
+ * confirmar). Regla dura: ninguna fila con `estado` distinto de `activa`
+ * puede tener `falta` vacío.
+ */
+function filaSeccion_(datos) {
+  return {
+    seccion_id: datos.id,
+    padre: datos.padre || '',
+    orden: datos.orden,
+    nombre: datos.nombre,
+    informes: datos.informes,
+    modo: datos.modo,
+    itera_sobre: datos.itera || '',
+    filtro: datos.filtro || '',
+    opcional: datos.opcional || 'no',
+    condicion: datos.condicion || '',
+    familia_tokens: datos.familia || '',
+    estado: datos.estado || 'activa',
+    falta: datos.falta || '',
+    notas: datos.notas || ''
+  };
+}
+
+var SEED_SECCIONES_ = [
+  // Primer nivel
+  filaSeccion_({ id: 'portada', orden: 1, nombre: 'Portada', informes: 'JM,SECCO', modo: 'unica' }),
+  filaSeccion_({ id: 'indice', orden: 2, nombre: 'Índice', informes: 'SECCO', modo: 'unica' }),
+  filaSeccion_({ id: 'resumen_ejecutivo', orden: 3, nombre: 'Resumen Ejecutivo', informes: 'JM', modo: 'repetible', itera: 'entidad (JM / GCBA)', estado: 'manual', falta: 'es redacción, no dato' }),
+  filaSeccion_({ id: 'analisis_comparativo', orden: 4, nombre: 'Análisis comparativo Imagen (interanual)', informes: 'SECCO', modo: 'repetible', itera: 'red social', estado: 'manual', falta: 'sin marcar en la plantilla; fuente de la serie interanual' }),
+  filaSeccion_({ id: 'semana_jm_conversacion', orden: 5, nombre: 'Semana JM — conversación X', informes: 'SECCO', modo: 'unica' }),
+  filaSeccion_({ id: 'miba', orden: 6, nombre: 'Integración MiBA', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'fuente sin definir en el motor; el bloque ya se publica lleno a mano' }),
+  filaSeccion_({ id: 'portada_digital_directa', orden: 7, nombre: 'Portada Digital/Directa', informes: 'JM,SECCO', modo: 'unica' }),
+  filaSeccion_({ id: 'encuentro', orden: 8, nombre: 'Bloque de encuentro', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', familia: 'ecv_,enc_' }),
+  filaSeccion_({ id: 'comunicaciones_post', orden: 9, nombre: 'Comunicaciones post', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', filtro: 'etapa=post', familia: 'post_' }),
+  filaSeccion_({ id: 'impacto_comunicacional', orden: 10, nombre: 'Semana JM — Impacto comunicacional', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'sin marcar en la plantilla' }),
+  filaSeccion_({ id: 'ministros', orden: 11, nombre: 'Encuentros de ministros', informes: 'SECCO', modo: 'agregado', familia: 'emin_' }),
+  filaSeccion_({ id: 'm2', orden: 12, nombre: 'M2', informes: 'JM,SECCO', modo: 'agregado', familia: 'm2_' }),
+  filaSeccion_({ id: 'campana', orden: 13, nombre: 'Campaña destacada', informes: 'JM,SECCO', modo: 'repetible', itera: 'CAMPANAS', familia: 'camp_' }),
+  filaSeccion_({ id: 'nuevos_proveedores', orden: 14, nombre: 'Nuevos Proveedores', informes: 'SECCO', modo: 'repetible', itera: 'proveedor', estado: 'manual', falta: 'sin marcar; falta base de Uber / Twitch / Mercado Libre' }),
+  filaSeccion_({ id: 'analisis_tematico', orden: 15, nombre: 'Análisis temático ad-hoc', informes: 'SECCO', modo: 'repetible', itera: 'tema', estado: 'manual', falta: 'ad-hoc por tema, puede no ser automatizable' }),
+  filaSeccion_({ id: 'otros_temas', orden: 16, nombre: 'Otros temas', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'sin marcar en la plantilla' }),
+  filaSeccion_({ id: 'cierre', orden: 17, nombre: 'Cierre', informes: 'JM,SECCO', modo: 'unica' }),
+
+  // Hijos de 'campana' — largo variable (3 a 21 láminas según canales usados,
+  // docs/SECCIONES.md Corrección 1).
+  filaSeccion_({ id: 'campana_portada', padre: 'campana', orden: 1, nombre: 'Campaña — portada', informes: 'JM,SECCO', modo: 'unica' }),
+  filaSeccion_({ id: 'campana_objetivo', padre: 'campana', orden: 2, nombre: 'Campaña — objetivo y período', informes: 'JM,SECCO', modo: 'unica' }),
+  filaSeccion_({ id: 'campana_herramientas', padre: 'campana', orden: 3, nombre: 'Campaña — herramientas y audiencias', informes: 'JM,SECCO', modo: 'unica' }),
+  filaSeccion_({ id: 'campana_formatos', padre: 'campana', orden: 4, nombre: 'Campaña — formatos digitales implementados', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'hubo piezas digitales', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+  filaSeccion_({ id: 'campana_agregados', padre: 'campana', orden: 5, nombre: 'Campaña — resultados agregados', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'ya hay resultados', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+  filaSeccion_({ id: 'campana_audiencia', padre: 'campana', orden: 6, nombre: 'Campaña — por audiencia', informes: 'JM,SECCO', modo: 'repetible', itera: 'AUDIENCIAS', opcional: 'sí', condicion: 'la campaña se segmenta por audiencia', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+  filaSeccion_({ id: 'campana_desag_digital', padre: 'campana', orden: 7, nombre: 'Campaña — desagregados Digital', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'hubo digital', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+  filaSeccion_({ id: 'campana_desag_mail', padre: 'campana', orden: 8, nombre: 'Campaña — desagregados Directa: envío de mail', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'hubo mail', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+  filaSeccion_({ id: 'campana_desag_respuestas', padre: 'campana', orden: 9, nombre: 'Campaña — desagregados Directa: respuestas', informes: 'JM,SECCO', modo: 'repetible', itera: 'remitente (JM / GCBA)', opcional: 'sí', condicion: 'hubo respuestas', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+
+  // Hijos de 'campana_audiencia' — Grandes Generadores (21 láminas) repite por
+  // audiencia, no por campaña (docs/SECCIONES.md Corrección 2).
+  filaSeccion_({ id: 'aud_formatos', padre: 'campana_audiencia', orden: 1, nombre: 'Audiencia — formatos y resultados', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'la audiencia usó formatos digitales', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+  filaSeccion_({ id: 'aud_directa', padre: 'campana_audiencia', orden: 2, nombre: 'Audiencia — directa', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'la audiencia recibió directa', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+  filaSeccion_({ id: 'aud_contacto_ciudadano', padre: 'campana_audiencia', orden: 3, nombre: 'Audiencia — contacto ciudadano', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'la audiencia tuvo call center', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+
+  // Hijos de 'encuentro' — ni siquiera dos Uno a uno tienen la misma cantidad
+  // de láminas (docs/SECCIONES.md Corrección 6).
+  filaSeccion_({ id: 'encuentro_portada', padre: 'encuentro', orden: 1, nombre: 'Encuentro — portada', informes: 'JM,SECCO', modo: 'unica' }),
+  filaSeccion_({ id: 'encuentro_estrategia', padre: 'encuentro', orden: 2, nombre: 'Encuentro — estrategia', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'el tipo de encuentro tiene bloque de estrategia (temático/uno a uno)', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+  filaSeccion_({ id: 'encuentro_iceberg', padre: 'encuentro', orden: 3, nombre: 'Encuentro — iceberg', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'el encuentro tiene datos de convocatoria por canal', familia: 'enc_', estado: 'revisar', falta: 'ecv_* se usa para ECV y para Uno a uno — definir si es genérico' }),
+  filaSeccion_({ id: 'encuentro_resultados', padre: 'encuentro', orden: 4, nombre: 'Encuentro — resultados', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'hay resultados post-encuentro', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
+
+  // Hijos de 'm2' — Status semanal + Caudal semanal (2-3 láminas).
+  filaSeccion_({ id: 'm2_status', padre: 'm2', orden: 1, nombre: 'M2 — status semanal', informes: 'JM,SECCO', modo: 'unica', familia: 'm2_' }),
+  filaSeccion_({ id: 'm2_caudal', padre: 'm2', orden: 2, nombre: 'M2 — caudal semanal', informes: 'SECCO', modo: 'unica', familia: 'm2_' })
+];
+
+/**
+ * Siembra `SEED_SECCIONES_` — SOLO agrega filas de `seccion_id` que todavía no
+ * existen. A diferencia de `upsertPorClave_` (BASES/MAPEO), esta siembra NUNCA
+ * pisa una fila existente, sea `manual`, `revisar` o lo que sea: no hay columna
+ * `origen` en `SECCIONES` para distinguir "lo escribió la siembra" de "lo tocó
+ * una persona", así que la regla simple y segura es "solo agregar lo que
+ * falta". Correr `instalar()` dos veces no duplica ni pisa nada (Paso 2.9G,
+ * test de aceptación).
+ */
+function sembrarSecciones_(hoja) {
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxId = headers.indexOf('seccion_id');
+  if (idxId === -1) return 0;
+
+  var existentes = {};
+  for (var f = 1; f < datos.length; f++) {
+    if (datos[f][idxId]) existentes[datos[f][idxId]] = true;
+  }
+
+  var nuevas = SEED_SECCIONES_.filter(function (s) { return !existentes[s.seccion_id]; });
+  if (!nuevas.length) return 0;
+
+  var filas = nuevas.map(function (s) { return headers.map(function (h) { return (h in s) ? s[h] : ''; }); });
+  hoja.getRange(hoja.getLastRow() + 1, 1, filas.length, headers.length).setValues(filas);
+  return filas.length;
+}
+
+function menuSembrarSecciones_() {
+  var ui = SpreadsheetApp.getUi();
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SECCIONES');
+  if (!hoja) {
+    ui.alert('No se pudo sembrar', 'La hoja SECCIONES no existe. Corré "Instalar / reparar hojas" primero.', ui.ButtonSet.OK);
+    return;
+  }
+  var agregadas = sembrarSecciones_(hoja);
+  ui.alert('Secciones sembradas', 'Filas nuevas agregadas: ' + agregadas + ' (las existentes no se tocaron).', ui.ButtonSet.OK);
 }
