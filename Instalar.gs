@@ -146,6 +146,23 @@ var HOJAS_CONFIG_ = {
       ['m2_mensual', '2026-06-01', '2026-06-30', 'M2 dentro del JM'],
       ['quincena_rrss', '2026-06-16', '2026-06-30', 'Análisis RRSS']
     ]
+  },
+  // Paso 2.9D — R-02: el temario define el universo del informe, no la fecha.
+  // Curado a mano, mismo patrón que CAMPANAS. Sembrado con el temario real del
+  // 24/07 al 30/07/2026 (docs/TEMARIO_Y_PLANTILLA_2026-07-31.md), rescatado de
+  // los comentarios de la plantilla SECCO — es el único ejemplo real que existe
+  // del formato en que el equipo piensa el informe.
+  REUNIONES: {
+    headers: ['orden', 'eje', 'tipo', 'nombre', 'fecha', 'etapa', 'mostrar', 'texto_original', 'notas'],
+    ejemplos: [
+      [1, 'JM', 'Uno a uno', 'San Cristóbal', '2026-07-23', 'pre', 'sí', 'JM | Uno a uno en San Cristóbal 23/07 (pre)', ''],
+      [2, 'JM', 'Uno a uno', 'Retiro', '2026-07-24', 'pre', 'sí', '2) JM | Uno a uno en Retiro 24/07 (pre)', ''],
+      [3, 'JM', 'Encuentro Temático', 'Orden Público', '2026-07-28', '', 'sí', 'JM | Encuentro Temático Orden Público 28/07', ''],
+      [4, 'JM', 'Uno a uno', 'San Cristóbal', '2026-07-23', 'post', 'sí', 'JM | Uno a uno en San Cristóbal 23/07 (POST)', ''],
+      [5, 'JM', 'Uno a uno', 'Retiro', '2026-07-24', 'post', 'sí', 'JM | Uno a uno en Retiro 24/07 (post)', ''],
+      [6, 'Ministros', 'Agregado', 'Reuniones de la semana', '2026-07-24', '', 'sí', 'Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)', '24/07 al 30/07 inclusive'],
+      [7, 'M2', 'Agregado', 'Campañas y enviados de la semana', '2026-07-24', '', 'sí', '6) M2 | Campañas y enviados de la semana del 24/07 al 30/07', '']
+    ]
   }
 };
 
