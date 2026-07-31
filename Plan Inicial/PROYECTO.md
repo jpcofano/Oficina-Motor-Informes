@@ -118,7 +118,7 @@ Bases vivas (Google Sheets nativas), cargadas en `BASES`:
 |---|---|---|---|---|
 | rdv | RDV JM CM ES + funcionarios | `1ZpHO6Ru1uY2r9WfBF_yFtu5z7ip7F3Q6VOoRJN5vLAo` | RVD JM-CM - ES | filtrar |
 | digital | Seguimiento Digital | `1LadILzFpyCrZRapxgDOFOldSoRawjKkWMaFci_ilhPY` | Digital | filtrar |
-| looker | Base Looker | `1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ` | resumen_metricas | filtrar |
+| looker | Base Looker | `1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ` | resumen_metricas_dinamico | filtrar |
 | m2 | M2 Reporte para Fede 2026 | `1_GS01-TXrhez0GlpFf4bUjWLNQPfaW9BOFFXz0hZNvY` | M2 periodo DIRECTA | **snapshot** |
 | miba | Integración MiBA | *(vacío)* | | parqueada (activo=no) |
 
@@ -128,8 +128,8 @@ las hojas `M2 periodo DIRECTA` / `M2 periodo DIGITAL` **ya vienen al corte del p
 fila 2 = vacía, datos desde fila 4). Config M2: `modo_periodo=snapshot`, `fila_encabezado=3`.
 
 **MAPEO — completo en código** (`SEED_MAPEO_` en `Instalar.gs`): **rdv** (hoja
-`RVD JM-CM - ES`), **looker** (hoja `resumen_metricas` — decidida por `getFormulas()`,
-Paso 2.8 Parte C, ver más abajo; incluye `fecha` → `fecha_inicio` e `id_cuenta` para
+`RVD JM-CM - ES`), **looker** (hoja `resumen_metricas_dinamico` — S-01,
+`docs/SUPUESTOS.md`, ver más abajo; incluye `fecha` → `fecha_inicio` e `id_cuenta` para
 el join con Seguimiento Digital), **m2** (DIRECTA + DIGITAL + `Cuentas` como dimensión
 de atributos, DOC-3 Parte D) y **digital** (Paso 2.3: `Digital` + `Directa Mail` +
 `Directa SMS` + `Directa IVR` + `Alcance` + `Seguimiento digital` maestra, unidas por
@@ -151,27 +151,43 @@ para una campaña; si se pisan, gana la fuente más a la izquierda. `m2` va apar
 el rollup exacto de Seguimiento Digital (no una fuente independiente) — por eso SD pesa
 más: tiene el desagregado por envío que Looker no puede reconstruir.
 
-**✅ RESUELTO (Paso 2.8 Parte C, 31/07/2026) — DOC-3 Parte A cerrada.**
-`resumen_metricas_dinamico` y `resumen_metricas` existen **las dos** en el archivo
-`looker`, con encabezados y conteos idénticos (903 filas, mismo orden de columnas —
-`compararResumenesLooker_`, Solapas.gs). Eso solo decía que no había riesgo de leer la
-columna equivocada; no decía **cuál es la fuente**. El test que sí discrimina:
-`getFormulas()` sobre las filas 2 a 4 de cada una
-(`auditarFormulasResumenesLooker_`, Solapas.gs) — la que tiene fórmulas se recalcula a
-partir de la otra (derivada), la que tiene valores planos es la fuente. Resultado:
-**`resumen_metricas` tiene valores planos → es la fuente. `resumen_metricas_dinamico`
-tiene fórmulas → es la derivada.** Esto invierte la elección previa (DOC-3 Parte A
-original, 30/07, basada en metadata de Drive — "primera solapa del archivo" no es lo
-mismo que "solapa con los valores reales").
+**✅ RESUELTO (Paso 2.9 Parte C, 31/07/2026) — DOC-3 Parte A cerrada, S-01
+(`docs/SUPUESTOS.md`).** `resumen_metricas_dinamico` y `resumen_metricas` existen
+**las dos** en el archivo `looker`, con encabezados y conteos idénticos (903 filas,
+mismo orden de columnas — `compararResumenesLooker_`, Solapas.gs). Eso solo decía que
+no había riesgo de leer la columna equivocada; no decía **cuál es la fuente**.
 
-Aplicado con `consolidarMapeoLooker_()` (Solapas.gs): `SOLAPAS` — `resumen_metricas` =
-`fuente`, `resumen_metricas_dinamico` = `derivada` (las dos `origen=manual`, para que
-`sembrarClasificacionSolapas()` no las vuelva a poner en `revisar`); `BASES.hoja_default`
-(looker) = `resumen_metricas`. `MAPEO` — 0 filas movidas: el Paso 2.8 Parte B ya había
-consolidado los 25 mapeos en `resumen_metricas` como fix provisorio para destrabar
-`«FALTA:fecha_periodo»`, y ese provisorio resultó ser la decisión correcta. `SEED_MAPEO_`/
-`SEED_BASES_` (`Instalar.gs`) actualizados para que una instalación nueva quede alineada
-sin depender de la migración en vivo.
+**Segunda vuelta sobre el mismo test.** El Paso 2.8 Parte C había corrido
+`getFormulas()` sobre las filas 2-4 y leído "tiene fórmulas = derivada, valores planos
+= fuente" al pie de la letra, concluyendo `resumen_metricas` = fuente. Esa lectura
+asume que la fórmula deriva de la OTRA hoja del par — pero la fórmula real de
+`resumen_metricas_dinamico` es `=QUERY(Cuentas!A2:G; "SELECT * WHERE Col1 is not null
+AND Col7 <> 'Pendiente'"; 0)`: consulta una **tercera** hoja (`Cuentas`), no
+`resumen_metricas`. Son independientes, no fuente y copia — el criterio "fórmulas =
+derivada" no aplica, y de hecho se invierte: `_dinamico` es una consulta viva que
+crece con `Cuentas`; `resumen_metricas` es un pegado congelado que hoy coincide y la
+semana que viene no (y ya devolvió 899 de 903 filas sin fecha, señal de que está
+viejo). **Resultado final: `resumen_metricas_dinamico` es la fuente,
+`resumen_metricas` es la derivada** (invierte el cierre del Paso 2.8 Parte C).
+
+Aplicado en código con `alinearMapeoLookerADinamico_()` / `alinearSolapasLookerADinamico_()`
+/ `alinearBasesHojaDefaultLooker_()` (Instalar.gs, corren dentro de `instalar()`, por
+eso son idempotentes y se reafirman en cada instalación en vez de depender de una
+migración manual una sola vez): `SOLAPAS` — `resumen_metricas_dinamico` = `fuente`,
+`resumen_metricas` = `derivada` (las dos `origen=manual`); `BASES.hoja_default`
+(looker) = `resumen_metricas_dinamico`; `MAPEO` — las 25 filas de vuelta a
+`resumen_metricas_dinamico`. Reemplazan a `moverFechaPeriodoLookerAResumenMetricas_`
+(Paso 2.8 Parte B), que movía en sentido contrario y se hubiera revertido solo en la
+próxima instalación si seguía corriendo.
+
+**Lección para no repetir:** un test automático (`getFormulas()`) puede tener razón en
+el hecho ("hay una fórmula") y equivocarse en la inferencia ("por lo tanto deriva de
+la otra hoja del par") si nadie lee QUÉ consulta esa fórmula. `auditarFormulasResumenesLooker_()`
+ya volcaba el texto literal de cada celda con fórmula (mejora del Paso 2.8 Parte C); el
+error no fue de instrumentación, fue de lectura: la clasificación automática
+(`estado='una_es_derivada'`) asume que toda fórmula deriva de la otra hoja del par, sin
+distinguir una `QUERY()` sobre una tercera fuente. El texto de la fórmula estaba
+disponible — hacía falta mirarlo antes de aceptar la etiqueta `derivada`/`fuente` tal cual.
 
 **Pregunta abierta, sin resolver (no cambia la precedencia de arriba):** `looker` tiene
 el desglose por canal (`MAIL`/`IVR`/`SMS`/`CC`/`DIGITAL`/`ALCANCE`, cada una con su

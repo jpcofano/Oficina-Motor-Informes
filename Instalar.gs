@@ -65,7 +65,7 @@ var HOJAS_CONFIG_ = {
     ejemplos: [
       ['rdv', 'RDV JM CM ES', '', 'RVD JM-CM - ES', 1, 'filtrar', 'google_sheets', 'sí', 'Encuentros'],
       ['digital', 'Seguimiento Digital', '', 'Digital', 1, 'filtrar', 'google_sheets', 'sí', 'Campaña por canal'],
-      ['looker', 'Base Looker', '', 'resumen_metricas', 1, 'filtrar', 'google_sheets', 'sí', 'Consolidado'],
+      ['looker', 'Base Looker', '', 'resumen_metricas_dinamico', 1, 'filtrar', 'google_sheets', 'sí', 'Consolidado'],
       ['m2', 'M2 Reporte 2026', '', 'M2 periodo DIRECTA', 3, 'snapshot', 'google_sheets', 'sí', 'Familia m2_*'],
       ['miba', 'Integración MiBA', '', '', 1, 'filtrar', 'google_sheets', 'no', 'Parqueada']
     ]
@@ -222,7 +222,13 @@ function instalar() {
   var hojaMapeo = ss.getSheetByName('MAPEO');
   var backfill = hojaMapeo ? backfillSolapaMapeo_(hojaMapeo) : { rellenadas: 0, sinHoja: [] };
   var eliminoAlcance = hojaMapeo ? eliminarMapeoAlcanceDigitalObsoleto_(hojaMapeo) : false;
-  var movioFechaPeriodoLooker = hojaMapeo ? moverFechaPeriodoLookerAResumenMetricas_(hojaMapeo) : false;
+  var movidasLooker = hojaMapeo ? alinearMapeoLookerADinamico_(hojaMapeo) : 0;
+
+  var hojaSolapas = ss.getSheetByName('SOLAPAS');
+  var tocadasSolapasLooker = hojaSolapas ? alinearSolapasLookerADinamico_(hojaSolapas) : 0;
+
+  var hojaBases = ss.getSheetByName('BASES');
+  var alineoHojaDefaultLooker = hojaBases ? alinearBasesHojaDefaultLooker_(hojaBases) : false;
 
   var hojaMarcadores = ss.getSheetByName('MARCADORES');
   var migroOperacion = hojaMarcadores ? migrarCalculoAOperacion_(hojaMarcadores) : false;
@@ -237,7 +243,9 @@ function instalar() {
       ? '\n⚠️ MAPEO sin "hoja" cargada, no se pudo determinar solapa: ' + backfill.sinHoja.join(', ')
       : '') +
     (eliminoAlcance ? '\nMAPEO: eliminada la fila digital/Digital/alcance (col E era Fecha de inicio, Paso 2.8 Parte A)' : '') +
-    (movioFechaPeriodoLooker ? '\nMAPEO: looker/fecha_periodo movida a resumen_metricas (provisorio, Paso 2.8 Parte B)' : '') +
+    (movidasLooker ? '\nMAPEO: ' + movidasLooker + ' fila(s) de looker alineadas a resumen_metricas_dinamico (S-01, Paso 2.9 Parte C)' : '') +
+    (tocadasSolapasLooker ? '\nSOLAPAS: looker resumen_metricas_dinamico=fuente / resumen_metricas=derivada (S-01)' : '') +
+    (alineoHojaDefaultLooker ? '\nBASES: looker.hoja_default = resumen_metricas_dinamico (S-01)' : '') +
     (migroOperacion ? '\nMARCADORES.calculo renombrada a operacion (valores conservados)' : '');
   SpreadsheetApp.getUi().alert('Instalación completa', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
 }
@@ -270,45 +278,83 @@ function eliminarMapeoAlcanceDigitalObsoleto_(hoja) {
 }
 
 /**
- * Paso 2.8 Parte B — migración idempotente: destraba «FALTA:fecha_periodo@looker/
- * resumen_metricas». De los ~25 mapeos de looker, 24 cuelgan en vivo de la solapa
- * `resumen_metricas` (seed viejo, previo a DOC-3 Parte A) y `fecha_periodo` quedó
- * sola en `resumen_metricas_dinamico` (la escribió `promoverFechasElegidas()`,
- * Fechas.gs, a partir de la elección congelada en `docs/FECHAS_seleccion.md`).
- * Ninguna de las dos solapas tiene el juego completo, así que `buscarMapeo()`
- * nunca encuentra `fecha_periodo` en la solapa que `BASES.hoja_default` señala hoy
- * (`resumen_metricas`). Mueve SOLO esa fila de solapa — no toca `columna`: las dos
- * hojas tienen el mismo orden de columnas (Paso 2.7 Parte D / `compararResumenesLooker_`),
- * así que sigue apuntando a la celda correcta.
- * PROVISORIO: si la Parte C decide que la fuente real es `resumen_metricas_dinamico`,
- * hay que revertir con `consolidarMapeoLooker_()` (Solapas.gs), que mueve los 25
- * mapeos completos para allá. Si la fila ya está en `resumen_metricas`, o no existe,
- * no hace nada.
+ * Paso 2.9 Parte C — S-01: la fuente de `looker` es `resumen_metricas_dinamico`
+ * (`=QUERY(Cuentas!A2:G; ...)`, consulta viva sobre `Cuentas`), no `resumen_metricas`
+ * (pegado de valores que devolvió 899 de 903 filas sin fecha). Esto invierte la
+ * decisión del Paso 2.8 Parte C, que había leído "tiene fórmulas = derivada" sin
+ * contemplar que la fórmula puede consultar una TERCERA hoja en vez de derivar de
+ * la otra — ver docs/SUPUESTOS.md S-01.
+ *
+ * Reemplaza a `moverFechaPeriodoLookerAResumenMetricas_` (Paso 2.8 Parte B), que
+ * movía en sentido contrario y, si seguía corriendo en cada `instalar()`, iba a
+ * revertir esta decisión sola en la próxima instalación. Mueve TODAS las filas de
+ * `MAPEO` de looker que cuelgan de `resumen_metricas` de vuelta a
+ * `resumen_metricas_dinamico` (no solo `fecha_periodo`) — no toca `columna`: las
+ * dos hojas tienen el mismo orden de columnas. Idempotente: en una instalación ya
+ * alineada no mueve nada.
  */
-function moverFechaPeriodoLookerAResumenMetricas_(hoja) {
+function alinearMapeoLookerADinamico_(hoja) {
   var datos = hoja.getDataRange().getValues();
   var headers = datos[0];
   var idxBaseId = headers.indexOf('base_id');
   var idxSolapa = headers.indexOf('solapa');
-  var idxCampo = headers.indexOf('campo_logico');
   var idxHoja = headers.indexOf('hoja');
-  var idxNotas = headers.indexOf('notas');
-  if (idxBaseId === -1 || idxSolapa === -1 || idxCampo === -1 || idxHoja === -1) return false;
+  if (idxBaseId === -1 || idxSolapa === -1 || idxHoja === -1) return 0;
 
-  var NOTA_PROVISORIA_ =
-    'Paso 2.8 Parte B: movida de resumen_metricas_dinamico a resumen_metricas para ' +
-    'destrabar «FALTA:fecha_periodo» y juntar los 25 mapeos — PROVISORIO, revertir si ' +
-    'la Parte C confirma que la fuente real es resumen_metricas_dinamico.';
+  var movidas = 0;
+  for (var f = 1; f < datos.length; f++) {
+    if (datos[f][idxBaseId] === 'looker' && datos[f][idxSolapa] === 'resumen_metricas') {
+      hoja.getRange(f + 1, idxSolapa + 1).setValue('resumen_metricas_dinamico');
+      hoja.getRange(f + 1, idxHoja + 1).setValue('resumen_metricas_dinamico');
+      movidas++;
+    }
+  }
+  return movidas;
+}
+
+/**
+ * Paso 2.9 Parte C, punto 1 — mismo criterio que `alinearMapeoLookerADinamico_`
+ * pero sobre `SOLAPAS`: `resumen_metricas_dinamico` → `fuente`,
+ * `resumen_metricas` → `derivada`, las dos con `origen=manual` (para que
+ * `sembrarClasificacionSolapas()` no las vuelva a poner en `revisar`) y nota
+ * apuntando a S-01. Idempotente.
+ */
+function alinearSolapasLookerADinamico_(hoja) {
+  var existentes = leerFilasSolapas_(hoja);
+  var nota = 'Paso 2.9 Parte C — ver docs/SUPUESTOS.md S-01';
+  var tocadas = 0;
+
+  var dinamico = existentes['looker||resumen_metricas_dinamico'];
+  if (dinamico) {
+    hoja.getRange(dinamico.fila, dinamico.idx.uso + 1).setValue('fuente');
+    hoja.getRange(dinamico.fila, dinamico.idx.origen + 1).setValue('manual');
+    hoja.getRange(dinamico.fila, dinamico.idx.notas + 1).setValue(nota);
+    tocadas++;
+  }
+  var plana = existentes['looker||resumen_metricas'];
+  if (plana) {
+    hoja.getRange(plana.fila, plana.idx.uso + 1).setValue('derivada');
+    hoja.getRange(plana.fila, plana.idx.origen + 1).setValue('manual');
+    hoja.getRange(plana.fila, plana.idx.notas + 1).setValue(nota);
+    tocadas++;
+  }
+  return tocadas;
+}
+
+/**
+ * Paso 2.9 Parte C, punto 3 — `BASES.hoja_default` de looker vuelve a
+ * `resumen_metricas_dinamico`. Idempotente.
+ */
+function alinearBasesHojaDefaultLooker_(hoja) {
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxBaseId = headers.indexOf('base_id');
+  var idxHojaDefault = headers.indexOf('hoja_default');
+  if (idxBaseId === -1 || idxHojaDefault === -1) return false;
 
   for (var f = 1; f < datos.length; f++) {
-    if (datos[f][idxBaseId] === 'looker' && datos[f][idxCampo] === 'fecha_periodo' &&
-        datos[f][idxSolapa] === 'resumen_metricas_dinamico') {
-      hoja.getRange(f + 1, idxSolapa + 1).setValue('resumen_metricas');
-      hoja.getRange(f + 1, idxHoja + 1).setValue('resumen_metricas');
-      if (idxNotas !== -1) {
-        var notaActual = datos[f][idxNotas];
-        hoja.getRange(f + 1, idxNotas + 1).setValue(notaActual ? notaActual + ' | ' + NOTA_PROVISORIA_ : NOTA_PROVISORIA_);
-      }
+    if (datos[f][idxBaseId] === 'looker' && datos[f][idxHojaDefault] !== 'resumen_metricas_dinamico') {
+      hoja.getRange(f + 1, idxHojaDefault + 1).setValue('resumen_metricas_dinamico');
       return true;
     }
   }
@@ -397,7 +443,7 @@ function limpiarHojaPorDefecto_(ss) {
 var SEED_BASES_ = [
   { base_id: 'rdv', nombre: 'RDV JM CM ES + funcionarios', sheet_id: '1ZpHO6Ru1uY2r9WfBF_yFtu5z7ip7F3Q6VOoRJN5vLAo', hoja_default: 'RVD JM-CM - ES', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Encuentros' },
   { base_id: 'digital', nombre: 'Seguimiento Digital', sheet_id: '1LadILzFpyCrZRapxgDOFOldSoRawjKkWMaFci_ilhPY', hoja_default: 'Digital', fila_encabezado: 1, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Campaña por canal. Paso 2.3: snapshot — sus solapas usan fecha de inicio de campaña (lead 3-7 días), el recorte por período lo hace el agregador vía link campaña↔encuentro, no ventana de fecha cruda.' },
-  { base_id: 'looker', nombre: 'Base Looker', sheet_id: '1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ', hoja_default: 'resumen_metricas', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Consolidado. Fuente decidida por getFormulas() (Paso 2.8 Parte C, 31/07): resumen_metricas tiene valores planos, resumen_metricas_dinamico se recalcula desde ahí (fórmulas) — DOC-3 Parte A cerrada.' },
+  { base_id: 'looker', nombre: 'Base Looker', sheet_id: '1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ', hoja_default: 'resumen_metricas_dinamico', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Consolidado. Fuente = resumen_metricas_dinamico (S-01, Paso 2.9 Parte C, 31/07): QUERY() viva sobre Cuentas; resumen_metricas es un pegado que devolvió 899 de 903 filas sin fecha — DOC-3 Parte A cerrada.' },
   { base_id: 'm2', nombre: 'M2 Reporte para Fede 2026', sheet_id: '1_GS01-TXrhez0GlpFf4bUjWLNQPfaW9BOFFXz0hZNvY', hoja_default: 'M2 periodo DIRECTA', fila_encabezado: 3, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Directa + Digital en hojas separadas' },
   { base_id: 'miba', nombre: 'Integración MiBA', sheet_id: '', hoja_default: '', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'no', notas: 'Parqueada' }
 ];
@@ -423,50 +469,51 @@ var SEED_MAPEO_ = [
   { base_id: 'rdv', campo_logico: 'comuna', hoja: 'RVD JM-CM - ES', columna: 'AA', notas: '' },
   { base_id: 'rdv', campo_logico: 'poblacion', hoja: 'RVD JM-CM - ES', columna: 'AB', notas: 'habitantes' },
 
-  // looker — hoja 'resumen_metricas' (Paso 2.8 Parte C, 31/07: fuente decidida por
-  // getFormulas() sobre las filas 2-4 — resumen_metricas tiene valores planos,
-  // resumen_metricas_dinamico se recalcula desde ahí (fórmulas) y quedó uso=derivada
-  // en SOLAPAS. Reemplaza la elección previa de DOC-3 Parte A (30/07, basada en
-  // metadata de Drive — "primera solapa del archivo" no es lo mismo que "solapa con
-  // los valores reales"). Las dos hojas tienen el mismo orden de columnas
+  // looker — hoja 'resumen_metricas_dinamico' (Paso 2.9 Parte C, 31/07 — S-01,
+  // docs/SUPUESTOS.md: es una QUERY() viva sobre 'Cuentas', no un derivado de
+  // 'resumen_metricas'. Invierte la lectura del Paso 2.8 Parte C, que había tomado
+  // "tiene fórmulas → derivada" al pie de la letra sin ver que la fórmula consulta
+  // una TERCERA hoja — con eso, 'resumen_metricas_dinamico' es la que crece con
+  // 'Cuentas' y 'resumen_metricas' el pegado que queda viejo (899 de 903 filas sin
+  // fecha). Las dos hojas tienen el mismo orden de columnas
   // (`compararResumenesLooker_`, Solapas.gs), así que las letras no cambian.
   // Una fila por campaña; prefijos = canal, no familia.
   // DOC-3 Parte C: faltaba id_cuenta (col A) — clave de join con Seguimiento Digital
   // que el Paso 2.4 necesita. Sin prefijo de canal (a diferencia de dig_id_cuenta,
   // mail_id_cuenta, …): looker tiene una sola solapa, no seis, no hace falta desambiguar.
-  { base_id: 'looker', campo_logico: 'id_cuenta', hoja: 'resumen_metricas', columna: 'A', notas: 'join con Seguimiento Digital (Paso 2.4)' },
-  { base_id: 'looker', campo_logico: 'campana', hoja: 'resumen_metricas', columna: 'B', notas: '' },
-  { base_id: 'looker', campo_logico: 'fecha_inicio', hoja: 'resumen_metricas', columna: 'C', notas: '' },
-  { base_id: 'looker', campo_logico: 'fecha_fin', hoja: 'resumen_metricas', columna: 'D', notas: '' },
-  { base_id: 'looker', campo_logico: 'fecha', hoja: 'resumen_metricas', columna: 'C',
+  { base_id: 'looker', campo_logico: 'id_cuenta', hoja: 'resumen_metricas_dinamico', columna: 'A', notas: 'join con Seguimiento Digital (Paso 2.4)' },
+  { base_id: 'looker', campo_logico: 'campana', hoja: 'resumen_metricas_dinamico', columna: 'B', notas: '' },
+  { base_id: 'looker', campo_logico: 'fecha_inicio', hoja: 'resumen_metricas_dinamico', columna: 'C', notas: '' },
+  { base_id: 'looker', campo_logico: 'fecha_fin', hoja: 'resumen_metricas_dinamico', columna: 'D', notas: '' },
+  { base_id: 'looker', campo_logico: 'fecha', hoja: 'resumen_metricas_dinamico', columna: 'C',
     notas: 'apunta a fecha_inicio. Es el arranque de la pauta de convocatoria, entre 3 y 7 días antes del encuentro (DISENO_match_temario.md §5). Sirve para acotar la lectura, NO para elegir qué campaña entra al informe.' },
   // fecha_periodo (Paso 2.8 Parte B/C): la escribió promoverFechasElegidas() (Fechas.gs)
   // contra la elección congelada en FECHAS_seleccion.md — misma columna que 'fecha'.
-  { base_id: 'looker', campo_logico: 'fecha_periodo', hoja: 'resumen_metricas', columna: 'C', notas: 'filtro de período (elegida en FECHAS_seleccion.md)' },
-  { base_id: 'looker', campo_logico: 'eje', hoja: 'resumen_metricas', columna: 'E', notas: '' },
-  { base_id: 'looker', campo_logico: 'area', hoja: 'resumen_metricas', columna: 'F', notas: '' },
-  { base_id: 'looker', campo_logico: 'estado', hoja: 'resumen_metricas', columna: 'G', notas: '' },
-  { base_id: 'looker', campo_logico: 'dig_impresiones', hoja: 'resumen_metricas', columna: 'H', notas: '' },
-  { base_id: 'looker', campo_logico: 'dig_visualizaciones', hoja: 'resumen_metricas', columna: 'I', notas: '' },
-  { base_id: 'looker', campo_logico: 'dig_clics', hoja: 'resumen_metricas', columna: 'J', notas: '' },
-  { base_id: 'looker', campo_logico: 'alcance', hoja: 'resumen_metricas', columna: 'K', notas: '' },
-  { base_id: 'looker', campo_logico: 'frecuencia', hoja: 'resumen_metricas', columna: 'M',
+  { base_id: 'looker', campo_logico: 'fecha_periodo', hoja: 'resumen_metricas_dinamico', columna: 'C', notas: 'filtro de período (elegida en FECHAS_seleccion.md)' },
+  { base_id: 'looker', campo_logico: 'eje', hoja: 'resumen_metricas_dinamico', columna: 'E', notas: '' },
+  { base_id: 'looker', campo_logico: 'area', hoja: 'resumen_metricas_dinamico', columna: 'F', notas: '' },
+  { base_id: 'looker', campo_logico: 'estado', hoja: 'resumen_metricas_dinamico', columna: 'G', notas: '' },
+  { base_id: 'looker', campo_logico: 'dig_impresiones', hoja: 'resumen_metricas_dinamico', columna: 'H', notas: '' },
+  { base_id: 'looker', campo_logico: 'dig_visualizaciones', hoja: 'resumen_metricas_dinamico', columna: 'I', notas: '' },
+  { base_id: 'looker', campo_logico: 'dig_clics', hoja: 'resumen_metricas_dinamico', columna: 'J', notas: '' },
+  { base_id: 'looker', campo_logico: 'alcance', hoja: 'resumen_metricas_dinamico', columna: 'K', notas: '' },
+  { base_id: 'looker', campo_logico: 'frecuencia', hoja: 'resumen_metricas_dinamico', columna: 'M',
     notas: 'M=frecuencia_total; existe también meta_frecuencia en L — elección sin confirmar con el equipo (DOC-3 Parte C)' },
-  { base_id: 'looker', campo_logico: 'mail_enviados', hoja: 'resumen_metricas', columna: 'N', notas: '' },
-  { base_id: 'looker', campo_logico: 'mail_entregados', hoja: 'resumen_metricas', columna: 'O', notas: '' },
-  { base_id: 'looker', campo_logico: 'mail_aperturas', hoja: 'resumen_metricas', columna: 'P', notas: '' },
-  { base_id: 'looker', campo_logico: 'mail_clics', hoja: 'resumen_metricas', columna: 'Q', notas: '' },
-  { base_id: 'looker', campo_logico: 'cc_contactados', hoja: 'resumen_metricas', columna: 'T', notas: '' },
-  { base_id: 'looker', campo_logico: 'cc_efectivos', hoja: 'resumen_metricas', columna: 'U', notas: '' },
-  { base_id: 'looker', campo_logico: 'ivr_audiencia', hoja: 'resumen_metricas', columna: 'V', notas: '' },
-  { base_id: 'looker', campo_logico: 'ivr_atendidos', hoja: 'resumen_metricas', columna: 'X', notas: '' },
-  { base_id: 'looker', campo_logico: 'ivr_escucha75', hoja: 'resumen_metricas', columna: 'Y', notas: '' },
-  { base_id: 'looker', campo_logico: 'ivr_marque1', hoja: 'resumen_metricas', columna: 'Z', notas: '' },
-  { base_id: 'looker', campo_logico: 'sms_enviados', hoja: 'resumen_metricas', columna: 'AA', notas: '' },
-  { base_id: 'looker', campo_logico: 'sms_entregados', hoja: 'resumen_metricas', columna: 'AB', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_enviados', hoja: 'resumen_metricas_dinamico', columna: 'N', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_entregados', hoja: 'resumen_metricas_dinamico', columna: 'O', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_aperturas', hoja: 'resumen_metricas_dinamico', columna: 'P', notas: '' },
+  { base_id: 'looker', campo_logico: 'mail_clics', hoja: 'resumen_metricas_dinamico', columna: 'Q', notas: '' },
+  { base_id: 'looker', campo_logico: 'cc_contactados', hoja: 'resumen_metricas_dinamico', columna: 'T', notas: '' },
+  { base_id: 'looker', campo_logico: 'cc_efectivos', hoja: 'resumen_metricas_dinamico', columna: 'U', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_audiencia', hoja: 'resumen_metricas_dinamico', columna: 'V', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_atendidos', hoja: 'resumen_metricas_dinamico', columna: 'X', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_escucha75', hoja: 'resumen_metricas_dinamico', columna: 'Y', notas: '' },
+  { base_id: 'looker', campo_logico: 'ivr_marque1', hoja: 'resumen_metricas_dinamico', columna: 'Z', notas: '' },
+  { base_id: 'looker', campo_logico: 'sms_enviados', hoja: 'resumen_metricas_dinamico', columna: 'AA', notas: '' },
+  { base_id: 'looker', campo_logico: 'sms_entregados', hoja: 'resumen_metricas_dinamico', columna: 'AB', notas: '' },
   // DOC-3 Parte F: fuente encontrada para el token huérfano post_camp1-3 dinámico —
   // pieza_meta trae la URL del posteo de Facebook de la campaña (anteúltima columna).
-  { base_id: 'looker', campo_logico: 'post_meta', hoja: 'resumen_metricas', columna: 'AD', notas: 'URL del posteo de Facebook de la campaña — candidato para post_camp1-3 dinámico' },
+  { base_id: 'looker', campo_logico: 'post_meta', hoja: 'resumen_metricas_dinamico', columna: 'AD', notas: 'URL del posteo de Facebook de la campaña — candidato para post_camp1-3 dinámico' },
 
   // m2 — DIRECTA en 'M2 periodo DIRECTA', DIGITAL en 'M2 periodo DIGITAL'
   { base_id: 'm2', campo_logico: 'campana', hoja: 'M2 periodo DIRECTA', columna: 'B', notas: '' },
@@ -701,8 +748,8 @@ var SEED_SOLAPAS_ = [].concat(
 
   // looker — "Base Looker"
   [
-    filaSolapa_('looker', 'resumen_metricas_dinamico', 'derivada', 'Paso 2.8 Parte C: getFormulas() en filas 2-4 → tiene fórmulas, se recalcula desde resumen_metricas'),
-    filaSolapa_('looker', 'resumen_metricas', 'fuente', 'Paso 2.8 Parte C: getFormulas() en filas 2-4 → valores planos; hoja_default'),
+    filaSolapa_('looker', 'resumen_metricas_dinamico', 'fuente', 'Paso 2.9 Parte C (S-01): QUERY() viva sobre Cuentas, no deriva de resumen_metricas — hoja_default'),
+    filaSolapa_('looker', 'resumen_metricas', 'derivada', 'Paso 2.9 Parte C (S-01): pegado de valores; devolvió 899 de 903 filas sin fecha'),
     filaSolapa_('looker', 'MAIL', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 5748 }),
     filaSolapa_('looker', 'IVR', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 190 }),
     filaSolapa_('looker', 'SMS', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 86 }),
