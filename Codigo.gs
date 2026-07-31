@@ -35,6 +35,11 @@ function onOpen() {
         .addItem('Validar MAPEO (duplicados)', 'menuValidarMapeo_')
         .addItem('Comparar resúmenes de looker (Parte G)', 'menuCompararResumenesLooker_')
         .addItem('Auditar digital/Digital/alcance (Parte B)', 'menuAuditarAlcanceDigital_')
+        .addItem('Auditar fórmulas de looker (Parte D)', 'menuAuditarFormulasResumenesLooker_')
+    )
+    .addSubMenu(
+      ui.createMenu('Consolidaciones (decisión + escritura)')
+        .addItem('Consolidar mapeos de looker (Parte D)', 'menuConsolidarMapeoLooker_')
     )
     .addSubMenu(
       ui.createMenu('Mantenimiento')

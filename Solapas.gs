@@ -250,3 +250,193 @@ function menuCompararResumenesLooker_() {
 
   ui.alert('looker: resumen_metricas vs resumen_metricas_dinamico', lineas.join('\n'), ui.ButtonSet.OK);
 }
+
+/**
+ * Paso 2.7 Parte D — `MAPEO` tiene los 25 campos de `looker` partidos entre las dos
+ * solapas: 24 cuelgan de `resumen_metricas` y `fecha_periodo` cuelga de
+ * `resumen_metricas_dinamico`. Encabezados y conteos son idénticos (903 filas, mismo
+ * orden de columnas — `compararResumenesLooker_` de arriba lo confirma), así que no
+ * hay riesgo de leer la columna equivocada, pero obliga a declarar `fuente` a las
+ * dos, justo lo que `SOLAPAS` busca evitar.
+ *
+ * Test para decidir cuál es la fuente real: `getFormulas()` sobre la fila 2 de cada
+ * una. La que tiene fórmulas es la derivada (se recalcula a partir de la otra); la
+ * que tiene valores planos es la fuente. Si las DOS tienen valores planos, no hay
+ * vínculo entre ellas — no se puede decidir por código, hay que preguntarle al
+ * dueño (`dgples.comunicacion@gmail.com`) cuál actualiza.
+ */
+function auditarFormulasResumenesLooker_() {
+  var bases = leerBases();
+  var base = bases.looker;
+  if (!base || !base.sheet_id) {
+    return { ok: false, motivo: 'La base "looker" no está configurada (sin sheet_id).' };
+  }
+
+  var libro;
+  try {
+    libro = SpreadsheetApp.openById(base.sheet_id);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo abrir looker: ' + e.message };
+  }
+
+  var nombres = ['resumen_metricas_dinamico', 'resumen_metricas'];
+  var info = {};
+  for (var i = 0; i < nombres.length; i++) {
+    var hoja = libro.getSheetByName(nombres[i]);
+    if (!hoja) return { ok: false, motivo: 'No existe la solapa "' + nombres[i] + '" en looker.' };
+    if (hoja.getLastRow() < 2) return { ok: false, motivo: 'La solapa "' + nombres[i] + '" no tiene fila 2 (sin datos).' };
+
+    var ultimaCol = hoja.getLastColumn();
+    var formulasFila2 = hoja.getRange(2, 1, 1, ultimaCol).getFormulas()[0];
+    info[nombres[i]] = {
+      hoja: hoja,
+      tieneFormulas: formulasFila2.some(function (f) { return f && f.length > 0; })
+    };
+  }
+
+  var dinamico = info['resumen_metricas_dinamico'];
+  var plana = info['resumen_metricas'];
+
+  if (dinamico.tieneFormulas && !plana.tieneFormulas) {
+    return {
+      ok: true, estado: 'una_es_derivada', derivada: 'resumen_metricas_dinamico', fuente: 'resumen_metricas',
+      recomendacion: '"resumen_metricas_dinamico" tiene fórmulas en la fila 2 (derivada); "resumen_metricas" tiene valores planos (fuente).'
+    };
+  }
+  if (plana.tieneFormulas && !dinamico.tieneFormulas) {
+    return {
+      ok: true, estado: 'una_es_derivada', derivada: 'resumen_metricas', fuente: 'resumen_metricas_dinamico',
+      recomendacion: '"resumen_metricas" tiene fórmulas en la fila 2 (derivada); "resumen_metricas_dinamico" tiene valores planos (fuente).'
+    };
+  }
+  if (!dinamico.tieneFormulas && !plana.tieneFormulas) {
+    var muestraDinamico = dinamico.hoja.getRange(2, 1, Math.min(4, dinamico.hoja.getLastRow() - 1), 1).getValues().map(function (r) { return r[0]; });
+    var muestraPlana = plana.hoja.getRange(2, 1, Math.min(4, plana.hoja.getLastRow() - 1), 1).getValues().map(function (r) { return r[0]; });
+    var difierenYa = JSON.stringify(muestraDinamico) !== JSON.stringify(muestraPlana);
+
+    return {
+      ok: true,
+      estado: 'ambas_valores_planos',
+      muestraDinamico: muestraDinamico,
+      muestraPlana: muestraPlana,
+      difierenYa: difierenYa,
+      recomendacion: 'Las dos hojas tienen valores planos en la fila 2 — no hay vínculo de fórmula entre ellas. ' +
+        (difierenYa
+          ? '⚠ Los primeros id_cuentas YA difieren entre las dos — la pregunta de cuál actualiza es urgente.'
+          : 'Los primeros id_cuentas coinciden hoy, pero eso no prueba que se actualicen juntas.') +
+        ' No se puede decidir por código: preguntale al dueño (dgples.comunicacion@gmail.com) cuál mantiene.'
+    };
+  }
+
+  return { ok: true, estado: 'ambas_formulas', recomendacion: 'Las dos hojas tienen fórmulas en la fila 2 — caso no previsto por el prompt. Revisar a mano.' };
+}
+
+function menuAuditarFormulasResumenesLooker_() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = auditarFormulasResumenesLooker_();
+
+  if (!resultado.ok) {
+    ui.alert('No se pudo auditar', resultado.motivo, ui.ButtonSet.OK);
+    return;
+  }
+
+  var lineas = [resultado.recomendacion];
+  if (resultado.estado === 'una_es_derivada') {
+    lineas.push('', 'Correr "Consolidar mapeos de looker (Parte D)" para aplicar esta decisión.');
+  } else if (resultado.estado === 'ambas_valores_planos') {
+    lineas.push('', 'Primeros id_cuentas de resumen_metricas_dinamico: ' + resultado.muestraDinamico.join(', '));
+    lineas.push('Primeros id_cuentas de resumen_metricas: ' + resultado.muestraPlana.join(', '));
+  }
+
+  ui.alert('Auditoría de fórmulas — resúmenes de looker (Parte D)', lineas.join('\n'), ui.ButtonSet.OK);
+}
+
+/**
+ * Aplica la consolidación: mueve las filas de `MAPEO` de `looker` que cuelgan de
+ * `hojaDerivada` a `hojaFuente`, marca `hojaDerivada` como `uso=derivada` y
+ * `hojaFuente` como `uso=fuente` en `SOLAPAS` (con `origen=manual`, para que
+ * `sembrarClasificacionSolapas()` no vuelva a poner las dos en `revisar` en una
+ * re-siembra), y alinea `BASES.hoja_default` de `looker` con `hojaFuente`.
+ */
+function consolidarMapeoLooker_(hojaFuente, hojaDerivada) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  var hojaMapeo = ss.getSheetByName('MAPEO');
+  var datosMapeo = hojaMapeo.getDataRange().getValues();
+  var headersMapeo = datosMapeo[0];
+  var idxBaseId = headersMapeo.indexOf('base_id');
+  var idxSolapa = headersMapeo.indexOf('solapa');
+  var idxHoja = headersMapeo.indexOf('hoja');
+
+  var filasMovidas = 0;
+  for (var f = 1; f < datosMapeo.length; f++) {
+    if (datosMapeo[f][idxBaseId] === 'looker' && datosMapeo[f][idxSolapa] === hojaDerivada) {
+      hojaMapeo.getRange(f + 1, idxSolapa + 1).setValue(hojaFuente);
+      hojaMapeo.getRange(f + 1, idxHoja + 1).setValue(hojaFuente);
+      filasMovidas++;
+    }
+  }
+
+  var hojaSolapas = ss.getSheetByName('SOLAPAS');
+  var existentesSolapas = leerFilasSolapas_(hojaSolapas);
+  var notaConsolidacion = 'Paso 2.7 Parte D: consolidado por getFormulas() — ';
+
+  var filaDerivada = existentesSolapas['looker||' + hojaDerivada];
+  if (filaDerivada) {
+    hojaSolapas.getRange(filaDerivada.fila, filaDerivada.idx.uso + 1).setValue('derivada');
+    hojaSolapas.getRange(filaDerivada.fila, filaDerivada.idx.origen + 1).setValue('manual');
+    hojaSolapas.getRange(filaDerivada.fila, filaDerivada.idx.notas + 1).setValue(notaConsolidacion + 'MAPEO movido a ' + hojaFuente);
+  }
+  var filaFuente = existentesSolapas['looker||' + hojaFuente];
+  if (filaFuente) {
+    hojaSolapas.getRange(filaFuente.fila, filaFuente.idx.uso + 1).setValue('fuente');
+    hojaSolapas.getRange(filaFuente.fila, filaFuente.idx.origen + 1).setValue('manual');
+    hojaSolapas.getRange(filaFuente.fila, filaFuente.idx.notas + 1).setValue(notaConsolidacion + 'recibe los mapeos de ' + hojaDerivada);
+  }
+
+  var hojaBases = ss.getSheetByName('BASES');
+  var datosBases = hojaBases.getDataRange().getValues();
+  var headersBases = datosBases[0];
+  var idxBaseIdBases = headersBases.indexOf('base_id');
+  var idxHojaDefault = headersBases.indexOf('hoja_default');
+  for (var b = 1; b < datosBases.length; b++) {
+    if (datosBases[b][idxBaseIdBases] === 'looker') {
+      hojaBases.getRange(b + 1, idxHojaDefault + 1).setValue(hojaFuente);
+      break;
+    }
+  }
+
+  return { filasMovidas: filasMovidas };
+}
+
+function menuConsolidarMapeoLooker_() {
+  var ui = SpreadsheetApp.getUi();
+  var diagnostico = auditarFormulasResumenesLooker_();
+
+  if (!diagnostico.ok) {
+    ui.alert('No se pudo diagnosticar', diagnostico.motivo, ui.ButtonSet.OK);
+    return;
+  }
+  if (diagnostico.estado !== 'una_es_derivada') {
+    ui.alert('Sin decisión automática — Parte D', diagnostico.recomendacion, ui.ButtonSet.OK);
+    return; // Parte D: si las dos tienen valores planos, no se decide acá, se pregunta al dueño.
+  }
+
+  var confirmacion = ui.alert(
+    'Consolidar MAPEO de looker',
+    diagnostico.recomendacion + '\n\nSe van a mover las filas de MAPEO de looker a "' + diagnostico.fuente +
+      '", marcar "' + diagnostico.derivada + '" como uso=derivada en SOLAPAS, y alinear BASES.hoja_default. ¿Confirmás?',
+    ui.ButtonSet.YES_NO
+  );
+  if (confirmacion !== ui.Button.YES) return;
+
+  var resultado = consolidarMapeoLooker_(diagnostico.fuente, diagnostico.derivada);
+  ui.alert(
+    'Looker consolidado',
+    'MAPEO — filas movidas a "' + diagnostico.fuente + '": ' + resultado.filasMovidas +
+      '\nSOLAPAS — "' + diagnostico.derivada + '" = derivada, "' + diagnostico.fuente + '" = fuente (origen=manual).' +
+      '\nBASES.hoja_default (looker) = "' + diagnostico.fuente + '".' +
+      '\n\nPendiente (Parte D, punto 4): dejar escrito en PROYECTO.md por qué DOC-3 Parte A se cierra así.',
+    ui.ButtonSet.OK
+  );
+}
