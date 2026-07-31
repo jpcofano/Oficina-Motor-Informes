@@ -108,6 +108,33 @@ entran las mismas filas). Las dos clases:
 **No implementado todavía — es el Paso 5.** El Paso 2.2 solo deja el registro (`tipo`
 ampliado) y esta documentación; la emisión de los bloques sigue sin cablear.
 
+**✅ Periodicidad y corte de datos — confirmado (DOC-4, 31/07/2026), archivaba en
+`docs/DECISION-periodicidad-y-periodos.md`.** Los dos informes son semanales **por
+defecto**, pero todo tiene que ser configurable — nunca hardcodeado en código ni
+plantilla. Reglas confirmadas:
+- **La reunión define el corte por defecto del informe**, y las reuniones son
+  **entidades específicas**, no una columna genérica dentro de `PERIODOS` — es
+  exactamente lo que ya construyó la hoja `REUNIONES` (Paso 2.9D): una fila curada por
+  encuentro (`orden`, `eje`, `tipo`, `nombre`, `fecha`, `etapa`, `mostrar`,
+  `texto_original`, `notas`), no el campo `reunion` que proponía el documento original.
+  Esa parte de la propuesta queda superada por lo implementado, no por descarte.
+- **Cualquier bloque puede pedir un período distinto** al del informe vía `periodo_ref`
+  (`PERIODOS`) — ya implementado, es la capa 2 de arriba.
+- **No hay corte diario de datos**: el motor lee en vivo al momento de la corrida: dos
+  corridas del mismo período pueden dar números distintos si hubo carga posterior, y eso
+  es esperable, no un bug. Es la razón de ser de `docs/Prompts/Paso-2.9H.md`
+  (`VALORES`/`VALORES_DIVERGENTES`): la foto de cada cálculo y la decisión explícita de
+  reusar o actualizar cuando dos informes comparten un bloque y el valor cambió entre
+  medio.
+
+El documento archivado también proponía un esquema propio para `PERIODOS` (`id_periodo`,
+`tipo`, `fecha_desde`, `fecha_hasta`, `etiqueta`, `reunion`) — **no coincide con el
+esquema ya implementado** (`periodo_id`, `desde`, `hasta`, `notas`, Paso 0.5). Queda
+anotado acá como lo que se propuso, sin migrar nada: la hoja viva manda.
+
+Los pendientes que quedaban sin confirmar en el documento (salvo el de "reunión", ya
+cerrado por la existencia de `REUNIONES`) están en `docs/PENDIENTES_consistencia.md`.
+
 ---
 
 ## 5. Fuente de verdad — DATOS
@@ -378,20 +405,77 @@ BASES/MAPEO/CONFIG) · Paso 1.6 + 1.6 v2 (registrar plantillas, robusto) · Paso
 - Prompts `Paso-*.md` en `docs/Prompts/` — no van acá.
 - Docs viejos consolidados acá quedan archivados en `Plan Inicial/_archivo/`.
 
-### Taxonomía de documentos (DOC-1, 29/07/2026)
+### Taxonomía de documentos (DOC-1, 29/07/2026 — inventario completo DOC-4, 31/07/2026)
 
 La regla "`PROYECTO.md` es el único doc que se actualiza" es buena pero hasta el 29/07
 no se cumplía: había al menos seis docs que se seguían editando a mano y divergían entre
-sí (ver `docs/PENDIENTES_consistencia.md`). Tres estados, explícitos:
+sí (ver `docs/PENDIENTES_consistencia.md`). El `DOC-1` clasificó 9 documentos; para el
+31/07 `docs/` tenía 20 más dos directorios, y los que nacieron después no estaban
+declarados en ningún lado — cuando ningún documento está declarado como el lugar donde
+va algo nuevo, lo más barato es crear un archivo nuevo, y así se llegó de 8 a 20 en dos
+días. La corrección no es archivar (la mayoría están citados desde otros documentos):
+es declararlos todos.
 
-- **Vivos** — se editan cuando cambia algo: `PROYECTO.md`, `docs/RUNBOOK.md`,
-  `docs/TOKENS.md`, `docs/PENDIENTES_consistencia.md`.
-- **Congelados** — se leen, no se editan; son relevamientos o hallazgos fechados que
-  describen un momento, no el estado actual: `docs/MAPEO_completo.md`,
-  `docs/HALLAZGOS_validacion_decks.md`, `docs/DISENO_match_temario.md`,
-  `docs/CONFIG_INFORMES.md`, `docs/PLANTILLAS_QA_y_armonizacion.md`.
-- **Archivados** — `Plan Inicial/_archivo/`: superados, ya no se leen para trabajar,
-  solo como historial.
+**Vivos — se editan cuando cambia lo que describen**
+
+| documento | qué contiene | quién lo edita |
+|---|---|---|
+| `CLAUDE.md` (raíz) | convenciones de repo y ruteo documental para las herramientas | ambas |
+| `Plan Inicial/PROYECTO.md` | maestro: arquitectura, decisiones, estado, convenciones | ambas |
+| `docs/RUNBOOK.md` | cómo se opera y se corre | ambas |
+| `docs/TOKENS.md` | diccionario de tokens | ambas |
+| `docs/PENDIENTES_consistencia.md` | inconsistencias abiertas, sin resolver | ambas |
+| `docs/REGLAS_NEGOCIO.md` | reglas del dominio con ID estable `R-NN` | ambas |
+| `docs/SUPUESTOS.md` | supuestos asumidos con ID estable `S-NN` | ambas |
+| `docs/OBJETIVO_lamina_nueva.md` | objetivo de láminas por prompt; se refina | ambas |
+| `docs/BITACORA.md` | qué hizo cada paso, append-only | **solo Code** |
+| `docs/HANDOFF_CODE.md` | estado actual del trabajo, se reescribe | **solo Code** |
+
+`REGLAS_NEGOCIO` y `SUPUESTOS` son **append-only**: se agregan filas, nunca se reutiliza
+un ID, y una regla o supuesto que se cae se marca **derogado con fecha** en vez de
+borrarse.
+
+**Congelados — se leen, no se editan**
+
+Relevamientos, auditorías y hallazgos fechados: describen un momento, no el estado
+actual. Si uno necesita cambiar, el cambio va a `PROYECTO.md`, o el documento pasa a
+vivo explícitamente anotándolo acá.
+
+| documento | qué relevó |
+|---|---|
+| `docs/MAPEO_completo.md` | relevamiento original del mapeo; la verdad viva es la hoja `MAPEO` |
+| `docs/HALLAZGOS_validacion_decks.md` | validación contra decks publicados |
+| `docs/DISENO_match_temario.md` | diseño del match de temario |
+| `docs/CONFIG_INFORMES.md` | decisiones de configuración por informe |
+| `docs/PLANTILLAS_QA_y_armonizacion.md` | QA y equivalencia de slides entre plantillas |
+| `docs/FECHAS_seleccion.md` | 30/07 — ya se autodeclara congelado |
+| `docs/AUD-2_union_digital_clave.md` | 30/07 — auditoría de solo lectura |
+| `docs/RDV_otros_ministros_riesgo.md` | 30/07 — hallazgo + generalización DOC-3 |
+| `docs/SECCIONES.md` | inventario verificado contra informes publicados |
+| `docs/INFORMES_relacion.md` | verificación token por token de ambas plantillas |
+| `docs/GRANO_TEMPORAL.md` | doctrina: por qué la fecha de reunión no filtra canales |
+| `docs/TEMARIO_Y_PLANTILLA_2026-07-31.md` | 31/07 — temario y diff de plantilla |
+| `docs/VALIDACION_2026-07-31.md` | 31/07 — validación del informe SECCO publicado contra las cuatro bases |
+
+**Tablas de referencia — ni vivas ni congeladas**
+
+| archivo | qué es |
+|---|---|
+| `docs/PERSONAS_equivalencias.csv` | tabla de equivalencias. Se actualiza cuando cambia el padrón, no es prosa y no lleva estado |
+| `docs/casos_validacion_2026-07-31.csv` | casos puntuales de `VALIDACION_2026-07-31.md`, detalle fila por fila |
+
+**Directorios**
+
+| directorio | quién escribe | regla |
+|---|---|---|
+| `docs/Prompts/` | ambas | un archivo por paso, auditoría o trabajo documental: `Paso-N.md`, `AUD-N_*.md`, `DOC-N_*.md`. No se editan una vez ejecutados |
+| `docs/Sesiones/` | **solo claude.ai** | buzón donde el usuario deja los handoffs que baja de sus conversaciones. Code lee de ahí y **no escribe nunca**. Solo queda el más reciente; el resto en `_archivo/` |
+| `Plan Inicial/_archivo/` | ambas | historial: documentos superados, plantillas espejo |
+
+**Nota sobre `RDV_otros_ministros_riesgo.md`:** el documento queda congelado, pero su
+sección "Qué falta" (el mecanismo de firma de encabezados, todavía sin implementar) está
+copiada a `docs/PENDIENTES_consistencia.md` — un pendiente vivo no puede vivir dentro de
+un documento congelado.
 
 Si un documento **congelado** necesita cambiar: o el cambio va a `PROYECTO.md` (que sí
 es vivo), o el doc pasa a vivo explícitamente (se anota acá). Lo que no puede pasar es
@@ -407,9 +491,8 @@ historia, pero de acá en adelante:
 1. Se termina un paso → se avisa y se espera que el usuario lo pruebe. No se sigue al
    siguiente paso por cuenta propia.
 2. El usuario confirma que pasó la prueba.
-3. Recién ahí se actualiza la doc (`docs/Sesiones/HANDOFF AAAA-MM-DD.md` de la sesión —
-   ver convención abajo —, y `PROYECTO.md` si el paso cambió algo estructural) y se
-   commitea.
+3. Recién ahí se documenta y se commitea: entrada en `docs/BITACORA.md` siempre,
+   `docs/HANDOFF_CODE.md` reescrito, y `PROYECTO.md` si el paso cambió algo estructural.
 4. Mensaje de commit: `Paso N ✅ — <resumen corto>`. Un paso por commit, sin bundles.
 5. Si un paso toca los mismos archivos que el anterior, igual va en su propio commit:
    alcanza el orden temporal, no hace falta separar por archivo.
@@ -419,19 +502,32 @@ historia, pero de acá en adelante:
 Excepción explícita: un mismo prompt puede pedir varios commits internos (p. ej. este
 mismo Paso 1.8, con Partes A/B/C) cuando el propio prompt lo indica.
 
-### Convención de HANDOFF: un archivo nuevo por sesión, fechado
+### Convención de HANDOFF y bitácora: dos archivos, dos dueños (DOC-4, 31/07/2026)
 
 Instaurada el 2026-07-29, tras un conflicto de sincronización de OneDrive: el usuario
 edita este repo desde dos herramientas (esta sesión de Code, con git, y claude.ai, que
 sube/edita archivos directo en la carpeta sin git), y un `HANDOFF.md` único editado desde
 las dos a la vez generó dos versiones simultáneas.
 
-- Cada sesión que necesite dejar un handoff escribe un archivo **nuevo**:
+**El conflicto no lo causaba el archivo único: lo causaba que tuviera dos autores.** Con
+un solo dueño, un archivo único es seguro — por eso Code recupera el suyo, separado por
+función:
+
+| archivo | dueño | cómo se escribe | para qué |
+|---|---|---|---|
+| `docs/HANDOFF_CODE.md` | solo Code | se reescribe entero | dónde quedó el trabajo, ahora |
+| `docs/BITACORA.md` | solo Code | append-only | qué hizo cada paso, para siempre |
+| `docs/Sesiones/HANDOFF AAAA-MM-DD.md` | solo claude.ai | archivo nuevo, nunca se edita | qué se verificó y decidió en esa conversación |
+
+- Cada sesión de claude.ai que necesite dejar un handoff escribe un archivo **nuevo**:
   `docs/Sesiones/HANDOFF AAAA-MM-DD.md`. Si ya hay uno de ese día, sumar `-N`
-  (`HANDOFF AAAA-MM-DD-2.md`).
-- **Nunca se edita un HANDOFF de una sesión anterior.** Son snapshots, no un doc vivo.
-- El HANDOFF más reciente por fecha es el punto de partida para la próxima conversación;
-  los anteriores quedan como historial.
+  (`HANDOFF AAAA-MM-DD-2.md`). **Nunca se edita un HANDOFF de una sesión anterior.**
+- El HANDOFF más reciente por fecha es el punto de partida para la próxima conversación
+  de claude.ai; los anteriores se archivan en `docs/Sesiones/_archivo/`.
+- Code no escribe nunca en `docs/Sesiones/`: su handoff propio es `docs/HANDOFF_CODE.md`
+  (puntero al presente, se reescribe entero) y su historia es `docs/BITACORA.md`
+  (append-only, una entrada por paso). Si al actualizar el handoff parece que se está
+  borrando algo que vale la pena conservar, eso va a la bitácora, no abajo en el handoff.
 
 ### Riesgo real: los `.gs` comparten un único namespace global
 

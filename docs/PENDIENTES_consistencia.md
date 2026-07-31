@@ -34,6 +34,32 @@
 
 ## Sigue abierto
 
+### P1 · Firma de encabezados (de `docs/RDV_otros_ministros_riesgo.md`, congelado)
+
+**La firma de encabezados** — registrar la fila de encabezado de cada solapa mapeada, y
+fallar ruidosamente si cambió — es la mitigación general al riesgo de encabezados no
+confiables, pero **no está implementada**. Es su propio paso, con su propio test, antes
+del `Paso-3-v2` (ver `PROYECTO.md` §7). `diagnosticarBases()` (`Fechas.gs`, DOC-3 Parte B)
+ya lee la fila de encabezado de cada solapa mapeada para tipar columnas — la mitad del
+trabajo (leer esa fila) queda hecha ahí; falta la otra mitad: guardar la firma y comparar
+contra la corrida anterior. `firma_encabezado` ya existe como columna reservada en
+`SOLAPAS` (Paso 2.6 Parte E), sin implementar.
+
+### P1 · Pendientes de `DECISION-periodicidad-y-periodos.md` (archivado, DOC-4 31/07/2026)
+
+La decisión de fondo quedó confirmada (`PROYECTO.md` §4: informes semanales por defecto,
+ventana definida por la reunión, sin corte diario de datos — ver `VALORES`/
+`VALORES_DIVERGENTES`, Paso 2.9H). Quedan sin resolver los detalles finos:
+
+- Si la ventana semanal se deriva automáticamente de la fecha de la reunión (ej. los 7
+  días previos) o se carga a mano en la hoja `REUNIONES`.
+- Qué columna de fecha usa cada base para filtrar — cruzar con `docs/GRANO_TEMPORAL.md`,
+  que ya sostiene que la fecha de la reunión no filtra las filas de canal.
+- Si la ventana cierra el día anterior a la reunión o incluye el día parcial de la
+  reunión misma.
+- Nombre definitivo del token de estampa de actualización (tipo `{{fecha_actualizacion}}`)
+  — pasa a `docs/TOKENS.md` cuando se decida.
+
 ### P0 · Verificación real del Paso 2
 
 Los criterios **A1–A10** de `docs/Prompts/VERIFICACION_Paso-2.md` (sobre todo A3–A5:

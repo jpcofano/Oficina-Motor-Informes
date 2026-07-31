@@ -1,0 +1,49 @@
+caso_id,bloque,token_propuesto,valor_esperado,base,solapa,clave,columna,operacion,estado,nota
+V-01,ecv_san_cristobal_2307,ecv_inscriptos,138,rdv,RVD JM-CM - ES,"Figura=Jorge Macri; EVENTO=""1 a 1""; FECHA=2026-07-23",Inscriptos,VALOR,exacto,
+V-02,ecv_san_cristobal_2307,ecv_asistentes,9,rdv,RVD JM-CM - ES,idem V-01,Asistentes,VALOR,exacto,
+V-03,ecv_retiro_2407,ecv_inscriptos,98,rdv,RVD JM-CM - ES,"Figura=Jorge Macri; EVENTO=""1 a 1""; FECHA=2026-07-24",Inscriptos,VALOR,exacto,
+V-04,ecv_retiro_2407,ecv_asistentes,10,rdv,RVD JM-CM - ES,idem V-03,Asistentes,VALOR,exacto,
+V-05,et_orden_publico_2807,enc_inscriptos,753,rdv,RVD JM-CM - ES,"Figura=Jorge Macri; EVENTO=Encuentro Temático ""Orden Público""; FECHA=2026-07-28",Inscriptos,VALOR,exacto,
+V-06,et_orden_publico_2807,enc_asistentes,199,rdv,RVD JM-CM - ES,idem V-05,Asistentes,VALOR,exacto,
+V-07,et_orden_publico_2807,enc_asistencia_pct,0.2643,rdv,RVD JM-CM - ES,idem V-05,% de Asistencia,VALOR,exacto,deck muestra 26%
+V-08,et_orden_publico_2807,ecv_insc_mail,361,rdv,RVD JM-CM - ES,idem V-05,Mail,VALOR,exacto,cierra pendiente TEMARIO §7
+V-09,et_orden_publico_2807,ecv_insc_digital,180,rdv,RVD JM-CM - ES,idem V-05,RRSS,VALOR,exacto,NO es la fuente digital
+V-10,et_orden_publico_2807,ecv_insc_cc,169,rdv,RVD JM-CM - ES,idem V-05,Call Center,VALOR,exacto,
+V-11,et_orden_publico_2807,ecv_insc_ivr,43,rdv,RVD JM-CM - ES,idem V-05,IVR,VALOR,exacto,cierra pendiente TEMARIO §3.3
+V-12,et_orden_publico_2807,enc_mails_enviados,44043,digital,Directa Mail,"ID Cuentas=3387-JULJDGGC; Fecha envio=2026-07-25",Enviados,VALOR,exacto,un envío; NO sumar la cuenta
+V-13,et_orden_publico_2807,enc_mails_entregados,43439,digital,Directa Mail,idem V-12,Entregados,VALOR,exacto,
+V-14,et_orden_publico_2807,enc_or,4652,digital,Directa Mail,idem V-12,Aperturas,VALOR,exacto,deck 11%
+V-15,et_orden_publico_2807,enc_ctor,145,digital,Directa Mail,idem V-12,Clics,VALOR,exacto,deck 3%
+V-16,et_orden_publico_2807,enc_llamados,78637,digital,Directa IVR,ID cuentas=3387-JULJDGGC,Llamados Realizados,SUMA,exacto,2 filas (22/07 y 23/07)
+V-17,et_orden_publico_2807,enc_atendidos,71234,digital,Directa IVR,idem V-16,Llamados Atendidos,SUMA,exacto,deck 91%
+V-18,et_orden_publico_2807,enc_e75,27599,digital,Directa IVR,idem V-16,Escucharon +75%,SUMA,exacto,deck 39%
+V-19,et_orden_publico_2807,enc_marque1,256,digital,Directa IVR,idem V-16,Marque 1,SUMA,exacto,
+V-20,et_orden_publico_2807,enc_llamados,78637,looker,resumen_metricas_dinamico,id_cuentas=3387-JULJDGGC,ivr_realizados,VALOR,exacto,fuente alternativa idéntica a V-16
+V-21,u1_san_cristobal_pre,u1_google_impresiones,17401,digital,CAMPAÑAS_DESGLOCE_DIGITAL,"Id cuentas=3354-JULJDGAG; Plataforma=Google ads",Impresiones,SUMA,exacto,
+V-22,u1_san_cristobal_pre,u1_google_clics,496,digital,CAMPAÑAS_DESGLOCE_DIGITAL,idem V-21,Clics,SUMA,exacto,CTR 2.85% coincide
+V-23,u1_san_cristobal_pre,u1_meta_impresiones,25099,digital,CAMPAÑAS_DESGLOCE_DIGITAL,"Id cuentas=3354-JULJDGAG; Plataforma=Meta",Impresiones,SUMA,exacto,
+V-24,u1_san_cristobal_pre,u1_meta_clics,778,digital,CAMPAÑAS_DESGLOCE_DIGITAL,idem V-23,Clics,SUMA,exacto,CTR 3.10% coincide
+V-25,u1_retiro_pre,u1_meta_impresiones,18015,digital,CAMPAÑAS_DESGLOCE_DIGITAL,"Id cuentas=3346-JULJDGAG; Plataforma=Meta",Impresiones,SUMA,exacto,
+V-26,u1_retiro_pre,u1_meta_vistas,1833,digital,CAMPAÑAS_DESGLOCE_DIGITAL,idem V-25,Visualizaciones,SUMA,exacto,deck 10%
+V-27,camp_cadetes,post_camp_mail_env_1,163749,digital,Directa Mail,"ID Cuentas=3305-JULSEGGJ; Fecha envio=2026-07-17",Enviados,VALOR,exacto,
+V-28,camp_cadetes,post_camp_mail_ape_1,101422,digital,Directa Mail,idem V-27,Aperturas,VALOR,exacto,deck 62%
+V-29,camp_cadetes,post_camp_mail_env_2,40293,digital,Directa Mail,"ID Cuentas=3305-JULSEGGJ; Fecha envio=2026-07-18",Enviados,VALOR,exacto,
+V-30,camp_1114,post_camp_mail_env_1,215240,digital,Directa Mail,"Nombre campaña=Operativo Saturación 1-11-14; Fecha envio=2026-07-24",Enviados,VALOR,exacto,ATENCION ID Cuentas='Pieza' - no matchea por id
+V-31,camp_1114,post_camp_mail_env_2,24805,digital,Directa Mail,"ID Cuentas=3410-JULSEGGJ; Fecha envio=2026-07-25",Enviados,VALOR,exacto,
+V-32,camp_1114,post_camp_mail_env_3,112423,digital,Directa Mail,"ID Cuentas=3410-JULSEGGJ; Fecha envio=2026-07-27",Enviados,VALOR,exacto,remitente GCBA
+V-33,pp_pareto_2707,enc_inscriptos,1344,rdv,RVD JM-CM - ES,"Figura=Jorge Macri; EVENTO=Encuentro ""Primera Persona""; FECHA=2026-07-27",Inscriptos,VALOR,exacto,el deck lo dejó en xx
+V-34,pp_pareto_2707,enc_asistentes,267,rdv,RVD JM-CM - ES,idem V-33,Asistentes,VALOR,exacto,el deck lo dejó en xx
+V-35,pp_pareto_2707,ecv_insc_cc,103,rdv,RVD JM-CM - ES,idem V-33,Call Center,VALOR,exacto,único valor cargado en el deck
+V-36,pp_pareto_2707,ecv_insc_mail,807,rdv,RVD JM-CM - ES,idem V-33,Mail,VALOR,exacto,el deck lo dejó en xx
+V-37,pp_pareto_2707,ecv_insc_digital,434,rdv,RVD JM-CM - ES,idem V-33,RRSS,VALOR,exacto,el deck lo dejó en xx
+D-01,et_orden_publico_2807,enc_base_total,8255,looker,resumen_metricas_dinamico,id_cuentas=3387-JULJDGGC,call_enviado,VALOR,deriva,base 31/07 = 8978 (+723)
+D-02,et_orden_publico_2807,enc_base_llamada,7232,looker,resumen_metricas_dinamico,idem D-01,call_discado,VALOR,deriva,base 31/07 = 7954
+D-03,et_orden_publico_2807,enc_ll_contactados,1901,looker,resumen_metricas_dinamico,idem D-01,call_contactados,VALOR,deriva,base 31/07 = 2169
+D-04,et_orden_publico_2807,enc_ll_efectivos,1514,looker,resumen_metricas_dinamico,idem D-01,call_efectivos,VALOR,deriva,base 31/07 = 1766
+D-05,et_orden_publico_2807,enc_impresiones,2295332,looker,resumen_metricas_dinamico,idem D-01,digital_impresiones,VALOR,deriva,base 31/07 = 2293619
+D-06,et_orden_publico_2807,enc_alcance,65576,looker,resumen_metricas_dinamico,idem D-01,meta_alcance,VALOR,deriva,base 31/07 = 66345
+X-01,ministros_semana,emin_entregados,685623,?,?,?,?,?,sin_fuente,por cuenta da 750528; por envío en ventana da 701493
+X-02,m2_semana,m2_enviados,995194,?,?,?,?,?,sin_fuente,Eje=M2 en ventana da 894797 en 19 envíos
+X-03,registro_civil,rc_enviados,3061,?,?,?,?,?,sin_fuente,cero filas de Registro Civil en las 4 bases
+X-04,et_orden_publico_2807,enc_habitantes_eje,596482,?,?,?,?,?,sin_fuente,RDV tiene población por comuna; falta tabla de ejes
+X-05,u1_san_cristobal_post,u1_prog_impresiones,94955,?,?,?,?,?,sin_fuente,el POST digital no está en ninguna base
