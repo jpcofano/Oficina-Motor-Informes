@@ -351,7 +351,7 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   (R-10 `normalizar()` + hoja `VALIDACION`) de `Paso-2.10_PartesBC_verificado.md` y
   `Paso-2.10_ParteD_con_R10.md` siguen sin ejecutar — van en pasos separados.
 
-## Paso 2.10 Parte C — seis solapas "periodo" bajan a `referencia`, `m2` sin fuente (2026-07-31) — commit `<pendiente>`
+## Paso 2.10 Parte C — seis solapas "periodo" bajan a `referencia`, `m2` sin fuente (2026-07-31) — commit `fa1d595`
 - **Qué pedía el prompt:** `docs/Prompts/Paso-2.10_PartesBC_verificado.md` Parte C —
   no son cuatro solapas "periodo" sino **seis** (dos más en `digital`, con el período en
   la fila 2 en vez de la 1); bajarlas todas a `uso=referencia`. Sacar `M2 periodo
@@ -386,3 +386,39 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   "Probar lectura por ventana" y las 9 solapas en `revisar` bajan a 3 en `SOLAPAS`.
   Parte D (`Paso-2.10_ParteD_con_R10.md`: `normalizar_()` + hoja `VALIDACION`) sigue sin
   ejecutar.
+
+## Paso 2.11 Parte A — `HOJAS_CONFIG_.ejemplos` deja de sembrar datos (2026-07-31) — commit `<pendiente>`
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md` Parte
+  A. Explica, con evidencia, la causa raíz de "falta la vuelta de prueba" que quedó
+  pendiente en el Paso 2.10 Parte C: `BASES.m2.hoja_default` estaba escrito dos veces
+  (`HOJAS_CONFIG_.BASES.ejemplos` con `'M2 periodo DIRECTA'`, `SEED_BASES_` con `''`),
+  por dos caminos distintos (`instalar()` vs `seedConfiguracion()`), y correr el primero
+  después del segundo revertía la Parte C sin avisar. Mismo problema en `MARCADORES`
+  (`ejemplos` tenía una fila `m2_envios` apuntando a `M2 periodo DIRECTA`). Tarea:
+  `HOJAS_CONFIG_` pasa a ser solo esquema (`headers`); `instalar()` no vuelve a escribir
+  filas de datos.
+- **Qué se hizo:** `Instalar.gs` — `ejemplos` eliminado de las 12 hojas de
+  `HOJAS_CONFIG_`; el bloque `if (!hoja)` de `instalar()` ya no escribe la segunda fila.
+  Los datos reales que vivían en `ejemplos`: `SEED_INFORMES_` y `SEED_PERIODOS_` (config
+  durable, misma categoría que `BASES`/`MAPEO`) se cablearon a `seedConfiguracion()` con
+  `upsertPorClave_`, igual que las demás. `SEED_CAMPANAS_EJEMPLO_` y
+  `SEED_REUNIONES_EJEMPLO_` se movieron pero **sin sembrador automático** — son curadas a
+  mano y cambian cada semana (mismo riesgo que ya se vio con `m2`: un upsert automático
+  en cada "Cargar config inicial" pisaría la campaña/reunión real de la semana si
+  coincide la clave); quedan a la espera de `menuCargarEjemplo_()` (hoy un stub en
+  `Codigo.gs`), que el usuario dispara a mano cuando de verdad quiere cargar el ejemplo.
+  Grep de control (tarea 4 del prompt) confirmado: `'M2 periodo DIRECTA'` ya no aparece
+  en ningún `ejemplos`, `hoja_default` ni fila de `MARCADORES` — solo en `SEED_SOLAPAS_`
+  (como `referencia`), `SEED_MAPEO_` (fuera de alcance de esta parte) y comentarios.
+- **Prueba:** confirmada por el usuario contra la planilla en vivo. "Instalar / reparar
+  hojas" reportó `BASES`/`MAPEO`/`MARCADORES` **fuera** de "Hojas actualizadas" (criterio
+  de aceptación cumplido — antes las revertía). Las demás hojas sin `COLUMNAS_DELTA_`
+  (`CONFIG`, `INFORMES`, `PERIODOS`, `REUNIONES`, `SECCIONES`, `VALORES`,
+  `VALORES_DIVERGENTES`) sí salieron en "actualizadas" — comportamiento preexistente
+  (`instalar()` reescribe la fila de encabezados sin comparar si cambió), no algo que
+  esta parte haya introducido; queda para la Parte C (diff real en vez de conteo).
+  "Cargar config inicial" corrida después: `INFORMES — actualizadas: 2` y
+  `PERIODOS — actualizadas: 2` confirman que el nuevo cableado a `seedConfiguracion()`
+  funciona contra las filas reales ya cargadas.
+- **Pendientes/decisiones:** ninguna nueva. Sigue la Parte B del mismo prompt
+  (`fila_encabezado` por solapa, no por base, en `m2`).

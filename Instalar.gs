@@ -1,13 +1,14 @@
 /**
  * Instalar.gs — Setup inicial.
  * Crea las hojas de configuración por registros (CONFIG, BASES, INFORMES,
- * MARCADORES, MAPEO, CAMPANAS, PERIODOS) con encabezados + filas de ejemplo,
- * y deja el menú instalado.
+ * MARCADORES, MAPEO, CAMPANAS, PERIODOS, ...) con encabezados solamente — ninguna
+ * fila de datos (Paso 2.11 Parte A: `HOJAS_CONFIG_` es esquema, no siembra) — y deja
+ * el menú instalado.
  * Idempotente: si una hoja ya existe, no la pisa. Para MARCADORES/CAMPANAS,
  * si ya existen con el esquema viejo, inserta las columnas nuevas
  * (periodo_ref / desde / hasta) en su posición sin tocar filas cargadas.
  * También expone seedConfiguracion(): carga (upsert) los valores reales de
- * BASES/MAPEO/CONFIG para no cargarlos a mano; diagnosticarCarpetaPlantillas_():
+ * BASES/MAPEO/CONFIG/INFORMES/PERIODOS para no cargarlos a mano; diagnosticarCarpetaPlantillas_():
  * lista sin filtrar qué hay en la carpeta de plantillas; y
  * registrarPlantillasDesdeCarpeta(): recorre esa carpeta (hasta 2 niveles de
  * subcarpetas), matchea los Slides nativos contra INFORMES y completa
@@ -50,45 +51,34 @@ function diagnosticoDrive() {
   Logger.log('Total subcarpetas: ' + c);
 }
 
+// Paso 2.11 Parte A — `HOJAS_CONFIG_` define el ESQUEMA (los `headers`), nada más.
+// Antes tenía `ejemplos`: filas que se escribían una sola vez, al crear la hoja de
+// cero, y que en la práctica eran datos reales (BASES/MAPEO/MARCADORES) leídos por
+// el motor — una segunda fuente de verdad además de los `SEED_*` de más abajo, y las
+// dos no siempre decían lo mismo (`m2.hoja_default` llegó a estar en desacuerdo
+// consigo mismo entre `ejemplos` y `SEED_BASES_`). `instalar()` ya no escribe filas
+// de datos: crea la hoja vacía (headers solamente) y el sembrador correspondiente
+// (`seedConfiguracion()`, `sembrarClasificacionSolapas()`, `sembrarSecciones_()`, o
+// uno de los `SEED_*` nuevos de más abajo) es la única fuente de las filas.
 var HOJAS_CONFIG_ = {
   CONFIG: {
-    headers: ['clave', 'valor'],
-    ejemplos: [
-      ['periodo_desde', '2026-06-26'],
-      ['periodo_hasta', '2026-07-03'],
-      ['informe_activo', ''],
-      ['carpeta_salida', '']
-    ]
+    headers: ['clave', 'valor']
   },
   BASES: {
-    headers: ['base_id', 'nombre', 'sheet_id', 'hoja_default', 'fila_encabezado', 'modo_periodo', 'tipo', 'activo', 'notas'],
-    ejemplos: [
-      ['rdv', 'RDV JM CM ES', '', 'RVD JM-CM - ES', 1, 'filtrar', 'google_sheets', 'sí', 'Encuentros'],
-      ['digital', 'Seguimiento Digital', '', 'Digital', 1, 'filtrar', 'google_sheets', 'sí', 'Campaña por canal'],
-      ['looker', 'Base Looker', '', 'resumen_metricas_dinamico', 1, 'filtrar', 'google_sheets', 'sí', 'Consolidado'],
-      ['m2', 'M2 Reporte 2026', '', 'M2 periodo DIRECTA', 3, 'snapshot', 'google_sheets', 'sí', 'Familia m2_*'],
-      ['miba', 'Integración MiBA', '', '', 1, 'filtrar', 'google_sheets', 'no', 'Parqueada']
-    ]
+    headers: ['base_id', 'nombre', 'sheet_id', 'hoja_default', 'fila_encabezado', 'modo_periodo', 'tipo', 'activo', 'notas']
   },
   INFORMES: {
-    headers: ['informe_id', 'nombre', 'plantilla_id', 'periodicidad', 'familias', 'activo', 'notas'],
-    ejemplos: [
-      ['jm', 'Informe semanal JM', '', 'semanal', 'ecv,enc,m2,camp,mail,gcba,rrss', 'sí', '22 slides'],
-      ['secco', 'Seguimiento SECCO-SSCDI', '', 'mensual', 'ecv,et,emin,m2,camp,conv,rep,rrss', 'sí', '29 slides']
-    ]
+    headers: ['informe_id', 'nombre', 'plantilla_id', 'periodicidad', 'familias', 'activo', 'notas']
   },
   // solapa/operacion/valor_fijo (DOC-2 Parte A): operacion reemplaza a calculo
   // (migración idempotente en migrarCalculoAOperacion_); valor_fijo es para
   // operacion=TEXTO; solapa entra en la clave de MAPEO y, si viene vacía, la
   // regla de resolución (docs/TOKENS.md, PROYECTO.md §3) decide si se infiere
-  // o se exige.
+  // o se exige. Sin sembrador: ver "No sembrar las ~200 filas de MARCADORES"
+  // en `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` — bloqueado por
+  // la armonización de plantillas, se carga a mano hasta que eso se resuelva.
   MARCADORES: {
-    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'solapa', 'campo_logico', 'periodo_ref', 'operacion', 'valor_fijo', 'formato', 'notas'],
-    ejemplos: [
-      ['ecv_inscriptos', 'ecv', '*', 'rdv', '', 'inscriptos', '', 'calcInscriptos', '', 'numero', '* = compartido; solapa vacía: rdv tiene una sola'],
-      ['camp_alcance', 'camp', '*', 'looker', '', 'alcance', '', 'calcAlcance', '', 'miles', 'solapa vacía: looker tiene una sola'],
-      ['m2_envios', 'm2', 'jm', 'm2', 'M2 periodo DIRECTA', 'envios', 'm2_mensual', 'calcEnvios', '', 'numero', 'solapa cargada: m2 tiene DIRECTA + DIGITAL']
-    ]
+    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'solapa', 'campo_logico', 'periodo_ref', 'operacion', 'valor_fijo', 'formato', 'notas']
   },
   // solapa (Paso 2.3.2): entra en la clave junto con base_id + campo_logico.
   // Antes de esto, dos solapas de la misma base no podían mapear el mismo
@@ -99,18 +89,7 @@ var HOJAS_CONFIG_ = {
   // lo esperado, y con 35 avisos casi todos inocentes (`figura`, `*_id_cuenta`, …)
   // la gente aprendía a ignorarlos.
   MAPEO: {
-    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'tipo_esperado', 'notas'],
-    ejemplos: [
-      ['rdv', 'RVD JM-CM - ES', 'inscriptos', 'RVD JM-CM - ES', 'H', 'numero', ''],
-      // Paso 2.8 Parte A: el ejemplo original era 'digital'/'Digital'/'alcance' apuntando
-      // a la columna E — esa fila se instaló en MAPEO y quedó viva ahí porque `instalar()`
-      // nunca pisa filas cargadas. La columna E de esa solapa es "Fecha de inicio"
-      // (`dig_fecha_inicio`, ya mapeada más abajo), no alcance — confirmado por
-      // `auditarAlcanceDigital_()` (Paso 2.7 Parte B). Corregido acá para que una
-      // instalación nueva no repita el error; `eliminarMapeoAlcanceDigitalObsoleto_()`
-      // limpia la fila vieja en instalaciones ya existentes.
-      ['digital', 'Digital', 'dig_fecha_inicio', 'Digital', 'E', 'fecha', '']
-    ]
+    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'tipo_esperado', 'notas']
   },
   // SOLAPAS (Paso 2.6): declara el uso de CADA solapa de cada base — el motor solo
   // sabía de las que aparecían en MAPEO, y el resto (backups, pivots, vistas con
@@ -128,68 +107,40 @@ var HOJAS_CONFIG_ = {
   // conserva al lado del filas_datos corregido porque la diferencia entre
   // ambas ES el diagnóstico — ver Solapas.gs inventariarSolapas().
   SOLAPAS: {
-    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'notas'],
-    ejemplos: [
-      ['rdv', 'RVD JM-CM - ES', 'fuente', 'seed', 1, '', '', '', 'base de encuentros, hoja_default'],
-      ['rdv', 'RVD JM-CM - ES Back Up', 'ignorar', 'seed', 1, '', '', '', 'backup']
-    ]
+    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'notas']
   },
   // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
   // ministros, proveedor — ver Plan Inicial/PROYECTO.md §4.
   CAMPANAS: {
-    headers: ['campana_id', 'nombre', 'informe_id', 'base_id', 'tipo', 'desde', 'hasta', 'mostrar', 'orden'],
-    ejemplos: [
-      ['serv_esenciales', 'Servicios esenciales', 'secco', 'looker', 'campana', '2026-06-02', '2026-06-15', 'sí', 1],
-      ['encuentros_min', 'Encuentros de ministros', 'secco', 'rdv', 'ministros', '2026-06-01', '2026-06-30', 'sí', 2],
-      ['prov_uber', 'Uber', 'secco', 'digital', 'proveedor', '2026-06-01', '2026-06-30', 'no', 3]
-    ]
+    headers: ['campana_id', 'nombre', 'informe_id', 'base_id', 'tipo', 'desde', 'hasta', 'mostrar', 'orden']
   },
   PERIODOS: {
-    headers: ['periodo_id', 'desde', 'hasta', 'notas'],
-    ejemplos: [
-      ['m2_mensual', '2026-06-01', '2026-06-30', 'M2 dentro del JM'],
-      ['quincena_rrss', '2026-06-16', '2026-06-30', 'Análisis RRSS']
-    ]
+    headers: ['periodo_id', 'desde', 'hasta', 'notas']
   },
   // Paso 2.9D — R-02: el temario define el universo del informe, no la fecha.
-  // Curado a mano, mismo patrón que CAMPANAS. Sembrado con el temario real del
-  // 24/07 al 30/07/2026 (docs/TEMARIO_Y_PLANTILLA_2026-07-31.md), rescatado de
-  // los comentarios de la plantilla SECCO — es el único ejemplo real que existe
-  // del formato en que el equipo piensa el informe.
+  // Curado a mano, mismo patrón que CAMPANAS.
   REUNIONES: {
-    headers: ['orden', 'eje', 'tipo', 'nombre', 'fecha', 'etapa', 'mostrar', 'texto_original', 'notas'],
-    ejemplos: [
-      [1, 'JM', 'Uno a uno', 'San Cristóbal', '2026-07-23', 'pre', 'sí', 'JM | Uno a uno en San Cristóbal 23/07 (pre)', ''],
-      [2, 'JM', 'Uno a uno', 'Retiro', '2026-07-24', 'pre', 'sí', '2) JM | Uno a uno en Retiro 24/07 (pre)', ''],
-      [3, 'JM', 'Encuentro Temático', 'Orden Público', '2026-07-28', '', 'sí', 'JM | Encuentro Temático Orden Público 28/07', ''],
-      [4, 'JM', 'Uno a uno', 'San Cristóbal', '2026-07-23', 'post', 'sí', 'JM | Uno a uno en San Cristóbal 23/07 (POST)', ''],
-      [5, 'JM', 'Uno a uno', 'Retiro', '2026-07-24', 'post', 'sí', 'JM | Uno a uno en Retiro 24/07 (post)', ''],
-      [6, 'Ministros', 'Agregado', 'Reuniones de la semana', '2026-07-24', '', 'sí', 'Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)', '24/07 al 30/07 inclusive'],
-      [7, 'M2', 'Agregado', 'Campañas y enviados de la semana', '2026-07-24', '', 'sí', '6) M2 | Campañas y enviados de la semana del 24/07 al 30/07', '']
-    ]
+    headers: ['orden', 'eje', 'tipo', 'nombre', 'fecha', 'etapa', 'mostrar', 'texto_original', 'notas']
   },
   // Paso 2.9G v2 — registro jerárquico de secciones (docs/SECCIONES.md, v2,
-  // verificada contra tres informes publicados). Sin ejemplos acá: se siembra
-  // con SEED_SECCIONES_ + sembrarSecciones_() (abajo), no con filas sueltas —
-  // el árbol completo es demasiado para "ejemplos" de instalación.
+  // verificada contra tres informes publicados). Se siembra con `SEED_SECCIONES_` +
+  // `sembrarSecciones_()` (abajo) — el árbol completo es demasiado para un ejemplo
+  // de instalación.
   SECCIONES: {
-    headers: ['seccion_id', 'padre', 'orden', 'nombre', 'informes', 'modo', 'itera_sobre', 'filtro', 'opcional', 'condicion', 'familia_tokens', 'estado', 'falta', 'notas'],
-    ejemplos: []
+    headers: ['seccion_id', 'padre', 'orden', 'nombre', 'informes', 'modo', 'itera_sobre', 'filtro', 'opcional', 'condicion', 'familia_tokens', 'estado', 'falta', 'notas']
   },
   // Paso 2.9H — la "foto" de cada token calculado. Nunca se pisa: cada corrida
   // agrega una fila, así un informe pasado se puede reproducir (punteo del
   // 30/07). Ver Valores.gs.
   VALORES: {
-    headers: ['periodo', 'informe_id', 'seccion_id', 'item', 'token', 'valor', 'fecha_calculo', 'origen_valor', 'parcial'],
-    ejemplos: []
+    headers: ['periodo', 'informe_id', 'seccion_id', 'item', 'token', 'valor', 'fecha_calculo', 'origen_valor', 'parcial']
   },
   // Paso 2.9H — un token calculado para el mismo (periodo, item) ya dio un
   // valor distinto antes: no se decide sola (recalcular calla la divergencia
   // entre informes; congelar publica un número viejo). Queda acá hasta que la
   // persona completa `decision` (reusar/actualizar).
   VALORES_DIVERGENTES: {
-    headers: ['item', 'token', 'valor_anterior', 'fecha_anterior', 'valor_nuevo', 'diferencia', 'parcial', 'decision'],
-    ejemplos: []
+    headers: ['item', 'token', 'valor_anterior', 'fecha_anterior', 'valor_nuevo', 'diferencia', 'parcial', 'decision']
   }
 };
 
@@ -241,11 +192,11 @@ function instalar() {
     var hoja = ss.getSheetByName(nombre);
 
     if (!hoja) {
+      // Paso 2.11 Parte A: solo encabezados. Las filas de datos las escribe el
+      // sembrador de esa hoja (seedConfiguracion(), sembrarClasificacionSolapas(),
+      // sembrarSecciones_(), o uno de los SEED_* de más abajo) — no HOJAS_CONFIG_.
       hoja = ss.insertSheet(nombre);
       hoja.getRange(1, 1, 1, def.headers.length).setValues([def.headers]);
-      if (def.ejemplos.length) {
-        hoja.getRange(2, 1, def.ejemplos.length, def.headers.length).setValues(def.ejemplos);
-      }
       hoja.setFrozenRows(1);
       creadas.push(nombre);
       return;
@@ -559,6 +510,15 @@ function limpiarHojaPorDefecto_(ss) {
  * Ver docs/Prompts/Paso-1.7.md y Plan Inicial/_archivo/M2_mapeo_y_config.md.
  */
 
+// Paso 2.11 Parte A — antes vivía en HOJAS_CONFIG_.INFORMES.ejemplos. 'jm'/'secco'
+// son identificadores durables, referenciados en todo SEED_MAPEO_/SEED_SOLAPAS_ —
+// misma categoría que BASES/MAPEO, se aplica con el mismo mecanismo (upsertPorClave_
+// en seedConfiguracion()).
+var SEED_INFORMES_ = [
+  { informe_id: 'jm', nombre: 'Informe semanal JM', plantilla_id: '', periodicidad: 'semanal', familias: 'ecv,enc,m2,camp,mail,gcba,rrss', activo: 'sí', notas: '22 slides' },
+  { informe_id: 'secco', nombre: 'Seguimiento SECCO-SSCDI', plantilla_id: '', periodicidad: 'mensual', familias: 'ecv,et,emin,m2,camp,conv,rep,rrss', activo: 'sí', notas: '29 slides' }
+];
+
 var SEED_BASES_ = [
   { base_id: 'rdv', nombre: 'RDV JM CM ES + funcionarios', sheet_id: '1ZpHO6Ru1uY2r9WfBF_yFtu5z7ip7F3Q6VOoRJN5vLAo', hoja_default: 'RVD JM-CM - ES', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Encuentros' },
   { base_id: 'digital', nombre: 'Seguimiento Digital', sheet_id: '1LadILzFpyCrZRapxgDOFOldSoRawjKkWMaFci_ilhPY', hoja_default: 'Digital', fila_encabezado: 1, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Campaña por canal. Paso 2.3: snapshot — sus solapas usan fecha de inicio de campaña (lead 3-7 días), el recorte por período lo hace el agregador vía link campaña↔encuentro, no ventana de fecha cruda.' },
@@ -801,6 +761,45 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
 };
 SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAMPO_[fila.campo_logico] || ''; });
 
+// Paso 2.11 Parte A — antes vivía en HOJAS_CONFIG_.PERIODOS.ejemplos. Períodos
+// nombrados reutilizables (referenciados por MARCADORES.periodo_ref, ej.
+// 'm2_mensual') — misma categoría durable que BASES/MAPEO/INFORMES, mismo
+// mecanismo de aplicación.
+var SEED_PERIODOS_ = [
+  { periodo_id: 'm2_mensual', desde: '2026-06-01', hasta: '2026-06-30', notas: 'M2 dentro del JM' },
+  { periodo_id: 'quincena_rrss', desde: '2026-06-16', hasta: '2026-06-30', notas: 'Análisis RRSS' }
+];
+
+// Paso 2.11 Parte A — antes vivían en HOJAS_CONFIG_.CAMPANAS.ejemplos y
+// HOJAS_CONFIG_.REUNIONES.ejemplos. A diferencia de INFORMES/PERIODOS, estas dos
+// son curadas a mano y cambian cada semana (mismo patrón — ver R-02 en
+// docs/REGLAS_NEGOCIO.md): un upsert automático en cada "Cargar config inicial"
+// pisaría la campaña/reunión real de la semana con este dato de ejemplo si
+// coincidiera la clave. Quedan movidas acá (fuera de HOJAS_CONFIG_, que ya no
+// siembra nada) pero SIN sembrador automático — a la espera de que
+// `menuCargarEjemplo_()` (Codigo.gs, hoy un stub) las use para una instalación
+// de cero, con el humano confirmando antes de escribir.
+var SEED_CAMPANAS_EJEMPLO_ = [
+  { campana_id: 'serv_esenciales', nombre: 'Servicios esenciales', informe_id: 'secco', base_id: 'looker', tipo: 'campana', desde: '2026-06-02', hasta: '2026-06-15', mostrar: 'sí', orden: 1 },
+  { campana_id: 'encuentros_min', nombre: 'Encuentros de ministros', informe_id: 'secco', base_id: 'rdv', tipo: 'ministros', desde: '2026-06-01', hasta: '2026-06-30', mostrar: 'sí', orden: 2 },
+  { campana_id: 'prov_uber', nombre: 'Uber', informe_id: 'secco', base_id: 'digital', tipo: 'proveedor', desde: '2026-06-01', hasta: '2026-06-30', mostrar: 'no', orden: 3 }
+];
+
+// Paso 2.9D — R-02: el temario define el universo del informe, no la fecha.
+// Rescatado de los comentarios de la plantilla SECCO — temario real del 24/07 al
+// 30/07/2026 (docs/TEMARIO_Y_PLANTILLA_2026-07-31.md), el único ejemplo real que
+// existe del formato en que el equipo piensa el informe. Ver nota de
+// SEED_CAMPANAS_EJEMPLO_ arriba: sin sembrador automático, mismo motivo.
+var SEED_REUNIONES_EJEMPLO_ = [
+  { orden: 1, eje: 'JM', tipo: 'Uno a uno', nombre: 'San Cristóbal', fecha: '2026-07-23', etapa: 'pre', mostrar: 'sí', texto_original: 'JM | Uno a uno en San Cristóbal 23/07 (pre)', notas: '' },
+  { orden: 2, eje: 'JM', tipo: 'Uno a uno', nombre: 'Retiro', fecha: '2026-07-24', etapa: 'pre', mostrar: 'sí', texto_original: '2) JM | Uno a uno en Retiro 24/07 (pre)', notas: '' },
+  { orden: 3, eje: 'JM', tipo: 'Encuentro Temático', nombre: 'Orden Público', fecha: '2026-07-28', etapa: '', mostrar: 'sí', texto_original: 'JM | Encuentro Temático Orden Público 28/07', notas: '' },
+  { orden: 4, eje: 'JM', tipo: 'Uno a uno', nombre: 'San Cristóbal', fecha: '2026-07-23', etapa: 'post', mostrar: 'sí', texto_original: 'JM | Uno a uno en San Cristóbal 23/07 (POST)', notas: '' },
+  { orden: 5, eje: 'JM', tipo: 'Uno a uno', nombre: 'Retiro', fecha: '2026-07-24', etapa: 'post', mostrar: 'sí', texto_original: 'JM | Uno a uno en Retiro 24/07 (post)', notas: '' },
+  { orden: 6, eje: 'Ministros', tipo: 'Agregado', nombre: 'Reuniones de la semana', fecha: '2026-07-24', etapa: '', mostrar: 'sí', texto_original: 'Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)', notas: '24/07 al 30/07 inclusive' },
+  { orden: 7, eje: 'M2', tipo: 'Agregado', nombre: 'Campañas y enviados de la semana', fecha: '2026-07-24', etapa: '', mostrar: 'sí', texto_original: '6) M2 | Campañas y enviados de la semana del 24/07 al 30/07', notas: '' }
+];
+
 /**
  * Paso 2.6 Parte D — clasificación PROPUESTA de las ~86 solapas reales de las
  * cuatro bases (relevamiento manual sobre los archivos vivos,
@@ -1021,6 +1020,15 @@ function seedConfiguracion() {
   var hojaConfig = ss.getSheetByName('CONFIG');
   var resultadoConfig = hojaConfig ? seedConfigConfig_(hojaConfig) : vacio;
 
+  // Paso 2.11 Parte A: INFORMES y PERIODOS son config durable (como BASES/MAPEO),
+  // así que se aplican con el mismo upsertPorClave_. CAMPANAS y REUNIONES no —
+  // ver la nota de SEED_CAMPANAS_EJEMPLO_ más arriba.
+  var hojaInformes = ss.getSheetByName('INFORMES');
+  var resultadoInformes = hojaInformes ? upsertPorClave_(hojaInformes, ['informe_id'], SEED_INFORMES_) : vacio;
+
+  var hojaPeriodos = ss.getSheetByName('PERIODOS');
+  var resultadoPeriodos = hojaPeriodos ? upsertPorClave_(hojaPeriodos, ['periodo_id'], SEED_PERIODOS_) : vacio;
+
   var pendientes = SEED_MAPEO_
     .filter(function (fila) { return !fila.columna; })
     .map(function (fila) { return fila.base_id + '/' + fila.campo_logico; });
@@ -1028,7 +1036,9 @@ function seedConfiguracion() {
   var resumen =
     'BASES — nuevas: ' + resultadoBases.escritas + ', actualizadas: ' + resultadoBases.actualizadas + '\n' +
     'MAPEO — nuevas: ' + resultadoMapeo.escritas + ', actualizadas: ' + resultadoMapeo.actualizadas + '\n' +
-    'CONFIG — nuevas: ' + resultadoConfig.escritas + ', completadas: ' + resultadoConfig.actualizadas +
+    'CONFIG — nuevas: ' + resultadoConfig.escritas + ', completadas: ' + resultadoConfig.actualizadas + '\n' +
+    'INFORMES — nuevas: ' + resultadoInformes.escritas + ', actualizadas: ' + resultadoInformes.actualizadas + '\n' +
+    'PERIODOS — nuevas: ' + resultadoPeriodos.escritas + ', actualizadas: ' + resultadoPeriodos.actualizadas +
     (pendientes.length
       ? '\n\n⚠️ Pendientes de confirmar columna en MAPEO: ' + pendientes.join(', ')
       : '');
