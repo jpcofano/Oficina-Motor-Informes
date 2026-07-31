@@ -523,3 +523,99 @@ function menuDiagnosticarFilasSinClaveDigital_() {
 
   ui.alert('Diagnóstico: filas sin clave en digital (Paso 2.8 Parte E)', lineas.join('\n'), ui.ButtonSet.OK);
 }
+
+/**
+ * Paso 2.9A — diagnóstico del "colapso por clave" del lector. El fix ya se aplicó
+ * en el propio Paso 2.9 (leerFuente() ya no excluye filas por clave vacía ni por
+ * fila 100% vacía — Fuentes.gs). Esta función queda como la herramienta de
+ * verificación que pedía 2.9A: corre DESPUÉS del fix, así que sirve para
+ * CONFIRMAR que quedó resuelto (filas_devueltas ≈ filas_crudas), no para
+ * diagnosticar un bug que ya no está en el código.
+ *
+ * Por cada base con `uso=fuente` en su solapa default (SOLAPAS manda): vuelca
+ * `filas_datos` (SOLAPAS), `filas_crudas` (getDataRange() sin encabezado),
+ * `filas_devueltas` (leerFuente()) y `valores_distintos_clave` (si la base tiene
+ * `clave`/`campana` resoluble en MAPEO — `rdv` no la tiene, y ESO es lo que
+ * explicaba su recorte: no un colapso por valor de clave, sino el descarte de
+ * filas 100% vacías, ya corregido igual). Escribe en la hoja `DIAG_COLAPSO`, no
+ * en un alert — la corrida del 30/07 murió por timeout con el alert como última
+ * instrucción y se perdió todo el resultado.
+ */
+function diagnosticarColapso_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('DIAG_COLAPSO');
+  if (!hoja) hoja = ss.insertSheet('DIAG_COLAPSO');
+  hoja.clear();
+
+  var headers = ['base_id', 'solapa', 'filas_datos_SOLAPAS', 'filas_crudas', 'filas_devueltas', 'valores_distintos_clave', 'notas'];
+  hoja.getRange(1, 1, 1, headers.length).setValues([headers]);
+  hoja.setFrozenRows(1);
+
+  var bases = leerBases();
+  var ventana = resolverVentana({});
+  var filaEscritura = 2;
+
+  Object.keys(bases).forEach(function (baseId) {
+    var base = bases[baseId];
+    if (!base.activo || !base.sheet_id) return;
+
+    var abierto = abrirHoja(baseId);
+    if (!abierto.ok) {
+      hoja.getRange(filaEscritura, 1, 1, headers.length).setValues([[baseId, '', '', '', '', '', abierto.motivo]]);
+      filaEscritura++;
+      return;
+    }
+
+    var nombreHoja = abierto.hoja.getName();
+    if (usoSolapa_(baseId, nombreHoja) !== 'fuente') {
+      hoja.getRange(filaEscritura, 1, 1, headers.length)
+        .setValues([[baseId, nombreHoja, '', '', '', '', 'solapa default no es uso=fuente en SOLAPAS']]);
+      filaEscritura++;
+      return;
+    }
+
+    var solapas = leerSolapas();
+    var registroSolapa = solapas[baseId] && solapas[baseId][nombreHoja];
+    var filasDatosSolapas = registroSolapa ? registroSolapa.filas_datos : '';
+
+    var filaEncabezado = Number(base.fila_encabezado) || 1;
+    var datos = abierto.hoja.getDataRange().getValues();
+    var filasCrudas = Math.max(datos.length - filaEncabezado, 0);
+
+    var lectura = leerFuente(baseId, ventana.ok ? ventana : null);
+    var filasDevueltas = lectura.ok ? lectura.filas_totales : '(' + lectura.motivo + ')';
+
+    var clave = resolverClave_(baseId, nombreHoja);
+    var valoresDistintos = '';
+    var notas = '';
+    if (clave.ok) {
+      var idxClave = columnaLetraAIndice_(clave.columna);
+      var vistos = {};
+      datos.slice(filaEncabezado).forEach(function (fila) {
+        var valor = fila[idxClave];
+        if (valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === '')) return;
+        vistos[String(valor).trim()] = true;
+      });
+      valoresDistintos = Object.keys(vistos).length;
+    } else {
+      notas = 'sin clave/campana resoluble en MAPEO (' + clave.motivo + ') — no hay colapso posible por ese mecanismo';
+    }
+
+    hoja.getRange(filaEscritura, 1, 1, headers.length)
+      .setValues([[baseId, nombreHoja, filasDatosSolapas, filasCrudas, filasDevueltas, valoresDistintos, notas]]);
+    filaEscritura++;
+  });
+
+  return { ok: true, filas: filaEscritura - 2 };
+}
+
+function menuDiagnosticarColapso_() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = diagnosticarColapso_();
+  ui.alert(
+    'Diagnóstico de colapso (Paso 2.9A)',
+    'Volcado en la hoja DIAG_COLAPSO (' + resultado.filas + ' fila(s)). ' +
+      'filas_devueltas debería salir ≈ filas_crudas en todas — el fix de Paso 2.9 ya corrió.',
+    ui.ButtonSet.OK
+  );
+}
