@@ -39,6 +39,7 @@ function onOpen() {
         .addItem('Diagnosticar corte de filas en m2 (Paso 2.8 Parte D)', 'menuDiagnosticarCorteFilasM2_')
         .addItem('Diagnosticar filas sin clave en digital (Paso 2.8 Parte E)', 'menuDiagnosticarFilasSinClaveDigital_')
         .addItem('Diagnosticar colapso del lector (Paso 2.9A)', 'menuDiagnosticarColapso_')
+        .addItem('Verificar nombres de solapa fuente (Paso 2.9C.2)', 'menuVerificarNombresSolapasFuente_')
     )
     .addSubMenu(
       ui.createMenu('Consolidaciones (decisión + escritura)')

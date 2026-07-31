@@ -609,6 +609,69 @@ function diagnosticarColapso_() {
   return { ok: true, filas: filaEscritura - 2 };
 }
 
+/**
+ * Paso 2.9C.2 — SOLAPAS tiene todas sus filas con `origen=manual`: los nombres se
+ * tipearon a mano, y un tipeo no se nota hasta que `abrirHoja` falla en plena
+ * corrida. Caso puntual que motivó esto: SOLAPAS registra la solapa default de
+ * `rdv` como "RVD JM-CM - ES" (con RVD), mientras la misma planilla tiene
+ * "RDV CONJUNTO", "RDV_otros_ministros", "RDV_JM_CM_ES" (con RDV) — hay que
+ * confirmar contra el archivo vivo, no asumir por parecido.
+ * Solo lectura: para cada (base_id, solapa) con `uso=fuente`, abre el archivo y
+ * confirma que ese nombre exacto existe entre sus tabs. No corrige nada — decide
+ * el usuario cuál es la grafía correcta.
+ */
+function verificarNombresSolapasFuente_() {
+  var solapas = leerSolapas();
+  var bases = leerBases();
+  var libroCache = {};
+  var problemas = [];
+  var verificadas = 0;
+
+  Object.keys(solapas).forEach(function (baseId) {
+    var base = bases[baseId];
+    if (!base || !base.activo || !base.sheet_id) return;
+
+    Object.keys(solapas[baseId]).forEach(function (nombreSolapa) {
+      var fila = solapas[baseId][nombreSolapa];
+      if (fila.uso !== 'fuente') return;
+      verificadas++;
+
+      if (!Object.prototype.hasOwnProperty.call(libroCache, baseId)) {
+        try {
+          libroCache[baseId] = SpreadsheetApp.openById(base.sheet_id);
+        } catch (e) {
+          libroCache[baseId] = null;
+        }
+      }
+      var libro = libroCache[baseId];
+      if (!libro) {
+        problemas.push({ base_id: baseId, solapa: nombreSolapa, motivo: 'no se pudo abrir el archivo' });
+        return;
+      }
+      if (!libro.getSheetByName(nombreSolapa)) {
+        problemas.push({ base_id: baseId, solapa: nombreSolapa, motivo: 'no existe ese tab en el archivo vivo' });
+      }
+    });
+  });
+
+  return { ok: true, verificadas: verificadas, problemas: problemas };
+}
+
+function menuVerificarNombresSolapasFuente_() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = verificarNombresSolapasFuente_();
+
+  var lineas = ['Solapas uso=fuente verificadas: ' + resultado.verificadas];
+  if (!resultado.problemas.length) {
+    lineas.push('', '✅ Todas existen tal cual están registradas en SOLAPAS (incluida la grafía RVD/RDV).');
+  } else {
+    lineas.push('', '⚠ No coinciden con el archivo vivo — corregir a mano en SOLAPAS:');
+    resultado.problemas.forEach(function (p) { lineas.push('  · ' + p.base_id + '/' + p.solapa + ' — ' + p.motivo); });
+  }
+
+  ui.alert('Verificación de nombres de solapa (Paso 2.9C.2)', lineas.join('\n'), ui.ButtonSet.OK);
+}
+
 function menuDiagnosticarColapso_() {
   var ui = SpreadsheetApp.getUi();
   var resultado = diagnosticarColapso_();
