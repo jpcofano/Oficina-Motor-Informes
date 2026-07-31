@@ -34,6 +34,7 @@ function onOpen() {
         .addItem('Detectar columnas de fecha', 'menuDetectarColumnasFecha_')
         .addItem('Validar MAPEO (duplicados)', 'menuValidarMapeo_')
         .addItem('Comparar resúmenes de looker (Parte G)', 'menuCompararResumenesLooker_')
+        .addItem('Auditar digital/Digital/alcance (Parte B)', 'menuAuditarAlcanceDigital_')
     )
     .addSubMenu(
       ui.createMenu('Mantenimiento')

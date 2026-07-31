@@ -248,3 +248,83 @@ function menuAuditarSolapas_() {
 
   ui.alert('Auditoría de solapas (AUD-1)', lineas.join('\n'), ui.ButtonSet.OK);
 }
+
+/**
+ * Paso 2.7 Parte B — auditoría de solo lectura: `digital/Digital/alcance` (columna E)
+ * tipó `mixto` en DIAG_BASES, con ejemplo de fecha ("Thu Aug 29 2024..."). Las otras
+ * dos filas de MAPEO que apuntan a la columna E (`dig_fecha_inicio`, `fecha_periodo`)
+ * son coherentes entre sí — `alcance` no. Ya existe `digital/Alcance/alc_alcance`
+ * mapeado aparte, así que la fila `digital/Digital/alcance` probablemente sobra.
+ * NO corrige nada: vuelca el encabezado real de la columna y sus vecinas, y una
+ * recomendación — decide el usuario. Ver docs/Prompts/Paso-2.7_destrabar_solapas.md
+ * Parte B.
+ */
+function auditarAlcanceDigital_() {
+  var bases = leerBases();
+  var base = bases.digital;
+  if (!base || !base.sheet_id) {
+    return { ok: false, motivo: 'La base "digital" no está configurada (sin sheet_id).' };
+  }
+
+  var libro;
+  try {
+    libro = SpreadsheetApp.openById(base.sheet_id);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo abrir digital: ' + e.message };
+  }
+
+  var hoja = libro.getSheetByName('Digital');
+  if (!hoja) {
+    return { ok: false, motivo: 'No existe la solapa "Digital" en la base digital.' };
+  }
+
+  var ultimaCol = hoja.getLastColumn();
+  var headers = ultimaCol ? hoja.getRange(1, 1, 1, ultimaCol).getValues()[0] : [];
+
+  var columnasVecinas = ['D', 'E', 'F'].map(function (letra) {
+    var idx = columnaLetraAIndice_(letra);
+    return { columna: letra, encabezado: headers[idx] !== undefined ? String(headers[idx]) : '' };
+  });
+
+  var mapa = leerMapeo();
+  var filaAlcance = mapa.digital && mapa.digital['Digital'] && mapa.digital['Digital'].alcance;
+  var yaExisteAlcAlcance = !!(mapa.digital && mapa.digital['Alcance'] && mapa.digital['Alcance'].alc_alcance);
+
+  var recomendacion = yaExisteAlcAlcance
+    ? '"digital/Alcance/alc_alcance" ya cubre el alcance de digital — la fila "digital/Digital/alcance" ' +
+      '(col ' + (filaAlcance ? filaAlcance.columna : '?') + ') probablemente sobra. Confirmá contra el ' +
+      'encabezado real de la columna antes de eliminarla.'
+    : 'No hay otra fila de MAPEO cubriendo el alcance de digital — confirmá el encabezado real antes de ' +
+      'decidir si se corrige la columna o se elimina la fila.';
+
+  return {
+    ok: true,
+    filaMapeoExiste: !!filaAlcance,
+    filaMapeoColumna: filaAlcance ? filaAlcance.columna : '',
+    columnasVecinas: columnasVecinas,
+    yaExisteAlcAlcance: yaExisteAlcAlcance,
+    recomendacion: recomendacion
+  };
+}
+
+function menuAuditarAlcanceDigital_() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = auditarAlcanceDigital_();
+
+  if (!resultado.ok) {
+    ui.alert('No se pudo auditar', resultado.motivo, ui.ButtonSet.OK);
+    return;
+  }
+
+  var lineas = [
+    'MAPEO tiene digital/Digital/alcance → columna ' + (resultado.filaMapeoColumna || '(no encontrada)'),
+    '',
+    'Encabezado real de las columnas vecinas en digital/Digital:'
+  ];
+  resultado.columnasVecinas.forEach(function (c) {
+    lineas.push('  ' + c.columna + ': "' + c.encabezado + '"');
+  });
+  lineas.push('', resultado.recomendacion, '', 'No se corrigió nada — esto es un reporte, decide el usuario.');
+
+  ui.alert('Auditoría: digital/Digital/alcance (Paso 2.7 Parte B)', lineas.join('\n'), ui.ButtonSet.OK);
+}
