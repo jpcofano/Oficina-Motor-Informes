@@ -330,7 +330,7 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   (Partes B-E, G: correcciones a `SOLAPAS`, hoja `VALIDACION`, corte vertical a Orden
   Público) sigue sin ejecutar.
 
-## Paso 2.10 Parte B — `filas_datos` deja de contar relleno de fórmula (2026-07-31) — commit `<pendiente>`
+## Paso 2.10 Parte B — `filas_datos` deja de contar relleno de fórmula (2026-07-31) — commit `7dcc564`
 - **Qué pedía el prompt:** `docs/Prompts/Paso-2.10_PartesBC_verificado.md` Parte B —
   `getLastRow()-1` cuenta como dato cualquier fila con fórmula que evalúe a `""`
   (`m2/M2 periodo DIRECTA` devolvía 29.533 en vez de 18-20 reales). Cambiar `filas_datos`
@@ -350,3 +350,39 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
 - **Pendientes/decisiones:** Partes C (bajar seis solapas `periodo` a `referencia`) y D
   (R-10 `normalizar()` + hoja `VALIDACION`) de `Paso-2.10_PartesBC_verificado.md` y
   `Paso-2.10_ParteD_con_R10.md` siguen sin ejecutar — van en pasos separados.
+
+## Paso 2.10 Parte C — seis solapas "periodo" bajan a `referencia`, `m2` sin fuente (2026-07-31) — commit `<pendiente>`
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.10_PartesBC_verificado.md` Parte C —
+  no son cuatro solapas "periodo" sino **seis** (dos más en `digital`, con el período en
+  la fila 2 en vez de la 1); bajarlas todas a `uso=referencia`. Sacar `M2 periodo
+  DIRECTA`/`DIGITAL` de `SOLAPAS_M2_INVERTIDAS_` (no es clasificación invertida, es un
+  `GROUP BY` sobre `M2 Directa` con período tipeado a mano). Declarar `digital/Directa
+  Mail`=`fuente` (ya lo era) y `m2/Directa mail`=`derivada` (espejo, 2.106 vs 2.107
+  filas). No tocar `MAPEO` de `m2`: queda sin fuente, y el fallo tiene que ser visible
+  (`«FALTA:token»`), no un número plausible.
+- **Qué se hizo:** `Instalar.gs` — `SEED_SOLAPAS_`: las seis solapas periodo
+  (`m2/M2 periodo DIRECTA`, `m2/M2 periodo DIGITAL`, `m2/Mail per`, `digital/Mail per`,
+  `digital/Buscador por periodo digital`, `digital/Buscador por periodo directa`) pasan
+  a `referencia` con nota compartida (`NOTA_PERIODO_MANUAL_`); `digital/Buscador por
+  periodo *` salieron de `ignorar` (estaban mal clasificadas: no son un pivot/backup, sí
+  documentan un recorte real). `m2/Directa mail` → `derivada`. `SOLAPAS_M2_INVERTIDAS_`
+  perdió las dos `M2 periodo *` (si seguían, `reclasificarSolapasM2Invertidas_()` las
+  volvía a pisar a `revisar` en cada instalación). `SEED_BASES_.m2.hoja_default` → `''`
+  (antes apuntaba a una solapa ahora `referencia`; en `modo_periodo=snapshot` `leerFuente`
+  no pasa por `buscarMapeo()`, así que sin este cambio seguiría leyendo esa vista entera
+  sin avisar). `Fuentes.gs` (`abrirHoja`): mensaje propio cuando `hoja_default` está
+  vacío, para no confundirlo con "no existe una hoja llamada ''". `Fechas.gs`
+  (`diagnosticarBases`) y `Auditoria.gs` (`auditarSolapas`): un `hoja_default` vacío ya
+  no se reporta como referencia rota en esos dos diagnósticos.
+- **Prueba:** el usuario corrió "Probar lectura por ventana" contra la planilla en vivo
+  antes de aplicar `SEED_BASES_`/`SEED_SOLAPAS_` (`Cargar config inicial` +
+  `Sembrar clasificación inicial de solapas` corren aparte de `Instalar / reparar
+  hojas`, que no los toca): `rdv`/`digital`/`looker` salieron ✅ con los números
+  esperados, `m2` todavía leía `M2 periodo DIRECTA` (29.531 filas, snapshot) porque el
+  cambio de `hoja_default` no se había sembrado todavía. **Falta la vuelta de prueba
+  después de sembrar** — pendiente de confirmación del usuario.
+- **Pendientes/decisiones:** confirmar que, tras `Cargar config inicial` +
+  `Sembrar clasificación inicial de solapas`, `m2` sale ⚠ "sin hoja_default" en
+  "Probar lectura por ventana" y las 9 solapas en `revisar` bajan a 3 en `SOLAPAS`.
+  Parte D (`Paso-2.10_ParteD_con_R10.md`: `normalizar_()` + hoja `VALIDACION`) sigue sin
+  ejecutar.

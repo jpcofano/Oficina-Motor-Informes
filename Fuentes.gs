@@ -80,6 +80,12 @@ function abrirHoja(baseId, nombreHoja) {
   if (!resultado.ok) return resultado;
 
   var nombre = nombreHoja || resultado.base.hoja_default;
+  // Paso 2.10 Parte C: hoja_default vacío es una decisión explícita (caso m2 — ver
+  // SEED_BASES_), no un dato faltante por descuido. Mensaje propio para no confundirlo
+  // con "no existe una hoja llamada ''", que no dice nada de por qué.
+  if (!nombre) {
+    return { ok: false, motivo: 'La base "' + baseId + '" no tiene hoja_default (sin fuente activa) y no se pasó una hoja explícita' };
+  }
   var hoja = resultado.libro.getSheetByName(nombre);
   if (!hoja) {
     return { ok: false, motivo: 'La hoja "' + nombre + '" no existe en la base "' + baseId + '"' };

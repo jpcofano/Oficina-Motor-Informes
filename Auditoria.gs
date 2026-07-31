@@ -94,7 +94,9 @@ function auditarSolapas() {
       });
     });
 
-    if (!hojaDefaultExiste) {
+    // hoja_default vacío (Paso 2.10 Parte C, caso m2) es "sin fuente activa" a
+    // propósito, no una referencia rota — no se reporta acá como ⚠.
+    if (base.hoja_default && !hojaDefaultExiste) {
       inventario.push({
         base_id: baseId,
         sheet_id_vivo: base.sheet_id,

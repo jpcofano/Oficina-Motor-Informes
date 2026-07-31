@@ -450,11 +450,17 @@ function corregirNotaControlAnclaje_(hoja) {
  * / `M2 digital` (26 / 67 filas, notas "acumulados") en `uso=fuente`, y `M2 periodo
  * DIRECTA` / `M2 periodo DIGITAL` (29.533 / 2.413 filas) en `uso=derivada`. Una vista
  * filtrada no puede tener mil veces más filas que su origen — misma inversión que
- * tuvo `looker` (S-01). No se decide sola acá: las cuatro pasan a `uso=revisar` con
- * la nota de sospecha, pendiente de que alguien confirme contra la base viva (¿tiene
- * fórmula "M2 periodo DIRECTA"? ¿de dónde lee?). Idempotente.
+ * tuvo `looker` (S-01). No se decide sola acá: pasan a `uso=revisar` con la nota de
+ * sospecha, pendiente de que alguien confirme contra la base viva. Idempotente.
+ *
+ * Paso 2.10 Parte C — `M2 periodo DIRECTA`/`DIGITAL` SALIERON de esta lista: no era
+ * una inversión, es un `GROUP BY id_cuenta` sobre `M2 Directa` con período tipeado a
+ * mano (verificado: los 18 `ID` de la vista son exactamente los 18 `ID cuentas`
+ * distintos de `M2 Directa`). `SEED_SOLAPAS_` ya las clasifica `referencia` junto con
+ * las otras cuatro solapas "periodo" — si siguieran acá, esta función las volvería a
+ * `revisar` en cada instalación y pisaría esa clasificación.
  */
-var SOLAPAS_M2_INVERTIDAS_ = ['M2 Directa', 'M2 digital', 'M2 periodo DIRECTA', 'M2 periodo DIGITAL'];
+var SOLAPAS_M2_INVERTIDAS_ = ['M2 Directa', 'M2 digital'];
 var NOTA_M2_INVERTIDA_ = 'clasificación invertida, pendiente de confirmar (Paso 2.9 Parte C.5)';
 
 function reclasificarSolapasM2Invertidas_(hoja) {
@@ -557,7 +563,16 @@ var SEED_BASES_ = [
   { base_id: 'rdv', nombre: 'RDV JM CM ES + funcionarios', sheet_id: '1ZpHO6Ru1uY2r9WfBF_yFtu5z7ip7F3Q6VOoRJN5vLAo', hoja_default: 'RVD JM-CM - ES', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Encuentros' },
   { base_id: 'digital', nombre: 'Seguimiento Digital', sheet_id: '1LadILzFpyCrZRapxgDOFOldSoRawjKkWMaFci_ilhPY', hoja_default: 'Digital', fila_encabezado: 1, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Campaña por canal. Paso 2.3: snapshot — sus solapas usan fecha de inicio de campaña (lead 3-7 días), el recorte por período lo hace el agregador vía link campaña↔encuentro, no ventana de fecha cruda.' },
   { base_id: 'looker', nombre: 'Base Looker', sheet_id: '1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ', hoja_default: 'resumen_metricas_dinamico', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Consolidado. Fuente = resumen_metricas_dinamico (S-01, Paso 2.9 Parte C, 31/07): QUERY() viva sobre Cuentas; resumen_metricas es un pegado que devolvió 899 de 903 filas sin fecha — DOC-3 Parte A cerrada.' },
-  { base_id: 'm2', nombre: 'M2 Reporte para Fede 2026', sheet_id: '1_GS01-TXrhez0GlpFf4bUjWLNQPfaW9BOFFXz0hZNvY', hoja_default: 'M2 periodo DIRECTA', fila_encabezado: 3, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Directa + Digital en hojas separadas' },
+  // Paso 2.10 Parte C: hoja_default vacío a propósito — 'M2 periodo DIRECTA' pasó a
+  // uso=referencia (banner de período tipeado a mano, no una fuente). Un default que
+  // apunta a una solapa no-fuente hacía que los diagnósticos genéricos (probarConexionBases,
+  // probarLecturaPeriodo) "leyeran" igual esa vista sin avisar — vacío falla ⚠ y visible
+  // en vez de silencioso. m2 queda sin fuente activa para m2_* (ver SOLAPAS_M2_INVERTIDAS_
+  // más arriba y Paso-2.10_PartesBC_verificado.md §2.3): el catálogo 'Cuentas M2' se
+  // sobrescribe cada semana sin historia, así que ni siquiera apuntando ahí resolvería
+  // el período del informe. Los tokens m2_* de MARCADORES usan overrides de solapa, no
+  // este default, y van a emitir «FALTA:token» hasta que se decida una fuente real.
+  { base_id: 'm2', nombre: 'M2 Reporte para Fede 2026', sheet_id: '1_GS01-TXrhez0GlpFf4bUjWLNQPfaW9BOFFXz0hZNvY', hoja_default: '', fila_encabezado: 3, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Directa + Digital en hojas separadas. Sin hoja_default (Paso 2.10 Parte C): m2 sin fuente activa para m2_*.' },
   { base_id: 'miba', nombre: 'Integración MiBA', sheet_id: '', hoja_default: '', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'no', notas: 'Parqueada' }
 ];
 
@@ -802,8 +817,10 @@ SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAM
  *
  * ⚠ Consecuencia real, no cosmética: sembrar esto deja `M2 periodo DIRECTA` /
  * `M2 periodo DIGITAL` (banner de período en fila 1 — viola el criterio de fuente
- * cruda) en `uso=revisar` aunque HOY están mapeadas y en uso. `buscarMapeo()` va a
- * fallar para esos campos hasta que alguien reclasifique esas filas a mano.
+ * cruda) en `uso=referencia` (Paso 2.10 Parte C — antes decía `revisar`, ya resuelto:
+ * no es una clasificación pendiente, es un período tipeado a mano y no reproducible)
+ * aunque siguen mapeadas en `MAPEO`. `buscarMapeo()` va a fallar para esos campos con
+ * `«FALTA:token»` — visible a propósito, hasta que se decida una fuente real para `m2`.
  * (La ambigüedad de las dos hojas de `looker` que tenía esta misma nota se resolvió
  * en Paso 2.8 Parte C — ver `filaSolapa_('looker', ...)` más abajo, ya con
  * `uso=fuente`/`derivada`.)
@@ -826,6 +843,9 @@ function filaSolapa_(baseId, solapa, uso, notas, opciones) {
 function filasSolapa_(baseId, solapas, uso, notas) {
   return solapas.map(function (solapa) { return filaSolapa_(baseId, solapa, uso, notas); });
 }
+
+// Paso 2.10 Parte C — nota compartida por las seis solapas "periodo" (ver más abajo).
+var NOTA_PERIODO_MANUAL_ = 'vista con período manual en celda editable — no es fuente; ver VALIDACION_2026-07-31 §1.2';
 
 var SEED_SOLAPAS_ = [].concat(
   // rdv — "RDV JM CM ES + funcionarios"
@@ -852,7 +872,6 @@ var SEED_SOLAPAS_ = [].concat(
   [filaSolapa_('digital', 'Seguimiento digital', 'fuente', 'maestra de la unión del Paso 2.4')],
   [filaSolapa_('digital', 'Alcance', 'fuente', 'usada por Union.gs')],
   [filaSolapa_('digital', 'RDV', 'ignorar', '⚠ duplica la base rdv — si se lee, hay doble conteo')],
-  filasSolapa_('digital', ['Buscador por periodo digital', 'Buscador por periodo directa'], 'ignorar', 'período tipeado a mano: violan el criterio de fuente cruda'),
   filasSolapa_('digital', ['Digital 2026 acumulado', 'm2 digital'], 'derivada', 'acumulados'),
   // Paso 2.9 Parte C.4: NO es conjunto de control — es texto pegado (una foto a mano
   // del link Funcionario/Barrio/Fecha, no datos vivos ni una fórmula). Ver
@@ -863,7 +882,19 @@ var SEED_SOLAPAS_ = [].concat(
     { filas_datos: 37 })],
   filasSolapa_('digital', ['Metricas informe', 'INFORME'], 'referencia', 'el informe manual actual'),
   filasSolapa_('digital', ['Nomalización de barrios', 'Barrio Hab', 'Limpia Fun'], 'referencia', 'catálogos de normalización — útiles para el scoring del anclaje'),
-  filasSolapa_('digital', ['Cuentas', 'Filter unificado', 'EDV', 'CAMPAÑAS_DESGLOCE_DIGITAL', 'Mail per'], 'revisar', 'sin decidir'),
+  filasSolapa_('digital', ['Cuentas', 'Filter unificado', 'EDV', 'CAMPAÑAS_DESGLOCE_DIGITAL'], 'revisar', 'sin decidir'),
+
+  // Paso 2.10 Parte C — seis solapas "periodo" entre m2 y digital: el recorte de
+  // fechas vive en dos celdas editables (fila 1, o fila 2 en las dos de más abajo),
+  // no en una fórmula ni un filtro reproducible — mismo defecto que ya tenía
+  // 'RDV JM 2 VECES'. Medido el 31/07: cinco ventanas de fecha DISTINTAS entre las
+  // seis, ninguna la del período del informe (24-30/07). 'referencia', no 'ignorar':
+  // a diferencia de un backup o duplicado, sí documentan un recorte real — solo que
+  // no es el que hace falta y no se puede reproducir sin retipear las celdas a mano.
+  // No son destino de MAPEO. m2/Mail per y digital/Mail per son hojas DISTINTAS con
+  // el mismo nombre (una por base) — la clave compuesta (base_id, solapa) las separa.
+  filasSolapa_('m2', ['M2 periodo DIRECTA', 'M2 periodo DIGITAL', 'Mail per'], 'referencia', NOTA_PERIODO_MANUAL_),
+  filasSolapa_('digital', ['Mail per', 'Buscador por periodo digital', 'Buscador por periodo directa'], 'referencia', NOTA_PERIODO_MANUAL_),
 
   // looker — "Base Looker"
   [
@@ -884,14 +915,18 @@ var SEED_SOLAPAS_ = [].concat(
     filaSolapa_('m2', 'Cuentas M2', 'fuente', '353 filas, encabezado fila 1 — dimensión de campañas M2', { fila_encabezado: 1, filas_datos: 353 }),
     filaSolapa_('m2', 'Cuentas', 'revisar', '3453 filas, mismo encabezado — parece el universo completo, no solo M2', { fila_encabezado: 1, filas_datos: 3453 })
   ],
-  // Paso 2.9 Parte C.5: 'M2 periodo DIRECTA'/'DIGITAL' (29.533/2.413 filas) y 'M2
-  // Directa'/'M2 digital' (26/67 filas, "acumulados") tienen clasificación sospechada
-  // invertida — una vista filtrada no puede tener mil veces más filas que su origen.
-  // Las cuatro quedan 'revisar' hasta confirmar contra la base viva (misma duda que
-  // resolvió S-01 para looker). reclasificarSolapasM2Invertidas_() (abajo) fuerza esto
-  // también en una instalación ya existente donde alguien las haya puesto 'fuente' a mano.
-  filasSolapa_('m2', ['M2 periodo DIGITAL', 'M2 periodo DIRECTA', 'M2 Directa', 'M2 digital'], 'revisar', 'clasificación invertida, pendiente de confirmar (Paso 2.9 Parte C.5)'),
-  filasSolapa_('m2', ['Directa mail', 'Seguimiento digital', 'Alcance', 'CAMPAÑAS_DESGLOCE_DIGITAL', 'Mail per'], 'revisar', '⚠ mismos nombres que solapas de digital — hay que saber cuál manda antes de mapear ninguna'),
+  // Paso 2.9 Parte C.5: 'M2 Directa'/'M2 digital' (26/67 filas, "acumulados") tienen
+  // clasificación sospechada invertida frente a lo que se leía como su detalle.
+  // Quedan 'revisar' hasta confirmar contra la base viva (misma duda que resolvió S-01
+  // para looker). 'M2 periodo DIRECTA'/'DIGITAL' salieron de este grupo en el Paso 2.10
+  // Parte C: no son un "detalle invertido", son las seis solapas "periodo" de más
+  // arriba — reclasificarSolapasM2Invertidas_() (abajo) ya no las toca.
+  filasSolapa_('m2', ['M2 Directa', 'M2 digital'], 'revisar', 'clasificación invertida, pendiente de confirmar (Paso 2.9 Parte C.5)'),
+  filasSolapa_('m2', ['Seguimiento digital', 'Alcance', 'CAMPAÑAS_DESGLOCE_DIGITAL'], 'revisar', '⚠ mismos nombres que solapas de digital — hay que saber cuál manda antes de mapear ninguna'),
+  // Paso 2.10 Parte C: espejo de digital/Directa Mail (2.106 vs 2.107 filas, mismas
+  // métricas) — declarada 'derivada' para que no queden las dos vivas dando números
+  // casi iguales. MAPEO sigue apuntando a digital/Directa Mail, no se toca acá.
+  [filaSolapa_('m2', 'Directa mail', 'derivada', 'espejo de digital/Directa Mail — ver Paso 2.10 Parte C')],
   filasSolapa_('m2', ['Digital acumulado'], 'derivada', 'acumulados')
 );
 

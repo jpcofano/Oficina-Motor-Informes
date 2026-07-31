@@ -553,7 +553,9 @@ function diagnosticarBases() {
 
     // Referencias de config que no corresponden a ninguna solapa real del archivo.
     // No cuentan en el control de totales de abajo, que es sobre solapas reales.
-    if (nombresSolapas.indexOf(base.hoja_default) === -1) {
+    // hoja_default vacío (Paso 2.10 Parte C, caso m2) es una decisión explícita —
+    // "sin fuente activa", no una referencia rota — no se reporta acá como ⚠.
+    if (base.hoja_default && nombresSolapas.indexOf(base.hoja_default) === -1) {
       filasSolapas.push({
         base_id: baseId,
         solapa: base.hoja_default,

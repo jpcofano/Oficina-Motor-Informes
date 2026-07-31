@@ -4,34 +4,42 @@
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 > Los handoffs de `docs/Sesiones/` son de claude.ai — se leen, no se tocan.
 
-**Última actualización:** 2026-07-31 · último commit al escribirlo: `5b72cf4`
+**Última actualización:** 2026-07-31 · último commit al escribirlo: `7dcc564`
 
 ## Dónde estamos
 
-`Paso 2.10` en curso, ejecutándose parte por parte sobre `docs/Prompts/Paso-2.10_PartesBC_verificado.md`
-(reemplaza a las Partes B/C del prompt original `Paso-2.10_anclar_a_numeros_verificados.md`)
-y `docs/Prompts/Paso-2.10_ParteD_con_R10.md`. **Parte B hecha y probada contra la planilla
-en vivo:** `SOLAPAS.filas_datos` dejó de contar relleno de fórmula (contaba
-`getLastRow()-1`, que en `m2/M2 periodo DIRECTA` daba 29.533 en vez de ~18-20 reales);
-ahora cuenta filas con alguna celda no vacía tras `trim()` sobre todo `getDataRange()`.
-`filas_crudas` (columna nueva) conserva el valor viejo al lado, para que la diferencia
-entre las dos siga siendo diagnóstico visible. Código en `Instalar.gs`/`Solapas.gs`/
-`Config.gs`, ver `docs/BITACORA.md` "Paso 2.10 Parte B".
+`Paso 2.10` en curso, sobre `docs/Prompts/Paso-2.10_PartesBC_verificado.md` (reemplaza a
+las Partes B/C del prompt original) y `docs/Prompts/Paso-2.10_ParteD_con_R10.md`.
+**Partes B y C con código hecho:**
+
+- **B** (probada contra la planilla en vivo): `SOLAPAS.filas_datos` dejó de contar
+  relleno de fórmula; cuenta filas con alguna celda no vacía tras `trim()` sobre todo
+  `getDataRange()`. `filas_crudas` (columna nueva) conserva el valor viejo al lado.
+- **C** (código hecho, **falta la vuelta de prueba**): las seis solapas "periodo" pasan
+  a `uso=referencia` en `SEED_SOLAPAS_`; `m2/Directa mail` → `derivada` (espejo de
+  `digital/Directa Mail`); `SOLAPAS_M2_INVERTIDAS_` ya no incluye `M2 periodo *`;
+  `SEED_BASES_.m2.hoja_default` → `''` (antes apuntaba a una solapa que ahora es
+  `referencia` y, en `modo_periodo=snapshot`, `leerFuente` no pasa por `buscarMapeo()` —
+  sin este cambio seguiría leyendo esa vista entera sin avisar). `MAPEO` de `m2` no se
+  tocó a propósito.
+
+Ver `docs/BITACORA.md` "Paso 2.10 Parte B" y "Paso 2.10 Parte C".
+
+**Pendiente inmediato:** el usuario corrió "Probar lectura por ventana" antes de
+sembrar los cambios de la Parte C (`SEED_BASES_`/`SEED_SOLAPAS_` no se aplican solos con
+"Instalar / reparar hojas" — hacen falta, aparte, "Cargar config inicial" y "Sembrar
+clasificación inicial de solapas"). `rdv`/`digital`/`looker` salieron ✅; `m2` todavía
+leía `M2 periodo DIRECTA` (29.531 filas) porque el `hoja_default` vacío no se había
+sembrado. Falta la vuelta de prueba después de sembrar, y confirmar que las 9 solapas en
+`revisar` bajan a 3.
 
 ## Qué sigue
 
-Orden sugerido por el prompt: B → C → D → E → F → G → A. B ✅. F (reglas de negocio)
-ya se había hecho antes, por separado, como R-05 a R-10 (`docs/REGLAS_NEGOCIO.md`).
-Quedan:
+Orden del prompt: B → C → D → E → F → G → A. B ✅, C con código hecho (confirmar
+prueba). F ya se había hecho antes, por separado, como R-05 a R-10
+(`docs/REGLAS_NEGOCIO.md`). Quedan:
 
-1. **Parte C** (`Paso-2.10_PartesBC_verificado.md` §"Parte C"): bajar **seis** solapas
-   `periodo` a `uso=referencia` en `SEED_SOLAPAS_` (no cuatro — hay dos más en `digital`:
-   `Buscador por periodo digital` y `Buscador por periodo directa`, con el período en la
-   fila 2 en vez de la fila 1). Sacar `M2 periodo DIRECTA`/`M2 periodo DIGITAL` de
-   `SOLAPAS_M2_INVERTIDAS_` o cambiar su destino a `referencia`. Declarar
-   `digital/Directa Mail` como `fuente` y `m2/Directa mail` como `derivada` (son espejo).
-   **No reapuntar `MAPEO` de `m2`** — queda `sin_fuente`, con nota, y `BASES.m2.hoja_default`
-   se vacía o la base pasa a `activo=no` con nota (para que el fallo sea visible).
+1. **Confirmar la Parte C** contra la planilla en vivo (ver "Pendiente inmediato").
 2. **`docs/Prompts/Paso-2.10_ParteD_con_R10.md`**, en dos partes, en orden — corre
    *después* de C:
    - **R-10** primero: `normalizar_()` en `Fuentes.gs` (colapsa espacios/saltos de línea,
@@ -61,7 +69,5 @@ Quedan:
 
 ## Trabado
 
-Nada bloqueando. Antes de la Parte C conviene correr "Inventariar solapas" una vez más
-sobre la planilla en vivo con el `filas_datos` ya corregido, para tener los números frescos
-de la tabla de aceptación de la Parte B (`m2`/`rdv`/`digital`/`looker`) a mano si hace
-falta compararlos.
+Nada bloqueando. La Parte C quedó commiteada con el código hecho pero sin la vuelta de
+prueba confirmada — es lo primero para retomar la próxima sesión.
