@@ -123,6 +123,7 @@ function leerSolapas() {
     if (!registro[baseId]) registro[baseId] = {};
     registro[baseId][solapa] = {
       uso: fila[idx.uso],
+      origen: fila[idx.origen],
       fila_encabezado: fila[idx.fila_encabezado],
       firma_encabezado: fila[idx.firma_encabezado],
       filas_datos: fila[idx.filas_datos],

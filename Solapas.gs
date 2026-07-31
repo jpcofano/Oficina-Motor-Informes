@@ -1,16 +1,25 @@
 /**
  * Solapas.gs — Paso 2.6 Parte C: `inventariarSolapas()`.
- * Ver docs/Prompts/Paso-2.6_registro_solapas.md.
+ * Ver docs/Prompts/Paso-2.6_registro_solapas.md y docs/Prompts/Paso-2.7_destrabar_solapas.md.
  *
  * Recorre las bases activas y hace upsert en la hoja SOLAPAS por (base_id, solapa),
  * misma lógica que el resto del motor: descubre, no cablea.
  *   - solapa que no estaba registrada  -> se agrega con uso='revisar' (el default
- *     seguro de todo lo nuevo) y notas='detectada <fecha>'.
- *   - solapa que ya estaba registrada  -> se actualiza SOLO filas_datos. El `uso`
- *     cargado por una persona no se pisa nunca acá (para eso está sembrarClasifi-
- *     cacionSolapas_/SEED_SOLAPAS_ en Instalar.gs, que es una siembra explícita).
+ *     seguro de todo lo nuevo), origen='auto' y notas='detectada <fecha>'.
+ *   - solapa que ya estaba registrada  -> se actualiza SOLO filas_datos. NO toca
+ *     `uso` ni `origen`, pase lo que pase (Paso 2.7 Parte A regla 3) — para pisar
+ *     una clasificación hace falta `sembrarClasificacionSolapas()` (Instalar.gs),
+ *     que sí distingue `origen` y es una siembra explícita y separada.
  *   - solapa registrada que ya no aparece en el archivo -> no se borra: se marca
  *     notas='NO ENCONTRADA <fecha>' y sale ⚠ en el reporte.
+ *
+ * `origen` (Paso 2.7 Parte A) distingue quién escribió `uso` por última vez:
+ * 'auto' (este inventario) / 'seed' (la siembra propuesta) / 'manual' (una persona
+ * lo tipeó en la hoja). Es la única forma de que la siembra sepa qué puede pisar sin
+ * depender del texto libre de `notas`. Asimetría documentada a propósito: 'auto' y
+ * 'seed' se pisan en una re-siembra; 'manual' nunca — quien quiera blindar una fila,
+ * escribe `manual` a mano en esa columna.
+ *
  * Expone inventariarSolapas() y el menú "Inventariar solapas".
  */
 
@@ -57,13 +66,14 @@ function inventariarSolapas() {
           base_id: baseId,
           solapa: nombre,
           uso: 'revisar',
+          origen: 'auto',
           fila_encabezado: '',
           firma_encabezado: '',
           filas_datos: filasDatos,
           notas: 'detectada ' + fecha
         });
       } else {
-        hoja.getRange(existente.fila, existente.idxFilasDatos + 1).setValue(filasDatos);
+        hoja.getRange(existente.fila, existente.idx.filas_datos + 1).setValue(filasDatos);
         actualizadas++;
       }
     });
@@ -89,7 +99,7 @@ function inventariarSolapas() {
     var existente = existentes[clave];
     noEncontradas.push(clave);
     if (typeof existente.notas === 'string' && existente.notas.indexOf('NO ENCONTRADA') === 0) return; // ya estaba marcada
-    hoja.getRange(existente.fila, existente.idxNotas + 1).setValue('NO ENCONTRADA ' + fecha);
+    hoja.getRange(existente.fila, existente.idx.notas + 1).setValue('NO ENCONTRADA ' + fecha);
   });
 
   return {
@@ -102,9 +112,12 @@ function inventariarSolapas() {
 }
 
 /**
- * Lee las filas actuales de SOLAPAS indexadas por (base_id, solapa), con el
- * número de fila real en la hoja (1-based) y los índices de columna que
- * `inventariarSolapas()` necesita tocar sin reescribir la fila entera.
+ * Lee las filas actuales de SOLAPAS indexadas por (base_id, solapa): número de fila
+ * real en la hoja (1-based), el mapa completo de índices de columna por nombre de
+ * encabezado (`idx`, para que el llamador pueda tocar cualquier columna sin
+ * reescribir la fila entera) y los valores de `uso`/`origen`/`notas`, que son los
+ * que `inventariarSolapas()` y `sembrarClasificacionSolapas()` (Instalar.gs)
+ * necesitan para decidir qué pisar.
  */
 function leerFilasSolapas_(hoja) {
   var datos = hoja.getDataRange().getValues();
@@ -121,8 +134,9 @@ function leerFilasSolapas_(hoja) {
 
     registro[baseId + '||' + solapa] = {
       fila: f + 1,
-      idxFilasDatos: idx.filas_datos,
-      idxNotas: idx.notas,
+      idx: idx,
+      uso: fila[idx.uso],
+      origen: fila[idx.origen],
       notas: fila[idx.notas]
     };
   }

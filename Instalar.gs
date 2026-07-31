@@ -106,11 +106,16 @@ var HOJAS_CONFIG_ = {
   // `buscarMapeo()` la deje leer (Config.gs); `fila_encabezado` vive acá (no en BASES)
   // porque es un atributo de la solapa, no de la base — ver docs/Prompts/Paso-2.6_registro_solapas.md
   // Parte B. `firma_encabezado` queda reservada, sin implementar todavía (Parte E).
+  // `origen` (Paso 2.7 Parte A): 'auto' (lo escribió inventariarSolapas) / 'seed'
+  // (lo escribió la siembra propuesta) / 'manual' (lo tipeó una persona) — sin esto,
+  // la siembra no puede distinguir un `uso=revisar` automático de uno elegido a mano,
+  // y termina sin poder pisar nada (ver Solapas.gs y sembrarClasificacionSolapas()
+  // abajo).
   SOLAPAS: {
-    headers: ['base_id', 'solapa', 'uso', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'notas'],
+    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'notas'],
     ejemplos: [
-      ['rdv', 'RVD JM-CM - ES', 'fuente', 1, '', '', 'base de encuentros, hoja_default'],
-      ['rdv', 'RVD JM-CM - ES Back Up', 'ignorar', 1, '', '', 'backup']
+      ['rdv', 'RVD JM-CM - ES', 'fuente', 'seed', 1, '', '', 'base de encuentros, hoja_default'],
+      ['rdv', 'RVD JM-CM - ES Back Up', 'ignorar', 'seed', 1, '', '', 'backup']
     ]
   },
   // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
@@ -154,6 +159,11 @@ var COLUMNAS_DELTA_ = {
   ],
   MAPEO: [
     { nombre: 'solapa', indice: 2 }
+  ],
+  // Paso 2.7 Parte A: `origen` se inserta después de `uso` (columna 3) para una
+  // hoja SOLAPAS instalada con el esquema del Paso 2.6, que todavía no la tenía.
+  SOLAPAS: [
+    { nombre: 'origen', indice: 4 }
   ]
 };
 
@@ -570,11 +580,15 @@ var SEED_SOLAPAS_ = [].concat(
 
 /**
  * Aplica SEED_SOLAPAS_ sobre la hoja SOLAPAS. A diferencia de `inventariarSolapas()`
- * (Solapas.gs), esto SÍ pisa `uso`/`fila_encabezado`/`notas` de las filas que toca:
- * es una siembra explícita, pensada para correr una vez, después de la primera
- * corrida de "Inventariar solapas". Si se corre de nuevo después de que alguien
- * reclasificó algo a mano, esa reclasificación se pierde — por eso vive en su
- * propio ítem de menú, separado de "Cargar config inicial".
+ * (Solapas.gs), esto SÍ pisa `uso`/`fila_encabezado`/`notas` de las filas que toca —
+ * pero NUNCA una fila con `origen=manual` (Paso 2.7 Parte A regla 2): esa es la única
+ * marca que protege una decisión humana de una re-siembra. Toda fila que sí escribe
+ * queda con `origen='seed'` — incluidas las que el inventario había dejado en
+ * `origen='auto'` (ese es justo el caso que destraba esta parte: antes, un
+ * `uso=revisar` puesto por el inventario se confundía con uno puesto a mano y la
+ * siembra no podía pisarlo).
+ * Pensada para correr una vez después de la primera corrida de "Inventariar
+ * solapas"; vive en su propio ítem de menú, separado de "Cargar config inicial".
  */
 function sembrarClasificacionSolapas() {
   var ui = SpreadsheetApp.getUi();
@@ -584,10 +598,47 @@ function sembrarClasificacionSolapas() {
     return;
   }
 
-  var resultado = upsertPorClave_(hoja, ['base_id', 'solapa'], SEED_SOLAPAS_);
+  var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  var existentes = leerFilasSolapas_(hoja);
+
+  var escritas = 0;
+  var actualizadas = 0;
+  var protegidas = [];
+
+  SEED_SOLAPAS_.forEach(function (obj) {
+    var clave = obj.base_id + '||' + obj.solapa;
+    var existente = existentes[clave];
+
+    if (existente && existente.origen === 'manual') {
+      protegidas.push(clave);
+      return; // Parte A regla 2: nunca pisar una fila marcada a mano
+    }
+
+    var filaObj = {
+      base_id: obj.base_id,
+      solapa: obj.solapa,
+      uso: obj.uso,
+      origen: 'seed',
+      fila_encabezado: obj.fila_encabezado,
+      firma_encabezado: obj.firma_encabezado,
+      filas_datos: obj.filas_datos,
+      notas: obj.notas
+    };
+    var valores = headers.map(function (h) { return (h in filaObj) ? filaObj[h] : ''; });
+
+    if (existente) {
+      hoja.getRange(existente.fila, 1, 1, headers.length).setValues([valores]);
+      actualizadas++;
+    } else {
+      hoja.appendRow(valores);
+      escritas++;
+    }
+  });
+
   ui.alert(
     'Clasificación inicial sembrada',
-    'SOLAPAS — nuevas: ' + resultado.escritas + ', actualizadas: ' + resultado.actualizadas +
+    'SOLAPAS — nuevas: ' + escritas + ', actualizadas: ' + actualizadas +
+      (protegidas.length ? '\nProtegidas (origen=manual, no tocadas): ' + protegidas.length : '') +
       '\n\nEs una propuesta, no una decisión: las filas en uso=revisar quedan pendientes de que el usuario decida.',
     ui.ButtonSet.OK
   );
