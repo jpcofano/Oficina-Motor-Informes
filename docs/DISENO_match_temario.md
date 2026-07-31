@@ -327,3 +327,14 @@ dos cosas, ninguna de las cuales pasa por leerla en una corrida normal:
    bis, §6.3 de este doc) usa señales de entidad/similitud/fecha — vale contrastar esas
    señales contra esta clave de tres campos antes de asumir que el diseño actual las
    captura todas.
+
+> ⚠ **INVÁLIDA como conjunto de control (Paso 2.9 Parte C.4, 31/07/2026).** El punto 1
+> de arriba está descartado: `RDV JM 2 VECES` es **texto pegado a mano**, una foto del
+> link `(Funcionario, Barrio, Fecha)` tomada en un momento dado — no datos vivos, no una
+> fórmula que se pueda re-derivar. No sirve para "correr `anclarEncuentros()` y comparar"
+> porque no hay forma de saber contra qué corrida de las bases se armó esa foto, ni de
+> reproducirla. `SOLAPAS` corrigió la nota de esta solapa en consecuencia
+> (`corregirNotaControlAnclaje_()`, Instalar.gs): sigue en `uso=referencia`, ya no dice
+> "usar para validar el scoring/umbral 0.6". El punto 2 (la clave de tres campos) sigue
+> siendo información válida — no depende de que la tabla esté viva, solo de qué columnas
+> tiene.

@@ -226,6 +226,8 @@ function instalar() {
 
   var hojaSolapas = ss.getSheetByName('SOLAPAS');
   var tocadasSolapasLooker = hojaSolapas ? alinearSolapasLookerADinamico_(hojaSolapas) : 0;
+  var corrigioNotaControl = hojaSolapas ? corregirNotaControlAnclaje_(hojaSolapas) : false;
+  var reclasificadasM2 = hojaSolapas ? reclasificarSolapasM2Invertidas_(hojaSolapas) : 0;
 
   var hojaBases = ss.getSheetByName('BASES');
   var alineoHojaDefaultLooker = hojaBases ? alinearBasesHojaDefaultLooker_(hojaBases) : false;
@@ -245,6 +247,8 @@ function instalar() {
     (eliminadasAlcance ? '\nMAPEO: eliminada(s) ' + eliminadasAlcance + ' fila(s) digital/Digital/alcance (col E era Fecha de inicio, Paso 2.8/2.9)' : '') +
     (movidasLooker ? '\nMAPEO: ' + movidasLooker + ' fila(s) de looker alineadas a resumen_metricas_dinamico (S-01, Paso 2.9 Parte C)' : '') +
     (tocadasSolapasLooker ? '\nSOLAPAS: looker resumen_metricas_dinamico=fuente / resumen_metricas=derivada (S-01)' : '') +
+    (corrigioNotaControl ? '\nSOLAPAS: nota de digital/RDV JM 2 VECES corregida (texto pegado, no control — Parte C.4)' : '') +
+    (reclasificadasM2 ? '\nSOLAPAS: ' + reclasificadasM2 + ' solapa(s) de m2 pasadas a revisar (clasificación invertida — Parte C.5)' : '') +
     (alineoHojaDefaultLooker ? '\nBASES: looker.hoja_default = resumen_metricas_dinamico (S-01)' : '') +
     (migroOperacion ? '\nMARCADORES.calculo renombrada a operacion (valores conservados)' : '');
   SpreadsheetApp.getUi().alert('Instalación completa', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
@@ -370,6 +374,55 @@ function alinearBasesHojaDefaultLooker_(hoja) {
     }
   }
   return false;
+}
+
+/**
+ * Paso 2.9 Parte C.4 — `digital/RDV JM 2 VECES` no es un conjunto de control: es
+ * texto pegado a mano (una foto del link Funcionario/Barrio/Fecha en un momento
+ * dado, no datos vivos ni una fórmula). La nota vieja decía "usar para validar el
+ * scoring/umbral 0.6" — corregida para que nadie la use así (ver
+ * docs/DISENO_match_temario.md §9, marcada inválida). No toca `uso` (sigue
+ * `referencia`: no se lee para mapear, pero tampoco se borra el registro).
+ * Idempotente.
+ */
+var NOTA_CONTROL_ANCLAJE_CORREGIDA_ = 'texto pegado — no es fuente ni control. No usar (Paso 2.9 Parte C.4).';
+
+function corregirNotaControlAnclaje_(hoja) {
+  var existentes = leerFilasSolapas_(hoja);
+  var fila = existentes['digital||RDV JM 2 VECES'];
+  if (!fila || fila.notas === NOTA_CONTROL_ANCLAJE_CORREGIDA_) return false;
+
+  hoja.getRange(fila.fila, fila.idx.notas + 1).setValue(NOTA_CONTROL_ANCLAJE_CORREGIDA_);
+  return true;
+}
+
+/**
+ * Paso 2.9 Parte C.5 — SOLAPAS tenía la clasificación de `m2` invertida: `M2 Directa`
+ * / `M2 digital` (26 / 67 filas, notas "acumulados") en `uso=fuente`, y `M2 periodo
+ * DIRECTA` / `M2 periodo DIGITAL` (29.533 / 2.413 filas) en `uso=derivada`. Una vista
+ * filtrada no puede tener mil veces más filas que su origen — misma inversión que
+ * tuvo `looker` (S-01). No se decide sola acá: las cuatro pasan a `uso=revisar` con
+ * la nota de sospecha, pendiente de que alguien confirme contra la base viva (¿tiene
+ * fórmula "M2 periodo DIRECTA"? ¿de dónde lee?). Idempotente.
+ */
+var SOLAPAS_M2_INVERTIDAS_ = ['M2 Directa', 'M2 digital', 'M2 periodo DIRECTA', 'M2 periodo DIGITAL'];
+var NOTA_M2_INVERTIDA_ = 'clasificación invertida, pendiente de confirmar (Paso 2.9 Parte C.5)';
+
+function reclasificarSolapasM2Invertidas_(hoja) {
+  var existentes = leerFilasSolapas_(hoja);
+  var tocadas = 0;
+
+  SOLAPAS_M2_INVERTIDAS_.forEach(function (nombreSolapa) {
+    var fila = existentes['m2||' + nombreSolapa];
+    if (!fila) return;
+    if (fila.uso === 'revisar' && fila.notas === NOTA_M2_INVERTIDA_) return; // ya aplicado
+
+    hoja.getRange(fila.fila, fila.idx.uso + 1).setValue('revisar');
+    hoja.getRange(fila.fila, fila.idx.notas + 1).setValue(NOTA_M2_INVERTIDA_);
+    tocadas++;
+  });
+
+  return tocadas;
 }
 
 /**
@@ -752,10 +805,12 @@ var SEED_SOLAPAS_ = [].concat(
   [filaSolapa_('digital', 'RDV', 'ignorar', '⚠ duplica la base rdv — si se lee, hay doble conteo')],
   filasSolapa_('digital', ['Buscador por periodo digital', 'Buscador por periodo directa'], 'ignorar', 'período tipeado a mano: violan el criterio de fuente cruda'),
   filasSolapa_('digital', ['Digital 2026 acumulado', 'm2 digital'], 'derivada', 'acumulados'),
+  // Paso 2.9 Parte C.4: NO es conjunto de control — es texto pegado (una foto a mano
+  // del link Funcionario/Barrio/Fecha, no datos vivos ni una fórmula). Ver
+  // docs/DISENO_match_temario.md §9, marcada inválida como fuente de validación.
   [filaSolapa_('digital', 'RDV JM 2 VECES', 'referencia',
-    'conjunto de control del anclaje: 37 encuentros con el link (Funcionario, Barrio, Fecha) ' +
-    'ya hecho a mano, misma salida que busca Union.gs/anclarEncuentros(). No mapear — usar para ' +
-    'validar el scoring/umbral 0.6. Detalle: docs/DISENO_match_temario.md §9.',
+    'texto pegado — no es fuente ni control. No usar (Paso 2.9 Parte C.4; ' +
+    'antes decía "usar para validar el scoring/umbral 0.6", ver docs/DISENO_match_temario.md §9).',
     { filas_datos: 37 })],
   filasSolapa_('digital', ['Metricas informe', 'INFORME'], 'referencia', 'el informe manual actual'),
   filasSolapa_('digital', ['Nomalización de barrios', 'Barrio Hab', 'Limpia Fun'], 'referencia', 'catálogos de normalización — útiles para el scoring del anclaje'),
@@ -780,9 +835,15 @@ var SEED_SOLAPAS_ = [].concat(
     filaSolapa_('m2', 'Cuentas M2', 'fuente', '353 filas, encabezado fila 1 — dimensión de campañas M2', { fila_encabezado: 1, filas_datos: 353 }),
     filaSolapa_('m2', 'Cuentas', 'revisar', '3453 filas, mismo encabezado — parece el universo completo, no solo M2', { fila_encabezado: 1, filas_datos: 3453 })
   ],
-  filasSolapa_('m2', ['M2 periodo DIGITAL', 'M2 periodo DIRECTA'], 'revisar', 'el nombre sugiere vista por período; sin confirmar'),
+  // Paso 2.9 Parte C.5: 'M2 periodo DIRECTA'/'DIGITAL' (29.533/2.413 filas) y 'M2
+  // Directa'/'M2 digital' (26/67 filas, "acumulados") tienen clasificación sospechada
+  // invertida — una vista filtrada no puede tener mil veces más filas que su origen.
+  // Las cuatro quedan 'revisar' hasta confirmar contra la base viva (misma duda que
+  // resolvió S-01 para looker). reclasificarSolapasM2Invertidas_() (abajo) fuerza esto
+  // también en una instalación ya existente donde alguien las haya puesto 'fuente' a mano.
+  filasSolapa_('m2', ['M2 periodo DIGITAL', 'M2 periodo DIRECTA', 'M2 Directa', 'M2 digital'], 'revisar', 'clasificación invertida, pendiente de confirmar (Paso 2.9 Parte C.5)'),
   filasSolapa_('m2', ['Directa mail', 'Seguimiento digital', 'Alcance', 'CAMPAÑAS_DESGLOCE_DIGITAL', 'Mail per'], 'revisar', '⚠ mismos nombres que solapas de digital — hay que saber cuál manda antes de mapear ninguna'),
-  filasSolapa_('m2', ['Digital acumulado', 'M2 Directa', 'M2 digital'], 'derivada', 'acumulados')
+  filasSolapa_('m2', ['Digital acumulado'], 'derivada', 'acumulados')
 );
 
 /**
