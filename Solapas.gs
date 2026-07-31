@@ -6,10 +6,11 @@
  * misma lógica que el resto del motor: descubre, no cablea.
  *   - solapa que no estaba registrada  -> se agrega con uso='revisar' (el default
  *     seguro de todo lo nuevo), origen='auto' y notas='detectada <fecha>'.
- *   - solapa que ya estaba registrada  -> se actualiza SOLO filas_datos. NO toca
- *     `uso` ni `origen`, pase lo que pase (Paso 2.7 Parte A regla 3) — para pisar
- *     una clasificación hace falta `sembrarClasificacionSolapas()` (Instalar.gs),
- *     que sí distingue `origen` y es una siembra explícita y separada.
+ *   - solapa que ya estaba registrada  -> se actualiza SOLO filas_datos y
+ *     filas_crudas (Paso 2.10 Parte B). NO toca `uso` ni `origen`, pase lo que
+ *     pase (Paso 2.7 Parte A regla 3) — para pisar una clasificación hace falta
+ *     `sembrarClasificacionSolapas()` (Instalar.gs), que sí distingue `origen`
+ *     y es una siembra explícita y separada.
  *   - solapa registrada que ya no aparece en el archivo -> no se borra: se marca
  *     notas='NO ENCONTRADA <fecha>' y sale ⚠ en el reporte.
  *
@@ -58,7 +59,20 @@ function inventariarSolapas() {
       var clave = baseId + '||' + nombre;
       vivas[clave] = true;
 
-      var filasDatos = Math.max(hojaSheet.getLastRow() - 1, 0);
+      // Paso 2.10 Parte B: `getLastRow()-1` cuenta relleno de fórmula como si
+      // fuera dato (una fórmula que evalúa a "" sigue extendiendo getLastRow()).
+      // `filas_crudas` conserva ese valor viejo como referencia; `filas_datos`
+      // pasa a contar filas con alguna celda no vacía tras trim(), sobre TODO
+      // el rango — incluye encabezados y banners de período a propósito, porque
+      // separar eso depende de detectar encabezado por solapa (no todas lo
+      // tienen, ej. `Mail per`). La diferencia entre las dos columnas ES el
+      // diagnóstico: no perderla resumiéndola en una sola.
+      var filasCrudas = Math.max(hojaSheet.getLastRow() - 1, 0);
+      var valoresHoja = hojaSheet.getDataRange().getValues();
+      var filasDatos = 0;
+      valoresHoja.forEach(function (fila) {
+        if (!filaVacia_(fila)) filasDatos++;
+      });
       var existente = existentes[clave];
 
       if (!existente) {
@@ -70,10 +84,12 @@ function inventariarSolapas() {
           fila_encabezado: '',
           firma_encabezado: '',
           filas_datos: filasDatos,
+          filas_crudas: filasCrudas,
           notas: 'detectada ' + fecha
         });
       } else {
         hoja.getRange(existente.fila, existente.idx.filas_datos + 1).setValue(filasDatos);
+        hoja.getRange(existente.fila, existente.idx.filas_crudas + 1).setValue(filasCrudas);
         actualizadas++;
       }
     });

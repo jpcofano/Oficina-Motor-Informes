@@ -329,3 +329,24 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   pendientes de implementar (`PENDIENTES_consistencia.md`). El resto de `Paso-2.10`
   (Partes B-E, G: correcciones a `SOLAPAS`, hoja `VALIDACION`, corte vertical a Orden
   Público) sigue sin ejecutar.
+
+## Paso 2.10 Parte B — `filas_datos` deja de contar relleno de fórmula (2026-07-31) — commit `<pendiente>`
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.10_PartesBC_verificado.md` Parte B —
+  `getLastRow()-1` cuenta como dato cualquier fila con fórmula que evalúe a `""`
+  (`m2/M2 periodo DIRECTA` devolvía 29.533 en vez de 18-20 reales). Cambiar `filas_datos`
+  a "filas con alguna celda no vacía tras `trim()`", sobre todo `getDataRange()` (incluye
+  encabezados y banners de período a propósito — definición "Recomendada" del prompt,
+  para no depender de detectar encabezado por solapa). Agregar `filas_crudas` al lado con
+  el valor viejo, porque la diferencia entre las dos ES el diagnóstico.
+- **Qué se hizo:** `Instalar.gs` — columna `filas_crudas` en `HOJAS_CONFIG_.SOLAPAS.headers`
+  (entre `filas_datos` y `notas`) y en `COLUMNAS_DELTA_.SOLAPAS` (para instalaciones ya
+  existentes). `Solapas.gs` (`inventariarSolapas()`) — `filasCrudas` conserva
+  `Math.max(getLastRow()-1, 0)`; `filasDatos` ahora recorre `getDataRange().getValues()`
+  completo y cuenta con `filaVacia_()` (Fuentes.gs, reusada). Se escriben las dos columnas
+  tanto para solapas nuevas como ya registradas. `Config.gs` (`leerSolapas()`) expone
+  `filas_crudas` en el registro.
+- **Prueba:** confirmada por el usuario contra la planilla en vivo (`clasp push` +
+  "Instalar / reparar hojas" + "Inventariar solapas").
+- **Pendientes/decisiones:** Partes C (bajar seis solapas `periodo` a `referencia`) y D
+  (R-10 `normalizar()` + hoja `VALIDACION`) de `Paso-2.10_PartesBC_verificado.md` y
+  `Paso-2.10_ParteD_con_R10.md` siguen sin ejecutar — van en pasos separados.

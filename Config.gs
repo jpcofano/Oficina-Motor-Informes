@@ -13,7 +13,8 @@
  *     (base_id, solapa) — ver `usoSolapa_` abajo.
  *   validarMapeo()        -> detecta tríos (base_id, solapa, campo_logico) duplicados
  *   leerSolapas()         -> { base_id: { solapa: {uso, fila_encabezado, firma_encabezado,
- *                               filas_datos, notas} } } — registro `SOLAPAS` (Paso 2.6)
+ *                               filas_datos, filas_crudas, notas} } } — registro `SOLAPAS`
+ *                               (Paso 2.6; filas_crudas — Paso 2.10 Parte B)
  *   usoSolapa_(base_id, solapa) -> 'fuente'/'derivada'/'referencia'/'ignorar'/'revisar', o
  *     '' si la solapa no está registrada en SOLAPAS (mismo trato que 'revisar': no se lee)
  *   leerPeriodos()        -> { periodo_id: {desde, hasta, notas} }
@@ -129,6 +130,7 @@ function leerSolapas() {
       fila_encabezado: fila[idx.fila_encabezado],
       firma_encabezado: fila[idx.firma_encabezado],
       filas_datos: fila[idx.filas_datos],
+      filas_crudas: fila[idx.filas_crudas],
       notas: fila[idx.notas]
     };
   });

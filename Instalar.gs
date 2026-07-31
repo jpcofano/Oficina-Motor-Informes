@@ -123,11 +123,15 @@ var HOJAS_CONFIG_ = {
   // la siembra no puede distinguir un `uso=revisar` automático de uno elegido a mano,
   // y termina sin poder pisar nada (ver Solapas.gs y sembrarClasificacionSolapas()
   // abajo).
+  // filas_crudas (Paso 2.10 Parte B): el valor viejo de filas_datos
+  // (getLastRow()-1, cuenta relleno de fórmula como si fuera dato). Se
+  // conserva al lado del filas_datos corregido porque la diferencia entre
+  // ambas ES el diagnóstico — ver Solapas.gs inventariarSolapas().
   SOLAPAS: {
-    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'notas'],
+    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'notas'],
     ejemplos: [
-      ['rdv', 'RVD JM-CM - ES', 'fuente', 'seed', 1, '', '', 'base de encuentros, hoja_default'],
-      ['rdv', 'RVD JM-CM - ES Back Up', 'ignorar', 'seed', 1, '', '', 'backup']
+      ['rdv', 'RVD JM-CM - ES', 'fuente', 'seed', 1, '', '', '', 'base de encuentros, hoja_default'],
+      ['rdv', 'RVD JM-CM - ES Back Up', 'ignorar', 'seed', 1, '', '', '', 'backup']
     ]
   },
   // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
@@ -217,8 +221,13 @@ var COLUMNAS_DELTA_ = {
   ],
   // Paso 2.7 Parte A: `origen` se inserta después de `uso` (columna 3) para una
   // hoja SOLAPAS instalada con el esquema del Paso 2.6, que todavía no la tenía.
+  // Paso 2.10 Parte B: `filas_crudas` se inserta antes de `notas` — sea cual sea
+  // el estado previo de la hoja, `origen` (si falta) ya corrió antes en este mismo
+  // forEach y corrió `notas` a su posición final, así que el índice de acá asume
+  // esquema con `origen` ya presente.
   SOLAPAS: [
-    { nombre: 'origen', indice: 4 }
+    { nombre: 'origen', indice: 4 },
+    { nombre: 'filas_crudas', indice: 8 }
   ]
 };
 
