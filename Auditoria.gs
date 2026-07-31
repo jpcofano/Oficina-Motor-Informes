@@ -362,6 +362,9 @@ function diagnosticoCorteFilasM2_() {
     Logger.log('fila ' + (f + 1) + ': ' + JSON.stringify(datos[f]));
   }
 
+  // Paso 2.9 Parte B: "sin clave" ya no se descarta en leerFuente() — el conteo
+  // de acá es solo para chequear que el bug quedó atrás (filas_totales debería
+  // salir igual a filasTrasEncabezado, no filasTrasEncabezado - sinClave).
   var claveInfo = null;
   var clave = resolverClave_('m2', hoja.getName());
   if (clave.ok) {
@@ -373,16 +376,16 @@ function diagnosticoCorteFilasM2_() {
       var vacia = valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === '');
       if (vacia) sinClave++;
     });
-    claveInfo = { columna: clave.columna, filasTrasEncabezado: filasCrudas.length, sinClave: sinClave, quedan: filasCrudas.length - sinClave };
+    claveInfo = { columna: clave.columna, filasTrasEncabezado: filasCrudas.length, sinClave: sinClave };
     Logger.log('Clave resuelta: columna ' + clave.columna + ' — de ' + filasCrudas.length +
-      ' filas tras fila_encabezado, ' + sinClave + ' tienen la clave vacía (se descartan) → quedarían ' + claveInfo.quedan);
+      ' filas tras fila_encabezado, ' + sinClave + ' tienen la clave vacía (informativo, ya no se descartan).');
   } else {
-    Logger.log('Sin clave resoluble para m2/' + hoja.getName() + ': ' + clave.motivo + ' — se usa criterio de fila 100% vacía.');
+    Logger.log('Sin clave resoluble para m2/' + hoja.getName() + ': ' + clave.motivo);
   }
 
   var lectura = leerFuente('m2', null, hoja.getName());
   Logger.log('leerFuente() resultado: ok=' + lectura.ok + ' filas_totales=' + lectura.filas_totales +
-    ' filas_vacias_descartadas=' + lectura.filas_vacias_descartadas + ' filas_descartadas_sin_clave=' + lectura.filas_descartadas_sin_clave);
+    ' filas_vacias=' + lectura.filas_vacias + ' filas_sin_clave=' + lectura.filas_sin_clave);
 
   var solapas = leerSolapas();
   var registro = solapas.m2 && solapas.m2[hoja.getName()];
@@ -414,13 +417,13 @@ function menuDiagnosticarCorteFilasM2_() {
     'M2 periodo DIRECTA — getLastRow=' + resultado.getLastRow + ', getLastColumn=' + resultado.getLastColumn +
       ', fila_encabezado(BASES)=' + resultado.filaEncabezado,
     'leerFuente(): filas_totales=' + resultado.lectura.filas_totales +
-      ', vacías descartadas=' + resultado.lectura.filas_vacias_descartadas +
-      ', sin clave descartadas=' + resultado.lectura.filas_descartadas_sin_clave,
+      ', vacías (informativo)=' + resultado.lectura.filas_vacias +
+      ', sin clave (informativo)=' + resultado.lectura.filas_sin_clave,
     'SOLAPAS.filas_datos registrado: ' + (resultado.filasDatosRegistradas !== null ? resultado.filasDatosRegistradas : '(sin fila en SOLAPAS)')
   ];
   if (resultado.claveInfo) {
     lineas.push('Clave (col ' + resultado.claveInfo.columna + '): ' + resultado.claveInfo.filasTrasEncabezado +
-      ' filas tras fila_encabezado, ' + resultado.claveInfo.sinClave + ' con clave vacía → quedan ' + resultado.claveInfo.quedan);
+      ' filas tras fila_encabezado, ' + resultado.claveInfo.sinClave + ' con clave vacía (ya no se descartan)');
   }
   lineas.push('', 'Filas 1-8 completas volcadas en Ver → Registros de ejecución (Logger).', '', 'No se corrigió nada — es un reporte.');
 

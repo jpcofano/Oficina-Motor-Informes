@@ -31,12 +31,20 @@
  *
  * Convención de columna clave (Paso 2.3): igual mecánica que la de fecha, pero
  * con `campo_logico = 'clave'` (o `'campana'` como fallback si no hay `clave`
- * explícita). Sirve para descartar del conteo filas basura (fórmulas que
- * devuelven '', colas de la hoja) sin depender de que TODA la fila esté vacía.
- * Sin clave resoluble, `leerFuente` cae al criterio anterior (fila 100%
- * vacía). El descarte por clave cuenta en `filas_descartadas_sin_clave`; el
- * descarte por fila 100% vacía, en `filas_vacias_descartadas` — nunca los dos
- * a la vez para una misma base.
+ * explícita).
+ *
+ * ⚠ Paso 2.9 Parte B — `leerFuente()` NO EXCLUYE filas por su cuenta. Hasta acá,
+ * una fila sin clave (o 100% vacía si no hay clave resoluble) se descartaba del
+ * conteo en silencio — parecía prudencia ("filtrar basura") pero era el modo de
+ * falla caro: `digital` devolvía 960 de 1297 filas, `rdv` 720 de 1362, `m2` 18
+ * de 29.533, todo con ✅. Un lector que decide por su cuenta qué fila "cuenta"
+ * hace imposible cualquier `SUMA` correcta río abajo, porque el agregador nunca
+ * se entera de lo que faltó. Ahora `leerFuente` devuelve **todas** las filas
+ * entre `fila_encabezado` y el final de `getDataRange()` (más el filtro de
+ * ventana si `modo_periodo=filtrar`) — "vacía" y "sin clave" pasan a ser
+ * conteos informativos (`filas_vacias`, `filas_sin_clave`), nunca un filtro
+ * aplicado. Si hace falta deduplicar o descartar basura para algo puntual, es
+ * una operación aparte y explícita en la capa que lo necesite — no acá.
  */
 
 var cacheBases_ = {};
@@ -266,30 +274,25 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
     return valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === '');
   }
 
-  // Tarea 3 (Paso 2.3): si la base declara una columna clave en MAPEO (campo
-  // "clave", o "campana" como fallback), una fila solo cuenta como dato si esa
-  // celda no está vacía — más preciso que "toda la fila vacía" (fórmulas que
-  // devuelven '', colas de la hoja). Bases sin clave definida siguen con el
-  // criterio anterior (fila 100% vacía) para no romper lo que ya andaba.
-  // Se guarda el índice original (dentro de `filasCrudas`) de cada fila que
-  // pasa el filtro, para poder ir a buscar su valor mostrado en pantalla más
-  // abajo (`filasCrudasDisplay`).
-  var filasDatos, filasVaciasDescartadas, filasDescartadasSinClave, indicesDatos;
+  // Paso 2.9 Parte B: "vacía" y "sin clave" son conteos informativos, NUNCA un
+  // filtro. `filasDatos` es SIEMPRE `filasCrudas` completo — todas las filas
+  // entre `fila_encabezado` y el final de `getDataRange()`, sin excluir nada acá.
+  var filasDatos = filasCrudas;
+  var filasVacias = 0;
+  var filasSinClave = 0;
   var clave = resolverClave_(baseId, hoja.getName());
 
   if (clave.ok) {
     var idxClave = columnaLetraAIndice_(clave.columna);
-    indicesDatos = [];
-    filasCrudas.forEach(function (fila, i) { if (!celdaVacia_(fila[idxClave])) indicesDatos.push(i); });
-    filasVaciasDescartadas = 0;
-    filasDescartadasSinClave = filasCrudas.length - indicesDatos.length;
+    filasCrudas.forEach(function (fila) {
+      if (celdaVacia_(fila[idxClave])) filasSinClave++;
+      if (filaVacia_(fila)) filasVacias++;
+    });
   } else {
-    indicesDatos = [];
-    filasCrudas.forEach(function (fila, i) { if (!filaVacia_(fila)) indicesDatos.push(i); });
-    filasVaciasDescartadas = filasCrudas.length - indicesDatos.length;
-    filasDescartadasSinClave = 0;
+    filasCrudas.forEach(function (fila) {
+      if (filaVacia_(fila)) filasVacias++;
+    });
   }
-  filasDatos = indicesDatos.map(function (i) { return filasCrudas[i]; });
 
   var resultado = {
     ok: true,
@@ -300,8 +303,8 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
     columna_fecha: null,
     ventana_aplicada: null,
     filas_totales: filasDatos.length,
-    filas_vacias_descartadas: filasVaciasDescartadas,
-    filas_descartadas_sin_clave: filasDescartadasSinClave,
+    filas_vacias: filasVacias,
+    filas_sin_clave: filasSinClave,
     filas_en_ventana: 0,
     filas_sin_fecha: 0,
     filas_fecha_invalida: 0,
@@ -343,7 +346,7 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
   filasDatos.forEach(function (fila, j) {
     var crudo = fila[idxFecha];
     if (celdaVacia_(crudo)) {
-      var mostrado = filasCrudasDisplay[indicesDatos[j]][idxFecha];
+      var mostrado = filasCrudasDisplay[j][idxFecha];
       if (mostrado && mostrado.trim() !== '') crudo = mostrado;
     }
     if (crudo === '' || crudo === null || crudo === undefined) {
@@ -443,8 +446,15 @@ function diagnosticoLooker_() {
  * (`inventariarSolapas()`, puede estar desactualizado), así que esto solo avisa
  * ⚠, nunca bloquea la lectura. Sin fila en SOLAPAS o sin `filas_datos` cargado,
  * no hay con qué comparar: `{ ok: false }`.
+ *
+ * Paso 2.9 Parte B punto 5: el umbral del Paso 2.8 (50%) no habría agarrado
+ * 960/1297 (74%) ni 720/1362 (53%) — los dos venían del mismo bug (exclusión
+ * silenciosa) que la Parte B corrige. Sube a 90% y el porcentaje se muestra
+ * siempre, no solo por debajo del umbral: con `leerFuente()` devolviendo todas
+ * las filas, la cobertura debería rondar el 100% salvo un corte real en
+ * `getDataRange()` — cualquier desvío, aunque no dispare el ⚠, es dato útil.
  */
-var UMBRAL_COBERTURA_LECTURA_ = 0.5;
+var UMBRAL_COBERTURA_LECTURA_ = 0.9;
 
 function evaluarCoberturaLectura_(baseId, nombreHoja, filasLeidas) {
   var solapas = leerSolapas();
@@ -459,8 +469,9 @@ function evaluarCoberturaLectura_(baseId, nombreHoja, filasLeidas) {
 }
 
 function sufijoCobertura_(cobertura) {
-  if (!cobertura.ok || !cobertura.bajoUmbral) return '';
-  return ' ⚠ cobertura ' + Math.round(cobertura.ratio * 100) + '% de SOLAPAS.filas_datos (' + cobertura.registradas + ')';
+  if (!cobertura.ok) return '';
+  var icono = cobertura.bajoUmbral ? ' ⚠' : '';
+  return icono + ' cobertura ' + Math.round(cobertura.ratio * 100) + '% de SOLAPAS.filas_datos (' + cobertura.registradas + ')';
 }
 
 function menuProbarLectura_() {
@@ -488,23 +499,24 @@ function menuProbarLectura_() {
       return;
     }
 
-    var sufijoClave = r.filas_descartadas_sin_clave > 0
-      ? ' (' + r.filas_descartadas_sin_clave + ' sin clave descartadas)'
-      : '';
+    // Paso 2.9 Parte B: "sin clave"/"vacías" ya no se descartan del conteo —
+    // son dato informativo, se muestran junto al total, no restadas de él.
+    var sufijoClave = r.filas_sin_clave > 0 ? ' (' + r.filas_sin_clave + ' sin clave)' : '';
+    var sufijoVacias = r.filas_vacias > 0 ? ' (' + r.filas_vacias + ' vacías)' : '';
     var cobertura = evaluarCoberturaLectura_(r.base_id, r.hoja, r.filas_totales);
     var sufijoCob = sufijoCobertura_(cobertura);
 
     if (r.modo === 'snapshot') {
       var iconoSnapshot = cobertura.bajoUmbral ? '⚠️' : '✅';
-      lineas.push(iconoSnapshot + ' ' + r.base_id + ' (' + r.hoja + ', snapshot) — ' + r.filas_totales + ' filas (todas, sin ventana)' + sufijoClave + sufijoCob);
+      lineas.push(iconoSnapshot + ' ' + r.base_id + ' (' + r.hoja + ', snapshot) — ' + r.filas_totales + ' filas (todas, sin ventana)' + sufijoClave + sufijoVacias + sufijoCob);
       return;
     }
 
     // Diagnóstico honesto (Paso 2.3): el ✅ solo dice "pude leer y resolver la
     // columna", no "la data sirve". Se degrada a ⚠️ si no cayó nada en la
     // ventana, si más de la mitad de las filas no tienen fecha, o si la
-    // cobertura contra SOLAPAS.filas_datos está por debajo del umbral (Paso 2.8
-    // Parte D).
+    // cobertura contra SOLAPAS.filas_datos está por debajo del umbral (Paso 2.9
+    // Parte B).
     var icono = '✅';
     if (r.filas_en_ventana === 0 || (r.filas_totales > 0 && (r.filas_sin_fecha / r.filas_totales) > 0.5) || cobertura.bajoUmbral) {
       icono = '⚠️';
@@ -513,7 +525,7 @@ function menuProbarLectura_() {
     lineas.push(
       icono + ' ' + r.base_id + ' (' + r.hoja + ', col fecha "' + r.columna_fecha + '") — ' +
       r.filas_totales + ' totales, ' + r.filas_en_ventana + ' en ventana, ' +
-      r.filas_sin_fecha + ' sin fecha, ' + r.filas_fecha_invalida + ' fecha inválida' + sufijoClave + sufijoCob
+      r.filas_sin_fecha + ' sin fecha, ' + r.filas_fecha_invalida + ' fecha inválida' + sufijoClave + sufijoVacias + sufijoCob
     );
   });
 
