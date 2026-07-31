@@ -434,6 +434,35 @@ function diagnosticoLooker_() {
   diagnosticoColumnaFecha_('looker');
 }
 
+/**
+ * Paso 2.8 Parte D, guardarraíl — un lector que devuelve una fracción chica de
+ * lo que `SOLAPAS.filas_datos` registra para esa (base_id, hoja) **sin fallar**
+ * es el modo de falla caro en su forma más pura: río abajo, un marcador suma esas
+ * pocas filas y produce un número plausible (caso real: `m2` devolvió 18 filas de
+ * 29.533, con ✅). No es un error — `filas_datos` es un conteo de referencia
+ * (`inventariarSolapas()`, puede estar desactualizado), así que esto solo avisa
+ * ⚠, nunca bloquea la lectura. Sin fila en SOLAPAS o sin `filas_datos` cargado,
+ * no hay con qué comparar: `{ ok: false }`.
+ */
+var UMBRAL_COBERTURA_LECTURA_ = 0.5;
+
+function evaluarCoberturaLectura_(baseId, nombreHoja, filasLeidas) {
+  var solapas = leerSolapas();
+  var fila = solapas[baseId] && solapas[baseId][nombreHoja];
+  var registradas = fila ? Number(fila.filas_datos) : NaN;
+  if (!fila || isNaN(registradas) || registradas <= 0) {
+    return { ok: false };
+  }
+
+  var ratio = filasLeidas / registradas;
+  return { ok: true, registradas: registradas, ratio: ratio, bajoUmbral: ratio < UMBRAL_COBERTURA_LECTURA_ };
+}
+
+function sufijoCobertura_(cobertura) {
+  if (!cobertura.ok || !cobertura.bajoUmbral) return '';
+  return ' ⚠ cobertura ' + Math.round(cobertura.ratio * 100) + '% de SOLAPAS.filas_datos (' + cobertura.registradas + ')';
+}
+
 function menuProbarLectura_() {
   var ui = SpreadsheetApp.getUi();
   var resultado = probarLecturaPeriodo();
@@ -462,24 +491,29 @@ function menuProbarLectura_() {
     var sufijoClave = r.filas_descartadas_sin_clave > 0
       ? ' (' + r.filas_descartadas_sin_clave + ' sin clave descartadas)'
       : '';
+    var cobertura = evaluarCoberturaLectura_(r.base_id, r.hoja, r.filas_totales);
+    var sufijoCob = sufijoCobertura_(cobertura);
 
     if (r.modo === 'snapshot') {
-      lineas.push('✅ ' + r.base_id + ' (' + r.hoja + ', snapshot) — ' + r.filas_totales + ' filas (todas, sin ventana)' + sufijoClave);
+      var iconoSnapshot = cobertura.bajoUmbral ? '⚠️' : '✅';
+      lineas.push(iconoSnapshot + ' ' + r.base_id + ' (' + r.hoja + ', snapshot) — ' + r.filas_totales + ' filas (todas, sin ventana)' + sufijoClave + sufijoCob);
       return;
     }
 
     // Diagnóstico honesto (Paso 2.3): el ✅ solo dice "pude leer y resolver la
     // columna", no "la data sirve". Se degrada a ⚠️ si no cayó nada en la
-    // ventana, o si más de la mitad de las filas no tienen fecha.
+    // ventana, si más de la mitad de las filas no tienen fecha, o si la
+    // cobertura contra SOLAPAS.filas_datos está por debajo del umbral (Paso 2.8
+    // Parte D).
     var icono = '✅';
-    if (r.filas_en_ventana === 0 || (r.filas_totales > 0 && (r.filas_sin_fecha / r.filas_totales) > 0.5)) {
+    if (r.filas_en_ventana === 0 || (r.filas_totales > 0 && (r.filas_sin_fecha / r.filas_totales) > 0.5) || cobertura.bajoUmbral) {
       icono = '⚠️';
     }
 
     lineas.push(
       icono + ' ' + r.base_id + ' (' + r.hoja + ', col fecha "' + r.columna_fecha + '") — ' +
       r.filas_totales + ' totales, ' + r.filas_en_ventana + ' en ventana, ' +
-      r.filas_sin_fecha + ' sin fecha, ' + r.filas_fecha_invalida + ' fecha inválida' + sufijoClave
+      r.filas_sin_fecha + ' sin fecha, ' + r.filas_fecha_invalida + ' fecha inválida' + sufijoClave + sufijoCob
     );
   });
 

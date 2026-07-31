@@ -328,3 +328,101 @@ function menuAuditarAlcanceDigital_() {
 
   ui.alert('Auditoría: digital/Digital/alcance (Paso 2.7 Parte B)', lineas.join('\n'), ui.ButtonSet.OK);
 }
+
+/**
+ * Paso 2.8 Parte D — auditoría de solo lectura: `m2` devolvió 18 filas de las
+ * 29.533 que `SOLAPAS` registra para `M2 periodo DIRECTA`, en modo snapshot, SIN
+ * fallar — el modo de falla caro en su forma más pura, porque un marcador río
+ * abajo suma esas 18 filas y produce un número plausible. `BASES` declara
+ * `fila_encabezado=3` para `m2` (banner de período en las filas 1-2); esta función
+ * vuelca las filas 1 a 8 completas y las cifras que `leerFuente()` usa para
+ * decidir el corte (`getDataRange()`, la clave resuelta y cuántas filas quedan
+ * afuera por ella), para encontrar la línea exacta donde se pierden las filas.
+ * NO corrige nada — ni acá ni a mano: si el banner de período resulta ser la
+ * causa, la conclusión no es ajustar `fila_encabezado`, es que la solapa no es
+ * fuente cruda (ver docs/Prompts/Paso-2.8_cerrar_lectura.md Parte D).
+ */
+function diagnosticoCorteFilasM2_() {
+  var abierto = abrirHoja('m2', 'M2 periodo DIRECTA');
+  if (!abierto.ok) { Logger.log('No se pudo abrir: ' + abierto.motivo); return { ok: false, motivo: abierto.motivo }; }
+
+  var hoja = abierto.hoja;
+  var filaEncabezado = Number(abierto.base.fila_encabezado) || 1;
+
+  Logger.log('Hoja: ' + hoja.getName() + ' · getLastRow=' + hoja.getLastRow() + ' · getLastColumn=' + hoja.getLastColumn() +
+    ' · fila_encabezado (BASES)=' + filaEncabezado);
+
+  var datos = hoja.getDataRange().getValues();
+  Logger.log('getDataRange(): ' + datos.length + ' filas × ' + (datos[0] ? datos[0].length : 0) + ' columnas');
+
+  var filasVolcadas = [];
+  var filasAVolcar = Math.min(8, datos.length);
+  for (var f = 0; f < filasAVolcar; f++) {
+    filasVolcadas.push(datos[f]);
+    Logger.log('fila ' + (f + 1) + ': ' + JSON.stringify(datos[f]));
+  }
+
+  var claveInfo = null;
+  var clave = resolverClave_('m2', hoja.getName());
+  if (clave.ok) {
+    var idxClave = columnaLetraAIndice_(clave.columna);
+    var filasCrudas = datos.slice(filaEncabezado);
+    var sinClave = 0;
+    filasCrudas.forEach(function (fila) {
+      var valor = fila[idxClave];
+      var vacia = valor === null || valor === undefined || (typeof valor === 'string' && valor.trim() === '');
+      if (vacia) sinClave++;
+    });
+    claveInfo = { columna: clave.columna, filasTrasEncabezado: filasCrudas.length, sinClave: sinClave, quedan: filasCrudas.length - sinClave };
+    Logger.log('Clave resuelta: columna ' + clave.columna + ' — de ' + filasCrudas.length +
+      ' filas tras fila_encabezado, ' + sinClave + ' tienen la clave vacía (se descartan) → quedarían ' + claveInfo.quedan);
+  } else {
+    Logger.log('Sin clave resoluble para m2/' + hoja.getName() + ': ' + clave.motivo + ' — se usa criterio de fila 100% vacía.');
+  }
+
+  var lectura = leerFuente('m2', null, hoja.getName());
+  Logger.log('leerFuente() resultado: ok=' + lectura.ok + ' filas_totales=' + lectura.filas_totales +
+    ' filas_vacias_descartadas=' + lectura.filas_vacias_descartadas + ' filas_descartadas_sin_clave=' + lectura.filas_descartadas_sin_clave);
+
+  var solapas = leerSolapas();
+  var registro = solapas.m2 && solapas.m2[hoja.getName()];
+  var filasDatosRegistradas = registro ? Number(registro.filas_datos) : null;
+  Logger.log('SOLAPAS.filas_datos registrado: ' + (registro ? registro.filas_datos : '(sin fila en SOLAPAS)'));
+
+  return {
+    ok: true,
+    getLastRow: hoja.getLastRow(),
+    getLastColumn: hoja.getLastColumn(),
+    filaEncabezado: filaEncabezado,
+    filasVolcadas: filasVolcadas,
+    claveInfo: claveInfo,
+    lectura: lectura,
+    filasDatosRegistradas: filasDatosRegistradas
+  };
+}
+
+function menuDiagnosticarCorteFilasM2_() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = diagnosticoCorteFilasM2_();
+
+  if (!resultado.ok) {
+    ui.alert('No se pudo diagnosticar', resultado.motivo, ui.ButtonSet.OK);
+    return;
+  }
+
+  var lineas = [
+    'M2 periodo DIRECTA — getLastRow=' + resultado.getLastRow + ', getLastColumn=' + resultado.getLastColumn +
+      ', fila_encabezado(BASES)=' + resultado.filaEncabezado,
+    'leerFuente(): filas_totales=' + resultado.lectura.filas_totales +
+      ', vacías descartadas=' + resultado.lectura.filas_vacias_descartadas +
+      ', sin clave descartadas=' + resultado.lectura.filas_descartadas_sin_clave,
+    'SOLAPAS.filas_datos registrado: ' + (resultado.filasDatosRegistradas !== null ? resultado.filasDatosRegistradas : '(sin fila en SOLAPAS)')
+  ];
+  if (resultado.claveInfo) {
+    lineas.push('Clave (col ' + resultado.claveInfo.columna + '): ' + resultado.claveInfo.filasTrasEncabezado +
+      ' filas tras fila_encabezado, ' + resultado.claveInfo.sinClave + ' con clave vacía → quedan ' + resultado.claveInfo.quedan);
+  }
+  lineas.push('', 'Filas 1-8 completas volcadas en Ver → Registros de ejecución (Logger).', '', 'No se corrigió nada — es un reporte.');
+
+  ui.alert('Diagnóstico: corte de filas en m2 (Paso 2.8 Parte D)', lineas.join('\n'), ui.ButtonSet.OK);
+}
