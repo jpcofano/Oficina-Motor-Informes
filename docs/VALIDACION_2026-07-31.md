@@ -6,8 +6,8 @@
 > Repo leído en `48beb2a`. **Trabajamos en español.**
 >
 > Es la primera vez que se puede comparar informe publicado ↔ base ↔ temario con las tres
-> cosas de la misma fecha. Esto no reemplaza al `HANDOFF_2026-07-31`: lo corrige en dos
-> puntos y le cierra tres preguntas abiertas.
+> cosas de la misma fecha. Esto no reemplaza al `docs/Sesiones/HANDOFF 2026-07-31.md`: lo
+> corrige en dos puntos y le cierra tres preguntas abiertas.
 
 ---
 

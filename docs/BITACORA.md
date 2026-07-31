@@ -258,7 +258,7 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   tolerante (`normalizar_`) y borrado de todas las filas que matcheen.
 - **Prueba:** investigación de código (grep, sin Map/Set de colapso encontrado en
   `Fuentes.gs`) documentada en el commit `718e1c7`. **No se verificó contra la planilla
-  viva en esta sesión** — ver `docs/Sesiones/HANDOFF_2026-07-31-2.md`: el número que
+  viva en esta sesión** — ver `docs/Sesiones/HANDOFF 2026-07-31-2.md`: el número que
   debía confirmar la hipótesis (valores distintos de `clave` en `rdv` = 720) no quedó
   registrado, y el caso de `m2` (18 de 29.533) sigue sin verificación directa post-fix.
 - **Pendientes/decisiones:** **verificar contra datos en vivo** que `m2`/`rdv`/`digital`
@@ -288,10 +288,10 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   revert de looker y la higiene de registros sí corrieron contra archivos vivos en algún
   punto de la sesión, pero el reporte no dejó los conteos concretos. El corte vertical
   (`VISTA_PREVIA`) y el anclaje (¿desapareció el timeout?) **no tienen resultado
-  registrado** — ver `docs/Sesiones/HANDOFF_2026-07-31-2.md`, que es la fuente de este
+  registrado** — ver `docs/Sesiones/HANDOFF 2026-07-31-2.md`, que es la fuente de este
   matiz y llegó **después** de que estos commits ya estuvieran hechos.
 - **Pendientes/decisiones:** los cinco puntos de "Cómo seguir" de
-  `docs/Sesiones/HANDOFF_2026-07-31-2.md` — releer conteos de lectura (sobre todo `m2`),
+  `docs/Sesiones/HANDOFF 2026-07-31-2.md` — releer conteos de lectura (sobre todo `m2`),
   mirar `VISTA_PREVIA` (los diez tokens + tres controles + columna `filas` + columna
   `operacion`), correr el anclaje de verdad, probar `SECCIONES`/`VALORES` contra la
   planilla real, resolver el origen de `CLAUDE.md`/`DOC-4`. Todos siguen abiertos al

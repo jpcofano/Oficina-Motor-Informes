@@ -1,6 +1,6 @@
 # TEMARIO Y PLANTILLA — Motor de Informes (GCBA) — 2026-07-31
 
-> Complementa a `HANDOFF_2026-07-31.md`. Documenta tres cosas que hasta ahora vivían
+> Complementa a `HANDOFF 2026-07-31.md`. Documenta tres cosas que hasta ahora vivían
 > sólo en comentarios de una presentación: **de dónde sale la lista de reuniones**,
 > **cómo se estructura**, y **qué cambió entre las dos versiones de la plantilla SECCO**.
 >

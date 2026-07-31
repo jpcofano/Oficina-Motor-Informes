@@ -15,7 +15,7 @@ de esto: Paso 2.9 completo (A-H) — lector corregido, looker revertido a
 `Marcadores.gs`/`VISTA_PREVIA`, anclaje reescrito sobre `REUNIONES` con umbral en
 `CONFIG`, hojas `SECCIONES` y `VALORES`/`VALORES_DIVERGENTES`.
 
-**Ojo:** `docs/Sesiones/HANDOFF_2026-07-31-2.md` (segunda sesión de claude.ai del 31/07,
+**Ojo:** `docs/Sesiones/HANDOFF 2026-07-31-2.md` (segunda sesión de claude.ai del 31/07,
 posterior a los commits de Paso 2.9) señala que buena parte de Paso 2.9 se ejecutó de
 corrido sin verificar contra la planilla viva — ver "Qué sigue" abajo.
 
