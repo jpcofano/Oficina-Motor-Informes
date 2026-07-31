@@ -485,8 +485,11 @@ var SEED_MAPEO_ = [
   { base_id: 'looker', campo_logico: 'campana', hoja: 'resumen_metricas_dinamico', columna: 'B', notas: '' },
   { base_id: 'looker', campo_logico: 'fecha_inicio', hoja: 'resumen_metricas_dinamico', columna: 'C', notas: '' },
   { base_id: 'looker', campo_logico: 'fecha_fin', hoja: 'resumen_metricas_dinamico', columna: 'D', notas: '' },
-  { base_id: 'looker', campo_logico: 'fecha', hoja: 'resumen_metricas_dinamico', columna: 'C',
-    notas: 'apunta a fecha_inicio. Es el arranque de la pauta de convocatoria, entre 3 y 7 días antes del encuentro (DISENO_match_temario.md §5). Sirve para acotar la lectura, NO para elegir qué campaña entra al informe.' },
+  // Paso 2.9 Parte D (S-02): 'fecha' es el contrato viejo — leerFuente() ya solo
+  // busca 'fecha_periodo' (verificado: no hay ningún buscarMapeo(..., 'fecha')
+  // en el código). No se borra la fila, se marca derogada para que quede
+  // constancia de por qué existió (apuntaba a fecha_inicio, columna C).
+  { base_id: 'looker', campo_logico: 'fecha', hoja: 'resumen_metricas_dinamico', columna: 'C', notas: 'DEROGADA — ver S-02' },
   // fecha_periodo (Paso 2.8 Parte B/C): la escribió promoverFechasElegidas() (Fechas.gs)
   // contra la elección congelada en FECHAS_seleccion.md — misma columna que 'fecha'.
   { base_id: 'looker', campo_logico: 'fecha_periodo', hoja: 'resumen_metricas_dinamico', columna: 'C', notas: 'filtro de período (elegida en FECHAS_seleccion.md)' },
@@ -517,7 +520,8 @@ var SEED_MAPEO_ = [
 
   // m2 — DIRECTA en 'M2 periodo DIRECTA', DIGITAL en 'M2 periodo DIGITAL'
   { base_id: 'm2', campo_logico: 'campana', hoja: 'M2 periodo DIRECTA', columna: 'B', notas: '' },
-  { base_id: 'm2', campo_logico: 'fecha', hoja: 'M2 periodo DIRECTA', columna: 'C', notas: '' },
+  // Paso 2.9 Parte D (S-02): 'fecha' es el contrato viejo, igual que en looker.
+  { base_id: 'm2', campo_logico: 'fecha', hoja: 'M2 periodo DIRECTA', columna: 'C', notas: 'DEROGADA — ver S-02' },
   { base_id: 'm2', campo_logico: 'envios', hoja: 'M2 periodo DIRECTA', columna: 'D', notas: '' },
   { base_id: 'm2', campo_logico: 'entregados', hoja: 'M2 periodo DIRECTA', columna: 'E', notas: '' },
   { base_id: 'm2', campo_logico: 'aperturas', hoja: 'M2 periodo DIRECTA', columna: 'F', notas: '' },
