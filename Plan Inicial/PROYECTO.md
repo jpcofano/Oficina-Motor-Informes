@@ -406,6 +406,7 @@ los de `CLAUDE.md` §3 (vivo / congelado / archivado); acá no se repiten por do
 | `docs/SUPUESTOS.md` | supuestos asumidos con ID estable `S-NN` | ambas |
 | `docs/OBJETIVO_lamina_nueva.md` | objetivo de láminas por prompt; se refina | ambas |
 | `docs/CONFIG_INFORMES.md` | decisiones editoriales de configuración por informe — curado a mano por diseño | ambas |
+| `docs/ENTORNO.local.md` | **fuera de git**: URLs de la web app, cuentas y dónde vive cada credencial (Paso 1.8). Fuente única de direcciones — no se repiten en el RUNBOOK ni acá. En un clon limpio no existe: se reconstruye con `.clasp.json` + `clasp list-deployments` | ambas |
 | `docs/BITACORA.md` | qué hizo cada paso, append-only | **solo Code** |
 | `docs/HANDOFF_CODE.md` | estado actual del trabajo, se reescribe | **solo Code** |
 | `docs/MAPEO_completo.md` | relevamiento original del mapeo (28-29/07); la verdad viva es la hoja `MAPEO` | nadie — se autodeclara congelado |

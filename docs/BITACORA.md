@@ -652,3 +652,64 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   esa convención no estaba escrita en ningún lado — queda anotada en
   `docs/PENDIENTES_consistencia.md` junto con la nota de API executable (versión desplegada
   ≠ HEAD).
+
+## Paso 1.8 — API de pruebas sobre `/dev` (2026-08-01) — commits de esta entrada
+- **Qué pedía el prompt:** `docs/Prompts/Paso-1.8-API-de-pruebas-v3.md`. Que Code pueda
+  invocar funciones del motor contra HEAD y leer el resultado, sin deploy versionado y sin
+  que un humano apriete un botón del menú en cada ciclo. Decisión de diseño del prompt: la
+  URL `/dev`, no `/exec`; `clasp deploy` no se usa en este paso.
+- **Qué se hizo:**
+  - **`Api.gs`** (archivo nuevo) — `doGet`/`doPost` delegan en `manejarPedido_`, todo
+    adentro de un `try/catch` porque una excepción no atrapada devuelve HTML y rompe al
+    cliente. Pedido unificado (body JSON pisa query string). Dos barreras siempre, en
+    orden: identidad contra `API_AUTORIZADOS_`, y token contra la propiedad de script
+    `API_TOKEN` con comparación de longitud fija. Propiedad ausente **rechaza**. Cinco
+    acciones: `ping`, `version`, `registros`, `bases`, `llamar`. La `traza` sale siempre,
+    en éxito y en error. `serializar_` con tope de profundidad 5 y nombre del tipo para lo
+    que no sobrevive a `JSON.stringify`.
+  - **`Fuentes.gs`** — el prompt lo declaraba intacto, pero su propia prueba de aceptación
+    nº 3 (`llamar` a `probarConexionBases`) era imposible: la función alertaba con
+    `SpreadsheetApp.getUi()`, que sobre HTTP tira excepción. Se extrajo
+    `diagnosticoBases_()`, que devuelve las líneas; la de menú alerta sólo si `hayUi_()`
+    (nuevo, en `Codigo.gs`) y ahora retorna el resumen. Cero aritmética tocada.
+  - **`Api.gs` · `apiHojaControl_()`** — sobre HTTP no hay planilla activa y **todos** los
+    módulos leen con `getActiveSpreadsheet()`. Si devuelve `null`, ata la planilla por la
+    propiedad opcional `HOJA_CONTROL_ID`. El id no va en el código.
+  - **`tools/token.js`** — access token derivado de `~/.clasprc.json`, con cache y
+    `--info` (imprime cuenta y scopes, nunca el token). Estructura real de clasp 3.3.0:
+    `tokens.default.{client_id, client_secret, refresh_token}`; se contempla también la
+    forma de clasp 2.x.
+  - **`tools/api.js`** (no lo pedía el prompt) — cliente que lee las dos credenciales
+    adentro del proceso. El prompt proponía `curl` con las credenciales en la línea de
+    comandos, o sea en el historial del shell y en los logs; el `CLAUDE.md` de usuario lo
+    prohíbe. La URL sale de `docs/ENTORNO.local.md`.
+  - **`appsscript.json`** — bloque `webapp` (`ANYONE_ANONYMOUS` + `USER_DEPLOYING`), que
+    acá no abre nada: `/dev` exige permiso de edición y la Barrera 1 rechaza sin mail.
+  - **`docs/ENTORNO.local.md`** (fuera de git) — fuente única de URLs y cuentas. Con su
+    fila en `CLAUDE.md` §7 y en la taxonomía de `PROYECTO.md` §9, en este mismo commit.
+  - **`.gitignore`** — `docs/ENTORNO.local.md`, `.env`, `tools/.token-cache.json`,
+    `.clasprc.json`. **`.claspignore`** — `Plan Inicial/`, `docs/`, `tools/`, `*.md`,
+    `.env` explícitos después de las negaciones.
+  - **`docs/RUNBOOK.md`** — Parte G nueva, con la operatoria y **sin un solo valor
+    concreto**: apunta a `ENTORNO.local.md` para URLs y cuentas.
+- **Prueba:** las cuatro de aceptación **no corrieron**: falta que el humano cargue
+  `API_TOKEN` en las propiedades del script, y sin eso la Barrera 2 rechaza por diseño.
+  Sí corrió la primera llamada real contra `/dev`: devolvió **JSON** (no HTML) con
+  `barrera 1: ok` y `barrera 2: API_TOKEN no está seteado` — o sea que el Bearer derivado
+  de `.clasprc.json` alcanza y que `Session.getActiveUser()` devuelve el mail sobre `/dev`,
+  que era el supuesto central del prompt. Verificadas aparte con node, fuera de la
+  planilla, `serializar_` (primitivas, `null`, `NaN`, `Date`→ISO, anidado, objeto de clase,
+  tope de profundidad) y la comparación de longitud fija (igual, distinto, vacío, prefijo,
+  más largo): 12 de 12. `clasp push` hecho.
+- **Pendientes/decisiones:**
+  - **La URL `/dev` NO se arma con el `scriptId`**, contra lo que afirmaba el prompt en dos
+    lugares: probado, devuelve 404 en HTML. El id de la URL es el de la implementación
+    `@HEAD`, que da `clasp list-deployments`.
+  - La cuenta que pasa la Barrera 1 es **`jpcofanogcba1@gmail.com`** (la de clasp), no la
+    del usuario en otros productos. Verificada con `node tools/token.js --info`, que además
+    confirmó el scope `script.webapp.deploy`: no hizo falta ni el Plan B ni el Plan C.
+  - No se actualizó el estado del paso en `PROYECTO.md`: DOC-5 le sacó el estado de avance
+    a ese documento (§7). Va a `HANDOFF_CODE.md`.
+  - `llamar` **no** tiene lista blanca de sólo lectura — sigue siendo el punto 2 del
+    pendiente P0. Lo que sí queda cerrado para `/dev` es el punto 1 (código viejo): `/dev`
+    es HEAD. P0 revive cuando el Paso 6 publique `/exec`.

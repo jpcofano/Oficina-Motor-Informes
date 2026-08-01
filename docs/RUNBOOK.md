@@ -114,6 +114,93 @@ Todo lo que el motor abre por ID tiene que estar accesible para `jpcofanogcba1`:
 
 ---
 
+## Parte G — API de pruebas sobre `/dev` (Paso 1.8)
+
+Sirve para una sola cosa: que Claude Code pueda invocar una función del motor contra el
+código que acaba de pushear y leer el resultado como JSON, sin abrir la planilla y sin
+pedirle a nadie que apriete un botón del menú.
+
+### Por qué `/dev` y no un deploy versionado
+
+`/dev` sirve **HEAD**: lo que dejó el último `clasp push`, sin republicar nada. Por eso
+en este paso no se usa `clasp deploy`, y por eso el pendiente P0 de
+`docs/PENDIENTES_consistencia.md` (una API que sirve código viejo) no aplica acá: sobre
+`/dev` no hay versión desplegada que pueda quedar atrás. Cuando el Paso 6 publique
+`/exec`, ese pendiente vuelve a estar vivo.
+
+Google exige sesión con **permiso de edición sobre el script** antes de correr una línea
+de nuestro código en `/dev`. Esa exigencia es la que hace tolerable que exista una acción
+`llamar` con nombre de función dinámico: el endpoint no es alcanzable anónimamente.
+
+### Las dos barreras, y dónde vive cada credencial
+
+Se evalúan siempre, en orden, antes de cualquier acción (`Api.gs`):
+
+1. **Identidad** — `Session.getActiveUser().getEmail()` tiene que estar en
+   `API_AUTORIZADOS_`. Es la cuenta con la que está logueado clasp, no la del usuario en
+   otro producto; se verifica con `node tools/token.js --info`.
+2. **Token de aplicación** — el `token` del pedido contra la propiedad de script
+   `API_TOKEN`. Si la propiedad no está seteada, **rechaza**: nunca pasa por ausencia.
+
+| credencial | dónde vive | quién la usa |
+|---|---|---|
+| Bearer de Google | `~/.clasprc.json`, derivado por `tools/token.js` | el cliente |
+| `MOTOR_API_TOKEN` | `.env` en la raíz, fuera de git | el cliente |
+| `API_TOKEN` | Propiedades del script (editor → ⚙ Configuración del proyecto) | el servidor |
+| `HOJA_CONTROL_ID` | Propiedades del script, **opcional** | el servidor |
+
+`HOJA_CONTROL_ID` es la red de seguridad de `apiHojaControl_()`: sobre HTTP no hay
+planilla activa y todos los módulos leen con `SpreadsheetApp.getActiveSpreadsheet()`. Si
+el binding del contenedor alcanza, no hace falta setearla.
+
+**Las URLs y las cuentas no están en este archivo**: viven en `docs/ENTORNO.local.md`,
+que está fuera de git. En un clon limpio ese archivo no existe y hay que reconstruirlo —
+el `scriptId` sale de `.clasp.json`, y el id de la URL `/dev` sale de
+`clasp list-deployments` (la línea `@HEAD`). Ojo: **la URL `/dev` no se arma con el
+`scriptId`**, aunque el prompt del paso decía que sí; con el `scriptId` da 404 en HTML.
+
+### Ciclo de trabajo
+
+```
+clasp push  →  node tools/api.js <accion> [clave=valor ...]  →  leer el JSON
+```
+
+`tools/api.js` existe para que ninguna de las dos credenciales quede escrita en la línea
+de comandos: las lee del `.env` y del `.clasprc.json` adentro del proceso. Con `--get`
+manda todo por query string (ejercita `doGet`); sin `--get`, por body JSON (`doPost`).
+
+### Acciones
+
+| acción | qué hace |
+|---|---|
+| `ping` | `{ pong, mail, fecha }` — verifica las dos barreras de una |
+| `version` | versión del contrato de la API + hoja de control en uso |
+| `registros` | dump de una hoja de registro; parámetro `hoja` |
+| `bases` | resultado de `diagnosticoBases_()` |
+| `llamar` | invoca una función del motor por nombre: `fn` y `args` (array) |
+
+Mantener esta tabla a medida que crezcan los pasos. Acción desconocida devuelve la lista.
+
+### Lo que hay que saber antes de que sorprenda
+
+- **Todo sale HTTP 200.** Apps Script no deja setear el status: el estado va en `ok` del
+  JSON. Si la respuesta es HTML en vez de JSON, el problema es de autenticación de
+  Google, no del motor.
+- **La `traza` viene siempre**, en éxito y en error. Es el único log que ve quien llama.
+- **Una función `void` devuelve `null`.** Para probar una por la API hay que hacer que
+  retorne algo. Es lo que se le hizo a `probarConexionBases()` en este paso: el cálculo
+  se movió a `diagnosticoBases_()`, que devuelve las líneas, y la de menú alerta sólo si
+  `hayUi_()`. Una función que sólo sabe hablar por `alert()` no se puede probar desde
+  afuera, y `SpreadsheetApp.getUi()` sobre HTTP tira excepción.
+- **Un objeto de Apps Script** (`Spreadsheet`, `Range`, `Presentation`) no se serializa:
+  sale como `[objeto no serializable]` más su tipo. La profundidad tope es 5.
+- **`llamar` es para leer y calcular, no para escribir.** Que hoy no esté prohibido por
+  código es el pendiente P0 punto 2 (lista blanca de sólo lectura).
+- **Re-autorizar a mano** hace falta sólo cuando se agrega un `oauthScope` nuevo en
+  `appsscript.json`.
+
+---
+
 ## Y después…
 
 13. Con las bases verdes y `INFORMES` cargado, seguís con el motor headless:
