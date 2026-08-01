@@ -1,10 +1,99 @@
-/**
- * Codigo.gs — Punto de entrada del proyecto.
- * Responsabilidad: menú de la planilla (onOpen) y ruteo a cada módulo.
- * NO contiene lógica de negocio.
- * Se completa en: Paso 0 (menú) y se amplía en pasos siguientes.
- */
+# MENÚ — declarado por tabla
 
+> Destino: `docs/Prompts/MENU_declarado_por_tabla.md`
+> **Paso no funcional, sin número.** No cambia comportamiento del motor: reordena
+> el menú y cambia cómo se declara. No bloquea ni depende de `Paso-2.11` ni de
+> `Paso-2.13`; se puede correr entre partes.
+> Un solo commit. **Trabajamos en español.**
+
+---
+
+## El problema
+
+El menú tiene 35 ítems en 5 submenús, uno de ellos (`Diagnóstico y pruebas`) con
+18 seguidos: no entran en pantalla. Dos causas:
+
+1. Cada paso agregó su ítem y ninguno se sacó nunca, aunque el caso se cerrara.
+2. El número de paso viaja en la etiqueta (`(Paso 2.9E)`, `(Parte D)`, `(AUD-1)`),
+   duplicando lo que ya dice `docs/BITACORA.md` y alargando cada línea.
+
+## Qué hay que hacer
+
+En `Codigo.gs`, reemplazar el bloque que va desde `function onOpen() {` hasta el
+`}` que cierra el `.addToUi();` por el bloque de la sección **Código** de abajo.
+Va completo, incluida la tabla `MENU_`.
+
+`onOpen()` deja de encadenar `addItem`/`addSubMenu` y pasa a recorrer una tabla
+declarada arriba en el mismo archivo. Agregar un ítem es agregar una fila;
+`onOpen()` no se toca más.
+
+```
+{ t: 'etiqueta', f: 'nombreFuncion' }   → ítem
+{ t: 'etiqueta', items: [ ... ] }       → submenú
+'---'                                    → separador
+```
+
+**No agregar ítems nuevos. No renombrar funciones. No tocar ningún otro archivo.**
+
+## Reagrupamiento
+
+| Antes | Ahora |
+|---|---|
+| `Valores (Paso 2.9H)` + `Consolidaciones (decisión + escritura)` | `Datos y decisiones` |
+| `Mantenimiento` + `Diagnosticar carpeta de plantillas` | `Plantillas` |
+| `Diagnóstico y pruebas` (18 ítems) | `Diagnóstico`: las 4 pruebas de uso diario arriba + `Solapas`, `Fechas y mapeo`, `Looker y alcance`, `Archivo (casos cerrados)` |
+
+## Reglas que quedan vigentes
+
+1. **La etiqueta dice qué hace el ítem.** El paso que lo creó vive en el
+   encabezado de la función y en `BITACORA.md`, no en la etiqueta. Única
+   excepción: el submenú `Archivo (casos cerrados)`, donde el paso es la
+   identidad del caso.
+2. **Ningún nivel pasa de 8 ítems visibles; la profundidad máxima es 3.**
+   Si un submenú llega a 9, se parte antes de agregar el noveno.
+3. **Un diagnóstico de un caso cerrado se mueve a `Archivo`, no se borra.**
+   Sirve para reabrir el caso, no para el uso diario.
+4. `construirMenu_()` solo arma menú: no valida, no lee hojas, no calcula.
+5. `onOpen()` no puede tirar excepción: si `MENU_` queda mal, cae a un menú
+   mínimo (`Abrir panel` + `Instalar / reparar hojas`) y loguea el error. Un
+   `onOpen()` que explota deja la planilla sin ningún menú.
+6. **Una vez aplicado, la fuente de verdad del menú es `MENU_` en `Codigo.gs`.**
+   Este archivo queda como registro del paso: no se edita para cambiar el menú.
+
+## Verificación
+
+**Invariante:** el conjunto de nombres de función invocados por el menú es
+idéntico antes y después — 35 nombres, sin altas, sin bajas, sin duplicados.
+Ya verificado contra el menú vigente antes de escribir este prompt; Code lo
+vuelve a verificar después de aplicar y **reporta los tres números**:
+
+```bash
+grep -o "f: *'[A-Za-z0-9_]*'" Codigo.gs | sed "s/f: *'//;s/'//" | sort > /tmp/menu.txt
+wc -l < /tmp/menu.txt            # tiene que dar 35
+sort -u /tmp/menu.txt | wc -l    # tiene que dar 35 → sin duplicados
+# toda función del menú tiene que existir en algún .gs:
+while read f; do grep -qh "^function $f" *.gs || echo "FALTA: $f"; done < /tmp/menu.txt
+```
+
+`FALTA:` esperado únicamente para `menuAplicarConfiguracion_`,
+`menuEstadoConfiguracion_` y `menuDiagnosticoTiposFechasConfig_` **si el trabajo
+de `Paso-2.11` Parte C / C.2 todavía no está commiteado**. Cualquier otro
+`FALTA:` es un error: parar y avisar.
+
+Después: `clasp push`, recargar la planilla y confirmar que el menú abre y que
+`Diagnóstico` entra entero en pantalla.
+
+## Cierre
+
+1. Entrada en `docs/BITACORA.md`.
+2. `docs/HANDOFF_CODE.md` reescrito si corresponde.
+3. Commit: `Menú declarado por tabla`.
+
+---
+
+## Código
+
+```javascript
 // ============================================================================
 // MENÚ — declaración única
 // ----------------------------------------------------------------------------
@@ -130,15 +219,4 @@ function construirMenu_(ui, nodo) {
   }
   return menu;
 }
-
-function menuAbrirPanel_() {
-  SpreadsheetApp.getActiveSpreadsheet().toast('próximamente', 'Abrir panel');
-}
-
-function menuGenerarInforme_() {
-  SpreadsheetApp.getActiveSpreadsheet().toast('próximamente', 'Generar informe');
-}
-
-function menuCargarEjemplo_() {
-  SpreadsheetApp.getActiveSpreadsheet().toast('próximamente', 'Cargar ejemplo');
-}
+```
