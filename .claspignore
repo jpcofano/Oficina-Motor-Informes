@@ -3,3 +3,11 @@
 !appsscript.json
 !*.gs
 !*.html
+
+# Paso 1.8 — explícito después de las negaciones (gana la última coincidencia):
+# nada de esto sube al proyecto de Apps Script, aunque algún día tenga .gs adentro.
+Plan Inicial/**
+docs/**
+tools/**
+*.md
+.env

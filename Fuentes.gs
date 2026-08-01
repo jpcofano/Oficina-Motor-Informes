@@ -94,7 +94,13 @@ function abrirHoja(baseId, nombreHoja) {
   return { ok: true, base: resultado.base, libro: resultado.libro, hoja: hoja };
 }
 
-function probarConexionBases() {
+/**
+ * Diagnóstico de conexión a las bases activas, sin UI. Separado de
+ * `probarConexionBases()` en el Paso 1.8: el menú alerta, la API devuelve. Una
+ * función que sólo sabe hablar por `alert()` no se puede probar desde afuera de
+ * la planilla, y `SpreadsheetApp.getUi()` directamente rompe sobre HTTP.
+ */
+function diagnosticoBases_() {
   var bases = leerBases();
   var lineas = [];
 
@@ -115,8 +121,15 @@ function probarConexionBases() {
     );
   });
 
-  var resumen = lineas.length ? lineas.join('\n') : 'No hay bases activas registradas en BASES.';
-  SpreadsheetApp.getUi().alert('Prueba de conexión a bases', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
+  return lineas.length ? lineas : ['No hay bases activas registradas en BASES.'];
+}
+
+function probarConexionBases() {
+  var resumen = diagnosticoBases_().join('\n');
+  if (hayUi_()) {
+    SpreadsheetApp.getUi().alert('Prueba de conexión a bases', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
+  }
+  return resumen;
 }
 
 /**

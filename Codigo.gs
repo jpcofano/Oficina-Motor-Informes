@@ -132,6 +132,22 @@ function construirMenu_(ui, nodo) {
   return menu;
 }
 
+/**
+ * ¿Hay interfaz de planilla en este contexto? (Paso 1.8.)
+ * Sobre HTTP —la API de pruebas de Api.gs— no la hay, y `SpreadsheetApp.getUi()`
+ * tira excepción en vez de devolver null. Una función de menú que quiera ser
+ * invocable desde afuera pregunta acá antes de alertar. No hay otra forma de
+ * consultarlo que intentarlo.
+ */
+function hayUi_() {
+  try {
+    SpreadsheetApp.getUi();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function menuAbrirPanel_() {
   SpreadsheetApp.getActiveSpreadsheet().toast('próximamente', 'Abrir panel');
 }

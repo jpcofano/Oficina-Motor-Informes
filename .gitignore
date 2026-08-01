@@ -1,6 +1,12 @@
 node_modules/
 .DS_Store
 
+# Paso 1.8 — API de pruebas. URLs, cuentas y credenciales viven fuera de git.
+docs/ENTORNO.local.md
+.env
+tools/.token-cache.json
+.clasprc.json
+
 # Muestras de datos: el repo es público y las bases tienen datos reales de GCBA
 # (nombres de funcionarios, barrios, volúmenes de envío, respuestas de vecinos).
 # El repo lleva código y documentación; si Claude necesita una muestra, se sube
