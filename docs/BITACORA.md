@@ -480,7 +480,7 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   (retirar `reclasificarSolapasM2Invertidas_`, entra dentro de la Parte D del Paso 2.11)
   siguen sin ejecutar.
 
-## Paso 2.11 Parte C — un solo "Aplicar configuración", con diff (2026-07-31) — commit `<pendiente>`
+## Paso 2.11 Parte C — un solo "Aplicar configuración", con diff (2026-07-31) — commit `2979f03`
 - **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md` Parte
   C — la configuración se aplicaba desde cuatro ítems de menú sin orden escrito
   (`instalar`, `seedConfiguracion`, `sembrarClasificacionSolapas`,
@@ -535,7 +535,7 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   resolvió aparte (commit `9fd16c6`, menú declarado por tabla); queda de esa parte retirar
   `reclasificarSolapasM2Invertidas_` (Parte 3 de `Paso-2.12`).
 
-## Paso 2.11 Parte C.2-1 — el diff deja de reportar un cambio que no existe (2026-08-01) — commit `<pendiente>`
+## Paso 2.11 Parte C.2-1 — el diff deja de reportar un cambio que no existe (2026-08-01) — commit `2979f03`
 - **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md` C.2-1. La
   premisa original (el seed degradó `PERIODOS` de fecha a texto y cualquier filtro por
   ventana devuelve cero filas) resultó **falsa en las dos mitades**, y las dos correcciones
@@ -589,7 +589,7 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   quede operativa; `docs/Prompts/Paso-2.13` referencia `docs/_archivo/`, que no existe —
   al ejecutarlo, usar `Plan Inicial/_archivo/`.
 
-## Protocolo 2.11-C corrido — 5 de 7 pasos pasados (2026-07-31/08-01) — commit `<pendiente>`
+## Protocolo 2.11-C corrido — 5 de 7 pasos pasados (2026-07-31/08-01) — commit `641ba42`
 - **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md`, protocolo de
   siete pasos, para decidir si la Parte C + C.2-1 se puede commitear.
 - **Qué se hizo:** el usuario corrió el protocolo desde la planilla (snapshot previo, cinco
