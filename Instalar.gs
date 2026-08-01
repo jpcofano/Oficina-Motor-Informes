@@ -268,8 +268,14 @@ function aplicarInstalacion_() {
  * (un bloque más dentro del reporte combinado).
  */
 function formatearResumenInstalacion_(r) {
+  // C.2-2 tarea 3: "actualizada" tenía dos sentidos en la misma lista. Lo que hace
+  // `instalar()` es verificar/reparar ESTRUCTURA (encabezados, columnas nuevas) — que
+  // REUNIONES/VALORES/VALORES_DIVERGENTES aparecieran junto a hojas con cambios de
+  // contenido daba a entender que se les había tocado un dato, y no es así. Los cambios
+  // de contenido son las líneas del diff, no esta lista.
   return 'Hojas creadas: ' + (r.creadas.length ? r.creadas.join(', ') : 'ninguna') +
-    '\nHojas actualizadas: ' + (r.actualizadas.length ? r.actualizadas.join(', ') : 'ninguna') +
+    '\nHojas verificadas/reparadas por instalar() (estructura, no contenido): ' +
+    (r.actualizadas.length ? r.actualizadas.join(', ') : 'ninguna') +
     (r.backfill.rellenadas ? '\nMAPEO.solapa completada en ' + r.backfill.rellenadas + ' fila(s) desde MAPEO.hoja' : '') +
     (r.backfill.sinHoja.length
       ? '\n⚠️ MAPEO sin "hoja" cargada, no se pudo determinar solapa: ' + r.backfill.sinHoja.join(', ')
@@ -1686,7 +1692,11 @@ function menuAplicarConfiguracion_() {
     resultadoSecciones.nuevas.map(function (id) { return ['SECCIONES', 'nueva', id, '', '', '']; })
   );
 
-  escribirDiffConfiguracion_(filasDiff);
+  var ssActiva = SpreadsheetApp.getActiveSpreadsheet();
+  var filasAlcance = construirBloqueAlcance_(ALCANCE_REGISTROS_, function (n) {
+    return ssActiva.getSheetByName(n);
+  });
+  escribirDiffConfiguracion_(filasDiff, 'DIFF_CONFIGURACION', 'menuAplicarConfiguracion_', filasAlcance);
 
   var totalCambios = filasDiff.filter(function (f) { return f[1] === 'cambio'; }).length;
   var totalNuevas = filasDiff.filter(function (f) { return f[1] === 'nueva'; }).length;
@@ -1702,7 +1712,8 @@ function menuAplicarConfiguracion_() {
       : '') +
     (filasDiff.length
       ? '\n\nDetalle completo (clave, columna, de qué valor a qué valor) en la hoja DIFF_CONFIGURACION.'
-      : '\n\nSin cambios — la configuración de la planilla ya coincide con el código.');
+      : '\n\nSin cambios — la configuración de la planilla ya coincide con el código.') +
+    '\n\nQué se auditó y qué no: bloque ALCANCE, arriba en esa misma hoja.';
 
   ui.alert('Aplicar configuración', resumen, ui.ButtonSet.OK);
 }
@@ -1729,17 +1740,100 @@ function filasDiffParaHoja_(nombreHoja, resultado) {
 
 var HEADERS_DIFF_CONFIGURACION_ = ['hoja', 'tipo', 'clave', 'columna', 'anterior', 'nuevo'];
 
-function escribirDiffConfiguracion_(filas, nombreHoja) {
+/**
+ * Paso 2.11 C.2-2 — qué hoja de registro audita el diff y cuál no, declarado.
+ *
+ * Sin esto, "BASES: cero líneas" y "BASES: no se audita" producen exactamente el mismo
+ * output — y durante la verificación del protocolo hubo corridas donde no se podía
+ * distinguir una cosa de la otra. `MARCADORES` está acá a propósito, con
+ * `auditada = no · sin sembrador`: es un hallazgo abierto (Paso 2.13) y tiene que estar a
+ * la vista, no implícito por ausencia.
+ *
+ * `seed` es una función y no el array directo porque Apps Script concatena todos los
+ * `.gs` en un scope global y el orden de evaluación de los `var` no está garantizado:
+ * referenciar `SEED_BASES_` en el literal daría `undefined` si esta tabla se evalúa antes.
+ */
+var ALCANCE_REGISTROS_ = [
+  { hoja: 'BASES', auditada: true, seed: function () { return SEED_BASES_; } },
+  { hoja: 'MAPEO', auditada: true, seed: function () { return SEED_MAPEO_; } },
+  { hoja: 'CONFIG', auditada: true, seed: function () { return Object.keys(SEED_CONFIG_DEFAULTS_); } },
+  { hoja: 'INFORMES', auditada: true, seed: function () { return SEED_INFORMES_; } },
+  { hoja: 'PERIODOS', auditada: true, seed: function () { return SEED_PERIODOS_; } },
+  { hoja: 'SOLAPAS', auditada: true, seed: function () { return SEED_SOLAPAS_; } },
+  { hoja: 'SECCIONES', auditada: true, seed: function () { return SEED_SECCIONES_; } },
+  { hoja: 'CAMPANAS', auditada: false, motivo: 'excluida a propósito — curada a mano, cambia cada semana (SEED_CAMPANAS_EJEMPLO_ existe pero sin sembrador automático)',
+    seed: function () { return SEED_CAMPANAS_EJEMPLO_; } },
+  { hoja: 'REUNIONES', auditada: false, motivo: 'excluida a propósito — ídem CAMPANAS (SEED_REUNIONES_EJEMPLO_ sin sembrador automático)',
+    seed: function () { return SEED_REUNIONES_EJEMPLO_; } },
+  { hoja: 'MARCADORES', auditada: false, motivo: 'sin sembrador — hallazgo abierto, Paso 2.13' }
+];
+
+var HEADERS_ALCANCE_ = ['hoja', 'auditada', 'filas_en_hoja', 'filas_en_seed', 'motivo'];
+
+/**
+ * Construye el bloque de alcance. `obtenerHoja` se inyecta (no se toma de
+ * `SpreadsheetApp` adentro) para que el control positivo pueda alimentarlo con hojas
+ * sintéticas y verificar que discrimina — ver `probarBloqueDeAlcance_()`.
+ */
+function construirBloqueAlcance_(descriptores, obtenerHoja) {
+  return descriptores.map(function (d) {
+    var hoja = obtenerHoja(d.hoja);
+    var filasEnHoja = hoja ? Math.max(hoja.getLastRow() - 1, 0) : '';
+    var filasEnSeed = '';
+    if (d.seed) {
+      try { filasEnSeed = d.seed().length; } catch (e) { filasEnSeed = '(error al leer el seed)'; }
+    }
+    var motivo = d.motivo || '';
+    if (!hoja) motivo = motivo ? motivo + ' · la hoja no existe' : 'la hoja no existe';
+    return [d.hoja, (d.auditada && hoja) ? 'sí' : 'no', filasEnHoja, filasEnSeed, motivo];
+  });
+}
+
+/**
+ * Paso 2.11 C.2-2 — cabecera de corrida. Sin esto no se puede saber si lo que se está
+ * mirando es de esta corrida o de la anterior: durante la verificación del protocolo hubo
+ * que vaciar las dos hojas a mano tres veces por esto mismo.
+ */
+function cabeceraDeCorrida_(ejecutadoPor) {
+  var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  return [
+    ['ejecutado_por', ejecutadoPor, '', '', ''],
+    ['fecha_hora', Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm:ss'), '', '', ''],
+    ['version_codigo', '(sin marca de versión — ver docs/PENDIENTES_consistencia.md, nota de API executable)', '', '', '']
+  ];
+}
+
+/**
+ * Escribe una hoja de reporte completa: cabecera de corrida, bloque de alcance y tabla de
+ * diff. La hoja se limpia entera antes de escribir (C.2-2): filas de una corrida vieja
+ * mezcladas con las nuevas es exactamente lo que hacía el output no interpretable.
+ */
+function escribirDiffConfiguracion_(filas, nombreHoja, ejecutadoPor, filasAlcance) {
   nombreHoja = nombreHoja || 'DIFF_CONFIGURACION';
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var hoja = ss.getSheetByName(nombreHoja);
   if (!hoja) hoja = ss.insertSheet(nombreHoja);
   hoja.clear();
-  hoja.getRange(1, 1, 1, HEADERS_DIFF_CONFIGURACION_.length).setValues([HEADERS_DIFF_CONFIGURACION_]);
-  hoja.setFrozenRows(1);
+  hoja.setFrozenRows(0);
+
+  var bloques = [];
+  bloques = bloques.concat(cabeceraDeCorrida_(ejecutadoPor || '(sin declarar)'));
+  bloques.push(['', '', '', '', '']);
+  bloques.push(['ALCANCE DE ESTA CORRIDA', '', '', '', '']);
+  bloques.push(HEADERS_ALCANCE_);
+  bloques = bloques.concat(filasAlcance || []);
+  bloques.push(['', '', '', '', '']);
+  bloques.push(['DETALLE', '', '', '', '']);
+
+  var anchoBloque = 5;
+  hoja.getRange(1, 1, bloques.length, anchoBloque).setValues(bloques);
+
+  var filaHeaders = bloques.length + 1;
+  hoja.getRange(filaHeaders, 1, 1, HEADERS_DIFF_CONFIGURACION_.length).setValues([HEADERS_DIFF_CONFIGURACION_]);
   if (filas.length) {
-    hoja.getRange(2, 1, filas.length, HEADERS_DIFF_CONFIGURACION_.length).setValues(filas);
+    hoja.getRange(filaHeaders + 1, 1, filas.length, HEADERS_DIFF_CONFIGURACION_.length).setValues(filas);
   }
+  hoja.setFrozenRows(filaHeaders);
 }
 
 /**
@@ -1875,14 +1969,18 @@ function menuEstadoConfiguracion_() {
     lineasResumen.push('SECCIONES — la hoja no existe');
   }
 
-  escribirDiffConfiguracion_(filas, 'ESTADO_CONFIGURACION');
+  var filasAlcanceEstado = construirBloqueAlcance_(ALCANCE_REGISTROS_, function (n) {
+    return ss.getSheetByName(n);
+  });
+  escribirDiffConfiguracion_(filas, 'ESTADO_CONFIGURACION', 'menuEstadoConfiguracion_', filasAlcanceEstado);
 
   ui.alert(
     'Estado de configuración',
     lineasResumen.join('\n') +
       (filas.length
         ? '\n\nDetalle completo en la hoja ESTADO_CONFIGURACION.'
-        : '\n\n✅ Sin discrepancias entre el código y la planilla.'),
+        : '\n\n✅ Sin discrepancias entre el código y la planilla.') +
+      '\n\nQué se auditó y qué no: bloque ALCANCE, arriba en esa misma hoja.',
     ui.ButtonSet.OK
   );
 }

@@ -73,6 +73,7 @@ var MENU_ = {
         { t: 'Validar MAPEO (duplicados)',                f: 'menuValidarMapeo_' },
         { t: 'Tipos de fechas de ventana (solo lectura)', f: 'menuDiagnosticoTiposFechasConfig_' }
       ]},
+      { t: 'Correr pruebas del diff', f: 'menuCorrerPruebasDiff_' },
       { t: 'Looker y alcance', items: [
         { t: 'Comparar resúmenes de looker',    f: 'menuCompararResumenesLooker_' },
         { t: 'Auditar fórmulas de resúmenes',   f: 'menuAuditarFormulasResumenesLooker_' },
