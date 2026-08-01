@@ -72,6 +72,13 @@ explícitamente); *archivados* en `Plan Inicial/_archivo/`, `docs/Prompts/_archi
 encabezado**, no un índice central. Editar un congelado en silencio es exactamente lo que
 costó la mitad del `DOC-1`.
 
+**Antes de pedir que se corrija algo en un archivo existente, grepearlo primero.**
+Un pedido de corregir algo que no está ahí empuja a editar de más, y a meter en un archivo
+contenido que tiene dueño en otro. Si el grep da cero, el resultado correcto es cero
+ediciones y se registra el cero. Aplica a los tres lados: al que escribe el prompt, al que
+lo pasa y a Code. Origen: 01/08, `AUD-3` Tarea 1 — se pidieron tres correcciones sobre una
+sospecha no verificada; las tres premisas no estaban en el archivo.
+
 ---
 
 ## 4. Flujo de trabajo — un paso, un test, un commit
