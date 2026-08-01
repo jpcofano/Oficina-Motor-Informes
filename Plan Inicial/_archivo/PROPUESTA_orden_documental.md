@@ -1,5 +1,10 @@
 # PROPUESTA — orden documental
 
+> **Archivado (DOC-5 cerrado, 31/07/2026).** La tabla de autoridad, con las correcciones
+> T-1 a T-5, G-2 y G-3, quedó **instalada en `CLAUDE.md` §7** — esa es la versión
+> vigente; esta es la propuesta que le dio origen, con el inventario y la evidencia.
+> El razonamiento de cada caso (Tareas 1–4) sigue siendo consultable acá.
+
 > Producto de `docs/Prompts/DOC-5_orden_documental.md`. Tarea de solo lectura: no se movió,
 > no se borró, no se editó ningún archivo. Método: tres agentes de lectura en paralelo
 > (`docs/`, `docs/Prompts/`, `Plan Inicial/` + `docs/Sesiones/`) más verificación directa

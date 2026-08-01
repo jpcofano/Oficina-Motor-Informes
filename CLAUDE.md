@@ -56,33 +56,21 @@ grep -rn "function nombreNuevo_" *.gs
 
 ## 3. Dónde va cada cosa — ruteo obligatorio
 
-**No crear archivos `.md` nuevos.** Si algo hay que documentar, va en uno de los archivos
-de esta tabla. Si de verdad no entra en ninguno, **preguntar antes de crearlo** y, si se
-crea, declararlo en la taxonomía de `PROYECTO.md` §9 en el mismo commit. Esta es la regla
-que más importa: el repo ya acumuló una docena de documentos que nacieron sueltos y
-divergieron entre sí.
+**No crear archivos `.md` nuevos.** Si algo hay que documentar, va en el documento que la
+tabla de §7 declara dueño de esa pregunta. Si de verdad no entra en ninguno, **preguntar
+antes de crearlo** y, si se crea, agregarle su fila en §7 y en la taxonomía de
+`PROYECTO.md` §9 en el mismo commit. Esta es la regla que más importa: el repo ya acumuló
+una docena de documentos que nacieron sueltos y divergieron entre sí. Los prompts nuevos
+van a `docs/Prompts/` (`Paso-N.md` para pasos del motor, `DOC-N_*.md` para trabajo
+documental — no consume número de paso —, `AUD-N_*.md` para auditorías). Relevamientos o
+hallazgos fechados: **ninguno nuevo** — la conclusión va al PROYECTO.
 
-| Qué estás por escribir | Dónde va |
-|---|---|
-| Decisión de arquitectura, esquema o negocio | `Plan Inicial/PROYECTO.md` (sección que corresponda) |
-| Estado del proyecto, paso terminado, pendiente resuelto | `Plan Inicial/PROYECTO.md` §7 |
-| Convención nueva o aprendizaje de proceso | `Plan Inicial/PROYECTO.md` §9 |
-| Cómo se opera / se corre algo | `docs/RUNBOOK.md` |
-| Token nuevo, renombrado o eliminado | `docs/TOKENS.md` |
-| Inconsistencia detectada y no resuelta | `docs/PENDIENTES_consistencia.md` |
-| Qué hizo un paso | `docs/BITACORA.md` — entrada nueva, siempre |
-| Dónde quedó el trabajo | `docs/HANDOFF_CODE.md` — se reescribe |
-| Regla del dominio que el motor da por cierta | `docs/REGLAS_NEGOCIO.md`, ID `R-NN` nuevo |
-| Supuesto asumido para poder avanzar | `docs/SUPUESTOS.md`, ID `S-NN` nuevo |
-| Prompt de un paso del motor | `docs/Prompts/Paso-N.md` |
-| Prompt de trabajo documental | `docs/Prompts/DOC-N_*.md` (no consume número de paso) |
-| Prompt de auditoría | `docs/Prompts/AUD-N_*.md` |
-| Relevamiento o hallazgo fechado | **Ninguno nuevo** — la conclusión va al PROYECTO |
-
-**Los tres estados de un documento** (§9): *vivos* se editan; *congelados* se leen y no se
+**Los tres estados de un documento**: *vivos* se editan; *congelados* se leen y no se
 editan (si un congelado necesita cambiar, el cambio va al PROYECTO o el doc pasa a vivo
-explícitamente); *archivados* en `Plan Inicial/_archivo/` o `docs/Sesiones/_archivo/`.
-Editar un congelado en silencio es exactamente lo que costó la mitad del `DOC-1`.
+explícitamente); *archivados* en `Plan Inicial/_archivo/`, `docs/Prompts/_archivo/` o
+`docs/Sesiones/_archivo/`. El estado lo declara **cada documento en su propio
+encabezado**, no un índice central. Editar un congelado en silencio es exactamente lo que
+costó la mitad del `DOC-1`.
 
 ---
 
@@ -159,6 +147,64 @@ Al agregar un tipo de archivo nuevo, verificar que no se cuele al push.
 
 ---
 
-## 7. Idioma
+## 7. Quién es dueño de qué — una pregunta, un dueño único
+
+Instalada por `DOC-5` (31/07/2026). No es un ranking: dos documentos con preguntas
+distintas nunca compiten. La precedencia entra solo como desempate, al final.
+
+| pregunta | dueño único | quién escribe |
+|---|---|---|
+| ¿Cómo se trabaja en este proyecto? (método, regla de parada, invariantes) | `CLAUDE.md` (raíz) | los dos |
+| ¿Arquitectura, esquema, decisión estructural? | `Plan Inicial/PROYECTO.md` §1–§6, §8 — vale solo la sección o fila que **lleve su propia fecha escrita** (git versiona archivos, no secciones; la fecha de commit no sirve para esto) | los dos |
+| ¿Convención de proceso o aprendizaje? | `Plan Inicial/PROYECTO.md` §9 | los dos |
+| ¿Dónde estamos ahora mismo (qué paso, qué falta)? | `docs/HANDOFF_CODE.md` — se reescribe entero | solo Code |
+| ¿Qué se hizo y cuándo, historial completo? | `docs/BITACORA.md` — append-only. Si discrepa con `HANDOFF_CODE.md` sobre un hecho histórico, **gana la bitácora**: no puede perder una entrada al reescribirse; el handoff es un resumen que puede quedar atrás y se reconstruye desde ella | solo Code |
+| ¿Qué se verificó/decidió en la última sesión de claude.ai? | El handoff de `docs/Sesiones/` **vigente por cadena de reemplazo** (ver abajo), no por ubicación de carpeta | solo claude.ai |
+| ¿Qué se construyó en un paso puntual y cómo se verifica? | El prompt vigente de su cadena en `docs/Prompts/`. No dice si ya corrió ni si sigue siendo cierto hoy — eso es de la bitácora y el handoff | los dos; no se edita una vez ejecutado (addenda fechados sí, ver abajo) |
+| ¿Qué dice una regla del dominio? | `docs/REGLAS_NEGOCIO.md`, ID `R-NN`, append-only, derogación con fecha | los dos |
+| ¿Qué supuesto se está asumiendo? | `docs/SUPUESTOS.md`, ID `S-NN`, ídem | los dos |
+| ¿Cómo se llama este token? | `docs/TOKENS.md` | los dos |
+| ¿Qué inconsistencia documental sigue abierta? | `docs/PENDIENTES_consistencia.md` | los dos |
+| ¿Qué se le preguntó al equipo y sigue sin respuesta? | `docs/PENDIENTES_consistencia.md`, sección propia "Preguntas al equipo" (nacen en docs congelados como `VALIDACION` §7; al congelarse el doc, la pregunta viva se copia ahí) | los dos |
+| ¿Qué número dio una medición y contra qué se verificó? | `docs/VALIDACION_*.md` + su CSV de casos — congelados, uno nuevo por corrida de validación | nadie edita; se crea uno nuevo |
+| ¿Cómo se opera / se corre algo? | `docs/RUNBOOK.md` | los dos |
+| ¿Qué decisión editorial lleva cada informe? (qué campañas, qué va a mano) | `docs/CONFIG_INFORMES.md` | los dos |
+| ¿Qué debe cumplir una lámina nueva pedida en lenguaje natural? | `docs/OBJETIVO_lamina_nueva.md` | los dos |
+| ¿Qué va a hacer el motor si corro ahora? | Las **hojas de registro** vivas (`CONFIG`, `BASES`, `INFORMES`, `MARCADORES`, `MAPEO`, `CAMPANAS`, `PERIODOS`, `SOLAPAS`, `SECCIONES`). Autoridad total sobre el comportamiento — y sobre nada más (nota abajo) | humano y motor, vía menú |
+| ¿Qué *debería* decir esa configuración? | Los `SEED_*` de `Instalar.gs` y, cuando exista, `docs/ESCRITORES.md`. **No operativa del todo hasta la Parte E del Paso 2.11**: hoy hay celdas con más de un sembrador, y sin `ESCRITORES.md` esta fila no tiene a quién señalar en esos casos | los dos |
+| ¿Cuáles son los datos? | Las cuatro bases (`rdv`, `digital`, `looker`, `m2`) — dueños ajenos, el motor solo lee. No divergen de nada: **son** el dato; la nota de abajo no les aplica | el equipo y dueños externos |
+| ¿Qué versión vale si el disco local y git divergen? | **El disco local.** Git atrasado es una falla de respaldo a corregir, no una contradicción a dirimir. Corolario: lo que claude.ai tenga que ver, tiene que estar pusheado — un archivo sin pushear no está en la conversación | — |
+
+**Hojas de registro: estado, no verdad.** Si lo que hace el motor y lo que dice el
+sembrador no coinciden, ninguno "gana": es un **hallazgo**, va a
+`docs/PENDIENTES_consistencia.md` (pasó con `BASES.m2.hoja_default`, y este cuadro existe
+por eso). Aplica solo a las hojas de registro, no a las cuatro bases.
+
+**Cadena de reemplazo — un solo campo, `reemplaza:`.** El documento nuevo declara en su
+encabezado a cuál(es) reemplaza; el viejo no se edita y por eso no puede apuntar a nada.
+Mismo campo en prompts y en handoffs. Un documento puede ser reemplazado por **varios**
+(`Paso-2.10` quedó partido en dos addenda) — para saber qué está vigente hay que seguir
+todas las declaraciones, no la primera. Vigente = lo que ninguna declaración cubre.
+
+**Addenda fechados.** "No se edita" significa no alterar una línea del texto original —
+no que el documento quede mudo ante un error propio: un addendum fechado y marcado que
+corrige una premisa es válido (ejemplos: `docs/DISENO_match_temario.md` §9,
+`docs/Prompts/DOC-5_orden_documental.md`).
+
+**Todo lo demás es evidencia congelada, no dueño de ninguna pregunta:** los relevamientos
+y hallazgos fechados de `docs/` (`AUD-2`, `HALLAZGOS_validacion_decks`,
+`DISENO_match_temario`, `FECHAS_seleccion`, `GRANO_TEMPORAL`, `INFORMES_relacion`,
+`MAPEO_completo`, `PLANTILLAS_QA_y_armonizacion`, `RDV_otros_ministros_riesgo`,
+`SECCIONES`, `TEMARIO_Y_PLANTILLA_*`), los prompts ya ejecutados, los handoffs
+archivados y todo `_archivo/`. Explican cómo se llegó; nunca qué es cierto hoy.
+
+**Desempate**, para el caso raro en que dos documentos reclamen la misma pregunta: gana
+el que **esta tabla** declara dueño; si ninguno lo es, gana el que lleve la **fecha
+escrita** más reciente — nunca la fecha de commit, nunca la ubicación de carpeta (la
+ubicación fue justo lo que falló con los handoffs del 31/07).
+
+---
+
+## 8. Idioma
 
 Todo en español: código, comentarios, documentación, commits y conversación.

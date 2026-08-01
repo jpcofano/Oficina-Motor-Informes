@@ -405,7 +405,7 @@ los de `CLAUDE.md` §3 (vivo / congelado / archivado); acá no se repiten por do
 | `docs/REGLAS_NEGOCIO.md` | reglas del dominio con ID estable `R-NN` | ambas |
 | `docs/SUPUESTOS.md` | supuestos asumidos con ID estable `S-NN` | ambas |
 | `docs/OBJETIVO_lamina_nueva.md` | objetivo de láminas por prompt; se refina | ambas |
-| `docs/CONFIG_INFORMES.md` | decisiones editoriales de configuración por informe — curado a mano por diseño, vivo de forma permanente, no transitoria | ambas |
+| `docs/CONFIG_INFORMES.md` | decisiones editoriales de configuración por informe — curado a mano por diseño | ambas |
 | `docs/BITACORA.md` | qué hizo cada paso, append-only | **solo Code** |
 | `docs/HANDOFF_CODE.md` | estado actual del trabajo, se reescribe | **solo Code** |
 | `docs/MAPEO_completo.md` | relevamiento original del mapeo (28-29/07); la verdad viva es la hoja `MAPEO` | nadie — se autodeclara congelado |
@@ -438,7 +438,7 @@ borrarse.
 |---|---|---|
 | `docs/Prompts/` | ambas | un archivo por paso, auditoría o trabajo documental: `Paso-N.md`, `AUD-N_*.md`, `DOC-N_*.md`. No se editan una vez ejecutados; un prompt que reemplaza a otro lo declara con un campo `reemplaza:` en su propio encabezado (DOC-5 Parte 2) — el original no se toca. Nada que no sea un prompt (con Partes y protocolo de prueba) vive acá — lo que llegó a colarse va a `docs/Prompts/_archivo/` |
 | `docs/Prompts/_archivo/` | ambas | contenido que se coló en `docs/Prompts/` sin ser un prompt y ya se fusionó a su lugar correcto (ej. `REGLAS_R09_R10.md`, fusionado a `docs/REGLAS_NEGOCIO.md`) |
-| `docs/Sesiones/` | **solo claude.ai** | buzón donde el usuario deja los handoffs que baja de sus conversaciones. Code lee de ahí y **no escribe nunca**. El handoff vivo es el que **ningún otro handoff declara como su propio predecesor** (cadena "Continúa a..." en el encabezado) — no el que esté fuera de `_archivo/` por ubicación, que puede desalinearse (pasó una vez: `docs/PROPUESTA_orden_documental.md`, Tarea 2 Caso 5) |
+| `docs/Sesiones/` | **solo claude.ai** | buzón donde el usuario deja los handoffs que baja de sus conversaciones. Code lee de ahí y **no escribe nunca**. El handoff vivo es el que **ningún otro handoff declara reemplazar** (campo `reemplaza:` en el encabezado — mismo campo que los prompts, `CLAUDE.md` §7; los viejos decían "Continúa a", vale igual) — no el que esté fuera de `_archivo/` por ubicación, que puede desalinearse (pasó una vez, 31/07) |
 | `Plan Inicial/_archivo/` | ambas | historial: documentos superados, plantillas espejo |
 
 **Nota sobre `RDV_otros_ministros_riesgo.md`:** el documento se autodeclara congelado, pero

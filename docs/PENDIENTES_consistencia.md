@@ -34,6 +34,13 @@
 
 ## Sigue abierto
 
+### P0 · Datos personales reales en el historial público del repo
+
+Desde el 27/07 (`75f510d`): muestras de las cuatro bases y informes publicados, en tres
+rutas sucesivas del historial. `.gitignore` (31/07) frena lo nuevo pero no lo existente.
+Borrado diferido: decidido por el equipo, fuera del alcance de Code — Code no toca
+historial ni archivos de datos.
+
 ### P0 · Tres reglas de negocio nuevas (R-06, R-09, R-10) sin implementar en código
 
 Escritas en `docs/REGLAS_NEGOCIO.md` (31/07/2026, `docs/Prompts/REGLAS_R09_R10.md` +
@@ -113,52 +120,6 @@ recuerda y repite en el mensaje siguiente. Sin decidir todavía cómo mitigarlo 
 instrucción que quede fuera de alcance se anota acá mismo, como fila nueva, en vez de
 perderse?) — queda registrado como el hallazgo, no la solución.
 
-### P1 · DOC-5 — correcciones aprobadas para la regla de precedencia, sin aplicar (T-1 a T-5, G-2, G-3)
-
-Revisión del 31/07/2026 sobre `docs/PROPUESTA_orden_documental.md` Tarea 5b. Aprobada la
-tabla con estas correcciones, que van juntas en un solo paso de edición de la propuesta,
-antes de instalarla en `CLAUDE.md` §7:
-
-- **T-1** — el desempate invoca "la tabla de ruteo de `CLAUDE.md` §3", pero esta tabla va
-  a instalarse en `CLAUDE.md`: dos mapas de autoridad, y el desempate de uno apunta al
-  otro (circular). Resolver: si §3 es una tabla de ruteo documental, una de las dos se
-  elimina y el desempate dice "esta tabla"; si §3 es otra cosa, sacar la referencia.
-- **T-2** — la tabla cubre 8 archivos; el inventario encontró 21 en `docs/` raíz. Chequeo
-  inverso: cada archivo del inventario o entra en una fila o queda marcado explícitamente
-  como evidencia congelada (no dueño de ninguna pregunta). Sin categoría intermedia. Dos
-  preguntas que faltan y probablemente tienen dueño: "¿qué se le preguntó al equipo y
-  sigue sin respuesta?" (las 7 preguntas de `VALIDACION` §7 + 2 nuevas no son
-  inconsistencias documentales) y "¿qué número dio una medición y contra qué se verificó?"
-  (candidato: los `VALIDACION_*.md`).
-- **T-3** — falta la columna "quién escribe" (humano / Code / los dos) por documento. Tal
-  como está, nada impide que Code edite `REGLAS_NEGOCIO.md`.
-- **T-4** — `HANDOFF_CODE.md` y `BITACORA.md` sí pueden competir por "dónde estamos"
-  (pasó: handoff decía Paso 2.11 Parte C, bitácora ya tenía 2.12 Parte 1). Resolución a
-  escribir: en un hecho histórico gana `BITACORA.md` (append-only, no pierde entradas al
-  reescribirse); `HANDOFF_CODE.md` es un resumen que puede quedar atrás y se reconstruye
-  desde la bitácora.
-- **T-5a** — "la hoja viva" mezcla dos cosas: las hojas de registro (`BASES`, `MAPEO`,
-  `SOLAPAS`, `CONFIG`), que pueden divergir del código y generar el hallazgo de la nota
-  C-1, y las cuatro bases de datos (`rdv`, `digital`, `looker`, `m2`), que no divergen de
-  nada: son el dato. Separarlas.
-- **T-5b** — la fila de `CLAUDE.md` está mal descrita: no es "cómo se rutea algo nuevo",
-  es el documento de gobierno (método, regla de parada, invariantes). La pregunta que
-  contesta es "¿cómo se trabaja en este proyecto?".
-- **G-2** — `reemplaza:` y "continúa a" son el mismo campo (el documento nuevo declara su
-  relación con el viejo; el viejo no se edita y no puede apuntar a nada). Unificar el
-  nombre. Y contemplar el caso partición: un documento puede ser reemplazado por varios
-  (`Paso-2.10_PartesBC_verificado.md` y `Paso-2.10_ParteD_con_R10.md` reemplazan partes
-  distintas del mismo original) — "el vigente es el que nadie declara haber reemplazado"
-  ahí devuelve dos, y hay que seguirlos todos.
-- **G-3a** — ítem nuevo en la tabla: el disco local manda sobre git. Si divergen, gana el
-  local; git atrasado es una falla de respaldo a corregir, no una contradicción a dirimir.
-  Corolario operativo: lo que tenga que ver claude.ai tiene que estar pusheado — un
-  archivo sin pushear no está en la conversación.
-- **G-3b** — la dependencia de C-1: "¿qué debería decir esa celda?" señala al sembrador en
-  código, pero hoy hay celdas con más de un sembrador (el Paso 2.11 existe por eso). La
-  regla no queda operativa hasta que `ESCRITORES.md` declare un dueño por hoja × columna —
-  Parte E del 2.11. Escribir la dependencia en la propia regla.
-
 ### P1 · Chequeo periódico: archivos en disco que no están en git
 
 Tiene **dos motivos opuestos**, y el mismo chequeo cubre ambos:
@@ -204,6 +165,17 @@ la referencia.
   Queda como imprecisión del relevamiento original; no se corrige en un doc congelado.
 
 ---
+
+## Preguntas al equipo — abiertas, esperando respuesta humana
+
+> Dueña de la pregunta "¿qué se le preguntó al equipo y sigue sin respuesta?"
+> (`CLAUDE.md` §7). No son inconsistencias documentales: son preguntas de dominio que
+> nacieron en documentos hoy congelados y necesitan un lugar vivo. Al responderse, la
+> respuesta va al documento dueño del hecho y la pregunta se tacha acá.
+
+- Las siete preguntas de `docs/VALIDACION_2026-07-31.md` §7 ("Preguntas para el equipo")
+  — siguen abiertas; el detalle está allá, esta línea existe para que no queden
+  enterradas en un doc congelado.
 
 ## Nota sobre `Paso-3-v2.md`
 
