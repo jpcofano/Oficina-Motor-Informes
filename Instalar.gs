@@ -1844,17 +1844,12 @@ function menuAplicarConfiguracion_() {
   });
   escribirDiffConfiguracion_(filasDiff, 'DIFF_CONFIGURACION', 'menuAplicarConfiguracion_', filasAlcance);
 
-  var totalCambios = filasDiff.filter(function (f) { return f[1] === 'cambio'; }).length;
-  var totalNuevas = filasDiff.filter(function (f) { return f[1] === 'nueva'; }).length;
-  var totalProtegidas = filasDiff.filter(function (f) { return f[1].indexOf('protegida') === 0; }).length;
-
   var resumen =
     formatearResumenInstalacion_(resultadoInstalar) + '\n\n' +
     '— — —\n' +
-    'Filas nuevas: ' + totalNuevas + ' · celdas cambiadas: ' + totalCambios +
-    (totalProtegidas ? ' · protegidas (origen=manual): ' + totalProtegidas : '') +
+    resumenDesagregado_(filasDiff) +
     (resultadoSeed.pendientes.length
-      ? '\n⚠️ Pendientes de confirmar columna en MAPEO: ' + resultadoSeed.pendientes.join(', ')
+      ? '\n\n⚠️ Pendientes de confirmar columna en MAPEO: ' + resultadoSeed.pendientes.join(', ')
       : '') +
     (filasDiff.length
       ? '\n\nDetalle completo (clave, columna, de qué valor a qué valor) en la hoja DIFF_CONFIGURACION.'
@@ -1862,6 +1857,38 @@ function menuAplicarConfiguracion_() {
     '\n\nQué se auditó y qué no: bloque ALCANCE, arriba en esa misma hoja.';
 
   ui.alert('Aplicar configuración', resumen, ui.ButtonSet.OK);
+}
+
+/**
+ * C.2-6 — un solo total es lo que trajo el problema hasta acá: "MAPEO — actualizadas:
+ * 106" no distinguía nada, y "celdas cambiadas: 1" no decía si era un cambio real, una
+ * migración o una protegida. Cada categoría se cuenta aparte.
+ *
+ * **No lista claves**: el detalle va a la hoja. Un `alert()` con cientos de líneas es el
+ * mismo modo de falla que ya rompió `diagnosticarColapso_()` por timeout.
+ */
+function resumenDesagregado_(filasDiff) {
+  var cuenta = function (predicado) {
+    return filasDiff.filter(function (f) { return predicado(String(f[1])); }).length;
+  };
+  var categorias = [
+    ['cambiadas', cuenta(function (t) { return t === 'cambio'; })],
+    ['agregadas', cuenta(function (t) { return t === 'nueva'; })],
+    ['migraciones', cuenta(function (t) { return t.indexOf('migracion') === 0; })],
+    ['solo_en_hoja', cuenta(function (t) { return t === 'solo_en_hoja'; })],
+    ['protegidas (con diferencia)', cuenta(function (t) { return t.indexOf('protegida (habría cambiado)') === 0; })],
+    ['protegidas (sin diferencia)', cuenta(function (t) { return t.indexOf('protegida (sin diferencias)') === 0; })]
+  ];
+  var lineas = categorias.map(function (c) { return c[0] + ': ' + c[1]; });
+  var totalReportado = categorias.reduce(function (a, c) { return a + c[1]; }, 0);
+  // "sin cambios" no es una fila del diff: es la ausencia de las dos primeras categorías.
+  // Se declara igual, para que el resumen no dependa de leer un cero entre otros.
+  lineas.push('sin cambios: ' + ((categorias[0][1] + categorias[1][1] + categorias[2][1]) === 0 ? 'sí' : 'no'));
+  // Cualquier tipo que no entre en las categorías de arriba se cuenta aparte en vez de
+  // desaparecer del resumen — un total que no cierra tiene que verse.
+  var sinCategoria = filasDiff.length - totalReportado;
+  if (sinCategoria > 0) lineas.push('otras líneas (sin categoría): ' + sinCategoria);
+  return lineas.join(' · ');
 }
 
 /**

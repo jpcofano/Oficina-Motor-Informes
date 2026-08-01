@@ -277,6 +277,61 @@ function probarProtegidasConDiferencia_() {
 }
 
 /**
+ * Control positivo de C.2-6 — el resumen desagrega, y no lista claves.
+ *
+ * Un solo total es lo que trajo el problema hasta acá: "celdas cambiadas: 1" no decía si
+ * era un cambio real, una migración o una protegida.
+ */
+function probarResumenDesagregado_() {
+  var filas = [
+    ['BASES', 'cambio', 'm2', 'hoja_default', 'Cuentas M2', ''],
+    ['MAPEO', 'nueva', 'm2||M2 periodo DIRECTA||or', '', '', ''],
+    ['SOLAPAS', 'migracion', 'looker||resumen_metricas  [S-01]', 'uso', 'revisar', 'fuente'],
+    ['SOLAPAS', 'migracion (pisa manual)', 'looker||x  [S-01]', 'uso', 'a', 'b'],
+    ['MAPEO', 'solo_en_hoja', 'm2||ahhh||or', '', 'fila 3', '(no está en el seed)'],
+    ['SOLAPAS', 'protegida (habría cambiado)', 'rdv||RDV CONJUNTO', 'uso', 'revisar', 'ignorar (no aplicado)'],
+    ['SOLAPAS', 'protegida (sin diferencias)', 'rdv||Comunas', '', '', 'ya coincide con el seed']
+  ];
+  var r = resumenDesagregado_(filas);
+
+  // Cada categoría se cuenta por separado.
+  afirmar_(r.indexOf('cambiadas: 1') !== -1, 'C.2-6: cambiadas mal contadas -> ' + r);
+  afirmar_(r.indexOf('agregadas: 1') !== -1, 'C.2-6: agregadas mal contadas -> ' + r);
+  afirmar_(r.indexOf('migraciones: 2') !== -1, 'C.2-6: las dos migraciones (con y sin pisa manual) se cuentan juntas -> ' + r);
+  afirmar_(r.indexOf('solo_en_hoja: 1') !== -1, 'C.2-6: solo_en_hoja mal contada -> ' + r);
+  afirmar_(r.indexOf('protegidas (con diferencia): 1') !== -1, 'C.2-6: protegida con diferencia mal contada -> ' + r);
+  afirmar_(r.indexOf('protegidas (sin diferencia): 1') !== -1, 'C.2-6: protegida sin diferencia mal contada -> ' + r);
+
+  // Las siete filas quedan clasificadas: nada desaparece del resumen.
+  afirmar_(r.indexOf('sin categoría') === -1, 'C.2-6: no debería quedar ninguna fila sin categoría -> ' + r);
+
+  // El caso que importa: una protegida NO puede contarse como cambio.
+  var soloProtegida = resumenDesagregado_([
+    ['SOLAPAS', 'protegida (sin diferencias)', 'x', '', '', 'ya coincide']
+  ]);
+  afirmar_(soloProtegida.indexOf('cambiadas: 0') !== -1,
+    'C.2-6: una protegida no es un cambio -> ' + soloProtegida);
+  afirmar_(soloProtegida.indexOf('sin cambios: sí') !== -1,
+    'C.2-6: solo protegidas significa sin cambios -> ' + soloProtegida);
+
+  // Y una migración SÍ cuenta como que hubo cambios (rompe la idempotencia).
+  var conMigracion = resumenDesagregado_([['SOLAPAS', 'migracion', 'x', 'uso', 'a', 'b']]);
+  afirmar_(conMigracion.indexOf('sin cambios: no') !== -1,
+    'C.2-6: una migración que escribe no es "sin cambios" -> ' + conMigracion);
+
+  // Un tipo desconocido no puede desaparecer del total.
+  var raro = resumenDesagregado_([['X', 'tipo_que_no_existe', 'k', '', '', '']]);
+  afirmar_(raro.indexOf('sin categoría): 1') !== -1,
+    'C.2-6: un tipo sin categoría tiene que verse en el resumen -> ' + raro);
+
+  // No se listan claves en el resumen — eso ya rompió diagnosticarColapso_ por timeout.
+  afirmar_(r.indexOf('RDV CONJUNTO') === -1 && r.indexOf('ahhh') === -1,
+    'C.2-6: el resumen no puede listar claves, el detalle va a la hoja -> ' + r);
+
+  return 'C.2-6 resumen desagregado: OK';
+}
+
+/**
  * Corre todas las pruebas y devuelve el texto del reporte. Sin `alert()` acá adentro para
  * poder llamarla también desde otro lado.
  */
@@ -285,7 +340,8 @@ function correrPruebasDiff_() {
     probarBloqueDeAlcance_,
     probarMigracionesEnDiff_,
     probarSoloEnHoja_,
-    probarProtegidasConDiferencia_
+    probarProtegidasConDiferencia_,
+    probarResumenDesagregado_
   ];
   var lineas = [];
   var fallas = 0;
