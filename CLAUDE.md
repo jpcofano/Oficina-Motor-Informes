@@ -99,6 +99,16 @@ Quien implementa no se autoverifica. Los errores del Paso 2.2 se cazaron verific
 archivos vivos, no leyendo los reportes de las funciones. Reportar lo que se hizo, no
 declarar que funciona.
 
+### Convenciones de shell
+
+La sesión corre en PowerShell sobre Windows, y ya arranca parada en el directorio del
+proyecto.
+
+- **Mensajes de commit multilínea: un `-m` por línea** (`git commit -m "línea 1" -m "línea 2"`).
+  Nunca `$(cat <<'EOF' …)` ni here-docs: son sintaxis de bash y en PowerShell no parsean.
+- **No anteponer `cd <ruta> &&`** a los comandos. Es redundante y además dispara el prompt
+  de permisos.
+
 ---
 
 ## 5. Handoffs — dos archivos, dos dueños
