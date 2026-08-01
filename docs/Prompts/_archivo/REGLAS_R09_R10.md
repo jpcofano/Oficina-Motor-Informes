@@ -1,5 +1,11 @@
 # R-09 y R-10 — para agregar a `docs/REGLAS_NEGOCIO.md`
 
+> **Archivado (DOC-5 Parte 2, 31/07/2026).** No era un prompt — no tiene Partes con tarea
+> ni protocolo de prueba, es contenido normativo. Se fusionó en `docs/REGLAS_NEGOCIO.md`
+> (R-09 y R-10, ambas ya escritas ahí). `docs/Prompts/` lleva prompts y nada más — ver
+> `docs/PROPUESTA_orden_documental.md`, Tarea 4, hallazgo 3. Queda acá como historial de
+> cómo se verificaron las dos reglas contra las cuatro bases del 31/07.
+
 > Verificadas contra las cuatro bases del 31/07.
 > Numeración continúa a R-05 (JM/GCBA), R-06 (el id manda), R-07 (`fecha_corte`),
 > R-08 (el vínculo reunión↔cuenta es curado). **Trabajamos en español.**
