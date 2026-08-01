@@ -792,3 +792,48 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
     hay **siete** tablas dinámicas, no cinco.
   - `docs/Prompts/AUD-3_inventario_codigo.md` sigue sin commitear: es de otro paso, no se
     bundlea (`CLAUDE.md` §4.5).
+
+## Config — el scratchpad entra al `additionalDirectories` de usuario (2026-08-01) — commit de esta entrada
+
+No es un paso del motor y **no tocó un solo archivo del repo**: el cambio vive en
+`~/.claude/settings.json`, fuera de git. Se anota igual porque el hallazgo del final cambia
+qué esperar de la configuración de permisos, y porque un archivo fuera de git no lo ve
+nadie más.
+
+- **Qué se cambió.** Una sola clave: `permissions.additionalDirectories` pasó de `[]` a
+  `["C:\\Users\\20243359679\\AppData\\Local\\Temp\\claude"]`. El scratchpad de sesión cuelga
+  de ahí con un ID que cambia en cada arranque, así que aprobar la ruta puntual no servía:
+  la sesión siguiente era otra ruta. Verificado tras reiniciar — escribir y leer archivos en
+  el scratchpad ya no pide autorización. Ése era el problema real.
+- **Se corrió `/fewer-permission-prompts` y el resultado fue no agregar nada.** Escaneados
+  los 50 `.jsonl` más recientes de los siete proyectos. Todo comando líder con tres o más
+  usos ya está cubierto: o lo auto-permite Claude Code (`grep` 158, `ls` 54, `cat` 20,
+  `find` 19, `which`/`wc`/`tail`/`sed`/`echo`), o ya está en el allowlist de usuario
+  (`git` 131, `node` 43, `cp` 14, `npx` 13, `python3` 11), o está en `ask` a propósito
+  (`taskkill`, `pkill`). Del lado PowerShell la herramienta casi no se usa: 47 `cd`, 8
+  `git`, 5 `ls`, 5 `Copy-Item`. Agregar reglas que no matchean sólo ensucia el archivo.
+- **Un error de método que conviene no repetir.** El primer conteo contaba *tramos de
+  pipeline* (`grep … | sort | uniq`) y daba candidatos falsos como `Select-Object`. Las
+  reglas de permiso matchean contra el **comando líder**, no contra cada tramo. Recontado
+  por líder, la lista de candidatos quedó vacía.
+- **Lo que sí queda y no se arregla con allowlist.** Unas 34 invocaciones arrancan con
+  formas compuestas —`for f in …`, `export LC_ALL=…`, prefijos de variable como
+  `SCRATCH=… comando`— que no matchean limpio contra reglas de prefijo. Si son la causa de
+  los prompts residuales, el arreglo es de conducta y ya está escrito: comandos simples, sin
+  cadenas largas (`CLAUDE.md` de usuario, §Comandos simples). No está confirmado cómo parte
+  Claude Code los compuestos antes de evaluar permisos.
+- **Límite del método, para no llevarse una falsa tranquilidad.** Los transcripts registran
+  los rechazos, no las autorizaciones concedidas: en las 50 sesiones hay **un solo** rechazo
+  real. "No hay candidatos" significa *ningún patrón frecuente sin cubrir*, no *no te van a
+  preguntar nunca*.
+- **Corrección a un dato que Code dio mal en esta misma sesión.** Se afirmó que en
+  `defaultMode: "auto"` el clasificador puede pedir confirmación aunque exista una regla de
+  allow que matchee. **Es falso.** El esquema de settings documenta `autoMode.classifyAllShell`
+  como *"When true, every Bash/PowerShell allow rule is suspended … so all shell commands are
+  routed through the classifier"*, con **default `false`**: por defecto las reglas de allow
+  ganan y el comando no llega al clasificador. El flag no está puesto en ninguno de los dos
+  settings. Consecuencia práctica: ampliar el allowlist **sí** elimina esos prompts de raíz.
+- **Pendientes, dejados a propósito.** (a) `Bash(rm *)` y `Bash(curl *)` del allowlist de
+  usuario son anchos y se angostan en una sesión dedicada; (b) el `additionalDirectories`
+  con `/tmp` del settings del proyecto y el `Read(//tmp/**)` del de usuario son rutas POSIX
+  que en Windows no cubren nada — ruido muerto conocido, sin urgencia.
