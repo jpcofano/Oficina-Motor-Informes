@@ -506,3 +506,20 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   3→3-v2, 2.2→2.2.2); `ESCRITORES.md` (Paso 2.11 Parte E) para que la fila del sembrador
   quede operativa; `docs/Prompts/Paso-2.13` referencia `docs/_archivo/`, que no existe —
   al ejecutarlo, usar `Plan Inicial/_archivo/`.
+
+## Protocolo 2.11-C corrido — 5 de 7 pasos pasados (2026-07-31/08-01) — commit `<pendiente>`
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md`, protocolo de
+  siete pasos, para decidir si la Parte C + C.2-1 se puede commitear.
+- **Qué se hizo:** el usuario corrió el protocolo desde la planilla (snapshot previo, cinco
+  ediciones de control positivo, aplicar ×2 + estado). Code documentó la corrida en
+  `docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md` (archivo nuevo, congelado, con su fila en
+  `CLAUDE.md` §7 y en `PROYECTO.md` §9) y verificó la causa del bloqueante contra el código.
+- **Prueba:** pasos 1, 2, 3, 6 y 7 ✅; pasos 4 (idempotencia) y 5 (estado = apply) ❌.
+  El control positivo cerró con evidencia la duda abierta desde el 31/07: `BASES` y `MAPEO`
+  **sí** se auditan — el "cero líneas" anterior era ausencia de cambios, no ceguera.
+- **Pendientes/decisiones:** **sin commit del código** (Parte C + C.2-1 siguen en el working
+  tree). Bloqueante 1 verificado —la migración `corregirNotaControlAnclaje_` revertía la
+  nota que `SEED_SOLAPAS_` ya traía bien, roles invertidos respecto de la hipótesis— y
+  arreglado retirando la migración; falta re-correr los pasos 3-5. Bloqueante 2 debería
+  caerse con eso, se verifica. Hallazgo nuevo: `BASES.fila_encabezado` con formato de fecha
+  (P1, se une a H-2). Los tres en `docs/PENDIENTES_consistencia.md`.

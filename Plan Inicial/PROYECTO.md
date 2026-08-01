@@ -420,6 +420,7 @@ los de `CLAUDE.md` §3 (vivo / congelado / archivado); acá no se repiten por do
 | `docs/GRANO_TEMPORAL.md` | doctrina: por qué la fecha de reunión no filtra canales | nadie |
 | `docs/TEMARIO_Y_PLANTILLA_2026-07-31.md` | temario y diff de plantilla (31/07) | nadie |
 | `docs/VALIDACION_2026-07-31.md` | validación del informe SECCO publicado contra las cuatro bases (31/07) | nadie |
+| `docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md` | las tres corridas del protocolo del Paso 2.11 Parte C (31/07): control positivo, idempotencia, estado | nadie — se crea uno nuevo por corrida |
 
 `REGLAS_NEGOCIO` y `SUPUESTOS` son **append-only**: se agregan filas, nunca se reutiliza
 un ID, y una regla o supuesto que se cae se marca **derogado con fecha** en vez de

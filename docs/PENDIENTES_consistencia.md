@@ -41,6 +41,37 @@ rutas sucesivas del historial. `.gitignore` (31/07) frena lo nuevo pero no lo ex
 Borrado diferido: decidido por el equipo, fuera del alcance de Code — Code no toca
 historial ni archivos de datos.
 
+### P0 · Paso 2.11 Parte C: el protocolo falla en los pasos 4 y 5 — arreglo aplicado, sin re-verificar
+
+Corrida completa y evidencia: `docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md`. Cinco de
+siete pasos pasaron; los dos que fallan son el núcleo del criterio.
+
+- **No idempotente (paso 4).** Cada corrida de "Aplicar configuración" reporta la misma
+  celda: `SOLAPAS.digital||RDV JM 2 VECES`, columna `notas`. **Causa verificada contra el
+  código el 01/08** — y con los roles al revés de la hipótesis inicial: `SEED_SOLAPAS_` ya
+  traía la nota larga y correcta; la migración `corregirNotaControlAnclaje_` comparaba
+  contra su propia constante vieja (corta) y la revertía en cada corrida, dentro de la
+  misma corrida, antes de que el sembrador la volviera a escribir larga.
+  **Arreglo aplicado en el working tree, sin commitear:** migración retirada entera (el
+  seed ya es dueño del valor). **Falta re-correr los pasos 3, 4 y 5.**
+- **"Estado de configuración" no coincide con "Aplicar" (paso 5).** Estado decía
+  `✅ Sin discrepancias` y un "Aplicar" inmediatamente después cambiaba una celda. No era
+  una mentira sobre el presente: la discrepancia la **fabricaba** el propio apply, vía la
+  migración de arriba. Debería caerse solo con el arreglo — **se verifica en la próxima
+  corrida, no se asume.**
+
+### P1 · `BASES.fila_encabezado` tiene formato de fecha aplicado encima
+
+El diff reportó `BASES m2 fila_encabezado: 31/12/1899 → 1900-01-02`. Son los enteros **1 y
+3** renderizados como seriales de Sheets (1 = 31/12/1899, 3 = 02/01/1900). El valor es
+correcto —H-2 ya decía que `BASES.m2` es 3—; lo que falta resolver es el **tipo**: si
+`getValues()` devuelve `Date` en vez de número, `Union.gs:36` y `:261`, que leen
+`base.fila_encabezado` directo sin pasar por `resolverFilaEncabezado_()`, harían
+`Number(Date)` = milisegundos de época, un número de fila absurdo y sin fallar. Si es
+número, alcanza con sacarle el formato de fecha a la columna. **Diagnóstico ya desplegado**
+(Diagnóstico → Fechas y mapeo → "Tipos de fechas de ventana" ahora releva también esta
+columna); falta correrlo. Se une a **H-2** del prompt `Paso-2.11_ParteC2_diff_auditable.md`.
+
 ### P0 · Tres reglas de negocio nuevas (R-06, R-09, R-10) sin implementar en código
 
 Escritas en `docs/REGLAS_NEGOCIO.md` (31/07/2026, `docs/Prompts/REGLAS_R09_R10.md` +
