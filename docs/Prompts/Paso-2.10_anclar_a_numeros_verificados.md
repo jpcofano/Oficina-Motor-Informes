@@ -300,3 +300,11 @@ derivaba de un buen instinto. Era falsa. La única defensa fue abrir el archivo 
 filas.
 
 De ahí que este paso ponga la hoja `VALIDACION` antes que el corte vertical, y no al revés.
+
+---
+
+> **Nota de equivalencia (DOC-6 Parte B, 01/08/2026) — no modifica el texto de arriba.**
+> Los IDs `R-03` / `R-04` / `R-05` de este documento corresponden a `R-05` / `R-06` /
+> `R-07` del canon vigente (`docs/REGLAS_NEGOCIO.md`). Se renumeraron `+2` al consolidar,
+> porque `R-03` y `R-04` ya estaban asignados a otras dos reglas; este texto no se
+> modifica. Alcanza a las tres definiciones de la Parte F (§`R-03`, §`R-04`, §`R-05`).

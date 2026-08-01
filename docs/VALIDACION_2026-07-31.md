@@ -379,3 +379,13 @@ Esta validación lo encontró dos veces más, y las dos habrían pasado inadvert
 Y una tercera, en la dirección contraria y más incómoda: **la hipótesis del colapso del
 lector también era plausible.** Explicaba cuatro síntomas con una causa, se derivaba de un
 buen instinto metodológico, y era falsa. La única defensa fue abrir el archivo y contar.
+
+---
+
+> **Nota de equivalencia (DOC-6 Parte B, 01/08/2026) — no modifica el texto de arriba.**
+> En la tabla de §"Qué cambia" (línea 342), `Nueva R-03: agregado JM/GCBA` y
+> `Nueva R-04: el id manda, el nombre nunca` corresponden a **`R-05`** y **`R-06`** del
+> canon vigente (`docs/REGLAS_NEGOCIO.md`). Son las reglas que este documento propuso
+> crear; al escribirlas se renumeraron `+2` porque `R-03` y `R-04` ya estaban asignados.
+> Este documento es evidencia congelada y no es un prompt, pero la nota vale igual: era
+> el último lugar vivo donde `R-03`/`R-04` significaban otra cosa.

@@ -2,6 +2,10 @@
 
 > Supuestos del dominio que el motor da por ciertos. Cada uno tiene ID estable.
 > Si una regla se cae, se marca como **derogada** con fecha — no se borra.
+>
+> **Este archivo es el canon.** Una regla citada en cualquier otro documento con un ID
+> distinto al de acá está vencida, no es una segunda opinión — ver la nota de renumeración
+> al final.
 
 ## R-01 — Un encuentro por Figura por día
 
@@ -344,3 +348,46 @@ con el encabezado **crudo**, no el normalizado (si guarda el normalizado, pierde
 cambios de espaciado, que son justo los que rompen); agregar al diagnóstico un control de
 encabezados duplicados tras normalizar, por solapa (hoy hay cuatro casos reales; que
 salgan como ⚠, no como una columna elegida al azar).
+---
+
+## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
+
+**Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas
+como `R-03`, `R-04` y `R-05`. Al consolidarlas acá (`REGLAS_R09_R10`, 31/07/2026,
+`764dc1e`) resultó que `R-03` y `R-04` ya estaban asignados a otras dos reglas con
+contenido distinto, así que las tres se renumeraron `+2`:
+
+| en los documentos de origen | canon vigente |
+|---|---|
+| `R-03` · el agregado suma universos de JM y aperturas de JM+GCBA | **`R-05`** |
+| `R-04` · el `id_cuenta` manda | **`R-06`** |
+| `R-05` · `fecha_corte` es obligatoria | **`R-07`** |
+
+**Por qué no se arregló en origen.** La regla de ID estable ya existía y funcionó: acá
+ningún ID se reusó ni cambió de significado. Lo que quedó fuera del alcance de esa
+consolidación fueron los **documentos congelados**, que por definición no se editan. El
+criterio es el de un ADR: *una decisión no se edita, se supersede* — así que los tres
+archivos afectados llevan una **nota de equivalencia fechada al pie**, y su texto original
+queda intacto:
+
+- `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` — las tres definiciones.
+- `docs/Prompts/Paso-2.10_PartesBC_verificado.md` — **sólo las líneas 23 y 97**: el resto
+  del documento ya cita el canon, porque es el que diagnosticó la colisión y propuso este
+  mismo renumerado.
+- `docs/VALIDACION_2026-07-31.md` — la tabla "Qué cambia" (línea 342).
+
+**Lo que se verificó y no hizo falta tocar.** Las 34 citas de IDs `R-`/`S-` de
+`docs/BITACORA.md` (12 IDs distintos) son **todas consistentes con este canon**. La única
+mención de la numeración vieja está en la entrada de `REGLAS_R09_R10`, que narra el
+renumerado en sí: es historia correcta, no una cita vencida.
+
+**No es el único caso, y el otro ya está resuelto en su lugar.** `R-04` lleva su propia
+nota de numeración en el cuerpo de la regla: se documentó primero como `R-02` en su prompt
+de origen, y `R-02` ya estaba tomado. Esa nota y esta cubren colisiones **distintas** y no
+se contradicen — la de `R-04` es de un ID solo, ésta es del corrimiento `+2` de tres.
+
+**Qué hacer si vuelve a pasar.** Antes de asignar un ID nuevo, greppear el prefijo en todo
+el repo (`grep -rnoE "R-[0-9]{2}" --include=*.md .`), no sólo en este archivo. La colisión
+no se produjo acá: se produjo en un prompt que asignó IDs sin mirar el canon. Es el mismo
+patrón que `CLAUDE.md` §1 ya exige para nombres de función y `CLAUDE.md` §3 para pedidos de
+corrección: **greppear antes de escribir.**

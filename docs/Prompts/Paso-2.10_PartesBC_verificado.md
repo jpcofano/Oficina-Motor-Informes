@@ -249,3 +249,20 @@ El 2.10 propone agregar **R-03** (agregado JM/GCBA), **R-04** (el id manda) y **
 
 Esto toca la Parte E: sin R-08 resuelta, `enc_mails_enviados` no tiene cómo llegar a la
 fila del 25/07 salvo cableada a mano.
+
+---
+
+> **Nota de equivalencia (DOC-6 Parte B, 01/08/2026) — no modifica el texto de arriba, y
+> es acotada a dos líneas.**
+> Este documento convive con las dos numeraciones **a propósito**: es el que diagnosticó
+> la colisión. Su §3 cita el canon correctamente (`R-01`…`R-04`, `C-01`) y propone el
+> renumerado que después se aplicó (*"renumerar a R-05, R-06 y R-07"*), y de ahí en
+> adelante ya usa `R-06` y `R-08` del canon. Una nota general que declarara vieja toda su
+> numeración sería falsa.
+>
+> Quedan con numeración vieja **sólo dos citas**, ambas anteriores al §3:
+>
+> | línea | dice | canon vigente |
+> |---|---|---|
+> | 23 | `R-05 · fecha_corte` | **`R-07`** |
+> | 97 | `R-04` (el `id_cuenta` manda; filas con métricas y sin identificador) | **`R-06`** |
