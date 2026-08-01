@@ -1,2 +1,13 @@
 node_modules/
 .DS_Store
+
+# Muestras de datos: el repo es público y las bases tienen datos reales de GCBA
+# (nombres de funcionarios, barrios, volúmenes de envío, respuestas de vecinos).
+# El repo lleva código y documentación; si Claude necesita una muestra, se sube
+# al chat, no al repo. (DOC-5 Parte 2, 31/07/2026.)
+# Ojo: .gitignore solo frena lo nuevo — lo ya trackeado sigue trackeado (ver
+# auditoría G-1c en PENDIENTES_consistencia.md).
+Plan Inicial/_archivo/samples/
+docs/samples/
+*.xlsx
+*.zip
