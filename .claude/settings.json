@@ -1,43 +1,33 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git show:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git push:*)",
-      "Bash(git pull:*)",
-      "Bash(git fetch:*)",
-      "Bash(git branch:*)",
-      "Bash(git checkout:*)",
-      "Bash(git switch:*)",
-      "Bash(git restore:*)",
-      "Bash(git stash:*)",
-      "Bash(git remote:*)",
-      "Bash(clasp:*)",
-      "Bash(npx clasp:*)",
+      "Bash(clasp *)",
+      "Bash(npx clasp *)",
+      "Bash(node --check *)",
       "Bash(command -v node)",
-      "Bash(node --check:*)",
-      "Bash(cp Instalar.gs __TRACKED_VAR__/Instalar_check.js)",
-      "Bash(cp Instalar.gs /tmp/Instalar_check.js)",
-      "Bash(cp Instalar.gs /tmp/Instalar_check2.js; node --check /tmp/Instalar_check2.js && echo \"SYNTAX OK\")",
-      "Bash(grep -v \"^[0-9]*: *//\")",
-      "Read(//c//**)",
-      "Bash(cd \"/c/Users/20243359679/OneDrive/Documentos/AppsScript/Oficina/Motor Informes/docs/Prompts\" && ls -la --time-style=full-iso DOC-5_orden_documental.md 2>/dev/null; echo \"---buscando conflictos OneDrive---\"; find . -iname \"*DOC-5*\" 2>/dev/null; find .. -iname \"*conflict*\" -o -iname \"*-PC-*\" 2>/dev/null | head -20)",
-      "Read(//c/Users/20243359679/OneDrive/Documentos/AppsScript/Oficina/**)"
+      "PowerShell(clasp *)",
+      "PowerShell(npx clasp *)",
+      "PowerShell(node --check *)"
     ],
     "deny": [
+      "Bash(git push --force*)",
       "Bash(git push --force:*)",
+      "Bash(git push -f*)",
       "Bash(git push -f:*)",
+      "Bash(git reset --hard*)",
       "Bash(git reset --hard:*)",
+      "Bash(git clean *)",
       "Bash(git clean:*)",
-      "Bash(git filter-branch:*)"
+      "Bash(git filter-branch *)",
+      "Bash(git filter-branch:*)",
+      "PowerShell(git push --force*)",
+      "PowerShell(git push -f*)",
+      "PowerShell(git reset --hard*)",
+      "PowerShell(git clean *)",
+      "PowerShell(git filter-branch *)"
     ],
     "additionalDirectories": [
-      "/tmp",
-      "\\tmp"
+      "/tmp"
     ]
   },
   "model": "opus",
