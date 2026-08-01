@@ -71,6 +71,29 @@ fallar**. Hoy `MARCADORES.m2_envios` ya usa `periodo_ref = m2_mensual`.
 > nueve `SEED_*` y ninguno es de `MARCADORES`). Ninguno de los ocho resultó inválido desde
 > el lado del código.
 
+> ⚠ **Addendum 2 (31/07/2026, diagnóstico corrido — la hipótesis de degradación queda
+> tumbada).** El diagnóstico de tipos dio: **las doce celdas son `Date`** — `PERIODOS`,
+> `CAMPANAS` y `CONFIG`, todas. Ninguna se degradó. Lo que cambió fue el **formato de
+> visualización** (antes `1/06/2026`, ahora `2026-06-01`): la escritura del seed pisó el
+> número de formato de la celda, y Sheets reparseó el string a `Date` igual. El ciclo real:
+> la hoja tiene `Date` → el seed escribe string → Sheets lo convierte de nuevo a `Date` →
+> la próxima corrida compara `Date` contra string, no coinciden, reescribe. Para siempre.
+> El paso 4 del protocolo no puede pasar, y no hay ningún bug de datos detrás.
+>
+> **Qué queda de C.2-1 y qué se cae:**
+> - **Queda solo la tarea 3** — `normalizarParaComparar_(valor, tipoColumna)` en
+>   `calcularDiffUpsert_()`. Es el arreglo entero.
+> - La tarea 2 (`SEED_PERIODOS_` escribe `Date` reales) pasa a **opcional, no correctiva**:
+>   Sheets ya convierte. Solo si sale gratis.
+> - La tarea 4 (`tipo_degradado`) **no va**: se diseñó para un problema que no existe, y un
+>   guardarraíl que nunca puede dispararse es peso muerto.
+> - El criterio de aceptación `PERIODOS.desde instanceof Date === true` **ya se cumple hoy**
+>   y no discrimina nada. Criterio nuevo: correr "Aplicar configuración" dos veces y que la
+>   segunda **no reporte ninguna línea de `PERIODOS` ni de `CAMPANAS`**.
+> - Detalle menor que sí conviene: que el seed no pise el número de formato de la celda (o
+>   escriba `Date` y el formato quede estable) — hoy la hoja se ve distinta después de cada
+>   instalación aunque el valor sea el mismo.
+
 1. **Verificar antes de tocar.** Correr un diagnóstico de sólo lectura que imprima
    `typeof` y `instanceof Date` de `PERIODOS.desde` / `PERIODOS.hasta` y de
    `CONFIG.periodo_desde` / `CONFIG.periodo_hasta`. Dejar el resultado en la bitácora.

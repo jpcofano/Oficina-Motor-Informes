@@ -120,6 +120,23 @@ recuerda y repite en el mensaje siguiente. Sin decidir todavía cómo mitigarlo 
 instrucción que quede fuera de alcance se anota acá mismo, como fila nueva, en vez de
 perderse?) — queda registrado como el hallazgo, no la solución.
 
+### P2 · Acoplamiento no declarado: formato de escritura del seed ↔ `parsearFechaCelda_`
+
+El sistema hoy funciona porque `parsearFechaCelda_` (`Fuentes.gs:222`) acepta justo los
+formatos que los `SEED_*` escriben (ISO `'2026-06-01'`) y los que Sheets devuelve tras
+reparsear (`Date`). Nadie declaró ese contrato: si un seed cambia de formato o el parser
+se ajusta, la ventana deja de resolver sin que ningún test lo ate. Detectado en C.2-1
+(31/07/2026, la hipótesis de degradación de tipo resultó falsa, pero el acoplamiento
+quedó a la vista). Dónde declararlo: comentario cruzado en ambos lados o regla propia.
+
+### P2 · El patrón `commit <pendiente>` en `BITACORA.md`
+
+La bitácora se escribe antes del commit del paso, así que el hash queda `<pendiente>` y
+depende de que alguien vuelva a completarlo (ya pasó dos veces: `5b72cf4`, `5c2be2e`).
+Un `<pendiente>` olvidado deja una entrada sin ancla verificable. Mitigación barata a
+decidir: chequeo al cerrar sesión (grep de `<pendiente>`), o completar el hash en el
+mismo commit del paso siguiente.
+
 ### P1 · Chequeo periódico: archivos en disco que no están en git
 
 Tiene **dos motivos opuestos**, y el mismo chequeo cubre ambos:
