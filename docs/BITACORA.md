@@ -479,3 +479,30 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   después de la Parte C del Paso 2.11 — necesita el diff de esa parte) y Parte 3
   (retirar `reclasificarSolapasM2Invertidas_`, entra dentro de la Parte D del Paso 2.11)
   siguen sin ejecutar.
+
+## DOC-5 — Orden documental: un solo dueño por hecho (2026-07-31) — commits `b9d57c5`…`ceeef86` y el de esta entrada
+- **Qué pedía el prompt:** `docs/Prompts/DOC-5_orden_documental.md` — inventario de los
+  ~96 `.md`, duplicaciones, hechos sin respaldo, huérfanos/muertos, y propuesta de mapa
+  de autoridad. Las partes siguientes las dirigió la revisión humana por PARADAs
+  (decisiones D-1–D-4, correcciones T-1–T-5, hallazgos G-1–G-3).
+- **Qué se hizo:** handoff vivo pasó a `HANDOFF 2026-07-31-3.md` (estaba archivado y sin
+  trackear); `PROYECTO.md` §7 dejó de llevar estado (roadmap + puntero a esta bitácora y
+  al handoff); §9 dejó de asignar vivo/congelado central (lo declara cada doc);
+  `REGLAS_R09_R10.md` a `docs/Prompts/_archivo/` (no era un prompt); campo único
+  `reemplaza:` para declarar reemplazo (prompts y handoffs, admite partición); addenda
+  fechados permitidos sobre prompts ejecutados; `.gitignore` con motivo (datos reales
+  fuera del repo público, el `.zip` nunca llegó a commitearse); auditoría G-1c del
+  historial → P0 en `PENDIENTES_consistencia.md` (datos personales reales desde
+  `75f510d`, decisión del equipo, fuera del alcance de Code); **tabla de autoridad
+  instalada en `CLAUDE.md` §7** (una pregunta → un dueño único → quién escribe, con
+  desempate propio; la tabla de ruteo de §3 desaparece); `PROPUESTA_orden_documental.md`
+  archivada con nota de instalación.
+- **Prueba:** revisión humana parte por parte (cada PARADA); verificaciones git en vivo
+  (`check-ignore` por las tres fuentes, `ls-tree` de HEAD, historial completo de
+  binarios; el bug de `git mv` con edición sin stagear se reprodujo en un repo de prueba
+  aislado antes de afirmarlo).
+- **Pendientes\decisiones:** P0 de datos en historial (equipo, diferido); generalizar
+  `reemplaza:` a los prompts viejos con reemplazo ya detectado (Paso-0→0-v2, 1.6→1.6-v2,
+  3→3-v2, 2.2→2.2.2); `ESCRITORES.md` (Paso 2.11 Parte E) para que la fila del sembrador
+  quede operativa; `docs/Prompts/Paso-2.13` referencia `docs/_archivo/`, que no existe —
+  al ejecutarlo, usar `Plan Inicial/_archivo/`.
