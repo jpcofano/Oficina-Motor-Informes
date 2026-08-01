@@ -195,3 +195,59 @@ aplicarse:
 
 R-06 y R-09 siguen sin implementar y están anotadas en `PENDIENTES_consistencia.md`. No
 entran acá: tocan el anclaje, que es Paso 3.
+
+---
+
+> ⚠ **Addendum 1 (01/08/2026) — la Parte C.2 entera, bajada acá. Punto 1 de `C.2-7`.**
+> Este documento estaba ejecutado cuando la Parte C.2 se escribió, así que la C.2 nació en
+> un prompt aparte (`docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md`, con sus propios
+> tres addenda) y este texto quedó describiendo un diff que ya no es el que hay. Se baja
+> acá lo que cambió, sin tocar una línea de arriba.
+>
+> **Qué agregó la Parte C.2 sobre la Parte C** (código en `Instalar.gs`, salvo donde se
+> indica; controles positivos en `Pruebas.gs`, archivo nuevo):
+>
+> | punto | qué cambió | dónde |
+> |---|---|---|
+> | **C.2-1** | `normalizarParaComparar_(valor, tipoColumna)` — lleva `Date` y string-fecha a ISO `yyyy-mm-dd` antes de comparar. Sin esto el paso 4 del protocolo (segunda corrida, cero cambios) **no podía pasar nunca**: la hoja tiene `Date`, el seed escribe string, Sheets lo reparsea a `Date`, y la corrida siguiente vuelve a ver una diferencia. La hipótesis original —que el seed había degradado `PERIODOS` de fecha a texto— quedó **tumbada** por el diagnóstico: las doce celdas eran `Date`; lo que había cambiado era el número de formato de la celda | `calcularDiffUpsert_()` |
+> | **C.2-2** | Cabecera de corrida (`ejecutado_por`, `fecha_hora`, `version_codigo`) y bloque de alcance en las dos hojas de reporte, que se limpian enteras antes de escribir. Hasta acá "`BASES`: cero líneas" y "`BASES`: no se audita" producían el mismo output, y había que vaciar `DIFF_CONFIGURACION` a mano antes de cada corrida | `cabeceraDeCorrida_()`, `ALCANCE_REGISTROS_`, `construirBloqueAlcance_()`, `escribirDiffConfiguracion_()` |
+> | **C.2-3** | Cada migración acepta `aplicar = false` y calcula sin escribir; las que escriben emiten líneas `migracion`. Fue la única forma de que "Estado" incluyera las migraciones pendientes sin aplicarlas | `aplicarInstalacion_(false)`, `filasDiffMigraciones_()` |
+> | **C.2-4** | La protegida dice **qué** se habría perdido (`protegida (habría cambiado)`, con columna, anterior y nuevo), y la que no tenía nada por cambiar lo dice explícito (`protegida (sin diferencias)`). Celdas vacías eran ambiguas en las dos direcciones | `aplicarClasificacionSolapas_()`, `filasDiffParaHoja_()` |
+> | **C.2-5** | Tercer tipo de línea, `solo_en_hoja`: lo que está en la hoja y no en el seed. **No se borra nada**, sólo se reporta — ahí es donde viven las ediciones a mano | `calcularDiffUpsert_()`, `menuEstadoConfiguracion_()` |
+> | **C.2-6** | Resumen desagregado en el `alert()`: `cambiadas · agregadas · migraciones · solo_en_hoja · protegidas (con diferencia) · protegidas (sin diferencia) · sin cambios`, más `otras líneas (sin categoría)` para que un tipo nuevo no desaparezca del total. Sin `tipo_degradado`, que no se implementó (ver abajo). Sin claves en el `alert()` — eso ya rompió `diagnosticarColapso_()` por timeout | `resumenDesagregado_()` |
+> | **C.2-7** | Esta documentación y `docs/_snapshots/` (`tools/snapshot.js`, RUNBOOK Parte H) | — |
+>
+> **Dos cosas se diseñaron y no van, y conviene que quede escrito por qué:** la tarea 4 de
+> C.2-1 (`tipo = tipo_degradado`) resolvía un problema que el diagnóstico demostró
+> inexistente, y un guardarraíl que nunca puede dispararse es peso muerto; y la migración
+> `corregirNotaControlAnclaje_` se **retiró entera** —constante, función, llamada y línea de
+> resumen— porque `SEED_SOLAPAS_` ya era dueño del valor correcto. Una migración que
+> corrige un valor que el seed vuelve a escribir bien no es una migración, es un parche
+> permanente. Esa retirada es lo que cerró el paso 4 del protocolo (idempotencia) y, de
+> arrastre, el paso 5.
+>
+> **El fix de `sembrarClasificacionSolapas()` que la Parte C hizo y nunca se documentó.**
+> El objeto que la clasificación manda al upsert dejó de incluir `filas_datos` y
+> `firma_encabezado`. Esas dos columnas son de `inventariarSolapas()` (`Solapas.gs`), que
+> las mide contra el archivo vivo; el objeto de `SEED_SOLAPAS_` casi siempre las trae en
+> `''` (sólo algunas filas de `looker`/`m2` tienen una estimación manual vieja), así que
+> escribirlas en cada siembra devolvía a blanco —o a un número de relevamiento
+> desactualizado— lo que el inventario ya había medido. Con la clasificación corriendo
+> ahora **dentro** de "Aplicar configuración", pensada para correrse seguido y no una sola
+> vez, ese pisado dejó de ser tolerable. Es el mismo hallazgo que C.2-2 punto 4 pedía
+> declarar: una exclusión no documentada es una excepción oculta. Comentario en
+> `Instalar.gs`, arriba de `aplicarClasificacionSolapas_()`.
+>
+> **Controles positivos, y por qué hacían falta.** El protocolo de siete pasos **pasa igual
+> aunque las cinco partes estén mal**: cero cambios sigue siendo cero cambios. Cada parte
+> tiene su `probar*_()` en `Pruebas.gs`, que le mete una discrepancia conocida por una hoja
+> sintética (`hojaFalsa_`) y afirma que se detecta, sin tocar la planilla. Se verificó por
+> **mutación** que discriminan: se rompió cada función a propósito, incluido reintroducir el
+> bug original de cada parte, y cazaron 18 de 18. Menú: Diagnóstico → "Correr pruebas del
+> diff" (`correrPruebasDiff_`).
+>
+> **Estado al 01/08/2026.** Partes A, B y C cerradas; C.2 completa y verificada en vivo
+> (evidencia: `docs/PROTOCOLO_2.11-C_corrida_2026-08-01.md`). La **Parte D sigue abierta**
+> — es lo único de este documento que falta, y arrastra `BASES.fila_encabezado` vestigial
+> (H-2), los dos accesos directos de `Union.gs` y el retiro de
+> `reclasificarSolapasM2Invertidas_`.

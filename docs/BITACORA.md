@@ -713,3 +713,82 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   - `llamar` **no** tiene lista blanca de sólo lectura — sigue siendo el punto 2 del
     pendiente P0. Lo que sí queda cerrado para `/dev` es el punto 1 (código viejo): `/dev`
     es HEAD. P0 revive cuando el Paso 6 publique `/exec`.
+
+## Paso 2.11 C.2-7 — documentación y snapshots (2026-08-01) — commits `e62b8bd` + el de esta entrada
+- **Qué pedía el prompt:** `docs/Prompts/Pedido_C.2-7.md`, que cierra el último punto abierto
+  de `docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md`. No es un paso de código: bajar la
+  Parte C.2 al prompt dueño, exportar los snapshots y anotar lo que la corrida dejó a la
+  vista. No crea un `.md` de prompt propio (`CLAUDE.md` §3).
+- **Qué se hizo:**
+  - **`tools/snapshot.js`** (archivo nuevo) — vuelca las diez hojas de registro a TSV.
+    **No usa `tools/api.js`**: el contra-qué de un diff no puede salir del mismo código que
+    se está probando, así que le pide el volcado a Google directo por el endpoint de
+    exportación de Sheets, con el mismo Bearer de `tools/token.js`. No pasa por
+    `calcularDiffUpsert_`, ni por los `SEED_*`, ni por los lectores de `Config.gs`. La lista
+    de las diez hojas está duplicada a propósito de `ALCANCE_REGISTROS_`: leerla del código
+    bajo prueba anularía la independencia. El id de la planilla sale del `parentId` de
+    `.clasp.json` y los `gid` de la página `htmlview`; no hay ningún id en el script.
+  - **`docs/_snapshots/`** — diez archivos `<HOJA>_2026-08-01.tsv`. **Diez, no nueve**: el
+    prompt de C.2 pedía nueve y C.2-2 estableció diez (las nueve más `MARCADORES`); el
+    bloque ALCANCE de la corrida emite diez filas. Premisa vencida del propio prompt, la
+    cuarta de este tipo en el proyecto.
+  - **`docs/RUNBOOK.md` Parte H** — cuándo se corre el snapshot, por qué no usa la API del
+    motor, y el 429 de la cuota de exportación (el script espera y reintenta; un volcado a
+    medias es peor que ninguno porque parece completo).
+  - **`docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md`** — addendum 1 fechado (el
+    prompt ya estaba ejecutado, no se tocó una línea del texto original): la Parte C.2
+    entera en una tabla punto por punto, las dos cosas que se diseñaron y no fueron
+    (`tipo_degradado` y la migración `corregirNotaControlAnclaje_`, con el porqué), los
+    controles positivos, y **el fix de `sembrarClasificacionSolapas()`** que la Parte C hizo
+    y nunca se documentó — dejó de pisar `filas_datos` / `firma_encabezado` con el valor
+    vacío de `SEED_SOLAPAS_`, porque esas dos columnas son de `inventariarSolapas()`.
+  - **`docs/PROTOCOLO_2.11-C_corrida_2026-08-01.md`** (nuevo, congelado) — la corrida. No
+    reemplaza al de `2026-07-31`, que cubre otras dos corridas con otro código; ese no se
+    editó.
+  - **`docs/PENDIENTES_consistencia.md`** — dos P0 tachados, el P0 de la API reescrito y
+    tres hallazgos abiertos (abajo).
+- **Prueba:** las cinco `probar*_()` corrieron **por la API sobre `/dev`**: 5 de 5 OK. Es la
+  primera vez que Code corre parte del protocolo sin que nadie abra la planilla. El
+  protocolo desde el menú lo corrió el usuario: `menuEstadoConfiguracion_` (16:06) y dos
+  `menuAplicarConfiguracion_` (16:29:14 y 16:30:56), **idénticos**:
+  `cambiadas: 0 · agregadas: 0 · migraciones: 0 · solo_en_hoja: 7 · protegidas (con
+  diferencia): 10 · protegidas (sin diferencia): 0 · sin cambios: sí`. Estado y Aplicar
+  coinciden. Qué se probó **cómo**, que es lo que importa acá:
+  - **C.2-2, C.2-4, C.2-5, C.2-6 — en vivo contra la planilla.** Diez filas de alcance, diez
+    protegidas con su `habría cambiado`, siete `solo_en_hoja` reportadas y todavía en la
+    hoja, resumen desagregado. Números distintos de cero: la corrida los ejercitó.
+  - **C.2-3 — sólo sintético** (`probarMigracionesEnDiff_`). `migraciones: 0` es correcto,
+    pero cero no distingue *no hay migraciones pendientes* de *ese camino no se ejecuta*.
+  - **`cambiadas` / `agregadas` — el camino central del upsert no se ejecutó** en ninguna de
+    las dos corridas. Lo probaría el control positivo de cinco ediciones, que no se repuso
+    (la planilla se limpió antes: `zz_prueba` y la huérfana `ahhh` ya no están, verificado
+    en los snapshots).
+  - Los snapshots se revisaron **antes** de commitear: ninguna de las diez hojas tiene datos
+    personales. `REUNIONES` trae barrios y temas, `CAMPANAS` nombres de campaña, y los ids
+    de Drive de `BASES`/`CONFIG` ya estaban en `Instalar.gs` desde antes.
+- **Pendientes/decisiones:**
+  - **P1 (se pidió como P0) · las siete filas huérfanas de `MAPEO` son columnas de fecha.**
+    Las escribe `promoverFechasElegidas()` (`Fechas.gs:378`), no un sembrador: dos
+    escritores para la misma hoja. Baja a P1 porque, verificado contra el código, **no se
+    pierde un número en silencio**: `leerFuente()` corta con `«FALTA:fecha_periodo@…»`
+    (`Fuentes.gs:367-370`), las cinco de `digital` no se consumen (`modo_periodo = snapshot`
+    retorna antes, `Fuentes.gs:361-365`) y la fila 3 es el contrato viejo derogado, que el
+    seed ya cubre como `fecha_periodo` (`Instalar.gs:673`). La única que un re-sembrado
+    rompería es la 108 (`rdv||RDV_otros_ministros`), y rompe fuerte.
+  - **P1 · asimetría Estado / Aplicar en las protegidas.** C.2-4 vive en
+    `aplicarClasificacionSolapas_()`, que sólo corre en el apply; `menuEstadoConfiguracion_()`
+    reimplementa la comparación (`Instalar.gs:2136-2153`) y saltea las `origen=manual` con un
+    `return` seco, además de comparar con `String()` en vez de `normalizarParaComparar_()`.
+  - **P2 · `diagnosticoBases_()` lista solapas `uso = 'ignorar'`.** `getSheets()` crudo
+    (`Fuentes.gs:117`), sin `usoSolapa_()`. **Preexistente**: se extrajo tal cual de
+    `probarConexionBases()` en el Paso 1.8 y se veía poco porque vivía en un `alert()`.
+  - **El P0 de la API se reescribió y baja a P1.** Sobre `/dev` el desfasaje de versión no
+    aplica (`/dev` es HEAD); revive cuando el Paso 6 publique `/exec`. La lista blanca
+    `EJECUTABLES_REMOTOS_` **se difiere al Paso 6, decisión del usuario del 01/08/2026**.
+  - **Dos correcciones al prompt de este pedido**, las dos verificadas: son siete filas
+    huérfanas pero **una es de otra clase** (la 3, derogada, no una pérdida); y el duplicado
+    de `digital` que causa doble conteo es `digital||RDV` (`uso = ignorar`), no
+    `digital||RDV JM 2 VECES` (`uso = referencia`). En la salida real de `diagnosticoBases_()`
+    hay **siete** tablas dinámicas, no cinco.
+  - `docs/Prompts/AUD-3_inventario_codigo.md` sigue sin commitear: es de otro paso, no se
+    bundlea (`CLAUDE.md` §4.5).

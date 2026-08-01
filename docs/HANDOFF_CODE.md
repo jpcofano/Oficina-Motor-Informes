@@ -7,79 +7,84 @@
 
 ## Dónde estamos
 
-**Paso 1.8 implementado y pusheado. Trabado en un paso manual de una sola vez.**
+**Paso 2.11 Parte C + C.2 cerrado y verificado en vivo. Sin nada trabado.**
 
-La API de pruebas sobre `/dev` está construida y el endpoint ya responde JSON. Falta que
-el humano cargue la propiedad de script `API_TOKEN` con el valor que está en `.env`
-(línea `MOTOR_API_TOKEN=`), en el editor → ⚙ Configuración del proyecto → Propiedades de
-la secuencia de comandos. Sin eso la Barrera 2 rechaza **por diseño** ("nunca dejar pasar
-por ausencia"), así que las cuatro pruebas de aceptación no pueden correr.
+El diff de configuración funciona **y ya es auditable**: dice qué auditó y qué no (bloque
+ALCANCE, diez hojas), con cabecera de corrida, migraciones dentro del diff, protegidas que
+declaran qué se habrían perdido, línea `solo_en_hoja` y resumen desagregado. Los dos P0 que
+bloqueaban —idempotencia y "Estado no coincide con Aplicar"— están cerrados con evidencia
+repetida (`docs/PROTOCOLO_2.11-C_corrida_2026-08-01.md`).
 
-Hecho esto, Code puede invocar cualquier función del motor contra HEAD sin que nadie
-abra la planilla. Eso es lo que destraba el protocolo del Paso 2.11 C.2, que sigue sin
-correrse porque hasta hoy exigía un humano apretando ítems de menú.
+También quedó destrabado el Paso 1.8: el usuario cargó `API_TOKEN` y la API sobre `/dev`
+responde. **Por primera vez Code corrió parte de un protocolo sin que nadie abriera la
+planilla** — las cinco `probar*_()` por HTTP, 5 de 5 OK.
 
-## Qué quedó hecho y qué no
+## Qué quedó hecho en C.2-7
 
 | pieza | estado | nota |
 |---|---|---|
-| `Api.gs` — dos barreras, 5 acciones, traza siempre | hecha | `ping`, `version`, `registros`, `bases`, `llamar` |
-| `tools/token.js` — Bearer desde `~/.clasprc.json` | hecha | `--info` imprime cuenta y scopes, nunca el token |
-| `tools/api.js` — cliente | hecha | **no lo pedía el prompt**: `curl` habría dejado las dos credenciales en el historial del shell |
-| `appsscript.json` — bloque `webapp` | hecha | `ANYONE_ANONYMOUS` no abre nada: `/dev` exige permiso de edición |
-| `docs/ENTORNO.local.md` — URLs y cuentas | hecha | **fuera de git**; con su fila en `CLAUDE.md` §7 y `PROYECTO.md` §9 |
-| `.gitignore` / `.claspignore` | hecha | verificado con `git status`: `.env` y `ENTORNO.local.md` no entran |
-| `docs/RUNBOOK.md` Parte G | hecha | operatoria sin un solo valor concreto |
-| **Las 4 pruebas de aceptación** | **NO corridas** | dependen del `API_TOKEN` |
-
-## Los tres desvíos respecto del prompt
-
-Ninguno es una decisión de gusto: los tres salieron de un hecho verificado.
-
-1. **La URL `/dev` no se arma con el `scriptId`.** El prompt lo afirmaba en dos lugares.
-   Probado: da **404 en HTML**. El id correcto es el de la implementación `@HEAD`, que
-   sale de `clasp list-deployments`. Corregido en `ENTORNO.local.md` y en el RUNBOOK.
-2. **Se tocó `Fuentes.gs`, que el prompt declaraba intacto.** La prueba de aceptación nº 3
-   del propio prompt (`llamar` a `probarConexionBases`) era imposible: la función alertaba
-   con `SpreadsheetApp.getUi()`, que sobre HTTP tira excepción. Se extrajo
-   `diagnosticoBases_()` y la de menú alerta sólo si `hayUi_()`. Cero aritmética tocada.
-3. **No se actualizó el estado del paso en `PROYECTO.md`.** DOC-5 le sacó el estado de
-   avance a ese documento (§7 lo dice explícito). Vive acá.
+| `tools/snapshot.js` + `docs/_snapshots/` | hecha | diez TSV, volcados **sin pasar por el motor** |
+| `docs/RUNBOOK.md` Parte H | hecha | cuándo se corre, por qué no usa la API, el 429 |
+| Addendum 1 a `Paso-2.11_una_sola_fuente_de_verdad.md` | hecha | la C.2 entera + el fix de `sembrarClasificacionSolapas()` |
+| `docs/PROTOCOLO_2.11-C_corrida_2026-08-01.md` | hecha | congelado; **no** reemplaza al del 31/07 |
+| `docs/PENDIENTES_consistencia.md` | hecha | 2 P0 tachados, el de la API reescrito, 3 hallazgos abiertos |
 
 ## Lo que se verificó y lo que no
 
-Verificado contra la planilla real: **una** llamada, la primera. Devolvió JSON (no HTML)
-con `barrera 1: ok` y `barrera 2: API_TOKEN no está seteado`. Eso confirma las dos cosas
-que el prompt daba por supuestas y podían no ser ciertas: que el Bearer derivado de
-`.clasprc.json` alcanza para `/dev` (scope `script.webapp.deploy`, verificado con
-`tools/token.js --info`) y que `Session.getActiveUser()` devuelve el mail ahí. No hicieron
-falta ni el Plan B ni el Plan C del prompt.
+**Verificado en vivo contra la planilla:** C.2-2, C.2-4, C.2-5 y C.2-6. Diez filas de
+alcance, diez protegidas con su `habría cambiado`, siete `solo_en_hoja` reportadas y
+todavía en la hoja, resumen desagregado. Dos "Aplicar configuración" seguidos, idénticos.
 
-Verificado fuera de la planilla, con node: `serializar_` y la comparación de longitud fija,
-12 afirmaciones, 12 pasadas. Es lógica pura y no necesitaba la planilla.
+**Verificado sólo sintéticamente:** C.2-3 (`probarMigracionesEnDiff_`). `migraciones: 0` es
+el resultado correcto, pero cero no distingue *no hay migraciones pendientes* de *ese camino
+no se ejecuta*.
 
-**Nada más está verificado.** `registros`, `bases` y `llamar` no se ejercitaron todavía —
-en particular está sin probar si `getActiveSpreadsheet()` devuelve algo sobre HTTP. Si
-devuelve `null`, hay que cargar también la propiedad `HOJA_CONTROL_ID` con el `parentId`
-de `.clasp.json`; `apiHojaControl_()` ya contempla las dos ramas y dice cuál usó en la
-traza.
+**No verificado:** el camino central del upsert. `cambiadas: 0 · agregadas: 0` en las dos
+corridas porque el control positivo de cinco ediciones **no se repuso** — la planilla se
+limpió antes (`zz_prueba` y la huérfana `ahhh` ya no están, confirmado en los snapshots).
+Que el upsert detecte cambios lo sostienen la corrida del 31/07 y los controles positivos,
+no ésta.
+
+## Los tres hallazgos que este paso abrió y no arregló
+
+Están en `docs/PENDIENTES_consistencia.md` con el detalle y las líneas de código:
+
+1. **P1 · las siete filas huérfanas de `MAPEO` son columnas de fecha.** Las escribe
+   `promoverFechasElegidas()` (`Fechas.gs:378`), no un sembrador: dos escritores, uno solo
+   declarado. Se pidió como P0; **baja a P1 verificado contra el código** — `leerFuente()`
+   corta con `«FALTA:fecha_periodo@…»`, las cinco de `digital` ni se consumen
+   (`modo_periodo = snapshot`), y la fila 3 es el contrato viejo que el seed ya cubre. La
+   única que un re-sembrado rompería es `rdv||RDV_otros_ministros`, y rompe fuerte.
+2. **P1 · asimetría Estado / Aplicar en las protegidas.** Aplicar emite diez líneas,
+   Estado ninguna: `menuEstadoConfiguracion_()` reimplementa la comparación de `SOLAPAS`
+   (`Instalar.gs:2136-2153`) y saltea las `origen=manual` sin decir nada. Es el P0 recién
+   cerrado en versión chica.
+3. **P2 · `diagnosticoBases_()` lista solapas `uso = 'ignorar'`.** Preexistente del Paso
+   1.8, no de acá.
 
 ## Trabado
 
-Sólo el `API_TOKEN` de arriba. Los pendientes abiertos están en
-`docs/PENDIENTES_consistencia.md`. Sobre el **P0** (una API que sirve código viejo): el
-punto 1 queda cerrado *para `/dev`*, que es HEAD por definición, y revive cuando el Paso 6
-publique `/exec`. El punto 2 —lista blanca de sólo lectura para `llamar`— sigue **abierto**
-y hoy no lo impide nada más que la convención.
+Nada. El `API_TOKEN` que bloqueaba el Paso 1.8 está cargado.
+
+Sobre el pendiente de la API: el punto 1 (código viejo) **no aplica sobre `/dev`**, que es
+HEAD por definición, y revive cuando el Paso 6 publique `/exec`. El punto 2 —lista blanca
+`EJECUTABLES_REMOTOS_` de sólo lectura para `llamar`— **se difiere al Paso 6 por decisión
+del usuario del 01/08/2026**.
 
 ## Qué sigue
 
-1. Cargar `API_TOKEN` y correr las cuatro pruebas de aceptación del Paso 1.8 §7.
-2. Con la API andando, **el protocolo de siete pasos del 2.11 C.2** —que sigue sin
-   correrse— pasa a ser ejecutable desde acá. El paso 0 de ese protocolo (limpiar las
-   filas `zz_prueba` y la huérfana `ahhh`) está detallado en la bitácora del lote C.2 y en
-   el prompt `Paso-2.11_ParteC2_diff_auditable.md`.
-3. **C.2-7** — documentación y `docs/_snapshots/`, lo único que queda de ese prompt.
-4. `Paso-2.12` Parte 2 (las 17 disposiciones de `SOLAPAS.uso`).
-5. `Paso-2.11` Parte D — `BASES.fila_encabezado` vestigial, los dos accesos directos de
-   `Union.gs` (H-2) y retirar `reclasificarSolapasM2Invertidas_`.
+1. **`Paso-2.11` Parte D** — lo único que le falta a este paso: `BASES.fila_encabezado`
+   vestigial (H-2), los dos accesos directos de `Union.gs:36` y `:261`, retirar
+   `reclasificarSolapasM2Invertidas_`, y los nombres de solapa hardcodeados de
+   `Fechas.gs:66` y `Auditoria.gs:348`.
+2. **`Paso-2.12` Parte 2** — las 17 disposiciones de `SOLAPAS.uso` en `revisar`. Ahora se
+   puede hacer con datos: las diez protegidas ya declaran qué se habrían perdido, que era
+   justamente lo que faltaba para `rdv/RDV CONJUNTO` y `rdv/Comunas`.
+3. **`Paso-2.13`** — `SEED_MARCADORES_`. `MARCADORES` sigue con tres filas contra las 43
+   trazas del CSV y sin sembrador; el snapshot del 01/08 ya está tomado, que era su primera
+   tarea.
+4. Las cuatro pruebas de aceptación del Paso 1.8 §7 nunca corrieron como tales, aunque la
+   API ya se usó en serio para las cinco `probar*_()` y para `bases`.
+
+**Sin commitear, y de otro paso:** `docs/Prompts/AUD-3_inventario_codigo.md`. No se
+bundlea (`CLAUDE.md` §4.5) — decidir a qué paso pertenece antes de meterlo.

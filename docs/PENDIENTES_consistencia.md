@@ -50,12 +50,28 @@ se cayó al resolver el 1. Se deja la entrada tachada, con el detalle original a
 el diagnóstico —y sobre todo el error de la hipótesis inicial— explica por qué el arreglo
 fue retirar una migración y no reordenar los sembradores.
 
-**Sigue abierto, y es lo que viene:** el diff **funciona pero no es auditable**. `C.2-2` a
-`C.2-7` de `docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md` — sin marca de corrida (hay
-que vaciar `DIFF_CONFIGURACION` y `ESTADO_CONFIGURACION` a mano), las migraciones escriben
-por fuera del diff (S-01 aparece con cero celdas cambiadas y no se sabe si escribe), las 10
-protegidas no dicen qué se habrían perdido, y no hay línea `solo_en_hoja` (la fila huérfana
-de `MAPEO` no se reporta).
+**Confirmado en una tercera corrida** (`docs/PROTOCOLO_2.11-C_corrida_2026-08-01.md`), esta
+vez con `C.2-2` a `C.2-6` puestas: dos "Aplicar configuración" seguidos, idénticos y con
+`cambiadas: 0 · agregadas: 0 · migraciones: 0`, y "Estado de configuración" consistente con
+los dos. Los dos P0 —idempotencia y "Estado no coincide con Aplicar"— quedan cerrados con
+evidencia repetida, no con una sola medición.
+
+### ~~P0 · El diff funciona pero no es auditable (`C.2-2` a `C.2-7`)~~ — CERRADO (01/08/2026)
+
+Era el resto abierto de la entrada de arriba: sin marca de corrida (había que vaciar
+`DIFF_CONFIGURACION` y `ESTADO_CONFIGURACION` a mano), las migraciones escribían por fuera
+del diff, las 10 protegidas no decían qué se habrían perdido, y no había línea
+`solo_en_hoja`. Las cinco partes están implementadas y verificadas en vivo;
+`C.2-7` (documentación + `docs/_snapshots/`) cerró el 01/08. Evidencia:
+`docs/PROTOCOLO_2.11-C_corrida_2026-08-01.md`; qué hace cada parte, en el addendum 1 de
+`docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md`.
+
+**Lo que esa corrida no probó, y no se puede leer del cero:** `C.2-3` está probado sólo
+sintéticamente (`probarMigracionesEnDiff_`) — `migraciones: 0` no distingue *no hay
+migraciones pendientes* de *ese camino no se ejecuta*; y `cambiadas`/`agregadas` en cero
+significan que el camino central del upsert no se ejecutó, porque el control positivo de
+cinco ediciones no se repuso. No reabre el P0: lo sostienen la corrida del 31/07 y los
+controles positivos. Queda dicho para que nadie lea el cero como cobertura.
 
 <details>
 <summary>Detalle original del P0 (cerrado)</summary>
@@ -140,7 +156,9 @@ ventana definida por la reunión, sin corte diario de datos — ver `VALORES`/
 - Si la ventana semanal se deriva automáticamente de la fecha de la reunión (ej. los 7
   días previos) o se carga a mano en la hoja `REUNIONES`.
 - Qué columna de fecha usa cada base para filtrar — cruzar con `docs/GRANO_TEMPORAL.md`,
-  que ya sostiene que la fecha de la reunión no filtra las filas de canal.
+  que ya sostiene que la fecha de la reunión no filtra las filas de canal. **Parcialmente
+  contestada** (01/08/2026): las siete filas `fecha_periodo` de `MAPEO` la contestan, pero
+  viven sólo en la planilla — ver el P1 de las filas huérfanas de `MAPEO`, arriba.
 - Si la ventana cierra el día anterior a la reunión o incluye el día parcial de la
   reunión misma.
 - Nombre definitivo del token de estampa de actualización (tipo `{{fecha_actualizacion}}`)
@@ -177,23 +195,116 @@ recuerda y repite en el mensaje siguiente. Sin decidir todavía cómo mitigarlo 
 instrucción que quede fuera de alcance se anota acá mismo, como fila nueva, en vez de
 perderse?) — queda registrado como el hallazgo, no la solución.
 
-### P0 · API executable: se sirve la versión **desplegada**, no `HEAD`
+### P1 · API de pruebas: `llamar` no tiene lista blanca de sólo lectura
 
-Anotado antes de que se use (01/08/2026). Cuando el proyecto se despliegue como API
-executable para poder correr diagnósticos desde afuera de la planilla, **un `clasp push`
-sin redesplegar deja la API sirviendo código viejo**: un diagnóstico devolvería resultados
-plausibles de una versión que ya no existe — exactamente el modo de falla caro de este
-proyecto (el número que parece bien y no lo es).
+**Reescrito el 01/08/2026, con la API ya en uso.** La forma original de este pendiente
+—"se sirve la versión desplegada, no `HEAD`"— **no aplica sobre `/dev`**, que sirve el
+último `clasp push` por definición. El desfasaje de versión revive el día que el **Paso 6**
+publique `/exec`, y ahí vuelve a ser P0; hasta entonces no hay nada que mitigar.
 
-Dos mitigaciones, ninguna implementada:
+Queda el punto 2, que sí está vivo: **`llamar` puede invocar cualquier función global por
+nombre, incluidas las que escriben.** Nada en el código lo impide — sólo la convención.
+`API_PROHIBIDAS_` (`Api.gs`) cubre únicamente la recursión (`doGet`, `doPost`,
+`manejarPedido_`), no la escritura.
 
-1. **Marca de versión en el retorno de cada función expuesta**, para poder comparar contra
-   lo que hay en el repo. Hoy no existe ninguna marca de versión en el código: la cabecera
-   de corrida de `DIFF_CONFIGURACION` escribe `version_codigo` con un literal que remite a
-   esta nota, justamente porque no hay qué poner ahí.
-2. **Lista blanca `EJECUTABLES_REMOTOS_` de sólo lectura**: que la API sólo pueda invocar
-   funciones que no escriben. Un `menuAplicarConfiguracion_` disparado contra una versión
-   vieja escribe en las hojas de registro.
+La mitigación —una lista blanca `EJECUTABLES_REMOTOS_`— **se difiere al Paso 6, decisión
+del usuario del 01/08/2026**: sobre `/dev` las dos barreras ya exigen una cuenta con
+permiso de edición sobre el script, o sea alguien que puede escribir en la planilla de
+todos modos, y el riesgo real aparece cuando la URL deje de ser `/dev`.
+
+Consecuencia menor que sigue: no hay marca de versión en el código, así que la cabecera de
+corrida de `DIFF_CONFIGURACION` escribe `version_codigo` con un literal que remite a esta
+nota, porque no hay qué poner ahí.
+
+### P1 · Las siete filas huérfanas de `MAPEO` son columnas de fecha que ningún `SEED_*` conoce
+
+Abierto el 01/08/2026 desde `docs/PROTOCOLO_2.11-C_corrida_2026-08-01.md`: las siete
+`solo_en_hoja` que reportó el diff no son basura de pruebas, son las columnas con las que se
+filtra la ventana temporal. Están en `docs/_snapshots/MAPEO_2026-08-01.tsv`, en la fila que
+se indica:
+
+```
+rdv||RVD JM-CM - ES||fecha                    fila 3     ← caso aparte, ver abajo
+rdv||RDV_otros_ministros||fecha_periodo       fila 108
+digital||Digital||fecha_periodo               fila 109
+digital||Directa Mail||fecha_periodo          fila 110
+digital||Directa IVR||fecha_periodo           fila 111
+digital||Directa SMS||fecha_periodo           fila 112
+digital||Seguimiento digital||fecha_periodo   fila 113
+```
+
+Seis consecutivas, cargadas de una vez. **Las escribe `promoverFechasElegidas()`
+(`Fechas.gs:378`), no un sembrador** — o sea que la misma hoja tiene dos escritores y sólo
+uno declara lo que pone. Es la fila "¿qué *debería* decir esa configuración?" de
+`CLAUDE.md` §7 sin dueño, y lo que `docs/ESCRITORES.md` va a tener que resolver.
+
+Contesta además una de las preguntas abiertas de este archivo ("qué columna de fecha usa
+cada base para filtrar", en los pendientes de periodicidad): **alguien ya la contestó y la
+respuesta vive sólo en la planilla.** Hasta el 01/08 no había ni copia.
+
+**Se abrió como P0 y baja a P1. Verificado contra el código, no se pierde un número en
+silencio:**
+
+- `leerFuente()` resuelve la columna con `buscarMapeo(baseId, hoja, 'fecha_periodo')` y, si
+  no está, **corta con `«FALTA:fecha_periodo@base/solapa»`** (`Fuentes.gs:367-370`). Falla
+  ruidosa, que es el contrato del proyecto.
+- Las cinco de `digital` **hoy no se consumen**: `BASES.digital.modo_periodo = 'snapshot'`,
+  y en ese modo `leerFuente()` retorna **antes** de buscar `fecha_periodo`
+  (`Fuentes.gs:361-365`).
+- La fila 3 (`rdv||…||fecha`) es el **contrato viejo derogado**, no una pérdida: el seed
+  tiene la misma columna E como `rdv||RVD JM-CM - ES||fecha_periodo` (`Instalar.gs:673`,
+  con el comentario de DOC-2 Parte C) y ningún `buscarMapeo(..., 'fecha')` existe en el
+  código. Es hermana de las dos filas que sí están marcadas `DEROGADA — ver S-02`, sin la
+  marca.
+- **La única que un re-sembrado desde cero rompería de verdad es la fila 108**
+  (`rdv||RDV_otros_ministros`), porque `rdv` es `modo_periodo = 'filtrar'`. Y rompe fuerte,
+  no callado.
+
+Qué falta, entonces: que `SEED_MAPEO_` sea dueño de las filas `fecha_periodo` que hoy
+escribe `promoverFechasElegidas()`, o que se declare explícitamente que ese es el otro
+escritor legítimo de `MAPEO` y por qué. Hoy no está escrito en ningún lado.
+
+### P1 · Asimetría Estado / Aplicar en las filas protegidas de `SOLAPAS`
+
+Abierto el 01/08/2026, misma corrida. "Aplicar configuración" emite **diez** líneas
+`protegida (habría cambiado)`; "Estado de configuración", sobre la misma planilla y en la
+misma sesión, **ninguna**.
+
+La causa es de dónde vive cada cálculo: C.2-4 se implementó en
+`aplicarClasificacionSolapas_()` (`Instalar.gs:1127-1141`), que sólo corre desde el apply
+(`Instalar.gs:1823`). `menuEstadoConfiguracion_()` **reimplementa** la comparación de
+`SOLAPAS` por su cuenta (`Instalar.gs:2136-2153`) y ahí una fila `origen = 'manual'` se
+saltea con un `return` seco, sin emitir línea. De paso, esa reimplementación compara con
+`String()` en vez de `normalizarParaComparar_()`, así que las dos vistas no sólo reportan
+distinto: calculan distinto.
+
+**El criterio contrario ya está escrito**, en el comentario de `Instalar.gs:2064` para
+`solo_en_hoja`: *"si Aplicar lo va a reportar, Estado tiene que verlo, o las dos vistas
+vuelven a no coincidir"*. Es el P0 recién cerrado en versión chica — no fabrica una
+discrepancia, pero esconde una que el apply sí muestra.
+
+### P2 · `diagnosticoBases_()` lista solapas `uso = 'ignorar'`
+
+Abierto el 01/08/2026. **Preexistente, no de este paso:** `diagnosticoBases_()` se extrajo
+tal cual de `probarConexionBases()` en el Paso 1.8, y se veía poco porque el resultado vivía
+dentro de un `alert()`. Con la API devolviéndolo como JSON quedó a la vista.
+
+Enumera `resultado.libro.getSheets()` crudo (`Fuentes.gs:117`) y **nunca consulta
+`usoSolapa_()`** (`Config.gs:146`). Salida real del 01/08 (`node tools/api.js bases`): 36
+solapas de `rdv`, entre ellas `RVD JM-CM - ES Back Up`, `Copia de Para Revisar`, `Copia de
+Para Revisar 1` y siete `Tabla dinámica *`; y en `digital`, `RDV` — el duplicado de la base
+`rdv` que `CLAUDE.md` §2 nombra como causa de doble conteo, con `notas` que dicen
+literalmente *"⚠ duplica la base rdv — si se lee, hay doble conteo"*.
+
+Son 27 filas marcadas `ignorar` en `SOLAPAS` que el diagnóstico vuelve a poner sobre la
+mesa. `CLAUDE.md` §2 es explícito: una solapa `ignorar` no se toca, ni se menciona en un
+reporte de hallazgos — la regla existe para no reabrir discusiones ya cerradas. Arreglo:
+saltear las `ignorar` de entrada, o marcarlas como tales en la salida en vez de listarlas
+como si fueran candidatas.
+
+(Nota al pasar, para que no se busque donde no está: `digital||RDV JM 2 VECES` también
+aparece en esa salida, pero su `uso` es `referencia`, no `ignorar`. El duplicado que causa
+doble conteo es `digital||RDV`.)
 
 ### P2 · La convención `probar_<nombre>()` no está declarada en ningún lado
 
