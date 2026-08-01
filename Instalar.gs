@@ -184,7 +184,14 @@ var COLUMNAS_DELTA_ = {
   ]
 };
 
-function instalar() {
+/**
+ * Paso 2.11 Parte C — núcleo de `instalar()`, sin `alert()`: crea/repara hojas y corre
+ * las migraciones one-off, y DEVUELVE el resultado en vez de mostrarlo. `instalar()`
+ * (el ítem de menú) es ahora un wrapper de una línea; `menuAplicarConfiguracion_()`
+ * llama a este núcleo directo para poder combinar su resultado con el de los otros tres
+ * sembradores en un solo reporte, sin cuatro `alert()` en cadena.
+ */
+function aplicarInstalacion_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var creadas = [];
   var actualizadas = [];
@@ -228,7 +235,10 @@ function instalar() {
 
   var hojaSolapas = ss.getSheetByName('SOLAPAS');
   var tocadasSolapasLooker = hojaSolapas ? alinearSolapasLookerADinamico_(hojaSolapas) : 0;
-  var corrigioNotaControl = hojaSolapas ? corregirNotaControlAnclaje_(hojaSolapas) : false;
+  // corregirNotaControlAnclaje_ retirada (Paso 2.11 C.2, 01/08/2026): SEED_SOLAPAS_ ya
+  // trae la nota completa de digital/RDV JM 2 VECES, y la migración —que comparaba
+  // contra su propia constante vieja, más corta— la revertía en cada corrida: el diff
+  // reportaba el mismo cambio para siempre y el paso 4 del protocolo no podía pasar.
   var reclasificadasM2 = hojaSolapas ? reclasificarSolapasM2Invertidas_(hojaSolapas) : 0;
 
   var hojaBases = ss.getSheetByName('BASES');
@@ -239,21 +249,42 @@ function instalar() {
 
   limpiarHojaPorDefecto_(ss);
 
-  var resumen =
-    'Hojas creadas: ' + (creadas.length ? creadas.join(', ') : 'ninguna') +
-    '\nHojas actualizadas: ' + (actualizadas.length ? actualizadas.join(', ') : 'ninguna') +
-    (backfill.rellenadas ? '\nMAPEO.solapa completada en ' + backfill.rellenadas + ' fila(s) desde MAPEO.hoja' : '') +
-    (backfill.sinHoja.length
-      ? '\n⚠️ MAPEO sin "hoja" cargada, no se pudo determinar solapa: ' + backfill.sinHoja.join(', ')
+  return {
+    creadas: creadas,
+    actualizadas: actualizadas,
+    backfill: backfill,
+    eliminadasAlcance: eliminadasAlcance,
+    movidasLooker: movidasLooker,
+    tocadasSolapasLooker: tocadasSolapasLooker,
+    reclasificadasM2: reclasificadasM2,
+    alineoHojaDefaultLooker: alineoHojaDefaultLooker,
+    migroOperacion: migroOperacion
+  };
+}
+
+/**
+ * Paso 2.11 Parte C — texto del resumen de `aplicarInstalacion_()`, separado para que
+ * lo use tanto `instalar()` (su propio `alert()`) como `menuAplicarConfiguracion_()`
+ * (un bloque más dentro del reporte combinado).
+ */
+function formatearResumenInstalacion_(r) {
+  return 'Hojas creadas: ' + (r.creadas.length ? r.creadas.join(', ') : 'ninguna') +
+    '\nHojas actualizadas: ' + (r.actualizadas.length ? r.actualizadas.join(', ') : 'ninguna') +
+    (r.backfill.rellenadas ? '\nMAPEO.solapa completada en ' + r.backfill.rellenadas + ' fila(s) desde MAPEO.hoja' : '') +
+    (r.backfill.sinHoja.length
+      ? '\n⚠️ MAPEO sin "hoja" cargada, no se pudo determinar solapa: ' + r.backfill.sinHoja.join(', ')
       : '') +
-    (eliminadasAlcance ? '\nMAPEO: eliminada(s) ' + eliminadasAlcance + ' fila(s) digital/Digital/alcance (col E era Fecha de inicio, Paso 2.8/2.9)' : '') +
-    (movidasLooker ? '\nMAPEO: ' + movidasLooker + ' fila(s) de looker alineadas a resumen_metricas_dinamico (S-01, Paso 2.9 Parte C)' : '') +
-    (tocadasSolapasLooker ? '\nSOLAPAS: looker resumen_metricas_dinamico=fuente / resumen_metricas=derivada (S-01)' : '') +
-    (corrigioNotaControl ? '\nSOLAPAS: nota de digital/RDV JM 2 VECES corregida (texto pegado, no control — Parte C.4)' : '') +
-    (reclasificadasM2 ? '\nSOLAPAS: ' + reclasificadasM2 + ' solapa(s) de m2 pasadas a revisar (clasificación invertida — Parte C.5)' : '') +
-    (alineoHojaDefaultLooker ? '\nBASES: looker.hoja_default = resumen_metricas_dinamico (S-01)' : '') +
-    (migroOperacion ? '\nMARCADORES.calculo renombrada a operacion (valores conservados)' : '');
-  SpreadsheetApp.getUi().alert('Instalación completa', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
+    (r.eliminadasAlcance ? '\nMAPEO: eliminada(s) ' + r.eliminadasAlcance + ' fila(s) digital/Digital/alcance (col E era Fecha de inicio, Paso 2.8/2.9)' : '') +
+    (r.movidasLooker ? '\nMAPEO: ' + r.movidasLooker + ' fila(s) de looker alineadas a resumen_metricas_dinamico (S-01, Paso 2.9 Parte C)' : '') +
+    (r.tocadasSolapasLooker ? '\nSOLAPAS: looker resumen_metricas_dinamico=fuente / resumen_metricas=derivada (S-01)' : '') +
+    (r.reclasificadasM2 ? '\nSOLAPAS: ' + r.reclasificadasM2 + ' solapa(s) de m2 pasadas a revisar (clasificación invertida — Parte C.5)' : '') +
+    (r.alineoHojaDefaultLooker ? '\nBASES: looker.hoja_default = resumen_metricas_dinamico (S-01)' : '') +
+    (r.migroOperacion ? '\nMARCADORES.calculo renombrada a operacion (valores conservados)' : '');
+}
+
+function instalar() {
+  var resultado = aplicarInstalacion_();
+  SpreadsheetApp.getUi().alert('Instalación completa', formatearResumenInstalacion_(resultado), SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 /**
@@ -376,26 +407,6 @@ function alinearBasesHojaDefaultLooker_(hoja) {
     }
   }
   return false;
-}
-
-/**
- * Paso 2.9 Parte C.4 — `digital/RDV JM 2 VECES` no es un conjunto de control: es
- * texto pegado a mano (una foto del link Funcionario/Barrio/Fecha en un momento
- * dado, no datos vivos ni una fórmula). La nota vieja decía "usar para validar el
- * scoring/umbral 0.6" — corregida para que nadie la use así (ver
- * docs/DISENO_match_temario.md §9, marcada inválida). No toca `uso` (sigue
- * `referencia`: no se lee para mapear, pero tampoco se borra el registro).
- * Idempotente.
- */
-var NOTA_CONTROL_ANCLAJE_CORREGIDA_ = 'texto pegado — no es fuente ni control. No usar (Paso 2.9 Parte C.4).';
-
-function corregirNotaControlAnclaje_(hoja) {
-  var existentes = leerFilasSolapas_(hoja);
-  var fila = existentes['digital||RDV JM 2 VECES'];
-  if (!fila || fila.notas === NOTA_CONTROL_ANCLAJE_CORREGIDA_) return false;
-
-  hoja.getRange(fila.fila, fila.idx.notas + 1).setValue(NOTA_CONTROL_ANCLAJE_CORREGIDA_);
-  return true;
 }
 
 /**
@@ -973,20 +984,29 @@ var SEED_SOLAPAS_ = [].concat(
  * Pensada para correr una vez después de la primera corrida de "Inventariar
  * solapas"; vive en su propio ítem de menú, separado de "Cargar config inicial".
  */
-function sembrarClasificacionSolapas() {
-  var ui = SpreadsheetApp.getUi();
-  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SOLAPAS');
+/**
+ * Paso 2.11 Parte C — núcleo de `sembrarClasificacionSolapas()`, diff-aware (mismo
+ * motivo que `upsertPorClave_`) y sin `alert()`.
+ *
+ * `filaObj` NO incluye `filas_datos` ni `firma_encabezado`: esas dos las escribe
+ * `inventariarSolapas()` (Solapas.gs) contra el archivo vivo, y son las que estaban
+ * rotas antes de esta parte — el objeto de `SEED_SOLAPAS_` casi siempre trae
+ * `filas_datos: ''` (solo algunas filas de `looker`/`m2` tienen una estimación manual
+ * vieja), así que escribir esas dos columnas en cada siembra las devolvía a blanco o a
+ * un número de relevamiento desactualizado, pisando lo que `inventariarSolapas()` ya
+ * había medido. Con la clasificación corriendo ahora dentro de "Aplicar configuración"
+ * (pensada para poder correrse seguido, no una sola vez), ese pisado ya no es tolerable.
+ */
+function aplicarClasificacionSolapas_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('SOLAPAS');
   if (!hoja) {
-    ui.alert('No se pudo sembrar', 'La hoja SOLAPAS no existe. Corré "Instalar / reparar hojas" primero.', ui.ButtonSet.OK);
-    return;
+    return { ok: false, motivo: 'La hoja SOLAPAS no existe. Corré "Instalar / reparar hojas" primero.' };
   }
 
-  var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
   var existentes = leerFilasSolapas_(hoja);
-
-  var escritas = 0;
-  var actualizadas = 0;
   var protegidas = [];
+  var objetosAAplicar = [];
 
   SEED_SOLAPAS_.forEach(function (obj) {
     var clave = obj.base_id + '||' + obj.solapa;
@@ -997,34 +1017,37 @@ function sembrarClasificacionSolapas() {
       return; // Parte A regla 2: nunca pisar una fila marcada a mano
     }
 
-    var filaObj = {
+    objetosAAplicar.push({
       base_id: obj.base_id,
       solapa: obj.solapa,
       uso: obj.uso,
       origen: 'seed',
       fila_encabezado: obj.fila_encabezado,
-      firma_encabezado: obj.firma_encabezado,
-      filas_datos: obj.filas_datos,
       notas: obj.notas
-    };
-    var valores = headers.map(function (h) { return (h in filaObj) ? filaObj[h] : ''; });
-
-    if (existente) {
-      hoja.getRange(existente.fila, 1, 1, headers.length).setValues([valores]);
-      actualizadas++;
-    } else {
-      hoja.appendRow(valores);
-      escritas++;
-    }
+    });
   });
 
-  ui.alert(
-    'Clasificación inicial sembrada',
-    'SOLAPAS — nuevas: ' + escritas + ', actualizadas: ' + actualizadas +
-      (protegidas.length ? '\nProtegidas (origen=manual, no tocadas): ' + protegidas.length : '') +
-      '\n\nEs una propuesta, no una decisión: las filas en uso=revisar quedan pendientes de que el usuario decida.',
-    ui.ButtonSet.OK
-  );
+  var resultado = upsertPorClave_(hoja, ['base_id', 'solapa'], objetosAAplicar);
+  resultado.ok = true;
+  resultado.protegidas = protegidas;
+  return resultado;
+}
+
+function formatearResumenClasificacionSolapas_(r) {
+  if (!r.ok) return r.motivo;
+  return 'SOLAPAS — nuevas: ' + r.escritas + ', actualizadas: ' + r.actualizadas +
+    (r.protegidas.length ? '\nProtegidas (origen=manual, no tocadas): ' + r.protegidas.length : '') +
+    '\n\nEs una propuesta, no una decisión: las filas en uso=revisar quedan pendientes de que el usuario decida.';
+}
+
+function sembrarClasificacionSolapas() {
+  var ui = SpreadsheetApp.getUi();
+  var resultado = aplicarClasificacionSolapas_();
+  if (!resultado.ok) {
+    ui.alert('No se pudo sembrar', resultado.motivo, ui.ButtonSet.OK);
+    return;
+  }
+  ui.alert('Clasificación inicial sembrada', formatearResumenClasificacionSolapas_(resultado), ui.ButtonSet.OK);
 }
 
 var SEED_CONFIG_DEFAULTS_ = {
@@ -1039,9 +1062,13 @@ var SEED_CONFIG_DEFAULTS_ = {
   umbral_anclaje_reunion: '0.6'
 };
 
-function seedConfiguracion() {
+/**
+ * Paso 2.11 Parte C — núcleo de `seedConfiguracion()`, sin `alert()` (mismo patrón que
+ * `aplicarInstalacion_()`).
+ */
+function aplicarSeedConfiguracion_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var vacio = { escritas: 0, actualizadas: 0 };
+  var vacio = { escritas: 0, actualizadas: 0, cambios: [], nuevasClaves: [] };
 
   var hojaBases = ss.getSheetByName('BASES');
   var resultadoBases = hojaBases ? upsertPorClave_(hojaBases, ['base_id'], SEED_BASES_) : vacio;
@@ -1065,29 +1092,91 @@ function seedConfiguracion() {
     .filter(function (fila) { return !fila.columna; })
     .map(function (fila) { return fila.base_id + '/' + fila.campo_logico; });
 
-  var resumen =
-    'BASES — nuevas: ' + resultadoBases.escritas + ', actualizadas: ' + resultadoBases.actualizadas + '\n' +
-    'MAPEO — nuevas: ' + resultadoMapeo.escritas + ', actualizadas: ' + resultadoMapeo.actualizadas + '\n' +
-    'CONFIG — nuevas: ' + resultadoConfig.escritas + ', completadas: ' + resultadoConfig.actualizadas + '\n' +
-    'INFORMES — nuevas: ' + resultadoInformes.escritas + ', actualizadas: ' + resultadoInformes.actualizadas + '\n' +
-    'PERIODOS — nuevas: ' + resultadoPeriodos.escritas + ', actualizadas: ' + resultadoPeriodos.actualizadas +
-    (pendientes.length
-      ? '\n\n⚠️ Pendientes de confirmar columna en MAPEO: ' + pendientes.join(', ')
-      : '');
+  return {
+    bases: resultadoBases,
+    mapeo: resultadoMapeo,
+    config: resultadoConfig,
+    informes: resultadoInformes,
+    periodos: resultadoPeriodos,
+    pendientes: pendientes
+  };
+}
 
-  SpreadsheetApp.getUi().alert('Config inicial cargada', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
+function formatearResumenSeedConfiguracion_(r) {
+  return 'BASES — nuevas: ' + r.bases.escritas + ', actualizadas: ' + r.bases.actualizadas + '\n' +
+    'MAPEO — nuevas: ' + r.mapeo.escritas + ', actualizadas: ' + r.mapeo.actualizadas + '\n' +
+    'CONFIG — nuevas: ' + r.config.escritas + ', completadas: ' + r.config.actualizadas + '\n' +
+    'INFORMES — nuevas: ' + r.informes.escritas + ', actualizadas: ' + r.informes.actualizadas + '\n' +
+    'PERIODOS — nuevas: ' + r.periodos.escritas + ', actualizadas: ' + r.periodos.actualizadas +
+    (r.pendientes.length
+      ? '\n\n⚠️ Pendientes de confirmar columna en MAPEO: ' + r.pendientes.join(', ')
+      : '');
+}
+
+function seedConfiguracion() {
+  var resultado = aplicarSeedConfiguracion_();
+  SpreadsheetApp.getUi().alert('Config inicial cargada', formatearResumenSeedConfiguracion_(resultado), SpreadsheetApp.getUi().ButtonSet.OK);
 }
 
 /**
- * Upsert genérico por clave compuesta: si ya hay una fila con esa clave la
- * actualiza en el lugar; si no, la agrega al final. No toca ni borra filas
- * cuya clave no está en `filaObjetos` (respeta lo que haya cargado el usuario).
+ * Paso 2.11 Parte C — compara `filaObjetos` contra lo que YA hay en `hoja`, por clave
+ * compuesta, SIN escribir nada. Es la base de `upsertPorClave_` (que aplica el
+ * resultado) y de `menuEstadoConfiguracion_()` (que solo lo muestra). Antes,
+ * `upsertPorClave_` reescribía toda fila existente sin comparar — "actualizada" no
+ * distinguía "cambió de verdad" de "se volvió a escribir lo mismo", así que correr
+ * "Aplicar configuración" dos veces seguidas nunca podía dar "sin cambios" (el criterio
+ * de aceptación de esta parte) y un conteo como "MAPEO — actualizadas: 106" no decía
+ * nada sobre qué de esos 106 era real.
+ * Compara solo las columnas que cada objeto declara (`h in obj`): un objeto que no trae
+ * `notas` no compite con lo que haya en esa celda. Comparación por `String()` — no
+ * marca cambio una diferencia de tipo (número vs texto) que Sheets ya resuelve sola —
+ * salvo en las columnas declaradas en COLUMNAS_FECHA_REGISTRO_, que se comparan vía
+ * `normalizarParaComparar_` (Paso 2.11 Parte C.2-1): el seed escribe string ISO, Sheets
+ * lo reparsea a Date, y sin normalizar cada corrida veía Date contra string, reportaba
+ * cambio y reescribía — el paso 4 del protocolo (idempotencia) no podía pasar nunca.
  */
-function upsertPorClave_(hoja, clavesNombres, filaObjetos) {
+
+// Paso 2.11 Parte C.2-1 — qué columnas de qué hoja de registro llevan fecha.
+// Solo afecta la COMPARACIÓN del diff (nunca se escribe el valor normalizado).
+var COLUMNAS_FECHA_REGISTRO_ = {
+  PERIODOS: { desde: true, hasta: true },
+  CAMPANAS: { desde: true, hasta: true },
+  REUNIONES: { fecha: true }
+};
+
+/**
+ * Lleva Date y string-fecha a la misma representación canónica (ISO yyyy-mm-dd,
+ * sin hora, sin zona) para que el diff no vea cambio donde solo hay diferencia de
+ * tipo. Estricta a propósito: un string solo se canonicaliza si es EXACTAMENTE una
+ * fecha (`2026-06-01` o `1/06/2026`) — `'2026-06-01 v2'` queda como texto, porque
+ * normalizarlo taparía un cambio real en una nota. Con tipoColumna distinto de
+ * 'fecha' reproduce la comparación por String() de siempre.
+ */
+function normalizarParaComparar_(valor, tipoColumna) {
+  if (valor === null || valor === undefined) return '';
+  if (tipoColumna === 'fecha') {
+    var y, m, d;
+    if (valor instanceof Date && !isNaN(valor.getTime())) {
+      y = valor.getFullYear(); m = valor.getMonth() + 1; d = valor.getDate();
+    } else if (typeof valor === 'string') {
+      var iso = valor.trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+      var dmy = valor.trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+      if (iso) { y = Number(iso[1]); m = Number(iso[2]); d = Number(iso[3]); }
+      else if (dmy) { d = Number(dmy[1]); m = Number(dmy[2]); y = Number(dmy[3]); if (y < 100) y += 2000; }
+    }
+    if (y !== undefined) {
+      return y + '-' + (m < 10 ? '0' : '') + m + '-' + (d < 10 ? '0' : '') + d;
+    }
+  }
+  return String(valor);
+}
+
+function calcularDiffUpsert_(hoja, clavesNombres, filaObjetos) {
   var datos = hoja.getDataRange().getValues();
   var headers = datos[0];
   var indices = {};
   headers.forEach(function (h, i) { indices[h] = i; });
+  var columnasFecha = COLUMNAS_FECHA_REGISTRO_[hoja.getName()] || {};
 
   function claveDeFila(fila) {
     return clavesNombres.map(function (k) { return fila[indices[k]]; }).join('||');
@@ -1102,24 +1191,75 @@ function upsertPorClave_(hoja, clavesNombres, filaObjetos) {
     if (clave) filaPorClave[clave] = f + 1; // número de fila real en la hoja (1-based)
   }
 
-  var escritas = 0;
-  var actualizadas = 0;
+  var nuevas = [];
+  var cambios = []; // { clave, fila, columna, anterior, nuevo }
+  var clavesConCambios = {};
 
   filaObjetos.forEach(function (obj) {
     var clave = claveDeObjeto(obj);
-    var valores = headers.map(function (h) { return (h in obj) ? obj[h] : ''; });
+    var filaNum = filaPorClave[clave];
 
-    if (filaPorClave[clave]) {
-      hoja.getRange(filaPorClave[clave], 1, 1, headers.length).setValues([valores]);
-      actualizadas++;
-    } else {
-      hoja.appendRow(valores);
-      filaPorClave[clave] = hoja.getLastRow();
-      escritas++;
+    if (!filaNum) {
+      nuevas.push({ clave: clave, obj: obj });
+      return;
     }
+
+    var filaActual = datos[filaNum - 1];
+    Object.keys(obj).forEach(function (h) {
+      if (indices[h] === undefined) return;
+      var anterior = filaActual[indices[h]];
+      var nuevo = obj[h];
+      var tipoColumna = columnasFecha[h] ? 'fecha' : '';
+      if (normalizarParaComparar_(anterior, tipoColumna) !== normalizarParaComparar_(nuevo, tipoColumna)) {
+        cambios.push({ clave: clave, fila: filaNum, columna: h, anterior: anterior, nuevo: nuevo });
+        clavesConCambios[clave] = true;
+      }
+    });
   });
 
-  return { escritas: escritas, actualizadas: actualizadas };
+  return {
+    headers: headers,
+    filaPorClave: filaPorClave,
+    nuevas: nuevas,
+    cambios: cambios,
+    clavesConCambios: clavesConCambios
+  };
+}
+
+/**
+ * Upsert genérico por clave compuesta: si ya hay una fila con esa clave y algo
+ * REALMENTE cambió, la reescribe; si no, no la toca (Paso 2.11 Parte C — antes
+ * reescribía siempre, ver `calcularDiffUpsert_`). Si la clave no existe, la agrega al
+ * final. No toca ni borra filas cuya clave no está en `filaObjetos` (respeta lo que
+ * haya cargado el usuario).
+ */
+function upsertPorClave_(hoja, clavesNombres, filaObjetos) {
+  var diff = calcularDiffUpsert_(hoja, clavesNombres, filaObjetos);
+  var headers = diff.headers;
+
+  if (diff.nuevas.length) {
+    var filasNuevas = diff.nuevas.map(function (n) {
+      return headers.map(function (h) { return (h in n.obj) ? n.obj[h] : ''; });
+    });
+    hoja.getRange(hoja.getLastRow() + 1, 1, filasNuevas.length, headers.length).setValues(filasNuevas);
+  }
+
+  var actualizadas = 0;
+  filaObjetos.forEach(function (obj) {
+    var clave = clavesNombres.map(function (k) { return obj[k]; }).join('||');
+    if (!diff.clavesConCambios[clave]) return;
+    var filaNum = diff.filaPorClave[clave];
+    var valores = headers.map(function (h) { return (h in obj) ? obj[h] : ''; });
+    hoja.getRange(filaNum, 1, 1, headers.length).setValues([valores]);
+    actualizadas++;
+  });
+
+  return {
+    escritas: diff.nuevas.length,
+    actualizadas: actualizadas,
+    cambios: diff.cambios,
+    nuevasClaves: diff.nuevas.map(function (n) { return n.clave; })
+  };
 }
 
 /**
@@ -1368,6 +1508,8 @@ function seedConfigConfig_(hoja) {
 
   var escritas = 0;
   var actualizadas = 0;
+  var cambios = []; // Paso 2.11 Parte C — { clave, columna:'valor', anterior, nuevo }
+  var nuevasClaves = [];
 
   Object.keys(SEED_CONFIG_DEFAULTS_).forEach(function (clave) {
     var valorDefault = SEED_CONFIG_DEFAULTS_[clave];
@@ -1376,17 +1518,19 @@ function seedConfigConfig_(hoja) {
     if (!fila) {
       hoja.appendRow([clave, valorDefault]);
       escritas++;
+      nuevasClaves.push(clave);
       return;
     }
 
     var valorActual = hoja.getRange(fila, idxValor + 1).getValue();
     if ((valorActual === '' || valorActual === null) && valorDefault !== '') {
       hoja.getRange(fila, idxValor + 1).setValue(valorDefault);
+      cambios.push({ clave: clave, fila: fila, columna: 'valor', anterior: valorActual, nuevo: valorDefault });
       actualizadas++;
     }
   });
 
-  return { escritas: escritas, actualizadas: actualizadas };
+  return { escritas: escritas, actualizadas: actualizadas, cambios: cambios, nuevasClaves: nuevasClaves };
 }
 
 /**
@@ -1481,7 +1625,7 @@ function sembrarSecciones_(hoja) {
   var datos = hoja.getDataRange().getValues();
   var headers = datos[0];
   var idxId = headers.indexOf('seccion_id');
-  if (idxId === -1) return 0;
+  if (idxId === -1) return { nuevas: [] };
 
   var existentes = {};
   for (var f = 1; f < datos.length; f++) {
@@ -1489,11 +1633,11 @@ function sembrarSecciones_(hoja) {
   }
 
   var nuevas = SEED_SECCIONES_.filter(function (s) { return !existentes[s.seccion_id]; });
-  if (!nuevas.length) return 0;
-
-  var filas = nuevas.map(function (s) { return headers.map(function (h) { return (h in s) ? s[h] : ''; }); });
-  hoja.getRange(hoja.getLastRow() + 1, 1, filas.length, headers.length).setValues(filas);
-  return filas.length;
+  if (nuevas.length) {
+    var filas = nuevas.map(function (s) { return headers.map(function (h) { return (h in s) ? s[h] : ''; }); });
+    hoja.getRange(hoja.getLastRow() + 1, 1, filas.length, headers.length).setValues(filas);
+  }
+  return { nuevas: nuevas.map(function (s) { return s.seccion_id; }) };
 }
 
 function menuSembrarSecciones_() {
@@ -1503,6 +1647,242 @@ function menuSembrarSecciones_() {
     ui.alert('No se pudo sembrar', 'La hoja SECCIONES no existe. Corré "Instalar / reparar hojas" primero.', ui.ButtonSet.OK);
     return;
   }
-  var agregadas = sembrarSecciones_(hoja);
-  ui.alert('Secciones sembradas', 'Filas nuevas agregadas: ' + agregadas + ' (las existentes no se tocaron).', ui.ButtonSet.OK);
+  var resultado = sembrarSecciones_(hoja);
+  ui.alert('Secciones sembradas', 'Filas nuevas agregadas: ' + resultado.nuevas.length + ' (las existentes no se tocaron).', ui.ButtonSet.OK);
+}
+
+/**
+ * Paso 2.11 Parte C — "Aplicar configuración": corre los cuatro sembradores en el
+ * único orden en que tiene sentido correrlos (las hojas tienen que existir antes de
+ * sembrarlas, y SOLAPAS antes que nada que dependa de `uso=fuente`) y arma UN reporte
+ * combinado. Antes había cuatro ítems de menú sin orden escrito, y correr uno después
+ * de otro podía revertir en silencio lo que el anterior acababa de aplicar — es
+ * literalmente lo que le pasó a `m2.hoja_default` en el Paso 2.10 Parte C (ver
+ * docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md, "La evidencia").
+ *
+ * El reporte es un DIFF, no un conteo (tarea 2 del prompt): "MAPEO — actualizadas: 106"
+ * no dice si eso es lo que se quería. El detalle completo (clave, columna, de qué valor
+ * a qué valor) se escribe en la hoja `DIFF_CONFIGURACION` — un `alert()` con cientos de
+ * líneas es el mismo modo de falla que ya rompió `diagnosticarColapso_()` por timeout
+ * (Auditoria.gs) — y el `alert()` que ve el usuario es un resumen de conteos con
+ * puntero a esa hoja.
+ */
+function menuAplicarConfiguracion_() {
+  var ui = SpreadsheetApp.getUi();
+
+  var resultadoInstalar = aplicarInstalacion_();
+  var resultadoSeed = aplicarSeedConfiguracion_();
+  var resultadoSolapas = aplicarClasificacionSolapas_();
+  var hojaSecciones = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SECCIONES');
+  var resultadoSecciones = hojaSecciones ? sembrarSecciones_(hojaSecciones) : { nuevas: [] };
+
+  var filasDiff = [].concat(
+    filasDiffParaHoja_('BASES', resultadoSeed.bases),
+    filasDiffParaHoja_('MAPEO', resultadoSeed.mapeo),
+    filasDiffParaHoja_('CONFIG', resultadoSeed.config),
+    filasDiffParaHoja_('INFORMES', resultadoSeed.informes),
+    filasDiffParaHoja_('PERIODOS', resultadoSeed.periodos),
+    resultadoSolapas.ok ? filasDiffParaHoja_('SOLAPAS', resultadoSolapas) : [],
+    resultadoSecciones.nuevas.map(function (id) { return ['SECCIONES', 'nueva', id, '', '', '']; })
+  );
+
+  escribirDiffConfiguracion_(filasDiff);
+
+  var totalCambios = filasDiff.filter(function (f) { return f[1] === 'cambio'; }).length;
+  var totalNuevas = filasDiff.filter(function (f) { return f[1] === 'nueva'; }).length;
+  var totalProtegidas = filasDiff.filter(function (f) { return f[1].indexOf('protegida') === 0; }).length;
+
+  var resumen =
+    formatearResumenInstalacion_(resultadoInstalar) + '\n\n' +
+    '— — —\n' +
+    'Filas nuevas: ' + totalNuevas + ' · celdas cambiadas: ' + totalCambios +
+    (totalProtegidas ? ' · protegidas (origen=manual): ' + totalProtegidas : '') +
+    (resultadoSeed.pendientes.length
+      ? '\n⚠️ Pendientes de confirmar columna en MAPEO: ' + resultadoSeed.pendientes.join(', ')
+      : '') +
+    (filasDiff.length
+      ? '\n\nDetalle completo (clave, columna, de qué valor a qué valor) en la hoja DIFF_CONFIGURACION.'
+      : '\n\nSin cambios — la configuración de la planilla ya coincide con el código.');
+
+  ui.alert('Aplicar configuración', resumen, ui.ButtonSet.OK);
+}
+
+/**
+ * Normaliza un resultado con forma de `upsertPorClave_` (`escritas`/`actualizadas`/
+ * `cambios`/`nuevasClaves`, y opcionalmente `protegidas`) a filas para la hoja
+ * `DIFF_CONFIGURACION`: `[hoja, tipo, clave, columna, anterior, nuevo]`.
+ */
+function filasDiffParaHoja_(nombreHoja, resultado) {
+  if (!resultado) return [];
+  var filas = [];
+  (resultado.nuevasClaves || []).forEach(function (clave) {
+    filas.push([nombreHoja, 'nueva', clave, '', '', '']);
+  });
+  (resultado.cambios || []).forEach(function (c) {
+    filas.push([nombreHoja, 'cambio', c.clave, c.columna, c.anterior, c.nuevo]);
+  });
+  (resultado.protegidas || []).forEach(function (clave) {
+    filas.push([nombreHoja, 'protegida (origen=manual)', clave, '', '', '']);
+  });
+  return filas;
+}
+
+var HEADERS_DIFF_CONFIGURACION_ = ['hoja', 'tipo', 'clave', 'columna', 'anterior', 'nuevo'];
+
+function escribirDiffConfiguracion_(filas, nombreHoja) {
+  nombreHoja = nombreHoja || 'DIFF_CONFIGURACION';
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(nombreHoja);
+  if (!hoja) hoja = ss.insertSheet(nombreHoja);
+  hoja.clear();
+  hoja.getRange(1, 1, 1, HEADERS_DIFF_CONFIGURACION_.length).setValues([HEADERS_DIFF_CONFIGURACION_]);
+  hoja.setFrozenRows(1);
+  if (filas.length) {
+    hoja.getRange(2, 1, filas.length, HEADERS_DIFF_CONFIGURACION_.length).setValues(filas);
+  }
+}
+
+/**
+ * Paso 2.11 Parte C — "Estado de configuración": SOLO LECTURA, no escribe ninguna hoja
+ * de registro (si escribe la hoja `ESTADO_CONFIGURACION`, que es el propio diagnóstico,
+ * mismo patrón que `DIAG_COLAPSO`/`DIAG_FECHAS`). Responde "¿en qué estado está esto?"
+ * sin correr nada que modifique — para eso ya está "Aplicar configuración".
+ * Por cada hoja de registro: filas totales, distribución de `origen` (solo `SOLAPAS`,
+ * es la única con esa columna) y discrepancias entre el `SEED_*` del código y lo que hay
+ * en la planilla (calculadas con los mismos `calcularDiff*_` que usa "Aplicar", sin
+ * aplicar nada).
+ */
+function menuEstadoConfiguracion_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ui = SpreadsheetApp.getUi();
+
+  var filas = [];
+  var lineasResumen = [];
+
+  function agregarDiscrepancias_(nombreHoja, diff) {
+    (diff.nuevas || []).forEach(function (n) {
+      filas.push([nombreHoja, 'falta en la planilla', n.clave, '', '', '']);
+    });
+    (diff.cambios || []).forEach(function (c) {
+      filas.push([nombreHoja, 'discrepancia', c.clave, c.columna, c.anterior, c.nuevo]);
+    });
+  }
+
+  function filasTotales_(nombreHoja) {
+    var hoja = ss.getSheetByName(nombreHoja);
+    return hoja ? Math.max(hoja.getLastRow() - 1, 0) : null;
+  }
+
+  [
+    { nombre: 'BASES', claves: ['base_id'], seed: SEED_BASES_ },
+    { nombre: 'MAPEO', claves: ['base_id', 'solapa', 'campo_logico'], seed: SEED_MAPEO_ },
+    { nombre: 'INFORMES', claves: ['informe_id'], seed: SEED_INFORMES_ },
+    { nombre: 'PERIODOS', claves: ['periodo_id'], seed: SEED_PERIODOS_ }
+  ].forEach(function (registro) {
+    var hoja = ss.getSheetByName(registro.nombre);
+    var totales = filasTotales_(registro.nombre);
+    if (!hoja) {
+      lineasResumen.push(registro.nombre + ' — la hoja no existe');
+      return;
+    }
+    var diff = calcularDiffUpsert_(hoja, registro.claves, registro.seed);
+    agregarDiscrepancias_(registro.nombre, diff);
+    lineasResumen.push(registro.nombre + ' — ' + totales + ' fila(s), ' +
+      diff.nuevas.length + ' pendiente(s) de crear, ' + diff.cambios.length + ' discrepancia(s)');
+  });
+
+  // CONFIG: forma distinta (clave/valor, solo completa vacíos) — mismo cálculo que
+  // seedConfigConfig_ pero sin escribir.
+  var hojaConfig = ss.getSheetByName('CONFIG');
+  if (hojaConfig) {
+    var datosConfig = hojaConfig.getDataRange().getValues();
+    var idxValorConfig = datosConfig[0].indexOf('valor');
+    var idxClaveConfig = datosConfig[0].indexOf('clave');
+    var filaPorClaveConfig = {};
+    for (var fc = 1; fc < datosConfig.length; fc++) {
+      if (datosConfig[fc][idxClaveConfig]) filaPorClaveConfig[datosConfig[fc][idxClaveConfig]] = fc;
+    }
+    var faltantesConfig = 0;
+    Object.keys(SEED_CONFIG_DEFAULTS_).forEach(function (clave) {
+      var f = filaPorClaveConfig[clave];
+      if (f === undefined) {
+        filas.push(['CONFIG', 'falta en la planilla', clave, '', '', SEED_CONFIG_DEFAULTS_[clave]]);
+        faltantesConfig++;
+        return;
+      }
+      var valorActual = datosConfig[f][idxValorConfig];
+      if ((valorActual === '' || valorActual === null) && SEED_CONFIG_DEFAULTS_[clave] !== '') {
+        filas.push(['CONFIG', 'discrepancia', clave, 'valor', valorActual, SEED_CONFIG_DEFAULTS_[clave]]);
+        faltantesConfig++;
+      }
+    });
+    lineasResumen.push('CONFIG — ' + Math.max(datosConfig.length - 1, 0) + ' fila(s), ' + faltantesConfig + ' sin completar');
+  } else {
+    lineasResumen.push('CONFIG — la hoja no existe');
+  }
+
+  // SOLAPAS: además de discrepancias contra SEED_SOLAPAS_, distribución de origen.
+  var hojaSolapas = ss.getSheetByName('SOLAPAS');
+  if (hojaSolapas) {
+    var existentesSolapas = leerFilasSolapas_(hojaSolapas);
+    var totalSolapas = Object.keys(existentesSolapas).length;
+    var porOrigen = {};
+    Object.keys(existentesSolapas).forEach(function (clave) {
+      var o = existentesSolapas[clave].origen || '(sin origen)';
+      porOrigen[o] = (porOrigen[o] || 0) + 1;
+    });
+    var distribucion = Object.keys(porOrigen).sort().map(function (o) { return o + ': ' + porOrigen[o]; }).join(', ');
+
+    SEED_SOLAPAS_.forEach(function (obj) {
+      var clave = obj.base_id + '||' + obj.solapa;
+      var existente = existentesSolapas[clave];
+      if (existente && existente.origen === 'manual') return; // protegida, no es discrepancia
+      if (!existente) {
+        filas.push(['SOLAPAS', 'falta en la planilla', clave, '', '', '']);
+        return;
+      }
+      ['uso', 'fila_encabezado', 'notas'].forEach(function (campo) {
+        var anterior = existente[campo];
+        var nuevo = campo === 'notas' ? obj.notas : obj[campo];
+        var comparableAnterior = (anterior === null || anterior === undefined) ? '' : String(anterior);
+        var comparableNuevo = (nuevo === null || nuevo === undefined) ? '' : String(nuevo);
+        if (comparableAnterior !== comparableNuevo) {
+          filas.push(['SOLAPAS', 'discrepancia', clave, campo, anterior, nuevo]);
+        }
+      });
+    });
+
+    var discrepanciasSolapas = filas.filter(function (f) { return f[0] === 'SOLAPAS'; }).length;
+    lineasResumen.push('SOLAPAS — ' + totalSolapas + ' fila(s) [' + distribucion + '], ' + discrepanciasSolapas + ' discrepancia(s)');
+  } else {
+    lineasResumen.push('SOLAPAS — la hoja no existe');
+  }
+
+  var hojaSecciones = ss.getSheetByName('SECCIONES');
+  if (hojaSecciones) {
+    var datosSecciones = hojaSecciones.getDataRange().getValues();
+    var idxIdSeccion = datosSecciones[0].indexOf('seccion_id');
+    var idsExistentes = {};
+    for (var fs = 1; fs < datosSecciones.length; fs++) {
+      if (datosSecciones[fs][idxIdSeccion]) idsExistentes[datosSecciones[fs][idxIdSeccion]] = true;
+    }
+    var faltantesSecciones = SEED_SECCIONES_.filter(function (s) { return !idsExistentes[s.seccion_id]; });
+    faltantesSecciones.forEach(function (s) {
+      filas.push(['SECCIONES', 'falta en la planilla', s.seccion_id, '', '', '']);
+    });
+    lineasResumen.push('SECCIONES — ' + Math.max(datosSecciones.length - 1, 0) + ' fila(s), ' + faltantesSecciones.length + ' pendiente(s) de crear');
+  } else {
+    lineasResumen.push('SECCIONES — la hoja no existe');
+  }
+
+  escribirDiffConfiguracion_(filas, 'ESTADO_CONFIGURACION');
+
+  ui.alert(
+    'Estado de configuración',
+    lineasResumen.join('\n') +
+      (filas.length
+        ? '\n\nDetalle completo en la hoja ESTADO_CONFIGURACION.'
+        : '\n\n✅ Sin discrepancias entre el código y la planilla.'),
+    ui.ButtonSet.OK
+  );
 }

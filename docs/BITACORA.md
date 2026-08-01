@@ -480,6 +480,88 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   (retirar `reclasificarSolapasM2Invertidas_`, entra dentro de la Parte D del Paso 2.11)
   siguen sin ejecutar.
 
+## Paso 2.11 Parte C — un solo "Aplicar configuración", con diff (2026-07-31) — commit `<pendiente>`
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md` Parte
+  C — la configuración se aplicaba desde cuatro ítems de menú sin orden escrito
+  (`instalar`, `seedConfiguracion`, `sembrarClasificacionSolapas`,
+  `menuSembrarSecciones_`), y correr uno después de otro podía revertir en silencio lo
+  que el anterior acababa de aplicar (exactamente lo que le pasó a `m2.hoja_default` en
+  el Paso 2.10 Parte C). Tareas: un `menuAplicarConfiguracion_()` que corre los cuatro en
+  orden fijo y reporta un **diff** (qué cambió, de qué valor a qué valor), no un conteo;
+  un `menuEstadoConfiguracion_()` de solo lectura con las discrepancias código↔planilla.
+- **Qué se hizo:** `Instalar.gs` — `calcularDiffUpsert_()`: motor de diff genérico por
+  clave compuesta, sin escribir nada. `upsertPorClave_()` pasa a ser un wrapper que
+  aplica ese diff (antes reescribía TODA fila existente sin comparar — "MAPEO —
+  actualizadas: 106" no distinguía cambio real de reescritura idéntica). `instalar()`,
+  `seedConfiguracion()` y `sembrarClasificacionSolapas()` se partieron en un núcleo sin
+  `alert()` (`aplicarInstalacion_`, `aplicarSeedConfiguracion_`,
+  `aplicarClasificacionSolapas_`, que devuelven el resultado) y un wrapper delgado que
+  arma el texto y lo muestra — los tres ítems de menú individuales siguen andando igual
+  que antes, ahora sobre el núcleo compartido. `seedConfigConfig_()` (CONFIG) y
+  `sembrarSecciones_()` (SECCIONES) se enriquecieron para devolver el mismo tipo de
+  detalle (`cambios`/`nuevasClaves`) sin cambiar su lógica, que ya era diff-aware.
+  `menuAplicarConfiguracion_()` corre los cuatro núcleos en orden fijo
+  (instalar → seed BASES/MAPEO/CONFIG/INFORMES/PERIODOS → clasificar SOLAPAS → sembrar
+  SECCIONES) y escribe el diff completo en la hoja `DIFF_CONFIGURACION` (un `alert()`
+  con cientos de líneas es el mismo modo de falla que ya rompió
+  `diagnosticarColapso_()` por timeout) con un resumen de conteos en el `alert()`.
+  `menuEstadoConfiguracion_()` recalcula los mismos diffs sin aplicarlos, agrega
+  distribución de `origen` para `SOLAPAS`, y escribe todo en `ESTADO_CONFIGURACION`.
+  `Codigo.gs` — los cuatro ítems individuales bajan a un submenú `Avanzado`; los dos
+  nuevos quedan arriba en `Configuración`.
+  **Corregido de paso:** `aplicarClasificacionSolapas_()` ya NO escribe `filas_datos` ni
+  `firma_encabezado` al clasificar — esas dos las escribe `inventariarSolapas()` contra
+  el archivo vivo, y el código viejo las pisaba con el valor casi siempre vacío de
+  `SEED_SOLAPAS_` en cada siembra (bug preexistente, invisible mientras "Sembrar
+  clasificación" se corría una sola vez; se vuelve real ahora que entra en un ítem
+  pensado para correrse seguido).
+- **Prueba:** protocolo de siete pasos de `docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md`,
+  corrido dos veces por el usuario contra la planilla — evidencia completa en
+  `docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md` (cuerpo = primera corrida, addendum =
+  segunda). **Primera corrida: 5 de 7.** Fallaron el paso 4 (idempotencia: la nota de
+  `SOLAPAS.digital||RDV JM 2 VECES` se reescribía en cada corrida) y el 5 ("Estado" decía
+  ✅ y un "Aplicar" inmediato cambiaba una celda). **Segunda corrida, con C.2-1 completo:
+  los siete pasos ✅** — apply ×2 con `nuevas: 0 · cambiadas: 0`, `DIFF_CONFIGURACION`
+  con las 10 protegidas y ninguna línea de cambio, y "Estado" en cero **consistente** con
+  las dos corridas de apply (que era exactamente lo que el paso 5 tenía que descartar).
+  El control positivo de la primera corrida cerró con evidencia una duda abierta desde el
+  31/07: `BASES` y `MAPEO` **sí** se auditan — el "cero líneas" era ausencia de cambios,
+  no ceguera del diff.
+- **Pendientes/decisiones:** **el diff funciona pero todavía no es auditable**: C.2-2 a
+  C.2-7 siguen sin hacer (sin marca de corrida ni bloque de alcance — hay que vaciar las
+  hojas de reporte a mano; las migraciones escriben por fuera del diff; las protegidas no
+  dicen qué se habrían perdido; no hay línea `solo_en_hoja`). Pasar el protocolo no es
+  tener un diff auditable. El resto del menú era la Parte D del mismo prompt y ya se
+  resolvió aparte (commit `9fd16c6`, menú declarado por tabla); queda de esa parte retirar
+  `reclasificarSolapasM2Invertidas_` (Parte 3 de `Paso-2.12`).
+
+## Paso 2.11 Parte C.2-1 — el diff deja de reportar un cambio que no existe (2026-08-01) — commit `<pendiente>`
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md` C.2-1. La
+  premisa original (el seed degradó `PERIODOS` de fecha a texto y cualquier filtro por
+  ventana devuelve cero filas) resultó **falsa en las dos mitades**, y las dos correcciones
+  quedaron como addenda fechados en el propio prompt: no hay ningún consumidor que compare
+  el valor crudo (`resolverVentana` pasa todo por `parsearFechaCelda_`, que acepta texto
+  ISO), y el diagnóstico mostró que **las doce celdas son `Date`** — lo que cambió fue el
+  formato de visualización, no el tipo.
+- **Qué se hizo:** `Fechas.gs` — `diagnosticoTiposFechasConfig_()`, solo lectura, reporta
+  `typeof` / `instanceof Date` / display de `PERIODOS`, `CAMPANAS`, `CONFIG` y (agregada
+  después, por el hallazgo del protocolo) `BASES.fila_encabezado`. `Instalar.gs` —
+  `normalizarParaComparar_(valor, tipoColumna)` + `COLUMNAS_FECHA_REGISTRO_`, integradas
+  en `calcularDiffUpsert_()`: `Date` y string-fecha se llevan a ISO `yyyy-mm-dd` **solo
+  para comparar**, nunca se escribe el valor normalizado. Estricta a propósito: un string
+  se canonicaliza únicamente si es exactamente una fecha, para no tapar un cambio real en
+  una nota. Se **retiró** `corregirNotaControlAnclaje_()` entera: comparaba contra su
+  propia constante vieja y revertía en cada corrida la nota que `SEED_SOLAPAS_` ya traía
+  bien — una migración que corrige lo que el seed vuelve a escribir bien es un parche
+  permanente, no una migración.
+- **Prueba:** los siete pasos del protocolo, ver la entrada de arriba. El bloqueante 2
+  (paso 5) **no tuvo arreglo propio**: se cayó como consecuencia de resolver el 1.
+- **Pendientes/decisiones:** `BASES.fila_encabezado` es `number` en las cinco filas
+  (`m2 = 3`) — el `31/12/1899 → 1900-01-02` era solo formato de celda, así que el hallazgo
+  baja a cosmético; **H-2 sigue en pie por otra razón** (`BASES.m2 = 3` contra
+  `SOLAPAS.m2/Cuentas M2 = 1`, más los dos accesos directos de `Union.gs`). Ver
+  `docs/PENDIENTES_consistencia.md`.
+
 ## DOC-5 — Orden documental: un solo dueño por hecho (2026-07-31) — commits `b9d57c5`…`ceeef86` y el de esta entrada
 - **Qué pedía el prompt:** `docs/Prompts/DOC-5_orden_documental.md` — inventario de los
   ~96 `.md`, duplicaciones, hechos sin respaldo, huérfanos/muertos, y propuesta de mapa

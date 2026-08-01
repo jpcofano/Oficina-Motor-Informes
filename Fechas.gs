@@ -761,3 +761,84 @@ function menuDiagnosticarBases_() {
 
   ui.alert('Solapas y tipos de columnas mapeadas', lineas.join('\n'), ui.ButtonSet.OK);
 }
+
+/**
+ * Paso 2.11 Parte C.2-1 — DIAGNÓSTICO, solo lectura, no corrige nada.
+ * ¿De qué tipo son las fechas de ventana en las hojas de registro?
+ * PERIODOS.desde/hasta, CONFIG.periodo_desde/periodo_hasta y
+ * CAMPANAS.desde/hasta se leen con getValues() (igual que leerRegistro_/
+ * leerConfig) y se reporta, por celda: typeof, instanceof Date, y el
+ * display value — porque una celda texto y una celda fecha se VEN
+ * iguales en la planilla, y la diferencia solo aparece acá.
+ */
+function diagnosticoTiposFechasConfig_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var filas = [];
+
+  function describir_(valor) {
+    var esDate = valor instanceof Date;
+    return 'typeof=' + typeof valor + ' · instanceof Date=' + esDate +
+      (esDate && isNaN(valor.getTime()) ? ' (Date INVÁLIDA)' : '');
+  }
+
+  function relevarHoja_(nombreHoja, columnaClave, campos) {
+    var hoja = ss.getSheetByName(nombreHoja);
+    if (!hoja) { filas.push('⚠️ Hoja ' + nombreHoja + ' no existe'); return; }
+    var valores = hoja.getDataRange().getValues();
+    var display = hoja.getDataRange().getDisplayValues();
+    var headers = valores[0];
+    var idxClave = headers.indexOf(columnaClave);
+    for (var f = 1; f < valores.length; f++) {
+      var clave = valores[f][idxClave];
+      if (!clave) continue;
+      campos.forEach(function (campo) {
+        var c = headers.indexOf(campo);
+        if (c === -1) { filas.push('⚠️ ' + nombreHoja + ' sin columna ' + campo); return; }
+        filas.push(nombreHoja + '.' + clave + '.' + campo + ' → ' +
+          describir_(valores[f][c]) + ' · se ve como "' + display[f][c] + '"');
+      });
+    }
+  }
+
+  relevarHoja_('PERIODOS', 'periodo_id', ['desde', 'hasta']);
+  relevarHoja_('CAMPANAS', 'campana_id', ['desde', 'hasta']);
+  // Hallazgo del protocolo C.2 (01/08/2026): el diff reportó BASES.m2.fila_encabezado
+  // como "31/12/1899 → 1900-01-02" — enteros 1 y 3 con formato de fecha encima. La
+  // columna NO es de fecha; se releva acá para saber qué devuelve getValues() (número
+  // o Date), porque Union.gs:36/:261 la leen directo con Number() y un Date daría un
+  // número de fila absurdo sin fallar.
+  relevarHoja_('BASES', 'base_id', ['fila_encabezado']);
+
+  // CONFIG es clave→valor, no registro: se releva aparte.
+  var hojaConfig = ss.getSheetByName('CONFIG');
+  if (!hojaConfig) {
+    filas.push('⚠️ Hoja CONFIG no existe');
+  } else {
+    var valoresCfg = hojaConfig.getDataRange().getValues();
+    var displayCfg = hojaConfig.getDataRange().getDisplayValues();
+    var headersCfg = valoresCfg[0];
+    var idxCl = headersCfg.indexOf('clave');
+    var idxVa = headersCfg.indexOf('valor');
+    var buscadas = { periodo_desde: false, periodo_hasta: false };
+    for (var i = 1; i < valoresCfg.length; i++) {
+      var cl = valoresCfg[i][idxCl];
+      if (cl !== 'periodo_desde' && cl !== 'periodo_hasta') continue;
+      buscadas[cl] = true;
+      filas.push('CONFIG.' + cl + ' → ' + describir_(valoresCfg[i][idxVa]) +
+        ' · se ve como "' + displayCfg[i][idxVa] + '"');
+    }
+    Object.keys(buscadas).forEach(function (cl) {
+      if (!buscadas[cl]) filas.push('CONFIG.' + cl + ' → (la clave no está en la hoja)');
+    });
+  }
+
+  var texto = filas.join('\n');
+  Logger.log(texto);
+  return texto;
+}
+
+function menuDiagnosticoTiposFechasConfig_() {
+  var ui = SpreadsheetApp.getUi();
+  ui.alert('Tipos de fechas de ventana (Paso 2.11 C.2-1 — solo lectura)',
+    diagnosticoTiposFechasConfig_(), ui.ButtonSet.OK);
+}
