@@ -1,0 +1,4 @@
+marcador	familia	informe_id	base_id	solapa	campo_logico	periodo_ref	operacion	valor_fijo	formato	notas
+ecv_inscriptos	ecv	*	rdv		inscriptos		calcInscriptos		numero	* = compartido
+camp_alcance	camp	*	looker		alcance		calcAlcance		miles	
+m2_envios	m2	jm	m2		envios	m2_mensual	calcEnvios		numero	

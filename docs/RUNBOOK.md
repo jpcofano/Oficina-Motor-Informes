@@ -201,6 +201,43 @@ Mantener esta tabla a medida que crezcan los pasos. Acción desconocida devuelve
 
 ---
 
+## Parte H — Snapshot de las hojas de registro (Paso 2.11 C.2-7)
+
+```
+node tools/snapshot.js
+```
+
+Deja `docs/_snapshots/<HOJA>_<AAAA-MM-DD>.tsv`, una por cada una de las **diez** hojas de
+registro (`BASES`, `MAPEO`, `CONFIG`, `INFORMES`, `PERIODOS`, `SOLAPAS`, `SECCIONES`,
+`CAMPANAS`, `REUNIONES`, `MARCADORES`). Texto plano y diffeable — `.gitignore` bloquea
+`*.xlsx` justamente para que nadie versione la alternativa binaria.
+
+**Cuándo se corre:** antes de "Aplicar configuración", que reescribe todo de una vez. El
+punto es tener contra qué comparar si el diff está mal.
+
+**Por qué no usa `tools/api.js`.** Ese contra-qué no puede salir del mismo código que se
+está probando. `snapshot.js` no toca ni un `.gs`: le pide el volcado a Google directo, por
+el endpoint de exportación de Sheets, con el mismo Bearer de `tools/token.js`. No pasa por
+`calcularDiffUpsert_`, ni por los `SEED_*`, ni por los lectores de `Config.gs`. La lista de
+las diez hojas está escrita en `snapshot.js` a propósito, duplicando la de
+`ALCANCE_REGISTROS_` (`Instalar.gs`): leerla del código bajo prueba anularía la
+independencia.
+
+- El id de la planilla sale de `.clasp.json` (`parentId`); los `gid` de cada solapa, de la
+  página `htmlview` del libro. No hay ningún id escrito en el script.
+- `--destino=<ruta>` vuelca a otra carpeta (revisión previa), `--fecha=AAAA-MM-DD` fija la
+  fecha del nombre.
+- **Diez exportaciones seguidas dan HTTP 429**: esa cuota es más estricta que la de la API.
+  El script espera entre pedidos y reintenta con backoff. Un volcado a medias es peor que
+  ninguno, porque parece completo.
+- **Antes de commitear un snapshot, mirarlo.** El repo es público y hay un P0 abierto por
+  datos personales en el historial. Al 01/08/2026 ninguna de las diez hojas tiene nombres
+  de personas: `REUNIONES` tiene barrios y temas, `CAMPANAS` tiene nombres de campaña, y
+  los ids de Drive de `BASES`/`CONFIG` ya están en `Instalar.gs` desde antes. Eso vale
+  para esa corrida, no para siempre.
+
+---
+
 ## Y después…
 
 13. Con las bases verdes y `INFORMES` cargado, seguís con el motor headless:
