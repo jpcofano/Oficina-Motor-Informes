@@ -3,88 +3,73 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-01 · último commit al escribirlo: el de esta entrada
+**Última actualización:** 2026-08-01 (tarde) · último commit al escribirlo: el de esta entrada
 
 ## Dónde estamos
 
-**Paso 2.11 Parte C + C.2 cerrado y verificado en vivo. Sin nada trabado.**
+**AUD-3 ejecutado. C.2-7 cerrado más temprano hoy. Sin nada trabado. Cero cambios en `.gs` pendientes.**
 
-El diff de configuración funciona **y ya es auditable**: dice qué auditó y qué no (bloque
-ALCANCE, diez hojas), con cabecera de corrida, migraciones dentro del diff, protegidas que
-declaran qué se habrían perdido, línea `solo_en_hoja` y resumen desagregado. Los dos P0 que
-bloqueaban —idempotencia y "Estado no coincide con Aplicar"— están cerrados con evidencia
-repetida (`docs/PROTOCOLO_2.11-C_corrida_2026-08-01.md`).
+El código está mapeado: `docs/INVENTARIO_CODIGO.md` (congelado — grafo de llamadas,
+huérfanas clasificadas, trabajos y costuras de `Instalar.gs`, menú) y
+`docs/ESCRITORES.md` (**vivo** — contrato de quién escribe cada hoja de registro, con
+matriz regenerable). Los dos con script en `tools/` (`inventario.js`, `escritores.js`):
+si dentro de un mes el mapa parece viejo, se re-corre, no se le cree.
 
-También quedó destrabado el Paso 1.8: el usuario cargó `API_TOKEN` y la API sobre `/dev`
-responde. **Por primera vez Code corrió parte de un protocolo sin que nadie abriera la
-planilla** — las cinco `probar*_()` por HTTP, 5 de 5 OK.
+## Lo que el AUD-3 dejó establecido
 
-## Qué quedó hecho en C.2-7
+- **20 huérfanas, no 18** — 8 adelantadas (los 5 `op*` del Paso 3, `abrirPanel`,
+  `filasDigitalDeEncuentro`, `parsearPersonas_`) + 6 colgadas (el camino de escritura de
+  `Valores.gs`: el punto de cableado existe — `corteVerticalRetiro2407_` calcula sin
+  registrar) + 6 muertas (instrumentos de consola de casos cerrados). Ninguna borrada:
+  AUD-3 clasifica, no resuelve.
+- **`MAPEO` tiene TRES escritores, no dos**: upsert/`SEED_*`, `promoverFechasElegidas`
+  (`Fechas.gs`) y **`consolidarMapeoLooker_` (`Solapas.gs:455-456`)** — el tercero lo
+  encontró el censo solo, era el control positivo del patrón. También escribe `BASES` y
+  `SOLAPAS`. Regla operativa provisoria en `ESCRITORES.md` §2.1.
+- **`MARCADORES`: nada la siembra y nada la escribe salvo una migración de renombre**
+  (`migrarCalculoAOperacion_`). H-6 confirmado desde el código — insumo directo del 2.13.
+- **`CAMPANAS`: cero escritores** — consistente con "curada a mano".
+- **33 de 36 ítems de menú tocan `getUi()` y son no-invocables por la API**; el único
+  protegido es `probarConexionBases` vía `hayUi_`. Insumo del paso que quiera exponer
+  diagnósticos por `/dev`.
+- Las mediciones externas del punto de partida: exactas en funciones/archivos/duplicados
+  e `Instalar.gs`; las líneas ("~8.100" → 8.410), el menú (~34 → 36) y `getUi` (37 → 40)
+  eran aproximadas. Detalle y conciliación en `INVENTARIO_CODIGO.md` §0.
 
-| pieza | estado | nota |
-|---|---|---|
-| `tools/snapshot.js` + `docs/_snapshots/` | hecha | diez TSV, volcados **sin pasar por el motor** |
-| `docs/RUNBOOK.md` Parte H | hecha | cuándo se corre, por qué no usa la API, el 429 |
-| Addendum 1 a `Paso-2.11_una_sola_fuente_de_verdad.md` | hecha | la C.2 entera + el fix de `sembrarClasificacionSolapas()` |
-| `docs/PROTOCOLO_2.11-C_corrida_2026-08-01.md` | hecha | congelado; **no** reemplaza al del 31/07 |
-| `docs/PENDIENTES_consistencia.md` | hecha | 2 P0 tachados, el de la API reescrito, 3 hallazgos abiertos |
+## Reglas nuevas de esta sesión
 
-## Lo que se verificó y lo que no
+- **`CLAUDE.md` §3: grepear antes de pedir una corrección** — la Tarea 1 del AUD-3 pidió
+  corregir tres premisas que no estaban en el archivo; el resultado correcto fue cero
+  ediciones, registrado.
+- `CLAUDE.md` §7: la fila "¿qué debería decir esa configuración?" ya tiene a quién
+  señalar — `SEED_*` (el valor) + `ESCRITORES.md` (el camino).
 
-**Verificado en vivo contra la planilla:** C.2-2, C.2-4, C.2-5 y C.2-6. Diez filas de
-alcance, diez protegidas con su `habría cambiado`, siete `solo_en_hoja` reportadas y
-todavía en la hoja, resumen desagregado. Dos "Aplicar configuración" seguidos, idénticos.
+## Chequeo pendiente que este cierre confirmó
 
-**Verificado sólo sintéticamente:** C.2-3 (`probarMigracionesEnDiff_`). `migraciones: 0` es
-el resultado correcto, pero cero no distingue *no hay migraciones pendientes* de *ese camino
-no se ejecuta*.
-
-**No verificado:** el camino central del upsert. `cambiadas: 0 · agregadas: 0` en las dos
-corridas porque el control positivo de cinco ediciones **no se repuso** — la planilla se
-limpió antes (`zz_prueba` y la huérfana `ahhh` ya no están, confirmado en los snapshots).
-Que el upsert detecte cambios lo sostienen la corrida del 31/07 y los controles positivos,
-no ésta.
-
-## Los tres hallazgos que este paso abrió y no arregló
-
-Están en `docs/PENDIENTES_consistencia.md` con el detalle y las líneas de código:
-
-1. **P1 · las siete filas huérfanas de `MAPEO` son columnas de fecha.** Las escribe
-   `promoverFechasElegidas()` (`Fechas.gs:378`), no un sembrador: dos escritores, uno solo
-   declarado. Se pidió como P0; **baja a P1 verificado contra el código** — `leerFuente()`
-   corta con `«FALTA:fecha_periodo@…»`, las cinco de `digital` ni se consumen
-   (`modo_periodo = snapshot`), y la fila 3 es el contrato viejo que el seed ya cubre. La
-   única que un re-sembrado rompería es `rdv||RDV_otros_ministros`, y rompe fuerte.
-2. **P1 · asimetría Estado / Aplicar en las protegidas.** Aplicar emite diez líneas,
-   Estado ninguna: `menuEstadoConfiguracion_()` reimplementa la comparación de `SOLAPAS`
-   (`Instalar.gs:2136-2153`) y saltea las `origen=manual` sin decir nada. Es el P0 recién
-   cerrado en versión chica.
-3. **P2 · `diagnosticoBases_()` lista solapas `uso = 'ignorar'`.** Preexistente del Paso
-   1.8, no de acá.
-
-## Trabado
-
-Nada. El `API_TOKEN` que bloqueaba el Paso 1.8 está cargado.
-
-Sobre el pendiente de la API: el punto 1 (código viejo) **no aplica sobre `/dev`**, que es
-HEAD por definición, y revive cuando el Paso 6 publique `/exec`. El punto 2 —lista blanca
-`EJECUTABLES_REMOTOS_` de sólo lectura para `llamar`— **se difiere al Paso 6 por decisión
-del usuario del 01/08/2026**.
+**El Paso 1.8 no tiene ✅.** Su entrada de bitácora (commit `4fa54f5`) dice "las cuatro
+de aceptación no corrieron" y ningún commit posterior —incluido `fd58902`— registra que
+hayan corrido como tales. La API se usó en serio (5/5 `probar*_`, `bases`), pero las
+cuatro pruebas del Paso 1.8 §7 como protocolo nunca se corrieron. Cerrarlo es una
+corrida de esas cuatro + una línea en la bitácora.
 
 ## Qué sigue
 
-1. **`Paso-2.11` Parte D** — lo único que le falta a este paso: `BASES.fila_encabezado`
-   vestigial (H-2), los dos accesos directos de `Union.gs:36` y `:261`, retirar
-   `reclasificarSolapasM2Invertidas_`, y los nombres de solapa hardcodeados de
-   `Fechas.gs:66` y `Auditoria.gs:348`.
-2. **`Paso-2.12` Parte 2** — las 17 disposiciones de `SOLAPAS.uso` en `revisar`. Ahora se
-   puede hacer con datos: las diez protegidas ya declaran qué se habrían perdido, que era
-   justamente lo que faltaba para `rdv/RDV CONJUNTO` y `rdv/Comunas`.
-3. **`Paso-2.13`** — `SEED_MARCADORES_`. `MARCADORES` sigue con tres filas contra las 43
-   trazas del CSV y sin sembrador; el snapshot del 01/08 ya está tomado, que era su primera
-   tarea.
-4. Las cuatro pruebas de aceptación del Paso 1.8 §7 nunca corrieron como tales, aunque la
-   API ya se usó en serio para las cinco `probar*_()` y para `bases`.
+1. **Las cuatro pruebas de aceptación del Paso 1.8 §7** — lo único que le falta a ese
+   paso para su ✅.
+2. **`Paso-2.11` Parte D** — `BASES.fila_encabezado` vestigial (H-2), `Union.gs:36`/`:261`,
+   retirar `reclasificarSolapasM2Invertidas_`, nombres hardcodeados de `Fechas.gs:66` y
+   `Auditoria.gs:348`. El inventario §C ya dice qué comparte cada pieza.
+3. **`Paso-2.11` Parte E** — formalizar el contrato de escritores que `ESCRITORES.md`
+   dejó redactado (el tercero de `MAPEO` incluido).
+4. **`Paso-2.12` Parte 2** — las 17 en `revisar` de `SOLAPAS`; `ESCRITORES.md` §2.2 trae
+   el desglose de las 10 protegidas (8 `uso` donde el humano gana, 2 `notas` donde el
+   seed es mejor).
+5. **`Paso-2.13`** — `SEED_MARCADORES_`; el snapshot está tomado y el censo confirma que
+   hoy nadie escribe esa hoja.
+6. Lo que el usuario anticipó: **DOC-6** para lo que salga de acá en adelante.
 
-**Sin commitear, y de otro paso:** `docs/Prompts/AUD-3_inventario_codigo.md`. No se
-bundlea (`CLAUDE.md` §4.5) — decidir a qué paso pertenece antes de meterlo.
+## P1/P2 abiertos sin cambios
+
+Los tres de C.2-7 (filas huérfanas de `MAPEO` — ahora con el tercer escritor censado —,
+asimetría Estado/Aplicar, `diagnosticoBases_` listando `ignorar`) más el resto de
+`docs/PENDIENTES_consistencia.md`. AUD-3 no arregló ninguno: es sólo lectura.

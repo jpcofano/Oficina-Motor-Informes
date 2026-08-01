@@ -422,6 +422,8 @@ los de `CLAUDE.md` §3 (vivo / congelado / archivado); acá no se repiten por do
 | `docs/TEMARIO_Y_PLANTILLA_2026-07-31.md` | temario y diff de plantilla (31/07) | nadie |
 | `docs/VALIDACION_2026-07-31.md` | validación del informe SECCO publicado contra las cuatro bases (31/07) | nadie |
 | `docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md` | las tres corridas del protocolo del Paso 2.11 Parte C (31/07): control positivo, idempotencia, estado | nadie — se crea uno nuevo por corrida |
+| `docs/INVENTARIO_CODIGO.md` | foto del código al 01/08/2026 (AUD-3): grafo de llamadas, las 20 huérfanas clasificadas, trabajos y costuras de `Instalar.gs`, menú. Se regenera con `tools/inventario.js` y se escribe uno nuevo | nadie — congelado |
+| `docs/ESCRITORES.md` | **contrato vivo**: quién escribe cada hoja de registro y por qué camino; co-dueño con los `SEED_*` de "¿qué debería decir esa configuración?" (`CLAUDE.md` §7). Matriz regenerable con `tools/escritores.js` | ambas |
 
 `REGLAS_NEGOCIO` y `SUPUESTOS` son **append-only**: se agregan filas, nunca se reutiliza
 un ID, y una regla o supuesto que se cae se marca **derogado con fecha** en vez de

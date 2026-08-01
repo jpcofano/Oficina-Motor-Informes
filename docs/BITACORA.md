@@ -837,3 +837,60 @@ nadie más.
   usuario son anchos y se angostan en una sesión dedicada; (b) el `additionalDirectories`
   con `/tmp` del settings del proyecto y el `Read(//tmp/**)` del de usuario son rutas POSIX
   que en Windows no cubren nada — ruido muerto conocido, sin urgencia.
+
+## AUD-3 — inventario del código, sólo lectura (2026-08-01) — commits `3bc7c50` (prompt) + el de esta entrada
+- **Qué pedía el prompt:** `docs/Prompts/AUD-3_inventario_codigo.md` (editado en el lugar
+  en `3bc7c50`, no ejecutado hasta entonces). Un mapa del código sin tocar una línea:
+  grafo de llamadas (A), huérfanas clasificadas (B), trabajos de `Instalar.gs` (C), menú
+  (D) y censo de escritores por hoja (E). Dos entregables separados por ciclo de vida.
+- **Qué se hizo:**
+  - **`tools/inventario.js`** (nuevo) — Parte A mecánica: limpieza de comentarios/strings
+    preservando offsets, extracción de funciones con cuerpo por balance de llaves,
+    grafo de usos (invocación **y referencia sin paréntesis**), entradas declaradas
+    (`onOpen`/`MENU_`/`doGet`/`doPost`/`API_LECTORES_`/**carga de módulo**), tabla de
+    menú con `getUi()` en el camino y última mención en bitácora.
+  - **`tools/escritores.js`** (nuevo) — Parte E mecánica: las nueve mutaciones sobre las
+    diez hojas, atribución por resolución de receptor con propagación por parámetros
+    (cadena `vía`), constantes globales y literales de llamadores. Lo no atribuible va a
+    `(sin resolver)`, listado — 7 sitios, todos explicados.
+  - **`docs/INVENTARIO_CODIGO.md`** (nuevo, congelado) — Partes A a D + salida del script
+    embebida. Con su fila en `PROYECTO.md` §9 y en la lista de evidencia congelada de
+    `CLAUDE.md` §7, este commit.
+  - **`docs/ESCRITORES.md`** (nuevo, vivo) — Parte E: contrato hoja por hoja + matriz
+    embebida. Pasa a ser co-dueño real de "¿qué debería decir esa configuración?"
+    (`CLAUDE.md` §7 actualizado: la fila dejó de decir "cuando exista").
+- **Prueba (criterios del prompt, resultado y no afirmación):**
+  - **(a) Reproducibilidad:** 235 funciones de primer nivel ✅ exacto · 21 archivos ✅ ·
+    0 duplicados ✅ · `Instalar.gs` 2.204/44 ✅. Líneas: **8.410**, no ~8.100 — la cifra
+    externa no coincide con ninguna revisión del 01/08 (medido por commit: 7.304 →
+    7.986 → 8.410); menú: **36**, no ~34; `getUi()`: **40**, no 37.
+  - **(b) Control positivo del censo — encontró los dos y uno más:** MAPEO vía upsert
+    (`Instalar.gs:1391/1400` vía `aplicarSeedConfiguracion_`) ✅ · MAPEO vía
+    `promoverFechasElegidas` (`Fechas.gs:385` + `migrarPrefijosFechaPeriodo_:412`) ✅ ·
+    y **`consolidarMapeoLooker_` (`Solapas.gs:455-456`), tercer escritor no soplado**,
+    que además escribe `BASES` (:485) y `SOLAPAS` (:467-475).
+  - Las diez hojas están en la matriz, `CAMPANAS` con cero escritores ✅. `MARCADORES`:
+    un solo escritor y es una migración — H-6 confirmado desde el código.
+  - Cero cambios en `.gs` ✅ (`git status`: solo `tools/` y `docs/`).
+- **La discrepancia como hallazgo (el prompt mandaba parar y reportarla):** las 18
+  huérfanas eran **20** — 2 falsas (`filasSolapa_`, `filaSeccion_`: corren en la carga
+  de módulo, 18 y 35 llamadas en `SEED_SOLAPAS_`/`SEED_SECCIONES_`; la medición externa
+  no contaba el nivel de módulo como entrada) y 4 omitidas (`diagnosticoColumnaFecha_`,
+  `diagnosticoElementosSlide_`, `logElementosSlide_`, `filasDigitalDeEncuentro`). Más
+  una trampa cazada en el propio script: las 8 de `Pruebas.gs` parecen huérfanas si no
+  se cuentan referencias sin paréntesis (`correrPruebasDiff_` las invoca por variable).
+  Clasificación final: **8 adelantadas + 6 colgadas + 6 muertas = 20**, ninguna en dos,
+  ninguna borrada. Correcciones a hipótesis del prompt: `abrirPanel` y
+  `parsearPersonas_` eran candidatas a muertas y son adelantadas (evidencia en el doc);
+  `Valores.gs` no está "entero" colgado — la mitad de lectura está cableada al menú, lo
+  colgado es el camino de escritura, y el punto de cableado que falta ya existe
+  (`corteVerticalRetiro2407_` calcula sin registrar).
+- **Pendientes/decisiones:**
+  - El tercer escritor de `MAPEO` (`consolidarMapeoLooker_`) queda **declarado** en
+    `ESCRITORES.md` §2.1 con regla operativa provisoria; formalizarla es del 2.11 Parte E.
+  - Los dos P1/P2 de C.2-7 quedan con más evidencia (asimetría Estado/Aplicar:
+    `Instalar.gs:2136-2153`; el seed desactualizado en las 8 `uso` manuales:
+    `ESCRITORES.md` §2.2). No se arregló nada — AUD-3 es sólo lectura.
+  - **El Paso 1.8 sigue sin su ✅**: el chequeo pedido lo confirma — `fd58902` no trae
+    ningún cierre del 1.8 (su entrada de bitácora es de `4fa54f5` y dice "las cuatro de
+    aceptación no corrieron"; nada posterior registra que hayan corrido como tales).

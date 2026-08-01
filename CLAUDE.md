@@ -184,7 +184,7 @@ distintas nunca compiten. La precedencia entra solo como desempate, al final.
 | ¿Qué decisión editorial lleva cada informe? (qué campañas, qué va a mano) | `docs/CONFIG_INFORMES.md` | los dos |
 | ¿Qué debe cumplir una lámina nueva pedida en lenguaje natural? | `docs/OBJETIVO_lamina_nueva.md` | los dos |
 | ¿Qué va a hacer el motor si corro ahora? | Las **hojas de registro** vivas (`CONFIG`, `BASES`, `INFORMES`, `MARCADORES`, `MAPEO`, `CAMPANAS`, `PERIODOS`, `SOLAPAS`, `SECCIONES`). Autoridad total sobre el comportamiento — y sobre nada más (nota abajo) | humano y motor, vía menú |
-| ¿Qué *debería* decir esa configuración? | Los `SEED_*` de `Instalar.gs` y, cuando exista, `docs/ESCRITORES.md`. **No operativa del todo hasta la Parte E del Paso 2.11**: hoy hay celdas con más de un sembrador, y sin `ESCRITORES.md` esta fila no tiene a quién señalar en esos casos | los dos |
+| ¿Qué *debería* decir esa configuración? | Los `SEED_*` de `Instalar.gs` (el valor) y `docs/ESCRITORES.md` (quién puede escribirlo y por qué camino — existe desde AUD-3, 01/08/2026; matriz regenerable con `tools/escritores.js`) | los dos |
 | ¿Cuáles son los datos? | Las cuatro bases (`rdv`, `digital`, `looker`, `m2`) — dueños ajenos, el motor solo lee. No divergen de nada: **son** el dato; la nota de abajo no les aplica | el equipo y dueños externos |
 | ¿Qué versión vale si el disco local y git divergen? | **El disco local.** Git atrasado es una falla de respaldo a corregir, no una contradicción a dirimir. Corolario: lo que claude.ai tenga que ver, tiene que estar pusheado — un archivo sin pushear no está en la conversación | — |
 
@@ -208,8 +208,10 @@ corrige una premisa es válido (ejemplos: `docs/DISENO_match_temario.md` §9,
 y hallazgos fechados de `docs/` (`AUD-2`, `HALLAZGOS_validacion_decks`,
 `DISENO_match_temario`, `FECHAS_seleccion`, `GRANO_TEMPORAL`, `INFORMES_relacion`,
 `MAPEO_completo`, `PLANTILLAS_QA_y_armonizacion`, `RDV_otros_ministros_riesgo`,
-`SECCIONES`, `TEMARIO_Y_PLANTILLA_*`), los prompts ya ejecutados, los handoffs
-archivados y todo `_archivo/`. Explican cómo se llegó; nunca qué es cierto hoy.
+`SECCIONES`, `TEMARIO_Y_PLANTILLA_*`, `INVENTARIO_CODIGO` — foto del código del
+01/08/2026, AUD-3; para saber qué es cierto hoy se re-corren sus scripts), los prompts ya
+ejecutados, los handoffs archivados y todo `_archivo/`. Explican cómo se llegó; nunca qué
+es cierto hoy.
 
 **Desempate**, para el caso raro en que dos documentos reclamen la misma pregunta: gana
 el que **esta tabla** declara dueño; si ninguno lo es, gana el que lleve la **fecha
