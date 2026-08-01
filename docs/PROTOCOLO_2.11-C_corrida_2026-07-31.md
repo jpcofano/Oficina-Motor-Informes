@@ -129,3 +129,53 @@ números.
 > corrió, la celda tenía la larga y coincidía con el seed—, lo que no podía ver es que el
 > próximo "Aplicar" iba a **fabricar** la discrepancia él mismo. Sin migración que la
 > fabrique, las dos vistas quedan sobre el mismo cálculo. Se verifica, no se asume.
+
+---
+
+## Segunda corrida (01/08/2026) — los siete pasos ✅
+
+Mismo protocolo, mismo control positivo todavía en la planilla, con C.2-1 completo y la
+migración `corregirNotaControlAnclaje_` ya retirada. Corrida por el usuario; Code
+transcribe. **El delta entre las dos corridas es la evidencia de que el arreglo sirvió.**
+
+**Diagnóstico de tipos** (ahora releva también `BASES.fila_encabezado`):
+`BASES.fila_encabezado` es **`number` en las cinco filas**, con `m2 = 3`. El
+`31/12/1899 → 1900-01-02` de la corrida 1 era **solo formato de celda** (seriales de
+Sheets renderizados como fecha), no un tipo degradado. `Union.gs:36`/`:261` reciben un
+número, así que el `Number()` directo funciona — el hallazgo baja a **cosmético**.
+
+**"Aplicar configuración" ×2** — `nuevas: 0 · cambiadas: 0` en las dos.
+`DIFF_CONFIGURACION` queda con las 10 protegidas y **ninguna línea de cambio**.
+
+**"Estado de configuración"** — cero discrepancias en las siete hojas, y esta vez
+**consistente** con las dos corridas de apply. La vez anterior decía el mismo ✅ y el apply
+cambiaba una celda igual: eso era el bloqueante 2, y era lo que el paso 5 tenía que
+descartar.
+
+| paso | criterio | corrida 1 | corrida 2 |
+|---|---|---|---|
+| 1 | tipos de fecha | ✅ 12 celdas `Date` | ✅ + `BASES.fila_encabezado` = `number` |
+| 2 | control positivo | ✅ las 3 ediciones reportadas | (vigente de la corrida 1) |
+| 3 | aplicar | ✅ corrió | ✅ `nuevas: 0 · cambiadas: 0` |
+| 4 | idempotencia | ❌ 1 celda cambiada | ✅ **cero líneas** |
+| 5 | estado sin discrepancias | ❌ decía ✅ y el apply cambiaba | ✅ **y consistente con el apply** |
+| 6 | inventariar solapas | ✅ 84 filas con datos reales | (vigente) |
+| 7 | `filas_datos ≤ filas_crudas` | ✅ 84/84 | (vigente) |
+
+**El bloqueante 2 no tuvo arreglo propio: se resolvió como consecuencia del 1.** No se
+tocó una línea de `menuEstadoConfiguracion_()`. La discrepancia que "Estado" no podía
+anticipar la fabricaba el propio apply vía la migración; retirada la migración, las dos
+vistas quedaron sobre el mismo cálculo. Vale anotarlo porque es un patrón: dos síntomas
+distintos, una sola causa, y arreglar el segundo por separado habría sido trabajo sobre un
+problema inexistente.
+
+**Lo que el protocolo NO cubre, y sigue abierto** (es `C.2-2` a `C.2-7`):
+
+- El resumen sigue mostrando **S-01 con cero celdas cambiadas**, y no se puede distinguir
+  si la migración escribe o no (`C.2-3`).
+- Las **10 protegidas** siguen sin decir qué se habrían perdido (`C.2-4`).
+- La **fila huérfana de `MAPEO`** sigue sin reportarse (`C.2-5`).
+- **No hay marca de corrida** en las hojas de reporte, así que sigue haciendo falta
+  vaciarlas a mano antes de cada corrida (`C.2-2`) — como se hizo en las dos.
+
+Código commiteado tras esta corrida: `2979f03`.

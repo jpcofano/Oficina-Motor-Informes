@@ -41,7 +41,24 @@ rutas sucesivas del historial. `.gitignore` (31/07) frena lo nuevo pero no lo ex
 Borrado diferido: decidido por el equipo, fuera del alcance de Code — Code no toca
 historial ni archivos de datos.
 
-### P0 · Paso 2.11 Parte C: el protocolo falla en los pasos 4 y 5 — arreglo aplicado, sin re-verificar
+### ~~P0 · Paso 2.11 Parte C: el protocolo falla en los pasos 4 y 5~~ — CERRADO (01/08/2026)
+
+Los dos bloqueantes se resolvieron y el protocolo pasó completo en su segunda corrida
+(commit `2979f03`; evidencia y delta entre corridas en
+`docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md`). El bloqueante 2 **no tuvo arreglo propio**:
+se cayó al resolver el 1. Se deja la entrada tachada, con el detalle original abajo, porque
+el diagnóstico —y sobre todo el error de la hipótesis inicial— explica por qué el arreglo
+fue retirar una migración y no reordenar los sembradores.
+
+**Sigue abierto, y es lo que viene:** el diff **funciona pero no es auditable**. `C.2-2` a
+`C.2-7` de `docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md` — sin marca de corrida (hay
+que vaciar `DIFF_CONFIGURACION` y `ESTADO_CONFIGURACION` a mano), las migraciones escriben
+por fuera del diff (S-01 aparece con cero celdas cambiadas y no se sabe si escribe), las 10
+protegidas no dicen qué se habrían perdido, y no hay línea `solo_en_hoja` (la fila huérfana
+de `MAPEO` no se reporta).
+
+<details>
+<summary>Detalle original del P0 (cerrado)</summary>
 
 Corrida completa y evidencia: `docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md`. Cinco de
 siete pasos pasaron; los dos que fallan son el núcleo del criterio.
@@ -60,17 +77,26 @@ siete pasos pasaron; los dos que fallan son el núcleo del criterio.
   migración de arriba. Debería caerse solo con el arreglo — **se verifica en la próxima
   corrida, no se asume.**
 
-### P1 · `BASES.fila_encabezado` tiene formato de fecha aplicado encima
+</details>
+
+### P2 · `BASES.fila_encabezado` tiene formato de fecha aplicado encima (cosmético)
 
 El diff reportó `BASES m2 fila_encabezado: 31/12/1899 → 1900-01-02`. Son los enteros **1 y
-3** renderizados como seriales de Sheets (1 = 31/12/1899, 3 = 02/01/1900). El valor es
-correcto —H-2 ya decía que `BASES.m2` es 3—; lo que falta resolver es el **tipo**: si
-`getValues()` devuelve `Date` en vez de número, `Union.gs:36` y `:261`, que leen
-`base.fila_encabezado` directo sin pasar por `resolverFilaEncabezado_()`, harían
-`Number(Date)` = milisegundos de época, un número de fila absurdo y sin fallar. Si es
-número, alcanza con sacarle el formato de fecha a la columna. **Diagnóstico ya desplegado**
-(Diagnóstico → Fechas y mapeo → "Tipos de fechas de ventana" ahora releva también esta
-columna); falta correrlo. Se une a **H-2** del prompt `Paso-2.11_ParteC2_diff_auditable.md`.
+3** renderizados como seriales de Sheets. **Diagnóstico corrido el 01/08: la columna es
+`number` en las cinco filas, con `m2 = 3`** — el tipo está bien, `Union.gs` recibe un número
+y `Number()` funciona. Queda solo lo cosmético: sacarle el formato de fecha a la columna
+cuando se toque `BASES` por otra razón. Baja de P1 a P2.
+
+### P1 · H-2 · `BASES.fila_encabezado` es vestigial y `Union.gs` la lee directo
+
+**No es lo mismo que el punto anterior y no se resolvió con él.** El Paso 2.11 Parte B movió
+`fila_encabezado` a `SOLAPAS`, por solapa, pero la columna sigue en `BASES` con valores que
+**se contradicen**: `BASES.m2 = 3` mientras `SOLAPAS.m2/Cuentas M2 = 1` y
+`SOLAPAS.m2/M2 periodo DIRECTA = 3`. Y `Union.gs:36` y `:261` leen `base.fila_encabezado`
+directo, sin pasar por `resolverFilaEncabezado_()` — para `m2/Cuentas M2` leerían la fila 3
+como encabezado, que ahí es una fila de datos. El tipo es correcto; el problema es que la
+columna sigue existiendo y siendo leída. → **Paso 2.11 Parte D**, junto con los nombres de
+solapa hardcodeados de `Fechas.gs:66` y `Auditoria.gs:348`.
 
 ### P0 · Tres reglas de negocio nuevas (R-06, R-09, R-10) sin implementar en código
 
