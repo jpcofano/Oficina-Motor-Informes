@@ -164,13 +164,73 @@ function probarMigracionesEnDiff_() {
 }
 
 /**
+ * Control positivo de C.2-5 — lo que está en la hoja y no en el seed se reporta.
+ *
+ * El caso real: la fila `m2 | ahhh | or` del control positivo del protocolo vivió TRES
+ * corridas en `MAPEO` sin que ninguna la nombrara. Un diff de upsert por clave reporta
+ * cambiadas y agregadas, y omite en silencio justo donde viven las ediciones a mano.
+ */
+function probarSoloEnHoja_() {
+  var headers = ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'notas'];
+  var hoja = hojaFalsa_('MAPEO', [
+    headers,
+    ['m2', 'M2 periodo DIRECTA', 'or', 'M2 periodo DIRECTA', 'G', ''],
+    ['m2', 'ahhh', 'or', 'cc', 'G', 'cdcdd'],          // la huérfana real
+    ['zz_prueba', 'hoja inventada', 'zz_borrar', 'x', 'A', 'texto'] // la clave inventada
+  ]);
+  var seed = [
+    { base_id: 'm2', solapa: 'M2 periodo DIRECTA', campo_logico: 'or', hoja: 'M2 periodo DIRECTA', columna: 'G', notas: '' }
+  ];
+
+  var diff = calcularDiffUpsert_(hoja, ['base_id', 'solapa', 'campo_logico'], seed);
+
+  afirmar_(diff.soloEnHoja.length === 2,
+    'C.2-5: se esperaban 2 filas solo_en_hoja (ahhh y zz_prueba), vinieron ' + diff.soloEnHoja.length);
+  var claves = diff.soloEnHoja.map(function (s) { return s.clave; }).join(' ');
+  afirmar_(claves.indexOf('m2||ahhh||or') !== -1, 'C.2-5: la fila huérfana ahhh tiene que reportarse');
+  afirmar_(claves.indexOf('zz_prueba||hoja inventada||zz_borrar') !== -1, 'C.2-5: la clave inventada tiene que reportarse');
+
+  // Y lo que SÍ está en el seed no puede salir como huérfano.
+  afirmar_(claves.indexOf('M2 periodo DIRECTA') === -1,
+    'C.2-5: una fila que está en el seed no es solo_en_hoja');
+  afirmar_(diff.cambios.length === 0 && diff.nuevas.length === 0,
+    'C.2-5: la fila del seed coincide, no debería haber cambios ni nuevas');
+
+  // Caso negativo: sin huérfanas, cero líneas.
+  var limpia = hojaFalsa_('MAPEO', [headers, ['m2', 'M2 periodo DIRECTA', 'or', 'M2 periodo DIRECTA', 'G', '']]);
+  afirmar_(calcularDiffUpsert_(limpia, ['base_id', 'solapa', 'campo_logico'], seed).soloEnHoja.length === 0,
+    'C.2-5: una hoja sin huérfanas no puede reportar solo_en_hoja');
+
+  // El upsert NO borra: sigue habiendo 3 filas de datos después de calcular el diff.
+  afirmar_(hoja.getLastRow() === 4, 'C.2-5: calcular el diff no puede borrar filas de la hoja');
+
+  // Las filas del reporte llevan el tipo y dicen que no se tocan.
+  var filas = filasDiffParaHoja_('MAPEO', { soloEnHoja: diff.soloEnHoja });
+  afirmar_(filas.length === 2, 'C.2-5: cada huérfana es una fila del reporte');
+  afirmar_(filas[0][1] === 'solo_en_hoja', 'C.2-5: el tipo tiene que ser solo_en_hoja, vino ' + filas[0][1]);
+  afirmar_(String(filas[0][5]).indexOf('no se toca') !== -1, 'C.2-5: la línea tiene que aclarar que no se borra');
+
+  // Una fila protegida del seed NO es una huérfana: son categorías opuestas.
+  var conProtegida = filasDiffParaHoja_('SOLAPAS', {
+    protegidas: ['rdv||RDV CONJUNTO'],
+    soloEnHoja: [{ clave: 'zz_prueba||hoja inventada', fila: 9 }]
+  });
+  var tipos = conProtegida.map(function (f) { return f[1]; }).join(' ');
+  afirmar_(tipos.indexOf('protegida') !== -1 && tipos.indexOf('solo_en_hoja') !== -1,
+    'C.2-5: protegida y solo_en_hoja tienen que convivir como tipos distintos');
+
+  return 'C.2-5 solo_en_hoja: OK';
+}
+
+/**
  * Corre todas las pruebas y devuelve el texto del reporte. Sin `alert()` acá adentro para
  * poder llamarla también desde otro lado.
  */
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
-    probarMigracionesEnDiff_
+    probarMigracionesEnDiff_,
+    probarSoloEnHoja_
   ];
   var lineas = [];
   var fallas = 0;

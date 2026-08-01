@@ -1142,6 +1142,13 @@ function aplicarClasificacionSolapas_() {
   var resultado = upsertPorClave_(hoja, ['base_id', 'solapa'], objetosAAplicar);
   resultado.ok = true;
   resultado.protegidas = protegidas;
+  // C.2-5: las protegidas SÍ están en el seed — se sacaron de `objetosAAplicar` a
+  // propósito. Sin esta resta saldrían como `solo_en_hoja`, que es exactamente la
+  // categoría contraria (lo que nadie declaró) y volvería a confundir dos cosas
+  // distintas en el mismo reporte.
+  var esProtegida = {};
+  protegidas.forEach(function (c) { esProtegida[c] = true; });
+  resultado.soloEnHoja = (resultado.soloEnHoja || []).filter(function (s) { return !esProtegida[s.clave]; });
   return resultado;
 }
 
@@ -1306,9 +1313,11 @@ function calcularDiffUpsert_(hoja, clavesNombres, filaObjetos) {
   var nuevas = [];
   var cambios = []; // { clave, fila, columna, anterior, nuevo }
   var clavesConCambios = {};
+  var clavesDelSeed = {};
 
   filaObjetos.forEach(function (obj) {
     var clave = claveDeObjeto(obj);
+    clavesDelSeed[clave] = true;
     var filaNum = filaPorClave[clave];
 
     if (!filaNum) {
@@ -1329,12 +1338,22 @@ function calcularDiffUpsert_(hoja, clavesNombres, filaObjetos) {
     });
   });
 
+  // C.2-5 — lo que está en la hoja y NO en el seed. Un diff de upsert por clave reporta
+  // cambiadas y agregadas y omite esto en silencio, que es justo donde viven las ediciones
+  // a mano: la fila `ahhh` del control positivo vivió tres corridas sin que nadie la
+  // nombrara. **No se borra nada** — solo se reporta.
+  var soloEnHoja = [];
+  Object.keys(filaPorClave).forEach(function (clave) {
+    if (!clavesDelSeed[clave]) soloEnHoja.push({ clave: clave, fila: filaPorClave[clave] });
+  });
+
   return {
     headers: headers,
     filaPorClave: filaPorClave,
     nuevas: nuevas,
     cambios: cambios,
-    clavesConCambios: clavesConCambios
+    clavesConCambios: clavesConCambios,
+    soloEnHoja: soloEnHoja
   };
 }
 
@@ -1370,7 +1389,8 @@ function upsertPorClave_(hoja, clavesNombres, filaObjetos) {
     escritas: diff.nuevas.length,
     actualizadas: actualizadas,
     cambios: diff.cambios,
-    nuevasClaves: diff.nuevas.map(function (n) { return n.clave; })
+    nuevasClaves: diff.nuevas.map(function (n) { return n.clave; }),
+    soloEnHoja: diff.soloEnHoja // C.2-5: se reporta, nunca se borra
   };
 }
 
@@ -1853,6 +1873,10 @@ function filasDiffParaHoja_(nombreHoja, resultado, clavesDeMigracion) {
       clave, '', '', ''
     ]);
   });
+  // C.2-5 — al final, para que no se mezclen con lo que sí cambió.
+  (resultado.soloEnHoja || []).forEach(function (s) {
+    filas.push([nombreHoja, 'solo_en_hoja', s.clave, '', 'fila ' + s.fila + ' de la hoja', '(no está en el seed — no se toca)']);
+  });
   return filas;
 }
 
@@ -1977,6 +2001,11 @@ function menuEstadoConfiguracion_() {
     });
     (diff.cambios || []).forEach(function (c) {
       filas.push([nombreHoja, 'discrepancia', c.clave, c.columna, c.anterior, c.nuevo]);
+    });
+    // C.2-5 — también en sólo lectura: si "Aplicar" lo va a reportar, "Estado" tiene que
+    // verlo, o las dos vistas vuelven a no coincidir.
+    (diff.soloEnHoja || []).forEach(function (s) {
+      filas.push([nombreHoja, 'solo_en_hoja', s.clave, '', 'fila ' + s.fila + ' de la hoja', '(no está en el seed — no se toca)']);
     });
   }
 
