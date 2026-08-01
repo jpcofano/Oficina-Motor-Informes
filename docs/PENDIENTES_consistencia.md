@@ -168,6 +168,20 @@ Un `<pendiente>` olvidado deja una entrada sin ancla verificable. Mitigación ba
 decidir: chequeo al cerrar sesión (grep de `<pendiente>`), o completar el hash en el
 mismo commit del paso siguiente.
 
+### P2 · Code escribió un handoff en `docs/Sesiones/`, que la regla le prohíbe
+
+`CLAUDE.md` §5 y §7 y `PROYECTO.md` §9 dicen que `docs/Sesiones/` es **solo de claude.ai**
+y que "Code no escribe ahí nunca, ni crea archivos nuevos en ese directorio". El
+01/08/2026, por pedido explícito del usuario al cerrar sesión, Code escribió
+`docs/Sesiones/HANDOFF 2026-08-01.md` (autoría marcada dentro del propio archivo).
+
+La regla existe porque un handoff con **dos autores** fue lo que generó el conflicto de
+sincronización que partió el `HANDOFF.md` original — el problema no era el archivo único,
+era el doble dueño. Con Code escribiendo ahí, esa propiedad se pierde. A decidir: o la
+regla cambia y se escribe (por ejemplo, `docs/Sesiones/` pasa a ser "handoffs de sesión,
+de cualquiera de las dos, con autoría declarada en el encabezado"), o los handoffs de Code
+van a otro lado. Lo que no puede quedar es la regla diciendo una cosa y la práctica otra.
+
 ### P1 · Chequeo periódico: archivos en disco que no están en git
 
 Tiene **dos motivos opuestos**, y el mismo chequeo cubre ambos:
