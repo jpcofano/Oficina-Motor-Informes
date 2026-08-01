@@ -456,7 +456,7 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   `leerFuente`. Si alguno de esos diagnósticos corre sobre una de las siete solapas
   corregidas, puede repetir el síntoma viejo.
 
-## Paso 2.12 Parte 1 — `filas_crudas` deja de restar el encabezado (2026-07-31) — commit `<pendiente>`
+## Paso 2.12 Parte 1 — `filas_crudas` deja de restar el encabezado (2026-07-31) — commit `53098f2`
 - **Qué pedía el prompt:** `docs/Prompts/Paso-2.12_conteos_y_clasificacion.md` Parte 1
   — de las 84 filas de `SOLAPAS`, 65 dan `filas_datos = filas_crudas + 1`, exactamente
   +1 sin excepción: `filas_datos` (Paso 2.10 Parte B) cuenta el encabezado, `filas_crudas`
