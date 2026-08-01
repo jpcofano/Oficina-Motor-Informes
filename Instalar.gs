@@ -191,12 +191,18 @@ var COLUMNAS_DELTA_ = {
  * llama a este núcleo directo para poder combinar su resultado con el de los otros tres
  * sembradores en un solo reporte, sin cuatro `alert()` en cadena.
  */
-function aplicarInstalacion_() {
+function aplicarInstalacion_(aplicar) {
+  aplicar = (aplicar !== false);
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var creadas = [];
   var actualizadas = [];
 
-  Object.keys(HOJAS_CONFIG_).forEach(function (nombre) {
+  if (!aplicar) {
+    // C.2-3: en modo cálculo no se crea ni repara nada — solo se simulan las
+    // migraciones, que es lo que "Estado de configuración" necesita ver.
+    creadas = [];
+    actualizadas = [];
+  } else Object.keys(HOJAS_CONFIG_).forEach(function (nombre) {
     var def = HOJAS_CONFIG_[nombre];
     var hoja = ss.getSheetByName(nombre);
 
@@ -228,38 +234,89 @@ function aplicarInstalacion_() {
     }
   });
 
+  // C.2-3 — las migraciones dejaron de ser un contador opaco: cada una devuelve sus
+  // `cambios` (clave, columna, anterior, nuevo, y `pisaManual` cuando corresponde) para
+  // que salgan en el diff con `tipo = migracion`, igual que un cambio normal. Con
+  // `aplicar = false` calculan sin escribir, que es lo que usa "Estado de configuración"
+  // para incluir las migraciones pendientes sin aplicarlas.
+  var vacia = { cambios: [] };
   var hojaMapeo = ss.getSheetByName('MAPEO');
-  var backfill = hojaMapeo ? backfillSolapaMapeo_(hojaMapeo) : { rellenadas: 0, sinHoja: [] };
-  var eliminadasAlcance = hojaMapeo ? eliminarMapeoAlcanceDigitalObsoleto_(hojaMapeo) : 0;
-  var movidasLooker = hojaMapeo ? alinearMapeoLookerADinamico_(hojaMapeo) : 0;
+  var backfill = hojaMapeo ? backfillSolapaMapeo_(hojaMapeo, aplicar) : { rellenadas: 0, sinHoja: [], cambios: [] };
+  var alcanceObsoleto = hojaMapeo ? eliminarMapeoAlcanceDigitalObsoleto_(hojaMapeo, aplicar) : vacia;
+  var lookerMapeo = hojaMapeo ? alinearMapeoLookerADinamico_(hojaMapeo, aplicar) : vacia;
 
   var hojaSolapas = ss.getSheetByName('SOLAPAS');
-  var tocadasSolapasLooker = hojaSolapas ? alinearSolapasLookerADinamico_(hojaSolapas) : 0;
+  var lookerSolapas = hojaSolapas ? alinearSolapasLookerADinamico_(hojaSolapas, aplicar) : vacia;
   // corregirNotaControlAnclaje_ retirada (Paso 2.11 C.2, 01/08/2026): SEED_SOLAPAS_ ya
   // trae la nota completa de digital/RDV JM 2 VECES, y la migración —que comparaba
   // contra su propia constante vieja, más corta— la revertía en cada corrida: el diff
   // reportaba el mismo cambio para siempre y el paso 4 del protocolo no podía pasar.
-  var reclasificadasM2 = hojaSolapas ? reclasificarSolapasM2Invertidas_(hojaSolapas) : 0;
+  var m2Invertidas = hojaSolapas ? reclasificarSolapasM2Invertidas_(hojaSolapas, aplicar) : vacia;
 
   var hojaBases = ss.getSheetByName('BASES');
-  var alineoHojaDefaultLooker = hojaBases ? alinearBasesHojaDefaultLooker_(hojaBases) : false;
+  var lookerBases = hojaBases ? alinearBasesHojaDefaultLooker_(hojaBases, aplicar) : vacia;
 
   var hojaMarcadores = ss.getSheetByName('MARCADORES');
-  var migroOperacion = hojaMarcadores ? migrarCalculoAOperacion_(hojaMarcadores) : false;
+  var operacion = hojaMarcadores ? migrarCalculoAOperacion_(hojaMarcadores, aplicar) : vacia;
 
-  limpiarHojaPorDefecto_(ss);
+  if (aplicar) limpiarHojaPorDefecto_(ss);
+
+  // Cada migración con la hoja sobre la que escribe y un nombre corto para el reporte.
+  var migraciones = [
+    { hoja: 'MAPEO', nombre: 'backfill de solapa', cambios: backfill.cambios },
+    { hoja: 'MAPEO', nombre: 'alcance digital obsoleto', cambios: alcanceObsoleto.cambios },
+    { hoja: 'MAPEO', nombre: 'looker a dinamico (S-01)', cambios: lookerMapeo.cambios },
+    { hoja: 'SOLAPAS', nombre: 'looker a dinamico (S-01)', cambios: lookerSolapas.cambios },
+    { hoja: 'SOLAPAS', nombre: 'm2 invertidas (C.5)', cambios: m2Invertidas.cambios },
+    { hoja: 'BASES', nombre: 'looker hoja_default (S-01)', cambios: lookerBases.cambios },
+    { hoja: 'MARCADORES', nombre: 'calculo a operacion', cambios: operacion.cambios }
+  ];
 
   return {
     creadas: creadas,
     actualizadas: actualizadas,
     backfill: backfill,
-    eliminadasAlcance: eliminadasAlcance,
-    movidasLooker: movidasLooker,
-    tocadasSolapasLooker: tocadasSolapasLooker,
-    reclasificadasM2: reclasificadasM2,
-    alineoHojaDefaultLooker: alineoHojaDefaultLooker,
-    migroOperacion: migroOperacion
+    eliminadasAlcance: alcanceObsoleto.cambios.length,
+    movidasLooker: lookerMapeo.cambios.length / 2,
+    tocadasSolapasLooker: lookerSolapas.cambios.length,
+    reclasificadasM2: m2Invertidas.cambios.length,
+    alineoHojaDefaultLooker: lookerBases.cambios.length > 0,
+    migroOperacion: operacion.cambios.length > 0,
+    migraciones: migraciones
   };
+}
+
+/**
+ * C.2-3 — convierte las migraciones a filas de `DIFF_CONFIGURACION`, con
+ * `tipo = migracion` o `tipo = migracion (pisa manual)`. Una migración PUEDE escribir
+ * sobre una fila `origen=manual` —para eso existe—, pero entonces lo dice: lo que no
+ * puede pasar es que la misma fila salga como `protegida` y quede modificada igual.
+ */
+function filasDiffMigraciones_(migraciones) {
+  var filas = [];
+  (migraciones || []).forEach(function (m) {
+    (m.cambios || []).forEach(function (c) {
+      filas.push([
+        m.hoja,
+        c.pisaManual ? 'migracion (pisa manual)' : 'migracion',
+        c.clave + '  [' + m.nombre + ']',
+        c.columna,
+        c.anterior === undefined ? '' : c.anterior,
+        c.nuevo === undefined ? '' : c.nuevo
+      ]);
+    });
+  });
+  return filas;
+}
+
+/** Claves que una migración tocó en esa hoja, para no reportarlas como `protegida` a secas. */
+function clavesTocadasPorMigracion_(migraciones, nombreHoja) {
+  var set = {};
+  (migraciones || []).forEach(function (m) {
+    if (m.hoja !== nombreHoja) return;
+    (m.cambios || []).forEach(function (c) { set[c.clave] = true; });
+  });
+  return set;
 }
 
 /**
@@ -308,15 +365,16 @@ function instalar() {
 // `columna` vacía después de correr la migración anterior, señal de que el
 // match exacto (`===`) no la encontró (probablemente espacios sueltos cargados
 // a mano en algún momento).
-function eliminarMapeoAlcanceDigitalObsoleto_(hoja) {
+function eliminarMapeoAlcanceDigitalObsoleto_(hoja, aplicar) {
+  aplicar = (aplicar !== false);
   var datos = hoja.getDataRange().getValues();
   var headers = datos[0];
   var idxBaseId = headers.indexOf('base_id');
   var idxSolapa = headers.indexOf('solapa');
   var idxCampo = headers.indexOf('campo_logico');
-  if (idxBaseId === -1 || idxSolapa === -1 || idxCampo === -1) return 0;
+  if (idxBaseId === -1 || idxSolapa === -1 || idxCampo === -1) return { eliminadas: 0, cambios: [] };
 
-  var eliminadas = 0;
+  var cambios = [];
   // De abajo hacia arriba y sin cortar en el primer match: si quedó más de una
   // fila duplicada (p. ej. de una corrida anterior de la migración que solo
   // borraba la primera), esta versión las borra todas en la misma corrida.
@@ -324,11 +382,14 @@ function eliminarMapeoAlcanceDigitalObsoleto_(hoja) {
     if (normalizar_(datos[f][idxBaseId]) === 'digital' &&
         normalizar_(datos[f][idxSolapa]) === 'digital' &&
         normalizar_(datos[f][idxCampo]) === 'alcance') {
-      hoja.deleteRow(f + 1);
-      eliminadas++;
+      cambios.push({
+        clave: 'digital||digital||alcance', columna: '(fila entera)',
+        anterior: 'presente en la fila ' + (f + 1), nuevo: '(eliminada)'
+      });
+      if (aplicar) hoja.deleteRow(f + 1);
     }
   }
-  return eliminadas;
+  return { eliminadas: cambios.length, cambios: cambios };
 }
 
 /**
@@ -347,23 +408,29 @@ function eliminarMapeoAlcanceDigitalObsoleto_(hoja) {
  * dos hojas tienen el mismo orden de columnas. Idempotente: en una instalación ya
  * alineada no mueve nada.
  */
-function alinearMapeoLookerADinamico_(hoja) {
+function alinearMapeoLookerADinamico_(hoja, aplicar) {
+  aplicar = (aplicar !== false);
   var datos = hoja.getDataRange().getValues();
   var headers = datos[0];
   var idxBaseId = headers.indexOf('base_id');
   var idxSolapa = headers.indexOf('solapa');
   var idxHoja = headers.indexOf('hoja');
-  if (idxBaseId === -1 || idxSolapa === -1 || idxHoja === -1) return 0;
+  var idxCampo = headers.indexOf('campo_logico');
+  if (idxBaseId === -1 || idxSolapa === -1 || idxHoja === -1) return { movidas: 0, cambios: [] };
 
-  var movidas = 0;
+  var cambios = [];
   for (var f = 1; f < datos.length; f++) {
     if (datos[f][idxBaseId] === 'looker' && datos[f][idxSolapa] === 'resumen_metricas') {
-      hoja.getRange(f + 1, idxSolapa + 1).setValue('resumen_metricas_dinamico');
-      hoja.getRange(f + 1, idxHoja + 1).setValue('resumen_metricas_dinamico');
-      movidas++;
+      var clave = 'looker||resumen_metricas||' + (idxCampo === -1 ? '?' : datos[f][idxCampo]);
+      cambios.push({ clave: clave, columna: 'solapa', anterior: 'resumen_metricas', nuevo: 'resumen_metricas_dinamico' });
+      cambios.push({ clave: clave, columna: 'hoja', anterior: datos[f][idxHoja], nuevo: 'resumen_metricas_dinamico' });
+      if (aplicar) {
+        hoja.getRange(f + 1, idxSolapa + 1).setValue('resumen_metricas_dinamico');
+        hoja.getRange(f + 1, idxHoja + 1).setValue('resumen_metricas_dinamico');
+      }
     }
   }
-  return movidas;
+  return { movidas: cambios.length / 2, cambios: cambios };
 }
 
 /**
@@ -373,46 +440,67 @@ function alinearMapeoLookerADinamico_(hoja) {
  * `sembrarClasificacionSolapas()` no las vuelva a poner en `revisar`) y nota
  * apuntando a S-01. Idempotente.
  */
-function alinearSolapasLookerADinamico_(hoja) {
+function alinearSolapasLookerADinamico_(hoja, aplicar) {
+  aplicar = (aplicar !== false);
   var existentes = leerFilasSolapas_(hoja);
   var nota = 'Paso 2.9 Parte C — ver docs/SUPUESTOS.md S-01';
-  var tocadas = 0;
+  var cambios = [];
 
-  var dinamico = existentes['looker||resumen_metricas_dinamico'];
-  if (dinamico) {
-    hoja.getRange(dinamico.fila, dinamico.idx.uso + 1).setValue('fuente');
-    hoja.getRange(dinamico.fila, dinamico.idx.origen + 1).setValue('manual');
-    hoja.getRange(dinamico.fila, dinamico.idx.notas + 1).setValue(nota);
-    tocadas++;
-  }
-  var plana = existentes['looker||resumen_metricas'];
-  if (plana) {
-    hoja.getRange(plana.fila, plana.idx.uso + 1).setValue('derivada');
-    hoja.getRange(plana.fila, plana.idx.origen + 1).setValue('manual');
-    hoja.getRange(plana.fila, plana.idx.notas + 1).setValue(nota);
-    tocadas++;
-  }
-  return tocadas;
+  // C.2-3 (01/08/2026): antes escribía las tres celdas SIEMPRE, sin comparar, y
+  // devolvía `tocadas=2` en cada corrida — por eso S-01 aparecía en el resumen de todas
+  // las corridas del protocolo sin que se pudiera saber si estaba escribiendo algo o no.
+  // Es el mismo vicio que la Parte C ya le sacó a `upsertPorClave_`: "escribí" sin
+  // distinguir "escribí algo distinto". Ahora compara, y solo emite línea si cambia.
+  [
+    { clave: 'looker||resumen_metricas_dinamico', uso: 'fuente' },
+    { clave: 'looker||resumen_metricas', uso: 'derivada' }
+  ].forEach(function (caso) {
+    var fila = existentes[caso.clave];
+    if (!fila) return;
+    // `origen === 'manual'` acá no distingue por sí solo si lo puso una persona o esta
+    // misma migración en una corrida anterior; lo que decide es que además haya algo
+    // distinto de lo que la migración quiere escribir.
+    var eraManual = (fila.origen === 'manual');
+    var deseado = { uso: caso.uso, origen: 'manual', notas: nota };
+    Object.keys(deseado).forEach(function (columna) {
+      if (String(fila[columna] === undefined ? '' : fila[columna]) === String(deseado[columna])) return;
+      cambios.push({
+        clave: caso.clave, columna: columna,
+        anterior: fila[columna], nuevo: deseado[columna],
+        pisaManual: eraManual
+      });
+      if (aplicar) hoja.getRange(fila.fila, fila.idx[columna] + 1).setValue(deseado[columna]);
+    });
+  });
+
+  return { tocadas: cambios.length, cambios: cambios };
 }
 
 /**
  * Paso 2.9 Parte C, punto 3 — `BASES.hoja_default` de looker vuelve a
  * `resumen_metricas_dinamico`. Idempotente.
  */
-function alinearBasesHojaDefaultLooker_(hoja) {
+function alinearBasesHojaDefaultLooker_(hoja, aplicar) {
+  aplicar = (aplicar !== false);
   var datos = hoja.getDataRange().getValues();
   var headers = datos[0];
   var idxBaseId = headers.indexOf('base_id');
   var idxHojaDefault = headers.indexOf('hoja_default');
-  if (idxBaseId === -1 || idxHojaDefault === -1) return false;
+  if (idxBaseId === -1 || idxHojaDefault === -1) return { tocada: false, cambios: [] };
 
   for (var f = 1; f < datos.length; f++) {
     if (datos[f][idxBaseId] === 'looker' && datos[f][idxHojaDefault] !== 'resumen_metricas_dinamico') {
-      hoja.getRange(f + 1, idxHojaDefault + 1).setValue('resumen_metricas_dinamico');
-      return true;
+      if (aplicar) hoja.getRange(f + 1, idxHojaDefault + 1).setValue('resumen_metricas_dinamico');
+      return {
+        tocada: true,
+        cambios: [{
+          clave: 'looker', columna: 'hoja_default',
+          anterior: datos[f][idxHojaDefault], nuevo: 'resumen_metricas_dinamico'
+        }]
+      };
     }
   }
-  return false;
+  return { tocada: false, cambios: [] };
 }
 
 /**
@@ -433,21 +521,31 @@ function alinearBasesHojaDefaultLooker_(hoja) {
 var SOLAPAS_M2_INVERTIDAS_ = ['M2 Directa', 'M2 digital'];
 var NOTA_M2_INVERTIDA_ = 'clasificación invertida, pendiente de confirmar (Paso 2.9 Parte C.5)';
 
-function reclasificarSolapasM2Invertidas_(hoja) {
+function reclasificarSolapasM2Invertidas_(hoja, aplicar) {
+  aplicar = (aplicar !== false);
   var existentes = leerFilasSolapas_(hoja);
-  var tocadas = 0;
+  var cambios = [];
 
   SOLAPAS_M2_INVERTIDAS_.forEach(function (nombreSolapa) {
-    var fila = existentes['m2||' + nombreSolapa];
+    var clave = 'm2||' + nombreSolapa;
+    var fila = existentes[clave];
     if (!fila) return;
     if (fila.uso === 'revisar' && fila.notas === NOTA_M2_INVERTIDA_) return; // ya aplicado
 
-    hoja.getRange(fila.fila, fila.idx.uso + 1).setValue('revisar');
-    hoja.getRange(fila.fila, fila.idx.notas + 1).setValue(NOTA_M2_INVERTIDA_);
-    tocadas++;
+    var eraManual = (fila.origen === 'manual');
+    if (String(fila.uso) !== 'revisar') {
+      cambios.push({ clave: clave, columna: 'uso', anterior: fila.uso, nuevo: 'revisar', pisaManual: eraManual });
+    }
+    if (String(fila.notas) !== NOTA_M2_INVERTIDA_) {
+      cambios.push({ clave: clave, columna: 'notas', anterior: fila.notas, nuevo: NOTA_M2_INVERTIDA_, pisaManual: eraManual });
+    }
+    if (aplicar) {
+      hoja.getRange(fila.fila, fila.idx.uso + 1).setValue('revisar');
+      hoja.getRange(fila.fila, fila.idx.notas + 1).setValue(NOTA_M2_INVERTIDA_);
+    }
   });
 
-  return tocadas;
+  return { tocadas: cambios.length, cambios: cambios };
 }
 
 /**
@@ -457,14 +555,18 @@ function reclasificarSolapasM2Invertidas_(hoja) {
  * la hoja ya dice `operacion`, no hace nada; si nunca tuvo `calculo` (hoja
  * instalada de cero con el esquema nuevo), tampoco.
  */
-function migrarCalculoAOperacion_(hoja) {
+function migrarCalculoAOperacion_(hoja, aplicar) {
+  aplicar = (aplicar !== false);
   var ultimaColumna = Math.max(hoja.getLastColumn(), 1);
   var headers = hoja.getRange(1, 1, 1, ultimaColumna).getValues()[0];
   var idxCalculo = headers.indexOf('calculo');
-  if (idxCalculo === -1) return false; // ya migrada o instalación nueva
+  if (idxCalculo === -1) return { migrada: false, cambios: [] }; // ya migrada o instalación nueva
 
-  hoja.getRange(1, idxCalculo + 1).setValue('operacion');
-  return true;
+  if (aplicar) hoja.getRange(1, idxCalculo + 1).setValue('operacion');
+  return {
+    migrada: true,
+    cambios: [{ clave: '(encabezado)', columna: 'calculo', anterior: 'calculo', nuevo: 'operacion' }]
+  };
 }
 
 /**
@@ -476,16 +578,17 @@ function migrarCalculoAOperacion_(hoja) {
  * no se adivina (ver Paso-2.3.2.md, sección A). Idempotente: no toca filas que
  * ya tengan `solapa`.
  */
-function backfillSolapaMapeo_(hoja) {
+function backfillSolapaMapeo_(hoja, aplicar) {
+  aplicar = (aplicar !== false);
   var datos = hoja.getDataRange().getValues();
   var headers = datos[0];
   var idxBaseId = headers.indexOf('base_id');
   var idxSolapa = headers.indexOf('solapa');
   var idxHoja = headers.indexOf('hoja');
   var idxCampo = headers.indexOf('campo_logico');
-  if (idxSolapa === -1 || idxHoja === -1) return { rellenadas: 0, sinHoja: [] };
+  if (idxSolapa === -1 || idxHoja === -1) return { rellenadas: 0, sinHoja: [], cambios: [] };
 
-  var rellenadas = 0;
+  var cambios = [];
   var sinHoja = [];
 
   for (var f = 1; f < datos.length; f++) {
@@ -498,11 +601,14 @@ function backfillSolapaMapeo_(hoja) {
       sinHoja.push(fila[idxBaseId] + '/' + fila[idxCampo]);
       continue;
     }
-    hoja.getRange(f + 1, idxSolapa + 1).setValue(valorHoja);
-    rellenadas++;
+    cambios.push({
+      clave: fila[idxBaseId] + '||(sin solapa)||' + (idxCampo === -1 ? '?' : fila[idxCampo]),
+      columna: 'solapa', anterior: '', nuevo: valorHoja
+    });
+    if (aplicar) hoja.getRange(f + 1, idxSolapa + 1).setValue(valorHoja);
   }
 
-  return { rellenadas: rellenadas, sinHoja: sinHoja };
+  return { rellenadas: cambios.length, sinHoja: sinHoja, cambios: cambios };
 }
 
 function asegurarColumna_(hoja, nombreColumna, indiceDestino) {
@@ -1682,13 +1788,17 @@ function menuAplicarConfiguracion_() {
   var hojaSecciones = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SECCIONES');
   var resultadoSecciones = hojaSecciones ? sembrarSecciones_(hojaSecciones) : { nuevas: [] };
 
+  var migraciones = resultadoInstalar.migraciones;
   var filasDiff = [].concat(
+    filasDiffMigraciones_(migraciones),
     filasDiffParaHoja_('BASES', resultadoSeed.bases),
     filasDiffParaHoja_('MAPEO', resultadoSeed.mapeo),
     filasDiffParaHoja_('CONFIG', resultadoSeed.config),
     filasDiffParaHoja_('INFORMES', resultadoSeed.informes),
     filasDiffParaHoja_('PERIODOS', resultadoSeed.periodos),
-    resultadoSolapas.ok ? filasDiffParaHoja_('SOLAPAS', resultadoSolapas) : [],
+    resultadoSolapas.ok
+      ? filasDiffParaHoja_('SOLAPAS', resultadoSolapas, clavesTocadasPorMigracion_(migraciones, 'SOLAPAS'))
+      : [],
     resultadoSecciones.nuevas.map(function (id) { return ['SECCIONES', 'nueva', id, '', '', '']; })
   );
 
@@ -1723,8 +1833,9 @@ function menuAplicarConfiguracion_() {
  * `cambios`/`nuevasClaves`, y opcionalmente `protegidas`) a filas para la hoja
  * `DIFF_CONFIGURACION`: `[hoja, tipo, clave, columna, anterior, nuevo]`.
  */
-function filasDiffParaHoja_(nombreHoja, resultado) {
+function filasDiffParaHoja_(nombreHoja, resultado, clavesDeMigracion) {
   if (!resultado) return [];
+  clavesDeMigracion = clavesDeMigracion || {};
   var filas = [];
   (resultado.nuevasClaves || []).forEach(function (clave) {
     filas.push([nombreHoja, 'nueva', clave, '', '', '']);
@@ -1733,7 +1844,14 @@ function filasDiffParaHoja_(nombreHoja, resultado) {
     filas.push([nombreHoja, 'cambio', c.clave, c.columna, c.anterior, c.nuevo]);
   });
   (resultado.protegidas || []).forEach(function (clave) {
-    filas.push([nombreHoja, 'protegida (origen=manual)', clave, '', '', '']);
+    // C.2-3: una fila que una migración modificó en ESTA corrida no puede reportarse
+    // como `protegida` a secas — decía "no la toqué" sobre una fila que sí quedó
+    // modificada, por otro camino, en la misma corrida.
+    filas.push([
+      nombreHoja,
+      clavesDeMigracion[clave] ? 'protegida del seed, pero modificada por una migración' : 'protegida (origen=manual)',
+      clave, '', '', ''
+    ]);
   });
   return filas;
 }
@@ -1968,6 +2086,18 @@ function menuEstadoConfiguracion_() {
   } else {
     lineasResumen.push('SECCIONES — la hoja no existe');
   }
+
+  // C.2-3 — las migraciones pendientes entran en el cálculo, SIN aplicarlas
+  // (`aplicarInstalacion_(false)` no escribe ni una celda). Sin esto, "cero
+  // discrepancias" en sólo lectura no cubría lo que el apply sí iba a escribir: era
+  // justamente la mitad que faltaba para que "Estado" y "Aplicar" dijeran lo mismo.
+  var simulacion = aplicarInstalacion_(false);
+  var filasMigracionesPendientes = filasDiffMigraciones_(simulacion.migraciones).map(function (f) {
+    return [f[0], 'migracion pendiente', f[2], f[3], f[4], f[5]];
+  });
+  filas = filasMigracionesPendientes.concat(filas);
+  lineasResumen.push('Migraciones pendientes (las aplicaría "Aplicar configuración"): ' +
+    filasMigracionesPendientes.length + ' celda(s)');
 
   var filasAlcanceEstado = construirBloqueAlcance_(ALCANCE_REGISTROS_, function (n) {
     return ss.getSheetByName(n);

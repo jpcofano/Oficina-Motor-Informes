@@ -79,12 +79,98 @@ function probarBloqueDeAlcance_() {
 }
 
 /**
+ * Hoja falsa de SOLAPAS: `leerFilasSolapas_` espera encabezados reales y devuelve un
+ * mapa por clave con `.idx`. Se le agrega `getRange` que registra las escrituras en vez
+ * de hacerlas, para poder afirmar TAMBIÉN que en modo cálculo no se escribe nada.
+ */
+function hojaFalsaConEscrituras_(nombre, matriz) {
+  var hoja = hojaFalsa_(nombre, matriz);
+  hoja.escrituras = [];
+  hoja.getRange = function (fila, columna) {
+    return {
+      setValue: function (v) { hoja.escrituras.push({ fila: fila, columna: columna, valor: v }); }
+    };
+  };
+  return hoja;
+}
+
+/**
+ * Control positivo de C.2-3 — la migración de S-01 deja de escribir a ciegas.
+ *
+ * El caso testigo del prompt: `alinearSolapasLookerADinamico_` aparecía en el resumen de
+ * TODAS las corridas del protocolo con cero celdas cambiadas, y no había forma de saber
+ * si estaba escribiendo o no.
+ */
+function probarMigracionesEnDiff_() {
+  var headers = ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'notas'];
+  var notaS01 = 'Paso 2.9 Parte C — ver docs' + '/SUPUESTOS.md S-01';
+
+  // 1. Fila desalineada: la migración tiene que reportar QUÉ cambia, no un contador.
+  var desalineada = hojaFalsaConEscrituras_('SOLAPAS', [
+    headers,
+    ['looker', 'resumen_metricas_dinamico', 'revisar', 'seed', 1, '', '', '', 'otra cosa']
+  ]);
+  var r1 = alinearSolapasLookerADinamico_(desalineada, true);
+  afirmar_(r1.cambios.length === 3, 'C.2-3: se esperaban 3 celdas (uso, origen, notas), vinieron ' + r1.cambios.length);
+  var porColumna = {};
+  r1.cambios.forEach(function (c) { porColumna[c.columna] = c; });
+  afirmar_(porColumna.uso && porColumna.uso.anterior === 'revisar' && porColumna.uso.nuevo === 'fuente',
+    'C.2-3: la línea de uso tiene que decir de revisar a fuente');
+  afirmar_(porColumna.uso.pisaManual === false, 'C.2-3: origen=seed no es pisar manual');
+  afirmar_(desalineada.escrituras.length === 3, 'C.2-3: con aplicar=true tiene que escribir las 3 celdas');
+
+  // 2. Ya alineada: CERO líneas. Esta es la que fallaba antes — reportaba 2 siempre.
+  var alineada = hojaFalsaConEscrituras_('SOLAPAS', [
+    headers,
+    ['looker', 'resumen_metricas_dinamico', 'fuente', 'manual', 1, '', '', '', notaS01],
+    ['looker', 'resumen_metricas', 'derivada', 'manual', 1, '', '', '', notaS01]
+  ]);
+  var r2 = alinearSolapasLookerADinamico_(alineada, true);
+  afirmar_(r2.cambios.length === 0, 'C.2-3: una hoja ya alineada no puede reportar cambios, vinieron ' + r2.cambios.length);
+  afirmar_(alineada.escrituras.length === 0, 'C.2-3: una hoja ya alineada no puede recibir escrituras');
+
+  // 3. Pisando una fila puesta a mano: tiene que decirlo.
+  var manual = hojaFalsaConEscrituras_('SOLAPAS', [
+    headers,
+    ['looker', 'resumen_metricas_dinamico', 'ignorar', 'manual', 1, '', '', '', 'lo puso una persona']
+  ]);
+  var r3 = alinearSolapasLookerADinamico_(manual, true);
+  afirmar_(r3.cambios.length > 0, 'C.2-3: debería reportar que pisa la fila manual');
+  afirmar_(r3.cambios[0].pisaManual === true, 'C.2-3: tiene que marcar pisaManual sobre una fila origen=manual');
+
+  // 4. Modo cálculo (aplicar=false): reporta lo mismo y NO escribe. Es lo que usa
+  //    "Estado de configuración" para incluir las migraciones pendientes.
+  var simulada = hojaFalsaConEscrituras_('SOLAPAS', [
+    headers,
+    ['looker', 'resumen_metricas_dinamico', 'revisar', 'seed', 1, '', '', '', 'otra cosa']
+  ]);
+  var r4 = alinearSolapasLookerADinamico_(simulada, false);
+  afirmar_(r4.cambios.length === 3, 'C.2-3: en modo cálculo tiene que reportar los mismos 3 cambios');
+  afirmar_(simulada.escrituras.length === 0, 'C.2-3: en modo cálculo NO puede escribir ninguna celda');
+
+  // 5. Las filas del diff llevan tipo migracion, y "pisa manual" cuando corresponde.
+  var filas = filasDiffMigraciones_([{ hoja: 'SOLAPAS', nombre: 'S-01', cambios: r3.cambios }]);
+  afirmar_(filas.length === r3.cambios.length, 'C.2-3: cada cambio de migración es una fila del diff');
+  afirmar_(filas[0][1] === 'migracion (pisa manual)', 'C.2-3: el tipo tiene que declarar que pisa manual, vino ' + filas[0][1]);
+
+  // 6. Una fila protegida por el seed pero modificada por una migración no puede salir
+  //    reportada como "protegida" a secas.
+  var tocadas = clavesTocadasPorMigracion_([{ hoja: 'SOLAPAS', nombre: 'S-01', cambios: r3.cambios }], 'SOLAPAS');
+  var filasSolapas = filasDiffParaHoja_('SOLAPAS', { protegidas: ['looker||resumen_metricas_dinamico'] }, tocadas);
+  afirmar_(filasSolapas[0][1].indexOf('modificada por una migración') !== -1,
+    'C.2-3: una fila protegida y a la vez modificada tiene que decirlo, vino ' + filasSolapas[0][1]);
+
+  return 'C.2-3 migraciones por el diff: OK';
+}
+
+/**
  * Corre todas las pruebas y devuelve el texto del reporte. Sin `alert()` acá adentro para
  * poder llamarla también desde otro lado.
  */
 function correrPruebasDiff_() {
   var pruebas = [
-    probarBloqueDeAlcance_
+    probarBloqueDeAlcance_,
+    probarMigracionesEnDiff_
   ];
   var lineas = [];
   var fallas = 0;
