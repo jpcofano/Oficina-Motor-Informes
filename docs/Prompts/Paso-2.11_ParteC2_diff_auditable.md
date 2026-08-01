@@ -343,6 +343,39 @@ reunión— pero la config todavía no lo refleja. → **Paso 2.10 Parte E.**
 
 ---
 
+---
+
+> ⚠ **Addendum 3 (01/08/2026) — C.2-2 a C.2-6 implementadas, sin probar en planilla.**
+> Lote nocturno encadenado, un commit por parte: `63095d9` (C.2-2), `3401861` (C.2-3),
+> `f0d12ea` (C.2-5), `d561b6d` (C.2-4), `45fe14e` (C.2-6). Orden de ejecución 2-3-5-4-6,
+> no el del documento: `solo_en_hoja` antes que las protegidas, porque las protegidas se
+> apoyan en la misma estructura. **Ninguna corrió contra la planilla** — eso es de mañana.
+>
+> **Lo que cambió respecto de lo escrito arriba:**
+> - **C.2-2** — el bloque de alcance nombra **diez** hojas, no nueve: las nueve del
+>   documento más `MARCADORES`, que el propio punto 2 pide incluir. El criterio de
+>   aceptación decía "nueve"; son diez.
+> - **C.2-3** — cada migración acepta `aplicar = false` y calcula sin escribir. Fue la
+>   única forma de que `menuEstadoConfiguracion_()` incluyera las migraciones pendientes
+>   sin aplicarlas, que es lo que el punto 3 pide.
+> - **C.2-4** — la protegida sin diferencias **también** emite línea, diciéndolo
+>   explícito. Dejarla afuera habría reproducido la ambigüedad original al revés
+>   (ausencia = "no tenía nada" o "no se calculó").
+> - **C.2-6** — se agregó una categoría que el documento no pedía: `otras líneas (sin
+>   categoría)`, para que un tipo que no entre en la lista no desaparezca del total.
+>
+> **Cada parte tiene un control positivo en `Pruebas.gs` (archivo nuevo)**, porque el
+> protocolo de siete pasos **pasa igual aunque estas cinco estén mal**: cero cambios sigue
+> siendo cero cambios. Los controles alimentan las funciones con hojas sintéticas
+> (`hojaFalsa_`) y afirman que la discrepancia conocida se detecta; no tocan la planilla,
+> así que no hay nada que revertir. Además se verificó por **mutación** que discriminan:
+> se rompió cada función a propósito (incluido reintroducir el bug original de cada parte)
+> y los controles cazaron **18 de 18** roturas. Menú: Diagnóstico → "Correr pruebas del
+> diff".
+>
+> **Lo que este addendum NO cubre:** C.2-7 (documentación + `docs/_snapshots/`) sigue sin
+> hacer — los snapshots nunca se versionaron, ver `docs/HANDOFF_CODE.md`.
+
 ## Qué NO hacer en esta parte
 
 - No tocar la clasificación de las 17 filas en `revisar` de `SOLAPAS` — eso es Paso 2.12 Parte 2.

@@ -177,6 +177,37 @@ recuerda y repite en el mensaje siguiente. Sin decidir todavía cómo mitigarlo 
 instrucción que quede fuera de alcance se anota acá mismo, como fila nueva, en vez de
 perderse?) — queda registrado como el hallazgo, no la solución.
 
+### P0 · API executable: se sirve la versión **desplegada**, no `HEAD`
+
+Anotado antes de que se use (01/08/2026). Cuando el proyecto se despliegue como API
+executable para poder correr diagnósticos desde afuera de la planilla, **un `clasp push`
+sin redesplegar deja la API sirviendo código viejo**: un diagnóstico devolvería resultados
+plausibles de una versión que ya no existe — exactamente el modo de falla caro de este
+proyecto (el número que parece bien y no lo es).
+
+Dos mitigaciones, ninguna implementada:
+
+1. **Marca de versión en el retorno de cada función expuesta**, para poder comparar contra
+   lo que hay en el repo. Hoy no existe ninguna marca de versión en el código: la cabecera
+   de corrida de `DIFF_CONFIGURACION` escribe `version_codigo` con un literal que remite a
+   esta nota, justamente porque no hay qué poner ahí.
+2. **Lista blanca `EJECUTABLES_REMOTOS_` de sólo lectura**: que la API sólo pueda invocar
+   funciones que no escriben. Un `menuAplicarConfiguracion_` disparado contra una versión
+   vieja escribe en las hojas de registro.
+
+### P2 · La convención `probar_<nombre>()` no está declarada en ningún lado
+
+El lote del 01/08 la cita como "`CLAUDE.md` §5", pero §5 es **Handoffs — dos archivos, dos
+dueños**: la convención no aparece ahí ni en ninguna otra sección. Existía sólo como
+patrón de nombres suelto (`probarConexionBases`, `probarLecturaPeriodo`), y esos son
+smoke tests manuales de menú, no controles positivos con afirmaciones.
+
+Lo implementado en `Pruebas.gs` (una `probar_*()` por parte, que introduce una discrepancia
+conocida, afirma que se detecta y no toca la planilla) **funciona y vale como convención**,
+pero hay que escribirla donde corresponde: `Plan Inicial/PROYECTO.md` §9 es el dueño de
+"convención de proceso o aprendizaje" (`CLAUDE.md` §7). Falta decidir además si se exige
+para todo código nuevo o sólo para lo que un protocolo no puede distinguir.
+
 ### P2 · Acoplamiento no declarado: formato de escritura del seed ↔ `parsearFechaCelda_`
 
 El sistema hoy funciona porque `parsearFechaCelda_` (`Fuentes.gs:222`) acepta justo los

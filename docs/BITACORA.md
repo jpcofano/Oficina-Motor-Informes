@@ -605,3 +605,50 @@ cuando aporta contexto. Donde el campo no surge de la evidencia disponible, dice
   arreglado retirando la migración; falta re-correr los pasos 3-5. Bloqueante 2 debería
   caerse con eso, se verifica. Hallazgo nuevo: `BASES.fila_encabezado` con formato de fecha
   (P1, se une a H-2). Los tres en `docs/PENDIENTES_consistencia.md`.
+
+## Paso 2.11 C.2-2 a C.2-6 — el diff pasa a ser auditable (2026-08-01) — commits `63095d9`, `3401861`, `f0d12ea`, `d561b6d`, `45fe14e`
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md` (con sus tres
+  addenda), puntos C.2-2 a C.2-6. La Parte C pasó los siete pasos del protocolo y aun así
+  el diff **funcionaba pero no decía qué había mirado**: "cero líneas" y "no auditado"
+  daban el mismo output, y hubo que vaciar las hojas de reporte a mano tres veces porque
+  no había marca de corrida. Lote nocturno encadenado, un commit por parte.
+- **Qué se hizo:**
+  - **C.2-2** (`63095d9`) — cabecera de corrida (`ejecutado_por`, `fecha_hora`,
+    `version_codigo`) en las dos hojas de reporte, que se limpian enteras antes de
+    escribir. `ALCANCE_REGISTROS_` declara las **diez** hojas de registro con `auditada`,
+    `filas_en_hoja`, `filas_en_seed` y el motivo cuando no se audita; `MARCADORES` va con
+    `sin sembrador`, a la vista. Separados los dos sentidos de "actualizada": `instalar()`
+    verifica/repara **estructura**, y eso ya no se lista junto a hojas con cambios de
+    contenido (`REUNIONES`/`VALORES`/`VALORES_DIVERGENTES` aparecían ahí).
+  - **C.2-3** (`3401861`) — las siete migraciones devolvían un contador opaco; ahora
+    devuelven `cambios` y salen en el diff con `tipo = migracion`, o
+    `migracion (pisa manual)`. Una fila protegida por el seed pero modificada por una
+    migración en la misma corrida ya no sale como `protegida` a secas. Cada migración
+    acepta `aplicar=false` (calcula sin escribir), y `menuEstadoConfiguracion_()` lo usa
+    para incluir las migraciones pendientes sin aplicarlas. Caso testigo: S-01
+    (`alinearSolapasLookerADinamico_`) escribía las tres celdas **siempre**, sin comparar.
+  - **C.2-5** (`f0d12ea`) — `calcularDiffUpsert_` devuelve `soloEnHoja`: lo que está en la
+    hoja y no en el seed se reporta y **no se borra**. Es donde vivía la fila `m2||ahhh||or`
+    del control positivo, que sobrevivió tres corridas sin que nadie la nombrara. En
+    `SOLAPAS` las protegidas se descuentan, o habrían salido como huérfanas siendo la
+    categoría contraria.
+  - **C.2-4** (`d561b6d`) — `aplicarClasificacionSolapas_` calcula el diff que **no**
+    aplica: cada protegida dice columna, valor actual, valor del seed y "no aplicado:
+    origen=manual". Si no había nada por cambiar lo dice explícito en vez de dejar celdas
+    vacías. Lo necesita la Parte 2 del Paso 2.12 para `rdv/RDV CONJUNTO` y `rdv/Comunas`.
+  - **C.2-6** (`45fe14e`) — `resumenDesagregado_`: cambiadas · agregadas · migraciones ·
+    solo_en_hoja · protegidas (con y sin diferencia) · sin cambios, más `otras líneas (sin
+    categoría)` para que un tipo desconocido no desaparezca del total. Sigue sin listar
+    claves (el `alert()` con cientos de líneas ya rompió `diagnosticarColapso_()`).
+- **Prueba:** **ninguna contra la planilla — eso es del humano.** Cada parte tiene su
+  control positivo en `Pruebas.gs` (archivo nuevo), porque el protocolo de siete pasos
+  pasa igual aunque las cinco estén mal implementadas: cero cambios sigue siendo cero
+  cambios. Los controles alimentan las funciones con hojas sintéticas y afirman que la
+  discrepancia conocida se detecta. Verificado además por **mutación**: se rompió cada
+  función a propósito, incluido reintroducir el bug original de cada parte, y los
+  controles cazaron **18 de 18**. `clasp push` hecho.
+- **Pendientes/decisiones:** C.2-7 sin hacer (`docs/_snapshots/` nunca se versionó). El
+  prompt citaba `CLAUDE.md` §5 para la convención `probar_<nombre>()`; §5 es "Handoffs" y
+  esa convención no estaba escrita en ningún lado — queda anotada en
+  `docs/PENDIENTES_consistencia.md` junto con la nota de API executable (versión desplegada
+  ≠ HEAD).

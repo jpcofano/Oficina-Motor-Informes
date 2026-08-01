@@ -2,85 +2,160 @@
 
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
-> Los handoffs de `docs/Sesiones/` son de claude.ai — se leen, no se tocan
-> (excepción declarada: `HANDOFF 2026-08-01.md`, ver `docs/PENDIENTES_consistencia.md`).
 
-**Última actualización:** 2026-08-01 · último commit al escribirlo: `0f05f7f`
+**Última actualización:** 2026-08-01 (lote nocturno) · último commit al escribirlo: `45fe14e`
 
 ## Dónde estamos
 
-**`Paso 2.11` Parte C + C.2-1 cerradas y probadas.** El protocolo de siete pasos
-(`docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md`) **pasó completo** en su segunda
-corrida: apply ×2 con `nuevas: 0 · cambiadas: 0`, `DIFF_CONFIGURACION` con las 10
-protegidas y ninguna línea de cambio, "Estado de configuración" en cero y **consistente**
-con las dos corridas de apply. Evidencia de las dos corridas:
-`docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md`.
+**C.2-2 a C.2-6 implementadas y pusheadas. Ninguna probada contra la planilla.**
+Lote encadenado, un commit por parte: `63095d9` (C.2-2), `3401861` (C.2-3), `f0d12ea`
+(C.2-5), `d561b6d` (C.2-4), `45fe14e` (C.2-6). `clasp push` hecho, así que la planilla ya
+tiene el código nuevo. El árbol de trabajo queda limpio.
 
-Qué quedó funcionando:
+Con esto el diff pasa de "funciona" a "dice qué miró": cabecera de corrida y bloque de
+alcance, migraciones adentro del diff, `solo_en_hoja`, protegidas que dicen qué se
+saltearon, y resumen desagregado.
 
-- **Un solo "Aplicar configuración"** que corre los cuatro sembradores en orden fijo y
-  reporta un diff real (clave, columna, de qué valor a qué valor), no un conteo.
-  `menuEstadoConfiguracion_()` hace el mismo cálculo sin escribir.
-- **`normalizarParaComparar_()`** en `calcularDiffUpsert_()`: `Date` y string-fecha se
-  comparan canonicalizados a ISO, así que el diff dejó de reportar como cambio lo que solo
-  era diferencia de tipo. Nunca se escribe el valor normalizado.
-- **Migración `corregirNotaControlAnclaje_()` retirada**: revertía en cada corrida la nota
-  que `SEED_SOLAPAS_` ya traía bien. Era la causa del paso 4; el paso 5 se cayó solo con
-  eso, sin arreglo propio.
+## Qué quedó hecho y qué no
 
-**El diff funciona, pero todavía no es auditable.** Distinción importante: pasar el
-protocolo no es estar terminado.
+| parte | estado | nota |
+|---|---|---|
+| C.2-2 cabecera + alcance | hecha | el bloque nombra **diez** hojas, no nueve: las del prompt + `MARCADORES` |
+| C.2-3 migraciones por el diff | hecha | cada migración acepta `aplicar=false` para que "Estado" las vea sin aplicarlas |
+| C.2-5 `solo_en_hoja` | hecha | reporta, nunca borra |
+| C.2-4 protegidas con diferencia | hecha | la protegida **sin** diferencia también emite línea, explícita |
+| C.2-6 resumen desagregado | hecha | más `otras líneas (sin categoría)`, que el prompt no pedía |
+| **C.2-7 documentación + snapshots** | **NO hecha** | `docs/_snapshots/` nunca existió en el repo. Es lo único del prompt que queda |
 
-## Qué sigue
+**Nada quedó bloqueado por falta de decisión.** Las cuatro desviaciones respecto del texto
+del prompt están en el addendum 3 de `docs/Prompts/Paso-2.11_ParteC2_diff_auditable.md`.
 
-1. **Limpiar las filas de prueba del control positivo** en la planilla (pendiente del
-   humano — Code no tiene acceso a Sheets). Ver la sección de abajo: **una de las tres
-   instrucciones crearía un duplicado**, leerla antes de ejecutar.
-2. **`C.2-2` a `C.2-7`** del prompt, que es donde el diff se vuelve auditable:
-   - `C.2-2` cabecera de corrida + bloque de alcance (hoy hay que vaciar
-     `DIFF_CONFIGURACION` y `ESTADO_CONFIGURACION` a mano para saber qué es de cuándo).
-   - `C.2-3` las migraciones pasan por el diff (hoy S-01 aparece en el resumen con cero
-     celdas cambiadas y no se puede saber si escribe o no).
-   - `C.2-4` las 10 protegidas dicen qué se habrían perdido.
-   - `C.2-5` línea `solo_en_hoja` (hoy la fila huérfana de `MAPEO` no se reporta).
-   - `C.2-6` resumen desagregado · `C.2-7` documentación + snapshots.
-3. Después, el orden lineal pendiente de `Paso-2.10`: Parte B (verificar contra la tabla de
-   doce valores medidos), `Paso-2.10_ParteD_con_R10` (R-10 + hoja `VALIDACION`), Parte E
-   (corte vertical a Orden Público), Partes G y A. `Paso-2.12` Parte 2 (las 17 disposiciones
-   de `SOLAPAS.uso`) y Parte 3 (retirar `reclasificarSolapasM2Invertidas_`) siguen abiertas.
+## Por qué hay controles positivos, y qué prueban
 
-## Trabado
+**El protocolo de siete pasos pasa igual aunque las cinco partes estén mal
+implementadas**: cero cambios sigue siendo cero cambios. Por eso cada parte tiene su
+`probar_*()` en `Pruebas.gs` (archivo nuevo): alimenta la función con hojas sintéticas
+(`hojaFalsa_`), introduce una discrepancia conocida y afirma que se detecta. No tocan la
+planilla, así que no hay nada que revertir.
 
-Nada bloqueando. Tres pendientes anotados en `docs/PENDIENTES_consistencia.md`, ninguno
-urgente: `BASES.fila_encabezado` con formato de fecha (cosmético — es `number`, `m2 = 3`),
-H-2 (que sigue en pie por otra razón: `BASES.m2 = 3` contra `SOLAPAS.m2/Cuentas M2 = 1` y
-los dos accesos directos de `Union.gs:36`/`:261`), y el handoff que Code escribió en
-`docs/Sesiones/`, que la regla le prohíbe.
+Verificado además por **mutación** (fuera de la planilla, con node): se rompió cada
+función a propósito —incluido reintroducir el bug original de cada parte— y los controles
+cazaron **18 de 18** roturas. Un control que pasa siempre no distingue "anda" de "no miré".
 
-## Limpieza de las filas de prueba — leer antes de ejecutar
+## Protocolo para mañana — paso por paso
 
-Del control positivo quedaron tres cosas en la planilla. **Verificado contra
-`SEED_MAPEO_`, no contra el snapshot: el snapshot del paso 0 no está en el repo** (se tomó,
-pero `docs/_snapshots/` no existe acá — es parte de `C.2-7`).
+Nombres verificados contra el `MENU_` actual de `Codigo.gs`. Menú raíz: **▶ Motor de
+Informes**.
+
+### 0 · Limpiar las filas de prueba que quedaron del protocolo anterior
+
+Siguen en la planilla desde la corrida del 31/07. **Leer antes de ejecutar**: una de las
+tres no se restaura, se borra.
 
 | qué | acción |
 |---|---|
 | `SOLAPAS`, fila `zz_prueba` | **borrar** |
 | `MAPEO`, fila `zz_prueba` | **borrar** |
-| `MAPEO`, fila `ahhh / cc / cdcdd` | **borrar, NO restaurar** — ver abajo |
+| `MAPEO`, fila `ahhh / cc / cdcdd` | **borrar, NO restaurar** |
 
-**La fila `ahhh` no hay que devolverla a `M2 periodo DIRECTA`: hay que borrarla.** La clave
-de `MAPEO` es el trío `(base_id, solapa, campo_logico)`. Al editar `solapa` a `ahhh`, la
-clave original `(m2, M2 periodo DIRECTA, or)` desapareció, y el seed **ya la volvió a
-crear** en la corrida 1 (salió reportada como `nueva`). Restaurar la fila `ahhh` a esos
-valores dejaría **dos filas con el mismo trío** — exactamente el duplicado que la clave
-compuesta del Paso 2.3.2 existe para evitar, y que `validarMapeo()` marca.
+La clave de `MAPEO` es el trío `(base_id, solapa, campo_logico)`. Al editar `solapa` a
+`ahhh`, la clave original `(m2, M2 periodo DIRECTA, or)` desapareció y **el seed ya la
+volvió a crear**. Restaurar la fila `ahhh` a esos valores dejaría dos filas con el mismo
+trío — el duplicado que la clave compuesta del Paso 2.3.2 existe para evitar. Confirmar
+antes que la fila re-creada está: `m2 | M2 periodo DIRECTA | or | M2 periodo DIRECTA | G`,
+notas vacías (`SEED_MAPEO_`, `Instalar.gs:629`).
 
-Antes de borrar, confirmar que la fila re-creada por el seed está y es correcta:
-`m2 | M2 periodo DIRECTA | or | M2 periodo DIRECTA | G | notas vacías` (`SEED_MAPEO_`,
-`Instalar.gs:629`; `solapa` la completa `backfillSolapaMapeo_` desde `hoja`). Si por lo que
-sea no está, entonces sí conviene restaurar la fila `ahhh` en vez de borrarla — pero una de
-las dos, nunca las dos.
+### 1 · Diagnóstico → **"Correr pruebas del diff"**
 
-Después de limpiar: **"Estado de configuración"** una vez más, para confirmar que sigue en
-cero.
+Es lo primero porque no toca nada y valida el instrumento antes de usarlo.
+
+> **Esperado:** las cinco pruebas ✅ y "Las 5 pruebas pasaron". Cualquier ❌ nombra la
+> parte y qué se esperaba — si aparece, **parar acá**: el resto del protocolo mide con un
+> instrumento roto.
+
+### 2 · Configuración → **"Estado de configuración"** (sólo lectura, antes de tocar nada)
+
+> **Esperado:** la hoja `ESTADO_CONFIGURACION` ahora arranca con **cabecera de corrida**
+> (`ejecutado_por = menuEstadoConfiguracion_`, `fecha_hora` de ahora) y un **bloque
+> ALCANCE con diez filas**, una por hoja de registro. `MARCADORES` tiene que decir
+> `auditada = no` con motivo `sin sembrador`. `CAMPANAS` y `REUNIONES`, `no` con
+> "excluida a propósito". Las otras siete, `sí`, con `filas_en_hoja` y `filas_en_seed`.
+> En el resumen aparece una línea nueva: **"Migraciones pendientes … 0 celda(s)"** — si da
+> distinto de cero, anotar cuáles (son migraciones que el apply va a escribir).
+
+### 3 · Control positivo — las cinco ediciones a mano
+
+Sin esto, "cero discrepancias" en el paso 5 no distingue *no hay problema* de *no miré*.
+Después de limpiar el paso 0, volver a introducirlas:
+
+1. `BASES` · `m2.hoja_default` → `Cuentas M2`
+2. `MAPEO` · fila `m2 | M2 periodo DIRECTA | or`: `solapa` → `ahhh`, `hoja` → `cc`,
+   `notas` → `cdcdd`
+3. `SOLAPAS` · `rdv||RDV CONJUNTO`, `uso`: `revisar` → `ignorar` (es `origen=manual`)
+4. `MAPEO` · fila nueva `zz_prueba | hoja inventada | zz_borrar | … | A | texto`
+5. `SOLAPAS` · fila nueva `zz_prueba | hoja inventada | revisar | seed`
+
+**Para el bloque de alcance hace falta además desalinear una hoja**, porque con todo
+alineado el bloque se ve igual esté bien o mal: la edición 2 ya sirve — deja `MAPEO` con
+una fila de menos respecto del seed y una huérfana, así que `filas_en_hoja` y
+`filas_en_seed` tienen que diferir en esa fila.
+
+Correr **"Estado de configuración"**.
+
+> **Esperado, y esto es lo que hay que mirar de verdad:**
+> - `BASES` reporta `m2 · hoja_default · Cuentas M2 → (vacío)`.
+> - `MAPEO` reporta `m2||M2 periodo DIRECTA||or` como **falta en la planilla**.
+> - **Nuevo (C.2-5):** `m2||ahhh||or` y `zz_prueba||hoja inventada||zz_borrar` salen como
+>   **`solo_en_hoja`**, con la fila donde están y "(no está en el seed — no se toca)".
+>   Antes no aparecían: la fila `ahhh` sobrevivió tres corridas sin que nadie la nombrara.
+> - **Nuevo (C.2-4):** `rdv||RDV CONJUNTO` sale como
+>   **`protegida (habría cambiado)`** con `uso · ignorar → revisar (no aplicado:
+>   origen=manual)`. Las protegidas que ya coinciden con el seed salen como
+>   **`protegida (sin diferencias)`** — antes las diez salían con las celdas vacías y no se
+>   sabía cuál era cuál.
+
+### 4 · Configuración → **"Aplicar configuración"**
+
+> **Esperado:** el `alert()` ya no dice un solo total. Dice
+> `cambiadas: N · agregadas: N · migraciones: N · solo_en_hoja: N · protegidas (con
+> diferencia): N · protegidas (sin diferencia): N · sin cambios: sí/no`.
+> Las tres ediciones de filas existentes se revierten y se reportan; las dos claves
+> inventadas **siguen en la hoja** y siguen saliendo como `solo_en_hoja`.
+> En `DIFF_CONFIGURACION`: cabecera con `ejecutado_por = menuAplicarConfiguracion_`, bloque
+> ALCANCE de diez filas, y el detalle abajo.
+
+### 5 · Configuración → **"Aplicar configuración"** otra vez, sin tocar nada
+
+> **Esperado (es el criterio de idempotencia, el que más importa):**
+> `cambiadas: 0 · agregadas: 0 · migraciones: 0 · sin cambios: sí`.
+> `solo_en_hoja: 2` **sí puede seguir apareciendo** — son las dos claves inventadas, y que
+> sigan reportándose es lo correcto: se reportan, no se borran.
+> **Si aparece alguna línea de `migracion`, es un hallazgo**: significa que una migración
+> vuelve a escribir en cada corrida, que es exactamente el bug que C.2-3 vino a hacer
+> visible. Anotar cuál.
+
+### 6 · Configuración → **"Estado de configuración"**
+
+> **Esperado:** cero discrepancias, `migraciones pendientes: 0`, y **consistente con lo que
+> acaba de reportar el apply**. Las dos claves inventadas siguen saliendo `solo_en_hoja`.
+> Si "Estado" dice cero y un "Aplicar" inmediato cambia algo, es el bloqueante 2 otra vez.
+
+### 7 · Limpiar
+
+Borrar las dos filas `zz_prueba` y la huérfana `ahhh` (mismo criterio del paso 0), y correr
+**"Estado de configuración"** una vez más para confirmar que queda en cero.
+
+## Trabado
+
+Nada. Los pendientes abiertos están en `docs/PENDIENTES_consistencia.md`; los dos nuevos de
+este lote: **P0 de API executable** (se sirve la versión desplegada, no `HEAD` — con las dos
+mitigaciones sin implementar) y **P2 de la convención `probar_*()`**, que el prompt citaba
+como `CLAUDE.md` §5 y no está escrita en ningún lado (§5 es Handoffs).
+
+## Qué sigue después de que el protocolo pase
+
+1. **C.2-7** — documentación y `docs/_snapshots/`, lo único que queda del prompt.
+2. `Paso-2.12` Parte 2 (las 17 disposiciones de `SOLAPAS.uso`), que ahora sí puede
+   apoyarse en lo que reportan las protegidas.
+3. `Paso-2.11` Parte D — `BASES.fila_encabezado` vestigial y los dos accesos directos de
+   `Union.gs` (H-2), más retirar `reclasificarSolapasM2Invertidas_`.
