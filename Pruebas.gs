@@ -223,6 +223,60 @@ function probarSoloEnHoja_() {
 }
 
 /**
+ * Control positivo de C.2-4 — una fila protegida dice QUÉ se salteó.
+ *
+ * Las diez protegidas del protocolo salían con `anterior`/`nuevo` vacíos: se sabía que se
+ * habían salteado, no si estaban por cambiar. La Parte 2 del Paso 2.12 necesita
+ * exactamente ese dato para `rdv/RDV CONJUNTO` y `rdv/Comunas`.
+ */
+function probarProtegidasConDiferencia_() {
+  // Una protegida CON diferencia: el seed la quiere en `ignorar`, la hoja dice `revisar`.
+  var conDif = filasDiffParaHoja_('SOLAPAS', {
+    protegidas: [{
+      clave: 'rdv||RDV CONJUNTO',
+      diferencias: [{ columna: 'uso', anterior: 'revisar', nuevo: 'ignorar' }]
+    }]
+  });
+  afirmar_(conDif.length === 1, 'C.2-4: una diferencia, una línea');
+  afirmar_(conDif[0][1].indexOf('habría cambiado') !== -1,
+    'C.2-4: el tipo tiene que decir que habría cambiado, vino ' + conDif[0][1]);
+  afirmar_(conDif[0][3] === 'uso', 'C.2-4: tiene que decir qué columna');
+  afirmar_(conDif[0][4] === 'revisar', 'C.2-4: tiene que decir el valor actual');
+  afirmar_(String(conDif[0][5]).indexOf('ignorar') !== -1, 'C.2-4: tiene que decir a qué valor');
+  afirmar_(String(conDif[0][5]).indexOf('no aplicado') !== -1, 'C.2-4: tiene que aclarar que no se aplicó');
+
+  // Una protegida SIN diferencia: se dice explícito, no con celdas vacías.
+  var sinDif = filasDiffParaHoja_('SOLAPAS', {
+    protegidas: [{ clave: 'looker||resumen_metricas', diferencias: [] }]
+  });
+  afirmar_(sinDif.length === 1, 'C.2-4: una protegida sin diferencias igual se reporta');
+  afirmar_(sinDif[0][1].indexOf('sin diferencias') !== -1,
+    'C.2-4: tiene que decir "sin diferencias" explícito, vino ' + sinDif[0][1]);
+  afirmar_(sinDif[0][5] !== '', 'C.2-4: no puede quedar la celda vacía, que era lo ambiguo');
+
+  // Las dos no pueden verse iguales — es el punto entero de la parte.
+  afirmar_(conDif[0][1] !== sinDif[0][1],
+    'C.2-4: protegida con diferencia y sin diferencia no pueden reportarse igual');
+
+  // Y el cálculo real: aplicarClasificacionSolapas_ arma esas diferencias comparando
+  // la fila viva contra el seed. Se verifica el comparador que usa.
+  afirmar_(normalizarParaComparar_('revisar', '') !== normalizarParaComparar_('ignorar', ''),
+    'C.2-4: el comparador tiene que distinguir dos usos distintos');
+  afirmar_(normalizarParaComparar_('ignorar', '') === normalizarParaComparar_('ignorar', ''),
+    'C.2-4: el comparador no puede inventar diferencias donde no las hay');
+
+  // Combinado con C.2-3: protegida + tocada por migración lo dice en el mismo tipo.
+  var tocadas = { 'rdv||RDV CONJUNTO': true };
+  var combinada = filasDiffParaHoja_('SOLAPAS', {
+    protegidas: [{ clave: 'rdv||RDV CONJUNTO', diferencias: [{ columna: 'uso', anterior: 'a', nuevo: 'b' }] }]
+  }, tocadas);
+  afirmar_(combinada[0][1].indexOf('modificada por una migración') !== -1,
+    'C.2-4: tiene que seguir marcando la modificación por migración, vino ' + combinada[0][1]);
+
+  return 'C.2-4 protegidas con diferencia: OK';
+}
+
+/**
  * Corre todas las pruebas y devuelve el texto del reporte. Sin `alert()` acá adentro para
  * poder llamarla también desde otro lado.
  */
@@ -230,7 +284,8 @@ function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
     probarMigracionesEnDiff_,
-    probarSoloEnHoja_
+    probarSoloEnHoja_,
+    probarProtegidasConDiferencia_
   ];
   var lineas = [];
   var fallas = 0;

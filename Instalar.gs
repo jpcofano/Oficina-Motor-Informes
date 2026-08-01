@@ -1125,7 +1125,19 @@ function aplicarClasificacionSolapas_() {
     var existente = existentes[clave];
 
     if (existente && existente.origen === 'manual') {
-      protegidas.push(clave);
+      // C.2-4 — no alcanza con decir "no la toqué": hay que decir QUÉ se salteó. Las diez
+      // protegidas salían con `anterior`/`nuevo` vacíos, así que no se sabía cuáles
+      // estaban por cambiar y cuáles ya coincidían con el seed. La Parte 2 del Paso 2.12
+      // necesita justamente eso para `rdv/RDV CONJUNTO` y `rdv/Comunas`.
+      var diferencias = [];
+      ['uso', 'fila_encabezado', 'notas'].forEach(function (columna) {
+        if (!(columna in obj)) return;
+        var actual = existente[columna];
+        var deseado = obj[columna];
+        if (normalizarParaComparar_(actual, '') === normalizarParaComparar_(deseado, '')) return;
+        diferencias.push({ columna: columna, anterior: actual, nuevo: deseado });
+      });
+      protegidas.push({ clave: clave, diferencias: diferencias });
       return; // Parte A regla 2: nunca pisar una fila marcada a mano
     }
 
@@ -1147,7 +1159,7 @@ function aplicarClasificacionSolapas_() {
   // categoría contraria (lo que nadie declaró) y volvería a confundir dos cosas
   // distintas en el mismo reporte.
   var esProtegida = {};
-  protegidas.forEach(function (c) { esProtegida[c] = true; });
+  protegidas.forEach(function (p) { esProtegida[p.clave] = true; });
   resultado.soloEnHoja = (resultado.soloEnHoja || []).filter(function (s) { return !esProtegida[s.clave]; });
   return resultado;
 }
@@ -1155,7 +1167,11 @@ function aplicarClasificacionSolapas_() {
 function formatearResumenClasificacionSolapas_(r) {
   if (!r.ok) return r.motivo;
   return 'SOLAPAS — nuevas: ' + r.escritas + ', actualizadas: ' + r.actualizadas +
-    (r.protegidas.length ? '\nProtegidas (origen=manual, no tocadas): ' + r.protegidas.length : '') +
+    (r.protegidas.length
+      ? '\nProtegidas (origen=manual, no tocadas): ' + r.protegidas.length +
+        ' — de esas, ' + r.protegidas.filter(function (p) { return p.diferencias && p.diferencias.length; }).length +
+        ' tenían algo por cambiar (ver DIFF_CONFIGURACION)'
+      : '') +
     '\n\nEs una propuesta, no una decisión: las filas en uso=revisar quedan pendientes de que el usuario decida.';
 }
 
@@ -1863,15 +1879,31 @@ function filasDiffParaHoja_(nombreHoja, resultado, clavesDeMigracion) {
   (resultado.cambios || []).forEach(function (c) {
     filas.push([nombreHoja, 'cambio', c.clave, c.columna, c.anterior, c.nuevo]);
   });
-  (resultado.protegidas || []).forEach(function (clave) {
+  (resultado.protegidas || []).forEach(function (p) {
+    // Compatibilidad: `protegidas` puede venir como string (formato viejo) o como
+    // { clave, diferencias } (C.2-4).
+    var clave = (typeof p === 'string') ? p : p.clave;
+    var diferencias = (typeof p === 'string') ? null : (p.diferencias || []);
     // C.2-3: una fila que una migración modificó en ESTA corrida no puede reportarse
     // como `protegida` a secas — decía "no la toqué" sobre una fila que sí quedó
     // modificada, por otro camino, en la misma corrida.
-    filas.push([
-      nombreHoja,
-      clavesDeMigracion[clave] ? 'protegida del seed, pero modificada por una migración' : 'protegida (origen=manual)',
-      clave, '', '', ''
-    ]);
+    var sufijo = clavesDeMigracion[clave] ? ', pero modificada por una migración' : '';
+    if (diferencias === null) {
+      filas.push([nombreHoja, 'protegida (origen=manual)' + sufijo, clave, '', '', '']);
+      return;
+    }
+    if (!diferencias.length) {
+      // C.2-4: decirlo explícito. Celdas vacías eran ambiguas — no se distinguía
+      // "no tenía nada por cambiar" de "no se calculó".
+      filas.push([nombreHoja, 'protegida (sin diferencias)' + sufijo, clave, '', '', 'ya coincide con el seed']);
+      return;
+    }
+    diferencias.forEach(function (d) {
+      filas.push([
+        nombreHoja, 'protegida (habría cambiado)' + sufijo, clave,
+        d.columna, d.anterior, d.nuevo + '  (no aplicado: origen=manual)'
+      ]);
+    });
   });
   // C.2-5 — al final, para que no se mezclen con lo que sí cambió.
   (resultado.soloEnHoja || []).forEach(function (s) {
