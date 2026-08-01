@@ -92,22 +92,16 @@ release: es el backup del trabajo y la única forma que tiene la sesión de clau
 el estado real del repo. Un commit sin pushear es invisible. Pushear al terminar cada
 paso, no acumular al final de la sesión.
 
-Si el push es rechazado porque el remoto avanzó, **parar y preguntar.** Nunca `--force`:
-este repo se edita desde dos herramientas y un force-push pisa trabajo que no se ve.
+Si el push es rechazado porque el remoto avanzó, **parar y preguntar.** `--force` **no se
+usa por cuenta propia: requiere confirmación explícita del usuario**, pedida en el momento.
+No está vetado —el repo es backup y canal de contexto, no un historial compartido con
+terceros— pero sigue siendo la última opción: este repo se edita desde dos herramientas que
+no se ven entre sí, y un force-push pisa trabajo que no está a la vista. Antes de pedir la
+confirmación, mirar qué commits se estarían tirando.
 
 Quien implementa no se autoverifica. Los errores del Paso 2.2 se cazaron verificando
 archivos vivos, no leyendo los reportes de las funciones. Reportar lo que se hizo, no
 declarar que funciona.
-
-### Convenciones de shell
-
-La sesión corre en PowerShell sobre Windows, y ya arranca parada en el directorio del
-proyecto.
-
-- **Mensajes de commit multilínea: un `-m` por línea** (`git commit -m "línea 1" -m "línea 2"`).
-  Nunca `$(cat <<'EOF' …)` ni here-docs: son sintaxis de bash y en PowerShell no parsean.
-- **No anteponer `cd <ruta> &&`** a los comandos. Es redundante y además dispara el prompt
-  de permisos.
 
 ---
 
