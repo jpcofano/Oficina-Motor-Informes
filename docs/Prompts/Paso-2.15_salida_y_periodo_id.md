@@ -22,40 +22,55 @@ registrado y hay que verificar, no asumir:
   `texto_original`, `notas` — 7 filas.
 - `PERIODOS`: 2 filas.
 
-**0.2 · Asimetría de estructura.** El resumen de `instalar()` lista `REUNIONES` entre las
-hojas cuya **estructura** verifica y repara, pero **no** lista `CAMPANAS`. Las dos están
-excluidas de la auditoría de **contenido** (`Instalar.gs:1965`). Confirmar si es así: cambia
-cómo se agrega la columna en cada una, y si `CAMPANAS` no tiene nadie que le verifique la
-estructura, agregar la columna a mano no queda respaldado por nada.
+**0.2 · Asimetría de estructura — ✅ verificada y resuelta el 02/08/2026.**
 
-> ✅ **Verificado el 02/08/2026 contra `Instalar.gs`, y la asimetría es la contraria — con
-> una consecuencia que cambia la Parte B.**
->
-> El discriminador no es el resumen (las dos ramas hacen `actualizadas.push(nombre)`, así que
-> aparecer ahí no distingue nada). Es **`COLUMNAS_DELTA_`**, que tiene
-> `MARCADORES · CAMPANAS · BASES · MAPEO · SOLAPAS` — **`REUNIONES` no está**. Y las dos
-> ramas hacen cosas muy distintas:
->
-> | hoja | rama | qué hace |
-> |---|---|---|
-> | `CAMPANAS` | **con** delta | `asegurarColumna_` por cada columna faltante — inserta sin pisar encabezados ni filas |
-> | `REUNIONES` | **sin** delta | `hoja.getRange(1,1,1,def.headers.length).setValues([def.headers])` — **reescribe la fila 1 entera** |
->
-> **Consecuencia dura para B.1:** en `REUNIONES`, poner `periodo_id` "al principio o junto a
-> las columnas de identidad" **desalinea la hoja**. `instalar()` reescribe los encabezados en
-> el orden nuevo pero **no mueve los datos**, así que cada columna a partir del punto de
-> inserción queda etiquetada con el nombre de la anterior. Sobre una hoja curada a mano, en
-> silencio. Es el modo de falla caro de este proyecto en su forma más literal.
->
-> Las dos salidas, y hay que elegir **antes** de escribir la columna:
-> 1. `periodo_id` **al final** en `REUNIONES` — seguro con el código de hoy, contra lo que
->    pide B.1.
-> 2. **Agregar `REUNIONES` a `COLUMNAS_DELTA_`** con la posición deseada, y recién ahí
->    ponerla donde B.1 quiere. Es una línea más de código y deja a `REUNIONES` con el mismo
->    trato que las otras cinco.
->
-> La 2 es mejor y es la que la asimetría estaba pidiendo desde antes de este paso; la 1 es la
-> que no toca nada. **No se decide acá.**
+> El texto original de este punto deducía la asimetría del resumen de `instalar()`
+> —"lista `REUNIONES` y no lista `CAMPANAS`"— y **estaba mal**: las dos ramas hacen
+> `actualizadas.push(nombre)`, así que aparecer en esa lista no discrimina nada. Se
+> reemplaza por la premisa medida, que apunta al lugar contrario.
+
+El discriminador es **`COLUMNAS_DELTA_`** (`Instalar.gs`), y `REUNIONES` **no está**:
+
+```
+con delta : MARCADORES · CAMPANAS · BASES · MAPEO · SOLAPAS
+sin delta : CONFIG · INFORMES · PERIODOS · REUNIONES · SECCIONES · VALORES · VALORES_DIVERGENTES
+```
+
+| rama | qué hace `aplicarInstalacion_` |
+|---|---|
+| **con** delta | `asegurarColumna_` por columna faltante — `insertColumnBefore`, que corre los datos **junto con sus encabezados** |
+| **sin** delta | `hoja.getRange(1,1,1,headers.length).setValues([headers])` — **reescribe la fila 1** y no mueve los datos |
+
+**Por eso `periodo_id` "al principio" en `REUNIONES` desalinearía la hoja** con el código de
+hoy: encabezados nuevos sobre datos viejos, sobre una hoja curada a mano y en silencio.
+
+**Decisión (usuario, 02/08): se agrega `REUNIONES` a `COLUMNAS_DELTA_` y recién ahí va
+`periodo_id` donde `B.1` pide.** Poner la columna al final esquiva el caso pero lo deja
+armado para la próxima columna que alguien agregue; arreglarlo cuesta una línea más.
+
+**Verificado antes de decidir** —`asegurarColumna_` no toca las 7 filas curadas:
+
+1. **Es idempotente**: si el encabezado ya existe, `return false` y no escribe nada.
+2. `insertColumnBefore` es una inserción real de Sheets — los datos se corren a la derecha
+   **con** su encabezado. Es lo contrario de reescribir la fila 1.
+3. Sólo escribe la celda del encabezado nuevo; las 7 filas quedan con la columna vacía.
+
+**Dos efectos que sí cambian, y los dos son buscados:**
+
+- `REUNIONES` **deja de recibir la reescritura de encabezados en cada `instalar()`**. Gana
+  que ya no se la puede desalinear desde el seed; pierde que un encabezado renombrado a mano
+  ya no se auto-repara. Ese "auto-reparado" **es** el mecanismo peligroso, así que es el
+  intercambio que la decisión acepta.
+- **El resumen cambia, el diff no.** Hoy `REUNIONES` aparece en cada corrida bajo *"Hojas
+  verificadas/reparadas por `instalar()`"* porque la rama `else` siempre hace el `push`.
+  Después va a aparecer **una sola vez** —cuando agregue la columna— y nunca más.
+  `cambiadas`, `protegidas` y `sin cambios` **no se mueven**: eso es lo que hay que confirmar
+  al ejecutar, y si se mueven, parar.
+
+⚠ **Arregla el caso, no la clase.** `REUNIONES` es **una de siete** hojas sin delta. Las
+otras seis tienen el mismo riesgo latente: si alguien reordena sus `headers` en
+`HOJAS_CONFIG_`, se desalinean igual. Este paso no las toca — queda anotado para que nadie
+lea "resuelto" donde dice "resuelto para `REUNIONES`".
 
 **0.3 · Escritores.** `ESCRITORES.md` registra `CAMPANAS` con **cero escritores**. `REUNIONES`
 **sí tiene uno desde ayer**: `cargarTemario(texto)`, que el Paso 2.14 separó de su envoltorio
@@ -117,6 +132,17 @@ de reconfigurar todo.
 **B.1** — Agregar `periodo_id` a las dos hojas y a sus seeds de ejemplo
 (`SEED_CAMPANAS_EJEMPLO_`, `SEED_REUNIONES_EJEMPLO_`). Posición: al principio o junto a las
 otras columnas de identidad, no al final — se lee como clave, no como dato suelto.
+
+**En este orden, que no es indistinto (ver 0.2):**
+
+1. **Primero** agregar `REUNIONES` a `COLUMNAS_DELTA_`, con la entrada
+   `{ nombre: 'periodo_id', indice: <la posición elegida> }`. `CAMPANAS` ya está: sólo se le
+   suma la entrada.
+2. **Recién después** tocar `HOJAS_CONFIG_.REUNIONES.headers`.
+
+Al revés, la corrida intermedia toma la rama sin delta y **reescribe la fila 1 de
+`REUNIONES` sobre datos que no se movieron** — que es el modo de falla que 0.2 midió.
+`CAMPANAS` no tiene ese riesgo porque ya está en el delta.
 
 **B.2** — Las filas existentes (3 y 7, todas de ejemplo). **Proponer qué valor llevan y
 parar**: asignarles el período vigente, dejarlas vacías con una regla explícita de qué hace
