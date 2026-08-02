@@ -271,9 +271,16 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
    - Generalizar `hayUi_()` — desbloquea correr el protocolo entero por API.
    - `periodo_id` en `CAMPANAS` y `REUNIONES` (`D-08`).
    - Repuntar `carpeta_salida` a reportes (`D-03`).
-   - **Registrar M2** con los parámetros validados el 01/08: `modo_periodo` de `snapshot` a
-     `filtrar`, `fecha_periodo` → `Fecha envio` de la solapa `Directa mail`, y excluir
-     `Estado = Proyectado`. Es la **primera medición de `D-01`** (eje "base nueva").
+   - **Activar `m2` — tres cambios sobre una base ya registrada.** No es un alta: `m2` ya
+     tiene fila en `SEED_BASES_` (con `sheet_id`) y filas en `SEED_MAPEO_`. Con los
+     parámetros validados el 01/08: **(a)** `modo_periodo` de `snapshot` a `filtrar`;
+     **(b)** una fila `fecha_periodo`, que hoy **no existe** — lo que hay es `fecha`,
+     marcada `DEROGADA` por `S-02` —, apuntando a `Fecha envio` de la solapa
+     `Directa mail`; **(c)** excluir `Estado = Proyectado`. Es la **primera medición de
+     `D-01`** (eje "base nueva").
+     **La solapa fuente que nombra (b) está en revisión:** el `Paso-2.16` la devuelve en su
+     Parte A.3 como decisión del usuario. Este ítem **no se ejecuta directo, se ejecuta por
+     el prompt**.
      *Predicción a anotar antes de correrla:* las dos primeras son config; excluir
      `Proyectado` probablemente no lo sea, y si es así ése es el primer renglón de la lista
      de "por qué hubo que tocar código".
