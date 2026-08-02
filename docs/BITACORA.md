@@ -960,3 +960,41 @@ nadie más.
   - No se agregó la fila de `PLAN.md` a `PROYECTO.md` §9 aunque `§3` lo exigía al momento
     del commit: `D.4` retiraba la exigencia y `E` congelaba el archivo dos commits después.
     Declarado en el momento, no en silencio.
+
+## Paso 1.8 ✅ — cierre: las cuatro pruebas de aceptación corridas (2026-08-01) — commit de esta entrada
+- **Qué faltaba:** el Paso 1.8 se implementó el 01/08 (`4fa54f5`) pero sus cuatro pruebas
+  de aceptación (§7 de `docs/Prompts/Paso-1.8-API-de-pruebas-v3.md`) **nunca corrieron**:
+  dependían de que el humano cargara la propiedad de script `API_TOKEN`, y sin eso la
+  Barrera 2 rechaza por diseño. El `DOC-6` verificó que ningún commit posterior traía el
+  cierre, y lo dejó como punto 1 de `docs/PLAN.md` §2. Esto es ese punto.
+- **Qué se hizo:** cero código. Se corrieron las cuatro pruebas contra `/dev`.
+- **Prueba — 4 de 4, con qué instrumento y qué devolvió:**
+
+  | # | prueba | vía | resultado |
+  |---|---|---|---|
+  | 1 | `ping` — valida las dos barreras | query string (`doGet`) | `ok:true`, `barrera 1: ok`, `barrera 2: ok`, mail `jpcofanogcba1@gmail.com`, 93 ms |
+  | 2 | token de app inválido | query string | `ok:false`, `error: no autorizado`, traza `barrera 2: token inválido` — **rechaza sin decirle al que llama por qué**, 47 ms |
+  | 3 | `llamar` a `probarConexionBases` | body JSON (`doPost`) | `ok:true`, las cuatro bases con sus solapas y conteos, 20.984 ms |
+  | 4 | función inexistente | body JSON | `ok:false`, `error: funcion no encontrada: noExisteEstaFuncion_`, 40 ms |
+
+  **Los cuatro criterios de aceptación del prompt, uno por uno:**
+  - *JSON válido, nunca HTML* — ✅ las cuatro, `content-type: application/json`, HTTP 200.
+  - *`ping` reporta el mail correcto* — ✅ `jpcofanogcba1@gmail.com`, que es el único de
+    `API_AUTORIZADOS_` (`Api.gs:29`).
+  - *`llamar` devuelve lo mismo que el menú* — ✅ `probarConexionBases` **es** la función
+    del ítem "Probar conexión a bases"; sobre HTTP corre igual y devuelve el resumen porque
+    `hayUi_()` da false y no alerta. Contrastado además contra la acción `bases` del mismo
+    día (que llama a `diagnosticoBases_()`, el núcleo compartido): salida idéntica. Lo
+    único no verificado es el `alert()` visual, que requiere abrir la planilla.
+  - *ninguna respuesta contiene el `API_TOKEN`* — ✅ verificado por programa sobre los
+    cuerpos crudos de las cuatro: ni el token de app (48 caracteres) ni el Bearer de Google
+    aparecen en ninguna. El valor no se imprimió en ningún momento, sólo el largo.
+- **Desvío respecto del prompt, deliberado:** §7 escribía las cuatro como `curl` con el
+  Bearer y el `MOTOR_API_TOKEN` **en la línea de comandos**, o sea en el historial del
+  shell y en los logs de la sesión — lo prohíbe el `CLAUDE.md` de usuario. Se corrieron con
+  `tools/api.js`, que lee las dos credenciales adentro del proceso. Es el mismo motivo por
+  el que ese cliente existe (ver la entrada del Paso 1.8, `4fa54f5`).
+- **Pendientes/decisiones:** ninguno nuevo. Los dos que arrastraba el paso siguen donde
+  estaban: `llamar` no tiene lista blanca de sólo lectura (`P1` en
+  `docs/PENDIENTES_consistencia.md`, **diferido al Paso 6** por decisión del usuario del
+  01/08), y el desfasaje de versión no aplica sobre `/dev` porque `/dev` es HEAD.

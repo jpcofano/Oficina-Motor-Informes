@@ -3,60 +3,62 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-01 (cierre de sesión) · último commit al escribirlo: el de esta entrada
+**Última actualización:** 2026-08-01 · último commit al escribirlo: el de esta entrada
 
 ## Dónde estamos
 
-**`DOC-6` cerrado. El repo tiene por primera vez un plan escrito y un solo índice.**
-Cero cambios en `.gs` en toda la sesión de documentación.
+**Paso 1.8 cerrado con su `✅`. Empieza el Tramo 1 — cerrar configuración.**
 
-Antes de hoy el plan vivía en el `§6` del handoff de claude.ai —que se reemplaza cada
-sesión— y las reglas estaban en dos catálogos que había que mantener sincronizados a mano.
-Ahora: **`docs/PLAN.md`** tiene el plan y 14 decisiones `D-NN`, **`CLAUDE.md` §7 es el
-único índice**, y `Plan Inicial/PROYECTO.md` está **congelado** con un mapa de adónde fue
-cada una de sus nueve secciones.
+Las cuatro pruebas de aceptación del Paso 1.8 §7 corrieron: **4 de 4**, con los cuatro
+criterios cumplidos (JSON y nunca HTML, el mail correcto, `llamar` devolviendo lo mismo que
+el menú, y ninguna respuesta con el `API_TOKEN` adentro). Era el punto 1 de `docs/PLAN.md`
+§2 y ya salió de la lista.
 
-## Lo que cambió de lugar hoy — mapa corto
+Con eso el paso queda cerrado del todo: **Code puede invocar cualquier función del motor
+contra HEAD sin que nadie abra la planilla.** Es la capacidad que hace ejecutable buena
+parte de lo que viene.
 
-| pregunta | dueño ahora |
-|---|---|
-| ¿Qué sigue y en qué orden? ¿Qué decisión estructural está tomada? | `docs/PLAN.md` |
-| ¿Arquitectura, esquema, decisión estructural? | `docs/PLAN.md` §1, como `D-NN` |
-| ¿Convención de proceso o aprendizaje? | `CLAUDE.md`, en la sección donde se aplica |
-| ¿Cómo se resuelve el período de un token? | `docs/TOKENS.md` §5 (las tres capas) |
-| ¿Quién puede escribir esta hoja de registro? | `docs/ESCRITORES.md` |
-| ¿Cómo está construido el código? | los scripts de `tools/` re-corridos, no el `.md` |
-| ¿Dónde se registra un `.md` nuevo? | **sólo** `CLAUDE.md` §7 |
+## Qué sigue — Tramo 1, siete ítems (`docs/PLAN.md` §2)
+
+Sale cuando el diff da cero ruido. No están ordenados entre sí salvo el primero, que
+depende de terceros:
+
+1. **Pedir acceso de `reporteseinformesgcba` a las cuatro bases** (`D-02`) — **arranca ya**:
+   dos bases son de dueños externos y el pedido tiene demora. Hoy la cuenta que pasa la
+   Barrera 1 es `jpcofanogcba1`.
+2. Abrir el P1 del **tercer escritor de `MAPEO`** (`consolidarMapeoLooker_`,
+   `Solapas.gs:455-456`), que además escribe `BASES.hoja_default` y seis celdas de `SOLAPAS`
+   desde un ítem de menú.
+3. **`Paso-2.12` Parte 2** — las 17 disposiciones de `SOLAPAS.uso`. Las diez líneas
+   `protegida (habría cambiado)` son la lista de trabajo, y `docs/ESCRITORES.md` §2.2 ya
+   trae el desglose: ocho son `uso` donde el humano tiene razón, dos son `notas` donde el
+   seed es mejor.
+4. **Generalizar `hayUi_()`** — desbloquea correr el protocolo entero por API. Hoy protege
+   un solo camino de menú de los 36 (`docs/INVENTARIO_CODIGO.md` Parte D).
+5. **`periodo_id` en `CAMPANAS` y `REUNIONES`** (`D-08`). No toca código: el censo confirma
+   que `CAMPANAS` tiene cero escritores.
+6. **Repuntar `carpeta_salida`** a reportes (`D-03`).
+7. **Registrar M2** con los parámetros validados el 01/08 — `modo_periodo` de `snapshot` a
+   `filtrar`, `fecha_periodo` → `Fecha envio` de `Directa mail`, y excluir
+   `Estado = Proyectado`. Es la **primera medición de `D-01`**, y el plan pide anotar la
+   predicción *antes* de correrla: las dos primeras son config, la tercera probablemente no.
 
 ## Lo que hay que saber antes de tocar algo
 
-- **`PROYECTO.md` §2 está superado y dice lo contrario que el plan.** Al 30/07 decía que
-  ejecuta `jpcofanogcba1`; `D-02` (01/08) dice que ejecuta `reporteseinformesgcba`, que
-  **todavía necesita** que le den lectura sobre las cuatro bases. Está marcado en el
-  encabezado del congelado, pero si alguien cita §2 de memoria, va a citar al revés.
-- **Los `D-NN` no se editan: se superseden.** Una decisión estructural nueva nace como
-  `D-15`, citando la que reemplaza.
-- **`CLAUDE.md` quedó en 275 líneas**, por encima del ~250 sugerido. Decidido no recortar:
-  lo que engordó son invariantes y aprendizajes. Si algún día hay que bajarlo, el candidato
-  es §7 (29 filas) y es un paso propio — recortar una tabla de dueños al pasar es cómo se
-  pierde un dueño sin que nadie se entere.
+- **`PROYECTO.md` está congelado** desde el 01/08. Su §2 dice lo contrario que `D-02` sobre
+  qué cuenta ejecuta el motor — está marcado en el encabezado del propio archivo, pero
+  quien lo cite de memoria va a citar al revés.
+- **Los `D-NN` no se editan: se superseden.** Decisión estructural nueva = `D-15`.
+- **Un `.md` nuevo se registra sólo en `CLAUDE.md` §7.** `PROYECTO.md` dejó de ser índice.
+- `CLAUDE.md` quedó en 275 líneas, por encima del ~250 sugerido. Decidido no recortar.
 
-## Qué sigue — el orden está en `docs/PLAN.md` §2
+## Abierto, sin cambios
 
-1. **Cerrar el Paso 1.8** — es el punto 1 del plan. Las cuatro pruebas de aceptación del
-   §7 de su prompt **nunca corrieron como tales**; verificado que `fd58902` no trae ningún
-   cierre. Falta la corrida y el commit con el `✅`.
-2. **Tramo 1 — cerrar configuración.** Siete ítems, con el pedido de acceso de
-   `reporteseinformesgcba` a las cuatro bases arrancando ya porque depende de terceros.
-3. Tramos 2 a 5: corte vertical JM → prueba de motor con SECCO → panel → chequeo previo.
+Todo `docs/PENDIENTES_consistencia.md`. Lo que toca directamente al Tramo 1: el bloqueante
+`{{m2_salud_camp}}` (bloquea armonizar la plantilla canónica de JM), la asimetría
+Estado/Aplicar en las protegidas, y `diagnosticoBases_()` listando solapas `ignorar` — este
+último es **precondición de `D-11`**, así que va a volver en el Tramo 5 si no se resuelve
+antes.
 
-## Abierto, sin cambios en esta sesión
-
-Todo `docs/PENDIENTES_consistencia.md`, que hoy sumó tres entradas migradas del
-`PROYECTO.md` congelado: el bloqueante `{{m2_salud_camp}}` (bloquea armonizar la plantilla
-canónica de JM), la mejora de `ultima_carga` en `CONFIG`, y la pregunta abierta de si
-`looker` ya trae hecho el join que arma `unirDigitalPorCuenta()`.
-
-Los tres hallazgos que abrió `C.2-7` siguen abiertos, y el `AUD-3` le sumó evidencia al
-primero: `MAPEO` tiene **tres** escritores, no dos — el tercero es
-`consolidarMapeoLooker_` (`Solapas.gs:455-456`), que además escribe `BASES` y `SOLAPAS`.
+`llamar` sigue sin lista blanca de sólo lectura: **diferido al Paso 6** por decisión del
+usuario, porque sobre `/dev` las dos barreras ya exigen una cuenta con permiso de edición.

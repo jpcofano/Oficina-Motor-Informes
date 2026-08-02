@@ -145,10 +145,7 @@ automatización.
 
 ## 2 · Próximo (ordenado, con dependencias)
 
-1. **Cerrar el Paso 1.8.** Commit de cierre con el `✅` y la bitácora. Verificado que nunca
-   entró: `fd58902` toca sólo los seis docs de C.2-7.
-
-2. **Tramo 1 — cerrar configuración.** Sale cuando el diff da cero ruido.
+1. **Tramo 1 — cerrar configuración.** Sale cuando el diff da cero ruido.
    - Pedir acceso de `reporteseinformesgcba` a las cuatro bases (`D-02`) — **arranca ya**,
      depende de terceros.
    - Abrir el P1 del tercer escritor de `MAPEO` (`consolidarMapeoLooker_`,
@@ -166,18 +163,18 @@ automatización.
      `Proyectado` probablemente no lo sea, y si es así ése es el primer renglón de la lista
      de "por qué hubo que tocar código".
 
-3. **Tramo 2 — corte vertical, JM solo.** Pasos 3, 4 y 5. Se hace contra JM únicamente:
+2. **Tramo 2 — corte vertical, JM solo.** Pasos 3, 4 y 5. Se hace contra JM únicamente:
    construir los dos en paralelo impide después distinguir qué necesitó código y qué salió
    solo. **`Paso-4.md` se revisa antes de ejecutarlo** — está escrito y casi seguro asume
    copiar-y-reemplazar sin registrar la configuración de la corrida (`D-06`).
 
-4. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
+3. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
    valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo
    siguiente.
 
-5. **Tramo 4 — panel** (`D-04`).
+4. **Tramo 4 — panel** (`D-04`).
 
-6. **Tramo 5 — chequeo previo programado** (`D-11`). Es todo lo que queda de lo que antes
+5. **Tramo 5 — chequeo previo programado** (`D-11`). Es todo lo que queda de lo que antes
    eran los Pasos 10-12.
 
 ---
