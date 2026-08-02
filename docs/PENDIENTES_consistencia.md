@@ -136,6 +136,42 @@ está en el código**:
 R-05, R-07 y R-08 son constataciones/decisiones de diseño (no piden código nuevo por sí
 mismas, aunque R-07 hace que `Snapshot.gs` deje de ser opcional).
 
+### P1 · `auditarFormulasResumenesLooker_` clasifica por "tiene fórmula" sin mirar qué consulta
+
+Abierto el 01/08/2026 (Paso 2.11 Parte E). El diagnóstico decide cuál de las dos hojas de
+`looker` es la fuente con la regla *"la que tiene fórmulas es la derivada; la que tiene
+valores planos es la fuente"* (`Solapas.gs`). **Para este caso la regla es falsa**, y el
+resultado sale invertido.
+
+**Verificado corriéndolo** el 01/08 (sólo lectura, por la API):
+
+```
+estado:   "una_es_derivada"
+derivada: "resumen_metricas_dinamico"   ← al revés de S-01
+fuente:   "resumen_metricas"            ← al revés de S-01
+formula:  =QUERY(Cuentas!A2:G;"SELECT * WHERE Col1 is not null AND Col7 <> 'Pendiente'";0)
+```
+
+La fórmula que encuentra consulta una **tercera** hoja (`Cuentas`), no la otra del par:
+es la prueba de que `_dinamico` es la consulta **viva**, o sea la fuente — y el
+diagnóstico la lee como prueba de lo contrario. `resumen_metricas` es el pegado congelado
+que ya devolvió 899 de 903 filas sin fecha (`docs/SUPUESTOS.md` S-01).
+
+**Es la lección de `CLAUDE.md` §4 en vivo:** acertó el hecho ("hay una fórmula") y erró la
+inferencia ("por lo tanto deriva de la otra hoja del par"). El literal de la fórmula ya
+estaba en `celdasConFormula` desde el Paso 2.8 — faltaba mirarlo antes de aceptar la
+etiqueta.
+
+**Mitigación aplicada, no arreglo:** los dos ítems de menú se retiraron (Paso 2.11 Parte E)
+— el propio diagnóstico y `menuConsolidarMapeoLooker_`, que tomaba de él la dirección y con
+ella habría revertido S-01 sobre `MAPEO`, `SOLAPAS` y `BASES` de un click. Las funciones
+**no se borraron**.
+
+**Qué falta:** que la clasificación mire el argumento de la fórmula — si la `QUERY`/
+referencia apunta a una hoja que **no es la otra del par**, no hay relación fuente/derivada
+entre ellas y el caso es `ambas_independientes`, que hoy no existe como estado. Hasta
+entonces, ninguna de las dos funciones vuelve al menú.
+
 ### P1 · Bloqueante de la armonización: la caja `{{m2_salud_camp}}` huérfana
 
 **Movido acá el 01/08/2026 (`DOC-6` Parte E), desde `Plan Inicial/PROYECTO.md` §6, que se

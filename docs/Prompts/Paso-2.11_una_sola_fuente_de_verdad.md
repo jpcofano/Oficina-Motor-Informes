@@ -251,3 +251,75 @@ entran acá: tocan el anclaje, que es Paso 3.
 > — es lo único de este documento que falta, y arrastra `BASES.fila_encabezado` vestigial
 > (H-2), los dos accesos directos de `Union.gs` y el retiro de
 > `reclasificarSolapasM2Invertidas_`.
+
+---
+
+> ⚠ **Addendum 2 (02/08/2026) — Parte E: el escritor de looker. Primera vez que se escribe
+> algo de una "Parte E" que este documento nunca tuvo.**
+>
+> **La Parte E no existía.** Este prompt tiene Partes A, B, C y D. Cuatro documentos la
+> citaban como si existiera (`docs/BITACORA.md`, `docs/ESCRITORES.md` §2.1,
+> `docs/Prompts/AUD-3_inventario_codigo.md`) y le asignaban el contrato de escritores. Este
+> addendum es lo primero que se escribe bajo ese nombre; el resto de la Parte E —el
+> contrato completo— vive en `docs/ESCRITORES.md`, que es documento vivo.
+>
+> **De dónde salió.** El censo mecánico de la Parte E del `AUD-3` encontró un tercer
+> escritor de `MAPEO` que nadie le sopló: `consolidarMapeoLooker_` (`Solapas.gs`), que
+> además escribía `BASES.hoja_default` y seis celdas de `SOLAPAS`, desde el ítem de menú
+> "Consolidar mapeos de looker". El `P1` de `C.2-7` contaba dos escritores y eran tres.
+>
+> **Evidencia (sólo lectura, 01-02/08/2026).** Contra `docs/_snapshots/` y corriendo el
+> diagnóstico por la API:
+>
+> - La consolidación **ya estaba aplicada**: 27/27 filas de `MAPEO` de looker en
+>   `resumen_metricas_dinamico`, `SOLAPAS` con `fuente`/`derivada`, `BASES.hoja_default`
+>   alineada. La sostienen en cada corrida tres migraciones idempotentes de `Instalar.gs`
+>   (`alinearMapeoLookerADinamico_`, `alinearSolapasLookerADinamico_`,
+>   `alinearBasesHojaDefaultLooker_`), o sea que la cuarta función no aportaba nada.
+> - **Su único camino de invocación producía la dirección invertida.**
+>   `auditarFormulasResumenesLooker_`, que le pasaba `hojaFuente`/`hojaDerivada`, devuelve
+>   `fuente: 'resumen_metricas'` — al revés de `S-01`. Clasifica "tiene fórmula → derivada"
+>   sin mirar que la fórmula es un `QUERY()` sobre una **tercera** hoja. Un click revertía
+>   `S-01` sobre las tres hojas de registro, bajo un texto de confirmación que sonaba
+>   autorizado.
+> - **Dos de las diez `protegida (habría cambiado)` no eran decisiones humanas.** Las de
+>   `looker` tenían `origen=manual` escrito por `alinearSolapasLookerADinamico_`, de cuando
+>   el seed todavía mandaba esas filas a `revisar`. Con el seed ya diciendo
+>   `fuente`/`derivada`, la protección no protegía nada: su único efecto vivo era congelar
+>   la nota corta que escribía la migración, porque `aplicarClasificacionSolapas_` saltea
+>   toda fila `origen=manual` sin escribirla.
+>
+> **Decisión (a) — migración ejecutada.** Lo aplicado:
+>
+> 1. **Dos bajas en la tabla `MENU_`**, no una: `menuConsolidarMapeoLooker_` y
+>    `menuAuditarFormulasResumenesLooker_`. El segundo muestra la misma recomendación
+>    invertida y remata mandando a correr el primero — retirar uno solo dejaba un consejo
+>    equivocado sin salida. De 36 ítems a 34.
+> 2. **Ninguna función se borró.** Encabezado en las cuatro. `consolidarMapeoLooker_` está
+>    **parametrizada por dirección**: sigue siendo la única forma de mover la decisión sin
+>    tocar código si el dueño externo cambia cuál hoja mantiene. Una migración ejecutada no
+>    es código muerto.
+> 3. **`alinearSolapasLookerADinamico_` dejó de escribir `notas` y pasó `origen` de
+>    `'manual'` a `'seed'`.** Con eso la fila vuelve al sembrador y el piso de diez baja a
+>    ocho. La instrucción original decía mantener `origen=manual`, pero eso no cerraba el
+>    piso —el `manual` es justamente lo que bloquea al seed—, y se corrigió antes de
+>    ejecutar.
+>
+> **Verificado en la planilla (02/08/2026), las tres corridas:**
+>
+> | corrida | resultado |
+> |---|---|
+> | Aplicar 1ª | `migraciones: 2` (los dos `origen: manual → seed`) · `cambiadas: 2` (las dos notas que el seed por fin escribe) · **`protegidas (con diferencia): 8`** |
+> | Aplicar 2ª | todo en cero, `protegidas: 8`, `sin cambios: sí` — **la idempotencia no se rompió** |
+> | Estado | `SOLAPAS 84 filas [manual: 8, seed: 76]`, 0 discrepancias, 0 migraciones pendientes |
+>
+> El `manual: 8` es el control positivo desde el otro lado: quedan **exactamente** las ocho
+> decisiones humanas de `rdv`, que son el alcance del Grupo B de
+> `docs/Prompts/Paso-2.12_Parte2_disposicion_solapas.md`.
+>
+> **Lo que este addendum NO cierra.** La inferencia invertida de
+> `auditarFormulasResumenesLooker_` **no se arregló**: se anotó como `P1` en
+> `docs/PENDIENTES_consistencia.md`, con qué falta (un estado `ambas_independientes` para
+> cuando la fórmula apunta a una hoja que no es la otra del par). Hasta entonces ninguna de
+> las dos funciones vuelve al menú. Y `promoverFechasElegidas()` sigue siendo un escritor
+> de `MAPEO` sin declarar — es el `P1` original de `C.2-7` y no es de este paso.

@@ -998,3 +998,64 @@ nadie más.
   estaban: `llamar` no tiene lista blanca de sólo lectura (`P1` en
   `docs/PENDIENTES_consistencia.md`, **diferido al Paso 6** por decisión del usuario del
   01/08), y el desfasaje de versión no aplica sobre `/dev` porque `/dev` es HEAD.
+
+## Paso 2.11 Parte E — el escritor de looker: retirar la migración ejecutada (2026-08-02) — commits de esta entrada
+- **Qué pedía el prompt:** addendum al final de `docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md`.
+  Cerrar el tercer escritor de `MAPEO` que el censo del `AUD-3` encontró solo,
+  `consolidarMapeoLooker_`. Parte A de evidencia con parada obligatoria, Parte B recién con
+  la decisión del usuario.
+- **Hallazgo previo, y quedó escrito:** **la "Parte E" del Paso 2.11 no existía.** Ese
+  prompt tiene A, B, C y D. Cuatro documentos la citaban como dueña del contrato de
+  escritores (`BITACORA.md`, `ESCRITORES.md` §2.1, `AUD-3`). El addendum es el primer texto
+  que se escribe bajo ese nombre.
+- **Qué se hizo (decisión (a) del usuario — migración ejecutada):**
+  - **`Codigo.gs`** — **dos** bajas en la tabla `MENU_`, no una: `menuConsolidarMapeoLooker_`
+    y `menuAuditarFormulasResumenesLooker_`. El segundo muestra la misma recomendación
+    invertida y remata mandando a correr el primero; retirar uno solo dejaba un consejo
+    equivocado sin salida. De 36 ítems a **34**, verificado con `tools/inventario.js`:
+    ningún ítem quedó apuntando a una función inexistente.
+  - **`Solapas.gs`** — encabezados en las cuatro funciones que quedan sin camino de
+    invocación. **Ninguna se borró.** `consolidarMapeoLooker_` queda marcada como migración
+    ejecutada y **parametrizada por dirección**: es la única forma de mover la decisión sin
+    tocar código si el dueño externo cambia cuál hoja mantiene.
+  - **`Instalar.gs`** — `alinearSolapasLookerADinamico_` dejó de escribir `notas` y pasó
+    `origen` de `'manual'` a `'seed'`.
+  - **`docs/ESCRITORES.md`** — `MAPEO` baja a dos escritores de contenido vivos; `BASES` y
+    `SOLAPAS` pasan a ✅ con todos sus caminos declarados; §2.1 reescrita con el contrato
+    vigente; §2.2 explica por qué las dos de `looker` no eran decisiones humanas.
+  - **`docs/PENDIENTES_consistencia.md`** — P1 nuevo (abajo).
+- **La corrección a la instrucción, hecha antes de ejecutar:** el prompt pedía que
+  `alinearSolapasLookerADinamico_` dejara de escribir `notas` **manteniendo
+  `origen='manual'`**. Verificado contra el código, eso **no bajaba el piso de 10 a 8**:
+  `aplicarClasificacionSolapas_` saltea con `return` toda fila `origen=manual`, así que la
+  nota buena del seed no podía llegar nunca y la línea `protegida (habría cambiado)` iba a
+  seguir saliendo. Se reportó antes de tocar nada y el usuario eligió `origen: 'seed'`. El
+  `manual` era **vestigial**: lo había escrito la propia migración cuando `SEED_SOLAPAS_`
+  todavía mandaba esas filas a `revisar`; hoy el seed ya dice `fuente`/`derivada`, o sea lo
+  mismo, y la protección sólo servía para congelar la peor versión de las notas.
+- **Prueba — predicción y resultado, las dos:**
+  - **Simulación antes de tocar la planilla** (`aplicarInstalacion_(false)` por la API,
+    verificado que con `aplicar=false` no escribe): exactamente **2 cambios**, los dos
+    `origen: manual → seed`, ninguna línea de `notas`, cero en las demás migraciones.
+  - **Corrida real desde el menú**, por el usuario:
+
+    | corrida | resultado |
+    |---|---|
+    | Aplicar 1ª | `migraciones: 2` · `cambiadas: 2` (las dos notas que el seed por fin escribe) · **`protegidas (con diferencia): 8`** · `solo_en_hoja: 7` |
+    | Aplicar 2ª | todo cero, `protegidas: 8`, `sin cambios: sí` — **idempotencia intacta** |
+    | Estado | `SOLAPAS 84 filas [manual: 8, seed: 76]`, 0 discrepancias, 0 migraciones pendientes |
+
+    El `manual: 8` de "Estado" es el control positivo desde el otro lado: quedan
+    **exactamente** las ocho decisiones humanas de `rdv`.
+- **Pendientes/decisiones:**
+  - **P1 nuevo · `auditarFormulasResumenesLooker_` tiene la inferencia invertida.**
+    Verificado corriéndolo: devuelve `fuente: 'resumen_metricas'`, al revés de `S-01`.
+    Clasifica "tiene fórmula → derivada" sin mirar que la fórmula es un `QUERY()` sobre una
+    **tercera** hoja — la prueba misma de que `_dinamico` es la fuente viva. Es la lección
+    de `CLAUDE.md` §4 en vivo. **Se anotó, no se arregló.** Mitigación: los dos ítems
+    fuera del menú. Falta un estado `ambas_independientes` para cuando la fórmula apunta a
+    una hoja que no es la otra del par.
+  - Con el menú de por medio, un click revertía `S-01` sobre `MAPEO`, `SOLAPAS` y `BASES`,
+    bajo un texto de confirmación que sonaba autorizado. Eso es lo que se cerró.
+  - `promoverFechasElegidas()` sigue siendo escritor de `MAPEO` sin declarar — es el P1
+    original de `C.2-7` y no era de este paso.

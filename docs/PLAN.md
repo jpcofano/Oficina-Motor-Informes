@@ -156,9 +156,11 @@ automatización.
    - Dar acceso de lectura a `reporteseinformesgcba` sobre las cuatro bases (`D-02`).
      **No depende de terceros**: las cuatro son cuentas del usuario y se comparten sin
      pedirle permiso a nadie (corregido el 02/08/2026 — ver la nota bajo `D-02`).
-   - Abrir el P1 del tercer escritor de `MAPEO` (`consolidarMapeoLooker_`,
-     `Solapas.gs:455-456`), que además escribe `BASES.hoja_default` y seis celdas de
-     `SOLAPAS` desde un ítem de menú.
+   - ~~Abrir el P1 del tercer escritor de `MAPEO` (`consolidarMapeoLooker_`)~~ — **hecho
+     02/08/2026** (Paso 2.11 Parte E): retirado del menú junto con el diagnóstico que le
+     pasaba la dirección invertida. `MAPEO` vuelve a dos escritores de contenido vivos.
+     Dejó abierto un P1 nuevo, que **no** es de este tramo: la inferencia invertida de
+     `auditarFormulasResumenesLooker_`.
    - `Paso-2.12` Parte 2 — las 17 disposiciones de `SOLAPAS.uso`. Las diez líneas
      `protegida (habría cambiado)` son la lista de trabajo y son todas de `SOLAPAS`.
    - Generalizar `hayUi_()` — desbloquea correr el protocolo entero por API.

@@ -14,7 +14,9 @@
 >
 > Último censo: **01/08/2026** (AUD-3 Parte E). Control positivo: el censo debía
 > encontrar solo los dos escritores conocidos de `MAPEO` — encontró esos dos **y un
-> tercero que nadie le sopló** (ver abajo).
+> tercero que nadie le sopló**, `consolidarMapeoLooker_`. Ese tercero se **retiró del
+> menú** el 01/08 (Paso 2.11 Parte E): hoy `MAPEO` vuelve a tener dos escritores de
+> contenido vivos. Ver §2.1.
 
 ---
 
@@ -33,12 +35,12 @@ agujero del patrón.
 
 | hoja | dueño declarado del contenido | escritores censados | veredicto |
 |---|---|---|---|
-| `BASES` | `SEED_BASES_` vía upsert | upsert (`aplicarSeedConfiguracion_`) · migración `alinearBasesHojaDefaultLooker_` · **`consolidarMapeoLooker_` (`Solapas.gs:485`)** | ⚠ tres caminos — ver §2 |
-| `MAPEO` | `SEED_MAPEO_` vía upsert | upsert · `promoverFechasElegidas` + `migrarPrefijosFechaPeriodo_` (`Fechas.gs`) · **`consolidarMapeoLooker_` (`Solapas.gs:455-456`)** · migraciones `eliminarMapeoAlcanceDigitalObsoleto_`, `alinearMapeoLookerADinamico_`, `backfillSolapaMapeo_` | ⚠ **tres escritores de contenido, uno solo declarado** — ver §2 |
+| `BASES` | `SEED_BASES_` vía upsert | upsert (`aplicarSeedConfiguracion_`) · migración `alinearBasesHojaDefaultLooker_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ✅ dos caminos, los dos declarados |
+| `MAPEO` | `SEED_MAPEO_` vía upsert | upsert · `promoverFechasElegidas` + `migrarPrefijosFechaPeriodo_` (`Fechas.gs`) · migraciones `eliminarMapeoAlcanceDigitalObsoleto_`, `alinearMapeoLookerADinamico_`, `backfillSolapaMapeo_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ⚠ **dos escritores de contenido vivos**: el upsert y `promoverFechasElegidas`. El segundo sigue sin declarar — ver §2.1 |
 | `CONFIG` | `SEED_CONFIG_DEFAULTS_` vía `seedConfigConfig_` (solo completa vacíos) | `seedConfigConfig_` únicamente | ✅ un camino; el humano edita valores y el seed no los pisa |
 | `INFORMES` | `SEED_INFORMES_` vía upsert | upsert · `clasificarArchivoPlantilla_` (registro de plantillas, escribe `plantilla_id`) · `repuntarPlantillaCanonicaJM_` (`Armonizar.gs:660`, ídem) | ✅ con reparto declarado: el seed no siembra `plantilla_id` — esa columna es del registro de plantillas |
 | `PERIODOS` | `SEED_PERIODOS_` vía upsert | upsert únicamente | ✅ |
-| `SOLAPAS` | `SEED_SOLAPAS_` vía `aplicarClasificacionSolapas_` (clasificación) + `inventariarSolapas` (medición) | upsert de clasificación · `inventariarSolapas` (`Solapas.gs:119-147`: `filas_datos`, `filas_crudas`, `firma_encabezado`) · migraciones `alinearSolapasLookerADinamico_`, `reclasificarSolapasM2Invertidas_` · **`consolidarMapeoLooker_` (`Solapas.gs:467-475`, 6 sitios)** | ⚠ la hoja más concurrida: 4 caminos. El reparto seed/inventario está declarado (C.2-7); `consolidarMapeoLooker_`, no |
+| `SOLAPAS` | `SEED_SOLAPAS_` vía `aplicarClasificacionSolapas_` (clasificación) + `inventariarSolapas` (medición) | upsert de clasificación · `inventariarSolapas` (`Solapas.gs:119-147`: `filas_datos`, `filas_crudas`, `firma_encabezado`) · migraciones `alinearSolapasLookerADinamico_`, `reclasificarSolapasM2Invertidas_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ✅ tres caminos, los tres declarados. El reparto seed/inventario viene de C.2-7; la migración de looker dejó de escribir `notas` en la Parte E |
 | `SECCIONES` | `SEED_SECCIONES_` vía `sembrarSecciones_` | `sembrarSecciones_` únicamente | ✅ |
 | `CAMPANAS` | curada a mano (sin sembrador, a propósito) | **cero escritores en el código** | ✅ consistente con `ALCANCE_REGISTROS_` |
 | `REUNIONES` | curada a mano + `cargarTemarioReuniones_` (menú "Cargar temario") | `cargarTemarioReuniones_` (`Reuniones.gs:155`) únicamente | ✅ |
@@ -46,22 +48,30 @@ agujero del patrón.
 
 ## 2 · Los conflictos que la matriz deja a la vista
 
-### 2.1 · `MAPEO` tiene tres escritores de contenido, y el P1 de C.2-7 contaba dos
+### 2.1 · `MAPEO`: el tercer escritor se retiró; quedan dos, y uno sigue sin declarar
 
-El P1 abierto por C.2-7 ("las siete filas huérfanas son columnas de fecha") documentó
-dos: el upsert de los `SEED_*` y `promoverFechasElegidas()`. **El censo encontró el
-tercero sin que nadie se lo dijera** — `consolidarMapeoLooker_` (`Solapas.gs:442`,
-menú "Consolidar mapeos de looker"), que repunta filas de `MAPEO` entre
-`resumen_metricas` y `resumen_metricas_dinamico` y de paso escribe `BASES.hoja_default`
-(`Solapas.gs:485`) y seis celdas de `SOLAPAS`. Tres hojas de registro desde un ítem de
-menú de "Datos y decisiones", ninguna mención en el P1.
+**El censo encontró un tercer escritor que nadie le sopló** — `consolidarMapeoLooker_`
+(`Solapas.gs`), que repuntaba filas de `MAPEO` entre `resumen_metricas` y
+`resumen_metricas_dinamico` y de paso escribía `BASES.hoja_default` y seis celdas de
+`SOLAPAS`, todo desde un ítem de menú de "Datos y decisiones". El P1 de `C.2-7`
+contaba dos y eran tres.
 
-Eso no lo vuelve ilegítimo — es el instrumento de la decisión S-01 — pero es
-exactamente lo que este contrato existe para tener escrito: **quién puede escribir
-`MAPEO` y cuándo**. Hasta que el Paso 2.11 Parte E (o quien tome la decisión) lo
-declare, la regla operativa es: *el upsert siembra, `promoverFechasElegidas` escribe
-las `fecha_periodo` elegidas en `DIAG_FECHAS`, `consolidarMapeoLooker_` solo repunta
-looker, y nadie más.*
+**Resuelto el 01/08/2026 (Paso 2.11 Parte E).** La consolidación ya estaba aplicada —
+27/27 filas de `MAPEO` en `_dinamico`, `SOLAPAS` y `BASES` alineadas— y la sostienen en
+cada corrida tres migraciones idempotentes de `Instalar.gs`. La función quedaba como
+duplicado, y su único camino de invocación **producía la dirección invertida**: el
+diagnóstico que la alimentaba devuelve `fuente: resumen_metricas`, al revés de S-01. Se
+retiró del menú junto con ese diagnóstico. **Ninguna de las dos se borró** — ver sus
+encabezados y el P1 en `docs/PENDIENTES_consistencia.md`.
+
+**Contrato vigente de `MAPEO`:** *el upsert de los `SEED_*` siembra, y
+`promoverFechasElegidas()` (`Fechas.gs`) escribe las filas `fecha_periodo` elegidas en
+`DIAG_FECHAS`. Nadie más.* Las migraciones de `Instalar.gs` corrigen estado viejo y
+tienen vencimiento; no son escritores de contenido.
+
+⚠ **El segundo sigue sin declarar formalmente.** Que `promoverFechasElegidas()` escriba
+`MAPEO` es correcto, pero ningún `SEED_MAPEO_` conoce las siete filas que escribe — es
+el P1 abierto de `C.2-7`, y **no es de este paso**.
 
 ### 2.2 · Las diez protegidas de `SOLAPAS` — el conflicto seed ↔ manual, medido
 
@@ -75,14 +85,22 @@ manuales, todas, en cada corrida.** Desglose (evidencia:
   `Funcionarios / Ministros`, `Respuestas JM 📩`). Acá el humano tiene razón y el
   `SEED_SOLAPAS_` está desactualizado: sigue diciendo `revisar` sobre decisiones
   tomadas.
-- **Dos son `notas` de looker** — la manual dice `ver docs/SUPUESTOS.md S-01` (un
+- **Dos eran `notas` de looker** — la "manual" decía `ver docs/SUPUESTOS.md S-01` (un
   puntero) y la del seed trae el dato concreto (QUERY() viva sobre Cuentas; 899 de 903
-  sin fecha). Acá la protección conserva la versión **peor**.
+  sin fecha). Ahí la protección conservaba la versión **peor**.
 
-Un piso de diez líneas que aparece siempre convierte la alarma en ruido: la línea once,
-la que importe, entra en una lista que todos aprendieron a saltear. La resolución (alinear
-el seed con las ocho decisiones, y decidir las dos notas) es del Paso 2.12 Parte 2 / 2.11
-Parte E — **acá queda el mapa y el número.**
+**Las dos de looker se cerraron el 01/08 (Paso 2.11 Parte E), y no eran decisiones
+humanas.** Su `origen=manual` lo escribía `alinearSolapasLookerADinamico_`, de cuando el
+seed todavía mandaba esas filas a `revisar`. Hoy el seed ya dice `fuente`/`derivada`, o
+sea lo mismo que la migración: la protección no protegía nada y su único efecto vivo era
+congelar la nota corta, porque `aplicarClasificacionSolapas_` saltea toda fila
+`origen=manual` sin escribirla. La migración pasó a escribir `origen: 'seed'` y dejó de
+escribir `notas`; con eso el seed adopta las dos filas y el piso baja de **10 a 8**.
+
+Un piso que aparece siempre convierte la alarma en ruido: la línea de más, la que
+importe, entra en una lista que todos aprendieron a saltear. **Las ocho que quedan sí son
+decisiones humanas** —el seed dice `revisar` y la planilla dice `ignorar`/`referencia`,
+así que ahí la protección hace trabajo real— y se resuelven en el **Paso 2.12 Parte 2**.
 
 ### 2.3 · Sitios que el censo no atribuye, y por qué está bien
 
