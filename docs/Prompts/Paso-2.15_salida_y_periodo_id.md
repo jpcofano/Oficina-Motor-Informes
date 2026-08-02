@@ -179,3 +179,53 @@ sí se audita y hay que entender por qué.
 - Sin trailer `Co-Authored-By`.
 
 **Modelo:** Opus.
+
+---
+
+## Addendum 1 — 02/08/2026, después de la Parte 0
+
+**1 · Corrección a 0.2 (error de claude.ai).** El motivo escrito para descartar la
+premisa vieja es falso: la rama con delta pushea condicionalmente y la rama sin
+delta pushea siempre, así que aparecer en la lista de hojas actualizadas SÍ
+discrimina. La deducción original apuntaba a una señal real; lo que estaba mal
+era la conclusión que sacaba de ella. El discriminador sigue siendo
+COLUMNAS_DELTA_ y la decisión no cambia.
+
+**2 · Hallazgo 1 — B.2 pierde su premisa.** Las 3 filas de CAMPANAS no son "todas
+de ejemplo": dos tienen `tipo` editado a mano. No se las trata como descartables.
+El seed se sigue llamando SEED_CAMPANAS_EJEMPLO_ y ese nombre ya no describe lo
+que hay; NO renombrarlo en este paso. Anotar en PENDIENTES_consistencia.md, en
+una entrada: nombre del seed desactualizado, `tipo` sin ningún lector en el repo,
+y valores vivos fuera de la lista que declara el comentario de Instalar.gs.
+
+**3 · B.2 — decidido: vacío, con regla explícita.** Las 10 filas quedan con
+`periodo_id` vacío. Regla que se declara ahora y se implementa en el Tramo 2:
+una fila sin `periodo_id` no entra a ningún informe. El motor no asume el período
+vigente (D-10). NO crear filas en PERIODOS: el hallazgo 2 muestra que ninguna
+cubre la ventana activa, y asignarles una inventada es justo lo que la regla
+prohíbe. Registrar como D-19 en PLAN.md §1 — greppear el prefijo antes de
+asignarlo, aunque al 02/08 estaba libre.
+
+**4 · B.1 — índice decidido.** `periodo_id` es la primera columna de las dos
+hojas: `{ nombre: 'periodo_id', indice: 1 }`. En CAMPANAS la entrada va al FINAL
+del array de COLUMNAS_DELTA_.CAMPANAS, después de `desde`/`hasta`: las entradas
+se evalúan en orden y una nueva adelante correría los índices de las que ya
+están (mismo caso que documenta la nota de MARCADORES). Antes de aplicar,
+confirmar que upsertPorClave_ resuelve por encabezado y no por posición; si
+resolviera por posición, parar y reportar.
+
+**5 · B.3 — decidido.** `cargarTemario` recibe el período por parámetro y falla
+explícito si falta. El hallazgo 3 muestra que hoy escribiría vacío en silencio,
+que es peor que fallar. Alcance: el parámetro nuevo, el campo en
+parsearLineaReunion_, validar que el id exista en PERIODOS, el ítem de menú lo
+pide al usuario y la entrada por API lo pasa. Anotar cuántas líneas de .gs.
+
+**6 · B.4** — ESCRITORES.md: además del contrato, agregar la entrada por API que
+abrió el Paso 2.14. Hoy solo describe el ítem de menú.
+
+**7 · Hallazgo 4 — no es de este paso.** Un deck creado por jpcofanogcba1 dentro
+de la carpeta de reportes queda con jpcofanogcba1 como dueño; la carpeta no
+transfiere propiedad. Es una pieza abierta de D-03 que resuelve el Paso 4.
+Anotarla en PLAN.md §3 con qué la destraba, y no tocarla acá.
+
+**8 · Visto para la Parte A.** Se ejecuta como está escrita.
