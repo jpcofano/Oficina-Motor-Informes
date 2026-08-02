@@ -210,7 +210,7 @@ function escribirBloqueAud_(hoja, filaInicio, titulo, headers, filas) {
 }
 
 function menuAuditarSolapas_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = auditarSolapas();
 
   var lineas = [
@@ -310,7 +310,7 @@ function auditarAlcanceDigital_() {
 }
 
 function menuAuditarAlcanceDigital_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = auditarAlcanceDigital_();
 
   if (!resultado.ok) {
@@ -407,7 +407,7 @@ function diagnosticoCorteFilasM2_() {
 }
 
 function menuDiagnosticarCorteFilasM2_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = diagnosticoCorteFilasM2_();
 
   if (!resultado.ok) {
@@ -502,7 +502,7 @@ function diagnosticoFilasSinClaveDigital_() {
 }
 
 function menuDiagnosticarFilasSinClaveDigital_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = diagnosticoFilasSinClaveDigital_();
 
   if (!resultado.ok) {
@@ -660,7 +660,7 @@ function verificarNombresSolapasFuente_() {
 }
 
 function menuVerificarNombresSolapasFuente_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = verificarNombresSolapasFuente_();
 
   var lineas = ['Solapas uso=fuente verificadas: ' + resultado.verificadas];
@@ -675,7 +675,7 @@ function menuVerificarNombresSolapasFuente_() {
 }
 
 function menuDiagnosticarColapso_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = diagnosticarColapso_();
   ui.alert(
     'Diagnóstico de colapso (Paso 2.9A)',

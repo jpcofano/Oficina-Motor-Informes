@@ -441,7 +441,7 @@ function leerDiagFechas_() {
 
 /** D) Menú. */
 function menuDetectarColumnasFecha_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = detectarColumnasFecha();
 
   var lineas = [
@@ -469,7 +469,7 @@ function menuDetectarColumnasFecha_() {
 }
 
 function menuPromoverFechasElegidas_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = promoverFechasElegidas();
 
   if (!resultado.ok) {
@@ -719,7 +719,7 @@ function escribirDiagBases_(hoja, filasSolapas, filasTipos) {
 }
 
 function menuDiagnosticarBases_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = diagnosticarBases();
 
   var lineas = [
@@ -838,7 +838,7 @@ function diagnosticoTiposFechasConfig_() {
 }
 
 function menuDiagnosticoTiposFechasConfig_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   ui.alert('Tipos de fechas de ventana (Paso 2.11 C.2-1 — solo lectura)',
     diagnosticoTiposFechasConfig_(), ui.ButtonSet.OK);
 }

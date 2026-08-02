@@ -227,7 +227,7 @@ function corteVerticalRetiro2407_() {
 }
 
 function menuCorteVerticalRetiro2407_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = corteVerticalRetiro2407_();
 
   if (!resultado.ok) {

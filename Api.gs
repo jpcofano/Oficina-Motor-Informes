@@ -292,7 +292,27 @@ function apiLlamar_(accion, pedido, traza, t0) {
   apiHojaControl_(traza);
   // Nombre y cantidad, nunca los valores.
   traza.push('llama: ' + nombre + ' con ' + args.length + ' arg(s)');
-  return apiOk_(accion, fn.apply(null, args), traza, t0);
+
+  // Paso 2.14 — lo que la función haya querido mostrar por pantalla viaja en la
+  // respuesta. Se vacía ANTES de llamar: si no, una corrida arrastra lo dicho por
+  // la anterior. Es el mismo criterio que la `traza`, que también es por pedido.
+  UI_DICHO_ = [];
+  var resultado = fn.apply(null, args);
+  if (UI_DICHO_.length) traza.push('dicho por pantalla: ' + UI_DICHO_.length + ' mensaje(s)');
+
+  var sobre = apiOk_(accion, resultado, traza, t0);
+  return UI_DICHO_.length ? apiSalida_(apiConDicho_(sobre, UI_DICHO_)) : sobre;
+}
+
+/**
+ * Agrega `dicho` al sobre ya armado. Separado para no tocar `apiOk_`, que lo usan
+ * las otras cuatro acciones y no muestran nada por pantalla.
+ */
+function apiConDicho_(sobre, dicho) {
+  var texto = sobre.getContent();
+  var obj = JSON.parse(texto);
+  obj.dicho = dicho.slice();
+  return obj;
 }
 
 function apiGlobal_(nombre) {

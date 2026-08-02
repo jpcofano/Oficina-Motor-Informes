@@ -594,7 +594,7 @@ function filasDigitalDeEncuentro(idCuentaOEncuentro, ventana) {
  * y muestra el diagnóstico — no persiste nada, es solo lectura.
  */
 function menuProbarUnionYAnclaje_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var ventana = resolverVentana({});
   if (!ventana.ok) {
     ui.alert('No se pudo resolver el período', ventana.motivo, ui.ButtonSet.OK);

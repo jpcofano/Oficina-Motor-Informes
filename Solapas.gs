@@ -190,7 +190,7 @@ function leerFilasSolapas_(hoja) {
 }
 
 function menuInventariarSolapas_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = inventariarSolapas();
 
   if (!resultado.ok) {
@@ -266,7 +266,7 @@ function compararResumenesLooker_() {
 }
 
 function menuCompararResumenesLooker_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = compararResumenesLooker_();
 
   if (!resultado.ok) {
@@ -430,7 +430,7 @@ function auditarFormulasResumenesLooker_() {
  *  se arregla la inferencia. Su texto de cierre manda a correr la consolidación, que es
  *  justamente lo que no hay que hacer con la dirección actual. */
 function menuAuditarFormulasResumenesLooker_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = auditarFormulasResumenesLooker_();
 
   if (!resultado.ok) {
@@ -528,7 +528,7 @@ function consolidarMapeoLooker_(hojaFuente, hojaDerivada) {
  *  `consolidarMapeoLooker_`. Era la única vía de invocación, y derivaba la dirección de
  *  `auditarFormulasResumenesLooker_`, que la devuelve invertida. No se borra. */
 function menuConsolidarMapeoLooker_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var diagnostico = auditarFormulasResumenesLooker_();
 
   if (!diagnostico.ok) {

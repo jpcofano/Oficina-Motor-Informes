@@ -110,6 +110,10 @@ var MENU_ = {
  * el error en el log. Un onOpen() que tira excepción deja la planilla sin menú.
  */
 function onOpen() {
+  // Paso 2.14 — acá SÍ va la UI real, no `ui_()`: `onOpen` sólo corre al abrir la
+  // planilla, así que siempre hay UI, y necesita `createMenu`, que el sustituto no
+  // expone a propósito (un menú sin planilla no significa nada). Es la categoría
+  // "construcción de menú": no aplica la generalización.
   var ui = SpreadsheetApp.getUi();
   try {
     construirMenu_(ui, MENU_).addToUi();
@@ -141,9 +145,15 @@ function construirMenu_(ui, nodo) {
 /**
  * ¿Hay interfaz de planilla en este contexto? (Paso 1.8.)
  * Sobre HTTP —la API de pruebas de Api.gs— no la hay, y `SpreadsheetApp.getUi()`
- * tira excepción en vez de devolver null. Una función de menú que quiera ser
- * invocable desde afuera pregunta acá antes de alertar. No hay otra forma de
- * consultarlo que intentarlo.
+ * tira excepción en vez de devolver null. No hay otra forma de consultarlo que
+ * intentarlo.
+ *
+ * ⚠ **Esta es la sonda, y su forma no se toca** (Paso 2.14). Es el **único lugar
+ * del repo donde `SpreadsheetApp.getUi()` puede tirar a propósito**: acá la
+ * excepción es el resultado que se busca, no una falla. En cualquier otro lado se
+ * pide la UI con `ui_()`, que ya contempla las dos ramas. Si alguien agrega otro
+ * `try { getUi() }` suelto, la garantía se pierde: pasa a haber dos lugares donde
+ * una excepción significa cosas distintas.
  */
 function hayUi_() {
   try {
@@ -154,14 +164,82 @@ function hayUi_() {
   }
 }
 
+/**
+ * Paso 2.14 — lo que se pidió mostrar en esta corrida, en orden.
+ *
+ * Se llena SIEMPRE, haya UI o no: con planilla el texto se muestra *y* se anota;
+ * sobre HTTP sólo se anota. Así ningún camino pierde información — que es el punto
+ * del paso. Vive a nivel de módulo porque una corrida de Apps Script es de a una
+ * por invocación; `Api.gs` lo vacía antes de cada llamada y lo devuelve después,
+ * igual que hace con la `traza`.
+ */
+var UI_DICHO_ = [];
+
+/**
+ * Paso 2.14 — la UI, o un sustituto que anota en vez de mostrar.
+ *
+ * Reemplaza a `var ui = SpreadsheetApp.getUi()` en las 31 funciones de menú. Con
+ * planilla delega en la UI real y no cambia nada de lo que ve una persona; sobre
+ * HTTP no rompe y guarda el texto en `UI_DICHO_`.
+ *
+ * **Las dos degradaciones, que son decisiones y no descuidos:**
+ *
+ * - `alert` sin UI devuelve `null`. Un `alert(…, YES_NO)` usado como confirmación
+ *   compara contra `ui.Button.YES`, así que sin UI la comparación falla y el
+ *   llamador **corta**. Un confirm que no se puede hacer degrada a *no
+ *   confirmado*, nunca a "sí" — que era la preocupación central de este paso.
+ * - `prompt` sin UI **tira**. No hay a quién preguntarle y no se inventa una
+ *   respuesta. Si una función necesita un dato del usuario para correr por API,
+ *   ese dato entra por parámetro: ver `cargarTemario()` en `Reuniones.gs`.
+ */
+function ui_() {
+  var real = hayUi_() ? SpreadsheetApp.getUi() : null;
+
+  return {
+    hayUi: !!real,
+    texto: function () { return UI_DICHO_.join('\n\n———\n\n'); },
+
+    alert: function () {
+      // Apps Script acepta alert(msg), alert(msg, botones) y alert(titulo, msg, botones).
+      var partes = [];
+      for (var i = 0; i < arguments.length && i < 2; i++) {
+        if (typeof arguments[i] === 'string') partes.push(arguments[i]);
+      }
+      UI_DICHO_.push(partes.join('\n\n'));
+      return real ? real.alert.apply(real, arguments) : null;
+    },
+
+    prompt: function () {
+      if (!real) {
+        throw new Error('Se pidió un dato por pantalla y no hay planilla. Sobre HTTP el ' +
+          'dato entra por parámetro — ver el encabezado de ui_() en Codigo.gs.');
+      }
+      return real.prompt.apply(real, arguments);
+    },
+
+    ButtonSet: real ? real.ButtonSet : { OK: null, OK_CANCEL: null, YES_NO: null },
+    Button: real ? real.Button : { OK: 'OK', YES: 'YES', NO: 'NO', CANCEL: 'CANCEL' }
+  };
+}
+
+/**
+ * Paso 2.14 — aviso liviano (`toast`) con la misma garantía que `ui_()`: se anota
+ * siempre y se muestra sólo si hay planilla. Devuelve el texto.
+ */
+function anunciar_(titulo, texto) {
+  UI_DICHO_.push(titulo + '\n\n' + texto);
+  if (hayUi_()) SpreadsheetApp.getActiveSpreadsheet().toast(texto, titulo);
+  return titulo + '\n\n' + texto;
+}
+
 function menuAbrirPanel_() {
-  SpreadsheetApp.getActiveSpreadsheet().toast('próximamente', 'Abrir panel');
+  return anunciar_('Abrir panel', 'próximamente');
 }
 
 function menuGenerarInforme_() {
-  SpreadsheetApp.getActiveSpreadsheet().toast('próximamente', 'Generar informe');
+  return anunciar_('Generar informe', 'próximamente');
 }
 
 function menuCargarEjemplo_() {
-  SpreadsheetApp.getActiveSpreadsheet().toast('próximamente', 'Cargar ejemplo');
+  return anunciar_('Cargar ejemplo', 'próximamente');
 }

@@ -156,19 +156,24 @@ function cargarTemarioReuniones_(textoPegado) {
   return { ok: true, agregadas: filas.length, sinParsear: sinParsear };
 }
 
-function menuCargarTemarioReuniones_() {
-  var ui = SpreadsheetApp.getUi();
-  var respuesta = ui.prompt(
-    'Cargar temario de reuniones',
-    'Pegá el texto del temario (una línea por reunión). Se agrega a REUNIONES con mostrar vacío — confirmás cada una a mano.',
-    ui.ButtonSet.OK_CANCEL
-  );
-  if (respuesta.getSelectedButton() !== ui.Button.OK) return;
-
-  var resultado = cargarTemarioReuniones_(respuesta.getResponseText());
+/**
+ * Paso 2.14 — el trabajo, con el texto por parámetro. Invocable por API.
+ *
+ * El `prompt` del ítem de menú no era una guarda de confirmación: era **el insumo
+ * del paso**. Sobre HTTP no hay a quién pedirle el temario, y no se inventa — si
+ * falta el texto, **falla explícito**. Ésa es la diferencia con un `confirm`, que
+ * degrada solo a "no confirmado" (ver `ui_()` en `Codigo.gs`).
+ */
+function cargarTemario(texto) {
+  if (!texto || !String(texto).trim()) {
+    throw new Error('cargarTemario: falta el texto del temario. Desde el menú lo pide un ' +
+      'prompt; por API entra por parámetro — una línea por reunión.');
+  }
+  var ui = ui_();
+  var resultado = cargarTemarioReuniones_(texto);
   if (!resultado.ok) {
     ui.alert('No se pudo cargar', resultado.motivo, ui.ButtonSet.OK);
-    return;
+    return ui.texto();
   }
 
   ui.alert(
@@ -178,4 +183,22 @@ function menuCargarTemarioReuniones_() {
       '\n\nNinguna quedó con mostrar=sí: confirmá a mano cuáles entran al informe.',
     ui.ButtonSet.OK
   );
+  return ui.texto();
+}
+
+/**
+ * Envoltorio de menú: consigue el texto con el `prompt` y delega. Con planilla se
+ * comporta igual que siempre; sin planilla no se llega acá (el ítem de menú no
+ * existe sobre HTTP) y quien quiera correrlo por API llama a `cargarTemario(texto)`.
+ */
+function menuCargarTemarioReuniones_() {
+  var ui = ui_();
+  var respuesta = ui.prompt(
+    'Cargar temario de reuniones',
+    'Pegá el texto del temario (una línea por reunión). Se agrega a REUNIONES con mostrar vacío — confirmás cada una a mano.',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (respuesta.getSelectedButton() !== ui.Button.OK) return;
+
+  return cargarTemario(respuesta.getResponseText());
 }

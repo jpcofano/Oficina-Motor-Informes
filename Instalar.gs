@@ -349,7 +349,10 @@ function formatearResumenInstalacion_(r) {
 
 function instalar() {
   var resultado = aplicarInstalacion_();
-  SpreadsheetApp.getUi().alert('Instalación completa', formatearResumenInstalacion_(resultado), SpreadsheetApp.getUi().ButtonSet.OK);
+  var ui = ui_();
+  var texto = formatearResumenInstalacion_(resultado);
+  ui.alert('Instalación completa', texto, ui.ButtonSet.OK);
+  return texto;
 }
 
 /**
@@ -1266,7 +1269,7 @@ function formatearResumenClasificacionSolapas_(r) {
 }
 
 function sembrarClasificacionSolapas() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = aplicarClasificacionSolapas_();
   if (!resultado.ok) {
     ui.alert('No se pudo sembrar', resultado.motivo, ui.ButtonSet.OK);
@@ -1340,7 +1343,10 @@ function formatearResumenSeedConfiguracion_(r) {
 
 function seedConfiguracion() {
   var resultado = aplicarSeedConfiguracion_();
-  SpreadsheetApp.getUi().alert('Config inicial cargada', formatearResumenSeedConfiguracion_(resultado), SpreadsheetApp.getUi().ButtonSet.OK);
+  var ui = ui_();
+  var texto = formatearResumenSeedConfiguracion_(resultado);
+  ui.alert('Config inicial cargada', texto, ui.ButtonSet.OK);
+  return texto;
 }
 
 /**
@@ -1659,7 +1665,7 @@ function diagnosticarCarpetaPlantillas_(folderId) {
 }
 
 function menuDiagnosticarCarpetaPlantillas_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var folderId = leerConfig().carpeta_plantillas;
 
   if (!folderId) {
@@ -1684,7 +1690,7 @@ function menuDiagnosticarCarpetaPlantillas_() {
 }
 
 function menuRegistrarPlantillas_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var folderId = leerConfig().carpeta_plantillas;
 
   if (!folderId) {
@@ -1879,7 +1885,7 @@ function sembrarSecciones_(hoja) {
 }
 
 function menuSembrarSecciones_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SECCIONES');
   if (!hoja) {
     ui.alert('No se pudo sembrar', 'La hoja SECCIONES no existe. Corré "Instalar / reparar hojas" primero.', ui.ButtonSet.OK);
@@ -1906,7 +1912,7 @@ function menuSembrarSecciones_() {
  * puntero a esa hoja.
  */
 function menuAplicarConfiguracion_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
 
   var resultadoInstalar = aplicarInstalacion_();
   var resultadoSeed = aplicarSeedConfiguracion_();
@@ -1947,6 +1953,7 @@ function menuAplicarConfiguracion_() {
     '\n\nQué se auditó y qué no: bloque ALCANCE, arriba en esa misma hoja.';
 
   ui.alert('Aplicar configuración', resumen, ui.ButtonSet.OK);
+  return resumen; // Paso 2.14: por API el reporte va en el retorno, no en la pantalla
 }
 
 /**
@@ -2139,7 +2146,7 @@ function escribirDiffConfiguracion_(filas, nombreHoja, ejecutadoPor, filasAlcanc
  */
 function menuEstadoConfiguracion_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
 
   var filas = [];
   var lineasResumen = [];
@@ -2282,13 +2289,12 @@ function menuEstadoConfiguracion_() {
   });
   escribirDiffConfiguracion_(filas, 'ESTADO_CONFIGURACION', 'menuEstadoConfiguracion_', filasAlcanceEstado);
 
-  ui.alert(
-    'Estado de configuración',
-    lineasResumen.join('\n') +
-      (filas.length
-        ? '\n\nDetalle completo en la hoja ESTADO_CONFIGURACION.'
-        : '\n\n✅ Sin discrepancias entre el código y la planilla.') +
-      '\n\nQué se auditó y qué no: bloque ALCANCE, arriba en esa misma hoja.',
-    ui.ButtonSet.OK
-  );
+  var resumen = lineasResumen.join('\n') +
+    (filas.length
+      ? '\n\nDetalle completo en la hoja ESTADO_CONFIGURACION.'
+      : '\n\n✅ Sin discrepancias entre el código y la planilla.') +
+    '\n\nQué se auditó y qué no: bloque ALCANCE, arriba en esa misma hoja.';
+
+  ui.alert('Estado de configuración', resumen, ui.ButtonSet.OK);
+  return resumen; // Paso 2.14: por API el reporte va en el retorno, no en la pantalla
 }

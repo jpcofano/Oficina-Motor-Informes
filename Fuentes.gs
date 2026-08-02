@@ -125,10 +125,12 @@ function diagnosticoBases_() {
 }
 
 function probarConexionBases() {
+  // Paso 2.14 — era el único caso protegido a mano (Paso 1.8) y pasa a `ui_()`, que
+  // hace lo mismo y además anota el texto en `UI_DICHO_`. El retorno no cambia:
+  // sigue siendo el resumen pelado, que es lo que verifica la prueba nº 3 del 1.8.
   var resumen = diagnosticoBases_().join('\n');
-  if (hayUi_()) {
-    SpreadsheetApp.getUi().alert('Prueba de conexión a bases', resumen, SpreadsheetApp.getUi().ButtonSet.OK);
-  }
+  var ui = ui_();
+  ui.alert('Prueba de conexión a bases', resumen, ui.ButtonSet.OK);
   return resumen;
 }
 
@@ -522,7 +524,7 @@ function sufijoCobertura_(cobertura) {
 }
 
 function menuProbarLectura_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = probarLecturaPeriodo();
 
   if (!resultado.ventana.ok) {

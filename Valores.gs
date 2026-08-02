@@ -192,7 +192,7 @@ function leerDivergenciasPendientes_() {
 }
 
 function menuRevisarDivergenciasValores_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var pendientes = leerDivergenciasPendientes_();
 
   if (!pendientes.length) {

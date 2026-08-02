@@ -360,6 +360,6 @@ function correrPruebasDiff_() {
 }
 
 function menuCorrerPruebasDiff_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   ui.alert('Pruebas del diff de configuración', correrPruebasDiff_(), ui.ButtonSet.OK);
 }

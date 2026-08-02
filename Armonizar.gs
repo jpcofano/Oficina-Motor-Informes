@@ -445,7 +445,7 @@ function corregirCajasPresentacion_(informeId, presentacion) {
 }
 
 function menuArmonizarPlantillas_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var reporte = armonizarPlantillas();
 
   if (!reporte.length) {
@@ -588,7 +588,7 @@ function contarTokensDistintos_(presentacion) {
 }
 
 function menuInventarioPlantillas_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var reporte = inventarioPlantillas();
 
   if (!reporte.length) {
@@ -678,7 +678,7 @@ function repuntarPlantillaCanonicaJM_() {
 }
 
 function menuRepuntarPlantillaCanonicaJM_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = repuntarPlantillaCanonicaJM_();
 
   if (!resultado.ok) {

@@ -218,7 +218,7 @@ function validarMapeo() {
 }
 
 function menuValidarMapeo_() {
-  var ui = SpreadsheetApp.getUi();
+  var ui = ui_();
   var resultado = validarMapeo();
 
   if (!resultado.ok) {
