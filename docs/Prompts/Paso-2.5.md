@@ -36,24 +36,31 @@ filas de tokens que todavía pueden cambiar de nombre, y deshacerlo es a mano, f
 vacíos. Verificar contra la planilla viva si la hoja los tiene cargados. Sin `plantilla_id`
 no hay de dónde leer tokens.
 
-**0.3 · El choque con el `Paso-2.13`. Es la decisión que bloquea, y es del usuario.**
+**0.3 · El choque con el `Paso-2.13` — ✅ RESUELTO el 02/08/2026. Ganan las plantillas.**
 
-`Paso-2.13` propone `SEED_MARCADORES_` — un arreglo en código como fuente de las filas de
-`MARCADORES`. Este paso propone sembrarlas **desde las plantillas**. Son dos dueños para la
-misma hoja: exactamente el problema que `ESCRITORES.md` existe para evitar, esta vez antes
-de que ocurra en vez de después.
+**Decidido en `docs/PLAN.md` `D-17`.** Este paso ya no está bloqueado y el `Paso-2.13`
+tiene su Parte 1 sin efecto: **`SEED_MARCADORES_` no se hace.**
 
-Lo que hay que pesar, sin decidirlo acá:
+El planteo se conserva entero, porque es el argumento que va a hacer falta si alguien lo
+reabre —y porque el caso vale por sí mismo: fue la única vez que se vieron **dos dueños para
+la misma hoja antes** de que ocurriera, en vez de descubrirlos después con un censo.
 
-- A favor de las plantillas: **la plantilla ya es la fuente de verdad de qué tokens
-  existen.** Con `SEED_MARCADORES_` en código, agregar un informe exige editar `.gs`, que es
-  lo contrario de `D-01`. Con este paso, un informe nuevo es plantilla nueva más correr el
-  helper.
-- A favor del seed en código: da idempotencia y diff auditable, que es lo que
-  `Paso-2.11 C.2` costó tres corridas de protocolo conseguir para las otras hojas.
+`Paso-2.13` proponía `SEED_MARCADORES_` — un arreglo en código como fuente de las filas de
+`MARCADORES`. Este paso las siembra **desde las plantillas**. Lo que se pesó:
 
-**Reportar la tensión, no resolverla.** El resto de este prompt asume que ganan las
-plantillas; si gana el seed, este paso cambia de forma y hay que reescribirlo.
+- **A favor de las plantillas — ganó.** La plantilla **ya es** la fuente de verdad de qué
+  tokens existen: si un token no está en la lámina, no hay nada que reemplazar. Con
+  `SEED_MARCADORES_` en código, agregar un informe exige editar un `.gs`, que es exactamente
+  el número que `D-01` mide y quiere bajar. Y un seed sería una segunda copia de un dato que
+  ya vive en otro lado, con el ciclo de divergencia de siempre.
+- **A favor del seed en código — no alcanzó.** Su fuerza era la idempotencia y el diff
+  auditable, que `Paso-2.11 C.2` costó tres corridas de protocolo conseguir para las otras
+  hojas. **Pero la idempotencia acá no la da el seed: la da `upsertSoloVacias_`**, que sólo
+  completa celdas vacías y nunca pisa lo que una persona configuró. Con eso el argumento
+  queda cubierto sin pagar el costo de `D-01`.
+
+**Qué queda por hacer en esta parte 0.3:** nada. Se deja escrito para no volver a discutirlo
+sin evidencia nueva.
 
 **0.4 · Reportar y parar.**
 

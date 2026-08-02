@@ -1330,3 +1330,36 @@ nadie más.
     investigación —se llegó a verificar la sintaxis de los 21 `.gs`, que parsean bien— antes
     de ver que era del lado de Google. Anotado en el `RUNBOOK` junto al caso del Bearer
     vencido, con el atajo para descartar el código en un segundo.
+
+## D-17 — el dueño de `MARCADORES` es la plantilla (2026-08-02) — commit de esta entrada
+- **Qué se decidió:** las filas de `MARCADORES` se siembran leyendo los `{{token}}` de las
+  plantillas de Slides (`sembrarMarcadoresDesdePlantillas` + `upsertSoloVacias_`,
+  `Paso-2.5`). **`SEED_MARCADORES_` no se hace.** Decisión del usuario.
+- **La razón, que es `D-01` en su forma más directa:** con el seed en código, agregar un
+  informe exige editar un `.gs` — el número que `D-01` mide y quiere bajar. La plantilla
+  **ya es** la fuente de verdad de qué tokens existen: si un token no está en la lámina, no
+  hay nada que reemplazar. Un seed sería una segunda copia de un dato que ya vive en otro
+  lado. **El contraargumento fuerte del seed —idempotencia y diff auditable, que la C.2
+  costó tres corridas de protocolo— queda cubierto sin él:** la idempotencia la da
+  `upsertSoloVacias_`, que sólo completa celdas vacías y nunca pisa lo configurado a mano.
+- **Qué se escribió:**
+  - **`docs/PLAN.md` §1 — `D-17`**, citando `D-01` y el `P1` que cierra. Verificado antes de
+    asignarlo que el número estuviera libre (`D-16` era el último, cero menciones de `D-17`
+    en el repo) — la advertencia del propio §1 aplicada a sí misma.
+  - **`docs/Prompts/Paso-2.13`** — la fila de su cuadro pasa a "sembrado desde las plantillas
+    (`Paso-2.5`)", con nota fechada: la Parte 1 queda sin efecto, **el resto del prompt sigue
+    vivo**. Se corrige **en el lugar** por no haber corrido nunca (`DOC-7`). Se deja anotado
+    qué de esa Parte 1 sí sobrevive: el hallazgo `H-6` (tres filas contra 43 trazas) y la
+    tarea de exportar la hoja a `docs/_snapshots/` antes de que nada la escriba — sigue
+    siendo la primera tarea, sólo que ahora el escritor es el 2.5.
+  - **`docs/Prompts/Paso-2.5` §0.3** — la tensión queda **resuelta, no borrada**: el planteo
+    completo y los dos argumentos se conservan, con cuál ganó y por qué. Es lo que va a hacer
+    falta si alguien la reabre, y el caso vale por sí mismo — fue la única vez que se vieron
+    dos dueños para la misma hoja **antes** de que ocurriera, en vez de descubrirlos después
+    con un censo.
+  - **`docs/PENDIENTES_consistencia.md`** — el `P1` tachado, con puntero a `D-17`.
+- **Prueba:** no hay código. Verificado que no queda ninguna referencia contradictoria: las
+  siete menciones restantes a `SEED_MARCADORES_` son históricas (bitácora, prompts
+  congelados) o son la decisión misma.
+- **Pendientes/decisiones:** **`Paso-2.5` y `Paso-2.13` quedan desbloqueados**, los dos. El
+  orden entre ellos no está decidido y no es de esta entrada.

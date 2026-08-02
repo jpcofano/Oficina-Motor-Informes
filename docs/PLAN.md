@@ -201,6 +201,25 @@ Tres piezas, y la tercera es la que hay que resolver:
    qué pasa cuando alguien puede ver un informe pero no la base de la que sale. **No hay
    solución elegida — es trabajo de diseño, no de implementación.**
 
+**`D-17` — El dueño de `MARCADORES` es la plantilla, no el código.**
+Las filas se siembran leyendo los `{{token}}` de las plantillas de Slides
+(`sembrarMarcadoresDesdePlantillas` + `upsertSoloVacias_`, `Paso-2.5`). **`SEED_MARCADORES_`
+no se hace**, y con eso se cierra la Parte 1 del `Paso-2.13`.
+
+**Por qué, y es `D-01` en su forma más directa:** con el seed en código, agregar un informe
+exige editar un `.gs`. Ese es exactamente el número que `D-01` mide y quiere bajar, y acá se
+podía evitar antes de contraerlo. La plantilla **ya es** la fuente de verdad de qué tokens
+existen —si un token no está en la lámina no hay nada que reemplazar—, así que un seed en
+código sería una segunda copia de un dato que ya vive en otro lado, con el ciclo de
+divergencia que este proyecto conoce de memoria.
+
+**La idempotencia no se pierde:** la da `upsertSoloVacias_`, que sólo completa celdas
+vacías y nunca pisa lo que una persona configuró. Era el argumento fuerte a favor del seed
+—"el seed es reproducible"— y queda cubierto sin el seed.
+
+Cierra el `P1` de `docs/PENDIENTES_consistencia.md` sobre los dos dueños de `MARCADORES`,
+que era el bloqueo del `Paso-2.5` y del `Paso-2.13`.
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)

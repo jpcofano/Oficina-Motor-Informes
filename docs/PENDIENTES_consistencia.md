@@ -559,7 +559,7 @@ Plantillas y deck comentado: alcanza con poner los IDs de Drive al lado del nomb
 (`1JrHvs_p…` JM · `1_ZKjWhL…` SECCO · `1yIlCIBG…` comentado) — no es un error, solo falta
 la referencia.
 
-### P1 · `Paso-2.5` y `Paso-2.13` proponen dos dueños para `MARCADORES`
+### ~~P1 · `Paso-2.5` y `Paso-2.13` proponen dos dueños para `MARCADORES`~~ — CERRADO (02/08/2026)
 
 **Reemplaza al P2 "`Paso-2.5.md` se pisa con `Paso-3-v2.md`" (02/08/2026).** Los dos puntos
 que tenía —que la tabla de columnas usaba `calculo` en vez de `operacion` y no sembraba
@@ -581,9 +581,14 @@ evitar, y esta vez se ve **antes** de que ocurra, no después. Hoy `MARCADORES` 
 ningún escritor de contenido (confirmado por el censo del `AUD-3`), así que el que corra
 primero define el contrato.
 
-**Es decisión del usuario y bloquea a los dos.** La Parte 0 del `Paso-2.5` la plantea sin
-resolverla, con los argumentos de cada lado; ninguno de los dos prompts puede correr hasta
-que esté tomada.
+**Resuelto: gana la plantilla** (`docs/PLAN.md` `D-17`, 02/08/2026). Las filas se siembran
+leyendo los `{{token}}` de los Slides (`Paso-2.5`); **`SEED_MARCADORES_` no se hace** y la
+Parte 1 del `Paso-2.13` queda sin efecto, anotada en ese mismo archivo. Con el seed en
+código, agregar un informe exigía editar un `.gs` — el número que `D-01` mide. La
+idempotencia, que era el argumento a favor del seed, la da `upsertSoloVacias_`.
+
+Los dos prompts quedan **desbloqueados**. El argumento completo se conserva en el §0.3 del
+`Paso-2.5`, no se borró: es lo que va a hacer falta si alguien reabre la discusión.
 
 ### P2 · Contadores que no cierran
 

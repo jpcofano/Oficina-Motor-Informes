@@ -22,13 +22,28 @@ uno de ellos no existe.
 | dónde está cada base | `BASES` | `SEED_BASES_` |
 | qué solapas hay y para qué sirven | `SOLAPAS` | `SEED_SOLAPAS_` |
 | `campo_logico` → columna | `MAPEO` | `SEED_MAPEO_` (113 filas) |
-| **token → base, solapa, campo, operación** | **`MARCADORES`** | **`SEED_MARCADORES_` — no existe** |
+| **token → base, solapa, campo, operación** | **`MARCADORES`** | **sembrado desde las plantillas (`Paso-2.5`)** — ver nota |
 | **nombre canónico del token** | **`docs/TOKENS.md`** | prosa, normativo sólo para nombres |
 | **valor verificado del token** | **`casos_validacion_2026-07-31.csv`** → hoja `VALIDACION` | ancla de corrección |
 | secciones de cada informe | `SECCIONES` | `SEED_SECCIONES_` |
 | qué campañas entran | `CAMPANAS` | curado a mano |
 
 A archivo: `docs/MAPEO_completo.md`.
+
+> ⚠ **Nota del 02/08/2026 — la Parte 1 de este prompt queda sin efecto. `SEED_MARCADORES_`
+> no se hace.** Este documento nunca se ejecutó, así que se corrige **en el lugar** y no por
+> addendum (`DOC-7`); el resto del prompt sigue vivo tal cual.
+>
+> Decidido en `docs/PLAN.md` `D-17`: **el dueño de `MARCADORES` es la plantilla**, y las
+> filas se siembran leyendo los `{{token}}` de los Slides (`Paso-2.5`). Un seed en código
+> haría que agregar un informe exija editar un `.gs`, que es el número que `D-01` mide; y
+> sería una segunda copia de un dato que ya vive en la lámina. La idempotencia, que era el
+> argumento a favor del seed, la da `upsertSoloVacias_`.
+>
+> **Lo que sigue en pie de la Parte 1** y hay que llevarse a donde corresponda: el hallazgo
+> de que `MARCADORES` tiene tres filas contra las 43 trazas del CSV (`H-6`), y la tarea de
+> exportar la hoja a `docs/_snapshots/` **antes** de que nada la escriba — sigue siendo la
+> primera tarea, sólo que ahora el escritor es el `Paso-2.5` y no un seed.
 
 ---
 
