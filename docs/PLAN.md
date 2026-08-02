@@ -17,7 +17,7 @@
 >
 > La prueba para saber en cuál va algo: **si no podés decir qué lo desbloquea, es backlog.**
 
-### Dos notas de método, antes de escribir acá
+### Tres notas de método, antes de escribir acá
 
 **1 · Las cifras que aporta claude.ai desde afuera del repo son estimaciones hasta que un
 script las reproduzca.** Casos: 18 huérfanas eran **20**, ~8.100 líneas eran **8.410**, ~34
@@ -31,6 +31,14 @@ de escribirla.** La advertencia de greppear el prefijo (§1) cubre **asignar** u
 `D-09`→`R-02` (era `R-04`), los dos en el texto de origen de la Parte C — y el segundo,
 un commit después de que la Parte B cerrara las otras tres apariciones de esa misma
 numeración vieja.
+
+**3 · Una nota nunca nombra un ID que todavía no se asignó.** Escribir "sería un `D-15` que
+cite a ésta" promete que ese número va a seguir libre hasta que alguien lo necesite para
+eso. No lo estuvo ni un día: la nota bajo `D-02` lo escribió el 02/08/2026 y `D-15` se
+asignó esa misma tarde a la autenticación del panel, que no supersede nada. Un ID futuro se
+nombra por lo que sería —"una decisión nueva que cite a ésta"— y recién lleva número cuando
+se escribe. Cubre el hueco entre las otras dos: la nota 2 cubre **citar** un ID existente y
+`§1` cubre **asignar** uno nuevo; ninguna cubría **anunciar** uno.
 
 ---
 
@@ -66,7 +74,12 @@ son de terceros, así que el pedido tiene demora y arranca ya.
 > comparten sin depender de nadie. Lo que se decide en `D-02` —qué cuenta ejecuta y qué
 > cuenta es dueña— sigue igual; lo que se cae es que el acceso sea un bloqueo externo. Se
 > corrige con nota y no editando el texto, que es el criterio de `D-NN`: una decisión no se
-> reescribe. Si además hiciera falta cambiar *la decisión*, sería un `D-15` que cite a ésta.
+> reescribe. Si además hiciera falta cambiar *la decisión*, haría falta una decisión nueva
+> que cite a ésta.
+>
+> *(Addendum 02/08/2026, mismo día: esta nota decía "sería un `D-15` que cite a ésta". `D-15`
+> se asignó horas después a la autenticación del panel, que no supersede nada. Nombrar un ID
+> futuro es prometer que va a seguir libre — ver la nota de método 3 del encabezado.)*
 
 **`D-03` — Reportes es dueño de todo lo que un humano abre.**
 Plantillas (ya lo es) y salidas. `carpeta_salida` apunta hoy a una carpeta de
@@ -148,6 +161,38 @@ automatización.
 > las otras tres las cerró la Parte B de este mismo prompt. Se escriben acá los IDs del
 > canon; el enunciado de las decisiones no cambió.
 
+**`D-15` — El panel se despliega como "ejecuta el usuario que accede".**
+La web app de `D-04` va con *Ejecutar como: el usuario que accede* y acceso a cualquiera
+con cuenta de Google. Google exige login antes de que corra el código, así que
+`Session.getActiveUser().getEmail()` devuelve identidad confiable y se filtra contra lista
+blanca. De las tres opciones evaluadas es la única que combina **identidad con lista
+blanca**: con *ejecutar como: yo* sobre cuentas Gmail personales, `getActiveUser()` suele
+volver vacío y el filtro deja de servir. Consistente con `D-02` —el motor corre con la
+identidad de quien lo dispara, que es por qué las bases se comparten con
+`reporteseinformesgcba`— y **acoplada** a ella: si alguna vez se pasara a *ejecutar como:
+yo*, las bases dejarían de necesitar compartirse y `D-02` cambiaría de sentido. No son
+decisiones independientes.
+**Verificación pendiente antes de escribir el panel:** desplegar y confirmar qué devuelve
+`getActiveUser()` entrando desde reportes. Si volviera vacío, `D-15` se revisa antes de
+construir nada.
+
+**`D-16` — Cada usuario accede sólo a sus informes y a sus datos.**
+Distintos grupos ven distintas selecciones de informes desde la **misma** web app: el
+permiso es por informe, no por URL — URLs distintas por grupo serían apps que divergen.
+Tres piezas, y la tercera es la que hay que resolver:
+1. La lista de accesos sale de una **hoja**, no del código. Hoy `API_AUTORIZADOS_` está
+   cableada en `Api.gs:29` y editarla exige tocar `.gs`, que es lo contrario de `D-01`. Va
+   a una hoja (mail × `informe_id` × rol) que el motor lee como lee el resto.
+2. El panel filtra qué informes ofrece según esa hoja.
+3. **Sin resolver — el acceso al dato, no al panel.** Filtrar la selección del panel no
+   alcanza: un informe generado es un archivo de Slides con permisos propios de Drive, y
+   las bases son planillas con los suyos. Si el usuario abre el deck directo, o si el motor
+   corre con su identidad (`D-15`) y necesita leer bases que él no debería ver, el control
+   del panel no interviene. Hay que definir cómo se sostiene la restricción end-to-end:
+   quién comparte cada salida y con quién, si el motor lo hace según la hoja de accesos, y
+   qué pasa cuando alguien puede ver un informe pero no la base de la que sale. **No hay
+   solución elegida — es trabajo de diseño, no de implementación.**
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
@@ -201,6 +246,7 @@ Cada ítem nombra **qué lo destraba y de quién depende**.
 | Qué regla selecciona los envíos de M2 dentro de la ventana | no es la marca `M2` ni la fecha; si es curaduría manual, hace falta registro a nivel `ID MailUp` | equipo |
 | La lámina dice 18 envíos y 11 campañas; el número sale de 10 envíos y 3 campañas | preguntar quién armó la lámina | equipo |
 | Etapa 2: actualizar el deck en sitio (`D-06`) | el mapa `token → objectId` de la etapa 1, más decidir qué hace el motor cuando una caja registrada ya no está | interno |
+| `D-16` · acceso por usuario a informes y datos | resolver la pieza 3: cómo se sostiene la restricción sobre archivos de Drive y bases, no sólo sobre el panel. Requiere el panel construido (`D-04`) para probar contra algo real | interno |
 
 Nota: los tokens de MiBA ya están marcados en las plantillas, así que en cuanto corra el
 Paso 4 van a emitir `«FALTA:miba_*»` en `FALTANTES` en cada corrida. **Lo postergado se
