@@ -61,6 +61,13 @@ quien toca el menú, así que `reporteseinformesgcba` necesita lectura sobre las
 bases. Hoy la cuenta que pasa esa barrera es `jpcofanogcba1` (`BITACORA.md:708`). Dos bases
 son de terceros, así que el pedido tiene demora y arranca ya.
 
+> **Premisa corregida (02/08/2026), la decisión no cambia.** *"Dos bases son de terceros,
+> así que el pedido tiene demora"* es falso: **las cuatro son cuentas del usuario** y se
+> comparten sin depender de nadie. Lo que se decide en `D-02` —qué cuenta ejecuta y qué
+> cuenta es dueña— sigue igual; lo que se cae es que el acceso sea un bloqueo externo. Se
+> corrige con nota y no editando el texto, que es el criterio de `D-NN`: una decisión no se
+> reescribe. Si además hiciera falta cambiar *la decisión*, sería un `D-15` que cite a ésta.
+
 **`D-03` — Reportes es dueño de todo lo que un humano abre.**
 Plantillas (ya lo es) y salidas. `carpeta_salida` apunta hoy a una carpeta de
 `jpcofanogcba1` y está sin usar: se repunta antes de que el Paso 4 genere el primer deck.
@@ -146,8 +153,9 @@ automatización.
 ## 2 · Próximo (ordenado, con dependencias)
 
 1. **Tramo 1 — cerrar configuración.** Sale cuando el diff da cero ruido.
-   - Pedir acceso de `reporteseinformesgcba` a las cuatro bases (`D-02`) — **arranca ya**,
-     depende de terceros.
+   - Dar acceso de lectura a `reporteseinformesgcba` sobre las cuatro bases (`D-02`).
+     **No depende de terceros**: las cuatro son cuentas del usuario y se comparten sin
+     pedirle permiso a nadie (corregido el 02/08/2026 — ver la nota bajo `D-02`).
    - Abrir el P1 del tercer escritor de `MAPEO` (`consolidarMapeoLooker_`,
      `Solapas.gs:455-456`), que además escribe `BASES.hoja_default` y seis celdas de
      `SOLAPAS` desde un ítem de menú.
