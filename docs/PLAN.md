@@ -17,6 +17,21 @@
 >
 > La prueba para saber en cuál va algo: **si no podés decir qué lo desbloquea, es backlog.**
 
+### Dos notas de método, antes de escribir acá
+
+**1 · Las cifras que aporta claude.ai desde afuera del repo son estimaciones hasta que un
+script las reproduzca.** Casos: 18 huérfanas eran **20**, ~8.100 líneas eran **8.410**, ~34
+ítems de menú eran **36**, 37 `getUi()` eran **40**, ~20 citas en `BITACORA.md` eran **34**.
+Ninguna estuvo mal por mucho: estuvieron **presentadas con más precisión de la que tenían**.
+Una cifra con tilde de aproximación se puede usar; una redonda que se lee como medida, no.
+
+**2 · Toda cita a un `D-`, `R-`, `S-` o `archivo:línea` se verifica contra el destino antes
+de escribirla.** La advertencia de greppear el prefijo (§1) cubre **asignar** un ID nuevo;
+ésta cubre el otro lado, que es **citar** uno existente. Casos: `D-05`→`D-09` (era `D-11`) y
+`D-09`→`R-02` (era `R-04`), los dos en el texto de origen de la Parte C — y el segundo,
+un commit después de que la Parte B cerrara las otras tres apariciones de esa misma
+numeración vieja.
+
 ---
 
 ## 1 · Decisiones de arquitectura
@@ -25,7 +40,8 @@ IDs `D-NN`, **estables, nunca se reutilizan**. Una decisión no se edita: se **s
 con una nueva que la cita. Mismo criterio que `R-` de `docs/REGLAS_NEGOCIO.md` y `S-` de
 `docs/SUPUESTOS.md` — y misma advertencia: antes de asignar un `D-NN` nuevo, greppear el
 prefijo en todo el repo, que es exactamente lo que no se hizo con los `R-` y costó tres
-notas de equivalencia (`REGLAS_NEGOCIO.md`, nota de renumeración).
+notas de equivalencia (`REGLAS_NEGOCIO.md`, nota de renumeración). Para **citar** un ID ya
+existente, ver la nota de método 2 del encabezado.
 
 **`D-01` — La extensibilidad es una métrica, no una puerta.**
 El objetivo final es agregar un informe o una base sin tocar `.gs`. No es criterio de
