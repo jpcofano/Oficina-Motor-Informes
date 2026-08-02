@@ -894,3 +894,69 @@ nadie más.
   - **El Paso 1.8 sigue sin su ✅**: el chequeo pedido lo confirma — `fd58902` no trae
     ningún cierre del 1.8 (su entrada de bitácora es de `4fa54f5` y dice "las cuatro de
     aceptación no corrieron"; nada posterior registra que hayan corrido como tales).
+
+## DOC-6 — Una sola fuente de verdad: catálogo, plan y decisiones (2026-08-01) — commits `0185cb7`, `b1e8885`, `97fea9e`, `777c83b`, `760947d`
+- **Qué pedía el prompt:** `docs/Prompts/DOC-6_plan_y_fuente_unica.md`. Sacar el plan del
+  `§6` del handoff de claude.ai —el artefacto más volátil del repo— y ponerlo en un archivo
+  propio; deduplicar reglas **borrando una, no sincronizando dos**; y congelar
+  `PROYECTO.md`. Cero código. Un commit por parte, con parada y aviso entre cada una.
+- **Qué se hizo, parte por parte:**
+  - **A · censo (sólo lectura, sin commit).** 83 `.md` fuera de `_archivo/` y
+    `docs/Sesiones/`, 13 vivos. **Catorce enunciados normativos duplicados**, trece de ellos
+    entre `CLAUDE.md` y `PROYECTO.md` §9. El decimocuarto ("la plantilla es del equipo")
+    estaba en **tres** archivos. La causa raíz quedó identificada en el propio censo: `§3`
+    de `CLAUDE.md` **obligaba** a registrar cada documento nuevo en dos índices.
+  - **B · IDs `R-` (`0185cb7`).** El prompt decía que la numeración vieja quedaba en un
+    archivo; son **tres**. `Paso-2.10_anclar` (nota general), `Paso-2.10_PartesBC`
+    (**nota acotada a las líneas 23 y 97** — el resto del archivo ya cita el canon porque es
+    el que diagnosticó la colisión, y una nota general habría sido falsa) y
+    `VALIDACION_2026-07-31` (congelado pero no es un prompt; decisión del usuario).
+    `REGLAS_NEGOCIO.md` se declara canon y explica la causa. **B.4 sin trabajo:** las 34
+    citas de la bitácora son todas correctas.
+  - **C · `docs/PLAN.md` (`b1e8885` + `97fea9e`).** Archivo nuevo y único del prompt: 14
+    decisiones `D-NN`, Próximo/Bloqueado/Backlog, con la frontera y la prueba escritas
+    (*si no podés decir qué lo desbloquea, es backlog*). Addendum con dos notas de método.
+  - **D · `CLAUDE.md` (`777c83b`).** §9 nueva (10 líneas), mapa del repo, filas de dueño, y
+    **§3 deja de exigir el doble registro**: §7 es el único índice.
+  - **E · congelar `PROYECTO.md` (`760947d`).** Encabezado con tabla sección por sección de
+    adónde fue cada cosa, §9 vaciada con el mapa de sus trece duplicados.
+- **Prueba:** no hay protocolo posible —es documentación—, así que el criterio fue el
+  censo mismo: `grep` reproducible por enunciado, y verificación de **cada** cita contra su
+  destino. Verificado antes de commitear: `BITACORA.md:708` e `Instalar.gs:1965` (las dos
+  citas a línea de `D-02`/`D-08`) son exactas; `CONFIG_INFORMES.md:175` ya era dueño de la
+  precedencia de merge, así que la de `PROYECTO.md` §5 era duplicado y no pérdida.
+  `git status` limpio al cerrar cada parte; **un solo `.md` nuevo en todo el prompt**.
+  `wc -l CLAUDE.md`: 225 → **275**.
+- **Pendientes/decisiones:**
+  - **La Parte E era ruteo, no borrado.** Congelar `PROYECTO.md` dejaba **cinco rutas vivas
+    de `CLAUDE.md`** apuntando a un documento que ya no acepta escritura, y **dos eran filas
+    de dueño**: "¿arquitectura, esquema, decisión estructural?" y "¿convención de proceso o
+    aprendizaje?" se quedaban **sin dueño**. Decisión del usuario: arquitectura →
+    `docs/PLAN.md` §1 como `D-NN`; aprendizaje → `CLAUDE.md`, en la sección donde se aplica
+    (no un depósito aparte). Las otras tres rutas (`:70`, `:78`, `:99`) se cayeron con la
+    primera.
+  - **`PROYECTO.md` §2 no estaba duplicado: estaba al revés.** Decía que ejecuta
+    `jpcofanogcba1` y que `reporteseinformesgcba` es dueña de las bases; `D-02` (escrito el
+    día anterior) lo invierte, y `D-04` descarta la barra lateral que §2 proponía.
+    Congelarlo sin marcar la superseción habría dejado un documento que en seis meses enseña
+    los roles de cuenta al revés. Marcado en el encabezado.
+  - **Tres reglas vivas sin destino, resueltas por el usuario:** las tres capas de
+    resolución de período → `docs/TOKENS.md` §5 (el período se resuelve **por token**); el
+    bloqueante `{{m2_salud_camp}}` y la mejora de `ultima_carga` → `PENDIENTES`; la lección
+    del `getFormulas()` → `CLAUDE.md` §4.
+  - **Cuatro referencias cruzadas del propio prompt estaban mal**, las cuatro verificadas
+    contra su destino: `D-05`→`D-09` (era `D-11`), `D-09`→`R-02` (era `R-04`), y las dos
+    premisas de la Parte B sobre cuántos archivos tenían numeración vieja. La de
+    `D-09`→`R-02` es la **cuarta aparición** de la numeración vieja de `R-04`, escrita un
+    commit después de que la Parte B cerrara las otras tres. De ahí salió la nota de método
+    2 de `PLAN.md`.
+  - **La fila de dueños que el `AUD-3` dejó conflada** ("¿qué debería decir la config?" y
+    "¿quién puede escribirla?" eran la misma fila) se partió en dos en la Parte D. Es un
+    hallazgo, no prolijidad: son preguntas distintas, y las dejó juntas justamente el paso
+    que existía para separar dueños.
+  - **`CLAUDE.md` quedó en 275 líneas**, por encima del ~250 que sugiere la convención. Se
+    decidió no recortar: lo que engordó son invariantes y aprendizajes, o sea contenido de
+    primera clase. Candidato futuro con paso propio: §7, que ya tiene 29 filas.
+  - No se agregó la fila de `PLAN.md` a `PROYECTO.md` §9 aunque `§3` lo exigía al momento
+    del commit: `D.4` retiraba la exigencia y `E` congelaba el archivo dos commits después.
+    Declarado en el momento, no en silencio.

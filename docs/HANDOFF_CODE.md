@@ -3,73 +3,60 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-01 (tarde) · último commit al escribirlo: el de esta entrada
+**Última actualización:** 2026-08-01 (cierre de sesión) · último commit al escribirlo: el de esta entrada
 
 ## Dónde estamos
 
-**AUD-3 ejecutado. C.2-7 cerrado más temprano hoy. Sin nada trabado. Cero cambios en `.gs` pendientes.**
+**`DOC-6` cerrado. El repo tiene por primera vez un plan escrito y un solo índice.**
+Cero cambios en `.gs` en toda la sesión de documentación.
 
-El código está mapeado: `docs/INVENTARIO_CODIGO.md` (congelado — grafo de llamadas,
-huérfanas clasificadas, trabajos y costuras de `Instalar.gs`, menú) y
-`docs/ESCRITORES.md` (**vivo** — contrato de quién escribe cada hoja de registro, con
-matriz regenerable). Los dos con script en `tools/` (`inventario.js`, `escritores.js`):
-si dentro de un mes el mapa parece viejo, se re-corre, no se le cree.
+Antes de hoy el plan vivía en el `§6` del handoff de claude.ai —que se reemplaza cada
+sesión— y las reglas estaban en dos catálogos que había que mantener sincronizados a mano.
+Ahora: **`docs/PLAN.md`** tiene el plan y 14 decisiones `D-NN`, **`CLAUDE.md` §7 es el
+único índice**, y `Plan Inicial/PROYECTO.md` está **congelado** con un mapa de adónde fue
+cada una de sus nueve secciones.
 
-## Lo que el AUD-3 dejó establecido
+## Lo que cambió de lugar hoy — mapa corto
 
-- **20 huérfanas, no 18** — 8 adelantadas (los 5 `op*` del Paso 3, `abrirPanel`,
-  `filasDigitalDeEncuentro`, `parsearPersonas_`) + 6 colgadas (el camino de escritura de
-  `Valores.gs`: el punto de cableado existe — `corteVerticalRetiro2407_` calcula sin
-  registrar) + 6 muertas (instrumentos de consola de casos cerrados). Ninguna borrada:
-  AUD-3 clasifica, no resuelve.
-- **`MAPEO` tiene TRES escritores, no dos**: upsert/`SEED_*`, `promoverFechasElegidas`
-  (`Fechas.gs`) y **`consolidarMapeoLooker_` (`Solapas.gs:455-456`)** — el tercero lo
-  encontró el censo solo, era el control positivo del patrón. También escribe `BASES` y
-  `SOLAPAS`. Regla operativa provisoria en `ESCRITORES.md` §2.1.
-- **`MARCADORES`: nada la siembra y nada la escribe salvo una migración de renombre**
-  (`migrarCalculoAOperacion_`). H-6 confirmado desde el código — insumo directo del 2.13.
-- **`CAMPANAS`: cero escritores** — consistente con "curada a mano".
-- **33 de 36 ítems de menú tocan `getUi()` y son no-invocables por la API**; el único
-  protegido es `probarConexionBases` vía `hayUi_`. Insumo del paso que quiera exponer
-  diagnósticos por `/dev`.
-- Las mediciones externas del punto de partida: exactas en funciones/archivos/duplicados
-  e `Instalar.gs`; las líneas ("~8.100" → 8.410), el menú (~34 → 36) y `getUi` (37 → 40)
-  eran aproximadas. Detalle y conciliación en `INVENTARIO_CODIGO.md` §0.
+| pregunta | dueño ahora |
+|---|---|
+| ¿Qué sigue y en qué orden? ¿Qué decisión estructural está tomada? | `docs/PLAN.md` |
+| ¿Arquitectura, esquema, decisión estructural? | `docs/PLAN.md` §1, como `D-NN` |
+| ¿Convención de proceso o aprendizaje? | `CLAUDE.md`, en la sección donde se aplica |
+| ¿Cómo se resuelve el período de un token? | `docs/TOKENS.md` §5 (las tres capas) |
+| ¿Quién puede escribir esta hoja de registro? | `docs/ESCRITORES.md` |
+| ¿Cómo está construido el código? | los scripts de `tools/` re-corridos, no el `.md` |
+| ¿Dónde se registra un `.md` nuevo? | **sólo** `CLAUDE.md` §7 |
 
-## Reglas nuevas de esta sesión
+## Lo que hay que saber antes de tocar algo
 
-- **`CLAUDE.md` §3: grepear antes de pedir una corrección** — la Tarea 1 del AUD-3 pidió
-  corregir tres premisas que no estaban en el archivo; el resultado correcto fue cero
-  ediciones, registrado.
-- `CLAUDE.md` §7: la fila "¿qué debería decir esa configuración?" ya tiene a quién
-  señalar — `SEED_*` (el valor) + `ESCRITORES.md` (el camino).
+- **`PROYECTO.md` §2 está superado y dice lo contrario que el plan.** Al 30/07 decía que
+  ejecuta `jpcofanogcba1`; `D-02` (01/08) dice que ejecuta `reporteseinformesgcba`, que
+  **todavía necesita** que le den lectura sobre las cuatro bases. Está marcado en el
+  encabezado del congelado, pero si alguien cita §2 de memoria, va a citar al revés.
+- **Los `D-NN` no se editan: se superseden.** Una decisión estructural nueva nace como
+  `D-15`, citando la que reemplaza.
+- **`CLAUDE.md` quedó en 275 líneas**, por encima del ~250 sugerido. Decidido no recortar:
+  lo que engordó son invariantes y aprendizajes. Si algún día hay que bajarlo, el candidato
+  es §7 (29 filas) y es un paso propio — recortar una tabla de dueños al pasar es cómo se
+  pierde un dueño sin que nadie se entere.
 
-## Chequeo pendiente que este cierre confirmó
+## Qué sigue — el orden está en `docs/PLAN.md` §2
 
-**El Paso 1.8 no tiene ✅.** Su entrada de bitácora (commit `4fa54f5`) dice "las cuatro
-de aceptación no corrieron" y ningún commit posterior —incluido `fd58902`— registra que
-hayan corrido como tales. La API se usó en serio (5/5 `probar*_`, `bases`), pero las
-cuatro pruebas del Paso 1.8 §7 como protocolo nunca se corrieron. Cerrarlo es una
-corrida de esas cuatro + una línea en la bitácora.
+1. **Cerrar el Paso 1.8** — es el punto 1 del plan. Las cuatro pruebas de aceptación del
+   §7 de su prompt **nunca corrieron como tales**; verificado que `fd58902` no trae ningún
+   cierre. Falta la corrida y el commit con el `✅`.
+2. **Tramo 1 — cerrar configuración.** Siete ítems, con el pedido de acceso de
+   `reporteseinformesgcba` a las cuatro bases arrancando ya porque depende de terceros.
+3. Tramos 2 a 5: corte vertical JM → prueba de motor con SECCO → panel → chequeo previo.
 
-## Qué sigue
+## Abierto, sin cambios en esta sesión
 
-1. **Las cuatro pruebas de aceptación del Paso 1.8 §7** — lo único que le falta a ese
-   paso para su ✅.
-2. **`Paso-2.11` Parte D** — `BASES.fila_encabezado` vestigial (H-2), `Union.gs:36`/`:261`,
-   retirar `reclasificarSolapasM2Invertidas_`, nombres hardcodeados de `Fechas.gs:66` y
-   `Auditoria.gs:348`. El inventario §C ya dice qué comparte cada pieza.
-3. **`Paso-2.11` Parte E** — formalizar el contrato de escritores que `ESCRITORES.md`
-   dejó redactado (el tercero de `MAPEO` incluido).
-4. **`Paso-2.12` Parte 2** — las 17 en `revisar` de `SOLAPAS`; `ESCRITORES.md` §2.2 trae
-   el desglose de las 10 protegidas (8 `uso` donde el humano gana, 2 `notas` donde el
-   seed es mejor).
-5. **`Paso-2.13`** — `SEED_MARCADORES_`; el snapshot está tomado y el censo confirma que
-   hoy nadie escribe esa hoja.
-6. Lo que el usuario anticipó: **DOC-6** para lo que salga de acá en adelante.
+Todo `docs/PENDIENTES_consistencia.md`, que hoy sumó tres entradas migradas del
+`PROYECTO.md` congelado: el bloqueante `{{m2_salud_camp}}` (bloquea armonizar la plantilla
+canónica de JM), la mejora de `ultima_carga` en `CONFIG`, y la pregunta abierta de si
+`looker` ya trae hecho el join que arma `unirDigitalPorCuenta()`.
 
-## P1/P2 abiertos sin cambios
-
-Los tres de C.2-7 (filas huérfanas de `MAPEO` — ahora con el tercer escritor censado —,
-asimetría Estado/Aplicar, `diagnosticoBases_` listando `ignorar`) más el resto de
-`docs/PENDIENTES_consistencia.md`. AUD-3 no arregló ninguno: es sólo lectura.
+Los tres hallazgos que abrió `C.2-7` siguen abiertos, y el `AUD-3` le sumó evidencia al
+primero: `MAPEO` tiene **tres** escritores, no dos — el tercero es
+`consolidarMapeoLooker_` (`Solapas.gs:455-456`), que además escribe `BASES` y `SOLAPAS`.
