@@ -1363,3 +1363,28 @@ nadie más.
   congelados) o son la decisión misma.
 - **Pendientes/decisiones:** **`Paso-2.5` y `Paso-2.13` quedan desbloqueados**, los dos. El
   orden entre ellos no está decidido y no es de esta entrada.
+
+## D-18 — los terceros acceden por el panel, nunca por la planilla de control (2026-08-02) — commit de esta entrada
+- **Qué se decidió:** el motor es invisible para el usuario final. `reporteseinformesgcba`
+  ejecuta y tiene las cuatro bases (`D-02`); cualquier otra persona entra **sólo** por la web
+  app del panel (`D-15`). Lo que se comparte con terceros son **las salidas**: el deck en la
+  carpeta de reportes (`D-03`), compartido según la hoja de accesos (`D-16`), sin acceso a
+  ninguna base.
+- **Razón:** la planilla de control **es** la superficie de configuración — compartirla da
+  edición sobre `BASES`, `MAPEO`, `CONFIG` y el resto. Y no se le puede generar una planilla
+  propia a cada usuario: el script está *bound* a esa planilla y una copia sería un **segundo
+  script que diverge**.
+- **Corolario:** no se copia código a mano a ninguna cuenta. Lo que el panel necesite va al
+  script del motor —versionado con `clasp` y git— y se expone por la web app.
+- **Dónde quedó la cuenta de prueba, y por qué no en `PLAN.md`:** en
+  `docs/ENTORNO.local.md`, que es el dueño de "con qué cuenta" (`CLAUDE.md` §7) y **está
+  fuera de git**. El repo es público y hay un `P0` abierto por datos personales en el
+  historial; meter una dirección nueva en un archivo versionado lo habría agrandado. `D-18`
+  la referencia sin nombrarla. Verificado con `git check-ignore` y con un grep sobre todo lo
+  versionado: la dirección no aparece en ningún archivo que entre al repo.
+- **Prueba:** ninguna todavía — `D-18` deja una **disponible antes del panel**: compartirle un
+  deck de salida a la cuenta de prueba y confirmar que lo abre sin acceso a las bases. Es la
+  mitad de `D-16` que no depende del panel, y se puede correr en cuanto el Paso 4 genere el
+  primer deck.
+- **Pendientes/decisiones:** verificado antes de asignar que `D-18` estuviera libre (`D-17`
+  era el último, cero menciones en el repo) y que las cuatro decisiones que cita existan.

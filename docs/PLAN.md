@@ -220,6 +220,39 @@ vacías y nunca pisa lo que una persona configuró. Era el argumento fuerte a fa
 Cierra el `P1` de `docs/PENDIENTES_consistencia.md` sobre los dos dueños de `MARCADORES`,
 que era el bloqueo del `Paso-2.5` y del `Paso-2.13`.
 
+> **Nota — `upsertSoloVacias_` da idempotencia, no auditabilidad.** Un seed permite un diff
+> contra un **estado declarado**; `upsertSoloVacias_` sólo garantiza **no pisar**. La
+> pregunta *"¿qué debería decir `MARCADORES` hoy?"* se responde con la plantilla, no con una
+> tabla en código — coherente con esta decisión, pero **la auditoría toma otra forma**:
+> re-correr el helper y mirar el reporte de huérfanas, no comparar contra un `SEED_`.
+> Consecuencia a resolver cuando `MARCADORES` tenga filas reales.
+
+**`D-18` — Los terceros acceden por el panel, nunca por la planilla de control.**
+El motor es **invisible** para el usuario final. `reporteseinformesgcba` ejecuta el motor y
+tiene compartidas las cuatro bases (`D-02`); cualquier otra persona accede **únicamente** por
+la web app del panel (`D-15`), nunca abriendo la planilla de control. La cuenta de prueba
+externa está registrada en `docs/ENTORNO.local.md`, que es el dueño de "con qué cuenta"
+(`CLAUDE.md` §7) y vive fuera de git.
+
+**Razón:** la planilla de control **es la superficie de configuración**. Compartirla da acceso
+de edición a `BASES`, `MAPEO`, `CONFIG` y el resto de los registros. Y el motor **no puede
+generarle una planilla de control propia a cada usuario**: el script está *bound* a esa
+planilla, así que una copia sería un **segundo script que diverge** — contra la regla de que
+el código vive en un solo lugar.
+
+**Lo que sí se comparte con terceros son las salidas.** El motor crea el deck en la carpeta
+de reportes (`D-03`) y lo comparte con quien corresponda según la hoja de accesos (`D-16`).
+Un tercero abre su informe **sin tener acceso a ninguna base**.
+
+**Corolario — no se copia código a mano a ninguna cuenta.** Si el panel necesita algo nuevo,
+va al script del motor —versionado con `clasp` y git— y se expone por la web app. Un `.gs`
+copiado a otra cuenta es un **segundo script sin versionar**, que es el mismo problema que
+`D-15`/`D-16` resuelven del lado del acceso.
+
+**Prueba disponible ya, antes del panel:** compartirle un deck de salida a la cuenta de
+prueba y confirmar que lo abre **sin acceso a ninguna base**. Es **la mitad de `D-16` que no
+depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck.
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
