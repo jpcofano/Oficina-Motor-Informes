@@ -1108,3 +1108,38 @@ nadie más.
   - `H-4` sigue abierto y **no era de este paso**: `m2/Cuentas` pasó a `ignorar` y las cinco
     filas de `MAPEO` que la mapean quedan huérfanas. Mapear una solapa que se ignora es una
     inconsistencia distinta de clasificarla.
+
+## Paso 2.12 — cierre: la corrida real (2026-08-02) — commit de esta entrada
+- **Qué faltaba:** la entrada anterior (`f3fbc33` + `b15ec09`) cerró el código con la
+  simulación hecha y decía *"falta la corrida real desde el menú"*. Esto es esa corrida.
+- **Prueba — "Aplicar configuración" ×2, corrida por el usuario:**
+
+  | corrida | resultado |
+  |---|---|
+  | 1ª | `cambiadas: 30` · `agregadas: 0` · `migraciones: 0` · `solo_en_hoja: 7` · **`protegidas (con diferencia): 0`** · `protegidas (sin diferencia): 8` · `sin cambios: no` |
+  | 2ª | todo en cero · `protegidas (con diferencia): 0` · `protegidas (sin diferencia): 8` · `sin cambios: sí` |
+
+  **`protegidas (con diferencia): 0` — el diff quedó sin ruido por primera vez.** El piso
+  que arrastraba desde el Paso 2.11 C.2 (diez líneas, después ocho) llegó a cero: no queda
+  ninguna fila donde el seed quiera algo distinto de lo que hay en la planilla.
+- **Criterio 1 verificado aparte, con evidencia y no por inferencia:** snapshot fresco de
+  `SOLAPAS` después de aplicar → **84 filas, cero en `uso=revisar`** (18 `fuente`, 16
+  `referencia`, 12 `derivada`, 38 `ignorar`), `origen=manual` en 8. Confirmado además que
+  el seed escribió las notas del Grupo A (`digital||Cuentas` y `m2||M2 Directa` con su
+  texto nuevo).
+- **La predicción y la medición no estaban en la misma unidad.** Se predijo `cambiadas: 15`
+  y dio **30**: las mismas 15 filas × 2 columnas (`uso` + `notas`). El resultado es el
+  esperado —no hubo desviación— pero **la predicción contaba filas y el diff cuenta
+  celdas**, y dos números en unidades distintas no se pueden comparar, que es justamente
+  para lo que sirve predecir. Anotado como nota de método 3 en `docs/PLAN.md`.
+- **Pendientes/decisiones:**
+  - **El P2 de las notas de `rdv` ganó su causa raíz, y es más de fondo que las notas.** En
+    las 15 del Grupo A el seed pisó las notas viejas sin resistencia, porque son
+    `origen=seed`; las ocho que quedan mal son sólo las de `rdv` y sólo por ser
+    `origen=manual`. O sea que **`origen` hace dos trabajos a la vez**: *"lo decidió una
+    persona"* (procedencia) y *"el sembrador no lo toca"* (protección). Mientras sean la
+    misma columna, marcar la procedencia obliga a congelar la fila entera y hay que elegir
+    entre nota correcta y protección. Es la raíz común de este P2 y del piso de `looker`
+    que cerró la Parte E. Separar los dos trabajos es un paso propio.
+  - `H-4` sigue abierto: `m2/Cuentas` quedó `ignorar` y las cinco filas de `MAPEO` que la
+    mapean están huérfanas. No era de este paso.

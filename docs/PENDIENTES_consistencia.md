@@ -194,6 +194,24 @@ sembrador, como se hizo con las dos de `looker`. **La segunda opción es la que 
 caso de verdad**, pero es una decisión sobre ocho filas curadas a mano y no era de este
 paso.
 
+**La corrida del 02/08 dejó la causa a la vista, y es más de fondo que las notas.** En las
+15 filas del Grupo A el seed pisó las notas viejas sin ninguna resistencia —
+`digital||Cuentas` pasó de `sin decidir` a la nota del seed— porque son `origen=seed`. Las
+ocho que quedan con notas malas son **sólo** las de `rdv`, y **sólo** por ser
+`origen=manual`.
+
+O sea que **`origen` está haciendo dos trabajos a la vez**:
+
+1. *"esto lo decidió una persona"* — procedencia, que es información;
+2. *"el sembrador no lo toca"* — protección, que es comportamiento.
+
+Mientras sean la misma columna, marcar la procedencia obliga a congelar **toda** la fila, y
+hay que elegir entre **nota correcta** y **protección** — no se pueden tener las dos. Es la
+raíz común de este P2 y del piso de `looker` que cerró el 2.11 Parte E: allá el `manual` era
+vestigial y alcanzó con sacarlo; acá es genuino y no se puede. La salida de fondo es separar
+los dos trabajos (una columna que diga quién decidió, otra que diga qué columnas se
+protegen), y eso es un paso propio, no un arreglo al pasar.
+
 ### P1 · Bloqueante de la armonización: la caja `{{m2_salud_camp}}` huérfana
 
 **Movido acá el 01/08/2026 (`DOC-6` Parte E), desde `Plan Inicial/PROYECTO.md` §6, que se

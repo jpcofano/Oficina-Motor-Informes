@@ -32,6 +32,14 @@ de escribirla.** La advertencia de greppear el prefijo (§1) cubre **asignar** u
 un commit después de que la Parte B cerrara las otras tres apariciones de esa misma
 numeración vieja.
 
+**3 · Una predicción numérica declara su unidad.** El `Paso-2.12` Parte 2 se predijo en
+`cambiadas: 15` y la corrida dio **30**: son las mismas 15 filas × 2 columnas
+(`uso` + `notas`). La predicción contaba **filas**, el diff cuenta **celdas**. No fue
+desviación —el resultado era el esperado— pero una predicción y una medición en unidades
+distintas no se pueden comparar, que es para lo que sirve predecir. **El diff de
+configuración cuenta celdas**: predecir en celdas, o decir explícitamente "N filas × M
+columnas".
+
 **3 · Una nota nunca nombra un ID que todavía no se asignó.** Escribir "sería un `D-15` que
 cite a ésta" promete que ese número va a seguir libre hasta que alguien lo necesite para
 eso. No lo estuvo ni un día: la nota bajo `D-02` lo escribió el 02/08/2026 y `D-15` se
