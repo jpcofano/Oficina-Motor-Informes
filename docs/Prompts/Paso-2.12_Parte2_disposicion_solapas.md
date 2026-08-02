@@ -16,8 +16,12 @@
 ## Precondición dura — no arrancar sin esto
 
 **Este paso arranca después de confirmar que `protegidas (con diferencia)` bajó de 10 a 8**
-en una corrida de "Aplicar configuración" (Paso 2.11 Parte E, pendiente de verificación al
-escribir esto).
+en una corrida de "Aplicar configuración" (Paso 2.11 Parte E).
+
+✅ **Cumplida el 02/08/2026.** Aplicar 1ª: `migraciones: 2 · protegidas (con diferencia): 8`.
+Aplicar 2ª: todo en cero, `protegidas: 8`. Estado: `SOLAPAS 84 filas [manual: 8, seed: 76]`,
+0 discrepancias. El `manual: 8` es el control positivo desde el otro lado — quedan
+exactamente las ocho decisiones humanas de `rdv`, que son el alcance del Grupo B.
 
 Por qué es dura y no una cortesía: las **ocho** son la lista de trabajo del Grupo B de
 abajo. Si el número no bajó a 8, o bajó a otro número, entonces las dos filas de `looker`
@@ -43,12 +47,16 @@ Contra el snapshot del 01/08:
   donde el `SEED_SOLAPAS_` sigue diciendo `revisar` y la planilla ya tiene una decisión
   humana. Dos de esas ocho son justamente `RDV CONJUNTO` y `Comunas`.
 
-> ⚠ **Una advertencia de procedencia sobre `rdv/RDV CONJUNTO`.** Su `uso=ignorar` actual
-> entró como **edición de control positivo** del protocolo del 31/07
-> (`docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md`, edición nº 3), no como aplicación
-> deliberada de esta decisión. Que coincida con el valor decidido es afortunado, no
-> intencional. **Confirmarlo con el usuario antes de sembrarlo** — es la única de las ocho
-> cuyo valor en la planilla no tiene una decisión humana explícita detrás.
+> ✅ **`rdv/RDV CONJUNTO` — confirmado `ignorar` por decisión del usuario del 02/08/2026.**
+> Motivo dado: *podría ser una solapa de control, dejarla así*.
+>
+> **Qué sostiene el valor, que es lo que importa dejar escrito:** lo sostiene esa decisión
+> del 02/08, **no** la edición de control positivo del protocolo del 31/07
+> (`docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md`, edición nº 3), que puso el mismo
+> `ignorar` por casualidad — era una prueba del diff, no una aplicación de esta
+> clasificación. Las dos cosas coinciden en el valor y sólo una lo justifica. Sin esta
+> línea, la única de las ocho sin decisión humana detrás habría quedado sembrada sobre una
+> coincidencia.
 
 ---
 
