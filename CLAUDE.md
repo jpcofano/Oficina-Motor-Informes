@@ -169,6 +169,7 @@ distintas nunca compiten. La precedencia entra solo como desempate, al final.
 | ¿Arquitectura, esquema, decisión estructural? | `Plan Inicial/PROYECTO.md` §1–§6, §8 — vale solo la sección o fila que **lleve su propia fecha escrita** (git versiona archivos, no secciones; la fecha de commit no sirve para esto) | los dos |
 | ¿Convención de proceso o aprendizaje? | `Plan Inicial/PROYECTO.md` §9 | los dos |
 | ¿Dónde estamos ahora mismo (qué paso, qué falta)? | `docs/HANDOFF_CODE.md` — se reescribe entero | solo Code |
+| ¿Qué sigue y en qué orden? ¿Qué decisión de arquitectura ya está tomada? | `docs/PLAN.md` — decisiones `D-NN` (estables, se superseden), Próximo / Planificado y bloqueado / Backlog. Distinto del handoff: éste dice **hacia dónde**, el handoff dice **dónde estamos** | los dos |
 | ¿Qué se hizo y cuándo, historial completo? | `docs/BITACORA.md` — append-only. Si discrepa con `HANDOFF_CODE.md` sobre un hecho histórico, **gana la bitácora**: no puede perder una entrada al reescribirse; el handoff es un resumen que puede quedar atrás y se reconstruye desde ella | solo Code |
 | ¿Qué se verificó/decidió en la última sesión de claude.ai? | El handoff de `docs/Sesiones/` **vigente por cadena de reemplazo** (ver abajo), no por ubicación de carpeta | solo claude.ai |
 | ¿Qué se construyó en un paso puntual y cómo se verifica? | El prompt vigente de su cadena en `docs/Prompts/`. No dice si ya corrió ni si sigue siendo cierto hoy — eso es de la bitácora y el handoff | los dos; no se edita una vez ejecutado (addenda fechados sí, ver abajo) |
