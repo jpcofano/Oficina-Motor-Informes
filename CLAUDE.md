@@ -29,6 +29,10 @@ grep -rn "function nombreNuevo_" *.gs
 - **Regla de oro: toda la aritmética vive en `Marcadores.gs` y en ningún otro lado.**
   Los demás módulos solo leen config, leen datos o pintan Slides. Si un cálculo aparece
   fuera de `Marcadores.gs`, es un bug de arquitectura aunque el número dé bien.
+- **La extensibilidad se mide, no se declara** (`docs/PLAN.md`, `D-01`). Si agregar un
+  informe o una base necesita tocar `.gs`, eso se anota como medición, no se silencia.
+  El objetivo es que ese número baje. No es criterio de aceptación: nada se bloquea por
+  esto, pero nada se esconde tampoco.
 - **Nada de nombres hardcodeados.** Bases y plantillas se descubren leyendo las hojas de
   registro (`CONFIG`, `BASES`, `INFORMES`, `MARCADORES`, `MAPEO`, `CAMPANAS`,
   `PERIODOS`). Si aparece un nombre de base o de plantilla literal en el código, está mal.
@@ -58,12 +62,17 @@ grep -rn "function nombreNuevo_" *.gs
 
 **No crear archivos `.md` nuevos.** Si algo hay que documentar, va en el documento que la
 tabla de §7 declara dueño de esa pregunta. Si de verdad no entra en ninguno, **preguntar
-antes de crearlo** y, si se crea, agregarle su fila en §7 y en la taxonomía de
-`PROYECTO.md` §9 en el mismo commit. Esta es la regla que más importa: el repo ya acumuló
-una docena de documentos que nacieron sueltos y divergieron entre sí. Los prompts nuevos
-van a `docs/Prompts/` (`Paso-N.md` para pasos del motor, `DOC-N_*.md` para trabajo
-documental — no consume número de paso —, `AUD-N_*.md` para auditorías). Relevamientos o
-hallazgos fechados: **ninguno nuevo** — la conclusión va al PROYECTO.
+antes de crearlo** y, si se crea, agregarle su fila en **§7, en el mismo commit**. Esta es
+la regla que más importa: el repo ya acumuló una docena de documentos que nacieron sueltos
+y divergieron entre sí. Los prompts nuevos van a `docs/Prompts/` (`Paso-N.md` para pasos
+del motor, `DOC-N_*.md` para trabajo documental — no consume número de paso —,
+`AUD-N_*.md` para auditorías). Relevamientos o hallazgos fechados: **ninguno nuevo** — la
+conclusión va al PROYECTO.
+
+**§7 es el único índice.** Hasta el 01/08 esta regla pedía registrar el documento nuevo
+también en la taxonomía de `PROYECTO.md` §9: dos índices del mismo repo, sincronizados a
+mano. Era la divergencia que la regla venía a evitar, fabricada por la regla misma
+(`DOC-6` D.4).
 
 **Los tres estados de un documento**: *vivos* se editan; *congelados* se leen y no se
 editan (si un congelado necesita cambiar, el cambio va al PROYECTO o el doc pasa a vivo
@@ -140,6 +149,7 @@ handoff de claude.ai más reciente dice qué se verificó y qué se decidió.
 ```
 CLAUDE.md                           este archivo — convenciones y ruteo, raíz del repo
 *.gs, Panel.html, appsscript.json   código Apps Script (raíz — así lo espera clasp)
+docs/PLAN.md                        plan, decisiones D-NN, backlog
 Plan Inicial/PROYECTO.md            documento maestro
 Plan Inicial/_archivo/              historial: docs superados, plantillas .pptx espejo
 docs/RUNBOOK.md                     guía de operación
@@ -150,7 +160,10 @@ docs/BITACORA.md                    qué hizo cada paso (append-only, solo Code)
 docs/HANDOFF_CODE.md                estado actual (se reescribe, solo Code)
 docs/REGLAS_NEGOCIO.md              reglas del dominio, ID R-NN
 docs/SUPUESTOS.md                   supuestos asumidos, ID S-NN
+docs/ESCRITORES.md                  quién escribe cada hoja de registro (vivo)
+docs/INVENTARIO_CODIGO.md           foto del código al 01/08 (congelado)
 docs/Sesiones/                      handoffs bajados de claude.ai — Code no escribe acá
+tools/                              scripts de verificación independiente
 ```
 
 `.claspignore` ya está configurado para pushear solo `appsscript.json`, `*.gs` y `*.html`.
@@ -185,7 +198,9 @@ distintas nunca compiten. La precedencia entra solo como desempate, al final.
 | ¿Qué decisión editorial lleva cada informe? (qué campañas, qué va a mano) | `docs/CONFIG_INFORMES.md` | los dos |
 | ¿Qué debe cumplir una lámina nueva pedida en lenguaje natural? | `docs/OBJETIVO_lamina_nueva.md` | los dos |
 | ¿Qué va a hacer el motor si corro ahora? | Las **hojas de registro** vivas (`CONFIG`, `BASES`, `INFORMES`, `MARCADORES`, `MAPEO`, `CAMPANAS`, `PERIODOS`, `SOLAPAS`, `SECCIONES`). Autoridad total sobre el comportamiento — y sobre nada más (nota abajo) | humano y motor, vía menú |
-| ¿Qué *debería* decir esa configuración? | Los `SEED_*` de `Instalar.gs` (el valor) y `docs/ESCRITORES.md` (quién puede escribirlo y por qué camino — existe desde AUD-3, 01/08/2026; matriz regenerable con `tools/escritores.js`) | los dos |
+| ¿Qué *debería* decir esa configuración? | Los `SEED_*` de `Instalar.gs` — el **valor** | los dos |
+| ¿Quién puede escribir esta hoja de registro, y por qué camino? | `docs/ESCRITORES.md` — contrato vivo, distinto del anterior: ése dice qué valor va, éste dice quién tiene derecho a ponerlo. Matriz regenerable con `tools/escritores.js` | los dos |
+| ¿Cómo está construido el código y qué alcanza a qué? | **Los scripts de `tools/`, re-corridos** (`inventario.js`, `escritores.js`) — nunca el `.md`. `docs/INVENTARIO_CODIGO.md` es la foto del 01/08/2026 y envejece; el script es el que sigue siendo cierto | los dos |
 | ¿Cuáles son los datos? | Las cuatro bases (`rdv`, `digital`, `looker`, `m2`) — dueños ajenos, el motor solo lee. No divergen de nada: **son** el dato; la nota de abajo no les aplica | el equipo y dueños externos |
 | ¿Qué versión vale si el disco local y git divergen? | **El disco local.** Git atrasado es una falla de respaldo a corregir, no una contradicción a dirimir. Corolario: lo que claude.ai tenga que ver, tiene que estar pusheado — un archivo sin pushear no está en la conversación | — |
 
@@ -224,3 +239,21 @@ ubicación fue justo lo que falló con los handoffs del 31/07).
 ## 8. Idioma
 
 Todo en español: código, comentarios, documentación, commits y conversación.
+
+---
+
+## 9. Plan y decisiones
+
+`docs/PLAN.md` es el único lugar donde vive el plan. Tiene las **decisiones de
+arquitectura** con ID `D-NN` —estables, nunca se reutilizan; una decisión no se edita, se
+**supersede** con otra que la cita— y tres secciones de futuro cuya frontera es lo que hace
+que el archivo sirva:
+
+- **Próximo** — lista **ordenada**, con las dependencias dichas.
+- **Planificado y bloqueado** — cada ítem nombra **qué lo destraba y de quién depende**.
+- **Backlog** — sin orden y sin fecha.
+
+La prueba para saber en cuál va algo: **si no podés decir qué lo desbloquea, es backlog.**
+
+El invariante de `D-01` no está acá: vive en §2, con los demás invariantes de código, que
+es donde lo lee quien está por tocar un `.gs`.
