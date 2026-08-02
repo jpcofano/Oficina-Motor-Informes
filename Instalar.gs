@@ -436,14 +436,27 @@ function alinearMapeoLookerADinamico_(hoja, aplicar) {
 /**
  * Paso 2.9 Parte C, punto 1 — mismo criterio que `alinearMapeoLookerADinamico_`
  * pero sobre `SOLAPAS`: `resumen_metricas_dinamico` → `fuente`,
- * `resumen_metricas` → `derivada`, las dos con `origen=manual` (para que
- * `sembrarClasificacionSolapas()` no las vuelva a poner en `revisar`) y nota
- * apuntando a S-01. Idempotente.
+ * `resumen_metricas` → `derivada`. Idempotente.
+ *
+ * **Paso 2.11 Parte E (01/08/2026): dejó de escribir `notas` y `origen` pasó de
+ * `manual` a `seed`.** El `origen=manual` se puso cuando `SEED_SOLAPAS_` todavía
+ * mandaba estas dos filas a `revisar` — hoy el seed ya dice `fuente`/`derivada`
+ * (`SEED_SOLAPAS_`, filas de `looker`), así que la protección no protegía nada y su
+ * único efecto vivo era **congelar la peor versión de las notas**: la migración
+ * escribía una corta, el seed quería las concretas, y `aplicarClasificacionSolapas_`
+ * saltea toda fila `origen=manual` sin escribirla. Resultado: dos líneas
+ * `protegida (habría cambiado)` sobre `notas` en cada corrida, para siempre.
+ *
+ * Con `origen: 'seed'`, la fila vuelve al sembrador: emite **una** línea de cambio
+ * auditable (`origen: manual → seed`) y en la corrida siguiente el seed adopta las
+ * dos filas con sus notas buenas. S-01 no queda sin sostén — pasa a sostenerlo
+ * `SEED_SOLAPAS_`, que es el objetivo del Paso 2.11. Es el criterio de migración con
+ * vencimiento de la Parte D: la que produce un estado que el seed ya sabe reproducir
+ * deja de hacer falta.
  */
 function alinearSolapasLookerADinamico_(hoja, aplicar) {
   aplicar = (aplicar !== false);
   var existentes = leerFilasSolapas_(hoja);
-  var nota = 'Paso 2.9 Parte C — ver docs/SUPUESTOS.md S-01';
   var cambios = [];
 
   // C.2-3 (01/08/2026): antes escribía las tres celdas SIEMPRE, sin comparar, y
@@ -461,7 +474,9 @@ function alinearSolapasLookerADinamico_(hoja, aplicar) {
     // misma migración en una corrida anterior; lo que decide es que además haya algo
     // distinto de lo que la migración quiere escribir.
     var eraManual = (fila.origen === 'manual');
-    var deseado = { uso: caso.uso, origen: 'manual', notas: nota };
+    // `notas` NO va acá a propósito: es del seed (ver encabezado). Escribirla desde
+    // dos lados es la duplicación que este paso elimina.
+    var deseado = { uso: caso.uso, origen: 'seed' };
     Object.keys(deseado).forEach(function (columna) {
       if (String(fila[columna] === undefined ? '' : fila[columna]) === String(deseado[columna])) return;
       cambios.push({

@@ -318,6 +318,24 @@ function menuCompararResumenesLooker_() {
  */
 var FILAS_TEST_FORMULAS_LOOKER_ = [2, 3, 4];
 
+/**
+ * ⚠ INFERENCIA INVERTIDA — NO USAR. Fuera del menú desde el 01/08/2026 (Paso 2.11
+ * Parte E). Ver el P1 en `docs/PENDIENTES_consistencia.md`.
+ *
+ * El párrafo de arriba dice "la que tiene fórmulas es la derivada". **Es falso para
+ * este caso.** La fórmula de `resumen_metricas_dinamico` es
+ * `=QUERY(Cuentas!A2:G; …)`: consulta una TERCERA hoja, no la otra del par — o sea
+ * que es la consulta **viva**, la fuente. `resumen_metricas` es el pegado congelado.
+ * Corrido el 01/08 devuelve `fuente: 'resumen_metricas'`, exactamente al revés de
+ * S-01 (`docs/SUPUESTOS.md`), y con esa dirección alimentaba a
+ * `consolidarMapeoLooker_`.
+ *
+ * Acierta el hecho ("hay una fórmula") y erra la inferencia ("por lo tanto deriva de
+ * la otra hoja del par"). Es el caso que dejó escrita la regla de `CLAUDE.md` §4:
+ * cuando un instrumento devuelve una etiqueta, verificar el dato crudo del que salió.
+ * El literal de la fórmula ya estaba en `celdasConFormula` desde el Paso 2.8 —
+ * faltaba mirarlo.
+ */
 function auditarFormulasResumenesLooker_() {
   var bases = leerBases();
   var base = bases.looker;
@@ -407,6 +425,10 @@ function auditarFormulasResumenesLooker_() {
   };
 }
 
+/** ⚠ Sin ítem de menú desde el 01/08/2026 (Paso 2.11 Parte E) — ver el encabezado de
+ *  `auditarFormulasResumenesLooker_`. No se borra: es la vía de re-lectura si algún día
+ *  se arregla la inferencia. Su texto de cierre manda a correr la consolidación, que es
+ *  justamente lo que no hay que hacer con la dirección actual. */
 function menuAuditarFormulasResumenesLooker_() {
   var ui = SpreadsheetApp.getUi();
   var resultado = auditarFormulasResumenesLooker_();
@@ -433,11 +455,23 @@ function menuAuditarFormulasResumenesLooker_() {
 }
 
 /**
- * Aplica la consolidación: mueve las filas de `MAPEO` de `looker` que cuelgan de
- * `hojaDerivada` a `hojaFuente`, marca `hojaDerivada` como `uso=derivada` y
- * `hojaFuente` como `uso=fuente` en `SOLAPAS` (con `origen=manual`, para que
- * `sembrarClasificacionSolapas()` no vuelva a poner las dos en `revisar` en una
- * re-siembra), y alinea `BASES.hoja_default` de `looker` con `hojaFuente`.
+ * ⚠ MIGRACIÓN EJECUTADA (S-01 aplicado). Fuera del menú desde el 01/08/2026
+ * (Paso 2.11 Parte E). **No re-invocar sin arreglar antes el P1 de
+ * `auditarFormulasResumenesLooker_`** (`docs/PENDIENTES_consistencia.md`): ese
+ * diagnóstico es el que le pasaba `hojaFuente`/`hojaDerivada`, y devuelve la
+ * dirección INVERTIDA — un click revertía S-01 sobre las tres hojas.
+ *
+ * No se borra. Está **parametrizada por dirección**, así que sigue siendo la única
+ * forma de mover la decisión sin tocar código si el dueño externo cambia cuál de
+ * las dos hojas mantiene. Verificado el 01/08 contra `docs/_snapshots/`: la
+ * consolidación ya está hecha (27/27 filas de `MAPEO` en `_dinamico`, `SOLAPAS` y
+ * `BASES.hoja_default` alineadas), y la sostienen en cada corrida las tres
+ * migraciones idempotentes `alinear*LookerADinamico_`/`alinearBasesHojaDefaultLooker_`
+ * de `Instalar.gs`.
+ *
+ * Qué hace: mueve las filas de `MAPEO` de `looker` que cuelgan de `hojaDerivada` a
+ * `hojaFuente`, marca `hojaDerivada` como `uso=derivada` y `hojaFuente` como
+ * `uso=fuente` en `SOLAPAS` (con `origen=manual`), y alinea `BASES.hoja_default`.
  */
 function consolidarMapeoLooker_(hojaFuente, hojaDerivada) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -490,6 +524,9 @@ function consolidarMapeoLooker_(hojaFuente, hojaDerivada) {
   return { filasMovidas: filasMovidas };
 }
 
+/** ⚠ Sin ítem de menú desde el 01/08/2026 (Paso 2.11 Parte E) — ver el encabezado de
+ *  `consolidarMapeoLooker_`. Era la única vía de invocación, y derivaba la dirección de
+ *  `auditarFormulasResumenesLooker_`, que la devuelve invertida. No se borra. */
 function menuConsolidarMapeoLooker_() {
   var ui = SpreadsheetApp.getUi();
   var diagnostico = auditarFormulasResumenesLooker_();

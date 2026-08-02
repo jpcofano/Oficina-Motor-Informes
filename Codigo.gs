@@ -50,9 +50,13 @@ var MENU_ = {
     ]},
 
     // --- Datos: lo que decide una persona y después se escribe --------------
+    // "Consolidar mapeos de looker" retirado (Paso 2.11 Parte E, 01/08/2026): la
+    // consolidación S-01 ya está aplicada y la sostienen tres migraciones idempotentes
+    // dentro de instalar(). El ítem quedaba como única vía de invocación de
+    // consolidarMapeoLooker_, y su diagnóstico devuelve la dirección INVERTIDA — un
+    // click revertía S-01. La función no se borra; ver su encabezado en Solapas.gs.
     { t: 'Datos y decisiones', items: [
-      { t: 'Revisar divergencias de valores', f: 'menuRevisarDivergenciasValores_' },
-      { t: 'Consolidar mapeos de looker',     f: 'menuConsolidarMapeoLooker_' }
+      { t: 'Revisar divergencias de valores', f: 'menuRevisarDivergenciasValores_' }
     ]},
 
     // --- Diagnóstico: las cuatro pruebas de uso diario arriba, el resto agrupado
@@ -76,7 +80,9 @@ var MENU_ = {
       { t: 'Correr pruebas del diff', f: 'menuCorrerPruebasDiff_' },
       { t: 'Looker y alcance', items: [
         { t: 'Comparar resúmenes de looker',    f: 'menuCompararResumenesLooker_' },
-        { t: 'Auditar fórmulas de resúmenes',   f: 'menuAuditarFormulasResumenesLooker_' },
+        // "Auditar fórmulas de resúmenes" retirado con el anterior (Paso 2.11 Parte E):
+        // muestra la misma recomendación invertida y remata mandando a correr la
+        // consolidación. Retirar uno solo dejaba un consejo equivocado sin salida.
         { t: 'Auditar digital / alcance',       f: 'menuAuditarAlcanceDigital_' }
       ]},
       // Instrumentos de casos ya cerrados. No se borran: sirven para reabrir un
