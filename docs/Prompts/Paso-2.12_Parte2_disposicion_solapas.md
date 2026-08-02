@@ -9,7 +9,27 @@
 > transcriben acá; lo que cambia es cuántas filas son, cuáles, y qué hay que hacer con
 > cada grupo.
 >
-> Las Partes 1 y 3 de aquel documento **siguen vigentes y no las toca este prompt.**
+> La Parte 1 de aquel documento sigue vigente y no la toca este prompt.
+
+> ⚠ **El orden de las partes se invirtió: la Parte 3 se ejecutó ANTES que la Parte 2**
+> (02/08/2026). No es una preferencia — la dependencia real va al revés de lo que decía el
+> texto original, y quedó verificada contra el código antes de tocar nada.
+>
+> `reclasificarSolapasM2Invertidas_` (`Instalar.gs`) fuerza `m2/M2 Directa` y `m2/M2 digital`
+> a `uso='revisar'` en cada corrida, y las migraciones corren **antes** del sembrador de
+> `SOLAPAS`. Sembrar `ignorar` en esas dos con la migración todavía cableada producía, en
+> cada corrida y para siempre: 4 líneas de `migracion` + 2 de `cambio`, con el estado final
+> correcto. Es el patrón de `corregirNotaControlAnclaje_`, retirada en el 2.11 C.2 por
+> exactamente esto, y **rompe el criterio de aceptación 3 de este mismo prompt**.
+>
+> Lo llamativo: el razonamiento ya estaba hecho y aplicado a la mitad del caso. El
+> comentario de `Instalar.gs` (Paso 2.10 Parte C) explica que `M2 periodo DIRECTA`/`DIGITAL`
+> salieron de `SOLAPAS_M2_INVERTIDAS_` porque *"si siguieran acá, esta función las volvería
+> a `revisar` en cada instalación y pisaría esa clasificación"*. El par que quedó en la
+> lista tenía el mismo problema, latente hasta que la Parte 2 le diera una clasificación.
+>
+> Por eso la Parte 3 —retirar la migración— pasó a ser **precondición** de la Parte 2, y no
+> su continuación.
 
 ---
 

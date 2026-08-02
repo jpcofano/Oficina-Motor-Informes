@@ -1059,3 +1059,52 @@ nadie más.
     bajo un texto de confirmación que sonaba autorizado. Eso es lo que se cerró.
   - `promoverFechasElegidas()` sigue siendo escritor de `MAPEO` sin declarar — es el P1
     original de `C.2-7` y no era de este paso.
+
+## Paso 2.12 Partes 3 y 2 — disposición de las solapas: cero filas en `revisar` (2026-08-02) — commits `f3fbc33` + el de esta entrada
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.12_Parte2_disposicion_solapas.md`, escrito
+  el 02/08 y que **reemplaza** la Parte 2 del `Paso-2.12_conteos_y_clasificacion.md`
+  original. Cerrar `SOLAPAS.uso`: Grupo A (filas en `revisar`, `origen=seed`) y Grupo B
+  (protegidas de `rdv`, alinear el seed sin tocar `origen`).
+- **El orden de las partes se invirtió, y no en silencio.** Al ejecutar apareció que
+  `reclasificarSolapasM2Invertidas_` fuerza `m2/M2 Directa` y `m2/M2 digital` a
+  `uso='revisar'` en cada corrida, y las migraciones corren **antes** del sembrador de
+  `SOLAPAS`. Sembrar `ignorar` con esa migración cableada daba 4 líneas de `migracion` + 2
+  de `cambio` en cada corrida, para siempre — el patrón de `corregirNotaControlAnclaje_`, y
+  rompe el criterio 3 del propio prompt. Se paró, se reportó, y el usuario eligió correr la
+  **Parte 3 primero**. Anotado en el prompt con el porqué.
+  - **El razonamiento ya estaba hecho y aplicado a la mitad del caso:** el comentario de
+    `Instalar.gs` (Paso 2.10 Parte C) explica que `M2 periodo DIRECTA`/`DIGITAL` salieron de
+    `SOLAPAS_M2_INVERTIDAS_` porque *"si siguieran acá, esta función las volvería a
+    `revisar` en cada instalación y pisaría esa clasificación"*. El par que quedó en la
+    lista tenía el mismo problema, latente hasta que la Parte 2 le diera clasificación.
+- **Qué se hizo:**
+  - **Parte 3** — `reclasificarSolapasM2Invertidas_` sale de `aplicarInstalacion_`, de la
+    lista de `migraciones` y del resumen: una migración que ya no corre no puede seguir
+    figurando entre las activas aunque reporte cero. **No se borró**, ni ella ni
+    `SOLAPAS_M2_INVERTIDAS_`/`NOTA_M2_INVERTIDA_`, que quedan marcadas sin uso. Verificado
+    con el grafo: no la llama nadie.
+  - **Parte 2, Grupo A (15)** — `digital/Cuentas` y `digital/CAMPAÑAS_DESGLOCE_DIGITAL` a
+    `fuente`; `digital/EDV` y `looker/Audiencias` a `referencia`; las once restantes a
+    `ignorar`. `m2/M2 Directa` y `M2 digital` con su **condición de reversión escrita**: se
+    ignoran porque `m2` quedó `sin_fuente`, no porque no sirvan.
+  - **Parte 2, Grupo B (8)** — sólo `uso`; `origen` no se tocó.
+- **La corrección dentro de la ejecución:** el Grupo B iba a llevar notas nuevas y mejores.
+  Verificado antes de aplicar: el diff compara también `notas`, y como son `origen=manual`
+  el sembrador no puede escribirlas — habrían quedado **ocho `protegida (habría cambiado)`
+  sobre `notas` en cada corrida**, el mismo piso permanente que la Parte E acababa de sacar
+  del lado de `looker`. Las notas quedaron textualmente iguales. Que digan "sin decidir"
+  sobre filas decididas es un P2 nuevo en `PENDIENTES`, con las dos formas de cerrarlo.
+- **Prueba (simulación previa, contra la planilla real):** se tomó un snapshot fresco de
+  `SOLAPAS` del 02/08 —el del 01/08 es anterior a la Parte E y habría dado dos falsos
+  positivos— y se evaluó `SEED_SOLAPAS_` contra él: **15 filas en `revisar` → `cambiadas:
+  15`, `protegidas (con diferencia): 0`, `protegidas (sin diferencia): 8`.** El seed quedó
+  con **cero filas en `revisar`** (84 filas: 18 `fuente`, 16 `referencia`, 12 `derivada`,
+  38 `ignorar`). `clasp push` hecho. **Falta la corrida real desde el menú.**
+- **Pendientes/decisiones:**
+  - **P2 nuevo** · las notas de las ocho protegidas de `rdv` dicen "sin decidir" sobre filas
+    decididas. Se cierra editando las ocho a mano en la planilla, o devolviéndolas al
+    sembrador como se hizo con las dos de `looker` — la segunda cierra el caso de verdad,
+    pero es una decisión sobre ocho filas curadas a mano.
+  - `H-4` sigue abierto y **no era de este paso**: `m2/Cuentas` pasó a `ignorar` y las cinco
+    filas de `MAPEO` que la mapean quedan huérfanas. Mapear una solapa que se ignora es una
+    inconsistencia distinta de clasificarla.

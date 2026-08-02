@@ -172,6 +172,28 @@ referencia apunta a una hoja que **no es la otra del par**, no hay relación fue
 entre ellas y el caso es `ambas_independientes`, que hoy no existe como estado. Hasta
 entonces, ninguna de las dos funciones vuelve al menú.
 
+### P2 · Las `notas` de las ocho solapas protegidas de `rdv` dicen "sin decidir" sobre filas decididas
+
+Abierto el 02/08/2026 (Paso 2.12 Parte 2). Las ocho filas `origen=manual` de `rdv` ya
+tienen su `uso` decidido (`ignorar`/`referencia`) y el seed quedó alineado, así que el diff
+no las reporta más. Pero su columna `notas` sigue diciendo `sin decidir` —o la duda vieja,
+en `RDV_JM_CM_ES` y `Funcionarios / Ministros`— tanto en la planilla como en
+`SEED_SOLAPAS_`.
+
+**Por qué quedó así y no es un descuido:** el diff compara `['uso', 'fila_encabezado',
+'notas']`. Escribir notas mejores en el seed no las aplicaría —son `origen=manual`, el
+sembrador no las pisa— y dejaría **ocho líneas `protegida (habría cambiado)` sobre `notas`
+en cada corrida**: exactamente el piso permanente que el Paso 2.11 Parte E acababa de sacar
+del lado de `looker`. Entre una nota desactualizada y ocho líneas de ruido para siempre, se
+eligió la nota desactualizada, y se deja anotado.
+
+**Cómo se arregla,** cuando toque: o se editan las ocho notas en la planilla a mano (son
+filas de dueño humano) y en el mismo commit el seed, o se decide que el `origen=manual` de
+esas ocho ya no protege nada —el seed dice lo mismo que la planilla— y se devuelven al
+sembrador, como se hizo con las dos de `looker`. **La segunda opción es la que cierra el
+caso de verdad**, pero es una decisión sobre ocho filas curadas a mano y no era de este
+paso.
+
 ### P1 · Bloqueante de la armonización: la caja `{{m2_salud_camp}}` huérfana
 
 **Movido acá el 01/08/2026 (`DOC-6` Parte E), desde `Plan Inicial/PROYECTO.md` §6, que se
