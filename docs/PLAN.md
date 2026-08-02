@@ -36,6 +36,11 @@ numeración vieja.
 
 ## 1 · Decisiones de arquitectura
 
+> **Dueño de "¿arquitectura, esquema, decisión estructural?"** (`CLAUDE.md` §7) desde el
+> 01/08/2026: heredó la pregunta de `Plan Inicial/PROYECTO.md` §1–§6/§8 al congelarlo
+> (`DOC-6` Parte E). Una decisión estructural nueva **nace como `D-NN`**; no se edita un
+> documento maestro.
+
 IDs `D-NN`, **estables, nunca se reutilizan**. Una decisión no se edita: se **supersede**
 con una nueva que la cita. Mismo criterio que `R-` de `docs/REGLAS_NEGOCIO.md` y `S-` de
 `docs/SUPUESTOS.md` — y misma advertencia: antes de asignar un `D-NN` nuevo, greppear el

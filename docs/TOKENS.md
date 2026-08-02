@@ -4,11 +4,12 @@
 > aplicado sobre la plantilla canónica.** JM canónica (Paso 2.2.2):
 > `117I0qn1XP1JCiz2mU32hUY1iiMUmrAAvHOsczd7u6jI` — sin armonizar. La corrida del
 > 29/07 se aplicó por error sobre `1JrHvs_p…`, una plantilla JM distinta y ya
-> obsoleta (marcada `[OBSOLETA — no usar]` en Drive; ver `PROYECTO.md` §6). La
+> obsoleta (marcada `[OBSOLETA — no usar]` en Drive). La
 > armonización la aplica `armonizarPlantillas()` (`Armonizar.gs`, Paso 2.2 +
 > 2.2.1 + 2.2.2), que sigue sin correr sobre la canónica — hay un bloqueante sin
-> resolver (caja `{{m2_salud_camp}}` huérfana, ver `PROYECTO.md` §6). **No
-> sembrar `MARCADORES` asumiendo que las plantillas ya están armonizadas.**
+> resolver (caja `{{m2_salud_camp}}` huérfana, detalle y decisión pendiente en
+> `docs/PENDIENTES_consistencia.md`). **No sembrar `MARCADORES` asumiendo que las
+> plantillas ya están armonizadas.**
 >
 > Fusiona (y reemplaza) `TOKENS_diccionario_canonico.md`, `JM_tokens_marcados.md`
 > y `SECCO_tokens_marcados.md` — archivados en `Plan Inicial/_archivo/`. Derivado
@@ -275,3 +276,29 @@ ruidosamente en vez de devolver la fila de al lado.
 ⚠ **`rdv` ya tiene dos solapas mapeadas** (`RVD JM-CM - ES` y `RDV_otros_ministros`), así
 que la fila "solapa vacía + una sola solapa" de la tabla aplica a menos bases de las que
 parece — verificar contra `MAPEO` antes de asumir que una base es de solapa única.
+
+---
+
+## 5. Resolución de período — las tres capas
+
+> Migrado desde `Plan Inicial/PROYECTO.md` §4 al congelarlo (`DOC-6` Parte E, 01/08/2026).
+> Vive acá porque **el período se resuelve por token**, y este documento ya es dueño del
+> diccionario y de la columna `periodo_ref`. Es el contrato que el Paso 3 tiene que
+> implementar.
+
+El período **no es global**. Para cada token se resuelve en este orden de prioridad, y se
+usa el primero que aplique:
+
+| # | condición | ventana que gana |
+|---|---|---|
+| 1 | el token pertenece a una **campaña seleccionada** | `desde`/`hasta` de esa fila de `CAMPANAS` |
+| 2 | el marcador tiene **`periodo_ref`** cargado | esa ventana de `PERIODOS` |
+| 3 | ninguna de las anteriores | período principal de `CONFIG` (`periodo_desde`/`periodo_hasta`) |
+
+**El caso que justifica las tres capas** (`docs/CONFIG_INFORMES.md` §1.3): M2 reporta
+**mensual** dentro de un informe semanal, vía `periodo_ref = m2_mensual`. Sin la capa 2,
+ese bloque saldría con la ventana del informe y el número sería plausible y equivocado.
+
+**No confundir con el régimen de selección** (`docs/PLAN.md`, `D-09`): esta tabla decide
+**qué ventana de fechas** usa un token que ya entró al informe. Qué filas entran es otra
+pregunta, y para las secciones por temario la fecha no la contesta (`R-04`).

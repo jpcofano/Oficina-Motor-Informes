@@ -136,6 +136,52 @@ está en el código**:
 R-05, R-07 y R-08 son constataciones/decisiones de diseño (no piden código nuevo por sí
 mismas, aunque R-07 hace que `Snapshot.gs` deje de ser opcional).
 
+### P1 · Bloqueante de la armonización: la caja `{{m2_salud_camp}}` huérfana
+
+**Movido acá el 01/08/2026 (`DOC-6` Parte E), desde `Plan Inicial/PROYECTO.md` §6, que se
+congeló.** Un pendiente vivo no puede vivir dentro de un documento congelado — es la misma
+razón por la que se movió el "Qué falta" de `RDV_otros_ministros_riesgo.md`.
+`docs/TOKENS.md` lo nombraba y mandaba a `PROYECTO.md` §6 por el detalle; ahora apunta acá.
+
+En la matriz digital de M2 hay una caja `{{m2_salud_camp}}` **huérfana y visible**, que no
+está en la columna de Salud. Si además se aplica el renombre `m2_camp4` → `m2_salud_camp`
+que pide el diccionario (`docs/TOKENS.md` §1), quedan **dos cajas con el mismo token** — el
+mismo problema que causó la regresión de `enc_audiencia`.
+
+**Qué bloquea:** correr "Armonizar tokens de plantillas" sobre la plantilla canónica de JM
+(`117I0qn1XP1JCiz2mU32hUY1iiMUmrAAvHOsczd7u6jI`), que sigue **sin armonizar**. La corrida
+del 29/07 se aplicó por error sobre `1JrHvs_p…`, hoy marcada `[OBSOLETA — no usar]`.
+
+**Quién decide:** el usuario, y son dos opciones excluyentes — o la caja es un sobrante y se
+borra de la plantilla, o el renombre sale de la lista del diccionario. No se elige por
+criterio técnico (`C-01`: la plantilla es del equipo).
+
+### P2 · El diagnóstico no distingue config vieja de config mal armada
+
+**Movido acá el 01/08/2026 (`DOC-6` Parte E), desde `PROYECTO.md` §9.** El aprendizaje
+quedó en `CLAUDE.md` §4; acá queda sólo la mejora concreta, que es lo que sigue pendiente.
+
+En el Paso 2.1, tres ⚠ y un ✅ engañoso de "Probar lectura por ventana" llevaron a
+diagnosticar un bug de seed inexistente: el código estaba bien y lo viejo era **la
+planilla**, porque nadie había corrido "Cargar config inicial" después del `clasp push`.
+
+**Mejora, tres líneas:** que `seedConfiguracion()` guarde un `ultima_carga` en `CONFIG` y
+que "Probar lectura por ventana" lo muestre. Evita repetir el diagnóstico equivocado cada
+vez que cambie un seed. Queda para el próximo paso que toque `Instalar.gs`/`Fuentes.gs`.
+
+### P2 · Pregunta abierta: ¿`looker` ya trae hecho el join que arma `unirDigitalPorCuenta()`?
+
+**Movida acá el 01/08/2026 (`DOC-6` Parte E), desde `PROYECTO.md` §5.** `looker` tiene el
+desglose por canal (`MAIL`/`IVR`/`SMS`/`CC`/`DIGITAL`/`ALCANCE`, cada una con su
+`ID cuentas`) como solapas propias. Si el join ya viene hecho río arriba,
+`unirDigitalPorCuenta()` (Paso 2.4) lo está reconstruyendo al pedo, y puede explicar el
+timeout de ~6 minutos de `menuProbarUnionYAnclaje_` (Tarea 7 de AUD-1, sin diagnosticar).
+
+**Una hipótesis alternativa ya quedó descartada** (`docs/AUD-2_union_digital_clave.md`,
+Paso 2.7 Parte C): la unión ya va por `*_id_cuenta` en las seis solapas (`Union.gs:81-93`),
+nunca por `clave`. El candidato que queda en pie para el timeout es el scoring
+`O(realizadas × candidatos)` de `anclarEncuentros()`/`scoreMatchDigitalRdv_()`.
+
 ### P1 · Firma de encabezados (de `docs/RDV_otros_ministros_riesgo.md`, congelado)
 
 **La firma de encabezados** — registrar la fila de encabezado de cada solapa mapeada, y

@@ -4,7 +4,8 @@ Motor en Google Apps Script que arma informes en Google Slides leyendo datos de 
 Sheets. **Es un motor, no un informe:** agregar un informe nuevo = plantilla nueva +
 filas de config. Nunca requiere tocar código.
 
-Contexto profundo → `Plan Inicial/PROYECTO.md`. Operación → `docs/RUNBOOK.md`.
+Plan y decisiones → `docs/PLAN.md` (§9). Operación → `docs/RUNBOOK.md`.
+Contexto histórico → `Plan Inicial/PROYECTO.md`, **congelado** desde el 01/08/2026.
 Punto de partida de cada sesión → `docs/HANDOFF_CODE.md` (estado actual) + el handoff más
 reciente de `docs/Sesiones/` (verificaciones de claude.ai). Ver §5.
 
@@ -38,8 +39,12 @@ grep -rn "function nombreNuevo_" *.gs
   `PERIODOS`). Si aparece un nombre de base o de plantilla literal en el código, está mal.
 - **Un token que falla escribe `«FALTA:token»`, no rompe la corrida.** Resiliencia sobre
   fragilidad: el informe sale con los huecos marcados y visibles.
-- **La plantilla es del equipo, el motor se adapta** (§6 del PROYECTO). Nunca al revés.
-  Toda migración que escriba sobre una plantilla crea backup antes.
+- **La plantilla es del equipo, el motor se adapta** (`docs/REGLAS_NEGOCIO.md`, `C-01`).
+  Nunca al revés. Toda migración que escriba sobre una plantilla crea backup antes.
+- **Reparto de responsabilidad por módulo:** estructura de hojas → `Instalar.gs`; acceso a
+  datos y caché → `Fuentes.gs`; aritmética → `Marcadores.gs`; despacho y reemplazo en
+  Slides → `Generador.gs`. Es la forma larga de la regla de oro: si un módulo hace el
+  trabajo de otro, el número puede dar bien igual y la arquitectura ya está rota.
 - **Los renombres de tokens son por `informe_id`, nunca globales.** El mismo nombre puede
   ser correcto en una plantilla e incorrecto en otra — lo demostró la regresión de
   `enc_audiencia`.
@@ -67,7 +72,8 @@ la regla que más importa: el repo ya acumuló una docena de documentos que naci
 y divergieron entre sí. Los prompts nuevos van a `docs/Prompts/` (`Paso-N.md` para pasos
 del motor, `DOC-N_*.md` para trabajo documental — no consume número de paso —,
 `AUD-N_*.md` para auditorías). Relevamientos o hallazgos fechados: **ninguno nuevo** — la
-conclusión va al PROYECTO.
+conclusión va al documento que §7 declara dueño de esa pregunta; si es estructural, a
+`docs/PLAN.md` como `D-NN`.
 
 **§7 es el único índice.** Hasta el 01/08 esta regla pedía registrar el documento nuevo
 también en la taxonomía de `PROYECTO.md` §9: dos índices del mismo repo, sincronizados a
@@ -75,8 +81,9 @@ mano. Era la divergencia que la regla venía a evitar, fabricada por la regla mi
 (`DOC-6` D.4).
 
 **Los tres estados de un documento**: *vivos* se editan; *congelados* se leen y no se
-editan (si un congelado necesita cambiar, el cambio va al PROYECTO o el doc pasa a vivo
-explícitamente); *archivados* en `Plan Inicial/_archivo/`, `docs/Prompts/_archivo/` o
+editan (si un congelado necesita cambiar, el cambio va al documento vivo dueño de esa
+pregunta según §7 — no al PROYECTO, que desde el 01/08 también está congelado — o el doc
+pasa a vivo explícitamente); *archivados* en `Plan Inicial/_archivo/`, `docs/Prompts/_archivo/` o
 `docs/Sesiones/_archivo/`. El estado lo declara **cada documento en su propio
 encabezado**, no un índice central. Editar un congelado en silencio es exactamente lo que
 costó la mitad del `DOC-1`.
@@ -96,7 +103,8 @@ sospecha no verificada; las tres premisas no estaban en el archivo.
    propia.
 2. El usuario prueba y confirma.
 3. Recién ahí se documenta y se commitea: **entrada en `docs/BITACORA.md` siempre**,
-   `docs/HANDOFF_CODE.md` reescrito, y `PROYECTO.md` si el paso cambió algo estructural.
+   `docs/HANDOFF_CODE.md` reescrito, y `docs/PLAN.md` si el paso cambió algo estructural
+   (decisión nueva = `D-NN` nuevo; una vieja no se edita, se supersede).
 4. Mensaje: `Paso N ✅ — <resumen corto>`. Un paso por commit, sin bundles.
 5. Si el working tree tiene cambios de más de un paso al momento de commitear: **parar y
    preguntar**, no bundlear.
@@ -118,6 +126,14 @@ confirmación, mirar qué commits se estarían tirando.
 Quien implementa no se autoverifica. Los errores del Paso 2.2 se cazaron verificando
 archivos vivos, no leyendo los reportes de las funciones. Reportar lo que se hizo, no
 declarar que funciona.
+
+**Un test puede acertar el hecho y errar la inferencia.** `getFormulas()` sobre las dos
+hojas de `looker` devolvió bien "esta tiene fórmula"; la conclusión "por lo tanto deriva
+de la otra hoja del par" era falsa — la fórmula era un `QUERY()` sobre una **tercera**
+hoja, y la clasificación quedó invertida hasta el Paso 2.9 Parte C. El texto de la fórmula
+estaba disponible desde el 2.8: faltó mirarlo antes de aceptar la etiqueta. Cuando un
+instrumento devuelve una **etiqueta** (`derivada`, `plausible`, `ok`), verificar el dato
+crudo del que salió, no la etiqueta.
 
 ---
 
@@ -150,7 +166,7 @@ handoff de claude.ai más reciente dice qué se verificó y qué se decidió.
 CLAUDE.md                           este archivo — convenciones y ruteo, raíz del repo
 *.gs, Panel.html, appsscript.json   código Apps Script (raíz — así lo espera clasp)
 docs/PLAN.md                        plan, decisiones D-NN, backlog
-Plan Inicial/PROYECTO.md            documento maestro
+Plan Inicial/PROYECTO.md            maestro histórico — CONGELADO 01/08/2026
 Plan Inicial/_archivo/              historial: docs superados, plantillas .pptx espejo
 docs/RUNBOOK.md                     guía de operación
 docs/TOKENS.md                      diccionario de tokens
@@ -179,8 +195,8 @@ distintas nunca compiten. La precedencia entra solo como desempate, al final.
 | pregunta | dueño único | quién escribe |
 |---|---|---|
 | ¿Cómo se trabaja en este proyecto? (método, regla de parada, invariantes) | `CLAUDE.md` (raíz) | los dos |
-| ¿Arquitectura, esquema, decisión estructural? | `Plan Inicial/PROYECTO.md` §1–§6, §8 — vale solo la sección o fila que **lleve su propia fecha escrita** (git versiona archivos, no secciones; la fecha de commit no sirve para esto) | los dos |
-| ¿Convención de proceso o aprendizaje? | `Plan Inicial/PROYECTO.md` §9 | los dos |
+| ¿Arquitectura, esquema, decisión estructural? | `docs/PLAN.md` §1, como `D-NN` — ID estable, y **una decisión no se edita: se supersede** con otra que la cita. Heredó la pregunta de `PROYECTO.md` §1–§6/§8 al congelarlo (`DOC-6` E) | los dos |
+| ¿Convención de proceso o aprendizaje? | **Este archivo**, en la sección donde se aplica: §1 el namespace global, §3 el grep previo, §4 la verificación. Un aprendizaje no va a un depósito aparte — va donde alguien lo va a leer justo antes de repetir el error. Heredó la pregunta de `PROYECTO.md` §9 | los dos |
 | ¿Dónde estamos ahora mismo (qué paso, qué falta)? | `docs/HANDOFF_CODE.md` — se reescribe entero | solo Code |
 | ¿Qué sigue y en qué orden? ¿Qué decisión de arquitectura ya está tomada? | `docs/PLAN.md` — decisiones `D-NN` (estables, se superseden), Próximo / Planificado y bloqueado / Backlog. Distinto del handoff: éste dice **hacia dónde**, el handoff dice **dónde estamos** | los dos |
 | ¿Qué se hizo y cuándo, historial completo? | `docs/BITACORA.md` — append-only. Si discrepa con `HANDOFF_CODE.md` sobre un hecho histórico, **gana la bitácora**: no puede perder una entrada al reescribirse; el handoff es un resumen que puede quedar atrás y se reconstruye desde ella | solo Code |

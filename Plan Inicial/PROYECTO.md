@@ -1,11 +1,43 @@
 # PROYECTO — Motor de Informes
 
-> **Documento maestro vivo.** Único lugar de verdad: se actualiza cada vez que
-> cambia algo. Ubicación: `Plan Inicial/PROYECTO.md`.
-> Para *ejecutar* (comandos, permisos, orden de corrida) → `docs/RUNBOOK.md`.
-> Para los prompts de Code → `docs/Prompts/Paso-*.md`.
+> # ⚠ DOCUMENTO CONGELADO — 01/08/2026 (`DOC-6` Parte E)
 >
-> Última actualización: 30/07/2026.
+> **Esto es historia, no el estado del proyecto.** Fue el documento maestro vivo entre el
+> 26/07 y el 01/08/2026: ahí se decidió la arquitectura por registros, se resolvió cuál de
+> las dos hojas de `looker` era la fuente, y se fijó que la plantilla es del equipo. Sirve
+> para entender **cómo se llegó**; no para saber qué es cierto hoy.
+>
+> Se congeló porque el estado tenía dos casas y perdía sincronía: §7 llegó a describir el
+> Paso 2.4 como el más reciente cuando el proyecto iba por el 2.11, y §9 duplicaba trece
+> reglas de `CLAUDE.md`. Un archivo que hay que mantener alineado con otro se desalinea.
+>
+> **Adónde fue cada cosa:**
+>
+> | sección | qué contenía | dónde vive hoy |
+> |---|---|---|
+> | §1 | tesis del motor, regla de oro | `CLAUDE.md` (encabezado y §2) |
+> | **§2** | **roles de las dos cuentas, permisos, sidebar vs web app** | **`docs/PLAN.md` `D-02`/`D-03`/`D-04` — ⚠ y lo contradicen, ver abajo** |
+> | §3 | esquema de las hojas de registro · recetas · reparto por módulo | esquema → `Instalar.gs` (`HOJAS_CONFIG_`) y las hojas vivas · recetas → `PLAN.md` `D-01` · reparto por módulo → `CLAUDE.md` §2 |
+> | §4 | tres capas de resolución de período · bloques repetibles · periodicidad | **capas → `docs/TOKENS.md` §5** · bloques → `TOKENS.md` §3 · periodicidad → `docs/CONFIG_INFORMES.md` |
+> | §5 | tabla de bases · quirk de M2 · precedencia de merge · resolución S-01 · lección del `getFormulas()` | bases → `docs/_snapshots/` y la hoja `BASES` · precedencia → `CONFIG_INFORMES.md` §4 · S-01 → `docs/SUPUESTOS.md` · **lección → `CLAUDE.md` §4** · pregunta abierta del timeout → `docs/PENDIENTES_consistencia.md` |
+> | §6 | regla "la plantilla es del equipo" · plantillas canónicas · familias · bloqueante `m2_salud_camp` | regla → **`docs/REGLAS_NEGOCIO.md` `C-01`** · IDs y familias → `docs/TOKENS.md` · **bloqueante → `docs/PENDIENTES_consistencia.md`** |
+> | §7 | roadmap por bloques | `docs/PLAN.md` §2 (tramos) |
+> | §8 | setup de clasp y git | `docs/RUNBOOK.md` y `CLAUDE.md` §4 |
+> | §9 | taxonomía de documentos y convenciones | `CLAUDE.md` §7 (índice único, `DOC-6` D.4) y §1/§3/§4/§5 |
+>
+> **⚠ §2 quedó superado y dice lo contrario que el plan vigente.** No leerlo como
+> instrucción: al 30/07 decía que `jpcofanogcba1` es la "cuenta robot que ejecuta" y que
+> `reporteseinformesgcba` es dueña de las bases. `docs/PLAN.md` `D-02` (01/08) lo invierte —
+> **ejecuta `reporteseinformesgcba`**, y todavía **necesita** que le den lectura sobre las
+> cuatro bases. `D-04` además descarta la barra lateral que §2 proponía para admin: el panel
+> es web app. Lo único de §2 que sigue en pie es que el script y la planilla de control son
+> de `jpcofanogcba1`.
+>
+> **Si algo de acá tiene que cambiar**, no se edita este archivo: el cambio va al documento
+> que `CLAUDE.md` §7 declara dueño de esa pregunta. Una decisión estructural nueva nace como
+> `D-NN` en `docs/PLAN.md`.
+>
+> Última actualización como documento vivo: 30/07/2026.
 
 ---
 
@@ -366,166 +398,28 @@ Roadmap por bloques, sin marca de avance:
 
 ---
 
-## 9. Convenciones de mantenimiento
+## 9. Convenciones de mantenimiento — MIGRADAS
 
-- **Este `PROYECTO.md` es el único doc "vivo" sin restricción.** Al cerrar cada bloque,
-  se refresca (estado, decisiones resueltas, deltas de esquema). Ver la taxonomía de
-  abajo: no todos los docs de `docs/` se actualizan a mano de la misma forma.
-- Prompts `Paso-*.md` en `docs/Prompts/` — no van acá.
-- Docs viejos consolidados acá quedan archivados en `Plan Inicial/_archivo/`.
-
-### Taxonomía de documentos (DOC-1, 29/07/2026 — inventario completo DOC-4, 31/07/2026)
-
-La regla "`PROYECTO.md` es el único doc que se actualiza" es buena pero hasta el 29/07
-no se cumplía: había al menos seis docs que se seguían editando a mano y divergían entre
-sí (ver `docs/PENDIENTES_consistencia.md`). El `DOC-1` clasificó 9 documentos; para el
-31/07 `docs/` tenía 20 más dos directorios, y los que nacieron después no estaban
-declarados en ningún lado — cuando ningún documento está declarado como el lugar donde
-va algo nuevo, lo más barato es crear un archivo nuevo, y así se llegó de 8 a 20 en dos
-días. La corrección no es archivar (la mayoría están citados desde otros documentos):
-es declararlos todos.
-
-**Taxonomía de `docs/` (DOC-5 Parte 2, 31/07/2026 — corrige el criterio de `DOC-1`/`DOC-4`)**
-
-Esta tabla es un índice de ruteo — ruta, qué contiene, quién edita — **no** un registro
-central de qué documento está vivo o congelado. Esa distinción la declara **cada
-documento en su propio encabezado**, cuando aplica; un índice central se desactualiza sin
-que nadie lo note, que es justo lo que le pasó a `docs/CONFIG_INFORMES.md` (este índice lo
-tenía como congelado mientras su propio encabezado decía "vivo/borrador" — ver
-`docs/PROPUESTA_orden_documental.md`, Tarea 2). Los tres estados posibles siguen siendo
-los de `CLAUDE.md` §3 (vivo / congelado / archivado); acá no se repiten por documento.
-
-| documento | qué contiene | quién edita |
-|---|---|---|
-| `CLAUDE.md` (raíz) | convenciones de repo y ruteo documental para las herramientas | ambas |
-| `Plan Inicial/PROYECTO.md` | maestro: arquitectura, decisiones, convenciones (no estado de avance — ver §7) | ambas |
-| `docs/RUNBOOK.md` | cómo se opera y se corre | ambas |
-| `docs/TOKENS.md` | diccionario de tokens | ambas |
-| `docs/PENDIENTES_consistencia.md` | inconsistencias abiertas, sin resolver | ambas |
-| `docs/REGLAS_NEGOCIO.md` | reglas del dominio con ID estable `R-NN` | ambas |
-| `docs/SUPUESTOS.md` | supuestos asumidos con ID estable `S-NN` | ambas |
-| `docs/OBJETIVO_lamina_nueva.md` | objetivo de láminas por prompt; se refina | ambas |
-| `docs/CONFIG_INFORMES.md` | decisiones editoriales de configuración por informe — curado a mano por diseño | ambas |
-| `docs/ENTORNO.local.md` | **fuera de git**: URLs de la web app, cuentas y dónde vive cada credencial (Paso 1.8). Fuente única de direcciones — no se repiten en el RUNBOOK ni acá. En un clon limpio no existe: se reconstruye con `.clasp.json` + `clasp list-deployments` | ambas |
-| `docs/BITACORA.md` | qué hizo cada paso, append-only | **solo Code** |
-| `docs/HANDOFF_CODE.md` | estado actual del trabajo, se reescribe | **solo Code** |
-| `docs/MAPEO_completo.md` | relevamiento original del mapeo (28-29/07); la verdad viva es la hoja `MAPEO` | nadie — se autodeclara congelado |
-| `docs/HALLAZGOS_validacion_decks.md` | validación contra decks publicados (29/07) | nadie |
-| `docs/DISENO_match_temario.md` | diseño del match de temario | nadie, salvo addendum fechado y marcado (ver ejemplo del 31/07 en el propio archivo) |
-| `docs/PLANTILLAS_QA_y_armonizacion.md` | QA y equivalencia de slides entre plantillas (29/07) | nadie |
-| `docs/FECHAS_seleccion.md` | selección de columnas de fecha por solapa (30/07) | nadie — se autodeclara congelado |
-| `docs/AUD-2_union_digital_clave.md` | auditoría de solo lectura (30/07) | nadie |
-| `docs/RDV_otros_ministros_riesgo.md` | hallazgo + generalización DOC-3 (30/07) | nadie — se autodeclara congelado |
-| `docs/SECCIONES.md` | inventario verificado contra informes publicados | nadie |
-| `docs/INFORMES_relacion.md` | verificación token por token de ambas plantillas | nadie |
-| `docs/GRANO_TEMPORAL.md` | doctrina: por qué la fecha de reunión no filtra canales | nadie |
-| `docs/TEMARIO_Y_PLANTILLA_2026-07-31.md` | temario y diff de plantilla (31/07) | nadie |
-| `docs/VALIDACION_2026-07-31.md` | validación del informe SECCO publicado contra las cuatro bases (31/07) | nadie |
-| `docs/PROTOCOLO_2.11-C_corrida_2026-07-31.md` | las tres corridas del protocolo del Paso 2.11 Parte C (31/07): control positivo, idempotencia, estado | nadie — se crea uno nuevo por corrida |
-| `docs/INVENTARIO_CODIGO.md` | foto del código al 01/08/2026 (AUD-3): grafo de llamadas, las 20 huérfanas clasificadas, trabajos y costuras de `Instalar.gs`, menú. Se regenera con `tools/inventario.js` y se escribe uno nuevo | nadie — congelado |
-| `docs/ESCRITORES.md` | **contrato vivo**: quién escribe cada hoja de registro y por qué camino; co-dueño con los `SEED_*` de "¿qué debería decir esa configuración?" (`CLAUDE.md` §7). Matriz regenerable con `tools/escritores.js` | ambas |
-
-`REGLAS_NEGOCIO` y `SUPUESTOS` son **append-only**: se agregan filas, nunca se reutiliza
-un ID, y una regla o supuesto que se cae se marca **derogado con fecha** en vez de
-borrarse.
-
-**Tablas de datos**
-
-| archivo | qué es |
-|---|---|
-| `docs/PERSONAS_equivalencias.csv` | tabla de equivalencias. Se actualiza cuando cambia el padrón, no es prosa |
-| `docs/casos_validacion_2026-07-31.csv` | casos puntuales de `VALIDACION_2026-07-31.md`, detalle fila por fila |
-
-**Directorios**
-
-| directorio | quién escribe | regla |
-|---|---|---|
-| `docs/Prompts/` | ambas | un archivo por paso, auditoría o trabajo documental: `Paso-N.md`, `AUD-N_*.md`, `DOC-N_*.md`. No se editan una vez ejecutados; un prompt que reemplaza a otro lo declara con un campo `reemplaza:` en su propio encabezado (DOC-5 Parte 2) — el original no se toca. Nada que no sea un prompt (con Partes y protocolo de prueba) vive acá — lo que llegó a colarse va a `docs/Prompts/_archivo/` |
-| `docs/Prompts/_archivo/` | ambas | contenido que se coló en `docs/Prompts/` sin ser un prompt y ya se fusionó a su lugar correcto (ej. `REGLAS_R09_R10.md`, fusionado a `docs/REGLAS_NEGOCIO.md`) |
-| `docs/Sesiones/` | **solo claude.ai** | buzón donde el usuario deja los handoffs que baja de sus conversaciones. Code lee de ahí y **no escribe nunca**. El handoff vivo es el que **ningún otro handoff declara reemplazar** (campo `reemplaza:` en el encabezado — mismo campo que los prompts, `CLAUDE.md` §7; los viejos decían "Continúa a", vale igual) — no el que esté fuera de `_archivo/` por ubicación, que puede desalinearse (pasó una vez, 31/07) |
-| `Plan Inicial/_archivo/` | ambas | historial: documentos superados, plantillas espejo |
-
-**Nota sobre `RDV_otros_ministros_riesgo.md`:** el documento se autodeclara congelado, pero
-su sección "Qué falta" (el mecanismo de firma de encabezados, todavía sin implementar) está
-copiada a `docs/PENDIENTES_consistencia.md` — un pendiente vivo no puede vivir dentro de
-un documento congelado.
-
-Si un documento que se autodeclara **congelado** necesita cambiar: o el cambio va a
-`PROYECTO.md` (que sí es vivo), o el doc pasa a vivo explícitamente **en su propio
-encabezado**. Lo que no puede pasar es que se edite en silencio y quede contradiciendo a
-otro — eso es exactamente lo que costó la mitad del trabajo de `DOC-1`.
-
-### Convención de trabajo: un commit por paso
-
-Instaurada en el Paso 1.8, porque el commit `8f76cc5` bundleó cuatro pasos (0.5, 1,
-1.6, 1.7) al encimarse en los mismos archivos sin commit intermedio. No se rehace esa
-historia, pero de acá en adelante:
-
-1. Se termina un paso → se avisa y se espera que el usuario lo pruebe. No se sigue al
-   siguiente paso por cuenta propia.
-2. El usuario confirma que pasó la prueba.
-3. Recién ahí se documenta y se commitea: entrada en `docs/BITACORA.md` siempre,
-   `docs/HANDOFF_CODE.md` reescrito, y `PROYECTO.md` si el paso cambió algo estructural.
-4. Mensaje de commit: `Paso N ✅ — <resumen corto>`. Un paso por commit, sin bundles.
-5. Si un paso toca los mismos archivos que el anterior, igual va en su propio commit:
-   alcanza el orden temporal, no hace falta separar por archivo.
-6. Si al momento de commitear el working tree tiene cambios de más de un paso, se para
-   y se pregunta en vez de bundlear.
-
-Excepción explícita: un mismo prompt puede pedir varios commits internos (p. ej. este
-mismo Paso 1.8, con Partes A/B/C) cuando el propio prompt lo indica.
-
-### Convención de HANDOFF y bitácora: dos archivos, dos dueños (DOC-4, 31/07/2026)
-
-Instaurada el 2026-07-29, tras un conflicto de sincronización de OneDrive: el usuario
-edita este repo desde dos herramientas (esta sesión de Code, con git, y claude.ai, que
-sube/edita archivos directo en la carpeta sin git), y un `HANDOFF.md` único editado desde
-las dos a la vez generó dos versiones simultáneas.
-
-**El conflicto no lo causaba el archivo único: lo causaba que tuviera dos autores.** Con
-un solo dueño, un archivo único es seguro — por eso Code recupera el suyo, separado por
-función:
-
-| archivo | dueño | cómo se escribe | para qué |
-|---|---|---|---|
-| `docs/HANDOFF_CODE.md` | solo Code | se reescribe entero | dónde quedó el trabajo, ahora |
-| `docs/BITACORA.md` | solo Code | append-only | qué hizo cada paso, para siempre |
-| `docs/Sesiones/HANDOFF AAAA-MM-DD.md` | solo claude.ai | archivo nuevo, nunca se edita | qué se verificó y decidió en esa conversación |
-
-- Cada sesión de claude.ai que necesite dejar un handoff escribe un archivo **nuevo**:
-  `docs/Sesiones/HANDOFF AAAA-MM-DD.md`. Si ya hay uno de ese día, sumar `-N`
-  (`HANDOFF AAAA-MM-DD-2.md`). **Nunca se edita un HANDOFF de una sesión anterior.**
-- El HANDOFF más reciente por fecha es el punto de partida para la próxima conversación
-  de claude.ai; los anteriores se archivan en `docs/Sesiones/_archivo/`.
-- Code no escribe nunca en `docs/Sesiones/`: su handoff propio es `docs/HANDOFF_CODE.md`
-  (puntero al presente, se reescribe entero) y su historia es `docs/BITACORA.md`
-  (append-only, una entrada por paso). Si al actualizar el handoff parece que se está
-  borrando algo que vale la pena conservar, eso va a la bitácora, no abajo en el handoff.
-
-### Riesgo real: los `.gs` comparten un único namespace global
-
-Las dos herramientas (esta sesión y claude.ai) escriben archivos `.gs` en la misma
-carpeta sin verse entre sí. Apps Script concatena **todos** los `.gs` en un solo scope
-global: dos funciones o `var` con el mismo nombre en archivos distintos no dan error de
-sintaxis, pero una pisa a la otra en silencio (gana la que carga después, típicamente por
-orden alfabético de archivo). Pasó en el Paso 2: `Fuentes.gs` y el nuevo `Parseo.gs`
-(de claude.ai) definieron cada uno su propio `parsearFecha_` con firmas incompatibles —
-se detectó a tiempo y se renombró el de `Fuentes.gs` a `parsearFechaCelda_`.
-**Antes de nombrar una función o `var` global nueva, greppear el nombre en todo el
-repo** (`grep -rn "function nombre_" *.gs`), sobre todo si el otro archivo pudo haber
-sido escrito por la otra herramienta sin avisar.
-
-### Aprendizaje: el diagnóstico no distingue config vieja de config mal armada
-
-En el Paso 2.1, tres ⚠ y un ✅ engañoso de "Probar lectura por ventana" llevaron a
-diagnosticar un bug de seed que no existía: el código estaba bien (`SEED_MAPEO_` ya
-tenía `rdv/fecha` y `looker` sembrado, `SEED_BASES_` ya tenía `m2` en snapshot/fila 3) y
-lo que estaba viejo era **la planilla**, porque nadie había corrido "Cargar config
-inicial" después del `clasp push`. Se leyó el código buscando un problema que estaba en
-la hoja.
-
-**Mejora concreta pendiente (no implementada en `DOC-1` — ese prompt no toca código):**
-que "Probar lectura por ventana" muestre cuándo fue la última carga de config, guardando
-un `ultima_carga` en `CONFIG` al correr `seedConfiguracion()`. Tres líneas, evita repetir
-este diagnóstico equivocado cada vez que cambie un seed. Queda anotado para el próximo
-paso que toque `Instalar.gs`/`Fuentes.gs`.
+> **Vaciada el 01/08/2026 (`DOC-6` Parte E).** Esta sección tenía la taxonomía de
+> documentos, las convenciones de commit y de handoff, el riesgo del namespace global y un
+> par de aprendizajes. **Trece de esas reglas estaban también en `CLAUDE.md`**, palabra por
+> palabra o casi — el censo de la Parte A las contó una por una. Dos índices del mismo repo
+> mantenidos a mano divergen: es lo que ya había pasado con `CONFIG_INFORMES.md`, que este
+> índice declaraba congelado mientras su propio encabezado decía "vivo".
+>
+> Un duplicado se resuelve **borrando uno**, no sincronizando los dos. Queda el de
+> `CLAUDE.md`, que es el archivo que alguien lee en cada corrida:
+>
+> | qué había acá | dónde está ahora |
+> |---|---|
+> | Taxonomía de documentos (tabla de 24 docs, tablas de datos, directorios) | `CLAUDE.md` §7 — **el único índice** desde `DOC-6` D.4 |
+> | Convención de trabajo: un commit por paso (los 6 puntos) | `CLAUDE.md` §4 |
+> | Convención de HANDOFF y bitácora: dos archivos, dos dueños | `CLAUDE.md` §5 |
+> | Riesgo del namespace global de los `.gs` y el caso `parsearFecha_` | `CLAUDE.md` §1 |
+> | Mensaje de commit `Paso N ✅`, `REGLAS_NEGOCIO`/`SUPUESTOS` append-only, estados de documento, campo `reemplaza:`, nomenclatura `Paso-N`/`DOC-N`/`AUD-N` | `CLAUDE.md` §3, §4 y §7 |
+> | Aprendizaje: el diagnóstico no distingue config vieja de config mal armada | mejora pendiente (`ultima_carga` en `CONFIG`) → `docs/PENDIENTES_consistencia.md` |
+>
+> Lo único que **no** estaba duplicado y no se perdió: la nota sobre
+> `RDV_otros_ministros_riesgo.md` (un pendiente vivo no puede vivir dentro de un documento
+> congelado) — es el criterio que esta misma parte aplicó para sacar de acá el bloqueante
+> de `{{m2_salud_camp}}` y mandarlo a `PENDIENTES_consistencia.md`.
