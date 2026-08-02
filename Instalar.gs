@@ -251,7 +251,12 @@ function aplicarInstalacion_(aplicar) {
   // trae la nota completa de digital/RDV JM 2 VECES, y la migración —que comparaba
   // contra su propia constante vieja, más corta— la revertía en cada corrida: el diff
   // reportaba el mismo cambio para siempre y el paso 4 del protocolo no podía pasar.
-  var m2Invertidas = hojaSolapas ? reclasificarSolapasM2Invertidas_(hojaSolapas, aplicar) : vacia;
+  // reclasificarSolapasM2Invertidas_ retirada (Paso 2.12 Parte 3, 02/08/2026): la
+  // clasificación de `m2/M2 Directa` y `m2/M2 digital` la sostiene ahora `SEED_SOLAPAS_`
+  // (`ignorar`, Parte 2), y esta migración las forzaba a `revisar` en cada corrida —
+  // ping-pong permanente con el sembrador. La función no se borra; ver su encabezado.
+  // Sale también de la lista de `migraciones` y del resumen: una migración que ya no
+  // corre no puede seguir figurando entre las activas, aunque reporte cero.
 
   var hojaBases = ss.getSheetByName('BASES');
   var lookerBases = hojaBases ? alinearBasesHojaDefaultLooker_(hojaBases, aplicar) : vacia;
@@ -267,7 +272,6 @@ function aplicarInstalacion_(aplicar) {
     { hoja: 'MAPEO', nombre: 'alcance digital obsoleto', cambios: alcanceObsoleto.cambios },
     { hoja: 'MAPEO', nombre: 'looker a dinamico (S-01)', cambios: lookerMapeo.cambios },
     { hoja: 'SOLAPAS', nombre: 'looker a dinamico (S-01)', cambios: lookerSolapas.cambios },
-    { hoja: 'SOLAPAS', nombre: 'm2 invertidas (C.5)', cambios: m2Invertidas.cambios },
     { hoja: 'BASES', nombre: 'looker hoja_default (S-01)', cambios: lookerBases.cambios },
     { hoja: 'MARCADORES', nombre: 'calculo a operacion', cambios: operacion.cambios }
   ];
@@ -279,7 +283,6 @@ function aplicarInstalacion_(aplicar) {
     eliminadasAlcance: alcanceObsoleto.cambios.length,
     movidasLooker: lookerMapeo.cambios.length / 2,
     tocadasSolapasLooker: lookerSolapas.cambios.length,
-    reclasificadasM2: m2Invertidas.cambios.length,
     alineoHojaDefaultLooker: lookerBases.cambios.length > 0,
     migroOperacion: operacion.cambios.length > 0,
     migraciones: migraciones
@@ -340,7 +343,6 @@ function formatearResumenInstalacion_(r) {
     (r.eliminadasAlcance ? '\nMAPEO: eliminada(s) ' + r.eliminadasAlcance + ' fila(s) digital/Digital/alcance (col E era Fecha de inicio, Paso 2.8/2.9)' : '') +
     (r.movidasLooker ? '\nMAPEO: ' + r.movidasLooker + ' fila(s) de looker alineadas a resumen_metricas_dinamico (S-01, Paso 2.9 Parte C)' : '') +
     (r.tocadasSolapasLooker ? '\nSOLAPAS: looker resumen_metricas_dinamico=fuente / resumen_metricas=derivada (S-01)' : '') +
-    (r.reclasificadasM2 ? '\nSOLAPAS: ' + r.reclasificadasM2 + ' solapa(s) de m2 pasadas a revisar (clasificación invertida — Parte C.5)' : '') +
     (r.alineoHojaDefaultLooker ? '\nBASES: looker.hoja_default = resumen_metricas_dinamico (S-01)' : '') +
     (r.migroOperacion ? '\nMARCADORES.calculo renombrada a operacion (valores conservados)' : '');
 }
@@ -533,9 +535,34 @@ function alinearBasesHojaDefaultLooker_(hoja, aplicar) {
  * las otras cuatro solapas "periodo" — si siguieran acá, esta función las volvería a
  * `revisar` en cada instalación y pisaría esa clasificación.
  */
+/**
+ * ⚠ SIN USO desde el 02/08/2026 (Paso 2.12 Parte 3) — sólo las lee
+ * `reclasificarSolapasM2Invertidas_`, que salió de `aplicarInstalacion_`. No se borran:
+ * son el registro de qué dos solapas estuvieron bajo sospecha de inversión y con qué nota.
+ */
 var SOLAPAS_M2_INVERTIDAS_ = ['M2 Directa', 'M2 digital'];
 var NOTA_M2_INVERTIDA_ = 'clasificación invertida, pendiente de confirmar (Paso 2.9 Parte C.5)';
 
+/**
+ * ⚠ MIGRACIÓN EJECUTADA. Fuera de `aplicarInstalacion_` desde el 02/08/2026
+ * (Paso 2.12 Parte 3). **No volver a cablearla sin retirar antes la clasificación de
+ * `SEED_SOLAPAS_`**, o las dos se pisan en cada corrida.
+ *
+ * Por qué se retiró: la sospecha que la justificaba está resuelta. `M2 Directa` y
+ * `M2 digital` pasaron a `ignorar` en `SEED_SOLAPAS_` (Paso 2.12 Parte 2) —`m2` quedó
+ * `sin_fuente` en el Paso 2.10 Parte C, así que hoy no hay a qué engancharlas—, y esta
+ * función las forzaba a `revisar` **antes** de que corriera el sembrador. Resultado: cuatro
+ * líneas de `migracion` y dos de `cambio` en cada corrida, para siempre, con el estado
+ * final igual. Es el patrón de `corregirNotaControlAnclaje_`, retirada en el Paso 2.11
+ * C.2 por romper la idempotencia.
+ *
+ * **El razonamiento ya estaba hecho y se había aplicado a la mitad del caso.** El
+ * comentario de arriba (Paso 2.10 Parte C) explica que `M2 periodo DIRECTA`/`DIGITAL`
+ * salieron de `SOLAPAS_M2_INVERTIDAS_` porque *"si siguieran acá, esta función las
+ * volvería a `revisar` en cada instalación y pisaría esa clasificación"*. Exactamente eso
+ * es lo que pasaba con el par que quedó en la lista, desde que la Parte 2 le dio una
+ * clasificación al seed.
+ */
 function reclasificarSolapasM2Invertidas_(hoja, aplicar) {
   aplicar = (aplicar !== false);
   var existentes = leerFilasSolapas_(hoja);
@@ -1006,7 +1033,9 @@ var SEED_SOLAPAS_ = [].concat(
     filaSolapa_('rdv', 'RVD JM-CM - ES', 'fuente', 'base de encuentros, hoja_default'),
     filaSolapa_('rdv', 'RDV_otros_ministros', 'fuente', 'mapeada; base ajena, ojo con la firma'),
     filaSolapa_('rdv', 'RVD JM-CM - ES Back Up', 'ignorar', 'backup'),
-    filaSolapa_('rdv', 'RDV_JM_CM_ES', 'revisar', 'nombre casi idéntico al default — ¿duplicado?')
+    // Paso 2.12 Parte 2, Grupo B — sólo cambia `uso`; la nota queda igual, ver el bloque
+    // de las otras siete más abajo.
+    filaSolapa_('rdv', 'RDV_JM_CM_ES', 'ignorar', 'nombre casi idéntico al default — ¿duplicado?')
   ],
   filasSolapa_('rdv', ['Para Revisar', 'Copia de Para Revisar', 'Copia de Para Revisar 1'], 'ignorar', 'copias de trabajo'),
   filasSolapa_('rdv', ['Tabla dinámica 4', 'Tabla dinámica 14', 'Tabla dinámica 16', 'Tabla dinámica 18', 'Tabla dinámica 19', 'Tabla dinámica 20', 'Tabla dinámica 23'], 'ignorar', 'pivots'),
@@ -1016,8 +1045,30 @@ var SEED_SOLAPAS_ = [].concat(
   filasSolapa_('rdv', ['Cantidad de reuniones por franja horaria'], 'derivada', 'agregado'),
   filasSolapa_('rdv', ['Desplegables', 'Organigrama', 'Mail propuesta'], 'ignorar', 'validaciones y material suelto'),
   filasSolapa_('rdv', ['Backup respuestas'], 'ignorar', 'backup'),
-  filasSolapa_('rdv', ['Funcionarios / Ministros'], 'revisar', 'posible catálogo de personas — cruzar con PERSONAS_equivalencias.csv'),
-  filasSolapa_('rdv', ['PPTS', 'RDV CONJUNTO', 'Agenda', 'Comunas', 'Seguimiento', 'Respuestas JM 📩'], 'revisar', 'sin decidir'),
+  // Paso 2.12 Parte 2, Grupo B — estas ocho ya estaban decididas en la planilla con
+  // `origen=manual`, y el seed seguía diciendo `revisar`: la protección impedía pisarlas,
+  // así que el diff emitía ocho líneas `protegida (habría cambiado)` en cada corrida. Acá
+  // el seed se alinea con lo decidido. **`origen` no se toca**: son decisiones humanas y la
+  // protección tiene que seguir existiendo — lo que se corrige es que el seed proponga otra
+  // cosa. (Distinto del caso `looker` del 2.11 Parte E, donde el `manual` era vestigial y
+  // la fila volvió al sembrador: mismo síntoma, causa opuesta, arreglo opuesto.)
+  // La agrupación de seis se abre porque no van todas al mismo lado.
+  // ⚠ **Las `notas` de estas ocho quedan textualmente como están.** No es descuido: el
+  // diff compara `['uso', 'fila_encabezado', 'notas']`, y hoy las notas del seed coinciden
+  // con las de la planilla — por eso las ocho líneas salían sobre `uso` solamente. Si acá
+  // se escribieran notas mejores, el seed no podría aplicarlas (son `origen=manual`) y
+  // quedarían ocho `protegida (habría cambiado)` sobre `notas` en cada corrida: el mismo
+  // piso permanente que el 2.11 Parte E acaba de sacar del lado de `looker`.
+  // Que digan "sin decidir" sobre filas ya decididas está mal y está anotado en
+  // `docs/PENDIENTES_consistencia.md`; arreglarlo pide tocar la planilla o `origen`, y
+  // ninguna de las dos cosas es de este paso.
+  //
+  // `RDV CONJUNTO`: `ignorar` por decisión del usuario del 02/08/2026 — podría ser una
+  // solapa de control. Lo sostiene esa decisión, NO la edición de control positivo del
+  // protocolo del 31/07, que puso el mismo valor por casualidad al probar el diff.
+  filasSolapa_('rdv', ['Funcionarios / Ministros'], 'referencia', 'posible catálogo de personas — cruzar con PERSONAS_equivalencias.csv'),
+  filasSolapa_('rdv', ['Comunas'], 'referencia', 'sin decidir'),
+  filasSolapa_('rdv', ['PPTS', 'RDV CONJUNTO', 'Agenda', 'Seguimiento', 'Respuestas JM 📩'], 'ignorar', 'sin decidir'),
 
   // digital — "Seguimiento Digital"
   [filaSolapa_('digital', 'Digital', 'fuente', 'hoja_default')],
@@ -1035,7 +1086,12 @@ var SEED_SOLAPAS_ = [].concat(
     { filas_datos: 37 })],
   filasSolapa_('digital', ['Metricas informe', 'INFORME'], 'referencia', 'el informe manual actual'),
   filasSolapa_('digital', ['Nomalización de barrios', 'Barrio Hab', 'Limpia Fun'], 'referencia', 'catálogos de normalización — útiles para el scoring del anclaje'),
-  filasSolapa_('digital', ['Cuentas', 'Filter unificado', 'EDV', 'CAMPAÑAS_DESGLOCE_DIGITAL'], 'revisar', 'sin decidir'),
+  // Paso 2.12 Parte 2, Grupo A — decidido el 31/07 contra la firma de encabezados y los
+  // conteos reales. Criterio general: ante la duda, `ignorar`.
+  filasSolapa_('digital', ['Cuentas'], 'fuente', 'catálogo maestro: ID Cuentas es clave única real (3.453 filas, 3.453 distintos, cero vacíos) — la única columna así en las cuatro bases'),
+  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'tabla original, encabezados en fila 1, sin recorte por período — los casos V-21 a V-26 de VALIDACION la usan y resuelven'),
+  filasSolapa_('digital', ['EDV'], 'referencia', 'funcionarios/figuras por fecha (confirmado por el usuario)'),
+  filasSolapa_('digital', ['Filter unificado'], 'ignorar', 'la fila 1 son dos fechas — no tiene encabezados'),
 
   // Paso 2.10 Parte C — seis solapas "periodo" entre m2 y digital: el recorte de
   // fechas vive en dos celdas editables (fila 1, o fila 2 en las dos de más abajo),
@@ -1067,29 +1123,48 @@ var SEED_SOLAPAS_ = [].concat(
     filaSolapa_('looker', 'DIGITAL', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 4563 }),
     filaSolapa_('looker', 'ALCANCE', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 727 })
   ],
-  filasSolapa_('looker', ['Desglose Alcance', 'Audiencias', 'Audiencias Conectadas', 'URLs', 'Cuentas'], 'revisar', 'sin decidir'),
+  // Paso 2.12 Parte 2, Grupo A.
+  filasSolapa_('looker', ['Audiencias'], 'referencia', 'catálogo de segmentaciones'),
+  filasSolapa_('looker', ['Cuentas'], 'ignorar', 'es el origen de resumen_metricas_dinamico, que ya es fuente (S-01)'),
+  filasSolapa_('looker', ['Desglose Alcance'], 'ignorar', 'looker/ALCANCE ya da el alcance por cuenta'),
+  filasSolapa_('looker', ['URLs'], 'ignorar', 'links a piezas creativas; además tiene id_cuentas y nombre_campaña duplicados en el encabezado'),
+  filasSolapa_('looker', ['Audiencias Conectadas'], 'ignorar', '1 fila de datos'),
   [filaSolapa_('looker', 'Desplegables', 'ignorar', 'validaciones')],
 
   // m2 — "M2 Reporte para Fede 2026"
   [
     filaSolapa_('m2', 'Cuentas M2', 'fuente', '353 filas, encabezado fila 1 — dimensión de campañas M2', { fila_encabezado: 1, filas_datos: 353 }),
-    filaSolapa_('m2', 'Cuentas', 'revisar', '3453 filas, mismo encabezado — parece el universo completo, no solo M2', { fila_encabezado: 1, filas_datos: 3453 })
+    filaSolapa_('m2', 'Cuentas', 'ignorar', 'mismo universo que digital/Cuentas (3453 filas), que queda como fuente (Paso 2.12 Parte 2)', { fila_encabezado: 1, filas_datos: 3453 })
   ],
-  // Paso 2.9 Parte C.5: 'M2 Directa'/'M2 digital' (26/67 filas, "acumulados") tienen
-  // clasificación sospechada invertida frente a lo que se leía como su detalle.
-  // Quedan 'revisar' hasta confirmar contra la base viva (misma duda que resolvió S-01
-  // para looker). 'M2 periodo DIRECTA'/'DIGITAL' salieron de este grupo en el Paso 2.10
-  // Parte C: no son un "detalle invertido", son las seis solapas "periodo" de más
-  // arriba — reclasificarSolapasM2Invertidas_() (abajo) ya no las toca.
+  // Paso 2.9 Parte C.5: 'M2 Directa'/'M2 digital' (26/67 filas, "acumulados") tuvieron
+  // clasificación sospechada invertida frente a lo que se leía como su detalle, y
+  // quedaron 'revisar' hasta confirmar contra la base viva.
+  //
+  // Paso 2.12 Parte 2 (02/08/2026) — pasan a 'ignorar', y la sospecha deja de estar
+  // pendiente: NO se ignoran porque no sirvan, sino porque hoy **no hay a qué
+  // engancharlas** — `m2` quedó `sin_fuente` en el Paso 2.10 Parte C. **Condición de
+  // reversión:** si la lista curada de campañas M2 termina viviendo en `CAMPANAS`,
+  // `M2 Directa` es el detalle que corresponde y vuelve a `fuente`.
+  //
+  // Para que esta clasificación se sostenga hubo que retirar antes
+  // `reclasificarSolapasM2Invertidas_` de `aplicarInstalacion_` (Parte 3): forzaba estas
+  // dos a 'revisar' antes de que corriera el sembrador, o sea ping-pong en cada corrida.
+  // Es la razón por la que la Parte 3 se ejecutó ANTES que la Parte 2.
+  //
+  // 'M2 periodo DIRECTA'/'DIGITAL' salieron de este grupo en el Paso 2.10 Parte C: no son
+  // un "detalle invertido", son las seis solapas "periodo" de más arriba.
   // Paso 2.11 Parte B — fila_encabezado: 1, no el default de m2 (3). Medido contra el
   // archivo del 31/07: primeras celdas reales 'ID cuentas · ID MailUp · Listado de
   // Mail' (M2 Directa) / 'ID Cuentas · Nombre campaña…' (M2 digital) en la fila 1.
   // Con encabezado en fila 3 (el default viejo), leerFuente tomaba una fila de DATOS
   // como si fueran títulos — no fallaba, devolvía columnas con nombres raros.
-  filasSolapa_('m2', ['M2 Directa', 'M2 digital'], 'revisar', 'clasificación invertida, pendiente de confirmar (Paso 2.9 Parte C.5)', { fila_encabezado: 1 }),
+  filasSolapa_('m2', ['M2 Directa', 'M2 digital'], 'ignorar', 'sin fuente a la que engancharlas (m2 quedó sin_fuente, Paso 2.10 Parte C). Si la lista curada de campañas M2 vive en CAMPANAS, M2 Directa vuelve a fuente', { fila_encabezado: 1 }),
   // Paso 2.11 Parte B — mismo caso: encabezado real en fila 1 ('ID Cuentas · Nombre
   // campaña…' / 'ID Cuentas · Alcance · Frecuencia' / 'Id accion · Id cuentas · Año').
-  filasSolapa_('m2', ['Seguimiento digital', 'Alcance', 'CAMPAÑAS_DESGLOCE_DIGITAL'], 'revisar', '⚠ mismos nombres que solapas de digital — hay que saber cuál manda antes de mapear ninguna', { fila_encabezado: 1 }),
+  // Paso 2.12 Parte 2, Grupo A — resuelto: manda la de `digital`. Las tres de `m2` son
+  // copias exactas (mismo conteo de filas), así que se ignoran para no tener dos vivas
+  // dando números casi iguales.
+  filasSolapa_('m2', ['Seguimiento digital', 'Alcance', 'CAMPAÑAS_DESGLOCE_DIGITAL'], 'ignorar', 'copia exacta de la solapa homónima de digital, que queda como fuente (Paso 2.12 Parte 2)', { fila_encabezado: 1 }),
   // Paso 2.10 Parte C: espejo de digital/Directa Mail (2.106 vs 2.107 filas, mismas
   // métricas) — declarada 'derivada' para que no queden las dos vivas dando números
   // casi iguales. MAPEO sigue apuntando a digital/Directa Mail, no se toca acá.
