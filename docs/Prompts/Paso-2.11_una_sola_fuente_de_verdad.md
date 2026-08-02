@@ -323,3 +323,26 @@ entran acá: tocan el anclaje, que es Paso 3.
 > cuando la fórmula apunta a una hoja que no es la otra del par). Hasta entonces ninguna de
 > las dos funciones vuelve al menú. Y `promoverFechasElegidas()` sigue siendo un escritor
 > de `MAPEO` sin declarar — es el `P1` original de `C.2-7` y no es de este paso.
+
+---
+
+> ⚠ **Addendum 3 (02/08/2026) — la Parte D queda ARCHIVADA. `DOC-7` Parte A.**
+>
+> **No se mueve el archivo:** las Partes A, B y C están ejecutadas y la C tiene su propia
+> cadena de addenda. Se archiva **la parte**, declarándolo acá, que es el mecanismo del repo
+> para un prompt ya corrido. El texto de la Parte D no se toca.
+>
+> **Por qué se archiva: sus cuatro tareas se cumplieron por otro camino.**
+>
+> | tarea de la Parte D | quién la hizo |
+> |---|---|
+> | 1 · renombrar los ítems de menú por lo que hacen, no por el paso | `MENU_declarado_por_tabla.md` — `Codigo.gs` declara hoy la convención en el propio archivo: *"la etiqueta dice QUÉ hace el ítem; el paso que lo creó vive en el encabezado de la función"* |
+> | 2 · agrupar en submenús | ídem — seis submenús (`Configuración`, `Datos y decisiones`, `Diagnóstico`, `Plantillas`, `Avanzado`, `Archivo`) |
+> | 3 · retirar los diagnósticos de hipótesis cerradas | parcial y por decisión distinta: el submenú **`Archivo (casos cerrados)`** los conserva declarando su intención, en vez de borrarlos. Se resolvió mejor que como lo pedía la tarea |
+> | 4 · migraciones con vencimiento | de a una, y con evidencia cada vez: `corregirNotaControlAnclaje_` (2.11 C.2), `consolidarMapeoLooker_` + `auditarFormulasResumenesLooker_` (2.11 Parte E), `reclasificarSolapasM2Invertidas_` (2.12 Parte 3) |
+>
+> **Lo único vivo que tenía era `H-2`** (`BASES.fila_encabezado` vestigial, y `Union.gs:36`
+> y `:261` leyéndola directo sin pasar por `resolverFilaEncabezado_()`). **Se desprendió
+> antes de archivar**: `docs/PENDIENTES_consistencia.md` lo tiene como `P1` autosuficiente,
+> sin paso asignado y esperando uno propio. Archivar una parte que todavía sostiene un
+> pendiente sería perderlo, que es justo lo que este censo vino a evitar.

@@ -80,6 +80,15 @@ también en la taxonomía de `PROYECTO.md` §9: dos índices del mismo repo, sin
 mano. Era la divergencia que la regla venía a evitar, fabricada por la regla misma
 (`DOC-6` D.4).
 
+**Un prompt declara su estado cuando se lo toca**, no antes: al 02/08 lo declaran 5 de 58 y
+**no se van a editar los 53 restantes** — una pasada de mantenimiento sobre prompts que en
+su mayoría ya corrieron es trabajo que no rinde (`DOC-7`). Para saber si un prompt se
+ejecutó, el cruce válido es **el designador de paso contra los encabezados de
+`docs/BITACORA.md`**, no el nombre de archivo: la bitácora nombra el paso, no el archivo, así
+que buscar por nombre da falsos negativos en casi todos. Ojo con los pasos **sin número**
+(`MENU_declarado_por_tabla.md`): se escapan de ese cruce, y por eso uno quedó sin entrada
+hasta que lo encontró el censo del `DOC-7`.
+
 **Los tres estados de un documento**: *vivos* se editan; *congelados* se leen y no se
 editan (si un congelado necesita cambiar, el cambio va al documento vivo dueño de esa
 pregunta según §7 — no al PROYECTO, que desde el 01/08 también está congelado — o el doc
@@ -98,6 +107,16 @@ sospecha no verificada; las tres premisas no estaban en el archivo.
 ---
 
 ## 4. Flujo de trabajo — un paso, un test, un commit
+
+**Antes de empezar: un prompt no ejecutado es una hipótesis, no un plan.** Se verifican sus
+premisas contra el estado de hoy y, si alguna venció, **se reporta y se para antes de la
+primera edición**. Las citas a `archivo:línea` se resuelven **por nombre**, no por número:
+una línea corrida es inofensiva, una premisa vencida no. En los prompts nuevos, no escribir
+números de línea como dato — si se citan, es como referencia, y envejecen con cualquier
+commit. (Origen: 02/08. El `Paso-2.14` citaba `Instalar.gs:2052` y `:1819`, hoy `:2140` y
+`:1908`, y no pasó nada; el `Paso-2.12` hablaba de 17 filas y de dos casos difíciles que ya
+estaban resueltos en la planilla, y eso **no se detecta releyendo el prompt** — se detectó
+cruzando contra los datos al ejecutar.)
 
 1. Se termina un paso → **se avisa y se para.** No se avanza al siguiente por cuenta
    propia.

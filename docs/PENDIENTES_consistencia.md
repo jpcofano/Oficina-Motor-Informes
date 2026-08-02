@@ -111,8 +111,14 @@ cuando se toque `BASES` por otra razón. Baja de P1 a P2.
 `SOLAPAS.m2/M2 periodo DIRECTA = 3`. Y `Union.gs:36` y `:261` leen `base.fila_encabezado`
 directo, sin pasar por `resolverFilaEncabezado_()` — para `m2/Cuentas M2` leerían la fila 3
 como encabezado, que ahí es una fila de datos. El tipo es correcto; el problema es que la
-columna sigue existiendo y siendo leída. → **Paso 2.11 Parte D**, junto con los nombres de
-solapa hardcodeados de `Fechas.gs:66` y `Auditoria.gs:348`.
+columna sigue existiendo y siendo leída. Junto con los nombres de solapa hardcodeados de
+`Fechas.gs:66` y `Auditoria.gs:348`.
+
+**Sin paso asignado desde el 02/08/2026, y es a propósito.** Venía apuntando a la Parte D de
+`docs/Prompts/Paso-2.11_una_sola_fuente_de_verdad.md`, que se **archivó** ese día (`DOC-7`):
+sus tareas de menú ya las había hecho `MENU_declarado_por_tabla.md` y sus migraciones con
+vencimiento se retiraron de a una. **`H-2` era lo único vivo que le quedaba a esa parte**, y
+por eso se desprende acá antes de archivarla en vez de irse con ella. Necesita paso propio.
 
 ### P0 · Tres reglas de negocio nuevas (R-06, R-09, R-10) sin implementar en código
 
@@ -171,6 +177,29 @@ ella habría revertido S-01 sobre `MAPEO`, `SOLAPAS` y `BASES` de un click. Las 
 referencia apunta a una hoja que **no es la otra del par**, no hay relación fuente/derivada
 entre ellas y el caso es `ambas_independientes`, que hoy no existe como estado. Hasta
 entonces, ninguna de las dos funciones vuelve al menú.
+
+### P2 · El designador de paso no es único: ningún cruce automático puede usarlo como clave
+
+Abierto el 02/08/2026 por el censo del `DOC-7`. Los números de paso **colisionan**, y no
+sólo entre partes del mismo paso:
+
+| designador | archivos | ¿son el mismo paso? |
+|---|---|---|
+| `Paso-2.9` | 9 (`A`…`H` + `_v2`) | sí — un lote, corrió junto |
+| `Paso-2.10` | 3 | sí — partes distintas del mismo |
+| `Paso-2.11` | 2 | sí — el prompt y su Parte C.2 |
+| `Paso-2.12` | 2 | sí — el original y el reemplazo de su Parte 2 |
+| **`Paso-1.8`** | **2** | **NO** — `Paso-1.8.md` es *"higiene de proyecto: commit por paso + zona horaria + scopes"* y `Paso-1.8-API-de-pruebas-v3.md` es la API sobre `/dev`. **Dos pasos distintos con el mismo número** |
+
+**No se renumera nada:** los designadores ya están citados en la bitácora, en `PENDIENTES`,
+en encabezados de función y en commits. Renumerar rompería más de lo que arregla.
+
+**La consecuencia práctica** es la tensión que dejó el censo: para saber si un prompt corrió
+hay que cruzar **por designador** contra `docs/BITACORA.md` (que es lo único que la bitácora
+registra), pero el designador **no identifica unívocamente el archivo**. O sea que el cruce
+sirve para una persona y **no es automatizable con los datos que hay hoy**. Si alguna vez
+hace falta automatizarlo, la bitácora tiene que empezar a registrar el **nombre de archivo
+completo** del prompt en cada entrada — eso es un cambio de formato y no se decide al pasar.
 
 ### P2 · Las `notas` de las ocho solapas protegidas de `rdv` dicen "sin decidir" sobre filas decididas
 

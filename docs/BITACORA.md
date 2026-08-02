@@ -1196,3 +1196,36 @@ nadie más.
   - `D-16` pieza 3 abierta y sin solución elegida (`§3`).
   - `API_AUTORIZADOS_` sigue cableada en `Api.gs:29`. Migrarla a hoja es parte de `D-16`
     pieza 1, no de este commit: acá no se tocó código.
+
+## MENÚ declarado por tabla (2026-08-01) — commit `9fd16c6` · **entrada retroactiva, escrita el 02/08/2026**
+> ⚠ **Reconstruida desde el código y el commit, no desde la memoria de la corrida.** El paso
+> se ejecutó el 01/08 y **no dejó entrada**: lo encontró el censo del `DOC-7`. La fecha del
+> título es la real del commit; la de escritura de esta entrada es el 02/08. No se falsea
+> ninguna de las dos.
+>
+> Se escapó del cruce habitual porque **no tiene número de paso** —se declara "paso no
+> funcional, sin número"— y la bitácora se cruza por designador. Es el hueco que el censo
+> encontró y la razón de la nueva regla de `CLAUDE.md` §3.
+- **Qué pedía el prompt:** `docs/Prompts/MENU_declarado_por_tabla.md`. Dos problemas: cada
+  paso agregaba su ítem y ninguno se sacaba nunca aunque el caso se cerrara, y el número de
+  paso viajaba en la etiqueta (`(Paso 2.9E)`, `(Parte D)`, `(AUD-1)`), así que a las seis
+  semanas nadie iba a saber cuáles seguían sirviendo.
+- **Qué se hizo** (verificado contra `Codigo.gs` y el diff de `9fd16c6`, 174 líneas):
+  - `MENU_` pasa a ser una **tabla declarativa** y `construirMenu_()` la recorre. Agregar un
+    ítem es agregar una fila; `onOpen()` no se toca más.
+  - **La etiqueta dice qué hace el ítem.** El paso que lo creó vive en el encabezado de la
+    función, no en la etiqueta — una sola fuente de verdad. Única excepción declarada: el
+    submenú `Archivo (casos cerrados)`, donde el paso **es** la identidad del caso.
+  - Reagrupado en seis submenús (`Configuración`, `Datos y decisiones`, `Diagnóstico`,
+    `Plantillas`, más `Avanzado` y `Archivo` anidados).
+  - **Un diagnóstico de un caso cerrado se mueve a `Archivo`, no se borra.**
+  - `onOpen()` no puede tirar excepción: si `MENU_` queda mal, cae a un menú mínimo
+    degradado y deja el error en el log. Un `onOpen()` que falla deja la planilla sin menú.
+- **Prueba:** no consta cuál se corrió. Lo verificable hoy: `tools/inventario.js` lee la
+  tabla y reporta **34 ítems, ninguno apuntando a una función inexistente**, y el menú
+  degradado existe en el código. La verificación original del prompt no quedó registrada —
+  es la consecuencia de no haber escrito la entrada en su momento.
+- **Pendientes/decisiones:** este paso es el que dejó **cumplidas las tareas 1, 2 y 3 de la
+  Parte D del `Paso-2.11`**, que por eso se archivó el 02/08 (`DOC-7`). Su tarea 3 se
+  resolvió mejor que como estaba pedida: en vez de retirar los diagnósticos de casos
+  cerrados, se conservan en `Archivo` declarando su intención.
