@@ -1143,3 +1143,56 @@ nadie más.
     que cerró la Parte E. Separar los dos trabajos es un paso propio.
   - `H-4` sigue abierto: `m2/Cuentas` quedó `ignorar` y las cinco filas de `MAPEO` que la
     mapean están huérfanas. No era de este paso.
+
+---
+
+## Doc — `D-15` y `D-16`: autenticación del panel y acceso por usuario (2026-08-02) — commits `11f2667` + el de esta entrada
+
+- **Qué se agregó a `docs/PLAN.md` §1.** Dos decisiones nuevas, las primeras del bloque de
+  panel desde `D-04`:
+  - **`D-15` — el panel se despliega como "ejecuta el usuario que accede".** La web app de
+    `D-04` va con esa opción y acceso a cualquiera con cuenta de Google: Google exige login
+    antes de que corra el código, así que `Session.getActiveUser().getEmail()` devuelve
+    identidad confiable y se filtra contra lista blanca. De las tres opciones evaluadas es
+    la única que **combina identidad con lista blanca** — con *ejecutar como: yo* sobre
+    cuentas Gmail personales `getActiveUser()` suele volver vacío y el filtro deja de
+    servir. **Acoplada a `D-02`**, no independiente: si alguna vez se pasara a *ejecutar
+    como: yo*, las bases dejarían de necesitar compartirse y `D-02` cambiaría de sentido.
+  - **`D-16` — cada usuario accede sólo a sus informes y a sus datos.** El permiso es por
+    informe, no por URL: una sola app que arma la selección según quién entró; URLs
+    distintas por grupo serían apps que divergen. Tres piezas — (1) la lista de accesos
+    sale de una hoja y no del código (hoy `API_AUTORIZADOS_` está cableada en `Api.gs:29`,
+    lo contrario de `D-01`); (2) el panel filtra qué informes ofrece; (3) **sin resolver**,
+    el acceso al **dato** y no al panel.
+- **La pieza 3 es el trabajo real y quedó nombrada como tal.** Filtrar la selección del
+  panel no alcanza: un deck generado es un archivo de Drive con permisos propios y las
+  bases son planillas con los suyos, así que si el usuario abre el deck directo —o si el
+  motor corre con su identidad (`D-15`) y necesita leer una base que él no debería ver— el
+  control del panel no interviene. Va a `§3` como bloqueada, destrabada por el diseño
+  end-to-end y con el panel construido (`D-04`) como precondición para probar contra algo
+  real. **No hay solución elegida: es trabajo de diseño, no de implementación.**
+- **La precondición de `D-15` subió a `§2` Tramo 4 como primer ítem**, con el resto del
+  tramo dependiendo de ella: verificar qué devuelve `getActiveUser()` con el despliegue
+  real, entrando desde `reporteseinformesgcba`; si vuelve vacío, `D-15` se revisa antes de
+  escribir código del panel. En la decisión quedó el **puntero**, no la instrucción — una
+  precondición escondida adentro de la decisión que la motiva no se ejecuta.
+- **Nota de método 4 nueva, y el disparador fue una colisión real.** La nota del 02/08 bajo
+  `D-02` cerraba con *"sería un `D-15` que cite a ésta"*, nombrando un ID futuro
+  hipotético. **`D-15` se asignó esa misma tarde**, a la autenticación del panel, que no
+  supersede a `D-02` sino que la cita: el número no estuvo libre ni un día. Se le sacó el
+  número a la nota (*"haría falta una decisión nueva que cite a ésta"*) con addendum
+  fechado que deja constancia de qué decía antes, y la regla quedó como **nota de método
+  4** en el encabezado del plan. Cubre el hueco entre las otras dos: la nota 2 cubre
+  **citar** un ID existente y `§1` cubre **asignar** uno nuevo; ninguna cubría
+  **anunciar** uno.
+- **Colisión de numeración al escribir, resuelta en el momento.** Entre el commit `11f2667`
+  y esta entrada, otra sesión agregó al encabezado su propia *"nota 3"* (la de unidades de
+  predicción, del cierre del Paso 2.12). Quedaron **dos notas numeradas 3**: la de
+  predicción conserva el 3 —es la que ya está citada así desde la bitácora del 2.12— y la
+  de IDs futuros pasó a **4**, con su referencia cruzada bajo `D-02` corregida. El mismo
+  repo editado desde dos herramientas que no se ven entre sí, que es el riesgo de
+  `CLAUDE.md` §1, esta vez sobre numeración de notas en vez de nombres de función.
+- **Pendientes/decisiones:**
+  - `D-16` pieza 3 abierta y sin solución elegida (`§3`).
+  - `API_AUTORIZADOS_` sigue cableada en `Api.gs:29`. Migrarla a hoja es parte de `D-16`
+    pieza 1, no de este commit: acá no se tocó código.

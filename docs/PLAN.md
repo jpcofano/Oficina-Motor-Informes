@@ -17,7 +17,7 @@
 >
 > La prueba para saber en cuál va algo: **si no podés decir qué lo desbloquea, es backlog.**
 
-### Tres notas de método, antes de escribir acá
+### Cuatro notas de método, antes de escribir acá
 
 **1 · Las cifras que aporta claude.ai desde afuera del repo son estimaciones hasta que un
 script las reproduzca.** Casos: 18 huérfanas eran **20**, ~8.100 líneas eran **8.410**, ~34
@@ -40,7 +40,7 @@ distintas no se pueden comparar, que es para lo que sirve predecir. **El diff de
 configuración cuenta celdas**: predecir en celdas, o decir explícitamente "N filas × M
 columnas".
 
-**3 · Una nota nunca nombra un ID que todavía no se asignó.** Escribir "sería un `D-15` que
+**4 · Una nota nunca nombra un ID que todavía no se asignó.** Escribir "sería un `D-15` que
 cite a ésta" promete que ese número va a seguir libre hasta que alguien lo necesite para
 eso. No lo estuvo ni un día: la nota bajo `D-02` lo escribió el 02/08/2026 y `D-15` se
 asignó esa misma tarde a la autenticación del panel, que no supersede nada. Un ID futuro se
@@ -87,7 +87,7 @@ son de terceros, así que el pedido tiene demora y arranca ya.
 >
 > *(Addendum 02/08/2026, mismo día: esta nota decía "sería un `D-15` que cite a ésta". `D-15`
 > se asignó horas después a la autenticación del panel, que no supersede nada. Nombrar un ID
-> futuro es prometer que va a seguir libre — ver la nota de método 3 del encabezado.)*
+> futuro es prometer que va a seguir libre — ver la nota de método 4 del encabezado.)*
 
 **`D-03` — Reportes es dueño de todo lo que un humano abre.**
 Plantillas (ya lo es) y salidas. `carpeta_salida` apunta hoy a una carpeta de
@@ -180,9 +180,9 @@ identidad de quien lo dispara, que es por qué las bases se comparten con
 `reporteseinformesgcba`— y **acoplada** a ella: si alguna vez se pasara a *ejecutar como:
 yo*, las bases dejarían de necesitar compartirse y `D-02` cambiaría de sentido. No son
 decisiones independientes.
-**Verificación pendiente antes de escribir el panel:** desplegar y confirmar qué devuelve
-`getActiveUser()` entrando desde reportes. Si volviera vacío, `D-15` se revisa antes de
-construir nada.
+Esta decisión tiene una **precondición verificable, y vive en `§2` Tramo 4** como primer
+ítem, no acá: una precondición escondida adentro de la decisión que la motiva no se
+ejecuta.
 
 **`D-16` — Cada usuario accede sólo a sus informes y a sus datos.**
 Distintos grupos ven distintas selecciones de informes desde la **misma** web app: el
@@ -235,7 +235,14 @@ Tres piezas, y la tercera es la que hay que resolver:
    valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo
    siguiente.
 
-4. **Tramo 4 — panel** (`D-04`).
+4. **Tramo 4 — panel** (`D-04`). El resto del tramo depende del primer ítem.
+   - **Primero, y antes de escribir código del panel:** verificar qué devuelve
+     `getActiveUser()` con el despliegue *"ejecuta el usuario que accede"*, entrando desde
+     `reporteseinformesgcba`. Si vuelve vacío, **`D-15` se revisa antes de escribir código
+     del panel** — sin identidad confiable, la lista blanca no filtra nada.
+   - Recién después, el panel: `doGet`, selección de informes, corrida a demanda.
+   - La hoja de accesos y el filtrado por usuario son `D-16`, y la pieza 3 de esa decisión
+     está sin resolver (`§3`).
 
 5. **Tramo 5 — chequeo previo programado** (`D-11`). Es todo lo que queda de lo que antes
    eran los Pasos 10-12.
