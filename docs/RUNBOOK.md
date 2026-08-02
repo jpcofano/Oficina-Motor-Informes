@@ -186,6 +186,13 @@ Mantener esta tabla a medida que crezcan los pasos. Acción desconocida devuelve
 - **Todo sale HTTP 200.** Apps Script no deja setear el status: el estado va en `ok` del
   JSON. Si la respuesta es HTML en vez de JSON, el problema es de autenticación de
   Google, no del motor.
+- **El Bearer dura una hora, y cuando vence la respuesta es HTML — que se lee como motor
+  roto.** Google devuelve la página de login de `accounts.google.com` con HTTP 200, así que
+  una sesión larga empieza a "fallar" de golpe en llamadas que venían andando. **Antes de
+  diagnosticar nada, renovar:** `node tools/token.js --forzar`. Pasó el 02/08: un control
+  positivo figuró como error y era sólo el token — con el token nuevo dio OK a la primera.
+  `tools/api.js` ya distingue el caso y avisa *"La respuesta NO es JSON"*, pero es fácil
+  leerlo como que rompió el código.
 - **La `traza` viene siempre**, en éxito y en error. Es el único log que ve quien llama.
 - **Una función `void` devuelve `null`.** Para probar una por la API hay que hacer que
   retorne algo. Es lo que se le hizo a `probarConexionBases()` en este paso: el cálculo

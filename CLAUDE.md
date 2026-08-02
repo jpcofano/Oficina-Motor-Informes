@@ -146,6 +146,14 @@ Quien implementa no se autoverifica. Los errores del Paso 2.2 se cazaron verific
 archivos vivos, no leyendo los reportes de las funciones. Reportar lo que se hizo, no
 declarar que funciona.
 
+**Quien toca una función con control positivo corre los controles antes de cerrar.** No
+alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
+siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue
+siendo cero cambios— y lo mismo vale para cualquier verificación end-to-end. Origen: 02/08.
+La Parte E del 2.11 cambió `alinearSolapasLookerADinamico_`, se verificó contra la planilla
+(el número dio bien) y **no se re-corrieron los controles**; el de `C.2-3` quedó fallando un
+día entero, invisible, hasta que lo encontró el Paso 2.14 al correrlos por API.
+
 **Un test puede acertar el hecho y errar la inferencia.** `getFormulas()` sobre las dos
 hojas de `looker` devolvió bien "esta tiene fórmula"; la conclusión "por lo tanto deriva
 de la otra hoja del par" era falsa — la fórmula era un `QUERY()` sobre una **tercera**

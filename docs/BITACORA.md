@@ -1229,3 +1229,68 @@ nadie más.
   Parte D del `Paso-2.11`**, que por eso se archivó el 02/08 (`DOC-7`). Su tarea 3 se
   resolvió mejor que como estaba pedida: en vez de retirar los diagnósticos de casos
   cerrados, se conservan en `Archivo` declarando su intención.
+
+## Paso 2.14 ✅ — generalizar `hayUi_()`: el protocolo entero corre por API (2026-08-02) — commits `bfb8679` + el de esta entrada
+- **Qué pedía el prompt:** `docs/Prompts/Paso-2.14_generalizar_hayUi.md`. Que `Estado` y
+  `Aplicar` corran por HTTP sin que nadie abra la planilla. Parte A de inventario con parada
+  obligatoria, Parte B recién con la decisión sobre los casos (b).
+- **Parte A — el inventario corrigió dos cosas antes de empezar:**
+  - **Son 38 sitios ejecutables, no 40.** Las 40 del `INVENTARIO_CODIGO.md` se contaron con
+    `grep -o`, que incluye comentarios: dos eran texto explicando que `getUi()` rompe sobre
+    HTTP. Ya estaba mal el 01/08, no lo cambió este paso.
+  - **Los casos (b) son dos, y uno estaba muerto.** El prompt temía *"un `confirm` que se
+    auto-responde «sí» convierte una guarda en nada"*. El único (b) vivo
+    —`menuCargarTemarioReuniones_`— **no es una guarda: es el insumo**. El otro
+    (`menuConsolidarMapeoLooker_`) ya estaba fuera del menú desde la Parte E. La
+    preocupación era razonable y no se cumplió; queda el caso, no la predicción.
+- **Qué se hizo:**
+  - **`ui_()` (`Codigo.gs`)** — sustituto que delega en la UI real cuando la hay y **anota
+    siempre** en `UI_DICHO_`. Se eligió sobre tocar los 61 `ui.alert(...)`: las 31 funciones
+    cambiaron **una línea cada una**, con planilla no cambia nada de lo que ve una persona,
+    y **los 40 `return;` tempranos no pierden su mensaje** porque el texto viaja por el
+    buffer y no por el retorno. `Api.gs` lo vacía antes de cada llamada y lo devuelve en
+    `dicho`, mismo criterio que la `traza`.
+  - **Las dos degradaciones, escritas como decisiones:** `alert` sin UI devuelve `null`, así
+    que un `alert(…, YES_NO)` usado como confirmación falla la comparación contra
+    `ui.Button.YES` y el llamador corta — **un confirm degrada a *no confirmado*, nunca a
+    "sí"**. `prompt` sin UI **tira**: no hay a quién preguntarle y no se inventa.
+  - **(b)** — `cargarTemario(texto)` hace el trabajo y es invocable por API; si falta el
+    texto **falla explícito**. El envoltorio de menú lo consigue con el `prompt` y delega.
+  - **`hayUi_`** conserva su forma, con el encabezado que le faltaba: es el **único lugar del
+    repo donde `getUi()` puede tirar a propósito**, y si aparece otro `try { getUi() }` suelto
+    esa garantía se pierde.
+  - **`onOpen`** queda con la UI real. El reemplazo masivo lo tocó y se revirtió: necesita
+    `createMenu`, que el sustituto **no expone a propósito** — un menú sin planilla no
+    significa nada. Es la categoría (c), no aplica.
+  - **`probarConexionBases`** pasó de su guarda a mano (Paso 1.8) a `ui_()`. El retorno no
+    cambió: sigue siendo el resumen pelado, que es lo que verifica la prueba nº 3 del 1.8.
+- **Prueba — los cinco controles del prompt:**
+  1. Controles positivos por HTTP: **4 de 5**. El que falla se explica abajo y **no lo causó
+     este paso**.
+  2. **Estado y Aplicar por API devuelven lo mismo que el menú, carácter por carácter.**
+     Estado por API: `SOLAPAS 84 [manual: 8, seed: 76]`, 0 discrepancias, 0 migraciones
+     pendientes. Aplicar por API: `cambiadas: 0 · agregadas: 0 · migraciones: 0 ·
+     solo_en_hoja: 7 · protegidas (con diferencia): 0 · protegidas (sin diferencia): 8 ·
+     sin cambios: sí`.
+  3. Aplicar ×2 por API: **idénticas**.
+  4. **Los dos desde el menú, con planilla** (usuario, 15:36 / 15:38 / 15:40): idénticos a
+     los de la API. `Cargar temario de reuniones` abre su `prompt` normalmente. **Generalizar
+     `hayUi_()` no rompió el camino con UI**, que es lo que este control tenía que descartar.
+  5. `git status` limpio salvo lo del paso.
+- **Nota obligatoria de cierre:** `INVENTARIO_CODIGO.md` **no se rehizo**. Se le agregó la
+  tabla de cifras vencidas: 40 `getUi()` → 3 (y las 40 ya venían infladas), 36 ítems de menú
+  → 34, 235 funciones → 239, 8.410 líneas → 8.693. Lo que no envejeció —el grafo, la
+  clasificación de las huérfanas, los seis trabajos de `Instalar.gs`— queda como está.
+- **Pendientes/decisiones:**
+  - **P1 nuevo · `probarMigracionesEnDiff_` está vencido y falló un día sin que nadie lo
+    viera.** Es una **prueba vencida, no un bug**: la Parte E del 2.11 cambió
+    `alinearSolapasLookerADinamico_` y la prueba sigue afirmando el contrato viejo. No se
+    arregló acá: el 2.14 es sólo capa de UI.
+  - **La regla que faltaba, ya escrita en `CLAUDE.md` §4:** *quien toca una función con
+    control positivo corre los controles antes de cerrar*. En la Parte E cambié una función
+    con control positivo, verifiqué contra la planilla —el número dio bien— y cerré sin
+    re-correr los controles. El protocolo desde el menú **pasa igual aunque los cinco estén
+    mal**, así que nada avisó.
+  - **`docs/RUNBOOK.md`** — un Bearer vencido devuelve **HTML con HTTP 200** y se lee como
+    motor roto. Pasó en este paso: un control figuró como error y era sólo el token. Anotado
+    con el remedio (`node tools/token.js --forzar`) antes de diagnosticar nada.

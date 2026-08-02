@@ -178,6 +178,30 @@ referencia apunta a una hoja que **no es la otra del par**, no hay relación fue
 entre ellas y el caso es `ambas_independientes`, que hoy no existe como estado. Hasta
 entonces, ninguna de las dos funciones vuelve al menú.
 
+### P1 · `probarMigracionesEnDiff_` quedó vencido y estuvo fallando un día sin que nadie lo viera
+
+Abierto el 02/08/2026 (Paso 2.14). El control positivo de `C.2-3` **falla**:
+`C.2-3: se esperaban 3 celdas (uso, origen, notas), vinieron 1`.
+
+**Es una prueba vencida, no un bug.** Su caso 1 arma una fila sintética con `origen='seed'`
+y afirma que `alinearSolapasLookerADinamico_` toca tres columnas. El Paso 2.11 Parte E hizo
+que esa migración **deje de escribir `notas`** y quiera **`origen='seed'`** en vez de
+`'manual'`, así que hoy toca una sola. El comportamiento nuevo es el correcto y está
+verificado contra la planilla: es lo que bajó el piso de protegidas de 10 a 8, con dos
+corridas idénticas. Los casos 2 y 4 de la misma prueba tienen el mismo problema (sus fixtures
+usan `origen='manual'` y esperan 3 cambios).
+
+**Qué falta:** actualizar los fixtures y las expectativas de `probarMigracionesEnDiff_` al
+contrato nuevo. No se hizo en el 2.14 porque ese paso es sólo capa de UI —*"no cambiar la
+lógica de ninguna función"*— y esto es saldar deuda de otro paso.
+
+**Lo que destapó vale más que la prueba, y ya es regla.** Cambié una función **que tenía
+control positivo** y no volví a correr los controles: verifiqué contra la planilla, el número
+dio bien, y di el paso por cerrado. El protocolo desde el menú **pasa igual aunque los cinco
+controles estén mal** —el addendum 3 del `Paso-2.11_ParteC2` lo dice con todas las letras— así
+que nada avisó durante un día entero. Quedó escrito en `CLAUDE.md` §4: *quien toca una función
+con control positivo corre los controles antes de cerrar*.
+
 ### P2 · El designador de paso no es único: ningún cruce automático puede usarlo como clave
 
 Abierto el 02/08/2026 por el censo del `DOC-7`. Los números de paso **colisionan**, y no

@@ -547,3 +547,26 @@ La tabla completa (36 ítems, función, `getUi()` en el camino, última mención
 - `doGet` citado en Api.gs:41
 - `doPost` citado en Api.gs:41
 - `manejarPedido_` citado en Api.gs:41
+
+---
+
+# Números vencidos — qué dejó de ser cierto y por qué
+
+> **Este documento no se rehace.** Es la foto del 01/08/2026 y así se queda (`CLAUDE.md`
+> §7: la fuente viva son los scripts de `tools/` re-corridos, el `.md` es la foto). Lo que
+> sí corresponde es dejar anotado qué cifras envejecieron y por culpa de qué, para que nadie
+> las cite creyéndolas de hoy.
+
+| cifra de este documento | valor al 02/08/2026 | qué la movió |
+|---|---|---|
+| 40 llamadas a `getUi()` | **3** | Paso 2.14. Y las 40 **ya estaban infladas el 01/08**: se contaron con `grep -o`, que incluye comentarios. Los sitios ejecutables eran **38**; dos eran texto explicando que `getUi()` rompe sobre HTTP (`Codigo.gs`, `Fuentes.gs`). Las 3 que quedan son `onOpen` (construye el menú), `hayUi_` (la sonda) y `ui_()` (el sustituto) |
+| `hayUi_` protege un solo camino | protege **todos** | Paso 2.14: las 31 funciones de menú pasaron a pedir la UI con `ui_()` |
+| 36 ítems de menú | **34** | Paso 2.11 Parte E retiró dos (`menuConsolidarMapeoLooker_` y `menuAuditarFormulasResumenesLooker_`) |
+| 235 funciones de primer nivel | **239** | Paso 2.14 agregó `ui_`, `anunciar_`, `cargarTemario` y `apiConDicho_` |
+| 8.410 líneas | **8.693** | los pasos 2.11 Parte E, 2.12 y 2.14 |
+| 20 no alcanzables | sin re-medir | la clasificación de la Parte B sigue valiendo; el conteo no se volvió a correr |
+| cero nombres duplicados | **sigue en cero** | verificado el 02/08 |
+
+**Lo que no envejeció** y es la parte que importa: el grafo de llamadas, la clasificación de
+las huérfanas en adelantadas/colgadas/muertas, los seis trabajos de `Instalar.gs` y sus
+costuras. Eso describe **cómo está armado** el código, no cuánto mide.
