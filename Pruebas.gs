@@ -101,29 +101,52 @@ function hojaFalsaConEscrituras_(nombre, matriz) {
  * TODAS las corridas del protocolo con cero celdas cambiadas, y no había forma de saber
  * si estaba escribiendo o no.
  */
+/**
+ * ⚠ **Actualizado el 02/08/2026 (Paso 2.14) al contrato que dejó el Paso 2.11 Parte E.**
+ * No se ajustó la prueba al código porque sí — una prueba que se acomoda sin decir por qué
+ * deja de ser control. Qué cambió y por qué:
+ *
+ * `alinearSolapasLookerADinamico_` **tocaba tres columnas** (`uso`, `origen`, `notas`) y
+ * ahora toca **dos como máximo** (`uso`, `origen`), casi siempre una. La Parte E le sacó
+ * `notas` —es del `SEED_SOLAPAS_`, y escribirla desde los dos lados congelaba la peor
+ * versión— y le cambió el `origen` deseado de `'manual'` a `'seed'`, porque ese `manual` era
+ * vestigial: lo ponía la propia migración y su único efecto vivo era bloquear al sembrador.
+ * Evidencia: bajó el piso de `protegidas (con diferencia)` de 10 a 8, con dos corridas
+ * idénticas (`docs/BITACORA.md`, Paso 2.11 Parte E).
+ *
+ * **Esta prueba estuvo fallando un día entero sin que nadie lo viera**, y es el origen de la
+ * regla de `CLAUDE.md` §4: *quien toca una función con control positivo corre los controles
+ * antes de cerrar*. El protocolo de siete pasos pasa igual aunque los cinco controles estén
+ * mal — por eso existen, y por eso no alcanza con verificar contra la planilla.
+ */
 function probarMigracionesEnDiff_() {
   var headers = ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'notas'];
-  var notaS01 = 'Paso 2.9 Parte C — ver docs' + '/SUPUESTOS.md S-01';
+  var notaSeed = 'la que quiera el SEED_SOLAPAS_';
 
-  // 1. Fila desalineada: la migración tiene que reportar QUÉ cambia, no un contador.
+  // 1. Fila desalineada en las DOS columnas que la migración sostiene: tiene que reportar
+  //    QUÉ cambia, no un contador. `notas` va distinta a propósito y NO debe aparecer.
   var desalineada = hojaFalsaConEscrituras_('SOLAPAS', [
     headers,
-    ['looker', 'resumen_metricas_dinamico', 'revisar', 'seed', 1, '', '', '', 'otra cosa']
+    ['looker', 'resumen_metricas_dinamico', 'revisar', 'auto', 1, '', '', '', 'otra cosa']
   ]);
   var r1 = alinearSolapasLookerADinamico_(desalineada, true);
-  afirmar_(r1.cambios.length === 3, 'C.2-3: se esperaban 3 celdas (uso, origen, notas), vinieron ' + r1.cambios.length);
+  afirmar_(r1.cambios.length === 2, 'C.2-3: se esperaban 2 celdas (uso, origen), vinieron ' + r1.cambios.length);
   var porColumna = {};
   r1.cambios.forEach(function (c) { porColumna[c.columna] = c; });
   afirmar_(porColumna.uso && porColumna.uso.anterior === 'revisar' && porColumna.uso.nuevo === 'fuente',
     'C.2-3: la línea de uso tiene que decir de revisar a fuente');
-  afirmar_(porColumna.uso.pisaManual === false, 'C.2-3: origen=seed no es pisar manual');
-  afirmar_(desalineada.escrituras.length === 3, 'C.2-3: con aplicar=true tiene que escribir las 3 celdas');
+  afirmar_(porColumna.origen && porColumna.origen.nuevo === 'seed',
+    'C.2-3: la migración devuelve la fila al sembrador (origen=seed), no la blinda como manual');
+  afirmar_(!porColumna.notas, 'C.2-3: `notas` es del SEED_SOLAPAS_ — la migración no puede tocarla (Parte E)');
+  afirmar_(porColumna.uso.pisaManual === false, 'C.2-3: origen=auto no es pisar manual');
+  afirmar_(desalineada.escrituras.length === 2, 'C.2-3: con aplicar=true tiene que escribir las 2 celdas');
 
-  // 2. Ya alineada: CERO líneas. Esta es la que fallaba antes — reportaba 2 siempre.
+  // 2. Ya alineada: CERO líneas. Sigue siendo el caso que más importa —antes reportaba 2
+  //    siempre— y ahora "alineada" quiere decir uso+origen, con la nota que sea.
   var alineada = hojaFalsaConEscrituras_('SOLAPAS', [
     headers,
-    ['looker', 'resumen_metricas_dinamico', 'fuente', 'manual', 1, '', '', '', notaS01],
-    ['looker', 'resumen_metricas', 'derivada', 'manual', 1, '', '', '', notaS01]
+    ['looker', 'resumen_metricas_dinamico', 'fuente', 'seed', 1, '', '', '', notaSeed],
+    ['looker', 'resumen_metricas', 'derivada', 'seed', 1, '', '', '', 'otra nota cualquiera']
   ]);
   var r2 = alinearSolapasLookerADinamico_(alineada, true);
   afirmar_(r2.cambios.length === 0, 'C.2-3: una hoja ya alineada no puede reportar cambios, vinieron ' + r2.cambios.length);
@@ -137,15 +160,23 @@ function probarMigracionesEnDiff_() {
   var r3 = alinearSolapasLookerADinamico_(manual, true);
   afirmar_(r3.cambios.length > 0, 'C.2-3: debería reportar que pisa la fila manual');
   afirmar_(r3.cambios[0].pisaManual === true, 'C.2-3: tiene que marcar pisaManual sobre una fila origen=manual');
+  // Parte E: sobre una fila `manual` la migración además la DEVUELVE al sembrador. Es un
+  // cambio de comportamiento, no un detalle: le saca el blindaje a una fila que alguien
+  // pudo haber blindado a propósito. Por eso tiene que salir con `pisaManual` a la vista.
+  var porColumna3 = {};
+  r3.cambios.forEach(function (c) { porColumna3[c.columna] = c; });
+  afirmar_(porColumna3.origen && porColumna3.origen.anterior === 'manual' && porColumna3.origen.nuevo === 'seed',
+    'C.2-3: sobre una fila manual la migración tiene que reportar origen manual → seed');
 
   // 4. Modo cálculo (aplicar=false): reporta lo mismo y NO escribe. Es lo que usa
   //    "Estado de configuración" para incluir las migraciones pendientes.
+  //    Mismo fixture que el caso 1 a propósito: lo único que cambia es `aplicar`.
   var simulada = hojaFalsaConEscrituras_('SOLAPAS', [
     headers,
-    ['looker', 'resumen_metricas_dinamico', 'revisar', 'seed', 1, '', '', '', 'otra cosa']
+    ['looker', 'resumen_metricas_dinamico', 'revisar', 'auto', 1, '', '', '', 'otra cosa']
   ]);
   var r4 = alinearSolapasLookerADinamico_(simulada, false);
-  afirmar_(r4.cambios.length === 3, 'C.2-3: en modo cálculo tiene que reportar los mismos 3 cambios');
+  afirmar_(r4.cambios.length === 2, 'C.2-3: en modo cálculo tiene que reportar los mismos 2 cambios');
   afirmar_(simulada.escrituras.length === 0, 'C.2-3: en modo cálculo NO puede escribir ninguna celda');
 
   // 5. Las filas del diff llevan tipo migracion, y "pisa manual" cuando corresponde.

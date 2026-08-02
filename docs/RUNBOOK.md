@@ -186,6 +186,12 @@ Mantener esta tabla a medida que crezcan los pasos. Acción desconocida devuelve
 - **Todo sale HTTP 200.** Apps Script no deja setear el status: el estado va en `ok` del
   JSON. Si la respuesta es HTML en vez de JSON, el problema es de autenticación de
   Google, no del motor.
+- **`/dev` devuelve 404 intermitente, y no es tu código.** Medido el 02/08: **cuatro
+  pedidos idénticos seguidos dieron 200, 404, 404, 200**. La URL es la correcta y `@HEAD`
+  no cambió — es inestabilidad del lado de Google. **Antes de diagnosticar, reintentar dos o
+  tres veces con unos segundos en el medio.** Es fácil perder media hora buscando un error
+  de sintaxis que no existe: si sospechás del código, `node -e` con `new vm.Script(...)`
+  sobre los 21 `.gs` responde eso en un segundo y sin salir de la máquina.
 - **El Bearer dura una hora, y cuando vence la respuesta es HTML — que se lee como motor
   roto.** Google devuelve la página de login de `accounts.google.com` con HTTP 200, así que
   una sesión larga empieza a "fallar" de golpe en llamadas que venían andando. **Antes de

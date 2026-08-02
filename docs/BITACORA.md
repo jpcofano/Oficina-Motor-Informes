@@ -1294,3 +1294,39 @@ nadie más.
   - **`docs/RUNBOOK.md`** — un Bearer vencido devuelve **HTML con HTTP 200** y se lee como
     motor roto. Pasó en este paso: un control figuró como error y era sólo el token. Anotado
     con el remedio (`node tools/token.js --forzar`) antes de diagnosticar nada.
+
+## Paso 2.14 addendum — saldar la prueba vencida de `C.2-3` (2026-08-02) — commit de esta entrada
+- **Qué faltaba:** el `P1` que abrió el 2.14. Se saldó **antes** de entrar al Tramo 1, porque
+  ese tramo toca `Instalar.gs` y hasta acá el control de `C.2-3` no protegía nada.
+- **Qué se hizo:**
+  - **`Pruebas.gs` · `probarMigracionesEnDiff_`** actualizado al contrato que dejó el
+    `Paso-2.11` Parte E. Casos 1 y 4: **2 celdas** (`uso`, `origen`) en vez de 3, con fixture
+    `origen='auto'` para que las dos difieran. Caso 2: "alineada" ahora es `uso`+`origen`, con
+    la nota que sea — se afirma explícitamente que **`notas` no puede aparecer**, que es lo
+    que la Parte E le sacó. Caso 3 **suma una afirmación**: sobre una fila `manual` la
+    migración la **devuelve al sembrador** (`origen: manual → seed`); es un cambio de
+    comportamiento, no un detalle —le saca el blindaje a una fila que alguien pudo blindar a
+    propósito— y por eso tiene que salir con `pisaManual` a la vista. Casos 5 y 6 no se
+    tocaron: seguían válidos.
+  - **El encabezado de la prueba declara qué cambió, con fecha, paso y evidencia.** Una
+    prueba que se ajusta al código sin decir por qué deja de ser control.
+  - **`docs/PENDIENTES_consistencia.md`** — el `P1` queda tachado, y el `P2` de
+    `Paso-2.5`↔`Paso-3-v2` se reescribe (abajo).
+- **Prueba:** `correrPruebasDiff_` por API, **5 de 5**. Es la regla de `CLAUDE.md` §4
+  aplicada a su propio caso: quien toca una función con control positivo corre los controles
+  antes de cerrar.
+- **Pendientes/decisiones:**
+  - **El `P2` de `Paso-2.5`↔`Paso-3-v2` se cerró y se reemplazó, no se agendó.** Sus dos
+    puntos (`calculo` en vez de `operacion` y sin `valor_fijo`; el bloque repetible) ya
+    estaban corregidos en el reemplazo del `Paso-2.5`, verificado contra el archivo. **No se
+    delegó al cierre del 2.5**: una corrección delegada a un paso futuro ya se evaporó una vez
+    (Reconciliación 1 del `Paso-2.4`) y es lo que dice `CLAUDE.md` §3.
+  - **Lo que quedó vivo cambió de contraparte y subió a `P1`:** `Paso-2.5` y `Paso-2.13`
+    proponen **dos dueños para `MARCADORES`** —sembrar desde las plantillas vs.
+    `SEED_MARCADORES_` en código—, que es lo que `ESCRITORES.md` existe para evitar, esta vez
+    visible **antes** de que ocurra. Bloquea a los dos y la decisión es del usuario.
+  - **`/dev` devuelve 404 intermitente.** Medido: cuatro pedidos idénticos seguidos dieron
+    **200, 404, 404, 200**, con la URL correcta y `@HEAD` sin cambios. Costó una
+    investigación —se llegó a verificar la sintaxis de los 21 `.gs`, que parsean bien— antes
+    de ver que era del lado de Google. Anotado en el `RUNBOOK` junto al caso del Bearer
+    vencido, con el atajo para descartar el código en un segundo.

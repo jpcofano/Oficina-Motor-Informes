@@ -178,7 +178,7 @@ referencia apunta a una hoja que **no es la otra del par**, no hay relación fue
 entre ellas y el caso es `ambas_independientes`, que hoy no existe como estado. Hasta
 entonces, ninguna de las dos funciones vuelve al menú.
 
-### P1 · `probarMigracionesEnDiff_` quedó vencido y estuvo fallando un día sin que nadie lo viera
+### ~~P1 · `probarMigracionesEnDiff_` quedó vencido~~ — CERRADO (02/08/2026)
 
 Abierto el 02/08/2026 (Paso 2.14). El control positivo de `C.2-3` **falla**:
 `C.2-3: se esperaban 3 celdas (uso, origen, notas), vinieron 1`.
@@ -191,9 +191,15 @@ verificado contra la planilla: es lo que bajó el piso de protegidas de 10 a 8, 
 corridas idénticas. Los casos 2 y 4 de la misma prueba tienen el mismo problema (sus fixtures
 usan `origen='manual'` y esperan 3 cambios).
 
-**Qué falta:** actualizar los fixtures y las expectativas de `probarMigracionesEnDiff_` al
-contrato nuevo. No se hizo en el 2.14 porque ese paso es sólo capa de UI —*"no cambiar la
-lógica de ninguna función"*— y esto es saldar deuda de otro paso.
+**Saldado el 02/08/2026**, antes de entrar al Tramo 1 porque ese tramo toca `Instalar.gs` y
+hasta ahora el control de `C.2-3` no protegía nada. Los casos 1 y 4 pasaron a esperar **2
+celdas** (`uso`, `origen`) en vez de 3, el 2 dejó de exigir una `notas` concreta, y el 3
+suma una afirmación nueva: sobre una fila `manual` la migración ahora la **devuelve al
+sembrador** (`origen: manual → seed`), que es un cambio de comportamiento y no un detalle —
+le saca el blindaje a una fila que alguien pudo haber blindado a propósito, y por eso tiene
+que salir con `pisaManual` a la vista. **El encabezado de la prueba declara qué cambió, con
+fecha y paso**: una prueba que se ajusta al código sin decir por qué deja de ser control.
+Al cerrar se corrieron los cinco: **5 de 5**.
 
 **Lo que destapó vale más que la prueba, y ya es regla.** Cambié una función **que tenía
 control positivo** y no volví a correr los controles: verifiqué contra la planilla, el número
@@ -553,13 +559,31 @@ Plantillas y deck comentado: alcanza con poner los IDs de Drive al lado del nomb
 (`1JrHvs_p…` JM · `1_ZKjWhL…` SECCO · `1yIlCIBG…` comentado) — no es un error, solo falta
 la referencia.
 
-### P2 · `Paso-2.5.md` se pisa con `Paso-3-v2.md`
+### P1 · `Paso-2.5` y `Paso-2.13` proponen dos dueños para `MARCADORES`
 
-- La tabla de columnas a escribir usa `calculo`, pero la Parte B de `Paso-2.5` cuenta
-  como "completos" los que tienen `operacion` — columna que recién crea `Paso-3-v2`.
-  Tampoco siembra `valor_fijo`.
-- Con el bloque de encuentro repetible (`docs/TOKENS.md` §3), el 2.5 tiene que saber que
-  un token de bloque repetible es **una** fila en `MARCADORES`, no una por instancia.
+**Reemplaza al P2 "`Paso-2.5.md` se pisa con `Paso-3-v2.md`" (02/08/2026).** Los dos puntos
+que tenía —que la tabla de columnas usaba `calculo` en vez de `operacion` y no sembraba
+`valor_fijo`, y que no contemplaba que un token de bloque repetible es **una** fila y no una
+por instancia— **ya están corregidos** en el reemplazo de `docs/Prompts/Paso-2.5.md`
+(commit `1f4a9b5`), verificado contra el archivo. Se cierran acá y no al ejecutar el 2.5:
+una corrección delegada a un paso futuro ya se evaporó una vez —la Reconciliación 1 del
+`Paso-2.4`— y es lo que dice la regla de `CLAUDE.md` §3.
+
+**Lo que sigue vivo cambió de contraparte y subió de prioridad.** El choque ya no es con
+`Paso-3-v2` sino con **`Paso-2.13`**, y es de fondo:
+
+- **`Paso-2.13`** propone `SEED_MARCADORES_`: un arreglo en código como fuente de las filas
+  de `MARCADORES`.
+- **`Paso-2.5`** propone sembrarlas **desde las plantillas**, leyendo los `{{token}}`.
+
+Son **dos dueños para la misma hoja** — exactamente lo que `docs/ESCRITORES.md` existe para
+evitar, y esta vez se ve **antes** de que ocurra, no después. Hoy `MARCADORES` no tiene
+ningún escritor de contenido (confirmado por el censo del `AUD-3`), así que el que corra
+primero define el contrato.
+
+**Es decisión del usuario y bloquea a los dos.** La Parte 0 del `Paso-2.5` la plantea sin
+resolverla, con los argumentos de cada lado; ninguno de los dos prompts puede correr hasta
+que esté tomada.
 
 ### P2 · Contadores que no cierran
 
