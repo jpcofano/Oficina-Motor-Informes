@@ -1,89 +1,139 @@
 # Paso 2.5 — Sembrar `MARCADORES` desde los tokens de las plantillas
 
+**Estado:** vivo · **Actualizado:** 2026-08-02 · **Reemplaza:** el texto anterior de este
+mismo archivo (nunca ejecutado, se edita en el lugar — no lleva addendum).
+
 > **Regla de oro:** este paso NO calcula nada. Lee los `{{token}}` de las plantillas de
 > Slides y escribe filas de config. La aritmética llega en el Paso 3.
 >
 > **Un commit por parte.**
 
+## Qué cambió respecto de la versión anterior
+
+- **Se agregó Parte 0**: el bloqueo declarado abajo hay que verificarlo, no asumirlo.
+- **Bloques repetibles** (`docs/TOKENS.md §3`): el prompt deduplicaba por nombre de token
+  entre slides, pero no contemplaba que un token de bloque repetible es **una** fila, no una
+  por instancia. Era el punto vivo del P2 de `PENDIENTES_consistencia.md`.
+- **Choque con el `Paso-2.13`**, que hay que resolver antes de correr cualquiera de los dos.
+- **Headless**: el 2.14 generalizó `hayUi_()`; los dos reportes tienen que devolverse por
+  respuesta, no sólo por `alert`.
+- **`ESCRITORES.md`**: este paso crea el primer escritor vivo de `MARCADORES`.
+
+> El P2 de `PENDIENTES` también decía que la tabla de columnas usaba `calculo`. **Ya está
+> corregido en este archivo** — dice `operacion` e incluye `valor_fijo`. Reportarlo al cerrar
+> para que el pendiente se actualice.
+
 ---
 
-## ⚠ Bloqueo — no correr todavía
+## Parte 0 — Verificación de premisas. Sólo lectura. Reportar y **PARAR**.
 
-**Este paso no se corre hasta que la armonización de plantillas (`Paso-2.2.2` Parte D,
-sobre la JM canónica) esté verificada.** Sembrar `MARCADORES` antes lee tokens de una
-plantilla que todavía puede cambiar de nombre (renombres pendientes del diccionario
-canónico, `docs/TOKENS.md` §1) — sembrar antes es sembrar ~200 filas de tokens rotos, y
-deshacerlo es a mano, fila por fila.
+**0.1 · El bloqueo.** Este paso declara que no se corre hasta que la armonización de
+plantillas (`Paso-2.2.2` Parte D, sobre la JM canónica) esté verificada. **Verificar contra
+`BITACORA.md` si cerró.** Si no cerró, este paso no arranca: sembrar antes es sembrar ~200
+filas de tokens que todavía pueden cambiar de nombre, y deshacerlo es a mano, fila por fila.
+
+**0.2 · `INFORMES.plantilla_id`.** `SEED_INFORMES_` (`Instalar.gs:684-687`) los tiene
+vacíos. Verificar contra la planilla viva si la hoja los tiene cargados. Sin `plantilla_id`
+no hay de dónde leer tokens.
+
+**0.3 · El choque con el `Paso-2.13`. Es la decisión que bloquea, y es del usuario.**
+
+`Paso-2.13` propone `SEED_MARCADORES_` — un arreglo en código como fuente de las filas de
+`MARCADORES`. Este paso propone sembrarlas **desde las plantillas**. Son dos dueños para la
+misma hoja: exactamente el problema que `ESCRITORES.md` existe para evitar, esta vez antes
+de que ocurra en vez de después.
+
+Lo que hay que pesar, sin decidirlo acá:
+
+- A favor de las plantillas: **la plantilla ya es la fuente de verdad de qué tokens
+  existen.** Con `SEED_MARCADORES_` en código, agregar un informe exige editar `.gs`, que es
+  lo contrario de `D-01`. Con este paso, un informe nuevo es plantilla nueva más correr el
+  helper.
+- A favor del seed en código: da idempotencia y diff auditable, que es lo que
+  `Paso-2.11 C.2` costó tres corridas de protocolo conseguir para las otras hojas.
+
+**Reportar la tensión, no resolverla.** El resto de este prompt asume que ganan las
+plantillas; si gana el seed, este paso cambia de forma y hay que reescribirlo.
+
+**0.4 · Reportar y parar.**
 
 ---
 
 ## Por qué
 
-`MARCADORES` tiene hoy 3 filas de ejemplo y necesita ~200 (JM ≈110 tokens, SECCO
-similar). Cargarlas a mano es un día de trabajo y propenso a errores de tipeo, que en
-este motor no fallan ruidosamente: un token mal escrito simplemente queda sin
-reemplazar en el deck.
+`MARCADORES` tiene hoy 3 filas de ejemplo y necesita ~200 (JM ≈110 tokens, SECCO similar).
+Cargarlas a mano es un día de trabajo y propenso a errores de tipeo que **no fallan
+ruidosamente**: un token mal escrito queda sin reemplazar en el deck y nadie se entera.
 
-La plantilla **ya es la fuente de verdad** de qué tokens existen. Este paso invierte el
-trabajo: en vez de escribir 200 filas, se revisan 200 filas ya creadas.
+Este paso invierte el trabajo: en vez de escribir 200 filas, se revisan 200 ya creadas.
 
-**Lo que el helper NO hace:** decidir de dónde sale cada token. `base_id`,
-`campo_logico` y `operacion` quedan **vacíos a propósito** — eso es criterio humano y se
-completa en el Paso 3. El helper solo garantiza que no falte ni sobre ningún token.
+**Lo que el helper NO hace:** decidir de dónde sale cada token. `base_id`, `campo_logico` y
+`operacion` quedan **vacíos a propósito** — eso es criterio humano y se completa en el Paso
+3. El helper sólo garantiza que no falte ni sobre ningún token.
 
 ---
 
 ## Parte A — `sembrarMarcadoresDesdePlantillas()`
 
-Agregala a `Instalar.gs` (junto a `seedConfiguracion`) y sumala al menú como
-**"Sembrar marcadores desde plantillas"**.
+En `Instalar.gs`, junto a `seedConfiguracion`, y al menú como **"Sembrar marcadores desde
+plantillas"**.
 
-1. **Recorré `INFORMES`** (vía `leerInformes()`), tomando las filas con `activo=sí` y
-   `plantilla_id` cargado. Si alguna activa no tiene `plantilla_id`, avisá y salteala
-   (hay que correr antes "Registrar plantillas").
+**1. Recorrer `INFORMES`** (vía `leerInformes()`), filas con `activo=sí` y `plantilla_id`
+cargado. Si una activa no tiene `plantilla_id`, avisar y saltearla.
 
-2. **Por cada plantilla**, abrila con `SlidesApp.openById(plantilla_id)` y extraé
-   todos los `{{token}}`:
-   - Recorré `getSlides()`, y en cada slide `getShapes()`, `getTables()` (celda por
-     celda) y `getGroups()` **recursivamente** — hay tokens dentro de tablas y grupos,
-     no solo en cajas sueltas.
-   - Sacá el texto con `getText().asString()` y aplicá `/\{\{([^}]+)\}\}/g`.
-   - Guardá el **número de slide** (1-based) de la primera aparición.
-   - Deduplicá por nombre de token: un token repetido en varias slides es **una sola
-     fila** en `MARCADORES`.
+**2. Por cada plantilla**, abrirla con `SlidesApp.openById(plantilla_id)` y extraer todos
+los `{{token}}`:
 
-3. **Escribí en `MARCADORES`** con `upsertPorClave_`, clave **`(informe_id, marcador)`**.
-   Por cada token:
+- Recorrer `getSlides()`, y en cada slide `getShapes()`, `getTables()` (celda por celda) y
+  `getGroups()` **recursivamente** — hay tokens dentro de tablas y grupos, no sólo en cajas
+  sueltas.
+- Texto con `getText().asString()`, patrón `/\{\{([^}]+)\}\}/g`.
+- Guardar el **número de slide** (1-based) de la primera aparición.
+- **Deduplicar por nombre de token**: repetido en varias slides es **una sola** fila.
 
-   | columna | valor |
-   |---|---|
-   | `marcador` | el token sin llaves, p. ej. `ecv_inscriptos` |
-   | `familia` | el prefijo hasta el primer `_` (`ecv_inscriptos` → `ecv`). Si no tiene `_`, familia = el token entero (`periodo`, `frecuencia`) |
-   | `informe_id` | el `informe_id` de la plantilla |
-   | `base_id` | **vacío** |
-   | `solapa` | **vacío** (criterio humano, igual que `base_id` — ver regla de resolución en `docs/TOKENS.md` §4) |
-   | `campo_logico` | **vacío** |
-   | `periodo_ref` | **vacío** |
-   | `operacion` | **vacío** (esquema DOC-2: `calculo` ya se renombró a `operacion` en `Instalar.gs`) |
-   | `valor_fijo` | **vacío** |
-   | `formato` | **vacío** |
-   | `notas` | `slide N` (dónde aparece — sirve para el QA) |
+**2-bis. Bloques repetibles (`docs/TOKENS.md §3`).** Un token que vive dentro de un bloque
+repetible —el de encuentro, y el de campaña que emite el Paso 5— es **una fila** en
+`MARCADORES`, no una por instancia. La instancia la resuelve el motor en tiempo de corrida
+iterando la hoja curada; `MARCADORES` describe el token, no sus apariciones. Detectar el
+caso y anotarlo en `notas` (p. ej. `bloque repetible: encuentro`), porque un humano leyendo
+la hoja necesita saber por qué ese token no tiene período propio.
 
-   **Usá `upsertSoloVacias_` (variante nueva, a implementar acá), no `upsertPorClave_`.**
-   `upsertPorClave_` reescribe la fila entera con `headers.map(h => (h in obj) ? obj[h] :
-   '')`: si un token ya existe y un humano ya le cargó `base_id`/`campo_logico`, el
-   upsert se lo borra. **No modifiques `upsertPorClave_`**: `seedConfiguracion` depende
-   de que pise la fila entera, y tocarlo acá rompe ese contrato (ya anotado en
-   `Paso-2.4.md`, Reconciliación 4). `upsertSoloVacias_` es una función nueva que, en
-   filas existentes, solo completa celdas vacías y nunca pisa valores cargados. Este
-   paso tiene que poder correrse muchas veces sin destruir trabajo manual.
+**3. Escribir en `MARCADORES`**, clave **`(informe_id, marcador)`**:
 
-4. **Reporte final** (alert + log):
-   - Por informe: tokens encontrados, filas nuevas, filas ya existentes.
-   - **Tokens sin `base_id`** (cuántos faltan resolver) — es el marcador de avance real.
-   - **Filas huérfanas**: marcadores en la hoja cuyo token **ya no está** en la
-     plantilla. **No las borres**: listalas para que el usuario decida (puede ser una
-     plantilla que cambió, o un token mal escrito).
+| columna | valor |
+|---|---|
+| `marcador` | el token sin llaves, p. ej. `ecv_inscriptos` |
+| `familia` | prefijo hasta el primer `_`. Sin `_`, familia = el token entero |
+| `informe_id` | el de la plantilla |
+| `base_id` | **vacío** |
+| `solapa` | **vacío** (criterio humano — `docs/TOKENS.md §4`) |
+| `campo_logico` | **vacío** |
+| `periodo_ref` | **vacío** |
+| `operacion` | **vacío** |
+| `valor_fijo` | **vacío** |
+| `formato` | **vacío** |
+| `notas` | `slide N`, más la marca de bloque repetible si aplica |
+
+> **Usar `upsertSoloVacias_` (función nueva, se implementa acá), no `upsertPorClave_`.**
+> `upsertPorClave_` reescribe la fila entera: si un humano ya cargó `base_id`, se lo borra.
+> **No modificar `upsertPorClave_`** — `seedConfiguracion` depende de que pise la fila
+> entera, y tocarlo acá rompe ese contrato (`Paso-2.4.md`, Reconciliación 4).
+> `upsertSoloVacias_` sólo completa celdas vacías y nunca pisa valores cargados.
+
+**Y esto vale más que como detalle de implementación.** `SOLAPAS` resuelve el mismo problema
+—distinguir lo que puso el seed de lo que puso una persona— con la columna `origen`, y eso
+terminó haciendo dos trabajos a la vez (procedencia y protección), que es el P2 abierto.
+`upsertSoloVacias_` lo resuelve con una **regla de comportamiento** en vez de una bandera:
+no hay columna que mantener, no hay `protegida (habría cambiado)` permanente, y el paso se
+puede correr cuantas veces haga falta. Dejarlo escrito en el encabezado de la función.
+
+**4. Reporte final** — **devuelto en la respuesta**, no sólo por `alert`:
+
+- Por informe: tokens encontrados, filas nuevas, filas ya existentes.
+- **Tokens sin `base_id`**: el marcador de avance real.
+- **Filas huérfanas**: marcadores en la hoja cuyo token ya no está en la plantilla.
+  **No borrarlas**: listarlas para que el usuario decida. Puede ser una plantilla que
+  cambió, o un token mal escrito.
 
 → **Commit A:** `Paso 2.5 ✅ — sembrar MARCADORES desde tokens de plantillas`
 
@@ -91,44 +141,64 @@ Agregala a `Instalar.gs` (junto a `seedConfiguracion`) y sumala al menú como
 
 ## Parte B — Reporte de cobertura de configuración
 
-Agregá **"Ver cobertura de configuración"** al menú: recorre `MARCADORES` y muestra,
-por informe, cuántos marcadores están **completos** (con `base_id` + `campo_logico` +
-`operacion`) y cuántos **pendientes**, con la lista de los primeros ~20 pendientes.
+Ítem **"Ver cobertura de configuración"**: por informe, cuántos marcadores están
+**completos** (`base_id` + `campo_logico` + `operacion`) y cuántos **pendientes**, con los
+primeros ~20 pendientes.
 
-**`solapa` entra en la condición de "completo" solo cuando la base tenga más de una
-solapa mapeada en `MAPEO`** (misma regla que la resolución de solapa en `MARCADORES`,
-`docs/TOKENS.md` §4): si la base tiene una sola solapa, `solapa` vacía se infiere y no
-cuenta como pendiente; si tiene varias (p. ej. `digital`, y `rdv` desde que tiene
-`RDV_otros_ministros`), un marcador de esa base sin `solapa` cargada **sí** cuenta como
-pendiente — sin eso, el reporte de cobertura miente diciendo "completo" sobre un
-marcador que en runtime va a fallar con `«FALTA:token@sin_solapa»`.
+**`solapa` entra en la condición de "completo" sólo cuando la base tenga más de una solapa
+mapeada en `MAPEO`** (`docs/TOKENS.md §4`): con una sola solapa se infiere y no cuenta como
+pendiente; con varias —`digital`, y `rdv` desde que tiene `RDV_otros_ministros`— un marcador
+sin `solapa` **sí** cuenta. Sin eso el reporte miente diciendo "completo" sobre un marcador
+que en runtime va a fallar con `«FALTA:token@sin_solapa»`.
 
-Es el tablero de avance del cableado: al principio va a decir "0 de 110" y el trabajo
-del Paso 3 es llevarlo a verde. También sirve para detectar tokens que **nunca** van a
-tener fuente (los que se cargan a mano, ver `docs/CONFIG_INFORMES.md`).
+**Frontera con `FALTANTES` (`D-12`), para no construir dos tableros:** cobertura responde
+*qué falta cablear* y se mira antes de correr; `FALTANTES` responde *qué falló al correr* y
+lo escribe el Paso 4. No se fusionan.
 
 → **Commit B:** `Paso 2.5 ✅ — reporte de cobertura de configuración`
 
 ---
 
+## Al cerrar — `ESCRITORES.md`
+
+Este paso crea el **primer escritor vivo de `MARCADORES`**: hasta hoy su único escritor era
+una migración de renombre (`AUD-3`, censo de la Parte E). Declarar `sembrarMarcadoresDesdePlantillas()`
+y `upsertSoloVacias_` con su contrato: **sólo completa vacías, nunca pisa**.
+
+---
+
 ## Prueba del usuario
 
-1. Verificar que `INFORMES` tenga `plantilla_id` en `jm` y `secco` (si no, correr antes
-   "Registrar plantillas").
+1. `INFORMES` tiene `plantilla_id` en `jm` y `secco`.
 2. Menú → **"Sembrar marcadores desde plantillas"**.
-3. En `MARCADORES`: deben aparecer ~110 filas de `jm` y las de `secco`, con `familia` y
-   `notas` (`slide N`) completos, y `base_id`/`campo_logico` vacíos.
-4. **Test de no-destrucción:** completá a mano `base_id=rdv` y `campo_logico=inscriptos`
-   en la fila `ecv_inscriptos`, y **volvé a correr el helper**. Esos valores tienen que
-   seguir ahí. Si se borraron, el punto 3 de la Parte A está mal implementado.
-5. Menú → **"Ver cobertura de configuración"**: debe reportar casi todo pendiente.
+3. En `MARCADORES`: ~110 filas de `jm` más las de `secco`, con `familia` y `notas` completos,
+   y `base_id`/`campo_logico` vacíos.
+4. **Test de no-destrucción:** completar a mano `base_id=rdv` y `campo_logico=inscriptos` en
+   `ecv_inscriptos`, y **volver a correr el helper**. Esos valores siguen ahí. Si se
+   borraron, el punto 3 está mal implementado.
+5. **Test de bloque repetible:** un token del bloque de encuentro aparece **una sola vez**,
+   con su marca en `notas`.
+6. Menú → **"Ver cobertura de configuración"**: casi todo pendiente.
 
 ---
 
 ## Nota sobre los tokens que no salen de una base
 
-Varios tokens son de carga manual o de fuente todavía indefinida (insights, títulos de
-campaña, temas de conversación, MiBA). Van a quedar sin `base_id` **para siempre**, y
-está bien: el motor los resuelve con `operacion=TEXTO` leyendo un valor cargado a mano.
-No los trates como pendientes de cableado. El detalle está en
-`docs/CONFIG_INFORMES.md`.
+Varios son de carga manual o de fuente indefinida (insights, títulos de campaña, temas de
+conversación, MiBA). Van a quedar sin `base_id` **para siempre**, y está bien: se resuelven
+con `operacion=TEXTO` leyendo `valor_fijo`. No tratarlos como pendientes de cableado. Detalle
+en `docs/CONFIG_INFORMES.md`.
+
+Los de MiBA además están en `PLAN.md §3` como planificado y bloqueado: van a emitir
+`«FALTA:miba_*»` en cada corrida hasta que se defina la fuente. **Es lo esperado, no una
+falla.**
+
+---
+
+## Qué NO hacer
+
+- No correr sin resolver 0.1 y 0.3.
+- No modificar `upsertPorClave_`.
+- No borrar filas huérfanas.
+- No cablear `base_id` ni `campo_logico` — eso es el Paso 3.
+- Sin trailer `Co-Authored-By`.
