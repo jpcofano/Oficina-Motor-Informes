@@ -56,6 +56,27 @@ escribió en la cola de documentación del 02/08. No agregar uno nuevo.
 
 ## Parte A — Las operaciones en `Marcadores.gs`
 
+> **Ejecutada el 03/08/2026, y no hizo lo que este texto supone. Corregido en el lugar para
+> que el prompt no mienta sobre lo que pasó.**
+>
+> **Las seis operaciones ya existían.** `opSUMA`, `opCONTEO`, `opULTIMO`, `opRATIO`, `opPCT`
+> y `opTEXTO` estaban en `Marcadores.gs` desde el corte vertical del `Paso-2.9E`. La Parte 0
+> no lo detectó porque **no preguntó por ellas**: sus siete puntos miran `MARCADORES`,
+> `SECCIONES`, `resolverVentana()`, el filtro del `2.16`, el proveedor de `digital`,
+> `TOKENS.md` §5 y los normalizadores — ninguno mira si las operaciones existen. Es un hueco
+> del prompt, no un descuido de la ejecución.
+>
+> **Lo que la Parte A sí fue: alineación y despacho.** (1) Alinear las seis al contrato de
+> `ctx` de más abajo, aceptando `ctx.filas` + `ctx.encabezado` además del `ctx.valores` que
+> ya usaba el corte vertical; (2) meter la ventana en la traza; (3) escribir
+> `despacharOperacion_` con **mapa explícito**, que es lo único que no existía. **Medición de
+> `D-01`: +242 / −23 líneas**, y el renglón de "por qué hubo que tocar código" es el
+> despacho.
+>
+> **Lo que sigue valiendo de este texto:** la tabla de operaciones, la firma uniforme, el
+> contrato de `ctx`, la exigencia sobre la traza y el escape hatch. Nada de eso cambió — lo
+> único que cambió es de dónde se partía.
+
 Una función **por operación**, no por marcador. Con ~200 tokens, una función por marcador
 son ~200 funciones y cada informe nuevo volvería a pedir código.
 

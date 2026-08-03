@@ -488,6 +488,57 @@ function probarDespachoOperaciones_() {
   return 'Paso 3 A despacho de operaciones: OK';
 }
 
+/**
+ * Paso 3 (v3) Parte B.3 — control positivo de la semana de `R-11`.
+ *
+ * Por qué **este** control y no una corrida de `resolverVentana()`: el último eslabón sólo
+ * se alcanza con `CONFIG` vacío, y `CONFIG` está cargado. Vaciarlo para probar sería tocar
+ * la planilla; peor, el `P1` del diff ciego a los valores de `CONFIG` dice que ese cambio no
+ * lo ve ninguna verificación. `semanaR11_` es pura y toma la fecha por parámetro, así que se
+ * prueba entera sin planilla y sin esperar a un viernes.
+ */
+function probarSemanaR11_() {
+  function iso_(d) {
+    return Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+
+  // El caso de referencia del Addendum 1: vie 24/07/2026 → jue 30/07/2026. Siete días.
+  var desdeElViernes = semanaR11_(new Date(2026, 6, 24));
+  afirmar_(iso_(desdeElViernes.desde) === '2026-07-24',
+    'R-11: corriendo un viernes, la semana arranca ESE viernes, no el anterior');
+  afirmar_(iso_(desdeElViernes.hasta) === '2026-07-30',
+    'R-11: la semana cierra el jueves siguiente, extremo inclusive');
+
+  // Siete días contando los dos extremos, no ocho.
+  var dias = Math.round((desdeElViernes.hasta - desdeElViernes.desde) / 86400000) + 1;
+  afirmar_(dias === 7, 'R-11: son siete días inclusive, no ocho — es lo que cerró el Addendum 1');
+
+  // Cualquier día de esa semana devuelve la MISMA ventana.
+  ['2026-07-25', '2026-07-28', '2026-07-30'].forEach(function (dia) {
+    var partes = dia.split('-');
+    var v = semanaR11_(new Date(Number(partes[0]), Number(partes[1]) - 1, Number(partes[2])));
+    afirmar_(iso_(v.desde) === '2026-07-24' && iso_(v.hasta) === '2026-07-30',
+      'R-11: ' + dia + ' cae en la semana del 24/07 y tiene que devolver esa ventana');
+  });
+
+  // El jueves cierra; el viernes siguiente ya es otra semana. Es el borde que importa.
+  var siguiente = semanaR11_(new Date(2026, 6, 31));
+  afirmar_(iso_(siguiente.desde) === '2026-07-31',
+    'R-11: el viernes siguiente abre una ventana nueva, no extiende la anterior');
+
+  // Cruce de mes y de año, que es donde la aritmética de fechas suele romperse.
+  var finDeAnio = semanaR11_(new Date(2027, 0, 2)); // sábado 02/01/2027
+  afirmar_(iso_(finDeAnio.desde) === '2027-01-01' && iso_(finDeAnio.hasta) === '2027-01-07',
+    'R-11: la semana tiene que cruzar el cambio de año sin romperse');
+
+  // La hora no participa: la ventana es de días.
+  var conHora = semanaR11_(new Date(2026, 6, 28, 23, 59, 59));
+  afirmar_(iso_(conHora.desde) === '2026-07-24',
+    'R-11: la hora de la corrida no puede mover la ventana');
+
+  return 'R-11 semana calculada: OK';
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
@@ -496,7 +547,8 @@ function correrPruebasDiff_() {
     probarProtegidasConDiferencia_,
     probarResumenDesagregado_,
     probarListaBlancaValores_,
-    probarDespachoOperaciones_
+    probarDespachoOperaciones_,
+    probarSemanaR11_
   ];
   var lineas = [];
   var fallas = 0;

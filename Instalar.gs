@@ -141,8 +141,17 @@ var HOJAS_CONFIG_ = {
   // verificada contra tres informes publicados). Se siembra con `SEED_SECCIONES_` +
   // `sembrarSecciones_()` (abajo) — el árbol completo es demasiado para un ejemplo
   // de instalación.
+  // Paso 3 (v3) Parte B (D-20) — `periodo_ref` antes de `notas`. **Esta lista se tocó
+  // DESPUÉS de que `COLUMNAS_DELTA_.SECCIONES` existiera y de una corrida aplicada**: con la
+  // entrada de delta puesta, la hoja ya no pasa por la rama que reescribe la fila 1, así que
+  // agregar la columna acá no puede correr los encabezados sobre las filas curadas. Al
+  // revés —headers primero, delta después— sí las corría. Ver el comentario de
+  // `COLUMNAS_DELTA_.SECCIONES`.
+  //
+  // Para una planilla nueva esta lista es la que vale: `insertSheet` escribe estos headers
+  // y no pasa por el delta.
   SECCIONES: {
-    headers: ['seccion_id', 'padre', 'orden', 'nombre', 'informes', 'modo', 'itera_sobre', 'filtro', 'opcional', 'condicion', 'familia_tokens', 'estado', 'falta', 'notas']
+    headers: ['seccion_id', 'padre', 'orden', 'nombre', 'informes', 'modo', 'itera_sobre', 'filtro', 'opcional', 'condicion', 'familia_tokens', 'estado', 'falta', 'periodo_ref', 'notas']
   },
   // Paso 2.9H — la "foto" de cada token calculado. Nunca se pisa: cada corrida
   // agrega una fila, así un informe pasado se puede reproducir (punteo del
@@ -211,6 +220,25 @@ var COLUMNAS_DELTA_ = {
   SOLAPAS: [
     { nombre: 'origen', indice: 4 },
     { nombre: 'filas_crudas', indice: 8 }
+  ],
+  // Paso 3 (v3) Parte B (D-20) — `SECCIONES` entra al delta **antes** de que su `headers`
+  // gane `periodo_ref`, y esto no es una preferencia de estilo: sin entrada acá, la hoja
+  // cae en la rama `else` de `aplicarInstalacion_`, que reescribe la fila 1 con
+  // `HOJAS_CONFIG_.SECCIONES.headers` **sin mover los datos**. Con una columna nueva en esa
+  // lista, eso corre todos los encabezados una posición sobre **34 filas curadas a mano**,
+  // en silencio y sin fallar. Es el mismo modo de falla que midió el `Paso-2.15` en su 0.2
+  // para `CAMPANAS`/`REUNIONES`.
+  //
+  // Índice 14 = **antes de `notas`**, que es la convención que ya usan
+  // `MAPEO.valores_incluidos` y `SOLAPAS.filas_crudas`: `notas` queda siempre última.
+  //
+  // Se llama `periodo_ref` y NO `periodo_id`, a propósito y en contra de lo que podría
+  // sugerir el paralelo con `CAMPANAS`/`REUNIONES`: son **opuestos**. `periodo_id` vacío
+  // significa que la fila **no entra a ningún informe** (`D-19`); `periodo_ref` vacío
+  // significa que la sección **usa el eslabón siguiente** de la cadena (`D-20`). Además
+  // apunta a `PERIODOS` igual que `MARCADORES.periodo_ref`, que es el eslabón de arriba.
+  SECCIONES: [
+    { nombre: 'periodo_ref', indice: 14 }
   ]
 };
 

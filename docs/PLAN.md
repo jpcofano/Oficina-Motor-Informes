@@ -526,16 +526,16 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
      períodos consecutivos pueden solaparse o dejar hueco sin que el motor diga nada
      (`R-11` Addendum 1). El extremo inclusivo ya está cerrado; no queda nada que preguntar
      antes de implementarlo.
-   - **El Paso 3 tiene que resolver `D-20`: el período por sección.** Es lo que el
-     `Paso-3-v3` toma como su Parte B, y es la razón por la que se reescribió. Son tres
-     cosas y van
-     juntas porque las tres tocan `resolverVentana()`: **(1)** la columna de período en
-     `SECCIONES` —que **entra a `COLUMNAS_DELTA_` antes** de que se toquen sus `headers`,
-     por lo que midió el `Paso-2.15` 0.2—; **(2)** el eslabón nuevo en la cadena, en la
-     posición que ya fija el Addendum 1 de `D-20` (`campaña > marcador > sección > CONFIG >
-     semana`) — el Paso 3 la implementa, no la decide; **(3)** el cálculo del default de
-     `R-11`, que es **el último eslabón de esa misma cadena** y hoy no existe: con `CONFIG`
-     vacío la función devuelve error, no una semana.
+   - ~~**El Paso 3 tiene que resolver `D-20`: el período por sección.**~~ — **hecho el
+     03/08/2026** (`Paso-3-v3` Parte B). Las tres cosas salieron juntas, que era el punto:
+     **(1)** `SECCIONES.periodo_ref` en la posición 14, con `COLUMNAS_DELTA_` puesto
+     **antes** y en dos corridas aplicadas separadas — verificado fila por fila contra el
+     snapshot previo, 35 filas antes y después y cero diferencias fuera de la columna nueva;
+     **(2)** el eslabón nuevo, entre el marcador y `CONFIG`, con las tres precedencias del
+     Addendum 1 de `D-20` corridas por API; **(3)** el default de `R-11`, que **ya no
+     falla**: `resolverVentana()` devuelve la semana calculada con `origen: 'R-11
+     (calculado)'`. El diff de configuración da los mismos números antes y después, con
+     `protegidas (con diferencia): 0`.
    - **Los cuatro ítems que el `Paso-3-v3` no cubre — corregido el 03/08/2026 con su
      destino real.** Al reemplazar al `v2`, Code anotó acá que el `v3` deja afuera `R-12`,
      los dos valores de ventana a `CONFIG`, el empate técnico del match y la migración de

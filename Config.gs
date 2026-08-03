@@ -43,6 +43,16 @@ function leerCampanas() {
   return leerRegistro_('CAMPANAS', 'campana_id');
 }
 
+/**
+ * Paso 3 (v3) Parte B — `SECCIONES` **plano**, indexado por `seccion_id`.
+ * Distinto de `leerSecciones_(informeId)` (`Secciones.gs`), que arma el **árbol** de un
+ * informe: `resolverVentana()` necesita mirar una sección por su id, sin recorrer padres ni
+ * filtrar por informe.
+ */
+function leerSeccionesPlano_() {
+  return leerRegistro_('SECCIONES', 'seccion_id');
+}
+
 function leerConfig() {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CONFIG');
   if (!hoja) return {};

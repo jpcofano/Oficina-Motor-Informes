@@ -188,13 +188,90 @@ function resolverVentana(opciones) {
     return { ok: true, desde: desdePeriodo, hasta: hastaPeriodo, origen: 'periodo_ref:' + opciones.periodo_ref };
   }
 
+  // ---- Eslabón 3 (Paso 3 v3 Parte B, D-20): la sección ------------------------------
+  // Va DEBAJO del `periodo_ref` del marcador y ENCIMA de `CONFIG`. El criterio es de más
+  // específico a más general, y un marcador puntual es más específico que la sección que lo
+  // contiene: lo fija el Addendum 1 de `D-20`, que además aclara que el Paso 3 lo
+  // **implementa, no lo decide**.
+  //
+  // Vacío acá significa "usá el eslabón siguiente" — lo contrario que `periodo_id` vacío en
+  // `CAMPANAS`/`REUNIONES`, donde la fila **no entra a ningún informe** (`D-19`). Están
+  // escritos uno al lado del otro a propósito, para que nadie los unifique.
+  if (opciones.seccion_id) {
+    var secciones = leerSeccionesPlano_();
+    var seccion = secciones[opciones.seccion_id];
+    if (!seccion) {
+      return { ok: false, motivo: 'La sección "' + opciones.seccion_id + '" no existe en SECCIONES' };
+    }
+    var refSeccion = String(seccion.periodo_ref || '').trim();
+    if (refSeccion) {
+      var periodosSeccion = leerPeriodos();
+      var periodoSeccion = periodosSeccion[refSeccion];
+      if (!periodoSeccion) {
+        return {
+          ok: false,
+          motivo: 'SECCIONES."' + opciones.seccion_id + '".periodo_ref = "' + refSeccion + '" no existe en PERIODOS'
+        };
+      }
+      var desdeSeccion = parsearFechaCelda_(periodoSeccion.desde);
+      var hastaSeccion = parsearFechaCelda_(periodoSeccion.hasta);
+      if (!desdeSeccion || !hastaSeccion) {
+        return { ok: false, motivo: 'PERIODOS "' + refSeccion + '" no tiene desde/hasta válidos' };
+      }
+      return {
+        ok: true, desde: desdeSeccion, hasta: hastaSeccion,
+        origen: 'seccion:' + opciones.seccion_id + '→' + refSeccion
+      };
+    }
+    // `periodo_ref` vacío: sigue la cadena, no es un error.
+  }
+
+  // ---- Eslabón 4: CONFIG -----------------------------------------------------------
   var cfg = leerConfig();
   var desdeCfg = parsearFechaCelda_(cfg.periodo_desde);
   var hastaCfg = parsearFechaCelda_(cfg.periodo_hasta);
-  if (!desdeCfg || !hastaCfg) {
-    return { ok: false, motivo: 'CONFIG.periodo_desde/periodo_hasta no están cargados o no son fechas válidas' };
+  if (desdeCfg && hastaCfg) {
+    return { ok: true, desde: desdeCfg, hasta: hastaCfg, origen: 'config' };
   }
-  return { ok: true, desde: desdeCfg, hasta: hastaCfg, origen: 'config' };
+
+  // ---- Eslabón 5: la semana de `R-11` ----------------------------------------------
+  // **Último eslabón de la cadena, no una nota al margen** (`D-20` Addendum 1). Hasta hoy
+  // acá la función devolvía error; ahora responde una semana. Lo cargado en `CONFIG` sigue
+  // mandando siempre —`R-11` Addendum 1 punto 2: configurar es el caso normal, el cálculo es
+  // el piso—, así que este eslabón sólo entra con `CONFIG` vacío o ilegible.
+  var semana = semanaR11_(new Date());
+  return {
+    ok: true, desde: semana.desde, hasta: semana.hasta, origen: 'R-11 (calculado)',
+    calculado: true,
+    motivo_calculo: desdeCfg || hastaCfg
+      ? 'CONFIG tiene una sola de las dos fechas cargada o ilegible'
+      : 'CONFIG.periodo_desde/periodo_hasta vacíos'
+  };
+}
+
+/**
+ * Paso 3 (v3) Parte B.3 — la semana de `R-11`: **siete días, viernes a jueves, con los dos
+ * extremos inclusive** (`R-11` Addendum 1 punto 1; caso de referencia `vie 24/07 → jue
+ * 30/07`). Se calcula respecto de una fecha de corrida.
+ *
+ * Cuál semana: la que **contiene** a `fechaCorrida`. Se retrocede hasta el viernes anterior
+ * o igual, y ese viernes abre la ventana; el jueves siguiente la cierra. Si la corrida cae
+ * un viernes, ese mismo viernes es el `desde` — el informe de una semana se arma sobre la
+ * semana que arranca ese día, no sobre la anterior.
+ *
+ * **No valida nada.** Dos períodos consecutivos pueden solaparse o dejar hueco y eso es
+ * válido y esperado (`R-11` Addendum 1 punto 3): esta función responde cuando nadie cargó
+ * nada, no es un patrón contra el cual comparar lo que cargó una persona.
+ */
+function semanaR11_(fechaCorrida) {
+  var VIERNES = 5; // getDay(): 0 domingo … 5 viernes
+  var base = new Date(fechaCorrida.getFullYear(), fechaCorrida.getMonth(), fechaCorrida.getDate());
+
+  var retroceso = (base.getDay() - VIERNES + 7) % 7;
+  var desde = new Date(base.getFullYear(), base.getMonth(), base.getDate() - retroceso);
+  var hasta = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate() + 6);
+
+  return { desde: desde, hasta: hasta };
 }
 
 /* ============ Paso 2.16 (D-21) — lista blanca de valores por columna ============ */

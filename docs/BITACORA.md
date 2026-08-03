@@ -2076,3 +2076,67 @@ nadie más.
   - **Sigue faltando la operación de lista** (`P1`): ninguna de las seis devuelve un arreglo
     concatenado, y `m2_campanias` la necesita.
   - **Paro acá**, como pide el prompt: un commit por parte, se avisa al final de cada una.
+
+## Paso 3 (v3) Parte B — la cadena de período completa, cinco eslabones (2026-08-03) — commit de esta entrada
+- **Qué pedía:** la columna de período en `SECCIONES` (con `COLUMNAS_DELTA_` **primero**), el
+  eslabón nuevo en la cadena, el cálculo del default de `R-11`, los tres vacíos que no se
+  unifican, y reescribir `TOKENS.md` §5. Con diff de configuración antes y después, y
+  `protegidas (con diferencia): 0` como referencia.
+- **B.1 · La columna, en dos corridas aplicadas y en ese orden.**
+  - **Corrida 1 — sólo `COLUMNAS_DELTA_.SECCIONES`**, sin tocar `HOJAS_CONFIG_`. La hoja
+    salió de la rama que reescribe la fila 1 y entró a la que inserta columnas.
+    `periodo_ref` quedó en la **posición 14, antes de `notas`** — la convención que ya usan
+    `MAPEO.valores_incluidos` y `SOLAPAS.filas_crudas`.
+  - **Corrida 2 — recién ahí `HOJAS_CONFIG_.SECCIONES.headers`.** Con el delta puesto, la
+    hoja ya no pasa por la reescritura de encabezados, así que agregar la columna a esa lista
+    no puede correr los headers sobre los datos.
+  - **Verificación fila por fila contra el snapshot previo: 35 filas de datos antes y 35
+    después, y CERO diferencias fuera de la columna nueva.** Las 35 con `periodo_ref` vacío,
+    que es lo que corresponde: vacío = usa el eslabón siguiente.
+  - **`sembrarSecciones_` es inmune**: lee los headers **de la hoja**, no de `HOJAS_CONFIG_`,
+    y mapea por nombre.
+- **B.2 y B.3 · `resolverVentana()` pasa de tres capas a cinco.** Antes:
+  `campaña > marcador > CONFIG > error`. Ahora: `campaña > marcador > SECCIONES.periodo_ref >
+  CONFIG > semana de R-11`. **El último eslabón ya no falla: responde.** `semanaR11_(fecha)`
+  calcula siete días viernes a jueves, los dos extremos inclusive, y marca el resultado con
+  `origen: 'R-11 (calculado)'` y `calculado: true` — un número calculado y uno cargado a mano
+  se leen igual en el deck y no deberían auditarse igual. Lo cargado en `CONFIG` sigue
+  mandando siempre (`R-11` Addendum 1 punto 2).
+  - `leerSeccionesPlano_()` (`Config.gs`), nuevo: `SECCIONES` indexado por `seccion_id`.
+    Distinto de `leerSecciones_(informeId)` (`Secciones.gs`), que arma el **árbol** de un
+    informe — acá hace falta mirar una sección por id, sin recorrer padres.
+- **B.4 · Los tres vacíos** quedaron escritos juntos en el código (comentario de
+  `COLUMNAS_DELTA_.SECCIONES` y de la rama del eslabón 3) y en `TOKENS.md` §5, con el aviso
+  de que `periodo_ref` y `periodo_id` **parecen lo mismo y significan lo contrario**.
+- **B.5 · `TOKENS.md` §5 reescrita.** Dejó de ser "las tres capas" con una nota que avisaba
+  que estaban superadas: ahora son los cinco eslabones, con la tabla de los tres vacíos y la
+  aclaración de que el eslabón 5 responde en vez de fallar.
+- **Prueba:**
+  - **Diff de configuración, antes y después: idénticos.**
+    `cambiadas 0 · agregadas 0 · migraciones 0 · solo_en_hoja 7 · protegidas (con diferencia)
+    0 · protegidas (sin diferencia) 8 · sin cambios: sí`. **La referencia se sostiene.**
+  - **Control positivo nuevo, `probarSemanaR11_`, y son 8.** Cubre el caso de referencia del
+    Addendum 1 (vie 24/07 → jue 30/07), que son **siete** días y no ocho, que cualquier día de
+    esa semana devuelve la misma ventana, que el viernes siguiente abre una ventana nueva, el
+    cruce de año, y que la hora de la corrida no mueve nada. Es puro: no toca la planilla —
+    probar el eslabón 5 contra `CONFIG` exigiría vaciarlo, y el `P1` del diff ciego a los
+    valores de `CONFIG` dice que ese cambio no lo ve ninguna verificación.
+  - **La cadena, corrida por API:** `{}` → `config`; `{seccion_id:'portada'}` → la sección
+    existe con `periodo_ref` vacío y **cae al eslabón siguiente**, `config`;
+    `{seccion_id:'resumen_ejecutivo', periodo_ref:'m2_mensual'}` → **gana el marcador**,
+    `periodo_ref:m2_mensual`; `{campana:'x', seccion_id:'portada'}` → **la campaña se evalúa
+    primero**. Las tres precedencias que fija `D-20` Addendum 1, verificadas.
+- **Medición de `D-01`: +235 / −31 líneas**, de las cuales `.gs` son `Fuentes.gs` +83,
+  `Pruebas.gs` +54, `Instalar.gs` +30 y `Config.gs` +10. El renglón de "por qué hubo que
+  tocar código": **la cadena de período es lógica de resolución, no configuración** — el
+  eslabón nuevo y el default calculado no se pueden declarar en una hoja.
+- **Pendientes/decisiones:**
+  - **Corrección de una cifra propia, la segunda del día.** La entrada del `Paso-3-v3`
+    Parte 0 dice *"En riesgo: 34 filas curadas (el handoff venía diciendo 35)"*. **Son 35**:
+    el archivo termina sin salto de línea final y `wc -l` cuenta uno de menos. El handoff
+    original tenía razón y la "corrección" estaba mal. Contado ahora por script sobre las
+    líneas no vacías.
+  - **`SECCIONES.periodo_ref` queda vacío en las 35 filas.** Cargar alguna es curaduría del
+    usuario, y hasta que pase, el eslabón 3 no cambia ningún número — que es exactamente lo
+    que se quiere de un cambio estructural.
+  - **Paro acá**, como pide el prompt. Sigue la Parte C, el despachador en `Generador.gs`.

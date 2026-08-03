@@ -279,39 +279,55 @@ parece — verificar contra `MAPEO` antes de asumir que una base es de solapa ú
 
 ---
 
-## 5. Resolución de período — las tres capas
+## 5. Resolución de período — los cinco eslabones
 
 > Migrado desde `Plan Inicial/PROYECTO.md` §4 al congelarlo (`DOC-6` Parte E, 01/08/2026).
 > Vive acá porque **el período se resuelve por token**, y este documento ya es dueño del
-> diccionario y de la columna `periodo_ref`. Es el contrato que el Paso 3 tiene que
-> implementar.
-
-> ⚠ **Superado por `D-20` y su Addendum 1 (`docs/PLAN.md`, 02/08/2026): la cadena tiene
-> ahora cinco eslabones, no tres.** `campaña > marcador (periodo_ref) > SECCIONES.periodo_ref
-> > CONFIG > semana de `R-11``. Se agregó el período **por sección** en el medio y el
-> **default calculado** al final. La tabla de abajo se conserva porque su caso testigo sigue
-> explicando por qué el período no es global, pero **la decisión vigente es `D-20`** y es la
-> que el Paso 3 implementa. Esta nota se agregó el 03/08/2026 en la auditoría de premisas;
-> el resto de la sección no se tocó.
+> diccionario y de la columna `periodo_ref`.
 >
-> *(Corrección del 03/08/2026, misma nota: decía `SECCIONES.periodo_id`. Es `periodo_ref`.
-> `periodo_id` es la columna de `CAMPANAS`/`REUNIONES` que fijaron `D-08` y `D-19`, y
-> significa lo contrario — una fila sin `periodo_id` **no entra a ningún informe**, una
-> sección sin `periodo_ref` **usa el eslabón siguiente**. Confundir los dos nombres es
-> exactamente lo que `D-19` y `D-20` piden no hacer.)*
+> **Reescrita el 03/08/2026 (Paso 3 v3, Parte B.5).** Hasta hoy esta sección describía **tres
+> capas** y llevaba una nota que avisaba que estaban superadas. Ya no hace falta la nota: la
+> cadena de cinco eslabones de `D-20` Addendum 1 **está implementada** en
+> `resolverVentana()` (`Fuentes.gs`) y verificada. Dejó de ser un contrato a futuro.
 
-El período **no es global**. Para cada token se resuelve en este orden de prioridad, y se
-usa el primero que aplique:
+El período **no es global**. Para cada token se resuelve **de más específico a más general**,
+y gana el primero que aplique:
 
-| # | condición | ventana que gana |
-|---|---|---|
-| 1 | el token pertenece a una **campaña seleccionada** | `desde`/`hasta` de esa fila de `CAMPANAS` |
-| 2 | el marcador tiene **`periodo_ref`** cargado | esa ventana de `PERIODOS` |
-| 3 | ninguna de las anteriores | período principal de `CONFIG` (`periodo_desde`/`periodo_hasta`) |
+| # | eslabón | de dónde sale la ventana | estado |
+|---|---|---|---|
+| 1 | el token pertenece a una **campaña** | `desde`/`hasta` de esa fila de `CAMPANAS` | ya estaba |
+| 2 | el **marcador** tiene `periodo_ref` | esa ventana de `PERIODOS` | ya estaba |
+| 3 | la **sección** tiene `periodo_ref` | esa ventana de `PERIODOS` | **nuevo, 03/08/2026** |
+| 4 | `CONFIG` | `periodo_desde` / `periodo_hasta` | ya estaba |
+| 5 | nadie cargó nada | **la semana de `R-11`, calculada** | **nuevo, 03/08/2026** |
 
-**El caso que justifica las tres capas** (`docs/CONFIG_INFORMES.md` §1.3): M2 reporta
-**mensual** dentro de un informe semanal, vía `periodo_ref = m2_mensual`. Sin la capa 2,
-ese bloque saldría con la ventana del informe y el número sería plausible y equivocado.
+**El marcador le gana a la sección, y la campaña le gana a todo.** No es una preferencia de
+implementación: lo fija `D-20` Addendum 1, con el criterio de que un marcador puntual es más
+específico que la sección que lo contiene. El Paso 3 lo implementó, no lo decidió.
+
+**El caso que justifica el eslabón 2** (`docs/CONFIG_INFORMES.md` §1.3): M2 reporta
+**mensual** dentro de un informe semanal, vía `periodo_ref = m2_mensual`. Sin él, ese bloque
+saldría con la ventana del informe y el número sería plausible y equivocado.
+
+**El eslabón 5 responde, ya no falla.** Hasta el 03/08 `resolverVentana()` devolvía error
+cuando `CONFIG` estaba vacío. Ahora devuelve la semana de `R-11` —**siete días, viernes a
+jueves, los dos extremos inclusive**— calculada respecto de la fecha de corrida, y marca el
+resultado con `origen: 'R-11 (calculado)'` y `calculado: true`. **Lo cargado en `CONFIG`
+manda siempre**: el cálculo es el piso, no una validación de lo que escribió una persona
+(`R-11` Addendum 1 punto 2). Un número calculado y uno cargado a mano se leen igual en el
+deck, y por eso la traza los distingue.
+
+**Un vacío no significa lo mismo en cada hoja, y son tres reglas distintas a propósito:**
+
+| dónde | vacío significa |
+|---|---|
+| `SECCIONES.periodo_ref` (eslabón 3) | **usa el eslabón siguiente** (`D-20`) |
+| `CAMPANAS.periodo_id` / `REUNIONES.periodo_id` | **la fila no entra a ningún informe** (`D-19`) |
+| `MAPEO.valores_incluidos` | **sin filtro**: entran todas las filas (`D-21`) |
+
+Son tres respuestas distintas porque son tres preguntas distintas. **Ojo con los nombres:**
+la columna de las secciones es `periodo_ref` y la de `CAMPANAS`/`REUNIONES` es `periodo_id`
+— parecen lo mismo y significan lo contrario.
 
 **No confundir con el régimen de selección** (`docs/PLAN.md`, `D-09`): esta tabla decide
 **qué ventana de fechas** usa un token que ya entró al informe. Qué filas entran es otra
