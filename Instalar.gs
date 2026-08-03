@@ -122,8 +122,10 @@ var HOJAS_CONFIG_ = {
   },
   // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
   // ministros, proveedor — ver Plan Inicial/PROYECTO.md §4.
+  // Paso 2.15 Parte B — `periodo_id` primera: es clave foránea a PERIODOS, se lee como
+  // identidad y no como dato suelto. Ver D-19 para qué hace el motor con una fila vacía.
   CAMPANAS: {
-    headers: ['campana_id', 'nombre', 'informe_id', 'base_id', 'tipo', 'desde', 'hasta', 'mostrar', 'orden']
+    headers: ['periodo_id', 'campana_id', 'nombre', 'informe_id', 'base_id', 'tipo', 'desde', 'hasta', 'mostrar', 'orden']
   },
   PERIODOS: {
     headers: ['periodo_id', 'desde', 'hasta', 'notas']
@@ -131,7 +133,7 @@ var HOJAS_CONFIG_ = {
   // Paso 2.9D — R-02: el temario define el universo del informe, no la fecha.
   // Curado a mano, mismo patrón que CAMPANAS.
   REUNIONES: {
-    headers: ['orden', 'eje', 'tipo', 'nombre', 'fecha', 'etapa', 'mostrar', 'texto_original', 'notas']
+    headers: ['periodo_id', 'orden', 'eje', 'tipo', 'nombre', 'fecha', 'etapa', 'mostrar', 'texto_original', 'notas']
   },
   // Paso 2.9G v2 — registro jerárquico de secciones (docs/SECCIONES.md, v2,
   // verificada contra tres informes publicados). Se siembra con `SEED_SECCIONES_` +
@@ -169,7 +171,20 @@ var COLUMNAS_DELTA_ = {
   ],
   CAMPANAS: [
     { nombre: 'desde', indice: 6 },
-    { nombre: 'hasta', indice: 7 }
+    { nombre: 'hasta', indice: 7 },
+    // Paso 2.15 Parte B (D-08/D-19): va AL FINAL del array aunque la columna quede
+    // primera. Las entradas se evalúan en orden en el forEach de aplicarInstalacion_:
+    // una entrada nueva adelante correría los índices 6 y 7 de las que ya están, que
+    // asumen el esquema previo (mismo caso que documenta la nota de MARCADORES).
+    { nombre: 'periodo_id', indice: 1 }
+  ],
+  // Paso 2.15 Parte B: REUNIONES entra al delta ANTES de que su `headers` gane
+  // `periodo_id`. Sin esto cae en la rama `else` de aplicarInstalacion_, que reescribe
+  // la fila 1 con los encabezados nuevos y NO mueve los datos: encabezados corridos
+  // sobre siete filas curadas a mano, en silencio. Efecto buscado y verificado en la
+  // Parte 0: deja de recibir la reescritura de encabezados en cada corrida.
+  REUNIONES: [
+    { nombre: 'periodo_id', indice: 1 }
   ],
   BASES: [
     { nombre: 'fila_encabezado', indice: 5 },
@@ -961,9 +976,9 @@ var SEED_PERIODOS_ = [
 // `menuCargarEjemplo_()` (Codigo.gs, hoy un stub) las use para una instalación
 // de cero, con el humano confirmando antes de escribir.
 var SEED_CAMPANAS_EJEMPLO_ = [
-  { campana_id: 'serv_esenciales', nombre: 'Servicios esenciales', informe_id: 'secco', base_id: 'looker', tipo: 'campana', desde: '2026-06-02', hasta: '2026-06-15', mostrar: 'sí', orden: 1 },
-  { campana_id: 'encuentros_min', nombre: 'Encuentros de ministros', informe_id: 'secco', base_id: 'rdv', tipo: 'ministros', desde: '2026-06-01', hasta: '2026-06-30', mostrar: 'sí', orden: 2 },
-  { campana_id: 'prov_uber', nombre: 'Uber', informe_id: 'secco', base_id: 'digital', tipo: 'proveedor', desde: '2026-06-01', hasta: '2026-06-30', mostrar: 'no', orden: 3 }
+  { periodo_id: '', campana_id: 'serv_esenciales', nombre: 'Servicios esenciales', informe_id: 'secco', base_id: 'looker', tipo: 'campana', desde: '2026-06-02', hasta: '2026-06-15', mostrar: 'sí', orden: 1 },
+  { periodo_id: '', campana_id: 'encuentros_min', nombre: 'Encuentros de ministros', informe_id: 'secco', base_id: 'rdv', tipo: 'ministros', desde: '2026-06-01', hasta: '2026-06-30', mostrar: 'sí', orden: 2 },
+  { periodo_id: '', campana_id: 'prov_uber', nombre: 'Uber', informe_id: 'secco', base_id: 'digital', tipo: 'proveedor', desde: '2026-06-01', hasta: '2026-06-30', mostrar: 'no', orden: 3 }
 ];
 
 // Paso 2.9D — R-02: el temario define el universo del informe, no la fecha.
@@ -972,13 +987,13 @@ var SEED_CAMPANAS_EJEMPLO_ = [
 // existe del formato en que el equipo piensa el informe. Ver nota de
 // SEED_CAMPANAS_EJEMPLO_ arriba: sin sembrador automático, mismo motivo.
 var SEED_REUNIONES_EJEMPLO_ = [
-  { orden: 1, eje: 'JM', tipo: 'Uno a uno', nombre: 'San Cristóbal', fecha: '2026-07-23', etapa: 'pre', mostrar: 'sí', texto_original: 'JM | Uno a uno en San Cristóbal 23/07 (pre)', notas: '' },
-  { orden: 2, eje: 'JM', tipo: 'Uno a uno', nombre: 'Retiro', fecha: '2026-07-24', etapa: 'pre', mostrar: 'sí', texto_original: '2) JM | Uno a uno en Retiro 24/07 (pre)', notas: '' },
-  { orden: 3, eje: 'JM', tipo: 'Encuentro Temático', nombre: 'Orden Público', fecha: '2026-07-28', etapa: '', mostrar: 'sí', texto_original: 'JM | Encuentro Temático Orden Público 28/07', notas: '' },
-  { orden: 4, eje: 'JM', tipo: 'Uno a uno', nombre: 'San Cristóbal', fecha: '2026-07-23', etapa: 'post', mostrar: 'sí', texto_original: 'JM | Uno a uno en San Cristóbal 23/07 (POST)', notas: '' },
-  { orden: 5, eje: 'JM', tipo: 'Uno a uno', nombre: 'Retiro', fecha: '2026-07-24', etapa: 'post', mostrar: 'sí', texto_original: 'JM | Uno a uno en Retiro 24/07 (post)', notas: '' },
-  { orden: 6, eje: 'Ministros', tipo: 'Agregado', nombre: 'Reuniones de la semana', fecha: '2026-07-24', etapa: '', mostrar: 'sí', texto_original: 'Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)', notas: '24/07 al 30/07 inclusive' },
-  { orden: 7, eje: 'M2', tipo: 'Agregado', nombre: 'Campañas y enviados de la semana', fecha: '2026-07-24', etapa: '', mostrar: 'sí', texto_original: '6) M2 | Campañas y enviados de la semana del 24/07 al 30/07', notas: '' }
+  { periodo_id: '', orden: 1, eje: 'JM', tipo: 'Uno a uno', nombre: 'San Cristóbal', fecha: '2026-07-23', etapa: 'pre', mostrar: 'sí', texto_original: 'JM | Uno a uno en San Cristóbal 23/07 (pre)', notas: '' },
+  { periodo_id: '', orden: 2, eje: 'JM', tipo: 'Uno a uno', nombre: 'Retiro', fecha: '2026-07-24', etapa: 'pre', mostrar: 'sí', texto_original: '2) JM | Uno a uno en Retiro 24/07 (pre)', notas: '' },
+  { periodo_id: '', orden: 3, eje: 'JM', tipo: 'Encuentro Temático', nombre: 'Orden Público', fecha: '2026-07-28', etapa: '', mostrar: 'sí', texto_original: 'JM | Encuentro Temático Orden Público 28/07', notas: '' },
+  { periodo_id: '', orden: 4, eje: 'JM', tipo: 'Uno a uno', nombre: 'San Cristóbal', fecha: '2026-07-23', etapa: 'post', mostrar: 'sí', texto_original: 'JM | Uno a uno en San Cristóbal 23/07 (POST)', notas: '' },
+  { periodo_id: '', orden: 5, eje: 'JM', tipo: 'Uno a uno', nombre: 'Retiro', fecha: '2026-07-24', etapa: 'post', mostrar: 'sí', texto_original: 'JM | Uno a uno en Retiro 24/07 (post)', notas: '' },
+  { periodo_id: '', orden: 6, eje: 'Ministros', tipo: 'Agregado', nombre: 'Reuniones de la semana', fecha: '2026-07-24', etapa: '', mostrar: 'sí', texto_original: 'Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)', notas: '24/07 al 30/07 inclusive' },
+  { periodo_id: '', orden: 7, eje: 'M2', tipo: 'Agregado', nombre: 'Campañas y enviados de la semana', fecha: '2026-07-24', etapa: '', mostrar: 'sí', texto_original: '6) M2 | Campañas y enviados de la semana del 24/07 al 30/07', notas: '' }
 ];
 
 /**

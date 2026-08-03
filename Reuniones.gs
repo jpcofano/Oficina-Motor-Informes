@@ -62,7 +62,10 @@ function leerReuniones_() {
  */
 function parsearLineaReunion_(lineaCruda) {
   var textoOriginal = String(lineaCruda === null || lineaCruda === undefined ? '' : lineaCruda).trim();
-  var propuesta = { orden: '', eje: '', tipo: '', nombre: '', fecha: '', etapa: '', mostrar: '', texto_original: textoOriginal, notas: '' };
+  // Paso 2.15 Parte B: `periodo_id` sale acá vacío a propósito — no se deduce de la
+  // fecha de la línea. Con ventanas variables (R-11 Addendum 1) la fecha no determina
+  // el período, así que lo pone el llamador o no lo pone nadie.
+  var propuesta = { periodo_id: '', orden: '', eje: '', tipo: '', nombre: '', fecha: '', etapa: '', mostrar: '', texto_original: textoOriginal, notas: '' };
   if (!textoOriginal) return propuesta;
 
   var texto = textoOriginal;
@@ -137,7 +140,7 @@ function parsearLineaReunion_(lineaCruda) {
  * filas existentes, solo agrega (mismo criterio que `inventariarSolapas()`: no
  * se adivina, se descubre y se dejan las decisiones para quien mira la hoja).
  */
-function cargarTemarioReuniones_(textoPegado) {
+function cargarTemarioReuniones_(textoPegado, periodoId) {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('REUNIONES');
   if (!hoja) return { ok: false, motivo: 'La hoja REUNIONES no existe. Corré "Instalar / reparar hojas" primero.' };
 
@@ -148,6 +151,9 @@ function cargarTemarioReuniones_(textoPegado) {
   var sinParsear = 0;
   var filas = lineas.map(function (linea) {
     var propuesta = parsearLineaReunion_(linea);
+    // Paso 2.15 Parte B: el período lo pone el llamador, que ya lo validó contra
+    // PERIODOS. Acá no se valida de nuevo ni se completa con un default.
+    propuesta.periodo_id = periodoId;
     if (propuesta.notas === 'no se pudo parsear' || propuesta.notas.indexOf('no se encontró fecha') !== -1) sinParsear++;
     return headers.map(function (h) { return (h in propuesta) ? propuesta[h] : ''; });
   });
@@ -164,13 +170,30 @@ function cargarTemarioReuniones_(textoPegado) {
  * falta el texto, **falla explícito**. Ésa es la diferencia con un `confirm`, que
  * degrada solo a "no confirmado" (ver `ui_()` en `Codigo.gs`).
  */
-function cargarTemario(texto) {
+function cargarTemario(texto, periodoId) {
   if (!texto || !String(texto).trim()) {
     throw new Error('cargarTemario: falta el texto del temario. Desde el menú lo pide un ' +
       'prompt; por API entra por parámetro — una línea por reunión.');
   }
+  // Paso 2.15 Parte B (D-19): el período es obligatorio y NO se asume el vigente.
+  // Sin `periodo_id` la fila entra sin período y la curaduría de esta semana pisa la
+  // de la anterior sin dejar rastro — el modo de falla que D-08 vino a cerrar. Falla
+  // explícito, como con el texto: cuando falta una definición, el motor no la inventa
+  // (D-10).
+  if (!periodoId || !String(periodoId).trim()) {
+    throw new Error('cargarTemario: falta el periodo_id. Una fila sin período no entra a ' +
+      'ningún informe (D-19), y asumir el vigente en silencio es justo lo que periodo_id ' +
+      'viene a evitar. Períodos disponibles: ' + Object.keys(leerPeriodos()).join(', '));
+  }
+  periodoId = String(periodoId).trim();
+  if (!leerPeriodos()[periodoId]) {
+    throw new Error('cargarTemario: el periodo_id "' + periodoId + '" no existe en PERIODOS. ' +
+      'Cargalo ahí primero — el motor no crea períodos. Disponibles: ' +
+      Object.keys(leerPeriodos()).join(', '));
+  }
+
   var ui = ui_();
-  var resultado = cargarTemarioReuniones_(texto);
+  var resultado = cargarTemarioReuniones_(texto, periodoId);
   if (!resultado.ok) {
     ui.alert('No se pudo cargar', resultado.motivo, ui.ButtonSet.OK);
     return ui.texto();
@@ -178,7 +201,7 @@ function cargarTemario(texto) {
 
   ui.alert(
     'Temario cargado',
-    'Filas agregadas: ' + resultado.agregadas +
+    'Período: ' + periodoId + '\nFilas agregadas: ' + resultado.agregadas +
       (resultado.sinParsear ? '\n⚠ ' + resultado.sinParsear + ' no se pudieron interpretar del todo — revisar notas y texto_original.' : '') +
       '\n\nNinguna quedó con mostrar=sí: confirmá a mano cuáles entran al informe.',
     ui.ButtonSet.OK
@@ -193,6 +216,23 @@ function cargarTemario(texto) {
  */
 function menuCargarTemarioReuniones_() {
   var ui = ui_();
+
+  // Paso 2.15 Parte B: el período se pide primero. Si se pidiera después del texto,
+  // cancelar acá tiraría un temario ya pegado.
+  var disponibles = Object.keys(leerPeriodos());
+  if (!disponibles.length) {
+    ui.alert('Falta configuración', 'No hay ninguna fila en PERIODOS. Cargá el período ' +
+      'antes de cargar el temario: una reunión sin período no entra a ningún informe (D-19).',
+      ui.ButtonSet.OK);
+    return;
+  }
+  var respuestaPeriodo = ui.prompt(
+    'Período del temario',
+    '¿A qué período pertenecen estas reuniones?\nDisponibles: ' + disponibles.join(', '),
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (respuestaPeriodo.getSelectedButton() !== ui.Button.OK) return;
+
   var respuesta = ui.prompt(
     'Cargar temario de reuniones',
     'Pegá el texto del temario (una línea por reunión). Se agrega a REUNIONES con mostrar vacío — confirmás cada una a mano.',
@@ -200,5 +240,5 @@ function menuCargarTemarioReuniones_() {
   );
   if (respuesta.getSelectedButton() !== ui.Button.OK) return;
 
-  return cargarTemario(respuesta.getResponseText());
+  return cargarTemario(respuesta.getResponseText(), respuestaPeriodo.getResponseText());
 }
