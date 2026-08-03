@@ -1271,6 +1271,31 @@ todavía no está decidida.
   desde acá es **si la corrigieron, si borraron la fila o si el envío se recargó**. La
   pregunta es esa, y hasta que se responda la advertencia de `FECHAS_seleccion.md` se
   mantiene escrita aunque hoy no se reproduzca.
+> **Las cuatro entradas marcadas `⏸ esperando al usuario` (03/08/2026) no se vuelven a
+> plantear.** No se re-preguntan, no se proponen como próximo paso y no se listan en
+> `HANDOFF_CODE.md` como bloqueo. Vuelven a la conversación **sólo cuando el usuario las
+> trae**. Se anotan acá para que existan, no para que empujen.
+
+- **⏸ esperando al usuario · La lámina M2 con la grilla por ejes no salió en el informe del
+  24 al 31/07. ¿Se dejó de usar, o esa semana no hubo material?** Es la pregunta que decide
+  si la slide 10 sigue vigente. Hoy está **congelada** por decisión del usuario del
+  03/08/2026: no se retira, no se corrige, y la armonización la excluye por filtro derivado.
+- **⏸ esperando al usuario · `{{m2_salud_camp}}`: qué mide la línea ancha debajo del cuadro
+  de cinco columnas.** Caja de `y=356 x=100 w=513`, fuera de la grilla, que cruza las cinco
+  columnas. **Sólo aplica si la lámina sigue vigente** — si la respuesta de arriba es que se
+  dejó de usar, esta pregunta se cae sola.
+- **⏸ esperando al usuario · El cruce de nombres de JM: ¿se corrigen en la plantilla o se
+  registran como están?** `{{m2_envios}}` está en la caja del **conteo de campañas** y
+  `{{m2_campanias}}` en la de la **lista de nombres**; SECCO los nombra bien y además tiene
+  la tercera caja (`m2_implementaciones`) que JM no tiene. La plantilla es del equipo
+  (`C-01`), así que corregirla es decisión suya; registrarlos como están también es una
+  opción válida y no bloquea nada — `MARCADORES` los distingue por `informe_id`.
+- **⏸ esperando autorización del usuario · Correr la armonización de JM.** El filtro de
+  láminas congeladas ya está y `previsualizarArmonizacion('jm')` da **5 dentro / 16 fuera,
+  cero conflictos** sin tocar nada. Correrla **escribe sobre la plantilla del equipo** (con
+  backup automático previo). Es lo único que separa a la canónica de estar armonizada, y con
+  eso se destraba el `0.1` del `Paso-2.5`. **No se vuelve a ofrecer.**
+
 - **`R-01` no se cumple hoy: hay 5 grupos con más de un encuentro por (Figura, fecha) en
   `rdv/RVD JM-CM - ES`.** Medido el 03/08/2026 con `verificarPrecondicionAnclaje_()`.
   `R-01` es explícito sobre qué hacer: *"el exceso son duplicados de carga o la regla

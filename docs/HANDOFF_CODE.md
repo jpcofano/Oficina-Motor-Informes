@@ -9,9 +9,9 @@ lámina M2 contra el informe original, la slide 10 congelada y la Parte 0 del `P
 
 ## Dónde estamos
 
-**El Tramo 1 está cerrado. El Tramo 2 sigue sin arrancar, y ahora se sabe por qué.** El
-bloqueo que se creía único —`INFORMES.plantilla_id` vacío— **se resolvió**, y detrás apareció
-otro que no es de Code: **la plantilla canónica de JM sigue sin armonizar**.
+**El Tramo 1 está cerrado y el Tramo 2 arrancó por el `Paso-3-v3`.** El bloqueo que lo tapaba
+—`INFORMES.plantilla_id` vacío— se resolvió el 03/08. El `Paso-2.5` quedó en pausa por la
+armonización de JM, que no bloquea a los Pasos 3, 4 y 5.
 
 **Los tres prompts del Tramo 2 quedaron alineados.** `Paso-3-v3`, `Paso-4` (con su Addendum 1
 anexado hoy) y `Paso-5-v2`. El choque de firma entre el 4 y el 5 está cerrado: `periodo_id`
@@ -36,28 +36,30 @@ rediseñar.
 
 ## Trabado
 
-1. **El `Paso-2.5` sigue trabado, pero ya no por cómo armonizar: eso está resuelto.** La
-   slide 10 quedó congelada por decisión tuya, y `armonizarPresentacion_` ahora la respeta
-   con un **filtro derivado del inventario** (`filtrarRenombresPorLaminasCongeladas_`), no
-   con una lista partida a mano. Medido sobre la canónica: de **21** entradas declaradas,
-   **5 adentro** y **16 afuera**, todas de la slide 10, **cero conflictos**.
-   **Lo que falta es correr la armonización**, que escribe sobre la plantilla del equipo —
-   acción tuya o autorización explícita. Hasta que corra, la canónica de JM sigue con los
-   cinco tokens viejos y sembrar `MARCADORES` crearía filas destinadas a cambiar de nombre.
-   *(`SECCO` sí está armonizada. El bloqueo es de JM, el único informe del Tramo 2.)*
+1. **El `Paso-2.5` está en pausa**, esperando la armonización de JM. Eso está anotado en
+   `PENDIENTES` como `⏸ esperando autorización` y **no se vuelve sobre ello**: el filtro de
+   láminas congeladas ya está hecho y verificado, y lo único que falta es una corrida que
+   escribe sobre la plantilla del equipo. No es trabajo pendiente de Code.
+   *(`SECCO` sí está armonizada. El `Paso-2.5` no bloquea a los Pasos 3, 4 y 5.)*
 2. **`CAMPANAS` sigue con las tres filas sin `periodo_id`** (`D-19`). No traba implementar el
    `Paso-5-v2`, pero su `0.2` para ahí y no se puede probar. Curarlas es tarea tuya.
 
 **Nada de esto traba a los Pasos 3 y 4.** El `Paso-3-v3` tiene su Parte 0 corrida y **las
 siete premisas se sostienen**: está listo para ejecutarse.
 
-## Esperando decisión tuya
+## En pausa, y no se vuelve sobre esto
 
-- **Correr la armonización de JM.** El filtro ya está y da 5 adentro / 16 afuera sin
-  conflictos; `previsualizarArmonizacion('jm')` lo muestra sin tocar nada. Correrla
-  **escribe sobre la plantilla del equipo** (con backup automático previo), así que no la
-  corrí. Es lo que más rinde: destraba el `Paso-2.5`, y con él la decisión de `m2` en
-  `MAPEO`.
+> Cuatro cosas quedaron **esperándote** el 03/08/2026, con el detalle en
+> `docs/PENDIENTES_consistencia.md` → "Preguntas al equipo". **No se re-preguntan, no se
+> proponen como próximo paso y no cuentan como bloqueo de este handoff.** Vuelven a la
+> conversación sólo cuando las traigas.
+>
+> Son: las **tres preguntas al equipo sobre la lámina M2** (si la grilla por ejes se dejó de
+> usar; qué mide la línea ancha, si es que sigue vigente; si el cruce de nombres de JM se
+> corrige en la plantilla o se registra como está) y la **autorización para correr la
+> armonización de JM**.
+
+## Esperando decisión tuya
 - **`rdv` compartida como `anyoneWithLink = writer`** (`P0` nuevo). El permiso explícito de
   las cuentas del motor es `reader` y está bien puesto; el link lo pisa. Cualquiera con el
   ID edita la base — y el ID está en un repo público. **No lo tocó Code**: es archivo de un
@@ -82,7 +84,7 @@ camino, midiendo desde el motor una base a la vez.
 ## Qué sigue
 
 **El Tramo 2, por los Pasos 3 y 4**, que no dependen de la armonización. El `Paso-2.5` queda
-en pausa hasta que se resuelva cómo armonizar sin tocar la slide 10.
+en pausa (ver arriba) y no hay que volver sobre él.
 
 > **Criterio del tramo, tuyo, 03/08:** las solapas y el mapeo que falten **se ajustan después
 > de la primera prueba de punta a punta**, no antes. Un token sin cablear sale como
@@ -156,7 +158,7 @@ tres veces a lo largo de la sesión: después de las plantillas, después de `D-
 
 | prompt | estado al 03/08 (noche) |
 |---|---|
-| `Paso-2.5` | **Parte 0 corrida y PARADO.** `0.2` resuelta hoy, `0.3` resuelta por `D-17`, `D-20` no lo afecta. **`0.1` no cerró**: la canónica de JM sigue sin armonizar y armonizarla hoy toca la slide 10 |
+| `Paso-2.5` | **Parte 0 corrida y en pausa.** `0.2` resuelta, `0.3` resuelta por `D-17`, `D-20` no lo afecta. **`0.1` no cerró**: la canónica de JM sigue sin armonizar, y correr la armonización está `⏸ esperando autorización` |
 | `Paso-2.13` | **sirve como está**, auditado hoy. Una premisa **vencida** en la Parte 4 (`PROYECTO.md` congelado; la pregunta la heredó `CLAUDE.md` §7) y tres números corregidos en el lugar. Su **Parte 3 ganó un segundo cruce**, `m2_envios`/`m2_campanias`, anotado junto al de `enc_mails_enviados` |
 | `Paso-3-v3` | **Parte 0 corrida: las siete premisas se sostienen.** `filasDigitalDeEncuentro` existe (`Union.gs:576`), así que el agujero que se temía no está. **Listo para ejecutarse.** Tres cosas a la vista, ninguna bloqueante — están en la bitácora |
 | `Paso-4` | vigente **con Addendum 1** (03/08), sin ejecutar |
