@@ -34,27 +34,34 @@ es **parámetro opcional** de `generarInforme` y manda la cadena de `D-20`.
 Y `D-01` tiene su nota fechada: **deseable, no requisito**. No bloquea un paso ni obliga a
 rediseñar.
 
-## Trabado — y las dos cosas son del usuario
+## Trabado
 
-1. **La plantilla canónica de JM sigue sin armonizar. Esto para el `Paso-2.5`.** Medido hoy
-   contra la plantilla viva: están los **cinco tokens viejos** de la muestra de diagnóstico
-   más el literal `135`, y la lista real de renombres de JM tiene **23 entradas**. Sembrar
-   `MARCADORES` ahora crea hasta 23 filas destinadas a cambiar de nombre.
-   **Lo destraba una decisión tuya, y son dos opciones excluyentes** (`P1` de la caja
-   `{{m2_salud_camp}}` huérfana, en `PENDIENTES`): o la caja es un sobrante y se borra de la
-   plantilla, o el renombre `m2_camp4`→`m2_salud_camp` sale del diccionario. **No se elige
-   por criterio técnico** — `C-01`, la plantilla es del equipo. Aplicarlo con la caja ahí
-   deja dos cajas con el mismo token, que es la regresión de `enc_audiencia` otra vez.
-   *(`SECCO` sí está armonizada. El bloqueo es de JM, que es el único informe del Tramo 2.)*
+1. **El `Paso-2.5` sigue trabado, pero el bloqueo cambió de naturaleza.** Ya no es una
+   decisión pendiente sobre la caja `{{m2_salud_camp}}` —eso lo cerraste el 03/08: **la
+   slide 10 se congela y no se toca**—. Lo que queda es **cómo armonizar sin tocarla**:
+   `armonizarPresentacion_` aplica la lista entera de `jm` con `replaceAllText()`, que es de
+   **toda la presentación**, y **veinte de sus veinticinco entradas son de la slide 10**.
+   Correrlo como está produce la colisión que tu decisión quiere evitar. Las otras **cinco**
+   (`enc_audiencia`, `enc_audiencia_pct`, `enc_clics`, `enc_audiencia_ivr`, `rrss_prom`) no
+   la tocan. **Armonizar respetando la decisión exige correr sólo esas cinco, y eso hoy no se
+   puede sin partir la lista en el `.gs`.** No lo hice: es una decisión sobre cómo armonizar,
+   no una corrección mecánica.
+   *(`SECCO` sí está armonizada. El bloqueo es de JM, el único informe del Tramo 2.)*
 2. **`CAMPANAS` sigue con las tres filas sin `periodo_id`** (`D-19`). No traba implementar el
    `Paso-5-v2`, pero su `0.2` para ahí y no se puede probar. Curarlas es tarea tuya.
 
-**Nada de esto traba a los Pasos 3 y 4**, que ya no dependen de `plantilla_id`.
+**Nada de esto traba a los Pasos 3 y 4.** El `Paso-3-v3` tiene su Parte 0 corrida y **las
+siete premisas se sostienen**: está listo para ejecutarse.
 
 ## Esperando decisión tuya
 
-- **La caja `{{m2_salud_camp}}`** — ver arriba. Es la que más rinde: destraba el `Paso-2.5`,
-  y con él la decisión de `m2` en `MAPEO`.
+- **Cómo armonizar JM sin tocar la slide 10** — ver "Trabado". Es la que más rinde: destraba
+  el `Paso-2.5`, y con él la decisión de `m2` en `MAPEO`.
+- **De cuál informe salió el deck original que aportaste.** Las coordenadas que pasaste
+  —conteo `x=308 y=120 w=343`, lista `x=308 y=142 w=343`— coinciden **exactamente en `x` y
+  `w` con SECCO** (slide 14) y sólo se aproximan a JM (slide 9: `x=268`, `w=378`). El texto
+  también: SECCO renderiza `12 Campañas` con espacio, JM `12Campañas` sin espacio. Define
+  cuál plantilla es la referencia de esa lámina.
 - **`rdv` compartida como `anyoneWithLink = writer`** (`P0` nuevo). El permiso explícito de
   las cuentas del motor es `reader` y está bien puesto; el link lo pisa. Cualquiera con el
   ID edita la base — y el ID está en un repo público. **No lo tocó Code**: es archivo de un
@@ -79,10 +86,17 @@ camino, midiendo desde el motor una base a la vez.
 ## Qué sigue
 
 **El Tramo 2, por los Pasos 3 y 4**, que no dependen de la armonización. El `Paso-2.5` queda
-en pausa hasta la decisión de la caja huérfana.
+en pausa hasta que se resuelva cómo armonizar sin tocar la slide 10.
 
-- **`Paso-3-v3`** — su Parte 0 verifica siete premisas y para. **El agujero más probable**:
-  da por hecho un proveedor de datos de `digital` que debía dejar el `Paso-2.4`.
+> **Criterio del tramo, tuyo, 03/08:** las solapas y el mapeo que falten **se ajustan después
+> de la primera prueba de punta a punta**, no antes. Un token sin cablear sale como
+> `«FALTA:token»` y queda listado. **No se abre trabajo de mapeo por anticipado** — tampoco
+> por lo que salió del relevamiento de la lámina M2. Está en `PLAN.md` §2.
+
+- **`Paso-3-v3`** — **Parte 0 corrida y todo en pie; se puede arrancar por la Parte A.** Al
+  hacerlo, tener presente que falta una operación: las seis del prompt devuelven un escalar y
+  ninguna arma una **lista** de valores concatenados, que es lo que pide la caja de nombres
+  de campaña de la lámina M2 (`P1` nuevo en `PENDIENTES`, con sus candidatos).
 - **`Paso-4`** — ya tiene su Addendum 1. Ojo con dos cosas que el addendum deja anotadas: el
   período se imprime **inclusive en los dos extremos** y es **el que se usó**, no el de
   `CONFIG`; y el deck generado queda con **la cuenta que ejecuta** como dueño, aunque caiga
@@ -104,6 +118,15 @@ en pausa hasta la decisión de la caja huérfana.
   las borra — **65 de 84 filas** las tienen pobladas. **No se tocó la maquinaria**: es de
   cinco hojas y el arreglo cambia la semántica de todas. Regla mientras tanto: **una columna
   nueva se agrega al `SEED_*` con su valor real, nunca con `''`.**
+- **Ningún `.gs` recorre `getTables()` ni `getGroups()`** (`P1` nuevo). El inventario reporta
+  **158** tokens en JM y el recorrido completo encuentra **191**; en SECCO, **119** contra
+  **167**. Faltan 33 y 48. La armonización está a salvo —`replaceAllText` es de toda la
+  presentación— pero **el `Paso-2.5` sembraría de menos** si copiara el recorrido viejo.
+  `mapaDeTokens_` (`Armonizar.gs`, nuevo hoy, sólo lectura) ya tiene el recorrido correcto y
+  sirve de base. Los invisibles están listados por slide en `PENDIENTES`, con dos cosas a
+  resolver antes de sembrar: `camp1..camp4` de JM **no tienen guión bajo** —la regla de
+  familia los manda a cuatro familias de un miembro— y `post_*` de SECCO **es una familia que
+  `INFORMES` no declara**.
 - **El registro automático de plantillas no sirve para esta carpeta** (`P0` nuevo). La
   canónica de JM **no aparece al listar** —desde `DriveApp` y desde la Drive API, por padre y
   por nombre— y se abre perfecto por ID; el recorrido **baja a `_backups`**, donde vive la
@@ -137,9 +160,9 @@ tres veces a lo largo de la sesión: después de las plantillas, después de `D-
 
 | prompt | estado al 03/08 (noche) |
 |---|---|
-| `Paso-2.5` | **Parte 0 corrida y PARADO.** `0.2` resuelta hoy, `0.3` resuelta por `D-17`, `D-20` no lo afecta. **`0.1` no cerró** y lo destraba una decisión del usuario |
-| `Paso-2.13` | **sirve como está**, auditado hoy. Una premisa **vencida** en la Parte 4 (`PROYECTO.md` congelado; la pregunta la heredó `CLAUDE.md` §7) y tres números corregidos en el lugar. Partes 2 y 3 vivas |
-| `Paso-3-v3` | vigente, sin ejecutar. Su Parte 0 para si falta el proveedor de `digital` |
+| `Paso-2.5` | **Parte 0 corrida y PARADO.** `0.2` resuelta hoy, `0.3` resuelta por `D-17`, `D-20` no lo afecta. **`0.1` no cerró**: la canónica de JM sigue sin armonizar y armonizarla hoy toca la slide 10 |
+| `Paso-2.13` | **sirve como está**, auditado hoy. Una premisa **vencida** en la Parte 4 (`PROYECTO.md` congelado; la pregunta la heredó `CLAUDE.md` §7) y tres números corregidos en el lugar. Su **Parte 3 ganó un segundo cruce**, `m2_envios`/`m2_campanias`, anotado junto al de `enc_mails_enviados` |
+| `Paso-3-v3` | **Parte 0 corrida: las siete premisas se sostienen.** `filasDigitalDeEncuentro` existe (`Union.gs:576`), así que el agujero que se temía no está. **Listo para ejecutarse.** Tres cosas a la vista, ninguna bloqueante — están en la bitácora |
 | `Paso-4` | vigente **con Addendum 1** (03/08), sin ejecutar |
 | `Paso-5-v2` | vigente, sin ejecutar. Su `0.2` para si `CAMPANAS` sigue sin `periodo_id` |
 | `DOC-8` | sirve como está. Dos cosas a mirar al ejecutarlo, en la bitácora del 03/08 |
