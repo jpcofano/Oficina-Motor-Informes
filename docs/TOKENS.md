@@ -287,12 +287,18 @@ parece — verificar contra `MAPEO` antes de asumir que una base es de solapa ú
 > implementar.
 
 > ⚠ **Superado por `D-20` y su Addendum 1 (`docs/PLAN.md`, 02/08/2026): la cadena tiene
-> ahora cinco eslabones, no tres.** `campaña > marcador (periodo_ref) > SECCIONES.periodo_id
+> ahora cinco eslabones, no tres.** `campaña > marcador (periodo_ref) > SECCIONES.periodo_ref
 > > CONFIG > semana de `R-11``. Se agregó el período **por sección** en el medio y el
 > **default calculado** al final. La tabla de abajo se conserva porque su caso testigo sigue
 > explicando por qué el período no es global, pero **la decisión vigente es `D-20`** y es la
 > que el Paso 3 implementa. Esta nota se agregó el 03/08/2026 en la auditoría de premisas;
 > el resto de la sección no se tocó.
+>
+> *(Corrección del 03/08/2026, misma nota: decía `SECCIONES.periodo_id`. Es `periodo_ref`.
+> `periodo_id` es la columna de `CAMPANAS`/`REUNIONES` que fijaron `D-08` y `D-19`, y
+> significa lo contrario — una fila sin `periodo_id` **no entra a ningún informe**, una
+> sección sin `periodo_ref` **usa el eslabón siguiente**. Confundir los dos nombres es
+> exactamente lo que `D-19` y `D-20` piden no hacer.)*
 
 El período **no es global**. Para cada token se resuelve en este orden de prioridad, y se
 usa el primero que aplique:

@@ -1927,3 +1927,57 @@ nadie más.
     se aproximan a JM (`x=268 w=378`, Δ`y` 23); el texto también —SECCO renderiza
     `12 Campañas` con espacio, JM `12Campañas` sin espacio—. Define cuál plantilla es la
     referencia de esa lámina.
+
+## Paso 3 (v3) — Parte 0 corrida: las siete premisas, y **para** (2026-08-03) — commit de esta entrada
+- **Qué pedía:** verificar las siete premisas del `Paso-3-v3`, sólo lectura, reportar y
+  **PARAR**. Se hizo porque no depende de nada de lo que quedó abierto en M2.
+- **Veredicto: el prompt se sostiene. Ninguna premisa vencida, y el agujero que se temía no
+  existe.** Hay tres cosas para tener a la vista al ejecutarlo, ninguna bloqueante.
+- **0.1 · `MARCADORES`.** El esquema vivo es **exactamente** el que el prompt esperaba, once
+  columnas: `marcador · familia · informe_id · base_id · solapa · campo_logico · periodo_ref ·
+  operacion · valor_fijo · formato · notas`. **Tres filas**, y las tres **están cableadas**
+  (`base_id` + `campo_logico` + `operacion`). **La clave del upsert no se puede confirmar
+  porque no hay upsert:** `MARCADORES` no tiene sembrador —su único escritor censado es la
+  migración `migrarCalculoAOperacion_`—, así que lo que `DOC-2` iba a pasar a
+  `['marcador','informe_id']` **no existe todavía**. Lo crea el `Paso-2.5`.
+  **⚠ A la vista:** las `operacion` de las tres filas son `calcInscriptos`, `calcAlcance` y
+  `calcEnvios` — el estilo **una función por marcador**, que es justo lo que la Parte A del
+  `v3` reemplaza por seis operaciones genéricas. Bajo el `v3` las tres quedan inválidas: o se
+  reescriben a `SUMA`/`ULTIMO`/… o pasan a `FN:`. Son filas de ejemplo, así que el costo es
+  nulo, pero conviene no descubrirlo corriendo.
+- **0.2 · `SECCIONES`.** Catorce columnas: `seccion_id · padre · orden · nombre · informes ·
+  modo · itera_sobre · filtro · opcional · condicion · familia_tokens · estado · falta ·
+  notas`. **No ganó columna de período.** **Confirmado que sigue FUERA de `COLUMNAS_DELTA_`**
+  —el mapa tiene `MARCADORES`, `CAMPANAS`, `REUNIONES`, `BASES`, `MAPEO` y `SOLAPAS`, no
+  `SECCIONES`—. **En riesgo: 34 filas curadas** (el handoff venía diciendo 35; son 35 líneas
+  de TSV, 34 de datos). El modo de falla del `2.15` `0.2` está intacto y la precaución del
+  prompt es correcta.
+- **0.3 · `resolverVentana()`** (`Fuentes.gs`), leído del código y no del comentario: resuelve
+  en **tres** capas, en este orden — `opciones.campana` (busca en `CAMPANAS`, usa
+  `desde`/`hasta`) → `opciones.periodo_ref` (busca en `PERIODOS`) → `CONFIG.periodo_desde/
+  periodo_hasta`. **Cuando no encuentra nada devuelve `{ok:false, motivo:…}`, no una semana.**
+  Confirma las dos premisas de `D-20`: falta el eslabón de sección **y** falta el default de
+  `R-11`.
+- **0.4 · Lo que dejó el `2.16`.** Confirmado en `leerFuente`: la lista blanca se calcula
+  **antes** de bifurcar por modo y produce un vector `incluida[]`; la rama `filtrar` saltea
+  las excluidas (`if (!incluida[j]) return;`) y la rama `snapshot` filtra por el mismo vector.
+  **`resultado.filas` sale ya filtrado**, así que `ctx.filas` le llega filtrado a la
+  operación. El despachador no tiene que volver a filtrar.
+- **0.5 · El proveedor de `digital` — EXISTE. El agujero más probable no está.**
+  `filasDigitalDeEncuentro(idCuentaOEncuentro, ventana)` vive en `Union.gs:576` y está
+  declarada en el encabezado del módulo. El `v2` la daba por hecho y acertaba.
+- **0.6 · `TOKENS.md` §5.** La tabla sigue describiendo **tres capas** —campaña, marcador con
+  `periodo_ref`, `CONFIG`—, y ya tiene la nota del 03/08 que la declara superada por `D-20`.
+  La Parte C del prompt es la que la reescribe. **Se corrigió un error de esa nota:** decía
+  `SECCIONES.periodo_id` y es `periodo_ref`; `periodo_id` es la columna de
+  `CAMPANAS`/`REUNIONES` y significa lo contrario.
+- **0.7 · Normalizadores — hay cuatro y ninguno se agrega.** `normalizar_` (`Parseo.gs`,
+  pliega case y acentos, para texto libre), `normalizarParaComparar_` (`Instalar.gs`,
+  canonicaliza fechas para el diff), `normalizarIdCuenta_` (`Union.gs`, `String().trim()`
+  para claves de join) y `normalizarValorDeclarado_` (`Fuentes.gs`, la forma de `R-10`:
+  colapsa espacios y recorta, **sin plegar mayúsculas ni acentos**). **El canónico para
+  comparar valores de una columna es `normalizarValorDeclarado_`.** La regla y los cuatro
+  están escritos en `CLAUDE.md` §2.
+- **Prueba:** sólo lectura. No se tocó código.
+- **Pendientes/decisiones:** ninguna nueva. **El paso está listo para ejecutarse** cuando se
+  decida arrancarlo.
