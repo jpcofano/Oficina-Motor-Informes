@@ -423,6 +423,47 @@ discrepancia queda anotada en `docs/PENDIENTES_consistencia.md`, no corregida en
 
 ---
 
+## R-12 — Ampliar antes de rendirse: no se reporta "sin match" sin haber buscado fuera de la ventana corta
+
+**Enunciado:** la búsqueda de candidatos para el match reunión↔cuenta **se acota primero a
+una ventana corta, por costo**. Si no hay match en esa ventana, **se amplía la búsqueda
+antes de dar el vínculo por perdido**. Un `sin_link` sólo es legítimo después de haber
+buscado en la ventana ampliada.
+
+**Es el complemento de `R-08`.** Esa regla dice que el vínculo reunión↔cuenta **no es
+derivable** —por eso hay confirmación humana—; ésta responde la pregunta que aquélla deja
+abierta: **cuánto hay que buscar antes de declarar que no hay vínculo.**
+
+**Su costo, escrito:** un encuentro perdido en silencio. Un `sin_link` prematuro no falla
+ni avisa: el encuentro simplemente no aparece en el informe, y nadie tiene cómo notar la
+diferencia entre "no existe la cuenta" y "estaba a dieciséis días".
+
+**Origen:** decisión del usuario, 02/08/2026.
+
+**Cómo se aplica.** La ventana corta ya existe y su motivo está escrito en el código:
+`VENTANA_DIAS_CANDIDATOS_ANCLAJE_ = 14` (`Union.gs`) es **lo que disuelve el timeout** —
+puntuar 500 encuentros × 1297 cuentas no terminaba en seis minutos; contra 5-20 candidatos
+cercanos en fecha, sí. Lo que falta es la segunda mitad: hoy, si no hay candidato en esos
+14 días, se reporta `sin_link` y no se reintenta.
+
+**Los dos valores pasan a `CONFIG`** —la ventana corta y la ampliada—, por el mismo
+argumento con que el Paso 2.9F sacó `umbral_anclaje_reunion` del código: cambiar un
+parámetro de negocio no puede exigir `clasp push`. Hoy uno es constante de módulo y el otro
+no existe.
+
+**No se implementa con esta regla.** El cambio de comportamiento es del **Paso 3**; acá
+queda registrada la decisión.
+
+**Cómo se verifica:** una reunión cuya cuenta esté fuera de la ventana corta pero dentro de
+la ampliada tiene que aparecer como candidata —con su banda de confianza—, no como
+`sin_link`.
+
+**Si falla:** si ampliar resulta demasiado caro en tiempo de ejecución, la salida **no** es
+volver a la ventana corta en silencio: es reportar explícitamente que la búsqueda se
+truncó, para que un `sin_link` nunca se confunda con "busqué todo".
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas

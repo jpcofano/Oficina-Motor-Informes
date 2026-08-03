@@ -458,6 +458,16 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
      semana`) — el Paso 3 la implementa, no la decide; **(3)** el cálculo del default de
      `R-11`, que es **el último eslabón de esa misma cadena** y hoy no existe: con `CONFIG`
      vacío la función devuelve error, no una semana.
+   - **El Paso 3 también implementa `R-12`** (ampliar la búsqueda de candidatos antes de
+     declarar `sin_link`) y, ya que toca esa función, resuelve dos cosas que hoy están
+     abiertas: los **dos valores de ventana a `CONFIG`** —la corta, hoy constante de módulo,
+     y la ampliada, que no existe— y el **empate técnico** del match, que
+     `DISENO_match_temario.md` §6.4 declara y ningún código implementa
+     (`PENDIENTES_consistencia.md`).
+   - **Migrar el filtro `status = Realizada` de `Union.gs` a `MAPEO.valores_incluidos`**
+     (`D-21`). No se hizo en el `Paso-2.16` porque con ese diseño **declarar es conectar**:
+     cargar la celda cambiaría en el acto lo que ve cualquier lectura de `rdv`, no sólo el
+     matcher. Requiere correr los controles de la función tocada.
 
 3. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
    valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo

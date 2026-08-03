@@ -794,6 +794,22 @@ los datos. Queda registrada en `SOLAPAS.firma_encabezado` de las dos. Hoy es ino
 la va a ver como nombre de columna, y `R-10` (normalización de encabezados) no la contempla.
 Se corrige en origen, en la base, no en el motor.
 
+### P2 · El empate técnico del match no está implementado en ningún lado
+
+`docs/DISENO_match_temario.md` §6.4 declara que **dos candidatos a menos de 0,05 nunca se
+eligen solos**. El código no lo contempla: `Union.gs` tiene un solo umbral y dos ramas, así
+que dos candidatos empatados **apenas por encima** del umbral se resuelven eligiendo el
+primero que quedó arriba al ordenar — sin marca, sin `pendiente`, sin avisar.
+
+La diferencia con las bandas es que aquélla se cerró y ésta no: el `Addendum 10` de ese
+mismo documento (02/08/2026) decidió que **por encima del umbral se acepta solo** —gana el
+código—, pero eso no resuelve el empate: justamente convierte el empate arriba del umbral
+en una elección automática entre dos candidatos indistinguibles. El costo es el que ya está
+escrito en §6.4: *"no es un número mal, es un encuentro entero atribuido a otro barrio"*.
+
+Se decide junto con la implementación de `R-12`, en el Paso 3, que ya va a tocar esa
+función.
+
 ### P2 · Dos carpetas de Drive distintas se llaman "Sistema Informes en Slides"
 
 Verificado contra Drive el 02/08/2026 (`Paso-2.15` Parte A). La carpeta de **plantillas**

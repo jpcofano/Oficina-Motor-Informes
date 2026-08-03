@@ -338,3 +338,32 @@ dos cosas, ninguna de las cuales pasa por leerla en una corrida normal:
 > "usar para validar el scoring/umbral 0.6". El punto 2 (la clave de tres campos) sigue
 > siendo información válida — no depende de que la tabla esté viva, solo de qué columnas
 > tiene.
+
+---
+
+## 10. Addendum (Paso 2.16, 02/08/2026) — las tres bandas de §6.4 contra el código: gana el código
+
+> Segundo addendum, mismo criterio que el §9: no se toca nada de lo de arriba. Se agrega
+> porque al revisar el match para `R-12` apareció una **discrepancia entre este diseño y
+> el código vivo**, y la decisión que la cierra es del usuario (02/08/2026).
+
+**La discrepancia.** §6.4 declara **tres** bandas; `Union.gs` implementa **dos**, con un
+solo umbral (`CONFIG.umbral_anclaje_reunion`, hoy `0.6`):
+
+| §6.4 dice | el código hace |
+|---|---|
+| `≥ 0,85` → se propone como alto, **igual se confirma** | no existe esa banda: todo lo que pasa el umbral entra directo |
+| `0,60 – 0,85` → se propone con los alternativos al lado | `!pasaUmbral` → `pendiente`, va a `bajaConfianza` y registra los `top3` |
+| `< 0,60` → no se propone, buscador manual | ídem anterior (una sola rama por debajo del umbral) |
+
+**Decisión: gana el código.** Por encima del umbral **se acepta solo**, sin confirmación.
+La frase de §6.4 *"ningún match se aplica sin confirmación humana"* queda acotada a lo que
+el código sostiene hoy: **por debajo del umbral no se elige nunca en silencio** —se le
+presentan los candidatos a la persona, que es lo que importaba—, pero por encima no se
+pide confirmación.
+
+**Lo que sigue sin implementar, y queda como pendiente, no como resuelto:** el **empate
+técnico** de §6.4 —dos candidatos a menos de 0,05 no se eligen solos— **no está en ninguna
+parte del código**. Con el diseño de dos bandas, dos candidatos empatados apenas por
+encima del umbral se resuelven eligiendo el primero. Anotado en
+`docs/PENDIENTES_consistencia.md`.
