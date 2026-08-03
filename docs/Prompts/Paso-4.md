@@ -154,3 +154,72 @@ insumo y hay que saberlo ahora, no en tres meses.
 Commit `Paso 4 ✅ — motor de reemplazo (tokens fijos) + registro de corrida`.
 
 Sin trailer `Co-Authored-By`.
+
+---
+
+# Addendum 1 al `Paso-4` — 03/08/2026
+
+**Escrito por claude.ai.** Se anexa al final de `docs/Prompts/Paso-4.md`. **No altera
+ninguna línea del texto original**: lo que sigue lo corrige y manda sobre él donde
+difieran.
+
+> **Por qué:** el `Paso-4` se escribió antes de `D-19`, `D-20`, `R-11` y del `Paso-5-v2`.
+> Su firma no coincide con la que el `Paso-5-v2` asume, y no dice nada sobre imprimir el
+> período en la lámina, que es lo que el usuario ve.
+
+---
+
+## 1 · La firma
+
+El original declara `generarInforme(informe_id, periodo_id)`. El `Paso-5-v2` extiende
+`generarInforme(informe_id)` y resuelve el período por la cadena de `D-20`.
+
+**Manda la cadena, no el parámetro.** Con cinco eslabones —campaña, marcador, sección,
+`CONFIG`, semana de `R-11`— un `periodo_id` en la firma es un sexto origen que compite con
+los otros cinco y no está en la decisión.
+
+**Qué hacer:** `periodo_id` queda como parámetro **opcional**. Si viene, se usa como
+override explícito del eslabón `CONFIG` y **la traza tiene que decirlo**. Si no viene —el
+caso normal, y el que usa el `Paso-5-v2`— la cadena resuelve sola. Documentarlo en el
+encabezado de la función: es la única puerta por la que alguien puede pisar la cadena, y
+tiene que ser visible.
+
+## 2 · Imprimir el período en la lámina
+
+El original no lo menciona y es lo primero que mira quien recibe el informe.
+
+- El período se imprime en el formato que el equipo ya usa en el temario: **inclusive en
+  los dos extremos**, siete días, viernes a jueves (`R-11` Addendum 1). `vie 24/07 — jue
+  30/07`, no `24/07 — 31/07`.
+- La lámina imprime **el período que efectivamente se usó**, no el de `CONFIG`. Si una
+  sección o una campaña tienen ventana propia, es la suya la que va — de lo contrario el
+  encabezado dice una cosa y los números otra.
+- Si el período salió del cálculo de `R-11` y no de una celda cargada, **eso también se
+  registra** en el reporte de corrida. No en la lámina: en el reporte. Un número calculado
+  y uno cargado a mano se leen igual en el deck y no deberían auditarse igual.
+
+## 3 · `D-19` en el reemplazo de tokens fijos
+
+Los tokens fijos no iteran `CAMPANAS` ni `REUNIONES` —eso es del Paso 5— pero cualquier
+marcador que lea esas hojas tiene que respetar `D-19`: **una fila sin `periodo_id` no
+entra**. No se asume el período vigente. Si un token queda sin datos por eso, sale
+`«FALTA:token»` con el motivo en el reporte, no un cero.
+
+## 4 · Dónde queda el archivo
+
+En la carpeta de salidas. **Nada de este paso escribe dentro de la carpeta del motor ni la
+recorre recursivamente** — ahí viven la planilla de control y una subcarpeta
+`_Back up archivo` con respaldos manuales.
+
+Y una pieza abierta de `D-03` que este paso **no** resuelve y que conviene no dar por
+cerrada: un deck creado por la cuenta que ejecuta queda con **esa cuenta** como dueño,
+aunque esté dentro de una carpeta de reportes. Drive no transfiere propiedad por
+ubicación. Reportar quién queda como dueño del primer deck generado; si no es reportes,
+es trabajo, y hay que decir cuánto.
+
+## 5 · Qué NO cubre este addendum
+
+`R-12`, los dos valores de ventana de candidatos a `CONFIG` y el empate técnico del match
+son del **matcher** (`Union.gs`), no del Paso 4 ni del Paso 3. Están anotados en
+`PLAN.md` §2 y van en un paso propio. `D-21` —migrar `status = Realizada` a
+`MAPEO.valores_incluidos`— es configuración y va suelto, no acá.

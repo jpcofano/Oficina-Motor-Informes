@@ -70,6 +70,15 @@ aceptación hoy. Cada vez que se agrega uno, se anota **qué código hubo que to
 qué**; esa lista de "por qué" es la hoja de ruta hacia el objetivo. El número baja o no
 baja, y eso se ve.
 
+> **Nota del 03/08/2026 — decisión del usuario. No altera el texto de arriba: lo
+> confirma y lo cierra.** No tocar código al agregar un informe o una base es un
+> **deseable, no un requisito**. Se mide y se anota, y con eso alcanza: **no bloquea un
+> paso, no obliga a rediseñar y no es motivo para reabrir un diseño ya elegido**. Se
+> escribe porque la lectura contraria apareció en la práctica —un paso que se detiene a
+> discutir arquitectura porque la medición dio distinta de cero—, y porque `D-01` decía
+> *"no es criterio de aceptación **hoy**"*, lo que dejaba abierto que algún día sí. No lo
+> va a ser. El `Paso-3-v3` ya lo dice con estas palabras en "Decisiones ya tomadas".
+
 **`D-02` — Dos cuentas, dos roles.**
 `reporteseinformesgcba` ejecuta el motor; `jpcofanogcba1` es dueño del script y de la
 planilla de control. **Consecuencia dura:** un script *bound* corre con la identidad de
@@ -469,23 +478,26 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
      semana`) — el Paso 3 la implementa, no la decide; **(3)** el cálculo del default de
      `R-11`, que es **el último eslabón de esa misma cadena** y hoy no existe: con `CONFIG`
      vacío la función devuelve error, no una semana.
-   - **El Paso 3 también implementa `R-12`** (ampliar la búsqueda de candidatos antes de
-     declarar `sin_link`) y, ya que toca esa función, resuelve dos cosas que hoy están
-     abiertas: los **dos valores de ventana a `CONFIG`** —la corta, hoy constante de módulo,
-     y la ampliada, que no existe— y el **empate técnico** del match, que
+   - **Los cuatro ítems que el `Paso-3-v3` no cubre — corregido el 03/08/2026 con su
+     destino real.** Al reemplazar al `v2`, Code anotó acá que el `v3` deja afuera `R-12`,
+     los dos valores de ventana a `CONFIG`, el empate técnico del match y la migración de
+     `status = Realizada`. **El hecho es cierto; la inferencia de que le faltan al Paso 3
+     no.** Decisión del usuario, 03/08/2026: los tres primeros son del **matcher**
+     (`Union.gs`), que no comparte código con el despachador de marcadores, y van en un
+     **paso propio todavía sin escribir**; el cuarto es **configuración suelta**. La línea
+     queda porque sin ella los cuatro se pierden de vista — lo que cambia es a quién se le
+     reclaman. Anotado también como nota al pie del `Paso-3-v3`.
+   - **Paso del matcher (`Union.gs`) — sin escribir, después del Paso 3.** Tres cosas que
+     tocan la misma función: **`R-12`** (ampliar la búsqueda de candidatos antes de declarar
+     `sin_link`), los **dos valores de ventana a `CONFIG`** —la corta, hoy constante de
+     módulo, y la ampliada, que no existe— y el **empate técnico** del match, que
      `DISENO_match_temario.md` §6.4 declara y ningún código implementa
-     (`PENDIENTES_consistencia.md`).
+     (`PENDIENTES_consistencia.md`). No entra en el Paso 3 ni en el 4.
    - **Migrar el filtro `status = Realizada` de `Union.gs` a `MAPEO.valores_incluidos`**
-     (`D-21`). No se hizo en el `Paso-2.16` porque con ese diseño **declarar es conectar**:
-     cargar la celda cambiaría en el acto lo que ve cualquier lectura de `rdv`, no sólo el
-     matcher. Requiere correr los controles de la función tocada.
-   - **Los dos ítems de arriba no están en el `Paso-3-v3`** (03/08/2026). El `v3` cubre
-     `D-20`, `R-11`, `D-19` y `D-21` en su Parte B, pero **no menciona `R-12`, ni los dos
-     valores de ventana a `CONFIG`, ni el empate técnico del match, ni la migración del
-     filtro de `Union.gs`**. Se anota acá y no se edita el prompt: esta lista es la dueña
-     de "qué sigue y en qué orden", y lo que el prompt no cubra sale como paso aparte o
-     como addendum al ejecutarlo. Sin esto, los cuatro se pierden de vista al cerrar el
-     Paso 3.
+     (`D-21`) — **es configuración suelta, no parte de un paso de código** (decisión del
+     usuario, 03/08/2026). Se declara la celda midiendo antes y después cuántas filas de
+     `rdv` entran; lo que queda —retirar `VALOR_STATUS_REALIZADA_` de `Union.gs`, que
+     pasaría a filtrar dos veces sin cambiar el resultado— va con el paso del matcher.
 
 3. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
    valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo
@@ -525,6 +537,7 @@ Cada ítem nombra **qué lo destraba y de quién depende**.
 | La lámina dice 18 envíos y 11 campañas; el número sale de 10 envíos y 3 campañas | preguntar quién armó la lámina | equipo |
 | Etapa 2: actualizar el deck en sitio (`D-06`) | el mapa `token → objectId` de la etapa 1, más decidir qué hace el motor cuando una caja registrada ya no está | interno |
 | `D-16` · acceso por usuario a informes y datos | resolver la pieza 3: cómo se sostiene la restricción sobre archivos de Drive y bases, no sólo sobre el panel. Requiere el panel construido (`D-04`) para probar contra algo real | interno |
+| Qué pasa con `m2` en `MAPEO` — las 19 filas duplicadas de `digital`, y si se mapea `Cuentas M2` | **el `Paso-2.5`**, cuando se siembre `MARCADORES` leyendo los `{{token}}` reales de las plantillas (`D-17`). Recién ahí se sabe si algún token pide los atributos de `Cuentas M2`. **El criterio ya está fijado** (usuario, 03/08/2026): `Cuentas M2` es un **catálogo de cuentas** —eje, área, nombre de campaña—, **no una fuente de métricas**; se mapea **sólo si algún token necesita esos atributos**. Las **métricas** de M2 salen de `digital`, no de `m2`. Sin token que las pida, las 19 filas se despiden y no se mapea nada | interno |
 
 Nota: los tokens de MiBA ya están marcados en las plantillas, así que en cuanto corra el
 Paso 4 van a emitir `«FALTA:miba_*»` en `FALTANTES` en cada corrida. **Lo postergado se

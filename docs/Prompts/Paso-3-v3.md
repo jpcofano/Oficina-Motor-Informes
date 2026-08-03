@@ -204,3 +204,25 @@ anota la medición y se sigue. No bloquea ni obliga a rediseñar.
 - Sin trailer `Co-Authored-By`.
 
 **Modelo:** Opus.
+
+---
+
+## Nota al pie — 03/08/2026, corrección de alcance
+
+**No altera ninguna línea del texto de arriba.** Corrige una nota que Code escribió en
+`docs/PLAN.md` §2 el mismo día, no este prompt.
+
+Al reemplazar al `v2`, Code anotó en `PLAN.md` §2 que el `v3` **no cubre cuatro cosas** que
+esa lista le asignaba al Paso 3: `R-12`, los dos valores de ventana de candidatos a
+`CONFIG`, el empate técnico del match y la migración de `status = Realizada` a
+`MAPEO.valores_incluidos`. **El hecho es cierto —el `v3` no las cubre— pero la inferencia
+de que le faltan al Paso 3 es falsa.** Decisión del usuario, 03/08/2026:
+
+- **`R-12`, los dos valores de ventana a `CONFIG` y el empate técnico del match son del
+  matcher (`Union.gs`)**, que no comparte código con el despachador de marcadores. Van en
+  un **paso propio, todavía sin escribir**. No son un hueco de este prompt.
+- **`D-21` —migrar `status = Realizada` a `MAPEO.valores_incluidos`— es configuración y va
+  suelto**, no dentro de un paso de código.
+
+La línea de `PLAN.md` §2 **queda**, corregida con ese destino: sin ella los cuatro se
+pierden de vista, que es por lo que se escribió. Lo que cambia es a quién se le reclaman.
