@@ -3,9 +3,9 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-03 (sesión nocturna: las cuatro respuestas del usuario, el
-`Paso-2.5` parado en su Parte 0 y la auditoría del `2.13`) · último commit al escribirlo: el
-de esta entrada
+**Última actualización:** 2026-08-03 (sesión nocturna, segunda tanda: el relevamiento de la
+lámina M2 contra el informe original, la slide 10 congelada y la Parte 0 del `Paso-3-v3`) ·
+último commit al escribirlo: el de esta entrada
 
 ## Dónde estamos
 
