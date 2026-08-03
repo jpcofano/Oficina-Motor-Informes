@@ -308,6 +308,32 @@ en las dos decisiones para que nadie las unifique por parecerse.
   hoy tampoco existe: si `CONFIG` está vacío, `resolverVentana()` devuelve error, no una
   semana.
 
+> **Addendum 1 a `D-20` — 02/08/2026, decisión del usuario.** El texto de arriba no se
+> altera; esto lo corrige y lo completa el mismo día.
+>
+> **1 · La cadena de arriba quedó incompleta y con un eslabón fuera de lugar.** La correcta
+> tiene **cinco** eslabones:
+>
+> ```
+> campaña > marcador (periodo_ref) > SECCIONES.periodo_ref > CONFIG > semana R-11
+>    ya      ya                       falta la columna       ya      falta el cálculo
+> ```
+>
+> Dos correcciones concretas sobre lo escrito arriba:
+>
+> - **`MARCADORES.periodo_ref` va POR ENCIMA de la sección, no por debajo.** El criterio es
+>   **de más específico a más general**, y un marcador puntual es más específico que la
+>   sección que lo contiene. La cadena de cuatro eslabones del texto original lo tenía al
+>   revés.
+> - **El default de `R-11` es el último eslabón de la cadena, no una nota al margen.** Es lo
+>   que `resolverVentana()` **responde** cuando no encontró nada cargado, no un
+>   comportamiento aparte que viva en otro lado. Hoy, en ese lugar, la función devuelve
+>   error.
+>
+> **2 · Queda cerrada la pregunta de marcador vs. sección**, que el texto de arriba dejaba
+> abierta: **gana el marcador**. Sale del diseño del Paso 3 — el Paso 3 la implementa, no la
+> decide.
+
 **Prueba disponible ya, antes del panel:** compartirle un deck de salida a la cuenta de
 prueba y confirmar que lo abre **sin acceso a ninguna base**. Es **la mitad de `D-16` que no
 depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck.
@@ -368,10 +394,11 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
    - **El Paso 3 tiene que resolver `D-20`: el período por sección.** Son tres cosas y van
      juntas porque las tres tocan `resolverVentana()`: **(1)** la columna de período en
      `SECCIONES` —que **entra a `COLUMNAS_DELTA_` antes** de que se toquen sus `headers`,
-     por lo que midió el `Paso-2.15` 0.2—; **(2)** el eslabón nuevo en la cadena, con la
-     posición de la sección respecto de la campaña y de `MARCADORES.periodo_ref` decidida
-     explícitamente; **(3)** el cálculo del default de `R-11`, que hoy no existe — con
-     `CONFIG` vacío la función devuelve error, no una semana.
+     por lo que midió el `Paso-2.15` 0.2—; **(2)** el eslabón nuevo en la cadena, en la
+     posición que ya fija el Addendum 1 de `D-20` (`campaña > marcador > sección > CONFIG >
+     semana`) — el Paso 3 la implementa, no la decide; **(3)** el cálculo del default de
+     `R-11`, que es **el último eslabón de esa misma cadena** y hoy no existe: con `CONFIG`
+     vacío la función devuelve error, no una semana.
 
 3. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
    valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo
