@@ -598,6 +598,67 @@ Los dos prompts quedan **desbloqueados**. El argumento completo se conserva en e
 - `MAPEO_completo.md` (ahora congelado) describe Looker como "31 columnas" y detalla 23.
   Queda como imprecisión del relevamiento original; no se corrige en un doc congelado.
 
+### P2 · `SEED_CAMPANAS_EJEMPLO_` ya no describe lo que hay, y `tipo` no lo lee nadie
+
+Detectado en la Parte 0 del `Paso-2.15` (02/08/2026), leyendo `CAMPANAS` viva por API.
+Tres cosas, una sola causa — la hoja está fuera de la auditoría de contenido
+(`ALCANCE_REGISTROS_`, `auditada: false`) y nada compara sus valores contra el seed:
+
+1. **El nombre del seed miente.** Dos de las tres filas vivas tienen `tipo` editado a
+   mano (`destacada` y `encuentro_ministros` donde el seed dice `campana` y `ministros`),
+   así que no son "de ejemplo" y no se las puede tratar como descartables. El seed **no se
+   renombra** todavía: se anota acá para que nadie lo lea como si describiera la hoja.
+2. **Los valores vivos están fuera de la lista declarada.** El comentario de
+   `Instalar.gs` sobre `HOJAS_CONFIG_.CAMPANAS` enumera `campana, uno_a_uno, tematico,
+   primera_persona, ministros, proveedor`; ni `destacada` ni `encuentro_ministros` están
+   ahí. Una de las dos cosas está desactualizada y no sabemos cuál.
+3. **`tipo` no tiene ningún lector en el repo.** El único consumidor de `CAMPANAS` es
+   `resolverVentana()` (`Fuentes.gs`) y sólo mira `desde`/`hasta`. Mientras siga así, la
+   discrepancia es inofensiva; deja de serlo el día que alguien ramifique por `tipo`.
+
+### P1 · El diff no ve los **valores** de `CONFIG`: seis claves pueden divergir del seed en silencio
+
+Demostrado sobre una divergencia real el 02/08/2026 (`Paso-2.15` Parte A), no es una
+hipótesis: con `SEED_CONFIG_DEFAULTS_.carpeta_salida` ya en `1LAEVlWZ…` y desplegado, y la
+hoja todavía en `1EyTlfg…`, `Estado de configuración` reportó `CONFIG — 6 fila(s), 1 sin
+completar` — y ese 1 era la **clave nueva** que faltaba, no la divergencia. La divergencia
+no apareció por ningún lado.
+
+Dos mecanismos que apuntan en la misma dirección, los dos en `Instalar.gs`:
+
+1. `seedConfigConfig_()` sólo escribe cuando la celda viva está **vacía**
+   (`if ((valorActual === '' || valorActual === null) && valorDefault !== '')`); nunca pisa
+   un valor cargado. La auditoría de `menuEstadoConfiguracion_()` usa **el mismo criterio**,
+   así que un valor cargado y distinto del seed no es "discrepancia" para nadie.
+2. En `ALCANCE_REGISTROS_`, el seed de `CONFIG` son **las claves**:
+   `seed: function () { return Object.keys(SEED_CONFIG_DEFAULTS_); }`. Compara presencia,
+   no contenido.
+
+**Por qué importa más que un detalle de reporte:** las seis claves son parámetros de
+negocio y direcciones de Drive (`carpeta_plantillas`, `carpeta_salida`, `carpeta_motor`,
+`informe_activo`, el período, `umbral_anclaje_reunion`). Cualquiera puede quedar apuntando
+a otro lado que el código, y el motor va a usar el de la hoja sin que ninguna verificación
+lo note. Es una excepción a la premisa con la que se lee el diff —"si da cero, hoja y
+código dicen lo mismo"— y no está declarada en ninguna parte fuera de esto.
+
+Convivencia mientras siga abierto: `docs/RUNBOOK.md`, sección "Las carpetas de Drive",
+explica cómo cambiar un valor (vaciar la celda y sembrar, o editar a mano y actualizar el
+seed en el mismo commit). Eso es la mitigación operativa; **la falta de detección sigue
+abierta**. Arreglarlo es decidir qué gana cuando difieren, que es justo la pregunta que
+`CLAUDE.md` §7 responde con "es un hallazgo, no gana ninguno" — o sea que lo correcto
+probablemente sea **reportar la diferencia sin aplicarla**, como se hace con las filas
+protegidas de `SOLAPAS`.
+
+### P2 · Dos carpetas de Drive distintas se llaman "Sistema Informes en Slides"
+
+Verificado contra Drive el 02/08/2026 (`Paso-2.15` Parte A). La carpeta de **plantillas**
+(`1Q5At-…`, de `reporteseinformesgcba`) y la carpeta donde vive **el motor** (`1EyTlfg…`,
+de `jpcofanogcba1`) tienen exactamente el mismo nombre, en Drives distintos, creadas con
+menos de dos horas de diferencia el 28/07/2026. **Cualquier documento o instrucción que
+las nombre por nombre es ambiguo**: hay que ir por rol o por ID (tabla "Las carpetas de
+Drive" en `docs/RUNBOOK.md`). Renombrar una es una acción sobre Drive, del usuario, y
+todavía no está decidida.
+
 ---
 
 ## Preguntas al equipo — abiertas, esperando respuesta humana

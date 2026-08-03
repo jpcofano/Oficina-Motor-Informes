@@ -83,7 +83,8 @@
 10. Las plantillas ya están como Google Slides en tu carpeta. Dos opciones:
     - **Automático (recomendado):** pasá a Code el prompt `docs/Prompts/Paso-1.6.md`
       → agrega `registrarPlantillasDesdeCarpeta()`; corré esa función con el ID de
-      la carpeta `1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi` y llena `INFORMES` sola.
+      la carpeta de **plantillas** (tabla "Las carpetas de Drive", al final) y llena
+      `INFORMES` sola.
     - **Manual:** abrí cada Slides, copiá su ID de la URL
       (`/presentation/d/`**`ESTE_ID`**`/edit`) y pegalo en `INFORMES.plantilla_id`
       (`jm` y `secco`).
@@ -96,8 +97,10 @@ Todo lo que el motor abre por ID tiene que estar accesible para `jpcofanogcba1`:
 
 11. Compartí con `jpcofanogcba1@gmail.com`:
     - Las **4 bases** → como **Lector** (el motor solo lee datos).
-    - La **carpeta de plantillas** (`1Q5At-…`) → como **Editor** (el motor las copia).
+    - La **carpeta de plantillas** → como **Editor** (el motor las copia).
     - La **carpeta de salida** → como **Editor**.
+
+    Los IDs de las dos están en la tabla "Las carpetas de Drive", al final.
     - La **planilla de control** → compartila con la cuenta del **usuario**
       (`reporteseinformesgcba`) como **Editor** (para que configure).
 
@@ -256,6 +259,39 @@ independencia.
 13. Con las bases verdes y `INFORMES` cargado, seguís con el motor headless:
     **Paso 2** (lectura por ventana) → **3** (cálculo) → **4** (reemplazo) →
     **5** (campañas + end-to-end). Los prompts ya están en `docs/Prompts/`.
+
+---
+
+## Las carpetas de Drive (referencia)
+
+Tres carpetas, tres roles distintos. Los IDs viven en `CONFIG` (lo que el motor usa) y en
+`SEED_CONFIG_DEFAULTS_` de `Instalar.gs` (lo que debería decir); esta tabla dice **qué es
+cada una y quién la lee**. Verificada contra Drive el 02/08/2026 (Paso 2.15 Parte A).
+
+| rol | ID | nombre real en Drive | cuenta dueña | quién la lee en el código |
+|---|---|---|---|---|
+| **Plantillas** — los Slides que el motor copia | `1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi` | Sistema Informes en Slides | `reporteseinformesgcba` | `CONFIG.carpeta_plantillas` → `registrarPlantillasDesdeCarpeta()`, `menuDiagnosticarCarpetaPlantillas_()`, `diagnosticoDrive()` y `asegurarCarpetaBackups_()` (`Armonizar.gs`) |
+| **Salidas** — los informes generados | `1LAEVlWZXoGjon2cnaMjGksV0THz3Ejlz` | Salidas Reportes | `reporteseinformesgcba` | `CONFIG.carpeta_salida` — **ningún lector todavía**: la consume el Paso 4, que aún no existe |
+| **Motor** — donde vive la planilla de control, más la subcarpeta `_Back up archivo` con respaldos manuales | `1EyTlfg16vpyrftpUXgacShFk8iSbX_fJ` | Sistema Informes en Slides | `jpcofanogcba1` | `CONFIG.carpeta_motor` — **ningún lector**. La clave existe para que el ID no se pierda y para que quede dicho que no es la de salidas |
+
+⚠ **Las dos "Sistema Informes en Slides" son carpetas distintas**, en Drives distintos.
+Nombrarlas por nombre es ambiguo: siempre por rol o por ID.
+
+⚠ **Nada del motor escribe dentro de la carpeta Motor, ni la recorre recursivamente.**
+Ahí viven la planilla de control y los respaldos manuales de `_Back up archivo`. El Paso 4
+copia plantillas y crea decks: **el destino de todo lo generado es la carpeta de salidas**,
+sin excepción. Un recorrido recursivo sobre la carpeta Motor toca respaldos, y un respaldo
+pisado no se recupera.
+
+Hasta el 02/08/2026 `carpeta_salida` apuntaba a la carpeta **Motor**, así que el primer
+deck generado habría caído al lado de la planilla de control, en el Drive de
+`jpcofanogcba1`. Repuntarla es `D-03` (`docs/PLAN.md`).
+
+**Ojo con `CONFIG`:** `seedConfigConfig_()` sólo completa celdas **vacías** y nunca pisa un
+valor cargado, y la auditoría de configuración compara **las claves**, no los valores. Un
+ID que difiera entre la hoja y el seed **no lo detecta ninguna verificación**: para
+cambiarlo hay que vaciar la celda y volver a sembrar, o editarla a mano y actualizar el
+seed en el mismo commit.
 
 ---
 
