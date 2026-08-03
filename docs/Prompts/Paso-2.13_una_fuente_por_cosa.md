@@ -158,6 +158,43 @@ declararlo: `enc_mails_enviados` es **un envío**, no la suma de la cuenta. Para
 `3387-JULJDGGC` el envío del 25/07 da 44.043 y la suma de los cuatro envíos de la cuenta da
 271.701 — un factor de 6,17. La `operacion` correcta es la fila única, no `SUMA`.
 
+> **Segundo cruce, medido el 03/08/2026 — `m2_envios` / `m2_campanias`.** Va acá y no en una
+> entrada aparte: es **la misma clase** que el de arriba y se resuelve con el mismo criterio.
+> Verificado contra las dos plantillas y contra el informe publicado. **No se renombra nada:
+> los nombres de token son de la plantilla (`C-01`).**
+>
+> La lámina *Status semanal de M2* existe en las dos plantillas con la misma estructura —a la
+> izquierda la columna de Mail, a la derecha una caja de conteo sobre una caja ancha con la
+> lista de nombres de campaña—. **SECCO la nombra bien y JM la nombra corrida un lugar:**
+>
+> | caja | SECCO (slide 14) | JM (slide 9) |
+> |---|---|---|
+> | envíos | `{{m2_envios}} envíos` · `x437 y82 w86` | **no hay token** — dice `33 envíos`, escrito a mano |
+> | conteo de campañas | `{{m2_campanias}} Campañas` · `x308 y107 w343` | `{{m2_envios}}Campañas` · `x268 y84 w378` |
+> | lista de nombres | `{{m2_implementaciones}}` · `x308 y129 w343` | `{{m2_campanias}}` · `x268 y107 w378` |
+>
+> O sea: **`m2_envios` significa "envíos" en SECCO y "cantidad de campañas" en JM**, y
+> **`m2_campanias` significa "cantidad de campañas" en SECCO y "lista de nombres" en JM**.
+> Dos nombres, cuatro significados. Igual que `enc_mails_enviados`, **es expresable** porque
+> `MARCADORES` tiene `informe_id`: refuerza las tres tareas de esta parte —clave
+> `['marcador','informe_id']`, nunca `informe_id='*'` para un token cruzado, y el guardarraíl
+> que avisa si aparecen las dos formas.
+>
+> **Dos consecuencias que no son de la clave:**
+> - **JM no tiene token para los envíos de M2**: la cifra está escrita a mano en la lámina.
+>   Mientras siga así, ese número no lo produce el motor.
+> - **La caja de la lista necesita una operación que no existe** — ver el `P1` de la
+>   operación de lista en `docs/PENDIENTES_consistencia.md`. Vale para `m2_implementaciones`
+>   en SECCO y para `m2_campanias` en JM.
+>
+> **Un dato para verificar antes de dar por buena la correspondencia con el informe:** las
+> coordenadas del deck original que aportó el usuario —conteo `x=308 y=120 w=343`, lista
+> `x=308 y=142 w=343`, Δ`y` 22— coinciden **exactamente en `x` y en `w` con SECCO**, y sólo
+> se aproximan a JM (`x=268`, `w=378`, Δ`y` 23). El texto también: SECCO renderiza
+> `12 Campañas` con espacio y JM `12Campañas` sin espacio. **Conviene confirmar de cuál de
+> los dos informes salió el deck**, porque define cuál plantilla es la referencia de esa
+> lámina.
+
 ### Tareas
 
 1. Clave del upsert de `MARCADORES`: `['marcador', 'informe_id']`.

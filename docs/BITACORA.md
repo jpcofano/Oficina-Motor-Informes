@@ -1878,3 +1878,52 @@ nadie más.
     de envíos está al lado, a mano, como `33 envíos`), y `{{m2_campanias}}` está en la caja
     de la **lista de nombres**. Misma clase de cruce que `enc_mails_enviados` (`Paso-2.13`
     Parte 3).
+
+## Doc — la operación de lista, el segundo cruce de M2, y la slide 10 congelada (2026-08-03) — commit de esta entrada
+- **Qué pedía:** anotar como `P1` la operación que falta —una que devuelva una lista de
+  valores concatenados—; reportar si hay otros tokens con esa forma; anotar el cruce de
+  `m2_envios`/`m2_campanias` **junto al de `enc_mails_enviados`** del `Paso-2.13` Parte 3 y no
+  como entrada suelta; registrar la decisión del usuario sobre la slide 10; y dejar en
+  `PLAN.md` §2 el criterio de que las solapas y el mapeo se ajustan **después** del corte
+  vertical.
+- **Qué se hizo:**
+  - **`P1` nuevo — falta la operación de lista.** Las seis del `Paso-3-v3` devuelven un
+    escalar. `TEXTO` no cubre el caso: lee un literal de `valor_fijo`, no construye desde
+    datos, y una lista que cambia cada semana en `valor_fijo` sería curaduría a mano
+    disfrazada de configuración. Apunta al **Paso 3**, que es quien implementa las
+    operaciones.
+  - **Los candidatos, buscados en las dos plantillas** (tokens de nombre plural, con su
+    geometría): **dos confirmados** —`m2_implementaciones` (SECCO slide 14) y `m2_campanias`
+    (JM slide 9), que son la misma caja de lista— y **dos plausibles sin confirmar**:
+    `ecv_barrios` (JM slide 5, convive con `ecv_barrio1/2/3`, así que puede ser el conteo) y
+    `rep_p2_temas`/`rep_p3_temas` (SECCO slide 27). Además queda anotado el **patrón
+    alternativo** que convive: `ecv_barrio1-3`, `conv_tema1-3`, `post_camp1-3`,
+    `camp_env1-5`, `rrss_area1-10`, `m2_camp1-5` resuelven lo mismo con **una caja por
+    ítem** y no necesitan la operación.
+  - **El segundo cruce, en el `Paso-2.13` Parte 3, junto al primero.** SECCO nombra bien esa
+    lámina y **JM la nombra corrida un lugar**: en SECCO `m2_envios`=envíos,
+    `m2_campanias`=conteo de campañas, `m2_implementaciones`=lista de nombres; en JM
+    `m2_envios`=conteo de campañas, `m2_campanias`=lista de nombres, y **para envíos no hay
+    token** —dice `33 envíos` escrito a mano—. Dos nombres, cuatro significados. Refuerza las
+    tres tareas de esa parte: clave `['marcador','informe_id']`, nunca `'*'` para un token
+    cruzado, y el guardarraíl. **No se renombró nada** (`C-01`).
+  - **La slide 10 queda congelada**, decisión del usuario: no se retira, no se corrige, no se
+    borra la caja, no se saca el renombre y **no se aplica el diccionario sobre esa lámina**.
+    Si vuelve a aparecer en un informe, ahí se decide.
+  - **`PLAN.md` §2** — criterio del Tramo 2: solapas y mapeo se ajustan **después** del corte
+    vertical. Un token sin cablear sale como `«FALTA:token»` y queda listado; mapear por
+    adelantado es trabajar sobre sospechas, que es lo que midió el `Paso-2.16`.
+- **Prueba:** ninguna, es documental. El relevamiento de tokens fue sólo lectura.
+- **Pendientes/decisiones:**
+  - **La decisión sobre la slide 10 cambia el bloqueo del `Paso-2.5`, y hay que verlo antes
+    de armonizar.** `armonizarPresentacion_` aplica la lista entera de `jm` con
+    `replaceAllText`, que es de **toda la presentación**: correrlo como está **sí toca la
+    slide 10** —veinte de las veinticinco entradas de `jm` son suyas— y produce justamente la
+    colisión que la decisión quiere evitar. Las otras **cinco** no la tocan. Armonizar
+    respetando la decisión exige correr sólo esas cinco, y eso hoy no se puede sin partir la
+    lista en el `.gs`. **No se hizo:** es una decisión sobre cómo armonizar.
+  - **Verificar de cuál informe salió el deck original.** Las coordenadas que aportó el
+    usuario coinciden **exactamente en `x` y `w` con SECCO** (`x=308 w=343`, Δ`y` 22) y sólo
+    se aproximan a JM (`x=268 w=378`, Δ`y` 23); el texto también —SECCO renderiza
+    `12 Campañas` con espacio, JM `12Campañas` sin espacio—. Define cuál plantilla es la
+    referencia de esa lámina.

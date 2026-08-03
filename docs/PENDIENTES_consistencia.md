@@ -489,8 +489,25 @@ criterio técnico (`C-01`: la plantilla es del equipo).
 > para `enc_mails_enviados`, y hay que resolverlo aunque la slide 10 se retire: es la lámina
 > que sí se usa.
 >
-> **Decisión pendiente, y es del usuario con el equipo (`C-01`): ¿la slide 10 sigue vigente?**
-> No se tocó nada.
+> **F · Decidido por el usuario el 03/08/2026: la slide 10 no se toca, y la entrada queda
+> abierta a propósito.** La lámina **no se retira y no se corrige ahora**. Si vuelve a
+> aparecer en un informe, ahí se decide. Hasta entonces:
+>
+> - **No se borra la caja** `{{m2_salud_camp}}`.
+> - **No se saca el renombre** `m2_camp4`→`m2_salud_camp` del diccionario.
+> - **No se aplica el diccionario sobre esa lámina.** `{{m2_salud_camp}}` y la grilla de
+>   cinco ejes quedan como están, **con la colisión anotada y sin resolver**.
+>
+> **Consecuencia operativa que hay que tener a la vista, porque cambia el bloqueo del
+> `Paso-2.5`:** `armonizarPresentacion_` aplica la lista entera de `jm` con
+> `presentacion.replaceAllText()`, que es de **toda la presentación**. Correr
+> "Armonizar tokens de plantillas" como está hoy **sí toca la slide 10** — las veinte
+> entradas `m2_*` de la lista son suyas— y produce la colisión que esta decisión quiere
+> evitar. Las otras **cinco** entradas de `jm` (`enc_audiencia`, `enc_audiencia_pct`,
+> `enc_clics`, `enc_audiencia_ivr`, `rrss_prom`) **no tocan la slide 10**. Así que armonizar
+> respetando esta decisión exige correr **sólo esas cinco**, lo que hoy no se puede hacer sin
+> partir la lista en el `.gs`. **No se hizo:** es una decisión sobre cómo armonizar, no una
+> corrección mecánica.
 
 ### P2 · El diagnóstico no distingue config vieja de config mal armada
 
@@ -1081,6 +1098,48 @@ empiece con `_`** o que se limite a profundidad 0; que `clasificarArchivoPlantil
 carpeta de salidas **deje de ser hija** de la de plantillas; o —lo más barato y lo que ya
 está hecho de hecho— que el ID venga del seed y el registro automático quede como
 diagnóstico, no como escritor. Ninguno se aplicó: hoy el registro sigue pudiendo escribir.
+
+### P1 · Falta una operación que devuelva una **lista** de valores, no un número
+
+Detectado el 03/08/2026 al verificar la lámina M2 contra el informe original. Las seis
+operaciones que declara el `Paso-3-v3` —`SUMA`, `CONTEO`, `ULTIMO`, `RATIO`, `PCT`, `TEXTO`—
+**devuelven todas un escalar**. Ninguna cubre el caso de una caja que **enumera**: toma las
+filas de la ventana y concatena un campo de cada una.
+
+**`TEXTO` no sirve para esto y conviene decirlo explícito**, porque el nombre invita a
+confusión: lee un **literal** de la columna `valor_fijo`. No mira los datos. Una lista que
+cambia todas las semanas no puede vivir en `valor_fijo` — sería curaduría manual disfrazada
+de configuración, y volvería a poner un dato derivable en una celda que alguien tiene que
+acordarse de actualizar.
+
+**El caso que la obliga, confirmado contra el informe publicado:** la lámina *Status semanal
+de M2* tiene una caja de conteo (`12 Campañas`) sobre una caja ancha con **los doce nombres
+de campaña**. El conteo es `CONTEO`; la lista no tiene con qué resolverse.
+
+**Los candidatos, para que se diseñe una sola vez.** Dos confirmados y dos plausibles:
+
+| token | plantilla · lámina | caja | veredicto |
+|---|---|---|---|
+| `m2_implementaciones` | SECCO slide 14 | `x308 y129 w343`, debajo del conteo | **confirmado** — es la caja de la lista del informe |
+| `m2_campanias` | JM slide 9 | `x268 y107 w378`, debajo del conteo | **confirmado** — misma caja, nombre cruzado (ver abajo) |
+| `ecv_barrios` | JM slide 5 | `Barrios impactados: {{ecv_barrios}}` | **plausible, sin confirmar** — convive con `ecv_barrio1/2/3`, así que puede ser el **conteo** y los otros tres los nombres. `TOKENS.md` los lista juntos y ya los marca *"⚠ revisar posiciones"* |
+| `rep_p2_temas`, `rep_p3_temas` | SECCO slide 27 | *Repercusiones en X* | **plausible, sin confirmar** — el nombre es plural |
+
+**Y hay un patrón alternativo conviviendo, que es la razón por la que esto no es obvio:**
+varias láminas resuelven lo mismo con **una caja por ítem** en vez de una que enumera —
+`ecv_barrio1-3`, `conv_tema1-3`, `post_camp1-3`, `camp_env1-5`, `rrss_area1-10`,
+`m2_camp1-5`—. Esos **no** necesitan la operación: cada caja es un valor. La operación nueva
+sirve al otro patrón. Antes de diseñarla conviene mirar los dos, porque el mismo dato
+aparece de las dos formas en plantillas distintas.
+
+**Qué hay que decidir al implementarla** (no ahora): el separador, el orden de los ítems, y
+qué pasa cuando son demasiados para la caja — truncar con "y N más", o dejar que la caja
+crezca y desarme la lámina. Un `«FALTA»` no cubre este caso: la lista puede venir vacía
+legítimamente.
+
+**Dueño: el Paso 3**, que es quien implementa las operaciones (`Paso-3-v3` Parte A). Se anota
+acá y no en el prompt porque el prompt no se edita una vez entregado; al ejecutarlo, sale
+como operación nueva o como addendum.
 
 ### P1 · Ningún `.gs` recorre `getTables()` ni `getGroups()`: 33 tokens de JM no se ven
 

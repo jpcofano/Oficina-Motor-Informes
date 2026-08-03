@@ -497,7 +497,18 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
 
 2. **Tramo 2 — corte vertical, JM solo.** Pasos 3, 4 y 5. Se hace contra JM únicamente:
    construir los dos en paralelo impide después distinguir qué necesitó código y qué salió
-   solo. Los prompts vigentes son **`docs/Prompts/Paso-3-v3.md`**, `docs/Prompts/Paso-4.md`
+   solo.
+
+   > **Criterio del tramo, decidido el 03/08/2026: las solapas y el mapeo que falten se
+   > ajustan DESPUÉS de la primera prueba de punta a punta, no antes.** No se abre trabajo de
+   > mapeo por anticipado. **El corte vertical es el que dice cuáles hacen falta de verdad**,
+   > y lo dice barato: un token sin cablear sale como `«FALTA:token»` y queda listado, que es
+   > exactamente para lo que existe esa regla. Mapear por adelantado es trabajar sobre una
+   > lista de sospechas — y este repo ya midió lo que cuesta: el `Paso-2.16` fue a activar
+   > `m2` y encontró que **no había nada que activar**, con 19 filas de `MAPEO` duplicadas de
+   > `digital` que nadie había verificado contra un consumidor real. Aplica también a lo que
+   > salga del relevamiento de la lámina M2 del 03/08: **no se toca `MAPEO` ni `SOLAPAS` por
+   > eso hasta que el corte vertical corra.** Los prompts vigentes son **`docs/Prompts/Paso-3-v3.md`**, `docs/Prompts/Paso-4.md`
    y **`docs/Prompts/Paso-5-v2.md`** (03/08/2026: la auditoría de premisas mandó reescribir
    los dos, `Paso-3-v2.md` y `Paso-5.md` quedaron en `docs/Prompts/_archivo/`).
    **`Paso-4.md` se revisa antes de ejecutarlo** — está escrito y casi seguro asume
