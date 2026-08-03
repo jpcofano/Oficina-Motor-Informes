@@ -330,9 +330,17 @@ en las dos decisiones para que nadie las unifique por parecerse.
 >   comportamiento aparte que viva en otro lado. Hoy, en ese lugar, la función devuelve
 >   error.
 >
-> **2 · Queda cerrada la pregunta de marcador vs. sección**, que el texto de arriba dejaba
-> abierta: **gana el marcador**. Sale del diseño del Paso 3 — el Paso 3 la implementa, no la
-> decide.
+> **2 · Quedan cerradas las dos posiciones que el texto de arriba mandaba al Paso 3.**
+> Marcador vs. sección: **gana el marcador**. Sección vs. campaña: **la campaña va primero**,
+> como ya está en el código y en la cadena. **El Paso 3 no decide ninguna de las dos: las
+> implementa.**
+>
+> **3 · El único caso que la cadena no cubre con un criterio explícito, anotado y no
+> resuelto:** un marcador con `periodo_ref` propio **dentro de un bloque de campaña**. Hoy
+> **gana la campaña**, porque es como está escrito el código —`resolverVentana()` mira
+> `opciones.campana` primero y devuelve sin evaluar el resto—, no porque se haya decidido.
+> Se deja así. Si alguna vez molesta, va a aparecer como **un número que no cierra**, y ahí
+> se decide con un caso real a la vista en vez de en abstracto.
 
 **Prueba disponible ya, antes del panel:** compartirle un deck de salida a la cuenta de
 prueba y confirmar que lo abre **sin acceso a ninguna base**. Es **la mitad de `D-16` que no
