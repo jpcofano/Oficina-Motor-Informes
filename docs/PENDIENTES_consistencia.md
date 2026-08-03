@@ -762,6 +762,38 @@ Arreglo posible, a decidir: escribir sólo las columnas presentes en el objeto d
 de la fila completa, o declarar en `ALCANCE_REGISTROS_` qué columnas gobierna cada seed y
 fallar si la hoja tiene una que el seed no declara.
 
+### P1 · `m2/Cuentas` tiene `uso = 'ignorar'` y sin embargo está mapeada y auditada
+
+Relevado el 02/08/2026 en la Parte A del `Paso-2.16`. `CLAUDE.md` §2 es explícito: una
+solapa `ignorar` **"no se toca nunca. Ni se lee, ni se audita, ni se mapea, ni se
+diagnostica"**. `m2/Cuentas` está en `ignorar` desde el `Paso-2.12` Parte 2, con el motivo
+escrito en su propia nota —*"mismo universo que digital/Cuentas (3453 filas), que queda como
+fuente"*—, que es justo el caso de doble conteo que el invariante viene a evitar. Y sin
+embargo:
+
+- **`MAPEO` la mapea, con cinco filas vivas** (`id_cuenta`, `campana`, `estado`, `eje`,
+  `area`), presentes tanto en la hoja como en `SEED_MAPEO_`.
+- **`Auditoria.gs` la audita**: figura en `SOLAPAS_A_DESCRIBIR_AUD1_`.
+
+**El contraste que lo vuelve difícil de defender:** de las tres solapas que `MAPEO` usa para
+`m2`, dos son `referencia` (`M2 periodo DIRECTA` y `M2 periodo DIGITAL`, vistas con período
+tipeado a mano) y una es `ignorar` (`Cuentas`). **Ninguna fila de `MAPEO` apunta a una solapa
+`fuente` de `m2`** — y la única que `m2` tiene declarada como fuente, `Cuentas M2`
+(354 filas, "dimensión de campañas M2"), **no tiene ni una fila de `MAPEO`**.
+
+No se arregla acá: borrar cinco filas de `MAPEO` cambia qué puede leer el motor y hay que
+decidir antes si `Cuentas M2` ocupa ese lugar o si `m2` no aporta nada que `digital` no
+tenga.
+
+### P2 · La columna U de `Directa Mail` tiene `#REF!` como encabezado
+
+En las dos solapas —`digital/Directa Mail` y su espejo `m2/Directa mail`—, la columna **U**
+tiene literalmente `#REF!` en la fila de títulos: una fórmula rota en el encabezado, no en
+los datos. Queda registrada en `SOLAPAS.firma_encabezado` de las dos. Hoy es inofensiva
+—ningún `MAPEO` apunta a la U de esa solapa— pero cualquier lectura que recorra encabezados
+la va a ver como nombre de columna, y `R-10` (normalización de encabezados) no la contempla.
+Se corrige en origen, en la base, no en el motor.
+
 ### P2 · Dos carpetas de Drive distintas se llaman "Sistema Informes en Slides"
 
 Verificado contra Drive el 02/08/2026 (`Paso-2.15` Parte A). La carpeta de **plantillas**
@@ -784,6 +816,14 @@ todavía no está decidida.
 - Las siete preguntas de `docs/VALIDACION_2026-07-31.md` §7 ("Preguntas para el equipo")
   — siguen abiertas; el detalle está allá, esta línea existe para que no queden
   enterradas en un doc congelado.
+- **`digital/Directa Mail`, columna F (`Fecha envio`): ¿se corrigió el año `20206`?**
+  `docs/FECHAS_seleccion.md` la marca con ⚠ *"dato erróneo… corregir en origen antes de
+  promover"*, y es la columna que el `Paso-2.16` quiere usar para filtrar por período.
+  **Medido el 02/08/2026 sobre las 2114 filas vivas: no queda ninguna fecha anómala** —
+  2079 filas con fecha, **todas del año 2026**, y 35 sin fecha. Lo que no se puede saber
+  desde acá es **si la corrigieron, si borraron la fila o si el envío se recargó**. La
+  pregunta es esa, y hasta que se responda la advertencia de `FECHAS_seleccion.md` se
+  mantiene escrita aunque hoy no se reproduzca.
 
 ## Nota sobre `Paso-3-v2.md`
 
