@@ -350,6 +350,59 @@ del 29/07 se aplicó por error sobre `1JrHvs_p…`, hoy marcada `[OBSOLETA — n
 borra de la plantilla, o el renombre sale de la lista del diccionario. No se elige por
 criterio técnico (`C-01`: la plantilla es del equipo).
 
+> **Relevamiento del 03/08/2026 — sólo lectura, no se aplicó ningún renombre.** Hecho con
+> `mapaDeTokens_` (`Armonizar.gs`, nuevo), que recorre `getPageElements()` y baja a tablas y
+> grupos. **No cambia la decisión: la afina, y agrega una tercera opción.**
+>
+> **1 · Sí hay un grupo de tokens nombrados por eje, y no es el que se buscaba.** En la
+> lámina M2 de la JM canónica (slide 10) conviven dos generaciones de nombres. La nueva son
+> **seis cajas**: `m2_subtes_imp`, `m2_desalojos_imp`, `m2_transito_imp`, `m2_salud_imp`,
+> `m2_seguridad_imp` (la fila de Impresiones **entera**) y `m2_seguridad_aud`. **Ninguna de
+> las seis tiene un `m2_campN` de origen en el diccionario, y ninguna colisiona con nada**:
+> son casillas que nunca tuvieron nombre viejo — la fila de Impresiones no existe en la serie
+> de letras, y la audiencia de Seguridad quedó fuera porque esa serie se corta en `d`.
+> Eso explica por qué la plantilla parece a medio migrar y por qué `m2_salud_camp` no
+> desentona leyendo la lista de tokens.
+>
+> **2 · `m2_salud_camp` no pertenece a ese grupo, y lo dice la geometría.** La grilla es de
+> cinco columnas —`x` 20 Subtes, 162 Desalojos, 302 Tránsito, 443 Salud, 571 Seguridad,
+> leído de la fila de encabezados— por cuatro filas de métrica (`y` 88 Impresiones, 175
+> Audiencia, 224 Clics, 273 Visualizaciones, 318 campañas). Las cinco cajas de campañas están
+> en `y=318` con `w≈82`, una debajo de cada eje. **La caja en disputa está en `y=356`,
+> `x=100`, `w=513`, `h=30`: fila propia, debajo de la grilla, y cruza a lo ancho por debajo
+> de las cinco columnas.** No hay ninguna etiqueta vecina a esa altura. Su texto es
+> `{{m2_salud_camp}} campañas`, en **plural**, mientras la caja de Salud de la grilla dice
+> `{{m2_camp4}} campaña`, en **singular**.
+>
+> **3 · La caja ancha es anterior a la armonización.** En la plantilla obsoleta
+> (`1JrHvs_p…`), que es la que tiene el renombre del `2.2.1` aplicado y es lo más cercano al
+> original que queda, esa caja está **en la misma posición exacta y ya con el mismo nombre**.
+> No la creó el renombre. Y ahí se ve el resultado de aplicarlo: `{{m2_salud_camp}}` aparece
+> **dos veces**, en `y=318 x=464` (grilla, Salud) y en `y=356 x=100`. **La obsoleta es la
+> prueba empírica de la colisión**, no una predicción.
+>
+> **4 · El resto del diccionario queda confirmado, columna por columna.** El mapeo
+> letra→eje de `RENOMBRES_ARMONIZACION_POR_INFORME_` coincide con la grilla de la obsoleta
+> coordenada por coordenada: `m2_camp2`→subtes (`x48`), `m2_camp1`→desalojos (`x188`),
+> `m2_camp3`→tránsito (`x329`), `m2_camp4`→salud (`x464`), `m2_camp5`→seguridad (`x592`), y
+> lo mismo para `aud`, `clics` y `vis`. También se confirma el comentario del código sobre
+> las visualizaciones: sólo hay **dos** cajas, subtes y desalojos.
+>
+> **5 · La tercera opción, que no estaba planteada.** Las dos opciones escritas arriba
+> asumen que la caja ancha es *o* un sobrante *o* la buena. La geometría sugiere una
+> lectura distinta: **es una caja de otro concepto —una línea a lo ancho, plausiblemente un
+> total— que quedó con el nombre de un eje**. Si fuera eso, la salida no es borrarla ni sacar
+> el renombre, sino **renombrarla a lo que mide** (`m2_camp_total` o similar), y entonces
+> `m2_camp4`→`m2_salud_camp` deja de chocar y el diccionario se aplica entero.
+> **Es una inferencia, no un hecho**: nada en la lámina dice "total". Lo que la sostiene es
+> el ancho, la fila propia y el plural; lo que falta para confirmarla es el informe original
+> publicado, o preguntarle al equipo qué mostraba esa línea.
+>
+> **Dato suelto que puede ayudar a responderlo:** la slide 10 tiene material **fuera del
+> área visible** (`y` negativo) con datos reales del informe original — `Desalojo - 6
+> campañas`, `Avenidas porteñas - 1 campañas`, `Puntos seguros - 1 campañas`, con sus
+> Impresiones/Clics/Visualizaciones. Es lo más parecido al deck original que hay en el repo.
+
 ### P2 · El diagnóstico no distingue config vieja de config mal armada
 
 **Movido acá el 01/08/2026 (`DOC-6` Parte E), desde `PROYECTO.md` §9.** El aprendizaje
@@ -939,6 +992,30 @@ empiece con `_`** o que se limite a profundidad 0; que `clasificarArchivoPlantil
 carpeta de salidas **deje de ser hija** de la de plantillas; o —lo más barato y lo que ya
 está hecho de hecho— que el ID venga del seed y el registro automático quede como
 diagnóstico, no como escritor. Ninguno se aplicó: hoy el registro sigue pudiendo escribir.
+
+### P1 · Ningún `.gs` recorre `getTables()` ni `getGroups()`: 33 tokens de JM no se ven
+
+Greppeado y medido el 03/08/2026. `contarTokensDistintos_` (`Armonizar.gs`) —el que alimenta
+el `tokensDistintosCount` de `inventarioPlantillas()`— recorre **sólo `slide.getShapes()`**.
+Lo mismo el resto del repo: **ninguna función llama a `getTables()` ni a `getGroups()`**.
+
+**El número:** sobre la JM canónica, `inventariarPresentacion_` reporta **158** tokens
+distintos y `mapaDeTokens_` —que sí baja a tablas y grupos— encuentra **191**. **Faltan 33**,
+y no son marginales: la lámina de M2 es una tabla, y con celdas combinadas (`getCell` tira
+excepción sobre una celda combinada que no es la principal, que fue el primer error al
+relevarla).
+
+**Qué NO rompe, y conviene decirlo para no sobrerreaccionar:** la armonización está a salvo.
+`armonizarPresentacion_` usa `presentacion.replaceAllText()`, que es de toda la presentación
+y sí alcanza tablas y grupos. El renombre nunca dependió de este recorrido.
+
+**Qué sí rompe:** **(1)** todo diagnóstico que cuente tokens subcuenta, y el conteo se usa
+para decidir si una plantilla está completa; **(2)** el `Paso-2.5`, que va a sembrar
+`MARCADORES` desde los tokens de las plantillas — su Parte A **ya pide** recorrer
+`getShapes()`, `getTables()` celda por celda y `getGroups()` recursivamente, así que el
+prompt está bien y lo que falta es que el helper nuevo lo implemente. Si se implementara
+copiando `contarTokensDistintos_`, faltarían 33 filas de `MARCADORES` en JM sin que nada
+fallara. **`mapaDeTokens_` ya tiene el recorrido correcto y sirve de base.**
 
 ### P2 · Dos carpetas de Drive distintas se llaman "Sistema Informes en Slides"
 

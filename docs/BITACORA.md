@@ -1750,3 +1750,47 @@ nadie más.
 - **Pendientes/decisiones:** ninguna nueva. `MARCADORES` **ya está en `COLUMNAS_DELTA_`**, así
   que la columna `verificado_por` de la Parte 2 tiene el mecanismo correcto disponible — y va
   **al final del array**, por lo que midieron el `2.15` y el `2.16`.
+
+## Relevamiento — la caja `{{m2_salud_camp}}`: qué es y qué la rodea (2026-08-03) — commit de esta entrada
+- **Qué pedía:** antes de decidir sobre la caja huérfana, **buscar el grupo**. El usuario
+  sospechaba que hubiera una caja por eje —salud, transporte y similares—, en cuyo caso sería
+  un grupo y no una huérfana, y el diagnóstico cambiaba. Sólo lectura, sin aplicar el
+  renombre.
+- **Qué se hizo:** `mapaDeTokens_(plantillaId, patron)` en `Armonizar.gs`, **sólo lectura**:
+  recorre `getPageElements()` y baja a **tablas** (celda por celda) y **grupos**
+  (recursivo), y devuelve por cada caja con token su slide, geometría y texto. Corrido sobre
+  la JM canónica y sobre la obsoleta. No se tocó ninguna plantilla.
+- **Prueba / qué se encontró:**
+  - **Sí hay un grupo de tokens nombrados por eje, y no es el que se buscaba: son seis** —
+    la fila de Impresiones entera (`m2_subtes_imp`, `m2_desalojos_imp`, `m2_transito_imp`,
+    `m2_salud_imp`, `m2_seguridad_imp`) más `m2_seguridad_aud`. **Ninguna tiene `m2_campN` de
+    origen y ninguna colisiona:** son casillas que nunca tuvieron nombre viejo.
+  - **`m2_salud_camp` no pertenece a ese grupo, y lo dice la geometría.** La grilla es 5
+    columnas × 4 filas de métrica; las cinco cajas de campañas están en `y=318` con `w≈82`,
+    una por eje. La caja en disputa está en **`y=356, x=100, w=513, h=30`**: fila propia,
+    debajo de la grilla, cruzando a lo ancho las cinco columnas, sin etiqueta vecina. Dice
+    "campañas" en plural; la de Salud de la grilla dice "campaña" en singular.
+  - **La caja ancha es anterior a la armonización.** En la obsoleta (`1JrHvs_p…`) está en la
+    **misma posición exacta y ya con el mismo nombre**. No la creó el renombre. Y ahí se ve
+    el resultado de aplicarlo: `{{m2_salud_camp}}` aparece **dos veces**. La obsoleta es la
+    **prueba empírica** de la colisión, no una predicción.
+  - **El resto del diccionario queda confirmado columna por columna** contra la grilla
+    armonizada de la obsoleta: `camp2`→subtes, `camp1`→desalojos, `camp3`→tránsito,
+    `camp4`→salud, `camp5`→seguridad, e ídem `aud`/`clics`/`vis`. También el comentario del
+    código sobre visualizaciones: sólo hay **dos** cajas.
+  - **Aparece una tercera opción que no estaba planteada:** que la caja ancha sea **otro
+    concepto —plausiblemente un total— con el nombre de un eje**. Si fuera eso, no se borra
+    ni se saca el renombre: se la renombra a lo que mide y el diccionario entra entero. **Es
+    inferencia, no hecho** — lo sostienen el ancho, la fila propia y el plural.
+  - **Hallazgo lateral, `P1` nuevo:** ningún `.gs` recorre `getTables()` ni `getGroups()`.
+    Sobre la JM canónica, el inventario reporta **158** tokens y el recorrido completo
+    encuentra **191**: **faltan 33**. La armonización está a salvo —`replaceAllText` es de
+    toda la presentación— pero los diagnósticos subcuentan y el `Paso-2.5` sembraría 33 filas
+    de menos si copiara el recorrido viejo.
+  - **Dato suelto:** la slide 10 tiene material **fuera del área visible** (`y` negativo) con
+    datos reales del informe original — `Desalojo - 6 campañas`, `Avenidas porteñas - 1
+    campañas`, `Puntos seguros - 1 campañas`, con sus métricas.
+- **Pendientes/decisiones:** **no se aplicó el renombre y no se tocó ninguna plantilla.** La
+  decisión sigue siendo del usuario, ahora con tres opciones en vez de dos. Lo que falta para
+  cerrar la tercera es el informe original publicado, o preguntarle al equipo qué mostraba
+  esa línea a lo ancho.

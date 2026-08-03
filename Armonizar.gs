@@ -587,6 +587,189 @@ function contarTokensDistintos_(presentacion) {
   return { cantidad: Object.keys(vistos).length, textoCompleto: partes.join('\n') };
 }
 
+/**
+ * 03/08/2026 — mapa de tokens de una plantilla, **sólo lectura**. No escribe ni en la
+ * presentación ni en ninguna hoja.
+ *
+ * Por qué no alcanzaba lo que había: `contarTokensDistintos_` y `armonizarPresentacion_`
+ * recorren **sólo `getShapes()`**. Greppeado el 03/08: **ningún `.gs` del repo llama a
+ * `getTables()` ni a `getGroups()`**. Un token dentro de una tabla o de un grupo es
+ * invisible para el conteo y para el renombre — y la lámina de M2 es exactamente una
+ * grilla. Esta función recorre `getPageElements()` y baja a tablas (celda por celda) y a
+ * grupos (recursivo), que es lo que el `Paso-2.5` ya pedía para sembrar `MARCADORES`.
+ *
+ * Devuelve poco a propósito: `/dev` no devuelve respuestas grandes (ver `RUNBOOK` Parte G).
+ * Sólo las slides que tienen alguna coincidencia, con los textos recortados.
+ *
+ * @param {string} plantillaId  ID del Slides.
+ * @param {string} patron       Regex como string, p. ej. 'm2_.*_camp'. Sin llaves.
+ */
+function mapaDeTokens_(plantillaId, patron) {
+  var presentacion;
+  try {
+    presentacion = SlidesApp.openById(plantillaId);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo abrir "' + plantillaId + '": ' + e.message };
+  }
+
+  var re = new RegExp(patron);
+  var TOKEN = /\{\{([a-zA-Z0-9_]+)\}\}/g;
+  var slides = presentacion.getSlides();
+  var slidesConCoincidencia = [];
+  var contexto = [];
+  var vecinos = [];
+  var todosLosTokens = {};
+
+  function recorte_(texto, tope) {
+    var limpio = String(texto || '').replace(/\s+/g, ' ').trim();
+    return limpio.length > tope ? limpio.slice(0, tope) + '…' : limpio;
+  }
+
+  function geometria_(elemento) {
+    try {
+      return {
+        x: Math.round(elemento.getLeft()),
+        y: Math.round(elemento.getTop()),
+        w: Math.round(elemento.getWidth()),
+        h: Math.round(elemento.getHeight())
+      };
+    } catch (e) {
+      return null; // hay elementos sin geometría propia (celdas de tabla, p. ej.)
+    }
+  }
+
+  // Junta { texto, contenedor, geo } de todo lo que tenga texto en la slide.
+  function textosDe_(elemento, contenedor, geoHeredada, salida) {
+    var tipo;
+    try { tipo = String(elemento.getPageElementType()); } catch (e) { return; }
+
+    if (tipo === 'GROUP') {
+      var geoGrupo = geometria_(elemento) || geoHeredada;
+      elemento.asGroup().getChildren().forEach(function (hijo) {
+        textosDe_(hijo, contenedor === 'suelta' ? 'grupo' : contenedor + '>grupo', geoGrupo, salida);
+      });
+      return;
+    }
+
+    if (tipo === 'TABLE') {
+      var tabla = elemento.asTable();
+      var geoTabla = geometria_(elemento) || geoHeredada;
+      for (var f = 0; f < tabla.getNumRows(); f++) {
+        for (var c = 0; c < tabla.getNumColumns(); c++) {
+          // `getCell` tira excepción sobre una celda combinada que no es la principal
+          // (la de arriba a la izquierda). Es el caso de la lámina de M2, que es una
+          // grilla con combinaciones: saltearlas es correcto, su texto vive en la
+          // principal y ya se leyó.
+          try {
+            salida.push({
+              texto: tabla.getCell(f, c).getText().asString(),
+              contenedor: 'tabla fila ' + (f + 1) + ' col ' + (c + 1),
+              geo: geoTabla
+            });
+          } catch (e) {
+            continue; // celda combinada que no es la principal
+          }
+        }
+      }
+      return;
+    }
+
+    if (tipo === 'SHAPE' || tipo === 'TEXT_BOX') {
+      var forma = elemento.asShape();
+      salida.push({
+        texto: forma.getText().asString(),
+        contenedor: contenedor,
+        geo: geometria_(elemento) || geoHeredada
+      });
+    }
+  }
+
+  slides.forEach(function (slide, i) {
+    var piezas = [];
+    slide.getPageElements().forEach(function (elemento) {
+      textosDe_(elemento, 'suelta', null, piezas);
+    });
+
+    var coincidencias = [];
+    var tokensDeLaSlide = {};
+    var textosSinToken = [];
+
+    piezas.forEach(function (pieza) {
+      var encontrados = [];
+      var m;
+      TOKEN.lastIndex = 0;
+      while ((m = TOKEN.exec(pieza.texto)) !== null) encontrados.push(m[1]);
+
+      if (!encontrados.length) {
+        var suelto = recorte_(pieza.texto, 40);
+        if (suelto) {
+          textosSinToken.push({
+            y: pieza.geo ? pieza.geo.y : '',
+            x: pieza.geo ? pieza.geo.x : '',
+            w: pieza.geo ? pieza.geo.w : '',
+            texto: suelto
+          });
+        }
+        return;
+      }
+
+      encontrados.forEach(function (t) {
+        tokensDeLaSlide[t] = true;
+        todosLosTokens[t] = true;
+        if (!re.test(t)) return;
+        coincidencias.push({
+          token: t,
+          contenedor: pieza.contenedor,
+          texto: recorte_(pieza.texto, 120),
+          geo: pieza.geo
+        });
+      });
+    });
+
+    if (!coincidencias.length) return;
+
+    // Plano a propósito: `Api.gs` serializa hasta profundidad 5, y una geometría anidada
+    // dos niveles más abajo se pierde entera sin avisar. Cada coincidencia es un renglón.
+    coincidencias.forEach(function (c) {
+      slidesConCoincidencia.push({
+        slide: i + 1,
+        token: c.token,
+        contenedor: c.contenedor,
+        x: c.geo ? c.geo.x : '',
+        y: c.geo ? c.geo.y : '',
+        w: c.geo ? c.geo.w : '',
+        h: c.geo ? c.geo.h : '',
+        texto: c.texto
+      });
+    });
+
+    contexto.push({
+      slide: i + 1,
+      titulo: recorte_(primerTextoDeSlide_(slide), 80),
+      tokens_de_la_slide: Object.keys(tokensDeLaSlide).sort().join(' ')
+    });
+
+    // Plano, por lo mismo que `cajas`: la geometría anidada se pierde a profundidad 5.
+    textosSinToken.slice(0, 80).forEach(function (t) {
+      vecinos.push({ slide: i + 1, y: t.y, x: t.x, w: t.w, texto: t.texto });
+    });
+  });
+
+  var queCoinciden = Object.keys(todosLosTokens).filter(function (t) { return re.test(t); }).sort();
+
+  return {
+    ok: true,
+    id: plantillaId,
+    nombre: DriveApp.getFileById(plantillaId).getName(),
+    slides_total: slides.length,
+    tokens_distintos_total: Object.keys(todosLosTokens).length,
+    tokens_que_coinciden: queCoinciden.join(' '),
+    cajas: slidesConCoincidencia,
+    contexto: contexto,
+    vecinos: vecinos
+  };
+}
+
 function menuInventarioPlantillas_() {
   var ui = ui_();
   var reporte = inventarioPlantillas();
