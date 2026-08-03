@@ -366,13 +366,68 @@ function probarResumenDesagregado_() {
  * Corre todas las pruebas y devuelve el texto del reporte. Sin `alert()` acá adentro para
  * poder llamarla también desde otro lado.
  */
+/**
+ * Paso 2.16 — control positivo de la lista blanca de `MAPEO.valores_incluidos` (D-21).
+ *
+ * Por qué hace falta: el protocolo de configuración no lo distingue. Un filtro que no
+ * filtra nada y un filtro correcto dan el mismo diff (`CAMPANAS`/`MAPEO` no cambian de
+ * tamaño), así que "pasa el protocolo" no dice nada sobre esta función. Las cuatro
+ * afirmaciones son sobre el comportamiento, no sobre la forma.
+ *
+ * Puro: no lee hojas. Se le pasan las filas y los filtros ya armados.
+ */
+function probarListaBlancaValores_() {
+  var filtro = {
+    campo_logico: 'mail_estado', columna: 'D', indice: 3,
+    declarado: 'Implementado, En curso',
+    permitidos: ['Implementado', 'En curso'],
+    etiqueta: 'digital/Directa Mail/mail_estado'
+  };
+  var filas = [
+    ['a', 'b', 'c', 'Implementado'],
+    ['a', 'b', 'c', '  En   curso '], // espacios de más: tiene que entrar igual
+    ['a', 'b', 'c', 'Proyectado'],
+    ['a', 'b', 'c', ''],
+    ['a', 'b', 'c', 'implementado']   // minúscula: NO entra (R-10, no se pliega el case)
+  ];
+
+  var veredictos = filas.map(function (f) { return filaPasaListaBlanca_(f, [filtro]); });
+  afirmar_(veredictos[0].pasa === true, 'lista blanca: "Implementado" tiene que entrar');
+  afirmar_(veredictos[1].pasa === true, 'lista blanca: los espacios de más se colapsan, "En curso" entra');
+  afirmar_(veredictos[2].pasa === false, 'lista blanca: "Proyectado" tiene que quedar afuera');
+  afirmar_(veredictos[3].pasa === false, 'lista blanca: el vacío tiene que quedar afuera');
+  afirmar_(veredictos[4].pasa === false, 'lista blanca: minúsculas NO se pliegan (R-10)');
+  afirmar_(veredictos[2].valor === 'Proyectado', 'lista blanca: el motivo tiene que decir qué valor excluyó');
+
+  // Sin filtros declarados, entra todo — la celda vacía significa "sin filtro".
+  afirmar_(filaPasaListaBlanca_(filas[2], []).pasa === true, 'lista blanca: sin filtros no se excluye nada');
+
+  // El tipeo que se manifiesta como filas que faltan.
+  var conTipeo = { campo_logico: 'x', columna: 'D', indice: 3, declarado: 'Implementadoo',
+    permitidos: ['Implementadoo'], etiqueta: 'x' };
+  var huerfanos = valoresDeclaradosSinFilas_(filas, [conTipeo]);
+  afirmar_(huerfanos.length === 1, 'lista blanca: un valor declarado que no existe tiene que reportarse');
+
+  // La coma que era parte del valor, no separador.
+  var filasConComa = [['a', 'b', 'c', 'Salud, Educación']];
+  var filtroComa = { campo_logico: 'y', columna: 'D', indice: 3, declarado: 'Salud, Educación',
+    permitidos: ['Salud', 'Educación'], etiqueta: 'y' };
+  afirmar_(comaDentroDeUnValor_(filasConComa, filtroComa) === true,
+    'lista blanca: una coma dentro de un valor tiene que detectarse');
+  afirmar_(comaDentroDeUnValor_(filas, filtro) === false,
+    'lista blanca: "Implementado, En curso" NO puede dar falso positivo de coma interna');
+
+  return 'D-21 lista blanca de valores: OK';
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
     probarMigracionesEnDiff_,
     probarSoloEnHoja_,
     probarProtegidasConDiferencia_,
-    probarResumenDesagregado_
+    probarResumenDesagregado_,
+    probarListaBlancaValores_
   ];
   var lineas = [];
   var fallas = 0;

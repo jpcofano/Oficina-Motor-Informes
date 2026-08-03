@@ -97,8 +97,10 @@ var HOJAS_CONFIG_ = {
   // declarado — antes avisaba ⚠ toda columna texto/mixto sin importar si eso era
   // lo esperado, y con 35 avisos casi todos inocentes (`figura`, `*_id_cuenta`, …)
   // la gente aprendía a ignorarlos.
+  // Paso 2.16 — `valores_incluidos`: lista blanca de valores de esa columna, separados
+  // por coma. Vacío = sin filtro (entran todas las filas). Ver D-21.
   MAPEO: {
-    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'tipo_esperado', 'notas']
+    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'tipo_esperado', 'valores_incluidos', 'notas']
   },
   // SOLAPAS (Paso 2.6): declara el uso de CADA solapa de cada base — el motor solo
   // sabía de las que aparecían en MAPEO, y el resto (backups, pivots, vistas con
@@ -194,7 +196,11 @@ var COLUMNAS_DELTA_ = {
     { nombre: 'solapa', indice: 2 },
     // Paso 2.7 Parte F: se inserta antes de `notas` (que para MAPEO instalado sin
     // este delta está en la columna 6 antes de correr esto).
-    { nombre: 'tipo_esperado', indice: 6 }
+    { nombre: 'tipo_esperado', indice: 6 },
+    // Paso 2.16: al FINAL del array, como la de CAMPANAS en el 2.15 — las entradas se
+    // evalúan en orden y una nueva adelante correría los índices de las que ya están.
+    // Índice 7 = antes de `notas`, que con `tipo_esperado` ya presente está en la 7.
+    { nombre: 'valores_incluidos', indice: 7 }
   ],
   // Paso 2.7 Parte A: `origen` se inserta después de `uso` (columna 3) para una
   // hoja SOLAPAS instalada con el esquema del Paso 2.6, que todavía no la tenía.
@@ -740,7 +746,13 @@ var SEED_MAPEO_ = [
   // derogada). Alineado con la selección congelada en docs/FECHAS_seleccion.md: columna
   // E, sin advertencias ("limpia").
   { base_id: 'rdv', campo_logico: 'fecha_periodo', hoja: 'RVD JM-CM - ES', columna: 'E', notas: 'filtro de período' },
-  { base_id: 'rdv', campo_logico: 'status', hoja: 'RVD JM-CM - ES', columna: 'I', notas: 'filtro (Realizada)' },
+  // Paso 2.16 — **`valores_incluidos` queda VACÍO acá a propósito.** El plan era declarar
+  // `Realizada` ahora y migrar el consumidor en el Paso 3, pero al verificar apareció que
+  // con este diseño **declarar ES conectar**: `leerFuente` aplica toda lista blanca
+  // declarada, así que cargarla acá cambiaría en el acto lo que ve *cualquier* lectura de
+  // `rdv` —no sólo el matcher de `Union.gs`, que ya filtra por su cuenta— y eso está fuera
+  // del alcance de este paso. Decisión pendiente del usuario (ver D-21 y HANDOFF_CODE).
+  { base_id: 'rdv', campo_logico: 'status', hoja: 'RVD JM-CM - ES', columna: 'I', notas: 'filtro (Realizada) — el valor NO está declarado en valores_incluidos todavía: ver D-21' },
   { base_id: 'rdv', campo_logico: 'inscriptos', hoja: 'RVD JM-CM - ES', columna: 'K', notas: '(resuelto)' },
   { base_id: 'rdv', campo_logico: 'insc_mail', hoja: 'RVD JM-CM - ES', columna: 'L', notas: '' },
   { base_id: 'rdv', campo_logico: 'insc_cc', hoja: 'RVD JM-CM - ES', columna: 'M', notas: '' },
@@ -866,6 +878,12 @@ var SEED_MAPEO_ = [
   { base_id: 'digital', campo_logico: 'mail_clics', hoja: 'Directa Mail', columna: 'Q', notas: '' },
   { base_id: 'digital', campo_logico: 'mail_ctor', hoja: 'Directa Mail', columna: 'R', notas: '' },
   { base_id: 'digital', campo_logico: 'mail_area', hoja: 'Directa Mail', columna: 'T', notas: '' },
+  // Paso 2.16 — la columna `Estado` (D) no estaba mapeada. Entra con su lista blanca:
+  // sólo `Implementado` y `En curso` alimentan el informe. Medido el 02/08/2026 sobre
+  // 2114 filas: entran 2073, quedan afuera 30 `Proyectado` y 11 con el estado vacío.
+  // Lista blanca y no exclusión a propósito (D-21): con "todo lo que no sea Proyectado",
+  // un estado nuevo entraría solo y en silencio.
+  { base_id: 'digital', campo_logico: 'mail_estado', hoja: 'Directa Mail', columna: 'D', valores_incluidos: 'Implementado, En curso', notas: 'lista blanca — ver D-21' },
 
   // hoja 'Directa SMS'
   { base_id: 'digital', campo_logico: 'sms_id_cuenta', hoja: 'Directa SMS', columna: 'A', notas: 'join entre solapas' },
@@ -911,6 +929,10 @@ var SEED_MAPEO_ = [
 // `hoja_default`) — `solapa` es exactamente ese mismo valor, así que se deriva
 // acá en vez de tipearlo dos veces por fila.
 SEED_MAPEO_.forEach(function (fila) { fila.solapa = fila.hoja; });
+// Paso 2.16: el default explícito. Sin esto, la clave falta en el objeto y `upsertPorClave_`
+// la trata distinto según por dónde entre (compara sólo las claves presentes, pero al
+// reescribir una fila entera la completa con ''). Declararla evita esa asimetría.
+SEED_MAPEO_.forEach(function (fila) { if (fila.valores_incluidos === undefined) fila.valores_incluidos = ''; });
 
 /**
  * Paso 2.7 Parte F — `tipo_esperado` por `campo_logico`, no por fila: el mismo

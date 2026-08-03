@@ -81,6 +81,7 @@ function leerMapeo() {
   var idxHoja = headers.indexOf('hoja');
   var idxColumna = headers.indexOf('columna');
   var idxTipoEsperado = headers.indexOf('tipo_esperado');
+  var idxValoresIncluidos = headers.indexOf('valores_incluidos'); // Paso 2.16
   var idxNotas = headers.indexOf('notas');
 
   var mapa = {};
@@ -96,6 +97,7 @@ function leerMapeo() {
       hoja: fila[idxHoja],
       columna: fila[idxColumna],
       tipo_esperado: idxTipoEsperado !== -1 ? fila[idxTipoEsperado] : '',
+      valores_incluidos: idxValoresIncluidos !== -1 ? fila[idxValoresIncluidos] : '',
       notas: fila[idxNotas]
     };
   });

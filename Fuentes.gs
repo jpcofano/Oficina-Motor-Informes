@@ -197,6 +197,132 @@ function resolverVentana(opciones) {
   return { ok: true, desde: desdeCfg, hasta: hastaCfg, origen: 'config' };
 }
 
+/* ============ Paso 2.16 (D-21) — lista blanca de valores por columna ============ */
+
+/**
+ * Normaliza los dos lados antes de comparar: colapsa espacios internos y recorta los
+ * bordes, **preservando mayúsculas y acentos**.
+ *
+ * Por qué no se reusa ninguno de los tres normalizadores que ya existen — la pregunta
+ * se hizo explícita antes de escribir el cuarto:
+ *   - `normalizar_` (Parseo.gs) baja a minúsculas y saca acentos. Sirve para matchear
+ *     nombres de barrio con tolerancia; acá colapsaría `Implementado` con `IMPLEMENTADO`
+ *     y con cualquier variante acentuada, que es justo lo que `R-10` decidió NO hacer.
+ *   - `normalizarParaComparar_` (Instalar.gs) canonicaliza fechas para el diff; para una
+ *     columna de texto es `String(valor)` pelado, sin siquiera `trim()`.
+ *   - `normalizarIdCuenta_` (Union.gs) es `String(valor).trim()` — el cuerpo más cercano,
+ *     pero no colapsa espacios internos y su nombre dice "id de cuenta": reusarlo para
+ *     estados sería mentir sobre qué compara.
+ *
+ * Esta es **exactamente la forma que `R-10` ya declara** —`colapsar(/\s+/ → ' ').trim()`,
+ * sin tocar mayúsculas ni acentos— y que sigue **pendiente de implementar** para
+ * encabezados. Se escribe acá con ese contrato para que, cuando la tarea de `R-10` entre,
+ * use esta función y no aparezca un quinto normalizador.
+ */
+function normalizarValorDeclarado_(valor) {
+  if (valor === null || valor === undefined) return '';
+  return String(valor).replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Lee de MAPEO las columnas de esta (base, solapa) que declaran lista blanca.
+ * Devuelve [] si no hay ninguna — el caso de las 120 filas que no la usan.
+ *
+ * Replica a propósito la guarda de `buscarMapeo`: sólo una solapa `uso = fuente` puede
+ * filtrar. Acá se recorre `leerMapeo()` directo (hace falta el conjunto de columnas de la
+ * solapa, no un campo puntual), así que la guarda no se hereda y hay que ponerla.
+ */
+function filtrosValoresIncluidos_(baseId, solapa) {
+  if (usoSolapa_(baseId, solapa) !== 'fuente') return [];
+
+  var mapa = leerMapeo();
+  var campos = mapa[baseId] && mapa[baseId][solapa];
+  if (!campos) return [];
+
+  var filtros = [];
+  Object.keys(campos).forEach(function (campoLogico) {
+    var fila = campos[campoLogico];
+    var declarado = normalizarValorDeclarado_(fila.valores_incluidos);
+    if (!declarado || !fila.columna) return;
+
+    // La coma es el separador (misma convención que INFORMES.familias y
+    // SECCIONES.informes). Un valor que la contenga no se puede expresar, así que el
+    // motor **para y avisa** en vez de partirlo mal y filtrar de menos en silencio.
+    var permitidos = declarado.split(',').map(normalizarValorDeclarado_).filter(function (v) { return v !== ''; });
+    if (!permitidos.length) return;
+
+    filtros.push({
+      campo_logico: campoLogico,
+      columna: fila.columna,
+      indice: columnaLetraAIndice_(fila.columna),
+      declarado: declarado,
+      permitidos: permitidos,
+      etiqueta: baseId + '/' + solapa + '/' + campoLogico
+    });
+  });
+
+  return filtros;
+}
+
+/**
+ * ¿Pasa la fila todas las listas blancas declaradas para su solapa? Varias columnas con
+ * lista blanca se combinan con Y — la fila tiene que pasar todas.
+ *
+ * Devuelve también el valor que la dejó afuera, que es lo que alimenta el conteo por
+ * valor: excluir en silencio es el modo de falla que el motor evita en todo lo demás.
+ */
+function filaPasaListaBlanca_(fila, filtros) {
+  for (var i = 0; i < filtros.length; i++) {
+    var filtro = filtros[i];
+    var valor = normalizarValorDeclarado_(fila[filtro.indice]);
+    if (filtro.permitidos.indexOf(valor) === -1) {
+      return { pasa: false, valor: valor, campo_logico: filtro.campo_logico };
+    }
+  }
+  return { pasa: true, valor: '' };
+}
+
+/**
+ * ¿La coma de la celda declarada es parte de un valor y no un separador? El motor no
+ * puede adivinar la intención, pero sí reconocer la **firma exacta** de ese error: la
+ * celda entera, sin partir, coincide con un valor real de la columna, y en cambio alguno
+ * de los pedazos no coincide con ninguno. Ahí partirla filtraría de menos en silencio, y
+ * la respuesta correcta es parar — no seguir con una lista blanca que nadie escribió.
+ *
+ * Con `Implementado, En curso` no hay falso positivo: esa cadena entera no es el valor de
+ * ninguna celda.
+ */
+function comaDentroDeUnValor_(filasDatos, filtro) {
+  if (filtro.permitidos.length < 2) return false;
+
+  var presentes = {};
+  filasDatos.forEach(function (fila) {
+    presentes[normalizarValorDeclarado_(fila[filtro.indice])] = true;
+  });
+
+  if (!presentes[filtro.declarado]) return false;
+  return filtro.permitidos.some(function (p) { return !presentes[p]; });
+}
+
+/**
+ * Valores declarados en una lista blanca que no aparecen en ninguna fila. Casi siempre
+ * es un tipeo en la celda de `MAPEO`, y sin este conteo se manifiesta como filas que
+ * faltan en el informe, que es mucho más caro de diagnosticar.
+ */
+function valoresDeclaradosSinFilas_(filasDatos, filtros) {
+  var huerfanos = [];
+  filtros.forEach(function (filtro) {
+    var presentes = {};
+    filasDatos.forEach(function (fila) {
+      presentes[normalizarValorDeclarado_(fila[filtro.indice])] = true;
+    });
+    filtro.permitidos.forEach(function (permitido) {
+      if (!presentes[permitido]) huerfanos.push(filtro.etiqueta + ' → "' + permitido + '"');
+    });
+  });
+  return huerfanos;
+}
+
 /**
  * Fila completamente vacía (todas las celdas '', null, undefined o solo
  * espacios) — se descarta antes de clasificar por fecha, para que
@@ -343,11 +469,53 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
     });
   }
 
+  // Paso 2.16 (D-21) — lista blanca declarada en MAPEO.valores_incluidos. Se calcula
+  // ANTES de bifurcar por modo, porque aplica igual a `snapshot` y a `filtrar`: la
+  // primera base que lo usa (`digital`) es snapshot.
+  //
+  // NO toca `filasDatos`: el invariante del Paso 2.9 Parte B dice que es siempre
+  // `filasCrudas` completo y que los conteos informativos cuentan sobre TODO. Se calcula
+  // un vector de inclusión paralelo, así los índices siguen alineados con
+  // `filasCrudasDisplay` (que la rama `filtrar` indexa por posición) y los conteos
+  // viejos siguen significando lo mismo.
+  var listaBlanca = filtrosValoresIncluidos_(baseId, hoja.getName());
+
+  // Para y avisa antes de filtrar: una coma que era parte de un valor, no un separador.
+  for (var f = 0; f < listaBlanca.length; f++) {
+    if (comaDentroDeUnValor_(filasDatos, listaBlanca[f])) {
+      return {
+        ok: false,
+        base_id: baseId,
+        motivo: 'MAPEO.valores_incluidos de "' + listaBlanca[f].etiqueta + '" tiene una coma que ' +
+          'parece parte del valor y no un separador: "' + listaBlanca[f].declarado + '" existe como ' +
+          'valor de la columna, y alguno de los pedazos no. Partirla filtraría de menos en silencio.'
+      };
+    }
+  }
+
+  var incluida = [];
+  var excluidasPorValor = {};
+  var filasExcluidas = 0;
+  filasDatos.forEach(function (fila, j) {
+    var veredicto = filaPasaListaBlanca_(fila, listaBlanca);
+    incluida[j] = veredicto.pasa;
+    if (!veredicto.pasa) {
+      filasExcluidas++;
+      var etiqueta = veredicto.valor === '' ? '(vacío)' : veredicto.valor;
+      excluidasPorValor[etiqueta] = (excluidasPorValor[etiqueta] || 0) + 1;
+    }
+  });
+
   var resultado = {
     ok: true,
     base_id: baseId,
     hoja: hoja.getName(),
     modo: modo,
+    filas_excluidas_por_valor: filasExcluidas,
+    excluidas_por_valor: excluidasPorValor,
+    // Un valor declarado que no aparece en ninguna fila es casi siempre un tipeo
+    // ('Implementadoo'), y sin este conteo se manifiesta como filas que faltan.
+    valores_declarados_sin_filas: valoresDeclaradosSinFilas_(filasDatos, listaBlanca),
     fila_encabezado: filaEncabezado,
     columna_fecha: null,
     ventana_aplicada: null,
@@ -361,7 +529,7 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
   };
 
   if (modo === 'snapshot') {
-    resultado.filas = filasDatos.map(filaAObjeto);
+    resultado.filas = filasDatos.filter(function (fila, j) { return incluida[j]; }).map(filaAObjeto);
     resultado.filas_en_ventana = resultado.filas.length;
     return resultado;
   }
@@ -393,6 +561,7 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
   var hastaStr = Utilities.formatDate(ventana.hasta, ssTz, 'yyyy-MM-dd');
 
   filasDatos.forEach(function (fila, j) {
+    if (!incluida[j]) return; // Paso 2.16: excluida por lista blanca, ya contada arriba
     var crudo = fila[idxFecha];
     if (celdaVacia_(crudo)) {
       var mostrado = filasCrudasDisplay[j][idxFecha];
