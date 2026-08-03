@@ -1679,3 +1679,74 @@ nadie más.
   - **Si algún día se suma `En agenda`:** en la base viva está escrito **`en agenda`, en
     minúscula**, y `R-10` compara sin plegar mayúsculas. Con la capitalización equivocada esas
     6 filas se excluirían en silencio.
+
+## Paso 2.5 — Parte 0 corrida, y **para**: la plantilla canónica de JM sigue sin armonizar (2026-08-03) — commit de esta entrada
+- **Qué pedía:** arrancar el `Paso-2.5` por su Parte 0, que es verificación de premisas, sólo
+  lectura, "reportar y **PARAR**".
+- **Qué se hizo — las cuatro premisas, verificadas contra el estado de hoy:**
+  - **0.1 · El bloqueo — ❌ NO cerró. Es el que para el paso.** El prompt dice que no arranca
+    hasta que la armonización de la JM canónica esté verificada. **No lo está.**
+    `inventariarPresentacion_('jm', '117I0qn1…')` encuentra **los cinco tokens viejos** de
+    `TOKENS_VIEJOS_DIAGNOSTICO_` —`enc_audiencia_ivr`, `enc_audiencia_pauta`, `enc_clics`,
+    `rrss_prom`, `m2_clics_a`— más el literal `135` suelto. `docs/TOKENS.md` lo dice en su
+    encabezado con estas palabras: *"No sembrar `MARCADORES` asumiendo que las plantillas ya
+    están armonizadas"*. **Y el número real es peor que el que devuelve el diagnóstico:**
+    esa lista es una **muestra de cinco**, no un censo; la lista de renombres de JM
+    (`RENOMBRES_ARMONIZACION_POR_INFORME_`) tiene **23 entradas**. Sembrar ahora es crear
+    hasta 23 filas destinadas a cambiar de nombre, y deshacerlo es a mano.
+    **Quién lo destraba:** el `P1` de la caja `{{m2_salud_camp}}` huérfana, que es **decisión
+    del usuario y no criterio técnico** (`C-01`: la plantilla es del equipo) — o la caja es
+    un sobrante y se borra, o el renombre `m2_camp4`→`m2_salud_camp` sale del diccionario.
+    Aplicarlo con la caja ahí deja **dos cajas con el mismo token**, que es la regresión de
+    `enc_audiencia` otra vez.
+  - **0.2 · `INFORMES.plantilla_id` — ✅ resuelto hoy**, en la entrada de más arriba. Era el
+    bloqueo que la auditoría del 03/08 había marcado como vencido y bloqueante.
+  - **0.3 · El choque con el `Paso-2.13` — ✅ resuelto** por `D-17` el 02/08. Sin cambios.
+  - **`D-20` no afecta a este paso, contra lo que suponía la auditoría.** El `Paso-2.5`
+    escribe `periodo_ref` **vacío** y deja la cadena para el Paso 3. Con la cadena de cinco
+    eslabones, `MARCADORES.periodo_ref` es el segundo y vacío significa "pasá al siguiente":
+    exactamente lo que el prompt ya hace. **No necesita addendum por `D-20`.**
+- **Prueba:** ninguna, es sólo lectura. **No se tocó una línea de código ni de `MARCADORES`**,
+  que sigue con sus 3 filas de ejemplo.
+- **Pendientes/decisiones:** el `Paso-2.5` queda **trabado por una decisión del usuario** —
+  la caja `{{m2_salud_camp}}`—, no por trabajo de Code. Es el mismo bloqueo que ya estaba
+  escrito en `PENDIENTES` y en el encabezado de `TOKENS.md`; lo nuevo es que ahora está
+  **medido contra la plantilla viva**, y que `SECCO` **sí** está armonizada (cero tokens
+  viejos de la muestra), así que el bloqueo es de JM, que es justo el informe del Tramo 2.
+
+## Doc — auditoría de premisas del `Paso-2.13`: sirve, con una premisa vencida (2026-08-03) — commit de esta entrada
+- **Qué pedía:** auditar las premisas del `Paso-2.13` y dar veredicto, **sin ejecutarlo**.
+- **Veredicto: sirve como está, con una premisa vencida en la Parte 4 y tres números
+  corregidos.** Las correcciones van **en el lugar**, que es lo que su propio encabezado
+  declara para este prompt (nunca ejecutado, no lleva addendum).
+- **Qué se verificó, parte por parte:**
+  - **Parte 1 — anulada** por `D-17` desde el 02/08, ya estaba dicho en el prompt. Sigue en
+    pie su cola: `MARCADORES` tiene **3 filas** contra las trazas del CSV (`H-6`), y la
+    exportación a `docs/_snapshots/` antes de que nada la escriba — hecha hoy como parte del
+    snapshot previo a "Aplicar".
+  - **Parte 2 — vive, con dos números mal.** `MAPEO` tiene **121** filas, no 113. Y el CSV:
+    **las 48 filas tienen traza completa**, medido con un parser que respeta comillas. El
+    **43 es correcto por otro motivo** — la columna `estado` da `exacto` 37, `deriva` 6,
+    `sin_fuente` 5, y 48 − 5 = 43. El corte no es *"tiene traza"* sino **`estado !=
+    sin_fuente`**, y como está escrito el criterio de aceptación pide declarar cinco casos
+    que el propio CSV marca sin fuente. La premisa de `m2` **sigue viva**: de sus 19 filas,
+    8 apuntan a `M2 periodo DIRECTA` y 6 a `M2 periodo DIGITAL` (las dos `referencia`) y 5 a
+    `Cuentas` (`ignorar`, que es el `P1` abierto).
+  - **Parte 3 — vive entera y es la más filosa.** El cruce de `enc_mails_enviados` sigue tal
+    cual en `TOKENS.md`. Y `MARCADORES` **hoy tiene dos de sus tres filas con
+    `informe_id = '*'`** (`ecv_inscriptos`, `camp_alcance`): el guardarraíl que esta parte
+    pide no es hipotético.
+  - **Parte 4 — ⚠ premisa vencida.** Manda agregar el cuadro de "una fuente por cosa" a
+    `PROYECTO.md` §9, y **`PROYECTO.md` está congelado desde el 01/08** (`DOC-6` Parte E).
+    Esa pregunta la heredó **`CLAUDE.md` §7**, que ya tiene el cuadro con más filas. **La
+    tarea no hay que rehacerla: está hecha en otro lado.** Y el criterio *"`docs/` baja de 23
+    a 22"* no se puede evaluar: hoy hay **27** `.md`. Lo que sí sigue en pie es archivar
+    `docs/MAPEO_completo.md`. La otra mitad —una línea de "qué gobierna" en cada `.md`—
+    **conviene decidirla antes de hacerla**: `DOC-6` decidió después de este prompt que **§7
+    es el único índice**, y una línea por archivo sería la segunda lista, que es justo lo que
+    esa regla vino a evitar.
+- **Prueba:** ninguna, es documental. Verificado contra la hoja viva (snapshot del 03/08), el
+  CSV, `Instalar.gs` y `CLAUDE.md` §7.
+- **Pendientes/decisiones:** ninguna nueva. `MARCADORES` **ya está en `COLUMNAS_DELTA_`**, así
+  que la columna `verificado_por` de la Parte 2 tiene el mecanismo correcto disponible — y va
+  **al final del array**, por lo que midieron el `2.15` y el `2.16`.

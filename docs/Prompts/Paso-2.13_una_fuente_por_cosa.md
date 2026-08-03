@@ -89,6 +89,27 @@ publicado del 31/07. Son lo único comprobado contra datos vivos en todo el sist
 `MAPEO` tiene 113 filas, ninguna verificada. Se superponen y en varios puntos se
 contradicen — `MAPEO` sigue apuntando `m2` a `M2 periodo DIRECTA`, que ya es `referencia`.
 
+> **Corrección mecánica del 03/08/2026 (auditoría de premisas, sin ejecutar el paso).** Dos
+> números del párrafo de arriba y una definición:
+>
+> - **`MAPEO` tiene 121 filas**, no 113. El cuadro del encabezado de este prompt ya estaba
+>   corregido; este párrafo se había quedado atrás.
+> - **Las 48 filas del CSV tienen traza completa, las 48.** Medido con un parser que respeta
+>   las comillas: ninguna tiene vacío ni `base`, ni `solapa`, ni `clave`, ni `columna`, ni
+>   `operacion`. **El 43 es correcto pero por otro motivo**: la columna `estado` da `exacto`
+>   37, `deriva` 6, `sin_fuente` 5 — y 48 − 5 = 43. O sea que el corte no es *"tiene traza"*
+>   sino **`estado != sin_fuente`**. Importa para el criterio de aceptación de esta parte: si
+>   se lee al pie de la letra, pide declarar en `MARCADORES` cinco casos que el propio CSV
+>   marca como sin fuente, y eso no se puede cumplir.
+> - **La premisa de `m2` sigue viva:** de las 19 filas de `m2` en la hoja, 8 apuntan a
+>   `M2 periodo DIRECTA`, 6 a `M2 periodo DIGITAL` y 5 a `Cuentas`. Las dos primeras son
+>   `referencia` y la tercera es `ignorar` — ese último grupo es el `P1` de `m2/Cuentas` de
+>   `PENDIENTES`.
+> - **Buena noticia para la tarea 1:** `MARCADORES` **ya está en `COLUMNAS_DELTA_`**
+>   (`Instalar.gs`), así que agregarle `verificado_por` tiene el mecanismo correcto
+>   disponible. **Va al FINAL del array**, por lo que midieron el `2.15` y el `2.16`: una
+>   entrada nueva adelante correría los índices de las tres que ya están.
+
 ### La regla de reconciliación
 
 1. Donde el CSV y `MARCADORES`/`MAPEO` difieren, **gana el CSV**. Está verificado; el otro
@@ -177,3 +198,27 @@ esa línea es narrativo por defecto.
 
 Ningún `.md` de `docs/` describe de dónde sale un dato sin decir que la fuente es
 `MARCADORES`/`MAPEO`. `docs/` baja de 23 a 22 archivos.
+
+> **Premisa vencida — corrección del 03/08/2026 (auditoría, sin ejecutar el paso).** Esta
+> Parte 4 es la única del prompt con una premisa que **caducó**, y es de la clase que
+> `CLAUDE.md` §4 manda parar antes de la primera edición:
+>
+> - **`PROYECTO.md` está CONGELADO desde el 01/08/2026** (`DOC-6` Parte E). No se le agrega
+>   un cuadro. La pregunta *"¿quién es dueño de qué?"* la heredó **`CLAUDE.md` §7**, que ya
+>   tiene ese cuadro en forma de tabla y con más filas que el de acá — incluidas las que este
+>   prompt no contemplaba (`ESCRITORES.md`, `PENDIENTES`, `ENTORNO.local.md`). **La tarea no
+>   hay que rehacerla: ya está hecha en otro lado.** Lo que queda vivo de esta parte es la
+>   segunda mitad: que cada `.md` normativo diga en su encabezado qué gobierna.
+> - **`docs/` tiene 27 `.md` hoy, no 23.** El criterio "baja de 23 a 22" no se puede evaluar
+>   como está escrito. Lo que sí se puede: **archivar `docs/MAPEO_completo.md`**, que sigue
+>   en `docs/` y sigue siendo el duplicado que esta parte identifica — `CLAUDE.md` §7 ya lo
+>   clasifica como *evidencia congelada*, no como dueño de ninguna pregunta.
+> - **La línea "qué gobierna" en el encabezado de cada `.md` no está, y probablemente ya no
+>   corresponda.** Greppeado: `docs/TOKENS.md` **no** tiene la línea *"Normativo para… No
+>   normativo para…"* que esta parte le pide — su encabezado es la advertencia de que las
+>   plantillas todavía no están armonizadas. Pero la pregunta *"¿cómo se llama este token?"*
+>   **ya está asignada a `TOKENS.md` en `CLAUDE.md` §7**, y `DOC-6` decidió después de este
+>   prompt que **§7 es el único índice**, justamente para no mantener a mano dos listas del
+>   mismo repo. Una línea por archivo sería la segunda lista. **Antes de escribirla, decidir
+>   si se quiere** — no es una tarea mecánica pendiente, es una decisión que el `DOC-6` ya
+>   inclinó para el otro lado.

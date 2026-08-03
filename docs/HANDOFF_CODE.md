@@ -3,148 +3,143 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-03 (prompts del Tramo 2 reemplazados) · último commit al escribirlo: el de esta entrada
+**Última actualización:** 2026-08-03 (sesión nocturna: las cuatro respuestas del usuario, el
+`Paso-2.5` parado en su Parte 0 y la auditoría del `2.13`) · último commit al escribirlo: el
+de esta entrada
 
 ## Dónde estamos
 
-**El Tramo 1 está cerrado.** Los siete ítems salieron; el último fue el `Paso-2.16`.
+**El Tramo 1 está cerrado. El Tramo 2 sigue sin arrancar, y ahora se sabe por qué.** El
+bloqueo que se creía único —`INFORMES.plantilla_id` vacío— **se resolvió**, y detrás apareció
+otro que no es de Code: **la plantilla canónica de JM sigue sin armonizar**.
 
-**El `Paso-2.16` no hizo lo que decía su título.** Su Parte A mostró que **no había ningún
-`m2` que activar**: las 19 filas de `MAPEO` de `m2` están duplicadas en `digital` campo por
-campo, ninguna apunta a una solapa `fuente`, y la única solapa `fuente` que `m2` tiene
-(`Cuentas M2`) no está mapeada. De los tres cambios, **(a)** se descartó —`filtrar` sin
-`fecha_periodo` habría roto toda lectura de `m2`—, **(b)** ya existía en la solapa correcta
-(`digital/Directa Mail.fecha_periodo` = F) y **(c)** fue todo el paso.
+**Los tres prompts del Tramo 2 quedaron alineados.** `Paso-3-v3`, `Paso-4` (con su Addendum 1
+anexado hoy) y `Paso-5-v2`. El choque de firma entre el 4 y el 5 está cerrado: `periodo_id`
+es **parámetro opcional** de `generarInforme` y manda la cadena de `D-20`.
 
-**Lo que se construyó es más útil que lo que se pedía:** el **filtro declarativo por valor
-de columna** (`D-21`). `MAPEO.valores_incluidos` declara qué valores entran; lo que no está
-declarado queda afuera **y se cuenta**. La primera aplicación es `digital/Directa Mail`:
-**2114 → 2073 filas**, con 41 excluidas (`Proyectado` 30, vacío 11).
+**Las cuatro decisiones del usuario del 03/08 están ejecutadas**, cada una con su medición:
 
-**Medición de `D-01`: +253 / −5 líneas de `.gs`** en cuatro archivos. El renglón de "por qué
-hubo que tocar código" es uno solo y es reusable: **el motor no tenía forma declarativa de
-excluir filas por valor**.
+1. **Plantillas — hecho.** `jm` → `117I0qn1…` (`JM_marcada`, 22 slides, 158 tokens),
+   `secco` → `1_ZKjWhL…` (`SECCO_marcada`, 29 slides, 119 tokens). Las dos son Google Slides
+   nativas, dueño `reporteseinformesgcba`, verificadas contra la carpeta. La declaración de
+   `Armonizar.gs` (`117I0qn1…` canónica, `1JrHvs_p…` obsoleta) **seguía siendo cierta**, y
+   los dos IDs salieron del `.gs`: viven en `SEED_INFORMES_` → `INFORMES`.
+2. **`D-21` — hecho, y esta vez sí se pudo medir.** `rdv/status = Realizada` declarado.
+   Entran **653 de 1362** filas; en la ventana de `CONFIG`, **16 → 13**.
+3. **`m2` en `MAPEO` — no se decide, con criterio fijado.** Se movió al `Paso-2.5` y el
+   criterio quedó escrito en `PLAN.md` §3.
+4. **Acceso de las bases — verificado.** Las cuatro con `reporteseinformesgcba` en `reader`.
+   Una excepción que **no es de rol**: `rdv` está compartida como `anyoneWithLink = writer`.
 
-Números de referencia, verificados por API al cerrar:
-`cambiadas 0 · agregadas 0 · migraciones 0 · solo_en_hoja 7 · protegidas (con diferencia) 0 ·
-protegidas (sin diferencia) 8 · sin cambios: sí`. `MAPEO` en 121 filas. Los **6 controles**
-de `Pruebas.gs` pasan, incluido `probarListaBlancaValores_`.
+Y `D-01` tiene su nota fechada: **deseable, no requisito**. No bloquea un paso ni obliga a
+rediseñar.
+
+## Trabado — y las dos cosas son del usuario
+
+1. **La plantilla canónica de JM sigue sin armonizar. Esto para el `Paso-2.5`.** Medido hoy
+   contra la plantilla viva: están los **cinco tokens viejos** de la muestra de diagnóstico
+   más el literal `135`, y la lista real de renombres de JM tiene **23 entradas**. Sembrar
+   `MARCADORES` ahora crea hasta 23 filas destinadas a cambiar de nombre.
+   **Lo destraba una decisión tuya, y son dos opciones excluyentes** (`P1` de la caja
+   `{{m2_salud_camp}}` huérfana, en `PENDIENTES`): o la caja es un sobrante y se borra de la
+   plantilla, o el renombre `m2_camp4`→`m2_salud_camp` sale del diccionario. **No se elige
+   por criterio técnico** — `C-01`, la plantilla es del equipo. Aplicarlo con la caja ahí
+   deja dos cajas con el mismo token, que es la regresión de `enc_audiencia` otra vez.
+   *(`SECCO` sí está armonizada. El bloqueo es de JM, que es el único informe del Tramo 2.)*
+2. **`CAMPANAS` sigue con las tres filas sin `periodo_id`** (`D-19`). No traba implementar el
+   `Paso-5-v2`, pero su `0.2` para ahí y no se puede probar. Curarlas es tarea tuya.
+
+**Nada de esto traba a los Pasos 3 y 4**, que ya no dependen de `plantilla_id`.
+
+## Esperando decisión tuya
+
+- **La caja `{{m2_salud_camp}}`** — ver arriba. Es la que más rinde: destraba el `Paso-2.5`,
+  y con él la decisión de `m2` en `MAPEO`.
+- **`rdv` compartida como `anyoneWithLink = writer`** (`P0` nuevo). El permiso explícito de
+  las cuentas del motor es `reader` y está bien puesto; el link lo pisa. Cualquiera con el
+  ID edita la base — y el ID está en un repo público. **No lo tocó Code**: es archivo de un
+  tercero (`brianbanderbek`) con catorce colaboradores, sacar el link puede romperle el
+  trabajo a alguien. Lo mínimo, si tiene que seguir existiendo: bajarlo de `writer` a
+  `reader`.
+- **`R-01` no se cumple: 5 grupos** con más de un encuentro por (Figura, fecha) en `rdv`.
+  **`anclarEncuentros()` no corre** mientras falle, así que el matcher está bloqueado. `R-01`
+  manda reportar el conteo y decidir con el equipo; está en "Preguntas al equipo".
+  **No lo causó `D-21`** — esa verificación no pasa por `leerFuente`.
+- **`CONFIG.periodo_hasta` = `03/07`** son ocho días inclusive y `R-11` fija siete. Confirmado
+  que es arrastre, no intención. **La celda no se toca: la corrige una persona.**
+- **Si algún día se suma `En agenda` a la lista blanca de `rdv`:** en la base está escrito
+  **`en agenda`, en minúscula**, y `R-10` compara sin plegar mayúsculas.
+
+## Esperando permiso
+
+**Ninguno.** No quedó ningún comando pendiente de aprobación. Un comando se frenó —una
+tanda de sondeos sobre la base `rdv`— y **no se reintentó**: la medición salió por otro
+camino, midiendo desde el motor una base a la vez.
 
 ## Qué sigue
 
-**El Tramo 2: los Pasos 3, 4 y 5, contra JM solo.** Los prompts vigentes son
-`docs/Prompts/Paso-3-v3.md`, `docs/Prompts/Paso-4.md` y `docs/Prompts/Paso-5-v2.md`. El
-`Paso-4` es el único de los tres que la auditoría del 03/08 dejó marcado como **addendum
-pendiente** —le falta absorber la impresión del período en la lámina, `D-19`/`D-20`, y la
-firma que no coincide con la del Paso 5—, así que **se revisa antes de ejecutarlo**. El
-Paso 3 arrastra cinco cosas ya decididas y sin implementar, todas anotadas en `PLAN.md` §2
-y ahora también en el `v3`:
+**El Tramo 2, por los Pasos 3 y 4**, que no dependen de la armonización. El `Paso-2.5` queda
+en pausa hasta la decisión de la caja huérfana.
 
-1. **`D-20`** — el período por sección: la columna en `SECCIONES` (que **entra a
-   `COLUMNAS_DELTA_` antes** de que se toquen sus `headers`), el eslabón en la cadena
-   `campaña > marcador > sección > CONFIG > semana`, y el cálculo del default de `R-11`,
-   que hoy no existe.
-2. **`R-12`** — ampliar la búsqueda de candidatos antes de declarar `sin_link`, con los dos
-   valores de ventana a `CONFIG`.
-3. **El empate técnico** del match, que `DISENO_match_temario.md` §6.4 declara y ningún
-   código implementa.
-4. **Migrar `status = Realizada`** de `Union.gs` a `MAPEO.valores_incluidos` — ver abajo,
-   tiene una decisión pendiente adelante.
-5. El filtrado por período que `D-19` habilitó (`Paso-2.15` B.5).
-
-## Decisiones esperando al usuario
-
-Ninguna bloquea el Tramo 2; las cuatro se pueden resolver cuando toque.
-
-- **`rdv/status` quedó sin declarar, contra lo planeado.** El plan era declarar
-  `Realizada` ahora y migrar el consumidor en el Paso 3, pero al verificar apareció que con
-  este diseño **declarar es conectar**: `leerFuente` aplica toda lista blanca declarada, así
-  que cargar la celda cambiaría en el acto lo que ve *cualquier* lectura de `rdv`, no sólo
-  el matcher de `Union.gs` —que ya filtra por su cuenta—. No pude medir el impacto porque
-  `leerFuente` no acepta una ventana por API (`Utilities.formatDate` rechaza strings), así
-  que **tomé la decisión conservadora de no activarlo**. Está en `D-21` y en la bitácora.
-- **Qué pasa con `m2`**: si se despide de `MAPEO` —las 19 filas duplicadas, incluidas las 5
-  que violan el invariante de `ignorar`— o si se mapea `Cuentas M2` y `m2` se queda sólo con
-  lo suyo. Es probablemente un `D-NN`.
-- **El acceso de `reportes` a las cuatro bases es `writer`, no lector**, y los dueños son
-  terceros (`brianbanderbek`, `tarnowski.jp`, `dgples.comunicacion`). Bajarlo a lector es
-  una acción tuya sobre Drive. Conviene decidirlo antes del Paso 4.
-- **`CONFIG.periodo_hasta` = `03/07`** son ocho días inclusive y `R-11` fija siete. Ya está
-  confirmado que es arrastre, no intención, pero **la celda no se toca**: la corrige una
-  persona. No bloquea nada hasta el Paso 3.
+- **`Paso-3-v3`** — su Parte 0 verifica siete premisas y para. **El agujero más probable**:
+  da por hecho un proveedor de datos de `digital` que debía dejar el `Paso-2.4`.
+- **`Paso-4`** — ya tiene su Addendum 1. Ojo con dos cosas que el addendum deja anotadas: el
+  período se imprime **inclusive en los dos extremos** y es **el que se usó**, no el de
+  `CONFIG`; y el deck generado queda con **la cuenta que ejecuta** como dueño, aunque caiga
+  en la carpeta de reportes — hay que reportar quién queda como dueño del primero.
+- **`Paso-5-v2`** — implementable; probable sólo con una fila de `CAMPANAS` curada.
+- **Paso del matcher (`Union.gs`), sin escribir.** Junta `R-12`, los dos valores de ventana a
+  `CONFIG`, el empate técnico del match, el retiro de `VALOR_STATUS_REALIZADA_` —que hoy
+  filtra dos veces por lo mismo— y la asimetría de `verificarPrecondicionAnclaje_`, que lee
+  con `getDataRange()` directo y por eso **no ve la lista blanca**: cuenta duplicados de
+  `R-01` sobre filas que el matcher nunca va a mirar.
 
 ## Qué mirar antes de tocar algo
 
+- **`upsertPorClave_` reescribe la fila entera, y ya se cobró una** (`PENDIENTES`, ahora
+  `P0`). `INFORMES.plantilla_id` llegó vacío al 03/08 **aunque se había cargado el 30/07**:
+  el seed lo declaraba `''` y cada "Aplicar configuración" lo borraba. **`SOLAPAS` está
+  expuesta hoy** por la misma vía: `firma_encabezado`, `filas_datos` y `filas_crudas` no
+  están en los objetos del sembrador, así que la próxima corrida que cambie algo de una fila
+  las borra — **65 de 84 filas** las tienen pobladas. **No se tocó la maquinaria**: es de
+  cinco hojas y el arreglo cambia la semántica de todas. Regla mientras tanto: **una columna
+  nueva se agrega al `SEED_*` con su valor real, nunca con `''`.**
+- **El registro automático de plantillas no sirve para esta carpeta** (`P0` nuevo). La
+  canónica de JM **no aparece al listar** —desde `DriveApp` y desde la Drive API, por padre y
+  por nombre— y se abre perfecto por ID; el recorrido **baja a `_backups`**, donde vive la
+  obsoleta. Con las celdas vacías habría cargado la obsoleta. Hoy, cargadas, devuelve 7
+  conflictos y sirve de diagnóstico. **La carpeta de salidas es hija de la de plantillas**,
+  así que cuando el Paso 4 deje decks ahí, el registro los va a ver como candidatos.
+- **Una respuesta grande no vuelve por `/dev`, y se disfraza de token vencido.** Medido:
+  `ping` en 33 ms y `probarLecturaPeriodo()` fallando cuatro veces seguidas, alternando 404 y
+  página de login con HTTP 200. No era el token ni el endpoint: eran las miles de filas de la
+  respuesta. **Antes de sospechar, mirar el tamaño de lo que se pidió.** La salida es pedir
+  menos: `contarLecturaBase_(baseId)` (`Fuentes.gs`, nuevo hoy) da los mismos conteos de una
+  base y sin las filas.
 - **El diff no ve los valores de `CONFIG`** (`PENDIENTES`, `P1`). Para cambiar un valor:
   vaciar la celda y sembrar, o editarla a mano y actualizar el seed en el mismo commit.
-- **`upsertPorClave_` reescribe la fila entera** (`PENDIENTES`, `P1`). El día que alguien le
-  ponga sembrador a `CAMPANAS` sin incluir `periodo_id`, la curaduría se borra sola.
-- **Tres significados distintos de una celda vacía**, a propósito: `D-19` (la fila no
-  entra), `D-20` (usa el default), `D-21` (no hay filtro). Están escritos uno al lado del
+- **Tres significados distintos de una celda vacía**, a propósito: `D-19` (la fila no entra),
+  `D-20` (usa el eslabón siguiente), `D-21` (no hay filtro). Están escritos uno al lado del
   otro para que nadie los unifique.
 - **El repo es público y expone 14 IDs internos** (`PENDIENTES`, `P0`). Decidido: sigue
-  público, se revisa al llegar a producción o a una versión de prueba.
-- **`/dev` alternó 404 y página de login durante toda la verificación del 2.16**, con el
-  token válido y los 21 `.gs` parseando bien. Se perdió el reporte de una corrida de
-  `Aplicar` —la llamada se ejecutó pero la respuesta no volvió— y hubo que verificar el
-  estado leyendo la hoja. **Reintentar tres veces antes de sospechar del código**, y usar el
-  atajo de `new vm.Script` que documenta el RUNBOOK.
+  público, se revisa al llegar a producción o a una versión de prueba. El sub-ítem de
+  `PLANTILLA_JM_CANONICA_` **se cerró hoy**; lo que cierra es la duplicación, no la
+  exposición.
 
-## Auditoría de premisas de los prompts sin ejecutar (03/08/2026)
+## Números de referencia, verificados hoy por API
 
-Corrida sobre los seis que el cruce designador↔`BITACORA` da como no ejecutados. Los dos
-`prompt-consolidar-*` **sí corrieron** (su contenido está vivo en los `CLAUDE.md`); escapan
-al cruce por no tener designador, como pasó con `MENU_declarado_por_tabla`. **`DOC-7` corrió
-y no dejó entrada en la bitácora** — el mismo hueco que él mismo encontró.
+`cambiadas 0 · agregadas 0 · migraciones 0 · solo_en_hoja 7 · protegidas (con diferencia) 0 ·
+protegidas (sin diferencia) 8 · sin cambios: sí` — idénticos a los del cierre del `2.16`.
+`MAPEO` en 121 filas, `MARCADORES` en 3. Los **6 controles** de `Pruebas.gs` pasan, corridos
+tres veces a lo largo de la sesión: después de las plantillas, después de `D-21` y al cerrar.
 
-**Un bloqueo tapa a los cuatro primeros: `INFORMES.plantilla_id` está vacío en la hoja
-viva**, en `jm` y en `secco`. Sin eso no hay de dónde leer tokens ni qué copiar. Es una
-tarea del usuario y no la puede hacer Code: los IDs de las plantillas están en el repo
-(`1JrHvs_p…` JM, `1_ZKjWhL…` SECCO) pero cargarlos es una decisión sobre cuál es la canónica.
+## Estado de los prompts sin ejecutar
 
-| prompt | veredicto | por qué |
-|---|---|---|
-| `Paso-2.5` | **addendum** | 0.2 vencida y bloqueante (`plantilla_id` vacío). 0.1 sigue trabado: el `P1` de la caja `{{m2_salud_camp}}` huérfana sigue abierto en `PENDIENTES`. 0.3 correcto (`D-17`). Falta absorber que la cadena de período pasó a cinco eslabones (`D-20`) |
-| `Paso-2.13` | **sirve como está** | Su Parte 1 ya está anulada en el lugar por `D-17`. Partes 2-4 intactas. Sólo se corrigió el número de filas de `SEED_MAPEO_` |
-| ~~`Paso-3-v2`~~ → `Paso-3-v3` | **reescrito 03/08** | Su Parte C punto 2 decía *"resuelve la ventana en tres capas"* y hoy son cinco (`D-20` Addendum 1). No era un addendum: la Parte C es el despachador y la cadena es su núcleo. El `v3` (`docs/Prompts/Paso-3-v3.md`) absorbe los cinco eslabones, la columna de período en `SECCIONES`, el cálculo del default de `R-11`, `D-19` y `D-21` (el filtrado por valor ya lo hace el lector). **Sin ejecutar**: su Parte 0 verifica siete premisas y para |
-| `Paso-4` | **addendum** | `A.2` ya estaba cumplida y se tachó. Falta absorber: **imprimir el período en la lámina** (`PLAN.md` §2 lo asigna a este paso y el prompt no lo menciona), `D-19`/`D-20`, y que su firma `generarInforme(informe_id, periodo_id)` no coincide con la del `Paso-5` |
-| ~~`Paso-5`~~ → `Paso-5-v2` | **reescrito 03/08** | Filtraba `CAMPANAS` por `informe_id` + `mostrar=sí` **sin `periodo_id`**: con `D-19` esas filas no entran a ningún informe, así que como estaba emitiría campañas que la decisión excluye. El `v2` (`docs/Prompts/Paso-5-v2.md`) agrega el filtro, obliga a reportar las excluidas con su motivo, y su `0.2` para si las tres filas siguen con `periodo_id` vacío — curarlas es tarea del usuario. **Sin ejecutar** |
-| `DOC-8` | **sirve como está** | Sus tres ejemplos de `A.2` se verifican: el acceso de reportes ya se resolvió, el tercer informe sigue como no prioritario. `docs/AVANCE.md` está libre y `CLAUDE.md` §7 no reclama esa pregunta. Dos cosas a mirar al ejecutarlo, abajo |
-
-**Los dos "hay que reescribirlo" ya volvieron** (03/08, entregados por claude.ai):
-`docs/Prompts/Paso-3-v3.md` y `docs/Prompts/Paso-5-v2.md`. `Paso-3-v2.md` y `Paso-5.md`
-quedaron en `docs/Prompts/_archivo/`. **`Paso-3.md` no se archivó porque ya estaba
-archivado**: vive en `Plan Inicial/_archivo/Prompts/Paso-3.md` desde el commit `a0dab72`,
-así que el pedido del `v3` de "archivá los dos" se cumple con uno solo. Cero ediciones, y
-se registra el cero (`CLAUDE.md` §3).
-
-**Hallazgos que no son de un prompt solo:**
-
-- **La regla de derivación de `DOC-8` A.3 no cubre todas las filas de `PLAN.md` §3.** Hoy
-  hay **4** filas con `depende de ∈ {equipo, tercero}` —las que la regla manda a "Qué nos
-  frena"—, **2** `interno` y **1** `usuario`. Esa última (*"Tercer informe"*) **no encaja en
-  ninguna categoría** de la regla. `DOC-8` pide explícitamente reportarlo si pasaba.
-- **`DOC-8` A.1 mete el ID del Doc de conducción en el repo**, que es el caso 14 del `P0` de
-  direccionabilidad, y su `C.3` propone además escribirlo en el `RUNBOOK`. Con el repo
-  público, conviene decidir eso junto con el `P0`.
-- **`Paso-5` corrobora los valores vivos de `CAMPANAS.tipo`** (`destacada`,
-  `encuentro_ministros`, `proveedor`), o sea que **los desactualizados son el seed y el
-  comentario de `Instalar.gs`**, no la hoja. Refuerza el `P2` ya abierto.
-- **Ningún prompt cita un `D-NN`, `R-NN` o `S-NN` que no exista.** Se verificaron `D-01`,
-  `D-03`, `D-06`, `D-07`, `D-09`, `D-12`, `D-17`, `C-01`, `R-04`, `R-08`, `R-10` y `S-02`:
-  los doce resuelven. Las citas rotas eran a **líneas de archivo**, no a IDs.
-
-## Trabado
-
-Nada de código. **La reescritura de los dos prompts ya no traba nada**: `Paso-3-v3` y
-`Paso-5-v2` están en el repo, sin ejecutar. Queda una sola cosa del usuario para arrancar
-el Tramo 2: **cargar los dos `INFORMES.plantilla_id`**, hoy vacíos en `jm` y en `secco`,
-que tapan a los Pasos 3, 4 y 5. La segunda, que traba la prueba del Paso 5 pero no su
-implementación, es **curar el `periodo_id` de al menos una fila de `CAMPANAS`** (`D-19`):
-si las tres siguen vacías, el `0.2` del `Paso-5-v2` para ahí.
-
-## Comandos que quedaron sin aprobar
-
-Uno solo, y no bloqueó nada: un `ls | sed` para listar los prompts. Se resolvió con las
-herramientas de búsqueda dedicadas, que además es lo que corresponde. **No quedó ningún
-comando pendiente de aprobación.**
+| prompt | estado al 03/08 (noche) |
+|---|---|
+| `Paso-2.5` | **Parte 0 corrida y PARADO.** `0.2` resuelta hoy, `0.3` resuelta por `D-17`, `D-20` no lo afecta. **`0.1` no cerró** y lo destraba una decisión del usuario |
+| `Paso-2.13` | **sirve como está**, auditado hoy. Una premisa **vencida** en la Parte 4 (`PROYECTO.md` congelado; la pregunta la heredó `CLAUDE.md` §7) y tres números corregidos en el lugar. Partes 2 y 3 vivas |
+| `Paso-3-v3` | vigente, sin ejecutar. Su Parte 0 para si falta el proveedor de `digital` |
+| `Paso-4` | vigente **con Addendum 1** (03/08), sin ejecutar |
+| `Paso-5-v2` | vigente, sin ejecutar. Su `0.2` para si `CAMPANAS` sigue sin `periodo_id` |
+| `DOC-8` | sirve como está. Dos cosas a mirar al ejecutarlo, en la bitácora del 03/08 |

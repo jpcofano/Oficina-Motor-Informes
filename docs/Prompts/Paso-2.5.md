@@ -32,6 +32,24 @@ plantillas (`Paso-2.2.2` Parte D, sobre la JM canónica) esté verificada. **Ver
 `BITACORA.md` si cerró.** Si no cerró, este paso no arranca: sembrar antes es sembrar ~200
 filas de tokens que todavía pueden cambiar de nombre, y deshacerlo es a mano, fila por fila.
 
+> **Corrido el 03/08/2026 — ❌ NO cerró, y es lo que para el paso.** Verificado contra la
+> plantilla viva, no contra la bitácora: `inventariarPresentacion_('jm', '117I0qn1…')`
+> devuelve **los cinco tokens viejos** de `TOKENS_VIEJOS_DIAGNOSTICO_` —`enc_audiencia_ivr`,
+> `enc_audiencia_pauta`, `enc_clics`, `rrss_prom`, `m2_clics_a`— más el literal `135` suelto.
+> El encabezado de `docs/TOKENS.md` dice lo mismo con todas las letras.
+>
+> **Y esa lista de cinco es una muestra, no un censo:** la lista de renombres real de JM
+> (`RENOMBRES_ARMONIZACION_POR_INFORME_`, `Armonizar.gs`) tiene **23 entradas**. Sembrar
+> ahora crea hasta 23 filas destinadas a cambiar de nombre.
+>
+> **Quién lo destraba, y no es Code:** el `P1` de la caja `{{m2_salud_camp}}` huérfana
+> (`docs/PENDIENTES_consistencia.md`). Son dos opciones excluyentes y es **decisión del
+> usuario**, no criterio técnico (`C-01`). Aplicar `m2_camp4`→`m2_salud_camp` con esa caja
+> ahí deja **dos cajas con el mismo token** — la regresión de `enc_audiencia` otra vez.
+>
+> **`SECCO` sí está armonizada** (cero tokens viejos de la muestra). El bloqueo es de **JM**,
+> que es justamente el único informe del Tramo 2.
+
 **0.2 · `INFORMES.plantilla_id`.** `SEED_INFORMES_` (`Instalar.gs`, buscar por nombre) los
 tiene vacíos. Verificar contra la planilla viva si la hoja los tiene cargados. Sin
 `plantilla_id` no hay de dónde leer tokens.
@@ -39,6 +57,12 @@ tiene vacíos. Verificar contra la planilla viva si la hoja los tiene cargados. 
 > **Verificado el 03/08/2026 (auditoría de premisas): la hoja viva también los tiene
 > vacíos**, en `jm` y en `secco`. Este paso **no puede correr**: la Parte A saltearía los dos
 > informes. El bloqueo es cargar los dos `plantilla_id`.
+>
+> **✅ RESUELTO el mismo 03/08, más tarde.** Los dos están cargados y los declara
+> `SEED_INFORMES_`, no la hoja sola: `jm` → `117I0qn1…` (`JM_marcada`, 22 slides, 158 tokens
+> distintos), `secco` → `1_ZKjWhL…` (`SECCO_marcada`, 29 slides, 119 tokens). Verificado con
+> `inventarioPlantillas()`, que las abre leyendo `INFORMES`. **Esta premisa ya no bloquea** —
+> la que bloquea es la 0.1.
 
 **0.3 · El choque con el `Paso-2.13` — ✅ RESUELTO el 02/08/2026. Ganan las plantillas.**
 
