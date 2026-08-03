@@ -619,6 +619,8 @@ function mapaDeTokens_(plantillaId, patron) {
   var contexto = [];
   var vecinos = [];
   var todosLosTokens = {};
+  var enFormaSuelta = {};
+  var slidesPorToken = {};
 
   function recorte_(texto, tope) {
     var limpio = String(texto || '').replace(/\s+/g, ' ').trim();
@@ -716,6 +718,13 @@ function mapaDeTokens_(plantillaId, patron) {
       encontrados.forEach(function (t) {
         tokensDeLaSlide[t] = true;
         todosLosTokens[t] = true;
+        // `contarTokensDistintos_` sólo mira `slide.getShapes()`, que son las formas de
+        // primer nivel — lo que acá se etiqueta `suelta`. Todo token que nunca aparezca
+        // en una `suelta` es invisible para ese conteo y para cualquier diagnóstico que
+        // lo use. Se anota para poder listarlos.
+        if (pieza.contenedor === 'suelta') enFormaSuelta[t] = true;
+        if (!slidesPorToken[t]) slidesPorToken[t] = [];
+        if (slidesPorToken[t].indexOf(i + 1) === -1) slidesPorToken[t].push(i + 1);
         if (!re.test(t)) return;
         coincidencias.push({
           token: t,
@@ -757,6 +766,20 @@ function mapaDeTokens_(plantillaId, patron) {
 
   var queCoinciden = Object.keys(todosLosTokens).filter(function (t) { return re.test(t); }).sort();
 
+  // Los que `contarTokensDistintos_` no ve: nunca aparecieron en una forma de primer nivel.
+  var invisibles = Object.keys(todosLosTokens).filter(function (t) { return !enFormaSuelta[t]; }).sort();
+  var invisiblesPorSlide = {};
+  invisibles.forEach(function (t) {
+    var clave = slidesPorToken[t].sort(function (a, b) { return a - b; }).join('+');
+    if (!invisiblesPorSlide[clave]) invisiblesPorSlide[clave] = [];
+    invisiblesPorSlide[clave].push(t);
+  });
+  var invisiblesTexto = Object.keys(invisiblesPorSlide).sort(function (a, b) {
+    return Number(a.split('+')[0]) - Number(b.split('+')[0]);
+  }).map(function (clave) {
+    return 'slide ' + clave + ': ' + invisiblesPorSlide[clave].join(' ');
+  });
+
   return {
     ok: true,
     id: plantillaId,
@@ -764,6 +787,9 @@ function mapaDeTokens_(plantillaId, patron) {
     slides_total: slides.length,
     tokens_distintos_total: Object.keys(todosLosTokens).length,
     tokens_que_coinciden: queCoinciden.join(' '),
+    tokens_en_forma_suelta: Object.keys(enFormaSuelta).length,
+    tokens_invisibles_al_conteo_viejo: invisibles.length,
+    invisibles_por_slide: invisiblesTexto,
     cajas: slidesConCoincidencia,
     contexto: contexto,
     vecinos: vecinos

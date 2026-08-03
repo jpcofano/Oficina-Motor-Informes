@@ -1794,3 +1794,47 @@ nadie más.
   decisión sigue siendo del usuario, ahora con tres opciones en vez de dos. Lo que falta para
   cerrar la tercera es el informe original publicado, o preguntarle al equipo qué mostraba
   esa línea a lo ancho.
+
+## Relevamiento — el material fuera de vista de la lámina M2, y los 81 tokens invisibles (2026-08-03) — commit de esta entrada
+- **Qué pedía:** (1) reportar, **sin interpretarlo**, qué decía el material fuera del área
+  visible de la slide 10, para saber si la caja ancha era un agregado; (2) si lo confirmaba,
+  renombrarla y proponer nombres; si no, **parar** — es del equipo (`C-01`); (3) anotar en
+  `PENDIENTES` que la colisión **no la crea el renombre, la revela**; (4) listar los 33
+  tokens que el conteo viejo no ve.
+- **Qué se hizo, y el punto 2 NO se ejecutó:**
+  - **1 · El material fuera de vista, transcripto tal cual.** La slide 10 tiene 51 textos sin
+    token; **18 están fuera de la lámina** (`y` negativo). Son **cuatro** bloques:
+    `Desalojo - 6 campañas` (Aud 1.101.777 · Imp 15.793.427 · Clics 73.181 · Vis 1.782.747),
+    `Avenidas porteñas - 1 campañas` (184.030 · 2.567.696 · 34.483 · 308.879),
+    `Puntos seguros - 1 campañas` (978.523 · 7.387.326 · 46.021 · `-`) y
+    `Estaciones de subtes - 3 campañas` (1.242.288 · 12.742.329 · 27.326 · `-`).
+    **Salud no aparece.** Los conteos suman **11 campañas**.
+  - **2 · NO alcanza para decidir, así que se paró y no se renombró nada.** Ese material
+    **no es el contenido de la caja ancha**: es un layout distinto y anterior donde cada eje
+    es un bloque vertical y **el conteo de campañas vive dentro del título**, no en una fila
+    aparte. En ese diseño **no existe ninguna caja a lo ancho**. Ninguno de los 18 textos
+    está a `y=356` ni tiene `w=513`, y **ninguno contiene un token**. La tercera opción sigue
+    siendo la lectura más plausible y sigue **sin confirmar**. Va al equipo, con la pregunta
+    concreta escrita en `PENDIENTES`.
+  - **3 · Anotado en `PENDIENTES`, y corrige la premisa de la entrada.** El texto original
+    dice que el renombre *crea* las dos cajas con el mismo token. **No las crea: las revela.**
+    La caja ancha ya estaba con ese nombre y en esa posición en la plantilla obsoleta, que es
+    anterior al diccionario. Por eso **ninguna de las dos opciones excluyentes es correcta**:
+    borrar la caja toca la plantilla del equipo sin saber qué mide, y sacar el renombre deja
+    a `m2_camp4` con nombre viejo para siempre por un choque que no es suyo.
+  - **4 · Los invisibles, listados por slide.** **JM: 33 de 191 (17%)** —
+    `ecv_barrio*` (slide 5), `camp1..camp4` (7), diez `camp_env*` (18), once `camp_resp*`
+    (19), cuatro `rrss_c*_pct` (21). Y se midió también **SECCO: 48 de 167 (29%)** —
+    `ecv_minutos` (5), seis `post_*` (10), los mismos `camp_env*` y `camp_resp*` (22 y 23),
+    once `conv_*` (25), nueve `rrss_*` (28).
+- **Prueba:** `tokens_en_forma_suelta` da **158** en JM, que es exactamente lo que reporta
+  `inventariarPresentacion_`; 158 + 33 = 191. Los 6 controles de `Pruebas.gs` pasan.
+- **Pendientes/decisiones — dos cosas nuevas que hay que resolver antes de que el `Paso-2.5`
+  siembre:**
+  - **`camp1`..`camp4` (JM slide 7) no tienen guión bajo.** La regla de familia del prompt
+    —*prefijo hasta el primer `_`; sin `_`, familia = el token entero*— los manda a **cuatro
+    familias de un miembro** en vez de a `camp`. Es la primera vez que la regla se topa con
+    un token sin `_`.
+  - **`post_*` (SECCO slide 10) es una familia que `INFORMES` no declara.** Las de `secco`
+    son `ecv,et,emin,m2,camp,conv,rep,rrss`. O falta `post`, o los seis tokens están mal
+    nombrados.

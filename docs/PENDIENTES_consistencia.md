@@ -352,7 +352,22 @@ criterio técnico (`C-01`: la plantilla es del equipo).
 
 > **Relevamiento del 03/08/2026 — sólo lectura, no se aplicó ningún renombre.** Hecho con
 > `mapaDeTokens_` (`Armonizar.gs`, nuevo), que recorre `getPageElements()` y baja a tablas y
-> grupos. **No cambia la decisión: la afina, y agrega una tercera opción.**
+> grupos.
+>
+> **⚠ Antes que nada: las dos opciones excluyentes del párrafo de arriba están mal
+> planteadas, y la premisa que las sostenía es falsa.** El texto original dice *"si además se
+> aplica el renombre… quedan dos cajas con el mismo token"*, o sea que el renombre **crea**
+> el problema. **No lo crea: lo revela.** La caja ancha ya existía **con el nombre
+> `m2_salud_camp` y en la misma posición exacta** en la plantilla obsoleta (`1JrHvs_p…`),
+> que es anterior. El conflicto de nombres está en la plantilla desde antes de que el
+> diccionario existiera; el renombre sólo lo pone a la vista al ocupar el mismo nombre desde
+> el otro lado.
+>
+> **Consecuencia:** ninguna de las dos opciones es correcta. *"Borrar la caja"* borra
+> contenido de la plantilla del equipo sin saber qué mide (contra `C-01`), y *"sacar el
+> renombre de la lista"* deja `m2_camp4` con nombre viejo para siempre por un choque que no
+> es suyo — y deja igual dos cosas distintas peleando por un nombre. La tercera opción está
+> abajo, en el punto 5.
 >
 > **1 · Sí hay un grupo de tokens nombrados por eje, y no es el que se buscaba.** En la
 > lámina M2 de la JM canónica (slide 10) conviven dos generaciones de nombres. La nueva son
@@ -398,10 +413,36 @@ criterio técnico (`C-01`: la plantilla es del equipo).
 > el ancho, la fila propia y el plural; lo que falta para confirmarla es el informe original
 > publicado, o preguntarle al equipo qué mostraba esa línea.
 >
-> **Dato suelto que puede ayudar a responderlo:** la slide 10 tiene material **fuera del
-> área visible** (`y` negativo) con datos reales del informe original — `Desalojo - 6
-> campañas`, `Avenidas porteñas - 1 campañas`, `Puntos seguros - 1 campañas`, con sus
-> Impresiones/Clics/Visualizaciones. Es lo más parecido al deck original que hay en el repo.
+> **6 · El material fuera del área visible, mirado a fondo — y NO alcanza para decidir.**
+> La slide 10 tiene 51 textos sin token; **18 de ellos están fuera de la lámina** (`y`
+> negativo) y son datos reales de un informe publicado. Transcriptos tal cual, en orden:
+>
+> | bloque | Audiencia | Impresiones | Clics | Visualizaciones |
+> |---|---|---|---|---|
+> | `Desalojo - 6 campañas` | 1.101.777 | 15.793.427 | 73.181 | 1.782.747 |
+> | `Avenidas porteñas - 1 campañas` | 184.030 | 2.567.696 | 34.483 | 308.879 |
+> | `Puntos seguros - 1 campañas` | 978.523 | 7.387.326 | 46.021 | `-` |
+> | `Estaciones de subtes - 3 campañas` | 1.242.288 | 12.742.329 | 27.326 | `-` |
+>
+> **Por qué no alcanza, y es la razón por la que esto se detiene acá:** ese material **no es
+> el contenido de la caja ancha**. Es un **layout distinto y anterior**, en el que cada eje
+> es un bloque vertical con su título y sus cuatro métricas, y **el conteo de campañas vive
+> dentro del título** (`Desalojo - 6 campañas`), no en una fila aparte. En ese diseño **no
+> existe ninguna caja a lo ancho**, así que no hay nada que diga qué se escribía en la de
+> `y=356`. Ninguno de los 18 textos está a esa altura ni tiene ese ancho, y **ninguno de los
+> elementos fuera de vista contiene un solo token**: son texto plano con valores pegados.
+>
+> **Lo único que el material sí establece, sin interpretarlo:** son **cuatro** bloques, no
+> cinco. Los nombres son `Desalojo`, `Avenidas porteñas`, `Puntos seguros` y
+> `Estaciones de subtes`. **Salud no aparece** — y Salud es justamente el eje del token en
+> disputa. Los conteos suman **6 + 1 + 1 + 3 = 11 campañas**.
+>
+> **Veredicto: no se renombra nada.** La tercera opción del punto 5 sigue siendo la lectura
+> más plausible y **sigue sin confirmarse**. Elegir un nombre para la caja exige saber qué
+> mide, y eso hoy sólo lo sabe el equipo, que es el dueño de la plantilla (`C-01`).
+> **Qué preguntarle al equipo, concreto:** en la lámina M2 del informe, la línea ancha
+> debajo del cuadro de cinco columnas, ¿qué decía — el total de campañas de M2, las campañas
+> de Salud, u otra cosa?
 
 ### P2 · El diagnóstico no distingue config vieja de config mal armada
 
@@ -1016,6 +1057,43 @@ para decidir si una plantilla está completa; **(2)** el `Paso-2.5`, que va a se
 prompt está bien y lo que falta es que el helper nuevo lo implemente. Si se implementara
 copiando `contarTokensDistintos_`, faltarían 33 filas de `MARCADORES` en JM sin que nada
 fallara. **`mapaDeTokens_` ya tiene el recorrido correcto y sirve de base.**
+
+**Los invisibles, uno por uno (03/08/2026), para saber si hay familias nuevas.**
+
+**JM — 33 de 191 (17%):**
+
+| slide | qué es la lámina | tokens |
+|---|---|---|
+| 5 | Encuentros: alcance semanal | `ecv_barrio1` `ecv_barrio2` `ecv_barrio3` `ecv_barrios` |
+| 7 | Benchmark VTR Post RDV | **`camp1` `camp2` `camp3` `camp4`** |
+| 18 | Directa: envío de mail | `camp_env1_aud` `camp_env1_fecha` `camp_env1_rem` `camp_env2_aud` `camp_env2_fecha` `camp_env3_aud` `camp_env3_fecha` `camp_env4_aud` `camp_env5_aud` `camp_env5_fecha` |
+| 19 | Directa: respuestas | `camp_resp_info` `camp_resp_info_pct` `camp_resp_neg` `camp_resp_neg_pct` `camp_resp_neu` `camp_resp_neu_pct` `camp_resp_pos` `camp_resp_pos_pct` `camp_resp_sol` `camp_resp_sol_pct` `camp_resp_total` |
+| 21 | Resumen Ejecutivo | `rrss_c1_pct` `rrss_c2_pct` `rrss_c3_pct` `rrss_c4_pct` |
+
+**SECCO — 48 de 167 (29%), todavía peor:**
+
+| slide | qué es la lámina | tokens |
+|---|---|---|
+| 5 | Uno a uno en comunas | `ecv_minutos` |
+| 10 | Digital: comunicaciones post | **`post_camp1` `post_camp2` `post_camp3` `post_estado1` `post_estado2` `post_estado3`** |
+| 22 | Directa: envío de mail | los mismos diez `camp_env*` de JM slide 18 |
+| 23 | Directa: respuestas | los mismos once `camp_resp*` de JM slide 19 |
+| 25 | Conversación | `conv_menciones` `conv_menciones_var` `conv_sm_pos` `conv_sm_pos_var` `conv_tema1` `conv_tema2` `conv_tema3` `conv_usuarios` `conv_usuarios_var` `conv_vistas` `conv_vistas_var` |
+| 28 | Interacción positiva RRSS | `rrss_c1_pct` `rrss_c1_txt` `rrss_c2_pct` `rrss_c2_txt` `rrss_c3_pct` `rrss_c3_txt` `rrss_c4_pct` `rrss_c4_txt` `rrss_prom_general` |
+
+**Dos cosas que aparecen y hay que resolver antes de sembrar:**
+
+- **`camp1`..`camp4` de JM slide 7 no tienen guión bajo.** La regla de familia del `Paso-2.5`
+  es *"prefijo hasta el primer `_`; sin `_`, familia = el token entero"*, así que estos
+  cuatro caerían en **cuatro familias de un miembro** (`camp1`, `camp2`, `camp3`, `camp4`)
+  en vez de en `camp`, que es la familia declarada en `INFORMES.familias` de `jm`. Es la
+  primera vez que la regla se topa con un token sin `_`.
+- **`post_*` de SECCO slide 10 es una familia que `INFORMES` no declara.** Las familias de
+  `secco` son `ecv,et,emin,m2,camp,conv,rep,rrss`: **`post` no está**. O falta en `INFORMES`,
+  o los seis tokens deberían llamarse de otra manera.
+
+El resto son familias ya conocidas (`ecv`, `camp`, `rrss`, `conv`). **Ninguno de los 81
+tokens invisibles está en `MARCADORES` hoy** — esa hoja tiene tres filas de ejemplo.
 
 ### P2 · Dos carpetas de Drive distintas se llaman "Sistema Informes en Slides"
 
