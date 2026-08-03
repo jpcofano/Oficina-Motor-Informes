@@ -1508,3 +1508,47 @@ nadie más.
     válido y los 21 `.gs` parseando bien. Costó varios reintentos y **se perdió el reporte
     de la primera corrida de `Aplicar`** —la llamada se ejecutó pero la respuesta no
     volvió—; el estado final se verificó leyendo la hoja.
+
+## Doc — los prompts del Tramo 2 reemplazados: `Paso-3-v3` y `Paso-5-v2` (2026-08-03) — commit de esta entrada
+- **Qué pedía:** entregar al repo las dos versiones nuevas que escribió claude.ai a partir de
+  la auditoría de premisas del 03/08 —los dos prompts que esa auditoría marcó como "hay que
+  reescribirlo"—, archivar los superados y actualizar el censo y las referencias del plan.
+  **No se ejecutó ninguno de los dos.**
+- **Qué se hizo:**
+  - **`docs/Prompts/Paso-3-v3.md`** (nuevo). Resuelve la ventana en los **cinco eslabones**
+    de `D-20` Addendum 1 —campaña > marcador > `SECCIONES.periodo_ref` > `CONFIG` > la
+    semana de `R-11`— en vez de las tres capas del `v2`. Suma la columna de período en `SECCIONES`
+    (que entra a `COLUMNAS_DELTA_` **antes**, por lo que midió el `Paso-2.15` 0.2), el
+    cálculo del default de `R-11`, y los **tres significados distintos del vacío** escritos
+    juntos para que nadie los unifique (`D-19` la fila no entra, `D-20` usa el eslabón
+    siguiente, `D-21` sin filtro). Su Parte 0 verifica siete premisas y para.
+  - **`docs/Prompts/Paso-5-v2.md`** (nuevo). Agrega `periodo_id` no vacío al filtro de
+    `CAMPANAS` (`D-19`) y obliga a **reportar las excluidas con su motivo** — una campaña
+    tildada que no sale en silencio es el modo de falla más caro del paso. Su `0.2` para si
+    las tres filas siguen sin `periodo_id`: curarlas es del usuario.
+  - **Archivados en `docs/Prompts/_archivo/`:** `Paso-3-v2.md` y `Paso-5.md`.
+  - **`docs/PLAN.md` §2** — el ítem del Tramo 2 nombra los tres prompts vigentes, anota el
+    bloqueo de `INFORMES.plantilla_id` y **deja escrito qué del Tramo 2 no está en el
+    `Paso-3-v3`** (ver abajo).
+  - **`docs/HANDOFF_CODE.md`** — las dos filas del censo pasan de "hay que reescribirlo" a
+    "reescrito 03/08" con el archivo que las reemplaza; "Trabado" queda con una sola cosa
+    del usuario para arrancar el Tramo 2.
+  - **`docs/PENDIENTES_consistencia.md`** — la "Nota sobre `Paso-3-v2.md`" se cierra **por
+    reemplazo**: el `v3` no tiene bloque "Antes de empezar", así que la Reconciliación 1 del
+    `Paso-2.4` se queda sin objeto.
+- **Prueba:** ninguna, no se tocó código. Verificado que los dos archivos nuevos están en
+  `docs/Prompts/`, que los dos superados están en `_archivo/`, y que ningún documento vivo
+  apunta a `docs/Prompts/Paso-5.md` como ruta vigente.
+- **Pendientes/decisiones:**
+  - **`Paso-3.md` no se archivó porque ya estaba archivado.** El `v3` pide archivar "los
+    dos"; el original vive en `Plan Inicial/_archivo/Prompts/Paso-3.md` desde el commit
+    `a0dab72`. Cero ediciones, y se registra el cero (`CLAUDE.md` §3).
+  - **El `Paso-3-v3` no cubre cuatro cosas que `PLAN.md` §2 le asignaba al Paso 3:** `R-12`,
+    los dos valores de ventana a `CONFIG`, el empate técnico del match
+    (`DISENO_match_temario.md` §6.4) y la migración del filtro `status = Realizada` de
+    `Union.gs` a `MAPEO.valores_incluidos` (`D-21`). **No se editó el prompt**: la lista del
+    plan es la dueña de "qué sigue y en qué orden", y ahí quedó anotado. Salen como paso
+    aparte o como addendum al ejecutarlo.
+  - **`Paso-4.md` sigue siendo el único addendum pendiente** del tramo: le falta absorber la
+    impresión del período en la lámina, `D-19`/`D-20`, y la firma de `generarInforme`, que
+    no coincide con la del Paso 5.

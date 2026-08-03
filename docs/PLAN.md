@@ -441,8 +441,17 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
 
 2. **Tramo 2 — corte vertical, JM solo.** Pasos 3, 4 y 5. Se hace contra JM únicamente:
    construir los dos en paralelo impide después distinguir qué necesitó código y qué salió
-   solo. **`Paso-4.md` se revisa antes de ejecutarlo** — está escrito y casi seguro asume
-   copiar-y-reemplazar sin registrar la configuración de la corrida (`D-06`).
+   solo. Los prompts vigentes son **`docs/Prompts/Paso-3-v3.md`**, `docs/Prompts/Paso-4.md`
+   y **`docs/Prompts/Paso-5-v2.md`** (03/08/2026: la auditoría de premisas mandó reescribir
+   los dos, `Paso-3-v2.md` y `Paso-5.md` quedaron en `docs/Prompts/_archivo/`).
+   **`Paso-4.md` se revisa antes de ejecutarlo** — está escrito y casi seguro asume
+   copiar-y-reemplazar sin registrar la configuración de la corrida (`D-06`); además le
+   falta absorber la impresión del período en la lámina, `D-19`/`D-20` y la firma de
+   `generarInforme`, que no coincide con la del Paso 5.
+   - **Un bloqueo tapa a los tres: `INFORMES.plantilla_id` está vacío** en `jm` y en
+     `secco` en la hoja viva. Sin eso no hay de dónde leer tokens ni qué copiar. Es tarea
+     del usuario: los IDs están en el repo, pero cuál es la plantilla canónica es una
+     decisión.
    - **El default de período de `R-11` (siete días, viernes a jueves) y la impresión de las
      fechas en la lámina son parte de estos pasos, no un paso propio**: el cálculo entra
      donde se resuelve la ventana (Paso 3) y la impresión donde se reemplazan los tokens
@@ -450,7 +459,9 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
      períodos consecutivos pueden solaparse o dejar hueco sin que el motor diga nada
      (`R-11` Addendum 1). El extremo inclusivo ya está cerrado; no queda nada que preguntar
      antes de implementarlo.
-   - **El Paso 3 tiene que resolver `D-20`: el período por sección.** Son tres cosas y van
+   - **El Paso 3 tiene que resolver `D-20`: el período por sección.** Es lo que el
+     `Paso-3-v3` toma como su Parte B, y es la razón por la que se reescribió. Son tres
+     cosas y van
      juntas porque las tres tocan `resolverVentana()`: **(1)** la columna de período en
      `SECCIONES` —que **entra a `COLUMNAS_DELTA_` antes** de que se toquen sus `headers`,
      por lo que midió el `Paso-2.15` 0.2—; **(2)** el eslabón nuevo en la cadena, en la
@@ -468,6 +479,13 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
      (`D-21`). No se hizo en el `Paso-2.16` porque con ese diseño **declarar es conectar**:
      cargar la celda cambiaría en el acto lo que ve cualquier lectura de `rdv`, no sólo el
      matcher. Requiere correr los controles de la función tocada.
+   - **Los dos ítems de arriba no están en el `Paso-3-v3`** (03/08/2026). El `v3` cubre
+     `D-20`, `R-11`, `D-19` y `D-21` en su Parte B, pero **no menciona `R-12`, ni los dos
+     valores de ventana a `CONFIG`, ni el empate técnico del match, ni la migración del
+     filtro de `Union.gs`**. Se anota acá y no se edita el prompt: esta lista es la dueña
+     de "qué sigue y en qué orden", y lo que el prompt no cubra sale como paso aparte o
+     como addendum al ejecutarlo. Sin esto, los cuatro se pierden de vista al cerrar el
+     Paso 3.
 
 3. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
    valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo

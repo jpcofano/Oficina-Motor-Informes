@@ -841,9 +841,16 @@ todavía no está decidida.
   pregunta es esa, y hasta que se responda la advertencia de `FECHAS_seleccion.md` se
   mantiene escrita aunque hoy no se reproduzca.
 
-## Nota sobre `Paso-3-v2.md`
+## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 
 Su bloque "Antes de empezar" todavía reabre la decisión Looker-vs-SD y el alcance del
 corte vertical. **No se toca desde `DOC-1` ni desde este archivo** — está asignado como
 Reconciliación 1 de `docs/Prompts/Paso-2.4.md`. Corregirlo acá duplicaría el trabajo y
 dejaría a `Paso-2.4.md` describiendo un pendiente que ya no existe.
+
+**Cerrada por reemplazo, no por corrección:** el `Paso-3-v2.md` se archivó en
+`docs/Prompts/_archivo/` y lo reemplaza `docs/Prompts/Paso-3-v3.md`, que ya no tiene
+bloque "Antes de empezar" — la decisión Looker-vs-SD está en su sección **"Decisiones ya
+tomadas — no reabrir"**, con `PROYECTO.md` §5 y `HALLAZGOS_validacion_decks.md` §4 como
+respaldo, y el alcance del corte vertical es su Parte D. La Reconciliación 1 del
+`Paso-2.4` se queda sin objeto.

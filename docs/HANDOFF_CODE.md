@@ -3,7 +3,7 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-03 (madrugada, cierre del Tramo 1) · último commit al escribirlo: el de esta entrada
+**Última actualización:** 2026-08-03 (prompts del Tramo 2 reemplazados) · último commit al escribirlo: el de esta entrada
 
 ## Dónde estamos
 
@@ -32,9 +32,13 @@ de `Pruebas.gs` pasan, incluido `probarListaBlancaValores_`.
 
 ## Qué sigue
 
-**El Tramo 2: los Pasos 3, 4 y 5, contra JM solo.** `Paso-4.md` se revisa antes de
-ejecutarlo. El Paso 3 arrastra cinco cosas ya decididas y sin implementar, todas anotadas en
-`PLAN.md` §2:
+**El Tramo 2: los Pasos 3, 4 y 5, contra JM solo.** Los prompts vigentes son
+`docs/Prompts/Paso-3-v3.md`, `docs/Prompts/Paso-4.md` y `docs/Prompts/Paso-5-v2.md`. El
+`Paso-4` es el único de los tres que la auditoría del 03/08 dejó marcado como **addendum
+pendiente** —le falta absorber la impresión del período en la lámina, `D-19`/`D-20`, y la
+firma que no coincide con la del Paso 5—, así que **se revisa antes de ejecutarlo**. El
+Paso 3 arrastra cinco cosas ya decididas y sin implementar, todas anotadas en `PLAN.md` §2
+y ahora también en el `v3`:
 
 1. **`D-20`** — el período por sección: la columna en `SECCIONES` (que **entra a
    `COLUMNAS_DELTA_` antes** de que se toquen sus `headers`), el eslabón en la cadena
@@ -102,10 +106,17 @@ tarea del usuario y no la puede hacer Code: los IDs de las plantillas están en 
 |---|---|---|
 | `Paso-2.5` | **addendum** | 0.2 vencida y bloqueante (`plantilla_id` vacío). 0.1 sigue trabado: el `P1` de la caja `{{m2_salud_camp}}` huérfana sigue abierto en `PENDIENTES`. 0.3 correcto (`D-17`). Falta absorber que la cadena de período pasó a cinco eslabones (`D-20`) |
 | `Paso-2.13` | **sirve como está** | Su Parte 1 ya está anulada en el lugar por `D-17`. Partes 2-4 intactas. Sólo se corrigió el número de filas de `SEED_MAPEO_` |
-| `Paso-3-v2` | **hay que reescribirlo** | Su Parte C punto 2 dice *"resuelve la ventana en tres capas"* y hoy son cinco (`D-20` Addendum 1). No es un addendum: la Parte C es el despachador y la cadena es su núcleo. Además tiene que absorber `D-21` (`leerFuente` ahora filtra por lista blanca) y `R-11` (el default calculado, que hoy no existe) |
+| ~~`Paso-3-v2`~~ → `Paso-3-v3` | **reescrito 03/08** | Su Parte C punto 2 decía *"resuelve la ventana en tres capas"* y hoy son cinco (`D-20` Addendum 1). No era un addendum: la Parte C es el despachador y la cadena es su núcleo. El `v3` (`docs/Prompts/Paso-3-v3.md`) absorbe los cinco eslabones, la columna de período en `SECCIONES`, el cálculo del default de `R-11`, `D-19` y `D-21` (el filtrado por valor ya lo hace el lector). **Sin ejecutar**: su Parte 0 verifica siete premisas y para |
 | `Paso-4` | **addendum** | `A.2` ya estaba cumplida y se tachó. Falta absorber: **imprimir el período en la lámina** (`PLAN.md` §2 lo asigna a este paso y el prompt no lo menciona), `D-19`/`D-20`, y que su firma `generarInforme(informe_id, periodo_id)` no coincide con la del `Paso-5` |
-| `Paso-5` | **hay que reescribirlo** | Filtra `CAMPANAS` por `informe_id` + `mostrar=sí` **sin `periodo_id`**: con `D-19` esas filas no entran a ningún informe, así que como está emitiría campañas que la decisión excluye. Cita `PROYECTO.md` §4, cuyo contenido migró a `TOKENS.md` §5 y hoy está superado por `D-20` |
+| ~~`Paso-5`~~ → `Paso-5-v2` | **reescrito 03/08** | Filtraba `CAMPANAS` por `informe_id` + `mostrar=sí` **sin `periodo_id`**: con `D-19` esas filas no entran a ningún informe, así que como estaba emitiría campañas que la decisión excluye. El `v2` (`docs/Prompts/Paso-5-v2.md`) agrega el filtro, obliga a reportar las excluidas con su motivo, y su `0.2` para si las tres filas siguen con `periodo_id` vacío — curarlas es tarea del usuario. **Sin ejecutar** |
 | `DOC-8` | **sirve como está** | Sus tres ejemplos de `A.2` se verifican: el acceso de reportes ya se resolvió, el tercer informe sigue como no prioritario. `docs/AVANCE.md` está libre y `CLAUDE.md` §7 no reclama esa pregunta. Dos cosas a mirar al ejecutarlo, abajo |
+
+**Los dos "hay que reescribirlo" ya volvieron** (03/08, entregados por claude.ai):
+`docs/Prompts/Paso-3-v3.md` y `docs/Prompts/Paso-5-v2.md`. `Paso-3-v2.md` y `Paso-5.md`
+quedaron en `docs/Prompts/_archivo/`. **`Paso-3.md` no se archivó porque ya estaba
+archivado**: vive en `Plan Inicial/_archivo/Prompts/Paso-3.md` desde el commit `a0dab72`,
+así que el pedido del `v3` de "archivá los dos" se cumple con uno solo. Cero ediciones, y
+se registra el cero (`CLAUDE.md` §3).
 
 **Hallazgos que no son de un prompt solo:**
 
@@ -125,9 +136,12 @@ tarea del usuario y no la puede hacer Code: los IDs de las plantillas están en 
 
 ## Trabado
 
-Nada de código. Dos cosas dependen del usuario y ya están arriba: cargar los dos
-`INFORMES.plantilla_id`, y decidir si `Paso-3-v2` y `Paso-5` se reescriben (lo hace
-claude.ai, con este reporte a la vista).
+Nada de código. **La reescritura de los dos prompts ya no traba nada**: `Paso-3-v3` y
+`Paso-5-v2` están en el repo, sin ejecutar. Queda una sola cosa del usuario para arrancar
+el Tramo 2: **cargar los dos `INFORMES.plantilla_id`**, hoy vacíos en `jm` y en `secco`,
+que tapan a los Pasos 3, 4 y 5. La segunda, que traba la prueba del Paso 5 pero no su
+implementación, es **curar el `periodo_id` de al menos una fila de `CAMPANAS`** (`D-19`):
+si las tres siguen vacías, el `0.2` del `Paso-5-v2` para ahí.
 
 ## Comandos que quedaron sin aprobar
 
