@@ -659,10 +659,13 @@ protegidas de `SOLAPAS`.
 **La celda no se toca, y eso no es una omisión: es la regla.** El Addendum 1 dice que
 configurar es el caso normal y que lo cargado por una persona manda sobre el default —el
 motor no valida lo que un humano escribió—, así que un valor de ocho días es legítimo.
-Queda anotado por dos motivos: para que nadie lo lea como confirmación de `R-11` (el
-párrafo "Cómo se verifica" de la regla lo daba por consistente, y el Addendum 1 lo
-corrige), y para preguntarle al usuario si el `03/07` fue intencional o un arrastre de
-cuando el extremo no estaba definido.
+Queda anotado para que nadie lo lea como confirmación de `R-11`: el párrafo "Cómo se
+verifica" de la regla lo daba por consistente, y el Addendum 1 lo corrige.
+
+**Respondido el 02/08/2026 (usuario): el `03/07` es arrastre** de cuando el extremo no
+estaba definido, no una decisión. Aun así **la celda no se toca**: la corrige una persona,
+no el motor — es exactamente lo que dice el Addendum 1 sobre lo cargado a mano. **No
+bloquea nada hasta el Paso 3**, que es cuando el cálculo de ventana empieza a usarse.
 
 **Nota sobre el día de corte, para que no se lea como contradicción.** Al escribir `R-11`
 se relevaron tres días declarados; con el Addendum 1 quedan reconciliados y **no hay
