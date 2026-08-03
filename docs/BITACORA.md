@@ -2194,3 +2194,77 @@ nadie más.
   - **`generarInforme(informeId, periodoId)`** queda declarada con `periodoId` **opcional**,
     como fija el Addendum 1 del `Paso-4`, y devolviendo "todavía no". La implementa el Paso 4.
   - **Paro acá.** Sigue la Parte D, el corte vertical, que es la prueba real de la Parte C.
+
+## Paso 3 (v3) Parte D — `D.0` corrido, y **para** (2026-08-03) — commit de esta entrada
+- **Qué pedía:** con la Parte D ya ampliada en el lugar, correr sólo `D.0.1`–`D.0.5`. Sólo
+  lectura: no escribir hojas, no tocar `.gs`, no cargar filas de `MARCADORES`.
+- **D.0.1 · Las tres filas de ejemplo, tal cual están. No se tocaron.**
+
+  | marcador | familia | informe_id | base_id | solapa | campo_logico | periodo_ref | operacion | formato |
+  |---|---|---|---|---|---|---|---|---|
+  | `ecv_inscriptos` | ecv | `*` | rdv | *(vacía)* | inscriptos | | `calcInscriptos` | numero |
+  | `camp_alcance` | camp | `*` | looker | *(vacía)* | alcance | | `calcAlcance` | miles |
+  | `m2_envios` | m2 | jm | m2 | *(vacía)* | envios | `m2_mensual` | `calcEnvios` | numero |
+
+  **Qué le falta a cada una:**
+  - **Las tres:** su `operacion` no existe. `calcInscriptos`/`calcAlcance`/`calcEnvios` son
+    del estilo una-función-por-marcador que la Parte A reemplazó. Para ser válidas necesitan
+    una de las seis (`SUMA`, `CONTEO`, `ULTIMO`, `RATIO`, `PCT`, `TEXTO`) o el prefijo `FN:`
+    con la función declarada en `FUNCIONES_PROPIAS_`, hoy vacío.
+  - **`ecv_inscriptos`:** además le falta `solapa`. `rdv` tiene **dos** solapas fuente
+    mapeadas, así que no hay inferencia posible.
+  - **`camp_alcance`:** la solapa **sí** se infiere (`looker` tiene una sola mapeada). Sólo
+    le falta la operación.
+  - **`m2_envios`:** además le falta una solapa **que exista**. `m2` tiene una sola solapa
+    fuente (`Cuentas M2`) y **no está en `MAPEO`**, así que hoy no hay ninguna a la que
+    apuntar. Su `periodo_ref = m2_mensual` sí resuelve.
+  - **Y las dos primeras usan `informe_id = '*'`**, que es la firma del cruce a medio
+    resolver del `Paso-2.13` Parte 3. **Curarlas o retirarlas es decisión del usuario:**
+    `MARCADORES` no tiene sembrador y esas filas las cargó una persona.
+- **D.0.2 · Qué se puede cablear hoy.** Solapas `uso = fuente` **y** presentes en `MAPEO`:
+  `rdv` **2** (`RVD JM-CM - ES` 15 campos, `RDV_otros_ministros` 1), `looker` **1**
+  (`resumen_metricas_dinamico`, 27 campos), `digital` **6**, `m2` **0**.
+  Confirmado que quedan fuera del corte: `digital` (necesita `id_cuenta`), `m2` (cero solapas
+  mapeadas) y todo token por encuentro o por campaña.
+  **Candidatos, con solapa explícita para `rdv`:**
+
+  | token sugerido | base / solapa | campo_logico | operacion |
+  |---|---|---|---|
+  | inscriptos del período | `rdv` / `RVD JM-CM - ES` | `inscriptos` (K) | `SUMA` |
+  | asistentes del período | `rdv` / `RVD JM-CM - ES` | `asistentes` (Q) | `SUMA` |
+  | encuentros del período | `rdv` / `RVD JM-CM - ES` | `inscriptos` (K) | `CONTEO` |
+  | % de asistencia | `rdv` / `RVD JM-CM - ES` | `asistentes/inscriptos` | `PCT` |
+  | alcance | `looker` / *(inferida)* | `alcance` (K) | `SUMA` |
+
+  Las dos últimas son las que más rinden: el `PCT` ejercita el `RATIO`, y dejar la solapa
+  **vacía** en el de `looker` ejercita la inferencia, que ningún caso exitoso probó todavía.
+- **⚠ Hallazgo que `D.0.2` anticipaba y quedó confirmado: el despachador NO soporta
+  `RATIO`/`PCT`.** `resolverMarcadores` hace **un solo** `buscarMapeo` con el `campo_logico`
+  entero, así que un `numerador/denominador` no resuelve. Verificado por API:
+  `buscarMapeo('rdv','RVD JM-CM - ES','asistentes/inscriptos')` → *"falta MAPEO:
+  rdv/RVD JM-CM - ES/asistentes/inscriptos"*. **Partir por `/` y hacer dos `buscarMapeo` es
+  trabajo de `D.1`/`D.2`**, no un defecto de premisa — la Parte C nunca lo ejercitó porque
+  ninguna fila de `MARCADORES` usa `RATIO`.
+- **D.0.3 · Encabezados de las columnas candidatas: los ocho limpios.** Sin espacios dobles,
+  sin saltos de línea, sin bordes con espacio. `rdv`: `Inscriptos` (K), `Asistentes` (Q),
+  `FECHA` (E), `STATUS REUNIÓN` (I). `looker`: `mails_enviados` (N), `mails_aperturas` (P),
+  `meta_alcance` (K), `nombre_campaña` (B). **`R-10` sigue sin implementar y hoy no muerde
+  en estas ocho** — vale para estas columnas, no para siempre.
+  *(Ojo al leer: los encabezados de `looker` no coinciden con el `campo_logico` que los
+  mapea —`mails_enviados` vs `mail_enviados`, `meta_alcance` vs `alcance`—. Es correcto: son
+  dos espacios de nombres distintos, y para eso existe `MAPEO`.)*
+- **D.0.4 · La ventana del corte.** `resolverVentana({})` → **2026-06-26 → 2026-07-03**,
+  `origen: 'config'`. **No es `R-11 (calculado)`**: `CONFIG` está cargado, así que el número
+  del corte **no se va a mover solo con la fecha de corrida**. De `rdv/RVD JM-CM - ES`:
+  1362 filas totales, **13 en ventana**, 709 excluidas por la lista blanca de `D-21`.
+- **D.0.5 · El ítem de menú.** El que ya existe se llama **"Calcular corte vertical"**
+  (`Codigo.gs:67`, submenú *Diagnóstico*, junto a las otras tres pruebas de uso diario) y
+  apunta a `menuCorteVerticalRetiro2407_`, que lee **una fila de `rdv` cableada a mano**. El
+  nuevo recorre `MARCADORES`, que es otra cosa. **No colisiona por nombre de función**, pero
+  sí por nombre visible. Propuesta: el nuevo entra como **"Calcular marcadores de prueba"**
+  justo debajo, y **el viejo pasa a "Calcular corte vertical (Paso 2.9E)"** para que se
+  distingan — es un renombre de etiqueta en la tabla `MENU_`, no de función.
+- **Prueba:** sólo lectura. No se escribió ninguna hoja, no se tocó ningún `.gs`, no se cargó
+  ninguna fila de `MARCADORES`.
+- **Pendientes/decisiones — `D.0.1` y `D.0.2` terminan en decisión del usuario:** qué se hace
+  con las tres filas de ejemplo, y qué tokens se cablean. **Paro acá.**
