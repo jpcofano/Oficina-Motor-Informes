@@ -2025,3 +2025,54 @@ nadie más.
     la de ahora la contó el código. Corregido en `Paso-2.5` `0.1`, en `PENDIENTES` y en el
     handoff; las entradas anteriores de esta bitácora quedan como están —es append-only— y
     esta línea es su corrección.
+
+## Paso 3 (v3) Parte A — despacho de operaciones, y cinco sextos ya estaban (2026-08-03) — commit de esta entrada
+- **Qué pedía:** una función **por operación** en `Marcadores.gs`, firma uniforme
+  `op<NOMBRE>(ctx) -> { valor, traza }`, la traza diciendo operación, campo, columna, solapa,
+  cantidad de filas y ventana, y el escape hatch `operacion = FN:nombre`.
+- **Lo primero que apareció, y la Parte 0 no lo había mirado: las seis operaciones ya
+  existían.** `opSUMA`, `opCONTEO`, `opULTIMO`, `opRATIO`, `opPCT` y `opTEXTO` están en
+  `Marcadores.gs` desde el corte vertical del `Paso-2.9E`. **La Parte A no era escribirlas: era
+  alinearlas al contrato del `v3` y agregar el despacho, que no existía.**
+- **Qué se hizo:**
+  - **El contrato de `ctx`, aceptando las dos formas a propósito.** El prompt declara
+    `ctx.filas` —los objetos que devuelve `leerFuente()`, ya leídos y ya filtrados por
+    ventana y por `valores_incluidos`— y las seis esperaban `ctx.valores`, el arreglo de la
+    columna ya extraído. `valoresDeCtx_(ctx)` acepta las dos: usa `valores` si viene, si no
+    extrae de `filas` con `ctx.encabezado`. **Se extrae por nombre de columna y no por letra
+    a propósito:** resolver letra → encabezado es leer `MAPEO`, y estas funciones no
+    resuelven `MAPEO` ni abren bases. `ctx.columna` va igual, pero **sólo para la traza**.
+  - **La ventana entra en la traza** (`trazaDeVentana_`), que era lo que faltaba para que el
+    equipo pueda auditar un número sin abrir la base.
+  - **`despacharOperacion_(nombre, ctx)` con mapa explícito `OPERACIONES_`.** **Nunca `eval`
+    ni `this[nombre]`:** en Apps Script todos los `.gs` comparten un único scope global, así
+    que resolver contra el global convierte una celda de `MARCADORES` —que edita una
+    persona— en la capacidad de invocar cualquier función del proyecto, incluidas las que
+    escriben hojas. El mapa **es** la lista blanca. El escape hatch `FN:` resuelve contra
+    `FUNCIONES_PROPIAS_`, **vacío a propósito**: cada entrada ahí es una operación que no se
+    pudo expresar con las seis, y esa lista es la medición de `D-01` del despachador.
+  - **Una excepción adentro de una operación se convierte en `{ ok: false, motivo }`**, no
+    corta la corrida — es la resiliencia que pide la Parte C. `opRATIO` además dice **cuál**
+    de sus dos arreglos falta, en vez de tirar un `TypeError` que en la traza se lee
+    "Cannot read properties of undefined".
+  - **`opTEXTO` documenta lo que NO hace:** lee un literal de `valor_fijo` y no arma listas.
+    Apunta al `P1` de la operación de lista.
+- **Prueba — control positivo nuevo, `probarDespachoOperaciones_` (`Pruebas.gs`), y son 7:**
+  `SUMA` sobre `filas` da 15 y **coincide con pasar `valores` ya extraído**; `CONTEO` cuenta
+  la fila vacía; `ULTIMO` la saltea; la traza dice la ventana; una `operacion` desconocida
+  falla con su nombre en el motivo; **`despacharOperacion_('instalar', …)` y
+  `FN:instalar` fallan los dos** —que es el caso que justifica el mapa—; y `RATIO` sin sus
+  arreglos dice cuál falta. **Las 7 pruebas pasan.**
+  **Regresión del llamador que ya existía:** `corteVerticalRetiro2407_()` corrido por API —
+  10 filas de token, 3 controles, **`cierraSuma: true`**. El cambio de contrato no lo tocó.
+- **Medición de `D-01`: +242 / −23 líneas** en dos archivos (`Marcadores.gs` +194,
+  `Pruebas.gs` +71). El renglón de "por qué hubo que tocar código" es **el despacho**: el
+  motor no tenía forma de ejecutar una operación nombrada desde configuración sin abrir la
+  puerta al scope global.
+- **Pendientes/decisiones:**
+  - **`FUNCIONES_PROPIAS_` queda vacío.** Si al terminar JM tiene más de un puñado de
+    entradas, falta una operación genérica — la regla es del prompt y quedó escrita en el
+    código, que es donde se va a leer.
+  - **Sigue faltando la operación de lista** (`P1`): ninguna de las seis devuelve un arreglo
+    concatenado, y `m2_campanias` la necesita.
+  - **Paro acá**, como pide el prompt: un commit por parte, se avisa al final de cada una.

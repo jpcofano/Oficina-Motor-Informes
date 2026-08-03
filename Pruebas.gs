@@ -420,6 +420,74 @@ function probarListaBlancaValores_() {
   return 'D-21 lista blanca de valores: OK';
 }
 
+/**
+ * Paso 3 (v3) Parte A — control positivo del despacho de operaciones.
+ *
+ * Por qué hace falta, y es la misma razón que el de la lista blanca: **nada de esto lo
+ * distingue el protocolo de configuración**. Un despachador que resuelve por `eval` y uno
+ * que resuelve por mapa dan exactamente el mismo número cuando la configuración es correcta;
+ * la diferencia sólo aparece con una `operacion` inventada — que es el caso que este control
+ * ejercita y que en producción llega desde una celda que edita una persona.
+ *
+ * Puro: no lee hojas ni abre bases. Los `ctx` son literales.
+ */
+function probarDespachoOperaciones_() {
+  var filas = [
+    { Inscriptos: 10, Barrio: 'Retiro' },
+    { Inscriptos: 5, Barrio: 'Palermo' },
+    { Inscriptos: '', Barrio: 'Boedo' }
+  ];
+  var ctx = {
+    marcador: 'ecv_inscriptos', base_id: 'rdv', solapa: 'RVD JM-CM - ES',
+    campo_logico: 'inscriptos', columna: 'K', encabezado: 'Inscriptos', filas: filas
+  };
+
+  // 1 · Las seis genéricas resuelven por nombre, y `filas` + `encabezado` es equivalente a
+  //     pasar `valores` ya extraído: es el punto del contrato nuevo.
+  var suma = despacharOperacion_('SUMA', ctx);
+  afirmar_(suma.ok === true && suma.valor === 15, 'despacho: SUMA sobre `filas` tiene que dar 15');
+  var sumaValores = despacharOperacion_('SUMA', {
+    base_id: 'rdv', campo_logico: 'inscriptos', columna: 'K', valores: [10, 5, '']
+  });
+  afirmar_(sumaValores.valor === suma.valor, 'despacho: `filas`+`encabezado` y `valores` tienen que dar lo mismo');
+
+  afirmar_(despacharOperacion_('CONTEO', ctx).valor === 3,
+    'despacho: CONTEO cuenta filas, incluida la de valor vacío');
+  afirmar_(despacharOperacion_('ULTIMO', ctx).valor === 5,
+    'despacho: ULTIMO saltea la celda vacía del final');
+  afirmar_(despacharOperacion_('TEXTO', { valor_fijo: 'hola' }).valor === 'hola',
+    'despacho: TEXTO devuelve el literal de valor_fijo');
+
+  // 2 · La ventana entra en la traza. Es lo que permite auditar el número sin abrir la base.
+  var conVentana = despacharOperacion_('SUMA', {
+    base_id: 'rdv', campo_logico: 'inscriptos', columna: 'K', valores: [1],
+    ventana: { desde: new Date(2026, 5, 26), hasta: new Date(2026, 6, 2) }
+  });
+  afirmar_(conVentana.traza.indexOf('2026-06-26') !== -1 && conVentana.traza.indexOf('2026-07-02') !== -1,
+    'despacho: la traza tiene que decir la ventana cuando el ctx la trae');
+
+  // 3 · Una `operacion` desconocida NO rompe la corrida: devuelve motivo legible.
+  var desconocida = despacharOperacion_('PROMEDIO', ctx);
+  afirmar_(desconocida.ok === false && desconocida.motivo.indexOf('PROMEDIO') !== -1,
+    'despacho: una operación desconocida tiene que fallar con su nombre en el motivo');
+  afirmar_(despacharOperacion_('', ctx).ok === false,
+    'despacho: `operacion` vacía tiene que fallar explícito');
+
+  // 4 · El caso que justifica el mapa explícito: una celda de MARCADORES no puede invocar
+  //     una función cualquiera del proyecto. `instalar` existe y escribe hojas.
+  var global = despacharOperacion_('instalar', ctx);
+  afirmar_(global.ok === false, 'despacho: no se puede alcanzar una función global por nombre');
+  var globalFn = despacharOperacion_('FN:instalar', ctx);
+  afirmar_(globalFn.ok === false, 'despacho: el escape hatch tampoco resuelve contra el global');
+
+  // 5 · Una excepción adentro de la operación se convierte en motivo, no en corte de corrida.
+  var ratioSinDatos = despacharOperacion_('RATIO', { campo_logico: 'a/b' });
+  afirmar_(ratioSinDatos.ok === false && ratioSinDatos.motivo.indexOf('valoresNumerador') !== -1,
+    'despacho: RATIO sin sus arreglos tiene que decir cuál falta, no tirar TypeError');
+
+  return 'Paso 3 A despacho de operaciones: OK';
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
@@ -427,7 +495,8 @@ function correrPruebasDiff_() {
     probarSoloEnHoja_,
     probarProtegidasConDiferencia_,
     probarResumenDesagregado_,
-    probarListaBlancaValores_
+    probarListaBlancaValores_,
+    probarDespachoOperaciones_
   ];
   var lineas = [];
   var fallas = 0;
