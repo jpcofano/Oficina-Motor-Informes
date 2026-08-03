@@ -342,6 +342,48 @@ en las dos decisiones para que nadie las unifique por parecerse.
 > Se deja así. Si alguna vez molesta, va a aparecer como **un número que no cierra**, y ahí
 > se decide con un caso real a la vista en vez de en abstracto.
 
+**`D-21` — Las filas se excluyen por lista blanca declarada, nunca por exclusión.**
+Una columna puede declarar en `MAPEO.valores_incluidos` **qué valores entran**; toda fila
+cuyo valor no esté en esa lista queda afuera. Decisión del usuario, 02/08/2026, aplicada
+por primera vez en el `Paso-2.16` sobre `digital/Directa Mail` (entran `Implementado` y
+`En curso`).
+
+**Por qué lista blanca y no exclusión:** con "todo lo que no sea `Proyectado`", un estado
+nuevo en la base **entra solo y en silencio**. Con lista blanca, un valor nuevo **queda
+afuera y visible** — es la misma dirección que el resto del motor, donde lo que no está
+declarado no se usa.
+
+**Forma:** valores separados por coma (misma convención que `INFORMES.familias` y
+`SECCIONES.informes`), comparados con espacios colapsados y **sin plegar mayúsculas ni
+acentos** (`R-10`). Varias columnas con lista blanca en la misma solapa se combinan con Y.
+Si la coma parece parte de un valor y no un separador —la celda entera coincide con un
+valor real de la columna y alguno de los pedazos no—, **el motor para y avisa** en vez de
+filtrar de menos.
+
+**Nada se excluye en silencio.** La lectura reporta `filas_excluidas_por_valor`, el desglose
+`excluidas_por_valor` y `valores_declarados_sin_filas` — este último caza el tipeo
+(`Implementadoo`), que si no se manifiesta como filas que faltan en el informe.
+
+**Tercer significado del vacío, y no se unifica con los otros dos.** Ya hay tres reglas
+distintas sobre una celda vacía, a propósito:
+
+| dónde | vacío significa |
+|---|---|
+| `CAMPANAS`/`REUNIONES`.`periodo_id` (`D-19`) | la fila **no entra** a ningún informe |
+| `SECCIONES`.período (`D-20`) | la sección **usa el default** de `R-11` |
+| `MAPEO`.`valores_incluidos` (`D-21`) | **no hay filtro**: entran todas las filas |
+
+Son tres respuestas distintas porque son tres preguntas distintas. Unificarlas rompería
+las tres.
+
+**Lo que esta decisión deja abierto, y es del Paso 3:** con este diseño **declarar es
+conectar** — `leerFuente` aplica toda lista blanca que encuentre. Por eso el plan de
+declarar `rdv/status = Realizada` "sin consumidor" **no se pudo ejecutar**: cargarlo
+cambiaría en el acto lo que ve *cualquier* lectura de `rdv`, no sólo el matcher de
+`Union.gs` —que ya filtra por su cuenta con `VALOR_STATUS_REALIZADA_` hardcodeado—. La
+celda quedó **vacía** y la migración del filtro de `Union.gs` sigue siendo del Paso 3, con
+sus controles a mano.
+
 **Prueba disponible ya, antes del panel:** compartirle un deck de salida a la cuenta de
 prueba y confirmar que lo abre **sin acceso a ninguna base**. Es **la mitad de `D-16` que no
 depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck.
@@ -374,19 +416,28 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
    - ~~Repuntar `carpeta_salida` a reportes (`D-03`)~~ — **hecho 02/08/2026** (`Paso-2.15`
      Parte A, `aca39bf`). Apareció que una clave hacía de dos: el ID viejo era la carpeta
      donde vive la planilla de control y quedó como `carpeta_motor`, sin lector.
-   - **Activar `m2` — tres cambios sobre una base ya registrada.** No es un alta: `m2` ya
-     tiene fila en `SEED_BASES_` (con `sheet_id`) y filas en `SEED_MAPEO_`. Con los
-     parámetros validados el 01/08: **(a)** `modo_periodo` de `snapshot` a `filtrar`;
-     **(b)** una fila `fecha_periodo`, que hoy **no existe** — lo que hay es `fecha`,
-     marcada `DEROGADA` por `S-02` —, apuntando a `Fecha envio` de la solapa
-     `Directa mail`; **(c)** excluir `Estado = Proyectado`. Es la **primera medición de
-     `D-01`** (eje "base nueva").
-     **La solapa fuente que nombra (b) está en revisión:** el `Paso-2.16` la devuelve en su
-     Parte A.3 como decisión del usuario. Este ítem **no se ejecuta directo, se ejecuta por
-     el prompt**.
-     *Predicción a anotar antes de correrla:* las dos primeras son config; excluir
-     `Proyectado` probablemente no lo sea, y si es así ése es el primer renglón de la lista
-     de "por qué hubo que tocar código".
+   - ~~**Activar `m2`**~~ — **cerrado 02/08/2026 por el `Paso-2.16`, y no como estaba
+     escrito.** La Parte A mostró que **no había nada que activar**: las 19 filas de
+     `MAPEO` de `m2` están duplicadas en `digital` campo por campo, ninguna apunta a una
+     solapa `fuente` —catorce van a vistas `referencia` con período tipeado a mano y cinco
+     a una `ignorar`—, y la única solapa `fuente` que `m2` tiene (`Cuentas M2`) no está
+     mapeada. Los tres cambios quedaron así:
+     **(a)** `modo_periodo` a `filtrar` — **descartado**: sin `fecha_periodo` en ninguna
+     solapa de `m2`, habría convertido toda lectura en `«FALTA:fecha_periodo»`, y nada lee
+     `m2` hoy, así que el error habría quedado latente.
+     **(b)** `fecha_periodo` — **ya existía**, en la solapa correcta:
+     `digital/Directa Mail` columna F, promovida en el Paso 2.3.x. La fuente es `digital`,
+     no `m2/Directa mail`, que es `derivada` (decisión del usuario tras A.3; `buscarMapeo`
+     la habría rechazado igual, exige `uso = fuente`).
+     **(c)** el filtro por `Estado` — **es todo lo que quedó del paso**, y resultó medir
+     algo más útil: no cuánto cuesta una base nueva, sino **cuánto cuesta el primer filtro
+     declarativo** (`D-21`), que es reusable.
+     *La predicción se cumplió:* las dos primeras eran config —tanto que salieron gratis— y
+     la tercera exigió `.gs`. **Medición de `D-01`: +253 / −5 líneas en cuatro archivos**
+     (`Fuentes.gs` +170, `Pruebas.gs` +56, `Instalar.gs` +25, `Config.gs` +2), de las
+     cuales una parte grande son comentarios y el control positivo nuevo.
+     **Sigue abierto y no es de este tramo:** si `m2` se despide de `MAPEO` (las 19 filas
+     duplicadas) o si se mapea `Cuentas M2` y `m2` se queda sólo con lo suyo.
 
 2. **Tramo 2 — corte vertical, JM solo.** Pasos 3, 4 y 5. Se hace contra JM únicamente:
    construir los dos en paralelo impide después distinguir qué necesitó código y qué salió

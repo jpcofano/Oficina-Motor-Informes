@@ -1445,3 +1445,66 @@ nadie más.
     `RUNBOOK`, con su fila propia en `CLAUDE.md` §7, y la frontera de `ENTORNO.local.md`
     dicha explícita — credenciales y URLs de acceso, no identificadores que ya viven en un
     seed versionado.
+
+## Paso 2.16 ✅ — el filtro declarativo, y `m2` que no había que activar (2026-08-02/03) — commits `9dda191` + el de esta entrada
+- **Qué pedía el prompt:** "registrar M2" con tres cambios —`modo_periodo` a `filtrar`,
+  una fila `fecha_periodo`, y excluir `Estado = Proyectado`—, como primera medición de
+  `D-01` por el eje "base nueva".
+- **La Parte A tiró abajo dos de los tres, y el prompt estaba diseñado para eso.** Su A.3
+  preguntaba cuál es la fuente, porque el ítem del plan mandaba mapear contra
+  `m2/Directa mail`, que el Paso 2.10 Parte C declaró **derivada**. Se verificó contra el
+  dato crudo y no contra la etiqueta: las dos solapas tienen el **mismo
+  `firma_encabezado` carácter por carácter**, **2114 filas cada una** y la misma
+  distribución de `Estado`. Son el mismo contenido. **Decisión del usuario: la fuente es
+  `digital/Directa Mail`.** `buscarMapeo` la habría rechazado igual — exige `uso = fuente`.
+- **Qué quedó de los tres cambios:** **(a)** descartado — `filtrar` sin `fecha_periodo` en
+  ninguna solapa de `m2` habría convertido toda lectura en `«FALTA:fecha_periodo»`, latente
+  porque nada lee `m2`. **(b)** ya existía: `digital/Directa Mail.fecha_periodo` = F,
+  promovida en el Paso 2.3.x. **(c)** todo el paso.
+- **`m2` no aporta nada que `digital` no tenga.** Sus 19 filas de `MAPEO` están duplicadas
+  campo por campo; catorce apuntan a vistas `referencia` con período tipeado a mano y cinco
+  a una solapa `ignorar`. **Ninguna apunta a una solapa `fuente`**, y la única que `m2`
+  tiene declarada (`Cuentas M2`, 354 filas) no está mapeada. Queda abierto y fuera del
+  tramo.
+- **Qué se hizo:** `MAPEO.valores_incluidos` (columna nueva vía `COLUMNAS_DELTA_`, entrada
+  al final del array por la lección del 2.15), el filtro y sus conteos en `Fuentes.gs`,
+  `normalizarValorDeclarado_`, el control positivo `probarListaBlancaValores_`, y la fila
+  `digital/Directa Mail/mail_estado` con `Implementado, En curso`. **Lista blanca y no
+  exclusión** (`D-21`): con "todo lo que no sea Proyectado", un estado nuevo entraría solo
+  y en silencio.
+- **Tres decisiones de diseño que no se resolvieron en el código:** el filtro se aplica
+  **antes** de bifurcar por modo (la primera base que lo usa es `snapshot`); **no toca
+  `filasDatos`**, para no romper el invariante del Paso 2.9 Parte B —se usa un vector de
+  inclusión paralelo, así los índices siguen alineados con `filasCrudasDisplay`—; y **no se
+  escribió un cuarto normalizador a ciegas**: se compararon los tres que ya existen, se
+  escribió por qué ninguno servía, y el nuevo implementa **exactamente la forma que `R-10`
+  ya declara** y que sigue pendiente para encabezados.
+- **Medición de `D-01`: +253 / −5 líneas en cuatro archivos** (`Fuentes.gs` +170,
+  `Pruebas.gs` +56, `Instalar.gs` +25, `Config.gs` +2). El renglón de "por qué hubo que
+  tocar código" es uno solo y es reusable: **el motor no tenía forma declarativa de excluir
+  filas por valor**. El único filtro que existía (`status = Realizada`) está hardcodeado en
+  `Union.gs`, con el valor guardado en una `notas` que ningún código lee.
+- **Prueba:** por API. `digital/Directa Mail` pasa de **2114 a 2073** filas, con **41
+  excluidas** (`Proyectado` 30, vacío 11), cero valores declarados sin filas y sólo
+  `Implementado` y `En curso` en el resultado; `filas_totales` sigue en 2114, o sea que el
+  invariante de `filasDatos` se sostuvo. `Aplicar configuración` ×2: `cambiadas 2 ·
+  agregadas 0` y después `sin cambios: sí`, con `protegidas (con diferencia): 0`. Los
+  **6 controles** de `Pruebas.gs`, incluido el nuevo, pasan.
+- **Pendientes/decisiones:**
+  - **`D-21` nuevo**, con el tercer significado del vacío escrito al lado de los otros dos
+    (`D-19`: la fila no entra; `D-20`: usa el default) para que nadie los unifique.
+  - **`rdv/status` quedó SIN declarar, contra lo planeado.** Al verificar apareció que con
+    este diseño **declarar es conectar**: `leerFuente` aplica toda lista blanca declarada,
+    así que cargar `Realizada` cambiaría en el acto lo que ve *cualquier* lectura de `rdv`,
+    no sólo el matcher. Es decisión del usuario y está en `HANDOFF_CODE.md`.
+  - **Dos hallazgos preexistentes a `PENDIENTES`**: `m2/Cuentas` está en `ignorar` y sin
+    embargo la mapea `MAPEO` y la audita `SOLAPAS_A_DESCRIBIR_AUD1_`, contra el invariante
+    de `CLAUDE.md` §2; y la columna U de `Directa Mail` tiene `#REF!` como encabezado.
+  - **La advertencia del año `20206` no se reproduce**: 2079 filas con fecha, todas de
+    2026. Va a "Preguntas al equipo" porque desde el motor no se puede saber si la
+    corrigieron, si borraron la fila o si el envío se recargó. La lista blanca además deja
+    el universo con fecha completa: de las 2073 que entran, **cero sin fecha**.
+  - **El `/dev` alternó 404 y página de login durante la verificación**, con el token
+    válido y los 21 `.gs` parseando bien. Costó varios reintentos y **se perdió el reporte
+    de la primera corrida de `Aplicar`** —la llamada se ejecutó pero la respuesta no
+    volvió—; el estado final se verificó leyendo la hoja.
