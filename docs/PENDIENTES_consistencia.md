@@ -478,7 +478,7 @@ criterio técnico (`C-01`: la plantilla es del equipo).
 > formato que no se usa. Renombrarla —o borrarla, o sacar el renombre— es decidir sobre el
 > interior de una lámina cuya vigencia es la pregunta de arriba. **Si la slide 10 se retira,
 > el conflicto desaparece entero**: se van con ella `m2_salud_camp` y las veintitantas cajas
-> de la grilla, y las veinte entradas `m2_*` del diccionario de renombres dejan de tener
+> de la grilla, y las dieciséis entradas `m2_*` del diccionario de renombres dejan de tener
 > objeto. Si se conserva, recién ahí tiene sentido preguntar qué mide la caja ancha.
 >
 > **E · Un hallazgo que sobrevive a esa decisión, y es de `docs/TOKENS.md`: los dos tokens de
@@ -498,16 +498,34 @@ criterio técnico (`C-01`: la plantilla es del equipo).
 > - **No se aplica el diccionario sobre esa lámina.** `{{m2_salud_camp}}` y la grilla de
 >   cinco ejes quedan como están, **con la colisión anotada y sin resolver**.
 >
-> **Consecuencia operativa que hay que tener a la vista, porque cambia el bloqueo del
-> `Paso-2.5`:** `armonizarPresentacion_` aplica la lista entera de `jm` con
-> `presentacion.replaceAllText()`, que es de **toda la presentación**. Correr
-> "Armonizar tokens de plantillas" como está hoy **sí toca la slide 10** — las veinte
-> entradas `m2_*` de la lista son suyas— y produce la colisión que esta decisión quiere
-> evitar. Las otras **cinco** entradas de `jm` (`enc_audiencia`, `enc_audiencia_pct`,
-> `enc_clics`, `enc_audiencia_ivr`, `rrss_prom`) **no tocan la slide 10**. Así que armonizar
-> respetando esta decisión exige correr **sólo esas cinco**, lo que hoy no se puede hacer sin
-> partir la lista en el `.gs`. **No se hizo:** es una decisión sobre cómo armonizar, no una
-> corrección mecánica.
+> **Consecuencia operativa — resuelta el 03/08/2026, con un filtro derivado.**
+> `armonizarPresentacion_` aplicaba la lista entera de `jm` con
+> `presentacion.replaceAllText()`, que es de **toda la presentación**, así que correr
+> "Armonizar tokens de plantillas" **tocaba la slide 10** y producía la colisión que esta
+> decisión quiere evitar.
+>
+> **No se resolvió partiendo la lista a mano** —eso deja una segunda lista que nadie
+> actualiza—: `filtrarRenombresPorLaminasCongeladas_` **deriva el corte del inventario de la
+> plantilla**. Para cada entrada mira en qué slides vive su token de origen y la excluye
+> sólo si vive **únicamente** en una lámina congelada. Se recalcula solo cuando la plantilla
+> cambia, y el día que la lámina se descongele no hay nada que acordarse de tocar.
+>
+> **Medido sobre la JM canónica, sin armonizar:** de **21** entradas declaradas, **5
+> adentro** (`enc_audiencia`, `enc_audiencia_pct`, `enc_clics`, `enc_audiencia_ivr`,
+> `rrss_prom`) y **16 afuera**, todas `m2_*` y todas en la slide 10. **Cero conflictos** —
+> ninguna entrada tiene su token de origen dentro y fuera— y **cero sin ocurrencias**: los 21
+> tokens de origen existen en la plantilla.
+>
+> **Dos frenos, los dos a propósito.** `LAMINAS_CONGELADAS_` declara un **testigo**
+> (`m2_salud_camp`) que tiene que estar en la slide declarada: si el equipo reordena las
+> láminas, el filtro **para y no armoniza** en vez de excluir la equivocada — el número de
+> slide solo no alcanza, la misma lámina es la 10 en la canónica y la 11 en la obsoleta. Y si
+> una entrada tuviera su token dentro **y** fuera, también para: no se puede excluir sin
+> perder el renombre bueno, y no hay opción correcta que el código pueda elegir solo.
+>
+> *(Corrección de una cifra propia: durante el día esta entrada dijo "veinte de las
+> veinticinco" y el `Paso-2.5` dijo "23". La lista tiene **21**. Contadas a ojo, no por el
+> código — la nota de método 1 de `docs/PLAN.md`.)*
 
 ### P2 · El diagnóstico no distingue config vieja de config mal armada
 
@@ -1098,6 +1116,27 @@ empiece con `_`** o que se limite a profundidad 0; que `clasificarArchivoPlantil
 carpeta de salidas **deje de ser hija** de la de plantillas; o —lo más barato y lo que ya
 está hecho de hecho— que el ID venga del seed y el registro automático quede como
 diagnóstico, no como escritor. Ninguno se aplicó: hoy el registro sigue pudiendo escribir.
+
+### P2 · `armonizarPresentacion_` reemplaza con `replaceAllText`, que es global por diseño
+
+Anotado el 03/08/2026 al derivar el filtro de láminas congeladas. **No se hace ahora.**
+
+`presentacion.replaceAllText(viejo, nuevo, true)` opera sobre **toda la presentación**: no
+tiene forma de acotarse a una lámina. Es la razón por la que congelar una sola lámina obligó
+a construir un filtro que decide **qué entradas se le pasan** en vez de **dónde escribe**.
+El filtro funciona y se deriva del inventario, pero es un rodeo: acota por token, que es una
+aproximación a acotar por lámina. Coinciden mientras cada token viva en una sola lámina — y
+el propio filtro tiene que parar y avisar cuando no.
+
+**La solución de fondo es escribir por `objectId`**, con `Slides API` o recorriendo los
+`PageElement` y reemplazando en el `TextRange` de cada uno. Con eso el alcance es una
+propiedad de la llamada y no una consecuencia de qué lista se armó: se puede decir
+"renombrá esto en estas láminas" sin filtros derivados, sin testigos y sin el caso de parada.
+
+**Y no es trabajo perdido:** `D-06` etapa 2 ya exige el mapa `token → objectId` para poder
+actualizar un deck en sitio, y el `Paso-4` lo tiene que registrar al generar. El día que ese
+mapa exista, la armonización puede usar el mismo mecanismo. **Conviene hacerlo después del
+Paso 4, no antes** — ahí el costo ya está pago.
 
 ### P1 · Falta una operación que devuelva una **lista** de valores, no un número
 

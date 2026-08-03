@@ -187,13 +187,23 @@ declararlo: `enc_mails_enviados` es **un envío**, no la suma de la cuenta. Para
 >   operación de lista en `docs/PENDIENTES_consistencia.md`. Vale para `m2_implementaciones`
 >   en SECCO y para `m2_campanias` en JM.
 >
-> **Un dato para verificar antes de dar por buena la correspondencia con el informe:** las
-> coordenadas del deck original que aportó el usuario —conteo `x=308 y=120 w=343`, lista
-> `x=308 y=142 w=343`, Δ`y` 22— coinciden **exactamente en `x` y en `w` con SECCO**, y sólo
-> se aproximan a JM (`x=268`, `w=378`, Δ`y` 23). El texto también: SECCO renderiza
-> `12 Campañas` con espacio y JM `12Campañas` sin espacio. **Conviene confirmar de cuál de
-> los dos informes salió el deck**, porque define cuál plantilla es la referencia de esa
-> lámina.
+> **Resuelto el mismo 03/08 con el deck a la vista, y el resultado importa más que el
+> cruce.** El deck del 24–31/07 **es de JM** —lo dice su portada—, y su lámina M2 tiene la
+> estructura de **tres cajas**: envíos, conteo de campañas y lista de nombres. Ésa es la
+> estructura de **SECCO**, no la de la plantilla de JM, que tiene **dos** y no tiene token
+> para los envíos. Coinciden también las coordenadas (`x=308 w=343`, Δ`y` 22) y el texto
+> (`12 Campañas` con espacio, como SECCO; JM renderiza `12Campañas`).
+>
+> **Dos consecuencias:**
+> - **La plantilla de JM está atrasada respecto del informe que JM publica.** No es que el
+>   deck sea de otro informe: es que el equipo ya rehizo esa lámina y la plantilla no lo
+>   siguió. Lo que hay que corregir es la plantilla, no la lectura del deck.
+> - **SECCO es la referencia de esa lámina**, y con eso **el cruce de nombres de JM queda
+>   como un defecto, no como una convención por informe.** Es la diferencia que importa al
+>   declararlo en `MARCADORES`: un cruce deliberado se registra con `informe_id` y se respeta;
+>   un defecto de una plantilla atrasada se registra igual —porque hoy la plantilla dice lo
+>   que dice— pero **con fecha de vencimiento**, y se revisa cuando la lámina se actualice.
+>   **No se renombra nada** (`C-01`): el arreglo es del equipo, sobre la plantilla.
 
 ### Tareas
 

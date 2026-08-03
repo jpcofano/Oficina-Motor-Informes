@@ -36,16 +36,14 @@ rediseñar.
 
 ## Trabado
 
-1. **El `Paso-2.5` sigue trabado, pero el bloqueo cambió de naturaleza.** Ya no es una
-   decisión pendiente sobre la caja `{{m2_salud_camp}}` —eso lo cerraste el 03/08: **la
-   slide 10 se congela y no se toca**—. Lo que queda es **cómo armonizar sin tocarla**:
-   `armonizarPresentacion_` aplica la lista entera de `jm` con `replaceAllText()`, que es de
-   **toda la presentación**, y **veinte de sus veinticinco entradas son de la slide 10**.
-   Correrlo como está produce la colisión que tu decisión quiere evitar. Las otras **cinco**
-   (`enc_audiencia`, `enc_audiencia_pct`, `enc_clics`, `enc_audiencia_ivr`, `rrss_prom`) no
-   la tocan. **Armonizar respetando la decisión exige correr sólo esas cinco, y eso hoy no se
-   puede sin partir la lista en el `.gs`.** No lo hice: es una decisión sobre cómo armonizar,
-   no una corrección mecánica.
+1. **El `Paso-2.5` sigue trabado, pero ya no por cómo armonizar: eso está resuelto.** La
+   slide 10 quedó congelada por decisión tuya, y `armonizarPresentacion_` ahora la respeta
+   con un **filtro derivado del inventario** (`filtrarRenombresPorLaminasCongeladas_`), no
+   con una lista partida a mano. Medido sobre la canónica: de **21** entradas declaradas,
+   **5 adentro** y **16 afuera**, todas de la slide 10, **cero conflictos**.
+   **Lo que falta es correr la armonización**, que escribe sobre la plantilla del equipo —
+   acción tuya o autorización explícita. Hasta que corra, la canónica de JM sigue con los
+   cinco tokens viejos y sembrar `MARCADORES` crearía filas destinadas a cambiar de nombre.
    *(`SECCO` sí está armonizada. El bloqueo es de JM, el único informe del Tramo 2.)*
 2. **`CAMPANAS` sigue con las tres filas sin `periodo_id`** (`D-19`). No traba implementar el
    `Paso-5-v2`, pero su `0.2` para ahí y no se puede probar. Curarlas es tarea tuya.
@@ -55,13 +53,11 @@ siete premisas se sostienen**: está listo para ejecutarse.
 
 ## Esperando decisión tuya
 
-- **Cómo armonizar JM sin tocar la slide 10** — ver "Trabado". Es la que más rinde: destraba
-  el `Paso-2.5`, y con él la decisión de `m2` en `MAPEO`.
-- **De cuál informe salió el deck original que aportaste.** Las coordenadas que pasaste
-  —conteo `x=308 y=120 w=343`, lista `x=308 y=142 w=343`— coinciden **exactamente en `x` y
-  `w` con SECCO** (slide 14) y sólo se aproximan a JM (slide 9: `x=268`, `w=378`). El texto
-  también: SECCO renderiza `12 Campañas` con espacio, JM `12Campañas` sin espacio. Define
-  cuál plantilla es la referencia de esa lámina.
+- **Correr la armonización de JM.** El filtro ya está y da 5 adentro / 16 afuera sin
+  conflictos; `previsualizarArmonizacion('jm')` lo muestra sin tocar nada. Correrla
+  **escribe sobre la plantilla del equipo** (con backup automático previo), así que no la
+  corrí. Es lo que más rinde: destraba el `Paso-2.5`, y con él la decisión de `m2` en
+  `MAPEO`.
 - **`rdv` compartida como `anyoneWithLink = writer`** (`P0` nuevo). El permiso explícito de
   las cuentas del motor es `reader` y está bien puesto; el link lo pisa. Cualquiera con el
   ID edita la base — y el ID está en un repo público. **No lo tocó Code**: es archivo de un

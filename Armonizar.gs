@@ -68,6 +68,261 @@ var RENOMBRES_ARMONIZACION_POR_INFORME_ = {
   ]
 };
 
+/* ===================== Recorrido de una presentación (sólo lectura) =====================
+ *
+ * Extraído a scope de módulo el 03/08/2026 para que `mapaDeTokens_` y el filtro de láminas
+ * congeladas usen **el mismo** recorrido. Antes vivía adentro de `mapaDeTokens_`, y dos
+ * recorridos distintos sobre las mismas plantillas es exactamente la clase de duplicación
+ * que este repo ya pagó cara.
+ *
+ * Baja a **tablas** (celda por celda) y a **grupos** (recursivo), que es lo que
+ * `slide.getShapes()` no hace: medido el 03/08, ese camino no ve 33 tokens de JM ni 48 de
+ * SECCO.
+ */
+var RE_TOKEN_ = /\{\{([a-zA-Z0-9_]+)\}\}/g;
+
+function recorteTexto_(texto, tope) {
+  var limpio = String(texto || '').replace(/\s+/g, ' ').trim();
+  return limpio.length > tope ? limpio.slice(0, tope) + '…' : limpio;
+}
+
+function geometriaElemento_(elemento) {
+  try {
+    return {
+      x: Math.round(elemento.getLeft()),
+      y: Math.round(elemento.getTop()),
+      w: Math.round(elemento.getWidth()),
+      h: Math.round(elemento.getHeight())
+    };
+  } catch (e) {
+    return null; // hay elementos sin geometría propia (celdas de tabla, p. ej.)
+  }
+}
+
+/** Todo lo que tiene texto en una slide: `{ texto, contenedor, geo }`. */
+function piezasDeTextoDeSlide_(slide) {
+  var salida = [];
+
+  function recorrer_(elemento, contenedor, geoHeredada) {
+    var tipo;
+    try { tipo = String(elemento.getPageElementType()); } catch (e) { return; }
+
+    if (tipo === 'GROUP') {
+      var geoGrupo = geometriaElemento_(elemento) || geoHeredada;
+      elemento.asGroup().getChildren().forEach(function (hijo) {
+        recorrer_(hijo, contenedor === 'suelta' ? 'grupo' : contenedor + '>grupo', geoGrupo);
+      });
+      return;
+    }
+
+    if (tipo === 'TABLE') {
+      var tabla = elemento.asTable();
+      var geoTabla = geometriaElemento_(elemento) || geoHeredada;
+      for (var f = 0; f < tabla.getNumRows(); f++) {
+        for (var c = 0; c < tabla.getNumColumns(); c++) {
+          // `getCell` tira excepción sobre una celda combinada que no es la principal
+          // (la de arriba a la izquierda). Es el caso de la lámina de M2, que es una
+          // grilla con combinaciones: saltearlas es correcto, su texto vive en la
+          // principal y ya se leyó.
+          try {
+            salida.push({
+              texto: tabla.getCell(f, c).getText().asString(),
+              contenedor: 'tabla fila ' + (f + 1) + ' col ' + (c + 1),
+              geo: geoTabla
+            });
+          } catch (e) {
+            continue;
+          }
+        }
+      }
+      return;
+    }
+
+    if (tipo === 'SHAPE' || tipo === 'TEXT_BOX') {
+      salida.push({
+        texto: elemento.asShape().getText().asString(),
+        contenedor: contenedor,
+        geo: geometriaElemento_(elemento) || geoHeredada
+      });
+    }
+  }
+
+  slide.getPageElements().forEach(function (elemento) {
+    recorrer_(elemento, 'suelta', null);
+  });
+  return salida;
+}
+
+/** `{ token: [nº de slide, …] }`, 1-based, sin llaves. Sólo lectura. */
+function tokensPorSlide_(presentacion) {
+  var mapa = {};
+  presentacion.getSlides().forEach(function (slide, i) {
+    piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+      var m;
+      RE_TOKEN_.lastIndex = 0;
+      while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) {
+        var t = m[1];
+        if (!mapa[t]) mapa[t] = [];
+        if (mapa[t].indexOf(i + 1) === -1) mapa[t].push(i + 1);
+      }
+    });
+  });
+  return mapa;
+}
+
+/* ========================= Láminas congeladas (03/08/2026) =========================
+ *
+ * Decisión del usuario del 03/08/2026: la lámina de la grilla de cinco ejes de M2 **no se
+ * retira y no se corrige**. Si vuelve a aparecer en un informe, ahí se decide. Hasta
+ * entonces no se le aplica el diccionario de renombres — aplicarlo dejaría dos cajas con el
+ * token `{{m2_salud_camp}}`, colisión que la plantilla ya trae y que el renombre **revela**,
+ * no crea (ver `docs/PENDIENTES_consistencia.md`).
+ *
+ * **El filtro NO es una lista de renombres escrita a mano.** Se deriva del inventario de la
+ * plantilla: para cada entrada del diccionario se mira en qué slides vive su token de
+ * origen, y se excluye únicamente si vive **sólo** en una lámina congelada. Así el filtro se
+ * recalcula solo cuando la plantilla cambia, y el día que la lámina se descongele no queda
+ * una lista que nadie se acuerde de actualizar.
+ *
+ * `testigo` es la red de seguridad: un token que **tiene que** estar en esa slide para que
+ * el número de slide se considere válido. Si el equipo reordena las láminas, el testigo no
+ * aparece y el filtro **para y avisa** en vez de excluir la lámina equivocada — que sería
+ * peor que no filtrar. (El número de slide solo no sirve: la misma lámina es la 10 en la
+ * plantilla canónica y la 11 en la obsoleta.)
+ */
+var LAMINAS_CONGELADAS_ = {
+  jm: [
+    { slide: 10, testigo: 'm2_salud_camp', motivo: 'grilla de cinco ejes de M2 — congelada 03/08/2026, no está en el informe publicado' }
+  ]
+};
+
+/**
+ * Parte la lista de renombres de un informe en las que se aplican y las que no, **derivando
+ * el corte del inventario de la plantilla**. Sólo lectura: no escribe nada.
+ *
+ * Devuelve `{ ok, dentro, fuera, conflictos, sin_ocurrencias, laminas }`.
+ *
+ * **`ok: false` en dos casos, los dos a propósito:**
+ *  - un `testigo` no está en la slide que declara `LAMINAS_CONGELADAS_` (la plantilla se
+ *    reordenó, o es otra);
+ *  - una entrada tiene su token de origen **dentro y fuera** de la lámina congelada. Ésa no
+ *    se puede excluir sin perder el renombre bueno, ni aplicar sin tocar la lámina. Se
+ *    reporta y se para: no hay opción correcta que el código pueda elegir solo.
+ */
+function filtrarRenombresPorLaminasCongeladas_(informeId, presentacion) {
+  var lista = RENOMBRES_ARMONIZACION_POR_INFORME_[informeId] || [];
+  var congeladas = LAMINAS_CONGELADAS_[informeId] || [];
+
+  if (!congeladas.length) {
+    return { ok: true, dentro: lista, fuera: [], conflictos: [], sin_ocurrencias: [], laminas: [] };
+  }
+
+  var mapa = tokensPorSlide_(presentacion);
+
+  // Red de seguridad antes de excluir nada.
+  var laminas = [];
+  for (var i = 0; i < congeladas.length; i++) {
+    var c = congeladas[i];
+    var slidesDelTestigo = mapa[c.testigo] || [];
+    if (slidesDelTestigo.indexOf(c.slide) === -1) {
+      return {
+        ok: false,
+        motivo: 'El testigo "' + c.testigo + '" de la lámina congelada ' + c.slide + ' no está en esa slide' +
+          (slidesDelTestigo.length ? ' (está en la ' + slidesDelTestigo.join(', ') + ')' : ' (no está en la presentación)') +
+          '. La plantilla se reordenó o es otra: no se filtra nada y no se armoniza.'
+      };
+    }
+    laminas.push({ slide: c.slide, testigo: c.testigo, motivo: c.motivo });
+  }
+
+  var numerosCongelados = congeladas.map(function (c) { return c.slide; });
+  var dentro = [];
+  var fuera = [];
+  var conflictos = [];
+  var sinOcurrencias = [];
+
+  lista.forEach(function (par) {
+    var token = String(par.viejo).replace(/[{}]/g, '');
+    var slides = mapa[token] || [];
+
+    if (!slides.length) {
+      // No existe en la plantilla: `replaceAllText` daría 0 ocurrencias. Se deja dentro
+      // —es inofensivo— pero se reporta, porque suele significar que ya se aplicó.
+      sinOcurrencias.push(token);
+      dentro.push(par);
+      return;
+    }
+
+    var enCongelada = slides.filter(function (s) { return numerosCongelados.indexOf(s) !== -1; });
+    var enOtras = slides.filter(function (s) { return numerosCongelados.indexOf(s) === -1; });
+
+    if (enCongelada.length && enOtras.length) {
+      conflictos.push({ token: token, en_congelada: enCongelada, en_otras: enOtras });
+      return;
+    }
+    if (enCongelada.length) {
+      fuera.push({ viejo: par.viejo, nuevo: par.nuevo, slides: enCongelada });
+      return;
+    }
+    dentro.push(par);
+  });
+
+  if (conflictos.length) {
+    return {
+      ok: false,
+      motivo: 'Hay ' + conflictos.length + ' renombre(s) cuyo token de origen vive dentro Y fuera de la lámina ' +
+        'congelada. No se pueden excluir sin perder el renombre bueno. No se armoniza.',
+      conflictos: conflictos,
+      laminas: laminas
+    };
+  }
+
+  return {
+    ok: true,
+    dentro: dentro,
+    fuera: fuera,
+    conflictos: [],
+    sin_ocurrencias: sinOcurrencias,
+    laminas: laminas
+  };
+}
+
+/**
+ * Reporte del filtro **sin armonizar nada**. Es lo que hay que mirar antes de correr
+ * "Armonizar tokens de plantillas": cuántas entradas quedan dentro, cuántas fuera y por qué.
+ */
+function previsualizarArmonizacion(informeId) {
+  var informes = leerInformes();
+  var informe = informes[informeId];
+  if (!informe) return { ok: false, motivo: 'No hay fila "' + informeId + '" en INFORMES' };
+  if (!informe.plantilla_id) return { ok: false, motivo: 'INFORMES.' + informeId + '.plantilla_id está vacío' };
+
+  var presentacion;
+  try {
+    presentacion = SlidesApp.openById(informe.plantilla_id);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo abrir la presentación: ' + e.message };
+  }
+
+  var lista = RENOMBRES_ARMONIZACION_POR_INFORME_[informeId] || [];
+  var filtro = filtrarRenombresPorLaminasCongeladas_(informeId, presentacion);
+
+  return {
+    ok: filtro.ok,
+    informe_id: informeId,
+    plantilla: presentacion.getName(),
+    total_declarados: lista.length,
+    dentro: filtro.ok ? filtro.dentro.length : 0,
+    fuera: filtro.ok ? filtro.fuera.length : 0,
+    detalle_dentro: filtro.ok ? filtro.dentro.map(function (p) { return p.viejo + ' → ' + p.nuevo; }) : [],
+    detalle_fuera: filtro.ok ? filtro.fuera.map(function (p) { return p.viejo + ' → ' + p.nuevo + ' (slide ' + p.slides.join(',') + ')'; }) : [],
+    sin_ocurrencias: filtro.sin_ocurrencias || [],
+    laminas_congeladas: filtro.laminas || [],
+    conflictos: filtro.conflictos || [],
+    motivo: filtro.motivo || ''
+  };
+}
+
 function armonizarPlantillas() {
   var informes = leerInformes();
   var reporte = [];
@@ -127,6 +382,13 @@ function armonizarPresentacion_(informeId, plantillaId) {
     return { ok: false, motivo: 'No se pudo abrir la presentación "' + plantillaId + '": ' + e.message };
   }
 
+  // El filtro de láminas congeladas corre ANTES del backup: si no se va a armonizar, no
+  // tiene sentido dejar una copia más en `_backups`.
+  var filtro = filtrarRenombresPorLaminasCongeladas_(informeId, presentacion);
+  if (!filtro.ok) {
+    return { ok: false, motivo: 'No se armonizó (no se tocó la plantilla): ' + filtro.motivo, conflictos: filtro.conflictos || [] };
+  }
+
   var carpetaBackups = asegurarCarpetaBackups_();
   if (!carpetaBackups.ok) {
     return { ok: false, motivo: 'Backup abortado (no se tocó la plantilla): ' + carpetaBackups.motivo };
@@ -141,12 +403,13 @@ function armonizarPresentacion_(informeId, plantillaId) {
   var renombres = [];
   var renombresOmitidos = !listaRenombres;
 
-  if (listaRenombres) {
-    listaRenombres.forEach(function (par) {
-      var ocurrencias = presentacion.replaceAllText(par.viejo, par.nuevo, true);
-      renombres.push({ viejo: par.viejo, nuevo: par.nuevo, ocurrencias: ocurrencias });
-    });
-  }
+  // `replaceAllText` es de TODA la presentación (`P2` en PENDIENTES: la solución de fondo es
+  // escribir por `objectId`). Mientras tanto, lo que acota el alcance es qué entradas se le
+  // pasan, y eso lo decide `filtro.dentro` — derivado del inventario, no escrito a mano.
+  filtro.dentro.forEach(function (par) {
+    var ocurrencias = presentacion.replaceAllText(par.viejo, par.nuevo, true);
+    renombres.push({ viejo: par.viejo, nuevo: par.nuevo, ocurrencias: ocurrencias });
+  });
 
   // Parte B corre siempre DESPUÉS de los renombres de texto de la Parte A,
   // sobre la misma presentación ya abierta — el orden es a propósito (ver
@@ -160,6 +423,14 @@ function armonizarPresentacion_(informeId, plantillaId) {
     backup: backup,
     renombres: renombres,
     renombres_omitidos: renombresOmitidos,
+    // Qué quedó afuera por lámina congelada, y por qué. Va en el reporte a propósito: una
+    // armonización que aplica menos renombres de los declarados tiene que decirlo, si no
+    // el próximo que mire la plantilla va a ver tokens viejos y no va a saber si es un bug.
+    excluidos_por_lamina_congelada: (filtro.fuera || []).map(function (p) {
+      return p.viejo + ' → ' + p.nuevo + ' (slide ' + p.slides.join(',') + ')';
+    }),
+    laminas_congeladas: filtro.laminas || [],
+    sin_ocurrencias: filtro.sin_ocurrencias || [],
     cajas: cajas
   };
 }
@@ -622,75 +893,8 @@ function mapaDeTokens_(plantillaId, patron) {
   var enFormaSuelta = {};
   var slidesPorToken = {};
 
-  function recorte_(texto, tope) {
-    var limpio = String(texto || '').replace(/\s+/g, ' ').trim();
-    return limpio.length > tope ? limpio.slice(0, tope) + '…' : limpio;
-  }
-
-  function geometria_(elemento) {
-    try {
-      return {
-        x: Math.round(elemento.getLeft()),
-        y: Math.round(elemento.getTop()),
-        w: Math.round(elemento.getWidth()),
-        h: Math.round(elemento.getHeight())
-      };
-    } catch (e) {
-      return null; // hay elementos sin geometría propia (celdas de tabla, p. ej.)
-    }
-  }
-
-  // Junta { texto, contenedor, geo } de todo lo que tenga texto en la slide.
-  function textosDe_(elemento, contenedor, geoHeredada, salida) {
-    var tipo;
-    try { tipo = String(elemento.getPageElementType()); } catch (e) { return; }
-
-    if (tipo === 'GROUP') {
-      var geoGrupo = geometria_(elemento) || geoHeredada;
-      elemento.asGroup().getChildren().forEach(function (hijo) {
-        textosDe_(hijo, contenedor === 'suelta' ? 'grupo' : contenedor + '>grupo', geoGrupo, salida);
-      });
-      return;
-    }
-
-    if (tipo === 'TABLE') {
-      var tabla = elemento.asTable();
-      var geoTabla = geometria_(elemento) || geoHeredada;
-      for (var f = 0; f < tabla.getNumRows(); f++) {
-        for (var c = 0; c < tabla.getNumColumns(); c++) {
-          // `getCell` tira excepción sobre una celda combinada que no es la principal
-          // (la de arriba a la izquierda). Es el caso de la lámina de M2, que es una
-          // grilla con combinaciones: saltearlas es correcto, su texto vive en la
-          // principal y ya se leyó.
-          try {
-            salida.push({
-              texto: tabla.getCell(f, c).getText().asString(),
-              contenedor: 'tabla fila ' + (f + 1) + ' col ' + (c + 1),
-              geo: geoTabla
-            });
-          } catch (e) {
-            continue; // celda combinada que no es la principal
-          }
-        }
-      }
-      return;
-    }
-
-    if (tipo === 'SHAPE' || tipo === 'TEXT_BOX') {
-      var forma = elemento.asShape();
-      salida.push({
-        texto: forma.getText().asString(),
-        contenedor: contenedor,
-        geo: geometria_(elemento) || geoHeredada
-      });
-    }
-  }
-
   slides.forEach(function (slide, i) {
-    var piezas = [];
-    slide.getPageElements().forEach(function (elemento) {
-      textosDe_(elemento, 'suelta', null, piezas);
-    });
+    var piezas = piezasDeTextoDeSlide_(slide);
 
     var coincidencias = [];
     var tokensDeLaSlide = {};
@@ -703,7 +907,7 @@ function mapaDeTokens_(plantillaId, patron) {
       while ((m = TOKEN.exec(pieza.texto)) !== null) encontrados.push(m[1]);
 
       if (!encontrados.length) {
-        var suelto = recorte_(pieza.texto, 40);
+        var suelto = recorteTexto_(pieza.texto, 40);
         if (suelto) {
           textosSinToken.push({
             y: pieza.geo ? pieza.geo.y : '',
@@ -729,7 +933,7 @@ function mapaDeTokens_(plantillaId, patron) {
         coincidencias.push({
           token: t,
           contenedor: pieza.contenedor,
-          texto: recorte_(pieza.texto, 120),
+          texto: recorteTexto_(pieza.texto, 120),
           geo: pieza.geo
         });
       });
@@ -754,7 +958,7 @@ function mapaDeTokens_(plantillaId, patron) {
 
     contexto.push({
       slide: i + 1,
-      titulo: recorte_(primerTextoDeSlide_(slide), 80),
+      titulo: recorteTexto_(primerTextoDeSlide_(slide), 80),
       tokens_de_la_slide: Object.keys(tokensDeLaSlide).sort().join(' ')
     });
 

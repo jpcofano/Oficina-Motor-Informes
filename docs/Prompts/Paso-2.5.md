@@ -39,8 +39,12 @@ filas de tokens que todavía pueden cambiar de nombre, y deshacerlo es a mano, f
 > El encabezado de `docs/TOKENS.md` dice lo mismo con todas las letras.
 >
 > **Y esa lista de cinco es una muestra, no un censo:** la lista de renombres real de JM
-> (`RENOMBRES_ARMONIZACION_POR_INFORME_`, `Armonizar.gs`) tiene **23 entradas**. Sembrar
-> ahora crea hasta 23 filas destinadas a cambiar de nombre.
+> (`RENOMBRES_ARMONIZACION_POR_INFORME_`, `Armonizar.gs`) tiene **21 entradas**. Sembrar
+> ahora crea hasta 21 filas destinadas a cambiar de nombre.
+>
+> *(Corrección del 03/08/2026, mismo día: acá decía **23** y en otros lados **25**. Son
+> **21** — 5 no-`m2` y 16 `m2`—, contadas por el código y no a ojo. Es la nota de método 1 de
+> `docs/PLAN.md`: una cifra redonda que se lee como medida.)*
 >
 > **Quién lo destraba, y no es Code:** el `P1` de la caja `{{m2_salud_camp}}` huérfana
 > (`docs/PENDIENTES_consistencia.md`). Son dos opciones excluyentes y es **decisión del

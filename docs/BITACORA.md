@@ -1981,3 +1981,47 @@ nadie más.
 - **Prueba:** sólo lectura. No se tocó código.
 - **Pendientes/decisiones:** ninguna nueva. **El paso está listo para ejecutarse** cuando se
   decida arrancarlo.
+
+## Armonización — filtro de láminas congeladas derivado del inventario (2026-08-03) — commit de esta entrada
+- **Qué pedía:** registrar que el deck 24–31/07 es de **JM** y tiene la estructura de **tres
+  cajas de SECCO**; resolver cómo armonizar sin tocar la lámina congelada **sin partir la
+  lista a mano**, derivando el filtro del inventario, y reportar cuántas entradas quedan
+  dentro y fuera **antes de correr**; anotar como `P2` que `replaceAllText` es global por
+  diseño.
+- **Qué se hizo:**
+  - **1 · La plantilla de JM está atrasada respecto del informe que JM publica.** Anotado en
+    el `Paso-2.13` Parte 3, junto al cruce. El deck es de JM y su lámina M2 tiene las **tres**
+    cajas —envíos, conteo de campañas, lista de nombres— que hoy sólo existen en la plantilla
+    de **SECCO**; la de JM tiene dos y le falta el token de envíos. Eso hace de **SECCO la
+    referencia de esa lámina** y confirma que el cruce de nombres de JM es un **defecto**, no
+    una convención por informe.
+  - **2 · El filtro, derivado.** `filtrarRenombresPorLaminasCongeladas_` mira, para cada
+    entrada del diccionario, en qué slides vive su token de origen, y la excluye **sólo si
+    vive únicamente en una lámina congelada**. `LAMINAS_CONGELADAS_` declara la lámina con un
+    **testigo** (`m2_salud_camp`) que tiene que estar en esa slide: si el equipo reordena,
+    **para y no armoniza** en vez de excluir la equivocada — el número de slide solo no
+    alcanza, la misma lámina es la 10 en la canónica y la 11 en la obsoleta. Si una entrada
+    tuviera su token **dentro y fuera**, también para y la reporta.
+  - Para poder derivarlo se **extrajo el recorrido a scope de módulo**
+    (`piezasDeTextoDeSlide_`, `tokensPorSlide_`, `recorteTexto_`, `geometriaElemento_`), que
+    antes vivía adentro de `mapaDeTokens_`. Dos recorridos distintos sobre la misma plantilla
+    era la duplicación que este repo ya pagó cara. Los cuatro nombres se greppearon antes.
+  - **3 · `P2` anotado, sin hacerlo:** `replaceAllText` es de toda la presentación, así que el
+    filtro acota **por token**, que es una aproximación a acotar **por lámina**. La solución
+    de fondo es escribir por `objectId` — y **no es trabajo perdido**: `D-06` etapa 2 ya
+    exige el mapa `token → objectId` y el `Paso-4` lo registra. Conviene hacerlo **después**
+    del Paso 4, cuando el costo ya esté pago.
+- **Prueba — `previsualizarArmonizacion('jm')`, sólo lectura, sin armonizar:**
+  **21 declaradas · 5 DENTRO · 16 FUERA · 0 conflictos · 0 sin ocurrencias.** Las 5 de adentro
+  son `enc_audiencia`, `enc_audiencia_pct`, `enc_clics`, `enc_audiencia_ivr` y `rrss_prom`;
+  las 16 de afuera son todas `m2_*` y todas de la slide 10. El testigo verificó. Los 6
+  controles de `Pruebas.gs` pasan.
+- **Pendientes/decisiones:**
+  - **No se armonizó.** Correrla escribe sobre la plantilla del equipo. Es acción del usuario
+    o autorización explícita.
+  - **Corrección de una cifra propia, y es la nota de método 1 de `PLAN.md`.** Durante el día
+    dije que la lista de `jm` tenía **23** entradas y después **25**. Tiene **21** — 5 no-`m2`
+    y 16 `m2`. Las dos cifras salieron de contar a ojo una lista con comentarios en el medio;
+    la de ahora la contó el código. Corregido en `Paso-2.5` `0.1`, en `PENDIENTES` y en el
+    handoff; las entradas anteriores de esta bitácora quedan como están —es append-only— y
+    esta línea es su corrección.
