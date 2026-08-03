@@ -649,6 +649,26 @@ abierta**. Arreglarlo es decidir qué gana cuando difieren, que es justo la preg
 probablemente sea **reportar la diferencia sin aplicarla**, como se hace con las filas
 protegidas de `SOLAPAS`.
 
+### P2 · Tres días de corte distintos para la misma semana
+
+Relevado el 02/08/2026 al escribir `R-11`. Nadie los contradice en código —**no hay
+aritmética de día de la semana en ningún `.gs`**: `Fechas.gs` y `preseleccion_fechas.gs`
+detectan *columnas* de fecha, no calculan ventanas, y `resolverVentana()` (`Fuentes.gs`)
+lee `CAMPANAS`/`PERIODOS`/`CONFIG` sin default propio. Pero declarados hay tres:
+
+| dónde | qué dice |
+|---|---|
+| `R-11` (`REGLAS_NEGOCIO.md`) | la semana va de **viernes a viernes** — decisión del usuario, 02/08 |
+| `docs/DISENO_match_temario.md` §26 y el temario real | **viernes a jueves** (vie 24/07 → jue 30/07) |
+| `Automatizacion.gs`, encabezado | *"Cada **lunes** genera el informe de la semana cerrada"* |
+
+El de `Automatizacion.gs` es el más barato de corregir y el más fácil de que sobreviva:
+el archivo es un **stub de cinco líneas** (Paso 10, sin implementar), así que hoy no hace
+nada — pero es la única instrucción escrita que va a leer quien lo implemente, y dice otro
+día. No se corrige acá porque cuál gana depende de la pregunta abierta de `PLAN.md` §3
+(¿es M2 una excepción, o la etiqueta "jueves-a-jueves" leyó mal la observación?). Cuando
+el equipo responda, se alinean los tres de una vez.
+
 ### P2 · Dos carpetas de Drive distintas se llaman "Sistema Informes en Slides"
 
 Verificado contra Drive el 02/08/2026 (`Paso-2.15` Parte A). La carpeta de **plantillas**

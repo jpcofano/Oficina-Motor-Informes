@@ -289,6 +289,12 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
    construir los dos en paralelo impide después distinguir qué necesitó código y qué salió
    solo. **`Paso-4.md` se revisa antes de ejecutarlo** — está escrito y casi seguro asume
    copiar-y-reemplazar sin registrar la configuración de la corrida (`D-06`).
+   - **El default de período de `R-11` (viernes a viernes) y la impresión de las fechas en
+     la lámina son parte de estos pasos, no un paso propio**: el cálculo entra donde se
+     resuelve la ventana (Paso 3) y la impresión donde se reemplazan los tokens (Paso 4).
+     `CONFIG` hoy tiene `2026-06-26` → `2026-07-03`, los dos viernes, así que el valor
+     cargado ya cumple `R-11` y no hay que tocarlo. Antes de implementar el cálculo hace
+     falta cerrar si el extremo final es inclusivo (ver `R-11`, "Pendiente de definir").
 
 3. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
    valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo
@@ -316,7 +322,7 @@ Cada ítem nombra **qué lo destraba y de quién depende**.
 |---|---|---|
 | Fuente de MiBA | definir de dónde salen los datos | tercero |
 | Tercer informe | no es prioritario: el objetivo es la capacidad de incorporar informes, no un informe puntual | usuario |
-| Ventana jueves-a-jueves de M2 | confirmar con una segunda semana; hoy hay **un solo caso observado** | equipo |
+| Ventana jueves-a-jueves de M2 — **contradice a `R-11`** (02/08/2026) | `R-11` fija la semana del informe **viernes a viernes**, y el único caso observado de M2 es vie 24/07 → jue 30/07, no jueves a jueves. O M2 es una excepción declarada a `R-11`, o la etiqueta "jueves-a-jueves" leyó mal esa misma observación: la evidencia primaria (comentario de la slide 1, recogido en `docs/DISENO_match_temario.md` §26) dice **"El período es de viernes a jueves"**. **No está decidido cuál de las dos** — se pregunta junto con la segunda semana | equipo |
 | Qué regla selecciona los envíos de M2 dentro de la ventana | no es la marca `M2` ni la fecha; si es curaduría manual, hace falta registro a nivel `ID MailUp` | equipo |
 | La lámina dice 18 envíos y 11 campañas; el número sale de 10 envíos y 3 campañas | preguntar quién armó la lámina | equipo |
 | Etapa 2: actualizar el deck en sitio (`D-06`) | el mapa `token → objectId` de la etapa 1, más decidir qué hace el motor cuando una caja registrada ya no está | interno |

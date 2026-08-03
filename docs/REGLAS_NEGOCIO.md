@@ -350,6 +350,36 @@ encabezados duplicados tras normalizar, por solapa (hoy hay cuatro casos reales;
 salgan como ⚠, no como una columna elegida al azar).
 ---
 
+## R-11 — La semana del informe va de viernes a viernes
+
+**Enunciado:** el período que reporta el informe es una semana de **viernes a viernes**.
+Es el default en dos lugares: para **mostrar** el período en las láminas, y para
+**calcularlo** cuando nadie lo cargó a mano.
+
+**Precedencia — el cálculo automático nunca pisa a una persona:** si
+`CONFIG.periodo_desde` / `CONFIG.periodo_hasta` están cargados, mandan ellos. El default
+sólo entra cuando esos valores están vacíos. Misma dirección que `D-10` y que la
+preselección de `DIAG_FECHAS`: lo que decidió un humano no se recalcula solo.
+
+**Origen:** decisión del usuario, 02/08/2026.
+
+**Cómo se verifica:** con `CONFIG` cargado, el período impreso en la lámina es el de
+`CONFIG` aunque no caiga en viernes. Con `CONFIG` vacío, el período calculado arranca un
+viernes. Al 02/08/2026 `CONFIG` tiene `2026-06-26` → `2026-07-03`, **los dos viernes**
+(verificado), así que el valor cargado ya es consistente con la regla y no hay que tocarlo.
+
+**Pendiente de definir, y no lo decide esta regla:** si el extremo final es inclusivo o
+exclusivo. `CONFIG` hoy dice viernes 26/06 → viernes 03/07, que leído inclusive son **ocho
+días**; el único período real observado en un temario es vie 24/07 → jue 30/07, "inclusive"
+según su propio texto, que son **siete**. Las dos formas describen la misma semana con
+distinto extremo. Hace falta la respuesta antes de implementar el cálculo (Pasos 3 y 4).
+
+**Si falla:** si el equipo corrige el día de corte, esta regla se marca derogada con fecha
+y se revisa la fila de `PLAN.md` §3 que apunta acá, más el encabezado de `Automatizacion.gs`
+(ver `docs/PENDIENTES_consistencia.md`).
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas
