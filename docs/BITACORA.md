@@ -1838,3 +1838,43 @@ nadie más.
   - **`post_*` (SECCO slide 10) es una familia que `INFORMES` no declara.** Las de `secco`
     son `ecv,et,emin,m2,camp,conv,rep,rrss`. O falta `post`, o los seis tokens están mal
     nombrados.
+
+## Relevamiento — la caja en disputa está en otra lámina: la pregunta cambia (2026-08-03) — commit de esta entrada
+- **Qué pedía:** con el informe original (24/07–31/07) aportado por el usuario, verificar
+  contra la plantilla si `{{m2_campanias}}` y `{{m2_salud_camp}}` viven en la **misma lámina
+  o en dos distintas**. Sin renombrar.
+- **Respuesta: en dos distintas.** Y eso cambia la pregunta, como el usuario anticipó.
+
+  | | lámina | token | `y` | `x` | `w` | `h` |
+  |---|---|---|---|---|---|---|
+  | conteo | **slide 9** · *Directa \| Status semanal de M2* | `{{m2_envios}}` (texto `{{m2_envios}}Campañas`) | 84 | 268 | 378 | 24 |
+  | lista | **slide 9**, 23 pt debajo | `{{m2_campanias}}` | 107 | 268 | 378 | 24 |
+  | caja en disputa | **slide 10** · *M2* | `{{m2_salud_camp}}` | 356 | 100 | 513 | 30 |
+
+- **Qué se verificó:**
+  - **La slide 9 es la lámina del informe real, y la correspondencia es de forma.** El
+    original tiene Mail a la izquierda y a la derecha una caja de conteo (`12 Campañas`)
+    sobre una caja ancha con la lista — conteo `x=308 y=120 w=343`, lista `x=308 y=142
+    w=343`. La slide 9: **misma `x`, mismo `w`, lista inmediatamente debajo del conteo**
+    (Δ`y` 23 contra 22), y a la izquierda `Mail`, `Mails entregados`, `Aperturas (OR)`,
+    `Clics (CTOR)` más un `33 envíos` escrito a mano.
+  - **La grilla de cinco ejes no existe en el informe.** La slide 10 no tiene contraparte en
+    el deck publicado, y acumula **dos** formatos por eje que nadie usó: la grilla visible y
+    los cuatro bloques verticales parkeados fuera del área. El informe resuelve M2 con **una
+    lista plana de doce nombres que mezcla ejes**, sin agrupamiento.
+  - **Verificado también en la obsoleta:** su slide 9 tiene las dos cajas en las mismas
+    coordenadas (`x=268`, `y=84` y `y=107`, `w=378`). La estructura es anterior al
+    diccionario.
+- **Prueba:** `mapaDeTokens_` sobre la canónica, sólo lectura. Los 6 controles pasan.
+- **Pendientes/decisiones:**
+  - **No se renombró nada, y la tercera opción quedó sin objeto por ahora.** La pregunta ya
+    no es cómo nombrar la caja: es **si la slide 10 sigue vigente**. Si se retira, el
+    conflicto desaparece entero —se van `m2_salud_camp` y las veintitantas cajas de la
+    grilla, y las veinte entradas `m2_*` del diccionario de renombres dejan de tener objeto—.
+    Es del usuario con el equipo (`C-01`).
+  - **Hallazgo que sobrevive a esa decisión, y es de `docs/TOKENS.md`:** en la slide 9, que
+    **sí** se usa, los dos tokens dicen lo contrario de lo que llenan. `{{m2_envios}}` está
+    en la caja del **conteo de campañas** (su texto es `{{m2_envios}}Campañas`, y el conteo
+    de envíos está al lado, a mano, como `33 envíos`), y `{{m2_campanias}}` está en la caja
+    de la **lista de nombres**. Misma clase de cruce que `enc_mails_enviados` (`Paso-2.13`
+    Parte 3).

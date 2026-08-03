@@ -443,6 +443,54 @@ criterio técnico (`C-01`: la plantilla es del equipo).
 > **Qué preguntarle al equipo, concreto:** en la lámina M2 del informe, la línea ancha
 > debajo del cuadro de cinco columnas, ¿qué decía — el total de campañas de M2, las campañas
 > de Salud, u otra cosa?
+>
+> ---
+>
+> **Addendum del 03/08/2026 — con el informe original (24/07–31/07) a la vista, la pregunta
+> cambia y esta entrada deja de ser sobre una caja.** El usuario aportó el deck publicado. La
+> verificación contra la plantilla es concluyente y **no requiere preguntarle nada al equipo
+> sobre el nombre de la caja**: la pregunta ya no es cómo renombrarla.
+>
+> **A · Están en dos láminas distintas. Ese era el dato que faltaba.**
+>
+> | | lámina | token | `y` | `x` | `w` | `h` |
+> |---|---|---|---|---|---|---|
+> | conteo | **slide 9** · *Directa \| Status semanal de M2* | `{{m2_envios}}` (texto `{{m2_envios}}Campañas`) | 84 | 268 | 378 | 24 |
+> | lista | **slide 9**, 23 pt debajo | `{{m2_campanias}}` | 107 | 268 | 378 | 24 |
+> | caja en disputa | **slide 10** · *M2* | `{{m2_salud_camp}}` | 356 | 100 | 513 | 30 |
+>
+> **B · La slide 9 ES la lámina del informe real, caja por caja.** El original tiene Mail a
+> la izquierda y, a la derecha, una caja de conteo (`12 Campañas`) sobre una caja ancha con
+> la lista de nombres — conteo en `x=308 y=120 w=343`, lista en `x=308 y=142 w=343`. La
+> slide 9 tiene exactamente esa estructura: **misma `x`, mismo `w`, lista inmediatamente
+> debajo del conteo** (Δ`y` 23 en la plantilla contra 22 en el original), y a la izquierda la
+> columna de Mail — `Mail`, `Mails entregados`, `Aperturas (OR)`, `Clics (CTOR)`, más un
+> `33 envíos` escrito a mano. La correspondencia es de forma, no sólo de contenido.
+>
+> **C · La grilla de cinco ejes no existe en el informe.** La slide 10 no tiene contraparte en
+> el deck publicado. Y acumula **dos** formatos por eje que nadie usó: la grilla visible, y
+> los cuatro bloques verticales parkeados fuera del área (punto 6). El informe real resuelve
+> M2 con **una lista plana de doce nombres que mezcla ejes** —transporte, salud, espacio
+> público, servicios—, sin ningún agrupamiento. La slide 10 agrupa por eje algo que el
+> informe no agrupa.
+>
+> **D · La pregunta ya no es la caja: es la lámina.** `{{m2_salud_camp}}` es una caja de un
+> formato que no se usa. Renombrarla —o borrarla, o sacar el renombre— es decidir sobre el
+> interior de una lámina cuya vigencia es la pregunta de arriba. **Si la slide 10 se retira,
+> el conflicto desaparece entero**: se van con ella `m2_salud_camp` y las veintitantas cajas
+> de la grilla, y las veinte entradas `m2_*` del diccionario de renombres dejan de tener
+> objeto. Si se conserva, recién ahí tiene sentido preguntar qué mide la caja ancha.
+>
+> **E · Un hallazgo que sobrevive a esa decisión, y es de `docs/TOKENS.md`: los dos tokens de
+> la slide 9 dicen lo contrario de lo que llenan.** `{{m2_envios}}` está en la caja del
+> **conteo de campañas** (su texto es literalmente `{{m2_envios}}Campañas`, y el conteo de
+> envíos está al lado escrito a mano como `33 envíos`), y `{{m2_campanias}}` está en la caja
+> de la **lista de nombres**. Es la misma clase de cruce que el `Paso-2.13` Parte 3 documenta
+> para `enc_mails_enviados`, y hay que resolverlo aunque la slide 10 se retire: es la lámina
+> que sí se usa.
+>
+> **Decisión pendiente, y es del usuario con el equipo (`C-01`): ¿la slide 10 sigue vigente?**
+> No se tocó nada.
 
 ### P2 · El diagnóstico no distingue config vieja de config mal armada
 
