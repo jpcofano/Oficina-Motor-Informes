@@ -41,6 +41,57 @@ rutas sucesivas del historial. `.gitignore` (31/07) frena lo nuevo pero no lo ex
 Borrado diferido: decidido por el equipo, fuera del alcance de Code — Code no toca
 historial ni archivos de datos.
 
+### P0 · Direccionabilidad: 14 IDs de recursos internos en un repo público
+
+Censado el 02/08/2026 al revisar el `DOC-8`. **Es distinto del `P0` de arriba**: ése es
+sobre **contenido** —datos personales que quedaron publicados—, éste es sobre
+**direccionabilidad** —qué recursos internos quedan localizables—. Un ID de Drive no da
+acceso, los permisos siguen mandando; sí confirma que el recurso existe, permite pedir
+acceso dirigido y liga por nombre este repo con documentos de conducción de un organismo
+público.
+
+| ID | qué es | dónde nace |
+|---|---|---|
+| `1ZpHO6Ru…vLAo` | base **rdv** | `SEED_BASES_` (`Instalar.gs`) |
+| `1LadILzF…ilhPY` | base **digital** | `SEED_BASES_` |
+| `1t6Ji4Cd…rHKaQ` | base **looker** | `SEED_BASES_` |
+| `1_GS01-TX…hZNvY` | base **m2** | `SEED_BASES_` |
+| `1aPWibSbng…BZbIY` | planilla de control | `docs/_snapshots/*.tsv` |
+| `1Q5At-CO…xgYpi` | carpeta plantillas | `SEED_CONFIG_DEFAULTS_` |
+| `1EyTlfg1…SbX_fJ` | carpeta motor | `SEED_CONFIG_DEFAULTS_` |
+| `1LAEVlWZ…3Ejlz` | carpeta salidas | `SEED_CONFIG_DEFAULTS_` |
+| `1JrHvs_p…JAzbE` | plantilla JM | `INFORMES` y docs |
+| `1_ZKjWhL…B4-n8` | plantilla SECCO | `INFORMES` y docs |
+| `1yIlCIBG…rNZv0` | deck comentado | docs |
+| `117I0qn1…7u6jI` | plantilla JM canónica | **hardcodeada** en `Armonizar.gs` |
+| `1wrSsWNU…` | script id del proyecto | `.clasp.json`, trackeado |
+| `1MBNAzxe…5HbAw` | Google Doc de conducción | `docs/Prompts/DOC-8_punteo_de_avance.md` |
+
+Aparecen en **33 archivos trackeados**: los `.gs`, el RUNBOOK, `PROYECTO.md`, doce prompts,
+siete handoffs, los snapshots `.tsv` y `.clasp.json`. Trece de los catorce ya estaban antes
+del `DOC-8`, varios desde el primer commit: **el `DOC-8` es el caso 14, no la causa.**
+Sacarlo no cambiaría nada mientras las cuatro bases y las tres carpetas sigan publicadas.
+
+**Reescribir el historial no alcanzaría.** El repo es público desde el 27/07/2026
+(verificado contra la API de GitHub el 02/08: `visibility: public`), así que hay que asumir
+que lo publicado ya pudo copiarse o indexarse. Un borrado retroactivo limpia el repo, no el
+mundo.
+
+**Decisión del usuario, 02/08/2026: el repo sigue público por ahora**, y esto **se revisa
+al llegar a producción o a una versión de prueba** — lo que ocurra primero. No es una
+pregunta abierta sin dueño: es una decisión tomada con revisión programada, anotada también
+en `docs/PLAN.md` §2 para que la encuentre quien llegue a ese hito.
+
+**Dos sub-ítems que no se arreglan ahora y que conviene resolver antes de esa revisión:**
+
+- **`.clasp.json` está trackeado.** Es el más incómodo de la lista porque no es un ID de
+  dato: es el **proyecto de Apps Script**. `.claspignore` no lo cubre — ese archivo filtra
+  lo que sube *a* Apps Script, no lo que entra a git.
+- **`117I0qn1…` está hardcodeado en `Armonizar.gs`** (`PLANTILLA_JM_CANONICA_`) cuando
+  debería salir de configuración. Es la misma clase de duplicación que se cerró el 02/08 en
+  `diagnosticoDrive()` (`Paso-2.15` Parte A): mientras viva en código, el ID no se puede
+  cambiar sin `clasp push` y queda publicado aunque la config apunte a otro lado.
+
 ### ~~P0 · Paso 2.11 Parte C: el protocolo falla en los pasos 4 y 5~~ — CERRADO (01/08/2026)
 
 Los dos bloqueantes se resolvieron y el protocolo pasó completo en su segunda corrida

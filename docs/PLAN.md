@@ -300,6 +300,13 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
 3. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
    valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo
    siguiente.
+   - **Revisión programada, al llegar acá o a producción, lo que ocurra primero:** el repo
+     es **público** y expone 14 IDs de recursos internos —las cuatro bases, la planilla de
+     control, las tres carpetas, las plantillas, el script id—. Se decidió el 02/08/2026
+     dejarlo público **por ahora** y revisarlo en este hito. El censo completo, la
+     distinción con el `P0` de datos personales y los dos sub-ítems (`.clasp.json`
+     trackeado, `PLANTILLA_JM_CANONICA_` hardcodeada) están en
+     `docs/PENDIENTES_consistencia.md`, `P0` de direccionabilidad.
 
 4. **Tramo 4 — panel** (`D-04`). El resto del tramo depende del primer ítem.
    - **Primero, y antes de escribir código del panel:** verificar qué devuelve
