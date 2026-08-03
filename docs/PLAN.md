@@ -268,6 +268,46 @@ justamente la ambigüedad que `D-08` vino a cerrar.
 **Lo que esta decisión NO define:** qué hace el motor al *leer* — filtrar por período es de
 los Pasos 3 y 5 (`Paso-2.15` B.5). Acá sólo queda establecido el significado del vacío.
 
+> **Nota del 02/08/2026, agregada al escribir `D-20`** (no altera nada de arriba): **el
+> vacío de `D-19` y el de `D-20` son opuestos y no se unifican.** Una **fila** de
+> `CAMPANAS`/`REUNIONES` sin `periodo_id` **no entra a ningún informe**. Una **sección** sin
+> período **sí entra**: usa el default. La diferencia no es un descuido — una fila sin
+> período es un dato del que no se sabe a qué semana pertenece; una sección sin período es
+> una sección que no necesita ventana propia, que es el caso normal.
+
+**`D-20` — El período se configura por sección.**
+Cada sección de un informe puede tener **su propia ventana**. Si no la tiene, se usa el
+default de `R-11` —la semana, siete días de viernes a jueves— o lo que el usuario haya
+cargado. Decisión del usuario, 02/08/2026.
+
+Es **un escalón más en la cadena que ya resuelve `resolverVentana()`**, no un mecanismo
+nuevo: `campaña > sección > periodo_ref > CONFIG`. Hoy esa cadena existe sin el eslabón del
+medio (`Fuentes.gs`), y el período sólo se puede declarar por marcador
+(`MARCADORES.periodo_ref`) o por campaña.
+
+**Consecuencia estructural, y hay que respetarla en ese orden:** `SECCIONES` gana una
+columna de período, y le aplica lo mismo que a `CAMPANAS` y `REUNIONES` en el `Paso-2.15`.
+Está entre las **siete hojas sin `COLUMNAS_DELTA_`**, así que **entra al delta antes de que
+nadie le toque los `headers`**. Al revés, la rama sin delta reescribe la fila 1 con los
+encabezados nuevos sin mover los datos, sobre una hoja de 35 filas curadas: mismo modo de
+falla que midió el `Paso-2.15` en su punto 0.2.
+
+**Relación con `D-19` — son opuestas a propósito.** Una sección sin período **no** es una
+sección sin datos: es una sección que usa el default. Es la regla **contraria** a la de las
+filas de `CAMPANAS`/`REUNIONES` sin `periodo_id`, que no entran a ningún informe. Está dicho
+en las dos decisiones para que nadie las unifique por parecerse.
+
+**Lo que esta decisión NO cierra, y es diseño del Paso 3:**
+
+- **Dónde entra exactamente la sección respecto de la campaña.**
+- La cadena como está escrita pone la sección **por encima de
+  `MARCADORES.periodo_ref`**, que hoy es el mecanismo más fino que existe. Si se confirma
+  así, una sección con ventana propia le gana a un marcador que declare la suya. Conviene
+  resolverlo explícito en el Paso 3 y no descubrirlo con un número raro.
+- **No se implementa acá.** Es del Paso 3, junto con el cálculo del default de `R-11`, que
+  hoy tampoco existe: si `CONFIG` está vacío, `resolverVentana()` devuelve error, no una
+  semana.
+
 **Prueba disponible ya, antes del panel:** compartirle un deck de salida a la cuenta de
 prueba y confirmar que lo abre **sin acceso a ninguna base**. Es **la mitad de `D-16` que no
 depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck.
@@ -325,6 +365,13 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
      períodos consecutivos pueden solaparse o dejar hueco sin que el motor diga nada
      (`R-11` Addendum 1). El extremo inclusivo ya está cerrado; no queda nada que preguntar
      antes de implementarlo.
+   - **El Paso 3 tiene que resolver `D-20`: el período por sección.** Son tres cosas y van
+     juntas porque las tres tocan `resolverVentana()`: **(1)** la columna de período en
+     `SECCIONES` —que **entra a `COLUMNAS_DELTA_` antes** de que se toquen sus `headers`,
+     por lo que midió el `Paso-2.15` 0.2—; **(2)** el eslabón nuevo en la cadena, con la
+     posición de la sección respecto de la campaña y de `MARCADORES.periodo_ref` decidida
+     explícitamente; **(3)** el cálculo del default de `R-11`, que hoy no existe — con
+     `CONFIG` vacío la función devuelve error, no una semana.
 
 3. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
    valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo
