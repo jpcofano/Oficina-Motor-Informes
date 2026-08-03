@@ -98,8 +98,10 @@ var MENU_ = {
     { t: 'Plantillas', items: [
       { t: 'Inventario de plantillas',            f: 'menuInventarioPlantillas_' },
       { t: 'Diagnosticar carpeta de plantillas',  f: 'menuDiagnosticarCarpetaPlantillas_' },
-      { t: 'Armonizar tokens de plantillas',      f: 'menuArmonizarPlantillas_' },
-      { t: 'Fijar plantilla canónica de JM',      f: 'menuRepuntarPlantillaCanonicaJM_' }
+      // "Fijar plantilla canónica de JM" retirado el 03/08/2026 junto con
+      // `repuntarPlantillaCanonicaJM_` (`Armonizar.gs`): era una migración de un solo uso
+      // que ya corrió, y el ID que cableaba vive ahora en `INFORMES.plantilla_id`.
+      { t: 'Armonizar tokens de plantillas',      f: 'menuArmonizarPlantillas_' }
     ]}
   ]
 };

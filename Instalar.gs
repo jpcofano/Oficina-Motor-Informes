@@ -714,9 +714,30 @@ function limpiarHojaPorDefecto_(ss) {
 // son identificadores durables, referenciados en todo SEED_MAPEO_/SEED_SOLAPAS_ —
 // misma categoría que BASES/MAPEO, se aplica con el mismo mecanismo (upsertPorClave_
 // en seedConfiguracion()).
+// 03/08/2026 — `plantilla_id` pasa a declararse acá, con el ID real. Antes iba vacío
+// porque el reparto declarado en `docs/ESCRITORES.md` le daba esa columna al registro de
+// plantillas (`registrarPlantillasDesdeCarpeta` → `clasificarArchivoPlantilla_`). Ese
+// reparto no se sostiene, por dos razones medidas el 03/08:
+//
+//   1. `upsertPorClave_` reescribe la fila ENTERA cuando alguna columna declarada
+//      cambia, y escribe '' en las que el seed no declara. Con el seed en '', cualquier
+//      "Aplicar configuración" borraba el `plantilla_id` que el registro había cargado.
+//      Es por eso que la hoja viva llegó al 03/08 con las dos celdas vacías pese a que
+//      `repuntarPlantillaCanonicaJM_` había corrido el 30/07 (la plantilla obsoleta
+//      quedó renombrada en Drive, que es su otra mitad).
+//   2. El registro de plantillas NO ve la plantilla de JM: `DriveApp` no la lista al
+//      recorrer la carpeta, aunque la abre bien por ID. Verificado el 03/08 por los dos
+//      lados (Drive API `files.list` y `diagnosticarCarpetaPlantillas_`).
+//
+// Los IDs de recurso viven en los `SEED_*` — mismo criterio que `SEED_BASES_.sheet_id` y
+// que `SEED_CONFIG_DEFAULTS_`. Lo que sale de acá es el ID cableado en `Armonizar.gs`,
+// que sí era un consumidor leyendo una constante en vez de la hoja de registro.
+//
+// La obsoleta de JM (`1JrHvs_p…`) NO se declara: vive renombrada `[OBSOLETA — no usar]`
+// en la subcarpeta `_backups` de la carpeta de plantillas, y ese nombre es su registro.
 var SEED_INFORMES_ = [
-  { informe_id: 'jm', nombre: 'Informe semanal JM', plantilla_id: '', periodicidad: 'semanal', familias: 'ecv,enc,m2,camp,mail,gcba,rrss', activo: 'sí', notas: '22 slides' },
-  { informe_id: 'secco', nombre: 'Seguimiento SECCO-SSCDI', plantilla_id: '', periodicidad: 'mensual', familias: 'ecv,et,emin,m2,camp,conv,rep,rrss', activo: 'sí', notas: '29 slides' }
+  { informe_id: 'jm', nombre: 'Informe semanal JM', plantilla_id: '117I0qn1XP1JCiz2mU32hUY1iiMUmrAAvHOsczd7u6jI', periodicidad: 'semanal', familias: 'ecv,enc,m2,camp,mail,gcba,rrss', activo: 'sí', notas: '22 slides' },
+  { informe_id: 'secco', nombre: 'Seguimiento SECCO-SSCDI', plantilla_id: '1_ZKjWhL-bhCP8yHQ8PJ33ymyjSXu3thh7MKMOxB4-n8', periodicidad: 'mensual', familias: 'ecv,et,emin,m2,camp,conv,rep,rrss', activo: 'sí', notas: '29 slides' }
 ];
 
 var SEED_BASES_ = [
