@@ -34,9 +34,21 @@ grep -rn "function nombreNuevo_" *.gs
   informe o una base necesita tocar `.gs`, eso se anota como medición, no se silencia.
   El objetivo es que ese número baje. No es criterio de aceptación: nada se bloquea por
   esto, pero nada se esconde tampoco.
-- **Nada de nombres hardcodeados.** Bases y plantillas se descubren leyendo las hojas de
-  registro (`CONFIG`, `BASES`, `INFORMES`, `MARCADORES`, `MAPEO`, `CAMPANAS`,
-  `PERIODOS`). Si aparece un nombre de base o de plantilla literal en el código, está mal.
+- **Nada de valores hardcodeados.** Todo valor que pueda cambiar **sin que cambie la
+  lógica** —nombres de estados, umbrales, ventanas de días, IDs de carpeta— vive en una
+  hoja de configuración, no en el código. Es la dirección de `D-01`: si cambiar un
+  parámetro de negocio exige `clasp push`, eso es una línea de `.gs` que no debería hacer
+  falta.
+  - **Los nombres son el caso particular** que esta regla ya cubría: bases y plantillas se
+    descubren leyendo las hojas de registro (`CONFIG`, `BASES`, `INFORMES`, `MARCADORES`,
+    `MAPEO`, `CAMPANAS`, `PERIODOS`). Un nombre de base o de plantilla literal en el
+    código está mal.
+  - **El precedente dice el motivo con todas las letras**: el Paso 2.9F sacó el umbral de
+    anclaje de `Union.gs` a `CONFIG.umbral_anclaje_reunion`, y el comentario que dejó en
+    `Instalar.gs` lo explica — *"cambiarlo ya no exige `clasp push`"*.
+  - La regla se lee **antes** de escribir la constante, no después: una constante de
+    módulo con un valor de negocio adentro (`VENTANA_DIAS_CANDIDATOS_ANCLAJE_ = 14`,
+    `VALOR_STATUS_REALIZADA_ = 'Realizada'`) es deuda desde la línea uno, aunque funcione.
 - **Un token que falla escribe `«FALTA:token»`, no rompe la corrida.** Resiliencia sobre
   fragilidad: el informe sale con los huecos marcados y visibles.
 - **La plantilla es del equipo, el motor se adapta** (`docs/REGLAS_NEGOCIO.md`, `C-01`).
