@@ -49,8 +49,20 @@ grep -rn "function nombreNuevo_" *.gs
   - La regla se lee **antes** de escribir la constante, no después: una constante de
     módulo con un valor de negocio adentro (`VENTANA_DIAS_CANDIDATOS_ANCLAJE_ = 14`,
     `VALOR_STATUS_REALIZADA_ = 'Realizada'`) es deuda desde la línea uno, aunque funcione.
-- **Un token que falla escribe `«FALTA:token»`, no rompe la corrida.** Resiliencia sobre
-  fragilidad: el informe sale con los huecos marcados y visibles.
+- **Nada que venga de una planilla se compara crudo: se normalizan los dos lados.** Una
+  celda trae espacios de más, saltos de línea pegados y valores tipeados a mano; comparar
+  con `===` contra un literal falla en silencio y el síntoma aparece lejos —filas que no
+  entran, un `MAPEO` que no matchea, un token que sale `«FALTA:»`—. Esto estaba en el
+  código en cuatro lugares y en ninguna regla hasta el 02/08/2026.
+  - **La forma la fija `R-10`**: colapsar `/\s+/` a un espacio y `trim()`, **preservando
+    mayúsculas y acentos**. No es una preferencia: plegar el case colapsa quince pares de
+    encabezados reales que son columnas distintas con contenido distinto.
+  - **Antes de escribir un normalizador nuevo, mirar los cuatro que ya existen** (§1, el
+    grep previo): `normalizar_` (`Parseo.gs`, pliega case y acentos — para matchear texto
+    libre), `normalizarParaComparar_` (`Instalar.gs`, canonicaliza fechas para el diff),
+    `normalizarIdCuenta_` (`Union.gs`, `String().trim()` para claves de join) y
+    `normalizarValorDeclarado_` (`Fuentes.gs`, la forma de `R-10`). Cuatro ya son una
+    señal; un quinto **sin el motivo escrito arriba de la función** es deuda.
 - **La plantilla es del equipo, el motor se adapta** (`docs/REGLAS_NEGOCIO.md`, `C-01`).
   Nunca al revés. Toda migración que escriba sobre una plantilla crea backup antes.
 - **Reparto de responsabilidad por módulo:** estructura de hojas → `Instalar.gs`; acceso a
