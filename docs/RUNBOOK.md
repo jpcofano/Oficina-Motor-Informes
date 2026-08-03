@@ -80,14 +80,23 @@
 
 ## Parte D — Registrar las plantillas (Paso 1.6)
 
-10. Las plantillas ya están como Google Slides en tu carpeta. Dos opciones:
-    - **Automático (recomendado):** pasá a Code el prompt `docs/Prompts/Paso-1.6.md`
-      → agrega `registrarPlantillasDesdeCarpeta()`; corré esa función con el ID de
-      la carpeta de **plantillas** (tabla "Las carpetas de Drive", al final) y llena
-      `INFORMES` sola.
-    - **Manual:** abrí cada Slides, copiá su ID de la URL
-      (`/presentation/d/`**`ESTE_ID`**`/edit`) y pegalo en `INFORMES.plantilla_id`
-      (`jm` y `secco`).
+10. **Hecho el 03/08/2026, y no como decía este paso.** Los dos `INFORMES.plantilla_id`
+    están cargados: `jm` → `117I0qn1…` (`JM_marcada`, 22 slides), `secco` → `1_ZKjWhL…`
+    (`SECCO_marcada`, 29 slides). Los declara **`SEED_INFORMES_`** (`Instalar.gs`) y llegan
+    a la hoja por "Aplicar configuración", como los `sheet_id` de `BASES`. Verificado por
+    API: `inventarioPlantillas()` abre las dos.
+
+    ⚠ **No corras el registro automático para cargarlas.** Era la opción "recomendada" de
+    este paso y **no sirve para esta carpeta**, por dos motivos medidos el 03/08 (`P0` en
+    `docs/PENDIENTES_consistencia.md`): la plantilla de JM **no aparece** al listar la
+    carpeta —aunque se abre bien por ID— y el recorrido **entra en `_backups`**, donde vive
+    `[OBSOLETA — no usar] JM_marcada`. Con las celdas vacías habría cargado la obsoleta.
+    Hoy, con las celdas cargadas, `registrarPlantillasDesdeCarpeta()` es inofensivo y sirve
+    de **diagnóstico**: devuelve 7 conflictos, todos contra backups.
+
+    Para cambiar una plantilla: editar el ID en `SEED_INFORMES_` y "Aplicar configuración",
+    o editar la celda a mano **y actualizar el seed en el mismo commit** — si el seed dice
+    otra cosa, la próxima corrida pisa la celda.
 
 ---
 
@@ -96,7 +105,11 @@
 Todo lo que el motor abre por ID tiene que estar accesible para `jpcofanogcba1`:
 
 11. Compartí con `jpcofanogcba1@gmail.com`:
-    - Las **4 bases** → como **Lector** (el motor solo lee datos).
+    - Las **4 bases** → como **Lector** (el motor solo lee datos). ✅ **Hecho y verificado
+      por API el 03/08/2026** en las cuatro. Con una salvedad que no es de rol: `rdv` está
+      compartida como `anyoneWithLink = writer`, y eso pisa el `reader` explícito — el motor
+      (y cualquiera con el link) la puede editar. `P0` abierto en
+      `docs/PENDIENTES_consistencia.md`.
     - La **carpeta de plantillas** → como **Editor** (el motor las copia).
     - La **carpeta de salida** → como **Editor**.
 
@@ -276,6 +289,15 @@ cada una y quién la lee**. Verificada contra Drive el 02/08/2026 (Paso 2.15 Par
 
 ⚠ **Las dos "Sistema Informes en Slides" son carpetas distintas**, en Drives distintos.
 Nombrarlas por nombre es ambiguo: siempre por rol o por ID.
+
+⚠ **La carpeta de salidas es hija de la de plantillas** (medido el 03/08/2026): dentro de
+`1Q5At-…` hay dos subcarpetas, `Salidas Reportes` (`1LAEVlWZ…`, la de la fila 2 de esta
+tabla) y `_backups` (`1MMU_C5_…`, siete presentaciones de respaldo, entre ellas la JM
+obsoleta). La tabla las lista como tres roles y eso sigue siendo cierto, pero **no son tres
+carpetas hermanas**. Importa porque `registrarPlantillasDesdeCarpeta()` recorre
+subcarpetas hasta profundidad 2: cuando el Paso 4 empiece a dejar decks en salidas, el
+registro de plantillas los va a ver como candidatos. Ver el `P0` correspondiente en
+`docs/PENDIENTES_consistencia.md`.
 
 ⚠ **Nada del motor escribe dentro de la carpeta Motor, ni la recorre recursivamente.**
 Ahí viven la planilla de control y los respaldos manuales de `_Back up archivo`. El Paso 4

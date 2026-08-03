@@ -60,10 +60,10 @@ público.
 | `1Q5At-CO…xgYpi` | carpeta plantillas | `SEED_CONFIG_DEFAULTS_` |
 | `1EyTlfg1…SbX_fJ` | carpeta motor | `SEED_CONFIG_DEFAULTS_` |
 | `1LAEVlWZ…3Ejlz` | carpeta salidas | `SEED_CONFIG_DEFAULTS_` |
-| `1JrHvs_p…JAzbE` | plantilla JM | `INFORMES` y docs |
-| `1_ZKjWhL…B4-n8` | plantilla SECCO | `INFORMES` y docs |
+| `1JrHvs_p…JAzbE` | plantilla JM **obsoleta** | docs (al 03/08 ya no está en `INFORMES` ni en ningún `.gs`) |
+| `1_ZKjWhL…B4-n8` | plantilla SECCO | `SEED_INFORMES_` (`Instalar.gs`) → `INFORMES`, y docs |
 | `1yIlCIBG…rNZv0` | deck comentado | docs |
-| `117I0qn1…7u6jI` | plantilla JM canónica | **hardcodeada** en `Armonizar.gs` |
+| `117I0qn1…7u6jI` | plantilla JM canónica | ~~hardcodeada en `Armonizar.gs`~~ → `SEED_INFORMES_` (03/08/2026) |
 | `1wrSsWNU…` | script id del proyecto | `.clasp.json`, trackeado |
 | `1MBNAzxe…5HbAw` | Google Doc de conducción | `docs/Prompts/DOC-8_punteo_de_avance.md` |
 
@@ -87,10 +87,18 @@ en `docs/PLAN.md` §2 para que la encuentre quien llegue a ese hito.
 - **`.clasp.json` está trackeado.** Es el más incómodo de la lista porque no es un ID de
   dato: es el **proyecto de Apps Script**. `.claspignore` no lo cubre — ese archivo filtra
   lo que sube *a* Apps Script, no lo que entra a git.
-- **`117I0qn1…` está hardcodeado en `Armonizar.gs`** (`PLANTILLA_JM_CANONICA_`) cuando
+- ~~**`117I0qn1…` está hardcodeado en `Armonizar.gs`** (`PLANTILLA_JM_CANONICA_`) cuando
   debería salir de configuración. Es la misma clase de duplicación que se cerró el 02/08 en
   `diagnosticoDrive()` (`Paso-2.15` Parte A): mientras viva en código, el ID no se puede
-  cambiar sin `clasp push` y queda publicado aunque la config apunte a otro lado.
+  cambiar sin `clasp push` y queda publicado aunque la config apunte a otro lado.~~ —
+  **CERRADO el 03/08/2026.** Se retiraron de `Armonizar.gs` las dos constantes
+  (`PLANTILLA_JM_CANONICA_`, `PLANTILLA_JM_OBSOLETA_`), la migración de un solo uso
+  `repuntarPlantillaCanonicaJM_()` que las consumía y su ítem de menú. El ID canónico vive
+  ahora en `INFORMES.plantilla_id`, declarado por `SEED_INFORMES_` como los `sheet_id` de
+  `SEED_BASES_`. **Lo que cierra es la duplicación, no la exposición:** el ID sigue en el
+  repo, ahora en `Instalar.gs`, y sigue contando como uno de los catorce de la tabla de
+  arriba. Lo que se gana es que se puede cambiar sin `clasp push` —el valor vive en la
+  hoja— y que hay un solo lugar que dice cuál es la plantilla de cada informe.
 
 ### ~~P0 · Paso 2.11 Parte C: el protocolo falla en los pasos 4 y 5~~ — CERRADO (01/08/2026)
 
@@ -762,6 +770,46 @@ Arreglo posible, a decidir: escribir sólo las columnas presentes en el objeto d
 de la fila completa, o declarar en `ALCANCE_REGISTROS_` qué columnas gobierna cada seed y
 fallar si la hoja tiene una que el seed no declara.
 
+> **Addendum 03/08/2026 — "hoy no puede dispararse" es falso, y ya se disparó una vez.**
+> El texto de arriba no se altera; lo que sigue lo corrige. Sube a **`P0`**: dejó de ser una
+> pérdida hipotética.
+>
+> **1 · Se disparó, y se puede fechar.** `INFORMES.plantilla_id` llegó al 03/08 vacío en las
+> dos filas **aunque `repuntarPlantillaCanonicaJM_` había corrido el 30/07** — la otra mitad
+> de esa migración, el renombre de la plantilla obsoleta en Drive, sigue hecha. La celda no
+> quedó sin cargar: **se cargó y después se borró**, porque `SEED_INFORMES_` declaraba
+> `plantilla_id: ''` y cualquier "Aplicar configuración" reescribe la fila desde el seed. Es
+> una variante del mecanismo de arriba, no la rama `: ''`: acá la columna **sí** estaba en el
+> objeto, con el valor vacío. **Un seed que declara `''` borra igual que uno que no declara.**
+> El bloqueo que tapó a los Pasos 3, 4 y 5 durante cuatro días salió de acá.
+>
+> **2 · `SOLAPAS` está expuesta hoy, por la rama original.** `aplicarClasificacionSolapas_`
+> arma sus objetos con seis claves (`base_id`, `solapa`, `uso`, `origen`, `fila_encabezado`,
+> `notas`) y **omite a propósito** `filas_datos` y `firma_encabezado`, que las mide
+> `inventariarSolapas()`. El comentario del `Paso-2.11` Parte C dice que omitirlas evita
+> pisarlas; **el código dice lo contrario**: la fila se reescribe entera y las omitidas caen
+> en `: ''`. La hoja tiene además `filas_crudas`, también omitida. Verificado el 03/08 contra
+> el snapshot: las tres columnas están pobladas en las 84 filas. **La próxima corrida de
+> "Aplicar configuración" que cambie algo de una fila de `SOLAPAS` borra esas tres celdas de
+> esa fila**, sin error y sin diff — el diff sólo compara las columnas que el seed declara.
+> No pasó todavía porque hace varias corridas que `SOLAPAS` da *cambiadas: 0*. Medido sobre
+> el snapshot del 03/08: de **84** filas de datos, **65** tienen las tres columnas pobladas y
+> **66** tienen al menos una — o sea que el daño posible alcanza a casi cuatro quintos de la
+> hoja, y son justamente las mediciones contra las bases vivas, que no se recuperan sin
+> volver a correr `inventariarSolapas()`.
+>
+> **Es un test que acierta el hecho y erra la inferencia** (`CLAUDE.md` §4): la omisión de las
+> dos claves es real y deliberada, la conclusión de que protege es falsa. Nadie lo verificó
+> contra el escritor.
+>
+> **3 · Qué se hizo el 03/08 y qué no.** Se resolvió **el caso de `INFORMES`**, declarando el
+> ID real en `SEED_INFORMES_` — el seed pasa a ser el dueño de la columna
+> (`docs/ESCRITORES.md` §2.4). **No se tocó `upsertPorClave_`**: es maquinaria compartida por
+> cinco hojas y el arreglo cambia la semántica de todas. Queda para un paso propio, con los
+> controles de `Pruebas.gs` corridos. **Mientras tanto, la regla operativa es:** antes de
+> agregar una columna a una hoja sembrada, agregarla al `SEED_*` con su valor real — nunca
+> con `''`.
+
 ### P1 · `m2/Cuentas` tiene `uso = 'ignorar'` y sin embargo está mapeada y auditada
 
 Relevado el 02/08/2026 en la Parte A del `Paso-2.16`. `CLAUDE.md` §2 es explícito: una
@@ -807,8 +855,90 @@ código—, pero eso no resuelve el empate: justamente convierte el empate arrib
 en una elección automática entre dos candidatos indistinguibles. El costo es el que ya está
 escrito en §6.4: *"no es un número mal, es un encuentro entero atribuido a otro barrio"*.
 
-Se decide junto con la implementación de `R-12`, en el Paso 3, que ya va a tocar esa
-función.
+Se decide junto con la implementación de `R-12`, en el **paso del matcher** (`Union.gs`),
+que ya va a tocar esa función. *(Corregido el 03/08/2026: hasta hoy esta línea decía "en el
+Paso 3". Decisión del usuario — `R-12`, los dos valores de ventana a `CONFIG` y este empate
+son del matcher, que no comparte código con el despachador de marcadores, y van en un paso
+propio todavía sin escribir. Anotado en `docs/PLAN.md` §2.)*
+
+### P0 · La base `rdv` está compartida como `anyoneWithLink = writer`
+
+Verificado contra la Drive API el 03/08/2026, al confirmar que el acceso de
+`reporteseinformesgcba` a las cuatro bases había bajado a Lector. Bajó: **en las cuatro el
+permiso explícito de esa cuenta es `reader`**, y en `digital`, `looker` y `m2` la capacidad
+efectiva medida (`capabilities.canEdit`) es **`false`**. En `rdv`, **`canEdit` es `true`**.
+
+**El permiso nominal no es el que manda.** `rdv` tiene, además de sus quince permisos
+nominales, uno de tipo `anyone`: `{"id":"anyoneWithLink","type":"anyone","role":"writer"}`.
+Cualquiera con el link **edita la base**, y eso pisa el `reader` explícito de las cuentas del
+motor. La bajada a Lector se hizo y está bien hecha; sobre `rdv` **no cambia nada en la
+práctica** mientras exista ese permiso.
+
+**Por qué es `P0` y no una molestia:** el `P0` de direccionabilidad de más arriba se apoya en
+la frase *"un ID de Drive no da acceso, los permisos siguen mandando"*. **Para `rdv` esa
+premisa es falsa**, y su ID `1ZpHO6Ru…` está en `SEED_BASES_`, en el `RUNBOOK` y en los
+snapshots, en un repo público desde el 27/07/2026. No es exposición de lectura: es de
+**escritura** sobre la base de encuentros, que es de un tercero (`brianbanderbek`) y la
+fuente de todo lo que el motor cuenta de reuniones.
+
+**No se tocó, y no lo puede tocar Code.** `jpcofanogcba1` tiene `canShare: true` sobre `rdv`,
+así que técnicamente podría quitar el permiso — pero es un archivo de otra persona, con
+catorce colaboradores que pueden estar usando ese link, y sacarlo puede romperle el trabajo a
+alguien. **Es una decisión y una acción del usuario, hablada con el dueño de la base.**
+
+Lo mínimo, si el link tiene que seguir existiendo: bajarlo de `writer` a `reader`.
+
+### P0 · El registro automático de plantillas no ve la de JM, y sí ve los backups
+
+Medido el 03/08/2026 al cargar `INFORMES.plantilla_id`. Son **dos fallas independientes que
+se suman**, y la combinación de las dos apunta el motor a la plantilla equivocada sin decir
+nada. La ruta afectada es la que el `RUNBOOK` Parte D recomienda:
+`registrarPlantillasDesdeCarpeta()`, *"Automático (recomendado)"*.
+
+**1 · `JM_marcada` (`117I0qn1…`) es invisible al listado de la carpeta.** No aparece en
+`carpeta.getFiles()` desde Apps Script —`diagnosticarCarpetaPlantillas_()` sobre la carpeta
+de plantillas devuelve **una sola** presentación, `SECCO_marcada`— ni en `files.list` de la
+Drive API, ni filtrando por padre ni buscando por nombre, con la cuenta `jpcofanogcba1`. Y
+sin embargo **se abre perfecto por ID**: `files.get`, `DriveApp.getFileById()` y
+`SlidesApp.openById()` la devuelven completa (22 slides, 158 tokens distintos), su
+`parents` es la carpeta de plantillas y no está en la papelera. Los permisos de las dos
+plantillas son equivalentes —`reporteseinformesgcba` dueño, `jpcofano` y `jpcofanogcba1`
+como `writer`; JM tiene además a `brianbanderbek`—, así que **no está explicado**. Es del
+lado de Google, no del código: se comprobó por dos caminos que no comparten nada más que la
+cuenta.
+
+**2 · El recorrido baja a `_backups`, donde vive la plantilla obsoleta.**
+`PROFUNDIDAD_MAX_PLANTILLAS_ = 2`, así que `recorrerCarpetaPlantillas_()` entra en las
+subcarpetas. La carpeta de plantillas tiene dos: `_backups` —siete presentaciones, entre
+ellas `[OBSOLETA — no usar] JM_marcada` y tres backups fechados de cada informe— y
+**`Salidas Reportes`**, que es la carpeta de salidas del Paso 4, anidada adentro de la de
+plantillas. `matchearInformeId_` matchea por `/JM/i` y `/SECCO/i` sobre el nombre, así que
+**todos los backups son candidatos** y el `[OBSOLETA — no usar]` también: el prefijo no lo
+excluye de nada.
+
+**La consecuencia, y es la que importa:** hasta hoy `INFORMES.plantilla_id` estaba vacío en
+las dos filas. En ese estado, `clasificarArchivoPlantilla_` no encuentra conflicto —el
+conflicto lo detecta comparando contra un `idActual` **no vacío**— y **escribe el primero que
+matchea**. Como la canónica de JM no se lista y los backups sí, el registro automático
+habría cargado `1JrHvs_p…`, la obsoleta, como plantilla de `jm`. Sin error, sin aviso, y el
+Tramo 2 entero corriendo contra el deck equivocado.
+
+**Medición del 03/08, ya con las celdas cargadas:** `totalArchivosVistos: 8` (una en la raíz
++ siete en `_backups`; `Salidas Reportes` está vacía todavía), `asignados: 1` (secco, con su
+propio ID — reescritura del mismo valor), **`conflictos: 7`**, todos contra backups, cuatro
+de ellos de JM. La celda cargada es lo único que hoy separa al motor del error.
+
+**Por qué queda abierto siendo que ya no puede pasar:** la protección es un valor en una
+celda, no una regla. Vuelve a estar expuesto en cuanto una celda quede vacía —y el `P1` de
+`upsertPorClave_` de más arriba **es exactamente el mecanismo que las vacía**. Los dos
+pendientes son el mismo accidente visto desde dos lados.
+
+**Arreglos posibles, a decidir:** que el recorrido **no baje a subcarpetas cuyo nombre
+empiece con `_`** o que se limite a profundidad 0; que `clasificarArchivoPlantilla_`
+**descarte** los nombres que empiezan con `[OBSOLETA` o que contienen `backup`; que la
+carpeta de salidas **deje de ser hija** de la de plantillas; o —lo más barato y lo que ya
+está hecho de hecho— que el ID venga del seed y el registro automático quede como
+diagnóstico, no como escritor. Ninguno se aplicó: hoy el registro sigue pudiendo escribir.
 
 ### P2 · Dos carpetas de Drive distintas se llaman "Sistema Informes en Slides"
 

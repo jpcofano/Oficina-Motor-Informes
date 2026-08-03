@@ -1552,3 +1552,81 @@ nadie más.
   - **`Paso-4.md` sigue siendo el único addendum pendiente** del tramo: le falta absorber la
     impresión del período en la lámina, `D-19`/`D-20`, y la firma de `generarInforme`, que
     no coincide con la del Paso 5.
+
+## Doc — Addendum 1 al `Paso-4` y corrección de alcance del `Paso-3-v3` (2026-08-03) — commit `a5262bb`
+- **Qué pedía:** anexar al final de `docs/Prompts/Paso-4.md` el Addendum 1 entregado por
+  claude.ai, sin alterar el texto original, y corregir el destino de los cuatro ítems que la
+  entrada anterior de esta bitácora dejó anotados como "no cubiertos por el `Paso-3-v3`".
+- **Qué se hizo:**
+  - **`docs/Prompts/Paso-4.md`** — Addendum 1 al final, cinco puntos: `periodo_id` pasa a
+    **parámetro opcional** de `generarInforme` (manda la cadena de `D-20`, y un override
+    tiene que decirlo en la traza), **imprimir el período en la lámina** con los dos extremos
+    inclusive y el que efectivamente se usó —no el de `CONFIG`—, `D-19` en el reemplazo de
+    tokens fijos, la carpeta de salidas y la propiedad del deck generado, y qué NO cubre.
+    Con eso los tres prompts del Tramo 2 quedan alineados: se cierra el choque de firma con
+    el `Paso-5-v2`.
+  - **`docs/Prompts/Paso-3-v3.md`** — nota al pie fechada, sin tocar el texto de arriba.
+  - **`docs/PLAN.md` §2** — la línea de los cuatro ítems queda, corregida con su destino:
+    `R-12`, los dos valores de ventana a `CONFIG` y el empate técnico del match son del
+    **matcher** (`Union.gs`) y van en un **paso propio todavía sin escribir**; `D-21` es
+    **configuración suelta**. El hecho era cierto —el `v3` no los cubre— y la inferencia de
+    que le faltaban al Paso 3, no.
+  - **`docs/PLAN.md` §1** — nota fechada bajo `D-01`: no tocar código al agregar un informe o
+    una base es **deseable, no requisito**; no bloquea un paso ni obliga a rediseñar. El
+    texto de `D-01` decía *"no es criterio de aceptación **hoy**"*, que dejaba abierto que
+    algún día sí. No lo va a ser.
+  - **`docs/PLAN.md` §3** — fila nueva para `m2` en `MAPEO`: la decisión **se mueve al
+    `Paso-2.5`**, y el criterio queda fijado — `Cuentas M2` es un **catálogo de cuentas**, no
+    una fuente de métricas; se mapea sólo si algún token de las plantillas pide esos
+    atributos. Las métricas de M2 salen de `digital`.
+- **Prueba:** ninguna, no se tocó código.
+- **Pendientes/decisiones:** las cuatro respuestas del usuario del 03/08 entraron acá (las
+  dos de `PLAN.md`) y en la entrada siguiente (plantillas y acceso de las bases).
+
+## Config + código — los dos `INFORMES.plantilla_id`, y lo que apareció al cargarlos (2026-08-03) — commit `95d048b`
+- **Qué pedía:** cargar `INFORMES.plantilla_id` para `jm` y `secco` verificando contra la
+  carpeta de plantillas cuál es cuál y que sean Google Slides nativas; confirmar que la
+  declaración de `Armonizar.gs` (`117I0qn1…` canónica, `1JrHvs_p…` obsoleta) siga siendo
+  cierta; y sacar esos dos IDs del `.gs` a `INFORMES`, que es su lugar.
+- **Qué se hizo:**
+  - **Verificación contra Drive.** Las dos son `application/vnd.google-apps.presentation`
+    (nativas, no `.pptx`), dueño `reporteseinformesgcba`. `JM_marcada` = `117I0qn1…`, 22
+    slides, 158 tokens distintos. `SECCO_marcada` = `1_ZKjWhL…`, 29 slides, 119 tokens. La
+    declaración de `Armonizar.gs` **sigue siendo cierta**: `1JrHvs_p…` está en Drive como
+    `[OBSOLETA — no usar] JM_marcada`, dentro de la subcarpeta `_backups`.
+  - **`SEED_INFORMES_` (`Instalar.gs`)** declara los dos IDs. "Aplicar configuración" los
+    llevó a la hoja; la corrida siguiente da `cambiadas 0 · agregadas 0 · migraciones 0 ·
+    solo_en_hoja 7 · protegidas (con diferencia) 0 · protegidas (sin diferencia) 8 · sin
+    cambios: sí` — los mismos números de referencia del cierre del `2.16`.
+  - **Retirados de `Armonizar.gs`:** `PLANTILLA_JM_CANONICA_`, `PLANTILLA_JM_OBSOLETA_` y la
+    migración de un solo uso `repuntarPlantillaCanonicaJM_()`, más su ítem de menú en
+    `Codigo.gs`. Cierra el sub-ítem `PLANTILLA_JM_CANONICA_ hardcodeada` del `P0` de
+    direccionabilidad.
+  - **`docs/ESCRITORES.md`** — censo re-corrido (`node tools/escritores.js`, 03/08) y §2.4
+    nueva: `INFORMES.plantilla_id` **cambió de dueño**, del registro de plantillas al seed.
+  - **`docs/RUNBOOK.md`** — Parte D reescrita (el registro automático **ya no es la opción
+    recomendada** para esta carpeta), Parte E con el acceso verificado, y la tabla de
+    carpetas con la anidación real.
+- **Prueba:** los 21 `.gs` parsean (`new vm.Script`); `menuAplicarConfiguracion_` sin
+  cambios; **los 6 controles de `Pruebas.gs` pasan**; `inventarioPlantillas()` abre las dos
+  plantillas leyendo `INFORMES`.
+- **Pendientes/decisiones:**
+  - **Por qué al seed y no sólo a la hoja.** `upsertPorClave_` reescribe la **fila entera**
+    desde el seed, y `SEED_INFORMES_` declaraba `plantilla_id: ''`: cada "Aplicar
+    configuración" borraba el ID. Es por eso que la celda llegó vacía al 03/08 **aunque
+    `repuntarPlantillaCanonicaJM_` había corrido el 30/07** —su otra mitad, el renombre en
+    Drive, sigue hecha—. El bloqueo que tapó a los Pasos 3, 4 y 5 durante cuatro días salió
+    de ahí. **No se tocó `upsertPorClave_`**: es maquinaria de cinco hojas y el arreglo
+    cambia la semántica de todas. Queda como `P0` en `PENDIENTES`, con la parte de `SOLAPAS`
+    que **sí puede dispararse hoy** sobre 65 de 84 filas.
+  - **Dos hallazgos nuevos, los dos `P0` en `PENDIENTES`:** (1) `JM_marcada` **es invisible
+    al listado** de la carpeta —desde `DriveApp` y desde la Drive API, por padre y por
+    nombre— y se abre perfecto por ID; el recorrido del registro **baja a `_backups`**, así
+    que con las celdas vacías habría cargado la obsoleta. Medido con las celdas ya cargadas:
+    8 archivos vistos, 1 asignado, **7 conflictos**, todos contra backups. (2) `rdv` está
+    compartida como **`anyoneWithLink = writer`**, que pisa el `reader` explícito: la bajada
+    a Lector se hizo en las cuatro bases y se verificó, pero sobre `rdv` no cambia nada en la
+    práctica. Acción del usuario sobre Drive, con el dueño de la base.
+  - **No había entrada en `PENDIENTES` sobre el acceso de `reportes` para cerrar:** se
+    greppeó y dio cero. Se registra el cero (`CLAUDE.md` §3) y la verificación queda en
+    `PLAN.md` §2, que es donde vivía el ítem.

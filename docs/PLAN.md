@@ -410,6 +410,14 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
      cuatro son cuentas del usuario"* **es falsa** — los dueños reales son
      `brianbanderbek` (rdv), `tarnowski.jp` (digital y m2) y `dgples.comunicacion` (looker),
      así que **sí hay terceros**, aunque el acceso ya no haya que pedirlo.
+     **(1) cerrado el 03/08/2026:** el usuario bajó el rol y se verificó por API — en las
+     cuatro el permiso explícito de `reporteseinformesgcba` es **`reader`**, y en `digital`,
+     `looker` y `m2` la capacidad efectiva (`capabilities.canEdit`) es **`false`**. **`rdv`
+     es la excepción y no por el rol:** está compartida como `anyoneWithLink = writer`, que
+     pisa el `reader` explícito — `canEdit` da `true`. Es un `P0` nuevo en
+     `docs/PENDIENTES_consistencia.md` y una acción del usuario sobre Drive, hablada con el
+     dueño de la base. *(No había entrada de este tema en `PENDIENTES` para cerrar: se
+     greppeó y dio cero — `CLAUDE.md` §3, se registra el cero.)*
    - ~~Abrir el P1 del tercer escritor de `MAPEO` (`consolidarMapeoLooker_`)~~ — **hecho
      02/08/2026** (Paso 2.11 Parte E): retirado del menú junto con el diagnóstico que le
      pasaba la dirección invertida. `MAPEO` vuelve a dos escritores de contenido vivos.

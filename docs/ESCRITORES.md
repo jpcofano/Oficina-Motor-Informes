@@ -12,11 +12,21 @@
 > Al editar código que escribe hojas de registro: re-correr el censo, actualizar la
 > matriz, y si aparece un escritor nuevo, decidir acá si es legítimo.
 >
-> Último censo: **01/08/2026** (AUD-3 Parte E). Control positivo: el censo debía
-> encontrar solo los dos escritores conocidos de `MAPEO` — encontró esos dos **y un
-> tercero que nadie le sopló**, `consolidarMapeoLooker_`. Ese tercero se **retiró del
-> menú** el 01/08 (Paso 2.11 Parte E): hoy `MAPEO` vuelve a tener dos escritores de
-> contenido vivos. Ver §2.1.
+> Último censo: **03/08/2026**, re-corrido al retirar `repuntarPlantillaCanonicaJM_`.
+> El censo anterior era del **01/08/2026** (AUD-3 Parte E) y su control positivo sigue
+> valiendo: debía encontrar solo los dos escritores conocidos de `MAPEO` y encontró esos
+> dos **y un tercero que nadie le sopló**, `consolidarMapeoLooker_`. Ese tercero se
+> **retiró del menú** el 01/08 (Paso 2.11 Parte E): hoy `MAPEO` vuelve a tener dos
+> escritores de contenido vivos. Ver §2.1.
+>
+> **Dos movimientos en el censo del 03/08**, ninguno de ellos un escritor nuevo:
+> `repuntarPlantillaCanonicaJM_` **desaparece de `INFORMES`** (se retiró del código —
+> ver la fila de esa hoja), y `reclasificarSolapasM2Invertidas_` **sale de `SOLAPAS` y
+> cae en "Sin resolver"**, con el motivo *"parámetro hoja sin llamadores"*: es la migración
+> que el `Paso-2.12` Parte 3 sacó de `aplicarInstalacion_`, así que el censo ya no puede
+> atribuirle una hoja porque nadie la llama. **No escribe nada hoy**; figura en la lista
+> de no atribuidos, no en la matriz. Eso ya era cierto antes del 03/08 — se ve recién
+> ahora porque el censo se re-corrió.
 
 ---
 
@@ -38,7 +48,7 @@ agujero del patrón.
 | `BASES` | `SEED_BASES_` vía upsert | upsert (`aplicarSeedConfiguracion_`) · migración `alinearBasesHojaDefaultLooker_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ✅ dos caminos, los dos declarados |
 | `MAPEO` | `SEED_MAPEO_` vía upsert | upsert · `promoverFechasElegidas` + `migrarPrefijosFechaPeriodo_` (`Fechas.gs`) · migraciones `eliminarMapeoAlcanceDigitalObsoleto_`, `alinearMapeoLookerADinamico_`, `backfillSolapaMapeo_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ⚠ **dos escritores de contenido vivos**: el upsert y `promoverFechasElegidas`. El segundo sigue sin declarar — ver §2.1 |
 | `CONFIG` | `SEED_CONFIG_DEFAULTS_` vía `seedConfigConfig_` (solo completa vacíos) | `seedConfigConfig_` únicamente | ✅ un camino; el humano edita valores y el seed no los pisa |
-| `INFORMES` | `SEED_INFORMES_` vía upsert | upsert · `clasificarArchivoPlantilla_` (registro de plantillas, escribe `plantilla_id`) · `repuntarPlantillaCanonicaJM_` (`Armonizar.gs:660`, ídem) | ✅ con reparto declarado: el seed no siembra `plantilla_id` — esa columna es del registro de plantillas |
+| `INFORMES` | `SEED_INFORMES_` vía upsert, **`plantilla_id` incluido** (cambió el 03/08/2026 — ver abajo) | upsert · `clasificarArchivoPlantilla_` (registro de plantillas, escribe `plantilla_id`) · ~~`repuntarPlantillaCanonicaJM_`~~ (retirada del código el 03/08/2026) | ✅ dos caminos, los dos declarados, con el seed como dueño de la columna |
 | `PERIODOS` | `SEED_PERIODOS_` vía upsert | upsert únicamente | ✅ |
 | `SOLAPAS` | `SEED_SOLAPAS_` vía `aplicarClasificacionSolapas_` (clasificación) + `inventariarSolapas` (medición) | upsert de clasificación · `inventariarSolapas` (`Solapas.gs:119-147`: `filas_datos`, `filas_crudas`, `firma_encabezado`) · migraciones `alinearSolapasLookerADinamico_`, `reclasificarSolapasM2Invertidas_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ✅ tres caminos, los tres declarados. El reparto seed/inventario viene de C.2-7; la migración de looker dejó de escribir `notas` en la Parte E |
 | `SECCIONES` | `SEED_SECCIONES_` vía `sembrarSecciones_` | `sembrarSecciones_` únicamente | ✅ |
@@ -110,9 +120,44 @@ escritor estructural (§1, dinámico sobre `HOJAS_CONFIG_`), y los cuatro de
 **sintética** de `Pruebas.gs` (`hojaFalsa_`), que no es una hoja real. Un censo futuro
 con otros números acá es señal de patrón roto, no de ruido.
 
----
+**Al 03/08/2026 son nueve, no siete**, y los dos que se sumaron no son escritores nuevos:
+las **dos** apariciones de `reclasificarSolapasM2Invertidas_` (*"parámetro `hoja` sin
+llamadores"*), que el `Paso-2.12` Parte 3 desconectó de `aplicarInstalacion_`. Un sitio que
+el censo no atribuye **porque nadie lo llama** es distinto de uno que no atribuye porque el
+receptor es dinámico: el primero no escribe nada. Vale la misma regla — un número distinto
+acá es señal, no ruido — pero la señal de esta vez ya estaba explicada.
 
-# Matriz — `node tools/escritores.js` (01/08/2026)
+### 2.4 · `INFORMES.plantilla_id` cambió de dueño (03/08/2026)
+
+Hasta el 03/08 este documento declaraba: *"el seed no siembra `plantilla_id` — esa columna
+es del registro de plantillas"*. **Ese reparto se dio vuelta**, y no por preferencia: se
+midió que no funcionaba. Las dos mitades:
+
+1. **El seed la borraba.** `upsertPorClave_` reescribe la **fila entera** cuando alguna
+   columna declarada cambia, y en las columnas que el objeto del seed no declara escribe
+   `''` (`Instalar.gs`, `headers.map(... (h in obj) ? obj[h] : '')`). Con
+   `SEED_INFORMES_.plantilla_id = ''`, cada "Aplicar configuración" borraba el ID que el
+   registro de plantillas hubiera cargado. Es por eso que la hoja viva llegó al 03/08 con
+   las dos celdas vacías **aunque `repuntarPlantillaCanonicaJM_` había corrido el 30/07** —
+   su otra mitad, el renombre de la plantilla obsoleta en Drive, sigue ahí.
+2. **El registro de plantillas no ve la plantilla de JM.** Verificado el 03/08 por los dos
+   lados: `diagnosticarCarpetaPlantillas_()` sobre la carpeta devuelve **una** presentación
+   (`SECCO_marcada`), y la Drive API `files.list` tampoco la lista, ni por padre ni por
+   nombre — mientras que `files.get` y `SlidesApp.openById()` la abren sin problema y los
+   permisos de las dos son equivalentes. Un registro que no puede ver la mitad de las
+   plantillas no puede ser el dueño de la columna.
+
+Hoy el ID vive en `SEED_INFORMES_`, como `SEED_BASES_.sheet_id` y `SEED_CONFIG_DEFAULTS_`.
+`clasificarArchivoPlantilla_` sigue siendo un escritor legítimo de la columna: si el
+registro encuentra una plantilla, la escribe, y el seed la va a confirmar o a corregir en
+el siguiente "Aplicar".
+
+**El punto 1 es un hallazgo abierto y más grande que esta columna** —toca a las cinco hojas
+que pasan por `upsertPorClave_`— y está anotado en `docs/PENDIENTES_consistencia.md`. Acá
+sólo se registra que fue el motivo del cambio de dueño.
+
+---
+# Matriz — `node tools/escritores.js` (03/08/2026)
 
 ## Matriz — hojas de registro (las diez, aunque tengan cero escritores)
 
@@ -120,77 +165,74 @@ con otros números acá es señal de patrón roto, no de ruido.
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `alinearBasesHojaDefaultLooker_` | `setValue` | Instalar.gs:493 | vía aplicarInstalacion_ (Instalar.gs:257) |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1391 | vía aplicarSeedConfiguracion_ (Instalar.gs:1209) |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1400 | vía aplicarSeedConfiguracion_ (Instalar.gs:1209) |
-| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:485 | directo |
+| `alinearBasesHojaDefaultLooker_` | `setValue` | Instalar.gs:543 | vía aplicarInstalacion_ (Instalar.gs:292) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1563 | vía aplicarSeedConfiguracion_ (Instalar.gs:1378) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1572 | vía aplicarSeedConfiguracion_ (Instalar.gs:1378) |
+| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:519 | directo |
 
 ### MAPEO
 
 | función | método | sitio | camino |
 |---|---|---|---|
 | `migrarPrefijosFechaPeriodo_` | `setValue` | Fechas.gs:412 | vía promoverFechasElegidas (Fechas.gs:333) |
-| `eliminarMapeoAlcanceDigitalObsoleto_` | `deleteRow` | Instalar.gs:389 | vía aplicarInstalacion_ (Instalar.gs:245) |
-| `alinearMapeoLookerADinamico_` | `setValue` | Instalar.gs:428 | vía aplicarInstalacion_ (Instalar.gs:246) |
-| `alinearMapeoLookerADinamico_` | `setValue` | Instalar.gs:429 | vía aplicarInstalacion_ (Instalar.gs:246) |
-| `backfillSolapaMapeo_` | `setValue` | Instalar.gs:608 | vía aplicarInstalacion_ (Instalar.gs:244) |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1391 | vía promoverFechasElegidas (Fechas.gs:385) |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1391 | vía aplicarSeedConfiguracion_ (Instalar.gs:1212) |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1400 | vía promoverFechasElegidas (Fechas.gs:385) |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1400 | vía aplicarSeedConfiguracion_ (Instalar.gs:1212) |
-| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:455 | directo |
-| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:456 | directo |
+| `eliminarMapeoAlcanceDigitalObsoleto_` | `deleteRow` | Instalar.gs:424 | vía aplicarInstalacion_ (Instalar.gs:275) |
+| `alinearMapeoLookerADinamico_` | `setValue` | Instalar.gs:463 | vía aplicarInstalacion_ (Instalar.gs:276) |
+| `alinearMapeoLookerADinamico_` | `setValue` | Instalar.gs:464 | vía aplicarInstalacion_ (Instalar.gs:276) |
+| `backfillSolapaMapeo_` | `setValue` | Instalar.gs:683 | vía aplicarInstalacion_ (Instalar.gs:274) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1563 | vía promoverFechasElegidas (Fechas.gs:385) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1563 | vía aplicarSeedConfiguracion_ (Instalar.gs:1381) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1572 | vía promoverFechasElegidas (Fechas.gs:385) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1572 | vía aplicarSeedConfiguracion_ (Instalar.gs:1381) |
+| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:489 | directo |
+| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:490 | directo |
 
 ### CONFIG
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `seedConfigConfig_` | `appendRow` | Instalar.gs:1667 | vía aplicarSeedConfiguracion_ (Instalar.gs:1215) |
-| `seedConfigConfig_` | `setValue` | Instalar.gs:1675 | vía aplicarSeedConfiguracion_ (Instalar.gs:1215) |
+| `seedConfigConfig_` | `appendRow` | Instalar.gs:1839 | vía aplicarSeedConfiguracion_ (Instalar.gs:1384) |
+| `seedConfigConfig_` | `setValue` | Instalar.gs:1847 | vía aplicarSeedConfiguracion_ (Instalar.gs:1384) |
 
 ### INFORMES
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `repuntarPlantillaCanonicaJM_` | `setValue` | Armonizar.gs:660 | directo |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1391 | vía aplicarSeedConfiguracion_ (Instalar.gs:1221) |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1400 | vía aplicarSeedConfiguracion_ (Instalar.gs:1221) |
-| `clasificarArchivoPlantilla_` | `setValue` | Instalar.gs:1535 | vía recorrerCarpetaPlantillas_ (Instalar.gs:1490) → registrarPlantillasDesdeCarpeta (Instalar.gs:1480) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1563 | vía aplicarSeedConfiguracion_ (Instalar.gs:1390) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1572 | vía aplicarSeedConfiguracion_ (Instalar.gs:1390) |
+| `clasificarArchivoPlantilla_` | `setValue` | Instalar.gs:1707 | vía recorrerCarpetaPlantillas_ (Instalar.gs:1662) → registrarPlantillasDesdeCarpeta (Instalar.gs:1652) |
 
 ### PERIODOS
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `upsertPorClave_` | `setValues` | Instalar.gs:1391 | vía aplicarSeedConfiguracion_ (Instalar.gs:1224) |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1400 | vía aplicarSeedConfiguracion_ (Instalar.gs:1224) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1563 | vía aplicarSeedConfiguracion_ (Instalar.gs:1393) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1572 | vía aplicarSeedConfiguracion_ (Instalar.gs:1393) |
 
 ### SOLAPAS
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `alinearSolapasLookerADinamico_` | `setValue` | Instalar.gs:472 | vía aplicarInstalacion_ (Instalar.gs:249) |
-| `reclasificarSolapasM2Invertidas_` | `setValue` | Instalar.gs:543 | vía aplicarInstalacion_ (Instalar.gs:254) |
-| `reclasificarSolapasM2Invertidas_` | `setValue` | Instalar.gs:544 | vía aplicarInstalacion_ (Instalar.gs:254) |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1391 | vía aplicarClasificacionSolapas_ (Instalar.gs:1154) |
-| `upsertPorClave_` | `setValues` | Instalar.gs:1400 | vía aplicarClasificacionSolapas_ (Instalar.gs:1154) |
+| `alinearSolapasLookerADinamico_` | `setValue` | Instalar.gs:522 | vía aplicarInstalacion_ (Instalar.gs:279) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1563 | vía aplicarClasificacionSolapas_ (Instalar.gs:1314) |
+| `upsertPorClave_` | `setValues` | Instalar.gs:1572 | vía aplicarClasificacionSolapas_ (Instalar.gs:1314) |
 | `inventariarSolapas` | `setValue` | Solapas.gs:119 | directo |
 | `inventariarSolapas` | `setValue` | Solapas.gs:120 | directo |
 | `inventariarSolapas` | `setValue` | Solapas.gs:121 | directo |
 | `inventariarSolapas` | `setValues` | Solapas.gs:132 | directo |
 | `inventariarSolapas` | `setValue` | Solapas.gs:147 | directo |
-| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:467 | directo |
-| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:468 | directo |
-| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:469 | directo |
-| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:473 | directo |
-| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:474 | directo |
-| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:475 | directo |
+| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:501 | directo |
+| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:502 | directo |
+| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:503 | directo |
+| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:507 | directo |
+| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:508 | directo |
+| `consolidarMapeoLooker_` | `setValue` | Solapas.gs:509 | directo |
 
 ### SECCIONES
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `sembrarSecciones_` | `setValues` | Instalar.gs:1786 | vía menuSembrarSecciones_ (Instalar.gs:1798) |
-| `sembrarSecciones_` | `setValues` | Instalar.gs:1786 | vía menuAplicarConfiguracion_ (Instalar.gs:1825) |
+| `sembrarSecciones_` | `setValues` | Instalar.gs:1958 | vía menuSembrarSecciones_ (Instalar.gs:1970) |
+| `sembrarSecciones_` | `setValues` | Instalar.gs:1958 | vía menuAplicarConfiguracion_ (Instalar.gs:1997) |
 
 ### CAMPANAS — sin escritores en el código
 
@@ -199,18 +241,13 @@ con otros números acá es señal de patrón roto, no de ruido.
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `cargarTemarioReuniones_` | `setValues` | Reuniones.gs | vía `cargarTemario(texto, periodoId)` — desde el menú (`menuCargarTemarioReuniones_`, que pide el período y después el texto) o por API |
-
-**Contrato desde el Paso 2.15 Parte B:** `cargarTemario` exige `periodoId`, verifica que
-exista en `PERIODOS` y **lanza** si falta o no existe. `cargarTemarioReuniones_` no valida
-ni completa: escribe el período que le pasan. Ninguna fila nueva puede entrar sin período
-(`D-19`); las que ya estaban quedaron vacías a propósito.
+| `cargarTemarioReuniones_` | `setValues` | Reuniones.gs:161 | directo |
 
 ### MARCADORES
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `migrarCalculoAOperacion_` | `setValue` | Instalar.gs:565 | vía aplicarInstalacion_ (Instalar.gs:260) |
+| `migrarCalculoAOperacion_` | `setValue` | Instalar.gs:640 | vía aplicarInstalacion_ (Instalar.gs:295) |
 
 ## Anexo — hojas que no son de registro (reportes, diagnósticos, trabajo)
 
@@ -269,19 +306,19 @@ ni completa: escribe el período que le pasan. Ninguna fila nueva puede entrar s
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `escribirDiffConfiguracion_` | `clear` | Instalar.gs:2017 | vía menuAplicarConfiguracion_ (Instalar.gs:1845) |
-| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2030 | vía menuAplicarConfiguracion_ (Instalar.gs:1845) |
-| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2033 | vía menuAplicarConfiguracion_ (Instalar.gs:1845) |
-| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2035 | vía menuAplicarConfiguracion_ (Instalar.gs:1845) |
+| `escribirDiffConfiguracion_` | `clear` | Instalar.gs:2190 | vía menuAplicarConfiguracion_ (Instalar.gs:2017) |
+| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2203 | vía menuAplicarConfiguracion_ (Instalar.gs:2017) |
+| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2206 | vía menuAplicarConfiguracion_ (Instalar.gs:2017) |
+| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2208 | vía menuAplicarConfiguracion_ (Instalar.gs:2017) |
 
 ### ESTADO_CONFIGURACION
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `escribirDiffConfiguracion_` | `clear` | Instalar.gs:2017 | vía menuEstadoConfiguracion_ (Instalar.gs:2193) |
-| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2030 | vía menuEstadoConfiguracion_ (Instalar.gs:2193) |
-| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2033 | vía menuEstadoConfiguracion_ (Instalar.gs:2193) |
-| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2035 | vía menuEstadoConfiguracion_ (Instalar.gs:2193) |
+| `escribirDiffConfiguracion_` | `clear` | Instalar.gs:2190 | vía menuEstadoConfiguracion_ (Instalar.gs:2366) |
+| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2203 | vía menuEstadoConfiguracion_ (Instalar.gs:2366) |
+| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2206 | vía menuEstadoConfiguracion_ (Instalar.gs:2366) |
+| `escribirDiffConfiguracion_` | `setValues` | Instalar.gs:2208 | vía menuEstadoConfiguracion_ (Instalar.gs:2366) |
 
 ### VALORES
 
@@ -311,13 +348,15 @@ ni completa: escribe el período que le pasan. Ninguna fila nueva puede entrar s
 
 ## Sin resolver — sitios cuya hoja el censo no pudo atribuir
 
-- `aplicarInstalacion_` · `setValues` · Instalar.gs:214 — getSheetByName(nombre) sin literal a la vista
-- `aplicarInstalacion_` · `setValues` · Instalar.gs:232 — getSheetByName(nombre) sin literal a la vista
-- `alinearSolapasLookerADinamico_` · `setValue` · Instalar.gs:472 · vía probarMigracionesEnDiff_ (Pruebas.gs:113) — retorno de hojaFalsaConEscrituras_ sin literal
-- `alinearSolapasLookerADinamico_` · `setValue` · Instalar.gs:472 · vía probarMigracionesEnDiff_ (Pruebas.gs:128) — retorno de hojaFalsaConEscrituras_ sin literal
-- `alinearSolapasLookerADinamico_` · `setValue` · Instalar.gs:472 · vía probarMigracionesEnDiff_ (Pruebas.gs:137) — retorno de hojaFalsaConEscrituras_ sin literal
-- `alinearSolapasLookerADinamico_` · `setValue` · Instalar.gs:472 · vía probarMigracionesEnDiff_ (Pruebas.gs:147) — retorno de hojaFalsaConEscrituras_ sin literal
-- `asegurarColumna_` · `setValue` · Instalar.gs:620 · vía aplicarInstalacion_ (Instalar.gs:226) — getSheetByName(nombre) sin literal a la vista
+- `aplicarInstalacion_` · `setValues` · Instalar.gs:244 — getSheetByName(nombre) sin literal a la vista
+- `aplicarInstalacion_` · `setValues` · Instalar.gs:262 — getSheetByName(nombre) sin literal a la vista
+- `alinearSolapasLookerADinamico_` · `setValue` · Instalar.gs:522 · vía probarMigracionesEnDiff_ (Pruebas.gs:132) — retorno de hojaFalsaConEscrituras_ sin literal
+- `alinearSolapasLookerADinamico_` · `setValue` · Instalar.gs:522 · vía probarMigracionesEnDiff_ (Pruebas.gs:151) — retorno de hojaFalsaConEscrituras_ sin literal
+- `alinearSolapasLookerADinamico_` · `setValue` · Instalar.gs:522 · vía probarMigracionesEnDiff_ (Pruebas.gs:160) — retorno de hojaFalsaConEscrituras_ sin literal
+- `alinearSolapasLookerADinamico_` · `setValue` · Instalar.gs:522 · vía probarMigracionesEnDiff_ (Pruebas.gs:178) — retorno de hojaFalsaConEscrituras_ sin literal
+- `reclasificarSolapasM2Invertidas_` · `setValue` · Instalar.gs:618 — parámetro hoja sin llamadores
+- `reclasificarSolapasM2Invertidas_` · `setValue` · Instalar.gs:619 — parámetro hoja sin llamadores
+- `asegurarColumna_` · `setValue` · Instalar.gs:695 · vía aplicarInstalacion_ (Instalar.gs:256) — getSheetByName(nombre) sin literal a la vista
 
 ## Control positivo del censo (criterio (b) de la Parte E)
 
