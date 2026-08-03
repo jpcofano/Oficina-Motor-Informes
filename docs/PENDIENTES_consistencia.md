@@ -649,25 +649,35 @@ abierta**. Arreglarlo es decidir qué gana cuando difieren, que es justo la preg
 probablemente sea **reportar la diferencia sin aplicarla**, como se hace con las filas
 protegidas de `SOLAPAS`.
 
-### P2 · Tres días de corte distintos para la misma semana
+### P2 · `CONFIG.periodo_hasta` cae un viernes; con `R-11` la semana termina el jueves
 
-Relevado el 02/08/2026 al escribir `R-11`. Nadie los contradice en código —**no hay
-aritmética de día de la semana en ningún `.gs`**: `Fechas.gs` y `preseleccion_fechas.gs`
-detectan *columnas* de fecha, no calculan ventanas, y `resolverVentana()` (`Fuentes.gs`)
-lee `CAMPANAS`/`PERIODOS`/`CONFIG` sin default propio. Pero declarados hay tres:
+`CONFIG` vivo tiene `periodo_desde 2026-06-26` (viernes) y `periodo_hasta 2026-07-03`
+(viernes): leído inclusive son **ocho días**. `R-11` + su Addendum 1 fijan la semana en
+**siete**, viernes a jueves, así que la semana que arranca el vie 26/06 termina el
+**jue 02/07**.
 
-| dónde | qué dice |
-|---|---|
-| `R-11` (`REGLAS_NEGOCIO.md`) | la semana va de **viernes a viernes** — decisión del usuario, 02/08 |
-| `docs/DISENO_match_temario.md` §26 y el temario real | **viernes a jueves** (vie 24/07 → jue 30/07) |
-| `Automatizacion.gs`, encabezado | *"Cada **lunes** genera el informe de la semana cerrada"* |
+**La celda no se toca, y eso no es una omisión: es la regla.** El Addendum 1 dice que
+configurar es el caso normal y que lo cargado por una persona manda sobre el default —el
+motor no valida lo que un humano escribió—, así que un valor de ocho días es legítimo.
+Queda anotado por dos motivos: para que nadie lo lea como confirmación de `R-11` (el
+párrafo "Cómo se verifica" de la regla lo daba por consistente, y el Addendum 1 lo
+corrige), y para preguntarle al usuario si el `03/07` fue intencional o un arrastre de
+cuando el extremo no estaba definido.
 
-El de `Automatizacion.gs` es el más barato de corregir y el más fácil de que sobreviva:
-el archivo es un **stub de cinco líneas** (Paso 10, sin implementar), así que hoy no hace
-nada — pero es la única instrucción escrita que va a leer quien lo implemente, y dice otro
-día. No se corrige acá porque cuál gana depende de la pregunta abierta de `PLAN.md` §3
-(¿es M2 una excepción, o la etiqueta "jueves-a-jueves" leyó mal la observación?). Cuando
-el equipo responda, se alinean los tres de una vez.
+**Nota sobre el día de corte, para que no se lea como contradicción.** Al escribir `R-11`
+se relevaron tres días declarados; con el Addendum 1 quedan reconciliados y **no hay
+contradicción abierta**:
+
+| dónde | qué dice | estado |
+|---|---|---|
+| `R-11` + Addendum 1 | la semana son 7 días, **vie → jue** | vigente |
+| `docs/DISENO_match_temario.md` §26 y el temario real | **vie → jue** (vie 24/07 → jue 30/07) | coincide — es la evidencia primaria de la regla |
+| `Automatizacion.gs`, encabezado | *"Cada **lunes** genera el informe de la semana cerrada"* | **coherente**: es el día del disparo, no un extremo de la ventana. Con la semana cerrando el jueves, el lunes el período ya cerró |
+
+No hay aritmética de día de la semana en ningún `.gs`: `Fechas.gs` y
+`preseleccion_fechas.gs` detectan *columnas* de fecha, no calculan ventanas, y
+`resolverVentana()` (`Fuentes.gs`) lee `CAMPANAS`/`PERIODOS`/`CONFIG` sin default propio.
+Quien implemente el Paso 10 tiene los tres alineados.
 
 ### P2 · Dos carpetas de Drive distintas se llaman "Sistema Informes en Slides"
 

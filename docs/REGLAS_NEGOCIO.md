@@ -352,6 +352,11 @@ salgan como ⚠, no como una columna elegida al azar).
 
 ## R-11 — La semana del informe va de viernes a viernes
 
+> ⚠ **Leer primero el Addendum 1 (02/08/2026), al final de esta regla.** Cierra el
+> pendiente del extremo (es **inclusivo**: siete días, viernes a jueves), pone la jerarquía
+> al derecho —**configurar es el caso normal, el cálculo es el piso**— y corrige el párrafo
+> "Cómo se verifica" de abajo, que da por consistente un `CONFIG` que no lo es.
+
 **Enunciado:** el período que reporta el informe es una semana de **viernes a viernes**.
 Es el default en dos lugares: para **mostrar** el período en las láminas, y para
 **calcularlo** cuando nadie lo cargó a mano.
@@ -377,6 +382,44 @@ distinto extremo. Hace falta la respuesta antes de implementar el cálculo (Paso
 **Si falla:** si el equipo corrige el día de corte, esta regla se marca derogada con fecha
 y se revisa la fila de `PLAN.md` §3 que apunta acá, más el encabezado de `Automatizacion.gs`
 (ver `docs/PENDIENTES_consistencia.md`).
+
+### Addendum 1 — 02/08/2026, decisión del usuario
+
+El texto de arriba no se altera; esto lo corrige y lo completa el mismo día.
+
+**1 · El extremo es inclusivo: la semana son siete días, viernes a jueves.** El caso de
+referencia es **vie 24/07 → jue 30/07**. Queda cerrado el "Pendiente de definir" de arriba,
+y cerrado en favor de la evidencia primaria —el comentario de la slide 1 y el renglón del
+temario, los dos viernes-a-jueves—, no de la etiqueta "jueves-a-jueves" de la fila de
+`PLAN.md` §3.
+
+**2 · La jerarquía, al derecho: lo cargado manda; el cálculo es el piso.** El párrafo de
+"Precedencia" de arriba dice lo mismo, pero de atrás para adelante, como si configurar
+fuera la excepción. Es al revés: **configurar es el caso normal.**
+
+El motivo explica todo el resto: **el informe lleva siempre lo más actual, y las reuniones
+que no entraron una semana se ponen en la siguiente.** Por eso la ventana real varía — a
+veces viernes a viernes, a veces jueves a viernes. El default de siete días es lo que se
+usa **cuando nadie cargó nada**; no es una expectativa sobre lo que va a estar cargado, ni
+algo contra lo cual validar lo que una persona escribió.
+
+**3 · Dos consecuencias, escritas ahora para no descubrirlas en el Paso 3:**
+
+- **Dos períodos consecutivos pueden solaparse o dejar hueco, y eso es válido y esperado.**
+  El motor **no** valida continuidad entre períodos ni alerta por solapamiento. Un control
+  que avise "esta semana pisa a la anterior" estaría reportando el funcionamiento normal.
+- **Por eso `periodo_id` (`D-08`) no es una comodidad, es lo que hace reconstruible la
+  curaduría.** Con ventanas variables, sin clave de período la curaduría de una semana
+  pisa la de la anterior y **no hay forma de reconstruirla**: no se puede deducir a qué
+  semana pertenecía una fila mirando su fecha, porque las ventanas ni siquiera son
+  disjuntas. Es el argumento que faltaba en la Parte B del `Paso-2.15`.
+
+**4 · Corrección al "Cómo se verifica" de arriba.** Ese párrafo dice que `CONFIG`
+(`2026-06-26` → `2026-07-03`) "ya es consistente con la regla y no hay que tocarlo".
+**Lo primero es falso**: leído inclusive son ocho días, y con esta regla la semana que
+arranca el vie 26/06 termina el **jue 02/07**. Lo segundo sigue en pie y por un motivo más
+fuerte: **no se toca porque lo cargó una persona**, y el punto 2 dice que eso manda. La
+discrepancia queda anotada en `docs/PENDIENTES_consistencia.md`, no corregida en la hoja.
 
 ---
 
