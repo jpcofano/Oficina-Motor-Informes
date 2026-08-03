@@ -2140,3 +2140,57 @@ nadie más.
     usuario, y hasta que pase, el eslabón 3 no cambia ningún número — que es exactamente lo
     que se quiere de un cambio estructural.
   - **Paro acá**, como pide el prompt. Sigue la Parte C, el despachador en `Generador.gs`.
+
+## Paso 3 (v3) Parte C — el despachador de marcadores (2026-08-03) — commit de esta entrada
+- **Qué pedía:** `resolverMarcadores(informe_id, …)` en `Generador.gs`: leer las filas de
+  `MARCADORES` del informe, resolver la ventana con la cadena de la Parte B, resolver
+  `solapa` (`TOKENS.md` §4), pedir los datos a `Fuentes.gs` respetando `modo_periodo` —con la
+  excepción de `digital`—, despachar la operación, aplicar `formato`, y devolver
+  `{ marcador, valor, valor_formateado, estado, traza }` con `estado ∈ {ok, sin_datos,
+  error}`. Con resiliencia y caché por `(base_id, solapa, desde, hasta)`.
+- **Qué se hizo.** `Generador.gs` pasó de 9 líneas de encabezado a un despachador completo.
+  Seis piezas, y ninguna hace aritmética —la regla de oro se respeta: acá se despacha, la
+  cuenta vive en `Marcadores.gs`—:
+  - `leerMarcadores_()` y `solapasFuenteDeBase_()`. La segunda **filtra por `uso = fuente`**,
+    y no es cosmético: `m2/Cuentas` es hoy una solapa `ignorar` que sin embargo está mapeada
+    (`P1` abierto), y contarla haría que una base de una sola solapa útil pareciera de dos.
+  - `resolverSolapaDeMarcador_()` implementa `TOKENS.md` §4: declarada se usa, una sola
+    fuente se infiere **y la traza lo dice**, varias fallan con `«FALTA:token@sin_solapa»`.
+  - `formatearValorMarcador_()` — `numero`/`miles`/`porcentaje`/`fecha`/`texto`. **No cambia
+    el valor:** el crudo viaja igual en el resultado, porque es lo que se audita.
+  - `datosDeMarcador_()` con el **caché por corrida**. No es de módulo a propósito: uno de
+    módulo sobreviviría entre corridas y devolvería datos de una ventana vieja sin decirlo.
+  - La **excepción `digital`**: se pide a `filasDigitalDeEncuentro` (`Union.gs`) y no a
+    `leerFuente`. Necesita el `id_cuenta` del ítem que se emite, que el despachador todavía
+    no recibe —eso es del Paso 5—, así que hoy sale `error` **diciendo exactamente eso**, en
+    vez de leer la solapa equivocada.
+- **Prueba — corrido sobre `jm`, y los tres marcadores dan `error` con tres motivos
+  distintos, cada uno correcto:**
+  - `ecv_inscriptos` → `«FALTA:ecv_inscriptos@sin_solapa»`, porque **`rdv` tiene dos solapas
+    fuente** (`RVD JM-CM - ES`, `RDV_otros_ministros`). Es exactamente el caso que
+    `TOKENS.md` §4 marca con ⚠ y pide verificar antes de asumir base de solapa única. La
+    regla dispara bien.
+  - `camp_alcance` → la solapa **se infirió** (`resumen_metricas_dinamico`, única fuente de
+    `looker`), la ventana resolvió, y falló en la operación: `calcAlcance` **no existe**. Es
+    la medición del pendiente que dejó la Parte A — las tres filas de ejemplo de
+    `MARCADORES` usan el estilo una-función-por-marcador y son inválidas bajo el `v3`.
+  - `m2_envios` → `m2` tiene **cero** solapas fuente en `MAPEO`, consistente con lo que midió
+    el `Paso-2.16` Parte A. Y su ventana salió por `periodo_ref:m2_mensual` →
+    **2026-06-01–2026-06-30**: el segundo eslabón funcionando, que es el caso M2-mensual-
+    dentro-de-informe-semanal que justifica toda la cadena.
+  - `lecturas_cacheadas: 1`. **Los 9 controles pasan** (nuevo: `probarFormatoMarcador_`) y el
+    diff de configuración sigue en `protegidas (con diferencia): 0`.
+- **Medición de `D-01`: +332 / −7 líneas** (`Generador.gs` +297, `Pruebas.gs` +42). El
+  renglón: **el despachador es código por definición** — es la pieza que traduce
+  configuración en llamadas, y no hay forma declarativa de escribirla.
+- **Pendientes/decisiones:**
+  - **El despachador está bien y la configuración no alcanza.** Ningún marcador produce un
+    número hoy, y eso es el resultado correcto: el motor no inventa. Lo que falta es
+    `MARCADORES` cableado, que lo siembra el `Paso-2.5` (en pausa) y lo cablea a mano el
+    corte vertical de la **Parte D**.
+  - **Las tres filas de ejemplo de `MARCADORES` hay que reescribirlas o borrarlas**: sus
+    `operacion` son del estilo viejo. Es trabajo de la Parte D, que las reemplaza por los 5-10
+    tokens del corte vertical.
+  - **`generarInforme(informeId, periodoId)`** queda declarada con `periodoId` **opcional**,
+    como fija el Addendum 1 del `Paso-4`, y devolviendo "todavía no". La implementa el Paso 4.
+  - **Paro acá.** Sigue la Parte D, el corte vertical, que es la prueba real de la Parte C.

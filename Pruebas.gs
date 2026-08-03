@@ -539,6 +539,45 @@ function probarSemanaR11_() {
   return 'R-11 semana calculada: OK';
 }
 
+/**
+ * Paso 3 (v3) Parte C — control positivo del formateo de marcadores.
+ *
+ * Por qué éste y no el despachador entero: `resolverMarcadores` lee hojas y bases, así que
+ * probarlo de verdad es la Parte D (el corte vertical). Lo que sí se puede aislar es
+ * `formatearValorMarcador_`, y conviene: **es lo único que decide qué ve una persona en la
+ * lámina**, y un error de formato no se manifiesta como error — se manifiesta como un número
+ * plausible y equivocado, que es el modo de falla más caro del proyecto.
+ *
+ * Puro: no lee hojas.
+ */
+function probarFormatoMarcador_() {
+  afirmar_(formatearValorMarcador_(1234.567, 'numero') === '1234.57',
+    'formato: `numero` redondea a dos decimales');
+  afirmar_(formatearValorMarcador_(0, 'numero') === '0',
+    'formato: el CERO tiene que salir "0", no vacío — es un dato, no la ausencia de uno');
+  afirmar_(formatearValorMarcador_(44.05, 'porcentaje') === '44.1%',
+    'formato: `porcentaje` va a un decimal y con el signo');
+  afirmar_(formatearValorMarcador_('hola', 'texto') === 'hola',
+    'formato: `texto` no toca el valor');
+  afirmar_(formatearValorMarcador_('sin formato declarado', '') === 'sin formato declarado',
+    'formato: sin `formato` declarado se devuelve el valor tal cual');
+
+  // Vacío y no numérico: no se inventa un 0 ni un NaN.
+  afirmar_(formatearValorMarcador_('', 'miles') === '',
+    'formato: el vacío sigue vacío, no se convierte en 0');
+  afirmar_(formatearValorMarcador_(null, 'numero') === '',
+    'formato: null sigue vacío');
+  afirmar_(formatearValorMarcador_('n/d', 'numero') === 'n/d',
+    'formato: un valor no numérico con formato numérico sale tal cual, nunca NaN');
+
+  // `miles` separa; el punto es que 15793427 no se lea como 15.79.
+  var miles = formatearValorMarcador_(15793427, 'miles');
+  afirmar_(miles.indexOf('15') === 0 && miles.length > 8,
+    'formato: `miles` tiene que separar los miles, dio "' + miles + '"');
+
+  return 'Paso 3 C formato de marcadores: OK';
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
@@ -548,7 +587,8 @@ function correrPruebasDiff_() {
     probarResumenDesagregado_,
     probarListaBlancaValores_,
     probarDespachoOperaciones_,
-    probarSemanaR11_
+    probarSemanaR11_,
+    probarFormatoMarcador_
   ];
   var lineas = [];
   var fallas = 0;
