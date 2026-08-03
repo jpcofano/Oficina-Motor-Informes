@@ -277,19 +277,29 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
 ## 2 · Próximo (ordenado, con dependencias)
 
 1. **Tramo 1 — cerrar configuración.** Sale cuando el diff da cero ruido.
-   - Dar acceso de lectura a `reporteseinformesgcba` sobre las cuatro bases (`D-02`).
-     **No depende de terceros**: las cuatro son cuentas del usuario y se comparten sin
-     pedirle permiso a nadie (corregido el 02/08/2026 — ver la nota bajo `D-02`).
+   - ~~Dar acceso de lectura a `reporteseinformesgcba` sobre las cuatro bases (`D-02`)~~ —
+     **ya estaba dado, verificado el 02/08/2026** contra la API de Drive: las cuatro tienen a
+     `reporteseinformesgcba` con rol **`writer`**. Deja dos cosas a la vista, ninguna de este
+     tramo: **(1)** el rol es más ancho que el que pide `D-02` y que el que declara el
+     `RUNBOOK` ("como Lector, el motor sólo lee datos"); **(2)** la nota que decía *"las
+     cuatro son cuentas del usuario"* **es falsa** — los dueños reales son
+     `brianbanderbek` (rdv), `tarnowski.jp` (digital y m2) y `dgples.comunicacion` (looker),
+     así que **sí hay terceros**, aunque el acceso ya no haya que pedirlo.
    - ~~Abrir el P1 del tercer escritor de `MAPEO` (`consolidarMapeoLooker_`)~~ — **hecho
      02/08/2026** (Paso 2.11 Parte E): retirado del menú junto con el diagnóstico que le
      pasaba la dirección invertida. `MAPEO` vuelve a dos escritores de contenido vivos.
      Dejó abierto un P1 nuevo, que **no** es de este tramo: la inferencia invertida de
      `auditarFormulasResumenesLooker_`.
-   - `Paso-2.12` Parte 2 — las 17 disposiciones de `SOLAPAS.uso`. Las diez líneas
-     `protegida (habría cambiado)` son la lista de trabajo y son todas de `SOLAPAS`.
-   - Generalizar `hayUi_()` — desbloquea correr el protocolo entero por API.
-   - `periodo_id` en `CAMPANAS` y `REUNIONES` (`D-08`).
-   - Repuntar `carpeta_salida` a reportes (`D-03`).
+   - ~~`Paso-2.12` Parte 2 — las 17 disposiciones de `SOLAPAS.uso`~~ — **hecho 02/08/2026**
+     (`BITACORA`, Paso 2.12 Partes 3 y 2, y su cierre): cero filas en `revisar`.
+   - ~~Generalizar `hayUi_()`~~ — **hecho 02/08/2026** (Paso 2.14): el protocolo entero corre
+     por API.
+   - ~~`periodo_id` en `CAMPANAS` y `REUNIONES` (`D-08`)~~ — **hecho 02/08/2026**
+     (`Paso-2.15` Parte B, `c4797d8`). Columna primera en las dos hojas, las diez filas
+     existentes con el valor vacío y su significado fijado en `D-19`.
+   - ~~Repuntar `carpeta_salida` a reportes (`D-03`)~~ — **hecho 02/08/2026** (`Paso-2.15`
+     Parte A, `aca39bf`). Apareció que una clave hacía de dos: el ID viejo era la carpeta
+     donde vive la planilla de control y quedó como `carpeta_motor`, sin lector.
    - **Activar `m2` — tres cambios sobre una base ya registrada.** No es un alta: `m2` ya
      tiene fila en `SEED_BASES_` (con `sheet_id`) y filas en `SEED_MAPEO_`. Con los
      parámetros validados el 01/08: **(a)** `modo_periodo` de `snapshot` a `filtrar`;

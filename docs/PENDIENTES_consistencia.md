@@ -733,6 +733,35 @@ No hay aritmética de día de la semana en ningún `.gs`: `Fechas.gs` y
 `resolverVentana()` (`Fuentes.gs`) lee `CAMPANAS`/`PERIODOS`/`CONFIG` sin default propio.
 Quien implemente el Paso 10 tiene los tres alineados.
 
+### P1 · `upsertPorClave_` reescribe la fila entera: una columna que el seed no conozca se vacía
+
+Detectado el 02/08/2026 verificando el upsert para la Parte B del `Paso-2.15`. Cuando una
+fila **ya existe y tiene algún cambio**, no se actualiza celda por celda: se arma la fila
+completa desde el objeto del seed y se pisa entera
+(`headers.map(function (h) { return (h in obj) ? obj[h] : ''; })` y después `setValues` sobre
+todo el rango, `Instalar.gs`). Una columna que exista en la hoja y **no** esté en el objeto
+del seed cae en la rama `: ''` y **se borra**.
+
+**Hoy no puede dispararse**, y por eso es un pendiente y no un bug abierto: las cuatro hojas
+que pasan por el upsert (`BASES`, `MAPEO`, `INFORMES`, `PERIODOS`) tienen todas sus columnas
+representadas en sus `SEED_*`, y `CAMPANAS`/`REUNIONES` no tienen sembrador automático.
+
+**El disparador concreto, que es lo que hay que evitar:** el día que alguien le ponga
+sembrador a `CAMPANAS` —por ejemplo para que `menuCargarEjemplo_()` deje de ser un stub, que
+es justo lo que anticipa la nota de `SEED_CAMPANAS_EJEMPLO_`— y ese seed no incluya
+`periodo_id`, **la curaduría de período se borra sola en la primera corrida que toque
+cualquier otra columna**, sin error y sin aparecer en el diff. Lo mismo vale para cualquier
+columna futura de las cuatro hojas ya sembradas: agregar la columna a la hoja sin agregarla
+al seed es suficiente.
+
+**Misma clase que el `P1` del diff ciego a los valores de `CONFIG`:** una pérdida silenciosa
+esperando un cambio razonable. Ninguno de los dos falla; los dos borran o divergen sin que
+ninguna verificación lo note.
+
+Arreglo posible, a decidir: escribir sólo las columnas presentes en el objeto del seed en vez
+de la fila completa, o declarar en `ALCANCE_REGISTROS_` qué columnas gobierna cada seed y
+fallar si la hoja tiene una que el seed no declara.
+
 ### P2 · Dos carpetas de Drive distintas se llaman "Sistema Informes en Slides"
 
 Verificado contra Drive el 02/08/2026 (`Paso-2.15` Parte A). La carpeta de **plantillas**

@@ -1388,3 +1388,60 @@ nadie más.
   primer deck.
 - **Pendientes/decisiones:** verificado antes de asignar que `D-18` estuviera libre (`D-17`
   era el último, cero menciones en el repo) y que las cuatro decisiones que cita existan.
+
+## Paso 2.15 ✅ — `carpeta_salida` a reportes y `periodo_id` en la curaduría (2026-08-02) — commits `aca39bf`, `555880c`, `c4797d8`, `4de320a`
+- **Qué pedía el prompt:** dos ítems del Tramo 1 en una sola pasada, un commit por parte.
+  Parte A: repuntar `CONFIG.carpeta_salida` a la carpeta de reportes (`D-03`). Parte B:
+  columna `periodo_id` en `CAMPANAS` y `REUNIONES` como clave foránea a `PERIODOS` (`D-08`).
+- **La Parte 0 devolvió cuatro hallazgos y ninguna premisa vencida.** Los esquemas vivos de
+  las tres hojas coinciden con lo registrado (3 · 7 · 2 filas). Lo que no coincidía:
+  `CAMPANAS` viva difiere de `SEED_CAMPANAS_EJEMPLO_` en `tipo` (dos de tres filas editadas
+  a mano), invisible porque la hoja está `auditada: false`; ningún período de `PERIODOS`
+  cubre la ventana activa de `CONFIG`; `cargarTemario` habría escrito `periodo_id` vacío en
+  silencio, porque arma la fila mapeando encabezados; y la carpeta nueva verificada contra
+  Drive. Se corrigió además el **motivo escrito** del punto 0.2: la rama con delta pushea
+  condicionalmente y la sin delta siempre, así que aparecer en la lista de hojas
+  actualizadas **sí** discrimina — la conclusión del addendum era correcta, su justificación
+  no.
+- **La Parte A cambió de alcance al ejecutarse.** No era repuntar un valor: una clave estaba
+  haciendo de dos. `carpeta_salida` apuntaba a la carpeta **donde vive la planilla de
+  control**, así que el primer deck del Paso 4 habría caído al lado del motor, en el Drive de
+  `jpcofanogcba1`. Se repuntó a `Salidas Reportes` (de `reporteseinformesgcba`,
+  `canAddChildren` verificado) y el ID viejo entró como clave nueva `carpeta_motor`, **sin
+  lector**, para que no se pierda y para que quede dicho que son dos carpetas distintas.
+  `diagnosticoDrive()` dejó de hardcodear el ID de plantillas y lo lee de `CONFIG`.
+- **Qué se hizo en la Parte B:** `periodo_id` primera columna de las dos hojas. `REUNIONES`
+  entró a `COLUMNAS_DELTA_` **antes** de que su `headers` ganara la columna —sin eso, la rama
+  sin delta reescribe la fila 1 sin mover los datos, sobre siete filas curadas a mano—, y la
+  entrada de `CAMPANAS` va **al final** de su array porque las entradas se evalúan en orden.
+  `cargarTemario(texto, periodoId)` exige el período, lo valida contra `PERIODOS` y **falla
+  explícito**; el ítem de menú lo pide **antes** del texto, para que cancelar no tire un
+  temario ya pegado. Las diez filas existentes quedaron con `periodo_id` vacío (`D-19`).
+- **Medición de `.gs`: +74 / −19, en dos archivos** (`Instalar.gs` +28/−13, `Reuniones.gs`
+  +46/−6). Buena parte de `Instalar.gs` son los comentarios que explican el orden de las dos
+  operaciones. No es una medición de `D-01` —eso es del `Paso-2.16`—, pero queda anotada.
+- **Prueba:** `Aplicar configuración` ×2 en las dos partes, por API. Parte A: primera corrida
+  `cambiadas 1 · agregadas 1`, exactamente la predicción (3 celdas: la fila nueva más el
+  valor); segunda `sin cambios: sí`, `CONFIG` en 7 filas y 0 sin completar. Parte B: el diff
+  **no se movió** en ninguna de las dos (`0 · 0 · 0 · solo_en_hoja 7 · protegidas 0/8`), y
+  `REUNIONES` **desapareció** de "hojas verificadas/reparadas" en la segunda corrida — el
+  efecto que la Parte 0 había predicho al meterla en el delta. Las hojas quedaron en 3 y 7
+  filas con los valores intactos. Los cinco controles de `Pruebas.gs`, 5 de 5, en las dos
+  partes. `cargarTemario` probado en sus **dos caminos de falla** (sin período y con uno
+  inexistente): las dos lanzan antes de escribir y `REUNIONES` siguió en 7 filas.
+- **Pendientes/decisiones:**
+  - **`D-19` nuevo:** una fila sin `periodo_id` no entra a ningún informe. El vacío significa
+    "sin período asignado", no "el vigente". La razón es `R-11` Addendum 1: como las ventanas
+    pueden solaparse o dejar hueco, **la fecha de una fila no determina su período**.
+  - **`R-11` y su Addendum 1** (fuera del alcance del prompt, pedidos aparte): la semana del
+    informe son siete días, viernes a jueves; lo cargado a mano manda sobre el default.
+  - **Cinco entradas nuevas en `PENDIENTES`**, dos de ellas `P1` y una `P0`: el diff es ciego
+    a los **valores** de `CONFIG`; `upsertPorClave_` reescribe la fila entera y borraría una
+    columna que el seed no conozca; `SEED_CAMPANAS_EJEMPLO_` ya no describe lo que hay; dos
+    carpetas de Drive homónimas; y el `P0` de **direccionabilidad** — 14 IDs de recursos
+    internos en un repo público, con la decisión del usuario de dejarlo público por ahora y
+    revisarlo al llegar a producción o a una versión de prueba.
+  - **Documentación nueva con dueño declarado:** la tabla "Las carpetas de Drive" en el
+    `RUNBOOK`, con su fila propia en `CLAUDE.md` §7, y la frontera de `ENTORNO.local.md`
+    dicha explícita — credenciales y URLs de acceso, no identificadores que ya viven en un
+    seed versionado.

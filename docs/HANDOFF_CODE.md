@@ -3,66 +3,62 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-02 (cierre) · último commit al escribirlo: el de esta entrada
+**Última actualización:** 2026-08-02 (cierre del Paso 2.15) · último commit al escribirlo: el de esta entrada
 
 ## Dónde estamos
 
-**Tramo 1 con cuatro ítems abiertos. Nada bloqueado.**
+**El Tramo 1 queda con un solo ítem abierto: el `Paso-2.16`.** Nada bloqueado, nada
+esperando a un tercero.
 
-Lo que se cerró hoy: el **Paso 1.8** (`✅`, las cuatro pruebas de aceptación), el **2.11
-Parte E**, el **2.12** entero, el **DOC-6**, el **DOC-7** y el **2.14** con su addendum.
+El **Paso 2.15** se cerró entero, en cuatro commits (`aca39bf`, `555880c`, `c4797d8`,
+`4de320a`):
 
-Dos cosas que cambian cómo se trabaja de acá en adelante:
+- **`carpeta_salida` apunta a la carpeta de reportes.** Apareció al ejecutarlo que una clave
+  hacía de dos: el ID viejo era la carpeta **donde vive la planilla de control**, así que el
+  primer deck del Paso 4 habría caído al lado del motor. Quedó como clave nueva
+  `carpeta_motor`, sin lector.
+- **`periodo_id` es la primera columna de `CAMPANAS` y `REUNIONES`.** Las diez filas
+  existentes quedaron con el valor vacío, y `D-19` fija qué significa ese vacío: **sin
+  período asignado**, nunca "el vigente".
+- **`cargarTemario` exige el período y falla explícito.** Antes habría escrito la celda vacía
+  en silencio.
 
-- **El protocolo de configuración corre entero por API.** `Estado` y `Aplicar` se invocan por
-  HTTP y devuelven lo mismo que el menú, carácter por carácter — verificado en los dos
-  caminos. Ya no hace falta que una persona abra la planilla para verificar un paso.
-- **El diff quedó sin ruido:** `cambiadas: 0 · agregadas: 0 · migraciones: 0 ·
-  solo_en_hoja: 7 · protegidas (con diferencia): 0 · protegidas (sin diferencia): 8`.
+Números de referencia, verificados por API al cerrar:
+`cambiadas 0 · agregadas 0 · migraciones 0 · solo_en_hoja 7 · protegidas (con diferencia) 0 ·
+protegidas (sin diferencia) 8 · sin cambios: sí`. `CONFIG` en 7 filas, 0 sin completar.
+`CAMPANAS` 3 filas, `REUNIONES` 7. Los cinco controles de `Pruebas.gs`: 5 de 5.
 
-Y los cinco controles positivos vuelven a proteger algo: **5 de 5**.
+**`REUNIONES` salió de la lista de "hojas verificadas/reparadas" de cada corrida.** Entró a
+`COLUMNAS_DELTA_`, así que ya no recibe la reescritura de encabezados en cada `instalar()`.
+Es el efecto buscado; si vuelve a aparecer, es que agregó una columna.
 
-## Qué sigue — Tramo 1 (`docs/PLAN.md` §2)
+## Qué sigue
 
-Cuatro, sin orden entre sí:
+**`Paso-2.16` — activar `m2`.** Es el último ítem del Tramo 1 y la **primera medición de
+`D-01`**, así que va en su propio commit. Su Parte A es sólo lectura y termina con una
+decisión para el usuario: el ítem del plan manda mapear `fecha_periodo` contra
+`m2/Directa mail`, que el Paso 2.10 Parte C declaró **derivada** de `digital/Directa Mail`.
+**Si A.3 confirma que la fuente es `digital`, el prompt se corrige antes de la Parte B.**
 
-1. Dar acceso de lectura a `reporteseinformesgcba` sobre las cuatro bases (`D-02`). **No
-   depende de terceros**: son cuentas del usuario.
-2. `periodo_id` en `CAMPANAS` y `REUNIONES` (`D-08`). No toca código.
-3. Repuntar `carpeta_salida` a reportes (`D-03`).
-4. **Registrar M2** — primera medición de `D-01`, con la predicción anotada *antes* de
-   correrla y **en celdas, no en filas**.
+Después del 2.16, el Tramo 1 cierra y arranca el **Tramo 2** (Pasos 3, 4 y 5, contra JM
+solo). `Paso-4.md` se revisa antes de ejecutarlo.
 
-**Desbloqueados hoy, pero son del Tramo 2:** `Paso-2.5` y `Paso-2.13`. `D-17` decidió que el
-dueño de `MARCADORES` es la plantilla; `SEED_MARCADORES_` no se hace. El orden entre esos dos
-no está decidido.
+## Qué mirar antes de tocar algo
 
-## Lo que hay que saber antes de tocar algo
+- **El diff no ve los valores de `CONFIG`** (`PENDIENTES`, `P1`). Seis claves pueden diferir
+  del seed sin que ninguna verificación lo note — demostrado sobre una divergencia real en
+  este paso. Para cambiar un valor: vaciar la celda y sembrar, o editarla a mano y actualizar
+  el seed en el mismo commit.
+- **`upsertPorClave_` reescribe la fila entera** (`PENDIENTES`, `P1`). Hoy no puede
+  dispararse; el día que alguien le ponga sembrador a `CAMPANAS` sin incluir `periodo_id`, la
+  curaduría se borra sola.
+- **El repo es público y expone 14 IDs de recursos internos** (`PENDIENTES`, `P0`). Decidido
+  el 02/08: sigue público por ahora, se revisa al llegar a producción o a una versión de
+  prueba (anotado en `PLAN.md` §2, Tramo 3).
+- **Las cuatro bases tienen a `reportes` como `writer`, no como lector**, y **sus dueños no
+  son cuentas del usuario** — verificado contra Drive el 02/08. La nota vieja de `PLAN.md`
+  que decía lo contrario ya está corregida.
 
-- **La UI se pide con `ui_()`**, nunca con `SpreadsheetApp.getUi()`. Las tres excepciones son
-  `onOpen`, `hayUi_` (la sonda) y el propio `ui_()`.
-- **`prompt` sin UI tira; `alert` sin UI devuelve `null`** — un confirm degrada a *no
-  confirmado*, nunca a "sí". Un dato que la función necesita entra **por parámetro**: el
-  patrón está en `cargarTemario(texto)`.
-- **Quien toca una función con control positivo corre los controles antes de cerrar**
-  (`CLAUDE.md` §4). Ya dejó un control fallando un día entero.
-- **La API falla de dos formas que se leen como motor roto**, y las dos están en el `RUNBOOK`
-  Parte G: `/dev` devuelve **404 intermitente** (medido: 200, 404, 404, 200 en cuatro pedidos
-  idénticos), y un **Bearer vencido devuelve HTML con HTTP 200**. Reintentar y renovar antes
-  de sospechar del código.
-- **`origen` en `SOLAPAS` hace dos trabajos** —procedencia y protección— y mientras sean la
-  misma columna hay que elegir entre nota correcta y protección.
+## Trabado
 
-## Abierto
-
-`docs/PENDIENTES_consistencia.md`. Lo que más pesa para lo que viene:
-
-- **P1 · `promoverFechasElegidas()`** escribe siete filas de `MAPEO` que ningún `SEED_MAPEO_`
-  conoce. Es el P1 original de `C.2-7` y sigue sin declarar.
-- **P1 · la inferencia invertida** de `auditarFormulasResumenesLooker_`. Falta un estado
-  `ambas_independientes`; hasta entonces sus dos funciones no vuelven al menú.
-- **P1 · `H-2`** · `BASES.fila_encabezado` vestigial y leída directo por `Union.gs:36`/`:261`.
-  **Sin paso asignado** desde que se archivó la Parte D del 2.11 — necesita uno propio.
-- **P0 · R-06, R-09 y R-10** sin implementar en código.
-- **P2** · `diagnosticoBases_()` lista solapas `ignorar` (precondición de `D-11`); las notas
-  de las ocho protegidas de `rdv`; el designador de paso no es único.
+Nada.
