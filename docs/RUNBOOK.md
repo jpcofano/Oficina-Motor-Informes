@@ -215,6 +215,17 @@ Mantener esta tabla a medida que crezcan los pasos. Acción desconocida devuelve
   positivo figuró como error y era sólo el token — con el token nuevo dio OK a la primera.
   `tools/api.js` ya distingue el caso y avisa *"La respuesta NO es JSON"*, pero es fácil
   leerlo como que rompió el código.
+- **Una respuesta grande no vuelve, y se disfraza de las otras dos fallas.** Medido el
+  03/08/2026: con el token recién renovado y `ping` respondiendo en 33 ms,
+  `probarLecturaPeriodo()` y `diagnosticoBases_()` fallaron **cuatro veces seguidas**,
+  alternando 404 y página de login con HTTP 200 — los dos síntomas que las viñetas de arriba
+  atribuyen a la inestabilidad de `/dev` y al Bearer vencido. **No era ninguna de las dos:
+  las dos funciones leen las cuatro bases y devuelven `filas` completo**, miles de objetos.
+  Las llamadas que sí vuelven en esa misma sesión tardan entre 0,5 y 6 segundos y devuelven
+  poco. **Antes de sospechar del token o de Google, mirar el tamaño de lo que se pidió.**
+  La salida es pedir menos: `contarLecturaBase_(baseId)` (`Fuentes.gs`) da los mismos
+  conteos de **una** base y **sin las filas**, y responde en cinco o seis segundos. Es lo
+  que destrabó medir `D-21` sobre `rdv`.
 - **La `traza` viene siempre**, en éxito y en error. Es el único log que ve quien llama.
 - **Una función `void` devuelve `null`.** Para probar una por la API hay que hacer que
   retorne algo. Es lo que se le hizo a `probarConexionBases()` en este paso: el cálculo

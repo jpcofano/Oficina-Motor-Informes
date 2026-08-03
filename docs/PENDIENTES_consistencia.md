@@ -970,6 +970,21 @@ todavía no está decidida.
   desde acá es **si la corrigieron, si borraron la fila o si el envío se recargó**. La
   pregunta es esa, y hasta que se responda la advertencia de `FECHAS_seleccion.md` se
   mantiene escrita aunque hoy no se reproduzca.
+- **`R-01` no se cumple hoy: hay 5 grupos con más de un encuentro por (Figura, fecha) en
+  `rdv/RVD JM-CM - ES`.** Medido el 03/08/2026 con `verificarPrecondicionAnclaje_()`.
+  `R-01` es explícito sobre qué hacer: *"el exceso son duplicados de carga o la regla
+  cambió. No se ajusta el cálculo en silencio: se reporta el conteo de violaciones y se
+  decide con el equipo"*. Esta línea es ese reporte. **Consecuencia dura:**
+  `anclarEncuentros()` **no corre** mientras la precondición falle, así que el matcher está
+  bloqueado y con él la parte del Tramo 2 que depende de encuentros anclados.
+  **No lo causó la declaración de `D-21` de ese mismo día:** `verificarPrecondicionAnclaje_`
+  lee la solapa con `getDataRange()` directo, sin pasar por `leerFuente`, así que ninguna
+  lista blanca puede haberlo movido. **Y ahí está la pregunta útil:** cuenta duplicados
+  sobre **todas** las filas, incluidas las 709 que `D-21` ahora excluye —642 vacías, 58
+  `Suspendida`, 6 `en agenda`, 2 `Reprogramada`, 1 `Se modifico el barrio`—. Si los 5 grupos
+  son duplicados entre filas que el matcher nunca va a ver, la precondición está bloqueando
+  de más. **Qué falta para responderla:** que la función devuelva **cuáles** son los 5
+  grupos, no sólo cuántos. Va con el paso del matcher.
 
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 

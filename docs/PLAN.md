@@ -397,6 +397,45 @@ sus controles a mano.
 prueba y confirmar que lo abre **sin acceso a ninguna base**. Es **la mitad de `D-16` que no
 depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck.
 
+> **Addendum 1 a `D-21` — 03/08/2026, decisión del usuario.** El texto de arriba no se
+> altera. Lo que cambia es el estado del último párrafo: **`rdv/status = Realizada` quedó
+> declarado**, y esta vez con el impacto medido de los dos lados.
+>
+> **1 · Se pudo medir, y el instrumento faltaba.** El `Paso-2.16` reportó que no se podía
+> medir por API porque `leerFuente` no acepta una ventana por JSON —espera dos `Date` y
+> `Utilities.formatDate` rechaza strings—. El diagnóstico era correcto y la conclusión no:
+> `probarLecturaPeriodo()` ya resolvía la ventana adentro. Lo que fallaba era **el tamaño de
+> la respuesta**: recorre las cuatro bases y devuelve `filas` completo, y sobre `/dev` esa
+> respuesta no vuelve —contesta 404 o la página de login con HTTP 200, el mismo síntoma que
+> un token vencido—. `contarLecturaBase_(baseId)` (`Fuentes.gs`) devuelve los mismos conteos
+> de **una** base y sin las filas, y responde en cinco segundos.
+>
+> **2 · Los números, ventana de `CONFIG` 26/06 → 03/07.** Antes: `filas_totales` **1362**,
+> `filas_en_ventana` **16**, `filas_excluidas_por_valor` **0**. Después: `filas_totales`
+> **1362** —el invariante del `Paso-2.9` Parte B se sostiene—, `filas_en_ventana` **13**,
+> `filas_excluidas_por_valor` **709**: vacío 642, `Suspendida` 58, `en agenda` 6,
+> `Reprogramada` 2, `Se modifico el barrio` 1. Entran **653 de 1362**.
+> `valores_declarados_sin_filas` vacío, así que `Realizada` no es un tipeo.
+>
+> **3 · Un efecto de segundo orden que conviene no confundir con un arreglo:**
+> `filas_sin_fecha` pasó de **642 a 0**. No se llenó ninguna fecha — las 642 filas vacías
+> ahora quedan afuera por valor **antes** de llegar al bucle de fechas, así que dejan de
+> contarse ahí. `filas_vacias` sigue en 642, que es donde se siguen viendo.
+>
+> **4 · Quién ve la lista y quién no.** Por `leerFuente` la ven el matcher
+> (`buscarEncuentroDelDia_`, `Union.gs`) —que **ya filtraba por su cuenta** con
+> `VALOR_STATUS_REALIZADA_` cableado, así que ahora filtra dos veces por lo mismo y el
+> resultado no cambia— y dos diagnósticos. **No la ve `verificarPrecondicionAnclaje_`**, que
+> lee la solapa con `getDataRange()` directo: cuenta duplicados de `R-01` sobre filas que el
+> matcher nunca va a mirar. Es la asimetría a resolver en el paso del matcher, junto con el
+> retiro de `VALOR_STATUS_REALIZADA_`.
+>
+> **5 · El valor puede estar desactualizado y se revisa después** (decisión del usuario). Si
+> alguna vez hay que sumar `En agenda`, ojo con cómo está escrito: en la base vivo aparece
+> como **`en agenda`, en minúscula**, y `R-10` compara **sin plegar mayúsculas**. Declararlo
+> con la capitalización equivocada excluiría esas 6 filas en silencio — el caso que
+> `valores_declarados_sin_filas` está para cazar.
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
@@ -501,11 +540,14 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
      módulo, y la ampliada, que no existe— y el **empate técnico** del match, que
      `DISENO_match_temario.md` §6.4 declara y ningún código implementa
      (`PENDIENTES_consistencia.md`). No entra en el Paso 3 ni en el 4.
-   - **Migrar el filtro `status = Realizada` de `Union.gs` a `MAPEO.valores_incluidos`**
-     (`D-21`) — **es configuración suelta, no parte de un paso de código** (decisión del
-     usuario, 03/08/2026). Se declara la celda midiendo antes y después cuántas filas de
-     `rdv` entran; lo que queda —retirar `VALOR_STATUS_REALIZADA_` de `Union.gs`, que
-     pasaría a filtrar dos veces sin cambiar el resultado— va con el paso del matcher.
+   - ~~**Migrar el filtro `status = Realizada` de `Union.gs` a `MAPEO.valores_incluidos`**
+     (`D-21`)~~ — **la celda quedó declarada el 03/08/2026**, con el impacto medido antes y
+     después (`D-21` Addendum 1): entran **653 de 1362** filas de `rdv`, y en la ventana de
+     `CONFIG` **16 → 13**. Era configuración suelta, no parte de un paso de código.
+     **Queda pendiente y va con el paso del matcher:** retirar `VALOR_STATUS_REALIZADA_` de
+     `Union.gs` —hoy filtra dos veces por lo mismo, sin cambiar el resultado— y resolver que
+     `verificarPrecondicionAnclaje_` **no pasa por `leerFuente`** y por lo tanto cuenta
+     duplicados de `R-01` sobre filas que el matcher nunca ve.
 
 3. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
    valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo

@@ -1630,3 +1630,52 @@ nadie más.
   - **No había entrada en `PENDIENTES` sobre el acceso de `reportes` para cerrar:** se
     greppeó y dio cero. Se registra el cero (`CLAUDE.md` §3) y la verificación queda en
     `PLAN.md` §2, que es donde vivía el ítem.
+
+## Config — `D-21` activado sobre `rdv/status`, con la medición que el 2.16 no pudo hacer (2026-08-03) — commit `66ff042`
+- **Qué pedía:** declarar `rdv/status = Realizada` en `MAPEO.valores_incluidos` (decisión del
+  usuario), **midiendo antes cuántas filas entran y cuántas quedan afuera** y qué lecturas
+  además del matcher se ven afectadas. Si no se podía medir por API, activarlo igual pero con
+  los números antes y después en la bitácora.
+- **Qué se hizo:**
+  - **Se pudo medir, y el `2.16` se había equivocado en la conclusión, no en el hecho.** Es
+    cierto que `leerFuente` no acepta una ventana por JSON —espera dos `Date` y
+    `Utilities.formatDate` rechaza strings—, pero `probarLecturaPeriodo()` ya la resolvía
+    adentro. Lo que fallaba era **el tamaño de la respuesta**: recorre las cuatro bases y
+    devuelve `filas` completo, y sobre `/dev` esa respuesta no vuelve. Con el token recién
+    renovado y `ping` en 33 ms, falló cuatro veces alternando 404 y página de login — los dos
+    síntomas que el `RUNBOOK` atribuía al endpoint y al Bearer.
+  - **`contarLecturaBase_(baseId)` (`Fuentes.gs`)**, sólo lectura: los mismos conteos de una
+    base y sin las filas. Responde en 5-6 s. Nombre greppeado antes (`CLAUDE.md` §1): libre.
+  - **`SEED_MAPEO_`** — `rdv/RVD JM-CM - ES/status` pasa a `valores_incluidos: 'Realizada'`.
+    "Aplicar configuración" da **`cambiadas: 2`**, que es **1 fila × 2 columnas**
+    (`valores_incluidos` + `notas`) — la unidad de la nota de método 3 de `PLAN.md`.
+- **Prueba — los números, ventana de `CONFIG` 26/06 → 03/07:**
+
+  | | antes | después |
+  |---|---|---|
+  | `filas_totales` | 1362 | **1362** (invariante del `2.9` B) |
+  | `filas_en_ventana` | 16 | **13** |
+  | `filas_excluidas_por_valor` | 0 | **709** |
+  | `filas_sin_fecha` | 642 | **0** |
+
+  Desglose de las 709: vacío **642**, `Suspendida` **58**, `en agenda` **6**,
+  `Reprogramada` **2**, `Se modifico el barrio` **1**. Entran **653 de 1362**.
+  `valores_declarados_sin_filas` vacío: `Realizada` no es un tipeo. **Los 6 controles de
+  `Pruebas.gs` pasan.**
+- **Pendientes/decisiones:**
+  - **`filas_sin_fecha` 642 → 0 no es un arreglo.** No se llenó ninguna fecha: las 642 filas
+    vacías quedan afuera por valor **antes** del bucle de fechas, así que dejan de contarse
+    ahí. `filas_vacias` sigue en 642. Anotado para que nadie lo lea como una mejora de datos.
+  - **Quién ve la lista y quién no.** Por `leerFuente`: el matcher (`buscarEncuentroDelDia_`),
+    que **ya filtraba por su cuenta** con `VALOR_STATUS_REALIZADA_` cableado —ahora filtra dos
+    veces por lo mismo, sin cambiar el resultado— y dos diagnósticos. **No la ve
+    `verificarPrecondicionAnclaje_`**, que lee con `getDataRange()` directo. Retirar el
+    duplicado y resolver la asimetría van con el **paso del matcher**.
+  - **`R-01` no se cumple: 5 grupos** con más de un encuentro por (Figura, fecha), medido con
+    `verificarPrecondicionAnclaje_()`. **`anclarEncuentros()` no corre** mientras falle. **No
+    lo causó `D-21`** —esa función no pasa por `leerFuente`, ninguna lista blanca puede
+    moverla— pero sí cuenta duplicados sobre las 709 filas que ahora se excluyen. Reportado
+    como pregunta al equipo en `PENDIENTES`, que es lo que `R-01` manda hacer.
+  - **Si algún día se suma `En agenda`:** en la base viva está escrito **`en agenda`, en
+    minúscula**, y `R-10` compara sin plegar mayúsculas. Con la capitalización equivocada esas
+    6 filas se excluirían en silencio.
