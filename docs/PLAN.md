@@ -249,6 +249,25 @@ va al script del motor —versionado con `clasp` y git— y se expone por la web
 copiado a otra cuenta es un **segundo script sin versionar**, que es el mismo problema que
 `D-15`/`D-16` resuelven del lado del acceso.
 
+**`D-19` — Una fila sin `periodo_id` no entra a ningún informe.**
+En `CAMPANAS` y `REUNIONES`, `periodo_id` vacío significa **"no está asignada a ningún
+período"**, no "asignada al vigente". El motor **no completa el período faltante**: ni lo
+asume, ni lo deduce de la fecha de la fila. Vale para las diez filas que ya existían al
+02/08/2026 —quedaron vacías a propósito— y para toda fila futura.
+
+**Razón, y es la que hace que no haya alternativa:** con `R-11` Addendum 1, las ventanas de
+período **pueden solaparse o dejar hueco**. Entonces la fecha de una fila **no determina** a
+qué período pertenece: dos períodos pueden contenerla, o ninguno. Deducirlo sería inventar.
+Es el mismo principio que `D-10` — cuando falta una definición, el motor no la fabrica.
+
+**Corolario en el escritor:** `cargarTemario(texto, periodoId)` **falla explícito** si el
+período falta o no existe en `PERIODOS`, en vez de escribir la fila con la celda vacía. Una
+fila vacía escrita por descuido es indistinguible de una vacía a propósito, y ésa es
+justamente la ambigüedad que `D-08` vino a cerrar.
+
+**Lo que esta decisión NO define:** qué hace el motor al *leer* — filtrar por período es de
+los Pasos 3 y 5 (`Paso-2.15` B.5). Acá sólo queda establecido el significado del vacío.
+
 **Prueba disponible ya, antes del panel:** compartirle un deck de salida a la cuenta de
 prueba y confirmar que lo abre **sin acceso a ninguna base**. Es **la mitad de `D-16` que no
 depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck.

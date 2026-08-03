@@ -43,7 +43,7 @@ agujero del patrón.
 | `SOLAPAS` | `SEED_SOLAPAS_` vía `aplicarClasificacionSolapas_` (clasificación) + `inventariarSolapas` (medición) | upsert de clasificación · `inventariarSolapas` (`Solapas.gs:119-147`: `filas_datos`, `filas_crudas`, `firma_encabezado`) · migraciones `alinearSolapasLookerADinamico_`, `reclasificarSolapasM2Invertidas_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ✅ tres caminos, los tres declarados. El reparto seed/inventario viene de C.2-7; la migración de looker dejó de escribir `notas` en la Parte E |
 | `SECCIONES` | `SEED_SECCIONES_` vía `sembrarSecciones_` | `sembrarSecciones_` únicamente | ✅ |
 | `CAMPANAS` | curada a mano (sin sembrador, a propósito) | **cero escritores en el código** | ✅ consistente con `ALCANCE_REGISTROS_` |
-| `REUNIONES` | curada a mano + `cargarTemarioReuniones_` (menú "Cargar temario") | `cargarTemarioReuniones_` (`Reuniones.gs:155`) únicamente | ✅ |
+| `REUNIONES` | curada a mano + `cargarTemarioReuniones_`, por **dos entradas**: el ítem de menú "Cargar temario" y, desde el Paso 2.14, la llamada por API `cargarTemario(texto, periodoId)` | `cargarTemarioReuniones_` únicamente (las dos entradas pasan por ahí) | ✅ un solo escritor, dos puertas. Desde el Paso 2.15 Parte B **el período es obligatorio en las dos**: `cargarTemario` valida contra `PERIODOS` y falla explícito antes de escribir (`D-19`) |
 | `MARCADORES` | **sin dueño** (H-6, Paso 2.13 pendiente) | un solo escritor y es una migración: `migrarCalculoAOperacion_` (`Instalar.gs:565`) | ⚠ verificado desde el código: nada la siembra, nada la escribe salvo una migración de renombre de columna. H-6 confirmado |
 
 ## 2 · Los conflictos que la matriz deja a la vista
@@ -199,7 +199,12 @@ con otros números acá es señal de patrón roto, no de ruido.
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `cargarTemarioReuniones_` | `setValues` | Reuniones.gs:155 | directo |
+| `cargarTemarioReuniones_` | `setValues` | Reuniones.gs | vía `cargarTemario(texto, periodoId)` — desde el menú (`menuCargarTemarioReuniones_`, que pide el período y después el texto) o por API |
+
+**Contrato desde el Paso 2.15 Parte B:** `cargarTemario` exige `periodoId`, verifica que
+exista en `PERIODOS` y **lanza** si falta o no existe. `cargarTemarioReuniones_` no valida
+ni completa: escribe el período que le pasan. Ninguna fila nueva puede entrar sin período
+(`D-19`); las que ya estaban quedaron vacías a propósito.
 
 ### MARCADORES
 
