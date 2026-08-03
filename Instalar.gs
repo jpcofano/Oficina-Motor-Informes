@@ -767,13 +767,22 @@ var SEED_MAPEO_ = [
   // derogada). Alineado con la selección congelada en docs/FECHAS_seleccion.md: columna
   // E, sin advertencias ("limpia").
   { base_id: 'rdv', campo_logico: 'fecha_periodo', hoja: 'RVD JM-CM - ES', columna: 'E', notas: 'filtro de período' },
-  // Paso 2.16 — **`valores_incluidos` queda VACÍO acá a propósito.** El plan era declarar
-  // `Realizada` ahora y migrar el consumidor en el Paso 3, pero al verificar apareció que
-  // con este diseño **declarar ES conectar**: `leerFuente` aplica toda lista blanca
-  // declarada, así que cargarla acá cambiaría en el acto lo que ve *cualquier* lectura de
-  // `rdv` —no sólo el matcher de `Union.gs`, que ya filtra por su cuenta— y eso está fuera
-  // del alcance de este paso. Decisión pendiente del usuario (ver D-21 y HANDOFF_CODE).
-  { base_id: 'rdv', campo_logico: 'status', hoja: 'RVD JM-CM - ES', columna: 'I', notas: 'filtro (Realizada) — el valor NO está declarado en valores_incluidos todavía: ver D-21' },
+  // Paso 2.16 dejó `valores_incluidos` VACÍO acá: con este diseño **declarar ES conectar**
+  // —`leerFuente` aplica toda lista blanca declarada—, así que cargarla cambia en el acto
+  // lo que ve *cualquier* lectura de `rdv`, no sólo el matcher de `Union.gs`.
+  //
+  // **Declarado el 03/08/2026, decisión del usuario, con el impacto medido antes y después**
+  // (`contarLecturaBase_('rdv')`, ventana de `CONFIG` 26/06 → 03/07). El valor queda en
+  // `Realizada`; si la base resulta estar desactualizada puede ser `En agenda`, y eso se
+  // revisa después.
+  //
+  // Quién lee `rdv` por `leerFuente` y por lo tanto ve la lista: el matcher
+  // (`buscarEncuentroDelDia_`, `Union.gs`), que **ya filtraba por su cuenta** con
+  // `VALOR_STATUS_REALIZADA_` — pasa a filtrar dos veces por lo mismo, sin cambiar el
+  // resultado — y dos diagnósticos (`probarLecturaPeriodo`, `diagnosticarBaseColapso_`).
+  // Quién NO la ve, y es la asimetría a mirar en el paso del matcher:
+  // `verificarPrecondicionAnclaje_` (`Union.gs`) lee la solapa con `getDataRange()` directo.
+  { base_id: 'rdv', campo_logico: 'status', hoja: 'RVD JM-CM - ES', columna: 'I', valores_incluidos: 'Realizada', notas: 'lista blanca — ver D-21. El consumidor duplicado de Union.gs se retira en el paso del matcher' },
   { base_id: 'rdv', campo_logico: 'inscriptos', hoja: 'RVD JM-CM - ES', columna: 'K', notas: '(resuelto)' },
   { base_id: 'rdv', campo_logico: 'insc_mail', hoja: 'RVD JM-CM - ES', columna: 'L', notas: '' },
   { base_id: 'rdv', campo_logico: 'insc_cc', hoja: 'RVD JM-CM - ES', columna: 'M', notas: '' },

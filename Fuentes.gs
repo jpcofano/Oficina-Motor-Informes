@@ -612,6 +612,50 @@ function probarLecturaPeriodo() {
   return { ventana: ventana, reportes: reportes };
 }
 
+/**
+ * 03/08/2026 — `probarLecturaPeriodo()` con los mismos conteos pero **una sola base y sin
+ * las filas**. Sólo lectura; no escribe nada.
+ *
+ * Por qué existe, y es una limitación del transporte, no del motor: `probarLecturaPeriodo`
+ * recorre las cuatro bases activas y devuelve `filas` completo en cada reporte — miles de
+ * objetos. Sobre `/dev` esa respuesta no vuelve: contesta 404 o la página de login de
+ * Google con HTTP 200, que es el mismo síntoma que un token vencido y por eso se diagnostica
+ * mal (`RUNBOOK`, Parte G). Medido el 03/08: `ping` responde en 33 ms y
+ * `probarLecturaPeriodo` falla cuatro veces seguidas con el token recién renovado.
+ *
+ * Es lo que destraba medir `D-21` sobre `rdv`: para saber cuántas filas deja afuera una
+ * lista blanca hay que leer la base **con la ventana de `CONFIG` aplicada**, y una ventana
+ * no se puede mandar por JSON — `leerFuente` espera dos `Date` y `Utilities.formatDate`
+ * rechaza strings. Acá la ventana se resuelve adentro, como en `probarLecturaPeriodo`.
+ */
+function contarLecturaBase_(baseId, nombreHojaOverride) {
+  var ventana = resolverVentana({});
+  if (!ventana.ok) return { ok: false, base_id: baseId, motivo: 'Ventana no resuelta: ' + ventana.motivo };
+
+  var r = leerFuente(baseId, ventana, nombreHojaOverride);
+  if (!r.ok) return r;
+
+  // Se devuelve todo menos `filas`: los conteos son el dato, las filas son el peso.
+  return {
+    ok: true,
+    base_id: r.base_id,
+    hoja: r.hoja,
+    modo: r.modo,
+    ventana: { desde: formatearFecha_(ventana.desde), hasta: formatearFecha_(ventana.hasta) },
+    fila_encabezado: r.fila_encabezado,
+    columna_fecha: r.columna_fecha,
+    filas_totales: r.filas_totales,
+    filas_en_ventana: r.filas_en_ventana,
+    filas_excluidas_por_valor: r.filas_excluidas_por_valor,
+    excluidas_por_valor: r.excluidas_por_valor,
+    valores_declarados_sin_filas: r.valores_declarados_sin_filas,
+    filas_vacias: r.filas_vacias,
+    filas_sin_clave: r.filas_sin_clave,
+    filas_sin_fecha: r.filas_sin_fecha,
+    filas_fecha_invalida: r.filas_fecha_invalida
+  };
+}
+
 function formatearFecha_(fecha) {
   return Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd');
 }
