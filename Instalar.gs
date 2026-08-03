@@ -32,7 +32,16 @@
 function diagnosticoDrive() {
   Logger.log('Cuenta efectiva: ' + Session.getEffectiveUser().getEmail());
 
-  var id = '1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi'; // carpeta_plantillas
+  // Paso 2.15 Parte A: el ID estaba hardcodeado acá, con lo cual éste era el único
+  // lugar que no se enteraba si la carpeta de plantillas cambiaba — un diagnóstico
+  // que mira la carpeta equivocada y dice que todo está bien. Ahora sale de CONFIG,
+  // como los otros tres consumidores (registrarPlantillasDesdeCarpeta,
+  // menuDiagnosticarCarpetaPlantillas_, Armonizar.gs).
+  var id = leerConfig().carpeta_plantillas;
+  if (!id) {
+    Logger.log('CONFIG.carpeta_plantillas está vacío — cargalo antes de diagnosticar.');
+    return;
+  }
   var carpeta = DriveApp.getFolderById(id);
   Logger.log('Carpeta: ' + carpeta.getName());
 
@@ -1283,7 +1292,16 @@ var SEED_CONFIG_DEFAULTS_ = {
   periodo_desde: '',
   periodo_hasta: '',
   carpeta_plantillas: '1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi',
-  carpeta_salida: '1EyTlfg16vpyrftpUXgacShFk8iSbX_fJ',
+  // Paso 2.15 Parte A (D-03): la carpeta de salidas es de `reporteseinformesgcba`
+  // ("Salidas Reportes"), no la de `jpcofanogcba1` que estaba acá y nunca se usó.
+  // Ojo: este default NO repunta la hoja — `seedConfigConfig_` sólo completa celdas
+  // vacías (ver ahí), así que la fila viva se cambia aparte y nada avisa si divergen.
+  carpeta_salida: '1LAEVlWZXoGjon2cnaMjGksV0THz3Ejlz',
+  // Paso 2.15 Parte A: la carpeta donde vive el motor (la planilla de control está
+  // adentro), que hasta hoy hacía de `carpeta_salida` — una clave para dos cosas.
+  // **Sin lector**: existe para que el ID no se pierda al repuntar la salida, y para
+  // que quede dicho que son dos carpetas distintas. Ver la tabla del RUNBOOK.
+  carpeta_motor: '1EyTlfg16vpyrftpUXgacShFk8iSbX_fJ',
   // Paso 2.9F: el umbral de confianza del anclaje sale del código (era una
   // constante en Union.gs) y pasa a ser parámetro de negocio — cambiarlo ya no
   // exige clasp push. Ver umbralAnclajeReunion_() en Union.gs.
