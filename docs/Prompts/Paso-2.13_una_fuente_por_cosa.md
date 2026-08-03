@@ -21,7 +21,7 @@ uno de ellos no existe.
 |---|---|---|
 | dónde está cada base | `BASES` | `SEED_BASES_` |
 | qué solapas hay y para qué sirven | `SOLAPAS` | `SEED_SOLAPAS_` |
-| `campo_logico` → columna | `MAPEO` | `SEED_MAPEO_` (113 filas) |
+| `campo_logico` → columna | `MAPEO` | `SEED_MAPEO_` (114 filas al 03/08/2026; 121 en la hoja viva) |
 | **token → base, solapa, campo, operación** | **`MARCADORES`** | **sembrado desde las plantillas (`Paso-2.5`)** — ver nota |
 | **nombre canónico del token** | **`docs/TOKENS.md`** | prosa, normativo sólo para nombres |
 | **valor verificado del token** | **`casos_validacion_2026-07-31.csv`** → hoja `VALIDACION` | ancla de corrección |

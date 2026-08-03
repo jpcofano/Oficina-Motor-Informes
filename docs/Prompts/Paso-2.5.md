@@ -32,9 +32,13 @@ plantillas (`Paso-2.2.2` Parte D, sobre la JM canónica) esté verificada. **Ver
 `BITACORA.md` si cerró.** Si no cerró, este paso no arranca: sembrar antes es sembrar ~200
 filas de tokens que todavía pueden cambiar de nombre, y deshacerlo es a mano, fila por fila.
 
-**0.2 · `INFORMES.plantilla_id`.** `SEED_INFORMES_` (`Instalar.gs:684-687`) los tiene
-vacíos. Verificar contra la planilla viva si la hoja los tiene cargados. Sin `plantilla_id`
-no hay de dónde leer tokens.
+**0.2 · `INFORMES.plantilla_id`.** `SEED_INFORMES_` (`Instalar.gs`, buscar por nombre) los
+tiene vacíos. Verificar contra la planilla viva si la hoja los tiene cargados. Sin
+`plantilla_id` no hay de dónde leer tokens.
+
+> **Verificado el 03/08/2026 (auditoría de premisas): la hoja viva también los tiene
+> vacíos**, en `jm` y en `secco`. Este paso **no puede correr**: la Parte A saltearía los dos
+> informes. El bloqueo es cargar los dos `plantilla_id`.
 
 **0.3 · El choque con el `Paso-2.13` — ✅ RESUELTO el 02/08/2026. Ganan las plantillas.**
 

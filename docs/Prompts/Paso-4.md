@@ -19,8 +19,8 @@ están en `docs/PLAN.md §1`:
 - **`D-07` — la configuración de una corrida es un insumo editable, no un log.** El
   original guardaba trazabilidad sólo para el `alert` final. Tiene que persistir.
 - **`D-12` — hoja `FALTANTES`.** Los `«FALTA:token»` ya no viven sólo en la lámina.
-- **`D-03` — la salida es de reportes.** `carpeta_salida` apunta hoy a una carpeta de
-  `jpcofanogcba1`.
+- **`D-03` — la salida es de reportes.** ~~`carpeta_salida` apunta hoy a una carpeta de
+  `jpcofanogcba1`.~~ **Resuelto el 02/08/2026** por el `Paso-2.15` Parte A — ver `A.2`.
 
 ---
 
@@ -29,16 +29,23 @@ están en `docs/PLAN.md §1`:
 Un prompt no ejecutado es una hipótesis. Antes de la primera edición:
 
 **A.1** — `INFORMES.plantilla_id`. El texto anterior afirmaba que ya apunta a la plantilla
-canónica de cada informe. **`SEED_INFORMES_` (`Instalar.gs:684-687`) los tiene vacíos**, y
-Estado reporta `INFORMES — 2 filas, 0 discrepancias`, lo que sólo cierra si el upsert
-saltea valores vacíos del seed o si la hoja también está vacía. **Verificar contra la
+canónica de cada informe. **`SEED_INFORMES_` (`Instalar.gs`, buscar por nombre) los tiene
+vacíos**, y Estado reporta `INFORMES — 2 filas, 0 discrepancias`, lo que sólo cierra si el
+upsert saltea valores vacíos del seed o si la hoja también está vacía. **Verificar contra la
 planilla viva** cuáles de las dos cosas es. Si están vacíos, este paso no puede correr y el
 bloqueo es cargarlos.
 
-**A.2** — `CONFIG.carpeta_salida` (`Instalar.gs:1283`) sigue apuntando a
-`1EyTlfg16vpyrftpUXgacShFk8iSbX_fJ`, de `jpcofanogcba1`. `D-03` dice que la salida es de
-`reporteseinformesgcba`. **Precondición dura:** repuntarla antes de generar el primer deck.
-Después es mudanza de archivos, no una fila de `CONFIG`.
+> **Verificado el 03/08/2026 (auditoría de premisas): la hoja viva también los tiene
+> vacíos.** Es la segunda opción, y el bloqueo está confirmado: cargar los dos
+> `plantilla_id` es precondición de este paso y del `Paso-2.5`.
+
+**A.2** — ~~`CONFIG.carpeta_salida` sigue apuntando a `1EyTlfg…`, de `jpcofanogcba1`~~ —
+**ya no: se repuntó el 02/08/2026** (`Paso-2.15` Parte A, commit `aca39bf`). Hoy apunta a
+`1LAEVlWZXoGjon2cnaMjGksV0THz3Ejlz` ("Salidas Reportes", de `reporteseinformesgcba`), con
+permiso de escritura verificado. **La precondición dura de `D-03` está cumplida**; el ID
+viejo quedó como `CONFIG.carpeta_motor`, sin lector. Ver la tabla "Las carpetas de Drive"
+en `docs/RUNBOOK.md`, y su advertencia: **nada del motor escribe dentro de la carpeta Motor
+ni la recorre recursivamente** — ahí viven la planilla de control y los respaldos.
 
 **A.3** — `resolverMarcadores(informe_id, periodo)` existe y tiene esa firma (viene del
 `Paso-3-v2`, no `calcularMarcador`, que quedó del `Paso-3.md` viejo). Si el Paso 3 cerró con

@@ -286,6 +286,14 @@ parece — verificar contra `MAPEO` antes de asumir que una base es de solapa ú
 > diccionario y de la columna `periodo_ref`. Es el contrato que el Paso 3 tiene que
 > implementar.
 
+> ⚠ **Superado por `D-20` y su Addendum 1 (`docs/PLAN.md`, 02/08/2026): la cadena tiene
+> ahora cinco eslabones, no tres.** `campaña > marcador (periodo_ref) > SECCIONES.periodo_id
+> > CONFIG > semana de `R-11``. Se agregó el período **por sección** en el medio y el
+> **default calculado** al final. La tabla de abajo se conserva porque su caso testigo sigue
+> explicando por qué el período no es global, pero **la decisión vigente es `D-20`** y es la
+> que el Paso 3 implementa. Esta nota se agregó el 03/08/2026 en la auditoría de premisas;
+> el resto de la sección no se tocó.
+
 El período **no es global**. Para cada token se resuelve en este orden de prioridad, y se
 usa el primero que aplique:
 
