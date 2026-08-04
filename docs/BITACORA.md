@@ -2699,3 +2699,123 @@ nadie más.
   los `prueba_*`; los 13 `enc_*` fallan **todos** con `«FALTA:…@digital_sin_cuenta»`, que es
   el error esperado hasta que el Paso 5 pase el `id_cuenta`. **Las 10 pruebas pasan.**
 - **Pendientes/decisiones:** la elección de solapa de `enc_alcance` (arriba).
+
+## Paso 4 ✅ — motor de reemplazo (tokens fijos) + registro de corrida (2026-08-04) — commit de esta entrada
+- **Parte A · las premisas, verificadas y anotadas** (sin parar, como fija la corrida
+  nocturna): `A.1` los dos `plantilla_id` siguen cargados; `A.2` `CONFIG.carpeta_salida` =
+  `1LAEVlWZ…`; `A.3` la firma real de `resolverMarcadores` leída antes de escribir `B.2`;
+  `A.4` todo corre por API. **Y una premisa que mejoró sola:** `CONFIG.periodo_hasta` ya no
+  es `03/07` — hoy la ventana es `24/07 → 30/07`, siete días viernes a jueves, la de `R-11`.
+- **`A.5` · Hojas nuevas `CORRIDAS` y `FALTANTES`**, declaradas en `HOJAS_CONFIG_` como
+  cualquier otra. `CORRIDAS` es append (`D-07`, es un insumo y no un log); `FALTANTES` **se
+  pisa** en cada corrida (`D-12`): es la lista de trabajo de lo que falta cablear.
+- **`A.6` · `retirarMarcadoresDePrueba_()` corrido antes de la primera generación:** 11
+  filas retiradas, `MARCADORES` queda en **13**, los 13 `enc_*`.
+- **`B.3` · El mapa `token → objectId` se toma ANTES de reemplazar**, que es lo único
+  irreversible del paso: cuando `{{ecv_total}}` pasa a ser "1.234" el token deja de existir.
+  Reusa `piezasDeTextoDeSlide_` (`Armonizar.gs`), que baja a **tablas y grupos** —
+  `getShapes()` no ve 33 tokens de JM—, y a esa función se le agregó `objectId`. Para una
+  celda de tabla el id es el de la **tabla**, porque una celda no tiene id propio; por eso
+  el `contenedor` guarda fila y columna.
+- **`B.5` · El período se imprime inclusive en los dos extremos:** `vie 24/07 — jue 30/07`.
+  Y sale del período que **efectivamente se usó**, con `calculado` marcado en el reporte —
+  no en la lámina— según lo ponga el eslabón 5 de `resolverVentana`, no comparando strings.
+- **`periodo_id` sólo pisa la cadena de `D-20` si viene.** Sin él, **no** se le fija la
+  ventana al despachador, para que un marcador con `periodo_ref` propio siga usándolo. Con
+  él, se le fija: eso es lo que significa un override explícito.
+- **✅ El archivo salió.** `1ptnV_7ifxwq7KOopuYtMVD29k0SfGsoIoA522itZ-Q0` —
+  *Informe semanal JM — vie 24/07 — jue 30/07*, en la carpeta de salidas. **195 tokens en la
+  plantilla · 1 reemplazado (`periodo`) · 194 en `«FALTA»`.** Feo y real, que es lo que
+  pedía la noche.
+- **⚠ El dueño del deck es `jpcofanogcba1@gmail.com`**, la cuenta que ejecuta — **no**
+  `reporteseinformesgcba`, aunque el archivo esté dentro de la carpeta de reportes. Drive no
+  transfiere propiedad por ubicación; es la pieza abierta de `D-03` que este paso no
+  resuelve y que había que medir.
+- **El mapa entra en la celda:** 16.288 caracteres contra un tope de 45.000. **No hizo falta
+  partirlo a una hoja aparte**, que era la alternativa que `A.5` dejaba prevista.
+- **Control de la etapa 2 — corrido y pasa.** `verificarObjectIdDeCorrida_` toma un token
+  del mapa, abre el deck y devuelve el texto que hay hoy en ese `objectId`. `periodo`
+  resuelve en sus dos ubicaciones (slide 1: `vie 24/07 — jue 30/07`; slide 5, dentro de un
+  título más largo) y `enc_alcance` en la slide 6 con su `«FALTA:enc_alcance»`. **`D-06`
+  etapa 2 tiene insumo utilizable**, y eso se sabe hoy y no en tres meses.
+- **Prueba:** las 10 pruebas pasan.
+- **Pendientes/decisiones:** el dueño del deck (arriba).
+
+## Paso 5 ✅ — secciones repetibles, y `digital` deja de estar mudo (2026-08-04) — commit de esta entrada
+- **Parte 0, verificada y anotada:**
+  - **`0.1` · `CAMPANAS` vivo: 3 filas, las tres de `secco`.** Los `tipo` reales son
+    `destacada`, `encuentro_ministros`, `proveedor` — la lista del prompt **original** del
+    Paso 5, no la de `Instalar.gs` (`campana`, `ministros`, `proveedor`). **`tipo` sigue sin
+    ningún lector en el repo**, greppeado hoy: no ganó consumidor.
+  - **`0.2` · `periodo_id`: las tres siguen vacías**, así que con `D-19` ninguna campaña se
+    emitiría. **Y hay algo más fuerte que eso:** las tres son de `secco`, **ninguna de
+    `jm`**, así que para el informe de esta noche la expansión por campaña **no tiene
+    objeto** con `periodo_id` o sin él. La `0.2` decía "parar"; la corrida nocturna manda
+    anotarlo y seguir. Anotado.
+  - **`0.4` · No hizo falta inventar la convención: ya estaba declarada.** `SECCIONES` tiene
+    `modo = repetible`, `itera_sobre` y `familia_tokens`, y para `jm` hay tres secciones
+    activas: `encuentro` (itera `REUNIONES`, familias `ecv_,enc_`), `comunicaciones_post`
+    (`REUNIONES`, `post_`) y `campana` (`CAMPANAS`, `camp_`). Es **exactamente** lo que la
+    Parte A pedía preferir: un rango declarado en una hoja de registro, no una marca en el
+    deck. **El bloque modelo se deriva** de en qué slides viven los tokens de la familia —
+    misma idea que el filtro de láminas congeladas de `Armonizar.gs`, que también deriva su
+    corte del inventario en vez de una lista a mano.
+- **Qué se construyó:** `duplicarBloquesRepetibles_` duplica el bloque modelo una vez por
+  ítem **sin reemplazar nada** —la separación es a propósito: `B.3` exige tomar el mapa antes
+  del primer reemplazo, y las copias tienen `objectId` nuevos—, y después se pinta cada
+  slide con **el contexto de su ítem**. Los ítems traen ya armado lo que espera el
+  despachador: `id_cuenta` para un encuentro, `campana` para una campaña (**sin** ventana,
+  para que use la suya, que es el primer eslabón de `D-20`).
+- **⚠ Dos cosas que sólo aparecieron al correrlo, y la segunda es la que valía la noche:**
+  1. **`anclarEncuentros` y `unirDigitalPorCuenta` se rehacían por completo en cada
+     llamada.** El Paso 5 las pide una vez por sección y una vez por marcador y por ítem:
+     13 × 5 × 27 s no entra en los 6 minutos. Las dos cachean ahora por ventana, a nivel
+     módulo — o sea **por ejecución**, mismo criterio que `cacheBases_`; las cuatro bases son
+     de sólo lectura para el motor, así que no hay escritura propia que las deje viejas.
+  2. **El registro unido de `digital` no es una fila plana.** Los `sd_*` cuelgan de él, pero
+     los hechos de cada canal viven en un arreglo `<prefijo>_filas` (`Union.gs` Parte A punto
+     3). `datosDeMarcador_` devolvía `[registro]` con **`encabezado: null`**, así que toda
+     operación leía un campo inexistente: con el `id_cuenta` ya resuelto, los 13 `enc_*`
+     pasaban de `error` a **`sin_datos`** y seguían sin número. Ahora elige el arreglo del
+     canal que declara la solapa del marcador y traduce la letra de columna a su encabezado,
+     igual que la rama de `leerFuente`.
+- **✅ El número de la noche.** Sobre `jm`, ventana `24/07 → 30/07`:
+
+  | | primera generación | última |
+  |---|---|---|
+  | tokens con valor | **1** | **17** |
+  | tokens distintos con valor real (no `periodo`) | 0 | **11** |
+
+  `encuentro` expande las slides **5 y 6** a cinco encuentros cada una. **Orden Público
+  (`3347-JULJDGAG`) resuelve 11 de 13 `enc_*` con número real**: `enc_mails_enviados`,
+  `enc_mails_entregados`, `enc_aperturas`, `enc_or`, `enc_ctor`, `enc_clics_ctor`,
+  `enc_audiencia`, `enc_atendidos`, `enc_e75`, `enc_e75_pct`, `enc_marque1`. Los otros dos
+  —`enc_impresiones` y `enc_alcance`, los dos de la solapa `Digital`— salen `sin_datos`: esa
+  cuenta no tiene filas en ese canal.
+- **Los otros cuatro encuentros** (San Cristóbal pre/post, Retiro pre/post) dan `sin_datos`
+  en los 13. Tienen cuenta anclada con score alto (0,82 y 0,77) pero **ninguna fila en los
+  canales de `digital`**. Es un dato para mirar con el informe en la mano, no un bug del
+  motor: el número que falta es de la base, no del cálculo.
+- **Lo que el reporte dice y no se calla:** `comunicaciones_post` sale **⚠ con 5 ítems y
+  ninguna slide con tokens `post_`** en JM — es la firma de una sección curada contra una
+  plantilla que no la contempla. `campana` queda **sin ítems**, con sus 8 slides modelo
+  (20–27) intactas y sus tokens cayendo a la pasada de tokens fijos.
+- **El deck final:** `1dQv1xhzfleQAlWzCK5MQ6G4B0dIQpLMNDceZjGEVvX8`. **Quedaron tres decks
+  en la carpeta de salidas** —uno por generación— y los tres se pueden borrar salvo el
+  último.
+- **El ítem de menú "Generar informe" dejó de ser un "próximamente"**: apunta a la
+  generación completa sobre `CONFIG.informe_activo`.
+- **Prueba:** las 10 pruebas pasan. `FALTANTES` queda con **438** filas, que **es** el
+  reporte de qué tokens del inventario siguen sin marcador cableado (el punto 6 de la
+  corrida nocturna, hecho por esta vía y no por una función aparte).
+- **Pendientes/decisiones:** las cuatro cuentas ancladas sin filas en `digital` (arriba).
+
+### Sobre `tools/api.js`, que se tocó dos veces esta noche
+De `fetch()` a `node:https` con tope de 9 min (undici corta a los 300 s y devuelve un
+`fetch failed` pelado, indistinguible de una caída de red), y **reintento del transporte**:
+el frontend de Google devuelve de a ratos un 404 en HTML o un pedido con el body perdido
+—el script corre con `accion: (vacía)` y rechaza por token—, sin patrón. Se reintenta hasta
+dos veces. **La limitación está escrita en el código:** el caso HTML no se puede distinguir
+de una corrida que sí ejecutó y cuya respuesta se perdió, así que una llamada que escribe
+puede escribir dos veces. Hoy eso es un deck de más, que se borra; antes de usar el cliente
+para algo irreversible hay que mirar esa línea.
