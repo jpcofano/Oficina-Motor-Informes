@@ -2434,3 +2434,54 @@ nadie más.
 - **Pendientes/decisiones:** el censo queda pendiente de una de dos decisiones del usuario —
   ampliar el alcance del token con `drive.readonly`, o autorizar una función de diagnóstico
   en el motor—. **Ninguna de las dos la toma Code.**
+
+## Pedido ventana m2 (v2) — Parte 0 corrida, y **para**: una premisa vencida (2026-08-03) — commit de esta entrada
+- **Qué pedía:** verificar las seis premisas de `docs/Prompts/Pedido_ventana_m2_y_cableado_mail.md`
+  (v2) antes de escribir la `R-NN`, la fila de `MAPEO` y el cableado de `digital`. Sólo
+  lectura.
+- **Veredicto: cinco se sostienen y una está VENCIDA — la `0.2`, que es la que justifica toda
+  la Parte B.**
+- **0.1 · La original y su espejo, sin tocar. ✅** `digital/Directa Mail` sigue
+  **`uso = fuente`** (notas: *"canales de directa"*) y `m2/Directa mail` sigue
+  **`uso = derivada`** (notas: *"espejo de digital/Directa Mail — ver Paso 2.10 Parte C"*).
+  **No se reclasificó ninguna.**
+- **⚠ 0.2 · VENCIDA. La fila que la Parte B quiere agregar YA EXISTE.** En la hoja viva,
+  `digital/Directa Mail` tiene **las dos**: `mail_fecha → F` (sin notas) y
+  **`fecha_periodo → F`**, con la nota *"fecha_periodo elegida en DIAG_FECHAS (Paso
+  2.3.1/2.3.2)"*. O sea que la promoción ya se hizo en el `Paso-2.3.x` y **la Parte B se
+  queda sin objeto**. Lo confirma además la bitácora del `Paso-2.16`, que ya lo había dicho:
+  *"(b) `fecha_periodo` — ya existía, en la solapa correcta: `digital/Directa Mail` columna
+  F, promovida en el Paso 2.3.x"*.
+  **Se para acá y no se edita nada** (`CLAUDE.md` §4: una premisa vencida se reporta antes de
+  la primera edición). Lo que sí queda por decidir es si `mail_fecha` —la fila vieja, misma
+  columna, sin consumidor— se deroga o se deja; eso el pedido no lo contempla.
+- **⚠ 0.3 · No se puede medir con los instrumentos de hoy, y es el mismo bloqueo del censo
+  de `rdv`.** Contar filas con fecha fuera de rango plausible en `digital/Directa Mail` col F
+  exige leer las filas de la base, y **las tres rutas independientes fallan por alcance del
+  token** (`P1` anotado hoy). El instrumento del motor tampoco sirve acá: `digital` es
+  `snapshot`, así que `leerFuente` **devuelve antes del bucle de fechas** y
+  `filas_sin_fecha`/`filas_fecha_invalida` dan 0 sin haber mirado nada — medido:
+  `columna_fecha: null`. **El último dato conocido es del 02/08** y está en `PENDIENTES`:
+  *2079 filas con fecha, todas de 2026, y 35 sin fecha; ninguna anómala*. No se pudo
+  confirmar contra hoy.
+- **0.4 · El filtro de estado, confirmado y medido hoy. ✅** `digital/Directa Mail/mail_estado`
+  → columna **D**, `valores_incluidos = "Implementado, En curso"`. Sobre **2137** filas:
+  **excluye 49** —`Proyectado` **38**, vacío **11**— y **entran 2088**.
+  `valores_declarados_sin_filas` vacío: ningún tipeo.
+  *(Los números del `Paso-2.16` eran 2114 / 41 excluidas —30 `Proyectado`, 11 vacío—. La base
+  creció 23 filas y `Proyectado` subió de 30 a 38 en un día: la base es viva, como se
+  esperaba.)*
+- **0.5 · `digital` sigue `snapshot`. ✅ No se cambió.** `BASES.digital.modo_periodo =
+  snapshot`, `hoja_default = Digital`.
+- **0.6 · Inventario de `MAPEO` para `digital`, desde la hoja viva.** **8** solapas
+  `uso = fuente`, de las cuales **6 están mapeadas**, con **59 campos** en total:
+  `Digital` 15 · `Directa IVR` 13 · `Directa Mail` 12 · `Directa SMS` 8 ·
+  `Seguimiento digital` 8 · `Alcance` 3. **`Cuentas` y `CAMPAÑAS_DESGLOCE_DIGITAL` son
+  `fuente` y no tienen ni un campo mapeado.** Las seis mapeadas ya tienen su `fecha_periodo`
+  declarado (`Digital` E, `Directa IVR` D, `Directa Mail` F, `Directa SMS` D,
+  `Seguimiento digital` L; `Alcance` no).
+- **Prueba:** sólo lectura. No se tocó `.gs`, no se escribió ninguna hoja, no se reclasificó
+  ninguna solapa, no se cambió `modo_periodo`.
+- **Pendientes/decisiones:** **la Parte B no tiene objeto** y hay que decidir qué hacer con
+  `mail_fecha`. La `0.3` queda sin confirmar hasta que se resuelva el `P1` del alcance del
+  token. Las Partes A, D y E no se tocaron: **paro acá**.
