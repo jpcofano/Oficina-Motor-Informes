@@ -1117,7 +1117,16 @@ carpeta de salidas **deje de ser hija** de la de plantillas; o —lo más barato
 está hecho de hecho— que el ID venga del seed y el registro automático quede como
 diagnóstico, no como escritor. Ninguno se aplicó: hoy el registro sigue pudiendo escribir.
 
-### P1 · Ninguna verificación independiente puede leer las cuatro bases
+### P2 · Desde fuera del motor no se pueden leer las bases: es el token de `clasp`
+
+> **⚠ Corregido el 04/08/2026, el mismo día que se escribió. El título original decía
+> "Ninguna verificación independiente puede leer las cuatro bases" y era `P1`. Estaba mal
+> atribuido: el hecho medido es correcto, la causa no.** `appsscript.json` del proyecto
+> declara **`https://www.googleapis.com/auth/drive`** y
+> **`https://www.googleapis.com/auth/spreadsheets`**, los dos completos — **el motor tiene
+> permiso de sobra sobre las cuatro bases**. Lo recortado es el token de `clasp`, o sea **la
+> vía externa desde el sandbox**, no el acceso del motor. Baja a `P2` porque no limita lo
+> que el motor puede hacer: limita desde dónde se lo puede contrastar.
 
 Medido el 03/08/2026 al intentar censar las 12 filas de `rdv` de la ventana. **Es una
 limitación de instrumentos, no un bug**, y conviene tenerla escrita porque contradice un
@@ -1139,15 +1148,20 @@ independientes fallan:
 archivos que la app creó o abrió, y el segundo sólo metadatos. Falta `drive.readonly` o
 `spreadsheets.readonly`. Por eso `files.get` responde y `files.export` no.
 
-**Consecuencia práctica:** todo lo que se sepa de las cuatro bases sale hoy **del propio
-motor**, por `/dev`. Para las hojas de registro sigue habiendo dos caminos independientes;
-para las bases hay **uno solo**. Cuando una verificación sobre datos de base "confirma" algo,
-está confirmando el motor consigo mismo.
+**Consecuencia práctica, ya con la causa bien puesta:** todo lo que se sepa de las cuatro
+bases sale hoy **del motor**, por `/dev`. Para las hojas de registro hay dos caminos —el
+motor y `tools/snapshot.js`—; para las bases, **uno solo**.
 
-**Qué lo destraba, y es decisión del usuario:** agregar `drive.readonly` a la autorización de
-`clasp` —re-autorizar una vez—, o aceptar que las bases se leen sólo por el motor y decirlo
-donde corresponda. **No se hizo nada:** ampliar el alcance de un token es una decisión sobre
-credenciales.
+**Y la objeción de "el motor confirmándose a sí mismo" es más chica de lo que parecía.**
+Apunta a **`leerFuente`**, no a Apps Script: un `getValues()` directo sobre la solapa no pasa
+por `leerFuente`, ni por su normalización, ni por `modo_periodo`, ni por la lista blanca de
+`D-21`. Para un censo crudo eso es **más** independiente que un export, porque
+`leerFuente` justamente **colapsa** vacía, cero explícito y texto no numérico en un solo
+caso. Es lo que hizo el censo del `−54` (Parte D del addendum del 03/08).
+
+**Qué lo destraba, si alguna vez hace falta la vía externa:** agregar `drive.readonly` a la
+autorización de `clasp` —re-autorizar una vez—. **No se hizo:** ampliar el alcance de un
+token es una decisión sobre credenciales, y hoy no bloquea nada.
 
 ### P2 · La inferencia de solapa de `looker` funciona porque `MAPEO` está incompleto
 

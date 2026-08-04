@@ -84,3 +84,18 @@ En `docs/BITACORA.md`:
 - Sin trailer `Co-Authored-By`.
 
 **Modelo:** Opus.
+
+---
+
+## Addendum — 03/08/2026
+
+> **Se invierte una instrucción del propio pedido.** Decía "no agregar una función para
+> esto", asumiendo que existía una vía de lectura externa a las bases. No existe: los scopes
+> de `clasp` son `drive.file` + `drive.metadata.readonly`, y `gviz`, `export` y `htmlview`
+> devuelven 404/403.
+>
+> **El censo se hace con una función temporal dentro del motor.** La objeción de que eso es
+> confirmar el motor consigo mismo apunta a `leerFuente`, no a Apps Script: un `getValues()`
+> directo no pasa por `leerFuente`, ni por su normalización, ni por `snapshot`, ni por
+> `D-21`. Y es lo que el censo necesita — `leerFuente` normaliza y borra justamente la
+> diferencia entre celda vacía, cero explícito y texto no numérico.
