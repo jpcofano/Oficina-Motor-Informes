@@ -557,6 +557,18 @@ function probarFormatoMarcador_() {
     'formato: el CERO tiene que salir "0", no vacío — es un dato, no la ausencia de uno');
   afirmar_(formatearValorMarcador_(44.05, 'porcentaje') === '44.1%',
     'formato: `porcentaje` va a un decimal y con el signo');
+  // El par que hay que mantener separado: el mismo 0,2818 es "0.3%" leído como porcentaje y
+  // 28,2 leído como fracción. Es el error que la corrida del 04/08 encontró en el deck.
+  afirmar_(formatearValorMarcador_(0.2818181818, 'fraccion') === '28.2',
+    'formato: `fraccion` lleva el 0–1 de la base a unidades de porcentaje');
+  afirmar_(formatearValorMarcador_(0.2818181818, 'porcentaje') === '0.3%',
+    'formato: `porcentaje` NO multiplica — si multiplicara, un PCT ya calculado saldría x100');
+  // La otra mitad del hallazgo: las cajas de JM traen su propio `%`, así que `fraccion` no
+  // lo agrega. Si esta afirmación se cae, el deck vuelve a decir "28.2%%".
+  afirmar_(formatearValorMarcador_(0.2818181818, 'fraccion').indexOf('%') === -1,
+    'formato: `fraccion` NO pone el signo — lo trae la caja de la plantilla (C-01)');
+  afirmar_(formatearValorMarcador_(0, 'fraccion') === '0',
+    'formato: el CERO en `fraccion` es un dato, sale "0" y no vacío');
   afirmar_(formatearValorMarcador_('hola', 'texto') === 'hola',
     'formato: `texto` no toca el valor');
   afirmar_(formatearValorMarcador_('sin formato declarado', '') === 'sin formato declarado',

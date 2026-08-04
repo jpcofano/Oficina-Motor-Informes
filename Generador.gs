@@ -91,7 +91,21 @@ function formatearValorMarcador_(valor, formato) {
   var numero = Number(valor);
   if (isNaN(numero)) return String(valor);
 
+  // `porcentaje` asume el valor **ya en unidades de porcentaje** (26.4 → "26.4%"), que es
+  // lo que devuelve la operación `PCT`.
   if (f === 'porcentaje') return (Math.round(numero * 10) / 10) + '%';
+  // `fraccion` asume el valor **entre 0 y 1** y lo lleva a unidades de porcentaje
+  // (0.2818 → "28.2"), **sin el signo**. Corrida nocturna 04/08, las dos mitades del
+  // hallazgo, verificadas en el deck generado:
+  //  - las columnas `*_or`, `*_ctor` y `*_e75_pct` de `digital` vienen como fracción, y
+  //    formatearlas con `porcentaje` imprimía "0.3" donde el número real es 28,2 — un
+  //    número plausible y equivocado, el modo de falla más caro del proyecto;
+  //  - **las cajas de JM traen su propio `%`** (`{{enc_aperturas}} ({{enc_or}}%)`), así que
+  //    agregarlo acá daba "28.2%%". La plantilla es del equipo y el motor se adapta
+  //    (`C-01`): el signo lo pone la lámina, la unidad la pone el formato.
+  // Son dos formatos y no una heurística sobre el valor a propósito: "0,5" es un 50% en una
+  // columna y medio punto en otra, y eso lo sabe la fila de `MARCADORES`, no el formateador.
+  if (f === 'fraccion') return String(Math.round(numero * 1000) / 10);
   if (f === 'miles') return Math.round(numero).toLocaleString('es-AR');
   if (f === 'numero') return String(Math.round(numero * 100) / 100);
   return String(valor);
@@ -739,6 +753,50 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme) {
   });
 
   return { asignaciones: asignaciones, reporte: reporte };
+}
+
+/**
+ * Corrida nocturna 04/08, punto 6 — qué tokens de la plantilla siguen sin marcador
+ * cableado. `FALTANTES` responde lo mismo pero **por instancia emitida**, con el sufijo
+ * `@ítem`: sirve para atacar una corrida, no para ver el trabajo que queda. Esto agrupa por
+ * token distinto y separa las tres razones, que se atacan distinto.
+ *
+ * Sólo lectura: no toca la plantilla ni `MARCADORES`.
+ */
+function tokensSinCablear_(informeId) {
+  var informe = leerInformes()[informeId];
+  if (!informe) return { ok: false, motivo: 'No hay fila "' + informeId + '" en INFORMES' };
+  if (!informe.plantilla_id) return { ok: false, motivo: 'INFORMES.' + informeId + '.plantilla_id está vacío' };
+
+  var enPlantilla = tokensPorSlide_(SlidesApp.openById(informe.plantilla_id));
+  var cableados = {};
+  leerMarcadores_().forEach(function (m) {
+    var suyo = String(m.informe_id || '').trim();
+    if (suyo === informeId || suyo === '*') cableados[m.marcador] = m;
+  });
+
+  var familias = {};
+  var sinCablear = [];
+  Object.keys(enPlantilla).sort().forEach(function (token) {
+    if (cableados[token]) return;
+    // `periodo` lo produce la generación, no un marcador: no es trabajo pendiente.
+    if (token === 'periodo') return;
+    sinCablear.push({ token: token, slides: enPlantilla[token].join(',') });
+    var familia = token.indexOf('_') !== -1 ? token.slice(0, token.indexOf('_') + 1) : '(sin prefijo)';
+    familias[familia] = (familias[familia] || 0) + 1;
+  });
+
+  return {
+    ok: true,
+    informe_id: informeId,
+    plantilla: informe.plantilla_id,
+    tokens_en_plantilla: Object.keys(enPlantilla).length,
+    cableados_y_presentes: Object.keys(cableados).filter(function (t) { return t in enPlantilla; }).length,
+    cableados_sin_caja: Object.keys(cableados).filter(function (t) { return !(t in enPlantilla); }).sort(),
+    sin_cablear: sinCablear.length,
+    por_familia: familias,
+    detalle: sinCablear
+  };
 }
 
 /**
