@@ -1117,6 +1117,38 @@ carpeta de salidas **deje de ser hija** de la de plantillas; o —lo más barato
 está hecho de hecho— que el ID venga del seed y el registro automático quede como
 diagnóstico, no como escritor. Ninguno se aplicó: hoy el registro sigue pudiendo escribir.
 
+### P1 · Ninguna verificación independiente puede leer las cuatro bases
+
+Medido el 03/08/2026 al intentar censar las 12 filas de `rdv` de la ventana. **Es una
+limitación de instrumentos, no un bug**, y conviene tenerla escrita porque contradice un
+supuesto que el repo venía usando.
+
+`tools/snapshot.js` existe justamente para que el "contra qué comparar" no salga del código
+bajo prueba, y funciona — **sobre la planilla de control, que es del robot**. Sobre las
+**bases**, que son de terceros y donde `jpcofanogcba1` es sólo **lector**, las tres rutas
+independientes fallan:
+
+| ruta | resultado |
+|---|---|
+| `docs.google.com/.../htmlview` (descubrir `gid`) | **HTTP 404** |
+| `docs.google.com/.../gviz/tq?tqx=out:csv&sheet=…` | **HTTP 404** |
+| Drive API `files/{id}/export?mimeType=text/csv` | **HTTP 403** — *"the user has not granted the app read access to the file"* |
+
+**La causa es el alcance del token, no el permiso de la cuenta.** Los scopes de
+`~/.clasprc.json` son `drive.file` + `drive.metadata.readonly`: el primero sólo cubre
+archivos que la app creó o abrió, y el segundo sólo metadatos. Falta `drive.readonly` o
+`spreadsheets.readonly`. Por eso `files.get` responde y `files.export` no.
+
+**Consecuencia práctica:** todo lo que se sepa de las cuatro bases sale hoy **del propio
+motor**, por `/dev`. Para las hojas de registro sigue habiendo dos caminos independientes;
+para las bases hay **uno solo**. Cuando una verificación sobre datos de base "confirma" algo,
+está confirmando el motor consigo mismo.
+
+**Qué lo destraba, y es decisión del usuario:** agregar `drive.readonly` a la autorización de
+`clasp` —re-autorizar una vez—, o aceptar que las bases se leen sólo por el motor y decirlo
+donde corresponda. **No se hizo nada:** ampliar el alcance de un token es una decisión sobre
+credenciales.
+
 ### P2 · La inferencia de solapa de `looker` funciona porque `MAPEO` está incompleto
 
 Anotado el 03/08/2026 en el mismo commit que crea la fila que depende de esto
@@ -1349,6 +1381,25 @@ todavía no está decidida.
   cero conflictos** sin tocar nada. Correrla **escribe sobre la plantilla del equipo** (con
   backup automático previo). Es lo único que separa a la canónica de estar armonizada, y con
   eso se destraba el `0.1` del `Paso-2.5`. **No se vuelve a ofrecer.**
+
+- **¿`inscriptos` es siempre la suma de los cinco canales, o hay inscriptos que no vienen de
+  ninguno de ellos?** El control agregado del corte vertical no cerró: sobre las 12 filas de
+  `rdv/RVD JM-CM - ES` en la ventana 24–30/07, `inscriptos` suma **2919** y los cinco canales
+  **2865** — **−54, un 1,8 %**. **No es el motor**: sumar cada columna y después sumar las
+  columnas da idéntico a sumar fila por fila, así que el despachador no puede introducir esa
+  diferencia acertando cada columna por separado. Y en la fila de `Orden Público 28/07` la
+  identidad **sí** cierra: `361 + 169 + 43 + 180 + vacío = 753`.
+  **Las dos lecturas posibles, y no las decide el motor:** *(1)* faltan datos —los canales
+  están sin cargar en algunas filas y la identidad vale—, y entonces es curaduría de la base;
+  *(2)* la identidad no vale siempre —hay inscripción espontánea, presencial, o un canal no
+  mapeado—, y entonces el control `cierraSuma` del `Paso-2.9E` es válido **por fila** pero
+  **no** es una regla general, y hay que escribirlo como tal.
+  **Le falta su respaldo:** el censo fila por fila —distinguiendo celda vacía, cero explícito
+  y texto no numérico, que `SUMA` saltea igual— **no se pudo producir**; ver el bloqueo
+  anotado abajo. Lo que sí está medido es la **cobertura por canal**: `insc_mail` 9 de 12
+  filas con valor numérico, `insc_digital` 9, `insc_cc` **2**, `insc_ivr` **1**, `insc_dif`
+  **2**, contra `inscriptos` **12 de 12**. **No es bloqueo:** el corte vertical cerró y esto
+  no traba ningún paso.
 
 - **`R-01` no se cumple hoy: hay 5 grupos con más de un encuentro por (Figura, fecha) en
   `rdv/RVD JM-CM - ES`.** Medido el 03/08/2026 con `verificarPrecondicionAnclaje_()`.

@@ -2389,3 +2389,48 @@ nadie más.
     pasa a fallar sin que nadie lo haya tocado.
   - **Los once `prueba_*` siguen cargados**, porque son el insumo de la prueba del usuario.
     Se retiran con `retirarMarcadoresDePrueba_()` al cerrar la Parte D.
+
+## Doc — el −54 del corte: lo que se pudo medir, y el censo que no se pudo (2026-08-03) — commit de esta entrada
+- **Qué pedía `docs/Prompts/Pedido_diferencia_54_canales_rdv.md`:** censar las 12 filas de
+  `rdv/RVD JM-CM - ES` de la ventana una por una, distinguiendo **celda vacía**, **cero
+  explícito** y **texto no numérico** —que `SUMA` saltea igual pero significan cosas
+  distintas—, anotar la pregunta al equipo, y documentar tres cosas en la bitácora. Sólo
+  lectura: *"No toca `.gs` ni escribe hojas"*.
+- **⚠ El censo de la Parte 0 NO se pudo producir, y el motivo es de instrumentos.** Leer las
+  filas de una base exige una de dos cosas, y el prompt cierra las dos puertas a propósito:
+  agregar una función al motor (prohibido: *"el censo se reporta, no se instala"*) o leer la
+  base por afuera. **Se intentaron las tres rutas independientes y las tres fallan:**
+  `htmlview` **404**, `gviz/tq?out:csv` **404**, Drive API `files/export` **403 — "the user
+  has not granted the app read access to the file"**. La causa es el **alcance del token**:
+  `drive.file` + `drive.metadata.readonly`, sin `drive.readonly`. Por eso `files.get`
+  responde y `files.export` no. **No se agregó ninguna función y no se tocó ningún `.gs`.**
+  Queda como `P1` nuevo en `PENDIENTES`, porque es más grande que este censo: **sobre las
+  cuatro bases hay un solo camino de lectura, el motor**, y una verificación que use ese
+  camino confirma el motor consigo mismo.
+- **Parte A · La pregunta al equipo, anotada** en `PENDIENTES` → "Preguntas al equipo", **sin
+  marcarla como bloqueo**: ¿`inscriptos` es siempre la suma de los cinco canales, o hay
+  inscriptos que no vienen de ninguno? Con las dos lecturas escritas —faltan datos, o la
+  identidad no vale siempre y `cierraSuma` del `2.9E` es válido por fila pero no como regla
+  general—. Queda dicho que **le falta su respaldo**: el censo fila por fila.
+- **Parte B · Lo que sí queda documentado:**
+  - **El control agregado no cerró: −54 sobre 2919, un 1,8 %.** Descartado el motor: sumar
+    cada columna y después sumar las columnas es idéntico a sumar fila por fila. Hallazgo
+    abierto sobre los datos de `rdv`.
+  - **Cobertura por canal en la ventana** — el dato más útil que dejó el corte, y **la
+    primera medición de cuán completa está esa base**: `insc_mail` **9** de 12 filas con
+    valor numérico, `insc_digital` **9**, `insc_cc` **2**, `insc_ivr` **1**, `insc_dif`
+    **2**, contra `inscriptos` **12 de 12**. *(Lo que este conteo **no** distingue es
+    justamente lo que pedía el censo: vacía, cero explícito y texto se cuentan igual.)*
+  - **`prueba_alcance = 1.255.486` es una lectura correcta de la pregunta equivocada, y esto
+    no estaba escrito en ningún lado.** `looker.fecha_periodo` es la fecha de **inicio de
+    campaña**, y las campañas arrancan días antes del encuentro: la ventana devuelve las
+    campañas que **empezaron** entre el 24 y el 30, no el alcance de los encuentros de esos
+    días. **Es la razón concreta de dos decisiones que hasta hoy se sostenían por otros
+    argumentos:** por qué los `camp_*` se cablean contra `digital` y no contra `looker`, y
+    por qué `digital` quedó en **`snapshot`** en el `Paso-2.3` —el recorte por período lo
+    hace el agregador vía el link campaña↔encuentro, no una ventana de fecha cruda—.
+- **Prueba:** ninguna, es sólo lectura. No se corrigió ninguna celda de `rdv`, no se retiró
+  ningún `prueba_*`, no se tocó ningún `.gs`.
+- **Pendientes/decisiones:** el censo queda pendiente de una de dos decisiones del usuario —
+  ampliar el alcance del token con `drive.readonly`, o autorizar una función de diagnóstico
+  en el motor—. **Ninguna de las dos la toma Code.**
