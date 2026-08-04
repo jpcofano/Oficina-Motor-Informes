@@ -120,8 +120,11 @@ function claveCacheLectura_(baseId, solapa, ventana) {
  * aplica cuando `opciones.id_cuenta` viene dado**; sin él, el marcador sale `error` y lo
  * dice, en vez de leer la solapa equivocada.
  */
-function datosDeMarcador_(fila, solapa, ventana, cache, opciones) {
-  var campo = buscarMapeo(fila.base_id, solapa, fila.campo_logico);
+function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride) {
+  // `campoOverride` lo usa `RATIO`/`PCT`: su `campo_logico` es `numerador/denominador` y no
+  // resuelve como uno solo, así que se resuelve con el numerador para traer las filas —y de
+  // ahí salen los dos arreglos, de la misma lectura—.
+  var campo = buscarMapeo(fila.base_id, solapa, campoOverride || fila.campo_logico);
   if (!campo.ok) return { ok: false, motivo: campo.motivo };
 
   if (fila.base_id === 'digital') {
@@ -159,6 +162,59 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones) {
     encabezado: encabezado,
     columna: campo.columna,
     origen: 'leerFuente(' + fila.base_id + '/' + solapa + ')'
+  };
+}
+
+/**
+ * Paso 3 (v3) `D.1` Parte C — `RATIO` y `PCT`.
+ *
+ * `campo_logico` viene como `numerador/denominador`: se parte por `/`, se hacen **dos**
+ * `buscarMapeo` sobre la **misma base y solapa**, y se arman los dos arreglos desde las
+ * filas **ya leídas** — una sola lectura, la misma que cachea `datosDeMarcador_`, no dos.
+ *
+ * La aritmética no se toca: sigue entera en `opRATIO`/`opPCT` (`Marcadores.gs`). Acá sólo
+ * se resuelve estructura, que es lo que este módulo hace.
+ *
+ * Devuelve `{ ok, valoresNumerador, valoresDenominador, numeradorNombre, denominadorNombre }`
+ * o `{ ok:false, motivo }` con motivo propio — nunca una excepción.
+ */
+function partirCampoRatio_(fila, solapa, filas) {
+  var partes = String(fila.campo_logico || '').split('/');
+  if (partes.length !== 2 || !partes[0].trim() || !partes[1].trim()) {
+    return {
+      ok: false,
+      motivo: '«FALTA:' + fila.marcador + '@campo_logico_no_es_ratio» — `' + fila.operacion +
+        '` espera "numerador/denominador" y recibió "' + fila.campo_logico + '"' +
+        (partes.length > 2 ? ' (tiene más de una barra)' : '')
+    };
+  }
+
+  var nombreNum = partes[0].trim();
+  var nombreDen = partes[1].trim();
+  var mapNum = buscarMapeo(fila.base_id, solapa, nombreNum);
+  var mapDen = buscarMapeo(fila.base_id, solapa, nombreDen);
+  if (!mapNum.ok || !mapDen.ok) {
+    return {
+      ok: false,
+      motivo: 'sin mapeo para ' + (!mapNum.ok ? 'el numerador "' + nombreNum + '"' : '') +
+        (!mapNum.ok && !mapDen.ok ? ' ni ' : '') +
+        (!mapDen.ok ? 'el denominador "' + nombreDen + '"' : '') +
+        ' en ' + fila.base_id + '/' + solapa
+    };
+  }
+
+  var encNum = encabezadoEnColumna_(fila.base_id, solapa, mapNum.columna);
+  var encDen = encabezadoEnColumna_(fila.base_id, solapa, mapDen.columna);
+  var extraer = function (encabezado) {
+    return filas.map(function (f) { return encabezado && (encabezado in f) ? f[encabezado] : ''; });
+  };
+
+  return {
+    ok: true,
+    valoresNumerador: extraer(encNum),
+    valoresDenominador: extraer(encDen),
+    numeradorNombre: nombreNum + ' (col ' + mapNum.columna + ')',
+    denominadorNombre: nombreDen + ' (col ' + mapDen.columna + ')'
   };
 }
 
@@ -226,16 +282,38 @@ function resolverMarcadores(informeId, opciones) {
       return base;
     }
 
-    // 4 · Los datos.
-    var datos = datosDeMarcador_(fila, solapa.solapa, ventana, cache, opciones);
+    // 4 · Los datos. `RATIO`/`PCT` traen las filas con el numerador y después parten.
+    var esRatio = ['RATIO', 'PCT'].indexOf(String(fila.operacion || '').trim()) !== -1;
+    var partido = null;
+    if (esRatio) {
+      var nombreNum = String(fila.campo_logico || '').split('/')[0].trim();
+      if (!nombreNum) {
+        base.estado = 'error';
+        base.traza = '«FALTA:' + fila.marcador + '@campo_logico_no_es_ratio» — `' + fila.operacion +
+          '` espera "numerador/denominador" y recibió "' + fila.campo_logico + '" · ' + trazaVentana;
+        return base;
+      }
+    }
+
+    var datos = datosDeMarcador_(fila, solapa.solapa, ventana, cache, opciones,
+      esRatio ? String(fila.campo_logico).split('/')[0].trim() : null);
     if (!datos.ok) {
       base.estado = 'error';
       base.traza = datos.motivo + ' · ' + trazaVentana;
       return base;
     }
 
+    if (esRatio) {
+      partido = partirCampoRatio_(fila, solapa.solapa, datos.filas);
+      if (!partido.ok) {
+        base.estado = 'error';
+        base.traza = partido.motivo + ' · ' + trazaVentana;
+        return base;
+      }
+    }
+
     // 5 · La operación.
-    var salida = despacharOperacion_(fila.operacion, {
+    var ctx = {
       marcador: fila.marcador,
       base_id: fila.base_id,
       solapa: solapa.solapa,
@@ -245,7 +323,14 @@ function resolverMarcadores(informeId, opciones) {
       ventana: ventana,
       filas: datos.filas,
       valor_fijo: fila.valor_fijo
-    });
+    };
+    if (partido) {
+      ctx.valoresNumerador = partido.valoresNumerador;
+      ctx.valoresDenominador = partido.valoresDenominador;
+      ctx.numeradorNombre = partido.numeradorNombre;
+      ctx.denominadorNombre = partido.denominadorNombre;
+    }
+    var salida = despacharOperacion_(fila.operacion, ctx);
     if (!salida.ok) {
       base.estado = 'error';
       base.traza = salida.motivo + ' · solapa "' + solapa.solapa + '" · ' + trazaVentana;

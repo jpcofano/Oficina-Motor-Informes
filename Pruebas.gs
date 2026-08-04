@@ -578,6 +578,59 @@ function probarFormatoMarcador_() {
   return 'Paso 3 C formato de marcadores: OK';
 }
 
+/**
+ * Paso 3 (v3) `D.1` Parte C — control positivo de `RATIO`/`PCT`.
+ *
+ * El caso que obliga a que exista: **un `PCT` con denominador cero no puede salir `NaN` ni
+ * `0` en la lámina**. Los dos serían números plausibles y equivocados — un `0%` de
+ * asistencia se lee como "no fue nadie", no como "no había base para calcularlo".
+ *
+ * Puro: los `ctx` son literales, no se lee ninguna hoja.
+ */
+function probarRatioEnDespachador_() {
+  // El caso real del corte: 199 asistentes sobre 753 inscriptos.
+  var pct = despacharOperacion_('PCT', {
+    campo_logico: 'asistentes/inscriptos',
+    valoresNumerador: [199], valoresDenominador: [753]
+  });
+  afirmar_(pct.ok === true, 'ratio: un PCT con los dos arreglos tiene que resolver');
+  afirmar_(Math.abs(pct.valor - 26.4276) < 0.01, 'ratio: 199/753 tiene que dar 26,43%, dio ' + pct.valor);
+  afirmar_(formatearValorMarcador_(pct.valor, 'porcentaje') === '26.4%',
+    'ratio: formateado a un decimal con signo');
+
+  // Denominador cero: ni NaN ni 0.
+  var cero = despacharOperacion_('PCT', {
+    campo_logico: 'asistentes/inscriptos',
+    valoresNumerador: [199], valoresDenominador: [0]
+  });
+  afirmar_(cero.ok === true, 'ratio: denominador cero NO es un error de despacho');
+  afirmar_(cero.valor === '', 'ratio: denominador cero devuelve vacío, no 0 ni NaN — dio ' + JSON.stringify(cero.valor));
+  afirmar_(formatearValorMarcador_(cero.valor, 'porcentaje') === '',
+    'ratio: en la lámina un denominador cero sale VACÍO, nunca "0%" ni "NaN%"');
+  afirmar_(cero.traza.indexOf('denominador') !== -1,
+    'ratio: la traza tiene que decir que el denominador estaba vacío o en cero');
+
+  // El denominador cero se traduce a `sin_datos`, que es lo que `resolverMarcadores` mira.
+  afirmar_((cero.valor === '' ? 'sin_datos' : 'ok') === 'sin_datos',
+    'ratio: un denominador cero es sin_datos, no error');
+
+  // La traza muestra los dos campos y los dos totales, que es lo que permite auditarlo.
+  afirmar_(pct.traza.indexOf('asistentes') !== -1 && pct.traza.indexOf('inscriptos') !== -1,
+    'ratio: la traza tiene que nombrar numerador y denominador');
+  afirmar_(pct.traza.indexOf('199') !== -1 && pct.traza.indexOf('753') !== -1,
+    'ratio: la traza tiene que mostrar los dos totales');
+
+  // Sumar antes de dividir, no dividir por fila y promediar: son números distintos.
+  var agregado = despacharOperacion_('RATIO', {
+    campo_logico: 'a/b',
+    valoresNumerador: [1, 2, 3], valoresDenominador: [10, 10, 10]
+  });
+  afirmar_(Math.abs(agregado.valor - 0.2) < 1e-9,
+    'ratio: suma los dos lados y DESPUÉS divide (6/30 = 0,2), no promedia razones por fila');
+
+  return 'Paso 3 D.1 RATIO/PCT: OK';
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
@@ -588,7 +641,8 @@ function correrPruebasDiff_() {
     probarListaBlancaValores_,
     probarDespachoOperaciones_,
     probarSemanaR11_,
-    probarFormatoMarcador_
+    probarFormatoMarcador_,
+    probarRatioEnDespachador_
   ];
   var lineas = [];
   var fallas = 0;
