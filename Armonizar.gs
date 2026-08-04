@@ -99,9 +99,20 @@ function geometriaElemento_(elemento) {
   }
 }
 
-/** Todo lo que tiene texto en una slide: `{ texto, contenedor, geo }`. */
+/**
+ * Todo lo que tiene texto en una slide: `{ texto, contenedor, geo, objectId }`.
+ *
+ * `objectId` se agregó el 04/08 para el `Paso-4` (`B.3`), que necesita registrar
+ * `token → objectId` **antes** de reemplazar. Es el id del elemento de página: para una
+ * celda de tabla es el de la **tabla**, porque una celda no tiene id propio — por eso
+ * `contenedor` dice fila y columna, que es lo que la vuelve a ubicar.
+ */
 function piezasDeTextoDeSlide_(slide) {
   var salida = [];
+
+  function idDe_(elemento) {
+    try { return elemento.getObjectId(); } catch (e) { return ''; }
+  }
 
   function recorrer_(elemento, contenedor, geoHeredada) {
     var tipo;
@@ -128,7 +139,8 @@ function piezasDeTextoDeSlide_(slide) {
             salida.push({
               texto: tabla.getCell(f, c).getText().asString(),
               contenedor: 'tabla fila ' + (f + 1) + ' col ' + (c + 1),
-              geo: geoTabla
+              geo: geoTabla,
+              objectId: idDe_(elemento)
             });
           } catch (e) {
             continue;
@@ -142,7 +154,8 @@ function piezasDeTextoDeSlide_(slide) {
       salida.push({
         texto: elemento.asShape().getText().asString(),
         contenedor: contenedor,
-        geo: geometriaElemento_(elemento) || geoHeredada
+        geo: geometriaElemento_(elemento) || geoHeredada,
+        objectId: idDe_(elemento)
       });
     }
   }

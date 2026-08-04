@@ -366,14 +366,328 @@ function resolverMarcadores(informeId, opciones) {
   };
 }
 
+/* ============================== Paso 4 — generación ==============================
+ *
+ * Acá tampoco hay aritmética: se copia, se pinta y se registra. Los números los calculó
+ * `resolverMarcadores`, que a su vez despacha a `Marcadores.gs`.
+ */
+
+/** Un token sin valor se escribe así, nunca crudo y nunca borrando la caja (`B.4`). */
+function textoFaltante_(token) {
+  return '«FALTA:' + token + '»';
+}
+
 /**
- * Paso 4 — copia la plantilla, reemplaza los `{{marcador}}` por `valor_formateado`, resalta
- * los `sin_datos`, guarda en la carpeta de salidas y devuelve link + cobertura.
+ * `B.3` — `token → objectId`, **antes** de reemplazar. Este barrido es irreversible en el
+ * sentido que importa: cuando `{{ecv_total}}` pasa a ser "1.234", el token deja de existir
+ * y el mapa no se puede reconstruir.
+ *
+ * Reusa `piezasDeTextoDeSlide_` (`Armonizar.gs`), que **sí** baja a tablas y a grupos —
+ * `slide.getShapes()` no ve 33 tokens de JM, medido el 03/08. El `objectId` sobrevive a que
+ * cambie el contenido de la caja: es lo que habilita la etapa 2 de `D-06`.
+ *
+ * Devuelve `{ tokens: { token: [{ slide, objectId, contenedor }] }, lista: [tokens ordenados] }`.
+ */
+function mapaTokenObjectId_(presentacion) {
+  var tokens = {};
+
+  presentacion.getSlides().forEach(function (slide, i) {
+    piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+      var m;
+      RE_TOKEN_.lastIndex = 0;
+      while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) {
+        var token = m[1];
+        if (!tokens[token]) tokens[token] = [];
+        var ubicacion = { slide: i + 1, objectId: pieza.objectId || '', contenedor: pieza.contenedor };
+        var repetida = tokens[token].some(function (u) {
+          return u.slide === ubicacion.slide && u.objectId === ubicacion.objectId && u.contenedor === ubicacion.contenedor;
+        });
+        if (!repetida) tokens[token].push(ubicacion);
+      }
+    });
+  });
+
+  return { tokens: tokens, lista: Object.keys(tokens).sort() };
+}
+
+/**
+ * `B.5` — el período tal como se imprime en la lámina: **inclusive en los dos extremos**,
+ * con el día de la semana adelante (`R-11`: siete días, viernes a jueves). `vie 24/07 —
+ * jue 30/07`, no `24/07 — 31/07`.
+ *
+ * Es formato, no cuenta: la ventana ya viene resuelta por `resolverVentana`.
+ */
+var DIAS_ABREVIADOS_ = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+
+function formatearPeriodoLamina_(ventana) {
+  var tz = Session.getScriptTimeZone();
+  var pieza = function (fecha) {
+    return DIAS_ABREVIADOS_[fecha.getDay()] + ' ' + Utilities.formatDate(fecha, tz, 'dd/MM');
+  };
+  return pieza(ventana.desde) + ' — ' + pieza(ventana.hasta);
+}
+
+/** La hoja se crea si falta, con los headers de `HOJAS_CONFIG_` — una sola fuente de esquema. */
+function hojaDeSalida_(nombre) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName(nombre);
+  if (hoja) return hoja;
+
+  hoja = ss.insertSheet(nombre);
+  hoja.getRange(1, 1, 1, HOJAS_CONFIG_[nombre].headers.length).setValues([HOJAS_CONFIG_[nombre].headers]);
+  hoja.setFrozenRows(1);
+  return hoja;
+}
+
+/**
+ * `B.7` (`D-12`) — `FALTANTES` **se pisa** en cada corrida: es la lista de trabajo de lo
+ * que falta cablear, no un historial. Una fila por token faltante, con base, solapa, campo
+ * y motivo, para poder atacarlos de a uno.
+ */
+function escribirFaltantes_(faltantes) {
+  var hoja = hojaDeSalida_('FALTANTES');
+  if (hoja.getLastRow() > 1) {
+    hoja.getRange(2, 1, hoja.getLastRow() - 1, hoja.getLastColumn()).clearContent();
+  }
+  if (!faltantes.length) return 0;
+
+  var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  var filas = faltantes.map(function (f) {
+    return headers.map(function (h) { return (h in f) ? f[h] : ''; });
+  });
+  hoja.getRange(2, 1, filas.length, headers.length).setValues(filas);
+  return filas.length;
+}
+
+/**
+ * `B.6` (`D-07`) — la fila de `CORRIDAS`. Append: cada generación agrega una.
+ *
+ * El límite de una celda de Sheets es 50.000 caracteres. Si el mapa no entra, **no se
+ * trunca en silencio**: se escribe el motivo en la celda y el mapa entero viaja igual en la
+ * respuesta, que es de donde se puede recuperar.
+ */
+var TOPE_CELDA_MAPA_TOKENS_ = 45000;
+
+function escribirCorrida_(fila, mapaTokens) {
+  var serializado = JSON.stringify(mapaTokens);
+  var entra = serializado.length <= TOPE_CELDA_MAPA_TOKENS_;
+  fila.mapa_tokens = entra
+    ? serializado
+    : '(no entra en la celda: ' + serializado.length + ' caracteres — está en la respuesta de la corrida)';
+
+  var hoja = hojaDeSalida_('CORRIDAS');
+  var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  hoja.appendRow(headers.map(function (h) { return (h in fila) ? fila[h] : ''; }));
+  return { entra: entra, caracteres: serializado.length };
+}
+
+/**
+ * Paso 4, "Control de la etapa 2" — el mapa de `CORRIDAS` **tiene que ser utilizable**, y
+ * eso hay que saberlo ahora y no en tres meses: si no lo es, `D-06` etapa 2 queda sin
+ * insumo. Toma un token del mapa de una corrida, abre el deck por su `deck_id`, busca el
+ * elemento por `objectId` y devuelve el texto que hay hoy ahí.
+ *
+ * Sólo lectura. No repara nada: si el id no resuelve, lo dice.
+ */
+function verificarObjectIdDeCorrida_(corridaId, token) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
+  if (!hoja) return { ok: false, motivo: 'La hoja CORRIDAS no existe' };
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos.shift();
+  var idx = {};
+  headers.forEach(function (h, i) { idx[h] = i; });
+
+  var fila = null;
+  datos.forEach(function (f) { if (String(f[idx.corrida_id]) === String(corridaId)) fila = f; });
+  if (!fila) return { ok: false, motivo: 'No hay corrida "' + corridaId + '" en CORRIDAS' };
+
+  var mapa;
+  try {
+    mapa = JSON.parse(fila[idx.mapa_tokens]);
+  } catch (e) {
+    return { ok: false, motivo: 'La celda `mapa_tokens` de esa corrida no es JSON: ' + fila[idx.mapa_tokens] };
+  }
+
+  var ubicaciones = mapa[token];
+  if (!ubicaciones || !ubicaciones.length) {
+    return { ok: false, motivo: 'El token "' + token + '" no está en el mapa de esa corrida' };
+  }
+
+  var presentacion = SlidesApp.openById(fila[idx.deck_id]);
+  return {
+    ok: true,
+    corrida_id: corridaId,
+    token: token,
+    deck_id: fila[idx.deck_id],
+    ubicaciones: ubicaciones.map(function (u) {
+      var elemento = null;
+      try { elemento = presentacion.getPageElementById(u.objectId); } catch (e) { elemento = null; }
+      if (!elemento) {
+        return { slide: u.slide, objectId: u.objectId, contenedor: u.contenedor, resuelve: false, texto: '' };
+      }
+      var texto = '';
+      try { texto = recorteTexto_(elemento.asShape().getText().asString(), 120); } catch (e) { texto = '(el elemento no es una forma con texto: ' + u.contenedor + ')'; }
+      return { slide: u.slide, objectId: u.objectId, contenedor: u.contenedor, resuelve: true, texto: texto };
+    })
+  };
+}
+
+/**
+ * Paso 4 — copia la plantilla, reemplaza los `{{token}}` por su `valor_formateado`, escribe
+ * `«FALTA:token»` en los que no tienen valor, guarda en `CONFIG.carpeta_salida` y devuelve
+ * el reporte de corrida.
  *
  * `periodoId` es **opcional** y es la única puerta para pisar la cadena de `D-20`
- * (`Paso-4` Addendum 1): si viene, se usa como override explícito del eslabón `CONFIG` y
- * **la traza tiene que decirlo**. Si no viene —el caso normal— la cadena resuelve sola.
+ * (`Paso-4` `B.1`): si viene, se resuelve contra `PERIODOS` como override explícito y **la
+ * traza lo dice**. Si no viene —el caso normal, y el que usa el `Paso-5`— la cadena de
+ * cinco eslabones resuelve sola.
+ *
+ * **Nunca escribe sobre la plantilla.** La única escritura autorizada sobre una plantilla
+ * es la armonización (`Armonizar.gs`), y es otra función.
  */
 function generarInforme(informeId, periodoId) {
-  return { ok: false, motivo: 'generarInforme() se implementa en el Paso 4 (todavía no).' };
+  var informe = leerInformes()[informeId];
+  if (!informe) return { ok: false, motivo: 'No hay fila "' + informeId + '" en INFORMES' };
+  if (!informe.plantilla_id) return { ok: false, motivo: 'INFORMES.' + informeId + '.plantilla_id está vacío' };
+
+  var carpetaId = leerConfig().carpeta_salida;
+  if (!carpetaId) return { ok: false, motivo: 'CONFIG.carpeta_salida no está cargado (precondición dura de D-03)' };
+
+  var ventana = periodoId
+    ? resolverVentana({ periodo_ref: periodoId })
+    : resolverVentana({});
+  if (!ventana.ok) return { ok: false, motivo: 'No se pudo resolver el período: ' + ventana.motivo };
+
+  var trazaPeriodo = periodoId
+    ? 'override explícito por periodo_id="' + periodoId + '" (' + ventana.origen + ') — pisa la cadena de D-20'
+    : 'cadena de D-20, eslabón "' + ventana.origen + '"';
+  var periodoLamina = formatearPeriodoLamina_(ventana);
+
+  var carpeta;
+  try {
+    carpeta = DriveApp.getFolderById(carpetaId);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo abrir CONFIG.carpeta_salida: ' + e.message };
+  }
+
+  var copia;
+  try {
+    copia = DriveApp.getFileById(informe.plantilla_id).makeCopy(informe.nombre + ' — ' + periodoLamina, carpeta);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo copiar la plantilla: ' + e.message };
+  }
+  var deckId = copia.getId();
+
+  var presentacion = SlidesApp.openById(deckId);
+
+  // 1 · El mapa, ANTES de tocar un solo token.
+  var mapa = mapaTokenObjectId_(presentacion);
+
+  // 2 · Los valores. `resolverMarcadores` ya trae `estado` por marcador, y el `estado` es
+  //     lo que decide qué se escribe.
+  //
+  //     La ventana se le fija **sólo** cuando vino un `periodoId`: eso es lo que significa
+  //     un override explícito. Sin él no se le pasa nada, para que cada marcador resuelva
+  //     su propia cadena — un marcador con `periodo_ref` propio tiene que seguir usándolo
+  //     (`B.5`: el encabezado dice el período del informe, pero un token con ventana propia
+  //     se calcula con la suya).
+  var resolucion = resolverMarcadores(informeId, periodoId ? { ventana: ventana } : {});
+  var porMarcador = {};
+  resolucion.resultados.forEach(function (r) { porMarcador[r.marcador] = r; });
+
+  // 3 · El reemplazo, token por token de los que **están en la plantilla**. Un marcador
+  //     cableado que no existe en el deck no se escribe en ningún lado: se reporta aparte.
+  var reemplazados = 0;
+  var conValor = [];
+  var faltantes = [];
+  var corridaId = informeId + '-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
+
+  mapa.lista.forEach(function (token) {
+    var resultado = porMarcador[token];
+
+    // `{{periodo}}` lo produce la generación, no un marcador: es el encabezado de la lámina
+    // y sale del período que **efectivamente se usó** (`B.5`). Si alguien le carga una fila
+    // en `MARCADORES`, esa fila gana — la hoja de registro manda sobre el default.
+    if (!resultado && token === 'periodo') {
+      presentacion.replaceAllText('{{' + token + '}}', periodoLamina, true);
+      reemplazados++;
+      conValor.push(token);
+      return;
+    }
+
+    if (resultado && resultado.estado === 'ok') {
+      presentacion.replaceAllText('{{' + token + '}}', String(resultado.valor_formateado), true);
+      reemplazados++;
+      conValor.push(token);
+      return;
+    }
+
+    presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token), true);
+    var fila = porMarcador[token];
+    faltantes.push({
+      corrida_id: corridaId,
+      informe_id: informeId,
+      token: token,
+      base_id: fila ? (fila.base_id || '') : '',
+      solapa: fila ? (fila.solapa || '') : '',
+      campo_logico: '',
+      motivo: fila
+        ? (fila.estado + ': ' + fila.traza)
+        : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó'
+    });
+  });
+
+  // 4 · Marcadores cableados que la plantilla no tiene. No es un faltante del informe: es
+  //     una fila de `MARCADORES` sin caja donde escribirse, y hay que verla.
+  var sinCajaEnPlantilla = Object.keys(porMarcador).filter(function (t) { return !(t in mapa.tokens); });
+
+  var faltantesEscritos = escribirFaltantes_(faltantes);
+  var celdaMapa = escribirCorrida_({
+    corrida_id: corridaId,
+    informe_id: informeId,
+    // El override si vino; si no, de qué eslabón salió la ventana — sin esto la fila no
+    // dice contra qué período se generó.
+    periodo_id: periodoId || ventana.origen,
+    deck_id: deckId,
+    fecha_generacion: new Date(),
+    tokens_reemplazados: reemplazados,
+    faltantes: faltantes.length
+  }, mapa.tokens);
+
+  var dueno = '';
+  try {
+    var propietario = DriveApp.getFileById(deckId).getOwner();
+    dueno = propietario ? propietario.getEmail() : '(sin dueño legible)';
+  } catch (e) {
+    dueno = '(no se pudo leer: ' + e.message + ')';
+  }
+
+  return {
+    ok: true,
+    corrida_id: corridaId,
+    informe_id: informeId,
+    deck: { id: deckId, nombre: copia.getName(), url: copia.getUrl(), dueno: dueno },
+    periodo: {
+      lamina: periodoLamina,
+      desde: formatearFecha_(ventana.desde),
+      hasta: formatearFecha_(ventana.hasta),
+      origen: ventana.origen,
+      // `B.5`: calculado y cargado a mano se leen igual en el deck y no se auditan igual,
+      // así que la distinción va acá y no en la lámina. La marca la pone el eslabón 5 de
+      // `resolverVentana`, no una comparación de strings contra el nombre del origen.
+      calculado: ventana.calculado === true,
+      traza: trazaPeriodo
+    },
+    tokens: {
+      en_plantilla: mapa.lista.length,
+      reemplazados: reemplazados,
+      faltantes: faltantes.length,
+      con_valor: conValor.sort(),
+      cableados_sin_caja_en_plantilla: sinCajaEnPlantilla.sort()
+    },
+    marcadores: resolucion.resumen,
+    faltantes_escritos: faltantesEscritos,
+    mapa_tokens: { cabe_en_la_celda: celdaMapa.entra, caracteres: celdaMapa.caracteres }
+  };
 }

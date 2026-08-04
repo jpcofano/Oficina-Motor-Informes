@@ -165,6 +165,20 @@ var HOJAS_CONFIG_ = {
   // persona completa `decision` (reusar/actualizar).
   VALORES_DIVERGENTES: {
     headers: ['item', 'token', 'valor_anterior', 'fecha_anterior', 'valor_nuevo', 'diferencia', 'parcial', 'decision']
+  },
+  // Paso 4 `A.5` — registro de CORRIDAS de generación. Va acá y no en `INFORMES`: esa hoja
+  // es el registro de plantillas, y meterle el nivel de instancia conflaría las dos cosas.
+  // **Es un insumo, no un log** (`D-07`): `mapa_tokens` guarda `token → objectId` serializado
+  // para que la etapa 2 de `D-06` pueda escribir por identidad de elemento en vez de por
+  // búsqueda de texto. Append: cada generación agrega una fila.
+  CORRIDAS: {
+    headers: ['corrida_id', 'informe_id', 'periodo_id', 'deck_id', 'fecha_generacion', 'tokens_reemplazados', 'faltantes', 'mapa_tokens']
+  },
+  // Paso 4 `B.7` (`D-12`) — se **pisa** en cada corrida, a propósito: es la lista de trabajo
+  // de lo que falta cablear, no un historial. Si algún día hace falta la serie,
+  // `tools/snapshot.js` ya la archivaría.
+  FALTANTES: {
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo']
   }
 };
 
