@@ -132,3 +132,16 @@ En `docs/PENDIENTES_consistencia.md`:
 - Sin trailer `Co-Authored-By`.
 
 **Modelo:** Opus.
+
+---
+
+## Addendum — 03/08/2026
+
+> **`0.2` vencida y `Parte B` sin objeto.** La fila `digital/Directa Mail/fecha_periodo → F`
+> **ya existía**: la promovió el `Paso-2.3.1`/`2.3.2` y la bitácora del `2.16` lo decía. El
+> pedido la mandaba a agregar. La verificación de premisas hizo lo suyo y frenó antes de la
+> primera edición.
+>
+> **Lo que la reemplaza:** derogar `mail_fecha`, la fila vieja sobre la misma columna y sin
+> consumidor. Decisión del usuario, 03/08/2026. Dos filas apuntando a la misma columna es la
+> ambigüedad que ya mordió con `SECCIONES.periodo_id` / `periodo_ref`.
