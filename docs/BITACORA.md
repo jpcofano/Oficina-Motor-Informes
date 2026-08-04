@@ -2588,3 +2588,114 @@ nadie más.
   `enc_*`. No se cambió `modo_periodo` de `digital`, no se reclasificó `m2/Directa mail`, no
   se retiró ningún `prueba_*`.
 - **Pendientes/decisiones:** ninguna nueva más allá de las anotadas.
+
+## Corrida nocturna — punto 1: destrabar el anclaje (2026-08-04) — commit de esta entrada
+- **Qué pedía:** que `verificarPrecondicionAnclaje_` cuente duplicados de `R-01` sólo sobre
+  las filas que el emparejador mira, leyendo la lista blanca de `MAPEO.valores_incluidos` y
+  no un literal. Y si la precondición pasa, correr `anclarEncuentros()`.
+- **Qué se hizo:** la verificación filtra ahora con `filtrosValoresIncluidos_` /
+  `filaPasaListaBlanca_` (`Fuentes.gs`), **el mismo par que usa `leerFuente`** — no un
+  normalizador nuevo, no un valor cableado. Devuelve además `filas_consideradas`,
+  `filas_excluidas_por_valor` y, si algún grupo queda duplicado, **el grupo entero**
+  (figura, fecha, evento, barrio, status y número de fila de la planilla).
+- **El número:** **653 filas consideradas · 709 excluidas · 0 grupos duplicados.** 653 + 709
+  = 1362, idéntico al reparto que había medido `D-21` el 03/08. **La precondición pasa.**
+- **`anclarEncuentros()` corrió por primera vez:** ventana `2026-07-24 → 2026-07-30`
+  (origen `config`, siete días, viernes a jueves), umbral `0,6`, **5 encuentros anclados, 0
+  sin link, 0 en baja confianza**. Las cuentas: San Cristóbal → `3354-JULJDGAG` (0,82),
+  Retiro → `3346-JULJDGAG` (0,77), Orden Público → `3347-JULJDGAG` (0,77), y otra vez San
+  Cristóbal y Retiro por la segunda etapa de cada uno.
+- **⚠ Dos cosas que sólo aparecen cuando la función corre de verdad**, y las dos estaban
+  tapadas por la precondición que fallaba antes:
+  1. **`unirDigitalPorCuenta` no volvía nunca.** Resolvía **cinco `buscarMapeo` por fila**
+     sobre ~1300 cuentas, y `buscarMapeo` **no cachea**: cada llamada relee `SOLAPAS` y
+     `MAPEO` enteras con `getDataRange()`. Son ~13.000 lecturas de la planilla de control y
+     se comen los 6 minutos de Apps Script. Las columnas de dimensión se resuelven ahora
+     **una vez, fuera del bucle**: de `>5,5 min` (timeout) a **27,5 s**, 740 cuentas.
+     *No se tocó `buscarMapeo`*: cachear `leerMapeo`/`leerSolapas` a nivel módulo es la
+     solución de fondo, pero `Instalar.gs` escribe esas hojas y las relee en la misma
+     corrida, así que un caché sin invalidación rompería el sembrador. Queda anotado.
+  2. **`catalogoBarriosDesdeBase_` (`Parseo.gs`) estaba roto desde siempre.** Llamaba
+     `getDataRange()` sobre el **sobre** que devuelve `abrirHoja` (`{ ok, base, libro, hoja }`)
+     en vez de sobre `.hoja`. Nunca se había visto porque `anclarEncuentros()` moría antes.
+     Corregido, y el fallo se devuelve ahora como catálogo vacío **con motivo** en vez de
+     apagar el score de barrio en silencio.
+- **`tools/api.js` pasa de `fetch()` a `node:https`.** undici corta a los **300 s**
+  esperando headers y devuelve un `fetch failed` pelado, sin status, indistinguible de una
+  caída de red — que es exactamente cómo se leyó el primer timeout. El tope quedó en 9 min,
+  arriba del límite de ejecución de Apps Script, y los redirects se siguen a mano.
+- **Prueba:** **las 10 pruebas de `Pruebas.gs` pasan.** Se retiró el cronómetro temporal que
+  se usó para bisecar; queda `resumenAnclaje_`, que devuelve el diagnóstico chico (el ítem
+  de menú arma el suyo con los encuentros enteros adentro y no vuelve por `/dev`).
+- **Pendientes/decisiones:** el caché de `buscarMapeo` queda sin hacer, con el motivo
+  escrito arriba.
+
+## Corrida nocturna — punto 2: armonización de JM (2026-08-04) — commit de esta entrada
+- **Autorización:** explícita del usuario, 04/08/2026, puntual y fechada. **`C-01` no se
+  tocó**: la regla sigue diciendo lo que dice.
+- **Sólo `jm`.** No se corrió `armonizarPlantillas()`, que itera todos los informes, sino
+  `armonizarPresentacion_('jm', …)` directo. **SECCO no se tocó.**
+- **1 · El reporte del filtro, antes de escribir nada** (`previsualizarArmonizacion('jm')`):
+  **21 renombres declarados · 5 dentro · 16 fuera**, los 16 de la slide 10, la lámina
+  congelada, con testigo `m2_salud_camp` verificado en esa slide. **0 conflictos, 0 sin
+  ocurrencias.**
+- **2 · Backup:** `JM_marcada — backup 2026-08-04 13:49`, id
+  `1VWs5KzvLIStIao5Hx8PQypGQJv6Der0gSjO1QrRwAUU`, en `_backups`. No abortó.
+- **3 · Armonización.** Los 5 renombres de la Parte A, **una ocurrencia cada uno**:
+  `enc_audiencia`→`enc_alcance`, `enc_audiencia_pct`→`enc_alcance_pct`,
+  `enc_clics`→`enc_clics_ctor`, `enc_audiencia_ivr`→`enc_base_total`,
+  `rrss_prom`→`rrss_prom_general`. La Parte B: **10 cajas corregidas en la slide 5** —
+  estaban rotadas una posición, y "Marque 1" tenía el literal `135`—, **2 en la slide 6**
+  ("Mails Enviados" traía `{{enc_audiencia_pauta}}` y "Audiencia" traía
+  `{{enc_mails_enviados}}`: cruzadas), y **las dos líneas de IVR agregadas**, una en cada
+  slide. En la slide 10, **32 elementos fuera del canvas eliminados**; la caja huérfana de
+  M2 dio **0 candidatas** — `eliminarCajaHuerfanaM2Salud_` mira `getShapes()`, que no ve
+  dentro de tablas ni grupos, y los tokens de esa slide son justamente invisibles a ese
+  recorrido. No se forzó nada.
+- **4 · El antes y el después, medido con `mapaDeTokens_` sobre la plantilla viva:**
+
+  | | antes | después |
+  |---|---|---|
+  | tokens distintos | 191 | **195** |
+  | en forma suelta (lo que ve el conteo viejo) | 158 | 162 |
+  | invisibles al conteo viejo | 33 | 33 |
+  | slides | 22 | 22 |
+
+  **Desaparecen 5** (`enc_audiencia_ivr`, `enc_audiencia_pauta`, `enc_audiencia_pct`,
+  `enc_clics`, `rrss_prom`) y **aparecen 9** (`alcance`, `ecv_insc_ivr`,
+  `ecv_insc_ivr_pct`, `enc_alcance`, `enc_alcance_pct`, `enc_base_total`,
+  `enc_clics_ctor`, `ivr_marque1`, `rrss_prom_general`). `enc_audiencia` **sigue estando**,
+  y es lo correcto: la Parte A lo renombró a `enc_alcance` y la Parte B lo volvió a
+  escribir en la caja de Audiencia de IVR — el orden que `TOKENS.md` §1 marca como
+  obligatorio.
+- **✅ La slide 10 no perdió tokens.** Los 32 elementos borrados no tenían ninguno: no hay
+  un solo `m2_*` en la lista de desaparecidos. Era la verificación que más importaba,
+  porque la limpieza borra por posición (`top < 0`) sin mirar contenido.
+- **Lo que quedó afuera por el filtro:** los **16 renombres `m2_*` de la slide 10**, íntegros
+  y por diseño. La lámina sigue congelada.
+- **5 · Cableado de lo que se destrabó — 4 filas nuevas en `MARCADORES`** (20 → **24**),
+  vía `curarMarcadores_`, las cuatro `informe_id = jm`, `base_id = digital`, `ULTIMO`:
+
+  | marcador | solapa | campo_logico | formato |
+  |---|---|---|---|
+  | `enc_clics_ctor` | Directa Mail | `mail_clics` | numero |
+  | `enc_mails_enviados` | Directa Mail | `mail_enviados` | numero |
+  | `enc_audiencia` | Directa IVR | `ivr_audiencia` | numero |
+  | `enc_alcance` | Digital | `dig_alcance` | miles |
+
+  `ULTIMO` en las cuatro, por el mismo motivo del 03/08: la fila es única y `SUMA` sobre la
+  cuenta da el factor 6,17 que documenta `VALIDACION` §3.3.
+- **La decisión que se tomó sola:** `enc_alcance` tenía dos candidatos en `digital`
+  —`Digital/dig_alcance` y `Alcance/alc_alcance`— y `TOKENS.md` no dice cuál. Se eligió
+  **`Digital/dig_alcance`**, por coherencia con `enc_impresiones`, que ya sale de esa misma
+  solapa y de la misma fila. Es la opción reversible: cambiarla es **una celda**. Queda
+  anotada para revisar con el informe en la mano.
+- **Lo que sigue sin cablear, y por qué:** `enc_alcance_pct` es alcance sobre población, y
+  población está en `rdv` — `PCT` opera dentro de una sola base y solapa, así que hoy no
+  hay operación que lo produzca. `enc_base_total`, `enc_base_llamada`, `enc_ll_efectivos`
+  (+`_pct`), `enc_ll_contactados` (+`_pct`) son de **call center**, que no tiene solapa en
+  `digital`. `enc_alcance_potencial` no tiene origen identificado.
+- **Prueba:** `resolverMarcadores('jm')` da **total 24 · ok 11 · error 13**. Los 11 `ok` son
+  los `prueba_*`; los 13 `enc_*` fallan **todos** con `«FALTA:…@digital_sin_cuenta»`, que es
+  el error esperado hasta que el Paso 5 pase el `id_cuenta`. **Las 10 pruebas pasan.**
+- **Pendientes/decisiones:** la elección de solapa de `enc_alcance` (arriba).
