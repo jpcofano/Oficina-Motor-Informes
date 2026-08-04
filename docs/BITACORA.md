@@ -2529,3 +2529,62 @@ nadie más.
 - **Prueba:** sólo lectura. **No se corrigió ninguna celda de `rdv`.** `censoCanalesRdv_`
   está marcada ⏳ **TEMPORAL** y se retira junto con los `prueba_*`.
 - **Pendientes/decisiones:** ninguna nueva.
+
+## Pedido ventana m2 (v2) — Partes A, D y E (2026-08-04) — commit de esta entrada
+- **Parte A · `R-13` escrita** en `docs/REGLAS_NEGOCIO.md`. Número greppeado en todo el repo
+  antes de asignarlo (`R-01`…`R-12` ocupados). Fija que **los `m2_*` no llevan `periodo_ref`
+  propio**: caen al eslabón 4 o al 5 de la cadena, con la ventana de `R-11` —siete días,
+  viernes a jueves, inclusive—. Y deja escrito **antes de que pase** que el equipo trabaja de
+  viernes a viernes, ocho días, así que **los números del motor van a diferir de los
+  publicados** por las filas del viernes de cierre: es conocido y deliberado, no un bug. Con
+  el corolario de qué NO hacer con esa diferencia — no ajustar la ventana para que cierre, no
+  hacer un caso especial para `m2_*`, no validar `CONFIG` contra los siete días.
+- **Parte D · Cableado de `MARCADORES` contra `digital`: 9 filas, y las 9 fallan a
+  propósito.** Verificado: las nueve salen `«FALTA:<token>@digital_sin_cuenta»`.
+  `resolverMarcadores('jm')` da ahora `total 20 · ok 11 · error 9` — los 11 `ok` son los
+  `prueba_*`, que siguen andando.
+
+  | marcador | solapa | campo_logico | operacion |
+  |---|---|---|---|
+  | `enc_mails_entregados` | Directa Mail | `mail_entregados` | `ULTIMO` |
+  | `enc_aperturas` | Directa Mail | `mail_aperturas` | `ULTIMO` |
+  | `enc_or` | Directa Mail | `mail_or` | `ULTIMO` |
+  | `enc_ctor` | Directa Mail | `mail_ctor` | `ULTIMO` |
+  | `enc_impresiones` | Digital | `dig_impresiones` | `ULTIMO` |
+  | `enc_atendidos` | Directa IVR | `ivr_atendidos` | `ULTIMO` |
+  | `enc_e75` | Directa IVR | `ivr_e75` | `ULTIMO` |
+  | `enc_e75_pct` | Directa IVR | `ivr_e75_pct` | `ULTIMO` |
+  | `enc_marque1` | Directa IVR | `ivr_marque1` | `ULTIMO` |
+
+  **Solapa siempre explícita** —`digital` tiene 6 mapeadas, no hay inferencia—, `informe_id`
+  `jm`, y **`ULTIMO` en todas**: los `*_pct`/`*_or`/`*_ctor` **ya vienen calculados en la
+  base** y no se recalculan con `PCT`, y para el resto la operación correcta es **la fila
+  única, no `SUMA`** (`VALIDACION` §3.3, el caso `enc_mails_enviados` con factor 6,17 entre
+  el envío y la suma de la cuenta).
+- **⚠ Lo que NO se cableó, y el motivo de fondo apareció al verificar contra la plantilla.**
+  Se midió con `mapaDeTokens_` qué `enc_*` existen hoy en la canónica de JM: **21**. Tres
+  grupos quedaron afuera:
+  1. **No existen en la lámina** — `enc_llamados`, `enc_atendidos_pct`, `enc_marque1_pct`.
+     Cablearlos crearía filas huérfanas.
+  2. **El nombre va a cambiar al armonizar, y acá está el cruce del `Paso-2.13` Parte 3 visto
+     desde el cableado.** La plantilla **no está armonizada**, así que hoy dice `enc_clics`
+     donde el canon dice `enc_clics_ctor`; `enc_mails_enviados` está hoy en la caja de
+     **Audiencia de IVR** y no en la de mails enviados; y `enc_audiencia` es hoy **alcance de
+     pauta**, que se renombra a `enc_alcance`. **Cablear con el nombre canónico deja las filas
+     rotas hasta que se armonice; cablear con el de hoy las rompe después. No hay opción
+     correcta mientras la plantilla esté a medio camino**, así que se dejaron sin cablear.
+  3. **Ambigüedad de origen** — `enc_alcance` tiene dos candidatos en `digital`
+     (`Digital/dig_alcance` y `Alcance/alc_alcance`) y `TOKENS.md` no dice cuál. **No se
+     decidió solo**, como pide el pedido.
+- **Parte E · Los pendientes, anotados en `PENDIENTES`:** el `P1` de los `enc_*` de `digital`
+  sin número hasta el Paso 5 —con los tres grupos de arriba— y el `P2` de
+  `digital/Cuentas` y `digital/CAMPAÑAS_DESGLOCE_DIGITAL`, que son `fuente` y **no tienen ni
+  un campo mapeado**. **No se abrió ese mapeo**: `PLAN.md` §2 fija que las solapas que falten
+  se ajustan **después** de la primera prueba de punta a punta. *(Los otros dos pendientes que
+  el pedido pide —la fecha de generación sin operación que la produzca, y `m2/Directa mail`
+  sin usarse— ya estaban anotados el 03/08 y no se duplicaron.)*
+- **Prueba:** **las 10 pruebas pasan** y el diff sigue en `cambiadas 0 · protegidas (con
+  diferencia) 0 · sin cambios: sí`. `MARCADORES` queda en **20 filas**: 11 `prueba_*` + 9
+  `enc_*`. No se cambió `modo_periodo` de `digital`, no se reclasificó `m2/Directa mail`, no
+  se retiró ningún `prueba_*`.
+- **Pendientes/decisiones:** ninguna nueva más allá de las anotadas.

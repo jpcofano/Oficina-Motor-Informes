@@ -464,6 +464,40 @@ truncó, para que un `sin_link` nunca se confunda con "busqué todo".
 
 ---
 
+## R-13 — Los `m2_*` usan la ventana del informe, y el motor va a diferir de lo publicado
+
+**Enunciado:** los tokens `m2_*` **no llevan `periodo_ref` propio**. Su ventana es la del
+informe: caen al eslabón 4 de la cadena (`CONFIG`) o al 5 (el cálculo de `R-11`), como todo
+lo demás. Y esa ventana es la de `R-11`: **siete días, viernes a jueves, con los dos extremos
+inclusive**.
+
+**Origen:** decisión del usuario, 03/08/2026.
+
+**La consecuencia, escrita antes de que pase para que nadie la reporte como bug:** el equipo
+hoy trabaja **de viernes a viernes**, ocho días. El motor usa siete. **Los números del motor
+van a diferir de los publicados**, y la diferencia va a estar en las filas del **viernes de
+cierre** — el octavo día, que el equipo incluye y el motor no. Es una diferencia **conocida y
+deliberada**, no un error de cálculo ni de lectura.
+
+**Qué NO se hace con esa diferencia:** no se ajusta la ventana para que los números cierren,
+no se agrega un caso especial para `m2_*`, y no se valida lo cargado en `CONFIG` contra los
+siete días. Si el equipo carga ocho días en `CONFIG`, **manda `CONFIG`**: configurar es el
+caso normal y el cálculo es el piso (`R-11` Addendum 1, punto 2).
+
+**El default de selección:** entra **todo lo que tenga `Implementado` o `En curso`** en la
+ventana, y el equipo saca o pone lo que necesite. Los dos valores son los que ya declara
+`MAPEO.valores_incluidos` para `digital/Directa Mail/mail_estado` (`D-21`); esta regla no los
+redefine, los referencia.
+
+**Cómo se verifica:** correr el informe sobre una semana ya publicada y comparar los `m2_*`.
+Si la única diferencia son las filas del viernes de cierre, la regla se está cumpliendo. Si
+hay diferencias en otros días, eso **sí** es un hallazgo.
+
+**Si falla:** si el equipo pasa a siete días —o el motor a ocho— esta regla se marca derogada
+con fecha y se revisa junto con `R-11`, que es de donde sale la ventana.
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas

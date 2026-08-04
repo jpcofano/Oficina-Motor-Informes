@@ -1117,6 +1117,59 @@ carpeta de salidas **deje de ser hija** de la de plantillas; o —lo más barato
 está hecho de hecho— que el ID venga del seed y el registro automático quede como
 diagnóstico, no como escritor. Ninguno se aplicó: hoy el registro sigue pudiendo escribir.
 
+### P1 · Los `enc_*` de `digital` no dan número hasta el Paso 5, y falta media docena por cablear
+
+Anotado el 04/08/2026 al cablear `MARCADORES` contra `digital` (pedido de `m2` v2, Parte D).
+
+**Lo cableado — 9 filas, y las 9 fallan a propósito.** `digital` se lee por
+`filasDigitalDeEncuentro()` (`Union.gs`), que necesita el `id_cuenta` **del ítem que se está
+emitiendo**, y el despachador todavía no lo recibe: eso es del **Paso 5**, que itera los
+ítems. Verificado: las 9 salen `«FALTA:<token>@digital_sin_cuenta»`. **El cableado está
+correcto y listo; lo que falta es el iterador.**
+
+**Lo NO cableado, y los tres motivos son distintos:**
+
+1. **El token no existe en la plantilla de JM** — `enc_llamados` (`ivr_llamados`),
+   `enc_atendidos_pct` (`ivr_at_pct`), `enc_marque1_pct` (`ivr_marque1_pct`). Medido con
+   `mapaDeTokens_` sobre la canónica: la plantilla tiene 21 `enc_*` y ninguno de esos tres.
+   `TOKENS.md` §1 ya marcaba *"falta en JM"* para `enc_llamados`. **Cablear un token que no
+   está en la lámina crea una fila huérfana**, que es lo que `D-17` evita sembrando desde la
+   plantilla.
+2. **⚠ El nombre va a cambiar cuando se armonice, y ése es el motivo más importante.** La
+   plantilla canónica de JM **no está armonizada** (`⏸ esperando autorización`), así que hoy
+   tiene los nombres viejos. Tres casos quedaron afuera por eso:
+   - `mail_clics` → hoy la lámina dice `enc_clics`, el canon dice `enc_clics_ctor`;
+   - `mail_enviados` → el canon dice `enc_mails_enviados`, pero **hoy esa caja tiene
+     `enc_audiencia_pauta`** y `enc_mails_enviados` está en la caja de **Audiencia de IVR**;
+   - `ivr_audiencia` → el canon dice `enc_audiencia`, y hoy `enc_audiencia` es la caja de
+     **alcance de pauta**, que se renombra a `enc_alcance`.
+
+   Los dos últimos **son el cruce del `Paso-2.13` Parte 3**, visto desde el cableado. Cablear
+   con el nombre canónico deja las filas rotas hasta que se armonice; cablear con el nombre
+   de hoy las rompe después. **No hay opción correcta mientras la plantilla esté a medio
+   camino**, así que se dejaron sin cablear y se anotan acá.
+3. **Ambigüedad de origen** — `enc_alcance` tiene **dos** candidatos en `digital`:
+   `Digital/dig_alcance` y `Alcance/alc_alcance`. `TOKENS.md` no dice cuál. No se decidió
+   solo, como pide el pedido.
+
+**Qué lo destraba:** el punto 2 se resuelve solo cuando corra la armonización de JM; el 1 y
+el 3 necesitan al equipo (agregar las cajas, o decidir el origen).
+
+### P2 · `digital/Cuentas` y `digital/CAMPAÑAS_DESGLOCE_DIGITAL` son `fuente` y no tienen ni un campo mapeado
+
+Medido el 03/08/2026 en el `0.6` del pedido de `m2` v2. `digital` tiene **8** solapas
+`uso = fuente` y sólo **6** aparecen en `MAPEO`, con 59 campos entre todas. Esas dos no
+tienen ninguno.
+
+**No se abrió el mapeo, y es por criterio explícito:** `PLAN.md` §2 fija que **las solapas y
+el mapeo que falten se ajustan DESPUÉS de la primera prueba de punta a punta**, no antes. Un
+token sin cablear sale como `«FALTA:token»` y queda listado; mapear por adelantado es
+trabajar sobre una lista de sospechas — que es lo que midió el `Paso-2.16` cuando fue a
+activar `m2` y encontró que no había nada que activar.
+
+**Se anota para que el corte vertical decida si hacen falta de verdad**, no como pendiente a
+resolver ya.
+
 ### P2 · Desde fuera del motor no se pueden leer las bases: es el token de `clasp`
 
 > **⚠ Corregido el 04/08/2026, el mismo día que se escribió. El título original decía
