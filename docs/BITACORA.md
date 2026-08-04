@@ -2819,3 +2819,47 @@ dos veces. **La limitación está escrita en el código:** el caso HTML no se pu
 de una corrida que sí ejecutó y cuya respuesta se perdió, así que una llamada que escribe
 puede escribir dos veces. Hoy eso es un deck de más, que se borra; antes de usar el cliente
 para algo irreversible hay que mirar esa línea.
+
+## Corrida nocturna — punto 6: lo que sobró tiempo para hacer (2026-08-04) — commit de esta entrada
+- **Las Partes A, D y E del pedido de `m2` ya estaban corridas** (commit `72ab438`, esta
+  misma fecha). No quedaba nada por correr ahí: el punto 6 arranca directo en el reporte.
+- **`tokensSinCablear_(informe_id)` — el reporte de qué falta.** `FALTANTES` responde la
+  misma pregunta pero **por instancia emitida**, con el sufijo `@ítem`: 438 filas para 181
+  tokens distintos. Sirve para atacar una corrida, no para ver el trabajo que queda. Esto
+  agrupa por token distinto y sale así para `jm`:
+
+  **195 en la plantilla · 13 cableados y presentes · 0 cableados sin caja · 181 sin cablear**
+
+  | familia | sin cablear | | familia | sin cablear |
+  |---|---|---|---|---|
+  | `camp_` | 53 | | `enc_` | 8 |
+  | `m2_` | 31 | | (sin prefijo) | 7 |
+  | `rrss_` | 21 | | `ivr_` | 7 |
+  | `ecv_` | 19 | | `cc_` · `imp_` · `mail_` | 4 c/u |
+  | `gcba_` | 19 | | `pauta_` · `contenidos_` | 3 y 1 |
+
+  **`cableados_sin_caja = 0`** es la mitad que importa del control: no hay ninguna fila de
+  `MARCADORES` apuntando a un token que la plantilla no tenga.
+
+### ⚠ El número plausible y equivocado — encontrado mirando el informe, no antes
+- **`enc_or` salía `0.3%` donde el valor real es `28,2%`.** El crudo es `0.2818…`: las
+  columnas `*_or`, `*_ctor` y `*_e75_pct` de `digital` vienen **como fracción**, y el formato
+  `porcentaje` asume el valor **ya en unidades de porcentaje** — que es lo correcto para lo
+  que devuelve la operación `PCT`, y por eso no se lo tocó. Los tres afectados:
+  `enc_or` (0,3 → **28,2**), `enc_ctor` (0 → **3,2**), `enc_e75_pct` (0,4 → **36,2**).
+- **Entra el formato `fraccion`** y las tres filas de `MARCADORES` pasan a usarlo. **Dos
+  formatos y no una heurística sobre el valor, a propósito:** "0,5" es un 50% en una columna
+  y medio punto en otra, y eso lo sabe la fila de `MARCADORES`, no el formateador.
+- **La segunda mitad del hallazgo la mostró el deck, no el código.** Las cajas de JM traen
+  **su propio `%`** —`{{enc_aperturas}} ({{enc_or}}%)`—, así que agregar el signo daba
+  `28.2%%`. `fraccion` convierte la unidad y **no** pone el signo: la plantilla es del equipo
+  y el motor se adapta (`C-01`). Verificado en el deck generado, por `objectId`:
+  `31 (28.2%)`, `2229 (36.2%)`, `1(3.2%)`.
+- **Prueba:** las 10 pruebas pasan, con **tres afirmaciones nuevas** que fijan el contrato de
+  los dos formatos y una que falla si el `%` vuelve a duplicarse.
+- **Deck vigente:** `1AU0tkyRQo0kGccnUGJqz0MoEqtiDpy5awYGy8VjTtH8`, corrida
+  `jm-20260804-180308`. **Quedaron cinco decks en la carpeta de salidas**, uno por
+  generación de la noche; sirve el último y los otros cuatro se borran.
+- **Pendientes/decisiones:** el formato `fraccion` se decidió solo, con el deck a la vista.
+  Si algún `*_pct` de otra base viniera ya en unidades de porcentaje, va con `porcentaje` y
+  no con éste — la distinción vive en la fila, que es donde se puede cambiar sin `clasp push`.

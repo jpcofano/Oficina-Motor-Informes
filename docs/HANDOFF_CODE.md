@@ -11,10 +11,10 @@ Pasos 4 y 5 implementados y corridos) · último commit al escribirlo: el de est
 **El motor genera un informe de punta a punta.** El Tramo 2 está cerrado: los Pasos 3, 4 y
 5 corrieron y el archivo existe.
 
-**El deck vigente:** `1dQv1xhzfleQAlWzCK5MQ6G4B0dIQpLMNDceZjGEVvX8` — *Informe semanal JM —
-vie 24/07 — jue 30/07*, en la carpeta de salidas, ventana `24/07 → 30/07` (`config`).
-Quedaron **tres decks** ahí, uno por generación de la noche: los dos primeros se pueden
-borrar.
+**El deck vigente:** `1AU0tkyRQo0kGccnUGJqz0MoEqtiDpy5awYGy8VjTtH8` — *Informe semanal JM —
+vie 24/07 — jue 30/07*, corrida `jm-20260804-180308`, ventana `24/07 → 30/07` (`config`).
+Quedaron **cinco decks** en la carpeta de salidas, uno por generación de la noche: sirve el
+último y los otros cuatro se pueden borrar.
 
 **El número de la noche: los tokens con valor pasaron de 1 a 17**, y los distintos con
 número real de 0 a 11. Los 11 son los `enc_*` del encuentro **Orden Público**, que resuelve
@@ -56,6 +56,19 @@ contra la cuenta digital `3347-JULJDGAG`.
   `TOKENS.md` no dice cuál va; se eligió por coherencia con `enc_impresiones`, que sale de
   esa misma solapa y de la misma fila. **Es reversible: una celda.** Si el número no cierra
   con el informe publicado, ahí está la primera sospecha.
+- **Entró el formato `fraccion`** y tres filas pasaron a usarlo (`enc_or`, `enc_ctor`,
+  `enc_e75_pct`): esas columnas de `digital` vienen como `0.2818`, no como `28.18`, y con
+  `porcentaje` el deck decía **0,3% donde el número es 28,2%**. `fraccion` convierte la
+  unidad y **no** pone el signo, porque las cajas de JM traen el suyo. **Si algún `*_pct` de
+  otra base ya viene en unidades de porcentaje, va con `porcentaje`** — la distinción vive
+  en la fila de `MARCADORES`, no en el código.
+- **Los números de Orden Público, para mirar juntos.** Son los únicos 11 con valor real:
+  `enc_mails_enviados` **110** y `enc_mails_entregados` **110** (idénticos), `enc_aperturas`
+  **31** (28,2%), `enc_clics_ctor` **1** (3,2%), `enc_atendidos` **6161**, `enc_e75` **2229**
+  (36,2%), `enc_marque1` **67**, `enc_audiencia` **37.763**. Los de IVR salen de **2 filas**
+  de la cuenta y la operación es `ULTIMO`, así que toman la última y **no** suman: si esas
+  dos filas son dos envíos del mismo encuentro, la operación correcta sería `SUMA`. **No se
+  cambió**: es una decisión de negocio y hay que mirarla con el informe publicado al lado.
 - **`rdv` compartida como `anyoneWithLink = writer`** (sigue abierto del 03/08). El permiso
   explícito de las cuentas del motor es `reader` y está bien puesto; el link lo pisa.
 - **`CAMPANAS.tipo` no tiene ningún lector en el repo**, y sus valores vivos
@@ -125,10 +138,17 @@ menos — `mapaDeTokens_` tiene el correcto.
 ## Números de referencia, verificados hoy
 
 `MARCADORES` en **13** filas (los 11 `prueba_*` se retiraron; entraron 4 `enc_*` nuevos).
-`MAPEO` en 121. **Las 10 pruebas de `Pruebas.gs` pasan**, corridas cuatro veces a lo largo
-de la noche: después del anclaje, después de la armonización, después del Paso 4 y al
-cerrar. La plantilla de JM quedó en **195 tokens distintos** (191 antes de armonizar), 22
-slides. `FALTANTES` en **438** filas — es el reporte de qué falta cablear.
+`MAPEO` en 121. **Las 10 pruebas de `Pruebas.gs` pasan**, corridas seis veces a lo largo de
+la noche: después del anclaje, de la armonización, del Paso 4, del Paso 5 y dos veces al
+tocar los formatos. La plantilla de JM quedó en **195 tokens distintos** (191 antes de
+armonizar), 22 slides.
+
+**Qué falta cablear, por token distinto** (`tokensSinCablear_('jm')`): **195 en la plantilla
+· 13 cableados y presentes · 0 cableados sin caja · 181 sin cablear** — `camp_` 53, `m2_`
+31, `rrss_` 21, `ecv_` 19, `gcba_` 19, `enc_` 8, sin prefijo 7, `ivr_` 7, y menos de cinco
+cada uno en `cc_`, `imp_`, `mail_`, `pauta_`, `contenidos_`. `FALTANTES` responde lo mismo
+pero **por instancia emitida** (438 filas para esos 181 tokens): sirve para atacar una
+corrida, no para dimensionar el trabajo.
 
 ## Estado de los prompts sin ejecutar
 
