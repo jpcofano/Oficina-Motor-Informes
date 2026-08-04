@@ -157,7 +157,32 @@ function opcion(argv, nombre) {
     opciones.headers['Content-Length'] = Buffer.byteLength(opciones.body);
   }
 
-  const respuesta = await pedir(url, opciones);
+  // Corrida nocturna 04/08 — el frontend de Google devuelve, de a ratos y sin patrón, un
+  // 404 en HTML o un pedido con el body perdido (el script corre con `accion: (vacía)` y
+  // rechaza por token). No es el motor ni la credencial: es transporte, y el reintento lo
+  // resuelve. Una respuesta JSON del motor, sea `ok` o no, se devuelve tal cual: eso sí se
+  // sabe que corrió.
+  //
+  // ⚠ **El caso HTML no se puede distinguir** de una corrida que sí ejecutó y cuya
+  // respuesta se perdió. Si la llamada escribe, el reintento puede escribir dos veces —
+  // hoy eso es un deck de más en la carpeta de salidas, que se borra. Antes de usar este
+  // cliente para algo con efecto irreversible, mirar esta línea.
+  let respuesta = await pedir(url, opciones);
+  for (let intento = 1; intento <= 2; intento++) {
+    const esHtml = /^\s*<!DOCTYPE|^\s*<html/i.test(respuesta.texto);
+    let cuerpoPerdido = false;
+    if (!esHtml) {
+      try {
+        const previo = JSON.parse(respuesta.texto);
+        cuerpoPerdido = previo && previo.ok === false && Array.isArray(previo.traza) &&
+          previo.traza.indexOf('accion: (vacía)') !== -1;
+      } catch (e) { /* no es JSON: cae por `esHtml` o se reporta abajo */ }
+    }
+    if (!esHtml && !cuerpoPerdido) break;
+    console.error('Transporte: la respuesta ' + (esHtml ? 'vino en HTML (HTTP ' + respuesta.status + ')' : 'llegó sin el pedido') +
+      ' — reintento ' + intento + '/2');
+    respuesta = await pedir(url, opciones);
+  }
   const texto = respuesta.texto;
 
   if (opcion(argv, 'crudo')) {

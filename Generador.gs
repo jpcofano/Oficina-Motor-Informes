@@ -141,7 +141,39 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     if (!registro) {
       return { ok: false, motivo: 'la cuenta "' + idCuenta + '" no está en la unión de digital de esa ventana' };
     }
-    return { ok: true, filas: [registro], encabezado: null, columna: campo.columna, origen: 'union digital por cuenta' };
+
+    // Corrida nocturna 04/08 — el registro unido **no es una fila plana**: los campos de
+    // dimensión (`sd_*`) cuelgan de él, pero los hechos de cada canal viven en un arreglo
+    // `<prefijo>_filas` con las filas crudas de esa solapa (`Union.gs` Parte A punto 3).
+    // Devolver `[registro]` con `encabezado: null` hacía que toda operación leyera un campo
+    // inexistente y saliera `sin_datos` — medido: los 13 `enc_*` con `id_cuenta` resuelto.
+    // Acá se elige el arreglo del canal que declara la solapa del marcador y se traduce la
+    // letra de columna a su encabezado, igual que en la rama de `leerFuente`.
+    if (solapa === SOLAPA_MAESTRA_DIGITAL_) {
+      // La maestra sí es plana, y sus claves son los `campo_logico`, no los encabezados.
+      return {
+        ok: true, filas: [registro], encabezado: campoOverride || fila.campo_logico,
+        columna: campo.columna, origen: 'union digital por cuenta (' + solapa + ', dimensión)'
+      };
+    }
+
+    var canal = SOLAPAS_CANAL_DIGITAL_.filter(function (c) { return c.solapa === solapa; })[0];
+    if (!canal) {
+      return {
+        ok: false,
+        motivo: '«FALTA:' + fila.marcador + '@solapa_digital_desconocida» — "' + solapa + '" no es una de las ' +
+          'solapas de canal que une el Paso 2.4 (' + SOLAPAS_CANAL_DIGITAL_.map(function (c) { return c.solapa; }).join(', ') + ')'
+      };
+    }
+
+    var filasCanal = registro[canal.prefijo + '_filas'] || [];
+    return {
+      ok: true,
+      filas: filasCanal,
+      encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+      columna: campo.columna,
+      origen: 'union digital por cuenta (' + solapa + ', ' + filasCanal.length + ' fila(s) de la cuenta ' + idCuenta + ')'
+    };
   }
 
   var clave = claveCacheLectura_(fila.base_id, solapa, ventana);
@@ -388,6 +420,17 @@ function textoFaltante_(token) {
  *
  * Devuelve `{ tokens: { token: [{ slide, objectId, contenedor }] }, lista: [tokens ordenados] }`.
  */
+/** Los tokens distintos de una slide, ordenados. Mismo recorrido que el mapa. */
+function tokensDeSlide_(slide) {
+  var vistos = {};
+  piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+    var m;
+    RE_TOKEN_.lastIndex = 0;
+    while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) vistos[m[1]] = true;
+  });
+  return Object.keys(vistos).sort();
+}
+
 function mapaTokenObjectId_(presentacion) {
   var tokens = {};
 
@@ -479,6 +522,223 @@ function escribirCorrida_(fila, mapaTokens) {
   var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
   hoja.appendRow(headers.map(function (h) { return (h in fila) ? fila[h] : ''; }));
   return { entra: entra, caracteres: serializado.length };
+}
+
+/* ========================= Paso 5 — secciones repetibles =========================
+ *
+ * **La convención no se inventó acá: ya estaba declarada en `SECCIONES`** (`Paso-5-v2`
+ * Parte A pedía elegir una y preferir la hoja de registro sobre una marca en el deck).
+ * Una sección con `modo = repetible` declara sobre qué itera (`itera_sobre`) y con qué
+ * familias de token se la reconoce en la plantilla (`familia_tokens`). El bloque modelo
+ * **no se marca en el Slides**: se deriva de en qué slides viven esos tokens, igual que el
+ * filtro de láminas congeladas de `Armonizar.gs` deriva su corte del inventario.
+ *
+ * Las dos fuentes de iteración que hoy tienen datos:
+ *   `REUNIONES` → los encuentros anclados (`anclarEncuentros`), y de ahí sale el
+ *                 `id_cuenta` que `digital` necesita para devolver número;
+ *   `CAMPANAS`  → filtradas por `informe_id` + `mostrar=sí` + `periodo_id` no vacío (`D-19`).
+ *
+ * Un `itera_sobre` que no es ninguna de las dos **no se expande y se reporta**: la sección
+ * queda como está y sus tokens caen a la pasada de tokens fijos. Inventarle una fuente
+ * sería peor que dejarla visible.
+ */
+var FUENTES_ITERACION_ = ['REUNIONES', 'CAMPANAS'];
+
+/** `familia_tokens` es una lista separada por coma de **prefijos** (`ecv_,enc_`). */
+function familiasDeSeccion_(seccion) {
+  return String(seccion.familia_tokens || '')
+    .split(',')
+    .map(function (f) { return f.trim(); })
+    .filter(function (f) { return f !== ''; });
+}
+
+function tokenEsDeFamilia_(token, familias) {
+  return familias.some(function (f) { return token.indexOf(f) === 0; });
+}
+
+/** Las secciones `repetible` y `activa` que declaran a este informe y tienen familias. */
+function seccionesRepetiblesDe_(informeId) {
+  var todas = leerSeccionesPlano_();
+  return Object.keys(todas)
+    .map(function (id) {
+      var s = todas[id];
+      s.seccion_id = s.seccion_id || id;
+      return s;
+    })
+    .filter(function (s) {
+      if (String(s.modo || '').trim() !== 'repetible') return false;
+      if (String(s.estado || '').trim() !== 'activa') return false;
+      var informes = String(s.informes || '').split(',').map(function (i) { return i.trim().toLowerCase(); });
+      return informes.indexOf(String(informeId).toLowerCase()) !== -1;
+    })
+    .filter(function (s) { return familiasDeSeccion_(s).length > 0; });
+}
+
+/**
+ * Los ítems sobre los que itera una sección. Devuelve `{ ok, items, excluidos, motivo }`.
+ *
+ * Cada ítem trae el **contexto del despachador** ya armado: `opciones` es lo que
+ * `resolverMarcadores` espera. Ahí está la pieza que faltaba — el `id_cuenta` del encuentro
+ * que se emite, sin el cual `digital` sale `«FALTA:…@digital_sin_cuenta»`.
+ */
+function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
+  var fuente = String(seccion.itera_sobre || '').trim();
+
+  if (fuente === 'REUNIONES') {
+    var anclaje = anclarEncuentros(ventanaInforme);
+    if (!anclaje.ok) return { ok: false, motivo: 'no se pudo anclar: ' + anclaje.motivo };
+
+    // Los sin link entran igual como ítem: la reunión existe en el temario (`R-02`) y tiene
+    // que salir en el deck aunque sus números de digital queden en `«FALTA»`. Callarla sería
+    // el modo de falla caro — un informe que se ve completo y le falta un encuentro.
+    var items = anclaje.encuentros.concat(anclaje.sinLink).map(function (e) {
+      return {
+        clave: e.reunion + (e.etapa ? ' (' + e.etapa + ')' : ''),
+        etiqueta: e.reunion,
+        // La ventana es la del informe: el recorte de `digital` lo hace el link
+        // campaña↔encuentro (`R-04`), no una ventana de fecha sobre la base.
+        opciones: e.idCuenta
+          ? { id_cuenta: e.idCuenta, ventana: ventanaInforme, seccion_id: seccion.seccion_id }
+          : { ventana: ventanaInforme, seccion_id: seccion.seccion_id },
+        id_cuenta: e.idCuenta || '',
+        motivo: e.idCuenta ? '' : ('sin cuenta digital anclada' + (e.motivo ? ': ' + e.motivo : ''))
+      };
+    });
+    return { ok: true, items: items, excluidos: [] };
+  }
+
+  if (fuente === 'CAMPANAS') {
+    var campanas = leerCampanas();
+    var items2 = [];
+    var excluidos = [];
+    Object.keys(campanas).forEach(function (id) {
+      var c = campanas[id];
+      if (String(c.informe_id || '').trim() !== informeId) return;
+      if (String(c.mostrar || '').trim().toLowerCase() !== 'sí') {
+        excluidos.push({ campana: id, motivo: 'mostrar ≠ sí' });
+        return;
+      }
+      // `D-19`: sin `periodo_id` la fila no entra a ningún informe. Se reporta, nunca se
+      // emite en silencio ni se asume el período vigente.
+      if (!String(c.periodo_id || '').trim()) {
+        excluidos.push({ campana: id, motivo: 'periodo_id vacío (D-19)' });
+        return;
+      }
+      items2.push({
+        clave: id,
+        etiqueta: c.nombre || id,
+        // Sin `ventana`: la campaña es el PRIMER eslabón de `D-20` y `resolverVentana` usa
+        // su `desde`/`hasta`. Pasarle la del informe sería justo lo que el paso prohíbe.
+        opciones: { campana: id, seccion_id: seccion.seccion_id },
+        id_cuenta: '',
+        motivo: ''
+      });
+    });
+    items2.sort(function (a, b) { return Number(campanas[a.clave].orden || 0) - Number(campanas[b.clave].orden || 0); });
+    return { ok: true, items: items2, excluidos: excluidos };
+  }
+
+  return {
+    ok: false,
+    motivo: '`itera_sobre` = "' + fuente + '" no es una fuente de iteración con datos (las que hay: ' +
+      FUENTES_ITERACION_.join(', ') + '). La sección no se expande y queda como está.'
+  };
+}
+
+/** Índices 0-based de las slides que llevan algún token de estas familias. */
+function slidesModeloDe_(presentacion, familias) {
+  var indices = [];
+  presentacion.getSlides().forEach(function (slide, i) {
+    var tieneFamilia = piezasDeTextoDeSlide_(slide).some(function (pieza) {
+      var m;
+      RE_TOKEN_.lastIndex = 0;
+      while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) {
+        if (tokenEsDeFamilia_(m[1], familias)) return true;
+      }
+      return false;
+    });
+    if (tieneFamilia) indices.push(i);
+  });
+  return indices;
+}
+
+/**
+ * Duplica los bloques modelo, **sin reemplazar nada todavía**. La separación es a propósito:
+ * `B.3` del Paso 4 exige registrar `token → objectId` antes del primer reemplazo, y las
+ * slides copiadas tienen `objectId` propios que no existían cuando se copió la plantilla.
+ * Así el mapa se toma una sola vez, sobre el deck ya expandido y todavía intacto.
+ *
+ * Devuelve `{ asignaciones: [{ slide, item }], reporte: [...] }` con `slide` 1-based.
+ */
+function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme) {
+  var asignaciones = [];
+  var reporte = [];
+  var reclamadas = {};
+
+  seccionesRepetiblesDe_(informeId).forEach(function (seccion) {
+    var familias = familiasDeSeccion_(seccion);
+    var modelos = slidesModeloDe_(presentacion, familias);
+
+    var resultado = itemsDeSeccion_(seccion, informeId, ventanaInforme);
+    if (!resultado.ok) {
+      reporte.push({ seccion: seccion.seccion_id, ok: false, motivo: resultado.motivo, slides_modelo: modelos.map(function (i) { return i + 1; }) });
+      return;
+    }
+
+    if (!modelos.length) {
+      reporte.push({
+        seccion: seccion.seccion_id, ok: false,
+        motivo: '⚠ hay ' + resultado.items.length + ' ítem(s) pero ninguna slide de la plantilla lleva tokens de ' +
+          familias.join('/') + ' — es una sección curada contra una plantilla que no la contempla',
+        items: resultado.items.map(function (i) { return i.clave; }),
+        excluidos: resultado.excluidos
+      });
+      return;
+    }
+
+    // Una slide reclamada por dos secciones no se resuelve adivinando: se reporta y no se
+    // toca ninguna de las dos.
+    var choque = modelos.filter(function (i) { return reclamadas[i]; });
+    if (choque.length) {
+      reporte.push({
+        seccion: seccion.seccion_id, ok: false,
+        motivo: '⚠ las slides ' + choque.map(function (i) { return i + 1; }).join(', ') +
+          ' ya las reclamó la sección "' + reclamadas[choque[0]] + '" — no se expande ninguna de las dos'
+      });
+      return;
+    }
+    modelos.forEach(function (i) { reclamadas[i] = seccion.seccion_id; });
+
+    if (!resultado.items.length) {
+      reporte.push({
+        seccion: seccion.seccion_id, ok: true, items: [], excluidos: resultado.excluidos,
+        motivo: 'sin ítems — el bloque modelo queda como está y sus tokens caen a la pasada de tokens fijos',
+        slides_modelo: modelos.map(function (i) { return i + 1; })
+      });
+      return;
+    }
+
+    // De atrás para adelante: duplicar corre los índices de todo lo que viene después.
+    modelos.slice().sort(function (a, b) { return b - a; }).forEach(function (indiceModelo) {
+      var modelo = presentacion.getSlides()[indiceModelo];
+      resultado.items.forEach(function (item, n) {
+        var copia = modelo.duplicate();
+        copia.move(indiceModelo + 1 + n);
+        asignaciones.push({ objectIdSlide: copia.getObjectId(), item: item, seccion: seccion.seccion_id });
+      });
+      modelo.remove();
+    });
+
+    reporte.push({
+      seccion: seccion.seccion_id, ok: true,
+      itera_sobre: seccion.itera_sobre,
+      slides_modelo: modelos.map(function (i) { return i + 1; }),
+      emitidos: resultado.items.map(function (i) { return i.clave + (i.motivo ? ' ⚠ ' + i.motivo : ''); }),
+      excluidos: resultado.excluidos
+    });
+  });
+
+  return { asignaciones: asignaciones, reporte: reporte };
 }
 
 /**
@@ -580,12 +840,80 @@ function generarInforme(informeId, periodoId) {
   var deckId = copia.getId();
 
   var presentacion = SlidesApp.openById(deckId);
+  var corridaId = informeId + '-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
+  var reemplazados = 0;
+  var conValor = [];
+  var faltantes = [];
 
-  // 1 · El mapa, ANTES de tocar un solo token.
+  // 1 · Paso 5 — duplicar los bloques repetibles. **Sin reemplazar nada**: las copias
+  //     tienen `objectId` propios y el mapa de `B.3` se toma después, una sola vez, sobre
+  //     el deck ya expandido y todavía intacto.
+  var expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana);
+
+  // 2 · El mapa, ANTES de tocar un solo token.
   var mapa = mapaTokenObjectId_(presentacion);
 
-  // 2 · Los valores. `resolverMarcadores` ya trae `estado` por marcador, y el `estado` es
-  //     lo que decide qué se escribe.
+  // 3 · La pasada por ítem: cada slide emitida se pinta con **el contexto de su ítem** —
+  //     el `id_cuenta` del encuentro, o la campaña con su propia ventana. Es lo que hace
+  //     que `digital` deje de salir `«FALTA:…@digital_sin_cuenta»`.
+  var porItem = [];
+  expansion.asignaciones.forEach(function (asignacion) {
+    var slide = null;
+    presentacion.getSlides().forEach(function (s) {
+      if (s.getObjectId() === asignacion.objectIdSlide) slide = s;
+    });
+    if (!slide) {
+      porItem.push({ seccion: asignacion.seccion, item: asignacion.item.clave, ok: false, motivo: 'la slide emitida no se encontró por objectId' });
+      return;
+    }
+
+    var resolucionItem = resolverMarcadores(informeId, asignacion.item.opciones);
+    var porMarcadorItem = {};
+    resolucionItem.resultados.forEach(function (r) { porMarcadorItem[r.marcador] = r; });
+
+    var reemplazadosItem = 0;
+    tokensDeSlide_(slide).forEach(function (token) {
+      var r = porMarcadorItem[token];
+      if (r && r.estado === 'ok') {
+        slide.replaceAllText('{{' + token + '}}', String(r.valor_formateado), true);
+        reemplazadosItem++;
+        conValor.push(token + ' @' + asignacion.item.clave);
+        return;
+      }
+      if (!r && token === 'periodo') {
+        slide.replaceAllText('{{' + token + '}}', periodoLamina, true);
+        reemplazadosItem++;
+        conValor.push(token + ' @' + asignacion.item.clave);
+        return;
+      }
+      slide.replaceAllText('{{' + token + '}}', textoFaltante_(token), true);
+      faltantes.push({
+        corrida_id: corridaId,
+        informe_id: informeId,
+        token: token + ' @' + asignacion.item.clave,
+        base_id: r ? (r.base_id || '') : '',
+        solapa: r ? (r.solapa || '') : '',
+        campo_logico: '',
+        motivo: r
+          ? (r.estado + ': ' + r.traza)
+          : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó'
+      });
+    });
+
+    reemplazados += reemplazadosItem;
+    porItem.push({
+      seccion: asignacion.seccion,
+      item: asignacion.item.clave,
+      id_cuenta: asignacion.item.id_cuenta,
+      ok: true,
+      reemplazados: reemplazadosItem,
+      resumen: resolucionItem.resumen,
+      motivo: asignacion.item.motivo
+    });
+  });
+
+  // 4 · Los tokens fijos, sobre todo lo que quedó. Los de las slides emitidas ya no están:
+  //     la pasada anterior los reemplazó por valor o por `«FALTA»`.
   //
   //     La ventana se le fija **sólo** cuando vino un `periodoId`: eso es lo que significa
   //     un override explícito. Sin él no se le pasa nada, para que cada marcador resuelva
@@ -596,14 +924,8 @@ function generarInforme(informeId, periodoId) {
   var porMarcador = {};
   resolucion.resultados.forEach(function (r) { porMarcador[r.marcador] = r; });
 
-  // 3 · El reemplazo, token por token de los que **están en la plantilla**. Un marcador
-  //     cableado que no existe en el deck no se escribe en ningún lado: se reporta aparte.
-  var reemplazados = 0;
-  var conValor = [];
-  var faltantes = [];
-  var corridaId = informeId + '-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
-
-  mapa.lista.forEach(function (token) {
+  var tokensFijos = tokensPorSlide_(presentacion);
+  Object.keys(tokensFijos).sort().forEach(function (token) {
     var resultado = porMarcador[token];
 
     // `{{periodo}}` lo produce la generación, no un marcador: es el encabezado de la lámina
@@ -638,7 +960,7 @@ function generarInforme(informeId, periodoId) {
     });
   });
 
-  // 4 · Marcadores cableados que la plantilla no tiene. No es un faltante del informe: es
+  // 5 · Marcadores cableados que la plantilla no tiene. No es un faltante del informe: es
   //     una fila de `MARCADORES` sin caja donde escribirse, y hay que verla.
   var sinCajaEnPlantilla = Object.keys(porMarcador).filter(function (t) { return !(t in mapa.tokens); });
 
@@ -687,7 +1009,46 @@ function generarInforme(informeId, periodoId) {
       cableados_sin_caja_en_plantilla: sinCajaEnPlantilla.sort()
     },
     marcadores: resolucion.resumen,
+    // Paso 5 — qué se expandió, qué se emitió y **qué quedó excluido con su motivo**. Lo
+    // excluido va en el reporte final a propósito: una campaña que el usuario tildó y no
+    // salió por `D-19` no puede desaparecer en silencio.
+    repetibles: { secciones: expansion.reporte, items: porItem },
     faltantes_escritos: faltantesEscritos,
     mapa_tokens: { cabe_en_la_celda: celdaMapa.entra, caracteres: celdaMapa.caracteres }
   };
+}
+
+/**
+ * Ítem de menú "Generar informe completo" (`Paso-5-v2` Parte D). El motor headless corre
+ * igual por API; esto es la puerta desde la planilla.
+ */
+function menuGenerarInformeCompleto_() {
+  var ui = ui_();
+  var informeId = String(leerConfig().informe_activo || '').trim();
+  if (!informeId) {
+    ui.alert('Generar informe completo', 'CONFIG.informe_activo está vacío.', ui.ButtonSet.OK);
+    return;
+  }
+
+  var r = generarInforme(informeId);
+  if (!r.ok) {
+    ui.alert('Generar informe completo', 'No se generó: ' + r.motivo, ui.ButtonSet.OK);
+    return r;
+  }
+
+  var lineas = [
+    'Informe: ' + r.informe_id + ' · corrida ' + r.corrida_id,
+    'Período: ' + r.periodo.lamina + ' (' + r.periodo.origen + (r.periodo.calculado ? ', calculado' : '') + ')',
+    'Deck: ' + r.deck.nombre,
+    r.deck.url,
+    'Dueño del archivo: ' + r.deck.dueno,
+    '',
+    'Tokens: ' + r.tokens.reemplazados + ' con valor de ' + r.tokens.en_plantilla + ' · ' + r.tokens.faltantes + ' en FALTA'
+  ];
+  r.repetibles.secciones.forEach(function (s) {
+    lineas.push('  ' + (s.ok ? '·' : '⚠') + ' ' + s.seccion + ': ' + (s.motivo || ((s.emitidos || []).length + ' emitido(s)')));
+    (s.excluidos || []).forEach(function (e) { lineas.push('      excluida ' + e.campana + ' — ' + e.motivo); });
+  });
+  ui.alert('Generar informe completo', lineas.join('\n'), ui.ButtonSet.OK);
+  return r;
 }

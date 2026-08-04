@@ -86,7 +86,30 @@ var SOLAPAS_CANAL_DIGITAL_ = [
   { solapa: 'Alcance', idCampo: 'alc_id_cuenta', prefijo: 'alc' }
 ];
 
+/**
+ * Caché de la unión por ventana. Corrida nocturna 04/08: `filasDigitalDeEncuentro` rehace
+ * la unión entera **en cada llamada**, y el Paso 5 la llama una vez por marcador y por
+ * ítem — 13 marcadores × 5 encuentros × 27 s no entra en los 6 minutos de Apps Script.
+ *
+ * Es de módulo, o sea **por ejecución**, mismo criterio que `cacheBases_` (`Fuentes.gs`):
+ * las cuatro bases son de sólo lectura para el motor, así que no hay escritura propia que
+ * lo pueda dejar viejo dentro de una corrida.
+ */
+var cacheUnionDigital_ = {};
+
 function unirDigitalPorCuenta(ventana) {
+  var claveCache = ventana && ventana.desde && ventana.hasta
+    ? formatearFecha_(ventana.desde) + '||' + formatearFecha_(ventana.hasta)
+    : '(sin ventana)';
+  if (Object.prototype.hasOwnProperty.call(cacheUnionDigital_, claveCache)) {
+    return cacheUnionDigital_[claveCache];
+  }
+  var resultado = unirDigitalPorCuentaSinCache_(ventana);
+  cacheUnionDigital_[claveCache] = resultado;
+  return resultado;
+}
+
+function unirDigitalPorCuentaSinCache_(ventana) {
   var maestraLeida = leerFuente(BASE_DIGITAL_, ventana, SOLAPA_MAESTRA_DIGITAL_);
   if (!maestraLeida.ok) return { ok: false, motivo: maestraLeida.motivo };
 
@@ -520,7 +543,26 @@ function registrarAnclajePendiente_(hoja, indice, tipo, nombreBuscado, top3) {
  * si el script se corta, `ANCLAJE_PENDIENTE` y el log ya tienen lo que se
  * alcanzó a procesar.
  */
+/**
+ * Mismo criterio que `cacheUnionDigital_`: el anclaje tarda ~50 s y el Paso 5 lo pide una
+ * vez por sección repetible que itere `REUNIONES` —hoy dos—. Por ejecución, no entre
+ * ejecuciones.
+ */
+var cacheAnclaje_ = {};
+
 function anclarEncuentros(ventana) {
+  var claveCache = ventana && ventana.desde && ventana.hasta
+    ? formatearFecha_(ventana.desde) + '||' + formatearFecha_(ventana.hasta)
+    : '(sin ventana)';
+  if (Object.prototype.hasOwnProperty.call(cacheAnclaje_, claveCache)) {
+    return cacheAnclaje_[claveCache];
+  }
+  var resultado = anclarEncuentrosSinCache_(ventana);
+  cacheAnclaje_[claveCache] = resultado;
+  return resultado;
+}
+
+function anclarEncuentrosSinCache_(ventana) {
   var precondicion = verificarPrecondicionAnclaje_();
   if (!precondicion.ok) return { ok: false, motivo: precondicion.motivo };
 

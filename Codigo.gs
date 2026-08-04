@@ -241,8 +241,13 @@ function menuAbrirPanel_() {
   return anunciar_('Abrir panel', 'próximamente');
 }
 
+/**
+ * Pasos 4 y 5 — deja de ser un "próximamente". Genera el informe de
+ * `CONFIG.informe_activo` de punta a punta: copia, secciones repetibles y tokens fijos.
+ * La implementación vive en `Generador.gs`, que es el dueño del reemplazo en Slides.
+ */
 function menuGenerarInforme_() {
-  return anunciar_('Generar informe', 'próximamente');
+  return menuGenerarInformeCompleto_();
 }
 
 function menuCargarEjemplo_() {
