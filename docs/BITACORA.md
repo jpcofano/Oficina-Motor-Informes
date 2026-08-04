@@ -2315,3 +2315,77 @@ nadie más.
   retiró ni cargó ninguna fila de `MARCADORES`.
 - **Pendientes/decisiones:** ninguna. **Paro acá.** Siguen los cuatro commits: addendum a la
   Parte C, retiro de las tres filas, `RATIO`/`PCT` en el despachador, y el cableado + menú.
+
+## Paso 3 (v3) `D.1` — el corte vertical corrido: **11 de 11 en `ok`, y el control agregado NO cierra** (2026-08-03) — commit de esta entrada
+- **Qué pedía:** los cuatro commits de `docs/Prompts/Paso-3-v3_D1.md`. Éste es el cuarto: el
+  cableado de los once `prueba_*`, el ítem de menú, y `D.4` con sus controles.
+- **Qué se hizo:** `MARCADORES_PRUEBA_` (`Pruebas.gs`) con los once, cargados por
+  `cablearMarcadoresDePrueba_` → `curarMarcadores_`. Ítem **"Calcular marcadores de prueba"**,
+  y el existente renombrado a **"Calcular corte vertical (Paso 2.9E)"**, que hace otra cosa.
+- **El corte: `total 11 · ok 11 · sin_datos 0 · error 0 · lecturas_cacheadas 2`.** La cadena
+  entera funciona de punta a punta por primera vez:
+
+  | marcador | valor | qué ejercita |
+  |---|---|---|
+  | `prueba_inscriptos` | **2919** | `SUMA`, 12 filas, 12 con valor numérico |
+  | `prueba_asistentes` | 686 | `SUMA` |
+  | `prueba_insc_mail` | 1654 | `SUMA` — 9 de 12 con valor numérico |
+  | `prueba_insc_cc` | 272 | `SUMA` — **2 de 12** |
+  | `prueba_insc_ivr` | 43 | `SUMA` — **1 de 12** |
+  | `prueba_insc_digital` | 874 | `SUMA` — 9 de 12 |
+  | `prueba_insc_dif` | 22 | `SUMA` — **2 de 12** |
+  | `prueba_encuentros` | 12 | `CONTEO` |
+  | `prueba_asistencia_pct` | **23.5%** | `PCT` — traza: `RATIO asistentes (col Q)/inscriptos (col K) = 686/2919` |
+  | `prueba_alcance` | 1.255.486 | `SUMA` sobre `looker` con **solapa inferida**, y la traza lo dice |
+  | `prueba_fecha` | 24/07 al 30/07 | `TEXTO` |
+
+  La traza dice de qué solapa salió cada número —y que la de `looker` fue **inferida**— y de
+  qué eslabón salió la ventana (`config`, 24/07–30/07). El caché se usó **2** veces: `rdv` y
+  `looker`, una lectura por base pese a los diez marcadores.
+- **`D.4` · Control externo: CIERRA.** `prueba_inscriptos` = **2919 ≥ 753**
+  (`Orden Público 28/07`, caso `V-05`, verificado dígito a dígito). Con 12 encuentros en la
+  ventana el criterio fijado en `0.2` era "753 o más", y **no dio 753 exacto**, que se habría
+  reportado como sospechoso.
+- **`D.4` · Los dos controles internos, y hay que leerlos juntos:**
+  - **Por fila — CIERRA.** La fila de Orden Público: `361 + 169 + 43 + 180 + vacío = 753`,
+    exactamente sus `Inscriptos`. Verificado en la Parte 0 contra la base viva.
+  - **Agregado — NO CIERRA.** Suma de los cinco `prueba_insc_*` = **2865** contra
+    `prueba_inscriptos` = **2919**. **Diferencia: −54.** *(No se ajustó nada.)*
+- **⚠ Y la regla "si cierra por fila y no en el agregado, el problema es del despachador" no
+  aplica acá — el propio resultado la descarta.** Sumar columna por columna y después sumar
+  las columnas es **idénticamente igual** a sumar fila por fila: la suma es conmutativa y
+  asociativa. **No hay forma de que el despachador produzca un −54 acertando cada columna
+  por separado.** Si el agregado no cierra, la identidad **no se cumple en todas las filas**,
+  aunque se cumpla en la de Orden Público.
+  **Y la traza dice dónde mirar:** `inscriptos` tiene **12 de 12** filas con valor numérico,
+  pero `insc_cc` tiene **2**, `insc_ivr` **1**, `insc_dif` **2** y `insc_mail`/`insc_digital`
+  **9**. O sea que en varias filas los canales están vacíos mientras `inscriptos` tiene
+  número. **Las dos lecturas posibles, y no se decide acá:** o hay inscriptos que no vienen
+  de esos cinco canales, o las celdas de canal están sin cargar. Es una pregunta sobre los
+  datos, no sobre el motor.
+  **Lo que falta para localizarlo** es ver las 12 filas y su identidad una por una; hoy
+  ninguna función devuelve eso y **no se agregó una para tapar el hueco**.
+- **`D.3` · La cadena de período, qué quedó ejercitado y qué no:**
+  - **`CONFIG` — ejercitado.** Los once salieron con `origen: config`, 24/07–30/07.
+  - **`SECCIONES.periodo_ref` (eslabón 3) — NO ejercitado**, como anticipaba el prompt: las
+    35 filas lo tienen vacío y el vínculo marcador↔sección sigue sin resolver. **No se
+    inventó una sección para la prueba.**
+  - **La semana de `R-11` (eslabón 5) — ejercitada por control unitario, no vaciando
+    `CONFIG`.** `probarSemanaR11_` cubre el caso de referencia (vie 24/07 → jue 30/07, siete
+    días) y los bordes. Vaciar `CONFIG` en la planilla viva para probar habría entrado
+    justo en el `P1` del diff ciego a los valores de `CONFIG`: nadie habría visto el cambio.
+  - **`campaña` (eslabón 1) — no ejercitado**: ningún `prueba_*` pertenece a una campaña.
+- **`prueba_asistencia_pct` = 23,5 %** es el número que faltaba: cierra el hueco de `RATIO`
+  que encontró `D.0` y que la Parte C de este prompt implementó.
+- **Prueba:** **las 10 pruebas de `Pruebas.gs` pasan** y el diff de configuración sigue en
+  `cambiadas 0 · protegidas (con diferencia) 0 · sin cambios: sí`.
+- **Pendientes/decisiones:**
+  - **El −54 queda abierto y sin tocar**, como pide el prompt: *"si no cierra, no ajustar
+    nada"*.
+  - **`P2` nuevo en `PENDIENTES`: la inferencia de solapa de `looker` es frágil.**
+    `solapasFuenteDeBase_` cruza `fuente` ∩ *mapeada*, y `looker` tiene 7 solapas `fuente`
+    pero **una sola mapeada**. La inferencia funciona **porque `MAPEO` está incompleto**, no
+    porque la base tenga una solapa: el día que alguien mapee una segunda, `prueba_alcance`
+    pasa a fallar sin que nadie lo haya tocado.
+  - **Los once `prueba_*` siguen cargados**, porque son el insumo de la prueba del usuario.
+    Se retiran con `retirarMarcadoresDePrueba_()` al cerrar la Parte D.

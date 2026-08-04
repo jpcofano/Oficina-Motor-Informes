@@ -631,6 +631,122 @@ function probarRatioEnDespachador_() {
   return 'Paso 3 D.1 RATIO/PCT: OK';
 }
 
+/* ============ Paso 3 (v3) `D.1` Parte D — el cableado del corte vertical ============
+ *
+ * Once tokens, **todos con prefijo `prueba_`**, y el prefijo no es cosmético:
+ * `ecv_inscriptos`, `ecv_asistentes` y `enc_alcance` son tokens **por encuentro** en
+ * `docs/TOKENS.md`, y acá se calculan **agregados sobre la ventana**. Cablearlos con el
+ * nombre canónico plantaría un número plausible y equivocado bajo un nombre que después se
+ * usa en el deck — el modo de falla que un corte vertical existe para evitar.
+ *
+ * **Se retiran al cerrar la Parte D** (`retirarMarcadoresDePrueba_`).
+ *
+ * `poblacion` queda afuera a propósito: sumarla cuenta dos veces el mismo barrio si hay dos
+ * encuentros ahí.
+ */
+var MARCADORES_PRUEBA_ = [
+  { marcador: 'prueba_inscriptos', familia: 'prueba', informe_id: 'jm', base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'inscriptos', operacion: 'SUMA', formato: 'numero', notas: 'corte vertical Paso 3 D.1 — se retira al cerrar' },
+  { marcador: 'prueba_asistentes', familia: 'prueba', informe_id: 'jm', base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'asistentes', operacion: 'SUMA', formato: 'numero', notas: 'corte vertical Paso 3 D.1 — se retira al cerrar' },
+  { marcador: 'prueba_insc_mail', familia: 'prueba', informe_id: 'jm', base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'insc_mail', operacion: 'SUMA', formato: 'numero', notas: 'corte vertical Paso 3 D.1 — se retira al cerrar' },
+  { marcador: 'prueba_insc_cc', familia: 'prueba', informe_id: 'jm', base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'insc_cc', operacion: 'SUMA', formato: 'numero', notas: 'corte vertical Paso 3 D.1 — se retira al cerrar' },
+  { marcador: 'prueba_insc_ivr', familia: 'prueba', informe_id: 'jm', base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'insc_ivr', operacion: 'SUMA', formato: 'numero', notas: 'corte vertical Paso 3 D.1 — se retira al cerrar' },
+  { marcador: 'prueba_insc_digital', familia: 'prueba', informe_id: 'jm', base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'insc_digital', operacion: 'SUMA', formato: 'numero', notas: 'corte vertical Paso 3 D.1 — se retira al cerrar' },
+  { marcador: 'prueba_insc_dif', familia: 'prueba', informe_id: 'jm', base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'insc_dif', operacion: 'SUMA', formato: 'numero', notas: 'corte vertical Paso 3 D.1 — se retira al cerrar' },
+  { marcador: 'prueba_encuentros', familia: 'prueba', informe_id: 'jm', base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'inscriptos', operacion: 'CONTEO', formato: 'numero', notas: 'corte vertical Paso 3 D.1 — se retira al cerrar' },
+  { marcador: 'prueba_asistencia_pct', familia: 'prueba', informe_id: 'jm', base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'asistentes/inscriptos', operacion: 'PCT', formato: 'porcentaje', notas: 'corte vertical Paso 3 D.1 — el unico PCT, ejercita RATIO' },
+  // Solapa VACÍA a propósito: `looker` tiene una sola mapeada, así que se infiere. Es el
+  // único caso que ejercita la inferencia de solapa (ver el `P2` de PENDIENTES).
+  { marcador: 'prueba_alcance', familia: 'prueba', informe_id: 'jm', base_id: 'looker', solapa: '', campo_logico: 'alcance', operacion: 'SUMA', formato: 'miles', notas: 'corte vertical Paso 3 D.1 — solapa vacia a proposito: ejercita la inferencia' },
+  { marcador: 'prueba_fecha', familia: 'prueba', informe_id: 'jm', base_id: '', solapa: '', campo_logico: '', operacion: 'TEXTO', valor_fijo: '24/07 al 30/07', formato: 'texto', notas: 'corte vertical Paso 3 D.1 — literal, ejercita TEXTO' }
+];
+
+function cablearMarcadoresDePrueba_() {
+  return curarMarcadores_([], MARCADORES_PRUEBA_);
+}
+
+function retirarMarcadoresDePrueba_() {
+  return curarMarcadores_(MARCADORES_PRUEBA_.map(function (m) { return m.marcador; }), []);
+}
+
+/**
+ * `D.4` — el corte corrido, con sus controles. Sólo lectura: no escribe hojas.
+ *
+ * **El control externo:** `prueba_inscriptos` contra los **753** de `Orden Público 28/07`,
+ * verificados dígito a dígito en `docs/VALIDACION_2026-07-31.md` (caso `V-05`). Con **12
+ * encuentros en la ventana**, el criterio fijado en `0.2` es **753 o más**; un 753 exacto se
+ * reporta como **sospechoso**, no como acierto.
+ *
+ * **Los dos controles internos, y la distinción importa:**
+ *  - *por fila* — los cinco canales de la fila de Orden Público (361+169+43+180+vacío)
+ *    tienen que dar sus 753 `Inscriptos`;
+ *  - *agregado* — la suma de los cinco `prueba_insc_*` sobre las 12 filas tiene que dar
+ *    `prueba_inscriptos`.
+ *
+ * **Si cierra por fila pero no en el agregado, el problema está en el despachador y no en
+ * los datos.** Ésa es la distinción que hace útil el corte, y por eso se reportan separados.
+ */
+function correrCorteVerticalMarcadores_() {
+  var r = resolverMarcadores('jm');
+  var porNombre = {};
+  r.resultados.forEach(function (x) { porNombre[x.marcador] = x; });
+
+  var num = function (nombre) {
+    var v = porNombre[nombre] && porNombre[nombre].valor;
+    return (v === '' || v === null || v === undefined) ? null : Number(v);
+  };
+
+  var inscriptos = num('prueba_inscriptos');
+  var canales = ['prueba_insc_mail', 'prueba_insc_cc', 'prueba_insc_ivr', 'prueba_insc_digital', 'prueba_insc_dif'];
+  var sumaCanales = canales.reduce(function (acc, n) { return acc + (num(n) || 0); }, 0);
+  var asistentes = num('prueba_asistentes');
+
+  // Control externo, con el criterio de 0.2.
+  var externo;
+  if (inscriptos === null) {
+    externo = { ok: false, veredicto: 'prueba_inscriptos no dio número' };
+  } else if (inscriptos === 753) {
+    externo = { ok: false, veredicto: 'SOSPECHOSO: dio 753 exacto con 12 encuentros en la ventana — se esperaba 753 o más' };
+  } else if (inscriptos > 753) {
+    externo = { ok: true, veredicto: 'cierra: ' + inscriptos + ' ≥ 753 (Orden Público 28/07, caso V-05)' };
+  } else {
+    externo = { ok: false, veredicto: 'NO cierra: ' + inscriptos + ' < 753. Diferencia: ' + (753 - inscriptos) };
+  }
+
+  return {
+    ok: true,
+    ventana: porNombre['prueba_inscriptos'] ? porNombre['prueba_inscriptos'].traza : '',
+    resumen: r.resumen,
+    control_externo: externo,
+    control_interno_agregado: {
+      prueba_inscriptos: inscriptos,
+      suma_de_los_cinco_canales: sumaCanales,
+      cierra: inscriptos !== null && sumaCanales === inscriptos,
+      diferencia: inscriptos === null ? null : (sumaCanales - inscriptos)
+    },
+    control_asistentes_menor: {
+      asistentes: asistentes,
+      inscriptos: inscriptos,
+      cierra: asistentes !== null && inscriptos !== null && asistentes < inscriptos
+    },
+    resultados: r.resultados
+  };
+}
+
+function menuCalcularMarcadoresPrueba_() {
+  var ui = ui_();
+  var r = correrCorteVerticalMarcadores_();
+  var lineas = ['Ventana: ' + r.ventana, ''];
+  r.resultados.forEach(function (x) {
+    lineas.push('[' + x.estado + '] ' + x.marcador + ' = ' + x.valor_formateado);
+    lineas.push('    ' + x.traza);
+  });
+  lineas.push('', 'Control externo: ' + r.control_externo.veredicto);
+  lineas.push('Control interno agregado: ' + (r.control_interno_agregado.cierra ? 'cierra' : 'NO cierra') +
+    ' (' + r.control_interno_agregado.suma_de_los_cinco_canales + ' vs ' + r.control_interno_agregado.prueba_inscriptos + ')');
+  ui.alert('Marcadores de prueba', lineas.join('\n'), ui.ButtonSet.OK);
+  return lineas.join('\n');
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,

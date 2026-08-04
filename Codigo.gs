@@ -64,7 +64,10 @@ var MENU_ = {
       { t: 'Probar conexión a bases',    f: 'probarConexionBases' },
       { t: 'Probar lectura por ventana', f: 'menuProbarLectura_' },
       { t: 'Probar unión y anclaje',     f: 'menuProbarUnionYAnclaje_' },
-      { t: 'Calcular corte vertical',    f: 'menuCorteVerticalRetiro2407_' },
+      // Los dos hacen cosas distintas y por eso la etiqueta lo dice (Paso 3 v3, D.0.5):
+      // el del 2.9E lee UNA fila de `rdv` cableada a mano; el de prueba recorre `MARCADORES`.
+      { t: 'Calcular corte vertical (Paso 2.9E)', f: 'menuCorteVerticalRetiro2407_' },
+      { t: 'Calcular marcadores de prueba',       f: 'menuCalcularMarcadoresPrueba_' },
       '---',
       { t: 'Solapas', items: [
         { t: 'Listar solapas y tipos',              f: 'menuDiagnosticarBases_' },

@@ -1117,6 +1117,36 @@ carpeta de salidas **deje de ser hija** de la de plantillas; o —lo más barato
 está hecho de hecho— que el ID venga del seed y el registro automático quede como
 diagnóstico, no como escritor. Ninguno se aplicó: hoy el registro sigue pudiendo escribir.
 
+### P2 · La inferencia de solapa de `looker` funciona porque `MAPEO` está incompleto
+
+Anotado el 03/08/2026 en el mismo commit que crea la fila que depende de esto
+(`prueba_alcance`, cableado del corte vertical).
+
+`solapasFuenteDeBase_` (`Generador.gs`) cruza **`uso = fuente` ∩ presente en `MAPEO`**, no
+`fuente` sola. Medido: `looker` tiene **7** solapas `fuente` en `SOLAPAS`
+(`resumen_metricas_dinamico`, `MAIL`, `IVR`, `SMS`, `CC`, `DIGITAL`, `ALCANCE`) y **una
+sola** en `MAPEO`. Por eso `prueba_alcance` puede llevar la solapa vacía y resolverse.
+
+**La inferencia funciona hoy porque el mapeo está incompleto, no porque la base tenga una
+sola solapa.** El día que alguien mapee una segunda solapa de `looker` —algo perfectamente
+razonable y que nadie pensaría como un cambio riesgoso—, `prueba_alcance` **pasa a fallar
+con `«FALTA:@sin_solapa»` sin que nadie haya tocado ese marcador**. El acoplamiento es real
+y va en la dirección incómoda: completar configuración rompe un marcador que andaba.
+
+**Qué NO es:** un bug de `solapasFuenteDeBase_`. El cruce con `MAPEO` es correcto y
+necesario —`m2/Cuentas` es una solapa `ignorar` que sin embargo está mapeada, y contarla
+rompería otra cosa—. Lo frágil es **apoyar un marcador en una inferencia**, no el criterio
+con que se infiere.
+
+**Qué hacer, cuando haya que decidirlo:** o la solapa se declara explícita en todo marcador
+—y la inferencia queda como comodidad de diagnóstico, no como cableado—, o `MAPEO` declara
+cuál es la solapa **por defecto** de cada base, que es un dato y no una deducción.
+`docs/TOKENS.md` §4 ya avisa de esto para `rdv` (*"aplica a menos bases de las que
+parece"*); acá queda medido para `looker`.
+
+**Hoy no bloquea nada:** el único marcador que depende de la inferencia es `prueba_alcance`,
+que es andamiaje del corte vertical y se retira al cerrar la Parte D.
+
 ### P2 · `informe_id = '*'` en `MARCADORES` está soportado y hoy no lo usa nadie
 
 Anotado el 03/08/2026 **antes de retirar** las tres filas de ejemplo de `MARCADORES`, porque
