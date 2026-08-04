@@ -2268,3 +2268,50 @@ nadie más.
   ninguna fila de `MARCADORES`.
 - **Pendientes/decisiones — `D.0.1` y `D.0.2` terminan en decisión del usuario:** qué se hace
   con las tres filas de ejemplo, y qué tokens se cablean. **Paro acá.**
+
+## Paso 3 (v3) `D.1` — Parte 0 corrida, y **para** (2026-08-03) — commit de esta entrada
+- **Qué pedía:** verificar las cinco premisas de `docs/Prompts/Paso-3-v3_D1.md` antes de
+  ejecutar nada. Sólo lectura.
+- **Veredicto: las cinco se sostienen. Ninguna vencida, y el control de `D.4` quedó anclado
+  contra la base viva, no contra el documento.**
+- **0.1 · La ventana cambió y el número viejo no servía.** `resolverVentana({})` →
+  **2026-07-24 → 2026-07-30**, `origen: config`. Es la semana de `R-11`: viernes a jueves,
+  siete días. De `rdv/RVD JM-CM - ES`: 1362 filas totales, **12 en ventana**, 709 excluidas
+  por `D-21`. **Las 13 que reportó `D.0` eran de la ventana anterior** (26/06–03/07) y no
+  sirven de referencia, como advertía el prompt.
+- **0.2 · El ancla del control, verificada en vivo.** `encontrarFilaRdvDeReunion_` encuentra
+  el encuentro en `rdv/RVD JM-CM - ES`:
+  - `Figura` **Jorge Macri** · `EVENTO` **Encuentro Temático "Orden Público" – Eje Norte** ·
+    `Barrio` **Belgrano** · `FECHA` **2026-07-28** · `STATUS REUNIÓN` **Realizada** ·
+    **`Inscriptos` = 753**, que coincide dígito a dígito con el caso `V-05` de
+    `docs/casos_validacion_2026-07-31.csv` (estado `exacto`).
+  - **28/07 cae dentro de la ventana** (24/07 ≤ 28/07 ≤ 30/07). ✅
+  - **Hay más de un encuentro en la ventana: 12.** (Sólo el 28/07 ya hay **3**.) Entonces el
+    criterio de `D.4` queda fijado en la segunda rama que plantea el prompt: **la `SUMA` de
+    `prueba_inscriptos` tiene que dar 753 o más**, no 753 exacto. Un 753 pelado sería
+    sospechoso, no un acierto.
+  - **Regalo del mismo renglón, y sirve de segundo control:** los cinco canales de esa fila
+    son `Mail` 361 · `Call Center` 169 · `IVR` 43 · `RRSS` 180 · `Difusión` vacío, que
+    **suman exactamente 753 = `Inscriptos`**. Es la misma identidad que verifica
+    `cierraSuma` en el corte del `2.9E`, y da un control interno con número conocido para
+    los cinco `prueba_insc_*`.
+- **0.3 · Las tres filas de ejemplo, reportadas por última vez antes de retirarlas** (van al
+  cuerpo del commit de la Parte B):
+
+  | marcador | familia | informe_id | base_id | solapa | campo_logico | periodo_ref | operacion | formato | notas |
+  |---|---|---|---|---|---|---|---|---|---|
+  | `ecv_inscriptos` | ecv | `*` | rdv | | inscriptos | | `calcInscriptos` | numero | `* = compartido` |
+  | `camp_alcance` | camp | `*` | looker | | alcance | | `calcAlcance` | miles | |
+  | `m2_envios` | m2 | jm | m2 | | envios | `m2_mensual` | `calcEnvios` | numero | |
+
+- **0.4 · Los siete campos de `rdv`, contra la hoja viva y no contra el seed: los siete
+  están.** `inscriptos` K · `asistentes` Q · `insc_mail` L · `insc_cc` M · `insc_ivr` N ·
+  `insc_digital` O · `insc_dif` P. **Ninguno falta.**
+- **0.5 · `looker` sigue habilitando la inferencia.** Tiene **7** solapas `uso = fuente` en
+  `SOLAPAS` pero **una sola mapeada** en `MAPEO`: `resumen_metricas_dinamico`. Es lo que
+  hace posible dejar la solapa vacía en `prueba_alcance` y que se infiera. `alcance` está
+  mapeado ahí, columna **K**.
+- **Prueba:** sólo lectura. No se escribió ninguna hoja, no se tocó ningún `.gs`, no se
+  retiró ni cargó ninguna fila de `MARCADORES`.
+- **Pendientes/decisiones:** ninguna. **Paro acá.** Siguen los cuatro commits: addendum a la
+  Parte C, retiro de las tres filas, `RATIO`/`PCT` en el despachador, y el cableado + menú.
