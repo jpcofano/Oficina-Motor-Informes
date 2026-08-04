@@ -54,7 +54,7 @@ agujero del patrón.
 | `SECCIONES` | `SEED_SECCIONES_` vía `sembrarSecciones_` | `sembrarSecciones_` únicamente | ✅ |
 | `CAMPANAS` | curada a mano (sin sembrador, a propósito) | **cero escritores en el código** | ✅ consistente con `ALCANCE_REGISTROS_` |
 | `REUNIONES` | curada a mano + `cargarTemarioReuniones_`, por **dos entradas**: el ítem de menú "Cargar temario" y, desde el Paso 2.14, la llamada por API `cargarTemario(texto, periodoId)` | `cargarTemarioReuniones_` únicamente (las dos entradas pasan por ahí) | ✅ un solo escritor, dos puertas. Desde el Paso 2.15 Parte B **el período es obligatorio en las dos**: `cargarTemario` valida contra `PERIODOS` y falla explícito antes de escribir (`D-19`) |
-| `MARCADORES` | **sin dueño** (H-6, Paso 2.13 pendiente) | un solo escritor y es una migración: `migrarCalculoAOperacion_` (`Instalar.gs:565`) | ⚠ verificado desde el código: nada la siembra, nada la escribe salvo una migración de renombre de columna. H-6 confirmado |
+| `MARCADORES` | **la plantilla** (`D-17`), vía el `Paso-2.5`, que todavía no corrió | migración `migrarCalculoAOperacion_` · **`curarMarcadores_`** (`Instalar.gs`, 03/08/2026) | ⚠ **sigue sin sembrador, y es a propósito.** `curarMarcadores_` **no lo es**: es la puerta para curar filas puntuales —retirar las tres de ejemplo, cargar y retirar las `prueba_*` del corte vertical—, que hasta hoy se hacían a mano en la planilla. El sembrador real lo trae el `Paso-2.5` (`sembrarMarcadoresDesdePlantillas` + `upsertSoloVacias_`) y **no compite con éste**: aquél completa vacías desde los `{{token}}` de los Slides, éste agrega y quita filas enteras por decisión de una persona. H-6 sigue confirmado |
 
 ## 2 · Los conflictos que la matriz deja a la vista
 

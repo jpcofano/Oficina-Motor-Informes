@@ -1997,6 +1997,77 @@ function sembrarSecciones_(hoja) {
   return { nuevas: nuevas.map(function (s) { return s.seccion_id; }) };
 }
 
+/**
+ * Paso 3 (v3) `D.1` — el único escritor de `MARCADORES`, y hace falta explicarlo.
+ *
+ * **`MARCADORES` no tiene sembrador y no lo va a tener** (`D-17`): su dueño es la plantilla,
+ * y las filas las siembra el `Paso-2.5` leyendo los `{{token}}` de los Slides con
+ * `upsertSoloVacias_`. Esta función **no es ese sembrador** ni compite con él: es la puerta
+ * para **curar filas puntuales** —retirar las tres de ejemplo, cargar y después retirar las
+ * `prueba_*` del corte vertical—, que hasta hoy se hacían a mano en la planilla.
+ *
+ * Por qué existe en vez de editar la hoja a mano: una curación a mano no deja traza, no es
+ * idempotente y no se puede repetir en otra planilla. Ésta reporta exactamente qué quitó y
+ * qué agregó.
+ *
+ * `quitar` es una lista de `marcador` (se van todas sus filas, de cualquier `informe_id`).
+ * `agregar` es una lista de objetos con las claves de los `headers` de la hoja; se escriben
+ * **respetando el orden de columnas de la hoja viva**, no un orden asumido.
+ *
+ * **Idempotente:** quitar lo que no está no hace nada; agregar un `(marcador, informe_id)`
+ * que ya existe lo **reemplaza**, no lo duplica — la clave es el par, como fija el
+ * `Paso-2.13` Parte 3.
+ */
+function curarMarcadores_(quitar, agregar) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) return { ok: false, motivo: 'La hoja MARCADORES no existe.' };
+
+  quitar = quitar || [];
+  agregar = agregar || [];
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxMarcador = headers.indexOf('marcador');
+  var idxInforme = headers.indexOf('informe_id');
+  if (idxMarcador === -1) return { ok: false, motivo: 'MARCADORES no tiene columna `marcador`.' };
+
+  var clavesAgregar = {};
+  agregar.forEach(function (o) { clavesAgregar[o.marcador + '||' + (o.informe_id || '')] = true; });
+
+  // Se recorre de abajo hacia arriba: borrar de arriba corre los índices de lo que falta.
+  var quitadas = [];
+  for (var f = datos.length - 1; f >= 1; f--) {
+    var marcador = datos[f][idxMarcador];
+    if (!marcador) continue;
+    var clave = marcador + '||' + (idxInforme === -1 ? '' : datos[f][idxInforme]);
+    var porNombre = quitar.indexOf(marcador) !== -1;
+    var porReemplazo = clavesAgregar[clave];
+    if (!porNombre && !porReemplazo) continue;
+    quitadas.push({
+      marcador: marcador,
+      informe_id: idxInforme === -1 ? '' : datos[f][idxInforme],
+      motivo: porNombre ? 'retirada' : 'reemplazada'
+    });
+    hoja.deleteRow(f + 1);
+  }
+
+  var agregadas = [];
+  if (agregar.length) {
+    var filas = agregar.map(function (o) {
+      return headers.map(function (h) { return (h in o) ? o[h] : ''; });
+    });
+    hoja.getRange(hoja.getLastRow() + 1, 1, filas.length, headers.length).setValues(filas);
+    agregadas = agregar.map(function (o) { return o.marcador + ' (' + (o.informe_id || '') + ')'; });
+  }
+
+  return {
+    ok: true,
+    quitadas: quitadas,
+    agregadas: agregadas,
+    filas_finales: Math.max(hoja.getLastRow() - 1, 0)
+  };
+}
+
 function menuSembrarSecciones_() {
   var ui = ui_();
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SECCIONES');

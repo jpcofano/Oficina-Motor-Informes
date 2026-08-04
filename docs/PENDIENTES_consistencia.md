@@ -1117,6 +1117,30 @@ carpeta de salidas **deje de ser hija** de la de plantillas; o —lo más barato
 está hecho de hecho— que el ID venga del seed y el registro automático quede como
 diagnóstico, no como escritor. Ninguno se aplicó: hoy el registro sigue pudiendo escribir.
 
+### P2 · `informe_id = '*'` en `MARCADORES` está soportado y hoy no lo usa nadie
+
+Anotado el 03/08/2026 **antes de retirar** las tres filas de ejemplo de `MARCADORES`, porque
+es lo único que se pierde con ellas.
+
+`resolverMarcadores` (`Generador.gs`) acepta `informe_id = '*'` con el significado **"vale
+para todos los informes"**: filtra `suyo === informeId || suyo === '*'`. Dos de las tres
+filas retiradas lo usaban —`ecv_inscriptos` y `camp_alcance`, esta última con la nota
+literal *"* = compartido"*—, así que la capacidad **estaba en uso y ahora queda sin ningún
+caso vivo**. El código no se toca: sacarlo sería resolver por borrado algo que todavía no se
+decidió.
+
+**Por qué importa y no es trivia:** `'*'` es exactamente la firma que el `Paso-2.13` Parte 3
+manda vigilar. Su guardarraíl dice que si un `marcador` aparece con `informe_id = '*'` **y**
+con un `informe_id` concreto, es un cruce a medio resolver. Y hay cruces reales conocidos
+—`enc_mails_enviados`, y el par `m2_envios`/`m2_campanias` medido el 03/08—: para esos,
+`'*'` **no se puede usar**, porque el mismo nombre significa cosas distintas en JM y en
+SECCO.
+
+**Lo que queda por decidir, cuando `MARCADORES` tenga filas reales:** si `'*'` se conserva
+como forma de declarar un token compartido —cómodo, y ahorra duplicar filas— o si se retira
+en favor de una fila por informe siempre, que es más verboso pero hace imposible el cruce
+silencioso. Hoy no hay evidencia para elegir: no hay ni un token compartido cableado.
+
 ### P2 · `armonizarPresentacion_` reemplaza con `replaceAllText`, que es global por diseño
 
 Anotado el 03/08/2026 al derivar el filtro de láminas congeladas. **No se hace ahora.**
