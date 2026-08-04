@@ -12,11 +12,11 @@
 > **Decisión del usuario, 04/08/2026.** El corte entre JM y GCBA no es una sola señal: es una por
 > canal.
 >
-> - **IVR** → la columna **`Vocero`** de `digital/Directa IVR`. Esa fila trae el `id_cuenta`, así
+> - **IVR** — la columna **`Vocero`** de `digital/Directa IVR`. Esa fila trae el `id_cuenta`, así
 >   que el corte se propaga por cuenta a lo que no tenga señal propia.
-> - **Mail** → el **remitente**, en `digital/Directa Mail` **columna G**. Si sale de
+> - **Mail** — el **remitente**, en `digital/Directa Mail` **columna G**. Si sale de
 >   `jorge.macri@buenosaires.gob.ar`, es JM.
-> - **SMS** → **todo GCBA.** No hay corte que hacer.
+> - **SMS** — **todo GCBA.** No hay corte que hacer.
 >
 > **Esto cierra el pendiente** que figuraba como "falta la marca que separa JM de GCBA en mail,
 > SMS y CC", y que en `PENDIENTES_consistencia.md` estaba anotado como el error de validación
