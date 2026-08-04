@@ -176,6 +176,24 @@ por `(base_id, solapa, desde, hasta)`.
 `base_id` se escribe en cada fila de `MARCADORES` —, **no** un motor de merge. El
 despachador no compara ni mergea: lee la fila tal cual está cableada.
 
+### Addendum 1 a la Parte C — 03/08/2026
+
+> La Parte C ya está ejecutada, así que **su texto no se edita**: esto se le anexa.
+>
+> **`RATIO` y `PCT` no quedaron soportados.** `resolverMarcadores` hace **un solo**
+> `buscarMapeo` con el `campo_logico` entero, así que un marcador declarado
+> `asistentes/inscriptos` falla con "falta MAPEO". Verificado por API en `D.0.2`:
+> `buscarMapeo('rdv','RVD JM-CM - ES','asistentes/inscriptos')` →
+> *"falta MAPEO: rdv/RVD JM-CM - ES/asistentes/inscriptos"*.
+>
+> El contrato de `ctx` de la Parte A exige `valoresNumerador` y `valoresDenominador` **ya
+> resueltos**, y `opRATIO` lanza con un mensaje explícito si falta alguno — o sea que el
+> hueco estaba señalizado en el módulo correcto, pero el despachador nunca lo llenó. El
+> punto `C.0.5` de la verificación **pidió confirmar exactamente esto** y la confirmación no
+> se tradujo en código.
+>
+> **Lo cierra `D.1`**, que es donde el corte vertical necesita un `PCT` para ejercitarlo.
+
 ---
 
 ## Parte D — Corte vertical (la prueba)
