@@ -1408,12 +1408,23 @@ todavía no está decidida.
   *(2)* la identidad no vale siempre —hay inscripción espontánea, presencial, o un canal no
   mapeado—, y entonces el control `cierraSuma` del `Paso-2.9E` es válido **por fila** pero
   **no** es una regla general, y hay que escribirlo como tal.
-  **Le falta su respaldo:** el censo fila por fila —distinguiendo celda vacía, cero explícito
-  y texto no numérico, que `SUMA` saltea igual— **no se pudo producir**; ver el bloqueo
-  anotado abajo. Lo que sí está medido es la **cobertura por canal**: `insc_mail` 9 de 12
-  filas con valor numérico, `insc_digital` 9, `insc_cc` **2**, `insc_ivr` **1**, `insc_dif`
-  **2**, contra `inscriptos` **12 de 12**. **No es bloqueo:** el corte vertical cerró y esto
-  no traba ningún paso.
+  **✅ El censo se hizo el 04/08/2026 y la respuesta es la lectura (1): faltan datos, y la
+  identidad vale.** Leído crudo con `getValues()` sobre las 12 filas:
+  - **10 de 12 cierran exacto. Cero quedan largas.**
+  - **Las 2 que quedan cortas son las que tienen los cinco canales vacíos**, y su faltante es
+    el total exacto: `Mataderos 29/07` inscriptos **34**, canales 0 → −34; `Palermo 29/07`
+    inscriptos **20**, canales 0 → −20. **34 + 20 = 54.** No hay otra fuente de diferencia.
+  - **Cero celdas con cero explícito y cero con texto no numérico.** Las 36 celdas que no
+    aportan son **todas vacías**. La distinción que el censo venía a buscar existe en el
+    código pero **no en estos datos**.
+
+  **Entonces la pregunta se afina y se achica:** `inscriptos = mail + cc + ivr + digital +
+  difusión` **se sostiene en las 10 filas que tienen algo cargado**, así que `cierraSuma` del
+  `Paso-2.9E` **sí es una regla general** y no sólo una verificación por fila. Lo que queda
+  para el equipo es puntual: **esas dos filas tienen inscriptos pero ningún canal cargado —
+  ¿falta cargarlos, o esos inscriptos entraron por una vía que no es ninguno de los cinco?**
+  **No es bloqueo:** el corte vertical cerró y esto no traba ningún paso. **No se corrigió
+  ninguna celda.**
 
 - **`R-01` no se cumple hoy: hay 5 grupos con más de un encuentro por (Figura, fecha) en
   `rdv/RVD JM-CM - ES`.** Medido el 03/08/2026 con `verificarPrecondicionAnclaje_()`.

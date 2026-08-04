@@ -2485,3 +2485,47 @@ nadie más.
 - **Pendientes/decisiones:** **la Parte B no tiene objeto** y hay que decidir qué hacer con
   `mail_fecha`. La `0.3` queda sin confirmar hasta que se resuelva el `P1` del alcance del
   token. Las Partes A, D y E no se tocaron: **paro acá**.
+
+## Censo del −54 — **cerrado: son dos filas sin canales cargados** (2026-08-04) — commit de esta entrada
+- **Qué pedía** la Parte D del `Addendum_2026-08-03_deroga_mail_fecha.md`: censar las 12
+  filas con una función **temporal** que lea `getValues()` crudo, distinguiendo los tres
+  casos que `leerFuente` colapsa.
+- **Por qué crudo, y era el punto:** `leerFuente` normaliza, y al normalizar **borra la
+  diferencia** entre celda vacía, cero explícito y texto no numérico — `opSUMA` saltea las
+  tres igual y en la traza salen idénticas. Leer crudo además no pasa por `modo_periodo` ni
+  por la lista blanca de `D-21`: el censo filtra por fecha y por `status` a la vista.
+- **El resultado, y no deja lugar a dudas:**
+
+  | | |
+  |---|---|
+  | filas en la ventana | **12** |
+  | **cierran exacto** | **10** |
+  | quedan cortas | **2** |
+  | **quedan largas** | **0** |
+  | total `inscriptos` | 2919 |
+  | total canales | 2865 |
+  | diferencia | **−54** |
+
+  **Las dos que no cierran son las dos que tienen los cinco canales vacíos**, y su faltante
+  es exactamente el total: `Mataderos 29/07` **34** con canales en 0 (−34) y `Palermo 29/07`
+  **20** con canales en 0 (−20). **34 + 20 = 54.** No hay ninguna otra fuente de diferencia
+  en la ventana.
+- **Y el dato que el censo venía a buscar: no existe en estos datos.** De las 36 celdas de
+  canal que no aportan, **las 36 son vacías**. **Cero ceros explícitos, cero textos no
+  numéricos.** La distinción está implementada y acá no discrimina nada — lo cual, para
+  este caso, es la mejor respuesta posible: no hay ambigüedad de tipo, hay ausencia.
+- **Cobertura por canal, ahora con los tres casos separados:** `mail` 9 número / 3 vacías ·
+  `digital` 9 / 3 · `cc` 2 / 10 · `ivr` 1 / 11 · `dif` 2 / 10. Ninguno con cero explícito ni
+  con texto.
+- **Consecuencia sobre una regla, y es la parte que más rinde:** la identidad
+  `inscriptos = mail + cc + ivr + digital + difusión` **se sostiene en las 10 filas que
+  tienen algo cargado**. Entonces `cierraSuma` del `Paso-2.9E` **sí es una regla general**,
+  no sólo una verificación válida por fila — que era la lectura (2) que el pedido planteaba
+  como alternativa. **Queda descartada.**
+- **La pregunta al equipo, anotada en `PENDIENTES` y achicada** por el censo: no es "¿vale la
+  identidad?" sino "**esas dos filas tienen inscriptos y ningún canal cargado: ¿falta
+  cargarlos, o entraron por una vía que no es ninguno de los cinco?**". **Sin marcarla como
+  bloqueo.**
+- **Prueba:** sólo lectura. **No se corrigió ninguna celda de `rdv`.** `censoCanalesRdv_`
+  está marcada ⏳ **TEMPORAL** y se retira junto con los `prueba_*`.
+- **Pendientes/decisiones:** ninguna nueva.

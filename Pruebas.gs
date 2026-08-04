@@ -747,6 +747,98 @@ function menuCalcularMarcadoresPrueba_() {
   return lineas.join('\n');
 }
 
+/**
+ * ⏳ **TEMPORAL — se retira junto con los `prueba_*`.** Censo del `−54` del corte vertical:
+ * `prueba_inscriptos` = 2919 contra 2865 de la suma de los cinco canales.
+ *
+ * **Por qué `getValues()` crudo y no `leerFuente`, que es todo el punto:** `leerFuente`
+ * normaliza, y al normalizar **colapsa en un solo caso** las tres cosas que este censo tiene
+ * que distinguir — celda vacía, cero explícito y texto no numérico—. `opSUMA` las saltea a
+ * las tres igual y en la traza salen idénticas. Leer crudo además no pasa por
+ * `modo_periodo` ni por la lista blanca de `D-21`, así que el censo no hereda ninguna
+ * decisión del lector: filtra por fecha y por `status` acá mismo, a la vista.
+ *
+ * Sólo lectura: **no corrige ninguna celda**. La base la cura una persona.
+ */
+function censoCanalesRdv_() {
+  var VENTANA = { desde: '2026-07-24', hasta: '2026-07-30' };
+  var abierto = abrirHoja('rdv', 'RVD JM-CM - ES');
+  if (!abierto.ok) return { ok: false, motivo: abierto.motivo };
+
+  var filaEncabezado = Number(abierto.base.fila_encabezado) || 1;
+  var datos = abierto.hoja.getDataRange().getValues();
+  var headers = datos[filaEncabezado - 1];
+  var idx = function (letra) { return columnaLetraAIndice_(letra); };
+  var C = { figura: idx('A'), barrio: idx('B'), evento: idx('C'), fecha: idx('E'), status: idx('I'),
+            inscriptos: idx('K'), mail: idx('L'), cc: idx('M'), ivr: idx('N'), digital: idx('O'), dif: idx('P') };
+  var CANALES = ['mail', 'cc', 'ivr', 'digital', 'dif'];
+  var tz = Session.getScriptTimeZone();
+
+  // Los tres casos que `leerFuente` colapsa en uno.
+  function clasificar(celda) {
+    if (celda === '' || celda === null || celda === undefined) return { tipo: 'vacía', n: 0 };
+    if (typeof celda === 'number') return celda === 0 ? { tipo: 'cero explícito', n: 0 } : { tipo: 'número', n: celda };
+    var t = String(celda).trim();
+    if (t === '') return { tipo: 'vacía (espacios)', n: 0 };
+    var n = Number(t);
+    if (isNaN(n)) return { tipo: 'texto "' + t + '"', n: 0 };
+    return n === 0 ? { tipo: 'cero explícito (texto)', n: 0 } : { tipo: 'número (texto)', n: n };
+  }
+
+  var filas = [];
+  var cobertura = {};
+  CANALES.forEach(function (k) { cobertura[k] = { numero: 0, vacia: 0, cero: 0, texto: 0 }; });
+  var totalInscriptos = 0, totalCanales = 0, exactas = 0, cortas = 0, largas = 0;
+
+  datos.slice(filaEncabezado).forEach(function (fila) {
+    var f = fila[C.fecha];
+    if (!(f instanceof Date)) f = parsearFechaCelda_(f);
+    if (!f) return;
+    var iso = Utilities.formatDate(f, tz, 'yyyy-MM-dd');
+    if (iso < VENTANA.desde || iso > VENTANA.hasta) return;
+    if (String(fila[C.status] || '').trim() !== 'Realizada') return;
+
+    var insc = clasificar(fila[C.inscriptos]);
+    var partes = CANALES.map(function (k) { return clasificar(fila[C[k]]); });
+    var suma = partes.reduce(function (a, p) { return a + p.n; }, 0);
+    var dif = suma - insc.n;
+    totalInscriptos += insc.n; totalCanales += suma;
+    if (dif === 0) exactas++; else if (dif < 0) cortas++; else largas++;
+
+    partes.forEach(function (p, k) {
+      var c = cobertura[CANALES[k]];
+      if (p.tipo.indexOf('número') === 0) c.numero++;
+      else if (p.tipo.indexOf('vacía') === 0) c.vacia++;
+      else if (p.tipo.indexOf('cero') === 0) c.cero++;
+      else c.texto++;
+    });
+
+    filas.push({
+      fecha: iso,
+      evento: String(fila[C.evento] || '').slice(0, 44),
+      barrio: String(fila[C.barrio] || ''),
+      inscriptos: insc.n,
+      suma_canales: suma,
+      diferencia: dif,
+      detalle: CANALES.map(function (k, i) { return k + '=' + partes[i].tipo; }).join(' · ')
+    });
+  });
+
+  return {
+    ok: true,
+    ventana: VENTANA.desde + '–' + VENTANA.hasta,
+    filas_en_ventana: filas.length,
+    total_inscriptos: totalInscriptos,
+    total_canales: totalCanales,
+    diferencia: totalCanales - totalInscriptos,
+    cierran_exacto: exactas,
+    quedan_cortas: cortas,
+    quedan_LARGAS: largas,
+    cobertura: cobertura,
+    filas: filas
+  };
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
