@@ -928,7 +928,17 @@ var SEED_MAPEO_ = [
   // hoja 'Directa Mail'
   { base_id: 'digital', campo_logico: 'mail_id_cuenta', hoja: 'Directa Mail', columna: 'A', notas: 'join entre solapas' },
   { base_id: 'digital', campo_logico: 'mail_campana', hoja: 'Directa Mail', columna: 'H', notas: '' },
-  { base_id: 'digital', campo_logico: 'mail_fecha', hoja: 'Directa Mail', columna: 'F', notas: '' },
+  // `mail_fecha` (Directa Mail, columna F) — DEROGADA y RETIRADA del seed el 03/08/2026,
+  // decisión del usuario. Distinto de las derogaciones de `looker.fecha` y `m2.fecha` de más
+  // arriba, que se conservan marcadas: aquéllas apuntaban a una columna que ningún otro
+  // campo reclama, así que dejar constancia no cuesta nada. Ésta apuntaba a la **misma
+  // columna F** que `fecha_periodo`, que es el contrato vivo (`S-02`) y el único que
+  // `leerFuente` busca. Dos filas de `MAPEO` sobre la misma columna es la ambigüedad que ya
+  // mordió con `SECCIONES.periodo_id`/`periodo_ref`: se retira en vez de marcarse.
+  // El usuario ya la borró de la hoja; esto saca el seed, sin el cual `upsertPorClave_` la
+  // repone en la corrida siguiente.
+  // NO se toca el mapa de tipos de más abajo, donde `mail_fecha: 'fecha'` convive con
+  // `dig_fecha_inicio`/`dig_fecha_fin`/`sms_fecha`: ese mapa lo consultan otros campos.
   { base_id: 'digital', campo_logico: 'mail_enviados', hoja: 'Directa Mail', columna: 'M', notas: '' },
   { base_id: 'digital', campo_logico: 'mail_entregados', hoja: 'Directa Mail', columna: 'N', notas: '' },
   { base_id: 'digital', campo_logico: 'mail_aperturas', hoja: 'Directa Mail', columna: 'O', notas: '' },
