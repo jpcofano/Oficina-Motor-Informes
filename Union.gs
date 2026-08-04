@@ -97,14 +97,24 @@ function unirDigitalPorCuenta(ventana) {
   var diagnostico = {};
   var cuentasMaestra = 0;
 
+  // Corrida nocturna 04/08 — las columnas de dimensión se resuelven UNA vez, fuera del
+  // bucle. Adentro eran cinco `buscarMapeo` por fila sobre ~1300 cuentas, y `buscarMapeo`
+  // no cachea: cada llamada relee `SOLAPAS` y `MAPEO` enteras con `getDataRange()`. Eran
+  // ~13.000 lecturas de la planilla de control y se comían los 6 minutos de Apps Script —
+  // `unirDigitalPorCuenta` sola no volvía, y con ella se caía `anclarEncuentros()`.
+  var columnasDimension = [];
+  CAMPOS_DIMENSION_MAESTRA_.forEach(function (campoLogico) {
+    var campo = buscarMapeo(BASE_DIGITAL_, SOLAPA_MAESTRA_DIGITAL_, campoLogico);
+    if (campo.ok) columnasDimension.push({ campo_logico: campoLogico, columna: campo.columna });
+  });
+
   maestraLeida.filas.forEach(function (fila) {
     var idCuenta = normalizarIdCuenta_(valorPorColumna_(fila, BASE_DIGITAL_, SOLAPA_MAESTRA_DIGITAL_, idMaestra.columna));
     if (!idCuenta) return;
 
     var registro = { sd_id_cuenta: idCuenta };
-    CAMPOS_DIMENSION_MAESTRA_.forEach(function (campoLogico) {
-      var campo = buscarMapeo(BASE_DIGITAL_, SOLAPA_MAESTRA_DIGITAL_, campoLogico);
-      if (campo.ok) registro[campoLogico] = valorPorColumna_(fila, BASE_DIGITAL_, SOLAPA_MAESTRA_DIGITAL_, campo.columna);
+    columnasDimension.forEach(function (dim) {
+      registro[dim.campo_logico] = valorPorColumna_(fila, BASE_DIGITAL_, SOLAPA_MAESTRA_DIGITAL_, dim.columna);
     });
 
     porCuenta[idCuenta] = registro;
@@ -263,27 +273,69 @@ function verificarPrecondicionAnclaje_() {
   var idxFecha = columnaLetraAIndice_(campoFecha.columna);
   var datos = abierto.hoja.getDataRange().getValues().slice(filaEncabezado);
 
-  var conteoPorClave = {};
-  datos.forEach(function (fila) {
+  // Corrida nocturna 04/08 — la asimetría que trababa el anclaje: esta verificación leía
+  // con `getDataRange()` directo, así que contaba duplicados de `R-01` sobre filas que
+  // `anclarEncuentros()` nunca mira (sólo empareja las `Realizada`). El filtro sale de
+  // `MAPEO.valores_incluidos` (`D-21`) reusando el mismo par de funciones que `leerFuente`
+  // —`filtrosValoresIncluidos_` / `filaPasaListaBlanca_` (`Fuentes.gs`)—, no de un literal:
+  // cambiar la lista blanca no debe exigir `clasp push`.
+  var listaBlanca = filtrosValoresIncluidos_('rdv', SOLAPA_ANCLA_RDV_);
+  var filasExcluidas = 0;
+  var consideradas = [];
+  datos.forEach(function (fila, j) {
+    // Se guarda el número de fila de la planilla junto con la fila: las excluidas corren
+    // los índices, así que después no se puede reconstruir desde la posición.
+    if (filaPasaListaBlanca_(fila, listaBlanca).pasa) consideradas.push({ fila: fila, numero: filaEncabezado + j + 1 });
+    else filasExcluidas++;
+  });
+
+  // Columnas de contexto para poder anotar los grupos enteros si alguno queda duplicado.
+  // Opcionales a propósito: si una no está en `MAPEO`, el reporte pierde una columna, no
+  // la verificación.
+  var contexto = {};
+  ['evento', 'barrio', 'status'].forEach(function (nombre) {
+    var campo = buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, nombre);
+    if (campo.ok) contexto[nombre] = columnaLetraAIndice_(campo.columna);
+  });
+
+  var gruposPorClave = {};
+  consideradas.forEach(function (registro) {
+    var fila = registro.fila;
     var figura = fila[idxFigura];
     var fecha = fila[idxFecha];
     if (!figura || !fecha) return;
-    var claveFecha = (fecha instanceof Date) ? fecha.getTime() : String(fecha).trim();
+    var claveFecha = (fecha instanceof Date) ? formatearFecha_(fecha) : String(fecha).trim();
     var clave = String(figura).trim() + '||' + claveFecha;
-    conteoPorClave[clave] = (conteoPorClave[clave] || 0) + 1;
+    if (!gruposPorClave[clave]) gruposPorClave[clave] = [];
+    gruposPorClave[clave].push({
+      fila: registro.numero,
+      figura: String(figura).trim(),
+      fecha: claveFecha,
+      evento: 'evento' in contexto ? String(fila[contexto.evento] || '').trim() : '',
+      barrio: 'barrio' in contexto ? String(fila[contexto.barrio] || '').trim() : '',
+      status: 'status' in contexto ? String(fila[contexto.status] || '').trim() : ''
+    });
   });
 
-  var gruposConDuplicados = Object.keys(conteoPorClave).filter(function (k) { return conteoPorClave[k] > 1; }).length;
-  if (gruposConDuplicados > 0) {
+  var duplicados = Object.keys(gruposPorClave).filter(function (k) { return gruposPorClave[k].length > 1; });
+  if (duplicados.length) {
     return {
       ok: false,
-      motivo: 'R-01 no se cumple: ' + gruposConDuplicados + ' grupo(s) con más de un encuentro por ' +
-        '(Figura, fecha) en rdv/' + SOLAPA_ANCLA_RDV_ + '. anclarEncuentros() no corre hasta resolverlo ' +
-        '(ver R-01 en docs/REGLAS_NEGOCIO.md).'
+      motivo: 'R-01 no se cumple: ' + duplicados.length + ' grupo(s) con más de un encuentro por ' +
+        '(Figura, fecha) en rdv/' + SOLAPA_ANCLA_RDV_ + ', sobre ' + consideradas.length + ' fila(s) que ' +
+        'pasan la lista blanca de MAPEO. anclarEncuentros() no corre hasta resolverlo ' +
+        '(ver R-01 en docs/REGLAS_NEGOCIO.md).',
+      filas_consideradas: consideradas.length,
+      filas_excluidas_por_valor: filasExcluidas,
+      grupos: duplicados.map(function (k) { return gruposPorClave[k]; })
     };
   }
 
-  return { ok: true };
+  return {
+    ok: true,
+    filas_consideradas: consideradas.length,
+    filas_excluidas_por_valor: filasExcluidas
+  };
 }
 
 function anioDefectoDesdeVentana_(ventana) {
@@ -586,6 +638,35 @@ function filasDigitalDeEncuentro(idCuentaOEncuentro, ventana) {
   if (!union.ok) return null;
 
   return union.porCuenta[normalizarIdCuenta_(idCuenta)] || null;
+}
+
+/**
+ * Corrida nocturna 04/08 — el mismo diagnóstico que `menuProbarUnionYAnclaje_`, pero
+ * devuelto como objeto chico en vez de como `alert`. Por qué existe: el ítem de menú
+ * arma su reporte con los encuentros enteros adentro y **la respuesta no vuelve por
+ * `/dev`** (el modo de falla ya medido el 03/08: una respuesta grande se disfraza de
+ * token vencido). Acá viajan conteos y nombres, nunca los registros unidos.
+ */
+function resumenAnclaje_(ventana) {
+  var ventanaResuelta = ventana || resolverVentana({});
+  if (!ventanaResuelta.ok) return { ok: false, motivo: ventanaResuelta.motivo };
+
+  var anclaje = anclarEncuentros(ventanaResuelta);
+  if (!anclaje.ok) return { ok: false, motivo: anclaje.motivo };
+
+  return {
+    ok: true,
+    ventana: formatearFecha_(ventanaResuelta.desde) + ' → ' + formatearFecha_(ventanaResuelta.hasta) +
+      ' (' + ventanaResuelta.origen + ')',
+    umbral: anclaje.umbral,
+    anclados: anclaje.encuentros.length,
+    sin_link: anclaje.sinLink.length,
+    baja_confianza: anclaje.bajaConfianza.length,
+    cuentas: anclaje.encuentros.map(function (e) {
+      return e.reunion + ' → ' + e.idCuenta + ' (' + Number(e.score).toFixed(2) + ')';
+    }),
+    sin_link_detalle: anclaje.sinLink.map(function (e) { return e.reunion + ' — ' + (e.motivo || 'sin motivo'); })
+  };
 }
 
 /**

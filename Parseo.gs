@@ -207,8 +207,15 @@ function parsearNombreCampana_(texto, opciones) {
  * El nombre de la hoja NO se hardcodea acá: sale de la fila de BASES.
  */
 function catalogoBarriosDesdeBase_(baseId, nombreHoja) {
-  var hoja = abrirHoja(baseId, nombreHoja);
-  var datos = hoja.getDataRange().getValues();
+  // Corrida nocturna 04/08 — `abrirHoja` devuelve `{ ok, base, libro, hoja }`, no la hoja:
+  // esto llamaba `getDataRange()` sobre el sobre y tiraba `hoja.getDataRange is not a
+  // function`. Nunca se había visto porque `anclarEncuentros()` moría antes, en la
+  // precondición de `R-01`. Sin catálogo, el catálogo sale vacío y el score de barrio se
+  // apaga en silencio, así que el fallo se devuelve como catálogo vacío **con motivo**.
+  var abierto = abrirHoja(baseId, nombreHoja);
+  if (!abierto.ok) return { barrios: [], porBarrio: {}, motivo: abierto.motivo };
+
+  var datos = abierto.hoja.getDataRange().getValues();
   var barrios = [], porBarrio = {};
   for (var i = 1; i < datos.length; i++) {
     var b = datos[i][0], c = datos[i][1];

@@ -28,7 +28,56 @@
 
 const fs = require('fs');
 const path = require('path');
+const https = require('https');
 const { obtenerToken } = require('./token');
+
+/**
+ * Corrida nocturna 04/08 — por qué no `fetch()`: undici corta a los **300 s** esperando
+ * los headers (`headersTimeout`) y devuelve un `fetch failed` pelado, sin status y sin
+ * distinguirse de una caída de red. `anclarEncuentros()` tarda más que eso, así que toda
+ * llamada larga se leía como error de conexión. Node no expone el dispatcher de `fetch`
+ * para subirle el límite, así que el pedido va por `node:https`, con el tope puesto arriba
+ * del límite de ejecución de Apps Script (6 min) y los redirects seguidos a mano.
+ */
+const TIMEOUT_MS = 9 * 60 * 1000;
+
+function pedir(url, opciones, saltos) {
+  saltos = saltos || 0;
+  return new Promise((resolve, reject) => {
+    if (saltos > 5) return reject(new Error('demasiados redirects'));
+
+    const pedido = https.request(url, { method: opciones.method || 'GET', headers: opciones.headers }, (res) => {
+      const ubicacion = res.headers.location;
+      if (ubicacion && res.statusCode >= 300 && res.statusCode < 400) {
+        res.resume();
+        // 303 —y 302 en la práctica— convierten el POST en GET; el /dev de Apps Script
+        // redirige a googleusercontent con la respuesta ya armada.
+        let siguiente = opciones;
+        if (res.statusCode !== 307 && res.statusCode !== 308) {
+          // Sin cuerpo no van sus headers: un GET con `Content-Length` lo rechaza Google
+          // con un 400 en HTML, que es justo el modo de falla que este cliente distingue.
+          const headers = Object.assign({}, opciones.headers);
+          delete headers['Content-Type'];
+          delete headers['Content-Length'];
+          siguiente = { method: 'GET', headers: headers };
+        }
+        return resolve(pedir(new URL(ubicacion, url).toString(), siguiente, saltos + 1));
+      }
+
+      let texto = '';
+      res.setEncoding('utf8');
+      res.on('data', (trozo) => { texto += trozo; });
+      res.on('end', () => resolve({ status: res.statusCode, contentType: res.headers['content-type'] || '', texto }));
+    });
+
+    pedido.setTimeout(TIMEOUT_MS, () => {
+      pedido.destroy(new Error('sin respuesta después de ' + (TIMEOUT_MS / 1000) + ' s'));
+    });
+    pedido.on('error', reject);
+    if (opciones.body) pedido.write(opciones.body);
+    pedido.end();
+  });
+}
 
 const RAIZ = path.join(__dirname, '..');
 const RUTA_ENV = path.join(RAIZ, '.env');
@@ -95,7 +144,7 @@ function opcion(argv, nombre) {
   const porGet = Boolean(opcion(argv, 'get'));
 
   let url = base;
-  let opciones = { headers: { Authorization: 'Bearer ' + bearer }, redirect: 'follow' };
+  let opciones = { headers: { Authorization: 'Bearer ' + bearer } };
 
   if (porGet) {
     const qs = new URLSearchParams();
@@ -105,13 +154,14 @@ function opcion(argv, nombre) {
     opciones.method = 'POST';
     opciones.headers['Content-Type'] = 'application/json';
     opciones.body = JSON.stringify(pedido);
+    opciones.headers['Content-Length'] = Buffer.byteLength(opciones.body);
   }
 
-  const respuesta = await fetch(url, opciones);
-  const texto = await respuesta.text();
+  const respuesta = await pedir(url, opciones);
+  const texto = respuesta.texto;
 
   if (opcion(argv, 'crudo')) {
-    console.log('HTTP ' + respuesta.status + ' ' + (respuesta.headers.get('content-type') || ''));
+    console.log('HTTP ' + respuesta.status + ' ' + respuesta.contentType);
     console.log(texto);
     return;
   }
@@ -122,7 +172,7 @@ function opcion(argv, nombre) {
   } catch (e) {
     // El modo de falla que más importa distinguir: HTML es un problema de
     // autenticación de Google, no del código del motor.
-    console.error('La respuesta NO es JSON (HTTP ' + respuesta.status + ', ' + (respuesta.headers.get('content-type') || 'sin content-type') + ').');
+    console.error('La respuesta NO es JSON (HTTP ' + respuesta.status + ', ' + (respuesta.contentType || 'sin content-type') + ').');
     console.error(texto.slice(0, 400));
     process.exitCode = 1;
     return;
