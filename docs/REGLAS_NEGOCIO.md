@@ -101,6 +101,24 @@ aborta esa presentación si el backup falla, en vez de escribir sin red.
 se pregunta cuál es la real y la otra se marca `[OBSOLETA — no usar]` en Drive (no se
 borra: puede servir de referencia).
 
+### Suspensión acotada — 14/08/2026: durante el desarrollo, la plantilla es del motor
+
+**`C-01` NO se deroga.** Vuelve a regir en producción, y todo lo de arriba sigue vigente:
+backup previo obligatorio, aborto si el backup falla, y ninguna caja se mueve ni se
+reescribe.
+
+**Qué suspende, y sólo eso:** la autorización expresa del usuario del 14/08 permite
+**retirar una lámina** de la plantilla, que no es una armonización de tokens y por lo tanto
+**no estaba cubierta** por la excepción de migración explícita que `C-01` ya contemplaba.
+
+**Por qué se anota en vez de aplicarse en silencio:** armonizar **no necesitaba esta
+autorización** —`C-01` ya la daba—; retirar una lámina sí. Confundir las dos cosas haría
+parecer que `C-01` se aflojó, y no se aflojó.
+
+**Alcance ejercido hasta hoy:** una lámina, la grilla de cinco ejes de M2 (slide 10 de la
+plantilla canónica de JM), **escondida y no borrada** (`skipped`), con backup previo. Es
+reversible en un clic y la evidencia queda a la vista.
+
 ## R-04 — El temario define el universo, no la fecha
 
 **Enunciado:** una campaña está activa todos los días de su tramo, pero el proceso

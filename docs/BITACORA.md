@@ -3577,3 +3577,43 @@ para algo irreversible hay que mirar esa línea.
 - **El criterio quedó escrito arriba de `opSUMA`**, no sólo acá: es la clase de decisión que
   alguien va a querer revertir en tres meses sin saber por qué se tomó.
 - **Prueba:** las 10 pruebas pasan.
+
+## Retiro de la lámina M2 — y la cadena que estaba rota en el primer eslabón (2026-08-14) — commit de esta entrada
+- **⚠ La premisa central del prompt era falsa: la plantilla canónica YA ESTABA ARMONIZADA.**
+  El prompt dice que *"sigue sin armonizar — la corrida del 29/07 se aplicó por error sobre
+  `1JrHvs_p…`"*. Cierto lo del 29/07, **pero el 04/08 se corrió sobre la canónica correcta**
+  (`117I0qn1…`), con backup `1VWs5Kzv…` y los 5 renombres aplicados. Está en la bitácora de
+  esa fecha. **La Parte B no tenía nada que hacer.**
+- **⚠ Y la cadena del prompt estaba rota en el primer eslabón.** *"El `P1` bloquea la
+  armonización → la armonización bloquea el sembrado"*: **`LAMINAS_CONGELADAS_` ya excluía la
+  slide 10 desde el 03/08**, con testigo `m2_salud_camp`. Los 16 renombres de M2 **nunca
+  entraban** a la armonización, y por eso la del 04/08 pudo correr con la lámina intacta.
+  **El `P1` no bloqueaba nada desde hacía once días.**
+- **0.1 · La lámina es la 10, confirmado por tres vías**: sus 23 tokens son la grilla de
+  cinco ejes (`m2_subtes_imp`, `m2_transito_imp`, `m2_desalojos_imp`, `m2_salud_imp`,
+  `m2_seguridad_imp`, los `m2_camp1-5`, `m2_aud_*`, `m2_clics_*`, `m2_vis_*`); lleva
+  `m2_salud_camp`; y `LAMINAS_CONGELADAS_` la declara con ese mismo testigo.
+  **⚠ El nombre que usa el prompt —"Status semanal de M2"— es el de la slide 9**, que es otra
+  cosa (métricas de mail de M2). Se identificó por contenido, no por título.
+- **0.2 · Se van 23 tokens con la lámina.** La plantilla tiene **195** y quedaría en **172**.
+- **0.3 · 8 tokens `m2_*` quedan fuera de la 10**, todos en la slide 9 (`m2_mails_enviados`,
+  `m2_aperturas`, `m2_or`, `m2_mails_entregados`, `m2_clics`, `m2_ctor`, `m2_campanias`,
+  `m2_envios`). **No se van con ella y no quedan huérfanos**: su lámina sigue viva.
+- **0.4 · Renombres: 5 dentro y 16 fuera.** De los 5, **cuatro ya no tienen ocurrencias**
+  —ya se aplicaron el 04/08— y **el quinto no se debe aplicar**:
+  `{{enc_audiencia}} → {{enc_alcance}}` tiene el **destino ya presente en la misma slide 6**,
+  así que aplicarlo crearía dos cajas con `enc_alcance`. Es la regresión de `enc_audiencia`.
+  Y `enc_audiencia` está cableado a `ivr_audiencia`: **la ocurrencia que queda es legítima**.
+- **0.5 · Queda una colisión, y no es de M2:** `rrss_area1` aparece en **dos cajas de la
+  slide 21**. Ningún renombre la toca, así que no bloquea; queda reportada.
+- **Parte A · lámina retirada.** Backup `JM_marcada — backup 2026-08-05 16:23`
+  (`1N5Hhp3eXK-Otdb3knEaXHfS0qdGo0diWyinwg_n1n9Q`), testigo verificado **antes** de escribir,
+  y **escondida (`skipped`), no borrada** — reversible en un clic.
+  **Se prefirió esconder también por una razón técnica:** borrar la haría desaparecer el
+  testigo `m2_salud_camp`, y entonces `filtrarRenombresPorLaminasCongeladas_` devolvería
+  `ok:false` y **rompería toda armonización futura**.
+- **Parte B · no se corrió**, porque el único renombre aplicable produce una colisión.
+- **Parte C · `P1` cerrado**, tachado y con la explicación: la caja era un **total** con
+  nombre de eje, confirmado por las líneas que van de las cinco cajas de campañas a la ancha.
+- **`C-01` no se derogó:** se anotó una **suspensión acotada y fechada** en
+  `REGLAS_NEGOCIO.md`, que vuelve a regir en producción.

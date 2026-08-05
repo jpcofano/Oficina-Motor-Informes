@@ -330,6 +330,27 @@ vestigial y alcanzó con sacarlo; acá es genuino y no se puede. La salida de fo
 los dos trabajos (una columna que diga quién decidió, otra que diga qué columnas se
 protegen), y eso es un paso propio, no un arreglo al pasar.
 
+### ~~P1 · Bloqueante de la armonización: la caja `{{m2_salud_camp}}` huérfana~~ — **CERRADO 14/08/2026**
+
+> **Cerrado porque la lámina se retiró**, no porque se resolviera la duda del nombre.
+> Decisión del usuario del 14/08: la lámina de la grilla de cinco ejes de M2 **no se usa
+> más**. Está **escondida** (`skipped`) en la plantilla canónica, con backup
+> `JM_marcada — backup 2026-08-05 16:23` (`1N5Hhp3eXK-Otdb3knEaXHfS0qdGo0diWyinwg_n1n9Q`).
+>
+> **La lectura correcta era la tercera opción: una caja de TOTAL con nombre de eje.** Lo
+> confirman las líneas que van de las cinco cajas de campañas a la caja ancha — es la suma de
+> las cinco, no la de Salud. **Eso explica el nombre equivocado**: `m2_camp4` → `m2_salud_camp`
+> le puso el nombre del cuarto eje a una caja que los totaliza.
+>
+> **⚠ Y no era el bloqueante de la armonización que se creía.** `LAMINAS_CONGELADAS_` ya
+> excluía la slide 10 desde el 03/08, así que los 16 renombres de M2 **nunca entraban** a la
+> armonización — y la canónica **se armonizó igual el 04/08**, con sus 5 renombres aplicados.
+> La cadena *"el `P1` bloquea la armonización → la armonización bloquea el sembrado"*
+> **estaba rota en el primer eslabón.**
+>
+> **No se borra la entrada:** el razonamiento de cómo se llegó vale para el próximo caso
+> parecido. El texto original queda abajo, sin tocar.
+
 ### P1 · Bloqueante de la armonización: la caja `{{m2_salud_camp}}` huérfana
 
 **Movido acá el 01/08/2026 (`DOC-6` Parte E), desde `Plan Inicial/PROYECTO.md` §6, que se
