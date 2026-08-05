@@ -3104,3 +3104,41 @@ para algo irreversible hay que mirar esa línea.
   hojas de registro. No se tocó ninguna configuración.
 - **Pendientes/decisiones:** falta decidir si `REUNIONES` se completa con los dos ítems que
   faltan, y cómo se identifica un encuentro sin depender del nombre.
+
+## `Pedido-4` Addendum — Parte 0 bis corrida, y **para**: nada se movió, salvo un conteo mío (2026-08-05) — commit de esta entrada
+- **Qué pedía** `docs/Prompts/Addendum_2026-08-05_Pedido-4_referencia_viva_y_opcion_C.md`:
+  confirmar, antes de tocar nada, que los hallazgos de la Parte 0 del 04/08 siguen en pie.
+  Sólo lectura, con parada propia.
+- **⚠ CORRECCIÓN a la entrada del 04/08 · la partición de los `ecv_` es 10 / 2 / 7, no
+  9 / 2 / 8.** Las **listas** que dejó esa entrada eran correctas; el **número** que las
+  encabezaba, no. Son **10** de agregado semanal puro (`ecv_encuentros`, `ecv_barrios`,
+  `ecv_barrio1`, `ecv_barrio2`, `ecv_barrio3` **más los cinco** `ecv_insc_*_pct` = 5 + 5),
+  **2** de encuentro (`ecv_barrio`, `ecv_poblacion`) y **7** en las dos láminas
+  (`ecv_inscriptos`, `ecv_asistentes` **más los cinco** `ecv_insc_*` = 2 + 5). 10 + 2 + 7 =
+  19. **La plantilla no cambió**: 19 tokens, mismas listas, `JM_marcada`, 22 slides, 195
+  tokens distintos. El error fue aritmético al redactar, y se propagó al handoff y al
+  addendum, que pide cablear "los 9" y **lista 10**. Manda la lista, no el número — como
+  el propio addendum previó.
+- **0bis.2 · `MARCADORES` sigue sin ninguna fila de familia `ecv`. ✅** Y su cabecera
+  confirma la premisa del addendum: **once columnas, sin `seccion_id`** — `marcador`,
+  `familia`, `informe_id`, `base_id`, `solapa`, `campo_logico`, `periodo_ref`, `operacion`,
+  `valor_fijo`, `formato`, `notas`.
+- **0bis.3 · El árbol de `SECCIONES` no se movió. ✅** `encuentro` sigue `repetible` sobre
+  `REUNIONES` con `familia_tokens = ecv_,enc_` y estado `activa`, con sus cuatro
+  subsecciones `portada` (activa) / `estrategia` / `iceberg` (`familia = enc_`) /
+  `resultados`, las tres últimas en `revisar`.
+- **0bis.4 · La base NO se movió en un día.** Ventana **24–30/07, origen `config`**, y los
+  tres agregados dan **idéntico** al 04/08: **3364 inscriptos · 811 asistentes · 16
+  encuentros**. Canales: mail 2003 · CC 272 · IVR 43 · digital 955 · difusión 71 =
+  **3344**, diferencia **−20**.
+  | medición | inscriptos | asistentes | encuentros |
+  |---|---|---|---|
+  | 03/08 (referencia derogada) | 2919 | 686 | 12 |
+  | 04/08 | 3364 | 811 | 16 |
+  | **05/08** | **3364** | **811** | **16** |
+- **La diferencia sigue teniendo una sola fila con nombre:** `Clara Muzzio · Palermo ·
+  29/07 → 20`. Es el control que la Parte D del addendum pide como `D.2`, y hoy pasa.
+- **Prueba:** sólo lectura, por `eval` sobre la API. No se tocó `SECCIONES`, ni
+  `MARCADORES`, ni la plantilla, ni ninguna base.
+- **Pendientes/decisiones:** **se para acá y se espera luz verde**, como pide el addendum.
+  Los 10 tokens de la Parte A quedan identificados por lista; los 7 ambiguos, diferidos.

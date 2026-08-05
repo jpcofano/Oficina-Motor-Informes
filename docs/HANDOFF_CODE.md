@@ -95,9 +95,11 @@ con sus números verificados, empezando por las que no iteran.** Lo justifica el
 `Pedido-2`: **384 de 438 faltantes son "sin fila en `MARCADORES`" — 88%.** No es motor, es
 cableado sin escribir.
 
-1. **`Pedido-4` — cerrar los `ecv_`.** **Parte 0 corrida y parada**: los números de
-   referencia no aplican a la ventana de hoy (ver abajo) y hay **ocho tokens ambiguos** que
-   impiden partir la sección sin una decisión tuya. Va **antes** del `Pedido-3`.
+1. **`Pedido-4` + su addendum del 05/08 — cerrar los `ecv_`.** **Partes 0 y 0 bis corridas
+   y paradas, esperando luz verde.** Las dos decisiones que faltaban ya están tomadas: la
+   referencia pasa a ser viva (Parte D nueva) y los ambiguos se difieren (opción C). Lo que
+   sigue es la **Parte A**: declarar la sección hermana en modo agregado y asignarle los
+   **10** tokens de agregado semanal puro. Va **antes** del `Pedido-3`.
 2. **`Pedido-1` Partes A a C y E** — el corte JM/GCBA. Ver abajo lo que cambió.
 3. **`Pedido-3` — el filtro declarativo** por marcador y por sección.
 4. **Arreglo del desempate del matcher** (`Union.gs`), junto con `ULTIMO` → `SUMA`.
@@ -106,15 +108,22 @@ cableado sin escribir.
 ## Lo que midieron los Pedidos 1, 2 y 4, y hay que tener a mano
 
 - **`ecv_`: 19 tokens en la plantilla y ninguno cableado.** `MARCADORES` no tiene ni una
-  fila de la familia. **8 de los 19 son ambiguos**: `ecv_inscriptos`, `ecv_asistentes` y los
-  cinco `ecv_insc_*` valen *el total de la semana* en la lámina 5 y *el de ese encuentro* en
-  la 6. **No se pueden mover sin decidir antes.**
-- **⚠ Los números de referencia del 03/08 no reproducen.** La ventana está bien
-  (24–30/07, `config`) pero `rdv` deja **16 filas, no 12**. Las cuatro de más son **las del
-  jueves 30/07**, que suman **445 inscriptos y 125 asistentes** — exactamente la diferencia
-  contra 2919 / 686. Hoy: **3364 · 811 · 16 · canales 3344 · diferencia −20**.
-  **La de 54 bajó a 20 porque `Mataderos` del 29 ya tiene sus canales cargados (34).**
-  Queda sólo `Palermo` del 29.
+  fila de la familia. La partición es **10 / 2 / 7** (verificada el 05/08; la entrada del
+  04/08 dijo 9 / 2 / 8 por un error aritmético al redactar — **las listas eran correctas**):
+  **10** de agregado semanal puro (`ecv_encuentros`, `ecv_barrios`, `ecv_barrio1/2/3` y los
+  **cinco** `ecv_insc_*_pct`), **2** de encuentro (`ecv_barrio`, `ecv_poblacion`) y
+  **7 ambiguos** (`ecv_inscriptos`, `ecv_asistentes` y los **cinco** `ecv_insc_*`), que
+  valen *el total de la semana* en la lámina 5 y *el de ese encuentro* en la 6.
+  **Los 7 quedan diferidos por decisión del 05/08 (opción C): no se mueven, no se cablean,
+  no se renombran.**
+- **La referencia dejó de ser un número escrito** (addendum del 05/08): el criterio de
+  cierre pasa a ser **interno a la corrida**. Los del 03/08 —2919 / 686 / 12— quedan
+  **derogados**: no estaban mal, están vencidos.
+- **Los agregados, medidos:** **3364 inscriptos · 811 asistentes · 16 encuentros**, ventana
+  24–30/07 `config`. **Idénticos el 04/08 y el 05/08 — la base no se movió en un día.**
+  Canales: mail 2003 · CC 272 · IVR 43 · digital 955 · difusión 71 = **3344**, diferencia
+  **−20**, con **una sola fila que la explica**: `Clara Muzzio · Palermo · 29/07`.
+  (La de 54 del 03/08 bajó a 20 porque `Mataderos` del 29 ya tiene sus canales cargados.)
 
 - **El corte JM/GCBA es una señal por canal.** IVR: `digital/Directa IVR` col **G**,
   encabezado exacto `"Vocero"`, 57/57 filas con dato, **`JM` 53 · `GCBA` 4**, y **0 cuentas
