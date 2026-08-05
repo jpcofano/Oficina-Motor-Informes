@@ -121,8 +121,16 @@ con sus números verificados, empezando por las que no iteran.** Lo justifica el
 `Pedido-2`: **384 de 438 faltantes son "sin fila en `MARCADORES`" — 88%.** No es motor, es
 cableado sin escribir.
 
-1. **`Pedido-3` — el filtro declarativo JM/GCBA.** Sin ejecutar. Era el punto 4 de la
-   corrida nocturna del 05/08 y **no se llegó**.
+1. **`Pedido-3` — el filtro declarativo JM/GCBA. Parte 0 corrida el 06/08; Partes A a G sin
+   ejecutar.** Ninguna se trabó: quedan listas y con su medición hecha. Tres cosas medidas
+   que cambian cómo se ejecutan:
+   - **`SECCIONES.filtro` está declarada y MUERTA** — la usa sólo `comunicaciones_post`
+     (`etapa=post`) y **ningún código la lee**. La Parte D es **implementarla**.
+   - **La tabla de envíos está en la lámina 18, no en la 22**, y le faltan **cinco** tokens,
+     no cuatro: los cuatro remitentes de los envíos 2–5 **y `camp_env4_fecha`**.
+   - **`0.6` contradice el supuesto: el máximo en ventana es 6 envíos** sobre cinco filas
+     fijas, así que hoy **un envío se pierde en silencio**. La Parte G **no se construyó**,
+     como manda el prompt.
 2. **La familia `m2_`** — 31 tokens, sección `agregado`, no itera, fuente sin ambigüedad.
    Era el punto 5 ("si sobra tiempo") y **no se llegó**.
 3. **Los cuatro `ecv_barrio*`**, que quedaron sin cablear: necesitan una decisión, no
