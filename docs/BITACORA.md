@@ -3248,3 +3248,54 @@ para algo irreversible hay que mirar esa línea.
 - **Queda escrito como convención para el próximo prompt de cableado: antes de cablear una
   lista de tokens, cruzarla contra los `[MANUAL]` de `CONFIG_INFORMES.md`.**
 - **Prueba:** documentación pura. Ni `.gs`, ni hojas, ni bases.
+
+## Corrida 06/08 — punto 2: `Pedido-3` Parte 0, y las Partes A–G **sin ejecutar** (2026-08-06) — commit de esta entrada
+- **Qué pedía:** correr `docs/Prompts/2026-08-04_Pedido-3_filtro_declarativo.md` de la Parte
+  0 a la G, con la Parte 0 terminando en bitácora y no en parada. **Corrió la Parte 0
+  entera; las Partes A a G no se ejecutaron** (ver el cierre).
+- **0.1 · `SECCIONES.filtro` está declarada y MUERTA.** La columna existe y **una sola fila
+  la usa**: `comunicaciones_post` con `filtro = "etapa=post"` (repetible, activa).
+  **Ningún código la lee.** El único lugar del repo que la menciona es `filaSeccion_`
+  (`Instalar.gs:1936`), que la **escribe** a la hoja. O sea que `etapa=post` nunca filtró
+  nada. **La Parte D del pedido es implementarla, no extenderla**, tal como el prompt
+  anticipaba como hipótesis.
+- **0.2 · `MARCADORES` no tiene columna `filtro`. ✅** Confirmado sobre la hoja viva: once
+  columnas, `marcador · familia · informe_id · base_id · solapa · campo_logico ·
+  periodo_ref · operacion · valor_fijo · formato · notas`.
+- **0.3 · `dig_jm_gcba` existe y clasifica bien.** `digital/Digital` columna **B**,
+  encabezado `JM | GCBA | POLICIA`, mapeada como `dig_jm_gcba` (una de los 15 campos de esa
+  solapa). Valores: **`GCBA` 739 · `JM` 205 · `POLICIA` 16**, con **334 filas sin valor**.
+  Cubre **877 cuentas**, de las cuales **29 tienen dos valores distintos**.
+- **0.4 · La tabla de envíos está en la lámina 18, no en la 22** que dice `TOKENS.md`. Su
+  inventario celda por celda, y **faltan cinco tokens, no cuatro**:
+  | fila | col 1 · remitente | col 2 · fecha | col 3 · audiencia |
+  |---|---|---|---|
+  | envío 1 | `camp_env1_rem` ✅ | `camp_env1_fecha` | `camp_env1_aud` |
+  | envío 2 | **falta** | `camp_env2_fecha` | `camp_env2_aud` |
+  | envío 3 | **falta** | `camp_env3_fecha` | `camp_env3_aud` |
+  | envío 4 | **falta** | **falta `camp_env4_fecha`** | `camp_env4_aud` |
+  | envío 5 | **falta** | `camp_env5_fecha` | `camp_env5_aud` |
+  **El quinto hueco es nuevo:** el prompt dice *"los envíos 2 a 5 tienen fecha y audiencia y
+  no remitente"*, y el envío 4 **tampoco tiene fecha**. No es una caja vacía: **no hay
+  token** en esa celda.
+- **0.5 · Los remitentes sueltos son dos, no uno.** `camp_remitente` aparece suelta en la
+  lámina **18** y otra vez en la **19**, y en la 18 está además `camp_bench_remitente`. La
+  pregunta del prompt —*qué debería mostrar si cada fila ya dice quién envió*— **se duplica**.
+  **No se cablearon**, como pide el prompt.
+- **⚠ 0.6 · La medición contradice el supuesto, y por eso la Parte G NO se construyó.** El
+  usuario había respondido el 05/08 que *cinco envíos alcanzan*. Sobre
+  `digital/Directa Mail`, agrupando por `id_cuenta`:
+  - **Dentro de la ventana 24–30/07:** 52 cuentas con envíos · **máximo 6**
+    (`3245-JUNFESGC`) · distribución 1:29 · 2:16 · 3:5 · 5:1 · **más de 5: 1**.
+  - **Sin ventana, sobre toda la base:** 880 cuentas · **máximo 52** (`1942-SEPEPHGC`) ·
+    **36 cuentas con más de 5 envíos**.
+  **Hay una cuenta que supera cinco en la ventana del informe**, así que hoy **un envío se
+  perdería en silencio** en esa lámina. El prompt de la corrida es explícito para este caso:
+  *"si `0.6` mide algo distinto de lo esperado, reportarlo, no construir la lámina, y
+  seguir"*. **No se construyó.** Queda para decisión del usuario, con el número medido.
+- **Prueba:** sólo lectura, por `eval` sobre la API. No se tocó `SECCIONES`, `MARCADORES`,
+  ninguna plantilla ni ninguna base.
+- **Pendientes/decisiones:** las Partes **A a G no corrieron** — la Parte 0 consumió la
+  corrida. Ninguna se trabó: quedan listas y con su medición hecha. La Parte E además
+  choca con el límite 2 de esta corrida (no se editan plantillas), así que cuando se
+  ejecute hay que reportar qué haría falta en vez de tocarla.
