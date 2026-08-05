@@ -3218,3 +3218,33 @@ para algo irreversible hay que mirar esa línea.
 - **Pendientes/decisiones:** los 4 `ecv_barrio*` esperan una decisión (¿manual, como dice
   §1.4, o una operación nueva?). Falta el formato "pct sin signo". `ESCRITORES.md` hay que
   regenerarlo.
+
+## Corrida 06/08 — punto 1: los tres huecos, anotados donde se leen (2026-08-06) — commit de esta entrada
+- **Qué pedía** `docs/Prompts/Corrida_2026-08-06.md` punto 1: sacar de un reporte y meter en
+  los documentos los tres huecos que la corrida del 05/08 nombró y dejó sueltos.
+  Documentación pura, sin código.
+- **Tres entradas nuevas en `docs/PENDIENTES_consistencia.md`, separadas a propósito:**
+  `P2 · DISTINCT no existe como operación`, `P2 · falta un formato "pct sin signo"` y
+  `P2 · ecv_barrio no puede usarse como prefijo de familia`.
+- **La separación que importa, y por qué:** `ecv_barrios` **no** quedó archivado junto a los
+  tres `[MANUAL]` de `CONFIG_INFORMES.md` §1.4. §1.4 declara manuales a **`ecv_barrio1-3`** y
+  **no menciona `ecv_barrios`**. Los tres primeros son una **decisión editorial**; el cuarto
+  es un **hueco técnico**. Meterlos en la misma bolsa lo habría hecho desaparecer: quedaría
+  "resuelto" por una decisión que nunca lo abarcó.
+- **En `CONFIG_INFORMES.md` §1.4** quedó marcado que la `[?]` abierta —*"¿o salen por ranking
+  automático de asistentes?"*— **resuelve dos huecos a la vez**: si el equipo dice que sí,
+  `ecv_barrio1-3` deja de ser manual y la operación que hace falta es de la misma familia que
+  la de `ecv_barrios`; si dice que no, los tres quedan manuales y sobrevive sólo
+  `ecv_barrios`. **Es pregunta para el equipo y no se inventa la respuesta.**
+
+### ⚠ Corrección a un prompt, no un hallazgo del motor
+- **La Parte A del addendum del `Pedido-4` pidió cablear los 10 sin cruzarlos contra
+  `CONFIG_INFORMES.md` §1.4**, que ya declaraba tres de ellos `[MANUAL]`. La clasificación de
+  `0bis.1` era **correcta** —los 10 son agregado semanal puro— pero **clasificar y poder
+  cablear no son lo mismo**, y ese cruce faltaba en el prompt. En la práctica no costó nada
+  —los tres no se cablearon igual, porque tampoco había operación— pero podría haber costado:
+  el camino natural era inventar una operación para cablear algo que ya estaba decidido como
+  manual.
+- **Queda escrito como convención para el próximo prompt de cableado: antes de cablear una
+  lista de tokens, cruzarla contra los `[MANUAL]` de `CONFIG_INFORMES.md`.**
+- **Prueba:** documentación pura. Ni `.gs`, ni hojas, ni bases.

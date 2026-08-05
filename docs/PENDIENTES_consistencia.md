@@ -1495,6 +1495,48 @@ todavía no está decidida.
   de más. **Qué falta para responderla:** que la función devuelva **cuáles** son los 5
   grupos, no sólo cuántos. Va con el paso del matcher.
 
+### P2 · `DISTINCT` no existe como operación, y `ecv_barrios` la necesita
+
+Las seis operaciones del motor son `SUMA` · `CONTEO` · `ULTIMO` · `RATIO` · `PCT` ·
+`TEXTO`. **`ecv_barrios` —la cantidad de barrios distintos de la semana— no se puede
+expresar con ninguna**, y por eso quedó sin cablear en la corrida del 05/08 aunque su
+columna sí existe (`rdv/RVD JM-CM - ES/barrio` → B en `MAPEO`). El dato está; falta la
+operación.
+
+**⚠ Esto NO es lo mismo que los tres `[MANUAL]` de `CONFIG_INFORMES.md` §1.4, y no se
+archiva junto a ellos.** §1.4 declara manuales a **`ecv_barrio1-3`** y **no menciona
+`ecv_barrios`**. Los tres primeros son una **decisión editorial** —alguien elige qué
+barrios destacar—; éste es un **hueco técnico**. Confundirlos hace desaparecer el
+pendiente: quedaría "resuelto" por una decisión que nunca lo abarcó.
+
+`P2` y no `P1`: bloquea **un token**, no una sección. La sección 1 cerró igual.
+
+### P2 · Falta un formato "unidades de porcentaje sin signo"
+
+El formateador tiene `porcentaje` (asume unidades de porcentaje y **agrega** el `%`) y
+`fraccion` (asume 0–1, lo lleva a unidades de porcentaje y **no** agrega el signo). Falta
+la cuarta celda de la matriz: **unidades de porcentaje, sin signo**.
+
+Se manifestó el 05/08 con los cinco `ecv_insc_*_pct`: la caja de la plantilla ya trae su
+propio `%` —`{{ecv_insc_mail}}({{ecv_insc_mail_pct}}%)`— así que `porcentaje` habría
+impreso `59.5%%`, el mismo bug que el formato `fraccion` arregló el 04/08. **Se cablearon
+con `numero`, y funciona** —el deck dice `(59.54%)`— pero por elección de un formato que
+**no describe el dato**: `numero` no dice que eso sea un porcentaje.
+
+**No cambiar el cableado**: anotar el hueco. Cuando exista el formato, son cinco celdas.
+
+### P2 · `ecv_barrio` no puede usarse como prefijo de familia
+
+`ecv_barrio` es **prefijo literal** de `ecv_barrio1`, `ecv_barrio2` y `ecv_barrio3`, y
+`tokenEsDeFamilia_` compara con `indexOf(f) === 0`. Cualquier `familia_tokens` que declare
+`ecv_barrio` **se lleva los cuatro tokens**, no uno.
+
+Ya está como comentario en `Instalar.gs`, arriba de `ecv_alcance_semanal`, pero queda
+también acá **porque es una trampa que se va a repetir**: la misma forma tienen
+`camp_bench_` vs `camp_bench_remitente`, y `m2_` contra cualquier `m2_algo`. El día que
+alguien escriba una familia con un token completo adentro, va a capturar de más **en
+silencio** — no rompe, arrastra.
+
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 
 Su bloque "Antes de empezar" todavía reabre la decisión Looker-vs-SD y el alcance del

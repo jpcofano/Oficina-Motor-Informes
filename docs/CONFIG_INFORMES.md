@@ -88,6 +88,18 @@ como ejemplo — confirmar si es real.)
   automático de asistentes? **[?]**
 - **[MANUAL]** Conclusiones y lecturas del período.
 
+> **⚠ Esa `[?]` resuelve dos huecos a la vez, y por eso conviene preguntarla.** (05–06/08)
+>
+> - **Si el equipo contesta que sí** —los tres salen por ranking automático de asistentes—
+>   entonces `ecv_barrio1-3` **deja de ser manual**, y la operación que hace falta para
+>   calcularlos es **la misma familia** que la que falta para `ecv_barrios` (la cantidad de
+>   barrios distintos): las dos recorren la columna `barrio` y agrupan. Se resuelven juntas.
+> - **Si contesta que no**, los tres quedan manuales para siempre y el único hueco técnico
+>   que sobrevive es **`ecv_barrios`**, que **no está en esta lista** y no es una decisión
+>   editorial. Está anotado aparte, en `PENDIENTES_consistencia.md`, como `P2`.
+>
+> **No inventar la respuesta: es pregunta para el equipo.**
+
 ### 1.5 Token huérfano resuelto — "Marque 1" (JM slide 6)
 
 **[DOC-3, 30/07]** El `135` literal de la caja "Marque 1" (`docs/PLANTILLAS_QA_y_armonizacion.md`,
