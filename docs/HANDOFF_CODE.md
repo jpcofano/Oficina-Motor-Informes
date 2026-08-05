@@ -3,110 +3,107 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-10, antes de arrancar el prompt de la clave de match ·
-último commit al escribirlo: `5025790`
+**Última actualización:** 2026-08-12, antes de arrancar el objetivo de `ULTIMO` determinista ·
+último commit al escribirlo: `613b4c9`
 
 ## Dónde estamos
 
-**El motor genera un informe de punta a punta. Los números de encuentro siguen siendo los de
-la cuenta equivocada, y el arreglo del 09/08 no funcionó.**
+**Los once números de Orden Público cierran contra el informe publicado.** Era el bloqueo
+principal desde el 04/08 y se cerró el 11/08, en dos pasos: la cuenta (10/08) y la operación
+(11/08).
 
-**Lo que sí quedó funcionando estos días:**
+**El deck vigente:** `14_QBHSTHu9lxinvemh7CMVwCct51ItzpmzzY3Wmr0Oo`, corrida
+`jm-20260805-125133`. En su slide 7 —Orden Público— están los once verificados caja por caja:
+**71.234 · 78.637 · 256 · 27.599 (38,74%) · 44.043 · 43.439 · 4.652 (10,7%) · 145 (3,1%)**.
 
-1. **El filtro declarativo** (08/08). `MARCADORES.filtro` y `SECCIONES.filtro` existen y se
-   aplican. Control positivo: sin filtro **3364** sobre 16 filas · `figura=Jorge Macri`
-   **2307** sobre 4 · `figura!=Jorge Macri` **1057** sobre 12 · **2307 + 1057 = 3364**.
-2. **La sección del alcance semanal `ecv_`** (05/08). Los agregados salen **una sola vez** y
-   `ecv_encuentros` da **16**.
-3. **El desempate temporal en `anclar_`** (09/08). Está implementado y **no rompe nada** —
-   siguen 5 anclados con los mismos scores— pero **no arregló el caso que lo motivó**.
+**Cómo se llegó, que importa para lo que sigue:**
 
-**El deck vigente sigue siendo el del 05/08:** `1cXrAhX3-GXs0dYeqwLxYqD1Nrr3ZJ2s1NJYRwz-llWo`,
-corrida `jm-20260805-005053`, **26 slides · 18 tokens con valor · 304 faltantes**. Desde
-entonces **no se generó ningún informe**.
+1. **La cuenta** (10/08). El matcher elegía `3347` porque **la fecha no entraba al score** —
+   se usaba sólo como prefiltro de ±14 días. Ahora pesa 0,5, igual que el barrio.
+2. **IVR a `SUMA`** (11/08), verificado dígito a dígito contra `VALIDACION` §3.2.
+3. **Mail no es `SUMA` ni `ULTIMO`: selecciona el envío de convocatoria.** La columna
+   `Tipo de mail` existía y no estaba mapeada. Con `mail_tipo=Convocatoria` quedan tres filas
+   y `ULTIMO` toma la del 25/07, que es la publicada.
 
 ## Trabado
 
-1. **⚠ La cuenta homónima, que es el bloqueo principal.** Orden Público resuelve a
-   **`3347-JULJDGAG`** y el encuentro es **`3387-JULJDGGC`**. **Once números del deck salen
-   de ahí.** El desempate temporal del 09/08 no lo movió: **no hubo empate**, o sea que las
-   dos no sacan el mismo score y **la premisa de ese prompt era falsa**.
-   **La pista viva:** el nombre que compara el matcher **no es el de `Directa IVR`** —donde
-   se vio el nombre repetido— sino **`sd_campana_digital` / `sd_campana_cuentas`**, de
-   *Seguimiento digital*. Es plausible que ahí los nombres no sean idénticos, o que una de
-   las dos tenga el nombre vacío y **no compita**. **Sin verificar.**
-2. **Las mediciones caras no vuelven por `/dev`.** `anclarEncuentros` llamada directa
-   devuelve **HTML 404** tras dos reintentos, y `unirDigitalPorCuenta` dentro de un `eval`
-   **tampoco vuelve**, ni devolviendo cinco campos. El anclaje completo tarda **93 s**.
-   Cualquier medición sobre la unión hay que pedirla **muy acotada**.
-3. **`CAMPANAS` no tiene ninguna fila de `jm`.** La sección `campana` emite 0 ítems, y por
-   eso la medición de envíos por campaña (`0.6` del `Pedido-3`) tuvo que agrupar por
-   `id_cuenta` — **el proxy fue forzado, no elegido**.
-4. **`REUNIONES` no es el temario.** Le faltan dos ítems del bloque Cercanía y M2:
-   `Primera Persona con Pareto 27/07` —el encuentro más grande de la semana, 1344 · 267— y
-   `M2 | Registro Civil`. Se sembró desde los comentarios del deck viejo.
-5. **La lámina 18 tiene celdas combinadas.** Lo que se leyó como "faltan cinco tokens" son
-   posiciones **sin celda propia**. Agregarlos exige descombinar, que es estructural. **La
-   autorización del 07/08 murió con el punto.**
+1. **⚠ `SUMA` sobre cero filas devuelve `0`, no `sin_datos` — regresión del 11/08.** Las
+   cuatro slides de encuentro que no tienen filas de IVR (San Cristóbal y Retiro) muestran
+   **`0`** en `enc_atendidos`, `enc_audiencia`, `enc_marque1` y `enc_e75`. **Son 16 ceros
+   falsos**, y son los que hicieron subir "tokens con valor" de 18 a **34**: el conteo mejoró
+   por un artefacto. **Un cero de audiencia se lee como "no llamamos a nadie", no como "no hay
+   dato".** Los de mail no lo tienen: `ULTIMO` sobre cero filas sigue dando `sin_datos`.
+   **No se arregló a propósito**: tocar `opSUMA` cambia el comportamiento de todos los
+   marcadores que suman y merece su propia medición.
+2. **⚠ `ULTIMO` elige por posición en la hoja, no por fecha.** El filtro
+   `mail_tipo=Convocatoria` deja tres filas —22/07 ×2 y 25/07— y `ULTIMO` toma la última **por
+   posición**. Las del 22/07 son **201.515** y **25.560**: si alguien reordena la hoja,
+   `enc_mails_enviados` pasa de 44.043 a 201.515 **y no salta nada**. **Es el objetivo del
+   prompt del 12/08.**
+3. **El score de anclaje saturó en `1,00`** y el circuito de `ANCLAJE_PENDIENTE` nunca corrió
+   de punta a punta. Es el **objetivo B**, anotado como `P1` en `PENDIENTES` el 11/08.
+4. **`CAMPANAS` no tiene ninguna fila de `jm`.** La sección `campana` emite 0 ítems.
+5. **`REUNIONES` no es el temario**: le faltan `Primera Persona con Pareto 27/07` —el
+   encuentro más grande de la semana— y `M2 | Registro Civil`.
+6. **`3354` y `3346` tienen cero filas de mail**, aunque `rdv` registra un inscripto por mail
+   en cada uno. Es **inconsistencia de datos**, y es lo que impidió validar la regla de
+   convocatoria fuera de `3387`.
 
 ## Esperando decisión tuya
 
-- **`ULTIMO` → `SUMA` en IVR: decidido que sí, pero no todavía.** Va junto con el arreglo de
-  la cuenta, para medir los dos cambios por separado (decisión del 04/08).
 - **Los cuatro `ecv_barrio*`**: `ecv_barrios` necesita una operación que no existe
-  (`DISTINCT`); `ecv_barrio1-3` están declarados `[MANUAL]` en `CONFIG_INFORMES.md` §1.4,
-  con una `[?]` de si salen por ranking. **Esa `[?]` resuelve los dos huecos a la vez.**
-- **Falta un formato "unidades de porcentaje sin signo".** Los cinco `ecv_insc_*_pct` salen
-  con `numero` porque la caja ya trae su `%`.
-- **`camp_bench_*`** sigue abierto: ¿fijos, o del período anterior?
-- El **dueño del deck** es `jpcofanogcba1@gmail.com`, no `reporteseinformesgcba` (`D-03`).
+  (`DISTINCT`); `ecv_barrio1-3` están `[MANUAL]` en `CONFIG_INFORMES.md` §1.4 con una `[?]`
+  que **resuelve los dos huecos a la vez**.
+- **Falta un formato "unidades de porcentaje sin signo"**; hoy se usa `numero`.
+- **`camp_bench_*`**: ¿fijos, o del período anterior?
+- El **dueño del deck** es `jpcofanogcba1@gmail.com` (`D-03`).
 
 ## En pausa, y no se vuelve sobre esto
 
-> Las **tres preguntas sobre la lámina M2** (`PENDIENTES`, "Preguntas al equipo", 03/08).
-> **Los tres remitentes sueltos** y **los once `camp_resp_*`**: diferidos el 07/08 y **no se
-> vuelven a reportar**. El **`P1` del reintento de `tools/api.js`** queda en observación.
+> Las tres preguntas sobre la lámina M2. **Los tres remitentes sueltos** y los **once
+> `camp_resp_*`**: diferidos el 07/08 y **no se vuelven a reportar**. El `P1` del reintento de
+> `tools/api.js`, en observación. **`enc_e75_pct` da 38,74 contra 39% publicado: es el mismo
+> número redondeado, no es un error y no se ajusta.**
 
 ## Qué sigue
 
-1. **La clave de match `Figura · Barrio · Fecha`** y el nombre de campaña por prioridad de
-   canal (`Directa Mail` → `Directa IVR` → `Directa SMS`). Es el prompt del 10/08 y **es el
-   camino para destrabar la cuenta homónima**.
-2. **`ULTIMO` → `SUMA`**, después y por separado.
-3. **`Pedido-3` Partes E, F y G** — la tabla de envíos, el call center y el desborde.
-4. **`Pedido-1` Partes A, C y E** — el corte JM/GCBA. Ver el addendum al pie del prompt.
-5. **La familia `m2_`** — tiene un `P1` abierto y **no es autocontenida**, contra lo que
-   dijeron dos prompts.
-6. **Tramo 3 — `secco`**, la medición de `D-01`.
+1. **`ULTIMO` por fecha** — el prompt del 12/08.
+2. **`SUMA` sobre cero filas** — la regresión del punto 1 de "Trabado".
+3. **Objetivo B** — que el score ordene y el circuito de confianza se pruebe.
+4. **`Pedido-3` Partes E, F y G**; **`Pedido-1` Partes A, C y E**; **`m2_`** (tiene `P1`
+   abierto y **no es autocontenido**).
+5. **Tramo 3 — `secco`**, la medición de `D-01`.
 
 ## Qué mirar antes de tocar algo
 
-- **Las bases no se leen desde node** (scope `drive.file`). Se mide por
-  `tools/api.js llamar fn=eval` con snippets de sólo lectura. **⚠ `eval` es invocable por la
-  API** y no está en `API_PROHIBIDAS_`.
-- **`SECCIONES.filtro` y `MARCADORES.filtro` tienen la misma sintaxis y dominios distintos:**
-  el de sección filtra **ítems de la iteración** (vocabulario de la fuente: `etapa`, `tipo`),
-  el de marcador filtra **filas de la base** (vocabulario de `MAPEO`). El de sección se
-  hereda al marcador **sólo si su campo está mapeado**; si no, se ignora y se dice en la
-  traza. Sin esa guarda, `etapa=post` rompía todos los marcadores de `comunicaciones_post`.
-- **`familia_tokens` es con qué se reconoce el bloque modelo en la plantilla.** Con `ecv_`
-  adentro, `encuentro` reclamaba la lámina del alcance semanal y la duplicaba cinco veces.
-- **`upsertPorClave_` reescribe la fila entera.** Una columna nueva va **primero a
-  `COLUMNAS_DELTA_` y después a `headers`**, y al `SEED_*` con su valor real, nunca con `''`.
-- **`curarMarcadores_` y `curarSecciones_`** son las puertas para curar filas puntuales.
-  `sembrarSecciones_` **sólo agrega y nunca pisa**.
-- **Nada que recorra una presentación puede usar `getShapes()`**: usar
-  `piezasDeTextoDeSlide_`, que además **saltea las celdas combinadas no principales** — es lo
-  que hizo leer "faltan tokens" donde faltaban celdas.
-- **Una solapa `uso = 'ignorar'` no se lee, no se audita y no se menciona.** El `uso` se
-  verifica **vivo**: `SOLAPAS` se movió 15 filas entre el 01 y el 04/08.
+- **Las bases no se leen desde node** (scope `drive.file`): se mide por
+  `tools/api.js llamar fn=eval`. **⚠ `eval` es invocable por la API.**
+- **`generarInforme` corta con `ECONNRESET` casi siempre**, incluso en segundo plano. **La
+  corrida sí ejecuta del lado del motor**: verificar contra `CORRIDAS` en vez de reintentar.
+  `unirDigitalPorCuenta` y `anclarEncuentros` directos **no vuelven** por `/dev`.
+- **`digital` es `snapshot` por diseño y no se filtra por ventana.** Sus solapas usan fecha de
+  inicio de campaña con lead de 3–7 días; el recorte lo hace el link campaña↔encuentro
+  (`R-04`). Una convocatoria del 22/07 para un encuentro del 27/07 es legítima.
+- **`SECCIONES.filtro` filtra ítems de la iteración; `MARCADORES.filtro` filtra filas de la
+  base.** El de sección se hereda al marcador **sólo si su campo está mapeado**.
+- **`mail_tipo` entró a `MAPEO` sin `valores_incluidos` a propósito**: filtrar ahí sacaría las
+  filas de confirmación y agradecimiento para toda la corrida.
+- **Un porcentaje no se suma.** `enc_e75_pct` es `PCT` sobre `ivr_e75/ivr_atendidos`; sumarlo
+  daba 77,6% donde el valor es 38,7%.
+- **`upsertPorClave_` reescribe la fila entera.** Columna nueva: primero `COLUMNAS_DELTA_`,
+  después `headers`, y al `SEED_*` con su valor real.
+- **`curarMarcadores_` y `curarSecciones_`** son las puertas de curación. `sembrarSecciones_`
+  sólo agrega.
+- **Nada que recorra una presentación puede usar `getShapes()`.** `piezasDeTextoDeSlide_`
+  **saltea las celdas combinadas no principales** — es lo que hizo leer "faltan tokens" donde
+  faltaban celdas.
 - **Tres significados distintos de una celda vacía**: `D-19`, `D-20`, `D-21`.
 
 ## Números de referencia
 
-`MARCADORES` en **19** filas, con columna `filtro` (índice 9, entre `valor_fijo` y
-`formato`). `MAPEO` en 120. `SECCIONES` con `ecv_alcance_semanal` agregada.
-**Las 10 pruebas pasan.** Anclaje: **5 anclados · 0 sin link · 0 en baja confianza**, scores
-0,82 (San Cristóbal) · 0,77 (Retiro) · 0,77 (Orden Público).
-`rdv` en la ventana 24–30/07: **3364 inscriptos · 811 asistentes · 16 encuentros**, canales
-**3344**, diferencia **−20** con una sola fila que la explica.
+`MARCADORES` en 19 filas, con columna `filtro`. `MAPEO` en 121 (entró `mail_tipo`).
+**Las 10 pruebas pasan.** Anclaje: **5 anclados · 0 sin link · 0 baja confianza**, los cinco
+con score **1,00** (saturado — ver objetivo B).
+Deck vigente: **34 tokens con valor y 288 faltantes**, pero **16 de esos 34 son los ceros
+falsos** de la regresión de `SUMA`: los útiles son **18**.
+`rdv` en la ventana 24–30/07: **3364 inscriptos · 811 asistentes · 16 encuentros**.
