@@ -3299,3 +3299,22 @@ para algo irreversible hay que mirar esa línea.
   corrida. Ninguna se trabó: quedan listas y con su medición hecha. La Parte E además
   choca con el límite 2 de esta corrida (no se editan plantillas), así que cuando se
   ejecute hay que reportar qué haría falta en vez de tocarla.
+
+## Corrida 06/08 — cierre: qué NO se hizo (2026-08-06) — commit de esta entrada
+- **El punto 3 —la familia `m2_`— no se empezó.** Era "si sobra tiempo" y no sobró: la
+  Parte 0 del `Pedido-3` son seis mediciones sobre tres bases y consumió la corrida. **No se
+  trabó: no se llegó.** Sus 31 tokens siguen sin cablear, la sección `m2` sigue en modo
+  `agregado` sin iterar, y la entrada `P1` de la caja `{{m2_salud_camp}}` huérfana sigue
+  abierta y sin cruzar contra esto.
+- **No se cableó ningún token nuevo en esta corrida.** La base de medición sigue siendo la
+  de la corrida del 05/08: **18 con valor / 304 faltantes**, `jm-20260805-005053`. **No se
+  generó informe** porque no hubo cableado que verificar — generar por generar habría dejado
+  un deck más en la carpeta de salidas sin responder ninguna pregunta.
+- **Una cosa que quedó afirmada y no verificada**, y conviene decirlo antes de que se lea
+  como hallazgo: la entrada del punto 2 dice que la tabla de envíos *"está en la lámina 18,
+  no en la 22 que dice `TOKENS.md`"*. **La lámina 18 está medida sobre la plantilla viva de
+  JM** (`mapaDeTokens_`); **el 22 de `TOKENS.md` no se verificó contra qué está numerando**
+  —puede ser el informe publicado, o SECCO, y entonces no habría contradicción—. **No se
+  tocó `TOKENS.md` ni se anotó como inconsistencia**: primero hay que mirar qué numera esa
+  tabla.
+- **Prueba:** documentación pura.
