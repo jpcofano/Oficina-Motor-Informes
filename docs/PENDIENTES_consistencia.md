@@ -1525,6 +1525,27 @@ con `numero`, y funciona** —el deck dice `(59.54%)`— pero por elección de u
 
 **No cambiar el cableado**: anotar el hueco. Cuando exista el formato, son cinco celdas.
 
+### P2 · `3354` y `3346` tienen cero filas de mail, y `rdv` dice que hubo mail
+
+**Pregunta para el equipo, no trabajo de motor.** Las cuentas de San Cristóbal (`3354`) y
+Retiro (`3346`) **no tienen ninguna fila en `digital/Directa Mail`**, pero `rdv` registra
+**un inscripto por mail en cada uno** de esos dos encuentros.
+
+**Es inconsistencia de datos**, y tiene una consecuencia concreta: **impidió validar la regla
+de convocatoria fuera de `3387`**. El filtro `mail_tipo=Convocatoria` (11/08) funciona para
+Orden Público y **no hay contra qué probarlo** en los otros dos encuentros anclados.
+
+Medido el 11/08. Anotado acá el 13/08, porque venía viajando en el `HANDOFF_CODE.md` y **ése
+se reescribe entero cada corrida**.
+
+### P2 · `enc_e75_pct` da 38,74 contra el 39% publicado — **no es un error, no se ajusta**
+
+27.599 / 71.234 = **38,74%**, y el informe publicado **redondea a entero**. Es el mismo
+número con más precisión.
+
+**Queda anotado para que nadie lo "arregle" más adelante:** cambiar el cálculo para que dé 39
+sería ajustar un número para que cierre, que es justo lo que el proyecto no hace.
+
 ### P1 · El score de anclaje saturó, y el circuito de confianza nunca se probó
 
 **Anotado el 11/08 por decisión del usuario, antes de arrancar el objetivo de los once
