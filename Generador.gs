@@ -221,6 +221,24 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
  * Ésa es la diferencia con `MAPEO.valores_incluidos` (`D-21`) y es todo el punto: aquél
  * filtra al leer la solapa, **para toda la corrida**, así que dos marcadores de la misma
  * solapa no pueden pedir mitades distintas del mismo universo. Éste sí.
+ *
+ * ────────────────────────────────────────────────────────────────────────────
+ * **QUÉ FILTRA CADA COLUMNA — la aclaración que faltaba (09/08).**
+ *
+ * Hay **dos** filtros con sintaxis idéntica y dominios distintos, y confundirlos cuesta:
+ *
+ * - **`MARCADORES.filtro` filtra FILAS DE LA BASE.** Su `campo` se resuelve por
+ *   `buscarMapeo` contra la base y solapa **del marcador**. Vocabulario: `MAPEO`.
+ * - **`SECCIONES.filtro` filtra ÍTEMS DE LA ITERACIÓN** — ver `filtrarItemsPorSeccion_`.
+ *   Su `campo` es un atributo del ítem crudo de la fuente de iteración (`etapa`, `tipo`,
+ *   `eje` en `REUNIONES`; los de la campaña en `CAMPANAS`). Vocabulario: la fuente.
+ *   **Ése es su uso principal y el que tiene caso real** (`comunicaciones_post`).
+ *
+ * Además, `SECCIONES.filtro` **se hereda** al marcador que no declara el suyo, y ahí pasa a
+ * filtrar filas de la base — **pero sólo si su campo existe en `MAPEO` para esa solapa**.
+ * Si no existe, se ignora en silencio y se dice en la traza, porque los dos vocabularios no
+ * tienen por qué coincidir. **El filtro propio del marcador siempre gana.**
+ * ────────────────────────────────────────────────────────────────────────────
  */
 function parsearFiltro_(texto) {
   var t = String(texto || '').trim();
@@ -250,7 +268,7 @@ function parsearFiltro_(texto) {
  * despachador, que lo baja a `sin_datos` con el motivo — un filtro mal escrito que devuelve
  * cero se lee igual que un dato faltante si no se distingue.
  */
-function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas) {
+function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
   var f = parsearFiltro_(textoFiltro);
   if (!f.ok) {
     return { ok: false, motivo: '«FALTA:' + fila.marcador + '@filtro_mal_escrito» — ' + f.motivo };
@@ -259,6 +277,17 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas) {
 
   var campo = buscarMapeo(fila.base_id, solapa, f.campo);
   if (!campo.ok) {
+    // Un filtro **heredado** de la sección cuyo campo no está mapeado para esta solapa
+    // **no se aplica y no es un error**: `SECCIONES.filtro` se escribe en el vocabulario de
+    // la *fuente de iteración* (`etapa=post` es una columna de `REUNIONES`), y ese
+    // vocabulario no tiene por qué existir en la base que lee un marcador. Sin esta guarda,
+    // `comunicaciones_post` rompería **todos** sus marcadores con
+    // `@filtro_campo_no_mapeado`. Un filtro **propio** sí falla: ahí alguien lo declaró
+    // para ese marcador y contra esa solapa, y el campo tiene que existir.
+    if (heredado) {
+      return { ok: true, filas: filas, traza: '', ignorado: 'el filtro de sección `' + textoFiltro +
+        '` no aplica acá: `' + f.campo + '` no es un campo de ' + fila.base_id + '/' + solapa };
+    }
     return {
       ok: false,
       motivo: '«FALTA:' + fila.marcador + '@filtro_campo_no_mapeado» — el filtro declara `' + f.campo +
@@ -434,9 +463,9 @@ function resolverMarcadores(informeId, opciones) {
     //         antes de la operación— porque filtrar dentro de `leerFuente` es exactamente
     //         lo que impide que dos marcadores de la misma solapa pidan mitades distintas.
     //         El del marcador gana; si no declara ninguno, hereda el de su sección.
-    var filtroEfectivo = String(fila.filtro || '').trim() ||
-      String((opciones && opciones.filtro_seccion) || '').trim();
-    var filtrado = aplicarFiltroDeMarcador_(filtroEfectivo, fila, solapa.solapa, datos.filas);
+    var filtroPropio = String(fila.filtro || '').trim();
+    var filtroEfectivo = filtroPropio || String((opciones && opciones.filtro_seccion) || '').trim();
+    var filtrado = aplicarFiltroDeMarcador_(filtroEfectivo, fila, solapa.solapa, datos.filas, !filtroPropio);
     if (!filtrado.ok) {
       base.estado = 'error';
       base.traza = filtrado.motivo + ' · ' + trazaVentana;

@@ -3404,3 +3404,19 @@ para algo irreversible hay que mirar esa línea.
 - **No se generó informe.** El intento se cortó por red (`ECONNRESET`) y **se verificó que
   no escribió**: `CORRIDAS` no tiene ninguna fila del 08/08. No hubo doble escritura.
 - **Prueba:** las 10 pruebas pasan. Diff antes y después con `protegidas (con diferencia): 0`.
+
+### Aclaración y arreglo del 09/08 — deuda del prompt anterior
+- **La Parte D entró en el commit `073f210`**, cuyo título dice sólo "Partes A y B". No se
+  reescribe historia: queda dicho acá para que se pueda encontrar.
+- **`SECCIONES.filtro` y `MARCADORES.filtro` tienen sintaxis idéntica y dominios distintos**,
+  y el reporte del 08/08 nombró sólo uno de los dos usos. Ahora está escrito en el código,
+  arriba de `parsearFiltro_`: **`MARCADORES.filtro` filtra filas de la base** (vocabulario:
+  `MAPEO`) y **`SECCIONES.filtro` filtra ítems de la iteración** (vocabulario: la fuente —
+  `etapa`, `tipo`, `eje`). Las dos cosas estaban implementadas; sólo una estaba dicha.
+- **⚠ Y esa ambigüedad escondía un bug latente, arreglado hoy.** `SECCIONES.filtro` también
+  se hereda al marcador que no declara el suyo, y ahí filtra filas de la base. Con
+  `etapa=post`, `buscarMapeo` no encuentra `etapa` en ninguna solapa de ninguna base: **los
+  marcadores de `comunicaciones_post` habrían fallado todos** con
+  `@filtro_campo_no_mapeado`. No se manifestó porque esa sección no tiene marcadores
+  todavía. **Ahora un filtro heredado cuyo campo no está mapeado se ignora y se dice en la
+  traza**; uno propio sigue fallando, porque ahí alguien lo declaró contra esa solapa.
