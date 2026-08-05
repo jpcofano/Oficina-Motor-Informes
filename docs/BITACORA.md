@@ -3444,3 +3444,29 @@ para algo irreversible hay que mirar esa línea.
   se cortó la corrida.
 - **0.4 · sin medir**, por lo mismo.
 - **Prueba:** las 10 pruebas pasan. Anclaje corrido y comparado contra el estado anterior.
+
+## Clave de match — la fecha entra al score y Orden Público ancla a `3387` (2026-08-10) — commit de esta entrada
+- **Por qué ganaba `3347`, medido:** los nombres **no eran idénticos**. El matcher compara
+  `sd_campana_digital`, donde `3387` es *"Agenda RDV Con 1 - Orden Público Eje Norte **28/7**"*
+  y `3347` *"…Orden Publico Eje Norte **21/7**"*. Comparten eje, tipo y casi todos los tokens,
+  así que sacaban casi el mismo score — **y la única señal que las separa, la fecha, no
+  entraba al score**: se usaba sólo como prefiltro de ±14 días, que las dejaba pasar a las dos.
+- **Arreglo:** la fecha pesa **0,5**, igual que el barrio. <1 día suma 0,5; ≤2 días 0,25; más
+  lejos no suma **y no resta** —el nombre puede traer la fecha de la convocatoria y restar
+  convertiría un match flojo en `sinLink`—.
+- **Anclaje antes → después:** los 5 siguen anclados, 0 sin link, 0 en baja confianza.
+  **Orden Público pasa de `3347-JULJDGAG` a `3387-JULJDGGC`**; los otros cuatro se quedan en
+  las mismas cuentas (`3354`, `3346`). Los scores suben de 0,82/0,77 a **1,00** en los cinco.
+- **⚠ `0.2` desmintió parte del plan.** Los formatos de nombre **difieren por canal**:
+  `Directa IVR` trae *"Reunión de vecinos JM Boedo 9/1"* —figura, barrio y fecha— y
+  `Directa Mail` trae *"Obras Trambus"*, sin ninguna de las tres. **Poner mail primero, como
+  pedía la Parte A, habría mejorado la cobertura y roto el parseo.** La Parte A no se hizo:
+  el arreglo salió del score, sin tocar de dónde sale el nombre.
+- **Parte C · los once, con la cuenta correcta y `ULTIMO`:** ninguno cierra, **y ninguno falla
+  ya por la cuenta**. `enc_atendidos` 34.179 · `enc_e75` 13.833 · `enc_marque1` 174 ·
+  `enc_audiencia` 37.763 son exactamente **la última fila IVR de `3387`**; los esperados
+  (71.234 · 27.599 · 256 · 78.637) son la **suma de sus dos filas**. `enc_mails_enviados` da
+  **582**, el envío del **03/08 — fuera de la ventana**. **Todos fallan por `ULTIMO`**, que no
+  se toca en este prompt por decisión del 04/08.
+- **Prueba:** las 10 pruebas pasan. Deck `1uFUCQ0maspF9ZODpF2gAKxscwV7hoyeiiMcur1gNkKo`,
+  corrida `jm-20260805-121426`, 18 con valor / 304 faltantes.
