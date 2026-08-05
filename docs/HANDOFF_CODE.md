@@ -3,89 +3,78 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-04 (corrida nocturna: anclaje destrabado, JM armonizada,
-Pasos 4 y 5 implementados y corridos) · último commit al escribirlo: el de esta entrada
+**Última actualización:** 2026-08-04, tarde (Pedidos 1 y 2 corridos, los dos de sólo
+lectura) · último commit al escribirlo: el de esta entrada
 
 ## Dónde estamos
 
-**El motor genera un informe de punta a punta.** El Tramo 2 está cerrado: los Pasos 3, 4 y
-5 corrieron y el archivo existe.
+**El motor genera un informe de punta a punta, y el informe está mal.** No por el motor:
+por la cuenta que eligió el anclaje.
 
-**El deck vigente:** `1AU0tkyRQo0kGccnUGJqz0MoEqtiDpy5awYGy8VjTtH8` — *Informe semanal JM —
-vie 24/07 — jue 30/07*, corrida `jm-20260804-180308`, ventana `24/07 → 30/07` (`config`).
-Quedaron **cinco decks** en la carpeta de salidas, uno por generación de la noche: sirve el
-último y los otros cuatro se pueden borrar.
+**El hallazgo que manda sobre todo lo demás:** los **once** números con valor real del deck
+vigente salen de la cuenta **`3347-JULJDGAG`**, y el encuentro es **`3387-JULJDGGC`**. Las
+dos se llaman igual en la base (`TE CUENTO BS AS JM | 21/7 ORDEN PÚBLICO`) y comparten
+hasta la columna `Audiencia` — por eso `enc_audiencia = 37.763` parecía correcto: **coincide
+por casualidad**. `3347` es del 16–17/07 con entregas chicas; `3387` es del 22–26/07 y es la
+que usó el informe publicado. `enc_mails_enviados` dice **110** donde el número es
+**44.043**; `enc_atendidos` dice **6.161** donde es **71.234**.
 
-**El número de la noche: los tokens con valor pasaron de 1 a 17**, y los distintos con
-número real de 0 a 11. Los 11 son los `enc_*` del encuentro **Orden Público**, que resuelve
-contra la cuenta digital `3347-JULJDGAG`.
+**Nada más falló.** El motor escribió bien: 0 tokens crudos sin reemplazar, 0 referencias
+del mapa que no existan en el deck, y los diez rótulos vecinos corresponden uno a uno
+—la rotación de la slide 5 y el cruce de la 6 no se reprodujeron—. **La caja, el rótulo y
+el formato están bien; está mal la cuenta.**
 
-**Lo que se destrabó, en una línea cada uno:**
-
-1. **El anclaje corre.** `verificarPrecondicionAnclaje_` filtra por
-   `MAPEO.valores_incluidos` y ya no cuenta duplicados sobre filas que el emparejador nunca
-   mira: **653 consideradas, 709 excluidas, 0 grupos duplicados**. `anclarEncuentros()` da
-   **5 anclados, 0 sin link, 0 en baja confianza**.
-2. **La plantilla de JM está armonizada**, con backup y con la slide 10 intacta.
-3. **El Paso 4 escribe el deck** y registra la corrida con el mapa `token → objectId`.
-4. **El Paso 5 expande las secciones repetibles** y le pasa el `id_cuenta` al despachador,
-   que es lo que hace que `digital` devuelva número.
+**El deck vigente:** `1AU0tkyRQo0kGccnUGJqz0MoEqtiDpy5awYGy8VjTtH8`, corrida
+`jm-20260804-180308`, 30 slides (la plantilla tiene 22; las 8 de más son la expansión).
+Los siete decks de la noche están **todos vivos**, ninguno en la papelera.
 
 ## Trabado
 
-1. **Cuatro de los cinco encuentros anclados no tienen ninguna fila en los canales de
-   `digital`.** San Cristóbal (pre y post) y Retiro (pre y post) anclan con score alto
-   —0,82 y 0,77— pero sus cuentas no aportan filas, así que sus 13 `enc_*` salen
-   `sin_datos`. **El número que falta es de la base, no del cálculo.** Es lo primero para
-   mirar con el informe en la mano.
-2. **`CAMPANAS` no tiene ninguna fila de `jm`.** Las tres son de `secco` y las tres siguen
-   sin `periodo_id`. La sección `campana` de JM queda sin ítems y sus 8 slides modelo
-   (20–27) quedan como están. **Curar esas filas es tarea tuya**, y hasta que exista una
-   fila de `jm` la expansión por campaña **no se probó contra datos**.
-3. **`comunicaciones_post` es una sección activa con 5 ítems y ninguna slide con tokens
-   `post_` en la plantilla de JM.** Sale con ⚠ en cada corrida. Es una sección curada
-   contra una plantilla que no la contempla: o entra el bloque a la plantilla, o la sección
-   se marca de otro modo.
+1. **El desempate del matcher.** `digital` es `modo_periodo = snapshot`, así que **nada
+   filtra por fecha**: el join es puro `id_cuenta` y el matcher eligió entre dos cuentas
+   homónimas sin desempate temporal. Es el "empate técnico del match" que ya estaba anotado
+   como pendiente de `Union.gs`; ahora tiene una víctima concreta. **Arreglarlo es de
+   `Union.gs`, no del cableado.**
+2. **Cuando se arregle la cuenta, mail sigue mal.** `3387` tiene **5 filas de mail** (22/07
+   ×2, 25/07, 27/07 y **03/08**). Con `ULTIMO` y sin filtro de fecha tomaría la del **03/08,
+   fuera de la ventana**; el informe publicado usa la del 25/07.
+3. **El anclaje no deja rastro.** `ANCLAJE_PENDIENTE` está vacía (sólo encabezado) y
+   **`VALORES` no tiene ni una fila**, aunque `Valores.gs` y `registrarValorCalculado_`
+   existen. Sin eso, "qué cuenta usó cada ítem" **no es auditable**, y el próximo error de
+   cuenta se descubre como éste: a mano, contra un informe publicado.
+4. **Las cinco slides de encuentro son indistinguibles.** `ecv_barrio` sale `«FALTA»` en las
+   cinco, así que el deck no dice qué encuentro es cada lámina. Y los valores cayeron en la
+   **slide 11**, que por orden de `REUNIONES` sería *Retiro (pre)*, mientras el handoff
+   anterior decía *Orden Público*. **No se puede saber cuál desde el deck.**
+5. **`CAMPANAS` sigue sin ninguna fila de `jm`.** La sección `campana` queda sin ítems y sus
+   8 slides modelo (20–27) sin número. Curar esas filas es tarea tuya.
+6. **`comunicaciones_post` es una sección activa con 5 ítems y ninguna slide con tokens
+   `post_`** en la plantilla de JM.
 
 ## Esperando decisión tuya
 
-- **El dueño del deck generado es `jpcofanogcba1@gmail.com`**, la cuenta que ejecuta, y no
-  `reporteseinformesgcba`, aunque el archivo caiga dentro de la carpeta de reportes. Drive
-  no transfiere propiedad por ubicación. Es la pieza abierta de `D-03`.
+- **`ULTIMO` → `SUMA` en IVR: decidido que sí, pero todavía no.** `VALIDACION` §3.2 lo
+  respalda (*"IVR cierra por SUMA sobre `id_cuenta`"*) y con la cuenta correcta los cuatro
+  números cierran dígito a dígito (78.637 · 71.234 · 27.599 · 256). **Va junto con el
+  arreglo de la cuenta**, para medir el antes y el después de los dos cambios por separado.
+- **El orden de expansión de las cinco slides de encuentro**: si es el de `REUNIONES` o no.
+- **Los números van sin separador de miles** — el deck dice `6161`, el informe publicado
+  `6.161`.
+- **El dueño del deck generado es `jpcofanogcba1@gmail.com`**, no `reporteseinformesgcba`.
+  Pieza abierta de `D-03`.
 - **`enc_alcance` se cableó a `digital/Digital/dig_alcance`** y no a `Alcance/alc_alcance`.
-  `TOKENS.md` no dice cuál va; se eligió por coherencia con `enc_impresiones`, que sale de
-  esa misma solapa y de la misma fila. **Es reversible: una celda.** Si el número no cierra
-  con el informe publicado, ahí está la primera sospecha.
-- **Entró el formato `fraccion`** y tres filas pasaron a usarlo (`enc_or`, `enc_ctor`,
-  `enc_e75_pct`): esas columnas de `digital` vienen como `0.2818`, no como `28.18`, y con
-  `porcentaje` el deck decía **0,3% donde el número es 28,2%**. `fraccion` convierte la
-  unidad y **no** pone el signo, porque las cajas de JM traen el suyo. **Si algún `*_pct` de
-  otra base ya viene en unidades de porcentaje, va con `porcentaje`** — la distinción vive
-  en la fila de `MARCADORES`, no en el código.
-- **Los números de Orden Público, para mirar juntos.** Son los únicos 11 con valor real:
-  `enc_mails_enviados` **110** y `enc_mails_entregados` **110** (idénticos), `enc_aperturas`
-  **31** (28,2%), `enc_clics_ctor` **1** (3,2%), `enc_atendidos` **6161**, `enc_e75` **2229**
-  (36,2%), `enc_marque1` **67**, `enc_audiencia` **37.763**. Los de IVR salen de **2 filas**
-  de la cuenta y la operación es `ULTIMO`, así que toman la última y **no** suman: si esas
-  dos filas son dos envíos del mismo encuentro, la operación correcta sería `SUMA`. **No se
-  cambió**: es una decisión de negocio y hay que mirarla con el informe publicado al lado.
-- **`rdv` compartida como `anyoneWithLink = writer`** (sigue abierto del 03/08). El permiso
-  explícito de las cuentas del motor es `reader` y está bien puesto; el link lo pisa.
-- **`CAMPANAS.tipo` no tiene ningún lector en el repo**, y sus valores vivos
-  (`destacada`, `encuentro_ministros`, `proveedor`) no coinciden con la lista que declara el
-  comentario de `Instalar.gs`. Nadie decide nada con esa columna hoy.
+  Reversible: una celda.
+- **`rdv` compartida como `anyoneWithLink = writer`** (abierto del 03/08).
+- **`CAMPANAS.tipo` no tiene ningún lector en el repo.**
 
 ## En pausa, y no se vuelve sobre esto
 
 > Siguen en `docs/PENDIENTES_consistencia.md` → "Preguntas al equipo", del 03/08: las **tres
-> preguntas sobre la lámina M2** (si la grilla por ejes se dejó de usar; qué mide la línea
-> ancha; si el cruce de nombres de JM se corrige en la plantilla o se registra como está).
-> **No se re-preguntan y no cuentan como bloqueo.** La cuarta —la autorización para
-> armonizar JM— **se cerró el 04/08**: la diste y se ejecutó.
+> preguntas sobre la lámina M2**. **No se re-preguntan y no cuentan como bloqueo.**
 
-El **`Paso-2.5`** deja de estar en pausa por la armonización, que ya corrió. Lo que sí sigue
-abierto para él es el recorrido: si copia el barrido viejo por `getShapes()`, sembraría de
-menos — `mapaDeTokens_` tiene el correcto.
+El **`P1` del reintento de `tools/api.js` baja a observación y no se saca.** Los siete
+`corrida_id`, siete `deck_id` y conteos crecientes 1→6→17 son desarrollo, no doble
+escritura. El riesgo sobre una llamada que escribe sigue existiendo; acá no se manifestó.
 
 ## Esperando permiso
 
@@ -93,71 +82,88 @@ menos — `mapaDeTokens_` tiene el correcto.
 
 ## Qué sigue
 
-- **Mirar el informe generado con vos**, que es para lo que se hizo. Los números a discutir
-  están arriba en "Trabado" y en "Esperando decisión".
-- **Curar una fila de `CAMPANAS` de `jm` con `periodo_id`**, y recién ahí la expansión por
-  campaña queda probada contra datos.
-- **Tramo 3 — `secco`**, que es la medición de `D-01`: cuántas líneas de `.gs` hace falta
-  tocar para el segundo informe. Nada de esta noche se escribió para `jm` en particular, así
-  que el conteo debería ser bajo; hay que medirlo, no declararlo.
-- **Paso del matcher (`Union.gs`), sin escribir.** Sigue juntando `R-12`, los dos valores de
-  ventana a `CONFIG` y el empate técnico del match. **Se le fue una pieza**: la asimetría de
-  `verificarPrecondicionAnclaje_` se resolvió anoche. Queda el retiro de
-  `VALOR_STATUS_REALIZADA_`, que hoy filtra dos veces por lo mismo.
+**Cambió el método, por decisión tuya del 04/08: desde acá se cierra una sección por vez,
+con sus números verificados, empezando por las que no iteran.** Lo justifica el dato del
+`Pedido-2`: **384 de 438 faltantes son "sin fila en `MARCADORES`" — 88%.** No es motor, es
+cableado sin escribir.
+
+1. **`Pedido-4` — cerrar los `ecv_`** (el agregado semanal de encuentros). Es la única
+   sección que se puede cerrar entera hoy: todo sale de `rdv` con solapa explícita, y **no
+   depende del anclaje, ni de `digital`, ni del corte JM/GCBA, ni del arreglo de la cuenta**.
+   Va **antes** del `Pedido-3`.
+2. **`Pedido-1` Partes A a C y E** — el corte JM/GCBA. Ver abajo lo que cambió.
+3. **`Pedido-3` — el filtro declarativo** por marcador y por sección.
+4. **Arreglo del desempate del matcher** (`Union.gs`), junto con `ULTIMO` → `SUMA`.
+5. **Tramo 3 — `secco`**, la medición de `D-01`.
+
+## Lo que midieron los Pedidos 1 y 2, y hay que tener a mano
+
+- **El corte JM/GCBA es una señal por canal.** IVR: `digital/Directa IVR` col **G**,
+  encabezado exacto `"Vocero"`, 57/57 filas con dato, **`JM` 53 · `GCBA` 4**, y **0 cuentas
+  con dos voceros**. Mail: `digital/Directa Mail` col **G**, encabezado exacto
+  `"Mail remitente"` —**no "MAIL"**—, 2149 filas, **21 remitentes distintos**,
+  `jorge.macri@buenosaires.gob.ar` 294 (13,7%). Pauta: `digital/Digital` col **B**,
+  mapeada como `dig_jm_gcba`.
+- **⚠ El remitente es por envío, no por cuenta.** De las 880 cuentas con mail, **136 mandan
+  desde dos remitentes distintos**. La propagación por `id_cuenta` **no aplica a mail**.
+- **⚠ La propagación por cuenta cubre el 1,3%**: 47 de 3491 `id_cuenta` tienen fila en
+  `Directa IVR`. Pero casi no hace falta — los tres canales tienen señal propia; lo que
+  queda sin señal es **CC y la pauta digital**.
+- **`valores_incluidos` no alcanza para el corte por sección.** Filtra dentro de
+  `leerFuente`, por `(base, solapa)` y **para toda la corrida**: no puede darle JM a una
+  sección y GCBA a la de al lado. Eso es lo que resuelve el `Pedido-3`.
+- **`R-10`: el enunciado está bien, el fundamento numérico está mal citado.** Dice quince
+  pares; hoy son **dos** (`Eje`/`eje` y `Estado`/`estado`, las dos en
+  `digital/CAMPAÑAS_DESGLOCE_DIGITAL`). `Nombre Campaña` vs `nombre_campaña` **no** colisiona
+  plegando case: es espacio contra guion bajo. Y D.1 lo refuerza igual: las tres parejas son
+  **columnas distintas con contenido distinto** — `Estado`/`estado` se contradice en **1082
+  de 4840 filas**.
+- **`SOLAPAS` se movió 15 filas desde el snapshot del 01/08.** `m2/Cuentas` → **`ignorar`**
+  (no se lee ni se mapea); `digital/CAMPAÑAS_DESGLOCE_DIGITAL` → **`fuente`**;
+  `m2/CAMPAÑAS_DESGLOCE_DIGITAL` → **`ignorar`**, con lo cual **manda la de `digital`**.
+  **Antes de citar un `uso`, mirarlo vivo: el snapshot envejeció en tres días.**
 
 ## Qué mirar antes de tocar algo
 
-- **`buscarMapeo` no cachea, y cuesta caro.** Cada llamada relee `SOLAPAS` y `MAPEO`
-  enteras con `getDataRange()`. Con cinco llamadas por fila sobre ~1300 cuentas eran ~13.000
-  lecturas y `unirDigitalPorCuenta` **no volvía nunca**. Se arregló **hoisteando fuera del
-  bucle**, no cacheando: `Instalar.gs` escribe esas dos hojas y las relee en la misma
-  corrida, así que un caché sin invalidación rompería el sembrador. **Si escribís un bucle
-  que llama a `buscarMapeo`, resolvé la columna afuera.**
-- **`anclarEncuentros` y `unirDigitalPorCuenta` sí cachean por ventana**, a nivel módulo, o
-  sea por ejecución. Es seguro porque las cuatro bases son de sólo lectura para el motor.
-- **`abrirHoja` devuelve un sobre `{ ok, base, libro, hoja }`, no la hoja.** Costó un
-  `getDataRange is not a function` en `catalogoBarriosDesdeBase_` que estaba ahí desde
-  siempre, invisible porque el anclaje moría antes de llegar.
-- **Nada que recorra una presentación puede usar `slide.getShapes()`.** No ve dentro de
-  tablas ni de grupos: son **33 tokens de JM** y 48 de SECCO. El recorrido correcto es
-  `piezasDeTextoDeSlide_` (`Armonizar.gs`), que ahora además devuelve `objectId`. Lo pagó
-  hoy `eliminarCajaHuerfanaM2Salud_`, que buscó su caja con `getShapes()` y encontró cero.
-- **`upsertPorClave_` reescribe la fila entera** (sigue abierto, `P0` en `PENDIENTES`).
-  `SOLAPAS` está expuesta: `firma_encabezado`, `filas_datos` y `filas_crudas` no están en
-  los objetos del sembrador y **65 de 84 filas** las tienen pobladas. Regla mientras tanto:
-  **una columna nueva se agrega al `SEED_*` con su valor real, nunca con `''`.**
-- **`tools/api.js` reintenta el transporte hasta dos veces**, porque el frontend de Google
-  devuelve de a ratos un 404 en HTML o pierde el body del POST. **El caso HTML no se
-  distingue de una corrida que sí ejecutó**, así que una llamada que escribe puede escribir
-  dos veces — está escrito en el código, arriba del reintento.
-- **Una respuesta grande no vuelve por `/dev`**, y el tope de ejecución de Apps Script son
-  **6 minutos**. `generarInforme` sobre `jm` tarda ~240 s: está adentro, pero no sobra tanto.
-- **Tres significados distintos de una celda vacía**, a propósito: `D-19` (la fila no
-  entra), `D-20` (usa el eslabón siguiente), `D-21` (no hay filtro).
+- **Las bases no se pueden leer desde node.** La cuenta de `tools/token.js` sólo tiene scope
+  `drive.file`, así que el `htmlview` de `tools/snapshot.js` da **404** contra libros ajenos.
+  Para medir sobre las bases, el camino es el motor: `tools/api.js llamar fn=eval` con
+  snippets de sólo lectura — cero líneas en el repo y cero `clasp push`.
+  **⚠ `eval` es invocable por la API** (no está en `API_PROHIBIDAS_`): cómodo para medir, y
+  superficie de ataque si el token se filtra.
+- **Una solapa con `uso = 'ignorar'` no se lee, no se audita y no se menciona.** El
+  `Pedido-1` leyó `m2/Cuentas` antes de saber que había pasado a `ignorar`: la premisa del
+  prompt decía `fuente`. **El `uso` se verifica vivo antes de leer, no después.**
+- **`FALTANTES` cuenta por (token, ítem), no por caja.** El deck tiene 447 cajas en `«FALTA»`
+  y la hoja registra 438: los 9 son `camp_titulo` (8 cajas, 1 fila), `camp_remitente` y
+  `rrss_area1`. Responde *qué* falta, no *cuántas cajas* quedaron marcadas.
+- **`buscarMapeo` no cachea, y cuesta caro.** Si escribís un bucle que la llama, resolvé la
+  columna afuera.
+- **`abrirHoja` devuelve un sobre `{ ok, base, libro, hoja }`, no la hoja.**
+- **Nada que recorra una presentación puede usar `slide.getShapes()`.** El recorrido correcto
+  es `piezasDeTextoDeSlide_` (`Armonizar.gs`), que devuelve `objectId` — es lo que hizo
+  posible leer el deck caja por caja.
+- **`upsertPorClave_` reescribe la fila entera** (`P0` en `PENDIENTES`). Una columna nueva se
+  agrega al `SEED_*` con su valor real, nunca con `''`, y **primero a `COLUMNAS_DELTA_` y
+  recién después a los `headers`**.
+- **Una respuesta grande no vuelve por `/dev`**, y el tope de Apps Script son **6 minutos**.
+- **Tres significados distintos de una celda vacía**: `D-19`, `D-20`, `D-21`.
 
 ## Números de referencia, verificados hoy
 
-`MARCADORES` en **13** filas (los 11 `prueba_*` se retiraron; entraron 4 `enc_*` nuevos).
-`MAPEO` en 121. **Las 10 pruebas de `Pruebas.gs` pasan**, corridas seis veces a lo largo de
-la noche: después del anclaje, de la armonización, del Paso 4, del Paso 5 y dos veces al
-tocar los formatos. La plantilla de JM quedó en **195 tokens distintos** (191 antes de
-armonizar), 22 slides.
-
-**Qué falta cablear, por token distinto** (`tokensSinCablear_('jm')`): **195 en la plantilla
-· 13 cableados y presentes · 0 cableados sin caja · 181 sin cablear** — `camp_` 53, `m2_`
-31, `rrss_` 21, `ecv_` 19, `gcba_` 19, `enc_` 8, sin prefijo 7, `ivr_` 7, y menos de cinco
-cada uno en `cc_`, `imp_`, `mail_`, `pauta_`, `contenidos_`. `FALTANTES` responde lo mismo
-pero **por instancia emitida** (438 filas para esos 181 tokens): sirve para atacar una
-corrida, no para dimensionar el trabajo.
+`MAPEO` en **120** filas — ninguna de `vocero` ni de remitente. `MARCADORES` en 13.
+Deck vigente: **195 tokens · 464 instancias · 17 con valor · 447 en `«FALTA»` · 0 crudos**.
+`FALTANTES` en 438 filas, **384 de ellas por "sin fila en `MARCADORES`" (88%)**.
+`digital` tiene **8** solapas `uso = fuente`; universo de `id_cuenta` del libro: **3491**.
 
 ## Estado de los prompts sin ejecutar
 
-| prompt | estado al 04/08 |
+| prompt | estado al 04/08 (tarde) |
 |---|---|
-| `Corrida_nocturna_2026-08-04` | **ejecutada.** Puntos 1 a 5 hechos; el 6 quedó cubierto por `FALTANTES` |
-| `Paso-4` | **ejecutado** |
-| `Paso-5-v2` | **ejecutado**, con su Parte 0 anotada y no ejecutada como parada. La expansión por campaña quedó **sin probar contra datos**: no hay ninguna fila de `jm` en `CAMPANAS` |
-| `Paso-2.5` | **destrabado** — la armonización que esperaba ya corrió. Al ejecutarlo, usar el recorrido de `mapaDeTokens_`, no `getShapes()` |
+| `2026-08-04_Pedido-1_corte_jm_gcba` | **Partes 0 y D corridas**, con tres premisas vencidas reportadas. A, B, C y E **sin ejecutar** — B necesita corrección (mail es por fila) |
+| `2026-08-04_Pedido-2_validar_deck` | **ejecutado entero.** Hallazgo: la cuenta equivocada |
+| `2026-08-04_Pedido-3_filtro_declarativo` | **sin ejecutar.** Va después del `Pedido-4` |
+| `Paso-2.5` | destrabado; al ejecutarlo, usar `mapaDeTokens_`, no `getShapes()` |
 | `Paso-2.13` | sirve como está, auditado el 03/08 |
 | `Paso-3-v3` | ejecutado hasta `D.1` Parte D |
 | `DOC-8` | sirve como está |

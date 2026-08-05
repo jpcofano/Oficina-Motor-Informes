@@ -2863,3 +2863,166 @@ para algo irreversible hay que mirar esa línea.
 - **Pendientes/decisiones:** el formato `fraccion` se decidió solo, con el deck a la vista.
   Si algún `*_pct` de otra base viniera ya en unidades de porcentaje, va con `porcentaje` y
   no con éste — la distinción vive en la fila, que es donde se puede cambiar sin `clasp push`.
+
+## `Pedido-1` — Partes 0 y D corridas, y **para** (2026-08-04) — commit de esta entrada
+- **Qué pedía** `docs/Prompts/2026-08-04_Pedido-1_corte_jm_gcba.md`: ubicar y medir la señal
+  que separa JM de GCBA por canal (Parte 0) y verificar el fundamento numérico de `R-10`
+  (Parte D). Las dos son sólo lectura y terminan en parada. **No se tocó `MAPEO`,
+  `REGLAS_NEGOCIO.md`, ningún `.gs` ni ninguna celda de las bases.**
+- **Cómo se midió, que importa para repetirlo:** la cuenta que corre `tools/token.js` sólo
+  tiene scope `drive.file`, así que **las bases no se pueden bajar desde node** — el
+  `htmlview` que usa `tools/snapshot.js` devuelve 404 contra libros ajenos. Las mediciones
+  salieron del propio motor, por `tools/api.js llamar fn=eval` con snippets de sólo lectura:
+  cero líneas nuevas en el repo y cero `clasp push`. **Nota de seguridad: `eval` es invocable
+  por la API** (no está en `API_PROHIBIDAS_`); es cómodo para medir y es superficie de ataque
+  si el token se filtra.
+- **⚠ Tres premisas del prompt estaban vencidas: `SOLAPAS` se movió 15 filas desde el
+  snapshot del 01/08.** Alguien curó los `revisar` en el medio.
+  `m2/Cuentas` pasó de `revisar` a **`ignorar`** (el prompt la declara `uso = fuente`);
+  `digital/CAMPAÑAS_DESGLOCE_DIGITAL` pasó a **`fuente`** (recién ahora es "solapa fuente
+  activa", como dice `R-10`); `m2/CAMPAÑAS_DESGLOCE_DIGITAL` pasó a **`ignorar`**, con lo
+  cual **la ⚠ de la Parte D ya está resuelta: manda la de `digital`**.
+  **`m2/Cuentas` se leyó antes de saberlo**, siguiendo la instrucción `0.1 bis`. Queda
+  anotado como lo que es: una solapa `ignorar` no se lee ni se mapea (`CLAUDE.md` §2), y la
+  tercera viñeta de la Parte A queda cancelada por regla.
+- **0.1 · `Vocero`, medida.** `digital/Directa IVR` columna **G**, encabezado exacto
+  `"Vocero"`. **57 filas de 57 con dato**, ninguna vacía. Valores: **`JM` 53 · `GCBA` 4**,
+  escritos así, en mayúsculas. 47 cuentas distintas.
+- **0.3 · Dato sano: 0 cuentas con dos voceros distintos.**
+- **0.1 bis · El remitente.** `digital/Directa Mail` columna **G**, encabezado exacto
+  `"Mail remitente"` — **no "MAIL"**. 2149 filas, ninguna vacía.
+  **⚠ El hallazgo que corrige el diseño: de las 880 cuentas con filas de mail, 136 mandan
+  desde dos remitentes distintos**, y el par más común es `infovecinos` + `jorge.macri`
+  sobre la misma cuenta. **El remitente es una señal por envío, no por cuenta**, así que la
+  propagación por `id_cuenta` que declara la Parte B **no puede aplicarse a mail**.
+- **0.4 · Son 21 remitentes, no 2.** `jorge.macri@buenosaires.gob.ar` = **294 filas
+  (13,7%)**; los otros veinte suman 1855, encabezados por `infovecinos` (936) y
+  `baparticipacionciudadana` (626), y la cola son ministros y áreas nominales. La regla
+  "JM = jorge.macri, el resto GCBA" funciona igual.
+  `SECCIONES.campana_desag_respuestas` existe, con `itera_sobre = remitente (JM / GCBA)` y
+  estado `revisar`.
+- **⚠ 0.2 · La propagación por cuenta cubre el 1,3%.** Universo de `id_cuenta` sobre las 8
+  solapas `fuente` de `digital`: **3491**. Con fila en `Directa IVR`: **47**. O sea
+  **98,7% sin vocero**. De las que faltan: 3436 en `Cuentas`, 875 en `Digital`, 833 en
+  `Directa Mail`, 695 en `Seguimiento digital`, 648 en `CAMPAÑAS_DESGLOCE_DIGITAL`, 638 en
+  `Alcance`, 31 en `Directa SMS`.
+  **Pero la propagación casi no hace falta:** los tres canales tienen señal propia — IVR su
+  columna, mail su remitente por fila, SMS es GCBA por decisión. Lo que queda sin ninguna
+  señal es **CC y la pauta digital**.
+- **`m2/Cuentas`, ya que se leyó:** columna **U**, encabezado `"Remitente"`, 3436 filas con
+  dato, vocabulario **`GCBA` 3052 · `JM` 286 · `ANUNCIO` 82 · `PDLC` 16**. No es la misma
+  variable que la columna G de `Directa Mail` (ahí hay direcciones de correo). No se mapea.
+- **D.1 · `R-10` tenía razón, y ahora está demostrado.** La solapa tiene **4840 filas** hoy,
+  no las 4591 que cita el prompt. Por pareja (exacto / sólo plegando case y acentos /
+  difieren de verdad): `Nombre Campaña`(E) vs `nombre_campaña`(V) → **1551 / 170 / 3119**
+  (V trae la nomenclatura completa: `"CAMPAÑA GCBA | INFRAESTRUCTURA | Campaña 360°
+  Movilidad 2025"` contra `"Campaña 360° Movilidad 2025"`); `Eje`(H) vs `eje`(W) →
+  **107 / 0 / 4733** (`"Infraestructura"` vs `"Movilidad"`: son taxonomías distintas);
+  `Estado`(K) vs `estado`(Y) → **0 / 3756 / 1082** (`"ACTIVA"` vs `"Finalizada"`).
+  **La pareja que más parece la misma se contradice en 1082 filas.** La hipótesis del
+  "bloque agregado aparte con el mismo contenido" queda descartada.
+- **⚠ D.2 · El "quince pares" de `R-10` no se reproduce: hoy son dos.** Censo sobre las
+  **46** solapas registradas que no son `ignorar` (38 salteadas por regla, sin nombrarlas).
+  **Plegando sólo mayúsculas y acentos —que es lo que `R-10` discute— hay 2 colisiones**,
+  las dos en `digital/CAMPAÑAS_DESGLOCE_DIGITAL` [`fuente`]: `Eje`/`eje` y `Estado`/`estado`.
+  **`Nombre Campaña` vs `nombre_campaña` no colisiona** bajo ese plegado — espacio contra
+  guion bajo, y `R-10` preserva los dos. Colisiona sólo si además se pliega `_`, y ahí
+  aparece una cuarta: `rdv/Visualiz_mail` [`derivada`] `Mail_remitente`(D) vs
+  `Mail remitente`(E). Duplicados exactos: **3**, todos en solapas `referencia`
+  (`rdv/Comunas` `"Agronomía"` T y V; `digital/RDV JM 2 VECES` y `digital/INFORME` con
+  `Clics` dos veces). **Los de `looker/URLs` ya no cuentan: esa solapa hoy es `ignorar`.**
+  **El enunciado de `R-10` sigue en pie y D.1 lo refuerza; lo que está mal citado es su
+  fundamento numérico**, y uno de sus tres ejemplos no es un caso de case-folding.
+- **D.3 · La columna `JM | GCBA | POLICIA` clasifica 15 veces más, y se contradice.** Está
+  en **tres** solapas `fuente`, no en una: `digital/CAMPAÑAS_DESGLOCE_DIGITAL` col T
+  (GCBA 4705 · JM 107 · Sin Tipo 22 · LINDA 6 · 693 cuentas · 1 ambigua);
+  `digital/Digital` col B (GCBA 739 · JM 205 · POLICIA 16 · 334 filas sin valor · 877
+  cuentas · 29 ambiguas); `digital/Seguimiento digital` col E (GCBA 787 · JM 27 · LINDA 2 ·
+  163 sin valor · 742 cuentas · 9 ambiguas).
+  Contra el vocero, cuenta por cuenta: `CAMPAÑAS_DESGLOCE` coincide en **12 de 45**;
+  `Seguimiento digital` en **9 de 47**. Los choques son casi todos cuentas `…JDGAG` con
+  `vocero = JM` y columna `GCBA`.
+  **La condición que puso el prompt —"si clasifica más y no se contradice"— no se cumple:
+  el corte por vocero y remitente se mantiene.** Lectura de por qué chocan: la columna dice
+  de quién es la campaña, el vocero dice quién habla en el audio. No son la misma pregunta.
+- **Prueba:** sólo lectura. Ni `.gs`, ni hojas, ni bases, ni plantillas.
+- **Pendientes/decisiones:** la Parte B necesita corrección antes de escribirse (mail es por
+  fila, no por cuenta). La Parte A pierde su tercera viñeta. **La Parte C se choca con el
+  límite que el propio prompt anticipó**: `valores_incluidos` filtra dentro de `leerFuente`,
+  por `(base, solapa)` y **para toda la corrida**, así que no puede darle JM a una sección y
+  GCBA a la de al lado — que es lo que pide `campana_desag_respuestas`. Eso es mecanismo
+  nuevo y lo decide el usuario. La Parte E no se abrió.
+
+## `Pedido-2` — el deck validado: **los once números salen de la cuenta equivocada** (2026-08-04) — commit de esta entrada
+- **Qué pedía** `docs/Prompts/2026-08-04_Pedido-2_validar_deck.md`: abrir el deck generado y
+  leer qué quedó escrito, caja por caja, contra el mapa `token → objectId` de `CORRIDAS`.
+  Casi todo sólo lectura. **No se corrigió ningún número, no se cambió `ULTIMO` por `SUMA`,
+  no se regeneró el informe, no se tocó la plantilla ni ninguna base.**
+- **⚠ EL HALLAZGO · el encuentro es `3387-JULJDGGC` y el motor leyó `3347-JULJDGAG`.** Las
+  dos cuentas comparten el nombre de campaña `TE CUENTO BS AS JM | 21/7 ORDEN PÚBLICO`, la
+  `Segmentacion` y hasta la columna `Audiencia` (40874 / 37763 en las dos) — **por eso
+  `enc_audiencia = 37763` parecía correcto: coincide por casualidad**. `3347` es del 16–17/07
+  con entregas chicas; `3387` es del 22–26/07 y es la que usó el informe publicado.
+  Deck contra `docs/VALIDACION_2026-07-31.md` §3.2: `enc_mails_enviados` **110** vs
+  **44.043**; `enc_mails_entregados` 110 vs 43.439; `enc_aperturas`/`enc_or` 31 (28,2%) vs
+  4.652 (10,7%); `enc_clics_ctor`/`enc_ctor` 1 (3,2%) vs 145 (3,1%); `enc_atendidos`
+  **6.161** vs **71.234**; `enc_e75`/`enc_e75_pct` 2.229 (36,2%) vs 27.599 (39%);
+  `enc_marque1` 67 vs 256; `enc_audiencia` 37.763 vs 78.637.
+  **Con la cuenta correcta y `SUMA`, los cuatro de IVR cierran dígito a dígito con el informe
+  publicado** (78.637 · 71.234 · 27.599 · 256).
+- **Por qué pasó:** `digital` es `modo_periodo = snapshot`, así que **nada filtra por fecha**;
+  el join es puro `id_cuenta` y el matcher eligió entre dos cuentas homónimas **sin desempate
+  temporal**. Es el "empate técnico del match" que ya figuraba como pendiente de `Union.gs`;
+  ahora tiene una víctima concreta.
+- **Segundo golpe, para cuando se arregle la cuenta:** `3387` tiene **5 filas de mail**
+  (22/07 ×2, 25/07, 27/07 y **03/08**). Con `ULTIMO` y sin filtro de fecha tomaría la del
+  **03/08, fuera de la ventana**; el informe publicado usa la del 25/07.
+- **0.1 / 0.2 · Los siete decks están todos vivos**, ninguno en la papelera. El vigente
+  `1AU0tkyRQo0kGccnUGJqz0MoEqtiDpy5awYGy8VjTtH8` existe y tiene **30 slides** (la plantilla
+  tiene 22; las 8 de más son la expansión).
+  **Confirmado lo que anticipaba el prompt:** siete `corrida_id`, siete `deck_id` y conteos
+  crecientes 1→6→17 **es desarrollo, no doble escritura por el reintento de `tools/api.js`**.
+  El `P1` del reintento **baja a observación y no se saca**: el riesgo sobre una llamada que
+  escribe sigue existiendo, sólo que no se manifestó acá.
+- **Parte A · el motor no falló al escribir.** 195 tokens, **464 instancias: 17 con valor,
+  447 con `«FALTA»`, 0 tokens crudos `{{...}}`, 0 referencias del mapa que no existan en el
+  deck.** El mapa `token → objectId` es fiel.
+- **La discrepancia contra `CORRIDAS` está explicada:** el deck tiene 447 cajas en `«FALTA»`
+  y `FALTANTES` registra 438. Los 9 son tres tokens que aparecen en más cajas que filas
+  registradas — `camp_titulo` (8 cajas, 1 fila), `camp_remitente` (2/1), `rrss_area1` (2/1).
+  **`FALTANTES` cuenta por (token, ítem), no por caja:** responde *qué* falta, no *cuántas
+  cajas* quedaron marcadas.
+- **Parte B · ningún valor está en la caja equivocada.** Los diez rótulos vecinos
+  corresponden uno a uno (`enc_mails_enviados`→"Mails Enviados", `enc_atendidos`→"Atendidos",
+  `enc_marque1`→"Marcaron 1", `enc_e75`→"Escucharon +75%", `enc_audiencia`→"Audiencia").
+  **La rotación de la slide 5 y el cruce de la 6 no se reprodujeron.**
+- **Parte D · 384 de 438 faltantes se destraban con una sola cosa:** el motivo
+  *"sin fila en `MARCADORES`"*, **88% del total**. Los otros 54 son `sin_datos` sobre 0
+  filas, repartidos en 13 motivos casi idénticos (`ivr_*`, `mail_*`, `dig_*`, 4-5 ítems cada
+  uno): son los cuatro encuentros cuyas cuentas no aportan filas. Por familia: `ecv_*` 130,
+  `enc_*` 94, `camp_*` 53, `m2_*` 31, `ivr_*` 24, `rrss_*` 21, `cc_*` 19, `mail_*` 19,
+  `gcba_*` 19.
+- **Parte E · medido, sin decidir.** `enc_mails_enviados` y `enc_mails_entregados` dan los
+  dos 110 porque **en la base son 110 y 110** para esa fila: es un dato, no una columna leída
+  dos veces. `enc_atendidos` (6161), `enc_marque1` (67) y `enc_e75` (2229) salen **los tres
+  de la misma fila** — la segunda de `3347` — con `ULTIMO`.
+  **`ULTIMO` vs `SUMA` deja de ser una pregunta abierta** (`VALIDACION` §3.2: *"IVR cierra
+  por SUMA sobre `id_cuenta`"*), **pero no se cambió**: va junto con el arreglo de la cuenta,
+  para poder medir los dos cambios por separado.
+- **Tres observaciones que el prompt no pedía:**
+  1. **Las cinco slides de encuentro son indistinguibles entre sí.** `ecv_barrio` sale
+     `«FALTA»` en las cinco, así que **el deck no dice qué encuentro es cada lámina**. Y hay
+     un desajuste sin resolver: los valores cayeron en la **slide 11**, que por orden de
+     `REUNIONES` sería *Retiro (pre)*, mientras el handoff dice que el encuentro con datos es
+     *Orden Público*. Una de las dos cosas está mal y **no se puede saber cuál desde el
+     deck**.
+  2. **El anclaje no queda registrado en ningún lado.** `ANCLAJE_PENDIENTE` está vacía (sólo
+     encabezado) y **`VALORES` no tiene ni una fila**, aunque `Valores.gs` y
+     `registrarValorCalculado_` existen. Sin eso, "qué cuenta usó cada ítem" no es auditable
+     — que es exactamente lo que hizo falta hoy.
+  3. **Los números van sin separador de miles**: el deck dice `6161`, `2229`, `37763`; el
+     informe publicado usa `6.161`.
+- **Prueba:** sólo lectura, por `eval` sobre la API. No se tocó `.gs` ni ninguna hoja.
+- **Pendientes/decisiones:** el arreglo del desempate del matcher es de `Union.gs` y no se
+  hizo acá. Queda pendiente decidir si el orden de expansión de las cinco slides es el de
+  `REUNIONES` o no.
