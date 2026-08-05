@@ -492,8 +492,24 @@ function resolverMarcadores(informeId, opciones) {
       }
     }
 
+    // 4 ter · Las fechas de cada fila, para que `ULTIMO` elija por fecha y no por posición
+    //         (12/08). Resolver **qué columna es la fecha** es estructura y por eso vive acá;
+    //         `opULTIMO` sólo elige. Si la solapa no tiene `fecha_periodo` mapeada, no se
+    //         pasa nada y `opULTIMO` cae a su comportamiento viejo diciéndolo en la traza.
+    var fechasDeFilas = null;
+    var campoFechaMarcador = buscarMapeo(fila.base_id, solapa.solapa, 'fecha_periodo');
+    if (campoFechaMarcador.ok) {
+      var claveFecha = (fila.base_id === 'digital' && solapa.solapa === SOLAPA_MAESTRA_DIGITAL_)
+        ? 'fecha_periodo'
+        : encabezadoEnColumna_(fila.base_id, solapa.solapa, campoFechaMarcador.columna);
+      fechasDeFilas = datos.filas.map(function (o) {
+        return parsearFechaCelda_(o[claveFecha]) || null;
+      });
+    }
+
     // 5 · La operación.
     var ctx = {
+      fechas: fechasDeFilas,
       marcador: fila.marcador,
       base_id: fila.base_id,
       solapa: solapa.solapa,

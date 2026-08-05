@@ -119,13 +119,68 @@ function opCONTEO(ctx) {
  */
 function opULTIMO(ctx) {
   var valores = valoresDeCtx_(ctx);
+
+  // `ULTIMO` por FECHA (12/08) — antes era "la última posición del array", o sea **el orden
+  // de filas de la hoja**. Con el filtro `mail_tipo=Convocatoria` quedan tres filas —22/07
+  // ×2 y 25/07— y el número correcto (44.043) salía sólo porque la del 25/07 está última.
+  // Las del 22/07 son **201.515** y **25.560**: reordenar la hoja cambiaba el número a uno
+  // grande, plausible y con el rótulo correcto al lado, sin que saltara nada. Es el mismo
+  // modo de falla que la cuenta `3347`, que sobrevivió tres semanas por eso.
+  //
+  // `ctx.fechas` lo arma el despachador (resolver qué columna es la fecha es **estructura**,
+  // y vive en `Generador.gs`; acá sólo se elige, que es la parte que sí es de este módulo).
+  // Si no viene, se cae al comportamiento viejo **y la traza lo dice** — hay marcadores sobre
+  // solapas sin fecha mapeada que hoy funcionan así y no se rompen por esto.
+  var fechas = ctx.fechas;
+  if (fechas && fechas.length === valores.length) {
+    var candidatos = [];
+    for (var f = 0; f < valores.length; f++) {
+      var v = valores[f];
+      if (v === '' || v === null || v === undefined) continue;
+      if (!fechas[f]) continue;
+      candidatos.push({ valor: v, fecha: fechas[f] });
+    }
+
+    if (candidatos.length) {
+      candidatos.sort(function (a, b) { return b.fecha.getTime() - a.fecha.getTime(); });
+      var tope = candidatos[0].fecha.getTime();
+      var empatados = candidatos.filter(function (c) { return c.fecha.getTime() === tope; });
+      var distintos = {};
+      empatados.forEach(function (c) { distintos[String(c.valor)] = true; });
+
+      // Empate real: misma fecha máxima y **valores distintos**. No se elige. Si los valores
+      // empatados son idénticos no hay nada que decidir y elegir cualquiera es lo mismo.
+      if (Object.keys(distintos).length > 1) {
+        return {
+          valor: '',
+          ambiguo: true,
+          traza: '«FALTA:@ultimo_ambiguo» — ÚLTIMO por fecha: ' + empatados.length + ' filas comparten la fecha ' +
+            'más alta (' + Utilities.formatDate(candidatos[0].fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy') +
+            ') con valores distintos (' + Object.keys(distintos).join(' / ') + ') en "' + ctx.campo_logico +
+            '". No se elige: un número plausible de la fila equivocada es peor que un hueco' + trazaDeVentana_(ctx),
+          filas: valores.length
+        };
+      }
+
+      return {
+        valor: candidatos[0].valor,
+        traza: 'ÚLTIMO por fecha de "' + ctx.campo_logico + '" (col ' + ctx.columna + '): se eligió la fila del ' +
+          Utilities.formatDate(candidatos[0].fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy') + ', la más alta de ' +
+          candidatos.length + ' fila(s) con valor y fecha, sobre ' + valores.length + ' fila(s) de ' +
+          ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') + trazaDeVentana_(ctx),
+        filas: valores.length
+      };
+    }
+  }
+
   for (var i = valores.length - 1; i >= 0; i--) {
     var valor = valores[i];
     if (valor !== '' && valor !== null && valor !== undefined) {
       return {
         valor: valor,
-        traza: 'ÚLTIMO valor no vacío de "' + ctx.campo_logico + '" (col ' + ctx.columna + ') sobre ' + valores.length +
-          ' fila(s) de ' + ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') + trazaDeVentana_(ctx),
+        traza: 'ÚLTIMO por POSICIÓN (sin fecha utilizable) de "' + ctx.campo_logico + '" (col ' + ctx.columna +
+          ') sobre ' + valores.length + ' fila(s) de ' + ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') +
+          trazaDeVentana_(ctx),
         filas: valores.length
       };
     }
