@@ -1952,7 +1952,28 @@ var SEED_SECCIONES_ = [
   filaSeccion_({ id: 'semana_jm_conversacion', orden: 5, nombre: 'Semana JM — conversación X', informes: 'SECCO', modo: 'unica' }),
   filaSeccion_({ id: 'miba', orden: 6, nombre: 'Integración MiBA', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'fuente sin definir en el motor; el bloque ya se publica lleno a mano' }),
   filaSeccion_({ id: 'portada_digital_directa', orden: 7, nombre: 'Portada Digital/Directa', informes: 'JM,SECCO', modo: 'unica' }),
-  filaSeccion_({ id: 'encuentro', orden: 8, nombre: 'Bloque de encuentro', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', familia: 'ecv_,enc_' }),
+  // `Pedido-4` Parte A (05/08) — la lámina del alcance semanal por herramienta. Hermana de
+  // `encuentro` y en modo `agregado`: **que no itere sobre `REUNIONES` es todo el punto.**
+  // `orden: 7.5` a propósito, para no renumerar ninguna fila curada — la sección va entre la
+  // portada de Digital/Directa y el bloque de encuentro, que es donde está la lámina.
+  // La familia lista los **10 tokens exactos** de agregado semanal puro en vez del prefijo
+  // `ecv_`: el prefijo se llevaría también los 7 ambiguos y los 2 de encuentro, que viven en
+  // la lámina del iceberg y no acá. Un token completo es un prefijo válido de sí mismo
+  // (`tokenEsDeFamilia_` compara con `indexOf(f) === 0`), así que la semántica no cambia.
+  // ⚠ `ecv_barrio` NO está en la lista y no puede estarlo: es prefijo de `ecv_barrio1/2/3`.
+  filaSeccion_({ id: 'ecv_alcance_semanal', orden: 7.5, nombre: 'Encuentros con vecinos — alcance semanal por herramienta', informes: 'JM,SECCO', modo: 'agregado',
+    familia: 'ecv_encuentros,ecv_barrios,ecv_barrio1,ecv_barrio2,ecv_barrio3,ecv_insc_mail_pct,ecv_insc_cc_pct,ecv_insc_ivr_pct,ecv_insc_digital_pct,ecv_insc_dif_pct',
+    notas: 'los 10 de agregado semanal puro (Pedido-4 0bis.1). Los 7 ambiguos (ecv_inscriptos, ecv_asistentes, los cinco ecv_insc_*) quedan diferidos por la opción C del 05/08 y siguen en el bloque de encuentro' }),
+  // `Pedido-4` Parte A (05/08) — la familia dice **con qué se reconoce el bloque modelo en
+  // la plantilla**, y el bloque de encuentro se reconoce por `enc_`, no por `ecv_`. Decía
+  // `ecv_,enc_`, y por eso `slidesModeloDe_` reclamaba también la lámina del **alcance
+  // semanal** (que lleva `ecv_*` y ningún `enc_*`) y la duplicaba una vez por encuentro: en
+  // el deck del 04/08, un total de la semana salió **cinco veces**. Los `ecv_` que sí viven
+  // en la lámina del iceberg —los 7 ambiguos y los 2 de encuentro— siguen resolviéndose por
+  // ítem sin estar en la familia: la pasada del Paso 5 recorre `tokensDeSlide_`, o sea
+  // **todos** los tokens de la slide emitida, no sólo los de la familia.
+  filaSeccion_({ id: 'encuentro', orden: 8, nombre: 'Bloque de encuentro', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', familia: 'enc_',
+    notas: 'familia enc_ y no ecv_,enc_ (Pedido-4, 05/08): los ecv_ del iceberg se resuelven por ítem vía tokensDeSlide_, no por familia' }),
   filaSeccion_({ id: 'comunicaciones_post', orden: 9, nombre: 'Comunicaciones post', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', filtro: 'etapa=post', familia: 'post_' }),
   filaSeccion_({ id: 'impacto_comunicacional', orden: 10, nombre: 'Semana JM — Impacto comunicacional', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'sin marcar en la plantilla' }),
   filaSeccion_({ id: 'ministros', orden: 11, nombre: 'Encuentros de ministros', informes: 'SECCO', modo: 'agregado', familia: 'emin_' }),
@@ -2090,6 +2111,57 @@ function curarMarcadores_(quitar, agregar) {
     agregadas: agregadas,
     filas_finales: Math.max(hoja.getLastRow() - 1, 0)
   };
+}
+
+/**
+ * `Pedido-4` Parte A (05/08) — la puerta para **corregir un campo** de una sección que ya
+ * existe. Misma necesidad y misma forma que `curarMarcadores_`, y por el mismo motivo:
+ * `sembrarSecciones_` **sólo agrega** y nunca pisa una fila existente, así que cambiar
+ * `encuentro.familia_tokens` de `ecv_,enc_` a `enc_` no tenía ningún camino en el código —
+ * sólo la mano de una persona sobre la celda, que no deja traza ni se puede repetir en otra
+ * planilla.
+ *
+ * **Deliberadamente angosta:** no crea filas, no borra filas y no toca `seccion_id`. Sólo
+ * escribe los campos declarados de una sección que ya existe, y **devuelve el antes y el
+ * después de cada celda que cambió**. Una sección que no existe se reporta y no se crea:
+ * crear es trabajo del sembrador, y mezclarlos es como `upsertPorClave_` terminó pisando
+ * filas curadas (`P0` en `PENDIENTES`).
+ *
+ * `cambios` es `[{ seccion_id: 'x', campo: valor, ... }]`.
+ */
+function curarSecciones_(cambios) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SECCIONES');
+  if (!hoja) return { ok: false, motivo: 'La hoja SECCIONES no existe.' };
+
+  cambios = cambios || [];
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxId = headers.indexOf('seccion_id');
+  if (idxId === -1) return { ok: false, motivo: 'SECCIONES no tiene columna `seccion_id`.' };
+
+  var filaDe = {};
+  for (var f = 1; f < datos.length; f++) {
+    if (datos[f][idxId]) filaDe[datos[f][idxId]] = f;
+  }
+
+  var aplicados = [];
+  var sinFila = [];
+  cambios.forEach(function (c) {
+    var id = c.seccion_id;
+    if (!(id in filaDe)) { sinFila.push(id); return; }
+    var f = filaDe[id];
+    Object.keys(c).forEach(function (campo) {
+      if (campo === 'seccion_id') return;
+      var col = headers.indexOf(campo);
+      if (col === -1) { sinFila.push(id + '.' + campo + ' (columna inexistente)'); return; }
+      var anterior = datos[f][col];
+      if (String(anterior) === String(c[campo])) return; // ya estaba: no se escribe
+      hoja.getRange(f + 1, col + 1).setValue(c[campo]);
+      aplicados.push({ seccion_id: id, campo: campo, anterior: anterior, nuevo: c[campo] });
+    });
+  });
+
+  return { ok: true, aplicados: aplicados, sin_fila: sinFila, cambios_escritos: aplicados.length };
 }
 
 function menuSembrarSecciones_() {
