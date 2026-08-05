@@ -3318,3 +3318,64 @@ para algo irreversible hay que mirar esa línea.
   tocó `TOKENS.md` ni se anotó como inconsistencia**: primero hay que mirar qué numera esa
   tabla.
 - **Prueba:** documentación pura.
+
+## Corrida 07/08 — puntos 1 y 2, y el punto 3 **parado antes de tocar la plantilla** (2026-08-07) — commit de esta entrada
+- **Punto 1 · `CONFIG_INFORMES.md` §1.1 reescrito.** Las dos decisiones del 05/08 que estaban
+  ahí **se reemplazan, no se matizan**: el período **no** es el criterio de selección —lo es
+  el temario, y las campañas destacadas **se buscan en toda la base, sin filtro de
+  ventana**—, y el *"máximo cinco envíos"* pasa a **desborde**: la lámina se repite, cinco
+  por lámina, y ningún envío se pierde. La regla quedó escrita en una línea: **la ventana
+  agrega, el temario selecciona.**
+- **Queda anotada la limitación de la medición que lo motivó**, porque importa: `0.6` agrupó
+  por **`id_cuenta`, no por campaña**, ya que `CAMPANAS` no tiene ninguna fila de `jm` y no
+  existe la campaña contra la cual agrupar. **El proxy fue forzado por falta de datos, no
+  elegido**: los 6 envíos en ventana dicen que **una cuenta** los recibió, **no** que una
+  campaña los haya mandado. La decisión se toma igual porque el modo de falla que evita
+  —perder un envío en silencio— no depende del número exacto.
+- **`D-19` sigue en pie, y ahora por un motivo más simple:** `periodo_id` es **el informe
+  donde la campaña aparece**, no el período de sus fechas. No hay nada que deducir: es una
+  decisión editorial y la escribe una persona.
+- **Punto 2 · los tres remitentes sueltos, diferidos y silenciados.** Entrada `P2` en
+  `PENDIENTES` con las tres ubicaciones y la pregunta textual, más la marca en §2.5.
+  **`camp_bench_` (sin `_remitente`) queda explícitamente afuera del cajón**: su pregunta es
+  otra y meterlo lo habría dado por cerrado.
+
+### ⚠ Punto 3 · PARADO. La lámina 18 no coincide con lo que midió `0.4`, y la plantilla NO se tocó
+- **No hubo backup porque no hubo escritura.** El prompt lo previó: *"si al abrir la
+  plantilla la lámina 18 no coincide con lo que midió `0.4`, reportar el diff y parar este
+  punto"*. Es exactamente el caso.
+- **Las cinco celdas donde había que agregar los tokens NO están vacías: no existen como
+  celdas.** La tabla de la lámina 18 (`objectId p18_i1084`, 7 filas × 9 columnas) tiene
+  **celdas combinadas**:
+  | fila | col 1 · Envío | col 2 · Fecha |
+  |---|---|---|
+  | 2 · envío 1 | `{{camp_env1_rem}}` | `{{camp_env1_fecha}}` |
+  | 3 · envío 2 | **(combinada)** | `{{camp_env2_fecha}}` |
+  | 4 · envío 3 | **(combinada)** | `{{camp_env3_fecha}}` |
+  | 5 · envío 4 | **(combinada)** | **(combinada)** |
+  | 6 · envío 5 | **(combinada)** | `{{camp_env5_fecha}}` |
+  **La columna "Envío" está fusionada verticalmente desde la fila 2**, y la celda de fecha
+  del envío 4 está fusionada con la del envío 3.
+- **Lo que `0.4` midió no era "faltan cinco tokens".** `piezasDeTextoDeSlide_` **saltea las
+  celdas combinadas que no son la principal** —está escrito en su propio código— así que
+  midió *"cinco posiciones sin token propio"*, y la causa es la combinación, no un olvido.
+  **El prompt de hoy heredó esa lectura y pidió escribir en celdas que no existen.**
+- **Agregarlos exigiría descombinar celdas**, que es un cambio **estructural** de la tabla,
+  muy por encima de *"agregar cinco tokens en esas celdas"*. La autorización del 07/08 es
+  puntual y acotada a esos cinco tokens: **descombinar no está adentro**, y se para.
+- **Lectura, no hecho:** una columna "Envío" fusionada para las cinco filas sugiere que el
+  equipo diseñó la lámina con **un remitente para toda la tabla**, no uno por envío — que es
+  justamente la pregunta diferida del punto 2. Si eso fuera así, los cuatro `camp_envN_rem`
+  **no harían falta**. No se verificó con el equipo y no se decide acá.
+- **`C-01` sigue vigente y no se aflojó.** La autorización quedó registrada, sin usar.
+
+### `TOKENS.md` no estaba mal, y corregirlo habría introducido un error
+- El punto 3 pedía *"corregir `TOKENS.md`, que ubica esta tabla en la lámina 22"*.
+  **Verificado antes de tocarlo, como quedó anotado el 06/08:** esa tabla numera
+  **`Plantilla_SECCO.pptx`** —lo dice su propio encabezado— y en SECCO la 22 **es** el
+  desagregado de directa mail. La 18 que medí es de **`JM_marcada`**, otro archivo. **Son
+  dos numeraciones distintas, no una contradicción.** No se editó ni una línea.
+- Esto cierra el pendiente que la corrida del 06/08 dejó abierto sobre qué numeraba esa
+  tabla. **La cautela de no anotarlo como inconsistencia estaba bien puesta.**
+- **Prueba:** sólo lectura sobre la plantilla. **La plantilla no se abrió para escritura, no
+  se copió y no se modificó.**
