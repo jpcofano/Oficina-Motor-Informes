@@ -3617,3 +3617,41 @@ para algo irreversible hay que mirar esa línea.
   nombre de eje, confirmado por las líneas que van de las cinco cajas de campañas a la ancha.
 - **`C-01` no se derogó:** se anotó una **suspensión acotada y fechada** en
   `REGLAS_NEGOCIO.md`, que vuelve a regir en producción.
+
+## Piloto del Resumen Ejecutivo — el mecanismo, sin el sembrado (2026-08-15) — commit de esta entrada
+- **0.1 · El inventario, medido sobre la plantilla.** Slide **2 (JM): 21 tokens** en 18 cajas
+  (`mail_*`, `ivr_*`, `cc_*`, `imp_*`, `pauta_*`, `contenidos_total`, `frecuencia`).
+  Slide **3 (GCBA): los mismos con prefijo `gcba_`**, en 17 cajas. **No son 19**: el conteo
+  que circulaba era del 04/08.
+- **⚠ 0.2 · NO puede ser una sección repetible, y `SECCIONES` la declara así.** Los tokens de
+  GCBA llevan **prefijo propio** (`gcba_mail_envios` contra `mail_envios`), y una sección
+  repetible emite **el mismo bloque de tokens** por cada ítem. **Son dos láminas con tokens
+  propios** y hay que declararlas así. La fila `resumen_ejecutivo` (`repetible` sobre
+  `entidad (JM / GCBA)`, `estado = manual`) **quedó sin corregir**: no llegué.
+- **⚠ 0.3 · El punto duro tenía DOS huecos, no uno.**
+  1. **Un marcador de `digital` sin `id_cuenta` ni siquiera llegaba a leer**: fallaba con
+     `@digital_sin_cuenta`. La única vía a esa base era el proveedor por cuenta del Paso 2.4.
+     **Eso bloqueaba de raíz cualquier agregado del período** — y es lo que el prompt buscaba
+     como "recorte por ventana", pero el problema estaba un paso antes.
+  2. **Y `leerFuente` sobre `digital` no recorta**: devuelve **2108 filas de 2164** con
+     `columna_fecha: null` y `ventana_aplicada: null`. Las 56 que faltan son la lista blanca
+     de `mail_estado`, no la ventana.
+- **La variante, implementada:** sin `id_cuenta` se cae a `leerFuente` y **se recorta por la
+  `fecha_periodo` de cada solapa** — mail por fecha de envío (col F), IVR por fecha de inicio
+  (col D), que es exactamente el criterio del usuario del 15/08 **sin cambiar nada de `MAPEO`**.
+  Sin `fecha_periodo` mapeada **falla con `@sin_fecha_para_recortar`** en vez de devolver el
+  total de todos los períodos. **`BASES.modo_periodo` de `digital` no se tocó** y la rama por
+  cuenta de los `enc_*` tampoco.
+- **⚠ 0.6 · El tiempo NO escala con la cantidad de marcadores, y ése es el dato del piloto.**
+  Doce corridas medidas desde `CORRIDAS` (inicio en el `corrida_id`, fin en
+  `fecha_generacion` — se puede medir **aunque la respuesta no vuelva**):
+  | marcadores | corridas | tiempo |
+  |---|---|---|
+  | 13 (04/08) | 6 | **186–286 s** |
+  | 19 (05/08) | 5 | **226–346 s** |
+  **La dispersión dentro de un mismo número de marcadores (±60 s y hasta 120 s) es mayor que
+  la diferencia entre 13 y 19.** El costo está dominado por otra cosa — consistente con el
+  `P1` del timeout, que ya anota que el anclaje solo tarda 93 s.
+- **Parte A · NO se sembró ninguna fila.** El mecanismo está, el sembrado no. Con eso, **el
+  piloto no midió lo que venía a medir**: falta el "después".
+- **Prueba:** las 10 pruebas pasan.
