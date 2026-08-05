@@ -214,3 +214,36 @@ traza.
 - Sin trailer `Co-Authored-By`.
 
 **Modelo:** Opus.
+
+---
+
+## Addendum — 05/08/2026 · dos partes quedaron sin objeto
+
+> **El texto de arriba no se edita: ya se ejecutó.** Esto es un addendum fechado, la forma
+> que fija `CLAUDE.md` §7 para que un documento ejecutado no quede mudo ante un error
+> propio. Lo escribió la corrida nocturna del 05/08 (punto 3).
+>
+> Las Partes **0** y **D** corrieron el 04/08 y están en `docs/BITACORA.md`. Lo que sigue
+> es lo que esas mediciones le hicieron a las partes que todavía no se ejecutaron.
+
+**Parte A, tercera viñeta — cancelada por regla.** `m2/Cuentas` pasó de `revisar` a
+**`uso = ignorar`** en `SOLAPAS`, entre el snapshot del 01/08 y la corrida. Una solapa
+`ignorar` **no se lee, no se audita y no se mapea** (`CLAUDE.md` §2). Se leyó antes de
+saberlo, siguiendo la instrucción `0.1 bis` de este mismo prompt, que la declaraba
+`uso = fuente`: **lo leído queda como nota en la bitácora, no como mapeo**. Su columna `U`
+(`Remitente`) tiene otro vocabulario que la columna G de `Directa Mail` —`GCBA` / `JM` /
+`ANUNCIO` / `PDLC` contra direcciones de correo—, así que tampoco era la misma variable.
+
+**Parte B — inaplicable a mail.** El enunciado *"el vocero se propaga por `id_cuenta`"* no
+sirve para el remitente: **136 de las 880 cuentas con filas de mail mandan desde dos
+remitentes distintos**, y el par más común es `infovecinos` + `jorge.macri` sobre la misma
+cuenta. **El remitente es señal por envío, no por cuenta.** Para IVR sí aplica: **0 cuentas
+con dos voceros**.
+
+**Lo que queda vivo de este pedido.** Los tres canales tienen señal propia y ninguno
+necesita propagación: **IVR** por su columna `Vocero` (G, `JM` 53 · `GCBA` 4, 57/57 filas
+con dato), **mail** por `Mail remitente` (G) fila a fila, **SMS** todo `GCBA` por decisión.
+Lo que queda **sin ninguna señal** es **el call center y la pauta digital** —y para pauta
+apareció después una respuesta mejor: `digital/Digital` columna B, mapeada como
+`dig_jm_gcba` (ver `Pedido-3`), que contesta *de quién es la campaña*, no *quién habla en
+el audio*. **Eso es pregunta para el usuario, no trabajo pendiente de este prompt.**
