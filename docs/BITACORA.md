@@ -3420,3 +3420,27 @@ para algo irreversible hay que mirar esa línea.
   `@filtro_campo_no_mapeado`. No se manifestó porque esa sección no tiene marcadores
   todavía. **Ahora un filtro heredado cuyo campo no está mapeado se ignora y se dice en la
   traza**; uno propio sigue fallando, porque ahí alguien lo declaró contra esa solapa.
+
+## Cuenta homónima — desempate implementado, y la hipótesis del empate resultó FALSA (2026-08-09) — commit de esta entrada
+- **0.1 · Dónde se elige la cuenta:** `anclar_()` (`Union.gs`), con `scoreMatchDigitalRdv_`
+  como score y `candidatosCercanosPorFecha_` como prefiltro (±14 días, valor hardcodeado).
+  Los candidatos salen de `digitalUnido.porCuenta`, y su `nombreCampana` de
+  **`sd_campana_digital` / `sd_campana_cuentas`** — o sea de *Seguimiento digital*, **no**
+  de `Directa IVR`, que es donde se vio el nombre repetido.
+- **0.2 · Por qué campo desempata hoy: por ninguno.** `scoreMatchDigitalRdv_` puntúa
+  barrio/comuna/eje (0,5/0,4), tipo (0,2) y solapamiento de tokens (0,3). **La fecha no
+  suma nada.**
+- **0.3 · Señal de fecha disponible:** `candidato.parseado.fecha` (parseada del nombre de
+  campaña, ya calculada para el prefiltro) y la fecha del encuentro en `REUNIONES`.
+- **Parte A · desempate implementado y verificado que NO rompe.** `anclar_` desempata por
+  proximidad temporal **sólo cuando varios comparten el score máximo**, y devuelve
+  `ambiguo` —sin elegir ninguna— cuando no puede: sin fecha objetivo, con algún candidato
+  sin fecha parseada, o con dos a la misma distancia. La traza dice qué eligió y por qué.
+  Siguen **5 anclados, 0 sin link, 0 en baja confianza**, con los mismos scores.
+- **⚠ Y no arregló el caso: Orden Público sigue resolviendo a `3347-JULJDGAG`.** Sin traza
+  de desempate, o sea **no hubo empate**. **La hipótesis del prompt —y la mía— era falsa:**
+  las dos homónimas no sacan el mismo score. La causa real no se midió: la medición que la
+  respondería (`unirDigitalPorCuenta` + scores de las dos) **no vuelve por `/dev`**, y ahí
+  se cortó la corrida.
+- **0.4 · sin medir**, por lo mismo.
+- **Prueba:** las 10 pruebas pasan. Anclaje corrido y comparado contra el estado anterior.
