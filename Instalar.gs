@@ -978,6 +978,14 @@ var SEED_MAPEO_ = [
   // Lista blanca y no exclusión a propósito (D-21): con "todo lo que no sea Proyectado",
   // un estado nuevo entraría solo y en silencio.
   { base_id: 'digital', campo_logico: 'mail_estado', hoja: 'Directa Mail', columna: 'D', valores_incluidos: 'Implementado, En curso', notas: 'lista blanca — ver D-21' },
+  // `Tipo de mail` (11/08) — la columna que distingue el envío de **convocatoria** de los de
+  // confirmación y agradecimiento. Es lo que necesitaba el iceberg: `VALIDACION` §3.3 dice que
+  // la lámina toma la convocatoria y **no** el total de la cuenta (271.701 en 5 envíos contra
+  // los 44.043 publicados). Sin esta fila no había forma declarativa de decirlo.
+  // **No lleva `valores_incluidos`**: filtrar acá sacaría las otras filas para toda la corrida,
+  // y las láminas de confirmación/agradecimiento las van a necesitar. El corte va por
+  // `MARCADORES.filtro`, que es por marcador (D-21 vs. el filtro declarativo del 08/08).
+  { base_id: 'digital', campo_logico: 'mail_tipo', hoja: 'Directa Mail', columna: 'I', notas: 'Convocatoria / Confirmación / Agradecimiento — corte del envío de convocatoria (VALIDACION §3.3)' },
 
   // hoja 'Directa SMS'
   { base_id: 'digital', campo_logico: 'sms_id_cuenta', hoja: 'Directa SMS', columna: 'A', notas: 'join entre solapas' },
