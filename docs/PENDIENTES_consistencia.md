@@ -1546,6 +1546,45 @@ con `numero`, y funciona** —el deck dice `(59.54%)`— pero por elección de u
 
 **No cambiar el cableado**: anotar el hueco. Cuando exista el formato, son cinco celdas.
 
+### P1 · `generarInforme` no vuelve, y hace tres corridas que no se verifica nada de punta a punta
+
+**El síntoma:** el intento del 13/08 murió en el **timeout de 540 s** de `tools/api.js`, y el
+reintento dio `ECONNRESET`. Antes hubo HTML 404 y otros `ECONNRESET`. **La respuesta vuelve
+más o menos una de cada cuatro veces**, y a veces el motor **tampoco llega a registrar la
+corrida** en `CORRIDAS` — o sea que no es sólo el transporte.
+
+**La consecuencia concreta, que es lo que lo hace `P1`:** el arreglo de `SUMA` sobre cero
+filas (13/08) está probado **contra la función** y **nunca contra un deck**. Los 16 ceros
+falsos siguen sin confirmarse como corregidos.
+
+**El candidato ya identificado:** el scoring del anclaje es `O(realizadas × candidatos)`.
+Pero **el anclaje solo tarda 93 s medidos**, y la generación completa tardaba ~250 s cuando
+volvía: **hay ~450 s en otro lado** que nadie midió. El próximo paso es cronometrar las
+etapas por separado, no optimizar a ciegas.
+
+### P1 · `{{enc_audiencia}} → {{enc_alcance}}` no se debe aplicar nunca
+
+Es el único renombre de `RENOMBRES_ARMONIZACION_POR_INFORME_.jm` que todavía tiene origen en
+la plantilla, y **aplicarlo sería un error**: el destino `enc_alcance` **ya existe en la misma
+slide 6**, así que crearía **dos cajas con el mismo token** — la regresión de `enc_audiencia`,
+ya conocida.
+
+**Y la ocurrencia que queda es legítima, no un resto sin renombrar.** `enc_audiencia` está
+cableado en `MARCADORES` a `ivr_audiencia`: es la audiencia de IVR, que es **otra cosa** que
+el alcance de pauta.
+
+`P1` y no `P2` porque **una armonización futura puede intentarlo de nuevo sin saberlo**: la
+entrada sigue en la lista de renombres y nada en el código la marca como no aplicable.
+
+### P2 · `rrss_area1` aparece en dos cajas de la slide 21
+
+Colisión viva de tokens en la plantilla canónica de JM, medida el 14/08 con `mapaDeTokens_`.
+**No bloquea nada**: ningún renombre del diccionario la toca, así que la armonización no la
+puede empeorar.
+
+Hoy figura sólo en una lista vieja de familias numeradas, que **no es lo mismo que estar
+anotada**: ahí se lee como un token más y no como dos cajas que comparten nombre.
+
 ### P2 · `3354` y `3346` tienen cero filas de mail, y `rdv` dice que hubo mail
 
 **Pregunta para el equipo, no trabajo de motor.** Las cuentas de San Cristóbal (`3354`) y
