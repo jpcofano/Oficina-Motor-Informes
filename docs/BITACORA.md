@@ -3056,7 +3056,11 @@ para algo irreversible hay que mirar esa línea.
   **445 inscriptos y 125 asistentes**, que es **exactamente** la diferencia contra los
   números de referencia. Hoy: **3364 inscriptos · 811 asistentes · 16 encuentros**;
   referencia del 03/08: 2919 · 686 · 12. `3364 − 445 = 2919` y `811 − 125 = 686`.
-  **El corte vertical del 03/08 no incluyó el 30/07.**
+  Las tres cuentas cierran a la vez, así que la hipótesis es sólida; **lo que no se puede
+  distinguir con los datos de hoy es por qué**: o el corte del 03/08 midió hasta el 29/07,
+  o las cuatro filas del 30/07 todavía no estaban cargadas. El usuario lo encuadró el
+  04/08: *el informe se arma por temario y esa presentación se armó con los números del
+  día*.
 - **Y la diferencia de 54 ya no es 54: es 20.** La suma de los cinco canales da **3344**,
   contra 3364 inscriptos. **`Mataderos` del 29 ya tiene sus canales cargados** (4 mail + 3
   RRSS + 27 difusión = 34), así que de los dos casos que explicaban el −54 queda **sólo
@@ -3067,3 +3071,36 @@ para algo irreversible hay que mirar esa línea.
   números contra los que había que cerrar no aplican a la ventana de hoy. Hay que decidir
   si la referencia pasa a ser `3364 / 811 / 16 / 3344 / −20` o si la ventana correcta
   termina el 29/07. Y hay que resolver los ocho tokens ambiguos antes de partir la sección.
+
+## Doc — el temario del 24–30/07, documentado, y `REUNIONES` no es el temario (2026-08-04) — commit de esta entrada
+- **Qué pedía el usuario:** revisar la configuración —*el informe se arma por temario, y
+  esa presentación se armó con los números del día*— y dejar el temario documentado para
+  poder comparar contra el informe *Seguimiento JS 31/07*.
+- **Dónde quedó:** `docs/CONFIG_INFORMES.md` §1.7, que es el dueño de la pregunta *"¿qué
+  decisión editorial lleva cada informe?"* (`CLAUDE.md` §7). **No se creó ningún `.md`
+  nuevo.** El temario ya estaba transcripto **parcialmente** en
+  `docs/TEMARIO_Y_PLANTILLA_2026-07-31.md` §1 —siete filas, sacadas de los *comentarios
+  del deck viejo*, no del temario— y ese documento es evidencia congelada: no se editó.
+- **⚠ `REUNIONES` no es el temario.** Tiene **7 filas** y le faltan **dos ítems del bloque
+  Cercanía y M2**: **`Primera Persona con Pareto 27/07`** —que en `rdv` existe y es el
+  encuentro más grande de la semana: **1344 inscriptos · 267 asistentes**— y **`M2 |
+  Registro Civil`**. Además `Orden Público` está con `orden = 3` y en el temario es el 4.
+  Los otros tres bloques del temario (Campañas destacadas, DGAYD, Otros) no están en
+  `REUNIONES`: las destacadas van por `CAMPANAS`, que **no tiene ninguna fila de `jm`**.
+- **⚠ El temario no respeta la ventana de `CONFIG`.** El ítem 1 es del **23/07** y la
+  ventana activa es **24–30/07**. Eso explica lo que estaba anotado como misterio: San
+  Cristóbal ancla con score alto **y no aporta ninguna fila porque su fila de `rdv` está
+  fuera de ventana**. La ventana sirve para los agregados; **no** para seleccionar los
+  encuentros del temario, que es una decisión humana con su propio calendario.
+- **⚠ "San Cristóbal" es homónimo dentro de `rdv`.** En ventana hay **Gabriel Mraida,
+  24/07, `Encuentro con Vecinos`, 50 · 24**, contra el **`"1 a 1"` de Jorge Macri del
+  23/07, 138 · 9** que pide el temario: otro funcionario, otro tipo, otra fecha. **Es el
+  mismo modo de falla que las dos cuentas homónimas de `digital`** — el nombre no alcanza
+  para identificar un encuentro; hacen falta figura, tipo y fecha.
+- **Los cuatro números del temario quedaron tabulados** en `CONFIG_INFORMES.md` §1.7 para
+  comparar contra el deck: San Cristóbal 138/9, Retiro 98/10, Primera Persona 1344/267,
+  Orden Público 753/199, con sus cinco canales.
+- **Prueba:** sólo lectura sobre `rdv` (26 filas entre el 20/07 y el 01/08) y sobre las
+  hojas de registro. No se tocó ninguna configuración.
+- **Pendientes/decisiones:** falta decidir si `REUNIONES` se completa con los dos ítems que
+  faltan, y cómo se identifica un encuentro sin depender del nombre.

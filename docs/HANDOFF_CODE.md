@@ -46,9 +46,17 @@ Los siete decks de la noche están **todos vivos**, ninguno en la papelera.
    cinco, así que el deck no dice qué encuentro es cada lámina. Y los valores cayeron en la
    **slide 11**, que por orden de `REUNIONES` sería *Retiro (pre)*, mientras el handoff
    anterior decía *Orden Público*. **No se puede saber cuál desde el deck.**
-5. **`CAMPANAS` sigue sin ninguna fila de `jm`.** La sección `campana` queda sin ítems y sus
+5. **`REUNIONES` no es el temario.** Tiene 7 filas y le faltan **dos ítems del bloque
+   Cercanía y M2**: `Primera Persona con Pareto 27/07` —que en `rdv` existe y es **el
+   encuentro más grande de la semana: 1344 inscriptos · 267 asistentes**— y
+   `M2 | Registro Civil`. Se sembró desde los comentarios del deck viejo, no desde el
+   temario. El temario completo está en `docs/CONFIG_INFORMES.md` §1.7.
+6. **El temario no respeta la ventana, y eso es correcto.** El ítem 1 es del **23/07** y la
+   ventana es 24–30/07: por eso San Cristóbal ancla y no aporta filas. La ventana sirve
+   para los agregados, **no** para seleccionar los encuentros del temario.
+7. **`CAMPANAS` sigue sin ninguna fila de `jm`.** La sección `campana` queda sin ítems y sus
    8 slides modelo (20–27) sin número. Curar esas filas es tarea tuya.
-6. **`comunicaciones_post` es una sección activa con 5 ítems y ninguna slide con tokens
+8. **`comunicaciones_post` es una sección activa con 5 ítems y ninguna slide con tokens
    `post_`** en la plantilla de JM.
 
 ## Esperando decisión tuya

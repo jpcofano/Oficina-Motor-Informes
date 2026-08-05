@@ -88,6 +88,76 @@ Ninguna de las dos está confirmada como la fuente real de "Audiencia Alcanzada"
 JM 5 — la pregunta 4 de `PLANTILLAS_QA_y_armonizacion.md` §7 sigue abierta
 ("¿es el mismo número que el `alcance` de Looker, o se calcula aparte?").
 
+### 1.7 El temario del 24–30/07 — *Seguimiento JS 31/07* [OK]
+
+**El informe se arma por temario.** Ésta es la decisión editorial de la semana, dictada
+por el usuario el **04/08/2026**, transcripta completa. Es contra esto que se compara el
+deck generado — no contra "todas las filas de `rdv` en la ventana".
+
+> **Status Cercanía y M2**
+> 1. JM | Uno a uno en San Cristóbal 23/07 (pre + post)
+> 2. JM | Uno a uno en Retiro 24/07 (pre + post)
+> 3. JM | Primera Persona con Pareto 27/07
+> 4. JM | Encuentro Temático Orden Público 28/07
+> 5. Ministros | Reuniones de la semana
+> 6. M2 | Campañas y enviados de la semana
+> 7. M2 | Registro Civil: nuevas piezas + métricas
+>
+> **Campañas destacadas**
+> 1. Egreso de cadetes (actualización: nuevo mail + video "tolerancia cero")
+> 2. Operativo de saturación en 1-11-14
+> 3. Desalojo 900 (estrategia; métricas en caso de que llegue el material)
+> 4. Video de obras de salud (en caso de que llegue el material)
+>
+> **DGAYD**
+> 1. Semana JM
+> 2. Análisis conversación digital Operativo 900
+> 3. Comparativo de Recuperación de Propiedades
+>
+> **Otros temas**
+> Status reunión con PC. *Las reuniones son siempre realizadas; hay números que siguen
+> creciendo en directa y mail.*
+
+#### Lo que el cruce contra la configuración viva muestra (04/08/2026)
+
+**`REUNIONES` no es el temario: es el subconjunto que quedó en los comentarios del deck
+viejo.** Tiene **7 filas** y le faltan **dos ítems del bloque Cercanía y M2**:
+
+| ítem del temario | ¿está en `REUNIONES`? | ¿está en `rdv`? |
+|---|---|---|
+| 1 · San Cristóbal 23/07 (pre + post) | sí, dos filas | sí — `"1 a 1"`, Jorge Macri, **23/07**, 138 insc · 9 asis |
+| 2 · Retiro 24/07 (pre + post) | sí, dos filas | sí — `"1 a 1"`, Jorge Macri, 24/07, 98 · 10 |
+| 3 · **Primera Persona con Pareto 27/07** | **NO** | sí — `Encuentro "Primera Persona"`, Villa Urquiza, 1344 · 267 |
+| 4 · Orden Público 28/07 | sí (con `orden = 3`) | sí — Belgrano, 753 · 199 |
+| 5 · Ministros, reuniones de la semana | sí, `tipo = Agregado` | no aplica |
+| 6 · M2, campañas y enviados | sí, `tipo = Agregado` | no aplica |
+| 7 · **M2, Registro Civil** | **NO** | fuera de las cuatro bases |
+
+Los otros tres bloques —Campañas destacadas, DGAYD, Otros— **no están en `REUNIONES`**:
+las destacadas van por `CAMPANAS` (hoy **sin ninguna fila de `jm`**) y DGAYD quedó
+declarado fuera de las cuatro bases en `docs/VALIDACION_2026-07-31.md`.
+
+**⚠ El temario no respeta la ventana de `CONFIG`.** El ítem 1 es del **23/07** y la
+ventana activa es **24–30/07**. La consecuencia está medida: San Cristóbal ancla con
+score alto y no aporta ninguna fila, porque **su fila de `rdv` está fuera de ventana**.
+La ventana sirve para los agregados (`ecv_*`, ministros, M2); **no** para seleccionar los
+encuentros del temario, que es una decisión humana con su propio calendario.
+
+**⚠ Y "San Cristóbal" es homónimo dentro de `rdv`.** En la ventana hay una fila de
+**Gabriel Mraida, 24/07, `Encuentro con Vecinos`, 50 insc · 24 asis** — otro funcionario,
+otro tipo y otra fecha que el `"1 a 1"` de Jorge Macri del 23/07 que pide el temario.
+Es el mismo modo de falla que las dos cuentas homónimas de `digital`: **el nombre no
+alcanza para identificar un encuentro; hacen falta figura, tipo y fecha.**
+
+**Los números del temario, para comparar contra el deck** (`rdv`, medidos el 04/08):
+
+| ítem | inscriptos | asistentes | mail | CC | IVR | RRSS | difusión |
+|---|---|---|---|---|---|---|---|
+| San Cristóbal 23/07 | 138 | 9 | 1 | — | — | 137 | — |
+| Retiro 24/07 | 98 | 10 | 1 | — | — | 97 | — |
+| Primera Persona 27/07 | 1344 | 267 | 807 | 103 | — | 434 | — |
+| Orden Público 28/07 | 753 | 199 | 361 | 169 | 43 | 180 | — |
+
 ---
 
 ## 2. Informe mensual SECCO-SSCDI
