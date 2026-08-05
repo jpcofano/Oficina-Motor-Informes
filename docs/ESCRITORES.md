@@ -233,6 +233,16 @@ sólo se registra que fue el motivo del cambio de dueño.
 |---|---|---|---|
 | `sembrarSecciones_` | `setValues` | Instalar.gs:1958 | vía menuSembrarSecciones_ (Instalar.gs:1970) |
 | `sembrarSecciones_` | `setValues` | Instalar.gs:1958 | vía menuAplicarConfiguracion_ (Instalar.gs:1997) |
+| `curarSecciones_` | `setValue` | Instalar.gs:2159 | directo |
+
+> **`curarSecciones_` es el segundo escritor de `SECCIONES`, y entró el 05/08** (corrida
+> nocturna, punto 1). `sembrarSecciones_` **sólo agrega** y nunca pisa una fila existente,
+> así que corregir un campo de una sección ya sembrada —el caso concreto:
+> `encuentro.familia_tokens`, de `ecv_,enc_` a `enc_`— no tenía ningún camino en el código.
+> Es deliberadamente angosta: **no crea filas, no borra filas y no toca `seccion_id`**, sólo
+> escribe campos declarados de una sección que ya existe, y devuelve el antes y el después
+> de cada celda. Misma forma y mismo motivo que `curarMarcadores_` sobre `MARCADORES`.
+> Las líneas de esta tabla se regeneran con `node tools/escritores.js`.
 
 ### CAMPANAS — sin escritores en el código
 

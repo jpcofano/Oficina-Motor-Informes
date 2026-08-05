@@ -3,13 +3,28 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-04, tarde (Pedidos 1 y 2 corridos, los dos de sólo
-lectura) · último commit al escribirlo: el de esta entrada
+**Última actualización:** 2026-08-05, corrida nocturna (punto 1 cerrado: la sección `ecv_`;
+puntos 2 y 3 escritos) · último commit al escribirlo: el de esta entrada
 
 ## Dónde estamos
 
-**El motor genera un informe de punta a punta, y el informe está mal.** No por el motor:
-por la cuenta que eligió el anclaje.
+**La sección 1 está cerrada: el agregado semanal de encuentros sale una sola vez y con
+número.** Era la primera sección del método nuevo —una por vez, empezando por las que no
+iteran— y cerró.
+
+**El deck de la noche:** `1cXrAhX3-GXs0dYeqwLxYqD1Nrr3ZJ2s1NJYRwz-llWo`, corrida
+`jm-20260805-005053`. **26 slides** (eran 30), **18 tokens con valor y 304 faltantes**
+(eran 17 y 438).
+
+**El bug que se arregló no era el que decía el prompt.** El addendum pedía declarar una
+sección hermana en modo `agregado`; eso solo no alcanzaba. La causa era
+`encuentro.familia_tokens = 'ecv_,enc_'`: la familia es **con qué se reconoce el bloque
+modelo en la plantilla**, y con `ecv_` adentro el motor reclamaba **también** la lámina del
+alcance semanal y la duplicaba una vez por encuentro. Ahora `encuentro` es `enc_`, y
+`slides_modelo` pasó de `[5, 6]` a **`[6]`**.
+
+**Y el informe sigue estando mal en la sección 3.** No por el motor: por la cuenta que
+eligió el anclaje.
 
 **El hallazgo que manda sobre todo lo demás:** los **once** números con valor real del deck
 vigente salen de la cuenta **`3347-JULJDGAG`**, y el encuentro es **`3387-JULJDGGC`**. Las
@@ -61,6 +76,17 @@ Los siete decks de la noche están **todos vivos**, ninguno en la papelera.
 
 ## Esperando decisión tuya
 
+- **Los cuatro `ecv_barrio*` no se cablearon, y no es por falta de dato.** `ecv_barrios`,
+  `ecv_barrio1`, `ecv_barrio2` y `ecv_barrio3`: **la columna existe** (`barrio` → B en
+  `MAPEO`), **la operación no**. Las seis del motor son `SUMA · CONTEO · ULTIMO · RATIO ·
+  PCT · TEXTO`, y esto pide "cantidad de barrios distintos" y "el N-ésimo del ranking".
+  **`CONFIG_INFORMES.md` §1.4 ya los declara `[MANUAL]`**, con una `[?]` de si salen por
+  ranking automático. O se confirman manuales, o hace falta una operación nueva.
+- **Falta el formato "unidades de porcentaje sin signo".** La matriz tiene `porcentaje`
+  (unidades pct **con** signo) y `fraccion` (0–1 → pct, **sin** signo); falta la cuarta
+  celda. Los cinco `ecv_insc_*_pct` salieron con **`numero`** —decisión propia— porque la
+  caja de la lámina ya trae su `%` y `porcentaje` habría impreso `59.5%%`. Sale `(59.54%)`,
+  verificado. **Reversible: una celda por fila.**
 - **`ULTIMO` → `SUMA` en IVR: decidido que sí, pero todavía no.** `VALIDACION` §3.2 lo
   respalda (*"IVR cierra por SUMA sobre `id_cuenta`"*) y con la cuenta correcta los cuatro
   números cierran dígito a dígito (78.637 · 71.234 · 27.599 · 256). **Va junto con el
@@ -95,15 +121,17 @@ con sus números verificados, empezando por las que no iteran.** Lo justifica el
 `Pedido-2`: **384 de 438 faltantes son "sin fila en `MARCADORES`" — 88%.** No es motor, es
 cableado sin escribir.
 
-1. **`Pedido-4` + su addendum del 05/08 — cerrar los `ecv_`.** **Partes 0 y 0 bis corridas
-   y paradas, esperando luz verde.** Las dos decisiones que faltaban ya están tomadas: la
-   referencia pasa a ser viva (Parte D nueva) y los ambiguos se difieren (opción C). Lo que
-   sigue es la **Parte A**: declarar la sección hermana en modo agregado y asignarle los
-   **10** tokens de agregado semanal puro. Va **antes** del `Pedido-3`.
-2. **`Pedido-1` Partes A a C y E** — el corte JM/GCBA. Ver abajo lo que cambió.
-3. **`Pedido-3` — el filtro declarativo** por marcador y por sección.
-4. **Arreglo del desempate del matcher** (`Union.gs`), junto con `ULTIMO` → `SUMA`.
-5. **Tramo 3 — `secco`**, la medición de `D-01`.
+1. **`Pedido-3` — el filtro declarativo JM/GCBA.** Sin ejecutar. Era el punto 4 de la
+   corrida nocturna del 05/08 y **no se llegó**.
+2. **La familia `m2_`** — 31 tokens, sección `agregado`, no itera, fuente sin ambigüedad.
+   Era el punto 5 ("si sobra tiempo") y **no se llegó**.
+3. **Los cuatro `ecv_barrio*`**, que quedaron sin cablear: necesitan una decisión, no
+   trabajo (ver abajo).
+4. **`Pedido-1` Partes A, C y E** — el corte JM/GCBA. La Parte B necesita reescritura y la
+   tercera viñeta de A está cancelada: ver el **addendum al pie del propio prompt**,
+   escrito el 05/08.
+5. **Arreglo del desempate del matcher** (`Union.gs`), junto con `ULTIMO` → `SUMA`.
+6. **Tramo 3 — `secco`**, la medición de `D-01`.
 
 ## Lo que midieron los Pedidos 1, 2 y 4, y hay que tener a mano
 

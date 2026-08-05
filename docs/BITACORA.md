@@ -3142,3 +3142,79 @@ para algo irreversible hay que mirar esa línea.
   `MARCADORES`, ni la plantilla, ni ninguna base.
 - **Pendientes/decisiones:** **se para acá y se espera luz verde**, como pide el addendum.
   Los 10 tokens de la Parte A quedan identificados por lista; los 7 ambiguos, diferidos.
+
+## Corrida nocturna 05/08 — punto 1: la sección 1 cerrada, el agregado semanal `ecv_` (2026-08-05) — commit de esta entrada
+- **Qué pedía:** `2026-08-04_Pedido-4_cerrar_ecv.md` con su addendum del 05/08 (que
+  sustituye las Partes A y D). Luz verde del usuario, partición **10 / 2 / 7**.
+- **⚠ El diagnóstico real era otro, y sin arreglarlo la Parte A no servía.** El addendum
+  pedía declarar una sección hermana en modo `agregado`; eso solo **no** habría sacado la
+  lámina de la repetición. La causa es `encuentro.familia_tokens = 'ecv_,enc_'`:
+  `familia_tokens` es **con qué se reconoce el bloque modelo en la plantilla**, y con `ecv_`
+  adentro `slidesModeloDe_` reclamaba **también** la lámina del alcance semanal —que lleva
+  `ecv_*` y ningún `enc_*`— y la duplicaba una vez por encuentro. **Ése era el bug**, no la
+  falta de una sección.
+- **Lo que se hizo:** entra `ecv_alcance_semanal` (`modo = agregado`, `orden = 7.5` para no
+  renumerar ninguna fila curada) con los **10 tokens exactos** en `familia_tokens` en vez
+  del prefijo `ecv_` —el prefijo se llevaría los 7 ambiguos y los 2 de encuentro—, y
+  `encuentro` pasa a `familia = enc_`.
+  **Los `ecv_` del iceberg no se rompen:** la pasada por ítem del Paso 5 recorre
+  `tokensDeSlide_`, o sea **todos** los tokens de la slide emitida, no sólo los de la
+  familia. Verificado en el deck.
+- **Se agregó `curarSecciones_`**, la puerta angosta para corregir un campo de una sección
+  que ya existe. Hacía falta: `sembrarSecciones_` **sólo agrega y nunca pisa**, así que
+  cambiar `encuentro.familia_tokens` no tenía ningún camino en el código — sólo la mano de
+  una persona sobre la celda. Misma forma y mismo motivo que `curarMarcadores_`: no crea
+  filas, no borra filas, no toca `seccion_id`, y devuelve el antes y el después de cada
+  celda. **`docs/ESCRITORES.md` queda desactualizado** hasta que se re-corra
+  `tools/escritores.js`.
+- **Diff antes y después: `protegidas (con diferencia): 0`** las dos veces, con
+  `agregadas: 1` en el medio. **Las 10 pruebas pasan.**
+- **Parte B · 6 de los 10 cableados**, contra `rdv/RVD JM-CM - ES`, solapa explícita:
+  `ecv_encuentros` (CONTEO — cuenta filas, no valores) y los cinco `ecv_insc_*_pct` (PCT,
+  `campo/inscriptos`). Los seis resuelven `ok`.
+- **Los 4 que NO se cablearon, con el motivo:** `ecv_barrios`, `ecv_barrio1`, `ecv_barrio2`
+  y `ecv_barrio3`. **La columna existe** (`barrio` → B en `MAPEO`); **lo que no existe es la
+  operación**. Las seis del motor son `SUMA · CONTEO · ULTIMO · RATIO · PCT · TEXTO`, y
+  estos cuatro piden "cantidad de barrios distintos" y "el N-ésimo barrio del ranking". No
+  se inventó ninguna: agregar una operación es mecanismo nuevo y toca a todos los
+  marcadores. **Además `CONFIG_INFORMES.md` §1.4 los declara `[MANUAL]` con una `[?]` de si
+  salen por ranking automático** — o sea que ni siquiera está decidido que deban calcularse.
+- **⚠ Decisión propia · los cinco `_pct` van con formato `numero`, no `porcentaje`.** La
+  caja de la lámina **ya trae su propio `%`** —`{{ecv_insc_mail}}({{ecv_insc_mail_pct}}%)`—
+  así que `porcentaje` habría impreso `59.5%%`: el mismo bug que el formato `fraccion`
+  arregló el 04/08. Lo que falta es un formato **"unidades de porcentaje sin signo"**, que
+  no existe: la matriz tiene `porcentaje` (unidades pct **con** signo) y `fraccion` (0–1 →
+  pct, **sin** signo), y falta la cuarta celda. **No se agregó** porque el prompt dice
+  explícitamente *"los porcentajes y las fechas no se tocan"*. Verificado en el deck:
+  `(59.54%)`, bien. **Reversible: una celda por fila.**
+- **Parte C · el formateador no necesitaba ningún cambio, y se verificó en vez de
+  suponerlo.** Su control positivo pasa tal como está: `0` con `miles` → `"0"` (no vacío) y
+  `"abc"` → `"abc"` (no `NaN`). `miles` ya da `3.364` · `37.763` · `6.161`. **Ninguno de los
+  6 tokens cableados es un número de miles** (`ecv_encuentros` = 16, y los cinco `_pct`), y
+  los que sí lo serían —`ecv_inscriptos` 3364 y `ecv_asistentes` 811— son de los 7 ambiguos
+  y no se tocan. Los `6161`/`2229`/`37763` sin separador del deck son `enc_*`, o sea
+  **sección 3, prohibida esta noche**.
+- **Parte D · la corrida.** `jm-20260805-005053`, deck
+  `1cXrAhX3-GXs0dYeqwLxYqD1Nrr3ZJ2s1NJYRwz-llWo`, 05/08 00:54. **Medición, no referencia.**
+  - **`D.3` ✅ — el control que dice si la Parte A funcionó: los agregados salen UNA vez.**
+    `slides_modelo` de `encuentro` pasó de `[5, 6]` a **`[6]`**; el deck pasó de **30 a 26
+    slides**; `ecv_encuentros` aparece **x1**, en la slide 5, con el valor **`16`**.
+  - **`D.1` sólo se puede verificar para `ecv_encuentros`: 16 en el deck y 16 en la lectura
+    cruda de `rdv`.** Los otros dos agregados —`ecv_inscriptos` y `ecv_asistentes`— **no
+    están cableados y no pueden estarlo**: son de los 7 ambiguos que la opción C difiere. Es
+    consecuencia directa de la decisión, no una falla del control.
+  - **`D.2` · la diferencia sigue teniendo una sola fila con nombre.** Sobre `rdv`: 3364
+    inscriptos contra **3344** de los cinco canales, **−20**, y la fila es
+    `Clara Muzzio · Palermo · 29/07`, sin ningún canal cargado. Los porcentajes del deck lo
+    confirman por otro camino: 59,54 + 28,39 + 8,09 + 2,11 + 1,28 = **99,41%**, y el 0,59%
+    que falta es exactamente 20/3364.
+  - **Tokens: 18 reemplazados y 304 faltantes**, contra 17/438 del 04/08. Los 134 que se
+    fueron son sobre todo las cuatro copias de más de la lámina agregada.
+- **⚠ Saltó el reintento del transporte** (*"la respuesta vino en HTML"*), que es el `P1`
+  que no se puede distinguir de una corrida que sí ejecutó. **Se verificó: `CORRIDAS` tiene
+  una sola fila de hoy.** No hubo doble escritura.
+- **Prueba:** las 10 pruebas pasan. Diff antes y después con `protegidas (con diferencia):
+  0`. El deck leído caja por caja por `objectId`.
+- **Pendientes/decisiones:** los 4 `ecv_barrio*` esperan una decisión (¿manual, como dice
+  §1.4, o una operación nueva?). Falta el formato "pct sin signo". `ESCRITORES.md` hay que
+  regenerarlo.
