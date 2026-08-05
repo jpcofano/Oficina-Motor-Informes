@@ -259,16 +259,88 @@ function candidatosCercanosPorFecha_(candidatos, fechaObjetivo, ventanaDias) {
  * hoy `scoreMatchDigitalRdv_` para reuniones; una campaña podría reusar
  * `solapamientoTokens_` de arriba sin tocar esta función.
  */
-function anclar_(candidatos, contexto, umbral, funcionScore) {
+/**
+ * Desempate temporal (09/08) — **el arreglo de la cuenta homónima.**
+ *
+ * `scoreMatchDigitalRdv_` puntúa barrio/comuna/eje, tipo y solapamiento de tokens. **La
+ * fecha no suma nada**, así que dos cuentas que comparten el nombre de campaña sacan
+ * **exactamente el mismo score** y `sort` deja adelante a la que vino primero: la cuenta se
+ * elegía **por orden de aparición**. Fue lo que puso los once números de Orden Público en
+ * `3347-JULJDGAG` (16–17/07) cuando el encuentro era `3387-JULJDGGC` (22–26/07).
+ *
+ * **Se desempata, no se re-puntúa.** Tocar los pesos del score movería los cinco anclajes
+ * que hoy funcionan; esto sólo actúa **cuando hay empate en el máximo**, que es exactamente
+ * el caso roto y sólo ése.
+ *
+ * **Un empate que no se puede desempatar devuelve `ambiguo`, no una cuenta al azar.** Es la
+ * regla que este bug enseñó: un número plausible de la cuenta equivocada es peor que un
+ * hueco — sobrevivió meses porque `37763` parecía bien.
+ */
+function desempatarPorFecha_(empatados, fechaObjetivo) {
+  if (!fechaObjetivo) {
+    return { ok: false, motivo: 'hay ' + empatados.length + ' candidatos con el mismo score y el encuentro no tiene fecha para desempatar' };
+  }
+
+  var sinFecha = empatados.filter(function (e) { return !(e.candidato.parseado && e.candidato.parseado.fecha); });
+  if (sinFecha.length) {
+    return {
+      ok: false,
+      motivo: 'hay ' + empatados.length + ' candidatos con el mismo score y ' + sinFecha.length +
+        ' no tiene(n) fecha en el nombre de campaña: no se pueden comparar por proximidad'
+    };
+  }
+
+  var conDistancia = empatados.map(function (e) {
+    return { item: e, dias: Math.abs(e.candidato.parseado.fecha.getTime() - fechaObjetivo.getTime()) / 86400000 };
+  }).sort(function (a, b) { return a.dias - b.dias; });
+
+  if (conDistancia.length > 1 && conDistancia[0].dias === conDistancia[1].dias) {
+    return {
+      ok: false,
+      motivo: 'hay ' + empatados.length + ' candidatos con el mismo score y los dos primeros están a la misma ' +
+        'distancia del encuentro (' + Math.round(conDistancia[0].dias) + ' día(s)): el desempate temporal no alcanza'
+    };
+  }
+
+  return {
+    ok: true,
+    elegido: conDistancia[0].item,
+    motivo: 'desempate temporal entre ' + empatados.length + ' homónimos: se eligió ' +
+      (conDistancia[0].item.candidato.idCuenta || '?') + ' a ' + Math.round(conDistancia[0].dias) +
+      ' día(s) del encuentro, contra ' + Math.round(conDistancia[1].dias) + ' del siguiente'
+  };
+}
+
+function anclar_(candidatos, contexto, umbral, funcionScore, fechaObjetivo) {
   var ranking = candidatos
     .map(function (c) { return { candidato: c, score: funcionScore(c, contexto) }; })
     .sort(function (a, b) { return b.score - a.score; });
 
   var mejor = ranking[0];
+  var traza = '';
+  var ambiguo = false;
+
+  // El empate se mide sobre el score máximo, y sólo entre los que lo comparten.
+  if (mejor && mejor.score > 0) {
+    var empatados = ranking.filter(function (r) { return r.score === mejor.score; });
+    if (empatados.length > 1) {
+      var d = desempatarPorFecha_(empatados, fechaObjetivo);
+      if (d.ok) {
+        mejor = d.elegido;
+        traza = d.motivo;
+      } else {
+        ambiguo = true;
+        traza = d.motivo;
+      }
+    }
+  }
+
   return {
-    mejor: mejor ? mejor.candidato : null,
+    mejor: (mejor && !ambiguo) ? mejor.candidato : null,
     score: mejor ? mejor.score : 0,
-    pasaUmbral: !!mejor && mejor.score >= umbral,
+    pasaUmbral: !ambiguo && !!mejor && mejor.score >= umbral,
+    ambiguo: ambiguo,
+    traza_desempate: traza,
     top3: ranking.slice(0, 3)
   };
 }
@@ -627,14 +699,24 @@ function anclarEncuentrosSinCache_(ventana) {
       var evento = campoEvento.ok ? valorPorColumna_(filaRdv.fila, 'rdv', filaRdv.hoja, campoEvento.columna) : '';
       var barrio = campoBarrio.ok ? valorPorColumna_(filaRdv.fila, 'rdv', filaRdv.hoja, campoBarrio.columna) : '';
 
-      var resultado = anclar_(candidatosCercanos, null, umbral, function (c) { return scoreMatchDigitalRdv_(c, evento, barrio); });
+      var resultado = anclar_(candidatosCercanos, null, umbral,
+        function (c) { return scoreMatchDigitalRdv_(c, evento, barrio); }, fecha);
 
       item.idCuenta = resultado.mejor ? resultado.mejor.idCuenta : '';
       item.score = resultado.score;
       item.registroDigital = resultado.mejor ? resultado.mejor.registro : null;
       item.candidatoNombre = resultado.mejor ? resultado.mejor.nombreCampana : '';
+      // La traza dice **qué cuenta se eligió y por qué**: sin esto, el próximo homónimo se
+      // detecta como se detectó éste — a mano, contra un informe publicado.
+      if (resultado.traza_desempate) item.traza_desempate = resultado.traza_desempate;
 
-      if (!resultado.mejor || resultado.score <= 0) {
+      if (resultado.ambiguo) {
+        // Homónimos que el desempate no puede separar: **no se elige ninguna**. El ítem
+        // entra igual (la reunión existe en el temario, `R-02`) y sus números salen
+        // `«FALTA»` con motivo, en vez de un número plausible de la cuenta equivocada.
+        item.motivoAmbiguo = '«FALTA:@homonimo_sin_desempate» — ' + resultado.traza_desempate;
+        sinLink.push(item);
+      } else if (!resultado.mejor || resultado.score <= 0) {
         sinLink.push(item);
       } else if (!resultado.pasaUmbral) {
         item.pendiente = true;
