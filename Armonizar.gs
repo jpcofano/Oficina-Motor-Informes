@@ -906,8 +906,38 @@ function mapaDeTokens_(plantillaId, patron) {
   var enFormaSuelta = {};
   var slidesPorToken = {};
 
+  /* ── El mapa excluye las láminas escondidas (16/08) ────────────────────────
+   * Una lámina marcada como omitida (`skipped`) **no se emite en el deck**, así que
+   * sus tokens **no se pueden llenar nunca** y contarlos como faltantes infla el
+   * denominador. Pasó al esconder la slide 10: el mapa seguía diciendo **195**
+   * cuando la plantilla emite **172**, y los 23 tokens de M2 quedaban como deuda
+   * eterna. Es el mismo problema que tuvo el conteo cuando `SUMA` devolvía ceros
+   * falsos: **el número dejaba de significar lo que parecía.**
+   *
+   * **Se excluyen del conteo, NO se borran del reporte.** Van aparte, en
+   * `tokens_en_laminas_escondidas`: una lámina escondida se vuelve a mostrar en un
+   * clic, y si sus tokens desaparecieran del reporte nadie se acordaría de que
+   * existen. Decisión del usuario, 16/08.
+   * ──────────────────────────────────────────────────────────────────────── */
+  var escondidas = {};
+  var tokensEscondidos = {};
+  slides.forEach(function (slide, i) {
+    try { if (slide.isSkipped()) escondidas[i + 1] = true; } catch (e) { /* servicio sin isSkipped: se cuenta como visible */ }
+  });
+
   slides.forEach(function (slide, i) {
     var piezas = piezasDeTextoDeSlide_(slide);
+
+    if (escondidas[i + 1]) {
+      piezas.forEach(function (pieza) {
+        var mE; TOKEN.lastIndex = 0;
+        while ((mE = TOKEN.exec(pieza.texto)) !== null) {
+          if (!tokensEscondidos[mE[1]]) tokensEscondidos[mE[1]] = [];
+          if (tokensEscondidos[mE[1]].indexOf(i + 1) === -1) tokensEscondidos[mE[1]].push(i + 1);
+        }
+      });
+      return;
+    }
 
     var coincidencias = [];
     var tokensDeLaSlide = {};
@@ -1003,6 +1033,10 @@ function mapaDeTokens_(plantillaId, patron) {
     nombre: DriveApp.getFileById(plantillaId).getName(),
     slides_total: slides.length,
     tokens_distintos_total: Object.keys(todosLosTokens).length,
+    // No se borran: se reportan aparte. Una lámina escondida vuelve en un clic.
+    laminas_escondidas: Object.keys(escondidas).map(Number).sort(function (a, b) { return a - b; }),
+    tokens_en_laminas_escondidas: Object.keys(tokensEscondidos).sort(),
+    cuantos_en_laminas_escondidas: Object.keys(tokensEscondidos).length,
     tokens_que_coinciden: queCoinciden.join(' '),
     tokens_en_forma_suelta: Object.keys(enFormaSuelta).length,
     tokens_invisibles_al_conteo_viejo: invisibles.length,
