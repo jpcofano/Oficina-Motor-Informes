@@ -90,6 +90,24 @@ El resto de la slide empareja bien. Solo estos dos:
 
 ## 6. QA posicional — JM slide 10: la matriz de M2
 
+> **⚠ RETIRADA el 14/08/2026 — la lámina ya no se usa.** Todo lo que sigue en esta sección
+> describe una lámina **escondida**, y se conserva como evidencia de cómo estaba.
+>
+> | | |
+> |---|---|
+> | **qué** | slide **10** de la plantilla canónica de JM (`117I0qn1XP1JCiz2mU32hUY1iiMUmrAAvHOsczd7u6jI`), la grilla de cinco ejes con la caja ancha `{{m2_salud_camp}}` |
+> | **cómo** | **escondida (`skipped`), no borrada** |
+> | **cuándo** | 14/08/2026 |
+> | **autorización** | expresa del usuario, 14/08 — anotada como **suspensión acotada de `C-01`** en `docs/REGLAS_NEGOCIO.md`. `C-01` **no se derogó** |
+> | **backup previo** | `JM_marcada — backup 2026-08-05 16:23`, id `1N5Hhp3eXK-Otdb3knEaXHfS0qdGo0diWyinwg_n1n9Q`, en `_backups` |
+> | **se lleva** | **23 tokens** `m2_*`. La plantilla pasa de 195 a **172** tokens distintos |
+> | **cómo se revierte** | abrir la plantilla → clic derecho sobre la slide 10 → *Omitir diapositiva* (destildar). O `SlidesApp.openById(ID).getSlides()[9].setSkipped(false)` |
+>
+> **Por qué escondida y no borrada, que es la parte que importa:** `LAMINAS_CONGELADAS_`
+> (`Armonizar.gs`) declara esta slide con testigo `m2_salud_camp`. **Si se borra, el testigo
+> desaparece y `filtrarRenombresPorLaminasCongeladas_` devuelve `ok:false`, que rompe toda
+> armonización futura.** Esconder la deja fuera del deck y conserva el ancla.
+
 Buena noticia: **los 14 números hardcodeados están fuera del área visible** (coordenadas
 `y` negativas, parkeados arriba del canvas). No se imprimen. Son restos del ejemplo y se
 pueden borrar sin riesgo.
