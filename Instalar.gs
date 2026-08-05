@@ -986,6 +986,14 @@ var SEED_MAPEO_ = [
   // y las láminas de confirmación/agradecimiento las van a necesitar. El corte va por
   // `MARCADORES.filtro`, que es por marcador (D-21 vs. el filtro declarativo del 08/08).
   { base_id: 'digital', campo_logico: 'mail_tipo', hoja: 'Directa Mail', columna: 'I', notas: 'Convocatoria / Confirmación / Agradecimiento — corte del envío de convocatoria (VALIDACION §3.3)' },
+  // `Mail remitente` (16/08) — el corte JM/GCBA de mail. Sin esta fila las dos láminas del
+  // Resumen Ejecutivo darían **idéntico**, que es el modo de falla que el prompt advierte.
+  // Medido el 04/08 (`Pedido-1` 0.1 bis): 21 remitentes distintos, `jorge.macri@…` en 294
+  // filas. **Es señal por envío y no por cuenta** — 136 de las 880 cuentas mandan desde dos
+  // remitentes distintos—, así que el corte va por fila, que es lo que hace `MARCADORES.filtro`.
+  // Sin `valores_incluidos`, por lo mismo que `mail_tipo`: filtrar acá sacaría las filas de
+  // GCBA para toda la corrida, y la lámina de GCBA las necesita.
+  { base_id: 'digital', campo_logico: 'mail_remitente', hoja: 'Directa Mail', columna: 'G', notas: 'corte JM/GCBA de mail — jorge.macri@buenosaires.gob.ar es JM, el resto GCBA (Pedido-1)' },
 
   // hoja 'Directa SMS'
   { base_id: 'digital', campo_logico: 'sms_id_cuenta', hoja: 'Directa SMS', columna: 'A', notas: 'join entre solapas' },

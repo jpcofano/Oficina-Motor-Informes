@@ -508,15 +508,6 @@ function resolverMarcadores(informeId, opciones) {
     }
     datos.filas = filtrado.filas;
 
-    if (esRatio) {
-      partido = partirCampoRatio_(fila, solapa.solapa, datos.filas);
-      if (!partido.ok) {
-        base.estado = 'error';
-        base.traza = partido.motivo + ' · ' + trazaVentana;
-        return base;
-      }
-    }
-
     // 4 ter · Las fechas de cada fila, para que `ULTIMO` elija por fecha y no por posición
     //         (12/08). Resolver **qué columna es la fecha** es estructura y por eso vive acá;
     //         `opULTIMO` sólo elige. Si la solapa no tiene `fecha_periodo` mapeada, no se
@@ -559,6 +550,20 @@ function resolverMarcadores(informeId, opciones) {
         fila.base_id + '/' + solapa.solapa + ' necesita recortar por la ventana del informe y esa ' +
         'solapa no tiene `fecha_periodo` en MAPEO · ' + trazaVentana;
       return base;
+    }
+
+    // 4 quater · `RATIO`/`PCT` parten **después** del filtro y del recorte por ventana, no
+    //            antes. Estaba al revés y se midió el 16/08: `mail_or` dividía
+    //            4.859.412 / 21.268.081 —todas las filas de todos los períodos— mientras su
+    //            `SUMA` hermana sumaba 211.357 sobre las 7 filas recortadas. **Dos números
+    //            del mismo marcador salidos de universos distintos.**
+    if (esRatio) {
+      partido = partirCampoRatio_(fila, solapa.solapa, datos.filas);
+      if (!partido.ok) {
+        base.estado = 'error';
+        base.traza = partido.motivo + ' · ' + trazaVentana;
+        return base;
+      }
     }
 
     // 5 · La operación.
