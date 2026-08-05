@@ -144,11 +144,36 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
   if (fila.base_id === 'digital') {
     var idCuenta = opciones && opciones.id_cuenta;
     if (!idCuenta) {
+      /* ── El agregado global de `digital` (15/08) ────────────────────────────
+       * Hasta hoy, un marcador de `digital` **sin `id_cuenta` fallaba**: la única
+       * forma de leer esta base era el proveedor por cuenta del Paso 2.4. Eso
+       * alcanzaba para los `enc_*`, que siempre se emiten dentro de un encuentro,
+       * y **bloqueaba de raíz** cualquier agregado del período — que es justo lo
+       * que necesita el Resumen Ejecutivo: *"cuántos mails se mandaron esta
+       * semana"*, sin cuenta.
+       *
+       * Cae a `leerFuente`, que es la rama general de más abajo. **La rama por
+       * cuenta no se toca**: los `enc_*` siguen leyendo por el proveedor unido.
+       *
+       * ⚠ **Y por eso hace falta recortar por ventana acá.** `digital` es
+       * `modo_periodo = snapshot` **por diseño** —sus solapas usan fecha de inicio
+       * con lead de 3 a 7 días y el recorte lo hace el link campaña↔encuentro
+       * (`R-04`)—, así que `leerFuente` **devuelve todas las filas de todos los
+       * períodos**. Medido: 2108 filas sobre la ventana 24–30/07. Un `SUMA` sobre
+       * eso da un número **grande, plausible y equivocado**, que es el modo de
+       * falla de siempre. El recorte va abajo, sobre `datos.filas`, y **no** se
+       * toca `BASES.modo_periodo`, que sostiene a los `enc_*`.
+       * ──────────────────────────────────────────────────────────────────── */
+      var lecturaAgregada = leerFuente(fila.base_id, ventana, solapa);
+      if (!lecturaAgregada.ok) return { ok: false, motivo: lecturaAgregada.motivo };
       return {
-        ok: false,
-        motivo: '«FALTA:' + fila.marcador + '@digital_sin_cuenta» — `digital` se lee por el proveedor ' +
-          'del Paso 2.4 (`filasDigitalDeEncuentro`), que necesita el `id_cuenta` del ítem que se está ' +
-          'emitiendo. El despachador todavía no lo recibe (es del Paso 5, que itera los ítems).'
+        ok: true,
+        filas: lecturaAgregada.filas,
+        encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+        columna: campo.columna,
+        recortar_por_ventana: true,
+        origen: 'agregado global de ' + fila.base_id + '/' + solapa + ' (sin id_cuenta; ' +
+          lecturaAgregada.filas.length + ' fila(s) antes del recorte por ventana)'
       };
     }
     var registro = filasDigitalDeEncuentro(idCuenta, ventana);
@@ -505,6 +530,35 @@ function resolverMarcadores(informeId, opciones) {
       fechasDeFilas = datos.filas.map(function (o) {
         return parsearFechaCelda_(o[claveFecha]) || null;
       });
+
+      // El recorte por ventana del agregado global (15/08). Sólo cuando la lectura lo pide
+      // —`digital` leída sin `id_cuenta`—: la rama por cuenta y las bases `filtrar`, que ya
+      // vienen recortadas por `leerFuente`, no pasan por acá.
+      if (datos.recortar_por_ventana && ventana && ventana.desde && ventana.hasta) {
+        var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+        var desdeStr = Utilities.formatDate(ventana.desde, tz, 'yyyy-MM-dd');
+        var hastaStr = Utilities.formatDate(ventana.hasta, tz, 'yyyy-MM-dd');
+        var antes = datos.filas.length;
+        var filasRecortadas = [], fechasRecortadas = [], sinFecha = 0;
+        datos.filas.forEach(function (o, i) {
+          var f = fechasDeFilas[i];
+          if (!f) { sinFecha++; return; }
+          var s = Utilities.formatDate(f, tz, 'yyyy-MM-dd');
+          if (s >= desdeStr && s <= hastaStr) { filasRecortadas.push(o); fechasRecortadas.push(f); }
+        });
+        datos.filas = filasRecortadas;
+        fechasDeFilas = fechasRecortadas;
+        base.recorte_ventana = 'recorte por ventana sobre "' + claveFecha + '": ' + filasRecortadas.length +
+          ' de ' + antes + ' fila(s)' + (sinFecha ? ' · ' + sinFecha + ' sin fecha, excluidas' : '');
+      }
+    } else if (datos.recortar_por_ventana) {
+      // Sin `fecha_periodo` mapeada no hay con qué recortar, y devolver el total de todos los
+      // períodos sería el número plausible y equivocado. Se falla con motivo propio.
+      base.estado = 'error';
+      base.traza = '«FALTA:' + fila.marcador + '@sin_fecha_para_recortar» — el agregado global de ' +
+        fila.base_id + '/' + solapa.solapa + ' necesita recortar por la ventana del informe y esa ' +
+        'solapa no tiene `fecha_periodo` en MAPEO · ' + trazaVentana;
+      return base;
     }
 
     // 5 · La operación.
@@ -539,6 +593,7 @@ function resolverMarcadores(informeId, opciones) {
     base.valor_formateado = formatearValorMarcador_(salida.valor, fila.formato);
     base.estado = (salida.valor === '' || salida.valor === null || salida.valor === undefined) ? 'sin_datos' : 'ok';
     base.traza = salida.traza +
+      (base.recorte_ventana ? ' · ' + base.recorte_ventana : '') +
       (base.filtro_aplicado ? ' · ' + base.filtro_aplicado : '') +
       ' · solapa "' + solapa.solapa + '"' + (solapa.inferida ? ' (inferida: es la única fuente de la base)' : '') +
       ' · ' + trazaVentana;
