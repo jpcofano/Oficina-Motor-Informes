@@ -126,8 +126,11 @@ cableado sin escribir.
    que cambian cómo se ejecutan:
    - **`SECCIONES.filtro` está declarada y MUERTA** — la usa sólo `comunicaciones_post`
      (`etapa=post`) y **ningún código la lee**. La Parte D es **implementarla**.
-   - **La tabla de envíos está en la lámina 18, no en la 22**, y le faltan **cinco** tokens,
-     no cuatro: los cuatro remitentes de los envíos 2–5 **y `camp_env4_fecha`**.
+   - **La tabla de envíos está en la lámina 18 de `JM_marcada`.** ⚠ **Corregido el 07/08:**
+     lo que se leyó como *"faltan cinco tokens"* son **celdas combinadas**, no celdas
+     vacías — la columna "Envío" está fusionada desde la fila 2 y la fecha del envío 4 con
+     la del 3. Agregarlos exige **descombinar**, que es estructural. **La plantilla no se
+     tocó.** Y `TOKENS.md` **no estaba mal**: su tabla numera `Plantilla_SECCO.pptx`.
    - **`0.6` contradice el supuesto: el máximo en ventana es 6 envíos** sobre cinco filas
      fijas, así que hoy **un envío se pierde en silencio**. La Parte G **no se construyó**,
      como manda el prompt.
