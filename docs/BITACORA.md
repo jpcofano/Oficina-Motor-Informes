@@ -3026,3 +3026,44 @@ para algo irreversible hay que mirar esa línea.
 - **Pendientes/decisiones:** el arreglo del desempate del matcher es de `Union.gs` y no se
   hizo acá. Queda pendiente decidir si el orden de expansión de las cinco slides es el de
   `REUNIONES` o no.
+
+## `Pedido-4` — Parte 0 corrida, y **para**: los números de referencia no reproducen (2026-08-04) — commit de esta entrada
+- **Qué pedía** `docs/Prompts/2026-08-04_Pedido-4_cerrar_ecv.md`: inventariar los `ecv_*`,
+  clasificarlos entre agregado semanal y por encuentro, y confirmar la ventana antes de
+  cablear nada. Sólo lectura, con parada propia. **No se tocó `SECCIONES`, ni `MARCADORES`,
+  ni el formateador.**
+- **0.1 · 19 tokens `ecv_*` en la plantilla de JM, y ninguno cableado.** `MARCADORES` no
+  tiene **ni una** fila de la familia. Viven en dos láminas: la **5** (*"Encuentros con
+  vecinos: alcance semanal por herramienta"*) y la **6** (*Iceberg*).
+- **⚠ 0.2 · La repetición es peor de lo que decía el prompt: no alcanza con mover tokens.**
+  De los 19, **9 son agregado semanal puro** (`ecv_encuentros`, `ecv_barrios`,
+  `ecv_barrio1/2/3` y los cinco `ecv_insc_*_pct`, todos sólo en la lámina 5) y **2 son de un
+  encuentro** (`ecv_barrio`, `ecv_poblacion`, sólo en la 6). **Los 8 restantes están en las
+  dos láminas con el mismo nombre y dos significados distintos**: `ecv_inscriptos`,
+  `ecv_asistentes` y los cinco `ecv_insc_*` valen *el total de la semana* en la lámina 5 y
+  *el de ese encuentro* en la 6.
+  Por la regla del propio prompt —*"si algún token queda ambiguo, no lo asignes"*— esos ocho
+  **no se mueven**: quedan listados y la decisión es del usuario. Partir la sección sin
+  resolverlos rompería la lámina 6.
+  Confirmado además el diagnóstico de origen: en el deck, **las slides 5 a 9 son cinco
+  copias de la lámina 5** —el agregado semanal— y las 10 a 14 son las cinco del iceberg.
+- **⚠ 0.3 · La ventana está bien y el conteo no.** `resolverVentana({})` da
+  **24/07 → 30/07, origen `config`** ✅. Pero `rdv/RVD JM-CM - ES` deja **16 filas en
+  ventana, no 12** (1362 totales; 703 excluidas por lista blanca: 642 vacío, 58
+  `Suspendida`, 2 `Reprogramada`, 1 `Se modificó el barrio`).
+- **Las cuatro filas de más están identificadas, y explican la diferencia exacta.** Son las
+  **cuatro del jueves 30/07** (Villa Urquiza, Chacarita, Palermo, La Paternal): suman
+  **445 inscriptos y 125 asistentes**, que es **exactamente** la diferencia contra los
+  números de referencia. Hoy: **3364 inscriptos · 811 asistentes · 16 encuentros**;
+  referencia del 03/08: 2919 · 686 · 12. `3364 − 445 = 2919` y `811 − 125 = 686`.
+  **El corte vertical del 03/08 no incluyó el 30/07.**
+- **Y la diferencia de 54 ya no es 54: es 20.** La suma de los cinco canales da **3344**,
+  contra 3364 inscriptos. **`Mataderos` del 29 ya tiene sus canales cargados** (4 mail + 3
+  RRSS + 27 difusión = 34), así que de los dos casos que explicaban el −54 queda **sólo
+  `Palermo` del 29, con 20 inscriptos y ningún canal**. `54 − 34 = 20`. La base es viva:
+  cambió entre el 03/08 y hoy.
+- **Prueba:** sólo lectura, por `eval` sobre la API.
+- **Pendientes/decisiones:** **se para antes de la Parte A**, como pide el prompt: los
+  números contra los que había que cerrar no aplican a la ventana de hoy. Hay que decidir
+  si la referencia pasa a ser `3364 / 811 / 16 / 3344 / −20` o si la ventana correcta
+  termina el 29/07. Y hay que resolver los ocho tokens ambiguos antes de partir la sección.

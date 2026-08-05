@@ -87,16 +87,26 @@ con sus números verificados, empezando por las que no iteran.** Lo justifica el
 `Pedido-2`: **384 de 438 faltantes son "sin fila en `MARCADORES`" — 88%.** No es motor, es
 cableado sin escribir.
 
-1. **`Pedido-4` — cerrar los `ecv_`** (el agregado semanal de encuentros). Es la única
-   sección que se puede cerrar entera hoy: todo sale de `rdv` con solapa explícita, y **no
-   depende del anclaje, ni de `digital`, ni del corte JM/GCBA, ni del arreglo de la cuenta**.
-   Va **antes** del `Pedido-3`.
+1. **`Pedido-4` — cerrar los `ecv_`.** **Parte 0 corrida y parada**: los números de
+   referencia no aplican a la ventana de hoy (ver abajo) y hay **ocho tokens ambiguos** que
+   impiden partir la sección sin una decisión tuya. Va **antes** del `Pedido-3`.
 2. **`Pedido-1` Partes A a C y E** — el corte JM/GCBA. Ver abajo lo que cambió.
 3. **`Pedido-3` — el filtro declarativo** por marcador y por sección.
 4. **Arreglo del desempate del matcher** (`Union.gs`), junto con `ULTIMO` → `SUMA`.
 5. **Tramo 3 — `secco`**, la medición de `D-01`.
 
-## Lo que midieron los Pedidos 1 y 2, y hay que tener a mano
+## Lo que midieron los Pedidos 1, 2 y 4, y hay que tener a mano
+
+- **`ecv_`: 19 tokens en la plantilla y ninguno cableado.** `MARCADORES` no tiene ni una
+  fila de la familia. **8 de los 19 son ambiguos**: `ecv_inscriptos`, `ecv_asistentes` y los
+  cinco `ecv_insc_*` valen *el total de la semana* en la lámina 5 y *el de ese encuentro* en
+  la 6. **No se pueden mover sin decidir antes.**
+- **⚠ Los números de referencia del 03/08 no reproducen.** La ventana está bien
+  (24–30/07, `config`) pero `rdv` deja **16 filas, no 12**. Las cuatro de más son **las del
+  jueves 30/07**, que suman **445 inscriptos y 125 asistentes** — exactamente la diferencia
+  contra 2919 / 686. Hoy: **3364 · 811 · 16 · canales 3344 · diferencia −20**.
+  **La de 54 bajó a 20 porque `Mataderos` del 29 ya tiene sus canales cargados (34).**
+  Queda sólo `Palermo` del 29.
 
 - **El corte JM/GCBA es una señal por canal.** IVR: `digital/Directa IVR` col **G**,
   encabezado exacto `"Vocero"`, 57/57 filas con dato, **`JM` 53 · `GCBA` 4**, y **0 cuentas
