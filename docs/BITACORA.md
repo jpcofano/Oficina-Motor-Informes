@@ -3516,3 +3516,33 @@ para algo irreversible hay que mirar esa línea.
 - **No se arregló acá, a propósito.** Tocar `opSUMA` cambia el comportamiento de **todos** los
   marcadores que suman, y merece su propia medición — no una corrección apurada al final de
   una corrida cuyo objetivo era otro. **Queda como lo primero del próximo prompt.**
+
+## `ULTIMO` por fecha — el orden de la hoja deja de decidir (2026-08-12) — commit de esta entrada
+- **0.1 · Cómo elegía:** `opULTIMO` recorría `valoresDeCtx_` **desde el final del array** —
+  o sea **la última posición de la hoja**. La línea era el `for (var i = valores.length - 1; ...)`.
+- **0.2 · Ocho marcadores usan `ULTIMO`**, y el cambio los toca a todos: los seis de
+  `digital/Directa Mail` (`enc_mails_enviados`, `_entregados`, `enc_aperturas`,
+  `enc_clics_ctor`, `enc_or`, `enc_ctor`) más **`enc_impresiones` y `enc_alcance`**, de
+  `digital/Digital`.
+- **0.3 · Las dos solapas afectadas SÍ tienen fecha mapeada:** `digital/Digital` →
+  `fecha_periodo` col **E**, `digital/Directa Mail` → col **F**. No hizo falta el camino de
+  respaldo para estos, pero se implementó igual.
+- **0.4 · `enc_alcance` y `enc_impresiones` están entre los afectados.**
+  `CONFIG_INFORMES.md` §4.1 dice que alcance y frecuencia **no son sumables** y van por
+  `ULTIMO`/lookup: **siguen en `ULTIMO`**, sólo cambia *cuál* fila elige. No se los pasó a
+  `SUMA` ni se los tocó.
+- **0.5 · Foto previa:** los once en `ok`, con los valores del 11/08.
+- **Parte A · el cambio.** `opULTIMO` elige **la fila con la fecha más alta**. El despachador
+  arma `ctx.fechas` —resolver qué columna es la fecha es **estructura** y por eso vive en
+  `Generador.gs`; `opULTIMO` sólo elige, que es lo que sí es de `Marcadores.gs`—.
+  Sin fecha mapeada **cae al comportamiento viejo y lo dice en la traza**
+  (`ÚLTIMO por POSICIÓN (sin fecha utilizable)`).
+- **Empate en la fecha más alta con valores distintos: no elige.** Sale
+  `«FALTA:@ultimo_ambiguo»` con los valores empatados en la traza. **Si los valores
+  empatados son idénticos sí elige** — no hay nada que decidir, y fallar ahí sería un hueco
+  gratis. Es una decisión propia, anotada.
+- **Control positivo, sin tocar la base:** `opULTIMO` con las tres convocatorias reales en
+  orden de hoja da **44.043**; **con las filas invertidas da 44.043 igual**. Más: sin fechas
+  cae a posición, empate distinto sale ambiguo, empate igual elige.
+- **Los once siguen cerrando**, con los mismos valores que la foto de `0.5`.
+- **Prueba:** las 10 pruebas pasan.
