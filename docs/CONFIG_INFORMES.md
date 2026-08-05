@@ -39,11 +39,34 @@ Mecánica: filas en `CAMPANAS` con `mostrar=sí`, ordenadas por `orden`. El moto
 un bloque de slides por campaña seleccionada (slides 12–19 en JM), usando la ventana de
 fechas propia de cada campaña.
 
-Preguntas abiertas:
-- **[?]** ¿Cuál es el criterio para dejar una campaña afuera? (¿volumen mínimo?
-  ¿relevancia política? ¿campaña que arrancó y todavía no tiene datos?)
-- **[?]** ¿Hay un máximo de campañas por informe? El deck crece 8 slides por campaña.
-- **[?]** ¿Quién decide y cuándo? (¿antes de correr el motor, o se corre y se poda?)
+#### Decisiones del usuario, 05/08/2026
+
+**[OK] El default editorial son las campañas del período.** Sobre ese default el equipo
+**agrega o saca, dentro del último mes**. La selección la cura el equipo; el motor no
+propone ni poda.
+
+**[OK] El mecanismo ya existe y no hay que construir nada:** `mostrar = sí/no` más
+`orden`, en `CAMPANAS`. Eso responde las tres primeras preguntas que estaban abiertas acá
+—criterio, máximo y quién decide—: **es curaduría humana sobre dos columnas**, y por eso
+no hay un criterio mecánico que escribir.
+
+**[OK] Máximo cinco envíos por campaña.** Con ese tope, `campana_desag_mail` —cuya tabla
+tiene cinco filas fijas— **queda acotada y no hace falta construir ninguna lámina extra de
+desagregados**. La medición que iba a decidirlo (`0.6` del `Pedido-3`) deja de ser
+necesaria.
+
+> **⚠ Esto no deroga `D-19`, y el motivo importa.** Son dos reglas de **distinto nivel** y
+> se leen juntas sin conflicto: *"las campañas del período"* dice **qué campañas van** —es
+> una regla **editorial**—; `D-19` dice **quién escribe la celda `periodo_id`** —es una
+> regla **mecánica**— y la respuesta sigue siendo **una persona**. El motor **no deduce el
+> período de las fechas de la campaña**, porque con `R-11` Addendum 1 las ventanas pueden
+> solaparse o dejar hueco, y una campaña a caballo de dos semanas no tiene un `periodo_id`
+> derivable. El default editorial **no es permiso para que el motor complete la celda.**
+
+**La fuente ya estaba resuelta:** la fila de la que salen los `camp_*` es **Seguimiento
+Digital**, fijada en **§4.1** de este mismo documento. No se repite acá — se apunta.
+
+Preguntas que siguen abiertas:
 - **[?]** Si una campaña cruza dos semanas, ¿se muestra acumulada o solo el tramo de
   la semana? Esto **cambia el número**, no solo la presentación.
 
@@ -202,10 +225,20 @@ esa slide — revisar en el QA (ver `docs/SECCO_tokens_marcados.md`).
 `mostrar=sí`.
 **[?]** ¿Cuántas campañas destacadas lleva el SECCO mensual? ¿Difiere de JM?
 **[MANUAL]** `camp_dig_insight`, `camp_mail_insight`, `camp_resp_insight` — son
-lecturas, las escribe el equipo.
-**[?]** `camp_bench_*` (benchmarks): ¿fijos, o del período anterior?
-**[?]** `camp_resp_*` (respuestas: positivas/neutras/negativas…) — ¿qué base las tiene?
-No aparece en `MAPEO_completo.md`. **Fuente sin identificar.**
+lecturas, las escribe el equipo. **Confirmado por el usuario el 05/08:** quedan manuales.
+
+**[OK] Los once `camp_resp_*` quedan DIFERIDOS** — decisión del usuario del 05/08.
+`camp_resp_pos` / `_neu` / `_neg` / `_info` / `_sol`, sus cinco `_pct`, y
+`camp_resp_total`: **no van en esta etapa** y **no se cablean**. La `[?]` de *"fuente sin
+identificar"* deja de ser una pregunta abierta y pasa a ser una **decisión tomada**: no se
+busca la fuente porque el bloque no entra todavía.
+
+**[?] `camp_bench_*` y `camp_bench_remitente` siguen abiertos.** ¿Fijos, o del período
+anterior? El usuario no los resolvió el 05/08. **No se cablean** hasta que se decida.
+
+> **El saldo de la familia `camp_`**, sobre los ~53 tokens sin cablear: **14 resueltos por
+> decisión** (11 diferidos + 3 manuales), **2 abiertos** (`camp_bench_*`), y **el resto con
+> fuente conocida**, bloqueados sólo por la falta de filas de `jm` en `CAMPANAS`.
 
 ### 2.6 Análisis / conversación X (slides 25, 27, 28)
 
