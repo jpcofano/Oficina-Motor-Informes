@@ -154,6 +154,29 @@ cruzando contra los datos al ejecutar.)
 6. Commits de documentación separados de commits de código.
 7. Excepción: un prompt puede pedir varios commits internos (Partes A/B/C) si lo indica.
 
+**Un prompt, un objetivo.** No se mezclan objetivos en una corrida, **por barato que parezca
+el segundo**. Pedido por el usuario el 08/08 y escrito acá el 12/08.
+
+El dato que lo justifica, porque es contundente: con el formato anterior —corridas de cinco
+puntos que mezclaban documentación barata con código caro, **y la documentación primero**—
+entre el 04 y el 07/08 salieron **dieciocho commits y un solo cambio de código**. La
+documentación salía siempre; el código, nunca: cuando la corrida se quedaba sin margen, lo
+que ya estaba hecho era lo barato. Con un objetivo por prompt, las cuatro corridas siguientes
+produjeron código **en las cuatro**.
+
+**Documentación mínima durante, completa al final.** Una línea de bitácora por commit
+mientras se trabaja; el resto —bitácora larga, `HANDOFF_CODE.md`, `PLAN.md`— **cuando el
+código funciona**, no antes y no intercalado. **Si el código no llega, se documenta lo que se
+hizo, no lo que se planeaba.**
+
+**Toda premisa del prompt se verifica antes de aplicarla, incluidas las que el prompt da por
+medidas.** Van **cuatro prompts seguidos con una premisa central falsa**, y en los cuatro la
+detectó una medición de la Parte 0: el nombre de `Directa Mail` no tenía barrio ni fecha; la
+figura no existe del lado digital; las dos cuentas homónimas nunca empataron; las celdas de
+la lámina 18 estaban combinadas y no vacías. **Frenar sobre una premisa vencida y seguir por
+otro lado es el comportamiento correcto, no una desviación** — y por eso la Parte 0 de un
+prompt se corre aunque parezca trámite.
+
 **`git push` después de cada commit, sin preguntar.** El remoto no es un canal de
 release: es el backup del trabajo y la única forma que tiene la sesión de claude.ai de ver
 el estado real del repo. Un commit sin pushear es invisible. Pushear al terminar cada
