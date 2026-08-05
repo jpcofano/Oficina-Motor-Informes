@@ -1525,6 +1525,28 @@ con `numero`, y funciona** —el deck dice `(59.54%)`— pero por elección de u
 
 **No cambiar el cableado**: anotar el hueco. Cuando exista el formato, son cinco celdas.
 
+### P2 · Los tres remitentes sueltos de la lámina de campaña — **DIFERIDO por decisión del usuario 07/08**
+
+**La pregunta, textual:** *si cada fila de la tabla de envíos ya dice quién envió, ¿qué
+debería mostrar un `camp_remitente` que está **fuera** de la tabla?*
+
+Las tres ubicaciones, medidas sobre la plantilla viva de JM el 06/08 (`mapaDeTokens_`):
+
+| token | lámina | contenedor |
+|---|---|---|
+| `camp_remitente` | **18** | suelta |
+| `camp_bench_remitente` | **18** | suelta |
+| `camp_remitente` | **19** | suelta |
+
+**No se cablean, no se borran, no se tocan**, y **dejan de reportarse en cada corrida** —
+una pregunta diferida que se repite en todos los reportes es ruido, y por eso queda acá,
+que es donde se lee. Marcado también en `CONFIG_INFORMES.md` §2.5, junto a los once
+`camp_resp_*` diferidos.
+
+**⚠ `camp_bench_` (sin `_remitente`) NO está diferido y no entra en este cajón.** Su
+pregunta es otra —¿son fijos, o del período anterior?— y nunca se respondió. Confundirlos
+lo daría por cerrado.
+
 ### P2 · `ecv_barrio` no puede usarse como prefijo de familia
 
 `ecv_barrio` es **prefijo literal** de `ecv_barrio1`, `ecv_barrio2` y `ecv_barrio3`, y

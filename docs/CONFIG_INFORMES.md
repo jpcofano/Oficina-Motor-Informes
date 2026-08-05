@@ -39,29 +39,49 @@ Mecánica: filas en `CAMPANAS` con `mostrar=sí`, ordenadas por `orden`. El moto
 un bloque de slides por campaña seleccionada (slides 12–19 en JM), usando la ventana de
 fechas propia de cada campaña.
 
-#### Decisiones del usuario, 05/08/2026
+#### Decisiones del usuario, 07/08/2026
 
-**[OK] El default editorial son las campañas del período.** Sobre ese default el equipo
-**agrega o saca, dentro del último mes**. La selección la cura el equipo; el motor no
-propone ni poda.
+> **Estas dos decisiones reemplazan a las del 05/08 que estaban acá.** No son un matiz de
+> aquéllas: la primera cambia **cuál es el criterio de selección** y la segunda **da vuelta
+> una afirmación** que la medición desmintió. Lo que decía antes —*"el default editorial son
+> las campañas del período"* y *"máximo cinco envíos, la medición deja de ser necesaria"*—
+> **está mal y por eso no se conserva**.
 
-**[OK] El mecanismo ya existe y no hay que construir nada:** `mostrar = sí/no` más
-`orden`, en `CAMPANAS`. Eso responde las tres primeras preguntas que estaban abiertas acá
-—criterio, máximo y quién decide—: **es curaduría humana sobre dos columnas**, y por eso
-no hay un criterio mecánico que escribir.
+**[OK] El temario elige qué campañas destacadas van, y se buscan en toda la base.** El
+período **no** es el criterio de selección. Una campaña destacada **puede ser anterior a la
+ventana del informe** y entrar igual: se busca en toda la base, **sin filtro de ventana**.
 
-**[OK] Máximo cinco envíos por campaña.** Con ese tope, `campana_desag_mail` —cuya tabla
-tiene cinco filas fijas— **queda acotada y no hace falta construir ninguna lámina extra de
-desagregados**. La medición que iba a decidirlo (`0.6` del `Pedido-3`) deja de ser
-necesaria.
+> **La regla, en una línea: la ventana agrega, el temario selecciona.**
+>
+> La ventana de `CONFIG` rige para los **agregados** —`ecv_*`, ministros, `m2`—, que son
+> sumas de un período. El **temario** rige para lo que se **elige mostrar**: campañas
+> destacadas y encuentros. Es el mismo régimen que §1.7 ya documentó para los encuentros, y
+> tiene ahí su caso testigo: **San Cristóbal 23/07 con ventana 24–30/07**.
 
-> **⚠ Esto no deroga `D-19`, y el motivo importa.** Son dos reglas de **distinto nivel** y
-> se leen juntas sin conflicto: *"las campañas del período"* dice **qué campañas van** —es
-> una regla **editorial**—; `D-19` dice **quién escribe la celda `periodo_id`** —es una
-> regla **mecánica**— y la respuesta sigue siendo **una persona**. El motor **no deduce el
-> período de las fechas de la campaña**, porque con `R-11` Addendum 1 las ventanas pueden
-> solaparse o dejar hueco, y una campaña a caballo de dos semanas no tiene un `periodo_id`
-> derivable. El default editorial **no es permiso para que el motor complete la celda.**
+**[OK] El mecanismo sigue siendo `mostrar` + `orden`** en `CAMPANAS`, y ahora se entiende
+mejor: **`orden` es el orden del temario**. Eso responde las tres preguntas que estaban
+abiertas acá —criterio, máximo y quién decide—: es **curaduría humana sobre dos columnas**.
+
+**[OK] Si una campaña supera cinco envíos, la lámina se repite.** Cinco por lámina, tantas
+láminas como hagan falta: **ningún envío se pierde**. `campana_desag_mail` deja de tener un
+tope y pasa a desbordar.
+
+> **⚠ La medición que lo motivó tiene una limitación que hay que leer con ella.** `0.6` del
+> `Pedido-3` (06/08) agrupó por **`id_cuenta`, no por campaña**, porque `CAMPANAS` **no
+> tiene ninguna fila de `jm`** y no existe la campaña contra la cual agrupar. **El proxy fue
+> forzado por falta de datos, no elegido.** Lo medido —**6 envíos en ventana**, 52 sin
+> ventana, 36 cuentas por encima de cinco— dice que **una cuenta** recibió seis envíos;
+> **no** prueba que una campaña los haya mandado. La medición correcta no se puede hacer
+> hasta que haya filas de `jm` en `CAMPANAS`.
+>
+> **La decisión de desbordar se toma igual**, porque el modo de falla que evita —**perder un
+> envío en silencio**— no depende de cuál sea el número exacto.
+
+> **⚠ Esto sigue sin derogar `D-19`, y ahora el motivo es más simple.** `periodo_id` es **el
+> informe en el que la campaña aparece**, no el período de sus fechas. Las fechas de la
+> campaña son propias y **pueden caer fuera** de la ventana de ese informe — es justamente
+> lo que habilita la decisión de arriba. Por eso el motor **no puede deducir la celda**: no
+> hay nada que deducir, es una decisión editorial. La escribe **una persona**.
 
 **La fuente ya estaba resuelta:** la fila de la que salen los `camp_*` es **Seguimiento
 Digital**, fijada en **§4.1** de este mismo documento. No se repite acá — se apunta.
@@ -245,8 +265,17 @@ lecturas, las escribe el equipo. **Confirmado por el usuario el 05/08:** quedan 
 identificar"* deja de ser una pregunta abierta y pasa a ser una **decisión tomada**: no se
 busca la fuente porque el bloque no entra todavía.
 
-**[?] `camp_bench_*` y `camp_bench_remitente` siguen abiertos.** ¿Fijos, o del período
-anterior? El usuario no los resolvió el 05/08. **No se cablean** hasta que se decida.
+**[OK] Los tres remitentes sueltos quedan DIFERIDOS** — decisión del usuario del 07/08.
+Son `camp_remitente` suelta en la lámina **18**, `camp_remitente` suelta otra vez en la
+**19**, y `camp_bench_remitente` en la **18**. La pregunta —*qué debería mostrar un
+remitente suelto si cada fila de la tabla ya dice quién envió*— **sigue sin respuesta y no
+se responde ahora**. **No se cablean, no se borran, no se tocan**, y **dejan de reportarse
+en cada corrida**: una pregunta diferida que se repite es ruido. Está anotada en
+`PENDIENTES_consistencia.md` con sus tres ubicaciones.
+
+**[?] `camp_bench_*` (sin `_remitente`) sigue abierto**, y **no entra en ese cajón**: la
+pregunta ahí es otra —¿fijos, o del período anterior?— y nunca se respondió. **No se
+cablean** hasta que se decida.
 
 > **El saldo de la familia `camp_`**, sobre los ~53 tokens sin cablear: **14 resueltos por
 > decisión** (11 diferidos + 3 manuales), **2 abiertos** (`camp_bench_*`), y **el resto con
