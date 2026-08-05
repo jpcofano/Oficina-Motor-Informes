@@ -87,7 +87,7 @@ var HOJAS_CONFIG_ = {
   // en `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` — bloqueado por
   // la armonización de plantillas, se carga a mano hasta que eso se resuelva.
   MARCADORES: {
-    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'solapa', 'campo_logico', 'periodo_ref', 'operacion', 'valor_fijo', 'formato', 'notas']
+    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'solapa', 'campo_logico', 'periodo_ref', 'operacion', 'valor_fijo', 'formato', 'filtro', 'notas']
   },
   // solapa (Paso 2.3.2): entra en la clave junto con base_id + campo_logico.
   // Antes de esto, dos solapas de la misma base no podían mapear el mismo
@@ -192,7 +192,19 @@ var COLUMNAS_DELTA_ = {
     // primero en el forEach — desplaza campo_logico/periodo_ref/calculo una
     // posición, y valor_fijo asume esa posición ya corrida (ver DOC-2 Parte A).
     { nombre: 'solapa', indice: 5 },
-    { nombre: 'valor_fijo', indice: 9 }
+    { nombre: 'valor_fijo', indice: 9 },
+    // Filtro declarativo (08/08) — **al final del array a propósito**, por lo mismo que
+    // explica la nota de `CAMPANAS`: las entradas se evalúan en orden y cada una asume el
+    // esquema del momento en que corre. Entra por el delta y NO por la rama que reescribe
+    // la fila 1, que habría pisado las 19 filas curadas.
+    //
+    // ⚠ **La columna terminó en el índice 9, entre `valor_fijo` y `formato`, no en el 10.**
+    // Medido en la hoja viva después de aplicar: `… valor_fijo · filtro · formato · notas`.
+    // El índice se cuenta sobre el esquema del momento, y `valor_fijo` acababa de insertar
+    // en 9. **No importa —todo se lee por nombre, nunca por posición— y se deja como quedó**
+    // en vez de moverla: mover una columna de una hoja curada por una preferencia estética
+    // es exactamente el riesgo que `COLUMNAS_DELTA_` existe para evitar.
+    { nombre: 'filtro', indice: 10 }
   ],
   CAMPANAS: [
     { nombre: 'desde', indice: 6 },

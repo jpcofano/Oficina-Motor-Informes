@@ -211,6 +211,87 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
   };
 }
 
+/* ===================== El filtro declarativo (08/08) =====================
+ *
+ * Sintaxis: `campo=valor` y `campo!=valor`. **`!=` y no `≠`**: el símbolo matemático se
+ * rompe al copiar, pegar y exportar una hoja, y el corte de GCBA es precisamente una
+ * negación — la forma que más se va a escribir.
+ *
+ * **Se aplica DESPUÉS de leer, sobre las filas del `ctx`, nunca dentro de `leerFuente`.**
+ * Ésa es la diferencia con `MAPEO.valores_incluidos` (`D-21`) y es todo el punto: aquél
+ * filtra al leer la solapa, **para toda la corrida**, así que dos marcadores de la misma
+ * solapa no pueden pedir mitades distintas del mismo universo. Éste sí.
+ */
+function parsearFiltro_(texto) {
+  var t = String(texto || '').trim();
+  if (t === '') return { ok: true, vacio: true };
+
+  // `!=` se busca primero: contiene un `=` y partir por `=` lo rompería.
+  var negado = t.indexOf('!=') !== -1;
+  var partes = negado ? t.split('!=') : t.split('=');
+  if (partes.length !== 2 || !partes[0].trim() || !partes[1].trim()) {
+    return {
+      ok: false,
+      motivo: 'filtro mal escrito: "' + t + '" — se espera `campo=valor` o `campo!=valor`' +
+        (t.indexOf('≠') !== -1 ? ' (y `!=`, no `≠`: el símbolo matemático se rompe al exportar la hoja)' : '')
+    };
+  }
+  return { ok: true, vacio: false, campo: partes[0].trim(), valor: partes[1].trim(), negado: negado };
+}
+
+/**
+ * Aplica el filtro de un marcador sobre las filas ya leídas.
+ *
+ * El `campo` se resuelve por `buscarMapeo` sobre la base y solapa **del marcador**: si no
+ * está mapeado, **falla con motivo propio**, no con excepción ni con un filtro que no filtra.
+ * Los dos lados se normalizan con `normalizarValorDeclarado_`, que es el canónico de `R-10`.
+ *
+ * Devuelve `{ ok, filas, traza }`. Cero filas **no** es un error acá: lo trata el
+ * despachador, que lo baja a `sin_datos` con el motivo — un filtro mal escrito que devuelve
+ * cero se lee igual que un dato faltante si no se distingue.
+ */
+function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas) {
+  var f = parsearFiltro_(textoFiltro);
+  if (!f.ok) {
+    return { ok: false, motivo: '«FALTA:' + fila.marcador + '@filtro_mal_escrito» — ' + f.motivo };
+  }
+  if (f.vacio) return { ok: true, filas: filas, traza: '' };
+
+  var campo = buscarMapeo(fila.base_id, solapa, f.campo);
+  if (!campo.ok) {
+    return {
+      ok: false,
+      motivo: '«FALTA:' + fila.marcador + '@filtro_campo_no_mapeado» — el filtro declara `' + f.campo +
+        '` y MAPEO no lo tiene para ' + fila.base_id + '/' + solapa + '. ' + campo.motivo
+    };
+  }
+
+  // Las filas vienen indexadas por ENCABEZADO (igual que en `datosDeMarcador_`), salvo la
+  // maestra de digital, cuyas claves son los `campo_logico`.
+  var clave = (fila.base_id === 'digital' && solapa === SOLAPA_MAESTRA_DIGITAL_)
+    ? f.campo
+    : encabezadoEnColumna_(fila.base_id, solapa, campo.columna);
+
+  var esperado = normalizarValorDeclarado_(f.valor);
+  var vacias = 0;
+  var quedan = filas.filter(function (o) {
+    var v = normalizarValorDeclarado_(o[clave]);
+    if (v === '') vacias++;
+    return f.negado ? v !== esperado : v === esperado;
+  });
+
+  return {
+    ok: true,
+    filas: quedan,
+    // El conteo de vacías va en la traza a propósito: una celda sin valor **pasa** el filtro
+    // negado y **no pasa** el afirmativo, y esa asimetría explica diferencias que si no
+    // parecen datos faltantes. Es el mismo criterio que `excluidas_por_valor` en `D-21`.
+    traza: 'filtro `' + textoFiltro + '` sobre "' + clave + '" (col ' + campo.columna + ') → ' +
+      quedan.length + ' de ' + filas.length + ' fila(s)' +
+      (vacias ? ' · ' + vacias + ' con la celda vacía' : '')
+  };
+}
+
 /**
  * Paso 3 (v3) `D.1` Parte C — `RATIO` y `PCT`.
  *
@@ -349,6 +430,30 @@ function resolverMarcadores(informeId, opciones) {
       return base;
     }
 
+    // 4 bis · El filtro declarativo. Va acá —después de leer, antes de partir el ratio y
+    //         antes de la operación— porque filtrar dentro de `leerFuente` es exactamente
+    //         lo que impide que dos marcadores de la misma solapa pidan mitades distintas.
+    //         El del marcador gana; si no declara ninguno, hereda el de su sección.
+    var filtroEfectivo = String(fila.filtro || '').trim() ||
+      String((opciones && opciones.filtro_seccion) || '').trim();
+    var filtrado = aplicarFiltroDeMarcador_(filtroEfectivo, fila, solapa.solapa, datos.filas);
+    if (!filtrado.ok) {
+      base.estado = 'error';
+      base.traza = filtrado.motivo + ' · ' + trazaVentana;
+      return base;
+    }
+    if (filtrado.traza) {
+      // Un filtro que deja cero filas sale `sin_datos` **con el motivo**, no `0`: un filtro
+      // mal escrito y un dato que no existe dan el mismo número y no son lo mismo.
+      if (!filtrado.filas.length) {
+        base.estado = 'sin_datos';
+        base.traza = 'sin_datos: el ' + filtrado.traza + ' · ' + trazaVentana;
+        return base;
+      }
+      base.filtro_aplicado = filtrado.traza;
+    }
+    datos.filas = filtrado.filas;
+
     if (esRatio) {
       partido = partirCampoRatio_(fila, solapa.solapa, datos.filas);
       if (!partido.ok) {
@@ -389,6 +494,7 @@ function resolverMarcadores(informeId, opciones) {
     base.valor_formateado = formatearValorMarcador_(salida.valor, fila.formato);
     base.estado = (salida.valor === '' || salida.valor === null || salida.valor === undefined) ? 'sin_datos' : 'ok';
     base.traza = salida.traza +
+      (base.filtro_aplicado ? ' · ' + base.filtro_aplicado : '') +
       ' · solapa "' + solapa.solapa + '"' + (solapa.inferida ? ' (inferida: es la única fuente de la base)' : '') +
       ' · ' + trazaVentana;
     return base;
@@ -595,6 +701,42 @@ function seccionesRepetiblesDe_(informeId) {
  * `resolverMarcadores` espera. Ahí está la pieza que faltaba — el `id_cuenta` del encuentro
  * que se emite, sin el cual `digital` sale `«FALTA:…@digital_sin_cuenta»`.
  */
+/**
+ * `SECCIONES.filtro`, implementada desde cero (08/08).
+ *
+ * **Estaba declarada y muerta:** la columna existía desde el Paso 2.9G, una sola fila la
+ * usaba —`comunicaciones_post` con `etapa=post`— y **ningún código la leía**; el único lugar
+ * del repo que la mencionaba era `filaSeccion_`, que la escribe. Medido en la Parte 0 del
+ * `Pedido-3` (06/08).
+ *
+ * Filtra **los ítems de la iteración**, no las filas de la base — que es lo que su único
+ * caso real necesita: `comunicaciones_post` itera sobre `REUNIONES` y tiene que emitir sólo
+ * las reuniones con `etapa = post`, no las cinco. El atributo se busca **en el ítem crudo**
+ * de la fuente de iteración, con la misma sintaxis del filtro de marcador.
+ *
+ * Los excluidos se devuelven y se reportan: una sección que emite de menos en silencio es el
+ * modo de falla que el motor evita en todo lo demás.
+ */
+function filtrarItemsPorSeccion_(seccion, crudos, leerAtributo) {
+  var f = parsearFiltro_(seccion.filtro);
+  if (!f.ok) return { ok: false, motivo: 'SECCIONES.filtro de "' + seccion.seccion_id + '": ' + f.motivo };
+  if (f.vacio) return { ok: true, crudos: crudos, excluidos: [], traza: '' };
+
+  var esperado = normalizarValorDeclarado_(f.valor);
+  var excluidos = [];
+  var quedan = crudos.filter(function (c) {
+    var v = normalizarValorDeclarado_(leerAtributo(c, f.campo));
+    var pasa = f.negado ? v !== esperado : v === esperado;
+    if (!pasa) excluidos.push({ item: leerAtributo(c, '__clave__'), motivo: f.campo + ' = "' + v + '"' });
+    return pasa;
+  });
+
+  return {
+    ok: true, crudos: quedan, excluidos: excluidos,
+    traza: 'SECCIONES.filtro `' + String(seccion.filtro).trim() + '` → ' + quedan.length + ' de ' + crudos.length + ' ítem(s)'
+  };
+}
+
 function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
   var fuente = String(seccion.itera_sobre || '').trim();
 
@@ -605,20 +747,26 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
     // Los sin link entran igual como ítem: la reunión existe en el temario (`R-02`) y tiene
     // que salir en el deck aunque sus números de digital queden en `«FALTA»`. Callarla sería
     // el modo de falla caro — un informe que se ve completo y le falta un encuentro.
-    var items = anclaje.encuentros.concat(anclaje.sinLink).map(function (e) {
+    var crudos = anclaje.encuentros.concat(anclaje.sinLink);
+    var filtroR = filtrarItemsPorSeccion_(seccion, crudos, function (e, campo) {
+      return campo === '__clave__' ? (e.reunion + (e.etapa ? ' (' + e.etapa + ')' : '')) : e[campo];
+    });
+    if (!filtroR.ok) return { ok: false, motivo: filtroR.motivo };
+
+    var items = filtroR.crudos.map(function (e) {
       return {
         clave: e.reunion + (e.etapa ? ' (' + e.etapa + ')' : ''),
         etiqueta: e.reunion,
         // La ventana es la del informe: el recorte de `digital` lo hace el link
         // campaña↔encuentro (`R-04`), no una ventana de fecha sobre la base.
         opciones: e.idCuenta
-          ? { id_cuenta: e.idCuenta, ventana: ventanaInforme, seccion_id: seccion.seccion_id }
-          : { ventana: ventanaInforme, seccion_id: seccion.seccion_id },
+          ? { id_cuenta: e.idCuenta, ventana: ventanaInforme, seccion_id: seccion.seccion_id, filtro_seccion: seccion.filtro }
+          : { ventana: ventanaInforme, seccion_id: seccion.seccion_id, filtro_seccion: seccion.filtro },
         id_cuenta: e.idCuenta || '',
         motivo: e.idCuenta ? '' : ('sin cuenta digital anclada' + (e.motivo ? ': ' + e.motivo : ''))
       };
     });
-    return { ok: true, items: items, excluidos: [] };
+    return { ok: true, items: items, excluidos: filtroR.excluidos, filtro: filtroR.traza };
   }
 
   if (fuente === 'CAMPANAS') {
@@ -638,12 +786,19 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
         excluidos.push({ campana: id, motivo: 'periodo_id vacío (D-19)' });
         return;
       }
+      // `SECCIONES.filtro` sobre los atributos de la campaña, misma sintaxis.
+      var fc = parsearFiltro_(seccion.filtro);
+      if (fc.ok && !fc.vacio) {
+        var vc = normalizarValorDeclarado_(c[fc.campo]);
+        var pasa = fc.negado ? vc !== normalizarValorDeclarado_(fc.valor) : vc === normalizarValorDeclarado_(fc.valor);
+        if (!pasa) { excluidos.push({ campana: id, motivo: 'SECCIONES.filtro: ' + fc.campo + ' = "' + vc + '"' }); return; }
+      }
       items2.push({
         clave: id,
         etiqueta: c.nombre || id,
         // Sin `ventana`: la campaña es el PRIMER eslabón de `D-20` y `resolverVentana` usa
         // su `desde`/`hasta`. Pasarle la del informe sería justo lo que el paso prohíbe.
-        opciones: { campana: id, seccion_id: seccion.seccion_id },
+        opciones: { campana: id, seccion_id: seccion.seccion_id, filtro_seccion: seccion.filtro },
         id_cuenta: '',
         motivo: ''
       });
