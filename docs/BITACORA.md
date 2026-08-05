@@ -3499,3 +3499,20 @@ para algo irreversible hay que mirar esa línea.
   `enc_e75_pct`, da **38,74** contra **39** publicado: es el mismo número, el informe lo
   redondea a entero. **No se ajustó nada.**
 - **Prueba:** las 10 pruebas pasan. Diff con `protegidas (con diferencia): 0` y `agregadas: 1`.
+
+### ⚠ Regresión introducida hoy por `SUMA`, medida en el deck
+- **En la slide de Orden Público los once cierran** (deck `14_QBHSTHu9lxinvemh7CMVwCct51ItzpmzzY3Wmr0Oo`,
+  corrida `jm-20260805-125133`): 71.234 · 78.637 · 256 · 27.599 (38,74%) · 44.043.
+- **Pero `SUMA` sobre cero filas devuelve `0`, no `sin_datos`.** Las otras cuatro slides de
+  encuentro —San Cristóbal y Retiro, que no tienen filas de IVR— muestran **`0`** en
+  `enc_atendidos`, `enc_audiencia`, `enc_marque1` y `enc_e75`, donde con `ULTIMO` salía
+  `«FALTA»`. **Son 16 ceros falsos**, y son los que hicieron subir "tokens con valor" de 18 a
+  **34**: el conteo mejoró por un artefacto, no por datos.
+- **Es exactamente el modo de falla que el proyecto combate:** un número plausible y
+  equivocado es peor que un hueco. Un cero de audiencia se lee como "no llamamos a nadie",
+  no como "no hay dato".
+- **Los de mail NO tienen el problema:** `ULTIMO` sobre cero filas sigue dando `sin_datos` y
+  esas cuatro slides muestran `«FALTA:enc_mails_enviados»`, que es lo correcto.
+- **No se arregló acá, a propósito.** Tocar `opSUMA` cambia el comportamiento de **todos** los
+  marcadores que suman, y merece su propia medición — no una corrección apurada al final de
+  una corrida cuyo objetivo era otro. **Queda como lo primero del próximo prompt.**
