@@ -3470,3 +3470,32 @@ para algo irreversible hay que mirar esa línea.
   se toca en este prompt por decisión del 04/08.
 - **Prueba:** las 10 pruebas pasan. Deck `1uFUCQ0maspF9ZODpF2gAKxscwV7hoyeiiMcur1gNkKo`,
   corrida `jm-20260805-121426`, 18 con valor / 304 faltantes.
+
+## Los once números — diez de once cierran dígito a dígito (2026-08-11) — commit de esta entrada
+- **0.1 ✅ la premisa se sostiene.** Las cinco filas de mail de `3387`, y la del **25/07** da
+  **44.043 / 43.439 / 4.652 / 145**, exactamente lo publicado.
+- **⚠ 0.2 · el campo que distinguía existía y no estaba mapeado: `Tipo de mail`** (columna I
+  de `digital/Directa Mail`). Las cinco filas: **`Convocatoria` ×3** (22/07 ×2 y 25/07),
+  **`Confirmación`** (27/07) y **`Agradecimiento`** (03/08). No hubo que inventar ninguna
+  regla: había que **registrar una columna**.
+- **0.3 · la ventana NO alcanzaba.** De las cinco filas, **2 caen en la ventana** 24–30/07
+  (25/07 y 27/07), y con `ULTIMO` la última es la de **confirmación** (583). Filtrar por
+  ventana habría cambiado 582 por 583 y seguía mal.
+- **La solución, que es la más simple que funciona:** filtro `mail_tipo=Convocatoria` y
+  `ULTIMO` **sin tocar**. Quedan tres convocatorias y la última es la del 25/07 — la
+  publicada. ⚠ **Depende del orden de filas de la hoja**, que es frágil; queda dicho.
+- **⚠ 0.4 · no se pudo generalizar: `3354` (San Cristóbal) y `3346` (Retiro) tienen CERO
+  filas de mail.** La regla no se puede validar contra ellos porque no hay contra qué. Sirve
+  para `3387` y **no se sabe** si sirve para el resto.
+- **Parte A · IVR a `SUMA`** en los cuatro contadores (`VALIDACION` §3.2).
+- **`enc_e75_pct` NO pasó a `SUMA`, pasó a `PCT`** `ivr_e75/ivr_atendidos`. Sumar dos
+  porcentajes daba **77,6%** donde el valor es 38,7%. El prompt lo metía en el mismo saco que
+  los cuatro contadores; **un porcentaje no se suma**.
+- **`mail_tipo` entra a `MAPEO` sin `valores_incluidos`**, a propósito: filtrar ahí sacaría
+  las filas de confirmación y agradecimiento **para toda la corrida**, y las láminas de post
+  las van a necesitar. El corte va por `MARCADORES.filtro`, que es por marcador.
+- **Parte C · diez de once cierran dígito a dígito.** IVR: **78.637 · 71.234 · 27.599 · 256**.
+  Mail: **44.043 / 43.439 / 4.652 / 145**, con **10,7%** y **3,1%**. El once,
+  `enc_e75_pct`, da **38,74** contra **39** publicado: es el mismo número, el informe lo
+  redondea a entero. **No se ajustó nada.**
+- **Prueba:** las 10 pruebas pasan. Diff con `protegidas (con diferencia): 0` y `agregadas: 1`.
