@@ -94,6 +94,36 @@ function opSUMA(ctx) {
     suma += numero;
     conValor++;
   });
+
+  /* ── El criterio, y por qué (13/08) ───────────────────────────────────────
+   * **Un agregado sin nada que agregar no vale cero: no tiene valor.** Si ninguna
+   * fila aportó un número, `SUMA` devuelve `sin_datos` y **no `0`**.
+   *
+   * Se midió en el deck: las cuatro slides de encuentro sin filas de IVR mostraban
+   * **`0`** en `enc_atendidos`, `enc_audiencia` y `enc_marque1`, donde `ULTIMO` sí
+   * ponía `«FALTA»`. Eran **16 ceros falsos**, y subieron "tokens con valor" de 18 a
+   * 34: el conteo mejoraba por un artefacto. **Un cero de audiencia se lee como "no
+   * llamamos a nadie", no como "no hay dato"** — el mismo modo de falla que la cuenta
+   * `3347`, que sobrevivió tres semanas porque el número parecía razonable.
+   *
+   * **No aplica a `CONTEO`, y la distinción es la que importa:** "cuántos encuentros
+   * hubo" con cero filas **es** cero, y es un dato. "Cuánta audiencia" con cero filas
+   * es *no sé*. Por eso el arreglo es de `SUMA` y no de las seis operaciones.
+   *
+   * **El corte es `conValor`, no `valores.length`**, y eso distingue tres casos que
+   * antes se veían iguales: cero filas → sin dato; filas con la celda vacía → sin
+   * dato; **filas con un `0` escrito → cero, que sí es un dato** y se devuelve.
+   * ──────────────────────────────────────────────────────────────────────── */
+  if (conValor === 0) {
+    return {
+      valor: '',
+      traza: 'SUMA: ninguna fila aportó un valor numérico a "' + ctx.campo_logico + '" (col ' + ctx.columna +
+        ') sobre ' + valores.length + ' fila(s) de ' + ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') +
+        ' — sin dato, no cero' + trazaDeVentana_(ctx),
+      filas: valores.length
+    };
+  }
+
   return {
     valor: suma,
     traza: 'SUMA de "' + ctx.campo_logico + '" (col ' + ctx.columna + ') sobre ' + valores.length + ' fila(s) de ' +
