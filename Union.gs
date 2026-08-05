@@ -464,13 +464,32 @@ function solapamientoTokens_(a, b) {
  *   - tipo de encuentro compatible -> señal media;
  *   - solapamiento de tokens del texto completo -> desempate residual.
  */
-function scoreMatchDigitalRdv_(candidato, evento, barrio) {
+function scoreMatchDigitalRdv_(candidato, evento, barrio, fechaEncuentro) {
   var parseado = candidato.parseado;
   var barrioEncuentroNorm = normalizar_(barrio);
   var comunaEncuentro = parsearComuna_(barrio) || parsearComuna_(evento);
   var ejeEncuentro = parsearEje_(evento);
 
   var score = 0;
+
+  // La fecha, que es la mitad de la clave del negocio (`Figura · Barrio · Fecha`, 10/08) y
+  // hasta hoy **no entraba al score**: se usaba sólo como prefiltro de ±14 días.
+  //
+  // Es lo que puso once números de Orden Público en la cuenta equivocada. Medido el 10/08:
+  // `3387-JULJDGGC` se llama "Agenda RDV Con 1 - Orden Público Eje Norte **28/7**" y
+  // `3347-JULJDGAG` "…Orden Publico Eje Norte **21/7**". El encuentro es el **28/07**. Las
+  // dos comparten eje, tipo y casi todos los tokens, así que sacaban prácticamente el mismo
+  // score — **la única señal que las separa es la fecha, y no se estaba mirando**.
+  //
+  // Pesa 0,5, igual que el barrio: no es un desempate residual, es clave.
+  if (parseado.fecha && fechaEncuentro) {
+    var dias = Math.abs(parseado.fecha.getTime() - fechaEncuentro.getTime()) / 86400000;
+    if (dias < 1) score += 0.5;
+    else if (dias <= 2) score += 0.25;
+    // Más de dos días: no suma. No resta, porque el nombre de campaña puede traer la fecha
+    // de la convocatoria y no la del encuentro — restar convertiría un match flojo en un
+    // `sinLink` y perdería encuentros que hoy anclan bien.
+  }
 
   if (parseado.barrio && barrioEncuentroNorm && normalizar_(parseado.barrio) === barrioEncuentroNorm) {
     score += 0.5;
@@ -700,7 +719,7 @@ function anclarEncuentrosSinCache_(ventana) {
       var barrio = campoBarrio.ok ? valorPorColumna_(filaRdv.fila, 'rdv', filaRdv.hoja, campoBarrio.columna) : '';
 
       var resultado = anclar_(candidatosCercanos, null, umbral,
-        function (c) { return scoreMatchDigitalRdv_(c, evento, barrio); }, fecha);
+        function (c) { return scoreMatchDigitalRdv_(c, evento, barrio, fecha); }, fecha);
 
       item.idCuenta = resultado.mejor ? resultado.mejor.idCuenta : '';
       item.score = resultado.score;
