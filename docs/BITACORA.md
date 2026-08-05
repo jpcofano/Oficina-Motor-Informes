@@ -3554,3 +3554,26 @@ para algo irreversible hay que mirar esa línea.
 - **⚠ Los 16 ceros falsos de la regresión de `SUMA` siguen ahí** —`enc_atendidos`,
   `enc_audiencia` y `enc_marque1` en las cuatro slides sin filas de IVR—. No se tocaron: es
   otro objetivo, y está anotado.
+
+## `SUMA` sobre cero filas devuelve `sin_datos` (2026-08-13) — commit de esta entrada
+- **0.1 · Qué devuelve cada operación sobre cero filas, medido:** `SUMA` **0** ⚠ ·
+  `CONTEO` **0** (correcto) · `ULTIMO` `sin_datos` ✅ · `RATIO` `sin_datos` ✅ ·
+  `PCT` `sin_datos` ✅ · `TEXTO` **`undefined`** (no usa filas: sale de `valor_fijo`, y hoy
+  ningún marcador la usa). **El problema era sólo de `SUMA`.**
+- **0.2 · La distinción se respetó: `CONTEO` no se tocó.** "Cuántos encuentros hubo" con cero
+  filas **es** cero y es un dato; "cuánta audiencia" con cero filas es *no sé*. Tratar a las
+  seis igual habría roto `ecv_encuentros`, que hoy da **16** y es el único `CONTEO`.
+- **⚠ 0.2 bis · `SUMA` tampoco distinguía cero filas de filas vacías:** daba `0` en los dos
+  casos. El corte quedó en **`conValor`, no en `valores.length`**, que separa tres cosas que
+  antes se veían iguales: cero filas → sin dato · celdas vacías → sin dato · **un `0`
+  escrito → cero, que sí es un dato**.
+- **0.3 · Marcadores por operación:** `ULTIMO` 8 · `PCT` 6 · `SUMA` 4 (los de IVR) ·
+  `CONTEO` 1 (`ecv_encuentros`). El cambio toca a los 4 de `SUMA`.
+- **0.5 · Nada depende de que `SUMA` devuelva cero.** Los `PCT` que dividen por un campo de
+  IVR ya estaban protegidos: `opRATIO` devuelve `sin_datos` con denominador vacío o cero, así
+  que el cambio **no se propaga** a un `NaN` ni a un `Infinity`.
+- **Control positivo, siete casos:** cero filas · celdas vacías · no numéricas → `sin_datos`;
+  un `0` escrito · ceros con vacías · `5 + (−5)` → **`0`**; suma normal → **60**.
+- **El criterio quedó escrito arriba de `opSUMA`**, no sólo acá: es la clase de decisión que
+  alguien va a querer revertir en tres meses sin saber por qué se tomó.
+- **Prueba:** las 10 pruebas pasan.
