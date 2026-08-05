@@ -3379,3 +3379,28 @@ para algo irreversible hay que mirar esa línea.
   tabla. **La cautela de no anotarlo como inconsistencia estaba bien puesta.**
 - **Prueba:** sólo lectura sobre la plantilla. **La plantilla no se abrió para escritura, no
   se copió y no se modificó.**
+
+## Filtro declarativo — Partes A, B y D (2026-08-08) — commit de esta entrada
+- **Parte A ✅** `MARCADORES.filtro` existe. Entró por `COLUMNAS_DELTA_` antes que por
+  `headers`: `protegidas (con diferencia): 0` y las **19 filas curadas intactas**. ⚠ La
+  columna quedó en el índice **9** (entre `valor_fijo` y `formato`), no en el 10: el índice
+  se cuenta sobre el esquema del momento. **Se deja como quedó** — todo se lee por nombre.
+- **Parte B ✅** El filtro se aplica **después de leer, sobre las filas del `ctx`**, nunca
+  dentro de `leerFuente`. Sintaxis `campo=valor` / `campo!=valor` (**`!=`, no `≠`**).
+  **Control positivo:** sin filtro **3364** sobre 16 filas · `figura=Jorge Macri` **2307**
+  sobre 4 · `figura!=Jorge Macri` **1057** sobre 12 · **2307 + 1057 = 3364** y 4 + 12 = 16.
+  Filtro mal escrito → `@filtro_mal_escrito`; campo no mapeado → `@filtro_campo_no_mapeado`.
+  Cero filas sale `sin_datos` con el motivo, no `0`. Los cinco marcadores `prueba_*` se
+  retiraron en la misma corrida: `MARCADORES` volvió a 19 filas.
+- **Parte D ✅** `SECCIONES.filtro` **implementada desde cero** — estaba declarada y muerta.
+  Filtra **los ítems de la iteración**, que es lo que su único caso real necesita:
+  `comunicaciones_post` con `etapa=post` pasó de emitir **5 ítems a emitir 2** —San
+  Cristóbal (post) y Retiro (post)— y **reporta los 3 excluidos con su motivo**
+  (`etapa = "pre"` ×2 y `etapa = ""` en Orden Público). El filtro de sección se hereda a los
+  marcadores por `opciones.filtro_seccion`, y **el del marcador gana** si declara el suyo.
+- **⚠ Parte C ✗ NO se ejecutó.** Ver el reporte: el corte de `dig_jm_gcba` vive en
+  `digital`, cuya rama del despachador exige el `id_cuenta` del ítem, y los tokens de pauta
+  no están cableados. No se cableó ningún token nuevo.
+- **No se generó informe.** El intento se cortó por red (`ECONNRESET`) y **se verificó que
+  no escribió**: `CORRIDAS` no tiene ninguna fila del 08/08. No hubo doble escritura.
+- **Prueba:** las 10 pruebas pasan. Diff antes y después con `protegidas (con diferencia): 0`.
