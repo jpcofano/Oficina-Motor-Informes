@@ -1525,6 +1525,34 @@ con `numero`, y funciona** —el deck dice `(59.54%)`— pero por elección de u
 
 **No cambiar el cableado**: anotar el hueco. Cuando exista el formato, son cinco celdas.
 
+### P1 · El score de anclaje saturó, y el circuito de confianza nunca se probó
+
+**Anotado el 11/08 por decisión del usuario, antes de arrancar el objetivo de los once
+números: primero eso, después esto.** No se implementa nada acá; queda escrito para retomarlo.
+
+**Los cinco anclajes dan `1,00` exacto** desde que la fecha entró al score (10/08). **Un
+score saturado no ordena:** si dos candidatos tienen barrio y fecha correctos, empatan en el
+techo, y el techo no distingue al bueno del casi-bueno.
+
+**En ese empate actúa el desempate temporal del 09/08 y el motor elige solo.** Eso
+**contradice la regla del usuario** —*cuando la confianza no alcanza se pregunta y el usuario
+elige*— y es exactamente el modo de falla de `3347`, que sobrevivió tres semanas porque el
+número parecía razonable.
+
+**El circuito de pregunta está entero y nunca corrió de punta a punta:**
+
+- `ANCLAJE_PENDIENTE` registra el top-3 (`registrarAnclajePendiente_`);
+- el motor **lee** la columna `elegido` en la corrida siguiente y **no pisa la decisión
+  humana** (`anclajeYaConfirmado_`);
+- el umbral sale de `CONFIG.umbral_anclaje_reunion`, no del código (Paso 2.9F).
+
+**Nunca se ejecutó porque ningún caso cayó bajo umbral.** La hoja está vacía —sólo el
+encabezado— desde que existe.
+
+**Qué haría falta:** que el score **ordene en vez de saturar**; que un empate real vaya a
+`ANCLAJE_PENDIENTE` **en vez de resolverse por proximidad**; y **probar el circuito completo
+con un caso forzado**, que es la única forma de saber que funciona.
+
 ### P2 · Los tres remitentes sueltos de la lámina de campaña — **DIFERIDO por decisión del usuario 07/08**
 
 **La pregunta, textual:** *si cada fila de la tabla de envíos ya dice quién envió, ¿qué
