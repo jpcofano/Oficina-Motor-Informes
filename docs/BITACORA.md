@@ -3546,3 +3546,11 @@ para algo irreversible hay que mirar esa línea.
   cae a posición, empate distinto sale ambiguo, empate igual elige.
 - **Los once siguen cerrando**, con los mismos valores que la foto de `0.5`.
 - **Prueba:** las 10 pruebas pasan.
+- **Deck regenerado:** `1vEdfOnXV3o3SmJKuzCG_WcWoqn_9_9_cpiAt4DV8Paw`, corrida
+  `jm-20260805-133836`, **34 con valor / 288 faltantes** — **idéntico al del 11/08**. Es lo
+  esperado: en este caso la fecha más alta y la última posición eran la misma fila, así que
+  el cambio **no movió ningún número**. Lo que cambió es que ahora **no depende del orden**.
+  `enc_mails_enviados` sigue en **44.043** en la slide de Orden Público.
+- **⚠ Los 16 ceros falsos de la regresión de `SUMA` siguen ahí** —`enc_atendidos`,
+  `enc_audiencia` y `enc_marque1` en las cuatro slides sin filas de IVR—. No se tocaron: es
+  otro objetivo, y está anotado.
