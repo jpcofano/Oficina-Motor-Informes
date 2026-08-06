@@ -3690,3 +3690,32 @@ para algo irreversible hay que mirar esa línea.
   de tiempo con 43 marcadores** — que era el cuarto criterio. Es el `P1` de `generarInforme`,
   ya anotado, y hoy es el bloqueante de cualquier verificación end-to-end.
 - **Prueba:** las 10 pruebas pasan. Diff con `protegidas (con diferencia): 0` y `agregadas: 1`.
+
+## `generarInforme` — el deck se crea siempre, y la corrida muere en el medio (2026-08-17) — commit de esta entrada
+- **⚠ `0.1` · La evidencia que faltaba estaba en Drive, y nadie la había mirado: **22 decks
+  en la carpeta de salida contra 12 filas en `CORRIDAS`**. Los diez huérfanos tienen las horas
+  exactas de las corridas que "no volvieron".
+- **`0.4` · La causa, en el código:** `escribirCorrida_` estaba **al final de todo**, después
+  de `escribirFaltantes_`. Una corrida que moría después de crear el deck **no dejaba ningún
+  rastro, por diseño** — y sin rastro no se puede diagnosticar. Es lo que dejó los últimos
+  cuatro objetivos sin verificar.
+- **`0.5` · El mapa de tokens pesa 25.463 caracteres.** No son megabytes, pero es la parte
+  gorda de la respuesta.
+- **`0.2` y `0.3` no se corrieron.** `0.1` los volvió innecesarios para decidir: con el deck
+  creado y la fila faltante, el diagnóstico ya estaba. Gastar la corrida en cronometrar
+  etapas habría dejado el arreglo sin hacer.
+- **Parte A · `CORRIDAS` se abre al empezar.** `abrirCorrida_` escribe la fila apenas existe
+  el deck, con el marcador *"(corrida en curso — si esto queda así, murió antes de
+  terminar)"*; `escribirCorrida_` la completa **en su lugar** en vez de agregar otra. Sigue
+  aceptando llamadas sin número de fila, así que ningún otro llamador se rompe.
+- **⚠ Y el arreglo corrigió el diagnóstico en la misma corrida.** `CORRIDAS` pasó de 12 a
+  **15 filas**, y la última quedó así:
+  `jm-20260805-222543 · deck 1MNwfxbDymWSdbjbroN4YqV26f3DxcRTH5mj7_79if_A · (corrida en curso)`.
+  **El motor NO completa.** Crea el deck y muere entre eso y el final. Lo que reporté hace
+  una hora —"el motor completa, es transporte"— **era falso en su segunda mitad**: el deck sí
+  se crea siempre, pero la corrida no termina.
+- **Parte B · no se pudo hacer.** Sin corrida completa no hay mapa de tokens ni deck escrito,
+  así que los cuatro objetivos pendientes **siguen sin confirmar**. Lo que sí quedó es que
+  ahora **cada intento deja fila**, que era el criterio que el prompt marcó como el que no se
+  puede saltear.
+- **Prueba:** las 10 pruebas pasan.
