@@ -1,7 +1,7 @@
-# Continuación — `2026-08-18_claudemd_revisar_prompt_y_plataforma.md`, Parte A
+# Continuación — `2026-08-06_3_claudemd_revisar_prompt_y_plataforma.md`, Parte A
 
 > **Estado:** ejecutado el 18/08/2026. **Reemplaza:** nada; continúa a
-> `2026-08-18_claudemd_revisar_prompt_y_plataforma.md`, cuya Parte 0 ya había
+> `2026-08-06_3_claudemd_revisar_prompt_y_plataforma.md`, cuya Parte 0 ya había
 > corrido en una conversación anterior.
 
 La Parte 0 corrió y se reportó en una conversación que ya cerró. **Las dos

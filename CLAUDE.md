@@ -95,7 +95,12 @@ antes de crearlo** y, si se crea, agregarle su fila en **§7, en el mismo commit
 la regla que más importa: el repo ya acumuló una docena de documentos que nacieron sueltos
 y divergieron entre sí. Los prompts nuevos van a `docs/Prompts/` (`Paso-N.md` para pasos
 del motor, `DOC-N_*.md` para trabajo documental — no consume número de paso —,
-`AUD-N_*.md` para auditorías). Relevamientos o hallazgos fechados: **ninguno nuevo** — la
+`AUD-N_*.md` para auditorías). **Los prompts fechados llevan `AAAA-MM-DD_N_descripcion.md`,
+con la fecha real del día en que se escriben y un número de orden dentro del día**, porque
+entra más de uno por día: sin el `N`, dos prompts distintos del mismo día se leen como el
+mismo, y el nombre deja de ordenar. El `N` cuenta sólo los archivos que siguen esta
+convención — un número que cuenta archivos que no la llevan no se puede verificar mirando la
+carpeta. Relevamientos o hallazgos fechados: **ninguno nuevo** — la
 conclusión va al documento que §7 declara dueño de esa pregunta; si es estructural, a
 `docs/PLAN.md` como `D-NN`.
 

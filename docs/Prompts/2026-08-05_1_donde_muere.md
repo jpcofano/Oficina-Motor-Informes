@@ -1,6 +1,6 @@
 # En qué etapa muere la generación. Un solo objetivo.
 
-**Estado:** vivo · **Fecha:** 2026-08-18 · **Ubicación:** `docs/Prompts/2026-08-18_donde_muere.md`
+**Estado:** vivo · **Fecha:** 2026-08-05 (el archivo decía 2026-08-18; ver el renombre del 06/08) · **Ubicación:** `docs/Prompts/2026-08-05_1_donde_muere.md`
 
 > **Undécimo prompt del formato nuevo: un objetivo, nada más.**
 >

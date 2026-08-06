@@ -3839,5 +3839,60 @@ movimiento completo.
 **Sin `D-NN` en `PLAN.md`.** Son convención de proceso, y la §7 rutea esa pregunta a
 `CLAUDE.md`, no al plan.
 
-**Prompts guardados** en `docs/Prompts/`: `2026-08-18_claudemd_revisar_prompt_y_plataforma.md`
-(original) y `..._ParteA.md` (la continuación que aprobó las ubicaciones).
+**Prompts guardados** en `docs/Prompts/`: `2026-08-06_3_claudemd_revisar_prompt_y_plataforma.md`
+(original) y `..._4_..._ParteA.md` (la continuación que aprobó las ubicaciones).
+
+---
+
+## Renombre de cinco prompts: la serie decía 18/08 y se escribieron el 05 y el 06 (2026-08-06) — commit de esta entrada
+
+**Origen.** Los prompts de `docs/Prompts/` llevan fecha en el nombre, y la serie se había
+corrido: había cinco archivos llamados `2026-08-18_…` commiteados el **05** y el **06**.
+Con un prompt por día el corrimiento no molestaba; con cinco en un día el nombre dejó de
+ordenar, y dos prompts distintos —`reintento_relanza_corrida` y
+`claudemd_revisar_prompt_y_plataforma`— se leían como del mismo día.
+
+**La fecha real es la del commit que agregó el archivo**, medida con
+`git log --diff-filter=A`.
+
+| nombre viejo | commit | fecha real | nombre nuevo |
+|---|---|---|---|
+| `2026-08-18_donde_muere.md` | `5361f78` | 2026-08-05 22:44 | `2026-08-05_1_donde_muere.md` |
+| `2026-08-18_reintento_relanza_corrida.md` | `2b56581` | 2026-08-06 12:07 | `2026-08-06_1_reintento_relanza_corrida.md` |
+| `2026-08-18_reintento_relanza_corrida_ADDENDUM.md` | `bfb216d` | 2026-08-06 12:20 | `2026-08-06_2_reintento_relanza_corrida_ADDENDUM.md` |
+| `2026-08-18_claudemd_revisar_prompt_y_plataforma.md` | `f934c8c` | 2026-08-06 12:54 | `2026-08-06_3_claudemd_revisar_prompt_y_plataforma.md` |
+| `2026-08-18_claudemd_revisar_prompt_y_plataforma_ParteA.md` | `f934c8c` | 2026-08-06 12:54 | `2026-08-06_4_claudemd_revisar_prompt_y_plataforma_ParteA.md` |
+
+Los dos últimos entraron en el mismo commit; el desempate es original primero, continuación
+después. Se renombró con `git mv` para que el historial siga al archivo. **Ningún cuerpo se
+tocó.**
+
+**El `N` cuenta sólo los archivos que siguen la convención**, no todos los prompts del día
+—decisión del usuario—: un número que cuenta archivos que no lo llevan no se puede verificar
+mirando la carpeta. Por eso `donde_muere` es `_1` del 05/08 aunque ese día entraran catorce
+archivos a la carpeta.
+
+**Referencias actualizadas — cuatro, ninguna fuera de `docs/`:** el título y el campo
+`reemplaza:` del `ParteA`, el título del `ADDENDUM`, el campo `Ubicación:` de `donde_muere`,
+y la línea de la entrada anterior de esta bitácora que nombraba los dos prompts guardados.
+Cero referencias en `CLAUDE.md`, en `tools/` y en los `.gs`.
+
+**El campo `Fecha:` de `donde_muere` se corrigió y quedó anotado** —
+`2026-08-05 (el archivo decía 2026-08-18; ver el renombre del 06/08)`. Es metadato del
+archivo, de la misma clase que el nombre: corregir uno y dejar el otro mintiendo deja el
+archivo contradiciéndose a sí mismo. La anotación es lo que permite reconstruir el renombre
+dentro de un mes.
+
+**Lo que se dejó a propósito, y hay que saberlo al leer lo viejo.**
+
+- **Los encabezados de esta bitácora siguen con la fecha corrida.** Las entradas de
+  *"`generarInforme` — el deck se crea siempre"*, *"Dónde muere la generación"* e
+  *"Inventario de decks de salida contra `CORRIDAS`"* dicen `(2026-08-17)` y `(2026-08-18)`;
+  las reales son **05/08 y 06/08**. No se editan: la bitácora es append-only y esta entrada
+  es la corrección.
+- **El corrimiento es más viejo que el alcance.** Los diez archivos de la serie
+  `2026-08-08_…` a `2026-08-17_…` se agregaron **todos el 05/08**, entre las 10:33 y las
+  21:43. Quedan con el nombre que tienen: son de otra época y renombrarlos rompe más de lo
+  que aclara.
+
+**La convención quedó escrita** en la §3 de `CLAUDE.md`, donde se rutean los prompts nuevos.

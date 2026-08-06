@@ -1,4 +1,4 @@
-# Addendum — `2026-08-18_reintento_relanza_corrida.md`
+# Addendum — `2026-08-06_1_reintento_relanza_corrida.md`
 
 **Por qué.** La Parte 0 dejó una contradicción que hay que cerrar antes de la
 Parte A, y que además toca la Parte C.
