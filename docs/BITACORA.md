@@ -3743,3 +3743,57 @@ para algo irreversible hay que mirar esa línea.
 - **Y explica los 22 decks contra 12 filas** sin necesidad de ninguna otra hipótesis: cada
   reintento copia la plantilla —lo primero que hace— y después muere en la etapa 4.
 - **Prueba:** las 10 pruebas pasan.
+
+## Inventario de decks de salida contra `CORRIDAS` (2026-08-18, `C.1`) — commit de esta entrada
+- **29 decks en la carpeta, 17 filas en `CORRIDAS`, **18 huérfanos**.
+- **No se borró ninguno.** El addendum posterga la Parte C mientras la contradicción esté abierta: hoy los decks son la única evidencia física de cuántas corridas se lanzaron.
+- **`C.1.b` · se leyó `CORRIDAS` por `eval`**, que es un tercer camino que el addendum no contemplaba: no hizo falta agregar la entrada a `API_LECTORES_` ni tocar código. La entrada sigue haciendo falta para la salida "por testigo" de la Parte A, pero no para esto.
+
+| creado | deck_id | corrida |
+|---|---|---|
+| 04/08 18:03 | `1AU0tkyRQo0kGccnUGJqz0MoEqtiDpy5awYGy8VjTtH8` | jm-20260804-180308 |
+| 04/08 18:42 | `10BuvocJrk48SiUIA7eM4i1-0xyprwhqx` | **(sin fila)** |
+| 04/08 18:42 | `12aREdG64A5Zo6c3W8HRd4aT6SzAi-s4_` | **(sin fila)** |
+| 04/08 18:42 | `1GMk95dogz_nYoN0MTOX4FOGXvzJyDjra` | **(sin fila)** |
+| 04/08 18:42 | `16oHHMgk8iFL2yzTZ6I2BVgsVmZs6nFGW` | **(sin fila)** |
+| 04/08 18:42 | `1_SIaantWFLlms0dgNFK8Tit35basI4u5` | **(sin fila)** |
+| 04/08 18:42 | `1oPdgJOE1m14FiGmcAGXsaQPEzEA5O_7q` | **(sin fila)** |
+| 04/08 18:42 | `1fhPXuys3kOYwYpNTsgpQ2M5Rb4pfPU7Y` | **(sin fila)** |
+| 05/08 00:44 | `1gU96TN0c_ODWQM56xxVrYFjGdTw7c_1FqECfbZoZwNY` | **(sin fila)** |
+| 05/08 00:50 | `1cXrAhX3-GXs0dYeqwLxYqD1Nrr3ZJ2s1NJYRwz-llWo` | jm-20260805-005053 |
+| 05/08 10:42 | `1FgODR5xlcsqstmMmEpauAlBisi52_BdakblrwLrE6eY` | jm-20260805-104211 |
+| 05/08 12:14 | `1uFUCQ0maspF9ZODpF2gAKxscwV7hoyeiiMcur1gNkKo` | jm-20260805-121426 |
+| 05/08 12:51 | `14_QBHSTHu9lxinvemh7CMVwCct51ItzpmzzY3Wmr0Oo` | jm-20260805-125133 |
+| 05/08 12:57 | `1YTYMlx6mWf38geDG6UDx0VbWT9aAnnWDrWnYRj2eGLE` | **(sin fila)** |
+| 05/08 13:38 | `1vEdfOnXV3o3SmJKuzCG_WcWoqn_9_9_cpiAt4DV8Paw` | jm-20260805-133836 |
+| 05/08 14:30 | `1xCqO9oixYHgEdh7ol2NOk181vBAvg-HVXwb5t2_vveQ` | **(sin fila)** |
+| 05/08 14:47 | `1sE9iKwZiisHMvB3VE4XBp8wEEDx9kNar7WIT25I92XM` | **(sin fila)** |
+| 05/08 16:54 | `1xxrqdmwYlzXr0pzjN4C2KM5GmIsEdNEAZd43COcC9Tw` | **(sin fila)** |
+| 05/08 20:08 | `1kkjNdC6_-si_6WkJjOM7pJ9AEDbbgUrTqNA1qRR60GU` | **(sin fila)** |
+| 05/08 20:14 | `1mIpdwc81nmqG707J10gROWE1IQ43us5VSka4RGjKIrA` | **(sin fila)** |
+| 05/08 20:20 | `1QCwqVDKpNrIwix9BUM3BxsCxwk8a2i69ft0G4AUWs5w` | **(sin fila)** |
+| 05/08 21:44 | `1drsIo_5K8xmNL1YRkhbVBSP9xK-8B9Vpp580YSpKj9E` | **(sin fila)** |
+| 05/08 21:50 | `10TD3goIyUh863p0GLwstgA_Yw8lcGyHgj78OYIoMRQY` | **(sin fila)** |
+| 05/08 21:56 | `1qhgwOvAgM0JgW_tssRr5XHhv6MG0MuCmtqGM3SQNpK0` | **(sin fila)** |
+| 05/08 22:13 | `1cpIDxRmyi2UCqS89bHFL2me_vn7ntbBLVhlY_qmrHaI` | jm-20260805-221341 |
+| 05/08 22:19 | `1JwF01d0AHKdZSYq1nqDhPnfXZWYddJIJOCFN57ULnms` | jm-20260805-221941 |
+| 05/08 22:25 | `1MNwfxbDymWSdbjbroN4YqV26f3DxcRTH5mj7_79if_A` | jm-20260805-222543 |
+| 05/08 23:14 | `1emP39NH51I0dquRqZtHihqMKNlTHMlOTBqABMZvTp3E` | jm-20260805-231421 |
+| 05/08 23:20 | `1itPMWTzBRjYyQIbfYO8MinJNqUXnACy0Il2Gv7KEPGM` | jm-20260805-232018 |
+
+### `C.1.d` · Los agrupamientos, sin interpretarlos
+
+- 1 deck(s): 18:03
+- 7 deck(s): 18:42 18:42 18:42 18:42 18:42 18:42 18:42
+- 2 deck(s): 00:44 00:50
+- 1 deck(s): 10:42
+- 1 deck(s): 12:14
+- 2 deck(s): 12:51 12:57
+- 1 deck(s): 13:38
+- 1 deck(s): 14:30
+- 1 deck(s): 14:47
+- 1 deck(s): 16:54
+- 3 deck(s): 20:08 20:14 20:20
+- 3 deck(s): 21:44 21:50 21:56
+- 3 deck(s): 22:13 22:19 22:25
+- 2 deck(s): 23:14 23:20
