@@ -736,7 +736,28 @@ function escribirFaltantes_(faltantes) {
  */
 var TOPE_CELDA_MAPA_TOKENS_ = 45000;
 
-function escribirCorrida_(fila, mapaTokens) {
+/**
+ * `CORRIDAS` se abre al EMPEZAR, no al terminar (17/08).
+ *
+ * **Medido:** hay **22 decks en la carpeta de salida y 12 filas en `CORRIDAS`**. El motor
+ * copia la plantilla y crea el deck **siempre**; lo que a veces no llega a pasar es la
+ * escritura de la fila, que estaba **al final de todo**. Una corrida que moría después de
+ * crear el deck **no dejaba ningún rastro, por diseño** — y sin rastro no se puede
+ * diagnosticar: los últimos cuatro objetivos quedaron sin verificar por esto.
+ *
+ * Abre la fila con lo que ya se sabe —`corrida_id`, `informe_id`, `periodo_id`, hora de
+ * inicio— y devuelve su número para que `escribirCorrida_` la **complete** en vez de
+ * agregar una nueva. Si la corrida muere en el medio, la fila queda con el `deck_id` vacío
+ * y los conteos vacíos: **eso mismo es el diagnóstico**.
+ */
+function abrirCorrida_(fila) {
+  var hoja = hojaDeSalida_('CORRIDAS');
+  var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  hoja.appendRow(headers.map(function (h) { return (h in fila) ? fila[h] : ''; }));
+  return hoja.getLastRow();
+}
+
+function escribirCorrida_(fila, mapaTokens, numeroFila) {
   var serializado = JSON.stringify(mapaTokens);
   var entra = serializado.length <= TOPE_CELDA_MAPA_TOKENS_;
   fila.mapa_tokens = entra
@@ -745,7 +766,13 @@ function escribirCorrida_(fila, mapaTokens) {
 
   var hoja = hojaDeSalida_('CORRIDAS');
   var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
-  hoja.appendRow(headers.map(function (h) { return (h in fila) ? fila[h] : ''; }));
+  var valores = headers.map(function (h) { return (h in fila) ? fila[h] : ''; });
+
+  // Completa la fila que abrió `abrirCorrida_`. Sin número de fila —llamada vieja— agrega,
+  // que es el comportamiento de antes y no rompe a ningún otro llamador.
+  if (numeroFila) hoja.getRange(numeroFila, 1, 1, headers.length).setValues([valores]);
+  else hoja.appendRow(valores);
+
   return { entra: entra, caracteres: serializado.length };
 }
 
@@ -1159,6 +1186,20 @@ function generarInforme(informeId, periodoId) {
 
   var presentacion = SlidesApp.openById(deckId);
   var corridaId = informeId + '-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
+
+  // La fila se abre ACÁ, con el deck ya creado y antes de todo el trabajo pesado. Si la
+  // corrida muere en el medio, queda una fila con `deck_id` y sin conteos — que es
+  // exactamente el rastro que faltaba para poder diagnosticar.
+  var filaCorrida = abrirCorrida_({
+    corrida_id: corridaId,
+    informe_id: informeId,
+    periodo_id: periodoId || ventana.origen,
+    deck_id: deckId,
+    fecha_generacion: '',
+    tokens_reemplazados: '',
+    faltantes: '(corrida en curso — si esto queda así, murió antes de terminar)'
+  });
+
   var reemplazados = 0;
   var conValor = [];
   var faltantes = [];
@@ -1293,7 +1334,7 @@ function generarInforme(informeId, periodoId) {
     fecha_generacion: new Date(),
     tokens_reemplazados: reemplazados,
     faltantes: faltantes.length
-  }, mapa.tokens);
+  }, mapa.tokens, filaCorrida);
 
   var dueno = '';
   try {
