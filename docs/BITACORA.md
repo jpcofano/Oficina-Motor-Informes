@@ -3719,3 +3719,27 @@ para algo irreversible hay que mirar esa línea.
   ahora **cada intento deja fila**, que era el criterio que el prompt marcó como el que no se
   puede saltear.
 - **Prueba:** las 10 pruebas pasan.
+
+## Dónde muere la generación — etapa 4, a los 324 s, y el cliente la relanza (2026-08-18) — commit de esta entrada
+- **0.1 · Las cinco etapas**, leídas del código entre `abrirCorrida_` y `escribirCorrida_`:
+  expandir secciones repetibles · mapa `token → objectId` · pasada por ítem · tokens fijos ·
+  escribir faltantes.
+- **0.2 · Instrumentadas las cinco.** `marcarEtapa_` escribe **en el momento y hace `flush()`**,
+  no acumula: acumular y volcar al final habría reproducido el problema que `abrirCorrida_`
+  acababa de resolver. Va en la columna `faltantes`, libre hasta el final — **sin columna
+  nueva, sin `COLUMNAS_DELTA_`**. Y traga sus excepciones: instrumentar no puede voltear la
+  corrida que mide.
+- **⚠ 0.3 · MUERE EN LA ETAPA 4 (tokens fijos), A LOS 324 s.** La fila lo dice sola:
+  `jm-20260805-231421 | (en curso) 4 · tokens fijos · +324 s`. El desglose que se puede
+  reconstruir: **etapas 1+2 ≤ 125 s**, **etapa 3 (pasada por ítem) ~200 s** (de 125 a 324),
+  y muere en la 4.
+- **La causa es el límite de ejecución de Apps Script, no el transporte.** 324 s más lo que
+  dure la etapa 4 pasa los **360 s (6 minutos)** que Apps Script permite. **Los ~150 s "sin
+  atribuir" eran la pasada por ítem**, que nadie había cronometrado.
+- **⚠ 0.4 · SÍ se duplica, y ahora se ve.** Una sola invocación de `generarInforme` dejó
+  **dos filas**: `jm-20260805-231421` y `jm-20260805-232018`, con seis minutos de diferencia.
+  **El reintento de `tools/api.js` relanza la generación entera.** Explica los cinco decks de
+  una sola corrida del 04/08, y los de 20:08 / 20:14 / 20:20 que "nadie lanzó".
+- **Y explica los 22 decks contra 12 filas** sin necesidad de ninguna otra hipótesis: cada
+  reintento copia la plantilla —lo primero que hace— y después muere en la etapa 4.
+- **Prueba:** las 10 pruebas pasan.
