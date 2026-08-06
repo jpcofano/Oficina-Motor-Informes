@@ -3655,3 +3655,38 @@ para algo irreversible hay que mirar esa línea.
 - **Parte A · NO se sembró ninguna fila.** El mecanismo está, el sembrado no. Con eso, **el
   piloto no midió lo que venía a medir**: falta el "después".
 - **Prueba:** las 10 pruebas pasan.
+
+## Sembrado del Resumen Ejecutivo — 24 marcadores, y el deck que no se pudo regenerar (2026-08-16) — commit de esta entrada
+- **0.1 · `isSkipped()` existe en `SlidesApp`** y devuelve `[10]`. La Parte A salió directa.
+- **0.2 · Ningún `[MANUAL]` cae en las slides 2 y 3.** Nada quedó bloqueado por eso.
+- **⚠ 0.4 · Las dos láminas NO son la misma métrica sobre dos recortes.** Slide 2 (JM): 18
+  cajas, **21 tokens** —tres cajas llevan dos—. Slide 3 (GCBA): 17 cajas, **19 tokens**, no
+  21. **JM lleva IVR (4 tokens) y GCBA no; GCBA lleva SMS (2) y JM no.** Es coherente con la
+  regla del `Pedido-1`: SMS es todo GCBA. **La premisa de "los mismos con prefijo `gcba_`"
+  era falsa.**
+- **Parte A · el denominador pasa de 195 a 172**, con los 23 de la lámina escondida
+  reportados aparte en `tokens_en_laminas_escondidas`, no borrados.
+- **Parte B · 24 marcadores sembrados de 40.** `MARCADORES` pasa de 19 a **43 filas**. Se
+  mapeó `mail_remitente` (col G): **sin esa fila las dos láminas darían idéntico.**
+- **Los 16 que quedaron afuera, todos por falta de fuente y ninguno por decisión:** los ocho
+  de **Call Center** (`cc_base`, `cc_campanias`, `cc_contactados`, `cc_contact_pct` y sus
+  `gcba_`) — CC no está en `digital`, está en `looker`, y **`cc_base` no existe en ninguna**;
+  los seis de **impresiones por plataforma** (`imp_google/meta/prog` y sus `gcba_`) — sólo hay
+  `dig_impresiones`, que es el total; y `contenidos_total` × 2, sin campo.
+- **⚠ Y un bug propio, introducido el 15/08 y arreglado hoy: `RATIO`/`PCT` partían ANTES del
+  recorte por ventana.** `mail_or` dividía **4.859.412 / 21.268.081** —todas las filas de
+  todos los períodos— mientras su `SUMA` hermana sumaba **211.357** sobre las 7 filas
+  recortadas: **dos números del mismo marcador salidos de universos distintos.** Ahora parten
+  después: `mail_or` = **25,42%** sobre 211.357/831.577.
+- **JM y GCBA dan distinto donde deben:** mail **838.571** contra **3.839.688** (7 filas
+  contra 80), y OR **25,42%** contra **28,57%**. El corte funciona.
+- **⚠ Tres grupos quedaron en `sin_datos`, y el patrón es el mismo:** el recorte por ventana
+  deja **cero filas** en `Directa IVR` (0 de 57, sobre `Inicio`), en `Seguimiento digital`
+  (`sd_pauta_*`) y en `Digital` (`imp_total`, `frecuencia`). Puede ser correcto —esas
+  campañas no empezaron esa semana— o puede ser que el criterio *"las que empezaron esos
+  días"* no aplique a pauta ni a digital. **No se ajustó nada.**
+- **⚠ Parte C · el deck NO se pudo regenerar.** La corrida **no dejó fila en `CORRIDAS`**:
+  van **tres de cuatro**. Sin eso **no hay "tokens con valor / faltantes" después, ni medición
+  de tiempo con 43 marcadores** — que era el cuarto criterio. Es el `P1` de `generarInforme`,
+  ya anotado, y hoy es el bloqueante de cualquier verificación end-to-end.
+- **Prueba:** las 10 pruebas pasan. Diff con `protegidas (con diferencia): 0` y `agregadas: 1`.
