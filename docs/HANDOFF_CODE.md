@@ -78,13 +78,17 @@ diría, y el token de la sesión no lo alcanza (le falta el scope `script.proces
 
 ## Qué sigue
 
-1. **Reanudación por etapas.** Es lo que dice la medición: ninguna reorganización del trabajo
-   actual entra en 360 s. Lo destraba la decisión de cómo se persiste el estado entre tramos.
-2. **Mirar `resolverMarcadores` de cerca**, en paralelo: son ~50 s × 6 llamadas = ~300 s de los
-   661. No hace falta para reanudar, pero es la mitad del presupuesto.
-3. **Verificar los cinco objetivos** con una corrida completa — sigue bloqueado por el 1.
-4. **Retomar el sembrado**, que está parado hasta que una corrida se pueda mirar.
-5. **Objetivo B**, los tres grupos que recortan a cero, y los 16 tokens sin fuente.
+**La escalera vive en `docs/PLAN.md` §2, con IDs `T<tramo>.<n>`.** Cada sub-ítem es un prompt y
+un commit. Lo inmediato:
+
+1. **`T2.1` · la corrida siempre cierra** — el MVP. Que deje siempre un deck usable y la lista
+   de lo que faltó, aunque no termine. **No depende del anclaje ni de reanudar.**
+2. **`T2.3` · reanudar**, después de `T2.1.3`. Es lo que dice la medición: ninguna
+   reorganización del trabajo actual entra en 360 s.
+3. **`T2.2.2` · `resolverMarcadores`**, en paralelo: ~50 s × 6 llamadas = ~300 s de los 661. No
+   hace falta para reanudar, pero es la mitad del presupuesto.
+4. **`T2.4` · los cuatro objetivos contra un deck real** — bloqueado por `T2.1`, y **ya no por
+   el anclaje**: la precondición pasa desde el 04/08.
 
 ## Qué mirar antes de tocar algo
 
