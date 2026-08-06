@@ -4019,3 +4019,52 @@ observación; no se le atribuye causa acá.**
 Se midió sobre el denominador viejo de **195** tokens de plantilla; hoy son **172** (195 menos
 los 23 de la lámina escondida). El par no se vuelve a citar como número de referencia hasta
 que haya una corrida completa que lo mida sobre 172.
+
+---
+
+## Una invocación, una corrida — `C.1`/`C.2`/`C.5`: la carpeta cierra, y los siete shortcuts no se pueden borrar (2026-08-06) — commit de esta entrada
+
+### ✅ `C.5` · El conteo cierra
+
+**12 decks · 12 filas con deck · 0 huérfanos.** `CORRIDAS` tiene 18 filas; las 6 que no
+tienen deck son las del 04/08 anteriores a las 18:03, ya anotadas en la entrada de `C.0` y que
+**no se tocan** — `CORRIDAS` es registro.
+
+Era la primera vez desde que se mira la carpeta que los dos lados dan lo mismo.
+
+### `C.2` · Los once huérfanos, a la papelera
+
+Los once decks del 05/08 sin fila (00:44 · 12:57 · 14:30 · 14:47 · 16:54 · 20:08 · 20:14 ·
+20:20 · 21:44 · 21:50 · 21:56). **`setTrashed(true)`, no borrado permanente**: es lo
+reversible, y el inventario de `C.0` ya los preserva como dato.
+
+### ⚠ `C.1` · Los siete shortcuts NO se pudieron borrar — y el motivo es de plataforma
+
+`setTrashed` sobre ellos devuelve **`Acceso denegado: DriveApp`**. Los once decks del mismo
+lote se borraron sin problema en la misma llamada, así que no es la carpeta ni la cuenta.
+
+Los scopes del token (`tools/token.js --info`) son **`drive.file`** y
+**`drive.metadata.readonly`**. `drive.file` da acceso de escritura **sólo a los archivos que la
+propia app creó**: los once decks salieron de un `makeCopy` del script y entran; **los siete
+shortcuts los creó una persona en la UI de Drive** el 04/08 a las 18:42 y quedan afuera.
+`drive.metadata.readonly` explica por qué sí se los puede listar, nombrar y clasificar.
+
+**No es una hipótesis suelta:** en la misma llamada, 11 de 11 archivos creados por el script
+se borraron y 1 de 1 archivo ajeno fue rechazado.
+
+**Dos salidas, y ninguna se toma por cuenta propia:**
+
+- **Borrarlos a mano en Drive.** Son siete, están juntos en la carpeta, y ya se sabe qué son.
+- **Reautorizar el token con scope `drive` completo.** Es interactivo, y **agranda el permiso
+  de un cliente de pruebas de "lo que yo creé" a "todo el Drive de la cuenta"**. No parece un
+  precio razonable por siete accesos directos.
+
+Mientras tanto **la carpeta cierra igual**: los shortcuts no son decks y no entran en el
+conteo. Quedan siete accesos directos apuntando a decks que ya no existen.
+
+### Lo que sí quedó ejercitado del corte de la Parte A
+
+Una medición por `llamar fn=eval` recibió un **404 en HTML** —el modo de falla de transporte
+que el reintento viejo sí disparaba— y el cliente respondió: *"NO se reintentó, a propósito […]
+mirá si la llamada llegó a correr antes de repetirla"*. **La rama nueva está probada contra
+una falla real**, no simulada. La medición se repitió a mano y salió bien.
