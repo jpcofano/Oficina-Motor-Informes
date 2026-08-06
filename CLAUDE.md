@@ -142,6 +142,34 @@ commit. (Origen: 02/08. El `Paso-2.14` citaba `Instalar.gs:2052` y `:1819`, hoy 
 estaban resueltos en la planilla, y eso **no se detecta releyendo el prompt** — se detectó
 cruzando contra los datos al ejecutar.)
 
+**El prompt se revisa antes de ejecutarlo, y lo que habría que cambiarle se reporta.** Un
+prompt es una hipótesis escrita por alguien que no midió. Verificar las premisas es la
+mitad; la otra mitad es mirar el prompt entero contra el repo y decir, antes de la primera
+edición, si tiene:
+
+- Una premisa que el repo desmiente — el párrafo de arriba. El caso puntual ya está en §3:
+  pedir que se corrija algo que no está en el archivo. Esa regla no se repite acá; ésta es
+  el movimiento completo del que aquélla es un caso.
+- Un paso que pide hacer algo que ya está hecho, o que el repo muestra innecesario.
+- Un método peor que uno disponible. Proponerlo; **no cambiarlo en silencio**.
+- Una decisión `D-NN`, `R-NN` o `S-NN` que el prompt derogaría sin decirlo.
+
+**Mejorar no es ampliar.** No agregar objetivos, no arreglar de paso lo que se ve roto al
+lado, no refactorizar lo que se toca. Es "un prompt, un objetivo" —abajo— mirado desde este
+lado: revisar el prompt no es licencia para ampliar el alcance. Si aparece algo que merece
+prompt propio, se anota en el reporte y se sigue.
+
+**Y no inventar el faltante.** Si el prompt no alcanza para saber qué hacer, eso se reporta
+como falta. No se completa con un supuesto razonable: un supuesto razonable metido en
+silencio es indistinguible de una instrucción, y sobrevive a la corrida. Esto **no choca con
+`docs/SUPUESTOS.md`**, cuyo encabezado manda asumir lo más probable y seguir — ese mecanismo
+cubre huecos **del dominio** y exige registrar el supuesto **con ID**, que es exactamente lo
+que lo deja a la vista y reversible. Lo que esta regla prohíbe es el supuesto **silencioso
+sobre qué hay que hacer**. Registrar un `S-NN` es la forma de cumplirla, no su excepción. Es
+el mismo principio que `D-10` —al motor le falta una definición, pregunta y no la fabrica— y
+que `D-19`/`D-21` —ninguna fila entra ni se excluye en silencio—, aplicado a quien ejecuta
+el prompt en vez de al motor.
+
 1. Se termina un paso → **se avisa y se para.** No se avanza al siguiente por cuenta
    propia.
 2. El usuario prueba y confirma.
@@ -208,6 +236,29 @@ hoja, y la clasificación quedó invertida hasta el Paso 2.9 Parte C. El texto d
 estaba disponible desde el 2.8: faltó mirarlo antes de aceptar la etiqueta. Cuando un
 instrumento devuelve una **etiqueta** (`derivada`, `plausible`, `ok`), verificar el dato
 crudo del que salió, no la etiqueta.
+
+**Apps Script es una plataforma con límites conocidos, y ese conocimiento se usa.** En todo
+lo que toca ejecución —límite de tiempo por invocación, cuotas, bloqueos, timeouts propios
+de cada servicio, concurrencia sobre la misma planilla, costo de `flush()`, `LockService`—
+aplicar lo que se sabe de la plataforma. Es un cuerpo de conocimiento que este proyecto no
+venía usando.
+
+- **Sirve para generar candidatos, no para cerrar causas.** Distinguir siempre el hecho de
+  plataforma —citable— de la afirmación sobre esta corrida, que necesita evidencia de esta
+  corrida.
+- **Causa y observación no son lo mismo.** "Murió a los 324 s" es una observación. "Murió
+  por el límite de 6 minutos" es una causa, y necesita evidencia que descarte las otras.
+  Sin eso va como candidato, **nombrado como candidato**.
+- **Una medición con dos cosas corriendo no es una medición.** Antes de tomar un número
+  como dato, verificar que hubo una sola corrida.
+- **El instrumento es parte del sistema.** La instrumentación escribe en la misma planilla
+  que se está diagnosticando. Cuando el síntoma es contención o tiempo, preguntarse si el
+  instrumento participa del problema antes de leer lo que informa.
+
+Origen de esta regla y de la de revisar el prompt, arriba: las dos corridas del 18/08. La
+primera atribuyó la muerte al límite de 6 minutos sin evidencia que descartara la contención
+de Sheets; la segunda lo corrigió. Y en ninguna se estaba aplicando conocimiento de Apps
+Script como plataforma, que es donde estaba la respuesta.
 
 ---
 

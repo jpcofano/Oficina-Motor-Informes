@@ -3797,3 +3797,47 @@ para algo irreversible hay que mirar esa línea.
 - 3 deck(s): 21:44 21:50 21:56
 - 3 deck(s): 22:13 22:19 22:25
 - 2 deck(s): 23:14 23:20
+
+---
+
+## Dos reglas nuevas en la §4 de `CLAUDE.md`: revisar el prompt, y el conocimiento de plataforma (2026-08-18) — commit de esta entrada
+
+**Origen — las dos corridas del 18/08.** La primera atribuyó la muerte de `generarInforme`
+al límite de 6 minutos de Apps Script **sin evidencia que descartara la contención de
+Sheets**; la segunda corrigió la causa. Y en ninguna de las dos se estaba aplicando
+conocimiento de Apps Script como plataforma, que es donde estaba la respuesta. Una causa mal
+atribuida sobrevivió a una corrida entera de diagnóstico.
+
+**Qué se escribió, y dónde.** Sólo documentación; ningún `.gs` tocado.
+
+- **`CLAUDE.md` §4, después del párrafo de apertura y antes del punto 1** — *"El prompt se
+  revisa antes de ejecutarlo, y lo que habría que cambiarle se reporta"*: las cuatro cosas a
+  mirar (premisa desmentida, paso ya hecho o innecesario, método peor que uno disponible,
+  `D-NN`/`R-NN`/`S-NN` derogada sin decirlo), *"mejorar no es ampliar"* y *"no inventar el
+  faltante"*.
+- **`CLAUDE.md` §4, al final** — *"Apps Script es una plataforma con límites conocidos, y ese
+  conocimiento se usa"*: candidatos vs. causas, causa vs. observación, la medición con dos
+  cosas corriendo, y el instrumento como parte del sistema.
+
+**Los tres roces, resueltos dentro del texto y no sólo en el reporte.**
+
+1. **`SUPUESTOS.md`.** Su encabezado manda asumir lo más probable y seguir, lo que leído
+   rápido parece lo contrario de "no inventar el faltante". No lo es: `SUPUESTOS` cubre
+   huecos **del dominio** y exige el registro **con ID**, que es lo que deja el supuesto a la
+   vista y reversible. Lo prohibido es el supuesto **silencioso sobre qué hay que hacer**.
+   Registrar un `S-NN` es la forma de cumplir la regla, no su excepción.
+2. **`D-10` y `D-19`/`D-21` como antecedentes**, citados en el texto: no fabricar lo que
+   falta, no entrar ni excluir en silencio — el mismo principio aplicado a quien ejecuta el
+   prompt en vez de al motor. Refuerzo, no conflicto.
+3. **"Mejorar no es ampliar" apoyado en "un prompt, un objetivo"**, que está unos párrafos
+   más abajo en la misma sección: revisar el prompt no es licencia para ampliar el alcance.
+
+**Sin duplicar la §3.** El párrafo del grep previo —pedir que se corrija algo que no está en
+el archivo— **se referencia, no se repite**: es el caso puntual del que la regla nueva es el
+movimiento completo.
+
+**Sin `D-NN` en `PLAN.md`.** Son convención de proceso, y la §7 rutea esa pregunta a
+`CLAUDE.md`, no al plan.
+
+**Prompts guardados** en `docs/Prompts/`: `2026-08-18_claudemd_revisar_prompt_y_plataforma.md`
+(original) y `..._ParteA.md` (la continuación que aprobó las ubicaciones).
