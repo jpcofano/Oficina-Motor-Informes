@@ -440,148 +440,132 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
 
 ## 2 · Próximo (ordenado, con dependencias)
 
-1. **Tramo 1 — cerrar configuración.** Sale cuando el diff da cero ruido.
-   - ~~Dar acceso de lectura a `reporteseinformesgcba` sobre las cuatro bases (`D-02`)~~ —
-     **ya estaba dado, verificado el 02/08/2026** contra la API de Drive: las cuatro tienen a
-     `reporteseinformesgcba` con rol **`writer`**. Deja dos cosas a la vista, ninguna de este
-     tramo: **(1)** el rol es más ancho que el que pide `D-02` y que el que declara el
-     `RUNBOOK` ("como Lector, el motor sólo lee datos"); **(2)** la nota que decía *"las
-     cuatro son cuentas del usuario"* **es falsa** — los dueños reales son
-     `brianbanderbek` (rdv), `tarnowski.jp` (digital y m2) y `dgples.comunicacion` (looker),
-     así que **sí hay terceros**, aunque el acceso ya no haya que pedirlo.
-     **(1) cerrado el 03/08/2026:** el usuario bajó el rol y se verificó por API — en las
-     cuatro el permiso explícito de `reporteseinformesgcba` es **`reader`**, y en `digital`,
-     `looker` y `m2` la capacidad efectiva (`capabilities.canEdit`) es **`false`**. **`rdv`
-     es la excepción y no por el rol:** está compartida como `anyoneWithLink = writer`, que
-     pisa el `reader` explícito — `canEdit` da `true`. Es un `P0` nuevo en
-     `docs/PENDIENTES_consistencia.md` y una acción del usuario sobre Drive, hablada con el
-     dueño de la base. *(No había entrada de este tema en `PENDIENTES` para cerrar: se
-     greppeó y dio cero — `CLAUDE.md` §3, se registra el cero.)*
-   - ~~Abrir el P1 del tercer escritor de `MAPEO` (`consolidarMapeoLooker_`)~~ — **hecho
-     02/08/2026** (Paso 2.11 Parte E): retirado del menú junto con el diagnóstico que le
-     pasaba la dirección invertida. `MAPEO` vuelve a dos escritores de contenido vivos.
-     Dejó abierto un P1 nuevo, que **no** es de este tramo: la inferencia invertida de
-     `auditarFormulasResumenesLooker_`.
-   - ~~`Paso-2.12` Parte 2 — las 17 disposiciones de `SOLAPAS.uso`~~ — **hecho 02/08/2026**
-     (`BITACORA`, Paso 2.12 Partes 3 y 2, y su cierre): cero filas en `revisar`.
-   - ~~Generalizar `hayUi_()`~~ — **hecho 02/08/2026** (Paso 2.14): el protocolo entero corre
-     por API.
-   - ~~`periodo_id` en `CAMPANAS` y `REUNIONES` (`D-08`)~~ — **hecho 02/08/2026**
-     (`Paso-2.15` Parte B, `c4797d8`). Columna primera en las dos hojas, las diez filas
-     existentes con el valor vacío y su significado fijado en `D-19`.
-   - ~~Repuntar `carpeta_salida` a reportes (`D-03`)~~ — **hecho 02/08/2026** (`Paso-2.15`
-     Parte A, `aca39bf`). Apareció que una clave hacía de dos: el ID viejo era la carpeta
-     donde vive la planilla de control y quedó como `carpeta_motor`, sin lector.
-   - ~~**Activar `m2`**~~ — **cerrado 02/08/2026 por el `Paso-2.16`, y no como estaba
-     escrito.** La Parte A mostró que **no había nada que activar**: las 19 filas de
-     `MAPEO` de `m2` están duplicadas en `digital` campo por campo, ninguna apunta a una
-     solapa `fuente` —catorce van a vistas `referencia` con período tipeado a mano y cinco
-     a una `ignorar`—, y la única solapa `fuente` que `m2` tiene (`Cuentas M2`) no está
-     mapeada. Los tres cambios quedaron así:
-     **(a)** `modo_periodo` a `filtrar` — **descartado**: sin `fecha_periodo` en ninguna
-     solapa de `m2`, habría convertido toda lectura en `«FALTA:fecha_periodo»`, y nada lee
-     `m2` hoy, así que el error habría quedado latente.
-     **(b)** `fecha_periodo` — **ya existía**, en la solapa correcta:
-     `digital/Directa Mail` columna F, promovida en el Paso 2.3.x. La fuente es `digital`,
-     no `m2/Directa mail`, que es `derivada` (decisión del usuario tras A.3; `buscarMapeo`
-     la habría rechazado igual, exige `uso = fuente`).
-     **(c)** el filtro por `Estado` — **es todo lo que quedó del paso**, y resultó medir
-     algo más útil: no cuánto cuesta una base nueva, sino **cuánto cuesta el primer filtro
-     declarativo** (`D-21`), que es reusable.
-     *La predicción se cumplió:* las dos primeras eran config —tanto que salieron gratis— y
-     la tercera exigió `.gs`. **Medición de `D-01`: +253 / −5 líneas en cuatro archivos**
-     (`Fuentes.gs` +170, `Pruebas.gs` +56, `Instalar.gs` +25, `Config.gs` +2), de las
-     cuales una parte grande son comentarios y el control positivo nuevo.
-     **Sigue abierto y no es de este tramo:** si `m2` se despide de `MAPEO` (las 19 filas
-     duplicadas) o si se mapea `Cuentas M2` y `m2` se queda sólo con lo suyo.
+**IDs `T<tramo>.<n>`.** La palabra "Paso" queda para la serie histórica y no se reusa: `Paso 5`
+ya se ejecutó, y `Paso 6` significa *"cuando se publique `/exec`"* en `PENDIENTES`, `BITACORA` y
+`RUNBOOK`. Cada sub-ítem de acá es **un prompt y un commit**.
 
-2. **Tramo 2 — corte vertical, JM solo.** Pasos 3, 4 y 5. Se hace contra JM únicamente:
-   construir los dos en paralelo impide después distinguir qué necesitó código y qué salió
-   solo.
+**Tramo 1 — cerrar configuración: hecho.** Los siete ítems (acceso a las bases, tercer escritor
+de `MAPEO`, disposición de `SOLAPAS`, `hayUi_()`, `periodo_id`, `carpeta_salida`, activar `m2`)
+cerraron entre el 02 y el 03/08. Detalle en `BITACORA.md`; los dos punteros finos son
+[`carpeta_motor`](BITACORA.md) —una sola aparición, en la entrada del `Paso 2.15` Parte A— y el
+rol `reader` de las cuatro bases —una sola, en la del 03/08 sobre permisos de Drive—.
 
-   > **Criterio del tramo, decidido el 03/08/2026: las solapas y el mapeo que falten se
-   > ajustan DESPUÉS de la primera prueba de punta a punta, no antes.** No se abre trabajo de
-   > mapeo por anticipado. **El corte vertical es el que dice cuáles hacen falta de verdad**,
-   > y lo dice barato: un token sin cablear sale como `«FALTA:token»` y queda listado, que es
-   > exactamente para lo que existe esa regla. Mapear por adelantado es trabajar sobre una
-   > lista de sospechas — y este repo ya midió lo que cuesta: el `Paso-2.16` fue a activar
-   > `m2` y encontró que **no había nada que activar**, con 19 filas de `MAPEO` duplicadas de
-   > `digital` que nadie había verificado contra un consumidor real. Aplica también a lo que
-   > salga del relevamiento de la lámina M2 del 03/08: **no se toca `MAPEO` ni `SOLAPAS` por
-   > eso hasta que el corte vertical corra.** Los prompts vigentes son **`docs/Prompts/Paso-3-v3.md`**, `docs/Prompts/Paso-4.md`
-   y **`docs/Prompts/Paso-5-v2.md`** (03/08/2026: la auditoría de premisas mandó reescribir
-   los dos, `Paso-3-v2.md` y `Paso-5.md` quedaron en `docs/Prompts/_archivo/`).
-   **`Paso-4.md` se revisa antes de ejecutarlo** — está escrito y casi seguro asume
-   copiar-y-reemplazar sin registrar la configuración de la corrida (`D-06`); además le
-   falta absorber la impresión del período en la lámina, `D-19`/`D-20` y la firma de
-   `generarInforme`, que no coincide con la del Paso 5.
-   - **Un bloqueo tapa a los tres: `INFORMES.plantilla_id` está vacío** en `jm` y en
-     `secco` en la hoja viva. Sin eso no hay de dónde leer tokens ni qué copiar. Es tarea
-     del usuario: los IDs están en el repo, pero cuál es la plantilla canónica es una
-     decisión.
-   - **El default de período de `R-11` (siete días, viernes a jueves) y la impresión de las
-     fechas en la lámina son parte de estos pasos, no un paso propio**: el cálculo entra
-     donde se resuelve la ventana (Paso 3) y la impresión donde se reemplazan los tokens
-     (Paso 4). Es **default, no validación**: lo cargado en `CONFIG` manda siempre, y dos
-     períodos consecutivos pueden solaparse o dejar hueco sin que el motor diga nada
-     (`R-11` Addendum 1). El extremo inclusivo ya está cerrado; no queda nada que preguntar
-     antes de implementarlo.
-   - ~~**El Paso 3 tiene que resolver `D-20`: el período por sección.**~~ — **hecho el
-     03/08/2026** (`Paso-3-v3` Parte B). Las tres cosas salieron juntas, que era el punto:
-     **(1)** `SECCIONES.periodo_ref` en la posición 14, con `COLUMNAS_DELTA_` puesto
-     **antes** y en dos corridas aplicadas separadas — verificado fila por fila contra el
-     snapshot previo, 35 filas antes y después y cero diferencias fuera de la columna nueva;
-     **(2)** el eslabón nuevo, entre el marcador y `CONFIG`, con las tres precedencias del
-     Addendum 1 de `D-20` corridas por API; **(3)** el default de `R-11`, que **ya no
-     falla**: `resolverVentana()` devuelve la semana calculada con `origen: 'R-11
-     (calculado)'`. El diff de configuración da los mismos números antes y después, con
-     `protegidas (con diferencia): 0`.
-   - **Los cuatro ítems que el `Paso-3-v3` no cubre — corregido el 03/08/2026 con su
-     destino real.** Al reemplazar al `v2`, Code anotó acá que el `v3` deja afuera `R-12`,
-     los dos valores de ventana a `CONFIG`, el empate técnico del match y la migración de
-     `status = Realizada`. **El hecho es cierto; la inferencia de que le faltan al Paso 3
-     no.** Decisión del usuario, 03/08/2026: los tres primeros son del **matcher**
-     (`Union.gs`), que no comparte código con el despachador de marcadores, y van en un
-     **paso propio todavía sin escribir**; el cuarto es **configuración suelta**. La línea
-     queda porque sin ella los cuatro se pierden de vista — lo que cambia es a quién se le
-     reclaman. Anotado también como nota al pie del `Paso-3-v3`.
-   - **Paso del matcher (`Union.gs`) — sin escribir, después del Paso 3.** Tres cosas que
-     tocan la misma función: **`R-12`** (ampliar la búsqueda de candidatos antes de declarar
-     `sin_link`), los **dos valores de ventana a `CONFIG`** —la corta, hoy constante de
-     módulo, y la ampliada, que no existe— y el **empate técnico** del match, que
-     `DISENO_match_temario.md` §6.4 declara y ningún código implementa
-     (`PENDIENTES_consistencia.md`). No entra en el Paso 3 ni en el 4.
-   - ~~**Migrar el filtro `status = Realizada` de `Union.gs` a `MAPEO.valores_incluidos`**
-     (`D-21`)~~ — **la celda quedó declarada el 03/08/2026**, con el impacto medido antes y
-     después (`D-21` Addendum 1): entran **653 de 1362** filas de `rdv`, y en la ventana de
-     `CONFIG` **16 → 13**. Era configuración suelta, no parte de un paso de código.
-     **Queda pendiente y va con el paso del matcher:** retirar `VALOR_STATUS_REALIZADA_` de
-     `Union.gs` —hoy filtra dos veces por lo mismo, sin cambiar el resultado— y resolver que
-     `verificarPrecondicionAnclaje_` **no pasa por `leerFuente`** y por lo tanto cuenta
-     duplicados de `R-01` sobre filas que el matcher nunca ve.
+---
 
-3. **Tramo 3 — prueba de motor.** SECCO, midiendo líneas de `.gs` tocadas. Es el paso que
-   valida la tesis del proyecto; si falla, lo que salga es el trabajo real del tramo
-   siguiente.
-   - **Revisión programada, al llegar acá o a producción, lo que ocurra primero:** el repo
-     es **público** y expone 14 IDs de recursos internos —las cuatro bases, la planilla de
-     control, las tres carpetas, las plantillas, el script id—. Se decidió el 02/08/2026
-     dejarlo público **por ahora** y revisarlo en este hito. El censo completo, la
-     distinción con el `P0` de datos personales y los dos sub-ítems (`.clasp.json`
-     trackeado, `PLANTILLA_JM_CANONICA_` hardcodeada) están en
-     `docs/PENDIENTES_consistencia.md`, `P0` de direccionabilidad.
+### Tramo 2 — corte vertical, JM solo · *acá estamos*
 
-4. **Tramo 4 — panel** (`D-04`). El resto del tramo depende del primer ítem.
-   - **Primero, y antes de escribir código del panel:** verificar qué devuelve
-     `getActiveUser()` con el despliegue *"ejecuta el usuario que accede"*, entrando desde
-     `reporteseinformesgcba`. Si vuelve vacío, **`D-15` se revisa antes de escribir código
-     del panel** — sin identidad confiable, la lista blanca no filtra nada.
-   - Recién después, el panel: `doGet`, selección de informes, corrida a demanda.
-   - La hoja de accesos y el filtrado por usuario son `D-16`, y la pieza 3 de esa decisión
-     está sin resolver (`§3`).
+> **Criterio del tramo (03/08):** las solapas y el mapeo que falten se ajustan **después** de la
+> primera prueba de punta a punta, no antes. El corte vertical es el que dice cuáles hacen falta
+> de verdad, y lo dice barato: un token sin cablear sale `«FALTA:token»` y queda listado. Lo
+> midió el `Paso-2.16`, que fue a activar `m2` y encontró que no había nada que activar.
 
-5. **Tramo 5 — chequeo previo programado** (`D-11`). Es todo lo que queda de lo que antes
-   eran los Pasos 10-12.
+**`T2.1` · la corrida siempre cierra. Es el MVP.** Hoy una corrida sin tiempo muere sin decir qué
+hizo. El objetivo no es que termine: es que deje siempre un deck usable y la lista de lo que
+faltó. **No depende del anclaje.**
+- `T2.1.1` — el motor mira el reloj y corta antes del límite
+- `T2.1.2` — el cierre se escribe siempre: fecha, tokens puestos, faltantes
+- `T2.1.3` — la fila guarda hasta qué ítem llegó
+
+**`T2.2` · bajar el costo por ítem.** Mejora, no requisito.
+- ~~`T2.2.1` — medir el presupuesto de una corrida~~ — **hecho 06/08.** ~661 s contra 360
+  disponibles; `resolverMarcadores` cuesta ~50 s y se llama seis veces. Detalle en `BITACORA.md`.
+- `T2.2.2` — sacar lo repetido por ítem. **La medición ya descartó las tres candidatas
+  obvias:** `leerMarcadores_()` es el 0,7% de la llamada que lo contiene, `getSlides()` 13 ms,
+  `replaceAllText` 7 ms por token. El costo está adentro de `resolverMarcadores`
+- `T2.2.3` — comprobar que ningún valor cambió
+
+**`T2.3` · reanudar.** Depende de `T2.1.3`. **Decidido (usuario, 06/08):** la llamada vuelve
+enseguida con el `corrida_id` y el cliente consulta la fila hasta que cierre. Que la llamada
+espere el ciclo completo **no es una opción**: el `doPost` que la atiende es él mismo una
+ejecución de Apps Script y se muere antes que la continuación que estaría esperando.
+- `T2.3.1` — continuar desde el índice guardado, invocado a mano
+- `T2.3.2` — la continuación se dispara sola. **Verificar antes la cuota de disparadores** — 90
+  min/día en cuentas gratuitas, 6 h en Workspace, y un deck de tres ejecuciones son 18 min por
+  corrida
+- `T2.3.3` — `LockService`, para que dos continuaciones no se pisen
+- `T2.3.4` — el cliente consulta la fila hasta el cierre, en vez de retener la llamada
+
+**`T2.4` · los cuatro objetivos contra un deck real.** `SUMA` sobre cero filas, `ULTIMO` por
+fecha, el agregado global de `digital`, el sembrado del Resumen Ejecutivo. Escritos y nunca
+vistos contra una corrida. Sale apenas exista `T2.1`. **No arrastra el anclaje** (ver `T2.9`).
+
+**`T2.5` · las operaciones que faltan.** Una que devuelva **lista** y no número (`P1`),
+`DISTINCT` para `ecv_barrios` (`P2`), y un formato de porcentaje sin signo (`P2`). Cada token sin
+operación es un `«FALTA:»` garantizado. → `PENDIENTES_consistencia.md`.
+
+**`T2.6` · los tres grupos que recortan a cero filas.** IVR (0 de 57 sobre `Inicio`),
+`sd_pauta_*` y `Digital`. **Ya no es pregunta al equipo (usuario, 06/08):** los agregados van por
+la ventana del informe, viernes a jueves. Lo que hay que medir es **por qué esa ventana da cero**.
+
+**`T2.7` · el instrumento.** `marcarEtapa_` traga sus excepciones **y las cinco marcas se pisan
+en la misma celda**, así que una fila puede decir que una corrida no arrancó cuando llegó a la
+etapa 4. Hoy es lo único que nos dice qué pasa.
+
+**`T2.8` · el score de anclaje.** Saturó en 1,00 y el circuito de `ANCLAJE_PENDIENTE` nunca se
+probó de punta a punta. → `PENDIENTES_consistencia.md`, `P1`.
+
+**`T2.9` · el matcher (`Union.gs`).** Cuatro cosas que tocan la misma función.
+- `T2.9.1` — `R-12`: ampliar la búsqueda de candidatos antes de declarar `sin_link`
+- `T2.9.2` — los dos valores de ventana a `CONFIG`: la corta (hoy constante de módulo) y la
+  ampliada (no existe)
+- `T2.9.3` — el empate técnico que `DISENO_match_temario.md` §6.4 declara y ningún código
+  implementa
+- `T2.9.4` — retirar `VALOR_STATUS_REALIZADA_` (`Union.gs:219`), que hoy filtra dos veces por lo
+  mismo
+- ~~`T2.9.5` — que la precondición devuelva **cuáles** son los grupos en violación~~ — **medido
+  el 06/08: no hay ninguno.** `verificarPrecondicionAnclaje_()` devuelve `ok`, con 660 filas
+  consideradas y 702 excluidas por lista blanca, y ya guarda el contexto para nombrar los grupos
+  si volviera a haberlos
+
+> **La dependencia del anclaje está vencida, medida el 06/08.** El ítem de `R-01` (03/08) dice
+> que *"el matcher está bloqueado y con él la parte del Tramo 2 que depende de encuentros
+> anclados"*. **No lo está:** la precondición pasa, y `itemsDeSeccion_('encuentro')` devuelve los
+> cinco encuentros anclados con su `id_cuenta`. Lo que lo destrabó ya estaba hecho —
+> `verificarPrecondicionAnclaje_` **pasa por la lista blanca de `D-21`** desde la corrida
+> nocturna del 04/08, que es exactamente la mitad de `T2.9.4` que el plan seguía reclamando.
+> El pendiente **no se cierra acá**: se reporta que su consecuencia dura no aplica.
+
+---
+
+### Tramo 3 — prueba de motor (SECCO)
+
+- `T3.1` — correr SECCO **midiendo líneas de `.gs` tocadas**. Es el paso que valida la tesis del
+  proyecto (`D-01`); si falla, lo que salga es el trabajo del tramo siguiente.
+- `T3.2` — revisión de exposición del repo público, programada para este hito: 14 IDs internos,
+  datos personales en el historial, `.clasp.json` trackeado, `PLANTILLA_JM_CANONICA_`
+  hardcodeada. Los cuatro son `P0` en `PENDIENTES_consistencia.md`.
+
+### Tramo 4 — panel (`D-04`)
+
+- `T4.1` — **primero:** qué devuelve `getActiveUser()` con el despliegue *"ejecuta el usuario que
+  accede"*. Si vuelve vacío, `D-15` se revisa **antes** de escribir código de panel.
+- `T4.2` — `doGet`, selección de informes, corrida a demanda
+- `T4.3` — `D-16`: acceso por usuario. La pieza 3 sigue sin resolver (§3)
+
+### Tramo 5 — chequeo previo programado (`D-11`)
+
+- `T5.1` — todo lo que queda de lo que antes eran los Pasos 10-12
+
+---
+
+### Higiene — sin orden, cada uno un prompt cuando toque
+
+Los `P0` y `P1` de `docs/PENDIENTES_consistencia.md` que no son de ningún tramo. **No se listan
+de nuevo acá:** ese archivo es su dueño y lleva su prioridad. Los dos que son **acción del
+usuario y no de Code**:
+- `rdv` compartida como `anyoneWithLink = writer`, que pisa el `reader` explícito (`P0`)
+- el registro automático de plantillas no ve la de JM y sí ve los backups (`P0`)
+
+### A revisar a futuro, no bloqueante
+
+**Los 33 tokens que el motor no ve** — ningún `.gs` recorre `getTables()` ni `getGroups()`
+(`PENDIENTES`, `P1`). **Decisión del usuario (06/08): no bloquea el tramo.** Son tokens sin
+información y se revisan más adelante.
+
+### Dato del terreno, no problema
+
+**El límite de ejecución de Apps Script son 6 minutos**, iguales para cuentas gratuitas y
+Workspace, y **no se puede extender**. Una línea, para que nadie vuelva a proponer agrandarlo.
 
 ---
 
@@ -599,6 +583,9 @@ Cada ítem nombra **qué lo destraba y de quién depende**.
 | Etapa 2: actualizar el deck en sitio (`D-06`) | el mapa `token → objectId` de la etapa 1, más decidir qué hace el motor cuando una caja registrada ya no está | interno |
 | `D-16` · acceso por usuario a informes y datos | resolver la pieza 3: cómo se sostiene la restricción sobre archivos de Drive y bases, no sólo sobre el panel. Requiere el panel construido (`D-04`) para probar contra algo real | interno |
 | Qué pasa con `m2` en `MAPEO` — las 19 filas duplicadas de `digital`, y si se mapea `Cuentas M2` | **el `Paso-2.5`**, cuando se siembre `MARCADORES` leyendo los `{{token}}` reales de las plantillas (`D-17`). Recién ahí se sabe si algún token pide los atributos de `Cuentas M2`. **El criterio ya está fijado** (usuario, 03/08/2026): `Cuentas M2` es un **catálogo de cuentas** —eje, área, nombre de campaña—, **no una fuente de métricas**; se mapea **sólo si algún token necesita esos atributos**. Las **métricas** de M2 salen de `digital`, no de `m2`. Sin token que las pida, las 19 filas se despiden y no se mapea nada | interno |
+| Los `camp_*` no dan número: `CAMPANAS` no tiene ninguna fila de `jm` | que alguien cargue las campañas del período en `CAMPANAS`. Sin filas, la sección `campana` emite 0 ítems — medido el 06/08: `itemsDeSeccion_('campana')` devuelve `items: 0` | usuario |
+| 16 tokens del Resumen Ejecutivo sin fuente: los ocho de Call Center (`cc_base` no existe en ninguna base), los seis de impresiones por plataforma y `contenidos_total` | decidir de dónde salen. No es cableado pendiente: **el dato no está en ninguna de las cuatro bases** | equipo |
+| La fila `resumen_ejecutivo` de `SECCIONES` está declarada `repetible` + `manual`, y está medido que **no puede ser repetible** | una línea: los tokens de GCBA llevan prefijo propio, así que el bloque no se itera. Es cambio de configuración, no de código | usuario |
 
 Nota: los tokens de MiBA ya están marcados en las plantillas, así que en cuanto corra el
 Paso 4 van a emitir `«FALTA:miba_*»` en `FALTANTES` en cada corrida. **Lo postergado se

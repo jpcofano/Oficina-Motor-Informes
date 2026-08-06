@@ -1,8 +1,15 @@
 # Paso 4 — Motor de reemplazo en Slides
 
-**Estado:** vivo · **Actualizado:** 2026-08-04 · **Reemplaza:** el texto anterior de este mismo
-archivo y sus Addenda 1 y 2, que quedan **fusionados acá**. Nunca se ejecutó, así que se edita en
-el lugar y no lleva addendum nuevo.
+**Estado:** **ejecutado el 2026-08-04** — `BITACORA.md`, *"Paso 4 ✅ — motor de reemplazo
+(tokens fijos) + registro de corrida (2026-08-04)"*. **El cuerpo no se toca**: un prompt
+ejecutado sólo lleva addendum.
+· **Actualizado:** 2026-08-04 · **Reemplaza:** el texto anterior de este mismo archivo y sus
+Addenda 1 y 2, que quedan **fusionados acá**.
+
+> **Corrección del 2026-08-06.** Este encabezado decía *"Nunca se ejecutó, así que se edita en
+> el lugar y no lleva addendum nuevo"*, y era falso desde el 04/08. Lo encontró la Parte 0 del
+> prompt `2026-08-06_9`, cruzando el encabezado contra la bitácora. Se corrige el estado, nada
+> más.
 
 > Requiere Pasos 0–3. Abre la plantilla de un informe, la copia, y reemplaza los `{{tokens}}` por
 > los valores calculados. Trabaja sobre Google Slides.

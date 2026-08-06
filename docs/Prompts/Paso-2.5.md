@@ -1,7 +1,13 @@
 # Paso 2.5 — Sembrar `MARCADORES` desde los tokens de las plantillas
 
-**Estado:** vivo · **Actualizado:** 2026-08-02 · **Reemplaza:** el texto anterior de este
-mismo archivo (nunca ejecutado, se edita en el lugar — no lleva addendum).
+**Estado:** vivo · **su Parte 0 corrió el 2026-08-03** (`BITACORA.md`, *"Paso 2.5 — Parte 0
+corrida, y **para**: la plantilla canónica de JM sigue sin armonizar"*); **el paso en sí sigue
+sin ejecutarse** · **Actualizado:** 2026-08-02 · **Reemplaza:** el texto anterior de este
+mismo archivo.
+
+> **Precisión del 2026-08-06.** El encabezado decía *"nunca ejecutado, se edita en el lugar"*
+> sin distinguir la Parte 0 del resto. La Parte 0 sí corrió, así que **lo que ya midió no se
+> edita**; el cuerpo del paso, que no corrió, sigue editable en el lugar.
 
 > **Regla de oro:** este paso NO calcula nada. Lee los `{{token}}` de las plantillas de
 > Slides y escribe filas de config. La aritmética llega en el Paso 3.

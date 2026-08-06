@@ -1427,6 +1427,137 @@ todavía no está decidida.
 
 ---
 
+
+> **Reubicados el 06/08/2026, sin cerrar ni reabrir ninguno.** Los ocho que siguen venían
+> colgando de `## Preguntas al equipo` — se habían ido agregando debajo de su última viñeta y
+> quedaron adentro de esa sección sin serlo. Ninguno espera respuesta humana: son trabajo con
+> el dato ya medido. **Prioridades intactas.**
+
+### P2 · `DISTINCT` no existe como operación, y `ecv_barrios` la necesita
+
+Las seis operaciones del motor son `SUMA` · `CONTEO` · `ULTIMO` · `RATIO` · `PCT` ·
+`TEXTO`. **`ecv_barrios` —la cantidad de barrios distintos de la semana— no se puede
+expresar con ninguna**, y por eso quedó sin cablear en la corrida del 05/08 aunque su
+columna sí existe (`rdv/RVD JM-CM - ES/barrio` → B en `MAPEO`). El dato está; falta la
+operación.
+
+**⚠ Esto NO es lo mismo que los tres `[MANUAL]` de `CONFIG_INFORMES.md` §1.4, y no se
+archiva junto a ellos.** §1.4 declara manuales a **`ecv_barrio1-3`** y **no menciona
+`ecv_barrios`**. Los tres primeros son una **decisión editorial** —alguien elige qué
+barrios destacar—; éste es un **hueco técnico**. Confundirlos hace desaparecer el
+pendiente: quedaría "resuelto" por una decisión que nunca lo abarcó.
+
+`P2` y no `P1`: bloquea **un token**, no una sección. La sección 1 cerró igual.
+
+
+### P2 · Falta un formato "unidades de porcentaje sin signo"
+
+El formateador tiene `porcentaje` (asume unidades de porcentaje y **agrega** el `%`) y
+`fraccion` (asume 0–1, lo lleva a unidades de porcentaje y **no** agrega el signo). Falta
+la cuarta celda de la matriz: **unidades de porcentaje, sin signo**.
+
+Se manifestó el 05/08 con los cinco `ecv_insc_*_pct`: la caja de la plantilla ya trae su
+propio `%` —`{{ecv_insc_mail}}({{ecv_insc_mail_pct}}%)`— así que `porcentaje` habría
+impreso `59.5%%`, el mismo bug que el formato `fraccion` arregló el 04/08. **Se cablearon
+con `numero`, y funciona** —el deck dice `(59.54%)`— pero por elección de un formato que
+**no describe el dato**: `numero` no dice que eso sea un porcentaje.
+
+**No cambiar el cableado**: anotar el hueco. Cuando exista el formato, son cinco celdas.
+
+
+### P1 · `generarInforme` no vuelve, y hace tres corridas que no se verifica nada de punta a punta
+
+**El síntoma:** el intento del 13/08 murió en el **timeout de 540 s** de `tools/api.js`, y el
+reintento dio `ECONNRESET`. Antes hubo HTML 404 y otros `ECONNRESET`. **La respuesta vuelve
+más o menos una de cada cuatro veces**, y a veces el motor **tampoco llega a registrar la
+corrida** en `CORRIDAS` — o sea que no es sólo el transporte.
+
+**La consecuencia concreta, que es lo que lo hace `P1`:** el arreglo de `SUMA` sobre cero
+filas (13/08) está probado **contra la función** y **nunca contra un deck**. Los 16 ceros
+falsos siguen sin confirmarse como corregidos.
+
+**El candidato ya identificado:** el scoring del anclaje es `O(realizadas × candidatos)`.
+Pero **el anclaje solo tarda 93 s medidos**, y la generación completa tardaba ~250 s cuando
+volvía: **hay ~450 s en otro lado** que nadie midió. El próximo paso es cronometrar las
+etapas por separado, no optimizar a ciegas.
+
+
+### P1 · `{{enc_audiencia}} → {{enc_alcance}}` no se debe aplicar nunca
+
+Es el único renombre de `RENOMBRES_ARMONIZACION_POR_INFORME_.jm` que todavía tiene origen en
+la plantilla, y **aplicarlo sería un error**: el destino `enc_alcance` **ya existe en la misma
+slide 6**, así que crearía **dos cajas con el mismo token** — la regresión de `enc_audiencia`,
+ya conocida.
+
+**Y la ocurrencia que queda es legítima, no un resto sin renombrar.** `enc_audiencia` está
+cableado en `MARCADORES` a `ivr_audiencia`: es la audiencia de IVR, que es **otra cosa** que
+el alcance de pauta.
+
+`P1` y no `P2` porque **una armonización futura puede intentarlo de nuevo sin saberlo**: la
+entrada sigue en la lista de renombres y nada en el código la marca como no aplicable.
+
+
+### P2 · `rrss_area1` aparece en dos cajas de la slide 21
+
+Colisión viva de tokens en la plantilla canónica de JM, medida el 14/08 con `mapaDeTokens_`.
+**No bloquea nada**: ningún renombre del diccionario la toca, así que la armonización no la
+puede empeorar.
+
+Hoy figura sólo en una lista vieja de familias numeradas, que **no es lo mismo que estar
+anotada**: ahí se lee como un token más y no como dos cajas que comparten nombre.
+
+
+### P2 · `enc_e75_pct` da 38,74 contra el 39% publicado — **no es un error, no se ajusta**
+
+27.599 / 71.234 = **38,74%**, y el informe publicado **redondea a entero**. Es el mismo
+número con más precisión.
+
+**Queda anotado para que nadie lo "arregle" más adelante:** cambiar el cálculo para que dé 39
+sería ajustar un número para que cierre, que es justo lo que el proyecto no hace.
+
+
+### P1 · El score de anclaje saturó, y el circuito de confianza nunca se probó
+
+**Anotado el 11/08 por decisión del usuario, antes de arrancar el objetivo de los once
+números: primero eso, después esto.** No se implementa nada acá; queda escrito para retomarlo.
+
+**Los cinco anclajes dan `1,00` exacto** desde que la fecha entró al score (10/08). **Un
+score saturado no ordena:** si dos candidatos tienen barrio y fecha correctos, empatan en el
+techo, y el techo no distingue al bueno del casi-bueno.
+
+**En ese empate actúa el desempate temporal del 09/08 y el motor elige solo.** Eso
+**contradice la regla del usuario** —*cuando la confianza no alcanza se pregunta y el usuario
+elige*— y es exactamente el modo de falla de `3347`, que sobrevivió tres semanas porque el
+número parecía razonable.
+
+**El circuito de pregunta está entero y nunca corrió de punta a punta:**
+
+- `ANCLAJE_PENDIENTE` registra el top-3 (`registrarAnclajePendiente_`);
+- el motor **lee** la columna `elegido` en la corrida siguiente y **no pisa la decisión
+  humana** (`anclajeYaConfirmado_`);
+- el umbral sale de `CONFIG.umbral_anclaje_reunion`, no del código (Paso 2.9F).
+
+**Nunca se ejecutó porque ningún caso cayó bajo umbral.** La hoja está vacía —sólo el
+encabezado— desde que existe.
+
+**Qué haría falta:** que el score **ordene en vez de saturar**; que un empate real vaya a
+`ANCLAJE_PENDIENTE` **en vez de resolverse por proximidad**; y **probar el circuito completo
+con un caso forzado**, que es la única forma de saber que funciona.
+
+
+### P2 · `ecv_barrio` no puede usarse como prefijo de familia
+
+`ecv_barrio` es **prefijo literal** de `ecv_barrio1`, `ecv_barrio2` y `ecv_barrio3`, y
+`tokenEsDeFamilia_` compara con `indexOf(f) === 0`. Cualquier `familia_tokens` que declare
+`ecv_barrio` **se lleva los cuatro tokens**, no uno.
+
+Ya está como comentario en `Instalar.gs`, arriba de `ecv_alcance_semanal`, pero queda
+también acá **porque es una trampa que se va a repetir**: la misma forma tienen
+`camp_bench_` vs `camp_bench_remitente`, y `m2_` contra cualquier `m2_algo`. El día que
+alguien escriba una familia con un token completo adentro, va a capturar de más **en
+silencio** — no rompe, arrastra.
+
+
 ## Preguntas al equipo — abiertas, esperando respuesta humana
 
 > Dueña de la pregunta "¿qué se le preguntó al equipo y sigue sin respuesta?"
@@ -1516,157 +1647,23 @@ todavía no está decidida.
   de más. **Qué falta para responderla:** que la función devuelva **cuáles** son los 5
   grupos, no sólo cuántos. Va con el paso del matcher.
 
-### P2 · `DISTINCT` no existe como operación, y `ecv_barrios` la necesita
-
-Las seis operaciones del motor son `SUMA` · `CONTEO` · `ULTIMO` · `RATIO` · `PCT` ·
-`TEXTO`. **`ecv_barrios` —la cantidad de barrios distintos de la semana— no se puede
-expresar con ninguna**, y por eso quedó sin cablear en la corrida del 05/08 aunque su
-columna sí existe (`rdv/RVD JM-CM - ES/barrio` → B en `MAPEO`). El dato está; falta la
-operación.
-
-**⚠ Esto NO es lo mismo que los tres `[MANUAL]` de `CONFIG_INFORMES.md` §1.4, y no se
-archiva junto a ellos.** §1.4 declara manuales a **`ecv_barrio1-3`** y **no menciona
-`ecv_barrios`**. Los tres primeros son una **decisión editorial** —alguien elige qué
-barrios destacar—; éste es un **hueco técnico**. Confundirlos hace desaparecer el
-pendiente: quedaría "resuelto" por una decisión que nunca lo abarcó.
-
-`P2` y no `P1`: bloquea **un token**, no una sección. La sección 1 cerró igual.
-
-### P2 · Falta un formato "unidades de porcentaje sin signo"
-
-El formateador tiene `porcentaje` (asume unidades de porcentaje y **agrega** el `%`) y
-`fraccion` (asume 0–1, lo lleva a unidades de porcentaje y **no** agrega el signo). Falta
-la cuarta celda de la matriz: **unidades de porcentaje, sin signo**.
-
-Se manifestó el 05/08 con los cinco `ecv_insc_*_pct`: la caja de la plantilla ya trae su
-propio `%` —`{{ecv_insc_mail}}({{ecv_insc_mail_pct}}%)`— así que `porcentaje` habría
-impreso `59.5%%`, el mismo bug que el formato `fraccion` arregló el 04/08. **Se cablearon
-con `numero`, y funciona** —el deck dice `(59.54%)`— pero por elección de un formato que
-**no describe el dato**: `numero` no dice que eso sea un porcentaje.
-
-**No cambiar el cableado**: anotar el hueco. Cuando exista el formato, son cinco celdas.
-
-### P1 · `generarInforme` no vuelve, y hace tres corridas que no se verifica nada de punta a punta
-
-**El síntoma:** el intento del 13/08 murió en el **timeout de 540 s** de `tools/api.js`, y el
-reintento dio `ECONNRESET`. Antes hubo HTML 404 y otros `ECONNRESET`. **La respuesta vuelve
-más o menos una de cada cuatro veces**, y a veces el motor **tampoco llega a registrar la
-corrida** en `CORRIDAS` — o sea que no es sólo el transporte.
-
-**La consecuencia concreta, que es lo que lo hace `P1`:** el arreglo de `SUMA` sobre cero
-filas (13/08) está probado **contra la función** y **nunca contra un deck**. Los 16 ceros
-falsos siguen sin confirmarse como corregidos.
-
-**El candidato ya identificado:** el scoring del anclaje es `O(realizadas × candidatos)`.
-Pero **el anclaje solo tarda 93 s medidos**, y la generación completa tardaba ~250 s cuando
-volvía: **hay ~450 s en otro lado** que nadie midió. El próximo paso es cronometrar las
-etapas por separado, no optimizar a ciegas.
-
-### P1 · `{{enc_audiencia}} → {{enc_alcance}}` no se debe aplicar nunca
-
-Es el único renombre de `RENOMBRES_ARMONIZACION_POR_INFORME_.jm` que todavía tiene origen en
-la plantilla, y **aplicarlo sería un error**: el destino `enc_alcance` **ya existe en la misma
-slide 6**, así que crearía **dos cajas con el mismo token** — la regresión de `enc_audiencia`,
-ya conocida.
-
-**Y la ocurrencia que queda es legítima, no un resto sin renombrar.** `enc_audiencia` está
-cableado en `MARCADORES` a `ivr_audiencia`: es la audiencia de IVR, que es **otra cosa** que
-el alcance de pauta.
-
-`P1` y no `P2` porque **una armonización futura puede intentarlo de nuevo sin saberlo**: la
-entrada sigue en la lista de renombres y nada en el código la marca como no aplicable.
-
-### P2 · `rrss_area1` aparece en dos cajas de la slide 21
-
-Colisión viva de tokens en la plantilla canónica de JM, medida el 14/08 con `mapaDeTokens_`.
-**No bloquea nada**: ningún renombre del diccionario la toca, así que la armonización no la
-puede empeorar.
-
-Hoy figura sólo en una lista vieja de familias numeradas, que **no es lo mismo que estar
-anotada**: ahí se lee como un token más y no como dos cajas que comparten nombre.
-
-### P2 · `3354` y `3346` tienen cero filas de mail, y `rdv` dice que hubo mail
-
-**Pregunta para el equipo, no trabajo de motor.** Las cuentas de San Cristóbal (`3354`) y
-Retiro (`3346`) **no tienen ninguna fila en `digital/Directa Mail`**, pero `rdv` registra
-**un inscripto por mail en cada uno** de esos dos encuentros.
-
-**Es inconsistencia de datos**, y tiene una consecuencia concreta: **impidió validar la regla
-de convocatoria fuera de `3387`**. El filtro `mail_tipo=Convocatoria` (11/08) funciona para
-Orden Público y **no hay contra qué probarlo** en los otros dos encuentros anclados.
-
-Medido el 11/08. Anotado acá el 13/08, porque venía viajando en el `HANDOFF_CODE.md` y **ése
-se reescribe entero cada corrida**.
-
-### P2 · `enc_e75_pct` da 38,74 contra el 39% publicado — **no es un error, no se ajusta**
-
-27.599 / 71.234 = **38,74%**, y el informe publicado **redondea a entero**. Es el mismo
-número con más precisión.
-
-**Queda anotado para que nadie lo "arregle" más adelante:** cambiar el cálculo para que dé 39
-sería ajustar un número para que cierre, que es justo lo que el proyecto no hace.
-
-### P1 · El score de anclaje saturó, y el circuito de confianza nunca se probó
-
-**Anotado el 11/08 por decisión del usuario, antes de arrancar el objetivo de los once
-números: primero eso, después esto.** No se implementa nada acá; queda escrito para retomarlo.
-
-**Los cinco anclajes dan `1,00` exacto** desde que la fecha entró al score (10/08). **Un
-score saturado no ordena:** si dos candidatos tienen barrio y fecha correctos, empatan en el
-techo, y el techo no distingue al bueno del casi-bueno.
-
-**En ese empate actúa el desempate temporal del 09/08 y el motor elige solo.** Eso
-**contradice la regla del usuario** —*cuando la confianza no alcanza se pregunta y el usuario
-elige*— y es exactamente el modo de falla de `3347`, que sobrevivió tres semanas porque el
-número parecía razonable.
-
-**El circuito de pregunta está entero y nunca corrió de punta a punta:**
-
-- `ANCLAJE_PENDIENTE` registra el top-3 (`registrarAnclajePendiente_`);
-- el motor **lee** la columna `elegido` en la corrida siguiente y **no pisa la decisión
-  humana** (`anclajeYaConfirmado_`);
-- el umbral sale de `CONFIG.umbral_anclaje_reunion`, no del código (Paso 2.9F).
-
-**Nunca se ejecutó porque ningún caso cayó bajo umbral.** La hoja está vacía —sólo el
-encabezado— desde que existe.
-
-**Qué haría falta:** que el score **ordene en vez de saturar**; que un empate real vaya a
-`ANCLAJE_PENDIENTE` **en vez de resolverse por proximidad**; y **probar el circuito completo
-con un caso forzado**, que es la única forma de saber que funciona.
-
-### P2 · Los tres remitentes sueltos de la lámina de campaña — **DIFERIDO por decisión del usuario 07/08**
-
-**La pregunta, textual:** *si cada fila de la tabla de envíos ya dice quién envió, ¿qué
-debería mostrar un `camp_remitente` que está **fuera** de la tabla?*
-
-Las tres ubicaciones, medidas sobre la plantilla viva de JM el 06/08 (`mapaDeTokens_`):
-
-| token | lámina | contenedor |
-|---|---|---|
-| `camp_remitente` | **18** | suelta |
-| `camp_bench_remitente` | **18** | suelta |
-| `camp_remitente` | **19** | suelta |
-
-**No se cablean, no se borran, no se tocan**, y **dejan de reportarse en cada corrida** —
-una pregunta diferida que se repite en todos los reportes es ruido, y por eso queda acá,
-que es donde se lee. Marcado también en `CONFIG_INFORMES.md` §2.5, junto a los once
-`camp_resp_*` diferidos.
-
-**⚠ `camp_bench_` (sin `_remitente`) NO está diferido y no entra en este cajón.** Su
-pregunta es otra —¿son fijos, o del período anterior?— y nunca se respondió. Confundirlos
-lo daría por cerrado.
-
-### P2 · `ecv_barrio` no puede usarse como prefijo de familia
-
-`ecv_barrio` es **prefijo literal** de `ecv_barrio1`, `ecv_barrio2` y `ecv_barrio3`, y
-`tokenEsDeFamilia_` compara con `indexOf(f) === 0`. Cualquier `familia_tokens` que declare
-`ecv_barrio` **se lleva los cuatro tokens**, no uno.
-
-Ya está como comentario en `Instalar.gs`, arriba de `ecv_alcance_semanal`, pero queda
-también acá **porque es una trampa que se va a repetir**: la misma forma tienen
-`camp_bench_` vs `camp_bench_remitente`, y `m2_` contra cualquier `m2_algo`. El día que
-alguien escriba una familia con un token completo adentro, va a capturar de más **en
-silencio** — no rompe, arrastra.
+- **`3354` y `3346` tienen cero filas de mail, y `rdv` dice que hubo mail** (`P2`, medido el
+  11/08). Las cuentas de San Cristóbal y Retiro no tienen ninguna fila en
+  `digital/Directa Mail`, pero `rdv` registra un inscripto por mail en cada uno. Es
+  inconsistencia de datos y tiene consecuencia: **impidió validar la regla de convocatoria**
+  fuera de `3387` — el filtro `mail_tipo=Convocatoria` funciona para Orden Público y no hay
+  contra qué probarlo en los otros dos. *(Era un `###` con cuerpo largo; pasa a viñeta el
+  06/08/2026 porque es la forma de esta sección. El texto no cambió de sentido.)*
+- **Los tres remitentes sueltos de la lámina de campaña** (`P2`) — **DIFERIDO por decisión
+  del usuario, 07/08.** La pregunta, textual: *si cada fila de la tabla de envíos ya dice
+  quién envió, ¿qué debería mostrar un `camp_remitente` que está fuera de la tabla?* Tres
+  ubicaciones en la plantilla viva de JM: `camp_remitente` (láminas 18 y 19) y
+  `camp_bench_remitente` (18), las tres sueltas. **No se cablean, no se borran, no se tocan**,
+  y dejan de reportarse en cada corrida. Marcado también en `CONFIG_INFORMES.md` §2.5, junto
+  a los once `camp_resp_*` diferidos.
+  **⚠ `camp_bench_` (sin `_remitente`) NO está diferido**: su pregunta es otra —¿son fijos, o
+  del período anterior?— y nunca se respondió. Confundirlos lo daría por cerrado.
+  *(Pasa a viñeta el 06/08/2026; el texto no cambió de sentido.)*
 
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 

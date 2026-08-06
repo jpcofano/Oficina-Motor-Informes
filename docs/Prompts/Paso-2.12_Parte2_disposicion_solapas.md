@@ -1,6 +1,10 @@
 # Paso 2.12 Parte 2 — Disposición de las solapas: cerrar `SOLAPAS.uso`
 
-**Estado:** vivo, **sin ejecutar** · **Fecha:** 2026-08-02 · **Ubicación:** `docs/Prompts/Paso-2.12_Parte2_disposicion_solapas.md`
+**Estado:** **ejecutado el 2026-08-02** — `BITACORA.md`, *"Paso 2.12 Partes 3 y 2 — disposición
+de las solapas: cero filas en `revisar`"* · **Fecha:** 2026-08-02 · **Ubicación:** `docs/Prompts/Paso-2.12_Parte2_disposicion_solapas.md`
+
+> **Corrección del 2026-08-06.** Decía *"vivo, sin ejecutar"* y era falso desde el 02/08.
+> Mismo cruce encabezado-contra-bitácora que corrigió el `Paso-4.md`.
 
 > **`reemplaza:` la Parte 2 de `docs/Prompts/Paso-2.12_conteos_y_clasificacion.md`.**
 > Ese texto no se toca. Se reemplaza porque su alcance —"las 17 filas en `revisar`"— está

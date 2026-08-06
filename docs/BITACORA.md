@@ -4177,3 +4177,96 @@ El cliente del repo no pudo transportar los snippets de medición: el shell se c
 del array de `args` y `tools/api.js` los toma por `argv`. Se usó un cliente mínimo en el
 scratchpad que lee el snippet **de un archivo** y arma el body JSON en el proceso. **No se
 agregó nada al repo**, y hereda el default nuevo: no reintenta.
+
+---
+
+## `PLAN.md §2` reescrita como escalera `T<tramo>.<n>`, y `PENDIENTES` reordenado (2026-08-06) — commit de esta entrada
+
+**Origen.** `PLAN.md` abre con su propia regla: *"una entrada es una línea o un párrafo corto;
+si necesita más, el detalle va a `BITACORA.md` y acá queda el puntero. Un plan que hay que leer
+entero para saber qué sigue deja de usarse."* La §2 tenía **145 líneas**, de las cuales **~71
+(49%) eran historia tachada**, y el trabajo de los últimos dos días no había entrado en ella.
+
+### Lo que la §2 decía antes, para que el resumen sea reversible
+
+El texto íntegro está en `f7e9ea4:docs/PLAN.md`, líneas 441–585. Lo que se sacó, y a dónde fue:
+
+| lo que estaba | dónde quedó |
+|---|---|
+| **Tramo 1 completo** — 7 ítems tachados, 53 líneas (acceso a las bases, tercer escritor de `MAPEO`, disposición de `SOLAPAS`, `hayUi_()`, `periodo_id`, `carpeta_salida`, activar `m2`) | **una línea** en la §2 con puntero a `BITACORA.md`. Los nueve hechos se verificaron uno por uno contra su marca en la bitácora antes de resumirlos |
+| `~~El Paso 3 tiene que resolver D-20~~`, 10 líneas | resumido; el detalle ya estaba en la entrada del `Paso-3-v3` Parte B |
+| `~~Migrar el filtro status = Realizada~~` (`D-21`), 8 líneas | resumido; lo que quedaba vivo de ese ítem —retirar `VALOR_STATUS_REALIZADA_`— es hoy `T2.9.4` |
+| El párrafo de "los cuatro ítems que el `Paso-3-v3` no cubre", 9 líneas de historia de una corrección | los cuatro ítems son hoy `T2.9.1`–`T2.9.4`, con ID propio |
+| El bloqueo *"`INFORMES.plantilla_id` está vacío en `jm` y en `secco`"* | **borrado: era falso.** Ver abajo |
+| `camp_` sin filas `jm`, los 16 tokens sin fuente, `resumen_ejecutivo` declarada repetible | **§3**, que es su lugar: cada uno con qué lo destraba y de quién depende |
+
+**Los dos punteros finos**, anotados en la §2 porque al resumir se pierden: `carpeta_motor`
+aparece **una sola vez** en la bitácora (entrada del `Paso 2.15` Parte A) y el rol `reader` de
+las cuatro bases **una sola vez** (entrada del 03/08 sobre permisos de Drive).
+
+### ⚠ Tres premisas de la §2 estaban vencidas
+
+1. **`INFORMES.plantilla_id` no está vacío en ninguno de los dos.** Leído en vivo:
+   `jm` → `117I0qn1XP1JCiz2mU32hUY1iiMUmrAAvHOsczd7u6jI`, `secco` →
+   `1_ZKjWhL-bhCP8yHQ8PJ33ymyjSXu3thh7MKMOxB4-n8`. La §2 lo daba como *"un bloqueo que tapa a
+   los tres"*.
+2. **`Paso-4.md` decía "nunca se ejecutó"** y corrió el 04/08. Corregido el encabezado; el
+   cuerpo no se toca. **El barrido encontró dos más:** `Paso-2.12_Parte2` decía *"vivo, sin
+   ejecutar"* y corrió el 02/08; `Paso-2.5` decía *"nunca ejecutado"* sin distinguir que **su
+   Parte 0 sí corrió** el 03/08. `Paso-2.13` dice lo mismo y **es cierto** — sólo tuvo una
+   auditoría de premisas, no una ejecución: no se tocó.
+3. **El `P1` de la lista blanca de `llamar` no lo cierra `4934f9c`.** Son dos riesgos distintos:
+   el pendiente es de `Api.gs` —`llamar` puede invocar cualquier global que escriba— y su
+   mitigación está diferida al Paso 6; `4934f9c` es de `tools/api.js` —que el cliente no
+   *repita* una llamada que escribe—. Uno protege de ejecutar algo que no debía; el otro de
+   ejecutarlo dos veces. **No se tocó el pendiente.**
+
+### ⚠ La dependencia del anclaje está vencida — medido, no deducido
+
+`PENDIENTES` decía las dos cosas a la vez: que `anclarEncuentros()` **no corre** mientras la
+precondición de `R-01` falle *"y con él está bloqueada la parte del Tramo 2 que depende de
+encuentros anclados"*, y que **hay cinco anclajes con score 1,00**.
+
+Medido hoy: **`verificarPrecondicionAnclaje_()` devuelve `ok: true`** — 660 filas consideradas,
+702 excluidas por lista blanca, **cero grupos en violación** — y
+`itemsDeSeccion_('encuentro')` devuelve los cinco encuentros con su `id_cuenta`
+(`3354-JULJDGAG`, `3346-JULJDGAG`, `3387-JULJDGGC`).
+
+**Lo que lo destrabó ya estaba hecho y nadie lo había anotado:** desde la corrida nocturna del
+04/08, `verificarPrecondicionAnclaje_` **pasa por la lista blanca de `D-21`**, reusando
+`filtrosValoresIncluidos_`/`filaPasaListaBlanca_` en vez de leer con `getDataRange()` directo.
+Eso es exactamente la mitad de `T2.9.4` que el plan seguía reclamando, y la razón por la que los
+cinco grupos duplicados desaparecieron: eran filas que el matcher nunca iba a mirar.
+
+**El pendiente no se cierra acá** —no es lo que este trabajo hace—: se registra que su
+consecuencia dura no aplica, y la escalera **no lleva esa dependencia**. `T2.1`, el MVP, no
+dependía de esto en ningún caso.
+
+### Los IDs: `T<tramo>.<n>`
+
+`Paso 6` está ocupado en tres documentos vivos —`PENDIENTES`, `BITACORA` y `RUNBOOK`, cinco
+referencias— con el significado *"cuando se publique `/exec`"*, y una de ellas es la condición
+de reactivación de un `P0`. `Paso 7` está ocupado en el plan original archivado. Y `Paso 5` ya
+se ejecutó, así que `5.1` se habría leído como sub-paso de las secciones repetibles.
+`T<tramo>.<n>` no colisiona con nada y **no obligó a tocar ninguna referencia viva**.
+
+### `PENDIENTES_consistencia.md`: diez `###` mal archivados
+
+Colgaban de `## Preguntas al equipo`, que es una sección de **viñetas** para preguntas de
+dominio que esperan respuesta humana: se habían ido agregando debajo de su última viñeta.
+**El archivo dio diez** — la Parte 0 había contado siete y se equivocó.
+
+- **Ocho pasaron a `## Sigue abierto`**, con la prioridad intacta: `DISTINCT`, el formato de
+  porcentaje sin signo, `generarInforme` no vuelve, `enc_audiencia → enc_alcance`, `rrss_area1`
+  en dos cajas, `enc_e75_pct`, el score de anclaje y `ecv_barrio` como prefijo.
+- **Dos se convirtieron en viñeta**, que es la forma de esa sección: `3354`/`3346` con cero
+  filas de mail —su propio texto dice *"pregunta para el equipo, no trabajo de motor"*— y los
+  tres remitentes sueltos, diferidos por decisión del usuario el 07/08.
+
+**Ninguno se cerró ni se reabrió. Ninguna prioridad cambió.**
+
+**Dos no encajaban en ninguna de las dos categorías y se decidieron solos:** `enc_e75_pct`
+(*"no es un error, no se ajusta"*) y `ecv_barrio` como prefijo son **notas de guardia** —están
+para que nadie los "arregle" más adelante—, no trabajo pendiente ni preguntas. Fueron a
+`Sigue abierto` porque es lo conservador: mantiene la prioridad y no cierra nada. Sus títulos ya
+dicen lo que son.
