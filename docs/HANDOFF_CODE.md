@@ -3,29 +3,40 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-06, al cerrar "una invocación, una corrida" · último commit
-al escribirlo: `06716de`
+**Última actualización:** 2026-08-06, al cerrar el desglose del presupuesto · último commit
+al escribirlo: `993d7b3`
 
 ## Dónde estamos
 
-**El bloqueo del proyecto sigue siendo que `generarInforme` no termina.** Todo lo demás está
-construido y **nada de lo construido en los últimos cinco objetivos está verificado contra un
-deck**.
+**Ya no es "por qué muere": es que no entra.** El presupuesto de una corrida está desglosado y
+**suma ~661 s contra los 360 s que da Apps Script** — sin contar la etapa 5, que no se midió.
+Las etapas **1+2+4 solas suman ~396 s**, así que **no entra ni con la etapa 3 valiendo cero**.
 
-**Lo que se cerró hoy:** una invocación deja **una fila y un deck**. El reintento del cliente
-ya no relanza la generación. La carpeta de salidas **cierra contra `CORRIDAS`**: 12 decks, 12
-filas con deck, cero huérfanos.
+**El próximo trabajo es reanudación por etapas**, y está dicho por la medición, no por
+preferencia.
 
-**El diagnóstico, y ésta es la versión buena:**
+**Dónde está el costo, medido:**
 
-- **El deck se crea siempre**, y la corrida muere en el medio. Son dos cosas a la vez, no una
-  excluyente: no es *sólo* transporte y no es *sólo* respuesta grande.
-- **La muerte está entre `abrirCorrida_` y `escribirCorrida_`** — cinco etapas instrumentadas.
-- **Dónde muere no es estable entre corridas.** El 05/08 una llegó a la etapa 4 a los +324 s;
-  hoy `jm-20260806-135202` quedó en la etapa 3 a los +159 s. **Las etapas 1+2 tardaron 159 s
-  hoy contra ≤125 s el 05/08.**
-- **⚠ No hay causa establecida.** El límite de 6 minutos es un candidato, no un hecho probado:
-  las dos corridas del 05/08 que lo "probaban" corrieron **de a dos sobre la misma planilla**.
+| | |
+|---|---|
+| etapa 1 · expandir | **119,8 s** — de los cuales **~63–70 s es el anclaje** (`itemsDeSeccion_`) y ~55 s la duplicación de slides |
+| etapa 2 · mapa | **9,6 s** |
+| etapa 3 · por ítem | **~256 s** — `resolverMarcadores` cuesta **~50 s por ítem**, y son 5 |
+| etapa 4 · tokens fijos | **~267 s** — `resolverMarcadores('jm',{})` sola **238,9 s** |
+| etapa 5 · faltantes | sin medir |
+
+**`resolverMarcadores` se llama seis veces por corrida y cuesta ~50 s cada vez.** Ahí está el
+presupuesto, no en lo que se sospechaba: `leerMarcadores_()` pesa **0,37 s** (0,7% de la
+llamada), `getSlides()` **13 ms**, `replaceAllText` **~7 ms por token**.
+
+**Lo que se cerró antes, y sigue en pie:** una invocación deja **una fila y un deck**; el
+reintento del cliente ya no relanza la generación; la carpeta de salidas **cierra contra
+`CORRIDAS`** (12 decks, 12 filas con deck, cero huérfanos).
+
+**⚠ Sigue sin haber causa establecida de la muerte.** El límite de 6 minutos es el candidato
+obvio y ahora tiene un presupuesto que lo respalda, pero **ninguna corrida dejó registro de su
+propia muerte**. El panel **Ejecuciones** del editor de Apps Script es el único oráculo que lo
+diría, y el token de la sesión no lo alcanza (le falta el scope `script.processes`).
 
 ## Trabado
 
@@ -67,11 +78,13 @@ filas con deck, cero huérfanos.
 
 ## Qué sigue
 
-1. **Por qué muere la corrida** — con una sola corrida por invocación, que es lo que faltaba
-   para poder medir. El punto ciego de `marcarEtapa_` se cierra antes o al mismo tiempo.
-2. **Verificar los cinco objetivos** con una corrida completa.
-3. **Retomar el sembrado**, que está parado hasta que una corrida se pueda mirar.
-4. **Objetivo B**, los tres grupos que recortan a cero, y los 16 tokens sin fuente.
+1. **Reanudación por etapas.** Es lo que dice la medición: ninguna reorganización del trabajo
+   actual entra en 360 s. Lo destraba la decisión de cómo se persiste el estado entre tramos.
+2. **Mirar `resolverMarcadores` de cerca**, en paralelo: son ~50 s × 6 llamadas = ~300 s de los
+   661. No hace falta para reanudar, pero es la mitad del presupuesto.
+3. **Verificar los cinco objetivos** con una corrida completa — sigue bloqueado por el 1.
+4. **Retomar el sembrado**, que está parado hasta que una corrida se pueda mirar.
+5. **Objetivo B**, los tres grupos que recortan a cero, y los 16 tokens sin fuente.
 
 ## Qué mirar antes de tocar algo
 
@@ -104,8 +117,11 @@ filas con deck, cero huérfanos.
 `MARCADORES` en **43** filas. `MAPEO` en 122 (entraron `mail_tipo` y `mail_remitente`).
 Plantilla: **172 tokens** (195 menos los 23 de la lámina escondida). **Las 10 pruebas pasan.**
 Anclaje: 5 anclados, los cinco con score **1,00** (saturado). `CORRIDAS` en **18 filas**, la
-última **abierta** (`jm-20260806-135202`, etapa 3). Carpeta de salidas: **12 decks** y 7
-shortcuts, cero huérfanos.
+última **abierta** (`jm-20260806-135202`, etapa 3). Carpeta de salidas: **12 decks**, cero
+shortcuts, cero huérfanos. **Presupuesto de una corrida: ~661 s medidos contra 360 disponibles.**
+
+**⚠ `mapaTokenObjectId_` cuenta 195 tokens distintos y `tokensPorSlide_` 193**, contra el
+denominador de **172** que usa esta sección. No está explicado.
 
 **⚠ No hay ningún deck completo medido contra el denominador de hoy.** El
 *34 con valor / 288 faltantes* de `jm-20260805-133836` **está superado**: se midió sobre 195

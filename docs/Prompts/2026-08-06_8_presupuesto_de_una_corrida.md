@@ -9,12 +9,20 @@ corrida. Hasta ahora cualquier tiempo podía estar midiendo dos.
 
 | | etapas 1+2 | etapa 3 | murió en |
 |---|---|---|---|
-| `05/08 231421` | ≤125 s | ~200 s (125→324) | etapa 4 |
+| `05/08 231421` | ~~≤125 s~~ **no medido** | ~~~200 s (125→324)~~ **no medido** | etapa 4 |
 | `06/08 135202` | 159 s | no la terminó | etapa 3 |
 
-Mismo trabajo, 34 s de diferencia en 1+2, y la muerte se corre de una etapa a
-otra. **La lectura es que el presupuesto no da y la varianza decide dónde cae** —
-pero es lectura, no medición: dos corridas no son una distribución.
+> **Corregido el 06/08, después de `0.0` — ver la nota al pie.** Las dos celdas
+> tachadas **no son mediciones**: las cinco marcas de `marcarEtapa_` se pisan en la
+> misma celda, así que de `231421` sólo sobrevivió la última, `4 · tokens fijos ·
+> +324 s`. El `≤125 s` es una reconstrucción —así la anota `BITACORA.md`— y el
+> `~200 s` es una resta sobre ella. **Lo medido es `1+2+3 = 324 s` el 05/08 y
+> `1+2 = 159 s` el 06/08: dos tramos distintos, no dos observaciones del mismo.**
+
+Mismo trabajo, y la muerte se corre de una etapa a otra. **La lectura es que el
+presupuesto no da y la varianza decide dónde cae** — pero es lectura, no medición:
+dos corridas no son una distribución, y **los "34 s de diferencia en 1+2" que decía
+esta línea salían de restarle a 159 un número que nunca se midió.**
 
 **Lo que sigue siendo candidato.** Que las mate el límite de 6 minutos. Ninguna
 dejó registro de su propia muerte. El `ECONNRESET` del cliente a los ~302 s cortó

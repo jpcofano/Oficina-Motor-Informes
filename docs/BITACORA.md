@@ -4068,3 +4068,112 @@ Una medición por `llamar fn=eval` recibió un **404 en HTML** —el modo de fal
 que el reintento viejo sí disparaba— y el cliente respondió: *"NO se reintentó, a propósito […]
 mirá si la llamada llegó a correr antes de repetirla"*. **La rama nueva está probada contra
 una falla real**, no simulada. La medición se repitió a mano y salió bien.
+
+---
+
+## El presupuesto de una corrida, desglosado — y no entra ni con la etapa 3 en cero (2026-08-06) — commit de esta entrada
+
+**El prompt cierra en su propia condición de cierre.** *"Si la medición muestra que ni con la
+etapa 3 en cero entra, el trabajo es reanudación y este prompt cierra ahí, con ese dato."*
+**No entra: las etapas 1+2+4 solas suman ~396 s contra un presupuesto de 360.** Las Partes A y
+B no se ejecutaron.
+
+### De dónde salen estos números
+
+**De un banco de medición, no de una corrida.** Copia descartable de la plantilla
+(`BANCO_MEDICION_060826_borrar`, deck `1Q-UZloxz6HKsmqbaEaBWQOw0C8ddoZNhIq6_MGnHcp0`), creada
+**fuera de la carpeta de salidas** y mandada a la papelera al terminar. La carpeta quedó en 12
+decks y `CORRIDAS` en 18 filas, igual que antes. Cuatro pasadas entre las 16:20 y las 16:45 del
+06/08.
+
+**Ninguno de estos números tiene `corrida_id`, y eso es a propósito.** Los únicos dos números
+que salen de corridas reales son `1+2+3 = 324 s` (`jm-20260805-231421`) y `1+2 = 159 s`
+(`jm-20260806-135202`), y ninguno de los dos se desglosa — `marcarEtapa_` pisa sus marcas en la
+misma celda. El banco es lo que permite abrir el desglose; el precio es que no es una corrida.
+
+### El presupuesto, pedazo por pedazo
+
+| pedazo | medido | qué es |
+|---|---|---|
+| config + ventana | **1,9 s** | `leerInformes` + `resolverVentana` |
+| copiar plantilla + abrir | **6,4 s** | `makeCopy` + `SlidesApp.openById` |
+| **etapa 1** | **119,8 s** | expandir secciones repetibles |
+| ↳ `itemsDeSeccion_('encuentro')` | **62,8 s** *(y 69,7 s en otra pasada)* | **el anclaje** |
+| ↳ `itemsDeSeccion_('comunicaciones_post')` | 3 ms | reusa lo que cacheó la anterior |
+| ↳ `itemsDeSeccion_('campana')` | 1,2 s | 0 ítems |
+| ↳ el resto, por diferencia | **~55 s** | `duplicate()` + `move()` + `remove()` en Slides |
+| **etapa 2** | **9,6 s** | `mapaTokenObjectId_` — 195 tokens distintos, 26 slides |
+| **etapa 3** | **~256 s estimados** | la pasada por ítem |
+| ↳ `resolverMarcadores` por ítem | **54,3 · 48,7 · 51,1 · 48,2 s** | 4 de los 5 ítems; el 5º no entró en el presupuesto de la pasada |
+| ↳ de eso, `leerMarcadores_()` | **0,37 s** | **el 0,7%** |
+| ↳ `tokensDeSlide_` | 18,7 s las 26 slides → **0,72 s/slide** | |
+| ↳ `replaceAllText` | **5–13 ms por token**, mediana 7 | |
+| ↳ `getSlides()` | **11–13 ms** | |
+| **etapa 4** | **~267 s** | tokens fijos |
+| ↳ `tokensPorSlide_` | **26,9 s** | 193 tokens fijos distintos |
+| ↳ `resolverMarcadores('jm', {})` | **238,9 s** | |
+| ↳ 193 × `replaceAllText` | ~1,5 s | |
+| **etapa 5** | **no medida** | `escribirFaltantes_` |
+
+**Total sin la etapa 5: ~661 s.** El presupuesto es 360.
+
+### `0.6` · La respuesta que cierra el prompt
+
+**1+2+4 = 119,8 + 9,6 + 267 ≈ 396 s.** Ya se pasa de 360 **con la etapa 3 valiendo cero**.
+
+Y la conclusión aguanta aunque el número más raro de la tabla esté mal: si
+`resolverMarcadores({})` de la etapa 4 costara lo mismo que una llamada por ítem (~50 s) en vez
+de 239 s, 1+2+4 daría ~207 s y quedarían 153 s para una etapa 3 que cuesta ~256 s. **No entra
+por ninguno de los dos caminos.**
+
+### `0.3`–`0.5` · Las tres optimizaciones de la Parte A no sirven, y por eso no se hicieron
+
+El prompt las condicionaba a que `0.3`–`0.5` las mostraran caras. **Las tres son baratas:**
+
+1. **`leerMarcadores_()` una sola vez** — pesa **0,37 s de los ~50 s** de cada
+   `resolverMarcadores`. Es cierto que no cachea entre llamadas (379 ms la primera, 370 ms la
+   segunda), pero sacarlo del loop ahorra **~1,5 s de 661**.
+2. **El cache compartido entre ítems** — el costo no está en releer la hoja.
+3. **El mapa `objectId → slide`** — `getSlides()` cuesta **13 ms**. No es un costo.
+
+Las tres juntas ahorran menos de 2 s. **"Nada por prolijidad": no se tocó nada.**
+
+**El costo está adentro de `resolverMarcadores`**, que se llama **seis veces** por corrida —una
+por cada uno de los 5 ítems más una para la etapa 4— y cuesta ~50 s cada una. Ahí es donde hay
+que mirar, y no es lo que este prompt proponía.
+
+### `0.1` · La varianza sigue siendo un candidato sin nombre
+
+**No se puede decir de dónde sale la diferencia entre los dos días**, porque del 05/08 nunca se
+midió 1+2 por separado: su única marca sobreviviente fue `4 · tokens fijos · +324 s`. Lo que sí
+se ve, dentro de un mismo día y sobre el mismo trabajo:
+
+- `itemsDeSeccion_('encuentro')`: **62,8 s** en una pasada y **69,7 s** en otra — **11%**.
+- 1+2 del banco: **129,4 s**; 1+2 de la corrida real de las 13:52: **159 s** — **30 s** de
+  diferencia, con la salvedad de que el banco no escribe `CORRIDAS` ni marca etapas.
+
+**Se cuenta como riesgo, según lo que pedía `0.1`.**
+
+### `0.2` · N = 5
+
+`duplicarBloquesRepetibles_` devolvió **5 asignaciones**.
+
+### Los números raros, sin analizarlos
+
+- **`resolverMarcadores('jm', {})` costó 238,9 s** contra ~50 s de una llamada por ítem. Casi
+  5×.
+- **`itemsDeSeccion_` devolvió 7 ítems** (5 de `encuentro`, 2 de `comunicaciones_post`, 0 de
+  `campana`) y `duplicarBloquesRepetibles_` produjo **5 asignaciones**.
+- **`mapaTokenObjectId_` cuenta 195 tokens distintos y `tokensPorSlide_` 193**, contra el
+  denominador de **172** que usa el handoff.
+- **`leerMarcadores_()` no cachea entre llamadas** (379 / 370 ms).
+- **Una pasada de medición murió sin respuesta**: el cliente esperó **540 s** y no volvió nada.
+- **Los 7 shortcuts ya no están en la carpeta de salidas** — entre las 16:04 y las 16:45 alguien
+  los borró. La carpeta quedó en **12 decks y 0 shortcuts**.
+
+### Nota de método
+
+El cliente del repo no pudo transportar los snippets de medición: el shell se come el cierre
+del array de `args` y `tools/api.js` los toma por `argv`. Se usó un cliente mínimo en el
+scratchpad que lee el snippet **de un archivo** y arma el body JSON en el proceso. **No se
+agregó nada al repo**, y hereda el default nuevo: no reintenta.
