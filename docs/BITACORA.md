@@ -3896,3 +3896,126 @@ dentro de un mes.
   que aclara.
 
 **La convención quedó escrita** en la §3 de `CLAUDE.md`, donde se rutean los prompts nuevos.
+
+---
+
+## Una invocación, una corrida — Partes A y B, y el inventario corregido antes de borrar (2026-08-06) — commit de esta entrada
+
+### ⚠ `C.0` · Siete de los 29 archivos nunca fueron decks
+
+El inventario de `2bcdb4a` contó **29 decks**. Son **22 decks y 7 shortcuts de Drive**
+(`application/vnd.google-apps.shortcut`) — se los ve en el ID, 33 caracteres contra los 44 de
+un archivo nativo. Los siete se crearon **en el mismo segundo**, 04/08 18:42:23, con el mismo
+nombre que el deck de las 18:03, y son el rastro de la limpieza de esa tarde: la entrada
+*"Corrida nocturna — punto 6"* cierra a las 18:16 diciendo *"quedaron cinco decks […] sirve el
+último y los otros cuatro se borran"*. **No son corridas y no hay nada que explicar en ellos.**
+
+Esta entrada **no edita** la tabla de `2bcdb4a` —la bitácora es append-only—: la reemplaza.
+El recuento correcto, antes de borrar nada:
+
+**22 decks · 7 shortcuts · 17 filas en `CORRIDAS` · 11 huérfanos.**
+
+Y cae con ellos la mitad de un hallazgo anterior: *"explica los cinco decks de una sola
+corrida del 04/08"* se apoyaba en estos siete. **El patrón de seis minutos se sostiene igual**,
+pero sobre los grupos del 05/08, que son medición directa.
+
+| creado | tipo | id | corrida |
+|---|---|---|---|
+| 08-04 18:03 | deck | `1AU0tkyRQo0kGccnUGJqz0MoEqtiDpy5awYGy8VjTtH8` | jm-20260804-180308 |
+| 08-04 18:42 | **shortcut** | `10BuvocJrk48SiUIA7eM4i1-0xyprwhqx` | (no es una corrida) |
+| 08-04 18:42 | **shortcut** | `12aREdG64A5Zo6c3W8HRd4aT6SzAi-s4_` | (no es una corrida) |
+| 08-04 18:42 | **shortcut** | `16oHHMgk8iFL2yzTZ6I2BVgsVmZs6nFGW` | (no es una corrida) |
+| 08-04 18:42 | **shortcut** | `1GMk95dogz_nYoN0MTOX4FOGXvzJyDjra` | (no es una corrida) |
+| 08-04 18:42 | **shortcut** | `1_SIaantWFLlms0dgNFK8Tit35basI4u5` | (no es una corrida) |
+| 08-04 18:42 | **shortcut** | `1fhPXuys3kOYwYpNTsgpQ2M5Rb4pfPU7Y` | (no es una corrida) |
+| 08-04 18:42 | **shortcut** | `1oPdgJOE1m14FiGmcAGXsaQPEzEA5O_7q` | (no es una corrida) |
+| 08-05 00:44 | deck | `1gU96TN0c_ODWQM56xxVrYFjGdTw7c_1FqECfbZoZwNY` | **(sin fila)** |
+| 08-05 00:50 | deck | `1cXrAhX3-GXs0dYeqwLxYqD1Nrr3ZJ2s1NJYRwz-llWo` | jm-20260805-005053 |
+| 08-05 10:42 | deck | `1FgODR5xlcsqstmMmEpauAlBisi52_BdakblrwLrE6eY` | jm-20260805-104211 |
+| 08-05 12:14 | deck | `1uFUCQ0maspF9ZODpF2gAKxscwV7hoyeiiMcur1gNkKo` | jm-20260805-121426 |
+| 08-05 12:51 | deck | `14_QBHSTHu9lxinvemh7CMVwCct51ItzpmzzY3Wmr0Oo` | jm-20260805-125133 |
+| 08-05 12:57 | deck | `1YTYMlx6mWf38geDG6UDx0VbWT9aAnnWDrWnYRj2eGLE` | **(sin fila)** |
+| 08-05 13:38 | deck | `1vEdfOnXV3o3SmJKuzCG_WcWoqn_9_9_cpiAt4DV8Paw` | jm-20260805-133836 |
+| 08-05 14:30 | deck | `1xCqO9oixYHgEdh7ol2NOk181vBAvg-HVXwb5t2_vveQ` | **(sin fila)** |
+| 08-05 14:47 | deck | `1sE9iKwZiisHMvB3VE4XBp8wEEDx9kNar7WIT25I92XM` | **(sin fila)** |
+| 08-05 16:54 | deck | `1xxrqdmwYlzXr0pzjN4C2KM5GmIsEdNEAZd43COcC9Tw` | **(sin fila)** |
+| 08-05 20:08 | deck | `1kkjNdC6_-si_6WkJjOM7pJ9AEDbbgUrTqNA1qRR60GU` | **(sin fila)** |
+| 08-05 20:14 | deck | `1mIpdwc81nmqG707J10gROWE1IQ43us5VSka4RGjKIrA` | **(sin fila)** |
+| 08-05 20:20 | deck | `1QCwqVDKpNrIwix9BUM3BxsCxwk8a2i69ft0G4AUWs5w` | **(sin fila)** |
+| 08-05 21:44 | deck | `1drsIo_5K8xmNL1YRkhbVBSP9xK-8B9Vpp580YSpKj9E` | **(sin fila)** |
+| 08-05 21:50 | deck | `10TD3goIyUh863p0GLwstgA_Yw8lcGyHgj78OYIoMRQY` | **(sin fila)** |
+| 08-05 21:56 | deck | `1qhgwOvAgM0JgW_tssRr5XHhv6MG0MuCmtqGM3SQNpK0` | **(sin fila)** |
+| 08-05 22:13 | deck | `1cpIDxRmyi2UCqS89bHFL2me_vn7ntbBLVhlY_qmrHaI` | jm-20260805-221341 |
+| 08-05 22:19 | deck | `1JwF01d0AHKdZSYq1nqDhPnfXZWYddJIJOCFN57ULnms` | jm-20260805-221941 |
+| 08-05 22:25 | deck | `1MNwfxbDymWSdbjbroN4YqV26f3DxcRTH5mj7_79if_A` | jm-20260805-222543 |
+| 08-05 23:14 | deck | `1emP39NH51I0dquRqZtHihqMKNlTHMlOTBqABMZvTp3E` | jm-20260805-231421 |
+| 08-05 23:20 | deck | `1itPMWTzBRjYyQIbfYO8MinJNqUXnACy0Il2Gv7KEPGM` | jm-20260805-232018 |
+| 08-06 13:51 | deck | `1G1VAo1Kvv7ZggV0x_fKQ1y-iUvsu5OPm22EfzUCQLWI` | jm-20260806-135202 (Parte B) |
+
+**`C.3` · Seis filas de `CORRIDAS` apuntan a decks que ya no están en la carpeta.** Se anotan
+acá y **no se tocan**: `CORRIDAS` es registro. Son las seis del 04/08 anteriores a las 18:03 —
+los decks que la limpieza de las 18:42 se llevó.
+
+| corrida | deck_id (ya no existe) |
+|---|---|
+| jm-20260804-144641 | `1ptnV_7ifxwq7KOopuYtMVD29k0SfGsoIoA522itZ-Q0` |
+| jm-20260804-151254 | `1NAmkeRMNP1aE92cH8Kgv3IJ9TBbIr6At-ug4-orE5Nk` |
+| jm-20260804-151618 | `1O8S1J5q2ee6Di37kA9oyPwPA8BHaDfemqjfkKczDDxQ` |
+| jm-20260804-153355 | `19855tqeF2s1CpHHFOwnc0tJgyUcOnnzGjWI85BV9YYc` |
+| jm-20260804-155102 | `1dQv1xhzfleQAlWzCK5MQ6G4B0dIQpLMNDceZjGEVvX8` |
+| jm-20260804-175409 | `1NEkGLjCWJwzf82tHOT8HlpwavIPi5iBuqO2rJYZRIdE` |
+
+### `0.1` · La lista blanca no podía ser por acción
+
+`Api.gs` expone **cinco** acciones: `ping`, `version`, `registros`, `bases`, `llamar`. Las
+cuatro primeras son lectura pura —verificados los nueve lectores de `API_LECTORES_` y
+`diagnosticoBases_`, ninguno escribe—. **`llamar` es la única que llega al motor, y adentro
+conviven `fn=leerMapeo` y `fn=generarInforme`.** Con `llamar` adentro de la lista blanca el
+reintento sobre `generarInforme` sigue vivo; con `llamar` afuera se pierde el reintento en el
+100% del uso real del cliente. **A nivel de acción no había corte posible.**
+
+### `0.2` · Lo que dice la fila de `232018`, y lo que no
+
+`(corrida en curso — si esto queda así, murió antes de terminar)` — el marcador que escribe
+`abrirCorrida_`, **nunca pisado por `1 · expandir secciones repetibles`**, que es la línea
+siguiente en el código. Dos lecturas que la fila no separa: murió en esa rendija, **o**
+`marcarEtapa_` falló las cinco veces sin que nadie se enterara — traga sus excepciones a
+propósito. **"Murió en `abrirCorrida_` por timeout de Sheets" no está escrito en ningún lado
+del repo** y no se repite como causa. Queda anotado que el instrumento tiene un punto ciego
+justo donde estamos mirando.
+
+### Parte A · El reintento deja de ser el default — `--reintentar`
+
+Commit `4934f9c`. El corte va **por llamada**, no por lista blanca de nombres de `fn`: el
+cliente no conoce el motor —`llamar fn=` acepta cualquier global y `eval` trae cualquier cosa
+adentro del snippet— y una lista en el cliente **envejece**, porque cada lector nuevo nace sin
+reintento hasta que alguien se acuerde de agregarlo. Quien escribe el comando sí sabe si lo
+que pide escribe. Sin `--reintentar` el cliente nombra la falla de transporte, dice que no
+reintentó a propósito y manda a mirar si la llamada llegó a correr. Corregido el comentario
+del 04/08: **no aparece "sin patrón"** — los grupos del 05/08 están separados por seis minutos
+exactos.
+
+**Costo, nombrado antes de descubrirlo:** las mediciones por `llamar fn=eval` pierden el
+reintento salvo que se pida a mano. Es el caso más frecuente de este proyecto y el más
+sensible a una falla de transporte; a cambio, `eval` no queda en ninguna lista que lo declare
+seguro sin mirar el snippet.
+
+### Parte B · ✅ Una invocación, una fila, un deck
+
+Una sola invocación de `generarInforme` sobre `jm`. **22 → 23 decks y 17 → 18 filas.** Una y
+una. El cliente perdió la conexión a los ~302 s con `ECONNRESET`, que entra por el `on('error')`
+y nunca llegó al bucle de reintento — con el código viejo tampoco habría entrado. **No se pudo
+provocar una falla de transporte de las que sí lo disparan** (HTML o body perdido), así que la
+rama nueva no quedó ejercitada en su camino de reintento: lo que se verificó es que la
+invocación deja un solo par.
+
+**La corrida no completó.** `jm-20260806-135202` quedó en `(en curso) 3 · pasada por ítem ·
++159 s`, y seguía ahí a los 304 s. Esta vez las etapas 1+2 tardaron **159 s** contra los ≤125 s
+del 05/08, y no llegó a la etapa 4 — la corrida anterior sí, a los +324 s. **Se registra como
+observación; no se le atribuye causa acá.**
+
+### `C.4` · Superado el *34 con valor / 288 faltantes*
+
+Se midió sobre el denominador viejo de **195** tokens de plantilla; hoy son **172** (195 menos
+los 23 de la lámina escondida). El par no se vuelve a citar como número de referencia hasta
+que haya una corrida completa que lo mida sobre 172.
