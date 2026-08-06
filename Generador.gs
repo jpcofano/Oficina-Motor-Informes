@@ -757,6 +757,31 @@ function abrirCorrida_(fila) {
   return hoja.getLastRow();
 }
 
+/**
+ * Deja la etapa en curso en la fila abierta de `CORRIDAS` (18/08).
+ *
+ * **Escribe en el momento, no acumula.** Si acumulara y volcara al final, una corrida que
+ * muere no dejaría nada — que es exactamente el problema que `abrirCorrida_` acaba de
+ * resolver. Cuesta un `setValue` por etapa (cinco en total) y a cambio la fila dice **hasta
+ * dónde llegó**.
+ *
+ * Va en la columna `faltantes` a propósito: está libre hasta el final —ahí vive el marcador
+ * de "corrida en curso"— y `escribirCorrida_` la pisa con el número real al terminar. Sin
+ * columna nueva, sin `COLUMNAS_DELTA_`, sin tocar el esquema.
+ */
+function marcarEtapa_(numeroFila, etapa, t0) {
+  if (!numeroFila) return;
+  try {
+    var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
+    var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+    var col = headers.indexOf('faltantes') + 1;
+    if (col < 1) return;
+    var seg = Math.round((new Date().getTime() - t0) / 1000);
+    hoja.getRange(numeroFila, col).setValue('(en curso) ' + etapa + ' · +' + seg + ' s');
+    SpreadsheetApp.flush(); // sin esto el buffer puede morir con la corrida
+  } catch (e) { /* instrumentar nunca puede voltear la corrida */ }
+}
+
 function escribirCorrida_(fila, mapaTokens, numeroFila) {
   var serializado = JSON.stringify(mapaTokens);
   var entra = serializado.length <= TOPE_CELDA_MAPA_TOKENS_;
@@ -1200,6 +1225,9 @@ function generarInforme(informeId, periodoId) {
     faltantes: '(corrida en curso — si esto queda así, murió antes de terminar)'
   });
 
+  var t0Etapas = new Date().getTime();
+  marcarEtapa_(filaCorrida, '1 · expandir secciones repetibles', t0Etapas);
+
   var reemplazados = 0;
   var conValor = [];
   var faltantes = [];
@@ -1209,12 +1237,14 @@ function generarInforme(informeId, periodoId) {
   //     el deck ya expandido y todavía intacto.
   var expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana);
 
+  marcarEtapa_(filaCorrida, '2 · mapa token→objectId', t0Etapas);
   // 2 · El mapa, ANTES de tocar un solo token.
   var mapa = mapaTokenObjectId_(presentacion);
 
   // 3 · La pasada por ítem: cada slide emitida se pinta con **el contexto de su ítem** —
   //     el `id_cuenta` del encuentro, o la campaña con su propia ventana. Es lo que hace
   //     que `digital` deje de salir `«FALTA:…@digital_sin_cuenta»`.
+  marcarEtapa_(filaCorrida, '3 · pasada por ítem', t0Etapas);
   var porItem = [];
   expansion.asignaciones.forEach(function (asignacion) {
     var slide = null;
@@ -1271,6 +1301,7 @@ function generarInforme(informeId, periodoId) {
     });
   });
 
+  marcarEtapa_(filaCorrida, '4 · tokens fijos', t0Etapas);
   // 4 · Los tokens fijos, sobre todo lo que quedó. Los de las slides emitidas ya no están:
   //     la pasada anterior los reemplazó por valor o por `«FALTA»`.
   //
@@ -1323,6 +1354,7 @@ function generarInforme(informeId, periodoId) {
   //     una fila de `MARCADORES` sin caja donde escribirse, y hay que verla.
   var sinCajaEnPlantilla = Object.keys(porMarcador).filter(function (t) { return !(t in mapa.tokens); });
 
+  marcarEtapa_(filaCorrida, '5 · escribir faltantes', t0Etapas);
   var faltantesEscritos = escribirFaltantes_(faltantes);
   var celdaMapa = escribirCorrida_({
     corrida_id: corridaId,
