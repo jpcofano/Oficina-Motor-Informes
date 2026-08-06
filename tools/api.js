@@ -22,6 +22,9 @@
  *   --get           manda todo por query string en vez de body JSON (prueba doGet)
  *   --token=xxx     pisa el MOTOR_API_TOKEN de .env (para probar el rechazo)
  *   --crudo         imprime la respuesta tal cual vino, sin formatear
+ *   --reintentar    reintenta ante una falla de transporte. **No es el default.**
+ *                   Sólo lo pide quien sabe que la llamada NO escribe: ver el
+ *                   comentario del reintento, más abajo.
  */
 
 'use strict';
@@ -157,16 +160,25 @@ function opcion(argv, nombre) {
     opciones.headers['Content-Length'] = Buffer.byteLength(opciones.body);
   }
 
-  // Corrida nocturna 04/08 — el frontend de Google devuelve, de a ratos y sin patrón, un
-  // 404 en HTML o un pedido con el body perdido (el script corre con `accion: (vacía)` y
-  // rechaza por token). No es el motor ni la credencial: es transporte, y el reintento lo
-  // resuelve. Una respuesta JSON del motor, sea `ok` o no, se devuelve tal cual: eso sí se
-  // sabe que corrió.
+  // Corrida nocturna 04/08 — el frontend de Google devuelve, de a ratos, un 404 en HTML o un
+  // pedido con el body perdido (el script corre con `accion: (vacía)` y rechaza por token).
+  // No es el motor ni la credencial: es transporte. Una respuesta JSON del motor, sea `ok` o
+  // no, se devuelve tal cual: eso sí se sabe que corrió.
   //
-  // ⚠ **El caso HTML no se puede distinguir** de una corrida que sí ejecutó y cuya
-  // respuesta se perdió. Si la llamada escribe, el reintento puede escribir dos veces —
-  // hoy eso es un deck de más en la carpeta de salidas, que se borra. Antes de usar este
-  // cliente para algo con efecto irreversible, mirar esta línea.
+  // ⚠ 06/08 — **el reintento relanzaba la generación entera, y por eso ya no es el default.**
+  // El caso HTML no se distingue de una corrida que sí ejecutó y cuya respuesta se perdió,
+  // así que reintentar una llamada que escribe la ejecuta de nuevo. La corrección al
+  // comentario que estaba acá: **no aparece "sin patrón"**. Los decks de salida vienen en
+  // grupos separados por seis minutos exactos —20:08/20:14/20:20 del 05/08, y dos grupos más
+  // igual— que son la invocación original más los dos reintentos, cada uno copiando la
+  // plantilla y muriendo después en el límite de ejecución de Apps Script.
+  //
+  // El corte va por llamada y no por una lista blanca de nombres de `fn`: este cliente no
+  // conoce el motor —`llamar fn=` acepta cualquier global, y `eval` puede traer cualquier
+  // cosa adentro del snippet— y una lista acá envejece, porque cada lector nuevo nace sin
+  // reintento hasta que alguien se acuerde de agregarlo. Quien escribe el comando sí sabe si
+  // lo que pide escribe: lo declara con `--reintentar`, y sin eso no se reintenta nada.
+  const reintentar = Boolean(opcion(argv, 'reintentar'));
   let respuesta = await pedir(url, opciones);
   for (let intento = 1; intento <= 2; intento++) {
     const esHtml = /^\s*<!DOCTYPE|^\s*<html/i.test(respuesta.texto);
@@ -179,8 +191,15 @@ function opcion(argv, nombre) {
       } catch (e) { /* no es JSON: cae por `esHtml` o se reporta abajo */ }
     }
     if (!esHtml && !cuerpoPerdido) break;
-    console.error('Transporte: la respuesta ' + (esHtml ? 'vino en HTML (HTTP ' + respuesta.status + ')' : 'llegó sin el pedido') +
-      ' — reintento ' + intento + '/2');
+    const que = esHtml ? 'vino en HTML (HTTP ' + respuesta.status + ')' : 'llegó sin el pedido';
+    if (!reintentar) {
+      console.error('Transporte: la respuesta ' + que + ' — NO se reintentó, a propósito.');
+      console.error('Sin `--reintentar` este cliente asume que la llamada puede escribir, y un');
+      console.error('reintento sobre esta respuesta es indistinguible de volver a ejecutarla.');
+      console.error('Mirá si la llamada llegó a correr —CORRIDAS, la carpeta de salidas— antes de repetirla.');
+      break;
+    }
+    console.error('Transporte: la respuesta ' + que + ' — reintento ' + intento + '/2');
     respuesta = await pedir(url, opciones);
   }
   const texto = respuesta.texto;
