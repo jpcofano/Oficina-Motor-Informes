@@ -5120,3 +5120,58 @@ Medido con los dos criterios: *"empieza en la ventana"* da **0** y el **solape d
 también da 0**. No hay ninguna campaña que llegue a julio de 2026. **Un cero acá no dice nada
 sobre el criterio ni sobre el motor**, y es la misma solapa que `N1.b` acaba de declarar fuente
 de la lámina 7.
+
+---
+
+## `N4` / `T2.7` — el instrumento deja de mentir (2026-08-07) — commit de esta entrada
+
+`marcarEtapa_` tenía dos defectos y los dos producían **conclusiones falsas**, no sólo falta de
+información.
+
+**1 · Las cinco marcas se pisaban en la misma celda.** La fila sólo decía la última que llegó a
+escribirse, así que una corrida que murió en la etapa 4 podía dejar escrita la 1 y eso se lee
+como *"no arrancó"*. Ahora **cada marca sobrevive a la siguiente**: la celda acumula el
+recorrido con `›`. Cuesta un `getValue` por etapa —cinco en total— y a cambio la fila dice el
+camino, no un punto.
+
+**2 · El `catch` era vacío.** Si el instrumento fallaba, la fila quedaba con una etapa vieja y
+**eso se leía como diagnóstico**. Sigue sin poder voltear la corrida —eso está bien y no
+cambia— pero ahora el fallo se guarda en `fallosInstrumento_`, la corrida lo publica en
+`instrumento.fallos`, la celda de `CORRIDAS` lo dice, y el reporte del menú lo canta **arriba
+de todo**, porque cambia cómo se lee el resto.
+
+### Controles
+
+**Acumulación**, sobre una fila de scratch que se creó y se borró en el mismo control:
+
+```
+(en curso) 1 · expandir secciones repetibles +0s › 2 · mapa token→objectId +1s
+           › 3 · pasada por ítem +2s › 4 · tokens fijos +3s › 5 · escribir faltantes +3s
+```
+
+**Las cinco sobreviven.** La fila de scratch se borró (`CORRIDAS` vuelve a su largo anterior).
+
+**Instrumento sano vs. roto**, dos corridas cortas con una excepción inyectada en la etapa 2
+para no gastar 120 s cada una:
+
+| | `instrumento.fallos` |
+|---|---|
+| A · normal | `[]` |
+| B · con `SpreadsheetApp.flush` tirando | **3** — etapas 1, 2 y 5, las tres que se llamaron |
+
+En las dos la excepción **no escapó** y la fila cerró. `flush` y `mapaTokenObjectId_`
+restaurados.
+
+### Un error propio que cazó el control, y por eso el control valía
+
+El primer intento puso los dos avisos —excepción y instrumento— en un **ternario**, así que
+competían: con las dos cosas a la vez, la celda contaba **sólo la excepción**. Justo el caso
+en que más importa saber que el rastro de etapas no es confiable. Lo cazó el control B, que
+mostró `instrumento.fallos` con 3 entradas y una celda que no las mencionaba.
+
+`avisosDeLaFila_(n, fallo, fallosInstrumento)` los **acumula**. Verificado en los cuatro
+casos: sin avisos devuelve el número pelado (`270`), y con las dos devuelve
+`172 · ⚠ excepción … · ⚠ el instrumento falló 2 vez/veces …`.
+
+**Las 10 pruebas pasan.** Los dos decks de control, a la papelera; `FALTANTES` restaurado a sus
+270 filas. **Pendiente de verificación humana.**

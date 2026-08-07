@@ -828,18 +828,87 @@ function abrirCorrida_(fila) {
  * de "corrida en curso"— y `escribirCorrida_` la pisa con el número real al terminar. Sin
  * columna nueva, sin `COLUMNAS_DELTA_`, sin tocar el esquema.
  */
+/**
+ * `T2.7` (07/08) — el prefijo que distingue "esto es el rastro de etapas" de la marca inicial
+ * que deja `abrirCorrida_`. Sin él, la primera etapa se pegaría al texto de "corrida en curso"
+ * y la celda quedaría ilegible.
+ */
+var MARCA_ETAPAS_ = '(en curso) ';
+
+/**
+ * `T2.7` (07/08) — los fallos del propio instrumento.
+ *
+ * `marcarEtapa_` **no puede voltear la corrida**: eso está bien y no cambia. Lo que estaba mal
+ * es que tampoco dejaba rastro — un `catch` vacío. Si el instrumento falla, la fila queda
+ * diciendo una etapa vieja y **eso se lee como "murió ahí"**, que es una conclusión falsa
+ * fabricada por el instrumento mismo. Ahora el fallo se guarda y la corrida lo publica.
+ *
+ * Vive en una variable de módulo, así que **muere con la ejecución de Apps Script**. Se
+ * reinicia al empezar cada corrida para que no arrastre lo de la anterior en la misma
+ * invocación.
+ */
+var fallosInstrumento_ = [];
+
+function reiniciarInstrumento_() { fallosInstrumento_ = []; }
+
+function fallosDelInstrumento_() { return fallosInstrumento_.slice(); }
+
+/**
+ * `T2.7` (07/08) — lo que la columna `faltantes` de `CORRIDAS` dice al cerrar.
+ *
+ * Esa columna hace de campo de estado desde `abrirCorrida_`, y ahora puede tener que contar
+ * **dos cosas a la vez**: que la corrida murió por una excepción y que el instrumento que
+ * anotaba las etapas también falló. **No compiten.** Un ternario las hacía competir, y el
+ * control positivo cazó el caso: con las dos, la celda contaba sólo la excepción — justo
+ * cuando más importa saber que el rastro de etapas no es confiable.
+ *
+ * Sin advertencias devuelve el número pelado, que es el caso normal y el que hace que la
+ * columna siga sirviendo para contar.
+ */
+function avisosDeLaFila_(cuantosFaltantes, fallo, fallosInstrumento) {
+  var avisos = [];
+  if (fallo) {
+    avisos.push('⚠ excepción en la etapa "' + fallo.etapa + '": ' + fallo.mensaje);
+  }
+  if (fallosInstrumento && fallosInstrumento.length) {
+    avisos.push('⚠ el instrumento falló ' + fallosInstrumento.length + ' vez/veces — el rastro ' +
+      'de etapas no es confiable: ' +
+      fallosInstrumento.map(function (f) { return f.etapa + ' → ' + f.mensaje; }).join(' · '));
+  }
+  return avisos.length ? cuantosFaltantes + ' · ' + avisos.join(' · ') : cuantosFaltantes;
+}
+
 function marcarEtapa_(numeroFila, etapa, t0) {
   if (numeroFila) {
     try {
       var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
+      if (!hoja) throw new Error('la hoja CORRIDAS no existe');
       var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
       var col = headers.indexOf('faltantes') + 1;
-      if (col > 0) {
-        var seg = Math.round((new Date().getTime() - t0) / 1000);
-        hoja.getRange(numeroFila, col).setValue('(en curso) ' + etapa + ' · +' + seg + ' s');
-        SpreadsheetApp.flush(); // sin esto el buffer puede morir con la corrida
-      }
-    } catch (e) { /* instrumentar nunca puede voltear la corrida */ }
+      if (col < 1) throw new Error('CORRIDAS no tiene columna `faltantes`');
+
+      var seg = Math.round((new Date().getTime() - t0) / 1000);
+      var celda = hoja.getRange(numeroFila, col);
+      var previo = String(celda.getValue() || '');
+
+      // `T2.7` — **cada marca sobrevive a la siguiente.** Antes las cinco se pisaban en la
+      // misma celda y la fila sólo decía la última que llegó a escribirse: una corrida que
+      // moría en la etapa 4 podía dejar escrita la 1 si el `setValue` de la 4 no alcanzó a
+      // volcarse, y eso se leía como "no arrancó". Acumular cuesta un `getValue` por etapa
+      // —cinco en total— y a cambio la fila dice **el recorrido**, no un punto.
+      var marca = etapa + ' +' + seg + 's';
+      celda.setValue(previo.indexOf(MARCA_ETAPAS_) === 0
+        ? previo + ' › ' + marca
+        : MARCA_ETAPAS_ + marca);
+      SpreadsheetApp.flush(); // sin esto el buffer puede morir con la corrida
+    } catch (e) {
+      // Sigue sin poder voltear la corrida. Pero ya no desaparece.
+      fallosInstrumento_.push({
+        etapa: etapa,
+        mensaje: String((e && e.message) ? e.message : e)
+      });
+      try { console.error('marcarEtapa_ falló en "' + etapa + '": ' + e); } catch (e2) { /* ni el log */ }
+    }
   }
   // `T2.1.2` — devuelve la etapa para que la corrida sepa en cuál está sin repetir el
   // literal en una variable paralela. Si adentro salta una excepción, el cierre tiene que
@@ -1465,6 +1534,9 @@ function generarInformeConCache_(informeId, periodoId) {
     faltantes: '(corrida en curso — si esto queda así, murió antes de terminar)'
   });
 
+  // `T2.7` — el instrumento arranca limpio: lo que falle de acá en más es de esta corrida.
+  reiniciarInstrumento_();
+
   var t0Etapas = new Date().getTime();
 
   var reemplazados = 0;
@@ -1713,6 +1785,9 @@ function generarInformeConCache_(informeId, periodoId) {
   });
 
   marcarEtapa_(filaCorrida, '5 · escribir faltantes', t0Etapas);
+  // `T2.7` — se leen **después** de la última marca: cualquier fallo del instrumento ya
+  // ocurrió, y esta lista es lo que impide que un rastro incompleto se lea como diagnóstico.
+  var fallosDelReloj = fallosDelInstrumento_();
   var faltantesEscritos = escribirFaltantes_(faltantes);
   var celdaMapa = escribirCorrida_({
     corrida_id: corridaId,
@@ -1727,9 +1802,11 @@ function generarInformeConCache_(informeId, periodoId) {
     // `marcarEtapa_` la etapa en curso y ahí deja `abrirCorrida_` el "corrida en curso".
     // Una muerte por excepción sigue el mismo camino, con el conteo adelante para no
     // perderlo. Sin esto la fila cerraba con un número prolijo y no decía que murió.
-    faltantes: fallo
-      ? faltantes.length + ' · ⚠ excepción en la etapa "' + fallo.etapa + '": ' + fallo.mensaje
-      : faltantes.length
+    // `T2.7` — las dos advertencias se **acumulan**, no compiten. El primer intento las puso
+    // en un ternario y el control lo cazó: con excepción **y** instrumento roto, la celda
+    // sólo contaba la excepción. Justamente el caso en que más importa saber que el rastro
+    // de etapas no es confiable.
+    faltantes: avisosDeLaFila_(faltantes.length, fallo, fallosDelReloj)
   }, mapa.tokens, filaCorrida);
 
   var dueno = '';
@@ -1789,6 +1866,9 @@ function generarInformeConCache_(informeId, periodoId) {
     // por excepción haría que el menú mostrara sólo el mensaje de error y escondiera el
     // deck parcial, que es la evidencia.
     fallo: fallo,
+    // `T2.7` — el instrumento se reporta a sí mismo. Lista vacía es la respuesta normal, y es
+    // la que habilita a leer el rastro de etapas como evidencia.
+    instrumento: { fallos: fallosDelReloj },
     presupuesto: {
       techo_seg: reloj.presupuesto,
       reserva_seg: reloj.reserva,
@@ -1836,6 +1916,14 @@ function menuGenerarInformeCompleto_() {
       ' token(s) fuera del conteo: lámina(s) ' +
       r.tokens.excluidos_por_lamina_escondida.laminas.join(', ') +
       ' escondida(s) — no se emiten. Numeradas sobre el DECK EXPANDIDO, no sobre la plantilla)');
+  }
+  // `T2.7` — antes que nada: si el instrumento falló, **nada de lo que sigue se puede leer
+  // como diagnóstico**. Va arriba porque cambia cómo se lee el resto, no porque sea grave.
+  if (r.instrumento && r.instrumento.fallos.length) {
+    lineas.push('');
+    lineas.push('⚠ EL INSTRUMENTO FALLÓ ' + r.instrumento.fallos.length + ' vez/veces — el rastro ' +
+      'de etapas de la fila de CORRIDAS está incompleto y no sirve para diagnosticar:');
+    r.instrumento.fallos.forEach(function (f) { lineas.push('   ' + f.etapa + ' → ' + f.mensaje); });
   }
   // `T2.1.2` — si murió, va primero que el corte: son dos cosas distintas y confundirlas
   // manda el diagnóstico al presupuesto, que no tuvo nada que ver.
