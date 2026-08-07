@@ -1985,10 +1985,11 @@ donde hoy hay una lámina a cablear**:
 *hoy no tiene tokens*, y la diferencia sólo se puede resolver mirando qué se espera de cada
 lámina — no midiendo la plantilla. No se decidió cuál es cuál en la corrida que las encontró.
 
-### P3 · El paso 6 de "Marcar y clasificar una lámina" no dice cuál `estado` se marca
+### P3 · El último paso de "Marcar y clasificar una lámina" no dice cuál `estado` se marca
 
-El paso 6 de esa sección del `RUNBOOK` dice que **la sección** entra en `estado = revisar` al
-agregar una lámina, y eso es `SECCIONES.estado`. La tabla de la **Fase 3** en `docs/PLAN.md`
+El último paso de esa sección del `RUNBOOK` —el **5** desde que el addendum 1 a `D-23` fundió
+las fases y la sección quedó en cinco pasos; era el 6— dice que **la sección** entra en
+`estado = revisar` al agregar una lámina, y eso es `SECCIONES.estado`. La tabla de la **Fase 3** en `docs/PLAN.md`
 §2 declara que la hoja `LAMINAS` va a llevar **su propio `estado` y su propio `falta`**.
 Cuando esa hoja exista, el paso queda ambiguo: no dice cuál de los dos se marca.
 

@@ -5908,3 +5908,24 @@ autorizado** — no porque se haya prohibido, sino porque el campo dejó de exis
 Y queda escrita la frontera con la limpieza del ancla: **no entra acá y no necesita
 autorización de `C-01`**, porque actúa sobre la copia, que es salida del motor. `C-01` protege
 la plantilla, y la plantilla no se limpia nunca. **Sin código.**
+
+---
+
+## Parte C — el RUNBOOK pasa a un solo sellado y un solo campo (2026-08-07) — commit de esta entrada
+
+La sección *"Marcar y clasificar una lámina"* queda en **cinco pasos**: el sellado es uno solo
+y hace las tres cosas juntas —tomar el siguiente id, escribir la fila, anexar el ancla—, y la
+sección se declara en `LAMINAS`. El ancla tiene **un campo**, con el contador dicho: vive en la
+hoja y es **uno solo para las dos plantillas**.
+
+**El aviso de cabecera ahora cubre las tres cosas que no existen:** la función *Sellar
+plantilla*, la hoja `LAMINAS` y la **función que limpia el ancla**. Esta última se nombra sin
+nombre de menú definitivo: se decide al implementarla.
+
+El bloque del deck generado pasa a describir el ciclo completo — conserva el ancla, el texto de
+máquina **se ve mientras esté**, y una función a demanda lo limpia. **La consecuencia no
+desaparece: queda en manos del usuario cuándo termina.** Y se agrega que retirar una lámina es
+esconderla, no borrarla.
+
+El `P3` sobre cuál `estado` se marca **se corrigió en el mismo commit**: apuntaba al "paso 6" y
+la sección ahora tiene cinco. **Sin código.**

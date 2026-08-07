@@ -280,46 +280,54 @@ independencia.
 
 ## Marcar y clasificar una lámina
 
-> **⚠ Nada de los pasos 2 a 4 existe todavía.** *Sellar plantilla* **no está en el menú** y no
-> la vas a encontrar ahí: es la Fase 2a de `D-23`, sin implementar. **La hoja `LAMINAS` tampoco
-> existe**: es la Fase 3, y sin ella no hay dónde declarar la sección de una lámina. Esta
-> sección describe el flujo decidido el 07/08/2026 para que quede escrito antes de
-> construirlo, no una operación disponible hoy.
+> **⚠ Nada de lo que sigue existe todavía.** *Sellar plantilla* **no está en el menú** y no la
+> vas a encontrar ahí: es la Fase 2 de `D-23`, sin implementar. **La hoja `LAMINAS` tampoco
+> existe** — la crea la misma operación. Y **la función que limpia el ancla de un informe
+> generado tampoco**. Esta sección describe el flujo decidido el 07/08/2026 para que quede
+> escrito antes de construirlo, no una operación disponible hoy.
 
 1. **Agregás la lámina** a la plantilla en Slides, con números de ejemplo o vacía. **Es el
    único paso que no pasa por el motor**, y es provisorio: pedirla en lenguaje natural es la
    capa de panel de `docs/OBJETIVO_lamina_nueva.md`, que espera su turno. Diseñar la lámina
    es diseñar; clasificarla, marcarla y esconderla es administrar, y eso pasa por el motor.
-2. **Corrés *Sellar plantilla*** (Fase 2a). El motor anexa **`#lamina: L-NNN` a todas las
-   láminas**, y a las que ya tienen ancla **no las toca**. **No necesita que ninguna esté
-   clasificada**: asignar un id no requiere saber a qué sección pertenece la lámina, y por eso
-   este paso nunca se traba.
-3. **El motor reporta, por lote, las láminas cuya sección no se dedujo.** Todas juntas, no de
-   a una: parar en la primera obligaría a repetir la corrida una vez por lámina. **No se
-   adivina la sección de ninguna** — lo que no se deduce, se pregunta.
-4. **Declarás la sección de cada una en la hoja `LAMINAS`** (Fase 3) y volvés a correr el
-   sellado (Fase 2b), que escribe `#seccion:` **leyendo esa hoja**. La clasificación de una
-   lámina **no se declara en `SECCIONES`**: `D-23` la sacó de ahí, y `familia_tokens` queda
-   congelado hasta la Fase 4.
-5. **Se cablea:** cada número de ejemplo pasa a `{{token}}` y cada token nuevo lleva su fila
+2. **Corrés *Sellar plantilla*.** Por cada lámina sin ancla el motor hace las tres cosas
+   juntas: **toma el siguiente id de la hoja `LAMINAS`, escribe la fila y anexa
+   `#lamina: L-NNN` a las notas.** A las que ya tienen ancla **no las toca**. **Un solo
+   sellado, y nunca se traba**: asignar un id no requiere saber a qué sección pertenece la
+   lámina.
+3. **Declarás la sección** de cada lámina **en la hoja `LAMINAS`**, en la columna
+   `seccion_id`. La clasificación **no se declara en `SECCIONES`**: `D-23` la sacó de ahí, y
+   `familia_tokens` queda congelado hasta la Fase 4. **Una lámina sin fila se reporta, no se
+   adivina** — igual que una solapa no declarada en `SOLAPAS`.
+4. **Se cablea:** cada número de ejemplo pasa a `{{token}}` y cada token nuevo lleva su fila
    en `MARCADORES`. **El detalle de este paso está pendiente** y no se inventa acá.
-6. **La sección entra en `estado = revisar`** hasta que alguien la vio llena en una corrida.
+5. **La sección entra en `estado = revisar`** hasta que alguien la vio llena en una corrida.
 
-**Qué escribe el motor, y dónde.** El ancla vive en **las notas del orador** de cada lámina,
-en dos campos: `#lamina: L-NNN` (id global y opaco, se asigna una vez y no se reasigna nunca)
-y `#seccion: <seccion_id>`. **El motor anexa una línea; nunca reemplaza lo que haya** — si
-alguien del equipo escribió notas ahí, siguen estando. La autorización que lo permite es el
-addendum 1 a la suspensión acotada de `C-01` (`docs/REGLAS_NEGOCIO.md`), y **no cubre esconder
-láminas, insertarlas, borrarlas ni mover cajas**.
+**Qué escribe el motor, y dónde.** El ancla vive en **las notas del orador** de cada lámina y
+tiene **un solo campo**: `#lamina: L-NNN` — id global y opaco, se asigna una vez y **no se
+reasigna nunca**. El contador vive en la hoja `LAMINAS`, y es **uno solo para las dos
+plantillas**. **El motor anexa una línea; nunca reemplaza lo que haya** — si alguien del equipo
+escribió notas ahí, siguen estando. La autorización que lo permite es la suspensión acotada de
+`C-01` con sus dos addenda (`docs/REGLAS_NEGOCIO.md`), y **no cubre esconder láminas,
+insertarlas, borrarlas ni mover cajas**.
 
-**El deck generado conserva el ancla.** El motor **no la retira** al generar. Con tres
-numeraciones conviviendo —la de la plantilla, la del deck emitido y la de las copias de una
-sección repetible—, el ancla es la única forma estable de decir de qué modelo salió una lámina
-del deck publicado, y eso sirve justo cuando un número sale mal.
+**Retirar una lámina del uso es esconderla, no borrarla.** Su ancla y su fila quedan como
+histórico, y por eso ningún id se recicla.
 
-> **Consecuencia a tener presente:** las notas del orador del deck publicado van a llevar
-> texto de máquina. **Se ve en modo presentador y al imprimir con notas.** Es una decisión
-> tomada (usuario, 07/08/2026), no un descuido.
+**El deck generado conserva el ancla, y lo limpiás cuando querés.** El motor **no la retira**
+al generar: con tres numeraciones conviviendo —la de la plantilla, la del deck emitido y la de
+las copias de una sección repetible—, el ancla es la única forma estable de decir de qué
+modelo salió una lámina del deck publicado, y eso sirve justo cuando un número sale mal.
+**Cuando el deck deja de trabajarse, corrés la función que lo limpia.**
+
+- **No hay automatismo y no hay "informe cerrado":** el motor no decide cuándo terminaste.
+- **Actúa sólo sobre el informe generado.** Contra una plantilla **se niega**.
+- **La plantilla no se limpia nunca.** El ancla es su historia.
+
+> **Consecuencia a tener presente:** mientras el ancla esté, las notas del orador del deck
+> generado llevan texto de máquina, y **se ve en modo presentador y al imprimir con notas**.
+> No desaparece sola: **queda en tus manos cuándo limpiarla.** Es una decisión tomada
+> (usuario, 07/08/2026), no un descuido.
 
 ---
 
