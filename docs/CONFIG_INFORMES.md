@@ -86,30 +86,27 @@ tope y pasa a desbordar.
 **La fuente ya estaba resuelta:** la fila de la que salen los `camp_*` es **Seguimiento
 Digital**, fijada en **§4.1** de este mismo documento. No se repite acá — se apunta.
 
-> **⚠ CONTRADICCIÓN ABIERTA con lo que el usuario dijo más tarde el mismo día (07/08/2026).**
+> **✅ CONTRADICCIÓN RESUELTA — 07/08/2026, y ganó lo de arriba.**
 >
-> La respuesta `A.1` del prompt `2026-08-07_4_once_respuestas.md` dice, sobre **el mismo
-> tema** —selección de campaña destacada—:
+> Estuvo abierta unas horas contra `A.1` del prompt `2026-08-07_4_once_respuestas.md`, que
+> decía lo opuesto —*"por defecto la semana… si no, por temario"*—, siendo las dos "decisión
+> del usuario, 07/08/2026". **El usuario resolvió a favor del temario**, y esa versión quedó
+> derogada.
 >
-> > *"Por defecto **la semana**: entra la campaña cuyos días activos —entre fecha de inicio y
-> > fecha de fin— toquen la semana del informe. **Si no, por temario**."*
+> **La regla general vive en `R-17`** (`docs/REGLAS_NEGOCIO.md`), con los tres niveles en
+> orden: el temario selecciona, los filtros de `R-15` acotan lo que eligió, y **la semana es el
+> fallback, no un filtro previo**. `R-16` recibió un addendum que declara qué parte suya quedó
+> superseded.
 >
-> Lo de arriba dice exactamente lo opuesto: **el temario selecciona y el período no**, sin
-> filtro de ventana, y con un caso testigo medido (San Cristóbal 23/07 con ventana 24–30/07,
-> §1.7). **Las dos son "decisión del usuario, 07/08/2026".**
+> **Esta sección conserva la decisión editorial de `jm` y el caso testigo, y deja de ser donde
+> se lee la regla general.** Para la prioridad entre regímenes: `R-17`.
 >
-> **No se eligió ninguna.** El texto de arriba **no se tocó** y `R-16` quedó escrita con la
-> otra versión y con esta misma advertencia. Lo único que se ejecutó el 07/08 es el solape
-> sobre **los agregados**, que es donde las dos versiones coinciden (*"la ventana agrega"*).
-> **La sección `campana` no se tocó.**
->
-> Para resolverla hace falta una sola aclaración: **si la semana es un filtro previo al
-> temario, o si el temario manda solo.**
+> **Nada se movió**: `R-16` nunca se cableó sobre la sección `campana`, y el código ya hacía lo
+> que `R-17` fija.
 
 Preguntas que siguen abiertas:
 - **[?]** Si una campaña cruza dos semanas, ¿se muestra acumulada o solo el tramo de
   la semana? Esto **cambia el número**, no solo la presentación.
-- **[?]** ⚠ **La contradicción de arriba** — semana-primero contra temario-solo.
 
 ### 1.2 Período
 
