@@ -1452,7 +1452,23 @@ var SEED_CONFIG_DEFAULTS_ = {
   // Paso 2.9F: el umbral de confianza del anclaje sale del código (era una
   // constante en Union.gs) y pasa a ser parámetro de negocio — cambiarlo ya no
   // exige clasp push. Ver umbralAnclajeReunion_() en Union.gs.
-  umbral_anclaje_reunion: '0.6'
+  umbral_anclaje_reunion: '0.6',
+  // T2.1.1 (06/08): el reloj de la corrida. Mismo patrón que el umbral — helper
+  // como único lector en Generador.gs, constante de módulo sólo como default.
+  // Bajar `presupuesto_corrida_seg` a 60 desde la hoja es la forma barata de
+  // probar el corte sin esperar a que la plataforma mate la corrida.
+  //
+  // 350 NO es un número medido: es el techo duro de Apps Script (360 s) menos lo
+  // que el llamador de menú gasta antes de entrar (~2 s) y un colchón.
+  presupuesto_corrida_seg: '350',
+  // 30 sale del cierre medido en 0,8 s más la barrida final (~6 s reusando el
+  // mapa de la etapa 2) más margen: tokensPorSlide_ dio 10,8 s y 26,9 s el mismo
+  // día, y la reserva es lo único que no se puede quedar corto.
+  reserva_cierre_seg: '30',
+  // 240 sale del banco de medición del 06/08, NO de una corrida:
+  // resolverMarcadores('jm', {}) costó 238,9 s. Es atómico —no acepta resolver un
+  // subconjunto—, así que la única decisión posible es entrar o no entrar.
+  costo_resolucion_etapa4_seg: '240'
 };
 
 /**

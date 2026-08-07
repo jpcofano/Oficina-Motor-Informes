@@ -1163,6 +1163,96 @@ function verificarObjectIdDeCorrida_(corridaId, token) {
   };
 }
 
+// ============================================================================
+// T2.1.1 — el reloj de la corrida
+// ============================================================================
+
+/**
+ * Los tres valores viven en `CONFIG` (`T2.1.1`, addendum del 06/08). Estas constantes son
+ * **sólo el default si la hoja no los tiene cargados**: nunca se leen directo, siempre por
+ * su helper. Mismo patrón que `umbralAnclajeReunion_()` (`Paso 2.9F`) — cambiar cualquiera
+ * de los tres no exige `clasp push`.
+ *
+ * De dónde sale cada número, porque no son de la misma clase:
+ *   - `350` **no es medido**: es el techo duro de Apps Script (360 s) menos lo que el
+ *     llamador de menú gasta antes de entrar (~2 s) y un colchón. La plataforma cuenta desde
+ *     `doPost` o desde el trigger, no desde acá.
+ *   - `30` sale del cierre **medido** en 0,8 s (`escribirFaltantes_` 455 ms +
+ *     `escribirCorrida_` 117 ms + dueño/nombre/url 259 ms) más la barrida (~6 s reusando el
+ *     mapa de la etapa 2) más margen por varianza: `tokensPorSlide_` dio 10,8 s y 26,9 s el
+ *     mismo día.
+ *   - `240` sale del **banco de medición del 06/08, no de una corrida**:
+ *     `resolverMarcadores('jm', {})` costó 238,9 s.
+ */
+var PRESUPUESTO_CORRIDA_SEG_DEFECTO_ = 350;
+var RESERVA_CIERRE_SEG_DEFECTO_ = 30;
+var COSTO_RESOLUCION_ETAPA4_SEG_DEFECTO_ = 240;
+
+/** Motivo de `FALTANTES` que distingue el corte por tiempo de un token sin cablear. */
+var MOTIVO_CORTE_TIEMPO_ = 'corte por tiempo: la corrida se quedó sin presupuesto antes de resolver este token';
+
+function presupuestoCorridaSeg_() {
+  var valor = Number(leerConfig().presupuesto_corrida_seg);
+  return isNaN(valor) || valor <= 0 ? PRESUPUESTO_CORRIDA_SEG_DEFECTO_ : valor;
+}
+
+function reservaCierreSeg_() {
+  var valor = Number(leerConfig().reserva_cierre_seg);
+  return isNaN(valor) || valor <= 0 ? RESERVA_CIERRE_SEG_DEFECTO_ : valor;
+}
+
+function costoResolucionEtapa4Seg_() {
+  var valor = Number(leerConfig().costo_resolucion_etapa4_seg);
+  return isNaN(valor) || valor <= 0 ? COSTO_RESOLUCION_ETAPA4_SEG_DEFECTO_ : valor;
+}
+
+/**
+ * El único lugar del flujo que hace cuentas de tiempo. Devuelve si entra un trabajo que se
+ * estima en `costoSeg`, dejando la reserva del cierre intacta.
+ *
+ * `reloj` es `{ t0, presupuesto, reserva }`, armado una sola vez al entrar a
+ * `generarInforme`. Ninguna otra parte arranca un cronómetro por su lado.
+ */
+function relojDeCorrida_() {
+  return { t0: new Date().getTime(), presupuesto: presupuestoCorridaSeg_(), reserva: reservaCierreSeg_() };
+}
+
+function segundosGastados_(reloj) {
+  return Math.round((new Date().getTime() - reloj.t0) / 1000);
+}
+
+function entraEnElPresupuesto_(reloj, costoSeg) {
+  var gastado = (new Date().getTime() - reloj.t0) / 1000;
+  var disponible = reloj.presupuesto - reloj.reserva - gastado;
+  return { entra: disponible >= costoSeg, disponible: Math.round(disponible), gastado: Math.round(gastado) };
+}
+
+/**
+ * La barrida final: ningún `{{token}}` crudo sobrevive a una corrida, se haya cortado o no.
+ *
+ * Reusa el mapa de la etapa 2 —`mapaTokenObjectId_` devuelve los mismos tokens que
+ * `tokensPorSlide_`, verificado el 06/08: 195 y 195— porque re-escanear el deck cuesta
+ * 10-27 s y leer el mapa cuesta cero. Si el corte llegó antes de la etapa 2 no hay mapa, y
+ * ahí sí se escanea; el retorno dice por cuál de los dos caminos fue.
+ */
+function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa) {
+  var origen = 'mapa de la etapa 2';
+  var tokens = tokensDelMapa ? Object.keys(tokensDelMapa) : null;
+  if (!tokens) {
+    origen = 'tokensPorSlide_ (no había mapa: el corte llegó antes de la etapa 2)';
+    tokens = Object.keys(tokensPorSlide_(presentacion));
+  }
+
+  var barridos = [];
+  tokens.sort().forEach(function (token) {
+    // `replaceAllText` no falla si el token ya no está: los que la corrida sí alcanzó
+    // devuelven cero reemplazos y no cuestan una lectura previa.
+    var n = presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token), true);
+    if (n > 0) barridos.push(token);
+  });
+  return { barridos: barridos, origen: origen };
+}
+
 /**
  * Paso 4 — copia la plantilla, reemplaza los `{{token}}` por su `valor_formateado`, escribe
  * `«FALTA:token»` en los que no tienen valor, guarda en `CONFIG.carpeta_salida` y devuelve
@@ -1177,6 +1267,12 @@ function verificarObjectIdDeCorrida_(corridaId, token) {
  * es la armonización (`Armonizar.gs`), y es otra función.
  */
 function generarInforme(informeId, periodoId) {
+  // T2.1.1 — el reloj arranca acá y es el único de la corrida. Ojo: la plataforma cuenta
+  // desde `doPost` o desde el trigger del menú, no desde esta línea; lo que gasta el
+  // llamador antes de entrar ya está descontado en el default de `presupuesto_corrida_seg`.
+  var reloj = relojDeCorrida_();
+  var corte = null;
+
   var informe = leerInformes()[informeId];
   if (!informe) return { ok: false, motivo: 'No hay fila "' + informeId + '" en INFORMES' };
   if (!informe.plantilla_id) return { ok: false, motivo: 'INFORMES.' + informeId + '.plantilla_id está vacío' };
@@ -1246,14 +1342,39 @@ function generarInforme(informeId, periodoId) {
   //     que `digital` deje de salir `«FALTA:…@digital_sin_cuenta»`.
   marcarEtapa_(filaCorrida, '3 · pasada por ítem', t0Etapas);
   var porItem = [];
-  expansion.asignaciones.forEach(function (asignacion) {
+  // T2.1.1 — el costo del ítem anterior **de esta misma corrida**. Arranca en 0 a propósito:
+  // el primer ítem no tiene observación previa, así que entra si queda algo sobre la reserva.
+  // No hay ninguna constante de segundos acá: el costo por ítem es un dato de la corrida.
+  var costoUltimoItemSeg = 0;
+  // `for` y no `forEach` porque el corte tiene que poder salir del loop sin excepción.
+  for (var iAsignacion = 0; iAsignacion < expansion.asignaciones.length; iAsignacion++) {
+    var asignacion = expansion.asignaciones[iAsignacion];
+
+    // Checkpoint 1 · antes de cada ítem.
+    var chequeoItem = entraEnElPresupuesto_(reloj, costoUltimoItemSeg);
+    if (!chequeoItem.entra) {
+      corte = {
+        etapa: '3 · pasada por ítem',
+        item: asignacion.item.clave,
+        items_emitidos: porItem.length,
+        items_sin_emitir: expansion.asignaciones.length - iAsignacion,
+        segundos: chequeoItem.gastado,
+        disponible_seg: chequeoItem.disponible,
+        estimado_seg: costoUltimoItemSeg,
+        motivo: 'el próximo ítem se estimó en ' + costoUltimoItemSeg + ' s (lo que costó el ' +
+          'anterior) y quedaban ' + chequeoItem.disponible + ' s por encima de la reserva'
+      };
+      break;
+    }
+    var t0Item = new Date().getTime();
+
     var slide = null;
     presentacion.getSlides().forEach(function (s) {
       if (s.getObjectId() === asignacion.objectIdSlide) slide = s;
     });
     if (!slide) {
       porItem.push({ seccion: asignacion.seccion, item: asignacion.item.clave, ok: false, motivo: 'la slide emitida no se encontró por objectId' });
-      return;
+      continue;
     }
 
     var resolucionItem = resolverMarcadores(informeId, asignacion.item.opciones);
@@ -1299,7 +1420,9 @@ function generarInforme(informeId, periodoId) {
       resumen: resolucionItem.resumen,
       motivo: asignacion.item.motivo
     });
-  });
+
+    costoUltimoItemSeg = Math.ceil((new Date().getTime() - t0Item) / 1000);
+  }
 
   marcarEtapa_(filaCorrida, '4 · tokens fijos', t0Etapas);
   // 4 · Los tokens fijos, sobre todo lo que quedó. Los de las slides emitidas ya no están:
@@ -1310,8 +1433,38 @@ function generarInforme(informeId, periodoId) {
   //     su propia cadena — un marcador con `periodo_ref` propio tiene que seguir usándolo
   //     (`B.5`: el encabezado dice el período del informe, pero un token con ventana propia
   //     se calcula con la suya).
-  var resolucion = resolverMarcadores(informeId, periodoId ? { ventana: ventana } : {});
+  //
+  // Checkpoint 2 (`T2.1.1`) · **la resolución de esta etapa es atómica**: `resolverMarcadores`
+  // no acepta un subconjunto —verificado en la Parte 0—, así que la única decisión posible es
+  // entrar o no entrar, contra `costo_resolucion_etapa4_seg`. El loop de pintado que viene
+  // después **no lleva checkpoint**: cuesta ~6 s, menos que la reserva, y cortarlo por la
+  // mitad dejaría tokens crudos sin ganar nada.
+  var resolucion = { resultados: [], resumen: null };
   var porMarcador = {};
+
+  if (corte) {
+    // Ya se cortó en la etapa 3. Un corte es un corte: no se abre una etapa nueva.
+  } else {
+    var costoEtapa4 = costoResolucionEtapa4Seg_();
+    var chequeoEtapa4 = entraEnElPresupuesto_(reloj, costoEtapa4);
+    if (!chequeoEtapa4.entra) {
+      corte = {
+        etapa: '4 · tokens fijos',
+        item: '',
+        items_emitidos: porItem.length,
+        items_sin_emitir: 0,
+        segundos: chequeoEtapa4.gastado,
+        disponible_seg: chequeoEtapa4.disponible,
+        estimado_seg: costoEtapa4,
+        motivo: 'la resolución de la etapa 4 es atómica y se estima en ' + costoEtapa4 +
+          ' s; quedaban ' + chequeoEtapa4.disponible + ' s por encima de la reserva'
+      };
+    }
+  }
+
+  if (!corte) {
+  var resolucionEtapa4 = resolverMarcadores(informeId, periodoId ? { ventana: ventana } : {});
+  resolucion = resolucionEtapa4;
   resolucion.resultados.forEach(function (r) { porMarcador[r.marcador] = r; });
 
   var tokensFijos = tokensPorSlide_(presentacion);
@@ -1349,10 +1502,30 @@ function generarInforme(informeId, periodoId) {
         : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó'
     });
   });
+  }
 
   // 5 · Marcadores cableados que la plantilla no tiene. No es un faltante del informe: es
   //     una fila de `MARCADORES` sin caja donde escribirse, y hay que verla.
   var sinCajaEnPlantilla = Object.keys(porMarcador).filter(function (t) { return !(t in mapa.tokens); });
+
+  // T2.1.1 · la barrida final. **Corre siempre, haya habido corte o no**: es lo único que
+  // garantiza que el deck no salga con `{{token}}` crudos, y por eso vive adentro de la
+  // reserva y no detrás de un checkpoint. En una corrida completa no encuentra nada.
+  var barrida = barrerTokensNoAlcanzados_(presentacion, mapa && mapa.tokens);
+  barrida.barridos.forEach(function (token) {
+    faltantes.push({
+      corrida_id: corridaId,
+      informe_id: informeId,
+      token: token,
+      base_id: '',
+      solapa: '',
+      campo_logico: '',
+      // Sin corte no debería quedar ninguno: si aparece, no se lo disfraza de corte.
+      motivo: corte
+        ? MOTIVO_CORTE_TIEMPO_ + ' (' + corte.etapa + ')'
+        : '⚠ quedó crudo en el deck sin que hubiera corte por tiempo — revisar'
+    });
+  });
 
   marcarEtapa_(filaCorrida, '5 · escribir faltantes', t0Etapas);
   var faltantesEscritos = escribirFaltantes_(faltantes);
@@ -1405,7 +1578,18 @@ function generarInforme(informeId, periodoId) {
     // salió por `D-19` no puede desaparecer en silencio.
     repetibles: { secciones: expansion.reporte, items: porItem },
     faltantes_escritos: faltantesEscritos,
-    mapa_tokens: { cabe_en_la_celda: celdaMapa.entra, caracteres: celdaMapa.caracteres }
+    mapa_tokens: { cabe_en_la_celda: celdaMapa.entra, caracteres: celdaMapa.caracteres },
+    // `T2.1.1` · `null` si la corrida hizo todo el trabajo. **Una corrida cortada no es una
+    // corrida fallida**: produjo un deck y una lista, así que sigue siendo `ok: true` —
+    // `ok: false` queda para los casos que ya lo devolvían, que son precondiciones que ni
+    // llegan a copiar la plantilla.
+    corte: corte,
+    presupuesto: {
+      techo_seg: reloj.presupuesto,
+      reserva_seg: reloj.reserva,
+      gastado_seg: segundosGastados_(reloj),
+      barrida: { tokens: barrida.barridos.length, origen: barrida.origen }
+    }
   };
 }
 
@@ -1436,6 +1620,18 @@ function menuGenerarInformeCompleto_() {
     '',
     'Tokens: ' + r.tokens.reemplazados + ' con valor de ' + r.tokens.en_plantilla + ' · ' + r.tokens.faltantes + ' en FALTA'
   ];
+  // `T2.1.1` — si cortó, se dice primero: el deck es válido pero está incompleto, y quien
+  // lo mira tiene que saberlo antes que ningún conteo.
+  if (r.corte) {
+    lineas.push('');
+    lineas.push('⚠ CORTE POR TIEMPO en la etapa ' + r.corte.etapa +
+      ' a los ' + r.corte.segundos + ' s (techo ' + r.presupuesto.techo_seg +
+      ' s, reserva ' + r.presupuesto.reserva_seg + ' s).');
+    lineas.push('   ' + r.corte.motivo);
+    if (r.corte.items_sin_emitir) lineas.push('   Ítems sin emitir: ' + r.corte.items_sin_emitir);
+    lineas.push('   El deck no tiene tokens crudos: ' + r.presupuesto.barrida.tokens +
+      ' quedaron como «FALTA:…» y están en FALTANTES con el motivo del corte.');
+  }
   r.repetibles.secciones.forEach(function (s) {
     lineas.push('  ' + (s.ok ? '·' : '⚠') + ' ' + s.seccion + ': ' + (s.motivo || ((s.emitidos || []).length + ' emitido(s)')));
     (s.excluidos || []).forEach(function (e) { lineas.push('      excluida ' + e.campana + ' — ' + e.motivo); });
