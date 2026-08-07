@@ -5736,3 +5736,20 @@ devuelven mucho más. **Hay causa candidata, no medida** —una corrida no es un
 (`CLAUDE.md` §4)— y con este margen **`T2.3` (reanudar) vuelve al camino crítico**.
 
 Los cinco ítems de `encuentro` siguen igual: sólo Orden Público pinta (11).
+
+---
+
+## `MAPEO` por letra: el pendiente anotado, no implementado (2026-08-07) — commit de esta entrada
+
+`docs/PENDIENTES_consistencia.md` gana un `P0`: la columna se resuelve por **posición** y una
+columna insertada en una base ajena corre el mapeo sin síntoma. La Parte 0 midió lo que hacía
+falta para escribirlo: **dos caminos**, no uno —índice directo sobre la fila cruda
+(`leerFuente`, `filtrosValoresIncluidos_`, `verificarPrecondicionAnclaje_`, …) y letra →
+encabezado → objeto fila (`encabezadoEnColumna_`/`valorPorColumna_`, que **parece** ir por
+nombre y no va)—; **cero** decisiones que deroguen (`grep "letra"` sobre `PLAN.md` y
+`REGLAS_NEGOCIO.md`); `D-21` como respaldo de que el fallback no puede ser silencioso; y la
+superficie contra la planilla viva: **140 entradas, las 140 con `columna` cargada**.
+
+No es el `P1 · Firma de encabezados`: aquél detecta el cambio, éste lo sobrevive. Van los dos.
+De dónde sale el nombre —columna nueva en `MAPEO` o derivarlo de `SOLAPAS.fila_encabezado`—
+queda planteado sin elegir: es el prompt siguiente. **Sin código.**

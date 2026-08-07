@@ -1888,6 +1888,73 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
   > son constantes del año o se recalculan contra el período anterior? Si son constantes,
   > `MARCADORES.valor_fijo` los resuelve sin código.
 
+### P0 · `MAPEO` resuelve la columna por letra, sin nombre: una columna insertada corre el mapeo
+
+**Qué pasa hoy.** `MAPEO.columna` guarda una **letra** (`K`, `E`, `AA`, …) y se resuelve
+posicionalmente con `columnaLetraAIndice_` (`Fuentes.gs`). La conversora es una sola, pero
+se consume **por dos caminos**, y los dos tienen el mismo problema:
+
+- **Índice directo sobre la fila cruda.** La letra se vuelve índice y se lee `fila[idx]`.
+  Lo hacen `leerFuente` (clave, `fecha_periodo` y `fecha_fin_periodo` — o sea **qué filas
+  entran al período**), `filtrosValoresIncluidos_` (el índice de la lista blanca de `D-21`,
+  que después consumen `filaPasaListaBlanca_`, `comaDentroDeUnValor_` y
+  `valoresDeclaradosSinFilas_`), `verificarPrecondicionAnclaje_` (`Union.gs`),
+  `tipificarColumna_` (`Fechas.gs`, vía `diagnosticarBases`) y `diagnosticoColumnaFecha_`.
+  En diagnóstico y pruebas: `auditarAlcanceDigital_`, `diagnosticoCorteFilasM2_`,
+  `diagnosticoFilasSinClaveDigital_`, `diagnosticarColapso_` y `censoCanalesRdv_`.
+- **Letra → encabezado → objeto fila.** `encabezadoEnColumna_` (`Union.gs`) convierte la
+  letra a índice **sólo para averiguar el nombre del encabezado**, y `valorPorColumna_`
+  indexa la fila-objeto por ese nombre. Parece resolver por nombre, pero **el ancla sigue
+  siendo la letra**: con una columna insertada devuelve el encabezado equivocado y por lo
+  tanto el valor equivocado. Es el camino que pinta los marcadores del informe —
+  `datosDeMarcador_`, `aplicarFiltroDeMarcador_`, `partirCampoRatio_` y `resolverMarcadores`
+  (`Generador.gs`), `unirDigitalPorCuentaSinCache_`, `encontrarFilaRdvDeReunion_` y
+  `anclarEncuentrosSinCache_` (`Union.gs`), `calcularTokenDirectoRdv_` (`Marcadores.gs`).
+
+**Por qué importa.** Las cuatro bases tienen dueños ajenos: el motor sólo lee, y nadie le
+avisa cuando alguien inserta o mueve una columna. Cuando eso pasa, el mapeo sigue apuntando
+a la misma **posición** y el motor devuelve el dato de **otra columna** sin fallar. No hay
+síntoma: no hay excepción, no hay `«FALTA:token»`, no hay fila de menos. Sale un número
+plausible y equivocado, que es el modo de falla caro del proyecto. Y en `leerFuente` es
+peor que un token mal: si lo que se corre es la columna de fecha o la clave, cambia **el
+conjunto de filas** sobre el que se calcula todo lo demás.
+
+**La forma propuesta.** Resolver por **nombre de encabezado**, normalizado con la forma que
+fija `R-10` (colapsar `/\s+/` a un espacio y `trim()`, **preservando mayúsculas y
+acentos**), y **caer a la letra** sólo si ese nombre no aparece en la fila de encabezado de
+la solapa. El fallback **no puede ser silencioso**: se reporta en la traza del marcador,
+por `D-21` — *"nada se excluye en silencio"*. Un fallback mudo reintroduce exactamente el
+problema que el ítem viene a sacar, con la ventaja engañosa de que ahora parece resuelto.
+
+El segundo camino (`encabezadoEnColumna_`) es el que sale casi solo: ya tiene el encabezado
+real a mano y sólo hay que invertir la dirección de la resolución.
+
+**Qué lo destraba: de dónde sale el nombre.** El repo permite al menos dos formas, y **este
+ítem no elige** — elegir es el prompt que viene después:
+
+- una **columna nueva en `MAPEO`** (`encabezado`, junto a `columna`), sembrada por
+  `SEED_MAPEO_*`, que declara el nombre esperado;
+- **derivarlo en el momento de resolver**, leyendo la fila que declara
+  `SOLAPAS.fila_encabezado` y guardando el nombre que hoy tiene la letra — con lo cual la
+  primera corrida fija la referencia y las siguientes la verifican.
+
+**No supersede ninguna decisión.** `grep -n "letra" docs/PLAN.md docs/REGLAS_NEGOCIO.md`
+da **cero**: ninguna `D-NN` ni `R-NN` fija la columna por letra. Es una implementación
+heredada, no una decisión tomada. Si al implementarlo hace falta una `D-NN`, se escribe
+ahí, no acá.
+
+**No es el ítem `P1 · Firma de encabezados`, y no lo reemplaza.** Aquél **detecta** que la
+fila de encabezado cambió y falla ruidosamente; éste hace que el mapeo **siga siendo
+correcto** cuando cambió. La firma frena todo, incluso ante un cambio inocuo; el nombre
+resuelve bien y sólo canta cuando no encuentra el encabezado. Van los dos.
+
+**Superficie, medida** (`node tools/api.js registros hoja=MAPEO`, 07/08/2026): **140
+entradas `(base, solapa, campo_logico)` en 13 solapas — `digital` 78, `looker` 27, `m2` 19,
+`rdv` 16 — y las 140 tienen `columna` cargada. Ninguna sin columna.** El cambio cubre todo
+`MAPEO`, no una parte. (El número sale de `leerMapeo`, que es lo que el motor resuelve; dos
+filas con el mismo `campo_logico` en la misma solapa colapsarían a una. Las filas crudas de
+la hoja no se midieron.)
+
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 
 Su bloque "Antes de empezar" todavía reabre la decisión Looker-vs-SD y el alcance del
