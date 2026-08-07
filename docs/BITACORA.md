@@ -5480,3 +5480,32 @@ llamada de inserción de filas de Slides en el repo. La cuarta la agrega una per
 que exista el mecanismo.
 
 **Las 10 pruebas pasan** y el anclaje sigue dando los cinco encuentros idénticos.
+
+---
+
+## `B.3` — `resumen_ejecutivo` deja de ser repetible, y `camp_bench_*` sigue abierta (2026-08-07) — commit de esta entrada
+
+**`resumen_ejecutivo`: `repetible` → `unica`**, y `itera_sobre` de `entidad (JM / GCBA)` a
+vacío. Aplicado con `curarSecciones_` y en `SEED_SECCIONES_`.
+
+**Está medido que no puede ser repetible:** los tokens de GCBA llevan **prefijo propio**
+(`gcba_mail_envios`, `gcba_imp_total`…), así que las láminas 2 y 3 no son una lámina modelo
+iterada sobre dos entidades — son **dos láminas con tokens distintos**.
+
+**No cambia ningún comportamiento, y eso también se verificó:** `seccionesRepetiblesDe_('jm')`
+devolvía y sigue devolviendo `encuentro`, `comunicaciones_post`, `campana`. La fila nunca
+entraba, porque no declara `familia_tokens`. `repetible` era **una etiqueta que no hacía nada y
+contradecía lo medido**; se corrige la etiqueta.
+
+### `camp_bench_*` — se buscó, no alcanzó, queda anotada
+
+`B.3` mandaba resolverla *"según lo que diga `A.1`/`A.5`"*. **Ninguna de las dos la toca**, y el
+motivo es de forma, no de detalle: `A.1` decide **qué campañas entran**, `A.5` decide **con qué
+criterio de fecha**, y `camp_bench_*` pregunta **de dónde sale un número de referencia** — que
+no es una fila que entre o salga de una ventana.
+
+Sigue siendo una pregunta de una línea: ¿los seis `camp_bench_{google,meta,prog}_{ctr,vtr}` son
+constantes del año o se recalculan contra el período anterior? **Si son constantes,
+`MARCADORES.valor_fijo` los resuelve sin código.**
+
+Las 10 pruebas pasan.

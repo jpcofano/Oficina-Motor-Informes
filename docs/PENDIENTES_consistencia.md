@@ -1861,6 +1861,17 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
   del período anterior?— y nunca se respondió. Confundirlos lo daría por cerrado.
   *(Pasa a viñeta el 06/08/2026; el texto no cambió de sentido.)*
 
+  > **Sigue abierta después del 07/08, y conviene decir por qué se buscó.** `B.3` de las once
+  > respuestas mandaba resolverlo *"según lo que diga `A.1`/`A.5`"* — la selección de campaña
+  > destacada y el paso a solape. **Ninguna de las dos lo toca:** `A.1` decide **qué campañas
+  > entran**, `A.5` decide **con qué criterio de fecha**, y `camp_bench_*` pregunta **de dónde
+  > sale un número de referencia** — que no es una fila que entre o salga. Se buscó, no
+  > alcanzó, y queda anotado como el prompt indica.
+  >
+  > **Sigue siendo una pregunta de una sola línea:** ¿los seis `camp_bench_{google,meta,prog}_{ctr,vtr}`
+  > son constantes del año o se recalculan contra el período anterior? Si son constantes,
+  > `MARCADORES.valor_fijo` los resuelve sin código.
+
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 
 Su bloque "Antes de empezar" todavía reabre la decisión Looker-vs-SD y el alcance del

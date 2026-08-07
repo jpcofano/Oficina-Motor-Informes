@@ -2031,7 +2031,14 @@ var SEED_SECCIONES_ = [
   // Primer nivel
   filaSeccion_({ id: 'portada', orden: 1, nombre: 'Portada', informes: 'JM,SECCO', modo: 'unica' }),
   filaSeccion_({ id: 'indice', orden: 2, nombre: 'Índice', informes: 'SECCO', modo: 'unica' }),
-  filaSeccion_({ id: 'resumen_ejecutivo', orden: 3, nombre: 'Resumen Ejecutivo', informes: 'JM', modo: 'repetible', itera: 'entidad (JM / GCBA)', estado: 'manual', falta: 'es redacción, no dato' }),
+  // `B.3` (07/08) — pasó de `repetible` a `unica`, y de `itera: entidad (JM / GCBA)` a nada.
+  // **Está medido que no puede ser repetible**: los tokens de GCBA llevan **prefijo propio**
+  // (`gcba_mail_envios`, `gcba_imp_total`…), así que las dos láminas no son una lámina modelo
+  // iterada sobre dos entidades — son dos láminas con tokens distintos, la 2 y la 3.
+  // **No cambia ningún comportamiento:** la fila nunca entró a `seccionesRepetiblesDe_`
+  // porque no declara `familia_tokens`, así que `repetible` era una etiqueta que no hacía
+  // nada y contradecía lo medido. Se corrige la etiqueta.
+  filaSeccion_({ id: 'resumen_ejecutivo', orden: 3, nombre: 'Resumen Ejecutivo', informes: 'JM', modo: 'unica', estado: 'manual', falta: 'es redacción, no dato' }),
   filaSeccion_({ id: 'analisis_comparativo', orden: 4, nombre: 'Análisis comparativo Imagen (interanual)', informes: 'SECCO', modo: 'repetible', itera: 'red social', estado: 'manual', falta: 'sin marcar en la plantilla; fuente de la serie interanual' }),
   filaSeccion_({ id: 'semana_jm_conversacion', orden: 5, nombre: 'Semana JM — conversación X', informes: 'SECCO', modo: 'unica' }),
   filaSeccion_({ id: 'miba', orden: 6, nombre: 'Integración MiBA', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'fuente sin definir en el motor; el bloque ya se publica lleno a mano' }),
