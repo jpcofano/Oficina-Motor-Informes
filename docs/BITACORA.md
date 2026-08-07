@@ -4891,3 +4891,78 @@ un solo signo.
 `Mail: «FALTA:ecv_insc_mail»(59.9%)`. El `_pct` resuelve y **el numerador no tiene fila en
 `MARCADORES`**. Los cinco pares `ecv_insc_*` están igual. **No se cableó nada** — el prompt lo
 prohíbe.
+
+---
+
+## `N1` — Addendum al `N9` de anoche: la premisa de las fuentes era falsa (2026-08-07) — commit de esta entrada
+
+> **Addendum fechado a la entrada `N9` de este mismo archivo.** La entrada de anoche **no se
+> edita** (`CLAUDE.md` §7: los addenda fechados sí valen, alterar el texto original no).
+
+**Lo que anoche quedó escrito y es falso:** *"la fuente de 20 de los 22 tokens nuevos —`Período`,
+`Alcance`, `Impresiones`, `Vistas`, `VTR` por campaña—, que **nadie declaró**"*.
+
+**Estaban declarados, y desde antes del 01/08.** Verificado contra `MAPEO` **vivo** (124 filas)
+el 07/08: la solapa `digital/Digital` tiene 15 filas mapeadas, entre ellas `dig_campana` (A),
+`dig_fecha_inicio` (E), `dig_fecha_fin` (F), `dig_impresiones` (H), `dig_alcance` (I),
+`dig_views` (K), `dig_vtr` (L).
+
+**La causa del error es una trampa de nombres**, y se anotó en `CLAUDE.md` §4 porque el patrón
+se va a repetir:
+
+| lo que se llama así | qué es |
+|---|---|
+| `"Seguimiento Digital"` | el **nombre de la base** `digital` (y el archivo real tiene un espacio al final) |
+| `Seguimiento digital` | una **solapa** de esa misma base — la maestra de la unión |
+| `Digital` | **otra solapa**, y además `BASES.digital.hoja_default` |
+
+La búsqueda de anoche se hizo sobre la solapa `Seguimiento digital`. La respuesta estaba en la
+solapa `Digital`.
+
+**Corregido en tres lugares** (`CONFIG_INFORMES.md` §1.8 y §1.8.1 nueva, `HANDOFF_CODE.md`
+punto 7 de Trabado, y este addendum). **En `PENDIENTES_consistencia.md` no estaba** — el grep
+previo dio **cero** y por lo tanto **cero ediciones**, que es el resultado correcto
+(`CLAUDE.md` §3).
+
+**Cobertura real: 6 de las 7 columnas de la lámina 7 están mapeadas. Falta una, `Estado`,
+columna `G` de `Digital`.** Se reporta y no se mapea: el prompt del 07/08 pide reportar lo que
+falte.
+
+### `N1.b` — la fuente de la lámina 7, decidida y verificada
+
+Decisión del usuario del 07/08: sale de `digital/Digital`. Escrita en `CONFIG_INFORMES.md`
+§1.8.1, con las otras dos descartadas y el motivo:
+
+- `Digital 2026 acumulado` — `uso = derivada`, 683 filas, y su firma **no tiene VTR**.
+- `CAMPAÑAS_DESGLOCE_DIGITAL` — 4.868 filas, **no tiene Alcance ni VTR** (sus métricas son
+  Impresiones · Visualizaciones · Clics) y trae **una fila por campaña y plataforma**.
+
+**Una premisa del prompt no se sostiene:** daba `CAMPAÑAS_DESGLOCE_DIGITAL` por declarada
+`revisar`; `SOLAPAS` vivo dice **`fuente`**. Lo sustantivo sí se confirma, así que **el
+descarte se sostiene por las columnas, no por el `uso`**.
+
+### La medición que el prompt pedía para el reporte
+
+Sobre la ventana del informe (24–30/07/2026), la solapa `Digital`:
+
+| criterio | filas |
+|---|---|
+| "empieza en la ventana" | **0** |
+| solape de `R-14` | **0** |
+
+**Y no es culpa del criterio.** Las 897 fechas reales de la solapa van de **2024-08-29 a
+2026-01-02**; 386 filas están vacías y 14 traen texto en vez de fecha. **No hay ninguna campaña
+que llegue a julio de 2026.** No hay nada que deduplicar porque no hay nada: la pregunta por
+campañas repetidas queda sin responder hasta que la solapa tenga datos de la ventana.
+
+### `R-14` pasa a ser aplicable — Addendum 1 en `REGLAS_NEGOCIO.md`
+
+`dig_fecha_fin` (columna `F`) existe: **hay extremo derecho, hay rango, `R-14` se puede
+evaluar.** El "no es aplicable" de anoche queda superado. Lo que falta ahora no es el mapeo:
+es **una semana con datos**.
+
+### `sd_fecha_fin` y `sd_estado` — qué son hoy
+
+Las dos filas que `N4` agregó anoche a `MAPEO` **quedan sin consumidor**: se mapearon cuando la
+fuente que `R-14` nombraba era `Seguimiento digital`. **No se borran** — son filas válidas que
+hoy nadie lee. `MAPEO` sigue en 124.

@@ -265,6 +265,23 @@ primera atribuyó la muerte al límite de 6 minutos sin evidencia que descartara
 de Sheets; la segunda lo corrigió. Y en ninguna se estaba aplicando conocimiento de Apps
 Script como plataforma, que es donde estaba la respuesta.
 
+**Dos cosas que se llaman igual no son la misma cosa, y en este repo pasa seguido.** Antes de
+concluir *"eso no está mapeado"*, *"esa columna no existe"* o *"esa solapa no tiene el dato"*,
+**verificar sobre qué se buscó**. El caso que lo instaló, 07/08: se buscó la fuente de la
+lámina 7 en la solapa `Seguimiento digital` y se concluyó que veinte tokens no tenían fuente.
+El dato estaba mapeado desde antes del 01/08 — **en la solapa `Digital`, de esa misma base**.
+La confusión es de nombres y está en los datos, no en quien busca: **`"Seguimiento Digital"` es
+el nombre de la base `digital`**, y además hay **una solapa** que se llama casi igual; y
+`BASES.digital.hoja_default` es una **tercera** cosa, `Digital`. Tres nombres parecidos, tres
+referentes distintos.
+
+- **La regla operativa:** un "no está" se reporta **nombrando el ámbito exacto en el que se
+  buscó** —base, solapa, columna—, nunca a secas. Un "no está" sin ámbito es una conclusión
+  que nadie puede verificar y que se propaga sola: ésta llegó a cuatro documentos en una
+  noche.
+- **Y se busca en el registro vivo**, no en un snapshot: un volcado envejece con la primera
+  escritura, incluida la que uno mismo acaba de hacer.
+
 ---
 
 ## 5. Handoffs — dos archivos, dos dueños

@@ -537,6 +537,32 @@ fin**. Sin el extremo derecho no hay rango, y sin rango no hay solape que evalua
 computable hoy es "empieza en la ventana", que es precisamente lo que esta regla dice que
 **no** es. La regla queda escrita y esperando el mapeo de `Fecha de fin`.
 
+> **Addendum 1 — 07/08/2026. El párrafo de arriba no se altera; lo que cambia es su estado:
+> `R-14` es aplicable hoy, y la fuente no es la que decía.**
+>
+> **1 · La fuente correcta es la solapa `Digital`, no `Seguimiento digital`.** Lo decidió el
+> usuario el 07/08 (`CONFIG_INFORMES.md` §1.8.1). El enunciado nombraba `Seguimiento digital`
+> por una **trampa de nombres**: *"Seguimiento Digital"* es el **nombre de la base `digital`**
+> y además hay una **solapa** que se llama casi igual. Son cosas distintas.
+>
+> **2 · El rango existe y estaba mapeado desde antes del 01/08.** En `digital/Digital`:
+> `dig_fecha_inicio` → `E`, `dig_fecha_fin` → `F`. **Hay extremo derecho, hay rango, y `R-14`
+> se puede evaluar.** El "no es aplicable" de arriba queda **superado**.
+>
+> **3 · Y sobre la ventana de hoy da cero — pero no por la regla.** Medido el 07/08 sobre las
+> 1297 filas de `Digital`, ventana 24–30/07/2026: **"empieza en la ventana" da 0 y el solape de
+> `R-14` también da 0**. El motivo es que **las 897 fechas reales de la solapa van de
+> 2024-08-29 a 2026-01-02**: no hay ninguna campaña que llegue a julio de 2026. La regla es
+> correcta y el dato no alcanza. **Un cero acá no es evidencia contra `R-14`.**
+>
+> **4 · El caso que la verifica sigue sin poder correrse**, por lo mismo: hace falta una
+> semana con datos. Cuando la haya, el control es el del párrafo de arriba — una campaña que
+> empiece antes del viernes y termine después del jueves.
+>
+> **5 · `sd_fecha_fin` y `sd_estado` (mapeados el 07/08 sobre `Seguimiento digital`) no se
+> borran** y quedan **sin consumidor**: se mapearon cuando la fuente que esta regla nombraba
+> era esa solapa. Son filas válidas de `MAPEO` que hoy nadie lee.
+
 **Cómo se verifica, cuando se pueda:** tomar una semana con una campaña que arranque antes del
 viernes de inicio y termine después del jueves de cierre —una que no toque ninguno de los dos
 extremos— y comprobar que entra. Ése es el caso que distingue el solape de las otras dos

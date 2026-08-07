@@ -63,8 +63,12 @@ Nada de esto lo puede cerrar Code. Las tres cosas de código de la noche:
    en ninguna base), los seis de impresiones por plataforma, y `contenidos_total`.
 6. **`CAMPANAS` sin filas de `jm`** y **`REUNIONES` no es el temario** (le faltan Primera
    Persona y Registro Civil).
-7. **20 de los 22 tokens nuevos de la lámina 7 no tienen fuente declarada** — `Período`,
-   `Alcance`, `Impresiones`, `Vistas` y `VTR` por campaña (`CONFIG_INFORMES.md` §1.8).
+7. **La lámina 7 tiene fuente y le falta una columna.** ~~20 de los 22 tokens nuevos no tienen
+   fuente declarada~~ — **era falso**, corregido el 07/08: la fuente es la solapa
+   `digital/Digital` y **6 de las 7 columnas ya estaban mapeadas** desde antes del 01/08. Falta
+   **`Estado`, columna `G`**. Lo que sí bloquea es otra cosa: **la solapa no tiene ninguna fila
+   en la ventana del informe** — sus fechas llegan hasta 2026-01-02 (`CONFIG_INFORMES.md`
+   §1.8.1).
 
 ## Esperando decisión tuya
 

@@ -297,17 +297,66 @@ hoy ya está sin token* — en `jm` es el literal *"Benchmark VTR Post RDV: 44%"
 bloque literal de cuatro líneas. O sea que la única parte con efecto de esta decisión es
 **"sale"**; "queda fijo" es el estado actual.
 
-**7 · `Estado`** lleva el valor que la campaña tenga en ese momento: la columna `N` de
-`Seguimiento digital`. **Ya está mapeada** (`N4`, 07/08): `sd_estado` → `digital` /
-`Seguimiento digital` / `N`. Valores observados en la base: `Finalizada`, entre otros — es
-texto libre cargado a mano, no una lista cerrada. Eso **responde la vieja `[?]`** de §2.3.
+**7 · `Estado`** lleva el valor que la campaña tenga en ese momento. Es texto libre cargado a
+mano, no una lista cerrada — eso **responde la vieja `[?]`** de §2.3.
+
+> **Corregido el 07/08, misma noche.** Este punto decía *"la columna `N` de `Seguimiento
+> digital`"*, mapeada como `sd_estado`. **La fuente de la tabla es otra**: por §1.8.1, sale de
+> la solapa `Digital`, y ahí `Estado` es la columna **`G`**, que **no está mapeada**.
+> `sd_estado` sigue existiendo y no se borra, pero **no es el `Estado` de esta tabla**.
+
+---
+
+#### 1.8.1 · La fuente de la tabla es la solapa `Digital` — **decisión del usuario, 07/08/2026**
+
+La tabla de la lámina 7 sale de **`digital` / `Digital`**. Verificado contra `SOLAPAS` y
+`MAPEO` **vivos** el 07/08, no contra el snapshot:
+
+- es la única de las tres candidatas declarada **`uso = fuente`** con la firma de encabezados
+  completa (1295 filas de datos);
+- es la única con **las siete columnas** que la tabla necesita — inicio, fin, estado, alcance,
+  impresiones, views, VTR;
+- **ya está mapeada** en `MAPEO` como `dig_*`, y estaba desde antes del 01/08.
+
+**Las otras dos, descartadas con el motivo escrito, para que nadie las vuelva a proponer:**
+
+| candidata | `uso` | por qué no |
+|---|---|---|
+| `Digital 2026 acumulado` | **`derivada`** | 683 filas, acumulado. Su firma es `Id · Nombre · Fecha de inicio · Fecha de fin · Estado · Impresiones · Views · Clics · % CTR · Frecuencia · Alcance` — **no tiene VTR** |
+| `CAMPAÑAS_DESGLOCE_DIGITAL` | `fuente` *(ver nota)* | 4.868 filas. **No tiene Alcance ni VTR** —sus métricas son `Impresiones · Visualizaciones · Clics`— y trae **una fila por campaña Y plataforma** (columna `Plataforma`: Meta, Google, …), así que una campaña aparece varias veces |
+
+> **Nota de premisa.** El prompt del 07/08 la daba por declarada **`revisar`**. `SOLAPAS` vivo
+> dice **`fuente`**. Lo que sí se confirma es lo sustantivo: no tiene alcance ni VTR y
+> desglosa por plataforma. **El descarte se sostiene por las columnas, no por el `uso`.**
+
+**Cobertura de `MAPEO` hoy — 6 de las 7 columnas están mapeadas:**
+
+| columna de la tabla | campo lógico | columna de la solapa |
+|---|---|---|
+| Campaña | `dig_campana` | `A` |
+| **Estado** | **— sin mapear —** | **`G`** ⚠ |
+| Período | `dig_fecha_inicio` + `dig_fecha_fin` | `E` + `F` |
+| Alcance | `dig_alcance` | `I` |
+| Impresiones | `dig_impresiones` | `H` |
+| Vistas | `dig_views` | `K` |
+| VTR | `dig_vtr` | `L` |
+
+**Falta una sola: `Estado`, columna `G`.** Se reporta y **no se mapea acá** — el prompt del
+07/08 pide reportar lo que falte, no cablearlo.
+
+**⚠ La medición que hay que ver antes de construir nada:** sobre la ventana del informe
+(24–30/07/2026), la solapa `Digital` devuelve **cero campañas**, con el criterio de inicio
+**y con el de solape de `R-14`**. No es un problema del criterio: **las 897 fechas reales de la
+solapa van de 2024-08-29 a 2026-01-02** — la solapa está desactualizada respecto de la ventana.
+Sin filas no hay tabla que llenar. Detalle en la entrada de `N3` de `BITACORA.md`.
 
 **Lo que falta para que esto sea ejecutable, y no depende de escribir tokens:**
 
 1. La lámina 7 no puede funcionar con más de 4 campañas hasta que exista `T2.10` (`D-22`).
-2. `sd_fecha_fin` está mapeado pero `R-14` —qué campañas entran— sigue **sin consumidor**.
-3. Nadie decidió de dónde salen `Período`, `Alcance`, `Impresiones`, `Vistas` y `VTR` por
-   campaña. Son 20 de los 22 tokens nuevos y **ninguno tiene fuente declarada**.
+2. **`Estado` (columna `G` de `Digital`) no está en `MAPEO`.** Es la única de las siete que
+   falta.
+3. **La solapa `Digital` no tiene filas en la ventana del informe** — ver arriba. Es lo que
+   bloquea de verdad, y no se arregla con tokens.
 
 ---
 
