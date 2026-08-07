@@ -1796,10 +1796,16 @@ function menuGenerarInformeCompleto_() {
     'Tokens: ' + r.tokens.reemplazados + ' con valor de ' + r.tokens.en_plantilla + ' · ' + r.tokens.faltantes + ' en FALTA'
   ];
   // `A.3` — lo excluido se dice, no se descuenta en silencio.
+  //
+  // 07/08 — y **dice contra qué numeración**. Los números salen de `mapaTokenObjectId_`, que
+  // recorre el **deck ya expandido**: la lámina 10 de la plantilla de `jm` aparece acá como
+  // la 14, porque la sección de encuentro ya duplicó sus copias antes. Sin esta aclaración el
+  // aviso manda a buscar una lámina que en la plantilla es otra cosa, y eso ya pasó.
   if (r.tokens.excluidos_por_lamina_escondida.cuantos) {
     lineas.push('  (' + r.tokens.excluidos_por_lamina_escondida.cuantos +
       ' token(s) fuera del conteo: lámina(s) ' +
-      r.tokens.excluidos_por_lamina_escondida.laminas.join(', ') + ' escondida(s) — no se emiten)');
+      r.tokens.excluidos_por_lamina_escondida.laminas.join(', ') +
+      ' escondida(s) — no se emiten. Numeradas sobre el DECK EXPANDIDO, no sobre la plantilla)');
   }
   // `T2.1.2` — si murió, va primero que el corte: son dos cosas distintas y confundirlas
   // manda el diagnóstico al presupuesto, que no tuvo nada que ver.
@@ -1825,7 +1831,13 @@ function menuGenerarInformeCompleto_() {
   }
   r.repetibles.secciones.forEach(function (s) {
     lineas.push('  ' + (s.ok ? '·' : '⚠') + ' ' + s.seccion + ': ' + (s.motivo || ((s.emitidos || []).length + ' emitido(s)')));
-    (s.excluidos || []).forEach(function (e) { lineas.push('      excluida ' + e.campana + ' — ' + e.motivo); });
+    // 07/08 — `e.campana` a secas daba `excluida undefined`. Los excluidos vienen de dos
+    // lados con forma distinta: los de `CAMPANAS` traen `campana` y los que filtra
+    // `filtroDeSeccion_` sobre los crudos traen `item`. Una exclusión que no dice **qué**
+    // excluyó es indistinguible de un ítem perdido, que es lo que `D-21` pide evitar.
+    (s.excluidos || []).forEach(function (e) {
+      lineas.push('      excluida ' + (e.campana || e.item || '(el ítem no trae nombre)') + ' — ' + e.motivo);
+    });
   });
   ui.alert('Generar informe completo', lineas.join('\n'), ui.ButtonSet.OK);
   return r;

@@ -4757,3 +4757,27 @@ marcación original sobre el `.pptx`.
 5. `ecv_minutos` en la 5 de `secco` tampoco.
 6. `m2_implementaciones` existe en `secco` y no en `jm`: las dos láminas se titulan igual y no
    son la misma.
+
+---
+
+## `N8` — los dos `P2` chicos de la corrida, arreglados (2026-08-07) — commit de esta entrada
+
+**1 · `excluida undefined`.** El diagnóstico que estaba escrito era casi correcto y le faltaba
+una mitad: los excluidos vienen de **dos** lados con forma distinta. Los de `CAMPANAS` traen
+`campana`; los que filtra `filtrarItemsPorSeccion_` sobre los crudos de `REUNIONES` traen
+**`item`**, resuelto por `__clave__`. El texto usa ahora
+`e.campana || e.item || '(el ítem no trae nombre)'`. Arreglo chico y local, como pedía el
+prompt.
+
+Medido con `itemsDeSeccion_('comunicaciones_post')` sobre la ventana vigente, las tres líneas
+que decían `undefined` ahora dicen `excluida San Cristóbal (pre) — etapa = "pre"`,
+`excluida Retiro (pre) — etapa = "pre"` y `excluida Orden Público — etapa = ""`.
+
+**2 · El aviso de láminas escondidas.** Se eligió **que lo diga**, no renumerar: el aviso
+termina ahora en *"Numeradas sobre el DECK EXPANDIDO, no sobre la plantilla"*. El número del
+deck expandido es el que tiene el archivo que la persona va a abrir, así que es el útil para ir
+a mirar; traducirlo a la numeración de la plantilla exigiría invertir la expansión, y el mapa
+de la corrida no la guarda.
+
+Los dos `P2` quedan anotados como arreglados en `docs/PENDIENTES_consistencia.md`, **pendientes
+de verificación humana**. Las 10 pruebas pasan.

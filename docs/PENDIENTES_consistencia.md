@@ -1656,6 +1656,17 @@ perdido: la exclusión ocurrió y el motivo es correcto.
 que se perdió, y es exactamente lo que `D-21` pide evitar. Hoy hay que ir a `FALTANTES` o al
 valor de retorno para saber cuál era.
 
+> **Arreglado el 07/08 (`N8`) — pendiente de verificación humana.** El diagnóstico de arriba
+> era casi correcto y le faltaba una mitad: los excluidos vienen de **dos** lados con forma
+> distinta. Los de `CAMPANAS` traen `campana`; los que filtra `filtrarItemsPorSeccion_` sobre
+> los crudos de `REUNIONES` traen **`item`**, resuelto por `__clave__`. El texto usa ahora
+> `e.campana || e.item || '(el ítem no trae nombre)'`.
+>
+> Medido con `itemsDeSeccion_('comunicaciones_post')` sobre la ventana vigente, las tres
+> líneas que antes decían `undefined` ahora dicen:
+> `excluida San Cristóbal (pre) — etapa = "pre"`, `excluida Retiro (pre) — etapa = "pre"`,
+> `excluida Orden Público — etapa = ""`.
+
 ### P2 · El aviso de lámina escondida numera contra el deck expandido y no lo dice
 
 La corrida `jm-20260806-214253` avisó **"lámina 14 escondida"**; en la plantilla esa lámina es
@@ -1667,6 +1678,20 @@ plantilla es el estable —es el que usan `mapaDeTokens_`, este archivo y los re
 del deck cambia con cada corrida según cuántos ítems se emitan.
 
 **Qué falta:** que el aviso diga cuál de los dos es, o que numere contra la plantilla.
+
+> **Arreglado el 07/08 (`N8`) — pendiente de verificación humana.** Se eligió **que lo diga**,
+> no renumerar. El aviso termina ahora en *"Numeradas sobre el DECK EXPANDIDO, no sobre la
+> plantilla"*.
+>
+> **Por qué decirlo y no renumerar:** el número del deck expandido es el que efectivamente
+> tiene el archivo que la persona va a abrir —es el deck generado, no la plantilla—, así que
+> es el número útil para ir a mirar. Traducirlo a la numeración de la plantilla exigiría
+> invertir la expansión, y el mapa de la corrida no la guarda. Decir contra qué se numera
+> cuesta una línea y no puede quedar desactualizado.
+>
+> Es la misma distinción que `TOKENS.md` §2.0 dejó escrita el mismo día: conviven **tres**
+> numeraciones —el `.pptx` archivado, la presentación viva de Slides, y el deck expandido— y
+> el problema nunca fue cuál usar sino no decir cuál.
 
 
 ## Preguntas al equipo — abiertas, esperando respuesta humana
