@@ -5300,3 +5300,32 @@ qué pasa si no entra en la caja.
 conteo** de barrios distintos o **la lista de nombres**. Si es el conteo, `DISTINCT` no
 necesita devolver lista y las otras cuatro desaparecen. **Ésa es la que hay que responder
 primero.**
+
+---
+
+## Corrida de cierre de la noche del 07/08 — los cinco cambios juntos, de punta a punta (2026-08-07) — commit de esta entrada
+
+`jm-20260807-023839`, con `T2.1.2`, `T2.6`, `T2.7`, `T2.9.4`, `T2.9.2` y el formato nuevo
+adentro:
+
+| | 06/08 (`jm-20260807-004300`) | 07/08 (`jm-20260807-023839`) |
+|---|---|---|
+| corte | `null` | `null` |
+| fallo | — | `null` |
+| `instrumento.fallos` | — | `[]` |
+| barrida (tokens crudos) | 0 | **0** |
+| tokens reemplazados | 29 | **35** |
+| faltantes | 270 | **264** |
+| marcadores | 17 ok / 26 sin_datos | **23 ok / 20 sin_datos** |
+| gastado | 120 s | **231 s** |
+
+**Los +6 / −6 son exactamente los seis `pauta_*`** que `N3` destrabó: `pauta_google/meta/prog` y
+`gcba_pauta_google/meta/prog`, ahora con valor en el deck. Ningún otro token cambió.
+
+**⚠ El presupuesto se apretó y no está explicado.** 231 s contra 120 la noche anterior, sobre un
+techo de 350. Los seis `pauta_*` ahora recorren 979 filas donde antes cortaban en cero, así que
+hay una **causa candidata** — pero **no está medida, y una corrida no es una serie**
+(`CLAUDE.md` §4: causa y observación no son lo mismo). Se nombra como candidato. Medirlo es lo
+primero de la próxima sesión.
+
+Los cinco ítems siguen igual: sólo `Orden Público` pinta (11), los otros cuatro pintan cero.
