@@ -1985,6 +1985,18 @@ donde hoy hay una lámina a cablear**:
 *hoy no tiene tokens*, y la diferencia sólo se puede resolver mirando qué se espera de cada
 lámina — no midiendo la plantilla. No se decidió cuál es cuál en la corrida que las encontró.
 
+### P3 · El paso 6 de "Marcar y clasificar una lámina" no dice cuál `estado` se marca
+
+El paso 6 de esa sección del `RUNBOOK` dice que **la sección** entra en `estado = revisar` al
+agregar una lámina, y eso es `SECCIONES.estado`. La tabla de la **Fase 3** en `docs/PLAN.md`
+§2 declara que la hoja `LAMINAS` va a llevar **su propio `estado` y su propio `falta`**.
+Cuando esa hoja exista, el paso queda ambiguo: no dice cuál de los dos se marca.
+
+**Se resuelve al implementar la Fase 3, no antes** — hoy `LAMINAS` no existe y el paso no es
+ambiguo. **No se propone cuál gana:** con la hoja escrita se va a ver si el estado de la
+lámina reemplaza al de la sección para este caso, si conviven, o si el paso pasa a nombrar los
+dos. El `RUNBOOK` no se toca hasta entonces.
+
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 
 Su bloque "Antes de empezar" todavía reabre la decisión Looker-vs-SD y el alcance del
