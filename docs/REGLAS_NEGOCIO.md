@@ -697,26 +697,24 @@ su régimen (`D-09`): por período o por temario (`R-04`, el temario define el u
 fecha no decide). Lo que esta regla fija es **qué hace el régimen por período**, y que es el
 que se asume cuando la sección no declara temario.
 
-> **⚠ CONTRADICCIÓN ABIERTA — no la resuelve esta regla, y hay que decidirla.**
+> **Addendum 1 — 07/08/2026: la contradicción se cerró, y parte de esta regla queda
+> superseded por `R-17`.** El texto de arriba no se altera; esto dice qué de él sigue rigiendo
+> y qué no. **Es un puntero, no una copia**: la prioridad de selección se lee en `R-17` y sólo
+> ahí.
 >
-> `docs/CONFIG_INFORMES.md` §1.1 lleva, **con la misma fecha (07/08/2026) y el mismo origen
-> (decisión del usuario)**, lo contrario para **campañas destacadas**:
+> | de esta regla | qué pasa |
+> |---|---|
+> | **el criterio de solape** —`inicio ≤ fin_de_ventana` y `fin ≥ inicio_de_ventana`— y su motivo (las campañas empiezan unos tres días antes) | **queda vivo.** Está medido: IVR dejó de dar cero sobre la ventana 24–30/07 |
+> | **"y el default es la semana"**, del título, y el párrafo que lo desarrolla | **superseded por `R-17`** |
+> | **la cláusula de filtros** *"sobre los días activos dentro de la semana"* | **superseded por `R-17`** |
+> | el bloque `⚠ CONTRADICCIÓN ABIERTA` que estaba acá | **cerrado.** Lo reemplaza este addendum |
 >
-> > *"**[OK] El temario elige qué campañas destacadas van, y se buscan en toda la base.** El
-> > período **no** es el criterio de selección. Una campaña destacada **puede ser anterior a la
-> > ventana del informe** y entrar igual: se busca en toda la base, **sin filtro de ventana**."*
-> > … *"La regla, en una línea: **la ventana agrega, el temario selecciona**."*
+> **El título de esta regla quedó con la mitad vencida.** Una `R-NN` no se edita, así que el
+> título se lee con este addendum al lado: lo que sigue siendo cierto es *"la selección por
+> período entra por solape"*; lo que ya no, *"y el default es la semana"*.
 >
-> Esa versión tiene además un **caso testigo medido** —San Cristóbal 23/07 entrando con ventana
-> 24–30/07 (§1.7)— y una consecuencia escrita en `D-19`.
->
-> **Las dos no pueden regir a la vez sobre campañas destacadas.** Una dice *temario, sin filtro
-> de ventana*; la otra dice *semana por defecto y temario si no*.
->
-> **Ninguna se aplicó por encima de la otra, y `R-16` NO se cableó sobre la sección
-> `campana`.** Lo que sí se aplicó es el solape sobre **los agregados** —que es el terreno
-> donde las dos versiones coinciden: "la ventana agrega"—. La contradicción queda acá,
-> fechada, esperando decisión.
+> **Nada de lo que se ejecutó se movió.** El solape sobre los agregados es el terreno donde las
+> dos versiones coincidían, y `R-16` nunca se cableó sobre la sección `campana`.
 
 **Origen:** decisión del usuario, 07/08/2026. `R-14` (06/08) fijó el criterio de solape;
 ésta lo declara **el default de la selección** y agrega el motivo de dominio.
@@ -745,6 +743,60 @@ fuentes que ya daban bien —`Directa Mail`, `Directa SMS`— **no se tienen que
 
 **Si falla:** si el solape hace entrar filas que el equipo no publica, **la salida no es volver
 a "empieza en la ventana"**: es agregar el filtro que las distingue y dejarlo declarado.
+
+## R-17 — El temario selecciona, los filtros acotan, y la semana es el fallback
+
+**Enunciado:** qué campañas entran a un informe se decide en **tres niveles, en este orden**:
+
+1. **El temario selecciona.** `mostrar` + `orden` en `CAMPANAS`. Si hay temario, **manda**, y
+   se busca **en toda la base, sin filtro de ventana**. Una campaña puede ser anterior a la
+   ventana del informe y entrar igual.
+2. **Los filtros del usuario acotan lo que el temario ya eligió.** Son los de `R-15`, canal por
+   canal — **no se repiten acá**: una sola fuente de verdad, y un valor duplicado es un valor
+   que se desincroniza.
+3. **La semana es el fallback, no un filtro previo.** Decide **sólo cuando no hay temario**.
+
+**La diferencia que generó la contradicción está en el nivel 3**, y por eso se dice dos veces:
+la semana **no filtra antes** del temario. Si hay temario, la ventana no participa de la
+selección.
+
+**Qué supersede de `R-16`, y qué no.** Supersede *"el default es la semana; el temario es la
+alternativa, no el default"* y la cláusula de filtros *"sobre los días activos dentro de la
+semana"* — con el nivel 2, los filtros acotan lo que el temario eligió, y el temario buscó en
+toda la base. **No supersede el criterio de solape**: cómo se decide si una fila toca la
+ventana se sigue leyendo en `R-16`, que queda vivo y medido.
+
+**El caso testigo, que es lo que la sostiene:** **San Cristóbal, 23/07, entra con ventana
+24–30/07** (`docs/CONFIG_INFORMES.md` §1.7). Una regla con un hecho medido al lado envejece
+mejor que una regla sola.
+
+**Origen:** decisión del usuario, 07/08/2026, en respuesta a la contradicción que `R-16` dejó
+anotada. **Confirma** la versión de `CONFIG_INFORMES.md` §1.1 —*"la ventana agrega, el temario
+selecciona"*— e **invierte el orden** de `A.1` del prompt
+`docs/Prompts/2026-08-07_4_once_respuestas.md`, que decía *"por defecto la semana… si no, por
+temario"*. **Esa versión queda derogada.** El prompt **no se edita**: vive en un prompt ya
+ejecutado y se lo cita, no se lo corrige.
+
+**Estado del código, verificado el 07/08/2026: el motor ya hace esto.** No es deuda ni cambio
+pendiente. `itemsDeSeccion_` (`Generador.gs`) filtra `CAMPANAS` por `informe_id`, `mostrar` y
+`periodo_id` no vacío (`D-19`), más `SECCIONES.filtro` — **sin ninguna intervención de la
+ventana**. Y las **dos** llamadas a `entraPorSolape_` que existen en el repo están las dos del
+lado de los agregados: la rama `filtrar` de `leerFuente` (`Fuentes.gs`) y el agregado global
+(`Generador.gs`). *(Se nombran las funciones y no las líneas: los números envejecen con
+cualquier commit.)*
+
+**Qué NO cambia.** La ventana sigue rigiendo **los agregados** —`ecv_*`, ministros, `m2`—, que
+son sumas de un período. Ahí las dos versiones siempre coincidieron, y el criterio de solape de
+`R-16` sigue vigente sin tocar.
+
+**Cómo se verifica:** **hoy no se puede sobre `campana`.** `CAMPANAS` tiene tres filas y las
+tres son de `secco`, con `periodo_id` vacío, así que por `D-19` ninguna emite. La verificación
+queda declarada para cuando haya filas de `jm`: una campaña destacada anterior a la ventana,
+con `mostrar = sí` y `periodo_id` cargado, tiene que **entrar**. Se dice que no se verificó, en
+vez de darlo por hecho.
+
+**Si falla:** si entran campañas que el equipo no publica, la salida **no es reponer el filtro
+de ventana** — es corregir el temario, que es donde vive la decisión editorial.
 
 ---
 
