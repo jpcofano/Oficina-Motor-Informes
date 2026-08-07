@@ -5329,3 +5329,71 @@ hay una **causa candidata** — pero **no está medida, y una corrida no es una 
 primero de la próxima sesión.
 
 Los cinco ítems siguen igual: sólo `Orden Público` pinta (11), los otros cuatro pintan cero.
+
+---
+
+## Parte A de las once respuestas del 07/08 — escritas en su dueño (2026-08-07) — commit de esta entrada
+
+### ⚠ Lo primero: una de las once **contradice** lo que ya estaba escrito, del mismo día
+
+`A.1` dice *"selección de campaña destacada: **por defecto la semana**; si no, por temario"*.
+`docs/CONFIG_INFORMES.md` §1.1 dice, **con la misma fecha (07/08/2026) y el mismo origen
+(decisión del usuario)**, exactamente lo contrario:
+
+> *"El temario elige qué campañas destacadas van, y se buscan en toda la base. El período **no**
+> es el criterio de selección… **La ventana agrega, el temario selecciona**."*
+
+Y esa versión trae **un caso testigo medido** —San Cristóbal 23/07 entrando con ventana
+24–30/07 (§1.7)— y una consecuencia escrita en `D-19`.
+
+**No se eligió ninguna.** Las dos quedan marcadas, cada una apuntando a la otra: en §1.1 y en
+`R-16`. **La sección `campana` no se tocó**, y lo único que se ejecutó es el solape sobre los
+**agregados**, que es el terreno donde las dos versiones coinciden.
+
+### Qué de las once ya estaba, y qué no
+
+| | ya estaba | qué se hizo |
+|---|---|---|
+| `A.1` semana/temario | **sí, y al revés** — §1.1 | contradicción marcada en los dos lados |
+| `A.1` los tres cortes (remitente · resto · vocero) | **medidos** en `BITACORA` del 04/08, **nunca como regla** | **`R-15` nueva** |
+| `A.2` fuente de la lámina 7 | §1.8.1, del mismo día, decía `Digital` | **superada por §1.8.2** |
+| `A.3` cableado lámina por lámina | no | **`T2.11`** en `PLAN.md` §2 — ID greppeado, `T2.11` estaba libre |
+| `A.4` inscriptos/asistentes de `rdv` | **a medias**: los cinco `_pct` cableados a `rdv`, los numeradores sin fila | **§1.4 bis** nueva |
+| `A.5` el solape | `R-14` (06/08) | **`R-16`** nueva, con el motivo de dominio |
+| `A.6` `ecv_barrios` es lista | la pregunta estaba en §1.4 y en el `P2` | respondida en los dos |
+| `A.7` nueve porcentajes | las nueve celdas ya identificadas | ejecutado en `B.1` |
+| `A.8` salida A | las tres salidas escritas sin elegir | **elegida A**, §1.8.0 |
+| `A.9` `secco` a 4 ranuras | `[?]` abierta en §2.3 | **resuelta**, y **no ejecutable**: `D-22` |
+| `A.10` tamaño de página en `SECCIONES` | `T2.10` lo proponía | **decidido**, ejecutado en `B.2` |
+| `A.11` `m2_*` con sufijos | §2.0 lo tenía como discrepancia | **derogada** la tabla de §1 |
+
+### `R-15` — el corte JM/GCBA es una señal por canal
+
+**Es la regla que más tiempo llevaba sin escribirse**: las decisiones son del **04/08** y
+vivían sólo en la memoria de sesión, no en el repo. Cuatro canales, cuatro respuestas: `Vocero`
+para IVR, `Mail remitente` para mail, **todo GCBA** para SMS, y `JM | GCBA | POLICIA` para
+pauta digital.
+
+Tres cosas que no se derivan solas y por eso van escritas: **GCBA se define por resta, no por
+lista** —por eso el cableado usa `!=jorge.macri@…`—; **si el mail sale de JM, la campaña
+directa es de JM**; y **el vocero y la pauta son preguntas distintas**. Más la asimetría
+medida: **136 de 880 cuentas mandan desde dos remitentes**, así que el remitente **no se puede
+propagar por `id_cuenta`**.
+
+Re-verificado el 07/08: `Vocero` 58/58 con dato (`JM` 53 · `GCBA` 5);
+`JM | GCBA | POLICIA` sobre 1297 filas — `GCBA` 739 · `JM` 205 · **`POLICIA` 16** · 337 vacías.
+
+### `R-16` — la selección por período entra por solape
+
+`R-14` aplicada, con **el motivo de dominio que no estaba en ninguna parte: las campañas suelen
+empezar unos tres días antes.** Y la contracara escrita: **los tres días NO son un parámetro** —
+el solape ya los cubre, y agregar una clave de "días antes" sería inventar una decisión que
+nadie tomó.
+
+### `A.11` — la tabla de `m2_*` por categoría queda derogada
+
+`TOKENS.md` §1 decía *"se eliminan los sufijos `_a`…`_e`"* y lo daba por **confirmado**; la
+plantilla viva los tiene desde entonces. **Manda la plantilla.** Y hay un motivo de fondo, no
+sólo de sincronización: la lámina 10 **está escondida y no se emite** — renombrar 23 tokens que
+nadie ve, contra `C-01`, para que coincidan con un documento, es al revés de cómo trabaja este
+proyecto.

@@ -77,7 +77,22 @@ renombre se lleva puesto al primero.
 fusionar. `et_*` (SECCO, encuentro temático) pasa a ser una instancia del bloque de
 encuentro repetible (§3), con nombres `enc_*` — ver la tabla de esa sección.
 
-### M2 slide 10 — nombres por categoría (confirmado)
+### M2 slide 10 — nombres por categoría ~~(confirmado)~~ · **derogado el 07/08/2026**
+
+> **⚠ Esta tabla NO describe la plantilla viva y no se va a aplicar. Decisión del usuario,
+> 07/08/2026: manda la plantilla, se corrige el documento.**
+>
+> La lámina 10 de `jm` **tiene los sufijos `_a`…`_e`** — `m2_aud_a-d`, `m2_clics_a-e`,
+> `m2_vis_a`, `m2_vis_e` — medido el 07/08 contra la presentación viva (§2.0, discrepancia 2).
+> El plan de renombrarlos por categoría venía del Paso 2.2 y **nunca se ejecutó**; el
+> documento decía "confirmado" y la plantilla decía otra cosa desde entonces.
+>
+> **Los nombres válidos son los de §2.0**, medidos. La tabla de abajo queda como registro de
+> lo que se había planeado, **no como algo pendiente de hacer**.
+>
+> Y hay un motivo de fondo, no sólo de sincronización: la lámina 10 **está escondida** y no se
+> emite. Renombrar 23 tokens de una lámina que nadie ve, contra `C-01`, para que coincidan con
+> un documento — es exactamente al revés de cómo trabaja este proyecto.
 
 Se eliminan los sufijos `_a`…`_e`. Quedan 5 categorías × 4 métricas + campañas:
 

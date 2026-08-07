@@ -1472,6 +1472,21 @@ pendiente: quedaría "resuelto" por una decisión que nunca lo abarcó.
 > `DISTINCT` no necesita devolver lista y las cuatro decisiones de arriba desaparecen.
 > **Esa es la que hay que responder primero.**
 
+> **Respondida — decisión del usuario, 07/08/2026: `ecv_barrios` es una LISTA.** Los barrios
+> alcanzados en la semana, `DISTINCT`. No es un conteo. Con eso, las cuatro decisiones
+> quedan así:
+>
+> | | estado |
+> |---|---|
+> | **1 · qué devuelve con cero filas** | **resuelta por precedente, no por decisión nueva.** Una lista es un agregado, como `SUMA`, y `SUMA` sobre cero filas da `sin_datos` — no `0` ni `""`. Un `""` en la lámina se lee como "ningún barrio", que es una afirmación que el motor no midió |
+> | **2 · con qué separa** | **abierta.** `", "` es lo natural para una enumeración en castellano, pero lo ve el lector del deck y es editorial |
+> | **3 · en qué orden** | **abierta.** Alfabético o el de aparición. Alfabético es reproducible entre corridas; el de aparición no |
+> | **4 · cómo deduplica** | **abierta, y es la que tiene una regla en contra.** `R-10` normaliza espacios **preservando mayúsculas y acentos**, así que `Palermo` y `palermo` serían dos barrios. Para nombres de barrio eso es casi seguro lo que **no** se quiere, y `normalizar_` (`Parseo.gs`) —que sí pliega case y acentos— existe justo para matchear texto libre. **Elegirlo es apartarse de `R-10` para un caso, y eso se escribe con el motivo** |
+> | **5 · qué pasa si no entra en la caja** | **abierta.** Quince barrios no entran en una línea de la lámina 5 |
+>
+> **Quedan cuatro decisiones editoriales y ninguna técnica.** `DISTINCT` no se implementó: sin
+> la 2 y la 4 lo que devuelva es una apuesta.
+
 
 ### P2 · Falta un formato "unidades de porcentaje sin signo"
 

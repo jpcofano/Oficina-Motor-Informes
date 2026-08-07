@@ -86,9 +86,30 @@ tope y pasa a desbordar.
 **La fuente ya estaba resuelta:** la fila de la que salen los `camp_*` es **Seguimiento
 Digital**, fijada en **§4.1** de este mismo documento. No se repite acá — se apunta.
 
+> **⚠ CONTRADICCIÓN ABIERTA con lo que el usuario dijo más tarde el mismo día (07/08/2026).**
+>
+> La respuesta `A.1` del prompt `2026-08-07_4_once_respuestas.md` dice, sobre **el mismo
+> tema** —selección de campaña destacada—:
+>
+> > *"Por defecto **la semana**: entra la campaña cuyos días activos —entre fecha de inicio y
+> > fecha de fin— toquen la semana del informe. **Si no, por temario**."*
+>
+> Lo de arriba dice exactamente lo opuesto: **el temario selecciona y el período no**, sin
+> filtro de ventana, y con un caso testigo medido (San Cristóbal 23/07 con ventana 24–30/07,
+> §1.7). **Las dos son "decisión del usuario, 07/08/2026".**
+>
+> **No se eligió ninguna.** El texto de arriba **no se tocó** y `R-16` quedó escrita con la
+> otra versión y con esta misma advertencia. Lo único que se ejecutó el 07/08 es el solape
+> sobre **los agregados**, que es donde las dos versiones coinciden (*"la ventana agrega"*).
+> **La sección `campana` no se tocó.**
+>
+> Para resolverla hace falta una sola aclaración: **si la semana es un filtro previo al
+> temario, o si el temario manda solo.**
+
 Preguntas que siguen abiertas:
 - **[?]** Si una campaña cruza dos semanas, ¿se muestra acumulada o solo el tramo de
   la semana? Esto **cambia el número**, no solo la presentación.
+- **[?]** ⚠ **La contradicción de arriba** — semana-primero contra temario-solo.
 
 ### 1.2 Período
 
@@ -119,6 +140,27 @@ como ejemplo — confirmar si es real.)
 >   editorial. Está anotado aparte, en `PENDIENTES_consistencia.md`, como `P2`.
 >
 > **No inventar la respuesta: es pregunta para el equipo.**
+
+> **Media respuesta, 07/08/2026 — decisión del usuario: `ecv_barrios` es una LISTA de los
+> barrios alcanzados en la semana (`DISTINCT`), no un conteo.** Eso resuelve el hueco técnico
+> de la segunda viñeta —ya se sabe qué tiene que devolver— y **deja la `[?]` de los tres
+> barrios destacados intacta**: sigue sin saberse si `ecv_barrio1-3` salen por ranking o a
+> mano. Las cuatro decisiones que le quedan a `DISTINCT` están en el `P2` de
+> `PENDIENTES_consistencia.md`, y **las cuatro son editoriales**.
+
+### 1.4 bis · De dónde salen inscriptos y asistentes — **decisión del usuario, 07/08/2026**
+
+**Los inscriptos y los asistentes de las reuniones salen de `rdv`.** Es la fuente de los cinco
+`ecv_insc_*` —mail, call center, IVR, digital y difusión— y de `ecv_asistentes`.
+
+**Ya estaba a medias en el cableado, y por eso se escribe:** los cinco `ecv_insc_*_pct` están
+cableados a `rdv/RVD JM-CM - ES` desde el 05/08 —`insc_mail/inscriptos`, etc.— y **los cinco
+numeradores no tienen fila en `MARCADORES`**. La consecuencia se ve en el deck: la lámina 5
+publica `Mail: «FALTA:ecv_insc_mail»(59.9%)` — el porcentaje resuelto al lado de un hueco.
+
+**Esta decisión cierra la pregunta de la fuente y no cablea nada.** Los cinco numeradores más
+`ecv_asistentes` y `ecv_inscriptos` son seis filas de `MARCADORES` que hoy no existen; entran
+por `T2.11`, que recorre el cableado lámina por lámina.
 
 ### 1.5 Token huérfano resuelto — "Marque 1" (JM slide 6)
 
@@ -307,7 +349,41 @@ mano, no una lista cerrada — eso **responde la vieja `[?]`** de §2.3.
 
 ---
 
-#### 1.8.1 · La fuente de la tabla es la solapa `Digital` — **decisión del usuario, 07/08/2026**
+#### 1.8.0 · Las cuatro decisiones del 07/08 que cierran esta lámina
+
+> Tomadas el 07/08/2026, después de medir. **Reemplazan** lo que §1.8.1 decía sobre la fuente y
+> cierran las tres `[?]` que §1.8 dejaba abiertas.
+
+**1 · La fuente deja de ser `Digital` y pasa a `Digital 2026 acumulado`.** Ver §1.8.2. El
+motivo es el que §1.8.1 midió y no pudo resolver: `Digital` **no tiene filas en la ventana del
+informe** —sus fechas llegan hasta 2026-01-02— así que declararla fuente dejaba la lámina
+vacía por construcción.
+
+**2 · Salida A del `P2` de `comunicaciones_post`: los tokens de la plantilla se renombran a la
+familia `post_`.** `camp1`…`camp4` pasan a `post_camp1`…`post_camp4`. Con eso la sección
+`comunicaciones_post` —que declara `familia_tokens = post_` para `JM,SECCO`— **encuentra la
+lámina de `jm`**, que hoy no encuentra. Los nombres son los de §1.8 punto 5, con la convención
+**atributo + índice** ya elegida.
+
+**3 · `secco` pasa a 4 ranuras**, igual que `jm`. Hoy tiene 3 (`post_camp1-3`,
+`post_estado1-3`). **⚠ Esto exige agregarle una fila a la tabla de la lámina 10 de `secco`, y
+eso es exactamente lo que `D-22` dice que el motor no sabe hacer.** La decisión queda tomada;
+la ejecución espera a `T2.10` o a que una persona edite la plantilla.
+
+**4 · El tamaño de página se declara en `SECCIONES`**, una columna por sección
+(`items_por_lamina`). Es la entrada de `T2.10`; **`T2.10` no se implementa con esto** y **nada
+consume la columna todavía**.
+
+#### 1.8.1 · ~~La fuente de la tabla es la solapa `Digital`~~ — **superada el 07/08 por §1.8.2**
+
+> **La decisión de abajo se tomó y se revirtió el mismo día**, y las dos mitades quedan porque
+> la medición que la revirtió es la parte que sirve. Lo que sigue vigente de esta sección: el
+> descarte de `CAMPAÑAS_DESGLOCE_DIGITAL`, la cobertura de `MAPEO`, y **la medición de que
+> `Digital` no tiene filas en la ventana** — que es justamente lo que la superó.
+>
+> **La fuente vigente es `Digital 2026 acumulado` (§1.8.2).**
+
+#### 1.8.1 bis · Lo que se midió sobre `Digital`, y sigue siendo cierto
 
 La tabla de la lámina 7 sale de **`digital` / `Digital`**. Verificado contra `SOLAPAS` y
 `MAPEO` **vivos** el 07/08, no contra el snapshot:
@@ -356,7 +432,51 @@ Sin filas no hay tabla que llenar. Detalle en la entrada de `N3` de `BITACORA.md
 2. **`Estado` (columna `G` de `Digital`) no está en `MAPEO`.** Es la única de las siete que
    falta.
 3. **La solapa `Digital` no tiene filas en la ventana del informe** — ver arriba. Es lo que
-   bloquea de verdad, y no se arregla con tokens.
+   bloquea de verdad, y no se arregla con tokens. **Y es lo que hizo cambiar la fuente el mismo
+   día: ver §1.8.2.**
+
+#### 1.8.2 · La fuente es `Digital 2026 acumulado` — **decisión del usuario, 07/08/2026**
+
+El usuario autorizó cambiar el seed y usar la solapa que sirva. **Es
+`digital / Digital 2026 acumulado`.**
+
+**Sus once columnas, medidas contra la base viva el 07/08:**
+
+`Id` · `Nombre de la campaña` · `Fecha de inicio` · `Fecha de fin` · `Estado` · `Impresiones` ·
+`Views` · `Clics` · `% CTR` · `Frecuencia` · `Alcance`
+
+| columna de la lámina 7 | de dónde sale |
+|---|---|
+| Campaña | `Nombre de la campaña` |
+| Estado | `Estado` — valores medidos: `FINALIZADA` 683 · `ACTIVA` 16 · `PAUSADA` 2 · `PENDIENTE` 1 |
+| Período | `Fecha de inicio` + `Fecha de fin` |
+| Alcance | `Alcance` |
+| Impresiones | `Impresiones` |
+| Vistas | `Views` |
+| **VTR** | **no existe — es derivable**, `Views / Impresiones` |
+
+**El VTR es la única que falta, y la propuesta es derivarlo.** `Views / Impresiones` es la
+definición estándar de view-through rate y las dos columnas están. El motor ya tiene con qué:
+`RATIO`/`PCT` sobre `dig2_views/dig2_impresiones`, con formato `porcentaje_sin_signo`.
+**No se cableó** — el prompt del 07/08 pide proponerlo y decirlo en el reporte, no hacerlo.
+
+**Tres cosas que hay que saber antes de construir sobre esta solapa:**
+
+1. **Estaba declarada `uso = derivada` en `SOLAPAS`**, no `fuente`. Es un acumulado. Usarla
+   como fuente **cambia su clasificación**, y eso se hizo por el seed, no a mano.
+2. **No tiene columna `JM | GCBA | POLICIA`.** El corte de `R-15` para pauta digital **no es
+   computable acá**. Para esta lámina no hace falta —es la tabla de comunicaciones post de los
+   ECV, sin corte JM/GCBA— pero cualquier otro consumidor que la use sí lo va a extrañar.
+3. **`Estado` viene en MAYÚSCULAS** (`FINALIZADA`, no `Finalizada`), y `R-10` compara **sin
+   plegar mayúsculas**. Cualquier filtro por estado sobre esta solapa tiene que declararlas así.
+
+**`CAMPAÑAS_DESGLOCE_DIGITAL` queda descartada por columnas**, no por su `uso`: **no tiene
+Alcance** —sus métricas son `Impresiones · Visualizaciones · Clics`— y trae **una fila por
+campaña Y plataforma** (columna `Plataforma`), así que una campaña aparece varias veces.
+
+**`Digital` no se borra de `SOLAPAS`.** Deja de ser la fuente de esta lámina, nada más: sigue
+siendo `uso = fuente` y la siguen leyendo `enc_impresiones`, `enc_alcance`, `imp_total`,
+`gcba_imp_total`, `frecuencia` y `gcba_frecuencia`.
 
 ---
 
@@ -396,9 +516,20 @@ la que hay que mover es la lámina 7 de `jm`. Debajo, un bloque literal de bench
 columna `N` de `Seguimiento digital`, cargada a mano. Mapeada el 07/08 como `sd_estado`
 (`N4`).
 
-**[?] abierta:** las siete decisiones del 06/08 fijan **cuatro** ranuras y `secco` tiene tres.
-**No está decidido si `secco` pasa a cuatro**: las decisiones se tomaron sobre la lámina 7 de
-`jm`.
+**[?] resuelta el 07/08 — `secco` pasa a CUATRO ranuras**, igual que `jm`. Decisión del
+usuario.
+
+> **⚠ Decidido y NO ejecutado, con motivo.** Pasar de 3 a 4 ranuras exige **agregarle una fila
+> a la tabla** de la lámina 10, y eso es exactamente lo que `D-22` mide que el motor **no sabe
+> hacer**: no hay una sola llamada de inserción de filas de Slides en el repo. La cuarta ranura
+> la agrega una persona en la plantilla, o espera a que exista el mecanismo.
+>
+> Los nombres de la cuarta, cuando se agregue: `post_camp4` y `post_estado4`, más las cinco
+> columnas que hoy están vacías en las tres existentes (§1.8, la lista de 28).
+
+**[?] resuelta el 07/08 — el tamaño de página se declara en `SECCIONES`.** La columna
+`items_por_lamina`; para `comunicaciones_post` vale **4**. **Nada la consume todavía**: es la
+entrada de `T2.10`.
 
 **[DOC-3, 30/07]** Fuente encontrada para el dinámico: `looker` tiene `pieza_meta`
 (columna AD, `MAPEO`), la URL del posteo de Facebook de la campaña — candidato directo

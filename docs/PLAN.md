@@ -581,6 +581,21 @@ lámina 7 de `jm` es lo otro: **una lámina cada cuatro ítems**, con las ranura
   sabe agregarles filas. `T2.10` **no** levanta esa limitación: reparte ítems entre ranuras
   fijas. Agregar filas a una tabla es otro trabajo y no está pedido.
 
+**`T2.11` · recorrer el cableado lámina por lámina.** *(decisión del usuario, 07/08/2026 — es
+el paso que sigue al Tramo 2)*
+
+**El número que lo justifica:** de los 143 tokens de `jm` sin valor en ninguna caja, **125 son
+cableado o datos, no motor** — 72 sin fila en `MARCADORES`, 53 de la sección `campana` que no
+tiene ítems porque `CAMPANAS` no tiene filas de `jm`. Los 18 restantes se reparten entre 15 de
+fuentes con cero filas y 3 `[MANUAL]`. **El motor dejó de ser el cuello de botella.**
+
+- Se recorre **lámina por lámina**, no token por token ni familia por familia: la lámina es la
+  unidad que una persona puede mirar y decir *"esto está bien"*.
+- **No es un paso de código.** Cada lámina puede terminar en una fila de `MARCADORES`, en una
+  fila de `MAPEO`, en una carga de datos, o en una pregunta al equipo. Si aparece algo que
+  necesita motor, ése es un sub-paso propio y no se hace acá.
+- **Depende de `T2.4`**, que ya corrió: hay un deck completo contra el cual mirar cada lámina.
+
 ---
 
 ### Tramo 3 — prueba de motor (SECCO)

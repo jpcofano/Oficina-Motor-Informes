@@ -575,6 +575,126 @@ ella. No se asume "sigue vigente" ni "dura un día": se registra el hueco y se p
 
 ---
 
+## R-15 — El corte JM / GCBA es **una señal por canal**, no una sola
+
+**Enunciado:** no hay una columna que diga si algo es de JM o de GCBA. Hay **cuatro
+respuestas distintas**, una por canal, y usar la de un canal en otro da un número plausible y
+equivocado.
+
+| canal | dónde se lee | JM es | GCBA es |
+|---|---|---|---|
+| **IVR** | `digital/Directa IVR`, columna `G` — `Vocero` | `JM` | `GCBA` |
+| **Mail** | `digital/Directa Mail`, columna `G` — `Mail remitente` | `jorge.macri@buenosaires.gob.ar` | **todo el resto** |
+| **SMS** | *(no hay columna)* | — | **todo** |
+| **Pauta digital** | `digital/Digital`, columna `B` — `JM \| GCBA \| POLICIA` | `JM` | `GCBA` *(y `POLICIA`, que es un tercer valor)* |
+
+**Origen:** decisión del usuario, 04/08/2026. Reafirmada el 07/08 al declarar los filtros de
+la selección de campaña destacada.
+
+**Lo medido, 04/08 y re-verificado el 07/08:**
+
+- `Vocero`: **58 filas de 58 con dato**, `JM` 53 · `GCBA` 5. Cero cuentas con dos voceros.
+- `Mail remitente`: ninguna vacía, y **21 remitentes distintos**, no dos.
+  `jorge.macri@buenosaires.gob.ar` son **294 filas (13,7 %)**; el resto lo encabezan
+  `infovecinos` (936) y `baparticipacionciudadana` (626).
+- `JM | GCBA | POLICIA`: sobre 1297 filas — `GCBA` 739 · `JM` 205 · **`POLICIA` 16** · 337
+  vacías.
+
+**Tres consecuencias que no se derivan solas y por eso van escritas:**
+
+1. **GCBA se define por resta, no por lista.** En mail, *"todo el que no sea `jorge.macri`"*
+   — incluidas las direcciones que aparezcan en el futuro. **No hay ni va a haber una lista
+   declarada de las otras veinte.** Por eso el cableado usa `mail_remitente!=jorge.macri@…`
+   y no una lista blanca: una lista se desactualiza sola y excluye en silencio.
+2. **Si el mail sale de JM, la campaña directa es de JM.** El remitente no es sólo el corte de
+   la lámina de mail: **define la pertenencia de la campaña directa entera**.
+3. **El vocero y la pauta son preguntas distintas.** `Vocero` dice **quién habla en el audio**;
+   `JM | GCBA | POLICIA` dice **de quién es la campaña**. Que coincidan en la mayoría de las
+   filas no las hace la misma columna.
+
+**Y una asimetría que ya mordió:** cada fila de `digital/Directa Mail` es **un envío**, no una
+cuenta. Medido el 04/08: **de las 880 cuentas con filas de mail, 136 mandan desde dos
+remitentes distintos** —el par más común es `infovecinos` + `jorge.macri` sobre la misma
+cuenta—. **El remitente es una señal por envío**, así que **no se puede propagar por
+`id_cuenta`**. Cualquier diseño que asigne un remitente a una cuenta entera está mal.
+
+**Dónde NO se aplica el corte:** la lámina de **agregados** de campaña destacada va **JM+GCBA
+junta, sin corte**. La de **desagregados** muestra el remitente por fila, y ahí es **un dato,
+no un filtro**.
+
+**Cómo se verifica:** `gcba_mail_*` sobre la ventana tiene que dar exactamente el complemento
+de `mail_*` — mismas filas totales, particionadas. Medido el 07/08: 7 filas JM + 80 GCBA sobre
+las 87 de la ventana. Si la suma no cierra, hay filas que no caen de ningún lado y eso es el
+hallazgo.
+
+**Si falla:** si aparece un canal nuevo, **no se le hereda el criterio de otro**: se pregunta
+cuál es su señal. Ésa es la regla, no un detalle de implementación.
+
+---
+
+## R-16 — La selección por período entra por **solape**, y el default es la semana
+
+**Enunciado:** una fila entra a una sección **por período** si sus **días activos** —entre
+fecha de inicio y fecha de fin— **tocan la semana del informe**. Es `R-14` aplicada: el
+criterio es `inicio ≤ fin_de_ventana` **y** `fin ≥ inicio_de_ventana`. **No** es "empieza en la
+ventana".
+
+**El default es la semana; el temario es la alternativa, no el default.** Cada sección declara
+su régimen (`D-09`): por período o por temario (`R-04`, el temario define el universo y la
+fecha no decide). Lo que esta regla fija es **qué hace el régimen por período**, y que es el
+que se asume cuando la sección no declara temario.
+
+> **⚠ CONTRADICCIÓN ABIERTA — no la resuelve esta regla, y hay que decidirla.**
+>
+> `docs/CONFIG_INFORMES.md` §1.1 lleva, **con la misma fecha (07/08/2026) y el mismo origen
+> (decisión del usuario)**, lo contrario para **campañas destacadas**:
+>
+> > *"**[OK] El temario elige qué campañas destacadas van, y se buscan en toda la base.** El
+> > período **no** es el criterio de selección. Una campaña destacada **puede ser anterior a la
+> > ventana del informe** y entrar igual: se busca en toda la base, **sin filtro de ventana**."*
+> > … *"La regla, en una línea: **la ventana agrega, el temario selecciona**."*
+>
+> Esa versión tiene además un **caso testigo medido** —San Cristóbal 23/07 entrando con ventana
+> 24–30/07 (§1.7)— y una consecuencia escrita en `D-19`.
+>
+> **Las dos no pueden regir a la vez sobre campañas destacadas.** Una dice *temario, sin filtro
+> de ventana*; la otra dice *semana por defecto y temario si no*.
+>
+> **Ninguna se aplicó por encima de la otra, y `R-16` NO se cableó sobre la sección
+> `campana`.** Lo que sí se aplicó es el solape sobre **los agregados** —que es el terreno
+> donde las dos versiones coinciden: "la ventana agrega"—. La contradicción queda acá,
+> fechada, esperando decisión.
+
+**Origen:** decisión del usuario, 07/08/2026. `R-14` (06/08) fijó el criterio de solape;
+ésta lo declara **el default de la selección** y agrega el motivo de dominio.
+
+**El motivo, que no estaba escrito en ninguna parte: las campañas suelen empezar unos tres
+días antes.** Por eso "empieza en la ventana" pierde justo las que importan. El caso que lo
+mostró, medido el 07/08: las dos campañas de IVR del encuentro de Orden Público arrancan el
+**22 y el 23/07**, la ventana empieza el **24**, y siguen activas toda la semana. Con el
+criterio viejo, IVR daba **cero por un día**.
+
+**⚠ Los tres días NO son un parámetro.** El solape ya los cubre — una campaña que arranca tres
+días antes y sigue activa, entra— y agregar un valor de "días antes" sería inventar una
+decisión que nadie tomó. **No existe ni va a existir una clave de configuración de
+anticipación.**
+
+**Las filas sin fecha de fin no cambian de criterio, y el motor lo dice.** No se les asume un
+fin implícito: un criterio distinto aplicado en silencio a un subconjunto es exactamente el
+número plausible que este proyecto persigue. Siguen entrando por su fecha única, y la traza lo
+declara.
+
+**Los filtros que acompañan a la selección**, cuando la sección es de campaña destacada:
+`Mail remitente` y `Vocero` según `R-15`, sobre los **días activos dentro de la semana**.
+
+**Cómo se verifica:** IVR tiene que dejar de dar cero sobre la ventana 24–30/07/2026, y las
+fuentes que ya daban bien —`Directa Mail`, `Directa SMS`— **no se tienen que mover**.
+
+**Si falla:** si el solape hace entrar filas que el equipo no publica, **la salida no es volver
+a "empieza en la ventana"**: es agregar el filtro que las distingue y dejarlo declarado.
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas
