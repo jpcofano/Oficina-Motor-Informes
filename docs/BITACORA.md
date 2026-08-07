@@ -5509,3 +5509,66 @@ constantes del año o se recalculan contra el período anterior? **Si son consta
 `MARCADORES.valor_fijo` los resuelve sin código.**
 
 Las 10 pruebas pasan.
+
+---
+
+## `B.4` — la fuente de la lámina 7 pasa a `Digital 2026 acumulado` (2026-08-07) — commit de esta entrada
+
+`A.2`: la fuente deja de ser `Digital`. El usuario autorizó cambiar el seed y usar la que sirva.
+
+**El motivo es medido, no de preferencia.** `Digital` —la candidata de ayer— **no tiene ninguna
+fila en la ventana del informe**: sus 897 fechas reales van de 2024-08-29 a 2026-01-02 y la
+ventana es julio de 2026. Declararla fuente dejaba la lámina vacía por construcción.
+
+**Dos cambios de seed, los dos por su camino:**
+
+| | qué | resultado |
+|---|---|---|
+| `SOLAPAS` | `Digital 2026 acumulado`: `derivada` → **`fuente`** | 1 solapa actualizada, ninguna otra |
+| `MAPEO` | **12 filas nuevas** con prefijo `acum_` | 122 → **136** filas *(124 + 12)* |
+
+**Prefijo `acum_` y no `dig_`**, aunque la clave de `MAPEO` incluya la solapa y no hubiera
+colisión: `dig_impresiones` sobre `Digital` son las impresiones **de un período** y sobre esta
+solapa son **el acumulado de la campaña entera**. Dos cosas distintas con el mismo nombre es
+exactamente la trampa que costó una noche el 07/08. Es además la convención que ya usan `alc_`,
+`sd_`, `mail_`, `ivr_` y `sms_`: **un prefijo por solapa**.
+
+### La medición que cierra la pregunta de anoche
+
+Sobre la ventana 24–30/07/2026, leyendo la solapa nueva:
+
+| | |
+|---|---|
+| filas con "empieza en la ventana" | 14 |
+| **filas por solape de `R-14`** | **66** |
+| campañas distintas | **66** |
+| **repetidas** | **ninguna** |
+| filas sin fecha de fin | **0** |
+
+**No hay nada que deduplicar.** La pregunta quedó abierta anoche porque `Digital` devolvía cero
+y no había sobre qué medir.
+
+**Y las campañas son las correctas**, lo que es el mejor control que hay de que la fuente es la
+que va: *"Agenda RDV Con 1 - Orden Público Eje Norte 28/7"*, *"Agenda Post con 1 - 1 A 1 -
+Retiro - 24/7"*, *"Agenda con 1 - 1 A 1 - San Cristobal - 24/7"* — son los encuentros de este
+informe.
+
+### VTR: propuesto, **no cableado**
+
+`Digital 2026 acumulado` no tiene columna de VTR y **es derivable**: `acum_views /
+acum_impresiones`, que es la definición estándar. El motor ya tiene con qué —`PCT` sobre
+`acum_views/acum_impresiones` con formato `porcentaje_sin_signo`—. **No se cableó**: el prompt
+pide proponerlo y decirlo en el reporte. Escrito en `CONFIG_INFORMES.md` §1.8.2.
+
+### `Digital` no se borró, y nada se rompió
+
+Sigue `uso = fuente`. La siguen leyendo **seis marcadores**: `enc_impresiones`, `enc_alcance`,
+`imp_total`, `frecuencia`, `gcba_imp_total`, `gcba_frecuencia`.
+
+**Control: 23 ok / 20 sin_datos / 0 error antes y después, y cero marcadores con estado o valor
+distinto.** Las 10 pruebas pasan.
+
+**Tres advertencias sobre la solapa nueva**, escritas en `CONFIG_INFORMES.md` §1.8.2 porque van
+a morder a quien la use para otra cosa: **no tiene columna `JM | GCBA | POLICIA`** —el corte de
+`R-15` para pauta digital no es computable ahí—, su **`Estado` viene en MAYÚSCULAS** y `R-10` no
+pliega el case, y es **un acumulado**: sus números son de la campaña entera, no del período.

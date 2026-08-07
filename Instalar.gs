@@ -1050,7 +1050,33 @@ var SEED_MAPEO_ = [
   { base_id: 'digital', campo_logico: 'sd_estado', hoja: 'Seguimiento digital', columna: 'N', notas: 'estado de la campaña en el momento del informe — valores libres, cargados a mano' },
   { base_id: 'digital', campo_logico: 'sd_pauta_google', hoja: 'Seguimiento digital', columna: 'T', notas: 'conteo de contenidos pauteados en Google, no monto' },
   { base_id: 'digital', campo_logico: 'sd_pauta_prog', hoja: 'Seguimiento digital', columna: 'U', notas: 'conteo de contenidos pauteados en Programmatic, no monto' },
-  { base_id: 'digital', campo_logico: 'sd_pauta_meta', hoja: 'Seguimiento digital', columna: 'V', notas: 'conteo de contenidos pauteados en Meta, no monto' }
+  { base_id: 'digital', campo_logico: 'sd_pauta_meta', hoja: 'Seguimiento digital', columna: 'V', notas: 'conteo de contenidos pauteados en Meta, no monto' },
+
+  // `A.2`/`B.4` (07/08) — la solapa `Digital 2026 acumulado`, fuente de la tabla de
+  // comunicaciones post (lámina 7 de `jm`). Letras verificadas contra la base viva el 07/08.
+  //
+  // **Prefijo propio `acum_` y no `dig_`**, aunque la clave de `MAPEO` incluya la solapa y no
+  // hubiera colisión: `dig_impresiones` sobre `Digital` son las impresiones **de un período**
+  // y sobre esta solapa son **el acumulado de la campaña entera**. Dos cosas distintas con el
+  // mismo nombre es exactamente la trampa que costó una noche el 07/08. Es además la
+  // convención que ya usan `alc_`, `sd_`, `mail_`, `ivr_` y `sms_`: un prefijo por solapa.
+  //
+  // **VTR no está y es derivable** — `acum_views / acum_impresiones`. No se mapea una columna
+  // que no existe ni se cablea el marcador: la propuesta va en el reporte (§1.8.2).
+  { base_id: 'digital', campo_logico: 'acum_id_cuenta', hoja: 'Digital 2026 acumulado', columna: 'A', notas: 'join entre solapas' },
+  { base_id: 'digital', campo_logico: 'acum_campana', hoja: 'Digital 2026 acumulado', columna: 'B', notas: '' },
+  { base_id: 'digital', campo_logico: 'acum_fecha_inicio', hoja: 'Digital 2026 acumulado', columna: 'C', notas: 'extremo izquierdo del rango de R-14' },
+  { base_id: 'digital', campo_logico: 'acum_fecha_fin', hoja: 'Digital 2026 acumulado', columna: 'D', notas: 'extremo derecho del rango de R-14' },
+  { base_id: 'digital', campo_logico: 'acum_estado', hoja: 'Digital 2026 acumulado', columna: 'E', notas: '⚠ viene en MAYÚSCULAS (FINALIZADA/ACTIVA/PAUSADA/PENDIENTE) y R-10 no pliega el case' },
+  { base_id: 'digital', campo_logico: 'acum_impresiones', hoja: 'Digital 2026 acumulado', columna: 'F', notas: '' },
+  { base_id: 'digital', campo_logico: 'acum_views', hoja: 'Digital 2026 acumulado', columna: 'G', notas: 'el numerador del VTR derivable' },
+  { base_id: 'digital', campo_logico: 'acum_clics', hoja: 'Digital 2026 acumulado', columna: 'H', notas: '' },
+  { base_id: 'digital', campo_logico: 'acum_ctr', hoja: 'Digital 2026 acumulado', columna: 'I', notas: '' },
+  { base_id: 'digital', campo_logico: 'acum_frecuencia', hoja: 'Digital 2026 acumulado', columna: 'J', notas: '' },
+  { base_id: 'digital', campo_logico: 'acum_alcance', hoja: 'Digital 2026 acumulado', columna: 'K', notas: '' },
+  // La fecha que gobierna el recorte por ventana de esta solapa: la de inicio, igual que en
+  // `Digital`. Con `acum_fecha_fin` mapeado, `R-14` es computable acá.
+  { base_id: 'digital', campo_logico: 'fecha_periodo', hoja: 'Digital 2026 acumulado', columna: 'C', notas: 'fecha_periodo = Fecha de inicio (A.2/B.4)' }
 ];
 
 // Paso 2.3.2: `solapa` entra en la clave de MAPEO junto a `base_id` +
@@ -1080,6 +1106,7 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   clave: 'texto', id_cuenta: 'texto', dig_jm_gcba: 'texto', post_meta: 'texto', mail_area: 'texto',
   dig_campana: 'texto', mail_campana: 'texto', sms_campana: 'texto', ivr_campana: 'texto',
   sd_campana_cuentas: 'texto', sd_campana_digital: 'texto', sd_estado: 'texto',
+  acum_id_cuenta: 'texto', acum_campana: 'texto', acum_estado: 'texto',
   dig_id_cuenta: 'texto', mail_id_cuenta: 'texto', sms_id_cuenta: 'texto',
   ivr_id_cuenta: 'texto', alc_id_cuenta: 'texto', sd_id_cuenta: 'texto',
 
@@ -1087,6 +1114,7 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   fecha_periodo: 'fecha', fecha_inicio: 'fecha', fecha_fin: 'fecha', fecha: 'fecha',
   dig_fecha_inicio: 'fecha', dig_fecha_fin: 'fecha', mail_fecha: 'fecha', sms_fecha: 'fecha',
   ivr_inicio: 'fecha', ivr_fin: 'fecha', sd_fecha_inicio: 'fecha', sd_fecha_fin: 'fecha',
+  acum_fecha_inicio: 'fecha', acum_fecha_fin: 'fecha',
 
   // métricas que un marcador va a sumar — numero
   inscriptos: 'numero', insc_mail: 'numero', insc_cc: 'numero', insc_ivr: 'numero',
@@ -1105,7 +1133,9 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   dig_alcance: 'numero', dig_frecuencia: 'numero', dig_views: 'numero', dig_vtr: 'numero',
   dig_ctr: 'numero', dig_impresiones_social: 'numero',
   alc_alcance: 'numero', alc_frecuencia: 'numero',
-  sd_pauta_google: 'numero', sd_pauta_prog: 'numero', sd_pauta_meta: 'numero'
+  sd_pauta_google: 'numero', sd_pauta_prog: 'numero', sd_pauta_meta: 'numero',
+  acum_impresiones: 'numero', acum_views: 'numero', acum_clics: 'numero',
+  acum_ctr: 'numero', acum_frecuencia: 'numero', acum_alcance: 'numero'
 };
 SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAMPO_[fila.campo_logico] || ''; });
 
@@ -1255,7 +1285,20 @@ var SEED_SOLAPAS_ = [].concat(
   [filaSolapa_('digital', 'Seguimiento digital', 'fuente', 'maestra de la unión del Paso 2.4')],
   [filaSolapa_('digital', 'Alcance', 'fuente', 'usada por Union.gs')],
   [filaSolapa_('digital', 'RDV', 'ignorar', '⚠ duplica la base rdv — si se lee, hay doble conteo')],
-  filasSolapa_('digital', ['Digital 2026 acumulado', 'm2 digital'], 'derivada', 'acumulados'),
+  // `A.2`/`B.4` (07/08) — **`Digital 2026 acumulado` pasa de `derivada` a `fuente`**, por
+  // decisión del usuario. Es la fuente de la tabla de comunicaciones post (lámina 7 de `jm`).
+  //
+  // El motivo es medido, no de preferencia: `Digital` —que era la candidata— **no tiene
+  // ninguna fila en la ventana del informe**; sus 897 fechas reales van de 2024-08-29 a
+  // 2026-01-02 y la ventana es julio de 2026. Declararla fuente dejaba la lámina vacía por
+  // construcción. `Digital 2026 acumulado` sí llega: 683 filas con `Estado` cargado.
+  //
+  // **Que siga siendo un acumulado no cambia**: lo que cambia es que ahora se lee. `derivada`
+  // en este registro significa "no la leas", no "está mal calculada", y esta lámina la
+  // necesita. Ver `CONFIG_INFORMES.md` §1.8.2, con las tres advertencias — no tiene columna
+  // `JM | GCBA | POLICIA`, su `Estado` viene en MAYÚSCULAS, y le falta VTR (derivable).
+  [filaSolapa_('digital', 'Digital 2026 acumulado', 'fuente', 'acumulado — fuente de la lámina de comunicaciones post (A.2/B.4, 07/08)')],
+  [filaSolapa_('digital', 'm2 digital', 'derivada', 'acumulados')],
   // Paso 2.9 Parte C.4: NO es conjunto de control — es texto pegado (una foto a mano
   // del link Funcionario/Barrio/Fecha, no datos vivos ni una fórmula). Ver
   // docs/DISENO_match_temario.md §9, marcada inválida como fuente de validación.
