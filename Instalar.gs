@@ -1028,6 +1028,12 @@ var SEED_MAPEO_ = [
   { base_id: 'digital', campo_logico: 'sd_campana_cuentas', hoja: 'Seguimiento digital', columna: 'B', notas: '' },
   { base_id: 'digital', campo_logico: 'sd_campana_digital', hoja: 'Seguimiento digital', columna: 'C', notas: '' },
   { base_id: 'digital', campo_logico: 'sd_fecha_inicio', hoja: 'Seguimiento digital', columna: 'L', notas: '' },
+  // `R-14` (06/08/2026) — una campaña entra si su rango **se solapa** con la ventana, y sin
+  // el extremo derecho no hay rango: con sólo `sd_fecha_inicio` lo único computable era
+  // "empieza en la ventana", que es justo lo que la regla dice que no es. Encabezados reales
+  // verificados el 07/08 contra la base: `M = "Fecha de fin"`, `N = "Estado"`.
+  { base_id: 'digital', campo_logico: 'sd_fecha_fin', hoja: 'Seguimiento digital', columna: 'M', notas: 'el extremo derecho del rango de R-14' },
+  { base_id: 'digital', campo_logico: 'sd_estado', hoja: 'Seguimiento digital', columna: 'N', notas: 'estado de la campaña en el momento del informe — valores libres, cargados a mano' },
   { base_id: 'digital', campo_logico: 'sd_pauta_google', hoja: 'Seguimiento digital', columna: 'T', notas: 'conteo de contenidos pauteados en Google, no monto' },
   { base_id: 'digital', campo_logico: 'sd_pauta_prog', hoja: 'Seguimiento digital', columna: 'U', notas: 'conteo de contenidos pauteados en Programmatic, no monto' },
   { base_id: 'digital', campo_logico: 'sd_pauta_meta', hoja: 'Seguimiento digital', columna: 'V', notas: 'conteo de contenidos pauteados en Meta, no monto' }
@@ -1059,14 +1065,14 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   comuna: 'texto', eje: 'texto', area: 'texto', campana: 'texto', campana_dig: 'texto',
   clave: 'texto', id_cuenta: 'texto', dig_jm_gcba: 'texto', post_meta: 'texto', mail_area: 'texto',
   dig_campana: 'texto', mail_campana: 'texto', sms_campana: 'texto', ivr_campana: 'texto',
-  sd_campana_cuentas: 'texto', sd_campana_digital: 'texto',
+  sd_campana_cuentas: 'texto', sd_campana_digital: 'texto', sd_estado: 'texto',
   dig_id_cuenta: 'texto', mail_id_cuenta: 'texto', sms_id_cuenta: 'texto',
   ivr_id_cuenta: 'texto', alc_id_cuenta: 'texto', sd_id_cuenta: 'texto',
 
   // fecha
   fecha_periodo: 'fecha', fecha_inicio: 'fecha', fecha_fin: 'fecha', fecha: 'fecha',
   dig_fecha_inicio: 'fecha', dig_fecha_fin: 'fecha', mail_fecha: 'fecha', sms_fecha: 'fecha',
-  ivr_inicio: 'fecha', ivr_fin: 'fecha', sd_fecha_inicio: 'fecha',
+  ivr_inicio: 'fecha', ivr_fin: 'fecha', sd_fecha_inicio: 'fecha', sd_fecha_fin: 'fecha',
 
   // métricas que un marcador va a sumar — numero
   inscriptos: 'numero', insc_mail: 'numero', insc_cc: 'numero', insc_ivr: 'numero',

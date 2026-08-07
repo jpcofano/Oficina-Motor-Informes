@@ -4635,3 +4635,38 @@ snapshot de `MAPEO` del 07/08.
 La regla dice además qué caso sirve de control —una campaña que empieza antes del viernes de
 inicio y termina después del jueves de cierre— porque los casos que tocan un extremo no
 discriminan entre las tres lecturas.
+
+---
+
+## `N4` — `MAPEO`: `sd_fecha_fin` y `sd_estado`, por el camino del seed (2026-08-07) — commit de esta entrada
+
+`R-14` no se puede aplicar sin el extremo derecho del rango. Las columnas estaban en la base y
+no en `MAPEO`.
+
+**Medido primero, contra la base viva** (980 filas en `Seguimiento digital`):
+
+| columna | encabezado real | tipo | nombre lógico |
+|---|---|---|---|
+| `L` | `Fecha de inicio` | fecha | `sd_fecha_inicio` *(ya estaba)* |
+| `M` | `Fecha de fin` | fecha | **`sd_fecha_fin`** |
+| `N` | `Estado` | texto | **`sd_estado`** |
+
+Los nombres siguen el del vecino que ya estaba, que es lo que el prompt pedía.
+
+**Por el camino del seed, no a mano.** Dos filas nuevas en `SEED_MAPEO_` (`Instalar.gs`) más
+sus entradas en `TIPO_ESPERADO_POR_CAMPO_`. El diff en sólo lectura, antes de escribir, dio
+**exactamente dos filas nuevas y cero discrepancias** en las cuatro hojas sembradas; la
+aplicación reportó lo mismo: `MAPEO — escritas: 2, actualizadas: 0`, y `BASES`, `CONFIG`,
+`INFORMES` y `PERIODOS` en cero. `MAPEO` pasa de 122 a **124** filas.
+
+`buscarMapeo('digital','Seguimiento digital','sd_fecha_fin')` devuelve `M`, y `sd_estado`
+devuelve `N`.
+
+**Mapear no es cablear: ningún marcador nuevo.** Las dos filas quedan disponibles y nadie las
+consume todavía.
+
+Las siete filas `solo_en_hoja` que reporta el diff son las `fecha_periodo` que escribe
+`DIAG_FECHAS`: no están en el seed y el upsert **no las toca**. Es el hueco conocido, sin
+cambios.
+
+Backup previo: snapshot de las diez hojas de registro con `tools/snapshot.js`.
