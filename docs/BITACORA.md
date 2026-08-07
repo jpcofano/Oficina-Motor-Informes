@@ -5249,3 +5249,54 @@ ampliada es de otro paso, como `R-12` dice.
 - **Las 10 pruebas pasan.**
 
 **Pendiente de verificación humana.**
+
+---
+
+## `N7` / `T2.5` — el formato `porcentaje_sin_signo`, y las decisiones que faltan para la lista (2026-08-07) — commit de esta entrada
+
+El prompt mandaba **empezar por el formato de porcentaje**, que era el más chico y el único
+medido, y **anotar y seguir** lo que necesitara una decisión.
+
+### Hecho: `porcentaje_sin_signo`
+
+Cierra el 2×2 que los formatos venían dibujando a medias — **unidad de entrada × lleva el
+signo** — y la fila de `MARCADORES` es la que sabe las dos cosas:
+
+| formato | entrada | sale |
+|---|---|---|
+| `porcentaje` | unidades de pct | `26.4%` |
+| **`porcentaje_sin_signo`** | unidades de pct | **`26.4`** |
+| `fraccion` | 0–1 | `28.2` |
+| *(entrada 0–1 con signo)* | — | no existe, nadie lo pidió |
+
+**`numero` no era equivalente**, y ése es el motivo de existir del formato: redondea a **dos**
+decimales (`25.42`) donde el resto del deck muestra **uno** (`25.4`), así que la misma lámina
+mezclaba dos precisiones. Las notas de los cinco `ecv_insc_*_pct` ya lo decían desde el 05/08.
+
+**Cinco afirmaciones nuevas** en `probarFormatoMarcador_`, incluida la que fija el motivo —
+`numero` da dos decimales— y la que ata los dos formatos: `porcentaje_sin_signo` + `'%'` tiene
+que dar exactamente `porcentaje`. **Las 10 pruebas pasan.**
+
+**El cableado no se tocó**, y es deliberado: cambiar `formato` en esas filas **cambia números
+publicados** (`mail_or` pasaría de `25.42` a `25.4`) y la corrida tenía prohibido cablear.
+
+**Son nueve celdas, y las nueve están verificadas caja por caja contra el deck**:
+`ecv_insc_mail_pct`, `ecv_insc_cc_pct`, `ecv_insc_ivr_pct`, `ecv_insc_digital_pct`,
+`ecv_insc_dif_pct`, `enc_e75_pct`, `mail_or`, `gcba_mail_or`, `ivr_at_pct`.
+
+> **Un error propio que cazó la verificación.** El primer borrador dejaba `ivr_at_pct` afuera
+> *"porque su caja no trae `%` propio"* — supuesto, no medido. La caja dice
+> `Atendidos: «FALTA:ivr_atendidos» («FALTA:ivr_at_pct»%)`. Las nueve traen su signo.
+
+### Anotado y no implementado: la operación que devuelve lista
+
+`DISTINCT` necesita **cinco decisiones**, y ninguna es del motor. Están escritas en el `P2` de
+`docs/PENDIENTES_consistencia.md`: qué devuelve con cero filas —el precedente del proyecto está
+partido a propósito, `SUMA` da `sin_datos` y `CONTEO` da `0`—, con qué separa, en qué orden,
+cómo deduplica —`R-10` preserva mayúsculas, así que `Palermo` y `palermo` serían dos barrios— y
+qué pasa si no entra en la caja.
+
+**Y una que precede a las otras cuatro:** sigue sin confirmarse si `ecv_barrios` es **el
+conteo** de barrios distintos o **la lista de nombres**. Si es el conteo, `DISTINCT` no
+necesita devolver lista y las otras cuatro desaparecen. **Ésa es la que hay que responder
+primero.**

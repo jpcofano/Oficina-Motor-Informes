@@ -569,6 +569,20 @@ function probarFormatoMarcador_() {
     'formato: `fraccion` NO pone el signo — lo trae la caja de la plantilla (C-01)');
   afirmar_(formatearValorMarcador_(0, 'fraccion') === '0',
     'formato: el CERO en `fraccion` es un dato, sale "0" y no vacío');
+
+  // `T2.5` (07/08) — la cuarta casilla: entrada ya en unidades de porcentaje, sin signo.
+  afirmar_(formatearValorMarcador_(25.416407620701392, 'porcentaje_sin_signo') === '25.4',
+    'formato: `porcentaje_sin_signo` va a UN decimal, como `porcentaje` y `fraccion`');
+  afirmar_(formatearValorMarcador_(25.416407620701392, 'porcentaje_sin_signo').indexOf('%') === -1,
+    'formato: `porcentaje_sin_signo` NO pone el signo — lo trae la caja de la plantilla (C-01)');
+  // La razón de existir del formato, escrita como afirmación: `numero` NO es equivalente.
+  // Redondea a dos decimales y mezcla precisiones en la misma lámina.
+  afirmar_(formatearValorMarcador_(25.416407620701392, 'numero') === '25.42',
+    'formato: `numero` da dos decimales — por eso no servía de reemplazo del porcentaje sin signo');
+  afirmar_(formatearValorMarcador_(26.4, 'porcentaje_sin_signo') + '%' === formatearValorMarcador_(26.4, 'porcentaje'),
+    'formato: `porcentaje_sin_signo` es `porcentaje` sin el signo, mismo redondeo');
+  afirmar_(formatearValorMarcador_(0, 'porcentaje_sin_signo') === '0',
+    'formato: el CERO en `porcentaje_sin_signo` es un dato, sale "0" y no vacío');
   afirmar_(formatearValorMarcador_('hola', 'texto') === 'hola',
     'formato: `texto` no toca el valor');
   afirmar_(formatearValorMarcador_('sin formato declarado', '') === 'sin formato declarado',

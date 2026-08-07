@@ -1449,6 +1449,29 @@ pendiente: quedaría "resuelto" por una decisión que nunca lo abarcó.
 
 `P2` y no `P1`: bloquea **un token**, no una sección. La sección 1 cerró igual.
 
+> **Medido y no implementado — 07/08 (`N7` / `T2.5`).** El prompt de la corrida nocturna mandaba
+> empezar por el formato de porcentaje —hecho— y **anotar y seguir** lo que necesitara una
+> decisión. Esto la necesita, y no es una sola:
+>
+> 1. **Qué devuelve con cero filas.** El precedente del proyecto está partido a propósito:
+>    `SUMA` sobre cero filas da `sin_datos`, `CONTEO` da `0`. Una lista se parece a las dos: es
+>    un agregado (como `SUMA`) pero su "vacío" es representable (como el `0` de `CONTEO`).
+>    **Nadie decidió cuál sigue.**
+> 2. **Con qué separa.** `", "`, `" · "`, salto de línea. Lo ve el lector del deck, así que es
+>    editorial.
+> 3. **En qué orden.** Alfabético, o el de aparición en la base.
+> 4. **Cómo deduplica.** `R-10` normaliza espacios **preservando mayúsculas y acentos**, así
+>    que `Palermo` y `palermo` serían dos barrios distintos. Para un `DISTINCT` de barrios eso
+>    es probablemente lo que **no** se quiere, y es la única de las cuatro donde una regla
+>    escrita empuja en contra del comportamiento deseable.
+> 5. **Qué pasa si no entra en la caja.** Quince barrios no entran en una línea de la lámina 5.
+>
+> **Y hay una quinta pregunta que precede a las otras:** `ecv_barrios` está descrito en el deck
+> como *"Barrios impactados"*, y sigue sin confirmarse si es **el conteo** —que sería un
+> `CONTEO` sobre valores distintos, no una lista— o **la lista de nombres**. Si es el conteo,
+> `DISTINCT` no necesita devolver lista y las cuatro decisiones de arriba desaparecen.
+> **Esa es la que hay que responder primero.**
+
 
 ### P2 · Falta un formato "unidades de porcentaje sin signo"
 
@@ -1463,6 +1486,28 @@ con `numero`, y funciona** —el deck dice `(59.54%)`— pero por elección de u
 **no describe el dato**: `numero` no dice que eso sea un porcentaje.
 
 **No cambiar el cableado**: anotar el hueco. Cuando exista el formato, son cinco celdas.
+
+> **El formato existe desde el 07/08 (`N7` / `T2.5`) — pendiente de verificación humana.**
+> `porcentaje_sin_signo`: entrada ya en unidades de porcentaje, **un** decimal, sin el signo.
+> Cierra el 2×2 de unidad de entrada × lleva el signo.
+>
+> **Y el cableado sigue sin cambiar, a propósito.** Cambiar `formato` en esas filas **cambia
+> el deck**: `mail_or` pasaría de `25.42` a `25.4`. Es lo que corresponde —el resto de la
+> lámina muestra un decimal, y `numero` estaba mezclando dos precisiones— pero es una
+> **decisión sobre números publicados** y la corrida nocturna del 07/08 tenía prohibido
+> cablear. Van a la cola del usuario.
+>
+> **Las nueve celdas** (`MARCADORES.formato`: `numero` → `porcentaje_sin_signo`):
+> `ecv_insc_mail_pct`, `ecv_insc_cc_pct`, `ecv_insc_ivr_pct`, `ecv_insc_digital_pct`,
+> `ecv_insc_dif_pct`, `enc_e75_pct`, `mail_or`, `gcba_mail_or`, **`ivr_at_pct`**. *(Nueve y no
+> cinco: las notas del 05/08 contaban sólo los `ecv_insc_*`; el sembrado del Resumen Ejecutivo
+> agregó `mail_or`, `gcba_mail_or` e `ivr_at_pct`, y `enc_e75_pct` ya estaba.)*
+>
+> **Las nueve verificadas caja por caja contra el deck**, no supuestas — el primer intento dejó
+> `ivr_at_pct` afuera dando por sentado que su caja no traía signo, y la caja dice
+> `Atendidos: «FALTA:ivr_atendidos» («FALTA:ivr_at_pct»%)`. Las nueve traen su propio `%`, así
+> que las nueve deben ir sin signo. **Si aparece un `PCT` nuevo, se mira la caja antes de
+> elegirle el formato.**
 
 
 ### P1 · `generarInforme` no vuelve, y hace tres corridas que no se verifica nada de punta a punta

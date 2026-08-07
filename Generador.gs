@@ -110,6 +110,20 @@ function formatearValorMarcador_(valor, formato) {
   // Son dos formatos y no una heurística sobre el valor a propósito: "0,5" es un 50% en una
   // columna y medio punto en otra, y eso lo sabe la fila de `MARCADORES`, no el formateador.
   if (f === 'fraccion') return String(Math.round(numero * 1000) / 10);
+  // `T2.5` (07/08) — la cuarta casilla del cuadro, la que faltaba. Los cuatro formatos son un
+  // 2×2 de **unidad de entrada** × **lleva el signo**, y la fila de `MARCADORES` es la que
+  // sabe las dos cosas:
+  //
+  //   entrada en unidades de pct + con signo  → `porcentaje`            26.4  → "26.4%"
+  //   entrada en unidades de pct + sin signo  → `porcentaje_sin_signo`  26.4  → "26.4"
+  //   entrada 0–1                + sin signo  → `fraccion`              0.2818 → "28.2"
+  //   entrada 0–1                + con signo  → no existe, nadie lo pidió
+  //
+  // El hueco lo dejó anotado la corrida del 05/08 en las notas de los cinco `ecv_insc_*_pct`
+  // y de `enc_e75_pct`: *"falta el formato 'unidades de pct sin signo'; se usa `numero`"*.
+  // `numero` no es equivalente — redondea a **dos** decimales (25.42) donde el resto del deck
+  // muestra **uno** (25.4), así que la misma lámina mezclaba dos precisiones.
+  if (f === 'porcentaje_sin_signo') return String(Math.round(numero * 10) / 10);
   if (f === 'miles') return Math.round(numero).toLocaleString('es-AR');
   if (f === 'numero') return String(Math.round(numero * 100) / 100);
   return String(valor);
