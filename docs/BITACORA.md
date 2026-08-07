@@ -5441,3 +5441,42 @@ que cambiar todavía**. Los dos van a moverse en cuanto tengan datos: `enc_e75_p
 por ítem para Orden Público.
 
 **Ninguna otra se movió.** Las 10 pruebas pasan. Backup previo con `tools/snapshot.js`.
+
+---
+
+## `B.2` — `items_por_lamina` en `SECCIONES`, y `secco` a cuatro ranuras (2026-08-07) — commit de esta entrada
+
+`A.10`: el tamaño de página se declara en `SECCIONES`, una columna por sección.
+
+**Entró por `COLUMNAS_DELTA_`, no por la rama que reescribe la fila 1**, y ése es todo el
+cuidado del paso: `SECCIONES` tiene **36 filas curadas a mano** y la rama `else` de
+`aplicarInstalacion_` reescribe los encabezados **sin mover los datos** — con una columna nueva
+eso corre todo una posición, en silencio y sin fallar. `indice: 15` = antes de `notas`, que
+sigue siendo siempre la última. Mismo mecanismo y mismo motivo que `periodo_ref` en su día.
+
+**Verificado que nada se corrió:** los 16 encabezados en orden, y la fila de `encuentro` con su
+`notas` larga todavía en `notas`. Las 36 filas siguen.
+
+**Valores cargados por `curarSecciones_`** —el camino declarado, porque `sembrarSecciones_`
+sólo agrega y nunca pisa—:
+
+| sección | `items_por_lamina` |
+|---|---|
+| `comunicaciones_post` | **4** |
+| `encuentro` | 1 |
+| `campana` | 1 |
+
+Y en `SEED_SECCIONES_`, para que una instalación nueva nazca igual. **Vacío es un valor válido
+y significa el comportamiento de hoy**: una lámina por ítem.
+
+**Nadie la consume todavía.** Es la entrada de `T2.10`, que no está implementado ni aprobado.
+
+### `A.9` · `secco` a cuatro ranuras — decidido y **no ejecutado**, con motivo
+
+La decisión quedó escrita en `CONFIG_INFORMES.md` §2.3 y en la columna. **La ejecución no se
+puede hacer:** pasar de 3 a 4 ranuras exige **agregarle una fila a la tabla** de la lámina 10 de
+`secco`, y eso es exactamente lo que `D-22` mide que el motor no sabe hacer — no hay una sola
+llamada de inserción de filas de Slides en el repo. La cuarta la agrega una persona, o espera a
+que exista el mecanismo.
+
+**Las 10 pruebas pasan** y el anclaje sigue dando los cinco encuentros idénticos.

@@ -151,7 +151,7 @@ var HOJAS_CONFIG_ = {
   // Para una planilla nueva esta lista es la que vale: `insertSheet` escribe estos headers
   // y no pasa por el delta.
   SECCIONES: {
-    headers: ['seccion_id', 'padre', 'orden', 'nombre', 'informes', 'modo', 'itera_sobre', 'filtro', 'opcional', 'condicion', 'familia_tokens', 'estado', 'falta', 'periodo_ref', 'notas']
+    headers: ['seccion_id', 'padre', 'orden', 'nombre', 'informes', 'modo', 'itera_sobre', 'filtro', 'opcional', 'condicion', 'familia_tokens', 'estado', 'falta', 'periodo_ref', 'items_por_lamina', 'notas']
   },
   // Paso 2.9H — la "foto" de cada token calculado. Nunca se pisa: cada corrida
   // agrega una fila, así un informe pasado se puede reproducir (punteo del
@@ -263,8 +263,18 @@ var COLUMNAS_DELTA_ = {
   // significa que la fila **no entra a ningún informe** (`D-19`); `periodo_ref` vacío
   // significa que la sección **usa el eslabón siguiente** de la cadena (`D-20`). Además
   // apunta a `PERIODOS` igual que `MARCADORES.periodo_ref`, que es el eslabón de arriba.
+  //
+  // `A.10`/`B.2` de las once respuestas (07/08) — `items_por_lamina` entra por el mismo
+  // camino y por el mismo motivo: la hoja tiene 34 filas curadas a mano y la rama `else`
+  // reescribiría la fila 1 corriendo todos los encabezados una posición, en silencio.
+  // `indice: 15` = **antes de `notas`**, que sigue siendo siempre la última.
+  //
+  // Declara **cuántos ítems entran en una lámina** de una sección repetible. Vacío = el
+  // comportamiento de hoy, una lámina por ítem. **Nadie la consume todavía**: es la entrada
+  // de `T2.10`, que no está implementado ni aprobado.
   SECCIONES: [
-    { nombre: 'periodo_ref', indice: 14 }
+    { nombre: 'periodo_ref', indice: 14 },
+    { nombre: 'items_por_lamina', indice: 15 }
   ]
 };
 
@@ -2009,6 +2019,10 @@ function filaSeccion_(datos) {
     familia_tokens: datos.familia || '',
     estado: datos.estado || 'activa',
     falta: datos.falta || '',
+    // `A.10`/`B.2` (07/08) — cuántos ítems entran en una lámina de esta sección.
+    // **Vacío es un valor válido y significa el comportamiento de hoy**: una lámina por ítem.
+    // Sólo se declara donde la lámina agrupa. Nadie lo consume todavía (`T2.10`).
+    items_por_lamina: datos.itemsPorLamina || '',
     notas: datos.notas || ''
   };
 }
@@ -2044,7 +2058,11 @@ var SEED_SECCIONES_ = [
   // **todos** los tokens de la slide emitida, no sólo los de la familia.
   filaSeccion_({ id: 'encuentro', orden: 8, nombre: 'Bloque de encuentro', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', familia: 'enc_',
     notas: 'familia enc_ y no ecv_,enc_ (Pedido-4, 05/08): los ecv_ del iceberg se resuelven por ítem vía tokensDeSlide_, no por familia' }),
-  filaSeccion_({ id: 'comunicaciones_post', orden: 9, nombre: 'Comunicaciones post', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', filtro: 'etapa=post', familia: 'post_' }),
+  // `A.9`/`A.10` (07/08) — **cuatro ranuras por lámina**, decisión del usuario. Es la única
+  // sección que agrupa: su lámina es una tabla con cuatro filas, no una lámina por ítem.
+  // `jm` ya tiene las cuatro; `secco` tiene tres y la cuarta **no se puede agregar todavía**
+  // (`D-22`: el motor no sabe insertar filas en una tabla de Slides).
+  filaSeccion_({ id: 'comunicaciones_post', orden: 9, nombre: 'Comunicaciones post', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', filtro: 'etapa=post', familia: 'post_', itemsPorLamina: '4' }),
   filaSeccion_({ id: 'impacto_comunicacional', orden: 10, nombre: 'Semana JM — Impacto comunicacional', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'sin marcar en la plantilla' }),
   filaSeccion_({ id: 'ministros', orden: 11, nombre: 'Encuentros de ministros', informes: 'SECCO', modo: 'agregado', familia: 'emin_' }),
   filaSeccion_({ id: 'm2', orden: 12, nombre: 'M2', informes: 'JM,SECCO', modo: 'agregado', familia: 'm2_' }),
