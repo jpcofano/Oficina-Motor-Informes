@@ -871,17 +871,35 @@ la Fase 4.
 
 | fase | qué | precondición |
 |---|---|---|
-| **2a** | `sellarPlantilla(informe_id)`: anexa `#lamina: L-NNN` a las notas del orador de **todas** las láminas. No toca las que ya tienen ancla. Nunca `setText`: anexa | **la autorización de `C-01` para escribir las notas** (`REGLAS_NEGOCIO.md`, addendum del 07/08). El acceso ya está: las dos plantillas dan `EDIT` a la cuenta del script |
-| **3** | Hoja `LAMINAS`: `lamina_id`, `informe_id`, `seccion_id`, `orden_plantilla` (reportado, **no** autoritativo), `escondida`, `origen`, `modo`, `itera_sobre`, `filtro` (los tres vacíos = heredan), `rol`, `estado`, `falta`, `notas`. Es `SOLAPAS` del lado del deck, y es `D-17` aplicado a láminas | Fase 2a: sin el `L-NNN` la fila no tiene con qué juntarse a la lámina |
-| **—** | **El usuario llena 26 celdas de `seccion_id`.** Es trabajo humano y está contado: 26 de 51 láminas no tienen sección deducible | Fase 3 |
-| **2b** | Segundo sellado: escribe `#seccion:` leyendo la hoja. Default-deny sobre lo que siga vacío, y **reporte por lote**, no parada en la primera | las celdas llenas |
-| **4** | Los consumidores migran al ancla: `LAMINAS_CONGELADAS_` sale del `.gs`, la emisión deja de derivar la pertenencia por prefijo, esconder/mostrar desde el menú, y se resuelven las 4 candidatas a colapsar | Fase 2b, **y una autorización nueva de `C-01`** para `setSkipped` |
+| **2** | `sellarPlantilla(informe_id)` **crea la hoja `LAMINAS` y sella, en una sola operación.** Por cada lámina sin ancla: toma el siguiente id de la hoja, escribe la fila y **anexa `#lamina: L-NNN`** a las notas del orador. No toca las que ya tienen ancla. Nunca `setText`: anexa. Columnas: `lamina_id`, `informe_id`, `seccion_id`, `orden_plantilla` (reportado, **no** autoritativo), `escondida`, `origen`, `modo`, `itera_sobre`, `filtro` (los tres vacíos = heredan), `rol`, `estado`, `falta`, `notas`. Es `SOLAPAS` del lado del deck, y es `D-17` aplicado a láminas | **la autorización de `C-01` para escribir las notas** (`REGLAS_NEGOCIO.md`, suspensión acotada + sus dos addenda). El acceso ya está: las dos plantillas dan `EDIT` a la cuenta del script |
+| **—** | **El usuario llena 26 celdas de `seccion_id`** en la hoja. Es trabajo humano y está contado: 26 de 51 láminas no tienen sección deducible | Fase 2 |
+| **4** | Los consumidores migran al ancla: `LAMINAS_CONGELADAS_` sale del `.gs`, la emisión deja de derivar la pertenencia por prefijo, esconder/mostrar desde el menú, y se resuelven las 4 candidatas a colapsar | las celdas llenas, **y una autorización nueva de `C-01`** para `setSkipped` |
 | **5** | El cableado de la lámina nueva, y después la capa de panel de `docs/OBJETIVO_lamina_nueva.md` | Fase 4. **Sin definir: no inventarlo** |
 
-**Por qué la Fase 2 está partida.** Escribir el id y clasificar son dos trabajos distintos:
-asignar `L-NNN` no requiere saber a qué sección pertenece la lámina. Si el sellado entero
-fuera default-deny, la Fase 2 no podría avanzar sin la hoja `LAMINAS` y la Fase 3 no podría
-existir sin la clave que escribe la Fase 2. Partirla rompe la circularidad sola.
+**Por qué la Fase 2 y la 3 se fundieron, y no hay Fase 3.** El contador de `L-NNN` vive en la
+hoja `LAMINAS` (`D-23`, addendum 1, punto 9): **no se deriva de las notas de las plantillas**,
+porque derivarlo haría retroceder el contador al retirar una lámina y un id se reasignaría.
+Con el contador ahí, sellar necesitaba la hoja y la hoja necesitaba la clave que escribe el
+sellado. **No se ordenan: se hacen juntas.** El número de fase 3 no se reutiliza — la
+numeración es histórica, como los `D-NN`.
+
+**Y no hay segundo sellado.** El ancla tiene un solo campo, así que el sellador **no deduce
+nada y no se traba nunca**. El default-deny no está en él: está en la hoja — **una lámina sin
+fila se reporta, no se adivina**, igual que una solapa no declarada en `SOLAPAS`.
+
+**`T-limpieza` · limpiar el ancla de un informe generado.** Función a demanda, que corre el
+usuario cuando quiere; **sin automatismo y sin concepto de "informe cerrado"**. Borra la línea
+del ancla, **nunca `setText`** sobre las notas — la copia hereda las del equipo. Actúa **sólo
+sobre el informe generado** y **se niega** si el archivo es una plantilla: la plantilla no se
+limpia nunca.
+
+- **Recibe una corrida, no un archivo señalado a mano.** Está medido: `CORRIDAS` tiene
+  `deck_id` cargado **en sus 27 filas**, y `verificarObjectIdDeCorrida_` (`Generador.gs`) ya
+  hace el patrón entero — busca la fila, abre el deck por id y trabaja sobre él.
+- **Lo que sigue sin definirse:** cómo se elige **cuál** corrida cuando hay varias. Se decide
+  al implementarla, no acá.
+- **Precondición:** la Fase 2 — sin ancla no hay nada que limpiar. **No necesita autorización
+  de `C-01`**: actúa sobre la copia, que es salida del motor.
 
 ---
 

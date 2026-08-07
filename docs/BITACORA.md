@@ -5929,3 +5929,24 @@ esconderla, no borrarla.
 
 El `P3` sobre cuál `estado` se marca **se corrigió en el mismo commit**: apuntaba al "paso 6" y
 la sección ahora tiene cinco. **Sin código.**
+
+---
+
+## Parte D — la tabla de fases queda con dos fases y un ítem nuevo (2026-08-07) — commit de esta entrada
+
+`PLAN.md` §2 se tocó **una sola vez, con las dos fusiones juntas**: `2a` y `2b` se funden
+porque el ancla tiene un campo, y las fases 2 y 3 se funden porque **el contador vive en la
+hoja**. Quedan **Fase 2, las 26 celdas humanas, Fase 4 y Fase 5**. El número 3 no se reutiliza:
+la numeración es histórica, como los `D-NN`.
+
+**La Fase 2 ahora crea la hoja y sella en una operación:** por cada lámina sin ancla, toma el
+siguiente id, escribe la fila y anexa el ancla. **No hay segundo sellado y el sellador no se
+traba nunca** — el default-deny se mudó del sellador a la hoja.
+
+**Entra `T-limpieza`**, escrito concreto porque `0.2` lo midió: la función **recibe una
+corrida, no un archivo señalado a mano** —`CORRIDAS` tiene `deck_id` en sus 27 filas y
+`verificarObjectIdDeCorrida_` ya hace el patrón entero—. **Lo que sigue sin definirse y se
+dice:** cómo se elige cuál corrida cuando hay varias.
+
+La tabla que quedó dentro del texto de `D-23` **no se tocó**: un addendum corrige, no reescribe.
+**Sin código.**
