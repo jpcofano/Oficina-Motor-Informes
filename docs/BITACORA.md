@@ -4966,3 +4966,76 @@ es **una semana con datos**.
 Las dos filas que `N4` agregó anoche a `MAPEO` **quedan sin consumidor**: se mapearon cuando la
 fuente que `R-14` nombraba era `Seguimiento digital`. **No se borran** — son filas válidas que
 hoy nadie lee. `MAPEO` sigue en 124.
+
+---
+
+## `N2` — los tokens sin valor, contados por causa (2026-08-07) — commit de esta entrada
+
+Medición, no vista: no se construyó ninguna hoja ni ningún panel. Denominador: los **172
+tokens distintos** que la corrida ve en la plantilla de `jm` (los 195 menos los 23 de la lámina
+escondida). Contra el deck de `jm-20260806-222554`, la corrida completa — **no** contra el valor
+de retorno de las funciones.
+
+**Las tres poblaciones, y suman:**
+
+| | tokens |
+|---|---|
+| con valor en **todas** sus cajas | **18** |
+| con valor en **una** caja y `«FALTA»` en otras | **11** |
+| sin valor en **ninguna** caja | **143** |
+| **total visible** | **172** |
+
+**El 143 del prompt es correcto.** Los 154 que uno cuenta si busca `«FALTA:` en el deck
+incluyen los 11 parciales, que sí tienen valor en alguna lámina.
+
+### Los 143, por causa
+
+| causa | tokens |
+|---|---|
+| sin fila en `MARCADORES` | **72** |
+| sección sin ítems | **53** |
+| fuente con cero filas tras el filtro | **15** |
+| declarado `[MANUAL]` | **3** |
+| fila incompleta | 0 |
+| campo sin mapear | 0 |
+| operación inexistente | 0 |
+| **sin clasificar** | **0** |
+| **total** | **143** |
+
+**Que "sin clasificar" dé cero no es que la tabla haya cerrado sola.** En la pasada global daban
+6 sin clasificar —los `enc_*` de `Directa Mail` con el empate de `ÚLTIMO` del 28/07—, y salieron
+de la tabla porque **la pasada por ítem los resuelve**: son parte de los 11 parciales. La causa
+"empate de `ÚLTIMO`" existe, está medida y tiene nombre; lo que no tiene es tokens sin valor.
+
+**Dónde está el trabajo, leído de la tabla:**
+
+- **53 de 143 son `camp_*`** y no dependen del motor: la sección `campana` itera sobre
+  `CAMPANAS`, que tiene **3 filas y las tres son de `secco`**. Cero ítems de `jm` → las ocho
+  láminas del bloque de campaña destacada quedan con sus tokens crudos. **Es una carga de
+  datos, no código.**
+- **72 no tienen fila en `MARCADORES`.** Adentro hay tres grupos distintos: los `rrss_*` (21,
+  sin fuente identificada), los `m2_*` de la lámina 9 (8), los `cc_*`/`imp_*`/`contenidos_total`
+  (16, el bloque sin fuente ya conocido), los `ecv_*` de las láminas 5 y 6 (12) y los cuatro
+  `camp1`–`camp4` de la lámina 7.
+- **15 tienen todo cableado y la fuente da cero filas** — los tres grupos de `T2.6` (`N3`).
+- **3 son `[MANUAL]`** (`ecv_barrio1-3`), y no son trabajo pendiente del motor.
+
+### El hallazgo grande: cuatro de los cinco encuentros pintaron cero
+
+`repetibles.items` de la corrida completa:
+
+| ítem | `id_cuenta` | resolvió | pintó |
+|---|---|---|---|
+| San Cristóbal (pre) | `3354-JULJDGAG` | 13 ok / 30 sin_datos | **0** |
+| Retiro (pre) | `3346-JULJDGAG` | 13 ok / 30 sin_datos | **0** |
+| **Orden Público** | `3387-JULJDGGC` | **31 ok** / 12 sin_datos | **11** |
+| San Cristóbal (post) | `3354-JULJDGAG` | 13 ok / 30 sin_datos | **0** |
+| Retiro (post) | `3346-JULJDGAG` | 13 ok / 30 sin_datos | **0** |
+
+Los cinco están **anclados con cuenta**. Los `13 ok` de los cuatro que pintaron cero son
+marcadores de otras láminas —`ecv_insc_*_pct`, `mail_*`, `gcba_*`—: de los 30 tokens de la
+lámina 6 no resolvió ninguno. **La diferencia no es el anclaje: es que las cuentas
+`3354-JULJDGAG` y `3346-JULJDGAG` no tienen filas en las solapas de canal para esta ventana, y
+`3387-JULJDGGC` sí.**
+
+**No se cableó ni se tocó nada.** Es medición.
