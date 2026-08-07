@@ -2234,6 +2234,90 @@ function curarSecciones_(cambios) {
   return { ok: true, aplicados: aplicados, sin_fila: sinFila, cambios_escritos: aplicados.length };
 }
 
+/**
+ * `B.1` de las once respuestas (07/08) — la puerta para **corregir un campo** de un marcador
+ * que ya existe. Es a `MARCADORES` lo que `curarSecciones_` es a `SECCIONES`, y nace por la
+ * misma falta: `curarMarcadores_` **agrega y quita filas enteras**, y cambiar el `formato` de
+ * nueve filas con esa herramienta las borra y las vuelve a escribir al final de la hoja —
+ * mucho movimiento para cambiar una celda, y con riesgo de perder lo que no se le pase.
+ *
+ * **Deliberadamente angosta**, igual que su gemela: no crea filas, no borra filas y no toca
+ * `marcador` ni `informe_id`. Sólo escribe los campos declarados de un marcador que ya existe,
+ * y **devuelve el antes y el después de cada celda que cambió**. Un marcador que no existe se
+ * reporta y no se crea: crear filas de `MARCADORES` es de la plantilla (`D-17`, `Paso-2.5`).
+ *
+ * La clave es `marcador` + `informe_id`, la misma que usa `curarMarcadores_`: el mismo nombre
+ * de token puede estar cableado distinto en dos informes.
+ *
+ * `cambios` es `[{ marcador: 'x', informe_id: 'jm', formato: 'porcentaje_sin_signo' }]`.
+ */
+function curarCamposMarcadores_(cambios) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) return { ok: false, motivo: 'La hoja MARCADORES no existe.' };
+
+  cambios = cambios || [];
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxMarcador = headers.indexOf('marcador');
+  var idxInforme = headers.indexOf('informe_id');
+  if (idxMarcador === -1) return { ok: false, motivo: 'MARCADORES no tiene columna `marcador`.' };
+
+  var filaDe = {};
+  for (var f = 1; f < datos.length; f++) {
+    if (!datos[f][idxMarcador]) continue;
+    var clave = datos[f][idxMarcador] + '||' + (idxInforme === -1 ? '' : datos[f][idxInforme]);
+    filaDe[clave] = f;
+  }
+
+  var aplicados = [];
+  var sinFila = [];
+  cambios.forEach(function (c) {
+    var clave = c.marcador + '||' + (c.informe_id || '');
+    if (!(clave in filaDe)) { sinFila.push(clave); return; }
+    var fila = filaDe[clave];
+    Object.keys(c).forEach(function (campo) {
+      if (campo === 'marcador' || campo === 'informe_id') return;
+      var col = headers.indexOf(campo);
+      if (col === -1) { sinFila.push(clave + '.' + campo + ' (columna inexistente)'); return; }
+      var anterior = datos[fila][col];
+      if (String(anterior) === String(c[campo])) return; // ya estaba: no se escribe
+      hoja.getRange(fila + 1, col + 1).setValue(c[campo]);
+      aplicados.push({ marcador: c.marcador, informe_id: c.informe_id || '', campo: campo, anterior: anterior, nuevo: c[campo] });
+    });
+  });
+
+  return { ok: true, aplicados: aplicados, sin_fila: sinFila, cambios_escritos: aplicados.length };
+}
+
+/**
+ * `A.7` / `B.1` de las once respuestas (07/08) — los nueve porcentajes que van **sin signo**.
+ *
+ * Las nueve cajas de las plantillas **traen su propio `%`**, verificado una por una contra el
+ * deck de `jm-20260806-222554`; el caso que lo demuestra es `ivr_at_pct`, que estuvo a punto de
+ * quedar afuera por suponer lo contrario sin mirar:
+ * `Atendidos: «FALTA:ivr_atendidos» («FALTA:ivr_at_pct»%)`.
+ *
+ * Estaban con `formato = numero` como parche declarado desde el 05/08 —*"falta el formato
+ * 'unidades de pct sin signo'"*— y `numero` redondea a **dos** decimales donde el resto del
+ * deck muestra **uno**, así que la misma lámina mezclaba precisiones.
+ *
+ * **Cambia números publicados** (`25.42` → `25.4`) y por eso es una decisión del usuario, no
+ * una migración de higiene: se ejecutó el 07/08 con su autorización explícita.
+ *
+ * Idempotente: `curarCamposMarcadores_` no escribe lo que ya está.
+ */
+var MARCADORES_PORCENTAJE_SIN_SIGNO_ = [
+  'ecv_insc_mail_pct', 'ecv_insc_cc_pct', 'ecv_insc_ivr_pct', 'ecv_insc_digital_pct',
+  'ecv_insc_dif_pct', 'enc_e75_pct', 'mail_or', 'gcba_mail_or', 'ivr_at_pct'
+];
+
+function migrarFormatoPorcentajeSinSigno_(informeId) {
+  informeId = informeId || 'jm';
+  return curarCamposMarcadores_(MARCADORES_PORCENTAJE_SIN_SIGNO_.map(function (m) {
+    return { marcador: m, informe_id: informeId, formato: 'porcentaje_sin_signo' };
+  }));
+}
+
 function menuSembrarSecciones_() {
   var ui = ui_();
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SECCIONES');

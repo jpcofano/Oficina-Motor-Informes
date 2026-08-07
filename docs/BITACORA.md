@@ -5397,3 +5397,47 @@ plantilla viva los tiene desde entonces. **Manda la plantilla.** Y hay un motivo
 sólo de sincronización: la lámina 10 **está escondida y no se emite** — renombrar 23 tokens que
 nadie ve, contra `C-01`, para que coincidan con un documento, es al revés de cómo trabaja este
 proyecto.
+
+---
+
+## `B.1` — los nueve porcentajes pasan a `porcentaje_sin_signo` (2026-08-07) — commit de esta entrada
+
+`A.7`: **sí, aunque cambie el número publicado.** Ejecutado.
+
+**Un escritor nuevo y declarado, en vez de tocar celdas a mano.** `curarCamposMarcadores_` es a
+`MARCADORES` lo que `curarSecciones_` es a `SECCIONES`: corrige **un campo** de una fila que ya
+existe, no crea ni borra, y devuelve el antes y el después de cada celda. Nace porque
+`curarMarcadores_` sólo sabe filas enteras — cambiar nueve `formato` con esa herramienta las
+borra y las reescribe al final de la hoja. Anotado en `docs/ESCRITORES.md` como el **tercer
+escritor**.
+
+`migrarFormatoPorcentajeSinSigno_` lleva la lista de las nueve y es idempotente.
+
+**Resultado: 9 celdas escritas, 0 sin fila.** Las nueve pasaron de `numero` a
+`porcentaje_sin_signo`.
+
+### El control: que cambien las nueve y ninguna otra
+
+| | antes | después |
+|---|---|---|
+| resumen | 23 ok / 20 sin_datos / 0 error | **idéntico** |
+| marcadores con valor formateado distinto | — | **6** |
+
+Los **seis** que se ven:
+
+| marcador | antes | después |
+|---|---|---|
+| `ecv_insc_cc_pct` | `8.13` | **`8.1`** |
+| `ecv_insc_ivr_pct` | `1.29` | **`1.3`** |
+| `ecv_insc_digital_pct` | `29.28` | **`29.3`** |
+| `ecv_insc_dif_pct` | `2.12` | **`2.1`** |
+| `mail_or` | `25.42` | **`25.4`** |
+| `gcba_mail_or` | `28.57` | **`28.6`** |
+
+**Nueve celdas y seis valores no es una inconsistencia**, y conviene decir por qué: de las tres
+que no se movieron, `ecv_insc_mail_pct` ya daba `59.9` con dos decimales —el redondeo coincide—
+y `enc_e75_pct` e `ivr_at_pct` están `sin_datos` en la pasada global, así que **no tienen valor
+que cambiar todavía**. Los dos van a moverse en cuanto tengan datos: `enc_e75_pct` ya resuelve
+por ítem para Orden Público.
+
+**Ninguna otra se movió.** Las 10 pruebas pasan. Backup previo con `tools/snapshot.js`.
