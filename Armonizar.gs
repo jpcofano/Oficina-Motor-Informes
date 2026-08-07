@@ -166,6 +166,33 @@ function piezasDeTextoDeSlide_(slide) {
   return salida;
 }
 
+/**
+ * **La única llamada a `isSkipped()` del repo.** Todo lo que quiera saber si una lámina se
+ * emite pasa por acá: si hubiera dos criterios volvería la divergencia que este helper vino a
+ * cerrar —`mapaDeTokens_` contaba 172 y `generarInforme` 195, con los 23 tokens de la lámina
+ * 10 de M2 pintados sobre algo que no se emite—.
+ *
+ * Un servicio sin `isSkipped` se trata como **visible**: ante la duda se pinta, que es el
+ * error recuperable — un token de más en `FALTANTES` se ve; una lámina que se dejó de llenar
+ * sin avisar, no.
+ */
+function esLaminaEscondida_(slide) {
+  try { return slide.isSkipped() === true; } catch (e) { return false; }
+}
+
+/**
+ * `{ nº de slide (1-based): true }` para las láminas marcadas como omitidas. Extraído de
+ * `mapaDeTokens_` el 06/08 para que la corrida use **el mismo** criterio que el mapa en vez
+ * de un recorrido propio.
+ */
+function laminasEscondidas_(slides) {
+  var escondidas = {};
+  slides.forEach(function (slide, i) {
+    if (esLaminaEscondida_(slide)) escondidas[i + 1] = true;
+  });
+  return escondidas;
+}
+
 /** `{ token: [nº de slide, …] }`, 1-based, sin llaves. Sólo lectura. */
 function tokensPorSlide_(presentacion) {
   var mapa = {};
@@ -919,11 +946,8 @@ function mapaDeTokens_(plantillaId, patron) {
    * clic, y si sus tokens desaparecieran del reporte nadie se acordaría de que
    * existen. Decisión del usuario, 16/08.
    * ──────────────────────────────────────────────────────────────────────── */
-  var escondidas = {};
+  var escondidas = laminasEscondidas_(slides);
   var tokensEscondidos = {};
-  slides.forEach(function (slide, i) {
-    try { if (slide.isSkipped()) escondidas[i + 1] = true; } catch (e) { /* servicio sin isSkipped: se cuenta como visible */ }
-  });
 
   slides.forEach(function (slide, i) {
     var piezas = piezasDeTextoDeSlide_(slide);

@@ -645,8 +645,16 @@ function textoFaltante_(token) {
  *
  * Devuelve `{ tokens: { token: [{ slide, objectId, contenedor }] }, lista: [tokens ordenados] }`.
  */
-/** Los tokens distintos de una slide, ordenados. Mismo recorrido que el mapa. */
+/**
+ * Los tokens distintos de una slide, ordenados. Mismo recorrido que el mapa.
+ *
+ * **Una slide escondida devuelve la lista vacía** (06/08). Hoy no puede pasar —ninguna slide
+ * modelo de `jm` está escondida, medido— pero `duplicate()` copia el estado de la modelo, así
+ * que el día que alguien esconda una modelo sus copias nacen escondidas y esto las saltea sin
+ * que haya que acordarse. La guarda es barata; descubrirlo en un deck, no.
+ */
 function tokensDeSlide_(slide) {
+  if (esLaminaEscondida_(slide)) return [];
   var vistos = {};
   piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
     var m;
@@ -656,15 +664,38 @@ function tokensDeSlide_(slide) {
   return Object.keys(vistos).sort();
 }
 
+/**
+ * **El mapa excluye las láminas escondidas** (06/08). Su único llamador es la etapa 2 de
+ * `generarInforme`, y desde acá se corrigen de un saque las cuatro cosas que salen de él: el
+ * denominador `tokens.en_plantilla`, `cableados_sin_caja_en_plantilla`, el `mapa_tokens` que
+ * se guarda en `CORRIDAS`, y la barrida final de `T2.1.1`.
+ *
+ * El motivo es el mismo que el de `mapaDeTokens_` desde el 16/08: una lámina omitida **no se
+ * emite**, así que sus tokens no se pueden llenar nunca y pintarlos es trabajo sobre algo que
+ * nadie va a ver. Era la diferencia entre los 195 que veía la corrida y los 172 que declara
+ * el mapa: los 23 tokens de la lámina 10 de M2.
+ *
+ * **Nada se excluye en silencio** (`D-21`): lo excluido sale en `escondidas`, con la lista de
+ * tokens y de láminas, y el resultado de la corrida lo publica.
+ */
 function mapaTokenObjectId_(presentacion) {
   var tokens = {};
+  var slides = presentacion.getSlides();
+  var escondidas = laminasEscondidas_(slides);
+  var tokensEscondidos = {};
 
-  presentacion.getSlides().forEach(function (slide, i) {
+  slides.forEach(function (slide, i) {
+    var estaEscondida = escondidas[i + 1] === true;
     piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
       var m;
       RE_TOKEN_.lastIndex = 0;
       while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) {
         var token = m[1];
+        if (estaEscondida) {
+          if (!tokensEscondidos[token]) tokensEscondidos[token] = [];
+          if (tokensEscondidos[token].indexOf(i + 1) === -1) tokensEscondidos[token].push(i + 1);
+          continue;
+        }
         if (!tokens[token]) tokens[token] = [];
         var ubicacion = { slide: i + 1, objectId: pieza.objectId || '', contenedor: pieza.contenedor };
         var repetida = tokens[token].some(function (u) {
@@ -675,7 +706,15 @@ function mapaTokenObjectId_(presentacion) {
     });
   });
 
-  return { tokens: tokens, lista: Object.keys(tokens).sort() };
+  return {
+    tokens: tokens,
+    lista: Object.keys(tokens).sort(),
+    escondidas: {
+      laminas: Object.keys(escondidas).map(Number).sort(function (a, b) { return a - b; }),
+      tokens: Object.keys(tokensEscondidos).sort(),
+      cuantos: Object.keys(tokensEscondidos).length
+    }
+  };
 }
 
 /**
@@ -1228,6 +1267,31 @@ function entraEnElPresupuesto_(reloj, costoSeg) {
 }
 
 /**
+ * `tokensPorSlide_` filtrado por lámina visible — **el filtro en el punto de llamada** (06/08).
+ *
+ * `tokensPorSlide_` vive en `Armonizar.gs` y **no se toca**: sus otros dos consumidores la
+ * usan para inventariar (`filtrarRenombresPorLaminasCongeladas_` busca el testigo de una
+ * lámina congelada, que puede estar escondida; `tokensSinCablear_` reporta el trabajo que
+ * queda) y ésos **necesitan ver todo**. Sólo la corrida quiere el recorte, así que el recorte
+ * es de la corrida.
+ *
+ * Un token sobrevive si aparece **en al menos una lámina visible**: el mismo token puede estar
+ * en la 10 —escondida— y en la 5, y ahí sí hay que pintarlo.
+ */
+function tokensVisiblesDe_(presentacion) {
+  var porSlide = tokensPorSlide_(presentacion);
+  var escondidas = laminasEscondidas_(presentacion.getSlides());
+  var visibles = {};
+  var descartados = [];
+  Object.keys(porSlide).forEach(function (token) {
+    var enVisible = porSlide[token].some(function (n) { return escondidas[n] !== true; });
+    if (enVisible) visibles[token] = porSlide[token];
+    else descartados.push(token);
+  });
+  return { tokens: visibles, descartados: descartados.sort() };
+}
+
+/**
  * La barrida final: ningún `{{token}}` crudo sobrevive a una corrida, se haya cortado o no.
  *
  * Reusa el mapa de la etapa 2 —`mapaTokenObjectId_` devuelve los mismos tokens que
@@ -1239,8 +1303,8 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa) {
   var origen = 'mapa de la etapa 2';
   var tokens = tokensDelMapa ? Object.keys(tokensDelMapa) : null;
   if (!tokens) {
-    origen = 'tokensPorSlide_ (no había mapa: el corte llegó antes de la etapa 2)';
-    tokens = Object.keys(tokensPorSlide_(presentacion));
+    origen = 'tokensVisiblesDe_ (no había mapa: el corte llegó antes de la etapa 2)';
+    tokens = Object.keys(tokensVisiblesDe_(presentacion).tokens);
   }
 
   var barridos = [];
@@ -1467,7 +1531,9 @@ function generarInforme(informeId, periodoId) {
   resolucion = resolucionEtapa4;
   resolucion.resultados.forEach(function (r) { porMarcador[r.marcador] = r; });
 
-  var tokensFijos = tokensPorSlide_(presentacion);
+  // El filtro en el punto de llamada: `tokensPorSlide_` sigue viendo todo para quien la use
+  // para inventariar; la corrida no pinta láminas que no se emiten.
+  var tokensFijos = tokensVisiblesDe_(presentacion).tokens;
   Object.keys(tokensFijos).sort().forEach(function (token) {
     var resultado = porMarcador[token];
 
@@ -1570,7 +1636,15 @@ function generarInforme(informeId, periodoId) {
       reemplazados: reemplazados,
       faltantes: faltantes.length,
       con_valor: conValor.sort(),
-      cableados_sin_caja_en_plantilla: sinCajaEnPlantilla.sort()
+      cableados_sin_caja_en_plantilla: sinCajaEnPlantilla.sort(),
+      // `A.3` / `D-21` — nada se excluye en silencio. Una exclusión que no se reporta es
+      // indistinguible de un token que se perdió, y el denominador cambia de 195 a 172 sin
+      // esto. La lámina escondida se vuelve a mostrar en un clic: los tokens siguen ahí.
+      excluidos_por_lamina_escondida: {
+        laminas: mapa.escondidas.laminas,
+        cuantos: mapa.escondidas.cuantos,
+        tokens: mapa.escondidas.tokens
+      }
     },
     marcadores: resolucion.resumen,
     // Paso 5 — qué se expandió, qué se emitió y **qué quedó excluido con su motivo**. Lo
@@ -1620,6 +1694,12 @@ function menuGenerarInformeCompleto_() {
     '',
     'Tokens: ' + r.tokens.reemplazados + ' con valor de ' + r.tokens.en_plantilla + ' · ' + r.tokens.faltantes + ' en FALTA'
   ];
+  // `A.3` — lo excluido se dice, no se descuenta en silencio.
+  if (r.tokens.excluidos_por_lamina_escondida.cuantos) {
+    lineas.push('  (' + r.tokens.excluidos_por_lamina_escondida.cuantos +
+      ' token(s) fuera del conteo: lámina(s) ' +
+      r.tokens.excluidos_por_lamina_escondida.laminas.join(', ') + ' escondida(s) — no se emiten)');
+  }
   // `T2.1.1` — si cortó, se dice primero: el deck es válido pero está incompleto, y quien
   // lo mira tiene que saberlo antes que ningún conteo.
   if (r.corte) {
