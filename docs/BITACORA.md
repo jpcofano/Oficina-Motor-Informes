@@ -5215,3 +5215,37 @@ San Cristóbal      | pre  | 3354-JULJDGAG | 1
 El comentario del seed en `Instalar.gs` se actualizó: decía *"pasa a filtrar dos veces por lo
 mismo"* y ahora dice que el matcher ya no filtra por su cuenta. **Pendiente de verificación
 humana.**
+
+---
+
+## `N6` / `T2.9.2` — las dos ventanas del anclaje a `CONFIG` (2026-08-07) — commit de esta entrada
+
+Mismo argumento que el Paso 2.9F con `umbral_anclaje_reunion`, y el que `R-12` ya dejó escrito:
+cambiar un parámetro de negocio no puede exigir `clasp push`.
+
+| clave de `CONFIG` | valor | helper | qué hace hoy |
+|---|---|---|---|
+| `ventana_candidatos_anclaje_dias` | **`14`** | `ventanaCandidatosAnclajeDias_()` | lo que hacía la constante de módulo |
+| `ventana_candidatos_anclaje_ampliada_dias` | **vacía** | `ventanaCandidatosAnclajeAmpliadaDias_()` → `null` | **nada: `null` significa "no ampliar"** |
+
+**La corta replica exactamente el valor de hoy.** `VENTANA_DIAS_CANDIDATOS_ANCLAJE_` pasó a
+llamarse `..._DEFECTO_` y **ya no se usa directo**: sólo entra si `CONFIG` no tiene la clave,
+igual que `UMBRAL_CONFIANZA_ANCLAJE_DEFECTO_`.
+
+**La ampliada nace vacía a propósito, y ésa es la decisión del paso.** `R-12` manda ampliar
+antes de declarar `sin_link`, pero **cuántos días** es una decisión de negocio que nadie tomó.
+Poner un número para que la clave "quede completa" sería inventar el faltante (`CLAUDE.md` §4).
+Vacía significa "no ampliar", que es literalmente lo que el motor hace hoy — por eso este paso
+**no cambia ningún comportamiento**. Y **nadie la consume todavía**: el reintento con la ventana
+ampliada es de otro paso, como `R-12` dice.
+
+**Controles:**
+
+- `aplicarSeedConfiguracion_` escribió **exactamente 2 claves nuevas** en `CONFIG` y **cero**
+  cambios en `BASES`, `MAPEO`, `INFORMES` y `PERIODOS`. Backup con `tools/snapshot.js` antes.
+- Los helpers leen bien: corta `14`, ampliada `null`.
+- **El anclaje da idéntico** al control de `N5` — los cinco encuentros, mismo `id_cuenta`,
+  mismo score, comparación exacta del objeto entero.
+- **Las 10 pruebas pasan.**
+
+**Pendiente de verificación humana.**

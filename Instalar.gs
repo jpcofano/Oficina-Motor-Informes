@@ -1463,6 +1463,19 @@ var SEED_CONFIG_DEFAULTS_ = {
   // constante en Union.gs) y pasa a ser parámetro de negocio — cambiarlo ya no
   // exige clasp push. Ver umbralAnclajeReunion_() en Union.gs.
   umbral_anclaje_reunion: '0.6',
+  // `T2.9.2` (07/08) — las dos ventanas del anclaje, por el mismo argumento que el umbral:
+  // cambiar un parámetro de negocio no puede exigir `clasp push` (`R-12`, `CLAUDE.md` §2).
+  //
+  // La corta **replica exactamente el valor de hoy**, 14: es la que disuelve el timeout
+  // —puntuar 500 encuentros × 1297 cuentas no termina en seis minutos; contra 5-20
+  // candidatos cercanos en fecha, sí—. Este paso no cambia ningún comportamiento.
+  ventana_candidatos_anclaje_dias: '14',
+  // La ampliada **nace vacía a propósito, y vacía significa "no ampliar"** — que es
+  // literalmente lo que el motor hace hoy. `R-12` decide que hay que ampliar antes de
+  // declarar `sin_link`, pero **cuántos días** es una decisión de negocio que nadie tomó, y
+  // poner un número acá para que la clave "quede completa" sería inventarlo (`CLAUDE.md` §4).
+  // La clave existe para que la decisión se tome editando una celda, no el código.
+  ventana_candidatos_anclaje_ampliada_dias: '',
   // T2.1.1 (06/08): el reloj de la corrida. Mismo patrón que el umbral — helper
   // como único lector en Generador.gs, constante de módulo sólo como default.
   // Bajar `presupuesto_corrida_seg` a 60 desde la hoja es la forma barata de

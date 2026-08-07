@@ -238,7 +238,37 @@ function umbralAnclajeReunion_() {
 // minutos; puntuar contra 5-20 candidatos cercanos en fecha, sí). Una cuenta
 // sin fecha parseable en el nombre no se puede descartar por este criterio:
 // pasa como candidata siempre (fallback), igual que antes.
-var VENTANA_DIAS_CANDIDATOS_ANCLAJE_ = 14;
+//
+// `T2.9.2` (07/08): el número sale del código y va a `CONFIG`
+// (`ventana_candidatos_anclaje_dias`), mismo patrón que `umbralAnclajeReunion_()`. Esta
+// constante queda **sólo como default** si `CONFIG` no lo tiene cargado — nunca se usa
+// directo, siempre pasa por el helper.
+var VENTANA_DIAS_CANDIDATOS_ANCLAJE_DEFECTO_ = 14;
+
+function ventanaCandidatosAnclajeDias_() {
+  var valor = Number(leerConfig().ventana_candidatos_anclaje_dias);
+  return (isNaN(valor) || valor <= 0) ? VENTANA_DIAS_CANDIDATOS_ANCLAJE_DEFECTO_ : valor;
+}
+
+/**
+ * `T2.9.2` / `R-12` — la ventana **ampliada**, la segunda mitad que hoy no existe.
+ *
+ * Devuelve `null` cuando `CONFIG.ventana_candidatos_anclaje_ampliada_dias` está vacía, y
+ * **`null` significa "no ampliar"** — que es exactamente lo que el motor hace hoy. Por eso
+ * este paso no cambia ningún comportamiento: saca el número del código y deja la clave a la
+ * vista, vacía, esperando la decisión de cuántos días.
+ *
+ * **Nadie la consume todavía.** `R-12` lo dice con todas las letras: el cambio de
+ * comportamiento —reintentar con la ventana ampliada antes de declarar `sin_link`— es de otro
+ * paso. Si algún día se carga un número acá y nada lo lee, eso es un bug de ese paso, no de
+ * éste.
+ */
+function ventanaCandidatosAnclajeAmpliadaDias_() {
+  var crudo = String(leerConfig().ventana_candidatos_anclaje_ampliada_dias || '').trim();
+  if (!crudo) return null;
+  var valor = Number(crudo);
+  return (isNaN(valor) || valor <= 0) ? null : valor;
+}
 
 function candidatosCercanosPorFecha_(candidatos, fechaObjetivo, ventanaDias) {
   if (!fechaObjetivo) return candidatos;
@@ -723,7 +753,7 @@ function anclarEncuentrosSinCache_(ventana) {
       item.confirmadoAMano = true;
       encuentros.push(item);
     } else {
-      var candidatosCercanos = candidatosCercanosPorFecha_(candidatosTodos, fecha, VENTANA_DIAS_CANDIDATOS_ANCLAJE_);
+      var candidatosCercanos = candidatosCercanosPorFecha_(candidatosTodos, fecha, ventanaCandidatosAnclajeDias_());
       var campoEvento = buscarMapeo('rdv', filaRdv.hoja, 'evento');
       var campoBarrio = buscarMapeo('rdv', filaRdv.hoja, 'barrio');
       var evento = campoEvento.ok ? valorPorColumna_(filaRdv.fila, 'rdv', filaRdv.hoja, campoEvento.columna) : '';
