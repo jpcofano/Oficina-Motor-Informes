@@ -516,6 +516,39 @@ con fecha y se revisa junto con `R-11`, que es de donde sale la ventana.
 
 ---
 
+## R-14 — Una campaña entra si su rango de fechas **se solapa** con la ventana del informe
+
+**Enunciado:** entra toda campaña cuyo rango de fechas se solape con la ventana del informe —
+alguno de sus días entre **inicio** y **fin** cae dentro de la semana. **No** es "empieza en la
+ventana" ni "termina en la ventana": una campaña que arrancó tres semanas antes y sigue
+corriendo entra, y una que arranca el jueves y termina en septiembre también.
+
+Fuente del dato: la solapa `Seguimiento digital` de la base `digital`.
+
+**Origen:** decisión del usuario, 06/08/2026.
+
+**Por qué se escribe:** el criterio no estaba en ningún lado — se midió el 06/08 y **no
+existía** ni acá ni en `SUPUESTOS.md`. Cada consumidor que necesitara seleccionar campañas lo
+habría inventado, y las tres formas razonables (empieza / termina / se solapa) dan conjuntos
+distintos sobre los mismos datos.
+
+**⚠ Hoy no es aplicable.** `MAPEO` tiene `sd_fecha_inicio` (columna `L`) y **no tiene fecha de
+fin**. Sin el extremo derecho no hay rango, y sin rango no hay solape que evaluar: lo único
+computable hoy es "empieza en la ventana", que es precisamente lo que esta regla dice que
+**no** es. La regla queda escrita y esperando el mapeo de `Fecha de fin`.
+
+**Cómo se verifica, cuando se pueda:** tomar una semana con una campaña que arranque antes del
+viernes de inicio y termine después del jueves de cierre —una que no toque ninguno de los dos
+extremos— y comprobar que entra. Ése es el caso que distingue el solape de las otras dos
+lecturas; los casos que empiezan o terminan dentro de la ventana **no** discriminan y no
+sirven de control.
+
+**Si falla:** si aparece una campaña sin fecha de fin cargada, esta regla no dice qué hacer con
+ella. No se asume "sigue vigente" ni "dura un día": se registra el hueco y se pregunta
+(`D-10` — al motor le falta una definición, pregunta y no la fabrica).
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas

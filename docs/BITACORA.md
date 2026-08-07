@@ -4617,3 +4617,21 @@ se corrió `generarInforme('jm')`.
 **Las 10 pruebas pasan.** `FALTANTES` se restauró byte a byte a lo que tenía antes del control
 (271 filas, comparación exacta). El deck de prueba, a la papelera. **Pendiente de verificación
 humana.**
+
+---
+
+## `N3` — `R-14`: una campaña entra si su rango **se solapa** con la ventana (2026-08-07) — commit de esta entrada
+
+Escrita en `docs/REGLAS_NEGOCIO.md`. Origen: decisión del usuario del 06/08/2026. El criterio
+no estaba en ningún lado —se midió el 06/08 y no existía ni en `REGLAS_NEGOCIO.md` ni en
+`SUPUESTOS.md`—, y las tres lecturas razonables (empieza / termina / se solapa) dan conjuntos
+distintos sobre los mismos datos.
+
+**Queda escrita y marcada como no aplicable hoy:** `MAPEO` tiene `sd_fecha_inicio` (columna
+`L`) y **no tiene fecha de fin**. Sin el extremo derecho no hay rango, y lo único computable
+es "empieza en la ventana" — justo lo que la regla dice que no es. Verificado contra el
+snapshot de `MAPEO` del 07/08.
+
+La regla dice además qué caso sirve de control —una campaña que empieza antes del viernes de
+inicio y termina después del jueves de cierre— porque los casos que tocan un extremo no
+discriminan entre las tres lecturas.
