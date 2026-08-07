@@ -4544,3 +4544,23 @@ compara un deck entero.
 
 **Y se verificó que el caché no queda encendido:** `cacheRegistrosAbierto_()` devuelve `false`
 al salir del alcance.
+
+---
+
+## `N1` / `T2.2.3` — el deck entero: cero diferencias, y la corrida completó en 120 s (2026-08-07) — commit de esta entrada
+
+Control que faltaba de `T2.2.2`. `T2.2.2` había comparado marcador por marcador; esto compara
+**el deck**: `jm-20260806-222554` (referencia, ya corrida con el caché puesto) contra una
+corrida de control nueva, `jm-20260807-004300`.
+
+**26 láminas, 1389 piezas de texto, cero diferencias.** Ninguna pieza sólo en un deck, ninguna
+con texto distinto. La evidencia completa, con el método y cómo se reproduce, en
+`docs/PROTOCOLO_T2.2.3_corrida_2026-08-07.md`.
+
+**Y la corrida completó.** `corte: null`, **120 s** gastados contra 350 de techo, barrida final
+en **0 tokens crudos**. La proyección de `T2.2.2` decía ~190 s: era pesimista. De paso corrige
+una lectura del handoff — `jm-20260806-222554` **tampoco estaba cortada**; sus 270 faltantes
+son tokens sin cablear, no corte por tiempo.
+
+El deck de control quedó en la papelera. `FALTANTES` se pisó, que es lo que hace siempre
+(`escribirFaltantes_` limpia la hoja: es la foto de la última corrida, no un histórico).
