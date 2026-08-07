@@ -563,18 +563,43 @@ function resolverMarcadores(informeId, opciones) {
         var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
         var desdeStr = Utilities.formatDate(ventana.desde, tz, 'yyyy-MM-dd');
         var hastaStr = Utilities.formatDate(ventana.hasta, tz, 'yyyy-MM-dd');
+
+        // `R-16` (07/08) — el extremo derecho, si la solapa lo declara. Misma resolución de
+        // clave que el izquierdo: la maestra de `digital` llega por dos caminos con filas de
+        // forma distinta y elegir por nombre de solapa es lo que rompió `T2.6`.
+        var campoFinMarcador = buscarMapeo(fila.base_id, solapa.solapa, 'fecha_fin_periodo');
+        var claveFin = campoFinMarcador.ok
+          ? claveDeFila_(datos.filas, 'fecha_fin_periodo',
+            encabezadoEnColumna_(fila.base_id, solapa.solapa, campoFinMarcador.columna))
+          : null;
+
         var antes = datos.filas.length;
-        var filasRecortadas = [], fechasRecortadas = [], sinFecha = 0;
+        var filasRecortadas = [], fechasRecortadas = [], sinFecha = 0, sinFin = 0;
         datos.filas.forEach(function (o, i) {
           var f = fechasDeFilas[i];
           if (!f) { sinFecha++; return; }
           var s = Utilities.formatDate(f, tz, 'yyyy-MM-dd');
-          if (s >= desdeStr && s <= hastaStr) { filasRecortadas.push(o); fechasRecortadas.push(f); }
+          var finStr = '';
+          if (claveFin) {
+            var ff = parsearFechaCelda_(o[claveFin]);
+            if (ff) finStr = Utilities.formatDate(ff, tz, 'yyyy-MM-dd');
+            else sinFin++;
+          }
+          if (entraPorSolape_(s, finStr, desdeStr, hastaStr)) {
+            filasRecortadas.push(o);
+            fechasRecortadas.push(f);
+          }
         });
         datos.filas = filasRecortadas;
         fechasDeFilas = fechasRecortadas;
-        base.recorte_ventana = 'recorte por ventana sobre "' + claveFecha + '": ' + filasRecortadas.length +
-          ' de ' + antes + ' fila(s)' + (sinFecha ? ' · ' + sinFecha + ' sin fecha, excluidas' : '');
+        // La traza dice **qué criterio se usó**, no sólo el resultado: sin eso, un conteo que
+        // sube no se distingue de un dato que cambió. Y dice cuántas filas se quedaron sin el
+        // extremo derecho, que son las que siguen entrando por punto (`R-16`, `A.2`).
+        base.recorte_ventana = 'recorte por ventana sobre "' + claveFecha + '" · ' +
+          (claveFin ? 'SOLAPE contra "' + claveFin + '" (R-16)' : 'punto — la solapa no declara fecha_fin_periodo') +
+          ': ' + filasRecortadas.length + ' de ' + antes + ' fila(s)' +
+          (sinFecha ? ' · ' + sinFecha + ' sin fecha, excluidas' : '') +
+          (sinFin ? ' · ' + sinFin + ' sin fecha de fin, entran por punto' : '');
       }
     } else if (datos.recortar_por_ventana) {
       // Sin `fecha_periodo` mapeada no hay con qué recortar, y devolver el total de todos los

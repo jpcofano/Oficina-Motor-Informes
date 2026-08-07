@@ -1076,7 +1076,21 @@ var SEED_MAPEO_ = [
   { base_id: 'digital', campo_logico: 'acum_alcance', hoja: 'Digital 2026 acumulado', columna: 'K', notas: '' },
   // La fecha que gobierna el recorte por ventana de esta solapa: la de inicio, igual que en
   // `Digital`. Con `acum_fecha_fin` mapeado, `R-14` es computable acá.
-  { base_id: 'digital', campo_logico: 'fecha_periodo', hoja: 'Digital 2026 acumulado', columna: 'C', notas: 'fecha_periodo = Fecha de inicio (A.2/B.4)' }
+  { base_id: 'digital', campo_logico: 'fecha_periodo', hoja: 'Digital 2026 acumulado', columna: 'C', notas: 'fecha_periodo = Fecha de inicio (A.2/B.4)' },
+
+  // `R-16` (07/08) — el **extremo derecho** del rango, para las solapas que lo tienen.
+  // `fecha_fin_periodo` es la contraparte declarativa de `fecha_periodo`: donde está, el
+  // recorte entra por **solape**; donde no, sigue entrando por **punto** y la traza lo dice.
+  //
+  // **Está sólo en cuatro solapas, y las cuatro son de campaña.** `Directa Mail`,
+  // `Directa SMS` y `rdv` **no la llevan a propósito**: una fila de mail es **un envío** y una
+  // de `rdv` es **un encuentro** — tienen una sola fecha por naturaleza, y forzarles un fin
+  // sería inventar un dato. `A.2` del prompt del 07/08 lo pide explícitamente: las filas sin
+  // fecha de fin siguen como están y el motor lo dice.
+  { base_id: 'digital', campo_logico: 'fecha_fin_periodo', hoja: 'Digital', columna: 'F', notas: 'R-16 — extremo derecho del solape' },
+  { base_id: 'digital', campo_logico: 'fecha_fin_periodo', hoja: 'Directa IVR', columna: 'E', notas: 'R-16 — el caso que motivó la regla: las campañas de Orden Público arrancan el 22 y 23/07 y la ventana empieza el 24' },
+  { base_id: 'digital', campo_logico: 'fecha_fin_periodo', hoja: 'Seguimiento digital', columna: 'M', notas: 'R-16 — extremo derecho del solape' },
+  { base_id: 'digital', campo_logico: 'fecha_fin_periodo', hoja: 'Digital 2026 acumulado', columna: 'D', notas: 'R-16 — extremo derecho del solape' }
 ];
 
 // Paso 2.3.2: `solapa` entra en la clave de MAPEO junto a `base_id` +
@@ -1111,7 +1125,7 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   ivr_id_cuenta: 'texto', alc_id_cuenta: 'texto', sd_id_cuenta: 'texto',
 
   // fecha
-  fecha_periodo: 'fecha', fecha_inicio: 'fecha', fecha_fin: 'fecha', fecha: 'fecha',
+  fecha_periodo: 'fecha', fecha_fin_periodo: 'fecha', fecha_inicio: 'fecha', fecha_fin: 'fecha', fecha: 'fecha',
   dig_fecha_inicio: 'fecha', dig_fecha_fin: 'fecha', mail_fecha: 'fecha', sms_fecha: 'fecha',
   ivr_inicio: 'fecha', ivr_fin: 'fecha', sd_fecha_inicio: 'fecha', sd_fecha_fin: 'fecha',
   acum_fecha_inicio: 'fecha', acum_fecha_fin: 'fecha',

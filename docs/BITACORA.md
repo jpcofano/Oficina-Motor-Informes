@@ -5619,3 +5619,90 @@ el renombre, con su propio backup y su propio reporte.
 **⚠ Esto cambia el deck** y todavía no se midió: `comunicaciones_post` tiene 2 ítems y ahora
 una lámina modelo, así que la corrida va a **duplicar la lámina 7 en dos**. La corrida de
 cierre lo mide. Las 10 pruebas pasan.
+
+---
+
+## `R-16` aplicada — la ventana de selección entra por solape (2026-08-07) — commit de esta entrada
+
+Prompt propio (`2026-08-07_5`), separado de las once respuestas porque **cambia números en
+todos lados**.
+
+### Parte 0 — lo que había que saber antes de escribir
+
+**`0.1` · El recorte por período se decide en DOS lugares, no en uno**, y por eso el cambio
+entró en los dos:
+
+| dónde | para qué bases |
+|---|---|
+| `leerFuente`, rama `modo === 'filtrar'` (`Fuentes.gs`) | `rdv`, `looker` |
+| el recorte del agregado global (`Generador.gs`) | `digital`, que es `snapshot` |
+
+**El criterio vive ahora en una sola función**, `entraPorSolape_` (`Fuentes.gs`), que llaman
+las dos. Dos criterios distintos sobre la misma pregunta es la divergencia que este repo ya
+pagó con los 195 contra 172.
+
+**`0.2` · Cuatro solapas tienen las dos fechas, y son las cuatro de campaña.** `Digital`
+(`E`/`F`), `Directa IVR` (`D`/`E`), `Seguimiento digital` (`L`/`M`) y `Digital 2026 acumulado`
+(`C`/`D`). **No es "la mayoría no tiene fin"**, así que no se paró.
+
+**Las que no la tienen no la tienen por naturaleza:** una fila de `Directa Mail` es **un
+envío** y una de `rdv` es **un encuentro** — una sola fecha, y forzarles un fin sería inventar
+un dato. `A.2` del prompt lo pide explícitamente: siguen como están **y el motor lo dice**.
+
+### Cómo se declara
+
+`MAPEO.fecha_fin_periodo`, contraparte declarativa de `fecha_periodo`. Donde está, el recorte
+entra por solape; donde no, por punto. **Nada hardcodeado y nada implícito**, y la traza dice
+cuál de los dos criterios usó:
+
+```
+recorte por ventana sobre "Inicio" · SOLAPE contra "Fin" (R-16): 2 de 58 fila(s)
+recorte por ventana sobre "Fecha de inicio" · punto — la solapa no declara fecha_fin_periodo
+```
+
+### Qué valores cambiaron — quince marcadores
+
+**IVR dejó de dar cero, que era la prueba.** `Directa IVR` pasó de **0 a 2 filas** en la
+ventana: las dos campañas de Orden Público que arrancan el **22 y el 23/07** con la ventana
+empezando el **24**.
+
+| marcador | antes | después |
+|---|---|---|
+| `enc_audiencia` | `sin_datos` | **78.637** |
+| `enc_atendidos` | `sin_datos` | **71.234** |
+| `enc_e75` | `sin_datos` | **27.599** |
+| `enc_marque1` | `sin_datos` | **256** |
+| `enc_e75_pct` | `sin_datos` | **38.7** |
+| `ivr_campanias` | `0` | **2** |
+| `ivr_llamados` | `sin_datos` | **78.637** |
+| `ivr_atendidos` | `sin_datos` | **71.234** |
+| `ivr_at_pct` | `sin_datos` | **90.6** |
+| `pauta_google/meta/prog` | `0` | **1** |
+| `gcba_pauta_google/meta/prog` | `0` | **1** |
+
+`Seguimiento digital` pasó de 16 a **72 filas** en la ventana.
+
+**Resumen: 23 `ok` / 20 `sin_datos` → 31 `ok` / 12 `sin_datos`.** Cero errores.
+
+> **Una confirmación independiente que vale anotar:** `enc_e75_pct` da **38.7**, y el handoff
+> venía diciendo desde hace días —por otra vía— que *"`enc_e75_pct` da 38,74 contra 39 %
+> publicado: es el mismo número redondeado"*. El solape lo hace salir por el camino normal del
+> motor y da lo mismo.
+
+### Y nada se movió en las fuentes que ya daban bien
+
+`Directa Mail` (`mail_*`, `gcba_mail_*`), `Directa SMS` (`gcba_sms_*`) y `rdv` (`ecv_*`)
+**no aparecen en la lista de cambios**: no declaran `fecha_fin_periodo` y siguen entrando por
+punto. `Digital` tampoco se movió, y es correcto — **por solape también da cero**, porque sus
+fechas llegan hasta 2026-01-02.
+
+**El anclaje sigue idéntico**: los cinco encuentros, mismo `id_cuenta`, mismo score. **Las 10
+pruebas pasan.**
+
+### Los tres días de anticipación NO son un parámetro
+
+`A.4` del prompt, y está escrito en `R-16`: el solape ya los cubre —una campaña que arranca
+tres días antes y sigue activa, entra— y **agregar una clave de "días antes" sería inventar
+una decisión que nadie tomó**. No existe ni va a existir.
+
+**Pendiente de verificación humana.**

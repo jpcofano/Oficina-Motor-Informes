@@ -482,6 +482,41 @@ function resolverFilaEncabezado_(baseId, solapa, filaEncabezadoBase) {
   return Number(filaEncabezadoBase) || 1;
 }
 
+/* ===================== `R-16` — la ventana entra por SOLAPE (07/08/2026) =====================
+ *
+ * **Una fila entra si sus días activos tocan la ventana**, no si empieza adentro:
+ * `inicio ≤ hasta` **y** `fin ≥ desde`. Es `R-14` aplicada, y el motivo de dominio está en
+ * `R-16`: **las campañas suelen empezar unos tres días antes**, así que "empieza en la
+ * ventana" pierde justo las que importan. El caso medido: las dos campañas de IVR del
+ * encuentro de Orden Público arrancan el 22 y el 23/07 con ventana 24–30/07, y siguen activas
+ * toda la semana — IVR daba **cero por un día**.
+ *
+ * **Vive acá, en un solo lugar, a propósito.** El recorte por ventana se decide en **dos**
+ * puntos del motor: la rama `filtrar` de `leerFuente` (bases `rdv`, `looker`) y el recorte del
+ * agregado global de `Generador.gs` (`digital`, que es `snapshot`). Dos criterios distintos
+ * sobre la misma pregunta es exactamente la divergencia que este repo ya pagó con los 195
+ * contra 172; los dos llaman a esta función.
+ *
+ * **Comparación por string `yyyy-MM-dd`, no por epoch**, por el mismo motivo que ya estaba
+ * escrito en `leerFuente`: V8 construye `Date` en UTC aunque el spreadsheet tenga otro huso, y
+ * comparar timestamps crudos corre un día en los bordes. Bordes inclusivos de los dos lados.
+ *
+ * **Sin fecha de fin, el criterio NO cambia** (`R-16`, y `A.2` del prompt del 07/08): la fila
+ * entra por su fecha única, como siempre. **No se le asume un fin implícito** — un criterio
+ * distinto aplicado en silencio a un subconjunto es el número plausible que este proyecto
+ * persigue. Quién tiene fin y quién no lo declara `MAPEO.fecha_fin_periodo`, y el que llama
+ * **dice en la traza cuál de los dos criterios usó**.
+ */
+function entraPorSolape_(inicioStr, finStr, desdeStr, hastaStr) {
+  if (!inicioStr) return false;
+  // Sin fin declarado o sin fin en la fila: criterio de punto, el de siempre.
+  var derecho = finStr || inicioStr;
+  // Una fila con fin anterior al inicio está mal cargada. No se corrige ni se descarta acá:
+  // se la trata como puntual sobre su inicio, que es lo que el motor hacía antes de `R-16`.
+  if (derecho < inicioStr) derecho = inicioStr;
+  return inicioStr <= hastaStr && derecho >= desdeStr;
+}
+
 /**
  * Lee una base filtrando por ventana de fechas (o todas las filas si
  * `modo_periodo=snapshot`). No suma ni promedia — eso es del Paso 3.
@@ -620,6 +655,16 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
   resultado.columna_fecha = headers[idxFecha] || campoFecha.columna;
   resultado.ventana_aplicada = { desde: ventana.desde, hasta: ventana.hasta };
 
+  // `R-16` (07/08) — el extremo derecho del rango, si la solapa lo declara. **Es opcional a
+  // propósito**: una fila de `Directa Mail` es **un envío** y tiene una sola fecha por
+  // naturaleza; forzarle un fin sería inventar un dato. Sin `fecha_fin_periodo` mapeado, el
+  // criterio sigue siendo el de punto y `resultado.criterio_ventana` lo dice.
+  var campoFin = buscarMapeo(baseId, hoja.getName(), 'fecha_fin_periodo');
+  var idxFin = campoFin.ok ? columnaLetraAIndice_(campoFin.columna) : -1;
+  resultado.columna_fecha_fin = campoFin.ok ? (headers[idxFin] || campoFin.columna) : '';
+  resultado.criterio_ventana = campoFin.ok ? 'solape (R-16)' : 'punto — la solapa no declara fecha_fin_periodo';
+  resultado.filas_sin_fecha_fin = 0;
+
   // Fallback a texto renderizado (Paso 2.3, hallazgo `looker`): una columna
   // de fecha armada con `QUERY()` puede devolver "" en `getValues()` para
   // celdas que sí muestran una fecha en pantalla — es la celda derramada de
@@ -656,7 +701,21 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
     }
 
     var fechaStr = Utilities.formatDate(fecha, ssTz, 'yyyy-MM-dd');
-    if (fechaStr >= desdeStr && fechaStr <= hastaStr) {
+
+    // `R-16` — el extremo derecho, con el mismo fallback a display que el izquierdo.
+    var finStr = '';
+    if (idxFin !== -1) {
+      var crudoFin = fila[idxFin];
+      if (celdaVacia_(crudoFin)) {
+        var mostradoFin = filasCrudasDisplay[j][idxFin];
+        if (mostradoFin && mostradoFin.trim() !== '') crudoFin = mostradoFin;
+      }
+      var fechaFin = parsearFechaCelda_(crudoFin);
+      if (fechaFin) finStr = Utilities.formatDate(fechaFin, ssTz, 'yyyy-MM-dd');
+      else resultado.filas_sin_fecha_fin++;
+    }
+
+    if (entraPorSolape_(fechaStr, finStr, desdeStr, hastaStr)) {
       resultado.filas_en_ventana++;
       resultado.filas.push(filaAObjeto(fila));
     }
