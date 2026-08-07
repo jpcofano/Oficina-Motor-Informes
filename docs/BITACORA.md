@@ -5950,3 +5950,35 @@ dice:** cómo se elige cuál corrida cuando hay varias.
 
 La tabla que quedó dentro del texto de `D-23` **no se tocó**: un addendum corrige, no reescribe.
 **Sin código.**
+
+---
+
+## `R-17` — el temario selecciona, y la contradicción se cierra (2026-08-07) — commit de esta entrada
+
+Parte A del `_10` con los seis ajustes del `10.1`. **Tres niveles, en orden:** el temario
+selecciona con `mostrar` + `orden` y **busca en toda la base, sin filtro de ventana**; los
+filtros de `R-15` **acotan lo que el temario ya eligió**; y **la semana es el fallback**, que
+decide sólo cuando no hay temario. Esa última frase es la que faltaba y la que generó la
+contradicción.
+
+**`R-16` no se corrigió al pie: recibió un addendum fechado**, porque la Parte 0 encontró la
+versión perdedora **en el título** y una `R-NN` no se edita. La división quedó escrita en las
+dos puntas: **queda vivo el criterio de solape** —está medido, IVR dejó de dar cero— y caen *"el
+default es la semana"* y la cláusula de filtros *"sobre los días activos dentro de la semana"*.
+
+**Esa cláusula es el hallazgo que más cambió el prompt**: acotaba los filtros del nivel 2 a la
+ventana, que es la versión perdedora entrando por la puerta de atrás. El prompt original no la
+anticipaba.
+
+**Y un ajuste al revés:** el prompt pedía escribir los tres filtros con su valor exacto porque
+`0.4` los daba por probablemente no escritos. **Están desde el 04/08 en `R-15`**, medidos y
+re-verificados, así que `R-17` **apunta y no copia** — un valor duplicado es un valor que se
+desincroniza.
+
+**Ningún número se movió, y está verificado por qué:** el motor **ya hacía** lo que `R-17`
+fija. `itemsDeSeccion_` filtra `CAMPANAS` por `informe_id`, `mostrar` y `periodo_id`, sin
+consultar la ventana, y las dos llamadas a `entraPorSolape_` están las dos del lado de los
+agregados. `CAMPANAS` además tiene tres filas, todas de `secco` y con `periodo_id` vacío.
+
+`CONFIG_INFORMES.md` §1.1 pasa a apuntar y conserva su decisión editorial y el caso testigo;
+`PLAN.md` deja de pedir *"las campañas del período"* y pide el temario. **Sin código.**

@@ -20,6 +20,12 @@ escribirlo: `42bbcfe`
 - **La copia generada conserva el ancla y se limpia a demanda**; **la plantilla nunca**.
 - **Una lámina no se borra: se esconde.**
 
+**Y se cerró la contradicción semana-primero contra temario-solo**, que venía abierta desde la
+mañana. `R-17` fija los tres niveles: **el temario selecciona** y busca en toda la base, los
+filtros de `R-15` acotan lo que eligió, y **la semana es el fallback** — decide sólo cuando no
+hay temario. `R-16` recibió un addendum que dice qué parte suya quedó superseded; **su criterio
+de solape sigue vivo**. Ningún número se movió: el código ya hacía esto.
+
 **El estado del deck no cambió.** Sigue valiendo `jm-20260807-083557`: 31 de 43 marcadores
 `ok`, 38 tokens reemplazados, 265 faltantes, 7 ítems, **298 s contra 350 de techo**.
 
@@ -78,11 +84,6 @@ de ellos** con el conjunto de tokens idéntico (`secco` 17=`jm` 13, 18=14, 20=16
 
 ## Esperando decisión tuya
 
-- **⚠ La contradicción semana-primero contra temario-solo.** `A.1` de las once respuestas
-  contra `CONFIG_INFORMES.md` §1.1, las dos "decisión del usuario, 07/08". §1.1 tiene caso
-  testigo medido (San Cristóbal) y consecuencia en `D-19`. **No se eligió ninguna.** Se
-  resuelve con una aclaración: **¿la semana es un filtro previo al temario, o el temario manda
-  solo?**
 - **Las 26 celdas de `seccion_id`.** Trabajo humano contado; la mesa está en el reporte del
   `_8`. Se llenan en `LAMINAS`, **después** de la Fase 2.
 - **Las dos láminas de `secco` sin tokens que quizá no son estáticas** (15 y 26) — `P2`.
