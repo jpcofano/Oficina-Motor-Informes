@@ -1997,6 +1997,29 @@ ambiguo. **No se propone cuál gana:** con la hoja escrita se va a ver si el est
 lámina reemplaza al de la sección para este caso, si conviven, o si el paso pasa a nombrar los
 dos. El `RUNBOOK` no se toca hasta entonces.
 
+### P2 · Sin decidir: la forma de la fila de `LAMINAS` cuando un id viva en las dos plantillas
+
+`D-23` addendum 1 punto 13 deja la identidad compartida entre plantillas como **implementación
+futura**: el contador de `L-NNN` ya es común a `jm` y `secco`, pero que la misma lámina lleve
+el mismo id en las dos requiere que alguien las reconozca como la misma. El día que se
+implemente hay que elegir la forma de la fila, y **son dos, incompatibles**:
+
+- **Una fila con `informes` plural**, como `SECCIONES` — un `L-014` con `informes = JM,SECCO`.
+- **Una fila por (`lamina_id`, `informe_id`)** — identidad compartida, configuración propia de
+  cada informe.
+
+**No es cosmético, y el repo ya midió el modo de falla de la primera.**
+`comunicaciones_post` declara `familia_tokens = post_` para `JM,SECCO`, y esa declaración
+única **es correcta para un informe y equivocada para el otro** (`P2` de más arriba, sobre
+`armonizarPresentacion_` y el alcance global). Una fila que habla por dos informes hereda ese
+problema; una fila por par lo evita al precio de duplicar configuración.
+
+**Insumo para cuando se decida** (medido el 07/08/2026, criterio grueso, sin decidir cuáles
+son "la misma"): **nueve pares** de láminas con el primer texto idéntico entre `secco` y `jm`,
+**seis de ellos** con además el conjunto de tokens idéntico —`secco` 17=`jm` 13, 18=14, 20=16,
+21=17, 22=18, 23=19, todos del bloque `camp_*`—, más cinco pares con solape parcial, el más
+fuerte `secco` 8 ~ `jm` 6 con **28 tokens en común**.
+
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 
 Su bloque "Antes de empezar" todavía reabre la decisión Looker-vs-SD y el alcance del

@@ -5845,3 +5845,50 @@ documentarse** — es `C.4`.
 **Verificado:** ninguna otra parte del `RUNBOOK` manda a declarar en `SECCIONES` la pertenencia
 de una lámina. La única otra mención es la lista de hojas que snapshotea `tools/snapshot.js`.
 **Sin código.**
+
+---
+
+## Addendum 1 a `D-23` — el ancla se reduce a un campo (2026-08-07) — commit de esta entrada
+
+Parte A del prompt `_9`. **El texto de `D-23` no se altera**: el addendum lo corrige, con la
+forma que ya usan los de `D-20` y `D-21`.
+
+**El ancla queda en `#lamina: L-NNN` y nada más.** El `#seccion:` se diseñó cuando el sellador
+deducía la sección y la escribía en el deck; **la decisión que lo dejó sin función está en el
+propio `D-23`** —la clasificación se declara en `LAMINAS`—, así que el `seccion_id` viviría en
+dos lados a la vez contra `D-01`. Y lo que ese campo justificaba sigue resuelto: la necesidad
+era identidad **por lámina**, que es justo lo que hace el id que queda.
+
+**Consecuencia grande: la Fase 2 deja de estar partida.** Sin segundo campo no hay segundo
+sellado — un solo sellado escribe ids en las 51 láminas, **no deduce nada y no se traba
+nunca**. El default-deny se muda del sellador a la hoja.
+
+**Y el ancla de la copia se limpia a demanda**, no se conserva siempre: una función que corre
+el usuario cuando quiere, **sólo sobre el informe generado**, que **se niega** si el archivo es
+una plantilla. La plantilla **no se limpia nunca** — el ancla es su historia y los ids no se
+reasignan.
+
+**Dos premisas medidas antes de escribirlo:** la copia **hereda las notas del equipo** (las dos
+de `SECCO_marcada` llegan íntegras), y `duplicate()` **arrastra las notas**, así que N copias
+de una lámina modelo comparten el id. Las dos van al addendum.
+
+**Y seis puntos más, del `9.2`, en el mismo addendum y en una sola pasada.** El contador de
+`L-NNN` **vive en la hoja `LAMINAS`** y no se deriva de las notas: derivarlo haría retroceder
+el contador al retirar una lámina, y un id se reasignaría. La consecuencia **funde las fases 2
+y 3** — con el contador en la hoja, sellar y sembrar son una sola operación, y es la tercera
+vez que esta decisión resuelve una circularidad de la misma forma.
+
+**Una lámina no se borra: se esconde**, y su ancla queda como histórico. El contraste con
+`SOLAPAS` —que sí tiene `NO ENCONTRADA <fecha>`— es deliberado: las pestañas de bases de
+terceros desaparecen, las láminas son nuestras.
+
+**El contador es uno solo para las dos plantillas**, pero la frontera queda escrita:
+**numeración común hoy, identidad compartida después.** Que la misma lámina lleve el mismo id
+en `jm` y `secco` es implementación futura y necesita reconocimiento humano — aunque el
+transporte sale gratis: **copiar una lámina entre presentaciones arrastra las notas**, medido.
+Mientras tanto la regla es de trabajo, con lista medida: **nueve pares con el primer texto
+idéntico, seis con el conjunto de tokens idéntico**, todos del bloque `camp_*`.
+
+`PENDIENTES_consistencia.md` gana un `P2` con la pregunta abierta —una fila con `informes`
+plural contra una fila por (`lamina_id`, `informe_id`)— y el precedente de
+`comunicaciones_post` citado. **Sin código.**

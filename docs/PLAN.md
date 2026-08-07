@@ -624,6 +624,116 @@ suspende en bloque**; la dirección queda escrita en esta decisión y las autori
 concretas siguen creciendo **de a una operación** en `docs/REGLAS_NEGOCIO.md`, que es lo que
 las hace verificables. En producción `C-01` vuelve a regir entero.
 
+> **Addendum 1 a `D-23` — 07/08/2026, decisión del usuario.** El texto de arriba no se
+> altera; esto lo corrige y lo completa el mismo día.
+>
+> **1 · El ancla tiene un campo, no dos: `#lamina: L-NNN` y nada más.** El `#seccion:` se
+> diseñó cuando el sellador deducía la sección y la escribía en el deck. **La decisión que lo
+> dejó sin función está en el propio texto de arriba**: la clasificación se declara en la hoja
+> `LAMINAS`, así que el `seccion_id` pasaría a vivir en dos lados a la vez y el registro es
+> dueño de la configuración (`D-01`). La copia en el deck no aporta nada y sí puede quedar
+> vieja. **El segundo campo no se descarta por malo: queda sin función por una decisión
+> posterior del mismo día.**
+>
+> **2 · Lo que el `#seccion:` justificaba sigue resuelto.** El argumento era que `m2` reclama
+> las láminas 9 y 10 de `jm` y `campana` reclama ocho. **Un id único por lámina las distingue
+> mejor que un `seccion_id` compartido** — la necesidad era identidad **por lámina**, y eso es
+> exactamente lo que hace el campo que queda.
+>
+> **3 · La Fase 2 deja de estar partida.** Sin `#seccion:` no hay segundo sellado: **un solo
+> sellado escribe ids en las 51 láminas, no deduce nada y no se traba nunca.** El default-deny
+> sale del sellador y pasa a la hoja — **una lámina sin fila en `LAMINAS` se reporta, no se
+> adivina**, igual que `SOLAPAS`. Las 26 huérfanas dejan de ser un problema de sellado: son 26
+> celdas vacías de `seccion_id`. La tabla de fases de §2 queda actualizada en consecuencia.
+>
+> **4 · La herencia no es sincronización, y conviene decirlo porque se prestó a confusión.**
+> `SECCIONES` y `LAMINAS` son **las dos configuración**: celda vacía = hereda, celda con valor
+> = manda la lámina. Es **un solo valor resuelto al leer**, nunca dos copias del mismo dato.
+> Lo que sí habría sido sincronización —y por eso se quita— era el `seccion_id` viviendo a la
+> vez en la hoja y en el deck.
+>
+> **5 · El deck deja de ser autodescriptivo. Riesgo asumido, con mitigación.** Con sólo un id,
+> si alguien borra la fila de `LAMINAS` el id queda huérfano y no significa nada. **La defensa
+> es que la hoja se siembra leyendo el deck**: una lámina sin fila se reporta. Está escrito acá
+> como riesgo, no como si no existiera.
+>
+> **6 · N copias, un id.** Las copias de una lámina modelo repetible salen **todas con el
+> mismo `#lamina:`**, porque `duplicate()` arrastra las notas —medido el 07/08: tres slides,
+> el mismo `#lamina:` en las tres— y porque **son** la misma lámina instanciada por ítem.
+> **No es un bug.**
+>
+> **7 · El ancla en la copia generada, que reemplaza a la decisión de conservarla siempre:**
+>
+> - El deck generado **conserva el ancla**. Es lo que permite decir de qué modelo salió cada
+>   lámina justo cuando un número sale mal.
+> - **Una función lo limpia, y la corre el usuario cuando quiere.** Sin automatismo y **sin
+>   concepto de "informe cerrado"**: el motor no decide cuándo un deck dejó de trabajarse.
+> - **Actúa sólo sobre el informe generado.** Correrla contra una plantilla es un error, y la
+>   función **tiene que negarse** — no confiar en que nadie lo intente.
+> - **Limpiar es borrar la línea del ancla, nunca `setText` sobre las notas.** Medido el
+>   07/08: **la copia hereda las notas del equipo** —las dos de `SECCO_marcada`, láminas 8 y
+>   25, llegan íntegras a la copia—. Limpiarlas de un saque destruiría trabajo humano que
+>   nadie tiene copiado.
+> - **No necesita autorización de `C-01`.** `C-01` protege la **plantilla**; la copia es
+>   salida del motor y el motor ya la escribe entera. Dicho para que nadie lo lea como una
+>   ampliación de la suspensión.
+>
+> **8 · La plantilla no se limpia nunca, y eso es una decisión, no un olvido.** El ancla es su
+> historia: una lámina retirada del uso queda marcada ahí con su id, y **como los ids no se
+> reasignan, esa historia no se pisa**. Queda escrito para que ninguna implementación futura
+> la incluya "por simetría" con la copia.
+>
+> **9 · El contador de `L-NNN` vive en la hoja `LAMINAS`.** Es donde están todas las láminas,
+> y por eso es el único lugar que sabe cuál fue el último id asignado. **No se deriva leyendo
+> las notas de las plantillas**: si se derivara, retirar una lámina haría **retroceder el
+> contador** y un id se reasignaría — exactamente lo que el punto 8 y el texto de arriba
+> prohíben.
+>
+> **10 · Consecuencia: sellar y sembrar son una sola operación, y las fases 2 y 3 se funden.**
+> Por cada lámina sin ancla: **tomar el siguiente id de la hoja, escribir la fila, anexar el
+> ancla.** Con el contador en la hoja, la Fase 2 necesitaba la hoja y la Fase 3 necesitaba la
+> clave que escribe la Fase 2; **no se ordenan, se hacen juntas**. Es la misma circularidad
+> que ya apareció dos veces en esta decisión, resuelta de la misma forma: **separando lo que
+> no depende de nada de lo que sí.** La tabla de §2 queda con una sola fase.
+>
+> **11 · Una lámina no se borra: se esconde.** Las láminas son de la plantilla y del motor;
+> retirarla del uso es **esconderla**, y su ancla y su fila quedan como histórico. Por eso los
+> ids no se reciclan y por eso esta decisión **no necesita un caso "lámina borrada"**.
+>
+> **El contraste con `SOLAPAS` es deliberado, no un olvido:** ahí sí existe
+> `NO ENCONTRADA <fecha>`, porque las pestañas de bases de terceros **sí desaparecen** y el
+> motor no manda sobre ellas. Las láminas son nuestras; las solapas, no.
+>
+> **12 · Un solo contador para todas las plantillas.** `L-NNN` es **global entre `jm` y
+> `secco`**, no por informe. Buena parte de `jm` está también en `secco`, y un espacio de ids
+> compartido permite que una misma lámina llegue a tener una sola identidad en las dos.
+>
+> **13 · Que una misma lámina comparta id entre plantillas es implementación futura, y hoy no
+> se construye.** La frontera, escrita: **numeración común hoy, identidad compartida después.**
+> El contador común garantiza que no haya dos `L-014` distintos **y nada más**; que la misma
+> lámina en dos plantillas lleve el mismo id requiere que **alguien las reconozca como la
+> misma**, y el sellador no puede deducirlo. El contador compartido se decide ahora porque es
+> gratis y porque cambiarlo después obligaría a re-sellar; el mecanismo de reconocimiento, no.
+>
+> **Mientras tanto la regla es de trabajo, no de código: al cablear `secco`, no repetir lo que
+> ya está en `jm` si se puede evitar.** Y hay lista, medida el 07/08 con criterio grueso —
+> **nueve pares con el primer texto idéntico**, de los cuales seis tienen además **el conjunto
+> de tokens idéntico**: `secco` 17=`jm` 13, 18=14, 20=16, 21=17, 22=18, 23=19, todos del
+> bloque `camp_*`. Más cinco pares con solape parcial, el más fuerte `secco` 8 ~ `jm` 6, con
+> **28 tokens en común**. No se decidió cuáles son "la misma": es la lista de dónde mirar.
+>
+> **Lo que esa implementación futura no va a tener que resolver:** medido el 07/08, **copiar
+> una lámina de una presentación a otra arrastra las notas del orador** — el ancla viaja con
+> la lámina. El transporte sale gratis; lo que falta es el reconocimiento humano.
+>
+> **14 · Una pregunta queda abierta, anotada y sin decidir.** El día que se implemente el
+> punto 13: si `L-014` vive en las dos plantillas, ¿es **una fila** de `LAMINAS` con una
+> columna `informes` plural —como `SECCIONES`—, o **una fila por (`lamina_id`, `informe_id`)**
+> con identidad compartida y configuración propia? **No es cosmético:** el repo ya tiene
+> medido el modo de falla de la primera forma — `comunicaciones_post` declara
+> `familia_tokens = post_` para `JM,SECCO` y es correcto para uno y equivocado para el otro.
+> Queda en `docs/PENDIENTES_consistencia.md` con las dos formas nombradas. **No se decide acá.**
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
