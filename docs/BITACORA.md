@@ -4845,3 +4845,49 @@ entra, y no entra **en silencio** — que es la mitad cara de `D-22`.
 
 `T2.10` **no** levanta `D-22`: reparte ítems entre ranuras fijas. Agregar filas a una tabla de
 Slides es otro trabajo y no está pedido.
+
+---
+
+## `T2.4` — los cuatro objetivos contra un deck real (2026-08-07) — commit de esta entrada
+
+Corrido **antes** de la cola nocturna del 07/08, que lo manda primero si no había corrido. No
+había corrido. Evidencia completa en `docs/PROTOCOLO_T2.4_corrida_2026-08-07.md`.
+
+`resolverMarcadores('jm')` sobre los 43 marcadores: **17 `ok` · 26 `sin_datos` · 0 `error`**.
+Deck: `jm-20260806-222554`, la corrida completa.
+
+| objetivo | veredicto |
+|---|---|
+| `SUMA` sobre cero filas → `sin_datos`, no `0` | ✅ **verificado**, con control negativo |
+| `ULTIMO` por fecha | ✅ el mecanismo · ❌ el número esperado |
+| agregado global de `digital` | ✅ donde hay filas |
+| sembrado del Resumen Ejecutivo | ✅ 11 de 24, pintados en el deck |
+
+**1 · `SUMA`.** Todas devuelven `sin_datos` con *"sin dato, no cero"* en la traza. **El control
+negativo salió en la misma corrida**: `ivr_campanias` es un `CONTEO` sobre **las mismas cero
+filas** y devuelve **`0`**. La asimetría está viva.
+
+**2 · `ULTIMO` — el objetivo decía `enc_mails_enviados = 44.043` y hoy no sale.** No es
+regresión: las tres piezas del cableado funcionan —filtro `mail_tipo=Convocatoria` (346 de
+2138), recorte por ventana (11 de 346), comparación por fecha— y **dentro de la ventana hay un
+empate real al 28/07 con dos valores distintos (85935 / 104362)**. El motor devuelve
+`«FALTA:@ultimo_ambiguo»` porque está construido para no elegir. Los seis `enc_*` de
+`Directa Mail` caen igual. **No se tocó la regla de desempate**: cuál de las dos filas publica
+la lámina es decisión de dominio.
+
+**3 · El agregado global.** Anda sin `id_cuenta`: `Directa Mail` (7 filas JM, 80 GCBA) y
+`Directa SMS` (1 fila) dan número. `Directa IVR`, `Seguimiento digital` y `Digital` dan cero
+filas — los tres grupos de `T2.6`. **Y la corrida deja a la vista que no tienen la misma
+causa:** `Seguimiento digital` recorta a cero porque **las 979 filas no tienen fecha** en la
+columna que gobierna; `Digital` (0 de 1297) e IVR (0 de 58) recortan a cero **teniendo fecha**.
+
+**4 · El Resumen Ejecutivo, leído del archivo y no del valor de retorno:** `838.571 envíos de
+Mail` y `Aperturas: 211.357 (25.42%)` en la lámina 2; `3.839.688`, `54.552 envíos de SMS`,
+`SMS entregados: 51.706` y `Aperturas: 1.084.516 (28.57%)` en la 3; `15` encuentros en la 5. El
+formato `numero` de los `_or`/`_pct` es el correcto: la caja ya trae su `%` y en el deck se lee
+un solo signo.
+
+**Un hallazgo no pedido, y es el más visible:** la lámina 5 publica
+`Mail: «FALTA:ecv_insc_mail»(59.9%)`. El `_pct` resuelve y **el numerador no tiene fila en
+`MARCADORES`**. Los cinco pares `ecv_insc_*` están igual. **No se cableó nada** — el prompt lo
+prohíbe.
