@@ -1465,10 +1465,13 @@ var SEED_CONFIG_DEFAULTS_ = {
   // mapa de la etapa 2) más margen: tokensPorSlide_ dio 10,8 s y 26,9 s el mismo
   // día, y la reserva es lo único que no se puede quedar corto.
   reserva_cierre_seg: '30',
-  // 240 sale del banco de medición del 06/08, NO de una corrida:
-  // resolverMarcadores('jm', {}) costó 238,9 s. Es atómico —no acepta resolver un
+  // Re-medido el 06/08 después de T2.2.2, que bajó esta llamada de ~239 s a ~36:
+  // tres muestras dieron 40,6 / 30,7 / 36,3 s, y 60 deja ~48% de margen sobre el
+  // máximo observado. **El valor viejo era 240**, y dejarlo habría hecho que la
+  // etapa 4 no entrara nunca con el motor ya arreglado: la corrida seguiría
+  // cortando ahí sin motivo. Es atómico —resolverMarcadores no acepta resolver un
   // subconjunto—, así que la única decisión posible es entrar o no entrar.
-  costo_resolucion_etapa4_seg: '240'
+  costo_resolucion_etapa4_seg: '60'
 };
 
 /**

@@ -20,6 +20,10 @@
 
 /** `MARCADORES` plano, indexado por `marcador||informe_id` — la clave real de la hoja. */
 function leerMarcadores_() {
+  return memoRegistro_('MARCADORES', leerMarcadoresSinCache_);
+}
+
+function leerMarcadoresSinCache_() {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
   if (!hoja) return [];
 
@@ -164,7 +168,16 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
        * falla de siempre. El recorte va abajo, sobre `datos.filas`, y **no** se
        * toca `BASES.modo_periodo`, que sostiene a los `enc_*`.
        * ──────────────────────────────────────────────────────────────────── */
-      var lecturaAgregada = leerFuente(fila.base_id, ventana, solapa);
+      // `T2.2.2` (06/08) — **por el caché, igual que la rama general de más abajo.** Estaba
+      // llamando a `leerFuente` directo y por eso la llamada global de la etapa 4 hacía **38
+      // lecturas de fuente con `lecturas_cacheadas: 1`**: 37 de los 43 marcadores son de
+      // `digital` sin `id_cuenta` y caían todos acá. Medido: 94,8 s de los 178 s de esa
+      // llamada. Las solapas distintas son ~8, no 38.
+      var claveAgregada = claveCacheLectura_(fila.base_id, solapa, ventana);
+      if (!(claveAgregada in cache)) {
+        cache[claveAgregada] = leerFuente(fila.base_id, ventana, solapa);
+      }
+      var lecturaAgregada = cache[claveAgregada];
       if (!lecturaAgregada.ok) return { ok: false, motivo: lecturaAgregada.motivo };
       return {
         ok: true,
@@ -1330,7 +1343,28 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa) {
  * **Nunca escribe sobre la plantilla.** La única escritura autorizada sobre una plantilla
  * es la armonización (`Armonizar.gs`), y es otra función.
  */
+/**
+ * `T2.2.2` (06/08) — el caché de hojas de registro se enciende **acá y sólo acá**.
+ *
+ * Una corrida lee `MAPEO` y `SOLAPAS` unas 600 veces y ninguna de las dos cambia mientras
+ * corre: `buscarMapeo` era el **90 %** de cada llamada a `resolverMarcadores`. El caché vive
+ * en una variable de módulo, así que **muere con la ejecución de Apps Script** — no es
+ * `CacheService`, no sobrevive al pedido.
+ *
+ * El `finally` no es prolijidad: `generarInforme` tiene seis `return` tempranos y puede
+ * lanzar. Sin él, un camino de error dejaría el caché encendido para lo que corra después en
+ * la misma invocación —el ítem de menú, por ejemplo— sirviéndole config leída hace minutos.
+ */
 function generarInforme(informeId, periodoId) {
+  abrirCacheRegistros_();
+  try {
+    return generarInformeConCache_(informeId, periodoId);
+  } finally {
+    cerrarCacheRegistros_();
+  }
+}
+
+function generarInformeConCache_(informeId, periodoId) {
   // T2.1.1 — el reloj arranca acá y es el único de la corrida. Ojo: la plataforma cuenta
   // desde `doPost` o desde el trigger del menú, no desde esta línea; lo que gasta el
   // llamador antes de entrar ya está descontado en el default de `presupuesto_corrida_seg`.

@@ -27,6 +27,55 @@
  * escribirConfig: pendiente (fuera de alcance por ahora).
  */
 
+/* ══════════════════════════════════════════════════════════════════════════════
+ * Caché de las hojas de registro — `T2.2.2`, 06/08/2026
+ *
+ * **Medido:** una llamada a `resolverMarcadores` por ítem cuesta ~37 s y **el 90 % es
+ * `buscarMapeo`**, invocada 103 veces para 43 marcadores. Cada invocación relee `MAPEO`
+ * (346 ms) y `SOLAPAS` (337 ms) **enteras**. Con seis llamadas por corrida, son ~600
+ * relecturas de dos hojas que no cambiaron.
+ *
+ * **Alcance: la invocación, y sólo mientras alguien lo pida.** `cacheRegistros_` es una
+ * variable de módulo, así que **muere con la ejecución de Apps Script** — no es
+ * `CacheService`, no sobrevive al pedido, no se comparte entre usuarios ni entre corridas.
+ *
+ * **Y está apagado por defecto**, que es la decisión que hace que esto sea seguro: sólo lo
+ * enciende `generarInforme`, y lo apaga al terminar. Todo lo demás —los sembradores, las
+ * migraciones, los ítems de menú, el diff de configuración— sigue leyendo la hoja viva en
+ * cada llamada, como antes.
+ *
+ * **Por qué así y no "cachear siempre e invalidar al escribir":** `ESCRITORES.md` censa
+ * ~15 escritores de hojas de registro repartidos en cinco archivos. Olvidar uno sería
+ * servir config vieja **en silencio**, que es el modo de falla que este repo caza. Con el
+ * caché apagado por defecto **no hay ningún escritor que invalidar**: ninguno corre adentro
+ * de `generarInforme`, que sólo escribe `CORRIDAS` y `FALTANTES` — y ésas no se leen por
+ * acá.
+ *
+ * Si algún día un escritor sí corre adentro del alcance, tiene que llamar a
+ * `invalidarCacheRegistros_()`. Está exportada para eso y hoy no la llama nadie.
+ * ══════════════════════════════════════════════════════════════════════════════ */
+var cacheRegistros_ = null;
+
+function abrirCacheRegistros_() { cacheRegistros_ = {}; }
+function cerrarCacheRegistros_() { cacheRegistros_ = null; }
+function cacheRegistrosAbierto_() { return cacheRegistros_ !== null; }
+
+/** Para un escritor que corra adentro del alcance. Hoy no lo llama nadie, a propósito. */
+function invalidarCacheRegistros_() { if (cacheRegistros_) cacheRegistros_ = {}; }
+
+/**
+ * Envoltorio único. Con el caché apagado —el default— llama a `leer()` y no guarda nada, o
+ * sea que el comportamiento es **idéntico** al de antes de este cambio.
+ */
+function memoRegistro_(nombre, leer) {
+  if (cacheRegistros_ && Object.prototype.hasOwnProperty.call(cacheRegistros_, nombre)) {
+    return cacheRegistros_[nombre];
+  }
+  var valor = leer();
+  if (cacheRegistros_) cacheRegistros_[nombre] = valor;
+  return valor;
+}
+
 function leerBases() {
   return leerRegistro_('BASES', 'base_id');
 }
@@ -54,6 +103,10 @@ function leerSeccionesPlano_() {
 }
 
 function leerConfig() {
+  return memoRegistro_('CONFIG', leerConfigSinCache_);
+}
+
+function leerConfigSinCache_() {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CONFIG');
   if (!hoja) return {};
 
@@ -80,6 +133,10 @@ function leerConfig() {
  * `solapa` en la clave, una se pisaba a la otra en silencio.
  */
 function leerMapeo() {
+  return memoRegistro_('MAPEO', leerMapeoSinCache_);
+}
+
+function leerMapeoSinCache_() {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MAPEO');
   if (!hoja) return {};
 
@@ -121,6 +178,10 @@ function leerMapeo() {
  * compuesta (base_id, solapa), igual criterio que `leerMapeo()`.
  */
 function leerSolapas() {
+  return memoRegistro_('SOLAPAS', leerSolapasSinCache_);
+}
+
+function leerSolapasSinCache_() {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SOLAPAS');
   if (!hoja) return {};
 
@@ -248,7 +309,12 @@ function menuValidarMapeo_() {
   ui.alert('Duplicados en MAPEO', lineas.join('\n'), ui.ButtonSet.OK);
 }
 
+/** Cubre `BASES`, `INFORMES`, `PERIODOS`, `CAMPANAS` y `SECCIONES` de un saque. */
 function leerRegistro_(nombreHoja, clavePrimaria) {
+  return memoRegistro_(nombreHoja, function () { return leerRegistroSinCache_(nombreHoja, clavePrimaria); });
+}
+
+function leerRegistroSinCache_(nombreHoja, clavePrimaria) {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombreHoja);
   if (!hoja) return {};
 
