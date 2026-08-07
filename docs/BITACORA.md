@@ -5804,3 +5804,22 @@ autorización **crece por operación**, que es lo que la hace verificable. Alcan
 el addendum se escribió el 07/08 —**no se corrige a ciegas**, no sabemos cuál de las dos está
 mal—, y las dos láminas de `secco` (15 y 26) que no tienen tokens pero probablemente **no**
 son estáticas. **Sin código.**
+
+---
+
+## Parte C — el flujo de marcar y clasificar una lámina, en el RUNBOOK (2026-08-07) — commit de esta entrada
+
+`RUNBOOK.md` gana la sección *"Marcar y clasificar una lámina"*, con los seis pasos del flujo
+decidido el 07/08. **Arranca con una advertencia**: *Sellar plantilla* **no está en el menú** y
+no se va a encontrar ahí — es la Fase 2a de `D-23` y está sin implementar. Decirlo evita que
+alguien la busque antes de que exista.
+
+Queda escrito qué escribe el motor y dónde —dos campos en las notas del orador, **anexando**—,
+qué autorización lo permite y qué **no** cubre esa autorización.
+
+**La copia generada conserva el ancla** (decisión del usuario, 07/08): con tres numeraciones
+conviviendo, es la única forma estable de decir de qué modelo salió una lámina del deck
+publicado. **La consecuencia queda dicha**: las notas del deck publicado van a llevar texto de
+máquina, visible en modo presentador y al imprimir.
+
+**La hoja `LAMINAS` no se documenta todavía** — es Fase 3 y no existe. **Sin código.**

@@ -278,6 +278,45 @@ independencia.
 
 ---
 
+## Marcar y clasificar una lámina
+
+> **⚠ Los pasos 2 y 3 nombran una función que todavía no existe.** *Sellar plantilla* **no
+> está en el menú** y no la vas a encontrar ahí: es la Fase 2a de `D-23` y está sin
+> implementar. Esta sección describe el flujo decidido el 07/08/2026 para que quede escrito
+> antes de construirlo, no una operación disponible hoy.
+
+1. **Agregás la lámina** a la plantilla en Slides, con números de ejemplo o vacía. **Es el
+   único paso que no pasa por el motor**, y es provisorio: pedirla en lenguaje natural es la
+   capa de panel de `docs/OBJETIVO_lamina_nueva.md`, que espera su turno. Diseñar la lámina
+   es diseñar; clasificarla, marcarla y esconderla es administrar, y eso pasa por el motor.
+2. **Corrés *Sellar plantilla*** desde el menú.
+3. **El motor recorre las láminas.** A las que ya tienen ancla **no las toca**. Las que no la
+   tienen y **cuya sección no se puede deducir** se **reportan todas juntas** y el sellado
+   **para**. No se adivina la sección de una lámina nueva. El reporte es por lote a propósito:
+   parar en la primera obligaría a repetir la corrida una vez por lámina.
+4. **Declarás la sección** —o la creás— y volvés a sellar. Ahí se escribe el ancla.
+5. **Se cablea:** cada número de ejemplo pasa a `{{token}}` y cada token nuevo lleva su fila
+   en `MARCADORES`. **El detalle de este paso está pendiente** y no se inventa acá.
+6. **La sección entra en `estado = revisar`** hasta que alguien la vio llena en una corrida.
+
+**Qué escribe el motor, y dónde.** El ancla vive en **las notas del orador** de cada lámina,
+en dos campos: `#lamina: L-NNN` (id global y opaco, se asigna una vez y no se reasigna nunca)
+y `#seccion: <seccion_id>`. **El motor anexa una línea; nunca reemplaza lo que haya** — si
+alguien del equipo escribió notas ahí, siguen estando. La autorización que lo permite es el
+addendum 1 a la suspensión acotada de `C-01` (`docs/REGLAS_NEGOCIO.md`), y **no cubre esconder
+láminas, insertarlas, borrarlas ni mover cajas**.
+
+**El deck generado conserva el ancla.** El motor **no la retira** al generar. Con tres
+numeraciones conviviendo —la de la plantilla, la del deck emitido y la de las copias de una
+sección repetible—, el ancla es la única forma estable de decir de qué modelo salió una lámina
+del deck publicado, y eso sirve justo cuando un número sale mal.
+
+> **Consecuencia a tener presente:** las notas del orador del deck publicado van a llevar
+> texto de máquina. **Se ve en modo presentador y al imprimir con notas.** Es una decisión
+> tomada (usuario, 07/08/2026), no un descuido.
+
+---
+
 ## Y después…
 
 13. Con las bases verdes y `INFORMES` cargado, seguís con el motor headless:
