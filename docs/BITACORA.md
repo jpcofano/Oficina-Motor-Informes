@@ -5706,3 +5706,33 @@ tres días antes y sigue activa, entra— y **agregar una clave de "días antes"
 una decisión que nadie tomó**. No existe ni va a existir.
 
 **Pendiente de verificación humana.**
+
+---
+
+## Corrida de cierre del 07/08 — las once respuestas y `R-16`, de punta a punta (2026-08-07) — commit de esta entrada
+
+`jm-20260807-083557`, con todo adentro: los nueve formatos, `items_por_lamina`,
+`resumen_ejecutivo` a `unica`, la fuente nueva de la lámina 7, el renombre a `post_*` y el
+solape.
+
+| | 06/08 | 07/08 madrugada | **07/08 cierre** |
+|---|---|---|---|
+| `corte` / `fallo` / `instrumento.fallos` | `null` / — / — | `null` / `null` / `[]` | **`null` / `null` / `[]`** |
+| barrida (tokens crudos) | 0 | 0 | **0** |
+| marcadores `ok` | 17 | 23 | **31** de 43 |
+| tokens reemplazados | 29 | 35 | **38** |
+| faltantes | 270 | 264 | **265** |
+| ítems emitidos | 5 | 5 | **7** |
+| gastado | 120 s | 231 s | **298 s** |
+
+**`comunicaciones_post` emite.** Es la confirmación de punta a punta de la salida A: la sección
+pasó de no encontrar lámina modelo a emitir **2 ítems** —San Cristóbal (post) y Retiro (post)—
+sobre la lámina 11 del deck expandido. **Pintan cero tokens**, y es esperado: los cuatro
+`post_camp1..4` no tienen fila en `MARCADORES`.
+
+**⚠ El presupuesto: 298 s contra 350. El margen bajó a 15 %.** Es la contracara del solape:
+`Directa IVR` pasó de 0 a 2 filas y `Seguimiento digital` de 16 a 72, así que las lecturas
+devuelven mucho más. **Hay causa candidata, no medida** —una corrida no es una serie
+(`CLAUDE.md` §4)— y con este margen **`T2.3` (reanudar) vuelve al camino crítico**.
+
+Los cinco ítems de `encuentro` siguen igual: sólo Orden Público pinta (11).
