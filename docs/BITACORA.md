@@ -5039,3 +5039,84 @@ lámina 6 no resolvió ninguno. **La diferencia no es el anclaje: es que las cue
 `3387-JULJDGGC` sí.**
 
 **No se cableó ni se tocó nada.** Es medición.
+
+---
+
+## `N3` / `T2.6` — los tres grupos que recortan a cero: tres causas distintas, y una era un bug (2026-08-07) — commit de esta entrada
+
+Lo que había que medir era **por qué la ventana da cero**. Da cero por tres motivos que no
+tienen nada que ver entre sí.
+
+### 1 · `sd_pauta_*` — **bug del motor. Arreglado.**
+
+El recorte por ventana elegía la clave con la que lee la fecha de cada fila **por el nombre de
+la solapa**:
+
+```js
+var claveFecha = (base === 'digital' && solapa === SOLAPA_MAESTRA_DIGITAL_)
+  ? 'fecha_periodo'
+  : encabezadoEnColumna_(...);
+```
+
+La maestra de `digital` llega por **dos caminos con filas de forma distinta**: por la unión
+(`Union.gs`) el registro es plano y sus claves son los `campo_logico`; por `leerFuente` —el
+agregado global, sin `id_cuenta`— las filas vienen indexadas por **el encabezado real de la
+planilla**. El caso especial es correcto por el primer camino y **falso por el segundo**.
+
+Consecuencia medida: `o['fecha_periodo']` era `undefined` en las **979** filas, y las seis
+`pauta_*` recortaban `0 de 979 · 979 sin fecha`. Por el encabezado real —`"Fecha de inicio"`,
+columna `L`— **751 de 979 tienen fecha y 16 caen en la ventana**.
+
+**El arreglo elige por lo que la fila tiene**, que es lo único que no puede mentir:
+`claveDeFila_(filas, claveLogica, encabezadoReal)`. Se aplicó en los **dos** lugares que
+tenían el mismo caso especial por nombre — el recorte por ventana y `aplicarFiltro_`. En el
+segundo el error era **latente**: ningún marcador filtra hoy sobre `Seguimiento digital`, pero
+el primero que lo hiciera —`sd_estado`, por ejemplo— habría filtrado sobre `undefined`.
+
+**Control, los 43 marcadores antes y después:**
+
+| | antes | después |
+|---|---|---|
+| `ok` | 17 | **23** |
+| `sin_datos` | 26 | **20** |
+| `error` | 0 | 0 |
+
+**Cambiaron exactamente seis, y son los seis esperados:** `pauta_google/meta/prog` y
+`gcba_pauta_google/meta/prog`, de `sin_datos` a `ok` sobre **16 filas**. Ningún otro marcador
+cambió de estado ni de valor. **Las 10 pruebas pasan.**
+
+**El valor de los seis es `0`, y eso es un dato, no un hueco:** son 16 filas con valor numérico
+que suman cero. Es exactamente la distinción que el motor tiene que sostener — `SUMA` sobre
+cero filas da `sin_datos`, `SUMA` sobre 16 ceros da `0`.
+
+### 2 · `Directa IVR` — **no es un bug: es el criterio de ventana, y `R-14` lo resolvería**
+
+58 filas, las 58 con fecha, y **cero en la ventana**. Las de la semana del informe están
+**a un día**:
+
+| `Inicio` | cuenta | campaña |
+|---|---|---|
+| **22/07/2026** | `3387-JULJDGGC` | TE CUENTO BS AS JM \| 21/7 ORDEN PÚBLICO EJE NORTE |
+| **23/07/2026** | `3387-JULJDGGC` | TE CUENTO BS AS JM \| 21/7 ORDEN PÚBLICO EJE NORTE |
+| 31/07/2026 | `3449-JULEMEGC` | IVR \| Alerta Naranja 30/7 |
+
+La ventana es **24–30/07**. Las dos campañas del encuentro de Orden Público **arrancaron el 22
+y el 23**, un día y dos antes del viernes de inicio; la siguiente arranca el 31, un día después
+del jueves de cierre. El agregado global las excluye porque filtra por *"empieza en la
+ventana"*; **la pasada por cuenta las ve** —no recorta por ventana— y por eso `Orden Público`
+es el único ítem que pintó números.
+
+**Es literalmente el caso que `R-14` describe** — *"no es 'empieza en la ventana'"* — y
+`Directa IVR` **tiene `ivr_fin` mapeado (columna `E`)**, así que el solape es computable ahí.
+**No se implementó:** cambiar qué fecha gobierna el recorte del agregado global es una decisión,
+no un arreglo, y el prompt manda anotarla y seguir.
+
+### 3 · `Digital` — **ni bug ni criterio: la solapa no tiene datos de la ventana**
+
+1297 filas · 897 con fecha real · 386 vacías · 14 con texto en vez de fecha.
+**Rango de las 897: 2024-08-29 → 2026-01-02.** La ventana es julio de 2026.
+
+Medido con los dos criterios: *"empieza en la ventana"* da **0** y el **solape de `R-14`
+también da 0**. No hay ninguna campaña que llegue a julio de 2026. **Un cero acá no dice nada
+sobre el criterio ni sobre el motor**, y es la misma solapa que `N1.b` acaba de declarar fuente
+de la lámina 7.

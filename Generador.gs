@@ -334,10 +334,15 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
   }
 
   // Las filas vienen indexadas por ENCABEZADO (igual que en `datosDeMarcador_`), salvo la
-  // maestra de digital, cuyas claves son los `campo_logico`.
-  var clave = (fila.base_id === 'digital' && solapa === SOLAPA_MAESTRA_DIGITAL_)
-    ? f.campo
-    : encabezadoEnColumna_(fila.base_id, solapa, campo.columna);
+  // maestra de digital leída **por la unión**, cuyas claves son los `campo_logico`.
+  //
+  // `T2.6` (07/08) — mismo arreglo que en el recorte por ventana, y por el mismo motivo: el
+  // caso especial estaba puesto **por nombre de solapa** y la maestra llega por dos caminos.
+  // Acá el error todavía era latente —ningún marcador filtra sobre `Seguimiento digital`—,
+  // pero el primero que lo hiciera (`sd_estado`, por ejemplo) habría filtrado sobre
+  // `undefined` y dejado cero filas sin decir por qué.
+  var clave = claveDeFila_(filas, f.campo,
+    encabezadoEnColumna_(fila.base_id, solapa, campo.columna));
 
   var esperado = normalizarValorDeclarado_(f.valor);
   var vacias = 0;
@@ -528,9 +533,11 @@ function resolverMarcadores(informeId, opciones) {
     var fechasDeFilas = null;
     var campoFechaMarcador = buscarMapeo(fila.base_id, solapa.solapa, 'fecha_periodo');
     if (campoFechaMarcador.ok) {
-      var claveFecha = (fila.base_id === 'digital' && solapa.solapa === SOLAPA_MAESTRA_DIGITAL_)
-        ? 'fecha_periodo'
-        : encabezadoEnColumna_(fila.base_id, solapa.solapa, campoFechaMarcador.columna);
+      // `T2.6` (07/08) — se elige por lo que la fila tiene, no por el nombre de la solapa.
+      // El caso especial por nombre daba `undefined` en las 979 filas de la maestra leída por
+      // `leerFuente`, y con eso las seis `pauta_*` recortaban a cero teniendo fecha.
+      var claveFecha = claveDeFila_(datos.filas, 'fecha_periodo',
+        encabezadoEnColumna_(fila.base_id, solapa.solapa, campoFechaMarcador.columna));
       fechasDeFilas = datos.filas.map(function (o) {
         return parsearFechaCelda_(o[claveFecha]) || null;
       });
@@ -889,6 +896,29 @@ function familiasDeSeccion_(seccion) {
 
 function tokenEsDeFamilia_(token, familias) {
   return familias.some(function (f) { return token.indexOf(f) === 0; });
+}
+
+/**
+ * `T2.6` (07/08) — con qué clave se lee un campo de una fila, cuando la misma solapa llega
+ * por dos caminos con filas de forma distinta.
+ *
+ * Por la unión (`Union.gs`) el registro de la maestra de `digital` es **plano y sus claves son
+ * los `campo_logico`**. Por `leerFuente` —el agregado global, sin `id_cuenta`— las filas
+ * vienen **indexadas por el encabezado real de la planilla**. Dos formas, la misma solapa.
+ *
+ * Hasta hoy la elección se hacía **por el nombre de la solapa**: si era la maestra, clave
+ * lógica; si no, encabezado. Eso es correcto por el camino de la unión y **falso por el otro**,
+ * y el precio fue silencioso: `pauta_google/meta/prog` y sus tres `gcba_*` recortaban
+ * `0 de 979 fila(s) · 979 sin fecha` porque `o['fecha_periodo']` era `undefined` en las 979.
+ * Medido: por el encabezado real (`"Fecha de inicio"`, columna `L`) **751 de 979 filas tienen
+ * fecha** y 16 caen en la ventana del informe.
+ *
+ * Se elige por **lo que la fila realmente tiene**, que es lo único que no puede mentir.
+ */
+function claveDeFila_(filas, claveLogica, encabezadoReal) {
+  var muestra = (filas && filas.length) ? filas[0] : null;
+  if (muestra && Object.prototype.hasOwnProperty.call(muestra, claveLogica)) return claveLogica;
+  return encabezadoReal;
 }
 
 /** Las secciones `repetible` y `activa` que declaran a este informe y tienen familias. */
