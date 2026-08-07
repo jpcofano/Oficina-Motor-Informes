@@ -558,6 +558,29 @@ probó de punta a punta. → `PENDIENTES_consistencia.md`, `P1`.
 > nocturna del 04/08, que es exactamente la mitad de `T2.9.4` que el plan seguía reclamando.
 > El pendiente **no se cierra acá**: se reporta que su consecuencia dura no aplica.
 
+**`T2.10` · paginar una sección repetible: una lámina cada N ítems.** *(escrito el 07/08; **no
+implementado**, y **no aprobado** — entra a la lista, no al trabajo en curso)*
+
+Hoy `duplicarBloquesRepetibles_` duplica **una lámina por ítem**: `resultado.items.forEach` y
+un `modelo.duplicate()` por vuelta. Cinco encuentros, cinco láminas. Lo que hace falta para la
+lámina 7 de `jm` es lo otro: **una lámina cada cuatro ítems**, con las ranuras sobrantes de la
+última en blanco.
+
+- No es un caso raro de lo que ya existe: es **otro modo**. Hoy la lámina modelo tiene los
+  tokens de **un** ítem y se duplica; ahí la lámina modelo tiene **N ranuras** y hay que
+  repartir los ítems entre ellas y **vaciar las que sobran**.
+- **De qué depende:** de nada del motor — se puede construir cuando se quiera. Depende de una
+  **decisión**: qué declara el tamaño de página. Lo natural es una columna nueva en
+  `SECCIONES` (`items_por_lamina`, vacío = el comportamiento de hoy), y eso es esquema, así que
+  hay que decidirlo antes de escribir código.
+- **De qué depende que valga la pena:** de las siete decisiones del 06/08 sobre la lámina 7
+  (`CONFIG_INFORMES.md` §1.8). **Sin esto, la lámina 7 no puede funcionar como se decidió: con
+  cinco campañas, la quinta no entra** — y no entra **en silencio**, que es la mitad cara de
+  `D-22`.
+- **Lo que ya está medido y no hace falta volver a medir:** `D-22` — el motor lee tablas y no
+  sabe agregarles filas. `T2.10` **no** levanta esa limitación: reparte ítems entre ranuras
+  fijas. Agregar filas a una tabla es otro trabajo y no está pedido.
+
 ---
 
 ### Tramo 3 — prueba de motor (SECCO)

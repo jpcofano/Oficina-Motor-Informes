@@ -4822,3 +4822,26 @@ cuatro ítems), un consumidor para `R-14`, y **la fuente de 20 de los 22 tokens 
 
 **Nada se ejecutó:** la plantilla no se tocó, ningún token se renombró, ningún marcador se
 cableó.
+
+---
+
+## `N10` — `T2.10`: paginar de a cuatro es una capacidad que el motor no tiene (2026-08-07) — commit de esta entrada
+
+Escrito en `docs/PLAN.md` §2, Tramo 2, con el ID **greppeado**: `T2.1` a `T2.9` estaban
+tomados, `T2.10` estaba libre. **No implementado y no aprobado.**
+
+**La premisa se verificó.** `duplicarBloquesRepetibles_` hace `resultado.items.forEach` con un
+`modelo.duplicate()` por vuelta: **una lámina por ítem**. Lo que la lámina 7 necesita es **una
+lámina cada cuatro ítems**, con las ranuras sobrantes de la última en blanco. No es un caso
+raro del mismo mecanismo: es otro modo — hoy la lámina modelo tiene los tokens de **un** ítem,
+ahí tiene **N ranuras** y hay que repartir y vaciar.
+
+**De qué depende:** de nada del motor. De una **decisión de esquema**: qué declara el tamaño de
+página — lo natural es una columna `items_por_lamina` en `SECCIONES`, vacío = el
+comportamiento de hoy.
+
+**Y queda dicho que la lámina 7 no puede funcionar sin esto:** con cinco campañas, la quinta no
+entra, y no entra **en silencio** — que es la mitad cara de `D-22`.
+
+`T2.10` **no** levanta `D-22`: reparte ítems entre ranuras fijas. Agregar filas a una tabla de
+Slides es otro trabajo y no está pedido.
