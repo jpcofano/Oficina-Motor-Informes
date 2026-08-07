@@ -4564,3 +4564,56 @@ son tokens sin cablear, no corte por tiempo.
 
 El deck de control quedó en la papelera. `FALTANTES` se pisó, que es lo que hace siempre
 (`escribirFaltantes_` limpia la hoja: es la foto de la última corrida, no un histórico).
+
+---
+
+## `N2` / `T2.1.2` — el cierre se escribe siempre, también cuando algo explota (2026-08-07) — commit de esta entrada
+
+`T2.1.1` puso el corte por tiempo y el cierre corre bien por esa vía. Faltaba la otra: una
+excepción inesperada adentro de las etapas se llevaba puesta la función entera y la fila de
+`CORRIDAS` quedaba diciendo *"corrida en curso"* para siempre — el mismo problema, entrando
+por otra puerta.
+
+**Qué cambió en `Generador.gs`:**
+
+- Las etapas 1 a 4 van adentro de un `try`. El `catch` **no relanza**: guarda `fallo` con la
+  etapa, el mensaje, el stack y los segundos, y deja que el cierre corra.
+- El estado que el cierre necesita —`mapa`, `expansion`, `porItem`, `resolucion`,
+  `porMarcador`, `sinCajaEnPlantilla`— se declara **afuera del `try`**, con un valor vacío
+  usable. No alcanzaba el hoisting de `var`: un `undefined` vuelve a tirar en el cierre, que
+  es el único lugar que no se puede permitir tirar.
+- `marcarEtapa_` **devuelve la etapa**, así la corrida sabe en cuál está sin una variable
+  paralela que se desincronice.
+- `MOTIVO_EXCEPCION_`, tercer motivo de `FALTANTES` al lado de `MOTIVO_CORTE_TIEMPO_`. Un
+  token crudo tiene ahora tres causas distinguibles: nadie lo cableó, se acabó el tiempo, o
+  algo explotó. Antes la tercera se disfrazaba de la segunda y el diagnóstico apuntaba al
+  presupuesto, que no tenía nada que ver.
+- La columna `faltantes` de `CORRIDAS` cierra con `<n> · ⚠ excepción en la etapa "…": <mensaje>`.
+  Es la misma columna que ya usa `marcarEtapa_` como campo de estado.
+- El resultado trae `fallo`, y `reporteGeneracion_` lo canta **antes** que el corte.
+- Sigue siendo `ok: true`, por el mismo motivo que el corte: hubo deck, hubo fila cerrada y
+  hubo lista de faltantes. `ok: false` queda para las precondiciones que ni copian la
+  plantilla.
+
+**Un bug que se cazó en el camino.** El default `mapa = { tokens: {} }` es **vacío pero
+truthy**, y `barrerTokensNoAlcanzados_` decide re-escanear por `tokensDelMapa ? … : null`. Con
+el default puesto, una muerte antes de la etapa 2 habría barrido **cero** tokens y el deck
+salía con `{{token}}` crudos — exactamente lo contrario de lo que esa barrida garantiza. La
+llamada pasa ahora `mapa.lista.length ? mapa.tokens : null`.
+
+**Control positivo, por API:** se le inyectó una excepción a `mapaTokenObjectId_` (etapa 2) y
+se corrió `generarInforme('jm')`.
+
+| | resultado |
+|---|---|
+| la excepción escapó | **no** |
+| `fallo.etapa` | `2 · mapa token→objectId`, a los 57 s |
+| fila de `CORRIDAS` | cerrada, con `172 · ⚠ excepción en la etapa "2 · mapa token→objectId": …` |
+| `FALTANTES` | 172 filas, todas con `MOTIVO_EXCEPCION_` |
+| barrida | 172 tokens, por `tokensVisiblesDe_` (no había mapa) |
+| tokens crudos en el deck | 23, **todos en la lámina escondida** — no se emite, nunca se pinta |
+| función restaurada | sí |
+
+**Las 10 pruebas pasan.** `FALTANTES` se restauró byte a byte a lo que tenía antes del control
+(271 filas, comparación exacta). El deck de prueba, a la papelera. **Pendiente de verificación
+humana.**

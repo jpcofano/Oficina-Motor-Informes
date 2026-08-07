@@ -822,16 +822,22 @@ function abrirCorrida_(fila) {
  * columna nueva, sin `COLUMNAS_DELTA_`, sin tocar el esquema.
  */
 function marcarEtapa_(numeroFila, etapa, t0) {
-  if (!numeroFila) return;
-  try {
-    var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
-    var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
-    var col = headers.indexOf('faltantes') + 1;
-    if (col < 1) return;
-    var seg = Math.round((new Date().getTime() - t0) / 1000);
-    hoja.getRange(numeroFila, col).setValue('(en curso) ' + etapa + ' · +' + seg + ' s');
-    SpreadsheetApp.flush(); // sin esto el buffer puede morir con la corrida
-  } catch (e) { /* instrumentar nunca puede voltear la corrida */ }
+  if (numeroFila) {
+    try {
+      var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
+      var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+      var col = headers.indexOf('faltantes') + 1;
+      if (col > 0) {
+        var seg = Math.round((new Date().getTime() - t0) / 1000);
+        hoja.getRange(numeroFila, col).setValue('(en curso) ' + etapa + ' · +' + seg + ' s');
+        SpreadsheetApp.flush(); // sin esto el buffer puede morir con la corrida
+      }
+    } catch (e) { /* instrumentar nunca puede voltear la corrida */ }
+  }
+  // `T2.1.2` — devuelve la etapa para que la corrida sepa en cuál está sin repetir el
+  // literal en una variable paralela. Si adentro salta una excepción, el cierre tiene que
+  // poder nombrar dónde murió, y dos copias del mismo string se desincronizan solas.
+  return etapa;
 }
 
 function escribirCorrida_(fila, mapaTokens, numeroFila) {
@@ -1243,6 +1249,14 @@ var COSTO_RESOLUCION_ETAPA4_SEG_DEFECTO_ = 240;
 /** Motivo de `FALTANTES` que distingue el corte por tiempo de un token sin cablear. */
 var MOTIVO_CORTE_TIEMPO_ = 'corte por tiempo: la corrida se quedó sin presupuesto antes de resolver este token';
 
+/**
+ * `T2.1.2` — el tercer motivo. Un token puede quedar crudo por tres razones distintas y las
+ * tres se leen igual en el deck: nadie lo cableó, la corrida se quedó sin tiempo, o algo
+ * explotó en el medio. Sin un motivo propio, la muerte por excepción se disfrazaba de corte
+ * por tiempo y el diagnóstico apuntaba al presupuesto, que no tenía nada que ver.
+ */
+var MOTIVO_EXCEPCION_ = 'la corrida murió por una excepción antes de resolver este token';
+
 function presupuestoCorridaSeg_() {
   var valor = Number(leerConfig().presupuesto_corrida_seg);
   return isNaN(valor) || valor <= 0 ? PRESUPUESTO_CORRIDA_SEG_DEFECTO_ : valor;
@@ -1316,7 +1330,9 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa) {
   var origen = 'mapa de la etapa 2';
   var tokens = tokensDelMapa ? Object.keys(tokensDelMapa) : null;
   if (!tokens) {
-    origen = 'tokensVisiblesDe_ (no había mapa: el corte llegó antes de la etapa 2)';
+    // `T2.1.2` — decía "el corte llegó antes de la etapa 2" y desde hoy hay una segunda vía
+    // para llegar sin mapa: una excepción. El origen no tiene por qué adivinar cuál fue.
+    origen = 'tokensVisiblesDe_ (no había mapa: la corrida no llegó a terminar la etapa 2)';
     tokens = Object.keys(tokensVisiblesDe_(presentacion).tokens);
   }
 
@@ -1420,26 +1436,48 @@ function generarInformeConCache_(informeId, periodoId) {
   });
 
   var t0Etapas = new Date().getTime();
-  marcarEtapa_(filaCorrida, '1 · expandir secciones repetibles', t0Etapas);
 
   var reemplazados = 0;
   var conValor = [];
   var faltantes = [];
 
+  /* `T2.1.2` — el cierre se escribe SIEMPRE.
+   *
+   * `T2.1.1` puso el corte por tiempo y el cierre corre bien por esa vía. Lo que quedaba
+   * abierto es la otra: una excepción inesperada adentro de las etapas se llevaba puesta la
+   * función entera y la fila de `CORRIDAS` quedaba diciendo "corrida en curso" para siempre
+   * — exactamente el problema que `T2.1.1` vino a resolver, entrando por otra puerta.
+   *
+   * Por eso todo lo que el cierre necesita se declara **acá afuera**, con un valor vacío que
+   * sirve igual: si la corrida muere en la etapa 1, `mapa` sigue siendo un mapa vacío y la
+   * barrida final lo lee sin explotar. No alcanza con el hoisting de `var`: un `undefined`
+   * volvería a tirar en el cierre, que es el único lugar que no se puede permitir tirar.
+   */
+  var expansion = { asignaciones: [], reporte: [] };
+  var mapa = { tokens: {}, lista: [], escondidas: { laminas: [], tokens: [], cuantos: 0 } };
+  var porItem = [];
+  var resolucion = { resultados: [], resumen: null };
+  var porMarcador = {};
+  var sinCajaEnPlantilla = [];
+  var etapaEnCurso = '';
+  var fallo = null;
+
+  try {
+  etapaEnCurso = marcarEtapa_(filaCorrida, '1 · expandir secciones repetibles', t0Etapas);
+
   // 1 · Paso 5 — duplicar los bloques repetibles. **Sin reemplazar nada**: las copias
   //     tienen `objectId` propios y el mapa de `B.3` se toma después, una sola vez, sobre
   //     el deck ya expandido y todavía intacto.
-  var expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana);
+  expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana);
 
-  marcarEtapa_(filaCorrida, '2 · mapa token→objectId', t0Etapas);
+  etapaEnCurso = marcarEtapa_(filaCorrida, '2 · mapa token→objectId', t0Etapas);
   // 2 · El mapa, ANTES de tocar un solo token.
-  var mapa = mapaTokenObjectId_(presentacion);
+  mapa = mapaTokenObjectId_(presentacion);
 
   // 3 · La pasada por ítem: cada slide emitida se pinta con **el contexto de su ítem** —
   //     el `id_cuenta` del encuentro, o la campaña con su propia ventana. Es lo que hace
   //     que `digital` deje de salir `«FALTA:…@digital_sin_cuenta»`.
-  marcarEtapa_(filaCorrida, '3 · pasada por ítem', t0Etapas);
-  var porItem = [];
+  etapaEnCurso = marcarEtapa_(filaCorrida, '3 · pasada por ítem', t0Etapas);
   // T2.1.1 — el costo del ítem anterior **de esta misma corrida**. Arranca en 0 a propósito:
   // el primer ítem no tiene observación previa, así que entra si queda algo sobre la reserva.
   // No hay ninguna constante de segundos acá: el costo por ítem es un dato de la corrida.
@@ -1522,7 +1560,7 @@ function generarInformeConCache_(informeId, periodoId) {
     costoUltimoItemSeg = Math.ceil((new Date().getTime() - t0Item) / 1000);
   }
 
-  marcarEtapa_(filaCorrida, '4 · tokens fijos', t0Etapas);
+  etapaEnCurso = marcarEtapa_(filaCorrida, '4 · tokens fijos', t0Etapas);
   // 4 · Los tokens fijos, sobre todo lo que quedó. Los de las slides emitidas ya no están:
   //     la pasada anterior los reemplazó por valor o por `«FALTA»`.
   //
@@ -1537,9 +1575,6 @@ function generarInformeConCache_(informeId, periodoId) {
   // entrar o no entrar, contra `costo_resolucion_etapa4_seg`. El loop de pintado que viene
   // después **no lleva checkpoint**: cuesta ~6 s, menos que la reserva, y cortarlo por la
   // mitad dejaría tokens crudos sin ganar nada.
-  var resolucion = { resultados: [], resumen: null };
-  var porMarcador = {};
-
   if (corte) {
     // Ya se cortó en la etapa 3. Un corte es un corte: no se abre una etapa nueva.
   } else {
@@ -1606,12 +1641,29 @@ function generarInformeConCache_(informeId, periodoId) {
 
   // 5 · Marcadores cableados que la plantilla no tiene. No es un faltante del informe: es
   //     una fila de `MARCADORES` sin caja donde escribirse, y hay que verla.
-  var sinCajaEnPlantilla = Object.keys(porMarcador).filter(function (t) { return !(t in mapa.tokens); });
+  sinCajaEnPlantilla = Object.keys(porMarcador).filter(function (t) { return !(t in mapa.tokens); });
+
+  } catch (e) {
+    // `T2.1.2` — no se traga y no se relanza. Se guarda con la etapa en la que estaba y el
+    // cierre de abajo corre igual, que es todo el punto: relanzar dejaría la fila abierta,
+    // que es justo lo que esto viene a evitar. La excepción viaja entera en el resultado.
+    fallo = {
+      etapa: etapaEnCurso || '(antes de la primera etapa)',
+      mensaje: String((e && e.message) ? e.message : e),
+      stack: String((e && e.stack) ? e.stack : ''),
+      segundos: segundosGastados_(reloj)
+    };
+  }
 
   // T2.1.1 · la barrida final. **Corre siempre, haya habido corte o no**: es lo único que
   // garantiza que el deck no salga con `{{token}}` crudos, y por eso vive adentro de la
   // reserva y no detrás de un checkpoint. En una corrida completa no encuentra nada.
-  var barrida = barrerTokensNoAlcanzados_(presentacion, mapa && mapa.tokens);
+  // `T2.1.2` · `mapa.lista.length` y no `mapa.tokens` a secas: el default de arriba es un
+  // mapa **vacío pero truthy**, así que pasarlo tal cual haría que la barrida recorriera
+  // cero tokens y el deck saliera con `{{token}}` crudos — justo lo contrario de lo que
+  // esta barrida garantiza. Si la corrida murió antes de la etapa 2 no hay mapa y hay que
+  // re-escanear, que es para lo que `barrerTokensNoAlcanzados_` acepta `null`.
+  var barrida = barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null);
   barrida.barridos.forEach(function (token) {
     faltantes.push({
       corrida_id: corridaId,
@@ -1620,10 +1672,13 @@ function generarInformeConCache_(informeId, periodoId) {
       base_id: '',
       solapa: '',
       campo_logico: '',
-      // Sin corte no debería quedar ninguno: si aparece, no se lo disfraza de corte.
+      // Tres motivos distintos que en el deck se leen igual. Sin corte y sin fallo no
+      // debería quedar ninguno: si aparece, no se lo disfraza de ninguna de las dos cosas.
       motivo: corte
         ? MOTIVO_CORTE_TIEMPO_ + ' (' + corte.etapa + ')'
-        : '⚠ quedó crudo en el deck sin que hubiera corte por tiempo — revisar'
+        : (fallo
+          ? MOTIVO_EXCEPCION_ + ' (etapa "' + fallo.etapa + '"): ' + fallo.mensaje
+          : '⚠ quedó crudo en el deck sin que hubiera corte por tiempo — revisar')
     });
   });
 
@@ -1638,7 +1693,13 @@ function generarInformeConCache_(informeId, periodoId) {
     deck_id: deckId,
     fecha_generacion: new Date(),
     tokens_reemplazados: reemplazados,
-    faltantes: faltantes.length
+    // `T2.1.2` — la columna `faltantes` ya venía haciendo de campo de estado: ahí escribe
+    // `marcarEtapa_` la etapa en curso y ahí deja `abrirCorrida_` el "corrida en curso".
+    // Una muerte por excepción sigue el mismo camino, con el conteo adelante para no
+    // perderlo. Sin esto la fila cerraba con un número prolijo y no decía que murió.
+    faltantes: fallo
+      ? faltantes.length + ' · ⚠ excepción en la etapa "' + fallo.etapa + '": ' + fallo.mensaje
+      : faltantes.length
   }, mapa.tokens, filaCorrida);
 
   var dueno = '';
@@ -1692,6 +1753,12 @@ function generarInformeConCache_(informeId, periodoId) {
     // `ok: false` queda para los casos que ya lo devolvían, que son precondiciones que ni
     // llegan a copiar la plantilla.
     corte: corte,
+    // `T2.1.2` · `null` si nada explotó. **Sigue siendo `ok: true`** por el mismo motivo que
+    // el corte: hubo deck, hubo fila cerrada y hubo lista de faltantes. `ok: false` queda
+    // para las precondiciones que ni llegan a copiar la plantilla, y meter acá una muerte
+    // por excepción haría que el menú mostrara sólo el mensaje de error y escondiera el
+    // deck parcial, que es la evidencia.
+    fallo: fallo,
     presupuesto: {
       techo_seg: reloj.presupuesto,
       reserva_seg: reloj.reserva,
@@ -1733,6 +1800,16 @@ function menuGenerarInformeCompleto_() {
     lineas.push('  (' + r.tokens.excluidos_por_lamina_escondida.cuantos +
       ' token(s) fuera del conteo: lámina(s) ' +
       r.tokens.excluidos_por_lamina_escondida.laminas.join(', ') + ' escondida(s) — no se emiten)');
+  }
+  // `T2.1.2` — si murió, va primero que el corte: son dos cosas distintas y confundirlas
+  // manda el diagnóstico al presupuesto, que no tuvo nada que ver.
+  if (r.fallo) {
+    lineas.push('');
+    lineas.push('⚠ LA CORRIDA MURIÓ POR UNA EXCEPCIÓN en la etapa ' + r.fallo.etapa +
+      ' a los ' + r.fallo.segundos + ' s. NO es corte por tiempo.');
+    lineas.push('   ' + r.fallo.mensaje);
+    lineas.push('   El cierre se escribió igual: la fila de CORRIDAS está cerrada y los ' +
+      r.presupuesto.barrida.tokens + ' token(s) crudos quedaron en FALTANTES con este motivo.');
   }
   // `T2.1.1` — si cortó, se dice primero: el deck es válido pero está incompleto, y quien
   // lo mira tiene que saberlo antes que ningún conteo.
