@@ -4697,3 +4697,27 @@ lámina 7 de `jm`, `camp_env1_*`…`camp_env5_*` en la 18, `post_camp1`…`post_
 **La consecuencia, de los dos lados:** una fila de más no entra y desaparece en silencio; una
 de menos queda como `«FALTA:token»` con su fila en `FALTANTES`. El segundo caso se ve; **el
 primero es el caro**, porque un deck con cuatro campañas de cinco se lee como un deck correcto.
+
+---
+
+## `N6` — el `P2` de `comunicaciones_post`, con la causa precisa (2026-08-07) — commit de esta entrada
+
+El `P2` de `docs/PENDIENTES_consistencia.md` decía que faltaba decidir *"si la sección sobra o
+si a la plantilla le falta la lámina"*. **Las dos mitades de esa pregunta son falsas**, medido
+el 07/08:
+
+1. **La lámina existe: es la 7 de `jm`.** Se titula "Campañas" y su pie dice
+   *"Digital | ECVs: post reuniones"*. Tabla de 7×8 con `{{camp1}}`…`{{camp4}}` en la columna
+   1, filas 4 a 7. Ninguno empieza con `post_`, y por eso `slidesModeloDe_(['post_'])` no la ve.
+2. **La familia `post_` existe, del lado de `secco`**: lámina 10, tabla 4×7, con `post_camp1-3`
+   y `post_estado1-3`. Y la fila de `SECCIONES` declara `informes = JM,SECCO`. O sea: la
+   sección **está bien para `secco`** y desalineada para `jm`.
+
+**El obstáculo que ninguna de las tres salidas podía ver antes:** `tokenEsDeFamilia_` matchea
+por **prefijo**. `campana` declara `camp_`, que no matchea `camp1`; pero una familia `camp` sin
+guion bajo se llevaría también `camp_titulo`, `camp_env*` y `camp_resp*`, o sea las láminas 12
+a 19. **La salida C —que la reclame otra sección— no es expresable hoy** sin renombrar o sin
+cambiar el matcheo de familias, que es motor y no configuración.
+
+Las tres salidas quedan escritas en el `P2`, con su costo, **sin elegir ninguna**. Esperando
+decisión del usuario.

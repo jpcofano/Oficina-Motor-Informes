@@ -1604,11 +1604,42 @@ El motor ya lo dice sin romper — es el caso que `duplicarBloquesRepetibles_` r
 curada contra una plantilla que no la contempla"*—, pero **nadie lo estaba leyendo**, y era el
 origen del "5 y no 7" que aparecía como número raro en tres mediciones seguidas.
 
-**Qué falta decidir:** si la sección `comunicaciones_post` sobra en `SECCIONES` para `jm`, o si
-a la plantilla le falta la lámina. Es decisión editorial, no de motor.
-
 **Visto en una corrida real** (06/08): `jm-20260806-214253`, verificada a mano desde la
 planilla, lo reportó igual que el banco. Deja de ser una medición de laboratorio.
+
+#### La causa precisa, medida el 07/08 — y ya no es "falta la lámina"
+
+**La lámina existe: es la 7 de `jm`.** Se titula *"Campañas"* y su pie dice
+*"Digital | ECVs: post reuniones"* — es la lámina de comunicaciones post, sin ninguna duda.
+Lleva una tabla de **7×8** cuya columna 1 tiene `{{camp1}}`, `{{camp2}}`, `{{camp3}}`,
+`{{camp4}}` en las filas 4 a 7. **Ninguno empieza con `post_`**, y por eso
+`slidesModeloDe_(presentacion, ['post_'])` no la ve.
+
+**Y la familia `post_` no es un invento de `SECCIONES`: existe, del lado de `secco`.** La
+lámina 10 de la plantilla de `secco` lleva una tabla de 4×7 con `post_camp1`, `post_camp2`,
+`post_camp3`, `post_estado1`, `post_estado2`, `post_estado3`. La fila de `SECCIONES` declara
+`informes = JM,SECCO`, así que **la sección está bien para `secco` y desalineada para `jm`**.
+Eso es distinto de "una sección curada contra una plantilla que no la contempla".
+
+**El obstáculo que hay que saber antes de elegir:** `tokenEsDeFamilia_` matchea **por
+prefijo** (`token.indexOf(familia) === 0`). La sección `campana` ya declara `camp_`, que **no**
+matchea `camp1` —`camp_` contra `camp1` falla en el quinto carácter—, y por eso hoy
+`camp1`…`camp4` no pertenecen a ninguna sección. Pero una familia `camp` (sin guion bajo)
+**sí** matchearía las dos cosas: `camp1` y `camp_titulo`, `camp_env1_aud`, `camp_resp_pos`…
+es decir, se llevaría puestas las láminas 12 a 19, que son de la sección `campana`.
+
+#### Las tres salidas — **ninguna elegida, esperando decisión del usuario**
+
+| | qué se hace | qué cuesta |
+|---|---|---|
+| **A** | **Renombrar en la plantilla de `jm`**: `camp1`…`camp4` → `post_camp1`…`post_camp4`. | Toca la plantilla, que es del equipo (`C-01`), y el renombre va **por `informe_id`**, nunca global — lo demostró la regresión de `enc_audiencia`. A favor: deja `jm` y `secco` diciendo lo mismo, y `secco` ya usa esos nombres. |
+| **B** | **Cambiar `familia_tokens` de la sección.** | La fila sirve a **los dos** informes y `post_` es correcto para `secco`: cambiarla rompe `secco` para arreglar `jm`. Sólo funciona partiendo la fila en dos, una por informe. |
+| **C** | **Que la reclame otra sección**, con una familia que matchee `camp1`…`camp4`. | **No es expresable hoy.** Con matcheo por prefijo, la única familia que los toma es `camp`, y `camp` se lleva también las láminas 12–19 de la sección `campana`. Exigiría o un renombre (y entonces es **A**) o cambiar el matcheo de familias, que es motor y no configuración. |
+
+**Dos de las tres salidas terminan en el mismo lugar**: renombrar los tokens de la lámina 7 de
+`jm`. Eso no las convierte en una: **B** sigue siendo distinta y no toca la plantilla.
+
+**Es decisión editorial, no de motor**, y sigue **abierta**. Nada de esto se ejecutó.
 
 
 ### P2 · El mensaje de exclusión no resuelve el nombre del ítem: `excluida undefined`
