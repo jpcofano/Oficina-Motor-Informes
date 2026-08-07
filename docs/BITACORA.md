@@ -4670,3 +4670,30 @@ Las siete filas `solo_en_hoja` que reporta el diff son las `fecha_periodo` que e
 cambios.
 
 Backup previo: snapshot de las diez hojas de registro con `tools/snapshot.js`.
+
+---
+
+## `N5` / `D-22` — el motor lee tablas y no sabe agregarles filas (2026-08-07) — commit de esta entrada
+
+Hallazgo propio, escrito en `docs/PLAN.md` §1 como decisión de arquitectura `D-22` — es
+estructural, y `CLAUDE.md` §3 manda ahí lo estructural en vez de a un hallazgo fechado nuevo.
+
+**Lo medido, sobre las dos plantillas vivas:**
+
+| plantilla | láminas con tabla | tablas | la más grande |
+|---|---|---|---|
+| `jm` | 6 de 22 (5, 7, 17, 18, 19, 21) | 7 | 7×9 en la 18 |
+| `secco` | 5 de 29 (5, 10, 21, 22, 23) | 5 | 7×9 en la 22 |
+
+`piezasDeTextoDeSlide_` baja a `TABLE` celda por celda y por eso los tokens de adentro se
+pintan igual que los sueltos. Escribir estructura es otra cosa: **no hay una sola llamada de
+inserción de filas de Slides en el repo** — `appendRow` e `insertColumnBefore` aparecen cuatro
+veces y las cuatro son de Sheets.
+
+Y las ranuras están cableadas **por índice en el nombre del token**: `camp1`…`camp4` en la
+lámina 7 de `jm`, `camp_env1_*`…`camp_env5_*` en la 18, `post_camp1`…`post_camp3` en la 10 de
+`secco`. El índice **es** la fila.
+
+**La consecuencia, de los dos lados:** una fila de más no entra y desaparece en silencio; una
+de menos queda como `«FALTA:token»` con su fila en `FALTANTES`. El segundo caso se ve; **el
+primero es el caro**, porque un deck con cuatro campañas de cinco se lee como un deck correcto.

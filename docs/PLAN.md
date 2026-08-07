@@ -438,6 +438,39 @@ depende del panel**, y se puede correr en cuanto el Paso 4 genere el primer deck
 
 ---
 
+**`D-22` — Toda tabla de una plantilla es de filas fijas: el motor lee tablas y no sabe
+agregarles filas.** (07/08/2026)
+
+El motor **lee** tablas: `piezasDeTextoDeSlide_` (`Armonizar.gs`) baja a `TABLE` celda por
+celda, y por eso los tokens de adentro de una tabla se mapean y se pintan igual que los de
+una caja suelta. **Escribir estructura es otra cosa, y no existe:** no hay una sola llamada
+de inserción de filas de Slides en el repo —`appendRow` e `insertColumnBefore` aparecen
+cuatro veces y las cuatro son de **Sheets**—. El único verbo que el motor le aplica a una
+tabla es `getCell(f, c).getText()`.
+
+**Lo medido, 07/08/2026, sobre las dos plantillas vivas:**
+
+| plantilla | láminas con tabla | tablas | la más grande |
+|---|---|---|---|
+| `jm` | 6 de 22 (5, 7, 17, 18, 19, 21) | 7 | 7×9 en la 18 |
+| `secco` | 5 de 29 (5, 10, 21, 22, 23) | 5 | 7×9 en la 22 |
+
+Y las ranuras están **cableadas por índice en el nombre del token**: `camp1`…`camp4` en la
+lámina 7 de `jm`, `camp_env1_*`…`camp_env5_*` en la 18, `post_camp1`…`post_camp3` en la 10
+de `secco`. El índice no es decorativo: **es** la fila.
+
+**La consecuencia, de los dos lados:** una fila de más **no entra** —el quinto ítem no tiene
+dónde escribirse y desaparece en silencio— y una de menos **queda como `«FALTA:token»`** en
+el deck, con su fila en `FALTANTES`. El segundo caso es ruidoso y se ve; **el primero es el
+caro**, porque un deck con cuatro campañas de cinco se lee como un deck correcto.
+
+**Qué NO decide esta decisión:** no dice que haya que implementar inserción de filas. Dice
+que hoy no existe, que toda tabla es de filas fijas, y que cualquier lámina que prometa "y si
+hay más, se repite" está prometiendo una capacidad que el motor no tiene. El sub-paso que la
+construiría es `T2.10` (§2), y **no está aprobado**.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 **IDs `T<tramo>.<n>`.** La palabra "Paso" queda para la serie histórica y no se reusa: `Paso 5`
