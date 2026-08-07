@@ -4781,3 +4781,44 @@ de la corrida no la guarda.
 
 Los dos `P2` quedan anotados como arreglados en `docs/PENDIENTES_consistencia.md`, **pendientes
 de verificación humana**. Las 10 pruebas pasan.
+
+---
+
+## `N9` — las siete decisiones sobre la lámina 7, escritas · `CONFIG_INFORMES.md` §1.8 (2026-08-07) — commit de esta entrada
+
+**Dos premisas del prompt no se sostienen, y la segunda cambia la lectura de las siete
+decisiones.**
+
+1. **§2.3 no es de `jm`.** Está bajo *"2. Informe mensual SECCO-SSCDI"* y describe la lámina 10
+   de `secco`. Las siete decisiones hablan de la lámina 7 de `jm`, que es de §1. Van a **§1.8**
+   nueva; §2.3 se reescribió apuntando ahí y con lo propio de `secco`.
+2. **⚠ El destino de la decisión 1 ya existe.** Las siete columnas que el usuario pidió
+   —Campaña · Estado · Período · Alcance · Impresiones · Vistas · VTR— **son textualmente las
+   de `secco` lámina 10**, medidas el 07/08. La decisión no diseña una tabla nueva: **alinea
+   `jm` con lo que `secco` ya tiene**.
+
+**La convención de nombres, elegida con el motivo escrito: `familia` + `atributo` + `índice`.**
+Por forma pura correspondía la otra —el repo usa índice + atributo cuando una ranura tiene
+varios atributos (`camp_env1_*`, `rep_p1_*`, `rrss_c1_*`) y acá son siete—. Gana igual la
+primera **por la decisión 4 del propio usuario, "los que ya existan se reusan"**: con atributo
++ índice **6 de los 28 ya existen y se reusan tal cual** (`post_camp1-3`, `post_estado1-3`) y
+**cero** tokens vivos se renombran; con índice + atributo los 28 son nuevos **y encima hay que
+renombrar esos 6**. Costo asimétrico, y la regla de reuso ya estaba escrita.
+
+Las 28 quedan listadas listas para copiar. **Adoptarlas en `jm` es elegir la salida A del `P2`
+de `comunicaciones_post`** —`camp1`…`camp4` pasan a `post_camp1`…`post_camp4`— y eso queda
+dicho, no dado por tomado.
+
+**Dos decisiones tienen menos efecto del que parecen:**
+
+- La **6** (el benchmark, *"sale o queda fijo, sin token"*): hoy **ya está sin token** en las
+  dos plantillas. Lo único con efecto es *"sale"*.
+- La **7** (`Estado` = columna `N`): **ya está mapeada** por `N4` como `sd_estado`, y responde
+  la vieja `[?]` de §2.3 — es **valor libre**, no lista cerrada.
+
+**Lo que falta para que esto sea ejecutable**, escrito en §1.8: `T2.10` (repetir la lámina cada
+cuatro ítems), un consumidor para `R-14`, y **la fuente de 20 de los 22 tokens nuevos**
+—`Período`, `Alcance`, `Impresiones`, `Vistas`, `VTR` por campaña—, que **nadie declaró**.
+
+**Nada se ejecutó:** la plantilla no se tocó, ningún token se renombró, ningún marcador se
+cableó.

@@ -215,6 +215,102 @@ alcanza para identificar un encuentro; hacen falta figura, tipo y fecha.**
 
 ---
 
+### 1.8 Comunicaciones post — lámina 7 · **decisiones del usuario del 06/08/2026**
+
+> Siete decisiones tomadas el 06/08. **Nada de esto está ejecutado**: la plantilla no se tocó,
+> ningún token se renombró, ningún marcador se cableó. Es la especificación; el archivo lo
+> toca una persona (`C-01`: la plantilla es del equipo).
+>
+> **Dónde vive esto y por qué acá y no en §2.3.** El prompt las mandaba a §2.3, pero §2.3 está
+> bajo *"2. Informe mensual SECCO-SSCDI"* y describe la **lámina 10 de `secco`**. Las siete
+> decisiones hablan de **la lámina 7 de `jm`**, que es de §1. Van acá; §2.3 quedó apuntando a
+> esta sección.
+
+**Lo medido primero (07/08), porque cambia la lectura de las siete decisiones:**
+
+| | `jm` lámina 7 | `secco` lámina 10 |
+|---|---|---|
+| título / pie | "Campañas" · *Digital \| ECVs: post reuniones* | *Digital \| Comunicaciones post* |
+| tabla | 7×8 | 4×7 |
+| columnas | *(sin encabezado)* · Período · **Formato** · **Habitantes** · Alcance · Impresiones · Visualizaciones · VTR% | **Campaña · Estado · Período · Alcance · Impresiones · Vistas · VTR** |
+| ranuras | 4 (`camp1`…`camp4`) | 3 (`post_camp1-3`, `post_estado1-3`) |
+| tokens | 4, sólo la columna de nombre | 6, nombre + estado |
+| benchmark abajo | *"Benchmark VTR Post RDV: 44%"*, literal | cuatro líneas, literales |
+
+**⚠ El destino de la decisión 1 ya existe.** Las siete columnas que el usuario pidió —Campaña ·
+Estado · Período · Alcance · Impresiones · Vistas · VTR— **son textualmente las de `secco`
+lámina 10**. La decisión no diseña una tabla nueva: alinea `jm` con lo que `secco` ya tiene.
+
+---
+
+**1 · Las columnas.** Pasan a ser **Campaña · Estado · Período · Alcance · Impresiones ·
+Vistas · VTR**. Se van `Formato` y `Habitantes`; entra `Estado`; `Visualizaciones` pasa a
+llamarse `Vistas` y `VTR%` a `VTR`. De 8 columnas a 7.
+
+**2 · Cuatro filas por lámina**, y si hay más campañas **se repite la lámina**. Eso último es
+una capacidad que el motor **no tiene** — ver `T2.10` en `PLAN.md` §2 y `D-22`.
+
+**3 · Cuatro ranuras.** `jm` ya tiene 4; `secco` tiene **3** y quedaría corta. **No está
+decidido** si `secco` pasa también a 4: las siete decisiones son sobre la lámina 7 de `jm`.
+
+**4 · Un token por celda:** 7 columnas × 4 filas = **28 tokens** en la tabla.
+
+**5 · La convención de nombres — elegida: `familia` + `atributo` + `índice`.**
+
+Conviven dos formas en el repo:
+
+| forma | ejemplos | cuándo se usa hoy |
+|---|---|---|
+| **atributo + índice** | `post_camp1`, `post_estado1`, `ecv_barrio1-3`, `camp_formato1-3`, `camp_audiencia1-3`, `rrss_area1-10`, `conv_tema1-4`, `m2_camp1-5` | listas de **un** atributo |
+| **índice + atributo** | `camp_env1_{aud,fecha,rem}`, `rep_p1_{periodo,sent,tema1-3}`, `rrss_c1_{pct,txt}` | ranuras con **varios** atributos |
+
+Por forma pura, esta tabla es del segundo caso: **siete** atributos por ranura, y el índice
+adelante los mantiene juntos al leer `MARCADORES` y `FALTANTES`.
+
+**Se elige igual la primera — atributo + índice — y el motivo es la decisión 4 del propio
+usuario: *"los que ya existan se reusan"*.** Con atributo + índice, **6 de los 28 ya existen y
+se reusan tal cual** (`post_camp1-3` y `post_estado1-3`, en `secco`), y **cero** tokens vivos se
+renombran. Con índice + atributo, los 28 son nuevos **y además hay que renombrar los 6 de
+`secco`** — 6 renombres a cambio de una prolijidad de orden alfabético. El costo es asimétrico
+y la regla de reuso ya la escribió el usuario.
+
+**Las 28, listas para copiar** *(los 6 en **negrita** ya existen en `secco` y se reusan)*:
+
+```
+post_camp1        post_estado1        post_periodo1   post_alcance1   post_impresiones1   post_vistas1   post_vtr1
+post_camp2        post_estado2        post_periodo2   post_alcance2   post_impresiones2   post_vistas2   post_vtr2
+post_camp3        post_estado3        post_periodo3   post_alcance3   post_impresiones3   post_vistas3   post_vtr3
+post_camp4        post_estado4        post_periodo4   post_alcance4   post_impresiones4   post_vistas4   post_vtr4
+```
+
+Ya existen: **`post_camp1`, `post_camp2`, `post_camp3`, `post_estado1`, `post_estado2`,
+`post_estado3`**. Nuevos: los otros 22.
+
+> **⚠ Adoptar esta lista en `jm` es elegir la salida A del `P2` de `comunicaciones_post`**
+> (`PENDIENTES_consistencia.md`): significa que `camp1`…`camp4` de la lámina 7 se renombran a
+> `post_camp1`…`post_camp4`, y con eso la sección `comunicaciones_post` —que declara
+> `familia_tokens = post_` para `JM,SECCO`— **pasa a encontrar la lámina de `jm`**, que hoy no
+> encuentra. Esa elección **sigue siendo del usuario** y acá no se da por tomada.
+
+**6 · El benchmark de abajo de la tabla** sale, o queda con `xx` fijo. **Sin token.** *Nota:
+hoy ya está sin token* — en `jm` es el literal *"Benchmark VTR Post RDV: 44%"* y en `secco` un
+bloque literal de cuatro líneas. O sea que la única parte con efecto de esta decisión es
+**"sale"**; "queda fijo" es el estado actual.
+
+**7 · `Estado`** lleva el valor que la campaña tenga en ese momento: la columna `N` de
+`Seguimiento digital`. **Ya está mapeada** (`N4`, 07/08): `sd_estado` → `digital` /
+`Seguimiento digital` / `N`. Valores observados en la base: `Finalizada`, entre otros — es
+texto libre cargado a mano, no una lista cerrada. Eso **responde la vieja `[?]`** de §2.3.
+
+**Lo que falta para que esto sea ejecutable, y no depende de escribir tokens:**
+
+1. La lámina 7 no puede funcionar con más de 4 campañas hasta que exista `T2.10` (`D-22`).
+2. `sd_fecha_fin` está mapeado pero `R-14` —qué campañas entran— sigue **sin consumidor**.
+3. Nadie decidió de dónde salen `Período`, `Alcance`, `Impresiones`, `Vistas` y `VTR` por
+   campaña. Son 20 de los 22 tokens nuevos y **ninguno tiene fuente declarada**.
+
+---
+
 ## 2. Informe mensual SECCO-SSCDI
 
 Cada sección tiene su propia configuración. Es el informe más configurable.
@@ -235,8 +331,26 @@ decirle al motor *cuál* es. Probablemente una fila en `CAMPANAS` con
 
 ### 2.3 Comunicaciones post (slide 10)
 
-**[MANUAL]** `post_camp1-3` y `post_estado1-3` — hasta 3 campañas con su estado.
-**[?]** ¿"Estado" es un valor libre o una lista cerrada?
+> **Reescrita el 07/08.** La especificación de esta sección vive ahora en **§1.8**, con las
+> siete decisiones del usuario del 06/08. Acá queda sólo lo propio de `secco`.
+
+**Lo medido (07/08), sobre la plantilla viva.** Tabla **4×7**, encabezado en la fila 1:
+**Campaña · Estado · Período · Alcance · Impresiones · Vistas · VTR**. **Son exactamente las
+siete columnas que el usuario decidió el 06/08** — o sea que `secco` ya está en el destino y
+la que hay que mover es la lámina 7 de `jm`. Debajo, un bloque literal de benchmarks VTR
+(ECVs 60 %, Uno a uno 55 %, Temáticas 44 %, Primera persona 27 %), **sin token**.
+
+**Tres ranuras, no cuatro:** filas 2 a 4, con `post_camp1-3` en la columna `Campaña` y
+`post_estado1-3` en `Estado`. Las otras cinco columnas están **vacías y sin token**.
+
+**[?] resuelta:** *"¿'Estado' es un valor libre o una lista cerrada?"* → **valor libre**, la
+columna `N` de `Seguimiento digital`, cargada a mano. Mapeada el 07/08 como `sd_estado`
+(`N4`).
+
+**[?] abierta:** las siete decisiones del 06/08 fijan **cuatro** ranuras y `secco` tiene tres.
+**No está decidido si `secco` pasa a cuatro**: las decisiones se tomaron sobre la lámina 7 de
+`jm`.
+
 **[DOC-3, 30/07]** Fuente encontrada para el dinámico: `looker` tiene `pieza_meta`
 (columna AD, `MAPEO`), la URL del posteo de Facebook de la campaña — candidato directo
 para `post_camp1-3`. También existe `pieza_mail` (AE), sin cablear. No se cablea en
