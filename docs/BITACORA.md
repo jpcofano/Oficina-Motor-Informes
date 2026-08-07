@@ -5572,3 +5572,50 @@ distinto.** Las 10 pruebas pasan.
 a morder a quien la use para otra cosa: **no tiene columna `JM | GCBA | POLICIA`** —el corte de
 `R-15` para pauta digital no es computable ahí—, su **`Estado` viene en MAYÚSCULAS** y `R-10` no
 pliega el case, y es **un acumulado**: sus números son de la campaña entera, no del período.
+
+---
+
+## `B.5` — la lámina 7 de `jm` pasa a la familia `post_` (2026-08-07) — commit de esta entrada
+
+`A.8`: **salida A** del `P2` de `comunicaciones_post`. Ejecutada.
+
+`migrarTokensComunicacionesPost_` (`Armonizar.gs`), migración de una sola vez con **backup
+como precondición dura**: si el backup falla, no se escribe. Backup hecho —
+`JM_marcada — backup 2026-08-07 08:25`, en la subcarpeta `_backups` de la carpeta de
+plantillas.
+
+**Cuatro reemplazos, una ocurrencia cada uno**, contados **antes** de tocar nada (después del
+reemplazo el token viejo ya no existe y no se puede contar):
+`{{camp1}}`…`{{camp4}}` → `{{post_camp1}}`…`{{post_camp4}}`.
+
+### El control es el que dice si la salida A servía
+
+| | antes | después |
+|---|---|---|
+| `slidesModeloDe_(pres, ['post_'])` para `jm` | **`[]`** | **`[7]`** |
+| tokens de la lámina 7 | `camp1..camp4` | `post_camp1..post_camp4` |
+| `camp1`…`camp4` sueltos en la plantilla | 4 | **0** |
+| tokens visibles de la plantilla | 172 | **172** |
+
+**La sección `comunicaciones_post` encuentra su bloque modelo**, y sus dos ítems dejan de
+perderse. Era el "5 y no 7" que aparecía como número raro en tres mediciones seguidas.
+
+**Lo que la salida A NO resuelve:** la lámina tiene cuatro ranuras y **una sola columna con
+token**. Las otras seis —Estado, Período, Alcance, Impresiones, Vistas, VTR— siguen sin token,
+y son **24 de los 28** de la lista de `CONFIG_INFORMES.md` §1.8. Renombrar cuatro tokens no
+llena una tabla.
+
+### Un hallazgo que salió al tocar el archivo, y hay que decirlo
+
+**`RENOMBRES_ARMONIZACION_POR_INFORME_.jm` todavía tenía los dieciséis renombres de `m2_*`** que
+`A.11` acababa de derogar. **Se retiraron.** Dejarlos habría hecho que la próxima armonización
+deshiciera la decisión **en silencio**: una lista de renombres viva es una intención pendiente,
+no un registro histórico. La lista original queda en el historial de git y en `TOKENS.md` §1.
+
+**Los cuatro `post_camp*` NO se agregaron a esa lista**, a propósito: la aplica la armonización
+entera, que además corrige contenido de caja y filtra láminas congeladas. Acá hacía falta sólo
+el renombre, con su propio backup y su propio reporte.
+
+**⚠ Esto cambia el deck** y todavía no se midió: `comunicaciones_post` tiene 2 ítems y ahora
+una lámina modelo, así que la corrida va a **duplicar la lámina 7 en dos**. La corrida de
+cierre lo mide. Las 10 pruebas pasan.

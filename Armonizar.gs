@@ -32,34 +32,26 @@ var RENOMBRES_ARMONIZACION_POR_INFORME_ = {
     { viejo: '{{enc_audiencia_pct}}', nuevo: '{{enc_alcance_pct}}' },
     { viejo: '{{enc_clics}}', nuevo: '{{enc_clics_ctor}}' },
     { viejo: '{{enc_audiencia_ivr}}', nuevo: '{{enc_base_total}}' },
-    { viejo: '{{rrss_prom}}', nuevo: '{{rrss_prom_general}}' },
-    // M2 slide 10 — nombres por categoría (docs/TOKENS.md §1, tabla
-    // "M2 slide 10"; mapeo verificado contra la Sheet viva en
-    // docs/Prompts/Paso-2.2.1.md, Problema 2). Cada texto viejo es único en
-    // la presentación (a diferencia de `enc_audiencia` en la slide 5, acá no
-    // hay colisión), así que el renombre 1 a 1 es seguro pese a que el mapeo
-    // real no sigue un patrón simple: `m2_vis_e` está en Desalojos (no en la
-    // "e" que sugeriría el sufijo) y `m2_camp1`/`m2_camp2` están cruzados.
-    // Si alguna ya está aplicada (p. ej. `m2_camp4` ya es `m2_salud_camp`),
-    // el reemplazo da 0 ocurrencias — no rompe nada, es idempotente.
-    { viejo: '{{m2_clics_a}}', nuevo: '{{m2_subtes_clics}}' },
-    { viejo: '{{m2_aud_a}}', nuevo: '{{m2_subtes_aud}}' },
-    { viejo: '{{m2_vis_a}}', nuevo: '{{m2_subtes_vis}}' },
-    { viejo: '{{m2_clics_b}}', nuevo: '{{m2_transito_clics}}' },
-    { viejo: '{{m2_aud_b}}', nuevo: '{{m2_transito_aud}}' },
-    { viejo: '{{m2_clics_c}}', nuevo: '{{m2_desalojos_clics}}' },
-    { viejo: '{{m2_aud_c}}', nuevo: '{{m2_desalojos_aud}}' },
-    { viejo: '{{m2_vis_e}}', nuevo: '{{m2_desalojos_vis}}' },
-    { viejo: '{{m2_clics_d}}', nuevo: '{{m2_salud_clics}}' },
-    { viejo: '{{m2_aud_d}}', nuevo: '{{m2_salud_aud}}' },
-    { viejo: '{{m2_clics_e}}', nuevo: '{{m2_seguridad_clics}}' },
-    { viejo: '{{m2_camp2}}', nuevo: '{{m2_subtes_camp}}' },
-    { viejo: '{{m2_camp1}}', nuevo: '{{m2_desalojos_camp}}' },
-    { viejo: '{{m2_camp3}}', nuevo: '{{m2_transito_camp}}' },
-    { viejo: '{{m2_camp4}}', nuevo: '{{m2_salud_camp}}' },
-    { viejo: '{{m2_camp5}}', nuevo: '{{m2_seguridad_camp}}' }
-    // No se crean m2_transito_vis / m2_salud_vis / m2_seguridad_vis: esas
-    // columnas no tienen caja de Visualizaciones en la plantilla viva.
+    { viejo: '{{rrss_prom}}', nuevo: '{{rrss_prom_general}}' }
+    // ⚠ **Los dieciséis renombres de `m2_*` que estaban acá se retiraron el 07/08/2026** —
+    // decisión del usuario (`A.11` de las once respuestas): **manda la plantilla, se corrige
+    // el documento**. La lámina 10 de `jm` tiene los sufijos `_a`…`_e` y se queda con ellos;
+    // `TOKENS.md` §1 quedó marcada como derogada y §2.0 tiene los nombres medidos.
+    //
+    // **Se retiran del código y no sólo del documento, y ése es el punto**: dejarlos acá
+    // hacía que la próxima armonización deshiciera la decisión en silencio. Una lista de
+    // renombres viva es una intención pendiente, no un registro histórico.
+    //
+    // Y hay un motivo de fondo: **la lámina 10 está escondida y no se emite.** Renombrarle 23
+    // tokens que nadie ve, escribiendo sobre una plantilla del equipo (`C-01`), para que
+    // coincida con un documento — es al revés de cómo trabaja este proyecto.
+    //
+    // La lista original está en el historial de git y en `TOKENS.md` §1, que la conserva.
+    //
+    // ⚠ **Los cuatro `camp1`…`camp4` → `post_camp*` NO van acá.** Los aplica
+    // `migrarTokensComunicacionesPost_`, que es una migración de una sola vez con su propio
+    // backup. Meterlos en esta lista los ataría a la armonización entera, que hace mucho más
+    // que renombrar y no está pedida.
   ],
   secco: [
     { viejo: '{{rrss_prom}}', nuevo: '{{rrss_prom_general}}' }
@@ -1123,3 +1115,89 @@ function menuInventarioPlantillas_() {
  * la plantilla es del equipo, el motor se adapta, y `INFORMES.plantilla_id` es la única
  * verdad sobre qué archivo usa cada informe.
  */
+
+/* ============ `B.5` — los tokens de la lámina 7 pasan a la familia `post_` (07/08/2026) ============
+ *
+ * Migración de una sola vez, autorizada por el usuario. Es la **salida A** del `P2` de
+ * `comunicaciones_post` (`docs/PENDIENTES_consistencia.md`): `camp1`…`camp4` de la lámina 7 de
+ * `jm` pasan a `post_camp1`…`post_camp4`.
+ *
+ * **Qué desbloquea:** la sección `comunicaciones_post` declara `familia_tokens = post_` para
+ * `JM,SECCO` y hoy **no encuentra ninguna lámina en `jm`** —`slidesModeloDe_(['post_'])`
+ * devuelve la lista vacía—, así que sus dos ítems no se emiten. Con el renombre, la encuentra.
+ *
+ * **Por qué no entra en `RENOMBRES_ARMONIZACION_POR_INFORME_`:** esa lista la aplica la
+ * armonización entera, que además corrige contenido de caja (Parte B) y filtra láminas
+ * congeladas. Acá hace falta **sólo el renombre**, con su propio backup y su propio reporte.
+ *
+ * **`C-01` está suspendido en desarrollo** (`REGLAS_NEGOCIO.md`), que es lo que habilita
+ * escribir sobre la plantilla. Lo que la suspensión **no** habilita es tocar la estructura de
+ * la tabla: **las columnas no se tocan** — eso necesita el mecanismo de `D-22`, que no existe.
+ * Acá sólo cambia el texto adentro de cuatro celdas.
+ *
+ * **Backup obligatorio, y si falla no se hace.** Misma regla que la armonización.
+ *
+ * Idempotente: si ya corrió, los cuatro reemplazos dan 0 ocurrencias y lo dice.
+ */
+var RENOMBRES_COMUNICACIONES_POST_ = [
+  { viejo: '{{camp1}}', nuevo: '{{post_camp1}}' },
+  { viejo: '{{camp2}}', nuevo: '{{post_camp2}}' },
+  { viejo: '{{camp3}}', nuevo: '{{post_camp3}}' },
+  { viejo: '{{camp4}}', nuevo: '{{post_camp4}}' }
+];
+
+function migrarTokensComunicacionesPost_(informeId, aplicar) {
+  informeId = informeId || 'jm';
+  aplicar = (aplicar !== false);
+
+  var informe = leerInformes()[informeId];
+  if (!informe) return { ok: false, motivo: 'No hay fila "' + informeId + '" en INFORMES' };
+  if (!informe.plantilla_id) return { ok: false, motivo: 'INFORMES.' + informeId + '.plantilla_id está vacío' };
+
+  var presentacion;
+  try {
+    presentacion = SlidesApp.openById(informe.plantilla_id);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo abrir la plantilla: ' + e.message };
+  }
+
+  // Cuántas veces está cada token ANTES de tocar nada: es el control, y después del
+  // reemplazo el token viejo ya no existe y no se puede contar.
+  var antes = {};
+  RENOMBRES_COMUNICACIONES_POST_.forEach(function (r) { antes[r.viejo] = 0; });
+  presentacion.getSlides().forEach(function (slide, i) {
+    piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+      RENOMBRES_COMUNICACIONES_POST_.forEach(function (r) {
+        if (String(pieza.texto).indexOf(r.viejo) !== -1) antes[r.viejo]++;
+      });
+    });
+  });
+
+  if (!aplicar) {
+    return { ok: true, aplicado: false, plantilla: informe.plantilla_id, ocurrencias_antes: antes };
+  }
+
+  // El backup es precondición dura, no prolijidad: si no se puede, no se escribe.
+  var carpeta = asegurarCarpetaBackups_();
+  if (!carpeta.ok) {
+    return { ok: false, motivo: 'No se pudo asegurar la carpeta de backups: ' + carpeta.motivo + ' — NO se tocó la plantilla' };
+  }
+  var backup = backupPlantilla_(informe.plantilla_id, presentacion.getName(), carpeta.carpeta);
+  if (!backup.ok) {
+    return { ok: false, motivo: 'El backup falló: ' + backup.motivo + ' — NO se tocó la plantilla' };
+  }
+
+  var reemplazos = RENOMBRES_COMUNICACIONES_POST_.map(function (r) {
+    return { viejo: r.viejo, nuevo: r.nuevo, ocurrencias: presentacion.replaceAllText(r.viejo, r.nuevo, true) };
+  });
+
+  return {
+    ok: true,
+    aplicado: true,
+    plantilla: informe.plantilla_id,
+    backup: { id: backup.id, nombre: backup.nombre, url: backup.url },
+    ocurrencias_antes: antes,
+    reemplazos: reemplazos,
+    total: reemplazos.reduce(function (a, r) { return a + r.ocurrencias; }, 0)
+  };
+}

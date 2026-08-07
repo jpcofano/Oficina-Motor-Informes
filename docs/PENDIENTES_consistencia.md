@@ -1701,6 +1701,22 @@ es decir, se llevaría puestas las láminas 12 a 19, que son de la sección `cam
 
 **Es decisión editorial, no de motor**, y sigue **abierta**. Nada de esto se ejecutó.
 
+> **CERRADO el 07/08/2026 — salida A, decisión del usuario, y ejecutada.**
+>
+> `camp1`…`camp4` de la lámina 7 de `jm` pasaron a `post_camp1`…`post_camp4`, por
+> `migrarTokensComunicacionesPost_` (`Armonizar.gs`), con backup previo de la plantilla.
+>
+> **El control es el que define si la salida A servía:** antes,
+> `slidesModeloDe_(presentacion, ['post_'])` devolvía **la lista vacía** para `jm`; ahora
+> devuelve **la lámina 7**. La sección `comunicaciones_post` encuentra su bloque modelo y sus
+> dos ítems dejan de perderse. Los 172 tokens visibles siguen siendo 172 y no quedó ningún
+> `camp1`…`camp4` suelto en la plantilla.
+>
+> **Lo que la salida A no resuelve, y hay que saberlo:** la lámina tiene **cuatro ranuras y
+> una sola columna con token**. Las otras seis columnas —Estado, Período, Alcance,
+> Impresiones, Vistas, VTR— siguen sin token, y son 24 de los 28 de la lista de
+> `CONFIG_INFORMES.md` §1.8. Renombrar cuatro tokens no llena una tabla.
+
 
 ### P2 · El mensaje de exclusión no resuelve el nombre del ítem: `excluida undefined`
 
