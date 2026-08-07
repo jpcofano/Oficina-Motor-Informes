@@ -3,138 +3,151 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-06, al cerrar el desglose del presupuesto · último commit
-al escribirlo: `993d7b3`
+**Última actualización:** 2026-08-07, al cerrar la corrida nocturna `N1`–`N10` · último commit
+al escribirlo: `d30e0c6`
 
 ## Dónde estamos
 
-**La corrida cierra sola, y ahora además entra en el presupuesto.** `T2.1.1` cortó y cerró en
-una corrida verificada a mano (`jm-20260806-214253`), y `T2.2.2` bajó el costo de
-`resolverMarcadores` **de 31 s a 4,7 s por ítem** y de 119 s a ~36 la global.
+**La corrida completa.** `jm-20260807-004300` terminó **sin corte**: 120 s contra un techo de
+350, barrida final en **0 tokens crudos**, 29 tokens con valor y 270 faltantes. Es la primera
+corrida completa medida, y **entierra el punto 1 de "Trabado"** que arrastraba el handoff
+anterior.
 
-**El presupuesto, antes y después de `T2.2.2`:**
+Con eso caen dos cosas más:
 
-| | antes | después |
-|---|---|---|
-| etapa 1 · expandir | 119,8 s | ~120 s *(sin tocar; ~63–70 s es el anclaje)* |
-| etapa 2 · mapa | 9,6 s | ~10 s |
-| etapa 3 · por ítem × 5 | ~256 s | **~24 s** |
-| etapa 4 · resolución | ~239 s | **~36 s** |
-| cierre | 0,8 s | 0,8 s |
-| **total** | **~661 s** | **~190 s** contra 360 |
+- **La proyección de `T2.2.2` era pesimista.** Decía ~190 s; la corrida real gastó **120**.
+- **`jm-20260806-222554` tampoco estaba cortada.** Sus 29/270 son idénticos a los de la corrida
+  completa. Los 270 faltantes **no son corte por tiempo**: son tokens sin cablear o sin fuente,
+  que es otro problema y ya está inventariado.
 
-**⚠ Los ~190 s son una proyección, no una corrida medida.** La verifica la próxima corrida
-completa. Si se confirma, **`T2.3` —reanudar— deja de ser urgente**, y el trabajo pasa a ser
-verificar los cuatro objetivos contra un deck real.
+**`T2.2.3` dio cero diferencias.** El deck de la corrida nueva contra el de
+`jm-20260806-222554`, **pieza por pieza**: 26 láminas, 1389 piezas de texto, ninguna sólo en un
+deck y ninguna con texto distinto. Evidencia completa en
+`docs/PROTOCOLO_T2.2.3_corrida_2026-08-07.md`.
 
-**Lo que se cerró antes, y sigue en pie:** una invocación deja **una fila y un deck**; el
-reintento del cliente ya no relanza la generación; la carpeta de salidas **cierra contra
-`CORRIDAS`** (12 decks, 12 filas con deck, cero huérfanos).
+**`T2.1.2` construido** — el cierre de la corrida se escribe también cuando salta una excepción
+inesperada. Control positivo por API con una excepción inyectada en la etapa 2: la fila de
+`CORRIDAS` cierra con motivo propio, los 172 tokens quedan en `FALTANTES` con
+`MOTIVO_EXCEPCION_` —distinguible del corte por tiempo— y la excepción no escapa.
 
-**⚠ Sigue sin haber causa establecida de la muerte.** El límite de 6 minutos es el candidato
-obvio y ahora tiene un presupuesto que lo respalda, pero **ninguna corrida dejó registro de su
-propia muerte**. El panel **Ejecuciones** del editor de Apps Script es el único oráculo que lo
-diría, y el token de la sesión no lo alcanza (le falta el scope `script.processes`).
+## Pendiente de verificación humana
+
+Nada de esto lo puede cerrar Code. Las tres cosas de código de la noche:
+
+1. **`T2.1.2` · el cierre blindado.** Cómo probarlo: correr `generarInforme` desde el menú y
+   confirmar que la corrida normal sigue igual. Para ver el camino nuevo hace falta forzar una
+   excepción — está descrito en la entrada de `N2` de la bitácora, y el control ya corrió por
+   API.
+2. **`N8` · `excluida <nombre>`** en vez de `excluida undefined`, en el reporte del menú.
+3. **`N8` · el aviso de láminas escondidas** termina ahora en *"Numeradas sobre el DECK
+   EXPANDIDO, no sobre la plantilla"*.
+
+**Las 10 pruebas pasan** después de los tres cambios.
 
 ## Trabado
 
-1. **⚠ `generarInforme` no completa.** Es el punto 1 y bloquea a los demás.
-2. **⚠ El instrumento tiene un punto ciego justo donde miramos.** `marcarEtapa_` **traga sus
-   excepciones a propósito**, así que una corrida puede llegar a la etapa 4 y dejar la fila
-   diciendo que nunca arrancó. Es exactamente lo que no permite decidir qué le pasó a
-   `jm-20260805-232018`. **Merece prompt propio; no se tocó.**
+1. **⚠ Sigue sin haber causa establecida de las muertes anteriores.** Ninguna corrida dejó
+   registro de su propia muerte, y el panel **Ejecuciones** del editor es el único oráculo que
+   lo diría — el token de la sesión no lo alcanza (le falta `script.processes`). **Pero ya no
+   bloquea nada**: la corrida completa, y `T2.1.2` cubre la vía que faltaba.
+2. **⚠ El instrumento tiene un punto ciego.** `marcarEtapa_` **traga sus excepciones a
+   propósito**, así que una corrida puede llegar a la etapa 4 y dejar la fila diciendo que
+   nunca arrancó. Es `T2.7`. **Merece prompt propio; no se tocó.**
 3. **Cinco objetivos construidos y sin verificar contra un deck:** los 16 ceros falsos de
-   `SUMA`; `ULTIMO` por fecha (`enc_mails_enviados` = 44.043); los once de Orden Público; el
-   agregado global de `digital`; y los **24 marcadores del Resumen Ejecutivo** (`MARCADORES`
-   pasó de 19 a **43 filas**). **Todos probados contra las funciones, ninguno contra el deck.**
+   `SUMA`; `ULTIMO` por fecha; los once de Orden Público; el agregado global de `digital`; y los
+   24 marcadores del Resumen Ejecutivo. **Ahora hay un deck completo contra el cual mirarlos**
+   — es `T2.4`, y es lo que sigue.
 4. **Tres grupos recortan a cero filas** con el recorte por ventana: IVR (0 de 57 sobre
    `Inicio`), `sd_pauta_*` y `Digital`. No se sabe si es correcto.
-5. **16 tokens del Resumen Ejecutivo sin fuente**: los ocho de Call Center (`cc_base` no
-   existe en ninguna base), los seis de impresiones por plataforma, y `contenidos_total`.
+5. **16 tokens del Resumen Ejecutivo sin fuente**: los ocho de Call Center (`cc_base` no existe
+   en ninguna base), los seis de impresiones por plataforma, y `contenidos_total`.
 6. **`CAMPANAS` sin filas de `jm`** y **`REUNIONES` no es el temario** (le faltan Primera
    Persona y Registro Civil).
+7. **20 de los 22 tokens nuevos de la lámina 7 no tienen fuente declarada** — `Período`,
+   `Alcance`, `Impresiones`, `Vistas` y `VTR` por campaña (`CONFIG_INFORMES.md` §1.8).
 
 ## Esperando decisión tuya
 
-- **Los siete shortcuts del 04/08 18:42** siguen en la carpeta de salidas: el token tiene
-  scope `drive.file` y **no puede borrar archivos que no creó el script**. O se borran a mano
-  —son siete y ya se sabe qué son— o se reautoriza con scope `drive` completo, que agranda el
-  permiso del cliente de pruebas a todo el Drive de la cuenta. **No se hizo ninguna de las dos.**
-- **Los cuatro `ecv_barrio*`** — `ecv_barrios` necesita `DISTINCT`, que no existe; los otros
-  tres están `[MANUAL]` con una `[?]` que resuelve los dos huecos a la vez.
+- **La lámina 7 de `jm`: cuál de las tres salidas** del `P2` de `comunicaciones_post`
+  (`PENDIENTES_consistencia.md`). Adoptar las 28 de `CONFIG_INFORMES.md` §1.8 **es elegir la
+  salida A**. Las tres están escritas con su costo; ninguna elegida.
+- **`R-14` no tiene consumidor.** La regla está escrita y `sd_fecha_fin` ya está mapeado, pero
+  nada la aplica todavía.
+- **`secco` tiene 3 ranuras y las decisiones fijan 4.** No está decidido si `secco` también
+  pasa a cuatro.
+- **`T2.10`** —una lámina cada N ítems— está escrito y **no aprobado**. Necesita una decisión de
+  esquema: dónde se declara el tamaño de página (lo natural, `SECCIONES.items_por_lamina`).
+- **Los `m2_*` de la lámina 10 de `jm` siguen con sufijos secuenciales** (`_a`…`_e`) y
+  `TOKENS.md` §1 declara que no los tienen. Discrepancia abierta desde el Paso 2.2.
+- **Los cuatro `ecv_barrio*`** — `ecv_barrios` necesita `DISTINCT`, que no existe.
 - **Falta un formato "porcentaje sin signo"**; hoy se usa `numero`.
 - **`camp_bench_*`**: ¿fijos o del período anterior?
-- **La fila `resumen_ejecutivo` de `SECCIONES`** sigue `repetible` + `manual`, y está medido
-  que **no puede ser repetible**: los tokens de GCBA llevan prefijo propio. Es una línea.
+- **La fila `resumen_ejecutivo` de `SECCIONES`** sigue `repetible` + `manual`, y está medido que
+  **no puede ser repetible**. Es una línea.
 
 ## En pausa, y no se vuelve sobre esto
 
 > Las tres preguntas sobre la lámina M2. **Los tres remitentes sueltos** y los **once
-> `camp_resp_*`**: diferidos el 07/08. **`enc_e75_pct` da 38,74 contra 39% publicado: es el
-> mismo número redondeado, no es un error y no se ajusta.** El **objetivo B** —score de
-> anclaje saturado en 1,00 y circuito de confianza sin probar— anotado como `P1`.
+> `camp_resp_*`**. **`enc_e75_pct` da 38,74 contra 39 % publicado: es el mismo número
+> redondeado, no es un error y no se ajusta.** El **objetivo B** —score de anclaje saturado en
+> 1,00 y circuito de confianza sin probar— anotado como `P1`.
 
 ## Qué sigue
 
-**La escalera vive en `docs/PLAN.md` §2, con IDs `T<tramo>.<n>`.** Cada sub-ítem es un prompt y
-un commit. Lo inmediato:
+**La escalera vive en `docs/PLAN.md` §2, con IDs `T<tramo>.<n>`.**
 
-1. **`T2.2.3` · comprobar que ningún valor cambió** contra un deck entero. `T2.2.2` ya comparó
-   marcador por marcador —86 marcadores, cero diferencias— pero eso no es un deck.
-2. **`T2.4` · los cuatro objetivos contra un deck real.** Con el presupuesto proyectado en
-   ~190 s, **una corrida completa dejó de ser hipotética**, y es lo que destraba el resto.
-3. **`T2.1.2` y `T2.1.3`** — el cierre blindado contra una excepción, y la fila que guarda
-   hasta qué ítem llegó.
-4. **`T2.3` · reanudar** deja de ser urgente si la corrida entra en 360 s. **No se descarta:**
-   los ~190 s son una proyección, no una corrida medida.
+1. **`T2.4` · los cuatro objetivos contra un deck real.** Es lo inmediato: ya hay deck completo
+   y ya no hay excusa de presupuesto.
+2. **`T2.1.3`** — la fila guarda hasta qué ítem llegó.
+3. **`T2.3` · reanudar dejó de ser urgente.** Con 120 s contra 360, no está en el camino
+   crítico. No se descarta.
+4. **`T2.7` · el instrumento** — `marcarEtapa_` traga sus excepciones y las cinco marcas se
+   pisan.
 
 ## Qué mirar antes de tocar algo
 
-- **El cliente ya no reintenta por defecto.** `tools/api.js` pide `--reintentar` explícito, y
-  sólo lo pide quien sabe que la llamada no escribe. **Las mediciones por `eval` también
-  perdieron el reintento**: si una devuelve HTML, el cliente lo dice y hay que repetirla a
-  mano.
-- **`CORRIDAS` se abre al empezar** (`abrirCorrida_`) y `escribirCorrida_` completa esa fila.
-  Una corrida que muere deja la fila con `deck_id` y sin conteos: **eso es el diagnóstico** —
-  con la salvedad del punto ciego de `marcarEtapa_`, arriba.
-- **Las bases no se leen desde node** (scope `drive.file`): se mide por
-  `tools/api.js llamar fn=eval`. **⚠ `eval` es invocable por la API.**
-- **`mapaDeTokens_` excluye las láminas escondidas**: el denominador es **172**, no 195, y
-  los 23 de la lámina 10 se reportan aparte.
-- **`RATIO`/`PCT` parten después del filtro y del recorte por ventana**, no antes. Estaba al
-  revés y `mail_or` dividía sobre todos los períodos.
-- **`SUMA` sobre cero filas devuelve `sin_datos`**; `CONTEO` sigue devolviendo `0`. El corte
-  es `conValor`, así que **un `0` escrito sigue siendo un dato**.
+- **El cierre de la corrida corre siempre**, incluida la vía de excepción (`T2.1.2`). El estado
+  que necesita —`mapa`, `expansion`, `porItem`, `resolucion`, `porMarcador`— se declara
+  **afuera del `try`**, con valores vacíos usables. **Si agregás algo al cierre, tiene que
+  tolerar que la corrida haya muerto en la etapa 1.**
+- **⚠ Cuidado con los defaults vacíos pero truthy.** `barrerTokensNoAlcanzados_` decide
+  re-escanear por `tokensDelMapa ? … : null`, y un `{}` lo engaña: la llamada pasa
+  `mapa.lista.length ? mapa.tokens : null`. El bug se cazó la misma noche que se creó.
+- **`FALTANTES` se pisa entera en cada corrida.** `escribirFaltantes_` limpia antes de escribir:
+  es la foto de la última corrida, no un histórico. Cualquier corrida de prueba la borra.
+- **El cliente ya no reintenta por defecto.** `tools/api.js` pide `--reintentar` explícito.
+- **Las bases no se leen desde node** (scope `drive.file`): se mide por `fn=eval`. **⚠ `eval` es
+  invocable por la API**, y con `globalThis.<fn> = …` se puede inyectar una excepción para
+  probar el cierre — así corrió el control de `T2.1.2`.
+- **El volcado de una hoja grande no entra en una línea de comandos de Windows** (~32 KB). Para
+  restaurar `FALTANTES` hubo que mandarlo en tres lotes.
+- **Tres numeraciones de lámina conviven** y confundirlas ya costó tiempo: el `.pptx` archivado,
+  la presentación viva de Slides, y el **deck expandido** de una corrida. `TOKENS.md` §2.0 lo
+  deja escrito y el aviso de escondidas ahora lo dice.
+- **`mapaDeTokens_` excluye las láminas escondidas**: el denominador es **172**, no 195.
+- **`esLaminaEscondida_` (`Armonizar.gs`) es la única llamada a `isSkipped()` del repo.**
+- **Seis láminas están escondidas**: la 10 de `jm`; la 23, 25, 26, 27 y 28 de `secco`. No se
+  emiten, y sus tokens quedan crudos en el deck a propósito.
+- **`RATIO`/`PCT` parten después del filtro y del recorte por ventana**, no antes.
+- **`SUMA` sobre cero filas devuelve `sin_datos`**; `CONTEO` sigue devolviendo `0`.
 - **`ULTIMO` elige por fecha**, no por posición; empate con valores distintos → no elige.
-- **`digital` sin `id_cuenta`** cae a `leerFuente` y **recorta por ventana** con la
-  `fecha_periodo` de cada solapa. `BASES.modo_periodo` **no se toca**.
+- **`digital` sin `id_cuenta`** cae a `leerFuente` y **recorta por ventana**.
 - **`SECCIONES.filtro` filtra ítems de la iteración; `MARCADORES.filtro` filtra filas.**
-- **Nada que recorra una presentación puede usar `getShapes()`**, y
-  `piezasDeTextoDeSlide_` **saltea las celdas combinadas no principales**.
-- **`esLaminaEscondida_` (`Armonizar.gs`) es la única llamada a `isSkipped()` del repo.** Todo
-  lo que necesite saber si una lámina se emite pasa por ahí: dos criterios es exactamente lo
-  que produjo los 195 contra 172.
-- **La corrida no pinta láminas escondidas; el inventario sí las ve.** `mapaTokenObjectId_` y
-  `tokensVisiblesDe_` filtran, `tokensPorSlide_` no. Antes de agregar un consumidor nuevo,
-  decidir de qué lado está.
+- **`tokenEsDeFamilia_` matchea por prefijo.** Por eso `camp_` no toma `camp1`, y `camp` tomaría
+  también `camp_titulo`. Cualquier familia nueva se piensa contra las que ya están.
+- **Nada que recorra una presentación puede usar `getShapes()`**, y `piezasDeTextoDeSlide_`
+  **saltea las celdas combinadas no principales**.
 - **Los decks se llaman todos igual** en la carpeta de salida: para verificar, tomar el
   `deck_id` de la fila de `CORRIDAS`, nunca la fecha de modificación.
 
 ## Números de referencia
 
-`MARCADORES` en **43** filas. `MAPEO` en 122 (entraron `mail_tipo` y `mail_remitente`).
-Plantilla: **172 tokens** (195 menos los 23 de la lámina escondida). **Las 10 pruebas pasan.**
-Anclaje: 5 anclados, los cinco con score **1,00** (saturado). `CORRIDAS` en **19 filas**, la
-última cerrada (`jm-20260806-210540`, cortada por tiempo a propósito). Carpeta de salidas:
-**13 decks**, cero huérfanos. **Presupuesto de una corrida: ~661 s medidos contra 360
-disponibles.**
+`MARCADORES` en **43** filas. **`MAPEO` en 124** (entraron `sd_fecha_fin` y `sd_estado`).
+Plantilla `jm`: **172 tokens** (195 menos los 23 de la lámina escondida) en 22 láminas;
+`secco`, 29 láminas. **Las 10 pruebas pasan.** `CORRIDAS` en **23 filas**. `FALTANTES` en
+**270**. Carpeta de salidas: **15 presentaciones, cero huérfanas** — todas con su fila en
+`CORRIDAS`. **Una corrida completa cuesta 120 s** contra 350 de techo y 30 de reserva.
 
-**Los 195 contra 172 quedaron explicados** (06/08): eran los **23 tokens `m2_*` de la lámina
-10**, escondida a propósito, que la corrida veía y el mapa no. `mapaTokenObjectId_` ahora
-devuelve **172** y lo excluido viaja en `tokens.excluidos_por_lamina_escondida`.
-`tokensPorSlide_` sigue devolviendo **195** a propósito: la usan dos consumidores de
-inventario que necesitan ver todo.
-
-**⚠ No hay ningún deck completo medido contra el denominador de hoy.** El
-*34 con valor / 288 faltantes* de `jm-20260805-133836` **está superado**: se midió sobre 195
-tokens y hoy son 172. No se vuelve a citar hasta que una corrida complete.
+Los dos decks generados esta noche —`jm-20260807-004300` (control de `T2.2.3`) y
+`jm-20260807-005413` (control de `T2.1.2`)— **están en la papelera**. Sus filas de `CORRIDAS`
+quedan: son el registro de que se hicieron.
