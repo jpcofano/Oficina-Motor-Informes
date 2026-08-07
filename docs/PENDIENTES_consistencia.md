@@ -1607,6 +1607,36 @@ origen del "5 y no 7" que aparecía como número raro en tres mediciones seguida
 **Qué falta decidir:** si la sección `comunicaciones_post` sobra en `SECCIONES` para `jm`, o si
 a la plantilla le falta la lámina. Es decisión editorial, no de motor.
 
+**Visto en una corrida real** (06/08): `jm-20260806-214253`, verificada a mano desde la
+planilla, lo reportó igual que el banco. Deja de ser una medición de laboratorio.
+
+
+### P2 · El mensaje de exclusión no resuelve el nombre del ítem: `excluida undefined`
+
+Visto **tres veces** en la corrida `jm-20260806-214253`, verificada a mano el 06/08:
+`excluida undefined — etapa = "pre"`. El motivo del filtro sí sale; **el nombre del ítem
+excluido, no**.
+
+El texto lo arma `menuGenerarInformeCompleto_` con `e.campana`, y los ítems de la sección
+`encuentro` no tienen esa propiedad — tienen `clave`. Es un `undefined` de campo, no un ítem
+perdido: la exclusión ocurrió y el motivo es correcto.
+
+**Por qué importa igual:** una exclusión que no dice *qué* excluyó es indistinguible de un ítem
+que se perdió, y es exactamente lo que `D-21` pide evitar. Hoy hay que ir a `FALTANTES` o al
+valor de retorno para saber cuál era.
+
+### P2 · El aviso de lámina escondida numera contra el deck expandido y no lo dice
+
+La corrida `jm-20260806-214253` avisó **"lámina 14 escondida"**; en la plantilla esa lámina es
+la **10**. Las dos son ciertas: la expansión de bloques repetibles inserta copias antes, así
+que el índice se corre. **El texto no dice contra qué deck numera.**
+
+Quien lee el aviso y va a la plantilla a buscar la 14 encuentra otra cosa. El número de la
+plantilla es el estable —es el que usan `mapaDeTokens_`, este archivo y los relevamientos— y el
+del deck cambia con cada corrida según cuántos ítems se emitan.
+
+**Qué falta:** que el aviso diga cuál de los dos es, o que numere contra la plantilla.
+
 
 ## Preguntas al equipo — abiertas, esperando respuesta humana
 

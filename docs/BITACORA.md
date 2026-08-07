@@ -4424,3 +4424,123 @@ reporta es indistinguible de un token que se perdió.
 estaba pintando las 23 láminas escondidas. Eso hizo más fuerte el argumento de filtrar adentro
 del mapa: la barrida se corrigió sola, sin editar una línea de `T2.1.1`, que es el sentido en
 que *"no se toca `T2.1.1`"* sí se cumplió.
+
+---
+
+## `T2.1.1` cerrado por verificación humana — y la corrida corrigió dos cosas de mi reporte (2026-08-06) — commit de esta entrada
+
+**Verificado desde la planilla por el usuario, corrida `jm-20260806-214253`.** Los cuatro
+criterios se cumplen: volvió sola, avisó el corte **antes** de los conteos, cero tokens crudos
+en el deck y la lista completa en `FALTANTES`. **`T2.1.1` queda cerrado.**
+
+**Dos correcciones a lo que reporté al implementarlo, y las dos son mías:**
+
+1. **El checkpoint de la etapa 4 no era código inalcanzable: se ejecutó y decidió bien.** Cortó
+   ahí a los **309 s**, con **11 s por encima de la reserva** contra 240 estimados. Lo que
+   escribí —*"no llega a evaluarse"*— salió de una prueba con `presupuesto_corrida_seg` en 60,
+   que **corta antes por construcción**. Extrapolé de un caso que no podía mostrar lo contrario.
+2. **Entraron los 5 ítems, no 3.** Mi aritmética usaba ~50 s por ítem, que era el número **con
+   la instrumentación encima**; sin ella son 37–39 s. Un instrumento que se cuela en la
+   predicción, otra vez.
+
+---
+
+## `T2.2.2` ✅ — el caché de hojas de registro: 31 s pasan a 4,7 s por ítem (2026-08-06) — commit `658b6d7`
+
+### `0.1`–`0.4` · Dónde estaba el gasto
+
+Instrumentado por envoltorio sobre los globales; la reasignación **sí** alcanza a los call
+sites internos, verificado con un contador que habría dado cero si no.
+
+```
+Una llamada POR ÍTEM — 47,3 s con instrumentación (31–39 s sin ella)
+  buscarMapeo      103 invocaciones   42,7 s   ← 90 % de la llamada
+    ├─ leerMapeo   104 invocaciones   21,9 s
+    └─ usoSolapa_  104 invocaciones   21,1 s   (leerSolapas 105 ×)
+  leerFuente         1 invocación      5,1 s
+  resolverVentana    0 invocaciones    0,0 s
+```
+
+**El gasto principal: `buscarMapeo`, 90 %.** 103 invocaciones para 43 marcadores, y cada una
+relee `MAPEO` (346 ms) y `SOLAPAS` (337 ms) **enteras**. Ningún lector de registro cacheaba;
+el único caché de módulo del repo era `cacheBases_`.
+
+**`0.4` resultó falsa: `resolverVentana` se llama cero veces** en la pasada por ítem. El ítem
+trae `opciones.ventana` ya resuelta y el `||` la cortocircuita. Se midió igual —287 ms vacía,
+619 ms con `seccion_id`, y sí relee `CONFIG` y `SECCIONES` cada vez— pero memoizarla no
+ahorraba nada.
+
+**`0.1` era correcta para un lado y falsa para el otro.** Por ítem, el caché local funciona y
+releer la hoja no es el costo (1 lectura). En la global, **38 lecturas de fuente con
+`lecturas_cacheadas: 1`** — la contradicción delató el bug: la rama del agregado global de
+`digital` llamaba a `leerFuente` **directo, salteándose el caché** que está dos ramas más
+abajo. 37 de los 43 marcadores caían ahí.
+
+**`0.3`:** las dos llamadas resuelven **los mismos 43 marcadores**. La diferencia era entera de
+esas lecturas sin caché más el doble de `buscarMapeo` (193 contra 103).
+
+### Qué se cambió, y qué no
+
+- **`memoRegistro_`** envuelve los siete lectores (`leerRegistro_` cubre `BASES`, `INFORMES`,
+  `PERIODOS`, `CAMPANAS` y `SECCIONES` de un saque; más `leerMapeo`, `leerSolapas`,
+  `leerConfig` y `leerMarcadores_`).
+- **El caché está apagado por defecto y sólo lo enciende `generarInforme`**, con `try/finally`
+  porque tiene seis `return` tempranos y puede lanzar.
+- **La rama del agregado global pasa por el caché de lectura**, como la rama general.
+- **`costo_resolucion_etapa4_seg`: 240 → 60**, re-medido.
+
+**Lo que NO se tocó, con el motivo:** `resolverVentana` (0 invocaciones), `leerMarcadores_`
+como candidato propio (367 ms, ya lo cubre el caché), y **ningún escritor**: no hizo falta
+invalidación (ver abajo).
+
+### La decisión que hace esto seguro: alcance explícito, no invalidación
+
+`ESCRITORES.md` censa **~15 escritores de hojas de registro** repartidos en cinco archivos.
+Cachear siempre e invalidar en cada uno significa que **olvidar uno sirve config vieja en
+silencio** — el modo de falla que este repo caza.
+
+Con el caché **apagado por defecto** no hay ningún escritor que invalidar: **ninguno corre
+adentro de `generarInforme`**, que sólo escribe `CORRIDAS` y `FALTANTES`, y ésas no se leen por
+`memoRegistro_`. Los sembradores, las migraciones, el diff y los ítems de menú siguen leyendo
+la hoja viva en cada llamada, exactamente como antes.
+
+`invalidarCacheRegistros_()` queda exportada por si algún día un escritor entra al alcance.
+**Hoy no la llama nadie, y eso es correcto.**
+
+**El alcance es la invocación, no el script:** `cacheRegistros_` es una variable de módulo, así
+que muere con la ejecución de Apps Script. **No es `CacheService`**, no sobrevive al pedido, no
+se comparte entre corridas ni entre usuarios. Está escrito en el comentario para que nadie los
+confunda.
+
+### El antes y el después
+
+| | antes | después |
+|---|---|---|
+| `resolverMarcadores` por ítem | **31,4 s** | **4,7 s** (−85 %) |
+| segundo ítem de la misma corrida | ~37 s | **4,6 s** |
+| `resolverMarcadores` global (etapa 4) | **118,8 s** | **50,1 s** (−58 %) |
+| `lecturas_cacheadas` en la global | 1 | **6** |
+
+Re-medida la etapa 4 con tres muestras: **40,6 / 30,7 / 36,3 s**. De ahí sale el 60 de
+`CONFIG`, con ~48 % de margen sobre el máximo observado.
+
+**Presupuesto proyectado de una corrida completa:** etapa 1 ~120 s + etapa 2 ~10 + etapa 3
+5×4,7 ≈ 24 + etapa 4 ~36 + cierre ~1 = **~190 s contra los 360 disponibles**. Sin verificar
+contra una corrida real, que la corre el usuario.
+
+### El control de valores idénticos
+
+`resolverMarcadores` antes y después, **marcador por marcador**, comparando
+`estado|valor|valor_formateado` sobre el mismo período y el mismo ítem:
+
+| | marcadores | diferencias |
+|---|---|---|
+| por ítem (`San Cristóbal (pre)`) | 43 | **0** |
+| global (etapa 4) | 43 | **0** |
+
+Los resúmenes también coinciden: `13 ok / 30 sin_datos` por ítem y `17 ok / 26 sin_datos` la
+global, antes y después. **Las 10 pruebas pasan.** Esto **no reemplaza a `T2.2.3`**, que
+compara un deck entero.
+
+**Y se verificó que el caché no queda encendido:** `cacheRegistrosAbierto_()` devuelve `false`
+al salir del alcance.

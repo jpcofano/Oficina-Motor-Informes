@@ -8,26 +8,24 @@ al escribirlo: `993d7b3`
 
 ## Dónde estamos
 
-**Ya no es "por qué muere": es que no entra.** El presupuesto de una corrida está desglosado y
-**suma ~661 s contra los 360 s que da Apps Script** — sin contar la etapa 5, que no se midió.
-Las etapas **1+2+4 solas suman ~396 s**, así que **no entra ni con la etapa 3 valiendo cero**.
+**La corrida cierra sola, y ahora además entra en el presupuesto.** `T2.1.1` cortó y cerró en
+una corrida verificada a mano (`jm-20260806-214253`), y `T2.2.2` bajó el costo de
+`resolverMarcadores` **de 31 s a 4,7 s por ítem** y de 119 s a ~36 la global.
 
-**El próximo trabajo es reanudación por etapas**, y está dicho por la medición, no por
-preferencia.
+**El presupuesto, antes y después de `T2.2.2`:**
 
-**Dónde está el costo, medido:**
+| | antes | después |
+|---|---|---|
+| etapa 1 · expandir | 119,8 s | ~120 s *(sin tocar; ~63–70 s es el anclaje)* |
+| etapa 2 · mapa | 9,6 s | ~10 s |
+| etapa 3 · por ítem × 5 | ~256 s | **~24 s** |
+| etapa 4 · resolución | ~239 s | **~36 s** |
+| cierre | 0,8 s | 0,8 s |
+| **total** | **~661 s** | **~190 s** contra 360 |
 
-| | |
-|---|---|
-| etapa 1 · expandir | **119,8 s** — de los cuales **~63–70 s es el anclaje** (`itemsDeSeccion_`) y ~55 s la duplicación de slides |
-| etapa 2 · mapa | **9,6 s** |
-| etapa 3 · por ítem | **~256 s** — `resolverMarcadores` cuesta **~50 s por ítem**, y son 5 |
-| etapa 4 · tokens fijos | **~267 s** — `resolverMarcadores('jm',{})` sola **238,9 s** |
-| etapa 5 · faltantes | sin medir |
-
-**`resolverMarcadores` se llama seis veces por corrida y cuesta ~50 s cada vez.** Ahí está el
-presupuesto, no en lo que se sospechaba: `leerMarcadores_()` pesa **0,37 s** (0,7% de la
-llamada), `getSlides()` **13 ms**, `replaceAllText` **~7 ms por token**.
+**⚠ Los ~190 s son una proyección, no una corrida medida.** La verifica la próxima corrida
+completa. Si se confirma, **`T2.3` —reanudar— deja de ser urgente**, y el trabajo pasa a ser
+verificar los cuatro objetivos contra un deck real.
 
 **Lo que se cerró antes, y sigue en pie:** una invocación deja **una fila y un deck**; el
 reintento del cliente ya no relanza la generación; la carpeta de salidas **cierra contra
@@ -81,14 +79,14 @@ diría, y el token de la sesión no lo alcanza (le falta el scope `script.proces
 **La escalera vive en `docs/PLAN.md` §2, con IDs `T<tramo>.<n>`.** Cada sub-ítem es un prompt y
 un commit. Lo inmediato:
 
-1. **`T2.1` · la corrida siempre cierra** — el MVP. Que deje siempre un deck usable y la lista
-   de lo que faltó, aunque no termine. **No depende del anclaje ni de reanudar.**
-2. **`T2.3` · reanudar**, después de `T2.1.3`. Es lo que dice la medición: ninguna
-   reorganización del trabajo actual entra en 360 s.
-3. **`T2.2.2` · `resolverMarcadores`**, en paralelo: ~50 s × 6 llamadas = ~300 s de los 661. No
-   hace falta para reanudar, pero es la mitad del presupuesto.
-4. **`T2.4` · los cuatro objetivos contra un deck real** — bloqueado por `T2.1`, y **ya no por
-   el anclaje**: la precondición pasa desde el 04/08.
+1. **`T2.2.3` · comprobar que ningún valor cambió** contra un deck entero. `T2.2.2` ya comparó
+   marcador por marcador —86 marcadores, cero diferencias— pero eso no es un deck.
+2. **`T2.4` · los cuatro objetivos contra un deck real.** Con el presupuesto proyectado en
+   ~190 s, **una corrida completa dejó de ser hipotética**, y es lo que destraba el resto.
+3. **`T2.1.2` y `T2.1.3`** — el cierre blindado contra una excepción, y la fila que guarda
+   hasta qué ítem llegó.
+4. **`T2.3` · reanudar** deja de ser urgente si la corrida entra en 360 s. **No se descarta:**
+   los ~190 s son una proyección, no una corrida medida.
 
 ## Qué mirar antes de tocar algo
 
