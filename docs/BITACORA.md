@@ -4721,3 +4721,39 @@ cambiar el matcheo de familias, que es motor y no configuración.
 
 Las tres salidas quedan escritas en el `P2`, con su costo, **sin elegir ninguna**. Esperando
 decisión del usuario.
+
+---
+
+## `N7` — `TOKENS.md` §2.0: el inventario por lámina, medido contra la plantilla viva (2026-08-07) — commit de esta entrada
+
+**La premisa del prompt era falsa, y en las dos mitades.** Decía que `TOKENS.md` numera
+"Comunicaciones post" como la 10 y que *"la 10 viva es Clics, escondida"*. Medido:
+
+- `TOKENS.md` numera "Comunicaciones post" como la **10 de `secco`**, y ahí está, con
+  `post_camp1-3` y `post_estado1-3` exactos. La numeración **está bien**.
+- La lámina 10 viva de `jm` es **"M2 — status digital por categoría"**, escondida. No hay
+  ninguna lámina "Clics" en ninguna de las dos plantillas.
+
+La confusión venía de mezclar las dos plantillas. La tarea se hizo igual, porque lo que pedía
+—regenerar el inventario desde la plantilla viva— sí hacía falta.
+
+**`TOKENS.md` §2.0, nuevo y fechado**, con las 22 láminas de `jm` y las 29 de `secco` medidas
+con `piezasDeTextoDeSlide_`. Dice contra qué se numera, que era el punto: las **tres**
+numeraciones que conviven —el `.pptx` archivado, la presentación viva de Slides, y el deck
+expandido de una corrida— son distintas, y confundirlas ya costó tiempo (el aviso de láminas
+escondidas numera contra el deck expandido: la 10 de la plantilla sale como 14 ahí).
+
+Las dos tablas anteriores **no se borraron**: pasan a ser §2.1 y §2.2, marcadas como la
+marcación original sobre el `.pptx`.
+
+**Seis discrepancias que no se pudieron reconciliar**, escritas y no borradas:
+
+1. **Ninguna de las dos tablas viejas dice qué láminas están escondidas, y hay seis** — la 10
+   de `jm`; la 23, 25, 26, 27 y 28 de `secco`. Es el dato que más cambia lo que el motor hace.
+2. Los `m2_*` de la lámina 10 de `jm` **siguen con sufijos secuenciales** (`_a`…`_e`), y §1
+   declara que no los tienen.
+3. `camp_eje` no figura en ninguna tabla vieja.
+4. `periodo` en la lámina 5 de `jm` tampoco.
+5. `ecv_minutos` en la 5 de `secco` tampoco.
+6. `m2_implementaciones` existe en `secco` y no en `jm`: las dos láminas se titulan igual y no
+   son la misma.

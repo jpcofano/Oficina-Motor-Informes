@@ -104,7 +104,107 @@ crean. Pregunta abierta para el equipo (ver `docs/PLANTILLAS_QA_y_armonizacion.m
 ya no es un pendiente. `enc_*` está resuelto por el diccionario canónico (§1). Las tablas
 de abajo ya no repiten esos dos puntos como pendientes.
 
-### JM — 22 slides
+---
+
+### 2.0 · Inventario medido sobre la plantilla viva — **07/08/2026**
+
+> **Contra qué se numera:** contra las **presentaciones de Google Slides que `INFORMES`
+> declara hoy** como `plantilla_id` — `jm` = `117I0qn…u6jI`, `secco` = `1_ZKjWhL…4-n8` —, leídas
+> con `piezasDeTextoDeSlide_`, que es el mismo recorrido que usa la corrida y **sí** baja a
+> tablas y a grupos. **No** se numera contra los `.pptx` de `Plan Inicial/_archivo/Plantillas/`,
+> que es contra lo que se hicieron las dos tablas de §2.1 y §2.2, ni contra el **deck
+> expandido** de una corrida, que tiene más láminas porque las repetibles se duplican.
+>
+> Las tres numeraciones son distintas y confundirlas ya costó tiempo: el aviso de láminas
+> escondidas de una corrida numera contra el **deck expandido** (la 10 de la plantilla sale
+> como 14 ahí).
+>
+> La columna **estado** sale de `esLaminaEscondida_`, la única llamada a `isSkipped()` del
+> repo. Una lámina escondida **no se emite**: sus tokens no entran al mapa de la corrida.
+
+**`jm` — 22 láminas**
+
+| # | estado | primer texto de la lámina | n | tokens |
+|---|---|---|---|---|
+| 1 | | *(sólo el token)* | 1 | `periodo` |
+| 2 | | Resumen Ejecutivo - JM | 21 | `cc_base` `cc_campanias` `cc_contact_pct` `cc_contactados` `contenidos_total` `frecuencia` `imp_google` `imp_meta` `imp_prog` `imp_total` `ivr_at_pct` `ivr_atendidos` `ivr_campanias` `ivr_llamados` `mail_aperturas` `mail_entregados` `mail_envios` `mail_or` `pauta_google` `pauta_meta` `pauta_prog` |
+| 3 | | Resumen Ejecutivo - GCBA | 19 | los mismos con prefijo `gcba_` + `gcba_sms_entregados` `gcba_sms_envios` (sin `gcba_ivr_*`) |
+| 4 | | Encuentros con vecinos | 0 | *(separador)* |
+| 5 | | Encuentros con vecinos: alcance semanal por herramienta | 31 | `alcance` `cc_base` `cc_contact_pct` `cc_contactados` `clics` `ecv_asistentes` `ecv_barrio1-3` `ecv_barrios` `ecv_encuentros` `ecv_insc_{cc,dif,digital,ivr,mail}` + sus `_pct` `ecv_inscriptos` `imp_total` `ivr_75` `ivr_75_pct` `ivr_atendidos` `ivr_marque1` `mail_aperturas` `mail_entregados` `mail_or` **`periodo`** |
+| 6 | | Benchmarks: Mail JM… *(la lámina del Iceberg)* | 30 | `ecv_*` (asistentes, barrio, insc_*, inscriptos, poblacion) + `enc_*` (alcance, alcance_pct, alcance_potencial, aperturas, atendidos, audiencia, base_llamada, base_total, clics_ctor, ctor, e75, e75_pct, impresiones, ll_contactados, ll_contactados_pct, ll_efectivos, ll_efectivos_pct, mails_entregados, mails_enviados, marque1, or) |
+| 7 | | Campañas · pie *"Digital \| ECVs: post reuniones"* | 4 | `camp1` `camp2` `camp3` `camp4` — tabla **7×8**, ranuras en filas 4 a 7 de la columna 1 |
+| 8 | | Comunicaciones M2 | 0 | *(separador)* |
+| 9 | | Directa \| Status semanal de M2 | 8 | `m2_aperturas` `m2_campanias` `m2_clics` `m2_ctor` `m2_envios` `m2_mails_entregados` `m2_mails_enviados` `m2_or` |
+| 10 | **escondida** | M2 | 23 | `m2_aud_a-d` `m2_camp1-5` `m2_clics_a-e` `m2_desalojos_imp` `m2_salud_camp` `m2_salud_imp` `m2_seguridad_aud` `m2_seguridad_imp` `m2_subtes_imp` `m2_transito_imp` `m2_vis_a` `m2_vis_e` |
+| 11 | | Campañas destacadas GCBA | 0 | *(separador)* |
+| 12 | | Campaña destacada `{{camp_titulo}}` | 1 | `camp_titulo` |
+| 13 | | Objetivo de la comunicación y período | 3 | `camp_desde` `camp_hasta` `camp_titulo` |
+| 14 | | Herramientas y audiencias | 7 | `camp_audiencia1-3` `camp_formato1-3` `camp_titulo` |
+| 15 | | Formatos digitales implementados | 1 | `camp_titulo` |
+| 16 | | Resultados agregados | 11 | `camp_alcance` `camp_aperturas` `camp_clics` `camp_ctor` `camp_dig_impl` `camp_dir_impl` `camp_entregados` `camp_frecuencia` `camp_impresiones` `camp_titulo` `camp_visualizaciones` |
+| 17 | | Resultados desagregados \| Digital | 9 | `camp_bench_{google,meta,prog}_{ctr,vtr}` `camp_dig_insight` **`camp_eje`** `camp_titulo` |
+| 18 | | Resultados desagregados \| Directa: envío de mail | 14 | `camp_bench_remitente` `camp_env1_{aud,fecha,rem}` `camp_env2_{aud,fecha}` `camp_env3_{aud,fecha}` `camp_env4_aud` `camp_env5_{aud,fecha}` `camp_mail_insight` `camp_remitente` `camp_titulo` |
+| 19 | | Resultados desagregados \| Directa: respuestas | 15 | `camp_remitente` `camp_resp_{total,pos,neu,neg,info,sol}` + sus `_pct` `camp_resp_insight` `camp_tasa_resp` `camp_titulo` |
+| 20 | | Análisis y datos | 0 | *(separador)* |
+| 21 | | Resumen Ejecutivo *(RRSS)* | 21 | `rrss_area1-10` `rrss_c1-4_pct` `rrss_insight_texto` `rrss_menciones` `rrss_menciones_escala` `rrss_prom_general` `rrss_tema2` `rrss_vis_escala` `rrss_visualizaciones` |
+| 22 | | MUCHAS GRACIAS | 0 | *(cierre)* |
+
+**`secco` — 29 láminas**
+
+| # | estado | primer texto de la lámina | n | tokens |
+|---|---|---|---|---|
+| 1 | | Seguimiento | 2 | `fecha_dia` `fecha_mes` |
+| 2 | | *(índice, sin marcar)* | 0 | |
+| 3 | | Febrero 2026 | 0 | *(separador)* |
+| 4 | | Uno a uno en comunas | 2 | `ecv_comuna` `ecv_fecha` |
+| 5 | | Plataforma | 7 | `ecv_asistentes` `ecv_comuna` `ecv_fecha` `ecv_minutos` `u1_bench_{google,meta,prog}` |
+| 6 | | Encuentro temático | 2 | `et_fecha` `et_nombre` |
+| 7 | | Estrategia de comunicación | 9 | `et_cc` `et_convocatoria` `et_digital` `et_directa` `et_fecha` `et_ivr` `et_mail` `et_nombre` `et_post_periodo` |
+| 8 | | Benchmarks: Mail… *(la lámina del Iceberg)* | 40 | `ecv_*` (14) + `enc_*` (24) + `et_fecha` `et_nombre` |
+| 9 | | Comunicaciones Post | 0 | *(separador)* |
+| 10 | | Digital \| Comunicaciones post | 6 | `post_camp1-3` `post_estado1-3` — tabla **4×7** |
+| 11 | | Encuentros de ministros | 0 | *(separador)* |
+| 12 | | Encuentros de ministros | 11 | `emin_alcance` `emin_alcance_semanal` `emin_aperturas` `emin_clics_ctor` `emin_clics_ctr` `emin_ctor` `emin_ctr` `emin_encuentros` `emin_lista` `emin_or` `periodo` |
+| 13 | | M2 | 0 | *(separador)* |
+| 14 | | Directa \| Status semanal de M2 | 9 | los 8 de `jm` + `m2_implementaciones` |
+| 15 | | Caudal semanal de M2 | 0 | *(gráficos)* |
+| 16–22 | | bloque campaña destacada | 46 | idénticos a las láminas 12 y 16–18 de `jm` *(ver arriba)* |
+| 23 | **escondida** | Resultados desagregados \| Directa: respuestas | 15 | ídem lámina 19 de `jm` |
+| 24 | | Análisis y Datos | 1 | `fecha_mes` |
+| 25 | **escondida** | *(sólo tokens)* | 13 | `conv_dia_activo` `conv_menciones` `conv_menciones_var` `conv_sm_pos` `conv_sm_pos_var` `conv_tema1-4` `conv_usuarios` `conv_usuarios_var` `conv_vistas` `conv_vistas_var` |
+| 26 | **escondida** | xx | 0 | *(temas por imagen — GAP conocido)* |
+| 27 | **escondida** | Repercusiones en X - JM + GCBA | 11 | `rep_p1_{periodo,sent,tema1,tema2,tema3}` `rep_p2_{periodo,sent,temas}` `rep_p3_{periodo,sent,temas}` |
+| 28 | **escondida** | Semana JM - Interacción positiva en RRSS | 9 | `rrss_c1-4_pct` `rrss_c1-4_txt` `rrss_prom_general` |
+| 29 | | ¡Muchas gracias! | 0 | *(cierre)* |
+
+#### Lo que no se pudo reconciliar con §2.1 y §2.2 — se marca, no se borra
+
+1. **Ninguna de las dos tablas de abajo dice qué láminas están escondidas, y hay seis.** En
+   `jm` la 10; en `secco` la 23, 25, 26, 27 y 28. Es el dato que más cambia lo que el motor
+   hace —una lámina escondida no se emite— y no estaba escrito en ningún lado de este
+   documento.
+2. **`m2_*` de la lámina 10 de `jm` sigue con los sufijos secuenciales.** §1 declara
+   *"nombres por categoría, sin sufijos `_a`…`_e`"* y la plantilla viva tiene `m2_aud_a-d`,
+   `m2_clics_a-e`, `m2_vis_a`, `m2_vis_e`. El `⚠ REVISAR` de §2.1 esperaba que el Paso 2.2 los
+   ordenara; **no pasó**, o pasó y volvió atrás. Queda como discrepancia abierta.
+3. **`camp_eje` (lámina 17 de `jm`, 21 de `secco`) no figura en ninguna de las dos tablas de
+   abajo.**
+4. **`periodo` en la lámina 5 de `jm`** tampoco figura. La 5 lo tiene y la tabla de §2.1 no lo
+   lista.
+5. **La lámina 5 de `secco`** tiene 7 tokens; §2.2 no menciona `ecv_minutos` como propio.
+6. **`m2_implementaciones`** existe en `secco` (lámina 14) y no en `jm` (lámina 9): las dos
+   láminas se titulan igual y no son la misma.
+
+**Lo que sí se reconcilió, y conviene decirlo porque se lo dio por roto:** la numeración de
+"Comunicaciones post" **está bien**. §2.2 la pone en la lámina **10 de `secco`** y ahí está,
+con `post_camp1-3` y `post_estado1-3` exactos. La lámina equivalente de `jm` es la **7**, que
+§2.1 numera bien y describe bien (`camp1-4`). La confusión venía de mezclar las dos
+plantillas: `jm` no tiene ninguna lámina `post_`, y no tiene por qué tenerla con esos nombres
+(ver el `P2` de `comunicaciones_post` en `docs/PENDIENTES_consistencia.md`).
+
+---
+
+### 2.1 · JM — 22 slides *(marcación original sobre el `.pptx`, 07/2026)*
 
 Marcado sobre `Plantilla__Informe_semanal_JM.pptx` (reemplazo posicional y
 determinístico, valida OK contra el original). Archivo de referencia:
@@ -146,7 +246,7 @@ que SECCO).
    plantilla (derecha, marcada). Decidir si la columna de ejemplo se borra o se deja
    como referencia.
 
-### SECCO — 29 slides
+### 2.2 · SECCO — 29 slides *(marcación original sobre el `.pptx`, 07/2026)*
 
 Marcado sobre `Plantilla_SECCO.pptx` (cada `xx` reemplazado por su `{{token}}` según la
 etiqueta contigua, reusando familias de JM donde la slide es la misma). Archivo de
