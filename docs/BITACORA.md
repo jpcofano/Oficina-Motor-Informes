@@ -5823,3 +5823,25 @@ publicado. **La consecuencia queda dicha**: las notas del deck publicado van a l
 máquina, visible en modo presentador y al imprimir.
 
 **La hoja `LAMINAS` no se documenta todavía** — es Fase 3 y no existe. **Sin código.**
+
+---
+
+## Corrección a la Parte C: los pasos 2 a 4 quedaban del flujo previo a `AJ-10` (2026-08-07) — commit de esta entrada
+
+El paso 4 decía *"declarás la sección —o la creás— y volvés a sellar"*, que es declarar en
+`SECCIONES` — justo lo que `D-23` sacó de ahí. Y el paso 3 decía que el sellado **para** ante
+una lámina sin sección deducible, cuando en la partición 2a/2b el primer sellado **no se
+traba**: escribe el id en todas.
+
+Reescritos 2, 3 y 4 según la partición que `D-23` ya tenía escrita: **2a** anexa
+`#lamina: L-NNN` a todas y no necesita que ninguna esté clasificada; las no deducibles se
+reportan **por lote**; la sección se declara en la hoja **`LAMINAS`** (Fase 3); **2b** escribe
+`#seccion:` leyendo esa hoja. Sin agregar nada que `D-23` no diga.
+
+El aviso de cabecera ahora cubre **las dos** cosas que no existen: la función *Sellar
+plantilla* y la hoja `LAMINAS`. **La estructura de columnas de `LAMINAS` sigue sin
+documentarse** — es `C.4`.
+
+**Verificado:** ninguna otra parte del `RUNBOOK` manda a declarar en `SECCIONES` la pertenencia
+de una lámina. La única otra mención es la lista de hojas que snapshotea `tools/snapshot.js`.
+**Sin código.**
