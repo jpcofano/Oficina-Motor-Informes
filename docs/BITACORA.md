@@ -5753,3 +5753,31 @@ superficie contra la planilla viva: **140 entradas, las 140 con `columna` cargad
 No es el `P1 · Firma de encabezados`: aquél detecta el cambio, éste lo sobrevive. Van los dos.
 De dónde sale el nombre —columna nueva en `MAPEO` o derivarlo de `SOLAPAS.fila_encabezado`—
 queda planteado sin elegir: es el prompt siguiente. **Sin código.**
+
+---
+
+## `D-23` — la identidad de una lámina se declara en el deck (2026-08-07) — commit de esta entrada
+
+Parte A del prompt del flujo de lámina nueva, con los once ajustes del `7.1`. La identidad va
+a **las notas del orador**, en dos campos anexados por el motor: `#seccion:` y un
+`#lamina: L-NNN` **global y opaco**, para que reclasificar una lámina no obligue a editar su
+id.
+
+**Lo medido el 07/08 sobre las dos plantillas vivas**, que es lo que fundamenta la decisión:
+**51 láminas**, de las cuales **20 (39 %) se clasifican bien hoy** por `familia_tokens`, **5**
+son ambiguas y **26 son huérfanas** (13 sin ningún token, 13 con tokens). Las dos plantillas
+dan `EDIT` a la cuenta del script, así que no hay bloqueo en Drive.
+
+**Tres descartes con razón medida, no con preferencia.** La sintaxis `{{…}}` queda descartada
+porque `presentacion.replaceAllText` **sí alcanza las notas** (2 ocurrencias contra 1 de
+`slide.replaceAllText`): la barrida de faltantes convertiría un `{{lamina}}` en `«FALTA:lamina»`
+en el deck publicado. El alt text queda descartado porque **`TableCell` no expone
+`setDescription` ni `setTitle`**. Y anexar en vez de reemplazar no es cortesía: `secco` ya
+tiene dos láminas con notas escritas por el equipo, una de ellas ambigua.
+
+**La Fase 2 se parte en 2a/2b** —sellar el id no requiere clasificar— y con eso se rompe la
+circularidad con la hoja `LAMINAS`. **La clasificación no pasa por `familia_tokens`**: llenar
+los 17 prefijos que hoy no declara nadie sería invertir en el mecanismo que la Fase 4 retira, y
+`rrss_` ya demuestra que sale mal —vive en dos secciones distintas de dos informes—.
+
+`familia_tokens` queda congelado. **Sin código.**

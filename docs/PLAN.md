@@ -471,6 +471,161 @@ construiría es `T2.10` (§2), y **no está aprobado**.
 
 ---
 
+**`D-23` — La identidad de una lámina se declara en el deck, en las notas del orador, y la
+escribe el motor.** (07/08/2026)
+
+Dos campos, anexados a las notas del orador de cada lámina de la plantilla:
+
+- **`#seccion: <seccion_id>`** — a qué sección pertenece.
+- **`#lamina: L-NNN`** — **id global, opaco, asignado una vez y nunca reasignado.** Global y
+  no derivado de la sección **a propósito**: el sistema existe para poder **reclasificar** una
+  lámina, y un id que contiene el `seccion_id` queda mintiendo el día que la lámina cambia de
+  sección — y entonces alguien lo edita, y un id que se edita deja de ser un id. Misma regla
+  que los `D-NN` y `R-NN` de este repo.
+
+**El segundo campo se escribe, y hay número que lo obliga:** `campana` reclama **ocho**
+láminas en las dos plantillas (12–19 en `jm`, 16–23 en `secco`) y `m2` reclama dos en `jm`
+(9 y 10). Con una sola sección por lámina no alcanza para distinguirlas.
+
+**Anexar, nunca reemplazar.** Dos láminas de `secco` ya tienen notas escritas por el equipo
+—la 8 (285 caracteres de antecedentes de una temática) y la 25 (267 sobre conversación en
+X)—, y la 8 es además una de las ambiguas. El motor **agrega una línea**; jamás hace `setText`
+sobre las notas. El día que el equipo deje de usarlas, esto sigue siendo correcto.
+
+**La unidad de emisión pasa a ser la lámina; la sección queda como agrupación conceptual.**
+Hoy una sección conceptual puede tener **una lámina agregada y otras que repiten**, y
+expresarlo obligó a partir `encuentro` en dos filas, enumerar diez tokens exactos en
+`familia_tokens` y agregar `curarSecciones_` para poder corregir un campo. Entonces:
+
+- La lámina puede declarar `modo`, `itera_sobre` y `filtro` propios.
+- **Precedencia, y es herencia, no conflicto**: celda vacía en la lámina = hereda de su
+  sección; celda con valor = manda la lámina. Vale la misma convención que ya usa
+  `MARCADORES.solapa`, donde vacío significa inferir. **No es el caso de "hojas de registro:
+  estado, no verdad"**: ahí dos fuentes describen lo mismo y discrepar es un hallazgo; acá la
+  sección declara el default y la lámina la excepción, y sólo una de las dos habla por celda.
+- **Identidad y estado propio no se heredan nunca**: `seccion_id`, `escondida` y `origen` son
+  de la lámina y de nadie más.
+
+**Las tres columnas no se pisan, y el régimen de selección ya está decidido en `D-09` — esta
+decisión lo cita, no lo reescribe:**
+
+| columna | qué decide |
+|---|---|
+| `itera_sobre` | **qué universo** se recorre — es donde vive el régimen de `D-09`, por período o por temario |
+| `filtro` | **qué se acota adentro** de ese universo (hoy el único caso es `etapa=post`) |
+| `modo` | **cuántas veces** se emite la lámina |
+
+La herencia por celda vacía vale para las tres igual.
+
+**Por qué no contradice `D-01`.** Lo que va al deck es **identidad**, no un valor de negocio.
+`modo`, `itera_sobre` y `filtro` siguen viviendo en hojas de registro — cambian de fila, no de
+lugar. Cambiar qué muestra una lámina sigue sin exigir tocar el Slides.
+
+**Qué cierra de `Paso-5-v2`, sin superseder nada.** Ese prompt dejó una condicional —*preferir
+la hoja de registro sobre la marca en la plantilla, salvo que se muestre que ya hay marcas
+puestas*—. Esta decisión **cierra esa condicional** con los números de abajo. Un prompt
+ejecutado no se edita y no es dueño de una decisión de arquitectura (`CLAUDE.md` §7): se lo
+cita, no se lo supersede.
+
+**Qué se descarta, con la razón medida al lado:**
+
+| descartado | por qué |
+|---|---|
+| la sintaxis `{{…}}` para el ancla | **`presentacion.replaceAllText` alcanza las notas del orador** (medido 07/08: 2 ocurrencias contra 1 de `slide.replaceAllText`, que sólo llega al cuerpo). La barrida de faltantes de `Generador.gs` convertiría un `{{lamina}}` de las notas en `«FALTA:lamina»` **en el deck publicado**. Por eso el ancla usa `#campo:` y no llaves |
+| alt text para identidad de **elemento** | **`TableCell` no expone `setDescription` ni `setTitle`** (medido sobre la plantilla viva): la propiedad existe sólo en el `PageElement` tabla completa, y los tokens viven dentro de celdas. Además `D-17` siembra `MARCADORES` leyendo los `{{token}}` de la plantilla: mover la identidad al alt text cortaría esa cadena |
+| caja de texto invisible en la lámina | el equipo la arrastra o la borra y el síntoma aparece lejos |
+| un ID único **global por elemento** replicado en copias | `duplicate()` lo replica en cada copia de una sección repetible. El `#lamina:` no cae en esto: las copias **son** la misma lámina modelo instanciada por ítem, y heredarlo es correcto |
+| `objectId` como ancla persistente | **no hay garantía documentada**: Google documenta la preservación de `objectId` al copiar el archivo entero con la Drive API, no como propiedad general de una presentación editada. La razón **no** es que el equipo edite la plantilla — bajo esta decisión ya no la edita |
+| guardar el **número** de lámina | es lo que hoy hace `LAMINAS_CONGELADAS_` y lo que se rompe al insertar una lámina antes. El número se **reporta** en cada corrida; no se guarda |
+
+**Regla que sale del primer descarte, y es regla y no hecho:** toda entrada de renombre pasa
+el token **envuelto en llaves**. Hoy los tres llamadores de `replaceAllText` lo hacen
+—`RENOMBRES_ARMONIZACION_`, `RENOMBRES_COMUNICACIONES_POST_` y la barrida— y por eso el ancla
+sobrevive. Un renombre futuro que pase texto pelado **puede corromper el ancla**, y el daño
+sería invisible hasta que alguien mire las notas del deck publicado.
+
+**Taxonomía: `modo` es de la máquina, `rol` es de las personas.**
+
+- **`modo` sigue siendo comportamiento**, y se le agrega el valor que falta: **`estatica`** —
+  la lámina **no lleva datos nunca**.
+- **`rol` entra como columna editorial, explícitamente sin comportamiento**, con el
+  vocabulario de bandas de la industria: `caratula`, `indice`, `resumen`, `detalle`,
+  `agregado`, `cierre`. **En el modelo de bandas (JasperReports, BIRT, Crystal) la banda
+  *es* el comportamiento** —`detail` se imprime por cada registro, `summary` una vez al
+  final—; **acá no**, porque las láminas ya existen maquetadas y el comportamiento lo decide
+  `modo`. Si `rol` empieza a decidir algo, hay dos columnas mandando sobre lo mismo.
+- **`getLayout()` es pista, no clasificación.** Medido: `BLANK` aparece en los dos bloques
+  (láminas sin tokens y láminas con veintiún tokens) y `SECTION_HEADER` también. Sólo `TITLE`
+  salió limpio. Sirve para **proponer**, nunca para decidir solo.
+- **`estatica` nace como etiqueta, igual que las otras tres.** Medido: el único lugar del
+  motor que lee `SECCIONES.modo` es `seccionesRepetiblesDe_` (`Generador.gs`), comparando
+  contra `repetible`. **`agregado`, `unica` y `manual` no tienen código detrás.** Decirlo
+  ahora evita que la taxonomía prometa comportamiento que no existe.
+- **"Sin tokens" no es lo mismo que "estática", y confundirlas congela deuda.** Trece láminas
+  no tienen ningún token, pero dos de ellas no son carátulas: **`secco` 15** (rótulos de datos
+  en una tabla y cero tokens: es una lámina de datos **sin cablear**) y **`secco` 26**
+  (escondida, con `xx` de relleno). `estatica` significa *no lleva datos nunca*, **no** *hoy
+  no tiene tokens*. Las dos dudosas quedan anotadas en `docs/PENDIENTES_consistencia.md` y se
+  revisan antes de clasificarlas.
+
+**El tamaño real, medido el 07/08 sobre las dos plantillas vivas y la hoja `SECCIONES` viva:**
+
+| | número |
+|---|---|
+| láminas totales (`jm` 22 + `secco` 29) | **51** |
+| clasificadas bien hoy por `familia_tokens` | **20 — el 39 %** |
+| ambiguas (más de una sección las reclama) | **5** |
+| huérfanas (ninguna sección las reclama) | **26** — 13 sin ningún token, 13 con tokens |
+
+**El primer sellado deja 26 láminas sin clasificar, y eso es trabajo humano, no una operación
+automática.** Está escrito acá para que nadie empiece la Fase 2 creyendo que es un botón.
+
+**Identidad y clasificación se separan, y eso rompe la circularidad:**
+
+| paso | qué hace | qué necesita |
+|---|---|---|
+| **2a** | sella `#lamina: L-NNN` en las 51 | nada: asignar un id no requiere clasificar |
+| **3** | siembra `LAMINAS`, una fila por lámina, `seccion_id` vacío donde no se dedujo | la clave que escribió 2a |
+| **—** | el usuario llena **26 celdas** de `seccion_id` en la hoja | — |
+| **2b** | segundo sellado: escribe `#seccion:` leyendo la hoja | las celdas llenas |
+
+`#seccion:` **sólo se escribe donde se deduce**: ahí sigue rigiendo default-deny, como
+`buscarMapeo` ante una solapa no declarada. Y **el reporte es por lote** — el sellador recorre
+todo, informa las 26 juntas y para; parar en la primera serían 26 rondas.
+
+**La clasificación NO pasa por `familia_tokens`, y esto es parte de la decisión.** Llenar los
+17 prefijos que hoy no declara nadie sería invertir en el mecanismo que la Fase 4 retira, y
+hay un caso concreto de que sale mal: **`rrss_` vive en `jm` 21 (Resumen Ejecutivo ·
+Sentiment) y en `secco` 28 (Interacción positiva en RRSS)**, que son secciones distintas —
+declararlo en una fila `informes = JM,SECCO` reclama las dos. Es el patrón del `P2` de
+`comunicaciones_post`, otra vez. **`familia_tokens` queda congelado donde está** hasta que la
+Fase 4 lo retire: no se escribe ninguno nuevo y no hace falta `curarSecciones_` sobre 27
+filas. (Que el seed las dejara clasificadas nunca fue posible: `sembrarSecciones_` sólo agrega
+filas nuevas y **jamás pisa una existente**.)
+
+**Qué se destraba, y es todo en la Fase 4, no con esta decisión:**
+
+- `LAMINAS_CONGELADAS_` sale del `.gs` y agregar una lámina deja de frenar la armonización.
+- **`familia_tokens` deja de ser el mecanismo de pertenencia.** Es el pago grande: hoy es
+  simultáneamente *"con qué se reconoce el bloque modelo"* y *"qué tokens son de esta
+  sección"*, y esa doble carga ya se cobró dos veces. **Medido: 4 de las 9 filas que declaran
+  `familia_tokens` son candidatas a colapsar** — `encuentro_iceberg`, `m2_status` y
+  `m2_caudal` (las tres `modo = unica`, compartiendo prefijo con su padre) y
+  `ecv_alcance_semanal` (diez tokens exactos). Candidatas, no tarea: alguna puede ser un
+  concepto legítimo.
+- **Y el pago no es conceptual: `ecv_alcance_semanal` fabricó dos láminas huérfanas.**
+  `ecv_comuna` y `ecv_fecha` no están en su enumeración de diez, así que las láminas 4 y 5 de
+  `secco` quedaron sin identidad posible. La solución al bug del alcance semanal duplicado
+  produjo el problema siguiente. La Fase 4 arregla dos huérfanas medidas, no una molestia.
+
+**Dirección de `C-01`, dicha acá.** Durante el desarrollo la relación se invierte: **la
+plantilla es artefacto del motor** y el equipo no la edita. `C-01` **no se deroga ni se
+suspende en bloque**; la dirección queda escrita en esta decisión y las autorizaciones
+concretas siguen creciendo **de a una operación** en `docs/REGLAS_NEGOCIO.md`, que es lo que
+las hace verificables. En producción `C-01` vuelve a regir entero.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 **IDs `T<tramo>.<n>`.** La palabra "Paso" queda para la serie histórica y no se reusa: `Paso 5`
@@ -595,6 +750,28 @@ fuentes con cero filas y 3 `[MANUAL]`. **El motor dejó de ser el cuello de bote
   fila de `MAPEO`, en una carga de datos, o en una pregunta al equipo. Si aparece algo que
   necesita motor, ése es un sub-paso propio y no se hace acá.
 - **Depende de `T2.4`**, que ya corrió: hay un deck completo contra el cual mirar cada lámina.
+
+---
+
+### Sellado y clasificación de láminas (`D-23`)
+
+Ordenado, y **cada fase nombra su precondición**. La Fase 1 fue la decisión misma: `D-23`,
+escrita el 07/08/2026. Ninguna de estas fases toca `familia_tokens` — queda congelado hasta
+la Fase 4.
+
+| fase | qué | precondición |
+|---|---|---|
+| **2a** | `sellarPlantilla(informe_id)`: anexa `#lamina: L-NNN` a las notas del orador de **todas** las láminas. No toca las que ya tienen ancla. Nunca `setText`: anexa | **la autorización de `C-01` para escribir las notas** (`REGLAS_NEGOCIO.md`, addendum del 07/08). El acceso ya está: las dos plantillas dan `EDIT` a la cuenta del script |
+| **3** | Hoja `LAMINAS`: `lamina_id`, `informe_id`, `seccion_id`, `orden_plantilla` (reportado, **no** autoritativo), `escondida`, `origen`, `modo`, `itera_sobre`, `filtro` (los tres vacíos = heredan), `rol`, `estado`, `falta`, `notas`. Es `SOLAPAS` del lado del deck, y es `D-17` aplicado a láminas | Fase 2a: sin el `L-NNN` la fila no tiene con qué juntarse a la lámina |
+| **—** | **El usuario llena 26 celdas de `seccion_id`.** Es trabajo humano y está contado: 26 de 51 láminas no tienen sección deducible | Fase 3 |
+| **2b** | Segundo sellado: escribe `#seccion:` leyendo la hoja. Default-deny sobre lo que siga vacío, y **reporte por lote**, no parada en la primera | las celdas llenas |
+| **4** | Los consumidores migran al ancla: `LAMINAS_CONGELADAS_` sale del `.gs`, la emisión deja de derivar la pertenencia por prefijo, esconder/mostrar desde el menú, y se resuelven las 4 candidatas a colapsar | Fase 2b, **y una autorización nueva de `C-01`** para `setSkipped` |
+| **5** | El cableado de la lámina nueva, y después la capa de panel de `docs/OBJETIVO_lamina_nueva.md` | Fase 4. **Sin definir: no inventarlo** |
+
+**Por qué la Fase 2 está partida.** Escribir el id y clasificar son dos trabajos distintos:
+asignar `L-NNN` no requiere saber a qué sección pertenece la lámina. Si el sellado entero
+fuera default-deny, la Fase 2 no podría avanzar sin la hoja `LAMINAS` y la Fase 3 no podría
+existir sin la clave que escribe la Fase 2. Partirla rompe la circularidad sola.
 
 ---
 
