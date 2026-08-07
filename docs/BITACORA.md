@@ -4353,3 +4353,74 @@ corrida gastó 147 antes de poder mirar el reloj por primera vez.
 
 **Verificación humana desde la planilla**, que es lo que el prompt marca como condición de
 cierre y todavía no ocurrió.
+
+---
+
+## Higiene — las láminas escondidas no entran a la corrida: 195 pasa a 172 (2026-08-06) — commit `9607a3b`
+
+**No lleva ID `T<tramo>.<n>`: es higiene, no un escalón de la escalera.**
+
+### `0.1`–`0.4`, lo medido
+
+- **Ninguno de los tres recorridos de la corrida miraba `isSkipped()`.** `grep` sobre todos los
+  `.gs` devolvía **una sola** llamada en el repo, adentro de `mapaDeTokens_`
+  (`Armonizar.gs:925`). `mapaTokenObjectId_`, `tokensPorSlide_` y `tokensDeSlide_`, ninguna.
+- **La diferencia son 23 tokens `m2_*` de la lámina 10**, medidos con `mapaDeTokens_` y no a
+  mano: `195 − 23 = 172`, la cuenta cierra exacta.
+- **⚠ Y ya estaba pasando:** la corrida de prueba de `T2.1.1` (`jm-20260806-210540`) dejó 195
+  filas en `FALTANTES`, **31 de ellas `m2_*`** — las 23 de la lámina escondida entre ellas.
+- **Ninguna slide modelo está escondida** (`encuentro` → 6; `campana` → 12–19;
+  `comunicaciones_post` → ninguna), así que el filtro mantuvo la forma prevista.
+
+### Dónde quedó el filtro, y por qué en cada lado
+
+| función | qué se hizo | por qué |
+|---|---|---|
+| `esLaminaEscondida_` (nueva, `Armonizar.gs`) | **la única llamada a `isSkipped()` del repo** | dos criterios es exactamente lo que produjo la divergencia |
+| `laminasEscondidas_` (nueva) | extraída de `mapaDeTokens_` | el mapa y la corrida usan **el mismo** recorrido |
+| `mapaTokenObjectId_` | filtra **adentro** | su único llamador es la etapa 2, y desde ahí se corrigen de un saque el denominador, `cableados_sin_caja_en_plantilla`, el `mapa_tokens` de `CORRIDAS` **y la barrida de `T2.1.1` sin editarla** |
+| `tokensPorSlide_` | **no se tocó** | `filtrarRenombresPorLaminasCongeladas_` y `tokensSinCablear_` inventarían y necesitan ver todo |
+| `tokensVisiblesDe_` (nueva, `Generador.gs`) | el filtro en el punto de llamada | etapa 4 y el *fallback* de la barrida |
+| `tokensDeSlide_` | guarda, aunque hoy no la necesite | `duplicate()` copia el estado de la modelo, y `0.3` sólo mide hoy |
+
+### `A.3` · Nada se excluye en silencio (`D-21`)
+
+El resultado de la corrida trae `tokens.excluidos_por_lamina_escondida` con **láminas, cuántos
+y la lista de tokens**, y el ítem de menú lo dice en su propia línea. Una exclusión que no se
+reporta es indistinguible de un token que se perdió.
+
+### Los dos efectos esperados — no son regresiones
+
+1. **Un marcador cuya única caja vive en la lámina escondida va a empezar a aparecer en
+   `cableados_sin_caja_en_plantilla`.** Es correcto y es información.
+2. **El `mapa_tokens` de `CORRIDAS` deja de traer los `objectId` de la lámina escondida.** Para
+   la **etapa 2 de `D-06`**, un deck viejo no va a poder actualizar esa lámina si algún día se
+   muestra. **Anotado, no resuelto** — va con `D-06`, que ya está en `PLAN.md` §3.
+
+### La verificación, barata y sin corrida completa
+
+| | antes | después |
+|---|---|---|
+| `mapaTokenObjectId_` sobre la plantilla JM | 195 | **172** |
+| `tokensVisiblesDe_` | — | **172 visibles, 23 descartados** (misma lista que `0.2`) |
+| `tokensPorSlide_` | 195 | **195** (no se tocó, a propósito) |
+| `tokensDeSlide_` sobre la lámina 10 | 23 | **0** |
+| `tokensDeSlide_` sobre la lámina 6 (modelo de `encuentro`) | 30 | **30** |
+
+**Las 10 pruebas pasan.**
+
+### Lo que se anotó en `PENDIENTES_consistencia.md`
+
+- **El `P1` de los 195 contra 172, cerrado** con la explicación y los dos efectos.
+- **Un `P2` nuevo:** `comunicaciones_post` tiene 2 ítems y **cero slides modelo**, y por eso
+  `duplicarBloquesRepetibles_` devuelve 5 asignaciones y no 7. El motor ya lo reportaba
+  —*"hay N ítem(s) pero ninguna slide lleva tokens de `post_`"*— y nadie lo leía; era el origen
+  del "5 y no 7" que apareció como número raro en tres mediciones seguidas. **No se arregla
+  acá:** decidir si sobra la sección o falta la lámina es editorial.
+
+### Premisa del prompt que resultó falsa
+
+**"Va antes de `T2.1.1`".** `T2.1.1` ya estaba implementado y commiteado, y su barrida final ya
+estaba pintando las 23 láminas escondidas. Eso hizo más fuerte el argumento de filtrar adentro
+del mapa: la barrida se corrigió sola, sin editar una línea de `T2.1.1`, que es el sentido en
+que *"no se toca `T2.1.1`"* sí se cumplió.

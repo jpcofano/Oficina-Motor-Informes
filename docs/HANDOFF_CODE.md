@@ -113,6 +113,12 @@ un commit. Lo inmediato:
 - **`SECCIONES.filtro` filtra ítems de la iteración; `MARCADORES.filtro` filtra filas.**
 - **Nada que recorra una presentación puede usar `getShapes()`**, y
   `piezasDeTextoDeSlide_` **saltea las celdas combinadas no principales**.
+- **`esLaminaEscondida_` (`Armonizar.gs`) es la única llamada a `isSkipped()` del repo.** Todo
+  lo que necesite saber si una lámina se emite pasa por ahí: dos criterios es exactamente lo
+  que produjo los 195 contra 172.
+- **La corrida no pinta láminas escondidas; el inventario sí las ve.** `mapaTokenObjectId_` y
+  `tokensVisiblesDe_` filtran, `tokensPorSlide_` no. Antes de agregar un consumidor nuevo,
+  decidir de qué lado está.
 - **Los decks se llaman todos igual** en la carpeta de salida: para verificar, tomar el
   `deck_id` de la fila de `CORRIDAS`, nunca la fecha de modificación.
 
@@ -120,12 +126,16 @@ un commit. Lo inmediato:
 
 `MARCADORES` en **43** filas. `MAPEO` en 122 (entraron `mail_tipo` y `mail_remitente`).
 Plantilla: **172 tokens** (195 menos los 23 de la lámina escondida). **Las 10 pruebas pasan.**
-Anclaje: 5 anclados, los cinco con score **1,00** (saturado). `CORRIDAS` en **18 filas**, la
-última **abierta** (`jm-20260806-135202`, etapa 3). Carpeta de salidas: **12 decks**, cero
-shortcuts, cero huérfanos. **Presupuesto de una corrida: ~661 s medidos contra 360 disponibles.**
+Anclaje: 5 anclados, los cinco con score **1,00** (saturado). `CORRIDAS` en **19 filas**, la
+última cerrada (`jm-20260806-210540`, cortada por tiempo a propósito). Carpeta de salidas:
+**13 decks**, cero huérfanos. **Presupuesto de una corrida: ~661 s medidos contra 360
+disponibles.**
 
-**⚠ `mapaTokenObjectId_` cuenta 195 tokens distintos y `tokensPorSlide_` 193**, contra el
-denominador de **172** que usa esta sección. No está explicado.
+**Los 195 contra 172 quedaron explicados** (06/08): eran los **23 tokens `m2_*` de la lámina
+10**, escondida a propósito, que la corrida veía y el mapa no. `mapaTokenObjectId_` ahora
+devuelve **172** y lo excluido viaja en `tokens.excluidos_por_lamina_escondida`.
+`tokensPorSlide_` sigue devolviendo **195** a propósito: la usan dos consumidores de
+inventario que necesitan ver todo.
 
 **⚠ No hay ningún deck completo medido contra el denominador de hoy.** El
 *34 con valor / 288 faltantes* de `jm-20260805-133836` **está superado**: se midió sobre 195

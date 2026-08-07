@@ -1558,6 +1558,56 @@ alguien escriba una familia con un token completo adentro, va a capturar de más
 silencio** — no rompe, arrastra.
 
 
+### ~~P1 · El denominador de la plantilla JM: 195 en la corrida contra 172 en el mapa~~ — CERRADO (06/08/2026)
+
+**La explicación, que faltaba.** `mapaDeTokens_` excluye las láminas escondidas desde el
+16/08; las tres funciones que usaba `generarInforme` —`mapaTokenObjectId_`, `tokensPorSlide_`
+y `tokensDeSlide_`— **no miraban `isSkipped()`**. `grep` sobre todos los `.gs` devolvía **una
+sola** llamada a `isSkipped()` en el repo, adentro de `mapaDeTokens_`.
+
+**La diferencia son exactamente los 23 tokens `m2_*` de la lámina 10**, escondida el 14/08 con
+backup y a propósito: `195 − 23 = 172`. La lista está en el reporte de `mapaDeTokens_`
+(`tokens_en_laminas_escondidas`).
+
+**No era teórico.** La corrida `jm-20260806-210540` dejó 195 filas en `FALTANTES`, **31 de
+ellas `m2_*`**, con los 23 de la lámina escondida entre ellas: la corrida los resolvía, los
+pintaba sobre una lámina que no se emite y los listaba como deuda.
+
+**Cerrado por el prompt `2026-08-06_12`** (`9607a3b`): `esLaminaEscondida_` queda como la
+única llamada a `isSkipped()` del repo; el filtro va adentro de `mapaTokenObjectId_` —único
+llamador, la etapa 2— y en los dos puntos de llamada de `tokensPorSlide_` en `Generador.gs`,
+vía `tokensVisiblesDe_`. **`tokensPorSlide_` no se tocó**: sus otros dos consumidores
+—`filtrarRenombresPorLaminasCongeladas_` y `tokensSinCablear_`— inventarían y necesitan ver
+todo.
+
+**Dos efectos esperados, para que nadie los lea como regresión:**
+
+1. **Un marcador cuya única caja vive en la lámina escondida va a empezar a aparecer en
+   `cableados_sin_caja_en_plantilla`.** Es correcto y es información: la fila de `MARCADORES`
+   existe y no tiene dónde escribirse *mientras la lámina esté escondida*.
+2. **El `mapa_tokens` que se guarda en `CORRIDAS` deja de traer los `objectId` de la lámina
+   escondida.** Para la **etapa 2 de `D-06`** —actualizar el deck en sitio— un deck viejo no
+   va a poder actualizar esa lámina si algún día se muestra: su mapa no la tiene.
+   **Anotado, no resuelto.** Va con `D-06`, que ya está en `PLAN.md` §3 como planificado y
+   bloqueado.
+
+### P2 · `comunicaciones_post` tiene 2 ítems y cero slides modelo
+
+Medido el 06/08 sobre la plantilla viva de `jm`: `itemsDeSeccion_` devuelve **7 ítems** en
+total —5 de `encuentro`, 2 de `comunicaciones_post`, 0 de `campana`— y
+`duplicarBloquesRepetibles_` produce **5 asignaciones**. Los dos que faltan son los de
+`comunicaciones_post`: `slidesModeloDe_(presentacion, ['post_'])` devuelve **la lista vacía**,
+o sea que **ninguna lámina de la plantilla lleva tokens de la familia `post_`**.
+
+El motor ya lo dice sin romper — es el caso que `duplicarBloquesRepetibles_` reporta como
+*"hay N ítem(s) pero ninguna slide de la plantilla lleva tokens de post_ — es una sección
+curada contra una plantilla que no la contempla"*—, pero **nadie lo estaba leyendo**, y era el
+origen del "5 y no 7" que aparecía como número raro en tres mediciones seguidas.
+
+**Qué falta decidir:** si la sección `comunicaciones_post` sobra en `SECCIONES` para `jm`, o si
+a la plantilla le falta la lámina. Es decisión editorial, no de motor.
+
+
 ## Preguntas al equipo — abiertas, esperando respuesta humana
 
 > Dueña de la pregunta "¿qué se le preguntó al equipo y sigue sin respuesta?"
