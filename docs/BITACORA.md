@@ -4270,3 +4270,86 @@ dominio que esperan respuesta humana: se habían ido agregando debajo de su últ
 para que nadie los "arregle" más adelante—, no trabajo pendiente ni preguntas. Fueron a
 `Sigue abierto` porque es lo conservador: mantiene la prioridad y no cierra nada. Sus títulos ya
 dicen lo que son.
+
+---
+
+## `T2.1.1` ✅ — el motor mira el reloj y corta antes del límite (2026-08-06) — commit `da10f18`
+
+**El MVP de `T2.1` empieza a existir:** una corrida que se queda sin tiempo ya no la mata la
+plataforma. Corta sola, cierra, y deja dicho hasta dónde llegó.
+
+### Los checkpoints — dos, no tres
+
+- **Antes de cada ítem de la etapa 3.** El loop pasó de `forEach` a `for` para poder salir sin
+  excepción; los dos `return` del cuerpo son `continue`. La estimación del próximo ítem es
+  **lo que costó el anterior en esta misma corrida** — el primero arranca en 0 y entra si
+  queda algo sobre la reserva. **Ninguna constante de segundos en el código.**
+- **Antes de la resolución de la etapa 4**, que es atómica. El loop de pintado que sigue no
+  lleva checkpoint: cuesta ~6 s, menos que la reserva.
+- **El tercero no existe a propósito:** la barrida y el cierre corren siempre. Para eso está
+  la reserva.
+
+### Las tres claves de `CONFIG`
+
+Patrón de `umbralAnclajeReunion_()` (`Paso 2.9F`): valor en la hoja, constante de módulo sólo
+como default y nunca leída directo, helper como único lector.
+
+| clave | valor | qué clase de número es |
+|---|---|---|
+| `presupuesto_corrida_seg` | 350 | **no medido**: 360 duro − ~2 s del llamador de menú − colchón |
+| `reserva_cierre_seg` | 30 | cierre **medido** 0,8 s + barrida ~6 s + margen por varianza |
+| `costo_resolucion_etapa4_seg` | 240 | **banco del 06/08, no una corrida**: 238,9 s |
+
+`Cargar config inicial` devolvió `CONFIG — nuevas: 3, completadas: 0` y `0 actualizadas` en
+todas las demás hojas: **no pisó nada**. Entre el `clasp push` y el sembrado, el estado de
+configuración muestra las tres como *"falta en la planilla"* — **es ruido esperado, no un
+hallazgo**.
+
+### La decisión de `A.5` — usuario, 06/08
+
+**Los tokens no alcanzados quedan `«FALTA:token»`**, igual que cualquier otro faltante; la
+distinción vive en el motivo de `FALTANTES`. **El motivo: el `{{token}}` crudo queda reservado
+para señalar un bug.** Si algún día aparece un `{{token}}` en un deck, eso significa que algo
+falló y no que la corrida se quedó sin tiempo — y por eso la barrida no puede dejar ninguno.
+
+El código respeta esa frontera en los dos sentidos: si la barrida encuentra un token crudo **y
+no hubo corte**, el motivo que escribe es `⚠ quedó crudo en el deck sin que hubiera corte por
+tiempo — revisar`, en vez de disfrazarlo de corte.
+
+### La prueba, con `presupuesto_corrida_seg` en 60 desde la hoja y sin `clasp push`
+
+Corrida `jm-20260806-210540`, deck `1JtrEjzCruD7OBexqiTMeDKU5a6U9YQqsLJ9HT95YVzU`:
+
+| criterio | resultado |
+|---|---|
+| vuelve sola, sin que la mate la plataforma | ✅ **147 s** |
+| fila cerrada con fecha y conteos | ✅ sin `(corrida en curso …)` |
+| `FALTANTES` con el motivo del corte | ✅ **195 de 195** |
+| deck sin `{{token}}` crudos | ✅ **0**, con 221 cajas en `«FALTA:…»` |
+
+La barrida reusó **el mapa de la etapa 2**, no re-escaneó el deck. **Las 10 pruebas pasan.**
+
+### ⚠ El checkpoint de la etapa 4 no llega a ejecutarse con los números de hoy
+
+En la prueba, el corte cayó en la etapa 3 y la etapa 4 **nunca vio su checkpoint** — un corte
+es un corte, no se abre una etapa nueva. Y con el default de 350 va a pasar lo mismo, por
+aritmética sobre lo medido: etapas 1+2 ≈ 130–160 s, cada ítem ≈ 50 s, entran tres ítems
+(≈ 290 s) y el cuarto no. Para que la etapa 4 decida haría falta llegar con ≤ 80 s gastados, y
+sólo la etapa 1 cuesta más que eso.
+
+**No se sacó** —deja de ser cierto en cuanto `T2.2` baje el costo— pero queda dicho.
+
+La otra cara del mismo número, que es la ganancia real: **hoy la corrida muere a los 324 s sin
+dejar nada; con esto vuelve a ~300 s con 3 de 5 ítems pintados, la fila cerrada y la lista
+completa.**
+
+### ⚠ Un presupuesto por debajo de ~160 s no se puede honrar
+
+Las etapas 1 y 2 **no tienen checkpoint y no pueden tenerlo con este diseño**:
+`duplicarBloquesRepetibles_` es un bloque. En la prueba se ve solo — se pidieron 60 s y la
+corrida gastó 147 antes de poder mirar el reloj por primera vez.
+
+### Pendiente antes de cerrar el paso
+
+**Verificación humana desde la planilla**, que es lo que el prompt marca como condición de
+cierre y todavía no ocurrió.
