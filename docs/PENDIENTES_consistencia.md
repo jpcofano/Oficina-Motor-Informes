@@ -1955,6 +1955,36 @@ entradas `(base, solapa, campo_logico)` en 13 solapas — `digital` 78, `looker`
 filas con el mismo `campo_logico` en la misma solapa colapsarían a una. Las filas crudas de
 la hoja no se midieron.)
 
+### P2 · La suspensión acotada de `C-01` lleva fecha 14/08/2026 y se escribió antes de esa fecha
+
+La sección *"Suspensión acotada — 14/08/2026"* de `docs/REGLAS_NEGOCIO.md` está fechada el
+**14/08/2026**, y el addendum 1 que se le agregó abajo se escribió el **07/08/2026**. Una de
+las dos fechas está mal y **no sabemos cuál**: puede ser un tipeo en el encabezado o una
+sesión que fechó mal. Se anota el hecho y nada más — **no se corrige a ciegas**, porque la
+fecha de una autorización es lo que la hace verificable, y elegir la equivocada la vuelve
+menos verificable que dejarla dudosa a la vista.
+
+Aparece también en el `P1` de más arriba sobre la caja `{{m2_salud_camp}}`, cerrado
+"14/08/2026": las dos anotaciones vienen de la misma sesión y probablemente comparten la
+causa. Mirarlas juntas.
+
+### P2 · Dos láminas sin tokens que probablemente **no** son estáticas
+
+`D-23` agrega el valor `modo = estatica` para las láminas que no llevan datos nunca, y el
+inventario del 07/08/2026 encontró **13 láminas sin ningún token** entre las dos plantillas.
+Dos de esas trece no parecen carátulas, y clasificarlas como `estatica` **congelaría deuda
+donde hoy hay una lámina a cablear**:
+
+- **`SECCO_marcada` lámina 15** — layout `CUSTOM_4`, con rótulos de datos en una tabla
+  (*"Caudal semanal de M2 · Comunicación Directa | Envío de mails · Proyectos Entregados…"*) y
+  **cero tokens**. Tiene toda la forma de una lámina de datos sin cablear, no de una portada.
+- **`SECCO_marcada` lámina 26** — escondida, con `xx` de relleno donde irían los números
+  (*"xx xx xx xx… Principales temas que aportaron positividad y negatividad"*).
+
+**Se revisan antes de clasificarlas.** `estatica` significa *no lleva datos nunca*, **no**
+*hoy no tiene tokens*, y la diferencia sólo se puede resolver mirando qué se espera de cada
+lámina — no midiendo la plantilla. No se decidió cuál es cuál en la corrida que las encontró.
+
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 
 Su bloque "Antes de empezar" todavía reabre la decisión Looker-vs-SD y el alcance del

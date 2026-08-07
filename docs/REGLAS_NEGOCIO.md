@@ -119,6 +119,40 @@ parecer que `C-01` se aflojó, y no se aflojó.
 plantilla canónica de JM), **escondida y no borrada** (`skipped`), con backup previo. Es
 reversible en un clic y la evidencia queda a la vista.
 
+#### Addendum 1 — 07/08/2026: el motor puede escribir las notas del orador para sellar el ancla
+
+**Qué agrega, y sólo eso:** además de retirar una lámina, el motor queda autorizado a
+**escribir las notas del orador de la plantilla** para sellar el ancla de identidad de
+`D-23` — los campos `#lamina: L-NNN` y `#seccion: <seccion_id>`.
+
+**Por qué hace falta escribirlo.** La suspensión de arriba autoriza **retirar una lámina** y
+nada más; escribir las notas **no estaba cubierto** ni por ella ni por la excepción de
+migración explícita de `C-01`, que habla de armonización de tokens. Verificado contra este
+archivo antes de escribir este addendum, no supuesto.
+
+**El motor anexa, nunca reemplaza.** Ninguna llamada a `setText` sobre las notas del orador
+queda autorizada. La razón está medida el 07/08/2026: **dos láminas de `SECCO_marcada` ya
+tienen notas escritas por el equipo** —la 8, con 285 caracteres de antecedentes de una
+temática, y la 25, con 267 sobre conversación en X— y la 8 es además una de las láminas cuya
+sección es ambigua. Pisarlas destruiría trabajo humano que nadie tiene copiado.
+
+**Qué NO autoriza este addendum**, con todas las letras:
+
+- **esconder o mostrar láminas** desde el motor (`setSkipped`) — eso necesita su propia
+  autorización, y `D-23` la nombra como precondición de la Fase 4;
+- **insertar o borrar láminas**;
+- **mover o reescribir cajas**, ni en el cuerpo ni en las notas.
+
+La dirección general —que durante el desarrollo la plantilla se administre por el motor—
+queda escrita en `D-23`. **Acá la autorización crece por operación**, con su alcance ejercido
+anotado, que es como está escrita la suspensión de arriba y lo que la hace verificable.
+
+**Lo que no cambia:** backup previo obligatorio, aborto si el backup falla, ninguna caja se
+mueve ni se reescribe, y **`C-01` vuelve a regir entero en producción**.
+
+**Alcance ejercido hasta hoy:** ninguno. El sellador no está implementado — esta autorización
+es su precondición, no su registro.
+
 ## R-04 — El temario define el universo, no la fecha
 
 **Enunciado:** una campaña está activa todos los días de su tramo, pero el proceso

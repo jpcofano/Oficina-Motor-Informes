@@ -5781,3 +5781,26 @@ los 17 prefijos que hoy no declara nadie sería invertir en el mecanismo que la 
 `rrss_` ya demuestra que sale mal —vive en dos secciones distintas de dos informes—.
 
 `familia_tokens` queda congelado. **Sin código.**
+
+---
+
+## Parte B — la autorización de `C-01` para escribir las notas (2026-08-07) — commit de esta entrada
+
+`REGLAS_NEGOCIO.md` gana un **Addendum 1 a la suspensión acotada de `C-01`**, fechado
+07/08/2026: el motor queda autorizado a **escribir las notas del orador** de la plantilla para
+sellar el ancla de `D-23`. La `0.2` del prompt verificó contra el archivo que la suspensión
+vigente autoriza **retirar una lámina y nada más**, así que el addendum hacía falta y no es
+redundante.
+
+**Anexa, nunca `setText`** — y la razón está medida: `SECCO_marcada` ya tiene dos láminas con
+notas escritas por el equipo, una de ellas ambigua.
+
+**Lo que el addendum NO autoriza, dicho con todas las letras:** `setSkipped`, insertar o
+borrar láminas, y mover o reescribir cajas. La dirección general vive en `D-23`; acá la
+autorización **crece por operación**, que es lo que la hace verificable. Alcance ejercido:
+**ninguno** — el sellador no existe todavía.
+
+`PENDIENTES_consistencia.md` gana dos `P2`: la suspensión de `C-01` lleva fecha 14/08/2026 y
+el addendum se escribió el 07/08 —**no se corrige a ciegas**, no sabemos cuál de las dos está
+mal—, y las dos láminas de `secco` (15 y 26) que no tienen tokens pero probablemente **no**
+son estáticas. **Sin código.**
