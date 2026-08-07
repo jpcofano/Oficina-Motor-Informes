@@ -5892,3 +5892,19 @@ idéntico, seis con el conjunto de tokens idéntico**, todos del bloque `camp_*`
 `PENDIENTES_consistencia.md` gana un `P2` con la pregunta abierta —una fila con `informes`
 plural contra una fila por (`lamina_id`, `informe_id`)— y el precedente de
 `comunicaciones_post` citado. **Sin código.**
+
+---
+
+## Parte B — la autorización de `C-01` se acota a un solo campo (2026-08-07) — commit de esta entrada
+
+`Addendum 2` a la suspensión acotada de `C-01`. **Es un recorte, no una ampliación**, y así
+está escrito: el `Addendum 1` de esta mañana autorizaba sellar dos campos, y el `Addendum 1 a
+D-23` dejó sin función al segundo, así que escribir `#seccion:` en una plantilla **ya no está
+autorizado** — no porque se haya prohibido, sino porque el campo dejó de existir.
+
+**El texto del `Addendum 1` no se toca**: siguen igual su "qué NO autoriza", su "anexa, nunca
+`setText`" y su alcance ejercido, que **sigue siendo ninguno**.
+
+Y queda escrita la frontera con la limpieza del ancla: **no entra acá y no necesita
+autorización de `C-01`**, porque actúa sobre la copia, que es salida del motor. `C-01` protege
+la plantilla, y la plantilla no se limpia nunca. **Sin código.**

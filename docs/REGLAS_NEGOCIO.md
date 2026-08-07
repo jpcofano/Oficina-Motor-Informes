@@ -153,6 +153,25 @@ mueve ni se reescribe, y **`C-01` vuelve a regir entero en producción**.
 **Alcance ejercido hasta hoy:** ninguno. El sellador no está implementado — esta autorización
 es su precondición, no su registro.
 
+#### Addendum 2 — 07/08/2026: la autorización se acota a un solo campo
+
+**Es un recorte, no una ampliación.** El `Addendum 1` de arriba autoriza escribir las notas
+del orador para sellar **`#lamina: L-NNN` y `#seccion: <seccion_id>`**. El `Addendum 1 a D-23`
+del mismo día dejó **sin función al segundo campo** —la clasificación se declara en la hoja
+`LAMINAS`, no en el deck—, así que la autorización queda acotada a **`#lamina: L-NNN` y nada
+más**. Escribir `#seccion:` en una plantilla **no está autorizado**, porque ya no existe como
+campo del ancla.
+
+**No se toca el texto del `Addendum 1`.** Siguen valiendo, sin cambio, su "qué NO autoriza"
+—esconder o mostrar láminas, insertar o borrar láminas, mover o reescribir cajas—, su "el
+motor anexa una línea, nunca `setText`", y su alcance ejercido, que **sigue siendo ninguno**:
+el sellador no existe.
+
+**La frontera con la limpieza del ancla, para que quede escrita.** La función que borra el
+ancla de un informe generado **no entra acá y no necesita autorización de `C-01`**: actúa
+sobre la copia, que es salida del motor y que el motor ya escribe entera. `C-01` protege la
+**plantilla** — y la plantilla **no se limpia nunca** (`D-23`, addendum 1, punto 8).
+
 ## R-04 — El temario define el universo, no la fecha
 
 **Enunciado:** una campaña está activa todos los días de su tramo, pero el proceso
