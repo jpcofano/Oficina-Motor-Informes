@@ -5175,3 +5175,43 @@ casos: sin avisos devuelve el número pelado (`270`), y con las dos devuelve
 
 **Las 10 pruebas pasan.** Los dos decks de control, a la papelera; `FALTANTES` restaurado a sus
 270 filas. **Pendiente de verificación humana.**
+
+---
+
+## `N5` / `T2.9.4` — retirado `VALOR_STATUS_REALIZADA_` (2026-08-07) — commit de esta entrada
+
+**Premisa verificada primero, contra `MAPEO` vivo:**
+`rdv | RVD JM-CM - ES | status | I | valores_incluidos = Realizada`, con la nota que ya
+anticipaba esta tarea — *"lista blanca — ver `D-21`. El consumidor duplicado de `Union.gs` se
+retira en el paso del matcher"*.
+
+`encontrarFilaRdvDeReunion_` (`Union.gs`) filtraba **una segunda vez** por
+`status === 'Realizada'` sobre filas que `leerFuente` ya había filtrado por la lista blanca. No
+cambiaba ningún resultado, pero sostenía **una constante de módulo con un valor de negocio
+adentro** — deuda desde la línea uno (`CLAUDE.md` §2): cambiar qué status entra exigía
+`clasp push` en vez de editar una celda. **Ahora la celda de `MAPEO` es el único lugar donde se
+decide.**
+
+**Lo que NO se retiró, a propósito:** la precondición que exige `campoStatus.ok`. Si el mapeo de
+`status` desapareciera, la lista blanca dejaría de filtrar y el matcher empezaría a encontrar
+encuentros suspendidos **sin decirlo**. La guarda se queda; el filtro se va.
+
+El mensaje de "no se encontró" también cambió: ya no nombra el valor `"Realizada"` —que era
+parte de la constante— y dice de dónde viene el filtro.
+
+### Control obligatorio: los cinco anclajes, antes y después
+
+```
+Orden Público      |      | 3387-JULJDGGC | 1
+Retiro             | post | 3346-JULJDGAG | 1
+Retiro             | pre  | 3346-JULJDGAG | 1
+San Cristóbal      | post | 3354-JULJDGAG | 1
+San Cristóbal      | pre  | 3354-JULJDGAG | 1
+```
+
+**Idénticos**, comparación exacta del objeto entero. `sinLink` 0 → 0, `bajaConfianza` 0 → 0.
+**Las 10 pruebas pasan.**
+
+El comentario del seed en `Instalar.gs` se actualizó: decía *"pasa a filtrar dos veces por lo
+mismo"* y ahora dice que el matcher ya no filtra por su cuenta. **Pendiente de verificación
+humana.**

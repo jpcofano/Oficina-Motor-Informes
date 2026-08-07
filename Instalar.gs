@@ -831,9 +831,13 @@ var SEED_MAPEO_ = [
   // revisa después.
   //
   // Quién lee `rdv` por `leerFuente` y por lo tanto ve la lista: el matcher
-  // (`buscarEncuentroDelDia_`, `Union.gs`), que **ya filtraba por su cuenta** con
-  // `VALOR_STATUS_REALIZADA_` — pasa a filtrar dos veces por lo mismo, sin cambiar el
-  // resultado — y dos diagnósticos (`probarLecturaPeriodo`, `diagnosticarBaseColapso_`).
+  // (`encontrarFilaRdvDeReunion_`, `Union.gs`) y dos diagnósticos (`probarLecturaPeriodo`,
+  // `diagnosticarBaseColapso_`).
+  //
+  // `T2.9.4` (07/08) — **el matcher ya no filtra por su cuenta**: filtraba dos veces por lo
+  // mismo con `VALOR_STATUS_REALIZADA_` cableado, y esa constante se retiró. **Esta celda es
+  // ahora el único lugar donde se decide qué status entra**, que es lo que se buscaba: se
+  // cambia editando la hoja, no con `clasp push`.
   // Quién NO la ve, y es la asimetría a mirar en el paso del matcher:
   // `verificarPrecondicionAnclaje_` (`Union.gs`) lee la solapa con `getDataRange()` directo.
   { base_id: 'rdv', campo_logico: 'status', hoja: 'RVD JM-CM - ES', columna: 'I', valores_incluidos: 'Realizada', notas: 'lista blanca — ver D-21. El consumidor duplicado de Union.gs se retira en el paso del matcher' },

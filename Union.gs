@@ -216,7 +216,6 @@ function unirDigitalPorCuentaSinCache_(ventana) {
  * grupos con más de una fila tiene que dar cero. Si no, este paso no corre.
  */
 var SOLAPA_ANCLA_RDV_ = 'RVD JM-CM - ES';
-var VALOR_STATUS_REALIZADA_ = 'Realizada';
 var HOJA_COMUNAS_RDV_ = 'Comunas';
 
 // Umbral de confianza (docs/DISENO_match_temario.md §6.4: banda 0,60–0,85 es
@@ -533,22 +532,34 @@ function encontrarFilaRdvDeReunion_(reunion) {
     return { ok: false, motivo: 'Falta MAPEO de barrio/status para rdv/' + lectura.hoja };
   }
 
+  // `T2.9.4` (07/08) — **el filtro por status se retiró de acá.** Lo hace `leerFuente` por la
+  // lista blanca de `D-21`: `MAPEO.rdv/RVD JM-CM - ES/status.valores_incluidos = "Realizada"`,
+  // y su propia nota ya decía *"el consumidor duplicado de `Union.gs` se retira en el paso del
+  // matcher"*. Filtrar dos veces por lo mismo no daba un resultado distinto, pero **sostenía
+  // una constante de módulo con un valor de negocio adentro** (`VALOR_STATUS_REALIZADA_`), que
+  // es deuda desde la línea uno (`CLAUDE.md` §2): cambiar qué status entra exigía `clasp push`
+  // en vez de editar una celda.
+  //
+  // `campoStatus` se sigue exigiendo más arriba a propósito: si el mapeo de `status`
+  // desapareciera, la lista blanca dejaría de filtrar y este matcher empezaría a encontrar
+  // encuentros suspendidos **sin decirlo**. La precondición se queda; el filtro se va.
   var nombreBuscado = normalizar_(reunion.nombre);
   var encontrada = null;
   lectura.filas.forEach(function (fila) {
     if (encontrada) return;
     var barrio = valorPorColumna_(fila, 'rdv', lectura.hoja, campoBarrio.columna);
     var evento = campoEvento.ok ? valorPorColumna_(fila, 'rdv', lectura.hoja, campoEvento.columna) : '';
-    var status = valorPorColumna_(fila, 'rdv', lectura.hoja, campoStatus.columna);
-    var coincide = normalizar_(barrio).indexOf(nombreBuscado) !== -1 || normalizar_(evento).indexOf(nombreBuscado) !== -1;
-    if (coincide && String(status || '').trim() === VALOR_STATUS_REALIZADA_) encontrada = fila;
+    if (normalizar_(barrio).indexOf(nombreBuscado) !== -1 || normalizar_(evento).indexOf(nombreBuscado) !== -1) {
+      encontrada = fila;
+    }
   });
 
   if (!encontrada) {
     return {
       ok: false,
-      motivo: 'No se encontró un encuentro "' + VALOR_STATUS_REALIZADA_ + '" para "' + reunion.nombre + '" (' +
-        Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy') + ') en rdv/' + lectura.hoja
+      motivo: 'No se encontró un encuentro para "' + reunion.nombre + '" (' +
+        Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy') + ') en rdv/' + lectura.hoja +
+        ' — las filas que llegan acá ya vienen filtradas por MAPEO.status.valores_incluidos (D-21)'
     };
   }
   return { ok: true, hoja: lectura.hoja, fila: encontrada, filasEnVentana: lectura.filas.length };
