@@ -257,6 +257,21 @@ el gabinete entero y nadie había declarado la señal de corte (`R-15` addendum 
 - **Se pregunta antes de cablear, no después.** Un token nuevo sobre una fuente cuyo universo
   no está declarado nace mal, y en lote el error se multiplica en vez de corregirse.
 
+**Y el corolario operativo: antes de escribir un filtro, verificar que su campo esté en
+`MAPEO`.** `aplicarFiltroDeMarcador_` resuelve el campo con `buscarMapeo` contra la base y
+solapa **del marcador**, y un filtro **propio** cuyo campo no está mapeado **no filtra: falla**
+con `«FALTA:…@filtro_campo_no_mapeado»`. Escribir seis celdas sin ese chequeo previo es dejar
+seis marcadores rotos de una sola pasada. Un `buscarMapeo(base, solapa, campo)` antes de la
+primera celda cuesta una llamada.
+
+- **La asimetría es a propósito y conviene conocerla:** un filtro **heredado** de la sección
+  cuyo campo no existe en esa base **se ignora en silencio y no es error** —`SECCIONES.filtro`
+  se escribe en el vocabulario de la fuente de iteración—, pero uno **propio** falla. Así que
+  el mismo texto de filtro se comporta distinto según dónde se lo escriba.
+- **Y al escribir sobre una hoja de registro, no pisar lo que ya está.** Si la celda trae otro
+  valor, se reporta y no se toca: pisarlo borra una decisión que alguien tomó y que no está
+  en ningún otro lado.
+
 **Apps Script es una plataforma con límites conocidos, y ese conocimiento se usa.** En todo
 lo que toca ejecución —límite de tiempo por invocación, cuotas, bloqueos, timeouts propios
 de cada servicio, concurrencia sobre la misma planilla, costo de `flush()`, `LockService`—
