@@ -105,8 +105,11 @@ Digital**, fijada en **§4.1** de este mismo documento. No se repite acá — se
 > que `R-17` fija.
 
 Preguntas que siguen abiertas:
-- **[?]** Si una campaña cruza dos semanas, ¿se muestra acumulada o solo el tramo de
-  la semana? Esto **cambia el número**, no solo la presentación.
+- **[OK] Si una campaña cruza dos semanas, se muestra ACUMULADA** — decisión del usuario,
+  07/08/2026. El motivo es la base: **así están cargados los datos**, y recortar el tramo de la
+  semana obligaría a un cálculo que la fuente no soporta. **Cambia el número, no sólo la
+  presentación**, y por eso queda dicho: el valor publicado es el acumulado de toda la campaña,
+  no lo que ocurrió dentro de la ventana del informe.
 
 ### 1.2 Período
 
@@ -122,8 +125,9 @@ como ejemplo — confirmar si es real.)
 
 ### 1.4 Carga manual
 
-- **[MANUAL]** Los tres barrios destacados (`ecv_barrio1-3`) — ¿o salen por ranking
-  automático de asistentes? **[?]**
+- ~~**[MANUAL]** Los tres barrios destacados (`ecv_barrio1-3`)~~ — **[OK] Ya no son manuales
+  (decisión del usuario, 07/08/2026).** Salen de **la misma lista** que `ecv_barrios`, con la
+  cadena de prioridad de `R-17`. **La respuesta a la `[?]` no era el ranking: era el filtro.**
 - **[MANUAL]** Conclusiones y lecturas del período.
 
 > **⚠ Esa `[?]` resuelve dos huecos a la vez, y por eso conviene preguntarla.** (05–06/08)
@@ -136,7 +140,14 @@ como ejemplo — confirmar si es real.)
 >   que sobrevive es **`ecv_barrios`**, que **no está en esta lista** y no es una decisión
 >   editorial. Está anotado aparte, en `PENDIENTES_consistencia.md`, como `P2`.
 >
-> **No inventar la respuesta: es pregunta para el equipo.**
+> **✅ RESPONDIDA — 07/08/2026, y por un camino que la pregunta no contemplaba.** No es el
+> ranking automático de asistentes **ni** carga manual: `ecv_barrio1-3` **salen de la misma
+> lista que `ecv_barrios`**, con la cadena de prioridad de `R-17`. La pregunta ofrecía dos
+> opciones y la respuesta era una tercera.
+>
+> **Consecuencia anotada y no resuelta: son tres ranuras para cuatro barrios medidos** —la
+> ventana 24–30/07 con el filtro de figura puesto da Belgrano, Caballito, Retiro y Villa
+> Urquiza—. **Es plantilla, no motor**, y no se toca acá.
 
 > **Media respuesta, 07/08/2026 — decisión del usuario: `ecv_barrios` es una LISTA de los
 > barrios alcanzados en la semana (`DISTINCT`), no un conteo.** Eso resuelve el hueco técnico
@@ -631,9 +642,13 @@ se responde ahora**. **No se cablean, no se borran, no se tocan**, y **dejan de 
 en cada corrida**: una pregunta diferida que se repite es ruido. Está anotada en
 `PENDIENTES_consistencia.md` con sus tres ubicaciones.
 
-**[?] `camp_bench_*` (sin `_remitente`) sigue abierto**, y **no entra en ese cajón**: la
-pregunta ahí es otra —¿fijos, o del período anterior?— y nunca se respondió. **No se
-cablean** hasta que se decida.
+**⛔ `camp_bench_*` (sin `_remitente`) queda FUERA DE ALCANCE — 07/08/2026, decisión del
+usuario.** La pregunta que tenía —*¿fijos, o del período anterior?*— **no se responde, y no
+porque falte información: se decidió no resolverla ahora**, y puede que esos tokens se borren.
+
+**No es "resuelta" y no es "abierta": es fuera de alcance con fecha.** La diferencia importa —
+una pregunta abierta vuelve a levantarse en cada revisión, y ésta **no se vuelve a levantar en
+ningún prompt**. Si algún día se decide cablearlos, se reabre explícitamente.
 
 > **El saldo de la familia `camp_`**, sobre los ~53 tokens sin cablear: **14 resueltos por
 > decisión** (11 diferidos + 3 manuales), **2 abiertos** (`camp_bench_*`), y **el resto con
