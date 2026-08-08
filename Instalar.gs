@@ -87,7 +87,7 @@ var HOJAS_CONFIG_ = {
   // en `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` — bloqueado por
   // la armonización de plantillas, se carga a mano hasta que eso se resuelva.
   MARCADORES: {
-    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'solapa', 'campo_logico', 'periodo_ref', 'operacion', 'valor_fijo', 'formato', 'filtro', 'notas']
+    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'solapa', 'campo_logico', 'periodo_ref', 'operacion', 'valor_fijo', 'formato', 'filtro', 'catalogo', 'separador', 'notas']
   },
   // solapa (Paso 2.3.2): entra en la clave junto con base_id + campo_logico.
   // Antes de esto, dos solapas de la misma base no podían mapear el mismo
@@ -204,7 +204,18 @@ var COLUMNAS_DELTA_ = {
     // en 9. **No importa —todo se lee por nombre, nunca por posición— y se deja como quedó**
     // en vez de moverla: mover una columna de una hoja curada por una preferencia estética
     // es exactamente el riesgo que `COLUMNAS_DELTA_` existe para evitar.
-    { nombre: 'filtro', indice: 10 }
+    { nombre: 'filtro', indice: 10 },
+    // `LISTA` (08/08) — las dos van **al final del array**, por lo mismo que explica la nota
+    // de `filtro` de arriba: cada entrada asume el esquema del momento en que corre, y una
+    // entrada nueva adelante correría los índices de las que ya están.
+    //
+    // **Por qué dos columnas y no un valor adentro de la operación:** `R-18` vale para
+    // cualquier lista `DISTINCT`, no sólo barrios, y la segunda categoría va a tener otro
+    // catálogo y puede tener otro separador. Una operación con `rdv/Comunas` o con `', '`
+    // adentro sirve para un token y para ninguno más — es exactamente lo que `D-01` mide.
+    // `catalogo` se declara como `base/solapa`; `separador` vacío = `', '`.
+    { nombre: 'catalogo', indice: 12 },
+    { nombre: 'separador', indice: 13 }
   ],
   CAMPANAS: [
     { nombre: 'desde', indice: 6 },

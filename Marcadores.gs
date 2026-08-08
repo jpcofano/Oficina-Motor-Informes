@@ -284,13 +284,106 @@ function opTEXTO(ctx) {
  * el global convierte una celda de `MARCADORES` en la capacidad de invocar cualquier función
  * del proyecto — incluidas las que escriben. Un mapa es la lista blanca.
  */
+/**
+ * `LISTA` — valores distintos, publicados con el canon de un catálogo. Implementa `R-18` y su
+ * addendum 1, y **nada más**: lo que no está en la regla no está acá.
+ *
+ * **Es genérica y no sabe de barrios.** El catálogo llega por `ctx.catalogo`
+ * (`{ lista, resolver, origen }`) y el separador por `ctx.separador`: los dos los arma el
+ * despachador leyendo `MARCADORES`. Una operación con `'rdv'` o con `', '` adentro sirve para
+ * un token y para ninguno más, que es justo lo que `D-01` mide.
+ *
+ * **El `resolver` es opcional y existe por las variantes ortográficas.** Sin él, un valor
+ * matchea si su forma normalizada coincide con la de alguna entrada del catálogo. Con él
+ * —`parsearBarrio_` para barrios— además se cubren las variantes que no colapsan por
+ * `normalizar_`, que **no toca puntuación ni espacios internos** (`Villa Gral. Mitre`).
+ *
+ * **Los cuatro estados de `R-18` addendum 1, y por qué se distinguen:**
+ *  - cero filas → valor vacío, y el despachador lo baja a `sin_datos`;
+ *  - **celda vacía → NO es un no-match**: no entra a la lista, no cuenta como rechazo, y se
+ *    cuenta en la traza. Contarla como rechazo mandaría el token a revisión por un motivo
+ *    falso y escondería los rechazos reales entre ruido;
+ *  - valor que no matchea → **queda fuera de la lista y viaja en `rechazados`**, para que el
+ *    despachador lo lleve a `FALTANTES`. **Nunca llega al deck.**
+ *
+ * ⚠ **Catálogo vacío es `error`, no "nada matcheó".** `catalogoBarriosDesdeBase_` devuelve
+ * lista vacía **con motivo** cuando la hoja no abre, y sin esta guarda ese fallo sería
+ * indistinguible de "todos los valores están mal": los cuatro barrios buenos irían a rechazo
+ * y el informe diría que el dato está sucio cuando el problema es de acceso.
+ */
+function opLISTA(ctx) {
+  var catalogo = ctx.catalogo;
+  if (!catalogo || !catalogo.lista || !catalogo.lista.length) {
+    throw new Error('LISTA necesita un catálogo con al menos una entrada' +
+      (catalogo && catalogo.motivo ? ' — ' + catalogo.motivo : '') +
+      '. Se declara en `MARCADORES.catalogo` con la forma `base/solapa`.');
+  }
+
+  var separador = (ctx.separador === undefined || ctx.separador === null || ctx.separador === '')
+    ? ', ' : String(ctx.separador);
+
+  // Índice del catálogo por clave normalizada: es el match barato y el que cubre el caso común.
+  var canonPorClave = {};
+  catalogo.lista.forEach(function (c) {
+    var k = normalizar_(c);
+    if (k && !(k in canonPorClave)) canonPorClave[k] = c;
+  });
+
+  var valores = valoresDeCtx_(ctx);
+  var vacias = 0;
+  var rechazados = [];
+  var publicadosPorClave = {};
+  var repetidos = 0;
+
+  valores.forEach(function (v) {
+    var crudo = (v === undefined || v === null) ? '' : String(v).trim();
+    if (crudo === '') { vacias++; return; }
+
+    var clave = normalizar_(crudo);
+    var canon = canonPorClave[clave];
+    if (!canon && typeof catalogo.resolver === 'function') {
+      canon = catalogo.resolver(crudo, catalogo.lista) || '';
+    }
+    if (!canon) { rechazados.push(crudo); return; }
+
+    var claveCanon = normalizar_(canon);
+    if (claveCanon in publicadosPorClave) { repetidos++; return; }
+    publicadosPorClave[claveCanon] = canon;
+  });
+
+  // Alfabético sobre la forma publicada, con comparación de castellano: es lo que hace la
+  // lista reproducible entre corridas. El orden de aparición depende de en qué fila quedó
+  // cada dato y cambia sin que cambie el dato.
+  var publicados = Object.keys(publicadosPorClave).map(function (k) { return publicadosPorClave[k]; });
+  publicados.sort(function (a, b) { return a.localeCompare(b, 'es'); });
+
+  var traza = 'LISTA de "' + ctx.campo_logico + '" sobre ' + valores.length + ' fila(s) de ' +
+    ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') +
+    ' · catálogo ' + (catalogo.origen || '(sin origen)') + ' con ' + catalogo.lista.length + ' entrada(s)' +
+    ' · ' + publicados.length + ' publicado(s)' +
+    (repetidos ? ' · ' + repetidos + ' repetido(s) colapsado(s)' : '') +
+    (vacias ? ' · ' + vacias + ' celda(s) vacía(s), no son rechazo' : '') +
+    (rechazados.length
+      ? ' · ⚠ ' + rechazados.length + ' fuera del catálogo, NO publicado(s): ' + rechazados.join(' | ')
+      : '') +
+    trazaDeVentana_(ctx);
+
+  return {
+    valor: publicados.join(separador),
+    traza: traza,
+    filas: valores.length,
+    rechazados: rechazados
+  };
+}
+
 var OPERACIONES_ = {
   SUMA: opSUMA,
   CONTEO: opCONTEO,
   ULTIMO: opULTIMO,
   RATIO: opRATIO,
   PCT: opPCT,
-  TEXTO: opTEXTO
+  TEXTO: opTEXTO,
+  LISTA: opLISTA
 };
 
 /**
@@ -349,7 +442,11 @@ function despacharOperacion_(nombreOperacion, ctx) {
     ok: true,
     valor: resultado.valor,
     traza: resultado.traza,
-    filas: resultado.filas
+    filas: resultado.filas,
+    // `LISTA` es la única que lo trae hoy. Viaja por acá y no por la traza porque el
+    // despachador necesita **la lista**, no el texto: con ella emite una fila de `FALTANTES`
+    // por valor rechazado aunque el token haya publicado bien el resto.
+    rechazados: resultado.rechazados || []
   };
 }
 

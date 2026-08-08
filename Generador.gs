@@ -62,6 +62,68 @@ function solapasFuenteDeBase_(baseId) {
  * deliberadamente distinto de un default silencioso, que es el modo de falla que el
  * `Paso-2.3.2` sacó de `buscarMapeo`.
  */
+/**
+ * El catálogo canónico de una fila con `operacion = LISTA` (`R-18` punto 2).
+ *
+ * `MARCADORES.catalogo` se declara como **`base/solapa`** — `rdv/Comunas`—. Ni la base ni la
+ * solapa pueden vivir adentro de la operación: una operación con `'rdv'` adentro sirve para un
+ * token y para ninguno más, y eso es lo que `D-01` mide.
+ *
+ * **Por qué no se declara en `MAPEO` como cualquier fuente:** `Comunas` está registrada en
+ * `SOLAPAS` con `uso = 'referencia'` y `buscarMapeo` exige `uso = 'fuente'` — medido el
+ * 07/08: devuelve `«FALTA:barrio@solapa_no_fuente(rdv/Comunas)»`. Y está bien que así sea: un
+ * catálogo **no es una fuente de filas del informe**, es la lista contra la que se valida. Por
+ * eso el camino es `catalogoBarriosDesdeBase_`, que abre la hoja por su cuenta.
+ *
+ * **El `resolver` sale del catálogo, no del token.** Hoy sólo hay uno —`parsearBarrio_`, que
+ * cubre las 11 variantes ortográficas de `Parseo.gs`— y se asocia a la solapa que lo necesita.
+ * Un catálogo sin `resolver` matchea sólo por forma normalizada, que es el caso común.
+ */
+function resolverCatalogoDeMarcador_(fila) {
+  var decl = String(fila.catalogo || '').trim();
+  if (!decl) {
+    return {
+      ok: false,
+      motivo: '«FALTA:' + fila.marcador + '@sin_catalogo» — `operacion = LISTA` necesita ' +
+        '`MARCADORES.catalogo` con la forma `base/solapa` (`R-18` punto 2)'
+    };
+  }
+
+  var partes = decl.split('/');
+  if (partes.length !== 2 || !partes[0].trim() || !partes[1].trim()) {
+    return {
+      ok: false,
+      motivo: '«FALTA:' + fila.marcador + '@catalogo_mal_escrito» — `' + decl +
+        '` no tiene la forma `base/solapa`'
+    };
+  }
+
+  var baseId = partes[0].trim();
+  var solapa = partes[1].trim();
+  var leido = catalogoBarriosDesdeBase_(baseId, solapa);
+
+  // Lista vacía **con motivo** es el modo de falla documentado de esa función cuando la hoja
+  // no abre. Se devuelve como error y no como catálogo vacío: si pasara vacío, `LISTA`
+  // rechazaría todos los valores buenos y el informe diría que el dato está sucio cuando el
+  // problema es de acceso.
+  if (!leido || !leido.barrios || !leido.barrios.length) {
+    return {
+      ok: false,
+      motivo: '«FALTA:' + fila.marcador + '@catalogo_vacio» — ' + baseId + '/' + solapa +
+        ' no devolvió ninguna entrada' + (leido && leido.motivo ? ': ' + leido.motivo : '')
+    };
+  }
+
+  return {
+    ok: true,
+    catalogo: {
+      lista: leido.barrios,
+      resolver: parsearBarrio_,
+      origen: baseId + '/' + solapa
+    }
+  };
+}
+
 function resolverSolapaDeMarcador_(fila) {
   var declarada = String(fila.solapa || '').trim();
   if (declarada) return { ok: true, solapa: declarada, inferida: false };
@@ -644,12 +706,26 @@ function resolverMarcadores(informeId, opciones) {
       ctx.numeradorNombre = partido.numeradorNombre;
       ctx.denominadorNombre = partido.denominadorNombre;
     }
+    // 5 bis · El catálogo de `LISTA`. Se resuelve **acá y no adentro de la operación**: leer
+    //         una hoja es acceso a datos, y `Marcadores.gs` sólo hace la cuenta. La
+    //         operación recibe la lista ya traída.
+    if (String(fila.operacion || '').trim() === 'LISTA') {
+      var cat = resolverCatalogoDeMarcador_(fila);
+      if (!cat.ok) {
+        base.estado = 'error';
+        base.traza = cat.motivo + ' · solapa "' + solapa.solapa + '" · ' + trazaVentana;
+        return base;
+      }
+      ctx.catalogo = cat.catalogo;
+      ctx.separador = fila.separador;
+    }
     var salida = despacharOperacion_(fila.operacion, ctx);
     if (!salida.ok) {
       base.estado = 'error';
       base.traza = salida.motivo + ' · solapa "' + solapa.solapa + '" · ' + trazaVentana;
       return base;
     }
+    base.rechazados = salida.rechazados || [];
 
     // 6 · El formato. No cambia el valor: el crudo viaja igual, es lo que se audita.
     base.solapa = solapa.solapa;
@@ -1761,6 +1837,22 @@ function generarInformeConCache_(informeId, periodoId) {
       presentacion.replaceAllText('{{' + token + '}}', String(resultado.valor_formateado), true);
       reemplazados++;
       conValor.push(token);
+      // `R-18` punto 3 — un valor que el catálogo rechazó **no llega al deck**, pero tampoco
+      // puede desaparecer: va a `FALTANTES` con su fila **aunque el token haya publicado bien
+      // el resto**. Sin esto, una lista que publica cuatro de cinco se ve idéntica a una que
+      // publica los cinco, y el barrio que falta no lo reclama nadie.
+      if (resultado.rechazados && resultado.rechazados.length) {
+        faltantes.push({
+          corrida_id: corridaId,
+          informe_id: informeId,
+          token: token,
+          base_id: resultado.base_id || '',
+          solapa: resultado.solapa || '',
+          campo_logico: '',
+          motivo: 'fuera del catálogo, NO publicado(s): ' + resultado.rechazados.join(' | ') +
+            ' — el token publicó los que sí matchean'
+        });
+      }
       return;
     }
 
