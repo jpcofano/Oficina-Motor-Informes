@@ -145,6 +145,36 @@ como ejemplo — confirmar si es real.)
 > mano. Las cuatro decisiones que le quedan a `DISTINCT` están en el `P2` de
 > `PENDIENTES_consistencia.md`, y **las cuatro son editoriales**.
 
+> **Cerrado el 07/08/2026 — decisión del usuario.** Las decisiones que le faltaban a
+> `ecv_barrios` están todas tomadas. **Lo técnico vive en `R-18`** (`REGLAS_NEGOCIO.md`): de
+> dónde sale la forma publicada, cómo se deduplica, qué pasa con lo que no matchea, en qué
+> orden y qué devuelve con cero filas. **Acá quedan sólo las dos editoriales**, abajo.
+>
+> **Una caja por barrio.** Cada barrio va en su propia caja, no en una lista dentro de una.
+>
+> - **El separador queda escrito y hoy no se usa.** Es la coma (`", "`), y rige **sólo si
+>   alguna vez se vuelve a la lista en una sola caja**. Las dos formas no conviven. Se deja
+>   escrito en vez de borrarlo: una decisión tomada no se descarta porque el diseño la esquive.
+> - **⚠ Choca con `ecv_barrio1-3`.** Esta misma sección los declara `[MANUAL]`, y son **tres
+>   ranuras para cuatro barrios** —medido el 07/08 sobre la ventana 24–30/07 con el filtro de
+>   figura puesto—. Si las cajas de barrio pasan a salir del `DISTINCT`, esos tres **dejan de
+>   ser carga manual**, y eso responde la `[?]` de arriba **por un camino distinto del que esa
+>   pregunta planteaba**. **No se da por respondida sin el usuario.**
+>
+> **⚠ Y la implementación no es cableado: es lámina nueva.** Medido: los cuatro tokens son
+> **celdas de una misma tabla** —un solo `objectId`, filas 1 a 4 de la primera columna—, y
+> `D-22` está medido: **el motor lee tablas y no sabe agregarles filas**. Tampoco hay mecanismo
+> de desborde: `items_por_lamina` existe como columna de `SECCIONES` y en el seed, y **ningún
+> consumidor la lee**. **La decisión se escribe igual; construirla es otro prompt, y la
+> plantilla no se tocó.**
+>
+> **No se trunca, y el número del equipo cierra con el motor.** Salen todos los barrios que
+> sobrevivan al filtro. El equipo dijo **entre 3 y 6, promedio 4**; el motor midió **4** con el
+> filtro `figura=Jorge Macri` puesto — Belgrano, Caballito, Retiro, Villa Urquiza. **La
+> discrepancia anterior de once tenía causa, era el universo, y quedó corregida el 07/08**
+> (`R-15` addendum 1, §1.4 ter). **Un número del equipo que cierra con el motor vale como
+> control, no como anécdota.**
+
 ### 1.4 bis · De dónde salen inscriptos y asistentes — **decisión del usuario, 07/08/2026**
 
 **Los inscriptos y los asistentes de las reuniones salen de `rdv`.** Es la fuente de los cinco
