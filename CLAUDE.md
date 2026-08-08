@@ -268,6 +268,12 @@ el gabinete entero y nadie había declarado la señal de corte (`R-15` addendum 
 - **Se pregunta antes de cablear, no después.** Un token nuevo sobre una fuente cuyo universo
   no está declarado nace mal, y en lote el error se multiplica en vez de corregirse.
 
+**Y una trampa de lectura del instrumento: `FALTANTES` lista por ítem, no por token.** Un token
+de una sección repetible aparece **una vez por ítem emitido** y con el sufijo `@<ítem>`, así que
+**contar tokens ahí mezcla láminas** — los `@San Cristóbal (pre)` son de la lámina 6, no de la 5.
+De ahí salió un conteo de "nueve" que eran diez. Para saber qué tokens tiene **una lámina**, se
+lee la lámina; `FALTANTES` responde otra pregunta.
+
 **Y el corolario operativo: antes de escribir un filtro, verificar que su campo esté en
 `MAPEO`.** `aplicarFiltroDeMarcador_` resuelve el campo con `buscarMapeo` contra la base y
 solapa **del marcador**, y un filtro **propio** cuyo campo no está mapeado **no filtra: falla**

@@ -2128,6 +2128,51 @@ número salió a la calle.
 **Corregido por:** `R-15` addendum 1 (la señal) + `CONFIG_INFORMES.md` §1.4 ter (el universo y
 el mecanismo), los dos del 07/08/2026.
 
+### P1 · Falta una operación que devuelva el elemento N de una lista — `ecv_barrio1-3` la necesitan
+
+`ecv_barrio1`, `ecv_barrio2` y `ecv_barrio3` **no se pudieron cablear** con el lote del 08/08, y
+por **dos razones independientes, las dos medidas**:
+
+1. **`opLISTA` no tiene parámetro de índice.** Devuelve la lista entera unida por el separador;
+   no sabe decir *"el elemento 1"*.
+2. **No puede haber `MAPEO` para ellos** — medido: `falta MAPEO: rdv/RVD JM-CM - ES/barrio1` en
+   los tres. Y no es que falte cargarlo: **no son columnas de la base**, son **posiciones dentro
+   de un resultado**. Declararlos en `MAPEO` sería mentir sobre qué son.
+
+**La decisión editorial del `_18` es correcta y hoy no es ejecutable, y son dos cosas
+distintas.** Que `ecv_barrio1-3` salgan de la misma lista que `ecv_barrios` está bien decidido —
+lo que falta es el mecanismo. **No se inventó una operación para completar el lote**: el lote
+quedó en siete y estos tres esperan.
+
+**Lo que haría falta**, dicho sin decidirlo: una operación que tome una lista y devuelva su
+elemento N, o un parámetro de índice en la que ya existe. Quien lo tome tiene que resolver qué
+pasa cuando la lista tiene **menos elementos que la posición pedida** — hoy son **tres ranuras
+para cuatro barrios**, así que el caso contrario también existe.
+
+### P1 · `ecv_insc_dif` publica `«FALTA»` donde una decisión escrita dice que debe publicar cero
+
+**Las dos puntas, y las dos son del 07-08/08/2026:**
+
+| | qué dice |
+|---|---|
+| **la decisión** (`13.1`, 07/08) | *"el `0` de `ecv_insc_dif_pct` es un dato, no un `sin_datos`… **cuando se cablee `ecv_insc_dif`, tiene que publicar cero, no un hueco**"* |
+| **lo medido** (08/08, al cablearlo) | `SUMA` devuelve **`sin_datos`**, y la lámina publica `Difusión: «FALTA:ecv_insc_dif»(0%)` |
+
+**No es un error del cableado.** `SUMA` distingue tres casos a propósito: cero filas → sin dato;
+filas con la celda vacía → sin dato; **filas con un `0` escrito → cero, que sí es un dato**. Las
+cuatro filas de JM tienen la celda **vacía**, no un cero, así que `SUMA` hace exactamente lo que
+está escrito que haga. El `_pct` da `0` porque tiene denominador.
+
+**No se arregló en la corrida que lo encontró, y el motivo importa:** tocar `SUMA` **mueve
+marcadores en todo el deck**, no sólo acá.
+
+**El criterio que lo resolvería, como candidato y no como decisión:** *cero filas tras el filtro*
+**no es lo mismo que** *filas presentes con la celda vacía*. La primera no tiene nada que
+agregar; la segunda tiene cuatro filas diciendo que ese canal no aportó. **Es exactamente la
+distinción que `R-18` addendum 1 ya escribió para las listas**, sin llevar a `SUMA`. **Quien lo
+implemente tiene que medir primero cuántos marcadores del deck cambiarían de estado** — si son
+muchos, el arreglo es más caro que el síntoma.
+
 ### P1 · Las dos solapas `Buscador por periodo` son paneles, y `R-02` ya las veta
 
 **Medido el 08/08/2026 sobre las hojas vivas.** `digital/Buscador por periodo digital` (1002

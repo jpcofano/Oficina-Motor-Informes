@@ -6301,3 +6301,51 @@ aviso de costo: **no reparten consumo entre cuentas**.
 
 `C.1` no hizo falta: la fila de §7 para la configuración de la herramienta **ya había entrado**
 con el `_2` de hoy, y cubre `.claude/` entero. **Sin código del motor.**
+
+---
+
+## Los siete `ecv_*` de la lámina 5, cableados (2026-08-08) — commit de esta entrada
+
+El `_3` con los ajustes del `3.1`. **La lámina 5 dejó de publicar porcentajes sin sus
+numeradores.** Corrida `jm-20260808-151951`: **75 tokens reemplazados** (eran 39) y `FALTANTES`
+**228** (eran 264).
+
+```
+Mail: 1169(50.7%)  Digital: 823(35.7%)  Call Center: 272(11.8%)  IVR: 43(1.9%)
+INSCRIPTOS: 2307   ASISTENTES: 488   ENCUENTROS: 4
+Barrios impactados: Belgrano, Caballito, Retiro, Villa Urquiza
+```
+
+**Los siete valores coinciden con los medidos ANTES de cablear**, que era el punto de `0.5`: un
+valor calculado después de cablear no verifica nada. **Los cinco `_pct` no se movieron** y
+`ecv_encuentros` y `ecv_barrios` tampoco.
+
+**✅ `C.2` cierra exacto: `1169 + 272 + 43 + 823 + 0 = 2307`, contra `ecv_inscriptos = 2307`.
+Diferencia cero.** Es la prueba que ningún token pasa solo, y `ecv_insc_dif` se trató como cero
+**diciéndolo**, no escondiéndolo.
+
+**Las siete filas nacieron con `filtro = figura=Jorge Macri`**, que es la regla permanente que
+reemplazó al bloqueo del `cableador`. Y **el campo del filtro se verificó en `MAPEO` antes de
+escribir la primera celda** — sin eso, siete filas rotas de una pasada.
+
+**Dos cosas quedaron afuera del lote y anotadas:**
+
+**`ecv_barrio1-3` no se cablearon**, por dos razones independientes y medidas: `opLISTA` **no
+tiene parámetro de índice**, y **no puede haber `MAPEO` para ellos** porque no son columnas sino
+**posiciones dentro de un resultado**. La decisión del `_18` de que salen de la misma lista **es
+correcta y hoy no es ejecutable** — son dos cosas distintas. **No se inventó una operación para
+llegar a diez.**
+
+**`ecv_insc_dif` publica `«FALTA»` donde el `13.1` decidió que debe publicar cero.** Las cuatro
+celdas están **vacías**, no en cero, así que `SUMA` hace lo que está escrito que haga. **Se
+cableó igual y la contradicción quedó escrita con las dos puntas**, más el criterio candidato que
+la resolvería. No se tocó `SUMA`: eso mueve marcadores en todo el deck.
+
+> **Y una corrección de conteo, con su causa, porque la causa vuelve:** el lote no era de nueve
+> sino de **diez** —siete cableables más los tres barrios—. El nueve salió de contar tokens en
+> `FALTANTES`, que **lista por ítem y no por token**: los `@San Cristóbal (pre)` son de la lámina
+> 6. **Trampa de lectura del instrumento, no error de suma**, y ya está en `CLAUDE.md` §4.
+
+**El `verificador` no corrió**: los archivos están escritos y commiteados, pero los agentes se
+cargan al arranque y la sesión no se reinició. **No bloqueó nada** — su reporte no habilita la
+ejecución.
