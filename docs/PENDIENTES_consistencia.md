@@ -1487,6 +1487,56 @@ pendiente: quedaría "resuelto" por una decisión que nunca lo abarcó.
 > **Quedan cuatro decisiones editoriales y ninguna técnica.** `DISTINCT` no se implementó: sin
 > la 2 y la 4 lo que devuelva es una apuesta.
 
+> **✅ CERRADO — 07/08/2026. Las cinco decisiones tienen dueño y `DISTINCT` puede escribirse.**
+> Acá sólo los punteros; el texto vive en su dueño y no se repite.
+>
+> | decisión | dónde se lee |
+> |---|---|
+> | 1 · qué devuelve con cero filas | **`R-18`** punto 6 |
+> | 2 · con qué separa | **`CONFIG_INFORMES.md` §1.4** — y hoy **no se usa**: una caja por barrio |
+> | 3 · en qué orden | **`R-18`** punto 5 — alfabético, por reproducibilidad |
+> | 4 · cómo deduplica | **`R-18`** punto 1, con el límite de `normalizar_` escrito |
+> | 5 · qué pasa si no entra en la caja | **`CONFIG_INFORMES.md` §1.4** — no se trunca; es problema de plantilla |
+>
+> **Y una sexta que no estaba en la lista:** de dónde sale **la forma publicada**. `R-18` punto
+> 2 la fija en el **catálogo canónico** —la solapa `Comunas` de `rdv`, vía `parsearBarrio_`—,
+> no en el texto de la celda. **Eso supersede a la decisión del mismo día** que decía *"se
+> publica el valor tal como está escrito en la celda"*: se tomó sin saber que el catálogo
+> existía. Y `R-18` punto 3 agrega qué pasa con lo que no matchea — **`REVISAR` y faltantes,
+> nunca crudo y nunca en silencio**.
+>
+> **⚠ La corrección que más vale de este pendiente: la frase sobre `R-10` era falsa.** El
+> punto 4 de arriba decía que era *"la única de las cuatro donde una regla escrita empuja en
+> contra del comportamiento deseable"*, y que elegir `normalizar_` era **apartarse de `R-10`
+> para un caso**. **No hay de qué apartarse.** Medido el 07/08 transcribiendo su enunciado:
+> `R-10` rige **encabezados de columna**, y el segundo "valor" que menciona es el de `MAPEO`,
+> que también es un nombre de columna. **No alcanza a los valores de celda.**
+>
+> **Por qué se creyó que había conflicto, que es lo que vale más que la frase limpia:** `R-10`
+> dice *"preservando mayúsculas y acentos"* y eso se leyó como una política general de
+> normalización del proyecto, cuando es la política **de un problema puntual** —quince pares de
+> encabezados reales colisionan si se pliega el case—. **Una regla que resuelve un problema no
+> declara una doctrina.** El error fue leerle un alcance que su enunciado nunca tuvo. `R-18`
+> lo dice explícito para que no vuelva a pasar.
+>
+> **Hallazgo de consistencia, anotado y no arreglado (07/08/2026):** el camino al catálogo está
+> hardcodeado en el llamador. `catalogoBarriosDesdeBase_(baseId, nombreHoja)` es agnóstica
+> —recibe los dos por parámetro— pero su **único llamador**, `Union.gs`, le pasa `'rdv'`
+> literal y la constante de módulo `HOJA_COMUNAS_RDV_ = 'Comunas'`. Ni el comentario de
+> `Parseo.gs` —que sugiere que sale de la fila de `BASES`— ni la constante son toda la verdad:
+> **la lista de barrios no está hardcodeada, pero sí dónde buscarla.**
+>
+> **Y una consecuencia dura para quien implemente `DISTINCT`: un marcador NO alcanza `Comunas`
+> por el camino normal.** Está registrada en `SOLAPAS` como **`referencia`**, y `buscarMapeo`
+> exige `uso = 'fuente'` — medido: devuelve `«FALTA:barrio@solapa_no_fuente(rdv/Comunas)»`. La
+> implementación tendrá que llamar a `catalogoBarriosDesdeBase_` como hace `Union.gs`, **no
+> declarar el catálogo en `MAPEO`**. Eso es correcto —`Comunas` es referencia, no fuente— pero
+> hay que saberlo antes de escribir la operación.
+>
+> **Y el `{{ecv_barrio}}` singular de la lámina 6** (`Estrategia de comunicación:{{ecv_barrio}}`)
+> es un **token distinto** de los cuatro de la lámina 5, y tiene su propio pendiente por el
+> problema de prefijo. Se anota acá para que nadie lo confunda con `ecv_barrio1`.
+
 
 ### P2 · Falta un formato "unidades de porcentaje sin signo"
 
