@@ -179,6 +179,20 @@ var HOJAS_CONFIG_ = {
   // `tools/snapshot.js` ya la archivaría.
   FALTANTES: {
     headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo']
+  },
+  // `_5` (08/08) — la primera solapa de equivalencias de la planilla. Sigue la forma del
+  // precedente `docs/PERSONAS_equivalencias.csv` —canónico / variante / dónde— adaptada al
+  // caso: acá el "canónico" es el `ID Cuentas` de la base y la "variante" es como lo escribe
+  // el temario.
+  //
+  // ⚠ **La escribe una persona, nunca el cargador** (`B.2`). El cargador la **lee**: si
+  // resolviera solo y guardara lo que adivinó, el error se repetiría cada semana con más
+  // confianza y dejaría de ser detectable. Un match por similitud es una hipótesis buena; una
+  // fila acá es una afirmación que nadie va a volver a mirar.
+  //
+  // **La convención que se elija acá la van a heredar las siguientes** — es la primera.
+  CAMPANAS_equivalencias: {
+    headers: ['variante_temario', 'id_cuentas', 'nombre_en_la_base', 'confirmada_por', 'notas']
   }
 };
 
@@ -1559,6 +1573,13 @@ var SEED_CONFIG_DEFAULTS_ = {
   // ⚠ **Vacío en `CONFIG` NO significa "sin chequeo": cae a esta lista.** Desactivar la guarda
   // tiene que ser una decisión escrita, no el efecto de una celda que alguien borró.
   centinelas_lectura: '#REF!,#N/A,#ERROR!,#VALUE!,#NAME?,#DIV/0!,Loading...',
+  // `_5` (08/08) — los dos umbrales del match por similitud de campañas. Van acá porque son
+  // valores que se ajustan **mirando resultados**, y bajar un umbral no puede exigir `clasp
+  // push`. El margen no es un adorno: "Operativo de saturación en 1-11-14" puntúa alto contra
+  // cuatro campañas de saturación distintas, y sin margen el cargador elegiría por orden de
+  // aparición. Medidos contra el temario real del 24-30/07.
+  umbral_similitud_campana: '0.8',
+  margen_similitud_campana: '0.2',
   // `T2.9.2` (07/08) — las dos ventanas del anclaje, por el mismo argumento que el umbral:
   // cambiar un parámetro de negocio no puede exigir `clasp push` (`R-12`, `CLAUDE.md` §2).
   //

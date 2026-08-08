@@ -39,6 +39,7 @@ var MENU_ = {
       { t: 'Registrar plantillas',         f: 'menuRegistrarPlantillas_' },
       { t: 'Promover fechas elegidas',     f: 'menuPromoverFechasElegidas_' },
       { t: 'Cargar temario de reuniones',  f: 'menuCargarTemarioReuniones_' },
+      { t: 'Cargar temario de campañas',  f: 'menuCargarTemarioCampanas_' },
       { t: 'Cargar ejemplo',               f: 'menuCargarEjemplo_' },
       '---',
       { t: 'Avanzado', items: [
