@@ -731,7 +731,25 @@ function resolverMarcadores(informeId, opciones) {
     base.solapa = solapa.solapa;
     base.valor = salida.valor;
     base.valor_formateado = formatearValorMarcador_(salida.valor, fila.formato);
-    base.estado = (salida.valor === '' || salida.valor === null || salida.valor === undefined) ? 'sin_datos' : 'ok';
+    /* ── `REVISAR` (08/08) — el cuarto estado, y no es un `sin_datos` con etiqueta ────────
+     * `R-18` addendum 1: **`sin_datos` afirma que no había nada.** Si había filas y **ninguna
+     * se pudo publicar** —todas quedaron fuera del catálogo— decir `sin_datos` es publicar una
+     * afirmación que el motor no midió, que es el modo de falla que este proyecto persigue.
+     *
+     * **El corte es "vacío Y hubo rechazos"**, no "hubo rechazos": una lista que publica tres
+     * de cinco **sí resolvió** y va `ok` — sus dos rechazados ya viajan a `FALTANTES` con su
+     * fila propia desde el 08/08. Lo que `REVISAR` marca es el caso en que el token no pudo
+     * decir nada **teniendo datos que decir**.
+     *
+     * **No hace falta tocar el pintado**, y se verificó antes de escribir esto: los dos puntos
+     * que pintan preguntan `estado === 'ok'` y **todo lo demás cae al mismo camino** — publica
+     * `«FALTA:token»` y deja su fila en `FALTANTES` con `estado + ': ' + traza`. Así que
+     * `REVISAR` hereda el precedente en vez de inventar una forma nueva, y la diferencia vive
+     * donde sirve: en el estado, en la traza y en el listado.
+     * ──────────────────────────────────────────────────────────────────────────────────── */
+    var vacio = (salida.valor === '' || salida.valor === null || salida.valor === undefined);
+    var huboRechazos = !!(salida.rechazados && salida.rechazados.length);
+    base.estado = vacio ? (huboRechazos ? 'REVISAR' : 'sin_datos') : 'ok';
     base.traza = salida.traza +
       (base.recorte_ventana ? ' · ' + base.recorte_ventana : '') +
       (base.filtro_aplicado ? ' · ' + base.filtro_aplicado : '') +
@@ -752,6 +770,10 @@ function resolverMarcadores(informeId, opciones) {
       total: resultados.length,
       ok: cuenta('ok'),
       sin_datos: cuenta('sin_datos'),
+      // `REVISAR` (08/08) va en el resumen y no sólo en la traza: un estado que no se cuenta
+      // es un estado que nadie mira. Distinto de `sin_datos` a propósito — ver el comentario
+      // del corte, arriba.
+      revisar: cuenta('REVISAR'),
       error: cuenta('error'),
       lecturas_cacheadas: Object.keys(cache).length
     }
