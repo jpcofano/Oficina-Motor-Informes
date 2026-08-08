@@ -204,6 +204,9 @@ function leerSolapasSinCache_() {
       firma_encabezado: fila[idx.firma_encabezado],
       filas_datos: fila[idx.filas_datos],
       filas_crudas: fila[idx.filas_crudas],
+      // `R-19` — el piso de la capa 3. **Vacío = sin chequeo**, y es el estado con el que
+      // nace: el número lo fija una persona, no el seed.
+      filas_minimas: fila[idx.filas_minimas],
       notas: fila[idx.notas]
     };
   });

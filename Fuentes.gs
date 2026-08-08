@@ -154,6 +154,92 @@ function resolverClave_(baseId, solapa) {
 }
 
 /**
+ * Las tres guardas de `R-19`: una fuente que dejó de traer **no es un dato, es una falla**.
+ *
+ * **Capa 1 · centinela de error en el encabezado.** Si la fila de encabezado contiene un valor
+ * de error de Sheets, el espejo se rompió. **La lista vive en `CONFIG.centinelas_lectura`, no
+ * acá**: es un valor que puede cambiar sin que cambie la lógica (`D-01`) — Google puede sumar
+ * un código de error mañana. Vacío en `CONFIG` = se usa la lista de arranque de
+ * `SEED_CONFIG_DEFAULTS_`, no "sin chequeo": desactivarla tiene que ser una decisión escrita,
+ * no un descuido.
+ *
+ * **Capa 2 · cero filas en una solapa `fuente`.** Medido el 08/08: las **19** solapas
+ * declaradas `fuente` traen datos, así que ninguna se convierte en falla por esto. Una que
+ * empiece a dar cero **cambió**, y eso hay que verlo.
+ *
+ * **Capa 3 · el piso declarado.** `SOLAPAS.filas_minimas`, **vacío = sin chequeo**. Cubre la
+ * degradación parcial —el espejo responde pero trae 12 filas de 4889—, que las dos primeras no
+ * ven. Los pisos los fija una persona editando la celda, sin tocar código.
+ *
+ * **El motivo nombra la solapa y el centinela encontrado**, no dice "error de lectura": quien
+ * lo lea a las siete de la mañana necesita saber que se le cayó un permiso del otro lado.
+ */
+function verificarLecturaDeFuente_(baseId, solapa, headers, filasDeDatos) {
+  var uso = usoSolapa_(baseId, solapa);
+
+  // Capa 1 — vale para toda solapa, sea `fuente` o no: un `#REF!` es un `#REF!`.
+  var centinelas = centinelasDeLectura_();
+  for (var i = 0; i < headers.length; i++) {
+    var celda = String(headers[i] === null || headers[i] === undefined ? '' : headers[i]).trim();
+    if (!celda) continue;
+    if (centinelas.indexOf(celda.toUpperCase()) !== -1) {
+      return {
+        ok: false,
+        motivo: '«FALTA:lectura@' + baseId + '/' + solapa + '» — el encabezado trae "' + celda +
+          '" en la columna ' + (i + 1) + '. Es una solapa espejo cuyo `IMPORTRANGE` dejó de ' +
+          'traer: revisá el permiso de la planilla de origen, que se revoca del otro lado y no avisa. ' +
+          '**No son cero filas: es una fuente caída** (`R-19`).'
+      };
+    }
+  }
+
+  // Las capas 2 y 3 sólo aplican a lo declarado `fuente`: una `referencia` puede estar vacía.
+  if (uso !== 'fuente') return { ok: true };
+
+  if (filasDeDatos === 0) {
+    return {
+      ok: false,
+      motivo: '«FALTA:lectura@' + baseId + '/' + solapa + '» — la solapa está declarada ' +
+        '`uso = fuente` y devolvió **cero filas de datos**. Una fuente vacía no es un período ' +
+        'sin actividad: es una lectura que falló (`R-19`). Si de verdad puede venir vacía, ' +
+        'la solapa no es `fuente`.'
+    };
+  }
+
+  var piso = pisoDeFilasDeSolapa_(baseId, solapa);
+  if (piso !== null && filasDeDatos < piso) {
+    return {
+      ok: false,
+      motivo: '«FALTA:lectura@' + baseId + '/' + solapa + '» — trajo ' + filasDeDatos +
+        ' fila(s) y `SOLAPAS.filas_minimas` declara un piso de ' + piso + '. Es una fuente que ' +
+        'responde pero trae mucho menos de lo habitual (`R-19`).'
+    };
+  }
+
+  return { ok: true };
+}
+
+/** Los centinelas de error, normalizados a mayúsculas. De `CONFIG`, con el seed como piso. */
+function centinelasDeLectura_() {
+  var declarados = String(leerConfig().centinelas_lectura || '').trim();
+  var texto = declarados || SEED_CONFIG_DEFAULTS_.centinelas_lectura || '';
+  return String(texto).split(',')
+    .map(function (c) { return c.trim().toUpperCase(); })
+    .filter(function (c) { return c !== ''; });
+}
+
+/** `SOLAPAS.filas_minimas` como número, o `null` si está vacío (= sin chequeo). */
+function pisoDeFilasDeSolapa_(baseId, solapa) {
+  var todas = leerSolapas();
+  var fila = todas[baseId] && todas[baseId][solapa];
+  if (!fila) return null;
+  var crudo = String(fila.filas_minimas === undefined || fila.filas_minimas === null ? '' : fila.filas_minimas).trim();
+  if (crudo === '') return null;
+  var n = Number(crudo);
+  return isNaN(n) ? null : n;
+}
+
+/**
  * Ventana de fechas por token, en orden de prioridad: campaña > periodo_ref
  * (PERIODOS) > período principal (CONFIG). Devuelve fechas como Date.
  */
@@ -548,6 +634,24 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
 
   var headers = datos[filaEncabezado - 1];
   var filasCrudas = datos.slice(filaEncabezado);
+
+  /* ── Las tres guardas del espejo (`R-19`, 08/08) ──────────────────────────────────────
+   * Tres de las solapas fuente de `digital` son **espejos**: su contenido entra por
+   * `IMPORTRANGE` desde planillas de terceros a las que esta cuenta no tiene acceso. **No hay
+   * alternativa** —el espejo es la fuente— así que lo que se puede hacer es detectar cuándo
+   * dejó de traer.
+   *
+   * **El modo de falla es silencioso y está medido (08/08).** Un `IMPORTRANGE` roto —permiso
+   * revocado del otro lado, planilla borrada, id cambiado— **no tira, no vacía la hoja y no
+   * devuelve un error**: deja **una fila** cuyo único valor es el **string** `"#REF!"`.
+   * `getLastRow()` da 1, `typeof` da `string`. Sin estas guardas la cadena es: encabezado
+   * `#REF!` → cero filas de datos → `SUMA` devuelve `sin_datos` → el token publica `«FALTA»`
+   * → **nada falla**. Un permiso caído se vería igual que una semana sin campañas.
+   * ─────────────────────────────────────────────────────────────────────────────────── */
+  var guarda = verificarLecturaDeFuente_(baseId, hoja.getName(), headers, filasCrudas.length);
+  if (!guarda.ok) {
+    return { ok: false, base_id: baseId, solapa: hoja.getName(), motivo: guarda.motivo };
+  }
 
   function filaAObjeto(fila) {
     var obj = {};

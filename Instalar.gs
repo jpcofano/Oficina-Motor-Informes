@@ -120,7 +120,7 @@ var HOJAS_CONFIG_ = {
   // conserva al lado del filas_datos corregido porque la diferencia entre
   // ambas ES el diagnóstico — ver Solapas.gs inventariarSolapas().
   SOLAPAS: {
-    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'notas']
+    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'filas_minimas', 'notas']
   },
   // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
   // ministros, proveedor — ver Plan Inicial/PROYECTO.md §4.
@@ -256,7 +256,15 @@ var COLUMNAS_DELTA_ = {
   // esquema con `origen` ya presente.
   SOLAPAS: [
     { nombre: 'origen', indice: 4 },
-    { nombre: 'filas_crudas', indice: 8 }
+    { nombre: 'filas_crudas', indice: 8 },
+    // `R-19` (08/08) — el piso de la capa 3, **al final del array** por lo mismo que explican
+    // las notas de `MARCADORES` y `CAMPANAS`: cada entrada asume el esquema del momento.
+    //
+    // ⚠ **Nace vacía en todas las filas, y vacío significa SIN CHEQUEO.** No es un descuido:
+    // el piso lo fija una persona que conoce la fuente, editando la celda y **sin tocar
+    // código**. Sembrarla con un número inventado convertiría una corrida buena en un fallo el
+    // día que la fuente encoja por un motivo legítimo.
+    { nombre: 'filas_minimas', indice: 9 }
   ],
   // Paso 3 (v3) Parte B (D-20) — `SECCIONES` entra al delta **antes** de que su `headers`
   // gane `periodo_ref`, y esto no es una preferencia de estilo: sin entrada acá, la hoja
@@ -1541,6 +1549,16 @@ var SEED_CONFIG_DEFAULTS_ = {
   // constante en Union.gs) y pasa a ser parámetro de negocio — cambiarlo ya no
   // exige clasp push. Ver umbralAnclajeReunion_() en Union.gs.
   umbral_anclaje_reunion: '0.6',
+  // `R-19` (08/08) — los centinelas de la capa 1: si el encabezado de una solapa trae uno de
+  // estos, el espejo se rompió y la lectura **falla** en vez de devolver cero filas.
+  //
+  // **Van en configuración y no en el código** por la misma razón que el umbral de arriba: es
+  // una lista de valores que puede cambiar sin que cambie la lógica — Google puede sumar un
+  // código de error mañana, y agregarlo no tiene por qué exigir `clasp push`.
+  //
+  // ⚠ **Vacío en `CONFIG` NO significa "sin chequeo": cae a esta lista.** Desactivar la guarda
+  // tiene que ser una decisión escrita, no el efecto de una celda que alguien borró.
+  centinelas_lectura: '#REF!,#N/A,#ERROR!,#VALUE!,#NAME?,#DIV/0!,Loading...',
   // `T2.9.2` (07/08) — las dos ventanas del anclaje, por el mismo argumento que el umbral:
   // cambiar un parámetro de negocio no puede exigir `clasp push` (`R-12`, `CLAUDE.md` §2).
   //
