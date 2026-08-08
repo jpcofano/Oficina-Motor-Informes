@@ -2128,7 +2128,51 @@ número salió a la calle.
 **Corregido por:** `R-15` addendum 1 (la señal) + `CONFIG_INFORMES.md` §1.4 ter (el universo y
 el mecanismo), los dos del 07/08/2026.
 
-### P1 · Falta una operación que devuelva el elemento N de una lista — `ecv_barrio1-3` la necesitan
+### P1 · Los `camp_*` sin fuente — catorce, y son tres preguntas distintas
+
+**Un token sin fuente no es un token pendiente de cablear: es una pregunta.** De los **46**
+`camp_*` de la plantilla `jm` (sin `camp_bench_*`, fuera de alcance), **catorce no salen de
+ninguna de las cuatro fuentes**, y agrupados por lo que les falta son tres problemas que no se
+resuelven juntos. Medido el 08/08/2026.
+
+**a · Los once `camp_resp_*` (lámina 19) — falta la fuente entera.**
+`camp_resp_pos`, `_neg`, `_neu`, `_info`, `_sol`, sus cinco `_pct`, `camp_resp_total` y
+`camp_tasa_resp`. Son **respuestas de mail clasificadas por sentimiento**, y **ninguna de las
+cuatro solapas tiene esa dimensión**. No es que falte mapear una columna: **el dato no está**.
+Es pregunta para el equipo, no trabajo de cableado.
+
+**b · Los seis `camp_audiencia1-3` y `camp_formato1-3` (lámina 14) — la granularidad no
+coincide, y está medido.** La hipótesis razonable era que **la plataforma fuera la "posición"**
+que esos tokens numeran, porque `CAMPAÑAS_DESGLOCE_DIGITAL` da una fila por campaña y
+plataforma. **No lo es:**
+
+| | medido sobre 2500 filas y 702 campañas |
+|---|---|
+| campañas con **una sola** plataforma | **599 — el 85 %** |
+| con exactamente **tres** | **21** |
+| con **cinco** | 4 |
+| vocabulario | `Meta`, `Google ads`, `DV360`, `TikTok`, `Twitter`, `Twitch`, `Uber` — **siete**, no tres |
+
+Con la plataforma como posición, **el 85 % de las campañas llenaría una ranura y dejaría dos
+vacías**, y las de cinco no entrarían. Además *"formato"* no es *"plataforma"*: el vocabulario
+son canales. **Quedan marcados y se levantan al final, sin insistir** (decisión del usuario,
+08/08/2026).
+
+**c · Lado mail: `camp_aperturas`, `camp_entregados`, `camp_ctor` y los diez `camp_env1..5_*`
+— la fuente existe pero es un panel.** Todos saldrían de `Mail per`, que **tiene el período
+tipeado a mano** y por lo tanto `R-02` la excluye. **No es una pregunta al equipo: es un camino
+técnico a construir**, y es distinto de los dos anteriores.
+
+### ~~P1 · Falta una operación que devuelva el elemento N de una lista~~ — POSTERGADO por decisión (08/08/2026)
+
+**No está bloqueado por falta de camino: está postergado.** Decisión del usuario, 08/08/2026:
+`ecv_barrio1-3` **quedan como pendiente y se levantan al final**. **No se borran de la
+plantilla** y **no se construye ahora** la operación que devuelve el elemento N de una lista.
+
+La diferencia importa para quien lea esto en un mes: el camino **se conoce** —está descrito
+abajo— y lo que falta es **prioridad**, no diseño. El texto original queda tal cual.
+
+### P1 · El detalle de por qué `ecv_barrio1-3` no se cablearon con el lote del 08/08
 
 `ecv_barrio1`, `ecv_barrio2` y `ecv_barrio3` **no se pudieron cablear** con el lote del 08/08, y
 por **dos razones independientes, las dos medidas**:

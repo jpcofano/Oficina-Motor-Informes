@@ -6349,3 +6349,45 @@ la resolvería. No se tocó `SUMA`: eso mueve marcadores en todo el deck.
 **El `verificador` no corrió**: los archivos están escritos y commiteados, pero los agentes se
 cargan al arranque y la sesión no se reinició. **No bloqueó nada** — su reporte no habilita la
 ejecución.
+
+---
+
+## `R-19` y las fuentes reales de una campaña (2026-08-08) — commit de esta entrada
+
+Dos cosas en la misma corrida: la guarda del espejo y la Parte A del `_4`.
+
+**`R-19` — una fuente que dejó de traer no es un dato, es una falla.** Es el mismo principio que
+`«FALTA»` antes que un número plausible, **aplicado a la lectura en vez de a la publicación**.
+
+**Lo medido, que es lo que la hace necesaria:** un `IMPORTRANGE` roto **no tira, no vacía la
+hoja y no devuelve un error** — deja **una fila** con el **string** `"#REF!"`. Sin guarda:
+encabezado `#REF!` → cero filas → `sin_datos` → `«FALTA»` → **nada falla**. Un permiso revocado
+del otro lado se veía igual que una semana sin campañas.
+
+**Tres capas.** Centinelas **en `CONFIG`**, no en el código, porque son valores que cambian sin
+que cambie la lógica; **el motivo nombra la solapa y el centinela**, no dice "error de lectura".
+Cero filas en una solapa `fuente` — **verificado antes de activarla: las 19 traen datos hoy**,
+así que ninguna se vuelve falla. Y `SOLAPAS.filas_minimas` **creada vacía en las 84 filas**:
+vacío es **sin chequeo**, y el piso lo fija una persona editando la celda, **sin tocar código**.
+Esa es la diferencia entre implementarla ahora y dejarla para después.
+
+**La Parte A del `_4`: la cadena de una campaña queda escrita.** El identificador es
+`ID Cuentas` y **cruza** —91 % con `Alcance`, 99,7 % con el desglose—, así que no hay nada que
+elegir. Y **el criterio del equipo coincide con las reglas del proyecto**: los paneles
+seleccionan por **solape** del lado digital y **por punto** del lado directa, que es exactamente
+`R-16`/`R-17` escritas por separado.
+
+**El veto de los tres paneles quedó contado con su motivo**, incluido el que apareció ayer:
+**`Mail per` es un tercer panel**, un nivel más abajo — el de directa **lee de otro panel**.
+
+**Catorce `camp_*` sin fuente, y son tres preguntas distintas**, no una lista: once
+`camp_resp_*` **sin dato en ninguna base** (pregunta al equipo), seis de granularidad —y acá se
+midió la hipótesis: **la plataforma NO es la posición**, el 85 % de las campañas tiene una sola
+y el vocabulario son siete canales— y trece del lado mail, que **tienen fuente pero es un
+panel**. Distinguirlas cambia quién las resuelve.
+
+**Cuatro respuestas del usuario, aplicadas:** `ecv_barrio1-3` pasa a **postergado por decisión,
+no bloqueado**; los seis de granularidad quedan marcados sin insistir; los tres
+`camp_*_insight` se declaran **`[MANUAL]`** y salen del cableado pendiente; y queda escrito que
+**ninguna campaña de `jm` se solapa con la semana** —lo cual **no impide que entren**, es lo que
+dice `R-17`— con la causa a mirar primero si una fila no emite: `periodo_id` o `mostrar`.

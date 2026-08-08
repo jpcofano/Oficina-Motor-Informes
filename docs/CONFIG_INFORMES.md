@@ -200,6 +200,58 @@ como ejemplo — confirmar si es real.)
 > (`R-15` addendum 1, §1.4 ter). **Un número del equipo que cierra con el motor vale como
 > control, no como anécdota.**
 
+### 1.4 quater · La cadena de una campaña destacada — **medido el 08/08/2026**
+
+**De una fila de `CAMPANAS` a los números de la lámina, en una página.**
+
+**Qué la identifica: `ID Cuentas`**, con la forma `NNNN-XXXYYYZZ`. Es el mismo identificador en
+las cuatro solapas que participan, y **los valores cruzan**: `Seguimiento digital` ∩ `Alcance` =
+**696 de 763 (91 %)**, ∩ `CAMPAÑAS_DESGLOCE_DIGITAL` = **388 de 389 (99,7 %)**. **No hay nada
+que elegir.**
+
+**De dónde sale cada grupo de tokens:**
+
+| tokens | solapa | cómo |
+|---|---|---|
+| `camp_desde`, `camp_hasta` | `Seguimiento digital` col 12 / 13 | directo |
+| `camp_titulo` | `Alcance` col 6 (`nombre_campaña`) | directo |
+| `camp_eje` | `Seguimiento digital` col 10 | directo |
+| `camp_alcance`, `camp_frecuencia` | `Alcance` col 2 / 3 | directo |
+| `camp_impresiones`, `camp_visualizaciones`, `camp_clics` | `CAMPAÑAS_DESGLOCE_DIGITAL` col 15 / 16 / 17 | **agrupando por campaña** |
+| `camp_aperturas`, `camp_entregados`, `camp_ctor`, `camp_env1..5_*` | lado mail — **sin camino hoy**, ver abajo |
+
+**⚠ El desglose trae una fila por campaña Y plataforma**, así que sumar sin agrupar cuenta la
+misma campaña varias veces. **Medido: 702 campañas en 2500 filas**, y una llega a tener **cinco
+plataformas**. No es un obstáculo — es el paso que falta.
+
+**El criterio de selección que el equipo usa hace meses coincide con `R-17` y `R-16`.** Las
+fórmulas del panel digital seleccionan con `inicio ≤ hasta` **y** `fin ≥ desde`, que es
+**solape exacto**; las del panel directa, **por punto**. Las dos reglas se escribieron por
+separado y **dieron lo mismo**.
+
+> **⚠ Y el veto de los paneles, para que nadie los vuelva a proponer.** `Buscador por periodo
+> digital`, `Buscador por periodo directa` y **`Mail per`** son **paneles**, no fuentes: tienen
+> el período **tipeado a mano** en la fila 1 o 2 y los datos generados por un `FILTER` contra
+> esas celdas. **`R-02` los excluye.**
+>
+> **El modo de falla es silencioso, y por eso merece quedar contado:** el 07/08 los tres tenían
+> **`31/07 → 07/08`** mientras el informe corría sobre **`24–30/07`**. Leerlos habría traído las
+> campañas de **otra semana** — **sin que ningún token fallara**. Es el caso más limpio de
+> número plausible y mal que tiene el proyecto.
+>
+> **Y `Mail per` está un nivel más abajo:** el panel de directa **lee de otro panel**. Todo el
+> lado mail cuelga de eso, y por eso sus tokens figuran arriba como *sin camino hoy*.
+
+**Los tres `camp_*_insight` son `[MANUAL]`** — decisión del usuario, 08/08/2026:
+`camp_dig_insight`, `camp_mail_insight` y `camp_resp_insight` son **texto editorial**, no salen
+de ninguna base. **Salen del cableado pendiente** y no vuelven a contarse como huecos técnicos.
+
+> **⚠ Un dato para cuando se carguen las primeras filas de `jm`** (usuario, 08/08/2026):
+> **ninguna campaña de `jm` se solapa con la semana del informe.** **Eso NO impide que entren** —
+> es exactamente lo que dice `R-17`: **el temario selecciona y la ventana no filtra campañas.**
+> Si al probar aparece una fila cargada que no emite, **la causa a mirar primero es `periodo_id`
+> vacío o `mostrar` distinto de `sí`**, nunca la fecha.
+
 ### 1.4 bis · De dónde salen inscriptos y asistentes — **decisión del usuario, 07/08/2026**
 
 **Los inscriptos y los asistentes de las reuniones salen de `rdv`.** Es la fuente de los cinco
