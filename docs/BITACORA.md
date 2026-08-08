@@ -6083,3 +6083,34 @@ catálogo en `MAPEO`.
 
 **La implementación no es cableado: es lámina nueva.** Los cuatro tokens son celdas de una misma
 tabla, `D-22` aplica y no hay desborde. **La plantilla no se tocó. Sin código.**
+
+---
+
+## Cinco respuestas del usuario, a sus dueños (2026-08-07) — commit de esta entrada
+
+El `_18`, primera corrida de la noche. **Cinco decisiones que ya estaban tomadas y no estaban en
+ningún documento.** Ninguna abre trabajo: las cinco cierran algo declarado abierto.
+
+**`R-18` gana su `Addendum 1`: los estados son cuatro, no dos.** Faltaban **la celda vacía**
+—que **no es un no-match**: no dispara `REVISAR` y se cuenta en la traza— y **todas las filas
+rechazadas**, que es `REVISAR` y **nunca `sin_datos``**. El motivo queda escrito: `sin_datos`
+**afirma que no había nada**, y si había y se descartó es una afirmación que el motor no midió.
+
+**`ecv_barrio1-3` dejan de ser `[MANUAL]`.** Salen de la misma lista que `ecv_barrios`. La `[?]`
+del 05/08 ofrecía dos opciones —ranking automático o carga manual— y **la respuesta era una
+tercera: el filtro**. Queda anotado que son **tres ranuras para cuatro barrios medidos**, que es
+plantilla y no motor.
+
+**`REUNIONES` es JM**, y la pregunta al equipo que abrió el `_13` se cierra el mismo día. **Pero
+se sostiene por curaduría, no por control:** la hoja no tiene columna `figura`, así que el motor
+no puede verificarlo ni notar si deja de ser cierto. **Es la diferencia entre un supuesto
+sostenido y uno verificado**, y por eso va escrita al lado de la respuesta.
+
+**`camp_bench_*` pasa a fuera de alcance con fecha** — que no es resuelta ni abierta. Una
+pregunta abierta vuelve a levantarse en cada revisión; ésta **no se vuelve a levantar**.
+
+**Una campaña que cruza dos semanas se muestra acumulada**, porque así está la base. **Cambia el
+número, no la presentación**, y queda dicho: el valor publicado es el acumulado de la campaña,
+no lo que pasó dentro de la ventana.
+
+**Sin código.**

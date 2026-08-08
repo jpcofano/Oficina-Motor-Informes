@@ -1827,14 +1827,21 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
 > nacieron en documentos hoy congelados y necesitan un lugar vivo. Al responderse, la
 > respuesta va al documento dueño del hecho y la pregunta se tacha acá.
 
-- **Las 7 filas de `REUNIONES`: ¿son todas encuentros de Jorge Macri, o incluyen ministros?**
-  *(abierta 07/08/2026)* **No se puede saber desde la hoja**: `REUNIONES` no tiene columna
-  `figura` — sus columnas son `periodo_id`, `orden`, `eje`, `tipo`, `nombre`, `fecha`, `etapa`,
-  `mostrar`, `texto_original` y `notas`. Importa porque la sección `encuentro` **se repite por
-  fila de `REUNIONES`** y produce la lámina 6: si hay ministros adentro, el informe `jm` está
-  emitiendo láminas que no le corresponden, que es el mismo error que se acaba de corregir en
-  la lámina 5 por otro camino (`R-15` addendum 1). **No se deduce de que hoy sean siete** ni
-  de que la fuente de anclaje sea `rdv`: se pregunta.
+- ~~**Las 7 filas de `REUNIONES`: ¿son todas encuentros de Jorge Macri, o incluyen
+  ministros?**~~ — **RESPONDIDA (usuario, 07/08/2026): `REUNIONES` es JM.** La lámina 6 es el
+  desglose de la 5, así que **mismo universo**. Abierta y cerrada el mismo día.
+
+  **⚠ Pero se sostiene por curaduría, no por control, y eso cambia qué tan firme es.** La hoja
+  **no tiene columna `figura`** —sus columnas son `periodo_id`, `orden`, `eje`, `tipo`,
+  `nombre`, `fecha`, `etapa`, `mostrar`, `texto_original`, `notas`—, así que **el motor no
+  puede verificarlo ni notar si deja de ser cierto**. Si alguna vez entran filas de otras
+  figuras, **nadie se va a enterar por la hoja**: la lámina 6 va a emitir láminas que no le
+  corresponden y el síntoma va a aparecer lejos, igual que el de la lámina 5.
+
+  **Queda escrito porque es la diferencia entre un supuesto sostenido y uno verificado.** El de
+  la lámina 5 se verifica solo —`figura=Jorge Macri` está en la celda y la traza lo dice—; éste
+  depende de que quien cargue `REUNIONES` mantenga el criterio. Si alguna vez hace falta
+  control, la salida es una columna `figura` en la hoja, no una discusión.
 - Las siete preguntas de `docs/VALIDACION_2026-07-31.md` §7 ("Preguntas para el equipo")
   — siguen abiertas; el detalle está allá, esta línea existe para que no queden
   enterradas en un doc congelado.
