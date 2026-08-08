@@ -159,6 +159,43 @@ publica `Mail: «FALTA:ecv_insc_mail»(59.9%)` — el porcentaje resuelto al lad
 `ecv_asistentes` y `ecv_inscriptos` son seis filas de `MARCADORES` que hoy no existen; entran
 por `T2.11`, que recorre el cableado lámina por lámina.
 
+### 1.4 ter · El universo de la lámina 5 — **decisión del usuario, 07/08/2026**
+
+**El informe `jm` cuenta sólo los encuentros de Jorge Macri.** `rdv/RVD JM-CM - ES` trae las
+figuras de todo el gabinete; la lámina 5 es de JM y sólo de JM.
+
+**Lo que estaba publicando, medido sobre la ventana 24–30/07** (15 filas, 12 figuras distintas,
+4 de Jorge Macri):
+
+| marcador | publicaba | tiene que dar |
+|---|---|---|
+| `ecv_encuentros` | **15** | **4** |
+| `ecv_insc_mail_pct` | 59.9 | **50.7** |
+| `ecv_insc_cc_pct` | 8.1 | **11.8** |
+| `ecv_insc_ivr_pct` | 1.3 | **1.9** |
+| `ecv_insc_digital_pct` | 29.3 | **35.7** |
+| `ecv_insc_dif_pct` | 2.1 | **0** |
+
+**El mecanismo es `MARCADORES.filtro`**, con `figura=Jorge Macri` en las seis filas. La señal la
+declara `R-15` addendum 1.
+
+**Y el descarte importa más que la elección.** `SECCIONES.filtro` sobre `ecv_alcance_semanal`
+sería más barato —una celda en vez de seis— y **hoy no rompería nada**: la sección declara
+`informes = JM,SECCO`, pero `SECCO` **no tiene ningún marcador que lea `rdv`**, así que el
+filtro le caería encima sin efecto visible. **Se descarta por lo que haría el día que `SECCO`
+sí tenga marcadores sobre `rdv`**, no por lo que hace hoy: heredaría un recorte por figura que
+nadie pidió, sobre un informe que es justamente el de los ministros. **Un filtro que no molesta
+hoy y rompe callado en tres meses es peor que uno que falla ahora.**
+
+**Sólo se filtra `ecv_alcance_semanal`.** La sección `encuentro` **no lleva este filtro y no
+puede llevarlo**: itera sobre `REUNIONES`, que es una hoja curada y **no tiene columna
+`figura`**. Un filtro por figura no se declara sobre una fuente que no tiene la columna.
+
+**El universo `GCBA` de `rdv` existe y no tiene consumidor.** La señal habilita el complemento
+—los encuentros de las otras once figuras— pero **nadie pidió esa lámina para `jm`**. Se anota
+para que se sepa antes de que alguien lo descubra como hallazgo: `SECCO` tiene su propia sección
+`ministros`, con familia `emin_`, que hoy no lee `rdv`.
+
 ### 1.5 Token huérfano resuelto — "Marque 1" (JM slide 6)
 
 **[DOC-3, 30/07]** El `135` literal de la caja "Marque 1" (`docs/PLANTILLAS_QA_y_armonizacion.md`,
