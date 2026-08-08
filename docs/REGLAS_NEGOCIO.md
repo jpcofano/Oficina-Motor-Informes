@@ -683,6 +683,36 @@ hallazgo.
 **Si falla:** si aparece un canal nuevo, **no se le hereda el criterio de otro**: se pregunta
 cuál es su señal. Ésa es la regla, no un detalle de implementación.
 
+### Addendum 1 — 07/08/2026: `rdv` es el quinto canal, y su señal es la columna `Figura`
+
+**El texto de arriba no se altera, y su tabla tampoco.** Esto la extiende con una quinta fila:
+
+| canal | dónde se lee | JM es | GCBA es |
+|---|---|---|---|
+| **Encuentros** | `rdv/RVD JM-CM - ES`, columna `A` — `Figura` (mapeada como `figura`) | `Jorge Macri` | **todo el resto** |
+
+**Esto es lo que la regla de arriba ya mandaba hacer.** *"Si aparece un canal nuevo, no se le
+hereda el criterio de otro: se pregunta cuál es su señal."* `rdv` no era un canal nuevo — era
+un canal cuya señal **nunca se preguntó**, y no declararla no se leyó como un hueco sino como
+que no hacía falta.
+
+**El efecto medido, que es lo que vuelve útil a esta fila.** Sin la señal declarada, la lámina 5
+del informe `jm` contaba **doce figuras**: en la ventana 24–30/07 hay 15 filas de 12 figuras
+distintas y **sólo 4 son de Jorge Macri**. `ecv_encuentros` publicaba **15** donde el número es
+**4**. Una regla con el error que evitó al lado envejece mejor que una regla sola.
+
+**`GCBA` se define por resta, igual que en mail.** *Todo el que no sea `Jorge Macri`* — hoy son
+once figuras y mañana pueden ser doce. **No hay ni va a haber una lista declarada de las otras**:
+una lista se desactualiza sola y excluye en silencio.
+
+**El valor matchea literal.** Medido el 07/08: `Jorge Macri` aparece **exacto en las 4 filas**,
+sin variantes de escritura, sin espacios de más y sin acentos. No necesita pasar por la solapa
+de equivalencias.
+
+**Dónde se aplica:** hoy sólo en los seis marcadores de `ecv_alcance_semanal`, por
+`MARCADORES.filtro`. La sección `encuentro` **no lo necesita**: itera sobre `REUNIONES`, que es
+una hoja curada y **no tiene columna `figura`**.
+
 ---
 
 ## R-16 — La selección por período entra por **solape**, y el default es la semana
