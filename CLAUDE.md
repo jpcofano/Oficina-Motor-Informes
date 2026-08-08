@@ -242,6 +242,21 @@ estaba disponible desde el 2.8: faltó mirarlo antes de aceptar la etiqueta. Cua
 instrumento devuelve una **etiqueta** (`derivada`, `plausible`, `ok`), verificar el dato
 crudo del que salió, no la etiqueta.
 
+**Un número correcto puede salir de las filas equivocadas, y ninguna verificación del proyecto
+lo miraba.** Antes de dar por bueno un número, preguntar **de qué filas sale**: qué entra, cuál
+es el denominador, y **quién declaró ese recorte**. No alcanza con que el token tenga fila en
+`MARCADORES`, el `MAPEO` resuelva, la fuente traiga filas y el formato sea el correcto — eso es
+exactamente lo que pasó con la lámina 5 el 07/08: los seis marcadores de `ecv_alcance_semanal`
+pasaron las cuatro verificaciones y contaban **doce figuras en vez de una**, porque `rdv` trae
+el gabinete entero y nadie había declarado la señal de corte (`R-15` addendum 1).
+
+- **Todas las verificaciones existentes preguntan si el número salió; ninguna preguntaba si
+  salió del universo que corresponde.** Ése es el hueco que esta convención cubre.
+- El síntoma es el peor de este proyecto: **el número plausible.** `15` encuentros no se ve mal
+  al lado de `4`; se ve como un buen dato. Sobrevivió porque nada lo contradecía.
+- **Se pregunta antes de cablear, no después.** Un token nuevo sobre una fuente cuyo universo
+  no está declarado nace mal, y en lote el error se multiplica en vez de corregirse.
+
 **Apps Script es una plataforma con límites conocidos, y ese conocimiento se usa.** En todo
 lo que toca ejecución —límite de tiempo por invocación, cuotas, bloqueos, timeouts propios
 de cada servicio, concurrencia sobre la misma planilla, costo de `flush()`, `LockService`—
