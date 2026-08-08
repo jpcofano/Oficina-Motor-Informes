@@ -268,6 +268,19 @@ el gabinete entero y nadie había declarado la señal de corte (`R-15` addendum 
 - **Se pregunta antes de cablear, no después.** Un token nuevo sobre una fuente cuyo universo
   no está declarado nace mal, y en lote el error se multiplica en vez de corregirse.
 
+**Un dato medido una vez y citado tres veces envejece igual que cualquier otro.** Una medición
+no se vuelve permanente porque haya viajado: cada vez que se **usa para decidir**, se vuelve a
+medir. El caso, 07–08/08: *"`CAMPAÑAS_DESGLOCE_DIGITAL` está registrada como `revisar`"* se
+escribió en un prompt, se repitió en el reporte de la corrida siguiente y se citó en un tercero
+como fundamento de un cambio — **y ya era falso: la solapa estaba como `fuente`**. Nadie mintió;
+el dato simplemente venció, y las tres citas lo hicieron parecer más firme cada vez.
+
+- **La cita no es la fuente.** Si un prompt, un reporte o una bitácora afirman el estado de una
+  hoja, del código o de una base, eso es **evidencia fechada**, no el estado de hoy — vale lo
+  mismo que un `.md` congelado (§7).
+- **Es el mismo error de los dos lados**: quien escribe el prompt y quien lo ejecuta. No alcanza
+  con que uno de los dos verifique.
+
 **Y una trampa de lectura del instrumento: `FALTANTES` lista por ítem, no por token.** Un token
 de una sección repetible aparece **una vez por ítem emitido** y con el sufijo `@<ítem>`, así que
 **contar tokens ahí mezcla láminas** — los `@San Cristóbal (pre)` son de la lámina 6, no de la 5.

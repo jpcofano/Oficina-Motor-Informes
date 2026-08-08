@@ -913,6 +913,60 @@ un valor que el catálogo rechazó**: es una fila que no aportó dato. Contarla 
 mandaría el token a `REVISAR` por un motivo falso y escondería los rechazos reales entre ruido.
 Va a la traza, que es donde se ve sin ensuciar el estado.
 
+## R-19 — Una fuente que dejó de traer no es un dato: es una falla
+
+**Enunciado:** cuando una solapa declarada `uso = fuente` **no devuelve lo que suele devolver**,
+el motor **falla con motivo** en vez de seguir con lo que haya. Cero filas no es "un período sin
+actividad"; un encabezado con `#REF!` no es "una columna que se llama así".
+
+**Es el mismo principio que ya rige la publicación, aplicado a la lectura.** El proyecto tiene
+escrito que un token sin valor publica `«FALTA»` antes que un número plausible. `R-19` dice lo
+mismo un paso antes: **antes de calcular mal, no leer**.
+
+**El modo de falla que la motiva, medido el 08/08/2026.** Tres solapas fuente de `digital`
+—`Seguimiento digital`, `Alcance` y `CAMPAÑAS_DESGLOCE_DIGITAL`— son **espejos**: su contenido
+entra por `IMPORTRANGE` desde planillas de terceros a las que esta cuenta **no tiene acceso**.
+El espejo es la fuente y no hay alternativa.
+
+Un `IMPORTRANGE` roto —permiso revocado del otro lado, planilla borrada, id cambiado— **no tira
+excepción, no vacía la hoja y no devuelve un error**: deja **una fila** cuyo único valor es el
+**string** `"#REF!"`. Medido: `getLastRow()` da **1**, `typeof` da **`string`**.
+
+**Sin guarda, la cadena entera es silenciosa:** encabezado `#REF!` → cero filas de datos →
+`SUMA` devuelve `sin_datos` → el token publica `«FALTA»` → **nada falla**. **Un permiso caído se
+ve exactamente igual que una semana sin campañas.** Y un permiso se revoca del otro lado, sin
+avisar.
+
+**Las tres capas, y por qué son tres:**
+
+| capa | qué mira | configuración |
+|---|---|---|
+| **1 · centinela** | la fila de encabezado trae `#REF!`, `#N/A`, `Loading...`… | **`CONFIG.centinelas_lectura`** — vacío **cae al seed**, no desactiva |
+| **2 · cero filas** | una solapa `fuente` devuelve **cero** filas de datos | ninguna: el corte es cero |
+| **3 · piso** | trae mucho menos de lo habitual —12 de 4889— | **`SOLAPAS.filas_minimas`**, **vacío = sin chequeo** |
+
+La 1 es determinista y **no puede dar falso positivo**: ningún encabezado legítimo se llama
+`#REF!`. La 2 se verificó antes de activarla — **las 19 solapas `fuente` traen datos hoy**, así
+que ninguna se convierte en falla. La 3 cubre la degradación **parcial**, que las otras dos no
+ven, y **nace inerte a propósito**: el piso lo fija una persona que conoce la fuente, editando
+la celda y **sin tocar código**.
+
+**Los centinelas van en configuración y no en el código** por la misma razón que el umbral de
+anclaje: es una lista de valores que puede cambiar sin que cambie la lógica (`D-01`).
+
+**El motivo nombra la solapa y el centinela encontrado**, nunca "error de lectura". Quien lo lea
+a las siete de la mañana necesita saber que **se le cayó un permiso del otro lado**, no que algo
+falló.
+
+**Cómo se verifica:** simular un `IMPORTRANGE` roto sobre una planilla desechable y confirmar
+que la lectura falla con `«FALTA:lectura@base/solapa»` en vez de devolver cero filas. Verificado
+el 08/08 sobre las tres capas, más el control de que una solapa `referencia` vacía **no** falla.
+
+**Si falla:** si una fuente empieza a dar cero legítimamente, **la salida no es apagar la
+guarda**: es que esa solapa no era `fuente`. El `uso` describe qué se espera de ella.
+
+---
+
 ---
 
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
