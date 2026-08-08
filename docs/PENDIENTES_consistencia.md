@@ -2128,6 +2128,65 @@ número salió a la calle.
 **Corregido por:** `R-15` addendum 1 (la señal) + `CONFIG_INFORMES.md` §1.4 ter (el universo y
 el mecanismo), los dos del 07/08/2026.
 
+### P1 · Las dos solapas `Buscador por periodo` son paneles, y `R-02` ya las veta
+
+**Medido el 08/08/2026 sobre las hojas vivas.** `digital/Buscador por periodo digital` (1002
+filas) y `digital/Buscador por periodo directa` (1000) **no son tablas de datos**:
+
+| fila | qué tiene |
+|---|---|
+| 1 | los rótulos `Periodo · Desde · Hasta` |
+| **2** | **los valores del período, tipeados a mano** |
+| 3 | los encabezados reales (`ID`, `Nombre de la campaña`, …), **y son fórmulas de array** |
+| 4+ | los datos, generados por `=UNIQUE(FILTER('Seguimiento digital'!A2:A; …<= C2 …))` |
+
+**La tabla se recalcula según lo que alguien haya tipeado en `B2`/`C2`.** Es exactamente el
+caso que `R-02` describe y excluye: *"si el período vive en la hoja… lo que devuelva depende de
+lo último que tipeó una persona: un informe de julio puede salir con el recorte de mayo **sin
+fallar**. Eso no es una fuente"*.
+
+**Y no es hipotético: hoy mismo están desincronizadas.** Los dos paneles tienen
+**`31/07/2026 → 07/08/2026`** en la fila 2, mientras el informe corre sobre **24–30/07**. Si el
+motor las leyera, traería las campañas de otra semana **y ningún token fallaría**.
+
+**Por eso NO se pasaron a `uso = fuente`** (la Parte A del prompt `_17` lo pedía para probar):
+`R-02` es anterior y las veta, así que la prueba no habría medido si sirven — habría medido si
+el motor sabe leer un panel. Y `A.2` del mismo prompt dice que **una solapa marcada `fuente`
+que no es fuente es peor que una marcada `referencia`**. **Se dejaron como estaban, en
+`referencia`, y no se tocó `SOLAPAS`.**
+
+**Lo que sí sirve, y ya está a mano:** las dos fórmulas dicen de dónde sacan los datos —
+`'Seguimiento digital'`, `'Mail per'`, `Alcance`, `CAMPAÑAS_DESGLOCE_DIGITAL`—, que son solapas
+reales. **El camino no es leer el panel: es leer lo que el panel lee.**
+
+### P2 · `digital/Alcance` es fuente y no tiene `nombre_campaña` en `MAPEO`
+
+Está registrada como **`uso = fuente`**, trae **768 filas** y sus columnas son
+`ID Cuentas · Alcance · Frecuencia · eje · area · nombre_campaña`. Es la que **engancha el
+nombre del temario con el id de cuenta**, que es justo lo que necesita la selección de campaña
+destacada.
+
+**Pero `buscarMapeo('digital','Alcance','nombre_campana')` devuelve `falta MAPEO`** — medido el
+08/08. La columna existe en la hoja y **no está declarada**. No se agregó la fila: `MAPEO` tiene
+sus escritores declarados y esto es cableado, que es otro prompt.
+
+**Dato para quien lo tome:** la hoja la llena un `IMPORTRANGE` desde la base `looker`, así que
+el nombre de la columna trae **ñ** (`nombre_campaña`), y `R-10` **no pliega acentos**.
+
+### P2 · `CAMPANAS.tipo`: el seed y la hoja viva usan vocabularios distintos, y nadie lo nota
+
+La hoja viva trae `destacada`, `encuentro_ministros` y `proveedor`. `SEED_CAMPANAS_EJEMPLO_`
+trae **`campana`, `ministros` y `proveedor`**. **Dos vocabularios para la misma columna.**
+
+**Por qué nadie lo notó: ningún consumidor lee esa columna.** Verificado el 08/08 — `tipo` sólo
+llegaría al motor por `SECCIONES.filtro` (`itemsDeSeccion_` evalúa el filtro contra los
+atributos de la campaña), y **ninguna sección declara un filtro sobre `tipo`**: el único filtro
+declarado hoy es `etapa=post` en `comunicaciones_post`, que es de `REUNIONES`.
+
+**La consecuencia está latente, no activa:** el día que alguien escriba
+`SECCIONES.filtro = tipo=destacada`, el vocabulario que vale es **el de la hoja**, y quien mire
+el seed para saber qué escribir va a poner `campana` y no va a entrar ninguna fila.
+
 ### P1 · `REVISAR` no existe como estado de marcador, y `R-18` lo pide
 
 **Los estados que el motor asigna son tres:** `ok`, `sin_datos` y `error`. **`REVISAR` no

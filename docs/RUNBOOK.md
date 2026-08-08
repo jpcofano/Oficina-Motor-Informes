@@ -278,6 +278,66 @@ independencia.
 
 ---
 
+## Cargar una fila de `CAMPANAS`
+
+> **⚠ Leé esto antes de cargar nada.** Podés cargar las filas hoy y **van a entrar bien**: la
+> selección por temario ya funciona (`R-17`, y `itemsDeSeccion_` filtra por `informe_id`,
+> `mostrar` y `periodo_id`). **Lo que todavía no existe es el enganche con las métricas.** Los
+> `camp_*` no van a resolver hasta que se cablee de dónde sale cada número, y eso es otro
+> prompt. Cargar igual sirve: sin filas, la sección `campana` emite **cero ítems** y no se
+> puede ni ver la lámina.
+
+**Las diez columnas, en el orden de la hoja** (verificado el 08/08/2026 — el seed es el
+correcto; un snapshot viejo tiene nueve y le falta `periodo_id`):
+
+| columna | qué va | ⚠ |
+|---|---|---|
+| `periodo_id` | **el informe en el que la campaña aparece** — no el período de sus fechas | **Vacío = la fila no entra a ningún informe** (`D-19`). Es el error más caro y no avisa |
+| `campana_id` | id corto y estable, tuyo (`orden_seguridad_2026`) | |
+| `nombre` | el nombre como se lee en el deck | |
+| `informe_id` | `jm` o `secco` | Si no coincide, la fila se ignora en silencio |
+| `base_id` | de dónde salen sus métricas (`digital`, `looker`, `rdv`) | |
+| `tipo` | `destacada`, `encuentro_ministros` o `proveedor` | **Usá el vocabulario de la hoja, no el del seed** — divergen, y hoy nadie lee la columna (ver `PENDIENTES`) |
+| `desde` / `hasta` | las fechas **propias de la campaña** | Pueden caer **fuera** de la ventana del informe: es lo normal y está bien (`R-17`) |
+| `mostrar` | **`sí`**, con tilde | Cualquier otra cosa excluye la fila |
+| `orden` | el orden del temario, 1, 2, 3… | Es lo que decide en qué orden salen las láminas |
+
+**Un ejemplo real, de una campaña que estuvo activa en la semana 24–30/07/2026** (medido: hay
+**67** en esa ventana):
+
+| | |
+|---|---|
+| `periodo_id` | `jm_20260724` |
+| `campana_id` | `orden_seguridad_2026` |
+| `nombre` | `Orden y Seguridad 2026` |
+| `informe_id` | `jm` |
+| `base_id` | `digital` |
+| `tipo` | `destacada` |
+| `desde` | `2026-05-18` |
+| `hasta` | `2026-08-31` |
+| `mostrar` | `sí` |
+| `orden` | `1` |
+
+**Fijate que `desde` es de mayo y el informe es de julio, y está bien.** El temario selecciona;
+la ventana no filtra la selección (`R-17`).
+
+**Los tres errores que dejan la fila muda**, en orden de frecuencia:
+
+1. **`periodo_id` vacío** — la fila existe, se ve en la hoja, y **no entra a ningún informe**.
+   No hay mensaje: la sección simplemente emite un ítem menos.
+2. **`mostrar` distinto de `sí`** — mismo efecto, y `si` sin tilde **no cuenta**.
+3. **`informe_id` que no coincide** con el informe que estás corriendo.
+
+**Qué NO va acá, y dónde está:** el régimen de selección —por qué el temario manda y la semana
+no filtra— es **`R-17`** (`docs/REGLAS_NEGOCIO.md`); qué campañas elige el equipo para `jm` es
+**`docs/CONFIG_INFORMES.md` §1.1**. Este instructivo sólo dice **cómo se llena la celda**.
+
+**Un apunte sobre `PERIODOS`:** hoy tiene dos filas —`m2_mensual` y `quincena_rrss`, las dos de
+junio— y **ninguna cubre la semana del informe**. No hace falta que la cubra: la ventana sale de
+`CONFIG.periodo_desde`/`periodo_hasta`, y `periodo_id` sólo tiene que **no estar vacío**.
+
+---
+
 ## Marcar y clasificar una lámina
 
 > **⚠ Nada de lo que sigue existe todavía.** *Sellar plantilla* **no está en el menú** y no la

@@ -6156,3 +6156,38 @@ para "¿qué operaciones tiene el motor?"**: se anotó el candidato sin tocar el
 
 **El presupuesto de la corrida:** 39 tokens reemplazados contra 38 de la corrida anterior — el
 que entró es `ecv_barrios`. `FALTANTES` bajó de 265 a **264**.
+
+---
+
+## Cómo se llena `CAMPANAS`, y por qué la Parte A no se ejecutó (2026-08-08) — commit de esta entrada
+
+El `_17`, tercera corrida de la noche. **El instructivo está en `RUNBOOK.md`**, con las diez
+columnas, un ejemplo real y los tres errores que dejan la fila muda. **`SOLAPAS` no se tocó** y
+**ninguna solapa amaneció marcada `fuente` sin serlo.**
+
+**La Parte A no se ejecutó, y el motivo es `R-02`.** Pedía pasar a `fuente` las dos solapas
+`Buscador por periodo` para probarlas. La medición mostró que **son paneles, no tablas**: fila 1
+rótulos, **fila 2 el período tipeado a mano**, fila 3 encabezados que son fórmulas de array, y
+los datos generados por un `FILTER` contra esas celdas. Es literalmente el caso que `R-02`
+excluye — *"lo que devuelva depende de lo último que tipeó una persona"*.
+
+**Y no es hipotético: los dos paneles están hoy en `31/07 → 07/08` y el informe corre sobre
+`24–30/07`.** Leerlos habría traído las campañas de otra semana **sin que ningún token
+fallara**. Marcarlas `fuente` para probar no habría medido si sirven: habría medido si el motor
+sabe leer un panel. **Se reportó en vez de ejecutarse**, que es lo que `CLAUDE.md` §4 pide
+cuando un prompt derogaría una regla sin decirlo.
+
+**Lo que sí sirve ya está a la vista:** las fórmulas de los paneles nombran sus fuentes reales
+—`Seguimiento digital`, `Mail per`, `Alcance`, `CAMPAÑAS_DESGLOCE_DIGITAL`—. **El camino no es
+leer el panel: es leer lo que el panel lee.**
+
+**Tres hallazgos más, anotados y no arreglados.** `digital/Alcance` **es fuente, tiene 768 filas
+y su `nombre_campaña` no está en `MAPEO`** — es la que engancha el nombre del temario con el id
+de cuenta, y la columna trae **ñ**. `CAMPANAS.tipo` **diverge entre el seed y la hoja viva**
+(`campana` contra `destacada`) y **nadie lo notó porque ningún consumidor lee esa columna**: el
+día que alguien escriba `SECCIONES.filtro = tipo=…`, el que mire el seed va a poner el valor que
+no entra. Y `PERIODOS` no cubre la semana del informe, lo cual **no molesta**: la ventana sale de
+`CONFIG` y `periodo_id` sólo tiene que no estar vacío.
+
+**Medido para el ejemplo del instructivo: 67 campañas** estuvieron activas en la ventana
+24–30/07. **Sin código.**
