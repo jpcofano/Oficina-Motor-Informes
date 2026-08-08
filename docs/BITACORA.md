@@ -6226,3 +6226,40 @@ figura.** El filtro existe desde hoy, así que **el bloqueo se levantó**.
 **`CLAUDE.md` §7 no tiene fila para la configuración de herramientas** —ni para `.claude/`, ni
 para los subagentes, ni para las operaciones del motor—. Es la misma pregunta sin dueño que ya
 se anotó al agregar `LISTA`. **No se tocó §7:** cambiar el ruteo es decisión del usuario.
+
+---
+
+## `REVISAR` y los dos dueños de `§7` (2026-08-08) — commit de esta entrada
+
+El `_2` del 08. **Cierra una regla escrita que el código no cumplía**, que es distinto de una
+mejora pendiente: `R-18` addendum 1 dice que si todas las filas de una lista se rechazan el
+estado es `REVISAR` y **nunca `sin_datos`**, y el motor decía `sin_datos`. No se disparaba
+porque los cuatro barrios matchean — **se arregló antes de que un dato lo despertara**.
+
+**`0.3` era la única parada y no se disparó.** Los dos puntos que pintan preguntan
+`estado === 'ok'` y **todo lo demás cae al mismo camino**: publica `«FALTA:token»` y deja su
+fila en `FALTANTES` con el estado en el motivo. Así que un estado nuevo **no rompe el pintado**
+y `REVISAR` hereda el precedente en vez de inventar una forma. **Se verificó antes de escribir
+código**, que es lo que la pregunta buscaba.
+
+**El corte es "vacío Y hubo rechazos", no "hubo rechazos".** Una lista que publica tres de cinco
+**sí resolvió** y sigue `ok`; sus dos rechazados ya viajaban a `FALTANTES` desde ayer. Lo que
+`REVISAR` marca es el caso en que el token **no pudo decir nada teniendo datos que decir**.
+
+**Entra al resumen de la corrida** (`revisar`), no sólo a la traza: un estado que no se cuenta
+es un estado que nadie mira.
+
+**Las dos pruebas de `A.3` pasaron en la misma corrida**, con filas temporales borradas al
+terminar: todas rechazadas → `REVISAR` con 4 rechazados; cero filas → `sin_datos`. **Y las siete
+positivas de ayer siguen dando lo mismo** (`A.4`), que es justo cuando se rompen sin que nadie
+mire.
+
+> **Un desvío que vale anotar:** el primer intento de `A.3` dio `error` en vez de `REVISAR`, y
+> **no era del código**: la prueba apuntaba a `nombre`, que no está en `MAPEO` para esa solapa.
+> El instrumento falló, no lo medido. Se corrigió a `figura` —mapeado, y sus valores nunca
+> matchean el catálogo de barrios— y pasó.
+
+**`CLAUDE.md` §7 ganó dos filas** y con eso se cierran los dos pendientes que la corrida
+nocturna abrió: *"¿Qué operaciones tiene el motor?"* → **`OPERACIONES_`**, y *"¿Cómo está
+configurada la herramienta?"* → **`.claude/`**. Las dos siguen el criterio que ya usaba la fila
+del inventario: **el código es la fuente, no un `.md` que se desincroniza.**

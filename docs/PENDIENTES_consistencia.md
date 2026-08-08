@@ -2187,7 +2187,22 @@ declarado hoy es `etapa=post` en `comunicaciones_post`, que es de `REUNIONES`.
 `SECCIONES.filtro = tipo=destacada`, el vocabulario que vale es **el de la hoja**, y quien mire
 el seed para saber qué escribir va a poner `campana` y no va a entrar ninguna fila.
 
-### P1 · `REVISAR` no existe como estado de marcador, y `R-18` lo pide
+### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
+
+**Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el
+resumen de la corrida** (`revisar`). El corte es **valor vacío Y hubo rechazos**: una lista que
+publica tres de cinco sigue siendo `ok`, con sus dos rechazados en `FALTANTES`.
+
+**No hizo falta tocar el pintado**, y se verificó antes de escribirlo: los dos puntos que pintan
+preguntan `estado === 'ok'` y **todo lo demás cae al mismo camino** — publica `«FALTA:token»` y
+deja su fila con el estado en el motivo. `REVISAR` **hereda el precedente** en vez de inventar
+una forma nueva.
+
+**Verificado con las dos pruebas en la misma corrida** (filas temporales, borradas al terminar):
+todas rechazadas → `REVISAR` con 4 rechazados; cero filas → `sin_datos`. Y los siete marcadores
+del día anterior **no se movieron**.
+
+> **El texto original del pendiente queda abajo, sin editar** — explica por qué se abrió.
 
 **Los estados que el motor asigna son tres:** `ok`, `sin_datos` y `error`. **`REVISAR` no
 existe** — medido el 08/08 grepeando `Generador.gs`. Los `REVISAR` que hay en el repo son de
@@ -2208,7 +2223,18 @@ la fila de `FALTANTES` lo desmienten, pero el estado miente.
 un estado nuevo toca la publicación, el conteo de la corrida y el listado de faltantes, y eso
 es un prompt propio.
 
-### P2 · Sin dueño declarado: "¿qué operaciones tiene el motor?"
+### ~~P2 · Sin dueño declarado: "¿qué operaciones tiene el motor?"~~ — CERRADO (08/08/2026)
+
+**`CLAUDE.md` §7 ganó dos filas**, no una: *"¿Qué operaciones tiene el motor?"* → **`OPERACIONES_`
+en `Marcadores.gs`**, y *"¿Cómo está configurada la herramienta?"* → **`.claude/`**, que era la
+otra pregunta sin dueño que la corrida nocturna había dejado abierta.
+
+**Ganó el candidato que el propio pendiente proponía**, y por su motivo: el mapa explícito es
+**exacto por construcción y no puede envejecer**, así que el dueño es el código y no un `.md` —
+el mismo criterio que la fila del inventario. Lo que la fila agrega es dónde se documenta una
+operación nueva: **en su propio comentario**, con el motivo.
+
+> **El texto original del pendiente queda abajo, sin editar.**
 
 `CLAUDE.md` §7 **no tiene fila para esa pregunta** — verificado el 08/08 grepeando el archivo.
 La respuesta hoy se lee del código (`OPERACIONES_`, `Marcadores.gs`), que es el mapa explícito
