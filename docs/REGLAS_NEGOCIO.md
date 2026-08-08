@@ -828,6 +828,68 @@ vez de darlo por hecho.
 **Si falla:** si entran campañas que el equipo no publica, la salida **no es reponer el filtro
 de ventana** — es corregir el temario, que es donde vive la decisión editorial.
 
+## R-18 — Una lista `DISTINCT` publica el canon del catálogo, nunca el texto de la celda
+
+**Enunciado:** una operación que devuelve una lista de valores distintos —barrios, y cualquier
+otra categoría— se rige por seis cosas, y por ninguna más.
+
+**1 · La clave de comparación es el valor normalizado.** `normalizar_` (`Parseo.gs`): pliega
+acentos y mayúsculas y hace `trim()`. `Palermo` y `palermo` son **el mismo valor**.
+
+> **El límite, escrito porque importa:** `normalizar_` **no colapsa espacios internos**, no toca
+> puntuación y no toca guiones. *Villa Gral Mitre* con doble espacio **no** colapsaría contra la
+> variante de un solo espacio. **Hoy el caso no existe** —medido el 07/08: cero pares colapsan y
+> los valores están escritos limpios—, y **no se crea un normalizador nuevo por un caso que
+> nadie tiene**. Si aparece, la salida está declarada: se **compone** con el colapso de espacios
+> de `R-10`, y el motivo se escribe arriba de la función (`CLAUDE.md` §2, que ya cuenta cuatro
+> normalizadores y pide justificar el quinto).
+
+**2 · La forma publicada sale del catálogo canónico de esa categoría, nunca de la celda.** Para
+barrios el catálogo es la solapa **`Comunas` de `rdv`** —48 filas, barrio→comuna— y el mapeo lo
+hace **`parsearBarrio_`**, que primero prueba la tabla de variantes ortográficas de `Parseo.gs`
+y después el catálogo. **La lista canónica no se construye: ya existe.**
+
+**3 · Lo que no matchea el catálogo no se publica.** Queda **fuera de la lista**, el token va a
+**`REVISAR`** y el valor entra al **listado de faltantes con su fila**. **Nunca crudo y nunca en
+silencio** — son las dos formas de fallar acá, y esta regla le cierra la puerta a las dos. Un
+valor crudo publicado se lee como canon; uno descartado sin registro desaparece sin que nadie
+se entere.
+
+**4 · La lista hereda el universo de su sección, y eso es parte del contrato de la operación.**
+No es una nota al pie: cuando se cablee `ecv_barrios`, su fila de `MARCADORES` lleva
+`filtro = figura=Jorge Macri`, igual que las seis del `Addendum 1` de `R-15`. **Sin eso el
+`DISTINCT` cuenta de más** — es exactamente el error que se corrigió en la lámina 5 el
+07/08/2026, y **ésta es la operación con más chances de repetirlo**: una lista larga se lee como
+riqueza de datos, no como un universo mal recortado. Medido: sin filtro **11 barrios**, con
+filtro **4**.
+
+**5 · El orden de salida es alfabético sobre la forma publicada**, con comparación de
+castellano. Alfabético es lo que hace la lista **reproducible entre corridas**; el orden de
+aparición depende de en qué fila quedó cada dato y cambia sin que cambie el dato.
+
+**6 · No se trunca, y cero filas da `sin_datos`.** Salen **todos** los que sobrevivan al filtro;
+si no entran en la caja, **el motor no recorta** — es problema de plantilla y se resuelve ahí.
+Con cero filas devuelve **`sin_datos`**, no `""` ni `0`: es el precedente de `SUMA`, que sobre
+cero filas da `sin_datos` porque un vacío publicado se lee como *"ningún barrio"*, que es una
+afirmación que el motor no midió.
+
+**Qué NO dice esta regla, y va explícito:** **no toca `R-10`.** `R-10` rige la lectura de
+**encabezados de columna** —su enunciado lo dice, y el segundo "valor" que menciona es el de
+`MAPEO`, que también es un nombre de columna—. Ésta rige **valores de celda**. Son dos
+normalizaciones con dos propósitos y **conviven**. Se escribe explícito porque es el
+malentendido que el `P2` de `PENDIENTES_consistencia.md` ya tuvo una vez: daba por sentado que
+`R-10` empujaba en contra de deduplicar `Palermo`/`palermo`, y **no la alcanza**.
+
+**Origen:** decisión del usuario, 07/08/2026. El punto 2 **supersede a la decisión del mismo
+día** que fijaba *"se publica el valor tal como está escrito en la celda"* — se tomó **sin saber
+que el catálogo existía**, y se movió cuando apareció el dato. **Una decisión que se corrige
+porque apareció evidencia no es una decisión que estaba mal**, y la distinción vale escribirla.
+
+**Cómo se verifica:** hoy **no se puede** — `ecv_barrios` no tiene fila en `MARCADORES` y la
+operación `DISTINCT` no existe. La verificación queda declarada para cuando se implemente: sobre
+la ventana 24–30/07 con el filtro puesto tiene que devolver **exactamente cuatro** —Belgrano,
+Caballito, Retiro, Villa Urquiza—, en ese orden, y ningún valor fuera del catálogo.
+
 ---
 
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
