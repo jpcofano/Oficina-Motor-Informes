@@ -971,6 +971,11 @@ auto-reporta.**
 
 ## 4 · Backlog (sin orden, sin fecha)
 
+- **Catálogos canónicos para las categorías que todavía no lo tienen.** Barrios **ya lo tiene**
+  —la solapa `Comunas` de `rdv`, 48 filas, más las variantes ortográficas de `Parseo.gs`— y por
+  eso sale de acá: `R-18` lo declara como la fuente de la forma publicada. Lo que queda es
+  **qué otras categorías publican texto libre sin catálogo detrás**, donde la forma publicada
+  depende de qué fila se leyó primero. Sin orden y sin fecha.
 - Historial de `FALTANTES` — `tools/snapshot.js` ya lo archivaría por corrida.
 - Fusionar `SUPUESTOS.md` y `REGLAS_NEGOCIO.md`: son la misma clase de cosa (enunciados con
   ID, ciclo de vida y derogación idénticos). **Decisión del usuario** — rompe ~40

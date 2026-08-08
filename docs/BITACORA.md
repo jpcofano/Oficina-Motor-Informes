@@ -6036,3 +6036,50 @@ Ninguna verificación miraba el universo.
 Y a `Preguntas al equipo`: **las 7 filas de `REUNIONES`, ¿son todas de JM o incluyen
 ministros?** Sin columna `figura` no se puede saber desde la hoja, y la sección `encuentro` se
 repite por esas filas.
+
+---
+
+## `R-18` — una lista `DISTINCT` publica el canon del catálogo (2026-08-07) — commit de esta entrada
+
+El `_15`, que **supersede al `_12` y absorbe al `12.1`**. Los dos quedan en la carpeta sin
+editar: el reporte de la Parte 0 del `_12` sigue valiendo. El `12.1` addendaba una reescritura
+del `_12` que nunca llegó al repo — se detectó antes de la primera edición y se resolvió con un
+prompt propio en vez de con otro addendum.
+
+**El hallazgo que le dio forma a todo: el catálogo canónico ya existe.**
+`catalogoBarriosDesdeBase_` lee la solapa `Comunas` de `rdv` —48 filas— y `parsearBarrio_` mapea
+variantes al canon. **No había que construir la lista: había que apuntarle.**
+
+`R-18` fija seis cosas para cualquier lista `DISTINCT`, no sólo barrios: clave normalizada **con
+el límite escrito** —`normalizar_` no colapsa espacios internos, y no se crea un quinto
+normalizador por un caso que hoy no existe—, **la forma publicada sale del catálogo y nunca de
+la celda**, lo que no matchea va a **`REVISAR` y a faltantes** —nunca crudo, nunca en silencio—,
+**la lista hereda el universo de su sección**, orden alfabético por reproducibilidad, y cero
+filas a `sin_datos`.
+
+**El punto 2 supersede a una decisión del mismo día** —*"se publica el valor tal como está en la
+celda"*—, tomada sin saber que el catálogo existía. Queda escrita esa relación: **una decisión
+que se movió porque apareció un dato no es una que estaba mal.**
+
+**El cuarto punto es el que más importa y por qué:** una lista larga se lee como riqueza de
+datos, no como un universo mal recortado. Medido: **sin filtro 11 barrios, con filtro 4**. Es el
+error de la lámina 5 y ésta es la operación con más chances de repetirlo.
+
+`S-04` registra lo que autoriza que las 11 variantes vivan en `Parseo.gs`: **el catálogo y sus
+variantes son estables**. Su síntoma es visible por diseño — un barrio que desaparece de la
+lista porque `parsearBarrio_` no lo matchea.
+
+**La corrección que más vale del `P2` cerrado:** la frase que decía que `R-10` empujaba en
+contra era **falsa**, y queda escrito **por qué se creyó que había conflicto** — se leyó
+*"preservando mayúsculas y acentos"* como una doctrina general cuando es la política de un
+problema puntual. **Una regla que resuelve un problema no declara una doctrina.**
+
+**Dos hallazgos anotados y no arreglados.** El camino al catálogo está hardcodeado en el
+llamador: `catalogoBarriosDesdeBase_` es agnóstica pero `Union.gs` le pasa `'rdv'` literal y la
+constante `HOJA_COMUNAS_RDV_`. **Y uno duro para quien implemente:** un marcador **no alcanza
+`Comunas`** por el camino normal — está en `SOLAPAS` como `referencia` y `buscarMapeo` devuelve
+`«FALTA:barrio@solapa_no_fuente»`. La operación tendrá que llamar a la función, no declarar el
+catálogo en `MAPEO`.
+
+**La implementación no es cableado: es lámina nueva.** Los cuatro tokens son celdas de una misma
+tabla, `D-22` aplica y no hay desborde. **La plantilla no se tocó. Sin código.**
