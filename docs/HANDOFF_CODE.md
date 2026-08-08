@@ -3,155 +3,107 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-07, al cerrar el `_9` y su addendum `9.2` · último commit al
-escribirlo: `42bbcfe`
+**Última actualización:** 2026-08-08, al cerrar la corrida nocturna de cuatro prompts · último
+commit al escribirlo: `89dce1b`
 
 ## Dónde estamos
 
-**Día entero de documentación, cero `.gs` tocados.** `D-23` se escribió a la mañana y su
-**Addendum 1** lo corrigió a la tarde, en catorce puntos. Lo que quedó decidido:
+**La lámina 5 quedó bien.** Es el cambio grande de la noche: publicaba los encuentros de **doce
+figuras** y ahora publica los de Jorge Macri, y además **publica los barrios**.
 
-- **La identidad de una lámina vive en las notas del orador, en un solo campo:
-  `#lamina: L-NNN`** — global, opaco, **nunca reasignado**. El `#seccion:` se descartó: la
-  clasificación se declara en la hoja `LAMINAS` y el registro es dueño de la configuración.
-- **El contador vive en la hoja `LAMINAS`**, es **uno solo para las dos plantillas**, y **no se
-  deriva de las notas** — derivarlo haría retroceder el contador al retirar una lámina.
-- **Sellar y sembrar son una sola operación.** No hay Fase 3 ni segundo sellado.
-- **La copia generada conserva el ancla y se limpia a demanda**; **la plantilla nunca**.
-- **Una lámina no se borra: se esconde.**
+| | antes | ahora |
+|---|---|---|
+| `ecv_encuentros` | 15 | **4** |
+| `ecv_insc_mail_pct` | 59.9 | **50.7** |
+| `ecv_insc_cc_pct` | 8.1 | **11.8** |
+| `ecv_insc_ivr_pct` | 1.3 | **1.9** |
+| `ecv_insc_digital_pct` | 29.3 | **35.7** |
+| `ecv_insc_dif_pct` | 2.1 | **0** *(es un dato, no `sin_datos`)* |
+| `ecv_barrios` | *(no existía)* | **Belgrano, Caballito, Retiro, Villa Urquiza** |
 
-**Y se cerró la contradicción semana-primero contra temario-solo**, que venía abierta desde la
-mañana. `R-17` fija los tres niveles: **el temario selecciona** y busca en toda la base, los
-filtros de `R-15` acotan lo que eligió, y **la semana es el fallback** — decide sólo cuando no
-hay temario. `R-16` recibió un addendum que dice qué parte suya quedó superseded; **su criterio
-de solape sigue vivo**. Ningún número se movió: el código ya hacía esto.
-
-**El estado del deck no cambió.** Sigue valiendo `jm-20260807-083557`: 31 de 43 marcadores
-`ok`, 38 tokens reemplazados, 265 faltantes, 7 ítems, **298 s contra 350 de techo**.
+Corrida de verificación `jm-20260808-012643`: **39 tokens reemplazados** (era 38), `FALTANTES`
+en **264** (era 265).
 
 ## Pendiente de verificación humana
 
-**Lo de hoy a la tarde es documental y se cierra leyendo:** el `Addendum 1 a D-23`, los dos
-addenda de `C-01` y la sección del RUNBOOK. **No implementé nada**, como pedían los prompts.
+**Lo que cambia números publicados y hay que mirar en el deck:** los seis marcadores de la
+lámina 5 con el filtro `figura=Jorge Macri`, y la lista de barrios. **El deck de la corrida está
+en `CORRIDAS`.**
 
-Y sigue pendiente **todo lo de las dos noches anteriores**, que sí cambia números publicados:
-los nueve porcentajes sin signo, el solape de `R-16` (quince marcadores), `claveDeFila_` (las
-seis `pauta_*`) y el renombre de la lámina 7 (con backup). **Se prueba corriendo
-`generarInforme` y mirando la lámina 6 de IVR y el Resumen Ejecutivo.**
+Y sigue pendiente todo lo de las noches anteriores: los nueve porcentajes sin signo, el solape
+de `R-16`, `claveDeFila_` y el renombre de la lámina 7.
 
-## Lo medido, y no hay que volver a medirlo
+## Qué se decidió y dónde quedó
 
-**Acceso:** las dos plantillas dan `EDIT` a `jpcofanogcba1@gmail.com` (dueñas:
-`reporteseinformesgcba`). No hay bloqueo de Drive para el sellador.
-
-| | número |
-|---|---|
-| láminas totales (`jm` 22 + `secco` 29) | **51** |
-| clasificadas bien hoy por `familia_tokens` | **20 — el 39 %** |
-| ambiguas | **5** |
-| huérfanas | **26** — 13 sin ningún token, 13 con tokens |
-
-**Cinco hechos de plataforma sobre Slides:**
-
-1. **`presentacion.replaceAllText` alcanza las notas del orador; `slide.replaceAllText` no.**
-   Por eso el ancla **no usa `{{…}}`**: la barrida de faltantes lo volvería `«FALTA:lamina»`.
-2. **`piezasDeTextoDeSlide_` no baja a las notas.** El ancla no contamina `tokensPorSlide_`,
-   `MARCADORES` ni `FALTANTES`.
-3. **`TableCell` no expone `setDescription` ni `setTitle`.**
-4. **`makeCopy` y `duplicate()` arrastran las notas**, y **copiar una lámina entre
-   presentaciones también**. De ahí: la copia hereda las notas del equipo, N copias de una
-   lámina modelo comparten id, y el transporte de identidad entre plantillas sale gratis.
-5. **`CORRIDAS` tiene `deck_id` cargado en sus 27 filas**, y `verificarObjectIdDeCorrida_`
-   (`Generador.gs`) ya hace el patrón "buscar fila → abrir deck por id → trabajar sobre él".
-
-**Del registro:** el único lugar que lee `SECCIONES.modo` es `seccionesRepetiblesDe_`,
-comparando contra `repetible` —`agregado`, `unica` y `manual` no tienen código detrás—; y
-`sembrarSecciones_` **sólo agrega filas nuevas, jamás pisa una existente**.
-
-**Solape `jm`↔`secco`, criterio grueso:** **nueve pares** con el primer texto idéntico, **seis
-de ellos** con el conjunto de tokens idéntico (`secco` 17=`jm` 13, 18=14, 20=16, 21=17, 22=18,
-23=19 — todos `camp_*`), más cinco con solape parcial, el más fuerte `secco` 8 ~ `jm` 6 con
-**28 tokens en común**. **No se decidió cuáles son "la misma".**
+- **`R-15` addendum 1** — `rdv` es el quinto canal; su señal es la columna `Figura`.
+- **`R-17`** — el temario selecciona, los filtros acotan, la semana es el fallback.
+- **`R-18` + addendum 1** — una lista `DISTINCT` publica el canon del catálogo; cuatro estados.
+- **`S-04`** — el catálogo de barrios y sus variantes son estables.
+- **`D-23` + addendum 1** — la identidad de una lámina va a las notas del orador, un solo campo.
+- **`C-01`** tiene dos addenda: el motor puede escribir las notas, acotado a `#lamina:`.
 
 ## Qué sigue
 
-1. **Que leas el `Addendum 1 a D-23` y confirmes.** Es la condición de cierre.
-2. **`T2.11` · el cableado lámina por lámina.** Donde está el 90 % del trabajo que queda.
-   Empezar por los cinco `ecv_insc_*`.
-3. **Medir el presupuesto.** 298 de 350 y sin causa establecida. Una serie, no una corrida.
-4. **`T2.3` · reanudar**, que volvió al camino crítico por el margen.
-5. **Fase 2 de `D-23`** — sellar y sembrar. **No arrancó y no arranca sin luz verde.**
+1. **`T2.11` · el cableado lámina por lámina.** **206 de las 264 filas de `FALTANTES` son
+   cableado puro** (sin fila en `MARCADORES`); 58 fallan por datos. **Los nueve `ecv_*` que
+   estaban bloqueados por el universo ya se pueden cablear** — el filtro existe desde hoy.
+2. **`_11` · Fase 2, el sellador.** **No se corrió a propósito**: es la primera corrida que
+   escribe sobre una plantilla y la querés mirar despierto.
+3. **`_14` Partes A–C · los subagentes.** Su Parte 0 ya corrió y tiene un hallazgo que cambia
+   el diseño (abajo).
+4. **Medir el presupuesto.** Sigue sin causa establecida.
 
 ## Esperando decisión tuya
 
-- **Las 26 celdas de `seccion_id`.** Trabajo humano contado; la mesa está en el reporte del
-  `_8`. Se llenan en `LAMINAS`, **después** de la Fase 2.
-- **Las dos láminas de `secco` sin tokens que quizá no son estáticas** (15 y 26) — `P2`.
-- **El VTR de la lámina 7: ¿se deriva?** `acum_views / acum_impresiones`. **No cableado.**
-- **`ecv_barrios` es una lista** (decidido). Faltan separador, orden, deduplicación —`R-10` no
-  pliega mayúsculas— y qué pasa si no entra en la caja.
-- **`camp_bench_*`: ¿fijos o del período anterior?** Si son constantes,
-  `MARCADORES.valor_fijo` los resuelve sin código.
-- **`ventana_candidatos_anclaje_ampliada_dias` está vacía** = no ampliar.
-- **`T2.10`** —una lámina cada N ítems— escrito y **no aprobado**.
+- **`REVISAR` no existe como estado del motor** y `R-18` lo pide. Hoy un valor rechazado **no
+  llega al deck** —queda en la traza y en `FALTANTES`—, pero si **todas** las filas se rechazan
+  el estado dice `sin_datos`, que es lo que el addendum prohíbe. **Crear el estado es un prompt
+  propio.**
+- **`CLAUDE.md` §7 no tiene dueño** para "¿qué operaciones tiene el motor?" ni para la
+  configuración de herramientas (`.claude/`, subagentes). **No toqué §7**: cambiar el ruteo es
+  tuyo.
+- **Las dos solapas `Buscador por periodo` no se pasaron a `fuente`** — ver abajo.
+- **`digital/Alcance` es fuente y su `nombre_campaña` no está en `MAPEO`.** Es la que engancha
+  el nombre del temario con el id de cuenta.
+- **Tres ranuras `[MANUAL]` para cuatro barrios** en la lámina 5. Es plantilla, no motor.
+- **La forma "una caja por barrio" se pospuso**, no se cayó: `D-22` y sin desborde.
 
-## Trabado
+## Lo medido esta noche, y no hay que volver a medirlo
 
-1. **`Digital` no tiene datos de la ventana** — 897 fechas de 2024-08-29 a 2026-01-02. **Ni por
-   solape entra nada.** Por eso la lámina 7 lee `Digital 2026 acumulado`.
-2. **La lámina 7 tiene cuatro ranuras y una sola columna con token.** Las otras seis son 24 de
-   los 28 de `CONFIG_INFORMES.md` §1.8 y no existen.
-3. **`secco` a 4 ranuras está decidido y no se puede ejecutar**: `D-22`.
-4. **Cuatro de los cinco encuentros pintan cero.** `3354-` y `3346-` no tienen filas en las
-   solapas de canal para esta ventana; `3387-` sí.
-5. **La lámina 5 publica un porcentaje sin su numerador**: `Mail: «FALTA:ecv_insc_mail»(59.9%)`.
-   Los cinco pares `ecv_insc_*` igual. **Es el arreglo más barato y más visible que queda.**
-6. **16 tokens del Resumen Ejecutivo sin fuente** (Call Center, impresiones por plataforma,
-   `contenidos_total`).
-7. **`REUNIONES` no es el temario** — le faltan Primera Persona y Registro Civil.
-
-## En pausa, y no se vuelve sobre esto
-
-> Las tres preguntas sobre la lámina M2. Los tres remitentes sueltos y los once
-> `camp_resp_*`. **Los `m2_*` con sufijos `_a`…`_e` se quedan como están** — manda la
-> plantilla. El **objetivo B** —score de anclaje saturado en 1,00— anotado como `P1`.
+- **Un subagente NO ve el `CLAUDE.md` del proyecto.** Medido lanzando uno sin herramientas:
+  devolvió *"NO TENGO INSTRUCCIONES DE PROYECTO EN CONTEXTO"*. Cada archivo de subagente tiene
+  que decir **qué abrir, con la ruta**.
+- **Claude Code `2.1.220`** — `/agents` ya no crea nada; los archivos se editan a mano.
+- **Las dos solapas `Buscador por periodo` son paneles, no tablas**: fila 1 rótulos, **fila 2 el
+  período tipeado a mano**, fila 3 encabezados que son fórmulas, y los datos generados por un
+  `FILTER` contra esas celdas. **`R-02` las veta.** Y hoy están en `31/07 → 07/08` mientras el
+  informe corre `24–30/07`: leerlas traería otra semana **sin que ningún token falle**.
+- **`CAMPANAS` tiene 10 columnas** (el seed es el correcto) y su `tipo` **diverge del seed**:
+  la hoja dice `destacada`, el seed dice `campana`. **Nadie lee esa columna hoy.**
+- **`PERIODOS` no cubre la semana del informe** y no molesta: la ventana sale de `CONFIG`.
+- **67 campañas** estuvieron activas en la ventana 24–30/07.
 
 ## Qué mirar antes de tocar algo
 
-- **⚠ Dos cosas que se llaman igual no son la misma cosa.** `"Seguimiento Digital"` es el
-  **nombre de la base**; `Seguimiento digital` es **una solapa**; `Digital` es **otra**; y
-  `Digital 2026 acumulado` es una cuarta. `CLAUDE.md` §4.
-- **`familia_tokens` está congelado hasta la Fase 4.** No escribir ninguno nuevo: `rrss_` ya
-  demuestra que sale mal —vive en dos secciones distintas de dos informes—.
-- **Toda entrada de renombre envuelve el token en llaves.** Uno que pase texto pelado **puede
-  corromper el ancla**, y no se vería hasta mirar las notas del deck publicado.
-- **`ecv_alcance_semanal` fabricó dos láminas huérfanas** (`secco` 4 y 5): `ecv_comuna` y
-  `ecv_fecha` no están en su enumeración de diez tokens exactos.
-- **El recorte por ventana se decide en dos lugares** —`leerFuente` rama `filtrar` y el
-  agregado global de `Generador.gs`— y los dos llaman a **`entraPorSolape_`**.
-- **`MAPEO.fecha_fin_periodo` es lo que enciende el solape.** Mail, SMS y `rdv` **no la llevan
-  a propósito**.
-- **`claveDeFila_` elige por lo que la fila tiene**, no por el nombre de la solapa.
-- **⚠ Cuidado con los defaults vacíos pero truthy** — `{}` engaña a `tokensDelMapa ? … : null`.
-- **El cierre de la corrida corre siempre** y **el instrumento se reporta a sí mismo**.
-- **`SECCIONES` tiene 36 filas curadas a mano**: toda columna nueva entra por `COLUMNAS_DELTA_`.
-- **`MARCADORES` tiene tres escritores declarados** (`ESCRITORES.md`).
-- **Los cuatro formatos son un 2×2** de unidad de entrada × lleva el signo.
-- **`SUMA` sobre cero filas devuelve `sin_datos`; `CONTEO` devuelve `0`.**
-- **`ULTIMO` elige por fecha**; empate con valores distintos → **no elige**.
-- **Seis láminas están escondidas**: la 10 de `jm`; la 23, 25, 26, 27 y 28 de `secco`.
-- **`tools/api.js` no reintenta por defecto, a propósito.** Si el transporte pierde el body,
-  **verificar en Drive/`CORRIDAS` si llegó a correr** antes de repetir. Pasó hoy.
-- **Los decks se llaman todos igual**: tomar el `deck_id` de `CORRIDAS`.
+- **`LISTA` es la séptima operación y es genérica.** El catálogo (`base/solapa`) y el separador
+  salen de **dos columnas nuevas de `MARCADORES`**, no del código.
+- **Catálogo vacío es `error`, no rechazo masivo.** Sin esa guarda, un fallo de acceso se leería
+  como *"todos los valores están mal"*.
+- **Antes de escribir un filtro, verificar que su campo esté en `MAPEO`** — un filtro propio con
+  campo no mapeado **no filtra: falla**. Y el heredado con campo ausente **se ignora en
+  silencio**: el mismo texto se comporta distinto según dónde se escriba.
+- **Un número correcto puede salir de las filas equivocadas.** `CLAUDE.md` §4.
+- **⚠ Dos cosas que se llaman igual no son la misma cosa.** Ahora hay un caso más: **`REVISAR`**
+  existe en `Fechas.gs` como origen de una columna de fecha, y **no es** un estado de marcador.
+- **`familia_tokens` está congelado** hasta la Fase 4.
+- **`tools/api.js` no reintenta por defecto.** Si el transporte devuelve HTML, **verificar si
+  llegó a correr** antes de repetir. Y un bucle `isRowHiddenByFilter` fila por fila sobre mil
+  filas **cuelga la llamada**: medir el filtro por su rango, no iterando.
+- **Seis láminas están escondidas**; los decks se llaman todos igual, tomar el `deck_id` de
+  `CORRIDAS`.
 
 ## Números de referencia
 
-`MARCADORES` en **43** filas · **31 `ok` / 12 `sin_datos` / 0 `error`**. `MAPEO` en **140**.
-`SECCIONES` en **36 filas y 16 columnas**, **9 declaran `familia_tokens`** y **4 de esas 9 son
-candidatas a colapsar**. `CORRIDAS` en **27 filas, las 27 con `deck_id`**. Plantillas: `jm` 22
-láminas y 172 tokens visibles, `secco` 29 láminas. **Las 10 pruebas pasan.** `FALTANTES` en
-**265**. Una corrida completa costó **298 s** y emitió **7 ítems**.
-
-El deck de `jm-20260807-083557` **se conserva**. En la papelera: los cuatro decks de control de
-las dos noches y las cuatro presentaciones temporales que midieron `replaceAllText`,
-`duplicate()`, el copiado entre presentaciones y la herencia de notas en `makeCopy`.
+`MARCADORES` en **44 filas** y **14 columnas** (entraron `catalogo` y `separador`). `SECCIONES`
+en 36 filas. `MAPEO` en 140. `CAMPANAS` en 3 filas, **las tres de `secco`**. `FALTANTES` en
+**264**. Plantilla `jm`: 22 láminas, 172 tokens. **Las operaciones del motor son siete.**
