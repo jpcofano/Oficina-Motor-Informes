@@ -278,6 +278,46 @@ independencia.
 
 ---
 
+## Los dos subagentes
+
+Viven en `.claude/agents/` y **se invocan por nombre**, nunca solos: sus `description` están
+escritas para que Claude **no** los delegue por su cuenta. El control queda en el prompt, que es
+donde vive la disciplina del proyecto.
+
+| | qué hace | cuándo |
+|---|---|---|
+| **`verificador`** | Toma un prompt **sin ejecutar** y dice, premisa por premisa, si se sostiene, con qué se desmiente o si no se pudo verificar. **Sólo lectura.** | Antes de la Parte 0, cuando el prompt lo pida |
+| **`cableador`** | Escribe filas de `MARCADORES` para tokens sin valor, **de a uno**, por un camino declarado en `ESCRITORES.md` | Cuando un prompt lo pida, nunca solo |
+
+### Cómo entra el `verificador` al flujo
+
+Es **el único paso nuevo**, y no cambia nada más: recibís un prompt sin ejecutar, se lo pasás a
+Code, y **antes de la Parte 0 le pedís que corra el `verificador` sobre el archivo**. El reporte
+vuelve a vos.
+
+> **⚠ Ese reporte NO habilita la ejecución.** El subagente corre **dentro** de la sesión que va a
+> implementar y **hereda sus premisas**: baja el costo de atajar una premisa falsa, pero no
+> reemplaza la verificación desde afuera. **La luz verde la seguís dando vos.**
+
+### Tres hechos operativos que conviene saber antes de tocarlos
+
+- **Los agentes se cargan al arranque.** Un archivo nuevo **no existe** hasta reiniciar la
+  sesión. Si lo acabás de crear y no aparece, no está roto: hay que reiniciar.
+- **`/agents` ya no crea nada** desde la `v2.1.198` — acá está la `2.1.220`. **Los archivos se
+  editan a mano.**
+- **⚠ Un subagente NO ve el `CLAUDE.md` del proyecto.** Está medido: se lanzó uno sin
+  herramientas y contestó que no tenía instrucciones de proyecto en contexto. Por eso cada
+  archivo **le dice qué abrir, con la ruta**, y esa lectura es su primer paso. Un subagente que
+  se la saltea **no está operando con las reglas del proyecto aunque lo parezca**.
+
+### El costo, dicho con precisión
+
+**Los subagentes no reparten consumo entre cuentas.** Corren dentro de la sesión de Code y
+**gastan su cuota**. Cada uno mantiene su propio contexto, así que un flujo con varios consume
+**bastante más** que una sesión sola. No son gratis y no son una forma de esquivar el límite.
+
+---
+
 ## Cargar una fila de `CAMPANAS`
 
 > **⚠ Leé esto antes de cargar nada.** Podés cargar las filas hoy y **van a entrar bien**: la

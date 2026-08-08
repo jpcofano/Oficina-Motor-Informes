@@ -164,6 +164,17 @@ lado, no refactorizar lo que se toca. Es "un prompt, un objetivo" —abajo— mi
 lado: revisar el prompt no es licencia para ampliar el alcance. Si aparece algo que merece
 prompt propio, se anota en el reporte y se sigue.
 
+**Todo prompt declara arriba qué subagente usa, o dice explícitamente que ninguno.** Sin esa
+línea **no se invoca ninguno**. Los dos que hay —`verificador` y `cableador`, en
+`.claude/agents/`— tienen su `description` escrita para **invocación explícita**, no para
+auto-delegación: el control queda en el prompt y no en lo que el modelo considere pertinente. Un
+subagente que escribe en una hoja de registro no arranca por criterio propio.
+
+- **Y el reporte del `verificador` no es luz verde.** Corre **dentro** de la sesión que
+  implementa y **hereda sus premisas**; no reemplaza la verificación contra los archivos vivos.
+  Es la misma regla de siempre —*quien implementa no se autoverifica*— y hay que decirla acá
+  porque la herramienta nueva invita a creer lo contrario.
+
 **Y no inventar el faltante.** Si el prompt no alcanza para saber qué hacer, eso se reporta
 como falta. No se completa con un supuesto razonable: un supuesto razonable metido en
 silencio es indistinguible de una instrucción, y sobrevive a la corrida. Esto **no choca con

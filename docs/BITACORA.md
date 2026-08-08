@@ -6263,3 +6263,41 @@ mire.
 nocturna abrió: *"¿Qué operaciones tiene el motor?"* → **`OPERACIONES_`**, y *"¿Cómo está
 configurada la herramienta?"* → **`.claude/`**. Las dos siguen el criterio que ya usaba la fila
 del inventario: **el código es la fuente, no un `.md` que se desincroniza.**
+
+---
+
+## Los dos subagentes: `verificador` y `cableador` (2026-08-08) — commit de esta entrada
+
+El `_14` con los cuatro ajustes del `14.1`. **Los dos archivos existen en `.claude/agents/`.
+Ninguno corrió todavía** — hacen falta reiniciar la sesión para que se carguen.
+
+**`0.3` reescribió el diseño, y para peor.** Un subagente **no ve el `CLAUDE.md` del proyecto**,
+así que *"citar las convenciones por referencia"* **no existía como opción**. Los dos archivos
+arrancan con la lista de qué abrir **con la ruta**, y esa lectura es su primer paso.
+
+**Y los dos nombran el modo de falla propio de la herramienta**, que es lo que pidió el
+addendum: un subagente que se saltea esa lectura **no está operando con las reglas del proyecto
+aunque lo parezca** — produce trabajo con forma correcta y fundamento inventado, y el formato
+engaña.
+
+**El `verificador` es sólo lectura, y la garantía es el frontmatter**, no el texto: su lista de
+`tools` no incluye `Write` ni `Edit`. Lleva adentro la pregunta que costó un día —*¿de qué filas
+sale este número?*— con el caso de la lámina 5 al lado: pasó las cuatro verificaciones que
+existían y contaba doce figuras. Y dice, adentro, que **su reporte no es luz verde**.
+
+**El `cableador` nació sin el bloqueo**: el universo de figura cerró anoche. En su lugar lleva
+la regla que lo reemplaza y que es permanente — **todo token que lea `rdv` nace con su filtro
+declarado**—, más el chequeo previo de que el campo del filtro esté en `MAPEO`, que es lo que
+evita escribir varias filas rotas de una pasada.
+
+**Su primer lote son los nueve `ecv_*` de la lámina 5, y no por orden de lista:** completan una
+lámina entera —hoy publica porcentajes sin sus numeradores— y **comparten universo**, así que un
+error de criterio se ve en los nueve juntos.
+
+`CLAUDE.md` §4 gana la convención: **todo prompt declara qué subagente usa o dice que ninguno**,
+y sin esa línea no se invoca ninguno. El `RUNBOOK` gana la sección con los tres hechos operativos
+—se cargan al arranque, `/agents` ya no crea nada en la `2.1.220`, y no ven el `CLAUDE.md`— y el
+aviso de costo: **no reparten consumo entre cuentas**.
+
+`C.1` no hizo falta: la fila de §7 para la configuración de la herramienta **ya había entrado**
+con el `_2` de hoy, y cubre `.claude/` entero. **Sin código del motor.**
