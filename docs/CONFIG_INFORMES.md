@@ -161,6 +161,20 @@ como ejemplo — confirmar si es real.)
 > dónde sale la forma publicada, cómo se deduplica, qué pasa con lo que no matchea, en qué
 > orden y qué devuelve con cero filas. **Acá quedan sólo las dos editoriales**, abajo.
 >
+> **⚠ Corregido el 08/08/2026 — la forma vigente es UNA CAJA con la lista separada por coma.**
+> Lo de abajo se escribió el 07/08 y quedó al revés: **"una caja por barrio" se pospuso**, no
+> se cayó.
+>
+> **Por qué se pospuso, que es distinto de descartarse:** la caja actual es una **celda de
+> tabla**, `D-22` mide que el motor no sabe agregarle filas, y no hay mecanismo de desborde.
+> Construir la lámina nueva para publicar cuatro nombres **no se paga**. La decisión sigue en
+> pie y **se corrige después, con su propio prompt**.
+>
+> **Y eso reactiva el separador**, que había quedado escrito y sin uso: hoy **sí se usa**, es
+> la coma, y vive en `MARCADORES.separador` — vacío significa `", "`. **Implementado y
+> verificado el 08/08:** la lámina 5 del deck publica
+> `Barrios impactados: Belgrano, Caballito, Retiro, Villa Urquiza`.
+
 > **Una caja por barrio.** Cada barrio va en su propia caja, no en una lista dentro de una.
 >
 > - **El separador queda escrito y hoy no se usa.** Es la coma (`", "`), y rige **sólo si

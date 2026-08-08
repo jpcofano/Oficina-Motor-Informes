@@ -2128,6 +2128,40 @@ número salió a la calle.
 **Corregido por:** `R-15` addendum 1 (la señal) + `CONFIG_INFORMES.md` §1.4 ter (el universo y
 el mecanismo), los dos del 07/08/2026.
 
+### P1 · `REVISAR` no existe como estado de marcador, y `R-18` lo pide
+
+**Los estados que el motor asigna son tres:** `ok`, `sin_datos` y `error`. **`REVISAR` no
+existe** — medido el 08/08 grepeando `Generador.gs`. Los `REVISAR` que hay en el repo son de
+`Fechas.gs` y `preseleccion_fechas.gs`, y son el **`origen` de una columna candidata a fecha**
+en `DIAG_FECHAS`: otro dominio, mismo nombre.
+
+**Qué queda cubierto igual, y qué no.** La operación `LISTA` ya cumple lo que importa de
+`R-18` punto 3: **un valor rechazado nunca llega al deck**, viaja en `rechazados`, sale en la
+traza y **el despachador le emite su fila en `FALTANTES`** aunque el token haya publicado bien
+el resto. Lo que falta es sólo el **estado**.
+
+**El caso concreto que hoy sale mal:** si **todas** las filas se rechazan, la lista queda
+vacía, el valor es `''` y el despachador lo baja a **`sin_datos`** — que es exactamente lo que
+el addendum 1 de `R-18` prohíbe, porque *`sin_datos` afirma que no había nada*. Hoy la traza y
+la fila de `FALTANTES` lo desmienten, pero el estado miente.
+
+**No se inventó el estado en la corrida que lo encontró** (decisión del usuario, 08/08): crear
+un estado nuevo toca la publicación, el conteo de la corrida y el listado de faltantes, y eso
+es un prompt propio.
+
+### P2 · Sin dueño declarado: "¿qué operaciones tiene el motor?"
+
+`CLAUDE.md` §7 **no tiene fila para esa pregunta** — verificado el 08/08 grepeando el archivo.
+La respuesta hoy se lee del código (`OPERACIONES_`, `Marcadores.gs`), que es el mapa explícito
+y por lo tanto **la lista es exacta y no puede envejecer**; pero nadie lo declaró como dueño,
+así que cada operación nueva vuelve a plantear la pregunta *"¿y esto dónde se documenta?"*.
+
+Pasó al agregar **`LISTA`** (la séptima, 08/08). El candidato natural es la fila que ya existe
+—*"¿Cómo está construido el código y qué alcanza a qué?"*, cuyo dueño son los scripts de
+`tools/` re-corridos— porque es el mismo criterio: **el código es la fuente, no un `.md` que se
+desincroniza**. **No se agregó la fila sin decidirlo**: tocar §7 es cambiar el ruteo del
+proyecto.
+
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 
 Su bloque "Antes de empezar" todavía reabre la decisión Looker-vs-SD y el alcance del

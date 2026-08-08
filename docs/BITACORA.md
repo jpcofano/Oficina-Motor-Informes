@@ -6114,3 +6114,45 @@ número, no la presentación**, y queda dicho: el valor publicado es el acumulad
 no lo que pasó dentro de la ventana.
 
 **Sin código.**
+
+---
+
+## La operación `LISTA` y `ecv_barrios` cableado (2026-08-08) — commit de esta entrada
+
+El `_16`, segunda corrida de la noche. **La lámina 5 publica los barrios:**
+`Barrios impactados: Belgrano, Caballito, Retiro, Villa Urquiza`, verificado en el deck de la
+corrida `jm-20260808-012643`.
+
+**`LISTA` es la séptima operación y es genérica.** El catálogo y el separador **no viven adentro
+de la función**: llegan por `ctx`, y el despachador los arma leyendo dos columnas nuevas de
+`MARCADORES` —`catalogo` (forma `base/solapa`) y `separador` (vacío = `", "`)—, que entraron por
+`COLUMNAS_DELTA_`. Una operación con `rdv/Comunas` adentro sirve para un token y para ninguno
+más, y `R-18` vale para cualquier categoría.
+
+**El catálogo lo resuelve `Generador.gs`, no `Marcadores.gs`:** leer una hoja es acceso a datos,
+no aritmética. Y **catálogo vacío es `error`, no rechazo masivo** — `catalogoBarriosDesdeBase_`
+devuelve lista vacía con motivo cuando la hoja no abre, y sin esa guarda un fallo de acceso se
+leería como *"todos los barrios están mal escritos"*.
+
+**Los rechazados viajan fuera de la traza, a propósito.** El despachador necesita **la lista**,
+no el texto: con ella emite una fila de `FALTANTES` **aunque el token haya publicado bien el
+resto**. Sin eso, una lista que publica cuatro de cinco se ve idéntica a una que publica los
+cinco, y el barrio que falta no lo reclama nadie.
+
+**La prueba negativa pasó en siete casos**, que es lo que hace que la operación esté probada y
+no sólo corrida: un valor fuera del catálogo queda afuera y en `rechazados`; **las celdas vacías
+no son rechazo** y se cuentan aparte; tres grafías de `Palermo` colapsan a una; las variantes
+ortográficas que `normalizar_` no colapsa —`Villa Gral. Mitre`, `Nuñez`— **las matchea el
+`resolver` y se publican con el canon** (`Núñez` con acento); todas rechazadas da vacío con los
+dos valores listados; cero filas da vacío; y catálogo vacío tira.
+
+**`C.3` pasó:** los seis marcadores del `_13` siguen dando lo mismo.
+
+**Dos cosas quedaron anotadas en `PENDIENTES` y no se resolvieron acá.** `REVISAR` **no existe
+como estado del motor** —`ok`, `sin_datos` y `error` son los tres que hay— así que si **todas**
+las filas se rechazan el estado dice `sin_datos`, que es lo que el addendum de `R-18` prohíbe;
+la traza y `FALTANTES` lo desmienten, pero el estado miente. Y **`CLAUDE.md` §7 no tiene fila
+para "¿qué operaciones tiene el motor?"**: se anotó el candidato sin tocar el ruteo.
+
+**El presupuesto de la corrida:** 39 tokens reemplazados contra 38 de la corrida anterior — el
+que entró es `ecv_barrios`. `FALTANTES` bajó de 265 a **264**.
