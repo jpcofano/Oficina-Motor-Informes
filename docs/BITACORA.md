@@ -5982,3 +5982,57 @@ agregados. `CAMPANAS` además tiene tres filas, todas de `secco` y con `periodo_
 
 `CONFIG_INFORMES.md` §1.1 pasa a apuntar y conserva su decisión editorial y el caso testigo;
 `PLAN.md` deja de pedir *"las campañas del período"* y pide el temario. **Sin código.**
+
+---
+
+## El universo de la lámina 5: `rdv` contaba doce figuras (2026-08-07) — commit de esta entrada
+
+Partes A a D del `_13` con los siete ajustes del `13.1`. **La lámina 5 del informe `jm` estaba
+publicando los encuentros del gabinete entero.** En la ventana 24–30/07 `rdv/RVD JM-CM - ES`
+tiene **15 filas de 12 figuras distintas** y sólo **4 son de Jorge Macri**.
+
+**`R-15` gana su `Addendum 1`**: `rdv` es el quinto canal y su señal es la columna `A`,
+`Figura` — `JM` es `Jorge Macri` literal, `GCBA` por resta. **Es lo que la propia `R-15` ya
+mandaba hacer** —*"si aparece un canal nuevo, no se le hereda el criterio de otro: se pregunta
+cuál es su señal"*—; `rdv` no era un canal nuevo, era uno cuya señal **nunca se preguntó**.
+
+**El mecanismo es `MARCADORES.filtro`**, seis celdas con `figura=Jorge Macri`. **`SECCIONES.filtro`
+se descartó por lo que haría mañana, no por lo que hace hoy**: `ecv_alcance_semanal` declara
+`informes = JM,SECCO` y hoy `SECCO` no tiene ningún marcador sobre `rdv`, así que el filtro le
+caería sin efecto visible. Un filtro que no molesta hoy y rompe callado en tres meses es peor
+que uno que falla ahora.
+
+**Verificado por el camino del motor** (`resolverMarcadores('jm')`, no recalculando a mano), y
+los seis dan la columna correcta, todos `estado: ok`:
+
+| marcador | antes | ahora |
+|---|---|---|
+| `ecv_encuentros` | 15 | **4** |
+| `ecv_insc_mail_pct` | 59.9 | **50.7** |
+| `ecv_insc_cc_pct` | 8.1 | **11.8** |
+| `ecv_insc_ivr_pct` | 1.3 | **1.9** |
+| `ecv_insc_digital_pct` | 29.3 | **35.7** |
+| `ecv_insc_dif_pct` | 2.1 | **0** |
+
+La traza lo dice: *"filtro `figura=Jorge Macri` sobre "Figura" (col A) → 4 de 15 fila(s)"*.
+**`SECCO` no se movió** y no podía moverse: el filtro vive por fila de `MARCADORES` y las seis
+son `informe_id = jm`.
+
+**Tres porcentajes suben, y está escrito por qué**: `insc_cc` e `insc_ivr` tienen el mismo
+numerador en las dos columnas —ese canal es 100 % de JM— y el denominador cae de 3344 a 2307.
+**Filtrar no baja todo: redistribuye.** Y el `0` de `ecv_insc_dif_pct` volvió con `estado: ok`,
+no `sin_datos`: **es un dato**, las 71 inscripciones diferidas son de otros ministros.
+
+**Son seis marcadores, no ocho.** Los otros siete que la lámina necesita —`ecv_inscriptos`,
+`ecv_asistentes` y los cinco numeradores— **no tienen fila en `MARCADORES`**. El deck publicaba
+**seis números mal y siete huecos**, y queda escrito que **se cablean después del filtro, nunca
+antes**: cableados antes nacen con el universo de doce figuras.
+
+`CLAUDE.md` §4 gana la convención que faltaba: **un número correcto puede salir de las filas
+equivocadas.** Los seis marcadores pasaron las cuatro verificaciones del proyecto —fila en
+`MARCADORES`, `MAPEO` que resuelve, fuente con filas, formato correcto— y contaban doce figuras.
+Ninguna verificación miraba el universo.
+
+Y a `Preguntas al equipo`: **las 7 filas de `REUNIONES`, ¿son todas de JM o incluyen
+ministros?** Sin columna `figura` no se puede saber desde la hoja, y la sección `encuentro` se
+repite por esas filas.
