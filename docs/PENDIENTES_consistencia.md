@@ -1777,6 +1777,14 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
 > nacieron en documentos hoy congelados y necesitan un lugar vivo. Al responderse, la
 > respuesta va al documento dueño del hecho y la pregunta se tacha acá.
 
+- **Las 7 filas de `REUNIONES`: ¿son todas encuentros de Jorge Macri, o incluyen ministros?**
+  *(abierta 07/08/2026)* **No se puede saber desde la hoja**: `REUNIONES` no tiene columna
+  `figura` — sus columnas son `periodo_id`, `orden`, `eje`, `tipo`, `nombre`, `fecha`, `etapa`,
+  `mostrar`, `texto_original` y `notas`. Importa porque la sección `encuentro` **se repite por
+  fila de `REUNIONES`** y produce la lámina 6: si hay ministros adentro, el informe `jm` está
+  emitiendo láminas que no le corresponden, que es el mismo error que se acaba de corregir en
+  la lámina 5 por otro camino (`R-15` addendum 1). **No se deduce de que hoy sean siete** ni
+  de que la fuente de anclaje sea `rdv`: se pregunta.
 - Las siete preguntas de `docs/VALIDACION_2026-07-31.md` §7 ("Preguntas para el equipo")
   — siguen abiertas; el detalle está allá, esta línea existe para que no queden
   enterradas en un doc congelado.
@@ -2020,6 +2028,48 @@ son "la misma"): **nueve pares** de láminas con el primer texto idéntico entre
 **seis de ellos** con además el conjunto de tokens idéntico —`secco` 17=`jm` 13, 18=14, 20=16,
 21=17, 22=18, 23=19, todos del bloque `camp_*`—, más cinco pares con solape parcial, el más
 fuerte `secco` 8 ~ `jm` 6 con **28 tokens en común**.
+
+### P0 · Los números de la lámina 5 publicados hasta el 07/08 están inflados: contaban doce figuras
+
+**Qué pasó.** `rdv/RVD JM-CM - ES` trae las figuras de todo el gabinete, y los seis marcadores
+de `ecv_alcance_semanal` leían **todas**. En la ventana 24–30/07 hay **15 filas de 12 figuras
+distintas** y sólo **4 son de Jorge Macri**. El informe `jm` publicó los encuentros del
+gabinete entero como si fueran los suyos.
+
+| marcador | publicado | correcto (sólo JM) |
+|---|---|---|
+| `ecv_encuentros` | **15** | **4** |
+| `ecv_insc_mail_pct` | 59.9 (2003/3344) | **50.7** (1169/2307) |
+| `ecv_insc_cc_pct` | 8.1 (272/3344) | **11.8** (272/2307) |
+| `ecv_insc_ivr_pct` | 1.3 (43/3344) | **1.9** (43/2307) |
+| `ecv_insc_digital_pct` | 29.3 (979/3344) | **35.7** (823/2307) |
+| `ecv_insc_dif_pct` | 2.1 (71/3344) | **0** (0/2307) |
+
+**Son seis marcadores, no ocho, y los siete que faltan son parte del hallazgo.**
+`ecv_inscriptos`, `ecv_asistentes` y los cinco numeradores `ecv_insc_*` **no tienen fila en
+`MARCADORES`** — son los huecos que producen el `Mail: «FALTA:ecv_insc_mail»(59.9%)` de la
+lámina 5. Dicho con precisión: **el deck publica seis números mal y siete huecos.**
+
+**⚠ Y por eso el orden no es una recomendación: los siete se cablean DESPUÉS del filtro, nunca
+antes.** Cableados antes, nacen con el universo de doce figuras y el error se multiplica por
+siete en vez de corregirse.
+
+**Tres de los cinco porcentajes SUBEN al filtrar, y el motivo va escrito para que nadie lo
+"arregle".** `insc_cc` (272) e `insc_ivr` (43) tienen **el mismo numerador en las dos
+columnas** —ese canal es 100 % de JM— mientras el denominador cae de 3344 a 2307. **Filtrar no
+baja todo: redistribuye.** Un porcentaje que sube al recortar el universo es correcto acá.
+
+**Y `ecv_insc_dif_pct` pasa a 0, que es un dato y no un `sin_datos`.** Las 71 inscripciones
+diferidas son **todas de otros ministros**. Cuando se cablee `ecv_insc_dif`, tiene que publicar
+**cero**: son dos estados distintos y el motor los distingue a propósito (`SUMA` sobre cero
+filas da `sin_datos`; sobre filas de ceros da `0`).
+
+**El registro vale más que la corrección.** Quedó publicado y alguien lo leyó. La corrección
+—`figura=Jorge Macri` en `MARCADORES.filtro`— está aplicada; esta entrada existe porque el
+número salió a la calle.
+
+**Corregido por:** `R-15` addendum 1 (la señal) + `CONFIG_INFORMES.md` §1.4 ter (el universo y
+el mecanismo), los dos del 07/08/2026.
 
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 
