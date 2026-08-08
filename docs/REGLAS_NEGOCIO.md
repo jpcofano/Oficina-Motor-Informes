@@ -890,6 +890,29 @@ operación `DISTINCT` no existe. La verificación queda declarada para cuando se
 la ventana 24–30/07 con el filtro puesto tiene que devolver **exactamente cuatro** —Belgrano,
 Caballito, Retiro, Villa Urquiza—, en ese orden, y ningún valor fuera del catálogo.
 
+### Addendum 1 — 07/08/2026: los estados son cuatro, no dos
+
+**El texto de arriba no se altera.** Los puntos 3 y 6 escribieron dos estados y hacen falta
+cuatro, porque hay dos casos que se confunden entre sí:
+
+| caso | estado |
+|---|---|
+| **cero filas** tras el filtro | **`sin_datos`** |
+| **fila con la celda vacía** | **no es un no-match.** No entra a la lista, **no dispara `REVISAR`**, y **se cuenta en la traza** |
+| **valor que no matchea** el catálogo | **`REVISAR`** |
+| **todas** las filas rechazadas por no matchear | **`REVISAR`, nunca `sin_datos`** |
+
+**El motivo, que es lo que hay que dejar escrito:** **`sin_datos` afirma que no había nada.** Si
+había valores y se descartaron, decir `sin_datos` es **publicar una afirmación que el motor no
+midió** — el mismo modo de falla que el `0` de audiencia que se leía como *"no llamamos a
+nadie"*. Cuatro barrios rechazados y cero barrios en la fuente son hechos distintos y tienen
+que verse distintos.
+
+**Y la celda vacía es el caso que más fácil se hace mal.** Una fila sin barrio cargado **no es
+un valor que el catálogo rechazó**: es una fila que no aportó dato. Contarla como no-match
+mandaría el token a `REVISAR` por un motivo falso y escondería los rechazos reales entre ruido.
+Va a la traza, que es donde se ve sin ensuciar el estado.
+
 ---
 
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
