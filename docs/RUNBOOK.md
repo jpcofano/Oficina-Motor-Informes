@@ -320,6 +320,43 @@ vuelve a vos.
 
 ## Cargar una fila de `CAMPANAS`
 
+**Hay dos formas, y la segunda es la que vas a usar casi siempre.**
+
+### Forma 1 — pegar el temario (menú → *Cargar temario de campañas*)
+
+Pegás **el temario completo**; el cargador lee **sólo el bloque `Campañas destacadas`** y no toca
+los demás. Pide el período y el informe antes del texto.
+
+**Qué hace con cada línea:** resuelve el `ID Cuentas` mirando primero la solapa
+`CAMPANAS_equivalencias` —lo que **vos** confirmaste— y, si no está, por similitud de nombre.
+
+| resultado | qué te deja |
+|---|---|
+| **resuelto por equivalencia** | la fila completa, con `desde`/`hasta` de la base |
+| **resuelto por similitud** | la fila completa, **marcada `SIN CONFIRMAR`** en `notas` con el % y el nombre de la base |
+| **sin resolver** | la fila igual, **con el id vacío y los candidatos anotados** para que elijas |
+
+**Medido contra el temario real del 24–30/07: dos de cuatro resuelven y dos preguntan.** Eso es
+el resultado esperado, no una falla — *"Operativo de saturación en 1-11-14"* tiene **tres
+campañas empatadas** en la base y el cargador **no elige por vos**.
+
+**Ante la duda, la campaña entra con `mostrar = sí`** y el paréntesis del temario va a `notas`.
+El motivo: una campaña que no salió **no tiene filas en la base**, así que sus tokens salen como
+huecos visibles. **Excluirla de más sería una lámina que nadie sabe que falta.**
+
+**Recargar un temario corregido es seguro:** una fila que ya existe para ese período **se saltea
+y se reporta**. No duplica ni pisa.
+
+**Cuando completes un id a mano, cargá también la fila en `CAMPANAS_equivalencias`** —variante
+del temario, id, nombre en la base— y la próxima semana esa campaña se resuelve sola. **Esa
+solapa la escribís vos: el cargador la lee y nunca la inventa.** Un match por similitud es una
+hipótesis; una fila ahí es una afirmación que se va a repetir sin que nadie la vuelva a mirar.
+
+### Forma 2 — a mano
+
+Es lo que se usa **para arreglar lo que el cargador no pudo**: completar un `campana_id` vacío,
+elegir entre candidatos, o cargar una campaña que no está en ningún temario.
+
 > **⚠ Leé esto antes de cargar nada.** Podés cargar las filas hoy y **van a entrar bien**: la
 > selección por temario ya funciona (`R-17`, y `itemsDeSeccion_` filtra por `informe_id`,
 > `mostrar` y `periodo_id`). **Lo que todavía no existe es el enganche con las métricas.** Los

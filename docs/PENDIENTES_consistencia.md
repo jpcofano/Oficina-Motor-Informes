@@ -2128,6 +2128,29 @@ número salió a la calle.
 **Corregido por:** `R-15` addendum 1 (la señal) + `CONFIG_INFORMES.md` §1.4 ter (el universo y
 el mecanismo), los dos del 07/08/2026.
 
+### P1 · El segundo enganche: de una reunión a **sus** campañas — sin prompt y sin medir
+
+**⚠ Son dos problemas distintos y los dos usan la palabra "campaña".** Confundirlos es barato de
+hacer y caro de descubrir, así que van escritos uno al lado del otro:
+
+| | qué busca | estado |
+|---|---|---|
+| **1 · campaña destacada → su fila en la base** | una campaña **que el temario nombra**, por nombre | **resuelto** — es el cargador del `_5`, con su solapa de equivalencias |
+| **2 · reunión → las campañas de esa reunión** | las campañas **que pertenecen a un encuentro** que el temario nombra, **pre y post** | **sin prompt, sin medir** |
+
+El primer bloque del temario son **reuniones**, y **cada reunión tiene campañas propias** — las
+suyas, en sus dos etapas. El bloque *"Campañas destacadas"* son campañas y nada más. **Uno busca
+una campaña; el otro busca las campañas de un encuentro.**
+
+**Lo que ya existe y conviene mirar cuando le toque el turno:** `REUNIONES` **ya tiene la columna
+`etapa`, con `pre` y `post`** — la mitad de la estructura está. **Lo que falta es con qué se
+engancha una reunión a sus campañas en `digital`**, y eso no está medido.
+
+**No se diseñó nada para este caso.** La solapa `CAMPANAS_equivalencias` del `_5` **probablemente
+sirva para los dos**, pero **no se dio por hecho ni se la adaptó**: primero que funcione para el
+que está medido. Estirar una convención hacia un caso que nadie midió es cómo se fabrica una
+tabla que no sirve para ninguno de los dos.
+
 ### P1 · Los `camp_*` sin fuente — catorce, y son tres preguntas distintas
 
 **Un token sin fuente no es un token pendiente de cablear: es una pregunta.** De los **46**

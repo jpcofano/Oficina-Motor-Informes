@@ -6391,3 +6391,46 @@ no bloqueado**; los seis de granularidad quedan marcados sin insistir; los tres
 `camp_*_insight` se declaran **`[MANUAL]`** y salen del cableado pendiente; y queda escrito que
 **ninguna campaña de `jm` se solapa con la semana** —lo cual **no impide que entren**, es lo que
 dice `R-17`— con la causa a mirar primero si una fila no emite: `periodo_id` o `mostrar`.
+
+---
+
+## El cargador de temario de campañas (2026-08-08) — commit de esta entrada
+
+El `_5` con los cinco ajustes del `5.1`. **Cargar el temario de campañas deja de ser trabajo
+manual**, y lo que no se puede resolver **queda marcado en vez de adivinado**.
+
+**Dos apartamientos del patrón de reuniones, los dos conscientes y escritos.** El parser es
+propio porque el de reuniones **exige `|`** y ninguna línea de campañas lo tiene — compartirlo
+habría dejado el 100 % del bloque sin parsear. Y **no hace `append` ciego**: el de reuniones
+duplica todo al recargar; éste saltea lo que ya existe.
+
+**Lo que sí se heredó:** el paréntesis final va a `notas`. Ya estaba resuelto y es justo el
+mecanismo que las condicionales necesitaban.
+
+**Ante la duda la campaña entra** (`AJ-1`, que supersede al `A.2` del prompt): `mostrar = sí` y
+el paréntesis a `notas`, **sin interpretarlo**. Los dos errores no cuestan lo mismo — una campaña
+que no salió no tiene filas en la base y sus tokens son **huecos visibles**; una excluida de más
+es **una lámina que nadie sabe que falta**.
+
+**El umbral se midió contra el temario real, y el resultado justifica el diseño:**
+
+| temario | mejor candidato | margen | decisión |
+|---|---|---|---|
+| Egreso de cadetes | **100 %** `3305` "Egreso más de 1000 Cadetes" | 50 % | **resuelve** |
+| Desalojo 900 | **100 %** `3441` "Desalojo N° 900" | 50 % | **resuelve** |
+| Operativo de saturación en 1-11-14 | **tres al 100 %** | **0 %** | **pregunta** |
+| Video de obras de salud | dos al 67 % | 0 % | **pregunta** |
+
+**El margen evitó un error concreto, no hipotético:** sin él, *"Operativo de saturación"* habría
+resuelto a `2979-MAYSEGCG` —*"ALTA INTERNA CONTENIDO ADICIONAL"*—, que es **otra campaña**, sólo
+por estar primera. Dos de cuatro resueltos y dos preguntando es **el resultado correcto**.
+
+**La solapa `CAMPANAS_equivalencias` es la primera de la planilla**, y sigue la forma del
+precedente `PERSONAS_equivalencias.csv`. **La escribe una persona; el cargador la lee y nunca la
+inventa** — una resolución por similitud **jamás entra sola ahí**: es una hipótesis buena, y una
+fila de equivalencias es una afirmación que se repite cada semana sin que nadie la revise.
+
+**Y quedó anotado el segundo enganche, que no es éste:** *reunión → sus campañas, pre y post*.
+Son dos problemas que comparten la palabra "campaña" — uno busca **una campaña que el temario
+nombra**, el otro **las campañas que pertenecen a un encuentro**. `REUNIONES` ya tiene `etapa`;
+lo que falta es con qué se engancha. **No se diseñó nada para él ni se adaptó la solapa.**
