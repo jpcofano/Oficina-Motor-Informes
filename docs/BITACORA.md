@@ -6191,3 +6191,38 @@ no entra. Y `PERIODOS` no cubre la semana del informe, lo cual **no molesta**: l
 
 **Medido para el ejemplo del instructivo: 67 campañas** estuvieron activas en la ventana
 24–30/07. **Sin código.**
+
+---
+
+## `_14` Parte 0 — los subagentes, medidos antes de escribirlos (2026-08-08) — commit de esta entrada
+
+Cuarta y última corrida de la noche. **Sólo la Parte 0, como pidió el usuario. No se creó
+ningún archivo de subagente.**
+
+**El hallazgo que decide el diseño: un subagente NO ve el `CLAUDE.md` del proyecto.** Medido, no
+supuesto: se lanzó uno con la instrucción de no usar herramientas y responder sólo con lo que
+tuviera en contexto, y devolvió *"NO TENGO INSTRUCCIONES DE PROYECTO EN CONTEXTO"*. **Confirma
+`AJ-2` en el sentido malo:** "incorporar las convenciones por referencia" **no funciona**, y el
+archivo de cada subagente va a tener que decirle explícitamente qué abrir, con la ruta. Una
+convención citada que el subagente no puede leer es una convención que no existe.
+
+**`.claude/` tiene `settings.json` y `settings.local.json`, y no hay `agents/`** — nada que
+pisar. **La versión instalada es `2.1.220`**, posterior a la `2.1.198`, así que **`/agents` ya
+no crea nada**: los archivos se editan a mano y el runbook tiene que decirlo así.
+
+**El camino de escritura de `MARCADORES` existe y está declarado** (`ESCRITORES.md`): son tres
+—la plantilla vía el `Paso-2.5` que aún no corrió, `curarMarcadores_` para filas enteras y
+`curarCamposMarcadores_` para un campo—. **El `cableador` tendría por dónde escribir sin
+inventar un cuarto**, que era la condición de `B.3`.
+
+**El tamaño de `T2.11`, medido sobre `FALTANTES` de la corrida de esta noche:** **264 filas**,
+de las cuales **206 son "sin fila en `MARCADORES`"** —cableado puro— y **58 tienen fila y
+fallan por datos**. Los diez primeros son nueve `ecv_*` del encuentro de San Cristóbal sin
+cablear más un `enc_alcance` con la fuente en cero.
+
+**Y esos nueve son justo los que el `_13` dejó bloqueados hasta que existiera el filtro por
+figura.** El filtro existe desde hoy, así que **el bloqueo se levantó**.
+
+**`CLAUDE.md` §7 no tiene fila para la configuración de herramientas** —ni para `.claude/`, ni
+para los subagentes, ni para las operaciones del motor—. Es la misma pregunta sin dueño que ya
+se anotó al agregar `LISTA`. **No se tocó §7:** cambiar el ruteo es decisión del usuario.
