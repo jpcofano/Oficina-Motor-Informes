@@ -41,3 +41,13 @@ V-61,resumen_ejecutivo_gcba,gcba_sms_envios,1,digital,Directa SMS,ventana 24/07-
 V-62,resumen_ejecutivo_gcba,gcba_sms_entregados,51706,digital,Directa SMS,idem V-61,Entregados,SUMA,exacto,
 V-63,resumen_ejecutivo_gcba,gcba_sms_clics,1076,digital,Directa SMS,idem V-61,Clics,SUMA,exacto,2% sobre entregados
 C-11,resumen_ejecutivo_jm,ivr_*,-,digital,Directa IVR,ventana 24/07-31/07,-,-,sin_datos,"cero filas de IVR en la ventana; el bloque IVR es posterior a este deck y hay que validarlo contra una semana que lo publique"
+A-01,resumen_ejecutivo_jm,imp_meta,716650,looker,DIGITAL x Cuentas,nombre_campaña CONTIENE JM; estado=Activa; ventana solapa,Impresiones,SUMA,aproximado,"da 679.647 (-5,2%). Looker es acumulado de campaña y el deck se armó en otro momento. Decisión del usuario 09/08: se cablea igual."
+A-02,resumen_ejecutivo_jm,imp_google,531403,looker,DIGITAL x Cuentas,idem A-01; Plataforma=Google ads,Impresiones,SUMA,aproximado,"da 614.140 (+15,6%)"
+A-03,resumen_ejecutivo_jm,imp_prog,5194898,looker,DIGITAL x Cuentas,idem A-01; Plataforma=DV360,Impresiones,SUMA,aproximado,"da 5.992.841 (+15,4%). DV360 es la única tercera plataforma de la solapa: imp_prog=DV360 queda confirmado por los datos"
+C-12,resumen_ejecutivo_jm,pauta_meta/google/prog,"9/7/14",looker,DIGITAL x Cuentas,idem A-01,-,CUENTA,abierto,"da 6/5/10. Un conteo no es acumulado: no se explica por la fecha del export. NO TRABA el cableado; queda como pregunta abierta"
+C-13,solapas,-,-,digital,Digital,-,-,-,contradice,"CONGELADA: 205 filas JM hasta diciembre 2025, cero datos de 2026. Debe ir a uso=ignorar"
+C-14,solapas,-,-,digital,CAMPAÑAS_DESGLOCE_DIGITAL,-,-,-,contradice,"JM llega hasta 17/04/2026, tres meses antes del informe. Debe ir a uso=ignorar"
+V-64,resumen_ejecutivo_jm,cc_base,6011,looker,CC x Cuentas,nombre_campaña CONTIENE JM; solapa la ventana; SOLO las cuentas que el temario nombra,Base barrida,SUMA,exacto,"3289-JUNJDGAG, dos filas: 4726+1285"
+V-65,resumen_ejecutivo_jm,cc_contactados,1878,looker,CC x Cuentas,idem V-64,Contactados,SUMA,exacto,1380+498
+C-15,resumen_ejecutivo_jm,-,-,looker,CC x Cuentas,-,-,-,cerrado,"3387-JULJDGGC queda afuera POR TEMARIO (decisión del usuario 09/08). Tiene 3 filas con datos y fecha en ventana (barrida 7.954, contactados 2.169). Es R-17: el temario selecciona, los filtros acotan. El universo de cc_* no es todas las cuentas JM de la ventana."
+C-16,resumen_ejecutivo,-,-,-,-,-,-,-,cerrado,"LIMITE DE LA VALIDACION: las láminas 2 y 3 sólo existen en el deck del 31/07. El del 07/08 es SECCO y no tiene resumen ejecutivo. Toda la lámina descansa en una sola observación."
