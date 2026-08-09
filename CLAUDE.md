@@ -72,6 +72,18 @@ grep -rn "function nombreNuevo_" *.gs
 - **Los renombres de tokens son por `informe_id`, nunca globales.** El mismo nombre puede
   ser correcto en una plantilla e incorrecto en otra — lo demostró la regresión de
   `enc_audiencia`.
+- **`lamina_id` es global y corrido, y el orden de sellado es `secco` primero, `jm` después.**
+  `secco` toma `L-001`–`L-029`, `jm` `L-030`–`L-051`. La clave de unicidad es **`lamina_id`
+  sola**, no el par plantilla + id, y el contador es `max(lamina_id) + 1` sobre la hoja entera.
+  - **El motivo del orden importa más que el orden, y es de legibilidad, no técnico.** La
+    documentación del proyecto entera dice *"lámina 2"*, *"lámina 6"*, *"la lámina 10 escondida"*
+    refiriéndose a la **posición en la plantilla `jm`**. Con `jm` arrancando en `L-030`,
+    **ningún `lamina_id` se parece a una de esas posiciones** y no hay forma de confundirlos. Al
+    revés —`jm` desde `L-001`— coincidían por casualidad, que es la peor forma de no colisionar.
+  - **Los ids son orden de asignación, no orden de deck.** Una lámina nueva en el medio de `jm`
+    toma el siguiente al máximo, **no se inserta**. La posición vive en la plantilla; el id, en
+    el registro — por eso `LAMINAS.orden_plantilla` es reportado y nunca autoritativo.
+  - **Una tercera plantilla toma `L-052` en adelante**, y eso tiene que ser esperado.
 - **Una solapa con `uso = 'ignorar'` en la hoja `SOLAPAS` no se toca nunca.** Ni se lee,
   ni se audita, ni se mapea, ni se diagnostica, ni se la menciona en un reporte de
   hallazgos. Consultar con `usoSolapa_(base_id, solapa)` antes de recorrer solapas y

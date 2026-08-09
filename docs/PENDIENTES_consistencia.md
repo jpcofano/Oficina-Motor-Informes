@@ -2603,6 +2603,32 @@ con el detalle de qué plantillas y cuántos renombres va a aplicar.
 aborta si el backup falla (`Armonizar.gs:424-431`), así que el dato está protegido. Lo que falta
 es el paso donde una persona puede decir "no, hoy no".
 
+### P2 · La asignación de láminas a informes: la sección declara, la lámina sólo se aparta
+
+**Escrito ahora para que no nazca torcido, sin columna todavía** (`11.2` §3).
+
+Hoy la asignación existe **sólo a nivel sección**: `SECCIONES.informes` con valores `JM`, `SECCO`
+o `JM,SECCO`. La numeración corrida de `lamina_id` —global, no por plantilla— existe justamente
+para que mañana se pueda asignar **una lámina sola o una sección entera** a un informe, y que el
+id alcance para nombrarla sin arrastrar de qué plantilla salió.
+
+**Cómo tiene que ser cuando se construya:**
+
+> **La sección declara; la lámina sólo se aparta.** `SECCIONES.informes` es el valor por defecto
+> de todas sus láminas. **`LAMINAS.informes` vacío significa "hereda"**, y sólo se completa cuando
+> esa lámina difiere de su sección. **Dos lugares declarando lo mismo se desincronizan; uno
+> declarando y otro apartándose, no.**
+
+Es el mismo criterio que ya rige `LAMINAS.seccion_id`, `modo`, `itera_sobre` y `filtro`: celda
+vacía = hereda, no "sin declarar" (`PLAN.md` §2).
+
+**No se agregó la columna en la corrida del `_11`**, a propósito: `LAMINAS` nace con trece
+columnas y la primera corrida viva no es el momento de sumar un campo **sin consumidor**. Un campo
+que nadie lee se llena mal la primera vez y nadie se entera.
+
+**Qué lo destraba:** que exista un caso real de una lámina que difiera de su sección. Hoy no hay
+ninguno registrado.
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el
