@@ -144,10 +144,22 @@ function unirDigitalPorCuentaSinCache_(ventana) {
     cuentasMaestra++;
   });
 
+  // `N4` (09/08) — el diagnóstico no podía ver la pisada, y ése era el problema.
+  //
+  // `cuentasMaestra` cuenta **filas con id**, no ids distintos, y se publicaba como `cuentas`:
+  // informaba 840 donde los ids reales son 763, así que comparar `filas_leidas` contra `cuentas`
+  // **no detectaba que 77 filas de maestra desaparecen** en la asignación de la línea 143.
+  //
+  // Ahora se publican las dos cosas y la diferencia como campo propio. **Esto no cambia el
+  // comportamiento de la unión**: sigue pisando exactamente igual, y con qué reemplazarla es una
+  // decisión de diseño que espera al usuario. Lo único que cambia es que el problema se ve.
+  var idsDistintosMaestra = Object.keys(porCuenta).length;
   diagnostico[SOLAPA_MAESTRA_DIGITAL_] = {
     ok: true,
     filas_leidas: maestraLeida.filas.length,
-    cuentas: cuentasMaestra
+    filas_con_id: cuentasMaestra,
+    cuentas: idsDistintosMaestra,
+    filas_pisadas: cuentasMaestra - idsDistintosMaestra
   };
 
   SOLAPAS_CANAL_DIGITAL_.forEach(function (canal) {
@@ -191,11 +203,36 @@ function unirDigitalPorCuentaSinCache_(ventana) {
     // no se descarta en silencio).
     var cuentasSinCanal = Object.keys(porCuenta).filter(function (id) { return !idsVistos[id]; });
 
+    // `N5` (09/08) — `huerfanas_en_canal` es una lista de ids **con repetidos**: se pushea una
+    // vez por fila descartada, así que su `.length` son filas, no cuentas, y el rótulo decía
+    // "huérfanas" a secas. Es el mismo error de conteo que `cuentasMaestra` (ver `N4`), en el
+    // otro campo.
+    //
+    // Medido el 09/08: `Directa Mail` descarta 631 filas de 2162 (292 ids) y `Digital` 922 de
+    // 1297 (842 ids). No es una nota al pie: es el 29 % y el 71 % de dos canales cayéndose sin
+    // que la corrida lo diga. `R-19` fijó que una fuente que dejó de traer es una falla; esto es
+    // hacerlo visible.
+    //
+    // **No cambia qué se descarta** — eso es diseño y espera al usuario. El campo original se
+    // conserva con su forma para no romper a nadie.
+    var filasPorIdHuerfano = {};
+    huerfanasEnCanal.forEach(function (id) {
+      filasPorIdHuerfano[id] = (filasPorIdHuerfano[id] || 0) + 1;
+    });
+    var idsHuerfanos = Object.keys(filasPorIdHuerfano);
+    var mayoresHuerfanos = idsHuerfanos
+      .sort(function (a, b) { return filasPorIdHuerfano[b] - filasPorIdHuerfano[a]; })
+      .slice(0, 5)
+      .map(function (id) { return { id_cuenta: id, filas: filasPorIdHuerfano[id] }; });
+
     diagnostico[canal.solapa] = {
       ok: true,
       filas_leidas: leido.filas.length,
       cuentas_matcheadas: matcheadas,
       huerfanas_en_canal: huerfanasEnCanal,
+      huerfanas_filas: huerfanasEnCanal.length,
+      huerfanas_ids: idsHuerfanos.length,
+      huerfanas_mayores: mayoresHuerfanos,
       cuentas_sin_este_canal: cuentasSinCanal
     };
   });
@@ -885,12 +922,29 @@ function menuProbarUnionYAnclaje_() {
       return;
     }
     if (solapa === SOLAPA_MAESTRA_DIGITAL_) {
-      lineas.push('  ' + solapa + ' (maestra): ' + d.filas_leidas + ' filas, ' + d.cuentas + ' cuentas');
+      lineas.push('  ' + solapa + ' (maestra): ' + d.filas_leidas + ' filas leídas, ' +
+        d.filas_con_id + ' con id, ' + d.cuentas + ' cuentas distintas');
+      // `N4` — la pisada se nombra sólo cuando existe, y se dice qué significa: un `0` acá no
+      // merece renglón, pero un número distinto de cero es trabajo perdido que no se veía.
+      if (d.filas_pisadas > 0) {
+        lineas.push('    ⚠ ' + d.filas_pisadas + ' fila(s) de maestra pisadas por id repetido — ' +
+          'sobrevive la última leída, las demás se descartan sin quedar en el diagnóstico');
+      }
     } else {
       lineas.push(
         '  ' + solapa + ': ' + d.filas_leidas + ' filas, ' + d.cuentas_matcheadas + ' matcheadas, ' +
-        d.huerfanas_en_canal.length + ' huérfanas en canal, ' + d.cuentas_sin_este_canal.length + ' cuentas sin este canal'
+        d.cuentas_sin_este_canal.length + ' cuentas sin este canal'
       );
+      // `N5` — las huérfanas con su peso: filas **e** ids, más los cinco mayores. El porcentaje
+      // va al lado porque "631 huérfanas" no dice nada y "29 % del canal" sí.
+      if (d.huerfanas_filas > 0) {
+        var pct = d.filas_leidas ? Math.round(1000 * d.huerfanas_filas / d.filas_leidas) / 10 : 0;
+        lineas.push('    ⚠ ' + d.huerfanas_filas + ' fila(s) descartadas (' + pct + ' % del canal) ' +
+          'en ' + d.huerfanas_ids + ' id(s) que no están en la maestra');
+        lineas.push('      mayores: ' + d.huerfanas_mayores.map(function (h) {
+          return h.id_cuenta + ' ×' + h.filas;
+        }).join(', '));
+      }
     }
   });
 
