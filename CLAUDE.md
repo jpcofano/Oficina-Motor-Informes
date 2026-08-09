@@ -452,6 +452,7 @@ distintas nunca compiten. La precedencia entra solo como desempate, al final.
 | ¿Qué es cada carpeta de Drive y para qué sirve? | `docs/RUNBOOK.md`, tabla "Las carpetas de Drive": rol, ID, nombre real, cuenta dueña y quién la lee. Distinto de las dos filas de configuración: ésas dicen qué valor usa el motor, ésta dice qué es cada recurso | los dos |
 | ¿Qué decisión editorial lleva cada informe? (qué campañas, qué va a mano) | `docs/CONFIG_INFORMES.md` | los dos |
 | ¿Qué debe cumplir una lámina nueva pedida en lenguaje natural? | `docs/OBJETIVO_lamina_nueva.md` | los dos |
+| ¿Qué decía una nota del orador que se borró de una plantilla? | `docs/NOTAS_ORADOR_SECCO_8_y_25.md` — evidencia congelada. Son las **dos únicas** notas del equipo de las dos plantillas (`SECCO` 8 y 25); se copiaron acá y se borraron de la plantilla **antes** de que el `_11` sellara, porque el sellado escribe en esa misma área | nadie edita |
 | ¿Qué va a hacer el motor si corro ahora? | Las **hojas de registro** vivas (`CONFIG`, `BASES`, `INFORMES`, `MARCADORES`, `MAPEO`, `CAMPANAS`, `PERIODOS`, `SOLAPAS`, `SECCIONES`). Autoridad total sobre el comportamiento — y sobre nada más (nota abajo) | humano y motor, vía menú |
 | ¿Qué *debería* decir esa configuración? | Los `SEED_*` de `Instalar.gs` — el **valor** | los dos |
 | ¿Quién puede escribir esta hoja de registro, y por qué camino? | `docs/ESCRITORES.md` — contrato vivo, distinto del anterior: ése dice qué valor va, éste dice quién tiene derecho a ponerlo. Matriz regenerable con `tools/escritores.js` | los dos |
