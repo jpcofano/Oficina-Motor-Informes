@@ -2451,6 +2451,86 @@ contra las 166 cuentas JM de `digital/Digital`: 34 filas en toda la historia, **
 Los valores publicados (Meta 716.650 · Google 531.403 · Programmatic 5.194.898) **no salen de ahí
 con ningún corte JM**.
 
+### P0 · `X-16` — ¿de qué fuente salen los `imp_*` del resumen ejecutivo? `CAMPAÑAS_DESGLOCE_DIGITAL` está descartada por medición
+
+**Pregunta dirigida a la rama de validación**, con caso numerado para que sea citable.
+
+**`X-16`** — El deck publica `imp_meta` **716.650**, `imp_google` **531.403** e `imp_prog`
+**5.194.898** (total 6.442.951, `X-10`). **De qué fuente salen no se sabe**, y la única candidata
+registrada quedó descartada el 09/08:
+
+- De las **436 filas** de `digital/CAMPAÑAS_DESGLOCE_DIGITAL` que solapan la ventana 24–31/07, la
+  columna `JM | GCBA | POLICIA` da **GCBA 431, `Sin Tipo` 5 y JM cero**.
+- Las filas `JM` de esa solapa **existen —107— pero se cortan en abril de 2026**. Ninguna en
+  julio ni agosto.
+- Cruzando por `Id cuentas` contra las **166 cuentas JM** de `digital/Digital`: **34 filas
+  históricas, 0 en la ventana**.
+
+**No falta afinar el join: no hay filas.** La otra solapa registrada con `Plataforma` e
+`Impresiones` juntas es `looker/DIGITAL` (4591 filas), **hoy ilegible** — `looker` es
+`modo_periodo = filtrar` y esa solapa no tiene `fecha_periodo`.
+
+**No se propone ninguna fuente candidata**, a propósito. Cualquier hipótesis que aparezca va
+marcada como hipótesis y sin código atrás.
+
+**Consecuencias ya tomadas:** el `_13` anunciado **se cancela** (su motivo era este cruce), y
+`C.4` queda retirado con razón — la poda habría borrado `imp_total`, la única fila que hoy
+produce un número, para reemplazarla por tres que no pueden crearse.
+
+### P1 · Los seis `pauta_*` publican `1` donde el deck dice 7/14/9 — es universo, no operación
+
+⚠ **Este pendiente reemplaza a un hallazgo mío del 09/08 que era falso** y que llegó a un prompt
+(`_12` §2). Queda la corrección, no el error.
+
+**Lo que se creyó:** que las columnas `Google` / `Programmatic` / `Meta` de
+`digital/Seguimiento digital` eran texto `"true"`/`"false"`, y que los seis marcadores con
+`operacion = SUMA` publicaban **un cero falso**.
+
+**Lo medido el 09/08 contra el motor:** los seis publican **`estado = ok`, `valor = 1`**. Las
+celdas son **booleanos reales** —`typeof` da `boolean` en 950 de 979 filas— y `Number(true) === 1`,
+así que **`SUMA` sobre una columna booleana es exactamente el conteo de `true`**. La operación
+está bien. *(El error de medición: `String(celda)` antes de mirar el tipo convierte `true` en
+`"true"` y disfraza un booleano de texto.)*
+
+**El problema real, que sí queda abierto:** `pauta_google` publica **1** y `X-11` pide **7**. Dos
+señales, las dos en la traza del propio motor:
+
+1. **`72 de 979 fila(s) · 220 sin fecha, excluidas.`** El recorte por ventana deja afuera 907
+   filas, 220 **por no tener fecha**. **Hipótesis, marcada como hipótesis y sin verificar:**
+   `Seguimiento digital` podría comportarse como `snapshot` —el resto de `digital` lo es
+   (`BASES.digital.modo_periodo = snapshot`)— en cuyo caso la ventana no debería intervenir.
+   **No escribir código contra esto.**
+2. **Los seis no tienen filtro.** `pauta_*` y `gcba_pauta_*` publican **el mismo número**: no hay
+   corte JM/GCBA en la familia entera. El token de GCBA publica el de JM.
+
+**Qué lo destraba:** decidir el universo de la familia `pauta` — si va por ventana o por snapshot,
+y con qué corte JM/GCBA. **Prompt propio.** No cambiar la operación: está bien.
+
+### P1 · `rdv/RDV_otros_ministros`: arreglar `C-09` rompe el `MAPEO` en silencio — van en el mismo commit
+
+**Atado a `C-09`** (`docs/casos_validacion_2026-08-09_addendum.csv`: *"encabezados corridos una
+columna respecto de los datos"*).
+
+`MAPEO` declara `rdv/RDV_otros_ministros/fecha_periodo` y **resuelve a `hora_cita_evento`**, la
+columna de la *hora*. Y **funciona**: `contarLecturaBase_` da 514 filas totales, 10 en la ventana,
+**0 sin fecha y 0 con fecha inválida**.
+
+**Funciona porque los encabezados están corridos una columna.** Es un **acierto por compensación
+de dos errores**: el mapeo apunta al dato correcto con el nombre equivocado.
+
+⚠ **El día que `C-09` se arregle, esta lectura no va a fallar: va a leer otra columna.** Sin
+error, sin `«FALTA»`, sin señal. Ministros se rompe en silencio.
+
+**La acción, cuando se tome `C-09`:** rehacer el `MAPEO` de esa solapa **en el mismo commit** que
+el corrimiento. No antes —el mapeo corrido es correcto mientras la solapa esté corrida— y no
+después.
+
+**Y el segundo motivo por el que `R-20` nació `SIN MECANISMO`, que se anota en la misma marca y no
+en una nueva:** esa solapa tiene **un solo campo en `MAPEO`**. No están `figura`, ni `inscriptos`,
+ni `asistentes`, ni el estado. **La cascada que la segunda mitad de `R-20` necesita no es
+ejecutable**, y el filtro `figura!=Jorge Macri` de la fila "ministros" de `C.2` tampoco. Los 8 de
+8 de `V-49` se validaron **a mano contra las bases**: ciertos como número, falsos como cableado.
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el

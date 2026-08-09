@@ -253,6 +253,22 @@ estaba disponible desde el 2.8: faltó mirarlo antes de aceptar la etiqueta. Cua
 instrumento devuelve una **etiqueta** (`derivada`, `plausible`, `ok`), verificar el dato
 crudo del que salió, no la etiqueta.
 
+**Y el corolario del instrumento propio: convertir antes de mirar el tipo destruye el tipo.**
+Una celda de Sheets llega tipada —`boolean`, `number`, `Date`, `string`— y un `String(celda)`
+puesto para "normalizar" antes de inspeccionarla **disfraza un booleano de texto**: `true` se
+vuelve `"true"`, y un conteo de `typeof v === 'number'` da cero sobre una columna que el motor
+suma perfecto, porque `Number(true) === 1`. Origen: 09/08. Así nació el hallazgo *"los seis
+`pauta_*` publican un cero falso"*, que era falso —publican `1`, con estado `ok`— y **llegó a un
+prompt antes de que nadie lo verificara contra el motor**.
+
+- **La regla operativa:** antes de afirmar que una columna "no es numérica" o "viene vacía",
+  mirar `typeof` **sobre el valor crudo**, y contrastar contra lo que el motor lee de esa misma
+  columna. Son dos instrumentos y tienen que coincidir; si no coinciden, el equivocado suele ser
+  el de afuera.
+- **Es el mismo error que `looker ilegible entero`** del 08/08 —una llamada mal construida leída
+  como propiedad del dato— y por eso van juntos: **cuando la medición propia contradice al motor,
+  la primera hipótesis es que la medición está mal**, no el motor.
+
 **Un número correcto puede salir de las filas equivocadas, y ninguna verificación del proyecto
 lo miraba.** Antes de dar por bueno un número, preguntar **de qué filas sale**: qué entra, cuál
 es el denominador, y **quién declaró ese recorte**. No alcanza con que el token tenga fila en

@@ -6924,3 +6924,102 @@ operador `CONTIENE`— y el párrafo siguiente dice *"reportar y parar antes de 
 existe como campo lógico en ninguna base, **`looker/CC` no tiene esa columna**, y `looker/CC` no
 tiene `fecha_periodo`. Escribirlo como regla vigente sería asentar algo inaplicable; si se
 escribe, va marcado `SIN MECANISMO` como `R-20`.
+
+---
+
+## El `_12` — contención de `pauta_*`: la premisa se cayó al medirla (2026-08-09)
+
+Corrida del `docs/Prompts/2026-08-09_12_contencion_pauta_y_secuencia.md`, **paso 2**. El **paso 1
+no se hizo** y el motivo es el que sigue. Ningún `.gs` tocado, ninguna fila de `MARCADORES`
+escrita.
+
+### `§2` — los seis `pauta_*` NO publican un cero. Publican `1`, con estado `ok`
+
+**Y el hallazgo que lo motivaba lo generé yo el 09/08, y era falso.** Queda retractado acá con la
+medición que lo desmiente, igual que se hizo con *"looker es ilegible"*.
+
+`resolverMarcadores('jm')` contra el motor, ventana `2026-07-24 → 2026-07-30`:
+
+```
+pauta_google / pauta_meta / pauta_prog          estado=ok  valor=1
+gcba_pauta_google / gcba_pauta_meta / gcba_prog estado=ok  valor=1
+traza: SUMA sobre 72 fila(s) de digital/Seguimiento digital (71 con valor numérico)
+```
+
+**Por qué mi medición anterior dijo "cero valores numéricos".** Las celdas de `Google`,
+`Programmatic` y `Meta` son **booleanos reales** de Sheets —`typeof` da `boolean` en **950 de las
+979 filas**—, no el texto `"true"`/`"false"`. Mi script hizo `String(celda)` antes de mirar el
+tipo, y eso **convierte `true` en `"true"` y disfraza un booleano de texto**. El motor no hace
+eso: `Number(true) === 1`.
+
+**Consecuencia, y da vuelta el diagnóstico entero: `SUMA` sobre una columna booleana ES el conteo
+de `true`.** La operación no está mal. `opSUMA` (`Marcadores.gs:86`) suma `1` por cada `true` y
+`0` por cada `false`, y su guarda de `conValor === 0` —*"sin dato, no cero"*— **ni siquiera se
+dispara**, porque hay 71 valores numéricos.
+
+**Entonces no hay ningún cero falso impreso, y la contención del paso 1 no tiene objeto.**
+
+### El problema real, que es otro y sí queda abierto
+
+`pauta_google` publica **1** y `X-11` pide **7**. La brecha no es de operación: **es de
+universo**, que es exactamente la hipótesis que el `_12` §2 marcaba como no verificada. Dos
+señales, las dos en la traza del propio motor:
+
+1. **`72 de 979 filas · 220 sin fecha, excluidas.`** El recorte por ventana sobre `Fecha de
+   inicio` con solape contra `Fecha de fin` deja afuera 907 filas, 220 de ellas **por no tener
+   fecha**. Si `Seguimiento digital` se comportara como `snapshot` —igual que el resto de
+   `digital`, que es `modo_periodo = snapshot`— la ventana no intervendría.
+2. **`pauta_*` y `gcba_pauta_*` publican el mismo número**, porque **ninguno de los seis tiene
+   filtro**. No hay corte JM/GCBA en la familia entera. El token de GCBA publica el de JM.
+
+**Nada de esto se tocó**: son dos decisiones de universo y el `_12` §5 prohíbe cambiar operación
+o fuente. Van a `PENDIENTES`.
+
+### Y por qué el paso 1 tampoco era ejecutable como estaba escrito
+
+Aparte de la premisa, hay un impedimento estructural: **`MARCADORES` no tiene columna `estado`.**
+Sus 14 columnas son `marcador · familia · informe_id · base_id · solapa · campo_logico ·
+periodo_ref · operacion · valor_fijo · filtro · formato · catalogo · separador · notas`.
+
+`REVISAR` **no es un valor que se escriba en la hoja**: es un estado que el motor calcula en
+runtime (`Generador.gs:752`, `vacio ? (huboRechazos ? 'REVISAR' : 'sin_datos') : 'ok'`) y cuyo
+disparador es `salida.rechazados`, que hoy sólo puebla la operación `LISTA`. Poner los seis en
+`REVISAR` habría exigido cambiar `operacion` o la fuente — **las dos cosas prohibidas por el
+`§5`** — o agregar una columna a una hoja de registro, que tampoco estaba autorizado.
+
+### `§1` — los `imp_*`: la medición cierra la puerta
+
+Ya asentada en la entrada anterior y en `VALIDACION_2026-08-09.md` §4.1. Los tres cortes:
+
+- **436 filas** de `digital/CAMPAÑAS_DESGLOCE_DIGITAL` solapan 24–31/07 → `JM | GCBA | POLICIA`
+  da **GCBA 431, `Sin Tipo` 5, JM cero**.
+- Las filas `JM` de esa solapa son **107 en total** y **se cortan en abril de 2026**.
+- Cruce por `Id cuentas` contra las **166** cuentas JM de `digital/Digital`: **34 filas
+  históricas, 0 en la ventana**.
+
+**Meta 716.650 / Google 531.403 / Programmatic 5.194.898 no salen de ese cruce con ningún corte
+JM.** No falta afinar el join: no hay filas.
+
+**El `_13` anunciado se cancela** — el cruce `Digital × CAMPAÑAS_DESGLOCE_DIGITAL` era su motivo
+y está medido que no destraba. Y confirma que **retirar `C.4` fue correcto**: la poda habría
+borrado `imp_total`, la única fila que produce un número, para reemplazarla por tres imposibles.
+
+### `§3` — `RDV_otros_ministros`, y un cero que se registra
+
+La solapa tiene **un solo campo en `MAPEO`** (`fecha_periodo`), y su `fecha_periodo` resuelve a
+**`hora_cita_evento`** — la columna de la *hora*. Funciona porque los encabezados están corridos
+una columna (`C-09`). **Es un acierto por compensación de dos errores:** el día que `C-09` se
+arregle, esta lectura no va a fallar, va a **leer otra columna**. Va a `PENDIENTES` atado a
+`C-09`. **El `MAPEO` no se tocó** — el mapeo corrido es correcto *mientras* la solapa esté
+corrida.
+
+**Y una corrección al `_12` §3, con el cero registrado.** El prompt manda corregir el handoff,
+que supuestamente lista los encuentros de ministros entre lo *"cableable hoy sin preguntarle nada
+a nadie"*. **Esa línea no existe.** `grep -rn "8 de 8|sin preguntarle nada|cableable hoy"` sobre
+todo el repo devuelve **dos coincidencias, las dos dentro del propio `_12`**. `HANDOFF_CODE.md`
+se reescribió entero el 09/08 y no la tiene. **Cero ediciones, y el cero queda registrado**
+(`CLAUDE.md` §3).
+
+El hecho de fondo sí es correcto y ya está anotado: con `figura` fuera del `MAPEO` de esa solapa,
+el filtro `figura!=Jorge Macri` **no es ejecutable por el motor**, y los 8 de 8 de `V-49` se
+validaron a mano contra las bases. Cierto como número, falso como cableado.
