@@ -6605,3 +6605,106 @@ a las tres las alcanza la pisada del modo B.
 **El texto original no se edita** (append-only). La misma frase quedó copiada en
 `docs/Prompts/2026-08-08_8_cerrar_laminas_1_a_6_jm.md` §"El alcance, medido" punto 3, que **está
 sin ejecutar**: quien lo corra tiene que leer este addendum primero.
+
+---
+
+## `N2` — de qué base leen las láminas 2 y 3 de `JM` (2026-08-09)
+
+Tarea `N2` de la corrida nocturna del `_9`. **Medición, sin cablear nada.** Lectura de
+`MARCADORES` vivo el 09/08/2026 a las 01:47 vía `tools/snapshot.js` —que no pasa por ningún
+`.gs`— y del `MAPEO` vivo vía la API.
+
+### La respuesta corta: **ninguno lee de `looker`. `MARCADORES` no tiene una sola fila de `looker`.**
+
+`MARCADORES` vivo: **51 filas de datos**, 14 columnas. (El `HANDOFF_CODE.md` decía 44 y el `_9`
+decía 52 contando el encabezado — las dos citas estaban corridas.) Su reparto por base y solapa:
+
+| filas | base / solapa |
+|---|---|
+| 14 | `digital / Directa Mail` |
+| 14 | `rdv / RVD JM-CM - ES` |
+| 9 | `digital / Directa IVR` |
+| 6 | `digital / Digital` |
+| 6 | `digital / Seguimiento digital` |
+| 2 | `digital / Directa SMS` |
+| **0** | **`looker` / cualquier solapa** |
+
+Cero filas con `base_id` vacío.
+
+### Los 40 tokens, uno por uno
+
+**Lámina 2 (`JM`) — 13 de 21 tienen fila.** Las trece leen de `digital`: `frecuencia` e
+`imp_total` de `Digital` (filtro `dig_jm_gcba=JM`); `ivr_at_pct`, `ivr_atendidos`,
+`ivr_campanias`, `ivr_llamados` de `Directa IVR`; `mail_aperturas`, `mail_entregados`,
+`mail_envios`, `mail_or` de `Directa Mail` (filtro `mail_remitente=jorge.macri@buenosaires.gob.ar`);
+`pauta_google`, `pauta_meta`, `pauta_prog` de `Seguimiento digital`.
+
+**Lámina 3 (`GCBA`) — 11 de 19 tienen fila**, todas de `digital`, con el mismo campo lógico y el
+filtro negado (`dig_jm_gcba!=JM`, `mail_remitente!=jorge.macri@…`), más `gcba_sms_envios` y
+`gcba_sms_entregados` de `Directa SMS`.
+
+**Los 16 sin fila son los mismos ocho de cada lado:** `cc_base`, `cc_campanias`,
+`cc_contact_pct`, `cc_contactados`, `contenidos_total`, `imp_google`, `imp_meta`, `imp_prog` — y
+sus ocho gemelos `gcba_`.
+
+### Qué significa para el `_8`
+
+**La suposición del `_8` se sostiene: el trabajo es cablear, no destrabar `looker`.** El
+razonamiento de `N2` («si leen de `looker`, el `_8` no sirve») partía de dos premisas y las dos
+resultaron falsas: ninguno lee de `looker`, y `looker/resumen_metricas_dinamico` **es legible**
+(ver el pendiente `P1` sobre `looker`).
+
+⚠ **Pero una premisa del `_8` sí se cae, y hay que leerla antes de correrlo.** El `_8` afirma:
+*"Ocho tokens de la lámina 2 ya los usa la 5, que publica bien: `mail_aperturas`, `mail_or`,
+`mail_entregados`, `cc_base`, `cc_contactados`, `cc_contact_pct`, `ivr_atendidos`, `imp_total`."*
+
+**Tres de esos ocho no tienen fila en `MARCADORES`**: `cc_base`, `cc_contactados` y
+`cc_contact_pct`. No pueden estar publicando en ninguna lámina. Los otros cinco sí están.
+
+Así que la cuenta del `_8` —*"trece tokens nuevos, no veintiuno"*— **da mal**: los que faltan en
+la lámina 2 son **ocho**, y tres de ellos son justamente los `cc_*` que el `_8` daba por resueltos.
+
+### De dónde saldrían los 16 — medido, no propuesto
+
+**Los `imp_*` y `contenidos_total`: `digital/CAMPAÑAS_DESGLOCE_DIGITAL`.** Es `uso = fuente`,
+4889 filas, legible hoy, y **no tiene una sola fila en `MAPEO`**. Tiene exactamente las dos
+columnas que hacen falta — `F Plataforma` y `O Impresiones` — más el corte JM/GCBA en `T`:
+
+| `Plataforma` (col `F`) | filas | impresiones |
+|---|---|---|
+| Meta | 1781 | 837.194.550 |
+| DV360 | 1626 | 2.161.052.366 |
+| Google ads | 1384 | 592.790.427 |
+| TikTok | 55 | 24.571.433 |
+| Mercado Libre | 21 | 11.775.499 |
+| Twitter | 12 | 10.613.986 |
+| Twitch | 5 | 1.605.948 |
+| Uber | 5 | **0,58** ⚠ |
+
+`JM | GCBA | POLICIA` (col `T`): `GCBA` 4759, `JM` 107, `Sin Tipo` 17, `LINDA` 6.
+
+Mapeo evidente: `imp_meta` → `Plataforma=Meta`, `imp_google` → `Plataforma=Google ads`,
+`imp_prog` → `Plataforma=DV360`. **Pero son tres decisiones del usuario, no de Code**: que
+"programmatic" sea `DV360` es una lectura, no un hecho; y las otras cinco plataformas
+(TikTok, Mercado Libre, Twitter, Twitch, Uber) **no tienen token** — hay que decir si van a
+`imp_total` o quedan afuera. ⚠ Y `Uber` con **0,58 impresiones en 5 filas** es un dato sucio que
+conviene mirar antes de sumarlo a nada.
+
+**Los `cc_*`: `looker/resumen_metricas_dinamico`.** Tiene `cc_contactados` en la columna `T` y
+`cc_efectivos` en la `U`, las dos mapeadas, y la solapa **es legible** (949 filas, 26 en la
+ventana del informe). Es la **única** fuente de call center en las cuatro bases: ninguna solapa de
+`digital` tiene datos de CC.
+
+Pero **no alcanza para los cuatro tokens**: hay `cc_contactados` y `cc_efectivos`, y los tokens
+piden `cc_base`, `cc_contactados`, `cc_contact_pct` y `cc_campanias`. **`cc_base` no existe en
+ningún `MAPEO` de ninguna base.** Sin `cc_base` no sale `cc_contact_pct`, que es un cociente.
+
+### Las preguntas que quedan para el usuario
+
+1. **¿`cc_base` de dónde sale?** No está mapeada en ninguna base. ¿Es `cc_efectivos`? ¿Es una
+   columna de `looker/CC` (1309 filas, `uso = fuente`, sin `MAPEO`)? ¿O no existe?
+2. **¿`imp_prog` es `DV360`?** Y qué pasa con TikTok, Mercado Libre, Twitter, Twitch y Uber.
+3. **¿`contenidos_total` es un `CONTEO` de `CAMPAÑAS_DESGLOCE_DIGITAL`** o la suma de los tres
+   `pauta_*`, que ya están cableados sobre `Seguimiento digital`?
+4. **Cablear los `cc_*` sobre `looker` sería la primera fila de `looker` en `MARCADORES`.** Hoy
+   son 51 filas y ninguna. No es un impedimento, pero conviene saberlo antes.
