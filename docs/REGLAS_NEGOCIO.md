@@ -172,17 +172,32 @@ ancla de un informe generado **no entra acá y no necesita autorización de `C-0
 sobre la copia, que es salida del motor y que el motor ya escribe entera. `C-01` protege la
 **plantilla** — y la plantilla **no se limpia nunca** (`D-23`, addendum 1, punto 8).
 
-#### Addendum 3 — 09/08/2026: las dos notas del equipo ya no están en la plantilla
+#### Addendum 3 — 09/08/2026: se borró **una** de las dos notas del equipo, no las dos
+
+> ⚠️ **Este addendum se escribió primero diciendo que se habían borrado las dos, y era falso.**
+> Se corrigió el mismo día, minutos después, cuando el lector de notas de `B.0` lo midió contra
+> la plantilla. La premisa venía del `11.1` §6 y se escribió sin verificar. Queda anotado acá
+> porque es el tercer documento seguido que repite ese dato sin medirlo.
 
 **Es una corrección de hecho, no de autorización.** Nada de lo que el `Addendum 1` autoriza o
 prohíbe cambia: el motor **sigue anexando y nunca reemplazando**, y `setText` sobre las notas
 del orador **sigue sin estar autorizado**.
 
-**Qué cambió.** El `Addendum 1` funda su regla en un hecho medido el 07/08: *"dos láminas de
-`SECCO_marcada` ya tienen notas escritas por el equipo —la 8, con 285 caracteres…, y la 25, con
-267—"*. **Esas dos notas se borraron de la plantilla el 08/08**, por decisión del usuario y de
-forma deliberada: el sellado del `_11` escribe en esa misma área, y borrarlas *después* se
-llevaría el ancla puesta.
+**Qué cambió, medido el 09/08 con `contarAnclasDeLaminas()` sobre las dos plantillas vivas:**
+
+| lámina de `SECCO_marcada` | `C-01 Add. 1` (07/08) | medido hoy |
+|---|---|---|
+| **8** — antecedentes de una temática | 285 caracteres | **sin notas** — borrada |
+| **25** — conversación en X | 267 caracteres | **267 caracteres, intacta** |
+
+**Se borró la 8. La 25 sigue en la plantilla, al dígito.** `JM_marcada` no tiene ninguna nota,
+como ya decía el `Addendum 1`.
+
+**Consecuencia operativa, y es la que importa:** el orden que fija
+`docs/NOTAS_ORADOR_SECCO_8_y_25.md` —copiar al repo, backup, borrar las dos, recién ahí sellar—
+**está a medias**. El sellado del `_11` anexa y no pisa, así que la nota de la 25 no corre riesgo
+de destruirse; pero **borrarla después del sellado se llevaría el ancla**, que es exactamente lo
+que ese orden venía a evitar.
 
 **El texto del `Addendum 1` no se altera** — sigue siendo el registro fiel de por qué la regla se
 escribió. Lo que hay que leer con este addendum al lado es su ejemplo: **hoy no es verificable
