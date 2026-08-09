@@ -2355,6 +2355,55 @@ Son **12.684 filas de detalle por canal, con `ID cuentas`**, declaradas fuente y
 `DIAG_FECHAS` → elección humana → `promoverFechasElegidas()` (`Fuentes.gs:21-30`, `S-02`):
 *"detección automática, elección humana"*. Escribir la celda a mano saltearía ese mecanismo.
 
+### P1 · La sección `m2` está declarada, tiene 31 tokens en la plantilla y no publica ninguno
+
+Medido el 09/08/2026 a las 01:47 sobre `MARCADORES` vivo (`tools/snapshot.js`, sin pasar por
+ningún `.gs`) y `SECCIONES` vivo.
+
+**Los tres hechos:**
+
+1. `SECCIONES` declara `m2` — orden 12, `modo = agregado`, `informes = JM,SECCO`,
+   `familia_tokens = m2_`, `estado = activa`. Y cuelga dos sub-secciones, `m2_status` y
+   `m2_caudal`.
+2. `JM_marcada` tiene **31 tokens `m2_*`**: 8 en la lámina 9 (`m2_aperturas`, `m2_campanias`,
+   `m2_clics`, `m2_ctor`, `m2_envios`, `m2_mails_entregados`, `m2_mails_enviados`, `m2_or`) y
+   **23 en la lámina 10, que está *escondida***.
+3. **`MARCADORES` no tiene un solo marcador de familia `m2_`.** 51 filas: 37 de `digital`, 14 de
+   `rdv`, cero de `m2`, cero `m2_*`.
+
+**Ojo con el "cero": no siempre fue cero.** El volcado `docs/_snapshots/MARCADORES_2026-08-01.tsv`
+tiene una fila `m2_envios` (`base_id = m2`, campo `envios`, `periodo_ref = m2_mensual`,
+`operacion = calcEnvios`). Hoy no está y **nadie registró su borrado**. Si desapareció por una
+limpieza, conviene saber que existió.
+
+**Por qué la sección está vacía — y no es "falta sembrar `MARCADORES`".** Eso ya está decidido:
+**`D-17`** fija que el dueño de `MARCADORES` es **la plantilla**, no un `SEED_MARCADORES_`
+(cerrado el 02/08). La causa es otra y está escrita en el seed desde el Paso 2.10 Parte C:
+**`BASES.m2.hoja_default` está vacío a propósito** — *"m2 sin fuente activa para `m2_*`"*—, así
+que los tokens `m2_*` emitirían `«FALTA:token»` aunque tuvieran fila.
+
+**Y hay un segundo motivo, independiente:** 23 de los 31 tokens están en una lámina **escondida**,
+que por `D-21` no entra al mapa de la corrida. Aunque se cableara `m2` entero, esos 23 no se
+publicarían hasta que alguien decida mostrar la lámina 10.
+
+**Lo que sí hay son datos, y están medidos.** Caso `2145-OCTVINGC` **en `digital/Directa Mail`**
+—no en `m2`, el ámbito importa—: 24 filas, **528.825 enviados**, desglose por `Tipo de mail`:
+`M2` 159.127 + `M2 | Post` 369.698, **ninguna `M2 | Pre`**. Y a escala de canal: de las 599 filas
+de `digital/Directa Mail` con `Eje = M2`, **429 (71,6 %) son huérfanas** —137 ids, 5.111.516
+enviados— y **349 (58,3 %) no declaran etapa**.
+
+**Las tres preguntas que hay que responder antes de cablear un solo `m2_`:**
+
+1. **¿De qué base sale M2?** `m2` no tiene fuente activa; los datos están en `digital/Directa
+   Mail` con `Eje = M2`. Son dos respuestas distintas y sólo una es la del usuario.
+2. **¿Qué señal define el universo M2?** `Eje = M2` da 599 filas; `Tipo de mail` que empieza con
+   `M2` da 718. **No empatan**, y elegir mal es el error de la lámina 5 otra vez.
+3. **¿La lámina 10 se muestra o no?** De eso depende si son 8 tokens o 31.
+
+**No se cableó ningún `m2_`.** De qué fuente sale cada número es criterio del usuario, y el
+riesgo de adivinarlo está medido: la lámina 5 publicó los encuentros de doce figuras durante
+quince días pasando las cuatro verificaciones.
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el
