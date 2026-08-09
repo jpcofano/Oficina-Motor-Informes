@@ -2404,6 +2404,53 @@ enviados— y **349 (58,3 %) no declaran etapa**.
 riesgo de adivinarlo está medido: la lámina 5 publicó los encuentros de doce figuras durante
 quince días pasando las cuatro verificaciones.
 
+### P1 · `R-20` está escrita y no tiene mecanismo — falta una segunda ruta de lectura de `rdv`
+
+`R-20` (09/08/2026) dice que para fechas pasadas `en agenda` cuenta como realizada **sólo para
+contar**. Está escrita en `REGLAS_NEGOCIO.md` con el encabezado `⚠ SIN MECANISMO` y **no se puede
+implementar con la configuración que hay**.
+
+**Por qué no es expresable.** El corte por estado vive hoy en
+`MAPEO.rdv/RVD JM-CM - ES/status.valores_incluidos = "Realizada"` (`D-21 Addendum 1`), y
+`valores_incluidos` es una **lista estática**: no puede decir *"además `en agenda`, pero sólo si la
+fecha ya pasó, y sólo para contar"*. `leerFuente` aplica toda lista blanca que encuentre, a todos
+los consumidores de la solapa por igual.
+
+**Lo que hace falta, nombrado:** una **segunda ruta de lectura** de `rdv/RVD JM-CM - ES` que no
+pase por la lista blanca, usada **sólo** por el contador y el listador de encuentros.
+
+**Lo que NO hay que hacer, y por eso queda escrito acá.** No agregar `en agenda` a
+`valores_incluidos`. Eso la haría visible a **todos** los consumidores de la solapa —incluidos los
+catorce marcadores `ecv_*`, que son sumas— y es exactamente lo que `R-09` impide. La regla acota;
+tocar la lista blanca derogaría.
+
+**Qué lo destraba:** un prompt propio con su Parte 0. No entra al `_10` ni a su addendum `10.1`,
+que lo dejaron declarado a propósito.
+
+**Dato para quien lo tome:** `en agenda` son **7 filas** en toda la historia de la solapa (1362
+filas), medido el 09/08. `R-09` dice 6 — es del 31/07 y entró una más. El vocabulario de estado
+está cerrado en cinco valores y no se movió en nueve días.
+
+### P2 · `C.4` del `_10` retirado el 09/08 — la poda de derivados no puede correr todavía
+
+`C.4` pedía retirar la fuente propia de `imp_total` y `contenidos_total` por ser derivados
+(`X-10`, `X-11`). **Se retiró entero** por el `10.1` §3, y el motivo es concreto: aplicarlo
+**borraría la única fila que hoy produce `imp_total`**, porque `imp_meta`, `imp_google` e
+`imp_prog` **no existen en `MARCADORES`** — la familia `imp` tiene una sola fila. Y
+`contenidos_total` no tiene fila propia, así que no había nada que podar.
+
+**Qué lo destraba:** que existan `imp_meta`, `imp_google` e `imp_prog` como filas de
+`MARCADORES`. Y eso, a su vez, depende de una medición que **todavía no cerró**: de dónde salen
+esos tres números.
+
+⚠ **Medido el 09/08 y en contra de la hipótesis que estaba en juego:** no se reproducen desde
+`digital/CAMPAÑAS_DESGLOCE_DIGITAL`. De las **436 filas que solapan la ventana 24–31/07**, la
+columna `JM | GCBA | POLICIA` da **GCBA 431, `Sin Tipo` 5 y JM cero**. Las filas `JM` de esa
+solapa existen —107 en total— pero **se cortan en abril de 2026**. Cruzando por `Id cuentas`
+contra las 166 cuentas JM de `digital/Digital`: 34 filas en toda la historia, **0 en la ventana**.
+Los valores publicados (Meta 716.650 · Google 531.403 · Programmatic 5.194.898) **no salen de ahí
+con ningún corte JM**.
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el

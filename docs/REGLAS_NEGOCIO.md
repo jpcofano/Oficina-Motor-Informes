@@ -969,6 +969,72 @@ guarda**: es que esa solapa no era `fuente`. El `uso` describe qué se espera de
 
 ---
 
+## R-20 — Para fechas pasadas, `en agenda` cuenta como realizada — sólo para contar
+
+> ⚠ **SIN MECANISMO — decidida 09/08/2026, no implementada. No citar como vigente.**
+>
+> No hay forma de expresarla en configuración: `MAPEO.valores_incluidos` es una **lista
+> estática** y esta regla es **condicional a la fecha**. Implementarla exige una segunda ruta de
+> lectura de `rdv/RVD JM-CM - ES` que no pase por la lista blanca, usada **sólo** por el contador
+> de encuentros — anotada en `docs/PENDIENTES_consistencia.md`. **Va en un prompt propio.**
+
+**Acota `R-09`, no la deroga.** `R-09` sigue rigiendo toda lectura **numérica** de
+`rdv/RVD JM-CM - ES`, y la lista blanca de `D-21 Addendum 1`
+(`MAPEO.rdv/RVD JM-CM - ES/status.valores_incluidos`) sigue siendo `"Realizada"` sola, **sin
+tocar**.
+
+**Alcance:** el **conteo y el listado** de encuentros — `emin_encuentros`, `emin_lista`, y
+cualquier cardinalidad de reuniones. **Nunca** una suma, un promedio ni un porcentaje.
+
+**Condición:** `STATUS REUNIÓN = "en agenda"` **y** fecha del encuentro anterior al cierre de la
+ventana del informe. Una fila `en agenda` con fecha futura sigue sin contar: todavía no pasó.
+**`Suspendida`, `Reprogramada` y `Se modifico el barrio` no se tocan** — `Suspendida` declara que
+el encuentro **no ocurrió**, que es distinto de una hoja desactualizada.
+
+**Los números de esa fila no se leen.** Se buscan en la otra solapa por el mismo encuentro
+(la cascada de `docs/DISENO_match_temario.md` §5 bis). Si no están, el token va a `REVISAR`.
+**Nunca a cero** — un cero se suma y se publica; un `REVISAR` frena.
+
+**Origen:** decisión del usuario, 09/08/2026. *"Para fechas pasadas, `Realizada` y `en agenda`
+cuentan igual — la hoja no siempre se actualiza. Suma encuentros y no suma números, así que el
+dato se busca en la otra solapa y si no está va a `REVISAR`, no a cero."*
+
+**Por qué no contradice a `R-09`, que es lo que hay que entender antes de tocarla.** `R-09:334`
+midió que **34 de las 61 filas no-realizadas traen `Inscriptos` o `Asistentes` distintos de
+cero**. Eso no debilita esta regla: la funda. Que una fila `en agenda` traiga un número **no la
+vuelve confiable, la vuelve peligrosa** — suma en silencio. Por eso `R-20` la deja contar y le
+prohíbe aportar.
+
+*(El prompt `_10` justificaba esta regla diciendo que esas filas vienen vacías. **Ese argumento
+es falso y queda retirado** por el `10.1` §1: lo agregó el redactor, no estaba en la decisión del
+usuario, y `R-09:334` lo desmiente.)*
+
+**Lo medido, 09/08/2026 01:5x** — vocabulario completo de `STATUS REUNIÓN` sobre las **1362**
+filas de la solapa, leído por `excluidas_por_valor` de `contarLecturaBase_`:
+
+| valor | hoy (09/08) | `R-09` (31/07) |
+|---|---|---|
+| `Realizada` | 662 | 653 |
+| `Suspendida` | 58 | 58 |
+| **`en agenda`** | **7** | 6 |
+| `Reprogramada` | 2 | 2 |
+| `Se modifico el barrio` | 1 | 1 |
+
+**El catálogo está cerrado**: los mismos cinco valores a nueve días de distancia. Y la regla es
+chica por construcción — **`en agenda` son 7 filas en toda la historia de la solapa**.
+
+⚠ **Ojo con el número al verificar:** el `10.1` dice *"contra las 6 filas `en agenda` de
+`R-09:331`"*. **Hoy son 7.** `R-09` es evidencia fechada del 31/07 y entró una fila más. Se
+verifica contra **el conteo del día**, no contra el 6.
+
+**Cómo se verifica:** las filas `en agenda` de fecha pasada tienen que entrar al conteo, y
+**ninguna tiene que aportar un número**. El conteo con la regla es siempre `>=` que sin ella.
+
+**Si falla:** si el conteo sube y algún agregado también, el mecanismo se filtró a la rama
+numérica. **Se retira el mecanismo, no se ajusta el número.**
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas
