@@ -6780,3 +6780,73 @@ segunda fuente posible para `imp_google/meta/prog`, además de
 - `imp_*` → ¿`digital/CAMPAÑAS_DESGLOCE_DIGITAL` (4889 filas, legible hoy) o `looker/DIGITAL`
   (4591 filas, hoy ilegible)? **Dos fuentes para el mismo número es exactamente lo que hay que
   decidir antes de cablear**, no después.
+
+---
+
+## `N4` + `N5` — el diagnóstico de la unión deja de esconder lo que descarta (2026-08-09)
+
+Tareas `N4` y `N5` de la nocturna del `_9`. **Van en un solo commit y conviene decir por qué:
+son el mismo bug de conteo en dos campos del mismo bloque** (`unirDigitalPorCuentaSinCache_`),
+y separarlos habría partido un hunk contiguo. El `_9` pide un commit por tarea; ésta es la
+excepción y queda anotada.
+
+**Ninguna de las dos cambia el comportamiento de la unión.** Sigue pisando y sigue descartando
+exactamente igual. Lo único que cambia es que ahora se ve.
+
+### `N4` — la pisada
+
+`cuentasMaestra` contaba **filas con id**, no ids distintos, y se publicaba como `cuentas`.
+Comparar `filas_leidas` contra `cuentas` no detectaba nada. El diagnóstico ahora publica cuatro
+campos y la diferencia como uno propio:
+
+```
+Seguimiento digital: leidas=979  con_id=840  cuentas=763  PISADAS=77
+```
+
+Verificado contra el motor después del `clasp push`, y coincide con la medición independiente de
+la Parte 0 del `_6`.
+
+### `N5` — las huérfanas, con su peso
+
+`huerfanas_en_canal` es una lista de ids **con repetidos** —se pushea una vez por fila
+descartada—, así que su `.length` eran filas y el rótulo decía "huérfanas" a secas. Se agregan
+`huerfanas_filas`, `huerfanas_ids` y `huerfanas_mayores` (top 5 por cantidad de filas), y el
+alert muestra el porcentaje del canal. El campo original **se conserva con su forma**, así que
+ningún consumidor se rompe.
+
+Medido contra el motor, después del push:
+
+| solapa | leídas | matcheadas | filas descartadas | ids | mayores |
+|---|---|---|---|---|---|
+| Digital | 1297 | **38** | **922 (71,1 %)** | 842 | `0824-DICNEWAN`×2, `0872-ENENEWAN`×2… |
+| Directa Mail | 2162 | 1531 | **631 (29,2 %)** | 292 | `1942-SEPEPHGC`×54, `1946-SEPEPHGC`×43, `2033-SEPEPHGC`×35 |
+| Directa SMS | 48 | 39 | 9 (18,8 %) | 8 | `3278-JUNVINGC`×2 |
+| Directa IVR | 58 | 58 | 0 | 0 | — |
+| Alcance | 768 | 763 | 5 (0,7 %) | 1 | **`#N/A`×5** |
+
+### El instrumento encontró algo en la primera corrida
+
+**Las 5 filas huérfanas de `digital/Alcance` tienen `id_cuenta = "#N/A"`.** No es un id que falte
+en la maestra: es **una fórmula rota que llega como texto**, que es exactamente el caso que `R-19`
+describe (*"un `IMPORTRANGE` roto no tira excepción: devuelve `#REF!` como texto"*, con `#N/A` en
+la misma familia).
+
+Antes esto se leía como *"1 huérfana en canal"* y no significaba nada. Ahora el valor está a la
+vista. **No se tocó**: `Alcance` es de un dueño externo y arreglar la fórmula no es del motor.
+Queda como dato para quien mire la base.
+
+### Lo que `N5` pedía y no se hizo, con el motivo
+
+El `_9` pide que las huérfanas salgan **al informe de corrida**. **No se hizo, y no por falta de
+tiempo:** no existe un "informe de corrida" al que agregarlas, y los tres candidatos tienen costos
+muy distintos —`FALTANTES` es por token y responde otra pregunta; `CORRIDAS` tiene esquema fijo de
+8 columnas y meter una más es tocar `HOJAS_CONFIG_`, o sea el esquema de una hoja de registro de
+noche y sin usuario; el valor de retorno de `generarInforme` es el candidato barato—.
+
+Y hay un obstáculo estructural que el prompt no ve: **la corrida nunca tiene el `diagnostico` en
+la mano.** `filasDigitalDeEncuentro` (`Union.gs:821-824`) devuelve `union.porCuenta[...]` y tira
+el resto. Llevar las huérfanas al Generador exige **abrir un camino nuevo** desde
+`unirDigitalPorCuenta`, y eso es más que *"un arreglo de reporte"*.
+
+**Queda para el usuario:** por dónde sale, y si el destino es el retorno de `generarInforme` o una
+columna nueva en `CORRIDAS`.
