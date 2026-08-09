@@ -197,7 +197,13 @@ function borrarFilasDeLaminas(ids) {
  * No toca la plantilla viva en ningún momento: copia, escribe la nota testigo sobre la copia,
  * sella la copia, verifica y **devuelve el id de la copia** para que se pueda mirar a mano.
  */
-function probarSelladoSobreCopia(informeId) {
+function probarSelladoSobreCopia(informeId, opciones) {
+  opciones = opciones || {};
+  // `11.2` — para probar la **numeración corrida** hace falta que las copias registren en
+  // `LAMINAS`: el contador es `max(lamina_id) + 1` sobre la hoja, así que sin filas `jm` volvería
+  // a arrancar en `L-001` y la prueba no probaría nada. Se corre con `registrar: true`, se
+  // verifica, y **se limpia con `borrarFilasDeLaminas` antes de la corrida viva**.
+  var registrar = opciones.registrar === true;
   var informe = leerInformes()[informeId];
   if (!informe || !informe.plantilla_id) {
     return { ok: false, motivo: 'Informe "' + informeId + '" sin plantilla_id en INFORMES' };
@@ -229,7 +235,7 @@ function probarSelladoSobreCopia(informeId) {
   shapeTestigo.getText().setText(TESTIGO);
   SlidesApp.openById(copiaId).saveAndClose();
 
-  var resultado = sellarPlantilla(informeId, { plantillaId: copiaId });
+  var resultado = sellarPlantilla(informeId, { plantillaId: copiaId, registrar: registrar });
   if (!resultado.ok) return { ok: false, motivo: 'El sellado falló: ' + resultado.motivo, copia_id: copiaId };
 
   // Verificación, y las tres condiciones tienen que darse a la vez.
