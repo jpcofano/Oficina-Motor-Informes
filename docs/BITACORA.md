@@ -6434,3 +6434,174 @@ fila de equivalencias es una afirmación que se repite cada semana sin que nadie
 Son dos problemas que comparten la palabra "campaña" — uno busca **una campaña que el temario
 nombra**, el otro **las campañas que pertenecen a un encuentro**. `REUNIONES` ya tiene `etapa`;
 lo que falta es con qué se engancha. **No se diseñó nada para él ni se adaptó la solapa.**
+
+---
+
+## La Parte 0 del `_6` — la etapa de una campaña, medida (2026-08-09)
+
+Corrida del prompt `docs/Prompts/2026-08-08_6_etapa_de_campana.md`, **sólo Parte 0**. Ningún `.gs`
+tocado. **Lectura de las hojas vivas el 09/08/2026 entre las 01:29 y las 01:30**, re-corrida sobre
+la medición original del 09/08 a las 02:20 — los números dieron idénticos en las dos pasadas.
+
+**Cómo se midió, porque importa para volver a citarlo.** `tools/api.js` contra la API del motor
+(`registros`, `llamar fn=leerFuente / resolverVentana / resumenAnclaje_ / buscarMapeo /
+parsearFiltro_ / contarLecturaBase_`) y `tools/snapshot.js` volcado al scratchpad. Las claves de
+join salen del **`MAPEO` vivo**, no de la primera columna ni del seed. Las solapas con
+`uso = 'ignorar'` no se leyeron (`CLAUDE.md` §2), `digital/RDV` incluida.
+
+### El caso real: `2033-SEPEPHGC`
+
+No son dos filas: **son 35**. Las dos que vio el usuario —`ID MailUp` 26770 y 26771, del 05/08—
+son las dos últimas; las otras 33 son la misma campaña de poda a lo largo de 2026, con cadencia
+pre/post semanal. Suman **99.218 enviados** y **ninguno llega al motor**.
+
+**Está en** `digital/Cuentas` (1 fila), `digital/Directa Mail` (35), `m2/Directa mail` (35,
+espejo), `m2/M2 periodo DIRECTA` (1, vista), `digital/Buscador por periodo directa` (1, vista).
+**No está en `Seguimiento digital`**, medido sobre las 979 filas de la maestra con la clave
+`sd_id_cuenta` → columna `A`. Las 35 filas caen enteras en `huerfanasEnCanal` (`Union.gs:176-178`)
+y se descartan. **Modo de falla A confirmado, no supuesto.**
+
+### Tabla 1 — huérfanas por canal (modo A)
+
+| solapa | filas | ids huérfanos | filas descartadas | % del canal |
+|---|---|---|---|---|
+| Digital | 1297 | 842 | **922** | **71,1 %** |
+| Directa Mail | 2162 | 292 | **631** | **29,2 %** |
+| Directa SMS | 48 | 8 | 9 | 18,8 % |
+| Directa IVR | 58 | 0 | 0 | 0 % |
+| Alcance | 768 | 1 | 5 | 0,7 % |
+
+Los mayores de mail: `1942-SEPEPHGC`×54, `1946-SEPEPHGC`×43, `2033-SEPEPHGC`×35,
+`1943-SEPEPHGC`×32, `1921-SEPAMBGC`×30.
+
+### Tabla 2 — cruce `Eje` × huérfana, sobre `digital/Directa Mail`
+
+| eje | huérfanas: filas / ids / enviados | con maestra: filas / ids / enviados |
+|---|---|---|
+| **M2** | **429 / 137 / 5.111.516** | 170 / 50 / 19.265.429 |
+| Cercanía | 102 / 81 / 5.431.618 | 914 / 303 / 19.317.516 |
+| Cuidado | 37 / 31 / 927.443 | 141 / 69 / 13.213.352 |
+| Movilidad | 24 / 15 / 1.415.136 | 119 / 90 / 11.831.875 |
+| Ciudad Atractiva | 21 / 18 / 315.993 | 163 / 66 / 16.214.203 |
+| Reforma del Estado | 9 / 3 / 983.183 | 24 / 6 / 3.853.508 |
+| Otros | 6 / 5 / 3.378 | — |
+| Cuidado y Bien Público | 2 / 1 / 348 | — |
+| Revisar | 1 / 1 / 96.692 | — |
+
+**El 71,6 % de las filas M2 de mail son huérfanas.** El enganche que falta no es un caso raro: es
+el modo normal de M2.
+
+### Tabla 3 — dónde vive la marca de etapa, y con qué vocabulario
+
+| solapa | col | mapeada | celdas con marca | vocabulario exacto |
+|---|---|---|---|---|
+| `Directa Mail` | **`I` Tipo de mail** | **sí, `mail_tipo`** | 265 / 1652 | `M2 \| Pre`, `M2 \| Post`, `M2 \| Durante` — **cerrado, 3 valores** |
+| `Directa Mail` | `H` Nombre campaña \| Directa | sí, `mail_campana` | **24 / 2162 (1,1 %)** | `Pre`×4 `PRE`×1 `pre`×3 `Post`×4 `POST`×3 `post`×4 `Durante`×5 |
+| `Directa Mail` | `K` Nomenclatura | **no** | 415 / 2151 | `PRE`×42 `Pre`×10 `POST`×120 `Post`×215 `post`×22 `Durante`×5 `durante`×1 |
+| `Seguimiento digital` | `B` / `C` | sí | 18 / 835 y 91 / 840 | `Post`×79, `Durante`+`durante`×12, `POST`×2 |
+| `Digital` | `A` | sí, `dig_campana` | 41 / 960 | `Post`×38, `Durante`+`durante`×2 |
+| `Directa SMS` | — | — | **0** | ninguna columna trae marca |
+| `Directa IVR` | — | — | **0** | ninguna columna trae marca |
+
+**`durante` existe en los datos**, escrito, con vocabulario propio: **`M2 | Durante`, 22 filas**.
+No hay que inventarla.
+
+**`I` mezcla dos vocabularios en un solo campo lógico** — nueve valores: `M2` 453,
+`Convocatoria` 349, `Agradecimiento` 301, `Confirmación` 260, `M2 | Post` 162, `M2 | Pre` 70,
+`M2 | Durante` 33, `Cancelación` 15, `Reprogramación` 9. **La nota del `MAPEO` vivo está vencida**:
+dice *"Convocatoria / Confirmación / Agradecimiento"* y la columna tiene nueve valores, cuatro de
+ellos M2.
+
+**Y el agujero que importa:** sobre las 599 filas con `Eje = M2`, **349 (58,3 %) no declaran
+etapa** — 203 dicen `M2` pelado y 138 tienen `I` vacía. Las dos filas del caso del usuario
+(26770/26771) **tienen `Tipo de mail` vacío**: la columna que resuelve el problema está en blanco
+justo en las filas nuevas.
+
+### Tabla 4 — las columnas de `Directa Mail` sin mapear
+
+| col | nombre real | llenas | distintos | qué es |
+|---|---|---|---|---|
+| `B` | `ID MailUp` | 2150/2162 | 2136 | id del envío. **No es clave única**: 12 vacías, ~14 repetidos |
+| `K` | `Nomenclatura` | 2151 | 2140 | nombre de pieza; mayor cobertura de etapa, vocabulario abierto |
+| `U` | `Nombre campaña \| Cuentas` | 2162 | 874 | nombre, no clasificación |
+| `V` | `Tag Orion Mail` | 787 | 110 | etiqueta, cobertura parcial |
+| `W` | `Proyecto` | 1867 | 87 | `ECVs Jorge Macri`, `Más servicios en tu barrio`… |
+| **`X`** | **`Eje`** | **2162/2162** | **9** | `Cercanía` 1016, `M2` 599, `Ciudad Atractiva` 184, `Cuidado` 178, `Movilidad` 143, `Reforma del Estado` 33, `Otros` 6, `Cuidado y Bien Público` 2, `Revisar` 1 |
+| `Y` | `ERROR` | 20 | 3 | `ERROR ID`×18, `ERROR FECHA`×1, `ERROR API`×1 |
+
+**`X` `Eje` es la vía para decir a qué sección pertenece una fila de mail**: cobertura 100 %,
+cardinalidad 9. No es `U`–`X` como conjunto — es `X` sola. Dos advertencias: tiene un valor
+`Revisar` (1 fila), así que el vocabulario no está del todo cerrado; y **`Eje = M2` (599) no
+coincide con las filas cuyo `Tipo de mail` empieza con `M2` (718)**. Dos señales de M2 que no
+empatan; hay que elegir cuál manda.
+
+### Tabla 5 — ids con más de una fila (modo B)
+
+**Maestra `Seguimiento digital`:** 979 filas leídas, 840 con clave, **763 ids distintos**.
+**76 ids con más de una fila → 77 filas de maestra desaparecen** por la asignación de
+`Union.gs:143`, sin quedar en ningún diagnóstico.
+
+| solapa | ids con >1 fila | filas amontonadas sin marca de etapa |
+|---|---|---|
+| **Directa Mail** | **421** | **1368** |
+| Alcance | 66 | 133 |
+| Directa IVR | 10 | 20 |
+| Directa SMS | 4 | 15 |
+| Digital | 2 | 5 |
+
+### El anclaje, re-medido
+
+`resumenAnclaje_`, ventana `2026-07-24 → 2026-07-30` (origen `config`), umbral 0.6, 67,8 s:
+**anclados 5 · sin_link 0 · baja_confianza 0**. San Cristóbal → `3354-JULJDGAG` (1.00), Retiro →
+`3346-JULJDGAG` (1.00), Orden Público → `3387-JULJDGGC` (1.00), y las dos repeticiones post.
+
+**Cero por `ambiguo` — y `ambiguo` no existe como bucket**: los homónimos sin desempate van a
+`sinLink` con el campo `motivoAmbiguo` (`Union.gs:773-778`). El `_6` pedía contar un bucket que no
+está.
+
+### De cuánto es el error
+
+**Para la poda, el error es total, no parcial.** `2033-SEPEPHGC` es huérfano ⇒
+`filasDigitalDeEncuentro` devuelve `null` ⇒ no publica nada. Los 6.041 de la pre y los 4.008 de la
+post **no se mezclan: no llegan**, y con ellos los otros 89.169 enviados.
+
+**El caso que sí publica** — `3387-JULJDGGC` (Orden Público), 5 filas de mail: `Convocatoria`
+201.515 (22/07) + 25.560 (22/07) + 44.043 (25/07), `Confirmación` 583 (27/07), `Agradecimiento`
+582 (**03/08**). Suma cruda **272.283**; hoy publica **44.043**, porque `MARCADORES` ya lleva
+`filtro = mail_tipo=Convocatoria` con `operacion = ULTIMO`. **El corte por `mail_tipo` ya existe y
+funciona** — para el vocabulario de encuentro.
+
+**El caso M2 con maestra** — `2145-OCTVINGC` en `digital/Directa Mail`: 24 filas, suma 528.825,
+desglose `M2` 159.127 + `M2 | Post` 369.698, ninguna `M2 | Pre`. **Hoy no publica nada tampoco**:
+no hay un solo marcador de familia `m2_` en `MARCADORES`.
+
+### Un hecho que habilita la Parte A sin tocar código
+
+`parsearFiltro_("mail_tipo=M2 | Post")` devuelve `{campo:"mail_tipo", valor:"M2 | Post"}` — **el
+`|` no rompe el parser**, que parte por `=` (`Generador.gs:357-372`). Y
+`buscarMapeo("digital","Directa Mail","mail_tipo")` → columna `I`. **Filtrar por etapa se puede
+escribir hoy en `MARCADORES`, sin tocar `.gs`**, para el 42 % de filas M2 que la declaran. El
+límite real es que `parsearFiltro_` acepta un solo `campo=valor`, sin OR.
+
+### Addendum fechado (09/08/2026) — una premisa de esta bitácora es falsa
+
+La entrada del 07/08 dice, sobre la lámina 6: *"las cuentas `3354-JULJDGAG` y `3346-JULJDGAG` no
+tienen filas en las solapas de canal **para esta ventana**, y `3387-JULJDGGC` sí"*. **La ventana no
+interviene.** `BASES.digital.modo_periodo = 'snapshot'` (`Instalar.gs:842`) y `leerFuente` ignora
+la ventana para `digital` (`Union.gs:61-67`): el recorte lo hace el anclaje vía el link
+campaña↔encuentro, no una ventana de fecha.
+
+**El número era correcto y el porqué no.** Medido hoy, por canal:
+
+| cuenta | maestra | Digital | Mail | SMS | IVR | Alcance |
+|---|---|---|---|---|---|---|
+| `3354-JULJDGAG` San Cristóbal | 2 filas | 0 | **0** | 0 | 0 | 1 |
+| `3346-JULJDGAG` Retiro | 2 filas | 0 | **0** | 0 | 0 | 1 |
+| `3387-JULJDGGC` Orden Público | 2 filas | 0 | 5 | 0 | 2 | 2 |
+
+No tienen filas, sin más — en ninguna ventana. Y las tres tienen **2 filas en la maestra**, así que
+a las tres las alcanza la pisada del modo B.
+
+**El texto original no se edita** (append-only). La misma frase quedó copiada en
+`docs/Prompts/2026-08-08_8_cerrar_laminas_1_a_6_jm.md` §"El alcance, medido" punto 3, que **está
+sin ejecutar**: quien lo corra tiene que leer este addendum primero.

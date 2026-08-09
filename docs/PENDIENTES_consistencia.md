@@ -2299,6 +2299,62 @@ declarado hoy es `etapa=post` en `comunicaciones_post`, que es de `REUNIONES`.
 `SECCIONES.filtro = tipo=destacada`, el vocabulario que vale es **el de la hoja**, y quien mire
 el seed para saber qué escribir va a poner `campana` y no va a entrar ninguna fila.
 
+### P0 · `digital/Digital`: el 71 % de sus filas se descarta en la unión y nadie se entera
+
+Medido el 09/08/2026 a las 01:30, sobre las hojas vivas, con la clave que usa el motor
+(`dig_id_cuenta` → columna `T`, del `MAPEO` vivo).
+
+De las **1297 filas** de `digital/Digital`: **337 no tienen id de cuenta**, **922 tienen un id que
+no está en la maestra `Seguimiento digital`** y se van a `huerfanasEnCanal` (`Union.gs:176-178`), y
+**sólo 38 matchean**. Es el **71,1 %** del canal cayéndose en silencio, más un 26 % sin clave.
+
+**Por qué es `P0` y no `P2`:** `huerfanas_en_canal` se calcula y **muere adentro del diagnóstico**
+—su único lector es `Union.gs:892`, un `ui.alert` de menú—, así que una corrida normal no lo dice.
+Un token que lea de `Digital` publica un número sacado de 38 filas de 1297 y **se ve bien**. Es
+exactamente el modo de falla de la lámina 5 (`R-15` addendum 1): el número plausible.
+
+**Lo que este hallazgo NO dice:** si las 922 son un error de datos, un `IMPORTRANGE` a medio traer,
+o campañas que legítimamente sólo existen en esa solapa. **No se investigó** — la medición salió de
+la Parte 0 del `_6`, que iba a otra cosa. Comparar con `Directa Mail`, que tiene 29,2 % de
+huérfanas, sugiere que el de `Digital` es de otro orden y merece su propia pasada.
+
+### P1 · Seis solapas de `looker` están registradas como `fuente` y no tienen ni una fila en `MAPEO`
+
+⚠ **Este pendiente corrige una afirmación falsa que estuvo circulando el 08–09/08.** Se dijo, en un
+reporte de medición y de ahí en el prompt `2026-08-08_9_corrida_nocturna.md`, que *"`looker` entero
+devuelve `«FALTA:fecha_periodo@looker/…»`"* y que *"`looker` es ilegible entero"*. **Es falso, y el
+error fue del instrumento, no del motor:** la medición llamó a `leerFuente` con una ventana armada
+a mano con fechas en texto, y `formatearFecha_` exige `Date`. El fallo de
+`resumen_metricas_dinamico` fue esa llamada mal construida, no un mapeo faltante.
+
+**Lo verificado el 09/08 a las 01:26, con la ventana que resuelve el motor:**
+
+- **`looker/resumen_metricas_dinamico` es perfectamente legible.** `contarLecturaBase_('looker')`
+  → 949 filas totales, **26 en la ventana** `2026-07-24 → 2026-07-30`, columna de fecha
+  `fecha_inicio`, **0 filas sin fecha, 0 con fecha inválida**. Su `fecha_periodo` está en `MAPEO`
+  (columna `C`) desde la selección de `docs/FECHAS_seleccion.md`. Es la fuente que declara `S-01` y
+  el `hoja_default` de la base.
+
+**El hallazgo real, que sí queda abierto:** las **otras seis** solapas de `looker` registradas con
+`uso = fuente` en `SOLAPAS` —`MAIL` (5760 filas), `IVR` (192), `SMS` (92), `CC` (1309), `DIGITAL`
+(4591), `ALCANCE` (740)— **no tienen una sola fila en `MAPEO`**. Como `looker` es
+`modo_periodo = filtrar`, cualquier lectura de ellas devuelve `«FALTA:fecha_periodo@looker/<solapa>»`.
+
+Son **12.684 filas de detalle por canal, con `ID cuentas`**, declaradas fuente y no leíbles.
+
+**Las dos salidas son distintas y la elección es del usuario:**
+
+1. **Mapearlas** — pero su `firma_encabezado` en `SOLAPAS` **no trae ninguna columna de fecha**
+   (son `Enviados/Entregados/Aperturas/Clics`, `Audiencia/Llamados/…`, `Alcance/Frecuencia/…`), así
+   que no hay candidata a `fecha_periodo` que elegir. Mapearlas exige antes decidir de dónde sale
+   su período.
+2. **Bajarlas a `uso = revisar` o `ignorar`** si el detalle por canal ya lo cubre `digital`, que es
+   lo que hoy usa la unión.
+
+**No se escribió ninguna fila de `MAPEO`.** El camino declarado para poblar `fecha_periodo` es
+`DIAG_FECHAS` → elección humana → `promoverFechasElegidas()` (`Fuentes.gs:21-30`, `S-02`):
+*"detección automática, elección humana"*. Escribir la celda a mano saltearía ese mecanismo.
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el
