@@ -217,6 +217,52 @@ el riesgo no. La próxima nota que alguien escriba a mano no va a estar anunciad
 desechable**, con el control *"el texto propio sigue entero **y** el ancla aparece como línea
 nueva"* — que da rojo si el sellado no ocurre, condición que el caso original ya no puede cumplir.
 
+#### Addendum 4 — 09/08/2026: borrar una nota del orador, con la copia en el repo como precondición
+
+**Autorización expresa del usuario, 09/08/2026.** Es una **ampliación**, no un recorte, y por eso
+se escribe **antes** de ejercerla: `C-01` y su `Addendum 1` autorizan **anexar** a las notas del
+orador y prohíben `setText` sobre ellas con todas las letras. **Borrar una nota es `setText('')`,
+así que no estaba cubierto por nada de lo anterior.**
+
+**Qué autoriza, y sólo eso:** **vaciar** las notas del orador de una lámina puntual, nombrada, y
+sólo cuando su contenido **ya está transcripto en el repo y verificado carácter por carácter
+contra la plantilla**.
+
+**Precondiciones, las cuatro y en este orden:**
+
+1. **La copia existe en el repo** y responde una pregunta declarada en `CLAUDE.md` §7.
+2. **La transcripción se verificó contra la plantilla**, no por largo sino por texto — dos
+   cadenas distintas pueden medir lo mismo.
+3. **Backup previo de la plantilla**, y **aborto si el backup falla**. Es de `C-01` y no se
+   negocia.
+4. **Se borra una lámina nombrada**, nunca un barrido.
+
+**Por qué hace falta, y es una razón de orden, no de limpieza.** El sellador del `_11` escribe el
+ancla `#lamina: L-NNN` **en el área de notas**. Una nota que se borre **después** del sellado se
+lleva el ancla con ella. Así que el borrado va antes o no va — y la alternativa (dejar la nota y
+sellar encima) obliga a no tocar nunca más esa lámina.
+
+**Qué NO autoriza este addendum**, con todas las letras:
+
+- **borrar notas en lote** o por criterio automático — es una lámina, nombrada, por vez;
+- **borrar sin la copia en el repo verificada**: sin el punto 2, esto es destrucción de trabajo
+  humano, que es exactamente lo que el `Addendum 1` vino a impedir;
+- **reemplazar el texto por otro.** Vaciar no es reescribir;
+- nada de lo que los addenda anteriores ya prohíben: esconder o mostrar láminas, insertar o
+  borrar láminas, mover o reescribir cajas, escribir `#seccion:`.
+
+**Lo que no cambia:** el motor **sigue anexando y nunca reemplazando** para sellar. Esta
+autorización cubre el borrado previo, no el sellado.
+
+**Alcance ejercido hasta hoy:** una nota, la de la **lámina 25 de `SECCO_marcada`** —267
+caracteres de texto sobre conversación en X—, transcripta en
+`docs/NOTAS_ORADOR_SECCO_8_y_25.md` y verificada contra la plantilla el 09/08 antes de borrarla.
+La lámina 8 de la misma plantilla ya había sido borrada a mano el 08/08, fuera del motor.
+
+**Con esto, `SECCO_marcada` queda sin ninguna nota del equipo**, y el orden que fija
+`docs/NOTAS_ORADOR_SECCO_8_y_25.md` —copiar al repo, backup, borrar, recién ahí sellar— queda
+completo por primera vez.
+
 ## R-04 — El temario define el universo, no la fecha
 
 **Enunciado:** una campaña está activa todos los días de su tramo, pero el proceso

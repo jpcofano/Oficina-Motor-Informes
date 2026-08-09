@@ -36,9 +36,15 @@ comparación interanual, sale de las bases, no de acá.
 
 ## Lámina 25 — temas posteriores
 
+> ⚠️ **Transcripción verificada contra la plantilla el 09/08/2026**, con
+> `notasDeLaminaPorOrden('secco', 25)`, **antes** de borrar el original. Idéntica salvo un punto
+> final que la transcripción había agregado y el original no tenía: **se retiró para que la copia
+> sea literal**. El original en la plantilla medía 269 caracteres (267 de texto más dos saltos de
+> línea, uno al principio y otro al final).
+
 > Los días posteriores hubo cuatro temas principales: coparticipación, htal clínicas, uber y
 > operativos de vendedores ambulantes. Hubo uno que fue un reflote de algo que pasó a principios
-> de abril con una discapacitada y otra (actual) que fue por la del hospital durand.
+> de abril con una discapacitada y otra (actual) que fue por la del hospital durand
 
 **Qué es.** Registro a mano de la agenda mediática de los días siguientes al informe. Nota de
 trabajo, no dato del deck.
