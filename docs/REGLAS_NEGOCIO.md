@@ -828,6 +828,31 @@ vez de darlo por hecho.
 **Si falla:** si entran campañas que el equipo no publica, la salida **no es reponer el filtro
 de ventana** — es corregir el temario, que es donde vive la decisión editorial.
 
+### Addendum 1 — 09/08/2026: el recorte de los agregados
+
+**El texto de arriba no se altera.** Esto acota una de sus frases.
+
+`R-17` dice, en *"Qué NO cambia"*: *"La ventana sigue rigiendo **los agregados** —`ecv_*`,
+ministros, `m2`—, que son sumas de un período."* **Se acota para `ecv_*`:** el agregado suma los
+encuentros que **`R-21`** seleccionó, no los que caen en la ventana. Es el agregado **de los
+encuentros del informe**, y el informe los elige por temario.
+
+**Ministros y `m2` no cambian: siguen por ventana.** Ministros es la unión de `RVD JM-CM - ES` y
+`RDV_otros_ministros` excluyendo `Figura=Jorge Macri`, y `m2` tiene sus bordes del 23/07 y 30/07
+como decisión humana. **Ninguno de los dos itera `REUNIONES` para elegir** — `Union.gs` ya excluye
+`tipo='Agregado'` del anclaje, así que la distinción ya está en el código.
+
+**Lo medido que lo obliga, 09/08/2026** (`C-01`…`C-04` de
+`docs/casos_validacion_2026-08-09_addendum.csv`): con la ventana 24/07–30/07 el motor publica
+**4 encuentros** y **2.307 inscriptos**; el deck publicado **también dice 4**, pero **son otros
+cuatro** — el deck incluye San Cristóbal 23/07 y excluye Caballito 29/07, el motor al revés.
+**El total coincidía y el universo no**, que es la peor forma de este error.
+
+**Encuadre, porque el prompt que trajo el caso lo tenía al revés.** El `_10` decía que esto
+*"contradice a `R-17`"*. **No la contradice: el motor estaba haciendo exactamente lo que `R-17`
+mandaba.** Lo que faltaba era la regla de selección, que es `R-21`. La corrección la levantó el
+`verificador` y la confirmó el `10.1` §5.
+
 ## R-18 — Una lista `DISTINCT` publica el canon del catálogo, nunca el texto de la celda
 
 **Enunciado:** una operación que devuelve una lista de valores distintos —barrios, y cualquier
@@ -1032,6 +1057,63 @@ verifica contra **el conteo del día**, no contra el 6.
 
 **Si falla:** si el conteo sube y algún agregado también, el mecanismo se filtró a la rama
 numérica. **Se retira el mecanismo, no se ajusta el número.**
+
+---
+
+## R-21 — Prioridad de selección de encuentros
+
+> ⚠ **PARCIALMENTE SIN MECANISMO — decidida 09/08/2026.** El nivel 1 existe a medias y el
+> nivel 3 no existe. Ver *"Estado de implementación"*, abajo. El código va en el `_12`.
+
+El universo de encuentros de un informe se resuelve **en cascada**, de más específico a más
+general, y **el primer eslabón que resuelve corta**:
+
+1. **`REUNIONES` del período.** El temario es la lista curada; para eso existe. La fecha del
+   encuentro **no** decide si entra — `Reuniones.gs` ya lo dice (*"universo del informe, no la
+   fecha"*) y `R-11 Addendum 1` ya estableció que con ventanas variables la fecha no determina el
+   período.
+2. **Filtro explícito del usuario**, vía `SECCIONES.filtro`.
+3. **Semana en curso**, por defecto.
+
+**Origen:** decisión del usuario, 09/08/2026, sobre `C-01`…`C-04` de
+`docs/casos_validacion_2026-08-09_addendum.csv`.
+
+**Por qué.** San Cristóbal 23/07 se publicó en el informe del 31/07, y Caballito 29/07 en el del
+07/08. **El encuentro se informa con un informe de retraso, dos veces.** Una selección temporal no
+puede reproducir eso; una lista curada sí. No es un caso raro: es cómo trabaja el equipo.
+
+**Relación con `R-17`, que es lo que hay que leer junto.** `R-17` fija la prioridad para
+**campañas** y dice que la ventana rige los agregados. `R-21` fija la prioridad para
+**encuentros**, y su `Addendum 1` acota `R-17` para el agregado `ecv_*`. Las dos reglas se
+complementan y **ninguna deroga a la otra**. `C-01`…`C-04` **no eran un incumplimiento de
+`R-17`** —el motor hacía lo que `R-17` mandaba—: era esta regla, que faltaba.
+
+### Estado de implementación — lo que falta, medido
+
+**Nivel 1, a medias.** `leerReuniones_` (`Reuniones.gs`) filtra por `eje` y `mostrar`, **no por
+`periodo_id`**: hoy toda fila con `mostrar = sí` entra a **todo** informe, de cualquier semana. La
+rama `CAMPANAS` de `itemsDeSeccion_` sí excluye `periodo_id` vacío citando `D-19`; la rama
+`REUNIONES`, cinco líneas más arriba, no. **Es una omisión, no un diseño.**
+
+**Nivel 3, inexistente.** `resolverVentana` termina en `CONFIG`, no en `hoy()`, y el corte de
+semana —**viernes a jueves**— vive en un solo lugar, `docs/DISENO_match_temario.md` §2, y **nunca
+se promovió a `CONFIG`**.
+
+**Hasta que exista el panel, caer sin período es `REVISAR`, no una semana adivinada** — mismo
+criterio que `D-19`: ninguna fila entra ni se excluye en silencio. *(Decisión del coordinador,
+marcada como propia en el `10.1` §5.)*
+
+**Y un tercer defecto medido que muerde acá:** el caché de `anclarEncuentros` se indexa por
+`desde||hasta` sola, así que **dos informes de períodos distintos con la misma ventana se pisan**.
+
+**Cómo se verifica:** un encuentro con fecha fuera de la ventana pero con fila en `REUNIONES` del
+período **tiene que entrar**; uno con fecha dentro de la ventana y sin fila en `REUNIONES`
+**no**. El caso testigo es el par San Cristóbal 23/07 / Caballito 29/07, que en el mismo deck
+caen de los dos lados.
+
+**Si falla:** si entran encuentros que el equipo no publicó, la salida **no es reponer el filtro
+por fecha** — es corregir el temario, que es donde vive la decisión editorial. Mismo criterio que
+el *"si falla"* de `R-17`.
 
 ---
 
