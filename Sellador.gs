@@ -83,6 +83,350 @@ function notasDeLaminaPorOrden(informeId, orden) {
 }
 
 /**
+ * `B.6` — ítem de menú. **Confirmación PREVIA con el detalle**, no `ButtonSet.OK` después.
+ *
+ * El precedente elegido es `menuConsolidarMapeoLooker_` (`Solapas.gs`), no
+ * `menuArmonizarPlantillas_` (`11.1` §3). Los dos existen y son opuestos; se eligió el que
+ * pregunta antes porque **es la primera operación del proyecto que escribe sobre una plantilla
+ * viva, y una plantilla no tiene `git`**. El backup obligatorio de `C-01` protege contra el
+ * error; la confirmación protege contra el arrepentimiento, que es otra cosa.
+ *
+ * El diálogo dice, antes de tocar nada: cuántas láminas se van a sellar, en qué plantilla, y que
+ * se hace backup primero. Sale de un `dryRun`, así que el número es real, no estimado.
+ */
+function menuSellarPlantillas_() {
+  var ui = ui_();
+  var informes = leerInformes();
+  var previos = [];
+
+  Object.keys(informes).forEach(function (informeId) {
+    if (!informes[informeId].activo || !informes[informeId].plantilla_id) return;
+    var previo = sellarPlantilla(informeId, { dryRun: true });
+    if (previo.ok) previos.push(previo);
+  });
+
+  if (!previos.length) {
+    ui.alert('Sellar plantillas', 'No hay informes activos con plantilla_id cargado.', ui.ButtonSet.OK);
+    return;
+  }
+
+  var total = previos.reduce(function (n, p) { return n + p.a_sellar; }, 0);
+  if (!total) {
+    ui.alert('Sellar plantillas', 'Nada que sellar: todas las láminas ya tienen ancla.', ui.ButtonSet.OK);
+    return;
+  }
+
+  var lineas = ['Se va a ESCRIBIR sobre las plantillas vivas.', ''];
+  previos.forEach(function (p) {
+    lineas.push('· ' + p.plantilla + ' (' + p.informe_id + '): ' + p.a_sellar + ' de ' + p.laminas +
+      ' lámina(s) sin ancla' + (p.ya_tenian_ancla ? ' — ' + p.ya_tenian_ancla + ' ya sellada(s)' : ''));
+  });
+  lineas.push('', 'Se hace BACKUP de cada plantilla antes de tocarla, y si el backup falla no se escribe nada.');
+  lineas.push('El ancla se ANEXA a las notas del orador: no se pisa nada de lo que haya.');
+  lineas.push('', '¿Confirmás?');
+
+  var r = ui.alert('Sellar plantillas — ' + total + ' lámina(s)', lineas.join('\n'), ui.ButtonSet.YES_NO);
+  if (r !== ui.Button.YES) {
+    ui.alert('Sellar plantillas', 'Cancelado. No se tocó ninguna plantilla.', ui.ButtonSet.OK);
+    return;
+  }
+
+  var salida = ['Sellado terminado.', ''];
+  previos.forEach(function (p) {
+    var res = sellarPlantilla(p.informe_id, {});
+    if (!res.ok) { salida.push('⚠ ' + p.informe_id + ' — ' + res.motivo); return; }
+    salida.push('· ' + res.plantilla + ': ' + res.filas_escritas + ' fila(s), ids ' + res.rango_ids +
+      (res.filas_a_reparar ? ' · ' + res.filas_a_reparar + ' fila(s) reparada(s)' : ''));
+    if (res.backup) salida.push('  backup: ' + res.backup.nombre);
+  });
+
+  ui.alert('Sellar plantillas', salida.join('\n'), ui.ButtonSet.OK);
+}
+
+/**
+ * Borra filas de `LAMINAS` por `lamina_id`. **Existe para deshacer un error de esta sesión y no
+ * debería tener más usos.**
+ *
+ * Origen, 09/08: la primera corrida de `C.1` selló una copia de prueba y, por un descuido de
+ * `sellarPlantilla`, escribió 22 filas en la hoja para láminas de un archivo desechable. La
+ * función que lo causó ya está corregida —una copia no deja fila—; ésta limpia lo que quedó.
+ *
+ * **Pide la lista explícita de ids.** No hay "borrar todo" ni borrado por criterio: `LAMINAS` es
+ * hoja de registro y `D-23` punto 11 dice que una fila no se borra, se esconde. Este borrado es
+ * la excepción de un error, no un mecanismo.
+ */
+function borrarFilasDeLaminas(ids) {
+  if (!Array.isArray(ids) || !ids.length) {
+    return { ok: false, motivo: 'Pasar la lista explícita de lamina_id a borrar' };
+  }
+  var reg = leerLaminas_();
+  if (!reg.ok) return reg;
+
+  var aBorrar = reg.filas.filter(function (f) { return ids.indexOf(String(f.lamina_id).trim()) !== -1; });
+  var noEncontrados = ids.filter(function (id) {
+    return !reg.filas.some(function (f) { return String(f.lamina_id).trim() === id; });
+  });
+
+  // De abajo hacia arriba: borrar de arriba corre los índices de las de abajo.
+  aBorrar.sort(function (a, b) { return b._fila - a._fila; })
+    .forEach(function (f) { reg.hoja.deleteRow(f._fila); });
+  SpreadsheetApp.flush();
+
+  return {
+    ok: true,
+    borradas: aBorrar.length,
+    ids_borrados: aBorrar.map(function (f) { return String(f.lamina_id).trim(); }),
+    no_encontrados: noEncontrados,
+    filas_restantes: leerLaminas_().filas.length
+  };
+}
+
+/**
+ * `C.1` + `C.2` — corre el sellado sobre una **copia desechable**, nunca sobre la plantilla, y
+ * verifica el control que importa: **anexar no pisa**.
+ *
+ * **El caso de prueba original ya no existe.** El `_11` `0.5` designaba las notas del equipo de
+ * `SECCO` 8 y 25; la 8 se borró el 08/08 y la 25 el 09/08 (`C-01` addendum 3 y 4). El reemplazo,
+ * acordado el 09/08: **una nota puesta a mano en la copia**, con el control
+ * *"mi texto sigue entero **Y** el ancla aparece como línea nueva"*.
+ *
+ * **Por qué este control sí es un control:** si el sellado no ocurre, el ancla no aparece y da
+ * rojo. Un control que sólo verificara "la nota original sobrevive" pasaría con y sin la lógica,
+ * que es lo que lo volvería inútil.
+ *
+ * No toca la plantilla viva en ningún momento: copia, escribe la nota testigo sobre la copia,
+ * sella la copia, verifica y **devuelve el id de la copia** para que se pueda mirar a mano.
+ */
+function probarSelladoSobreCopia(informeId) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) {
+    return { ok: false, motivo: 'Informe "' + informeId + '" sin plantilla_id en INFORMES' };
+  }
+
+  var carpeta = asegurarCarpetaBackups_();
+  if (!carpeta.ok) return { ok: false, motivo: 'No se pudo preparar la carpeta de copias: ' + carpeta.motivo };
+
+  var sello = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  var copiaArchivo;
+  try {
+    copiaArchivo = DriveApp.getFileById(informe.plantilla_id)
+      .makeCopy('[PRUEBA sellado] ' + informeId + ' ' + sello, carpeta.carpeta);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo copiar la plantilla: ' + e.message };
+  }
+
+  var copiaId = copiaArchivo.getId();
+  var TESTIGO = 'NOTA TESTIGO ' + sello + ' — si esto desaparece, el sellado pisó en vez de anexar.';
+
+  // La nota testigo va en la PRIMERA lámina de la copia. Se elige la 1 y no una al azar para
+  // que el control sea reproducible y para que quien mire la copia la encuentre enseguida.
+  var copia = SlidesApp.openById(copiaId);
+  var slideTestigo = copia.getSlides()[0];
+  var shapeTestigo = slideTestigo.getNotesPage().getSpeakerNotesShape();
+  if (!shapeTestigo) {
+    return { ok: false, motivo: 'La lámina 1 de la copia no tiene shape de notas', copia_id: copiaId };
+  }
+  shapeTestigo.getText().setText(TESTIGO);
+  SlidesApp.openById(copiaId).saveAndClose();
+
+  var resultado = sellarPlantilla(informeId, { plantillaId: copiaId });
+  if (!resultado.ok) return { ok: false, motivo: 'El sellado falló: ' + resultado.motivo, copia_id: copiaId };
+
+  // Verificación, y las tres condiciones tienen que darse a la vez.
+  var despues = notasDeLamina_(SlidesApp.openById(copiaId).getSlides()[0]);
+  var controles = {
+    testigo_intacto: despues.indexOf(TESTIGO) !== -1,
+    ancla_presente: despues.indexOf(ANCLA_LAMINA_PREFIJO_) !== -1,
+    ancla_en_linea_propia: /\n\s*#lamina:/i.test(despues)
+  };
+  var verificacion = controles.testigo_intacto && controles.ancla_presente && controles.ancla_en_linea_propia;
+
+  return {
+    ok: true,
+    informe_id: informeId,
+    copia_id: copiaId,
+    copia_url: copiaArchivo.getUrl(),
+    copia_nombre: copiaArchivo.getName(),
+    sellado: resultado,
+    controles: controles,
+    verificacion: verificacion ? 'VERDE — el testigo sobrevivió y el ancla se anexó en línea propia'
+      : 'ROJO — revisar: ' + JSON.stringify(controles),
+    notas_lamina_1: despues
+  };
+}
+
+/**
+ * El siguiente `L-NNN` a asignar, leído de la hoja `LAMINAS`.
+ *
+ * **Es el máximo de `lamina_id` + 1, y no se deriva de las notas de las plantillas** (`D-23`
+ * addendum 1, punto 9). La diferencia importa: derivarlo de las notas haría que **retirar una
+ * lámina hiciera retroceder el contador** y un id se reasignara. Desde la hoja no puede pasar,
+ * porque **una lámina no se borra: se esconde** (punto 11) y su fila queda como histórico.
+ *
+ * **Un solo contador para las dos plantillas** (`A.4`): `L-NNN` es global, no por informe.
+ */
+function siguienteIdLamina_(filas) {
+  var maximo = 0;
+  filas.forEach(function (fila) {
+    var m = String(fila.lamina_id || '').match(/^L-(\d+)$/);
+    if (m) maximo = Math.max(maximo, Number(m[1]));
+  });
+  return maximo + 1;
+}
+
+function formatearIdLamina_(numero) {
+  return 'L-' + ('00' + numero).slice(-3);
+}
+
+/** Filas actuales de `LAMINAS`, como objetos por encabezado. */
+function leerLaminas_() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('LAMINAS');
+  if (!hoja) return { ok: false, motivo: 'No existe la hoja LAMINAS — correr `instalar` primero' };
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var filas = [];
+  for (var f = 1; f < datos.length; f++) {
+    var o = { _fila: f + 1 };
+    headers.forEach(function (h, i) { o[h] = datos[f][i]; });
+    if (String(o.lamina_id || '').trim()) filas.push(o);
+  }
+  return { ok: true, hoja: hoja, headers: headers, filas: filas };
+}
+
+/**
+ * `B.1`–`B.5` — sella una plantilla: por cada lámina **sin ancla**, toma el siguiente id,
+ * escribe la fila en `LAMINAS` y **anexa** `#lamina: L-NNN` a las notas del orador.
+ *
+ * **La plantilla es autoritativa** (`11.1` §4). La idempotencia se evalúa contra el ancla de la
+ * lámina, no contra la hoja: si el ancla está, no se vuelve a anexar. Si la hoja no tiene la
+ * fila pero la plantilla sí el ancla, **la fila se repara** y se reporta con conteo — una
+ * reparación silenciosa convierte a la hoja en algo que siempre coincide y nunca informa nada.
+ *
+ * **Backup primero, siempre, y aborta si falla** (`B.1`). Es condición de `C-01`, no de acá.
+ *
+ * `opciones.dryRun` corre todo sin escribir: es lo que usa `C.1` para reportar antes de tocar
+ * una plantilla viva.
+ */
+function sellarPlantilla(informeId, opciones) {
+  opciones = opciones || {};
+  var dryRun = opciones.dryRun === true;
+  var plantillaIdOverride = opciones.plantillaId || null;
+
+  // **Una copia no es la plantilla del informe, así que no deja fila.** Lo encontró la primera
+  // corrida de `C.1` (09/08): sellar una copia de prueba escribió 22 filas en `LAMINAS` con
+  // `informe_id = jm`, apuntando a láminas de un archivo desechable. Esas filas habrían quedado
+  // como histórico de algo que no existe, y peor: **habrían movido el contador**, así que la
+  // plantilla viva habría empezado en `L-023`.
+  //
+  // Con `plantillaId` override el sellado escribe el ancla en la copia —que es lo que la prueba
+  // verifica— y **no toca la hoja**. Se puede forzar con `registrar: true`, pero hay que pedirlo.
+  var registrar = plantillaIdOverride ? opciones.registrar === true : true;
+
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) {
+    return { ok: false, motivo: 'Informe "' + informeId + '" sin plantilla_id en INFORMES' };
+  }
+  var plantillaId = plantillaIdOverride || informe.plantilla_id;
+
+  var reg = leerLaminas_();
+  if (!reg.ok) return reg;
+
+  var presentacion;
+  try {
+    presentacion = SlidesApp.openById(plantillaId);
+  } catch (e) {
+    return { ok: false, motivo: 'No se pudo abrir la presentación "' + plantillaId + '": ' + e.message };
+  }
+
+  var slides = presentacion.getSlides();
+  var yaConAncla = [];
+  var aSellar = [];
+
+  slides.forEach(function (slide, i) {
+    var ancla = anclaDeLamina_(slide);
+    if (ancla) yaConAncla.push({ orden: i + 1, ancla: ancla });
+    else aSellar.push({ orden: i + 1, slide: slide });
+  });
+
+  // Reparación de la hoja: anclas que están en la plantilla y no tienen fila. Gana la plantilla.
+  var porId = {};
+  reg.filas.forEach(function (f) { porId[String(f.lamina_id).trim()] = f; });
+  var aReparar = yaConAncla.filter(function (x) { return x.ancla !== '(sin id)' && !porId[x.ancla]; });
+
+  var resumen = {
+    ok: true,
+    informe_id: informeId,
+    plantilla_id: plantillaId,
+    plantilla: presentacion.getName(),
+    dry_run: dryRun,
+    laminas: slides.length,
+    ya_tenian_ancla: yaConAncla.length,
+    a_sellar: aSellar.length,
+    filas_a_reparar: aReparar.length
+  };
+
+  if (!aSellar.length && !aReparar.length) {
+    resumen.mensaje = 'Nada que hacer: las ' + slides.length + ' láminas ya tienen ancla y su fila.';
+    return resumen;
+  }
+
+  if (dryRun) {
+    resumen.mensaje = 'DRY RUN — no se escribió nada.';
+    resumen.ids_que_asignaria = aSellar.map(function (x, k) {
+      return { orden: x.orden, lamina_id: formatearIdLamina_(siguienteIdLamina_(reg.filas) + k) };
+    });
+    return resumen;
+  }
+
+  var carpeta = asegurarCarpetaBackups_();
+  if (!carpeta.ok) return { ok: false, motivo: 'Backup abortado (no se tocó la plantilla): ' + carpeta.motivo };
+  var backup = backupPlantilla_(plantillaId, presentacion.getName(), carpeta.carpeta);
+  if (!backup.ok) return { ok: false, motivo: 'Backup abortado (no se tocó la plantilla): ' + backup.motivo };
+  resumen.backup = backup;
+
+  var siguiente = siguienteIdLamina_(reg.filas);
+  var nuevas = [];
+  var asignados = [];
+
+  aSellar.forEach(function (x) {
+    var id = formatearIdLamina_(siguiente++);
+    var shape = x.slide.getNotesPage().getSpeakerNotesShape();
+    if (!shape) { return; }
+
+    // **Anexar, nunca `setText` sobre lo que hay** (`C-01` addendum 1). `appendText` conserva
+    // el texto previo por construcción; el salto va delante sólo si ya había algo escrito.
+    var previo = String(shape.getText().asString() || '');
+    var linea = (previo.trim() ? '\n' : '') + ANCLA_LAMINA_PREFIJO_ + ' ' + id;
+    shape.getText().appendText(linea);
+
+    nuevas.push([id, informeId, '', x.orden, esLaminaEscondida_(x.slide) ? 'sí' : '', 'sellador',
+      '', '', '', '', '', '', '']);
+    asignados.push({ orden: x.orden, lamina_id: id });
+  });
+
+  aReparar.forEach(function (x) {
+    nuevas.push([x.ancla, informeId, '', x.orden, '', 'reparada', '', '', '', '', '', '',
+      'fila repuesta: el ancla estaba en la plantilla y la fila no']);
+  });
+
+  if (nuevas.length && registrar) {
+    reg.hoja.getRange(reg.hoja.getLastRow() + 1, 1, nuevas.length, nuevas[0].length).setValues(nuevas);
+    SpreadsheetApp.flush();
+  }
+
+  resumen.registrado_en_laminas = registrar;
+  if (!registrar) {
+    resumen.nota_registro = 'Sellado sobre una copia: el ancla se escribió, la hoja LAMINAS NO se tocó.';
+  }
+  resumen.filas_escritas = registrar ? nuevas.length : 0;
+  resumen.asignados = asignados;
+  resumen.rango_ids = asignados.length
+    ? asignados[0].lamina_id + ' … ' + asignados[asignados.length - 1].lamina_id
+    : '(ninguno)';
+  return resumen;
+}
+
+/**
  * Vacía las notas del orador de UNA lámina nombrada. **Es la única función del repo que
  * escribe sobre las notas de una plantilla viva, y la única que llama `setText`.**
  *

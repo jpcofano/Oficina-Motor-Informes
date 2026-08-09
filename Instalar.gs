@@ -193,6 +193,31 @@ var HOJAS_CONFIG_ = {
   // **La convención que se elija acá la van a heredar las siguientes** — es la primera.
   CAMPANAS_equivalencias: {
     headers: ['variante_temario', 'id_cuentas', 'nombre_en_la_base', 'confirmada_por', 'notas']
+  },
+  // `_11` Fase 2 de `D-23` (09/08) — el registro de láminas. Es `SOLAPAS` del lado del deck:
+  // una fila por lámina de cada plantilla, con su identidad sellada en las notas del orador.
+  //
+  // **`cobertura`, no `estado`** (`11.1` §1). `SECCIONES` ya tiene una columna `estado` y
+  // responde otra pregunta: aquélla es de **ejecución** —¿esta sección se emite?—, ésta es de
+  // **cobertura** —¿los tokens de esta lámina tienen fuente validada?—. Valores: `cerrada`,
+  // `parcial`, `abierta`. **`falta` sí se comparte** con `SECCIONES`, porque ahí significa lo
+  // mismo en las dos: qué le falta a esa fila para estar completa. Se renombra donde la
+  // semántica difiere, se comparte donde coincide.
+  //
+  // ⚠ **`orden_plantilla` es reportado, NUNCA autoritativo** (`A.2`). Está para que una
+  // persona ubique la lámina en el deck. **Nada del motor puede decidir en base a ese número**:
+  // insertar una lámina antes corre todos los de abajo, y es exactamente lo que rompió
+  // `LAMINAS_CONGELADAS_` cuando guardaba números (`PLAN.md` §2). La identidad es `lamina_id`.
+  //
+  // **`escondida` se refleja, no se decide** (`B.3`): sale de `isSkipped()` y ninguna decisión
+  // del motor puede depender de ella. Esconder o mostrar desde el motor **no está autorizado**
+  // (`C-01` addendum 1).
+  //
+  // `seccion_id`, `modo`, `itera_sobre` y `filtro` vacíos significan **hereda de `SECCIONES`**,
+  // no "sin declarar" (`PLAN.md` §2: las dos son configuración, celda vacía = hereda).
+  LAMINAS: {
+    headers: ['lamina_id', 'informe_id', 'seccion_id', 'orden_plantilla', 'escondida', 'origen',
+      'modo', 'itera_sobre', 'filtro', 'rol', 'cobertura', 'falta', 'notas']
   }
 };
 
@@ -2629,7 +2654,13 @@ var ALCANCE_REGISTROS_ = [
     seed: function () { return SEED_CAMPANAS_EJEMPLO_; } },
   { hoja: 'REUNIONES', auditada: false, motivo: 'excluida a propósito — ídem CAMPANAS (SEED_REUNIONES_EJEMPLO_ sin sembrador automático)',
     seed: function () { return SEED_REUNIONES_EJEMPLO_; } },
-  { hoja: 'MARCADORES', auditada: false, motivo: 'sin sembrador — hallazgo abierto, Paso 2.13' }
+  { hoja: 'MARCADORES', auditada: false, motivo: 'sin sembrador — hallazgo abierto, Paso 2.13' },
+  // `_11` (09/08) — cuarta no auditada, y por un motivo distinto de las otras tres: no es que
+  // el seed no se haya escrito, es que **no puede existir**. El contenido de `LAMINAS` se
+  // deriva de las plantillas —una fila por lámina, con el id que el sellador asignó—, así que
+  // no hay valor declarado contra el cual diffear. `CAMPANAS` y `REUNIONES` se curan a mano;
+  // `MARCADORES` espera un sembrador; ésta no espera nada.
+  { hoja: 'LAMINAS', auditada: false, motivo: 'sin seed posible — su contenido se deriva de las plantillas' }
 ];
 
 var HEADERS_ALCANCE_ = ['hoja', 'auditada', 'filas_en_hoja', 'filas_en_seed', 'motivo'];

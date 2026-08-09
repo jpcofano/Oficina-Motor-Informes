@@ -105,7 +105,10 @@ var MENU_ = {
       // "Fijar plantilla canónica de JM" retirado el 03/08/2026 junto con
       // `repuntarPlantillaCanonicaJM_` (`Armonizar.gs`): era una migración de un solo uso
       // que ya corrió, y el ID que cableaba vive ahora en `INFORMES.plantilla_id`.
-      { t: 'Armonizar tokens de plantillas',      f: 'menuArmonizarPlantillas_' }
+      { t: 'Armonizar tokens de plantillas',      f: 'menuArmonizarPlantillas_' },
+      // `_11` — escribe sobre la plantilla viva, y el nombre lo dice (`B.6`). Pide confirmación
+      // previa con el detalle, a diferencia de "Armonizar", que informa después.
+      { t: 'Sellar plantillas (escribe las notas)', f: 'menuSellarPlantillas_' }
     ]}
   ]
 };
