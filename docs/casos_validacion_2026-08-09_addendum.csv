@@ -1,0 +1,43 @@
+caso_id,bloque,token_propuesto,valor_esperado,base,solapa,clave,columna,operacion,estado,nota
+V-38,agregado_semana_jm,ecv_inscriptos,2445,rdv,RVD JM-CM - ES,Figura=Jorge Macri; STATUS=Realizada; FECHA 23/07-31/07,Inscriptos,SUMA,exacto,universo del TEMARIO (5 encuentros, incluye San Cristóbal 23/07)
+V-39,agregado_semana_jm,ecv_insc_mail,1170,rdv,RVD JM-CM - ES,idem V-38,Mail,SUMA,exacto,
+V-40,agregado_semana_jm,ecv_insc_digital,960,rdv,RVD JM-CM - ES,idem V-38,RRSS,SUMA,exacto,confirma V-09: es RRSS
+V-41,agregado_semana_jm,ecv_insc_cc,272,rdv,RVD JM-CM - ES,idem V-38,Call Center,SUMA,exacto,
+V-42,agregado_semana_jm,ecv_insc_ivr,43,rdv,RVD JM-CM - ES,idem V-38,IVR,SUMA,exacto,
+V-43,agregado_semana_jm,ecv_asistentes,497,rdv,RVD JM-CM - ES,idem V-38,Asistentes,SUMA,exacto,
+V-44,agregado_semana_jm,ecv_encuentros,5,rdv,RVD JM-CM - ES,idem V-38,-,CUENTA,exacto,San Cristóbal 23/07 + Retiro 24/07 + Villa Urquiza 27/07 + Belgrano 28/07 + Caballito 29/07
+V-45,agregado_semana_jm,identidad_canales,2445,rdv,RVD JM-CM - ES,idem V-38,Mail+CC+IVR+RRSS+Difusión,SUMA,exacto,cierra al peso contra Inscriptos; vale también por fila
+C-01,agregado_semana_jm,ecv_inscriptos,2307,rdv,RVD JM-CM - ES,ventana 24/07-30/07 (vie-jue),Inscriptos,SUMA,contradice,lo que publicó el motor; excluye San Cristóbal 23/07 e incluye Caballito 29/07
+C-02,agregado_semana_jm,ecv_encuentros,4,rdv,RVD JM-CM - ES,idem C-01,-,CUENTA,contradice,"el deck publicado también dice 4, pero son otros cuatro: incluye San Cristóbal, no incluye Caballito"
+C-03,agregado_semana_jm,ecv_barrios,"Belgrano, Caballito, Retiro, Villa Urquiza",rdv,RVD JM-CM - ES,idem C-01,Barrio,LISTA,contradice,"el deck publica San Cristóbal, Retiro, Villa Urquiza, Belgrano"
+X-10,resumen_ejecutivo_jm,imp_total,6442951,deriva,-,imp_meta+imp_google+imp_prog,-,SUMA,exacto,716.650+531.403+5.194.898=6.442.951; es derivado, no necesita fuente propia
+X-11,resumen_ejecutivo_jm,contenidos_total,30,deriva,-,pauta_meta+pauta_google+pauta_prog,-,SUMA,exacto,9+7+14=30; ídem
+V-46,ecv_caballito_2907,ecv_inscriptos,112,rdv,RVD JM-CM - ES,Figura=Jorge Macri; FECHA=2026-07-29,Inscriptos,VALOR,exacto,publicado en el deck del 07/08; el dato existía en RDV desde el 29/07
+V-47,ecv_caballito_2907,ecv_asistentes,12,rdv,RVD JM-CM - ES,idem V-46,Asistentes,VALOR,exacto,ídem
+V-48,ecv_caballito_2907,ecv_insc_digital,112,rdv,RVD JM-CM - ES,idem V-46,RRSS,VALOR,exacto,"100% RRSS: mail 0, cc 0, ivr 0"
+C-04,seleccion_de_encuentros,-,-,rdv,RVD JM-CM - ES,-,FECHA,-,contradice,"Caballito 29/07 se publica en el informe 31/07-06/08, no en el 24/07-31/07 donde cae su fecha. Segunda instancia del mismo patrón que San Cristóbal 23/07. La selección la hace el temario, con un informe de retraso."
+X-12,m2_semana_0608,m2_envios,20,digital,Directa Mail,Tipo de mail CONTIENE M2; ventana 30/07-06/08; excluye filas con Enviados=0,-,CUENTA,exacto,"REGLA NUEVA, decisión del usuario 09/08: el clasificador de M2 es Tipo de mail CONTIENE M2, no Eje. 20 de 20. NO es expresable en MARCADORES.filtro: parsearFiltro_ soporta = y != , no CONTIENE."
+X-13,m2_semana_0608,m2_enviados,902703,digital,Directa Mail,idem X-12,Enviados,SUMA,deriva,"da 927.030; residuo 24.327 (2,7%). Conteo exacto, suma no. Afinado pendiente, no criterio."
+X-14,m2_semana_0608,m2_entregados,893780,digital,Directa Mail,idem X-12,Entregados,SUMA,deriva,da 918.020
+X-15,m2_semana_0608,m2_aperturas,262748,digital,Directa Mail,idem X-12,Aperturas,SUMA,deriva,da 265.970
+C-05,m2_semana_0608,-,-,-,-,-,-,-,contradice,"la ventana de M2 (30/07-06/08) NO es la del informe (31/07-06/08, lámina 17). Dos ventanas en el mismo deck."
+C-06,m2_semana_0608,-,-,m2,M2 periodo DIRECTA,-,-,-,contradice,"el panel del equipo pierde una fila: 1942-SEPEPHGC tiene 26737 (M2 | Pre) y 26738 (M2 | Post) y el panel muestra una. Misma pisada por Id Cuentas que Union.gs:143, en la planilla."
+V-49,ministros_semana_0608,emin_encuentros,8,rdv,RVD JM-CM - ES + RDV_otros_ministros,unión de las dos solapas; ventana 31/07-06/08; excluye Figura=Jorge Macri,-,CUENTA,exacto,"REGLA VALIDADA: la cascada entre las dos solapas es necesaria. Sabor (03/08) está sólo en la ancla."
+V-50,ministros_semana_0608,emin_inscriptos_szinny_0508,119,rdv,RDV_otros_ministros,funcionario=Sanchez Zinny; fecha=2026-08-05,Inscriptos,VALOR,exacto,"la ancla dice 'en agenda' y esta solapa 'Realizada' con datos: primer caso real de DISENO §5bis regla 5"
+V-51,ministros_semana_0608,emin_asistentes_szinny_0508,43,rdv,RDV_otros_ministros,idem V-50,Asistentes,VALOR,exacto,
+V-52,ministros_semana_0608,emin_inscriptos_szinny_0108,85,rdv,RDV_otros_ministros,funcionario=Sanchez Zinny; fecha=2026-08-01,Inscriptos,VALOR,exacto,
+C-07,ministros_semana_0608,-,Quirós (06/08),rdv,RVD JM-CM - ES + RDV_otros_ministros,fecha=2026-08-06; C3 / San Cristóbal,funcionario,-,contradice,"ERROR PUBLICADO: el deck dice Quirós; las DOS solapas dicen Francisco Quintana, misma fecha y dirección. Son personas distintas."
+C-08,ministros_semana_0608,-,-,rdv,RVD JM-CM - ES,ventana 31/07-06/08,estado_evento,-,contradice,"4 de los 8 encuentros publicados figuran 'en agenda' o 'Programado', no Realizada, al momento del deck"
+C-09,ministros_semana_0608,-,-,rdv,RDV_otros_ministros,-,encabezados,-,contradice,"encabezados corridos una columna respecto de los datos: el header dice Inscriptos donde el dato trae el estado. Confirmado empíricamente."
+V-53,resumen_ejecutivo_jm,mail_envios,8,digital,Directa Mail,Mail remitente=jorge.macri@buenosaires.gob.ar; ventana 24/07-31/07,-,CUENTA,exacto,"VERIFICA R-15 fila Mail contra valores publicados (antes sólo se había verificado la partición de filas, 07/08). Retira X-06..X-09."
+V-54,resumen_ejecutivo_jm,mail_entregados,831604,digital,Directa Mail,idem V-53,Entregados,SUMA,exacto,
+V-55,resumen_ejecutivo_jm,mail_aperturas,196573,digital,Directa Mail,idem V-53,Aperturas,SUMA,exacto,24% sobre entregados
+V-56,resumen_ejecutivo_gcba,gcba_mail_envios,91,digital,Directa Mail,COMPLEMENTO de V-53 (todo lo que NO es jorge.macri) en la misma ventana,-,CUENTA,exacto,"complemento exacto: 8 JM + 91 GCBA = 99 filas de la ventana. Verifica R-15 consecuencia 1"
+V-57,resumen_ejecutivo_gcba,gcba_mail_entregados,3477476,digital,Directa Mail,idem V-56,Entregados,SUMA,exacto,
+V-58,resumen_ejecutivo_gcba,gcba_mail_aperturas,986057,digital,Directa Mail,idem V-56,Aperturas,SUMA,exacto,28% sobre entregados
+V-59,resumen_ejecutivo_gcba,gcba_imp_total,116016433,deriva,-,gcba_imp_meta+gcba_imp_google+gcba_imp_prog,-,SUMA,exacto,26.263.598+10.218.896+79.533.939
+V-60,resumen_ejecutivo_gcba,gcba_contenidos_total,263,deriva,-,suma de las tres de pauta,-,SUMA,exacto,73+87+103
+V-61,resumen_ejecutivo_gcba,gcba_sms_envios,1,digital,Directa SMS,ventana 24/07-31/07,-,CUENTA,exacto,"sin corte por figura: R-15 ya declara que SMS no tiene columna y va entero a GCBA"
+V-62,resumen_ejecutivo_gcba,gcba_sms_entregados,51706,digital,Directa SMS,idem V-61,Entregados,SUMA,exacto,
+V-63,resumen_ejecutivo_gcba,gcba_sms_clics,1076,digital,Directa SMS,idem V-61,Clics,SUMA,exacto,2% sobre entregados
+C-11,resumen_ejecutivo_jm,ivr_*,-,digital,Directa IVR,ventana 24/07-31/07,-,-,sin_datos,"cero filas de IVR en la ventana; el bloque IVR es posterior a este deck y hay que validarlo contra una semana que lo publique"
