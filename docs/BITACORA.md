@@ -6850,3 +6850,77 @@ el resto. Llevar las huérfanas al Generador exige **abrir un camino nuevo** des
 
 **Queda para el usuario:** por dónde sale, y si el destino es el retorno de `generarInforme` o una
 columna nueva en `CORRIDAS`.
+
+---
+
+## El `10.1` — los seis puntos del verificador, resueltos (2026-08-09)
+
+Corrida del addendum `docs/Prompts/2026-08-08_10.1_addendum_verificador.md`, **puntos 1 a 5**.
+**Ningún `.gs` tocado, ningún marcador cableado.** El punto 6 —la Parte B del `_10`— **no se
+corrió**; el motivo está abajo.
+
+Antes corrió la **Parte 0 del `_10`** (reportada, sin persistir en su momento). Lo que midió:
+
+- **`0.1`** — `mail_remitente` → `G`, `mail_tipo` → `I`, `figura` → `A`, los tres en el `MAPEO`
+  **vivo**. La premisa del `_10` (*"no aparece en el snapshot del 01/08"*) era un snapshot vencido.
+- **`0.2`** — vocabulario de `STATUS REUNIÓN` sobre las 1362 filas: `Realizada` 662, `Suspendida`
+  58, **`en agenda` 7**, `Reprogramada` 2, `Se modifico el barrio` 1, vacío 632. **Catálogo
+  cerrado**, el mismo de `R-09` a nueve días. `en agenda` va en minúscula.
+- **`0.3`** — el borrado de las notas del orador de `SECCO` **no está registrado en el repo**;
+  `C-01` addendum 1 y el `_11` las dan por presentes. No verificable desde acá.
+- **`0.4`** — **7 textos de filtro distintos** en 33 filas de `MARCADORES` + 1 en `SECCIONES`.
+  Ninguno contiene `~`, `CONTIENE`, `~=`, `%`, `*=` ni `::`. **Cero colisiones.**
+
+### Lo que se escribió
+
+| punto | qué |
+|---|---|
+| 1 + 2 | **`R-20`** en `REGLAS_NEGOCIO.md`, acotando `R-09` sin derogarla, con encabezado `⚠ SIN MECANISMO` y su pendiente nombrando lo que falta |
+| 3 | **`C.4` retirado**, con su línea en `PENDIENTES` |
+| 4 | **`docs/VALIDACION_2026-08-09.md`**, el par que le faltaba al CSV |
+| 5 | **`R-21`** (prioridad de selección de encuentros) y el **`Addendum 1` de `R-17`** |
+
+**El argumento falso no se escribió.** El `_10` justificaba `R-20` diciendo que las filas
+no-realizadas vienen vacías; `R-09:334` midió lo contrario (34 de 61 traen números). El `10.1` §1
+lo retiró y en la regla quedó **por qué ese hecho la funda en vez de debilitarla**: una fila
+`en agenda` con número no es confiable, es peligrosa — suma en silencio.
+
+**Y una corrección de dato al propio `10.1`:** manda verificar `R-20` *"contra las 6 filas
+`en agenda` de `R-09:331`"*. **Hoy son 7.** `R-09` es del 31/07. Queda escrito en la regla para
+que nadie verifique contra un número vencido.
+
+### Tres hallazgos de la Parte 0 que no estaban en ningún prompt
+
+**1 · Los `imp_*` no se reproducen desde `CAMPAÑAS_DESGLOCE_DIGITAL`.** De las **436 filas que
+solapan 24–31/07**, `JM | GCBA | POLICIA` da **GCBA 431, `Sin Tipo` 5, JM cero**. Las filas `JM`
+de esa solapa existen —107— pero **se cortan en abril de 2026**. Por cruce con las 166 cuentas JM
+de `digital/Digital`: 34 filas históricas, **0 en la ventana**. Meta 716.650 · Google 531.403 ·
+Programmatic 5.194.898 **no salen de ahí con ningún corte JM**.
+
+**2 · Los seis `pauta_*` están cableados sobre columnas booleanas.** `Google`, `Programmatic` y
+`Meta` de `digital/Seguimiento digital` son **`"true"` / `"false"` como texto**, cero valores
+numéricos en 950+ filas — y los marcadores usan `operacion = SUMA` con `tipo_esperado: numero`.
+`SUMA` sobre texto no puede dar los 9/7/14 que pide `X-11`. Contar `true` en la ventana tampoco
+(da 1/1/1).
+
+**3 · `rdv/RDV_otros_ministros` resuelve su `fecha_periodo` a `hora_cita_evento`** — la columna de
+la *hora*. Funciona (514 filas, 10 en ventana, 0 sin fecha) **porque los encabezados están
+corridos una columna**, que es lo que denuncia `C-09`. El mapeo apunta al dato correcto con el
+nombre equivocado. Y esa solapa tiene **un solo campo en `MAPEO`**: ni `figura`, ni `inscriptos`,
+ni `asistentes`. **La cascada que `R-20` necesita no es ejecutable hoy.**
+
+### Por qué el punto 6 no se corrió
+
+**El propio `10.1` se contradice ahí:** el punto 6 manda correr la Parte B —que incluye el
+operador `CONTIENE`— y el párrafo siguiente dice *"reportar y parar antes de tocar nada de
+`Generador.gs`"*. El operador vive en `Generador.gs` (`parsearFiltro_:357`,
+`aplicarFiltroDeMarcador_:385`).
+
+**Y el orden lo fijó el usuario el 09/08:** `_11` primero, después `_10`, y recién ahí `_8`. El
+`_11` **no corrió**.
+
+**Además, `R-15 Addendum 2` está bloqueado**, y no por tiempo: `looker/Cuentas` tiene
+`uso = ignorar` (`CLAUDE.md` §2 prohíbe leerla, y es doble conteo por `S-01`), `nombre_campaña` no
+existe como campo lógico en ninguna base, **`looker/CC` no tiene esa columna**, y `looker/CC` no
+tiene `fecha_periodo`. Escribirlo como regla vigente sería asentar algo inaplicable; si se
+escribe, va marcado `SIN MECANISMO` como `R-20`.
