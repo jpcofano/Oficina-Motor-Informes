@@ -2576,6 +2576,33 @@ no alcanza y **no hay mecanismo**. Hoy no pasa —por eso `digital.hoja_default`
 el camino directo. **No se hace acá**: cambiaría el comportamiento de todos los diagnósticos y es
 decisión de diseño.
 
+### P2 · `menuArmonizarPlantillas_` escribe sobre una plantilla viva y no pide confirmación
+
+Detectado el 09/08 al buscar el patrón de confirmación para el sellador (`_11` `0.4`).
+
+`menuArmonizarPlantillas_` (`Armonizar.gs`) **escribe sobre la plantilla** y su única interacción
+es `ui.alert(..., ui.ButtonSet.OK)` en `:755` y `:789` — o sea **informa después**, no pregunta
+antes.
+
+**Hay dos precedentes opuestos en el repo y ninguno es "el patrón":**
+
+| función | qué hace | confirmación |
+|---|---|---|
+| `menuArmonizarPlantillas_` | escribe la plantilla | **ninguna** — `ButtonSet.OK`, informa al final |
+| `menuConsolidarMapeoLooker_` (`Solapas.gs:546`) | escribe hojas de registro | **previa**, con el detalle y un *"¿Confirmás?"* |
+
+**El `11.1` §3 eligió el de `Solapas.gs` para el sellador**, con el motivo escrito: el backup
+obligatorio de `C-01` protege contra el error, la confirmación protege contra el arrepentimiento,
+y una plantilla no tiene `git`.
+
+**Lo que queda abierto es la armonización, que ya existe y sigue sin confirmar.** No se tocó acá:
+es otra función y otro prompt. **Qué lo destraba:** una pasada que le agregue el diálogo previo
+con el detalle de qué plantillas y cuántos renombres va a aplicar.
+
+⚠️ **No es urgente pero tampoco es cosmético:** `armonizarPresentacion_` sí hace backup y sí
+aborta si el backup falla (`Armonizar.gs:424-431`), así que el dato está protegido. Lo que falta
+es el paso donde una persona puede decir "no, hoy no".
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el

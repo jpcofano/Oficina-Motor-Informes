@@ -172,6 +172,36 @@ ancla de un informe generado **no entra acá y no necesita autorización de `C-0
 sobre la copia, que es salida del motor y que el motor ya escribe entera. `C-01` protege la
 **plantilla** — y la plantilla **no se limpia nunca** (`D-23`, addendum 1, punto 8).
 
+#### Addendum 3 — 09/08/2026: las dos notas del equipo ya no están en la plantilla
+
+**Es una corrección de hecho, no de autorización.** Nada de lo que el `Addendum 1` autoriza o
+prohíbe cambia: el motor **sigue anexando y nunca reemplazando**, y `setText` sobre las notas
+del orador **sigue sin estar autorizado**.
+
+**Qué cambió.** El `Addendum 1` funda su regla en un hecho medido el 07/08: *"dos láminas de
+`SECCO_marcada` ya tienen notas escritas por el equipo —la 8, con 285 caracteres…, y la 25, con
+267—"*. **Esas dos notas se borraron de la plantilla el 08/08**, por decisión del usuario y de
+forma deliberada: el sellado del `_11` escribe en esa misma área, y borrarlas *después* se
+llevaría el ancla puesta.
+
+**El texto del `Addendum 1` no se altera** — sigue siendo el registro fiel de por qué la regla se
+escribió. Lo que hay que leer con este addendum al lado es su ejemplo: **hoy no es verificable
+contra la plantilla.**
+
+**Dónde vive ese contenido ahora:** `docs/NOTAS_ORADOR_SECCO_8_y_25.md`, evidencia congelada, con
+su fila en `CLAUDE.md` §7. ⚠️ **Ese archivo entró al repo recién el 09/08**: llegó adjunto el
+mismo día en que se borraron las notas y quedó fuera del repo por un pedido acotado a otros tres
+archivos. **Entre el borrado y hoy, la única copia de esas notas estuvo fuera de git.**
+
+**Por qué la regla no se debilita.** El `Addendum 1` prohíbe `setText` porque **puede** haber
+trabajo humano en las notas, no porque lo hubiera en esas dos. El caso que lo motivó desapareció;
+el riesgo no. La próxima nota que alguien escriba a mano no va a estar anunciada.
+
+**Consecuencia para el `_11`:** su `0.5` declara esas dos láminas *"caso de prueba obligatorio"*, y
+**ese caso ya no existe**. El reemplazo, aceptado el 09/08: una nota puesta a mano en una **copia
+desechable**, con el control *"el texto propio sigue entero **y** el ancla aparece como línea
+nueva"* — que da rojo si el sellado no ocurre, condición que el caso original ya no puede cumplir.
+
 ## R-04 — El temario define el universo, no la fecha
 
 **Enunciado:** una campaña está activa todos los días de su tramo, pero el proceso
