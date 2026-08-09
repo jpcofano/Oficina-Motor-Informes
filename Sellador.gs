@@ -63,6 +63,94 @@ function anclaDeLamina_(slide) {
 }
 
 /**
+ * Texto de las notas de UNA lámina, por informe y número de orden (1-based). **Sólo lectura.**
+ *
+ * Existe para un caso puntual y conviene decirlo: **verificar que la copia de una nota que está
+ * en el repo sea idéntica a la de la plantilla, antes de borrarla de la plantilla.** Comparar
+ * largos no alcanza — dos textos distintos pueden medir lo mismo.
+ */
+function notasDeLaminaPorOrden(informeId, orden) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) {
+    return { ok: false, motivo: 'Informe "' + informeId + '" sin plantilla_id en INFORMES' };
+  }
+  var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+  if (orden < 1 || orden > slides.length) {
+    return { ok: false, motivo: 'La lámina ' + orden + ' no existe (la plantilla tiene ' + slides.length + ')' };
+  }
+  var texto = notasDeLamina_(slides[orden - 1]);
+  return { ok: true, informe_id: informeId, orden: orden, chars: texto.length, texto: texto };
+}
+
+/**
+ * Vacía las notas del orador de UNA lámina nombrada. **Es la única función del repo que
+ * escribe sobre las notas de una plantilla viva, y la única que llama `setText`.**
+ *
+ * **Autorizada por `C-01` addendum 4 (09/08/2026) y por nada más.** Los addenda 1 y 2 autorizan
+ * **anexar** y prohíben `setText` con todas las letras; borrar necesitó su propia autorización,
+ * escrita antes de ejercerse.
+ *
+ * **Las tres guardas son precondiciones de esa autorización, no precauciones de esta función:**
+ *
+ * 1. `textoEsperado` es obligatorio y tiene que coincidir **carácter por carácter** con lo que
+ *    hay en la plantilla. Comparar largos no alcanza: dos cadenas distintas miden lo mismo. Si
+ *    no coincide, **no se toca nada** — significa que la copia del repo no es del texto que se
+ *    está por borrar.
+ * 2. **Backup primero, y aborto si falla.** Es de `C-01` y no se negocia.
+ * 3. Una lámina, por número de orden. **No hay barrido y no lo va a haber**: el addendum 4 lo
+ *    prohíbe explícitamente.
+ *
+ * Devuelve qué borró y dónde quedó el backup, para que el reporte de la corrida pueda decirlo.
+ */
+function borrarNotasDeLamina(informeId, orden, textoEsperado) {
+  if (typeof textoEsperado !== 'string' || !textoEsperado.length) {
+    return { ok: false, motivo: 'Falta `textoEsperado`: sin el texto a confirmar no se borra nada (C-01 addendum 4, precondición 2)' };
+  }
+
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) {
+    return { ok: false, motivo: 'Informe "' + informeId + '" sin plantilla_id en INFORMES' };
+  }
+
+  var presentacion = SlidesApp.openById(informe.plantilla_id);
+  var slides = presentacion.getSlides();
+  if (orden < 1 || orden > slides.length) {
+    return { ok: false, motivo: 'La lámina ' + orden + ' no existe (la plantilla tiene ' + slides.length + ')' };
+  }
+
+  var slide = slides[orden - 1];
+  var actual = notasDeLamina_(slide);
+  if (actual !== textoEsperado) {
+    return {
+      ok: false,
+      motivo: 'El texto de la lámina ' + orden + ' NO coincide con el esperado — no se tocó nada. ' +
+        'Esperado ' + textoEsperado.length + ' char(s), encontrado ' + actual.length + '.',
+      encontrado: actual
+    };
+  }
+
+  var carpeta = asegurarCarpetaBackups_();
+  if (!carpeta.ok) return { ok: false, motivo: 'Backup abortado (no se tocó la plantilla): ' + carpeta.motivo };
+
+  var backup = backupPlantilla_(informe.plantilla_id, presentacion.getName(), carpeta.carpeta);
+  if (!backup.ok) return { ok: false, motivo: 'Backup abortado (no se tocó la plantilla): ' + backup.motivo };
+
+  var shape = slide.getNotesPage().getSpeakerNotesShape();
+  if (!shape) return { ok: false, motivo: 'La lámina ' + orden + ' no tiene shape de notas', backup: backup };
+  shape.getText().setText('');
+
+  return {
+    ok: true,
+    informe_id: informeId,
+    orden: orden,
+    chars_borrados: actual.length,
+    texto_borrado: actual,
+    backup: backup,
+    chars_ahora: notasDeLamina_(slide).length
+  };
+}
+
+/**
  * `B.0` — la medición del gate. **Sólo lectura, no escribe nada.**
  *
  * Recorre las plantillas de todos los informes activos con `plantilla_id` y cuenta, por
