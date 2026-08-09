@@ -269,6 +269,20 @@ prompt antes de que nadie lo verificara contra el motor**.
   como propiedad del dato— y por eso van juntos: **cuando la medición propia contradice al motor,
   la primera hipótesis es que la medición está mal**, no el motor.
 
+**Pero eso tiene un borde, y sin el borde la regla sirve para tapar bugs reales.** Lo que los tres
+casos —`looker ilegible`, `String(celda)` sobre booleanos, `ignorar bloquea la lectura`— tienen en
+común **no es "medí por fuera del motor"**: es que **el instrumento propio reproducía lógica que
+el motor ya tenía** —parsear una fecha, leer un tipo, resolver un `uso`— **y la reproducía peor**.
+Ahí el motor gana, siempre.
+
+- **El motor NO gana cuando la medición es de su salida contra un hecho externo.** Ahí es el
+  sospechoso, y hay precedentes: `parsearFiltro_` sin `contiene`, `leerReuniones_` sin filtro por
+  `periodo_id`, los seis `pauta_*` sin `filtro`. **Ninguno de los tres se habría encontrado con la
+  regla aplicada sin este borde.**
+- **La pregunta que separa los dos casos:** ¿estoy reimplementando algo que el motor ya hace, o
+  estoy comparando lo que el motor publicó contra algo que él no puede saber? Lo primero es un
+  error de instrumento; lo segundo es cómo se encuentran los bugs.
+
 **Un número correcto puede salir de las filas equivocadas, y ninguna verificación del proyecto
 lo miraba.** Antes de dar por bueno un número, preguntar **de qué filas sale**: qué entra, cuál
 es el denominador, y **quién declaró ese recorte**. No alcanza con que el token tenga fila en

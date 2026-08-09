@@ -2531,6 +2531,51 @@ ni `asistentes`, ni el estado. **La cascada que la segunda mitad de `R-20` neces
 ejecutable**, y el filtro `figura!=Jorge Macri` de la fila "ministros" de `C.2` tampoco. Los 8 de
 8 de `V-49` se validaron **a mano contra las bases**: ciertos como número, falsos como cableado.
 
+### P1 · Línea de base del `hoja_default` de `digital` — 1297 filas congeladas informadas como buenas
+
+**Medido el 09/08/2026, antes de mover nada**, para que el control del movimiento tenga contra qué
+compararse (`2026-08-09_1.3` §2).
+
+`contarLecturaBase_('digital')` **hoy**, con `BASES.digital.hoja_default = "Digital"`:
+
+```
+hoja: "Digital"   modo: "snapshot"   columna_fecha: null
+filas_totales: 1297   filas_en_ventana: 1297
+filas_sin_clave: 337   filas_vacias: 3
+```
+
+**La ventana no interviene** —`digital` es `snapshot`, así que `leerFuente` la ignora— y por eso
+`filas_en_ventana` es igual a `filas_totales`. El recorte a 72 que aparece en la traza de los
+marcadores lo hace el Generador después, no `leerFuente`.
+
+**Ésta es la magnitud del problema que el movimiento arregla:** el diagnóstico de la base
+`digital` viene informando **1297 filas de una tabla cuyos datos JM terminan en diciembre de
+2025**, y **337 de ellas no tienen clave**. Da verde sobre datos muertos.
+
+**Predicción declarada antes de correr el movimiento**, para que el control sea una igualdad y no
+un *"cambió"*: con `hoja_default = "Seguimiento digital"` se espera
+**`filas_totales: 979` y `filas_en_ventana: 979`**, `modo: snapshot`, `ventana_aplicada: null`.
+**Si da 72, la predicción está mal y hay que entender por qué antes de seguir** — significaría que
+`leerFuente` recorta donde se creía que no.
+
+### P1 · `ignorar` no cubre el camino directo — el hueco que `R-22` no puede cerrar
+
+`uso = ignorar` corta en **un solo lugar**: `Config.gs:244-247`, dentro de `buscarMapeo`. Ni
+`abrirHoja` (`Fuentes.gs:78`) ni `leerFuente` (`:613`) consultan `usoSolapa_`, y **está declarado
+a propósito** (`Fuentes.gs:623-625`).
+
+**Consecuencia:** `ignorar` **apaga los marcadores** que leen de esa solapa —pasan a
+`«FALTA:…@solapa_no_fuente»`, visible y con motivo— pero **no apaga la solapa**. Diagnósticos,
+auditorías y cualquier llamada directa la siguen leyendo.
+
+**El hueco:** si aparece una solapa congelada que **además** se lee por camino directo, `ignorar`
+no alcanza y **no hay mecanismo**. Hoy no pasa —por eso `digital.hoja_default` se mueve a
+`Seguimiento digital`— pero la próxima vez puede no haber un `hoja_default` que mover.
+
+**Qué lo destrabaría:** que `abrirHoja`/`leerFuente` consulten `uso`, o una guarda equivalente en
+el camino directo. **No se hace acá**: cambiaría el comportamiento de todos los diagnósticos y es
+decisión de diseño.
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el
