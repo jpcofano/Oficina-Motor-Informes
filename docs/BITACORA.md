@@ -6708,3 +6708,75 @@ ningún `MAPEO` de ninguna base.** Sin `cc_base` no sale `cc_contact_pct`, que e
    `pauta_*`, que ya están cableados sobre `Seguimiento digital`?
 4. **Cablear los `cc_*` sobre `looker` sería la primera fila de `looker` en `MARCADORES`.** Hoy
    son 51 filas y ninguna. No es un impedimento, pero conviene saberlo antes.
+
+---
+
+## `N3` — `looker`: por qué es ilegible y qué le falta exactamente (2026-08-09)
+
+Tarea `N3` de la nocturna del `_9`. **Resultado: cero filas de `MAPEO` escritas**, y la guarda del
+propio prompt es la que lo decide — *"sólo se escribe cuando hay una única candidata inequívoca"*.
+**No hay ninguna candidata en ninguna de las seis solapas.**
+
+### La premisa del `_9` era falsa y ya está corregida
+
+El `_9` dice *"es `modo_periodo = filtrar` y sus solapas no tienen `fecha_periodo` en `MAPEO`"*.
+**`resumen_metricas_dinamico` sí la tiene** (columna `C`) y se lee perfecto: `contarLecturaBase_`
+devuelve 949 filas totales, 26 en la ventana `2026-07-24 → 2026-07-30`, columna de fecha
+`fecha_inicio`, **cero filas sin fecha y cero con fecha inválida**. El detalle de por qué circuló
+lo falso está en el pendiente `P1 · Seis solapas de looker…`.
+
+### Las seis solapas `fuente` restantes, medidas contra `SOLAPAS.firma_encabezado`
+
+| solapa | filas | columnas | candidatas a `fecha_periodo` |
+|---|---|---|---|
+| `MAIL` | 5760 | `ID cuentas · Enviados · Entregados · Aperturas · Clics` | **ninguna** |
+| `IVR` | 192 | `ID cuentas · Audiencia · Llamados Realizados · Llamados Atendidos · Escucharon +75% · Marque 1` | **ninguna** |
+| `SMS` | 92 | `ID cuentas · Enviados · Entregados · Clics` | **ninguna** |
+| `CC` | 1309 | `ID Cuentas · Base enviada · Base barrida · Contactados · Efectivos` | **ninguna** |
+| `DIGITAL` | 4591 | `Id cuentas · Plataforma · Impresiones · Visualizaciones · Clics · nombre_campaña · eje · area · estado` | **ninguna** |
+| `ALCANCE` | 740 | `ID Cuentas · Alcance · Frecuencia · eje · area · nombre_campaña` | **ninguna** |
+
+**12.684 filas de detalle por canal, declaradas `fuente`, sin una sola columna de fecha.** No es
+que la candidata sea ambigua: **no existe.** Son tablas de hechos por `ID cuentas`, sin dimensión
+temporal propia — el período tendría que venir del join contra la maestra, no de una columna suya.
+
+### La alternativa, reportada y no aplicada
+
+**Si `looker` fuera `snapshot` en vez de `filtrar`, las seis pasarían a legibles sin tocar
+`MAPEO`.** El argumento a favor es de simetría y está medido: estas seis solapas tienen **la misma
+forma** que las cinco solapas de canal de `digital` —hechos por `ID cuentas`, sin fecha— y
+`digital` es `snapshot` justamente por eso (`Instalar.gs:842`, y el motivo escrito en
+`Union.gs:61-67`: el recorte lo hace el link campaña↔encuentro, no una ventana de fecha).
+
+**El argumento en contra, y por eso no se aplica de noche:** `looker/resumen_metricas_dinamico`
+—la fuente que declara `S-01`, la que hoy funciona— **sí tiene fecha y sí se filtra bien**.
+Pasar la base entera a `snapshot` le sacaría el recorte por ventana a la única solapa que lo usa
+correctamente, y ese recorte hoy deja 26 filas de 949. **Es una decisión del usuario**, y las dos
+salidas posibles son distintas:
+
+1. `looker` a `snapshot` → las seis se vuelven legibles, y `resumen_metricas_dinamico` pierde su
+   filtro por ventana.
+2. Las seis bajan a `uso = revisar` o `ignorar` → si el detalle por canal ya lo cubre `digital`,
+   que es lo que hoy usa la unión, entonces están declaradas `fuente` de más.
+
+### Por qué no se escribió ninguna fila, más allá de que no haya candidata
+
+Aunque hubiera una, **el camino declarado para poblar `fecha_periodo` es otro**: `DIAG_FECHAS` →
+elección humana → `promoverFechasElegidas()` (`Fechas.gs`), con el criterio escrito en
+`Fuentes.gs:21-30` — *"detección automática, elección humana"* — y respaldado por `S-02` y por la
+selección congelada de `docs/FECHAS_seleccion.md`, que es de donde salió la fila de
+`looker/fecha_periodo` que hoy funciona. Escribir la celda a mano saltearía ese mecanismo.
+
+### Un hallazgo lateral que le sirve a `N2`
+
+**`looker/CC` tiene `Base enviada` y `Base barrida`** — ahí está el `cc_base` que `N2` no
+encontraba en ningún `MAPEO`. Y **`looker/DIGITAL` tiene `Plataforma` e `Impresiones`**, o sea una
+segunda fuente posible para `imp_google/meta/prog`, además de
+`digital/CAMPAÑAS_DESGLOCE_DIGITAL`.
+
+**Las dos siguen siendo preguntas del usuario, y ahora están acotadas:**
+
+- `cc_base` → ¿`Base enviada` o `Base barrida`? **Son dos candidatas, así que no se elige sola.**
+- `imp_*` → ¿`digital/CAMPAÑAS_DESGLOCE_DIGITAL` (4889 filas, legible hoy) o `looker/DIGITAL`
+  (4591 filas, hoy ilegible)? **Dos fuentes para el mismo número es exactamente lo que hay que
+  decidir antes de cablear**, no después.
