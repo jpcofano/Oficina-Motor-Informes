@@ -1352,7 +1352,7 @@ var SEED_SOLAPAS_ = [].concat(
   filasSolapa_('rdv', ['PPTS', 'RDV CONJUNTO', 'Agenda', 'Seguimiento', 'Respuestas JM 📩'], 'ignorar', 'sin decidir'),
 
   // digital — "Seguimiento Digital"
-  [filaSolapa_('digital', 'Digital', 'fuente', 'hoja_default')],
+  [filaSolapa_('digital', 'Digital', 'ignorar', 'R-22 (09/08): CONGELADA — sus 205 filas JM llegan a diciembre de 2025, cero datos de 2026. Era hoja_default; el default se movió a Seguimiento digital en la misma corrida')],
   filasSolapa_('digital', ['Directa Mail', 'Directa IVR', 'Directa SMS'], 'fuente', 'canales de directa'),
   [filaSolapa_('digital', 'Seguimiento digital', 'fuente', 'maestra de la unión del Paso 2.4')],
   [filaSolapa_('digital', 'Alcance', 'fuente', 'usada por Union.gs')],
@@ -1378,12 +1378,15 @@ var SEED_SOLAPAS_ = [].concat(
     'texto pegado — no es fuente ni control. No usar (Paso 2.9 Parte C.4; ' +
     'antes decía "usar para validar el scoring/umbral 0.6", ver docs/DISENO_match_temario.md §9).',
     { filas_datos: 37 })],
-  filasSolapa_('digital', ['Metricas informe', 'INFORME'], 'referencia', 'el informe manual actual'),
-  filasSolapa_('digital', ['Nomalización de barrios', 'Barrio Hab', 'Limpia Fun'], 'referencia', 'catálogos de normalización — útiles para el scoring del anclaje'),
+    filasSolapa_('digital', ['Nomalización de barrios', 'Barrio Hab', 'Limpia Fun'], 'referencia', 'catálogos de normalización — útiles para el scoring del anclaje'),
   // Paso 2.12 Parte 2, Grupo A — decidido el 31/07 contra la firma de encabezados y los
   // conteos reales. Criterio general: ante la duda, `ignorar`.
   filasSolapa_('digital', ['Cuentas'], 'fuente', 'catálogo maestro: ID Cuentas es clave única real (3.453 filas, 3.453 distintos, cero vacíos) — la única columna así en las cuatro bases'),
-  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'tabla original, encabezados en fila 1, sin recorte por período — los casos V-21 a V-26 de VALIDACION la usan y resuelven'),
+  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'ignorar', 'R-22 (09/08): CONGELADA — sus filas JM llegan al 17/04/2026, tres meses antes del informe. De las 436 que solapan la ventana 24-31/07, JM son cero'),
+  // Las cinco de abajo estaban en `referencia` y bajan a `ignorar` por `R-22`: `referencia`
+  // sugiere que sirven para consultar, y éstas no sirven para nada. Las tres de período
+  // manual las veta `R-02`; las dos de `#REF!` están rotas.
+  filasSolapa_('digital', ['Metricas informe', 'INFORME'], 'ignorar', 'R-22 (09/08): #REF! — fórmula rota que llega como texto'),
   filasSolapa_('digital', ['EDV'], 'referencia', 'funcionarios/figuras por fecha (confirmado por el usuario)'),
   filasSolapa_('digital', ['Filter unificado'], 'ignorar', 'la fila 1 son dos fechas — no tiene encabezados'),
 
@@ -1403,23 +1406,23 @@ var SEED_SOLAPAS_ = [].concat(
   // ya es dato (recorte de columnas de 'Directa mail'/'Directa Mail', pegado sin
   // encabezado propio). fila_encabezado=0, ver la nota de más arriba.
   [filaSolapa_('m2', 'Mail per', 'referencia', NOTA_PERIODO_MANUAL_, { fila_encabezado: 0 })],
-  filasSolapa_('digital', ['Buscador por periodo digital', 'Buscador por periodo directa'], 'referencia', NOTA_PERIODO_MANUAL_),
-  [filaSolapa_('digital', 'Mail per', 'referencia', NOTA_PERIODO_MANUAL_, { fila_encabezado: 0 })],
+  filasSolapa_('digital', ['Buscador por periodo digital', 'Buscador por periodo directa'], 'ignorar', 'R-22 (09/08): período tipeado a mano, vetada por R-02. ' + NOTA_PERIODO_MANUAL_),
+  [filaSolapa_('digital', 'Mail per', 'ignorar', 'R-22 (09/08): período tipeado a mano, vetada por R-02. ' + NOTA_PERIODO_MANUAL_, { fila_encabezado: 0 })],
 
   // looker — "Base Looker"
   [
     filaSolapa_('looker', 'resumen_metricas_dinamico', 'fuente', 'Paso 2.9 Parte C (S-01): QUERY() viva sobre Cuentas, no deriva de resumen_metricas — hoja_default'),
     filaSolapa_('looker', 'resumen_metricas', 'derivada', 'Paso 2.9 Parte C (S-01): pegado de valores; devolvió 899 de 903 filas sin fecha'),
-    filaSolapa_('looker', 'MAIL', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 5748 }),
-    filaSolapa_('looker', 'IVR', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 190 }),
-    filaSolapa_('looker', 'SMS', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 86 }),
+    filaSolapa_('looker', 'MAIL', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 5748 }),
+    filaSolapa_('looker', 'IVR', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 190 }),
+    filaSolapa_('looker', 'SMS', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 86 }),
     filaSolapa_('looker', 'CC', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 1299 }),
     filaSolapa_('looker', 'DIGITAL', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 4563 }),
-    filaSolapa_('looker', 'ALCANCE', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 727 })
+    filaSolapa_('looker', 'ALCANCE', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 727 })
   ],
   // Paso 2.12 Parte 2, Grupo A.
   filasSolapa_('looker', ['Audiencias'], 'referencia', 'catálogo de segmentaciones'),
-  filasSolapa_('looker', ['Cuentas'], 'ignorar', 'es el origen de resumen_metricas_dinamico, que ya es fuente (S-01)'),
+  filasSolapa_('looker', ['Cuentas'], 'fuente', 'TABLA DE DIMENSIÓN, no de métricas (1.2 del 09/08): se usa para id_cuentas, nombre_campaña y los cortes que dependan de ellos. NINGÚN marcador toma un número de acá — las métricas de looker salen de resumen_metricas_dinamico (S-01) y de ningún otro lado. Vuelve a fuente porque el join de CC y DIGITAL la necesita y sin ella falla antes de leer una fila'),
   filasSolapa_('looker', ['Desglose Alcance'], 'ignorar', 'looker/ALCANCE ya da el alcance por cuenta'),
   filasSolapa_('looker', ['URLs'], 'ignorar', 'links a piezas creativas; además tiene id_cuentas y nombre_campaña duplicados en el encabezado'),
   filasSolapa_('looker', ['Audiencias Conectadas'], 'ignorar', '1 fila de datos'),
