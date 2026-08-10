@@ -2671,7 +2671,7 @@ de IVR deja la base discada de la lámina 2 en cero.
 - **`Base enviada` llega corrupta en el export** —serial de Excel mal formateado, se lee como
   fecha—. Si el motor la lee como fecha, falla. `cc_base` es **`Base barrida`**, no `Base enviada`.
 
-### P1 · Tres listas de hojas de registro que deben coincidir por convención, no por mecanismo
+### ~~P1 · Tres listas de hojas de registro que deben coincidir por convención, no por mecanismo~~ — CERRADO (10/08/2026)
 
 Detectado el 10/08 al re-correr el censo del `_19`: **`LAMINAS` no aparecía** aunque existía desde
 el 09/08.
@@ -2691,12 +2691,19 @@ respaldo declarado y sin figurar en la matriz de escritores**, y nada lo señal�
 
 Las tres quedaron alineadas en **once** el 10/08.
 
-**Qué haría falta:** que el desajuste falle en vez de pasar inadvertido — un control que compare
-las tres y rompa, corrible desde `tools/`. **No se implementó acá a propósito**: las dos
-herramientas son deliberadamente independientes del motor, así que el control tiene que leer las
-tres sin volver dependiente a ninguna, y eso es diseño.
+**CERRADO el 10/08 con `tools/listas.js`.** Lee las tres **por texto** —sin `require`, sin
+ejecutar nada, sin que ninguna lea a la otra— y **falla con exit 1 si difieren**. La duplicación
+queda intacta, que es lo correcto: cada archivo sigue siendo dueño de su copia y las dos
+herramientas de `tools/` siguen siendo independientes del motor.
 
-**Y va a volver a pasar** en cuanto nazca la hoja doce.
+**Control positivo corrido:** sacando `LAMINAS` de `tools/snapshot.js` el script devuelve **exit
+1** y nombra la hoja que falta; con las tres alineadas, **exit 0**. Un control que no falla cuando
+debe no es un control.
+
+**La lección, que es la que vale más allá de este caso:** un valor hardcodeado no es deuda por
+estar escrito a mano — a veces la copia manual es el diseño, como acá. **Es deuda cuando nadie se
+entera de que quedó viejo.** La salida no siempre es borrar la duplicación; a veces es hacer que
+el desajuste falle.
 
 ### P2 · No existe respaldo del spreadsheet de control
 
