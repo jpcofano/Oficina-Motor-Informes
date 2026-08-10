@@ -83,6 +83,36 @@ function notasDeLaminaPorOrden(informeId, orden) {
 }
 
 /**
+ * El orden de sellado, **fijado y no derivado**. `secco` primero, `jm` después.
+ *
+ * **Por qué está acá y no se toma de `leerInformes()`.** Ese orden es el de las filas de la hoja
+ * `INFORMES` —hoy `jm` primero— y **cambiaría los ids si alguien reordena la hoja**. Un
+ * `lamina_id` asignado no se reusa nunca (`D-23` punto 8), así que el orden de sellado no puede
+ * depender de algo que se edita a mano sin consecuencias aparentes.
+ *
+ * **El motivo del orden es de legibilidad** y está en `CLAUDE.md` §2: la documentación del
+ * proyecto dice *"lámina 2"*, *"lámina 6"*, *"la 10 escondida"* refiriéndose a la **posición en
+ * `jm`**. Con `jm` arrancando en `L-030`, ningún `lamina_id` se parece a una de esas posiciones.
+ *
+ * Un informe activo que no esté en la lista va **después** de los fijados, alfabético: una
+ * tercera plantilla toma `L-052` en adelante y eso tiene que ser esperado, no sorpresa.
+ *
+ * Origen: 09/08. El menú recorría `Object.keys(leerInformes())` y el diálogo listaba `jm`
+ * primero; **ese arreglo era también el de ejecución**, así que habría asignado `L-001`–`L-022`
+ * a `jm`, al revés del `11.2`. Lo cazó el usuario al leer el diálogo antes de aceptar.
+ */
+var ORDEN_SELLADO_ = ['secco', 'jm'];
+
+function ordenDeSellado_(informes) {
+  var activos = Object.keys(informes).filter(function (id) {
+    return informes[id].activo && informes[id].plantilla_id;
+  });
+  var fijados = ORDEN_SELLADO_.filter(function (id) { return activos.indexOf(id) !== -1; });
+  var resto = activos.filter(function (id) { return ORDEN_SELLADO_.indexOf(id) === -1; }).sort();
+  return fijados.concat(resto);
+}
+
+/**
  * `B.6` — ítem de menú. **Confirmación PREVIA con el detalle**, no `ButtonSet.OK` después.
  *
  * El precedente elegido es `menuConsolidarMapeoLooker_` (`Solapas.gs`), no
@@ -97,12 +127,29 @@ function notasDeLaminaPorOrden(informeId, orden) {
 function menuSellarPlantillas_() {
   var ui = ui_();
   var informes = leerInformes();
-  var previos = [];
 
-  Object.keys(informes).forEach(function (informeId) {
-    if (!informes[informeId].activo || !informes[informeId].plantilla_id) return;
+  var orden = ordenDeSellado_(informes);
+  if (!orden.length) {
+    ui.alert('Sellar plantillas', 'No hay informes activos con plantilla_id cargado.', ui.ButtonSet.OK);
+    return;
+  }
+
+  // El rango de ids se simula **acumulando**: el contador es global, así que la segunda
+  // plantilla arranca donde termina la primera. Calcularlo por plantilla contra el estado
+  // actual de la hoja daría el mismo arranque para las dos y mentiría.
+  var reg = leerLaminas_();
+  if (!reg.ok) { ui.alert('Sellar plantillas', reg.motivo, ui.ButtonSet.OK); return; }
+  var siguiente = siguienteIdLamina_(reg.filas);
+
+  var previos = [];
+  orden.forEach(function (informeId) {
     var previo = sellarPlantilla(informeId, { dryRun: true });
-    if (previo.ok) previos.push(previo);
+    if (!previo.ok) return;
+    previo.rango_previsto = previo.a_sellar
+      ? formatearIdLamina_(siguiente) + ' … ' + formatearIdLamina_(siguiente + previo.a_sellar - 1)
+      : '(nada que asignar)';
+    siguiente += previo.a_sellar;
+    previos.push(previo);
   });
 
   if (!previos.length) {
@@ -116,11 +163,17 @@ function menuSellarPlantillas_() {
     return;
   }
 
-  var lineas = ['Se va a ESCRIBIR sobre las plantillas vivas.', ''];
-  previos.forEach(function (p) {
-    lineas.push('· ' + p.plantilla + ' (' + p.informe_id + '): ' + p.a_sellar + ' de ' + p.laminas +
-      ' lámina(s) sin ancla' + (p.ya_tenian_ancla ? ' — ' + p.ya_tenian_ancla + ' ya sellada(s)' : ''));
+  var lineas = ['Se va a ESCRIBIR sobre las plantillas vivas, EN ESTE ORDEN:', ''];
+  previos.forEach(function (p, i) {
+    lineas.push((i + 1) + '. ' + p.plantilla + ' (' + p.informe_id + ')');
+    lineas.push('   ' + p.a_sellar + ' de ' + p.laminas + ' lámina(s) sin ancla' +
+      (p.ya_tenian_ancla ? ' — ' + p.ya_tenian_ancla + ' ya sellada(s)' : ''));
+    // El rango es el único dato irreversible de la operación: un `lamina_id` asignado no se
+    // reusa nunca (`D-23` punto 8). El conteo solo no alcanza para revisarlo antes de aceptar.
+    lineas.push('   ids que va a asignar: ' + p.rango_previsto);
   });
+  lineas.push('', 'El orden importa: los ids son corridos y globales, así que la segunda plantilla');
+  lineas.push('arranca donde termina la primera. Un `lamina_id` asignado NO se reusa nunca.');
   lineas.push('', 'Se hace BACKUP de cada plantilla antes de tocarla, y si el backup falla no se escribe nada.');
   lineas.push('El ancla se ANEXA a las notas del orador: no se pisa nada de lo que haya.');
   lineas.push('', '¿Confirmás?');
