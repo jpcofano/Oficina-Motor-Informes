@@ -2,6 +2,10 @@
 
 > **Modelo: Opus, effort alto.** Subagente `verificador` antes de arrancar, sobre este archivo.
 > Nace del `15.1` §1: el usuario decide agregar la columna. El `_15` **no** la siembra — ver §0.3.
+>
+> **Editado en el lugar el 10/08, sin addendum: no llegó a ejecutarse.** Dos correcciones del
+> verificador de la nocturna del 09/08, las dos mías: la Parte D anunciaba un ID de decisión que
+> todavía no estaba asignado, y la `B.4` pedía un diff que el modo cálculo no puede producir.
 
 ---
 
@@ -66,8 +70,11 @@ sería otro.
 **A.1 · El esquema declarado.** Listar `HOJAS_CONFIG_.LAMINAS.headers` en orden, con su índice.
 Confirmar que son 13 nombres y que `notas` es el último.
 
-**A.2 · La rama que toma la hoja hoy.** Confirmar si `COLUMNAS_DELTA_` tiene o no entrada
-`LAMINAS`. Si no la tiene: decir qué rama de `aplicarInstalacion_` recibe la hoja, y **qué le pasa
+**A.2 · La rama que toma la hoja hoy, y la convención de índice.** Confirmar si
+`COLUMNAS_DELTA_` tiene o no entrada `LAMINAS`. **Y reportar qué convención usan las entradas
+que ya existen: 0-based o 1-based.** No es un detalle: `B.1` fija `indice: 5` y `B.2` la pone
+quinta en una lista 1-based. **Si el delta es 0-based, la columna entra después de `escondida`**
+y el dibujo de `B.2` queda incumplido en silencio. Si no la tiene: decir qué rama de `aplicarInstalacion_` recibe la hoja, y **qué le pasa
 a las 51 filas si se agrega un nombre a `headers` sin agregar antes la entrada al delta.** Es el
 modo de falla que ya documentaron `SECCIONES`, `CAMPANAS` y `REUNIONES` en sus comentarios: la
 fila 1 se reescribe y los datos no se mueven, en silencio y sin fallar.
@@ -94,16 +101,22 @@ vacío; si no, si tiene algún shape con texto no vacío; si ninguna de las dos.
   paso;
 - cuántos de los títulos encontrados **contienen `{{`**.
 
-**A.6 · Una contradicción documental, para reportar y no corregir todavía.** El comentario de
+**A.6 · Una contradicción documental — CERRADA el 10/08, ya no hay que esperar.** El comentario de
 `LAMINAS` en `Instalar.gs` lista `seccion_id` junto a `modo`, `itera_sobre` y `filtro` como
 «vacío = hereda de `SECCIONES`». `PLAN.md` §2 dice lo contrario con todas las letras: identidad y
 estado propio —`seccion_id`, `escondida`, `origen`— **no se heredan nunca**. Transcribir las dos
 citas con su ubicación.
 
 No es una nota al pie: **si `seccion_id` heredara, sembrarlo sería exactamente lo que el `15.1`
-objeta para `modo`** — declarar en dos lugares y romper la herencia. El `_15` entero descansa en
-que `PLAN.md` tiene razón y el comentario está viejo. Reportar cuál es la fuente de verdad y
-esperar; la corrección va en la Parte D o en el `_15`, no acá.
+objeta para `modo`** — declarar en dos lugares y romper la herencia.
+
+**Resuelto: `PLAN.md` es la fuente de verdad y el comentario de `Instalar.gs` está viejo.**
+`CLAUDE.md` §7 le da a `PLAN.md` §1 la pregunta de arquitectura; un comentario de `.gs` no es
+dueño de ninguna. **`seccion_id` es identidad, no política, y no hereda** (`D-23` addendum 1
+punto 4). Lo que el `11.2` declaró heredable es **`informes`**, que sí es política: la sección
+declara y la lámina sólo se aparta.
+
+**Corregir el comentario en la Parte D**, sin esperar. El `_15` descansa en esto y ya está firme.
 
 **Fin de la Parte A: reportar y parar.**
 
@@ -124,12 +137,27 @@ El orden importa y no es estético:
 - **B.3 · Los dos arrays de `sellarPlantilla` pasan a 14 posiciones**, con el título en la 5. Si
   A.3 confirma que la rama de reparación no tiene el `slide` a mano, guardarlo al armar la lista
   de láminas con ancla. Una fila reparada sin título es aceptable sólo si el motivo se reporta.
-- **B.4 · Antes de aplicar: correr la instalación en modo cálculo** —el que usa *Estado de
-  configuración*— y **pegar el diff en el reporte**. Aplicar recién después, y comparar el
-  encabezado real de la hoja contra lo esperado. El precedente de `MARCADORES.filtro` está escrito
-  en `Instalar.gs`: la columna terminó en un índice distinto del declarado y no importó, porque
-  todo se lee por nombre. **Si acá pasa lo mismo, se deja como quedó y se anota** — mover una
-  columna de una hoja curada es el riesgo que el delta existe para evitar.
+
+  ⚠ **`sellarPlantilla` llama a `tituloDeLamina_`, nunca su propia lógica de título.** Dos
+  escritores de la columna está bien; **dos definiciones de «título» es el bug de las tres copias
+  de `valorPasaFiltro_` otra vez** — el día que la vía 1 cambie, una de las dos se queda vieja y
+  no falla, escribe distinto.
+- **B.4 · Predicción escrita antes de aplicar, medición después. El modo cálculo no sirve acá y
+  hay que decir por qué:** con `aplicar = false`, `aplicarInstalacion_` **ni entra al `forEach` de
+  hojas**, así que el diff de una columna nueva saldría vacío — y un vacío ahí se lee como «no hay
+  nada que cambiar», que es la lectura opuesta a la verdadera. Corregido: el control es propio.
+
+  Antes de aplicar, escribir la predicción en el reporte: el encabezado real de la hoja
+  (`getLastColumn()` y los nombres en orden), las 51 filas, los 7 `escondida` marcados, y qué se
+  espera que valga cada una de esas tres cosas después. **Predecir en celdas o decir «N filas × M
+  columnas»** — `PLAN.md` §1 nota 3: una predicción y una medición en unidades distintas no se
+  pueden comparar, que es para lo que sirve predecir. Aplicar, volver a leer las tres, y pegar
+  las dos columnas al lado.
+
+  El precedente de `MARCADORES.filtro` está escrito en `Instalar.gs`: la columna terminó en un
+  índice distinto del declarado y no importó, porque todo se lee por nombre. **Si acá pasa lo
+  mismo, se deja como quedó y se anota** — mover una columna de una hoja curada es el riesgo que
+  el delta existe para evitar.
 
 ---
 
@@ -174,12 +202,20 @@ CLI y menú—: `C.1` del `_11` ya se cobró un bug de diálogo por probar sólo
   plantilla → `titulos_desactualizados`. **No suma al contador de `problemas`**: un título que
   cambió en el deck es información, no una hoja rota, y meterlo en el semáforo haría que la
   verificación diera rojo por una edición de texto.
-- **`ESCRITORES.md` no tiene fila para `LAMINAS`.** Agregarla: dueño declarado del contenido, los
-  escritores vivos, y el nuevo. Re-correr `node tools/escritores.js` y actualizar la matriz —
-  el documento pide eso explícitamente al editar código que escribe hojas de registro.
-- **`PLAN.md`: `D-24`** con la decisión, el régimen de la columna (§0.3) y por qué el nombre es
-  `titulo`. Actualizar la fila de la tabla de fases de §2 que enumera las columnas de `LAMINAS`:
-  hoy dice trece y va a decir catorce.
+- **`ESCRITORES.md` no tiene fila para `LAMINAS`, y su censo es del 03/08 — anterior al `_11`,
+  que es cuando la hoja nació.** O sea que no le falta sólo la fila: le faltan los escritores que
+  ya existían antes de este prompt. Agregar la hoja con su dueño declarado y **los tres
+  escritores: `sellarPlantilla`, `borrarFilasDeLaminas` y el nuevo.** Re-correr
+  `node tools/escritores.js` y actualizar la matriz entera — el documento pide eso explícitamente
+  al editar código que escribe hojas de registro, y **si el censo levanta un cuarto escritor que
+  nadie sopló, eso es hallazgo y va al reporte**: ya pasó una vez, con `consolidarMapeoLooker_`
+  en `MAPEO`.
+- **`PLAN.md`: una decisión nueva** con el régimen de la columna (§0.3) y por qué el nombre es
+  `titulo`. **El número se asigna al escribirla, tomando el primero libre en ese momento** — este
+  prompt no lo anuncia a propósito: `PLAN.md` §1 nota 4 dice que una nota nunca nombra un ID que
+  todavía no se asignó, y el precedente es que `D-15` quedó prometido y asignado a otra cosa la
+  misma tarde. Actualizar la fila de la tabla de fases de §2 que enumera las columnas de
+  `LAMINAS`: hoy dice trece y va a decir catorce.
 - **El comentario de `LAMINAS` en `Instalar.gs`** suma la columna. La contradicción de A.6 se
   corrige acá **sólo si la Parte A la confirmó y `PLAN.md` es la fuente de verdad**; si hay duda,
   queda como fila en `PENDIENTES_consistencia.md` y se decide despierto.
@@ -195,6 +231,9 @@ CLI y menú—: `C.1` del `_11` ya se cobró un bug de diálogo por probar sólo
 2. Toda lámina con texto tiene título en la hoja; toda lámina sin texto tiene la celda vacía **y
    figura nombrada en el reporte**.
 3. Correr `refrescarTitulosLaminas()` dos veces seguidas: la segunda escribe cero.
-4. `verificarLaminas()` sigue dando los mismos cinco desajustes que daba antes del cambio, y la
-   lista nueva no altera el contador de problemas.
+4. **`verificarLaminas()` sigue dando VERDE —cero desajustes— y las cinco clases se siguen
+   detectando.** Redactado como «los mismos cinco desajustes» se lee al revés: hoy la corrida da
+   **cero** desajustes vivos, y «cinco» son las **clases** que la función busca
+   (`Sellador.gs:97-106`). Pedir «los mismos cinco» sería pedir que se reproduzca un rojo que no
+   existe. Y la lista nueva `titulos_desactualizados` **no altera el contador de `problemas`**.
 5. Un `dryRun` no escribe.
