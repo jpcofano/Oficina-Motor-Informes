@@ -1208,6 +1208,62 @@ el *"si falla"* de `R-17`.
 
 ---
 
+## R-22 — Una solapa que dejó de actualizarse es peor que una que falla
+
+**Enunciado:** cuando el dato de una solapa **deja de actualizarse**, se declara `uso = ignorar`
+en `SOLAPAS` **en cuanto se detecta**. Una fuente que falla se ve; una que devuelve datos viejos
+**publica un número plausible** y no falla nada. **La lista de solapas congeladas es el estado de
+un día, no la regla** — la regla es el principio.
+
+**Origen:** decisión del usuario, 09/08/2026, sobre `digital/Digital` y
+`digital/CAMPAÑAS_DESGLOCE_DIGITAL`.
+
+**Lo medido, 09/08:** `digital/Digital` tiene **205 filas JM que llegan a diciembre de 2025** y
+cero datos de 2026; **cuatro marcadores de las láminas 2 y 3 la estaban leyendo**, más dos de la
+lámina 6. `CAMPAÑAS_DESGLOCE_DIGITAL` tiene filas JM hasta el **17/04/2026**, y de las **436 que
+solapan la ventana 24–31/07 las JM son cero**.
+
+### Qué garantiza `ignorar` y qué no
+
+**El corte está en `buscarMapeo` (`Config.gs:244-247`).** `ignorar` **apaga los marcadores** que
+leen de esa solapa: pasan a `«FALTA:…@solapa_no_fuente(base/solapa)»`, visible y con motivo.
+**No apaga la solapa.** `abrirHoja` y `leerFuente` no consultan `uso`, así que los caminos que no
+pasan por `MAPEO` —diagnósticos, auditorías, cualquier llamada directa— la siguen leyendo. Está
+declarado a propósito en `Fuentes.gs:623-625`.
+
+**Consecuencia: declarar `ignorar` protege lo que se publica, no lo que se mide.** Un diagnóstico
+que corra contra una solapa congelada va a informar que la base anda.
+
+**Y de ahí sale una obligación que no se deriva sola:** si la solapa congelada es el
+`hoja_default` de su base, **hay que mover el default en el mismo commit**, o `probarLecturaPeriodo`
+y `contarLecturaBase_` van a seguir midiéndola. Se hizo el 09/08:
+`BASES.digital.hoja_default` pasó de `Digital` a `Seguimiento digital`, y el conteo del
+diagnóstico cayó de **1297 filas de la tabla muerta a 979 de la maestra viva**.
+
+**El hueco que queda abierto:** si aparece una solapa congelada que **además** se lee por camino
+directo y no es `hoja_default` de nada, `ignorar` no alcanza y **no hay mecanismo**. Anotado en
+`docs/PENDIENTES_consistencia.md`.
+
+### Cómo se escribe
+
+**Por el seed, no por la celda.** `SEED_SOLAPAS_` es el dueño declarado del contenido de
+`SOLAPAS` (`docs/ESCRITORES.md`), y `aplicarClasificacionSolapas_` **pisa toda fila con
+`origen = seed`**. Escribir la celda a mano sin tocar el seed produce **ping-pong con el
+sembrador** — el precedente está escrito en `Instalar.gs:406-409`:
+`reclasificarSolapasM2Invertidas_` se retiró por eso mismo. La excepción es una fila marcada
+`origen = manual`, que el sembrador **no toca** (`Instalar.gs:1511-1526`).
+
+**Cómo se verifica:** los marcadores que leían de la solapa congelada tienen que caer a
+`«FALTA:…@solapa_no_fuente»` **y no a cero**. Verificado el 09/08: los seis de `digital/Digital`
+pasaron a `estado = error` con ese motivo, y el resumen de `jm` fue de `51 / ok 38 / sin_datos 13
+/ error 0` a `51 / ok 38 / sin_datos 7 / error 6`.
+
+**Si falla:** si un marcador que leía de una solapa recién congelada **sigue publicando un
+número**, no está resolviendo por `MAPEO` — y ése es un camino que hay que encontrar y nombrar,
+no un permiso para devolverla a `fuente`.
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas
