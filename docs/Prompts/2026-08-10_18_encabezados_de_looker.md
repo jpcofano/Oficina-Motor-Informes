@@ -1,4 +1,30 @@
-# `_18` · Los encabezados de `looker`, antes de decidir el join
+# ~~`_18` · Los encabezados de `looker`, antes de decidir el join~~ — **CANCELADO (10/08/2026)**
+
+> ⚠ **CANCELADO. No se ejecuta. No se borra**, para que nadie lo vuelva a escribir en tres semanas.
+>
+> **Motivo:** la rama de validación contestó sus preguntas con más precisión de la que una lectura
+> desde Apps Script iba a dar, midiendo con `openpyxl` sobre `Base Looker.xlsx`. Correrlo ahora
+> sería **medir dos veces lo mismo**.
+>
+> | punto del `_18` | qué lo contestó |
+> |---|---|
+> | `0.0` — qué sale de la dinámica y qué necesita `DIGITAL` | `V-67` + `C-19` |
+> | `0.1` — los encabezados, tal cual están | **`V-67`**: nueve columnas, `nombre_campaña` en `F`, `estado` en `I`, `J`–`S` vacías |
+> | `0.2` — los bordes del corte JM | **corrido igual el 10/08** y escrito como `R-23`. `V-67` lo confirma sobre `DIGITAL` |
+> | `0.4` — cuánto pesa el join | **`C-19`**: el join no es evitable, pero **por la ventana, no por JM** |
+>
+> **Lo único que sobrevive es la disyuntiva de período de `0.3`**, y pasa a
+> `docs/PENDIENTES_consistencia.md` con lo que ya se sabe.
+>
+> **Y una corrección que el propio `_18` anticipaba y falló al revés:** su premisa era que el corte
+> JM podía necesitar el join. `C-19` mostró que **el corte y el filtro de estado se resuelven
+> dentro de `DIGITAL`** —columnas `F` e `I`— y que **lo único que exige cruzar es la ventana**,
+> porque `DIGITAL` no tiene ninguna columna temporal. El join hace falta, pero es otro join.
+
+---
+
+## Texto original, congelado
+
 
 > **Modelo: Opus, effort alto.** **Sólo lectura, de punta a punta. Termina en reportar y parar.**
 > No escribe `MAPEO`, ni `SOLAPAS`, ni `BASES`, ni ninguna hoja. No cablea ningún marcador.

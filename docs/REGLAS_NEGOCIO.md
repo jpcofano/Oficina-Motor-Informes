@@ -1375,6 +1375,84 @@ regímenes conviviendo. Es corregir el nombre en la base, o declarar la variante
 
 ---
 
+## R-24 — `imp_prog` es todo lo que no es Meta ni Google ads: **por resta, no por lista**
+
+**Enunciado.** En `looker/DIGITAL`, las impresiones se reparten en tres tokens y el tercero se
+define **por negación de los otros dos**:
+
+```
+imp_meta     →  Plataforma = Meta
+imp_google   →  Plataforma = Google ads
+imp_prog     →  Plataforma != Meta  Y  != Google ads
+```
+
+**No se enumera.** `imp_prog` **no** es `Plataforma = DV360`, ni la lista
+`DV360, TikTok, Mercado Libre, Twitter`.
+
+**Origen:** decisión del usuario del 09/08/2026 —*las plataformas sueltas entran a
+Programmatic*—, formalizada el 10/08 al medir que no son tres plataformas sino más
+(`A-04`, `docs/casos_validacion_2026-08-09_addendum.csv`).
+
+### Por qué por resta, y está medido dos veces
+
+**`A-03` decía que `DV360` era la única tercera, y era cierto para la ventana que midió.** Es el
+modo de falla exacto que esta regla evita: **enumerar lo que había en una ventana**. `A-04` midió
+sobre el universo completo y encontró seis; cablear `= DV360` habría perdido **82 filas en
+silencio**.
+
+**Y la validación llegó el mismo día que se escribió esta regla.** Medido el **10/08/2026 sobre la
+solapa viva** —no sobre el fixture—, `Plataforma` tiene **ocho** valores distintos:
+
+| plataforma | filas | lado |
+|---|---|---|
+| `Meta` | 1783 | `imp_meta` |
+| `Google ads` | 1385 | `imp_google` |
+| `DV360` | 1629 | `imp_prog` |
+| `TikTok` | 55 | `imp_prog` |
+| `Mercado Libre` | 21 | `imp_prog` |
+| `Twitter` | 12 | `imp_prog` |
+| **`Twitch `** ⚠ | **5** | `imp_prog` |
+| **`Uber`** | **5** | `imp_prog` |
+
+**`Twitch` y `Uber` no estaban en `A-04`.** El `_22` §C decía, con razón para el fixture del 31/07,
+que *"no están en `looker/DIGITAL` — estaban en `CAMPAÑAS_DESGLOCE_DIGITAL`, hoy en `uso =
+ignorar`. La regla por resta las cubre igual si algún día aparecen"*.
+
+**Aparecieron el mismo día.** Una lista explícita escrita el 10/08 ya habría estado incompleta el
+10/08.
+
+⚠ **Y `Twitch ` viene con un espacio al final.** Es exactamente el contrapunto que esta regla
+necesitaba: **por resta, un valor mal escrito cae del lado correcto**; por lista, un `Twitch`
+enumerado sin espacio **no matchea y la fila desaparece sin fallar**.
+
+### El contrapunto, medido
+
+Una regla por resta tiene el riesgo simétrico: **una plataforma mal escrita de los dos lados
+positivos** —un `Meta ` con espacio, un `Google Ads` con mayúscula— **cae en `imp_prog` en vez de
+fallar**. Se midió antes de escribir la regla:
+
+**Cero colisiones.** Ninguno de los ocho valores difiere de otro sólo en espacios o mayúsculas.
+`Meta` y `Google ads` vienen escritos de una sola forma cada uno.
+
+**`R-23` había medido lo mismo para `nombre_campaña`, pero eso fue en la columna `F` y esto es la
+`B`: cada columna se mide sola.**
+
+### Alcance
+
+**`looker/DIGITAL`.** No se extiende a `CAMPAÑAS_DESGLOCE_DIGITAL` —que tiene su propia columna
+`Plataforma` y quedó en `uso = ignorar` por `R-22`— ni a ninguna otra base. Lo que no se midió no
+entra.
+
+**Cómo se verifica:** `imp_meta + imp_google + imp_prog` = total de impresiones de la solapa para
+el mismo universo, **sin resto**. Y los valores distintos de `Plataforma` se vuelven a listar cada
+vez: **una novena plataforma no rompe la regla, pero cambia el reparto** y conviene enterarse.
+
+**Si falla:** si `Meta` o `Google ads` aparecen con una variante de escritura, la salida **no es
+plegar el case en el filtro** —`R-10` no pliega y `~=` tampoco—: es corregir el valor en la base,
+o declarar la variante con su propio filtro.
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas

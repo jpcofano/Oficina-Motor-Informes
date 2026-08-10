@@ -2,9 +2,13 @@
 
 > **Congelado.** Nadie lo edita: si hay una corrida nueva, se crea otro
 > (`CLAUDE.md` §7). Su par de casos es **`docs/casos_validacion_2026-08-09_addendum.csv`**,
-> **55 casos** numerados `V-38`+, `C-01`+, `X-10`+, `A-01`+. Eran 43 al escribirse; el 10/08
-> entraron `A-01`…`A-03`, `C-12`…`C-18`, `V-64`…`V-66`. **Ninguna fila previa se editó** —
-> verificado con diff antes de pisar el archivo.
+> **60 casos** numerados `V-38`+, `C-01`+, `X-10`+, `A-01`+. Eran 43 al escribirse; el 10/08
+> entraron `A-01`…`A-04`, `C-12`…`C-20`, `V-64`…`V-67`, `X-16`. **Ninguna fila previa se editó**
+> en ninguna de las dos pasadas — verificado con diff antes de pisar el archivo.
+>
+> ⚠ **`A-03` no se reescribió y no hay que reescribirla: la corrige `A-04`.** El histórico de que
+> se midió sobre una ventana donde faltaban tres plataformas **es el dato que evita repetir el
+> error**, y borrarlo dejaría la corrección sin el caso que la explica.
 >
 > Sesión del 09/08/2026. Material: los decks publicados de las semanas **24/07–31/07** y
 > **31/07–06/08**, con sus bases del mismo período. Repo leído en `d24a07e`.
@@ -95,6 +99,33 @@ curada sí.
 literalmente que la ventana sigue rigiendo los agregados `ecv_*`. El motor estaba haciendo lo
 que `R-17` manda. Lo que faltaba era la regla — es **`R-21`**, y `R-17` recibió su
 **Addendum 1** para acotar el recorte de los agregados.
+
+---
+
+## 3 bis. Lo que contestó la rama de validación el 10/08 — `V-67`, `C-19`, `C-20`, `A-04`, `X-16`
+
+Medido con `openpyxl` sobre `Base Looker.xlsx` del informe del 31/07. Detalle en
+`docs/RESPUESTA_pedido_validacion_2026-08-10.md`.
+
+**`V-67` · `looker/DIGITAL` sí trae el nombre de campaña**, columna `F`. Nueve encabezados,
+`J`–`S` vacías. **El corte JM no necesita el join**: `R-23` se aplica sobre la propia solapa.
+
+**`C-19` · El join no es evitable, pero por la ventana, no por JM.** De los tres criterios que
+`A-01` declara —figura, estado, ventana— **dos se resuelven dentro de `DIGITAL`** (`F` e `I`) y
+**el temporal no**: la solapa **no tiene ninguna columna de fecha**. Cambia la forma de la
+capacidad: no es un join para saber de quién es la campaña, es **un join para saber cuándo
+corrió**. Si mañana `looker` publicara fechas por fila, el join desaparecería.
+
+**`C-20` · `estado` vive en las dos solapas** y aplicar `Activa` es un filtro fuerte. Deja 22
+filas sin decidir en el fixture — **36 en la solapa viva**, medido el 10/08, y **ninguna es JM**.
+
+**`A-04` corrige a `A-03`: no son tres plataformas, son seis** — y **ocho en la solapa viva**.
+`A-03` midió sobre una ventana donde las chicas no aparecían. De acá sale **`R-24`**: `imp_prog`
+**por resta**, no por lista.
+
+**`X-16` · el conteo de `pauta_*` no sale de esta solapa.** Cuatro unidades descartadas y ninguna
+da 9/7/14. Que Meta acierte en una unidad y las otras dos no **es evidencia de que el conteo viene
+de otro lado**.
 
 ---
 

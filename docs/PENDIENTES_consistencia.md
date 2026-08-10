@@ -2858,6 +2858,83 @@ nada y mueve un número publicable.
 modo de falla que este proyecto tiene nombrado: **el número plausible**. Si hay que generar un deck
 antes de resolverlo, retirarles la fuente y que salgan `«FALTA»` es preferible.
 
+### P2 · Las filas sin `estado` de `looker/DIGITAL` quedan afuera — decisión tomada, reversible
+
+**Decisión del coordinador, 10/08, y sigue el precedente en vez de inventar uno:** `estado =
+Activa` es una **inclusión positiva**, y una fila sin estado **no cumple la condición**. Quedan
+afuera.
+
+**Lo que cambia es que dejan de caer afuera por omisión: la traza las cuenta y las nombra.** Es
+`R-20` aplicado — **un vacío no es un valor**. La diferencia entre *"no entró porque no es
+`Activa`"* y *"no entró porque no dice nada"* tiene que estar escrita, o dentro de tres meses
+alguien mira un número corto y no tiene por dónde empezar.
+
+**Medido el 10/08 sobre la solapa viva** —no sobre el fixture del 31/07, que decía 22:
+
+| | |
+|---|---|
+| filas con `estado` vacío | **36** |
+| **de ésas, con `JM` en el nombre** | **0** |
+
+**Cero.** Ninguna campaña de JM se pierde hoy por esta decisión, así que **no cuesta nada en el
+informe actual**.
+
+⚠ **Y el cero es de hoy, no una propiedad.** Mismo criterio que el desvío de las campañas mixtas:
+se vuelve a medir, no se cita. Si alguna vez una campaña JM grande aparece sin estado, **se
+revisa** — y no se revisa sola: hay que mirarlo.
+
+**Se mide con `cruzarVacioContra('looker','DIGITAL','estado','nombre_campaña','JM')`.**
+
+**Dato de contexto que conviene tener al lado:** aplicar `estado = Activa` deja afuera **4.168 de
+4.895 filas (85 %)**. Es un filtro fuerte, y las 36 sin estado son ruido al lado de eso — pero son
+las únicas que quedan afuera **sin decir por qué**.
+
+### P1 · `X-16` · El conteo de `pauta_*` no sale de `looker/DIGITAL` — cuatro unidades descartadas
+
+Objetivo publicado: **9 / 7 / 14** (Meta / Google ads / DV360). La rama de validación probó cuatro
+unidades de conteo sobre `looker/DIGITAL × Cuentas` y **ninguna reproduce**:
+
+| unidad | resultado |
+|---|---|
+| filas · JM + ventana + `Activa` | 6 / 5 / 10 |
+| filas · JM + ventana, todos los estados | 12 / 12 / 18 |
+| cuentas distintas · `Activa` | 6 / 5 / 6 |
+| cuentas distintas · todos los estados | **9** / 8 / 9 |
+
+**Lo que el resultado negativo dice, y es más útil que la lista:** Meta acierta en la última fila y
+las otras dos no. **Que una plataforma dé exacto y las otras dos fallen dentro de la misma unidad
+no es un error de unidad: es evidencia de que el conteo no sale de esta solapa.** Y los 14 de DV360
+caen **entre** las 9 cuentas distintas y las 18 filas, así que **no hay agregación de este conjunto
+que los produzca**.
+
+Contar nombres de campaña distintos da lo mismo que contar cuentas, así que esa vía tampoco agrega.
+
+**Queda abierto.** La hipótesis viva es que el deck cuente **piezas o líneas de pauta desde otra
+tabla**, o que se cuente a mano — compatible con los dos errores de tipeo ya encontrados en estos
+decks (`C-07`, y el `41-350` con guión de la lámina 53).
+
+**Consecuencia para el cableado:** los seis `pauta_*` siguen **sin fuente válida**. Hoy están sobre
+las columnas booleanas de `digital/Seguimiento digital` publicando `1`, que tampoco es el número.
+**No cablearlos sobre `looker/DIGITAL` para "acercarse"**: sería cambiar un número mal por otro.
+
+### P2 · La disyuntiva de período de `looker` — lo único que sobrevive del `_18`
+
+El `_18` quedó **cancelado** (ver su archivo), pero su `0.3` seguía abierto y no lo contesta
+ninguno de los casos nuevos. Con lo que ya se sabe:
+
+| solapa | período |
+|---|---|
+| `resumen_metricas_dinamico` | **tiene `fecha_periodo`** (col C, `fecha_inicio`), y `fecha_fin` mapeado en D. 951 filas, **cero sin inicio, cero sin fin** |
+| `DIGITAL` | **ninguna columna temporal** — `C-19` |
+| `Cuentas` | tiene el par `fecha_inicio` / `fecha_fin` |
+
+**La decisión pendiente no es "elegir la columna": es si `looker` pasa a `snapshot`.** Hoy es
+`filtrar`, y eso es correcto para la dinámica —que sí filtra bien, 26 de 951 en la ventana— pero
+`DIGITAL` no tiene con qué filtrar y por eso necesita el cruce con `Cuentas`.
+
+**Qué lo destraba:** el prompt de diseño del join, que `C-19` ya acotó — no es un join para saber
+de quién es la campaña (eso sale de `F`), es **un join para saber cuándo corrió**.
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el
