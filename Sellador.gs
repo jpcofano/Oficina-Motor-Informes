@@ -180,6 +180,60 @@ function verificarLaminas() {
   };
 }
 
+/**
+ * Mide **cuántas filas cambian** si `~=` plegara el case. **Sólo lectura.**
+ *
+ * La pregunta la abre el operador `~=` del `_10`: `normalizarValorDeclarado_` es el canónico de
+ * `R-10` y **no pliega case ni acentos**, así que `nombre_campaña~=JM` no matchea `jm`. Antes de
+ * decidir si el operador debería plegar, hay que saber si la diferencia **existe en los datos**.
+ *
+ * Lee por `abrirHoja`, **no por `leerFuente`**: éste exige `fecha_periodo` y las solapas de canal
+ * de `looker` no la tienen. `abrirHoja` no consulta `uso` (`Fuentes.gs:623-625`, declarado a
+ * propósito), y las dos solapas que mira son `uso = fuente`, así que no se toca ninguna
+ * `ignorar`.
+ */
+function medirSensibilidadDeContiene(baseId, solapa, columna, aguja) {
+  var abierto = abrirHoja(baseId, solapa);
+  if (!abierto.ok) return { ok: false, motivo: abierto.motivo };
+
+  var datos = abierto.hoja.getDataRange().getValues();
+  if (!datos.length) return { ok: false, motivo: 'hoja vacía' };
+
+  var headers = datos[0].map(function (h) { return String(h).trim(); });
+  var col = headers.indexOf(columna);
+  if (col === -1) {
+    return { ok: false, motivo: 'la columna "' + columna + '" no existe en ' + baseId + '/' + solapa,
+      columnas: headers };
+  }
+
+  var sensible = 0, insensible = 0, soloInsensible = [];
+  var agujaNorm = normalizarValorDeclarado_(aguja);
+  var agujaBaja = agujaNorm.toLowerCase();
+
+  for (var f = 1; f < datos.length; f++) {
+    var v = normalizarValorDeclarado_(datos[f][col]);
+    if (!v) continue;
+    var s = v.indexOf(agujaNorm) !== -1;
+    var i = v.toLowerCase().indexOf(agujaBaja) !== -1;
+    if (s) sensible++;
+    if (i) insensible++;
+    if (i && !s && soloInsensible.length < 10) soloInsensible.push({ fila: f + 1, valor: v });
+  }
+
+  return {
+    ok: true,
+    base_id: baseId, solapa: solapa, columna: columna, aguja: aguja,
+    filas_con_valor: datos.length - 1,
+    matchean_sensible: sensible,
+    matchean_insensible: insensible,
+    diferencia: insensible - sensible,
+    solo_insensible: soloInsensible,
+    veredicto: insensible === sensible
+      ? 'La diferencia es CERO: la pregunta del case se cierra sola para este caso.'
+      : 'Diferencia de ' + (insensible - sensible) + ' fila(s) — hay que decidir, no asumir.'
+  };
+}
+
 /** Ítem de menú del control de cierre. Sólo lectura, así que no pide confirmación. */
 function menuVerificarLaminas_() {
   var ui = ui_();
