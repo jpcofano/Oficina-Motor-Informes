@@ -180,22 +180,18 @@ columna, no toca las notas del orador, no toca la plantilla. Un `lamina_id` de l
 aparece en ninguna plantilla **se reporta y se saltea** — ése es el caso «fila sin ancla» que
 `verificarLaminas()` ya sabe nombrar, y es el peor de los cinco; este prompt no lo repara.
 
-**Los helpers**, los dos con grep previo:
+**El helper**, con grep previo:
 
 ```
 tituloDeLamina_(slide)   // vía 1: placeholder de título · vía 2: primer texto no vacío · '' si no hay
-escribirColumnaLaminas_(mapa, columna, opciones)   // { lamina_id: valor } → una sola columna, por nombre
 ```
 
-**El segundo se escribe genérico a propósito, y no es especulación:** la Parte D del
-`2026-08-09_1` está frenada por exactamente esta pieza —necesita escribir `cobertura`, `falta` y
-`notas` de dos filas puntuales de `LAMINAS` y no hay con qué—, y el `_14` va a necesitar lo mismo
-para las 51. Escribirlo tres veces es tres oportunidades de que una escriba por posición.
-
-Contrato: recibe un mapa `lamina_id → valor`, **resuelve la columna por nombre de encabezado**,
-**no crea ni borra filas**, y un `lamina_id` que no está en la hoja **se reporta y se saltea**.
-Devuelve conteos: escritas, sin cambio, no encontradas. `refrescarTitulosLaminas` queda como su
-primer llamador y no toca la hoja por su cuenta.
+**El escritor ya no se escribe acá: salió a su propio prompt.** `escribirColumnaLaminas_` vive en
+`docs/Prompts/2026-08-10_19_escritor_de_columnas_de_laminas.md`, porque la Parte D del
+`2026-08-09_1` lo necesitaba **antes** que `titulo` y `titulo` no acerca la demo. **Este prompt lo
+cita como pieza existente y no lo redefine** — si al llegar acá no existe, el `_19` no corrió y
+hay que parar, no reimplementarlo. Dos definiciones del mismo escritor es el bug de las tres
+copias de `valorPasaFiltro_`, que es justo lo que sacarlo a un prompt propio vino a evitar.
 
 Normaliza con `R-10` —colapsar espacios y saltos, `trim()`, **preservando mayúsculas y
 acentos**— y trunca a 120 caracteres. Si trunca, que se note en el valor.
