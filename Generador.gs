@@ -354,21 +354,63 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
  * tienen por qué coincidir. **El filtro propio del marcador siempre gana.**
  * ────────────────────────────────────────────────────────────────────────────
  */
+/**
+ * Los cuatro operadores, **del más largo al más corto, y ese orden es el algoritmo**: buscar
+ * `=` antes que `!=` partiría `campo!=valor` en `campo!` y `valor`. La misma razón por la que
+ * `!=` ya se buscaba antes que `=`, extendida a los dos nuevos.
+ *
+ * **`~=` y no `CONTIENE`** (`_10` Parte A, 09/08). El requisito no negociable era **sobrevivir a
+ * exportar la hoja** — `≠` se descartó por eso mismo (`Pedido-3`, 04/08) —, y `~` es ASCII 126:
+ * no se transforma al copiar, pegar ni exportar a TSV. Una palabra como `CONTIENE` tiene un
+ * riesgo que el símbolo no tiene: **aparecería dentro del valor** de un filtro sobre texto libre.
+ *
+ * Medido antes de elegirlo: de los **7 textos de filtro** que existen hoy en `MARCADORES` y
+ * `SECCIONES`, **ninguno contiene `~`**. Cero colisiones.
+ */
+var OPERADORES_FILTRO_ = [
+  { simbolo: '!~=', op: '~=', negado: true },
+  { simbolo: '~=', op: '~=', negado: false },
+  { simbolo: '!=', op: '=', negado: true },
+  { simbolo: '=', op: '=', negado: false }
+];
+
 function parsearFiltro_(texto) {
   var t = String(texto || '').trim();
   if (t === '') return { ok: true, vacio: true };
 
-  // `!=` se busca primero: contiene un `=` y partir por `=` lo rompería.
-  var negado = t.indexOf('!=') !== -1;
-  var partes = negado ? t.split('!=') : t.split('=');
-  if (partes.length !== 2 || !partes[0].trim() || !partes[1].trim()) {
-    return {
-      ok: false,
-      motivo: 'filtro mal escrito: "' + t + '" — se espera `campo=valor` o `campo!=valor`' +
-        (t.indexOf('≠') !== -1 ? ' (y `!=`, no `≠`: el símbolo matemático se rompe al exportar la hoja)' : '')
-    };
+  for (var i = 0; i < OPERADORES_FILTRO_.length; i++) {
+    var o = OPERADORES_FILTRO_[i];
+    var corte = t.indexOf(o.simbolo);
+    if (corte === -1) continue;
+    var campo = t.slice(0, corte).trim();
+    var valor = t.slice(corte + o.simbolo.length).trim();
+    if (!campo || !valor) break;
+    return { ok: true, vacio: false, campo: campo, valor: valor, negado: o.negado, op: o.op };
   }
-  return { ok: true, vacio: false, campo: partes[0].trim(), valor: partes[1].trim(), negado: negado };
+
+  return {
+    ok: false,
+    motivo: 'filtro mal escrito: "' + t + '" — se espera `campo=valor`, `campo!=valor`, ' +
+      '`campo~=valor` (contiene) o `campo!~=valor` (no contiene)' +
+      (t.indexOf('≠') !== -1 ? ' (y `!=`, no `≠`: el símbolo matemático se rompe al exportar la hoja)' : '')
+  };
+}
+
+/**
+ * **La única comparación de filtros del motor.** Antes había tres copias de
+ * `f.negado ? v !== esperado : v === esperado` —`aplicarFiltroDeMarcador_`,
+ * `filtrarItemsPorSeccion_` y la rama `CAMPANAS` de `itemsDeSeccion_`, esta última inline— y
+ * agregar un operador en una sola habría dejado las otras dos **filtrando mal en silencio**:
+ * `f.op` sería `~=` y `f.negado` `false`, así que caerían a igualdad exacta sin fallar.
+ *
+ * Los dos lados pasan por `normalizarValorDeclarado_`, el canónico de `R-10`. **No pliega case
+ * ni acentos**, así que `~=` es sensible a mayúsculas: `nombre_campana~=JM` no matchea `jm`.
+ */
+function valorPasaFiltro_(valorCelda, f) {
+  var v = normalizarValorDeclarado_(valorCelda);
+  var esperado = normalizarValorDeclarado_(f.valor);
+  var coincide = f.op === '~=' ? v.indexOf(esperado) !== -1 : v === esperado;
+  return f.negado ? !coincide : coincide;
 }
 
 /**
@@ -420,12 +462,10 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
   var clave = claveDeFila_(filas, f.campo,
     encabezadoEnColumna_(fila.base_id, solapa, campo.columna));
 
-  var esperado = normalizarValorDeclarado_(f.valor);
   var vacias = 0;
   var quedan = filas.filter(function (o) {
-    var v = normalizarValorDeclarado_(o[clave]);
-    if (v === '') vacias++;
-    return f.negado ? v !== esperado : v === esperado;
+    if (normalizarValorDeclarado_(o[clave]) === '') vacias++;
+    return valorPasaFiltro_(o[clave], f);
   });
 
   return {
@@ -1173,12 +1213,16 @@ function filtrarItemsPorSeccion_(seccion, crudos, leerAtributo) {
   if (!f.ok) return { ok: false, motivo: 'SECCIONES.filtro de "' + seccion.seccion_id + '": ' + f.motivo };
   if (f.vacio) return { ok: true, crudos: crudos, excluidos: [], traza: '' };
 
-  var esperado = normalizarValorDeclarado_(f.valor);
   var excluidos = [];
   var quedan = crudos.filter(function (c) {
-    var v = normalizarValorDeclarado_(leerAtributo(c, f.campo));
-    var pasa = f.negado ? v !== esperado : v === esperado;
-    if (!pasa) excluidos.push({ item: leerAtributo(c, '__clave__'), motivo: f.campo + ' = "' + v + '"' });
+    var bruto = leerAtributo(c, f.campo);
+    var pasa = valorPasaFiltro_(bruto, f);
+    if (!pasa) {
+      excluidos.push({
+        item: leerAtributo(c, '__clave__'),
+        motivo: f.campo + ' = "' + normalizarValorDeclarado_(bruto) + '"'
+      });
+    }
     return pasa;
   });
 
@@ -1240,9 +1284,14 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
       // `SECCIONES.filtro` sobre los atributos de la campaña, misma sintaxis.
       var fc = parsearFiltro_(seccion.filtro);
       if (fc.ok && !fc.vacio) {
-        var vc = normalizarValorDeclarado_(c[fc.campo]);
-        var pasa = fc.negado ? vc !== normalizarValorDeclarado_(fc.valor) : vc === normalizarValorDeclarado_(fc.valor);
-        if (!pasa) { excluidos.push({ campana: id, motivo: 'SECCIONES.filtro: ' + fc.campo + ' = "' + vc + '"' }); return; }
+        var pasa = valorPasaFiltro_(c[fc.campo], fc);
+        if (!pasa) {
+          excluidos.push({
+            campana: id,
+            motivo: 'SECCIONES.filtro: ' + fc.campo + ' = "' + normalizarValorDeclarado_(c[fc.campo]) + '"'
+          });
+          return;
+        }
       }
       items2.push({
         clave: id,
