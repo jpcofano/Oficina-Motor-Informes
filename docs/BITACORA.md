@@ -7304,3 +7304,66 @@ inferencia* (`CLAUDE.md` §4), y es la segunda vez en esta sesión. Corregido a 
 **decidido en vez de ser un efecto colateral**. Y queda a la vista lo que cuesta: **no aportan
 nada a GCBA**. Si algún día un informe de GCBA parece que le falta una campaña de seguridad,
 empezar por ahí.
+
+---
+
+## `imp_total` y `gcba_imp_total` pasan a `looker`, con el corte de `R-23` (2026-08-10)
+
+**Primer cableado que usa el operador `~=`**, y el primero que apunta a `looker`: hasta hoy
+`MARCADORES` tenía 51 filas y **ninguna** de esa base.
+
+### Qué se cambió, y no fueron filas nuevas
+
+Los dos tokens **ya existían**, apuntando a `digital/Digital` — que quedó `uso = ignorar` por
+`R-22` porque sus filas `JM` llegan a diciembre de 2025. Así que esto **no es cablear: es mover la
+fuente de dos filas existentes**, por el camino declarado en `ESCRITORES.md`:
+`curarCamposMarcadores_`, que cura campos de filas que ya están, no pisa si el valor coincide, y
+devuelve `anterior`/`nuevo` por campo. **Ocho campos escritos, cero filas creadas.**
+
+| | antes | ahora |
+|---|---|---|
+| `base_id` | `digital` | **`looker`** |
+| `solapa` | `Digital` | **`resumen_metricas_dinamico`** |
+| `campo_logico` | `dig_impresiones` | *(sin cambio)* |
+| `filtro` de `imp_total` | `dig_jm_gcba=JM` | **`campana~=JM`** |
+| `filtro` de `gcba_imp_total` | `dig_jm_gcba!=JM` | **`campana!~=JM`** |
+
+Respaldo previo: `docs/_snapshots/MARCADORES_2026-08-10.tsv`.
+
+### El resultado, medido
+
+```
+imp_total        ok   6.084.893   SUMA sobre 4 filas   filtro campana~=JM
+gcba_imp_total   ok   2.027.888   SUMA sobre 22 filas  filtro campana!~=JM
+```
+
+**El complemento cierra: 4 + 22 = 26**, que son exactamente las filas de la ventana
+`2026-07-24 → 2026-07-30` que `contarLecturaBase_('looker')` había medido. Es el mismo control que
+`R-23` declara —`JM + GCBA = total, sin solapamiento y sin resto`— aplicado a la ventana en vez de
+al universo.
+
+**Resumen de `jm`:** de `51 / ok 38 / sin_datos 7 / error 6` a **`51 / ok 40 / sin_datos 7 /
+error 4`**. Los dos que salieron de `error` son éstos; los cuatro que quedan son
+`enc_impresiones`, `enc_alcance`, `frecuencia` y `gcba_frecuencia`, que siguen apuntando a
+`digital/Digital`.
+
+### Dónde quedó documentado el cableado, y por qué ahí
+
+**En la celda `notas` de cada una de las dos filas de `MARCADORES`** — que es el dueño de la
+pregunta *"¿qué va a hacer el motor si corro ahora?"* (`CLAUDE.md` §7). La nota dice tres cosas
+que no se deducen de las otras columnas:
+
+1. **de dónde vino y por qué se movió** — `digital/Digital` quedó `ignorar` por `R-22`;
+2. **la medición que respalda el corte** — 74 de 951, cero falsos positivos, cero variantes;
+3. **en `gcba_imp_total`, la trampa**: las cinco campañas que nombran a JM y GCBA a la vez **caen
+   enteras en JM y no aportan acá**. Quien mire ese número dentro de tres meses y lo vea corto,
+   empieza por ahí.
+
+**No se tocó `docs/TOKENS.md`**: responde *"cómo se llama este token"*, no de qué fuente sale. Y no
+se creó ningún documento nuevo — la fuente de un marcador vive en su fila, y duplicarla en un
+`.md` es exactamente lo que se desincroniza.
+
+### Lo que sigue sin cablear, y no es olvido
+
+`imp_meta`, `imp_google`, `imp_prog` y los seis `pauta_*` **necesitan el desglose por plataforma**,
+y `resumen_metricas_dinamico` no tiene columna `Plataforma`. Siguen en `(b)` del `0.0` del `_18`.
