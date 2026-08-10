@@ -1297,6 +1297,84 @@ no un permiso para devolverla a `fuente`.
 
 ---
 
+## R-23 — En `looker`, el corte JM/GCBA está en el nombre de la campaña
+
+**Enunciado.** Si el **nombre de la campaña contiene `JM`**, la fila es **JM**. **Todo lo demás es
+GCBA, por negación.** Se expresa con el operador de pertenencia que el motor ya tiene:
+
+```
+JM     →  campana~=JM
+GCBA   →  campana!~=JM
+```
+
+**No hace falta ninguna capacidad nueva.** `~=` y su negado `!~=` existen desde el 08/08
+(`Generador.gs`, `OPERADORES_FILTRO_`), y la comparación pasa por `normalizarValorDeclarado_`,
+el canónico de `R-10`.
+
+**Origen:** decisión del usuario, 10/08/2026. Ejemplo textual que dio:
+`PRIMERA PERSONA | JM | PAULA PARETTO 27/7`.
+
+**⚠ Alcance: `looker`, y nada más.** El corte JM/GCBA en Mail, SMS y CC **se resuelve por otros
+campos** —`R-15` los declara uno por uno— y ésos no están en esta base. **No extender esta regla
+a lo que no se midió.**
+
+### Lo medido, 10/08/2026 — `looker/resumen_metricas_dinamico`, columna `nombre_campaña`
+
+| | |
+|---|---|
+| filas totales | **951** |
+| con `JM` (`~=`) | **74** |
+| sin `JM` | **877** |
+| sin nombre de campaña | **0** |
+| **la suma cierra** | ✅ 74 + 877 + 0 = 951 |
+| falsos positivos —`JM` dentro de otra palabra— | **0** |
+| variantes de case que `~=` no matchearía | **0** |
+
+**Los dos ceros son lo que deja usar `~=` sin culpa.** El primero dice que no hay ninguna fila que
+entre a JM por accidente; el segundo, que **la sensibilidad a mayúsculas no cuesta nada acá** —
+`normalizarValorDeclarado_` no pliega case (`R-10`), así que un solo `jm` en minúscula se habría
+ido a GCBA sin avisar, y no hay ninguno.
+
+**Y una advertencia sobre el separador, porque el ejemplo del usuario induce al error:** el nombre
+viene en segmentos separados por ` | `, pero **`JM` casi nunca es un segmento propio**. Sólo lo es
+en **3 de las 74**; las otras 71 lo traen dentro de un segmento (`RDV JM`, `Cafe JM`, `1 A 1 JM`,
+`ANUNCIO JM`). **Un filtro que buscara `JM` como segmento capturaría 3 filas en vez de 74.** El
+operador correcto es la pertenencia, no la igualdad de segmento.
+
+### La decisión sobre las campañas mixtas — usuario, 10/08
+
+**Cinco campañas nombran a JM y a GCBA a la vez. Van enteras a JM.**
+
+```
+CAMPAÑA JM + GCBA | SEGURIDAD | 600 desalojos en la Ciudad
+CAMPAÑA GCBA/AGENDA JM | SALUD | HTAL. ZUBIZARRETA: RECORRIDA OBRAS
+CAMPAÑA JM + GCBA | SEGURIDAD | Operativo de Seguridad en Subte
+GCBA + JM | SEGURIDAD | Desalojo de propiedad Anchoris 183
+CAMPAÑA JM + GCBA | SEGURIDAD | Desalojo cuatro propiedades en Constitución
+```
+
+**No es un borde del operador: es una decisión editorial.** La regla de negación ya las manda a JM
+—contienen `JM`—, así que **el comportamiento no cambia**; lo que cambia es que ahora está
+decidido en vez de ser un efecto colateral.
+
+**⚠ Y la consecuencia que hay que tener a la vista: no aportan nada a GCBA.** Son cinco campañas
+de 951 que el corte cuenta una sola vez, del lado de JM. Si algún día un informe de GCBA parece
+faltarle una campaña de seguridad, empezar por acá.
+
+**Si el criterio cambia** —por ejemplo, que una campaña mixta cuente en los dos lados— eso **no se
+arregla con el filtro**: `campana~=JM` y `campana!~=JM` son complementarios por construcción y su
+suma es siempre el total. Contar una fila dos veces exige otro mecanismo, y sería otra regla.
+
+**Cómo se verifica:** `JM + GCBA = total de filas`, sin solapamiento y sin resto — el control que
+cerró esta medición. Y sobre una ventana concreta, que ninguna fila con nombre vacío entre a
+GCBA por la puerta de atrás: hoy son **cero**, y ese cero hay que volver a medirlo, no citarlo.
+
+**Si falla:** si aparecen variantes de escritura —`jm`, `Jm`— la salida **no es plegar el case en
+el operador**: `~=` es sensible a propósito porque `R-10` lo es, y plegarlo acá dejaría dos
+regímenes conviviendo. Es corregir el nombre en la base, o declarar la variante.
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas

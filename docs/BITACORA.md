@@ -7227,3 +7227,80 @@ documento**, que es exactamente lo que el `15.1` prohíbe.
 
 El `1.4` §3 quedó corregido en el lugar, y el requisito para el prompt que corra la Parte C está
 escrito: **trae las tres celdas literales entre comillas, no en prosa.**
+
+---
+
+## El `_18` — los encabezados de `looker`, y el corte JM medido (2026-08-10)
+
+Corrida del `docs/Prompts/2026-08-10_18_encabezados_de_looker.md`, puntos `0.0` y `0.2`.
+**Sólo lectura de punta a punta.** Ningún marcador cableado, ninguna hoja escrita salvo la regla.
+
+**Lectura de las hojas vivas el 10/08/2026.**
+
+### `0.0` — la salida es la **0** de las cuatro: parte de la Parte B ya es alcanzable
+
+`looker/resumen_metricas_dinamico` está **mapeada, es legible y tiene período**:
+
+```
+contarLecturaBase_('looker')
+  hoja: resumen_metricas_dinamico   modo: filtrar   columna_fecha: fecha_inicio
+  filas_totales: 951   filas_en_ventana: 26   filas_sin_fecha: 0
+```
+
+27 campos mapeados, entre ellos `campana`, `eje`, `area`, `id_cuenta`, `fecha_periodo` y
+**`dig_impresiones`**.
+
+**Token por token de la Parte B:**
+
+| token | veredicto |
+|---|---|
+| `imp_total` · `gcba_imp_total` | **(a) alcanzable hoy** — `dig_impresiones` + `campana~=JM` / `!~=` |
+| `imp_meta` · `imp_google` · `imp_prog` | **(b)** necesitan `Plataforma`, que la dinámica **no tiene** |
+| `pauta_*` | **(b)** — ídem, es conteo por plataforma |
+
+**Los tres bloqueos que reporté el 09/08 eran ciertos pero sobredimensionados.** Valen para el
+**desglose por plataforma**, no para la Parte B entera: `imp_total` y `gcba_imp_total` se destraban
+con dos filas de `MARCADORES` y el operador que ya existe — **sin join, sin `MAPEO` nuevo y sin
+tocar `fecha_periodo`**. Lo que yo no medí fue si la Parte B necesitaba `looker/DIGITAL`, y en
+parte no lo necesita.
+
+### `0.2` — los bordes del corte JM, y salieron limpios
+
+`medirBordesDeCorteJM` sobre `nombre_campaña`, 951 filas:
+
+| | |
+|---|---|
+| con `JM` (`~=`) | **74** |
+| sin `JM` | **877** |
+| sin nombre | **0** |
+| **suma cierra** | ✅ |
+| falsos positivos (`JM` dentro de otra palabra) | **0** |
+| variantes de case que `~=` no matchearía | **0** |
+
+**Los dos ceros son lo que deja usar `~=` sin culpa.** Escrito como **`R-23`**, con la acotación
+de que vale para `looker` y nada más — el corte en Mail, SMS y CC lo declara `R-15` por otros
+campos.
+
+**Y un dato que el ejemplo del usuario inducía a leer mal:** el nombre viene en segmentos
+separados por ` | `, pero **`JM` casi nunca es un segmento propio** — sólo en **3 de las 74**. Un
+filtro que buscara `JM` como segmento capturaría **3 filas en vez de 74**.
+
+### ⚠ Una corrección de instrumento, declarada
+
+El primer criterio de "falso positivo" marcó **71**, porque preguntaba si `JM` era **segmento
+propio entre pipes**. Pero `RDV JM | Villa Devoto` **sí es una campaña de JM**: el nombre
+simplemente no usa ese separador.
+
+**El instrumento medía la forma del nombre, no la pertenencia.** Es *acertar el hecho y errar la
+inferencia* (`CLAUDE.md` §4), y es la segunda vez en esta sesión. Corregido a *`JM` como palabra*
+—con bordes que no sean letra, acentos incluidos— y ahí da **cero**.
+
+### La decisión sobre las mixtas — usuario, 10/08
+
+**Cinco campañas nombran a JM y a GCBA a la vez** (`CAMPAÑA JM + GCBA`, `GCBA/AGENDA JM`,
+`GCBA + JM`). **Van enteras a JM**, con la nota escrita en `R-23`.
+
+**El comportamiento no cambia** —la regla de negación ya las mandaba ahí— pero ahora está
+**decidido en vez de ser un efecto colateral**. Y queda a la vista lo que cuesta: **no aportan
+nada a GCBA**. Si algún día un informe de GCBA parece que le falta una campaña de seguridad,
+empezar por ahí.
