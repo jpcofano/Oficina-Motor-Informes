@@ -7023,3 +7023,94 @@ se reescribió entero el 09/08 y no la tiene. **Cero ediciones, y el cero queda 
 El hecho de fondo sí es correcto y ya está anotado: con `figura` fuera del `MAPEO` de esa solapa,
 el filtro `figura!=Jorge Macri` **no es ejecutable por el motor**, y los 8 de 8 de `V-49` se
 validaron a mano contra las bases. Cierto como número, falso como cableado.
+
+---
+
+## El `_11` — Fase 2 de `D-23`: las 51 láminas selladas (2026-08-09)
+
+Corrida del `docs/Prompts/2026-08-07_11_fase2_sellador.md` con sus dos addenda, `11.1` y `11.2`.
+**Es la primera corrida del proyecto que escribe sobre las plantillas vivas.**
+
+```
+SECCO_marcada   29 láminas · L-001 … L-029
+JM_marcada      22 láminas · L-030 … L-051
+LAMINAS         51 filas · 7 escondidas marcadas
+```
+
+**El módulo es `Sellador.gs`, propio y no parte de `Armonizar.gs`:** aquél migra **tokens** del
+cuerpo de las láminas, éste escribe **identidad** en las notas del orador, y son **dos
+autorizaciones distintas de `C-01`** —la armonización ya estaba cubierta por la excepción de
+migración explícita; el sellado necesitó el `Addendum 1` del 07/08—. Mezclarlas haría parecer que
+una cubre a la otra.
+
+### La numeración, y el motivo del orden
+
+**`lamina_id` es global y corrido, `secco` primero.** El contador es `max(lamina_id) + 1` sobre la
+hoja entera, **no** una celda ni las notas de las plantillas (`D-23` punto 9): derivarlo de las
+notas haría que retirar una lámina **hiciera retroceder el contador** y un id se reasignara. Desde
+la hoja no puede pasar, porque una lámina no se borra, se esconde, y su fila queda (punto 11).
+
+**El motivo del orden es de legibilidad y pesa más que el orden:** la documentación del proyecto
+dice *"lámina 2"*, *"lámina 6"*, *"la 10 escondida"* refiriéndose a la **posición en `jm`**. Con
+`jm` arrancando en `L-030`, ningún `lamina_id` se parece a una de esas posiciones. Con `jm` desde
+`L-001` coincidían por casualidad — la peor forma de no colisionar. Queda en `CLAUDE.md` §2.
+
+### El caso de prueba se reemplazó, y el reemplazo es mejor control
+
+El `0.5` designaba las notas del equipo de `SECCO` 8 y 25. **Ya no existen**: la 8 se borró el
+08/08 fuera del motor y la 25 el 09/08 con autorización expresa (`C-01` addenda 3 y 4). El
+reemplazo: **una nota testigo puesta a mano en una copia desechable**, con el control *"mi texto
+sigue entero **Y** el ancla aparece como línea nueva"*.
+
+**Es mejor control que el original.** El de las notas del equipo sólo verificaba que el texto
+sobreviviera, y eso **pasa con y sin la lógica de sellado**. El del testigo da rojo si el ancla no
+aparece.
+
+### Los tres controles de la Parte C
+
+| | resultado |
+|---|---|
+| `C.1` anexar no pisa, sobre copias | **VERDE** — 3/3 controles en las dos plantillas |
+| `C.3` correr dos veces | **VERDE** — `a_sellar=0`, `filas_a_reparar=0`, **y ni siquiera hace backup**: sale antes de tocar nada |
+| `C.4` 51 y 51 | **VERDE** — 51 ids distintos, cero repetidos, cero huecos |
+
+### Dos bugs que encontró la verificación, y cómo
+
+**1 · Correr `C.1` sobre copias destapó que el sellado de una copia escribía en `LAMINAS`.** La
+primera pasada escribió 22 filas para láminas de un archivo desechable. El daño no era la basura:
+**habría movido el contador**, y la plantilla viva habría empezado en `L-023`. Corregido: con
+`plantillaId` override el sellado escribe el ancla y **no toca la hoja**. Es exactamente para esto
+que el prompt exige correr sobre copias primero.
+
+**2 · El diálogo del menú listaba `jm` primero, y ese orden era el de ejecución.**
+`menuSellarPlantillas_` armaba el preview con `Object.keys(leerInformes())` —que devuelve `jm`
+primero, el orden de las filas de la hoja— **y recorría ese mismo arreglo para sellar**. Habría
+asignado `L-001`–`L-022` a `jm`, al revés del `11.2`.
+
+**Lo cazó el usuario leyendo el diálogo antes de aceptar, y canceló.** La verificación de `C.1` no
+lo había atrapado porque probó llamando desde el CLI **en orden explícito**: se verificó el camino
+de la API y **el menú es otro camino**.
+
+Corregido con `ORDEN_SELLADO_ = ['secco','jm']`, **fijado y no derivado** — no puede salir de
+`leerInformes()` porque ese orden es el de una hoja que se edita a mano, y un `lamina_id` asignado
+no se reusa nunca. Y el diálogo pasó a mostrar **el rango de ids por plantilla, acumulando**: es
+el único dato irreversible de la operación y no aparecía.
+
+### `C.5` — el control de cierre, y por qué es lo que faltaba
+
+`verificarLaminas()` compara **plantilla contra hoja** y es corrible desde el menú. Busca cinco
+desajustes distintos: ancla sin fila, **fila sin ancla** (el peor: el id está quemado y no señala
+nada), lámina sin sellar, ids repetidos, y huecos más desajustes de `informe_id`/`orden_plantilla`.
+
+**Por qué hacía falta:** el `11.1` §4 fija que la plantilla es autoritativa y la hoja reparable,
+pero **no había forma de verificar que coincidieran desde el motor**. La primera vez que hizo falta
+—un estado intermedio durante la corrida viva— se leyó a mano cruzando dos llamadas y comparando a
+ojo. **Un invariante que sólo se puede chequear a mano no es un invariante: es una intención.**
+
+Corrida de cierre: **VERDE**, 51 láminas, 51 anclas, 51 filas, los seis desajustes en cero.
+
+### Lo que este paso NO hizo, y está decidido
+
+`seccion_id` **queda vacío en las 51 filas**: el sellador no deduce nada (`B.4`). Son 26 de 51
+celdas de trabajo humano posterior, medido. Tampoco se escribió `#seccion:` en ninguna nota —
+**no existe como campo del ancla** desde el `Addendum 2` de `C-01`.
