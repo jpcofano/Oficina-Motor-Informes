@@ -12,7 +12,14 @@
 > Al editar código que escribe hojas de registro: re-correr el censo, actualizar la
 > matriz, y si aparece un escritor nuevo, decidir acá si es legítimo.
 >
-> Último censo: **03/08/2026**, re-corrido al retirar `repuntarPlantillaCanonicaJM_`.
+> Último censo: **10/08/2026**, re-corrido al agregar `escribirColumnaLaminas_` y `LAMINAS`.
+> El de **03/08/2026** se había corrido al retirar `repuntarPlantillaCanonicaJM_`.
+>
+> ⚠ **`LAMINAS` no aparecía porque `tools/escritores.js` tenía diez hojas hardcodeadas y ella no estaba.**
+> Son **tres listas que deben coincidir por convención y no por mecanismo** —`HOJAS_REGISTRO` acá,
+> `HOJAS` en `tools/snapshot.js`, y `ALCANCE_REGISTROS_` en `Instalar.gs`—, y cuando la hoja nació con el
+> `_11` sólo la tercera la incluyó. **La divergencia no falló sola**: el censo mandaba `LAMINAS` al anexo
+> de «no es de registro» sin avisar. Las tres quedaron en once el 10/08.
 > El censo anterior era del **01/08/2026** (AUD-3 Parte E) y su control positivo sigue
 > valiendo: debía encontrar solo los dos escritores conocidos de `MAPEO` y encontró esos
 > dos **y un tercero que nadie le sopló**, `consolidarMapeoLooker_`. Ese tercero se
@@ -55,6 +62,7 @@ agujero del patrón.
 | `CAMPANAS` | curada a mano (sin sembrador, a propósito) | **cero escritores en el código** | ✅ consistente con `ALCANCE_REGISTROS_` |
 | `REUNIONES` | curada a mano + `cargarTemarioReuniones_`, por **dos entradas**: el ítem de menú "Cargar temario" y, desde el Paso 2.14, la llamada por API `cargarTemario(texto, periodoId)` | `cargarTemarioReuniones_` únicamente (las dos entradas pasan por ahí) | ✅ un solo escritor, dos puertas. Desde el Paso 2.15 Parte B **el período es obligatorio en las dos**: `cargarTemario` valida contra `PERIODOS` y falla explícito antes de escribir (`D-19`) |
 | `MARCADORES` | **la plantilla** (`D-17`), vía el `Paso-2.5`, que todavía no corrió | migración `migrarCalculoAOperacion_` · **`curarMarcadores_`** (`Instalar.gs`, 03/08/2026) · **`curarCamposMarcadores_`** (`Instalar.gs`, 07/08/2026) | ⚠ **sigue sin sembrador, y es a propósito.** **`curarCamposMarcadores_` es el tercer escritor y entró el 07/08**: es a `MARCADORES` lo que `curarSecciones_` es a `SECCIONES` — corrige **un campo** de una fila que ya existe, no crea ni borra. Nace porque `curarMarcadores_` sólo sabe filas enteras, y cambiar el `formato` de nueve filas con esa herramienta las borra y las reescribe al final de la hoja. Su primer uso: `migrarFormatoPorcentajeSinSigno_` (`A.7`/`B.1`). `curarMarcadores_` **no lo es**: es la puerta para curar filas puntuales —retirar las tres de ejemplo, cargar y retirar las `prueba_*` del corte vertical—, que hasta hoy se hacían a mano en la planilla. El sembrador real lo trae el `Paso-2.5` (`sembrarMarcadoresDesdePlantillas` + `upsertSoloVacias_`) y **no compite con éste**: aquél completa vacías desde los `{{token}}` de los Slides, éste agrega y quita filas enteras por decisión de una persona. H-6 sigue confirmado |
+| `LAMINAS` | **la plantilla** — el ancla `#lamina: L-NNN` de las notas del orador es el hecho; la hoja es registro reparable (`11.1` §4). Nació con el `_11` el 09/08 | `sellarPlantilla` (agrega filas enteras, por posición) · `borrarFilasDeLaminas` (excepción de un error, no un mecanismo) · **`escribirColumnaLaminas_`** (10/08, celdas puntuales por nombre de columna) | ✅ tres caminos, los tres declarados. **`escribirColumnaLaminas_` es el único que escribe celdas que no son filas nuevas** — un segundo sería bug de arquitectura aunque escribiera bien. ⚠ Hay un cuarto escritor **estructural**: `aplicarInstalacion_` reescribe la fila 1 de encabezados, porque `LAMINAS` no está en `COLUMNAS_DELTA_`. No es de contenido y §1 ya lo declara para todas |
 
 ## 2 · Los conflictos que la matriz deja a la vista
 
@@ -258,6 +266,14 @@ sólo se registra que fue el motivo del cambio de dueño.
 | función | método | sitio | camino |
 |---|---|---|---|
 | `migrarCalculoAOperacion_` | `setValue` | Instalar.gs:640 | vía aplicarInstalacion_ (Instalar.gs:295) |
+
+### LAMINAS
+
+| función | método | sitio | camino |
+|---|---|---|---|
+| `escribirColumnaLaminas_` | `setValue` | Sellador.gs:470 | directo |
+| `borrarFilasDeLaminas` | `deleteRow` | Sellador.gs:514 | directo |
+| `sellarPlantilla` | `setValues` | Sellador.gs:761 | directo |
 
 ## Anexo — hojas que no son de registro (reportes, diagnósticos, trabajo)
 

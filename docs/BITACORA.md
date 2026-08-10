@@ -7114,3 +7114,116 @@ Corrida de cierre: **VERDE**, 51 láminas, 51 anclas, 51 filas, los seis desajus
 `seccion_id` **queda vacío en las 51 filas**: el sellador no deduce nada (`B.4`). Son 26 de 51
 celdas de trabajo humano posterior, medido. Tampoco se escribió `#seccion:` en ninguna nota —
 **no existe como campo del ancla** desde el `Addendum 2` de `C-01`.
+
+---
+
+## El `_19` — `escribirColumnaLaminas_`, y una cita mía que era falsa (2026-08-10)
+
+Corrida del `docs/Prompts/2026-08-10_19_escritor_de_columnas_de_laminas.md` con su addendum
+`19.1`, que la acotó al **camino 1: sólo la Parte B —el escritor— más la Parte D**. La Parte C
+salió del alcance. **Ninguna celda de `L-031` ni `L-032` se escribió.**
+
+### Parte A — las cuatro premisas, predicción contra medición
+
+Lectura de la hoja viva el **10/08/2026**. El reporte del turno anterior entró como **predicción**,
+no como medición, y las cuatro dieron igual:
+
+| | predicción | medido |
+|---|---|---|
+| `A.1` | 13 columnas, sin `titulo` | **13**, sin `titulo`, y **cero encabezados con espacios al borde** |
+| `A.2` | mapea por encabezado, devuelve `_fila` | `_fila` presente — `L-001 → _fila 2` |
+| `A.3` | `L-031`/`L-032` = láminas 2 y 3 de `jm` | `L-031 → orden_plantilla 2`, `L-032 → 3`, las dos `jm` |
+| `A.4` | `cobertura`, `falta`, `notas` vacías | las tres `""` en las dos filas |
+
+Controles: **51 filas, 7 escondidas**. Y `A.1` confirma algo que no estaba en la predicción:
+**seed y hoja viva coinciden** — la distinción que `CLAUDE.md` §7 obliga a no dar por hecha.
+
+### ⚠ La cita de `A.3` era falsa, y el error es de esta sesión
+
+En el turno anterior escribí que `L-031`/`L-032` *"fueron verificadas por lectura en la nocturna
+del 09/08"*. **La medición existió** —se corrió `leerLaminas_` y dio ese resultado— **pero vivió
+sólo en la conversación**: cero rastro en bitácora, handoff o reporte. El `verificador` la buscó
+en todo el repo y no la encontró, y tenía razón.
+
+Y la fuente que yo citaba decía lo contrario. `1.4` §3, textual: *"Son `L-031` y `L-032` **si** la
+numeración corrida se sostiene, **pero eso se verifica leyendo, no se asume**"*. **Convertí una
+condicional en un hecho medido.** Es el patrón *"la cita no es la fuente"* de `CLAUDE.md` §4,
+cometido sobre una medición propia.
+
+**Ahora está medida y el número está escrito acá**, que es lo único que evita que vuelva a pasar.
+
+### Parte B — el escritor
+
+`escribirColumnaLaminas_(mapa, columna, opciones)` en `Sellador.gs`. **Es el único camino para
+escribir celdas de `LAMINAS` que no sean filas nuevas**: `sellarPlantilla` agrega filas enteras por
+posición y `borrarFilasDeLaminas` borra; entre esos dos extremos no había nada, y ésa es la razón
+por la que la Parte D del `2026-08-09_1` quedó frenada.
+
+Cada cláusula del contrato está por un modo de falla conocido: **una columna por llamada**
+—escribir varias es lo que hace que un error de alineación pase inadvertido—, **resuelta por
+nombre de encabezado y nunca por índice** —la hoja va a ganar `titulo` con el `_16` y esta función
+no puede enterarse—, **no crea ni borra filas**, y **si el valor es el que ya está, no escribe**,
+que es lo que permite correr dos veces y ver cero la segunda.
+
+**Los seis criterios, verificados contra el motor:**
+
+| control | resultado |
+|---|---|
+| `dryRun` no escribe | ✅ reporta 1, la celda sigue vacía |
+| mapa vacío | ✅ cero, sin fallar |
+| `lamina_id` inexistente | ✅ reportado en `no_encontradas`, **no crea fila** |
+| columna inexistente | ✅ falla con motivo y lista las 13 |
+| valor igual al que ya está | ✅ `sin_cambio=2`, **cero escrituras** |
+| 51 filas / 7 escondidas | ✅ intactas |
+
+### El respaldo, y por qué el prompt pedía algo que no existe
+
+El `_19` `B` pedía *"backup de la planilla antes de escribir"*. **No existe ninguna función que
+copie el spreadsheet de control** — `backupPlantilla_` copia Slides y su carpeta cuelga de
+`carpeta_plantillas`. Ningún escritor de hoja de registro respalda nada hoy.
+
+El `19.1` §3.1 lo resolvió con el precedente que sí existe: **el TSV de `docs/_snapshots/`**.
+Corrido antes de la primera escritura → `LAMINAS_2026-08-10.tsv`, 52 líneas. Y el respaldo fino va
+adentro de la función: **devuelve `anterior` y `nuevo` por celda**, con lo cual deshacer tres
+celdas a mano es trivial. Un backup del spreadsheet entero queda como capacidad propia en
+`PENDIENTES`.
+
+### El hallazgo: tres listas que deben coincidir y no coinciden solas
+
+`LAMINAS` no aparecía en el censo de escritores, y el motivo es estructural: **hay tres listas de
+hojas de registro, duplicadas a propósito** —`HOJAS_REGISTRO` en `tools/escritores.js`, `HOJAS` en
+`tools/snapshot.js`, y `ALCANCE_REGISTROS_` en `Instalar.gs`—. La duplicación **es correcta**: leer
+la lista del código bajo prueba anularía la independencia de las dos herramientas.
+
+**Pero cuando la hoja nació con el `_11` (09/08), sólo `ALCANCE_REGISTROS_` la incluyó**, y la
+divergencia **no falló sola**: el censo mandó `LAMINAS` al anexo de *"no es de registro"* sin
+avisar, y `docs/_snapshots/` nunca tuvo su TSV. Las tres quedaron en **once** el 10/08.
+
+**Lo que sigue abierto:** tres listas que deben coincidir **por convención y no por mecanismo** van
+a volver a divergir. Anotado en `PENDIENTES`; no se implementó ninguna guarda acá.
+
+### Parte D
+
+`ESCRITORES.md` gana la fila de `LAMINAS` con sus tres escritores, y el censo re-corrido **no
+levantó ningún cuarto que nadie soplara** — el `19.1` §4 pedía reportarlo si aparecía. Se anota
+igual el **cuarto escritor estructural**: `aplicarInstalacion_` reescribe la fila 1 de encabezados
+porque `LAMINAS` no está en `COLUMNAS_DELTA_`. No es de contenido, y §1 ya lo declara para todas.
+
+**`PLAN.md` no se tocó**, como fija el `19.1` §4: la regla del `1.4` §2 —quién escribe `cobertura`
+y `falta`— entra cuando se ejerza. Escribirla ahora sería documentar una excepción que nunca se
+usó.
+
+### Y por qué la Parte C no corrió
+
+El `_19` `C` mandaba escribir en `notas` *"la aproximación declarada de la Parte B"*, y **la Parte
+B del `2026-08-09_1` nunca corrió** — sigue bloqueada sin `MAPEO`, sin `fecha_periodo` y sin
+capacidad de join. Escribir esa nota **afirmaría en una celda de registro un hecho que no
+ocurrió**.
+
+Y hay un segundo motivo, más de fondo: la excepción del `1.4` §2 dice *"las escribe quien acaba de
+cambiar la cobertura de esa lámina, **en la misma corrida**"*. El `_19` no cambia ninguna
+cobertura. Sin esa condición, escribir `parcial` sería **copiar a la hoja un valor decidido en un
+documento**, que es exactamente lo que el `15.1` prohíbe.
+
+El `1.4` §3 quedó corregido en el lugar, y el requisito para el prompt que corra la Parte C está
+escrito: **trae las tres celdas literales entre comillas, no en prosa.**

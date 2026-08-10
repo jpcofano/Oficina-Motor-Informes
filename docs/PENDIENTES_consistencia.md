@@ -2671,6 +2671,53 @@ de IVR deja la base discada de la lámina 2 en cero.
 - **`Base enviada` llega corrupta en el export** —serial de Excel mal formateado, se lee como
   fecha—. Si el motor la lee como fecha, falla. `cc_base` es **`Base barrida`**, no `Base enviada`.
 
+### P1 · Tres listas de hojas de registro que deben coincidir por convención, no por mecanismo
+
+Detectado el 10/08 al re-correr el censo del `_19`: **`LAMINAS` no aparecía** aunque existía desde
+el 09/08.
+
+**Las tres listas, y la duplicación es correcta:**
+
+| lista | dónde | por qué está duplicada |
+|---|---|---|
+| `ALCANCE_REGISTROS_` | `Instalar.gs` | la del motor |
+| `HOJAS_REGISTRO` | `tools/escritores.js` | *"leerlo del código bajo prueba anularía la independencia"* |
+| `HOJAS` | `tools/snapshot.js` | ídem — el snapshot es el contra-qué del diff |
+
+**El problema no es la duplicación: es que el desajuste no falla.** Cuando `LAMINAS` nació con el
+`_11`, sólo `ALCANCE_REGISTROS_` la incluyó. El censo la mandó al anexo de *"no es de registro"*
+**sin avisar**, y `docs/_snapshots/` nunca tuvo su TSV — o sea que la hoja estuvo **un día sin
+respaldo declarado y sin figurar en la matriz de escritores**, y nada lo señaló.
+
+Las tres quedaron alineadas en **once** el 10/08.
+
+**Qué haría falta:** que el desajuste falle en vez de pasar inadvertido — un control que compare
+las tres y rompa, corrible desde `tools/`. **No se implementó acá a propósito**: las dos
+herramientas son deliberadamente independientes del motor, así que el control tiene que leer las
+tres sin volver dependiente a ninguna, y eso es diseño.
+
+**Y va a volver a pasar** en cuanto nazca la hoja doce.
+
+### P2 · No existe respaldo del spreadsheet de control
+
+El `_19` `B` pedía *"backup de la planilla antes de escribir"* y **no hay con qué**:
+`backupPlantilla_` (`Armonizar.gs:399`) copia **Slides**, y su carpeta cuelga de
+`CONFIG.carpeta_plantillas`. Los tres `makeCopy` del repo son de plantillas.
+
+**Ningún escritor de hoja de registro respalda nada** — ni `upsertPorClave_`, ni
+`sembrarSecciones_`, ni `inventariarSolapas`, ni `sellarPlantilla` cuando escribió las 51 filas de
+`LAMINAS`.
+
+**Lo que se usó en su lugar**, por el `19.1` §3.1: el TSV de `docs/_snapshots/` vía
+`tools/snapshot.js`, corrido antes de la primera escritura, **uno por corrida y no uno por
+llamada**. Más el registro por celda que devuelve `escribirColumnaLaminas_` —`anterior` y
+`nuevo`—, que para tres celdas es más útil que un archivo de 51 filas.
+
+**Qué lo destrabaría:** decidir si hace falta una copia del spreadsheet entero, y con qué
+criterio. Hoy no está especificado: qué se copia, a qué carpeta —`_backups` cuelga de
+`carpeta_plantillas`, que es de Slides—, con qué nombre, y cada cuánto. **Este prompt es el caso
+que la pidió**; no se implementó de contrabando.
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el
