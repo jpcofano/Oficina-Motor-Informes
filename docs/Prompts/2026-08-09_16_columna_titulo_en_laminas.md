@@ -70,8 +70,11 @@ sería otro.
 **A.1 · El esquema declarado.** Listar `HOJAS_CONFIG_.LAMINAS.headers` en orden, con su índice.
 Confirmar que son 13 nombres y que `notas` es el último.
 
-**A.2 · La rama que toma la hoja hoy.** Confirmar si `COLUMNAS_DELTA_` tiene o no entrada
-`LAMINAS`. Si no la tiene: decir qué rama de `aplicarInstalacion_` recibe la hoja, y **qué le pasa
+**A.2 · La rama que toma la hoja hoy, y la convención de índice.** Confirmar si
+`COLUMNAS_DELTA_` tiene o no entrada `LAMINAS`. **Y reportar qué convención usan las entradas que
+ya existen: 0-based o 1-based.** `B.1` fija `indice: 5` y `B.2` la pone quinta en una lista
+1-based; **si el delta es 0-based, la columna entra después de `escondida`** y el dibujo de `B.2`
+queda incumplido en silencio. Si no la tiene: decir qué rama de `aplicarInstalacion_` recibe la hoja, y **qué le pasa
 a las 51 filas si se agrega un nombre a `headers` sin agregar antes la entrada al delta.** Es el
 modo de falla que ya documentaron `SECCIONES`, `CAMPANAS` y `REUNIONES` en sus comentarios: la
 fila 1 se reescribe y los datos no se mueven, en silencio y sin fallar.
@@ -136,6 +139,11 @@ El orden importa y no es estético:
 - **B.3 · Los dos arrays de `sellarPlantilla` pasan a 14 posiciones**, con el título en la 5. Si
   A.3 confirma que la rama de reparación no tiene el `slide` a mano, guardarlo al armar la lista
   de láminas con ancla. Una fila reparada sin título es aceptable sólo si el motivo se reporta.
+
+  ⚠ **`sellarPlantilla` llama a `tituloDeLamina_`, nunca su propia lógica de título.** Dos
+  escritores de la columna está bien; **dos definiciones de «título» es el bug de las tres copias
+  de `valorPasaFiltro_` otra vez** — el día que la vía 1 cambie, una de las dos se queda vieja y
+  no falla: escribe distinto.
 - **B.4 · Predicción escrita antes de aplicar, medición después. El modo cálculo no sirve acá y
   hay que decir por qué:** con `aplicar = false`, `aplicarInstalacion_` **ni entra al `forEach` de
   hojas**, así que el diff de una columna nueva saldría vacío — y un vacío ahí se lee como «no hay
@@ -236,6 +244,9 @@ CLI y menú—: `C.1` del `_11` ya se cobró un bug de diálogo por probar sólo
 2. Toda lámina con texto tiene título en la hoja; toda lámina sin texto tiene la celda vacía **y
    figura nombrada en el reporte**.
 3. Correr `refrescarTitulosLaminas()` dos veces seguidas: la segunda escribe cero.
-4. `verificarLaminas()` sigue dando los mismos cinco desajustes que daba antes del cambio, y la
-   lista nueva no altera el contador de problemas.
+4. **`verificarLaminas()` sigue dando VERDE —cero desajustes— y las cinco clases se siguen
+   detectando.** «Los mismos cinco desajustes» se lee al revés: hoy la corrida da **cero**
+   desajustes vivos, y «cinco» son las **clases** que la función busca (`Sellador.gs:97-106`).
+   Pedir «los mismos cinco» sería pedir que se reproduzca un rojo que no existe. Y la lista nueva
+   `titulos_desactualizados` **no altera el contador de `problemas`**.
 5. Un `dryRun` no escribe.
