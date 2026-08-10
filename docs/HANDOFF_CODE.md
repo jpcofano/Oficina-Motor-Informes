@@ -53,8 +53,18 @@ verificarLaminas()  VERDE — 51/51/51, sin huecos, repetidos ni desajustes
   plantilla contra hoja. **La plantilla es autoritativa**: si divergen, se repara la fila.
 - **`ORDEN_SELLADO_` es fijo, no derivado.** No puede salir de `leerInformes()`: ese orden es el
   de las filas de una hoja que se edita a mano, y **un `lamina_id` asignado no se reusa nunca**.
-- **`seccion_id` quedó vacío en las 51 filas**, a propósito (`B.4`). Son 26 de 51 celdas de
-  trabajo humano posterior.
+- **`seccion_id` quedó vacío en las 51 filas**, a propósito (`B.4`): el sellador no deduce nada.
+  ⚠️ **Pero NO son trabajo humano** —así lo había escrito y está mal—: **el mapeo se deriva**, y
+  ya está documentado en tres lugares. Lo siembra el **`2026-08-09_15`**, que va **después del
+  `2026-08-09_1` y antes del `_8`**.
+  - Tres vías —por `familia_tokens`, por nombre, por orden— **medidas por separado**, y la tabla
+    que importa es **el cruce**: qué dice cada vía para cada una de las 51 y si coinciden.
+  - **Se siembra donde al menos dos coinciden y ninguna contradice.** Una sola vía no alcanza.
+  - **Las contradicciones se listan primero: son un hallazgo sobre los documentos, no sobre la
+    lámina.** Y la ambigüedad es el dato — Resumen Ejecutivo tiene `mail_`, `imp_`, `cc_`, `ivr_`
+    y `pauta_` a la vez, y `familia_tokens` está vacío en varias filas de `SECCIONES`.
+  - **El resultado esperado NO es 51 de 51.** Un sembrador que llena todo es un sembrador que
+    adivinó.
 - **`borrarNotasDeLamina`** es la única función que llama `setText` sobre notas de una plantilla
   viva, autorizada sólo por `C-01` addendum 4, con las tres guardas adentro.
 
