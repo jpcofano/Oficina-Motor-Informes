@@ -108,7 +108,10 @@ var MENU_ = {
       { t: 'Armonizar tokens de plantillas',      f: 'menuArmonizarPlantillas_' },
       // `_11` — escribe sobre la plantilla viva, y el nombre lo dice (`B.6`). Pide confirmación
       // previa con el detalle, a diferencia de "Armonizar", que informa después.
-      { t: 'Sellar plantillas (escribe las notas)', f: 'menuSellarPlantillas_' }
+      { t: 'Sellar plantillas (escribe las notas)', f: 'menuSellarPlantillas_' },
+      // `C.5` — el control de cierre. Sólo lectura: dice si la hoja y las plantillas coinciden,
+      // no repara. Va al lado del sellador porque es su verificación.
+      { t: 'Verificar LAMINAS contra las plantillas', f: 'menuVerificarLaminas_' }
     ]}
   ]
 };

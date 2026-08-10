@@ -83,6 +83,157 @@ function notasDeLaminaPorOrden(informeId, orden) {
 }
 
 /**
+ * `C.5` — el control de cierre: **compara la plantilla contra la hoja**, y es corrible.
+ *
+ * **Por qué existe.** El `11.1` §4 fija que la plantilla es autoritativa y la hoja es registro
+ * reparable, pero hasta acá **no había forma de verificar que coincidieran desde el motor**: la
+ * primera vez que hizo falta —09/08, un estado intermedio durante la corrida viva— se leyó a
+ * mano cruzando dos llamadas y comparando a ojo. Un invariante que sólo se puede chequear a mano
+ * no es un invariante: es una intención.
+ *
+ * **Sólo lectura. No repara nada** — reparar es de `sellarPlantilla`, que sabe hacerlo y lo
+ * reporta con conteo. Ésta dice qué está mal, no lo arregla.
+ *
+ * Los cinco desajustes que busca, y son distintos entre sí:
+ *
+ * 1. **Ancla sin fila** — la plantilla tiene el ancla y `LAMINAS` no la registra. Gana la
+ *    plantilla: se repone la fila.
+ * 2. **Fila sin ancla** — `LAMINAS` tiene el id y ninguna lámina lo lleva. **Es el peor**: el id
+ *    está quemado (`D-23` punto 8, no se reusa) y no señala nada.
+ * 3. **Lámina sin ancla** — quedó sin sellar.
+ * 4. **Ids repetidos** en la hoja.
+ * 5. **Huecos** en la secuencia, y **desajustes de `informe_id` u `orden_plantilla`** entre lo
+ *    que dice la fila y dónde está realmente la lámina.
+ */
+function verificarLaminas() {
+  var reg = leerLaminas_();
+  if (!reg.ok) return reg;
+
+  var informes = leerInformes();
+  var enPlantilla = {};   // lamina_id -> { informe_id, orden }
+  var sinAncla = [];
+  var totalLaminas = 0;
+
+  ordenDeSellado_(informes).forEach(function (informeId) {
+    var slides;
+    try {
+      slides = SlidesApp.openById(informes[informeId].plantilla_id).getSlides();
+    } catch (e) {
+      sinAncla.push({ informe_id: informeId, motivo: 'no se pudo abrir: ' + e.message });
+      return;
+    }
+    totalLaminas += slides.length;
+    slides.forEach(function (slide, i) {
+      var ancla = anclaDeLamina_(slide);
+      if (!ancla || ancla === '(sin id)') {
+        sinAncla.push({ informe_id: informeId, orden: i + 1, ancla: ancla || '(ninguna)' });
+        return;
+      }
+      enPlantilla[ancla] = { informe_id: informeId, orden: i + 1 };
+    });
+  });
+
+  var idsHoja = reg.filas.map(function (f) { return String(f.lamina_id).trim(); });
+  var repetidos = idsHoja.filter(function (v, i) { return idsHoja.indexOf(v) !== i; });
+
+  var anclasSinFila = Object.keys(enPlantilla).filter(function (id) { return idsHoja.indexOf(id) === -1; });
+  var filasSinAncla = idsHoja.filter(function (id) { return !enPlantilla[id]; });
+
+  var desajustes = [];
+  reg.filas.forEach(function (f) {
+    var id = String(f.lamina_id).trim();
+    var real = enPlantilla[id];
+    if (!real) return;
+    if (String(f.informe_id).trim() !== real.informe_id) {
+      desajustes.push({ lamina_id: id, campo: 'informe_id', en_hoja: f.informe_id, en_plantilla: real.informe_id });
+    }
+    if (Number(f.orden_plantilla) !== real.orden) {
+      desajustes.push({ lamina_id: id, campo: 'orden_plantilla', en_hoja: f.orden_plantilla, en_plantilla: real.orden });
+    }
+  });
+
+  var numeros = idsHoja.map(function (id) { return Number(id.slice(2)); })
+    .filter(function (n) { return !isNaN(n); }).sort(function (a, b) { return a - b; });
+  var huecos = [];
+  for (var n = 1; n <= (numeros[numeros.length - 1] || 0); n++) {
+    if (numeros.indexOf(n) === -1) huecos.push(formatearIdLamina_(n));
+  }
+
+  var problemas = anclasSinFila.length + filasSinAncla.length + sinAncla.length +
+    repetidos.length + huecos.length + desajustes.length;
+
+  return {
+    ok: true,
+    laminas_en_plantillas: totalLaminas,
+    filas_en_hoja: reg.filas.length,
+    anclas_en_plantillas: Object.keys(enPlantilla).length,
+    anclas_sin_fila: anclasSinFila,
+    filas_sin_ancla: filasSinAncla,
+    laminas_sin_ancla: sinAncla,
+    ids_repetidos: repetidos,
+    huecos: huecos,
+    desajustes: desajustes,
+    veredicto: problemas === 0
+      ? 'VERDE — la hoja y las plantillas coinciden: ' + totalLaminas + ' lámina(s), ' +
+        reg.filas.length + ' fila(s), ids sin huecos ni repetidos.'
+      : 'ROJO — ' + problemas + ' desajuste(s). La plantilla es autoritativa: reparar la hoja, nunca al revés.'
+  };
+}
+
+/** Ítem de menú del control de cierre. Sólo lectura, así que no pide confirmación. */
+function menuVerificarLaminas_() {
+  var ui = ui_();
+  var r = verificarLaminas();
+  if (!r.ok) { ui.alert('Verificar LAMINAS', r.motivo, ui.ButtonSet.OK); return; }
+
+  var lineas = [r.veredicto, '',
+    'Láminas en las plantillas: ' + r.laminas_en_plantillas,
+    'Con ancla: ' + r.anclas_en_plantillas,
+    'Filas en LAMINAS: ' + r.filas_en_hoja];
+
+  function bloque(titulo, lista) {
+    if (!lista.length) return;
+    lineas.push('', titulo + ' (' + lista.length + '):');
+    lista.slice(0, 12).forEach(function (x) { lineas.push('  · ' + JSON.stringify(x)); });
+    if (lista.length > 12) lineas.push('  … y ' + (lista.length - 12) + ' más');
+  }
+  bloque('Anclas sin fila en la hoja — reponer la fila', r.anclas_sin_fila);
+  bloque('⚠ Filas sin ancla en la plantilla — id quemado', r.filas_sin_ancla);
+  bloque('Láminas sin sellar', r.laminas_sin_ancla);
+  bloque('Ids repetidos', r.ids_repetidos);
+  bloque('Huecos en la secuencia', r.huecos);
+  bloque('Desajustes de informe_id u orden_plantilla', r.desajustes);
+
+  ui.alert('Verificar LAMINAS contra las plantillas', lineas.join('\n'), ui.ButtonSet.OK);
+}
+
+/**
+ * Lista los backups de plantillas, más nuevo primero. **Sólo lectura.**
+ *
+ * Existe porque el backup es la red de `C-01` y hasta ahora no había forma de verificar que
+ * estuviera puesta sin abrir Drive a mano. Cuando una corrida sobre plantilla viva se
+ * diagnostica, la primera pregunta es si el backup llegó a crearse.
+ */
+function listarBackupsDePlantillas(limite) {
+  var carpeta = asegurarCarpetaBackups_();
+  if (!carpeta.ok) return { ok: false, motivo: carpeta.motivo };
+
+  var archivos = carpeta.carpeta.getFiles();
+  var salida = [];
+  while (archivos.hasNext()) {
+    var f = archivos.next();
+    salida.push({
+      nombre: f.getName(),
+      id: f.getId(),
+      creado: Utilities.formatDate(f.getDateCreated(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss'),
+      url: f.getUrl()
+    });
+  }
+  salida.sort(function (a, b) { return a.creado < b.creado ? 1 : -1; });
+  return { ok: true, total: salida.length, backups: salida.slice(0, limite || 12) };
+}
+
+/**
  * El orden de sellado, **fijado y no derivado**. `secco` primero, `jm` después.
  *
  * **Por qué está acá y no se toma de `leerInformes()`.** Ese orden es el de las filas de la hoja
