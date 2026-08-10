@@ -181,6 +181,85 @@ function verificarLaminas() {
 }
 
 /**
+ * `_18` `0.2` — mide **los bordes** de la regla «el corte JM está en el nombre de la campaña».
+ * **Sólo lectura.**
+ *
+ * La regla la fijó el usuario el 10/08: si el nombre contiene `JM`, la fila es JM; **todo lo
+ * demás es GCBA, por negación**. Es expresable hoy con `campana~=JM` y su negado — el operador
+ * existe desde el 08/08 y **no hace falta join**.
+ *
+ * Lo que se mide acá es dónde una regla así **se rompe en silencio**: el nombre viene en
+ * segmentos separados por ` | `, así que `JM` puede aparecer **dentro de otra palabra** y sumar
+ * una fila que no corresponde, o aparecer en minúscula y restarla — `normalizarValorDeclarado_`
+ * **no pliega case** (`R-10`), y eso ya está medido: 594 de 594 el 09/08 sobre otra solapa.
+ *
+ * Lee por `abrirHoja`, no por `leerFuente`: éste exige ventana con `Date` y acá interesa el
+ * universo entero, no el recorte.
+ */
+function medirBordesDeCorteJM(baseId, solapa, columna) {
+  var abierto = abrirHoja(baseId, solapa);
+  if (!abierto.ok) return { ok: false, motivo: abierto.motivo };
+
+  var datos = abierto.hoja.getDataRange().getValues();
+  var headers = datos[0].map(function (h) { return String(h).trim(); });
+  var col = headers.indexOf(columna);
+  if (col === -1) return { ok: false, motivo: 'no existe la columna "' + columna + '"', columnas: headers };
+
+  var conJM = 0, sinJM = 0, vacias = 0;
+  var falsosPositivos = [];   // `JM` dentro de otra palabra, no como segmento propio
+  var variantes = {};         // `jm` en otro case — `~=` no los matchea (`R-10` no pliega)
+  var ambiguos = {};          // nombran a JM y a GCBA a la vez
+  var segmentosJM = 0;        // `JM` como segmento propio
+
+  for (var f = 1; f < datos.length; f++) {
+    var v = normalizarValorDeclarado_(datos[f][col]);
+    if (!v) { vacias++; continue; }
+
+    // La semántica de `~=`: `indexOf` sobre el valor normalizado, sensible a mayúsculas.
+    var matchea = v.indexOf('JM') !== -1;
+    if (matchea) conJM++; else sinJM++;
+
+    var segs = v.split('|').map(function (s) { return s.trim(); });
+    if (segs.indexOf('JM') !== -1) segmentosJM++;
+
+    // **El falso positivo real es `JM` DENTRO de una palabra**, no `JM` fuera de un segmento
+    // propio. Corregido el 10/08: el primer criterio marcaba `RDV JM | Villa Devoto` como falso
+    // positivo, y ésa **es** una campaña de JM — sólo que el nombre no usa ` | ` como separador.
+    // El instrumento medía la forma del nombre, no la pertenencia. Es el error que `CLAUDE.md`
+    // §4 describe: acertar el hecho y errar la inferencia.
+    if (matchea && !/(^|[^A-Za-zÁÉÍÓÚÑáéíóúñ])JM([^A-Za-zÁÉÍÓÚÑáéíóúñ]|$)/.test(v)) {
+      falsosPositivos.push(v);
+    }
+
+    // Variantes de escritura: `jm` en otro case, que `~=` **no** matchearía (`R-10` no pliega).
+    if (!matchea && v.toLowerCase().indexOf('jm') !== -1) {
+      variantes[v] = (variantes[v] || 0) + 1;
+    }
+    // Y los nombres que mencionan a los dos: no son falsos positivos, son ambiguos de verdad.
+    if (matchea && /GCBA/.test(v)) ambiguos[v] = (ambiguos[v] || 0) + 1;
+  }
+
+  var total = datos.length - 1;
+  return {
+    ok: true,
+    base_id: baseId, solapa: solapa, columna: columna,
+    filas_totales: total,
+    con_JM: conJM,
+    sin_JM: sinJM,
+    vacias: vacias,
+    suma_cierra: (conJM + sinJM + vacias) === total,
+    JM_como_segmento_propio: segmentosJM,
+    falsos_positivos: falsosPositivos.slice(0, 20),
+    falsos_positivos_total: falsosPositivos.length,
+    variantes_de_escritura: variantes,
+    ambiguos_JM_y_GCBA: ambiguos,
+    // Las vacías no caen en JM ni en GCBA: por la regla de negación terminarían contadas como
+    // GCBA sin que nadie lo decida. Se nombran a propósito.
+    nota_vacias: vacias + ' fila(s) sin nombre de campaña — por negación irían a GCBA'
+  };
+}
+
+/**
  * Mide **cuántas filas cambian** si `~=` plegara el case. **Sólo lectura.**
  *
  * La pregunta la abre el operador `~=` del `_10`: `normalizarValorDeclarado_` es el canónico de
