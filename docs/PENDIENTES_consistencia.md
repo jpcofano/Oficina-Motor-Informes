@@ -2629,6 +2629,48 @@ que nadie lee se llena mal la primera vez y nadie se entera.
 **Qué lo destraba:** que exista un caso real de una lámina que difiera de su sección. Hoy no hay
 ninguno registrado.
 
+### P1 · `R-15 Addendum 2` — CC e IVR son un canal con dos etapas: decidido, pendiente de mecanismo
+
+**Decisión del usuario, 09/08.** **No se escribe como regla todavía**, y el motivo es la regla de
+`CLAUDE.md` §4: lo que la destraba —`looker/Cuentas` a `fuente`— **está en la cola**, es la Parte A
+del `2026-08-09_1`. Una regla marcada `SIN MECANISMO` cuyo destrabe está a un prompto de distancia
+sería una marca que hay que sacar a mano.
+
+**Lo decidido, para que no se pierda:** Call Center e IVR **no son dos canales y tampoco son lo
+mismo**. Son **una sola operación telefónica** que dos tablas registran en momentos distintos. La
+tabla de `R-15` declara la señal de IVR y **nunca declaró la de la otra etapa**.
+
+| etapa | qué mide | dónde se lee | señal de JM |
+|---|---|---|---|
+| **barrido y contacto** | `Base barrida`, `Contactados`, `Efectivos` | `looker/CC` × `looker/Cuentas` | **`nombre_campaña` contiene `JM`** — nueva |
+| **llamado y escucha** | `Llamados`, `Atendidos`, `Escucharon +75%` | `digital/Directa IVR` | `Vocero = JM` — ya estaba |
+
+GCBA por resta en las dos, igual que el resto de la tabla de `R-15`.
+
+**La consecuencia que hay que escribir cuando se escriba la regla: las dos etapas NO comparten
+población.** Una cuenta puede estar en una y no en la otra, así que **ni la señal ni el universo
+se propagan entre ellas**. Y **`cc_campanias` e `ivr_campanias` cuentan cosas distintas y no se
+suman**: un total único de "campañas telefónicas" sacado de las dos tablas cuenta dos veces las
+cuentas que están en ambas.
+
+⚠ **La señal de CC NO se hereda de IVR, y está medido.** `digital/Directa IVR` tiene `Vocero` con
+`JM`/`GCBA`, y `3387-JULJDGGC` figura ahí con `Vocero = JM`. Pero **`3289-JUNJDGAG` —la cuenta que
+produce los 6.011 y los 1.878 publicados— no está en `Directa IVR` en absoluto.** Heredar la señal
+de IVR deja la base discada de la lámina 2 en cero.
+
+**Qué lo destraba, en este orden:**
+
+1. **La Parte A del `2026-08-09_1`** pone `looker/Cuentas` en `fuente`, acotada a dimensión.
+2. Con eso el join `looker/CC × looker/Cuentas` es expresable y **el mecanismo existe**.
+3. **Recién ahí se escribe `R-15 Addendum 2`, sin marca**, con su alcance y su "cómo se verifica".
+
+**Y dos cosas medidas el 09/08 que hay que tener a mano cuando se cablee:**
+
+- **`looker/CC` no tiene la columna `nombre_campaña`.** Su firma es `ID Cuentas · Base enviada ·
+  Base barrida · Contactados · Efectivos`. La señal sale del **join**, no de la solapa.
+- **`Base enviada` llega corrupta en el export** —serial de Excel mal formateado, se lee como
+  fecha—. Si el motor la lee como fecha, falla. `cc_base` es **`Base barrida`**, no `Base enviada`.
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el

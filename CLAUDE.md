@@ -225,6 +225,20 @@ mientras se trabaja; el resto —bitácora larga, `HANDOFF_CODE.md`, `PLAN.md`�
 código funciona**, no antes y no intercalado. **Si el código no llega, se documenta lo que se
 hizo, no lo que se planeaba.**
 
+**`SIN MECANISMO` es para decisiones que no tienen prompt que las destrabe. Si el destrabe está
+en la cola, va a `PENDIENTES` y no a una regla.** Decisión del usuario, 09/08.
+
+- **La marca no es una forma suave de escribir una regla que todavía no se puede aplicar.** Es
+  para lo que el usuario ya decidió y **nadie va a implementar en el horizonte visible** — `R-20`
+  es el caso: necesita una segunda ruta de lectura de `rdv` que no está en ninguna cola.
+- **Si lo que falta es un prompt que ya está en el orden, es un pendiente.** El caso que fijó la
+  regla: `R-15 Addendum 2` esperaba que `looker/Cuentas` volviera a `fuente`, y eso es la Parte A
+  del prompt siguiente. Escribirlo como regla marcada habría creado una marca que hay que sacar a
+  mano dos prompts después.
+- **Una marca que hay que sacar a mano es deuda**, y de la peor clase: nadie la saca, y la regla
+  queda diciendo "no citar como vigente" cuando ya es vigente. Un pendiente, en cambio, se cierra
+  con un tachado y una fecha.
+
 **Toda premisa del prompt se verifica antes de aplicarla, incluidas las que el prompt da por
 medidas.** Van **cuatro prompts seguidos con una premisa central falsa**, y en los cuatro la
 detectó una medición de la Parte 0: el nombre de `Directa Mail` no tenía barrio ni fecha; la
