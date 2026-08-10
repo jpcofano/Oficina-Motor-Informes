@@ -2766,29 +2766,37 @@ plausible, que es el modo de falla que este proyecto tiene nombrado.
 **Se mide con `medirDesvioCampanasMixtas('looker','resumen_metricas_dinamico','nombre_campaña','digital_impresiones')`.**
 Vuelve a correrse por ventana: **el cero de hoy es de esta semana, no una propiedad.**
 
-### P2 · La dinámica de `looker` tiene columnas de Call Center, y `R-15 Addendum 2` las estaba buscando en otro lado
+### P2 · ¿La etapa de barrido de CC sale de la dinámica de `looker`, sin join?
 
-**Hallazgo lateral del 10/08 — se anota y no se arregla** (`_21` §1).
+**Pregunta para la rama de validación. Code no la mide** — cerrarla exige comparar contra un deck
+publicado, y eso corre en otra ventana.
 
-Al medir las mixtas apareció la firma real de `looker/resumen_metricas_dinamico`, y trae:
-**`call_enviado`, `call_discado`, `call_contactados`, `call_efectivos`**.
+**De dónde sale.** `looker/resumen_metricas_dinamico` tiene **`call_enviado`, `call_discado`,
+`call_contactados`, `call_efectivos`**. `R-15 Addendum 2` quedó pendiente porque el barrido y
+contacto de CC parecía necesitar `looker/CC × looker/Cuentas`, y **ese join no existe como
+capacidad del motor**. Si esos campos son los mismos datos, la etapa sale de una solapa que ya
+está mapeada, es legible, tiene `fecha_periodo` y ya tiene el corte de `R-23`.
 
-`R-15 Addendum 2` quedó como pendiente porque el barrido y contacto de CC parecía necesitar
-`looker/CC × looker/Cuentas`, y ese join **no existe como capacidad**. Pero si esos cuatro campos
-son los mismos datos, **la etapa de barrido saldría de la dinámica sola** — que ya está mapeada,
-es legible, tiene `fecha_periodo` y ya tiene el corte de `R-23`.
+**El caso tiene que cerrar los dos ejes. Con uno solo no alcanza.**
 
-⚠ **No está verificado y no se verificó acá.** Lo que haría falta, en orden:
+| eje | la pregunta | lo que ya está cerrado |
+|---|---|---|
+| **QUÉ columna** | ¿`call_discado` es `Base barrida`? | `C-17` cerró la semántica **discada = barrida** para `cc_base` — es lo efectivamente marcado, no la base cargada |
+| **QUÉ universo** | ¿el de la dinámica filtrada por `campana~=JM` + ventana, o el del temario? | `C-15`: `cc_*` usa **el del temario** (`R-17`/`R-21`). Una cuenta con datos y fecha en ventana **queda afuera si el temario no la nombra** |
 
-1. que `call_discado` sea lo mismo que `Base barrida` de `looker/CC` — `C-17` cerró que **`cc_base`
-   es `Base barrida`**, y el nombre `discado` coincide con la semántica que ese caso describe
-   (*discada = barrida = lo efectivamente marcado*);
-2. que los números coincidan **para la misma cuenta y ventana** — y eso es de la rama de
-   validación, con caso numerado, no de acá;
-3. y sólo entonces, mapear los cuatro campos y cablear sin join.
+**Por qué los dos:** si sólo cierra la columna, **dos números pueden coincidir una semana por
+casualidad** y el universo equivocado aparece la semana siguiente. Es el modo de falla de la
+lámina 5 —número correcto, filas equivocadas— aplicado a un cierre.
 
-**Si se confirma, desaparece uno de los dos motivos del prompt de join.** El otro —`imp_meta`,
-`imp_google`, `imp_prog`, que necesitan `Plataforma`— sigue en pie.
+**La consecuencia, que es lo que hace útil este pendiente.** Hoy el prompt de join tiene **dos**
+motivos. Si esto se confirma, sobrevive **uno**:
+
+- ~~la etapa de barrido de CC~~ → saldría de la dinámica, sin join;
+- **el desglose por plataforma** (`A-01` a `A-03`) → **sigue en pie**: necesita `Plataforma` e
+  `Impresiones` **juntas**, y eso sólo está en `looker/DIGITAL`.
+
+**Uno en vez de dos cambia si el join se construye o se evita**, y ésa es la decisión que este
+caso destraba.
 
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
