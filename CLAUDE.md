@@ -49,6 +49,17 @@ grep -rn "function nombreNuevo_" *.gs
   - La regla se lee **antes** de escribir la constante, no después: una constante de
     módulo con un valor de negocio adentro (`VENTANA_DIAS_CANDIDATOS_ANCLAJE_ = 14`,
     `VALOR_STATUS_REALIZADA_ = 'Realizada'`) es deuda desde la línea uno, aunque funcione.
+  - **El caso raro en que la copia a mano ES el diseño, y qué hacer entonces.** Las tres listas
+    de hojas de registro —`ALCANCE_REGISTROS_` en `Instalar.gs`, `HOJAS_REGISTRO` en
+    `tools/escritores.js`, `HOJAS` en `tools/snapshot.js`— están duplicadas **a propósito**: las
+    dos herramientas de `tools/` son el contra-qué del motor, y si leyeran la lista del código
+    que auditan dejarían de ser independientes. Unificarlas rompería lo que las hace útiles.
+  - **Un valor escrito a mano no es deuda por estar escrito a mano: es deuda cuando nadie se
+    entera de que quedó viejo.** `LAMINAS` nació el 09/08, entró en una de las tres listas y no
+    en las otras dos, y **nada lo señaló** — la hoja pasó un día sin respaldo declarado y fuera
+    de la matriz de escritores. **Cuando la duplicación es el diseño, la salida no es borrarla:
+    es que el desajuste falle.** `tools/listas.js` (10/08) lee las tres por texto y sale con
+    error si difieren; su control positivo es sacar una hoja de una lista y ver que rompa.
 - **Nada que venga de una planilla se compara crudo: se normalizan los dos lados.** Una
   celda trae espacios de más, saltos de línea pegados y valores tipeados a mano; comparar
   con `===` contra un literal falla en silencio y el síntoma aparece lejos —filas que no
@@ -443,6 +454,7 @@ docs/ESCRITORES.md                  quién escribe cada hoja de registro (vivo)
 docs/INVENTARIO_CODIGO.md           foto del código al 01/08 (congelado)
 docs/Sesiones/                      handoffs bajados de claude.ai — Code no escribe acá
 tools/                              scripts de verificación independiente
+                                    (`listas.js` chequea que las tres listas de hojas coincidan)
 ```
 
 `.claspignore` ya está configurado para pushear solo `appsscript.json`, `*.gs` y `*.html`.
