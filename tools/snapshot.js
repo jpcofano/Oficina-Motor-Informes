@@ -32,13 +32,18 @@ const { obtenerToken } = require('./token');
 const RAIZ = path.join(__dirname, '..');
 
 /**
- * Las diez hojas de registro. Son las mismas —y en el mismo orden— que declara
+ * Las once hojas de registro. Son las mismas —y en el mismo orden— que declara
  * `ALCANCE_REGISTROS_` en `Instalar.gs`. La lista está duplicada a propósito: si
  * la leyera del código bajo prueba, el snapshot dejaría de ser independiente.
+ *
+ * ⚠ `LAMINAS` entró el 10/08. Es además el **respaldo declarado** de esa hoja: no existe
+ * ninguna función que copie el spreadsheet de control —`backupPlantilla_` copia Slides—, así
+ * que antes de la primera escritura de `escribirColumnaLaminas_` el TSV de acá es la red.
+ * Ver `docs/Prompts/2026-08-10_19.1_addendum_alcance.md` §3.1.
  */
 const HOJAS = [
   'BASES', 'MAPEO', 'CONFIG', 'INFORMES', 'PERIODOS',
-  'SOLAPAS', 'SECCIONES', 'CAMPANAS', 'REUNIONES', 'MARCADORES'
+  'SOLAPAS', 'SECCIONES', 'CAMPANAS', 'REUNIONES', 'MARCADORES', 'LAMINAS'
 ];
 
 function idPlanilla() {

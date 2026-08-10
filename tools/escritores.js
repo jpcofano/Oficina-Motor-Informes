@@ -32,11 +32,19 @@
 const path = require('path');
 const { cargarProyecto, lineaDe } = require('./inventario');
 
-// Las diez hojas de registro (mismo alcance que docs/_snapshots/ y ALCANCE_REGISTROS_;
+// Las once hojas de registro (mismo alcance que docs/_snapshots/ y ALCANCE_REGISTROS_;
 // duplicado a propósito — leerlo del código bajo prueba anularía la independencia).
+//
+// ⚠ `LAMINAS` entró el 10/08, y con ella el problema que la duplicación tiene de nacimiento:
+// **son tres listas que deben coincidir por convención y no por mecanismo** — ésta,
+// `HOJAS` de `tools/snapshot.js`, y `ALCANCE_REGISTROS_` de `Instalar.gs`. Cuando la hoja
+// nació con el `_11` (09/08), `ALCANCE_REGISTROS_` la incluyó y las otras dos no, y la
+// divergencia **no falló sola**: el censo mandó `LAMINAS` al anexo de "no es de registro"
+// sin avisar. La independencia es correcta y se conserva; lo que falta es que el desajuste
+// se note. Anotado en `docs/PENDIENTES_consistencia.md`.
 const HOJAS_REGISTRO = [
   'BASES', 'MAPEO', 'CONFIG', 'INFORMES', 'PERIODOS',
-  'SOLAPAS', 'SECCIONES', 'CAMPANAS', 'REUNIONES', 'MARCADORES'
+  'SOLAPAS', 'SECCIONES', 'CAMPANAS', 'REUNIONES', 'MARCADORES', 'LAMINAS'
 ];
 
 const RE_MUTACION = /\.\s*(setValues|setValue|setFormulas|setFormula|appendRow|insertRowsAfter|insertRowsBefore|insertRows|insertRowAfter|insertRowBefore|deleteRows|deleteRow|clearContents|clearContent|clear)\s*\(/g;

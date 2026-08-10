@@ -402,6 +402,90 @@ function menuSellarPlantillas_() {
 }
 
 /**
+ * Escribe **una sola columna** de `LAMINAS`, en las filas que ya existen, buscándolas por
+ * `lamina_id`. `mapa` es `{ 'L-031': valor, … }`.
+ *
+ * **Es el único camino para escribir celdas de `LAMINAS` que no sean filas nuevas.** Si aparece
+ * un segundo, es un bug de arquitectura aunque escriba bien: `sellarPlantilla` agrega filas
+ * enteras por posición y `borrarFilasDeLaminas` borra; entre esos dos extremos no había nada, y
+ * ésa es la razón por la que la Parte D del `2026-08-09_1` quedó frenada.
+ *
+ * **Cada cláusula del contrato está por un modo de falla conocido:**
+ *
+ * - **Resuelve la columna por nombre de encabezado, nunca por índice.** La hoja va a ganar
+ *   `titulo` con el `_16` y esta función no puede enterarse. Es lo contrario de los dos arrays
+ *   posicionales de `sellarPlantilla`, que sí van a tener que cambiar cuando eso pase.
+ * - **Una columna por llamada.** Escribir varias de una es lo que hace que un error de alineación
+ *   pase inadvertido: con una sola, el valor o cae donde va o no cae.
+ * - **No crea filas, no borra filas, no toca ninguna otra columna.** Un `lamina_id` que no está
+ *   en la hoja **se reporta y se saltea** — es el caso «fila sin ancla» que `verificarLaminas()`
+ *   ya sabe nombrar, y el peor de los cinco; acá no se repara.
+ * - **Si el valor es el que ya está, no escribe.** El conteo de `sin_cambio` es lo que permite
+ *   correr dos veces y ver cero la segunda.
+ * - **Devuelve `anterior` y `nuevo` por celda.** Es el respaldo real de esta función: deshacer
+ *   tres celdas con eso a mano es trivial. La red más grande es el TSV de `docs/_snapshots/`
+ *   —`tools/snapshot.js`, que desde el 10/08 incluye `LAMINAS`—, porque **no existe ninguna
+ *   función que copie el spreadsheet de control**: `backupPlantilla_` copia Slides.
+ *
+ * `opciones.dryRun === true` calcula todo y no escribe, misma convención que `sellarPlantilla`.
+ */
+function escribirColumnaLaminas_(mapa, columna, opciones) {
+  opciones = opciones || {};
+  var dryRun = opciones.dryRun === true;
+
+  if (!mapa || typeof mapa !== 'object') return { ok: false, motivo: 'Falta el mapa { lamina_id: valor }' };
+  if (!columna) return { ok: false, motivo: 'Falta el nombre de la columna' };
+
+  var reg = leerLaminas_();
+  if (!reg.ok) return reg;
+
+  var col = reg.headers.indexOf(columna);
+  if (col === -1) {
+    return {
+      ok: false,
+      motivo: 'La columna "' + columna + '" no existe en LAMINAS — hay ' + reg.headers.length + ': ' +
+        reg.headers.join(', ')
+    };
+  }
+
+  var porId = {};
+  reg.filas.forEach(function (f) { porId[String(f.lamina_id).trim()] = f; });
+
+  var escritas = [];
+  var sinCambio = [];
+  var noEncontradas = [];
+
+  Object.keys(mapa).forEach(function (id) {
+    var fila = porId[String(id).trim()];
+    if (!fila) { noEncontradas.push(id); return; }
+
+    var anterior = fila[columna];
+    var nuevo = mapa[id];
+    // Se comparan como texto: la celda puede venir tipada y el valor a escribir es un string.
+    if (String(anterior === null || anterior === undefined ? '' : anterior) === String(nuevo)) {
+      sinCambio.push(id);
+      return;
+    }
+
+    if (!dryRun) reg.hoja.getRange(fila._fila, col + 1).setValue(nuevo);
+    escritas.push({ lamina_id: id, fila: fila._fila, anterior: anterior, nuevo: nuevo });
+  });
+
+  if (escritas.length && !dryRun) SpreadsheetApp.flush();
+
+  return {
+    ok: true,
+    columna: columna,
+    dry_run: dryRun,
+    escritas: escritas.length,
+    sin_cambio: sinCambio.length,
+    no_encontradas: noEncontradas.length,
+    detalle_escritas: escritas,
+    detalle_no_encontradas: noEncontradas
+  };
+}
+
+/**
  * Borra filas de `LAMINAS` por `lamina_id`. **Existe para deshacer un error de esta sesión y no
  * debería tener más usos.**
  *
