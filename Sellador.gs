@@ -181,6 +181,92 @@ function verificarLaminas() {
 }
 
 /**
+ * Cruza dos columnas: cuántas filas tienen `columnaA` vacía **y** contienen `aguja` en
+ * `columnaB`. **Sólo lectura.**
+ *
+ * Existe para poner número a un pendiente en vez de dejarlo en prosa: *"las filas sin `estado`
+ * quedan afuera"* es una decisión, y **cuántas de ésas son JM** es lo que dice si la decisión
+ * cuesta algo hoy. Mismo criterio que el desvío de las campañas mixtas: **cero hoy no es cero por
+ * definición**, y el número hay que volver a medirlo.
+ */
+function cruzarVacioContra(baseId, solapa, columnaVacia, columnaBusqueda, aguja) {
+  var abierto = abrirHoja(baseId, solapa);
+  if (!abierto.ok) return { ok: false, motivo: abierto.motivo };
+
+  var datos = abierto.hoja.getDataRange().getValues();
+  var headers = datos[0].map(function (h) { return String(h).trim(); });
+  var iV = headers.indexOf(columnaVacia);
+  var iB = headers.indexOf(columnaBusqueda);
+  if (iV === -1 || iB === -1) return { ok: false, motivo: 'falta alguna columna', columnas: headers };
+
+  var vacias = 0, vaciasConAguja = 0;
+  var ejemplos = [];
+  for (var f = 1; f < datos.length; f++) {
+    if (normalizarValorDeclarado_(datos[f][iV]) !== '') continue;
+    vacias++;
+    var nombre = normalizarValorDeclarado_(datos[f][iB]);
+    if (nombre.indexOf(aguja) !== -1) {
+      vaciasConAguja++;
+      if (ejemplos.length < 8) ejemplos.push(nombre);
+    }
+  }
+  return {
+    ok: true,
+    columna_vacia: columnaVacia, columna_busqueda: columnaBusqueda, aguja: aguja,
+    filas_con_vacia: vacias,
+    de_esas_con_aguja: vaciasConAguja,
+    ejemplos: ejemplos
+  };
+}
+
+/**
+ * Valores distintos de una columna, **crudos**, con su conteo. **Sólo lectura.**
+ *
+ * **Crudo es el punto**: devuelve el valor tal cual está en la celda, sin `trim()` y sin plegar
+ * case, y al lado su forma normalizada. Sirve para el contrapunto de una regla **por resta** —
+ * `imp_prog` es todo lo que no es Meta ni Google ads—, donde **un `Meta ` con espacio o un
+ * `Google Ads` con mayúscula no falla: cae del otro lado y suma en silencio.**
+ *
+ * `R-23` ya midió que en `nombre_campaña` no hay variantes de case, pero eso se midió en `F`, no
+ * en `B`. Cada columna se mide sola.
+ */
+function valoresDistintosDeColumna(baseId, solapa, columna) {
+  var abierto = abrirHoja(baseId, solapa);
+  if (!abierto.ok) return { ok: false, motivo: abierto.motivo };
+
+  var datos = abierto.hoja.getDataRange().getValues();
+  var headers = datos[0].map(function (h) { return String(h).trim(); });
+  var col = headers.indexOf(columna);
+  if (col === -1) return { ok: false, motivo: 'no existe "' + columna + '"', columnas: headers };
+
+  var crudos = {};
+  for (var f = 1; f < datos.length; f++) {
+    var v = datos[f][col];
+    var clave = (v === null || v === undefined) ? '(vacío)' : String(v);
+    crudos[clave] = (crudos[clave] || 0) + 1;
+  }
+
+  // Dos valores que sólo difieren en espacios o case son el hallazgo que esta función busca.
+  var porCanonico = {};
+  Object.keys(crudos).forEach(function (v) {
+    var canon = v.replace(/\s+/g, ' ').trim().toLowerCase();
+    (porCanonico[canon] = porCanonico[canon] || []).push(v);
+  });
+  var colisiones = Object.keys(porCanonico).filter(function (k) { return porCanonico[k].length > 1; })
+    .map(function (k) { return { canonico: k, variantes: porCanonico[k] }; });
+
+  return {
+    ok: true,
+    base_id: baseId, solapa: solapa, columna: columna,
+    filas: datos.length - 1,
+    distintos: Object.keys(crudos).length,
+    valores: crudos,
+    variantes_que_colisionan: colisiones,
+    limpio: colisiones.length === 0
+  };
+}
+
+/**
  * `_20` `A.3` + `A.4` — la predicción antes de pasar `looker` de punto a solape. **Sólo lectura.**
  *
  * Cuenta las filas que entran con cada criterio y las desglosa por el corte de `R-23`, porque

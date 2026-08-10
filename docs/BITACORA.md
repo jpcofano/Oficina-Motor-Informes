@@ -7367,3 +7367,89 @@ se creó ningún documento nuevo — la fuente de un marcador vive en su fila, y
 
 `imp_meta`, `imp_google`, `imp_prog` y los seis `pauta_*` **necesitan el desglose por plataforma**,
 y `resumen_metricas_dinamico` no tiene columna `Plataforma`. Siguen en `(b)` del `0.0` del `_18`.
+
+---
+
+## El `_22` — las cinco respuestas de validación, `R-24`, y el `_18` cancelado (2026-08-10)
+
+Corrida del `docs/Prompts/2026-08-10_22_respuestas_validacion_y_plataformas.md`, **partes A a E**.
+**Ningún marcador cableado, ninguna plantilla tocada.** Lectura de las hojas vivas el 10/08.
+
+**Modelo por parte**, primera vez que se aplica: `A`, `B`, `D` y `E` Sonnet; `C` Opus, porque
+define de qué universo sale un número que va a un deck.
+
+### Parte A — las cuatro confirman
+
+- **`A.2` es la que podía parar todo, y no paró.** Los nueve encabezados de `looker/DIGITAL`
+  coinciden **exactamente** con `V-67`: `nombre_campaña` en `F`, `estado` en `I`. **El fixture del
+  31/07 y la solapa viva no divergieron en forma** — sí en volumen, que es otra cosa: `V-67` midió
+  4.569 filas y hoy son 4.895.
+- **`A.3`: `A-04` no era urgente.** Los seis `imp_*` por plataforma **no existen en `MARCADORES`**
+  y **cero filas dicen `DV360`**. No había nada que corregir antes de que se ejecutara.
+- **`A.4`**: `imp_total` y `gcba_imp_total` siguen sobre `resumen_metricas_dinamico`, como los dejó
+  el `P0`. Nadie los tocó.
+- **`A.1` se disparó igual que en el `_20` y por lo mismo:** el CSV ya traía los cinco casos porque
+  lo copié verificando superset exacto —cero filas previas alteradas, cinco nuevas—. **No es
+  hallazgo.**
+
+### Parte C — `R-24`, y se validó el mismo día que se escribió
+
+**`imp_prog` es todo lo que no es Meta ni Google ads. Por resta, no por lista.**
+
+El `_22` §C argumentaba la resta con un caso hipotético: *"la decisión del usuario del 09/08
+nombraba también Twitch y Uber. **No están en `looker/DIGITAL`** … La regla por resta las cubre
+igual **si algún día aparecen**"*.
+
+**Aparecieron.** Medido sobre la solapa viva —no sobre el fixture— `Plataforma` tiene **ocho**
+valores, no seis:
+
+| | filas | |
+|---|---|---|
+| `Meta` | 1783 | `imp_meta` |
+| `Google ads` | 1385 | `imp_google` |
+| `DV360` · `TikTok` · `Mercado Libre` · `Twitter` | 1629 · 55 · 21 · 12 | `imp_prog` |
+| **`Twitch `** · **`Uber`** | 5 · 5 | `imp_prog` — **no estaban en `A-04`** |
+
+**Una lista explícita escrita el 10/08 ya habría estado incompleta el 10/08.**
+
+⚠ **Y `Twitch ` viene con un espacio al final** — el contrapunto exacto de la regla: **por resta un
+valor mal escrito cae del lado correcto; por lista, un `Twitch` enumerado sin espacio no matchea y
+la fila desaparece sin fallar.**
+
+**El riesgo simétrico también se midió**, porque una regla por resta lo tiene: un `Meta ` con
+espacio caería en `imp_prog` en vez de fallar. **Cero colisiones** — ninguno de los ocho valores
+difiere de otro sólo en espacios o mayúsculas. `R-23` había medido lo mismo para `nombre_campaña`,
+pero eso fue la columna `F` y esto la `B`: **cada columna se mide sola**.
+
+### Parte D — las filas sin `estado`
+
+**Quedan afuera** —`estado = Activa` es inclusión positiva y un vacío no la cumple— **pero dejan de
+caer por omisión: la traza las cuenta**. Es `R-20` aplicado: *un vacío no es un valor*.
+
+**36 en la solapa viva** (22 en el fixture), y **ninguna es JM**. La decisión **no cuesta nada
+hoy**, y el cero es de hoy, no una propiedad — mismo criterio que el desvío de las campañas mixtas.
+
+Contexto: aplicar `Activa` deja afuera **4.168 de 4.895 filas (85 %)**. Las 36 son ruido al lado de
+eso, pero son **las únicas que quedan afuera sin decir por qué**.
+
+### Parte E — el `_18` cancelado, no borrado
+
+`V-67`, `C-19` y `C-20` contestaron su `0.0`, `0.1`, `0.2` y `0.4` **con más precisión de la que
+una lectura desde Apps Script iba a dar**. Queda marcado en su propio archivo con la tabla de qué
+caso contestó cada punto. **Lo único que sobrevive es la disyuntiva de período de `0.3`**, que pasó
+a `PENDIENTES`.
+
+**Y una corrección que el `_18` traía al revés:** su premisa era que el corte JM podía necesitar el
+join. **`C-19` mostró que el corte y el filtro de estado se resuelven dentro de `DIGITAL`** —`F` e
+`I`— y que **lo único que exige cruzar es la ventana**, porque la solapa no tiene ninguna columna
+temporal. El join hace falta, pero **es otro join**: no para saber de quién es la campaña, sino
+para saber cuándo corrió.
+
+### Los cuatro criterios de aceptación
+
+| | |
+|---|---|
+| 1 · CSV con cinco filas más, ninguna previa cambiada | ✅ verificado con diff **antes** de pisar |
+| 2 · ninguna fila de `MARCADORES` dice `Plataforma = DV360` | ✅ cero |
+| 3 · la regla por resta, con la fecha de la medición | ✅ `R-24` |
+| 4 · nada cableado, ninguna plantilla, `LAMINAS` intacta | ✅ `verificarLaminas()` **VERDE**, 51/51 |
