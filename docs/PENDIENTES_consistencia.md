@@ -2669,7 +2669,10 @@ de IVR deja la base discada de la lámina 2 en cero.
 - **`looker/CC` no tiene la columna `nombre_campaña`.** Su firma es `ID Cuentas · Base enviada ·
   Base barrida · Contactados · Efectivos`. La señal sale del **join**, no de la solapa.
 - **`Base enviada` llega corrupta en el export** —serial de Excel mal formateado, se lee como
-  fecha—. Si el motor la lee como fecha, falla. `cc_base` es **`Base barrida`**, no `Base enviada`.
+  fecha—. Si el motor la lee como fecha, falla. ~~`cc_base` es **`Base barrida`**, no `Base
+  enviada`~~ — **CERRADO (10/08/2026) por `C-17`**, con dos evidencias independientes del mismo
+  deck (`V-64` y `V-66`) y su límite escrito al lado (`C-18`: un deck, no dos). Detalle en
+  `docs/VALIDACION_2026-08-09.md` §4.3.
 
 ### ~~P1 · Tres listas de hojas de registro que deben coincidir por convención, no por mecanismo~~ — CERRADO (10/08/2026)
 
@@ -2797,6 +2800,63 @@ motivos. Si esto se confirma, sobrevive **uno**:
 
 **Uno en vez de dos cambia si el join se construye o se evita**, y ésa es la decisión que este
 caso destraba.
+
+### P0 · `imp_total` y `gcba_imp_total` están cableados sobre una fuente que los casos no declaran — y además son derivados
+
+**En revisión desde el 10/08. No revertido todavía**, a propósito: revertir sin decidir la fuente
+correcta deja los dos tokens en `«FALTA»` y pierde la traza de lo que se probó.
+
+**Qué se cableó el 10/08:** los dos pasaron de `digital/Digital` —congelada por `R-22`— a
+`looker/resumen_metricas_dinamico`, con el corte de `R-23`. Publicaron `imp_total = 6.084.893` y
+`gcba_imp_total = 2.027.888`, los dos con `estado = ok`.
+
+**Qué declaran los casos del repo**, y son dos cosas distintas:
+
+| caso | declara |
+|---|---|
+| `X-10` | `imp_total` = **6.442.951**, y es **DERIVADO**: `imp_meta + imp_google + imp_prog`. Textual: *"es derivado, **no necesita fuente propia**"* |
+| `V-59` | `gcba_imp_total` = **116.016.433**, también derivado de sus tres `gcba_imp_*` |
+| `A-01` | `imp_meta` → **`looker/DIGITAL × Cuentas`**, `nombre_campaña CONTIENE JM`, `estado=Activa`, **ventana solape** |
+| `A-02` | `imp_google` → ídem, `Plataforma = Google ads` |
+| `A-03` | `imp_prog` → ídem, `Plataforma = DV360` |
+
+**Los dos errores, y el segundo es el de fondo:**
+
+1. **La fuente no es la que los casos declaran.** `A-01`…`A-03` miden sobre **`looker/DIGITAL ×
+   Cuentas`**, no sobre la dinámica. Y ya lo midieron **con solape**, dando 679.647 + 614.140 +
+   5.992.841 = **7.286.628** — del orden de los 6.442.951 publicados.
+2. **`imp_total` y `gcba_imp_total` no deberían tener fuente propia.** `X-10` y `V-59` los declaran
+   **derivados**. Un derivado con `SUMA` sobre una solapa es un segundo camino al mismo número, y
+   los dos caminos van a divergir.
+
+**Por qué el parecido de `imp_total` engaña.** Con recorte por punto la dinámica da **6.084.893**
+contra los **6.442.951** publicados: se parece **por casualidad de orden**, no porque mida lo
+mismo. Con solape se va a **54.870.421** — nueve veces.
+
+**Y `gcba_imp_total` lo confirma sin lugar a dudas: ningún criterio de recorte lo acerca.**
+
+| | valor | contra `V-59` = 116.016.433 |
+|---|---|---|
+| punto | 2.027.888 | **57 veces corto** |
+| solape | 1.145.126.874 | **10 veces largo** |
+
+**El problema no es el recorte: es la fuente.** Ésa es la razón por la que la **Parte D del `_20`
+no corre sobre `looker`** — cambiar el criterio de ventana de una fuente equivocada no arregla
+nada y mueve un número publicable.
+
+**Qué lo destraba, en orden:**
+
+1. **El `0.0` del `_18`** — qué sale de la dinámica y qué necesita `looker/DIGITAL`. Ahora tiene
+   un caso concreto en vez de una pregunta abstracta.
+2. **Cablear `imp_meta`, `imp_google` e `imp_prog`** sobre la fuente que `A-01`…`A-03` declaran,
+   que necesita `Plataforma` e `Impresiones` juntas — y eso **sólo está en `looker/DIGITAL`**.
+3. **Recién entonces, retirar la fuente propia de los dos derivados.** Es lo que `C.4` del
+   `2026-08-09_1` pedía y el `10.1` §3 retiró **con razón**: sin los tres sumandos, la poda dejaba
+   `imp_total` sin nada. El orden importa y sigue siendo el mismo.
+
+⚠ **Mientras tanto los dos publican un número que no es el correcto, con `estado = ok`.** Es el
+modo de falla que este proyecto tiene nombrado: **el número plausible**. Si hay que generar un deck
+antes de resolverlo, retirarles la fuente y que salgan `«FALTA»` es preferible.
 
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 

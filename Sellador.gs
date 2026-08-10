@@ -181,6 +181,71 @@ function verificarLaminas() {
 }
 
 /**
+ * `_20` `A.3` + `A.4` — la predicción antes de pasar `looker` de punto a solape. **Sólo lectura.**
+ *
+ * Cuenta las filas que entran con cada criterio y las desglosa por el corte de `R-23`, porque
+ * **`imp_total` y `gcba_imp_total` se calculan sobre exactamente ese universo**: cambiar el
+ * recorte les mueve el número. La predicción se escribe antes; la medición va al lado después.
+ *
+ * `punto`  = `fecha_inicio` dentro de la ventana (lo que hace hoy, sin `fecha_fin_periodo`).
+ * `solape` = `inicio <= hasta` **y** `fin >= desde` — el criterio de `R-16`, inclusive.
+ */
+function predecirSolapeLooker(baseId, solapa) {
+  var abierto = abrirHoja(baseId, solapa);
+  if (!abierto.ok) return { ok: false, motivo: abierto.motivo };
+  var ventana = resolverVentana({});
+  if (!ventana.ok) return { ok: false, motivo: ventana.motivo };
+
+  var cIni = buscarMapeo(baseId, solapa, 'fecha_periodo');
+  var cFin = buscarMapeo(baseId, solapa, 'fecha_fin');
+  var cNom = buscarMapeo(baseId, solapa, 'campana');
+  if (!cIni.ok || !cFin.ok || !cNom.ok) {
+    return { ok: false, motivo: 'falta mapeo: ' + [cIni, cFin, cNom].filter(function (c) { return !c.ok; })
+      .map(function (c) { return c.motivo; }).join(' · ') };
+  }
+
+  var datos = abierto.hoja.getDataRange().getValues();
+  var iIni = columnaLetraAIndice_(cIni.columna);
+  var iFin = columnaLetraAIndice_(cFin.columna);
+  var iNom = columnaLetraAIndice_(cNom.columna);
+  var iVal = datos[0].map(function (h) { return String(h).trim(); }).indexOf('digital_impresiones');
+
+  var r = {
+    punto: { total: 0, jm: 0, gcba: 0, imp_jm: 0, imp_gcba: 0 },
+    solape: { total: 0, jm: 0, gcba: 0, imp_jm: 0, imp_gcba: 0 },
+    sin_fecha_fin: 0, sin_fecha_inicio: 0, filas: datos.length - 1
+  };
+
+  for (var f = 1; f < datos.length; f++) {
+    var ini = parsearFechaCelda_(datos[f][iIni]);
+    var fin = parsearFechaCelda_(datos[f][iFin]);
+    if (!ini) { r.sin_fecha_inicio++; continue; }
+    if (!fin) r.sin_fecha_fin++;
+
+    var esJM = normalizarValorDeclarado_(datos[f][iNom]).indexOf('JM') !== -1;
+    var val = iVal === -1 ? 0 : (Number(datos[f][iVal]) || 0);
+
+    if (ini >= ventana.desde && ini <= ventana.hasta) {
+      r.punto.total++; r.punto[esJM ? 'jm' : 'gcba']++;
+      r.punto[esJM ? 'imp_jm' : 'imp_gcba'] += val;
+    }
+    // `R-16`, inclusive. Una campaña sin fin no es un error —hay campañas abiertas—: se la trata
+    // como todavía activa, que es lo que su ausencia de fin significa.
+    var finEfectivo = fin || ventana.hasta;
+    if (ini <= ventana.hasta && finEfectivo >= ventana.desde) {
+      r.solape.total++; r.solape[esJM ? 'jm' : 'gcba']++;
+      r.solape[esJM ? 'imp_jm' : 'imp_gcba'] += val;
+    }
+  }
+
+  r.ok = true;
+  r.ventana = formatearFecha_(ventana.desde) + ' → ' + formatearFecha_(ventana.hasta);
+  r.control_punto = r.punto.jm + ' + ' + r.punto.gcba + ' = ' + r.punto.total;
+  r.control_solape = r.solape.jm + ' + ' + r.solape.gcba + ' = ' + r.solape.total;
+  return r;
+}
+
+/**
  * `_20` `A.6` — cuánto vale, en un número, que las campañas mixtas caigan enteras en JM.
  *
  * `R-23` cierra **formalmente** —`JM + GCBA = total`, sin resto— **pero no semánticamente**: las

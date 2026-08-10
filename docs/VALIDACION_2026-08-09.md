@@ -2,7 +2,9 @@
 
 > **Congelado.** Nadie lo edita: si hay una corrida nueva, se crea otro
 > (`CLAUDE.md` §7). Su par de casos es **`docs/casos_validacion_2026-08-09_addendum.csv`**,
-> 43 casos numerados `V-38`+, `C-01`+, `X-10`+.
+> **55 casos** numerados `V-38`+, `C-01`+, `X-10`+, `A-01`+. Eran 43 al escribirse; el 10/08
+> entraron `A-01`…`A-03`, `C-12`…`C-18`, `V-64`…`V-66`. **Ninguna fila previa se editó** —
+> verificado con diff antes de pisar el archivo.
 >
 > Sesión del 09/08/2026. Material: los decks publicados de las semanas **24/07–31/07** y
 > **31/07–06/08**, con sus bases del mismo período. Repo leído en `d24a07e`.
@@ -148,9 +150,28 @@ sobre `3289-JUNJDGAG`— se hizo **fuera del motor**, y no es replicable adentro
 **El número es sólido; el camino de cableado no existe.** Son dos preguntas distintas y
 conviene no confundirlas.
 
-Lo que sí quedó decidido con evidencia: **`cc_base` es `Base barrida`, no `Base enviada`**
-(que da 6673 sobre la misma cuenta). Y *"2 campañas"* son **las dos filas de CC de una
-cuenta**, no dos cuentas.
+Lo que sí quedó decidido con evidencia: ~~`cc_base` es `Base barrida`, no `Base enviada`
+(que da 6673 sobre la misma cuenta)~~ — **CERRADO el 10/08 por `C-17`, con `C-18` al lado.** Ver
+abajo. Y *"2 campañas"* son **las dos filas de CC de una cuenta**, no dos cuentas.
+
+#### `cc_base` — cerrado el 10/08, con dos evidencias independientes y su límite
+
+**Es `Base barrida`.** Lo cierra `C-17`, y lo que lo hace un cierre y no una preferencia es que
+son **dos números publicados del mismo deck que no se derivan uno del otro**:
+
+| caso | evidencia |
+|---|---|
+| `V-64` | `cc_base` = **6.011** — `Base barrida` 4726 + 1285 sobre `3289-JUNJDGAG`. Con `Base enviada` daría 6.673 |
+| `V-66` | `cc_contact_pct` = **31 %** — `1878/6011` = 31,2 % redondea a 31 (publicado). Con `Base enviada`: `1878/6673` = 28,1 % → **28 %** |
+
+**`V-66` es lo que convierte la coincidencia en confirmación:** el porcentaje **no se deriva del
+otro número publicado**, así que confirma en vez de repetir. Y la semántica acompaña —*discada =
+barrida* es lo efectivamente marcado; *enviada* es la base cargada—, que es lo que hace que el
+número y el significado apunten al mismo lado.
+
+⚠ **`C-18` es el límite, y va pegado al cierre porque sin él la afirmación viaja más fuerte de lo
+que se midió:** el deck del 07/08 **no publica ningún bloque de Call Center**, así que esto está
+**confirmado por dos números de UN deck, no por dos decks**.
 
 ### 4.4 `IVR` en esta ventana
 
