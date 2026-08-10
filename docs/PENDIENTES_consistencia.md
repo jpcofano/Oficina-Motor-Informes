@@ -2725,6 +2725,71 @@ criterio. Hoy no está especificado: qué se copia, a qué carpeta —`_backups`
 `carpeta_plantillas`, que es de Slides—, con qué nombre, y cada cuánto. **Este prompt es el caso
 que la pidió**; no se implementó de contrabando.
 
+### P1 · `gcba_imp_total` está subestimado por las campañas mixtas — hoy en cero, pero el orden es de millones
+
+**`R-23` cierra formalmente y no semánticamente.** El corte `campana~=JM` / `campana!~=JM` es
+complementario por construcción —`JM + GCBA = total`, sin solapamiento y sin resto— **pero las
+campañas que nombran a JM y a GCBA a la vez caen enteras en JM y no aportan nada a GCBA**. La
+decisión es del usuario (10/08) y está escrita en `R-23`; esto le pone el número al lado, porque
+**una decisión editorial documentada en prosa no alcanza cuando el efecto es un número**.
+
+**Medido el 10/08 sobre `looker/resumen_metricas_dinamico`, columna `digital_impresiones`:**
+
+| campaña | fecha | impresiones |
+|---|---|---|
+| `CAMPAÑA JM + GCBA \| SEGURIDAD \| 600 desalojos en la Ciudad` | 13/03 | 12.263.676 |
+| `CAMPAÑA JM + GCBA \| SEGURIDAD \| Operativo de Seguridad en Subte` | 18/03 | 9.045.006 |
+| `GCBA + JM \| SEGURIDAD \| Desalojo de propiedad Anchoris 183` | 07/04 | 5.850.055 |
+| `CAMPAÑA GCBA/AGENDA JM \| SALUD \| HTAL. ZUBIZARRETA` | 27/03 | 5.272.689 |
+| `CAMPAÑA JM + GCBA \| SEGURIDAD \| Desalojo cuatro propiedades en Constitución` | 15/04 | 4.255.739 |
+| **total del universo** | | **36.687.165** |
+
+**En la ventana del informe (24–30/07): cero.** Las cinco son de marzo y abril, así que
+**`gcba_imp_total = 2.027.888` de esta semana no está subestimado en nada.**
+
+**Por qué queda abierto igual, y es lo que importa:** el desvío es **cero hoy y de orden
+millonario cuando alguna caiga en ventana**. Las cinco son campañas de seguridad y salud de
+Jefatura + GCBA, o sea el tipo de campaña que se repite. La primera semana que una entre,
+`gcba_imp_total` va a estar corto **por millones y sin que nada falle** — el número va a verse
+plausible, que es el modo de falla que este proyecto tiene nombrado.
+
+**Qué lo destrabaría, y es decisión del usuario, no de implementación:**
+
+- **Dejarlo como está** — una campaña mixta es de JM y punto. Entonces esto se cierra y basta con
+  que la nota de `gcba_imp_total` lo diga, que ya lo dice.
+- **Contarla en los dos lados** — y eso **no se arregla con el filtro**: `~=` y `!~=` son
+  complementarios por construcción. Contar una fila dos veces exige otro mecanismo, y sería otra
+  regla.
+- **Un tercer valor** —`mixta`— con su propio token. Es lo único que no distorsiona ninguno de los
+  dos, y es el más caro.
+
+**Se mide con `medirDesvioCampanasMixtas('looker','resumen_metricas_dinamico','nombre_campaña','digital_impresiones')`.**
+Vuelve a correrse por ventana: **el cero de hoy es de esta semana, no una propiedad.**
+
+### P2 · La dinámica de `looker` tiene columnas de Call Center, y `R-15 Addendum 2` las estaba buscando en otro lado
+
+**Hallazgo lateral del 10/08 — se anota y no se arregla** (`_21` §1).
+
+Al medir las mixtas apareció la firma real de `looker/resumen_metricas_dinamico`, y trae:
+**`call_enviado`, `call_discado`, `call_contactados`, `call_efectivos`**.
+
+`R-15 Addendum 2` quedó como pendiente porque el barrido y contacto de CC parecía necesitar
+`looker/CC × looker/Cuentas`, y ese join **no existe como capacidad**. Pero si esos cuatro campos
+son los mismos datos, **la etapa de barrido saldría de la dinámica sola** — que ya está mapeada,
+es legible, tiene `fecha_periodo` y ya tiene el corte de `R-23`.
+
+⚠ **No está verificado y no se verificó acá.** Lo que haría falta, en orden:
+
+1. que `call_discado` sea lo mismo que `Base barrida` de `looker/CC` — `C-17` cerró que **`cc_base`
+   es `Base barrida`**, y el nombre `discado` coincide con la semántica que ese caso describe
+   (*discada = barrida = lo efectivamente marcado*);
+2. que los números coincidan **para la misma cuenta y ventana** — y eso es de la rama de
+   validación, con caso numerado, no de acá;
+3. y sólo entonces, mapear los cuatro campos y cablear sin join.
+
+**Si se confirma, desaparece uno de los dos motivos del prompt de join.** El otro —`imp_meta`,
+`imp_google`, `imp_prog`, que necesitan `Plataforma`— sigue en pie.
+
 ### ~~P1 · `REVISAR` no existe como estado de marcador~~ — CERRADO (08/08/2026)
 
 **Existe.** Es el cuarto estado, entró por el mismo camino que los otros y **cuenta en el

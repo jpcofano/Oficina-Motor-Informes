@@ -181,6 +181,64 @@ function verificarLaminas() {
 }
 
 /**
+ * `_20` `A.6` — cuánto vale, en un número, que las campañas mixtas caigan enteras en JM.
+ *
+ * `R-23` cierra **formalmente** —`JM + GCBA = total`, sin resto— **pero no semánticamente**: las
+ * campañas que nombran a JM y a GCBA a la vez van enteras a JM por la regla de negación, así que
+ * **`gcba_imp_total` queda subestimado por una cantidad conocida**. Una decisión editorial
+ * documentada en prosa no alcanza cuando el efecto es un número.
+ *
+ * Devuelve el desvío **acotado a la ventana del informe**, que es donde se publica — no al
+ * universo de la solapa, que sería un número más grande y menos útil.
+ */
+function medirDesvioCampanasMixtas(baseId, solapa, columnaNombre, columnaValor) {
+  var abierto = abrirHoja(baseId, solapa);
+  if (!abierto.ok) return { ok: false, motivo: abierto.motivo };
+
+  var ventana = resolverVentana({});
+  if (!ventana.ok) return { ok: false, motivo: ventana.motivo };
+
+  var campoFecha = buscarMapeo(baseId, solapa, 'fecha_periodo');
+  if (!campoFecha.ok) return { ok: false, motivo: campoFecha.motivo };
+
+  var datos = abierto.hoja.getDataRange().getValues();
+  var headers = datos[0].map(function (h) { return String(h).trim(); });
+  var iNom = headers.indexOf(columnaNombre);
+  var iVal = headers.indexOf(columnaValor);
+  var iFec = columnaLetraAIndice_(campoFecha.columna);
+  if (iNom === -1 || iVal === -1) {
+    return { ok: false, motivo: 'falta alguna columna', columnas: headers };
+  }
+
+  var mixtas = [];
+  var totalUniverso = 0;
+  for (var f = 1; f < datos.length; f++) {
+    var nombre = normalizarValorDeclarado_(datos[f][iNom]);
+    if (!nombre) continue;
+    // Mixta = matchea `~=JM` (así que hoy cuenta como JM) y además nombra a GCBA.
+    if (nombre.indexOf('JM') === -1 || !/GCBA/.test(nombre)) continue;
+
+    var valor = Number(datos[f][iVal]) || 0;
+    totalUniverso += valor;
+    var fecha = parsearFechaCelda_(datos[f][iFec]);
+    var enVentana = !!(fecha && fecha >= ventana.desde && fecha <= ventana.hasta);
+    mixtas.push({ nombre: nombre, valor: valor, fecha: fecha ? formatearFecha_(fecha) : '(sin fecha)', en_ventana: enVentana });
+  }
+
+  var enVentana = mixtas.filter(function (m) { return m.en_ventana; });
+  return {
+    ok: true,
+    ventana: formatearFecha_(ventana.desde) + ' → ' + formatearFecha_(ventana.hasta),
+    columna_valor: columnaValor,
+    mixtas_total: mixtas.length,
+    mixtas_en_ventana: enVentana.length,
+    desvio_en_ventana: enVentana.reduce(function (a, m) { return a + m.valor; }, 0),
+    desvio_universo: totalUniverso,
+    detalle: mixtas
+  };
+}
+
+/**
  * `_18` `0.2` — mide **los bordes** de la regla «el corte JM está en el nombre de la campaña».
  * **Sólo lectura.**
  *

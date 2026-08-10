@@ -1,6 +1,19 @@
 # `_20` · Los tres casos que cierran `cc_base`, y el período de campaña por solape
 
-> **Modelo: Opus, effort alto.** Subagente `verificador` antes de arrancar.
+> **Modelo por parte, no por prompt** (`_21` §1.1, 10/08) — **Opus se pide, no se hereda**:
+>
+> | parte | modelo | por qué |
+> |---|---|---|
+> | **A** | Sonnet | contar filas y verificar forma |
+> | **B** | Sonnet | incorporar tres filas y actualizar el `.md` par |
+> | **C** | Sonnet | escribir una decisión ya tomada |
+> | **D** | **OPUS** | **cambia el recorte de `looker` y mueve números ya publicados** |
+> | **E** | Sonnet | documentación |
+>
+> **El criterio, en una línea: si equivocarse cuesta una re-corrida, Sonnet; si cuesta un número
+> mal en un deck, Opus.**
+>
+> Subagente `verificador` antes de arrancar.
 >
 > Entra por el repo, no por conversación: **filas en `docs/casos_validacion_*.csv` con su `.md`
 > par.** Un número sin caso numerado no está validado.
@@ -62,12 +75,43 @@ qué se espera que valga después. **Predecir en celdas o decir «N filas × M c
 de configuración cuenta celdas, no filas, y una predicción y una medición en unidades distintas no
 se pueden comparar.
 
+**⚠ Y lo que este prompt no sabía cuando se escribió: la Parte D mueve `imp_total` y
+`gcba_imp_total`, que se cablearon el 10/08.** Los dos leen de `looker/resumen_metricas_dinamico`
+con el corte de `R-23`, y **las 26 filas sobre las que se calcularon `6.084.893` y `2.027.888` son
+exactamente las que el recorte por punto deja entrar**. Cambiar a solape cambia ese universo.
+
+**Tres cosas más en la predicción, y las tres se miden después:**
+
+1. **cuántas filas de `looker` entran hoy por punto, y cuántas por solape** — los dos números,
+   no la diferencia;
+2. **el desglose JM / GCBA de cada una**, con el control `4 + 22 = 26` **recalculado** — si el
+   total cambia, el control se rehace, no se cita;
+3. **los valores actuales de `imp_total` y `gcba_imp_total`**, para tenerlos antes de moverlos.
+
+**Si los dos números se movieron, la celda `notas` de esas dos filas de `MARCADORES` lo dice: qué
+valor tenían, con qué recorte, y desde cuándo.** Un número que cambió sin que la nota lo registre
+es peor que uno que nunca se cableó — el primero parece verificado.
+
 **A.5 · Qué queda esperando el join, y no se toca acá.** Los casos `A-01`, `A-02`, `A-03`, `V-64`,
 `V-65` y `V-66` declaran su fuente como `DIGITAL x Cuentas` y `CC x Cuentas`. **Seis casos
 validados esperan una capacidad que el motor no tiene.** Listarlos con su estado. No cablear
 ninguno. **Ese inventario es el fundamento del prompt de join** — y si el `_18` §0.0 muestra que
 el corte JM sale de una columna propia, puede que la capacidad no haga falta y que estos seis se
 resuelvan con `filtro`.
+
+**A.6 · Las cinco campañas mixtas necesitan número propio, no sólo una celda.**
+
+`R-23` cierra **formalmente** —`JM + GCBA = total`, sin solapamiento y sin resto— **pero no
+cierra semánticamente**: las cinco campañas que nombran a JM y a GCBA a la vez **caen enteras en
+JM y no aportan nada a `gcba_imp_total`**, así que ese número está **subestimado por una cantidad
+conocida**. Una decisión editorial documentada en prosa no alcanza cuando el efecto es un número.
+
+Medir y anotar: **las cinco campañas nombradas**, y **cuánto suman de `dig_impresiones` en la
+ventana del informe** — que es el desvío de `gcba_imp_total`, acotado. Si alguna cae fuera de la
+ventana, decirlo: el desvío es de la ventana, no del universo.
+
+Va **como caso en el CSV de validación o como fila en `PENDIENTES_consistencia.md`**. Con las
+cinco nombradas y el desvío medido si se puede acotar.
 
 **Fin de la Parte A: reportar y parar.**
 
