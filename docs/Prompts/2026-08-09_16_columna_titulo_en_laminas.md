@@ -70,11 +70,8 @@ sería otro.
 **A.1 · El esquema declarado.** Listar `HOJAS_CONFIG_.LAMINAS.headers` en orden, con su índice.
 Confirmar que son 13 nombres y que `notas` es el último.
 
-**A.2 · La rama que toma la hoja hoy, y la convención de índice.** Confirmar si
-`COLUMNAS_DELTA_` tiene o no entrada `LAMINAS`. **Y reportar qué convención usan las entradas
-que ya existen: 0-based o 1-based.** No es un detalle: `B.1` fija `indice: 5` y `B.2` la pone
-quinta en una lista 1-based. **Si el delta es 0-based, la columna entra después de `escondida`**
-y el dibujo de `B.2` queda incumplido en silencio. Si no la tiene: decir qué rama de `aplicarInstalacion_` recibe la hoja, y **qué le pasa
+**A.2 · La rama que toma la hoja hoy.** Confirmar si `COLUMNAS_DELTA_` tiene o no entrada
+`LAMINAS`. Si no la tiene: decir qué rama de `aplicarInstalacion_` recibe la hoja, y **qué le pasa
 a las 51 filas si se agrega un nombre a `headers` sin agregar antes la entrada al delta.** Es el
 modo de falla que ya documentaron `SECCIONES`, `CAMPANAS` y `REUNIONES` en sus comentarios: la
 fila 1 se reescribe y los datos no se mueven, en silencio y sin fallar.
@@ -101,22 +98,24 @@ vacío; si no, si tiene algún shape con texto no vacío; si ninguna de las dos.
   paso;
 - cuántos de los títulos encontrados **contienen `{{`**.
 
-**A.6 · Una contradicción documental — CERRADA el 10/08, ya no hay que esperar.** El comentario de
-`LAMINAS` en `Instalar.gs` lista `seccion_id` junto a `modo`, `itera_sobre` y `filtro` como
-«vacío = hereda de `SECCIONES`». `PLAN.md` §2 dice lo contrario con todas las letras: identidad y
-estado propio —`seccion_id`, `escondida`, `origen`— **no se heredan nunca**. Transcribir las dos
-citas con su ubicación.
+**A.6 · Una contradicción documental, resuelta el 10/08 — corregir.** El comentario de `LAMINAS`
+en `Instalar.gs` lista `seccion_id` junto a `modo`, `itera_sobre` y `filtro` como «vacío = hereda
+de `SECCIONES`». `PLAN.md` §2 dice lo contrario con todas las letras: identidad y estado propio
+—`seccion_id`, `escondida`, `origen`— **no se heredan nunca**.
 
-No es una nota al pie: **si `seccion_id` heredara, sembrarlo sería exactamente lo que el `15.1`
-objeta para `modo`** — declarar en dos lugares y romper la herencia.
+**Manda `PLAN.md`, y el comentario está mal. Es decisión del coordinador, con un argumento que la
+sostiene sola:** `seccion_id` **es la referencia a la sección**, no un atributo que la sección
+declare. `modo`, `itera_sobre` y `filtro` pueden heredarse porque para resolverlos alcanza con
+mirar la fila de `SECCIONES` que la lámina ya señala. **Un `seccion_id` vacío no se puede resolver
+mirando `SECCIONES`, porque es justamente el dato que dice qué fila mirar.** Heredarlo sería
+circular.
 
-**Resuelto: `PLAN.md` es la fuente de verdad y el comentario de `Instalar.gs` está viejo.**
-`CLAUDE.md` §7 le da a `PLAN.md` §1 la pregunta de arquitectura; un comentario de `.gs` no es
-dueño de ninguna. **`seccion_id` es identidad, no política, y no hereda** (`D-23` addendum 1
-punto 4). Lo que el `11.2` declaró heredable es **`informes`**, que sí es política: la sección
-declara y la lámina sólo se aparta.
+Corregir el comentario de `Instalar.gs` para que liste sólo las tres que sí heredan, y dejar dicho
+por qué `seccion_id` no está en esa lista — si no, alguien lo vuelve a agrupar con las otras tres
+en seis meses. Transcribir las dos citas originales en `BITACORA.md` con la resolución al lado.
 
-**Corregir el comentario en la Parte D**, sin esperar. El `_15` descansa en esto y ya está firme.
+**Esto desbloquea el `_15`**, que descansaba entero en que `PLAN.md` tuviera razón: si
+`seccion_id` heredara, sembrarlo sería exactamente lo que el `15.1` objeta para `modo`.
 
 **Fin de la Parte A: reportar y parar.**
 
@@ -137,11 +136,6 @@ El orden importa y no es estético:
 - **B.3 · Los dos arrays de `sellarPlantilla` pasan a 14 posiciones**, con el título en la 5. Si
   A.3 confirma que la rama de reparación no tiene el `slide` a mano, guardarlo al armar la lista
   de láminas con ancla. Una fila reparada sin título es aceptable sólo si el motivo se reporta.
-
-  ⚠ **`sellarPlantilla` llama a `tituloDeLamina_`, nunca su propia lógica de título.** Dos
-  escritores de la columna está bien; **dos definiciones de «título» es el bug de las tres copias
-  de `valorPasaFiltro_` otra vez** — el día que la vía 1 cambie, una de las dos se queda vieja y
-  no falla, escribe distinto.
 - **B.4 · Predicción escrita antes de aplicar, medición después. El modo cálculo no sirve acá y
   hay que decir por qué:** con `aplicar = false`, `aplicarInstalacion_` **ni entra al `forEach` de
   hojas**, así que el diff de una columna nueva saldría vacío — y un vacío ahí se lee como «no hay
@@ -178,11 +172,22 @@ columna, no toca las notas del orador, no toca la plantilla. Un `lamina_id` de l
 aparece en ninguna plantilla **se reporta y se saltea** — ése es el caso «fila sin ancla» que
 `verificarLaminas()` ya sabe nombrar, y es el peor de los cinco; este prompt no lo repara.
 
-**El helper**, también con grep previo:
+**Los helpers**, los dos con grep previo:
 
 ```
 tituloDeLamina_(slide)   // vía 1: placeholder de título · vía 2: primer texto no vacío · '' si no hay
+escribirColumnaLaminas_(mapa, columna, opciones)   // { lamina_id: valor } → una sola columna, por nombre
 ```
+
+**El segundo se escribe genérico a propósito, y no es especulación:** la Parte D del
+`2026-08-09_1` está frenada por exactamente esta pieza —necesita escribir `cobertura`, `falta` y
+`notas` de dos filas puntuales de `LAMINAS` y no hay con qué—, y el `_14` va a necesitar lo mismo
+para las 51. Escribirlo tres veces es tres oportunidades de que una escriba por posición.
+
+Contrato: recibe un mapa `lamina_id → valor`, **resuelve la columna por nombre de encabezado**,
+**no crea ni borra filas**, y un `lamina_id` que no está en la hoja **se reporta y se saltea**.
+Devuelve conteos: escritas, sin cambio, no encontradas. `refrescarTitulosLaminas` queda como su
+primer llamador y no toca la hoja por su cuenta.
 
 Normaliza con `R-10` —colapsar espacios y saltos, `trim()`, **preservando mayúsculas y
 acentos**— y trunca a 120 caracteres. Si trunca, que se note en el valor.
@@ -216,9 +221,9 @@ CLI y menú—: `C.1` del `_11` ya se cobró un bug de diálogo por probar sólo
   todavía no se asignó, y el precedente es que `D-15` quedó prometido y asignado a otra cosa la
   misma tarde. Actualizar la fila de la tabla de fases de §2 que enumera las columnas de
   `LAMINAS`: hoy dice trece y va a decir catorce.
-- **El comentario de `LAMINAS` en `Instalar.gs`** suma la columna. La contradicción de A.6 se
-  corrige acá **sólo si la Parte A la confirmó y `PLAN.md` es la fuente de verdad**; si hay duda,
-  queda como fila en `PENDIENTES_consistencia.md` y se decide despierto.
+- **El comentario de `LAMINAS` en `Instalar.gs`** suma la columna nueva **y pierde `seccion_id` de
+  la lista de las que heredan** — la corrección de `A.6`, que ya no está en duda. Las dos cosas
+  tocan el mismo comentario y van en el mismo commit.
 - **`BITACORA.md`**: entrada fechada con los conteos de A.5 y del refresco, y con la fecha y hora
   de lectura de las plantillas. Un conteo sin fecha envejece en silencio.
 - **`CLAUDE.md` en el mismo commit** si algo del ruteo cambia.
@@ -231,9 +236,6 @@ CLI y menú—: `C.1` del `_11` ya se cobró un bug de diálogo por probar sólo
 2. Toda lámina con texto tiene título en la hoja; toda lámina sin texto tiene la celda vacía **y
    figura nombrada en el reporte**.
 3. Correr `refrescarTitulosLaminas()` dos veces seguidas: la segunda escribe cero.
-4. **`verificarLaminas()` sigue dando VERDE —cero desajustes— y las cinco clases se siguen
-   detectando.** Redactado como «los mismos cinco desajustes» se lee al revés: hoy la corrida da
-   **cero** desajustes vivos, y «cinco» son las **clases** que la función busca
-   (`Sellador.gs:97-106`). Pedir «los mismos cinco» sería pedir que se reproduzca un rojo que no
-   existe. Y la lista nueva `titulos_desactualizados` **no altera el contador de `problemas`**.
+4. `verificarLaminas()` sigue dando los mismos cinco desajustes que daba antes del cambio, y la
+   lista nueva no altera el contador de problemas.
 5. Un `dryRun` no escribe.
