@@ -1254,9 +1254,42 @@ sembrador** — el precedente está escrito en `Instalar.gs:406-409`:
 `origen = manual`, que el sembrador **no toca** (`Instalar.gs:1511-1526`).
 
 **Cómo se verifica:** los marcadores que leían de la solapa congelada tienen que caer a
-`«FALTA:…@solapa_no_fuente»` **y no a cero**. Verificado el 09/08: los seis de `digital/Digital`
-pasaron a `estado = error` con ese motivo, y el resumen de `jm` fue de `51 / ok 38 / sin_datos 13
-/ error 0` a `51 / ok 38 / sin_datos 7 / error 6`.
+`«FALTA:…@solapa_no_fuente»` **y no a cero**. Verificado el 09/08 sobre los seis de
+`digital/Digital`.
+
+**Precisión sobre qué cambia exactamente, porque el resumen de la corrida se lee mal si no está
+dicha.** El **valor publicado** es `«FALTA:token»` — igual que cualquier otro token sin valor,
+porque los dos puntos que pintan preguntan `estado === 'ok'` y todo lo demás cae al mismo camino
+(`Generador.gs:783-788`). Lo que cambia es **el motivo**, que pasa a
+`«FALTA:<campo>@solapa_no_fuente(base/solapa)»`, y **el estado interno, que es `error`, no
+`sin_datos`**. En el resumen de la corrida eso aparece como una columna `error` distinta de cero:
+**no es que algo se rompió, es la solapa declarada fuera de uso.**
+
+### ⚠ Lo medido DESPUÉS, y acota el alcance de esta regla
+
+Al apagar `digital/Digital` el resumen de `jm` fue de `51 / ok 38 / sin_datos 13 / error 0` a
+`51 / ok 38 / sin_datos 7 / error 6`. **`ok` no se movió: 38 antes y 38 después.**
+
+**Por lo tanto los seis no venían de `ok`: venían de `sin_datos`.** Ya no publicaban ningún
+número — la solapa es `snapshot` pero sus filas `JM` son de 2025, así que el recorte por ventana
+del marcador las dejaba afuera y `SUMA` devolvía `sin datos, no cero` (`Marcadores.gs:118-125`).
+
+**Qué significa para la regla, dicho sin adornos:** en **este** caso apagar la solapa **no evitó
+un número viejo, porque no había ninguno publicándose**. Lo que mejoró es el **motivo**: de *"no
+hay datos"* —que invita a buscar el dato— a *"esta solapa está declarada fuera de uso"*, que es la
+respuesta correcta y ahorra la búsqueda.
+
+**El principio de la regla no cambia** —una fuente que devuelve datos viejos es peor que una que
+falla— pero **el caso que la originó no lo demuestra**. Quien la cite para justificar un apagado
+tiene que medir si esa solapa **estaba publicando algo**, y no asumirlo: el conteo de `ok` antes y
+después es la medición que lo dice en un renglón.
+
+⚠ **Dos nombres que se parecen demasiado, y una de las dos NO se congeló.**
+`looker/resumen_metricas` —sin sufijo— es un **pegado de valores** y quedó en `uso = derivada`:
+no baja a `ignorar` porque `derivada` ya la corta en `buscarMapeo` **y además dice qué es**.
+`looker/resumen_metricas_dinamico` es **otra solapa**, es la fuente viva que declara `S-01`
+—`QUERY()` sobre `Cuentas`—, **sigue en `uso = fuente`** y es la única de `looker` que el motor
+lee hoy (949 filas, 26 en la ventana). Confundirlas apaga la única fuente que funciona.
 
 **Si falla:** si un marcador que leía de una solapa recién congelada **sigue publicando un
 número**, no está resolviendo por `MAPEO` — y ése es un camino que hay que encontrar y nombrar,
