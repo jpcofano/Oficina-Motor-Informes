@@ -7578,3 +7578,91 @@ no por base— y la actualización de las dos entradas que este cambio tocó.
 | 3 · los tres conteos en la traza y suman | ✅ `966+3765+18+147+0 = 4896` |
 | 4 · referencia de dos niveles falla con motivo propio | ✅ control positivo, 4 casos negativos |
 | 5 · nada cableado, ninguna plantilla, `LAMINAS` intacta | ✅ `verificarLaminas()` VERDE 51/51 |
+
+---
+
+## Post-`_23` — el hueco de `SOLAPAS` era de 30 filas, y la medición de separadores (2026-08-10)
+
+Tres pedidos del usuario después de confirmar el `_23`. **Ningún marcador cableado.**
+
+### El agujero de `upsertPorClave_` había vaciado 30 de las 84 filas de `SOLAPAS`
+
+Se fue a reparar `looker/Cuentas` —la fila que el `_23` había encontrado con
+`firma_encabezado` y `filas_datos` vacíos— y **al medir la hoja entera aparecieron 30**, cuatro
+de ellas `uso = fuente`: `looker/resumen_metricas_dinamico` (el `hoja_default` de la base y la
+fuente de `imp_total`), `looker/Cuentas`, `digital/Cuentas` y `digital/Digital 2026 acumulado`.
+
+**Y no era sólo el dato: apagaba un guardarraíl sin avisar.** `evaluarCoberturaLectura_` devuelve
+`{ ok: false }` cuando `SOLAPAS.filas_datos` está vacío, así que en esas 30 solapas el aviso de
+"este lector devolvió una fracción de lo registrado" —el que se agregó por el caso `m2`, 18 filas
+de 29.533 con ✅— estaba desactivado.
+
+**Restaurado con `inventariarSolapas()`**, el escritor dueño de esas tres columnas: 84
+actualizadas, 0 nuevas, **29 de 30 recuperadas**. La restante es
+`rdv/Cantidad de reuniones por franja horaria` sin `firma_encabezado`, y no es pérdida: esa
+solapa no tiene fila de títulos.
+
+**Verificado que la restauración no pisó lo del `_23`:** `looker/DIGITAL` conserva
+`ventana_ref = Cuentas` y su nota. `inventariarSolapas()` escribe **celda por celda**, que es
+precisamente lo que `upsertPorClave_` no hace — el contraste entre los dos escritores de la misma
+hoja es el diagnóstico entero.
+
+**`filas_minimas` está vacía en las 84 y eso es correcto** (`R-19` capa 3: vacío = sin chequeo, el
+piso lo fija una persona). No había nada que restaurar ahí.
+
+**De paso, 20 conteos viejos se refrescaron.** `looker/DIGITAL` 4591 → 4904; `rdv/RDV_otros_ministros`
+**bajó** de 749 a 515. Los números de `SOLAPAS` son una foto con hora.
+
+### El filtro es de una sola condición, y el separador se eligió midiendo los datos, no los textos
+
+**Las dos premisas confirmadas contra el código:** `parsearFiltro_` (`Generador.gs`) corta en el
+primer operador y devuelve un `{campo, op, valor}` — no hay forma de expresar dos condiciones. Y
+`Generador.gs:626` es `filtroPropio || filtro_seccion`: el filtro del marcador **reemplaza** al de
+la sección, no se suma. El comentario de `:354` ya lo decía con todas las letras.
+
+**Cuántos de los 33 textos vivos usarían más de una condición: ninguno tiene evidencia de
+necesitarla hoy.** Los 33 (32 en `MARCADORES` + 1 en `SECCIONES`) son 9 textos distintos y todos
+de una condición. **La demanda no viene de los que existen: viene de los que faltan** — los tres
+`imp_*` necesitan tres condiciones simultáneas, y los seis `pauta_*` no tienen filtro y necesitan
+al menos la señal de figura.
+
+**Y el candidato con evidencia estructural, que no se decide acá:** los seis `enc_*` sobre
+`digital/Directa Mail` filtran `mail_tipo=Convocatoria` y **no cortan por remitente**, mientras
+sus hermanos `mail_*` y `gcba_mail_*` de la misma solapa sí lo hacen
+(`mail_remitente=jorge.macri@…`). Puede ser correcto —la iteración por encuentro quizá ya acota el
+universo— o puede faltarles el corte de figura. Es pregunta de dominio.
+
+### El separador: 12 libres contra los textos, **7 contra los datos**
+
+El precedente de `~=` midió los 7 textos de filtro y alcanzó. Acá no alcanzaba, y el barrido lo
+mostró: se barrieron **28 columnas** —toda fila de `MAPEO` con `tipo_esperado = texto` cuya solapa
+está `uso = fuente`— más las tres de `looker/DIGITAL` que todavía no están mapeadas y son
+justamente las que los `imp_*` van a filtrar.
+
+| candidato | contra los 33 textos | contra los valores reales |
+|---|---|---|
+| `&&` `;` `::` `^` ` AND ` ` & ` | libre | **libre** |
+| `~` | ocupado (2, es el operador) | libre, **pero colisiona con `~=`** |
+| **`\|`** | **libre** | ⚠ **447 de 709 valores de `looker/DIGITAL.nombre_campaña`** |
+| `,` | libre | 6 valores, y ya es el separador de `valores_incluidos` |
+| `+` / ` + ` | libre | 7–9 valores en cuatro columnas |
+| `/` | libre | 358 valores en `nombre_campaña`, 461 en `campana` |
+| ` Y ` | libre | 16–18 valores |
+| `&` | libre | 2 URLs de Facebook en `post_meta` |
+| `#` `?` | libre | `#N/A` y URLs en `post_meta` |
+
+**`|` es el caso que justifica haber medido los datos y no los textos.** Contra los 33 textos sale
+limpio; en la columna exacta que los `imp_*` van a filtrar aparece en **447 de 709 valores** —
+`RDV JM | Villa Devoto 15/12`, `CAMPAÑA GCBA | INFRAESTRUCTURA | …`—. Adoptarlo habría partido más
+de la mitad de los nombres de campaña por el medio. Es el mismo modo de falla que
+`comaDentroDeUnValor_` (`D-21`) ya cubre para `valores_incluidos`.
+
+**No se diseñó nada:** el pedido era medir, reportar y parar.
+
+### La ventana de validación tiene que rehacer `C-12`
+
+`X-16` descartó cuatro unidades para `pauta_*` con el conteo `6/5/10` de filas JM + ventana +
+`Activa`. **Esa ventana era la vieja.** Con la ventana por referencia el mismo corte da
+**16 / 14 / 21** (`Meta` / `Google ads` / `DV360`), 51 filas en total sobre las 966 de la ventana.
+Medido con `parsearFiltro_`/`valorPasaFiltro_`, que es la semántica del motor. **No se comparó
+contra ningún deck** — eso es de la otra rama.

@@ -3105,10 +3105,46 @@ por otro motivo, que es lo que lo hace difícil de ver.
 que `filas_datos` y `firma_encabezado` se dejan afuera del objeto *para no pisarlas*. La
 intención era correcta; el mecanismo no la cumplía.
 
-**La evidencia estaba a la vista y nadie la había leído así:** `looker/Cuentas` tiene hoy
+**La evidencia estaba a la vista y nadie la había leído así:** `looker/Cuentas` tenía
 `firma_encabezado` y `filas_datos` **vacíos** —se le editó `notas` el 09/08— y `looker/DIGITAL`
-los tiene cargados, porque nadie la había tocado desde el último inventario. Dos filas de la
+los tenía cargados, porque nadie la había tocado desde el último inventario. Dos filas de la
 misma hoja, una con datos y otra sin ellos, y la diferencia es cuál pasó por el sembrador.
+
+### ⚠ No era una fila: eran **30 de 84**, y cuatro `uso = fuente` (medido 10/08, ya restauradas)
+
+Al ir a reparar `looker/Cuentas` se midió la hoja entera y el agujero era mucho más grande de lo
+que sugería el caso que lo destapó:
+
+| | |
+|---|---|
+| filas de `SOLAPAS` | 84 |
+| **con hueco en `firma_encabezado` / `filas_datos` / `filas_crudas`** | **30** |
+| de ésas, `uso = fuente` | **4** — `looker/resumen_metricas_dinamico`, `looker/Cuentas`, `digital/Cuentas`, `digital/Digital 2026 acumulado` |
+| con `filas_minimas` cargada | **0 de 84** |
+
+**`looker/resumen_metricas_dinamico` es el `hoja_default` de `looker` y la fuente de `imp_total`.**
+No es una fila cualquiera.
+
+**Y el daño no era sólo el dato: apagaba un guardarraíl en silencio.**
+`evaluarCoberturaLectura_` (Paso 2.8 Parte D) existe para avisar cuando un lector devuelve una
+fracción chica de lo que `SOLAPAS.filas_datos` registra —el caso `m2`, 18 filas de 29.533 con ✅—
+y **devuelve `{ ok: false }` cuando `filas_datos` está vacío**. O sea que en esas 30 solapas, las
+cuatro `fuente` incluidas, el aviso estaba desactivado y nada lo decía.
+
+**`filas_minimas` no se perdió**: está vacía en las 84 y **vacío es su estado de nacimiento**
+—`R-19` capa 3, el piso lo fija una persona—. No hay nada que restaurar ahí.
+
+**Restauradas el 10/08 con `inventariarSolapas()`**, que es el escritor dueño de esas tres
+columnas según `ESCRITORES.md`: 84 filas actualizadas, 0 nuevas, 0 no encontradas,
+**29 de 30 recuperadas**. La que queda es `rdv/Cantidad de reuniones por franja horaria`
+(`derivada`) sin `firma_encabezado`, y **no es pérdida**: la solapa no tiene fila de títulos que
+leer. Verificado además que la restauración **no pisó** lo que el `_23` había escrito —
+`looker/DIGITAL` conserva su `ventana_ref = Cuentas` y su nota—, porque `inventariarSolapas()`
+escribe celda por celda y no la fila entera. Que es, exactamente, lo que `upsertPorClave_` no hace.
+
+**De paso: 20 filas tenían el conteo viejo y se refrescó.** Las bases crecen —`looker/DIGITAL`
+pasó de 4591 a 4904, `rdv/RDV_otros_ministros` **bajó** de 749 a 515— así que estos números son
+una foto con hora, no una propiedad.
 
 **Se arregló sólo en `aplicarClasificacionSolapas_`**, que ahora devuelve las cuatro columnas
 ajenas tal cual las encontró. **`upsertPorClave_` quedó igual a propósito:** lo usan `BASES`,
