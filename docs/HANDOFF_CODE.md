@@ -3,120 +3,111 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-09, al cerrar el `_11` (Fase 2 de `D-23`) · último commit al
-escribirlo: `ddeda60`
+**Última actualización:** 2026-08-10, al cerrar el `_23` · último commit al escribirlo: `d55efdb`
 
 ## Dónde estamos
 
-**Las 51 láminas están selladas.** Es la primera vez que el motor escribe sobre las plantillas
-vivas, y quedó verificado con un control corrible.
+**`looker/DIGITAL` se puede leer.** Era la última pieza que faltaba para los tres `imp_*`: la
+solapa tiene el corte, el filtro y el desglose pero **ninguna columna temporal** (`C-19`), y
+ahora toma la ventana de `looker/Cuentas` por pertenencia — `R-25`, declarada en
+`SOLAPAS.ventana_ref` + `MAPEO.clave_ventana` (`D-24`).
 
 ```
-SECCO_marcada   29 láminas · L-001 … L-029
-JM_marcada      22 láminas · L-030 … L-051
-LAMINAS         51 filas · 7 escondidas marcadas · seccion_id vacío en las 51
-verificarLaminas()  VERDE — 51/51/51, sin huecos, repetidos ni desajustes
+looker/DIGITAL   4896 filas · 966 en ventana 2026-07-24 → 2026-07-30
+                 3765 fuera · 18 sin clave · 147 huérfanas (31 ids)
+looker/Cuentas   1011 filas · 1011 ids distintos, cero repetidos · 92 en ventana
+control          Cuentas por referencia contra sí misma = recorte directo (92 y 92)
+pruebas del diff 11/11 verde · verificarLaminas() VERDE 51/51/51
 ```
 
-**El orden que sigue, y no cambia: `_10` → `2026-08-09_1` → `_8`.**
+**El siguiente es el cableado de los tres `imp_*`, y ya tiene todo:** fuente `looker/DIGITAL`,
+corte `nombre_campaña~=JM`, filtro `estado=Activa`, plataformas por `R-24` (Meta, Google ads, y
+el resto **por resta**), ventana por referencia. Medido el 10/08: **51 filas** cumplen JM +
+Activa, repartidas `Meta` 16 · `Google ads` 14 · `DV360` 21.
 
-| prompt | qué falta |
-|---|---|
-| **`_10`** + `10.1` | **siguiente.** Puntos 1–5 del `10.1` hechos; falta la **Parte B**: el operador `CONTIENE`, `R-15 Addendum 2` y las filas de `MARCADORES` |
-| **`2026-08-09_1`** + `1.1` `1.2` `1.3` | los tres addenda leídos y medidos; la Parte A no arrancó |
-| **`_8`** | último |
+**Y recién después se cierra el `P0`:** `imp_total` y `gcba_imp_total` son derivados (`X-10`,
+`V-59`) y se les retira la fuente propia **cuando existan los tres sumandos**, nunca antes. El
+orden está desde el `10.1` §3 y no cambió.
 
-**El `_10` va antes sí o sí:** su Parte B agrega `CONTIENE`, y la señal de la Parte B del `_1` es
-*`nombre_campaña` contiene `JM`*, hoy inexpresable. Y los dos escriben en `MARCADORES`.
+## Lo que hay que hacer antes de cablear, y no es opcional
 
-## Con qué entra el `_10`
+**`looker/DIGITAL` tiene cuatro filas de `MAPEO` que faltan.** Hoy sólo tiene `clave_ventana`.
+Sin `nombre_campaña`, `estado`, `Plataforma` e `Impresiones` mapeados, los marcadores fallan —
+`aplicarFiltroDeMarcador_` resuelve el campo con `buscarMapeo` y **un filtro propio cuyo campo no
+está mapeado no filtra: falla**. Es el corolario de `CLAUDE.md` §4, y son cuatro celdas que valen
+una llamada a `buscarMapeo` antes de la primera.
 
-- **`R-20` acotada y marcada `SIN MECANISMO`** — ya escrita en `REGLAS_NEGOCIO.md`. No se toca.
-- **`C.4` retirado** — la poda de derivados no corre: borraría `imp_total`, la única fila que
-  produce ese número, y `imp_meta`/`imp_google`/`imp_prog` no existen en `MARCADORES`.
-- **⚠ `parsearFiltro_` tiene UN parser y TRES consumidores**: `Generador.gs:428`, `:1180` y
-  **`:1241-1245` (inline, en la rama `CAMPANAS` de `itemsDeSeccion_`)**. Agregar el operador en
-  uno solo deja dos filtrando mal **en silencio** — `f.negado` sería `false` y caerían a igualdad
-  exacta. **Verificar las tres líneas contra `HEAD`: los números envejecen.**
-- **`normalizarValorDeclarado_` no pliega case ni acentos** (`Fuentes.gs:385-388`), así que
-  `CONTIENE JM` sería case-sensitive.
-- **El símbolo propuesto es `~=`** (y `!~=` para el negado): ASCII, sobrevive al round-trip de la
-  planilla, mantiene la forma `campo<op>valor`. Medido: **ninguno de los 7 filtros que existen
-  hoy** contiene `~`, `CONTIENE`, `~=`, `%`, `*=` ni `::`.
-- **`R-15 Addendum 2` está bloqueado** y no por tiempo: `looker/CC` no tiene `fecha_periodo` ni
-  filas en `MAPEO`, `nombre_campaña` no existe como campo lógico en ninguna base, y esa solapa no
-  tiene esa columna. Si se escribe, va marcado `SIN MECANISMO` como `R-20`.
+Columnas medidas el 10/08 sobre la solapa viva: `A Id cuentas · B Plataforma · C Impresiones ·
+D Visualizaciones · E Clics · F nombre_campaña · G eje · H area · I estado`.
 
-## Lo que dejó el `_11` y conviene no perder
+## Lo que dejó el `_23` y conviene no perder
 
-- **`verificarLaminas()`** — control de cierre corrible, en el menú *Plantillas*. Compara
-  plantilla contra hoja. **La plantilla es autoritativa**: si divergen, se repara la fila.
-- **`ORDEN_SELLADO_` es fijo, no derivado.** No puede salir de `leerInformes()`: ese orden es el
-  de las filas de una hoja que se edita a mano, y **un `lamina_id` asignado no se reusa nunca**.
-- **`seccion_id` quedó vacío en las 51 filas**, a propósito (`B.4`): el sellador no deduce nada.
-  ⚠️ **Pero NO son trabajo humano** —así lo había escrito y está mal—: **el mapeo se deriva**, y
-  ya está documentado en tres lugares. Lo siembra el **`2026-08-09_15`**, que va **después del
-  `2026-08-09_1` y antes del `_8`**.
-  - Tres vías —por `familia_tokens`, por nombre, por orden— **medidas por separado**, y la tabla
-    que importa es **el cruce**: qué dice cada vía para cada una de las 51 y si coinciden.
-  - **Se siembra donde al menos dos coinciden y ninguna contradice.** Una sola vía no alcanza.
-  - **Las contradicciones se listan primero: son un hallazgo sobre los documentos, no sobre la
-    lámina.** Y la ambigüedad es el dato — Resumen Ejecutivo tiene `mail_`, `imp_`, `cc_`, `ivr_`
-    y `pauta_` a la vez, y `familia_tokens` está vacío en varias filas de `SECCIONES`.
-  - **El resultado esperado NO es 51 de 51.** Un sembrador que llena todo es un sembrador que
-    adivinó.
-- **`borrarNotasDeLamina`** es la única función que llama `setText` sobre notas de una plantilla
-  viva, autorizada sólo por `C-01` addendum 4, con las tres guardas adentro.
+- **`SOLAPAS` tiene una columna nueva, `ventana_ref`**, antes de `notas`. Vacío = la solapa tiene
+  su propia `fecha_periodo`, que es el estado de las 100 y pico. **La única con valor es
+  `looker/DIGITAL`.**
+- **La referencia es de un solo nivel** y el segundo falla con motivo propio. El control positivo
+  vive en `Pruebas.gs` (`probarReferenciaVentanaUnNivel_`) y le pasa un mapa de solapas
+  **sintético** — por eso `validarReferenciaVentana_` recibe el mapa por parámetro.
+- **`controlVentanaPorReferencia_()` es el control corrible de la capacidad**: recorta
+  `looker/Cuentas` por los dos caminos y compara. Se corre por API, no escribe nada. Si algún día
+  difiere, la capacidad está rota y se ve sin tocar `DIGITAL`.
+- **`leerFuente` devuelve `encabezados`** (la fila de títulos tal cual se leyó). No es cosmético:
+  resolver el nombre de la columna por afuera con `encabezadoEnColumna_` usa
+  `BASES.fila_encabezado` en vez de `resolverFilaEncabezado_`, y donde difieran todas las claves
+  saldrían vacías **sin fallar**.
+- **`upsertPorClave_` blanquea toda columna que el objeto no traiga.** Se arregló sólo en
+  `aplicarClasificacionSolapas_`; el genérico quedó igual y está en `PENDIENTES`. Antes de tocar
+  un seed de `BASES`, `MAPEO`, `INFORMES` o `PERIODOS`, mirar qué columnas no declara.
 
 ## Esperando decisión tuya
 
-- **`pauta_*` no tiene señal de figura.** Los seis no tienen filtro, así que `pauta_*` y
-  `gcba_pauta_*` **publican el mismo número**.
-- **`looker/Cuentas` vuelve a `fuente`** con la acotación de dimensión — pendiente de la Parte A
-  del `2026-08-09_1`.
-- **`X-16`** — de qué fuente salen los `imp_*` del deck del 31/07. `CAMPAÑAS_DESGLOCE_DIGITAL`
-  quedó **descartada por medición**.
+- **147 filas de `DIGITAL` son huérfanas y 40 de ellas son JM.** Hoy no restan impresiones porque
+  ninguna está `Activa`, **y ese cero es de hoy**. Si son cuentas dadas de baja o si `Cuentas`
+  está incompleta lo sabe el equipo dueño de la base, no el motor (`D-10`).
+- **`looker/CC` sigue `fuente` y sin una fila en `MAPEO`** (1309 filas). Si su período tampoco
+  está en la solapa, el camino ya existe: el mismo `ventana_ref` a `Cuentas`.
+- **`pauta_*` no tiene señal de figura.** Los seis siguen sin filtro, así que `pauta_*` y
+  `gcba_pauta_*` publican el mismo número.
 - **`R-20` y `R-21` están escritas y sin mecanismo.**
-- **¿El registro fila por fila?** Hoy `sellarPlantilla` escribe el bloque de filas **después** de
-  anexar todas las anclas de esa plantilla, así que **una fila sin ancla es imposible**. El caso
-  inverso —anclas sin fila si algo corta en el medio— es recuperable por la reparación. Cambiarlo
-  a fila por fila cuesta 51 escrituras en vez de 2.
+- **¿`upsertPorClave_` pasa a preservar por defecto**, o cada sembrador se hace cargo como el de
+  `SOLAPAS`? Lo primero es una línea con radio de cuatro hojas; lo segundo son cuatro cambios que
+  se olvidan de a uno.
 
 ## Qué mirar antes de tocar algo
 
-- **Verificar el camino del menú, no sólo el de la API.** El bug del orden de sellado existía sólo
-  en `menuSellarPlantillas_`; `C.1` no lo atrapó porque probó llamando desde el CLI en orden
-  explícito. **Son dos caminos y hay que correr los dos.**
-- **`MARCADORES` no tiene columna `estado`.** `REVISAR` lo calcula el motor en runtime
-  (`Generador.gs:752`) y su disparador sólo lo puebla `LISTA`.
-- **`uso = ignorar` corta en `buscarMapeo` (`Config.gs:244-247`), no en `leerFuente`.** Apaga los
-  marcadores, **no la solapa**: los caminos que no pasan por `MAPEO` la siguen leyendo.
-- **`rdv/RDV_otros_ministros`** tiene un solo campo en `MAPEO` y su `fecha_periodo` resuelve a
-  `hora_cita_evento` — funciona **porque los encabezados están corridos** (`C-09`). Arreglar
-  `C-09` obliga a rehacer ese `MAPEO` en el mismo commit.
+- **Los encabezados de `Cuentas` y `DIGITAL` no coinciden** — `id_cuentas` contra `Id cuentas`.
+  Cualquier cruce entre las dos se resuelve por `MAPEO`, nunca por texto de encabezado. Es la
+  trampa que ya se comió una medición de este mismo paso.
+- **Verificar el camino del menú, no sólo el de la API.** Son dos caminos y hay que correr los
+  dos: el bug del orden de sellado existía sólo en `menuSellarPlantillas_`.
+- **`MARCADORES` no tiene columna `estado`.** `REVISAR` lo calcula el motor en runtime y su
+  disparador sólo lo puebla `LISTA`.
+- **`uso = ignorar` corta en `buscarMapeo` (`Config.gs`), no en `leerFuente`.** Apaga los
+  marcadores, **no la solapa**.
+- **`rdv/RDV_otros_ministros`** funciona **porque los encabezados están corridos** (`C-09`).
+  Arreglar `C-09` obliga a rehacer ese `MAPEO` en el mismo commit.
 - **Los números no se validan acá.** La validación contra decks publicados vive en la otra
   conversación. Acá se mide **estructura**.
 
-## El patrón que ya lleva tres casos
+## El patrón que ya lleva cuatro casos
 
-**Cuando algo parece roto en los datos, medir primero cómo se está mirando.** `CLAUDE.md` §4, con
-su borde: la regla vale cuando **el instrumento propio reproduce lógica que el motor ya tiene** y
-la reproduce peor. **No vale cuando la medición es de la salida del motor contra un hecho
-externo** — ahí el motor es el sospechoso, y así se encontraron `parsearFiltro_` sin `contiene`,
-`leerReuniones_` sin filtro por `periodo_id` y los seis `pauta_*` sin `filtro`.
+**Cuando algo parece roto en los datos, medir primero cómo se está mirando** — `CLAUDE.md` §4,
+con su borde: la regla vale cuando **el instrumento propio reproduce lógica que el motor ya
+tiene** y la reproduce peor. **No vale cuando la medición es de la salida del motor contra un
+hecho externo** — ahí el motor es el sospechoso.
 
 | se creyó | era |
 |---|---|
 | `looker` ilegible entero | ventana con fechas en texto; `formatearFecha_` exige `Date` |
 | los `pauta_*` publican cero | `String(celda)` disfraza un booleano; `Number(true)===1` |
 | `ignorar` bloquea la lectura | bloquea `buscarMapeo`, no `leerFuente` |
+| `Cuentas` no tiene ni un id | el encabezado se llama distinto; `datos[f][-1]` es `undefined` |
 
-## Números de referencia — 09/08
+## Números de referencia — 10/08
 
-`MARCADORES` **51 filas**, 14 columnas. **`LAMINAS` 51 filas, 13 columnas** (decimosexta hoja de
-`HOJAS_CONFIG_`, cuarta `auditada: false`). `SECCIONES` 36. `MAPEO` 140. `REUNIONES` 7.
-`CAMPANAS` 3. Plantillas: `jm` 22 láminas / 172 tokens, `secco` 29. Operaciones del motor: siete.
+`MARCADORES` **51 filas** · `LAMINAS` 51 · `SECCIONES` 36 · **`MAPEO` 144** (140 + las cuatro del
+`_23`) · `SOLAPAS` 84 filas, **11 columnas**. Plantillas: `jm` 22 láminas / 172 tokens, `secco`
+29. Operaciones del motor: siete. Pruebas del diff: **11**.
 
-Unión digital (`2026-07-24 → 2026-07-30`): maestra 979 filas / 840 con id / **763 cuentas** / 77
-pisadas. Anclaje: 5 anclados, 0 sinLink, 0 baja confianza. Huérfanas: `Digital` 922 de 1297,
-`Directa Mail` 631 de 2162.
+`looker`: `resumen_metricas_dinamico` 953 filas / 26 en ventana · `Cuentas` 1011 / 92 · `DIGITAL`
+4896 / 966. `rdv` 1362 / 15 en ventana, 700 excluidas por lista blanca.

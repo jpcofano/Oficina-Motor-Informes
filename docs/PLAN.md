@@ -736,6 +736,44 @@ las hace verificables. En producción `C-01` vuelve a regir entero.
 
 ---
 
+**`D-24` — Una solapa declara de dónde saca la ventana en `SOLAPAS`, y con qué clave se cruza
+en `MAPEO`. Dos hojas, porque son dos preguntas de grano distinto.** (10/08/2026)
+
+La capacidad y su justificación de dominio son `R-25`. Acá va **dónde se declara**, que es lo
+único de esto que es una decisión de arquitectura.
+
+| pregunta | dónde | por qué |
+|---|---|---|
+| ¿De qué solapa saca la fecha ésta? | **`SOLAPAS.ventana_ref`** | no es una columna de la solapa: es una propiedad **de la solapa**, del mismo grano que `uso` y `fila_encabezado` |
+| ¿Cuál es la columna de la clave? | **`MAPEO`, campo lógico `clave_ventana`**, una fila de cada lado | es literalmente una columna, que es lo que `MAPEO` registra |
+
+**Lo descartado, con el motivo — es la parte que hace falta conservar:**
+
+- **Las dos cosas en `MAPEO`**, con campos lógicos `ventana_ref_solapa` y `ventana_ref_clave`.
+  Obliga a poner un **nombre de solapa** en la columna `columna`, que en esa hoja significa una
+  letra: `columnaLetraAIndice_` haría cualquier cosa con ese string, `tipo_esperado` dejaría de
+  aplicar, y `backfillSolapaMapeo_` y las auditorías leerían una fila que **miente sobre su
+  propio grano**. Descartada por eso, no por estilo.
+- **Las dos cosas en `SOLAPAS`**, con la letra de la clave en una segunda columna nueva. Pone
+  *"qué columna es qué"* en un segundo lugar además de `MAPEO` — la divergencia que la tabla de
+  dueños de `CLAUDE.md` §7 existe para evitar.
+
+**El campo lógico se llama `clave_ventana` y no `id_cuenta`, a propósito.** El mecanismo no sabe
+de cuentas: el próximo par de solapas puede cruzarse por otra cosa. Es la dirección de `D-01` —
+un nombre de negocio adentro del mecanismo es una línea de `.gs` que después hay que tocar.
+
+**Y resuelve gratis un problema medido:** los encabezados reales de las dos solapas **no
+coinciden** (`Cuentas` titula `id_cuentas`, `DIGITAL` titula `Id cuentas`), así que la clave
+nunca podría haberse resuelto por texto. Un campo lógico con una fila de cada lado es la única
+forma que ya existía en el repo para decir *"esto de acá es lo mismo que aquello de allá"*.
+
+**Un solo nivel de referencia**, con motivo propio para el segundo — sin ese tope una cadena
+circular cuelga la corrida en vez de fallar. `validarReferenciaVentana_` recibe el mapa de
+solapas **por parámetro** justamente para que el control positivo pueda armar el ciclo sin
+escribirlo en la planilla.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 **IDs `T<tramo>.<n>`.** La palabra "Paso" queda para la serie histórica y no se reusa: `Paso 5`

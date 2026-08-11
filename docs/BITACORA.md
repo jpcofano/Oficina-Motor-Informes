@@ -7453,3 +7453,128 @@ para saber cuándo corrió.
 | 2 · ninguna fila de `MARCADORES` dice `Plataforma = DV360` | ✅ cero |
 | 3 · la regla por resta, con la fecha de la medición | ✅ `R-24` |
 | 4 · nada cableado, ninguna plantilla, `LAMINAS` intacta | ✅ `verificarLaminas()` **VERDE**, 51/51 |
+
+---
+
+## El `_23` — la ventana por referencia: `looker/DIGITAL` deja de ser ilegible (2026-08-10)
+
+Corrida del `docs/Prompts/2026-08-10_23_ventana_por_referencia.md`, partes A a D. **Ningún
+marcador cableado, ninguna plantilla tocada, `LAMINAS` intacta** (`verificarLaminas()` VERDE,
+51/51/51). Lecturas de las hojas y las bases vivas el 10/08 entre las 18:34 y las 21:10 UTC.
+
+**Modelo por parte:** `A` y `D` Sonnet; `B` y `C` Opus, porque `B` es diseño y `C` decide qué
+filas entran en la ventana de un número que va a un deck.
+
+### Parte A — tres confirman y una no
+
+**`A.1` y `A.2` confirman.** La ventana se decide en `leerFuente` (`Fuentes.gs`), rama `filtrar`,
+con `entraPorSolape_`, y quién tiene fin lo declara `MAPEO.fecha_fin_periodo`. `looker/DIGITAL`
+fallaba con `«FALTA:fecha_periodo@looker/DIGITAL»` — sin excepción y sin recorte que no recorta.
+
+**`A.3` NO confirma, y era la premisa que podía cambiar el trabajo.** El prompt pedía verificar
+*"que `fecha_inicio` y `fecha_fin` estén mapeados o sean mapeables"*. **No estaban mapeados: las
+27 filas de `MAPEO` de `looker` eran todas de `resumen_metricas_dinamico`, y `Cuentas` no tenía
+ni una.** Fallaba igual que `DIGITAL`, con `«FALTA:fecha_periodo@looker/Cuentas»`, teniendo las
+dos fechas a la vista. Son mapeables (`C` y `D`), así que el diseño no cambió — lo que cambió es
+que el criterio de aceptación 1 no se podía correr sin escribir esas filas primero.
+
+**Y lo que sí decía `A.3`, medido:** `Cuentas` tiene **1011 filas y 1011 ids distintos, cero
+repetidos**. El diseño por pertenencia era inmune al doble conteo igual; el número queda escrito
+porque es la evidencia de por qué se eligió, no una consecuencia de haber acertado.
+
+**`A.4` — el cruce.** `DIGITAL` 4896 filas: 4878 con id, **18 sin id**, 4731 matchean en
+`Cuentas`, **147 huérfanas** en 31 ids distintos, uno de ellos el literal `Falta ID`.
+
+> **Un error del instrumento, del catálogo exacto de `CLAUDE.md` §4.** La primera corrida dio
+> *"0 ids, 1011 vacíos, 4878 huérfanas"*. No era el dato: **los encabezados de las dos solapas no
+> coinciden** —`Cuentas` titula `id_cuentas` y `DIGITAL` titula `Id cuentas`— y el instrumento
+> buscaba una sola forma. `datos[f][-1]` es `undefined` y `undefined` se lee como celda vacía.
+> **La medición estaba mal, no la base**, y el desajuste que la causó terminó siendo el argumento
+> de diseño más fuerte de la Parte B.
+
+### Parte B — dónde se declara, con lo descartado
+
+`D-24`. **Dos hojas, porque son dos preguntas de grano distinto:** *¿de qué solapa saca la fecha
+ésta?* es una propiedad **de la solapa** y va en `SOLAPAS.ventana_ref`; *¿cuál es la columna de la
+clave?* es literalmente una columna y va en `MAPEO`, campo lógico `clave_ventana`, una fila de
+cada lado. Lo descartado —las dos cosas en `MAPEO`, las dos en `SOLAPAS`— está en `D-24` con el
+motivo, que es lo que hay que conservar.
+
+**El campo se llama `clave_ventana` y no `id_cuenta` a propósito** (`D-01`): el mecanismo no sabe
+de cuentas.
+
+### Parte C — predicción y medición, pegadas
+
+Escrita antes de medir, sobre la ventana `2026-07-24 → 2026-07-30` (origen `config`):
+
+| campo | predicho | medido |
+|---|---|---|
+| `filas_totales` | 4896 | **4896** |
+| `filas_en_ventana` | 966 | **966** |
+| `filas_fuera_de_ventana` | 3765 | **3765** |
+| `filas_sin_clave_ventana` | 18 | **18** |
+| `filas_clave_huerfana` | 147 | **147** |
+| `claves_de_referencia` | 1011 | **1011** |
+| `claves_en_ventana` | 92 | **92** |
+| `claves_huerfanas` | 31 | **31** |
+
+**Las ocho.** Y suman: `966 + 3765 + 18 + 147 + 0 = 4896`.
+
+**Control 1 — `Cuentas` contra sí misma: idéntico.** 92 filas y 92 claves por los dos caminos,
+cero de un lado solo, cero filas en ventana sin clave, universo 1011. El control **no escribe la
+autorreferencia en `SOLAPAS`** —`validarReferenciaVentana_` rechaza el ciclo de largo uno, y con
+razón—: llama a la maquinaria por abajo, que es exactamente lo que corre del lado de `DIGITAL`.
+
+**Control 2 — la regla de un nivel**, en `Pruebas.gs`, sintético y sin tocar la planilla: dos
+niveles, ciclo de largo uno, referencia a una solapa `ignorar` y referencia a una no registrada
+**fallan con motivo propio**; un nivel resuelve. Las **11** pruebas del diff en verde.
+
+**Conteo de filas para la otra ventana — no es un número publicado.** Con la ventana resuelta y
+midiendo con `parsearFiltro_`/`valorPasaFiltro_`, que son la semántica del motor y no un
+`indexOf` propio: de las 966 en ventana, **63 son JM**, 382 tienen `estado = Activa`, y **51
+cumplen las dos**. Repartidas en `Meta` 16, `Google ads` 14, `DV360` 21 — o sea que esta semana
+`imp_prog` por resta (`R-24`) sale todo de `DV360`.
+
+### Lo que apareció al escribir, y no estaba en el prompt
+
+**`upsertPorClave_` blanquea toda columna que el objeto no traiga**, y el comentario de
+`aplicarClasificacionSolapas_` decía lo contrario desde el 2.11 Parte C. Tocarle `notas` y
+`ventana_ref` a `looker/DIGITAL` le habría borrado `firma_encabezado`, `filas_datos`,
+`filas_crudas` y `filas_minimas`. **La evidencia estaba a la vista hace un día y nadie la había
+leído así:** `looker/Cuentas` tiene esas columnas vacías —se le editó `notas` el 09/08— y
+`DIGITAL` las tenía cargadas. Se arregló **sólo en el sembrador de `SOLAPAS`**, que ahora devuelve
+las cuatro columnas ajenas tal cual; `upsertPorClave_` quedó igual y el caso general es un
+pendiente con prompt propio. Verificado después de sembrar: `DIGITAL` conserva `filas_datos 4591`
+y su `firma_encabezado`.
+
+**Y una predicción vieja que se cumplió sin romper nada.** El pendiente *"la inferencia de solapa
+de `looker` funciona porque `MAPEO` está incompleto"* (03/08) decía que mapear una segunda solapa
+haría fallar a `prueba_alcance`. Se mapearon **dos**. `prueba_alcance` ya se había retirado, y en
+`MARCADORES` **ninguna** fila tiene `solapa` vacía: las dos de `looker` la declaran explícita. El
+acoplamiento sigue abierto; caducó el ejemplo.
+
+### Las 40 huérfanas JM — el número que corrigió el borrador
+
+El primer borrador de este cierre decía *"ninguna de las 147 huérfanas es JM"*. **Es falso**, y lo
+dijo la medición hecha para no afirmarlo sin dato: **40 de las 147 son JM** —el ejemplo se lee
+solo, `2411-DICJDGAG · RDV JM | Caballito 17/12`—. Lo que sí es cierto, y es más delgado de lo que
+parecía: **de esas 40, ninguna tiene `estado = Activa`**, así que con el filtro del cableado caen
+por el estado y no por ser huérfanas. Las 18 sin id, ninguna es JM. Va a `PENDIENTES` con el
+conteo y con la advertencia de que el cero es de hoy.
+
+### Documentación
+
+`R-25` (la regla, hermana de `R-16`), `D-24` (dónde se declara, con lo descartado), y en
+`PENDIENTES`: las huérfanas, el agujero de `upsertPorClave_`, la **disyuntiva de período de
+`looker` cerrada** —no había que elegir entre `filtrar` y `snapshot`: la pregunta era por solapa y
+no por base— y la actualización de las dos entradas que este cambio tocó.
+
+### Los cinco criterios de aceptación
+
+| | |
+|---|---|
+| 1 · `Cuentas` por referencia contra sí misma = recorte directo | ✅ 92 y 92, cero de un lado solo |
+| 2 · `DIGITAL` deja de fallar y devuelve la forma de siempre | ✅ 966 filas, `ok: true`, todos los campos del contrato |
+| 3 · los tres conteos en la traza y suman | ✅ `966+3765+18+147+0 = 4896` |
+| 4 · referencia de dos niveles falla con motivo propio | ✅ control positivo, 4 casos negativos |
+| 5 · nada cableado, ninguna plantilla, `LAMINAS` intacta | ✅ `verificarLaminas()` VERDE 51/51 |

@@ -1239,6 +1239,23 @@ token es una decisión sobre credenciales, y hoy no bloquea nada.
 
 ### P2 · La inferencia de solapa de `looker` funciona porque `MAPEO` está incompleto
 
+> **El día llegó, y no rompió nada — 10/08/2026.** Este pendiente predecía que *"el día que
+> alguien mapee una segunda solapa de `looker` … `prueba_alcance` pasa a fallar con
+> `«FALTA:@sin_solapa»` sin que nadie haya tocado ese marcador"*. El `_23` mapeó **dos**
+> (`Cuentas` y `DIGITAL`), así que `solapasFuenteDeBase_('looker')` ya no devuelve una sola.
+>
+> **Se midió antes de escribir las filas y después:** en `MARCADORES` **ninguna** fila tiene
+> `solapa` vacía, y las dos de `looker` —`imp_total` y `gcba_imp_total`— declaran
+> `resumen_metricas_dinamico` explícita. `prueba_alcance`, el único marcador que dependía de la
+> inferencia, **ya se había retirado**. `verificarLaminas()` VERDE 51/51 y las 11 pruebas del
+> diff en verde después del cambio.
+>
+> **El acoplamiento sigue siendo real; lo que caducó es el ejemplo.** La entrada queda abierta
+> porque la decisión que pide —o solapa explícita en todo marcador, o `MAPEO` declarando la
+> solapa por defecto de cada base— sigue sin tomarse. Lo que cambió es que ahora **`looker` es
+> una base con tres solapas mapeadas**, así que un marcador nuevo de `looker` sin `solapa` ya no
+> "anda por casualidad": falla de entrada, que es el comportamiento correcto y llegó solo.
+
 Anotado el 03/08/2026 en el mismo commit que crea la fila que depende de esto
 (`prueba_alcance`, cableado del corte vertical).
 
@@ -2320,6 +2337,31 @@ huérfanas, sugiere que el de `Digital` es de otro orden y merece su propia pasa
 
 ### P1 · Seis solapas de `looker` están registradas como `fuente` y no tienen ni una fila en `MAPEO`
 
+> **Actualizado el 10/08/2026 por el `_23` — quedan cuatro, y las dos que salieron muestran cuál
+> era la salida.** `DIGITAL` y `Cuentas` ya tienen filas en `MAPEO`.
+>
+> ⚠ **Y hay una premisa de este pendiente que era falsa: `Cuentas` también estaba `fuente` y sin
+> mapear.** No eran seis solapas mapeables más una legible: eran **siete sin mapear**, y `Cuentas`
+> no aparecía en la lista de arriba porque el conteo se hizo sobre las que no tienen columna de
+> fecha. `Cuentas` sí tiene el par `fecha_inicio`/`fecha_fin` y **fallaba igual**, con
+> `«FALTA:fecha_periodo@looker/Cuentas»`, por no tener la fila. Medido el 10/08.
+>
+> **La salida no fue ninguna de las dos que este pendiente ofrecía.** El punto 1 decía que
+> mapearlas *"exige antes decidir de dónde sale su período"* — correcto, y la decisión resultó ser
+> que el período **no sale de la solapa**: sale de otra, por referencia (`R-25` / `D-24`).
+>
+> **Lo que sigue abierto son cuatro:** `MAIL` (5760), `IVR` (192), `SMS` (92) y `ALCANCE` (740) —
+> pero tres de ellas ya no están `fuente`: `SEED_SOLAPAS_` las bajó a `ignorar` por `R-22`. **La
+> única que queda `fuente` y sin mapear es `CC` (1309 filas)**, y ahora tiene un camino: si su
+> período tampoco está en la solapa, es el mismo `ventana_ref` a `Cuentas` que usó `DIGITAL`. No
+> se hizo acá porque el `_23` construye la capacidad y no cablea (`CC` no tiene marcadores).
+>
+> **La objeción del último párrafo sigue en pie y por eso se respetó:** `promoverFechasElegidas()`
+> es el camino de `S-02` para **elegir una columna de fecha** entre candidatas de una solapa.
+> `Cuentas` no tenía candidatas que elegir —tiene el par explícito, `C` y `D`— y `DIGITAL` no
+> tiene ninguna, así que no había elección humana que saltear: las cuatro filas nuevas se
+> escribieron por `SEED_MAPEO_` + upsert, que es el otro escritor declarado en `ESCRITORES.md`.
+
 ⚠ **Este pendiente corrige una afirmación falsa que estuvo circulando el 08–09/08.** Se dijo, en un
 reporte de medición y de ahí en el prompt `2026-08-08_9_corrida_nocturna.md`, que *"`looker` entero
 devuelve `«FALTA:fecha_periodo@looker/…»`"* y que *"`looker` es ilegible entero"*. **Es falso, y el
@@ -2917,7 +2959,25 @@ decks (`C-07`, y el `41-350` con guión de la lámina 53).
 las columnas booleanas de `digital/Seguimiento digital` publicando `1`, que tampoco es el número.
 **No cablearlos sobre `looker/DIGITAL` para "acercarse"**: sería cambiar un número mal por otro.
 
-### P2 · La disyuntiva de período de `looker` — lo único que sobrevive del `_18`
+### ~~P2 · La disyuntiva de período de `looker` — lo único que sobrevive del `_18`~~ — CERRADA (10/08/2026)
+
+**No hacía falta elegir: `looker` sigue `filtrar` y `DIGITAL` toma la ventana de `Cuentas`.** La
+disyuntiva estaba mal planteada —*"¿`looker` pasa a `snapshot`?"*— porque suponía que la decisión
+era **por base**, y el problema era **por solapa**: `resumen_metricas_dinamico` filtra bien y
+`DIGITAL` no tenía con qué. `snapshot` habría arreglado una rompiendo la otra.
+
+Lo resolvió `R-25` / `D-24` (el `_23`): `SOLAPAS.ventana_ref = Cuentas` sobre `looker/DIGITAL`,
+cruzada por `MAPEO.clave_ventana`. Medido el 10/08 sobre la ventana `2026-07-24 → 2026-07-30`:
+**966 de 4896 filas en ventana**, con los cuatro conteos separados y sumando. El control de la
+capacidad —`Cuentas` recortada por referencia contra sí misma contra el recorte directo— dio
+**92 y 92, idéntico**.
+
+**Y el `_18` tenía la premisa al revés**, como ya había anotado la Parte E del `_22`: el join no
+era para saber de quién es la campaña —eso sale de `F` dentro de `DIGITAL`— sino **para saber
+cuándo corrió**. Y ni siquiera terminó siendo un join: es un conjunto de pertenencia (`R-25`).
+
+> **El texto original queda abajo, sin editar**, porque su tabla es la evidencia de por qué se
+> planteó así.
 
 El `_18` quedó **cancelado** (ver su archivo), pero su `0.3` seguía abierto y no lo contesta
 ninguno de los casos nuevos. Con lo que ya se sabe:
@@ -2994,6 +3054,71 @@ Pasó al agregar **`LISTA`** (la séptima, 08/08). El candidato natural es la fi
 `tools/` re-corridos— porque es el mismo criterio: **el código es la fuente, no un `.md` que se
 desincroniza**. **No se agregó la fila sin decidirlo**: tocar §7 es cambiar el ruteo del
 proyecto.
+
+### P1 · 147 filas de `looker/DIGITAL` tienen un `Id cuentas` que no existe en `Cuentas` — y 18 no tienen ninguno
+
+Medido el 10/08/2026 por el `_23`, Parte A, sobre las solapas vivas.
+
+| | filas | ids distintos |
+|---|---|---|
+| `DIGITAL`, total | **4896** | — |
+| con `Id cuentas` no vacío | 4878 | 740 |
+| **sin `Id cuentas`** | **18** | — |
+| matchean en `Cuentas` | 4731 | 709 |
+| **huérfanas** | **147** | **31** |
+
+**Por qué importa ahora y no antes:** hasta el 10/08 `DIGITAL` era ilegible entera, así que las
+huérfanas no salían de ningún lado. Con `R-25`, la solapa se lee y **estas 165 filas (147 + 18)
+quedan afuera de toda ventana, para siempre y por construcción**: no tienen con qué entrar. La
+traza las cuenta —`filas_clave_huerfana` y `filas_sin_clave_ventana`— así que dejaron de caer en
+silencio, que es lo que `R-20` pide. Pero **contarlas no es resolverlas**.
+
+**Uno de los 31 ids huérfanos es el literal `Falta ID`.** No es un id: es un texto de relleno de
+la base. Los otros 30 tienen forma de id (`2039-SEPDHHGC`, `2415-DICINFGC`, `2671-FEBJDGVC`…), o
+sea que son cuentas reales que `Cuentas` no lista.
+
+**Qué hay que decidir, y es del equipo dueño de la base, no del motor:** si son cuentas dadas de
+baja de `Cuentas` pero con actividad histórica en `DIGITAL`, o si `Cuentas` está incompleta. Las
+dos tienen consecuencias distintas y ninguna se puede adivinar desde acá — `D-10`: al motor le
+falta una definición, pregunta y no la fabrica.
+
+**⚠ Y no son todas ajenas al informe: 40 de las 147 huérfanas son JM.** El ejemplo se lee solo —
+`2411-DICJDGAG · RDV JM | Caballito 17/12`— y es una cuenta de un encuentro real que `Cuentas` no
+lista. Las 18 sin id, en cambio, **ninguna es JM**.
+
+**Hoy no bloquea el cableado de los `imp_*`, y el motivo es delgado: de esas 40, ninguna tiene
+`estado = Activa`.** Con el filtro del cableado —`nombre_campaña~=JM` **y** `estado=Activa`— las
+40 caen igual por el `estado`, no por ser huérfanas. **Ese cero es de hoy y no es una propiedad**:
+la primera cuenta JM huérfana que aparezca `Activa` va a restar impresiones sin que nada falle.
+Mismo criterio que el desvío de las campañas mixtas de `R-23` y que las 36 filas sin `estado` del
+`_22` — se vuelve a medir al cablear, y el conteo ya está en la traza para que se vea.
+
+### P2 · `upsertPorClave_` blanquea toda columna que el objeto no traiga, y hay un comentario que dice lo contrario
+
+Medido el 10/08/2026 por el `_23`, al ir a escribir `ventana_ref` en `looker/DIGITAL`.
+
+`upsertPorClave_` reescribe la **fila entera** con `headers.map(h => (h in obj) ? obj[h] : '')`.
+Así que **omitir una columna no la conserva: la borra** — y sólo en las filas que el seed cambia
+por otro motivo, que es lo que lo hace difícil de ver.
+
+**El comentario de `aplicarClasificacionSolapas_` afirmaba lo contrario desde el 2.11 Parte C:**
+que `filas_datos` y `firma_encabezado` se dejan afuera del objeto *para no pisarlas*. La
+intención era correcta; el mecanismo no la cumplía.
+
+**La evidencia estaba a la vista y nadie la había leído así:** `looker/Cuentas` tiene hoy
+`firma_encabezado` y `filas_datos` **vacíos** —se le editó `notas` el 09/08— y `looker/DIGITAL`
+los tiene cargados, porque nadie la había tocado desde el último inventario. Dos filas de la
+misma hoja, una con datos y otra sin ellos, y la diferencia es cuál pasó por el sembrador.
+
+**Se arregló sólo en `aplicarClasificacionSolapas_`**, que ahora devuelve las cuatro columnas
+ajenas tal cual las encontró. **`upsertPorClave_` quedó igual a propósito:** lo usan `BASES`,
+`MAPEO`, `INFORMES` y `PERIODOS`, y cambiar el genérico es una decisión con radio propio. Lo que
+no se hizo fue dejar que el `_23` destruyera datos de costado.
+
+**Qué hay que decidir:** si el genérico pasa a preservar por defecto —que es lo que todos los
+llamadores parecen esperar— o si cada sembrador se hace cargo como el de `SOLAPAS`. Lo primero es
+un cambio de una línea con radio de cuatro hojas; lo segundo son cuatro cambios que se olvidan de
+a uno.
 
 ## ~~Nota sobre `Paso-3-v2.md`~~ — CERRADA (03/08/2026)
 

@@ -1453,6 +1453,86 @@ o declarar la variante con su propio filtro.
 
 ---
 
+## R-25 — Una solapa sin fecha propia toma la ventana de otra, **por pertenencia y no por join**
+
+**Hermana de `R-16`, y la diferencia es la que importa:** `R-16` decide **cómo** se recorta una
+solapa —punto o solape—; ésta decide **con qué fecha** cuando la solapa no tiene ninguna.
+
+**Enunciado.** Una solapa que no tiene columna temporal declara **de qué otra solapa de la misma
+base toma la ventana** y **por qué clave se cruza**. El motor recorta la solapa de referencia con
+**su** ventana —punto o solape, según lo que ella declare, o sea `R-16` sin cambios—, arma el
+**conjunto** de claves que sobreviven, y deja pasar las filas cuya clave está en ese conjunto.
+
+```
+SOLAPAS.ventana_ref                 → de qué solapa (vacío = tiene fecha propia)
+MAPEO.clave_ventana, de los dos lados → qué columna es la clave en cada una
+```
+
+### Por qué pertenencia y no join
+
+**Un join produce filas nuevas; esto sólo decide si una fila entra o no.** La solapa que se
+recorta **no toma ningún dato** de la de referencia: no necesita el nombre, ni el estado, ni las
+fechas en la fila.
+
+Y eso no es una preferencia de estilo: **si la clave estuviera repetida del lado de la
+referencia, un join multiplicaría las filas y las métricas se contarían dos veces sin fallar.**
+Un conjunto de pertenencia es inmune —un id repetido entra una vez—, así que el modo de falla más
+caro desaparece **por construcción y no por cuidado**.
+
+### El caso que la motivó, con la medición
+
+`looker/DIGITAL` (10/08/2026, ventana `2026-07-24 → 2026-07-30`) tiene todo lo que hace falta para
+las impresiones menos el tiempo: `nombre_campaña` en `F` resuelve el corte JM (`R-23`), `estado`
+en `I` el filtro, `Plataforma` e `Impresiones` el desglose (`R-24`). **No tiene ninguna columna
+temporal** — `fecha_inicio` y `fecha_fin` viven en `looker/Cuentas` (`C-19`). Hasta este cambio
+fallaba con `«FALTA:fecha_periodo@looker/DIGITAL»`.
+
+| | |
+|---|---|
+| `Cuentas` — filas / ids distintos / repetidos | 1011 / 1011 / **0** |
+| `Cuentas` — filas sin `fecha_inicio` | 58 |
+| `Cuentas` — ids en la ventana | 92 |
+| `DIGITAL` — filas totales | 4896 |
+| **en ventana** | **966** |
+| fuera de ventana | 3765 |
+| clave vacía | 18 |
+| **clave huérfana** | **147** (31 ids distintos) |
+
+**Cero ids repetidos** en `Cuentas`: el diseño por pertenencia era inmune igual, pero el número
+queda escrito porque es la evidencia de por qué se eligió, no una consecuencia de haber acertado.
+
+### Los cuatro conteos van separados, y suman
+
+Es `R-20` aplicado —*un vacío no es un valor*—: una fila que sale por **no tener clave** no salió
+por la misma razón que una cuya clave **no existe del otro lado**, ni que una cuya clave existe
+pero **cayó fuera de la ventana**. Son tres explicaciones distintas de un total corto, y
+mezclarlas es lo que hace que un número corto se discuta en vez de explicarse.
+
+```
+en_ventana + fuera_de_ventana + clave_vacía + clave_huérfana + excluidas_por_valor = totales
+       966 +             3765 +          18 +            147 +                  0 = 4896
+```
+
+### Un solo nivel
+
+**La solapa de referencia no puede a su vez referirse a otra**, y el segundo nivel falla con
+motivo propio en vez de colgar la corrida. El ciclo más corto —una solapa que se declara a sí
+misma— tiene su propio mensaje, porque es el más fácil de tipear.
+
+**Cómo se verifica.** Sobre una solapa que **sí** tiene fecha propia, el recorte por referencia
+contra sí misma tiene que dar **exactamente** lo mismo que el recorte directo. Medido el 10/08
+sobre `looker/Cuentas`: 92 filas y 92 claves por los dos caminos, cero de un lado solo.
+
+**Si falla:** un conjunto de referencia en cero, o una cuenta de huérfanas parecida al total, no
+se corrige ampliando la ventana — se mira primero si la clave está resolviendo la columna
+correcta. Los encabezados de las dos solapas **no coinciden** (`id_cuentas` contra `Id cuentas`) y
+por eso la clave se resuelve por `MAPEO` y nunca por texto.
+
+**Alcance.** Sólo `looker/DIGITAL → looker/Cuentas`, que es la única declaración que existe hoy.
+La referencia es **dentro de la misma base**: cruzar entre bases no está medido y no entra.
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas
