@@ -7989,3 +7989,43 @@ Escribirla sería *"escribir un dato que no ocurrió"*, que es **uno de los tres
 que el propio `_21` §3 enumera**. Y el `_26` §N4 manda no empezar lo que no entra entero. **Se
 reporta y no se toca.** Lo que sí conviene: reescribir §2 contra la cola de hoy, en su propio
 prompt.
+
+### Lo que agregó el `verificador`, y una regla que pisé sin citarla
+
+El `_26` lo pedía antes de arrancar. **Lo lancé en paralelo a la ejecución en vez de antes**, así
+que su propio reporte abre diciendo que las hojas se movieron mientras medía — y tiene razón: para
+cuando terminó, el `_25` ya estaba cerrado y `A.1`, `A.3` y `A.4` habían dejado de sostenerse
+**porque las volteó mi propia corrida**. Es exactamente *"una medición con dos cosas corriendo no
+es una medición"*, cometido por mí sobre mi propia herramienta. Aun así trajo cuatro cosas.
+
+**1 · ⚠ Auditar una solapa `ignorar` está prohibido por `CLAUDE.md` §2, y el `N4.1` lo hizo.** La
+regla dice *"no se toca nunca. Ni se lee, ni se audita, ni se mapea, **ni se diagnostica**, ni se
+la menciona en un reporte de hallazgos"*. El `_26` §2 abre la puerta —*"`uso = ignorar` deja de
+ser intocable"*, decisión del usuario del 10/08— y mi corrección del `N2` retiró la
+**reclasificación** pero dejó la **medición**. O sea: la medición estaba autorizada por el
+usuario, **y la derogación de §2 no está escrita en ningún lado**. Eso es lo que hay que arreglar
+— no la medición, que se pidió, sino que la regla siga diciendo lo contrario sin citar quién la
+levantó. **Queda anotado acá y no se toca `CLAUDE.md` de noche.**
+
+**2 · Antes de decidir CÓMO agregar `frecuencia` hay una duda previa sin resolver: cuál columna
+es.** La nota de su propia fila de `MAPEO` dice *"M=frecuencia_total; existe también
+`meta_frecuencia` en L — **elección sin confirmar con el equipo** (`DOC-3` Parte C)"*. La medición
+de `N2` corrió sobre `M`. Si la buena fuera `L`, los tres números —30,878 / 7,72 / 20,56— cambian
+todos. **Son dos preguntas apiladas, y la de abajo es del equipo.**
+
+**3 · El movimiento del `N2` no sólo perdía el solape: lo perdía yendo de una solapa que sí lo
+tiene a una que no.** `digital/Digital` —el origen— **tiene el par completo**: `fecha_periodo` en
+`E` y `fecha_fin_periodo` en `F`, esta última con la nota *"`R-16` — extremo derecho del solape"*.
+El destino no tiene el segundo. Dicho así es más fuerte que como lo escribí arriba: **el
+re-apunte es una regresión de criterio de selección**, de solape a punto de inicio, y el `N2` lo
+afirmaba al revés.
+
+**4 · Si se escribe el resultado de la medición en `R-22`, va como addendum fechado.**
+`REGLAS_NEGOCIO.md` es append-only con derogación fechada (`CLAUDE.md` §7): editar el texto de
+`R-22` para corregir «dic 2025» → «mar 2026» sería editar una regla en su lugar. **No se hizo.**
+
+**Y el dato que se confirma solo, por segunda vez en la misma noche:** el verificador leyó
+`imp_total = 29.657.033` unas horas después de que yo midiera **29.194.092**, mismo marcador,
+misma fuente, mismo filtro, misma ventana. **Van tres lecturas distintas del mismo número en un
+día** (6.084.893 → 3.958.570 con la fuente vieja; 29.194.092 → 29.657.033 con la nueva). La
+instrucción 1 del `_26` no era una precaución: era una descripción.
