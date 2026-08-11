@@ -1002,6 +1002,22 @@ var SEED_MAPEO_ = [
   { base_id: 'looker', campo_logico: 'clave_ventana', hoja: 'Cuentas', columna: 'A', notas: 'clave del conjunto de pertenencia (_23) — encabezado real "id_cuentas"' },
   { base_id: 'looker', campo_logico: 'clave_ventana', hoja: 'DIGITAL', columna: 'A', notas: 'clave del conjunto de pertenencia (_23) — encabezado real "Id cuentas"' },
 
+  // ── `_25` (10/08) · lo que `DIGITAL` necesita para los seis `imp_*` ────────────────────
+  // Medido sobre la solapa viva ese día, 4903 filas: `A Id cuentas · B Plataforma ·
+  // C Impresiones · D Visualizaciones · E Clics · F nombre_campaña · G eje · H area · I estado`.
+  //
+  // **Los `campo_logico` son los de los filtros de `R-23`/`R-24`, con la capitalización del
+  // encabezado.** `Plataforma` e `Impresiones` rompen la convención minúscula del resto de la
+  // hoja, y es a propósito: el filtro se escribe `Plataforma=Meta` en `MARCADORES` y en `R-24`,
+  // y un campo lógico que no se lee igual que su filtro es una traducción más que nadie pidió.
+  { base_id: 'looker', campo_logico: 'nombre_campaña', hoja: 'DIGITAL', columna: 'F', notas: 'corte JM/GCBA por R-23 — 36 filas vienen con la celda vacía' },
+  { base_id: 'looker', campo_logico: 'estado', hoja: 'DIGITAL', columna: 'I', notas: 'filtro `estado=Activa` — las 36 sin estado quedan afuera y la traza las cuenta (_22 Parte D)' },
+  { base_id: 'looker', campo_logico: 'Plataforma', hoja: 'DIGITAL', columna: 'B', notas: 'desglose de R-24 — ocho valores distintos, `Twitch ` con un espacio al final' },
+  // `tipo_esperado = numero` **medido, no supuesto** (`B` del `_25`): 4888 celdas `number`, 15
+  // vacías, **cero `string`**. Importa porque una columna de números que llega como texto hace
+  // que la `SUMA` devuelva cero **sin fallar**, que es el modo de falla caro de este proyecto.
+  { base_id: 'looker', campo_logico: 'Impresiones', hoja: 'DIGITAL', columna: 'C', notas: 'la métrica de los seis imp_* — medida numérica: 4888 number, 15 vacías, cero texto (10/08)' },
+
   // m2 — DIRECTA en 'M2 periodo DIRECTA', DIGITAL en 'M2 periodo DIGITAL'
   { base_id: 'm2', campo_logico: 'campana', hoja: 'M2 periodo DIRECTA', columna: 'B', notas: '' },
   // Paso 2.9 Parte D (S-02): 'fecha' es el contrato viejo, igual que en looker.
@@ -1210,6 +1226,8 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   figura: 'texto', barrio: 'texto', evento: 'texto', status: 'texto', estado: 'texto',
   comuna: 'texto', eje: 'texto', area: 'texto', campana: 'texto', campana_dig: 'texto',
   clave: 'texto', id_cuenta: 'texto', clave_ventana: 'texto', dig_jm_gcba: 'texto', post_meta: 'texto', mail_area: 'texto',
+  // `_25` — con la capitalización del encabezado de `looker/DIGITAL`; ver el seed.
+  'nombre_campaña': 'texto', 'Plataforma': 'texto',
   dig_campana: 'texto', mail_campana: 'texto', sms_campana: 'texto', ivr_campana: 'texto',
   sd_campana_cuentas: 'texto', sd_campana_digital: 'texto', sd_estado: 'texto',
   acum_id_cuenta: 'texto', acum_campana: 'texto', acum_estado: 'texto',
@@ -1226,6 +1244,7 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   inscriptos: 'numero', insc_mail: 'numero', insc_cc: 'numero', insc_ivr: 'numero',
   insc_digital: 'numero', insc_dif: 'numero', asistentes: 'numero', poblacion: 'numero',
   dig_impresiones: 'numero', dig_visualizaciones: 'numero', dig_clics: 'numero',
+  'Impresiones': 'numero', // `_25` — medida: 4888 `number`, cero `string`
   alcance: 'numero', frecuencia: 'numero',
   mail_enviados: 'numero', mail_entregados: 'numero', mail_aperturas: 'numero',
   mail_clics: 'numero', mail_or: 'numero', mail_ctor: 'numero',

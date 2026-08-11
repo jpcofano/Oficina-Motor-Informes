@@ -1023,6 +1023,156 @@ function probarFiltroMulticondicion_() {
     'el motivo nombra la condición; un campo sin MAPEO falla entero (5 casos + la guarda de firma)';
 }
 
+/**
+ * `_25` §0.2 — **los tres `imp_*` por plataforma particionan su universo**, así que
+ * `imp_total` tiene que ser exactamente su suma. Sintético: se le dan filas armadas a mano que
+ * cubren los ocho valores de `Plataforma` medidos el 10/08 —incluido **`Twitch ` con el espacio
+ * al final**— y se afirma que cada fila cae en **uno y sólo uno** de los tres.
+ *
+ * Es la mitad sintética del control; la que mira la planilla viva es
+ * `controlParticionImpresiones_`, abajo. Esta prueba el **mecanismo** —que la negación conjunta
+ * sea el complemento de las dos igualdades— y por eso puede vivir adentro de la suite sin
+ * romper su contrato de no tocar la hoja.
+ */
+function probarParticionImpresiones_() {
+  var jm = 'nombre_campaña~=JM && estado=Activa';
+  var meta = parsearFiltro_(jm + ' && Plataforma=Meta');
+  var google = parsearFiltro_(jm + ' && Plataforma=Google ads');
+  var prog = parsearFiltro_(jm + ' && Plataforma!=Meta && Plataforma!=Google ads');
+  var total = parsearFiltro_(jm);
+  afirmar_(meta.ok && google.ok && prog.ok && total.ok, 'partición: los cuatro filtros tienen que parsear');
+
+  // Los ocho valores medidos el 10/08 sobre `looker/DIGITAL.Plataforma`, más los dos casos que
+  // el diseño por resta existe para cubrir: una plataforma nueva y una mal escrita.
+  var plataformas = ['Meta', 'Google ads', 'DV360', 'TikTok', 'Mercado Libre', 'Twitter',
+    'Twitch ', 'Uber', 'PlataformaQueTodaviaNoExiste', ''];
+  var filas = plataformas.map(function (p) {
+    return { 'nombre_campaña': 'RDV JM | Caballito', 'estado': 'Activa', 'Plataforma': p, 'Impresiones': 10 };
+  });
+  // Y dos que NO son del universo: una GCBA y una que no está `Activa`.
+  filas.push({ 'nombre_campaña': 'CAMPAÑA GCBA | x', 'estado': 'Activa', 'Plataforma': 'Meta', 'Impresiones': 10 });
+  filas.push({ 'nombre_campaña': 'RDV JM | x', 'estado': 'Finalizada', 'Plataforma': 'Meta', 'Impresiones': 10 });
+
+  function pasa(o, f) {
+    return primeraCondicionQueFalla_(f.condiciones, function (c) { return o[c]; }) === null;
+  }
+
+  var enTotal = 0, sumaDeTres = 0;
+  filas.forEach(function (o, i) {
+    var enM = pasa(o, meta), enG = pasa(o, google), enP = pasa(o, prog), enT = pasa(o, total);
+    var cuantos = (enM ? 1 : 0) + (enG ? 1 : 0) + (enP ? 1 : 0);
+    if (enT) {
+      enTotal++;
+      sumaDeTres += cuantos;
+      afirmar_(cuantos === 1, 'partición: la fila ' + i + ' (Plataforma "' + o['Plataforma'] +
+        '") cae en ' + cuantos + ' de los tres tokens, tiene que caer en exactamente 1');
+    } else {
+      afirmar_(cuantos === 0, 'partición: la fila ' + i + ' está fuera del universo JM+Activa ' +
+        'y sin embargo cae en ' + cuantos + ' token(s)');
+    }
+  });
+
+  afirmar_(enTotal === 10, 'partición: se esperaban 10 filas en el universo JM+Activa, hubo ' + enTotal);
+  afirmar_(sumaDeTres === enTotal,
+    'partición: la suma de los tres (' + sumaDeTres + ') tiene que igualar el total (' + enTotal + ')');
+
+  // El caso que la regla existe para cubrir, dicho aparte porque es el que se olvida: una
+  // plataforma que nadie enumeró cae en `imp_prog`, no afuera.
+  afirmar_(pasa({ 'nombre_campaña': 'RDV JM', 'estado': 'Activa', 'Plataforma': 'PlataformaQueTodaviaNoExiste' }, prog),
+    'partición: una plataforma nueva tiene que caer en imp_prog por resta');
+  afirmar_(pasa({ 'nombre_campaña': 'RDV JM', 'estado': 'Activa', 'Plataforma': 'Twitch ' }, prog),
+    'partición: `Twitch ` con espacio tiene que caer en imp_prog, no desaparecer');
+
+  return 'partición de impresiones: 10 filas del universo, cada una en exactamente 1 de los 3 ' +
+    'tokens; una plataforma nueva y una con espacio caen en imp_prog por resta';
+}
+
+/**
+ * `_25` §0.2, la mitad que mira la planilla viva — **y por eso está FUERA de
+ * `correrPruebasDiff_`**, cuyo contrato es no tocar la hoja. Se corre a mano:
+ * `node tools/api.js llamar fn=controlParticionImpresiones_`.
+ *
+ * Lee los filtros **tal como están cableados en `MARCADORES`** —no una copia— y afirma sobre las
+ * filas de la ventana en curso que `imp_total` es exactamente la suma de los tres. **El día que
+ * alguien convierta `imp_prog` en una lista explícita, falla acá y no en un deck**, que es todo
+ * el punto: la prueba sintética de arriba no lo agarraría, porque no lee lo que está cableado.
+ */
+function controlParticionImpresiones_() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) return { ok: false, motivo: 'La hoja MARCADORES no existe.' };
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0];
+  var iM = h.indexOf('marcador'), iF = h.indexOf('filtro'),
+      iS = h.indexOf('solapa'), iC = h.indexOf('campo_logico'), iB = h.indexOf('base_id');
+
+  var filtroDe = {}, fuenteDe = {};
+  for (var f = 1; f < datos.length; f++) {
+    filtroDe[datos[f][iM]] = String(datos[f][iF] || '');
+    fuenteDe[datos[f][iM]] = datos[f][iB] + '/' + datos[f][iS] + '/' + datos[f][iC];
+  }
+
+  var grupos = [
+    { total: 'imp_total', partes: ['imp_meta', 'imp_google', 'imp_prog'] },
+    { total: 'gcba_imp_total', partes: ['gcba_imp_meta', 'gcba_imp_google', 'gcba_imp_prog'] }
+  ];
+
+  var faltan = [];
+  grupos.forEach(function (g) {
+    [g.total].concat(g.partes).forEach(function (t) { if (!(t in filtroDe)) faltan.push(t); });
+  });
+  if (faltan.length) return { ok: false, motivo: 'sin fila en MARCADORES: ' + faltan.join(', ') };
+
+  // Todos tienen que salir de la MISMA fuente, o la igualdad no significa nada.
+  var fuentes = {};
+  Object.keys(fuenteDe).forEach(function (t) {
+    if (t.indexOf('imp_') !== -1) fuentes[fuenteDe[t]] = (fuentes[fuenteDe[t]] || 0) + 1;
+  });
+
+  var ventana = resolverVentana({});
+  if (!ventana.ok) return { ok: false, motivo: 'Ventana no resuelta: ' + ventana.motivo };
+  var lectura = leerFuente('looker', ventana, 'DIGITAL');
+  if (!lectura.ok) return { ok: false, motivo: lectura.motivo };
+
+  function medir(token) {
+    var r = aplicarFiltroDeMarcador_(filtroDe[token], { marcador: token, base_id: 'looker' },
+      'DIGITAL', lectura.filas, false);
+    if (!r.ok) return { ok: false, motivo: r.motivo };
+    var suma = 0;
+    r.filas.forEach(function (o) { var v = o['Impresiones']; if (typeof v === 'number') suma += v; });
+    return { ok: true, filas: r.filas.length, suma: suma };
+  }
+
+  var reporte = [];
+  var todoCierra = true;
+  grupos.forEach(function (g) {
+    var t = medir(g.total);
+    var partes = g.partes.map(medir);
+    if (!t.ok || partes.some(function (p) { return !p.ok; })) {
+      todoCierra = false;
+      reporte.push({ total: g.total, ok: false, motivo: (t.motivo || '') + partes.map(function (p) { return p.motivo || ''; }).join(' ') });
+      return;
+    }
+    var sumaPartes = partes.reduce(function (a, p) { return a + p.suma; }, 0);
+    var filasPartes = partes.reduce(function (a, p) { return a + p.filas; }, 0);
+    var cierra = (sumaPartes === t.suma) && (filasPartes === t.filas);
+    if (!cierra) todoCierra = false;
+    reporte.push({
+      total: g.total, ok: cierra,
+      importe_total: t.suma, importe_partes: sumaPartes, delta_importe: sumaPartes - t.suma,
+      filas_total: t.filas, filas_partes: filasPartes, delta_filas: filasPartes - t.filas,
+      partes: g.partes.map(function (n, i) { return n + ': ' + partes[i].filas + ' fila(s), ' + partes[i].suma; })
+    });
+  });
+
+  return {
+    ok: todoCierra,
+    ventana: { desde: formatearFecha_(ventana.desde), hasta: formatearFecha_(ventana.hasta) },
+    filas_en_ventana: lectura.filas.length,
+    fuentes_de_los_ocho: fuentes,
+    grupos: reporte
+  };
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
@@ -1036,7 +1186,8 @@ function correrPruebasDiff_() {
     probarFormatoMarcador_,
     probarRatioEnDespachador_,
     probarReferenciaVentanaUnNivel_,
-    probarFiltroMulticondicion_
+    probarFiltroMulticondicion_,
+    probarParticionImpresiones_
   ];
   var lineas = [];
   var fallas = 0;
