@@ -221,6 +221,33 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
   var campo = buscarMapeo(fila.base_id, solapa, campoOverride || fila.campo_logico);
   if (!campo.ok) return { ok: false, motivo: campo.motivo };
 
+  /* `_28` — un marcador de `rdv` emitido DENTRO de una lámina de encuentro lee **la fila de
+   * ese encuentro**, no la ventana entera.
+   *
+   * Es la contraparte de la rama por cuenta de `digital`, y por el mismo motivo: sin esto los
+   * seis `ecv_*` publicaban el agregado semanal en las cinco láminas —`1169` de Mail en todas—
+   * y la sección repetible poblaba sin filtrar.
+   *
+   * **No se recorta por ventana, y es a propósito.** El temario selecciona (`R-17`): San
+   * Cristóbal es del 23/07 y la ventana del informe arranca el 24/07, así que volver a
+   * recortar dejaría su lámina vacía. La fila ya la eligió `encontrarFilaRdvDeReunion_` por
+   * nombre y fecha de la reunión, y ya viene filtrada por la lista blanca de `D-21`.
+   *
+   * **La guarda de solapa no es paranoia:** `campo` se resolvió con `buscarMapeo(base, solapa)`
+   * y su letra de columna vale para ESA solapa. Si el marcador apunta a una solapa distinta de
+   * aquella donde se encontró la fila, la letra no aplica y el valor saldría de la columna
+   * equivocada **sin fallar** — un número plausible. Ahí se cae a la rama general.
+   */
+  if (fila.base_id === 'rdv' && opciones && opciones.fila_rdv && opciones.hoja_rdv === solapa) {
+    return {
+      ok: true,
+      filas: [opciones.fila_rdv],
+      encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+      columna: campo.columna,
+      origen: 'la fila de rdv/' + solapa + ' de este encuentro (1 fila, sin recorte por ventana: la eligió el temario)'
+    };
+  }
+
   if (fila.base_id === 'digital') {
     var idCuenta = opciones && opciones.id_cuenta;
     if (!idCuenta) {
@@ -1430,14 +1457,22 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
     if (!filtroR.ok) return { ok: false, motivo: filtroR.motivo };
 
     var items = filtroR.crudos.map(function (e) {
+      // La ventana es la del informe: el recorte de `digital` lo hace el link
+      // campaña↔encuentro (`R-04`), no una ventana de fecha sobre la base.
+      var opciones = { ventana: ventanaInforme, seccion_id: seccion.seccion_id, filtro_seccion: seccion.filtro };
+      // `digital` se recorta por cuenta…
+      if (e.idCuenta) opciones.id_cuenta = e.idCuenta;
+      // …y `rdv` por su fila, que es la llave del ítem en esa base (`_28`). Las dos viajan
+      // juntas y son independientes: un encuentro puede tener fila de `rdv` y no tener cuenta
+      // digital anclada, y entonces sus `ecv_*` salen y sus `enc_*` no.
+      if (e.filaRdv) {
+        opciones.fila_rdv = e.filaRdv;
+        opciones.hoja_rdv = e.hojaRdv;
+      }
       return {
         clave: e.reunion + (e.etapa ? ' (' + e.etapa + ')' : ''),
         etiqueta: e.reunion,
-        // La ventana es la del informe: el recorte de `digital` lo hace el link
-        // campaña↔encuentro (`R-04`), no una ventana de fecha sobre la base.
-        opciones: e.idCuenta
-          ? { id_cuenta: e.idCuenta, ventana: ventanaInforme, seccion_id: seccion.seccion_id, filtro_seccion: seccion.filtro }
-          : { ventana: ventanaInforme, seccion_id: seccion.seccion_id, filtro_seccion: seccion.filtro },
+        opciones: opciones,
         id_cuenta: e.idCuenta || '',
         motivo: e.idCuenta ? '' : ('sin cuenta digital anclada' + (e.motivo ? ': ' + e.motivo : ''))
       };

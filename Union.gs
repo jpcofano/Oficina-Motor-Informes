@@ -778,6 +778,28 @@ function anclarEncuentrosSinCache_(ventana) {
     var confirmado = anclajeYaConfirmado_(indicePendiente, 'reunion', nombreBuscado);
     var filaRdv = encontrarFilaRdvDeReunion_(reunion);
 
+    /* `_28` (11/08/2026) — **la fila de `rdv` de ESTE encuentro viaja con el ítem.**
+     *
+     * Ya se buscaba acá, para puntuar el anclaje, y se descartaba: sólo sobrevivían `evento` y
+     * `barrio` como variables locales del score. Sin ella, un marcador de `rdv` emitido dentro
+     * de una lámina de encuentro **no tiene forma de saber de qué encuentro es** y cae a la
+     * lectura por ventana, que es el agregado de la semana. Medido el 11/08: los seis `ecv_*`
+     * publicaban `1169` de Mail y `272` de Call Center **en las cinco láminas**, y 45 de 64
+     * marcadores daban idéntico en las tres cuentas ancladas.
+     *
+     * Es la contraparte exacta de lo que `digital` ya tenía con `filasDigitalDeEncuentro`: la
+     * iteración expandía la lámina y cambiaba el `id_cuenta`, pero `id_cuenta` es un concepto
+     * de `digital` y `rdv` no lo mira. Cada base necesita su propia llave del ítem.
+     *
+     * Se guarda **antes** del reparto en `encuentros`/`sinLink`/`bajaConfianza` para que la
+     * tenga cualquier ítem que llegue a emitirse: un encuentro sin cuenta digital anclada sigue
+     * saliendo en el deck (`R-02`) y sus números de `rdv` son igual de suyos.
+     */
+    if (filaRdv.ok) {
+      item.filaRdv = filaRdv.fila;
+      item.hojaRdv = filaRdv.hoja;
+    }
+
     if (!filaRdv.ok) {
       item.motivo = filaRdv.motivo;
       sinLink.push(item);
