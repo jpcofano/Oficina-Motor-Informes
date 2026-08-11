@@ -1,0 +1,4 @@
+periodo_id	campana_id	nombre	informe_id	base_id	tipo	desde	hasta	mostrar	orden
+	serv_esenciales	Servicios esenciales	secco	looker	destacada	2026-06-02	2026-06-15	sí	1
+	encuentros_min	Encuentros de ministros	secco	rdv	encuentro_ministros	2026-06-01	2026-06-30	sí	2
+	prov_uber	Uber	secco	digital	proveedor	2026-06-01	2026-06-30	no	3

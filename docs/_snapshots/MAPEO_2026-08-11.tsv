@@ -1,0 +1,145 @@
+base_id	solapa	campo_logico	hoja	columna	tipo_esperado	valores_incluidos	notas
+rdv	RVD JM-CM - ES	inscriptos	RVD JM-CM - ES	K	numero		(resuelto)
+rdv	RVD JM-CM - ES	fecha	RVD JM-CM - ES	E			filtro de período
+m2	M2 periodo DIRECTA	campana	M2 periodo DIRECTA	B	texto		
+m2	M2 periodo DIRECTA	fecha	M2 periodo DIRECTA	C	fecha		DEROGADA — ver S-02
+m2	M2 periodo DIRECTA	envios	M2 periodo DIRECTA	D	numero		
+m2	M2 periodo DIRECTA	entregados	M2 periodo DIRECTA	E	numero		
+m2	M2 periodo DIRECTA	aperturas	M2 periodo DIRECTA	F	numero		
+m2	M2 periodo DIRECTA	or	M2 periodo DIRECTA	G	numero		
+m2	M2 periodo DIRECTA	clics	M2 periodo DIRECTA	H	numero		
+m2	M2 periodo DIRECTA	ctor	M2 periodo DIRECTA	I	numero		
+m2	M2 periodo DIGITAL	impresiones	M2 periodo DIGITAL	F	numero		
+m2	M2 periodo DIGITAL	alcance_dig	M2 periodo DIGITAL	G	numero		
+m2	M2 periodo DIGITAL	views	M2 periodo DIGITAL	I	numero		
+m2	M2 periodo DIGITAL	clics_dig	M2 periodo DIGITAL	K	numero		
+m2	M2 periodo DIGITAL	campana_dig	M2 periodo DIGITAL	B	texto		
+rdv	RVD JM-CM - ES	figura	RVD JM-CM - ES	A	texto		filtro por figura
+rdv	RVD JM-CM - ES	barrio	RVD JM-CM - ES	B	texto		
+rdv	RVD JM-CM - ES	evento	RVD JM-CM - ES	C	texto		
+rdv	RVD JM-CM - ES	status	RVD JM-CM - ES	I	texto	Realizada	lista blanca — ver D-21. El consumidor duplicado de Union.gs se retira en el paso del matcher
+rdv	RVD JM-CM - ES	insc_mail	RVD JM-CM - ES	L	numero		
+rdv	RVD JM-CM - ES	insc_cc	RVD JM-CM - ES	M	numero		
+rdv	RVD JM-CM - ES	insc_ivr	RVD JM-CM - ES	N	numero		
+rdv	RVD JM-CM - ES	insc_digital	RVD JM-CM - ES	O	numero		header real "RRSS" — duda resuelta
+rdv	RVD JM-CM - ES	insc_dif	RVD JM-CM - ES	P	numero		
+rdv	RVD JM-CM - ES	asistentes	RVD JM-CM - ES	Q	numero		
+rdv	RVD JM-CM - ES	comuna	RVD JM-CM - ES	AA	texto		
+rdv	RVD JM-CM - ES	poblacion	RVD JM-CM - ES	AB	numero		habitantes
+looker	resumen_metricas_dinamico	campana	resumen_metricas_dinamico	B	texto		
+looker	resumen_metricas_dinamico	fecha_inicio	resumen_metricas_dinamico	C	fecha		
+looker	resumen_metricas_dinamico	fecha_fin	resumen_metricas_dinamico	D	fecha		
+looker	resumen_metricas_dinamico	fecha	resumen_metricas_dinamico	C	fecha		DEROGADA — ver S-02
+looker	resumen_metricas_dinamico	eje	resumen_metricas_dinamico	E	texto		
+looker	resumen_metricas_dinamico	area	resumen_metricas_dinamico	F	texto		
+looker	resumen_metricas_dinamico	estado	resumen_metricas_dinamico	G	texto		
+looker	resumen_metricas_dinamico	dig_impresiones	resumen_metricas_dinamico	H	numero		
+looker	resumen_metricas_dinamico	dig_visualizaciones	resumen_metricas_dinamico	I	numero		
+looker	resumen_metricas_dinamico	dig_clics	resumen_metricas_dinamico	J	numero		
+looker	resumen_metricas_dinamico	alcance	resumen_metricas_dinamico	K	numero		
+looker	resumen_metricas_dinamico	frecuencia	resumen_metricas_dinamico	M	numero		M=frecuencia_total; existe también meta_frecuencia en L — elección sin confirmar con el equipo (DOC-3 Parte C)
+looker	resumen_metricas_dinamico	mail_enviados	resumen_metricas_dinamico	N	numero		
+looker	resumen_metricas_dinamico	mail_entregados	resumen_metricas_dinamico	O	numero		
+looker	resumen_metricas_dinamico	mail_aperturas	resumen_metricas_dinamico	P	numero		
+looker	resumen_metricas_dinamico	mail_clics	resumen_metricas_dinamico	Q	numero		
+looker	resumen_metricas_dinamico	cc_contactados	resumen_metricas_dinamico	T	numero		
+looker	resumen_metricas_dinamico	cc_efectivos	resumen_metricas_dinamico	U	numero		
+looker	resumen_metricas_dinamico	ivr_audiencia	resumen_metricas_dinamico	V	numero		
+looker	resumen_metricas_dinamico	ivr_atendidos	resumen_metricas_dinamico	X	numero		
+looker	resumen_metricas_dinamico	ivr_escucha75	resumen_metricas_dinamico	Y	numero		
+looker	resumen_metricas_dinamico	ivr_marque1	resumen_metricas_dinamico	Z	numero		
+looker	resumen_metricas_dinamico	sms_enviados	resumen_metricas_dinamico	AA	numero		
+looker	resumen_metricas_dinamico	sms_entregados	resumen_metricas_dinamico	AB	numero		
+m2	M2 periodo DIGITAL	estado	M2 periodo DIGITAL	E	texto		
+digital	Digital	clave	Digital	A	texto		mismo valor que dig_campana; permite que el diagnóstico de "Probar lectura" (que corre sobre hoja_default) descarte filas sin campaña sin depender del prefijo por solapa
+digital	Digital	dig_campana	Digital	A	texto		
+digital	Digital	dig_jm_gcba	Digital	B	texto		
+digital	Digital	dig_id_cuenta	Digital	T	texto		join entre solapas
+digital	Digital	dig_fecha_inicio	Digital	E	fecha		
+digital	Digital	dig_fecha_fin	Digital	F	fecha		
+digital	Digital	dig_impresiones	Digital	H	numero		
+digital	Digital	dig_alcance	Digital	I	numero		
+digital	Digital	dig_frecuencia	Digital	J	numero		
+digital	Digital	dig_views	Digital	K	numero		
+digital	Digital	dig_vtr	Digital	L	numero		
+digital	Digital	dig_clics	Digital	M	numero		
+digital	Digital	dig_ctr	Digital	O	numero		
+digital	Digital	dig_impresiones_social	Digital	U	numero		
+digital	Directa Mail	mail_id_cuenta	Directa Mail	A	texto		join entre solapas
+digital	Directa Mail	mail_campana	Directa Mail	H	texto		
+digital	Directa Mail	mail_enviados	Directa Mail	M	numero		
+digital	Directa Mail	mail_entregados	Directa Mail	N	numero		
+digital	Directa Mail	mail_aperturas	Directa Mail	O	numero		
+digital	Directa Mail	mail_or	Directa Mail	P	numero		
+digital	Directa Mail	mail_clics	Directa Mail	Q	numero		
+digital	Directa Mail	mail_ctor	Directa Mail	R	numero		
+digital	Directa Mail	mail_area	Directa Mail	T	texto		
+digital	Directa SMS	sms_id_cuenta	Directa SMS	A	texto		join entre solapas
+digital	Directa SMS	sms_campana	Directa SMS	E	texto		
+digital	Directa SMS	sms_fecha	Directa SMS	D	fecha		
+digital	Directa SMS	sms_enviados	Directa SMS	F	numero		
+digital	Directa SMS	sms_entregados	Directa SMS	G	numero		
+digital	Directa SMS	sms_ent_pct	Directa SMS	H	numero		
+digital	Directa SMS	sms_clics	Directa SMS	I	numero		
+digital	Directa IVR	ivr_id_cuenta	Directa IVR	A	texto		join entre solapas
+digital	Directa IVR	ivr_campana	Directa IVR	I	texto		
+digital	Directa IVR	ivr_inicio	Directa IVR	D	fecha		
+digital	Directa IVR	ivr_fin	Directa IVR	E	fecha		
+digital	Directa IVR	ivr_audiencia	Directa IVR	J	numero		
+digital	Directa IVR	ivr_llamados	Directa IVR	K	numero		
+digital	Directa IVR	ivr_atendidos	Directa IVR	L	numero		
+digital	Directa IVR	ivr_at_pct	Directa IVR	M	numero		
+digital	Directa IVR	ivr_e75	Directa IVR	N	numero		
+digital	Directa IVR	ivr_e75_pct	Directa IVR	O	numero		
+digital	Directa IVR	ivr_marque1	Directa IVR	P	numero		
+digital	Directa IVR	ivr_marque1_pct	Directa IVR	Q	numero		
+digital	Alcance	alc_id_cuenta	Alcance	A	texto		join entre solapas
+digital	Alcance	alc_alcance	Alcance	B	numero		
+digital	Alcance	alc_frecuencia	Alcance	C	numero		
+digital	Seguimiento digital	sd_id_cuenta	Seguimiento digital	A	texto		join entre solapas
+digital	Seguimiento digital	sd_campana_cuentas	Seguimiento digital	B	texto		
+digital	Seguimiento digital	sd_campana_digital	Seguimiento digital	C	texto		
+digital	Seguimiento digital	sd_fecha_inicio	Seguimiento digital	L	fecha		
+digital	Seguimiento digital	sd_pauta_google	Seguimiento digital	T	numero		conteo de contenidos pauteados en Google, no monto
+digital	Seguimiento digital	sd_pauta_prog	Seguimiento digital	U	numero		conteo de contenidos pauteados en Programmatic, no monto
+digital	Seguimiento digital	sd_pauta_meta	Seguimiento digital	V	numero		conteo de contenidos pauteados en Meta, no monto
+rdv	RVD JM-CM - ES	fecha_periodo	RVD JM-CM - ES	E	fecha		filtro de período
+rdv	RDV_otros_ministros	fecha_periodo	RDV_otros_ministros	E			fecha_periodo elegida en DIAG_FECHAS (Paso 2.3.1/2.3.2)
+digital	Digital	fecha_periodo	Digital	E			fecha_periodo elegida en DIAG_FECHAS (Paso 2.3.1/2.3.2)
+digital	Directa Mail	fecha_periodo	Directa Mail	F			fecha_periodo elegida en DIAG_FECHAS (Paso 2.3.1/2.3.2)
+digital	Directa IVR	fecha_periodo	Directa IVR	D			fecha_periodo elegida en DIAG_FECHAS (Paso 2.3.1/2.3.2)
+digital	Directa SMS	fecha_periodo	Directa SMS	D			fecha_periodo elegida en DIAG_FECHAS (Paso 2.3.1/2.3.2)
+digital	Seguimiento digital	fecha_periodo	Seguimiento digital	L			fecha_periodo elegida en DIAG_FECHAS (Paso 2.3.1/2.3.2)
+looker	resumen_metricas_dinamico	fecha_periodo	resumen_metricas_dinamico	C	fecha		filtro de período (elegida en FECHAS_seleccion.md)
+looker	resumen_metricas_dinamico	id_cuenta	resumen_metricas_dinamico	A	texto		join con Seguimiento Digital (Paso 2.4)
+looker	resumen_metricas_dinamico	post_meta	resumen_metricas_dinamico	AD	texto		URL del posteo de Facebook de la campaña — candidato para post_camp1-3 dinámico
+m2	Cuentas	id_cuenta	Cuentas	A	texto		
+m2	Cuentas	campana	Cuentas	D	texto		
+m2	Cuentas	estado	Cuentas	J	texto		mapeada "Estado campaña" (J), no "Estado" (V) — las dos columnas coexisten en la hoja
+m2	Cuentas	eje	Cuentas	K	texto		
+m2	Cuentas	area	Cuentas	L	texto		
+digital	Directa Mail	mail_estado	Directa Mail	D		Implementado, En curso	lista blanca — ver D-21
+digital	Directa Mail	mail_tipo	Directa Mail	I			Convocatoria / Confirmación / Agradecimiento — corte del envío de convocatoria (VALIDACION §3.3)
+digital	Directa Mail	mail_remitente	Directa Mail	G			corte JM/GCBA de mail — jorge.macri@buenosaires.gob.ar es JM, el resto GCBA (Pedido-1)
+digital	Seguimiento digital	sd_fecha_fin	Seguimiento digital	M	fecha		el extremo derecho del rango de R-14
+digital	Seguimiento digital	sd_estado	Seguimiento digital	N	texto		estado de la campaña en el momento del informe — valores libres, cargados a mano
+digital	Digital 2026 acumulado	acum_id_cuenta	Digital 2026 acumulado	A	texto		join entre solapas
+digital	Digital 2026 acumulado	acum_campana	Digital 2026 acumulado	B	texto		
+digital	Digital 2026 acumulado	acum_fecha_inicio	Digital 2026 acumulado	C	fecha		extremo izquierdo del rango de R-14
+digital	Digital 2026 acumulado	acum_fecha_fin	Digital 2026 acumulado	D	fecha		extremo derecho del rango de R-14
+digital	Digital 2026 acumulado	acum_estado	Digital 2026 acumulado	E	texto		⚠ viene en MAYÚSCULAS (FINALIZADA/ACTIVA/PAUSADA/PENDIENTE) y R-10 no pliega el case
+digital	Digital 2026 acumulado	acum_impresiones	Digital 2026 acumulado	F	numero		
+digital	Digital 2026 acumulado	acum_views	Digital 2026 acumulado	G	numero		el numerador del VTR derivable
+digital	Digital 2026 acumulado	acum_clics	Digital 2026 acumulado	H	numero		
+digital	Digital 2026 acumulado	acum_ctr	Digital 2026 acumulado	I	numero		
+digital	Digital 2026 acumulado	acum_frecuencia	Digital 2026 acumulado	J	numero		
+digital	Digital 2026 acumulado	acum_alcance	Digital 2026 acumulado	K	numero		
+digital	Digital 2026 acumulado	fecha_periodo	Digital 2026 acumulado	C	fecha		fecha_periodo = Fecha de inicio (A.2/B.4)
+digital	Digital	fecha_fin_periodo	Digital	F	fecha		R-16 — extremo derecho del solape
+digital	Directa IVR	fecha_fin_periodo	Directa IVR	E	fecha		R-16 — el caso que motivó la regla: las campañas de Orden Público arrancan el 22 y 23/07 y la ventana empieza el 24
+digital	Seguimiento digital	fecha_fin_periodo	Seguimiento digital	M	fecha		R-16 — extremo derecho del solape
+digital	Digital 2026 acumulado	fecha_fin_periodo	Digital 2026 acumulado	D	fecha		R-16 — extremo derecho del solape
+looker	Cuentas	fecha_periodo	Cuentas	C	fecha		fecha_inicio — extremo izquierdo de la ventana (_23)
+looker	Cuentas	fecha_fin_periodo	Cuentas	D	fecha		R-16 — extremo derecho del solape
+looker	Cuentas	clave_ventana	Cuentas	A	texto		clave del conjunto de pertenencia (_23) — encabezado real "id_cuentas"
+looker	DIGITAL	clave_ventana	DIGITAL	A	texto		clave del conjunto de pertenencia (_23) — encabezado real "Id cuentas"

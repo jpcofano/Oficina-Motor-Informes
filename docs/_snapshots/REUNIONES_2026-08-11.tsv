@@ -1,0 +1,8 @@
+periodo_id	orden	eje	tipo	nombre	fecha	etapa	mostrar	texto_original	notas
+	1	JM	Uno a uno	San Cristóbal	2026-07-23	pre	sí	JM | Uno a uno en San Cristóbal 23/07 (pre)	
+	2	JM	Uno a uno	Retiro	2026-07-24	pre	sí	2) JM | Uno a uno en Retiro 24/07 (pre)	
+	3	JM	Encuentro Temático	Orden Público	2026-07-28		sí	JM | Encuentro Temático Orden Público 28/07	
+	4	JM	Uno a uno	San Cristóbal	2026-07-23	post	sí	JM | Uno a uno en San Cristóbal 23/07 (POST)	
+	5	JM	Uno a uno	Retiro	2026-07-24	post	sí	JM | Uno a uno en Retiro 24/07 (post)	
+	6	Ministros	Agregado	Reuniones de la semana	2026-07-24		sí	Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)	24/07 al 30/07 inclusive
+	7	M2	Agregado	Campañas y enviados de la semana	2026-07-24		sí	6) M2 | Campañas y enviados de la semana del 24/07 al 30/07	

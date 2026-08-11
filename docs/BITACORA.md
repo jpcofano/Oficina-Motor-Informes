@@ -7777,3 +7777,98 @@ cual para no mover números; queda escrito en el código, arriba de la línea.
 | 3 · un valor con `&` simple no se parte | ✅ con la URL real medida en los datos |
 | 4 · la herencia sigue siendo reemplazo | ✅ `filtroPropio \|\| filtro_seccion`, sin tocar |
 | 5 · nada cableado, ninguna plantilla, `LAMINAS` intacta | ✅ |
+
+---
+
+## `N1` — el `_25`: las seis impresiones cableadas y el `P0` cerrado (2026-08-10)
+
+Primera tarea de la corrida nocturna del `_26`. Corrida del
+`docs/Prompts/2026-08-10_25_cablear_impresiones.md`, partes A a E. **Ninguna plantilla tocada,
+`LAMINAS` intacta** (`verificarLaminas()` VERDE 51/51/51). Lecturas de las hojas y las bases vivas
+el 10/08 entre las 22:10 y las 23:50 UTC.
+
+### Parte A — las cuatro confirman
+
+- **`A.1`** · `looker/DIGITAL` tenía **sólo** `clave_ventana` en `MAPEO`. Las cuatro que hacían
+  falta no estaban.
+- **`A.2`** · Sobre la solapa viva (4903 filas): `A Id cuentas · B Plataforma · C Impresiones ·
+  D Visualizaciones · E Clics · F nombre_campaña · G eje · H area · I estado`. Las cuatro columnas
+  son las que el prompt decía. **Y el tipo, medido sobre el valor crudo**: `Impresiones` es
+  `number` en **4888** celdas, 15 vacías, **cero `string`** — que es lo que la Parte B pedía
+  reportar antes de declarar `tipo_esperado`.
+- **`A.3` / `A.4`** · De los ocho tokens, sólo existían `imp_total` y `gcba_imp_total`, los dos
+  sobre `looker/resumen_metricas_dinamico`. **Nadie los tocó** desde que se anotó el `P0`.
+
+**Y una alarma mía que la medición desarmó, que vale más que las cuatro confirmaciones.** Grepeé
+`gcba_imp_meta`/`google`/`prog` en `docs/` y no aparecían: iba a frenar por cablear tokens que
+ninguna plantilla usa (`D-17`). **Los tres existen** — están en la **lámina 3 de `jm`**, medidos
+abriendo la plantilla. Lo que está incompleto es el inventario de `TOKENS.md` §2.0, que es una
+foto del 07/08. **El instrumento equivocado era el grep sobre un `.md`; la plantilla es la
+autoridad.**
+
+### Parte C — las ocho predicciones aciertan y los tres controles cierran
+
+Predicción escrita **antes** de cablear, sobre la ventana `2026-07-24 → 2026-07-30` (966 filas):
+
+| token | filas predichas | medidas | importe |
+|---|---|---|---|
+| `imp_meta` | 16 | **16** | 2.091.730 |
+| `imp_google` | 14 | **14** | 1.672.839 |
+| `imp_prog` | 21 | **21** | 25.429.523 |
+| `gcba_imp_meta` | 91 | **91** | 32.515.196 |
+| `gcba_imp_google` | 94 | **94** | 50.773.340 |
+| `gcba_imp_prog` | 146 | **146** | 165.787.851 |
+| `imp_total` | 51 | **51** | 29.194.092 |
+| `gcba_imp_total` | 331 | **331** | 249.076.387 |
+
+| control | resultado |
+|---|---|
+| 1 · partición por plataforma | **delta 0** en importes y en filas, de los dos lados |
+| 2 · JM + GCBA = total | `51 + 331 = 382` = las filas `Activa` · delta 0 en filas **y en importes** |
+| 3 · ninguna fila en dos tokens | 0 en `Meta` y `Google ads` a la vez · 0 en JM y GCBA a la vez |
+
+**Una premisa de `A.5` que la medición corrigió.** El prompt decía *"faltan las tres chicas y las
+de plataforma vacía, que son las que `imp_prog` absorbe por resta"*. Medido: **del lado JM no hay
+ninguna plataforma chica** —las 21 de `imp_prog` son todas `DV360`— y las chicas (`TikTok` 4,
+`Twitch ` 3, `Mercado Libre` 2) están **todas del lado GCBA**. Y **no hay una sola celda de
+`Plataforma` vacía** en la ventana. La regla por resta sigue siendo la correcta; lo que no existe
+hoy es el caso que se usaba para ilustrarla.
+
+### Parte D — el `P0`, y un número que se movió solo
+
+`imp_total` y `gcba_imp_total` re-apuntados a `looker/DIGITAL` por `curarCamposMarcadores_`:
+cuatro campos cada uno, **cero filas creadas**.
+
+**El valor viejo se midió antes de pisarlo, y ahí apareció el dato del día:**
+
+| | el `_22`, mañana del 10/08 | medido esa misma noche |
+|---|---|---|
+| `imp_total` | 6.084.893 (4 filas) | **3.958.570** (4 filas) |
+| `gcba_imp_total` | 2.027.888 (22 filas) | **2.029.539** (22 filas) |
+
+**Mismo marcador, misma fuente, mismo filtro, misma ventana, y `imp_total` bajó un 35 % en
+horas.** No es un bug: es la base moviéndose, que es exactamente lo que la instrucción 1 del `_26`
+advertía. **Queda en la nota de la fila**, junto con la fuente vieja, el recorte viejo y el
+motivo del movimiento.
+
+### El control de partición, en dos mitades y a propósito
+
+- **Sintética, adentro de la suite** (`probarParticionImpresiones_`, 13/13 verde): diez filas que
+  cubren los ocho valores de `Plataforma` medidos —`Twitch ` con el espacio incluido— más una
+  plataforma que no existe, y cada una tiene que caer en **exactamente uno** de los tres. Prueba
+  el **mecanismo** y no toca la planilla, que es el contrato de `Pruebas.gs`.
+- **Viva, fuera de la suite** (`controlParticionImpresiones_`): lee los filtros **tal como están
+  cableados en `MARCADORES`** y afirma la igualdad sobre las filas de la ventana. **La sintética
+  sola no serviría** para lo que el prompt pide —*"el día que alguien convierta `imp_prog` en una
+  lista, tiene que fallar acá y no en un deck"*—, porque no lee lo que está cableado. Corrida:
+  `ok: true`, delta 0 en los dos grupos, y los ocho tokens sobre **una sola** fuente.
+
+### Los cinco criterios de aceptación
+
+| | |
+|---|---|
+| 1 · los tres controles de `C` cierran | ✅ delta 0 en los tres |
+| 2 · ningún token de impresiones apunta a la dinámica | ✅ los ocho en `looker/DIGITAL/Impresiones` |
+| 3 · el control de partición está en `Pruebas.gs` y pasa | ✅ 13/13, más el control vivo |
+| 4 · las notas dicen qué valor tenían y desde cuándo | ✅ con los dos valores y el desvío del día |
+| 5 · ninguna plantilla tocada, `LAMINAS` intacta | ✅ VERDE 51/51/51 |

@@ -822,6 +822,45 @@ coinciden, así que es la generalización estricta del comportamiento anterior.
 
 ---
 
+**`D-26` — Un token «derivado» se cierra apuntándolo a la fuente de sus sumandos, no construyendo
+una operación de derivación.** (10/08/2026)
+
+El caso: `imp_total` y `gcba_imp_total`. `X-10` y `V-59` los declaran **derivados** —
+`imp_meta + imp_google + imp_prog`— y el pendiente `P0` pedía retirarles la fuente propia.
+
+**Lo descartado: construir la derivación.** Las siete operaciones de `OPERACIONES_` agregan filas
+de una solapa; **ninguna suma otros tokens**. Habría que inventar una octava, con dependencias
+entre marcadores, orden de resolución y detección de ciclos. Y retirarle la fuente a `imp_total`
+antes de eso lo dejaba publicando `«FALTA»` para siempre.
+
+**Lo elegido:** `imp_total` es `SUMA` sobre **la misma solapa y el mismo corte que sus tres
+sumandos, sin la condición de plataforma**. Porque lo que el `P0` objetaba **no era que tuviera
+fuente**: era que tuviera **otra** fuente —`resumen_metricas_dinamico`— y que eso fuera un segundo
+camino al mismo número, destinado a divergir.
+
+**Y el argumento fuerte es lo que la decisión regala.** Por `R-24` las tres plataformas
+**particionan** el universo —dos igualdades exactas y su negación conjunta—, así que
+
+```
+imp_total  ==  imp_meta + imp_google + imp_prog
+```
+
+**tiene que dar exacto en cada corrida.** No son dos caminos que *deberían* coincidir: son dos
+recorridos de la misma fuente que **no pueden diferir salvo por un bug**. Un derivado de verdad no
+habría dado esa red — habría tenido un solo camino y ninguna forma de contradecirse.
+
+**El contrapunto, que es el punto:** si alguien convirtiera `imp_prog` en una lista explícita de
+plataformas, la partición se rompería y la igualdad dejaría de cerrar. **Que se rompa es lo que se
+quiere**, y por eso vive como control corrible —`controlParticionImpresiones_`, que lee los
+filtros tal como están cableados en `MARCADORES`— y no como comentario. Medido el 10/08: delta
+**0** en importes y en filas, de los dos lados.
+
+**Alcance.** Esto no dice que ningún token pueda ser derivado nunca. Dice que **antes de construir
+la derivación hay que mirar si el «derivado» y sus sumandos no salen del mismo lugar**: cuando
+salen, la suma es un control y no una operación.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 **IDs `T<tramo>.<n>`.** La palabra "Paso" queda para la serie histórica y no se reusa: `Paso 5`

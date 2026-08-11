@@ -2843,7 +2843,46 @@ motivos. Si esto se confirma, sobrevive **uno**:
 **Uno en vez de dos cambia si el join se construye o se evita**, y ésa es la decisión que este
 caso destraba.
 
-### P0 · `imp_total` y `gcba_imp_total` están cableados sobre una fuente que los casos no declaran — y además son derivados
+### ~~P0 · `imp_total` y `gcba_imp_total` están cableados sobre una fuente que los casos no declaran — y además son derivados~~ — CERRADO (10/08/2026, `_25`)
+
+**Los dos errores se cerraron, y el segundo no como estaba planteado.**
+
+**El primero, la fuente:** los ocho tokens de impresiones salen ahora de **`looker/DIGITAL`,
+columna `Impresiones`**, con la ventana por referencia a `Cuentas` (`R-25`, solape) — que es
+exactamente lo que declaran `A-01` a `A-03`. Verificado por el control vivo: los ocho comparten
+una sola fuente, `looker/DIGITAL/Impresiones`.
+
+**El segundo, «no deberían tener fuente propia», se resolvió sin construir la derivación** y la
+decisión está en `PLAN.md` `D-26`. El motor no tiene operación que sume otros tokens, y retirarle
+la fuente a `imp_total` lo dejaba en `«FALTA»` para siempre. Lo que el pendiente objetaba no era
+que tuviera fuente: era que tuviera **otra** fuente que la de sus sumandos. Hoy es la misma solapa
+y el mismo corte, **sin la condición de plataforma**, así que:
+
+```
+imp_total  ==  imp_meta + imp_google + imp_prog
+```
+
+**es un control corrible y no una esperanza** — `controlParticionImpresiones_`, que lee los
+filtros **tal como están cableados** y falla si dejan de particionar.
+
+**Medido el 10/08, ventana `2026-07-24 → 2026-07-30`, 966 filas:**
+
+| | filas | importe |
+|---|---|---|
+| `imp_meta` · `imp_google` · `imp_prog` | 16 · 14 · 21 | 2.091.730 · 1.672.839 · 25.429.523 |
+| **`imp_total`** | **51** | **29.194.092** · delta contra la suma: **0** |
+| `gcba_imp_meta` · `gcba_imp_google` · `gcba_imp_prog` | 91 · 94 · 146 | 32.515.196 · 50.773.340 · 165.787.851 |
+| **`gcba_imp_total`** | **331** | **249.076.387** · delta: **0** |
+
+⚠ **Lo que NO cierra este pendiente, y pasa a la ventana de validación:** los valores **no se
+compararon con ningún deck**, a propósito. Y hay un dato que hace falta llevar allá: el valor
+viejo de `imp_total` **se movió solo**. El `_22` lo midió en `6.084.893` el 10/08 por la mañana;
+el mismo marcador, misma fuente, mismo filtro y misma ventana dio **`3.958.570`** esa misma noche.
+`gcba_imp_total` pasó de `2.027.888` a `2.029.539`. **La base se mueve dentro del día**, así que
+comparar cualquiera de estos números contra un deck armado antes es comparar dos fotos distintas.
+
+> **El texto original del pendiente queda abajo, sin editar** — su tabla de casos es la que
+> ordenó el trabajo.
 
 **En revisión desde el 10/08. No revertido todavía**, a propósito: revertir sin decidir la fuente
 correcta deja los dos tokens en `«FALTA»` y pierde la traza de lo que se probó.
