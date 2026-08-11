@@ -7872,3 +7872,120 @@ motivo del movimiento.
 | 3 · el control de partición está en `Pruebas.gs` y pasa | ✅ 13/13, más el control vivo |
 | 4 · las notas dicen qué valor tenían y desde cuándo | ✅ con los dos valores y el desvío del día |
 | 5 · ninguna plantilla tocada, `LAMINAS` intacta | ✅ VERDE 51/51/51 |
+
+---
+
+## `N2` a `N4` de la corrida nocturna del `_26` — tres premisas caídas y una medición (2026-08-10)
+
+### `N2` — no se cableó nada, y las dos premisas que lo frenan son de mecánica, no de datos
+
+El `N2` corregido pedía re-apuntar `enc_impresiones`, `enc_alcance`, `frecuencia` y
+`gcba_frecuencia` de `digital/Digital` a `looker/resumen_metricas_dinamico`, cableando
+`enc_impresiones` y reportando la operación de los otros tres. **Se cableó cero, y está bien.**
+
+**Premisa caída 1 — la dinámica NO se recorta por solape.** El `N2` decía que tiene
+*"`fecha_periodo` + `fecha_fin_periodo` (solape)"*. Medido: tiene `fecha_periodo` (C) y
+`fecha_fin` (D), pero **`fecha_fin_periodo` no está mapeado**, así que `leerFuente` informa
+`criterio_ventana: "punto — la solapa no declara fecha_fin_periodo"`. Mapearlo movería el
+universo de **todo** marcador de esa solapa, y eso es alcance de siembra: se reporta, no se
+decide de noche.
+
+**Premisa caída 2, y es la que mata el cableado — `enc_impresiones` y `enc_alcance` no son
+re-apuntables sin tocar código.** `datosDeMarcador_` (`Generador.gs`) tiene la rama por cuenta
+**adentro del `if` que pregunta si la base es `digital`**. Para cualquier otra base cae a la rama
+general, que llama a `leerFuente` y **ignora `opciones.id_cuenta`**.
+
+Los dos son tokens de la sección repetible `encuentro` —lámina 6 de `jm`, 8 de `secco`—, o sea
+que se emiten **una vez por encuentro**. Re-apuntarlos a `looker` haría que **los seis encuentros
+publiquen el mismo agregado de la ventana**. Es el número plausible en su forma más pura: seis
+láminas con el mismo número grande y ningún error.
+
+**`frecuencia` y `gcba_frecuencia` sí son agregados** —láminas 2 y 3, Resumen Ejecutivo— así que
+no tienen ese problema. Los frena la otra pregunta, la que el usuario puso primero.
+
+### La operación de `alcance` y `frecuencia`, medida — y la hipótesis se confirma
+
+**`frecuencia` ES impresiones sobre alcance, fila por fila:** de las 3 filas JM comparables de la
+ventana, **3 coinciden y 0 difieren**. La columna trae el valor **ya calculado por campaña**, que
+es exactamente el caso que el usuario anticipó.
+
+Y ahí está el problema, medido sobre las 4 filas JM del `2026-07-24 → 2026-07-30`:
+
+| forma de agregar `frecuencia` | valor |
+|---|---|
+| `SUMA` | **30,878** — no significa nada |
+| promedio simple | **7,72** |
+| `RATIO` sobre los agregados (suma de impresiones sobre suma de alcance) | **20,56** |
+
+**Tres formas, tres números, y entre el promedio simple y el ponderado hay 2,7×.** No hay forma de
+elegir sin decidirlo.
+
+⚠ **Y el `RATIO` agregado, tal como saldría hoy, está mal formado.** `alcance` viene **vacío en 1
+de las 4 filas JM**, así que el cociente mete en el numerador una campaña que el denominador no
+tiene: 3.958.570 sobre 192.538. El ponderado correcto se calcula sobre las 3 filas que tienen las
+dos columnas. **Ese detalle no se ve en el número: 20,56 se lee perfectamente plausible.**
+
+**`alcance`:** `SUMA` da 192.538 sobre 3 filas, y sumar gente única cuenta a la misma persona una
+vez por campaña que la alcanzó. Confirmado además que **1 de 4 viene vacía**, así que la suma
+tampoco está completa. **No se cableó.**
+
+### `N3` — ya estaba hecho
+
+`escribirColumnaLaminas_` **existe** (`Sellador.gs`) y su Parte B corrió el 10/08 con los seis
+controles verificados, que están en la entrada del `_19` de esta misma bitácora. `N3` era la
+verificación de cinco minutos que el propio `_26` anticipaba. **Cero cambios.**
+
+### `N4.3` — premisa vencida, nada que hacer
+
+El `_26` decía *"`ESCRITORES.md` sin fila `LAMINAS`, `tools/escritores.js` con diez hojas contra
+las once de `ALCANCE_REGISTROS_`, **las tres listas divergen**"*. **Ya no.** `tools/listas.js`
+devuelve *"OK — las tres listas coinciden en 11 hoja(s)"*, `HOJAS_REGISTRO` tiene las once
+incluida `LAMINAS`, y `ESCRITORES.md` tiene su fila con los tres escritores declarados. Se cerró
+el 10/08 con el `_19`. **Cero cambios.**
+
+### `N4.1` — las 48 solapas en `ignorar`, medidas · **ninguna reclasificada**
+
+Rango de fechas de cada una, con el detector que el motor ya tiene
+(`detectarColumnasFechaEnSolapa_`, `Fechas.gs`), eligiendo la columna de mayor `pct_fecha` **con
+rango plausible** — una columna `HORA` se guarda como 1899-12-30 y ganaría por porcentaje sin
+decir nada del período.
+
+**Las dos que el `_26` señalaba:**
+
+| solapa | filas | columna | rango |
+|---|---|---|---|
+| `digital/Digital` | 1295 | `F · Fecha de fin` | **2024-12-23 → 2026-03-08** |
+| `digital/CAMPAÑAS_DESGLOCE_DIGITAL` | 4904 | `I · Fecha inicio` | **2025-10-06 → 2026-08-10** (máx. de la solapa: 2026-08-31) |
+
+- **`digital/Digital` sigue congelada respecto del período** —su dato más nuevo es de hace cinco
+  meses, con la ventana en julio de 2026— así que **no vuelve a `fuente`**. ⚠ **Pero el número de
+  `R-22` estaba viejo:** la regla dice *"sus filas JM llegan a dic 2025"* y hoy la solapa llega a
+  **marzo de 2026**. Sigue congelada, con otra fecha.
+- **`digital/CAMPAÑAS_DESGLOCE_DIGITAL` está viva** — tiene datos del período en curso. Cumple el
+  criterio de `_26` §2 para volver a `fuente`. **No se tocó**, porque la corrección del `N2` bajó
+  esto a medición y sacó la reclasificación de la cola.
+
+**Y un hallazgo que no estaba buscado:** las cuatro solapas de `looker` en `ignorar` —`MAIL`
+(5864 filas), `IVR` (195), `SMS` (97), `ALCANCE` (776)— **no tienen ninguna columna de fecha
+detectable**, que es literalmente el motivo por el que `R-22` las apagó. **Hoy eso tiene solución
+y no la tenía cuando se escribió la regla:** es el mismo caso de `looker/DIGITAL`, y `R-25`
+—`ventana_ref` a `Cuentas`— existe desde hoy. Si tienen `Id cuentas`, son legibles. **Se anota; no
+se hace acá.**
+
+### `N4.2` — el `_21` no se ejecutó, y lo frena su propia regla de parada
+
+Su §1 (las cuatro reglas de proceso) y §3 (qué decide Code solo) siguen siendo válidas — **de
+hecho esta corrida entera se manejó con ellas**. Pero su §4 manda escribir la cola de §2 en
+`PLAN.md` **como orden vigente**, y esa cola venció entera:
+
+| el `_21` dice | hoy |
+|---|---|
+| 1 · el `_18` es el camino crítico | **cancelado** por la Parte E del `_22` |
+| 2 · `_19` Parte B | **corrió** el 10/08 |
+| 3 · `_20` | **corrió** el 10/08 |
+| — · «las tres listas» congeladas | **ya coinciden** |
+
+Escribirla sería *"escribir un dato que no ocurrió"*, que es **uno de los tres motivos de parada
+que el propio `_21` §3 enumera**. Y el `_26` §N4 manda no empezar lo que no entra entero. **Se
+reporta y no se toca.** Lo que sí conviene: reescribir §2 contra la cola de hoy, en su propio
+prompt.
