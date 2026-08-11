@@ -1,10 +1,334 @@
-<!-- Panel.html — UI del panel lateral. Se completa en Pasos 6-8. -->
+<!-- Panel.html — UI de la barra lateral. `_27` bloque 1.1 (11/08/2026).
+     Cierra el TODO del Paso 6. Los Pasos 7 y 8 (formulario de valor nuevo, insertar
+     marcadores) siguen sin hacerse: este panel NO escribe en ninguna hoja de registro. -->
 <!DOCTYPE html>
 <html>
-  <head><base target="_top"></head>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: Roboto, Arial, sans-serif; font-size: 13px; margin: 0; padding: 12px; color: #202124; }
+      h1 { font-size: 14px; margin: 0 0 12px; font-weight: 500; }
+      label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
+              color: #5f6368; margin: 12px 0 4px; }
+      select, button { width: 100%; box-sizing: border-box; font-size: 13px; }
+      select { padding: 6px; border: 1px solid #dadce0; border-radius: 4px; background: #fff; }
+      button { margin-top: 16px; padding: 10px; border: 0; border-radius: 4px; background: #1a73e8;
+               color: #fff; font-weight: 500; cursor: pointer; }
+      button:disabled { background: #dadce0; color: #80868b; cursor: default; }
+      .nota { font-size: 11px; color: #5f6368; margin-top: 6px; line-height: 1.4; }
+      .aviso { margin-top: 12px; padding: 8px; border-radius: 4px; font-size: 12px; line-height: 1.4; }
+      .aviso.malo { background: #fce8e6; color: #c5221f; }
+      .aviso.ojo { background: #fef7e0; color: #b06000; }
+      .deck { display: block; margin: 4px 0 12px; padding: 10px; background: #e8f0fe; border-radius: 4px;
+              font-weight: 500; color: #1967d2; text-decoration: none; word-break: break-word; }
+      table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+      td { padding: 3px 0; vertical-align: top; }
+      td.n { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; padding-left: 8px; }
+      td.u { font-size: 11px; color: #5f6368; }
+      hr { border: 0; border-top: 1px solid #e8eaed; margin: 16px 0; }
+      .sec { font-size: 12px; margin: 2px 0; }
+      .sec i { color: #5f6368; font-style: normal; }
+      .check { display: flex; align-items: center; gap: 6px; }
+      .check input { width: auto; margin: 0; }
+      .check label { margin: 0; text-transform: none; letter-spacing: 0; font-size: 13px;
+                     color: #202124; }
+    </style>
+  </head>
   <body>
-    <!-- TODO (Paso 6): selector de período + botón "Vista previa" + tabla de estado.
-         TODO (Paso 7): formulario "Nuevo valor" con dropdowns de campos.
-         TODO (Paso 8): insertar marcadores + "explicá este número". -->
+    <h1>Motor de Informes</h1>
+
+    <div id="carga" class="nota">Leyendo la configuración…</div>
+
+    <div id="form" style="display:none">
+      <label for="informe">Informe</label>
+      <select id="informe"></select>
+
+      <label for="periodo">Período</label>
+      <select id="periodo"></select>
+      <div class="nota" id="notaPeriodo"></div>
+
+      <label>Secciones que entran en la corrida</label>
+      <div id="secciones"></div>
+      <div class="nota">Cada sección repetible duplica su lámina por ítem. Sacar una la deja
+        como está en la plantilla y <b>acorta la corrida</b> — el techo es de 350 s y la última
+        corrida completa de jm gastó 316.</div>
+
+      <label>Modo de presentación</label>
+      <div class="check">
+        <input type="checkbox" id="raya">
+        <label for="raya">Los huecos se ven como «—»</label>
+      </div>
+      <div class="nota">Sin tildar, un token sin dato imprime «FALTA:token» en la lámina.
+        Tildado se ve una raya — <b>el reporte y la hoja FALTANTES listan igual todos los
+        huecos, con su token y su motivo</b>.</div>
+
+      <button id="generar" onclick="generar()">Generar informe</button>
+      <div class="nota" id="notaBoton"></div>
+    </div>
+
+    <div id="salida"></div>
+
+    <script>
+      var ESTADO = null;
+
+      function texto(id, t) { document.getElementById(id).textContent = t; }
+      function esc(s) {
+        return String(s === null || s === undefined ? '' : s)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      }
+
+      google.script.run
+        .withSuccessHandler(pintar)
+        .withFailureHandler(function (e) {
+          texto('carga', 'No se pudo leer la configuración: ' + e.message);
+        })
+        .panel_getEstado();
+
+      function pintar(estado) {
+        ESTADO = estado;
+        document.getElementById('carga').style.display = 'none';
+        document.getElementById('form').style.display = 'block';
+
+        var si = document.getElementById('informe');
+        estado.informes.forEach(function (inf) {
+          var o = document.createElement('option');
+          o.value = inf.id;
+          // El badge dice la verdad medida, no una opinión: un informe sin marcadores
+          // cableados genera un deck de huecos. Que se lea ANTES de esperar cinco minutos.
+          o.textContent = inf.nombre + (inf.marcadores_cableados ? '' : ' · a desarrollar');
+          // `CONFIG.informe_activo` deja de ser la ÚNICA forma de elegir informe, pero sigue
+          // siendo el default: quien abre el panel ve preseleccionado lo mismo que hoy genera
+          // el ítem de menú, y elegir otro es un clic en vez de editar una celda.
+          if (inf.id === estado.informe_activo) o.selected = true;
+          si.appendChild(o);
+        });
+        si.onchange = pintarSecciones;
+
+        var sp = document.getElementById('periodo');
+        // La opción por defecto va primera y con las fechas puestas: es la que la corrida va a
+        // usar si no se toca nada, y sin las fechas a la vista "el de siempre" no dice nada.
+        var od = document.createElement('option');
+        od.value = '';
+        od.textContent = estado.por_defecto.ok
+          ? 'El del período activo · ' + estado.por_defecto.etiqueta
+          : 'El del período activo (no resuelve)';
+        sp.appendChild(od);
+
+        estado.periodos.forEach(function (p) {
+          var o = document.createElement('option');
+          o.value = p.id;
+          o.textContent = p.id + ' · ' + p.desde + ' a ' + p.hasta;
+          sp.appendChild(o);
+        });
+
+        sp.onchange = notaDelPeriodo;
+        notaDelPeriodo();
+        pintarSecciones();
+
+        if (!estado.por_defecto.ok) {
+          document.getElementById('notaBoton').innerHTML =
+            '<span class="aviso malo">La cadena de período no resuelve: ' +
+            esc(estado.por_defecto.motivo) + '. Elegí un período de la lista.</span>';
+        }
+      }
+
+      /**
+       * Las secciones del informe elegido, una tilde cada una y todas tildadas de entrada:
+       * el default del panel tiene que ser lo que el motor hace sin el panel.
+       *
+       * Se repinta al cambiar de informe porque las secciones son POR informe — `secco` no
+       * tiene las mismas que `jm`, y dejar las del anterior mandaría ids que no existen.
+       */
+      function pintarSecciones() {
+        var id = document.getElementById('informe').value;
+        var inf = null;
+        ESTADO.informes.forEach(function (x) { if (x.id === id) inf = x; });
+        var caja = document.getElementById('secciones');
+        caja.innerHTML = '';
+        if (!inf || !inf.secciones.length) {
+          caja.innerHTML = '<div class="nota">Este informe no tiene secciones repetibles activas.</div>';
+          return;
+        }
+        inf.secciones.forEach(function (s) {
+          var d = document.createElement('div');
+          d.className = 'check';
+          d.innerHTML = '<input type="checkbox" class="sec-check" value="' + esc(s.id) +
+            '" id="sec-' + esc(s.id) + '" checked>' +
+            '<label for="sec-' + esc(s.id) + '">' + esc(s.id) +
+            (s.itera_sobre ? ' <span class="u">itera ' + esc(s.itera_sobre) + '</span>' : '') +
+            '</label>';
+          caja.appendChild(d);
+        });
+      }
+
+      function seccionesElegidas() {
+        var v = [];
+        var checks = document.getElementsByClassName('sec-check');
+        for (var i = 0; i < checks.length; i++) if (checks[i].checked) v.push(checks[i].value);
+        return v;
+      }
+
+      function notaDelPeriodo() {
+        var v = document.getElementById('periodo').value;
+        if (!v) {
+          var d = ESTADO.por_defecto;
+          texto('notaPeriodo', d.ok
+            ? 'Sale de la cadena de D-20, eslabón «' + d.origen + '»: ' + d.desde + ' a ' + d.hasta + '.'
+            : 'No resuelve: ' + d.motivo);
+          return;
+        }
+        var p = null;
+        ESTADO.periodos.forEach(function (x) { if (x.id === v) p = x; });
+        texto('notaPeriodo', 'Override explícito sobre PERIODOS: pisa la cadena de D-20.' +
+          (p && p.notas ? ' — ' + p.notas : ''));
+      }
+
+      function generar() {
+        var boton = document.getElementById('generar');
+        boton.disabled = true;
+        boton.textContent = 'Generando…';
+
+        var t0 = Date.now();
+        var reloj = setInterval(function () {
+          // El usuario tiene que ver que algo pasa: la corrida medida el 11/08 tardó 316 s y
+          // un botón mudo durante cinco minutos se lee como colgado.
+          var seg = Math.round((Date.now() - t0) / 1000);
+          texto('notaBoton', 'Van ' + seg + ' s. Una corrida completa tarda unos 5 minutos: ' +
+            'copia la plantilla, expande las secciones y resuelve cada marcador.');
+        }, 1000);
+
+        document.getElementById('salida').innerHTML = '';
+
+        google.script.run
+          .withSuccessHandler(function (r) { clearInterval(reloj); listo(r); })
+          .withFailureHandler(function (e) {
+            clearInterval(reloj);
+            listo({ ok: false, motivo: e.message });
+          })
+          .panel_generar(
+            document.getElementById('informe').value,
+            document.getElementById('periodo').value,
+            document.getElementById('raya').checked,
+            seccionesElegidas()
+          );
+      }
+
+      function listo(r) {
+        var boton = document.getElementById('generar');
+        boton.disabled = false;
+        boton.textContent = 'Generar informe';
+        texto('notaBoton', '');
+
+        if (!r.ok) {
+          document.getElementById('salida').innerHTML =
+            '<div class="aviso malo"><b>No se generó.</b><br>' + esc(r.motivo) + '</div>';
+          return;
+        }
+
+        var h = [];
+
+        // El link primero y solo. Es lo que se viene a buscar.
+        h.push('<hr>');
+        h.push('<a class="deck" href="' + esc(r.deck.url) + '" target="_blank">' +
+               esc(r.deck.nombre) + ' ↗</a>');
+        h.push('<div class="nota">Período ' + esc(r.periodo.lamina) + ' · eslabón «' +
+               esc(r.periodo.origen) + '» · corrida ' + esc(r.corrida_id) + '</div>');
+
+        // Los avisos ANTES de los conteos: cambian cómo se leen. Mismo orden que el alert del
+        // menú, y por el mismo motivo (T2.7 / T2.1.2 / T2.1.1).
+        if (r.instrumento && r.instrumento.fallos && r.instrumento.fallos.length) {
+          h.push('<div class="aviso malo"><b>El instrumento falló ' + r.instrumento.fallos.length +
+                 ' vez/veces.</b> El rastro de etapas de CORRIDAS está incompleto y no sirve ' +
+                 'para diagnosticar.</div>');
+        }
+        if (r.fallo) {
+          h.push('<div class="aviso malo"><b>La corrida murió por una excepción</b> en la etapa ' +
+                 esc(r.fallo.etapa) + ' a los ' + r.fallo.segundos + ' s. No es corte por tiempo.<br>' +
+                 esc(r.fallo.mensaje) + '</div>');
+        }
+        if (r.corte) {
+          h.push('<div class="aviso ojo"><b>Corte por tiempo</b> en la etapa ' + esc(r.corte.etapa) +
+                 ' a los ' + r.corte.segundos + ' s. El deck es válido pero está incompleto.<br>' +
+                 esc(r.corte.motivo) + '</div>');
+        }
+
+        var c = r.conteos;
+        h.push('<hr><label>Qué tiene adentro</label><table>');
+        // Las dos unidades, dichas. Un solo renglón mezclándolas daba «83 con valor de 159 ·
+        // 207 en FALTA», y 207 > 159 se lee como un bug que no existe.
+        h.push(fila('Tokens distintos en el deck', c.tokens_distintos, ''));
+        h.push(fila('Impresiones con valor', c.impresiones_con_valor, 'token × lámina'));
+        h.push(fila('Filas en FALTANTES', c.filas_en_faltantes, 'una por token y por ítem'));
+        h.push('</table>');
+        // Con qué modo salió ESTE deck. Va pegado a los conteos porque es lo que explica por
+        // qué la lámina se ve limpia teniendo 207 huecos.
+        h.push('<div class="nota">En el deck los huecos se imprimieron como <b>' +
+               esc(r.presentacion_faltantes) + '</b>.</div>');
+
+        if (c.marcadores) {
+          h.push('<label>Marcadores (tokens fijos)</label><table>');
+          h.push(fila('Resueltos', c.marcadores.ok, ''));
+          h.push(fila('Sin dato', c.marcadores.sin_datos, ''));
+          h.push(fila('A revisar', c.marcadores.revisar, ''));
+          h.push(fila('En error', c.marcadores.error, ''));
+          h.push('</table>');
+        }
+
+        if (r.escondidas && r.escondidas.cuantos) {
+          h.push('<div class="aviso ojo">' + r.escondidas.cuantos +
+                 ' token(s) fuera del conteo: lámina(s) ' + esc(r.escondidas.laminas.join(', ')) +
+                 ' escondida(s), no se emiten. Numeradas sobre el <b>deck expandido</b>, no ' +
+                 'sobre la plantilla.</div>');
+        }
+        if (r.cableados_sin_caja && r.cableados_sin_caja.length) {
+          h.push('<div class="aviso ojo">' + r.cableados_sin_caja.length +
+                 ' marcador(es) cableado(s) que la plantilla no tiene dónde escribir: ' +
+                 esc(r.cableados_sin_caja.join(', ')) + '</div>');
+        }
+
+        h.push('<label>Secciones repetibles</label>');
+        r.secciones.forEach(function (s) {
+          var cuantos = s.motivo ? s.motivo : ((s.emitidos || []).length + ' emitido(s)');
+          h.push('<div class="sec">' + (s.omitida ? '○' : (s.ok ? '·' : '⚠')) + ' <b>' +
+                 esc(s.seccion) + '</b> — ' + esc(cuantos) + '</div>');
+          (s.excluidos || []).forEach(function (e) {
+            h.push('<div class="sec"><i>&nbsp;&nbsp;&nbsp;excluida ' +
+                   esc(e.campana || e.item || '(el ítem no trae nombre)') + ' — ' +
+                   esc(e.motivo) + '</i></div>');
+          });
+        });
+
+        // Lo que cuesta cada sección. Es lo que convierte el selector de arriba en una
+        // decisión con número en vez de una corazonada.
+        if (r.tiempos_por_seccion && r.tiempos_por_seccion.length) {
+          h.push('<label>Cuánto tardó cada sección</label><table>');
+          r.tiempos_por_seccion.forEach(function (t) {
+            h.push('<tr><td>' + esc(t.seccion) +
+                   (t.omitida ? '<br><span class="u">fuera de esta corrida</span>'
+                              : '<br><span class="u">' + t.items + ' ítem(s) · expandir ' +
+                                t.seg_expansion + ' s</span>') +
+                   '</td><td class="n">' + t.seg_total + ' s</td></tr>');
+          });
+          h.push('</table>');
+          h.push('<div class="nota">La suma de esta tabla es menor que el total de la corrida: ' +
+                 'copiar la plantilla, el mapa de tokens, los tokens fijos y el cierre no son ' +
+                 'de ninguna sección.</div>');
+        }
+
+        var p = r.presupuesto;
+        // El umbral es la reserva de cierre que declara CONFIG, no un número inventado acá.
+        var apretado = p.gastado_seg > (p.techo_seg - p.reserva_seg);
+        h.push('<hr><div class="nota' + (apretado ? ' aviso ojo' : '') + '">Tardó ' +
+               p.gastado_seg + ' s de un techo de ' + p.techo_seg + ' s' +
+               (apretado ? ' — al filo: la próxima corrida puede cortar.' : '.') + '</div>');
+
+        document.getElementById('salida').innerHTML = h.join('');
+      }
+
+      function fila(etiqueta, n, unidad) {
+        return '<tr><td>' + esc(etiqueta) + (unidad ? '<br><span class="u">' + esc(unidad) +
+               '</span>' : '') + '</td><td class="n">' + esc(n) + '</td></tr>';
+      }
+    </script>
   </body>
 </html>

@@ -988,9 +988,27 @@ function resolverMarcadores(informeId, opciones) {
  * `resolverMarcadores`, que a su vez despacha a `Marcadores.gs`.
  */
 
-/** Un token sin valor se escribe así, nunca crudo y nunca borrando la caja (`B.4`). */
-function textoFaltante_(token) {
-  return '«FALTA:' + token + '»';
+/**
+ * Un token sin valor se escribe así, nunca crudo y nunca borrando la caja (`B.4`).
+ *
+ * `_27` bloque 1.2 (11/08/2026) — segundo modo, **opción de la corrida y nunca default**.
+ * `«FALTA:token»` es el modo de trabajo y sigue siéndolo: dice qué token es y se ve de lejos.
+ * Pero una lámina con veinte de ésos se lee como un motor roto aunque el motor esté bien, y
+ * para mostrarlo hay un modo que rinde el hueco como una raya.
+ *
+ * **La contraparte es lo que hace que esto no sea esconder el problema, y es estructural, no
+ * una promesa:** esta función sólo decide el TEXTO que va a la caja. Los tres puntos que la
+ * llaman empujan su fila a `faltantes` en la línea de al lado, con token y motivo, y de ahí
+ * salen `FALTANTES` y los conteos del reporte. **No hay forma de cambiar el glifo y perder el
+ * registro**: son dos caminos distintos y ninguna opción toca el segundo. Si algún día se
+ * pudieran tocar juntos, el modo no se usa (`_27` 1.2).
+ *
+ * La raya no vive en `CONFIG` a propósito: no es un parámetro de negocio que alguien vaya a
+ * querer cambiar sin tocar código —el criterio de `D-01`— sino cómo se rinde un hueco, y el
+ * modo se elige por corrida, no por instalación.
+ */
+function textoFaltante_(token, comoRaya) {
+  return comoRaya === true ? '—' : '«FALTA:' + token + '»';
 }
 
 /**
@@ -1507,12 +1525,44 @@ function slidesModeloDe_(presentacion, familias) {
  *
  * Devuelve `{ asignaciones: [{ slide, item }], reporte: [...] }` con `slide` 1-based.
  */
-function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme) {
+function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, seccionesElegidas) {
   var asignaciones = [];
   var reporte = [];
   var reclamadas = {};
 
+  // `_27` bloque 3 — qué secciones entran en ESTA corrida.
+  //
+  // **Ausente = todas; una lista = exactamente ésas, y la lista vacía significa ninguna.**
+  // La distinción es entre `undefined` y `[]`, y es a propósito: con "lista vacía = todas",
+  // destildar todo en el panel habría pedido lo contrario de lo que hacía, y ése es el tipo
+  // de default silencioso que `D-19`/`D-21` prohíben. Un llamador que no conoce la opción
+  // sigue sin pasarla y no cambia nada.
+  //
+  // Por qué existe: la corrida de `jm` del 11/08 gastó **316 s de un techo de 350**, y eso
+  // con `campana` emitiendo cero ítems. Sus ocho slides modelo con ítems reales no entran, y
+  // un corte por tiempo a mitad de una presentación no se puede deshacer. Elegir secciones es
+  // lo que hace que la corrida entre en el techo.
+  var elegidas = null;
+  if (seccionesElegidas) {
+    elegidas = {};
+    seccionesElegidas.forEach(function (id) { elegidas[String(id).trim()] = true; });
+  }
+
   seccionesRepetiblesDe_(informeId).forEach(function (seccion) {
+    // `D-21` — una sección que queda afuera **se reporta**, nunca desaparece. Sus slides
+    // modelo se quedan como están y sus tokens caen a la pasada de tokens fijos, que es
+    // exactamente lo que ya pasa con una sección sin ítems: no es un camino nuevo.
+    if (elegidas && !elegidas[seccion.seccion_id]) {
+      reporte.push({
+        seccion: seccion.seccion_id, ok: true, omitida: true, items: [], excluidos: [],
+        motivo: 'fuera de esta corrida — no se la eligió. El bloque modelo queda como está y ' +
+          'sus tokens caen a la pasada de tokens fijos',
+        slides_modelo: slidesModeloDe_(presentacion, familiasDeSeccion_(seccion)).map(function (i) { return i + 1; })
+      });
+      return;
+    }
+
+    var t0Seccion = new Date().getTime();
     var familias = familiasDeSeccion_(seccion);
     var modelos = slidesModeloDe_(presentacion, familias);
 
@@ -1571,7 +1621,13 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme) {
       itera_sobre: seccion.itera_sobre,
       slides_modelo: modelos.map(function (i) { return i + 1; }),
       emitidos: resultado.items.map(function (i) { return i.clave + (i.motivo ? ' ⚠ ' + i.motivo : ''); }),
-      excluidos: resultado.excluidos
+      excluidos: resultado.excluidos,
+      // `_27` bloque 3 — lo que costó DUPLICAR esta sección. Es sólo una parte de lo que
+      // cuesta: pintar sus ítems se mide aparte, en la etapa 3, y las dos se suman en
+      // `tiempos_por_seccion`. Separadas y no sumadas acá porque se atacan distinto — una
+      // sección cara por duplicación tiene muchas slides modelo; una cara por ítems tiene
+      // muchos ítems.
+      seg_expansion: Math.round((new Date().getTime() - t0Seccion) / 1000)
     });
   });
 
@@ -1779,7 +1835,7 @@ function tokensVisiblesDe_(presentacion) {
  * 10-27 s y leer el mapa cuesta cero. Si el corte llegó antes de la etapa 2 no hay mapa, y
  * ahí sí se escanea; el retorno dice por cuál de los dos caminos fue.
  */
-function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa) {
+function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, comoRaya) {
   var origen = 'mapa de la etapa 2';
   var tokens = tokensDelMapa ? Object.keys(tokensDelMapa) : null;
   if (!tokens) {
@@ -1793,7 +1849,7 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa) {
   tokens.sort().forEach(function (token) {
     // `replaceAllText` no falla si el token ya no está: los que la corrida sí alcanzó
     // devuelven cero reemplazos y no cuestan una lectura previa.
-    var n = presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token), true);
+    var n = presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token, comoRaya), true);
     if (n > 0) barridos.push(token);
   });
   return { barridos: barridos, origen: origen };
@@ -1824,16 +1880,28 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa) {
  * lanzar. Sin él, un camino de error dejaría el caché encendido para lo que corra después en
  * la misma invocación —el ítem de menú, por ejemplo— sirviéndole config leída hace minutos.
  */
-function generarInforme(informeId, periodoId) {
+/**
+ * `_27` bloque 1.2 — `opciones` es el tercer parámetro y es **opcional**. Hoy lleva una sola
+ * clave, `faltantes_como_raya`, y por eso no reemplaza a `periodoId`: los dos llamadores que
+ * ya existen —el ítem de menú y la API— siguen llamando con uno o dos argumentos y no cambia
+ * nada para ellos. Un objeto de opciones que además absorbiera `periodoId` habría obligado a
+ * tocar los dos caminos por una opción de presentación.
+ */
+function generarInforme(informeId, periodoId, opciones) {
   abrirCacheRegistros_();
   try {
-    return generarInformeConCache_(informeId, periodoId);
+    return generarInformeConCache_(informeId, periodoId, opciones);
   } finally {
     cerrarCacheRegistros_();
   }
 }
 
-function generarInformeConCache_(informeId, periodoId) {
+function generarInformeConCache_(informeId, periodoId, opciones) {
+  opciones = opciones || {};
+  // `=== true` y no truthy: la opción entra desde un `<select>`, desde un JSON de la API y
+  // desde una llamada a mano. Un `"false"` de un query string es truthy y encendería el modo
+  // justo por el camino en que nadie lo está mirando.
+  var faltantesComoRaya = opciones.faltantes_como_raya === true;
   // T2.1.1 — el reloj arranca acá y es el único de la corrida. Ojo: la plataforma cuenta
   // desde `doPost` o desde el trigger del menú, no desde esta línea; lo que gasta el
   // llamador antes de entrar ya está descontado en el default de `presupuesto_corrida_seg`.
@@ -1912,6 +1980,10 @@ function generarInformeConCache_(informeId, periodoId) {
   var expansion = { asignaciones: [], reporte: [] };
   var mapa = { tokens: {}, lista: [], escondidas: { laminas: [], tokens: [], cuantos: 0 } };
   var porItem = [];
+  // `_27` bloque 3 — segundos de la etapa 3 acumulados por sección. Se declara acá afuera con
+  // el resto de los defaults del cierre: si la corrida muere en la etapa 1, el reporte de
+  // tiempos sale vacío en vez de tirar.
+  var segPorSeccion = {};
   var resolucion = { resultados: [], resumen: null };
   var porMarcador = {};
   var sinCajaEnPlantilla = [];
@@ -1924,7 +1996,7 @@ function generarInformeConCache_(informeId, periodoId) {
   // 1 · Paso 5 — duplicar los bloques repetibles. **Sin reemplazar nada**: las copias
   //     tienen `objectId` propios y el mapa de `B.3` se toma después, una sola vez, sobre
   //     el deck ya expandido y todavía intacto.
-  expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana);
+  expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana, opciones.secciones);
 
   etapaEnCurso = marcarEtapa_(filaCorrida, '2 · mapa token→objectId', t0Etapas);
   // 2 · El mapa, ANTES de tocar un solo token.
@@ -1988,7 +2060,7 @@ function generarInformeConCache_(informeId, periodoId) {
         conValor.push(token + ' @' + asignacion.item.clave);
         return;
       }
-      slide.replaceAllText('{{' + token + '}}', textoFaltante_(token), true);
+      slide.replaceAllText('{{' + token + '}}', textoFaltante_(token, faltantesComoRaya), true);
       faltantes.push({
         corrida_id: corridaId,
         informe_id: informeId,
@@ -2003,6 +2075,7 @@ function generarInformeConCache_(informeId, periodoId) {
     });
 
     reemplazados += reemplazadosItem;
+    var segItem = Math.ceil((new Date().getTime() - t0Item) / 1000);
     porItem.push({
       seccion: asignacion.seccion,
       item: asignacion.item.clave,
@@ -2010,10 +2083,14 @@ function generarInformeConCache_(informeId, periodoId) {
       ok: true,
       reemplazados: reemplazadosItem,
       resumen: resolucionItem.resumen,
-      motivo: asignacion.item.motivo
+      motivo: asignacion.item.motivo,
+      // `_27` bloque 3 — el costo de este ítem, que ya se medía para el checkpoint y se
+      // tiraba. Publicarlo es lo que permite decir **qué sección** se come el techo.
+      seg: segItem
     });
+    segPorSeccion[asignacion.seccion] = (segPorSeccion[asignacion.seccion] || 0) + segItem;
 
-    costoUltimoItemSeg = Math.ceil((new Date().getTime() - t0Item) / 1000);
+    costoUltimoItemSeg = segItem;
   }
 
   etapaEnCurso = marcarEtapa_(filaCorrida, '4 · tokens fijos', t0Etapas);
@@ -2095,7 +2172,7 @@ function generarInformeConCache_(informeId, periodoId) {
       return;
     }
 
-    presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token), true);
+    presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token, faltantesComoRaya), true);
     var fila = porMarcador[token];
     faltantes.push({
       corrida_id: corridaId,
@@ -2135,7 +2212,7 @@ function generarInformeConCache_(informeId, periodoId) {
   // cero tokens y el deck saliera con `{{token}}` crudos — justo lo contrario de lo que
   // esta barrida garantiza. Si la corrida murió antes de la etapa 2 no hay mapa y hay que
   // re-escanear, que es para lo que `barrerTokensNoAlcanzados_` acepta `null`.
-  var barrida = barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null);
+  var barrida = barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null, faltantesComoRaya);
   barrida.barridos.forEach(function (token) {
     faltantes.push({
       corrida_id: corridaId,
@@ -2203,6 +2280,10 @@ function generarInformeConCache_(informeId, periodoId) {
       calculado: ventana.calculado === true,
       traza: trazaPeriodo
     },
+    // `_27` 1.2 — con qué modo salió ESTE deck. Sin esto, un deck en modo raya y uno con
+    // todos los datos se leen igual una semana después, que es justo cuando alguien lo va a
+    // mirar sin acordarse de cómo lo generó.
+    presentacion_faltantes: faltantesComoRaya ? 'raya' : '«FALTA:token»',
     tokens: {
       en_plantilla: mapa.lista.length,
       reemplazados: reemplazados,
@@ -2223,6 +2304,25 @@ function generarInformeConCache_(informeId, periodoId) {
     // excluido va en el reporte final a propósito: una campaña que el usuario tildó y no
     // salió por `D-19` no puede desaparecer en silencio.
     repetibles: { secciones: expansion.reporte, items: porItem },
+    // `_27` bloque 3 — cuánto costó cada sección, para poder decidir cuáles entran en la
+    // próxima corrida con un número y no con una corazonada.
+    //
+    // **Las dos etapas van separadas y el total es la suma de las dos**, no del gasto de la
+    // corrida: el resto —copiar la plantilla, el mapa, la etapa 4, el cierre— no es de ninguna
+    // sección, y repartirlo entre ellas inventaría un número. Por eso la suma de esta tabla es
+    // MENOR que `presupuesto.gastado_seg`, y tiene que serlo.
+    tiempos_por_seccion: expansion.reporte.map(function (s) {
+      var items = segPorSeccion[s.seccion] || 0;
+      var exp = s.seg_expansion || 0;
+      return {
+        seccion: s.seccion,
+        omitida: s.omitida === true,
+        seg_expansion: exp,
+        seg_items: items,
+        seg_total: exp + items,
+        items: porItem.filter(function (i) { return i.seccion === s.seccion; }).length
+      };
+    }),
     faltantes_escritos: faltantesEscritos,
     mapa_tokens: { cabe_en_la_celda: celdaMapa.entra, caracteres: celdaMapa.caracteres },
     // `T2.1.1` · `null` si la corrida hizo todo el trabajo. **Una corrida cortada no es una
@@ -2266,15 +2366,37 @@ function menuGenerarInformeCompleto_() {
     return r;
   }
 
+  // `_27` bloque 1.3 — el link ARRIBA DE TODO. Es lo que se viene a buscar, y estaba cuarto,
+  // detrás de dos identificadores y del nombre del archivo.
+  //
+  // Y los conteos con su unidad dicha. El renglón anterior era
+  // `83 con valor de 159 · 207 en FALTA`, y `207 > 159` se lee como un bug del motor. No lo
+  // es: son **dos unidades distintas** metidas en la misma frase — `159` son tokens distintos
+  // del deck expandido, `207` son filas de `FALTANTES`, que se escriben una por token **y por
+  // ítem** (`CLAUDE.md` §4: «FALTANTES lista por ítem, no por token»). Medido en la corrida
+  // del 11/08, que es de donde salen esos tres números.
+  //
+  // No se suma nada: `reemplazados + faltantes` parece el total de impresiones y no lo es,
+  // porque `R-18` punto 3 escribe una fila para un token que **sí publicó**.
   var lineas = [
+    r.deck.url,
+    '',
+    'Deck: ' + r.deck.nombre,
     'Informe: ' + r.informe_id + ' · corrida ' + r.corrida_id,
     'Período: ' + r.periodo.lamina + ' (' + r.periodo.origen + (r.periodo.calculado ? ', calculado' : '') + ')',
-    'Deck: ' + r.deck.nombre,
-    r.deck.url,
     'Dueño del archivo: ' + r.deck.dueno,
     '',
-    'Tokens: ' + r.tokens.reemplazados + ' con valor de ' + r.tokens.en_plantilla + ' · ' + r.tokens.faltantes + ' en FALTA'
+    'Tokens distintos en el deck: ' + r.tokens.en_plantilla,
+    'Impresiones con valor (token × lámina): ' + r.tokens.reemplazados,
+    'Filas en FALTANTES (una por token y por ítem): ' + r.tokens.faltantes,
+    'Los huecos se imprimieron como: ' + r.presentacion_faltantes
   ];
+  // El desglose de la pasada de tokens fijos, que el alert nunca mostraba: `4 en error` es lo
+  // que manda a mirar el deck, y estaba sólo en el JSON del retorno.
+  if (r.marcadores) {
+    lineas.push('Marcadores: ' + r.marcadores.ok + ' resueltos · ' + r.marcadores.sin_datos +
+      ' sin dato · ' + r.marcadores.revisar + ' a revisar · ' + r.marcadores.error + ' en error');
+  }
   // `A.3` — lo excluido se dice, no se descuenta en silencio.
   //
   // 07/08 — y **dice contra qué numeración**. Los números salen de `mapaTokenObjectId_`, que

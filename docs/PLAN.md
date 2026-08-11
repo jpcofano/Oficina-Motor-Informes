@@ -861,6 +861,61 @@ salen, la suma es un control y no una operación.
 
 ---
 
+**`D-27` — Qué secciones repetibles entran es una opción de la corrida, y una sección que queda
+afuera se reporta.** (11/08/2026)
+
+`generarInforme` toma un tercer parámetro `opciones`, y `opciones.secciones` dice cuáles de las
+secciones repetibles se expanden. **Ausente = todas; una lista = exactamente ésas; la lista vacía
+= ninguna.**
+
+**La distinción entre `undefined` y `[]` es la decisión, no un detalle de firma.** Con "lista
+vacía = todas", destildar todas las secciones en el panel habría pedido **lo contrario** de lo que
+hacía — un default silencioso invirtiendo una elección explícita, que es justo lo que `D-19` y
+`D-21` prohíben en el otro extremo del motor. Un llamador que no conoce la opción no la pasa y no
+cambia nada: el ítem de menú y la API siguen llamando igual.
+
+**Una sección omitida no desaparece:** entra al reporte con `omitida: true` y su motivo, y sus
+slides modelo quedan como están, con los tokens cayendo a la pasada de tokens fijos. Es el mismo
+camino que ya recorría una sección sin ítems — no se inventó un estado nuevo.
+
+**Y el motivo por el que nació no es el que terminó justificándola.** Se pidió para que la corrida
+entrara en el techo, sospechando de `campana`. Medido, `campana` cuesta **0 s** porque tiene 0
+ítems (`CAMPANAS` no tiene ni una fila de `jm`). Lo que la opción sí da es el seguro para el día
+que los tenga, y —de paso— la primera pantalla donde se ve que el motor **se configura**. El
+riesgo de timeout real es otro y es `D-28`.
+
+---
+
+**`D-28` — El presupuesto de corrida se dimensiona contra la varianza de la plataforma, no contra
+el costo del trabajo.** (11/08/2026)
+
+Cuatro corridas de `jm` del 11/08, **con el mismo output exacto** —159 tokens distintos, 83
+impresiones con valor, 207 filas de `FALTANTES`— dieron:
+
+```
+316 s   las tres secciones
+204 s   las tres secciones
+220 s   sólo encuentro   ← menos trabajo, más tiempo que la de 204
+```
+
+**Rango 112 s sobre un techo de 350: un tercio del presupuesto, con el trabajo constante.** La
+corrida con **menos** secciones tardó **más** que una con todas. El costo de las secciones,
+medido, es chico y estable —`encuentro` 72-114 s, `comunicaciones_post` 33-45 s, `campana` 0— y
+el resto es latencia de Sheets y Slides, que no se controla desde acá.
+
+**La consecuencia operativa:** ningún selector de secciones alcanza contra esa varianza. Para una
+presentación, **el deck se genera antes y se muestra generado**; correrlo en vivo es una
+demostración del motor, no la forma de tener el deck.
+
+**Y la consecuencia para el techo, que es por lo que esto es una decisión y no una anécdota:**
+`CONFIG.presupuesto_corrida_seg` está en 350 y **no se puede subir mucho** — Apps Script corta la
+invocación a los 6 minutos, así que el margen real son ~10 s. El día que alguien quiera tocar ese
+número, el dato que necesita es este rango: no alcanza con medir una corrida, porque una sola
+corrida no dice nada sobre la próxima. El corte por tiempo del motor (`T2.1.1`) no es una
+precaución teórica: es la única red que queda.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 **IDs `T<tramo>.<n>`.** La palabra "Paso" queda para la serie histórica y no se reusa: `Paso 5`

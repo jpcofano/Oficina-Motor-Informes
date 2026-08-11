@@ -244,8 +244,21 @@ function anunciar_(titulo, texto) {
   return titulo + '\n\n' + texto;
 }
 
+/**
+ * `_27` (11/08/2026) — deja de ser un "próximamente". El primer ítem del menú era lo primero
+ * que veía el usuario y lo primero que no hacía nada.
+ *
+ * Sin planilla no hay barra lateral donde mostrarlo: `abrirPanel()` llama a `showSidebar`,
+ * que necesita UI real. Por eso el camino sin UI **avisa y no tira** — que es la degradación
+ * que `ui_()` ya fija para todo el menú.
+ */
 function menuAbrirPanel_() {
-  return anunciar_('Abrir panel', 'próximamente');
+  if (!hayUi_()) {
+    return anunciar_('Abrir panel', 'El panel es una barra lateral: necesita la planilla ' +
+      'abierta. Por API el camino equivalente es panel_getEstado() y panel_generar().');
+  }
+  abrirPanel();
+  return anunciar_('Abrir panel', 'Panel abierto en la barra lateral.');
 }
 
 /**

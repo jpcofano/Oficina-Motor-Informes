@@ -8029,3 +8029,152 @@ afirmaba al revés.
 misma fuente, mismo filtro, misma ventana. **Van tres lecturas distintas del mismo número en un
 día** (6.084.893 → 3.958.570 con la fuente vieja; 29.194.092 → 29.657.033 con la nueva). La
 instrucción 1 del `_26` no era una precaución: era una descripción.
+
+---
+
+## `_27` bloques 1 a 4 — el panel, el selector de secciones y nueve marcadores (2026-08-11)
+
+Prompt: `docs/Prompts/2026-08-11_27_plan_de_demo.md`, con el replanteo del usuario de los
+bloques 2 y 3 hecho a mitad de corrida. **Ningún subagente**: el prompt no declara uno.
+
+### Bloque 1 — el camino del usuario
+
+**Premisa caída, y era la central: el Panel no existía.** `abrirPanel()` era un `// TODO (Paso 6)`
+con cuerpo vacío, `Panel.html` tenía 10 líneas y `<body>` vacío, y `menuAbrirPanel_` —**el primer
+ítem del menú**— devolvía un toast `'próximamente'`. Las cinco `panel_*` del encabezado de
+`PanelBackend.gs` no existían. Con eso caían las otras dos premisas de 1.1: no había selector de
+período (la ventana salía de `CONFIG` por la cadena de `D-20`) ni de informe
+(`CONFIG.informe_activo`, o sea **editar una celda** para pasar de `jm` a `secco`).
+
+Se reportó y se paró antes de la primera edición. **Decisión del usuario: construir el panel
+mínimo.**
+
+- **`panel_getEstado()`** — informes, períodos, secciones repetibles y la ventana que saldría hoy,
+  en **una** llamada. La ventana se resuelve con `resolverVentana({})`, **la misma cadena que va a
+  usar la corrida**, y no leyendo `CONFIG.periodo_desde` a mano: mostrar la celda sería
+  reimplementar el motor peor, que es el borde de `CLAUDE.md` §4.
+- **`panel_generar()`** — genera y devuelve el reporte ya presentable.
+- **`fechaLegible_`** envuelve a `formatearFecha_`, que llama a `Utilities.formatDate` y **tira con
+  `null`**: sin eso, una fila de `PERIODOS` con la fecha mal tipeada volteaba `panel_getEstado()`
+  entero y el panel no se pintaba.
+- **El selector de período no se arma sólo con `PERIODOS`.** Sus dos filas son de junio y **ninguna
+  es la ventana en uso**: la opción por defecto va primera, con las fechas puestas.
+
+**1.2 · los faltantes como raya.** `textoFaltante_(token, comoRaya)` — opción de corrida
+(`opciones.faltantes_como_raya`), nunca default. `=== true` y no truthy: la opción entra desde un
+checkbox, desde un JSON y desde un query string, y `"false"` es truthy.
+
+**La contraparte es estructural y no una promesa:** la función sólo decide el texto de la caja; los
+tres puntos que la llaman empujan su fila a `faltantes` en la línea de al lado. **Verificado, no
+razonado:** la corrida de `secco` en modo raya escribió las **289 filas** de `FALTANTES` igual. El
+reporte devuelve `presentacion_faltantes` para que dentro de una semana una raya no se lea como un
+dato.
+
+**1.3 · el reporte.** El renglón del menú decía `83 con valor de 159 · 207 en FALTA`, y **`207 >
+159` se lee como un bug que no existe**: `159` son tokens distintos del deck expandido y `207` son
+filas de `FALTANTES`, que se escriben una por token **y por ítem** (`CLAUDE.md` §4). Dos unidades
+en la misma frase. Ahora cada número dice de qué es, el link va **arriba de todo** y el desglose
+`46 resueltos / 7 sin dato / 4 en error` —que sólo estaba en el JSON— se ve. **No se suma nada:**
+`reemplazados + faltantes` parece el total de impresiones y no lo es, porque `R-18` punto 3 escribe
+una fila para un token que **sí publicó**.
+
+### Bloque 3 — el selector de secciones, y la premisa que la medición volteó
+
+`D-27`. Cuatro corridas del mismo trabajo dieron **316 / 204 / 220 s**, y la de **menos** secciones
+tardó **más** que una de tres. `campana` cuesta **0 s**: no tiene ítems. **El riesgo de timeout es
+real y la causa no es `campana` — es varianza de latencia.** `D-28`, con las tres mediciones,
+porque ése es el dato que hace falta el día que alguien quiera subir el techo, y el techo casi no
+se puede subir (Apps Script corta a los 6 min; `presupuesto_corrida_seg` ya está en 350).
+
+Costo medido por sección: `encuentro` 72-114 s (5 ítems), `comunicaciones_post` 33-45 s (2),
+`campana` 0. La suma es **menor** que el total de la corrida y tiene que serlo: copiar la
+plantilla, el mapa, la etapa 4 y el cierre no son de ninguna sección, y repartirlos inventaría un
+número.
+
+### Bloque 2.1 — los 4 errores son 2
+
+`frecuencia` y `gcba_frecuencia` re-apuntados por **`curarCamposMarcadores_`** (12 celdas, **cero
+filas creadas**) de `digital/Digital` —que es `ignorar` por `R-22`, así que publicaban
+`solapa_no_fuente`— a `looker/resumen_metricas_dinamico`, `RATIO dig_impresiones/alcance`
+(`V-68`/`V-69`).
+
+| | valor | filas |
+|---|---|---|
+| `frecuencia` | 21,46 | 4 de 26 |
+| `gcba_frecuencia` | 1,63 | 22 de 26 |
+
+**Se sacó `estado=Activa`** aunque `imp_*` lo usa: con ese filtro las únicas 2 filas `Activa` de la
+ventana son las dos JM y `gcba_frecuencia` daba **0 de 26**. Un par complementario con una mitad
+vacía no es un universo. Sin él la partición cierra: 4 + 22 = 26.
+
+⚠ **El número tiene un defecto conocido y no se arregló:** `alcance` viene vacío en 1 de las 4
+filas JM, así que el numerador incluye una campaña que el denominador no tiene — el hallazgo que ya
+había dejado el `N2`. **21,46 se lee perfectamente plausible.** Marcado `SIN VALIDAR — demo 12/08`.
+
+### Bloque 2.2 — M2, y las láminas escondidas eran otras
+
+**El reporte de corrida numera sobre el DECK EXPANDIDO.** Las «15 y 24» son, en la plantilla, la
+**10 y la 19** (+5 por la expansión). Verificado contra `LAMINAS`, que marca `escondida = sí`
+exactamente en `orden_plantilla` 10 y 19.
+
+- **Lámina 9 — visible, 8 tokens `m2_*`.**
+- **Lámina 10 — escondida, 23 tokens `m2_*` distintos.**
+- **Ningún token está en las dos.** No es un bloque viejo duplicado: es un detalle más granular,
+  apagado. **Ninguna plantilla tocada.**
+
+Siete marcadores nuevos por **`curarMarcadores_`** (57 → 64 filas, cero quitadas) sobre
+`digital/Directa Mail`, filtro `mail_tipo~=M2`. **Eso destrabó una premisa vencida:** `X-12` decía
+que el clasificador *"NO es expresable en `MARCADORES.filtro`: soporta `=` y `!=`, no CONTIENE"* —
+**el `_24` trajo `~=`**. Fue decisivo, porque `m2/M2 periodo DIRECTA` está como `referencia` y
+`buscarMapeo` exige `fuente`: cablear ahí habría reproducido el error del 2.1.
+
+`m2_mails_enviados` 1.442.363 · `m2_mails_entregados` 1.424.241 · `m2_aperturas` 407.862 ·
+`m2_clics` 12.663 · `m2_or` 28,6 % · `m2_ctor` 3,1 % · `m2_envios` CONTEO. Todos `SIN VALIDAR`.
+
+**`m2_campanias` quedó sin cablear a propósito:** es cantidad de campañas distintas y
+`OPERACIONES_` no tiene DISTINCT. Un `CONTEO` de filas habría dado un número plausible y
+equivocado.
+
+### Bloque 4 — por qué las láminas de encuentro difieren: es el dato
+
+Los 6 tokens que tienen las cinco son `ecv_*`, de `rdv`. Los 11 extra de Orden Público son `enc_*`,
+de `digital/Directa IVR` y `Directa Mail`. Medido con el contexto de ítem de cada cuenta:
+
+- **3387-JULJDGGC** (Orden Público) → `enc_audiencia` = 78.637 sobre **2 filas** de `Directa IVR`
+- **3354-JULJDGAG** (San Cristóbal) → **0 filas**; el motor dice *"sin dato, no cero"*
+
+Correlaciona con `REUNIONES`: **Orden Público es `tipo = Encuentro Temático`** y los otros cuatro
+son `Uno a uno`. El temático tiene campaña de IVR/mail en la ventana; los barriales no.
+`enc_impresiones` y `enc_alcance` fallan en **los cinco** —apuntan a `digital/Digital`— y son los 2
+errores que quedan. **No se cableó nada para emparejarlas.**
+
+### `campana` queda como está, y el motivo va escrito
+
+`CAMPANAS` tiene **3 filas, las tres del seed y las tres `informe_id = secco`**: dos con
+`periodo_id` vacío (excluidas por `D-19`) y `prov_uber` con `mostrar = no`. **No hay ni una campaña
+de `jm` cargada.** No es un bug del motor y no se siembra hoy: cargar `CAMPANAS` es **decidir
+contenido**, y sus nueve sub-secciones opcionales están en estado `revisar`.
+
+### `secco` fuera de alcance, medido y no opinado
+
+`MARCADORES` tenía 57 filas y **las 57 eran de `jm`**; `secco` tiene cero. Su deck sale con 289
+huecos y un valor (`{{periodo}}`). El panel lo dice solo: `panel_getEstado` cuenta marcadores por
+informe y el selector muestra **"· a desarrollar"** cuando son cero.
+
+### `panel_ultimasCorridas()` — el lector que faltaba
+
+Nace de un problema real: una llamada de generación volvió en HTML y **no había forma de saber si
+había llegado a correr**, porque `CORRIDAS` era la única hoja de registro sin ningún lector
+(`verificarObjectIdDeCorrida_` exige el `corrida_id` que justamente falta cuando la llamada se
+cae). Sólo lectura.
+
+**El deck huérfano quedó identificado: `jm-20260811-132254`, deck
+`166MdMSmtkFJT18OOc_wqIWsycgOWG31LU5BQ4xJf1A8`** — la única fila **sin cerrar**, sin
+`fecha_generacion` y sin conteo. **No es el de la demo**, y los dos ids empiezan parecido.
+
+### Verificación
+
+Pruebas del diff **13/13**. `verificarLaminas()` **VERDE 51/51/51**. `controlParticionImpresiones_`
+delta **0** en importes y filas de los dos grupos. Deck de la demo: **`jm-20260811-135342`**, 226 s,
+sin corte, sin fallo, instrumento limpio, **92 impresiones con valor** (eran 83) y **55 ok / 7 sin
+dato / 2 error** (eran 46/7/4).

@@ -3,140 +3,112 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-10, al cerrar el `_24` · último commit al escribirlo: `382e8d0`
+**Última actualización:** 2026-08-11, al cerrar el `_27` · demo el 12/08
+
+## Lo primero, porque es de mañana
+
+**El deck de la demo ya está generado y es éste:**
+
+```
+corrida jm-20260811-135342
+deck    1EjZyuEQMJIo_i5MGdqpZvoRAh5M6SFSn6lS-8S2ttew
+        226 s · sin corte · sin fallo · instrumento limpio
+        92 impresiones con valor · 55 ok / 7 sin dato / 2 error
+```
+
+⚠ **Hay un deck huérfano en la misma carpeta y los dos ids empiezan parecido.** Es
+`166MdMSmtkFJT18OOc_wqIWsycgOWG31LU5BQ4xJf1A8`, de la corrida `jm-20260811-132254`, que volvió
+en HTML y murió antes del cierre: es la **única fila de `CORRIDAS` sin `fecha_generacion`**.
+`panel_ultimasCorridas()` lo muestra como `[SIN CERRAR]`.
+
+**Se muestra el deck ya generado.** Correrlo en vivo es una demostración del motor, no la forma
+de tener el deck — `D-28`.
 
 ## Dónde estamos
 
-**Las dos capacidades que bloqueaban los `imp_*` están hechas y verificadas.** Ninguna cableó un
-marcador.
+**El `_27` construyó el panel que los Pasos 6-8 nunca hicieron**, y cableó nueve marcadores.
 
-- **`_23` · la ventana por referencia.** `looker/DIGITAL` tiene el corte, el filtro y el desglose
-  pero **ninguna columna temporal** (`C-19`); ahora toma la ventana de `looker/Cuentas` por
-  pertenencia — `R-25`, declarada en `SOLAPAS.ventana_ref` + `MAPEO.clave_ventana` (`D-24`).
-- **`_24` · el filtro de más de una condición.** `campo=valor && campo=valor && …`, sólo
-  conjunción (`D-25`, sintaxis en `TOKENS.md` §6). Los 9 filtros vivos dan **idéntico** conteo
-  antes y después.
-
-```
-looker/DIGITAL   4896 filas · 966 en ventana 2026-07-24 → 2026-07-30
-                 3765 fuera · 18 sin clave · 147 huérfanas (31 ids)
-looker/Cuentas   1011 filas · 1011 ids distintos, cero repetidos · 92 en ventana
-control _23      Cuentas por referencia contra sí misma = recorte directo (92 y 92)
-control _24      los 9 filtros vivos, cero diferencias, trazas byte a byte idénticas
-pruebas del diff 12/12 verde · verificarLaminas() VERDE 51/51/51
-```
-
-**El siguiente es el cableado de los tres `imp_*`, y ya tiene todo:** fuente `looker/DIGITAL`,
-filtro `nombre_campaña~=JM && estado=Activa && Plataforma=Meta` (y por resta para `imp_prog`,
-`R-24`), ventana por referencia. Medido el 10/08: **51 filas** cumplen JM + Activa, repartidas
-`Meta` 16 · `Google ads` 14 · `DV360` 21.
-
-**Y recién después se cierra el `P0`:** `imp_total` y `gcba_imp_total` son derivados (`X-10`,
-`V-59`) y se les retira la fuente propia **cuando existan los tres sumandos**, nunca antes. El
-orden está desde el `10.1` §3 y no cambió.
-
-## Lo único que falta antes de cablear, y está medido
-
-**`looker/DIGITAL` tiene cuatro filas de `MAPEO` que faltan.** Hoy sólo tiene `clave_ventana`.
-Verificado el 10/08 sobre la solapa viva: el filtro de tres condiciones devuelve
+- **`abrirPanel()` ya no es un TODO.** `PanelBackend.gs` expone `panel_getEstado()`,
+  `panel_generar()` y `panel_ultimasCorridas()`. El primer ítem del menú dejó de decir
+  `'próximamente'`.
+- **Selector de informe, de período, de secciones y de modo de presentación**, los cuatro en el
+  panel. Antes pasar de `jm` a `secco` era **editar una celda de `CONFIG`**.
+- **`opciones.secciones`** decide qué secciones repetibles entran (`D-27`).
+- **`opciones.faltantes_como_raya`** rinde el hueco como `—` sin tocar el registro.
 
 ```
-«FALTA:imp_meta@filtro_campo_no_mapeado» — el filtro declara `nombre_campaña`
-(condición 1 de 3) y MAPEO no lo tiene para looker/DIGITAL
+MARCADORES  64 filas (57 + los 7 de m2), las 64 de jm
+marcadores  55 ok · 7 sin dato · 2 error  (eran 46/7/4)
+pruebas     13/13 · verificarLaminas VERDE 51/51/51 · partición delta 0
 ```
 
-**Es el fallo correcto** —dice cuál condición y qué campo— pero no es lo que se quiere. Faltan
-`nombre_campaña` (F), `estado` (I), `Plataforma` (B) e `Impresiones` (C). Columnas medidas:
-`A Id cuentas · B Plataforma · C Impresiones · D Visualizaciones · E Clics · F nombre_campaña ·
-G eje · H area · I estado`.
+## Los 2 errores que quedan, y son uno solo
 
-## Lo que dejó el `_24` y conviene no perder
+`enc_impresiones` y `enc_alcance` apuntan a `digital/Digital`, que es `ignorar` por `R-22`.
+Fallan en **los cinco** encuentros, no en cuatro. Necesitan la rama por cuenta (`C-23`) y **eso
+es trabajo de código**: `datosDeMarcador_` tiene esa rama adentro del `if` que pregunta si la
+base es `digital`, así que re-apuntarlos a `looker` sin tocar código haría que los cinco
+encuentros publiquen el mismo agregado.
 
-- **`parsearFiltro_` devuelve una lista, no un objeto.** `{ok, vacio, condiciones:[…]}`. Una
-  condición sola es una lista de uno: no hay dos caminos.
-- **`valorPasaFiltro_` tira si no recibe una condición.** Es la guarda del cambio de firma: sin
-  ella, un llamador que pasara el resultado entero **no fallaba** —`undefined === undefined`— y
-  dejaba pasar todas las filas. Tres consumidores, los tres en `Generador.gs`.
-- **Nunca se aplica un subconjunto de condiciones.** Si una no resuelve contra `MAPEO`, falla el
-  filtro entero nombrando cuál. Y un filtro **heredado** con una condición que no mapea se ignora
-  **entero**, nunca por partes.
-- **`&&` y nunca `&`.** Hay valores con `&` simple en los datos (dos URLs de `post_meta`) y tienen
-  su caso de prueba.
-- **La rama `CAMPANAS` de `itemsDeSeccion_` saltea en silencio un `SECCIONES.filtro` mal escrito**
-  (`if (fc.ok && …)`), mientras la rama `REUNIONES` falla con motivo. Es de antes del `_24`, se
-  dejó igual para no mover números, y está anotado arriba de la línea.
+## Lo que hay que saber antes de tocar algo
 
-## Lo que dejó el `_23` y conviene no perder
+- **`CAMPANAS` no tiene ni una fila de `jm`.** Las 3 que hay son del seed y `informe_id = secco`:
+  dos con `periodo_id` vacío (`D-19`) y una con `mostrar = no`. Por eso `campana` emite cero y
+  cuesta 0 s. **No es un bug**, y cargarla es decidir contenido.
+- **`secco` tiene cero marcadores cableados.** Su deck sale con 289 huecos y un valor. El panel
+  lo marca **"· a desarrollar"** contando `MARCADORES` por informe, no con una etiqueta escrita.
+- **El reporte de corrida numera las láminas sobre el DECK EXPANDIDO.** Las escondidas «15 y 24»
+  son, en la plantilla, la **10 y la 19**. Cuesta una hora si no se sabe.
+- **`m2_*` vive en dos láminas de `jm` y no hay un solo token repetido**: la 9 (visible, 8
+  tokens, cableados) y la 10 (escondida, 23 tokens distintos, más granular).
+- **`m2/M2 periodo DIRECTA` es `referencia`, no `fuente`**, y `buscarMapeo` exige `fuente`.
+  Cablear ahí devuelve `solapa_no_fuente`. La ruta buena es `digital/Directa Mail`.
+- **`X-12` está vencida**: decía que `Tipo de mail CONTIENE M2` no era expresable. El `_24` trajo
+  `~=` y ahora sí lo es.
+- **`FALTANTES` cuenta por ítem y la plantilla por token.** Por eso 207 puede ser mayor que 159
+  sin que nada esté roto. El reporte ahora lo dice; no volver a mezclarlos en una sola frase.
 
-- **`SOLAPAS` tiene una columna nueva, `ventana_ref`**, antes de `notas`. Vacío = la solapa tiene
-  su propia `fecha_periodo`, que es el estado de las 100 y pico. **La única con valor es
-  `looker/DIGITAL`.**
-- **La referencia es de un solo nivel** y el segundo falla con motivo propio. El control positivo
-  vive en `Pruebas.gs` (`probarReferenciaVentanaUnNivel_`) y le pasa un mapa de solapas
-  **sintético** — por eso `validarReferenciaVentana_` recibe el mapa por parámetro.
-- **`controlVentanaPorReferencia_()` es el control corrible de la capacidad**: recorta
-  `looker/Cuentas` por los dos caminos y compara. Se corre por API, no escribe nada. Si algún día
-  difiere, la capacidad está rota y se ve sin tocar `DIGITAL`.
-- **`leerFuente` devuelve `encabezados`** (la fila de títulos tal cual se leyó). No es cosmético:
-  resolver el nombre de la columna por afuera con `encabezadoEnColumna_` usa
-  `BASES.fila_encabezado` en vez de `resolverFilaEncabezado_`, y donde difieran todas las claves
-  saldrían vacías **sin fallar**.
-- **`upsertPorClave_` blanquea toda columna que el objeto no traiga.** Se arregló sólo en
-  `aplicarClasificacionSolapas_`; el genérico quedó igual y está en `PENDIENTES`. Antes de tocar
-  un seed de `BASES`, `MAPEO`, `INFORMES` o `PERIODOS`, mirar qué columnas no declara.
+## Los nueve cableados de ayer están SIN VALIDAR y hay que levantarlos
+
+Los siete `m2_*` y las dos `frecuencia` llevan `SIN VALIDAR — demo 12/08` en `MARCADORES.notas`.
+**Es deuda con fecha**, y la ventana de validación la levanta.
+
+⚠ **`frecuencia` = 21,46 tiene un defecto conocido:** `alcance` viene vacío en 1 de las 4 filas
+JM, así que el numerador incluye una campaña que el denominador no tiene. **El número se lee
+perfectamente plausible.** Es el hallazgo que ya había dejado el `N2` y sigue abierto (`C-22`).
 
 ## Esperando decisión tuya
 
-- **147 filas de `DIGITAL` son huérfanas y 40 de ellas son JM.** Hoy no restan impresiones porque
-  ninguna está `Activa`, **y ese cero es de hoy**. Si son cuentas dadas de baja o si `Cuentas`
-  está incompleta lo sabe el equipo dueño de la base, no el motor (`D-10`).
-- **`looker/CC` sigue `fuente` y sin una fila en `MAPEO`** (1309 filas). Si su período tampoco
-  está en la solapa, el camino ya existe: el mismo `ventana_ref` a `Cuentas`.
-- **`pauta_*` no tiene señal de figura.** Los seis siguen sin filtro, así que `pauta_*` y
-  `gcba_pauta_*` publican el mismo número.
-- **`R-20` y `R-21` están escritas y sin mecanismo.**
-- **¿`upsertPorClave_` pasa a preservar por defecto**, o cada sembrador se hace cargo como el de
-  `SOLAPAS`? Lo primero es una línea con radio de cuatro hojas; lo segundo son cuatro cambios que
-  se olvidan de a uno.
+- **¿`m2_campanias` cómo se cuenta?** Es cantidad de campañas distintas y `OPERACIONES_` no tiene
+  DISTINCT. Se dejó sin cablear a propósito: un `CONTEO` de filas daba un número plausible y
+  equivocado. Sale como raya.
+- **`pauta_*` sigue sin cablear** — era "sólo si sobra" en el `_27` y no sobró.
+- **147 filas de `DIGITAL` son huérfanas y 40 son JM.** Sin cambios desde el `_24`.
+- **`R-20` y `R-21` escritas y sin mecanismo.**
+- **¿`upsertPorClave_` pasa a preservar por defecto**, o cada sembrador se hace cargo?
 
-## Qué mirar antes de tocar algo
+## Lo que sigue
 
-- **Los encabezados de `Cuentas` y `DIGITAL` no coinciden** — `id_cuentas` contra `Id cuentas`.
-  Cualquier cruce entre las dos se resuelve por `MAPEO`, nunca por texto de encabezado. Es la
-  trampa que ya se comió una medición de este mismo paso.
-- **Verificar el camino del menú, no sólo el de la API.** Son dos caminos y hay que correr los
-  dos: el bug del orden de sellado existía sólo en `menuSellarPlantillas_`.
-- **`MARCADORES` no tiene columna `estado`.** `REVISAR` lo calcula el motor en runtime y su
-  disparador sólo lo puebla `LISTA`.
-- **`uso = ignorar` corta en `buscarMapeo` (`Config.gs`), no en `leerFuente`.** Apaga los
-  marcadores, **no la solapa**.
-- **`rdv/RDV_otros_ministros`** funciona **porque los encabezados están corridos** (`C-09`).
-  Arreglar `C-09` obliga a rehacer ese `MAPEO` en el mismo commit.
-- **Los números no se validan acá.** La validación contra decks publicados vive en la otra
-  conversación. Acá se mide **estructura**.
+**El mockup del Panel**, con badge "a desarrollar" en `secco`, `ministros` y `campana`. El de
+informes ya está implementado y se calcula; el de `campana` **todavía no** — contar sus ítems sin
+correr la sección exigiría reimplementar `D-19` fuera del motor, que es justo lo que `CLAUDE.md`
+§4 desaconseja.
 
-## El patrón que ya lleva cuatro casos
+## El patrón que ya lleva cinco casos
 
-**Cuando algo parece roto en los datos, medir primero cómo se está mirando** — `CLAUDE.md` §4,
-con su borde: la regla vale cuando **el instrumento propio reproduce lógica que el motor ya
-tiene** y la reproduce peor. **No vale cuando la medición es de la salida del motor contra un
-hecho externo** — ahí el motor es el sospechoso.
+**Cuando algo parece roto, medir primero cómo se está mirando** — con su borde: vale cuando el
+instrumento propio reproduce lógica que el motor ya tiene, **no** cuando se compara la salida del
+motor contra un hecho externo.
 
 | se creyó | era |
 |---|---|
 | `looker` ilegible entero | ventana con fechas en texto; `formatearFecha_` exige `Date` |
 | los `pauta_*` publican cero | `String(celda)` disfraza un booleano; `Number(true)===1` |
 | `ignorar` bloquea la lectura | bloquea `buscarMapeo`, no `leerFuente` |
-| `Cuentas` no tiene ni un id | el encabezado se llama distinto; `datos[f][-1]` es `undefined` |
+| `Cuentas` no tiene ni un id | el encabezado se llama distinto |
+| **el `m2` visible está escondido** | **el reporte numera sobre el deck expandido, no la plantilla** |
 
-## Números de referencia — 10/08
-
-`MARCADORES` **51 filas** · `LAMINAS` 51 · `SECCIONES` 36 · **`MAPEO` 144** (140 + las cuatro del
-`_23`) · `SOLAPAS` 84 filas, **11 columnas**. Plantillas: `jm` 22 láminas / 172 tokens, `secco`
-29. Operaciones del motor: siete. Pruebas del diff: **12**.
-
-Filtros: **33 textos vivos, 9 distintos**, todos de una condición. Solapas `fuente` mapeadas por
-base: `rdv` 2 · `digital` 6 · `looker` 3 · `m2` 0 — **ninguna base es de solapa única**.
-
-`looker`: `resumen_metricas_dinamico` 953 filas / 26 en ventana · `Cuentas` 1011 / 92 · `DIGITAL`
-4896 / 966. `rdv` 1362 / 15 en ventana, 700 excluidas por lista blanca.
+Y el caso nuevo del `_27`, que es del otro lado del borde: **`leerFuente` por API tiró**
+`formatDate(String,String,String)` porque un JSON no transporta `Date`. El instrumento estaba
+mal, no el motor — y la salida correcta fue **cablear y dejar que el motor resolviera la
+ventana**, no arreglar el instrumento.
