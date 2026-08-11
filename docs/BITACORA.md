@@ -7666,3 +7666,114 @@ de la mitad de los nombres de campaña por el medio. Es el mismo modo de falla q
 **16 / 14 / 21** (`Meta` / `Google ads` / `DV360`), 51 filas en total sobre las 966 de la ventana.
 Medido con `parsearFiltro_`/`valorPasaFiltro_`, que es la semántica del motor. **No se comparó
 contra ningún deck** — eso es de la otra rama.
+
+---
+
+## El `_24` — el filtro de más de una condición (2026-08-10)
+
+Corrida del `docs/Prompts/2026-08-10_24_filtro_multicondicion.md`, partes A a D. **Ningún
+marcador cableado, ninguna plantilla tocada, `LAMINAS` intacta.**
+
+### Parte A — las tres confirman, y la cuarta reporta
+
+**`A.1`** · 33 textos de filtro vivos (32 en `MARCADORES`, 1 en `SECCIONES`), **9 distintos**, y
+**ninguno contiene `&&` ni siquiera `&`**. Es la premisa que hace seguro el cambio.
+
+| | |
+|---|---|
+| `figura=Jorge Macri` | 14 usos |
+| `mail_tipo=Convocatoria` | 6 |
+| `mail_remitente=jorge.macri@buenosaires.gob.ar` | 4 |
+| `mail_remitente!=jorge.macri@buenosaires.gob.ar` | 4 |
+| `campana~=JM` · `campana!~=JM` | 1 y 1 |
+| `dig_jm_gcba=JM` · `dig_jm_gcba!=JM` | 1 y 1 |
+| `etapa=post` | 1 (`SECCIONES`) |
+
+**`A.2` y `A.3`** · `parsearFiltro_` es el único parser y `valorPasaFiltro_` la única
+comparación, las dos en `Generador.gs`, con **tres consumidores cada una**:
+`aplicarFiltroDeMarcador_`, `filtrarItemsPorSeccion_` y la rama `CAMPANAS` de `itemsDeSeccion_`
+(inline). Los tres leían `f.campo` y los tres se actualizaron.
+
+**Y el riesgo que `A.3` nombraba se cerró con una guarda, no con cuidado:** un llamador que
+siguiera pasando el resultado entero a `valorPasaFiltro_` **no habría fallado** —`undefined ===
+undefined` es `true` y todas las filas pasarían—. Ahora `valorPasaFiltro_` exige una condición
+con `op` y **rompe diciendo qué recibió**. Tiene su propio caso de prueba.
+
+**`A.4`, reportado y sin tocar:** los seis `enc_*` sobre `digital/Directa Mail` filtran
+`mail_tipo=Convocatoria` y **no cortan por remitente**, mientras `mail_*` y `gcba_mail_*` de la
+misma solapa sí (`mail_remitente=jorge.macri@…`). Puede que la iteración por encuentro ya acote
+el universo, o puede faltarles la figura. **Es de la rama de validación.**
+
+### Parte B — una lista de condiciones, no dos caminos
+
+`parsearFiltro_` devuelve `{ok, vacio, condiciones:[…]}`. **Una condición sola es una lista de
+uno**: no hay caso viejo y caso nuevo que puedan divergir — el mismo criterio que
+`entraPorSolape_`, que tiene un solo camino con y sin fecha de fin.
+
+**Se corta primero por `&&` y después por operadores**, en ese orden: al revés, un valor con
+`&&` rompería el corte. Dentro de cada condición el orden de `OPERADORES_FILTRO_` no cambió.
+
+**La decisión que con una sola condición no existía: qué pasa si UNA de las heredadas no mapea.**
+Se ignora el filtro heredado **entero**. Con `n = 1` las dos opciones coinciden, así que es la
+generalización estricta de lo de hoy; y aplicar el subconjunto haría que el mismo texto de
+`SECCIONES.filtro` **signifique cosas distintas en cada solapa, en silencio**. Descartado:
+aplicar las que mapean y anotar el resto — suena más útil y es exactamente el subconjunto que la
+regla del filtro propio prohíbe dos párrafos antes.
+
+### Parte C — el control de no-regresión, predicho y medido
+
+**Predicción escrita antes de tocar el parser: los nueve dan idéntico.**
+
+| filtro | leídas | antes | después |
+|---|---|---|---|
+| `figura=Jorge Macri` | 15 | 4 | **4** |
+| `mail_tipo=Convocatoria` | 2174 | 353 | **353** |
+| `mail_remitente=jorge.macri@…` | 2174 | 301 | **301** |
+| `mail_remitente!=jorge.macri@…` | 2174 | 1873 | **1873** |
+| `campana~=JM` | 26 | 4 | **4** |
+| `campana!~=JM` | 26 | 22 | **22** |
+| `dig_jm_gcba=JM` | 1297 | falla | **falla** |
+| `dig_jm_gcba!=JM` | 1297 | falla | **falla** |
+| `etapa=post` | 7 ítems | 2 | **2** |
+
+**Cero diferencias**, y las trazas de `n = 1` salieron **byte a byte idénticas** — se comparó el
+texto, no sólo el número, porque la traza es lo que va al reporte de corrida. Las dos que fallan
+lo hacen por lo mismo que antes: `digital/Digital` está `uso = ignorar` por `R-22`, así que
+`buscarMapeo` la rechaza. **Que sigan fallando igual es parte del control.**
+
+**Los cinco casos de `Pruebas.gs` pasan, y el tercero es el que sostiene la elección de
+separador:** la URL medida en los datos —`…photo?fbid=1447021517457493&set=p.1447021517457493`—
+**no se parte**. Sin ese control, «`&&` y nunca `&`» sería una afirmación. Total: **12 pruebas**.
+
+**Y el caso real, verificado sobre la solapa viva:** `nombre_campaña~=JM && estado=Activa &&
+Plataforma=Meta` sobre `looker/DIGITAL` (966 filas en ventana) devuelve
+`«FALTA:…@filtro_campo_no_mapeado» — el filtro declara `nombre_campaña` (**condición 1 de 3**) y
+MAPEO no lo tiene`. **Es el fallo correcto**, dice cuál condición y es exactamente lo que el
+prompt anticipaba en «Lo que sigue»: faltan las cuatro filas de `MAPEO` de `DIGITAL`.
+
+### Parte D
+
+`D-25` con las dos decisiones y los cinco descartados; `docs/TOKENS.md` §6 con la sintaxis y los
+ejemplos reales; el comentario de `OPERADORES_FILTRO_` con la medición de los dos universos.
+
+**Y una nota que este cambio dejó vencida y se corrigió en el momento:** `TOKENS.md` §4 decía
+que la inferencia de solapa aplica «a menos bases de las que parece». Medido el 10/08 con
+`solapasFuenteDeBase_`: `rdv` 2, `digital` 6, `looker` 3, `m2` 0. **Ninguna base tiene
+exactamente una**, así que esa fila de la tabla no tiene un solo caso vivo.
+
+### El hallazgo que quedó anotado y no se tocó
+
+La rama `CAMPANAS` de `itemsDeSeccion_` **saltea en silencio un `SECCIONES.filtro` mal escrito**
+(`if (fc.ok && !fc.vacio)`), mientras que `filtrarItemsPorSeccion_` —la rama `REUNIONES`— falla
+con motivo. Dos comportamientos para el mismo error, y es de antes del `_24`. Se conservó tal
+cual para no mover números; queda escrito en el código, arriba de la línea.
+
+### Los cinco criterios de aceptación
+
+| | |
+|---|---|
+| 1 · los 9 filtros vivos dan el mismo conteo | ✅ cero diferencias, y las trazas idénticas |
+| 2 · los cinco casos en `Pruebas.gs` pasan | ✅ 12/12 |
+| 3 · un valor con `&` simple no se parte | ✅ con la URL real medida en los datos |
+| 4 · la herencia sigue siendo reemplazo | ✅ `filtroPropio \|\| filtro_seccion`, sin tocar |
+| 5 · nada cableado, ninguna plantilla, `LAMINAS` intacta | ✅ |

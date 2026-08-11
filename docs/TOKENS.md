@@ -392,6 +392,14 @@ ruidosamente en vez de devolver la fila de al lado.
 que la fila "solapa vacía + una sola solapa" de la tabla aplica a menos bases de las que
 parece — verificar contra `MAPEO` antes de asumir que una base es de solapa única.
 
+⚠ **Y `looker` pasó a tener tres el 10/08** (`_23`). Medido ese día con
+`solapasFuenteDeBase_`: `rdv` **2**, `digital` **6**, `looker` **3**, `m2` **0**. Era la última
+base de solapa única del repo, así que **la fila del medio de esa tabla no tiene un solo caso
+vivo** — hoy una `solapa` vacía siempre cae en la tercera fila y falla con `«FALTA:…@sin_solapa»`
+(salvo `m2`, que no tiene ninguna y falla igual). Es exactamente lo que anticipaba el pendiente
+*"la inferencia de solapa de `looker` funciona porque `MAPEO` está incompleto"*, y no rompió nada
+porque ningún marcador vivo deja la `solapa` vacía.
+
 ---
 
 ## 5. Resolución de período — los cinco eslabones
@@ -447,3 +455,67 @@ la columna de las secciones es `periodo_ref` y la de `CAMPANAS`/`REUNIONES` es `
 **No confundir con el régimen de selección** (`docs/PLAN.md`, `D-09`): esta tabla decide
 **qué ventana de fechas** usa un token que ya entró al informe. Qué filas entran es otra
 pregunta, y para las secciones por temario la fecha no la contesta (`R-04`).
+
+---
+
+## 6. La sintaxis de `filtro` — una o más condiciones
+
+> Dueño de la pregunta *"¿cómo se escribe un filtro?"*. La **decisión** de por qué el
+> separador es `&&` y por qué no hay `OR` vive en `docs/PLAN.md` `D-25`; el **argumento
+> medido** vive en el comentario de `OPERADORES_FILTRO_` (`Generador.gs`), que es lo que lee
+> quien está por tocar el parser. Acá va la forma.
+
+```
+campo<operador>valor  [ && campo<operador>valor ]…
+```
+
+| operador | significa | ejemplo |
+|---|---|---|
+| `=` | igual | `estado=Activa` |
+| `!=` | distinto | `mail_remitente!=jorge.macri@buenosaires.gob.ar` |
+| `~=` | contiene | `nombre_campaña~=JM` |
+| `!~=` | no contiene | `campana!~=JM` |
+
+**El ejemplo real de lo que viene** (los tres `imp_*` sobre `looker/DIGITAL`):
+
+```
+nombre_campaña~=JM && estado=Activa && Plataforma=Meta
+```
+
+**Y `imp_prog`, que parece un `OR` y no lo es** (`R-24`, «todo lo que no es Meta ni Google
+ads»): son dos negaciones en conjunción, no una disyunción.
+
+```
+nombre_campaña~=JM && estado=Activa && Plataforma!=Meta && Plataforma!=Google ads
+```
+
+### Lo que hay que saber para escribir uno que ande
+
+- **`&&` es el único separador, y `&` simple no parte nada.** Está medido: hay valores en las
+  bases que contienen `&` —dos URLs de `post_meta`— y tienen que sobrevivir enteros.
+- **Sensible a mayúsculas y acentos.** Los dos lados pasan por `normalizarValorDeclarado_`,
+  el canónico de `R-10`, que colapsa espacios y hace `trim()` pero **no pliega el case**:
+  `nombre_campaña~=JM` no matchea `jm`.
+- **Todas las condiciones tienen que resolver contra `MAPEO`, o falla el filtro entero.**
+  Nunca se aplica un subconjunto — dos de tres condiciones dan un número plausible sacado del
+  universo equivocado. El motivo nombra **cuál** condición falló.
+- **Antes de escribir la primera celda, verificar que cada campo esté en `MAPEO`** para esa
+  base y solapa (`CLAUDE.md` §4). Un `buscarMapeo` cuesta una llamada; seis celdas sin ese
+  chequeo son seis marcadores rotos de una pasada.
+- **Una celda vacía pasa el filtro negado y no pasa el afirmativo.** La asimetría es real y la
+  traza cuenta las vacías por eso.
+
+### Dos filtros con la misma sintaxis y dominios distintos
+
+| columna | filtra | vocabulario |
+|---|---|---|
+| `MARCADORES.filtro` | **filas de la base** | `MAPEO`, contra la base y solapa del marcador |
+| `SECCIONES.filtro` | **ítems de la iteración** | la fuente de iteración (`REUNIONES`, `CAMPANAS`) |
+
+**El filtro propio del marcador reemplaza al de la sección; no se suman.** Y un filtro
+heredado cuyo campo no existe en `MAPEO` para esa solapa **se ignora en silencio y no es
+error** —los dos vocabularios no tienen por qué coincidir—, mientras que uno propio **falla**.
+El mismo texto se comporta distinto según dónde se lo escriba, y eso es a propósito.
+
+**Con varias condiciones, un filtro heredado que tenga una sola sin mapear se ignora entero**,
+nunca por partes: media condición no es una versión suave del criterio, es otro criterio.

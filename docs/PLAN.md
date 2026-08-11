@@ -774,6 +774,54 @@ escribirlo en la planilla.
 
 ---
 
+**`D-25` — El filtro admite varias condiciones unidas por `&&`. Sólo conjunción: no hay `OR`, y
+no es una etapa pendiente.** (10/08/2026)
+
+La sintaxis vive en `docs/TOKENS.md` §6 y el argumento medido en el comentario de
+`OPERADORES_FILTRO_`. Acá van las dos decisiones.
+
+**1 · Sólo `AND`.** `OR` exige precedencia, paréntesis y una gramática de verdad. **No hay un
+solo caso medido que lo pida:** los 33 textos de filtro vivos son de una condición y las nueve
+demandas nuevas —tres `imp_*`, seis `pauta_*`— son todas conjunciones. Y el caso que *parece*
+`OR` no lo es: `imp_prog` es «todo lo que no es Meta ni Google ads» (`R-24`) y se escribe
+`Plataforma!=Meta && Plataforma!=Google ads`. **La regla por resta ya evitó el `OR` sin
+proponérselo.** Si aparece una demanda real, entra con su caso y su medición; no se construye
+por si acaso.
+
+**2 · El separador es `&&`, y la elección enseña más que el resultado.** El barrido del 10/08
+midió **dos** universos, y ahí está todo: contra los **33 textos de filtro** quedaban doce
+candidatos libres; contra los **valores reales de las 31 columnas** que un filtro puede
+direccionar, sólo seis.
+
+**El caso que justifica haber medido los datos es `|`.** Sale limpio contra los textos —igual
+que `~` en su momento— y aparece en **447 de 709 valores** de `looker/DIGITAL.nombre_campaña`,
+la columna exacta que los `imp_*` van a filtrar: `RDV JM | Villa Devoto 15/12`. Adoptarlo habría
+partido más de la mitad de los nombres de campaña **sin fallar**. El precedente de `~=` midió
+sólo los textos y le alcanzó; **acá no alcanzaba, y no había forma de saberlo sin medir**.
+
+| descartado | por qué |
+|---|---|
+| `AND` | una palabra aparecería dentro del valor de un filtro sobre texto libre — el mismo motivo por el que `CONTIENE` perdió contra `~=` |
+| `&` simple | dos URLs de `post_meta` lo contienen. **`&&` no**, y el doble carácter es justo lo que los separa |
+| `;` | separador de campos de CSV en es-AR, y el requisito no negociable de `~=` era sobrevivir a exportar la hoja |
+| `^` y `::` | sobreviven todo y no dicen nada. Entre equivalentes gana el que se entiende sin abrir la documentación |
+| `\|`, `,`, `/`, `+`, ` Y ` | **ocupados en los datos**, aunque libres en los textos |
+
+**3 · Lo que esta decisión NO cambia, y es deliberado.** El filtro propio del marcador sigue
+**reemplazando** al de la sección, no sumándose (`Generador.gs`, `filtroPropio || filtro_seccion`).
+Cambiarlo movería el resultado de los 33 filtros vivos, y esta decisión no mueve ningún número:
+los nueve textos distintos dieron **idéntico conteo de filas antes y después**. Si sumar resulta
+lo correcto, es otra decisión con su propia medición del antes y el después.
+
+**4 · Nunca se aplica un subconjunto de condiciones.** Todas se resuelven contra `MAPEO` antes
+de filtrar una sola fila, y si una falla, falla el filtro entero nombrando cuál. Dos de tres
+condiciones dan un número plausible sacado del universo equivocado — el modo de falla que este
+repo persigue. **La misma regla vale para el filtro heredado**: si una de sus condiciones no
+mapea, se ignora el filtro entero, nunca las otras sueltas. Con `n = 1` las dos opciones
+coinciden, así que es la generalización estricta del comportamiento anterior.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 **IDs `T<tramo>.<n>`.** La palabra "Paso" queda para la serie histórica y no se reusa: `Paso 5`
