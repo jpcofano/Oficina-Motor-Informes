@@ -593,6 +593,226 @@ function resolverFilaEncabezado_(baseId, solapa, filaEncabezadoBase) {
  * persigue. Quién tiene fin y quién no lo declara `MAPEO.fecha_fin_periodo`, y el que llama
  * **dice en la traza cuál de los dos criterios usó**.
  */
+/* ===================== La ventana POR REFERENCIA (`_23`, 10/08/2026) =====================
+ *
+ * **El problema.** `looker/DIGITAL` tiene todo lo que hace falta para las impresiones menos
+ * el tiempo: `nombre_campaña` resuelve el corte JM, `estado` el filtro, `Plataforma` e
+ * `Impresiones` el desglose. **No tiene ninguna columna temporal** (`C-19`): `fecha_inicio` y
+ * `fecha_fin` viven en `looker/Cuentas`. Hasta hoy eso la dejaba fallando con
+ * `«FALTA:fecha_periodo@looker/DIGITAL»`, que es el modo de falla correcto y también el
+ * final del camino.
+ *
+ * **Y no es un join, que es lo que decide el diseño.** Un join produce filas nuevas; esto
+ * sólo tiene que decidir si una fila entra o no. `DIGITAL` **no toma ningún dato** de
+ * `Cuentas` —ni el nombre, ni el estado, ni las fechas—: necesita saber si su clave está
+ * **dentro del conjunto** de las que caen en la ventana.
+ *
+ * La consecuencia práctica sola justifica el enfoque: **si la clave estuviera repetida del
+ * lado de la referencia, un join multiplicaría las filas y las impresiones se contarían dos
+ * veces sin fallar.** Un conjunto de pertenencia es inmune —un id repetido entra una vez—,
+ * así que el modo de falla más caro desaparece por construcción y no por cuidado. (Medido el
+ * 10/08 por las dudas: `Cuentas` tiene 1011 filas y 1011 ids distintos, cero repetidos.)
+ *
+ * **Dónde se declara, y por qué en dos hojas distintas.** Son dos preguntas de grano
+ * distinto y `CLAUDE.md` §7 pide un dueño por pregunta:
+ *
+ *   - *¿De qué solapa saca la fecha ésta?* → **`SOLAPAS.ventana_ref`**. No es una columna de
+ *     la solapa: es una propiedad de la solapa, del mismo grano que `uso` y
+ *     `fila_encabezado`, que es exactamente lo que `SOLAPAS` registra.
+ *   - *¿Cuál es la columna de la clave?* → **`MAPEO`, campo lógico `clave_ventana`**, una
+ *     fila de cada lado. Eso es literalmente para lo que existe `MAPEO`, y resuelve gratis un
+ *     problema medido: los encabezados **no coinciden** —`Cuentas` dice `id_cuentas` y
+ *     `DIGITAL` dice `Id cuentas`—, así que la clave nunca puede resolverse por texto.
+ *
+ * **Lo descartado, con el motivo:** meter las dos cosas en `MAPEO`, con campos lógicos
+ * `ventana_ref_solapa` y `ventana_ref_clave`. Obligaba a poner un **nombre de solapa** en la
+ * columna `columna`, que en esa hoja significa una letra: `columnaLetraAIndice_` haría
+ * cualquier cosa con ese string, `tipo_esperado` dejaría de aplicar y `backfillSolapaMapeo_`
+ * y las auditorías leerían una fila que miente sobre su propio grano. La segunda descartada
+ * —las dos cosas en `SOLAPAS`, con la letra de la clave en una columna nueva— pone «qué
+ * columna es qué» en un segundo lugar además de `MAPEO`, que es la divergencia que §7 existe
+ * para evitar.
+ *
+ * **Un solo nivel, y el segundo falla con motivo propio** (`validarReferenciaVentana_`). Sin
+ * ese tope una referencia circular cuelga la corrida, y el ciclo más corto —una solapa que se
+ * referencia a sí misma— es el más fácil de tipear.
+ *
+ * **Los cuatro conteos, y por qué van separados.** Es `R-20` aplicado: *un vacío no es un
+ * valor*. Una fila que sale por no tener clave no salió por la misma razón que una cuya clave
+ * no existe del otro lado, ni que una cuya clave existe pero cayó fuera de la ventana. Los
+ * tres números son lo que hace que un total corto se pueda explicar en vez de discutir, y por
+ * eso **suman**:
+ *
+ *     filas_en_ventana + filas_fuera_de_ventana + filas_sin_clave_ventana
+ *       + filas_clave_huerfana + filas_excluidas_por_valor  =  filas_totales
+ *
+ * **El costo.** La solapa de referencia se lee **una vez por corrida y por ventana**, no una
+ * vez por marcador: `cacheClavesVentana_` es una variable de módulo, misma vida y mismo
+ * criterio que `cacheBases_` — muere con la ejecución de Apps Script, no es `CacheService`,
+ * no cruza pedidos. La clave del caché incluye las dos fechas, así que dos ventanas distintas
+ * en la misma corrida no se pisan. Lo invalida el fin de la ejecución y nada más: ningún
+ * escritor del motor toca una base, que son de dueños ajenos y sólo se leen.
+ * ======================================================================================= */
+
+/** El conjunto de claves en ventana de cada (base, solapa de referencia, ventana). */
+var cacheClavesVentana_ = {};
+
+/** `SOLAPAS.ventana_ref` normalizado. `''` = esta solapa tiene su propia `fecha_periodo`. */
+function referenciaDeVentana_(baseId, solapa) {
+  var solapas = leerSolapas();
+  var fila = solapas[baseId] && solapas[baseId][solapa];
+  if (!fila) return '';
+  var crudo = fila.ventana_ref;
+  return String(crudo === null || crudo === undefined ? '' : crudo).trim();
+}
+
+/**
+ * La regla de un nivel. **Pura y con el mapa de solapas por parámetro** para que el control
+ * positivo pueda armar el caso circular sin escribir en `SOLAPAS` — mismo criterio que
+ * `hojaFalsa_` en `Pruebas.gs`: una regla que sólo se puede probar rompiendo la planilla no
+ * se prueba nunca.
+ */
+function validarReferenciaVentana_(mapaSolapas, baseId, solapa) {
+  var propia = mapaSolapas[baseId] && mapaSolapas[baseId][solapa];
+  var ref = String((propia && propia.ventana_ref) || '').trim();
+  if (!ref) return { ok: true, hay: false };
+
+  var etiqueta = baseId + '/' + solapa;
+  if (ref === solapa) {
+    return {
+      ok: false,
+      motivo: '«FALTA:ventana_ref@' + etiqueta + '» — la solapa se declara a sí misma como ' +
+        'referencia de ventana. Es un ciclo de largo uno: si tiene fecha propia, `ventana_ref` ' +
+        'va vacía; si no la tiene, la referencia es a otra solapa.'
+    };
+  }
+
+  var destino = mapaSolapas[baseId] && mapaSolapas[baseId][ref];
+  if (!destino) {
+    return {
+      ok: false,
+      motivo: '«FALTA:ventana_ref@' + etiqueta + '» — declara `ventana_ref = "' + ref + '"` y ' +
+        'esa solapa no está registrada en SOLAPAS para la base "' + baseId + '".'
+    };
+  }
+  if (destino.uso !== 'fuente') {
+    return {
+      ok: false,
+      motivo: '«FALTA:ventana_ref@' + etiqueta + '» — la solapa de referencia "' + ref +
+        '" está declarada `uso = ' + (destino.uso || '(sin registrar)') + '` y no `fuente`. ' +
+        'Una solapa que no se puede leer tampoco puede prestar su ventana.'
+    };
+  }
+
+  var segundoNivel = String(destino.ventana_ref || '').trim();
+  if (segundoNivel) {
+    return {
+      ok: false,
+      motivo: '«FALTA:ventana_ref@' + etiqueta + '» — la referencia es de **un solo nivel** y ' +
+        'ésta tiene dos: "' + solapa + '" apunta a "' + ref + '", que a su vez apunta a "' +
+        segundoNivel + '". Sin este tope una cadena circular cuelga la corrida en vez de fallar.'
+    };
+  }
+
+  return { ok: true, hay: true, solapa_ref: ref };
+}
+
+/**
+ * El conjunto de claves de la solapa de referencia: las que caen en la ventana, y el universo
+ * completo. Los dos hacen falta y no son lo mismo — sin el universo, una clave que existe del
+ * otro lado pero cayó fuera de la ventana se confunde con una huérfana, que es la diferencia
+ * entre "esta semana no corrió" y "este id no existe en ninguna parte".
+ *
+ * **Las en-ventana salen de `leerFuente` sobre la solapa de referencia**, no de una relectura
+ * propia: así el recorte usa el mismo `entraPorSolape_`, el mismo fallback a
+ * `getDisplayValues()` y las mismas guardas de `R-19` que cualquier otra fuente. Reimplementar
+ * acá el recorte sería la forma más cara de que las dos ventanas empiecen a diferir.
+ *
+ * **El universo sí se lee directo, y sólo esa columna**: "qué claves existen" no es una
+ * pregunta de ventana, así que no hay lógica del motor que reproducir — sólo la fila de
+ * encabezado, que se resuelve con `resolverFilaEncabezado_`, la misma que usa `leerFuente`.
+ */
+function conjuntoDeClavesEnVentana_(baseId, solapaRef, ventana) {
+  var ssTz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  var desdeStr = Utilities.formatDate(ventana.desde, ssTz, 'yyyy-MM-dd');
+  var hastaStr = Utilities.formatDate(ventana.hasta, ssTz, 'yyyy-MM-dd');
+  var claveCache = baseId + '||' + solapaRef + '||' + desdeStr + '||' + hastaStr;
+  if (Object.prototype.hasOwnProperty.call(cacheClavesVentana_, claveCache)) {
+    return cacheClavesVentana_[claveCache];
+  }
+
+  var resultado = calcularConjuntoDeClaves_(baseId, solapaRef, ventana);
+  cacheClavesVentana_[claveCache] = resultado;
+  return resultado;
+}
+
+function calcularConjuntoDeClaves_(baseId, solapaRef, ventana) {
+  var etiqueta = baseId + '/' + solapaRef;
+
+  var campoClave = buscarMapeo(baseId, solapaRef, 'clave_ventana');
+  if (!campoClave.ok) {
+    return {
+      ok: false,
+      motivo: '«FALTA:clave_ventana@' + etiqueta + '» — es la solapa de referencia de una ' +
+        'ventana y no declara con qué columna se cruza: ' + campoClave.motivo
+    };
+  }
+
+  var lectura = leerFuente(baseId, ventana, solapaRef);
+  if (!lectura.ok) {
+    return {
+      ok: false,
+      motivo: 'no se pudo recortar la solapa de referencia ' + etiqueta + ': ' + lectura.motivo
+    };
+  }
+
+  var idx = columnaLetraAIndice_(campoClave.columna);
+  var encabezado = lectura.encabezados[idx];
+  var enVentana = {};
+  var tamano = 0;
+  var sinClave = 0;
+  lectura.filas.forEach(function (o) {
+    var v = normalizarIdCuenta_(o[encabezado]);
+    if (v === '') { sinClave++; return; }
+    if (!Object.prototype.hasOwnProperty.call(enVentana, v)) { enVentana[v] = true; tamano++; }
+  });
+
+  var universo = universoDeClaves_(baseId, solapaRef, idx);
+  if (!universo.ok) return universo;
+
+  return {
+    ok: true,
+    solapa_ref: solapaRef,
+    clave_ref: encabezado,
+    claves: enVentana,
+    tamano: tamano,
+    todas: universo.claves,
+    tamano_universo: universo.tamano,
+    criterio_ventana_ref: lectura.criterio_ventana,
+    filas_ref_totales: lectura.filas_totales,
+    filas_ref_en_ventana: lectura.filas_en_ventana,
+    filas_ref_sin_fecha: lectura.filas_sin_fecha,
+    filas_ref_sin_clave: sinClave
+  };
+}
+
+/** Todas las claves que existen en la solapa de referencia, sin mirar la ventana. */
+function universoDeClaves_(baseId, solapaRef, idxClave) {
+  var abierto = abrirHoja(baseId, solapaRef);
+  if (!abierto.ok) return { ok: false, motivo: abierto.motivo };
+
+  var filaEncabezado = resolverFilaEncabezado_(baseId, solapaRef, abierto.base.fila_encabezado);
+  var datos = abierto.hoja.getDataRange().getValues();
+  var claves = {};
+  var tamano = 0;
+  for (var f = filaEncabezado; f < datos.length; f++) {
+    var v = normalizarIdCuenta_(datos[f][idxClave]);
+    if (v === '') continue;
+    if (!Object.prototype.hasOwnProperty.call(claves, v)) { claves[v] = true; tamano++; }
+  }
+  return { ok: true, claves: claves, tamano: tamano };
+}
+
 function entraPorSolape_(inicioStr, finStr, desdeStr, hastaStr) {
   if (!inicioStr) return false;
   // Sin fin declarado o sin fin en la fila: criterio de punto, el de siempre.
@@ -741,12 +961,91 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
     filas_en_ventana: 0,
     filas_sin_fecha: 0,
     filas_fecha_invalida: 0,
+    // `_23` — la fila de encabezado tal cual se leyó. La necesita
+    // `calcularConjuntoDeClaves_` para resolver el nombre real de la columna de la clave
+    // sobre las filas que este mismo resultado devuelve. Resolverlo por afuera
+    // (`encabezadoEnColumna_`, Union.gs) usaría `BASES.fila_encabezado` en vez de
+    // `resolverFilaEncabezado_`, y donde las dos difieran el nombre no matchearía ninguna
+    // propiedad: todas las claves saldrían vacías y el conjunto quedaría en cero **sin
+    // fallar**. Devolver el encabezado que de verdad se usó saca esa clase de bug de raíz.
+    encabezados: headers,
     filas: []
   };
 
   if (modo === 'snapshot') {
     resultado.filas = filasDatos.filter(function (fila, j) { return incluida[j]; }).map(filaAObjeto);
     resultado.filas_en_ventana = resultado.filas.length;
+    return resultado;
+  }
+
+  /* ── `_23` · la tercera rama de la decisión de ventana ──────────────────────────────
+   * Las otras dos —punto y solape— las decide `MAPEO.fecha_fin_periodo`, más abajo. Ésta la
+   * decide `SOLAPAS.ventana_ref`, y **gana sobre la fecha propia cuando está declarada**: es
+   * una declaración humana explícita y una columna de fecha en la misma solapa sería, en el
+   * mejor caso, redundante. La traza dice cuál de las tres se usó, así que no hay forma de
+   * que la elección quede muda. */
+  var solapaRef = referenciaDeVentana_(baseId, hoja.getName());
+  if (solapaRef) {
+    var validacion = validarReferenciaVentana_(leerSolapas(), baseId, hoja.getName());
+    if (!validacion.ok) {
+      return { ok: false, base_id: baseId, solapa: hoja.getName(), motivo: validacion.motivo };
+    }
+
+    var campoClaveAca = buscarMapeo(baseId, hoja.getName(), 'clave_ventana');
+    if (!campoClaveAca.ok) {
+      return {
+        ok: false, base_id: baseId, solapa: hoja.getName(),
+        motivo: '«FALTA:clave_ventana@' + baseId + '/' + hoja.getName() + '» — la solapa toma ' +
+          'su ventana de "' + solapaRef + '" y sin la columna de la clave no hay con qué ' +
+          'decidir qué fila entra: ' + campoClaveAca.motivo
+      };
+    }
+
+    var conjunto = conjuntoDeClavesEnVentana_(baseId, solapaRef, ventana);
+    if (!conjunto.ok) return { ok: false, base_id: baseId, solapa: hoja.getName(), motivo: conjunto.motivo };
+
+    var idxClaveAca = columnaLetraAIndice_(campoClaveAca.columna);
+    resultado.ventana_aplicada = { desde: ventana.desde, hasta: ventana.hasta };
+    resultado.criterio_ventana = 'referencia — la ventana sale de ' + baseId + '/' + solapaRef +
+      ', cruzada por `clave_ventana` ("' + headers[idxClaveAca] + '" acá, "' + conjunto.clave_ref +
+      '" allá); esa solapa se recortó con criterio: ' + conjunto.criterio_ventana_ref;
+    resultado.ventana_referencia = {
+      solapa: solapaRef,
+      clave_aca: headers[idxClaveAca],
+      clave_alla: conjunto.clave_ref,
+      criterio_ventana_ref: conjunto.criterio_ventana_ref,
+      filas_ref_totales: conjunto.filas_ref_totales,
+      filas_ref_en_ventana: conjunto.filas_ref_en_ventana,
+      filas_ref_sin_fecha: conjunto.filas_ref_sin_fecha,
+      filas_ref_sin_clave: conjunto.filas_ref_sin_clave
+    };
+    // Los tres conteos que hacen explicable un total corto, más el universo de referencia.
+    resultado.claves_en_ventana = conjunto.tamano;
+    resultado.claves_de_referencia = conjunto.tamano_universo;
+    resultado.filas_sin_clave_ventana = 0;
+    resultado.filas_clave_huerfana = 0;
+    resultado.filas_fuera_de_ventana = 0;
+    var clavesHuerfanas = {};
+
+    filasDatos.forEach(function (fila, j) {
+      if (!incluida[j]) return; // excluida por lista blanca, ya contada arriba (`D-21`)
+      var claveFila = normalizarIdCuenta_(fila[idxClaveAca]);
+      if (claveFila === '') { resultado.filas_sin_clave_ventana++; return; }
+      if (!Object.prototype.hasOwnProperty.call(conjunto.todas, claveFila)) {
+        resultado.filas_clave_huerfana++;
+        clavesHuerfanas[claveFila] = (clavesHuerfanas[claveFila] || 0) + 1;
+        return;
+      }
+      if (!Object.prototype.hasOwnProperty.call(conjunto.claves, claveFila)) {
+        resultado.filas_fuera_de_ventana++;
+        return;
+      }
+      resultado.filas_en_ventana++;
+      resultado.filas.push(filaAObjeto(fila));
+    });
+
+    resultado.claves_huerfanas = Object.keys(clavesHuerfanas).length;
+    resultado.ejemplo_claves_huerfanas = Object.keys(clavesHuerfanas).slice(0, 8);
     return resultado;
   }
 
@@ -892,7 +1191,96 @@ function contarLecturaBase_(baseId, nombreHojaOverride) {
     filas_vacias: r.filas_vacias,
     filas_sin_clave: r.filas_sin_clave,
     filas_sin_fecha: r.filas_sin_fecha,
-    filas_fecha_invalida: r.filas_fecha_invalida
+    filas_fecha_invalida: r.filas_fecha_invalida,
+    // `_23` — sólo aparecen cuando la ventana entró por referencia; `undefined` en el resto.
+    criterio_ventana: r.criterio_ventana,
+    ventana_referencia: r.ventana_referencia,
+    claves_de_referencia: r.claves_de_referencia,
+    claves_en_ventana: r.claves_en_ventana,
+    claves_huerfanas: r.claves_huerfanas,
+    ejemplo_claves_huerfanas: r.ejemplo_claves_huerfanas,
+    filas_fuera_de_ventana: r.filas_fuera_de_ventana,
+    filas_sin_clave_ventana: r.filas_sin_clave_ventana,
+    filas_clave_huerfana: r.filas_clave_huerfana
+  };
+}
+
+/**
+ * `_23`, el control que cierra la capacidad — y es barato porque no necesita un dato nuevo:
+ * **`looker/Cuentas` sí tiene fecha propia**, así que se la puede recortar por los dos
+ * caminos y los dos tienen que dar exactamente lo mismo.
+ *
+ * El camino por referencia se arma **contra sí misma**, pero sin escribir esa referencia en
+ * `SOLAPAS`: `validarReferenciaVentana_` rechaza el ciclo de largo uno, y con razón. Lo que se
+ * hace es llamar a la maquinaria por abajo —`conjuntoDeClavesEnVentana_` sobre `Cuentas`, y
+ * después filtrar las filas de `Cuentas` por pertenencia a ese conjunto— que es exactamente lo
+ * que `leerFuente` hace del lado de `DIGITAL`. Si difiere, la capacidad está mal y se ve
+ * **antes** de tocar `DIGITAL`.
+ *
+ * No escribe nada. Se corre por API: `llamar fn=controlVentanaPorReferencia_`.
+ */
+function controlVentanaPorReferencia_() {
+  var BASE = 'looker';
+  var SOLAPA = 'Cuentas';
+
+  var ventana = resolverVentana({});
+  if (!ventana.ok) return { ok: false, motivo: 'Ventana no resuelta: ' + ventana.motivo };
+
+  // Camino 1 — el recorte directo, por la `fecha_periodo` de la propia solapa.
+  var directo = leerFuente(BASE, ventana, SOLAPA);
+  if (!directo.ok) return { ok: false, motivo: 'el recorte directo falló: ' + directo.motivo };
+
+  // Camino 2 — el conjunto de pertenencia, la misma maquinaria que usa `DIGITAL`.
+  var conjunto = conjuntoDeClavesEnVentana_(BASE, SOLAPA, ventana);
+  if (!conjunto.ok) return { ok: false, motivo: 'el conjunto por referencia falló: ' + conjunto.motivo };
+
+  var campoClave = buscarMapeo(BASE, SOLAPA, 'clave_ventana');
+  if (!campoClave.ok) return { ok: false, motivo: campoClave.motivo };
+
+  var todas = leerFuente(BASE, { desde: new Date(1900, 0, 1), hasta: new Date(2999, 11, 31) }, SOLAPA);
+  if (!todas.ok) return { ok: false, motivo: 'no se pudo leer el universo: ' + todas.motivo };
+
+  var encabezado = directo.encabezados[columnaLetraAIndice_(campoClave.columna)];
+  var porReferencia = todas.filas.filter(function (o) {
+    var v = normalizarIdCuenta_(o[encabezado]);
+    return v !== '' && Object.prototype.hasOwnProperty.call(conjunto.claves, v);
+  });
+
+  // La comparación es por el conjunto de claves de las filas devueltas: es lo que la
+  // pertenencia puede prometer. Las filas sin clave no entran por referencia **y no pueden**,
+  // y por eso se cuentan aparte en vez de hacer fallar el control sin decir por qué.
+  function clavesDe(filas) {
+    var set = {};
+    filas.forEach(function (o) {
+      var v = normalizarIdCuenta_(o[encabezado]);
+      if (v !== '') set[v] = true;
+    });
+    return set;
+  }
+  var setDirecto = clavesDe(directo.filas);
+  var setReferencia = clavesDe(porReferencia);
+  var soloDirecto = Object.keys(setDirecto).filter(function (k) { return !setReferencia[k]; });
+  var soloReferencia = Object.keys(setReferencia).filter(function (k) { return !setDirecto[k]; });
+
+  var sinClaveDirecto = directo.filas.length - Object.keys(setDirecto).length;
+
+  return {
+    ok: soloDirecto.length === 0 && soloReferencia.length === 0,
+    base: BASE,
+    solapa: SOLAPA,
+    ventana: { desde: formatearFecha_(ventana.desde), hasta: formatearFecha_(ventana.hasta) },
+    criterio_directo: directo.criterio_ventana,
+    filas_directo: directo.filas.length,
+    filas_por_referencia: porReferencia.length,
+    claves_directo: Object.keys(setDirecto).length,
+    claves_por_referencia: Object.keys(setReferencia).length,
+    claves_del_conjunto: conjunto.tamano,
+    universo_de_claves: conjunto.tamano_universo,
+    // Una fila de `Cuentas` en ventana **sin** `id_cuentas` no la puede traer la pertenencia.
+    // Medido 10/08: cero. Si algún día no es cero, el número explica la diferencia.
+    filas_en_ventana_sin_clave: sinClaveDirecto,
+    solo_en_directo: soloDirecto.slice(0, 10),
+    solo_en_referencia: soloReferencia.slice(0, 10)
   };
 }
 

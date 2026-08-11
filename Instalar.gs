@@ -119,8 +119,13 @@ var HOJAS_CONFIG_ = {
   // (getLastRow()-1, cuenta relleno de fórmula como si fuera dato). Se
   // conserva al lado del filas_datos corregido porque la diferencia entre
   // ambas ES el diagnóstico — ver Solapas.gs inventariarSolapas().
+  // `ventana_ref` (`_23`, 10/08): **de qué otra solapa de la misma base toma esta solapa su
+  // ventana temporal**. Vacío = la solapa se recorta con su propia `fecha_periodo`, que es lo
+  // que hacían todas hasta hoy. Vive acá y no en `MAPEO` porque no es una columna de la
+  // solapa: es una propiedad de la solapa, del mismo grano que `uso` y `fila_encabezado`.
+  // La **clave** del cruce sí es una columna, y por eso va en `MAPEO` (`clave_ventana`).
   SOLAPAS: {
-    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'filas_minimas', 'notas']
+    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'filas_minimas', 'ventana_ref', 'notas']
   },
   // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
   // ministros, proveedor — ver Plan Inicial/PROYECTO.md §4.
@@ -303,7 +308,16 @@ var COLUMNAS_DELTA_ = {
     // el piso lo fija una persona que conoce la fuente, editando la celda y **sin tocar
     // código**. Sembrarla con un número inventado convertiría una corrida buena en un fallo el
     // día que la fuente encoja por un motivo legítimo.
-    { nombre: 'filas_minimas', indice: 9 }
+    { nombre: 'filas_minimas', indice: 9 },
+    // `_23` (10/08) — **al final del array y con índice 10**, por lo mismo que las anteriores:
+    // cada entrada asume el esquema del momento, y para cuando ésta corre `filas_minimas` ya
+    // ocupa la 9 y `notas` corrió a la 10. `insertColumnBefore(10)` la deja antes de `notas`,
+    // que es la convención de toda la hoja.
+    //
+    // Nace vacía en las 100 y pico de filas, y **vacío significa «esta solapa tiene su propia
+    // fecha»** — el estado de todas hasta hoy. La única que nace con valor es `looker/DIGITAL`,
+    // porque no tiene ninguna columna temporal (`C-19`).
+    { nombre: 'ventana_ref', indice: 10 }
   ],
   // Paso 3 (v3) Parte B (D-20) — `SECCIONES` entra al delta **antes** de que su `headers`
   // gane `periodo_ref`, y esto no es una preferencia de estilo: sin entrada acá, la hoja
@@ -968,6 +982,26 @@ var SEED_MAPEO_ = [
   // pieza_meta trae la URL del posteo de Facebook de la campaña (anteúltima columna).
   { base_id: 'looker', campo_logico: 'post_meta', hoja: 'resumen_metricas_dinamico', columna: 'AD', notas: 'URL del posteo de Facebook de la campaña — candidato para post_camp1-3 dinámico' },
 
+  // ── `_23` (10/08) · la ventana por referencia ─────────────────────────────────────────
+  // Medido el 10/08 antes de escribir estas filas: `looker/Cuentas` y `looker/DIGITAL`
+  // estaban declaradas `uso=fuente` en `SOLAPAS` y **no tenían ninguna fila en `MAPEO`** —
+  // las 27 filas de `looker` eran todas de `resumen_metricas_dinamico`. Las dos fallaban con
+  // `«FALTA:fecha_periodo@looker/…»`, incluso `Cuentas`, que sí tiene las dos fechas.
+  //
+  // `Cuentas` es la solapa de referencia: es la que tiene fecha propia. 1011 filas, 1011
+  // `id_cuentas` distintos, **cero repetidos** (medido 10/08) — el conjunto de pertenencia
+  // sería inmune al doble conteo igual, pero el número queda escrito porque es la evidencia
+  // de por qué se eligió pertenencia y no join.
+  { base_id: 'looker', campo_logico: 'fecha_periodo', hoja: 'Cuentas', columna: 'C', notas: 'fecha_inicio — extremo izquierdo de la ventana (_23)' },
+  { base_id: 'looker', campo_logico: 'fecha_fin_periodo', hoja: 'Cuentas', columna: 'D', notas: 'R-16 — extremo derecho del solape' },
+  // `clave_ventana` es el campo lógico del cruce, y existe **de los dos lados con el mismo
+  // nombre lógico y distinto encabezado real**: `Cuentas` la titula `id_cuentas` y `DIGITAL`
+  // `Id cuentas`. Ése es justo el motivo de resolverla por `MAPEO` y no por texto de
+  // encabezado. Es genérica a propósito y no se llama `id_cuenta`: el mecanismo no sabe de
+  // cuentas, y el próximo par de solapas puede cruzarse por otra cosa (`D-01`).
+  { base_id: 'looker', campo_logico: 'clave_ventana', hoja: 'Cuentas', columna: 'A', notas: 'clave del conjunto de pertenencia (_23) — encabezado real "id_cuentas"' },
+  { base_id: 'looker', campo_logico: 'clave_ventana', hoja: 'DIGITAL', columna: 'A', notas: 'clave del conjunto de pertenencia (_23) — encabezado real "Id cuentas"' },
+
   // m2 — DIRECTA en 'M2 periodo DIRECTA', DIGITAL en 'M2 periodo DIGITAL'
   { base_id: 'm2', campo_logico: 'campana', hoja: 'M2 periodo DIRECTA', columna: 'B', notas: '' },
   // Paso 2.9 Parte D (S-02): 'fecha' es el contrato viejo, igual que en looker.
@@ -1175,7 +1209,7 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   // identificadores y categóricos — texto
   figura: 'texto', barrio: 'texto', evento: 'texto', status: 'texto', estado: 'texto',
   comuna: 'texto', eje: 'texto', area: 'texto', campana: 'texto', campana_dig: 'texto',
-  clave: 'texto', id_cuenta: 'texto', dig_jm_gcba: 'texto', post_meta: 'texto', mail_area: 'texto',
+  clave: 'texto', id_cuenta: 'texto', clave_ventana: 'texto', dig_jm_gcba: 'texto', post_meta: 'texto', mail_area: 'texto',
   dig_campana: 'texto', mail_campana: 'texto', sms_campana: 'texto', ivr_campana: 'texto',
   sd_campana_cuentas: 'texto', sd_campana_digital: 'texto', sd_estado: 'texto',
   acum_id_cuenta: 'texto', acum_campana: 'texto', acum_estado: 'texto',
@@ -1297,6 +1331,9 @@ function filaSolapa_(baseId, solapa, uso, notas, opciones) {
     fila_encabezado: 'fila_encabezado' in opciones ? opciones.fila_encabezado : FILA_ENCABEZADO_POR_BASE_[baseId],
     firma_encabezado: '',
     filas_datos: 'filas_datos' in opciones ? opciones.filas_datos : '',
+    // `_23` — vacío es el default y significa «esta solapa se recorta con su propia
+    // `fecha_periodo`». Se declara sólo donde la solapa no tiene ninguna columna temporal.
+    ventana_ref: 'ventana_ref' in opciones ? opciones.ventana_ref : '',
     notas: notas
   };
 }
@@ -1417,7 +1454,11 @@ var SEED_SOLAPAS_ = [].concat(
     filaSolapa_('looker', 'IVR', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 190 }),
     filaSolapa_('looker', 'SMS', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 86 }),
     filaSolapa_('looker', 'CC', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 1299 }),
-    filaSolapa_('looker', 'DIGITAL', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 4563 }),
+    // `_23` (10/08) — la única solapa del repo con `ventana_ref`. `C-19` midió que `DIGITAL`
+    // **no tiene ninguna columna temporal**: `fecha_inicio` y `fecha_fin` viven en `Cuentas`.
+    // Sin esta declaración `leerFuente` falla con `«FALTA:fecha_periodo@looker/DIGITAL»`, que
+    // es el modo de falla correcto — pero deja la solapa ilegible y con ella los tres `imp_*`.
+    filaSolapa_('looker', 'DIGITAL', 'fuente', 'detalle por canal, con ID cuentas · ventana por referencia a Cuentas (_23): no tiene columna temporal propia', { filas_datos: 4563, ventana_ref: 'Cuentas' }),
     filaSolapa_('looker', 'ALCANCE', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 727 })
   ],
   // Paso 2.12 Parte 2, Grupo A.
@@ -1517,7 +1558,7 @@ function aplicarClasificacionSolapas_() {
       // estaban por cambiar y cuáles ya coincidían con el seed. La Parte 2 del Paso 2.12
       // necesita justamente eso para `rdv/RDV CONJUNTO` y `rdv/Comunas`.
       var diferencias = [];
-      ['uso', 'fila_encabezado', 'notas'].forEach(function (columna) {
+      ['uso', 'fila_encabezado', 'ventana_ref', 'notas'].forEach(function (columna) {
         if (!(columna in obj)) return;
         var actual = existente[columna];
         var deseado = obj[columna];
@@ -1528,12 +1569,37 @@ function aplicarClasificacionSolapas_() {
       return; // Parte A regla 2: nunca pisar una fila marcada a mano
     }
 
+    /* `_23` (10/08) — **las cuatro columnas ajenas se devuelven tal cual, no se omiten.**
+     *
+     * El comentario de arriba de esta función dice, desde el 2.11 Parte C, que `filas_datos`
+     * y `firma_encabezado` se dejan afuera del objeto *para no pisarlas*. Eso no era lo que
+     * pasaba: `upsertPorClave_` reescribe **la fila entera** con
+     * `headers.map(h => (h in obj) ? obj[h] : '')`, así que una columna omitida no se
+     * conserva — se blanquea, y sólo en las filas que el seed cambia por otro motivo. Por eso
+     * `looker/Cuentas` tiene hoy `firma_encabezado` y `filas_datos` vacíos (se le editó
+     * `notas` el 09/08) y `looker/DIGITAL` los tiene cargados (nadie la tocó desde el último
+     * inventario). Medido el 10/08, al ir a escribirle `ventana_ref` a `DIGITAL`.
+     *
+     * El reparto de `docs/ESCRITORES.md` no cambia: el dueño de estas cuatro sigue siendo
+     * `inventariarSolapas()`. Lo que cambia es que este sembrador deja de destruirlas de
+     * costado. **`upsertPorClave_` sigue igual**: el mismo agujero existe para cualquier otro
+     * seed que omita una columna, y eso es un hallazgo con prompt propio, no un arreglo de
+     * paso. */
     objetosAAplicar.push({
       base_id: obj.base_id,
       solapa: obj.solapa,
       uso: obj.uso,
       origen: 'seed',
       fila_encabezado: obj.fila_encabezado,
+      firma_encabezado: existente ? existente.firma_encabezado : '',
+      filas_datos: existente ? existente.filas_datos : '',
+      filas_crudas: existente ? existente.filas_crudas : '',
+      filas_minimas: existente ? existente.filas_minimas : '',
+      // `_23` — entra a la lista de columnas sembradas, y **no** al grupo de `filas_datos`/
+      // `firma_encabezado`: aquéllas las mide `inventariarSolapas()` contra el archivo vivo y
+      // sembrarlas las pisaría. Ésta es una declaración estructural, del mismo tipo que `uso`,
+      // así que el seed es su dueño y el `origen=manual` de arriba sigue siendo su escape.
+      ventana_ref: obj.ventana_ref || '',
       notas: obj.notas
     });
   });

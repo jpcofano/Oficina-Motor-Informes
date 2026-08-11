@@ -207,6 +207,9 @@ function leerSolapasSinCache_() {
       // `R-19` — el piso de la capa 3. **Vacío = sin chequeo**, y es el estado con el que
       // nace: el número lo fija una persona, no el seed.
       filas_minimas: fila[idx.filas_minimas],
+      // `_23` — de qué solapa de la misma base toma la ventana. Vacío = tiene fecha propia.
+      // La lee `referenciaDeVentana_` (Fuentes.gs); nadie más la consulta.
+      ventana_ref: fila[idx.ventana_ref],
       notas: fila[idx.notas]
     };
   });

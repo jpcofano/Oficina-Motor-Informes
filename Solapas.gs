@@ -183,6 +183,17 @@ function leerFilasSolapas_(hoja) {
       uso: fila[idx.uso],
       origen: fila[idx.origen],
       fila_encabezado: fila[idx.fila_encabezado],
+      // `_23` — las cuatro columnas que el sembrador NO es dueño de escribir, expuestas para
+      // que pueda devolverlas tal cual. Ver el comentario de `aplicarClasificacionSolapas_`:
+      // `upsertPorClave_` reescribe la fila entera, así que «no incluirlas» las blanquea.
+      firma_encabezado: fila[idx.firma_encabezado],
+      filas_datos: fila[idx.filas_datos],
+      filas_crudas: fila[idx.filas_crudas],
+      filas_minimas: fila[idx.filas_minimas],
+      // `_23` — la lee `aplicarClasificacionSolapas_` para el diff de una fila protegida
+      // (`origen=manual`): sin esto, una `ventana_ref` tipeada a mano que difiera del seed
+      // se salteaba **sin salir en el reporte**, que es la mitad de lo que arregló `C.2-4`.
+      ventana_ref: fila[idx.ventana_ref],
       notas: fila[idx.notas]
     };
   }

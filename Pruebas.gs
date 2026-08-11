@@ -865,6 +865,62 @@ function censoCanalesRdv_() {
   };
 }
 
+/**
+ * `_23` — control positivo de la regla de un nivel de `validarReferenciaVentana_`.
+ *
+ * Existe por el mismo motivo que todo este archivo: **una referencia circular no falla, cuelga
+ * la corrida**, y un tope que nadie ejercitó es un tope que no se sabe si está. Probarlo contra
+ * la planilla obligaría a escribir un ciclo en `SOLAPAS` y después sacarlo, así que la función
+ * recibe el mapa de solapas por parámetro y acá se le pasa uno sintético. No toca nada.
+ */
+function probarReferenciaVentanaUnNivel_() {
+  var mapa = {
+    looker: {
+      // El caso bueno: una solapa sin fecha propia que apunta a una que sí la tiene.
+      DIGITAL: { uso: 'fuente', ventana_ref: 'Cuentas' },
+      Cuentas: { uso: 'fuente', ventana_ref: '' },
+      // Dos niveles: la referencia de DOS a su vez referencia.
+      DOS: { uso: 'fuente', ventana_ref: 'DIGITAL' },
+      // Ciclo de largo uno.
+      SOLA: { uso: 'fuente', ventana_ref: 'SOLA' },
+      // Apunta a una solapa que no se puede leer.
+      ANO_FUENTE: { uso: 'fuente', ventana_ref: 'IGNORADA' },
+      IGNORADA: { uso: 'ignorar', ventana_ref: '' },
+      // Apunta a una que no está registrada.
+      AFANTASMA: { uso: 'fuente', ventana_ref: 'NO_EXISTE' }
+    }
+  };
+
+  var buena = validarReferenciaVentana_(mapa, 'looker', 'DIGITAL');
+  afirmar_(buena.ok && buena.hay && buena.solapa_ref === 'Cuentas',
+    'un nivel: DIGITAL→Cuentas debería resolver, vino ' + JSON.stringify(buena));
+
+  var sinRef = validarReferenciaVentana_(mapa, 'looker', 'Cuentas');
+  afirmar_(sinRef.ok && sinRef.hay === false,
+    'un nivel: Cuentas no declara referencia, debería dar hay=false');
+
+  var dos = validarReferenciaVentana_(mapa, 'looker', 'DOS');
+  afirmar_(!dos.ok, 'un nivel: DOS→DIGITAL→Cuentas son dos niveles y debería fallar');
+  afirmar_(dos.motivo.indexOf('un solo nivel') !== -1,
+    'un nivel: el motivo tiene que decir por qué falló, vino "' + dos.motivo + '"');
+
+  var ciclo = validarReferenciaVentana_(mapa, 'looker', 'SOLA');
+  afirmar_(!ciclo.ok, 'un nivel: una solapa que se referencia a sí misma debería fallar');
+  afirmar_(ciclo.motivo.indexOf('a sí misma') !== -1,
+    'un nivel: el ciclo de largo uno tiene motivo propio, vino "' + ciclo.motivo + '"');
+
+  var noFuente = validarReferenciaVentana_(mapa, 'looker', 'ANO_FUENTE');
+  afirmar_(!noFuente.ok && noFuente.motivo.indexOf('ignorar') !== -1,
+    'un nivel: una referencia a una solapa `ignorar` debería fallar nombrando el uso');
+
+  var fantasma = validarReferenciaVentana_(mapa, 'looker', 'AFANTASMA');
+  afirmar_(!fantasma.ok && fantasma.motivo.indexOf('NO_EXISTE') !== -1,
+    'un nivel: una referencia a una solapa no registrada debería fallar nombrándola');
+
+  return 'referencia de ventana: un nivel resuelve; dos niveles, ciclo, `ignorar` y solapa ' +
+    'inexistente fallan con motivo propio (4 casos negativos, 2 positivos)';
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
@@ -876,7 +932,8 @@ function correrPruebasDiff_() {
     probarDespachoOperaciones_,
     probarSemanaR11_,
     probarFormatoMarcador_,
-    probarRatioEnDespachador_
+    probarRatioEnDespachador_,
+    probarReferenciaVentanaUnNivel_
   ];
   var lineas = [];
   var fallas = 0;
