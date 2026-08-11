@@ -374,9 +374,85 @@ var OPERADORES_FILTRO_ = [
   { simbolo: '=', op: '=', negado: false }
 ];
 
+/* ── La conjunción: `&&` entre condiciones (`_24`, 10/08/2026) ─────────────────────────────
+ *
+ * `campo=valor && campo=valor && …`. Sólo **Y**, y eso es una decisión, no una etapa: `OR`
+ * exige precedencia, paréntesis y una gramática de verdad, y **no hay un solo caso medido que
+ * lo pida**. Los 33 textos de filtro vivos son de una condición y las nueve demandas nuevas
+ * —tres `imp_*`, seis `pauta_*`— son todas conjunciones. El caso que **parece** `OR` y no lo
+ * es: `imp_prog` es «todo lo que no es Meta ni Google ads» (`R-24`), que se escribe con dos
+ * negaciones en conjunción —`Plataforma!=Meta && Plataforma!=Google ads`— y no con una
+ * disyunción. **La regla por resta ya evitó el `OR` sin proponérselo.**
+ *
+ * **Por qué `&&` y no los otros cinco que sobrevivieron la medición.** El barrido del 10/08
+ * midió dos cosas distintas, y ahí está todo el aprendizaje: contra los **33 textos de filtro**
+ * quedaban doce candidatos libres; contra los **valores reales de las 31 columnas** que un
+ * filtro puede direccionar hoy, sólo seis: `&&`, `;`, `::`, `^`, `AND` y `&`.
+ *
+ * - **`|` es el caso que justifica haber medido los datos.** Sale limpio contra los 33 textos
+ *   —igual que `~` en su momento— y aparece en **447 de 709 valores** de
+ *   `looker/DIGITAL.nombre_campaña`, que es la columna exacta que los `imp_*` van a filtrar:
+ *   `RDV JM | Villa Devoto 15/12`. Adoptarlo habría partido más de la mitad de los nombres de
+ *   campaña por el medio, sin fallar. Es el mismo modo de falla que `comaDentroDeUnValor_`
+ *   (`D-21`) ya cubre para `valores_incluidos`.
+ * - **`AND` se descarta por el mismo motivo que se descartó `CONTIENE` a favor de `~=`**: una
+ *   palabra aparecería dentro del valor de un filtro sobre texto libre.
+ * - **`&` solo se descarta porque no está libre en los datos** — aparece en dos URLs de
+ *   `post_meta`. `&&` sí lo está, y el doble carácter es justamente lo que lo separa del
+ *   simple. **El parseo corta en `&&` y nunca en `&`**, y eso tiene control positivo propio.
+ * - **`;` se descarta por un riesgo que el barrido no mide**: es el separador de campos de CSV
+ *   en configuraciones regionales es-AR, y el requisito no negociable de `~=` era sobrevivir a
+ *   exportar la hoja.
+ * - **`^` y `::` sobreviven todo pero no dicen nada.** Entre dos candidatos técnicamente
+ *   equivalentes gana el que se entiende sin abrir la documentación — el criterio de `~=`.
+ *
+ * `&&` es ASCII 38 duplicado, no se transforma al copiar, pegar ni exportar a TSV, está libre
+ * en los 33 textos vivos y en las 31 columnas barridas, y significa «y» para cualquiera.
+ *
+ * **La herencia no cambia:** el filtro propio del marcador sigue **reemplazando** al de la
+ * sección, no sumándose. Cambiarlo movería el resultado de los 33 filtros vivos, y este paso
+ * no mueve ningún número.
+ * ─────────────────────────────────────────────────────────────────────────────────────── */
+var SEPARADOR_CONDICIONES_FILTRO_ = '&&';
+
+/**
+ * Devuelve **una lista de condiciones**, no un objeto: una condición sola es una lista de uno.
+ * No hay dos caminos, hay uno con `n = 1` — que es lo que evita que el caso viejo y el nuevo
+ * diverjan, igual que `entraPorSolape_` tiene un solo criterio con y sin fecha de fin.
+ *
+ * **Se corta primero por condiciones y después por operadores.** Al revés, un valor que
+ * contenga `&&` rompería el corte.
+ *
+ * `{ ok, vacio, condiciones: [{campo, valor, negado, op}] }` o `{ ok: false, motivo }`.
+ */
 function parsearFiltro_(texto) {
   var t = String(texto || '').trim();
-  if (t === '') return { ok: true, vacio: true };
+  if (t === '') return { ok: true, vacio: true, condiciones: [] };
+
+  var piezas = t.split(SEPARADOR_CONDICIONES_FILTRO_);
+  var condiciones = [];
+  for (var p = 0; p < piezas.length; p++) {
+    var parseada = parsearCondicionFiltro_(piezas[p]);
+    if (!parseada.ok) {
+      // El motivo dice **cuál** de las condiciones está mal: un `filtro_mal_escrito` sobre un
+      // texto de tres es inútil si no dice dónde. Con una sola condición el mensaje queda
+      // idéntico al de antes de este cambio, que es lo que ven los 33 filtros vivos.
+      var donde = piezas.length > 1 ? ', condición ' + (p + 1) + ' de ' + piezas.length : '';
+      return { ok: false, motivo: 'filtro mal escrito' + donde + ': ' + parseada.motivo };
+    }
+    condiciones.push(parseada.condicion);
+  }
+
+  return { ok: true, vacio: false, condiciones: condiciones };
+}
+
+/** Una condición suelta, con la lógica de siempre y el mismo orden de operadores. */
+function parsearCondicionFiltro_(texto) {
+  var t = String(texto || '').trim();
+  if (t === '') {
+    return { ok: false, motivo: 'está vacía — hay dos `' + SEPARADOR_CONDICIONES_FILTRO_ +
+      '` seguidos, o uno al principio o al final' };
+  }
 
   for (var i = 0; i < OPERADORES_FILTRO_.length; i++) {
     var o = OPERADORES_FILTRO_[i];
@@ -385,12 +461,12 @@ function parsearFiltro_(texto) {
     var campo = t.slice(0, corte).trim();
     var valor = t.slice(corte + o.simbolo.length).trim();
     if (!campo || !valor) break;
-    return { ok: true, vacio: false, campo: campo, valor: valor, negado: o.negado, op: o.op };
+    return { ok: true, condicion: { campo: campo, valor: valor, negado: o.negado, op: o.op } };
   }
 
   return {
     ok: false,
-    motivo: 'filtro mal escrito: "' + t + '" — se espera `campo=valor`, `campo!=valor`, ' +
+    motivo: '"' + t + '" — se espera `campo=valor`, `campo!=valor`, ' +
       '`campo~=valor` (contiene) o `campo!~=valor` (no contiene)' +
       (t.indexOf('≠') !== -1 ? ' (y `!=`, no `≠`: el símbolo matemático se rompe al exportar la hoja)' : '')
   };
@@ -406,11 +482,39 @@ function parsearFiltro_(texto) {
  * Los dos lados pasan por `normalizarValorDeclarado_`, el canónico de `R-10`. **No pliega case
  * ni acentos**, así que `~=` es sensible a mayúsculas: `nombre_campana~=JM` no matchea `jm`.
  */
-function valorPasaFiltro_(valorCelda, f) {
+function valorPasaFiltro_(valorCelda, cond) {
+  // `_24` — la guarda que hace ruidoso el único modo de falla del cambio de firma. Ahora
+  // `parsearFiltro_` devuelve `{ok, vacio, condiciones}` y **no** tiene `op` ni `valor`, así
+  // que un llamador que le pase el resultado entero en vez de una de sus condiciones no
+  // filtraría mal en silencio —`undefined === undefined` es `true` y todo pasaría— sino que
+  // rompe acá diciendo qué se le pasó. Es el mismo criterio que hizo que la comparación viva
+  // en un solo lugar: el peligro no es equivocarse, es equivocarse sin que se note.
+  if (!cond || !cond.op) {
+    throw new Error('valorPasaFiltro_ espera UNA condición ({campo, valor, negado, op}) y ' +
+      'recibió ' + JSON.stringify(cond) + '. ¿Le pasaron el resultado de `parsearFiltro_` en ' +
+      'vez de un elemento de su `condiciones`?');
+  }
   var v = normalizarValorDeclarado_(valorCelda);
-  var esperado = normalizarValorDeclarado_(f.valor);
-  var coincide = f.op === '~=' ? v.indexOf(esperado) !== -1 : v === esperado;
-  return f.negado ? !coincide : coincide;
+  var esperado = normalizarValorDeclarado_(cond.valor);
+  var coincide = cond.op === '~=' ? v.indexOf(esperado) !== -1 : v === esperado;
+  return cond.negado ? !coincide : coincide;
+}
+
+/**
+ * `_24` — la primera condición que no pasa, o `null` si pasan todas. Devuelve **cuál** y no un
+ * booleano porque los dos llamadores que reportan exclusiones necesitan nombrar el motivo, y
+ * porque un filtro de tres condiciones que deja cero filas es indepurable sin eso.
+ *
+ * `leerValor(campo)` la arma cada llamador: el marcador resuelve por `MAPEO` + encabezado, la
+ * sección lee un atributo del ítem crudo, y la rama `CAMPANAS` lee la campaña. La comparación,
+ * en cambio, es una sola para los tres — que es la regla que ya regía y que ahora también
+ * cubre el recorrido.
+ */
+function primeraCondicionQueFalla_(condiciones, leerValor) {
+  for (var i = 0; i < condiciones.length; i++) {
+    if (!valorPasaFiltro_(leerValor(condiciones[i].campo), condiciones[i])) return condiciones[i];
+  }
+  return null;
 }
 
 /**
@@ -431,42 +535,98 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
   }
   if (f.vacio) return { ok: true, filas: filas, traza: '' };
 
-  var campo = buscarMapeo(fila.base_id, solapa, f.campo);
-  if (!campo.ok) {
-    // Un filtro **heredado** de la sección cuyo campo no está mapeado para esta solapa
-    // **no se aplica y no es un error**: `SECCIONES.filtro` se escribe en el vocabulario de
-    // la *fuente de iteración* (`etapa=post` es una columna de `REUNIONES`), y ese
-    // vocabulario no tiene por qué existir en la base que lee un marcador. Sin esta guarda,
-    // `comunicaciones_post` rompería **todos** sus marcadores con
-    // `@filtro_campo_no_mapeado`. Un filtro **propio** sí falla: ahí alguien lo declaró
-    // para ese marcador y contra esa solapa, y el campo tiene que existir.
-    if (heredado) {
-      return { ok: true, filas: filas, traza: '', ignorado: 'el filtro de sección `' + textoFiltro +
-        '` no aplica acá: `' + f.campo + '` no es un campo de ' + fila.base_id + '/' + solapa };
+  /* `_24` — **todas las condiciones se resuelven contra `MAPEO` antes de filtrar una fila.**
+   * Nunca se aplica un subconjunto: filtrar por dos de tres devuelve un número plausible
+   * sacado del universo equivocado, que es el modo de falla más caro de este proyecto.
+   *
+   * **Y la decisión nueva, que con una sola condición no existía: qué pasa si UNA de las
+   * heredadas no mapea.** Se ignora el filtro heredado **entero**. Dos motivos:
+   *
+   *   1. Con `n = 1` las dos opciones coinciden, así que ignorar entero es la generalización
+   *      estricta del comportamiento de hoy — no cambia ningún número de los 33 vivos.
+   *   2. Aplicar el subconjunto mapeado haría que **el mismo texto de `SECCIONES.filtro`
+   *      signifique cosas distintas en cada solapa**, en silencio. Alguien lo escribió como un
+   *      criterio único; media condición no es una versión suave del criterio, es otro.
+   *
+   * **Descartado:** aplicar las condiciones que sí mapean y anotar las otras en la traza. Suena
+   * más útil y es exactamente el subconjunto que el párrafo de arriba prohíbe para el filtro
+   * propio; no hay razón para que la herencia tenga una regla más laxa sobre el universo. */
+  var resueltas = [];
+  var n = f.condiciones.length;
+  for (var i = 0; i < n; i++) {
+    var cond = f.condiciones[i];
+    var campo = buscarMapeo(fila.base_id, solapa, cond.campo);
+    if (!campo.ok) {
+      // Un filtro **heredado** de la sección cuyo campo no está mapeado para esta solapa
+      // **no se aplica y no es un error**: `SECCIONES.filtro` se escribe en el vocabulario de
+      // la *fuente de iteración* (`etapa=post` es una columna de `REUNIONES`), y ese
+      // vocabulario no tiene por qué existir en la base que lee un marcador. Sin esta guarda,
+      // `comunicaciones_post` rompería **todos** sus marcadores con
+      // `@filtro_campo_no_mapeado`. Un filtro **propio** sí falla: ahí alguien lo declaró
+      // para ese marcador y contra esa solapa, y el campo tiene que existir.
+      if (heredado) {
+        return { ok: true, filas: filas, traza: '', ignorado: 'el filtro de sección `' + textoFiltro +
+          '` no aplica acá: `' + cond.campo + '` no es un campo de ' + fila.base_id + '/' + solapa +
+          (n > 1 ? ' — y con una condición que no mapea se ignora el filtro entero, nunca las otras sueltas' : '') };
+      }
+      return {
+        ok: false,
+        motivo: '«FALTA:' + fila.marcador + '@filtro_campo_no_mapeado» — el filtro declara `' + cond.campo +
+          '`' + (n > 1 ? ' (condición ' + (i + 1) + ' de ' + n + ')' : '') +
+          ' y MAPEO no lo tiene para ' + fila.base_id + '/' + solapa + '. ' + campo.motivo
+      };
     }
-    return {
-      ok: false,
-      motivo: '«FALTA:' + fila.marcador + '@filtro_campo_no_mapeado» — el filtro declara `' + f.campo +
-        '` y MAPEO no lo tiene para ' + fila.base_id + '/' + solapa + '. ' + campo.motivo
+
+    // Las filas vienen indexadas por ENCABEZADO (igual que en `datosDeMarcador_`), salvo la
+    // maestra de digital leída **por la unión**, cuyas claves son los `campo_logico`.
+    //
+    // `T2.6` (07/08) — mismo arreglo que en el recorte por ventana, y por el mismo motivo: el
+    // caso especial estaba puesto **por nombre de solapa** y la maestra llega por dos caminos.
+    // Acá el error todavía era latente —ningún marcador filtra sobre `Seguimiento digital`—,
+    // pero el primero que lo hiciera (`sd_estado`, por ejemplo) habría filtrado sobre
+    // `undefined` y dejado cero filas sin decir por qué.
+    resueltas.push({
+      cond: cond,
+      columna: campo.columna,
+      clave: claveDeFila_(filas, cond.campo, encabezadoEnColumna_(fila.base_id, solapa, campo.columna))
+    });
+  }
+
+  function leerDeFila_(o) {
+    return function (nombreCampo) {
+      for (var k = 0; k < resueltas.length; k++) {
+        if (resueltas[k].cond.campo === nombreCampo) return o[resueltas[k].clave];
+      }
+      return undefined;
     };
   }
 
-  // Las filas vienen indexadas por ENCABEZADO (igual que en `datosDeMarcador_`), salvo la
-  // maestra de digital leída **por la unión**, cuyas claves son los `campo_logico`.
-  //
-  // `T2.6` (07/08) — mismo arreglo que en el recorte por ventana, y por el mismo motivo: el
-  // caso especial estaba puesto **por nombre de solapa** y la maestra llega por dos caminos.
-  // Acá el error todavía era latente —ningún marcador filtra sobre `Seguimiento digital`—,
-  // pero el primero que lo hiciera (`sd_estado`, por ejemplo) habría filtrado sobre
-  // `undefined` y dejado cero filas sin decir por qué.
-  var clave = claveDeFila_(filas, f.campo,
-    encabezadoEnColumna_(fila.base_id, solapa, campo.columna));
-
   var vacias = 0;
   var quedan = filas.filter(function (o) {
-    if (normalizarValorDeclarado_(o[clave]) === '') vacias++;
-    return valorPasaFiltro_(o[clave], f);
+    resueltas.forEach(function (r) {
+      if (normalizarValorDeclarado_(o[r.clave]) === '') vacias++;
+    });
+    return primeraCondicionQueFalla_(f.condiciones, leerDeFila_(o)) === null;
   });
+
+  // Con una sola condición el texto es **idéntico** al de antes del `_24`: es lo que leen los
+  // 33 filtros vivos y lo que sale en los reportes de corrida.
+  var descripcion = n === 1
+    ? 'sobre "' + resueltas[0].clave + '" (col ' + resueltas[0].columna + ')'
+    : '(' + n + ' condiciones: ' + resueltas.map(function (r) {
+        return '"' + r.clave + '" col ' + r.columna;
+      }).join(', ') + ')';
+
+  // Cero filas con varias condiciones es indepurable sin saber cuál cortó. El desglose se
+  // calcula **sólo en ese caso**: en el normal sería ruido, que es justo lo que la traza no
+  // tiene que tener.
+  var desglose = '';
+  if (!quedan.length && n > 1) {
+    desglose = ' · sola, cada condición deja: ' + resueltas.map(function (r) {
+      var sobreviven = filas.filter(function (o) { return valorPasaFiltro_(o[r.clave], r.cond); }).length;
+      return '`' + r.cond.campo + '` ' + sobreviven;
+    }).join(', ');
+  }
 
   return {
     ok: true,
@@ -474,9 +634,11 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
     // El conteo de vacías va en la traza a propósito: una celda sin valor **pasa** el filtro
     // negado y **no pasa** el afirmativo, y esa asimetría explica diferencias que si no
     // parecen datos faltantes. Es el mismo criterio que `excluidas_por_valor` en `D-21`.
-    traza: 'filtro `' + textoFiltro + '` sobre "' + clave + '" (col ' + campo.columna + ') → ' +
+    // Con varias condiciones cuenta celdas, no filas — se dice en el texto.
+    traza: 'filtro `' + textoFiltro + '` ' + descripcion + ' → ' +
       quedan.length + ' de ' + filas.length + ' fila(s)' +
-      (vacias ? ' · ' + vacias + ' con la celda vacía' : '')
+      (vacias ? ' · ' + vacias + (n === 1 ? ' con la celda vacía' : ' celda(s) vacía(s) en las columnas filtradas') : '') +
+      desglose
   };
 }
 
@@ -1215,15 +1377,16 @@ function filtrarItemsPorSeccion_(seccion, crudos, leerAtributo) {
 
   var excluidos = [];
   var quedan = crudos.filter(function (c) {
-    var bruto = leerAtributo(c, f.campo);
-    var pasa = valorPasaFiltro_(bruto, f);
-    if (!pasa) {
+    // `_24` — con varias condiciones el motivo nombra **la primera que falla**, no las tres:
+    // quien lee el reporte necesita saber por qué salió este ítem, y la primera alcanza.
+    var falla = primeraCondicionQueFalla_(f.condiciones, function (campo) { return leerAtributo(c, campo); });
+    if (falla) {
       excluidos.push({
         item: leerAtributo(c, '__clave__'),
-        motivo: f.campo + ' = "' + normalizarValorDeclarado_(bruto) + '"'
+        motivo: falla.campo + ' = "' + normalizarValorDeclarado_(leerAtributo(c, falla.campo)) + '"'
       });
     }
-    return pasa;
+    return !falla;
   });
 
   return {
@@ -1282,13 +1445,18 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
         return;
       }
       // `SECCIONES.filtro` sobre los atributos de la campaña, misma sintaxis.
+      //
+      // ⚠ `fc.ok &&` — un filtro de sección **mal escrito se saltea en silencio acá**, mientras
+      // que `filtrarItemsPorSeccion_` (la rama `REUNIONES`) falla con motivo. Son dos
+      // comportamientos distintos para el mismo error, y es de antes del `_24`: se conserva tal
+      // cual para no mover números, y queda anotado como hallazgo.
       var fc = parsearFiltro_(seccion.filtro);
       if (fc.ok && !fc.vacio) {
-        var pasa = valorPasaFiltro_(c[fc.campo], fc);
-        if (!pasa) {
+        var falla = primeraCondicionQueFalla_(fc.condiciones, function (campo) { return c[campo]; });
+        if (falla) {
           excluidos.push({
             campana: id,
-            motivo: 'SECCIONES.filtro: ' + fc.campo + ' = "' + normalizarValorDeclarado_(c[fc.campo]) + '"'
+            motivo: 'SECCIONES.filtro: ' + falla.campo + ' = "' + normalizarValorDeclarado_(c[falla.campo]) + '"'
           });
           return;
         }

@@ -921,6 +921,108 @@ function probarReferenciaVentanaUnNivel_() {
     'inexistente fallan con motivo propio (4 casos negativos, 2 positivos)';
 }
 
+/**
+ * `_24` — control positivo del filtro de más de una condición.
+ *
+ * Los cinco casos que el prompt declara imprescindibles, y el que más importa es el tercero:
+ * **`&` simple vive en los datos** —dos URLs de `looker/…/post_meta`— y el corte tiene que ser
+ * en `&&` y sólo en `&&`. Sin este control, la elección de separador es una afirmación.
+ *
+ * Se prueban `parsearFiltro_` y `primeraCondicionQueFalla_` directo, sin planilla: la
+ * resolución por `MAPEO` es del llamador y tiene su propio caso, el quinto, que se arma con un
+ * campo que ninguna base mapea.
+ */
+function probarFiltroMulticondicion_() {
+  function condicionesDe_(texto) {
+    var r = parsearFiltro_(texto);
+    afirmar_(r.ok, 'multicondición: "' + texto + '" no parseó — ' + r.motivo);
+    return r.condiciones;
+  }
+
+  // 1 · Una condición sola: misma forma, lista de uno.
+  var una = parsearFiltro_('estado=Activa');
+  afirmar_(una.ok && !una.vacio, 'multicondición: una condición debería parsear');
+  afirmar_(una.condiciones.length === 1, 'multicondición: `estado=Activa` es 1 condición, vinieron ' + una.condiciones.length);
+  afirmar_(una.condiciones[0].campo === 'estado' && una.condiciones[0].valor === 'Activa' &&
+    una.condiciones[0].op === '=' && una.condiciones[0].negado === false,
+    'multicondición: la condición sola quedó ' + JSON.stringify(una.condiciones[0]));
+
+  var vacio = parsearFiltro_('');
+  afirmar_(vacio.ok && vacio.vacio && vacio.condiciones.length === 0,
+    'multicondición: el filtro vacío debería seguir siendo `vacio` con lista de cero');
+
+  // 2 · Tres condiciones — el caso real que viene: todas verdaderas, y una falsa.
+  var tres = condicionesDe_('nombre_campaña~=JM && estado=Activa && Plataforma=Meta');
+  afirmar_(tres.length === 3, 'multicondición: se esperaban 3 condiciones, vinieron ' + tres.length);
+  afirmar_(tres[0].op === '~=' && tres[1].campo === 'estado' && tres[2].valor === 'Meta',
+    'multicondición: las tres quedaron ' + JSON.stringify(tres));
+
+  var filaBuena = { 'nombre_campaña': 'RDV JM | Caballito 17/12', estado: 'Activa', 'Plataforma': 'Meta' };
+  var filaMala = { 'nombre_campaña': 'RDV JM | Caballito 17/12', estado: 'Finalizada', 'Plataforma': 'Meta' };
+  var lee = function (o) { return function (campo) { return o[campo]; }; };
+  afirmar_(primeraCondicionQueFalla_(tres, lee(filaBuena)) === null,
+    'multicondición: la fila con las tres verdaderas tendría que pasar');
+  var falla = primeraCondicionQueFalla_(tres, lee(filaMala));
+  afirmar_(falla && falla.campo === 'estado',
+    'multicondición: la fila con `estado` distinto tendría que fallar por `estado`, falló por ' + JSON.stringify(falla));
+
+  // Y el negado en conjunción, que es como se escribe `imp_prog` por resta (`R-24`).
+  var resta = condicionesDe_('Plataforma!=Meta && Plataforma!=Google ads');
+  afirmar_(resta.length === 2 && resta[0].negado && resta[1].negado,
+    'multicondición: las dos negaciones de la resta quedaron ' + JSON.stringify(resta));
+  afirmar_(primeraCondicionQueFalla_(resta, lee({ 'Plataforma': 'DV360' })) === null,
+    'multicondición: DV360 tendría que pasar las dos negaciones');
+  afirmar_(primeraCondicionQueFalla_(resta, lee({ 'Plataforma': 'Google ads' })) !== null,
+    'multicondición: Google ads NO tendría que pasar la resta');
+
+  // 3 · Un `&` simple **no** parte. Es una de las dos URLs medidas en los datos el 10/08.
+  var url = 'https://www.facebook.com/photo?fbid=1447021517457493&set=p.1447021517457493';
+  var conAmpersand = condicionesDe_('post_meta=' + url);
+  afirmar_(conAmpersand.length === 1,
+    'multicondición: una URL con `&` simple NO se parte — vinieron ' + conAmpersand.length + ' condiciones');
+  afirmar_(conAmpersand[0].valor === url,
+    'multicondición: el valor con `&` llegó recortado: ' + conAmpersand[0].valor);
+  afirmar_(valorPasaFiltro_(url, conAmpersand[0]),
+    'multicondición: la URL con `&` tendría que matchearse a sí misma');
+
+  // 4 · Una condición mal escrita entre dos buenas: falla, y el motivo dice CUÁL.
+  var mala = parsearFiltro_('estado=Activa && Plataforma Meta && eje=M2');
+  afirmar_(!mala.ok, 'multicondición: `Plataforma Meta` no tiene operador y debería fallar');
+  afirmar_(mala.motivo.indexOf('condición 2 de 3') !== -1,
+    'multicondición: el motivo tiene que decir cuál falló, vino "' + mala.motivo + '"');
+
+  var doble = parsearFiltro_('estado=Activa && && eje=M2');
+  afirmar_(!doble.ok && doble.motivo.indexOf('condición 2 de 3') !== -1,
+    'multicondición: dos `&&` seguidos deberían fallar nombrando la condición vacía, vino "' + doble.motivo + '"');
+
+  // Con una sola condición el mensaje queda como antes del `_24`: sin «condición N de M».
+  var solaMala = parsearFiltro_('Plataforma Meta');
+  afirmar_(!solaMala.ok && solaMala.motivo.indexOf('condición') === -1,
+    'multicondición: con una sola condición el motivo no debería numerarla, vino "' + solaMala.motivo + '"');
+
+  // 5 · Un campo que MAPEO no tiene hace fallar el filtro ENTERO, no filtra por los otros dos.
+  //     Se prueba contra el llamador real, con una base y solapa que existen.
+  var fila = { marcador: '(prueba _24)', base_id: 'looker' };
+  var filas = [{ 'nombre_campaña': 'RDV JM | x', 'estado': 'Activa' }];
+  var r = aplicarFiltroDeMarcador_('estado=Activa && no_existe_este_campo_24=x', fila,
+    'resumen_metricas_dinamico', filas, false);
+  afirmar_(!r.ok, 'multicondición: un campo sin MAPEO tiene que hacer fallar el filtro entero');
+  afirmar_(r.motivo.indexOf('filtro_campo_no_mapeado') !== -1 &&
+    r.motivo.indexOf('no_existe_este_campo_24') !== -1 &&
+    r.motivo.indexOf('condición 2 de 2') !== -1,
+    'multicondición: el motivo tiene que nombrar el campo y la condición, vino "' + r.motivo + '"');
+  afirmar_(r.filas === undefined,
+    'multicondición: un filtro que falla NO devuelve filas — devolvió ' + JSON.stringify(r.filas));
+
+  // Y la guarda que hace ruidoso el cambio de firma.
+  var rompio = false;
+  try { valorPasaFiltro_('x', parsearFiltro_('a=b')); } catch (e) { rompio = true; }
+  afirmar_(rompio, 'multicondición: pasarle el resultado de parsearFiltro_ a valorPasaFiltro_ tiene que romper, no filtrar mal');
+
+  return 'filtro multicondición: `&&` parte, `&` simple no; 3 condiciones y la resta de `R-24`; ' +
+    'el motivo nombra la condición; un campo sin MAPEO falla entero (5 casos + la guarda de firma)';
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
@@ -933,7 +1035,8 @@ function correrPruebasDiff_() {
     probarSemanaR11_,
     probarFormatoMarcador_,
     probarRatioEnDespachador_,
-    probarReferenciaVentanaUnNivel_
+    probarReferenciaVentanaUnNivel_,
+    probarFiltroMulticondicion_
   ];
   var lineas = [];
   var fallas = 0;
