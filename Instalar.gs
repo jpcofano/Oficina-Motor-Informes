@@ -1268,9 +1268,19 @@ SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAM
 // nombrados reutilizables (referenciados por MARCADORES.periodo_ref, ej.
 // 'm2_mensual') — misma categoría durable que BASES/MAPEO/INFORMES, mismo
 // mecanismo de aplicación.
+// Las tres semanas viernes-jueves de junio entran por el seed y no a mano porque **el seed es
+// el único escritor declarado de `PERIODOS`** (`docs/ESCRITORES.md`). Nacen el 11/08 para la
+// demo —mostrar que el motor corre cualquier semana, no sólo la de la ventana activa— y se
+// quedan: una ventana con nombre es reusable, y `PERIODOS` existe justamente para eso.
+//
+// Junio de 2026 arranca lunes, así que los viernes caen 5, 12, 19 y 26. La cuarta semana no
+// entra: 26/06–02/07 cruza el mes y deja de ser comparable con las otras tres.
 var SEED_PERIODOS_ = [
   { periodo_id: 'm2_mensual', desde: '2026-06-01', hasta: '2026-06-30', notas: 'M2 dentro del JM' },
-  { periodo_id: 'quincena_rrss', desde: '2026-06-16', hasta: '2026-06-30', notas: 'Análisis RRSS' }
+  { periodo_id: 'quincena_rrss', desde: '2026-06-16', hasta: '2026-06-30', notas: 'Análisis RRSS' },
+  { periodo_id: 'junio_sem1', desde: '2026-06-05', hasta: '2026-06-11', notas: 'Semana vie-jue de junio — alta para la demo del 12/08' },
+  { periodo_id: 'junio_sem2', desde: '2026-06-12', hasta: '2026-06-18', notas: 'Semana vie-jue de junio — alta para la demo del 12/08' },
+  { periodo_id: 'junio_sem3', desde: '2026-06-19', hasta: '2026-06-25', notas: 'Semana vie-jue de junio — alta para la demo del 12/08' }
 ];
 
 // Paso 2.11 Parte A — antes vivían en HOJAS_CONFIG_.CAMPANAS.ejemplos y

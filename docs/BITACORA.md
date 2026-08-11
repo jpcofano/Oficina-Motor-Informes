@@ -8178,3 +8178,52 @@ Pruebas del diff **13/13**. `verificarLaminas()` **VERDE 51/51/51**. `controlPar
 delta **0** en importes y filas de los dos grupos. Deck de la demo: **`jm-20260811-135342`**, 226 s,
 sin corte, sin fallo, instrumento limpio, **92 impresiones con valor** (eran 83) y **55 ok / 7 sin
 dato / 2 error** (eran 46/7/4).
+
+---
+
+## Tres semanas de junio en `PERIODOS`, y una sonda que midió el mes equivocado (2026-08-11)
+
+Pedido: un segundo deck de `jm` sobre una semana vieja, para mostrar que el motor corre
+cualquier período y no sólo el de la ventana activa.
+
+**`junio_sem1/2/3` entran por `SEED_PERIODOS_`** —viernes-jueves, 05-11, 12-18 y 19-25/06—
+porque **el seed es el único escritor declarado de `PERIODOS`** (`ESCRITORES.md`). El seed
+declara las cuatro columnas de la hoja, así que `upsertPorClave_` no blanquea nada: la
+advertencia del handoff sobre tocar el seed de `PERIODOS` se verificó antes de escribir.
+`aplicarSeedConfiguracion_` escribió **3 filas nuevas y cero cambios** en `BASES`, `MAPEO`,
+`CONFIG` e `INFORMES`.
+
+### ⚠ La sonda barata no servía, y el error es el de siempre
+
+Para no gastar una corrida de 4 minutos por semana se sondeó con
+`resolverMarcadores('jm', {periodo_ref: 'junio_semN'})`. Las cuatro sondas —el mes entero y las
+tres semanas— dieron **exactamente `55 ok / 7 sin dato / 2 error`**, y los valores salieron
+**idénticos entre sí**.
+
+**No era un hallazgo: era el instrumento.** La traza lo decía con todas las letras —
+`2026-07-24–2026-07-30 (config)`. **`resolverMarcadores` no honra `periodo_ref` en sus
+opciones**: cada marcador resuelve su propia cadena de `D-20` con el `periodo_ref` de **su fila
+de `MARCADORES`**, y con todas vacías cae a `CONFIG`. Las cuatro sondas midieron **julio**.
+
+El único instrumento válido es **`generarInforme(informeId, periodoId)`**, que resuelve el
+`periodoId` contra `PERIODOS` y baja `{ventana}` a la etapa 4. Es otra vuelta del patrón de
+`CLAUDE.md` §4: el instrumento propio reprodujo la cadena de ventana que el motor ya tiene, y la
+reprodujo mal. **Lo delató que tres semanas distintas dieran el mismo número** — no que fallara.
+
+### El deck de junio, verificado contra el deck y no contra el reporte
+
+`jm-20260811-173139` · `vie 12/06 — jue 18/06` · `origen periodo_ref:junio_sem2` · 178 s, sin
+corte. **96 impresiones con valor y 194 filas de `FALTANTES`, contra 92 y 198 del deck de julio:
+junio tiene MENOS huecos, no más.** Ninguna solapa snapshot le comió la base.
+
+Los números se leyeron **del deck** con `verificarObjectIdDeCorrida_`, porque el reporte ya había
+mentido una vez esa tarde:
+
+| token | julio 24-30/07 | junio 12-18/06 |
+|---|---|---|
+| `ecv_inscriptos` | 2307 | 1152 |
+| `imp_meta` | 2.215.327 | 314.241 |
+| `mail_envios` | 838.571 | 247.759 |
+
+**Las otras dos semanas de junio no se generaron:** la segunda alcanzó y sobró, y el criterio de
+descarte —"si sale con muchas más rayas, no se recomienda"— no se activó.
