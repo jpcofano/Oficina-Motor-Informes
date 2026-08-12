@@ -1042,3 +1042,133 @@ function diagDistintos_(baseId, solapa, campoLogico, desdeISO, hastaISO, campoFi
     colapsados_por_plegado: colapsados
   };
 }
+
+/**
+ * `_38` A — el censo del enlace digital, ítem por ítem: **qué se ancló, y cuántas filas trae
+ * esa cuenta con la ventana de la corrida y sin ninguna ventana.**
+ *
+ * Las tres causas que el prompt separa —sin cuenta enlazada · con cuenta y sin filas · con
+ * filas que la ventana deja afuera— se ven idénticas en el deck, y ninguna de las funciones
+ * que ya existen las distingue: `resumenAnclaje_` contesta la primera y no mira filas, y
+ * `diagSolapa_` cuenta filas de una solapa pero no sabe de qué encuentro son.
+ *
+ * **Las dos uniones se piden de verdad, no se deduce que son iguales.** `digital` es
+ * `modo_periodo = snapshot` y `leerFuente` ignora la ventana en esa rama, así que la
+ * predicción es que los dos conteos coincidan — pero eso es exactamente el tipo de premisa
+ * que este proyecto se acostumbró a medir en vez de razonar. La ventana ancha va de 2020 a
+ * 2030 igual que en `diagSolapeVsPunto_`, y las dos uniones tienen clave de caché distinta.
+ *
+ * `mail_tipo` viaja aparte porque los seis marcadores de Mail de la lámina de encuentro
+ * filtran `mail_tipo=Convocatoria`: una cuenta puede tener filas de Mail y ninguna que pase
+ * ese filtro, y eso no es ninguna de las tres causas del prompt.
+ *
+ * Sólo lectura: no escribe ninguna hoja, no genera y no ancla a mano.
+ */
+function diagEnlaceDigitalDeEncuentros_(periodoRef) {
+  var ventana = resolverVentana(periodoRef ? { periodo_ref: periodoRef } : {});
+  if (!ventana.ok) return { ok: false, motivo: ventana.motivo };
+
+  var anclaje = anclarEncuentros(ventana);
+  if (!anclaje.ok) return { ok: false, motivo: anclaje.motivo };
+
+  var ancha = { ok: true, desde: new Date(2020, 0, 1), hasta: new Date(2030, 11, 31), origen: 'diag _38 sin ventana' };
+  var conVentana = unirDigitalPorCuenta(ventana);
+  var sinVentana = unirDigitalPorCuenta(ancha);
+  if (!conVentana.ok) return { ok: false, motivo: 'union con ventana: ' + conVentana.motivo };
+  if (!sinVentana.ok) return { ok: false, motivo: 'union sin ventana: ' + sinVentana.motivo };
+
+  // Columna de fecha de cada solapa de canal, resuelta una vez: adentro del bucle serían
+  // cinco `buscarMapeo` por cuenta, y `buscarMapeo` relee `SOLAPAS` y `MAPEO` enteras.
+  var columnaFecha = {};
+  SOLAPAS_CANAL_DIGITAL_.forEach(function (canal) {
+    var c = buscarMapeo(BASE_DIGITAL_, canal.solapa, 'fecha_periodo');
+    columnaFecha[canal.solapa] = c.ok ? c.columna : null;
+  });
+  var columnaTipoMail = buscarMapeo(BASE_DIGITAL_, 'Directa Mail', 'mail_tipo');
+
+  /* **Una línea de texto por solapa, no un objeto anidado**, y no es cosmética: el sobre de la
+   * API corta a los 5 niveles (`serializar_`, `Api.gs`) y `resultado → items → item → filas →
+   * solapa` ya son cinco. Medido en la primera corrida: las cinco solapas volvieron como
+   * `"[profundidad máxima]"`. Aplanar acá cuesta menos que subirle el tope al serializador,
+   * que protege a todas las demás llamadas. */
+  function censarCuenta(idCuenta) {
+    var registro = conVentana.porCuenta[idCuenta];
+    var registroAncho = sinVentana.porCuenta[idCuenta];
+    if (!registro && !registroAncho) return ['(la cuenta no está en la unión de digital)'];
+
+    return SOLAPAS_CANAL_DIGITAL_.map(function (canal) {
+      /* **Un cero de acá tiene dos causas y hay que separarlas.** Si la unión no pudo adjuntar
+       * la solapa —`digital/Digital` es `uso = ignorar` por `R-22`, y `buscarMapeo` devuelve
+       * `«FALTA:dig_id_cuenta@solapa_no_fuente»`— entonces **ninguna** cuenta tiene filas de ese
+       * canal, y eso no dice nada sobre esta cuenta en particular. Publicar `0` a secas es
+       * exactamente el número plausible que este proyecto persigue. */
+      var diag = conVentana.diagnostico[canal.solapa];
+      if (diag && !diag.ok) return canal.solapa + ': la unión NO adjunta esta solapa — ' + diag.motivo;
+
+      var filas = (registro && registro[canal.prefijo + '_filas']) || [];
+      var filasAnchas = (registroAncho && registroAncho[canal.prefijo + '_filas']) || [];
+
+      var linea = canal.solapa + ': con_ventana=' + filas.length + ' · sin_ventana=' + filasAnchas.length;
+
+      if (columnaFecha[canal.solapa] && filasAnchas.length) {
+        var fechas = filasAnchas.map(function (f) {
+          var cruda = valorPorColumna_(f, BASE_DIGITAL_, canal.solapa, columnaFecha[canal.solapa]);
+          var fecha = (cruda instanceof Date) ? cruda : parsearFechaCelda_(cruda);
+          return fecha ? formatearFecha_(fecha) : '(ilegible: ' + String(cruda) + ')';
+        });
+        linea += ' · fechas=' + fechas.sort().join(',');
+      }
+
+      if (canal.solapa === 'Directa Mail' && columnaTipoMail.ok && filasAnchas.length) {
+        var tipos = {};
+        filasAnchas.forEach(function (f) {
+          var t = String(valorPorColumna_(f, BASE_DIGITAL_, canal.solapa, columnaTipoMail.columna) || '(vacío)');
+          tipos[t] = (tipos[t] || 0) + 1;
+        });
+        linea += ' · mail_tipo=' + Object.keys(tipos).map(function (t) { return t + '×' + tipos[t]; }).join(',');
+      }
+
+      return linea;
+    });
+  }
+
+  function describir(item, balde) {
+    var salida = {
+      item: item.reunion + (item.etapa ? ' (' + item.etapa + ')' : ''),
+      fecha: item.fecha instanceof Date ? formatearFecha_(item.fecha) : String(item.fecha),
+      balde: balde,
+      id_cuenta: item.idCuenta || '',
+      puntaje: Number(item.score || 0).toFixed(2),
+      campana_digital: item.candidatoNombre || '',
+      tiene_fila_rdv: Boolean(item.filaRdv)
+    };
+    if (item.motivo) salida.motivo = item.motivo;
+    if (item.motivoAmbiguo) salida.motivo = item.motivoAmbiguo;
+    if (item.confirmadoAMano) salida.confirmado_a_mano = true;
+    if (item.idCuenta) salida.filas = censarCuenta(normalizarIdCuenta_(item.idCuenta));
+    return salida;
+  }
+
+  var items = []
+    .concat(anclaje.encuentros.map(function (e) { return describir(e, 'encuentros'); }))
+    .concat(anclaje.bajaConfianza.map(function (e) { return describir(e, 'bajaConfianza'); }))
+    .concat(anclaje.sinLink.map(function (e) { return describir(e, 'sinLink'); }));
+
+  return {
+    ok: true,
+    ventana: formatearFecha_(ventana.desde) + ' → ' + formatearFecha_(ventana.hasta) + ' (' + ventana.origen + ')',
+    periodo_filtrado: anclaje.periodo_id || '(sin filtro: la ventana no vino por periodo_ref)',
+    umbral: anclaje.umbral,
+    excluidas_por_periodo: anclaje.excluidas_por_periodo,
+    cuentas_en_la_union: {
+      con_ventana: Object.keys(conVentana.porCuenta).length,
+      sin_ventana: Object.keys(sinVentana.porCuenta).length
+    },
+    // Qué solapas entraron de verdad a la unión, antes de mirar ninguna cuenta.
+    solapas_de_la_union: Object.keys(conVentana.diagnostico).map(function (s) {
+      var d = conVentana.diagnostico[s];
+      return s + ': ' + (d.ok ? 'ok · ' + d.filas_leidas + ' fila(s) leída(s)' : 'NO ENTRA — ' + d.motivo);
+    }),
+    items: items
+  };
+}

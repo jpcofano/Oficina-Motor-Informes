@@ -8435,3 +8435,36 @@ pares) tampoco vale: está medida sobre el universo equivocado.
 necesita —cuántas campañas distintas hay en la ventana **recortada como la recorta el motor**— y
 obtenerlo con un diagnóstico propio es repetir el error. La vía correcta es al revés: la operación
 nueva la calcula, y el número se lee del deck.
+
+## `_38` Parte A — el censo del enlace: la ventana no recorta nada, y faltan filas (2026-08-12)
+
+**Instrumento nuevo, sólo lectura:** `diagEnlaceDigitalDeEncuentros_(periodoRef)` en `Auditoria.gs`.
+Ancla los ítems del período y, para cada cuenta anclada, cuenta las filas de las cinco solapas de
+canal **dos veces** —con la ventana de la corrida y con una ventana 2020–2030—.
+
+**Las tres causas del prompt, medidas sobre los seis ítems de `julio_24_30`:**
+
+- **Sin cuenta enlazada: cero casos.** Los seis anclaron, ninguno cayó en `sinLink` ni en
+  `bajaConfianza`. Cinco con puntaje `1.00`, Villa Urquiza con `0.81`.
+- **La ventana deja filas afuera: cero casos.** `con_ventana` y `sin_ventana` dieron **idénticos en
+  las 30 celdas**. Era lo esperable —`digital` es `snapshot` y la rama por cuenta de
+  `datosDeMarcador_` no lleva `recortar_por_ventana`— pero se midió en vez de deducirse.
+- **Cuenta enlazada sin filas: la causa real**, y es por solapa, no por ítem. San Cristóbal
+  (`3354-JULJDGAG`) y Retiro (`3346-JULJDGAG`) traen **cero filas en Mail, SMS e IVR**. Villa
+  Urquiza trae 3 de Mail; Orden Público, 5 de Mail y 2 de IVR.
+
+**Y una cuarta causa que el prompt no tenía: el token.** De los 30 tokens de la lámina modelo
+(`L-035`, orden 7), **8 no tienen fila en `MARCADORES`** —los cuatro `enc_ll_*`, `enc_base_llamada`,
+`enc_base_total`, `enc_alcance_pct`, `enc_alcance_potencial`—. Salen `—` sin que el enlace digital
+participe.
+
+**⚠ Un cero de la unión no es un cero de la cuenta.** La primera versión del instrumento publicó
+`Digital: 0` para las seis cuentas. No era el dato: `digital/Digital` es `uso = ignorar` (`R-22`) y
+`buscarMapeo` devuelve `«FALTA:dig_id_cuenta@solapa_no_fuente»`, así que **la unión no adjunta esa
+solapa a ninguna cuenta**. El instrumento se corrigió para decirlo antes de contar. Es el mismo
+patrón de §4 —verificar el crudo del que salió la etiqueta— cazado esta vez antes del reporte.
+
+**Hallazgo al costado, medido:** `digital/Alcance` **sí tiene** la fila de San Cristóbal —`Alcance
+1412`, `Frecuencia 17,78`, campaña `1 A 1 JM | 23/7 SAN CRISTÓBAL`— y ningún marcador de la lámina
+la lee. `enc_alcance` apunta a `Digital/dig_alcance`, que es la solapa congelada en 2025. No se
+tocó: el prompt prohíbe cablear.
