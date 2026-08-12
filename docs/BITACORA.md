@@ -8606,3 +8606,44 @@ publicarían el agregado de la semana en las seis láminas.
 
 **Cuál de las dos filas de `Alcance` es la buena** para `3387` y `3289`. Hasta que se decida, las dos
 láminas publican `—` con motivo en la traza.
+
+---
+
+## El patrón: una prueba verde que prueba lo contrario de lo que dice (2026-08-12)
+
+**Vale más que el arreglo que lo destapó, así que se anota como patrón y no como un fixture
+corregido.**
+
+`Pruebas.gs:456` decía:
+
+```js
+afirmar_(despacharOperacion_('ULTIMO', ctx).valor === 5,
+  'despacho: ULTIMO saltea la celda vacía del final');
+```
+
+`ctx` traía `[10, 5, '']`. La prueba **pasaba**, y había pasado en todas las corridas desde que se
+escribió. Pero `5` es *el último valor no vacío*, así que lo que la afirmación verificaba era
+**"ULTIMO elige por posición"** — el rótulo decía una cosa y el fixture probaba otra. Las dos
+afirmaciones son compatibles con ese dato y por eso nadie las vio separarse.
+
+**Lo grave no es que estuviera mal: es que estaba verde.** Cuando el `_39` fue a arreglar
+`opULTIMO` —para que sin fecha utilizable y con valores distintos **no elija**—, la prueba se puso
+roja. Leída al pie de la letra, decía *"rompiste el salteo de la celda vacía"*, que era falso: el
+salteo seguía intacto. Lo que se había roto era la afirmación no escrita, la que la prueba
+verificaba de verdad.
+
+**Por eso una prueba así es peor que no tenerla: bloquea el cambio correcto y lo hace con la
+autoridad de un control que venía pasando.** Una prueba ausente deja el terreno libre; una prueba
+que miente cobra un peaje justo cuando alguien va a mejorar la cosa que ella dice cuidar. El costo
+no se paga cuando se escribe, se paga meses después y lo paga otro.
+
+**Cómo se detecta**, que es lo único accionable: **un fixture cuyo dato satisface más de una
+afirmación no distingue entre ellas.** `[10, 5, '']` no separa "saltea el vacío" de "elige el
+último". `[5, 5, '']` sí: pasa con el salteo y es indiferente a la posición. La pregunta que hay
+que hacerle a un control verde no es *"¿pasa?"* sino **"¿con qué otro dato seguiría pasando, y
+qué afirmación distinta estaría probando ahí?"**
+
+Quedó partido en dos fixtures —uno por afirmación— más la guarda nueva y su contraste. Las 13
+pruebas pasan. **Es el primer caso registrado de un control positivo del repo que era falso, y lo
+destapó un cambio de comportamiento, no una lectura.** Ninguna de las verificaciones del proyecto
+lo miraba, igual que pasó con "de qué filas sale el número" el 07/08.

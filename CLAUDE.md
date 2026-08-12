@@ -282,6 +282,25 @@ La Parte E del 2.11 cambió `alinearSolapasLookerADinamico_`, se verificó contr
 (el número dio bien) y **no se re-corrieron los controles**; el de `C.2-3` quedó fallando un
 día entero, invisible, hasta que lo encontró el Paso 2.14 al correrlos por API.
 
+**Y el control verde también se lee, porque una prueba puede probar lo contrario de lo que
+dice.** `Pruebas.gs:456` afirmaba *"ULTIMO saltea la celda vacía del final"* sobre el fixture
+`[10, 5, '']`. Pasaba desde el día que se escribió — y lo que verificaba era **"ULTIMO elige
+por posición"**, porque `5` es el último valor no vacío y el dato satisface las dos
+afirmaciones por igual. Se destapó el 12/08, cuando el `_39` cambió `opULTIMO` para que **no
+elija** sin fecha utilizable: la prueba se puso roja diciendo que se había roto el salteo del
+vacío, que seguía intacto.
+
+- **Una prueba así es peor que no tenerla.** Una ausente deja el terreno libre; una que miente
+  **bloquea el cambio correcto** y lo hace con la autoridad de un control que venía pasando. El
+  costo no se paga cuando se escribe: se paga meses después, y lo paga otro.
+- **La forma de detectarlo, que es lo único accionable:** un fixture cuyo dato satisface más de
+  una afirmación no distingue entre ellas. La pregunta a un control verde no es *"¿pasa?"* sino
+  **"¿con qué otro dato seguiría pasando, y qué afirmación distinta estaría probando ahí?"**.
+  `[5, 5, '']` separa las dos: pasa con el salteo y es indiferente a la posición.
+- **Cuando un control se pone rojo al cambiar una función, la primera pregunta es qué probaba
+  de verdad** — no cómo hacerlo pasar de nuevo. Ajustar el fixture para que vuelva a verde es
+  cómo se pierde el hallazgo.
+
 **Un test puede acertar el hecho y errar la inferencia.** `getFormulas()` sobre las dos
 hojas de `looker` devolvió bien "esta tiene fórmula"; la conclusión "por lo tanto deriva
 de la otra hoja del par" era falsa — la fórmula era un `QUERY()` sobre una **tercera**

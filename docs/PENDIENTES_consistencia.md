@@ -3374,3 +3374,36 @@ ventana no lo hace el lector sino `datosDeMarcador_` después.
 **El valor está en cómo se detectó:** la medición propia contradijo al motor y **el equivocado fue
 el instrumento**. Es el sexto caso del patrón de `CLAUDE.md` §4, y el primero que se cazó **en la
 misma corrida** en vez de sobrevivir a tres citas.
+
+---
+
+## `digital/Alcance` — dos filas por cuenta, y esperan una **regla**, no una elección — 12/08/2026
+
+**P1.** `3387-JULJDGGC` (Orden Público) y `3289-JUNJDGAG` (Villa Urquiza) traen **dos filas cada
+una en `digital/Alcance`, idénticas en las seis columnas salvo el número**:
+
+| `id_cuenta` | Alcance | Frecuencia | impresiones implícitas |
+|---|---|---|---|
+| `3387-JULJDGGC` | **66.345** | 14,18 | ≈ 940,7 k |
+| `3387-JULJDGGC` | 457.883 | 2,05 | ≈ 941,0 k |
+| `3289-JUNJDGAG` | 157.580 | 3,46 | ≈ 545,3 k |
+| `3289-JUNJDGAG` | 145.669 | 3,74 | ≈ 545,3 k |
+
+**Las impresiones implícitas coinciden en los dos casos.** No son dos campañas: son **dos
+definiciones del mismo hecho**. Y no hay columna que las discrimine —`ID Cuentas`, `eje`, `area` y
+`nombre_campaña` son iguales—, así que **ningún filtro puede separarlas** y la solapa no tiene
+columna de fecha para ordenarlas.
+
+**Lo que falta es una regla, no una elección.** `D-06` (`casos_validacion_2026-07-31`) valida la más
+chica **en un caso** — `enc_alcance` de Orden Público `65576`, nota *"base 31/07 = 66345"*—, y **un
+caso no alcanza para escribir una regla**. Elegir "siempre la menor" a partir de un solo punto
+validado es exactamente el supuesto silencioso que `CLAUDE.md` §4 prohíbe: sobreviviría a la corrida
+y nadie volvería a mirarlo.
+
+**Hasta entonces las dos láminas publican `—` con motivo, y eso es lo correcto.** La guarda del
+`_39` en `opULTIMO` devuelve `«FALTA:@ultimo_sin_fecha_ambiguo»` nombrando los dos valores. Sin ella
+se publicaba `457.883` donde el caso validado dice `66.345`: 7× más grande, plausible, con el rótulo
+correcto al lado.
+
+**Qué lo destraba:** que el dueño de `digital/Alcance` diga qué distingue las dos filas — o que
+aparezcan más casos validados que permitan inducir la regla. Ninguna de las dos cosas es del motor.
