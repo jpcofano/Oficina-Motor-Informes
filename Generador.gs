@@ -1450,7 +1450,29 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
     // Los sin link entran igual como ítem: la reunión existe en el temario (`R-02`) y tiene
     // que salir en el deck aunque sus números de digital queden en `«FALTA»`. Callarla sería
     // el modo de falla caro — un informe que se ve completo y le falta un encuentro.
+    /* `_31.3` Parte G — **`bajaConfianza` se excluye, pero deja de hacerlo en silencio.**
+     *
+     * `anclarEncuentros` devuelve TRES listas y acá se concatenaban dos: los de baja confianza
+     * desaparecían del deck sin una línea en `excluidos`. Medido el 11/08: `junio_sem2` emitió 3
+     * de 4 y Almagro no figuraba ni entre los emitidos ni entre los excluidos.
+     *
+     * **No entran como ítem, y esa parte es correcta.** Un ancla por debajo del umbral es un ancla
+     * flojo, y el ancla decide **qué fila de `rdv` se lee**: emitir la lámina publicaría barrio,
+     * inscriptos y población de una fila que el motor no está seguro de haber acertado. Es el
+     * número plausible que el umbral existe para evitar. `sinLink` sí entra porque ahí el ancla de
+     * `rdv` está bien y lo que falta es el enlace digital — son dos faltas distintas.
+     *
+     * Lo que cambia es que ahora se ven, con el puntaje y el umbral adentro del motivo.
+     */
     var crudos = anclaje.encuentros.concat(anclaje.sinLink);
+    var excluidosBajaConfianza = (anclaje.bajaConfianza || []).map(function (e) {
+      return {
+        item: e.reunion + (e.etapa ? ' (' + e.etapa + ')' : ''),
+        motivo: 'anclaje por debajo del umbral: puntaje ' + (e.score || 0).toFixed(2) +
+          ' < ' + anclaje.umbral + ' (CONFIG.umbral_anclaje_reunion) — registrado en ANCLAJE_PENDIENTE, ' +
+          'no se emite para no publicar la fila de rdv equivocada'
+      };
+    });
     var filtroR = filtrarItemsPorSeccion_(seccion, crudos, function (e, campo) {
       return campo === '__clave__' ? (e.reunion + (e.etapa ? ' (' + e.etapa + ')' : '')) : e[campo];
     });
@@ -1481,7 +1503,9 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
     // Van en la misma lista a propósito: para quien lee el reporte son lo mismo —un ítem que no
     // salió y por qué— y separarlas en dos listas obligaría a mirar dos lugares para responder
     // "¿por qué no está este encuentro?".
-    var excluidos = (anclaje.excluidas_por_periodo || []).concat(filtroR.excluidos || []);
+    var excluidos = (anclaje.excluidas_por_periodo || [])
+      .concat(excluidosBajaConfianza)
+      .concat(filtroR.excluidos || []);
     return {
       ok: true, items: items, excluidos: excluidos, filtro: filtroR.traza,
       // `''` = no se filtró por período. El reporte lo dice en vez de dejarlo suponer.
