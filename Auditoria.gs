@@ -1233,3 +1233,230 @@ function diagEnlaceDigitalDeEncuentros_(periodoRef) {
     items: items
   };
 }
+
+/* ============================================================================
+ * `_40` — censo de una planilla EXTERNA, todavía no registrada en `BASES`.
+ *
+ * Por qué hace falta un lector propio y por qué NO es reimplementar el motor: los
+ * lectores del motor (`leerFuente`, `diagSolapa_`, `datosDeMarcador_`) resuelven la
+ * planilla por `base_id` contra `BASES`/`SOLAPAS`/`MAPEO`, y esta planilla **no está
+ * registrada** — darla de alta para poder mirarla es exactamente la decisión que este
+ * censo tiene que informar, no anticipar. Así que se abre por id, se devuelven las
+ * celdas crudas, y **no se decide nada**: ni qué columna es qué campo lógico, ni qué
+ * fila entra. Eso lo hace el motor, cuando y si la base se da de alta.
+ *
+ * Cae del lado bueno del borde de §4: no se reproduce lógica del motor, se compara la
+ * salida del motor contra un hecho externo que el motor todavía no puede ver.
+ *
+ * Y el corolario del 09/08 —convertir antes de mirar el tipo destruye el tipo—: cada
+ * celda viaja con su `typeof` **del valor crudo**, y aparte el texto formateado que
+ * muestra la planilla. Los dos, nunca uno solo.
+ *
+ * SÓLO LECTURA. Ninguna de las tres abre nada para escribir.
+ * ========================================================================== */
+
+/** Recorta para que un sobre de 44 columnas × N filas no reviente el serializador. */
+function celdaDeCenso_(crudo, mostrado) {
+  var tipo = (crudo instanceof Date) ? 'Date' : typeof crudo;
+  var texto = (crudo instanceof Date) ? formatearFecha_(crudo) : String(crudo);
+  if (texto.length > 60) texto = texto.slice(0, 60) + '…';
+  var visto = String(mostrado === undefined ? '' : mostrado);
+  if (visto.length > 60) visto = visto.slice(0, 60) + '…';
+  return texto + ' [' + tipo + ']' + (visto && visto !== texto ? ' · muestra "' + visto + '"' : '');
+}
+
+/** `_40` A.1 — qué solapas tiene la planilla y qué forma tiene cada una. */
+function diagPlanillaExterna_(idPlanilla) {
+  var ss = SpreadsheetApp.openById(idPlanilla);
+  return {
+    ok: true,
+    id: idPlanilla,
+    nombre: ss.getName(),
+    solapas: ss.getSheets().map(function (h) {
+      var filas = h.getLastRow();
+      var cols = h.getLastColumn();
+      var linea = h.getName() + ': ' + filas + ' fila(s) × ' + cols + ' columna(s)';
+      if (filas >= 1 && cols >= 1) {
+        var tope = Math.min(cols, 12);
+        linea += ' · fila1=' + h.getRange(1, 1, 1, tope).getDisplayValues()[0].join('|');
+        if (filas >= 2) linea += ' · fila2=' + h.getRange(2, 1, 1, tope).getDisplayValues()[0].join('|');
+      }
+      return linea;
+    })
+  };
+}
+
+/**
+ * `_40` A.1 y A.5 — la forma de UNA solapa: encabezados, unicidad de la clave, rango de
+ * fechas, cuántas filas son futuras, y el censo de valores distintos de una columna.
+ *
+ * `campoFecha` y `columnaCenso` son nombres de encabezado ya normalizados con la forma de
+ * `R-10` (`normalizarValorDeclarado_`), porque dos encabezados de esta planilla traen un
+ * salto de línea adentro (`"Clics \ntotales"`) y sin colapsar no se los puede nombrar.
+ */
+function diagFormaDeSolapaExterna_(idPlanilla, solapa, filaEncabezado, campoClave, campoFecha, columnaCenso) {
+  var hoja = SpreadsheetApp.openById(idPlanilla).getSheetByName(solapa);
+  if (!hoja) return { ok: false, motivo: 'no existe la solapa "' + solapa + '" en ' + idPlanilla };
+
+  var enc = Number(filaEncabezado) || 1;
+  var ultimaFila = hoja.getLastRow();
+  var cols = hoja.getLastColumn();
+  if (ultimaFila <= enc) return { ok: false, motivo: 'la solapa no tiene filas de datos debajo de la fila ' + enc };
+
+  var encabezados = hoja.getRange(enc, 1, 1, cols).getValues()[0].map(normalizarValorDeclarado_);
+  var datos = hoja.getRange(enc + 1, 1, ultimaFila - enc, cols).getValues();
+
+  var iClave = encabezados.indexOf(normalizarValorDeclarado_(campoClave));
+  var iFecha = encabezados.indexOf(normalizarValorDeclarado_(campoFecha));
+  var iCenso = encabezados.indexOf(normalizarValorDeclarado_(columnaCenso));
+
+  // Una fila se cuenta como fila sólo si la clave tiene algo: las planillas del equipo
+  // arrastran filas de relleno abajo y `getLastRow()` las incluye.
+  var filasConClave = 0;
+  var vistas = {};
+  var duplicadas = [];
+  var tiposClave = {};
+  var fechas = [];
+  var ilegibles = [];
+  var censo = {};
+  var hoy = new Date();
+
+  datos.forEach(function (fila, i) {
+    var clave = iClave === -1 ? '' : normalizarValorDeclarado_(fila[iClave]);
+    if (!clave) return;
+    filasConClave++;
+    var t = typeof fila[iClave];
+    tiposClave[t] = (tiposClave[t] || 0) + 1;
+    if (vistas[clave]) duplicadas.push(clave + ' (filas ' + vistas[clave] + ' y ' + (enc + 1 + i) + ')');
+    else vistas[clave] = enc + 1 + i;
+
+    if (iFecha !== -1) {
+      var cruda = fila[iFecha];
+      var f = (cruda instanceof Date) ? cruda : parsearFechaCelda_(cruda);
+      if (f) fechas.push(f.getTime());
+      else if (String(cruda) !== '') ilegibles.push(clave + '=' + String(cruda));
+    }
+    if (iCenso !== -1) {
+      var v = normalizarValorDeclarado_(fila[iCenso]) || '(vacío)';
+      censo[v] = (censo[v] || 0) + 1;
+    }
+  });
+
+  var futuras = fechas.filter(function (t) { return t > hoy.getTime(); }).length;
+  var ordenadas = fechas.slice().sort(function (a, b) { return a - b; });
+
+  return {
+    ok: true,
+    solapa: solapa,
+    fila_encabezado: enc,
+    columnas: cols,
+    filas_hasta_getLastRow: ultimaFila - enc,
+    filas_con_clave: filasConClave,
+    encabezados: encabezados.map(function (h, i) { return (i + 1) + '. ' + (h || '(vacío)'); }),
+    clave: campoClave + (iClave === -1 ? ' — NO ESTÁ en el encabezado' : ' (columna ' + (iClave + 1) + ')'),
+    tipos_de_la_clave: Object.keys(tiposClave).map(function (t) { return t + '×' + tiposClave[t]; }),
+    duplicadas: duplicadas,
+    fecha: campoFecha + (iFecha === -1 ? ' — NO ESTÁ en el encabezado' : ' (columna ' + (iFecha + 1) + ')'),
+    fechas_legibles: fechas.length,
+    fechas_ilegibles: ilegibles.slice(0, 20),
+    rango_de_fechas: ordenadas.length
+      ? formatearFecha_(new Date(ordenadas[0])) + ' → ' + formatearFecha_(new Date(ordenadas[ordenadas.length - 1]))
+      : '(sin fechas legibles)',
+    filas_con_fecha_futura: futuras,
+    hoy: formatearFecha_(hoy),
+    censo_de: columnaCenso + (iCenso === -1 ? ' — NO ESTÁ en el encabezado' : ' (columna ' + (iCenso + 1) + ')'),
+    valores_distintos: Object.keys(censo).sort().map(function (v) { return v + ' ×' + censo[v]; })
+  };
+}
+
+/**
+ * `_40` A.2, A.3 y A.4 — las filas de las claves pedidas, celda por celda, crudas.
+ *
+ * `claves` es un array de `id_cuenta`. La comparación es con la forma de `R-10` de los dos
+ * lados; no se usa `normalizarIdCuenta_` porque ésa es la clave de join del motor y acá
+ * todavía no hay join que hacer — se está mirando si el id **existe** en una planilla ajena.
+ */
+function diagFilasDeSolapaExterna_(idPlanilla, solapa, filaEncabezado, campoClave, claves) {
+  var hoja = SpreadsheetApp.openById(idPlanilla).getSheetByName(solapa);
+  if (!hoja) return { ok: false, motivo: 'no existe la solapa "' + solapa + '" en ' + idPlanilla };
+
+  var enc = Number(filaEncabezado) || 1;
+  var ultimaFila = hoja.getLastRow();
+  var cols = hoja.getLastColumn();
+  var encabezados = hoja.getRange(enc, 1, 1, cols).getValues()[0].map(normalizarValorDeclarado_);
+  var rango = hoja.getRange(enc + 1, 1, ultimaFila - enc, cols);
+  var datos = rango.getValues();
+  var mostrados = rango.getDisplayValues();
+  var iClave = encabezados.indexOf(normalizarValorDeclarado_(campoClave));
+  if (iClave === -1) return { ok: false, motivo: 'la columna clave "' + campoClave + '" no está en la fila ' + enc };
+
+  var porClave = {};
+  datos.forEach(function (fila, i) {
+    var clave = normalizarValorDeclarado_(fila[iClave]);
+    if (!clave) return;
+    if (porClave[clave] === undefined) porClave[clave] = i;
+  });
+
+  var salida = {};
+  (claves || []).forEach(function (claveCruda) {
+    var clave = normalizarValorDeclarado_(claveCruda);
+    var i = porClave[clave];
+    if (i === undefined) {
+      salida[clave] = ['(sin fila en ' + solapa + ')'];
+      return;
+    }
+    salida[clave] = encabezados.map(function (h, j) {
+      return (h || '(col ' + (j + 1) + ')') + ' = ' + celdaDeCenso_(datos[i][j], mostrados[i][j]);
+    });
+  });
+
+  return { ok: true, solapa: solapa, fila_encabezado: enc, claves_pedidas: (claves || []).length, filas: salida };
+}
+
+/**
+ * `_40` A.3 — qué publica el motor HOY para una cuenta, **por token y no por texto de deck**.
+ *
+ * Por qué no alcanzaba con `diagTextoDeDeck_`: el texto de una lámina llega aplanado por
+ * recorrido de formas, y etiqueta y número viven en cajas distintas — aparearlos a ojo es
+ * adivinar. Acá se le pregunta al despachador, que es el que decide el valor, así que la
+ * respuesta no depende de cómo estén acomodadas las cajas.
+ *
+ * No es reimplementar el motor: **es el motor**. `resolverMarcadores` es el mismo camino que
+ * corre la generación; lo único que agrega esta función es resolver la ventana desde un
+ * `periodo_ref` —porque un `Date` no sobrevive al JSON de la API— y filtrar por prefijo.
+ *
+ * SÓLO LECTURA: `resolverMarcadores` no escribe.
+ */
+function diagMarcadoresDeCuenta_(informeId, periodoRef, cuentas, prefijo) {
+  var ventana = resolverVentana(periodoRef ? { periodo_ref: periodoRef } : {});
+  if (!ventana.ok) return { ok: false, motivo: ventana.motivo };
+
+  // Varias cuentas en **una** invocación a propósito: el caché de módulo de `Fuentes.gs` vive
+  // por invocación, así que la primera cuenta paga la lectura de las bases y las demás no.
+  // Medido: 170 s la primera, el resto en el mismo pedido.
+  var lista = Array.isArray(cuentas) ? cuentas : [cuentas];
+  var filtro = String(prefijo || '');
+  var salida = {};
+
+  lista.forEach(function (idCuenta) {
+    var corrida = resolverMarcadores(informeId, { id_cuenta: idCuenta, ventana: ventana });
+    if (!corrida.ok) {
+      salida[idCuenta] = ['(resolverMarcadores no ok)'];
+      return;
+    }
+    salida[idCuenta] = corrida.resultados
+      .filter(function (r) { return !filtro || String(r.marcador).indexOf(filtro) === 0; })
+      .map(function (r) {
+        return r.marcador + ' = ' + (r.valor_formateado === '' ? '(vacío)' : r.valor_formateado) +
+          ' · crudo=' + String(r.valor) + ' [' + (r.valor instanceof Date ? 'Date' : typeof r.valor) + ']' +
+          ' · estado=' + r.estado;
+      });
+  });
+
+  return {
+    ok: true,
+    informe_id: informeId,
+    ventana: formatearFecha_(ventana.desde) + ' → ' + formatearFecha_(ventana.hasta) + ' (' + ventana.origen + ')',
+    cuentas: salida
+  };
+}
