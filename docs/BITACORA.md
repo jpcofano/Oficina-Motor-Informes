@@ -8468,3 +8468,50 @@ patrón de §4 —verificar el crudo del que salió la etiqueta— cazado esta v
 1412`, `Frecuencia 17,78`, campaña `1 A 1 JM | 23/7 SAN CRISTÓBAL`— y ningún marcador de la lámina
 la lee. `enc_alcance` apunta a `Digital/dig_alcance`, que es la solapa congelada en 2025. No se
 tocó: el prompt prohíbe cablear.
+
+---
+
+## La carátula por ítem funciona — `jm-20260812-164443` (2026-08-12)
+
+**El control de la Parte B pasó leyendo el deck: seis pares carátula+detalle, no seis y seis.**
+
+```
+sl 6  carátula  Villa Urquiza    Encuentro "Primera Persona" con Paula Pareto
+sl 7  detalle   Villa Urquiza
+sl 8  carátula  San Cristóbal    "1 a 1"
+sl 9  detalle   San Cristóbal
+sl10  carátula  Retiro           "1 a 1"
+sl11  detalle   Retiro
+sl12  carátula  Belgrano         Encuentro Temático "Orden Público" – Eje Norte
+sl13  detalle   Belgrano
+sl14  carátula  San Cristóbal    "1 a 1"
+sl15  detalle   San Cristóbal
+sl16  carátula  Retiro           "1 a 1"
+sl17  detalle   Retiro
+```
+
+**Cada carátula trae el `enc_evento` y el `ecv_barrio` de la lámina que le sigue**, y los seis
+`enc_evento` dan **tres valores distintos**, con los pares pre/post repitiendo por compartir fila de
+`rdv`. Es exactamente lo esperado.
+
+### `seg_expansion` — cuarta lectura, y la primera con dos láminas modelo
+
+| corrida | leída | ítems | asignaciones | `seg_expansion` | `seg_items` |
+|---|---|---|---|---|---|
+| `jm-20260811-234158` | 11/08 ~23:45 | 6 | 6 | 72 s | 32 s |
+| `jm-20260812-104104` | 12/08 ~10:44 | 3 | 3 | 36 s | 59 s |
+| `jm-20260812-110746` | 12/08 ~11:10 | 6 | 6 | 36 s | 34 s |
+| **`jm-20260812-164443`** | **12/08 ~16:48** | **6** | **12** | **38 s** | **76 s** |
+
+**Lo que agrega esta lectura, y sigue sin ser una conclusión:** con **el doble de láminas
+duplicadas** —12 asignaciones contra 6— `seg_expansion` pasó de 36 a **38 s**. `seg_items`, en
+cambio, **sí escaló**: de 34 a 76 s, que es lo esperable porque son 12 slides a pintar en vez de 6.
+
+**La proyección de ~144 s que el `_35` descartó habría errado por un factor de cuatro.** Cuatro
+lecturas sostienen que **expandir depende mucho menos de la cantidad de láminas que pintar**, y que
+el costo real de duplicar un bloque está en `seg_items`. Sigue siendo un patrón observado sobre una
+sola plantilla y cuatro corridas del mismo día.
+
+Total de la corrida: **227 s** de un techo de 350, sin corte. Contra los 146 s de
+`jm-20260812-110746`, los 81 s de diferencia son casi exactamente el salto de `seg_items` (+42) más
+el resto de la corrida.
