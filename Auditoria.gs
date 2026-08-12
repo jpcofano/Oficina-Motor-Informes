@@ -880,3 +880,58 @@ function diagSolapa_(baseId, solapa, desdeISO, hastaISO, aguja, columnas) {
     })
   };
 }
+
+/**
+ * `_33` A.2 — el diff entre recortar **por punto** y recortar **por solape**, simulado.
+ *
+ * **No toca `MAPEO`.** Lee la solapa con una ventana ancha —para traerlas todas— y aplica los dos
+ * criterios en memoria sobre `fecha_inicio`/`fecha_fin`, que es lo que `MAPEO` mapearía. Así el
+ * impacto se mide **antes** de mover el universo de los marcadores que ya publican.
+ *
+ * `punto`  = `fecha_inicio` dentro de la ventana (lo que hace hoy `leerFuente`).
+ * `solape` = `fecha_inicio <= hasta` **y** `fecha_fin >= desde` (`R-16`).
+ */
+function diagSolapeVsPunto_(desdeISO, hastaISO, contieneCampana) {
+  var d = String(desdeISO).split('-'), h = String(hastaISO).split('-');
+  var desde = new Date(Number(d[0]), Number(d[1]) - 1, Number(d[2]));
+  var hasta = new Date(Number(h[0]), Number(h[1]) - 1, Number(h[2]));
+
+  var ancha = { ok: true, desde: new Date(2020, 0, 1), hasta: new Date(2030, 11, 31), origen: 'diag _33' };
+  var lectura = leerFuente('looker', ancha, 'resumen_metricas_dinamico');
+  if (!lectura.ok) return { ok: false, motivo: lectura.motivo };
+
+  var needle = String(contieneCampana || '');
+  var res = { punto: { cuentas: 0, imp: 0, alc: 0, disc: 0, cont: 0, ids: [] },
+              solape: { cuentas: 0, imp: 0, alc: 0, disc: 0, cont: 0, ids: [] } };
+
+  lectura.filas.forEach(function (f) {
+    var nom = String(f['nombre_campaña'] || '');
+    // `R-23` — el corte JM es por nombre de campaña y es sensible a mayúsculas, igual que `~=`.
+    if (needle === 'JM' && nom.indexOf('JM') === -1) return;
+    if (needle === '!JM' && nom.indexOf('JM') !== -1) return;
+
+    var ini = parsearFechaCelda_(f.fecha_inicio);
+    var fin = parsearFechaCelda_(f.fecha_fin);
+    if (!ini) return;
+
+    var esPunto = ini >= desde && ini <= hasta;
+    var esSolape = ini <= hasta && (fin ? fin >= desde : ini >= desde);
+
+    ['punto', 'solape'].forEach(function (k) {
+      if (k === 'punto' ? !esPunto : !esSolape) return;
+      var a = res[k];
+      a.cuentas++;
+      a.imp += Number(f.digital_impresiones) || 0;
+      a.alc += Number(f.meta_alcance) || 0;
+      a.disc += Number(f.call_discado) || 0;
+      a.cont += Number(f.call_contactados) || 0;
+      if (a.ids.length < 30) a.ids.push(String(f.id_cuentas) + ' ' + nom.slice(0, 34));
+    });
+  });
+
+  res.solo_en_solape = res.solape.ids.filter(function (x) { return res.punto.ids.indexOf(x) === -1; });
+  res.ok = true;
+  res.ventana = formatearFecha_(desde) + ' → ' + formatearFecha_(hasta);
+  res.filas_leidas = lectura.filas.length;
+  return res;
+}

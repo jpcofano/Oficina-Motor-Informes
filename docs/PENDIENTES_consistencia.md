@@ -3253,3 +3253,40 @@ publicado—, y `frecuencia` **lee esta misma solapa**. **El recorte por punto e
 explicarlo:** si campañas que corrieron toda la semana quedan afuera por haber arrancado antes, el
 denominador y el numerador salen de menos filas de las que el deck contempló. **No se verificó**, y
 la prueba vive en la ventana de validación, no en el motor.
+
+### Addendum — 12/08/2026: el solape se midió, y la puerta no abre
+
+**El `_33` Parte A midió lo que a este hallazgo le faltaba, y el resultado invierte la conclusión
+tentativa de arriba.** Simulado en memoria, **sin tocar `MAPEO`**: `punto` = `fecha_inicio` dentro de
+la ventana; `solape` = `fecha_inicio ≤ hasta` **y** `fecha_fin ≥ desde` (`R-16`).
+
+**Primero, el alcance real: son DOS marcadores, no todos.** Sólo `frecuencia` y `gcba_frecuencia`
+leen `resumen_metricas_dinamico`. El `_32.2` supuso un radio mayor; medido, es exactamente el par
+que ya publicaba.
+
+| ventana · corte | criterio | cuentas | impresiones | alcance | frecuencia |
+|---|---|---|---|---|---|
+| 24–30/07 · JM | punto | 4 | 4.528.060 | 192.538 | 23,52 |
+| 24–30/07 · JM | **solape** | **11** | **39.209.552** | 548.507 | **71,48** |
+| 24–30/07 · GCBA | punto | 22 | 2.034.955 | 1.246.075 | 1,63 |
+| 24–30/07 · GCBA | **solape** | **81** | **728.872.658** | 43.141.903 | **16,89** |
+| 12–18/06 · JM | punto | 2 | 3.653.312 | 36.610 | 99,79 |
+| 12–18/06 · JM | **solape** | **14** | 54.342.788 | 810.539 | 67,05 |
+
+**Por qué no abre, y el criterio es el que el `_33` fijó — explicable, no sólo chico.** Lo que entra
+por solape **no son las campañas de la semana**: son campañas de larga duración que llevaban meses
+corriendo. Entre las que aparecen sólo por solape hay ids `SEPEPHGC` —de septiembre— y `MAYJDGAG`
+—de mayo—. En GCBA las impresiones se multiplican por **358**. Eso no es *"entran las que estuvieron
+activas toda la semana"*: es *"entra el año entero"*.
+
+**Y la hipótesis sobre `C-22` queda refutada, que era el punto de haberla anotado como hipótesis.**
+`C-22` está abierto porque `frecuencia` no reproduce el **11,9** publicado. Con punto da 23,52; con
+solape, **71,48**. **El solape aleja, no acerca.** El recorte por punto **no explica `C-22`**.
+
+**Consecuencia:** los `cc_*` siguen en `—` y el `_32.2` sigue siendo la última palabra. `call_discado`
+y `call_contactados` sólo aparecen con solape —0 en los dos cortes bajo punto—, así que cablearlos
+exigiría exactamente el cambio que esta medición desaconseja.
+
+**Lo que sí queda cerrado:** mapear `fecha_fin_periodo` en esta solapa **no es la solución**, y ahora
+hay un número para decirlo en vez de una precaución. Si algún día se necesita el solape, hará falta
+además acotar por duración de campaña o por estado, que es una decisión de negocio y no de mapeo.
