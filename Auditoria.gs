@@ -935,3 +935,29 @@ function diagSolapeVsPunto_(desdeISO, hastaISO, contieneCampana) {
   res.filas_leidas = lectura.filas.length;
   return res;
 }
+
+/**
+ * `_36.1` A′.3 — ¿sigue en pie `LAMINAS_CONGELADAS_` después de insertar una lámina?
+ *
+ * `filtrarRenombresPorLaminasCongeladas_` recibe una `Presentation` y por eso no se puede llamar
+ * por API: esto la abre y delega. **Sólo lectura**, igual que la función que envuelve.
+ *
+ * El testigo existe justamente para este escenario: `LAMINAS_CONGELADAS_` declara la lámina **por
+ * número de slide**, y una inserción arriba lo corre. Que devuelva `ok: false` es el testigo
+ * haciendo su trabajo, no una falla.
+ */
+function diagCongeladas_(informeId) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) return { ok: false, motivo: 'informe sin plantilla_id' };
+
+  var presentacion = SlidesApp.openById(informe.plantilla_id);
+  var r = filtrarRenombresPorLaminasCongeladas_(informeId, presentacion);
+
+  var declarado = (LAMINAS_CONGELADAS_[informeId] || []).map(function (c) {
+    return { slide_declarado: c.slide, testigo: c.testigo };
+  });
+  var mapa = tokensPorSlide_(presentacion);
+  declarado.forEach(function (d) { d.slides_reales_del_testigo = mapa[d.testigo] || []; });
+
+  return { ok: true, informe_id: informeId, declarado: declarado, resultado_del_filtro: r };
+}

@@ -3312,3 +3312,31 @@ tampoco hay nada que pueda contradecirse cuando cambia.
 forma que dejó a `ecv_barrio` sin dueño. **Hoy no rompe**, porque `tokenEsDeFamilia_` compara contra
 la familia `enc_` y los tres matchean igual. Queda escrito porque **el día que alguien arme una
 familia más fina, muerde** — y para entonces el precedente de `ecv_barrio` va a estar lejos.
+
+---
+
+## `LAMINAS_CONGELADAS_` quedó desanclada por la carátula — 12/08/2026
+
+**El testigo hizo exactamente su trabajo, así que esto no es una falla: es la detección.**
+
+`Armonizar.gs` declara para `jm` una lámina congelada **por número de slide**:
+`{ slide: 10, testigo: 'm2_salud_camp' }`. Insertar la carátula `L-052` en el orden 6 corrió todo lo
+que venía después, y `m2_salud_camp` pasó a la **11**.
+
+```
+filtrarRenombresPorLaminasCongeladas_('jm') -> ok: false
+  El testigo "m2_salud_camp" de la lámina congelada 10 no está en esa slide (está en la 11).
+  La plantilla se reordenó o es otra: no se filtra nada y no se armoniza.
+```
+
+**Consecuencia hoy: la armonización de `jm` está frenada.** No es urgente —no corre en una
+generación— pero cualquier intento de armonizar tokens de `jm` se detiene ahí.
+
+⚠ **La corrección NO es cambiar el 10 por un 11.** Eso deja la misma bomba armada para la próxima
+inserción. `LAMINAS_CONGELADAS_` identifica una lámina **por posición**, que es justo lo que `D-23`
+resolvió para `LAMINAS` cuando estableció que la identidad es `#lamina: L-NNN` y que
+`orden_plantilla` es **reportado y nunca autoritativo**. La lámina congelada de `jm` tiene ancla
+propia y estable: **`L-039`**. Migrar la declaración de `slide` a `lamina_id` es la misma decisión
+de fondo, aplicada al segundo lugar donde quedó sin aplicar.
+
+**Se decide aparte y no se toca hoy.**
