@@ -8354,3 +8354,45 @@ exigiría exactamente el cambio que esta medición desaconseja.
 **Lo que sí queda cerrado:** mapear `fecha_fin_periodo` en esta solapa **no es la solución**, y ahora
 hay un número para decirlo en vez de una precaución. Si algún día se necesita el solape, hará falta
 además acotar por duración de campaña o por estado, que es una decisión de negocio y no de mapeo.
+
+---
+
+## `seg_expansion` — dos mediciones, y una proyección que no tenía respaldo (2026-08-12)
+
+**Esto es una medición, no una conclusión, y por eso queda escrito con los dos números y no con lo
+que parecen decir.**
+
+| corrida | leída | sección | ítems | `seg_expansion` |
+|---|---|---|---|---|
+| `jm-20260811-234158` | 11/08 ~23:45 | `encuentro` | 6 | **72 s** |
+| `jm-20260812-104104` | 12/08 ~10:44 | `encuentro` | 3 | **36 s** |
+| `jm-20260812-110746` | 12/08 ~11:10 | `encuentro` | 6 | **36 s** |
+
+**Lo que queda asentado, y es lo único que estos números sostienen:**
+
+1. **La proyección de ~144 s no tenía respaldo.** Se construyó el 12/08 duplicando los 72 s del
+   11/08, sobre el supuesto —**deducido, no medido**— de que expandir escala lineal con la cantidad
+   de láminas duplicadas. La medición siguiente dio **36 s con los mismos 6 ítems**, o sea la mitad
+   del número que se tomó como base.
+2. **Dos puntos no alcanzan para afirmar que expandir es barato.** Que 3 ítems y 6 ítems den los dos
+   36 s **sugiere** que `seg_expansion` depende menos de la cantidad de láminas de lo que se supuso,
+   y no lo demuestra: son dos lecturas, del mismo día, sobre la misma plantilla.
+3. ⚠ **El 72 s del 11/08 era el extremo alto de un rango y se usó como si fuera el valor.** Es el
+   mismo error que `D-28` describe para el total de la corrida —316 / 204 / 220 s para el mismo
+   output— aplicado a una sección.
+
+**La próxima decisión sobre `CONFIG.presupuesto_corrida_seg` se toma con estos números y con los que
+se agreguen, no con una deducción sobre cómo debería escalar.** Cada corrida los publica en
+`tiempos_por_seccion`; sumarlos a esta tabla cuesta nada.
+
+---
+
+## `enc_evento` y `ecv_barrio` comparten caja de texto — 12/08/2026
+
+En la lámina de detalle de `encuentro` (orden 6 de la plantilla de `jm`) los dos tokens viven en
+**la misma caja**: `Estrategia de comunicación:{{ecv_barrio}} / {{enc_evento}}`. Por eso
+`verificarObjectIdDeCorrida_` devuelve el mismo string para los dos — lee el elemento, no el token.
+
+**Hoy no es un error y no se toca.** Pero **la carátula por ítem los necesita separados**:
+`ecv_barrio` se queda en el detalle y `enc_evento` va a la carátula. Separarlos es parte de armar la
+lámina nueva, no un arreglo aparte.

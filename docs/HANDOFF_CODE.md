@@ -3,96 +3,91 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-11, al cerrar el `_27` · demo el 12/08
+**Última actualización:** 2026-08-12, al cerrar el `_35` · último commit al escribirlo: `c6ea467`
 
-## Lo primero, porque es de mañana
+## Los dos decks vigentes
 
-**El deck de la demo ya está generado y es éste:**
+| deck | corrida | para qué |
+|---|---|---|
+| **`1rSpgB26M9T2G_wvVb-sy2dxK_zEC06E3cudw3J-W2-c`** | `jm-20260812-110746` | **El que se muestra.** julio 24–30/07, 6 encuentros con su `enc_evento`, 146 s, 116 impresiones con valor |
+| `1TaOSazUr2qYaLniUefME4FEnS9UN6jLgsEZufZtC8v0` | `jm-20260811-234158` | **La red y nada más.** Mismo período, 246 s, 110 con valor. Sólo si algo rompe el de arriba |
+| `1_H4bFSWrgrxqH01jWwN8nnS2aNge9ZH7sORsfAQAdUo` | `jm-20260811-234622` | El de `junio_sem2`, para mostrar que **el selector de período cambia los encuentros**. 3 encuentros, barrios disjuntos de julio |
 
-```
-corrida jm-20260811-135342
-deck    1EjZyuEQMJIo_i5MGdqpZvoRAh5M6SFSn6lS-8S2ttew
-        226 s · sin corte · sin fallo · instrumento limpio
-        92 impresiones con valor · 55 ok / 7 sin dato / 2 error
-```
+⚠ Hay **dos filas huérfanas en `CORRIDAS`** por muerte de transporte, con la fila abierta —sin
+`fecha_generacion`— como rastro. `CORRIDAS` **no tiene fila en `ESCRITORES.md`** ni escritor que
+cierre una fila existente desde afuera, así que se dejan a propósito.
 
-⚠ **Hay un deck huérfano en la misma carpeta y los dos ids empiezan parecido.** Es
-`166MdMSmtkFJT18OOc_wqIWsycgOWG31LU5BQ4xJf1A8`, de la corrida `jm-20260811-132254`, que volvió
-en HTML y murió antes del cierre: es la **única fila de `CORRIDAS` sin `fecha_generacion`**.
-`panel_ultimasCorridas()` lo muestra como `[SIN CERRAR]`.
+## Qué publica valor hoy
 
-**Se muestra el deck ya generado.** Correrlo en vivo es una demostración del motor, no la forma
-de tener el deck — `D-28`.
+`MARCADORES`: **70 filas, las 70 de `jm`.** Última corrida: **61 ok · 7 sin dato · 2 error.**
 
-## Dónde estamos
+Cableado en las últimas 48 h, todo con `notas = SIN VALIDAR — demo 12/08`:
 
-**El `_27` construyó el panel que los Pasos 6-8 nunca hicieron**, y cableó nueve marcadores.
+- **`m2_*` (7)** — `digital/Directa Mail`, filtro `mail_tipo~=M2`. La ruta por la base `m2` está
+  descartada con motivo: `m2/M2 periodo DIRECTA` es `referencia` y `buscarMapeo` exige `fuente`.
+- **`frecuencia` y `gcba_frecuencia`** — `looker/resumen_metricas_dinamico`, `RATIO
+  dig_impresiones/alcance`. **Sin `estado=Activa`**, y no es un olvido: con ese filtro las únicas 2
+  filas `Activa` de la ventana son las dos JM y `gcba_frecuencia` daba 0 de 26.
+- **`ecv_barrio` y `ecv_poblacion`** — `rdv`, `ULTIMO`, por ítem.
+- **`ivr_75`, `ivr_75_pct`, `ivr_marque1`** — `digital/Directa IVR`. El `pct` calca a `ivr_at_pct`:
+  cada porcentaje del embudo es la etapa sobre la anterior.
+- **`enc_evento`** — `rdv/evento`, `ULTIMO`, por ítem. **`ULTIMO` y no `TEXTO`**: `opTEXTO` devuelve
+  `valor_fijo`, un literal, y habría publicado vacío en las seis láminas.
 
-- **`abrirPanel()` ya no es un TODO.** `PanelBackend.gs` expone `panel_getEstado()`,
-  `panel_generar()` y `panel_ultimasCorridas()`. El primer ítem del menú dejó de decir
-  `'próximamente'`.
-- **Selector de informe, de período, de secciones y de modo de presentación**, los cuatro en el
-  panel. Antes pasar de `jm` a `secco` era **editar una celda de `CONFIG`**.
-- **`opciones.secciones`** decide qué secciones repetibles entran (`D-27`).
-- **`opciones.faltantes_como_raya`** rinde el hueco como `—` sin tocar el registro.
+## Qué publica «—», y el motivo de cada uno
 
-```
-MARCADORES  64 filas (57 + los 7 de m2), las 64 de jm
-marcadores  55 ok · 7 sin dato · 2 error  (eran 46/7/4)
-pruebas     13/13 · verificarLaminas VERDE 51/51/51 · partición delta 0
-```
+Ninguno es "falta de tiempo". Los seis motivos son distintos y conviene no mezclarlos:
 
-## Los 2 errores que quedan, y son uno solo
+| token(s) | motivo |
+|---|---|
+| `cc_base`, `cc_contactados`, `cc_contact_pct` | **Medido y cerrado.** La fuente existe —`call_discado` col S, `call_contactados` col T de `resumen_metricas_dinamico`, y la fila `3289-JUNJDGAG` reproduce `V-64`/`V-65` exacto— pero la solapa **se recorta por punto**: esa cuenta arrancó el 17/07 y la ventana 24–30/07 la deja afuera. Las 4 que sí entran tienen todo en cero. **Un cero se lee como "hubo cero llamados", que es falso; una raya dice "no tengo el dato".** |
+| `alcance`, `clics` | Sin prefijo y sin fuente evidente. Elegirla es enumerar a ojo. |
+| `ecv_barrio1/2/3` | Piden una **operación posicional** que el motor no tiene. |
+| `m2_campanias` | Pide un **`DISTINCT`** que el motor no tiene. `OPERACIONES_` son `SUMA, CONTEO, ULTIMO, RATIO, PCT, TEXTO, LISTA`. |
+| los 32 `post_*` de la lámina 7 | Ninguno tiene fila. Serían 32 de 32 en «—», muy por encima del tercio. |
+| `enc_impresiones`, `enc_alcance` | **Son los 2 errores.** Apuntan a `digital/Digital`, que es `ignorar` por `R-22`. Fallan en los seis encuentros, no en cuatro. Necesitan la rama por cuenta (`C-23`) y eso es código. |
 
-`enc_impresiones` y `enc_alcance` apuntan a `digital/Digital`, que es `ignorar` por `R-22`.
-Fallan en **los cinco** encuentros, no en cuatro. Necesitan la rama por cuenta (`C-23`) y **eso
-es trabajo de código**: `datosDeMarcador_` tiene esa rama adentro del `if` que pregunta si la
-base es `digital`, así que re-apuntarlos a `looker` sin tocar código haría que los cinco
-encuentros publiquen el mismo agregado.
+## Listo y sin usar
+
+**El bloque repetible ya soporta dos láminas modelo por sección** (`_35` Parte B, `34d373d`). La
+expansión pasó de *"por cada modelo, N copias"* a **"por cada ítem, una copia del bloque completo"**,
+con control verde: salida idéntica sobre `junio_sem2`.
+
+**Todavía no hay carátula.** Para tenerla hace falta, del lado del usuario:
+
+1. Una **lámina nueva pegada a la de detalle** —el bloque **tiene que ser contiguo** o la sección no
+   se expande y lo reporta—.
+2. Con `{{enc_evento}}` y **nada más**. Si se hace duplicando la de detalle, **borrarle los 31
+   tokens** o la carátula publica los mismos números que la lámina que le sigue.
+3. **Separar `enc_evento` de `ecv_barrio`**, que hoy **comparten caja de texto** en la lámina de
+   detalle. `ecv_barrio` se queda; `enc_evento` se va a la carátula.
+
+No necesita prompt ni código.
+
+## Pendiente
+
+- **`_34` — el censo de `EVENTO`.** Dejó de ser bloqueante: la carátula no agrupa, así que no hace
+  falta catálogo. Sigue valiendo la pena — los valores crudos que el deck publica (`"1 a 1"` con
+  comillas, `Encuentro Temático "Orden Público" – Eje Norte`) muestran por qué.
+- **La carátula por ítem** — arriba.
+- **Los cuatro hallazgos de plantilla** en `docs/PENDIENTES_consistencia.md`, con fecha. El que
+  importa: **la lámina modelo de una sección se infiere de los tokens, así que editar la plantilla
+  la mueve en silencio** — `comunicaciones_post` pasó de la 11 a la 7 y nadie se enteró.
+- **`Educación 16/06` no ancla** (puntaje 0,54 contra umbral 0,6), así que `junio_sem2` emite 3 y no
+  4. **Está decidido por `D-29`: lo resuelve el usuario, no el motor**, y el umbral no se baja.
 
 ## Lo que hay que saber antes de tocar algo
 
-- **`CAMPANAS` no tiene ni una fila de `jm`.** Las 3 que hay son del seed y `informe_id = secco`:
-  dos con `periodo_id` vacío (`D-19`) y una con `mostrar = no`. Por eso `campana` emite cero y
-  cuesta 0 s. **No es un bug**, y cargarla es decidir contenido.
-- **`secco` tiene cero marcadores cableados.** Su deck sale con 289 huecos y un valor. El panel
-  lo marca **"· a desarrollar"** contando `MARCADORES` por informe, no con una etiqueta escrita.
-- **El reporte de corrida numera las láminas sobre el DECK EXPANDIDO.** Las escondidas «15 y 24»
-  son, en la plantilla, la **10 y la 19**. Cuesta una hora si no se sabe.
-- **`m2_*` vive en dos láminas de `jm` y no hay un solo token repetido**: la 9 (visible, 8
-  tokens, cableados) y la 10 (escondida, 23 tokens distintos, más granular).
-- **`m2/M2 periodo DIRECTA` es `referencia`, no `fuente`**, y `buscarMapeo` exige `fuente`.
-  Cablear ahí devuelve `solapa_no_fuente`. La ruta buena es `digital/Directa Mail`.
-- **`X-12` está vencida**: decía que `Tipo de mail CONTIENE M2` no era expresable. El `_24` trajo
-  `~=` y ahora sí lo es.
-- **`FALTANTES` cuenta por ítem y la plantilla por token.** Por eso 207 puede ser mayor que 159
-  sin que nada esté roto. El reporte ahora lo dice; no volver a mezclarlos en una sola frase.
-
-## Los nueve cableados de ayer están SIN VALIDAR y hay que levantarlos
-
-Los siete `m2_*` y las dos `frecuencia` llevan `SIN VALIDAR — demo 12/08` en `MARCADORES.notas`.
-**Es deuda con fecha**, y la ventana de validación la levanta.
-
-⚠ **`frecuencia` = 21,46 tiene un defecto conocido:** `alcance` viene vacío en 1 de las 4 filas
-JM, así que el numerador incluye una campaña que el denominador no tiene. **El número se lee
-perfectamente plausible.** Es el hallazgo que ya había dejado el `N2` y sigue abierto (`C-22`).
-
-## Esperando decisión tuya
-
-- **¿`m2_campanias` cómo se cuenta?** Es cantidad de campañas distintas y `OPERACIONES_` no tiene
-  DISTINCT. Se dejó sin cablear a propósito: un `CONTEO` de filas daba un número plausible y
-  equivocado. Sale como raya.
-- **`pauta_*` sigue sin cablear** — era "sólo si sobra" en el `_27` y no sobró.
-- **147 filas de `DIGITAL` son huérfanas y 40 son JM.** Sin cambios desde el `_24`.
-- **`R-20` y `R-21` escritas y sin mecanismo.**
-- **¿`upsertPorClave_` pasa a preservar por defecto**, o cada sembrador se hace cargo?
-
-## Lo que sigue
-
-**El mockup del Panel**, con badge "a desarrollar" en `secco`, `ministros` y `campana`. El de
-informes ya está implementado y se calcula; el de `campana` **todavía no** — contar sus ítems sin
-correr la sección exigiría reimplementar `D-19` fuera del motor, que es justo lo que `CLAUDE.md`
-§4 desaconseja.
+- **`resumen_metricas_dinamico` se recorta por punto y sólo dos marcadores la leen** —`frecuencia` y
+  `gcba_frecuencia`—. Mapear `fecha_fin_periodo` **está medido y descartado**: el solape lleva JM de
+  4 a 11 cuentas y GCBA de 22 a 81, con ids de septiembre y mayo. **Y refuta la hipótesis sobre
+  `C-22`**: punto da 23,52, solape 71,48, publicado 11,9 — el solape aleja.
+- **`leerReuniones_` filtra por `periodo_id`**, y el período **sale del `origen` de la ventana**
+  (`periodo_ref:<id>`). **Sin override no se filtra**, y el reporte lo dice.
+- **`FALTANTES` cuenta por ítem y la plantilla por token.** Por eso 234 puede ser mayor que 188.
+- **El reporte numera las láminas sobre el DECK EXPANDIDO**, no sobre la plantilla.
+- **`seg_expansion` tiene dos mediciones y ninguna conclusión** — ver la entrada del 12/08 en la
+  bitácora. La próxima decisión de techo se toma con esos números, no con una deducción.
 
 ## El patrón que ya lleva cinco casos
 
@@ -102,13 +97,9 @@ motor contra un hecho externo.
 
 | se creyó | era |
 |---|---|
-| `looker` ilegible entero | ventana con fechas en texto; `formatearFecha_` exige `Date` |
-| los `pauta_*` publican cero | `String(celda)` disfraza un booleano; `Number(true)===1` |
+| `looker` ilegible entero | ventana con fechas en texto |
+| los `pauta_*` publican cero | `String(celda)` disfraza un booleano |
 | `ignorar` bloquea la lectura | bloquea `buscarMapeo`, no `leerFuente` |
 | `Cuentas` no tiene ni un id | el encabezado se llama distinto |
-| **el `m2` visible está escondido** | **el reporte numera sobre el deck expandido, no la plantilla** |
-
-Y el caso nuevo del `_27`, que es del otro lado del borde: **`leerFuente` por API tiró**
-`formatDate(String,String,String)` porque un JSON no transporta `Date`. El instrumento estaba
-mal, no el motor — y la salida correcta fue **cablear y dejar que el motor resolviera la
-ventana**, no arreglar el instrumento.
+| el `m2` visible está escondido | el reporte numera sobre el deck expandido |
+| **junio no pierde datos** | **la sonda medía julio: `resolverMarcadores` no honra `periodo_ref`** |
