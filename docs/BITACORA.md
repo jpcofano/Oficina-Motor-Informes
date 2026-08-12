@@ -8227,3 +8227,48 @@ mentido una vez esa tarde:
 
 **Las otras dos semanas de junio no se generaron:** la segunda alcanzó y sobró, y el criterio de
 descarte —"si sale con muchas más rayas, no se recomienda"— no se activó.
+
+---
+
+## `_31` / `_31.1` / `_31.3` / `_31.4` — corrida nocturna: el período elige los encuentros (2026-08-11/12)
+
+**Parte A (censo).** `rdv` entre 01/06 y 11/08, `Figura = Jorge Macri`: 99 filas, 77 descartadas.
+Diez semanas con encuentros; la de **12–18/06 tiene 4 y barrios disjuntos de julio**, y por eso es el
+segundo período. Lámina 5: 31 tokens, 19 con fila. Escondidas de `jm`: 5 (`L-034`), 10 (`L-039`),
+19 (`L-048`) — `contarAnclasDeLaminas()` las contaba y no las listaba.
+
+**Parte B.** Alta de `julio_24_30` por `SEED_PERIODOS_`. Backfill de `periodo_id` en las 7 filas de
+`REUNIONES` y alta de Villa Urquiza (julio) y los 4 de `junio_sem2`. **`leerReuniones_` filtra por
+`periodo_id`**, y el período **sale del `origen` de la ventana** (`periodo_ref:<id>`) en vez de
+sumar un parámetro a cuatro firmas: ese dato ya viajaba. **Sin override no se filtra y el retorno lo
+dice** — deducirlo del rango sería la *"semana adivinada"* que `R-21` prohíbe. El `origen` entra en
+la clave del caché de anclaje: dos períodos con el mismo rango seleccionan temarios distintos.
+
+**`curarCamposReuniones_`** es nueva y necesaria: el único escritor declarado de `REUNIONES` sólo
+agrega filas, así que el backfill no tenía camino. Clave por `texto_original` porque `orden` queda
+vacío sin prefijo `N)`.
+
+**Parte G — `bajaConfianza` era una exclusión silenciosa.** `anclarEncuentros` devuelve tres listas
+y `itemsDeSeccion_` concatenaba dos. Ahora se lista con puntaje, umbral y puntero a
+`ANCLAJE_PENDIENTE`. **Sigue sin emitirse y eso es correcto:** el ancla decide qué fila de `rdv` se
+lee, así que emitirlo publicaría barrio, inscriptos y población de una fila que el motor no está
+seguro de haber acertado.
+
+**Parte H — Almagro no entró, y se ve por qué.** Recargado como `Encuentro Temático Educación 16/06`
+para anclar por `evento`, como Orden Público→Belgrano. Volvió a caer: **puntaje 0,54 < 0,6**. Por el
+`_31.4` no se insiste y **no se toca el umbral**: bajarlo para que entre es fabricar el resultado.
+
+**Parte C — tres de seis.** `ivr_75`, `ivr_75_pct` e `ivr_marque1` cableados sobre `digital/Directa
+IVR`, calcando la forma de `ivr_at_pct` (cada porcentaje del embudo es la etapa sobre la anterior).
+⚠ **Los tres `cc_*` NO se cablearon: `looker/CC` no tiene ni una fila en `MAPEO`.** El `_31.1` los
+daba por *"fuente que ya existe"* y no la hay — `V-64`/`V-65`/`V-66` midieron a mano, fuera del
+motor. Cablearlos habría publicado un error, no un valor.
+
+**Partes E/F — la lámina 7 no se cableó.** 32 tokens `post_*` con sufijo 1-4, **cero con fila**.
+Llenar slots posicionales pide una operación que el motor no tiene, igual que `ecv_barrio1/2/3` y
+`m2_campanias`. Sería 100 % en `—`, muy por encima del tercio: se reporta y no se toca.
+
+**Parte D — dos decks.** Julio `jm-20260811-234158` (246 s, 6 encuentros, 110 impresiones con
+valor); junio `jm-20260811-234622` (120 s, 3 encuentros, 97). **Barrios disjuntos** y **lámina 5
+presente en los dos** — el usuario la desmarcó durante la noche y las corridas lo confirman
+(`escondidas [16,25]` y `[12,21]`).
