@@ -3340,3 +3340,37 @@ propia y estable: **`L-039`**. Migrar la declaración de `slide` a `lamina_id` e
 de fondo, aplicada al segundo lugar donde quedó sin aplicar.
 
 **Se decide aparte y no se toca hoy.**
+
+---
+
+## `m2_campanias` — tres cosas que quedan escritas, 12/08/2026
+
+**1 · Los dos tokens tienen los roles cruzados respecto de sus nombres, y el mismo token significa
+cosas distintas en los dos informes.**
+
+| informe | lámina | caja, literal | qué publica |
+|---|---|---|---|
+| `jm` | `L-038` (orden 10) | `"{{m2_envios}}Campañas"` | **25 Campañas** — el conteo |
+| `jm` | `L-038` (orden 10) | `"{{m2_campanias}}"` | `—`, y **sin palabra al lado no dice qué pide** |
+| `secco` | `L-014` (orden 14) | `"{{m2_campanias}} Campañas"` | el conteo |
+
+O sea: en `jm` el conteo de campañas **ya lo publica `m2_envios`**, y en `secco` lo publica
+`m2_campanias`. **`MARCADORES` es por `informe_id`**, así que se puede resolver distinto en cada uno
+—el mecanismo existe y no hace falta inventarlo—, **pero cuál es cuál es una decisión del usuario
+con el deck publicado delante, no una inferencia del motor.**
+
+**`m2_campanias` se queda en `—`, y es el séptimo motivo de la tabla del handoff, distinto de los
+otros seis: no es que falte la operación, es que no está definido qué tiene que publicar.**
+
+**2 · `LISTA` exige catálogo y tira sin él.** Queda escrito para que nadie la proponga para campañas
+sin ver primero que hay que **curar un catálogo de campañas**, que no existe y es trabajo del
+usuario. La hipótesis *"`m2_campanias` pide la lista"* no se puede cablear hoy ni aunque se confirme.
+
+**3 · `diagDistintos_` se equivocó y lo detectó el motor** — ver la entrada del `_37` Parte A en la
+bitácora. Reportó 722 filas y 641 campañas distintas donde el motor publica **25**: llamó a
+`leerFuente` sobre `digital`, que es `modo_periodo = snapshot` **a propósito**, y ahí el recorte por
+ventana no lo hace el lector sino `datosDeMarcador_` después.
+
+**El valor está en cómo se detectó:** la medición propia contradijo al motor y **el equivocado fue
+el instrumento**. Es el sexto caso del patrón de `CLAUDE.md` §4, y el primero que se cazó **en la
+misma corrida** en vez de sobrevivir a tres citas.
