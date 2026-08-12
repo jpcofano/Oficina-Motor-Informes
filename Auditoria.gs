@@ -1065,6 +1065,39 @@ function diagDistintos_(baseId, solapa, campoLogico, desdeISO, hastaISO, campoFi
  * Sólo lectura: no escribe ninguna hoja, no genera y no ancla a mano.
  */
 /**
+ * `_39` C — el texto de un **deck ya generado**, por su id de Drive.
+ *
+ * El control de una corrida es *"qué dice el deck"*, y hasta hoy eso se leía a mano abriéndolo.
+ * `diagCajaDeToken_` no sirve: abre la **plantilla** de un `informe_id`, que es justamente el
+ * archivo donde los tokens **no** están resueltos.
+ *
+ * Vale la pena decir por qué esto no cae en la trampa de §4: acá **no se reimplementa nada del
+ * motor**. Se lee el archivo de salida y se lo compara contra hechos que el motor no puede
+ * saber —el `66345` de `D-06`, el `1412` medido en la base—. Ése es el borde en que medir por
+ * fuera es cómo se encuentran los bugs, no cómo se fabrican.
+ *
+ * `aguja` recorta a las láminas que la contienen; sin ella vuelven todas, truncadas.
+ */
+function diagTextoDeDeck_(deckId, aguja, tope) {
+  var slides = SlidesApp.openById(deckId).getSlides();
+  var needle = String(aguja || '').toLowerCase();
+  var corte = Number(tope) || 220;
+
+  var laminas = [];
+  slides.forEach(function (slide, i) {
+    var texto = piezasDeTextoDeSlide_(slide)
+      .map(function (p) { return String(p.texto); })
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (needle && texto.toLowerCase().indexOf(needle) === -1) return;
+    laminas.push('sl' + (i + 1) + ': ' + texto.slice(0, corte));
+  });
+
+  return { ok: true, deck_id: deckId, total_laminas: slides.length, laminas: laminas };
+}
+
+/**
  * `_39` A.3 — el `Alcance` de una cuenta **leído por la rama por cuenta de verdad**.
  *
  * Llama a `datosDeMarcador_` con una fila de marcador simulada, en vez de sacar el valor de
