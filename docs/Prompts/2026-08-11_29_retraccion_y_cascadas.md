@@ -91,10 +91,12 @@ Escribir un `Addendum` a `R-21` que:
    en `CONFIG`, no en `hoy()`, y el corte viernes–jueves vive en un solo lugar,
    `docs/DISENO_match_temario.md §2`, sin promoverse a `CONFIG`. Repetir el estado con fecha, no
    arreglarlo.
-3. **Anote el nivel 1 a medias**, que es lo que muerde en la práctica: `leerReuniones_` filtra por
-   `eje` y `mostrar` y **no** por `periodo_id`, así que hoy toda fila con `mostrar = sí` entra a
-   todo informe. Si el `_30` Parte B ya lo cerró, decirlo y apuntar al commit; si no, queda
-   anotado como pendiente con esa fecha.
+3. **Deje asentado qué pasó con el nivel 1.** Estaba a medias: `leerReuniones_` filtraba por `eje`
+   y `mostrar` y **no** por `periodo_id`, así que toda fila con `mostrar = sí` entraba a todo
+   informe. El `_30` Parte A lo midió el 11/08 y encontró la causa de que no se pudiera cerrar
+   ese día: **las 7 filas de `REUNIONES` con `periodo_id` vacío, y `PERIODOS` sin ninguna fila que
+   cubriera 24/07–30/07**. El `_31` Parte B destraba las dos cosas. Escribir el estado final —
+   cerrado y con qué commit, o pendiente y por qué — según lo que el `_31` haya dejado.
 
 **Sobre `CLAUDE.md`:** la cascada **no se copia ahí**. `CLAUDE.md` es convenciones y ruteo; la
 cascada vive en `R-21` y duplicarla es garantizar que las dos versiones se separen — es lo que ya
