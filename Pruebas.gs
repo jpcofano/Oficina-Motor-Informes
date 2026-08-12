@@ -453,8 +453,34 @@ function probarDespachoOperaciones_() {
 
   afirmar_(despacharOperacion_('CONTEO', ctx).valor === 3,
     'despacho: CONTEO cuenta filas, incluida la de valor vacío');
-  afirmar_(despacharOperacion_('ULTIMO', ctx).valor === 5,
-    'despacho: ULTIMO saltea la celda vacía del final');
+  /* `_39` (12/08) — este control **decía otra cosa de la que probaba**, y la guarda nueva de
+   * `opULTIMO` lo dejó a la vista. Corría sobre `ctx`, cuyos valores son `[10, 5, '']`: pasaba
+   * porque `5` es el último con valor, o sea que probaba *"ULTIMO elige por posición"* con el
+   * rótulo *"saltea la celda vacía del final"*. Son dos afirmaciones distintas y ahora van
+   * separadas, cada una con su fixture. */
+  afirmar_(despacharOperacion_('ULTIMO', {
+    base_id: 'rdv', campo_logico: 'inscriptos', columna: 'K', valores: [5, 5, '']
+  }).valor === 5, 'despacho: ULTIMO saltea la celda vacía del final');
+
+  // La guarda: sin fecha y con valores distintos **no se elige**. El fixture son las dos filas
+  // reales de `3387-JULJDGGC` en `digital/Alcance`, donde `D-06` valida la primera.
+  //
+  // Se afirma sobre `valor` y la traza, **no sobre el flag `ambiguo`**: `despacharOperacion_`
+  // rearma el sobre y no lo propaga — tampoco el de la rama por fecha, que ya existía. La señal
+  // que llega al deck es el valor vacío más el `«FALTA:»`, así que es la que se prueba.
+  var ultimoAmbiguo = despacharOperacion_('ULTIMO', {
+    base_id: 'digital', solapa: 'Alcance', campo_logico: 'alc_alcance', columna: 'B',
+    valores: [66345, 457883]
+  });
+  afirmar_(ultimoAmbiguo.valor === '' && ultimoAmbiguo.traza.indexOf('«FALTA:@ultimo_sin_fecha_ambiguo»') === 0,
+    'despacho: ULTIMO sin fecha no elige entre valores distintos');
+
+  // Y el contraste, para que la guarda no se coma el caso legítimo: mismas dos filas, mismo
+  // valor, se resuelve sin ambigüedad.
+  afirmar_(despacharOperacion_('ULTIMO', {
+    base_id: 'digital', solapa: 'Alcance', campo_logico: 'alc_alcance', columna: 'B',
+    valores: [66345, 66345]
+  }).valor === 66345, 'despacho: ULTIMO sin fecha sí resuelve si las filas traen lo mismo');
   afirmar_(despacharOperacion_('TEXTO', { valor_fijo: 'hola' }).valor === 'hola',
     'despacho: TEXTO devuelve el literal de valor_fijo');
 

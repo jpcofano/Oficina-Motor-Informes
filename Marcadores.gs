@@ -203,12 +203,46 @@ function opULTIMO(ctx) {
     }
   }
 
+  /* `_39` (12/08) — **sin fecha, elegir por posición es elegir por el orden de la hoja**, que es
+   * exactamente lo que el bloque de arriba vino a matar para el caso CON fecha. Faltaba cerrar la
+   * otra mitad.
+   *
+   * El caso que lo trajo: `digital/Alcance` no tiene columna de fecha —ni mapeada ni en la hoja—
+   * y sus cuentas traen **dos filas idénticas en las seis columnas salvo el número**.
+   * `3387-JULJDGGC` (Orden Público) da `66.345` y `457.883`, y `D-06` valida el primero
+   * (`65576`, nota *"base 31/07 = 66345"*). Por posición se publicaba el segundo: 7× más grande,
+   * plausible, y con el rótulo correcto al lado.
+   *
+   * **Mismo criterio y mismo umbral que el empate por fecha: valores distintos, no se elige.** Si
+   * las filas con valor traen todas lo mismo, no hay nada que decidir y sigue de largo — por eso
+   * los `ULTIMO` de una sola fila (los de `rdv` por ítem) no cambian.
+   *
+   * Radio de acción, medido antes de escribir esto: `rdv/RVD JM-CM - ES` (col E) y
+   * `digital/Directa Mail` (col F) **sí** tienen `fecha_periodo`, así que van por la rama de
+   * arriba y no llegan acá. `digital/Alcance` es la única solapa sin fecha con un marcador
+   * `ULTIMO` encima. */
+  var conValor = valores.filter(function (v) { return v !== '' && v !== null && v !== undefined; });
+  var distintosSinFecha = {};
+  conValor.forEach(function (v) { distintosSinFecha[String(v)] = true; });
+  if (Object.keys(distintosSinFecha).length > 1) {
+    return {
+      valor: '',
+      ambiguo: true,
+      traza: '«FALTA:@ultimo_sin_fecha_ambiguo» — ÚLTIMO sin fecha utilizable sobre "' + ctx.campo_logico +
+        '" (col ' + ctx.columna + '): ' + conValor.length + ' fila(s) con valores distintos (' +
+        Object.keys(distintosSinFecha).join(' / ') + ') en ' + ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') +
+        '. No se elige: elegir por posición es elegir por el orden de la hoja' + trazaDeVentana_(ctx),
+      filas: valores.length
+    };
+  }
+
   for (var i = valores.length - 1; i >= 0; i--) {
     var valor = valores[i];
     if (valor !== '' && valor !== null && valor !== undefined) {
       return {
         valor: valor,
-        traza: 'ÚLTIMO por POSICIÓN (sin fecha utilizable) de "' + ctx.campo_logico + '" (col ' + ctx.columna +
+        traza: 'ÚLTIMO por POSICIÓN (sin fecha utilizable, y las ' + conValor.length + ' fila(s) con valor ' +
+          'traen el mismo) de "' + ctx.campo_logico + '" (col ' + ctx.columna +
           ') sobre ' + valores.length + ' fila(s) de ' + ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') +
           trazaDeVentana_(ctx),
         filas: valores.length

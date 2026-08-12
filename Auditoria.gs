@@ -1064,6 +1064,31 @@ function diagDistintos_(baseId, solapa, campoLogico, desdeISO, hastaISO, campoFi
  *
  * Sólo lectura: no escribe ninguna hoja, no genera y no ancla a mano.
  */
+/**
+ * `_39` A.3 — el `Alcance` de una cuenta **leído por la rama por cuenta de verdad**.
+ *
+ * Llama a `datosDeMarcador_` con una fila de marcador simulada, en vez de sacar el valor de
+ * `alc_filas` a mano: la pregunta de A.3 es qué le llegaría a un marcador re-apuntado a
+ * `digital/Alcance`, y contestarla salteando el despachador sería medir otra cosa. La fila
+ * simulada **no se escribe en ninguna hoja** — vive en esta llamada y muere con ella.
+ *
+ * `ULTIMO` es la operación que tiene hoy `enc_alcance`; acá no se aplica ninguna, se devuelven
+ * los valores crudos de la columna para que se vea **cuántas filas hay** antes de decidirla.
+ */
+function alcanceDeLaCuenta_(idCuenta, ventana) {
+  var filaSimulada = {
+    marcador: 'enc_alcance (simulado — diag _39 A.3, no se escribe)',
+    informe_id: 'jm', base_id: 'digital', solapa: 'Alcance',
+    campo_logico: 'alc_alcance', operacion: 'ULTIMO', filtro: ''
+  };
+  var datos = datosDeMarcador_(filaSimulada, 'Alcance', ventana, {}, { id_cuenta: idCuenta });
+  if (!datos.ok) return 'NO LEE — ' + datos.motivo;
+
+  var valores = datos.filas.map(function (f) { return f[datos.encabezado]; });
+  return 'columna "' + datos.encabezado + '" · ' + valores.length + ' fila(s) · valores=' +
+    valores.join(',') + ' · origen: ' + datos.origen;
+}
+
 function diagEnlaceDigitalDeEncuentros_(periodoRef) {
   var ventana = resolverVentana(periodoRef ? { periodo_ref: periodoRef } : {});
   if (!ventana.ok) return { ok: false, motivo: ventana.motivo };
@@ -1145,7 +1170,10 @@ function diagEnlaceDigitalDeEncuentros_(periodoRef) {
     if (item.motivo) salida.motivo = item.motivo;
     if (item.motivoAmbiguo) salida.motivo = item.motivoAmbiguo;
     if (item.confirmadoAMano) salida.confirmado_a_mano = true;
-    if (item.idCuenta) salida.filas = censarCuenta(normalizarIdCuenta_(item.idCuenta));
+    if (item.idCuenta) {
+      salida.filas = censarCuenta(normalizarIdCuenta_(item.idCuenta));
+      salida.alcance_por_la_rama_por_cuenta = alcanceDeLaCuenta_(item.idCuenta, ventana);
+    }
     return salida;
   }
 
