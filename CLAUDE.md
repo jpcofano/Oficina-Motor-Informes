@@ -478,6 +478,7 @@ distintas nunca compiten. La precedencia entra solo como desempate, al final.
 | ¿Qué se verificó/decidió en la última sesión de claude.ai? | El handoff de `docs/Sesiones/` **vigente por cadena de reemplazo** (ver abajo), no por ubicación de carpeta | solo claude.ai |
 | ¿Qué se construyó en un paso puntual y cómo se verifica? | El prompt vigente de su cadena en `docs/Prompts/`. No dice si ya corrió ni si sigue siendo cierto hoy — eso es de la bitácora y el handoff | los dos; no se edita una vez ejecutado (addenda fechados sí, ver abajo) |
 | ¿Qué dice una regla del dominio? | `docs/REGLAS_NEGOCIO.md`, ID `R-NN`, append-only, derogación con fecha | los dos |
+| ¿Cómo se elige el universo de encuentros de un informe? | **`R-21` y sólo ahí** — la cascada de tres niveles con sus addenda. **No se copia acá**: duplicarla garantiza que las dos versiones se separen, que es lo que ya pasó entre `R-16` y `R-17`. Esta fila es el puntero, no el contenido | los dos |
 | ¿Qué supuesto se está asumiendo? | `docs/SUPUESTOS.md`, ID `S-NN`, ídem | los dos |
 | ¿Cómo se llama este token? | `docs/TOKENS.md` | los dos |
 | ¿Qué inconsistencia documental sigue abierta? | `docs/PENDIENTES_consistencia.md` | los dos |

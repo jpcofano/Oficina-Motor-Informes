@@ -1574,3 +1574,81 @@ el repo (`grep -rnoE "R-[0-9]{2}" --include=*.md .`), no sólo en este archivo. 
 no se produjo acá: se produjo en un prompt que asignó IDs sin mirar el canon. Es el mismo
 patrón que `CLAUDE.md` §1 ya exige para nombres de función y `CLAUDE.md` §3 para pedidos de
 corrección: **greppear antes de escribir.**
+
+### Addendum 2 a `R-17` — 12/08/2026: el universo del agregado queda EN REVISIÓN
+
+**El texto de `R-17` no se altera, y el `Addendum 1` tampoco.** Esto no lo deroga: lo pone **en
+revisión** y dice por qué no se aplica mientras tanto.
+
+El `Addendum 1` afirma que para `ecv_*` el agregado suma **los encuentros que `R-21` seleccionó** —
+una decisión fija, igual para todos los informes. Lo medido lo contradice:
+
+| caso | qué mide |
+|---|---|
+| `C-29`, `C-33`, `C-37` | **tres decks `jm` publicados, ninguno tiene lámina agregada.** Ninguno trae inscriptos, encuentros ni barrios impactados: sólo los individuales por encuentro. Los 28 tokens `ecv_*` de la lámina 5 de `JM_marcada` no reproducen nada que el equipo publique en `jm` |
+| `C-30` | **`secco` sí tiene agregado, y usa un tercer universo**, declarado por escrito en su propia lámina 5: último trimestre, período de reuniones más reciente de JM, con exclusión de encuentros uno a uno. Y además **segmenta por tipo**: una lámina agrega RdV + Encuentro Temático, otra sólo Primera Persona |
+| `C-28` | **retracta `V-38` a `V-45`.** El 2445 que sostenía al `Addendum 1` no salió de ningún deck: lo midió la rama de validación con un rango 23/07–31/07 elegido a mano, y es la **unión** de dos universos, no uno de ellos |
+| `V-71` | 2333 es la suma de los cuatro encuentros que el deck publica **individualmente** — no es un agregado publicado |
+
+**Lo que queda asentado, y nada más:**
+
+1. **El `Addendum 1` no se deroga y no se aplica.** Queda en revisión, con los casos citados por
+   `caso_id`. Nadie construye sobre él hasta que se cierre.
+2. **El universo del agregado no es una constante del motor: es una propiedad del informe.** `jm` y
+   `secco` no comparten criterio, así que no puede vivir cableado en el código ni en una regla
+   única.
+3. **El eje no es ventana-contra-temario**, y escribirlo así sería el error de fondo. `C-30` muestra
+   **tres** dimensiones —ventana, exclusión por tipo de encuentro, y segmentación por tipo en
+   láminas distintas—. Un booleano no alcanza; un booleano sería enumerar en vez de derivar.
+
+**No se implementa nada con esto.** Ni columna en `INFORMES`, ni `D-NN`, ni un marcador.
+
+---
+
+### Addendum a `R-21` — 12/08/2026: el nivel 2 era otro mecanismo, y el nivel 1 quedó cerrado
+
+**El texto de `R-21` no se altera.** Esto corrige el nivel 2, fecha el 3 y cierra el 1.
+
+**1 · El nivel 2 estaba nombrando el mecanismo equivocado.** `R-21` lo escribe como *"Filtro
+explícito del usuario, vía `SECCIONES.filtro`"*. El usuario enunció la cascada el **11/08/2026** así:
+*si hay temario manda el temario; si hay **período personalizado** manda el período personalizado;
+si no, la semana en curso*. Los niveles 1 y 3 coinciden con lo escrito; **el 2 no**.
+
+Lo que el usuario describe es un **período personalizado explícito** — el override que viaja por la
+cadena de `D-20` y que el Panel expone como selector de período. `SECCIONES.filtro` es **otra cosa**:
+filtra los **ítems de una iteración** por un atributo, no elige el universo temporal.
+
+**`SECCIONES.filtro` no desaparece: acota lo que el nivel ya eligió**, que es exactamente lo que
+`R-17` nivel 2 dice para campañas.
+
+**2 · Nivel 3, estado al 12/08/2026: sigue sin existir.** `resolverVentana` termina en `CONFIG`, no
+en `hoy()`, y el corte viernes–jueves vive en un solo lugar —`docs/DISENO_match_temario.md` §2— sin
+promoverse a `CONFIG`. **Se repite el estado con fecha; no se arregla acá.**
+
+**3 · Nivel 1, CERRADO el 11/08/2026** (commits `540ed22` y `c0b58b5`).
+
+Estaba a medias: `leerReuniones_` filtraba por `eje` y `mostrar` y **no** por `periodo_id`, así que
+toda fila con `mostrar = sí` entraba a todo informe. El `_30` Parte A midió por qué no se podía
+cerrar ese día: **las 7 filas de `REUNIONES` con `periodo_id` vacío, y `PERIODOS` sin ninguna fila
+que cubriera 24/07–30/07**. El `_31.1` Parte B destrabó las dos cosas.
+
+**Cómo quedó implementado, que importa para no volver a discutirlo:** el `periodo_id` **sale del
+`origen` de la ventana** —`resolverVentana` ya devuelve `periodo_ref:<id>` cuando la corrida trae
+override, y esa ventana viaja hasta `anclarEncuentros`—, y no de un parámetro nuevo en cuatro
+firmas. **Sin override no se filtra, y el retorno lo dice**: la cadena de `D-20` puede terminar en
+`CONFIG`, que no tiene `periodo_id`, y deducirlo del rango sería la *"semana adivinada"* que esta
+misma regla prohíbe. Las excluidas se listan con motivo, citando `D-19`.
+
+**Dos cosas más de esa noche, que son de la misma familia y si no se pierden:**
+
+- **`curarCamposReuniones_`** (`Reuniones.gs`), gemela de `curarCamposMarcadores_`: el único
+  escritor declarado de `REUNIONES` sólo **agrega** filas, así que un backfill de `periodo_id` sobre
+  las que ya existían no tenía camino. **La clave es `texto_original` y no `orden`**, porque
+  `cargarTemarioReuniones_` deja `orden` vacío cuando la línea no trae el prefijo `N)`.
+- **`bajaConfianza` era una exclusión silenciosa.** `anclarEncuentros` devuelve tres listas y
+  `itemsDeSeccion_` concatenaba dos: un encuentro con el ancla por debajo de
+  `CONFIG.umbral_anclaje_reunion` desaparecía del deck **sin una línea en `excluidos`**. Ahora se
+  lista con su puntaje, el umbral y el puntero a `ANCLAJE_PENDIENTE`. **Sigue sin emitirse, y eso es
+  correcto**: el ancla decide qué fila de `rdv` se lee, así que emitirlo publicaría barrio,
+  inscriptos y población de una fila que el motor no está seguro de haber acertado. Es la misma
+  clase de falla que `D-19` y `D-21` cierran en los otros caminos.
