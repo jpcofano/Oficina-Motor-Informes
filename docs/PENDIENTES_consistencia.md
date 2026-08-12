@@ -3208,3 +3208,48 @@ bloque "Antes de empezar" — la decisión Looker-vs-SD está en su sección **"
 tomadas — no reabrir"**, con `PROYECTO.md` §5 y `HALLAZGOS_validacion_decks.md` §4 como
 respaldo, y el alcance del corte vertical es su Parte D. La Reconciliación 1 del
 `Paso-2.4` se queda sin objeto.
+
+---
+
+## `resumen_metricas_dinamico` se recorta **por punto, no por solape** — 12/08/2026
+
+**Leído sobre la solapa viva el 12/08/2026.** No es un problema de Call Center: **es de la solapa**,
+y alcanza a **todo marcador que la lea**, incluidos los que hoy publican bien.
+
+`MAPEO` tiene `fecha_periodo` apuntando a `fecha_inicio` (col C) y **no tiene
+`fecha_fin_periodo`**. `leerFuente` lo informa con todas las letras —`criterio_ventana: "punto — la
+solapa no declara fecha_fin_periodo"`—: entra la fila cuyo **inicio** cae dentro de la ventana.
+**Una campaña que arrancó antes y siguió corriendo los siete días no entra.**
+
+**El caso testigo, con los números medidos:**
+
+| | |
+|---|---|
+| cuenta | `3289-JUNJDGAG` — *PRIMERA PERSONA \| JM \| PAULA PARETTO 27/7* |
+| `fecha_inicio` / `fecha_fin` | **17/07** → **20/08** |
+| `call_discado` / `call_contactados` | **6011** / **1878** |
+
+Es **la única cuenta de Call Center con datos de esa semana**, y la ventana `24–30/07` **la deja
+afuera**. Las cuatro cuentas JM que sí entran tienen `call_enviado`, `call_discado`,
+`call_contactados` y `call_efectivos` **en cero**.
+
+**Consecuencia inmediata, ya decidida (`_32.2`):** `cc_base`, `cc_contactados` y `cc_contact_pct`
+publican `—` y no se cablean. Un cero ahí se leería como *"hubo cero llamados"*, que es una
+afirmación falsa sobre el mundo; una raya dice *"no tengo el dato"*, que es verdad. **Deja de ser un
+pendiente de cableado y pasa a ser un pendiente de semántica de ventana**, que tiene otro dueño.
+
+**Las dos salidas, las dos descartadas para hoy y ninguna descartada para siempre:**
+
+1. **Mapear `fecha_fin_periodo` → `fecha_fin` (col D).** Es una fila de `MAPEO` y arregla el
+   criterio de raíz — es lo que `R-16` ya fija para las solapas que sí lo declaran. ⚠ **Mueve el
+   universo de TODOS los marcadores de esta solapa**, incluidos `frecuencia` y `gcba_frecuencia`,
+   que hoy publican 21,46 y 1,63. No se hace a tres horas de una demo.
+2. **Un `periodo_ref` propio para los tres `cc_*`.** Es inventarles un recorte, que es justo lo que
+   el `_31.4` prohíbe.
+
+⚠ **Y una hipótesis, anotada como hipótesis y no como conclusión.** `C-22` está abierto porque *el
+universo del total JM de `frecuencia` no cierra* —ninguna forma de agregar reproduce el 11,9
+publicado—, y `frecuencia` **lee esta misma solapa**. **El recorte por punto es candidato a
+explicarlo:** si campañas que corrieron toda la semana quedan afuera por haber arrancado antes, el
+denominador y el numerador salen de menos filas de las que el deck contempló. **No se verificó**, y
+la prueba vive en la ventana de validación, no en el motor.

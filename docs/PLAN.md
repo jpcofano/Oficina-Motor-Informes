@@ -916,6 +916,34 @@ precaución teórica: es la única red que queda.
 
 ---
 
+**`D-29` — Un encuentro que no alcanza el umbral de anclaje lo resuelve el usuario, no el motor.**
+(12/08/2026 · **decisión del usuario**, y por eso se escribe con su dueño puesto)
+
+**El umbral no se baja para que un encuentro entre.** Bajarlo cambia el anclaje de **todos** los
+demás para arreglar **uno**, y lo que hace entrar es una fila de `rdv` que el motor **no está seguro
+de haber acertado** — el ancla es lo que decide qué fila se lee, así que un ancla flojo publica
+barrio, inscriptos y población posiblemente de otro encuentro. Es el número plausible en su forma
+más cara: una lámina entera coherente y equivocada.
+
+**La salida es que el usuario confirme o corrija el anclaje, y eso es una capacidad del front**, no
+del motor. El motor ya hace su parte: `ANCLAJE_PENDIENTE` registra los candidatos con sus tres
+mejores opciones y una columna `elegido`.
+
+**Hasta que el front exista**, el encuentro se lista en `excluidos` con su puntaje y el umbral —lo
+que dejó funcionando la Parte G del `_31.3` (`c0b58b5`)— y el usuario decide. **Lo que se cerró ahí
+no fue la exclusión sino el silencio:** antes desaparecía del deck sin una línea, que es la misma
+clase de falla que `D-19` y `D-21` cierran en los otros caminos.
+
+**Caso vivo, 11/08/2026:** `Encuentro Temático Educación 16/06` (Almagro), **puntaje 0,54 contra
+umbral 0,6**. Recargado una vez para anclar por `evento` —como Orden Público→Belgrano— y volvió a
+caer. No se insistió y no se tocó `CONFIG.umbral_anclaje_reunion`.
+
+**Corolario, y es lo que hace operativa la decisión:** `scoreMatchDigitalRdv_` tampoco se toca por
+un caso. Si el matcher hay que mejorarlo, se mide sobre los encuentros de varias semanas y se
+decide con esa medición, no con el que falló hoy.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 **IDs `T<tramo>.<n>`.** La palabra "Paso" queda para la serie histórica y no se reusa: `Paso 5`

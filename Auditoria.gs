@@ -836,3 +836,47 @@ function diagTokensDeLamina_(informeId, ordenPlantilla) {
     tokens: tokens
   };
 }
+
+/**
+ * `_32.1` A.1 — filas de una solapa en una ventana, para reproducir una medición hecha afuera.
+ *
+ * `desdeISO`/`hastaISO` en `yyyy-MM-dd`: un JSON no transporta `Date`, que es lo que `leerFuente`
+ * exige. `aguja` filtra por coincidencia de texto en **cualquier** celda — alcanza para encontrar
+ * una cuenta o recortar por nombre de campaña, y evita inventar un mini-lenguaje de filtro que
+ * duplicaría el que el motor ya tiene.
+ *
+ * Sólo lectura. Devuelve los encabezados tal cual los leyó `leerFuente`, que es lo que hace falta
+ * para saber **qué columna es cuál** antes de escribir una fila de `MAPEO`.
+ */
+function diagSolapa_(baseId, solapa, desdeISO, hastaISO, aguja, columnas) {
+  var d = String(desdeISO).split('-'), h = String(hastaISO).split('-');
+  var ventana = {
+    ok: true,
+    desde: new Date(Number(d[0]), Number(d[1]) - 1, Number(d[2])),
+    hasta: new Date(Number(h[0]), Number(h[1]) - 1, Number(h[2])),
+    origen: 'diag _32.1'
+  };
+  var lectura = leerFuente(baseId, ventana, solapa);
+  if (!lectura.ok) return { ok: false, motivo: lectura.motivo };
+
+  var needle = String(aguja || '').toLowerCase();
+  var filas = lectura.filas.filter(function (f) {
+    if (!needle) return true;
+    return Object.keys(f).some(function (k) { return String(f[k]).toLowerCase().indexOf(needle) !== -1; });
+  });
+
+  var pedidas = (columnas && columnas.length) ? columnas : null;
+  return {
+    ok: true,
+    hoja: lectura.hoja,
+    encabezados: lectura.encabezados,
+    filas_en_ventana: lectura.filas.length,
+    filas_que_matchean: filas.length,
+    filas: filas.slice(0, 20).map(function (f) {
+      if (!pedidas) return f;
+      var o = {};
+      pedidas.forEach(function (c) { o[c] = f[c]; });
+      return o;
+    })
+  };
+}
