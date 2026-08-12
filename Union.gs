@@ -720,8 +720,10 @@ function registrarAnclajePendiente_(hoja, indice, tipo, nombreBuscado, top3) {
 var cacheAnclaje_ = {};
 
 function anclarEncuentros(ventana) {
+  // `_31.1` B.4 — el `origen` entra en la clave. Dos períodos pueden tener el mismo rango de
+  // fechas y seleccionar temarios distintos: sin esto, el segundo leería el anclaje del primero.
   var claveCache = ventana && ventana.desde && ventana.hasta
-    ? formatearFecha_(ventana.desde) + '||' + formatearFecha_(ventana.hasta)
+    ? formatearFecha_(ventana.desde) + '||' + formatearFecha_(ventana.hasta) + '||' + String(ventana.origen || '')
     : '(sin ventana)';
   if (Object.prototype.hasOwnProperty.call(cacheAnclaje_, claveCache)) {
     return cacheAnclaje_[claveCache];
@@ -736,8 +738,48 @@ function anclarEncuentrosSinCache_(ventana) {
   if (!precondicion.ok) return { ok: false, motivo: precondicion.motivo };
 
   var reuniones = leerReuniones_().filter(function (r) { return r.tipo !== 'Agregado'; });
+
+  /* `_31.1` B.4 — **el temario se recorta por `periodo_id`.**
+   *
+   * Hasta hoy `leerReuniones_` filtraba por `eje` y `mostrar` y nada más, así que toda fila con
+   * `mostrar = sí` entraba a **todo** informe y a toda semana (`R-21`: *"es una omisión, no un
+   * diseño"*). Con dos temarios cargados eso emitiría los doce encuentros en las dos corridas.
+   *
+   * **El período sale del `origen` de la ventana y no de un parámetro nuevo.** `resolverVentana`
+   * ya devuelve `periodo_ref:<id>` cuando la corrida trae override, y esa ventana viaja hasta acá:
+   * agregar un `periodoId` a cuatro firmas para transportar un dato que ya está sería duplicarlo.
+   *
+   * ⚠ **Sin override no se filtra**, y eso se dice en el retorno. Es deliberado: la cadena de
+   * `D-20` puede terminar en `CONFIG`, que no tiene `periodo_id`, y filtrar por un período
+   * adivinado a partir del rango sería exactamente la "semana adivinada" que `R-21` prohíbe.
+   * Emitir de más y avisar es recuperable; emitir cero en silencio, no.
+   */
+  var PREFIJO_PERIODO_REF_ = 'periodo_ref:';
+  var origen = String((ventana && ventana.origen) || '');
+  var periodoDeLaVentana = origen.indexOf(PREFIJO_PERIODO_REF_) === 0
+    ? origen.slice(PREFIJO_PERIODO_REF_.length) : '';
+
+  var excluidasPorPeriodo = [];
+  if (periodoDeLaVentana) {
+    reuniones = reuniones.filter(function (r) {
+      var suyo = String(r.periodo_id || '').trim();
+      if (suyo === periodoDeLaVentana) return true;
+      // `D-19` — una fila sin período no se asigna a la semana vigente: se lista.
+      excluidasPorPeriodo.push({
+        item: r.nombre + (r.etapa ? ' (' + r.etapa + ')' : ''),
+        motivo: 'periodo_id ' + (suyo ? '"' + suyo + '"' : 'vacío') + ' ≠ "' + periodoDeLaVentana + '" (D-19)'
+      });
+      return false;
+    });
+  }
+
   if (!reuniones.length) {
-    return { ok: false, motivo: 'REUNIONES no tiene filas con mostrar=sí para anclar (excluidas las de tipo Agregado).' };
+    return {
+      ok: false,
+      motivo: 'REUNIONES no tiene filas para anclar' +
+        (periodoDeLaVentana ? ' en el período "' + periodoDeLaVentana + '"' : ' (mostrar=sí)') +
+        ' — excluidas las de tipo Agregado. Descartadas por período: ' + excluidasPorPeriodo.length
+    };
   }
 
   var digitalUnido = unirDigitalPorCuenta(ventana);
@@ -851,7 +893,13 @@ function anclarEncuentrosSinCache_(ventana) {
     SpreadsheetApp.flush();
   });
 
-  return { ok: true, encuentros: encuentros, sinLink: sinLink, bajaConfianza: bajaConfianza, umbral: umbral };
+  return {
+    ok: true, encuentros: encuentros, sinLink: sinLink, bajaConfianza: bajaConfianza, umbral: umbral,
+    // `_31.1` B.4 — quién quedó afuera por período, y con qué período se filtró. `''` significa
+    // **no se filtró**, y el consumidor tiene que poder decirlo en el reporte.
+    periodo_id: periodoDeLaVentana,
+    excluidas_por_periodo: excluidasPorPeriodo
+  };
 }
 
 /**

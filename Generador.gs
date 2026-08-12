@@ -1477,7 +1477,16 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
         motivo: e.idCuenta ? '' : ('sin cuenta digital anclada' + (e.motivo ? ': ' + e.motivo : ''))
       };
     });
-    return { ok: true, items: items, excluidos: filtroR.excluidos, filtro: filtroR.traza };
+    // `_31.1` B.4 — las excluidas por `periodo_id` se suman a las que excluye `SECCIONES.filtro`.
+    // Van en la misma lista a propósito: para quien lee el reporte son lo mismo —un ítem que no
+    // salió y por qué— y separarlas en dos listas obligaría a mirar dos lugares para responder
+    // "¿por qué no está este encuentro?".
+    var excluidos = (anclaje.excluidas_por_periodo || []).concat(filtroR.excluidos || []);
+    return {
+      ok: true, items: items, excluidos: excluidos, filtro: filtroR.traza,
+      // `''` = no se filtró por período. El reporte lo dice en vez de dejarlo suponer.
+      periodo_id: anclaje.periodo_id || ''
+    };
   }
 
   if (fuente === 'CAMPANAS') {

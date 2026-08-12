@@ -1280,7 +1280,12 @@ var SEED_PERIODOS_ = [
   { periodo_id: 'quincena_rrss', desde: '2026-06-16', hasta: '2026-06-30', notas: 'Análisis RRSS' },
   { periodo_id: 'junio_sem1', desde: '2026-06-05', hasta: '2026-06-11', notas: 'Semana vie-jue de junio — alta para la demo del 12/08' },
   { periodo_id: 'junio_sem2', desde: '2026-06-12', hasta: '2026-06-18', notas: 'Semana vie-jue de junio — alta para la demo del 12/08' },
-  { periodo_id: 'junio_sem3', desde: '2026-06-19', hasta: '2026-06-25', notas: 'Semana vie-jue de junio — alta para la demo del 12/08' }
+  { periodo_id: 'junio_sem3', desde: '2026-06-19', hasta: '2026-06-25', notas: 'Semana vie-jue de junio — alta para la demo del 12/08' },
+  // `_31.1` B.1 — la semana del informe que ya funcionaba **no tenía fila en `PERIODOS`**, y ésa
+  // fue la razón por la que el `_30` B.2 quedó bloqueado: no existía el `periodo_id` contra el
+  // cual filtrar `REUNIONES`. El nombre lleva el rango adentro a propósito: `julio_sem4` obligaba
+  // a contar viernes para saber cuál es.
+  { periodo_id: 'julio_24_30', desde: '2026-07-24', hasta: '2026-07-30', notas: 'Semana vie-jue del informe vigente — alta para la demo del 12/08' }
 ];
 
 // Paso 2.11 Parte A — antes vivían en HOJAS_CONFIG_.CAMPANAS.ejemplos y

@@ -242,3 +242,60 @@ function menuCargarTemarioReuniones_() {
 
   return cargarTemario(respuesta.getResponseText(), respuestaPeriodo.getResponseText());
 }
+
+/**
+ * `_31.1` B.2 — la puerta para **corregir un campo** de una fila de `REUNIONES` que ya existe.
+ *
+ * Es a `REUNIONES` lo que `curarCamposMarcadores_` es a `MARCADORES`, y nace por la misma falta:
+ * el único escritor declarado de esta hoja (`cargarTemarioReuniones_`, `docs/ESCRITORES.md`)
+ * **sólo agrega filas**. Un backfill de `periodo_id` sobre las 7 filas que ya están no tenía
+ * camino, y hacerlo a mano en la planilla lo dejaba fuera de todo registro.
+ *
+ * **Deliberadamente angosta:** no crea filas, no borra filas, no toca `texto_original` —que es la
+ * clave— y **devuelve el antes y el después de cada celda que cambió**. Una fila que no existe se
+ * reporta y no se crea.
+ *
+ * **La clave es `texto_original` y no `orden`**: `cargarTemarioReuniones_` deja `orden` vacío
+ * cuando la línea no trae el prefijo `N)`, así que como clave no es única ni estable. El texto
+ * pegado sí lo es: es exactamente la línea que originó la fila.
+ *
+ * `cambios` es `[{ texto_original: '…', periodo_id: 'julio_24_30', mostrar: 'sí' }]`.
+ */
+function curarCamposReuniones_(cambios) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('REUNIONES');
+  if (!hoja) return { ok: false, motivo: 'La hoja REUNIONES no existe.' };
+
+  cambios = cambios || [];
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxTexto = headers.indexOf('texto_original');
+  if (idxTexto === -1) return { ok: false, motivo: 'REUNIONES no tiene columna `texto_original`.' };
+
+  var filaDe = {};
+  for (var f = 1; f < datos.length; f++) {
+    var clave = String(datos[f][idxTexto] || '').trim();
+    if (!clave) continue;
+    // Si dos filas comparten el texto, gana la primera y la segunda queda sin tocar: pisar dos
+    // filas con un solo cambio sería exactamente lo que esta función viene a evitar.
+    if (!(clave in filaDe)) filaDe[clave] = f;
+  }
+
+  var aplicados = [];
+  var sinFila = [];
+  cambios.forEach(function (c) {
+    var clave = String(c.texto_original || '').trim();
+    if (!(clave in filaDe)) { sinFila.push(clave); return; }
+    var fila = filaDe[clave];
+    Object.keys(c).forEach(function (campo) {
+      if (campo === 'texto_original') return;
+      var col = headers.indexOf(campo);
+      if (col === -1) { sinFila.push(clave + '.' + campo + ' (columna inexistente)'); return; }
+      var anterior = datos[fila][col];
+      if (String(anterior) === String(c[campo])) return; // ya estaba: no se escribe
+      hoja.getRange(fila + 1, col + 1).setValue(c[campo]);
+      aplicados.push({ texto_original: clave, campo: campo, anterior: anterior, nuevo: c[campo] });
+    });
+  });
+
+  return { ok: true, aplicados: aplicados, sin_fila: sinFila, cambios_escritos: aplicados.length };
+}
