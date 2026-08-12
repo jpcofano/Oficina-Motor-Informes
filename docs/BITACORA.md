@@ -8647,3 +8647,97 @@ Quedó partido en dos fixtures —uno por afirmación— más la guarda nueva y 
 pruebas pasan. **Es el primer caso registrado de un control positivo del repo que era falso, y lo
 destapó un cambio de comportamiento, no una lectura.** Ninguna de las verificaciones del proyecto
 lo miraba, igual que pasó con "de qué filas sale el número" el 07/08.
+
+---
+
+## `_40` — censo de la base nueva: coincide en IVR y Mail, difiere en Call Center e impresiones (2026-08-12)
+
+Censo de sólo lectura de `Base reuniones - Digital - Call Center`
+(`12b0v67FbxjuIndK7DgVU3MYxx-k0yBIS9gtyV45rFaY`, dueño `jpcofano2@gmail.com`). **No se dio de alta
+la base**: no se tocó `BASES`, `SOLAPAS`, `MAPEO` ni un marcador, y los dos decks vigentes quedaron
+intactos. Termina en reportar, que es lo que el prompt pedía.
+
+**Las seis mediciones "desde afuera" del prompt reproducen exactas sobre la copia viva**: 152 filas
+de datos, encabezado en la fila 2, `ID` único, cuatro solapas, 44 columnas, fechas 05/07/2025 →
+14/08/2026, **una** con fecha futura. El `.xlsx` que circuló nunca llegó a esta sesión, así que la
+comparación contra el export **no se hizo y no se reporta como hecha**.
+
+### Cuatro premisas del prompt que el repo desmiente
+
+- *"los 6 ítems de julio"* son 6 ítems pero **4 cuentas**: San Cristóbal y Retiro entran dos veces,
+  `pre` y `post`, con el mismo `id_cuenta`.
+- *"los 4 ítems de `junio_sem2`"*: **3 tienen `id_cuenta`**. `Boedo 17/06` sale `sinLink`
+  (`@homonimo_sin_desempate`) y `Educación` ancla en `bajaConfianza` con 0,54.
+- El token se llama **`enc_e75`**, no `enc_75`.
+- ⚠ *"4726 contra 6011 son dos definiciones distintas del mismo hecho"* — la diferencia es real
+  pero **no es un caso: son 28 de 49 celdas**. Y la cita venció: `V-64` explicaba el 6011 como
+  `4726 + 1285` sobre `looker/CC x Cuentas`, **solapa que hoy no existe**; medido en vivo sobre
+  `resumen_metricas_dinamico` hay **una sola fila** para `3289`, con `call_discado = 6011` de una
+  pieza. Es el patrón del 07–08/08 otra vez: un dato medido una vez, citado tres, ya falso.
+
+### Lo que coincide y lo que no
+
+Las **7 cuentas ancladas tienen fila** en `Agenda JM`; ninguna falta. Sobre 70 celdas —7 cuentas ×
+10 tokens— **15 coinciden, 1 difiere, 53 las tiene sólo la base nueva y 1 sólo el motor**. Las 42
+de Call Center caen del lado "sólo la base" porque **el motor no tiene fila en `MARCADORES`** para
+ninguno de los seis: es el hueco de 8 tokens que ya traía el `_38`.
+
+**IVR coincide en las 7 cuentas, celda por celda.** **Mail coincide exacto** con
+`digital/Directa Mail` en las tres donde el motor publica. **Impresiones coincide en 1 de 7** y
+**Call Center en 3 de 7, y los tres son ceros**.
+
+### La ambigüedad de `digital/Alcance` tiene respuesta, y son dos fuentes independientes
+
+`looker/resumen_metricas_dinamico.meta_alcance` y `Alcance manual` de la base nueva **coinciden en
+6 de 7 cuentas**, y en los cuatro casos ambiguos **las dos eligen la primera** de las dos filas de
+`digital/Alcance`: `3289` 157.580, `3387` **66.345** —el valor que el caso `D-06` anota como base
+del 31/07—, `3201` 20.876, `3178` 104.438. La excepción es Retiro (`3346`): la base dice `0` y las
+otras dos `47.753`, y esa fila trae **todo el bloque digital en cero**.
+
+### Tres cosas que aparecieron midiendo y no estaban en el prompt
+
+1. **Boedo publica un número que ninguna otra fuente tiene.** El motor imprime `258.684` para
+   `3156`; la base nueva y looker traen la celda **vacía**. La guarda del `_39` no lo tapa porque
+   una de las dos filas está vacía y `ULTIMO` se queda con la otra.
+2. **Orden Público publica ~1/6 de sus mails.** El deck dice `44.043` enviados; la base nueva
+   `271.118` y looker `272.283`. Es `ULTIMO` eligiendo una de tres filas `Convocatoria` en vez del
+   envío del encuentro. **No depende de dar de alta ninguna base**: es un defecto vivo en
+   `enc_mails_*`, con el deck de la demo publicado.
+3. **`Habitantes` es el string `"Revisar"` en 14 de 152 filas** —las 13 de eje más `Pendiente`— y
+   ahí `% Cobertura` sale `0`. Es el corolario numérico de que `Barrio / Comuna` trae el eje: **29
+   filas no son un barrio** (13 de eje, 15 de comuna, 1 `Pendiente`).
+
+### Los tres reemplazos, medidos
+
+- **`Alcance manual`**: sí resuelve la ambigüedad, en 6 de 7. En Retiro la empeora.
+- **`Impresiones Meta / Google / Programm`**: parten `Impresiones totales` **exacto en las 7**, pero
+  **no derogan `R-24`** —y no se derogó nada acá—. Parten un total que difiere del de looker en 6
+  de 7, y tres columnas fijas **no absorben una plataforma nueva ni un `Twitch ` con espacio**, que
+  es el motivo escrito de la regla.
+- **¿Alcanza un filtro por `ID`?** **No, y esto contradice al prompt.** `datosDeMarcador_` cablea la
+  rama por cuenta a `fila.base_id === 'digital'`; una base nueva cae a `leerFuente`, que lee la
+  solapa entera **sin el contexto del ítem**. Y `parsearCondicionFiltro_` toma el valor **literal**:
+  no hay marcador de posición para el `id_cuenta` del encuentro que se emite, así que un `ID=…` en
+  `MARCADORES.filtro` sería el mismo texto en las seis láminas. Hace falta una tercera rama, o que
+  el ruteo por cuenta pase a ser declarativo — la dirección de `D-01`.
+
+### El instrumento
+
+Cinco funciones nuevas en `Auditoria.gs`, todas de sólo lectura: `diagPlanillaExterna_`,
+`diagFormaDeSolapaExterna_`, `diagFilasDeSolapaExterna_`, `celdaDeCenso_` y
+`diagMarcadoresDeCuenta_`.
+
+**Por qué un lector propio y por qué no es reimplementar el motor:** los lectores del motor
+resuelven la planilla por `base_id` contra `BASES`/`SOLAPAS`/`MAPEO`, y esta planilla **no está
+registrada** — darla de alta para poder mirarla es la decisión que el censo tenía que informar, no
+anticipar. Cae del lado bueno del borde de §4: se compara la salida del motor contra un hecho
+externo que el motor todavía no puede ver.
+
+**Y `diagMarcadoresDeCuenta_` existe por un error que casi entra al reporte.** La primera pasada de
+A.3 leyó el deck con `diagTextoDeDeck_` y apareó etiqueta con número a ojo. El texto de una lámina
+llega **aplanado por recorrido de formas**, y etiqueta y valor viven en cajas distintas: en
+`sl7` la lectura ingenua daba *"Alcance Potencial 91.563"* cuando el `91.563` es de
+`Habitantes del Barrio`. Aparearlos es adivinar. El instrumento le pregunta a `resolverMarcadores`
+—que **es** el motor, no una copia— y por eso la respuesta no depende de cómo estén acomodadas las
+cajas. Contraste: los valores que devuelve para `3387` (`44.043`, `43.439`, `4.652`, `145`)
+coinciden con los que sí se leen sin ambigüedad en `sl13` del deck.
