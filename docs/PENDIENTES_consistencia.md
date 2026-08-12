@@ -3290,3 +3290,25 @@ exigiría exactamente el cambio que esta medición desaconseja.
 **Lo que sí queda cerrado:** mapear `fecha_fin_periodo` en esta solapa **no es la solución**, y ahora
 hay un número para decirlo en vez de una precaución. Si algún día se necesita el solape, hará falta
 además acotar por duración de campaña o por estado, que es una decisión de negocio y no de mapeo.
+
+---
+
+## Cuatro hallazgos de la plantilla de `jm` — 12/08/2026, se anotan y no se tocan
+
+Salen de la Parte A del `_35`. Ninguno se arregla; los cuatro quedan con fecha.
+
+**1 · ⚠ La lámina modelo de una sección se infiere de los tokens, así que editar la plantilla la
+mueve en silencio.** `comunicaciones_post` (familia `post_`) **cambió de la lámina 11 a la 7** sin
+que nadie lo declarara ni lo notara: `slidesModeloDe_` reclama toda lámina que tenga un token de la
+familia, y alcanzó con cargar 32 tokens `post_*` en la 7. Es un hallazgo de **diseño**, no un bug de
+una corrida: no hay ningún registro que diga cuál es la lámina modelo de una sección, y por lo tanto
+tampoco hay nada que pueda contradecirse cuando cambia.
+
+**2 · La lámina 11 quedó con cero tokens.** Consecuencia de lo anterior; no se toca.
+
+**3 · La plantilla pasó de 195 a 223 tokens** entre el 11/08 y el 12/08.
+
+**4 · `enc_alcance` es prefijo de `enc_alcance_pct` y de `enc_alcance_potencial`.** Es la misma
+forma que dejó a `ecv_barrio` sin dueño. **Hoy no rompe**, porque `tokenEsDeFamilia_` compara contra
+la familia `enc_` y los tres matchean igual. Queda escrito porque **el día que alguien arme una
+familia más fina, muerde** — y para entonces el precedente de `ecv_barrio` va a estar lejos.
