@@ -684,3 +684,155 @@ function menuDiagnosticarColapso_() {
     ui.ButtonSet.OK
   );
 }
+
+/* ============ `_31` Parte A — dos censos de sólo lectura ============
+ *
+ * Los dos existen porque **no había forma de contestar A.1 ni A.3 desde afuera**: `leerFuente`
+ * exige `Date` y un JSON no las transporta —medido el 11/08, `formatDate(String,String,String)`—,
+ * y `contarAnclasDeLaminas()` cuenta escondidas pero no dice cuáles.
+ *
+ * **No tocan nada.** Ni planilla, ni plantilla, ni caché. Son instrumentos, no motor.
+ */
+
+/**
+ * A.1 — los encuentros de `rdv` agrupados por semana de `R-11`, entre dos fechas.
+ *
+ * `desdeISO`/`hastaISO` en `yyyy-MM-dd`, que es lo único que sobrevive a un JSON.
+ *
+ * **Reusa `semanaR11_` y no reimplementa el corte viernes–jueves**: el instrumento propio que
+ * reproduce lógica del motor y la reproduce peor es el error que este proyecto ya cometió cuatro
+ * veces (`CLAUDE.md` §4). El filtro por `STATUS` tampoco se escribe acá — lo aplica `leerFuente`
+ * por la lista blanca de `D-21` (`MAPEO.status.valores_incluidos = "Realizada"`).
+ */
+function diagEncuentrosPorSemana_(desdeISO, hastaISO) {
+  var partesDesde = String(desdeISO).split('-');
+  var partesHasta = String(hastaISO).split('-');
+  var desde = new Date(Number(partesDesde[0]), Number(partesDesde[1]) - 1, Number(partesDesde[2]));
+  var hasta = new Date(Number(partesHasta[0]), Number(partesHasta[1]) - 1, Number(partesHasta[2]));
+
+  var ventana = { ok: true, desde: desde, hasta: hasta, origen: 'diag _31 A.1' };
+  var lectura = leerFuente('rdv', ventana);
+  if (!lectura.ok) return { ok: false, motivo: lectura.motivo };
+
+  var hoja = lectura.hoja;
+  var cFigura = buscarMapeo('rdv', hoja, 'figura');
+  var cBarrio = buscarMapeo('rdv', hoja, 'barrio');
+  var cEvento = buscarMapeo('rdv', hoja, 'evento');
+  var cFecha = buscarMapeo('rdv', hoja, 'fecha');
+  var cInsc = buscarMapeo('rdv', hoja, 'inscriptos');
+  if (!cFigura.ok || !cFecha.ok) return { ok: false, motivo: 'falta MAPEO de figura/fecha para rdv/' + hoja };
+
+  var porSemana = {};
+  var descartadas = 0;
+  lectura.filas.forEach(function (f) {
+    var figura = valorPorColumna_(f, 'rdv', hoja, cFigura.columna);
+    if (normalizar_(figura) !== normalizar_('Jorge Macri')) { descartadas++; return; }
+
+    var cruda = valorPorColumna_(f, 'rdv', hoja, cFecha.columna);
+    var fecha = (cruda instanceof Date) ? cruda : parsearFechaCelda_(cruda);
+    if (!fecha) { descartadas++; return; }
+
+    var sem = semanaR11_(fecha);
+    var clave = formatearFecha_(sem.desde);
+    if (!porSemana[clave]) {
+      porSemana[clave] = { desde: formatearFecha_(sem.desde), hasta: formatearFecha_(sem.hasta), encuentros: [] };
+    }
+    porSemana[clave].encuentros.push({
+      barrio: cBarrio.ok ? valorPorColumna_(f, 'rdv', hoja, cBarrio.columna) : '',
+      // `rdv` no tiene columna `tipo` mapeada — la que más se le parece es `evento`, y se
+      // devuelve con su nombre real para que nadie la lea como el `tipo` de `REUNIONES`.
+      evento: cEvento.ok ? valorPorColumna_(f, 'rdv', hoja, cEvento.columna) : '',
+      fecha: formatearFecha_(fecha),
+      inscriptos: cInsc.ok ? valorPorColumna_(f, 'rdv', hoja, cInsc.columna) : ''
+    });
+  });
+
+  var semanas = Object.keys(porSemana).sort().map(function (k) {
+    var s = porSemana[k];
+    s.cuantos = s.encuentros.length;
+    s.encuentros.sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; });
+    return s;
+  });
+
+  return {
+    ok: true, hoja: hoja,
+    rango: formatearFecha_(desde) + ' → ' + formatearFecha_(hasta),
+    filas_leidas: lectura.filas.length,
+    descartadas_no_jm_o_sin_fecha: descartadas,
+    semanas: semanas
+  };
+}
+
+/**
+ * A.3 — cuáles son las láminas escondidas de una plantilla, por número y por ancla.
+ *
+ * `contarAnclasDeLaminas()` ya las cuenta y reusa `esLaminaEscondida_`; lo único que le falta es
+ * decir cuáles. El ancla sale de las notas del orador, que es donde vive (`_11`).
+ */
+function diagLaminasEscondidas_(informeId) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) return { ok: false, motivo: 'informe sin plantilla_id: ' + informeId };
+
+  var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+  var escondidas = [];
+  slides.forEach(function (slide, i) {
+    if (!esLaminaEscondida_(slide)) return;
+    escondidas.push({ orden_plantilla: i + 1, ancla: anclaDeLamina_(slide) || '(sin ancla)' });
+  });
+  return { ok: true, informe_id: informeId, total_laminas: slides.length, escondidas: escondidas };
+}
+
+/**
+ * A.2 — los tokens de UNA lámina de la plantilla, por su orden.
+ *
+ * `tokensSinCablear_` sólo devuelve los que faltan; para censar una lámina hacen falta los dos
+ * lados. Reusa `tokensDeSlide_`, que es el mismo recorrido que usa la corrida —baja a tablas y a
+ * grupos, que `getShapes()` no ve— así que censa lo mismo que se va a pintar.
+ */
+function diagTokensDeLamina_(informeId, ordenPlantilla) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) return { ok: false, motivo: 'informe sin plantilla_id: ' + informeId };
+
+  var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+  var i = Number(ordenPlantilla) - 1;
+  if (i < 0 || i >= slides.length) return { ok: false, motivo: 'la plantilla tiene ' + slides.length + ' láminas' };
+
+  var cableados = {};
+  leerMarcadores_().forEach(function (m) {
+    var suyo = String(m.informe_id || '').trim();
+    if (suyo === informeId || suyo === '*') cableados[m.marcador] = m;
+  });
+
+  /* ⚠ **No se usa `tokensDeSlide_` y el motivo importa.** Esa función devuelve `[]` para una
+   * lámina escondida —guarda del 06/08, correcta para la corrida: lo que no se emite no se
+   * pinta—. Pero un **censo** tiene que ver la lámina justamente cuando está escondida, que es
+   * el caso de la 5 hoy. Con la guarda, este diagnóstico contestaba `total: 0` y se leía como
+   * "la lámina no tiene tokens" en vez de "no la puedo ver".
+   *
+   * Se replica su recorrido —`piezasDeTextoDeSlide_` + `RE_TOKEN_`, que bajan a tablas y a
+   * grupos donde `getShapes()` no llega— sin la guarda, y el retorno dice `escondida` para que
+   * quien lea sepa cuál de las dos cosas está mirando. */
+  var vistos = {};
+  piezasDeTextoDeSlide_(slides[i]).forEach(function (pieza) {
+    var m;
+    RE_TOKEN_.lastIndex = 0;
+    while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) vistos[m[1]] = true;
+  });
+
+  var tokens = Object.keys(vistos).sort().map(function (t) {
+    var m = cableados[t];
+    return m
+      ? { token: t, cableado: true, base_id: m.base_id, solapa: m.solapa, campo_logico: m.campo_logico,
+          operacion: m.operacion, filtro: m.filtro, periodo_ref: m.periodo_ref }
+      : { token: t, cableado: false };
+  });
+
+  return {
+    ok: true, informe_id: informeId, orden_plantilla: Number(ordenPlantilla),
+    escondida: esLaminaEscondida_(slides[i]),
+    total: tokens.length,
+    con_fila: tokens.filter(function (t) { return t.cableado; }).length,
+    sin_fila: tokens.filter(function (t) { return !t.cableado; }).length,
+    tokens: tokens
+  };
+}
