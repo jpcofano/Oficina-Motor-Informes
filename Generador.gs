@@ -1673,16 +1673,63 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
       return;
     }
 
-    // De atrás para adelante: duplicar corre los índices de todo lo que viene después.
-    modelos.slice().sort(function (a, b) { return b - a; }).forEach(function (indiceModelo) {
-      var modelo = presentacion.getSlides()[indiceModelo];
-      resultado.items.forEach(function (item, n) {
+    /* `_35` Parte B — **el bloque se duplica por ítem, no cada lámina por separado.**
+     *
+     * Antes era *por cada modelo, N copias*: dos láminas modelo daban `[A×N][B×N]`, o sea seis
+     * carátulas seguidas y después seis detalles. Ahora es **por cada ítem, una copia del bloque
+     * modelo completo**, en orden: `[A₁B₁][A₂B₂]…`
+     *
+     * **Con una sola lámina modelo la salida es idéntica a la de antes**, y ése es el control de
+     * la parte: `encuentro` y `comunicaciones_post` tienen una cada una, así que hoy no cambia
+     * nada. `campana` tiene ocho, pero emite cero ítems y no expande por ningún camino — el día
+     * que tenga ítems **va a cambiar, y ése es el objetivo**: sus ocho modelos salían como
+     * `[L12×N]…[L19×N]`, que no es lo que nadie quiso.
+     *
+     * **Todas las asignaciones de un mismo ítem comparten su contexto**, así que la carátula
+     * resuelve contra la misma fila de `rdv` que su lámina de detalle. Es lo que hace que el
+     * `EVENTO` de la carátula sea el del encuentro que le sigue y no el de otro.
+     */
+    var ordenados = modelos.slice().sort(function (a, b) { return a - b; });
+    var inicio = ordenados[0];
+    var largo = ordenados.length;
+
+    // **El bloque tiene que ser contiguo.** Con láminas modelo salteadas no hay "bloque" que
+    // repetir: habría que decidir si lo de en medio se repite o no, y eso no se adivina. Se
+    // reporta y no se expande, igual que el choque de dos secciones sobre la misma lámina.
+    var contiguo = ordenados.every(function (idx, k) { return idx === inicio + k; });
+    if (!contiguo) {
+      reporte.push({
+        seccion: seccion.seccion_id, ok: false,
+        motivo: '⚠ las láminas modelo ' + ordenados.map(function (i) { return i + 1; }).join(', ') +
+          ' no son consecutivas — un bloque repetible tiene que ser contiguo. No se expande y la ' +
+          'plantilla no se reordena.',
+        items: resultado.items.map(function (i) { return i.clave; }),
+        excluidos: resultado.excluidos,
+        slides_modelo: ordenados.map(function (i) { return i + 1; })
+      });
+      return;
+    }
+
+    var slidesAhora = presentacion.getSlides();
+    var modelosSlides = ordenados.map(function (i) { return slidesAhora[i]; });
+
+    // Dos pasadas, y la separación es lo que la hace correcta: `duplicate()` inserta la copia
+    // **pegada a su original**, así que mover mientras se duplica corre los índices de lo que
+    // todavía falta copiar. Primero se duplica todo, después se quitan los modelos, y recién
+    // entonces se ordenan las copias con posiciones que ya no se mueven.
+    var copias = [];
+    resultado.items.forEach(function (item) {
+      modelosSlides.forEach(function (modelo) {
         var copia = modelo.duplicate();
-        copia.move(indiceModelo + 1 + n);
+        copias.push(copia);
         asignaciones.push({ objectIdSlide: copia.getObjectId(), item: item, seccion: seccion.seccion_id });
       });
-      modelo.remove();
     });
+
+    modelosSlides.forEach(function (modelo) { modelo.remove(); });
+
+    // Ascendente: cada copia queda en su lugar definitivo y las ya ubicadas no se corren.
+    copias.forEach(function (copia, k) { copia.move(inicio + k); });
 
     reporte.push({
       seccion: seccion.seccion_id, ok: true,
