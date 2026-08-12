@@ -8515,3 +8515,94 @@ sola plantilla y cuatro corridas del mismo día.
 Total de la corrida: **227 s** de un techo de 350, sin corte. Contra los 146 s de
 `jm-20260812-110746`, los 81 s de diferencia son casi exactamente el salto de `seg_items` (+42) más
 el resto de la corrida.
+
+---
+
+## `_39` — `enc_alcance` cambia de solapa, y `ULTIMO` deja de elegir por posición (2026-08-12)
+
+**Parte A · la premisa vencida, citada.** La fila de `enc_alcance` decía, textual: *"cableado 04/08 —
+ambiguedad Digital/dig_alcance vs Alcance/alc_alcance resuelta por coherencia con enc_impresiones
+(misma solapa y misma fila)"*. Esa coherencia **ya no sostiene nada**: `digital/Digital` es
+`uso = ignorar` (`R-22`, congelada en diciembre de 2025) y `enc_impresiones` tampoco publica. Se
+alineaba con un marcador que no funciona.
+
+`digital/Alcance` en vivo: `usoSolapa_` devuelve `fuente`, `buscarMapeo(alc_alcance)` devuelve la
+columna `B`. La puerta abre.
+
+**A.3 — el alcance de los seis ítems, leído por la rama por cuenta de verdad.** El instrumento llama
+a `datosDeMarcador_` con una fila de marcador simulada, no saca el valor de `alc_filas` a mano: la
+pregunta es qué le llegaría a un marcador re-apuntado, y contestarla salteando el despachador sería
+medir otra cosa.
+
+| ítem | `id_cuenta` | filas | valores |
+|---|---|---|---|
+| Villa Urquiza | `3289-JUNJDGAG` | 2 | 157.580 · 145.669 |
+| San Cristóbal (pre y post) | `3354-JULJDGAG` | 1 | **1.412** |
+| Retiro (pre y post) | `3346-JULJDGAG` | 1 | **47.753** |
+| Orden Público | `3387-JULJDGGC` | 2 | 66.345 · 457.883 |
+
+**A.4 — no hay rama `looker` en `datosDeMarcador_`.** Las dos ramas por ítem son `rdv` (línea 241) y
+`digital` (251); lo demás cae al fallback general. Un marcador de `looker` dentro de una lámina de
+encuentro publicaría el agregado de la ventana en las seis, que es el bug que `_28` arregló para
+`rdv`. Queda nombrado, sin implementar.
+
+### El bloqueo que el prompt no anticipaba, y la guarda
+
+**`digital/Alcance` no tiene columna de fecha** —ni mapeada ni en la hoja: sus seis columnas son
+`ID Cuentas`, `Alcance`, `Frecuencia`, `eje`, `area`, `nombre_campaña`—. Así que el `ULTIMO por
+fecha` del 12/08 no aplica y `opULTIMO` caía a *"por POSICIÓN"*.
+
+**Y `3387` y `3289` traen dos filas idénticas en las seis columnas salvo el número.** No hay
+columna que las discrimine: ningún filtro puede separarlas.
+
+| `id_cuenta` | Alcance | Frecuencia | impresiones implícitas |
+|---|---|---|---|
+| `3387-JULJDGGC` | **66.345** | 14,18 | ≈ 940,7 k |
+| `3387-JULJDGGC` | 457.883 | 2,05 | ≈ 941,0 k |
+
+Las impresiones implícitas coinciden en los dos casos: son **dos definiciones del mismo hecho**, no
+dos campañas. Y `D-06` (`casos_validacion_2026-07-31`) valida la primera — *"enc_alcance 65576, base
+31/07 = 66345"*. **Por posición se habría publicado 457.883**: 7× más grande, plausible, con el
+rótulo correcto al lado.
+
+**La guarda cierra la mitad que le faltaba al arreglo del 12/08.** Mismo criterio y mismo umbral que
+el empate por fecha: **sin fecha utilizable y con valores distintos, no se elige** —
+`«FALTA:@ultimo_sin_fecha_ambiguo»`. Radio de acción medido antes de escribirla: `rdv/RVD JM-CM - ES`
+(col E) y `digital/Directa Mail` (col F) sí tienen `fecha_periodo` y van por la rama de arriba;
+`digital/Alcance` es la única solapa sin fecha con un `ULTIMO` encima.
+
+**⚠ Y el control positivo decía una cosa y probaba otra.** `Pruebas.gs:456` afirmaba *"ULTIMO saltea
+la celda vacía del final"* corriendo sobre `[10, 5, '']` — pasaba porque `5` es el último con valor,
+o sea que probaba **elegir por posición**. Son dos afirmaciones distintas; ahora van separadas, con
+un fixture cada una, más la guarda y su contraste. **Las 13 pruebas pasan.**
+
+Se afirma sobre `valor` y la traza, **no sobre el flag `ambiguo`**: `despacharOperacion_` rearma el
+sobre y no lo propaga — tampoco el de la rama por fecha, que ya existía.
+
+### Parte C — dos corridas, una por deck
+
+| | julio | junio_sem2 |
+|---|---|---|
+| corrida | `jm-20260812-172902` | `jm-20260812-174147` |
+| deck | `1K7z5uNT0E_54z22zNUt7fTDL52scCRGlSQtrkruIp2U` | `1estvqWRoOwTrBoNP9r4yEjodY2eqE5SMiW49PkujUgY` |
+| reemplazados | **126** (122 en `164443`, 116 en `110746`) | **104** |
+| gastado | 148 s de 350 | 203 s de 350 |
+| pares | **6** | **3** |
+
+**Control de julio, leído del deck:** seis pares carátula+detalle; `enc_alcance` publica **1.412** en
+San Cristóbal (sl9 y sl15) y **47.753** en Retiro (sl11 y sl17), distintos entre sí; Villa Urquiza y
+Belgrano salen `—` **por la guarda**, que es el comportamiento diseñado y no una falta.
+
+**Control de junio:** tres pares —Boedo, Mataderos, Boedo "1 a 1"—, barrios disjuntos de los de
+julio. `Educación 16/06` sigue sin anclar por `D-29`.
+
+Los +4 de julio (122 → 126) son exactamente los cuatro `enc_alcance` que la guarda deja pasar.
+
+### Lo que queda nombrado y no se hizo
+
+**La rama por cuenta para `looker`**, contraparte de las de `rdv` y `digital`. Destraba los 8 tokens
+sin fila del `_38` más `enc_impresiones`. **No se cablea ninguno hasta que exista**: sin la rama
+publicarían el agregado de la semana en las seis láminas.
+
+**Cuál de las dos filas de `Alcance` es la buena** para `3387` y `3289`. Hasta que se decida, las dos
+láminas publican `—` con motivo en la traza.
