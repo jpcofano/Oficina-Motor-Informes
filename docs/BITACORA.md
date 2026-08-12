@@ -8396,3 +8396,42 @@ En la lámina de detalle de `encuentro` (orden 6 de la plantilla de `jm`) los do
 **Hoy no es un error y no se toca.** Pero **la carátula por ítem los necesita separados**:
 `ecv_barrio` se queda en el detalle y `enc_evento` va a la carátula. Separarlos es parte de armar la
 lámina nueva, no un arreglo aparte.
+
+---
+
+## `_37` Parte A — el token pide dos cosas distintas, y mi A.3 midió mal (2026-08-12)
+
+**A.1 · La premisa del `Paso-2.13` se sostiene, y la caja lo dice sola.**
+
+| informe | lámina | caja, literal |
+|---|---|---|
+| `secco` | `L-014` (orden 14) | `"{{m2_campanias}} Campañas"` |
+| `jm` | `L-038` (orden 10) | `"{{m2_campanias}}"` — **el token solo** |
+
+En `secco` es inequívocamente un **conteo**. En `jm` la caja no lleva palabra, así que **por sí sola
+no dice** si es lista o conteo.
+
+**Lo que sí lo dice es la caja de al lado, y es el hallazgo del día:** en `jm`, `m2_envios` vive en
+`"{{m2_envios}}Campañas"` y el deck `jm-20260812-110746` publica ahí **`25Campañas`**. O sea que en
+`jm` **el conteo de campañas ya lo publica `m2_envios`**, y `m2_campanias` —solo en su caja— queda
+como el que pide la **lista**. Los dos tokens tienen los roles cruzados respecto de sus nombres.
+
+**A.2 · `m2_campanias` no tiene fila en `MARCADORES`** para ningún `informe_id`. `secco` no tiene
+ninguna fila cableada.
+
+**A.3 · ⚠ MI MEDICIÓN ESTÁ MAL Y LA DETECTÓ EL MOTOR.** Reporté 2187 filas en ventana, 722 pasando
+`mail_tipo~=M2`, 641 distintos crudos y 636 plegados. **El motor publica `25`.**
+
+**El instrumento reprodujo lógica del motor y la reprodujo peor**, que es el patrón de `CLAUDE.md`
+§4 por sexta vez. `BASES.digital.modo_periodo = snapshot` **a propósito** —sus solapas usan fecha de
+inicio con lead de 3 a 7 días—, así que `leerFuente` **devuelve todas las filas de todos los
+períodos** y el recorte por ventana lo hace `datosDeMarcador_` después, sobre `datos.filas`, con
+`recortar_por_ventana: true`. `diagDistintos_` llamó a `leerFuente` y contó sobre el universo entero.
+
+**Los tres números de A.3 no sirven y no se usan.** La diferencia crudos/plegados (641 vs 636, cinco
+pares) tampoco vale: está medida sobre el universo equivocado.
+
+**Consecuencia: la Parte B no puede decidir con lo que hay.** Le falta el único dato que su decisión
+necesita —cuántas campañas distintas hay en la ventana **recortada como la recorta el motor**— y
+obtenerlo con un diagnóstico propio es repetir el error. La vía correcta es al revés: la operación
+nueva la calcula, y el número se lee del deck.

@@ -961,3 +961,84 @@ function diagCongeladas_(informeId) {
 
   return { ok: true, informe_id: informeId, declarado: declarado, resultado_del_filtro: r };
 }
+
+/**
+ * `_37` A.1 — dónde está un token y **qué dice la caja que lo contiene**, literal.
+ *
+ * El texto de alrededor es el dato: *"3 Campañas"* y *"Subtes, Desalojos, …"* piden operaciones
+ * distintas, y el token solo no lo dice. Devuelve `lamina_id` además del orden, porque la
+ * identidad de una lámina es su ancla y no su posición (`D-23`).
+ */
+function diagCajaDeToken_(informeId, token) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) return { ok: false, motivo: 'informe sin plantilla_id: ' + informeId };
+
+  var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+  var apariciones = [];
+  slides.forEach(function (slide, i) {
+    piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+      if (String(pieza.texto).indexOf('{{' + token + '}}') === -1) return;
+      apariciones.push({
+        orden: i + 1,
+        lamina_id: anclaDeLamina_(slide) || '(sin ancla)',
+        escondida: esLaminaEscondida_(slide),
+        texto_caja: String(pieza.texto)
+      });
+    });
+  });
+  return { ok: true, informe_id: informeId, token: token, apariciones: apariciones };
+}
+
+/**
+ * `_37` A.3 — filas, distintos crudos y distintos plegados, sobre una columna de una fuente.
+ *
+ * **Los tres números salen juntos y ninguno se elige.** La diferencia entre crudos y plegados es
+ * la que decide si normalizar tiene consecuencia; con un solo número esa pregunta no se puede
+ * contestar. `normalizar_` es el de `Parseo.gs` —pliega case y acentos—, el mismo que usa el
+ * matcher, y por eso se reusa en vez de escribir un cuarto normalizador.
+ */
+function diagDistintos_(baseId, solapa, campoLogico, desdeISO, hastaISO, campoFiltro, contiene) {
+  var d = String(desdeISO).split('-'), h = String(hastaISO).split('-');
+  var ventana = {
+    ok: true,
+    desde: new Date(Number(d[0]), Number(d[1]) - 1, Number(d[2])),
+    hasta: new Date(Number(h[0]), Number(h[1]) - 1, Number(h[2])),
+    origen: 'diag _37'
+  };
+  var lectura = leerFuente(baseId, ventana, solapa);
+  if (!lectura.ok) return { ok: false, motivo: lectura.motivo };
+
+  var col = buscarMapeo(baseId, lectura.hoja, campoLogico);
+  if (!col.ok) return { ok: false, motivo: col.motivo };
+  var colFiltro = campoFiltro ? buscarMapeo(baseId, lectura.hoja, campoFiltro) : null;
+  if (colFiltro && !colFiltro.ok) return { ok: false, motivo: colFiltro.motivo };
+
+  var crudos = {}, plegados = {}, filas = 0;
+  lectura.filas.forEach(function (f) {
+    if (colFiltro) {
+      var v = valorPorColumna_(f, baseId, lectura.hoja, colFiltro.columna);
+      if (String(v).indexOf(contiene) === -1) return;
+    }
+    filas++;
+    var valor = valorPorColumna_(f, baseId, lectura.hoja, col.columna);
+    var texto = String(valor === undefined || valor === null ? '' : valor);
+    if (texto === '') return;
+    crudos[texto] = (crudos[texto] || 0) + 1;
+    var k = normalizar_(texto);
+    (plegados[k] = plegados[k] || []).push(texto);
+  });
+
+  var colapsados = Object.keys(plegados)
+    .filter(function (k) { return plegados[k].filter(function (v, i, a) { return a.indexOf(v) === i; }).length > 1; })
+    .map(function (k) { return k + ' <- ' + plegados[k].filter(function (v, i, a) { return a.indexOf(v) === i; }).join(' | '); });
+
+  return {
+    ok: true, hoja: lectura.hoja, columna: col.columna,
+    filas_en_ventana: lectura.filas.length,
+    filas_que_pasan_el_filtro: filas,
+    distintos_crudos: Object.keys(crudos).length,
+    distintos_plegados: Object.keys(plegados).length,
+    crudos: Object.keys(crudos).sort(),
+    colapsados_por_plegado: colapsados
+  };
+}
