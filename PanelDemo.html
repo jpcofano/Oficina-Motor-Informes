@@ -424,7 +424,6 @@ function vistaGenerar(){
 
   if (previa && !S.forzarForm){
     h += '<hr class="sep">';
-    h += '<p class="hint">Ya hay un deck generado para este período: se abre al instante.</p>';
     h += deckCard(previa.deck_id, inf.nombre,
       'Generado el ' + esc(previa.fecha) + ' · ' + previa.laminas + ' láminas');
     h += '<button class="btn btn-secondary" id="b-denuevo">Generar de nuevo, a sabiendas</button>';
