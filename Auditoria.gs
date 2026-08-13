@@ -1390,24 +1390,36 @@ function diagFilasDeSolapaExterna_(idPlanilla, solapa, filaEncabezado, campoClav
   var iClave = encabezados.indexOf(normalizarValorDeclarado_(campoClave));
   if (iClave === -1) return { ok: false, motivo: 'la columna clave "' + campoClave + '" no está en la fila ' + enc };
 
+  /* `_43` — **todas las filas de la clave, no la primera.** Devolver una sola escondía el caso que
+   * este censo vino a mirar: `looker/CC` tiene **tres** filas para `3387-JULJDGGC`, y con la
+   * primera nada más la pregunta *"¿cuál publica la lámina?"* no se puede ni formular. Es el mismo
+   * error de universo de siempre — un número correcto salido de las filas equivocadas. */
   var porClave = {};
   datos.forEach(function (fila, i) {
     var clave = normalizarValorDeclarado_(fila[iClave]);
     if (!clave) return;
-    if (porClave[clave] === undefined) porClave[clave] = i;
+    if (!porClave[clave]) porClave[clave] = [];
+    porClave[clave].push(i);
   });
 
   var salida = {};
   (claves || []).forEach(function (claveCruda) {
     var clave = normalizarValorDeclarado_(claveCruda);
-    var i = porClave[clave];
-    if (i === undefined) {
+    var indices = porClave[clave];
+    if (!indices || !indices.length) {
       salida[clave] = ['(sin fila en ' + solapa + ')'];
       return;
     }
-    salida[clave] = encabezados.map(function (h, j) {
-      return (h || '(col ' + (j + 1) + ')') + ' = ' + celdaDeCenso_(datos[i][j], mostrados[i][j]);
+    var lineas = [];
+    indices.forEach(function (i, n) {
+      // El número de fila de la planilla va delante: sin él, "la segunda" es una posición del
+      // arreglo y no algo que alguien pueda ir a mirar a mano.
+      lineas.push('— fila ' + (enc + 1 + i) + ' (' + (n + 1) + ' de ' + indices.length + ') —');
+      encabezados.forEach(function (h, j) {
+        lineas.push('   ' + (h || '(col ' + (j + 1) + ')') + ' = ' + celdaDeCenso_(datos[i][j], mostrados[i][j]));
+      });
     });
+    salida[clave] = lineas;
   });
 
   return { ok: true, solapa: solapa, fila_encabezado: enc, claves_pedidas: (claves || []).length, filas: salida };

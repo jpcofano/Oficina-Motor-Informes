@@ -3454,6 +3454,42 @@ lo que eligen los testigos.** Vale para `3387`, `3201` y `3178`, pero en `3289` 
 **Qué lo destraba — sin cambios:** que el dueño de `digital/Alcance` diga qué distingue las dos
 filas. Las láminas siguen publicando `—` con motivo, y eso sigue siendo lo correcto.
 
+### Addendum 2 · 12/08/2026 — las dos filas **sí** tienen qué las distingue, y mi testigo no servía
+
+**El addendum de arriba se equivocó en las dos mitades, y las dos las corrige el CSV consolidado.**
+No se edita: queda como estaba y esto lo corrige.
+
+**Uno — no son "dos definiciones del mismo hecho": son PRE y POST.** `C-51`: *"Las filas duplicadas
+de `digital/Alcance` son pares PRE/POST del mismo id, no ambigüedad. Nueva Pompeya tenía
+`[52.012, 22.362]` en el export del 06/08; la base de reuniones trae `Alcance manual` (PRE) =
+`52.012` EXACTO y `Alcance` (POST) = `45.211` al 12/08. El primer valor es PRE y el segundo POST, y
+el segundo crece."* Lo respalda `C-50`, que midió la estructura: el mismo `ID` vive en `Agenda JM`
+(PRE) y en `Agenda JM | Post` (POST), 98 ids compartidos.
+
+**Eso explica de golpe lo que el addendum de arriba llamó "las dos eligen la primera fila".** No
+elegían: **estaban leyendo la fase PRE**, que es la primera. La regularidad era real y la
+interpretación estaba dada vuelta.
+
+**Dos — `Alcance manual` no es un testigo utilizable.** `C-53`: *"NO ES ACUMULATIVA … La lámina 9
+publicó `219.139` el 31/07 y la base del 12/08 trae `157.580` para la misma fila: menor doce días
+después. El nombre de la columna lo dice: es un valor tipeado. Cualquier verificación de alcance
+contra esta columna **se valida por regla, no por número**, y no puede usar la dirección temporal
+como criterio."*
+
+**Así que el `157.580` que el addendum de arriba presenta como coincidencia de dos testigos es un
+número tipeado a mano que doce días antes decía otra cosa.** La coincidencia con `meta_alcance` es
+un hecho medido y sigue en pie; lo que se cae es tratarla como corroboración independiente.
+
+**Lo que reemplaza a todo esto es `A-12`, y está abierto:** *"`A-10` TIENE FUENTE. Hay dos columnas
+de alcance, una por fase: `Agenda JM.Alcance manual` y `Agenda JM | Post.Alcance` … Queda abierto si
+el total publicado es la suma de las dos o un deduplicado: al 12/08 N. Pompeya da
+`52.012 + 45.211 = 97.223` contra `79.461` publicado el 07/08."* Y `A-09` ya había medido que el
+publicado **nunca** es la suma, 4 de 4, siempre menor: sigue apuntando a deduplicado.
+
+**Qué lo destraba, actualizado:** ya no es *"qué distingue las dos filas"* —eso está contestado, es
+la fase— sino **cómo se combinan**. Es `A-12`, y no se decide acá. Las láminas siguen publicando
+`—`.
+
 ---
 
 ## `3156` Boedo publica un `enc_alcance` que ninguna otra fuente sostiene — 12/08/2026
@@ -3525,6 +3561,26 @@ mail de `Agenda JM` que contradiga al motor **no es evidencia de defecto — mid
 base se da de alta, sus columnas de mail **no reemplazan** a `digital/Directa Mail` para los
 `enc_mails_*`: usarlas ahí publicaría el agregado de campaña en la lámina del encuentro.
 
+### Addendum 12/08/2026 — `X-20`: está abierto, no cerrado
+
+**Esta sección lo dio por explicado y no lo está.** El CSV consolidado trae `X-20`, que numera
+exactamente este hecho y lo deja **`abierto`**:
+
+> *"EL BLOQUE DE MAIL DEL ICEBERG NO REPRODUCE, EN LA MISMA FILA DONDE EL IVR DA EXACTO. Deck
+> `44.043 / 43.439 / 4.652 / 145` contra base `271.118 / 268.146 / 55.118 / 876`. Factor cercano a 6
+> en los cuatro campos. **No es desfasaje: el iceberg publica un subconjunto de los envíos que la
+> fila agrega.** Sexto caso del patrón `X-16`/`X-17`, ahora dentro de una sola fila."*
+
+**Qué sigue en pie de lo de arriba y qué no.** Sigue en pie que `44.043` es el valor validado
+(`V-12`, y la nota de `MARCADORES` del 11/08), que el corte por `mail_tipo=Convocatoria` funciona, y
+que las columnas de mail de `Agenda JM` **no se cablean** contra los `enc_mails_*`. **No sigue en
+pie el tono de cierre:** *"mide otra cosa"* nombra el hecho pero no la regla, y `X-20` dice que la
+regla —qué subconjunto de envíos publica el iceberg— **todavía no está**.
+
+**Y el contraste que lo hace interesante está en la misma fila:** `V-87` mide el bloque IVR de
+`3387` contra `Agenda JM` y da **cinco de cinco exacto**. La misma fila, la misma cuenta: IVR
+reproduce y Mail no.
+
 ---
 
 ## Base nueva contra `looker`: **28 de 49 celdas difieren** — 12/08/2026
@@ -3561,3 +3617,97 @@ donde otra fuente tiene datos.
 diferencia grande, o que el dueño de `Agenda JM` diga qué recorte declara cada columna. **Hasta
 entonces, ninguna columna de la base nueva se cablea contra un token que hoy lee `looker`**: se
 estaría cambiando el universo sin decirlo, que es el modo de falla del 07/08 (`R-15` addendum 1).
+
+### Addendum 12/08/2026 — el candidato 1 se cae y el 2 tiene nombre: `C-50`
+
+**El CSV consolidado repuso 22 casos que el addendum del repo no tenía**, y dos contestan lo que
+esta sección dejaba como candidatos sin medir.
+
+**El candidato de la ventana no explica nada, y el que sí explica es otro.** `C-50` cierra `C-41`:
+*"PRE y POST comparten el mismo ID de cuenta y viven en dos solapas distintas. 152 ids en PRE, 102
+en POST, 98 compartidos, 4 sólo POST. La clave del par es `(ID, solapa)`, no dos cuentas."* Y `V-88`
+lo confirma por el otro lado: el bloque PRE del deck **está entero en una sola fila de `Agenda JM`**
+—San Cristóbal `42.500` impresiones, `1.274` clics, Meta `25.099/778`, Google `17.401/496`—
+idénticos al deck.
+
+**O sea que `Agenda JM` no trae "menos por la ventana": trae la fase PRE, y la POST vive en
+`Agenda JM | Post`.** La comparación de esta sección puso **una fase de la base contra la campaña
+entera de `looker`**, y por eso 6 de 7 dieron distinto. **El 28/49 sigue siendo el número medido,
+pero ya no significa "dos fuentes que discrepan": significa que se compararon universos distintos.**
+
+**Y hace falta una segunda clave, que ninguna de las dos secciones anteriores tenía en cuenta.**
+Si la clave del par es `(ID, solapa)`, entonces un ruteo por cuenta que sólo mire el `id_cuenta` **no
+alcanza para elegir la fila**: el mismo id existe en las dos solapas con números distintos. Eso es
+un requisito para el mecanismo de `SOLAPAS.campo_id_cuenta`, no un detalle.
+
+⚠ **Y hay una corrección que sí importa a la sección de arriba: `Alcance manual` no sirve como
+testigo.** `C-53` la mide y la contradice: *"NO ES ACUMULATIVA … la lámina 9 publicó 219.139 el
+31/07 y la base del 12/08 trae 157.580 para la misma fila: menor doce días después. El nombre de la
+columna lo dice: es un valor tipeado."* Ver el addendum propio en la sección de `digital/Alcance`.
+
+---
+
+## `X-21` — la lámina publica **dos de las tres** filas de Call Center, y nada dice cuál queda afuera — 12/08/2026
+
+**P1. Los `enc_*` de Call Center no se cablean.** No es que falte el ruteo por cuenta: es que **con
+el ruteo puesto tampoco habría con qué reproducir el número.**
+
+`3387-JULJDGGC` tiene **tres filas** en `looker/CC`, medidas en vivo el 12/08 a las 22:15:
+
+| fila de la solapa | `Base enviada` | `Base barrida` | `Contactados` | `Efectivos` |
+|---|---|---|---|---|
+| 1289 | 8.000 | **6.977** | **1.785** | **1.414** |
+| 1299 | 255 | **255** | **116** | **100** |
+| 1300 | 722 | 722 | 268 | 252 |
+| **suma de las tres** | 8.977 | **7.954** | **2.169** | **1.766** |
+| **lo publicado (lámina 11)** | 8.255 | **7.232** | **1.901** | **1.514** |
+
+**Lo publicado es la suma de la 1 y la 2. La 1300 queda afuera, en las cuatro columnas.** Es `X-21`,
+séptimo caso del patrón `X-16`/`X-17` — y el primero **dentro de una sola cuenta**, no entre cuentas.
+
+**La medición del motor que se agrega hoy, y lo que descarta.** La suma de las tres filas da `7.954`
+y **cierra exacta** contra `call_discado` de `looker/resumen_metricas_dinamico`; ídem `2.169` contra
+`call_contactados`. Verificado en las 7 cuentas ancladas: `resumen_metricas_dinamico` **es** la suma
+por cuenta de `looker/CC`.
+
+**Las dos solapas de `looker` concuerdan entre sí y las dos discrepan de lo publicado.** Por lo
+tanto:
+
+- **`SUMA` sobre `looker/CC` da 7.954, no 7.232.** Descartada.
+- **Leer `resumen_metricas_dinamico` da lo mismo**, porque es esa suma. Descartada.
+- **Elegir una fila no llega**: ninguna de las tres es `7.232`; hace falta sumar exactamente dos.
+- **`Agenda JM` tampoco arbitra**: trae el bloque CC de `3387` **en cero en los cuatro campos**
+  mientras el IVR de esa misma fila está completo y exacto (`V-87`). Es `C-58`.
+
+**Y no hay columna con qué decidir.** `looker/CC` tiene **cinco columnas y ninguna más**:
+`ID Cuentas`, `Base enviada`, `Base barrida`, `Contactados`, `Efectivos`. Sin fecha, sin nombre de
+campaña, sin estado. **No hay nada que distinga la fila 1300 de las otras dos.**
+
+⚠ **Y la única columna que parecía una fecha no lo es.** `Base enviada` llega tipada `Date` con
+valores de 1899 a 1921 porque la planilla la tiene formateada como fecha: son **seriales**. Lo mide
+`C-54` y se reprodujo en vivo — `30/12/1899` = `0` en la fila cuya barrida es `0`; `25/02/1900` =
+`57`, igual que su `Base barrida`; y `1914-09-30 = 5.387` más `1903-07-09 = 1.286` dan los `6.673`
+de `call_enviado`. **Un lector que no convierta el serial va a tratar la columna como fecha basura o
+como vacía**, y un `fecha_periodo` mapeado ahí sería una fecha inventada.
+
+**Qué lo destraba:** que el dueño de `looker/CC` diga qué separa la tercera fila — o una columna que
+lo exprese. Es el mismo modo de falla que `C-15` resolvió **por temario a nivel cuenta**; acá hay
+que resolverlo **a nivel fila dentro de una cuenta**, y el temario no llega hasta ahí.
+
+**Lo que sí queda decidido, por `C-58`:** el **embudo del iceberg** se cablea contra `Agenda JM`,
+con `REVISAR` cuando el bloque venga en cero — que es exactamente el caso de `3387`. Los `cc_*` del
+Resumen Ejecutivo **siguen leyendo `looker`**, donde `V-64`/`V-65`/`V-66` los validan.
+
+**Nota sobre el nombre `CC x Cuentas`, porque aparece en cinco casos y confunde.** No existe como
+solapa: en `SOLAPAS` vivo, las únicas solapas con "cuenta" en el nombre son `digital/Cuentas`,
+`looker/Cuentas`, `m2/Cuentas` y `m2/Cuentas M2`. Ya lo había establecido el
+`docs/Prompts/2026-08-12_32.1_addendum_fuente_cc.md` — *"ese nombre no existe en ningún lado"*. Es
+la etiqueta de un export viejo; **la solapa viva es `looker/CC`**, y es la que tiene los números que
+los casos citan. Las dos cosas del `_43.2` A.3 son ciertas a la vez: la solapa no existe con ese
+nombre, y el dato que `C-58` manda a buscar ahí sí existe, en `looker/CC`.
+
+⚠ **Y `looker/CC` hoy no se puede leer por `leerFuente`.** `looker` es `modo_periodo = filtrar`, así
+que exige `fecha_periodo`; medido en vivo devuelve `«FALTA:fecha_periodo@looker/CC»`. **No tiene
+ninguna fila en `MAPEO`** —ni `id_cuenta` ni `fecha_periodo`— y **no tiene columna de fecha que
+mapear**. Lo mismo vale para `looker/DIGITAL`. Las dos están declaradas `uso = fuente` en `SOLAPAS`
+y ninguna de las dos es legible por el motor.
