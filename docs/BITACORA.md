@@ -8930,3 +8930,28 @@ no tiene caso: no hay diferencia que explicar. Si el selector aparece en uno y n
 causa está en otro lado. **No se tocó nada**, como pedía el prompt.
 
 Dato al pasar: `jm` tiene **78** marcadores cableados (eran 57 el 11/08) y `secco` sigue en cero.
+
+### El conteo que llegó al final y cambió el arreglo
+
+Medidas **las 51 filas** de `CORRIDAS`, no las cuatro del muestreo:
+
+| `periodo_id` | filas |
+|---|---|
+| `config` (etiqueta de origen) | **37** |
+| `julio_24_30` | 7 |
+| `junio_sem2` | 7 |
+| vacío | **0** |
+
+Ocho corridas sin cerrar. **Ninguna fila vacía**, así que la regla *"una corrida con `periodo_id`
+vacío no empareja con nada"* es defensiva y hoy no aplica a ningún dato — se implementó igual.
+
+**Lo que sí cambió el arreglo: el caso raro es el dominante.** El emparejamiento tenía un fallback
+a la etiqueta de origen para cuando ningún período registrado coincidiera con la ventana por
+defecto. Con 37 filas en `config` —y el período real de cada una indeterminable, porque depende de
+qué decía `CONFIG` ese día— ese fallback ofrecería la más nueva de las 37 como si fuera del período
+elegido. **Es abrir el deck equivocado**, que es literalmente lo que la vía rápida existe para
+evitar. Se sacó: sin coincidencia no se ofrece deck y se muestra el formulario. Cuesta una
+generación de más en vez de una reunión.
+
+El muestreo de cuatro filas decía lo contrario del universo de 51, y las cuatro eran las más
+nuevas —las únicas generadas con período explícito—. **Un muestreo por recencia no es un muestreo.**
