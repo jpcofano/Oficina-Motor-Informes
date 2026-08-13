@@ -210,6 +210,9 @@ function leerSolapasSinCache_() {
       // `_23` — de qué solapa de la misma base toma la ventana. Vacío = tiene fecha propia.
       // La lee `referenciaDeVentana_` (Fuentes.gs); nadie más la consulta.
       ventana_ref: fila[idx.ventana_ref],
+      // `_44` (`D-30`) — qué campo lógico lleva el `id_cuenta` en esta solapa. Vacío = la solapa
+      // no se selecciona por cuenta. La lee `campoIdCuentaDeSolapa_` (Fuentes.gs).
+      campo_id_cuenta: fila[idx.campo_id_cuenta],
       notas: fila[idx.notas]
     };
   });

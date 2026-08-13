@@ -657,6 +657,27 @@ function resolverFilaEncabezado_(baseId, solapa, filaEncabezadoBase) {
 /** El conjunto de claves en ventana de cada (base, solapa de referencia, ventana). */
 var cacheClavesVentana_ = {};
 
+/**
+ * `_44` / `D-30` — `SOLAPAS.campo_id_cuenta` normalizado. `''` = esta solapa **no** se selecciona
+ * por cuenta y se lee como hasta hoy.
+ *
+ * Devuelve el **campo lógico** que lleva el `id_cuenta` en esa solapa, no la letra de columna: la
+ * letra vive en `MAPEO`, que es su dueño, y ponerla acá sería la segunda copia de un dato que ya
+ * tiene lugar. Mismo criterio que `ventana_ref`, que declara la solapa de referencia y deja la
+ * clave del cruce en `MAPEO.clave_ventana` (`D-24`).
+ *
+ * **Por solapa y no por base**, y no es simetría: `C-50` midió que el par PRE/POST comparte el
+ * mismo `ID` en **dos solapas distintas** de la misma base, así que la clave del par es
+ * `(ID, solapa)`. Una declaración por base no podría distinguirlas.
+ */
+function campoIdCuentaDeSolapa_(baseId, solapa) {
+  var solapas = leerSolapas();
+  var fila = solapas[baseId] && solapas[baseId][solapa];
+  if (!fila) return '';
+  var crudo = fila.campo_id_cuenta;
+  return String(crudo === null || crudo === undefined ? '' : crudo).trim();
+}
+
 /** `SOLAPAS.ventana_ref` normalizado. `''` = esta solapa tiene su propia `fecha_periodo`. */
 function referenciaDeVentana_(baseId, solapa) {
   var solapas = leerSolapas();
@@ -830,7 +851,7 @@ function entraPorSolape_(inicioStr, finStr, desdeStr, hastaStr) {
  * misma base (caso M2: MAPEO tiene campos en "M2 periodo DIGITAL" además de
  * la hoja default "M2 periodo DIRECTA").
  */
-function leerFuente(baseId, ventana, nombreHojaOverride) {
+function leerFuente(baseId, ventana, nombreHojaOverride, opcionesLectura) {
   var abierto = abrirHoja(baseId, nombreHojaOverride);
   if (!abierto.ok) return { ok: false, base_id: baseId, motivo: abierto.motivo };
 
@@ -838,6 +859,24 @@ function leerFuente(baseId, ventana, nombreHojaOverride) {
   var hoja = abierto.hoja;
   var filaEncabezado = resolverFilaEncabezado_(baseId, hoja.getName(), base.fila_encabezado);
   var modo = base.modo_periodo || 'filtrar';
+
+  /* `_44` / `D-30` — **el llamador puede pedir la solapa sin recortar**, y sólo el llamador.
+   *
+   * Lo usa la rama por cuenta de `datosDeMarcador_`: cuando el ítem trae `id_cuenta`, **la
+   * cuenta es el recorte** y volver a recortar por fecha dejaría láminas vacías —San Cristóbal
+   * es del 23/07 y la ventana de julio arranca el 24 (`R-17`: el temario ya seleccionó)—. Es la
+   * misma razón por la que la rama de `rdv` no recorta desde el `_28`.
+   *
+   * ⚠ **Va por parámetro y NO por una columna de `SOLAPAS`, y la diferencia importa.** Una
+   * declaración por solapa apagaría el recorte para **todos** los lectores de esa solapa, y
+   * `looker/resumen_metricas_dinamico` se lee de las dos formas: por cuenta para los `enc_*` y
+   * como **agregado de la semana** para `frecuencia` y `gcba_frecuencia`. Apagárselo al agregado
+   * le daría la suma de todos los períodos: grande, plausible y equivocada. El recorte no es
+   * propiedad de la solapa — es propiedad de **cómo se la está leyendo**.
+   *
+   * Reusa la rama `snapshot` en vez de escribir un camino nuevo: "devolver todas las filas" ya
+   * está implementado ahí, y duplicarlo sería tener dos definiciones de lo mismo. */
+  if (opcionesLectura && opcionesLectura.sin_recorte_por_ventana) modo = 'snapshot';
 
   // Paso 2.11 Parte B: fila_encabezado=0 ("sin fila de títulos") no tiene de dónde
   // sacar nombres de columna — MAPEO no puede apuntar acá (buscarMapeo ya exige

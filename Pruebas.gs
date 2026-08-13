@@ -1199,6 +1199,73 @@ function controlParticionImpresiones_() {
   };
 }
 
+/**
+ * `_44` / `D-30` — control positivo de la rama por cuenta declarativa.
+ *
+ * Prueba las dos funciones puras directo, sin planilla: `planDeLecturaPorCuenta_` recibe el
+ * resultado de `buscarMapeo` por parámetro justamente para esto.
+ *
+ * **Los fixtures están elegidos para distinguir afirmaciones, no sólo para pasar** (`CLAUDE.md`
+ * §4). El del filtro es el caso: con `[3387, 3289, 3387]` y buscando `3289`, el resultado —una
+ * fila, la del medio— **no coincide** ni con "devuelve la primera", ni con "devuelve la última",
+ * ni con "devuelve todas". Un fixture de dos filas donde la buscada fuera la primera habría
+ * pasado con las cuatro implementaciones.
+ */
+function probarRamaPorCuentaDeclarativa_() {
+  // ── 1 · filtra por la cuenta del ítem ──────────────────────────────────────────────────
+  var filas = [
+    { ID: '3387-JULJDGGC', v: 10 },
+    { ID: '  3289-JUNJDGAG ', v: 20 },
+    { ID: '3387-JULJDGGC', v: 30 }
+  ];
+
+  var unaSola = filtrarFilasPorCuenta_(filas, 'ID', '3289-JUNJDGAG');
+  afirmar_(unaSola.length === 1 && unaSola[0].v === 20,
+    'rama por cuenta: buscando 3289 sobre [3387, 3289, 3387] tiene que volver esa sola fila ' +
+    '(la del medio), vinieron ' + unaSola.length + ' con v=' + unaSola.map(function (f) { return f.v; }));
+
+  // El id de la fila trae espacios de más a propósito: si el filtro comparara crudo, el caso de
+  // arriba daría cero. Esto verifica que se normalizan **los dos lados**, no sólo el buscado.
+  var dosIguales = filtrarFilasPorCuenta_(filas, 'ID', ' 3387-JULJDGGC');
+  afirmar_(dosIguales.length === 2,
+    'rama por cuenta: una cuenta con dos filas tiene que devolver las dos, vinieron ' + dosIguales.length);
+
+  var ninguna = filtrarFilasPorCuenta_(filas, 'ID', '9999-NOEXISTE');
+  afirmar_(ninguna.length === 0,
+    'rama por cuenta: una cuenta sin filas devuelve cero, no todas — vinieron ' + ninguna.length);
+
+  // ── 2 · sin `id_cuenta` falla, y falla POR ESO ─────────────────────────────────────────
+  // El mapeo se pasa **ok** a propósito: si estuviera mal, el caso pasaría por el motivo
+  // equivocado y no distinguiría esta afirmación de la siguiente.
+  var sinCuenta = planDeLecturaPorCuenta_('enc_x', 'reuniones', 'Agenda JM', 'id_cuenta', '',
+    { ok: true, columna: 'A' });
+  afirmar_(!sinCuenta.ok,
+    'rama por cuenta: sin `id_cuenta` NO puede caer a leer la solapa entera');
+  afirmar_(sinCuenta.motivo.indexOf('@sin_id_cuenta') !== -1,
+    'rama por cuenta: el motivo tiene que nombrar el hueco, vino "' + sinCuenta.motivo + '"');
+
+  // ── 3 · la guarda del campo declarado dispara, y dispara POR ESO ───────────────────────
+  // La cuenta viene bien a propósito, por lo mismo que arriba y al revés.
+  var sinMapeo = planDeLecturaPorCuenta_('enc_x', 'reuniones', 'Agenda JM', 'id_cuenta',
+    '3289-JUNJDGAG', { ok: false, motivo: 'falta MAPEO: reuniones/Agenda JM/id_cuenta' });
+  afirmar_(!sinMapeo.ok,
+    'rama por cuenta: un `campo_id_cuenta` que MAPEO no tiene no puede filtrar contra una ' +
+    'columna inventada — dejaría pasar todas las filas');
+  afirmar_(sinMapeo.motivo.indexOf('@campo_id_cuenta_no_mapeado') !== -1,
+    'rama por cuenta: el motivo de la guarda es propio, vino "' + sinMapeo.motivo + '"');
+
+  // ── 4 · el control de que las dos guardas no disparan de más ──────────────────────────
+  var bueno = planDeLecturaPorCuenta_('enc_x', 'reuniones', 'Agenda JM', 'id_cuenta',
+    '3289-JUNJDGAG', { ok: true, columna: 'A' });
+  afirmar_(bueno.ok && bueno.columnaClave === 'A',
+    'rama por cuenta: con cuenta y con mapeo tiene que resolver a la columna del mapeo, vino ' +
+    JSON.stringify(bueno));
+
+  return 'rama por cuenta declarativa: filtra la cuenta del ítem normalizando los dos lados; ' +
+    'sin `id_cuenta` y sin mapeo falla con motivo propio y distinto; el caso bueno resuelve ' +
+    '(3 negativos, 4 positivos)';
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
@@ -1213,7 +1280,8 @@ function correrPruebasDiff_() {
     probarRatioEnDespachador_,
     probarReferenciaVentanaUnNivel_,
     probarFiltroMulticondicion_,
-    probarParticionImpresiones_
+    probarParticionImpresiones_,
+    probarRamaPorCuentaDeclarativa_
   ];
   var lineas = [];
   var fallas = 0;

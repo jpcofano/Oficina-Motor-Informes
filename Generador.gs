@@ -331,6 +331,50 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     };
   }
 
+  /* ── `_44` / `D-30` · la rama por cuenta declarativa ────────────────────────────────────
+   * Las dos ramas de arriba están cableadas a un `base_id` literal —`rdv` y `digital`— y por eso
+   * **cualquier otra base publica el mismo agregado en las seis láminas**: es el bug que el `_28`
+   * arregló para `rdv`, esperando a la tercera base para repetirse. Ésta no nombra ninguna base:
+   * se activa cuando la solapa **declara** cuál de sus campos lógicos lleva la cuenta.
+   *
+   * Va **después** de las dos cableadas y no antes: aquéllas ya están medidas y validadas, y
+   * `digital` además no es un filtro sino una unión de seis solapas por cuenta (`Union.gs`), que
+   * esta rama no sabría reproducir. El orden es deliberado.
+   *
+   * `id_cuenta` sale del contexto del ítem que se está emitiendo, no de la fila de `MARCADORES`:
+   * un filtro declarativo no sirve acá porque `parsearCondicionFiltro_` toma el valor **literal**,
+   * el mismo texto para las seis láminas. */
+  var campoCuenta = campoIdCuentaDeSolapa_(fila.base_id, solapa);
+  if (campoCuenta) {
+    var idCuentaItem = opciones && opciones.id_cuenta;
+    var plan = planDeLecturaPorCuenta_(fila.marcador, fila.base_id, solapa, campoCuenta,
+      idCuentaItem, buscarMapeo(fila.base_id, solapa, campoCuenta));
+    if (!plan.ok) return { ok: false, motivo: plan.motivo };
+
+    /* **Clave de caché propia**: es la misma solapa leída de otra forma —sin recortar—, así que
+     * compartir entrada con la lectura recortada devolvería filas de más a quien pidió el
+     * agregado, o de menos a quien pidió la cuenta. Dos lecturas distintas, dos claves. */
+    var claveCuenta = claveCacheLectura_(fila.base_id, solapa, ventana) + '||por_cuenta';
+    if (!(claveCuenta in cache)) {
+      cache[claveCuenta] = leerFuente(fila.base_id, ventana, solapa, { sin_recorte_por_ventana: true });
+    }
+    var lecturaCuenta = cache[claveCuenta];
+    if (!lecturaCuenta.ok) return { ok: false, motivo: lecturaCuenta.motivo };
+
+    var encClave = encabezadoEnColumna_(fila.base_id, solapa, plan.columnaClave);
+    var filasDeLaCuenta = filtrarFilasPorCuenta_(lecturaCuenta.filas, encClave, idCuentaItem);
+
+    return {
+      ok: true,
+      filas: filasDeLaCuenta,
+      encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+      columna: campo.columna,
+      origen: 'rama por cuenta declarativa (' + fila.base_id + '/' + solapa + ', `' + campoCuenta +
+        '` = "' + idCuentaItem + '": ' + filasDeLaCuenta.length + ' de ' + lecturaCuenta.filas.length +
+        ' fila(s), sin recorte por ventana — el temario ya seleccionó, R-17)'
+    };
+  }
+
   var clave = claveCacheLectura_(fila.base_id, solapa, ventana);
   if (!(clave in cache)) {
     cache[clave] = leerFuente(fila.base_id, ventana, solapa);
@@ -350,6 +394,63 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     columna: campo.columna,
     origen: 'leerFuente(' + fila.base_id + '/' + solapa + ')'
   };
+}
+
+/**
+ * `_44` / `D-30` — las dos decisiones de la rama por cuenta, **puras y con todo por parámetro**.
+ *
+ * Están afuera de `datosDeMarcador_` por el mismo criterio que `validarReferenciaVentana_`
+ * (`Fuentes.gs`): *una regla que sólo se puede probar rompiendo la planilla no se prueba nunca*.
+ * Acá el resultado de `buscarMapeo` entra como argumento, así que el control positivo arma los
+ * tres casos sin escribir en `SOLAPAS` ni en `MAPEO`.
+ *
+ * `mapeoClave` es el `{ ok, columna, motivo }` que devolvió `buscarMapeo` para el campo declarado.
+ */
+function planDeLecturaPorCuenta_(marcador, baseId, solapa, campoCuenta, idCuenta, mapeoClave) {
+  /* **Sin cuenta NO se cae a leer la solapa entera, y ésta es la decisión que importa.**
+   * Caer a la rama general daría una `SUMA` sobre todas las filas de todos los períodos —el
+   * número grande, plausible y equivocado que este proyecto persigue— y encima **sin decirlo**.
+   * Una solapa que declara `campo_id_cuenta` afirma que su grano es la cuenta: leerla sin cuenta
+   * no es una lectura más amplia, **es otra pregunta**. Falla con motivo propio. */
+  if (!idCuenta) {
+    return {
+      ok: false,
+      motivo: '«FALTA:' + marcador + '@sin_id_cuenta» — ' + baseId + '/' + solapa +
+        ' declara `campo_id_cuenta = ' + campoCuenta + '` en SOLAPAS, así que su grano es la ' +
+        'cuenta, y este marcador se está emitiendo sin `id_cuenta` en el contexto del ítem. ' +
+        'Leerla entera devolvería el agregado de todas las cuentas y de todos los períodos.'
+    };
+  }
+
+  /* La guarda de solapa, en la forma que le corresponde a esta rama. La de `rdv` compara la
+   * solapa del marcador contra aquella de donde salió la fila; acá el campo del marcador y el
+   * campo de la cuenta se resuelven **contra la misma solapa**, así que ese desalineamiento no
+   * puede darse. Lo que sí puede pasar es que el campo lógico declarado no exista en `MAPEO`, y
+   * eso se falla acá en vez de filtrar contra una columna inventada: sin la clave, el filtro
+   * dejaría pasar **todas** las filas y el marcador publicaría el agregado creyendo que publicó
+   * la cuenta. Es el modo de falla de siempre — el número plausible del universo equivocado. */
+  if (!mapeoClave || !mapeoClave.ok) {
+    return {
+      ok: false,
+      motivo: '«FALTA:' + marcador + '@campo_id_cuenta_no_mapeado» — SOLAPAS declara `' +
+        campoCuenta + '` como la cuenta de ' + baseId + '/' + solapa + ' y MAPEO no lo tiene. ' +
+        ((mapeoClave && mapeoClave.motivo) || '')
+    };
+  }
+
+  return { ok: true, columnaClave: mapeoClave.columna };
+}
+
+/**
+ * `_44` — el filtro por cuenta. Usa `normalizarIdCuenta_` de los dos lados, que es **la** clave de
+ * join del proyecto (`Union.gs`): un quinto normalizador acá desalinearía esta rama de la unión de
+ * `digital`, que es justo lo que no se quiere.
+ */
+function filtrarFilasPorCuenta_(filas, encabezadoClave, idCuenta) {
+  var buscada = normalizarIdCuenta_(idCuenta);
+  return (filas || []).filter(function (o) {
+    return normalizarIdCuenta_(o[encabezadoClave]) === buscada;
+  });
 }
 
 /* ===================== El filtro declarativo (08/08) =====================

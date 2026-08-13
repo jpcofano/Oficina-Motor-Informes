@@ -124,8 +124,12 @@ var HOJAS_CONFIG_ = {
   // que hacían todas hasta hoy. Vive acá y no en `MAPEO` porque no es una columna de la
   // solapa: es una propiedad de la solapa, del mismo grano que `uso` y `fila_encabezado`.
   // La **clave** del cruce sí es una columna, y por eso va en `MAPEO` (`clave_ventana`).
+  // `campo_id_cuenta` (`_44`, `D-30`): **qué campo lógico de esta solapa lleva el `id_cuenta`**.
+  // Vacío = la solapa no se selecciona por cuenta, que es el estado de todas hasta hoy. Guarda el
+  // **campo lógico** y no la letra de columna, por lo mismo que `ventana_ref` guarda la solapa y
+  // deja la clave en `MAPEO.clave_ventana`: la letra tiene dueño y es `MAPEO`.
   SOLAPAS: {
-    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'filas_minimas', 'ventana_ref', 'notas']
+    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'filas_minimas', 'ventana_ref', 'campo_id_cuenta', 'notas']
   },
   // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
   // ministros, proveedor — ver Plan Inicial/PROYECTO.md §4.
@@ -317,7 +321,16 @@ var COLUMNAS_DELTA_ = {
     // Nace vacía en las 100 y pico de filas, y **vacío significa «esta solapa tiene su propia
     // fecha»** — el estado de todas hasta hoy. La única que nace con valor es `looker/DIGITAL`,
     // porque no tiene ninguna columna temporal (`C-19`).
-    { nombre: 'ventana_ref', indice: 10 }
+    { nombre: 'ventana_ref', indice: 10 },
+    // `_44` (`D-30`) — **índice 11 y al final del array**, por la misma razón que las tres
+    // anteriores: cada entrada asume el esquema del momento en que corre, y para cuando ésta
+    // corre `ventana_ref` ya ocupa la 10 y `notas` corrió a la 11. `insertColumnBefore(11)` la
+    // deja antes de `notas`, que es la convención de toda la hoja.
+    //
+    // Nace vacía en las 100 y pico de filas, y **vacío significa «esta solapa no se selecciona
+    // por cuenta»** — el estado de todas hasta hoy, incluidas las de `digital`, que tienen su
+    // propia rama en `datosDeMarcador_` y no pasan por ésta.
+    { nombre: 'campo_id_cuenta', indice: 11 }
   ],
   // Paso 3 (v3) Parte B (D-20) — `SECCIONES` entra al delta **antes** de que su `headers`
   // gane `periodo_ref`, y esto no es una preferencia de estilo: sin entrada acá, la hoja
@@ -1368,6 +1381,10 @@ function filaSolapa_(baseId, solapa, uso, notas, opciones) {
     // `_23` — vacío es el default y significa «esta solapa se recorta con su propia
     // `fecha_periodo`». Se declara sólo donde la solapa no tiene ninguna columna temporal.
     ventana_ref: 'ventana_ref' in opciones ? opciones.ventana_ref : '',
+    // `_44` (`D-30`) — vacío es el default y significa «esta solapa no se selecciona por cuenta».
+    // Se declara sólo donde el grano de la solapa ES la cuenta y un marcador de encuentro tiene
+    // que quedarse con su fila.
+    campo_id_cuenta: 'campo_id_cuenta' in opciones ? opciones.campo_id_cuenta : '',
     notas: notas
   };
 }
@@ -1592,7 +1609,7 @@ function aplicarClasificacionSolapas_() {
       // estaban por cambiar y cuáles ya coincidían con el seed. La Parte 2 del Paso 2.12
       // necesita justamente eso para `rdv/RDV CONJUNTO` y `rdv/Comunas`.
       var diferencias = [];
-      ['uso', 'fila_encabezado', 'ventana_ref', 'notas'].forEach(function (columna) {
+      ['uso', 'fila_encabezado', 'ventana_ref', 'campo_id_cuenta', 'notas'].forEach(function (columna) {
         if (!(columna in obj)) return;
         var actual = existente[columna];
         var deseado = obj[columna];
@@ -1634,6 +1651,9 @@ function aplicarClasificacionSolapas_() {
       // sembrarlas las pisaría. Ésta es una declaración estructural, del mismo tipo que `uso`,
       // así que el seed es su dueño y el `origen=manual` de arriba sigue siendo su escape.
       ventana_ref: obj.ventana_ref || '',
+      // `_44` — misma categoría que `ventana_ref`: es una declaración estructural, del tipo de
+      // `uso`, así que el seed es su dueño y el `origen=manual` de arriba sigue siendo su escape.
+      campo_id_cuenta: obj.campo_id_cuenta || '',
       notas: obj.notas
     });
   });
