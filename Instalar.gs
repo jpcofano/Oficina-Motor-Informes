@@ -893,6 +893,20 @@ var SEED_BASES_ = [
   { base_id: 'rdv', nombre: 'RDV JM CM ES + funcionarios', sheet_id: '1ZpHO6Ru1uY2r9WfBF_yFtu5z7ip7F3Q6VOoRJN5vLAo', hoja_default: 'RVD JM-CM - ES', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Encuentros' },
   { base_id: 'digital', nombre: 'Seguimiento Digital', sheet_id: '1LadILzFpyCrZRapxgDOFOldSoRawjKkWMaFci_ilhPY', hoja_default: 'Seguimiento digital', fila_encabezado: 1, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Campaña por canal. Paso 2.3: snapshot — sus solapas usan fecha de inicio de campaña (lead 3-7 días), el recorte por período lo hace el agregador vía link campaña↔encuentro, no ventana de fecha cruda.' },
   { base_id: 'looker', nombre: 'Base Looker', sheet_id: '1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ', hoja_default: 'resumen_metricas_dinamico', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Consolidado. Fuente = resumen_metricas_dinamico (S-01, Paso 2.9 Parte C, 31/07): QUERY() viva sobre Cuentas; resumen_metricas es un pegado que devolvió 899 de 903 filas sin fecha — DOC-3 Parte A cerrada.' },
+  /* `_44` Parte C (12/08/2026) — la base de reuniones. **Una fila por encuentro**, que es la
+   * forma que ninguna de las otras cuatro tiene: `rdv` es por encuentro pero sin métricas
+   * digitales, y `digital`/`looker` son por campaña.
+   *
+   * `modo_periodo: 'snapshot'` y no `'filtrar'`, a propósito: sus dos solapas fuente declaran
+   * `campo_id_cuenta`, así que **el recorte lo hace la cuenta del ítem** (`D-30`) y el temario ya
+   * seleccionó (`R-17`). Poner `filtrar` exigiría un `fecha_periodo` mapeado y volvería a dejar
+   * afuera a San Cristóbal 23/07 en la ventana de julio, que es exactamente el bug que `D-30`
+   * evita.
+   *
+   * `fila_encabezado: 2` **no va acá sino en cada `SOLAPAS`**: la fila 1 de `Agenda JM` es una
+   * banda de grupos (`Comunicación Directa | Mailing`, …) y la 2 son los títulos reales. El
+   * default de la base queda en 1 porque `Barrios` sí tiene su encabezado en la 1. */
+  { base_id: 'reuniones', nombre: 'Base reuniones - Digital - Call Center', sheet_id: '12b0v67FbxjuIndK7DgVU3MYxx-k0yBIS9gtyV45rFaY', hoja_default: 'Agenda JM', fila_encabezado: 1, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Una fila por encuentro, clave ID = id_cuenta del anclaje. PRE en Agenda JM y POST en Agenda JM | Post, con el MISMO id (C-50): la clave del par es (ID, solapa). snapshot porque el recorte lo hace campo_id_cuenta (D-30), no la fecha.' },
   // Paso 2.10 Parte C: hoja_default vacío a propósito — 'M2 periodo DIRECTA' pasó a
   // uso=referencia (banner de período tipeado a mano, no una fuente). Un default que
   // apunta a una solapa no-fuente hacía que los diagnósticos genéricos (probarConexionBases,
@@ -1217,6 +1231,32 @@ var SEED_MAPEO_ = [
 // Paso 2.3.2: `solapa` entra en la clave de MAPEO junto a `base_id` +
 // `campo_logico`. Cada fila de arriba ya declara su `hoja` real (incluidas las
 // `dig_*`/`mail_*`/`sms_*`, que ya apuntaban a su solapa real, no a
+/* `_44` Parte C — `reuniones`. Las letras salieron de contar el encabezado de la fila 2 sobre la
+ * copia viva el 12/08 y se cruzaron contra los valores de las 7 cuentas ancladas: `Base total`
+ * de `3289` da 5.387, que es lo que `V-86` valida contra la lámina 9 publicada.
+ *
+ * **`id_cuenta` es la fila que hace funcionar a `D-30`**: `SOLAPAS.campo_id_cuenta` la nombra y
+ * `datosDeMarcador_` la resuelve para quedarse con la fila del encuentro. Sin ella, la rama falla
+ * con `@campo_id_cuenta_no_mapeado` en vez de filtrar contra una columna inventada.
+ *
+ * Los `_pct` se **leen**, no se calculan: la base ya los trae como fracción (`% Cont.` = 0,2920)
+ * y recalcularlos sería una segunda definición del mismo número conviviendo con la primera. */
+var SEED_MAPEO_REUNIONES_ = [
+  { base_id: 'reuniones', campo_logico: 'id_cuenta', hoja: 'Agenda JM', columna: 'A', notas: 'clave del encuentro — la nombra SOLAPAS.campo_id_cuenta (D-30)' },
+  { base_id: 'reuniones', campo_logico: 'cc_base_total', hoja: 'Agenda JM', columna: 'U', notas: '"Base total" — el BBDD de teléfonos del iceberg. V-90: = Base enviada de looker/CC' },
+  { base_id: 'reuniones', campo_logico: 'cc_base_discada', hoja: 'Agenda JM', columna: 'V', notas: '"Base discada" — la base llamada del iceberg. V-90: = Base barrida de looker/CC' },
+  { base_id: 'reuniones', campo_logico: 'cc_contactados', hoja: 'Agenda JM', columna: 'W', notas: '"Contactados"' },
+  { base_id: 'reuniones', campo_logico: 'cc_contactados_pct', hoja: 'Agenda JM', columna: 'X', notas: '"% Cont." — viene como fracción (0,2920), formato `fraccion`' },
+  { base_id: 'reuniones', campo_logico: 'cc_efectivos', hoja: 'Agenda JM', columna: 'Y', notas: '"Efectivos"' },
+  { base_id: 'reuniones', campo_logico: 'cc_efectivos_pct', hoja: 'Agenda JM', columna: 'Z', notas: '"% Efect." — fracción' },
+  { base_id: 'reuniones', campo_logico: 'imp_totales', hoja: 'Agenda JM', columna: 'AA', notas: '"Impresiones totales" — V-88: el bloque PRE del deck entero en una fila (San Cristóbal 42.500 exacto)' },
+  { base_id: 'reuniones', campo_logico: 'alc_potencial', hoja: 'Agenda JM', columna: 'AG', notas: '"Alcance potencial" — el alcance objetivo del iceberg' },
+  { base_id: 'reuniones', campo_logico: 'alc_cobertura_pct', hoja: 'Agenda JM', columna: 'AH', notas: '"% Cobertura" — ⚠ sale 0 en las 14 filas donde Habitantes es el texto "Revisar" (las de eje). Por eso su marcador lleva filtro !=0' },
+  // La POST entra con su clave nada más: sus métricas las cablea el prompt que las pida.
+  { base_id: 'reuniones', campo_logico: 'id_cuenta', hoja: 'Agenda JM | Post', columna: 'A', notas: 'mismo ID que la PRE — la clave del par es (ID, solapa), C-50' }
+];
+SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_REUNIONES_);
+
 // `hoja_default`) — `solapa` es exactamente ese mismo valor, así que se deriva
 // acá en vez de tipearlo dos veces por fila.
 SEED_MAPEO_.forEach(function (fila) { fila.solapa = fila.hoja; });
@@ -1273,7 +1313,12 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   alc_alcance: 'numero', alc_frecuencia: 'numero',
   sd_pauta_google: 'numero', sd_pauta_prog: 'numero', sd_pauta_meta: 'numero',
   acum_impresiones: 'numero', acum_views: 'numero', acum_clics: 'numero',
-  acum_ctr: 'numero', acum_frecuencia: 'numero', acum_alcance: 'numero'
+  acum_ctr: 'numero', acum_frecuencia: 'numero', acum_alcance: 'numero',
+  // `_44` — `reuniones`. Los `_pct` son `numero` y no un tipo propio: vienen como fracción y
+  // `tipo_esperado` describe el dato, no el formato con que se publica.
+  cc_base_total: 'numero', cc_base_discada: 'numero', cc_contactados_pct: 'numero',
+  cc_efectivos_pct: 'numero', imp_totales: 'numero', alc_potencial: 'numero',
+  alc_cobertura_pct: 'numero'
 };
 SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAMPO_[fila.campo_logico] || ''; });
 
@@ -1524,6 +1569,27 @@ var SEED_SOLAPAS_ = [].concat(
   [
     filaSolapa_('m2', 'Cuentas M2', 'fuente', '353 filas, encabezado fila 1 — dimensión de campañas M2', { fila_encabezado: 1, filas_datos: 353 }),
     filaSolapa_('m2', 'Cuentas', 'ignorar', 'mismo universo que digital/Cuentas (3453 filas), que queda como fuente (Paso 2.12 Parte 2)', { fila_encabezado: 1, filas_datos: 3453 })
+  ],
+  /* `_44` Parte C — las cuatro solapas de `reuniones`.
+   *
+   * **`fila_encabezado: 2` en las tres de agenda**: la fila 1 es una banda de grupos
+   * (`Comunicación Directa | Mailing`, `Comunicación Digital | Meta`, …) y la 2 son los títulos.
+   * Medido sobre la copia viva el 12/08: `Agenda JM` 152 filas × 44 columnas, `ID` único.
+   *
+   * **`campo_id_cuenta: 'id_cuenta'` en las dos que son fuente**, que es lo que hace que un
+   * marcador de encuentro se quede con la fila de SU cuenta y no publique el agregado en las
+   * seis láminas (`D-30`). Va en las dos por separado y no en la base: `C-50` midió que el mismo
+   * `ID` vive en `Agenda JM` (PRE, 152 ids) y en `Agenda JM | Post` (POST, 102 ids, 98
+   * compartidos), así que la clave del par es `(ID, solapa)`.
+   *
+   * `Agenda funcionarios` queda `ignorar`: son encuentros de otros funcionarios, el mismo caso
+   * que `rdv/RDV_otros_ministros` pero sin nadie que los pida hoy. `Barrios` es `referencia`:
+   * es la tabla de habitantes por barrio y comuna, no una fuente de métricas. */
+  [
+    filaSolapa_('reuniones', 'Agenda JM', 'fuente', 'PRE — una fila por encuentro, 152 filas × 44 columnas, ID único. Embudo de Call Center, Mail, IVR e impresiones por plataforma en la misma fila', { fila_encabezado: 2, filas_datos: 152, campo_id_cuenta: 'id_cuenta' }),
+    filaSolapa_('reuniones', 'Agenda JM | Post', 'fuente', 'POST — 102 filas, mismo ID que la PRE (C-50). Alcance, impresiones, clics y visualizaciones por plataforma', { fila_encabezado: 2, filas_datos: 102, campo_id_cuenta: 'id_cuenta' }),
+    filaSolapa_('reuniones', 'Agenda funcionarios', 'ignorar', 'encuentros de otros funcionarios — mismo caso que rdv/RDV_otros_ministros, nadie los pide hoy', { fila_encabezado: 2, filas_datos: 545 }),
+    filaSolapa_('reuniones', 'Barrios', 'referencia', 'habitantes por barrio y comuna — tabla de referencia, no fuente de métricas', { fila_encabezado: 1, filas_datos: 70 })
   ],
   // Paso 2.9 Parte C.5: 'M2 Directa'/'M2 digital' (26/67 filas, "acumulados") tuvieron
   // clasificación sospechada invertida frente a lo que se leía como su detalle, y
