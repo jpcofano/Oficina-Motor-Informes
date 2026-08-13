@@ -264,7 +264,14 @@ function informeActual(){
  * Con el selector en "por defecto" no hay id que comparar, así que se busca el período de la
  * lista **cuya ventana coincide** con la que el motor resolvería hoy. No es derivar el período
  * de la fecha de generación —eso sería adivinar—: es preguntar cuál de los períodos
- * registrados ES el que va a salir. Si ninguno coincide, cae a la etiqueta de origen.
+ * registrados ES el que va a salir.
+ *
+ * ⚠ **Y si ninguno coincide, no se ofrece nada — no se cae a la etiqueta.** Medido el 13/08:
+ * **37 de las 51 corridas tienen `config`**, y el período real de cada una es indeterminable,
+ * porque depende de qué decía `CONFIG` ese día. Emparejar contra la etiqueta ofrecería la más
+ * nueva de esas 37 como si fuera del período elegido, que es exactamente **abrir el deck
+ * equivocado** — el error que esta vía rápida existe para evitar. No ofrecer nada cuesta una
+ * generación de más; ofrecer el equivocado cuesta una reunión.
  *
  * Tres cosas que NO emparejan, y las tres a propósito:
  *   - una corrida con `periodo_id` vacío — no se le asigna el período elegido "porque es la
@@ -279,7 +286,7 @@ function periodoBuscado(){
     var p = S.periodos[i];
     if (p.desde === S.porDefecto.desde && p.hasta === S.porDefecto.hasta) return p.id;
   }
-  return String(S.porDefecto.origen || '');
+  return '';
 }
 
 function corridaPrevia(){
