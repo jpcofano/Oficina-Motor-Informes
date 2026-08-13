@@ -1,0 +1,13 @@
+import React from 'react';
+const KIND = {
+  error: { bg: 'var(--surface-error-subtle)', fg: 'var(--color-error)' },
+  warning: { bg: 'var(--surface-warning-subtle)', fg: 'var(--color-warning)' },
+  info: { bg: 'var(--surface-primary-subtle)', fg: 'var(--text-on-primary-subtle)' },
+};
+export function Alert({ kind = 'info', title, children }) {
+  const c = KIND[kind];
+  return React.createElement('div', { style: { background: c.bg, color: c.fg, borderRadius: 'var(--radius-sm)', padding: '10px 12px', fontSize: 'var(--text-xs)', lineHeight: 'var(--line-normal)' } },
+    title && React.createElement('div', { style: { fontWeight: 'var(--weight-bold)', marginBottom: 2 } }, title),
+    children
+  );
+}

@@ -1,0 +1,7 @@
+import React from 'react';
+export function DeckLinkCard({ name, href, meta }) {
+  return React.createElement('a', { href, target: '_blank', rel: 'noreferrer', style: { display: 'block', textDecoration: 'none', background: 'var(--surface-primary-subtle)', color: 'var(--text-on-primary-subtle)', borderRadius: 'var(--radius-md)', padding: '12px 14px', fontWeight: 'var(--weight-medium)', fontSize: 'var(--text-sm)' } },
+    name + ' ↗',
+    meta && React.createElement('div', { style: { color: 'var(--text-tertiary)', fontWeight: 'var(--weight-regular)', fontSize: 'var(--text-xs)', marginTop: 4 } }, meta)
+  );
+}

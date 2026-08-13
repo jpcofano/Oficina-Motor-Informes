@@ -1,0 +1,9 @@
+import React from 'react';
+export function StatRow({ label, unit, value }) {
+  return React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: '5px 0', borderBottom: '1px solid var(--border-subtle)' } },
+    React.createElement('div', null,
+      React.createElement('div', { style: { fontSize: 'var(--text-sm)', color: 'var(--text-primary)' } }, label),
+      unit && React.createElement('div', { style: { fontSize: 'var(--text-2xs)', color: 'var(--text-tertiary)' } }, unit)),
+    React.createElement('div', { style: { fontSize: 'var(--text-md)', fontWeight: 'var(--weight-medium)', fontVariantNumeric: 'tabular-nums', color: 'var(--text-primary)' } }, value)
+  );
+}

@@ -33,7 +33,23 @@ function encabezadoEnColumna_(baseId, solapa, columnaLetra) {
     if (!abierto.ok) {
       cacheEncabezadosUnion_[clave] = null;
     } else {
-      var filaEncabezado = Number(abierto.base.fila_encabezado) || 1;
+      /* `_44` (12/08) — **`resolverFilaEncabezado_` y no `BASES.fila_encabezado`**, que es el
+       * bug que el comentario de `leerFuente` (`_23`) había dejado escrito y sin arreglar:
+       * *"resolverlo por afuera usaría `BASES.fila_encabezado` en vez de
+       * `resolverFilaEncabezado_`, y donde las dos difieran el nombre no matchearía ninguna
+       * propiedad: todas las claves saldrían vacías **sin fallar**"*.
+       *
+       * Pasó exactamente así al dar de alta `reuniones`: `leerFuente` leía los títulos de la
+       * fila 2 —que es lo que declara `SOLAPAS`— y esta función los buscaba en la 1, que en
+       * `Agenda JM` es la banda de grupos. Los nueve marcadores nuevos salieron `sin_datos`
+       * con la fila cargada y el filtro bien: **el síntoma no se parece a la causa.**
+       *
+       * Radio medido antes de tocar: de las 16 solapas `fuente`, sólo **tres** tienen las dos
+       * declaraciones distintas — las dos de `reuniones` y `m2/Cuentas M2`, que hoy está
+       * leyendo la fila 3 como encabezado y **ya estaba rota** (`m2` no tiene fuente activa,
+       * sus tokens publican `«FALTA»`). Así que esto alinea, no cambia comportamiento vivo. */
+      var filaEncabezado = resolverFilaEncabezado_(baseId, abierto.hoja.getName(), abierto.base.fila_encabezado);
+      if (!(filaEncabezado > 0)) filaEncabezado = 1;
       var ultimaColumna = abierto.hoja.getLastColumn();
       cacheEncabezadosUnion_[clave] = abierto.hoja.getRange(filaEncabezado, 1, 1, ultimaColumna).getValues()[0];
     }

@@ -1,0 +1,7 @@
+import React from 'react';
+export function Checkbox({ id, label, sublabel, checked, onChange, disabled }) {
+  return React.createElement('label', { htmlFor: id, style: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 'var(--text-sm)', color: disabled ? 'var(--text-disabled)' : 'var(--text-primary)', cursor: disabled ? 'default' : 'pointer', padding: '4px 0' } },
+    React.createElement('input', { type: 'checkbox', id, checked, disabled, onChange: e => onChange && onChange(e.target.checked), style: { width: 16, height: 16, accentColor: 'var(--color-primary)', margin: 0 } }),
+    React.createElement('span', null, label, sublabel && React.createElement('span', { style: { fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', marginLeft: 6 } }, sublabel))
+  );
+}

@@ -1,0 +1,9 @@
+import React from 'react';
+export function RunHistoryItem({ informe, fecha, cerrada, faltantes }) {
+  return React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border-subtle)', fontSize: 'var(--text-sm)' } },
+    React.createElement('div', null,
+      React.createElement('div', { style: { color: 'var(--text-primary)', fontWeight: 'var(--weight-medium)' } }, informe),
+      React.createElement('div', { style: { color: cerrada ? 'var(--text-tertiary)' : 'var(--color-error)', fontSize: 'var(--text-xs)' } }, cerrada ? fecha : 'no cerró — sin fecha de generación')),
+    faltantes !== undefined && React.createElement('div', { style: { color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)', textAlign: 'right' } }, faltantes + ' en FALTANTES')
+  );
+}

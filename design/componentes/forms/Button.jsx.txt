@@ -1,0 +1,19 @@
+import React from 'react';
+export function Button({ variant = 'primary', size = 'md', disabled, children, onClick, style }) {
+  const base = {
+    fontFamily: 'var(--font-sans)', fontWeight: 'var(--weight-medium)', fontSize: 'var(--text-sm)',
+    border: 0, borderRadius: 'var(--radius-sm)', cursor: disabled ? 'default' : 'pointer',
+    padding: size === 'sm' ? '6px 12px' : '10px 16px', transition: 'background var(--duration-fast) var(--ease-standard)',
+    width: '100%', boxSizing: 'border-box',
+  };
+  const variants = {
+    primary: { background: disabled ? 'var(--color-disabled-bg)' : 'var(--color-primary)', color: disabled ? 'var(--color-disabled-fg)' : 'var(--text-on-primary)' },
+    secondary: { background: 'var(--surface-page)', color: disabled ? 'var(--text-disabled)' : 'var(--color-primary)', border: '1px solid var(--border-default)' },
+    ghost: { background: 'transparent', color: disabled ? 'var(--text-disabled)' : 'var(--text-secondary)' },
+  };
+  return React.createElement('button', {
+    disabled, onClick, style: { ...base, ...variants[variant], ...style },
+    onMouseEnter: e => { if (!disabled && variant === 'primary') e.currentTarget.style.background = 'var(--color-primary-hover)'; },
+    onMouseLeave: e => { if (!disabled && variant === 'primary') e.currentTarget.style.background = 'var(--color-primary)'; },
+  }, children);
+}

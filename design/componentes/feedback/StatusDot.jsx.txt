@@ -1,0 +1,14 @@
+import React from 'react';
+const MAP = {
+  ok: { symbol: '●', color: 'var(--color-success)' },
+  omitted: { symbol: '○', color: 'var(--text-tertiary)' },
+  warning: { symbol: '▲', color: 'var(--color-warning)' },
+};
+export function StatusDot({ status = 'ok', label, note }) {
+  const s = MAP[status];
+  return React.createElement('div', { style: { display: 'flex', gap: 8, alignItems: 'baseline', fontSize: 'var(--text-sm)', padding: '2px 0' } },
+    React.createElement('span', { style: { color: s.color, fontSize: 10 } }, s.symbol),
+    React.createElement('span', { style: { color: 'var(--text-primary)', fontWeight: 'var(--weight-medium)' } }, label),
+    note && React.createElement('span', { style: { color: 'var(--text-tertiary)', fontSize: 'var(--text-xs)' } }, note)
+  );
+}

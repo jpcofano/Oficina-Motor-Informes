@@ -1,0 +1,12 @@
+:root{
+--font-sans:'Roboto',Arial,sans-serif;
+--text-2xs:11px;--text-xs:12px;--text-sm:13px;--text-base:14px;--text-md:16px;--text-lg:20px;--text-xl:24px;
+--weight-regular:400;--weight-medium:500;--weight-bold:700;
+--line-tight:1.2;/* @kind other */
+--line-normal:1.4;/* @kind other */
+--line-relaxed:1.6;/* @kind other */
+--tracking-label:.4px;
+}
+@font-face{font-family:'Roboto';font-style:normal;font-weight:400;src:local('Roboto'),url(https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxKKTU1Kg.woff2) format('woff2')}
+@font-face{font-family:'Roboto';font-style:normal;font-weight:500;src:local('Roboto Medium'),url(https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmEU9fBBc4AMP6lQ.woff2) format('woff2')}
+@font-face{font-family:'Roboto';font-style:normal;font-weight:700;src:local('Roboto Bold'),url(https://fonts.gstatic.com/s/roboto/v30/KFOlCnqEu92Fr1MmWUlfBBc4AMP6lQ.woff2) format('woff2')}
