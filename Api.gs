@@ -89,6 +89,16 @@ function doGet(e) {
   if (Object.prototype.hasOwnProperty.call(params, 'accion')) {
     return manejarPedido_(e);
   }
+  // `_50` (13/08) — la maqueta para grabar, en su propia ruta. Va **acá adentro** y no en un
+  // `doGet` propio por la misma razón que el panel: `doGet` es uno solo en todo el proyecto y
+  // un segundo en otro archivo pisaría a éste en silencio (`CLAUDE.md` §1).
+  //
+  // Un parámetro nuevo y no una acción: `PanelDemo.html` no llama al backend ni una vez, así
+  // que no tiene nada que hacer del lado de la API. Y la barrera es la misma —una maqueta con
+  // ids de deck reales adentro no puede quedar más abierta que el panel—.
+  if (String(params.vista || '') === 'demo') {
+    return servirPanelDemo_();
+  }
   return servirPanel_();
 }
 
@@ -137,6 +147,27 @@ function servirPanel_() {
   console.log('panel — acceso concedido · ' + barrera.mail);
   return HtmlService.createHtmlOutputFromFile('Panel')
     .setTitle('Motor de Informes')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * La maqueta del `_50` (`?vista=demo`), para grabar el video.
+ *
+ * **No es el panel y no lo toca.** `PanelDemo.html` no comparte una línea con `Panel.html`: el
+ * CSS y el markup están copiados. Es a propósito — el panel real anda y muestra dos decks de
+ * verdad, y romperlo una hora antes de grabar era el único desenlace malo posible.
+ *
+ * No llama al backend ni una vez, así que no hay nada que orquestar acá: se sirve el archivo.
+ */
+function servirPanelDemo_() {
+  var traza = [];
+  var barrera = apiBarrera1_(traza);
+  if (!barrera.ok) {
+    console.log('demo — acceso denegado · motivo=' + barrera.motivo + ' · ' + traza.join(' | '));
+    return apiPantallaDeRechazo_(barrera.motivo);
+  }
+  return HtmlService.createHtmlOutputFromFile('PanelDemo')
+    .setTitle('Motor de Informes — demostración')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
