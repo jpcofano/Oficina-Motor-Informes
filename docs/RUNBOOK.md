@@ -152,11 +152,38 @@ de nuestro código en `/dev`. Esa exigencia es la que hace tolerable que exista 
 
 Se evalúan siempre, en orden, antes de cualquier acción (`Api.gs`):
 
-1. **Identidad** — `Session.getActiveUser().getEmail()` tiene que estar en
-   `API_AUTORIZADOS_`. Es la cuenta con la que está logueado clasp, no la del usuario en
-   otro producto; se verifica con `node tools/token.js --info`.
+1. **Identidad** — `Session.getActiveUser().getEmail()` tiene que estar en la clave
+   `mails_autorizados` de **`CONFIG`** (`_46`, 13/08/2026; antes era la constante
+   `API_AUTORIZADOS_` en `Api.gs`). Es la cuenta con la que está logueado clasp, no la del
+   usuario en otro producto; se verifica con `node tools/token.js --info`.
 2. **Token de aplicación** — el `token` del pedido contra la propiedad de script
    `API_TOKEN`. Si la propiedad no está seteada, **rechaza**: nunca pasa por ausencia.
+
+#### Agregar o sacar a alguien de la lista
+
+Se edita **la celda de `CONFIG`**, separando por comas. No hace falta `clasp push`, y
+**tampoco esperar ni limpiar nada**: `leerConfig()` pasa por `memoRegistro_`, cuyo caché es
+una variable de módulo que muere con cada ejecución de Apps Script y que además está
+**apagada salvo adentro de `generarInforme`**. El cambio vale en el pedido siguiente.
+
+Espacios alrededor y mayúsculas dan igual — `apiListaAutorizados_` normaliza los dos lados.
+
+**La barrera falla cerrada, y los tres motivos se distinguen en la traza:**
+
+| qué pasó | motivo en la traza |
+|---|---|
+| la hoja no se pudo leer (incluida "no hay planilla atada") | `config ilegible` |
+| la clave no existe en `CONFIG` | `clave ausente` |
+| la celda está vacía, o son puras comas | `lista vacía` |
+
+Ninguno cae a un default del código: **una lista vacía deja a todo el mundo afuera, incluido
+el dueño.** Es lo contrario de `centinelas_lectura`, y a propósito — sobre la puerta de
+entrada, un default convertiría un error de lectura en un acceso concedido.
+
+⚠ **Riesgo aceptado:** quien pueda editar la planilla de control puede agregarse a la lista.
+Es tolerable —quien edita la planilla ya tiene los datos que el informe publica— pero está
+escrito acá porque es una decisión, no una obviedad. Es la **pieza 1 de `D-16`**; el control
+del acceso al *dato* (pieza 3) sigue sin resolver.
 
 | credencial | dónde vive | quién la usa |
 |---|---|---|

@@ -8818,3 +8818,58 @@ mandaría a buscar el bug en el lugar equivocado.
 **La guarda del `_39` no lo tapa, y ésa es la parte accionable:** `opULTIMO` exige **dos valores
 distintos** para devolver `«FALTA:@ultimo_sin_fecha_ambiguo»`. Con una fila vacía y una con valor
 hay **uno solo**, y lo toma sin dudar. **La guarda cubre el empate y no cubre el hueco.**
+
+---
+
+## `_46` — la lista de mails sale del código, y el panel queda en `/exec` (2026-08-13)
+
+**Partes B y C.** La Parte A fue sólo lectura y disolvió dos de sus cinco preguntas.
+
+`API_AUTORIZADOS_` —un array con un solo mail cableado en `Api.gs`— pasa a
+`CONFIG.mails_autorizados`. Mismo argumento que `umbral_anclaje_reunion` en el Paso 2.9F: sumar a
+alguien es operación, no lógica, y no puede exigir `clasp push`. Es la **pieza 1 de `D-16`**; las
+piezas 2 y 3 siguen abiertas.
+
+**Falla cerrada con motivos distinguibles**, que es la mitad del trabajo: `config ilegible`,
+`clave ausente` y `lista vacía` rechazan las tres y dejan traza propia. Sin default de código, a
+diferencia de `umbralAnclajeReunion_` — sobre la puerta de entrada, un default convierte un error
+de lectura en un acceso concedido.
+
+### Dos premisas del prompt que el repo desmintió
+
+**A.3 pedía confirmar que `tools/api.js` postea sin sesión de Google, y postea con.** Manda
+`Authorization: Bearer` derivado por `tools/token.js` del refresh token de clasp
+(`jpcofanogcba1@gmail.com`, verificado con `--info`). Y pega a `/dev`, que no es un despliegue: es
+HEAD, restringido a cuentas con permiso de edición sobre el script. Por las dos vías, cambiar
+`access` no podía romperlo — **el intercambio que el prompt mandaba a decidir no existía**.
+
+**A.5 preguntaba si un proyecto admite dos despliegues con `access` distinto, y la pregunta era la
+equivocada.** `clasp list-deployments` devolvió **uno solo**, el `@HEAD` implícito que sirve `/dev`.
+La API no usa un despliegue. Sólo había un `access` que configurar, el del panel.
+
+Medido después del push, que era el único residuo abierto: con `access: ANYONE`, `/dev` sigue
+devolviendo JSON de nuestro propio código. Si Google lo hubiera cortado, la respuesta habría sido
+HTML antes de correr una línea.
+
+### El error de orden, que es lo que hay que recordar
+
+**El sembrador de `CONFIG` se alcanza sólo pasando la barrera, y la barrera exige la clave que el
+sembrador escribe.** Se pusheó la barrera antes de sembrar y la API quedó cerrada para todos,
+incluido el dueño. La traza lo dijo con todas las letras —`barrera 1: CONFIG no tiene la clave
+mails_autorizados`—, o sea que el diseño funcionó exactamente como se pidió; lo que falló fue la
+secuencia.
+
+**La salida correcta era en dos fases:** pushear `Instalar.gs` solo, sembrar por la API, y recién
+después pushear la barrera de `Api.gs`. Los dos caminos alternativos se probaron y ninguno sirve:
+`clasp run` pide que el proyecto esté desplegado como API executable, y no lo está; el token de
+`tools/token.js` no tiene scope de Sheets. Lo destrabó el usuario desde el menú.
+
+**La regla general, que aplica a cualquier barrera futura:** una guarda que lee configuración se
+despliega **después** de que esa configuración exista, y hay que preguntarse antes si el camino que
+la sembraría pasa por la guarda.
+
+### Lo desplegado
+
+`appsscript.json`: `ANYONE_ANONYMOUS` → `ANYONE`. Despliegue nuevo `@1` sobre `/exec`, con
+`executeAs: USER_DEPLOYING` sin tocar. Probado con Bearer de la cuenta dueña: HTTP 200 sirviendo
+nuestro `doGet`, no un error de Google ni un login.
