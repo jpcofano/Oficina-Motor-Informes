@@ -251,15 +251,48 @@ function informeActual(){
   for (var i=0;i<S.informes.length;i++) if (S.informes[i].id === S.informeId) return S.informes[i];
   return null;
 }
-/* Una corrida cerrada de este informe+período, para la vía rápida. `periodo` viene del
- * backend como texto, así que el cruce se hace por `corrida_id`, que empieza con el
- * `informe_id`. Sin `panel_getPeriodos` no hay forma de cruzar por período: por eso la vía
- * rápida sólo mira el informe y lo dice en el copy. */
+/* Una corrida cerrada de este informe Y de este período, para la vía rápida.
+ *
+ * Antes cruzaba sólo por informe y devolvía la más nueva, así que cambiar el período no
+ * cambiaba el deck ofrecido: mostraba siempre el mismo. El backend ya devuelve `periodo_id`.
+ *
+ * El caso "por defecto" necesita traducción, y conviene saber por qué. La columna guarda
+ * `periodoId || origen`, o sea **dos vocabularios**: un id de la lista de períodos si alguien
+ * lo eligió, y la etiqueta de la cadena que lo resolvió si no. Medido el 13/08, las corridas
+ * reales traen ids (`julio_24_30`, `junio_sem2`), pero la etiqueta puede aparecer igual.
+ *
+ * Con el selector en "por defecto" no hay id que comparar, así que se busca el período de la
+ * lista **cuya ventana coincide** con la que el motor resolvería hoy. No es derivar el período
+ * de la fecha de generación —eso sería adivinar—: es preguntar cuál de los períodos
+ * registrados ES el que va a salir. Si ninguno coincide, cae a la etiqueta de origen.
+ *
+ * Tres cosas que NO emparejan, y las tres a propósito:
+ *   - una corrida con `periodo_id` vacío — no se le asigna el período elegido "porque es la
+ *     más nueva", que es justamente el error que esto viene a arreglar;
+ *   - una que no cerró — no tiene deck que ofrecer;
+ *   - una de otro período — aunque sea la única que haya.
+ * La lista viene de la más nueva a la más vieja, así que el primer match es el más reciente. */
+function periodoBuscado(){
+  if (S.periodoId) return S.periodoId;
+  if (!S.porDefecto || !S.porDefecto.ok) return '';
+  for (var i=0;i<S.periodos.length;i++){
+    var p = S.periodos[i];
+    if (p.desde === S.porDefecto.desde && p.hasta === S.porDefecto.hasta) return p.id;
+  }
+  return String(S.porDefecto.origen || '');
+}
+
 function corridaPrevia(){
   if (!S.corridas || !S.informeId) return null;
+  var buscado = periodoBuscado();
+  if (!buscado) return null;
   for (var i=0;i<S.corridas.length;i++){
     var c = S.corridas[i];
-    if (c.informe_id === S.informeId && c.cerrada && c.deck_id) return c;
+    if (c.informe_id !== S.informeId) continue;
+    if (!c.cerrada || !c.deck_id) continue;
+    if (!c.periodo_id) continue;
+    if (c.periodo_id !== buscado) continue;
+    return c;
   }
   return null;
 }
@@ -385,8 +418,8 @@ function vistaGenerar(){
        (FLAGS.personalizado ? '<option value="__custom">Informe semanal personalizado</option>' : '') +
        '</select>';
   if (inf && inf.marcadores_cableados === 0){
-    h += '<p class="hint">Este informe todavía no tiene marcadores cableados: el deck va a salir ' +
-         'con huecos en casi todos los tokens.</p>';
+    h += '<p class="hint">Este informe todavía no tiene datos configurados: el deck va a salir ' +
+         'con huecos en casi todos los lugares.</p>';
   }
   h += '</div>';
 
@@ -399,7 +432,10 @@ function vistaGenerar(){
            esc(p.id) + ' · ' + esc(p.desde) + ' → ' + esc(p.hasta) + '</option>';
        }).join('') +
        '</select>' +
-       '<p class="hint">Sale de la cadena de D-20, eslabón «vigente».</p>';
+       (S.porDefecto && S.porDefecto.ok
+         ? '<p class="hint">Si no elegís, sale ' + esc(S.porDefecto.etiqueta) +
+           '. Podés cambiarlo en la lista.</p>'
+         : '<p class="hint">Elegí el período del informe.</p>');
   var roto = S.periodos.filter(function(p){
     return String(p.desde).indexOf('ilegible') !== -1 || String(p.hasta).indexOf('ilegible') !== -1;
   });
@@ -416,13 +452,14 @@ function vistaGenerar(){
          esc(S.porDefecto.motivo || '') + '</div>';
   }
 
-  /* La vía rápida: si este informe ya tiene un deck cerrado, se ofrece abrirlo antes que
-   * volver a esperar cinco minutos. */
+  /* La vía rápida: si este informe ya tiene un deck cerrado **de este período**, se ofrece
+   * abrirlo antes que volver a esperar cinco minutos. La fecha y hora quedan a la vista: es lo
+   * único que distingue dos decks del mismo informe y el mismo período. */
   if (previa && !S.forzarForm){
     h += '<hr class="sep">';
-    h += '<p class="hint">Este informe ya tiene un deck generado: se abre al instante.</p>';
+    h += '<p class="hint">Ya hay un deck generado para este período: se abre al instante.</p>';
     h += deckCard(previa.deck_id, (inf && inf.nombre) || previa.informe_id,
-      'Generado el ' + esc(previa.fecha_generacion) + ' · corrida ' + esc(previa.corrida_id));
+      'Generado el ' + esc(previa.fecha_generacion));
     h += '<button class="btn btn-secondary" id="b-denuevo">Generar de nuevo, a sabiendas</button>';
     return h;
   }
@@ -523,13 +560,13 @@ function vistaListo(){
 
   var c = r.conteos || {};
   h += '<div class="stats">' +
-    stat('Tokens distintos en el deck', '', c.tokens_distintos) +
-    stat('Impresiones con valor', 'token × lámina', c.impresiones_con_valor) +
-    stat('Filas en FALTANTES', 'una por token y por ítem', c.filas_en_faltantes) +
+    stat('Datos distintos en el deck', '', c.tokens_distintos) +
+    stat('Valores impresos', 'dato × lámina', c.impresiones_con_valor) +
+    stat('Datos que faltaron', 'uno por dato y por lámina', c.filas_en_faltantes) +
     '</div>';
 
   h += '<p class="muted">Los huecos se imprimieron como ' +
-    (r.presentacion_faltantes === 'raya' || S.faltantesComoRaya ? '«—»' : '«FALTA:token»') +
+    (r.presentacion_faltantes === 'raya' || S.faltantesComoRaya ? 'una raya' : 'un aviso de falta') +
     '. La corrida tardó ' + S.elapsed + ' s de un techo de ' + TECHO_S + ' s.</p>';
 
   var secs = r.secciones || [];
@@ -573,18 +610,17 @@ function vistaCorridas(){
       ? '<div class="run-when">' + esc(c.fecha_generacion) + '</div>'
       : '<div class="run-when is-dead">no cerró — sin fecha de generación</div>';
     izq += '</div>';
-    var der = c.cerrada ? '<span class="run-count">' + esc(c.faltantes || '0') + ' en FALTANTES</span>' : '';
+    var der = c.cerrada ? '<span class="run-count">' + esc(c.faltantes || '0') + ' sin dato</span>' : '';
     return '<div class="run">' + izq + der + '</div>';
   }).join('');
 }
 
 function vistaAnclajes(){
   if (!FLAGS.anclajes){
-    return '<div class="box">Confirmar el anclaje de un encuentro está diseñado pero <strong>todavía no ' +
-      'tiene backend</strong>. Las funciones que necesitaría no existen en <code>PanelBackend.gs</code>, ' +
-      'y el panel no inventa nombres de función.</div>' +
-      '<p class="muted">Mientras tanto, un encuentro que no ancla se resuelve como dice D-29: queda ' +
-      'listado en «excluidos» con su puntaje y lo decide una persona.</p>';
+    return '<div class="box">Confirmar a mano el encuentro de una campaña está diseñado, pero ' +
+      '<strong>todavía no funciona desde acá</strong>.</div>' +
+      '<p class="muted">Mientras tanto, un encuentro que el motor no puede asociar con seguridad ' +
+      'queda listado aparte con su puntaje, y lo decide una persona.</p>';
   }
   return '<p class="muted">—</p>';
 }

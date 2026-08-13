@@ -194,6 +194,17 @@ function panel_ultimasCorridas(cuantas) {
     return {
       corrida_id: String(f[idx.corrida_id]),
       informe_id: String(f[idx.informe_id] || ''),
+      // `_48` Parte B — **tal como está en la fila**, sin derivarlo de `fecha_generacion`: una
+      // corrida de hoy puede ser de junio, y el panel emparejaba por informe solo, así que
+      // mostraba el deck de otro período con total naturalidad.
+      //
+      // ⚠ **Ojo con qué guarda esta columna.** `abrirCorrida_` escribe
+      // `periodoId || ventana.origen`, así que una corrida **sin período explícito** no deja un
+      // `periodo_id` de `PERIODOS`: deja la **etiqueta de origen** de la cadena de `D-20`
+      // (hoy `config`). Son dos vocabularios en una columna. El panel lo resuelve comparando
+      // contra el origen cuando la elección es "por defecto"; acá no se traduce nada, porque
+      // traducirlo sería inventar a qué período pertenece una corrida vieja.
+      periodo_id: String(f[idx.periodo_id] || ''),
       deck_id: String(f[idx.deck_id] || ''),
       // Cruda y formateada: la primera ordena, la segunda se lee. Una corrida que murió antes
       // del cierre la deja vacía, y ése es justamente el rastro que la delata.
