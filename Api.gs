@@ -56,8 +56,52 @@ var API_LECTORES_ = {
   SECCIONES: 'leerSecciones_'
 };
 
+/**
+ * ⚠ **`doGet` es uno solo en todo el proyecto, y ahora lo pelean dos consumidores.**
+ *
+ * Apps Script concatena los `.gs` en un scope global: **un segundo `doGet` en otro archivo no
+ * daría error, pisaría a éste en silencio** (`CLAUDE.md` §1). Así que el panel como web app no
+ * puede traerse el suyo — tiene que entrar por acá.
+ *
+ * El despacho va **por la presencia de `accion`** y no por un parámetro nuevo tipo `?vista=panel`:
+ * la API ya exige `accion` en todos sus llamados y **rechaza el vacío por su propia barrera**
+ * (`accion: (vacía)` es justamente el síntoma de "el body se perdió" que documenta `tools/api.js`).
+ * Con eso, todo lo que hoy funciona sigue funcionando sin cambiarle una línea al cliente, y una
+ * visita de navegador —que nunca lleva `accion`— cae en el panel.
+ *
+ * `doPost` no se toca: el panel no postea, usa `google.script.run`.
+ */
 function doGet(e) {
-  return manejarPedido_(e);
+  var params = (e && e.parameter) || {};
+  if (Object.prototype.hasOwnProperty.call(params, 'accion')) {
+    return manejarPedido_(e);
+  }
+  return servirPanel_();
+}
+
+/**
+ * El panel como web app (`doGet` sin `accion`).
+ *
+ * **Con la misma barrera de mail que la API**, y no es simetría: `appsscript.json` declara hoy
+ * `access: ANYONE_ANONYMOUS`, así que sin esto **cualquiera con la URL de `/exec` podría disparar
+ * una generación** que corre con la cuenta del que desplegó. La barrera de token de la API no
+ * aplica acá —un navegador no la lleva— así que la de mail es la única que queda.
+ *
+ * Sobre un usuario anónimo `Session.getActiveUser().getEmail()` devuelve `''` y la barrera lo
+ * rechaza, que es el comportamiento correcto. **Lo que hay que arreglar al desplegar es el
+ * `access`**, no esto: ver el reporte del `_45`.
+ */
+function servirPanel_() {
+  var mail = apiBarrera1_([]);
+  if (!mail.ok) {
+    return HtmlService.createHtmlOutput(
+      '<p style="font:14px Roboto,Arial,sans-serif;color:#c5221f;padding:24px">' +
+      'Esta cuenta no tiene acceso al panel.</p>'
+    );
+  }
+  return HtmlService.createHtmlOutputFromFile('Panel')
+    .setTitle('Motor de Informes')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
 function doPost(e) {
