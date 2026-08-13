@@ -1266,6 +1266,83 @@ function probarRamaPorCuentaDeclarativa_() {
     '(3 negativos, 4 positivos)';
 }
 
+/**
+ * `_46` Parte B — la Barrera 1 lee la lista de `CONFIG` y **falla cerrada**.
+ *
+ * Los fixtures están separados a propósito, y la separación es el punto: un dato que
+ * satisface dos afirmaciones a la vez no distingue entre ellas (`CLAUDE.md` §4, el caso de
+ * `opULTIMO`). Por eso la clave ausente y la lista vacía son **dos** casos y no uno — los dos
+ * rechazan, pero uno significa "nadie sembró la clave" y el otro "alguien borró la celda", y
+ * se investigan distinto. Si los dos motivos se colapsaran a `'no autorizado'`, esta prueba
+ * seguiría pasando y no probaría nada: por eso afirma que los motivos **difieren**.
+ *
+ * No toca la planilla: `apiListaAutorizados_` recibe el lector por parámetro.
+ */
+function probarBarreraDeMails_() {
+  var devuelve_ = function (valor) {
+    return function () { return valor; };
+  };
+
+  // ── 1 · un mail de la lista pasa, con la mugre de una carga a mano ────────────────────
+  var t1 = [];
+  var r1 = apiListaAutorizados_(t1, devuelve_('  JPCofano@gmail.com , otro@gmail.com'));
+  afirmar_(r1.ok, 'barrera de mails: la lista buena tenía que resolver, vino ' + JSON.stringify(r1));
+  afirmar_(r1.mails.indexOf('jpcofano@gmail.com') !== -1,
+    'barrera de mails: espacios + mayúsculas tenían que normalizar, vino ' + JSON.stringify(r1.mails));
+  // El segundo separa `trim` de plegar el case: no tiene mayúsculas, así que si esto pasa y
+  // lo de arriba falla, lo que está roto es el `toLowerCase()` y no el `trim()`.
+  afirmar_(r1.mails.indexOf('otro@gmail.com') !== -1,
+    'barrera de mails: el espacio de adelante tenía que caer solo, vino ' + JSON.stringify(r1.mails));
+
+  // ── 2 · uno que no está en la lista, no aparece resuelto ──────────────────────────────
+  afirmar_(r1.mails.indexOf('ajeno@gmail.com') === -1,
+    'barrera de mails: un mail que no está en la lista no puede resolver');
+
+  // ── 3 · la clave vacía rechaza ────────────────────────────────────────────────────────
+  var t3 = [];
+  var r3 = apiListaAutorizados_(t3, devuelve_(''));
+  afirmar_(!r3.ok && r3.motivo === 'lista vacía',
+    'barrera de mails: la clave vacía tiene que rechazar por `lista vacía`, vino ' + JSON.stringify(r3));
+
+  // Una celda con sólo comas y espacios es "vacía" también, y es el caso realista de alguien
+  // que borró los mails pero no la celda.
+  var r3b = apiListaAutorizados_([], devuelve_(' , , '));
+  afirmar_(!r3b.ok && r3b.motivo === 'lista vacía',
+    'barrera de mails: una celda de puras comas tiene que rechazar, vino ' + JSON.stringify(r3b));
+
+  // ── 4 · la clave ausente rechaza, y por un motivo DISTINTO al de la vacía ─────────────
+  var t4 = [];
+  var r4 = apiListaAutorizados_(t4, devuelve_(null));
+  afirmar_(!r4.ok && r4.motivo === 'clave ausente',
+    'barrera de mails: la clave ausente tiene que rechazar por `clave ausente`, vino ' + JSON.stringify(r4));
+  afirmar_(r4.motivo !== r3.motivo,
+    'barrera de mails: `clave ausente` y `lista vacía` no pueden compartir motivo — sin eso ' +
+    'la traza no distingue "nadie la sembró" de "alguien la borró"');
+
+  // ── 5 · el fallo de lectura rechaza: no deja pasar "porque no pudo verificar" ─────────
+  var t5 = [];
+  var r5 = apiListaAutorizados_(t5, function () { throw new Error('no existe la hoja CONFIG'); });
+  afirmar_(!r5.ok && r5.motivo === 'config ilegible',
+    'barrera de mails: el fallo de lectura tiene que rechazar por `config ilegible`, vino ' + JSON.stringify(r5));
+
+  // ── 6 · sin planilla atada: rechaza con motivo propio y NO explota (`_46.1`) ──────────
+  // Es el caso real de `servirPanel_`, que llama a la barrera sin nada atado. Que esta línea
+  // devuelva en vez de tirar ES la afirmación: si `apiListaAutorizados_` dejara propagar la
+  // excepción, la prueba moriría acá con el mensaje de `apiHojaControl_`.
+  var t6 = [];
+  var r6 = apiListaAutorizados_(t6, function () {
+    throw new Error('No hay hoja de control: getActiveSpreadsheet() devolvió null y la ' +
+      'propiedad HOJA_CONTROL_ID no está seteada');
+  });
+  afirmar_(!r6.ok, 'barrera de mails: sin planilla atada tiene que rechazar, vino ' + JSON.stringify(r6));
+  afirmar_(t6.join(' ').indexOf('no se pudo leer CONFIG') !== -1,
+    'barrera de mails: sin planilla atada la traza tiene que decir por qué, vino ' + JSON.stringify(t6));
+
+  return 'barrera 1 desde CONFIG: normaliza espacios y mayúsculas por separado; clave vacía, ' +
+    'clave ausente y fallo de lectura rechazan los tres con motivos distinguibles; sin planilla ' +
+    'atada rechaza y no explota (6 negativos, 3 positivos)';
+}
+
 function correrPruebasDiff_() {
   var pruebas = [
     probarBloqueDeAlcance_,
@@ -1281,7 +1358,8 @@ function correrPruebasDiff_() {
     probarReferenciaVentanaUnNivel_,
     probarFiltroMulticondicion_,
     probarParticionImpresiones_,
-    probarRamaPorCuentaDeclarativa_
+    probarRamaPorCuentaDeclarativa_,
+    probarBarreraDeMails_
   ];
   var lineas = [];
   var fallas = 0;

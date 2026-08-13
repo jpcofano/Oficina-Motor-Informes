@@ -1825,7 +1825,22 @@ var SEED_CONFIG_DEFAULTS_ = {
   // etapa 4 no entrara nunca con el motor ya arreglado: la corrida seguiría
   // cortando ahí sin motivo. Es atómico —resolverMarcadores no acepta resolver un
   // subconjunto—, así que la única decisión posible es entrar o no entrar.
-  costo_resolucion_etapa4_seg: '60'
+  costo_resolucion_etapa4_seg: '60',
+  // `_46` (13/08) — la lista blanca de la Barrera 1 sale del código. Era `API_AUTORIZADOS_`
+  // en `Api.gs`, un array con un solo mail: sumar a alguien exigía `clasp push`, que es el
+  // mismo argumento del umbral de anclaje de más arriba. Es la **pieza 1 de `D-16`**.
+  //
+  // Los cuatro los dio el usuario el 13/08. Separados por comas; `apiListaAutorizados_`
+  // normaliza espacios y mayúsculas, así que la celda se puede editar a mano sin cuidado.
+  //
+  // ⚠ **Vacío acá NO cae a esta lista: la barrera deniega.** Es lo contrario de
+  // `centinelas_lectura`, y a propósito — sobre la puerta de entrada al motor, un default de
+  // código convertiría un error de lectura en un acceso concedido. Ver `apiListaAutorizados_`.
+  //
+  // Ojo con el otro borde, el de siempre: `seedConfigConfig_` **sólo completa celdas
+  // vacías**, así que si la fila ya existe este valor no la repunta y hay que mirar la celda
+  // viva.
+  mails_autorizados: 'jpcofanogcba1@gmail.com, reporteseinformesgcba@gmail.com, jpcofano@gmail.com, jpcofano2@gmail.com'
 };
 
 /**

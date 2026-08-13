@@ -20,13 +20,26 @@
  */
 
 /**
- * Mails habilitados (Barrera 1). Sin mail en esta lista no corre nada.
- * `jpcofanogcba1@gmail.com` es la cuenta con la que está logueado clasp en esta
- * máquina, o sea la que va a firmar el Bearer de Claude Code (`tools/token.js
- * --info`). Es la única que hoy tiene sentido acá: /dev exige permiso de edición
- * sobre el script.
+ * Clave de `CONFIG` con los mails habilitados (Barrera 1), separados por comas. Sin mail en
+ * esa lista no corre nada.
+ *
+ * `_46` (13/08/2026): la lista **salió del código**. Era `API_AUTORIZADOS_`, un array con un
+ * solo mail cableado acá, y sumar a alguien exigía `clasp push` — lo contrario de `D-01`.
+ * Mismo argumento que `umbral_anclaje_reunion` en el Paso 2.9F: es un parámetro de
+ * operación, no lógica. Es además la **pieza 1 de `D-16`**; las piezas 2 y 3 —el panel
+ * filtrando informes por usuario, y el acceso al dato— siguen abiertas.
+ *
+ * ⚠ **Diferencia con `umbralAnclajeReunion_()`, y es la que importa: acá NO hay default de
+ * código.** Aquél cae a una constante si la celda está vacía, porque un umbral ausente es un
+ * problema de calibración. Ésta es la puerta de entrada al motor: hoja ilegible, clave
+ * ausente o lista vacía **deniegan las tres**. Un default acá convertiría un error de lectura
+ * en un acceso concedido, que es exactamente el modo de falla que una barrera no puede tener.
+ *
+ * **Riesgo que esto acepta, dicho y no dado por obvio:** quien pueda editar la planilla de
+ * control puede agregarse a la lista. Es tolerable —quien edita la planilla ya tiene los
+ * datos que el informe publica— pero es una decisión tomada, no una consecuencia inadvertida.
  */
-var API_AUTORIZADOS_ = ['jpcofanogcba1@gmail.com'];
+var API_CLAVE_AUTORIZADOS_ = 'mails_autorizados';
 
 /**
  * Versión del contrato de esta API, no del código del motor. NO sirve como
@@ -92,8 +105,13 @@ function doGet(e) {
  * `access`**, no esto: ver el reporte del `_45`.
  */
 function servirPanel_() {
-  var mail = apiBarrera1_([]);
+  // La traza no viaja al navegador —el panel no es un cliente JSON— pero **sí tiene que
+  // quedar en algún lado**: los motivos que `apiListaAutorizados_` distingue no sirven de
+  // nada si acá se tiran. Van a Stackdriver, que es lo que `exceptionLogging` ya usa.
+  var traza = [];
+  var mail = apiBarrera1_(traza);
   if (!mail.ok) {
+    console.log('panel — acceso denegado · ' + traza.join(' | '));
     return HtmlService.createHtmlOutput(
       '<p style="font:14px Roboto,Arial,sans-serif;color:#c5221f;padding:24px">' +
       'Esta cuenta no tiene acceso al panel.</p>'
@@ -179,8 +197,90 @@ function apiPedido_(e, traza) {
 // ============================================================================
 
 /**
+ * Quinto normalizador del repo, y el motivo va escrito porque `CLAUDE.md` §2 lo exige:
+ * ninguno de los cuatro que ya existen sirve para un mail.
+ *
+ *   - `normalizar_` (Parseo.gs) **pliega acentos**, y un mail no es texto libre — plegarlos
+ *     cambiaría la identidad que se está comparando.
+ *   - `normalizarValorDeclarado_` (Fuentes.gs, la forma de `R-10`) **preserva mayúsculas**, y
+ *     acá hay que plegarlas: nadie escribe su mail con la misma capitalización dos veces, y
+ *     el motivo de `R-10` para preservarlas —quince pares de encabezados que son columnas
+ *     distintas— no existe entre dos direcciones que sólo difieren en el case.
+ *   - `normalizarParaComparar_` (Instalar.gs) canonicaliza fechas; `normalizarIdCuenta_`
+ *     (Union.gs) es sólo `trim`, que acá se queda corto.
+ *
+ * Entonces: `trim` + minúsculas, y nada más. No colapsa espacios interiores a propósito —
+ * un mail no los tiene, y colapsarlos escondería una celda mal cargada en vez de rechazarla.
+ */
+function normalizarMailAutorizado_(valor) {
+  return String(valor === null || valor === undefined ? '' : valor).trim().toLowerCase();
+}
+
+/**
+ * Lectura real de la lista blanca desde `CONFIG`. Separada de `apiListaAutorizados_` para
+ * que las pruebas puedan inyectar los modos de falla sin tocar la planilla.
+ *
+ * ⚠ **`apiHojaControl_` va primero, y no es adorno.** `leerConfig()` resuelve la hoja con
+ * `SpreadsheetApp.getActiveSpreadsheet()`, y en contexto web app eso puede ser `null` —
+ * `servirPanel_` llama a la barrera sin ninguna planilla atada. Sin esta línea el rechazo
+ * llegaría como `TypeError` desde adentro de `leerConfig`: falla cerrada igual, pero
+ * indistinguible en la traza de cualquier otra excepción (`_46` A.2, `_46.1`).
+ *
+ * Devuelve `null` —no `''`— cuando la clave no está, para que el llamador pueda separar
+ * "la clave no existe" de "la clave está vacía".
+ */
+function apiLeerMailsDeConfig_(traza) {
+  apiHojaControl_(traza);
+  var config = leerConfig();
+  return Object.prototype.hasOwnProperty.call(config, API_CLAVE_AUTORIZADOS_)
+    ? config[API_CLAVE_AUTORIZADOS_]
+    : null;
+}
+
+/**
+ * Resuelve la lista blanca, con los tres modos de falla terminando en rechazo.
+ *
+ * **Cada uno deja su propio motivo en la traza**, y ésa es la mitad del trabajo: sin eso,
+ * "no pude leer la hoja" y "la lista quedó vacía" se ven iguales desde afuera y se
+ * investigan igual, cuando una es un problema de plataforma y la otra una celda borrada.
+ *
+ * **Nunca devuelve `ok` por no haber podido verificar.** Es lo mismo que hace `apiBarrera2_`
+ * con `API_TOKEN` ausente, y por el mismo motivo.
+ *
+ * `leer` se inyecta desde `Pruebas.gs`; en producción es `apiLeerMailsDeConfig_`.
+ */
+function apiListaAutorizados_(traza, leer) {
+  leer = leer || apiLeerMailsDeConfig_;
+
+  var crudo;
+  try {
+    crudo = leer(traza);
+  } catch (err) {
+    traza.push('barrera 1: no se pudo leer CONFIG — ' +
+      apiEnmascarar_(String(err && err.message ? err.message : err)));
+    return { ok: false, motivo: 'config ilegible' };
+  }
+
+  if (crudo === null || crudo === undefined) {
+    traza.push('barrera 1: CONFIG no tiene la clave `' + API_CLAVE_AUTORIZADOS_ + '`');
+    return { ok: false, motivo: 'clave ausente' };
+  }
+
+  var mails = String(crudo).split(',').map(normalizarMailAutorizado_).filter(Boolean);
+  if (!mails.length) {
+    traza.push('barrera 1: `' + API_CLAVE_AUTORIZADOS_ + '` está vacía — nadie autorizado');
+    return { ok: false, motivo: 'lista vacía' };
+  }
+
+  return { ok: true, mails: mails };
+}
+
+/**
  * Barrera 1 — identidad. Sobre /dev, Google ya validó el Bearer y devuelve el
  * mail de quien llama; sobre /exec anónimo devuelve string vacío.
+ *
+ * El orden importa: sin mail se rechaza **antes** de ir a la planilla. Un anónimo no puede
+ * costar una lectura de `CONFIG`.
  */
 function apiBarrera1_(traza) {
   var mail = '';
@@ -194,7 +294,11 @@ function apiBarrera1_(traza) {
     traza.push('barrera 1: sin mail');
     return { ok: false, error: 'no autorizado' };
   }
-  if (API_AUTORIZADOS_.indexOf(mail) === -1) {
+
+  var lista = apiListaAutorizados_(traza);
+  if (!lista.ok) return { ok: false, error: 'no autorizado' };
+
+  if (lista.mails.indexOf(normalizarMailAutorizado_(mail)) === -1) {
     // Se nombra el mail recibido a propósito: quien llama ya conoce su propia
     // identidad, y sin esto el rechazo no distingue "no estás en la lista" de
     // "Google no me dio tu mail".
@@ -203,6 +307,8 @@ function apiBarrera1_(traza) {
   }
 
   traza.push('barrera 1: ok');
+  // El mail vuelve **sin normalizar**: es la identidad que devolvió Google, y `ping` la
+  // reporta para que quien llama pueda verificar con qué cuenta entró.
   return { ok: true, mail: mail };
 }
 
