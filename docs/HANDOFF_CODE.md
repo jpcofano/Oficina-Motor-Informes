@@ -3,7 +3,7 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-12, al cerrar el `_40` · último commit al escribirlo: `cdd4a7e`
+**Última actualización:** 2026-08-12, al cerrar el `_42` · último commit al escribirlo: `78fc620`
 
 ## Los dos decks vigentes — sin cambios, el `_40` no los tocó
 
@@ -31,14 +31,21 @@ falta. Sobre 70 celdas: **15 coinciden, 1 difiere, 53 sólo las tiene la base y 
 - Las 42 celdas de Call Center son "sólo la base" porque **esos seis tokens no tienen fila en
   `MARCADORES`** — el hueco de 8 tokens del `_38`.
 
-## Dos defectos vivos que encontró el censo, y no dependen de la base nueva
+## Un defecto vivo, no dos — el `_42` corrigió el otro
 
-- **Orden Público publica ~1/6 de sus mails.** El deck dice `44.043` enviados; la base nueva
-  `271.118` y `looker` `272.283`. Es `ULTIMO` eligiendo una de tres filas `Convocatoria` en vez del
-  envío del encuentro. **Está en el deck de la demo.**
-- **Boedo publica `258.684` de `enc_alcance` y ninguna otra fuente tiene ese número** — la base
-  nueva y `looker` traen la celda vacía. La guarda del `_39` no lo tapa: una de las dos filas de
-  `digital/Alcance` está vacía y `ULTIMO` se queda con la otra.
+- **Boedo publica `258.684` de `enc_alcance` y ninguna otra fuente sostiene ese número** — la base
+  nueva y `looker` traen la celda vacía, y grepeado el número sobre `docs/` entero, incluidos los
+  tres CSV de casos, **no aparece en ningún caso validado**. Sale de la segunda fila de
+  `digital/Alcance`; la guarda del `_39` no lo tapa porque **la primera está vacía y entonces no
+  hay dos valores distintos**: la guarda cubre el empate, no el hueco.
+- ⚠ **Lo de "Orden Público publica ~1/6 de sus mails" era mío y estaba al revés.** `44.043` es el
+  valor **validado**: `enc_mails_enviados` lleva `filtro = mail_tipo=Convocatoria`, y la nota de esa
+  fila —del 11/08, confirmada hoy contra la hoja viva— ya decía el número y el motivo. La bitácora
+  del `_40` lo dejó escrito como defecto y **no se edita** (append-only): la corrección vive en
+  `docs/PENDIENTES_consistencia.md` y en la entrada del `_42`.
+
+**Los cuatro hallazgos del censo ya están en `docs/PENDIENTES_consistencia.md`** (`_42`), que es el
+dueño de *qué sigue abierto*. Antes estaban sólo en la bitácora, que es el dueño de *qué se hizo*.
 
 ## Lo que el censo cerró
 
@@ -48,6 +55,12 @@ nueva **coinciden en 6 de 7 cuentas**, y en los cuatro casos ambiguos **las dos 
 fila: `3289` 157.580, `3387` **66.345**, `3201` 20.876, `3178` 104.438. Excepción: Retiro (`3346`),
 donde la base dice `0` y las otras dos `47.753` — esa fila trae todo el bloque digital en cero.
 **Falta la decisión del usuario; el motor no la toma solo.**
+
+⚠ **Y esto no alcanza para escribir la regla, por un motivo que conviene tener a mano:** *"la
+primera"* **es orden de lectura de la solapa, no una propiedad del dato** — alguien reordena las
+filas y la regla cambia de respuesta sin que nada falle. De paso cae la candidata vieja: *"siempre
+la menor"* vale para `3387`, `3201` y `3178`, pero en `3289` los dos testigos eligen **la mayor**.
+Los casos ambiguos además **son cuatro, no dos**: `3201` y `3178` no estaban en la sección original.
 
 **Una base nueva no se resuelve con un filtro.** `datosDeMarcador_` cablea la rama por cuenta a
 `fila.base_id === 'digital'`, y `parsearCondicionFiltro_` toma el valor **literal** — no hay
@@ -65,10 +78,10 @@ no absorben una plataforma nueva ni un `Twitch ` con espacio — el motivo escri
   (`call_discado`, `call_contactados`, `digital_impresiones`, `meta_alcance` en
   `resumen_metricas_dinamico`, clave `id_cuentas`). **No se cablea ninguno hasta que exista.**
   El `_40` le agrega peso: es también la forma de generalizar el ruteo por cuenta.
-- **Los dos defectos de arriba** — el `enc_mails_*` de Orden Público es el más caro: número
-  plausible, en el deck que se muestra.
-- **Decidir la fila de `digital/Alcance`** — ahora con dos fuentes que coinciden. Hasta que se
-  decida, esas láminas publican `—` con motivo.
+- **El `enc_alcance` de Boedo** — el único defecto vivo que dejó el censo, y está en un deck que se
+  muestra.
+- **Decidir la fila de `digital/Alcance`** — ahora con dos testigos que coinciden, pero **sigue
+  faltando la columna que discrimina**. Hasta que se decida, esas láminas publican `—` con motivo.
 - **Decidir si la base nueva se da de alta** — con la tabla de A.3 del `_40` delante.
 - **`m2_campanias`** — espera una definición del usuario, no un cableado.
 - **`_34`, el censo de `EVENTO`** — dejó de ser bloqueante, sigue valiendo la pena.

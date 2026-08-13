@@ -3407,3 +3407,157 @@ correcto al lado.
 
 **Qué lo destraba:** que el dueño de `digital/Alcance` diga qué distingue las dos filas — o que
 aparezcan más casos validados que permitan inducir la regla. Ninguna de las dos cosas es del motor.
+
+### Addendum 12/08/2026 — aparecieron dos testigos, y son cuatro casos ambiguos, no dos
+
+**No cierra esta sección. La amplía, y la corrobora sólo en parte.** El censo del `_40` midió la
+misma pregunta contra dos fuentes que no existían cuando se escribió lo de arriba:
+`looker/resumen_metricas_dinamico.meta_alcance` y `Agenda JM.Alcance manual` de la base
+`Base reuniones - Digital - Call Center` (**que no está dada de alta**).
+
+**Primero, el problema es más grande que el que declara la tabla de arriba:** las cuentas con dos
+filas en `digital/Alcance` **no son dos, son cuatro** — se suman `3201-JUNJDGAG` (Mataderos,
+`20876` y `47999`) y `3178-JUNJDGAG` (Educación, `104438` y `452030`). Y hay **una quinta de forma
+distinta**, `3156-JUNJDGAG` (Boedo), con **una fila vacía y una con `258684`**, que tiene sección
+propia más abajo.
+
+**Los dos testigos coinciden entre sí en 6 de las 7 cuentas medidas, y en los cuatro casos
+ambiguos las dos eligen la primera fila:**
+
+| cuenta | `Alcance manual` | `meta_alcance` | las dos filas de `digital/Alcance` |
+|---|---|---|---|
+| `3387-JULJDGGC` | **66.345** | **66.345** | 66345, 457883 |
+| `3289-JUNJDGAG` | **157.580** | **157.580** | 157580, 145669 |
+| `3201-JUNJDGAG` | **20.876** | **20.876** | 20876, 47999 |
+| `3178-JUNJDGAG` | **104.438** | **104.438** | 104438, 452030 |
+| `3354-JULJDGAG` | 1.412 | 1.412 | 1412 (una sola) |
+| `3156-JUNJDGAG` | (vacío) | (vacío) | (vacío), 258684 |
+| `3346-JULJDGAG` | **0** ⚠ | **47.753** | 47753 (una sola) |
+
+**La excepción importa tanto como la coincidencia.** En `3346` (Retiro) los dos testigos **no**
+coinciden: `Alcance manual` dice `0` y `meta_alcance` `47.753`. Esa fila de `Agenda JM` trae **todo
+el bloque digital en cero** —impresiones, alcance potencial, las tres plataformas—, así que su `0`
+parece falta de carga y no una medición. Eso **degrada a la base nueva como testigo**: no se puede
+leer su celda como un dato cuando en otra fila el mismo bloque está sin cargar.
+
+**Por qué esto no cierra la sección, dicho con todas las letras.** Dos fuentes que eligen la misma
+fila son **evidencia convergente, no la columna que discrimina**. Lo que falta sigue siendo lo
+mismo: **qué distingue las dos filas.** Saber cuál se elige en cuatro casos no dice por qué, y una
+regla inducida de *"siempre la primera"* sería **peor** que la de *"siempre la menor"* que el cuerpo
+de arriba ya rechaza — porque **"la primera" es orden de lectura de la solapa, no una propiedad del
+dato**: alguien reordena las filas y la regla cambia de respuesta sin que nada falle.
+
+⚠ **Y una corrección al cuerpo de arriba, que quedó incompleto: *"siempre la menor"* ya no describe
+lo que eligen los testigos.** Vale para `3387`, `3201` y `3178`, pero en `3289` los dos eligen
+`157.580`, que es **la mayor** de las dos. Un caso más y la regla candidata se cae.
+
+**Qué lo destraba — sin cambios:** que el dueño de `digital/Alcance` diga qué distingue las dos
+filas. Las láminas siguen publicando `—` con motivo, y eso sigue siendo lo correcto.
+
+---
+
+## `3156` Boedo publica un `enc_alcance` que ninguna otra fuente sostiene — 12/08/2026
+
+**P1.** El motor imprime **`258.684`** para `3156-JUNJDGAG` (Boedo 12/06) en el deck
+`jm-20260812-174147`, que es uno de los dos vigentes.
+
+**De dónde sale, con precisión:** `digital/Alcance` tiene **dos filas** para esa cuenta, la primera
+**vacía** y la segunda con `258684`. `ULTIMO` se queda con la segunda. **No es un número sin origen
+—tiene uno—: es un número sin corroboración**, que no es lo mismo y conviene no confundirlo.
+
+**Los dos testigos dicen que la celda está vacía.** `Agenda JM.Alcance manual` de `3156`: vacío,
+tipo `string`. `looker/resumen_metricas_dinamico.meta_alcance` de `3156`: vacío. Son las mismas dos
+fuentes que en las otras seis cuentas coinciden con lo que el motor publica, o con la fila que el
+motor no logra elegir.
+
+**Y no hay testigo en el repo.** Grepeado `258684` y `258.684` sobre `docs/` entero, **incluidos los
+tres CSV de casos** (`casos_validacion_2026-07-31.csv`, `_2026-08-09_addendum.csv` y
+`_2026-08-12_addendum.csv`): **cero apariciones fuera de la bitácora y el handoff del `_40`** — o
+sea, fuera de la salida del propio motor. Ningún caso `V-`, `C-`, `A-` ni `X-` lo menciona.
+
+**Por qué la guarda del `_39` no lo tapa, y es el punto.** `opULTIMO` devuelve
+`«FALTA:@ultimo_sin_fecha_ambiguo»` cuando hay **dos valores distintos** sin fecha que los ordene.
+Con una fila vacía y una con valor **no hay dos valores distintos**: hay uno, y `ULTIMO` lo toma sin
+dudar. **La guarda cubre el empate y no cubre el hueco.** Es la misma fila doble que la sección de
+arriba —la misma solapa, la misma ausencia de columna discriminante— y sale por un camino distinto
+**sin decir nada**.
+
+**Qué lo destraba:** lo mismo que la sección de arriba —el dueño de `digital/Alcance` diciendo qué
+distingue las dos filas—, **más** una decisión sobre qué debe hacer `ULTIMO` cuando una de las dos
+filas de una cuenta está vacía: tomar la que tiene valor (lo de hoy), o tratarlo como el mismo caso
+ambiguo. **No se decide acá.**
+
+---
+
+## La base nueva **no arbitra** sobre los `enc_mails_*` — 12/08/2026
+
+**P2. Esto corrige un hallazgo del `_40` que quedó escrito al revés en `docs/BITACORA.md`.**
+
+El `_40` reportó que *"Orden Público publica ~1/6 de sus mails"* —`44.043` publicados contra
+`271.118` de la base nueva— y lo llamó **defecto vivo**. **No lo es, y el repo ya tenía la respuesta
+antes de que se escribiera.**
+
+`MARCADORES.enc_mails_enviados` lleva `operacion = ULTIMO` **con `filtro = mail_tipo=Convocatoria`**,
+y su propia nota —fechada 11/08, verificada hoy contra la hoja viva— dice el número y el motivo:
+
+> *"la lámina toma el envío de convocatoria, no el total de la cuenta (271.701 en 5 envíos contra
+> los 44.043 publicados). Ni `SUMA` ni `ULTIMO` a secas: con el filtro quedan 3 convocatorias y
+> `ULTIMO` toma la del 25/07, que es la publicada."*
+
+**`44.043` es el valor validado y el corte por `mail_tipo` funciona.** Las cinco filas de mail de
+`3387` son `Convocatoria` ×3 (22/07 ×2 y 25/07), `Confirmación` (27/07) y `Agradecimiento` (03/08).
+
+**Lo que sí queda como dato, y es lo útil del hallazgo:** las cuatro fuentes miden **cuatro cosas
+distintas, y ninguna es la otra**.
+
+| fuente | enviados de `3387` | qué mide |
+|---|---|---|
+| el motor / el deck | **44.043** | el envío de convocatoria del encuentro — **validado** |
+| `digital/Directa Mail`, las 5 filas | 271.701 | el total de la cuenta |
+| `Agenda JM.Enviados` | 271.118 | el envío de la campaña, a su manera |
+| `looker.mails_enviados` | 272.283 | el envío de la campaña, a la suya |
+
+**Los tres agregados difieren entre sí** —271.701, 271.118 y 272.283—, así que ni siquiera existe un
+"total de campaña" único contra el cual contrastar.
+
+**Consecuencia para la decisión de alta, que es para lo que sirve esta entrada:** una columna de
+mail de `Agenda JM` que contradiga al motor **no es evidencia de defecto — mide otra cosa**. Si la
+base se da de alta, sus columnas de mail **no reemplazan** a `digital/Directa Mail` para los
+`enc_mails_*`: usarlas ahí publicaría el agregado de campaña en la lámina del encuentro.
+
+---
+
+## Base nueva contra `looker`: **28 de 49 celdas difieren** — 12/08/2026
+
+**P2.** Medido en el censo del `_40`: 7 cuentas × 7 campos comparables, `Agenda JM` contra
+`looker/resumen_metricas_dinamico`. **21 coinciden, 28 no.**
+
+| campo | cuentas que coinciden |
+|---|---|
+| `meta_alcance` / `Alcance manual` | **6 de 7** — falla `3346`; ver el addendum de `digital/Alcance` |
+| Call Center (4 columnas) | **3 de 7** — `3354`, `3346` y `3201`, **y los tres son ceros de los dos lados** |
+| `digital_impresiones` / `Impresiones totales` | **1 de 7** |
+| `mails_enviados` / `Enviados` | **2 de 7** — y las dos son ceros |
+
+⚠ **Corrección al reporte del `_40`: `meta_alcance` coincide en 6 de 7, no en 7 de 7.** El conteo de
+28/49 siempre fue correcto —y así quedó en la bitácora—; el que estaba mal era el desglose de esa
+línea, que se dijo en el reporte y se arrastró al prompt del `_42`.
+
+**El caso más grande:** para `3387` la base dice **0 discados** y `looker` **7.954**. Esa misma fila
+de la base **sí trae el bloque de IVR completo**, así que no es una fila vacía: es un cero declarado
+donde otra fuente tiene datos.
+
+**Dos candidatos de explicación, y ninguno está medido:**
+
+1. **Ventana.** La base es **una fila por encuentro** con su fecha de envío; `looker` trae un tramo
+   de campaña — para `3289`, `fecha_inicio 17/07` → `fecha_fin 20/08`: un mes contra un encuentro
+   del 27/07. Que la base sea sistemáticamente menor es **compatible**, y compatible no es medido.
+2. **`C-41`**, de `docs/casos_validacion_2026-08-12_addendum.csv`: *"la base tiene una sola cuenta
+   por encuentro y el deck publica dos campañas"*. Si `Agenda JM` hereda esa forma, sus columnas
+   reproducen **un bloque** y nunca el total. **Este candidato estaba sólo en el cuerpo de un
+   commit, que no es un lugar donde nadie lo lea** — por eso queda escrito acá.
+
+**Qué lo destraba:** medir la ventana de una de las dos fuentes contra la otra sobre una cuenta con
+diferencia grande, o que el dueño de `Agenda JM` diga qué recorte declara cada columna. **Hasta
+entonces, ninguna columna de la base nueva se cablea contra un token que hoy lee `looker`**: se
+estaría cambiando el universo sin decirlo, que es el modo de falla del 07/08 (`R-15` addendum 1).

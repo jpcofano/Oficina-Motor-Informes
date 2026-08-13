@@ -8741,3 +8741,80 @@ llega **aplanado por recorrido de formas**, y etiqueta y valor viven en cajas di
 —que **es** el motor, no una copia— y por eso la respuesta no depende de cómo estén acomodadas las
 cajas. Contraste: los valores que devuelve para `3387` (`44.043`, `43.439`, `4.652`, `145`)
 coinciden con los que sí se leen sin ambigüedad en `sl13` del deck.
+
+---
+
+## `_42` — los hallazgos del censo a `PENDIENTES`, y uno de ellos era falso (2026-08-12)
+
+La entrada de arriba dejó los cuatro hallazgos del `_40` **sólo en la bitácora**, que es el dueño de
+*qué se hizo y cuándo* y no de *qué sigue abierto* (`CLAUDE.md` §7). Un hueco anotado sólo acá se
+pierde. Van a `docs/PENDIENTES_consistencia.md`: un addendum fechado a la sección de
+`digital/Alcance` y tres secciones nuevas. **No se creó ningún archivo, no se tocó `R-24`, no se
+decidió ninguna regla de `Alcance`.**
+
+### El hallazgo que era falso, y es mío
+
+**"Orden Público publica ~1/6 de sus mails" no es un defecto, y el repo tenía la respuesta antes de
+que yo lo escribiera.** `MARCADORES.enc_mails_enviados` lleva `filtro = mail_tipo=Convocatoria` con
+`ULTIMO`, y **la nota de esa misma fila** —fechada 11/08, confirmada hoy contra la hoja viva— dice
+el número y el motivo con todas las letras: *"la lámina toma el envío de convocatoria, no el total
+de la cuenta (271.701 en 5 envíos contra los 44.043 publicados) … con el filtro quedan 3
+convocatorias y `ULTIMO` toma la del 25/07, que es la publicada"*. **`44.043` es el valor
+validado.**
+
+**Lo que falló no fue la medición: fue no cruzarla contra el registro que ya la explicaba.** El
+`_40` midió bien —`Agenda JM` dice 271.118 y `looker` 272.283— y de ahí saltó a *"el deck publica
+1/6"* sin preguntar **de qué filas sale** el 44.043. Es exactamente la convención de §4 que este
+proyecto ya tiene escrita, aplicada al revés: se verificó que el número de la base existiera y no
+que el número del motor estuviera mal.
+
+**Y la señal estaba a un grep de distancia**, en la columna `notas` de la fila del marcador. El
+snapshot `docs/_snapshots/MARCADORES_2026-08-11.tsv` la trae entera. Detalle que vale por sí solo:
+**ese mismo snapshot ya está viejo para `enc_alcance`** —lo muestra apuntando a `Digital/dig_alcance`,
+que el `_39` cambió el 12/08—, así que sirvió para confirmar el filtro de mail y **no** habría
+servido para nada que tocara alcance. Un volcado envejece por columna, no de golpe.
+
+**El hallazgo sigue siendo útil, dado vuelta:** las cuatro fuentes miden cuatro cosas distintas
+—44.043 el envío de convocatoria; 271.701 el total de la cuenta en `digital/Directa Mail`; 271.118
+en `Agenda JM`; 272.283 en `looker`— y **los tres agregados difieren entre sí**, así que ni siquiera
+hay un "total de campaña" único. Consecuencia para la decisión de alta: **una columna de mail de la
+base nueva que contradiga al motor no es evidencia de defecto, mide otra cosa.**
+
+⚠ **La entrada del `_40` no se edita** — la bitácora es append-only y ésa es la regla. La corrección
+vive acá, en `PENDIENTES_consistencia.md` y en `HANDOFF_CODE.md`.
+
+### Dos correcciones más, chicas y con consecuencia
+
+**`meta_alcance` coincide en 6 de 7, no en 7 de 7.** El 28/49 siempre estuvo bien y así quedó en la
+bitácora; el desglose de esa línea se dijo mal en el reporte de chat y **se arrastró al prompt del
+`_42`**, que lo repetía como premisa. Falla `3346` (Retiro): la base dice `0` y `looker` `47.753`.
+
+**Y `3346` degrada a la base nueva como testigo.** Esa fila trae **todo el bloque digital en cero**
+—impresiones, alcance potencial, las tres plataformas—, así que su `0` parece falta de carga y no
+una medición. No se puede leer una celda suya como dato sin mirar si el bloque está cargado.
+
+### Lo que el addendum de `digital/Alcance` agrega, y por qué no cierra nada
+
+Las cuentas con dos filas **son cuatro, no dos**: se suman `3201` (20876 / 47999) y `3178`
+(104438 / 452030) a las dos que la sección ya listaba. Los dos testigos coinciden entre sí en 6 de 7
+y **en los cuatro casos ambiguos eligen la primera fila**.
+
+**Y aun así no alcanza para escribir la regla**, por un motivo que conviene dejar dicho: **"la
+primera" es orden de lectura de la solapa, no una propiedad del dato.** Alguien reordena las filas y
+la regla cambia de respuesta **sin que nada falle** — sería peor que la candidata que la sección ya
+rechaza. De paso, esa candidata también cae: *"siempre la menor"* vale para `3387`, `3201` y `3178`,
+pero en `3289` los dos testigos eligen **la mayor**. Lo que falta sigue siendo la columna que
+discrimina, y no la tiene el motor.
+
+### Boedo, el único defecto vivo que quedó en pie
+
+`3156` publica `enc_alcance = 258.684` en `jm-20260812-174147`. Grepeado `258684` y `258.684` sobre
+`docs/` entero, **incluidos los tres CSV de casos**: cero apariciones fuera de la salida del propio
+motor. **Tiene origen —la segunda fila de `digital/Alcance`— pero ningún testigo**, y los dos que
+aparecieron dicen que la celda está vacía. Se escribió así y no como *"un número que no tiene de
+dónde salir"*, que es como lo pedía el prompt: sí tiene de dónde salir, y confundir las dos cosas
+mandaría a buscar el bug en el lugar equivocado.
+
+**La guarda del `_39` no lo tapa, y ésa es la parte accionable:** `opULTIMO` exige **dos valores
+distintos** para devolver `«FALTA:@ultimo_sin_fecha_ambiguo»`. Con una fila vacía y una con valor
+hay **uno solo**, y lo toma sin dudar. **La guarda cubre el empate y no cubre el hueco.**
