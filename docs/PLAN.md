@@ -944,6 +944,64 @@ decide con esa medición, no con el que falló hoy.
 
 ---
 
+**`D-30` — Una solapa declara en `SOLAPAS.campo_id_cuenta` qué campo suyo lleva la cuenta, y con
+eso el motor le da a cada lámina la fila de su encuentro. El recorte por ventana se suprime **en
+esa lectura**, no en la solapa.** (12/08/2026)
+
+**El problema.** `datosDeMarcador_` tenía **dos ramas por cuenta y las dos cableadas a un `base_id`
+literal**: `rdv` por `opciones.fila_rdv` y `digital` por `filasDigitalDeEncuentro`. Cualquier otra
+base cae a `leerFuente`, que devuelve la solapa entera sin el contexto del ítem — **el mismo
+agregado publicado en las seis láminas**. Es el bug que el `_28` arregló para `rdv`, esperando a la
+tercera base para repetirse, y hoy bloquea de una sola vez los cuatro `enc_*` de Call Center, el
+embudo del iceberg y las impresiones por plataforma.
+
+**Descartado: una tercera rama cableada.** Habría servido a la base nueva y **no** a `looker`, que
+necesita lo mismo, así que la cuarta base pedía una cuarta rama. Es la medición de `D-01` yendo para
+el lado que no es: un informe nuevo exigiendo un `.gs`.
+
+**Lo que se decidió, y son tres cosas.**
+
+**1 · La declaración es por solapa, no por base.** No es simetría con `BASES`: `C-50` midió que el
+par PRE/POST **comparte el mismo `ID` en dos solapas distintas** de la misma base —152 ids en
+`Agenda JM`, 102 en `Agenda JM | Post`, 98 compartidos—, así que la clave del par es
+`(ID, solapa)` y una declaración por base no podría distinguirlas. Guarda el **campo lógico**, no la
+letra de columna: la letra tiene dueño y es `MAPEO`. Es la forma exacta de `ventana_ref` (`D-24`),
+que declara la solapa de referencia y deja la clave del cruce en `MAPEO.clave_ventana`.
+
+**2 · La supresión del recorte por ventana es del llamador, no de la solapa** — y ésta es la parte
+que no era obvia. Cuando el ítem trae `id_cuenta`, **la cuenta es el recorte**, y volver a recortar
+por fecha vacía láminas: San Cristóbal es del 23/07 y la ventana de julio arranca el 24 (`R-17`, el
+temario ya seleccionó). Pero declararlo **en la solapa** lo apagaría para todos sus lectores, y
+`looker/resumen_metricas_dinamico` se lee de las dos formas: por cuenta para los `enc_*` y como
+**agregado de la semana** para `frecuencia` y `gcba_frecuencia`. Apagárselo al agregado le daría la
+suma de todos los períodos — grande, plausible y equivocada. **El recorte no es propiedad de la
+solapa: es propiedad de cómo se la está leyendo**, y por eso viaja como opción de `leerFuente` y la
+pide sólo esta rama.
+
+**3 · Sin `id_cuenta`, falla; no cae a leer la solapa entera.** Es la decisión que evita el modo de
+falla de siempre. Una solapa que declara `campo_id_cuenta` **afirma que su grano es la cuenta**:
+leerla sin cuenta no es una lectura más amplia, **es otra pregunta**. Devuelve
+`«FALTA:<token>@sin_id_cuenta»` nombrando la solapa y el campo declarado. Mismo criterio que `D-19`
+y `D-21`: nada entra ni se excluye en silencio.
+
+**La guarda que la acompaña.** Si el campo lógico declarado no está en `MAPEO` para esa solapa, la
+rama falla con `@campo_id_cuenta_no_mapeado` en vez de filtrar contra una columna inexistente —
+donde el filtro dejaría pasar **todas** las filas y el marcador publicaría el agregado creyendo que
+publicó la cuenta.
+
+**Qué NO cambia.** Las dos ramas cableadas siguen primero y sin tocar: están medidas y validadas, y
+la de `digital` además no es un filtro sino una unión de seis solapas (`Union.gs`) que esta rama no
+sabría reproducir. **Vacío es el default en las 100 y pico de filas de `SOLAPAS`**, y vacío
+significa «esta solapa no se selecciona por cuenta» — el estado de todas hasta hoy.
+
+**Control positivo:** `probarRamaPorCuentaDeclarativa_` (`Pruebas.gs`), sobre las dos funciones
+puras. El fixture del filtro es `[3387, 3289, 3387]` buscando `3289` a propósito: el resultado —una
+fila, la del medio— **no coincide** con "la primera", ni con "la última", ni con "todas", así que
+distingue las cuatro implementaciones. Uno de dos filas con la buscada adelante habría pasado con
+todas.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 **IDs `T<tramo>.<n>`.** La palabra "Paso" queda para la serie histórica y no se reusa: `Paso 5`
