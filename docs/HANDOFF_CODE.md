@@ -3,11 +3,11 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-13, al cerrar el `_46` · último commit al escribirlo: `8317e99`
+**Última actualización:** 2026-08-13, al cerrar el `_48` · último commit al escribirlo: `5a265f4`
 
-## El panel ya es una web app usable, con un problema de acceso abierto
+## El panel es una web app usable, y el acceso está decidido así a propósito
 
-**URL `/exec`** (despliegue `@1`, creado el 13/08):
+**URL `/exec`** (despliegue `@3`, 13/08):
 
 ```
 https://script.google.com/macros/s/AKfycbwr2JinpHmrw2UVbQHafyUiAZbD9bbsZoB1zy35xw3Y2omTCmI9VZ4brbKbi6Vh4lac/exec
@@ -16,14 +16,20 @@ https://script.google.com/macros/s/AKfycbwr2JinpHmrw2UVbQHafyUiAZbD9bbsZoB1zy35x
 `appsscript.json` declara `access: ANYONE` (cuenta de Google, ya no anónimo) y
 `executeAs: USER_DEPLOYING`.
 
-⚠ **Sólo entra la cuenta dueña.** Las otras tres de la lista reciben la pantalla de rechazo. Lo
-está midiendo el `_48` Parte A. **Candidato, nombrado como candidato:** con `executeAs:
-USER_DEPLOYING` y cuentas de consumidor, `Session.getActiveUser().getEmail()` puede devolver vacío
-para quien no sea el dueño del script — la barrera nunca vería el mail contra el cual comparar. No
-es lo único que puede ser.
+⚠ **Entra sólo la cuenta dueña, y eso NO es un bug abierto.** Medido el 13/08: con
+`USER_DEPLOYING` sobre cuentas de consumidor, `Session.getActiveUser().getEmail()` vuelve vacío,
+así que la barrera nunca ve el mail — la lista de `CONFIG` está bien cargada y bien leída. **El
+usuario decidió dejarlo así**: hoy entra el dueño y con eso se muestra. La identidad de las otras
+cuentas se decide más adelante, con `D-15` y su precondición `T4.1` sobre la mesa. **No anotarlo
+como defecto ni "arreglarlo" de paso.**
 
-⚠ **El panel muestra el mismo deck cambie o no el período.** `CORRIDAS` guarda `periodo_id` pero
-`panel_ultimasCorridas` no lo devuelve. Es la Parte B del `_48`.
+`D-15` ya había decidido `USER_ACCESSING` y por este motivo exacto. Lo desplegado la contradice,
+y es deliberado. **`T4.1` sigue sin medirse**: pedía medir con *"ejecuta el usuario que accede"*,
+y lo del 13/08 se midió con *"ejecuta yo"*.
+
+**El rechazo del panel muestra un código de motivo** —`sin identidad`, `fuera de lista`, `clave
+ausente`, `lista vacía`, `config ilegible`— sin ningún mail en pantalla; el mail va al log. Es la
+única vía de diagnóstico porque `clasp logs` no anda: el proyecto no tiene GCP propio.
 
 ## La Barrera 1 lee `CONFIG`, y falla cerrada
 
@@ -45,6 +51,14 @@ limpiar nada.
 
 ## Lo que hay que saber antes de tocar algo
 
+- **`CORRIDAS.periodo_id` tiene dos vocabularios**, y quien empareje contra esa columna tiene que
+  saberlo: `abrirCorrida_` escribe `periodoId || ventana.origen`, o sea un id de `PERIODOS` si
+  alguien lo eligió, y la **etiqueta de origen** de la cadena si no. Las cuatro corridas medidas
+  el 13/08 traen ids, pero la etiqueta puede aparecer igual. El panel lo resuelve buscando el
+  período registrado **cuya ventana coincide** con la que el motor resolvería hoy.
+- **`clasp push` no mueve el `/exec`.** Sirve HEAD, que es `/dev`. El panel vive en un despliegue
+  versionado: después de pushear hay que `clasp deploy --deploymentId <id>` sobre el mismo id
+  para no cambiar la URL. Sin eso el usuario prueba código viejo y la medición sale falsa.
 - **Una guarda que lee configuración se despliega DESPUÉS de que esa configuración exista.** El
   `_46` pusheó la barrera antes de sembrar la clave y cerró la API para todos: **el sembrador de
   `CONFIG` se alcanza sólo pasando la barrera**. La salida es en dos fases (seed primero, guarda
@@ -81,8 +95,11 @@ Sirven de fixture para la Parte B del `_48`: son dos períodos distintos en `COR
 
 ## Pendiente, en orden
 
-- **El `_48`** — acceso de las otras tres cuentas (A), deck por período (B), textos de la
-  interfaz (C), censo de secciones (D).
+- **La identidad de las otras tres cuentas**, cuando el usuario lo retome: `D-15`, su precondición
+  `T4.1` sin medir, y el costo de `USER_ACCESSING`. **No arrancarlo por cuenta propia.**
+- **El selector de secciones de `jm`** — `panel_getEstado()` devuelve las mismas tres secciones
+  para `jm` y para `secco`, así que la diferencia que se reportó no está en el backend. Si sigue
+  apareciendo, hay que mirar el render.
 - **`enc_alcance` sigue en `—`** mientras la regla de `digital/Alcance` esté abierta. `C-51` la
   reencuadró: las dos filas son **PRE y POST**, no dos definiciones. Lo que falta es cómo se
   combinan, y eso es `A-12`.

@@ -8873,3 +8873,60 @@ la sembraría pasa por la guarda.
 `appsscript.json`: `ANYONE_ANONYMOUS` → `ANYONE`. Despliegue nuevo `@1` sobre `/exec`, con
 `executeAs: USER_DEPLOYING` sin tocar. Probado con Bearer de la cuenta dueña: HTTP 200 sirviendo
 nuestro `doGet`, no un error de Google ni un login.
+
+---
+
+## `_48` — el deck corresponde al período, y la interfaz deja de hablar en interno (2026-08-13)
+
+### Parte A — la barrera nunca ve el mail
+
+Medido: con la segunda cuenta, el panel devuelve `sin identidad`. O sea que
+`Session.getActiveUser().getEmail()` vuelve **vacío** con `executeAs: USER_DEPLOYING` sobre
+cuentas de consumidor, y la lista de `CONFIG` **está bien cargada y bien leída** — se verificó
+aparte que `apiListaAutorizados_` parsea los cuatro mails íntegros desde la celda real, así que
+la hipótesis del separador raro queda descartada.
+
+**`D-15` ya había decidido esto, y por este motivo exacto**: *"con ejecutar como: yo sobre
+cuentas Gmail personales, `getActiveUser()` suele volver vacío y el filtro deja de servir"*. El
+`_46` Parte C desplegó con `USER_DEPLOYING` sin marcar que contradecía a `D-15`.
+
+**Decisión del usuario: el acceso queda como está** —`USER_DEPLOYING`, `access: ANYONE`, la
+lista en `CONFIG`—. Hoy entra el dueño y con eso alcanza para mostrar. La identidad de las otras
+cuentas se decide más adelante, con `D-15` y su precondición `T4.1` sobre la mesa. **No es un
+bug abierto: es una decisión postergada a propósito.**
+
+⚠ **`T4.1` sigue sin medirse.** Pedía medir `getActiveUser()` con *"ejecuta el usuario que
+accede"*; lo del 13/08 se midió con *"ejecuta yo"*. Confirma **por qué** `D-15` eligió como
+eligió, no que la otra opción funcione.
+
+De paso, la instrumentación que lo destapó: el rechazo del panel ahora muestra un **código de
+motivo** en pantalla —sin ningún mail, ni el de quien entra ni los de la lista— y manda el mail
+al log. Sirve porque `clasp logs` no anda: el proyecto no tiene un GCP propio configurado.
+
+### Parte B — la causa era una columna que el backend no devolvía
+
+`CORRIDAS` guarda `periodo_id` desde siempre y `panel_ultimasCorridas` no lo devolvía, así que
+`corridaPrevia()` cruzaba **sólo por informe** y tomaba la más nueva. Cambiar el período no
+cambiaba el deck ofrecido. El comentario del código lo decía con todas las letras —*"sin
+`panel_getPeriodos` no hay forma de cruzar por período"*— y era falso: la columna estaba ahí.
+
+**Una premisa propia que se cayó al medir, y conviene dejarla escrita.** `abrirCorrida_` escribe
+`periodoId || ventana.origen`, así que la columna tiene **dos vocabularios**: un id de `PERIODOS`
+o la etiqueta de origen de la cadena que resolvió el período. Se dio por hecho que las corridas
+sin período explícito traerían `config`, y se escribió el emparejamiento contra eso. **Medidas,
+las cuatro corridas reales traen ids** (`julio_24_30`, `junio_sem2`): con el selector en "por
+defecto" ese emparejamiento no habría encontrado nada. La forma correcta es buscar el período
+registrado **cuya ventana coincide** con la que el motor resolvería hoy, y caer a la etiqueta
+sólo si ninguno coincide.
+
+Es el patrón de siempre: la corrección no salió de releer el código, salió de mirar los datos.
+
+### Parte D — la premisa no se reproduce
+
+`panel_getEstado()` devuelve **las mismas tres secciones repetibles** para los dos informes:
+`encuentro`, `comunicaciones_post` y `campana`. **`jm` no trae menos que `secco`.** Así que la
+pregunta que el prompt planteaba —¿es `SECCIONES` (dato) o `seccionesRepetiblesDe_` (código)?—
+no tiene caso: no hay diferencia que explicar. Si el selector aparece en uno y no en el otro, la
+causa está en otro lado. **No se tocó nada**, como pedía el prompt.
+
+Dato al pasar: `jm` tiene **78** marcadores cableados (eran 57 el 11/08) y `secco` sigue en cero.
