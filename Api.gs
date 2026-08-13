@@ -107,19 +107,65 @@ function doGet(e) {
 function servirPanel_() {
   // La traza no viaja al navegador —el panel no es un cliente JSON— pero **sí tiene que
   // quedar en algún lado**: los motivos que `apiListaAutorizados_` distingue no sirven de
-  // nada si acá se tiran. Van a Stackdriver, que es lo que `exceptionLogging` ya usa.
+  // nada si acá se tiran. Van al log de ejecuciones.
   var traza = [];
-  var mail = apiBarrera1_(traza);
-  if (!mail.ok) {
-    console.log('panel — acceso denegado · ' + traza.join(' | '));
-    return HtmlService.createHtmlOutput(
-      '<p style="font:14px Roboto,Arial,sans-serif;color:#c5221f;padding:24px">' +
-      'Esta cuenta no tiene acceso al panel.</p>'
-    );
+  var barrera = apiBarrera1_(traza);
+
+  if (!barrera.ok) {
+    // `_48` A.1 — el diagnóstico del rechazo, y la asimetría es deliberada: **el mail va al
+    // log, el motivo va a la pantalla**. El motivo no dice nada de nadie —es una categoría,
+    // no una identidad— así que mostrarlo no filtra quién está en la lista, y ahorra el ida
+    // y vuelta de pedirle a la persona rechazada que alguien más le lea el log.
+    //
+    // `getEffectiveUser` es **la medición que decide el caso**, no un adorno: con
+    // `executeAs: USER_DEPLOYING` la ejecución corre como el dueño. Si el activo viene
+    // vacío y el efectivo trae al dueño, el mail nunca llegó a la barrera y la lista de
+    // `CONFIG` es inocente. Si los dos vienen iguales y poblados, el problema es otro.
+    var efectivo = '';
+    try {
+      efectivo = Session.getEffectiveUser().getEmail();
+    } catch (err) {
+      efectivo = '(no legible)';
+    }
+    console.log('panel — acceso denegado · motivo=' + barrera.motivo +
+      ' · activo=«' + (barrera.mail || '') + '»' +
+      ' · efectivo=«' + efectivo + '»' +
+      ' · ' + traza.join(' | '));
+    return apiPantallaDeRechazo_(barrera.motivo);
   }
+
+  console.log('panel — acceso concedido · ' + barrera.mail);
   return HtmlService.createHtmlOutputFromFile('Panel')
     .setTitle('Motor de Informes')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * La pantalla de rechazo, con el motivo en un código corto que la persona rechazada puede
+ * leer y repetir. **Ningún mail acá** — ni el suyo ni los de la lista.
+ *
+ * Los textos están escritos para quien los va a leer, no para nosotros: `CLAUDE.md` no tiene
+ * regla sobre esto todavía, pero el `_48` Parte C la instala para el resto del panel —
+ * nada de nombres de decisiones, casos ni tokens en la interfaz.
+ */
+function apiPantallaDeRechazo_(motivo) {
+  var QUE_PASO_ = {
+    'sin identidad': 'Google no nos dijo con qué cuenta entraste.',
+    'fuera de lista': 'Tu cuenta no está habilitada.',
+    'clave ausente': 'Falta cargar la lista de cuentas habilitadas.',
+    'lista vacía': 'La lista de cuentas habilitadas está vacía.',
+    'config ilegible': 'No pudimos leer la configuración.'
+  };
+  var texto = QUE_PASO_[motivo] || 'No pudimos verificar tu acceso.';
+
+  return HtmlService.createHtmlOutput(
+    '<div style="font:15px/1.6 Roboto,Arial,sans-serif;color:#202124;padding:32px;max-width:520px">' +
+    '<p style="color:#c5221f;font-weight:500;margin:0 0 8px">No pudimos abrirte el panel.</p>' +
+    '<p style="margin:0 0 16px">' + texto + '</p>' +
+    '<p style="color:#5f6368;font-size:13px;margin:0">Pasale este código a quien administra el ' +
+    'motor: <code style="background:#f1f3f4;padding:2px 6px;border-radius:3px">' + motivo +
+    '</code></p></div>'
+  ).setTitle('Motor de Informes');
 }
 
 function doPost(e) {
@@ -292,18 +338,25 @@ function apiBarrera1_(traza) {
 
   if (!mail) {
     traza.push('barrera 1: sin mail');
-    return { ok: false, error: 'no autorizado' };
+    return { ok: false, error: 'no autorizado', motivo: 'sin identidad' };
   }
 
   var lista = apiListaAutorizados_(traza);
-  if (!lista.ok) return { ok: false, error: 'no autorizado' };
+  // El motivo de la lista viaja tal cual: `clave ausente` y `lista vacía` son problemas de
+  // la configuración, no de quien llama, y colapsarlos con "fuera de lista" manda a
+  // investigar a la persona equivocada.
+  //
+  // El `mail` viaja en los rechazos **para el log de `servirPanel_`**, no para la respuesta:
+  // `manejarPedido_` sólo lee `.error`, así que nunca sale por HTTP.
+  if (!lista.ok) return { ok: false, error: 'no autorizado', motivo: lista.motivo, mail: mail };
 
   if (lista.mails.indexOf(normalizarMailAutorizado_(mail)) === -1) {
     // Se nombra el mail recibido a propósito: quien llama ya conoce su propia
     // identidad, y sin esto el rechazo no distingue "no estás en la lista" de
     // "Google no me dio tu mail".
-    traza.push('barrera 1: mail fuera de la lista — ' + mail);
-    return { ok: false, error: 'no autorizado' };
+    traza.push('barrera 1: mail fuera de la lista — ' + mail +
+      ' (la lista tiene ' + lista.mails.length + ')');
+    return { ok: false, error: 'no autorizado', motivo: 'fuera de lista', mail: mail };
   }
 
   traza.push('barrera 1: ok');
