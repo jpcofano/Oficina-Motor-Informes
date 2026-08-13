@@ -552,11 +552,14 @@ function vistaTemario(){
        '<textarea id="t-texto" rows="5" style="font:inherit;font-size:var(--text-sm);' +
        'padding:8px 10px;border:1px solid var(--border-default);border-radius:var(--radius-sm);' +
        'width:100%;resize:vertical" placeholder="Una línea por encuentro, como llegan por WhatsApp">' +
-       esc(filas.map(function(f){ return f.texto; }).join('\n')) + '</textarea>' +
-       '<p class="hint">Esto <strong>no carga nada</strong>: muestra qué entendió el motor de cada ' +
-       'línea, para revisarlo antes de cargarlo.</p></div>';
+       esc(filas.map(function(f){ return f.texto; }).join('\n')) + '</textarea></div>';
 
-  h += '<button class="btn btn-primary" id="b-temario">Ver qué se entendió</button>';
+  /* El botón dice `Interpretar` y no `Cargar`, y ésa pasó a ser la única señal de que esto no
+   * escribe: la línea que lo aclaraba se sacó a pedido del usuario el 13/08. Acá da igual
+   * —la maqueta no escribe nada por definición—, pero **cuando esta pantalla sea de verdad,
+   * alguien que pegue el temario, vea las filas y se vaya creyendo que quedaron cargadas es
+   * el peor desenlace posible**, y el verbo del botón va a ser lo único que lo evite. */
+  h += '<button class="btn btn-primary" id="b-temario">Interpretar</button>';
 
   if (S.temarioMostrado){
     h += '<hr class="sep">';
