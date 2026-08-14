@@ -120,3 +120,124 @@ tiene que decir en sus notas que no manda y por qué. **La Parte B no arranca si
 - **No cablea `MARCADORES`.** Sin decisión de fuente no hay token, y el gate es del usuario.
 - **No agrega la tarjeta de Google al PRE de la plantilla.** Eso es de la plantilla, `C-01`.
 - **No define `-` ni `---`.** Esa decisión sigue abierta y tiene prompt propio pendiente.
+
+---
+
+## Addendum — 14/08/2026 · gate resuelto, y la base volvió a cambiar
+
+> Se agrega al final de `2026-08-14_1_mapeo_metricas_plataforma_reuniones.md`, que ya se
+> ejecutó hasta el gate (`dcdc57a`). El cuerpo del prompt no se edita.
+
+### Corrección al cuerpo
+
+Eran **11** filas de `MAPEO` de `reuniones`, no 12. El número salió de un conteo mío sobre el
+seed, no de una medición, y el prompt lo heredó como si fuera dato. Queda anotado para que no
+vuelva a citarse.
+
+### El gate, resuelto
+
+**`digital` manda para todo el desglose por plataforma. `reuniones` entra sólo por lo que
+`digital` no tiene.** Criterio del usuario, 14/08. La Parte A lo sostiene: donde las dos
+tienen carga coinciden celda por celda, y `digital` es la que además tiene Visualizaciones y
+tiene a Retiro.
+
+**El `ALCANCE` de la tarjeta de Meta es de Meta.** Decisión del usuario, 14/08: el alcance lo
+aporta **sólo Meta**, y por eso es el que se muestra. Eso disuelve la contradicción que
+reportó la Parte A: la PRE y la POST no archivan dos alcances distintos, archivan el mismo
+hecho bajo dos dueños, y el dueño real es Meta. La aritmética que ya midió la Parte A lo
+sostiene —`Alcance manual` es el denominador tanto de `Frecuencia Meta` como de `Frecuencia
+estimada`— y eso es justamente lo que se espera si Meta es la única que lo aporta.
+
+Va como regla en `docs/REGLAS_NEGOCIO.md`. **El número de `R-NN` se verifica contra el
+destino antes de escribirlo:** `R-26` está pedido por el prompt del "1 a 1" y todavía no se
+ejecutó, así que no se puede dar por libre ni por tomado.
+
+---
+
+### Parte A2 — las solapas nuevas · **sólo lectura** · modelo: **Sonnet** · effort: alto
+
+El usuario avisó el 14/08 que a la base **le agregaron solapas, "para cuando falte algo"**.
+El censo de la Parte A corrió sobre las cuatro registradas, así que está incompleto desde
+antes de terminar. **La Parte B no arranca hasta cerrar esto.**
+
+Una solapa de relleno es el lugar exacto donde nace un número plausible y sin auditar: si el
+dato se completa a mano, el motor no puede distinguir un valor cargado de uno medido, y va a
+publicar los dos con la misma cara. Por eso el censo tiene que decir **de dónde sale cada
+celda**, no sólo que hay celda.
+
+1. **Qué hay hoy.** Listar todas las solapas de la base y marcar cuáles son las cuatro ya
+   registradas y cuáles son nuevas.
+
+2. **Por cada solapa nueva:** banda de la fila 1 y títulos de la fila 2 —la Parte A ya
+   estableció que la plataforma vive en la fila 1 y que los títulos de la 2 no son únicos—,
+   filas con dato, rango real de fechas, y `typeof` sobre el valor crudo.
+
+3. **¿Fórmula o carga a mano?** Para cada columna, `getFormulas()` y **el texto de la
+   fórmula**. Una columna que referencia a otra solapa es derivada; una escrita a mano es un
+   dato nuevo y necesita dueño. **Reportar cuál es cuál**, que es lo que decide si la solapa
+   puede ser `fuente`.
+
+4. **Los dos huecos conocidos.** ¿Alguna trae **Visualizaciones para el PRE**, o **alcance
+   por plataforma**? Son las dos cosas que hoy no existen en ningún lado y que la lámina pide.
+   Si la respuesta es no, decirlo con las columnas revisadas.
+
+5. **Cuánto rellenan de verdad.** Si son de relleno: sobre los 25 `Uno a uno`, cuántas celdas
+   que hoy están vacías o en cero en las solapas registradas **tienen dato** en las nuevas. Es
+   la medición que dice si valen la pena o si son una solapa vacía con buenas intenciones.
+
+6. **Solape y contradicción.** Si duplican columnas de las registradas, comparar fila a fila
+   sobre esos 25 y reportar **dónde difieren**, con el par de valores. Dos solapas que dicen
+   distinto sobre el mismo hecho es hallazgo, no ruido.
+
+**Reportar y parar.** Si alguna solapa nueva resulta ser fuente, necesita su fila en
+`SOLAPAS` antes de que `MAPEO` pueda nombrarla — y eso es un alta, no un mapeo: **se reporta
+y lo decide el usuario**, no se escribe acá.
+
+---
+
+### Parte B — ajustes sobre lo escrito arriba · modelo: **Opus** · effort: alto
+
+1. **Mapear el alcance, que es lo único que `reuniones` aporta a la lámina.**
+   `Agenda JM!AF` (`Alcance manual`), con la nota de que es el denominador verificado de
+   `Frecuencia Meta` y de `Frecuencia estimada`. Mapear también el `Alcance` (G) de la POST,
+   con la nota de que es el mismo hecho bajo la banda `Acumulado` y que la lámina usa el de
+   Meta.
+
+2. **No mapear las columnas de plataforma de `reuniones`.** Empatan exacto con `digital`, y
+   `digital` manda: mapearlas igual sería escribir una segunda respuesta a una pregunta que ya
+   tiene una, que es lo que `CLAUDE.md` §7 prohíbe. Dejar constancia de que existen y de por
+   qué no se usan **en las notas de `SOLAPAS`**, no en `MAPEO`.
+
+3. **Los `%` de la POST vuelven `string` en las filas en cero y `number` en las cargadas.**
+   Misma columna, dos tipos. Declararlo en las notas de la fila de `MAPEO`. **Ningún default
+   silencioso:** una celda que vuelve `string` no se convierte a `0` para que el token no
+   falle — falla, y se ve.
+
+4. **`% Cobertura` puede pasar de 100%** (Retiro POST: 115%). Anotarlo en su fila. Ningún
+   marcador la acota a 1: si se acota, publica 100% donde la medición dice 115% y nadie se
+   entera.
+
+5. **`R-24` sigue en pie.** `imp_totales` (AA) reproduce Meta + Google + Programmatic con
+   Programmatic en cero para San Cristóbal, que es exactamente lo que predice la resta.
+
+6. Correr `tools/listas.js`, commit por parte lógica, `git push`.
+
+---
+
+### Los hallazgos de la Parte A que necesitan destino
+
+Van **antes** de la Parte B, porque dos de ellos corrigen cosas ya escritas:
+
+1. **El bloque en cero es por par `(encuentro, solapa)` y se invierte** —San Cristóbal cargado
+   en la PRE y en cero en la POST, Retiro al revés—. El `_40` concluyó que "3346 degrada a la
+   base como testigo" mirando sólo la PRE. La corrección va a
+   `docs/PENDIENTES_consistencia.md` **como entrada nueva que cita al `_40`**; el `_40` no se
+   edita, que es prompt ejecutado.
+
+2. **El caso de Retiro se cierra:** `Alcance` de la POST da 47.753, el mismo número de
+   `looker`. La base coincidía y se estaba mirando la solapa equivocada. Entra al consolidado
+   como caso nuevo, **con su lámina de referencia**, y el caso viejo se marca resuelto sin
+   borrarse.
+
+3. **`Recap ×3` y tres filas con `Fecha` ilegible en la POST.** Se anotan como hueco en
+   `PENDIENTES_consistencia.md`. No se resuelven acá.
