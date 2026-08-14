@@ -1472,3 +1472,101 @@ function diagMarcadoresDeCuenta_(informeId, periodoRef, cuentas, prefijo) {
     cuentas: salida
   };
 }
+
+/**
+ * `2026-08-14_1` A2.3 — de dónde sale cada celda de una solapa externa: fórmula o carga a mano.
+ *
+ * Por qué no alcanza con mirar el valor: una columna escrita a mano y una derivada de otra
+ * solapa se ven **idénticas** en `getValues()`, y la diferencia es la que decide si la solapa
+ * puede ser `fuente`. Devuelve **el texto** de la fórmula y no un booleano, por el error del
+ * `_40`: `getFormulas()` contestó bien "tiene fórmula" y la inferencia "deriva de la otra hoja
+ * del par" era falsa — era un `QUERY()` sobre una tercera. La etiqueta no alcanza.
+ *
+ * Se muestrean varias filas y no una: el arrastre de una fórmula puede empezar más abajo, y
+ * mirar sólo la primera diría "a mano" sobre una columna derivada.
+ *
+ * SÓLO LECTURA: `getFormulas()` no escribe.
+ */
+function diagFormulasDeSolapaExterna_(idPlanilla, solapa, filaEncabezado, cuantasFilas) {
+  var hoja = SpreadsheetApp.openById(idPlanilla).getSheetByName(solapa);
+  if (!hoja) return { ok: false, motivo: 'no existe la solapa "' + solapa + '" en ' + idPlanilla };
+
+  var enc = Number(filaEncabezado) || 1;
+  var ultimaFila = hoja.getLastRow();
+  var cols = hoja.getLastColumn();
+  if (ultimaFila <= enc) return { ok: false, motivo: 'la solapa no tiene filas de datos debajo de la fila ' + enc };
+
+  var muestra = Math.min(Number(cuantasFilas) || 5, ultimaFila - enc);
+  var encabezados = hoja.getRange(enc, 1, 1, cols).getValues()[0].map(normalizarValorDeclarado_);
+  var formulas = hoja.getRange(enc + 1, 1, muestra, cols).getFormulas();
+
+  var salida = [];
+  for (var c = 0; c < cols; c++) {
+    var conFormula = 0;
+    var texto = '';
+    for (var f = 0; f < muestra; f++) {
+      if (formulas[f][c]) {
+        conFormula++;
+        if (!texto) texto = formulas[f][c];
+      }
+    }
+    if (texto.length > 200) texto = texto.slice(0, 200) + '…';
+    salida.push(indiceAColumnaLetra_(c) + '. ' + (encabezados[c] || '(vacío)') + ' — ' +
+      (conFormula ? conFormula + '/' + muestra + ' con fórmula: ' + texto : 'a mano (0/' + muestra + ')'));
+  }
+
+  return { ok: true, solapa: solapa, fila_encabezado: enc, filas_muestreadas: muestra, columnas: salida };
+}
+
+/**
+ * `2026-08-14_1` A2.6 — buscar por **letra de columna** en vez de por encabezado.
+ *
+ * `diagFilasDeSolapaExterna_` resuelve la clave por nombre de encabezado, y eso no alcanza en
+ * `reuniones/Base_Digital`: la solapa son **ocho bloques lado a lado**, cada uno con su propia
+ * columna `ID Cuentas`, así que `indexOf` siempre devuelve la primera y los otros siete quedan
+ * inalcanzables. Los bloques además son listas **independientes** —una fila trae dato en uno y
+ * vacío en los demás—, con lo cual el número de fila no significa nada entre bloques.
+ *
+ * Devuelve sólo las columnas pedidas: volcar las 27 por cada coincidencia es ilegible cuando la
+ * pregunta es una celda.
+ *
+ * SÓLO LECTURA.
+ */
+function diagFilasPorColumnaExterna_(idPlanilla, solapa, filaEncabezado, letraClave, claves, letrasDevueltas) {
+  var hoja = SpreadsheetApp.openById(idPlanilla).getSheetByName(solapa);
+  if (!hoja) return { ok: false, motivo: 'no existe la solapa "' + solapa + '" en ' + idPlanilla };
+
+  var enc = Number(filaEncabezado) || 1;
+  var ultimaFila = hoja.getLastRow();
+  var cols = hoja.getLastColumn();
+  if (ultimaFila <= enc) return { ok: false, motivo: 'la solapa no tiene filas de datos debajo de la fila ' + enc };
+
+  var iClave = columnaLetraAIndice_(letraClave);
+  if (iClave < 0 || iClave >= cols) return { ok: false, motivo: 'la columna ' + letraClave + ' está fuera de la solapa (' + cols + ' columnas)' };
+
+  var encabezados = hoja.getRange(enc, 1, 1, cols).getValues()[0].map(normalizarValorDeclarado_);
+  var rango = hoja.getRange(enc + 1, 1, ultimaFila - enc, cols);
+  var datos = rango.getValues();
+  var mostrados = rango.getDisplayValues();
+
+  var indices = (letrasDevueltas && letrasDevueltas.length)
+    ? letrasDevueltas.map(columnaLetraAIndice_)
+    : encabezados.map(function (h, i) { return i; });
+
+  var salida = {};
+  (claves || []).forEach(function (claveCruda) {
+    var clave = normalizarValorDeclarado_(claveCruda);
+    var lineas = [];
+    datos.forEach(function (fila, i) {
+      if (normalizarValorDeclarado_(fila[iClave]) !== clave) return;
+      lineas.push('— fila ' + (enc + 1 + i) + ' —');
+      indices.forEach(function (j) {
+        lineas.push('   ' + indiceAColumnaLetra_(j) + ' ' + (encabezados[j] || '(sin título)') +
+          ' = ' + celdaDeCenso_(datos[i][j], mostrados[i][j]));
+      });
+    });
+    salida[clave] = lineas.length ? lineas : ['(sin fila con ' + clave + ' en la columna ' + letraClave + ')'];
+  });
+
+  return { ok: true, solapa: solapa, columna_clave: letraClave, filas: salida };
+}
