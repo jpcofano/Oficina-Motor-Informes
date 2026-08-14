@@ -1533,6 +1533,58 @@ La referencia es **dentro de la misma base**: cruzar entre bases no está medido
 
 ---
 
+## R-27 — El alcance lo aporta **sólo Meta**
+
+> **`R-26` no está tomado por esta regla.** Está reservado por el prompt del "1 a 1"
+> (`docs/Prompts/2026-08-13_1_R-26_uno_a_uno_solo_digital.md`), que al 14/08/2026 no se ejecutó.
+> Si ese prompt falsa su premisa y nunca lo escribe, `R-26` queda como hueco: los IDs son
+> estables y no se reutilizan.
+
+**Enunciado.** De las tres plataformas del bloque digital —Meta, Google, Programmatic—, **la
+única que aporta alcance es Meta.** No es una preferencia de diseño ni un recorte de
+conveniencia: no existe dato de alcance de las otras dos.
+
+### Por qué es regla y no preferencia: lo dice la estructura de la base
+
+Decisión del usuario del 14/08/2026, **confirmada por la forma de `reuniones/Base_Digital`**, que
+es lo que la vuelve regla. La solapa titula sus bandas con todas las letras:
+
+| banda | qué archiva |
+|---|---|
+| `Alcance Meta Convocatoria` | el alcance de la PRE |
+| `Alcance Meta Post` | el alcance de la POST |
+
+**No existe banda de alcance de Google ni de Programmatic.** Las dos que hay nombran a Meta en el
+rótulo. Una regla que dijera "el alcance es el de Meta porque es el que tenemos" sería una
+excusa; ésta dice que **el dato de las otras dos no existe en la fuente**, que es un hecho
+verificable y que alguien puede desmentir mostrando la banda que falta.
+
+### La consecuencia, que es la mitad útil: un rótulo mal puesto
+
+El `Alcance` que la solapa **POST** archiva bajo la banda `Acumulado` **está mal rotulado.** No
+es un acumulado de las tres plataformas: el número sale del bloque `Alcance Meta Post` de
+`Base_Digital`, y se verificó **celda a celda** — Retiro `47.753`, exacto. Lo mismo del lado PRE:
+`Agenda JM!AF` ("Alcance manual") es `Base_Digital!K`, banda `Alcance Meta Convocatoria`, San
+Cristóbal `1.412`.
+
+Las dos filas de `MAPEO` de `alc_real` ya lo dicen en sus notas (`Instalar.gs`, `_1` Parte B).
+Esta regla es el lugar donde vive el **por qué**, para que la nota de `MAPEO` no tenga que
+sostenerlo sola.
+
+**Corolario de lectura, y es el que importa en la plantilla:** la lámina del "1 a 1" muestra ese
+alcance **en la tarjeta de Meta porque es de Meta**, no por conveniencia de diseño. Quien vea el
+alcance junto a Meta y sospeche un error de maquetación, que lea esto antes de moverlo.
+
+### Qué la desmiente
+
+Que aparezca en `Base_Digital` —o en cualquier fuente del bloque digital— una banda de alcance de
+Google o de Programmatic. Ahí el alcance deja de ser una medida de una plataforma y pasa a ser
+una que se agrega, y **el rótulo `Acumulado` de la POST pasaría a ser correcto**, que es
+exactamente el modo de falla que esta regla previene: hoy es un rótulo equivocado, mañana podría
+ser un rótulo cierto sobre otro número.
+
+---
+
 ## Nota de renumeración — por qué `R-03`/`R-04`/`R-05` significan dos cosas según el archivo (DOC-6, 01/08/2026)
 
 **Qué pasó.** `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` definió tres reglas

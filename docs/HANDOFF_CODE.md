@@ -3,7 +3,45 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-13, al cerrar el `_48` · último commit al escribirlo: `5a265f4`
+**Última actualización:** 2026-08-14, al cerrar el `_4` · último commit al escribirlo: `24c76e1`
+
+## Dónde estamos: la cola del 14/08, y qué de ella ya corrió
+
+Cinco prompts en orden. **`_1` y `_4` ejecutados; los otros tres no.**
+
+| prompt | estado |
+|---|---|
+| `2026-08-14_1` — métricas por plataforma de `reuniones` | **ejecutado** (Partes A, A2 y B). `alc_real` mapeado en las dos solapas; `CAMPAÑAS_DESGLOCE_DIGITAL` restituida a `fuente` |
+| `2026-08-14_4` — las decisiones sueltas | **ejecutado con un punto frenado** — ver abajo |
+| `2026-08-14_5` — el orden de los frentes a `PLAN.md` | pendiente |
+| `2026-08-14_3` — el sembrador no degrada en silencio | pendiente; se apoya en `S-05`, que ya está escrito |
+| `2026-08-13_1` — `R-26`, el "1 a 1" sólo digital | pendiente e independiente. **Su Parte A puede falsar la premisa**; si eso pasa, no se escribe nada |
+| `2026-08-14_2` — censo de dimensiones y vocabulario global | va **después** de los cuatro |
+
+**`R-26` está reservado y libre.** Lo pide el prompt del "1 a 1". El alcance de Meta del `_4`
+tomó `R-27` a propósito para no pisarlo; si el "1 a 1" falsa su premisa, `R-26` queda como
+**hueco** y así está bien — los IDs no se reutilizan.
+
+## ⚠ Trabado: el alta de las 20 solapas de `reuniones`
+
+**Falta el dato, no la decisión.** El censo de la Parte A2 del `_1` midió las 20 solapas nuevas
+y **su reporte quedó en la conversación, no en el repo**: sólo están nombradas las **tres**
+excepciones del Addendum 2 —`Desglose impresiones`, `Métricas digital`, `Digital | Base Post`—
+y ninguna de las otras 17. Sin la lista no se pueden escribir 19 filas `ignorar` con el motivo
+concreto de cada una, y **el motivo inventado es peor que la fila que falta**.
+
+**Qué lo destraba, en orden:**
+
+1. **La lista de las 20 solapas con el motivo de cada una** — del reporte de la Parte A2, o
+   re-medida sobre la planilla `12b0v67FbxjuIndK7DgVU3MYxx-k0yBIS9gtyV45rFaY` con
+   `diagPlanillaExterna_`.
+2. **La medición de las tres excepciones** que el Addendum 2 pide hacer **antes** de
+   clasificarlas. El `_4` la da por hecha (*"0 de 25 Uno a uno"*) y no está registrada.
+3. **La confirmación del usuario.** El Addendum 2: *"El alta de `SOLAPAS` es una decisión del
+   usuario y se confirma antes de escribir."*
+
+El reparto que cierra es **`Base_Digital` en `referencia` + 3 excepciones + 16 = 20** sobre 24
+solapas totales. El *"otras 17"* del Addendum 2 del `_1` está corrido en uno.
 
 ## El panel es una web app usable, y el acceso está decidido así a propósito
 

@@ -619,11 +619,43 @@ campaña Y plataforma** (columna `Plataforma`), así que una campaña aparece va
 siendo `uso = fuente` y la siguen leyendo `enc_impresiones`, `enc_alcance`, `imp_total`,
 `gcba_imp_total`, `frecuencia` y `gcba_frecuencia`.
 
+### 1.9 El desglose por herramienta es **sólo de `jm`** — decisión del usuario, 13/08/2026
+
+**Enunciado.** El desglose de impresiones por herramienta —abrir el número en Meta, Google y
+Programmatic en vez de publicar el total— es una decisión editorial **del informe `jm`**. No es
+una propiedad del motor ni de la fuente: `digital` puede desglosar para cualquier informe que lo
+pida, y `jm` es hoy el único que lo pide.
+
+> **⚠ Pendiente al lado, y hay que decidirlo antes de tocar la plantilla de `secco`.** `secco`
+> tiene **su propia lámina** de *"Uno a uno — resultados plataforma"*, con los `u1_bench_*`
+> marcados (§2.1). Hay tres salidas posibles y **ninguna está elegida**:
+>
+> 1. se **retira** la lámina de `secco`, y el desglose queda efectivamente sólo en `jm`;
+> 2. se **cablea con los mismos tokens** que `jm`, y entonces esta decisión editorial deja de
+>    ser de un informe solo;
+> 3. **queda como está** — marcada y sin cablear, publicando sus `«FALTA:token»`.
+>
+> Mientras `S-05` esté vivo, la opción 3 no cuesta nada; el día que caiga, hay que elegir. **No
+> se decide acá.**
+
 ---
 
 ## 2. Informe mensual SECCO-SSCDI
 
 Cada sección tiene su propia configuración. Es el informe más configurable.
+
+### 2.0 SECCO repite casi todo JM, a veces con un día de desfasaje — declarado por el usuario, 14/08/2026
+
+El informe SECCO incluye **casi todo lo de JM**, y a veces **actualizado un día después**. Dos
+consecuencias que hay que dejar escritas porque no son obvias:
+
+- **El desfasaje no genera tokens nuevos.** Es la **misma medida con otra ventana**, y la ventana
+  ya se resuelve por informe. Quien vea un número distinto entre los dos informes y piense que
+  hace falta un token propio de `secco`, que empiece por mirar la ventana.
+- **Es el argumento más fuerte a favor del vocabulario global.** Si los dos informes publican en
+  su mayoría el mismo hecho, mantener dos juegos de tokens es duplicación pura. **Por eso el
+  `2026-08-14_2` lo va a medir en vez de darlo por cierto**: el argumento es fuerte, pero sigue
+  siendo un enunciado hasta que el censo diga cuántos tokens se superponen de verdad.
 
 ### 2.1 Uno a uno (slides 4–5)
 

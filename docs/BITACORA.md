@@ -8955,3 +8955,75 @@ generación de más en vez de una reunión.
 
 El muestreo de cuatro filas decía lo contrario del universo de 51, y las cuatro eran las más
 nuevas —las únicas generadas con período explícito—. **Un muestreo por recencia no es un muestreo.**
+
+---
+
+## `_4` — las cuatro decisiones sueltas escritas, y el alta de solapas frenada por falta de censo (2026-08-14)
+
+### Parte A — los destinos, medidos contra el archivo
+
+- **Último `R-NN` = `R-25`.** `R-26` **está reservado y libre**: lo pide
+  `docs/Prompts/2026-08-13_1_R-26_uno_a_uno_solo_digital.md`, que **no se ejecutó** — no aparece
+  ni una vez en `REGLAS_NEGOCIO.md`. El alcance de Meta toma **`R-27`**, y la regla lo dice en su
+  encabezado para que el hueco no se lea como error.
+- **Último `S-NN` = `S-04`.** Libre: **`S-05`**.
+- **Ninguna de las cinco estaba escrita.** Grepeadas una por una en su destino antes de agregar:
+  `sólo lo lee quien lo desarrolla` y `lector externo` → cero en `docs/*.md`; `Alcance Meta` →
+  sólo en `PENDIENTES` como medición y en el prompt; `u1_bench` → una sola línea en
+  `CONFIG_INFORMES.md:631`, y es una `[?]` abierta, no la decisión; `desfasaje` / `día después` →
+  cero en `CONFIG_INFORMES.md` y en `PLAN.md`.
+- **La forma de `SUPUESTOS.md`** es la tabla de cinco columnas —ID, supuesto, evidencia, síntoma
+  que lo desmiente, cómo se revierte—. Respetada.
+
+### Parte B — las cuatro que tenían todo el material
+
+1. **`S-05`** — el deck sólo lo lee quien lo desarrolla. Supuesto **de etapa**. La columna de
+   reversión lista las tres decisiones que hoy se toman a su amparo (lámina sin cablear, sin
+   compatibilidad hacia atrás, `«FALTA:»` crudo en vez de `---`) y **ninguna se toca**: quedan
+   escritas para que el día que el supuesto caiga se encuentren.
+2. **`R-27`** — el alcance lo aporta sólo Meta. Es regla y no preferencia porque lo dice la
+   estructura de `reuniones/Base_Digital`: bandas `Alcance Meta Convocatoria` y `Alcance Meta
+   Post`, **y ninguna banda de Google ni de Programmatic**. Con su consecuencia: la banda
+   `Acumulado` de la POST **está mal rotulada** (Retiro `47.753` sale de `Base_Digital!Z`,
+   verificado celda a celda). Y con qué la desmiente, que es lo que la vuelve falsable.
+3. **`CONFIG_INFORMES.md §1.9`** — el desglose por herramienta es sólo de `jm`, con el pendiente
+   de la lámina de `secco` al lado y sus **tres salidas posibles, ninguna elegida**.
+4. **`CONFIG_INFORMES.md §2.0`** — SECCO repite casi todo JM, a veces con un día de desfasaje.
+   Con las dos consecuencias: **no genera tokens nuevos** (misma medida, otra ventana, y la
+   ventana ya se resuelve por informe) y es el argumento a favor del vocabulario global, **que el
+   `_2` va a medir en vez de darlo por cierto**.
+
+### ⚠ El punto 5 no se ejecutó — el alta de las 20 solapas de `reuniones`
+
+**No es una decisión de alcance mía: falta el dato.** El prompt dice *"Ya está todo medido"* y
+pide una nota por fila con *"la medición y su fecha, no el veredicto"*. **Esa medición no está en
+el repo.** El censo lo produjo la Parte A2 del `_1` (`d8925be`, `1b622ef`) y su reporte quedó en
+la conversación: de las 20 solapas, el repo nombra **tres** —`Desglose impresiones`, `Métricas
+digital`, `Digital | Base Post`, las excepciones del Addendum 2— y **ninguna de las otras 17**.
+Grepeado en `docs/`, `*.gs` y `tools/`.
+
+Sin la lista no hay forma de escribir 19 filas `ignorar` con el motivo concreto de cada una, y
+**inventar el motivo es exactamente el modo de falla que el prompt viene a evitar**: una nota que
+no se puede verificar en noviembre es indistinguible de una regla, que es lo que revirtió
+`CAMPAÑAS_DESGLOCE_DIGITAL` esta semana.
+
+**Dos cosas más que hay que resolver antes de escribir, y que no dependen de mí:**
+
+- **El Addendum 2 del `_1` pide medir las tres excepciones *antes* de clasificarlas**, y esa
+  medición tampoco está registrada. El `_4` da por hecho que dieron *"0 de 25 Uno a uno"*.
+- **El Addendum 2 dice con todas las letras: *"El alta de `SOLAPAS` es una decisión del usuario y
+  se confirma antes de escribir."*** Así que aunque apareciera la lista, la confirmación es un
+  gate del usuario, no un trámite.
+
+**Discrepancia de conteo, anotada porque el número entra en la escritura.** El Addendum 2 del
+`_1` dice *"las otras 17 van a `ignorar`"*; el `_4` dice **19**. Con 24 solapas totales —el
+número que el propio Addendum 2 usa— y 4 ya registradas, las nuevas son **20**: `Base_Digital` en
+`referencia` + 3 excepciones + **16** = 20. **El `_4` es el que cierra** (3 + 16 = 19 en
+`ignorar`); el "17" del Addendum 2 está corrido en uno.
+
+### Cierre
+
+- `tools/listas.js` — **OK, las tres listas coinciden en 11 hojas.** Esperado: no se agregó
+  ninguna hoja de registro. Se corre igual porque el prompt lo pide como cierre.
+- **Un solo commit, de documentación.** El de configuración —`SEED_SOLAPAS_` en `Instalar.gs`—
+  no existe porque su punto quedó frenado.
