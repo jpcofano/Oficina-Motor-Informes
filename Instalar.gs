@@ -1251,9 +1251,24 @@ var SEED_MAPEO_REUNIONES_ = [
   { base_id: 'reuniones', campo_logico: 'cc_efectivos_pct', hoja: 'Agenda JM', columna: 'Z', notas: '"% Efect." — fracción' },
   { base_id: 'reuniones', campo_logico: 'imp_totales', hoja: 'Agenda JM', columna: 'AA', notas: '"Impresiones totales" — V-88: el bloque PRE del deck entero en una fila (San Cristóbal 42.500 exacto)' },
   { base_id: 'reuniones', campo_logico: 'alc_potencial', hoja: 'Agenda JM', columna: 'AG', notas: '"Alcance potencial" — el alcance objetivo del iceberg' },
-  { base_id: 'reuniones', campo_logico: 'alc_cobertura_pct', hoja: 'Agenda JM', columna: 'AH', notas: '"% Cobertura" — ⚠ sale 0 en las 14 filas donde Habitantes es el texto "Revisar" (las de eje). Por eso su marcador lleva filtro !=0' },
+  { base_id: 'reuniones', campo_logico: 'alc_cobertura_pct', hoja: 'Agenda JM', columna: 'AH', notas: '"% Cobertura" — ⚠ sale 0 en las 14 filas donde Habitantes es el texto "Revisar" (las de eje). Por eso su marcador lleva filtro !=0. ⚠ `2026-08-14_1`: PUEDE PASAR DE 100% (Retiro POST 47.753/41.475 = 115%). Ningún marcador la acota a 1 — acotarla publica 100% donde la medición dice 115% y nadie se entera' },
   // La POST entra con su clave nada más: sus métricas las cablea el prompt que las pida.
-  { base_id: 'reuniones', campo_logico: 'id_cuenta', hoja: 'Agenda JM | Post', columna: 'A', notas: 'mismo ID que la PRE — la clave del par es (ID, solapa), C-50' }
+  { base_id: 'reuniones', campo_logico: 'id_cuenta', hoja: 'Agenda JM | Post', columna: 'A', notas: 'mismo ID que la PRE — la clave del par es (ID, solapa), C-50' },
+
+  /* `2026-08-14_1` Parte B — **el alcance es lo único que `reuniones` aporta a la lámina del
+   * "1 a 1"**, y por eso es lo único que se mapea. `digital` manda para el desglose por
+   * plataforma (decisión del usuario, 14/08): las columnas Meta/Google/Programmatic de esta
+   * base empatan exacto con `digital/CAMPAÑAS_DESGLOCE_DIGITAL` en las cuatro celdas medidas
+   * (`V-21` a `V-24`), así que mapearlas sería una segunda respuesta a una pregunta que ya
+   * tiene una. Quedan documentadas en las notas de `SOLAPAS`, que es donde va el "existe pero
+   * no se usa".
+   *
+   * **Se llama `alc_real` y no `alc_meta` a propósito.** El alcance lo aporta sólo Meta —eso
+   * está decidido y medido—, pero el dueño del dato va en la nota, no en el identificador de
+   * la medida: meter el corte en el nombre es justo lo que el plan de vocabulario viene a
+   * sacar. Hace par con `alc_potencial`, que es el objetivo contra el que se compara. */
+  { base_id: 'reuniones', campo_logico: 'alc_real', hoja: 'Agenda JM', columna: 'AF', notas: '"Alcance manual" — alcance del encuentro, y es el de META: verificado como denominador de Frecuencia Meta (25.099/1.412 = 17,775) y de Frecuencia estimada (42.500/1.412 = 30,099). ⚠ es copia a mano de Base_Digital!K (banda "Alcance Meta Convocatoria"): 0 fórmulas entre las dos, coinciden porque alguien las copió' },
+  { base_id: 'reuniones', campo_logico: 'alc_real', hoja: 'Agenda JM | Post', columna: 'G', notas: '"Alcance" — el mismo hecho que AF de la PRE. ⚠ la banda de la fila 1 lo rotula "Acumulado" y ESE RÓTULO ESTÁ MAL: el número sale de Base_Digital!Z, banda "Alcance Meta Post" (Retiro 47.753, exacto). Es el alcance de Meta, no un acumulado de las tres plataformas' }
 ];
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_REUNIONES_);
 
@@ -1318,7 +1333,9 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   // `tipo_esperado` describe el dato, no el formato con que se publica.
   cc_base_total: 'numero', cc_base_discada: 'numero', cc_contactados_pct: 'numero',
   cc_efectivos_pct: 'numero', imp_totales: 'numero', alc_potencial: 'numero',
-  alc_cobertura_pct: 'numero'
+  alc_cobertura_pct: 'numero',
+  // `2026-08-14_1` B — el alcance medido, contra `alc_potencial` que es el objetivo.
+  alc_real: 'numero'
 };
 SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAMPO_[fila.campo_logico] || ''; });
 
@@ -1515,7 +1532,19 @@ var SEED_SOLAPAS_ = [].concat(
   // Paso 2.12 Parte 2, Grupo A — decidido el 31/07 contra la firma de encabezados y los
   // conteos reales. Criterio general: ante la duda, `ignorar`.
   filasSolapa_('digital', ['Cuentas'], 'fuente', 'catálogo maestro: ID Cuentas es clave única real (3.453 filas, 3.453 distintos, cero vacíos) — la única columna así en las cuatro bases'),
-  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'ignorar', 'R-22 (09/08): CONGELADA — sus filas JM llegan al 17/04/2026, tres meses antes del informe. De las 436 que solapan la ventana 24-31/07, JM son cero'),
+  /* ⚠ `2026-08-14_1` Parte B — **estaba `ignorar` en el seed y `fuente` en la hoja viva, y
+   * correr el sembrador revirtió la decisión del usuario.** Se restituye acá para que no
+   * vuelva a pasar: mientras el seed diga `ignorar`, cada corrida de
+   * `aplicarClasificacionSolapas_()` la pisa de nuevo, en silencio y sin que ningún token falle.
+   *
+   * La premisa de `R-22` venció. El diagnóstico del 09/08 —"congelada, sus filas JM llegan al
+   * 17/04"— era cierto ese día; la solapa se actualizó desde entonces y hoy es la fuente de los
+   * `u1_*`, con los casos `V-21` a `V-26` del consolidado del 14/08 validados sobre datos de
+   * julio (San Cristóbal 23/07, Retiro 24/07). El usuario la dejó en `fuente` el 14/08.
+   *
+   * `R-22` no se deroga: sigue siendo la regla correcta. Lo que venció es la **medición** que la
+   * aplicaba a esta solapa, que es justo el caso de "un dato medido una vez y citado tres veces". */
+  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'fuente de los u1_* del "1 a 1" — impresiones, clics y visualizaciones por plataforma, con filtro Id cuentas + Plataforma (V-21 a V-26, consolidado 14/08). Repuesta a fuente el 14/08: el seed la tenía en ignorar por una medición de R-22 del 09/08 que venció'),
   // Las cinco de abajo estaban en `referencia` y bajan a `ignorar` por `R-22`: `referencia`
   // sugiere que sirven para consultar, y éstas no sirven para nada. Las tres de período
   // manual las veta `R-02`; las dos de `#REF!` están rotas.
@@ -1586,8 +1615,8 @@ var SEED_SOLAPAS_ = [].concat(
    * que `rdv/RDV_otros_ministros` pero sin nadie que los pida hoy. `Barrios` es `referencia`:
    * es la tabla de habitantes por barrio y comuna, no una fuente de métricas. */
   [
-    filaSolapa_('reuniones', 'Agenda JM', 'fuente', 'PRE — una fila por encuentro, 152 filas × 44 columnas, ID único. Embudo de Call Center, Mail, IVR e impresiones por plataforma en la misma fila', { fila_encabezado: 2, filas_datos: 152, campo_id_cuenta: 'id_cuenta' }),
-    filaSolapa_('reuniones', 'Agenda JM | Post', 'fuente', 'POST — 102 filas, mismo ID que la PRE (C-50). Alcance, impresiones, clics y visualizaciones por plataforma', { fila_encabezado: 2, filas_datos: 102, campo_id_cuenta: 'id_cuenta' }),
+    filaSolapa_('reuniones', 'Agenda JM', 'fuente', 'PRE — una fila por encuentro, 154 filas × 44 columnas al 14/08, ID único. Embudo de Call Center, Mail, IVR e impresiones por plataforma en la misma fila. De acá se mapea SÓLO el alcance (AF): las columnas de plataforma AJ-AR existen y NO se usan porque empatan exacto con digital/CAMPAÑAS_DESGLOCE_DIGITAL y digital manda (2026-08-14_1). Toda la solapa es carga a mano: 0 fórmulas en 44 columnas × 154 filas', { fila_encabezado: 2, filas_datos: 154, campo_id_cuenta: 'id_cuenta' }),
+    filaSolapa_('reuniones', 'Agenda JM | Post', 'fuente', 'POST — 104 filas al 14/08, mismo ID que la PRE (C-50). Impresiones, clics y visualizaciones por plataforma en bandas Meta/Google/Programmatic (fila 1); los títulos de la fila 2 se repiten y NO alcanzan para nombrar una columna. El Alcance (G) NO es por plataforma y su banda "Acumulado" está mal rotulada: es el de Meta. Las columnas de plataforma no se mapean — digital manda. ⚠ sus % CTR y % VTR vuelven string en las filas en cero y number en las cargadas', { fila_encabezado: 2, filas_datos: 104, campo_id_cuenta: 'id_cuenta' }),
     filaSolapa_('reuniones', 'Agenda funcionarios', 'ignorar', 'encuentros de otros funcionarios — mismo caso que rdv/RDV_otros_ministros, nadie los pide hoy', { fila_encabezado: 2, filas_datos: 545 }),
     filaSolapa_('reuniones', 'Barrios', 'referencia', 'habitantes por barrio y comuna — tabla de referencia, no fuente de métricas', { fila_encabezado: 1, filas_datos: 70 })
   ],
