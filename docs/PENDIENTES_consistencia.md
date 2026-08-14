@@ -3711,3 +3711,88 @@ que exige `fecha_periodo`; medido en vivo devuelve `«FALTA:fecha_periodo@looker
 ninguna fila en `MAPEO`** —ni `id_cuenta` ni `fecha_periodo`— y **no tiene columna de fecha que
 mapear**. Lo mismo vale para `looker/DIGITAL`. Las dos están declaradas `uso = fuente` en `SOLAPAS`
 y ninguna de las dos es legible por el motor.
+
+---
+
+## El sembrador revirtió una decisión viva: `CAMPAÑAS_DESGLOCE_DIGITAL` volvió a `ignorar` — 14/08/2026
+
+**Pasó de verdad, hoy, y lo causó la Parte B del `2026-08-14_1`.** Correr
+`aplicarClasificacionSolapas_()` cambió `digital/CAMPAÑAS_DESGLOCE_DIGITAL` de `uso = fuente`
+—como la había dejado el usuario el 14/08— a `uso = ignorar`. No lo pidió nadie: el seed de
+`Instalar.gs` seguía declarando `ignorar` y el sembrador pisa toda fila cuyo `origen` no sea
+`manual`. Quedó restituida a `fuente` en la misma corrida, y el seed corregido para que no
+vuelva a pasar.
+
+**El daño potencial era silencioso y grande.** Esa solapa es la fuente de los `u1_*` del "1 a
+1" (`V-21` a `V-26`). Con `uso = ignorar` el motor deja de leerla, y los seis tokens habrían
+salido `«FALTA:»` o vacíos **sin que ninguna verificación del proyecto lo señalara** — la
+corrida no falla, sólo publica menos.
+
+**La premisa que venció no es la regla, es la medición.** `R-22` sigue siendo correcta. Lo que
+caducó es el diagnóstico del 09/08 que la aplicaba acá —*"congelada, sus filas JM llegan al
+17/04/2026"*—: la solapa se actualizó y hoy tiene julio, con San Cristóbal 23/07 y Retiro
+24/07 validados. Es otra vez el patrón de *un dato medido una vez y citado tres veces*, con el
+agravante de que esta cita vivía **dentro del código**, donde nadie la releía.
+
+**Lo que queda abierto, y es lo que importa:** `origen = 'seed'` no distingue *"esto lo decidió
+el seed"* de *"esto lo decidió una persona y el seed todavía no se enteró"*. La única marca que
+protege una decisión humana es `origen = 'manual'`, y **una decisión tomada editando la hoja a
+mano no la pone**. Mientras eso siga así, toda corrida del sembrador puede revertir en silencio
+una decisión viva, y el único aviso es el diff — que hay que leer.
+
+**Qué lo destraba:** decidir si una edición manual sobre `SOLAPAS` debe marcar `origen=manual`
+sola, o si el seed tiene que fallar ruidoso cuando su valor difiere del vivo en vez de pisarlo.
+Es una decisión de arquitectura y no se toma acá.
+
+---
+
+## `reuniones/Agenda JM` y `reuniones/Base_Digital`: dos cargas manuales del mismo hecho — 14/08/2026
+
+Medido en la Parte A2 del `2026-08-14_1`: **cero fórmulas** en `Agenda JM` (44 columnas × 154
+filas) y **cero** en `Base_Digital` (27 × 1.893). Las dos solapas están escritas a mano.
+
+Hoy **coinciden exacto** donde las dos tienen dato: el `Alcance manual` (AF) de la PRE es el
+`Alcance real` (K) del bloque `Alcance Meta Convocatoria`, 1.412 para San Cristóbal; y el
+`Alcance` (G) de la POST es el `Alcance real` (Z) de `Alcance Meta Post`, 47.753 para Retiro.
+
+**Coinciden porque alguien las copió, no porque algo las mantenga sincronizadas.** No hay
+control de divergencia y el modo de falla es mudo: el día que difieran, el motor publica la de
+`Agenda JM` y nada lo señala. La fila de `MAPEO` de `alc_real` nombra la columna de origen
+justamente para que se sepa dónde mirar.
+
+**Qué lo destraba:** un control que compare las dos columnas sobre los encuentros del período,
+o que el equipo derive una de la otra por fórmula en vez de copiarla.
+
+---
+
+## El bloque digital en cero es por par `(encuentro, solapa)`, y se invierte — 14/08/2026
+
+**Corrige una conclusión del `_40`**, que no se edita por ser prompt ejecutado y bitácora
+append-only. El `_40` anotó *"`3346` degrada a la base nueva como testigo"* midiendo **sólo la
+PRE**. Medido ahora en las dos solapas:
+
+| encuentro | `Agenda JM` (PRE) | `Agenda JM \| Post` |
+|---|---|---|
+| `3354` San Cristóbal | cargado (42.500 impresiones) | **todo en cero** |
+| `3346` Retiro | **todo en cero** | cargado (136.971 impresiones) |
+
+No es una propiedad del encuentro sino del par. Y **no es carga descuidada**: `Base_Digital` no
+tiene fila para `3354` en el bloque Post ni para `3346` en el Convocatoria, así que la Agenda
+refleja fielmente lo que hay.
+
+**Con eso se cierra el caso de Retiro que el `_40` dejó abierto.** El `47.753` que `looker`
+daba y la base parecía contradecir con un `0` **está en la POST**, exacto. La base coincidía;
+se estaba mirando la solapa equivocada.
+
+---
+
+## Dos huecos chicos de `reuniones/Agenda JM | Post` — 14/08/2026
+
+- **`Tipo = Recap` en 3 filas.** Es un valor que la PRE no tiene (sus cuatro son `Encuentro con
+  vecinos`, `Primera persona`, `Reunión temática`, `Uno a uno`). Nadie declaró qué es un
+  `Recap` ni si entra en algún universo.
+- **Tres filas con `Fecha` ilegible**, literalmente `-`: `1976-SEPJDGAG`, `2063-OCTJDGAG`,
+  `2170-OCTJDGAG`. Hoy no molesta porque la solapa se recorta por `campo_id_cuenta` y no por
+  fecha (`D-30`), pero cualquier lectura por ventana las perdería sin avisar.
+
+No se resuelven acá.

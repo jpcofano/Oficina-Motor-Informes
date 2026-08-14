@@ -241,3 +241,68 @@ Van **antes** de la Parte B, porque dos de ellos corrigen cosas ya escritas:
 
 3. **`Recap ×3` y tres filas con `Fecha` ilegible en la POST.** Se anotan como hueco en
    `PENDIENTES_consistencia.md`. No se resuelven acá.
+
+---
+
+## Addendum 2 — 14/08/2026 · la Parte B avanza, con tres cosas más
+
+> Parte A2 ejecutada (`d8925be`, `1b622ef`). El cuerpo del prompt no se edita.
+
+### Autorizado
+
+**La Parte B corre**, con el ajuste que propuso el reporte: mapear `Agenda JM!AF` y
+`Agenda JM | Post!G`, y en la nota de la POST decir que **la banda `Acumulado` está mal
+rotulada y el número es de Meta** — no que "la lámina usa el de Meta". El reporte lo probó
+número contra número contra `Base_Digital`, así que es una corrección de rótulo, no una
+preferencia.
+
+El gate se sostiene: `digital` manda para el desglose por plataforma, `reuniones` entra sólo
+por el alcance. `Visualizaciones` no existe para el PRE en ninguna de las 24 solapas, así que
+`V-26` sigue dependiendo de `digital` y no hay nada que reconsiderar.
+
+### La nota que hace la diferencia
+
+`Agenda JM` y `Base_Digital` son **dos cargas manuales independientes, sin una sola fórmula
+entre las dos**, que hoy coinciden porque alguien las copió, no porque algo las mantenga
+sincronizadas. Está medido: 0 fórmulas en 44 columnas × 154 filas, y 0 en 27 × 1.893.
+
+Mapear `Agenda JM` sigue siendo correcto —una fila por encuentro con clave única, mientras
+`Base_Digital` repite claves y sus ocho bloques tienen listas independientes donde el número de
+fila no significa nada entre bloques—, pero **la fila de `MAPEO` tiene que decir que el valor
+es copia a mano de `Base_Digital`**, con la columna de origen nombrada. El día que difieran,
+esa nota es la diferencia entre mirar en el lugar correcto y no saber que difieren.
+
+Va también a `docs/PENDIENTES_consistencia.md` como hueco abierto: **dos fuentes manuales del
+mismo hecho, sin control de divergencia.** No se resuelve acá.
+
+### Las 20 solapas: clasificar sí, pero no todas a ciegas
+
+La sugerencia del reporte —`Base_Digital` en `referencia`, el resto en `ignorar`— se acepta
+**con tres excepciones que se abren antes de clasificarlas**:
+
+- **`Desglose impresiones`** — se llama igual que la decisión editorial pendiente del 13/08
+  (*el desglose por herramienta en impresiones es sólo para macri*). Antes de mandarla a
+  `ignorar`: qué columnas tiene, si desglosa por herramienta, y si cubre los 25 `Uno a uno`.
+- **`Métricas digital`** — es la única con `Views`, y `Visualizaciones` para el PRE es un hueco
+  abierto. Ya se midió que no contiene los dos encuentros del consolidado; falta saber **si
+  contiene alguno de los 25**, que es otra pregunta.
+- **`Digital | Base Post`** — se descartó por ser POST, que es exactamente lo que la hace
+  candidata para la mitad POST de la lámina.
+
+Las tres se miran en una lectura corta —encabezados, filas, y si aparecen los 25— y **recién
+después** se clasifican. Las otras 17 van a `ignorar` con el motivo en `notas`.
+
+**El alta de `SOLAPAS` es una decisión del usuario y se confirma antes de escribir.**
+
+### El punto 5, pendiente y no bloqueante
+
+Cuántas celdas rellenan las solapas nuevas sobre los **25** `Uno a uno` quedó medido sobre dos
+encuentros. **Se corre, pero después de la Parte B**: no cambia el mapeo del alcance, y el
+instrumento que pide es más barato con las solapas ya clasificadas.
+
+### Una consecuencia que no es de este prompt
+
+Estamos en desarrollo y no hace falta mantener dos sistemas andando. Eso no toca la Parte B,
+pero sí el plan de vocabulario global: el paso de precedencia entre `informe_id = '*'` y un
+informe concreto se cae salvo que se quiera override explícito, y la regla de `CLAUDE.md` se
+reescribe directo en vez de quedar como régimen de transición. **Va anotado en el `_2`.**
