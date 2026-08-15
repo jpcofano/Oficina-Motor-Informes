@@ -367,3 +367,30 @@ técnico** de §6.4 —dos candidatos a menos de 0,05 no se eligen solos— **no
 parte del código**. Con el diseño de dos bandas, dos candidatos empatados apenas por
 encima del umbral se resuelven eligiendo el primero. Anotado en
 `docs/PENDIENTES_consistencia.md`.
+
+---
+
+## Addendum — 14/08/2026 · ⚠ los encabezados de `RDV_otros_ministros` están corridos una columna
+
+**No altera ninguna línea de arriba.** Es una advertencia para quien ejecute lo que este
+documento propone: §5 la pone como **fuente de caída del anclaje** (regla de cascada, punto 2) y
+§7.1 como **ancla** de *"Ministros | Reuniones de la semana"*. Las dos cosas implican **mapear
+más columnas de esa solapa**, y ahí está la trampa.
+
+**El corrimiento es `C-09`, y está medido.** En esa solapa **el rótulo de cada columna
+corresponde al dato de la columna anterior**. El caso vivo: `fecha_periodo` está mapeado a `E`,
+cuyo rótulo dice `hora_cita_evento`, y **funciona** — 514 filas, 10 en ventana, 0 sin fecha —
+porque la `E` contiene la fecha. La bitácora del 09/08 lo llama *"un acierto por compensación de
+dos errores"*.
+
+⚠ **Consecuencia directa para cualquier mapeo nuevo sobre esta solapa: elegir la letra mirando el
+encabezado apunta una columna al lado.** Quien mapee `figura`, `inscriptos` o `asistentes`
+—los tres que §5 necesita y que hoy **no existen** en `MAPEO`: la solapa tiene un solo campo
+mapeado— tiene que **verificar el contenido de la celda, no el título de la columna**.
+
+**Y el testigo de `D-31` no protege contra esto**, que es justo lo que lo hace peligroso:
+`MAPEO.encabezado` documenta el **rótulo**, no el contenido, así que en esta solapa coincide
+siempre y no delata nada. El límite está escrito en `D-31`.
+
+**No se resuelve acá.** Queda anotado para que aparezca cuando alguien venga a ejecutar §5 o
+§7.1; el arreglo de fondo es `C-09` y no es de este documento.

@@ -9189,3 +9189,58 @@ El test dejó **6 claves del mapa sin uso en el seed**; con la excluida son **7*
 §2.1 mencionaba **sin nombrarlas**. Ahora están nombradas una por una en `PENDIENTES`.
 
 **`tools/listas.js`:** OK, 11 hojas.
+
+---
+
+## `_6` addendum — el hallazgo del mapeo corrido era `C-09`, y el error fundó el límite de `D-31` (2026-08-14)
+
+**Corrección del usuario, verificada contra la bitácora del 09/08.** Lo que reporté como *"un
+mapeo apuntando a la columna equivocada"* ya tenía número: **`C-09`**, y mi corrección propuesta
+—mover la letra a `D`— **habría roto una lectura que funciona**.
+
+**Lo que la bitácora ya decía, textual:** `rdv/RDV_otros_ministros` *"resuelve su `fecha_periodo`
+a `hora_cita_evento` … funciona (514 filas, 10 en ventana, 0 sin fecha) porque los encabezados
+están corridos una columna. El mapeo apunta al dato correcto con el nombre equivocado."* Y ya
+anticipaba la trampa: *"es un acierto por compensación de dos errores — el día que `C-09` se
+arregle, esta lectura no va a fallar, va a leer otra columna"*.
+
+**La letra no se toca.** El testigo se pobló con `hora_cita_evento`, que es el rótulo real.
+
+### El caso vale más que el error: fundó el límite de `D-31`
+
+**El testigo documenta el rótulo, no el contenido.** En una solapa con los encabezados corridos,
+el testigo **coincide siempre y no delata nada** — va a decir *"esperaba `hora_cita_evento`,
+encontré `hora_cita_evento`"* mientras el corrimiento siga ahí. Sin eso escrito, alguien iba a
+leer *"coincide"* como *"está bien"*.
+
+Con su lectura invertida, que es la que sorprende: **el día que ese testigo deje de coincidir
+será porque alguien arregló los rótulos**, no porque algo se rompió — y ahí hay que revisar la
+letra, no restaurar el testigo.
+
+`D-31` ahora enumera qué **no** cubre: una columna cuyo rótulo miente, una renombrada sin mover
+el dato, y dos intercambiadas con sus rótulos. Cubre una sola cosa —que la letra siga apuntando
+donde el rótulo dice— y ésa es su utilidad entera.
+
+### La advertencia donde va a hacer falta
+
+`docs/DISENO_match_temario.md` propone esa solapa **dos veces** —§5 como fuente de caída del
+anclaje, §7.1 como ancla de *"Ministros | Reuniones de la semana"*—, así que se va a mapear más
+de ella, y hoy tiene **un solo campo** en `MAPEO`. Addendum fechado al pie: **elegir la letra
+mirando el encabezado apunta una columna al lado**, y el testigo de `D-31` no protege contra
+esto. No se resuelve ahí; el arreglo de fondo es `C-09`.
+
+### Por qué se redescubrió, que es lo aprovechable
+
+El instrumento midió `MAPEO` contra la planilla **sin cruzar contra los casos de validación ni
+contra la bitácora**. Un hallazgo que sale de una medición nueva se lee como nuevo aunque tenga
+número desde hace una semana. La regla operativa quedó en `PENDIENTES`: **antes de abrir un
+hallazgo sobre una solapa, grepear su nombre en la bitácora y en el consolidado de casos.**
+
+### Y un conteo que no baja de 7 a 6
+
+La entrada quedó declarada en `ENCABEZADO_POR_MAPEO_`, pero **el mapa se aplica recorriendo
+`SEED_MAPEO_`** y esa fila no está en el seed. Así que hay dos números y no uno: **161 con
+testigo declarado**, **154 con testigo en la celda**, **7 con la celda vacía** — las mismas 7 de
+`promoverFechasElegidas()`. La de `RDV_otros_ministros` está en las dos listas a la vez:
+declarada y sin llegar a la hoja. Meterla en el seed le daría un segundo escritor a una fila que
+ya tiene uno, así que no se hizo.

@@ -3860,34 +3860,38 @@ propio prompt.
 
 ---
 
-## `rdv/RDV_otros_ministros/fecha_periodo` apunta a `hora_cita_evento` — 14/08/2026
+## ~~`rdv/RDV_otros_ministros/fecha_periodo` apunta a `hora_cita_evento`~~ — redescubierto y cerrado contra `C-09`, 14/08/2026
 
-**Medido** por `censarEncabezadosDeMapeo()` sobre `MAPEO` vivo. La fila mapea `fecha_periodo` a la
-columna **`E`** de `rdv/RDV_otros_ministros`, y en esa letra hay **`hora_cita_evento`**. La fecha
-de esa solapa está en **`D`** (`fecha_inicio_evento`), medido en el censo de solapas del 14/08.
+> **La entrada queda con el error adentro, no se borra.** Lo que vale de este caso es que se
+> redescubrió como hallazgo nuevo cuando ya tenía número, y que la corrección propuesta era
+> equivocada.
 
-| letra | encabezado real |
-|---|---|
-| `C` | `dia_evento` |
-| **`D`** | **`fecha_inicio_evento`** ← lo que `fecha_periodo` debería apuntar |
-| **`E`** | **`hora_cita_evento`** ← lo que apunta hoy |
+**Lo que se afirmó al medirlo con `censarEncabezadosDeMapeo()`:** que `fecha_periodo` apunta a
+`E`, donde hay `hora_cita_evento`, que la fecha está en `D` (`fecha_inicio_evento`), y que había
+que **corregir la letra a `D`**.
 
-**No es un corrimiento por columna insertada.** La fila **no está en `SEED_MAPEO_`**: la escribe
-`promoverFechasElegidas()` (`Fechas.gs`), el segundo escritor de `MAPEO`. En la solapa principal
-—`rdv/RVD JM-CM - ES`— la fecha **sí** está en `E`, así que el patrón es coherente con haber
-tomado la letra de la solapa hermana. **La letra es correcta para una solapa y se aplicó a otra.**
+**Lo que es cierto: la letra está bien y no se toca.** Los encabezados de esa solapa están
+**corridos una columna en origen** — eso es `C-09`, y la bitácora lo dice textual: *"resuelve su
+`fecha_periodo` a `hora_cita_evento` … funciona (514 filas, 10 en ventana, 0 sin fecha) **porque
+los encabezados están corridos una columna**. El mapeo apunta al dato correcto con el nombre
+equivocado."* La `E` **contiene la fecha**; lo que miente es el rótulo, no la letra.
 
-**Por qué importa aunque hoy no se vea:** `rdv` es `modo_periodo = filtrar`, y
-`RDV_otros_ministros` está `uso = fuente`. Cualquier lectura con recorte por ventana sobre esa
-solapa filtraría **por la hora**, no por la fecha. El modo de falla es el de siempre: no rompe,
-recorta mal.
+**Corregir a `D` habría roto una lectura que funciona.** Es la trampa exacta que la bitácora ya
+había nombrado: *"es un acierto por compensación de dos errores — el día que `C-09` se arregle,
+esta lectura no va a fallar, va a leer otra columna"*.
 
-**Qué lo destraba:** decidir si esa solapa se lee o no —hay un `docs/RDV_otros_ministros_riesgo.md`
-y ningún marcador conocido la usa— y, si se lee, corregir la letra a `D` **por el camino de
-`promoverFechasElegidas()`**, no a mano sobre la hoja.
+**Qué queda en pie, y sigue siendo de `C-09`:** el día que alguien arregle los rótulos de esa
+solapa, la letra **sí** hay que revisarla. No es un pendiente nuevo; está atado a `C-09` desde el
+09/08.
 
-**Su fila de `MAPEO` quedó sin `encabezado` a propósito** (`D-31`): poblarla con
-`hora_cita_evento` habría convertido el error en un error certificado por su propio testigo.
+**Su testigo se pobló con `hora_cita_evento`**, el rótulo real. Es el caso que fundó el límite
+escrito en `D-31`: **el testigo documenta el rótulo, no el contenido** — acá coincide siempre y
+no delata nada.
+
+**Por qué se redescubrió**, que es lo aprovechable: el instrumento midió `MAPEO` contra la
+planilla **sin cruzar contra los casos de validación**. Un hallazgo que sale de una medición
+nueva se lee como nuevo aunque tenga número desde hace una semana. **Antes de abrir un hallazgo
+sobre una solapa, grepear su nombre en la bitácora y en el consolidado de casos.**
 
 ---
 
@@ -3911,20 +3915,35 @@ proyecto. No tiene fecha de revisión: la tiene el día que alguien mire.
 diff de `instalar()` muestra la diferencia** entre lo declarado y lo que la hoja tiene. No detecta
 que la *planilla* cambió —para eso hace falta la función— pero sí que alguien tocó `MAPEO`.
 
-**Siete filas quedan fuera de esa media red.** Son las que `promoverFechasElegidas()` escribe y
-`SEED_MAPEO_` no conoce (`ESCRITORES.md` §2.1 ya las contaba sin nombrarlas). Medidas ahora, una
-por una:
+**Siete filas quedan fuera de esa media red, y conviene separar dos cosas que no son lo mismo.**
+
+`ENCABEZADO_POR_MAPEO_` declara testigo para **las 161** filas vivas. Pero se aplica con
+`SEED_MAPEO_.forEach(...)`, así que **sólo llega a la hoja para las 154 que están en el seed**.
+Las otras **7** están en `MAPEO` y no en `SEED_MAPEO_` — las escribe `promoverFechasElegidas()`,
+y son exactamente las que `ESCRITORES.md` §2.1 contaba sin nombrarlas. Medidas ahora, una por una:
 
 ```
-rdv|RVD JM-CM - ES|fecha            digital|Directa SMS|fecha_periodo
-rdv|RDV_otros_ministros|fecha_periodo   digital|Directa IVR|fecha_periodo
-digital|Digital|fecha_periodo       digital|Seguimiento digital|fecha_periodo
+rdv|RVD JM-CM - ES|fecha                 digital|Directa SMS|fecha_periodo
+rdv|RDV_otros_ministros|fecha_periodo    digital|Directa IVR|fecha_periodo
+digital|Digital|fecha_periodo            digital|Seguimiento digital|fecha_periodo
 digital|Directa Mail|fecha_periodo
 ```
 
-Su `encabezado` queda **vacío**, y vacío significa *"sin testigo declarado"*, no *"la columna no
-tiene título"*. Se llenarían el día que ese escritor se declare — que es el `P1` abierto de
-`C.2-7`, no de este paso.
+| | cuántas |
+|---|---|
+| con testigo **declarado** en `ENCABEZADO_POR_MAPEO_` | **161 de 161** |
+| con testigo que **llega a la celda** de `MAPEO` | **154** |
+| con la celda `encabezado` **vacía en la hoja** | **7**, las de arriba |
+
+**`rdv|RDV_otros_ministros|fecha_periodo` está en las dos listas a la vez**, y no es
+contradicción: su testigo **está declarado** —`hora_cita_evento`, con el motivo de `C-09` en el
+código— y **no llega a la celda**, porque la fila no está en el seed. Declararla en el seed sería
+darle un segundo escritor a una fila que ya tiene uno, así que no se hace acá.
+
+Vacío en la celda significa *"sin testigo declarado en la hoja"*, no *"la columna no tiene
+título"* — las siete tienen título y está medido. Se llenarían el día que ese escritor se
+declare, o si `promoverFechasElegidas()` pasara a escribir también el encabezado. Es el `P1`
+abierto de `C.2-7`, no de este paso.
 
 ---
 

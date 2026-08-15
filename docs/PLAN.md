@@ -1036,10 +1036,32 @@ función posterior no invente la política:
 todavía**. Eso es un **supuesto sobre bases de terceros** —`looker` es de `dgples`, `m2` de
 `tarnowski`— y por lo tanto **puede vencer sin aviso**: ver `PENDIENTES_consistencia.md`.
 
+### El límite, y es lo que más hay que saber: **el testigo documenta el rótulo, no el contenido**
+
+`encabezado` dice **qué título hay** en esa letra. **No dice que ese título describa el dato que
+la columna contiene.** Son cosas distintas y el proyecto ya tiene el caso que las separa.
+
+**`rdv/RDV_otros_ministros` tiene los encabezados corridos una columna en origen** (`C-09`). Su
+`fecha_periodo` apunta a `E`, cuyo rótulo dice `hora_cita_evento` y cuyo **contenido es la
+fecha** — medido: 514 filas, 10 en ventana, 0 sin fecha. La letra está bien; el rótulo, no. Su
+testigo es `hora_cita_evento`, el rótulo real.
+
+**En esa solapa el testigo coincide siempre y no delata nada.** Va a decir *"esperaba
+`hora_cita_evento`, encontré `hora_cita_evento`"* mientras el corrimiento siga ahí. **Si no queda
+escrito, alguien va a leer «coincide» como «está bien».**
+
+Y tiene una lectura invertida que conviene tener presente: **el día que el testigo de esa solapa
+deje de coincidir, será porque alguien arregló los rótulos** — no porque algo se rompió. Ahí lo
+que hay que revisar es la **letra**, no restaurar el testigo. La bitácora ya lo había anticipado:
+*"es un acierto por compensación de dos errores; el día que `C-09` se arregle, esta lectura no va
+a fallar, va a leer otra columna"*.
+
+**Qué NO cubre el testigo, dicho de una vez:** una columna cuyo rótulo miente, una columna
+renombrada sin mover el dato, y dos columnas intercambiadas con sus rótulos. Cubre exactamente
+una cosa —**que la letra siga apuntando donde el rótulo dice**— y ésa es su utilidad entera.
+
 **Medición que lo funda**, `censarEncabezadosDeMapeo()` sobre las 161 filas vivas (14/08/2026):
-cero letras sin encabezado, cero títulos repetidos dentro de una misma solapa, **y un mapeo
-apuntando a la columna equivocada** — `rdv/RDV_otros_ministros/fecha_periodo` sobre
-`hora_cita_evento`. Esa fila queda **sin testigo a propósito**: poblarla lo habría certificado.
+cero letras sin encabezado y cero títulos repetidos dentro de una misma solapa.
 
 ---
 
