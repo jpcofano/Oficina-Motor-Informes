@@ -111,9 +111,21 @@ grep -rn "function nombreNuevo_" *.gs
   datos y caché → `Fuentes.gs`; aritmética → `Marcadores.gs`; despacho y reemplazo en
   Slides → `Generador.gs`. Es la forma larga de la regla de oro: si un módulo hace el
   trabajo de otro, el número puede dar bien igual y la arquitectura ya está rota.
-- **Los renombres de tokens son por `informe_id`, nunca globales.** El mismo nombre puede
-  ser correcto en una plantilla e incorrecto en otra — lo demostró la regresión de
-  `enc_audiencia`.
+- **Un token es una medida más sus dimensiones, y el corte no va en el nombre** (`D-33`,
+  15/08/2026). El vocabulario es **global**: `ambito` (`jm`/`gcba`), `plataforma`
+  (`meta`/`google`/`programmatic`) y `tipo_envio` (`convocatoria`/`m2`) son cortes declarados, no
+  prefijos. Ocho marcadores de `looker/DIGITAL` que sólo difieren en el `filtro` son **una**
+  medida con dos dimensiones.
+  - **Esto reemplaza a *"los renombres de tokens son por `informe_id`, nunca globales"***, que
+    valió hasta el 15/08. La premisa de aquélla —*"el mismo nombre puede ser correcto en una
+    plantilla e incorrecto en otra"*— **se invierte cuando el corte deja de estar en el nombre**:
+    lo que hacía a un token específico de un informe era justamente el prefijo.
+  - **Sin régimen de transición, y es deliberado:** `S-05` está vivo —hay un solo lector— y no
+    hace falta mantener dos sistemas andando. La regresión de `enc_audiencia` que fundó la regla
+    vieja sigue siendo el caso a no repetir; lo que cambia es cómo se evita.
+  - ⚠ **La frontera que hay que respetar al migrar:** una **dimensión** es un corte que alguien
+    del equipo pediría; una **restricción técnica** es una regla de validez de la fila. Las nueve
+    guardas `!=0` y `estado=Activa` **no son dimensiones** y se quedan en `filtro`.
 - **`lamina_id` es global y corrido, y el orden de sellado es `secco` primero, `jm` después.**
   `secco` toma `L-001`–`L-029`, `jm` `L-030`–`L-051`. La clave de unicidad es **`lamina_id`
   sola**, no el par plantilla + id, y el contador es `max(lamina_id) + 1` sobre la hoja entera.

@@ -1116,6 +1116,72 @@ encuentra ningún caso que verificar.
 
 ---
 
+**`D-33` — El vocabulario se estructura como **medida + dimensiones**. El corte deja de ser parte
+de la identidad del token.** (15/08/2026)
+
+**La simetría que lo funda, y es el argumento entero:** el motor **ya sabe** que una medida se
+llama distinto en cada base — para eso está `MAPEO`, que traduce `campo_logico` a columna física.
+**Del lado de los cortes no existe nada equivalente**: `filtro` es texto libre, distinto por base,
+y el corte además vive **metido en el nombre del token**. `D-33` le da a las dimensiones lo que
+`MAPEO` ya le daba a las medidas.
+
+**Medición que lo funda** — `MARCADORES` al 15/08/2026, **78 marcadores, todos `informe_id = jm`**:
+
+| dimensión | valores | expresión física, medida base por base |
+|---|---|---|
+| **`ambito`** | `jm` · `gcba` | `rdv/RVD JM-CM - ES`: `figura=Jorge Macri` / el resto · `digital/Directa Mail`: `mail_remitente=jorge.macri@…` / `!=` · `looker/DIGITAL`: `nombre_campaña~=JM` / `!~=JM` · `looker/resumen_metricas_dinamico`: `campana~=JM` / `!~=JM` |
+| **`plataforma`** | `meta` · `google` · `programmatic` | `Plataforma=Meta` / `=Google ads` / `!=Meta && !=Google ads` — el tercero **por resta**, que es `R-24` |
+| **`tipo_envio`** | `convocatoria` · `m2` | `mail_tipo=Convocatoria` / `mail_tipo~=M2` |
+
+**`ambito` aplica también en `rdv`**, con el mismo criterio que en las otras tres: `Jorge Macri`
+es `jm`, todo lo demás —ministros incluidos— es `gcba`.
+
+### `gcba` es *todo lo que no es `jm`*, y eso se declara en voz alta
+
+**La negación se conserva como implementación**, porque es lo que las cuatro bases ya hacen. Pero
+deja de ser un accidente heredado y pasa a ser una decisión con su nombre, **y con su límite
+escrito**:
+
+⚠ **Una fila sin `figura`, sin remitente o sin nombre de campaña cae en `gcba`** — no queda
+afuera de las dos. Hoy funciona así en las cuatro bases. **El día que haga falta distinguir *"es
+GCBA"* de *"no está clasificado"*, esto se rompe**, y ése es el síntoma que hay que buscar: un
+`gcba_*` que crece sin que nadie haya cargado campañas nuevas.
+
+### Qué **no** es dimensión, y por qué la frontera importa
+
+**Las guardas `!=0` (nueve) y `estado=Activa` quedan como `filtro` y no migran.**
+
+**Una dimensión es un corte que alguien del equipo pediría** —*"sólo Meta"*, *"sólo Jorge
+Macri"*—. **Una restricción técnica es una regla de validez de la fila.** Las nueve `!=0` son la
+contracara de `R-18`: descartan filas donde el cero es un *"Revisar"* disfrazado, no un valor. Y
+`estado=Activa` **nunca aparece sola** — siempre acompaña a un corte de ámbito.
+
+Confundirlas convertiría cada guarda en un valor de dimensión que nadie va a pedir nunca, y el
+vocabulario dejaría de ser legible, que es lo único que lo justifica.
+
+### La ventana no entra: `periodo_ref` está vacío en los 78
+
+Medido. **La ventana se resuelve entera por la cadena de `D-20`**, así que el desfasaje de un día
+de SECCO —el argumento más fuerte a favor de globalizar— **no toca el vocabulario**: es la misma
+medida con otra ventana, y la ventana ya se resuelve por informe. `periodo_ref` es una columna
+disponible y sin consumidores.
+
+### La línea base de la migración
+
+**`docs/_snapshots/MARCADORES_2026-08-15.tsv`** — el estado del cableado que funciona, tomado
+**antes** de tocar nada. **Cada tanda se compara contra ese archivo, no contra la corrida
+anterior**, para que los errores no se acumulen de tanda en tanda sin que nadie los vea.
+
+**No se crea ningún mecanismo de backup aparte**, y es deliberado: sería una segunda copia de lo
+mismo, y la gracia del snapshot es justamente que **no sale del código que se está migrando**.
+
+### Precedencia entre `informe_id = '*'` y un informe concreto: **se cae**
+
+No hace falta un régimen de dos sistemas. `S-05` está vivo —hay un solo lector— y estamos en
+desarrollo. Si alguna vez se quiere un override explícito por informe, se decide entonces.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### Los frentes abiertos al 14/08/2026 — el orden
@@ -1136,7 +1202,7 @@ migra sin apuro — por eso la migración de los 51 no bloquea a nadie, pero la 
 | 2 | **El sembrador deja de pisar un `uso` existente** *(`_3`)* | **Va antes de la migración.** Ésa toca muchas filas de configuración y hoy existe un mecanismo que puede revertirlas en silencio — ya pasó con `CAMPAÑAS_DESGLOCE_DIGITAL` esta semana |
 | 3 | **`C-64` — las dos capas de la base**, aplicado a lo que falta | El caso **está cerrado como explicación**: filas contra agregado, resuelto en call center (`C-62`), IVR (`V-98`) y mail (`V-99`), y explica el patrón `X-16`/`X-17`. **Lo que queda es aplicar el mismo criterio a `pauta_*` y Alerta Naranja.** Va acá porque decide **de qué capa se lee**, no cómo se nombra: es independiente del vocabulario y condiciona todo cableado posterior |
 | 4 | **`_2` — censo de dimensiones y `D-NN` del vocabulario** | La decisión de estructura: una medida, y el corte como **dimensión**. **Todo lo que se cablee antes de esto nace con el corte metido en el nombre** |
-| 5 | **El piloto con una familia** — migrar una a `informe_id = '*'` y verificar que `jm` reproduzca los mismos números | Barato, y **si no reproduce, el plan se detiene acá**. Es la prueba de la decisión 4 antes de pagarla en 51 filas |
+| 5 | **El piloto: `imp_total` y sus siete hermanos** — `looker/DIGITAL/Impresiones/SUMA`, **ocho marcadores que sólo difieren en el `filtro`** | **Es el caso que justifica el frente entero**, medido el 15/08: una medida × `ambito` (2) × `plataforma` (3, con `programmatic` por resta) = **ocho nombres para un solo hecho**. Se migra a una medida con dos dimensiones y se verifica que `jm` reproduzca los mismos números **contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`**, que es la línea base de `D-33`. Barato, y **si no reproduce, el plan se detiene acá** |
 | 6 | **La letra manda, el título valida** — cada fila de `MAPEO` lleva el encabezado que espera encontrar en esa letra *(`_6`)* | **Va antes de `C-61` porque le saca el filo.** Hoy insertar una columna corre todas las letras a su derecha y el mapeo apunta una más allá **sin fallar**: un `SUMA` sobre la columna de al lado devuelve un número, no un error. El título como testigo convierte eso en falla ruidosa. **La función que valida se difiere** (usuario, 14/08); **poblar la columna ya mide**, y esa medición puede encontrar mapeos ya corridos |
 | 7 | **`C-61`** — el alta de columna que mueve 229 cuentas | **Bloquea el embudo de Call Center.** Dos mediciones antes de escribir: **(a)** si el motor lee CC **por encabezado o por posición** — si es por posición, una columna nueva corre todo lo demás **sin que nada falle**; **(b)** cuántos tokens ya validados cambian de valor, y **ninguno de los exactos vigentes puede moverse** |
 | 8 | **`R-NN` de los dos universos de Call Center** — `enc_*` filtra por tipo de llamado, `cc_*` no filtra | **Prompt propio: es una regla, no un detalle de un cableado.** Dos universos conviviendo sin declarar es el modo de falla del número plausible |
@@ -1144,7 +1210,7 @@ migra sin apuro — por eso la migración de los 51 no bloquea a nadie, pero la 
 | 10 | **`enc_impresiones` / `enc_visualizaciones` / `enc_clics`** | Operación confirmada 4 de 4. Se cablea **ya con el vocabulario decidido** — antes de 4 sería deuda deliberada. ⚠ **Y antes hay que resolver si su solapa sigue apagada**: `digital/Digital` está en `ignorar` y cuatro marcadores la apuntan (`PENDIENTES`, 14/08) |
 | 11 | **El embudo de Call Center** | Depende de **7 y 8**: sin el alta de columna no hay dato, y sin la regla no está declarado qué universo se cuenta |
 | 12 | **`alcance` y `clics` de campaña destacada, y `m2_campanias`** como `LISTA + CUENTA(LISTA)` | `m2_campanias` además espera una definición del usuario |
-| 13 | **La migración de los 51 marcadores, por tandas** | Empieza por los **nueve pares `gcba_*`**: son el caso donde la dimensión **ya está escrita en el `filtro`** y sólo hay que sacarla del nombre. Cada tanda se compara contra la corrida anterior antes de la siguiente. **No bloquea a nadie** — lo nuevo ya nace con la estructura buena |
+| 13 | **La migración, por tandas** — son **78** marcadores, no 51 (medido 15/08) | Empieza por los que **ya tienen la dimensión escrita en el `filtro`** y sólo hay que sacarla del nombre: los `mail_*`/`gcba_mail_*` y `frecuencia`/`gcba_frecuencia`. **No son "los nueve pares `gcba_*`"** —eso era una cifra del snapshot del 11/08 que la medición corrigió—, y **los tres pares `pauta_*` NO entran**: tienen filtro vacío en los dos lados, así que son un número publicado dos veces y van a validación (`PENDIENTES`). **Cada tanda se compara contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`, no contra la corrida anterior** — así los errores no se acumulan de tanda en tanda. **No bloquea a nadie:** lo nuevo ya nace con la estructura buena |
 | 14 | **El catálogo de tokens generado desde `MARCADORES`** — qué mide cada uno, de dónde sale, con qué operación y con qué filtro | **Es el objetivo declarado de todo esto:** que alguien del equipo arme una filmina eligiendo tokens documentados que dicen qué son y cómo se arman. **Generado, no escrito a mano** — a mano se desincroniza en la primera migración |
 
 **Dónde se cruza con lo que ya estaba listado, para que nadie lo trabaje dos veces.** Los frentes
@@ -1377,7 +1443,8 @@ Cada ítem nombra **qué lo destraba y de quién depende**.
 
 | qué | qué lo destraba | depende de |
 |---|---|---|
-| **Los siete `ecv_*` ambiguos** | la `D-NN` del `_2`. **Es precondición de globalizar esa familia**, no prolijidad: son tokens con el mismo nombre y distinto hecho según la plantilla | interno |
+| **Unificar los cuatro pares `enc_*` / `ivr_*`** — `enc_atendidos`/`ivr_atendidos`, `enc_e75`/`ivr_75`, `enc_e75_pct`/`ivr_75_pct`, `enc_marque1`/`ivr_marque1` | **el piloto de `D-33`**, y después `C-01`. Misma base, misma solapa, mismo campo, sin filtro: **no es descuido, es una migración a medio hacer** — `TOKENS.md` ya declara `enc_*` como canónico y los `ivr_*` siguen cableados porque las **láminas 2 y 5** los usan. **Decidido (usuario, 15/08): sobrevive `enc_*`.** No entra al `_2` porque unificar es **renombrar tokens en la plantilla**, que es de `C-01`, y arrastra esas dos láminas | usuario, por `C-01` |
+| **Los siete `ecv_*` ambiguos** | `D-33` ya está escrita, así que lo que falta es aplicarla a esta familia. **Es precondición de globalizarla**, no prolijidad: mismo nombre y distinto hecho — y su ambigüedad es **dentro de `jm`**, entre la lámina 5 (agregado del período) y la 6 (por encuentro), no entre informes | interno |
 | **Los estados `-` y `---`** | decisión del usuario sobre si `---` reemplaza a `«FALTA:token»` en el deck. **Ver `S-05`**: mientras el deck lo lea sólo quien lo desarrolla, el `«FALTA:»` crudo dice más. **Salvaguarda que va anotada desde ya:** el reporte de corrida tiene que **seguir distinguiendo *"no calculable"* de *"falló el cableado"*** aunque el deck deje de hacerlo | usuario |
 | **Los nombres de los tokens de la lámina del "1 a 1"**, más *"el desglose por herramienta es sólo de `jm`"* (`CONFIG_INFORMES.md` §1.9) | el `_2` | interno |
 | **`tipo` viaja con el ítem del encuentro**, y **qué consume hoy `LAMINAS`** | nada técnico: **espera su turno.** Son las dos piezas de *"que la lámina se use sólo en 1 a 1"* | interno |

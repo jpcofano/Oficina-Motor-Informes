@@ -4076,3 +4076,34 @@ deck y en `FALTANTES`.
 **Qué lo destraba:** la misma decisión del usuario que ya está esperando, **con esta pregunta
 agregada**: si el estado publicable se distingue del dato, o si se elige otro símbolo. **No se
 resuelve acá**; se anota para que la decisión se tome sabiendo esto.
+
+---
+
+## Los tres pares `pauta_*` / `gcba_pauta_*` publican el mismo número dos veces — 15/08/2026
+
+**Medido** sobre `docs/_snapshots/MARCADORES_2026-08-15.tsv`:
+
+| par | base / solapa | `campo_logico` | `operacion` | `filtro` |
+|---|---|---|---|---|
+| `pauta_google` · `gcba_pauta_google` | `digital/Seguimiento digital` | `sd_pauta_google` | `SUMA` | **vacío en los dos** |
+| `pauta_meta` · `gcba_pauta_meta` | ídem | `sd_pauta_meta` | `SUMA` | **vacío en los dos** |
+| `pauta_prog` · `gcba_pauta_prog` | ídem | `sd_pauta_prog` | `SUMA` | **vacío en los dos** |
+
+**La definición es idéntica en todo.** Lo único que los distingue es la columna `familia`
+—`pauta` contra `gcba`—, **y `familia` no filtra nada**: se usa para reconocer el bloque modelo
+en la plantilla, no para acotar filas. Los seis marcadores leen las mismas filas y devuelven el
+mismo número.
+
+**Por qué esto NO es migración al vocabulario de `D-33`, aunque lo parezca.** El prefijo `gcba_`
+sugiere que son la misma medida con distinto `ambito` — y si lo fueran, colapsarían en una sola
+con su dimensión. **Pero no lo son: no hay ningún corte de ámbito escrito.** O uno de los dos está
+mal, o los dos lo están y **falta el filtro en ambos**. Migrarlos sería **convertir un error en un
+error estructurado**, y con el nombre nuevo dejaría de verse.
+
+**Qué lo destraba:** decidir si el desglose de pauta tiene corte JM/GCBA. Si lo tiene, los seis
+necesitan filtro y hoy ninguno lo tiene; si no lo tiene, sobran tres marcadores. **Es un caso de
+validación con su propio prompt**, no un paso de la migración.
+
+⚠ **No entra a la migración del frente 4**, y queda dicho acá para que nadie lo levante como
+"tanda fácil": los tres pares son el caso que **más** se parece a una migración y el que menos lo
+es.

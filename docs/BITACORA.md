@@ -9701,3 +9701,70 @@ Con `MARCADORES_2026-08-15.tsv` en el repo, **el `_2` queda listo para su Parte 
 duplicados por definición, el inventario de `filtro` y la agrupación por dimensión lógica. Eso
 abre el **frente 4** del plan — la migración al vocabulario de métricas y dimensiones, que es el
 objetivo de todo esto.
+
+---
+
+## `_2` — `D-33`: el vocabulario pasa a medida + dimensiones (2026-08-15)
+
+### Parte A — el censo, sobre las 78 filas vivas
+
+Medido sobre `docs/_snapshots/MARCADORES_2026-08-15.tsv`. **78 marcadores, todos
+`informe_id = jm`** — el punto 4 del prompt confirmado: **`gcba` no es el informe**, las 12
+`gcba_*` viven con `informe_id = jm`. El prefijo es el ámbito de la campaña.
+
+**Tres correcciones al cuerpo del prompt, y las tres salieron de medir en vez de citar:**
+
+1. **`dig_jm_gcba` no aparece en ningún filtro.** El cuerpo lo daba como una de las cuatro formas
+   del ámbito; existe como **columna** en `digital/Digital` y sin usarse. La cuarta forma real es
+   **`nombre_campaña~=JM`** en `looker/DIGITAL`. Siguen siendo cuatro campos, pero uno es otro.
+2. **Los duplicados son siete, no nueve** — y de **dos clases distintas**, que es lo que importa:
+   tres pares `pauta_*`/`gcba_pauta_*` y cuatro pares `enc_*`/`ivr_*`.
+3. **`periodo_ref` está vacío en las 78.** La ventana se resuelve entera por la cadena de `D-20`,
+   así que **el desfasaje de un día de SECCO no toca el vocabulario**. El punto 5 queda cerrado
+   con esa respuesta, que es mejor que la que el prompt esperaba.
+
+### `D-33`, escrita
+
+Tres dimensiones —`ambito`, `plataforma`, `tipo_envio`— con la expresión física medida base por
+base. **El argumento es una simetría:** el motor ya sabe que una medida se llama distinto en cada
+base, para eso está `MAPEO`; del lado de los cortes no había nada equivalente. `D-33` le da a las
+dimensiones lo que `MAPEO` ya le daba a las medidas.
+
+**Dos cosas quedaron declaradas en voz alta porque se pierden:**
+
+- **`gcba` es *todo lo que no es `jm`*, con su límite escrito:** una fila **sin** `figura`, sin
+  remitente o sin nombre de campaña **cae en `gcba`**, no queda afuera de las dos. Hoy ya funciona
+  así; lo que cambia es que deja de ser un accidente heredado. El síntoma a buscar el día que se
+  rompa: **un `gcba_*` que crece sin que nadie haya cargado campañas nuevas.**
+- **La frontera dimensión / restricción técnica.** Las nueve guardas `!=0` y `estado=Activa`
+  **no migran**: una dimensión es un corte que alguien del equipo pediría, una restricción es una
+  regla de validez de la fila. Las `!=0` son la contracara de `R-18` —descartan filas donde el
+  cero es un *"Revisar"* disfrazado— y `estado=Activa` nunca aparece sola.
+
+**La línea base es `MARCADORES_2026-08-15.tsv`, citada por nombre**, y **cada tanda se compara
+contra ese archivo y no contra la corrida anterior** — así los errores no se acumulan de tanda en
+tanda. **No se creó ningún mecanismo de backup aparte**: sería una segunda copia de lo mismo, y la
+gracia del snapshot es que no sale del código que se está migrando.
+
+### Los siete duplicados, a tres destinos distintos
+
+**No son el mismo problema y no van al mismo lado** — meterlos en la misma tanda habría sido el
+error caro:
+
+| qué | dónde va | por qué |
+|---|---|---|
+| **`imp_total` y sus siete hermanos** (`looker/DIGITAL/Impresiones/SUMA`) | **el piloto**, frente 5 | ocho marcadores que sólo difieren en el `filtro`: una medida × ámbito × plataforma. Es el caso que justifica el frente entero |
+| **los tres pares `pauta_*` / `gcba_pauta_*`** | **`PENDIENTES`, validación** | definición idéntica y **filtro vacío en los dos**. No es migración: es **un número publicado dos veces**. Migrarlos sería convertir un error en un error estructurado, y con el nombre nuevo dejaría de verse |
+| **los cuatro pares `enc_*` / `ivr_*`** | **`PLAN.md`, bloqueado** | dos familias sobre el mismo hecho — **una migración a medio hacer**: `TOKENS.md` ya declara `enc_*` canónico y los `ivr_*` siguen cableados porque las láminas 2 y 5 los usan. Sobrevive `enc_*` (usuario, 15/08), pero unificar es renombrar en la plantilla, que es `C-01` |
+
+### Dos cifras del plan que la medición corrigió
+
+- **Son 78 marcadores, no 51.** La cifra vieja venía del snapshot del 11/08.
+- **La tanda inicial no son "los nueve pares `gcba_*`".** Los que ya tienen la dimensión escrita
+  en el `filtro` son los `mail_*`/`gcba_mail_*` y `frecuencia`/`gcba_frecuencia`; **los `pauta_*`
+  no entran** porque su filtro está vacío.
+
+**Ni una fila de `MARCADORES` cambió en este prompt.** La regla de `CLAUDE.md` sobre renombres por
+`informe_id` quedó **reemplazada** —sin régimen de transición, porque `S-05` está vivo y hay un
+solo lector— dejando dicho que su premisa **se invierte** cuando el corte deja de estar en el
+nombre: lo que hacía a un token específico de un informe era justamente el prefijo.

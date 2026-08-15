@@ -129,3 +129,105 @@ prompt, anotada al cerrar la Parte B del `_1`:
   se quiera un override explícito.
 - **La regla de `CLAUDE.md` se reescribe directo** en vez de quedar como régimen de
   transición, así que el punto 2 de la Parte B se simplifica.
+
+## Addendum — 15/08/2026 · gate resuelto, y tres correcciones al cuerpo
+
+> Se agrega al final de `2026-08-14_2_censo_dimensiones_y_decision.md`, que ya se
+> ejecutó hasta el gate. El cuerpo no se edita.
+
+### Correcciones a lo que el cuerpo daba por cierto
+
+1. **`dig_jm_gcba` no aparece en ningún filtro.** El cuerpo lo nombraba como una de las
+   cuatro formas del ámbito; existe como columna en `digital/Digital` y sin usarse. La
+   cuarta forma real es `nombre_campaña~=JM` en `looker/DIGITAL`. Siguen siendo cuatro
+   campos, pero uno es otro. El error salió de leer el snapshot del 11/08.
+2. **Los duplicados son siete, no nueve.** Tres pares `pauta_*` / `gcba_pauta_*` con
+   definición idéntica y filtro vacío, y cuatro pares `enc_*` / `ivr_*`.
+3. **`periodo_ref` está vacío en los 78 marcadores.** La ventana se resuelve entera por
+   la cadena de `D-20`, así que el desfasaje de un día de SECCO **no toca el
+   vocabulario**. El punto 5 del cuerpo queda cerrado con esa respuesta.
+
+### La línea base de la migración
+
+**`docs/_snapshots/MARCADORES_2026-08-15.tsv`** es el estado del cableado que funciona,
+tomado antes de tocar nada. **La `D-NN` lo cita por nombre.** No se crea ningún
+mecanismo de backup aparte: sería una segunda copia de lo mismo, y la gracia del
+snapshot es justamente que no sale del código que se está migrando.
+
+Cada tanda de la migración se compara contra ese archivo, no contra la corrida
+anterior.
+
+---
+
+### El vocabulario, decidido
+
+Tres dimensiones. La expresión física por base va en la `D-NN` con las cuatro formas
+medidas:
+
+| dimensión | valores | cómo se implementa |
+|---|---|---|
+| `ambito` | `jm` · `gcba` | `rdv`: `figura=Jorge Macri` / el resto · `digital/Directa Mail`: por remitente · `looker/DIGITAL`: por nombre de campaña · `looker/resumen_…`: por campaña |
+| `plataforma` | `meta` · `google` · `programmatic` | `Plataforma=Meta` / `=Google ads` / el resto, por `R-24` |
+| `tipo_envio` | `convocatoria` · `m2` | `mail_tipo` |
+
+**`ambito` aplica en `rdv`**, con el mismo criterio que en las otras tres: `Jorge Macri`
+es `jm`, todo lo demás —ministros incluidos— es `gcba`.
+
+**La negación se conserva como implementación, y la `D-NN` tiene que decirlo en voz
+alta:** `gcba` es *todo lo que no es `jm`*, no un valor propio. La consecuencia es que
+**una fila sin `figura`, sin remitente o sin nombre de campaña cae en `gcba`**, no queda
+afuera de las dos. Hoy ya funciona así en las cuatro bases; lo que cambia es que deja de
+ser un accidente heredado y pasa a ser una decisión con su nombre. Si alguna vez hay que
+distinguir *"es GCBA"* de *"no está clasificado"*, ahí se rompe — y ése es el síntoma
+que hay que anotar como límite.
+
+**Las guardas `!=0` y `estado=Activa` no son dimensiones.** Son restricciones técnicas:
+las nueve `!=0` son la contracara de `R-18` —descartan filas donde el cero es un
+*"Revisar"* disfrazado— y `estado=Activa` nunca aparece sola. Quedan como `filtro`, no
+migran a dimensión, y la `D-NN` explica por qué: una dimensión es un corte que alguien
+del equipo pediría; una restricción es una regla de validez de la fila.
+
+---
+
+### Los duplicados: tres destinos distintos
+
+**No todos son el mismo problema y no van al mismo lado.**
+
+1. **`looker/DIGITAL/Impresiones/SUMA` — ocho marcadores que sólo difieren en el
+   filtro.** Es el caso que justifica el frente entero: una medida × `ambito` (2) ×
+   `plataforma` (3, con `programmatic` por resta) da ocho nombres para un solo hecho.
+   **Es el piloto**, y va en prompt propio.
+
+2. **Los tres pares `pauta_*` / `gcba_pauta_*` — definición idéntica, filtro vacío en
+   los dos.** Esto **no es migración, es un número publicado dos veces**: los dos
+   marcadores dan lo mismo y uno de los dos está mal, o los dos lo están y falta el
+   filtro. Va a validación con su caso, **no a la migración**. Migrarlos sería
+   convertir un error en un error estructurado.
+
+3. **Los cuatro pares `enc_*` / `ivr_*` — dos familias sobre el mismo hecho.**
+   `enc_atendidos`/`ivr_atendidos`, `enc_e75`/`ivr_75`, `enc_e75_pct`/`ivr_75_pct`,
+   `enc_marque1`/`ivr_marque1`: misma base, misma solapa, mismo campo, sin filtro.
+   No es descuido, es **una migración a medio hacer** — `TOKENS.md` ya declara `enc_*`
+   como canónico y los `ivr_*` siguen cableados porque las láminas 2 y 5 los usan.
+
+   **Decisión del usuario del 15/08: sobrevive `enc_*`.** Pero **no entra al `_2`**:
+   unificar significa renombrar tokens en la plantilla, que es de `C-01`, y arrastra
+   las láminas 2 y 5. Va como paso propio **después del piloto**, y se anota en el
+   *Planificado y bloqueado* de `PLAN.md` con esa dependencia.
+
+---
+
+### Parte B — qué escribir ahora · modelo: **Opus** · effort: alto
+
+Lo del cuerpo, más lo de arriba:
+
+1. **La `D-NN` en `PLAN.md`** con las tres dimensiones, la expresión física por base, la
+   negación declarada con su límite, y **la línea base citada por nombre**.
+2. **La regla de `CLAUDE.md` reescrita.** Sin régimen de transición: `S-05` está vivo,
+   hay un solo lector y no hace falta mantener dos sistemas.
+3. **Los duplicados a sus tres destinos**, con el motivo de cada uno. Los `pauta_*` a
+   validación, los `enc_*`/`ivr_*` a `PLAN.md` como bloqueado, el caso de `imp_total`
+   como piloto.
+4. **Ni una fila de `MARCADORES` cambia en este prompt.** Si al escribir aparece que
+   alguno queda mal, **se anota en el reporte**.
+5. Commit de documentación, separado, y `git push`.
