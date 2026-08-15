@@ -3,68 +3,51 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-14, al cerrar la corrida nocturna `_7` · último commit al
-escribirlo: `bc6a742`
+**Última actualización:** 2026-08-15, al cerrar el alta, `D-31` y `D-32`, verificados contra
+los snapshots de `docs/_snapshots/`
 
-## ▶ Empezar por acá: `docs/CORRIDAS_pendientes_2026-08-15.md`
+## ▶ Empezar por acá: el frente 4 — **el vocabulario de métricas y dimensiones**
 
-**Cinco corridas de Apps Script esperando, en una sola lista y ordenadas por lo que destraban.**
-Es lo primero que hay que mirar. En orden:
+**Los tres frentes del 15/08 están cerrados y verificados contra la hoja**, no contra el reporte
+de la corrida:
 
-| # | correr | destraba |
-|---|---|---|
-| 1 | `censarCoberturaDeUniversos()` | el alta de las 20 solapas — cierra el `_4` y con él el `_1` |
-| 2 | `probarGateDeUsoDeSolapas_()` y después `probarGateDeUsoContraLaHoja_()` | verifican `D-32`, que quedó implementado anoche **y sin probar** |
-| 3 | `instalar()` | crea la columna `encabezado` de `MAPEO` (`D-31`) — ⚠ mirar el diff la primera vez |
-| 4 | `diffSolapasSinAplicar_()` | diagnóstico: cuántos desacuerdos seed↔hoja hay hoy |
-| 5 | el censo de `MARCADORES` — **no hay función; el camino es `tools/snapshot.js`** | los puntos 1–3 del `_2`, que es el frente 4 del plan |
+| frente | estado |
+|---|---|
+| **El alta de las 20 solapas** | `reuniones` en **2 `fuente` · 5 `referencia` · 17 `ignorar`**. Cierra el `_1` y el punto 5 del `_4` |
+| **`D-31`** — la letra manda, el título es testigo | **154 filas de `MAPEO`** con `encabezado`; las 7 vacías son las de `promoverFechasElegidas()` |
+| **`D-32`** — el sembrador no degrada en silencio | 12 afirmaciones puras **+ verificación a mano contra el sembrador** |
 
-La 1 y la 5 terminan en **decisión del usuario**. La 2 y la 3, no.
+**Lo que sigue es el `2026-08-14_2`, Parte A completa** — está destrabado: `MARCADORES_2026-08-15.tsv`
+ya está en `docs/_snapshots/`. Los duplicados por definición, el inventario de `filtro` y la
+agrupación por dimensión lógica. **Su gate es del usuario.**
 
-## La cola del 14/08
+⚠ **Dos cosas del 15/08 que hay que saber antes de tocar configuración:**
 
-**`_1`, `_4`, `_5`, `_6` y `_7` ejecutados; `_3` implementado y sin probar; `_2` y el del "1 a 1"
-no arrancaron.**
+- **`instalar()` NO siembra contenido.** Crea/repara hojas y aplica `COLUMNAS_DELTA_`. Lo que
+  siembra es el ítem de menú **Aplicar configuración**. Equivocarse produce **una corrida que
+  termina bien y una hoja que no cambia**.
+- **`D-32` no se puede verificar sobre una configuración consistente.** La prueba de punta a punta
+  **se abstiene**, y eso **no es un verde**: hay que fabricar el conflicto — una solapa en `fuente`
+  contra un seed que diga `ignorar`—, correr el sembrador, y devolverla.
+
+## La cola del 14/08 — cerrada, salvo dos
 
 | prompt | estado |
 |---|---|
-| `2026-08-14_1` — métricas por plataforma de `reuniones` | **ejecutado** (Partes A, A2 y B). `alc_real` mapeado en las dos solapas; `CAMPAÑAS_DESGLOCE_DIGITAL` restituida a `fuente` |
-| `2026-08-14_4` — las decisiones sueltas | **ejecutado con un punto frenado** — ver abajo |
-| `2026-08-14_5` — el orden de los frentes a `PLAN.md` | **ejecutado, y después revisado**: el prompt se reemplazó y los frentes pasaron a **14**, con el `_6` sexto y `C-61` séptimo |
-| `2026-08-14_6` — la letra manda, el título valida | **ejecutado.** `D-31`; el seed puebla el testigo de las 154 filas que conoce. **La columna todavía no existe en la hoja**: la crea `instalar()` |
-| `2026-08-14_7` — corrida nocturna | **ejecutada.** Bloques 1, 3, 4 y 5 completos; el 2 con tres puntos sin insumo — `SEED_MARCADORES_` no existe (`D-17`) |
-| `2026-08-14_3` — el sembrador no degrada en silencio | **implementado anoche por el bloque 3 del `_7` (`D-32`) y SIN PROBAR.** Es la corrida 2 de la lista |
-| `2026-08-13_1` — `R-26`, el "1 a 1" sólo digital | **no arrancó.** Independiente de todo lo demás. Su Parte A puede falsar la premisa; si eso pasa, no se escribe nada |
-| `2026-08-14_2` — censo de dimensiones y vocabulario global | **no arrancó**, y su Parte A está bloqueada: necesita el censo de `MARCADORES` (corrida 5) |
+| `2026-08-14_1` — métricas por plataforma de `reuniones` | **cerrado** |
+| `2026-08-14_4` — las decisiones sueltas | **cerrado**: su punto 5 era el alta |
+| `2026-08-14_5` — el orden de los frentes a `PLAN.md` | **cerrado** (reemplazado y re-aplicado: 14 frentes) |
+| `2026-08-14_6` — la letra manda, el título valida | **cerrado**, `D-31` materializado |
+| `2026-08-14_7` — corrida nocturna | **cerrada**; su bloque 2 dejó tres puntos sin insumo, que el snapshot destrabó |
+| `2026-08-14_3` — el sembrador no degrada en silencio | **cerrado**, `D-32` verificado punta a punta |
+| `2026-08-14_2` — censo de dimensiones y vocabulario global | **lo que sigue.** Parte A destrabada por `MARCADORES_2026-08-15.tsv` |
+| `2026-08-13_1` — `R-26`, el "1 a 1" sólo digital | **no arrancó.** Independiente; su Parte A puede falsar la premisa |
 
-**El orden de trabajo ya no vive acá: vive en `PLAN.md` §2.** Este handoff dice dónde estamos;
-el plan dice hacia dónde. Los tramos `T2.x`…`T5.x` **no se retiraron** — siguen siendo la
-especificación de cada pieza; lo que cambió es que el orden lo fija la lista de frentes.
+**El orden de trabajo vive en `PLAN.md` §2.** Este handoff dice dónde estamos; el plan, hacia
+dónde.
 
-**`R-26` está reservado y libre.** Lo pide el prompt del "1 a 1". El alcance de Meta del `_4`
-tomó `R-27` a propósito para no pisarlo; si el "1 a 1" falsa su premisa, `R-26` queda como
-**hueco** y así está bien — los IDs no se reutilizan.
-
-## ⚠ Trabado: el alta de las 20 solapas de `reuniones`
-
-**Falta el dato, no la decisión.** El censo de la Parte A2 del `_1` midió las 20 solapas nuevas
-y **su reporte quedó en la conversación, no en el repo**: sólo están nombradas las **tres**
-excepciones del Addendum 2 —`Desglose impresiones`, `Métricas digital`, `Digital | Base Post`—
-y ninguna de las otras 17. Sin la lista no se pueden escribir 19 filas `ignorar` con el motivo
-concreto de cada una, y **el motivo inventado es peor que la fila que falta**.
-
-**Qué lo destraba, en orden:**
-
-1. **La lista de las 20 solapas con el motivo de cada una** — del reporte de la Parte A2, o
-   re-medida sobre la planilla `12b0v67FbxjuIndK7DgVU3MYxx-k0yBIS9gtyV45rFaY` con
-   `diagPlanillaExterna_`.
-2. **La medición de las tres excepciones** que el Addendum 2 pide hacer **antes** de
-   clasificarlas. El `_4` la da por hecha (*"0 de 25 Uno a uno"*) y no está registrada.
-3. **La confirmación del usuario.** El Addendum 2: *"El alta de `SOLAPAS` es una decisión del
-   usuario y se confirma antes de escribir."*
-
-El reparto que cierra es **`Base_Digital` en `referencia` + 3 excepciones + 16 = 20** sobre 24
-solapas totales. El *"otras 17"* del Addendum 2 del `_1` está corrido en uno.
+**`R-26` sigue reservado y libre.** El alcance de Meta tomó `R-27` a propósito; si el "1 a 1"
+falsa su premisa, `R-26` queda como hueco y así está bien.
 
 ## El panel es una web app usable, y el acceso está decidido así a propósito
 
@@ -179,7 +162,7 @@ Sirven de fixture para la Parte B del `_48`: son dos períodos distintos en `COR
 | `diagPlanillaExterna_` · `diagFormaDeSolapaExterna_` · `diagFilasDeSolapaExterna_` | censar una planilla **no registrada en `BASES`**, con el `typeof` del valor crudo |
 | `alcanceDeLaCuenta_(idCuenta, ventana)` | el `Alcance` por la rama por cuenta real |
 
-## El patrón que ya lleva ocho casos
+## El patrón que ya lleva once casos
 
 **Cuando algo parece roto, medir primero cómo se está mirando** — con su borde: vale cuando el
 instrumento propio reproduce lógica que el motor ya tiene, **no** cuando se compara la salida del
@@ -196,3 +179,6 @@ motor contra un hecho externo.
 | el `6011` de `V-64` era una cita vencida | era correcto: miré la solapa equivocada |
 | los marcadores nuevos salen `sin_datos` | dos funciones resolvían la fila de encabezado distinto |
 | **`tools/api.js` postea sin sesión de Google** | **manda un Bearer, y además pega a `/dev`, que no es un despliegue** |
+| `campo_id_cuenta` se perdió de la hoja | `leerFilasSolapas_` no la exponía — `String(undefined)` |
+| un mapeo apuntaba a la columna equivocada | los encabezados de esa solapa están corridos (`C-09`): la letra estaba bien |
+| **`D-32` bloqueaba el alta de solapas** | **`instalar()` no siembra: la corrida era la equivocada** |

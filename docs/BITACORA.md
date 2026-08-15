@@ -9584,3 +9584,120 @@ caminos atraviesan esta función, y cuál de ellos no estoy tocando?"**.
 **Y la abstención de `probarGateDeUsoContraLaHoja_` queda explicada por lo mismo**: sin las 20
 filas insertadas no hay ninguna donde la hoja diga `fuente` y el seed otra cosa, o sea ningún caso
 que verificar. La abstención fue correcta y no era un verde — funcionó como se escribió.
+
+---
+
+## Tres frentes cerrados: el alta de las 20 solapas, `D-31` y `D-32` (2026-08-15)
+
+### 1 · El alta de las 20 solapas de `reuniones` — cierra el `_1` y el punto 5 del `_4`
+
+`reuniones` queda en **24 filas: 2 `fuente`, 5 `referencia`, 17 `ignorar`.**
+
+| `uso` | cuántas | cuáles |
+|---|---|---|
+| `fuente` | 2 | `Agenda JM`, `Agenda JM \| Post` |
+| `referencia` | 5 | `Barrios` + `Base_Digital`, `Total`, `EDVs \| Estados`, `Métricas EDVs` |
+| `ignorar` | 17 | `Agenda funcionarios` + las 16 nuevas |
+
+**Ninguna de las 20 puede ser `fuente`, y el motivo es estructural: son espejos.** Cada una es un
+`IMPORTRANGE` de `1siyVJPVuObp1UEeQTS4IncXpsbev_Iqs-b27hZfLhds`; las cuatro registradas tienen
+cero fórmulas. Esa planilla **no está en `BASES`** y quedó como pendiente propio.
+
+**Las tres de cobertura perfecta fueron a `referencia` y no a `ignorar`.** `Total` y `EDVs |
+Estados` no traen **ninguna métrica** —son índices de estados— y **`Métricas EDVs` es el
+superconjunto de `Agenda JM`**, verificado sobre `1493`: sus `S/T/U/V` reproducen exacto
+`AA/AJ/AM`. Cobertura alta decía que estaban los mismos encuentros; la lectura profunda dijo qué
+traen. Sin ese segundo paso, la más informativa de las veinte se descartaba.
+
+**Y dos huecos quedaron cerrados como "no existe", con las columnas revisadas:** `Visualizaciones`
+para el PRE no está en ninguna de las 24 —sólo en los bloques Post de `Base_Digital` (`P`, `T`,
+`X`)—, y alcance por plataforma tampoco: las únicas bandas son `Alcance Meta Convocatoria` (`J–L`)
+y `Alcance Meta Post` (`Y–AA`). **Es confirmación estructural de `R-27` por un camino distinto del
+que la fundó.**
+
+### 2 · `D-31` — la letra manda, el título es testigo
+
+**154 filas de `MAPEO` con su `encabezado`.** Medido sobre las 161 vivas: cero letras sin
+encabezado, cero títulos repetidos dentro de una misma solapa. Las 7 que quedan sin testigo en la
+celda son las de `promoverFechasElegidas()`, que el seed no conoce.
+
+**El testigo es testigo, nunca fallback**, y el motivo es medido: los títulos se repiten —`Agenda
+JM | Post` tiene cuatro `% CTR`, `Base_Digital` ocho `ID Cuentas`, `Desglose impresiones` tres
+claves—, así que un fallback por título **acertaría a veces y erraría en silencio otras**.
+
+**Con su límite escrito, que es lo que más vale del caso `C-09`: el testigo documenta el rótulo,
+no el contenido.** En una solapa con encabezados corridos coincide siempre y no delata nada — y
+el día que deje de coincidir será porque alguien **arregló** los rótulos, no porque algo se rompió.
+
+### 3 · `D-32` — el sembrador no degrada en silencio
+
+**Verificado de las dos mitades.** La pura, **12 afirmaciones**, corrida con el código real fuera
+de Apps Script. La de punta a punta, **a mano y contra el sembrador**: con
+`reuniones/Agenda funcionarios` puesta a `fuente` contra un seed que decía `ignorar`, el sembrador
+**no la revirtió** — la celda quedó en `fuente` y se devolvió a `ignorar` después.
+
+---
+
+## Las dos cosas de hoy que se pierden si no quedan escritas
+
+### El gate se probó contra el caso que lo motivó y no contra el que lo rompía
+
+Las **7 afirmaciones originales daban verde mientras el alta no entraba en la hoja.** Cubrían
+degradaciones —`fuente → ignorar`, `revisar → ignorar`, la mugre de una carga a mano— porque el
+incidente que originó `D-32` era una degradación. **Ninguna preguntaba qué pasa cuando la fila no
+existe**, que es el otro camino que atraviesa la misma función.
+
+**Insertar no es degradar: una fila que no existe no tiene `uso` que proteger.** La frase está
+ahora en `usoAEscribir_`, que se extrajo a función pura justamente para poder probar ese camino —
+vivía inline en una función que toca la planilla, y por eso lo único verificable era
+`esDegradacionDeUso_`.
+
+**El síntoma fue el peor posible: no falló nada.** La corrida terminó bien, el reporte no marcó
+ningún error, y la hoja no cambió. **Sin abrir la planilla no había forma de saberlo.** Es el modo
+de falla que el proyecto persigue desde el principio, esta vez del lado de la escritura.
+
+La pregunta que faltaba no era *"¿pasa?"* sino **"¿qué otros caminos atraviesan esta función, y
+cuál de ellos no estoy tocando?"**.
+
+### Sobre una configuración consistente, `D-32` no se puede verificar sin romperla a propósito
+
+`probarGateDeUsoContraLaHoja_` **se abstiene** cuando no encuentra ninguna fila donde la hoja diga
+`fuente` y el seed otra cosa. **Eso no es un verde, y no es un defecto de la prueba: es la
+consecuencia de que el gate proteja contra algo que hoy no está pasando.**
+
+**Para verificarlo hay que fabricar el conflicto** —poner una solapa en `fuente` contra un seed
+que diga `ignorar`, correr el sembrador, confirmar que no la revirtió, y devolverla— que es
+exactamente cómo se cerró hoy.
+
+**Quien vuelva a tocar `D-32` va a encontrarse con la abstención y va a tener que hacer lo mismo.**
+Queda escrito acá y en el documento de corridas para que no se lea como *"pasó"*.
+
+### La verificación que cierra: contra la hoja, no contra el reporte del sembrador
+
+Los snapshots del 15/08 se regeneraron **después** del alta y se versionaron en
+`docs/_snapshots/`. Medido sobre el `.tsv`, que es la hoja y no lo que la corrida dijo de sí
+misma:
+
+```
+SOLAPAS · reuniones → 24 filas: 2 fuente · 5 referencia · 17 ignorar
+MAPEO   · encabezado en la columna 6, después de `columna`
+        → 154 con testigo · 7 vacías
+```
+
+**Las 7 vacías son exactamente las predichas**, una por una: `rdv/RVD JM-CM - ES/fecha`,
+`rdv/RDV_otros_ministros/fecha_periodo` y los cinco `fecha_periodo` de `digital`. Son las que
+escribe `promoverFechasElegidas()` y `SEED_MAPEO_` no conoce — el `P1` de `C.2-7`.
+
+**Que la predicción se cumpla celda por celda es la verificación, y es distinta de que la corrida
+haya terminado bien.** Justamente hoy una corrida terminó bien sin escribir nada.
+
+### Y el snapshot del 11/08 dejó de ser una cita sin edad
+
+Con `tools/snapshot.js` versionando la salida, el repo tiene ahora las hojas al **01, 10, 11 y
+15/08**. **El "snapshot del 11/08" que cuatro documentos venían citando ya se puede abrir** — hasta
+hoy era una cifra que viajaba de prompt en prompt sin que nadie pudiera mirarle la fecha.
+
+Con `MARCADORES_2026-08-15.tsv` en el repo, **el `_2` queda listo para su Parte A completa**: los
+duplicados por definición, el inventario de `filtro` y la agrupación por dimensión lógica. Eso
+abre el **frente 4** del plan — la migración al vocabulario de métricas y dimensiones, que es el
+objetivo de todo esto.

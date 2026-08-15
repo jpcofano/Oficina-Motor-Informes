@@ -15,42 +15,15 @@
 
 ---
 
-## 0 · Menú → **Aplicar configuración** — va primero, y puede frenar todo lo demás
+## ~~0 · Menú → Aplicar configuración~~ — **corrida el 15/08**
 
-⚠ **NO es `instalar()`.** Corregido el 15/08 después de que `instalar()` corriera y **el alta de
-las 20 solapas no llegara a la planilla**. `instalar()` → `aplicarInstalacion_()`, que **crea y
-repara hojas y aplica los `COLUMNAS_DELTA_`** — y nada más. **No siembra contenido.**
+**Hecha.** El alta llegó: `reuniones` quedó en **2 `fuente`, 5 `referencia`, 17 `ignorar`**, y las
+154 filas de `MAPEO` con su `encabezado`.
 
-**Lo que hay que correr es el ítem de menú `Aplicar configuración`** (`menuAplicarConfiguracion_`),
-que corre los cuatro sembradores **en el único orden en que tiene sentido correrlos**:
-
-```
-aplicarInstalacion_()          ← esto es lo que hace instalar() por su cuenta
-aplicarSeedConfiguracion_()    ← BASES, MAPEO, INFORMES, PERIODOS  → los testigos de D-31
-aplicarClasificacionSolapas_() ← SOLAPAS                          → el alta de las 20
-sembrarSecciones_()
-```
-
-**Correr sólo `instalar()` deja las dos cosas a medias**, y de un modo que no se nota: la columna
-`encabezado` de `MAPEO` **existe pero está vacía** —los valores vienen de `SEED_MAPEO_`, que
-siembra el segundo— y `SOLAPAS` no recibe ninguna fila nueva.
-
-⚠ **Es la primera vez que un `COLUMNAS_DELTA_` toca `MAPEO`.** La columna entra después de
-`columna` y empuja `tipo_esperado`, `valores_incluidos` y `notas` una a la derecha. Por diseño
-**no** reescribe la fila 1 ni corre los datos — pero eso es lo que dice el mecanismo, no lo que
-está medido sobre esta hoja.
-
-**⛔ Si el diff muestra algo inesperado, parar y reportar antes de correr nada más.** No seguir
-con las otras: todas leen `SOLAPAS` o `MAPEO`, y sobre una hoja en estado dudoso sus resultados
-no significan nada.
-
-**Qué queda escrito después.** Las **24** filas de `reuniones` con su `uso` y su nota, y las 154
-filas de `MAPEO` con su testigo.
-
-**Cómo se verifica que funcionó**, en vez de confiar en que la corrida terminó bien:
-`verDiffDeSolapas()` tiene que pasar de **`20 en el seed y no en la hoja`** a **cero**.
-
-**¿Decide el usuario?** No, salvo que el diff sorprenda — y ahí decide todo.
+⚠ **NO era `instalar()`**, y por eso el primer intento no escribió nada: `instalar()` →
+`aplicarInstalacion_()`, que crea/repara hojas y aplica los `COLUMNAS_DELTA_` **y nada más**. El
+ítem de menú *Aplicar configuración* corre los cuatro sembradores en orden. **Queda escrito porque
+el síntoma de equivocarse es una corrida que termina bien y una hoja que no cambia.**
 
 ---
 
@@ -68,23 +41,18 @@ planilla que **no está en `BASES`**. Eso es un pendiente propio, no una corrida
 
 ---
 
-## 2 · `verificarGateDeUso()` — verifica `D-32`
+## ~~2 · `verificarGateDeUso()`~~ — **verificado el 15/08, y no alcanzó con correrlo**
 
-**Qué destraba.** El `_3` quedó implementado anoche (`D-32`: el sembrador **nunca pisa un `uso`
-existente**) **y sin probar**. Es un cambio en un escritor de hojas de registro: hasta que se
-verifique, no se puede confiar en él ni construir encima.
+**`D-32` cerrado**, de las dos mitades: **12 afirmaciones** puras, más la verificación a mano
+contra el sembrador.
 
-**Un solo botón, y adentro corre las dos en orden.** La pura primero — si falla, **no corre la de punta a punta**, porque sobre un cálculo roto su resultado no significa nada. La segunda es de punta a punta y **sólo lectura**.
+⚠ **La parte de punta a punta se abstuvo, y hubo que fabricar el caso.** Sobre una configuración
+consistente **no hay ninguna fila donde la hoja diga `fuente` y el seed otra cosa**, así que no
+hay nada que verificar — y **la abstención no es un verde**.
 
-> La pura también entró al runner `correrPruebasDiff_` (menú *Diagnóstico → Correr pruebas del diff*), porque cumple su contrato de no tocar la hoja. La de punta a punta **no** va ahí.
-
-**Qué queda escrito después.** La entrada de bitácora que cierra el `_3`. Si pasan, el frente 2
-del plan queda hecho.
-
-**¿Decide el usuario?** No para correrla. **Sí** si la parte de punta a punta se **abstiene**
-—lo hace cuando no encuentra ninguna fila con `fuente` en la hoja y otra cosa en el seed—: ahí
-hay que decidir si se fuerza el caso poniendo una solapa en `fuente` contra un seed que diga
-`ignorar`. **Una abstención no es un verde**, y está escrito así a propósito.
+**Cómo se cerró, que es lo que hay que repetir la próxima vez:** se puso
+`reuniones/Agenda funcionarios` en `fuente` a mano contra un seed que decía `ignorar`, se corrió
+el sembrador, se confirmó que **no la revirtió**, y se la devolvió a `ignorar`.
 
 ---
 
@@ -102,34 +70,18 @@ seed o la hoja— y ésa es una decisión por fila.
 
 ---
 
-## 4 · El censo de `MARCADORES` — desbloquea el `_2`, que es el frente 4 del plan
+## ~~4 · El censo de `MARCADORES`~~ — **hecho el 15/08**
 
-**Qué destraba.** Los **puntos 1, 2 y 3 de la Parte A del `_2`**: los duplicados por definición,
-el inventario de `filtro` y la agrupación por dimensión lógica. El bloque 2 de la corrida
-nocturna **no pudo hacerlos**, y no por falta de tiempo: **`SEED_MARCADORES_` no existe y no va a
-existir** — `Instalar.gs:2715` dice *"`MARCADORES` no tiene sembrador y no lo va a tener
-(`D-17`): su dueño es la plantilla"*. `MARCADORES` vive **sólo en la hoja**.
+`tools/snapshot.js` corrido y **la salida versionada en `docs/_snapshots/`**. El repo tiene ahora
+las hojas al **01, 10, 11 y 15/08**, así que el "snapshot del 11/08" que cuatro documentos venían
+citando **ya se puede abrir**.
 
-⚠ **No hay función escrita para esto todavía**, y es la única de la lista que no la tiene.
-`tools/snapshot.js` incluye `MARCADORES` en su lista de hojas, así que el camino más corto es
-correrlo.
+**Con `MARCADORES_2026-08-15.tsv` en el repo, el `_2` queda listo para su Parte A completa** — los
+duplicados por definición, el inventario de `filtro` y la agrupación por dimensión lógica —, que
+es el frente 4 del plan.
 
-**Versionar la salida en `docs/_snapshots/AAAA-MM-DD_MARCADORES.*`.** Es la mitad que faltaba: el
-"snapshot del 11/08" que los prompts vienen citando **nunca estuvo en el repo**, y por eso se lo
-citó cuatro veces **como si fuera de hoy** — nadie podía mirarle la fecha. Un snapshot versionado
-es evidencia fechada; uno que vive en la memoria de una conversación es una cifra sin edad.
-
-**Al versionar el nuevo, revisar que ningún documento vivo cite cifras del viejo sin decir de
-cuándo son.** Medido el 15/08 **antes** de que el nuevo exista: los candidatos que se habían
-señalado —el `_2` y `PENDIENTES`— **ya declaran la fecha en las tres citas** (`_2` líneas 21 y
-31, `PENDIENTES` línea 3820). **Cero ediciones hoy**, y el cero queda registrado; la revisión que
-importa es la de después, cuando haya dos snapshots y las cifras dejen de coincidir.
-
-**Qué queda escrito después.** El censo del `_2` completo, y con eso su gate queda listo para el
-usuario.
-
-**¿Decide el usuario?** **Sí, y es el gate más grande de la cola.** El `_2` define el vocabulario
-de dimensiones, y su Parte B no arranca sin esa decisión.
+⚠ Los del 15/08 se regeneraron **después** del alta. Los de `SOLAPAS` y `MAPEO` de la primera
+tanda eran **pre-alta** y quedaron reemplazados.
 
 ---
 
