@@ -1625,6 +1625,110 @@ function censarSolapasParaAlta() {
 }
 
 /**
+ * Parte A del `2026-08-14_6` — **qué encabezado hay hoy en la letra que cada fila de `MAPEO`
+ * referencia.** Sólo lectura; no escribe ni propone: mide.
+ *
+ * **Por qué se mide antes de poblar nada.** El día que la columna `encabezado_esperado` se
+ * llene con el valor leído, **un mapeo ya corrido queda corrido y bendecido**: el testigo
+ * pasaría a certificar el error en vez de detectarlo. Por eso esto corre primero y termina en
+ * un gate.
+ *
+ * **La fila de encabezado la resuelve `resolverFilaEncabezado_`**, que es la del motor —
+ * `SOLAPAS.fila_encabezado` con fallback a `BASES`. Reimplementarla acá sería el error del
+ * `_39`: dos funciones resolviendo la misma cosa distinto, con el síntoma lejos de la causa.
+ *
+ * La comparación contra `notas` es **un filtro, no un veredicto**: marca `REVISAR` cuando el
+ * encabezado leído no aparece textualmente en las notas de la fila. Muchas notas lo traen
+ * entrecomillado porque se venía pidiendo así; las que no, no prueban nada. **Los `REVISAR` se
+ * leen a mano.**
+ */
+function censarEncabezadosDeMapeo() {
+  var hojaMapeo = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MAPEO');
+  if (!hojaMapeo) { Logger.log('no hay hoja MAPEO'); return { ok: false, motivo: 'sin hoja MAPEO' }; }
+
+  var datos = hojaMapeo.getDataRange().getValues();
+  var headers = datos.shift();
+  var idx = {};
+  headers.forEach(function (h, i) { idx[h] = i; });
+
+  Logger.log('MAPEO tiene ' + datos.length + ' fila(s) y estas columnas: ' + headers.join(' · '));
+
+  var bases = leerBases();
+
+  // Agrupado ANIDADO por base y por solapa, no por una clave concatenada: `Agenda JM | Post`
+  // trae barras y espacios, así que cualquier separador de texto es un bug esperando.
+  var porBase = {};
+  datos.forEach(function (fila, i) {
+    var baseId = String(fila[idx.base_id]);
+    var solapa = String(fila[idx.solapa]);
+    if (!porBase[baseId]) porBase[baseId] = {};
+    if (!porBase[baseId][solapa]) porBase[baseId][solapa] = [];
+    porBase[baseId][solapa].push({ fila: i + 2, datos: fila });
+  });
+
+  var sinEncabezado = [];
+  var aRevisar = [];
+  var repetidos = [];
+
+  Object.keys(porBase).forEach(function (baseId) {
+    var base = bases[baseId];
+
+    Object.keys(porBase[baseId]).forEach(function (nombreSolapa) {
+      if (!base || !base.sheet_id) { Logger.log('[' + baseId + '] sin sheet_id — se saltea ' + nombreSolapa); return; }
+
+      var hoja = SpreadsheetApp.openById(base.sheet_id).getSheetByName(nombreSolapa);
+      if (!hoja) { Logger.log('[' + baseId + '/' + nombreSolapa + '] la solapa no existe'); return; }
+
+      var enc = resolverFilaEncabezado_(baseId, nombreSolapa, base.fila_encabezado);
+      var cols = hoja.getLastColumn();
+      var titulos = hoja.getRange(enc, 1, 1, cols).getValues()[0].map(normalizarValorDeclarado_);
+
+      // Cuántas veces aparece cada título en ESTA solapa. Los repetidos no rompen el diseño
+      // —la letra manda— pero la validación futura los leería como error si no se los conoce.
+      var vecesPorTitulo = {};
+      titulos.forEach(function (t) { if (t) vecesPorTitulo[t] = (vecesPorTitulo[t] || 0) + 1; });
+
+      Logger.log('=== ' + baseId + '/' + nombreSolapa + ' — encabezado en fila ' + enc + ', ' + cols + ' columna(s) ===');
+
+      porBase[baseId][nombreSolapa].forEach(function (item) {
+        var f = item.datos;
+        var letra = String(f[idx.columna] || '').trim();
+        var campo = f[idx.campo_logico];
+        var notas = String(f[idx.notas] || '');
+        var j = columnaLetraAIndice_(letra);
+        var titulo = (j >= 0 && j < titulos.length) ? titulos[j] : '';
+
+        var marcas = [];
+        if (!titulo) {
+          marcas.push('SIN ENCABEZADO');
+          sinEncabezado.push(baseId + '/' + nombreSolapa + '/' + campo + ' (' + letra + ')');
+        }
+        if (titulo && vecesPorTitulo[titulo] > 1) {
+          marcas.push('TITULO x' + vecesPorTitulo[titulo]);
+          repetidos.push(baseId + '/' + nombreSolapa + ' · "' + titulo + '" x' + vecesPorTitulo[titulo]);
+        }
+        if (titulo && notas && notas.indexOf(titulo) === -1) {
+          marcas.push('REVISAR: no figura en notas');
+          aRevisar.push(baseId + '/' + nombreSolapa + '/' + campo + ' · ' + letra + ' -> "' + titulo + '"');
+        }
+
+        Logger.log('  fila ' + item.fila + ' · ' + campo + ' · ' + letra + ' -> "' + titulo + '"' +
+          (marcas.length ? '   [' + marcas.join(' | ') + ']' : ''));
+      });
+    });
+  });
+
+  Logger.log('--- SIN ENCABEZADO (' + sinEncabezado.length + ') ---');
+  sinEncabezado.forEach(function (s) { Logger.log('   ' + s); });
+  Logger.log('--- TITULO REPETIDO EN SU SOLAPA (' + repetidos.length + ') ---');
+  repetidos.forEach(function (s) { Logger.log('   ' + s); });
+  Logger.log('--- REVISAR: el encabezado leido no figura en las notas (' + aRevisar.length + ') ---');
+  aRevisar.forEach(function (s) { Logger.log('   ' + s); });
+
+  return { ok: true, filas: datos.length, sin_encabezado: sinEncabezado, repetidos: repetidos, a_revisar: aRevisar };
+}
+
+/**
  * Las filas del **temario** (`REUNIONES`) agrupadas por `tipo`, **leídas crudas** — sólo lectura.
  *
  * **El recorte va declarado, porque es la diferencia con el otro lector.** `leerReuniones_()`
