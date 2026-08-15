@@ -1359,7 +1359,10 @@ function correrPruebasDiff_() {
     probarFiltroMulticondicion_,
     probarParticionImpresiones_,
     probarRamaPorCuentaDeclarativa_,
-    probarBarreraDeMails_
+    probarBarreraDeMails_,
+    // `D-32` — entra acá porque es **pura**: sólo mide `esDegradacionDeUso_` y no toca la hoja,
+    // que es el contrato de este runner. La de punta a punta va aparte, en `verificarGateDeUso()`.
+    probarGateDeUsoDeSolapas_
   ];
   var lineas = [];
   var fallas = 0;
@@ -1459,5 +1462,33 @@ function probarGateDeUsoContraLaHoja_() {
     d.degradaciones.length + ' y las reporta en `usosConservados`.');
   lineas.push('VERIFICACIÓN A MANO, que es la que cierra: correr el sembrador y confirmar que ' +
     'esas filas siguen en `fuente` y aparecen listadas en el resumen.');
+  return lineas.join('\n');
+}
+
+/**
+ * **Wrapper público de `D-32` — es el que hay que elegir en el desplegable del editor.**
+ *
+ * Apps Script trata como privada toda función terminada en `_` y **no la lista para ejecutar**,
+ * así que `probarGateDeUsoDeSolapas_` y `probarGateDeUsoContraLaHoja_` no se pueden correr desde
+ * ahí. Ésta las corre **en orden, y el orden importa**: la primera es pura, y si falla la
+ * segunda no significa nada — el cálculo estaría mal y la de punta a punta mediría sobre él.
+ *
+ * **Una abstención de la segunda NO es un verde**, y el texto lo dice: significa que hoy no hay
+ * ninguna fila donde la hoja diga `fuente` y el seed otra cosa, o sea ningún caso que verificar.
+ */
+function verificarGateDeUso() {
+  var lineas = [];
+  try {
+    lineas.push(probarGateDeUsoDeSolapas_());
+  } catch (e) {
+    lineas.push('✗ FALLA la parte pura: ' + e.message);
+    lineas.push('');
+    lineas.push('NO se corre la de punta a punta: con el cálculo mal, su resultado no significa nada.');
+    Logger.log(lineas.join('\n'));
+    return lineas.join('\n');
+  }
+  lineas.push('');
+  lineas.push(probarGateDeUsoContraLaHoja_());
+  Logger.log(lineas.join('\n'));
   return lineas.join('\n');
 }

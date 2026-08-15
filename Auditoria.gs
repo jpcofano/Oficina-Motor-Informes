@@ -2139,3 +2139,12 @@ function censarUniversosDeSolapasDeEncuentro() {
 
   return { ok: true, universos: salida };
 }
+
+/**
+ * **Wrapper público de `diffSolapasSinAplicar_`** — el nombre que hay que elegir en el
+ * desplegable del editor. Ver la convención de `CLAUDE.md` §2: lo que corre una persona a mano
+ * va sin `_` final.
+ */
+function verDiffDeSolapas() {
+  return diffSolapasSinAplicar_();
+}
