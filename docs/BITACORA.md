@@ -9485,3 +9485,40 @@ son la misma cosa— y esta vez lo escribí yo.
   modo de falla: la columna entra al `SEED_*` y a un consumidor, y los demás lectores quedan
   atrás **sin fallar**. Queda como checklist de cuatro puntos, donde se lee antes de tocar un
   `.gs`.
+
+---
+
+## Wrappers públicos, el orden de `instalar()` y la convención de snapshots (2026-08-15)
+
+**1 · Lo que corre una persona no puede terminar en `_`.** `probarGateDeUsoContraLaHoja_` y
+`diffSolapasSinAplicar_` estaban pusheadas **sin forma de invocarlas**: Apps Script no lista las
+privadas en el desplegable. Es el tercer caso de lo mismo —el primero fue `diagPlanillaExterna_`,
+que se midió y su resultado no quedó en ningún lado— así que la convención va a `CLAUDE.md` §2 y
+no a un comentario.
+
+- **`verificarGateDeUso()`** corre las dos **en orden**, y si la pura falla **no corre la de
+  punta a punta**: sobre un cálculo roto el resultado de la otra no significa nada. Esa es la
+  mitad del valor del wrapper, no un detalle.
+- **`verDiffDeSolapas()`**, ídem para el diff.
+- **`probarGateDeUsoDeSolapas_` entra al runner `correrPruebasDiff_`** porque es pura y cumple su
+  contrato de no tocar la hoja. La de punta a punta **no** va ahí, y eso también está dicho.
+- La convención agrega dos cosas que no son obvias: el interior **sigue** con `_` y el wrapper lo
+  llama —el motor conserva su namespace—, y el wrapper **devuelve por `Logger.log`**, porque el
+  editor no muestra el valor de retorno. Una función que sólo retorna, desde ahí, no dice nada.
+
+**2 · `instalar()` pasa a ser la corrida 0, y puede frenar todo lo demás.** Aplica **dos cosas en
+la misma pasada**: el alta de las 20 solapas y la columna `encabezado` de `MAPEO`. Es **la
+primera vez que un `COLUMNAS_DELTA_` toca `MAPEO`**, y aunque por diseño no reescribe la fila 1
+ni corre los datos, eso es lo que dice el mecanismo y no lo que está medido sobre esta hoja. **Si
+el diff sorprende, se para**: las otras cuatro corridas leen `SOLAPAS` o `MAPEO`, y sobre una
+hoja en estado dudoso no significan nada.
+
+**3 · Los snapshots se versionan en `docs/_snapshots/`.** Con su fila en `CLAUDE.md` §7 y en el
+mapa del repo. El motivo está escrito ahí y es el que importa: el "snapshot del 11/08" **nunca
+estuvo en el repo**, y por eso se lo citó cuatro veces **como si fuera de hoy** — nadie podía
+mirarle la fecha.
+
+**Y la revisión de citas, hecha antes de que exista el snapshot nuevo: cero ediciones.** Los
+candidatos señalados —el `_2` y `PENDIENTES`— **ya declaran la fecha en las tres citas** (`_2`
+líneas 21 y 31, `PENDIENTES` 3820). El cero queda registrado, como pide `CLAUDE.md` §3. La
+revisión que importa es la de después, cuando haya dos snapshots y las cifras dejen de coincidir.

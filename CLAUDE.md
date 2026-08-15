@@ -138,6 +138,18 @@ grep -rn "function nombreNuevo_" *.gs
   vía el caché de módulo en `Fuentes.gs`.
 - Archivos `.gs` en PascalCase (`Fuentes.gs`, `Marcadores.gs`). Funciones privadas con
   sufijo `_`.
+- **Toda función pensada para que la corra una persona desde el editor va SIN `_` final.**
+  Apps Script trata el sufijo como privado y **no la lista en el desplegable de ejecución**: una
+  función de diagnóstico con `_` es una función que nadie puede correr. Ya pasó dos veces —
+  `diagPlanillaExterna_` se midió y su resultado no quedó en ningún lado, y `diffSolapasSinAplicar_`
+  se pusheó sin forma de invocarla.
+  - **El interior sigue con `_`**, y eso no cambia: lo que se agrega es un **wrapper público**
+    que lo llama. Así el motor conserva su namespace y la persona tiene su botón.
+  - **Un wrapper que corre varias cosas las corre en el orden que corresponde**, y es la mitad
+    de su valor: `verificarGateDeUso()` no corre la prueba de punta a punta si la pura falló,
+    porque sobre un cálculo roto el resultado de la otra no significa nada.
+  - **Y devuelve por `Logger.log`, no sólo por `return`**: el editor no muestra el valor de
+    retorno. Una función que sólo retorna es, desde ahí, una que no dice nada.
 
 ---
 
@@ -502,6 +514,7 @@ docs/REGLAS_NEGOCIO.md              reglas del dominio, ID R-NN
 docs/SUPUESTOS.md                   supuestos asumidos, ID S-NN
 docs/ESCRITORES.md                  quién escribe cada hoja de registro (vivo)
 docs/INVENTARIO_CODIGO.md           foto del código al 01/08 (congelado)
+docs/_snapshots/                    volcados fechados de las hojas de registro (tools/snapshot.js)
 docs/Sesiones/                      handoffs bajados de claude.ai — Code no escribe acá
 tools/                              scripts de verificación independiente
                                     (`listas.js` chequea que las tres listas de hojas coincidan)
@@ -534,6 +547,7 @@ distintas nunca compiten. La precedencia entra solo como desempate, al final.
 | ¿Qué inconsistencia documental sigue abierta? | `docs/PENDIENTES_consistencia.md` | los dos |
 | ¿Qué se le preguntó al equipo y sigue sin respuesta? | `docs/PENDIENTES_consistencia.md`, sección propia "Preguntas al equipo" (nacen en docs congelados como `VALIDACION` §7; al congelarse el doc, la pregunta viva se copia ahí) | los dos |
 | ¿Qué número dio una medición y contra qué se verificó? | `docs/VALIDACION_*.md` + su CSV de casos — congelados, uno nuevo por corrida de validación | nadie edita; se crea uno nuevo |
+| ¿Qué decía una hoja de registro en una fecha dada? | `docs/_snapshots/AAAA-MM-DD_<hoja>.*`, generados por `tools/snapshot.js`. **Se versionan, y por eso existen**: el "snapshot del 11/08" se venía citando en cuatro documentos **como si fuera de hoy** porque no estaba en el repo y nadie podía mirarle la fecha. Un snapshot es **evidencia fechada** — al entrar uno nuevo, se revisa que ningún documento vivo cite cifras del viejo sin decir de cuándo son | nadie edita; se crea uno nuevo |
 | ¿Qué corridas de Apps Script están esperando, y qué destraba cada una? | `docs/CORRIDAS_pendientes_AAAA-MM-DD.md` — **una sola lista, ordenada por lo que destraba**. Nace de una corrida nocturna y **se consume**: cuando sus ítems se corrieron, el documento queda como evidencia congelada y el siguiente lo reemplaza. Distinto de `PLAN.md`, que ordena **frentes**: esto ordena **botones que hay que apretar** | los dos |
 | ¿Qué solapas tiene una base, con qué forma, y cuáles registra `SOLAPAS`? | `docs/CENSO_solapas_*_AAAA-MM-DD.md` — congelado, uno nuevo por corrida de censo. **Existe porque un censo que sólo vive en un reporte no se puede citar ni verificar**, y así se perdió el de la Parte A2 del `2026-08-14_1`: cuando el alta fue a escribirse, el repo nombraba 3 de 20 solapas. Es la evidencia que un alta de `SOLAPAS` **cita**; no clasifica —eso es del alta— y envejece como cualquier medición: para saber qué hay hoy se re-corre `censarSolapasParaAlta()` | nadie edita; se crea uno nuevo |
 | ¿Qué dio una corrida de protocolo de prueba y contra qué se verificó? | `docs/PROTOCOLO_*_corrida_*.md` — congelados, uno nuevo por corrida. Distinto de `VALIDACION_*`: eso mide números del informe contra las bases, esto verifica el comportamiento del motor contra un protocolo escrito | nadie edita; se crea uno nuevo |
