@@ -1625,6 +1625,117 @@ function censarSolapasParaAlta() {
 }
 
 /**
+ * `_7` bloque 4 (14/08/2026) — **¿cuántas filas de las solapas SIN REGISTRAR caen dentro del
+ * universo de encuentros de las registradas?** Sólo lectura.
+ *
+ * **Qué destraba.** Es lo último que le falta al alta de `SOLAPAS` del `_4`: el Addendum 2 del
+ * `2026-08-14_1` pide medir `Desglose impresiones`, `Métricas digital` y `Digital | Base Post`
+ * **contra los 25 `Uno a uno` antes** de mandarlas a `ignorar`.
+ *
+ * **No hardcodea la solapa, ni el tipo, ni la columna clave**, y las tres cosas importan:
+ * - los universos salen de las solapas `fuente` con `campo_id_cuenta` (`D-30`), agrupando por
+ *   sus columnas de baja cardinalidad — así aparecen `Uno a uno`, `Recap` y lo que venga;
+ * - la cobertura se mide **columna por columna** sobre cada solapa sin registrar, sin asumir
+ *   cuál es su clave. **`Desglose impresiones` tiene tres** —`Social`, `Google`,
+ *   `Programmatic`— y una función que buscara "la" columna de id mediría un tercio.
+ *
+ * Reporta sólo las columnas con al menos una coincidencia: una solapa que no comparte ningún id
+ * con ningún universo aparece con su cero, que es el dato que el alta necesita.
+ */
+function censarCoberturaDeUniversos() {
+  var bases = leerBases();
+  var registradas = leerSolapas();
+
+  Object.keys(registradas).forEach(function (baseId) {
+    var base = bases[baseId];
+    if (!base || !base.sheet_id) return;
+    var ss = SpreadsheetApp.openById(base.sheet_id);
+
+    // ── universos: por cada solapa fuente con `campo_id_cuenta`, los ids de cada valor de sus
+    //    columnas de baja cardinalidad ────────────────────────────────────────────────────
+    var universos = {}; // "solapa · columna = valor" -> { id: true }
+    Object.keys(registradas[baseId]).forEach(function (nombre) {
+      var reg = registradas[baseId][nombre];
+      if (reg.uso !== 'fuente' || !reg.campo_id_cuenta) return;
+      var hoja = ss.getSheetByName(nombre);
+      if (!hoja) return;
+
+      var enc = Number(reg.fila_encabezado) || 1;
+      var ultima = hoja.getLastRow();
+      if (ultima <= enc) return;
+      var cols = hoja.getLastColumn();
+      var titulos = hoja.getRange(enc, 1, 1, cols).getValues()[0].map(normalizarValorDeclarado_);
+      var datos = hoja.getRange(enc + 1, 1, ultima - enc, cols).getDisplayValues();
+
+      var mapa = buscarMapeo(baseId, nombre, reg.campo_id_cuenta);
+      if (!mapa.ok) return;
+      var iClave = columnaLetraAIndice_(mapa.columna);
+
+      titulos.forEach(function (titulo, j) {
+        if (j === iClave || !titulo) return;
+        var grupos = {};
+        datos.forEach(function (fila) {
+          var v = normalizarValorDeclarado_(fila[j]) || '(vacío)';
+          if (!grupos[v]) grupos[v] = {};
+          grupos[v][normalizarValorDeclarado_(fila[iClave])] = true;
+        });
+        if (Object.keys(grupos).length > TOPE_CARDINALIDAD_CENSO_) return;
+        Object.keys(grupos).forEach(function (v) {
+          universos[nombre + ' · ' + titulo + ' = ' + v] = grupos[v];
+        });
+      });
+    });
+
+    var nombresUniverso = Object.keys(universos);
+    if (!nombresUniverso.length) return;
+
+    Logger.log('===== ' + baseId + ' — ' + nombresUniverso.length + ' universo(s) de referencia =====');
+    nombresUniverso.forEach(function (u) {
+      Logger.log('   ' + u + ' → ' + Object.keys(universos[u]).length + ' id(s)');
+    });
+
+    // ── cobertura: cada solapa SIN REGISTRAR, columna por columna ────────────────────────
+    ss.getSheets().forEach(function (hoja) {
+      var nombre = hoja.getName();
+      if (registradas[baseId][nombre]) return; // ya registrada: no es de esta pregunta
+
+      var ultima = hoja.getLastRow();
+      var cols = hoja.getLastColumn();
+      if (ultima < 1 || cols < 1) return;
+      // `getDisplayValues()` es de `Range`, no de `Sheet` — la primera versión preguntaba por
+      // `hoja.getDisplayValues` y esa guarda daba `false` siempre, así que la función medía
+      // cero sin fallar. El mismo modo de falla que viene a medir.
+      var datos = hoja.getDataRange().getDisplayValues();
+      if (!datos.length) return;
+
+      var lineas = [];
+      for (var j = 0; j < cols; j++) {
+        var valores = {};
+        datos.forEach(function (fila) {
+          var v = normalizarValorDeclarado_(fila[j]);
+          if (v) valores[v] = true;
+        });
+        nombresUniverso.forEach(function (u) {
+          var universo = universos[u];
+          var n = 0;
+          Object.keys(valores).forEach(function (v) { if (universo[v]) n++; });
+          if (n > 0) {
+            lineas.push('     col ' + indiceAColumnaLetra_(j) + ' ∩ [' + u + '] = ' + n +
+              ' de ' + Object.keys(universo).length);
+          }
+        });
+      }
+
+      Logger.log('  --- ' + baseId + '/' + nombre + ' (' + ultima + ' filas × ' + cols + ' cols) ---');
+      if (!lineas.length) Logger.log('     sin coincidencias con ningún universo');
+      lineas.forEach(function (l) { Logger.log(l); });
+    });
+  });
+
+  return { ok: true };
+}
+
+/**
  * `_7` bloque 3 (14/08/2026) — **el diff entre lo que el seed declara y lo que la hoja tiene,
  * SIN aplicar nada.** Sólo lectura, y ése es el punto entero.
  *
