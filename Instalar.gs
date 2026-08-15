@@ -1964,8 +1964,11 @@ function aplicarClasificacionSolapas_() {
      * la muestra en cualquier momento sin escribir nada. */
     var usoDelSeed = obj.uso;
     var usoVigente = existente ? existente.uso : '';
-    if (existente && usoVigente !== '' &&
-        normalizarParaComparar_(usoVigente, '') !== normalizarParaComparar_(usoDelSeed, '')) {
+    // Misma normalización que `esDegradacionDeUso_`, y por el mismo motivo: sin `trim`, un
+    // `" fuente "` de la hoja se leía como distinto del `'fuente'` del seed y el gate conservaba
+    // el valor sucio — que es justo el que el motor no lee.
+    if (existente && normalizarValorDeclarado_(usoVigente) !== '' &&
+        normalizarValorDeclarado_(usoVigente) !== normalizarValorDeclarado_(usoDelSeed)) {
       usosConservados.push({ clave: clave, enLaHoja: usoVigente, enElSeed: usoDelSeed,
                              degradacion: esDegradacionDeUso_(usoVigente, usoDelSeed) });
       usoDelSeed = usoVigente;
@@ -2015,9 +2018,26 @@ function aplicarClasificacionSolapas_() {
  * no lo que el motor hace, y meterlas en la misma bolsa haría que el aviso se ignore.
  */
 function esDegradacionDeUso_(deLaHoja, delSeed) {
-  return normalizarParaComparar_(deLaHoja, '') === 'fuente' &&
-         normalizarParaComparar_(delSeed, '') !== 'fuente';
+  return normalizarValorDeclarado_(deLaHoja) === 'fuente' &&
+         normalizarValorDeclarado_(delSeed) !== 'fuente';
 }
+
+/* **Por qué `normalizarValorDeclarado_` y no `normalizarParaComparar_`, que era lo que había.**
+ *
+ * La segunda termina en `String(valor)` y **no hace `trim`**: sirve para canonicalizar fechas en
+ * el diff, que es para lo que se escribió. Con ella, un `uso` tipeado como `" fuente "` no
+ * matcheaba `'fuente'` y el gate lo trataba como un valor distinto. Lo cazó
+ * `probarGateDeUsoDeSolapas_` en su primera corrida, con el fixture que existe justamente para
+ * eso — **la mugre de una carga a mano es el caso realista**, no el borde.
+ *
+ * `normalizarValorDeclarado_` (`Fuentes.gs`) es la forma de `R-10`: colapsa espacios y trimea
+ * **preservando mayúsculas y acentos**. Es la que ya usa el motor para valores de celda, así que
+ * no entra un quinto normalizador.
+ *
+ * ⚠ **Y deja a la vista un bug latente que NO es de acá:** `buscarMapeo` compara
+ * `uso !== 'fuente'` **crudo**, así que una celda con `" fuente "` **hoy no se lee** — la solapa
+ * queda apagada sin que nada lo diga. Normalizar acá hace que el seed reescriba la celda limpia,
+ * o sea que este cambio la destapa en vez de taparla. Anotado en `PENDIENTES_consistencia.md`. */
 
 function formatearResumenClasificacionSolapas_(r) {
   if (!r.ok) return r.motivo;

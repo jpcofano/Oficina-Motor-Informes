@@ -3963,3 +3963,32 @@ validados cambian de valor, y ninguno de los exactos vigentes puede moverse—. 
 corrimiento estructural, no el efecto sobre los números.
 
 **Hay que revisar el caso a la luz de esto** antes de ejecutarlo, que es el frente 7 del plan.
+
+---
+
+## Un `uso` con espacios apaga la solapa y nada lo dice — 15/08/2026
+
+**Destapado al arreglar `D-32`**, no buscado. `buscarMapeo` compara `uso !== 'fuente'` **crudo**,
+sin normalizar ningún lado. Una celda tipeada como `" fuente "` —con un espacio de más, que es
+lo que produce una carga a mano— **no matchea**, y la solapa queda apagada: el marcador falla con
+`«FALTA:…@solapa_no_fuente»` sobre una fila que a la vista dice `fuente`.
+
+**Es el modo de falla más caro del proyecto invertido:** no publica un número plausible, publica
+un `«FALTA:»` cuya causa es invisible en la hoja. Quien mire la celda va a leer `fuente` y buscar
+el problema en otro lado.
+
+**Contradice `R-10`**, que manda normalizar los dos lados de toda comparación contra una
+planilla. `SOLAPAS` es hoja de registro, no base, pero se carga igual a mano.
+
+**Qué lo destraba:** pasar `usoSolapa_` o `buscarMapeo` por `normalizarValorDeclarado_`. Es una
+línea, pero toca el camino de lectura de **todas** las fuentes, así que necesita su propia
+corrida de verificación y no entra de paso.
+
+**Mientras tanto hay media red, y llegó por casualidad:** `D-32` ahora normaliza para comparar,
+así que el sembrador **reescribe la celda limpia** cuando el valor normalizado coincide con el
+del seed. O sea que una siembra arregla el espacio en las filas que el seed conoce. **No cubre
+las que el seed no tiene**, ni las `origen=manual`.
+
+**No está medido si hay alguna celda así hoy.** `diffSolapasSinAplicar_` no lo mostraría: compara
+seed contra hoja, y si las dos dicen `fuente` con distinto espaciado, ahora normaliza y no las
+reporta. Para saberlo hay que mirar las 84 celdas de `uso` crudas.

@@ -1625,6 +1625,127 @@ function censarSolapasParaAlta() {
 }
 
 /**
+ * 15/08/2026 — **la lectura profunda de las solapas sin registrar, antes de clasificarlas.**
+ * Sólo lectura.
+ *
+ * **Por qué hace falta además de la cobertura.** `censarCoberturaDeUniversos()` dijo que `Total`,
+ * `Métricas EDVs` y `EDVs | Estados` cubren los 25 `Uno a uno` al 100%. **Cobertura alta dice
+ * que están los mismos encuentros, no que traigan algo que sirva** — y las tres iban a `ignorar`
+ * sin que nadie las hubiera abierto.
+ *
+ * **Todo se indexa por letra, nunca por título**, porque `Desglose impresiones` ya mostró que la
+ * clave puede ser más de una columna y que los títulos se repiten.
+ *
+ * Por solapa: banda de la fila 1 y títulos de la fila 2 **textuales y sin normalizar**, si tiene
+ * fórmulas **con el texto de la primera** —una que referencie a otra solapa es derivada; una
+ * escrita a mano es dato nuevo y necesita dueño (`R-02` excluye los tableros como fuente)—, y la
+ * comparación valor a valor contra las solapas `fuente` para los ids que comparten.
+ */
+var TOPE_IDS_COMPARADOS_ = 2;
+
+function censarSolapasSinRegistrarEnProfundidad() {
+  var bases = leerBases();
+  var registradas = leerSolapas();
+
+  Object.keys(registradas).forEach(function (baseId) {
+    var base = bases[baseId];
+    if (!base || !base.sheet_id) return;
+    var ss = SpreadsheetApp.openById(base.sheet_id);
+
+    // ── las `fuente` con clave, para comparar contra ellas ───────────────────────────────
+    var referencias = [];
+    Object.keys(registradas[baseId]).forEach(function (nombre) {
+      var reg = registradas[baseId][nombre];
+      if (reg.uso !== 'fuente' || !reg.campo_id_cuenta) return;
+      var hoja = ss.getSheetByName(nombre);
+      if (!hoja) return;
+      var mapa = buscarMapeo(baseId, nombre, reg.campo_id_cuenta);
+      if (!mapa.ok) return;
+      var enc = Number(reg.fila_encabezado) || 1;
+      var ultima = hoja.getLastRow();
+      if (ultima <= enc) return;
+      var cols = hoja.getLastColumn();
+      referencias.push({
+        nombre: nombre,
+        titulos: hoja.getRange(enc, 1, 1, cols).getValues()[0],
+        datos: hoja.getRange(enc + 1, 1, ultima - enc, cols).getDisplayValues(),
+        iClave: columnaLetraAIndice_(mapa.columna)
+      });
+    });
+
+    ss.getSheets().forEach(function (hoja) {
+      var nombre = hoja.getName();
+      if (registradas[baseId][nombre]) return;
+      var ultima = hoja.getLastRow();
+      var cols = hoja.getLastColumn();
+      if (ultima < 1 || cols < 1) return;
+
+      Logger.log('##### ' + baseId + '/' + nombre + ' — ' + ultima + ' filas x ' + cols + ' cols #####');
+
+      // 1 · banda y títulos, por letra y SIN normalizar
+      var banda = hoja.getRange(1, 1, 1, cols).getValues()[0];
+      var titulos = ultima >= 2 ? hoja.getRange(2, 1, 1, cols).getValues()[0] : [];
+      for (var j = 0; j < cols; j++) {
+        Logger.log('   ' + indiceAColumnaLetra_(j) + ' | fila1="' + banda[j] + '" | fila2="' +
+          (titulos[j] === undefined ? '' : titulos[j]) + '"');
+      }
+
+      // 2 · fórmula o carga a mano, con el TEXTO de la primera fórmula que aparezca
+      var tope = Math.min(ultima, 200);
+      var formulas = hoja.getRange(1, 1, tope, cols).getFormulas();
+      var conFormula = 0;
+      var ejemplo = '';
+      formulas.forEach(function (fila, fi) {
+        fila.forEach(function (f, fj) {
+          if (!f) return;
+          conFormula++;
+          if (!ejemplo) ejemplo = indiceAColumnaLetra_(fj) + (fi + 1) + ': ' + f;
+        });
+      });
+      Logger.log('   -> formulas en las primeras ' + tope + ' filas: ' + conFormula +
+        (ejemplo ? ' · ejemplo ' + ejemplo : ' · CARGA A MANO'));
+
+      // 3 · comparación contra las `fuente`, por los ids que comparten.
+      // La hoja se lee UNA vez: adentro del bucle de columnas eran `cols` × `referencias`
+      // lecturas completas — 90 sobre `Métricas EDVs`, que es cómo se mata una corrida por
+      // tiempo sin que nada falle.
+      var datos = hoja.getRange(1, 1, ultima, cols).getDisplayValues();
+
+      referencias.forEach(function (ref) {
+        var idsRef = {};
+        ref.datos.forEach(function (f, i) { idsRef[normalizarValorDeclarado_(f[ref.iClave])] = i; });
+
+        for (var jj = 0; jj < cols; jj++) {
+          var comunes = [];
+          datos.forEach(function (f, i) {
+            var v = normalizarValorDeclarado_(f[jj]);
+            if (v && idsRef[v] !== undefined && comunes.length < TOPE_IDS_COMPARADOS_) {
+              comunes.push({ id: v, filaAca: i, filaRef: idsRef[v] });
+            }
+          });
+          if (comunes.length < TOPE_IDS_COMPARADOS_) continue;
+
+          Logger.log('   ~~ col ' + indiceAColumnaLetra_(jj) + ' es clave contra ' + ref.nombre + ' ~~');
+          comunes.forEach(function (c) {
+            Logger.log('      id ' + c.id + ' — esta solapa, fila ' + (c.filaAca + 1) + ':');
+            Logger.log('         ' + datos[c.filaAca].map(function (v, k) {
+              return indiceAColumnaLetra_(k) + '=' + v;
+            }).join(' · '));
+            Logger.log('      id ' + c.id + ' — ' + ref.nombre + ':');
+            Logger.log('         ' + ref.datos[c.filaRef].map(function (v, k) {
+              return indiceAColumnaLetra_(k) + '=' + v;
+            }).join(' · '));
+          });
+          break; // una columna clave por referencia alcanza
+        }
+      });
+    });
+  });
+
+  return { ok: true };
+}
+
+/**
  * `_7` bloque 4 (14/08/2026) — **¿cuántas filas de las solapas SIN REGISTRAR caen dentro del
  * universo de encuentros de las registradas?** Sólo lectura.
  *

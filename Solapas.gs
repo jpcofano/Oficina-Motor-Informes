@@ -194,6 +194,19 @@ function leerFilasSolapas_(hoja) {
       // (`origen=manual`): sin esto, una `ventana_ref` tipeada a mano que difiera del seed
       // se salteaba **sin salir en el reporte**, que es la mitad de lo que arregló `C.2-4`.
       ventana_ref: fila[idx.ventana_ref],
+      /* `_7` (14/08/2026) — **faltaba, y el síntoma era `"undefined"` como texto.**
+       *
+       * El `_44` agregó `campo_id_cuenta` a `SEED_SOLAPAS_` y a la lista de columnas que
+       * `aplicarClasificacionSolapas_` compara para una fila `origen=manual`, **pero no acá**.
+       * Resultado: ese diff leía `existente.campo_id_cuenta === undefined` y lo reportaba como
+       * diferente de cualquier valor real, en cada corrida y para siempre — el mismo modo de
+       * falla que `C.2-4` arregló para `notas`.
+       *
+       * **El dato de la hoja nunca estuvo en riesgo:** el sembrador escribe
+       * `obj.campo_id_cuenta` desde el seed y nunca lee éste, y el motor lo lee por
+       * `leerSolapas()` (`Config.gs`), que sí lo expone. Era un hueco de lectura de este
+       * lector, no una pérdida. Lo destapó `diffSolapasSinAplicar_`. */
+      campo_id_cuenta: fila[idx.campo_id_cuenta],
       notas: fila[idx.notas]
     };
   }
