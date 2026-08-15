@@ -9522,3 +9522,65 @@ mirarle la fecha.
 candidatos señalados —el `_2` y `PENDIENTES`— **ya declaran la fecha en las tres citas** (`_2`
 líneas 21 y 31, `PENDIENTES` 3820). El cero queda registrado, como pide `CLAUDE.md` §3. La
 revisión que importa es la de después, cuando haya dos snapshots y las cifras dejen de coincidir.
+
+---
+
+## El alta no llegó a la planilla, y no era `D-32`: era la función equivocada (2026-08-15)
+
+### La hipótesis a falsar, falsada
+
+Se propuso que `D-32` bloqueaba altas —que el gate corría sobre el conjunto a escribir en vez de
+sobre las filas existentes, y una fila nueva entraba por la rama de degradación—. **No es eso**, y
+se midió antes de tocar:
+
+**`instalar()` no siembra `SOLAPAS`.** Llama a `aplicarInstalacion_()`, que **crea y repara hojas
+y aplica los `COLUMNAS_DELTA_`**, nada más. El sembrador de `SOLAPAS` es
+`aplicarClasificacionSolapas_`, y lo invocan **`sembrarClasificacionSolapas()`** y
+**`menuAplicarConfiguracion_()`** — el ítem de menú *Aplicar configuración*, que corre los cuatro
+sembradores en orden. **Ninguna de las dos es `instalar()`.**
+
+**Es un error mío del documento de corridas**, no un bug del gate: la corrida 0 decía `instalar()`
+y tenía que decir *Aplicar configuración*.
+
+**Todo lo observado encaja sin bug:** `SOLAPAS` no recibió filas nuevas porque su sembrador no
+corrió; las notas de las cuatro existentes son del **14/08** —cuando sí se corrió el sembrador, y
+de ahí salió el incidente de `CAMPAÑAS_DESGLOCE_DIGITAL`—; y la columna `encabezado` de `MAPEO`
+apareció porque el **delta** sí es de `aplicarInstalacion_`.
+
+⚠ **Y por lo mismo, `D-31` está a medias y no se veía:** la columna existe, **los testigos están
+vacíos**. Los valores vienen de `SEED_MAPEO_`, que siembra `aplicarSeedConfiguracion_` — el
+segundo de los cuatro.
+
+### El gate se extrajo a una función pura, y ahí está la lección
+
+`usoAEscribir_(existente, usoDelSeed)`. **Vivía inline dentro de `aplicarClasificacionSolapas_`,
+que toca la planilla**, así que lo único verificable sin la hoja era `esDegradacionDeUso_` — y por
+eso `probarGateDeUsoDeSolapas_` pasó con siete afirmaciones **sin cubrir el alta**.
+
+Con la frase que faltaba escrita en el código: **insertar nunca es degradar; una fila que no
+existe no tiene `uso` que proteger.**
+
+**La prueba se escribió antes de tocar el gate, esperando que fallara. Pasó — 12 afirmaciones**,
+corrida fuera de Apps Script con el código real. **Eso es el resultado, no un trámite**: prueba
+que el gate nunca bloqueó altas y que la causa estaba en otro lado.
+
+### El patrón, que es la lección cara del día
+
+**El gate se probó contra el caso que lo motivó y no contra el caso que lo podía romper.** Los
+siete fixtures cubrían degradaciones —`fuente → ignorar`, `revisar → ignorar`, la mugre de una
+carga a mano— porque el caso que originó `D-32` era una degradación. **Ninguno preguntaba qué pasa
+cuando la fila no existe**, que es el otro camino que atraviesa la misma función.
+
+**Y el síntoma en producción fue el peor posible: no falló nada.** La corrida terminó bien, el
+reporte no marcó ningún error, y la hoja no cambió. **Sin abrir la planilla no había forma de
+saberlo** — el mismo modo de falla que el proyecto persigue desde el principio, esta vez del lado
+de la escritura y no de la lectura.
+
+**Lo accionable, que ya es regla en `CLAUDE.md` §4 y acá gana su tercer caso:** a un control
+verde se le pregunta **con qué otro dato seguiría pasando**. Estos siete seguían pasando con un
+gate que descartaba toda fila nueva. La pregunta que faltaba no era *"¿pasa?"* sino **"¿qué otros
+caminos atraviesan esta función, y cuál de ellos no estoy tocando?"**.
+
+**Y la abstención de `probarGateDeUsoContraLaHoja_` queda explicada por lo mismo**: sin las 20
+filas insertadas no hay ninguna donde la hoja diga `fuente` y el seed otra cosa, o sea ningún caso
+que verificar. La abstención fue correcta y no era un verde — funcionó como se escribió.

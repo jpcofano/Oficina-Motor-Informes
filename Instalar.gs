@@ -2017,17 +2017,12 @@ function aplicarClasificacionSolapas_() {
      *
      * La diferencia no se pierde: sale por `usosConservados` y la lista `diffSolapasSinAplicar_()`
      * la muestra en cualquier momento sin escribir nada. */
-    var usoDelSeed = obj.uso;
-    var usoVigente = existente ? existente.uso : '';
-    // Misma normalización que `esDegradacionDeUso_`, y por el mismo motivo: sin `trim`, un
-    // `" fuente "` de la hoja se leía como distinto del `'fuente'` del seed y el gate conservaba
-    // el valor sucio — que es justo el que el motor no lee.
-    if (existente && normalizarValorDeclarado_(usoVigente) !== '' &&
-        normalizarValorDeclarado_(usoVigente) !== normalizarValorDeclarado_(usoDelSeed)) {
-      usosConservados.push({ clave: clave, enLaHoja: usoVigente, enElSeed: usoDelSeed,
-                             degradacion: esDegradacionDeUso_(usoVigente, usoDelSeed) });
-      usoDelSeed = usoVigente;
+    var decision = usoAEscribir_(existente, obj.uso);
+    if (decision.conservado) {
+      usosConservados.push({ clave: clave, enLaHoja: decision.uso, enElSeed: obj.uso,
+                             degradacion: esDegradacionDeUso_(decision.uso, obj.uso) });
     }
+    var usoDelSeed = decision.uso;
 
     objetosAAplicar.push({
       base_id: obj.base_id,
@@ -2072,6 +2067,38 @@ function aplicarClasificacionSolapas_() {
  * importa es exactamente una: salir de `fuente`. Las otras transiciones cambian la etiqueta y
  * no lo que el motor hace, y meterlas en la misma bolsa haría que el aviso se ignore.
  */
+/**
+ * `D-32` — **qué `uso` se escribe**, dado lo que hay en la hoja y lo que dice el seed.
+ *
+ * **INSERTAR NUNCA ES DEGRADAR: una fila que no existe no tiene `uso` que proteger.** Ésa es la
+ * distinción, y va escrita porque es exactamente la que se puede perder al leer el gate de
+ * apuro: `existente` ausente significa *alta*, no *conflicto*, y el `uso` del seed entra tal
+ * cual. Sin eso, el gate que protege contra degradaciones bloquearía toda alta — y el síntoma
+ * sería una corrida que termina bien y una hoja que no cambia.
+ *
+ * **Se extrajo a una función pura el 15/08 para poder probarla.** Vivía inline dentro de
+ * `aplicarClasificacionSolapas_`, que toca la planilla, así que el único caso verificable era el
+ * de `esDegradacionDeUso_` — y por eso `probarGateDeUsoDeSolapas_` pasó con siete afirmaciones
+ * sin cubrir el alta.
+ */
+function usoAEscribir_(existente, usoDelSeed) {
+  // Alta: no hay fila, no hay nada que proteger.
+  if (!existente) return { uso: usoDelSeed, conservado: false };
+
+  var usoVigente = normalizarValorDeclarado_(existente.uso);
+  // Fila existente con `uso` vacío: tampoco hay decisión humana que conservar.
+  if (usoVigente === '') return { uso: usoDelSeed, conservado: false };
+
+  // Misma normalización que `esDegradacionDeUso_`: sin `trim`, un `" fuente "` de la hoja se
+  // leía como distinto del `'fuente'` del seed y el gate conservaba el valor sucio.
+  if (usoVigente === normalizarValorDeclarado_(usoDelSeed)) {
+    return { uso: usoDelSeed, conservado: false };
+  }
+
+  // Acá sí: la hoja dice algo distinto de lo que el seed quiere. La hoja manda.
+  return { uso: existente.uso, conservado: true };
+}
+
 function esDegradacionDeUso_(deLaHoja, delSeed) {
   return normalizarValorDeclarado_(deLaHoja) === 'fuente' &&
          normalizarValorDeclarado_(delSeed) !== 'fuente';

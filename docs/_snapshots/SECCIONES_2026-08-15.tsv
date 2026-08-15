@@ -1,0 +1,37 @@
+seccion_id	padre	orden	nombre	informes	modo	itera_sobre	filtro	opcional	condicion	familia_tokens	estado	falta	periodo_ref	items_por_lamina	notas
+portada		1	Portada	JM,SECCO	unica			no			activa				
+indice		2	Índice	SECCO	unica			no			activa				
+resumen_ejecutivo		3	Resumen Ejecutivo	JM	unica			no			manual	es redacción, no dato			
+analisis_comparativo		4	Análisis comparativo Imagen (interanual)	SECCO	repetible	red social		no			manual	sin marcar en la plantilla; fuente de la serie interanual			
+semana_jm_conversacion		5	Semana JM — conversación X	SECCO	unica			no			activa				
+miba		6	Integración MiBA	SECCO	unica			no			manual	fuente sin definir en el motor; el bloque ya se publica lleno a mano			
+portada_digital_directa		7	Portada Digital/Directa	JM,SECCO	unica			no			activa				
+encuentro		8	Bloque de encuentro	JM,SECCO	repetible	REUNIONES		no		enc_	activa			1	familia enc_ y no ecv_,enc_ (Pedido-4, 05/08): los ecv_ del iceberg se resuelven por item via tokensDeSlide_, no por familia
+comunicaciones_post		9	Comunicaciones post	JM,SECCO	repetible	REUNIONES	etapa=post	no		post_	activa			4	
+impacto_comunicacional		10	Semana JM — Impacto comunicacional	SECCO	unica			no			manual	sin marcar en la plantilla			
+ministros		11	Encuentros de ministros	SECCO	agregado			no		emin_	activa				
+m2		12	M2	JM,SECCO	agregado			no		m2_	activa				
+campana		13	Campaña destacada	JM,SECCO	repetible	CAMPANAS		no		camp_	activa			1	
+nuevos_proveedores		14	Nuevos Proveedores	SECCO	repetible	proveedor		no			manual	sin marcar; falta base de Uber / Twitch / Mercado Libre			
+analisis_tematico		15	Análisis temático ad-hoc	SECCO	repetible	tema		no			manual	ad-hoc por tema, puede no ser automatizable			
+otros_temas		16	Otros temas	SECCO	unica			no			manual	sin marcar en la plantilla			
+cierre		17	Cierre	JM,SECCO	unica			no			activa				
+campana_portada	campana	1	Campaña — portada	JM,SECCO	unica			no			activa				
+campana_objetivo	campana	2	Campaña — objetivo y período	JM,SECCO	unica			no			activa				
+campana_herramientas	campana	3	Campaña — herramientas y audiencias	JM,SECCO	unica			no			activa				
+campana_formatos	campana	4	Campaña — formatos digitales implementados	JM,SECCO	unica			sí	hubo piezas digitales		revisar	condición de activación inferida de 3 informes			
+campana_agregados	campana	5	Campaña — resultados agregados	JM,SECCO	unica			sí	ya hay resultados		revisar	condición de activación inferida de 3 informes			
+campana_audiencia	campana	6	Campaña — por audiencia	JM,SECCO	repetible	AUDIENCIAS		sí	la campaña se segmenta por audiencia		revisar	condición de activación inferida de 3 informes			
+campana_desag_digital	campana	7	Campaña — desagregados Digital	JM,SECCO	unica			sí	hubo digital		revisar	condición de activación inferida de 3 informes			
+campana_desag_mail	campana	8	Campaña — desagregados Directa: envío de mail	JM,SECCO	unica			sí	hubo mail		revisar	condición de activación inferida de 3 informes			
+campana_desag_respuestas	campana	9	Campaña — desagregados Directa: respuestas	JM,SECCO	repetible	remitente (JM / GCBA)		sí	hubo respuestas		revisar	condición de activación inferida de 3 informes			
+aud_formatos	campana_audiencia	1	Audiencia — formatos y resultados	JM,SECCO	unica			sí	la audiencia usó formatos digitales		revisar	condición de activación inferida de 3 informes			
+aud_directa	campana_audiencia	2	Audiencia — directa	JM,SECCO	unica			sí	la audiencia recibió directa		revisar	condición de activación inferida de 3 informes			
+aud_contacto_ciudadano	campana_audiencia	3	Audiencia — contacto ciudadano	JM,SECCO	unica			sí	la audiencia tuvo call center		revisar	condición de activación inferida de 3 informes			
+encuentro_portada	encuentro	1	Encuentro — portada	JM,SECCO	unica			no			activa				
+encuentro_estrategia	encuentro	2	Encuentro — estrategia	JM,SECCO	unica			sí	el tipo de encuentro tiene bloque de estrategia (temático/uno a uno)		revisar	condición de activación inferida de 3 informes			
+encuentro_iceberg	encuentro	3	Encuentro — iceberg	JM,SECCO	unica			sí	el encuentro tiene datos de convocatoria por canal	enc_	revisar	ecv_* se usa para ECV y para Uno a uno — definir si es genérico			
+encuentro_resultados	encuentro	4	Encuentro — resultados	JM,SECCO	unica			sí	hay resultados post-encuentro		revisar	condición de activación inferida de 3 informes			
+m2_status	m2	1	M2 — status semanal	JM,SECCO	unica			no		m2_	activa				
+m2_caudal	m2	2	M2 — caudal semanal	SECCO	unica			no		m2_	activa				
+ecv_alcance_semanal		7,5	Encuentros con vecinos — alcance semanal por herramienta	JM,SECCO	agregado			no		ecv_encuentros,ecv_barrios,ecv_barrio1,ecv_barrio2,ecv_barrio3,ecv_insc_mail_pct,ecv_insc_cc_pct,ecv_insc_ivr_pct,ecv_insc_digital_pct,ecv_insc_dif_pct	activa				los 10 de agregado semanal puro (Pedido-4 0bis.1). Los 7 ambiguos (ecv_inscriptos, ecv_asistentes, los cinco ecv_insc_*) quedan diferidos por la opción C del 05/08 y siguen en el bloque de encuentro

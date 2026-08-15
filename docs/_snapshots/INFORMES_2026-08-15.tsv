@@ -1,0 +1,3 @@
+informe_id	nombre	plantilla_id	periodicidad	familias	activo	notas
+jm	Informe semanal JM	117I0qn1XP1JCiz2mU32hUY1iiMUmrAAvHOsczd7u6jI	semanal	ecv,enc,m2,camp,mail,gcba,rrss	sí	22 slides
+secco	Seguimiento SECCO-SSCDI	1_ZKjWhL-bhCP8yHQ8PJ33ymyjSXu3thh7MKMOxB4-n8	mensual	ecv,et,emin,m2,camp,conv,rep,rrss	sí	29 slides

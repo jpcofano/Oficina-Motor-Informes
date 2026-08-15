@@ -15,11 +15,25 @@
 
 ---
 
-## 0 · `instalar()` — **va primero, y puede frenar todo lo demás**
+## 0 · Menú → **Aplicar configuración** — va primero, y puede frenar todo lo demás
 
-**Qué destraba.** Aplica **dos cosas en la misma corrida**: el **alta de las 20 solapas de
-`reuniones`** —que cierra el `_1` y el punto 5 del `_4`— y la columna `encabezado` de `MAPEO`
-(`D-31`).
+⚠ **NO es `instalar()`.** Corregido el 15/08 después de que `instalar()` corriera y **el alta de
+las 20 solapas no llegara a la planilla**. `instalar()` → `aplicarInstalacion_()`, que **crea y
+repara hojas y aplica los `COLUMNAS_DELTA_`** — y nada más. **No siembra contenido.**
+
+**Lo que hay que correr es el ítem de menú `Aplicar configuración`** (`menuAplicarConfiguracion_`),
+que corre los cuatro sembradores **en el único orden en que tiene sentido correrlos**:
+
+```
+aplicarInstalacion_()          ← esto es lo que hace instalar() por su cuenta
+aplicarSeedConfiguracion_()    ← BASES, MAPEO, INFORMES, PERIODOS  → los testigos de D-31
+aplicarClasificacionSolapas_() ← SOLAPAS                          → el alta de las 20
+sembrarSecciones_()
+```
+
+**Correr sólo `instalar()` deja las dos cosas a medias**, y de un modo que no se nota: la columna
+`encabezado` de `MAPEO` **existe pero está vacía** —los valores vienen de `SEED_MAPEO_`, que
+siembra el segundo— y `SOLAPAS` no recibe ninguna fila nueva.
 
 ⚠ **Es la primera vez que un `COLUMNAS_DELTA_` toca `MAPEO`.** La columna entra después de
 `columna` y empuja `tipo_esperado`, `valores_incluidos` y `notas` una a la derecha. Por diseño
@@ -27,11 +41,14 @@
 está medido sobre esta hoja.
 
 **⛔ Si el diff muestra algo inesperado, parar y reportar antes de correr nada más.** No seguir
-con las otras cuatro: todas leen `SOLAPAS` o `MAPEO`, y sobre una hoja en estado dudoso sus
-resultados no significan nada.
+con las otras: todas leen `SOLAPAS` o `MAPEO`, y sobre una hoja en estado dudoso sus resultados
+no significan nada.
 
-**Qué queda escrito después.** Las 24 filas de `reuniones` con su `uso` y su nota, y las 154
+**Qué queda escrito después.** Las **24** filas de `reuniones` con su `uso` y su nota, y las 154
 filas de `MAPEO` con su testigo.
+
+**Cómo se verifica que funcionó**, en vez de confiar en que la corrida terminó bien:
+`verDiffDeSolapas()` tiene que pasar de **`20 en el seed y no en la hoja`** a **cero**.
 
 **¿Decide el usuario?** No, salvo que el diff sorprenda — y ahí decide todo.
 

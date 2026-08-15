@@ -1425,7 +1425,34 @@ function probarGateDeUsoDeSolapas_() {
   afirmar_(esDegradacionDeUso_('  fuente ', 'ignorar') === true,
     'D-32: el `uso` de la hoja llega con espacios y tiene que normalizar igual');
 
-  return 'probarGateDeUsoDeSolapas_: 7 afirmaciones OK (la parte pura de D-32)';
+  // ── 4 · EL ALTA: insertar nunca es degradar ──────────────────────────────────
+  // Escritas el 15/08, DESPUÉS de que el alta de las 20 solapas no llegara a la planilla y
+  // ANTES de tocar el gate. Las siete afirmaciones de arriba pasaban y **ninguna cubría el
+  // alta**: probaban el caso que motivó el gate y no el que lo podía romper.
+  var alta = usoAEscribir_(undefined, 'ignorar');
+  afirmar_(alta.uso === 'ignorar' && alta.conservado === false,
+    'D-32: una fila que NO existe toma el `uso` del seed — insertar nunca es degradar. Vino ' + JSON.stringify(alta));
+  var altaFuente = usoAEscribir_(undefined, 'fuente');
+  afirmar_(altaFuente.uso === 'fuente' && altaFuente.conservado === false,
+    'D-32: el alta no depende de qué `uso` traiga el seed. Vino ' + JSON.stringify(altaFuente));
+
+  // ── 5 · fila existente con `uso` vacío: tampoco hay decisión que conservar ────────────
+  var vacia = usoAEscribir_({ uso: '' }, 'fuente');
+  afirmar_(vacia.uso === 'fuente' && vacia.conservado === false,
+    'D-32: una fila con `uso` vacío toma el del seed. Vino ' + JSON.stringify(vacia));
+
+  // ── 6 · el caso que el gate SÍ tiene que frenar, para que la prueba distinga ──────────
+  // Sin esto, un `usoAEscribir_` que devolviera siempre el del seed pasaría todo lo de arriba.
+  var conflicto = usoAEscribir_({ uso: 'fuente' }, 'ignorar');
+  afirmar_(conflicto.uso === 'fuente' && conflicto.conservado === true,
+    'D-32: la hoja dice fuente y el seed ignorar — gana la hoja. Vino ' + JSON.stringify(conflicto));
+
+  // ── 7 · y el que NO es conflicto, para que no marque de más ────────────────────
+  var iguales = usoAEscribir_({ uso: ' fuente ' }, 'fuente');
+  afirmar_(iguales.conservado === false,
+    'D-32: mismo `uso` con distinto espaciado no es conflicto. Vino ' + JSON.stringify(iguales));
+
+  return 'probarGateDeUsoDeSolapas_: 12 afirmaciones OK (la parte pura de D-32, incluido el alta)';
 }
 
 /**
