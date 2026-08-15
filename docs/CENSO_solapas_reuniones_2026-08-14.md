@@ -102,3 +102,63 @@ anotado porque **el motor la tiene registrada y vacía**, no ausente.
 **El censo cubrió 108 solapas en 6 bases**, no sólo las 24 de `reuniones`. Lo de las otras cinco
 bases no entra a este documento —su alcance son las 24— pero **una de esas lecturas contradice a
 un documento vivo** y va como hallazgo a `docs/PENDIENTES_consistencia.md`, que es su dueño.
+
+---
+
+## Addendum — el universo `Uno a uno`, medido la misma noche (14/08/2026, 22:40)
+
+> **No altera ninguna línea de arriba.** Cierra la sección *"Lo que este censo no midió"*, que
+> quedó escrita a las 21:34 cuando el dato todavía no existía. Se agrega como addendum y no
+> editando aquel párrafo, por la regla de los documentos congelados.
+
+Medido con `censarUniversosDeSolapasDeEncuentro()` sobre las dos solapas `fuente` de `reuniones`,
+resolviendo la clave por `MAPEO` (columna `A` en las dos) y no por texto.
+
+**Los 25 `Uno a uno` existen, y el número del `_4` era correcto.** Salen de la columna `Tipo`, y
+son **exactamente los mismos 25 ids en la PRE y en la POST**:
+
+```
+2790-MARJDGAG  2816-ABRJDGAG  2843-ABRJDGAG  2887-ABRJDGGC  2929-ABRJDGAG
+2960-ABRJDGAG  2988-MAYJDGAG  3035-MAYJDGAG  3087-MAYJDGAG  3111-MAYJDGAG
+3154-JUNJDGAG  3202-JUNJDGAG  3231-JUNJDGAG  3260-JUNJDGAG  3308-JULJDGAG
+3309-JULJDGAG  3354-JULJDGAG  3346-JULJDGAG  3389-JULJDGAG  3420-JULJDGGC
+3439-JULJDGAG  3440-JULJDGAG  3487-AGOJDGAG  3522-AGOJDGAG  3527-AGOJDGAG
+```
+
+**El reparto completo de `Tipo`**, que sirve para leer los 25 en contexto:
+
+| `Tipo` | `Agenda JM` (154) | `Agenda JM \| Post` (104) |
+|---|---|---|
+| `Encuentro con vecinos` | 113 | 60 |
+| **`Uno a uno`** | **25** | **25** |
+| `Reunión temática` | 12 | 12 |
+| `Primera persona` | 4 | 4 |
+| `Recap` | — | 3 |
+
+**Y confirma el número del temario, que es otro.** `REUNIONES` tiene 5 filas `Uno a uno`; la base
+tiene 25 encuentros. **No es una discrepancia:** el temario lista lo que se publica en un
+informe, la base lista lo que ocurrió. Quien cruce los dos números sin esto los va a leer como un
+error.
+
+**`Recap` sólo existe en la POST**, con 3 ids —`1976-SEPJDGAG`, `2063-OCTJDGAG`,
+`2170-OCTJDGAG`—, que son **los mismos tres** que ya estaban anotados en
+`PENDIENTES_consistencia.md` por tener la `Fecha` ilegible. Los dos huecos son de las mismas
+filas.
+
+### Un hallazgo del instrumento: `Agenda JM | Post` tiene CUATRO columnas `% CTR`
+
+El censo las emitió cuatro veces, con repartos distintos cada una. **Es la confirmación medida de
+lo que el `_1` había anotado** —*"los títulos de la fila 2 se repiten y NO alcanzan para nombrar
+una columna"*—: la banda de la fila 1 es la que distingue Meta de Google, de Programmatic y del
+acumulado, y sin ella el título es ambiguo.
+
+⚠ **Y por eso el objeto que devuelve `censarUniversosDeSolapasDeEncuentro()` no sirve para esta
+solapa**: indexa por `base/solapa/título`, así que las cuatro `% CTR` se pisan y sobrevive la
+última. **El log las muestra todas**; el valor de retorno, no. Se deja escrito para que nadie
+construya sobre el retorno sin saberlo.
+
+### Lo que sigue faltando
+
+Con los 25 ids en la mano, todavía **no está medida** la cobertura de las tres excepciones
+—`Desglose impresiones`, `Métricas digital`, `Digital | Base Post`— contra ese universo. Hasta
+que eso se corra, **las tres no se clasifican**, y el alta de `SOLAPAS` no se escribe entera.

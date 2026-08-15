@@ -3817,14 +3817,43 @@ y `gcba_frecuencia`."*
 `looker` con el corte de `R-23` (bitácora). O sea que **al menos dos de los seis marcadores que el
 párrafo lista ya no la leen**, y la afirmación de `uso` es directamente falsa desde el 09/08.
 
-**Lo que falta medir, y es lo que decide si esto es cosmético o caro:** si `enc_impresiones`,
-`frecuencia` o `gcba_frecuencia` **siguen apuntando a `digital/Digital`** en `MARCADORES` vivo. Si
-alguno lo hace, falla con `«FALTA:…@solapa_no_fuente(digital/Digital)»` — el mismo modo de falla
-que `CAMPAÑAS_DESGLOCE_DIGITAL` tuvo esta semana, y que **no rompe la corrida: publica menos**.
-`enc_alcance` ya no cuenta: el `_39` lo movió de solapa.
+**Son CUATRO los marcadores que la apuntan, no tres** — contra el snapshot del 11/08:
+`enc_impresiones`, `frecuencia`, `gcba_frecuencia` y **`enc_alcance`**. El snapshot es evidencia
+fechada y no el estado de hoy, así que **se confirma contra `MARCADORES` vivo antes de actuar**;
+pero la lista de cuatro es la que hay que ir a verificar.
+
+Si alguno sigue apuntando ahí, falla con `«FALTA:…@solapa_no_fuente(digital/Digital)»` — el mismo
+modo de falla que `CAMPAÑAS_DESGLOCE_DIGITAL` tuvo esta semana, y que **no rompe la corrida:
+publica menos**.
+
+### La consecuencia sobre `A-14` y `A-15`, que es la parte cara
+
+Los dos casos concluyen que **`enc_alcance` no tiene fuente medible porque la base está
+incompleta**: `A-14` mide PRE+POST de `reuniones` contra lo publicado y cierra uno de seis, con
+San Cristóbal sin POST, Retiro sin PRE y Caballito con PRE vacío; `A-15` confirma que
+`Base_Digital` no agrega información —`Alcance Meta Post` tiene 75 ids contra 797 del
+Convocatoria—. Los dos quedan *"sin medir"*, no refutados.
+
+**Eso sigue siendo cierto como evaluación de la fuente candidata, y no se toca.** Lo que hay que
+revisar es otra cosa: **por qué `enc_alcance` publica `—` hoy.** Veníamos leyendo ese síntoma
+como consecuencia de que no hay fuente. Si su marcador apunta a `digital/Digital`, la causa es
+**una solapa apagada**, que es un problema distinto, con otro arreglo y otro costo.
+
+**Son dos preguntas separadas y se estaban respondiendo con una sola:**
+
+| pregunta | qué la responde | estado |
+|---|---|---|
+| ¿`reuniones` puede ser la fuente de `enc_alcance`? | `A-14` / `A-15` | sin medir — la base está incompleta |
+| ¿por qué `enc_alcance` no publica **hoy**? | `MARCADORES` vivo: a qué solapa apunta | **abierto — se creía respondido por la fila de arriba** |
 
 **Qué lo destraba:** una lectura de `MARCADORES` vivo filtrando por `solapa = Digital` sobre la
-base `digital`. Con eso se sabe si hay que corregir marcadores o sólo el párrafo.
+base `digital`. Con eso se sabe si hay marcadores que corregir o sólo un párrafo.
 
-**No se corrige acá**, y el párrafo no se edita a ciegas: si los marcadores están bien, lo que
-cambia es una frase; si no, es un cableado roto y necesita su propio prompt.
+**Y tiene una precedencia que ya está en el plan.** `enc_impresiones` es el frente 9 de
+`PLAN.md` §2 —*"operación confirmada 4 de 4"*—: **si su solapa sigue apagada, eso se resuelve
+antes de cablearlo, no durante.** Cablear sobre una solapa `ignorar` produce un `«FALTA:»` que
+parece un error de cableado y no lo es.
+
+**No se corrige acá**, y el párrafo de `CONFIG_INFORMES.md` no se edita a ciegas: si los
+marcadores están bien, lo que cambia es una frase; si no, es un cableado roto y necesita su
+propio prompt.
