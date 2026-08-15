@@ -1002,6 +1002,47 @@ todas.
 
 ---
 
+**`D-31` — `MAPEO` referencia la columna **por letra**, y documenta en `encabezado` qué título hay
+en esa letra. El encabezado es **testigo, nunca fallback**.** (14/08/2026)
+
+**Por qué la letra sigue mandando.** Los títulos se repiten dentro de una misma solapa: `Agenda JM
+| Post` tiene **cuatro** `% CTR`, `Base_Digital` **ocho** `ID Cuentas`, `Desglose impresiones`
+**tres** claves. Buscar por título elegiría siempre el primero, en silencio y con un número
+plausible. La letra es la única referencia que distingue.
+
+**Qué agrega el testigo.** La letra sola deja un modo de falla sin red: **insertar una columna
+corre todas las letras a su derecha**, y el mapeo pasa a apuntar una más allá. Un `SUMA` sobre la
+columna de al lado **devuelve un número, no un error**. Con el encabezado documentado, ese
+desalineamiento es visible.
+
+**Dónde vive, y por qué no es un detalle.** En `ENCABEZADO_POR_MAPEO_` (`Instalar.gs`), o sea **en
+el seed**, no sólo en la hoja. `upsertPorClave_` reescribe la fila entera con `(h in obj) ? obj[h]
+: ''` cuando cambia **cualquier otra** columna: un valor que el seed no conoce se borra al primer
+cambio de una nota. Y hay un segundo motivo, mejor: con el testigo en el seed, **el diff de
+`instalar()` muestra el desalineamiento solo**, antes de que exista la función que compara.
+
+**Qué se hace cuando no coinciden — definido acá aunque todavía nada lo ejecute**, para que la
+función posterior no invente la política:
+
+1. **No se corrige la letra automáticamente, nunca.** Un desalineamiento puede ser una columna
+   insertada *o* un mapeo mal escrito de origen, y la reparación es distinta en cada caso.
+2. **Se reporta con los dos valores** —el esperado y el encontrado— y con la letra, que es lo que
+   permite decidir cuál de los dos casos es.
+3. **No se bloquea la corrida.** Es la misma decisión que `R-19` toma con una fuente que dejó de
+   traer: se avisa fuerte y se sigue, porque un deck a medias con la falla listada sirve más que
+   ninguno.
+
+**La validación automática está diferida** (usuario, 14/08/2026) porque **nadie insertó columnas
+todavía**. Eso es un **supuesto sobre bases de terceros** —`looker` es de `dgples`, `m2` de
+`tarnowski`— y por lo tanto **puede vencer sin aviso**: ver `PENDIENTES_consistencia.md`.
+
+**Medición que lo funda**, `censarEncabezadosDeMapeo()` sobre las 161 filas vivas (14/08/2026):
+cero letras sin encabezado, cero títulos repetidos dentro de una misma solapa, **y un mapeo
+apuntando a la columna equivocada** — `rdv/RDV_otros_ministros/fecha_periodo` sobre
+`hora_cita_evento`. Esa fila queda **sin testigo a propósito**: poblarla lo habría certificado.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### Los frentes abiertos al 14/08/2026 — el orden

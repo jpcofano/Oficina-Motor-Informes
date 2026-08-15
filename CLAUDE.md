@@ -60,6 +60,18 @@ grep -rn "function nombreNuevo_" *.gs
     de la matriz de escritores. **Cuando la duplicación es el diseño, la salida no es borrarla:
     es que el desajuste falle.** `tools/listas.js` (10/08) lee las tres por texto y sale con
     error si difieren; su control positivo es sacar una hoja de una lista y ver que rompa.
+- **Toda fila nueva de `MAPEO` lleva letra y encabezado.** La letra es la referencia operativa
+  y **la única forma de encontrar la columna**; `encabezado` documenta qué título hay hoy en esa
+  letra. Escribir una sin la otra deja el hueco abierto justo donde la documentación dice que
+  está cerrado (`D-31`, 14/08/2026).
+  - **El encabezado es testigo, nunca fallback.** El día que alguien lo use como *"si la letra
+    falla, buscá por título"*, vuelve el problema completo y peor: los títulos **se repiten**
+    —`Agenda JM | Post` tiene cuatro `% CTR`, `Base_Digital` ocho `ID Cuentas`, `Desglose
+    impresiones` tres claves— así que el fallback acertaría a veces y erraría en silencio otras.
+  - **Va en el seed, no sólo en la hoja**, y no es prolijidad: `upsertPorClave_` reescribe la
+    fila entera con `(h in obj) ? obj[h] : ''` cuando cambia **cualquier otra** columna, así que
+    un valor que el seed no conoce se borra solo. Con el testigo en el seed, además, **el diff
+    de `instalar()` muestra el desalineamiento sin que exista todavía quien lo compare**.
 - **Nada que venga de una planilla se compara crudo: se normalizan los dos lados.** Una
   celda trae espacios de más, saltos de línea pegados y valores tipeados a mano; comparar
   con `===` contra un literal falla en silencio y el síntoma aparece lejos —filas que no

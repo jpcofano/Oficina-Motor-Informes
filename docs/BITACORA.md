@@ -9120,3 +9120,72 @@ cuando le toque.
 
 Los dos prompts quedan en la carpeta. El `_5` viejo no se archiva: **se pisa**, por pedido
 explícito del usuario — no es una cadena de reemplazo, es la misma pieza corregida el mismo día.
+
+---
+
+## `_6` — la letra manda, el título queda documentado: `D-31` (2026-08-14)
+
+### Parte A — el censo de las 161 filas
+
+`censarEncabezadosDeMapeo()`, 00:07. **`MAPEO` vivo tiene 161 filas**, no las 72 del snapshot del
+11/08 que se venían citando — el prompt ya pedía no asumirlo.
+
+| lista | resultado |
+|---|---|
+| `SIN ENCABEZADO` | **0** — ninguna letra apunta a una columna sin título |
+| `TITULO REPETIDO` en su solapa | **0** |
+| `REVISAR` (el título no figura en las notas) | 43, informativos |
+
+**Los 43 `REVISAR` son ruido del filtro, como estaba previsto**, salvo uno. Casi todos son filas
+cuya nota simplemente no cita el encabezado —`inscriptos → "Inscriptos"`, `figura → "Figura"`— y
+no prueban nada.
+
+### El que no era ruido
+
+**`rdv/RDV_otros_ministros/fecha_periodo` apunta a `E`, donde hay `hora_cita_evento`.** La fecha
+de esa solapa está en `D` (`fecha_inicio_evento`).
+
+**Y no lo causó una columna insertada**, que era el modo de falla que el prompt venía a cubrir:
+la fila **no está en `SEED_MAPEO_`**, la escribe `promoverFechasElegidas()`. En la solapa hermana
+—`rdv/RVD JM-CM - ES`— la fecha **sí** está en `E`. La letra es correcta para una solapa y se
+aplicó a otra.
+
+**Vale como corrección de la premisa del prompt, no como refutación:** *"nadie insertó columnas"*
+sigue siendo cierto, y el efecto que la inserción produciría **ya existe por otra vía**. Esa fila
+quedó **sin testigo a propósito** — poblarla con `hora_cita_evento` habría convertido el error en
+un error certificado por su propio testigo, que es exactamente lo que el gate del prompt anterior
+protegía.
+
+### Parte B — lo escrito
+
+1. **La columna `encabezado`**, inmediatamente después de `columna`, por `COLUMNAS_DELTA_.MAPEO`.
+   Al **final** del array, como su propio comentario exige: las entradas se evalúan en orden y una
+   nueva adelante correría los índices de las que ya están.
+2. **`ENCABEZADO_POR_MAPEO_` en el seed**, 160 entradas. **Verificado fuera de Apps Script**: las
+   154 filas de `SEED_MAPEO_` reciben encabezado, cero quedan vacías.
+3. **La convención en `CLAUDE.md` §2** — toda fila nueva lleva letra y encabezado, con el *nunca
+   fallback* y su motivo medido: los títulos repetidos harían que el fallback acierte a veces y
+   erre en silencio otras.
+4. **`D-31` en `PLAN.md`**, con la política de qué hacer cuando no coinciden **definida aunque
+   nada la ejecute todavía**, para que la función posterior no la invente.
+5. **Tres entradas en `PENDIENTES`**: el mapeo corrido, la función diferida con su supuesto, y
+   `C-61`.
+
+### Por qué el testigo vive en el seed y no sólo en la hoja
+
+**Es un modo de falla medido, no una preferencia.** `upsertPorClave_` reescribe la fila entera con
+`(h in obj) ? obj[h] : ''` cuando cambia **cualquier otra** columna, así que una columna que el
+seed no conoce **se borra sola** al primer cambio de una nota. `calcularDiffUpsert_` no la marca
+—recorre `Object.keys(obj)`— pero el `setValues` posterior la pisa igual.
+
+Y hay un segundo motivo, que resultó mejor que el primero: **con el testigo en el seed, el diff de
+`instalar()` muestra el desalineamiento sin que exista todavía la función que compara.** El
+testigo empieza a servir antes de que se escriba quien lo lea.
+
+### Siete filas quedan sin testigo, y son exactamente las que `ESCRITORES.md` ya contaba
+
+El test dejó **6 claves del mapa sin uso en el seed**; con la excluida son **7**. Son las que
+`promoverFechasElegidas()` escribe y ningún `SEED_MAPEO_` conoce — el `P1` de `C.2-7`, que
+§2.1 mencionaba **sin nombrarlas**. Ahora están nombradas una por una en `PENDIENTES`.
+
+**`tools/listas.js`:** OK, 11 hojas.

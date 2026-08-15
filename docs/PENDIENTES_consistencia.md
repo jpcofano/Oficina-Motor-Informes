@@ -3857,3 +3857,90 @@ parece un error de cableado y no lo es.
 **No se corrige acá**, y el párrafo de `CONFIG_INFORMES.md` no se edita a ciegas: si los
 marcadores están bien, lo que cambia es una frase; si no, es un cableado roto y necesita su
 propio prompt.
+
+---
+
+## `rdv/RDV_otros_ministros/fecha_periodo` apunta a `hora_cita_evento` — 14/08/2026
+
+**Medido** por `censarEncabezadosDeMapeo()` sobre `MAPEO` vivo. La fila mapea `fecha_periodo` a la
+columna **`E`** de `rdv/RDV_otros_ministros`, y en esa letra hay **`hora_cita_evento`**. La fecha
+de esa solapa está en **`D`** (`fecha_inicio_evento`), medido en el censo de solapas del 14/08.
+
+| letra | encabezado real |
+|---|---|
+| `C` | `dia_evento` |
+| **`D`** | **`fecha_inicio_evento`** ← lo que `fecha_periodo` debería apuntar |
+| **`E`** | **`hora_cita_evento`** ← lo que apunta hoy |
+
+**No es un corrimiento por columna insertada.** La fila **no está en `SEED_MAPEO_`**: la escribe
+`promoverFechasElegidas()` (`Fechas.gs`), el segundo escritor de `MAPEO`. En la solapa principal
+—`rdv/RVD JM-CM - ES`— la fecha **sí** está en `E`, así que el patrón es coherente con haber
+tomado la letra de la solapa hermana. **La letra es correcta para una solapa y se aplicó a otra.**
+
+**Por qué importa aunque hoy no se vea:** `rdv` es `modo_periodo = filtrar`, y
+`RDV_otros_ministros` está `uso = fuente`. Cualquier lectura con recorte por ventana sobre esa
+solapa filtraría **por la hora**, no por la fecha. El modo de falla es el de siempre: no rompe,
+recorta mal.
+
+**Qué lo destraba:** decidir si esa solapa se lee o no —hay un `docs/RDV_otros_ministros_riesgo.md`
+y ningún marcador conocido la usa— y, si se lee, corregir la letra a `D` **por el camino de
+`promoverFechasElegidas()`**, no a mano sobre la hoja.
+
+**Su fila de `MAPEO` quedó sin `encabezado` a propósito** (`D-31`): poblarla con
+`hora_cita_evento` habría convertido el error en un error certificado por su propio testigo.
+
+---
+
+## La función que compara letra contra encabezado — diferida, y el supuesto que la sostiene
+
+**Qué falta.** Una función que, para cada fila de `MAPEO`, compare el `encabezado` declarado
+(`D-31`) contra el que hay hoy en esa letra, y reporte las diferencias con los dos valores. La
+política ya está definida en `D-31` —no corregir nunca la letra sola, reportar los dos valores, no
+bloquear la corrida— justamente para que quien la escriba no la invente.
+
+**Por qué se difirió** (decisión del usuario, 14/08/2026): **nadie insertó columnas todavía**, así
+que no hay corrimiento que buscar. El testigo se siembra ahora y la comparación viene después.
+
+⚠ **Y eso es un supuesto sobre bases de terceros, no sobre las nuestras.** `looker` es de
+`dgples`, `m2` de `tarnowski`; `rdv` y `digital` las edita el equipo. **Ninguna de las cuatro nos
+avisa cuando alguien agrega una columna**, así que el supuesto *"nadie insertó columnas"* **puede
+vencer sin aviso y sin síntoma** — el síntoma sería un número plausible, que es el peor de este
+proyecto. No tiene fecha de revisión: la tiene el día que alguien mire.
+
+**Mientras tanto hay media red, y conviene saber que existe:** con el testigo en el seed, **el
+diff de `instalar()` muestra la diferencia** entre lo declarado y lo que la hoja tiene. No detecta
+que la *planilla* cambió —para eso hace falta la función— pero sí que alguien tocó `MAPEO`.
+
+**Siete filas quedan fuera de esa media red.** Son las que `promoverFechasElegidas()` escribe y
+`SEED_MAPEO_` no conoce (`ESCRITORES.md` §2.1 ya las contaba sin nombrarlas). Medidas ahora, una
+por una:
+
+```
+rdv|RVD JM-CM - ES|fecha            digital|Directa SMS|fecha_periodo
+rdv|RDV_otros_ministros|fecha_periodo   digital|Directa IVR|fecha_periodo
+digital|Digital|fecha_periodo       digital|Seguimiento digital|fecha_periodo
+digital|Directa Mail|fecha_periodo
+```
+
+Su `encabezado` queda **vacío**, y vacío significa *"sin testigo declarado"*, no *"la columna no
+tiene título"*. Se llenarían el día que ese escritor se declare — que es el `P1` abierto de
+`C.2-7`, no de este paso.
+
+---
+
+## `C-61` cambia de riesgo con el testigo puesto — 14/08/2026
+
+`C-61` es un **alta de columna** sobre `looker/CC` que mueve 229 cuentas, y su riesgo escrito es
+que *"si el motor lee por posición, una columna nueva corre todo lo demás sin que nada falle"*.
+
+**Con `D-31` puesto, la parte silenciosa se achica.** `looker/CC` tiene hoy tres filas de `MAPEO`
+con testigo declarado, así que una columna insertada a su izquierda deja de ser invisible: el
+encabezado esperado y el real dejan de coincidir. **No se detecta solo todavía** —la función que
+compara está diferida— pero el dato para detectarlo ya está escrito, y el diff de `instalar()`
+alcanza para verlo a mano.
+
+**Lo que no cambia:** la segunda medición que `C-61` pide sigue haciendo falta —cuántos tokens ya
+validados cambian de valor, y ninguno de los exactos vigentes puede moverse—. El testigo cubre el
+corrimiento estructural, no el efecto sobre los números.
+
+**Hay que revisar el caso a la luz de esto** antes de ejecutarlo, que es el frente 7 del plan.
