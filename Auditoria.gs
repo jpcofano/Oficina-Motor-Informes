@@ -2229,42 +2229,76 @@ function testigoDeImpresiones() {
     if (Object.keys(filtros).length !== grupo.length) return; // no es "sólo difieren en filtro"
 
     Logger.log('===== ' + k + ' — ' + grupo.length + ' marcadores =====');
+
+    /* **El descuadre sólo se calcula donde hay una partición EXHAUSTIVA, y hoy hay una sola:
+     * `plataforma`, exhaustiva por `R-24` — `programmatic` es "todo lo que no es Meta ni Google
+     * ads", así que las tres partes cubren el total por construcción.**
+     *
+     * La primera versión lo calculaba sobre todo grupo, y daba dos clases de basura:
+     *
+     *   1. **Sobre los grupos de mail**, donde `mail_envios` (jm), `gcba_mail_envios` (gcba) y
+     *      `m2_mails_enviados` (`tipo_envio=m2`) son **tres cortes distintos de la misma
+     *      medida** y no un total con sus partes. El testigo tomaba al `m2_*` por total y
+     *      publicaba "suma de partes = 0". **No hay nada que cuadre ahí.**
+     *   2. **Sobre `PCT` y `RATIO`**, donde además de romperse la conversión el cálculo no
+     *      significa nada: **un ratio no se suma.** `m2_or` = 28,63… salía como
+     *      28.637.147.786.083.950.
+     *
+     * Un testigo archivado con seis "NO CUADRA" falsos es peor que no tenerlo: el día que
+     * aparezca uno real nadie lo va a mirar. */
+    var esRatio = String(grupo[0].operacion || '').toUpperCase().indexOf('PCT') !== -1 ||
+                  String(grupo[0].operacion || '').toUpperCase().indexOf('RATIO') !== -1;
+    var hayParticionPlataforma = grupo.some(function (m) {
+      return String(m.filtro || '').indexOf('Plataforma') !== -1;
+    });
+    var calculaDescuadre = !esRatio && hayParticionPlataforma;
+
     var suma = { jm: 0, gcba: 0 };
     var total = { jm: null, gcba: null };
 
     grupo.forEach(function (m) {
       var f = String(m.filtro || '');
       var ambito = f.indexOf('!~=JM') !== -1 || f.indexOf('!=jorge.macri') !== -1 ? 'gcba' : 'jm';
+      var otroEje = f.indexOf('mail_tipo') !== -1; // `tipo_envio`: no participa del descuadre
       var esAgregado = f.indexOf('Plataforma') === -1;
       var v = valorDe[m.marcador];
-      var n = Number(String(v).replace(/\./g, '').replace(',', '.'));
 
       Logger.log('  ' + m.marcador + ' = ' + v + '   [ambito=' + ambito +
-        (esAgregado ? ' · AGREGADO' : ' · con plataforma') + ']');
+        (otroEje ? ' · tipo_envio' : (esAgregado ? ' · AGREGADO' : ' · con plataforma')) +
+        ' · estado=' + (estadoDe[m.marcador] || '?') + ']');
       Logger.log('      filtro: ' + (m.filtro || '(vacío)'));
       if (trazaDe[m.marcador]) Logger.log('      traza:  ' + trazaDe[m.marcador]);
 
+      if (!calculaDescuadre || otroEje) return;
+      var n = Number(String(v).replace(/\./g, '').replace(',', '.'));
       if (isNaN(n)) { Logger.log('      ⚠ no numérico — no entra al descuadre'); return; }
       if (esAgregado) total[ambito] = n; else suma[ambito] += n;
     });
 
-    // 3 · el descuadre, medido ANTES de tocar: si hoy no cuadra hay que saberlo, porque
-    //     después de la migración un descuadre parecería causado por ella.
-    ['jm', 'gcba'].forEach(function (a) {
+    if (!calculaDescuadre) {
+      Logger.log('  -- sin descuadre: ' + (esRatio
+        ? 'la operación es ' + grupo[0].operacion + ' y un ratio no se suma'
+        : 'este grupo no tiene partición exhaustiva (sólo `plataforma` lo es, por R-24)'));
+    } else ['jm', 'gcba'].forEach(function (a) {
       if (total[a] === null) return;
       var d = total[a] - suma[a];
       Logger.log('  -- descuadre ' + a + ': total=' + total[a] + ' · suma de partes=' + suma[a] +
         ' · diferencia=' + d + (d === 0 ? '  ✔ CUADRA' : '  ⚠ NO CUADRA'));
     });
 
-    // El testigo, en una sola linea por marcador y en el orden en que se va a comparar.
-    // `CLAUDE.md` §2: desde el editor un valor de retorno no se ve, así que el testigo tiene
-    // que estar ENTERO en el log o no sirve para la Parte C.
     Logger.log('  == TESTIGO (copiar tal cual) ==');
     grupo.forEach(function (m) {
       Logger.log('  ' + m.marcador + '	' + valorDe[m.marcador] + '	' + (estadoDe[m.marcador] || ''));
       testigo.push({ marcador: m.marcador, valor: valorDe[m.marcador], estado: estadoDe[m.marcador] });
     });
+  });
+
+  // Los que el motor no pudo resolver. No son del piloto, pero un `error=10` sobre 78 sin
+  // nombres es un número que nadie puede accionar.
+  var enError = res.resultados.filter(function (r) { return r.estado === 'error'; });
+  Logger.log('== MARCADORES EN ERROR (' + enError.length + ') ==');
+  enError.forEach(function (r) {
+    Logger.log('  ' + r.marcador + ' [' + r.base_id + '] ' + (r.traza || '(sin traza)'));
   });
 
   Logger.log('== fin del testigo: ' + testigo.length + ' marcador(es) ==');
