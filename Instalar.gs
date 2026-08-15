@@ -1364,11 +1364,18 @@ SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAM
  * Medido con `censarEncabezadosDeMapeo()` el 14/08/2026 a las 00:07 sobre las 161 filas vivas:
  * cero letras sin encabezado y cero títulos repetidos dentro de una misma solapa.
  *
- * **Falta una de las 161 a propósito:** `rdv|RDV_otros_ministros|fecha_periodo` apunta a `E`,
- * donde hay `hora_cita_evento` — la fecha de esa solapa está en `D` (`fecha_inicio_evento`).
- * Poblarla certificaría el error. Queda vacía y anotada en `PENDIENTES_consistencia.md`.
+ * **El caso que marca el límite de todo esto:** `rdv|RDV_otros_ministros|fecha_periodo` apunta a
+ * `E`, donde el rótulo dice `hora_cita_evento`. **La letra está bien y no se toca** — los
+ * encabezados de esa solapa están **corridos una columna en origen** (`C-09`), así que `E`
+ * contiene la fecha con el nombre de la hora. Está medido y funciona: 514 filas, 10 en ventana,
+ * 0 sin fecha. Su testigo es `hora_cita_evento` porque **el testigo documenta el rótulo, no el
+ * contenido** — ver `D-31`.
  */
 var ENCABEZADO_POR_MAPEO_ = {
+  // `C-09`: rótulo corrido en origen. La `E` trae la fecha bajo el nombre de la hora, así que el
+  // testigo coincide y **no delata nada**; si algún día deja de coincidir, será porque alguien
+  // arregló los rótulos y entonces hay que revisar la letra, no restaurar el testigo.
+  'rdv|RDV_otros_ministros|fecha_periodo': 'hora_cita_evento',
   'rdv|RVD JM-CM - ES|inscriptos': 'Inscriptos',
   'rdv|RVD JM-CM - ES|fecha': 'FECHA',
   'rdv|RVD JM-CM - ES|figura': 'Figura',
