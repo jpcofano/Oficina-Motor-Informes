@@ -3796,3 +3796,35 @@ se estaba mirando la solapa equivocada.
   fecha (`D-30`), pero cualquier lectura por ventana las perdería sin avisar.
 
 No se resuelven acá.
+
+---
+
+## `CONFIG_INFORMES.md` dice que `digital/Digital` es `fuente`; el registro vivo dice `ignorar` — 14/08/2026
+
+**Medido**, no razonado: `censarSolapasParaAlta()` corrida el 14/08 a las 21:33 devuelve
+`[digital] REGISTRADA uso=ignorar · Digital: 1298 fila(s) × 21 columna(s)`, leyendo `SOLAPAS`
+**vivo** con `leerSolapas()` —el lector del motor, no una reimplementación—. El seed coincide:
+`Instalar.gs` la declara `ignorar` con motivo `R-22` del 09/08, *"CONGELADA — sus 205 filas JM
+llegan a diciembre de 2025, cero datos de 2026"*.
+
+**Lo que dice el documento vivo.** `docs/CONFIG_INFORMES.md` §1.8.2 cierra con: *"`Digital` no se
+borra de `SOLAPAS`. Deja de ser la fuente de esta lámina, nada más: **sigue siendo `uso = fuente`**
+y la siguen leyendo `enc_impresiones`, `enc_alcance`, `imp_total`, `gcba_imp_total`, `frecuencia`
+y `gcba_frecuencia`."*
+
+**Es una cita vencida, y se puede fechar el vencimiento.** El párrafo se escribió el 07/08; el
+09/08 `R-22` mandó la solapa a `ignorar`, y el 10/08 `imp_total` y `gcba_imp_total` se mudaron a
+`looker` con el corte de `R-23` (bitácora). O sea que **al menos dos de los seis marcadores que el
+párrafo lista ya no la leen**, y la afirmación de `uso` es directamente falsa desde el 09/08.
+
+**Lo que falta medir, y es lo que decide si esto es cosmético o caro:** si `enc_impresiones`,
+`frecuencia` o `gcba_frecuencia` **siguen apuntando a `digital/Digital`** en `MARCADORES` vivo. Si
+alguno lo hace, falla con `«FALTA:…@solapa_no_fuente(digital/Digital)»` — el mismo modo de falla
+que `CAMPAÑAS_DESGLOCE_DIGITAL` tuvo esta semana, y que **no rompe la corrida: publica menos**.
+`enc_alcance` ya no cuenta: el `_39` lo movió de solapa.
+
+**Qué lo destraba:** una lectura de `MARCADORES` vivo filtrando por `solapa = Digital` sobre la
+base `digital`. Con eso se sabe si hay que corregir marcadores o sólo el párrafo.
+
+**No se corrige acá**, y el párrafo no se edita a ciegas: si los marcadores están bien, lo que
+cambia es una frase; si no, es un cableado roto y necesita su propio prompt.
