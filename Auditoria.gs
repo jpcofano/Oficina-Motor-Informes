@@ -1625,6 +1625,67 @@ function censarSolapasParaAlta() {
 }
 
 /**
+ * `_7` bloque 3 (14/08/2026) — **el diff entre lo que el seed declara y lo que la hoja tiene,
+ * SIN aplicar nada.** Sólo lectura, y ése es el punto entero.
+ *
+ * **Por qué existe.** Hasta `D-32`, la única forma de saber qué iba a cambiar el sembrador era
+ * **dejarlo correr y leer el reporte después**. Eso es lo que dejó pasar el caso de
+ * `CAMPAÑAS_DESGLOCE_DIGITAL` el 14/08: el cambio se vio cuando ya estaba hecho. Con esto la
+ * pregunta *"¿qué me va a pisar?"* se responde **antes**, y sin efectos.
+ *
+ * **Marca las degradaciones de `uso` aparte**, porque son las únicas que cambian lo que el motor
+ * hace: sólo `fuente` se lee. Una fila que pasa de `revisar` a `ignorar` cambia la etiqueta; una
+ * que sale de `fuente` **apaga la lectura y no rompe nada** — publica menos, en silencio.
+ *
+ * Con `D-32` puesto, ninguna de esas degradaciones se aplicaría ya. Esto sirve igual para las
+ * otras columnas —`notas`, `fila_encabezado`, `ventana_ref`, `campo_id_cuenta`— que el sembrador
+ * **sí** sigue pisando, y para ver el desacuerdo antes de decidir cuál de los dos lados corregir.
+ */
+function diffSolapasSinAplicar_() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SOLAPAS');
+  if (!hoja) { Logger.log('no hay hoja SOLAPAS'); return { ok: false, motivo: 'sin hoja SOLAPAS' }; }
+
+  var existentes = leerFilasSolapas_(hoja);
+  var columnas = ['uso', 'fila_encabezado', 'ventana_ref', 'campo_id_cuenta', 'notas'];
+  var diferencias = [];
+  var degradaciones = [];
+  var soloEnSeed = [];
+
+  SEED_SOLAPAS_.forEach(function (obj) {
+    var clave = obj.base_id + '/' + obj.solapa;
+    var existente = existentes[obj.base_id + '||' + obj.solapa];
+    if (!existente) { soloEnSeed.push(clave); return; }
+
+    columnas.forEach(function (col) {
+      if (!(col in obj)) return;
+      var enHoja = existente[col];
+      var enSeed = obj[col];
+      if (normalizarParaComparar_(enHoja, '') === normalizarParaComparar_(enSeed, '')) return;
+
+      var item = { clave: clave, columna: col, en_hoja: enHoja, en_seed: enSeed,
+                   origen: existente.origen };
+      diferencias.push(item);
+      if (col === 'uso' && esDegradacionDeUso_(enHoja, enSeed)) degradaciones.push(item);
+    });
+  });
+
+  Logger.log('=== diff seed contra hoja · SOLAPAS · ' + diferencias.length + ' diferencia(s) ===');
+  diferencias.forEach(function (d) {
+    Logger.log('  ' + d.clave + ' · ' + d.columna + ' · hoja="' + d.en_hoja + '" seed="' + d.en_seed +
+      '" · origen=' + d.origen);
+  });
+  Logger.log('--- ⚠ DEGRADACIONES DE `uso` (saldrian de fuente) (' + degradaciones.length + ') ---');
+  degradaciones.forEach(function (d) {
+    Logger.log('   ' + d.clave + ': la hoja dice fuente, el seed dice ' + d.en_seed + ' · origen=' + d.origen);
+  });
+  Logger.log('--- en el seed y no en la hoja (' + soloEnSeed.length + ') ---');
+  soloEnSeed.forEach(function (c) { Logger.log('   ' + c); });
+  Logger.log('Con D-32 puesto, las degradaciones NO se aplican: el uso de la hoja gana.');
+
+  return { ok: true, diferencias: diferencias, degradaciones: degradaciones, solo_en_seed: soloEnSeed };
+}
+
+/**
  * Parte A del `2026-08-14_6` — **qué encabezado hay hoy en la letra que cada fila de `MAPEO`
  * referencia.** Sólo lectura; no escribe ni propone: mide.
  *

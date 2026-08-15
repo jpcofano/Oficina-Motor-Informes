@@ -1381,3 +1381,83 @@ function menuCorrerPruebasDiff_() {
   var ui = ui_();
   ui.alert('Pruebas del diff de configuración', correrPruebasDiff_(), ui.ButtonSet.OK);
 }
+
+/**
+ * `D-32` — **el sembrador no degrada un `uso` en silencio.** Escrita el 14/08/2026 por el
+ * bloque 3 del `_7` y **NO corrida**: la parte que importa necesita la planilla.
+ *
+ * **El control positivo es el caso real, no uno inventado:** `digital/CAMPAÑAS_DESGLOCE_DIGITAL`
+ * en `uso = fuente` contra un seed que decía `ignorar`. Es exactamente lo que pasó el 14/08 y lo
+ * que `D-32` viene a impedir. Un cambio de este tipo verificado contra un caso distinto del que
+ * lo originó no está verificado.
+ *
+ * **Los fixtures separan lo que hay que separar.** `fuente → ignorar` y `fuente → revisar` son
+ * las dos degradaciones reales; `revisar → ignorar` **no lo es** —ninguna de las dos se lee— y
+ * está puesta a propósito para que la prueba distinga *"salió de fuente"* de *"cambió de
+ * etiqueta"*. Sin ese tercer caso, una implementación que marcara **todo** cambio de `uso` como
+ * degradación pasaría igual, y el aviso terminaría ignorado por ruidoso.
+ */
+function probarGateDeUsoDeSolapas_() {
+  // ── 1 · las degradaciones: salir de `fuente` ──────────────────────────────────────────
+  afirmar_(esDegradacionDeUso_('fuente', 'ignorar') === true,
+    'D-32: fuente → ignorar es degradación (el caso de CAMPAÑAS_DESGLOCE_DIGITAL del 14/08)');
+  afirmar_(esDegradacionDeUso_('fuente', 'revisar') === true,
+    'D-32: fuente → revisar también apaga la lectura, buscarMapeo sólo acepta fuente');
+  afirmar_(esDegradacionDeUso_('fuente', 'derivada') === true,
+    'D-32: fuente → derivada apaga la lectura igual');
+
+  // ── 2 · lo que NO es degradación, y es lo que le da valor a la prueba ─────────────────
+  // Si esto diera `true`, la implementación estaría marcando cualquier cambio de `uso` y el
+  // aviso serviría para nada. Éste es el fixture que distingue las dos implementaciones.
+  afirmar_(esDegradacionDeUso_('revisar', 'ignorar') === false,
+    'D-32: revisar → ignorar NO es degradación — ninguna de las dos se lee');
+  afirmar_(esDegradacionDeUso_('ignorar', 'fuente') === false,
+    'D-32: ignorar → fuente es lo contrario de una degradación');
+  afirmar_(esDegradacionDeUso_('fuente', 'fuente') === false,
+    'D-32: sin cambio no hay degradación');
+
+  // ── 3 · la mugre de una carga a mano no puede cambiar el veredicto ────────────────────
+  // `R-10`: se normalizan los dos lados. Una celda tipeada con espacios de más es el caso
+  // realista, y si el gate se salteara por eso la protección no existiría justo donde hace falta.
+  afirmar_(esDegradacionDeUso_('  fuente ', 'ignorar') === true,
+    'D-32: el `uso` de la hoja llega con espacios y tiene que normalizar igual');
+
+  return 'probarGateDeUsoDeSolapas_: 7 afirmaciones OK (la parte pura de D-32)';
+}
+
+/**
+ * ⚠ **PREPARADA Y SIN CORRER — necesita la planilla.** La corre una persona a la mañana.
+ *
+ * Verifica `D-32` **de punta a punta**, que es lo único que prueba que el gate sirve: la parte
+ * pura de arriba sólo mide `esDegradacionDeUso_`, y el gate podría estar bien calculado y mal
+ * cableado dentro de `aplicarClasificacionSolapas_`.
+ *
+ * **Es de sólo lectura y no modifica `SOLAPAS`**: compara lo que la hoja tiene hoy contra lo que
+ * el seed declara, y verifica que el sembrador **conservaría** el `uso` de la hoja. No corre
+ * `aplicarClasificacionSolapas_` — correrla sería escribir.
+ *
+ * **Precondición para que la prueba signifique algo:** que exista al menos una fila donde la
+ * hoja diga `fuente` y el seed diga otra cosa. Si no existe, la prueba **no pasa: se abstiene**,
+ * y lo dice — una prueba verde sobre cero casos es exactamente el modo de falla del `Pruebas.gs`
+ * del 12/08.
+ */
+function probarGateDeUsoContraLaHoja_() {
+  var d = diffSolapasSinAplicar_();
+  if (!d.ok) return 'ABSTENIDA: ' + d.motivo;
+
+  if (!d.degradaciones.length) {
+    return 'ABSTENIDA — no hay ninguna fila donde la hoja diga `fuente` y el seed otra cosa. ' +
+      'La prueba no tiene caso que verificar hoy; eso NO es un verde. Para forzar el caso: ' +
+      'poner una solapa en `fuente` cuyo seed diga `ignorar` y volver a correr.';
+  }
+
+  var lineas = ['Casos de degradación encontrados: ' + d.degradaciones.length];
+  d.degradaciones.forEach(function (x) {
+    lineas.push('  ' + x.clave + ': hoja=fuente · seed=' + x.en_seed + ' · origen=' + x.origen);
+  });
+  lineas.push('', 'Con `D-32`, `aplicarClasificacionSolapas_` conserva el `uso` de la hoja en las ' +
+    d.degradaciones.length + ' y las reporta en `usosConservados`.');
+  lineas.push('VERIFICACIÓN A MANO, que es la que cierra: correr el sembrador y confirmar que ' +
+    'esas filas siguen en `fuente` y aparecen listadas en el resumen.');
+  return lineas.join('\n');
+}

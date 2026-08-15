@@ -9319,3 +9319,61 @@ es justamente lo que el `_2` viene a definir — pero hay que saber que el caso 
 **Lo que no se hizo, por instrucción:** ninguna `D-NN`, ninguna propuesta de vocabulario escrita
 en un documento. La agrupación de arriba es censo, no decisión — el gate del `_2` sigue siendo
 del usuario.
+
+---
+
+## `_7` Bloque 3 — el mapa de escritores, el gate de `D-32` y el diff sin aplicar (2026-08-14)
+
+### Punto 1 · todos los caminos por los que una fila de configuración cambia de valor
+
+Mapeado sobre el código, no sobre `ESCRITORES.md` — el documento es el contrato, esto es lo que
+hay.
+
+| camino | hoja | ¿respeta `origen=manual`? | ¿podía degradar un `uso`? |
+|---|---|---|---|
+| `aplicarClasificacionSolapas_()` (`Instalar.gs`) | `SOLAPAS` | **sí**, saltea la fila entera | **sí, y lo hizo** — es el caso del 14/08. **Ya no**: `D-32` |
+| `inventariarSolapas()` (`Solapas.gs`) | `SOLAPAS` | no le aplica | **no.** Sólo toca `filas_datos` y `filas_crudas`; una solapa nueva nace `uso=revisar`, `origen=auto` |
+| `upsertPorClave_` con `SEED_BASES_` | `BASES` | **no** — `BASES` no tiene columna `origen` | no le aplica (`BASES` no tiene `uso`) |
+| `upsertPorClave_` con `SEED_MAPEO_` | `MAPEO` | **no** — `MAPEO` tampoco tiene `origen` | no le aplica |
+| `promoverFechasElegidas()` (`Fechas.gs`) | `MAPEO` | **no** | no le aplica |
+| `migrarPrefijosFechaPeriodo_` (`Fechas.gs`) | `MAPEO` | **no** | no le aplica |
+| migraciones de `Instalar.gs` — `eliminarMapeoAlcanceDigitalObsoleto_`, `alinearMapeoLookerADinamico_`, `backfillSolapaMapeo_` | `MAPEO` | **no** | no le aplica |
+
+**Dos cosas que el mapa deja a la vista y no estaban dichas juntas:**
+
+1. **`origen` sólo existe en `SOLAPAS`.** `BASES` y `MAPEO` **no tienen forma de blindar una fila
+   editada a mano**: cualquier escritor las pisa. `SOLAPAS` era la única con escape, y era la
+   única que además podía degradar un `uso` — o sea que el problema estaba donde estaba la
+   protección, y no donde no la hay.
+2. **`upsertPorClave_` blanquea toda columna que el objeto del seed no traiga**, por
+   `headers.map(h => (h in obj) ? obj[h] : '')`, y sólo en las filas que cambian por otro motivo.
+   Está documentado desde el `_23` como *"un hallazgo con prompt propio, no un arreglo de paso"*,
+   y sigue abierto. Es el mismo mecanismo que obligó a poner el testigo de `D-31` en el seed.
+
+### Puntos 2, 3 y 5 · lo escrito
+
+- **`diffSolapasSinAplicar_()`** (`Auditoria.gs`), sólo lectura. Responde *"¿qué me va a pisar?"*
+  **antes** de sembrar, con las degradaciones marcadas aparte. **Pusheado y sin correr**, como
+  pedía el bloque.
+- **El gate en `aplicarClasificacionSolapas_`**, con el **por qué** escrito arriba y la fecha del
+  caso — que es justo lo que le faltaba a la línea del seed que causó esto: decía *"congelada,
+  sus filas JM llegan al 17/04"* sin decir **cuándo se midió**, y por eso nadie notó que había
+  vencido.
+- **`esDegradacionDeUso_`**, pura y separada, para que se pueda probar sin planilla.
+- **`probarGateDeUsoDeSolapas_`**, escrita y **no corrida**. Su fixture clave es
+  `revisar → ignorar` esperando **`false`**: sin él, una implementación que marcara **todo**
+  cambio de `uso` pasaría igual y el aviso terminaría ignorado por ruidoso. Es la lección del
+  control verde que probaba lo contrario, aplicada al escribirlo y no al descubrirlo.
+- **`probarGateDeUsoContraLaHoja_`**, de punta a punta, **preparada para la mañana**. Si no
+  encuentra ningún caso de degradación **se abstiene y lo dice**, en vez de dar verde sobre cero
+  casos.
+
+### Punto 4 · `D-32`, y lo que deja abierto a propósito
+
+La decisión está en `PLAN.md`. Lo que **no** resuelve, dicho ahí: **`origen` sigue sin distinguir
+*"lo decidió el seed"* de *"lo decidió una persona y el seed no se enteró"***. `D-32` cubre `uso`
+en `SOLAPAS`; la ambigüedad sigue igual para las demás columnas y para `BASES` y `MAPEO`, que ni
+siquiera tienen la columna. Decidirlo es del usuario.
+
+**Nada de esto se corrió.** El gate cambia el comportamiento de un escritor de hojas de registro
+y esta corrida no escribe en la planilla.

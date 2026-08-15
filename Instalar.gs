@@ -1899,6 +1899,7 @@ function aplicarClasificacionSolapas_() {
 
   var existentes = leerFilasSolapas_(hoja);
   var protegidas = [];
+  var usosConservados = []; // `D-32`: el `uso` de la hoja le ganó al del seed
   var objetosAAplicar = [];
 
   SEED_SOLAPAS_.forEach(function (obj) {
@@ -1938,10 +1939,42 @@ function aplicarClasificacionSolapas_() {
      * costado. **`upsertPorClave_` sigue igual**: el mismo agujero existe para cualquier otro
      * seed que omita una columna, y eso es un hallazgo con prompt propio, no un arreglo de
      * paso. */
+    /* `_3` / `_7` bloque 3 (14/08/2026, `D-32`) — **el sembrador nunca pisa un `uso` que ya
+     * existe en la hoja. La hoja manda.**
+     *
+     * **Por qué, con el caso que lo originó y su fecha.** El 14/08/2026 la Parte B del
+     * `2026-08-14_1` corrió esta función y cambió `digital/CAMPAÑAS_DESGLOCE_DIGITAL` de
+     * `uso = fuente` —como la había dejado el usuario ese mismo día— a `uso = ignorar`, porque
+     * el seed seguía declarando `ignorar` por una medición de `R-22` del 09/08 **que ya había
+     * vencido**. Nadie lo pidió y nada falló: esa solapa es la fuente de los seis `u1_*` del
+     * "1 a 1" (`V-21` a `V-26`), y con `ignorar` el motor deja de leerla y los seis salen
+     * vacíos **sin que ninguna verificación del proyecto lo señale**. La corrida no falla:
+     * publica menos.
+     *
+     * **`origen = 'manual'` no alcanzaba como escape**, y ésa es la causa real: una decisión
+     * tomada **editando la hoja a mano no pone `manual`**, así que toda fila humana quedaba
+     * indistinguible de una fila del seed. El escape existía y era inalcanzable por el camino
+     * que la gente usa.
+     *
+     * **Qué NO cambia:** una solapa **nueva** —sin fila en la hoja— toma el `uso` del seed,
+     * que es como nace toda clasificación. Y las demás columnas se siguen sembrando: el gate
+     * es sobre `uso`, no sobre la fila.
+     *
+     * La diferencia no se pierde: sale por `usosConservados` y la lista `diffSolapasSinAplicar_()`
+     * la muestra en cualquier momento sin escribir nada. */
+    var usoDelSeed = obj.uso;
+    var usoVigente = existente ? existente.uso : '';
+    if (existente && usoVigente !== '' &&
+        normalizarParaComparar_(usoVigente, '') !== normalizarParaComparar_(usoDelSeed, '')) {
+      usosConservados.push({ clave: clave, enLaHoja: usoVigente, enElSeed: usoDelSeed,
+                             degradacion: esDegradacionDeUso_(usoVigente, usoDelSeed) });
+      usoDelSeed = usoVigente;
+    }
+
     objetosAAplicar.push({
       base_id: obj.base_id,
       solapa: obj.solapa,
-      uso: obj.uso,
+      uso: usoDelSeed,
       origen: 'seed',
       fila_encabezado: obj.fila_encabezado,
       firma_encabezado: existente ? existente.firma_encabezado : '',
@@ -1963,6 +1996,7 @@ function aplicarClasificacionSolapas_() {
   var resultado = upsertPorClave_(hoja, ['base_id', 'solapa'], objetosAAplicar);
   resultado.ok = true;
   resultado.protegidas = protegidas;
+  resultado.usosConservados = usosConservados; // `D-32`
   // C.2-5: las protegidas SÍ están en el seed — se sacaron de `objetosAAplicar` a
   // propósito. Sin esta resta saldrían como `solo_en_hoja`, que es exactamente la
   // categoría contraria (lo que nadie declaró) y volvería a confundir dos cosas
@@ -1973,13 +2007,34 @@ function aplicarClasificacionSolapas_() {
   return resultado;
 }
 
+/**
+ * `D-32` — ¿pasar de `deLaHoja` a `delSeed` haría que el motor **deje de leer** la solapa?
+ *
+ * Sólo `fuente` se lee (`buscarMapeo` rechaza todo lo demás), así que la degradación que
+ * importa es exactamente una: salir de `fuente`. Las otras transiciones cambian la etiqueta y
+ * no lo que el motor hace, y meterlas en la misma bolsa haría que el aviso se ignore.
+ */
+function esDegradacionDeUso_(deLaHoja, delSeed) {
+  return normalizarParaComparar_(deLaHoja, '') === 'fuente' &&
+         normalizarParaComparar_(delSeed, '') !== 'fuente';
+}
+
 function formatearResumenClasificacionSolapas_(r) {
   if (!r.ok) return r.motivo;
+  var conservados = r.usosConservados || [];
+  var degradaciones = conservados.filter(function (c) { return c.degradacion; });
   return 'SOLAPAS — nuevas: ' + r.escritas + ', actualizadas: ' + r.actualizadas +
     (r.protegidas.length
       ? '\nProtegidas (origen=manual, no tocadas): ' + r.protegidas.length +
         ' — de esas, ' + r.protegidas.filter(function (p) { return p.diferencias && p.diferencias.length; }).length +
         ' tenían algo por cambiar (ver DIFF_CONFIGURACION)'
+      : '') +
+    (conservados.length
+      ? '\n`uso` conservado de la hoja (D-32): ' + conservados.length +
+        (degradaciones.length
+          ? ' — ⚠ ' + degradaciones.length + ' habrían sacado la solapa de `fuente`: ' +
+            degradaciones.map(function (c) { return c.clave + ' (' + c.enLaHoja + ' ← seed decía ' + c.enElSeed + ')'; }).join(', ')
+          : ' — ninguna era degradación')
       : '') +
     '\n\nEs una propuesta, no una decisión: las filas en uso=revisar quedan pendientes de que el usuario decida.';
 }

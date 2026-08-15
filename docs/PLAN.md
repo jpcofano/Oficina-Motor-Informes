@@ -1065,6 +1065,57 @@ cero letras sin encabezado y cero títulos repetidos dentro de una misma solapa.
 
 ---
 
+**`D-32` — El sembrador **nunca pisa un `uso` que ya existe en `SOLAPAS`**. La hoja manda; la
+diferencia se reporta.** (14/08/2026)
+
+**El caso, con fecha.** El 14/08 la Parte B del `2026-08-14_1` corrió
+`aplicarClasificacionSolapas_()` y cambió `digital/CAMPAÑAS_DESGLOCE_DIGITAL` de `uso = fuente`
+—como la había dejado el usuario ese mismo día— a `ignorar`, porque el seed seguía declarando
+`ignorar` por una medición de `R-22` del 09/08 **que ya había vencido**. Esa solapa es la fuente
+de los seis `u1_*` del "1 a 1": con `ignorar`, el motor deja de leerla y los seis salen vacíos
+**sin que ninguna verificación del proyecto lo señale**. La corrida no falla, **publica menos**.
+
+**La causa no era el valor del seed: era que `origen = 'manual'` no se alcanza por el camino que
+la gente usa.** El escape existía —una fila `manual` nunca se pisa— pero **editar la hoja a mano
+no pone `manual`**, así que toda decisión humana quedaba indistinguible de una fila sembrada.
+Un escape que sólo se activa escribiendo una columna que nadie sabe que hay que escribir no es un
+escape.
+
+**Qué cambia.** Si la fila existe y su `uso` difiere del seed, **gana el de la hoja**. La
+diferencia sale por `usosConservados`, y el resumen marca aparte las que **habrían sacado la
+solapa de `fuente`**.
+
+**Qué NO cambia**, y hay que decirlo porque es la mitad que hace que siga sirviendo:
+
+- una solapa **nueva** —sin fila en la hoja— toma el `uso` del seed. Así nace toda clasificación;
+- **las demás columnas se siguen sembrando**: `notas`, `fila_encabezado`, `ventana_ref`,
+  `campo_id_cuenta`. El gate es sobre `uso`, no sobre la fila;
+- `origen = 'manual'` **sigue existiendo** y sigue protegiendo la fila entera. `D-32` no lo
+  reemplaza: cubre el caso en que nadie lo puso.
+
+**Sólo `fuente` cuenta como degradación**, y es a propósito. `buscarMapeo` acepta únicamente
+`fuente`, así que salir de `fuente` **apaga la lectura** y todo lo demás sólo cambia la etiqueta.
+Marcar cualquier cambio de `uso` como degradación habría hecho el aviso ruidoso, y un aviso
+ruidoso se ignora — que es exactamente cómo se pierde el próximo caso.
+
+**Lo que queda abierto, y es la causa de fondo:** `origen` **sigue sin distinguir** *"esto lo
+decidió el seed"* de *"esto lo decidió una persona y el seed no se enteró"*. `D-32` cubre `uso`
+en `SOLAPAS`; **la ambigüedad de `origen` sigue igual para las demás columnas y para las demás
+hojas.** Resolverla es decidir si una edición manual debe marcar `origen = manual` sola, o si el
+seed tiene que fallar ruidoso cuando difiere del vivo en vez de pisarlo. **No se decide acá.**
+
+**Instrumento:** `diffSolapasSinAplicar_()` (`Auditoria.gs`), sólo lectura — responde *"¿qué me
+va a pisar?"* **antes** de sembrar. Hasta ahora la única forma de saberlo era dejarlo correr y
+leer el reporte después, que es como el caso del 14/08 se descubrió cuando ya estaba hecho.
+
+**Control positivo:** `probarGateDeUsoDeSolapas_` (`Pruebas.gs`), sobre la parte pura. Sus
+fixtures incluyen `revisar → ignorar` **a propósito, esperando `false`**: sin ese caso, una
+implementación que marcara todo cambio de `uso` pasaría igual. Y
+`probarGateDeUsoContraLaHoja_`, de punta a punta, que **se abstiene en vez de dar verde** si no
+encuentra ningún caso que verificar.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### Los frentes abiertos al 14/08/2026 — el orden
