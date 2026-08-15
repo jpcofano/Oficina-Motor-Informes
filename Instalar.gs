@@ -1825,7 +1825,62 @@ var SEED_SOLAPAS_ = [].concat(
     filaSolapa_('reuniones', 'Agenda JM', 'fuente', 'PRE — una fila por encuentro, 154 filas × 44 columnas al 14/08, ID único. Embudo de Call Center, Mail, IVR e impresiones por plataforma en la misma fila. De acá se mapea SÓLO el alcance (AF): las columnas de plataforma AJ-AR existen y NO se usan porque empatan exacto con digital/CAMPAÑAS_DESGLOCE_DIGITAL y digital manda (2026-08-14_1). Toda la solapa es carga a mano: 0 fórmulas en 44 columnas × 154 filas', { fila_encabezado: 2, filas_datos: 154, campo_id_cuenta: 'id_cuenta' }),
     filaSolapa_('reuniones', 'Agenda JM | Post', 'fuente', 'POST — 104 filas al 14/08, mismo ID que la PRE (C-50). Impresiones, clics y visualizaciones por plataforma en bandas Meta/Google/Programmatic (fila 1); los títulos de la fila 2 se repiten y NO alcanzan para nombrar una columna. El Alcance (G) NO es por plataforma y su banda "Acumulado" está mal rotulada: es el de Meta. Las columnas de plataforma no se mapean — digital manda. ⚠ sus % CTR y % VTR vuelven string en las filas en cero y number en las cargadas', { fila_encabezado: 2, filas_datos: 104, campo_id_cuenta: 'id_cuenta' }),
     filaSolapa_('reuniones', 'Agenda funcionarios', 'ignorar', 'encuentros de otros funcionarios — mismo caso que rdv/RDV_otros_ministros, nadie los pide hoy', { fila_encabezado: 2, filas_datos: 545 }),
-    filaSolapa_('reuniones', 'Barrios', 'referencia', 'habitantes por barrio y comuna — tabla de referencia, no fuente de métricas', { fila_encabezado: 1, filas_datos: 70 })
+    filaSolapa_('reuniones', 'Barrios', 'referencia', 'habitantes por barrio y comuna — tabla de referencia, no fuente de métricas', { fila_encabezado: 1, filas_datos: 70 }),
+
+    /* ── Las 20 solapas nuevas de `reuniones` — alta del 15/08/2026 ──────────────────────
+     *
+     * Cierra el `_1` y el punto 5 del `_4`. **Cada nota lleva la medición y su fecha, no el
+     * veredicto**: una nota que dice sólo "no sirve" es indistinguible de una regla, y quien la
+     * lea en noviembre no va a poder saber si sigue siendo cierta. Es el modo de falla que
+     * revirtió `CAMPAÑAS_DESGLOCE_DIGITAL` el 14/08.
+     *
+     * **La evidencia está en `docs/CENSO_solapas_reuniones_2026-08-14.md`** —las 24 solapas con
+     * forma, filas y motivo— y en la corrida de cobertura del 15/08 contra los universos de
+     * `Agenda JM`. Estas notas la citan; no la repiten.
+     *
+     * **⚠ NINGUNA VA A `fuente`, y el motivo es estructural: las 20 son espejos.** Cada una es
+     * un `IMPORTRANGE` en `A1` de la planilla `1siyVJPVuObp1UEeQTS4IncXpsbev_Iqs-b27hZfLhds`,
+     * importando el rango entero (medido 15/08/2026). Las cuatro registradas tienen **cero
+     * fórmulas**. Leer el espejo en vez del original es tener **dos respuestas para la misma
+     * pregunta**: si alguna hiciera falta como fuente, se registra **esa planilla** como base y
+     * se lee de ahí. Hoy **no está en `BASES` y nadie sabe que existe** — anotado en el censo. */
+    filaSolapa_('reuniones', 'Base_Digital', 'referencia', 'ESPEJO IMPORTRANGE de 1siyVJPV… · ocho bloques lado a lado, cada uno con su propia lista de ids (27 cols x 1.910 filas). ⚠ DESALINEAMIENTO PROBADO (15/08/2026): en su fila 3, col A = 1493-JUNJDGAG, col G = 1688-JULJDGAG, col M = 2411-DICJDGAG, col Q = 2723-MARJDGAG — leerla POR FILA mezcla cuatro encuentros distintos. Es el origen de lo que Agenda JM!AF y Agenda JM | Post!G traen copiado a mano. Su banda Alcance Meta Convocatoria (col J) cubre 24 de 25 Uno a uno y cierra contra alc_real. R-27: las únicas bandas de alcance son Meta Convocatoria (J-L) y Meta Post (Y-AA) — no hay de Google ni de Programmatic', { fila_encabezado: 2, filas_datos: 1908 }),
+
+    // Las tres excepciones del Addendum 2 del `_1`, medidas antes de clasificarlas.
+    filaSolapa_('reuniones', 'Desglose impresiones', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · 0 de 25 Uno a uno (medido 15/08/2026): sólo cubre Encuentro con vecinos. Tres pares (id, impresiones) lado a lado con listas independientes — Social/Google/Programmatic en A, C y E, o sea TRES columnas clave, no una. Sin columna de alcance, consistente con R-27. Se abrió por llamarse igual que la decisión editorial del 13/08 y no es eso', { fila_encabezado: 1, filas_datos: 2746 }),
+    filaSolapa_('reuniones', 'Métricas digital', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · 0 de 25 Uno a uno (medido 15/08/2026, clave en A): sólo cubre Encuentro con vecinos. Se abrió por ser la única con Views y Visualizaciones-para-el-PRE es hueco abierto; NO lo cubre. Comparte las 961 filas con reuniones/Digital porque son la MISMA LISTA DE CAMPAÑAS, no porque sean la misma solapa: acá están las métricas, allá los metadatos. Tiene una columna Post que el frente del "1 a 1" va a querer mirar', { fila_encabezado: 1, filas_datos: 960 }),
+    filaSolapa_('reuniones', 'Digital | Base Post', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · 0 de 25 Uno a uno (medido 15/08/2026, clave en A): sólo cubre Encuentro con vecinos. Se abrió por ser POST, que es lo que la hacía candidata para la mitad POST de la lámina del "1 a 1"; no trae ninguno de sus encuentros', { fila_encabezado: 1, filas_datos: 37 }),
+
+    /* Las tres de cobertura perfecta, resueltas el 15/08 con la lectura profunda. Van a
+     * `referencia` y **no a `ignorar`**: cubren los 25 Uno a uno al 100% y una solapa que
+     * responde por todos los encuentros no se descarta — se deja a mano y no se lee como fuente,
+     * que es exactamente lo que `referencia` significa. */
+    filaSolapa_('reuniones', 'Total', 'referencia', 'ESPEJO IMPORTRANGE de 1siyVJPV… (15/08/2026). Cobertura perfecta: col B da 25/25 Uno a uno, 154/154 Agenda JM, 104/104 POST y 3/3 Recap. NINGUNA MÉTRICA: sus 14 columnas son Estado, ID Cuentas, Tipo, Nombre y fechas de inicio/fin por canal. Es un índice de estados, no una fuente — por eso referencia y no ignorar', { fila_encabezado: 2, filas_datos: 2631 }),
+    filaSolapa_('reuniones', 'EDVs | Estados', 'referencia', 'ESPEJO IMPORTRANGE de 1siyVJPV… (15/08/2026). Col B da 154/154 y 25/25 en la PRE, y 100 de 104 en la POST — las 4 que faltan son dato a mirar, no descarte. NINGUNA MÉTRICA: lo mismo que Total más Funcionario y Barrio', { fila_encabezado: 2, filas_datos: 693 }),
+    filaSolapa_('reuniones', 'Métricas EDVs', 'referencia', 'ESPEJO IMPORTRANGE de 1siyVJPV… (15/08/2026), y es el SUPERCONJUNTO de Agenda JM: 45 columnas con Impr. Social/Google/Programm, Alcance manual, Frecuencia Meta, Cobertura, el embudo de IVR, y CALL CENTER JM separado de CALL CENTER FUNCIONARIOS. Verificado para 1493: sus S/T/U/V reproducen exacto AA/AJ/AM de Agenda JM. Trae además una columna Validación que no existe en ninguna registrada. ⚠ De acá sale lo que Agenda JM publica, así que es DE DÓNDE VIENE el dato — no se lee como fuente porque su dueño es otra planilla, no ésta. Clave "ID Reunión", no "ID Cuentas". Es el insumo directo de la R-NN de los dos universos de Call Center', { fila_encabezado: 2, filas_datos: 758 }),
+
+    // Las capas de filas de `C-64` — el agregado por cuenta ya está en `Agenda JM`.
+    filaSolapa_('reuniones', 'Base_mail', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · capa de FILAS del canal mail (C-64, medido 14/08/2026): una fila por envío, 360 x 8. El agregado por cuenta que el motor usa ya está en Agenda JM. Leerla sería doble conteo', { fila_encabezado: 1, filas_datos: 359 }),
+    filaSolapa_('reuniones', 'Base_IVR', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · capa de FILAS del canal IVR (C-64, medido 14/08/2026): 61 x 9. Su agregado por cuenta está en Agenda JM', { fila_encabezado: 1, filas_datos: 60 }),
+    filaSolapa_('reuniones', 'Base_Call', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · capa de FILAS de call center (C-64, medido 14/08/2026): 227 x 5. Su agregado por cuenta está en Agenda JM, y es de donde salen los cc_*', { fila_encabezado: 1, filas_datos: 226 }),
+
+    // Los tres cortes de `Call`, y el `Call` entero.
+    filaSolapa_('reuniones', 'Call', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · tiene la columna Tipo de llamado con Convocatoria, Reconfirmación, IVR convocatoria e Informativo — insumo directo de la R-NN de los dos universos de Call Center. Catálogo de campañas de call center, 1.330 x 28 (medido 14/08/2026) — mismo alto que looker/CC. No es por encuentro: es por campaña, con el id de cuenta como una columna más', { fila_encabezado: 1, filas_datos: 1329 }),
+    filaSolapa_('reuniones', 'Call (JM)', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · el recorte JM de Call, 227 x 28 (medido 14/08/2026) — mismo alto que Base_Call. Un recorte de una solapa que ya se ignora', { fila_encabezado: 1, filas_datos: 226 }),
+    filaSolapa_('reuniones', 'Call (Funcionarios)', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · el recorte de funcionarios de Call, 977 x 28 (medido 14/08/2026). 227 + 977 = 1.204 contra las 1.330 de Call: los tres conteos no cierran y nadie declaró por qué. Mismo caso que Agenda funcionarios — nadie los pide hoy', { fila_encabezado: 1, filas_datos: 976 }),
+
+    // Las dos sin fila de títulos: el testigo de `D-31` no es aplicable acá.
+    filaSolapa_('reuniones', 'IVR', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · SIN FILA DE TÍTULOS (medido 14/08/2026): su fila 1 son datos ("0781-NOVINFGC | Implementado | Yamila Abayay | Mon Jan 13 2025..."), 104 x 21. Vetada por R-02 como cualquier solapa sin encabezados, y sin fila de títulos tampoco puede llevar el testigo de D-31', { fila_encabezado: 0, filas_datos: 104 }),
+    filaSolapa_('reuniones', 'Mail', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · SIN FILA DE TÍTULOS (medido 14/08/2026): su fila 1 son datos ("0869-ENESALGC | Implementado | 03/01/2025..."), 383 x 14. Mismo caso que IVR', { fila_encabezado: 0, filas_datos: 383 }),
+
+    // Tableros y catálogos: `R-02` los excluye como fuente.
+    filaSolapa_('reuniones', 'EDVs | Activos', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · tres celdas de tablero (medido 14/08/2026): "EDVs activas por equipo" → DIGITAL: 1 | MAIL: 1 | CALL CENTER: 0. Sin clave y sin filas — 3 x 3', { fila_encabezado: 1, filas_datos: 2 }),
+    filaSolapa_('reuniones', 'EDVs | Resumen', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · tablero de conteos (medido 14/08/2026): "EDVs realizadas (a hoy)" = 682, más encuentros por fecha en dos bloques. 174 x 16, sin fila por encuentro', { fila_encabezado: 2, filas_datos: 172 }),
+    filaSolapa_('reuniones', 'Estados', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · tabla de desplegables (medido 14/08/2026): Equipo | Estado | Recategorización, 14 filas. Es el catálogo de estados, no una fuente de métricas', { fila_encabezado: 1, filas_datos: 13 }),
+
+    // Duplicados de otras bases o de esta misma.
+    filaSolapa_('reuniones', 'EDVs | Seguimiento Funcionarios', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · duplicado de digital/EDV (medido 14/08/2026): 291 x 27, MISMO alto y MISMO ancho, y digital/EDV ya está registrada como referencia. Leer las dos es doble conteo del mismo hecho', { fila_encabezado: 2, filas_datos: 289 }),
+    filaSolapa_('reuniones', 'Digital', 'ignorar', 'ESPEJO IMPORTRANGE de 1siyVJPV… · 961 x 19 (medido 15/08/2026). Comparte las 961 filas con reuniones/Métricas digital porque son la MISMA LISTA DE CAMPAÑAS: acá los metadatos, allá las métricas. NO son la misma solapa duplicada — esa hipótesis del 14/08 se midió y es falsa. ⚠ Tiene la columna JM | GCBA | POLICIA, o sea la dimensión ámbito del _2 escrita como columna en vez de inferida del nombre de campaña; no se usa todavía. Su nombre colisiona con la base digital y con digital/Digital, que son otras dos cosas', { fila_encabezado: 1, filas_datos: 960 })
   ],
   // Paso 2.9 Parte C.5: 'M2 Directa'/'M2 digital' (26/67 filas, "acumulados") tuvieron
   // clasificación sospechada invertida frente a lo que se leía como su detalle, y
