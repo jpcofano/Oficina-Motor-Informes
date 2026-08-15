@@ -2148,3 +2148,78 @@ function censarUniversosDeSolapasDeEncuentro() {
 function verDiffDeSolapas() {
   return diffSolapasSinAplicar_();
 }
+
+/**
+ * Parte A del `2026-08-15_1` — **el testigo del piloto: qué publican hoy los marcadores de
+ * `Impresiones`, antes de tocar nada.** Sólo lectura.
+ *
+ * **Los descubre por definición, no por nombre**: toda fila de `MARCADORES` que comparta
+ * `base_id`, `solapa`, `campo_logico` y `operacion` con más de una hermana y sólo difiera en el
+ * `filtro`. Hoy eso da los ocho de `looker/DIGITAL/Impresiones/SUMA`; si mañana hay un noveno,
+ * entra solo. Hardcodear los ocho nombres habría hecho que el testigo mienta el día que cambie
+ * el conjunto — y el piloto se verifica **contra este número**.
+ *
+ * **El ámbito y la plataforma también se leen del filtro, no del prefijo del token.** `~=JM` es
+ * `jm` y `!~=JM` es `gcba`; sin `Plataforma=` en el filtro, la fila es el agregado. Así el
+ * descuadre se calcula sin depender de que alguien haya nombrado bien el marcador — que es
+ * justamente lo que el piloto viene a dejar de necesitar.
+ *
+ * ⚠ **Reporta la ventana que usó, con todas las letras.** La Parte C tiene que correr sobre la
+ * misma o la comparación no significa nada; si el default cambió en el medio, la ventana
+ * reportada va a ser distinta y se va a ver.
+ */
+function testigoDeImpresiones() {
+  var res = resolverMarcadores('jm');
+  var todos = leerMarcadores_();
+
+  // Agrupar por definición para descubrir el conjunto sin nombrarlo.
+  var porDef = {};
+  todos.forEach(function (m) {
+    var k = [m.base_id, m.solapa, m.campo_logico, m.operacion].join(' | ');
+    if (!porDef[k]) porDef[k] = [];
+    porDef[k].push(m);
+  });
+
+  var valorDe = {};
+  var trazaDe = {};
+  res.forEach(function (r) { valorDe[r.marcador] = r.valor; trazaDe[r.marcador] = r.traza || ''; });
+
+  Object.keys(porDef).forEach(function (k) {
+    var grupo = porDef[k];
+    if (grupo.length < 2) return;
+    var filtros = {};
+    grupo.forEach(function (m) { filtros[m.filtro] = true; });
+    if (Object.keys(filtros).length !== grupo.length) return; // no es "sólo difieren en filtro"
+
+    Logger.log('===== ' + k + ' — ' + grupo.length + ' marcadores =====');
+    var suma = { jm: 0, gcba: 0 };
+    var total = { jm: null, gcba: null };
+
+    grupo.forEach(function (m) {
+      var f = String(m.filtro || '');
+      var ambito = f.indexOf('!~=JM') !== -1 || f.indexOf('!=jorge.macri') !== -1 ? 'gcba' : 'jm';
+      var esAgregado = f.indexOf('Plataforma') === -1;
+      var v = valorDe[m.marcador];
+      var n = Number(String(v).replace(/\./g, '').replace(',', '.'));
+
+      Logger.log('  ' + m.marcador + ' = ' + v + '   [ambito=' + ambito +
+        (esAgregado ? ' · AGREGADO' : ' · con plataforma') + ']');
+      Logger.log('      filtro: ' + (m.filtro || '(vacío)'));
+      if (trazaDe[m.marcador]) Logger.log('      traza:  ' + trazaDe[m.marcador]);
+
+      if (isNaN(n)) { Logger.log('      ⚠ no numérico — no entra al descuadre'); return; }
+      if (esAgregado) total[ambito] = n; else suma[ambito] += n;
+    });
+
+    // 3 · el descuadre, medido ANTES de tocar: si hoy no cuadra hay que saberlo, porque
+    //     después de la migración un descuadre parecería causado por ella.
+    ['jm', 'gcba'].forEach(function (a) {
+      if (total[a] === null) return;
+      var d = total[a] - suma[a];
+      Logger.log('  -- descuadre ' + a + ': total=' + total[a] + ' · suma de partes=' + suma[a] +
+        ' · diferencia=' + d + (d === 0 ? '  ✔ CUADRA' : '  ⚠ NO CUADRA'));
+    });
+  });
+
+  return { ok: true };
+}
