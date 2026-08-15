@@ -9098,3 +9098,25 @@ cambian de valor**, porque ninguno de los exactos vigentes puede moverse.
 terreno, no problema*, que es la sección que existe justamente para eso: no entra al plan, y está
 escrito para que no vuelva a proponerse. **No se creó ningún documento nuevo de plan** — `PLAN.md`
 es dueño único de la pregunta (`CLAUDE.md` §7 y §9).
+
+---
+
+## `_5` revisado — entra el `_6` como sexto, y el Próximo pasa a catorce (2026-08-14)
+
+El usuario reemplazó el prompt `_5` después de ejecutado. **La lista de frentes pasa de 13 a
+14**: entra *"la letra manda, el título valida"* (`_6`) en el **puesto 6**, y los de abajo se
+corren uno. `C-61` queda séptimo.
+
+**El motivo del lugar es una dependencia real, no una preferencia de orden:** el `_6` va antes
+de `C-61` porque **le saca el filo**. Hoy insertar una columna corre todas las letras a su
+derecha y el mapeo apunta una más allá **sin fallar** — un `SUMA` sobre la columna de al lado
+devuelve un número, no un error. Con el título como testigo, esa misma inserción pasa a ser una
+falla ruidosa. `C-61` es exactamente un alta de columna.
+
+Aprovecho la reescritura para dejar en el frente 10 la advertencia que salió del censo de
+anoche: **`enc_impresiones` no se cablea sin resolver antes si `digital/Digital` sigue apagada**.
+Es la precedencia que el usuario marcó al revisar `A-14`/`A-15`, y el plan es donde se va a leer
+cuando le toque.
+
+Los dos prompts quedan en la carpeta. El `_5` viejo no se archiva: **se pisa**, por pedido
+explícito del usuario — no es una cadena de reemplazo, es la misma pieza corregida el mismo día.

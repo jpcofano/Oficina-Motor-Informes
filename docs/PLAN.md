@@ -1023,20 +1023,21 @@ migra sin apuro — por eso la migración de los 51 no bloquea a nadie, pero la 
 | 3 | **`C-64` — las dos capas de la base**, aplicado a lo que falta | El caso **está cerrado como explicación**: filas contra agregado, resuelto en call center (`C-62`), IVR (`V-98`) y mail (`V-99`), y explica el patrón `X-16`/`X-17`. **Lo que queda es aplicar el mismo criterio a `pauta_*` y Alerta Naranja.** Va acá porque decide **de qué capa se lee**, no cómo se nombra: es independiente del vocabulario y condiciona todo cableado posterior |
 | 4 | **`_2` — censo de dimensiones y `D-NN` del vocabulario** | La decisión de estructura: una medida, y el corte como **dimensión**. **Todo lo que se cablee antes de esto nace con el corte metido en el nombre** |
 | 5 | **El piloto con una familia** — migrar una a `informe_id = '*'` y verificar que `jm` reproduzca los mismos números | Barato, y **si no reproduce, el plan se detiene acá**. Es la prueba de la decisión 4 antes de pagarla en 51 filas |
-| 6 | **`C-61`** — el alta de columna que mueve 229 cuentas | **Bloquea el embudo de Call Center.** Dos mediciones antes de escribir: **(a)** si el motor lee CC **por encabezado o por posición** — si es por posición, una columna nueva corre todo lo demás **sin que nada falle**; **(b)** cuántos tokens ya validados cambian de valor, y **ninguno de los exactos vigentes puede moverse** |
-| 7 | **`R-NN` de los dos universos de Call Center** — `enc_*` filtra por tipo de llamado, `cc_*` no filtra | **Prompt propio: es una regla, no un detalle de un cableado.** Dos universos conviviendo sin declarar es el modo de falla del número plausible |
-| 8 | **`R-26`** — el "1 a 1" se comunica sólo por digital | **Independiente de todo lo demás**, y por eso puede adelantarse. Su Parte A puede falsar la premisa; si eso pasa, no se escribe nada y `R-26` queda como hueco |
-| 9 | **`enc_impresiones` / `enc_visualizaciones` / `enc_clics`** | Operación confirmada 4 de 4. Se cablea **ya con el vocabulario decidido** — antes de 4 sería deuda deliberada |
-| 10 | **El embudo de Call Center** | Depende de **6 y 7**: sin el alta de columna no hay dato, y sin la regla no está declarado qué universo se cuenta |
-| 11 | **`alcance` y `clics` de campaña destacada, y `m2_campanias`** como `LISTA + CUENTA(LISTA)` | `m2_campanias` además espera una definición del usuario |
-| 12 | **La migración de los 51 marcadores, por tandas** | Empieza por los **nueve pares `gcba_*`**: son el caso donde la dimensión **ya está escrita en el `filtro`** y sólo hay que sacarla del nombre. Cada tanda se compara contra la corrida anterior antes de la siguiente. **No bloquea a nadie** — lo nuevo ya nace con la estructura buena |
-| 13 | **El catálogo de tokens generado desde `MARCADORES`** — qué mide cada uno, de dónde sale, con qué operación y con qué filtro | **Es el objetivo declarado de todo esto:** que alguien del equipo arme una filmina eligiendo tokens documentados que dicen qué son y cómo se arman. **Generado, no escrito a mano** — a mano se desincroniza en la primera migración |
+| 6 | **La letra manda, el título valida** — cada fila de `MAPEO` lleva el encabezado que espera encontrar en esa letra *(`_6`)* | **Va antes de `C-61` porque le saca el filo.** Hoy insertar una columna corre todas las letras a su derecha y el mapeo apunta una más allá **sin fallar**: un `SUMA` sobre la columna de al lado devuelve un número, no un error. El título como testigo convierte eso en falla ruidosa. **La función que valida se difiere** (usuario, 14/08); **poblar la columna ya mide**, y esa medición puede encontrar mapeos ya corridos |
+| 7 | **`C-61`** — el alta de columna que mueve 229 cuentas | **Bloquea el embudo de Call Center.** Dos mediciones antes de escribir: **(a)** si el motor lee CC **por encabezado o por posición** — si es por posición, una columna nueva corre todo lo demás **sin que nada falle**; **(b)** cuántos tokens ya validados cambian de valor, y **ninguno de los exactos vigentes puede moverse** |
+| 8 | **`R-NN` de los dos universos de Call Center** — `enc_*` filtra por tipo de llamado, `cc_*` no filtra | **Prompt propio: es una regla, no un detalle de un cableado.** Dos universos conviviendo sin declarar es el modo de falla del número plausible |
+| 9 | **`R-26`** — el "1 a 1" se comunica sólo por digital | **Independiente de todo lo demás**, y por eso puede adelantarse. Su Parte A puede falsar la premisa; si eso pasa, no se escribe nada y `R-26` queda como hueco |
+| 10 | **`enc_impresiones` / `enc_visualizaciones` / `enc_clics`** | Operación confirmada 4 de 4. Se cablea **ya con el vocabulario decidido** — antes de 4 sería deuda deliberada. ⚠ **Y antes hay que resolver si su solapa sigue apagada**: `digital/Digital` está en `ignorar` y cuatro marcadores la apuntan (`PENDIENTES`, 14/08) |
+| 11 | **El embudo de Call Center** | Depende de **7 y 8**: sin el alta de columna no hay dato, y sin la regla no está declarado qué universo se cuenta |
+| 12 | **`alcance` y `clics` de campaña destacada, y `m2_campanias`** como `LISTA + CUENTA(LISTA)` | `m2_campanias` además espera una definición del usuario |
+| 13 | **La migración de los 51 marcadores, por tandas** | Empieza por los **nueve pares `gcba_*`**: son el caso donde la dimensión **ya está escrita en el `filtro`** y sólo hay que sacarla del nombre. Cada tanda se compara contra la corrida anterior antes de la siguiente. **No bloquea a nadie** — lo nuevo ya nace con la estructura buena |
+| 14 | **El catálogo de tokens generado desde `MARCADORES`** — qué mide cada uno, de dónde sale, con qué operación y con qué filtro | **Es el objetivo declarado de todo esto:** que alguien del equipo arme una filmina eligiendo tokens documentados que dicen qué son y cómo se arman. **Generado, no escrito a mano** — a mano se desincroniza en la primera migración |
 
-**Dónde se cruza con lo que ya estaba listado, para que nadie lo trabaje dos veces.** El frente 6
-y el 10 tocan Call Center, y §3 tiene una fila de *"16 tokens del Resumen Ejecutivo sin fuente"*
+**Dónde se cruza con lo que ya estaba listado, para que nadie lo trabaje dos veces.** Los frentes
+7 y 11 tocan Call Center, y §3 tiene una fila de *"16 tokens del Resumen Ejecutivo sin fuente"*
 que incluye ocho de Call Center. **No son lo mismo:** aquélla dice que el dato **no está en
 ninguna de las cuatro bases**; `C-61` es sobre `looker/CC`, que sí lo tiene, y sobre el costo de
-agregarle una columna. Se cruzan al llegar al 10.
+agregarle una columna. Se cruzan al llegar al 11.
 
 ---
 
