@@ -9244,3 +9244,78 @@ testigo declarado**, **154 con testigo en la celda**, **7 con la celda vacía** 
 `promoverFechasElegidas()`. La de `RDV_otros_ministros` está en las dos listas a la vez:
 declarada y sin llegar a la hoja. Meterla en el seed le daría un segundo escritor a una fila que
 ya tiene uno, así que no se hizo.
+
+---
+
+## `_7` Bloque 2 — el censo estático del `_2`: tres puntos sin insumo y uno que salió (2026-08-14)
+
+### ⚠ Los puntos 1, 2 y 3 no son ejecutables: `SEED_MARCADORES_` no existe
+
+**Y no es una omisión, es una decisión de arquitectura escrita en el propio código.**
+`Instalar.gs:2715`: *"**`MARCADORES` no tiene sembrador y no lo va a tener** (`D-17`): su dueño es
+la plantilla"*. `HOJAS_CONFIG_.MARCADORES` declara sólo `headers`, y `ALCANCE_REGISTROS_` la lista
+como `{ auditada: false, motivo: 'sin sembrador — hallazgo abierto, Paso 2.13' }`.
+
+Los tres puntos piden medir **sobre el seed**: duplicados por definición, inventario de `filtro`,
+y agrupación por dimensión lógica. **No hay seed sobre el cual medirlos.** `MARCADORES` vive sólo
+en la hoja, así que los tres necesitan planilla — que es exactamente lo que esta corrida no tiene.
+
+**El "snapshot del 11/08" que los prompts citan tampoco está en el repo.** Lo produce
+`tools/snapshot.js` —que sí incluye `MARCADORES` en su lista de hojas— pero su salida no está
+versionada. Es el mismo patrón que el censo de la Parte A2 del `_1`: la medición existió y quedó
+fuera del repo.
+
+**Los tres van a la lista de la mañana** (bloque 4), con el instrumento que los destraba. No se
+improvisó una vía alternativa, como pide la regla 5.
+
+### El punto 4 sí salió: las colisiones `jm` ↔ `secco`
+
+Medido sobre `docs/TOKENS.md` §2.0 —el inventario del 07/08 contra las **plantillas vivas**, que
+es la numeración correcta— y no contra §2.1/§2.2, que son los `.pptx` archivados.
+
+**Montón 1 — mismo hecho, mismo nombre.** Se globalizan sin discusión:
+
+| tokens | dónde |
+|---|---|
+| `periodo` | `jm` 1 y 5 · `secco` 12 |
+| el bloque `camp_*` entero | `jm` 12–19 · `secco` 16–22, que §2.0 declara **idénticos** |
+| los once `camp_resp_*` | `jm` 19 · `secco` 23 (escondida) |
+| los ocho `m2_*` de status semanal | `jm` 9 · `secco` 14 — `secco` agrega `m2_implementaciones` |
+| `rrss_c1-4_pct` · `rrss_prom_general` | `jm` 21 · `secco` 28 (escondida) |
+
+**Montón 2 — hecho distinto con el mismo nombre.** Es el montón caro:
+
+- **Los `enc_*` del iceberg.** `jm` 6 y `secco` 8 llevan la misma familia sobre **encuentros
+  distintos**: en `jm` el encuentro de la semana, en `secco` el **temático** — la lámina de
+  `secco` trae además `et_fecha` y `et_nombre`, que es la marca de cuál es su universo.
+- **`ecv_asistentes` dentro de `secco`**, entre la lámina 5 (*Uno a uno en comunas*) y la 8 (el
+  iceberg del temático). Mismo nombre, dos encuentros distintos, **en la misma plantilla**.
+
+**Montón 3 — nombre distinto para el mismo hecho.** Uno claro y medido:
+
+- **`camp1-4` (`jm` 7) y `post_camp1-3` + `post_estado1-3` (`secco` 10)** son la **misma tabla de
+  comunicaciones post**. §2.0 lo dice al reconciliar: *"la lámina equivalente de `jm` es la 7"*.
+  `jm` tiene 4 ranuras y una sola columna marcada; `secco` tiene 3 y dos columnas. Es el caso
+  que mejor justifica el vocabulario global: **dos nombres para el mismo hecho, y encima con
+  distinta cantidad de ranuras**.
+- Candidato menor: `fecha_dia` / `fecha_mes` (`secco` 1 y 24) contra `periodo` (`jm` 1). Son la
+  misma pregunta —cuándo— resuelta con dos vocabularios. **No se decide acá.**
+
+### ⚠ Y una premisa del `_2` que hay que corregir antes de que se ejecute
+
+El `_2` dice que *"los siete `ecv_*` ambiguos deberían caer en el segundo montón"* — o sea, hecho
+distinto con el mismo nombre **entre `jm` y `secco`**. **Los siete no son eso.**
+
+Son los siete que el `Pedido-4` del 04/08 dejó en la partición **10 / 2 / 7**, y su ambigüedad es
+**dentro de `jm`**: los mismos nombres sirven a la lámina **5** (agregado semanal de la semana) y
+a la **6** (iceberg, por encuentro). Están cableados desde el 08/08 con `filtro = figura=Jorge
+Macri` y son `ecv_insc_{mail,cc,ivr,digital,dif}`, `ecv_inscriptos` y `ecv_asistentes`.
+
+**Que la ambigüedad sea intra-plantilla y no entre informes cambia el diseño**, no sólo la
+etiqueta: un vocabulario global que resuelva `jm` contra `secco` **no los desambigua**, porque el
+corte que los separa es *agregado del período* contra *un encuentro*. Eso es una **dimensión**, y
+es justamente lo que el `_2` viene a definir — pero hay que saber que el caso testigo es otro.
+
+**Lo que no se hizo, por instrucción:** ninguna `D-NN`, ninguna propuesta de vocabulario escrita
+en un documento. La agrupación de arriba es censo, no decisión — el gate del `_2` sigue siendo
+del usuario.
