@@ -1570,3 +1570,175 @@ function diagFilasPorColumnaExterna_(idPlanilla, solapa, filaEncabezado, letraCl
 
   return { ok: true, solapa: solapa, columna_clave: letraClave, filas: salida };
 }
+
+/**
+ * Censo de solapas de las bases registradas — **sólo lectura**, y **pública a propósito**.
+ *
+ * **Por qué existe, que es lo único que la justifica.** `diagPlanillaExterna_` y sus hermanas
+ * llevan sufijo `_`, así que Apps Script las trata como privadas y **no aparecen en el
+ * desplegable «Ejecutar» del editor**; además nadie las llama desde el motor y **devuelven un
+ * objeto sin persistir nada**. Corridas desde el editor, su resultado no queda en ningún lado —
+ * que es exactamente lo que pasó con el censo del `2026-08-14_1` Parte A2: se midió, y el
+ * número sólo existió en un reporte. Esta envoltura manda todo a `Logger`, **que sí es visible
+ * en el editor** (`clasp logs` no anda: el proyecto no tiene GCP propio).
+ *
+ * **No hardcodea ningún id ni ningún nombre**: descubre las bases leyendo `BASES` y cruza contra
+ * `SOLAPAS` vivo, así que una base nueva entra sola.
+ *
+ * Lo que deja por solapa: nombre exacto, filas × columnas, si la registra `SOLAPAS` hoy y con
+ * qué `uso`, y las filas 1 y 2 —banda y títulos—, que es de donde sale el motivo medido.
+ */
+function censarSolapasParaAlta() {
+  var bases = leerBases();
+  var registradas = leerSolapas();
+  var lineas = [];
+
+  Object.keys(bases).forEach(function (baseId) {
+    var base = bases[baseId];
+    if (!base.sheet_id) {
+      Logger.log('[' + baseId + '] sin sheet_id en BASES — no se censa');
+      return;
+    }
+
+    var censo = diagPlanillaExterna_(base.sheet_id);
+    if (!censo.ok) {
+      Logger.log('[' + baseId + '] no se pudo abrir: ' + (censo.motivo || '(sin motivo)'));
+      return;
+    }
+
+    Logger.log('=== ' + baseId + ' — "' + censo.nombre + '" — ' + censo.solapas.length + ' solapa(s) ===');
+    censo.solapas.forEach(function (linea) {
+      // `diagPlanillaExterna_` devuelve "nombre: N fila(s) × M columna(s) · fila1=… · fila2=…".
+      // El nombre es todo lo anterior al primer ": " — se corta por ahí y no por el último,
+      // porque una solapa puede tener ":" adentro y el separador siempre es el primero.
+      var corte = linea.indexOf(': ');
+      var solapa = corte === -1 ? linea : linea.slice(0, corte);
+      var fila = registradas[baseId] && registradas[baseId][solapa];
+      var estado = fila ? ('REGISTRADA uso=' + fila.uso) : 'SIN REGISTRAR';
+      Logger.log('[' + baseId + '] ' + estado + ' · ' + linea);
+      lineas.push(baseId + '\t' + solapa + '\t' + estado);
+    });
+  });
+
+  Logger.log('--- resumen: ' + lineas.length + ' solapa(s) censada(s) en ' + Object.keys(bases).length + ' base(s) ---');
+  return { ok: true, solapas: lineas };
+}
+
+/**
+ * Las filas del **temario** (`REUNIONES`) agrupadas por `tipo`, **leídas crudas** — sólo lectura.
+ *
+ * **El recorte va declarado, porque es la diferencia con el otro lector.** `leerReuniones_()`
+ * filtra por `eje` y por `mostrar`, que es correcto para emitir un informe y **equivocado para
+ * un censo**: una fila con `mostrar` vacío existe igual y tiene que contarse. Acá se lee la hoja
+ * entera y se agrupa **sólo por `tipo`**, sin filtrar nada.
+ *
+ * ⚠ **`REUNIONES` no tiene `id_cuenta`, y eso no es un hueco: es el diseño.** Sus columnas son
+ * `periodo_id · orden · eje · tipo · nombre · fecha · etapa · mostrar · texto_original · notas`
+ * (`HOJAS_CONFIG_.REUNIONES`). El `id_cuenta` de un encuentro **lo resuelve el anclaje**
+ * (`anclarEncuentros`, `Union.gs`), no el temario. La primera versión de esta función pedía
+ * `idx.id_cuenta` y publicaba `''` en todas las filas — un cero fabricado por el instrumento.
+ * Se deja escrito porque el síntoma es indistinguible de una columna vacía de verdad.
+ *
+ * Esta función **no responde cuál es el universo de un tipo de encuentro en la base**: el
+ * temario tiene una fila por línea publicada, no una por encuentro de `reuniones`.
+ */
+function censarTemarioPorTipo() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('REUNIONES');
+  if (!hoja) { Logger.log('no hay hoja REUNIONES'); return { ok: false, motivo: 'sin hoja REUNIONES' }; }
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos.shift();
+  var idx = {};
+  headers.forEach(function (h, i) { idx[h] = i; });
+  if (idx.tipo === undefined) { Logger.log('REUNIONES no tiene columna `tipo`'); return { ok: false, motivo: 'sin columna tipo' }; }
+
+  var porTipo = {};
+  datos.forEach(function (fila) {
+    var tipo = normalizarValorDeclarado_(fila[idx.tipo]) || '(vacío)';
+    if (!porTipo[tipo]) porTipo[tipo] = [];
+    porTipo[tipo].push({
+      nombre: idx.nombre === undefined ? '' : fila[idx.nombre],
+      fecha: idx.fecha === undefined ? '' : fila[idx.fecha],
+      mostrar: idx.mostrar === undefined ? '' : fila[idx.mostrar],
+      periodo_id: idx.periodo_id === undefined ? '' : fila[idx.periodo_id]
+    });
+  });
+
+  Object.keys(porTipo).forEach(function (tipo) {
+    var filas = porTipo[tipo];
+    Logger.log('=== tipo="' + tipo + '" — ' + filas.length + ' fila(s) ===');
+    filas.forEach(function (f) {
+      Logger.log('   mostrar=' + f.mostrar + ' · periodo_id=' + f.periodo_id + ' · ' + f.fecha + ' · ' + f.nombre);
+    });
+  });
+
+  return { ok: true, por_tipo: porTipo };
+}
+
+/**
+ * El universo de encuentros de una solapa de base, agrupado por los valores de una columna
+ * — sólo lectura. **Es la que responde "cuántos `Uno a uno` hay", que el temario no responde.**
+ *
+ * **No hardcodea base ni solapa:** recorre las solapas que `SOLAPAS` declara `fuente` **y con
+ * `campo_id_cuenta`** —o sea, las que el motor selecciona por encuentro (`D-30`)— y para cada
+ * una agrupa por toda columna de **baja cardinalidad** (hasta `TOPE_CARDINALIDAD_CENSO_`
+ * valores distintos), listando los ids de cada grupo. Una dimensión nueva aparece sola.
+ *
+ * Los ids que devuelve son los que `diagFilasDeSolapaExterna_` toma como `claves`.
+ */
+var TOPE_CARDINALIDAD_CENSO_ = 15;
+
+function censarUniversosDeSolapasDeEncuentro() {
+  var bases = leerBases();
+  var registradas = leerSolapas();
+  var salida = {};
+
+  Object.keys(registradas).forEach(function (baseId) {
+    var base = bases[baseId];
+    if (!base || !base.sheet_id) return;
+
+    Object.keys(registradas[baseId]).forEach(function (nombreSolapa) {
+      var reg = registradas[baseId][nombreSolapa];
+      if (reg.uso !== 'fuente' || !reg.campo_id_cuenta) return;
+
+      var hoja = SpreadsheetApp.openById(base.sheet_id).getSheetByName(nombreSolapa);
+      if (!hoja) { Logger.log('[' + baseId + '/' + nombreSolapa + '] no existe la solapa'); return; }
+
+      var enc = Number(reg.fila_encabezado) || 1;
+      var ultima = hoja.getLastRow();
+      var cols = hoja.getLastColumn();
+      if (ultima <= enc) { Logger.log('[' + baseId + '/' + nombreSolapa + '] sin filas debajo de la fila ' + enc); return; }
+
+      var encabezados = hoja.getRange(enc, 1, 1, cols).getValues()[0].map(normalizarValorDeclarado_);
+      var datos = hoja.getRange(enc + 1, 1, ultima - enc, cols).getDisplayValues();
+
+      // La clave es la columna que `MAPEO` asocia al `campo_id_cuenta` declarado. Se resuelve
+      // por el motor y no por texto: los encabezados de estas solapas no son estables.
+      var mapa = buscarMapeo(baseId, nombreSolapa, reg.campo_id_cuenta);
+      if (!mapa.ok) { Logger.log('[' + baseId + '/' + nombreSolapa + '] sin clave: ' + mapa.motivo); return; }
+      var iClave = columnaLetraAIndice_(mapa.columna);
+
+      Logger.log('=== ' + baseId + '/' + nombreSolapa + ' — ' + datos.length + ' fila(s), clave en ' + mapa.columna + ' ===');
+
+      encabezados.forEach(function (titulo, j) {
+        if (j === iClave || !titulo) return;
+        var grupos = {};
+        datos.forEach(function (fila) {
+          var v = normalizarValorDeclarado_(fila[j]) || '(vacío)';
+          if (!grupos[v]) grupos[v] = [];
+          grupos[v].push(fila[iClave]);
+        });
+        var valores = Object.keys(grupos);
+        if (valores.length > TOPE_CARDINALIDAD_CENSO_) return;
+
+        Logger.log('  — columna "' + titulo + '" (' + valores.length + ' valor/es):');
+        valores.forEach(function (v) {
+          Logger.log('     "' + v + '" → ' + grupos[v].length + ' fila(s) · ids: ' + grupos[v].join(', '));
+        });
+        salida[baseId + '/' + nombreSolapa + '/' + titulo] = grupos;
+      });
+    });
+  });
+
+  return { ok: true, universos: salida };
+}
