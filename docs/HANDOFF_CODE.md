@@ -3,26 +3,39 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-14, al cerrar el `_6` · último commit al escribirlo: `b9b57f2`
+**Última actualización:** 2026-08-14, al cerrar la corrida nocturna `_7` · último commit al
+escribirlo: `bc6a742`
 
-## Dónde estamos: la cola del 14/08, y qué de ella ya corrió
+## ▶ Empezar por acá: `docs/CORRIDAS_pendientes_2026-08-15.md`
 
-**`_1`, `_4`, `_5` y `_6` ejecutados; `_3`, `_2` y el del "1 a 1" no.**
+**Cinco corridas de Apps Script esperando, en una sola lista y ordenadas por lo que destraban.**
+Es lo primero que hay que mirar. En orden:
 
-⚠ **Antes de correr `instalar()` la próxima vez:** `MAPEO` gana la columna `encabezado`
-(`D-31`), que se inserta después de `columna` y empuja `tipo_esperado`, `valores_incluidos` y
-`notas` una a la derecha. Es por `COLUMNAS_DELTA_`, así que no reescribe la fila 1 ni corre los
-datos — pero conviene mirar el diff la primera vez.
+| # | correr | destraba |
+|---|---|---|
+| 1 | `censarCoberturaDeUniversos()` | el alta de las 20 solapas — cierra el `_4` y con él el `_1` |
+| 2 | `probarGateDeUsoDeSolapas_()` y después `probarGateDeUsoContraLaHoja_()` | verifican `D-32`, que quedó implementado anoche **y sin probar** |
+| 3 | `instalar()` | crea la columna `encabezado` de `MAPEO` (`D-31`) — ⚠ mirar el diff la primera vez |
+| 4 | `diffSolapasSinAplicar_()` | diagnóstico: cuántos desacuerdos seed↔hoja hay hoy |
+| 5 | el censo de `MARCADORES` — **no hay función; el camino es `tools/snapshot.js`** | los puntos 1–3 del `_2`, que es el frente 4 del plan |
+
+La 1 y la 5 terminan en **decisión del usuario**. La 2 y la 3, no.
+
+## La cola del 14/08
+
+**`_1`, `_4`, `_5`, `_6` y `_7` ejecutados; `_3` implementado y sin probar; `_2` y el del "1 a 1"
+no arrancaron.**
 
 | prompt | estado |
 |---|---|
 | `2026-08-14_1` — métricas por plataforma de `reuniones` | **ejecutado** (Partes A, A2 y B). `alc_real` mapeado en las dos solapas; `CAMPAÑAS_DESGLOCE_DIGITAL` restituida a `fuente` |
 | `2026-08-14_4` — las decisiones sueltas | **ejecutado con un punto frenado** — ver abajo |
 | `2026-08-14_5` — el orden de los frentes a `PLAN.md` | **ejecutado, y después revisado**: el prompt se reemplazó y los frentes pasaron a **14**, con el `_6` sexto y `C-61` séptimo |
-| `2026-08-14_6` — la letra manda, el título valida | **ejecutado.** `D-31`; `MAPEO` tiene `encabezado` y el seed lo puebla en 160 de 161 filas |
-| `2026-08-14_3` — el sembrador no degrada en silencio | pendiente; se apoya en `S-05`, que ya está escrito |
-| `2026-08-13_1` — `R-26`, el "1 a 1" sólo digital | pendiente e independiente. **Su Parte A puede falsar la premisa**; si eso pasa, no se escribe nada |
-| `2026-08-14_2` — censo de dimensiones y vocabulario global | va **después** de los cuatro |
+| `2026-08-14_6` — la letra manda, el título valida | **ejecutado.** `D-31`; el seed puebla el testigo de las 154 filas que conoce. **La columna todavía no existe en la hoja**: la crea `instalar()` |
+| `2026-08-14_7` — corrida nocturna | **ejecutada.** Bloques 1, 3, 4 y 5 completos; el 2 con tres puntos sin insumo — `SEED_MARCADORES_` no existe (`D-17`) |
+| `2026-08-14_3` — el sembrador no degrada en silencio | **implementado anoche por el bloque 3 del `_7` (`D-32`) y SIN PROBAR.** Es la corrida 2 de la lista |
+| `2026-08-13_1` — `R-26`, el "1 a 1" sólo digital | **no arrancó.** Independiente de todo lo demás. Su Parte A puede falsar la premisa; si eso pasa, no se escribe nada |
+| `2026-08-14_2` — censo de dimensiones y vocabulario global | **no arrancó**, y su Parte A está bloqueada: necesita el censo de `MARCADORES` (corrida 5) |
 
 **El orden de trabajo ya no vive acá: vive en `PLAN.md` §2.** Este handoff dice dónde estamos;
 el plan dice hacia dónde. Los tramos `T2.x`…`T5.x` **no se retiraron** — siguen siendo la

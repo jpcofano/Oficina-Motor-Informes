@@ -9377,3 +9377,34 @@ siquiera tienen la columna. Decidirlo es del usuario.
 
 **Nada de esto se corrió.** El gate cambia el comportamiento de un escritor de hojas de registro
 y esta corrida no escribe en la planilla.
+
+---
+
+## `_7` Bloques 4 y 5 — la lista de la mañana, y el cierre de la corrida nocturna (2026-08-14)
+
+**`docs/CORRIDAS_pendientes_2026-08-15.md`** — cinco corridas en un solo lugar, **ordenadas por
+lo que destraban** y no por cómo aparecieron. Cada una con la función exacta, qué queda escrito
+después, y si termina en decisión del usuario o si Code sigue solo. Con su fila en `CLAUDE.md`
+§7, en el mismo commit.
+
+El orden quedó: **1)** el alta de las 20 solapas, que cierra dos prompts; **2)** verificar `D-32`,
+implementado anoche y sin probar; **3)** `instalar()`, que materializa `D-31`; **4)** el diff
+como diagnóstico; **5)** el censo de `MARCADORES`, que destraba el `_2` entero.
+
+**Y una función nueva, porque la lista no podía pedir correr algo que no existía.**
+`censarCoberturaDeUniversos()` es la envoltura que le faltaba al alta del `_4`: mide cuántas
+filas de cada solapa sin registrar caen en el universo de los 25 `Uno a uno`. **Mide columna por
+columna sin asumir cuál es la clave** — `Desglose impresiones` tiene **tres**, y una función que
+buscara "la" columna de id habría medido un tercio y devuelto un número plausible.
+
+**Un bug propio, cazado antes de pushear y del linaje exacto que la función viene a medir:** la
+guarda preguntaba por `hoja.getDisplayValues`, que es método de **`Range`, no de `Sheet`**. Daba
+`false` siempre, así que la función habría devuelto **cero coincidencias sin fallar** — y un cero
+es una respuesta perfectamente creíble para *"¿esta solapa cubre los 25?"*.
+
+### Cierre
+
+- `tools/listas.js` — **OK, las tres listas coinciden en 11 hojas.**
+- `HANDOFF_CODE.md` reescrito, **arrancando con la lista de corridas**. De paso se sacó una fila
+  duplicada del `_3` que había quedado al actualizarlo.
+- **Cinco commits, uno por bloque**, más el del prompt. Cada uno revertible solo.
