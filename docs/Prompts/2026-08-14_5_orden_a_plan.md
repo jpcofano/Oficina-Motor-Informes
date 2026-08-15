@@ -35,33 +35,49 @@ Ordenar es decidir dependencias, no transcribir una lista.
 
 ### Próximo — ordenado, con las dependencias dichas
 
-1. **El alta de las 20 solapas de `reuniones`**, y después `BITACORA` y `HANDOFF_CODE`. Cierra
-   el `_1`. *(Lo ejecuta el `_4`.)*
-2. **El sembrador deja de pisar un `uso` existente.** Va antes de la migración del vocabulario:
-   ésa toca muchas filas de configuración, y hoy existe un mecanismo que puede revertirlas en
-   silencio. *(`_3`.)*
-3. **`C-61`** — el alta de columna que mueve 229 cuentas. **Bloquea el embudo de Call Center**,
+**El criterio del orden, que hay que escribir junto a la lista:** la definición del vocabulario
+va **antes que todo cableado nuevo**. Cada marcador que se crea con la estructura vieja es
+deuda que se contrae sabiendo que es deuda. Una vez tomada la decisión, lo nuevo nace bien y lo
+viejo se migra sin apuro — por eso la migración de los 51 no bloquea a nadie, pero la decisión
+sí.
+
+1. **El alta de las 20 solapas de `reuniones`**, con su censo volcado a un documento de
+   evidencia en `docs/` antes de escribirla. Cierra el `_1`. *(Punto 5 del `_4`, frenado
+   porque la medición existía sólo en un reporte de conversación.)*
+2. **El sembrador deja de pisar un `uso` existente.** Va antes de la migración: ésa toca muchas
+   filas de configuración, y hoy existe un mecanismo que puede revertirlas en silencio.
+   *(`_3`.)*
+3. **`C-64` — las dos capas de la base.** Filas contra agregado, y el deck a veces publica una
+   fila de abajo. Va acá porque cambia **cómo se leen las fuentes**, no cómo se nombran: es
+   independiente del vocabulario y condiciona todo lo que se cablee después. Explica el patrón
+   `X-16`/`X-17` en tres canales.
+4. **`_2` — censo de dimensiones y `D-NN` del vocabulario.** Es la decisión de estructura:
+   una medida, y el corte como dimensión. Todo lo que se cablee antes de esto nace con el corte
+   metido en el nombre.
+5. **El piloto con una familia** — migrar una a `informe_id = '*'` y verificar que `jm`
+   reproduzca los mismos números. Barato, y si no reproduce el plan se detiene acá.
+6. **`C-61`** — el alta de columna que mueve 229 cuentas. **Bloquea el embudo de Call Center**,
    y antes de escribir hay que medir si el motor lee CC **por encabezado o por posición**: si
    es por posición, una columna nueva corre todo lo demás sin que nada falle.
-4. **`R-NN` de los dos universos de Call Center** — `enc_*` filtra por tipo de llamado, `cc_*`
+7. **`R-NN` de los dos universos de Call Center** — `enc_*` filtra por tipo de llamado, `cc_*`
    no filtra. Prompt propio: es una regla, no un detalle de un cableado.
-5. **`C-64` — las dos capas de la base.** Filas contra agregado, y el deck a veces publica una
-   fila de abajo. Cambia **cómo se leen las fuentes**, no un token, y explica el patrón
-   `X-16`/`X-17` en tres canales.
-6. **`R-26`** — el "1 a 1" se comunica sólo por digital. Independiente de todo lo demás.
-7. **`enc_impresiones` / `enc_visualizaciones` / `enc_clics`** — operación confirmada 4 de 4.
-8. **El embudo de Call Center** — depende de 3 y 4.
-9. **`alcance` y `clics` de campaña destacada, y `m2_campanias`** como `LISTA + CUENTA(LISTA)`.
-10. **`_2` — censo de dimensiones y `D-NN` del vocabulario.** Sube hasta acá por una razón
-    concreta: **los 36 nombres de la lámina del "1 a 1" no se pueden fijar antes.** Los que hoy
-    están en la plantilla llevan el corte adentro (`u1_pre_meta_impresiones`), que es
-    exactamente lo que la decisión del 14/08 viene a sacar. El `_2` no migra nada, así que
-    adelantarlo sale barato.
+8. **`R-26`** — el "1 a 1" se comunica sólo por digital. Independiente de todo lo demás.
+9. **`enc_impresiones` / `enc_visualizaciones` / `enc_clics`** — operación confirmada 4 de 4,
+   ya con el vocabulario decidido.
+10. **El embudo de Call Center** — depende de 6 y 7.
+11. **`alcance` y `clics` de campaña destacada, y `m2_campanias`** como `LISTA + CUENTA(LISTA)`.
+12. **La migración de los 51 marcadores, por tandas**, empezando por los nueve pares `gcba_*`:
+    son el caso donde la dimensión ya está escrita en el `filtro` y sólo hay que sacarla del
+    nombre. Cada tanda se compara contra la corrida anterior antes de la siguiente. **No
+    bloquea a nadie:** lo nuevo ya nace con la estructura buena.
+13. **El catálogo de tokens generado desde `MARCADORES`** — qué mide cada uno, de dónde sale,
+    con qué operación y con qué filtro. **Es el objetivo declarado de todo esto:** que alguien
+    del equipo arme una filmina eligiendo tokens documentados que dicen qué son y cómo se
+    arman. Generado, no escrito a mano — escrito a mano se desincroniza en la primera
+    migración.
 
 ### Planificado y bloqueado — cada uno nombra qué lo destraba
 
-- **Piloto del vocabulario con una familia**, y después **la migración por tandas** empezando
-  por los nueve pares `gcba_*`. Destraba: que el `_2` cierre su gate.
 - **Los siete `ecv_*` ambiguos.** Destraba: la `D-NN` del `_2`. Es precondición de globalizar
   esa familia, no prolijidad.
 - **Los estados `-` y `---`.** Destraba: decisión del usuario sobre si `---` reemplaza a
@@ -89,10 +105,6 @@ Ordenar es decidir dependencias, no transcribir una lista.
   porque la hipótesis falle.
 - **`C-58`** — los `cc_*` no van contra `Agenda JM`.
 - **`ecv_barrio1-3`**, diferido por decisión previa.
-- **El catálogo de tokens generado desde `MARCADORES`** — qué mide cada uno, de dónde sale, con
-  qué operación y con qué filtro. Es el objetivo declarado del vocabulario global: que alguien
-  del equipo arme una filmina eligiendo tokens documentados. Va a backlog y no a bloqueado
-  porque su forma depende de decisiones que todavía no se tomaron.
 
 ### Cierre
 

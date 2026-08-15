@@ -9027,3 +9027,74 @@ número que el propio Addendum 2 usa— y 4 ya registradas, las nuevas son **20*
   ninguna hoja de registro. Se corre igual porque el prompt lo pide como cierre.
 - **Un solo commit, de documentación.** El de configuración —`SEED_SOLAPAS_` en `Instalar.gs`—
   no existe porque su punto quedó frenado.
+
+---
+
+## `_5` — el orden de los frentes a `PLAN.md`, y cuatro ítems que ya estaban hechos (2026-08-14)
+
+### Parte A — lo que la lectura encontró antes de escribir
+
+**§2 no era una lista plana**, y eso cambió cómo se escribió la Parte B: está organizada en
+**tramos** (`T2.x`…`T5.x`) más el bloque de sellado de `D-23`, Higiene y dos notas de terreno.
+La lista de 13 frentes **no reemplaza los tramos**: entra al frente de §2 como el orden, y los
+tramos quedan abajo como la especificación de cada pieza. Retirarlos habría tirado el texto que
+dice **qué** es cada cosa para conservar sólo **cuándo**.
+
+**Cuatro ítems cumplidos que el plan no marcaba** — un plan con ítems hechos adentro deja de
+leerse:
+
+| ítem | cuándo | evidencia |
+|---|---|---|
+| `T2.1.1` — el reloj y el corte | 06/08 | cerrado por verificación humana |
+| `T2.1.2` — el cierre se escribe siempre | 07/08 | `N2`, también cuando algo explota |
+| `T2.4` — los cuatro objetivos contra un deck real | 07/08 | `docs/PROTOCOLO_T2.4_corrida_2026-08-07.md` |
+| **Fase 2 de `D-23`** — las 51 láminas selladas | 09/08 | el `_11` |
+
+**Y el plan se contradecía a sí mismo sobre `T2.4`:** su propio texto decía *"sale apenas exista
+`T2.1`"* mientras `T2.11`, doce líneas más abajo, lo daba por corrido. Resuelto a favor de la
+bitácora (`CLAUDE.md` §7). La Fase 2 queda marcada con la salvedad de que `seccion_id` quedó
+**vacío en las 51 filas por diseño** — el sellador no deduce; las 26 celdas humanas siguen siendo
+su propia fila.
+
+**Ningún frente nuevo estaba ya listado**, así que no hubo nada que actualizar en su lugar. El
+único cruce real se anotó en el texto: los frentes 6 y 10 tocan Call Center y §3 tiene una fila
+de *"16 tokens del Resumen Ejecutivo sin fuente"* con ocho de CC. **No son lo mismo** — aquélla
+dice que el dato no está en ninguna de las cuatro bases; `C-61` es sobre `looker/CC`, que sí lo
+tiene.
+
+### Un ítem estaba en la sección equivocada, por la prueba de §9
+
+**El tercer informe** vivía en *Planificado y bloqueado* con esta columna de destrabe: *"no es
+prioritario: el objetivo es la capacidad de incorporar informes, no un informe puntual"*. **Eso
+es una razón para no hacerlo, no algo que lo destrabe.** *Si no podés decir qué lo desbloquea, es
+backlog* — bajó a §4 con el motivo escrito. **La decisión no cambia:** sigue sin ser prioritario,
+y por el mismo motivo. Los otros nueve ítems de §3 sí nombran su destrabe.
+
+### Parte B — lo que se escribió
+
+- **§2, al frente: los 13 frentes ordenados**, cada uno con **por qué va ahí** y no sólo qué es.
+  Con el criterio arriba, que es la mitad de la decisión: **la definición del vocabulario va
+  antes que todo cableado nuevo**, porque cada marcador creado con la estructura vieja es deuda
+  contraída a sabiendas.
+- **§3: siete bloqueados nuevos**, cada uno con su destrabe. Incluye la salvaguarda de los
+  estados `-`/`---` —que el reporte de corrida **siga distinguiendo *"no calculable"* de *"falló
+  el cableado"*** aunque el deck deje de hacerlo— y la lámina del "1 a 1", que **se queda visible
+  y sin sellar**: sus `«FALTA:token»` son la lista de lo que falta.
+- **§4: cinco de backlog**, apuntando a su dueño en vez de repetir el contenido — mismo criterio
+  que la sección Higiene ya usaba con `PENDIENTES`.
+
+**`C-64` entró con su estado real, que no es el que el prompt sugería.** El caso está **cerrado**
+como explicación —las dos capas, resuelto en call center (`C-62`), IVR (`V-98`) y mail
+(`V-99`)—; lo que queda es **aplicar el mismo criterio a `pauta_*` y Alerta Naranja**. El frente
+existe, con menos alcance del que su enunciado daba a entender.
+
+**`C-61` sumó una segunda medición previa** que el prompt no traía y el caso sí: además de si el
+motor lee CC **por encabezado o por posición**, hay que medir **cuántos tokens ya validados
+cambian de valor**, porque ninguno de los exactos vigentes puede moverse.
+
+### Lo que no entró, a propósito
+
+**El alcance de Meta no se vuelve a medir** (usuario, 14/08). Quedó **una línea** en *Dato del
+terreno, no problema*, que es la sección que existe justamente para eso: no entra al plan, y está
+escrito para que no vuelva a proponerse. **No se creó ningún documento nuevo de plan** — `PLAN.md`
+es dueño único de la pregunta (`CLAUDE.md` §7 y §9).

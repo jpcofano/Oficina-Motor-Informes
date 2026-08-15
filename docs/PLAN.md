@@ -1004,6 +1004,42 @@ todas.
 
 ## 2 · Próximo (ordenado, con dependencias)
 
+### Los frentes abiertos al 14/08/2026 — el orden
+
+> **Esta lista manda sobre el orden; los tramos de abajo siguen describiendo el trabajo.** Los
+> `T<tramo>.<n>` no se retiran ni se renumeran: son la estructura del corte vertical y su texto
+> es la especificación de cada pieza. Lo que cambió es que el trabajo de agosto dejó de entrar
+> por tramos y entra por frentes, así que **el orden vive acá y el detalle allá**.
+
+**El criterio del orden, y es la mitad de la decisión:** la **definición del vocabulario va antes
+que todo cableado nuevo.** Cada marcador que se crea con la estructura vieja es deuda que se
+contrae **sabiendo** que es deuda. Una vez tomada la decisión, lo nuevo nace bien y lo viejo se
+migra sin apuro — por eso la migración de los 51 no bloquea a nadie, pero la decisión sí.
+
+| # | frente | por qué va acá |
+|---|---|---|
+| 1 | **El alta de las 20 solapas de `reuniones`**, con su censo volcado a un documento de evidencia en `docs/` **antes** de escribirla | Cierra el `_1`. Es el punto 5 del `_4`, **frenado porque la medición existía sólo en un reporte de conversación** — el alta se escribe citando el documento, y cada nota de `ignorar` sale de una fila medida y no de una frase |
+| 2 | **El sembrador deja de pisar un `uso` existente** *(`_3`)* | **Va antes de la migración.** Ésa toca muchas filas de configuración y hoy existe un mecanismo que puede revertirlas en silencio — ya pasó con `CAMPAÑAS_DESGLOCE_DIGITAL` esta semana |
+| 3 | **`C-64` — las dos capas de la base**, aplicado a lo que falta | El caso **está cerrado como explicación**: filas contra agregado, resuelto en call center (`C-62`), IVR (`V-98`) y mail (`V-99`), y explica el patrón `X-16`/`X-17`. **Lo que queda es aplicar el mismo criterio a `pauta_*` y Alerta Naranja.** Va acá porque decide **de qué capa se lee**, no cómo se nombra: es independiente del vocabulario y condiciona todo cableado posterior |
+| 4 | **`_2` — censo de dimensiones y `D-NN` del vocabulario** | La decisión de estructura: una medida, y el corte como **dimensión**. **Todo lo que se cablee antes de esto nace con el corte metido en el nombre** |
+| 5 | **El piloto con una familia** — migrar una a `informe_id = '*'` y verificar que `jm` reproduzca los mismos números | Barato, y **si no reproduce, el plan se detiene acá**. Es la prueba de la decisión 4 antes de pagarla en 51 filas |
+| 6 | **`C-61`** — el alta de columna que mueve 229 cuentas | **Bloquea el embudo de Call Center.** Dos mediciones antes de escribir: **(a)** si el motor lee CC **por encabezado o por posición** — si es por posición, una columna nueva corre todo lo demás **sin que nada falle**; **(b)** cuántos tokens ya validados cambian de valor, y **ninguno de los exactos vigentes puede moverse** |
+| 7 | **`R-NN` de los dos universos de Call Center** — `enc_*` filtra por tipo de llamado, `cc_*` no filtra | **Prompt propio: es una regla, no un detalle de un cableado.** Dos universos conviviendo sin declarar es el modo de falla del número plausible |
+| 8 | **`R-26`** — el "1 a 1" se comunica sólo por digital | **Independiente de todo lo demás**, y por eso puede adelantarse. Su Parte A puede falsar la premisa; si eso pasa, no se escribe nada y `R-26` queda como hueco |
+| 9 | **`enc_impresiones` / `enc_visualizaciones` / `enc_clics`** | Operación confirmada 4 de 4. Se cablea **ya con el vocabulario decidido** — antes de 4 sería deuda deliberada |
+| 10 | **El embudo de Call Center** | Depende de **6 y 7**: sin el alta de columna no hay dato, y sin la regla no está declarado qué universo se cuenta |
+| 11 | **`alcance` y `clics` de campaña destacada, y `m2_campanias`** como `LISTA + CUENTA(LISTA)` | `m2_campanias` además espera una definición del usuario |
+| 12 | **La migración de los 51 marcadores, por tandas** | Empieza por los **nueve pares `gcba_*`**: son el caso donde la dimensión **ya está escrita en el `filtro`** y sólo hay que sacarla del nombre. Cada tanda se compara contra la corrida anterior antes de la siguiente. **No bloquea a nadie** — lo nuevo ya nace con la estructura buena |
+| 13 | **El catálogo de tokens generado desde `MARCADORES`** — qué mide cada uno, de dónde sale, con qué operación y con qué filtro | **Es el objetivo declarado de todo esto:** que alguien del equipo arme una filmina eligiendo tokens documentados que dicen qué son y cómo se arman. **Generado, no escrito a mano** — a mano se desincroniza en la primera migración |
+
+**Dónde se cruza con lo que ya estaba listado, para que nadie lo trabaje dos veces.** El frente 6
+y el 10 tocan Call Center, y §3 tiene una fila de *"16 tokens del Resumen Ejecutivo sin fuente"*
+que incluye ocho de Call Center. **No son lo mismo:** aquélla dice que el dato **no está en
+ninguna de las cuatro bases**; `C-61` es sobre `looker/CC`, que sí lo tiene, y sobre el costo de
+agregarle una columna. Se cruzan al llegar al 10.
+
+---
+
 **IDs `T<tramo>.<n>`.** La palabra "Paso" queda para la serie histórica y no se reusa: `Paso 5`
 ya se ejecutó, y `Paso 6` significa *"cuando se publique `/exec`"* en `PENDIENTES`, `BITACORA` y
 `RUNBOOK`. Cada sub-ítem de acá es **un prompt y un commit**.
@@ -1026,8 +1062,10 @@ rol `reader` de las cuatro bases —una sola, en la del 03/08 sobre permisos de 
 **`T2.1` · la corrida siempre cierra. Es el MVP.** Hoy una corrida sin tiempo muere sin decir qué
 hizo. El objetivo no es que termine: es que deje siempre un deck usable y la lista de lo que
 faltó. **No depende del anclaje.**
-- `T2.1.1` — el motor mira el reloj y corta antes del límite
-- `T2.1.2` — el cierre se escribe siempre: fecha, tokens puestos, faltantes
+- ~~`T2.1.1` — el motor mira el reloj y corta antes del límite~~ — **hecho 06/08**, cerrado por
+  verificación humana (`BITACORA.md`)
+- ~~`T2.1.2` — el cierre se escribe siempre: fecha, tokens puestos, faltantes~~ — **hecho 07/08**
+  (`N2`), también cuando algo explota
 - `T2.1.3` — la fila guarda hasta qué ítem llegó
 
 **`T2.2` · bajar el costo por ítem.** Mejora, no requisito.
@@ -1049,9 +1087,11 @@ ejecución de Apps Script y se muere antes que la continuación que estaría esp
 - `T2.3.3` — `LockService`, para que dos continuaciones no se pisen
 - `T2.3.4` — el cliente consulta la fila hasta el cierre, en vez de retener la llamada
 
-**`T2.4` · los cuatro objetivos contra un deck real.** `SUMA` sobre cero filas, `ULTIMO` por
-fecha, el agregado global de `digital`, el sembrado del Resumen Ejecutivo. Escritos y nunca
-vistos contra una corrida. Sale apenas exista `T2.1`. **No arrastra el anclaje** (ver `T2.9`).
+~~**`T2.4` · los cuatro objetivos contra un deck real.**~~ — **hecho el 07/08.** `SUMA` sobre cero
+filas, `ULTIMO` por fecha, el agregado global de `digital`, el sembrado del Resumen Ejecutivo,
+contra una corrida real. Evidencia en `docs/PROTOCOLO_T2.4_corrida_2026-08-07.md`. **El texto
+anterior decía *"sale apenas exista `T2.1`"* mientras `T2.11`, doce líneas más abajo, ya lo daba
+por corrido** — la contradicción se resuelve acá a favor de la bitácora (`CLAUDE.md` §7).
 
 **`T2.5` · las operaciones que faltan.** Una que devuelva **lista** y no número (`P1`),
 `DISTINCT` para `ecv_barrios` (`P2`), y un formato de porcentaje sin signo (`P2`). Cada token sin
@@ -1137,7 +1177,7 @@ la Fase 4.
 
 | fase | qué | precondición |
 |---|---|---|
-| **2** | `sellarPlantilla(informe_id)` **crea la hoja `LAMINAS` y sella, en una sola operación.** Por cada lámina sin ancla: toma el siguiente id de la hoja, escribe la fila y **anexa `#lamina: L-NNN`** a las notas del orador. No toca las que ya tienen ancla. Nunca `setText`: anexa. Columnas: `lamina_id`, `informe_id`, `seccion_id`, `orden_plantilla` (reportado, **no** autoritativo), `escondida`, `origen`, `modo`, `itera_sobre`, `filtro` (los tres vacíos = heredan), `rol`, **`cobertura`** (renombrada desde `estado` el 09/08 por el `11.1` §1 — `SECCIONES.estado` ya existe y responde otra pregunta: aquélla es de ejecución, ésta es de cobertura; valores `cerrada` · `parcial` · `abierta`), `falta` (**se queda así**: significa lo mismo que `SECCIONES.falta`), `notas`. Es `SOLAPAS` del lado del deck, y es `D-17` aplicado a láminas | **la autorización de `C-01` para escribir las notas** (`REGLAS_NEGOCIO.md`, suspensión acotada + sus dos addenda). El acceso ya está: las dos plantillas dan `EDIT` a la cuenta del script |
+| ~~**2**~~ **hecha 09/08** (el `_11`, **51 láminas selladas**; `seccion_id` quedó vacío en las 51 por diseño — el sellador no deduce) | `sellarPlantilla(informe_id)` **crea la hoja `LAMINAS` y sella, en una sola operación.** Por cada lámina sin ancla: toma el siguiente id de la hoja, escribe la fila y **anexa `#lamina: L-NNN`** a las notas del orador. No toca las que ya tienen ancla. Nunca `setText`: anexa. Columnas: `lamina_id`, `informe_id`, `seccion_id`, `orden_plantilla` (reportado, **no** autoritativo), `escondida`, `origen`, `modo`, `itera_sobre`, `filtro` (los tres vacíos = heredan), `rol`, **`cobertura`** (renombrada desde `estado` el 09/08 por el `11.1` §1 — `SECCIONES.estado` ya existe y responde otra pregunta: aquélla es de ejecución, ésta es de cobertura; valores `cerrada` · `parcial` · `abierta`), `falta` (**se queda así**: significa lo mismo que `SECCIONES.falta`), `notas`. Es `SOLAPAS` del lado del deck, y es `D-17` aplicado a láminas | **la autorización de `C-01` para escribir las notas** (`REGLAS_NEGOCIO.md`, suspensión acotada + sus dos addenda). El acceso ya está: las dos plantillas dan `EDIT` a la cuenta del script |
 | **—** | **El usuario llena 26 celdas de `seccion_id`** en la hoja. Es trabajo humano y está contado: 26 de 51 láminas no tienen sección deducible | Fase 2 |
 | **4** | Los consumidores migran al ancla: `LAMINAS_CONGELADAS_` sale del `.gs`, la emisión deja de derivar la pertenencia por prefijo, esconder/mostrar desde el menú, y se resuelven las 4 candidatas a colapsar | las celdas llenas, **y una autorización nueva de `C-01`** para `setSkipped` |
 | **5** | El cableado de la lámina nueva, y después la capa de panel de `docs/OBJETIVO_lamina_nueva.md` | Fase 4. **Sin definir: no inventarlo** |
@@ -1209,6 +1249,11 @@ información y se revisan más adelante.
 **El límite de ejecución de Apps Script son 6 minutos**, iguales para cuentas gratuitas y
 Workspace, y **no se puede extender**. Una línea, para que nadie vuelva a proponer agrandarlo.
 
+**El alcance de Meta no se vuelve a medir** (decisión del usuario, 14/08/2026). `alc_real` ya
+está mapeado en las dos solapas de `reuniones` y **su nota de `MAPEO` dice de qué columna de
+`Base_Digital` se copió**; el porqué vive en `R-27`. **No entra al plan** — está acá por el mismo
+motivo que la línea de arriba: para que no vuelva a proponerse.
+
 ---
 
 ## 3 · Planificado y bloqueado
@@ -1217,8 +1262,14 @@ Cada ítem nombra **qué lo destraba y de quién depende**.
 
 | qué | qué lo destraba | depende de |
 |---|---|---|
+| **Los siete `ecv_*` ambiguos** | la `D-NN` del `_2`. **Es precondición de globalizar esa familia**, no prolijidad: son tokens con el mismo nombre y distinto hecho según la plantilla | interno |
+| **Los estados `-` y `---`** | decisión del usuario sobre si `---` reemplaza a `«FALTA:token»` en el deck. **Ver `S-05`**: mientras el deck lo lea sólo quien lo desarrolla, el `«FALTA:»` crudo dice más. **Salvaguarda que va anotada desde ya:** el reporte de corrida tiene que **seguir distinguiendo *"no calculable"* de *"falló el cableado"*** aunque el deck deje de hacerlo | usuario |
+| **Los nombres de los tokens de la lámina del "1 a 1"**, más *"el desglose por herramienta es sólo de `jm`"* (`CONFIG_INFORMES.md` §1.9) | el `_2` | interno |
+| **`tipo` viaja con el ítem del encuentro**, y **qué consume hoy `LAMINAS`** | nada técnico: **espera su turno.** Son las dos piezas de *"que la lámina se use sólo en 1 a 1"* | interno |
+| **Sellado y alta de la lámina del "1 a 1" en `jm`** (`L-052`+) **y su cableado** | los nombres. **Hasta entonces la lámina se queda en la plantilla, visible y sin cablear**: sus `«FALTA:token»` son la lista de lo que falta, y por eso **no se sella ni se le crea fila en `LAMINAS`** | interno |
+| **Qué pasa con la lámina "Uno a uno — resultados plataforma" de `secco`**, que tiene los `u1_bench_*` marcados | decisión del usuario entre las tres salidas de `CONFIG_INFORMES.md` §1.9: retirarla, cablearla con los mismos tokens de `jm`, o dejarla como está | usuario |
+| **La remedición de los cuatro bloques PRE contra `V-101`** | la corrida del 15/08 | interno |
 | Fuente de MiBA | definir de dónde salen los datos | tercero |
-| Tercer informe | no es prioritario: el objetivo es la capacidad de incorporar informes, no un informe puntual | usuario |
 | ¿M2 tiene ventana propia, o usa la del informe? | `R-11` + su Addendum 1 (02/08/2026) cerraron la semana del informe: **siete días, viernes a jueves**, que es exactamente el único caso observado de M2 (vie 24/07 → jue 30/07). La etiqueta vieja de esta fila, "ventana jueves-a-jueves", **no la sostiene su propia evidencia** y se descarta. Queda una sola pregunta, más chica: si M2 se rige por `R-11` como todo lo demás —y entonces esta fila se cierra— o si tiene una ventana propia que todavía no se observó. Sigue haciendo falta una segunda semana | equipo |
 | Qué regla selecciona los envíos de M2 dentro de la ventana | no es la marca `M2` ni la fecha; si es curaduría manual, hace falta registro a nivel `ID MailUp` | equipo |
 | La lámina dice 18 envíos y 11 campañas; el número sale de 10 envíos y 3 campañas | preguntar quién armó la lámina | equipo |
@@ -1237,6 +1288,21 @@ auto-reporta.**
 
 ## 4 · Backlog (sin orden, sin fecha)
 
+- **El tercer informe.** *(Bajó de "Planificado y bloqueado" el 14/08, aplicando la prueba de §9.)*
+  Su columna de destrabe decía *"no es prioritario: el objetivo es la capacidad de incorporar
+  informes, no un informe puntual"* — **eso es una razón para no hacerlo, no algo que lo
+  destrabe.** Si no podés decir qué lo desbloquea, es backlog. Nada de esto cambia la decisión:
+  sigue sin ser prioritario, y por el mismo motivo.
+- **`C-21`** — ocho fixtures sin versionar. **No se resuelve midiendo**, y por eso no es un
+  pendiente con destrabe.
+- **`gcba_pauta_meta` y `pauta_meta` con la definición completa idéntica**, filtro vacío
+  incluido: **un número que hoy se publica dos veces.** Lo anota el `_2` en
+  `PENDIENTES_consistencia.md`, que es su dueño; acá queda el puntero para que el orden lo
+  contemple.
+- **`A-14` / `A-15`** — `enc_alcance` sin fuente medible **porque la base está incompleta**, no
+  porque la hipótesis falle. La distinción importa: no hay nada que arreglar en el motor.
+- **`C-58`** — los `cc_*` no van contra `Agenda JM`.
+- **`ecv_barrio1-3`**, diferido por decisión previa.
 - **Catálogos canónicos para las categorías que todavía no lo tienen.** Barrios **ya lo tiene**
   —la solapa `Comunas` de `rdv`, 48 filas, más las variantes ortográficas de `Parseo.gs`— y por
   eso sale de acá: `R-18` lo declara como la fuente de la forma publicada. Lo que queda es

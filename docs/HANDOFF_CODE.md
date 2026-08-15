@@ -3,20 +3,24 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-14, al cerrar el `_4` · último commit al escribirlo: `24c76e1`
+**Última actualización:** 2026-08-14, al cerrar el `_5` · último commit al escribirlo: `7d05047`
 
 ## Dónde estamos: la cola del 14/08, y qué de ella ya corrió
 
-Cinco prompts en orden. **`_1` y `_4` ejecutados; los otros tres no.**
+**`_1`, `_4` y `_5` ejecutados; los otros tres no.**
 
 | prompt | estado |
 |---|---|
 | `2026-08-14_1` — métricas por plataforma de `reuniones` | **ejecutado** (Partes A, A2 y B). `alc_real` mapeado en las dos solapas; `CAMPAÑAS_DESGLOCE_DIGITAL` restituida a `fuente` |
 | `2026-08-14_4` — las decisiones sueltas | **ejecutado con un punto frenado** — ver abajo |
-| `2026-08-14_5` — el orden de los frentes a `PLAN.md` | pendiente |
+| `2026-08-14_5` — el orden de los frentes a `PLAN.md` | **ejecutado.** Los 13 frentes están en `PLAN.md` §2, al frente y con el criterio del orden |
 | `2026-08-14_3` — el sembrador no degrada en silencio | pendiente; se apoya en `S-05`, que ya está escrito |
 | `2026-08-13_1` — `R-26`, el "1 a 1" sólo digital | pendiente e independiente. **Su Parte A puede falsar la premisa**; si eso pasa, no se escribe nada |
 | `2026-08-14_2` — censo de dimensiones y vocabulario global | va **después** de los cuatro |
+
+**El orden de trabajo ya no vive acá: vive en `PLAN.md` §2.** Este handoff dice dónde estamos;
+el plan dice hacia dónde. Los tramos `T2.x`…`T5.x` **no se retiraron** — siguen siendo la
+especificación de cada pieza; lo que cambió es que el orden lo fija la lista de frentes.
 
 **`R-26` está reservado y libre.** Lo pide el prompt del "1 a 1". El alcance de Meta del `_4`
 tomó `R-27` a propósito para no pisarlo; si el "1 a 1" falsa su premisa, `R-26` queda como
