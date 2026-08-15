@@ -100,7 +100,11 @@ var HOJAS_CONFIG_ = {
   // Paso 2.16 — `valores_incluidos`: lista blanca de valores de esa columna, separados
   // por coma. Vacío = sin filtro (entran todas las filas). Ver D-21.
   MAPEO: {
-    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'tipo_esperado', 'valores_incluidos', 'notas']
+    // `_6` (14/08/2026, `D-31`): `encabezado` va **inmediatamente después de `columna`** porque
+    // atestigua sobre ella. Es el título que hay hoy en esa letra — **testigo, nunca fallback**:
+    // la letra sigue siendo la única forma de encontrar la columna, y buscar por título elegiría
+    // siempre el primero de los repetidos (`Agenda JM | Post` tiene cuatro `% CTR`).
+    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'encabezado', 'tipo_esperado', 'valores_incluidos', 'notas']
   },
   // SOLAPAS (Paso 2.6): declara el uso de CADA solapa de cada base — el motor solo
   // sabía de las que aparecían en MAPEO, y el resto (backups, pivots, vistas con
@@ -294,7 +298,13 @@ var COLUMNAS_DELTA_ = {
     // Paso 2.16: al FINAL del array, como la de CAMPANAS en el 2.15 — las entradas se
     // evalúan en orden y una nueva adelante correría los índices de las que ya están.
     // Índice 7 = antes de `notas`, que con `tipo_esperado` ya presente está en la 7.
-    { nombre: 'valores_incluidos', indice: 7 }
+    { nombre: 'valores_incluidos', indice: 7 },
+    // `_6` (14/08/2026, `D-31`). Al final del array por la misma razón que la de arriba, y el
+    // índice se calcula sobre el estado que dejan las tres anteriores: con `solapa`,
+    // `tipo_esperado` y `valores_incluidos` ya aplicadas, `columna` está en la 5, así que la 6
+    // es *inmediatamente después de `columna`*. Empuja `tipo_esperado` a 7, `valores_incluidos`
+    // a 8 y `notas` a 9 — el mismo orden que declara `HOJAS_CONFIG_.MAPEO.headers`.
+    { nombre: 'encabezado', indice: 6 }
   ],
   // Paso 2.7 Parte A: `origen` se inserta después de `uso` (columna 3) para una
   // hoja SOLAPAS instalada con el esquema del Paso 2.6, que todavía no la tenía.
