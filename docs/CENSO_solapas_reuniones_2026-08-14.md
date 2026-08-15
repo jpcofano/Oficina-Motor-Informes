@@ -162,3 +162,102 @@ construya sobre el retorno sin saberlo.
 Con los 25 ids en la mano, todavía **no está medida** la cobertura de las tres excepciones
 —`Desglose impresiones`, `Métricas digital`, `Digital | Base Post`— contra ese universo. Hasta
 que eso se corra, **las tres no se clasifican**, y el alta de `SOLAPAS` no se escribe entera.
+
+---
+
+## Addendum 2 — las 20 son espejos, y con eso se cierra el alta (15/08/2026)
+
+> **No altera ninguna línea de arriba.** Cierra la sección *"Lo que sigue faltando"*.
+
+### ⚠ El hallazgo que cambia el encuadre: las 20 sin registrar son espejos `IMPORTRANGE`
+
+**Ninguna es dato propio de esta base.** Cada una tiene **una fórmula en `A1`** que importa el
+rango entero de la planilla:
+
+```
+1siyVJPVuObp1UEeQTS4IncXpsbev_Iqs-b27hZfLhds
+```
+
+Las **cuatro registradas** —`Agenda JM`, `Agenda JM | Post`, `Agenda funcionarios`, `Barrios`—
+tienen **cero fórmulas**: son carga a mano y son de esta base.
+
+⚠ **Esa planilla no está en `BASES`, y nadie sabía que existía.** Queda anotada acá porque es el
+dueño real de veinte solapas que el motor tiene a la vista.
+
+**Consecuencia directa sobre el alta: ninguna de las 20 puede ir a `fuente`.** Leer el espejo en
+vez del original es tener **dos respuestas para la misma pregunta**, y la segunda envejece sin
+avisar. Si alguna hace falta como fuente, **se registra esa planilla como base y se lee de ahí**
+— no se promueve el espejo.
+
+### Las tres de cobertura perfecta, resueltas: las tres a `referencia`
+
+**Cobertura alta decía que estaban los mismos encuentros. La lectura profunda dice qué traen.**
+
+| solapa | qué trae | por qué `referencia` y no `ignorar` |
+|---|---|---|
+| `Total` (14 cols) | `Estado`, `ID Cuentas`, `Tipo`, `Nombre`, y fechas de inicio y fin **por canal**. **Ninguna métrica** | es un **índice de estados** que cubre los cuatro universos al 100%. No se lee, pero no se descarta |
+| `EDVs \| Estados` (17 cols) | lo mismo, más `Funcionario` y `Barrio`. **Ninguna métrica** | ídem |
+| `Métricas EDVs` (45 cols) | **el agregado completo**: `Impr. Social / Google / Programm`, `Alcance manual`, `Frecuencia Meta`, `Cobertura`, el embudo de IVR, y **`CALL CENTER JM` separado de `CALL CENTER FUNCIONARIOS`**. Más una columna **`Validación`** que no existe en ninguna registrada | **es el superconjunto de `Agenda JM`, y de dónde viene su dato.** Verificado sobre `1493`: sus `S/T/U/V` reproducen **exacto** `AA/AJ/AM` de `Agenda JM` |
+
+**`Métricas EDVs` es la más importante de las veinte** y por eso conviene decir qué es: no es una
+solapa más que se descarta, es **el origen del que `Agenda JM` es un recorte**. Que su dueño sea
+otra planilla es lo único que la mantiene fuera de `fuente`.
+
+### Las tres excepciones: confirmadas, a `ignorar`
+
+| solapa | columnas clave | `Uno a uno` | qué cubre |
+|---|---|---|---|
+| `Desglose impresiones` | **A, C y E** — tres | **0 de 25** | sólo `Encuentro con vecinos` |
+| `Métricas digital` | A | **0 de 25** | sólo `Encuentro con vecinos` |
+| `Digital \| Base Post` | A | **0 de 25** | sólo `Encuentro con vecinos` |
+
+Las tres se abrieron por un motivo y **ninguno se sostuvo**. Que `Desglose impresiones` tenga
+**tres** columnas clave no es un detalle: una medición que hubiera buscado *"la"* columna de id
+habría medido un tercio y devuelto un número creíble.
+
+### Los dos huecos abiertos: **cerrados como "no existe"**, con las columnas revisadas
+
+**1 · `Visualizaciones` para el PRE no existe en ninguna de las 24.** En `Base_Digital` aparece
+**sólo en los bloques Post** — columnas `P`, `T`, `X`. **`V-26` sigue dependiendo de `digital`**,
+y no hay nada que reconsiderar.
+
+**2 · Alcance por plataforma tampoco existe.** Las únicas bandas de alcance de toda la base son
+`Alcance Meta Convocatoria` (`J–L`) y `Alcance Meta Post` (`Y–AA`). **Es confirmación estructural
+de `R-27`**, por un camino distinto del que la fundó: no hay banda de Google ni de Programmatic
+porque **el dato no existe**, no porque no se haya mapeado.
+
+**Los dos quedan cerrados. Que nadie los vuelva a buscar.**
+
+### Una hipótesis mía que se midió y era falsa
+
+El Addendum 1 anotó que `Métricas digital` y `Digital` eran *"probable duplicado de la misma
+solapa"* porque las dos tienen 961 filas y cobertura idéntica columna por columna. **No lo son.**
+Comparten las 961 filas porque son **la misma lista de campañas**: `Digital` son los
+**metadatos**, `Métricas digital` son las **métricas**. Corregido acá y en las notas de las dos.
+
+### Cómo quedaron las 24
+
+| `uso` | cuántas | cuáles |
+|---|---|---|
+| `fuente` | 2 | `Agenda JM`, `Agenda JM \| Post` — sin cambios, y son las únicas sin fórmulas que el motor lee |
+| `referencia` | 5 | `Barrios` (ya estaba) + **`Base_Digital`, `Total`, `EDVs \| Estados`, `Métricas EDVs`** |
+| `ignorar` | 17 | `Agenda funcionarios` (ya estaba) + **16 nuevas** |
+
+**Cada fila lleva en `notas` la medición y su fecha, no el veredicto.** Con esto el `_1` y el
+punto 5 del `_4` quedan cerrados.
+
+### Cuatro cosas que salieron de acá y son de otros frentes
+
+1. **`Base_Digital` está probada como desalineada.** En su fila 3: col `A` = `1493-JUNJDGAG`,
+   col `G` = `1688-JULJDGAG`, col `M` = `2411-DICJDGAG`, col `Q` = `2723-MARJDGAG`. **Cada bloque
+   tiene su propia lista y leerla por fila mezcla cuatro encuentros distintos.** Ya estaba
+   anotado como forma; ahora hay evidencia y la nota de `SOLAPAS` la cita.
+2. **`Call` tiene `Tipo de llamado`** con `Convocatoria`, `Reconfirmación`, `IVR convocatoria` e
+   `Informativo`, y **`Métricas EDVs` separa CC JM de CC Funcionarios**. Es el **insumo directo**
+   de la `R-NN` de los dos universos de Call Center — frente 8 del plan.
+3. **Dos columnas que otros frentes están buscando, anotadas y sin usar:** `Métricas digital`
+   tiene una columna **`Post`**, y `Digital` tiene **`JM | GCBA | POLICIA`** — o sea **la
+   dimensión ámbito del `_2` escrita como columna**, en vez de inferida del nombre de campaña.
+4. **`Agenda JM | Post` ya usa `-` como valor** en varias columnas. El `-` que se iba a definir
+   como estado publicable **existe en la base como dato**: son dos cosas distintas con el mismo
+   símbolo, y hay que decidir si se distinguen. Es del frente de los estados `-` / `---`.

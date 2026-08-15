@@ -9408,3 +9408,80 @@ es una respuesta perfectamente creíble para *"¿esta solapa cubre los 25?"*.
 - `HANDOFF_CODE.md` reescrito, **arrancando con la lista de corridas**. De paso se sacó una fila
   duplicada del `_3` que había quedado al actualizarlo.
 - **Cinco commits, uno por bloque**, más el del prompt. Cada uno revertible solo.
+
+---
+
+## El alta de las 20 solapas de `reuniones` — cierra el `_1` y el punto 5 del `_4` (2026-08-15)
+
+### El hallazgo que cambió el encuadre: **las 20 son espejos**
+
+Cada una es un `IMPORTRANGE` en `A1` de `1siyVJPVuObp1UEeQTS4IncXpsbev_Iqs-b27hZfLhds`,
+importando el rango entero. **Las cuatro registradas tienen cero fórmulas.**
+
+**Con eso, la pregunta del alta dejó de ser "¿cuál sirve?" y pasó a ser "¿alguna puede ser
+fuente?" — y la respuesta es no, para las veinte.** Leer un espejo es tener dos respuestas para
+la misma pregunta, y la segunda envejece sin avisar. Si alguna hiciera falta, se registra **esa
+planilla** como base. **Hoy no está en `BASES` y nadie sabía que existía**: va a `PENDIENTES`.
+
+### Cómo quedaron
+
+| `uso` | nuevas | cuáles |
+|---|---|---|
+| `referencia` | **4** | `Base_Digital`, `Total`, `EDVs \| Estados`, `Métricas EDVs` |
+| `ignorar` | **16** | las tres excepciones + las 13 restantes |
+
+**Las tres de cobertura perfecta fueron a `referencia` y no a `ignorar`**, y el motivo lo dio la
+lectura profunda: `Total` y `EDVs | Estados` **no tienen ninguna métrica** —son índices de
+estados— y **`Métricas EDVs` es el superconjunto de `Agenda JM`**. Verificado sobre `1493`: sus
+`S/T/U/V` reproducen **exacto** `AA/AJ/AM`. Es de donde viene el dato que el motor publica hoy, y
+lo único que la mantiene fuera de `fuente` es que su dueño es otra planilla.
+
+**Cobertura alta decía que estaban los mismos encuentros; la lectura profunda dijo qué traen.**
+Sin el segundo paso, las tres se iban a `ignorar` y `Métricas EDVs` —la más informativa de las
+veinte— se perdía.
+
+### Los dos huecos, cerrados como "no existe"
+
+- **`Visualizaciones` para el PRE no está en ninguna de las 24.** En `Base_Digital` aparece sólo
+  en los bloques Post (`P`, `T`, `X`). `V-26` sigue dependiendo de `digital`.
+- **Alcance por plataforma tampoco.** Sólo `Alcance Meta Convocatoria` (`J–L`) y `Alcance Meta
+  Post` (`Y–AA`). **Es confirmación estructural de `R-27` por un camino distinto del que la
+  fundó:** no hay banda de Google ni de Programmatic **porque el dato no existe**.
+
+Los dos quedan cerrados con las columnas revisadas, para que nadie los vuelva a buscar.
+
+### Una hipótesis mía, medida y falsa
+
+El 14/08 anoté que `Métricas digital` y `Digital` eran *"probable duplicado de la misma solapa"*
+por tener las dos 961 filas y cobertura idéntica. **No lo son:** comparten la lista de campañas
+porque es la misma, pero una trae **metadatos** y la otra **métricas**. Corregido en el censo y
+en las notas de las dos. Es el mismo error de siempre —dos cosas que se parecen en un número no
+son la misma cosa— y esta vez lo escribí yo.
+
+### Cuatro cosas que salieron de acá y son de otros frentes
+
+1. **`Base_Digital` desalineada, ahora con evidencia:** fila 3, col `A` = `1493-JUNJDGAG`, `G` =
+   `1688-JULJDGAG`, `M` = `2411-DICJDGAG`, `Q` = `2723-MARJDGAG`. Leerla por fila mezcla cuatro
+   encuentros. La nota de `SOLAPAS` la cita.
+2. **`Call` tiene `Tipo de llamado`** y **`Métricas EDVs` separa CC JM de CC Funcionarios**:
+   insumo directo de la `R-NN` de los dos universos, frente 8.
+3. **`Métricas digital` tiene una columna `Post`; `Digital` tiene `JM | GCBA | POLICIA`** — la
+   dimensión ámbito del `_2` **escrita como columna** en vez de inferida del nombre de campaña.
+   Anotadas, sin usar.
+4. **`Agenda JM | Post` ya usa `-` como dato.** El `-` que se iba a definir como estado
+   publicable ya existe en la base: dos cosas distintas con el mismo símbolo. A `PENDIENTES`.
+
+### Y lo demás de la tanda
+
+- **`D-32`, parte pura: verificada.** `probarGateDeUsoDeSolapas_` da **7 afirmaciones OK**,
+  corrida fuera de Apps Script con el código real extraído de `Fuentes.gs`, `Instalar.gs` y
+  `Pruebas.gs` — no una copia. Incluye el caso que fallaba, `'  fuente '` con espacios. **Falta
+  la de punta a punta**, que necesita la planilla.
+- **`buscarMapeo` sube en `PENDIENTES` con destrabe**: los seis comparadores de `uso` del camino
+  de lectura convergen en `leerSolapasSinCache_`, así que el arreglo es de una línea y en un solo
+  lugar — con las tres verificaciones que lo sacan de "una línea", y la prueba que **falla antes
+  y pasa después**, que es lo único que probaría que sirve.
+- **El patrón de las columnas nuevas, a `CLAUDE.md` §2.** Van tres en una semana con el mismo
+  modo de falla: la columna entra al `SEED_*` y a un consumidor, y los demás lectores quedan
+  atrás **sin fallar**. Queda como checklist de cuatro puntos, donde se lee antes de tocar un
+  `.gs`.

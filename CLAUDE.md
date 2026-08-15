@@ -60,6 +60,25 @@ grep -rn "function nombreNuevo_" *.gs
     de la matriz de escritores. **Cuando la duplicación es el diseño, la salida no es borrarla:
     es que el desajuste falle.** `tools/listas.js` (10/08) lee las tres por texto y sale con
     error si difieren; su control positivo es sacar una hoja de una lista y ver que rompa.
+- **Agregar una columna a una hoja de registro es tocar N lectores, no uno. Greppear el nombre
+  de la columna antes de dar el alta por terminada.** Van **tres casos en una semana**, los tres
+  con el mismo modo de falla: la columna entra al `SEED_*` y a **un** consumidor, y los demás
+  lectores quedan atrás **sin fallar**.
+  - `campo_id_cuenta` (`_44`) entró al seed y a la lista de columnas que compara
+    `aplicarClasificacionSolapas_`, **y no a `leerFilasSolapas_`**. Síntoma: `"undefined"` **como
+    texto** en un diff, un mes después.
+  - `encabezado` (`D-31`) se habría poblado sólo en la hoja, y `upsertPorClave_` la **borra** al
+    primer cambio de otra columna — `headers.map(h => (h in obj) ? obj[h] : '')`.
+  - `uso` con espacios: seis comparadores en el camino de lectura, **todos crudos**, y `R-10`
+    escrita desde el 02/08 (`PENDIENTES`, 15/08).
+  - **La checklist, que es lo accionable:** `grep -rn "<columna>" *.gs` y mirar **(a)** los
+    lectores que arman el registro —`leerSolapas`, `leerFilasSolapas_`, `leerRegistro_`—,
+    **(b)** los `SEED_*` y `COLUMNAS_DELTA_`, **(c)** todo `upsertPorClave_` que escriba esa
+    hoja, porque **blanquea lo que el objeto no traiga**, y **(d)** `tools/` — las tres listas
+    duplicadas a propósito.
+  - **El síntoma nunca es un error**: es un `undefined` disfrazado de texto, una celda que se
+    vacía sola, o una comparación que no matchea. Por eso hay que buscarlo al escribir y no
+    esperar a que aparezca.
 - **Toda fila nueva de `MAPEO` lleva letra y encabezado.** La letra es la referencia operativa
   y **la única forma de encontrar la columna**; `encabezado` documenta qué título hay hoy en esa
   letra. Escribir una sin la otra deja el hueco abierto justo donde la documentación dice que

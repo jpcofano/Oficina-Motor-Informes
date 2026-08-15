@@ -3992,3 +3992,87 @@ las que el seed no tiene**, ni las `origen=manual`.
 **No está medido si hay alguna celda así hoy.** `diffSolapasSinAplicar_` no lo mostraría: compara
 seed contra hoja, y si las dos dicen `fuente` con distinto espaciado, ahora normaliza y no las
 reporta. Para saberlo hay que mirar las 84 celdas de `uso` crudas.
+
+### El destrabe — qué habría que tocar, medido el 15/08/2026
+
+**Los comparadores de `uso` en el camino de lectura son seis, y todos comparan crudo:**
+
+| dónde | qué compara | de dónde saca el `uso` |
+|---|---|---|
+| `Config.gs:251` — **`buscarMapeo`** | `uso !== 'fuente'` | `usoSolapa_` |
+| `Fuentes.gs:399` | `usoSolapa_(...) !== 'fuente'` | `usoSolapa_` |
+| `Generador.gs:54` | `usoSolapa_(...) === 'fuente'` | `usoSolapa_` |
+| `Fuentes.gs:197` | `uso !== 'fuente'` | `leerSolapas()` directo |
+| `Fuentes.gs:719` | `destino.uso !== 'fuente'` | `leerSolapas()` directo |
+| `Auditoria.gs:638` | `fila.uso !== 'fuente'` | `leerSolapas()` directo — instrumento |
+
+**Los seis convergen en un solo constructor: `leerSolapasSinCache_` (`Config.gs:184`)**, que arma
+`registro[baseId][solapa] = { uso: fila[idx.uso], … }` con el valor crudo de la celda. `usoSolapa_`
+sólo lo devuelve.
+
+**Por eso el arreglo es de una línea y en un solo lugar:** normalizar `uso` **al construir el
+registro**, con `normalizarValorDeclarado_`. Los seis consumidores reciben el valor limpio sin
+tocarlos, y no hace falta acordarse de normalizar en el séptimo que se escriba — que es
+exactamente el modo de falla que este repo ya tuvo tres veces con las columnas nuevas.
+
+**Lo que hay que verificar antes de darlo por bueno, y es lo que lo saca de "una línea":**
+
+1. **Que el sembrador no cambie de comportamiento.** `aplicarClasificacionSolapas_` **no** usa
+   `leerSolapas()` sino `leerFilasSolapas_` (`Solapas.gs`), así que en principio no lo toca. Hay
+   que confirmarlo, no suponerlo.
+2. **Que ningún consumidor dependa del valor crudo** para escribirlo de vuelta. Un `uso` leído
+   normalizado y reescrito limpiaría la celda de costado, que es un efecto y no un arreglo.
+3. **Que `DIAG_BASES` y los reportes sigan mostrando lo que la celda tiene**, no lo normalizado:
+   si el instrumento normaliza, el síntoma vuelve a ser invisible y el pendiente se cierra sin
+   estar resuelto.
+
+**La prueba que lo verificaría**, y tiene que ser de las dos mitades:
+
+- **La pura:** `usoSolapa_` sobre un registro fabricado con `' fuente '`, `'fuente\n'` y
+  `'Fuente'` — las dos primeras tienen que resolver `fuente`; **la tercera no**, porque `R-10`
+  preserva mayúsculas y plegar el case acá sería otra decisión, no ésta.
+- **La de punta a punta, que es la que cierra:** poner una celda de `SOLAPAS` con un espacio de
+  más, correr `buscarMapeo` sobre esa solapa y verificar que **resuelve**. Hoy devuelve
+  `«FALTA:…@solapa_no_fuente»`, así que el control positivo existe y es visible: **la prueba
+  falla antes del arreglo y pasa después**, que es lo único que prueba que el arreglo sirve.
+
+**Por qué no se hace de paso:** toca el camino de lectura de **todas** las fuentes, y una
+regresión ahí no rompe la corrida — la deja publicando menos. Necesita su propia corrida.
+
+---
+
+## Una planilla que veinte solapas espejan y `BASES` no conoce — 15/08/2026
+
+`1siyVJPVuObp1UEeQTS4IncXpsbev_Iqs-b27hZfLhds`. **Las 20 solapas nuevas de `reuniones` son
+`IMPORTRANGE` suyos** —una fórmula en `A1` por solapa, rango entero, medido el 15/08— y las
+cuatro registradas tienen cero fórmulas.
+
+**Por qué es un pendiente y no un dato de color:** `Métricas EDVs` es **el superconjunto de
+`Agenda JM`**, verificado sobre `1493` (sus `S/T/U/V` reproducen exacto `AA/AJ/AM`). O sea que
+**el dato que el motor publica hoy nace en esa planilla**, viaja por un espejo, y el motor lee la
+copia de la copia sin saber que existe el original.
+
+**Qué lo destraba:** decidir si esa planilla se registra en `BASES`. **No es automático** — su
+dueño es ajeno, y `R-02` y el caso `digital/RDV` ya enseñaron que sumar una fuente que duplica
+otra produce doble conteo. La pregunta concreta es si algún token necesita algo que **sólo** esté
+ahí: hoy el candidato es la columna `Validación` de `Métricas EDVs`, que no existe en ninguna
+solapa registrada.
+
+**Mientras tanto, las 20 quedan fuera de `fuente` por regla y no por caso**: leer un espejo es
+tener dos respuestas para la misma pregunta, y la segunda envejece sin avisar.
+
+---
+
+## `Agenda JM | Post` ya usa `-` como dato, y `-` iba a ser un estado publicable — 15/08/2026
+
+Medido el 15/08: la solapa **trae `-` como valor** en varias columnas. El frente de los estados
+`-` / `---` —bloqueado en `PLAN.md` §3, esperando decisión del usuario— iba a definir `-` como
+**estado publicable** del motor.
+
+**Son dos cosas distintas con el mismo símbolo**, y hoy no hay forma de distinguirlas: un `-` que
+viene de la base y un `-` que el motor escribe porque algo no es calculable se ven igual en el
+deck y en `FALTANTES`.
+
+**Qué lo destraba:** la misma decisión del usuario que ya está esperando, **con esta pregunta
+agregada**: si el estado publicable se distingue del dato, o si se elige otro símbolo. **No se
+resuelve acá**; se anota para que la decisión se tome sabiendo esto.
