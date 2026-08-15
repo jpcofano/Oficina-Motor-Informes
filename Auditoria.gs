@@ -2169,8 +2169,40 @@ function verDiffDeSolapas() {
  * reportada va a ser distinta y se va a ver.
  */
 function testigoDeImpresiones() {
+  /* ⚠ **`resolverMarcadores` devuelve un OBJETO, no un array** — medido en `Generador.gs:1095`:
+   * `{ ok, informe_id, resultados: [...], resumen: { total, ok, sin_datos, revisar, error,
+   * lecturas_cacheadas } }`. El array está en `.resultados`.
+   *
+   * La primera versión hacía `res.forEach(...)` y rompía con `res.forEach is not a function`
+   * **después de 3m30s de lectura**, o sea con todo el trabajo ya hecho y tirado.
+   *
+   * **No se envuelve en `Array.isArray(res) ? res : [res]`**: eso convertiría un malentendido
+   * sobre la forma del dato en código que anda por casualidad, y taparía el día que el contrato
+   * cambie de verdad. Se leyó el `return` y se usa la forma que tiene.
+   *
+   * ⚠ **COSTO: ~3m30s, contra un límite de 6 minutos por invocación.** No hay ningún bucle con
+   * lectura adentro acá — el costo es de `resolverMarcadores`, que resuelve **los 78 marcadores
+   * del informe** contra las bases, y de esos sólo se necesitan 8. No se acota porque acotarlo
+   * sería o tocar el motor o reimplementar los ocho por fuera, y reproducir lógica que el motor
+   * ya tiene es el error que este proyecto persigue.
+   *
+   * **Consecuencia para la Parte C, que hay que saber antes de correrla:** el 58% del
+   * presupuesto ya está gastado. Si la resolución de dimensiones agrega costo, la corrida
+   * **no falla: devuelve menos**. Si se acerca al límite, la salida es correrlo por informe o
+   * con la ventana fijada, no confiar en que entre. */
   var res = resolverMarcadores('jm');
+  if (!res || !res.ok || !res.resultados) {
+    Logger.log('resolverMarcadores no devolvió resultados: ' + JSON.stringify(res));
+    return { ok: false, motivo: 'sin resultados' };
+  }
+  Logger.log('resolverMarcadores(jm) → ' + res.resumen.total + ' marcadores · ok=' + res.resumen.ok +
+    ' · sin_datos=' + res.resumen.sin_datos + ' · revisar=' + res.resumen.revisar +
+    ' · error=' + res.resumen.error);
+
+  // `leerMarcadores_()` hace falta: `resultados` trae `marcador`, `base_id` y `operacion`, pero
+  // NO `solapa`, `campo_logico` ni `filtro`, que son con los que se agrupa por definición.
   var todos = leerMarcadores_();
+  var testigo = [];
 
   // Agrupar por definición para descubrir el conjunto sin nombrarlo.
   var porDef = {};
@@ -2182,7 +2214,12 @@ function testigoDeImpresiones() {
 
   var valorDe = {};
   var trazaDe = {};
-  res.forEach(function (r) { valorDe[r.marcador] = r.valor; trazaDe[r.marcador] = r.traza || ''; });
+  var estadoDe = {};
+  res.resultados.forEach(function (r) {
+    valorDe[r.marcador] = r.valor;
+    trazaDe[r.marcador] = r.traza || '';
+    estadoDe[r.marcador] = r.estado || '';
+  });
 
   Object.keys(porDef).forEach(function (k) {
     var grupo = porDef[k];
@@ -2219,7 +2256,17 @@ function testigoDeImpresiones() {
       Logger.log('  -- descuadre ' + a + ': total=' + total[a] + ' · suma de partes=' + suma[a] +
         ' · diferencia=' + d + (d === 0 ? '  ✔ CUADRA' : '  ⚠ NO CUADRA'));
     });
+
+    // El testigo, en una sola linea por marcador y en el orden en que se va a comparar.
+    // `CLAUDE.md` §2: desde el editor un valor de retorno no se ve, así que el testigo tiene
+    // que estar ENTERO en el log o no sirve para la Parte C.
+    Logger.log('  == TESTIGO (copiar tal cual) ==');
+    grupo.forEach(function (m) {
+      Logger.log('  ' + m.marcador + '	' + valorDe[m.marcador] + '	' + (estadoDe[m.marcador] || ''));
+      testigo.push({ marcador: m.marcador, valor: valorDe[m.marcador], estado: estadoDe[m.marcador] });
+    });
   });
 
-  return { ok: true };
+  Logger.log('== fin del testigo: ' + testigo.length + ' marcador(es) ==');
+  return { ok: true, testigo: testigo };
 }
