@@ -2565,3 +2565,26 @@ function censarTokensEnPlantilla(informeId, tokensCsv) {
 
   return { ok: true, informe_id: informeId, total_laminas: slides.length, donde: donde };
 }
+
+/**
+ * Los ocho del piloto, en la plantilla de `jm`. **Wrapper sin argumentos de
+ * `censarTokensEnPlantilla`.**
+ *
+ * ⚠ **Existe porque una función CON PARÁMETROS no aparece en el desplegable del editor**, aunque
+ * no termine en `_`. Es la segunda mitad de la convención de `CLAUDE.md` §2, y ya es la tercera
+ * vez que aparece: lo que corre una persona tiene que ser invocable **sin `_` final y sin
+ * argumentos**.
+ *
+ * **Qué cierra:** el punto 4 de la Parte A del piloto —*"los consumidores: qué láminas y qué
+ * informes usan esos ocho tokens"*—, que quedó medido contra `docs/TOKENS.md` y **no contra la
+ * plantilla viva**. Una cita no es la fuente.
+ *
+ * Y de paso **nombra los cuatro `gcba_imp_*`**, que `TOKENS.md` describe como *"los mismos con
+ * prefijo `gcba_`"* sin listarlos — una descripción que no se puede verificar mirando la
+ * plantilla.
+ */
+function censarTokensDelPiloto() {
+  return censarTokensEnPlantilla('jm',
+    'imp_total,imp_meta,imp_google,imp_prog,' +
+    'gcba_imp_total,gcba_imp_meta,gcba_imp_google,gcba_imp_prog');
+}
