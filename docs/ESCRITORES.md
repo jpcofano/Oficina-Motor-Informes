@@ -64,6 +64,40 @@ agujero del patrón.
 | `MARCADORES` | **la plantilla** (`D-17`), vía el `Paso-2.5`, que todavía no corrió | migración `migrarCalculoAOperacion_` · **`curarMarcadores_`** (`Instalar.gs`, 03/08/2026) · **`curarCamposMarcadores_`** (`Instalar.gs`, 07/08/2026) | ⚠ **sigue sin sembrador, y es a propósito.** **`curarCamposMarcadores_` es el tercer escritor y entró el 07/08**: es a `MARCADORES` lo que `curarSecciones_` es a `SECCIONES` — corrige **un campo** de una fila que ya existe, no crea ni borra. Nace porque `curarMarcadores_` sólo sabe filas enteras, y cambiar el `formato` de nueve filas con esa herramienta las borra y las reescribe al final de la hoja. Su primer uso: `migrarFormatoPorcentajeSinSigno_` (`A.7`/`B.1`). `curarMarcadores_` **no lo es**: es la puerta para curar filas puntuales —retirar las tres de ejemplo, cargar y retirar las `prueba_*` del corte vertical—, que hasta hoy se hacían a mano en la planilla. El sembrador real lo trae el `Paso-2.5` (`sembrarMarcadoresDesdePlantillas` + `upsertSoloVacias_`) y **no compite con éste**: aquél completa vacías desde los `{{token}}` de los Slides, éste agrega y quita filas enteras por decisión de una persona. H-6 sigue confirmado |
 | `LAMINAS` | **la plantilla** — el ancla `#lamina: L-NNN` de las notas del orador es el hecho; la hoja es registro reparable (`11.1` §4). Nació con el `_11` el 09/08 | `sellarPlantilla` (agrega filas enteras, por posición) · `borrarFilasDeLaminas` (excepción de un error, no un mecanismo) · **`escribirColumnaLaminas_`** (10/08, celdas puntuales por nombre de columna) | ✅ tres caminos, los tres declarados. **`escribirColumnaLaminas_` es el único que escribe celdas que no son filas nuevas** — un segundo sería bug de arquitectura aunque escribiera bien. ⚠ Hay un cuarto escritor **estructural**: `aplicarInstalacion_` reescribe la fila 1 de encabezados, porque `LAMINAS` no está en `COLUMNAS_DELTA_`. No es de contenido y §1 ya lo declara para todas |
 
+## 1 bis · Si corrijo un valor en el `SEED_*`, ¿llega a la hoja? — medido el 16/08/2026
+
+**Es otra pregunta que la tabla de arriba, y por eso está aparte.** Aquélla dice **quién** puede
+escribir; ésta dice **qué pasa cuando el valor ya existe en la hoja y el seed cambia de opinión**.
+Se preguntó **dos veces en una semana** y se va a volver a preguntar en cada tanda de la
+migración.
+
+**La respuesta no es la misma para todas las hojas, y esa es toda la razón por la que esta tabla
+existe.**
+
+| hoja | mecanismo | ¿una corrección del seed llega? |
+|---|---|---|
+| `BASES` | `upsertPorClave_` | ✅ **sí** |
+| `MAPEO` | `upsertPorClave_` | ✅ **sí** |
+| `INFORMES` | `upsertPorClave_` | ✅ **sí** |
+| `PERIODOS` | `upsertPorClave_` | ✅ **sí** |
+| `SOLAPAS` | `aplicarClasificacionSolapas_` | ⚠ **parcial.** Siembra cinco columnas —`uso`, `fila_encabezado`, `ventana_ref`, `campo_id_cuenta`, `notas`— y de ésas **`uso` está protegido por `D-32`**: el sembrador nunca degrada un `uso` que la hoja ya tiene. Las otras cuatro llegan. Las columnas de medición (`filas_datos`, `filas_crudas`, `firma_encabezado`) son de `inventariarSolapas` y el seed no las toca |
+| **`CONFIG`** | `seedConfigConfig_` | ❌ **NO — sólo escribe si la celda está vacía.** **Es deliberado y está explicado**: el default es **piso, no autoridad**, y el humano edita valores que el seed no debe pisar |
+| **`SECCIONES`** | `sembrarSecciones_` | ❌ **NO — sólo inserta filas nuevas, nunca actualiza.** ⚠ **Y acá no hay nota que lo justifique**: no se sabe si es decisión o descuido. → `PENDIENTES_consistencia.md` |
+| **`MARCADORES`** | **sin sembrador** | — **No compite con ningún seed.** La migración escribe por `curarCamposMarcadores_`, que desde el 15/08 es **todo o nada**. Es la línea que más tranquiliza antes de la tanda 1 |
+| `CAMPANAS` | sin sembrador, a propósito | — curada a mano, cambia cada semana |
+| `REUNIONES` | sin sembrador, a propósito | — ídem, más `cargarTemarioReuniones_` |
+| `LAMINAS` | sin seed posible | — su contenido se **deriva de las plantillas**: no hay valor declarado contra el cual diffear |
+
+**El síntoma de las dos hojas que no propagan, escrito porque no se parece a un error:** un valor
+corregido en el seed produce **una corrida que dice "sin cambios" y una hoja que no se mueve**, y
+**las dos cosas son ciertas por separado**. Es una operación que **no falla y no hace** — lo mismo
+que `D-32` vino a evitar del otro lado. La salida es editar la celda a mano, sabiendo que se está
+haciendo eso.
+
+⚠ **Y antes de mirar esta tabla, mirar la de más atrás: un cambio de seed no existe hasta que se
+empuja.** `CLAUDE.md` §4. Que la hoja no cambie tiene **dos** causas posibles antes que ésta —la
+corrida equivocada (`instalar()` no siembra) y el código sin pushear—, y las dos se ven igual.
+
 ## 2 · Los conflictos que la matriz deja a la vista
 
 ### 2.1 · `MAPEO`: el tercer escritor se retiró; quedan dos, y uno sigue sin declarar

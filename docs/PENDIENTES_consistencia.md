@@ -4160,3 +4160,40 @@ la tiene, es el caso de `R-25` —una solapa sin fecha propia toma la ventana de
 
 **No se arregla acá.** `digital/Alcance` es `uso = fuente` y tocarla afecta a `alc_alcance` y
 `alc_frecuencia`, que hoy publican bien.
+
+---
+
+## `sembrarSecciones_` nunca actualiza, y no se sabe si es decisión o descuido — 16/08/2026
+
+**El hecho, medido:** `sembrarSecciones_` (`Instalar.gs`) **sólo inserta filas nuevas**. Filtra
+`SEED_SECCIONES_` por las `seccion_id` que no están en la hoja y agrega esas; **para una fila que
+ya existe no compara ni escribe nada.**
+
+**Por qué es un pendiente y no un bug:** **la misma conducta en `CONFIG` es deliberada y está
+explicada** — `seedConfigConfig_` escribe sólo si la celda está vacía porque **el default es piso,
+no autoridad**, y el humano edita valores que el seed no debe pisar. En `SECCIONES` **no hay
+ninguna nota que diga lo mismo ni lo contrario.** Puede ser la misma decisión sin escribir, o
+puede ser que nadie lo pensó.
+
+**El síntoma, escrito porque no se parece a un error:** un valor corregido en `SEED_SECCIONES_`
+produce **una corrida que dice "sin cambios" y una hoja que no se mueve**, y **las dos cosas son
+ciertas por separado**. Es una operación que **no falla y no hace** — lo mismo que `D-32` vino a
+evitar del otro lado. Nada avisa, y parece verde.
+
+**Qué lo destraba, y es una sola pregunta:** ¿`SECCIONES` debe comportarse como **`CONFIG`** —la
+hoja manda, el seed sólo siembra lo ausente— o como **`BASES`/`MAPEO`/`INFORMES`/`PERIODOS`** —el
+seed corrige lo que difiere—? **Es del usuario y no se decide acá.**
+
+- **Si la respuesta es "como `CONFIG`"**, no hay que tocar código: hay que **escribir la nota**,
+  que es lo único que falta.
+- **Si es "como `BASES`"**, `sembrarSecciones_` pasa a `upsertPorClave_` con clave `seccion_id`,
+  y eso **hay que medirlo antes**: `SECCIONES` tiene columnas que el seed podría no declarar, y
+  `upsertPorClave_` **reescribe la fila entera** poniendo `''` en lo que el objeto no traiga.
+
+⚠ **Y lo que hay que mirar antes de concluir que una corrección de seed no llegó**, porque ya
+costó dos veces esta semana: **un cambio de seed no existe hasta que se empuja**, y *"la hoja no
+cambió"* tiene **dos** causas más frecuentes que ésta — la corrida equivocada (`instalar()` no
+siembra; 15/08) y el código sin pushear (16/08). Las tres se ven igual. `CLAUDE.md` §4.
+
+**La tabla completa de qué hoja propaga una corrección y cuál no está en `docs/ESCRITORES.md`
+§1 bis.**

@@ -10382,3 +10382,62 @@ vacío en los 78 marcadores y en las 36 secciones. El período se elige **por co
 está declarado en ningún lado.
 
 **El eslabón de informe es prompt propio, y lo escribe el usuario.**
+
+---
+
+## Por qué el sembrador no aplicó `periodicidad`: código sin pushear (2026-08-16)
+
+> Medición pedida por el usuario tras correr *Aplicar configuración* y ver que la celda no
+> cambiaba. **No se tocó el sembrador.**
+
+### La causa, y el error es de esta sesión
+
+**`clasp push` corrió ANTES de que yo editara el seed**, y después de corregirlo commiteé a git y
+**no volví a pushear**. Le dije al usuario *"el camino es el sembrador"* sobre un cambio que sólo
+existía en el repo.
+
+**Verificado, no deducido:** se bajó el proyecto a un temporal con `clasp pull` —sin pisar nada
+del repo— y `Instalar.js` del proyecto **seguía diciendo `periodicidad: 'mensual'`**.
+
+**El sembrador hizo exactamente lo correcto.** Corrió con un seed que decía `mensual`, la hoja
+decía `mensual`, no había diferencia, no escribió, e informó *"sin cambios"* — que era verdad
+sobre el código que tenía delante.
+
+**No es el mismo caso del 15/08**, aunque el síntoma sea idéntico: aquél era **la corrida
+equivocada** (`instalar()` no siembra), éste es **código sin pushear**. **En los dos la conclusión
+rápida habría sido "el sembrador está roto"**, y en los dos habría sido falsa. La regla quedó en
+`CLAUDE.md` §4, con el chequeo barato: `clasp pull` a un temporal responde qué versión corrió, en
+dos comandos y sin efectos.
+
+### Las tres candidatas del usuario, descartadas con evidencia
+
+`D-32` vive **sólo** dentro de `aplicarClasificacionSolapas_` y **sólo** sobre `SOLAPAS.uso`. No
+hay protección por `origen`. Y `calcularDiffUpsert_` recorre `Object.keys(obj)`, así que **compara
+todas** las columnas del seed, `periodicidad` incluida. `INFORMES` **sí** se siembra, por
+`upsertPorClave_`.
+
+### Pero la pregunta encontró otra cosa, y es lo que queda
+
+**La preocupación de fondo —*"si corregir un valor existente en el seed no llega nunca a la hoja,
+toda corrección de esta migración va a necesitar edición manual"*— era correcta, y hay dos hojas
+donde pasa:**
+
+- **`CONFIG`** — `seedConfigConfig_` escribe **sólo si la celda está vacía**. **Es deliberado y
+  está explicado**: el default es piso, no autoridad.
+- **`SECCIONES`** — `sembrarSecciones_` **sólo inserta filas nuevas y nunca actualiza**, y **no
+  hay nota que lo justifique**. → `PENDIENTES`, con la distinción y su destrabe: hace falta saber
+  si debe comportarse como `CONFIG` o como `BASES`. **No se decidió.**
+
+**Y para la tanda 1 la respuesta tranquiliza por un motivo distinto del esperado:** `MARCADORES`
+**no tiene sembrador en absoluto**, así que la migración escribe por `curarCamposMarcadores_` y
+**no compite con ningún seed**. No va a necesitar edición manual.
+
+**La tabla de las once hojas —mecanismo y si una corrección llega— quedó en `docs/ESCRITORES.md`
+§1 bis**, que es donde se busca. Es la respuesta a una pregunta que se hizo dos veces esta semana
+y que se va a volver a hacer en cada tanda.
+
+### El estado, al cierre
+
+`clasp push` corrido y **verificado contra el remoto**: el proyecto dice `semanal` y tiene las
+tres funciones nuevas. **La hoja ya la había corregido el usuario a mano**, así que hoja, seed y
+proyecto coinciden y no queda divergencia.

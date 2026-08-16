@@ -365,6 +365,31 @@ el criterio menciona la cosa que se migra —la columna, el nombre, el prefijo�
 mide una sola de las dos fotos. **El síntoma nunca es un error: es un conjunto que se achica sin
 que nadie lo pida.**
 
+**Un cambio de seed no existe hasta que se empuja, y el sembrador no tiene forma de decirlo.**
+Van **dos casos en una semana**, con el **mismo síntoma** —*la corrida termina bien y la hoja no
+se mueve*— y **causas distintas**:
+
+- **15/08, las 20 solapas: era la corrida equivocada.** `instalar()` **no siembra** —crea/repara
+  hojas y aplica `COLUMNAS_DELTA_`—; el que siembra es el ítem de menú **Aplicar configuración**.
+- **16/08, `INFORMES.periodicidad`: era código sin pushear.** El seed se corrigió en el repo y
+  `clasp push` había corrido **antes** de esa edición. Verificado bajando el proyecto con
+  `clasp pull` a un temporal: seguía diciendo `mensual`.
+
+**En los dos el sembrador informó la verdad sobre lo que tenía delante**, y en los dos **la
+conclusión rápida habría sido "el sembrador está roto"** — que era falso, y perseguirla habría
+costado el día.
+
+- **Lo accionable, antes de acusar al sembrador:** verificar **qué versión corrió**. Que el repo
+  tenga el valor bueno no dice nada; lo que importa es qué tiene el proyecto de Apps Script.
+  `clasp pull` a un directorio temporal lo responde **sin pisar nada** y en dos comandos.
+- **Y la regla de higiene que lo evita:** `clasp push` **después** de tocar un `.gs`, no antes de
+  la próxima tanda de ediciones. Un push que corrió antes del cambio es indistinguible de uno que
+  no corrió.
+- ⚠ **El corolario que hace falta saber igual: que el seed llegue no garantiza que la hoja
+  cambie.** Hay dos hojas donde una corrección **nunca** llega —`CONFIG` y `SECCIONES`, que sólo
+  siembran lo ausente—. La tabla de qué se propaga y qué no vive en `docs/ESCRITORES.md`, y es lo
+  primero que hay que mirar antes de corregir un valor en un `SEED_*`.
+
 **Y su contracara, que es la mitad que faltaba: la comparación no puede depender de lo que se
 mueve solo.** Un testigo sirve si la única diferencia entre las dos tomas es el cambio que se
 está midiendo. Cuando la fuente se mueve por su cuenta —`looker` recalcula, y el 15/08 movió
