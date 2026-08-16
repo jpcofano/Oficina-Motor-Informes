@@ -2221,12 +2221,25 @@ function testigoDeImpresiones() {
     estadoDe[r.marcador] = r.estado || '';
   });
 
+  /* **Se agrupa por LA MEDIDA — base, solapa, `campo_logico`, `operacion`— y nada más.**
+   *
+   * La primera versión exigía además que **todos los filtros difirieran**, y con eso el
+   * instrumento **dejó de ver los ocho justo después de migrarlos**: ya migrados comparten
+   * `filtro = "estado=Activa"` y difieren en `dimensiones`, así que el grupo se descartaba
+   * entero. El testigo devolvió 14 marcadores en vez de 22 y el grupo de `Impresiones`
+   * desapareció — sin que nada fallara.
+   *
+   * ⚠ **La lección, que ya va tercera en dos días: el testigo no puede depender de dónde vive
+   * el corte, porque eso es justamente lo que la migración cambia.** Es la misma clase de error
+   * que el gate de `D-32` probado contra el caso que lo motivaba y no contra el que lo rompía:
+   * el criterio se escribió mirando el estado de HOY —el corte en `filtro`— y el instrumento
+   * existía para medir el cambio a MAÑANA.
+   *
+   * Con el criterio por medida, el instrumento ve los tres estados: corte en `filtro` (antes),
+   * en `dimensiones` (después), y repartido entre los dos (durante). */
   Object.keys(porDef).forEach(function (k) {
     var grupo = porDef[k];
     if (grupo.length < 2) return;
-    var filtros = {};
-    grupo.forEach(function (m) { filtros[m.filtro] = true; });
-    if (Object.keys(filtros).length !== grupo.length) return; // no es "sólo difieren en filtro"
 
     Logger.log('===== ' + k + ' — ' + grupo.length + ' marcadores =====');
 
@@ -2246,10 +2259,16 @@ function testigoDeImpresiones() {
      *
      * Un testigo archivado con seis "NO CUADRA" falsos es peor que no tenerlo: el día que
      * aparezca uno real nadie lo va a mirar. */
+    // El corte de una fila puede estar en `filtro`, en `dimensiones`, o repartido. Se lee de los
+    // dos lados **siempre**, que es lo que hace al testigo indiferente al momento de la migración.
+    var corteDe = function (m) {
+      return String(m.filtro || '') + ' ' + String(m.dimensiones || '');
+    };
     var esRatio = String(grupo[0].operacion || '').toUpperCase().indexOf('PCT') !== -1 ||
                   String(grupo[0].operacion || '').toUpperCase().indexOf('RATIO') !== -1;
     var hayParticionPlataforma = grupo.some(function (m) {
-      return String(m.filtro || '').indexOf('Plataforma') !== -1;
+      var c = corteDe(m);
+      return c.indexOf('Plataforma') !== -1 || c.indexOf('plataforma=') !== -1;
     });
     var calculaDescuadre = !esRatio && hayParticionPlataforma;
 
@@ -2257,16 +2276,18 @@ function testigoDeImpresiones() {
     var total = { jm: null, gcba: null };
 
     grupo.forEach(function (m) {
-      var f = String(m.filtro || '');
-      var ambito = f.indexOf('!~=JM') !== -1 || f.indexOf('!=jorge.macri') !== -1 ? 'gcba' : 'jm';
-      var otroEje = f.indexOf('mail_tipo') !== -1; // `tipo_envio`: no participa del descuadre
-      var esAgregado = f.indexOf('Plataforma') === -1;
+      var f = corteDe(m);
+      var ambito = (f.indexOf('!~=JM') !== -1 || f.indexOf('!=jorge.macri') !== -1 ||
+                    f.indexOf('ambito=gcba') !== -1) ? 'gcba' : 'jm';
+      var otroEje = f.indexOf('mail_tipo') !== -1 || f.indexOf('tipo_envio=') !== -1;
+      var esAgregado = f.indexOf('Plataforma') === -1 && f.indexOf('plataforma=') === -1;
       var v = valorDe[m.marcador];
 
       Logger.log('  ' + m.marcador + ' = ' + v + '   [ambito=' + ambito +
         (otroEje ? ' · tipo_envio' : (esAgregado ? ' · AGREGADO' : ' · con plataforma')) +
         ' · estado=' + (estadoDe[m.marcador] || '?') + ']');
-      Logger.log('      filtro: ' + (m.filtro || '(vacío)'));
+      Logger.log('      filtro:      ' + (m.filtro || '(vacío)'));
+      Logger.log('      dimensiones: ' + (m.dimensiones || '(vacío)'));
       if (trazaDe[m.marcador]) Logger.log('      traza:  ' + trazaDe[m.marcador]);
 
       if (!calculaDescuadre || otroEje) return;
@@ -2290,13 +2311,14 @@ function testigoDeImpresiones() {
      * datos de una ventana ya cerrada — medido el 15/08, +138.427 impresiones en 1h45 sobre la
      * misma ventana—. **El valor absoluto no distingue "la migración rompió algo" de "entraron
      * filas nuevas".** Las cuentas de filas de la traza sí. */
-    Logger.log('  == TESTIGO (copiar tal cual: marcador \t valor \t estado \t traza) ==');
+    Logger.log('  == TESTIGO (copiar tal cual: marcador \t valor \t estado \t dimensiones \t traza) ==');
     grupo.forEach(function (m) {
       var t = (trazaDe[m.marcador] || '').replace(/\s+/g, ' ');
       Logger.log('  ' + m.marcador + '	' + valorDe[m.marcador] + '	' +
-        (estadoDe[m.marcador] || '') + '	' + t);
+        (estadoDe[m.marcador] || '') + '	' + (m.dimensiones || '-') + '	' + t);
       testigo.push({ marcador: m.marcador, valor: valorDe[m.marcador],
-                     estado: estadoDe[m.marcador], traza: t });
+                     estado: estadoDe[m.marcador], dimensiones: m.dimensiones || '',
+                     filtro: m.filtro || '', traza: t });
     });
   });
 
