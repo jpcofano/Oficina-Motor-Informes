@@ -1562,5 +1562,16 @@ function condicionesDeDimensiones_(baseId, solapa, texto) {
     salida.push(fisica);
   }
 
-  return { ok: true, condiciones: salida.join(SEPARADOR_CONDICIONES_FILTRO_) };
+  /* El separador se emite **con espacios a los dos lados**, igual que el resto del motor.
+   *
+   * Con `join(SEPARADOR_CONDICIONES_FILTRO_)` pelado el filtro generado salía
+   * `nombre_campaña~=JM&&Plataforma=Meta && estado=Activa` — sin espacios en el `&&` que une las
+   * dimensiones entre sí, y con espacios en el que las une al `filtro`. **Las tres condiciones
+   * parseaban bien igual**, porque `parsearFiltro_` hace `trim` de cada pieza.
+   *
+   * Se arregla porque el día que un valor contenga un `&` la diferencia deja de ser cosmética:
+   * un separador que a veces lleva espacios y a veces no obliga a que el parser adivine, y un
+   * filtro mal partido **no falla — recorta mal**. */
+  var SEP = ' ' + SEPARADOR_CONDICIONES_FILTRO_ + ' ';
+  return { ok: true, condiciones: salida.join(SEP) };
 }
