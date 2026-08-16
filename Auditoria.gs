@@ -2439,3 +2439,63 @@ function verificarEncabezadosDeMapeo() {
   return { ok: true, revisadas: revisadas, sin_testigo: sinTestigo,
            no_fuente: noFuente, ilegibles: ilegibles, desalineadas: desalineadas };
 }
+
+/**
+ * En qué láminas de una plantilla aparece cada uno de los tokens pedidos.
+ *
+ * ⚠ **Wrapper público, sin `_` final** (`CLAUDE.md` §2): lo corre una persona desde el
+ * desplegable y devuelve por `Logger.log`, no sólo por `return`.
+ *
+ * **Por qué existe, habiendo `diagTokensDeLamina_`:** aquélla contesta *"qué tokens tiene ESTA
+ * lámina"* y hay que darle el orden de una. La pregunta inversa —*"¿dónde se usa ESTE token?"*—
+ * no la contestaba nadie, y es la que hace falta para decidir sobre un token duplicado: **un
+ * número publicado dos veces no se entiende sin saber en qué lámina se publica cada uno.**
+ *
+ * **Es de sólo lectura**: abre la plantilla y la recorre. No toca `MARCADORES` ni el deck.
+ *
+ * ⚠ **Recorre la PLANTILLA, no el deck expandido**, así que los órdenes que informa son los de
+ * la plantilla — que **no coinciden** con los del deck cuando una sección repetible ya duplicó
+ * sus copias. Es la misma advertencia que el cierre de corrida trae sobre las láminas
+ * escondidas, y acá hay que repetirla porque el número se lee igual y significa otra cosa.
+ *
+ * Uso:  censarTokensEnPlantilla('jm', 'pauta_meta, gcba_pauta_meta')
+ */
+function censarTokensEnPlantilla(informeId, tokensCsv) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) {
+    Logger.log('informe sin plantilla_id: ' + informeId);
+    return { ok: false, motivo: 'informe sin plantilla_id: ' + informeId };
+  }
+
+  var buscados = String(tokensCsv || '').split(',')
+    .map(function (t) { return t.replace(/[{}]/g, '').trim(); })
+    .filter(function (t) { return t !== ''; });
+  if (!buscados.length) {
+    Logger.log('no se pidió ningún token');
+    return { ok: false, motivo: 'sin tokens' };
+  }
+
+  var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+  var donde = {};
+  buscados.forEach(function (t) { donde[t] = []; });
+
+  slides.forEach(function (slide, i) {
+    // Se replica el recorrido de `diagTokensDeLamina_` —`piezasDeTextoDeSlide_`, que baja a
+    // tablas y a grupos donde `getShapes()` no llega— y **sin la guarda de lámina escondida**:
+    // un censo tiene que ver la lámina justamente cuando está escondida.
+    var texto = piezasDeTextoDeSlide_(slide).map(function (p) { return p.texto || ''; }).join('\n');
+    buscados.forEach(function (t) {
+      if (texto.indexOf('{{' + t + '}}') !== -1) {
+        donde[t].push(i + 1 + (esLaminaEscondida_(slide) ? ' (escondida)' : ''));
+      }
+    });
+  });
+
+  Logger.log('== Tokens en la plantilla de ' + informeId + ' · ' + slides.length + ' lámina(s) ==');
+  Logger.log('   ⚠ Órdenes de la PLANTILLA, no del deck expandido.');
+  buscados.forEach(function (t) {
+    Logger.log('   ' + t + ': ' + (donde[t].length ? 'lámina(s) ' + donde[t].join(', ') : '— NO aparece'));
+  });
+
+  return { ok: true, informe_id: informeId, total_laminas: slides.length, donde: donde };
+}
