@@ -56,3 +56,22 @@ No toques `Marcadores.gs`. No agregues lógica de cálculo ni lectura de bases e
 Prueba del usuario: recargar la planilla → ver el menú → "Instalar / reparar hojas"
 → aparecen las **6** hojas con ejemplos. Correr dos veces seguidas no duplica nada.
 Al cerrar el paso: commit `Paso 0 ✅ — instalar() + onOpen() (6 hojas registro)`.
+
+---
+
+## Addendum — 16/08/2026 · `secco` es **semanal**, no mensual
+
+> **El cuerpo no se edita** (`CLAUDE.md` §7: un prompt ejecutado es evidencia congelada). Esto
+> corrige un dato del cuerpo que venció.
+
+La línea de ejemplo de `INFORMES` dice *"Filas ejemplo: `jm` (semanal), `secco` (mensual)"*.
+**`secco` es semanal**, declarado por el usuario el 16/08/2026, y el seed de `Instalar.gs` ya está
+corregido.
+
+**La corrección es documental y no cambia comportamiento:** medido el 16/08, la columna
+`INFORMES.periodicidad` **no tiene un solo lector en el código**. La ventana real la resuelve la
+cadena de `D-20`, y hoy los dos informes caen en `CONFIG`.
+
+Queda anotado acá porque este prompt es de dónde salió el valor original, y **la próxima vez que
+alguien lo lea como referencia del seed va a encontrar la corrección al lado**, en vez de propagar
+el valor viejo.

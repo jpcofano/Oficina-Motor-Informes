@@ -640,22 +640,63 @@ pida, y `jm` es hoy el único que lo pide.
 
 ---
 
-## 2. Informe mensual SECCO-SSCDI
+## 2. Informe semanal SECCO-SSCDI
 
 Cada sección tiene su propia configuración. Es el informe más configurable.
+
+> **El título decía "mensual" hasta el 16/08/2026, y era prosa vencida.** El usuario declaró ese
+> día que **SECCO también es semanal**. La corrección es **documental y no cambia comportamiento**:
+> medido el 16/08, la columna `INFORMES.periodicidad` **no tiene un solo lector en el código** —
+> aparece en un comentario de contrato, en la lista de headers y en el seed, y nadie la consulta—.
+> **La ventana real la resuelve `CONFIG`**, por el eslabón 4 de la cadena de `D-20`.
+>
+> El valor del seed se corrigió a `semanal` igual, y el motivo es preventivo: **una celda que dice
+> lo contrario de la realidad es peor que una vacía**, porque el día que alguien conecte
+> `periodicidad` a la cadena va a heredar el valor viejo creyendo que estaba verificado.
 
 ### 2.0 SECCO repite casi todo JM, a veces con un día de desfasaje — declarado por el usuario, 14/08/2026
 
 El informe SECCO incluye **casi todo lo de JM**, y a veces **actualizado un día después**. Dos
 consecuencias que hay que dejar escritas porque no son obvias:
 
-- **El desfasaje no genera tokens nuevos.** Es la **misma medida con otra ventana**, y la ventana
-  ya se resuelve por informe. Quien vea un número distinto entre los dos informes y piense que
-  hace falta un token propio de `secco`, que empiece por mirar la ventana.
+- **El desfasaje no genera tokens nuevos.** Es la **misma medida con otra ventana**. Quien vea un
+  número distinto entre los dos informes y piense que hace falta un token propio de `secco`, que
+  empiece por mirar la ventana.
+  - ⚠ **Corrección del 16/08: este punto decía *"y la ventana ya se resuelve por informe"*, y eso
+    es falso.** Medido: la cadena de `D-20` **no tiene eslabón de informe** —`resolverVentana` ni
+    siquiera recibe `informe_id`— así que hoy `jm` y `secco` caen los dos en `CONFIG` y resuelven
+    **la misma ventana**. Se puede forzar a mano pasando `periodoId` a `generarInforme`, pero no
+    se resuelve solo. **El razonamiento del punto sigue en pie; lo que no estaba era el
+    mecanismo.** La propiedad general está en `PLAN.md`, `D-33` Addendum 1.
 - **Es el argumento más fuerte a favor del vocabulario global.** Si los dos informes publican en
   su mayoría el mismo hecho, mantener dos juegos de tokens es duplicación pura. **Por eso el
   `2026-08-14_2` lo va a medir en vez de darlo por cierto**: el argumento es fuerte, pero sigue
   siendo un enunciado hasta que el censo diga cuántos tokens se superponen de verdad.
+
+### 2.0 bis · La copia sin recalcular, y por qué el motor la resuelve solo — 16/08/2026
+
+**Hoy `secco` se genera el jueves a la noche y `jm` el viernes al mediodía. SECCO va primero.** Y
+cuando el contenido de SECCO se lleva a JM, **se copia sin recalcular**: llega al informe del
+viernes con el corte del jueves, unas **15 horas** viejo.
+
+**Eso no es un problema de disciplina, y por eso no se arregla con una instrucción de trabajo.**
+Es lo que pasa cuando un informe se arma copiando de otro en vez de generarse.
+
+**Lo que hay que dejar escrito es que el motor lo elimina sin que nadie tenga que acordarse:** en
+cuanto **cada informe se genere con su propia ventana**, no hay nada que copiar — SECCO resuelve
+la suya y JM la suya, y las dos salen del dato de su momento. **La copia sin recalcular deja de
+ser posible, no deja de estar permitida.**
+
+⚠ **Cuánto está en juego, para dimensionarlo:** el 15/08 se midió que `looker` movió **138.427
+impresiones en 1h45**. La ventana de desfasaje entre los dos informes es **ocho veces** ésa.
+
+⚠ **Y hoy el mecanismo no está**: la cadena de `D-20` no tiene eslabón de informe (ver la
+corrección de §2.0). Mientras tanto, la ventana por informe se fuerza a mano con el `periodoId`
+del panel. **Esto describe adónde va, no lo que ya pasa.**
+
+**La propiedad del vocabulario que lo acompaña vive en `PLAN.md`, `D-33` Addendum 1**, y no se
+copia acá: un token compartido va a dar números distintos en los dos informes **y los dos van a
+estar bien**.
 
 ### 2.1 Uno a uno (slides 4–5)
 

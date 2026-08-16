@@ -10309,3 +10309,76 @@ leería como una medida bien cortada por ámbito que casualmente da lo mismo en 
 (`verificarEncabezadosDeMapeo()`), **1 ter** (la tanda 1, que es prompt y no corrida) y **3 bis**
 (los `pauta_*`), los dos últimos marcados **"el usuario lo revisa antes"**. Se mantuvo *lo que NO
 hay que correr*, con `revertirPilotoDeImpresiones()` adentro.
+
+---
+
+## SECCO es semanal, y la ventana no se resuelve por informe (2026-08-16)
+
+> Medición pedida por el usuario, con la corrección documental que le siguió. **La celda de la
+> hoja no se tocó** — se corrigió el seed; la hoja la actualiza *Aplicar configuración*.
+
+### `periodicidad` no tiene un solo lector
+
+Aparece en tres lugares —el comentario de contrato de `leerInformes()`, la lista de headers de
+`SEED_INFORMES_` y los dos valores del seed— y **nadie la consulta**. Cero `.periodicidad` en el
+código.
+
+**Así que corregirla no arregla nada y no rompe nada.** Se corrigió igual, a `semanal`, y el
+motivo va escrito al lado del valor: **una celda que dice lo contrario de la realidad es peor que
+una vacía**, porque el día que alguien conecte `periodicidad` a la cadena va a heredar el valor
+viejo **creyendo que estaba verificado**. Un dato declarado y nunca leído no acumula evidencia de
+estar bien, sólo apariencia de.
+
+### El hallazgo real: la cadena de `D-20` no tiene eslabón de informe
+
+Los cinco eslabones son **campaña → `periodo_ref` del marcador → sección → `CONFIG` → `R-11`
+calculado**, y **`resolverVentana` ni siquiera recibe `informe_id`**.
+
+**Entonces `jm` y `secco` resuelven hoy exactamente la misma ventana** —`CONFIG.periodo_desde/
+hasta` = 24–30/07, origen `config`—, y no por casualidad: `CONFIG` es **un único par de celdas
+global**. Los eslabones 2 y 3 **no se disparan nunca**: `periodo_ref` está vacío en los **78
+marcadores** y en las **36 secciones**.
+
+**Se puede forzar a mano** —`generarInforme(informeId, periodoId)` pisa la cadena entera, y el
+panel ya lo expone por `panel_generar`— **pero no se resuelve solo.**
+
+**Qué más asumía "mensual": sólo prosa.** El título de `CONFIG_INFORMES.md` §2 y un ejemplo de
+`Paso-0-v2.md`. Ninguna hoja: `PERIODOS` sólo tiene `m2_mensual`, que es de M2. **`secco` no tiene
+marcadores todavía, así que el daño era potencial y no actual** — eso bajó la urgencia.
+
+### Una afirmación vencida encontrada de paso
+
+`CONFIG_INFORMES.md` §2.0 decía *"y la ventana ya se resuelve por informe"*. **Es falsa**, y
+estaba justo al lado de lo que había que agregar. Se corrigió con la medición al lado: **el
+razonamiento del punto sigue en pie; lo que no existía era el mecanismo.**
+
+### Los dos apuntes, a destinos distintos porque no son la misma clase de cosa
+
+- **`PLAN.md`, `D-33` Addendum 1** — *un token compartido da números distintos en `jm` y `secco`,
+  y los dos están bien*, porque **la ventana pertenece al informe, no al token**. Va ahí porque es
+  una propiedad del vocabulario global y es donde va a buscar el que dude: **compartir el token es
+  lo que hace los números comparables a simple vista, y por eso mismo invita a compararlos.** Con
+  su contracara dicha junto, o la propiedad se lee como permiso: **la ventana se descarta primero,
+  no siempre**.
+- **`CONFIG_INFORMES.md` §2.0 bis** — *la copia sin recalcular deja de ser posible, no deja de
+  estar permitida*, cuando cada informe se genere con su ventana. Es consecuencia editorial y
+  operativa, no regla del motor.
+
+**El desfasaje en juego son ~15 horas** —SECCO el jueves a la noche, JM el viernes al mediodía— y
+el 15/08 se midió que `looker` movió **138.427 impresiones en 1h45**: la ventana es **ocho veces**
+ésa.
+
+### Y una precisión sobre `R-11`, porque acá 15 horas importan
+
+Se citó como *"de viernes a viernes"*. `semanaR11_` computa **viernes + 6 días = viernes a
+jueves**, siete días, que es lo que `PLAN.md` ya decía. **La regla ya es viernes-a-jueves; lo que
+cambia con SECCO no es el largo sino dónde cae el corte.**
+
+### Estado del `2026-08-13_48`, revisado
+
+**El mecanismo de elegir período al generar está implementado y andando**: panel, override por
+`periodoId`, y `CORRIDAS.periodo_id`. **Lo que nunca se usó es la declaración** — `periodo_ref`
+vacío en los 78 marcadores y en las 36 secciones. El período se elige **por corrida y a mano**; no
+está declarado en ningún lado.
+
+**El eslabón de informe es prompt propio, y lo escribe el usuario.**

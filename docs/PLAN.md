@@ -1180,6 +1180,43 @@ mismo, y la gracia del snapshot es justamente que **no sale del código que se e
 No hace falta un régimen de dos sistemas. `S-05` está vivo —hay un solo lector— y estamos en
 desarrollo. Si alguna vez se quiere un override explícito por informe, se decide entonces.
 
+### Addendum 1 a `D-33` — 16/08/2026 · **la ventana pertenece al informe, no al token**
+
+> El cuerpo de `D-33` no se edita. Esto agrega una propiedad del vocabulario global que no
+> estaba dicha y que, sin decirla, se lee como un error.
+
+**Un token compartido entre `jm` y `secco` va a dar números distintos, y los dos van a estar
+bien.**
+
+El motivo es que **la ventana es una propiedad del informe y no del token**: el mismo
+`imp_total`, con la misma medida, la misma base y las mismas dimensiones, resuelve una ventana
+distinta según para qué informe se esté corriendo. No hay nada que corregir cuando eso pasa.
+
+**Por qué esto tiene que estar escrito acá y no en otro lado.** Es el lugar donde va a buscar
+quien dude, porque la duda nace justo del vocabulario global: **compartir el token es lo que hace
+que los dos números sean comparables a simple vista**, y por eso mismo invita a compararlos. La
+primera vez que alguien mire los dos decks al lado, la diferencia va a parecer un bug —y
+"corregirla" sería romper dos informes correctos para que coincidan.
+
+**El caso concreto que lo motivó, medido el 16/08:** `secco` se genera el **jueves a la noche** y
+`jm` el **viernes al mediodía**. Son unas **15 horas** de diferencia, y no es un redondeo — el
+15/08 medimos que `looker` movió **138.427 impresiones en 1h45**, o sea que la ventana de drift
+en juego es **ocho veces** ésa.
+
+⚠ **Y la contracara, que hay que decir junto o la propiedad se lee como permiso:** esto **no**
+significa que cualquier diferencia entre los dos informes sea legítima. Significa que **la
+ventana se descarta primero**. Si las dos corridas usaron la misma ventana y el número difiere,
+eso sí es un hallazgo.
+
+⚠ **Estado real del mecanismo al 16/08, para que la propiedad no se lea como ya implementada:**
+la cadena de `D-20` **no tiene eslabón de informe** —sus cinco eslabones son campaña →
+`periodo_ref` del marcador → sección → `CONFIG` → `R-11` calculado, y `resolverVentana` **ni
+siquiera recibe `informe_id`**—. Hoy `jm` y `secco` resuelven **exactamente la misma ventana**,
+porque caen los dos en `CONFIG`, que es **un único par de celdas global**. La ventana por informe
+se puede forzar **a mano**, pasando `periodoId` a `generarInforme` —el panel ya lo expone—, pero
+**no se resuelve sola**. La propiedad de arriba describe cómo tiene que comportarse el motor, y
+el eslabón que falta es prompt propio.
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
