@@ -337,6 +337,25 @@ La Parte E del 2.11 cambió `alinearSolapasLookerADinamico_`, se verificó contr
 (el número dio bien) y **no se re-corrieron los controles**; el de `C.2-3` quedó fallando un
 día entero, invisible, hasta que lo encontró el Paso 2.14 al correrlos por API.
 
+**Un instrumento que mide un cambio no puede depender de lo que el cambio modifica.** Van
+**tres casos en dos días** y los tres se ven igual: el criterio se escribe mirando el estado de
+**hoy**, y el instrumento existe para medir el paso a **mañana**.
+
+- **El gate de `D-32`** se probó contra el caso que lo motivó —una degradación— y no contra el
+  que lo rompía: una fila que **no existe**. Las siete afirmaciones daban verde mientras el alta
+  no entraba.
+- **El testigo del piloto** agrupaba los marcadores exigiendo que **difirieran en el `filtro`**.
+  Migrados, el corte pasó a `dimensiones` y los ocho comparten `filtro` — **el instrumento dejó
+  de verlos justo después de migrarlos**, devolvió 14 de 22 y nada falló.
+- **La migración** escribió `filtro` y no `dimensiones` porque la columna no existía: media
+  operación de dos pasos, con el sistema en un estado que ninguno de los dos lados contempla.
+
+**Lo accionable:** antes de escribir un instrumento que va a correr **antes y después** de un
+cambio, preguntarse **qué de lo que estoy usando para identificar lo que mido va a cambiar**. Si
+el criterio menciona la cosa que se migra —la columna, el nombre, el prefijo—, el instrumento
+mide una sola de las dos fotos. **El síntoma nunca es un error: es un conjunto que se achica sin
+que nadie lo pida.**
+
 **Y el control verde también se lee, porque una prueba puede probar lo contrario de lo que
 dice.** `Pruebas.gs:456` afirmaba *"ULTIMO saltea la celda vacía del final"* sobre el fixture
 `[10, 5, '']`. Pasaba desde el día que se escribió — y lo que verificaba era **"ULTIMO elige
