@@ -10077,3 +10077,44 @@ familias compitiendo. Y es un caso más de `C-64`, las dos capas de la base: fil
 2. **¿Los `cc_*` de las láminas 2 y 5 siguen publicando `—`?** Si la respuesta es sí, el frente 8
    no es sobre ellos y su alcance se achica al párrafo de la pregunta real. Si es no, `_32.2` se
    está derogando y eso necesita decirse.
+
+---
+
+## Bloque 5 — la lista de la mañana, y el cierre de la corrida nocturna (2026-08-16)
+
+`docs/CORRIDAS_pendientes_2026-08-16.md`, que **reemplaza** al del 15/08 —queda como evidencia
+congelada— y `HANDOFF_CODE.md` reescrito arrancando con esa lista.
+
+**Cinco entradas, ordenadas por lo que destraban:**
+
+| # | qué | qué destraba | ¿decide el usuario? |
+|---|---|---|---|
+| 1 | **`testigoDeImpresiones()`**, con el canario `gcba_frecuencia` como precondición | el frente 13 | sí, si no reproduce |
+| 2 | **`censarSolapasParaAlta()`** sobre `looker/CC` | el frente 7, y con él el 11 | sí, y es previa: dónde se inserta la columna |
+| 3 | **La Parte A de `R-26`** — no es un botón, es el prompt del 13/08 y nunca corrió | el frente 9, independiente | sí, gate explícito |
+| 4 | **nada que correr** — el frente 8 está bloqueado por una decisión | — | sí, las dos escritas en el bloque 3 |
+| 5 | una corrida del motor para completar el catálogo | mejora el frente 14 | sí, pero de **formato** |
+
+**Dos entradas son negativas y eso es a propósito.** La 4 dice *"no hay instrumento que correr"* y
+la lista tiene además un **«lo que NO hay que correr»** con `migrarPilotoDeImpresiones()`,
+`revertirPilotoDeImpresiones()` e `instalar()` esperando que siembre. Una lista de botones que
+sólo dice cuáles apretar deja al que la lee sin saber cuáles **no**, y las tres tienen precedente
+de haberse apretado de más.
+
+### El saldo de la corrida
+
+**Cinco bloques, cinco commits, y dos de los cinco pararon o cambiaron de forma por una medición.**
+
+- **El bloque 3 paró entero**, con la premisa falsa documentada y sin escribir el prompt ni el
+  instrumento que pedía. Escribir un `R-NN` sobre *"dos universos"* cuando el segundo no tiene
+  marcadores habría sido documentar una ficción **y darle la autoridad de una regla**.
+- **El bloque 2 encontró que el riesgo de `C-61` cambió de signo** y que **el testigo de `D-31` no
+  detecta nada todavía** — el frente 6 dejó el dato, no la alarma.
+- **El bloque 4 casi publica una etiqueta verde que significaba menos de lo que parecía.** El
+  cruce estático da **78 de 78 resuelven** contra los **diez en error** que el motor publica; la
+  columna se llama `config` y no `estado` por eso, y el límite quedó escrito dentro del propio
+  catálogo. **Sus dos controles positivos aíslan un chequeo cada uno** — el segundo marca 1 de 78,
+  el correcto, con la causa correcta.
+
+**Ninguna hoja de registro se tocó, ninguna plantilla, y los ocho del piloto quedaron como
+estaban.**

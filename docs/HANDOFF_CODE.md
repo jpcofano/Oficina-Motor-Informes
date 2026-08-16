@@ -3,48 +3,84 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-15, al cerrar el alta, `D-31` y `D-32`, verificados contra
-los snapshots de `docs/_snapshots/`
+**Última actualización:** 2026-08-16, al cerrar la corrida nocturna `2026-08-16_1` (cinco bloques)
 
-## ▶ Empezar por acá: el frente 4 — **el vocabulario de métricas y dimensiones**
+## ▶ Empezar por acá: **`docs/CORRIDAS_pendientes_2026-08-16.md`**
 
-**Los tres frentes del 15/08 están cerrados y verificados contra la hoja**, no contra el reporte
-de la corrida:
+**Es la lista única de lo que hay que apretar hoy**, ordenada por lo que destraba. Reemplaza a la
+del 15/08. En resumen, y el detalle está allá:
 
-| frente | estado |
-|---|---|
-| **El alta de las 20 solapas** | `reuniones` en **2 `fuente` · 5 `referencia` · 17 `ignorar`**. Cierra el `_1` y el punto 5 del `_4` |
-| **`D-31`** — la letra manda, el título es testigo | **154 filas de `MAPEO`** con `encabezado`; las 7 vacías son las de `promoverFechasElegidas()` |
-| **`D-32`** — el sembrador no degrada en silencio | 12 afirmaciones puras **+ verificación a mano contra el sembrador** |
+| # | qué correr | qué destraba | ¿decide el usuario? |
+|---|---|---|---|
+| **1** | **`testigoDeImpresiones()`** — la Parte C del piloto. **⚠ Leer el canario primero: si `gcba_frecuencia` da `0`, `looker` está recalculando y no se lee nada** | el frente 13, la migración por tandas. **La corrida más importante** | **sí, si no reproduce.** La reversión no se corre por criterio propio |
+| **2** | **`censarSolapasParaAlta()`** sobre `looker/CC` — qué columnas, qué títulos, qué letras | el frente 7 (`C-61`), que bloquea el embudo de Call Center | **sí, y es previa:** dónde se inserta la columna |
+| **3** | **La Parte A de `R-26`** — no es un botón: es el prompt del 13/08, sólo lectura, y **nunca corrió** | el frente 9, **independiente de todo lo demás** | **sí**, gate explícito antes de la Parte B |
+| **4** | *(nada que correr)* — el frente 8 está bloqueado por una **decisión**, no por una medición | — | **sí**, las dos de abajo |
+| **5** | una corrida del motor para completar el catálogo de tokens | mejora el frente 14, no bloquea | **sí**, pero de **formato** |
 
-**Lo que sigue es el `2026-08-14_2`, Parte A completa** — está destrabado: `MARCADORES_2026-08-15.tsv`
-ya está en `docs/_snapshots/`. Los duplicados por definición, el inventario de `filtro` y la
-agrupación por dimensión lógica. **Su gate es del usuario.**
+## El estado real, en tres líneas
+
+- **El piloto de `D-33` está MIGRADO y SIN VERIFICAR.** No es "en curso": los ocho marcadores de
+  `looker/DIGITAL/Impresiones` tienen `dimensiones` poblada y su `filtro` reducido a
+  `estado=Activa`. **La Parte C está abierta porque `looker` estaba recalculando**, no por falta
+  de tiempo. **No se revierte** mientras tanto.
+- **Los frentes 1, 2, 4 y 6 están hechos** (el alta de las 24 solapas, `D-32`, `D-33`, `D-31`).
+  **El primer frente vivo es el 7.**
+- **El frente 8 cambió de enunciado**, ver abajo.
 
 ⚠ **Dos cosas del 15/08 que hay que saber antes de tocar configuración:**
 
 - **`instalar()` NO siembra contenido.** Crea/repara hojas y aplica `COLUMNAS_DELTA_`. Lo que
   siembra es el ítem de menú **Aplicar configuración**. Equivocarse produce **una corrida que
   termina bien y una hoja que no cambia**.
-- **`D-32` no se puede verificar sobre una configuración consistente.** La prueba de punta a punta
-  **se abstiene**, y eso **no es un verde**: hay que fabricar el conflicto — una solapa en `fuente`
-  contra un seed que diga `ignorar`—, correr el sembrador, y devolverla.
+- **`curarCamposMarcadores_` ahora es todo o nada.** Si una columna de algún cambio no existe, no
+  escribe ninguna celda. Está así porque la migración del piloto corrió antes de que existiera
+  `dimensiones` y **escribió los ocho `filtro` sin escribir el corte**: los ocho quedaron
+  publicando el mismo número **y ninguno fallando**.
 
-## La cola del 14/08 — cerrada, salvo dos
+## Lo que midió la nocturna del 16/08, y que cambia dos frentes
+
+**`C-61` (frente 7) — el motor lee por POSICIÓN, y el riesgo cambió de signo.** La letra de
+`MAPEO` se convierte en índice (`columnaLetraAIndice_`), de ahí sale el título, y con el título se
+extrae de la fila: **el encabezado es derivado de la posición, nunca un criterio propio.** Y
+**`looker/CC` tiene cero filas de `MAPEO` y cero marcadores**, así que hoy no hay mapeo de `CC`
+que un corrimiento pueda romper.
+
+⚠ **El testigo de `D-31` hoy no detecta nada, automáticamente.** Está poblado —154 filas— pero
+**`leerMapeoSinCache_` ni siquiera indexa la columna `encabezado`**, y `buscarMapeo` devuelve sólo
+`{ hoja, columna }`. **No hay un punto del camino de lectura que compare el título esperado contra
+el encontrado.** Es coherente con lo decidido —*"la función que valida se difiere"*, usuario
+14/08— y hay que saberlo: **el frente 6 dejó el dato, no la alarma.**
+
+**El frente 8 cambió de enunciado, y el viejo era falso.** *"`enc_*` filtra por tipo de llamado,
+`cc_*` no filtra"* es falso en las dos mitades: **no existe ningún marcador `cc_*`** —son tokens
+de las láminas 2 y 5 sin fila, que publican `—` por decisión de `_32.2`— **y ningún `enc_*` filtra
+por `Tipo de llamado`**; los nueve de Call Center leen `reuniones/Agenda JM` con guardas `!=0`. El
+único filtro `Convocatoria` es `mail_tipo=Convocatoria`, que es **mail**. **El enunciado bueno:**
+los nueve leen un **agregado por encuentro calculado río arriba y nadie declaró qué tipos de
+llamado entran en él**. El corte vive en `reuniones/Call`, hoy **`ignorar`**.
+
+## La cola de prompts
 
 | prompt | estado |
 |---|---|
-| `2026-08-14_1` — métricas por plataforma de `reuniones` | **cerrado** |
-| `2026-08-14_4` — las decisiones sueltas | **cerrado**: su punto 5 era el alta |
-| `2026-08-14_5` — el orden de los frentes a `PLAN.md` | **cerrado** (reemplazado y re-aplicado: 14 frentes) |
-| `2026-08-14_6` — la letra manda, el título valida | **cerrado**, `D-31` materializado |
-| `2026-08-14_7` — corrida nocturna | **cerrada**; su bloque 2 dejó tres puntos sin insumo, que el snapshot destrabó |
-| `2026-08-14_3` — el sembrador no degrada en silencio | **cerrado**, `D-32` verificado punta a punta |
-| `2026-08-14_2` — censo de dimensiones y vocabulario global | **lo que sigue.** Parte A destrabada por `MARCADORES_2026-08-15.tsv` |
+| `2026-08-16_1` — corrida nocturna | **cerrada**, cinco bloques. El 3 paró por premisa falsa, con el motivo escrito |
+| `2026-08-15_1` — piloto de `imp_total` | **Partes A y B hechas; la C abierta**, esperando que `looker` se estabilice |
+| `2026-08-14_2` — censo de dimensiones y vocabulario global | **cerrado**, `D-33` escrita |
 | `2026-08-13_1` — `R-26`, el "1 a 1" sólo digital | **no arrancó.** Independiente; su Parte A puede falsar la premisa |
 
 **El orden de trabajo vive en `PLAN.md` §2.** Este handoff dice dónde estamos; el plan, hacia
-dónde.
+dónde; y `CORRIDAS_pendientes_2026-08-16.md`, qué botón se aprieta.
+
+## El catálogo de tokens existe, y su columna verde significa menos de lo que parece
+
+`docs/CATALOGO_tokens.md`, generado por **`tools/catalogo.js`** desde el juego del 15/08. El dueño
+de la pregunta es el script re-corrido, no el `.md` (§7).
+
+⚠ **La columna `config` dice sólo que la configuración resuelve.** Da **78 de 78** mientras el
+motor publica **diez marcadores en error**: ésos fallan en **ejecución** y ninguna de sus causas
+deja rastro en `MARCADORES`, `SOLAPAS` ni `MAPEO`. **No es una contradicción, son dos preguntas** —
+y por eso la columna no se llama `estado`.
 
 **`R-26` sigue reservado y libre.** El alcance de Meta tomó `R-27` a propósito; si el "1 a 1"
 falsa su premisa, `R-26` queda como hueco y así está bien.
@@ -148,7 +184,11 @@ Sirven de fixture para la Parte B del `_48`: son dos períodos distintos en `COR
   reencuadró: las dos filas son **PRE y POST**, no dos definiciones. Lo que falta es cómo se
   combinan, y eso es `A-12`.
 - **El `enc_alcance` de Boedo** — publica `258.684` y ninguna otra fuente lo sostiene.
-- **Los `enc_*` de Call Center del Resumen Ejecutivo** siguen en `looker`: `X-21` está abierto.
+- **Los `cc_*` del Resumen Ejecutivo y de la lámina 5 publican `—` y no se cablean** (`_32.2`), y
+  `X-21` sigue abierto sobre `looker/CC`. **Medido el 16/08 y conviene tenerlo derecho:** los
+  nueve `enc_*` de Call Center **ya no leen `looker`** — leen `reuniones/Agenda JM`. `cc_*` como
+  prefijo de token y `cc_*` como prefijo de campo lógico son dos cosas distintas que se llaman
+  igual.
 - **`m2_campanias`** — espera una definición del usuario.
 - **`Educación 16/06` no ancla** (0,54 contra 0,6). `D-29`: lo resuelve el usuario.
 
@@ -182,3 +222,5 @@ motor contra un hecho externo.
 | `campo_id_cuenta` se perdió de la hoja | `leerFilasSolapas_` no la exponía — `String(undefined)` |
 | un mapeo apuntaba a la columna equivocada | los encabezados de esa solapa están corridos (`C-09`): la letra estaba bien |
 | **`D-32` bloqueaba el alta de solapas** | **`instalar()` no siembra: la corrida era la equivocada** |
+| el piloto migrado publicaba mal | **`looker` estaba recalculando**: las ocho cuentas de filas eran idénticas y dos marcadores **sin migrar** se movieron igual o más |
+| **`enc_*` y `cc_*` eran dos universos de Call Center conviviendo** | **no existe ningún marcador `cc_*`**: son tokens sin fila que publican `—` por decisión, y ningún `enc_*` filtra por tipo de llamado |
