@@ -62,15 +62,52 @@ propio**: se reporta y decide el usuario.
 
 ---
 
-## 1 bis · Después de que la Parte C cierre — el frente **12 bis**, no la tanda 1
+## 1 bis · `verificarEncabezadosDeMapeo()` — el testigo de `D-31`, ya conectado
 
-**No es una corrida: es el prompt siguiente**, `docs/Prompts/2026-08-16_2_testigo_encabezado_conectado.md`.
-Va **entre** la Parte C y la tanda 1 (usuario, 16/08). Se anota acá porque quien lea esta lista de
-arriba abajo tiene que saber que **cerrar la 1 no habilita la migración todavía**.
+**Qué destraba:** nada, y por eso no es la 1. **Pero es la primera medición de una guarda que
+desde anoche está en el código**, y conviene tenerla antes de que la migración toque
+configuración.
 
-⚠ **Y cuando llegue la tanda 1: `frecuencia`/`gcba_frecuencia` NO entran.** `looker` tiene
-exactamente diez marcadores —los ocho del piloto y ese par—, así que migrarlos deja **cero
-marcadores de `looker` sin migrar** y sin canario. Detalle en el Addendum 4 del prompt del piloto.
+**El frente 12 bis se ejecutó la noche del 16/08.** `leerMapeoSinCache_` ya indexa `encabezado`,
+la comparación vive en `encabezadoEnColumna_`, y el aviso sale por el cierre de corrida. Falta la
+única mitad que necesita la planilla: **correrla y ver si hoy hay algún desalineamiento.**
+
+**Es de sólo lectura**, barre todo `MAPEO` sin generar informe, y **no corrige nada**: si
+encuentra desalineamientos los reporta y para ahí.
+
+⚠ **Cómo leer el resultado, porque las dos salidas se malinterpretan al revés:**
+
+- **Si da cero desalineadas, NO quiere decir que los datos estén bien.** El testigo compara
+  **rótulos, no contenido**: detecta que la columna **se movió**, no que el dato esté mal.
+- **Si da alguna, no es automáticamente un hallazgo.** Puede ser un encabezado corrido **en
+  origen** (`C-09`, `RDV_otros_ministros`), donde el rótulo miente de entrada. **Descartar `C-09`
+  antes de llamarlo hallazgo.**
+
+**¿Necesita decisión del usuario?** **Sólo si encuentra algo.** Corregir un mapeo desalineado es
+otro prompt y probablemente otra decisión.
+
+**El control positivo puro ya corrió y no hace falta repetirlo**: `node tools/probar-encabezado.js`,
+13 afirmaciones, fuera de Apps Script y extrayendo el código real del repo.
+
+---
+
+## 1 ter · Después de la Parte C — la tanda 1, que es un prompt y no una corrida
+
+`docs/Prompts/2026-08-16_4_tanda_1_mail.md`, **escrito y sin ejecutar. El usuario lo revisa
+antes.**
+
+Se anota acá porque quien lea esta lista de arriba abajo tiene que saber que **cerrar la 1 no
+habilita la migración sola**: la tanda 1 tiene la Parte C como precondición dura, y si el piloto
+no reproduce, no hay tanda.
+
+⚠ **`frecuencia`/`gcba_frecuencia` NO entran a la tanda 1.** `looker` tiene exactamente diez
+marcadores —los ocho del piloto y ese par—, así que migrarlos deja **cero marcadores de `looker`
+sin migrar** y sin canario. Detalle en el Addendum 4 del prompt del piloto.
+
+**El instrumento de la tanda 1 ya existe y no hay que escribir nada:** `testigoDeImpresiones()`
+**no es de impresiones** — agrupa **todos** los marcadores por medida y emite todo grupo de dos o
+más, así que los cuatro grupos de mail ya salen en su log hoy. **Su nombre es deuda**, y se
+renombra **después** de que la Parte C cierre: hacerlo ahora rompería esta misma lista.
 
 ---
 
@@ -131,6 +168,56 @@ suelta. **El censo puede correrse igual**, porque no la necesita.
 
 ---
 
+## 3 bis · `censarTokensEnPlantilla()` — la mitad de láminas de los `pauta_*` duplicados
+
+`docs/Prompts/2026-08-16_5_pauta_duplicados.md`, **escrito y sin ejecutar. El usuario lo revisa
+antes.**
+
+**Qué destraba:** nada bloqueado, pero **saca a los `pauta_*` del limbo**: hoy no entran a ninguna
+tanda de migración y nadie midió por qué publican lo mismo.
+
+Los tres pares tienen **definición idéntica y filtro vacío en los dos lados**, y el log del 15/08
+los muestra dando el mismo valor. **No es migración: es un número publicado dos veces.**
+
+⚠ **Y por eso no pueden entrar a una tanda:** migrados, el `gcba_` pasaría de estar en el nombre a
+estar en `dimensiones`, y **el error se volvería invisible** — se leería como una medida bien
+cortada por ámbito que casualmente da lo mismo en las dos ramas.
+
+**Dos corridas, las dos de sólo lectura:**
+
+- **`testigoDeImpresiones()`** — ya los cubre: valor, estado y **cuenta de filas** de los seis. La
+  cuenta de filas es la que decide, no el valor.
+- **`censarTokensEnPlantilla('jm', 'pauta_google, gcba_pauta_google, …')`** — **instrumento nuevo,
+  pusheado anoche y sin correr.** Dice **en qué lámina** se publica cada copia, que es lo que
+  convierte esto en una decisión posible: mismas láminas y distintas láminas son dos problemas
+  distintos.
+
+**¿Necesita decisión del usuario?** **Sí, pero después de medir.** El prompt elige entre tres
+explicaciones —falta el filtro en los dos / `gcba_pauta_*` nunca debió existir / es `C-64`, se lee
+la capa equivocada— y **no propone el arreglo.**
+
+---
+
+## 4 · Una corrida del motor para completar el catálogo de tokens — **no urgente**
+
+**Qué destraba:** nada bloqueado; mejora el frente 14.
+
+`docs/CATALOGO_tokens.md` ya existe, generado por `tools/catalogo.js` desde el snapshot del 15/08.
+Su limitación está escrita en el propio archivo: la columna `config` es **estática** y da **78 de
+78 resuelven**, mientras el motor publica **diez marcadores en error**. Esos diez fallan en
+**ejecución** —`D-30` sin `id_cuenta`, `ULTIMO` sin fecha utilizable, cero filas tras el recorte—
+y **ninguna de esas causas deja rastro en `MARCADORES`, `SOLAPAS` ni `MAPEO`**.
+
+Para que entren al catálogo hace falta una corrida contra la planilla viva
+(`diagMarcadoresDeCuenta_` vía su wrapper, o el `FALTANTES` de una corrida real) y volcar su
+salida a un formato que el generador pueda leer.
+
+**¿Necesita decisión del usuario?** **Sí, pero de formato, no de corrida:** **el formato
+definitivo del catálogo no está decidido** y la nocturna no lo tomó a propósito. Qué agrupa, qué
+nombre lleva cada cosa de cara al equipo, y si `-` y `---` significan algo.
+
+---
+
 ## — · Nada que correr para el frente 8 — está bloqueado por una decisión, no por una medición
 
 **No hay instrumento que correr, y es un resultado del bloque 3, no un olvido.**
@@ -155,26 +242,6 @@ Escribir un instrumento que la lea sería reproducir peor lo que el motor ya hac
 
 **El frente entero bajó a `PLAN.md` §3 con su enunciado corregido** — el viejo era falso y queda
 escrito cuál era, para que no vuelva por la misma puerta.
-
----
-
-## 4 · Una corrida del motor para completar el catálogo de tokens — **no urgente**
-
-**Qué destraba:** nada bloqueado; mejora el frente 14.
-
-`docs/CATALOGO_tokens.md` ya existe, generado por `tools/catalogo.js` desde el snapshot del 15/08.
-Su limitación está escrita en el propio archivo: la columna `config` es **estática** y da **78 de
-78 resuelven**, mientras el motor publica **diez marcadores en error**. Esos diez fallan en
-**ejecución** —`D-30` sin `id_cuenta`, `ULTIMO` sin fecha utilizable, cero filas tras el recorte—
-y **ninguna de esas causas deja rastro en `MARCADORES`, `SOLAPAS` ni `MAPEO`**.
-
-Para que entren al catálogo hace falta una corrida contra la planilla viva
-(`diagMarcadoresDeCuenta_` vía su wrapper, o el `FALTANTES` de una corrida real) y volcar su
-salida a un formato que el generador pueda leer.
-
-**¿Necesita decisión del usuario?** **Sí, pero de formato, no de corrida:** **el formato
-definitivo del catálogo no está decidido** y la nocturna no lo tomó a propósito. Qué agrupa, qué
-nombre lleva cada cosa de cara al equipo, y si `-` y `---` significan algo.
 
 ---
 

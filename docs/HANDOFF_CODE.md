@@ -3,7 +3,7 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-16, al aplicar la decisión del usuario sobre el orden de trabajo
+**Última actualización:** 2026-08-16, al cerrar la segunda corrida nocturna `2026-08-16_3`
 
 ## ⭐ La decisión que ordena todo: **primero se cierra la migración, después se cablea**
 
@@ -25,13 +25,16 @@ del 15/08. En resumen, y el detalle está allá:
 | # | qué correr | qué destraba | ¿decide el usuario? |
 |---|---|---|---|
 | **1** | **`testigoDeImpresiones()`** — la Parte C del piloto. **⚠ Leer el canario primero: si `gcba_frecuencia` da `0`, `looker` está recalculando y no se lee nada** | el frente 13, la migración por tandas. **La corrida más importante** | **sí, si no reproduce.** La reversión no se corre por criterio propio |
+| **1 bis** | **`verificarEncabezadosDeMapeo()`** — el testigo de `D-31`, **ya conectado anoche**. Barre todo `MAPEO` sin generar informe | nada, pero es la **primera medición** de una guarda que ya está en el código | **sólo si encuentra algo** |
+| **1 ter** | **La tanda 1** — prompt escrito, `2026-08-16_4`. **No es corrida: el usuario lo revisa antes** | el frente 13. Su precondición dura es la Parte C | **sí**, lo revisa antes |
 | **2** | **La Parte A de `R-26`** — no es un botón: es el prompt del 13/08, sólo lectura, y **nunca corrió** | el frente 9, **independiente de todo lo demás** | **sí**, gate explícito antes de la Parte B |
 | **3** | **`censarSolapasParaAlta()`** sobre `looker/CC` — sólo lectura, se puede adelantar | el frente 7, hoy **diferido detrás de la migración** | la decisión de **dónde se inserta la columna** está **diferida** |
-| — | *(nada que correr para el frente 8)* — bloqueado por una **decisión**, no por una medición | — | **media tomada:** los `cc_*` siguen en `—` |
+| **3 bis** | **`censarTokensEnPlantilla()`** + el testigo, para los `pauta_*` — prompt `2026-08-16_5`, **el usuario lo revisa antes** | saca a los `pauta_*` del limbo: no entran a ninguna tanda | **sí, después de medir** |
 | **4** | una corrida del motor para completar el catálogo de tokens | mejora el frente 14, no bloquea | **sí**, pero de **formato** |
+| — | *(nada que correr para el frente 8)* — bloqueado por una **decisión**, no por una medición | — | **media tomada:** los `cc_*` siguen en `—` |
 
-**El orden cambió respecto de esta mañana:** `R-26` sube porque es lo único **independiente de la
-migración**, y el censo de `looker/CC` baja porque lo que destrabaría está diferido.
+**El orden:** `R-26` está arriba porque es lo único **independiente de la migración**, y el censo
+de `looker/CC` abajo porque lo que destrabaría está diferido.
 
 ## El estado real, en tres líneas
 
@@ -40,8 +43,8 @@ migración**, y el censo de `looker/CC` baja porque lo que destrabaría está di
   `estado=Activa`. **La Parte C está abierta porque `looker` estaba recalculando**, no por falta
   de tiempo. **No se revierte** mientras tanto.
 - **Los frentes 1, 2, 4 y 6 están hechos** (el alta de las 24 solapas, `D-32`, `D-33`, `D-31`).
-- **El frente vivo es el 12 bis** — conectar el testigo de `D-31`, prompt escrito en
-  `docs/Prompts/2026-08-16_2_testigo_encabezado_conectado.md`. Va **antes de la tanda 1**.
+- ✅ **El frente 12 bis está HECHO** (noche del 16/08): el testigo de `D-31` **está conectado**.
+  Lo que falta es su primera medición contra la planilla, que es la 1 bis de la lista.
 - **El frente 8 cambió de enunciado** —el viejo era falso— y bajó a bloqueado, ver abajo.
 
 ⚠ **`frecuencia`/`gcba_frecuencia` SALEN de la tanda 1, y el motivo hay que saberlo.** Medido el
@@ -71,11 +74,25 @@ extrae de la fila: **el encabezado es derivado de la posición, nunca un criteri
 **`looker/CC` tiene cero filas de `MAPEO` y cero marcadores**, así que hoy no hay mapeo de `CC`
 que un corrimiento pueda romper.
 
-⚠ **El testigo de `D-31` hoy no detecta nada, automáticamente.** Está poblado —154 filas— pero
-**`leerMapeoSinCache_` ni siquiera indexa la columna `encabezado`**, y `buscarMapeo` devuelve sólo
-`{ hoja, columna }`. **No hay un punto del camino de lectura que compare el título esperado contra
-el encontrado.** Es coherente con lo decidido —*"la función que valida se difiere"*, usuario
-14/08— y hay que saberlo: **el frente 6 dejó el dato, no la alarma.**
+✅ **El testigo de `D-31` ya detecta — conectado la noche del 16/08.** `leerMapeoSinCache_` indexa
+`encabezado` (ésa era la causa raíz: la columna existía desde el 14/08 y no la leía nadie), la
+comparación vive en `encabezadoEnColumna_`, y **el aviso sale por el cierre de corrida**.
+
+Tres cosas que hay que saber antes de leer un aviso suyo:
+
+- **El valor devuelto NO cambia nunca.** La letra manda y el testigo **no es fallback jamás** —
+  los títulos se repiten, así que un fallback por título acertaría a veces y erraría en silencio
+  otras.
+- **Compara rótulos, NO contenido.** Detecta que la columna **se movió**, no que el dato esté mal.
+  En `RDV_otros_ministros` los encabezados están corridos **en origen** (`C-09`) y ahí va a
+  coincidir siempre. **Cero desalineadas no quiere decir que los datos estén bien.**
+- **El comparador recibe una LISTA de esperados**, y eso está medido: hay **12 grupos
+  (base, solapa, letra) con más de una fila** porque dos `campo_logico` pueden apuntar a la misma
+  columna. Tratarlo como valor único habría dado avisos falsos sobre doce grupos el primer día, y
+  **una alarma que grita de entrada es una alarma apagada**.
+
+Control positivo: `node tools/probar-encabezado.js` — 13 afirmaciones, **fuera de Apps Script y
+extrayendo el código real del repo**, no una copia.
 
 **El frente 8 cambió de enunciado, y el viejo era falso.** *"`enc_*` filtra por tipo de llamado,
 `cc_*` no filtra"* es falso en las dos mitades: **no existe ningún marcador `cc_*`** —son tokens
@@ -89,6 +106,10 @@ llamado entran en él**. El corte vive en `reuniones/Call`, hoy **`ignorar`**.
 
 | prompt | estado |
 |---|---|
+| `2026-08-16_3` — segunda corrida nocturna | **cerrada**, tres bloques. El 1 ejecutó el `_2` entero |
+| `2026-08-16_2` — conectar el testigo de `D-31` | **ejecutado.** Falta su medición contra la planilla |
+| `2026-08-16_4` — tanda 1 de la migración | **escrito, sin ejecutar.** El usuario lo revisa. Precondición dura: la Parte C |
+| `2026-08-16_5` — los `pauta_*` duplicados | **escrito, sin ejecutar.** El usuario lo revisa. Es validación, no migración |
 | `2026-08-16_1` — corrida nocturna | **cerrada**, cinco bloques. El 3 paró por premisa falsa, con el motivo escrito |
 | `2026-08-15_1` — piloto de `imp_total` | **Partes A y B hechas; la C abierta**, esperando que `looker` se estabilice |
 | `2026-08-14_2` — censo de dimensiones y vocabulario global | **cerrado**, `D-33` escrita |

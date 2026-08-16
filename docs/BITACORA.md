@@ -10199,3 +10199,113 @@ a mano que esto vino a reemplazar.
 **Y anotado para el rediseño: la columna `config` se conserva como distinción.** Dice *"la fila
 está bien armada"*, no *"el token anda"* — el cruce estático da **78 de 78** mientras el motor
 publica **diez en error**.
+
+---
+
+## `2026-08-16_3` — el testigo de `D-31` conectado, y dos prompts preparados (2026-08-16)
+
+> Segunda corrida nocturna del día. Tres bloques, cuatro commits, **código y documentación
+> separados** — la desviación de la corrida anterior no se repitió. **Ninguna hoja de registro se
+> tocó.**
+
+### Bloque 1 — `D-31` conectado: el testigo deja de ser un dato y pasa a ser una alarma
+
+**La causa raíz era una línea que no estaba.** `leerMapeoSinCache_` indexaba `base_id`, `solapa`,
+`campo_logico`, `hoja`, `columna`, `tipo_esperado`, `valores_incluidos` y `notas` — **y no
+`encabezado`**. La columna existía desde el 14/08 y **no la leía nadie**, así que `buscarMapeo` no
+podía devolverla y no había con qué comparar. El frente 6 dejó el dato y no la alarma porque le
+faltaba eso.
+
+**Lo que se escribió, en orden de importancia:**
+
+| pieza | dónde | qué hace |
+|---|---|---|
+| `desalineamientoDeEncabezado_` | `Union.gs` | **pura**: esperados × real → `null` o `{esperados, real}` |
+| el enganche | `encabezadoEnColumna_` | compara y avisa. **El valor devuelto NO cambia nunca** |
+| `encabezadosEsperadosEnColumna_` | `Union.gs` | resuelve los esperados **por letra**, no por `campo_logico` |
+| el aviso | cierre de corrida (`Generador.gs`) | porque **un reporte que no se lee es una función que no existe** |
+| `verificarEncabezadosDeMapeo()` | `Auditoria.gs` | wrapper público que barre **todo** `MAPEO` sin generar informe |
+
+**Se resolvió por letra y no por `campo_logico`, y eso tuvo una consecuencia de diseño que salió
+de medir.** Entrar por la letra permite que la comparación viva en el **único** punto donde la
+letra se vuelve columna, sin tocar sus **once** llamadores. Pero por letra la relación es de
+varios a uno: **`MAPEO_2026-08-15.tsv` tiene 12 grupos (base, solapa, letra) con más de una
+fila** —`looker/resumen_metricas_dinamico/C` tiene tres, y `rdv/RVD JM-CM - ES/E` tiene dos con
+testigos **distintos** (`''` y `'FECHA'`)—, porque dos `campo_logico` pueden apuntar a la misma
+columna física.
+
+**Por eso el comparador recibe una LISTA.** Si el real coincide con **alguno** de los declarados,
+no hay desalineamiento. Tratarlo como valor único habría producido avisos falsos sobre doce grupos
+el primer día, y **una alarma que grita de entrada es una alarma apagada**.
+
+**La política de `D-31` se aplica, no se reinventa**, y las tres reglas quedaron en el código:
+no corregir la letra sola nunca —el testigo **no es fallback jamás**, porque los títulos se
+repiten y un fallback acertaría a veces y erraría **en silencio** otras—, reportar los dos
+valores, y no bloquear la corrida (de ahí el `try` alrededor del aviso: un instrumento que rompe
+lo que mide es peor que no tenerlo).
+
+**Y el límite quedó escrito en el código, no sólo en `D-31`:** el testigo compara **rótulos, no
+contenido**. `C-09` es la prueba —en `RDV_otros_ministros` los encabezados están corridos **en
+origen**— así que ahí va a coincidir siempre. Una guarda cuyo límite vive en otro documento se lee
+como si no lo tuviera.
+
+#### La prueba se escribió antes, falló, y después se interrogó
+
+`tools/probar-encabezado.js`, **fuera de Apps Script y extrayendo el código real del repo** —lee
+`Union.gs` y `Fuentes.gs` por texto y saca las funciones por nombre—. Una copia pegada probaría la
+copia, y el día que alguien tocara el `.gs` seguiría en verde sobre código que ya no existe.
+
+**Corrió primero y falló**, con el error correcto: *"No encontré `function
+desalineamientoDeEncabezado_(` en Union.gs"*.
+
+**Un detalle del arnés que valió la pena arreglar bien:** la primera versión evaluaba cada función
+en su propio scope y `desalineamientoDeEncabezado_` no veía a `normalizarValorDeclarado_`. **Apps
+Script concatena todos los `.gs` en un scope global único** —la premisa de la §1— así que
+evaluarlas por separado probaba un entorno que no existe. Se corrigió a un solo scope.
+
+**Los tres casos obligatorios están, y dos más que hicieron falta:** *esperado ≠ real* reporta ·
+*esperado = real* no reporta —sin éste, una función que avisa **siempre** pasaría el primero— ·
+`encabezado` vacío no es desalineamiento (las 7 filas de `promoverFechasElegidas()`) · la aliasing
+de los 12 grupos · y el límite `C-09` afirmado **como comportamiento declarado**, para que no sea
+una sorpresa. **13 afirmaciones.**
+
+**Y después la pregunta que este repo ya pagó no hacer** —*"¿con qué otro dato seguiría
+pasando?"*—, respondida con cinco mutantes: *siempre null* · *siempre avisa* · *pliega el case* ·
+*sólo mira el primer esperado* · *no normaliza*. **Los cinco mueren.** La prueba distingue las
+cinco implementaciones rotas, y eso es lo que la separa de un control que pasa por casualidad.
+
+### Bloque 2 — dos prompts, y un instrumento que ya existía
+
+`2026-08-16_4` (tanda 1) y `2026-08-16_5` (los `pauta_*`), **escritos y sin ejecutar**.
+
+**El canario de la tanda 1 es `enc_atendidos`/`ivr_atendidos`** —`digital/Directa IVR`,
+`ivr_atendidos`, `SUMA`—. Cumple lo pedido —`filtro` vacío, otra solapa, ya sale en el log— y se
+eligió sobre los otros tres grupos por una razón fina: **es `SUMA` y no `PCT`**. Un ratio puede
+quedarse quieto mientras numerador y denominador se mueven en proporción, así que **un `PCT`
+estable no prueba que la base esté quieta**. Y de regalo, el par son **dos lecturas independientes
+de la misma medida**: si divergen entre sí, el problema es del instrumento.
+
+⚠ **Y el instrumento de la tanda 1 ya existía: `testigoDeImpresiones()` no es de impresiones.**
+Agrupa **todos** los marcadores por medida y emite **todo grupo de dos o más**, así que los cuatro
+grupos de mail, los tres de `pauta_*` y los cuatro de `Directa IVR` **ya salen en su log hoy**. Es
+la misma propiedad que lo hace indiferente a dónde vive el corte. **No se escribió un testigo
+nuevo**, que habría sido un duplicado. **Su nombre es deuda**, y **no se renombra mientras la
+Parte C esté abierta**: la lista de corridas y el prompt del piloto lo nombran así.
+
+**Lo único que faltaba es la mitad de láminas**, y para eso se escribió `censarTokensEnPlantilla()`
+—wrapper público, sólo lectura, sin correr—: `diagTokensDeLamina_` contesta *"qué tokens tiene
+esta lámina"* y la pregunta inversa no la contestaba nadie. **Un número publicado dos veces no se
+entiende sin saber en qué lámina se publica cada copia**: mismas láminas y distintas láminas son
+dos problemas distintos.
+
+**Los `pauta_*` no entran a ninguna tanda, y el prompt dice por qué con todas las letras:**
+migrados, el `gcba_` pasaría del nombre a `dimensiones` y **el error se volvería invisible** — se
+leería como una medida bien cortada por ámbito que casualmente da lo mismo en las dos ramas.
+**Migrarlos convertiría un error en un error estructurado.**
+
+### Bloque 3 — la lista de la mañana
+
+`CORRIDAS_pendientes_2026-08-16.md` y `HANDOFF_CODE.md` actualizados. Entraron **1 bis**
+(`verificarEncabezadosDeMapeo()`), **1 ter** (la tanda 1, que es prompt y no corrida) y **3 bis**
+(los `pauta_*`), los dos últimos marcados **"el usuario lo revisa antes"**. Se mantuvo *lo que NO
+hay que correr*, con `revertirPilotoDeImpresiones()` adentro.
