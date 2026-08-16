@@ -356,6 +356,23 @@ el criterio menciona la cosa que se migra —la columna, el nombre, el prefijo�
 mide una sola de las dos fotos. **El síntoma nunca es un error: es un conjunto que se achica sin
 que nadie lo pida.**
 
+**Y su contracara, que es la mitad que faltaba: la comparación no puede depender de lo que se
+mueve solo.** Un testigo sirve si la única diferencia entre las dos tomas es el cambio que se
+está midiendo. Cuando la fuente se mueve por su cuenta —`looker` recalcula, y el 15/08 movió
+138.427 impresiones en 1h45 y dejó un numerador en **cero**— un valor distinto **no dice nada**,
+ni a favor ni en contra.
+
+- **Antes de comparar, verificar que la base esté quieta.** La forma barata es un **canario: un
+  valor que el cambio NO toca**. En el piloto de `D-33` es `gcba_frecuencia` —sin migrar, de otra
+  solapa— y ya viene en el log de cada corrida: mientras dé `0`, la base está en tránsito y la
+  comparación no se lee.
+- **Un canario propio cuesta menos que cualquier verificación escrita**, y mide mejor: es el
+  mismo camino de lectura que lo que se está comparando.
+- **Lo que distingue "se rompió" de "la base se movió" es la cuenta de filas, no el valor.**
+  Mismas filas y otro número es el cambio; otras filas es la fuente. El 15/08 las ocho cuentas
+  fueron idénticas —46, 313, 14, 12, 20, 82, 84, 147— con valores muy distintos, y eso solo
+  descartó la migración como causa.
+
 **Y el control verde también se lee, porque una prueba puede probar lo contrario de lo que
 dice.** `Pruebas.gs:456` afirmaba *"ULTIMO saltea la celda vacía del final"* sobre el fixture
 `[10, 5, '']`. Pasaba desde el día que se escribió — y lo que verificaba era **"ULTIMO elige

@@ -249,3 +249,54 @@ coincide.
 ⚠ **Los ocho filtros se generaron leyendo el TSV, no transcribiéndolos**: `nombre_campaña` lleva
 una `ñ`, y una transcripción que la rompa produce un filtro que **no matchea ninguna fila y
 devuelve cero sin fallar** — el mismo modo de falla que se está reparando, en el reparador.
+
+---
+
+## Addendum 3 — 15/08/2026 · el canario: la Parte C no se puede leer con la base en tránsito
+
+> El cuerpo no se edita. Esto agrega la precondición que faltaba para que la Parte C signifique
+> algo.
+
+### Qué pasó: la Parte C dio no concluyente, y **no era la migración**
+
+`imp_meta` sumó **0** en vez de 3.249.453; `gcba_imp_meta` dio 2.424.456 en vez de 31.252.043.
+Parece una migración rota. **No lo es**, y hay dos pruebas independientes:
+
+1. **Los migrados que fallan leyeron las mismas filas.** Las ocho cuentas de la traza son
+   idénticas al testigo —46, 313, 14, 12, 20, 82, 84, 147—. **Si la dimensión tradujera mal la
+   condición, cambiaría la cuenta de filas**, no sólo la suma. No cambió.
+2. **Dos marcadores SIN migrar se movieron igual o más.** `frecuencia` y `gcba_frecuencia`
+   tienen `dimensiones` vacío, salen de `resumen_metricas_dinamico`, y su numerador pasó de
+   6.010.469 a 4.663.092 y de 2.048.748 a **0**. **La migración no los tocó.**
+
+`looker` está **recalculando**. Y el descuadre cuadró en cero en los dos ámbitos, pero **cuadró
+sobre valores en tránsito**, así que hoy tampoco prueba nada.
+
+### El canario: `gcba_frecuencia`
+
+**Precondición de la Parte C: mientras `gcba_frecuencia` dé `0`, la base no está estable y el
+resultado no se puede leer.** Ni a favor ni en contra.
+
+**Por qué un marcador y no una verificación propia:** `gcba_frecuencia` **no está migrado**, así
+que su valor no depende de nada que el piloto haya cambiado. Es el testigo del estado de la base,
+gratis, y ya está en el log de cada corrida. Cualquier chequeo que escribiéramos costaría más y
+mediría lo mismo peor.
+
+**Y es la contracara de la regla que este piloto ya dejó escrita** en `CLAUDE.md` §4: el
+instrumento no puede depender de lo que el cambio modifica, **y la comparación no puede depender
+de lo que se mueve solo**. Por eso el canario tiene que ser un marcador que la migración **no
+toca**.
+
+### Los ocho quedan migrados mientras tanto
+
+**No se revierte.** Si al final hay que hacerlo, `revertirPilotoDeImpresiones()` existe y está
+probada. Revertir ahora sería tirar la migración por un síntoma que ya está explicado por otra
+causa.
+
+### La Parte C, con la precondición puesta
+
+```
+1. testigoDeImpresiones()
+2. ¿`gcba_frecuencia` sigue en 0?  →  SÍ: parar, la base está en tránsito. Volver más tarde.
+3. NO  →  comparar traza, después valores, después descuadre.
+```
