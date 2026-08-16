@@ -87,7 +87,10 @@ var HOJAS_CONFIG_ = {
   // en `docs/Prompts/Paso-2.10_anclar_a_numeros_verificados.md` — bloqueado por
   // la armonización de plantillas, se carga a mano hasta que eso se resuelva.
   MARCADORES: {
-    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'solapa', 'campo_logico', 'periodo_ref', 'operacion', 'valor_fijo', 'formato', 'filtro', 'catalogo', 'separador', 'notas']
+    // `D-33` (15/08/2026) — `dimensiones` va al lado de `filtro`: las dos declaran cómo se
+    // acotan las filas, y separarlas en la hoja haría que se lean como cosas distintas cuando
+    // la diferencia es cuál se le explica al equipo y cuál es una regla de validez.
+    headers: ['marcador', 'familia', 'informe_id', 'base_id', 'solapa', 'campo_logico', 'periodo_ref', 'operacion', 'valor_fijo', 'formato', 'filtro', 'dimensiones', 'catalogo', 'separador', 'notas']
   },
   // solapa (Paso 2.3.2): entra en la clave junto con base_id + campo_logico.
   // Antes de esto, dos solapas de la misma base no podían mapear el mismo
@@ -267,7 +270,26 @@ var COLUMNAS_DELTA_ = {
     // adentro sirve para un token y para ninguno más — es exactamente lo que `D-01` mide.
     // `catalogo` se declara como `base/solapa`; `separador` vacío = `', '`.
     { nombre: 'catalogo', indice: 12 },
-    { nombre: 'separador', indice: 13 }
+    { nombre: 'separador', indice: 13 },
+    /* `2026-08-15_1` (`D-33`) — **`dimensiones`: el corte declarado, al lado de `filtro`.**
+     *
+     * **Una sola columna y no tres**, aunque hoy las dimensiones sean tres. Con una columna por
+     * dimensión, agregar la cuarta exige tocar el esquema y el delta; con una sola, es un valor
+     * más en una celda. Es `D-01` aplicado: **agregar una dimensión no puede pedir `clasp push`.**
+     *
+     * **Misma sintaxis que `filtro`** — `ambito=jm && plataforma=meta` — a propósito: inventar un
+     * segundo lenguaje para escribir cortes obligaría a aprender dos, y el que se usa menos se
+     * escribe mal.
+     *
+     * **La frontera con `filtro` la fija `D-33` y no se mezcla:** acá van los cortes que alguien
+     * del equipo pediría; en `filtro` quedan las restricciones técnicas — `estado=Activa` y las
+     * nueve guardas `!=0`.
+     *
+     * Al final del array por lo mismo que explica la nota de `filtro` arriba, y **con la misma
+     * salvedad: la columna puede terminar en un índice distinto del pedido**, porque el índice se
+     * cuenta sobre el esquema del momento. No importa — todo se lee por nombre, nunca por
+     * posición. */
+    { nombre: 'dimensiones', indice: 11 }
   ],
   CAMPANAS: [
     { nombre: 'desde', indice: 6 },
@@ -3491,4 +3513,75 @@ function menuEstadoConfiguracion_() {
 
   ui.alert('Estado de configuración', resumen, ui.ButtonSet.OK);
   return resumen; // Paso 2.14: por API el reporte va en el retorno, no en la pantalla
+}
+
+/**
+ * `2026-08-15_1` Parte B — **el piloto: los ocho de `Impresiones` pasan a declarar su corte en
+ * `dimensiones` (`D-33`)**, y su `filtro` queda con la restricción técnica sola.
+ *
+ * **Por el escritor declarado.** `curarCamposMarcadores_` corrige campos de filas que ya
+ * existen, sin crear ni borrar (`ESCRITORES.md`). **No hay `SEED_MARCADORES_` y no lo va a
+ * haber** (`D-17`: el dueño de `MARCADORES` es la plantilla), así que el punto 1 del prompt
+ * —*"en la hoja y en el seed por el mismo camino"*— **no aplica acá**: sólo hay hoja. La columna
+ * la crea `COLUMNAS_DELTA_`; el contenido, esto.
+ *
+ * **Qué cambia en cada una de las ocho, y por qué las dos cosas juntas:**
+ *
+ *   `filtro`      `nombre_campaña~=JM && estado=Activa && Plataforma=Meta`  →  `estado=Activa`
+ *   `dimensiones` (vacío)                                    →  `ambito=jm && plataforma=meta`
+ *
+ * **El corte sale del `filtro` en la misma operación en que entra a `dimensiones`.** Dejarlo en
+ * los dos lados daría el mismo número —las condiciones son idénticas y filtrar dos veces por lo
+ * mismo es idempotente— y por eso es tentador: sería un piloto que no puede fallar. **Y no
+ * probaría nada.** Lo que se está verificando es que la traducción de dimensión reproduzca la
+ * condición que el filtro tenía; si el filtro sigue ahí, el número reproduce por el filtro.
+ *
+ * **`estado=Activa` se queda**, y es la frontera de `D-33`: es una restricción técnica —una
+ * regla de validez de la fila— y no un corte que alguien del equipo pediría.
+ *
+ * **`imp_total` y `gcba_imp_total` NO llevan `plataforma`.** Ausente significa «todas» (usuario,
+ * 15/08). El control que detecta una ausencia confundida con «todas» es la invariante medida:
+ * **total = suma de partes**, exacto en los dos ámbitos.
+ *
+ * **Idempotente**: `curarCamposMarcadores_` no escribe una celda que ya tiene el valor pedido,
+ * así que correrla dos veces no hace nada la segunda.
+ *
+ * **Para revertir el piloto** —punto 4 de la Parte C— alcanza con vaciar `dimensiones` y
+ * devolver los `filtro` de `docs/_snapshots/MARCADORES_2026-08-15.tsv`, que es la línea base.
+ */
+function migrarPilotoImpresionesADimensiones_() {
+  var cambios = [
+    { marcador: 'imp_total',        informe_id: 'jm', filtro: 'estado=Activa', dimensiones: 'ambito=jm' },
+    { marcador: 'imp_meta',         informe_id: 'jm', filtro: 'estado=Activa', dimensiones: 'ambito=jm && plataforma=meta' },
+    { marcador: 'imp_google',       informe_id: 'jm', filtro: 'estado=Activa', dimensiones: 'ambito=jm && plataforma=google' },
+    { marcador: 'imp_prog',         informe_id: 'jm', filtro: 'estado=Activa', dimensiones: 'ambito=jm && plataforma=programmatic' },
+    { marcador: 'gcba_imp_total',   informe_id: 'jm', filtro: 'estado=Activa', dimensiones: 'ambito=gcba' },
+    { marcador: 'gcba_imp_meta',    informe_id: 'jm', filtro: 'estado=Activa', dimensiones: 'ambito=gcba && plataforma=meta' },
+    { marcador: 'gcba_imp_google',  informe_id: 'jm', filtro: 'estado=Activa', dimensiones: 'ambito=gcba && plataforma=google' },
+    { marcador: 'gcba_imp_prog',    informe_id: 'jm', filtro: 'estado=Activa', dimensiones: 'ambito=gcba && plataforma=programmatic' }
+  ];
+  return curarCamposMarcadores_(cambios);
+}
+
+/**
+ * Wrapper público del piloto — el que se elige en el desplegable (`CLAUDE.md` §2).
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`.** Es la única función de esta tanda que lo hace. Antes de
+ * correrla tiene que existir el testigo de la Parte A: sin él, la Parte C no tiene contra qué
+ * comparar y el piloto no se puede verificar ni revertir con criterio.
+ */
+function migrarPilotoDeImpresiones() {
+  var r = migrarPilotoImpresionesADimensiones_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== piloto: ' + r.cambios_escritos + ' celda(s) escrita(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" → "' + a.nuevo + '"');
+  });
+  if (r.sin_fila.length) {
+    Logger.log('⚠ SIN FILA EN LA HOJA (' + r.sin_fila.length + '):');
+    r.sin_fila.forEach(function (s) { Logger.log('   ' + s); });
+  }
+  Logger.log('Ahora: correr testigoDeImpresiones() y comparar los ocho contra el testigo de la Parte A.');
+  return r;
 }

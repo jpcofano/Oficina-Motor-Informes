@@ -914,7 +914,36 @@ function resolverMarcadores(informeId, opciones) {
     //         El del marcador gana; si no declara ninguno, hereda el de su sección.
     var filtroPropio = String(fila.filtro || '').trim();
     var filtroEfectivo = filtroPropio || String((opciones && opciones.filtro_seccion) || '').trim();
-    var filtrado = aplicarFiltroDeMarcador_(filtroEfectivo, fila, solapa.solapa, datos.filas, !filtroPropio);
+
+    /* `D-33` (15/08/2026) — **las dimensiones se traducen a condiciones y se suman al filtro.**
+     *
+     * **El camino de aplicación no se toca**, y eso es deliberado: `aplicarFiltroDeMarcador_`
+     * recibe texto y no se entera de que una parte vino de una dimensión. Si los ocho números
+     * del piloto se movieran, no habría que preguntarse si fue la estructura o el aplicador —
+     * el aplicador es exactamente el mismo.
+     *
+     * **La traducción vive en `Fuentes.gs`** (`condicionesDeDimensiones_`), que es resolución de
+     * datos contra la forma de cada base. Acá sólo se compone.
+     *
+     * **Un marcador con dimensiones NO hereda el filtro de su sección**: declaró su corte, así
+     * que el conjunto es propio. Sin esto, un corte explícito y uno heredado se mezclarían con
+     * la regla de `_24` —que ignora el heredado entero si una condición no mapea— y el mismo
+     * texto significaría cosas distintas según la solapa. */
+    var dims = condicionesDeDimensiones_(fila.base_id, solapa.solapa, fila.dimensiones);
+    if (!dims.ok) {
+      base.estado = 'error';
+      base.traza = '«FALTA:' + fila.marcador + '@dimension_no_resuelta» — ' + dims.motivo +
+        ' · ' + trazaVentana;
+      return base;
+    }
+    var hayDimensiones = dims.condiciones !== '';
+    if (hayDimensiones) {
+      filtroEfectivo = filtroPropio
+        ? dims.condiciones + ' ' + SEPARADOR_CONDICIONES_FILTRO_ + ' ' + filtroPropio
+        : dims.condiciones;
+    }
+    var esPropio = filtroPropio !== '' || hayDimensiones;
+    var filtrado = aplicarFiltroDeMarcador_(filtroEfectivo, fila, solapa.solapa, datos.filas, !esPropio);
     if (!filtrado.ok) {
       base.estado = 'error';
       base.traza = filtrado.motivo + ' · ' + trazaVentana;

@@ -1460,3 +1460,107 @@ function menuProbarLectura_() {
 
   ui.alert('Prueba de lectura por ventana', lineas.join('\n'), ui.ButtonSet.OK);
 }
+
+/* ===================== `D-33` — dimensiones a condición física (15/08/2026) =====================
+ *
+ * **Traduce un corte lógico —`ambito=jm`— a la condición que esa base entiende.** Es lo que
+ * `MAPEO` hace con las medidas, del lado de los cortes.
+ *
+ * **Vive acá y no en `Generador.gs` por el reparto de `CLAUDE.md` §2:** esto es resolución de
+ * datos contra la forma de cada base, no despacho. `Generador.gs` sigue siendo el que **aplica**
+ * el filtro; lo que recibe es texto, y no se entera de que una parte vino de una dimensión.
+ *
+ * **Y ése es el punto del piloto:** el camino de aplicación —`parsearFiltro_`,
+ * `aplicarFiltroDeMarcador_`— **no se toca**. Si los ocho números se movieran, no habría que
+ * preguntarse si fue la estructura o el aplicador, porque el aplicador es el mismo.
+ *
+ * ⚠ **DEUDA DECLARADA, y hay que decirla porque `D-33` promete otra cosa.** `D-33` funda la
+ * decisión en la **simetría con `MAPEO`** — y `MAPEO` es una **hoja**. Esta tabla es un mapa en
+ * código, así que **agregar una dimensión o un valor todavía pide `clasp push`**, que es
+ * exactamente lo que `D-01` mide. Para el piloto alcanza: prueba la estructura, no la
+ * configurabilidad. **La versión que se quede tiene que ser una hoja de registro**, y hasta
+ * entonces esto es andamio.
+ */
+var DIMENSIONES_ = {
+  ambito: {
+    // El valor es una función de (base_id, solapa) porque la misma dimensión se dice distinto
+    // en cada base — las cuatro formas medidas el 15/08 sobre las 78 filas vivas.
+    jm: {
+      'rdv|RVD JM-CM - ES': 'figura=Jorge Macri',
+      'digital|Directa Mail': 'mail_remitente=jorge.macri@buenosaires.gob.ar',
+      'looker|DIGITAL': 'nombre_campaña~=JM',
+      'looker|resumen_metricas_dinamico': 'campana~=JM'
+    },
+    // `gcba` es **todo lo que no es `jm`** (`D-33`), no un valor propio: se implementa negando
+    // la misma condición. La consecuencia está escrita en `D-33` y es que una fila sin el campo
+    // cargado cae acá, no afuera de las dos.
+    gcba: {
+      'rdv|RVD JM-CM - ES': 'figura!=Jorge Macri',
+      'digital|Directa Mail': 'mail_remitente!=jorge.macri@buenosaires.gob.ar',
+      'looker|DIGITAL': 'nombre_campaña!~=JM',
+      'looker|resumen_metricas_dinamico': 'campana!~=JM'
+    }
+  },
+  plataforma: {
+    meta: { 'looker|DIGITAL': 'Plataforma=Meta' },
+    google: { 'looker|DIGITAL': 'Plataforma=Google ads' },
+    // `R-24` NO se deroga: `programmatic` es **todo lo que no es Meta ni Google ads**, por resta
+    // y no por lista. Darle un valor propio sería enumerar en vez de derivar, y el día que
+    // aparezca una plataforma nueva quedaría afuera en silencio.
+    programmatic: { 'looker|DIGITAL': 'Plataforma!=Meta && Plataforma!=Google ads' }
+  },
+  tipo_envio: {
+    convocatoria: { 'digital|Directa Mail': 'mail_tipo=Convocatoria' },
+    m2: { 'digital|Directa Mail': 'mail_tipo~=M2' }
+  }
+};
+
+/**
+ * `D-33` — el texto de `MARCADORES.dimensiones` a condiciones de `filtro`.
+ *
+ * **Una dimensión ausente significa «todas»** (decisión del usuario, 15/08/2026): sin
+ * `plataforma`, la fila es el agregado sobre las tres. No se inventa un valor `todas` que después
+ * haya que mantener sincronizado con la lista real.
+ *
+ * ⚠ **Ausente y «todas» se ven igual, y el control que lo detecta está medido:** sobre
+ * `looker/DIGITAL/Impresiones`, **total = suma de partes**, exacto, en los dos ámbitos. Una fila
+ * a la que se le olvidó la plataforma devuelve el total y **descuadra esa invariante**. Es la
+ * razón por la que `R-24` tiene que seguir calculando `programmatic` por resta.
+ *
+ * **Falla ruidoso**: una dimensión o un valor que no existen, o que esa base no sabe expresar,
+ * devuelven `ok: false` con el motivo. Silenciarlos devolvería el universo entero — el modo de
+ * falla más caro del proyecto.
+ */
+function condicionesDeDimensiones_(baseId, solapa, texto) {
+  var t = String(texto || '').trim();
+  if (t === '') return { ok: true, condiciones: '' };
+
+  var clave = baseId + '|' + solapa;
+  var partes = t.split(SEPARADOR_CONDICIONES_FILTRO_);
+  var salida = [];
+
+  for (var i = 0; i < partes.length; i++) {
+    var p = String(partes[i]).trim();
+    if (p === '') continue;
+    var corte = p.indexOf('=');
+    if (corte === -1) {
+      return { ok: false, motivo: 'dimensión mal escrita: "' + p + '" (falta `=`)' };
+    }
+    var dim = normalizarValorDeclarado_(p.slice(0, corte));
+    var val = normalizarValorDeclarado_(p.slice(corte + 1));
+
+    if (!DIMENSIONES_[dim]) {
+      return { ok: false, motivo: 'dimensión desconocida: "' + dim + '"' };
+    }
+    if (!DIMENSIONES_[dim][val]) {
+      return { ok: false, motivo: 'valor desconocido para `' + dim + '`: "' + val + '"' };
+    }
+    var fisica = DIMENSIONES_[dim][val][clave];
+    if (!fisica) {
+      return { ok: false, motivo: '`' + dim + '=' + val + '` no está definida para ' + clave };
+    }
+    salida.push(fisica);
+  }
+
+  return { ok: true, condiciones: salida.join(SEPARADOR_CONDICIONES_FILTRO_) };
+}
