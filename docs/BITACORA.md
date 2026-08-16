@@ -9991,3 +9991,89 @@ motivo es que los títulos se repiten.
 - **Si se escribe ya la función que valida el testigo de `D-31`.** Está diferida por decisión
   del 14/08 y esta medición muestra exactamente qué se gana escribiéndola — pero la decisión
   sigue siendo del usuario.
+
+---
+
+## Bloque 3 — PARADO: no hay dos universos de Call Center, hay uno cableado y uno que publica `—` (2026-08-16)
+
+> **El bloque no produjo el prompt del frente 8, y es a propósito.** Regla 5 de la corrida: si
+> una premisa falla, el bloque para ahí. Falló la central, medida contra
+> `docs/_snapshots/MARCADORES_2026-08-15.tsv` y `MAPEO_2026-08-15.tsv`.
+
+### La premisa, y qué dice la medición
+
+El prompt la enunciaba así: *"`enc_*` filtra `Tipo de llamado IN (Convocatoria, IVR convocatoria)`
+y `cc_*` no filtra"*. **Las dos mitades son falsas, cada una por su lado.**
+
+**1 · No existe ningún marcador `cc_*`.** Cero filas en `MARCADORES`. `cc_base`, `cc_campanias`,
+`cc_contactados` y `cc_contact_pct` son **tokens de las láminas 2 y 5** (`TOKENS.md`) **sin fila**,
+y eso **no es un olvido: está decidido.** `_32.2`, recogido en `PENDIENTES`: publican `—` y no se
+cablean, porque *"un cero ahí se leería como 'hubo cero llamados', que es una afirmación falsa
+sobre el mundo; una raya dice 'no tengo el dato', que es verdad"*.
+
+Lo que sí existe con ese nombre son **campos lógicos** —`cc_base_total`, `cc_base_discada`,
+`cc_contactados`, `cc_contactados_pct`, `cc_efectivos`, `cc_efectivos_pct`— **de
+`reuniones/Agenda JM`**, y los leen marcadores que se llaman `enc_*`. **`cc_` como prefijo de
+token y `cc_` como prefijo de campo lógico son dos cosas distintas que se llaman igual**, que es
+el modo de confusión que `CLAUDE.md` §4 ya tiene documentado.
+
+**2 · Ningún `enc_*` filtra por `Tipo de llamado`.** La cadena entera —`MARCADORES` y `MAPEO` del
+15/08, y los `.gs`— **no tiene una sola aparición de `Tipo de llamado` fuera de una nota del seed.**
+Los nueve `enc_*` de Call Center leen `reuniones/Agenda JM` con **guardas `!=0` y nada más**, que
+`D-33` ya clasificó como **restricción técnica, no dimensión**.
+
+El único filtro `Convocatoria` que existe es **`mail_tipo=Convocatoria`**, en los seis `enc_*` de
+**`digital/Directa Mail`**. Es **mail, no Call Center** — el prompt cruzó dos familias.
+
+**3 · Y `looker/CC` no puede filtrar por tipo de llamado aunque se quisiera.** `X-21` lo midió en
+vivo el 12/08: la solapa tiene **cinco columnas y ninguna más** —`ID Cuentas`, `Base enviada`,
+`Base barrida`, `Contactados`, `Efectivos`—. Sin fecha, sin campaña, sin estado, **y sin tipo de
+llamado.**
+
+### El obstáculo que el prompt no podía saber: la fuente del corte está en `ignorar`
+
+La columna `Tipo de llamado` con `Convocatoria` / `Reconfirmación` / `IVR convocatoria` /
+`Informativo` está en **`reuniones/Call`** — y **`reuniones/Call` está `uso = ignorar`** desde el
+alta del 15/08. Ídem sus dos recortes `Call (JM)` y `Call (Funcionarios)`.
+
+**Por eso la Parte A que el prompt pedía no se puede escribir tal como está.** `CLAUDE.md` §2 es
+explícita: una solapa `ignorar` no se lee, no se audita, no se mapea y no se diagnostica. Y el
+motor la rechaza solo: `buscarMapeo` exige `uso === 'fuente'` **antes** de tocar `MAPEO`.
+
+**El seed lo dejó anotado y es la punta del hilo, no una contradicción:** la nota de `Call` dice
+*"insumo directo de la `R-NN` de los dos universos de Call Center"*, y la de **`Métricas EDVs`**
+—`referencia`, 45 columnas— dice que es **el superconjunto de `Agenda JM`, con Call Center JM
+separado de Call Center Funcionarios**, verificado para `1493`. O sea: **quien decidió el alta ya
+sabía que ahí estaba el dato y lo dejó fuera del alcance de lectura a propósito.**
+
+### La pregunta real, que sí existe y hay que escribir bien antes de prompearla
+
+**No es "dos universos conviviendo".** Es esto, y es más chico y más nítido:
+
+> **Los nueve `enc_*` de Call Center leen `reuniones/Agenda JM`, que es un agregado por encuentro
+> ya calculado río arriba. Nadie declaró qué tipos de llamado entran en ese agregado.** El corte
+> por `Tipo de llamado` existe una capa más abajo —en `reuniones/Call`, hoy `ignorar`— y el motor
+> no lo ve. Así que hoy el motor **hereda un recorte que no eligió y que no está escrito en
+> ninguna parte.**
+
+Es el modo de falla del **número plausible**, sí — pero por herencia silenciosa, no por dos
+familias compitiendo. Y es un caso más de `C-64`, las dos capas de la base: filas contra agregado.
+
+### Lo que este bloque NO hizo, y por qué
+
+- **No escribió el prompt del frente 8.** Redactar un `R-NN` sobre "dos universos" cuando el
+  segundo no tiene marcadores sería documentar una ficción y darle la autoridad de una regla.
+- **No escribió el instrumento de medición.** Su mitad `reuniones/Call` leería una solapa
+  `ignorar`, y su mitad `looker/CC` ya está en la lista de corridas por el bloque 2. Un
+  instrumento que reproduce el `uso` peor que el motor es exactamente el error que `CLAUDE.md` §4
+  documenta.
+
+### Las dos decisiones del usuario que destraban el frente 8
+
+1. **¿`reuniones/Call` (o `Métricas EDVs`) pasa a `fuente`, o el corte se declara sin leerlas?**
+   Es una escritura en `SOLAPAS` y una reversión de una decisión de hace un día — **no se toma a
+   la madrugada y no se toma sin el usuario.** `Métricas EDVs` tiene el agravante de que su dueño
+   es otra planilla y su clave es `ID Reunión`, no `ID Cuentas`.
+2. **¿Los `cc_*` de las láminas 2 y 5 siguen publicando `—`?** Si la respuesta es sí, el frente 8
+   no es sobre ellos y su alcance se achica al párrafo de la pregunta real. Si es no, `_32.2` se
+   está derogando y eso necesita decirse.
