@@ -2333,3 +2333,109 @@ function testigoDeImpresiones() {
   Logger.log('== fin del testigo: ' + testigo.length + ' marcador(es) ==');
   return { ok: true, testigo: testigo };
 }
+
+/**
+ * `D-31` de punta a punta — **barre TODO `MAPEO` y dice si hoy hay algún desalineamiento entre
+ * el encabezado declarado y el que la hoja tiene en esa letra.**
+ *
+ * ⚠ **Wrapper público, sin `_` final**, porque la corre una persona desde el desplegable del
+ * editor (`CLAUDE.md` §2) y devuelve por `Logger.log`, no sólo por `return`: el editor no
+ * muestra el valor de retorno.
+ *
+ * **Es de SÓLO LECTURA.** No escribe en `MAPEO`, no corrige ninguna letra y no toca ninguna
+ * base. Si encuentra desalineamientos los **reporta y para ahí**: corregirlos es otro prompt y
+ * probablemente otra decisión.
+ *
+ * **Por qué existe además del aviso en la corrida.** El aviso de `encabezadoEnColumna_` sólo se
+ * dispara sobre las columnas que **esa** corrida efectivamente leyó, así que un desalineamiento
+ * en una solapa que ningún marcador toca **no aparecería nunca**. Esto las mira todas, y sin
+ * generar un informe: es la forma barata de saber el estado de hoy.
+ *
+ * **Qué NO detecta, que es el límite de `D-31` y no un defecto de acá:** compara **rótulos, no
+ * contenido**. En las solapas con los encabezados corridos **en origen** —`C-09`,
+ * `RDV_otros_ministros`— el rótulo va a coincidir y no va a decir nada. Y al revés: un rótulo
+ * que **no** coincide puede ser un corrimiento de origen y no un mapeo mal apuntado. **Antes de
+ * llamar hallazgo a una fila de la tabla de abajo, descartar `C-09`.**
+ */
+function verificarEncabezadosDeMapeo() {
+  var mapa = leerMapeo();
+  var revisadas = 0;
+  var sinTestigo = 0;
+  var noFuente = 0;
+  var ilegibles = [];
+  var desalineadas = [];
+
+  Object.keys(mapa).sort().forEach(function (baseId) {
+    Object.keys(mapa[baseId]).sort().forEach(function (solapa) {
+      /* Una solapa que no es `fuente` no se lee nunca, así que compararla sería inventar
+       * trabajo — y si es `ignorar`, además está prohibido tocarla (`CLAUDE.md` §2). */
+      if (usoSolapa_(baseId, solapa) !== 'fuente') {
+        noFuente += Object.keys(mapa[baseId][solapa]).length;
+        return;
+      }
+
+      // Se agrupa por LETRA y no por `campo_logico`, igual que el comparador, porque hay 12
+      // grupos donde varios campos apuntan a la misma columna con testigos distintos.
+      var porLetra = {};
+      Object.keys(mapa[baseId][solapa]).forEach(function (campoLogico) {
+        var fila = mapa[baseId][solapa][campoLogico];
+        var letra = String(fila.columna || '').trim().toUpperCase();
+        if (!letra) return;
+        if (!porLetra[letra]) porLetra[letra] = { esperados: [], campos: [] };
+        porLetra[letra].campos.push(campoLogico);
+        if (fila.encabezado) porLetra[letra].esperados.push(fila.encabezado);
+      });
+
+      Object.keys(porLetra).forEach(function (letra) {
+        var grupo = porLetra[letra];
+        if (!grupo.esperados.length) { sinTestigo += grupo.campos.length; return; }
+
+        var real = encabezadoEnColumna_(baseId, solapa, letra);
+        if (real === undefined) {
+          // La solapa no se pudo abrir. **No es un desalineamiento** y mezclarlo con los otros
+          // sería reportar un problema de acceso como si fuera de mapeo.
+          ilegibles.push(baseId + '/' + solapa);
+          return;
+        }
+        revisadas++;
+        var d = desalineamientoDeEncabezado_(grupo.esperados, real);
+        if (d) {
+          desalineadas.push({
+            base_id: baseId, solapa: solapa, columna: letra,
+            campos: grupo.campos.join(', '),
+            esperados: d.esperados.join('" o "'), real: d.real
+          });
+        }
+      });
+    });
+  });
+
+  Logger.log('== D-31 · testigo de encabezados, sólo lectura ==');
+  Logger.log('  columnas comparadas: ' + revisadas +
+    ' · sin testigo declarado: ' + sinTestigo +
+    ' · en solapas que no son fuente: ' + noFuente +
+    ' · desalineadas: ' + desalineadas.length);
+
+  if (ilegibles.length) {
+    var unicas = ilegibles.filter(function (v, i) { return ilegibles.indexOf(v) === i; });
+    Logger.log('  ⚠ ' + unicas.length + ' solapa(s) no se pudieron abrir, y eso NO es un ' +
+      'desalineamiento: ' + unicas.join(' · '));
+  }
+
+  if (!desalineadas.length) {
+    Logger.log('  ✅ Ninguna columna desalineada. ⚠ Y eso NO quiere decir que los datos estén ' +
+      'bien: el testigo compara rótulos, no contenido (C-09).');
+  } else {
+    Logger.log('  ❌ ' + desalineadas.length + ' columna(s) desalineada(s). **No se corrigió ' +
+      'ninguna**: la letra manda y el testigo nunca es fallback.');
+    desalineadas.forEach(function (d) {
+      Logger.log('     ' + d.base_id + '/' + d.solapa + ' col ' + d.columna +
+        ' (' + d.campos + '): MAPEO espera "' + d.esperados + '" · la hoja tiene "' + d.real + '"');
+    });
+    Logger.log('     ⚠ Antes de llamarlo hallazgo, descartar C-09: en las solapas con los ' +
+      'encabezados corridos en origen el rótulo miente de entrada.');
+  }
+
+  return { ok: true, revisadas: revisadas, sin_testigo: sinTestigo,
+           no_fuente: noFuente, ilegibles: ilegibles, desalineadas: desalineadas };
+}

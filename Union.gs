@@ -26,6 +26,130 @@
  */
 var cacheEncabezadosUnion_ = {};
 
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * `D-31` conectado — el testigo de `MAPEO.encabezado` deja de ser un dato y pasa a ser alarma
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * **Qué problema resuelve.** El motor lee **por posición**: `buscarMapeo` devuelve una LETRA,
+ * `columnaLetraAIndice_` la vuelve índice, de ahí sale el título, y con el título se extrae de
+ * la fila. El encabezado es **derivado de la posición**, nunca un criterio propio — no se busca
+ * jamás una columna por su nombre.
+ *
+ * Consecuencia: **insertar una columna corre todas las letras a su derecha y nada falla.** La
+ * letra corrida da un índice válido, `headers[idx]` devuelve el título del vecino, y
+ * `obj[titulo]` devuelve el valor del vecino. Un `SUMA` sobre la columna de al lado es un
+ * número, no una excepción.
+ *
+ * Y peor: `leerFuente` arma la fila con `obj[h] = fila[i]`, así que **con títulos repetidos gana
+ * el último**. En estas bases los repetidos son la norma —`Base_Digital` tiene ocho
+ * `ID Cuentas`— así que después de un corrimiento el motor puede devolver **ni siquiera el
+ * vecino**, sino el valor de la última columna que comparta ese título.
+ *
+ * `D-31` pobló 154 filas de `MAPEO` con el encabezado esperado, y hasta hoy **no lo miraba
+ * nadie**: `leerMapeoSinCache_` ni siquiera indexaba la columna. El frente 6 dejó el dato y no
+ * la alarma. Esto es la alarma.
+ *
+ * ─── La política es de `D-31`. Acá se aplica, no se reinventa ─────────────────────────────
+ *
+ *   1. **NUNCA se corrige la letra sola.** Está prohibido *"si el título no coincide, buscá la
+ *      columna que sí lo tenga"*. La letra manda y el testigo **no es fallback jamás**. El
+ *      motivo: los títulos **se repiten**, así que un fallback por título acertaría a veces y
+ *      erraría **en silencio** otras — peor que el problema que vendría a resolver.
+ *   2. **Se reportan los DOS valores**, con base, solapa y letra. Un *"no coincide"* a secas no
+ *      se puede verificar.
+ *   3. **No bloquea la corrida.** Es un aviso, no una excepción: un desalineamiento no puede
+ *      dejar sin deck a quien lo necesita el jueves.
+ *
+ * ─── ⚠ El límite, que es de la herramienta y no una omisión ───────────────────────────────
+ *
+ * **El testigo compara RÓTULOS, NO CONTENIDO.** Detecta que la columna **se movió**, no que el
+ * dato esté mal.
+ *
+ * `C-09` es la prueba de que el límite es real y no teórico: en `RDV_otros_ministros` los
+ * encabezados están corridos **en origen** —el rótulo no describe lo que la columna tiene—, así
+ * que ahí el testigo **va a coincidir siempre** y no va a detectar nada. Está escrito acá y no
+ * sólo en `D-31` porque una guarda cuyo límite vive en otro documento se lee como si no tuviera
+ * límite, y el día que alguien confíe en ella para una pregunta que no responde, el costo lo
+ * paga la confianza puesta en el resto.
+ */
+
+/**
+ * Compara el/los encabezado(s) que `MAPEO` declara esperar en una letra contra el que
+ * efectivamente hay ahí. Devuelve `null` si no hay desalineamiento, o `{ esperados, real }`.
+ *
+ * **Es pura a propósito** —dos textos entran, un veredicto sale— para que su control positivo
+ * corra fuera de Apps Script: `node tools/probar-encabezado.js`, que extrae **esta misma
+ * función** del repo en vez de una copia.
+ *
+ * **Recibe una LISTA de esperados, y eso no es generalidad de más: está medido.** En
+ * `MAPEO_2026-08-15.tsv` hay **12 grupos (base, solapa, letra) con más de una fila**, porque dos
+ * `campo_logico` distintos pueden apuntar a la misma columna física — `looker/
+ * resumen_metricas_dinamico/C` tiene tres, y `rdv/RVD JM-CM - ES/E` tiene dos con testigos
+ * **distintos** (`''` y `'FECHA'`). Si el real coincide con **alguno** de los declarados, no hay
+ * desalineamiento. Tratarlo como valor único produciría avisos falsos sobre doce grupos el
+ * primer día, y **una alarma que grita de entrada es una alarma apagada**.
+ *
+ * **Un testigo vacío se saltea, no se compara contra `''`**: vacío significa *"no declarado"*, y
+ * es el estado real de 7 de las 154 filas — las de `promoverFechasElegidas()`.
+ *
+ * `R-10` para comparar: se normalizan los dos lados colapsando espacios, **preservando
+ * mayúsculas y acentos**. Plegar el case colapsaría encabezados que en estas bases son columnas
+ * distintas con contenido distinto.
+ */
+function desalineamientoDeEncabezado_(esperados, real) {
+  var lista = (esperados || []).map(normalizarValorDeclarado_).filter(function (e) { return e !== ''; });
+  if (!lista.length) return null;
+
+  var encontrado = normalizarValorDeclarado_(real);
+  for (var i = 0; i < lista.length; i++) {
+    if (lista[i] === encontrado) return null;
+  }
+  return { esperados: lista, real: encontrado };
+}
+
+/**
+ * Los avisos de desalineamiento de esta corrida. Variable de módulo, mismo criterio y misma
+ * vida que `cacheEncabezadosUnion_`: muere con la ejecución.
+ *
+ * **Se acumulan en vez de emitirse de a uno** porque `encabezadoEnColumna_` se llama una vez por
+ * marcador y por campo —decenas de veces por corrida— y el mismo desalineamiento saldría
+ * repetido hasta ser ruido. Se deduplica por (base, solapa, letra).
+ */
+var avisosEncabezadoUnion_ = {};
+
+/** Los avisos juntados hasta ahora, como lista de texto listo para la traza. */
+function avisosDeEncabezado_() {
+  return Object.keys(avisosEncabezadoUnion_).sort().map(function (k) {
+    return avisosEncabezadoUnion_[k];
+  });
+}
+
+/**
+ * Los encabezados que `MAPEO` declara esperar en una (base, solapa, letra). Devuelve `[]` si
+ * ninguna fila lo declara.
+ *
+ * Se resuelve **por letra y no por `campo_logico`** para que la comparación entre en el único
+ * punto donde la letra se vuelve columna —`encabezadoEnColumna_`— sin tocar sus once llamadores.
+ * Ese es el motivo de que el comparador reciba una lista: por letra, la relación es de varios a
+ * uno.
+ */
+function encabezadosEsperadosEnColumna_(baseId, solapa, columnaLetra) {
+  var mapa = leerMapeo();
+  var deLaSolapa = mapa[baseId] && mapa[baseId][solapa];
+  if (!deLaSolapa) return [];
+
+  var letra = String(columnaLetra || '').trim().toUpperCase();
+  if (!letra) return [];
+
+  var esperados = [];
+  Object.keys(deLaSolapa).forEach(function (campoLogico) {
+    var fila = deLaSolapa[campoLogico];
+    if (String(fila.columna || '').trim().toUpperCase() !== letra) return;
+    if (fila.encabezado) esperados.push(fila.encabezado);
+  });
+  return esperados;
+}
+
 function encabezadoEnColumna_(baseId, solapa, columnaLetra) {
   var clave = baseId + '||' + solapa;
   if (!Object.prototype.hasOwnProperty.call(cacheEncabezadosUnion_, clave)) {
@@ -56,7 +180,34 @@ function encabezadoEnColumna_(baseId, solapa, columnaLetra) {
   }
   var headers = cacheEncabezadosUnion_[clave];
   if (!headers) return undefined;
-  return headers[columnaLetraAIndice_(columnaLetra)];
+  var real = headers[columnaLetraAIndice_(columnaLetra)];
+
+  /* `D-31` conectado. **Se compara y se avisa; el valor devuelto NO cambia nunca** — ésa es la
+   * regla 1 de la política: la letra manda y el testigo no es fallback. Si esto empezara a
+   * devolver "la columna que sí tiene el título esperado", el motor pasaría a leer por nombre
+   * y **acertaría a veces y erraría en silencio otras**, porque los títulos se repiten.
+   *
+   * Va envuelto en `try` porque **la regla 3 es que no bloquea la corrida**: un fallo del aviso
+   * no puede tirar abajo la lectura que estaba avisando. Un instrumento que rompe lo que mide
+   * es peor que no tenerlo. */
+  try {
+    var claveAviso = clave + '||' + String(columnaLetra || '').trim().toUpperCase();
+    if (!Object.prototype.hasOwnProperty.call(avisosEncabezadoUnion_, claveAviso)) {
+      var desalineado = desalineamientoDeEncabezado_(
+        encabezadosEsperadosEnColumna_(baseId, solapa, columnaLetra), real);
+      if (desalineado) {
+        avisosEncabezadoUnion_[claveAviso] = '⚠ D-31 · ' + baseId + '/' + solapa + ' col ' +
+          columnaLetra + ': MAPEO espera "' + desalineado.esperados.join('" o "') +
+          '" y la hoja tiene "' + desalineado.real + '". **La letra manda: el valor se lee igual ' +
+          'de ' + columnaLetra + '.** Puede ser una columna insertada que corrió las letras — o ' +
+          'un encabezado corrido en origen (C-09), que no es lo mismo.';
+      }
+    }
+  } catch (e) {
+    // Silencio deliberado: ver la regla 3, arriba.
+  }
+
+  return real;
 }
 
 function valorPorColumna_(filaObjeto, baseId, solapa, columnaLetra) {

@@ -2654,6 +2654,25 @@ function menuGenerarInformeCompleto_() {
       r.tokens.excluidos_por_lamina_escondida.laminas.join(', ') +
       ' escondida(s) — no se emiten. Numeradas sobre el DECK EXPANDIDO, no sobre la plantilla)');
   }
+  /* `D-31` conectado (16/08) — los desalineamientos de encabezado que esta corrida encontró.
+   *
+   * **Va acá porque un reporte que no se lee es una función que no existe.** El comparador vive
+   * en `encabezadoEnColumna_`, pero si el aviso se quedara en una variable de módulo moriría con
+   * la ejecución sin que nadie lo viera.
+   *
+   * **No bloquea nada** —regla 3 de `D-31`— y por eso va DESPUÉS de los números del deck: el
+   * deck salió, y esto es una advertencia sobre de dónde salieron algunos valores.
+   *
+   * ⚠ Sólo cubre **las columnas que esta corrida efectivamente leyó**. Para el barrido completo
+   * de `MAPEO`, sin generar informe, está `verificarEncabezadosDeMapeo()`. */
+  var avisosEnc = (typeof avisosDeEncabezado_ === 'function') ? avisosDeEncabezado_() : [];
+  if (avisosEnc.length) {
+    lineas.push('');
+    lineas.push('⚠ D-31 — ' + avisosEnc.length + ' columna(s) con el encabezado desalineado. **El ' +
+      'valor se leyó igual, por la letra**: el testigo nunca corrige. Puede ser una columna ' +
+      'insertada que corrió las letras, o un encabezado corrido en origen (C-09), que no es lo mismo:');
+    avisosEnc.forEach(function (a) { lineas.push('   ' + a); });
+  }
   // `T2.7` — antes que nada: si el instrumento falló, **nada de lo que sigue se puede leer
   // como diagnóstico**. Va arriba porque cambia cómo se lee el resto, no porque sea grave.
   if (r.instrumento && r.instrumento.fallos.length) {

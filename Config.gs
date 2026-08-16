@@ -147,6 +147,10 @@ function leerMapeoSinCache_() {
   var idxCampoLogico = headers.indexOf('campo_logico');
   var idxHoja = headers.indexOf('hoja');
   var idxColumna = headers.indexOf('columna');
+  // `D-31` (16/08) — **la columna existía desde el 14/08 y esta función no la indexaba**, así
+  // que el testigo era un dato que no miraba nadie. Sin esta línea, `buscarMapeo` no lo puede
+  // devolver y la comparación de `Union.gs` no tiene contra qué comparar.
+  var idxEncabezado = headers.indexOf('encabezado');
   var idxTipoEsperado = headers.indexOf('tipo_esperado');
   var idxValoresIncluidos = headers.indexOf('valores_incluidos'); // Paso 2.16
   var idxNotas = headers.indexOf('notas');
@@ -163,6 +167,9 @@ function leerMapeoSinCache_() {
     mapa[baseId][solapa][campoLogico] = {
       hoja: fila[idxHoja],
       columna: fila[idxColumna],
+      // `D-31`: el rótulo que se espera encontrar en esa letra. **Testigo, nunca fallback** — lo
+      // compara `desalineamientoDeEncabezado_` (Union.gs) y no lo usa nadie para resolver.
+      encabezado: idxEncabezado !== -1 ? fila[idxEncabezado] : '',
       tipo_esperado: idxTipoEsperado !== -1 ? fila[idxTipoEsperado] : '',
       valores_incluidos: idxValoresIncluidos !== -1 ? fila[idxValoresIncluidos] : '',
       notas: fila[idxNotas]
