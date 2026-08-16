@@ -24,7 +24,7 @@ del 15/08. En resumen, y el detalle está allá:
 
 | # | qué correr | qué destraba | ¿decide el usuario? |
 |---|---|---|---|
-| **1** | **`testigoDeImpresiones()`** — la Parte C del piloto. **⚠ Leer el canario primero: si `gcba_frecuencia` da `0`, `looker` está recalculando y no se lee nada** | el frente 13, la migración por tandas. **La corrida más importante** | **sí, si no reproduce.** La reversión no se corre por criterio propio |
+| ~~1~~ | ~~**`testigoDeImpresiones()`** — la Parte C del piloto~~ | ✅ **corrida el 16/08 11:58. El piloto pasó** y el frente 13 quedó autorizado | — |
 | **1 bis** | **`verificarEncabezadosDeMapeo()`** — el testigo de `D-31`, **ya conectado anoche**. Barre todo `MAPEO` sin generar informe | nada, pero es la **primera medición** de una guarda que ya está en el código | **sólo si encuentra algo** |
 | **1 ter** | **La tanda 1** — prompt escrito, `2026-08-16_4`. **No es corrida: el usuario lo revisa antes** | el frente 13. Su precondición dura es la Parte C | **sí**, lo revisa antes |
 | **2** | **La Parte A de `R-26`** — no es un botón: es el prompt del 13/08, sólo lectura, y **nunca corrió** | el frente 9, **independiente de todo lo demás** | **sí**, gate explícito antes de la Parte B |
@@ -38,10 +38,14 @@ de `looker/CC` abajo porque lo que destrabaría está diferido.
 
 ## El estado real, en tres líneas
 
-- **El piloto de `D-33` está MIGRADO y SIN VERIFICAR.** No es "en curso": los ocho marcadores de
-  `looker/DIGITAL/Impresiones` tienen `dimensiones` poblada y su `filtro` reducido a
-  `estado=Activa`. **La Parte C está abierta porque `looker` estaba recalculando**, no por falta
-  de tiempo. **No se revierte** mientras tanto.
+- ✅ **El piloto de `D-33` PASÓ — 16/08/2026 11:58.** Los ocho de `looker/DIGITAL/Impresiones`
+  quedan migrados y verificados: **ocho cuentas de filas idénticas**, descuadre **cero** en los
+  dos ámbitos, y el canario sin migrar (`frecuencia` 12,63 → 13,20) confirmando desde afuera que
+  **se movió la base, no el motor**. **Esto autoriza el frente 13.**
+  - ⚠ **No se verificó por igualdad de valores, y no se podía**: con `looker` recibiendo datos de
+    una ventana ya cerrada, el valor absoluto no es un testigo estable. Se verificó por
+    **identidad de filas + descuadre + canario**. Los ocho números de hoy **son distintos** a los
+    del testigo, y eso está bien. **No leerlo como una comparación exacta que nunca hubo.**
 - **Los frentes 1, 2, 4 y 6 están hechos** (el alta de las 24 solapas, `D-32`, `D-33`, `D-31`).
 - ✅ **El frente 12 bis está HECHO** (noche del 16/08): el testigo de `D-31` **está conectado**.
   Lo que falta es su primera medición contra la planilla, que es la 1 bis de la lista.

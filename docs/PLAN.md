@@ -1180,6 +1180,63 @@ mismo, y la gracia del snapshot es justamente que **no sale del código que se e
 No hace falta un régimen de dos sistemas. `S-05` está vivo —hay un solo lector— y estamos en
 desarrollo. Si alguna vez se quiere un override explícito por informe, se decide entonces.
 
+### ✅ El piloto de `D-33` PASÓ — 16/08/2026 · y el criterio que lo decidió
+
+**Los ocho marcadores de `looker/DIGITAL/Impresiones` quedan migrados y verificados. Esto
+autoriza el frente 13, la migración por tandas.**
+
+**Ventana:** la que el motor resuelve por defecto, **24–30/07/2026** (`CONFIG`, origen `config`).
+La misma en las dos tomas.
+
+| toma | cuándo | estado |
+|---|---|---|
+| **testigo** | **15/08/2026 21:26** | antes de migrar · `docs/_snapshots/TESTIGO_impresiones_2026-08-15_2126.md` |
+| *(la migración)* | 15/08 22:40 | `migrarPilotoDeImpresiones()` |
+| **Parte C** | **16/08/2026 11:58** | después de migrar |
+
+*(Hubo dos intentos de Parte C fallidos el 15/08 — no por la migración, sino porque `looker`
+estaba recalculando. El canario los detectó.)*
+
+#### El criterio que lo decidió, y es lo que hay que reusar en cada tanda
+
+**Mismas filas y otro número es la fuente. Otras filas sería la migración.**
+
+| # | qué se miró | resultado |
+|---|---|---|
+| 0 | **el canario `gcba_frecuencia`**, sin migrar | **volvió de `0` a `1,6409`** → `looker` estable, el log se puede leer |
+| 1 | **las ocho cuentas de filas** de la traza | **idénticas**: 46, 313, 14, 12, 20, 82, 84, 147. **La dimensión lee exactamente las mismas filas que leía el filtro** |
+| 2 | los valores | subieron **entre 0,3% y 2,1%, todos en la misma dirección** |
+| 3 | **el descuadre** `total = suma de partes` | **cero exacto en los dos ámbitos** |
+| 4 | **la prueba independiente**: `frecuencia`, **sin migrar** | subió de **12,63 a 13,20**. Se movió **la base**, no el motor |
+
+**El paso 1 es el que decide y el 4 es el que lo confirma desde afuera.** Si la dimensión
+tradujera mal la condición, **cambiaría la cuenta de filas** —no sólo la suma—, y no cambió. Y un
+marcador que la migración **no tocó** se movió en la misma dirección, que es lo que descarta al
+motor como causa del movimiento.
+
+#### ⚠ El límite honesto: **esto NO se verificó por igualdad de valores**
+
+**Y no se podía.** Con `looker` recibiendo datos de una ventana ya cerrada —el 15/08 movió
+**138.427 impresiones en 1h45**— **el valor absoluto no es un testigo estable**, y exigir igualdad
+habría dado un rojo falso.
+
+**Se verificó por identidad de filas + descuadre en cero + canario.** Que quede dicho con todas
+las letras, **no vaya a leerse como una comparación exacta que nunca hubo**: los ocho números de
+hoy **son distintos** a los del testigo, y eso está bien.
+
+#### Dos reservas que no cambian el veredicto, y que la próxima tanda tiene que evitar
+
+- **El testigo NO guardó las cuentas de filas**, que son **el criterio principal**.
+  `TESTIGO_impresiones_2026-08-15_2126.md` tiene los ocho valores y el descuadre, y las ocho
+  cuentas sobrevivieron sólo porque quedaron citadas en `BITACORA.md` y en el Addendum 3 del
+  prompt. **El artefacto diseñado para comparar omitió justo el número contra el que se compara.**
+  → El prompt de la tanda 1 lo exige explícitamente.
+- **Tres de los ocho valores base están inferidos, no confirmados.** El propio testigo lo dice:
+  los `gcba_imp_{meta,google,prog}` traen el valor pero **su asignación a cada token se dedujo del
+  orden de la suma**. **No afecta al cierre** —el descuadre usa la suma, que es la misma en
+  cualquier orden, y el criterio es la cuenta de filas— pero **la comparación uno a uno de esos
+  tres no es firme**, y no debe citarse como si lo fuera.
+
 ### Addendum 1 a `D-33` — 16/08/2026 · **la ventana pertenece al informe, no al token**
 
 > El cuerpo de `D-33` no se edita. Esto agrega una propiedad del vocabulario global que no
@@ -1254,7 +1311,7 @@ migra sin apuro — por eso la migración de los 51 no bloquea a nadie, pero la 
 | 2 | ~~**El sembrador deja de pisar un `uso` existente** *(`_3`)*~~ — **hecho 15/08, `D-32` verificado punta a punta**: `reuniones/Agenda funcionarios` puesta a mano en `fuente` contra un seed que decía `ignorar`, y el sembrador **no la revirtió** | **Va antes de la migración.** Ésa toca muchas filas de configuración y hoy existe un mecanismo que puede revertirlas en silencio — ya pasó con `CAMPAÑAS_DESGLOCE_DIGITAL` esta semana |
 | 3 | **`C-64` — las dos capas de la base**, aplicado a lo que falta | El caso **está cerrado como explicación**: filas contra agregado, resuelto en call center (`C-62`), IVR (`V-98`) y mail (`V-99`), y explica el patrón `X-16`/`X-17`. **Lo que queda es aplicar el mismo criterio a `pauta_*` y Alerta Naranja.** Va acá porque decide **de qué capa se lee**, no cómo se nombra: es independiente del vocabulario y condiciona todo cableado posterior |
 | 4 | ~~**`_2` — censo de dimensiones y `D-NN` del vocabulario**~~ — **hecho 15/08: `D-33` escrita**, sobre las 78 filas medidas, con las tres dimensiones y la frontera dimensión / restricción técnica trazada | La decisión de estructura: una medida, y el corte como **dimensión**. **Todo lo que se cablee antes de esto nace con el corte metido en el nombre** |
-| 5 | **El piloto: `imp_total` y sus siete hermanos** — `looker/DIGITAL/Impresiones/SUMA`, **ocho marcadores que sólo difieren en el `filtro`** · ⏳ **MIGRADO, PENDIENTE DE VERIFICACIÓN** (15/08): los ocho tienen `dimensiones` poblada y su `filtro` reducido a `estado=Activa`. **La Parte C está abierta** y su precondición es el canario **`gcba_frecuencia`** — mientras dé `0`, `looker` está recalculando y la comparación no se lee. **No se revierte mientras tanto**; `revertirPilotoDeImpresiones()` existe y está probada | **Es el caso que justifica el frente entero**, medido el 15/08: una medida × `ambito` (2) × `plataforma` (3, con `programmatic` por resta) = **ocho nombres para un solo hecho**. Se migra a una medida con dos dimensiones y se verifica que `jm` reproduzca los mismos números **contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`**, que es la línea base de `D-33`. Barato, y **si no reproduce, el plan se detiene acá** |
+| 5 | ~~**El piloto: `imp_total` y sus siete hermanos**~~ — ✅ **PASÓ, 16/08/2026 11:58.** Las ocho cuentas de filas **idénticas** al testigo, descuadre **cero** en los dos ámbitos, y el canario sin migrar confirmando desde afuera que se movió la base. ⚠ **No se verificó por igualdad de valores** —con `looker` moviéndose no se puede—: se verificó por **identidad de filas + descuadre + canario**. Detalle y criterio completo en §1, *"El piloto de `D-33` PASÓ"*. **Esto autoriza el frente 13** | **Es el caso que justifica el frente entero**, medido el 15/08: una medida × `ambito` (2) × `plataforma` (3, con `programmatic` por resta) = **ocho nombres para un solo hecho**. Se migra a una medida con dos dimensiones y se verifica que `jm` reproduzca los mismos números **contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`**, que es la línea base de `D-33`. Barato, y **si no reproduce, el plan se detiene acá** |
 | 6 | ~~**La letra manda, el título valida** — cada fila de `MAPEO` lleva el encabezado que espera encontrar en esa letra *(`_6`)*~~ — **hecho 14–15/08, `D-31`**: 154 filas con `encabezado`, las 7 vacías son las de `promoverFechasElegidas()`. **Con el límite que expuso `C-09`: el testigo documenta el rótulo, no el contenido**, y **nunca es fallback** | **Va antes de `C-61` porque le saca el filo.** Hoy insertar una columna corre todas las letras a su derecha y el mapeo apunta una más allá **sin fallar**: un `SUMA` sobre la columna de al lado devuelve un número, no un error. El título como testigo convierte eso en falla ruidosa. **La función que valida se difiere** (usuario, 14/08); **poblar la columna ya mide**, y esa medición puede encontrar mapeos ya corridos |
 | 7 | **`C-61`** — el alta de columna que mueve 229 cuentas · ⬇ **DIFERIDO a §3** (usuario, 16/08): *primero se cierra la migración, después se cablea*. La medición (a) ya está hecha y queda acá; el censo de `looker/CC` puede adelantarse porque es sólo lectura | **Bloquea el embudo de Call Center.** Dos mediciones antes de escribir: **(a)** si el motor lee CC **por encabezado o por posición** — si es por posición, una columna nueva corre todo lo demás **sin que nada falle**; **(b)** cuántos tokens ya validados cambian de valor, y **ninguno de los exactos vigentes puede moverse**. — **Medido el 16/08 (bloque 2 de la nocturna, sólo código y snapshot): el motor lee por POSICIÓN.** La letra de `MAPEO` se convierte en índice (`columnaLetraAIndice_`), de ahí sale el título, y con el título se extrae — **el encabezado es derivado de la posición, nunca un criterio propio**. **Y el riesgo cambia de signo: `looker/CC` tiene CERO filas de `MAPEO` y CERO marcadores**, así que hoy no hay mapeo de `CC` que un corrimiento pueda romper. **Lo que falta es de planilla** y está en la lista de corridas |
 | 8 | ⬇ **BAJADO a §3, Planificado y bloqueado** (usuario, 16/08) — el enunciado era falso y lo que queda depende de una decisión | Ver la fila *"`R-NN` del recorte heredado de Call Center"* en §3. **No se borra**: la entrada de allá dice cuál era la premisa anterior y por qué era falsa |
@@ -1263,7 +1320,7 @@ migra sin apuro — por eso la migración de los 51 no bloquea a nadie, pero la 
 | 11 | **El embudo de Call Center** | Depende de **7 y 8**: sin el alta de columna no hay dato, y sin la regla no está declarado qué universo se cuenta |
 | 12 | **`alcance` y `clics` de campaña destacada, y `m2_campanias`** como `LISTA + CUENTA(LISTA)` | `m2_campanias` además espera una definición del usuario |
 | **12 bis** | ~~**Conectar el testigo de `D-31`**~~ — **HECHO la noche del 16/08.** `leerMapeoSinCache_` indexa `encabezado` (ésa era la causa raíz), `desalineamientoDeEncabezado_` compara —y recibe una **lista** de esperados, porque hay **12 grupos (base, solapa, letra) con más de una fila**—, el aviso sale por el cierre de corrida, y `verificarEncabezadosDeMapeo()` barre todo `MAPEO` sin generar informe. **El valor devuelto no cambia nunca.** Control positivo fuera de Apps Script extrayendo el código real: 13 afirmaciones, y los 5 mutantes mueren. **Falta su primera medición contra la planilla** | **El frente 6 dejó el dato y no la alarma**, y eso se midió el 16/08: `leerMapeoSinCache_` **ni siquiera indexa** la columna `encabezado`, y `buscarMapeo` devuelve sólo `{ hoja, columna }` — **no hay un punto del camino de lectura que compare nada**. Con el motor leyendo **por posición**, un corrimiento de columna hace que el mapeo apunte una más allá **sin fallar**; y con títulos repetidos —`Base_Digital` tiene ocho `ID Cuentas`— `obj[h] = fila[i]` **gana el último**, así que puede devolver **ni siquiera la columna vecina**. Va antes de la tanda 1 porque la migración toca muchas filas de configuración y conviene tener la alarma puesta antes, no después. ⚠ **La política ya está decidida en `D-31` y la función la aplica, no la reinventa:** no corregir la letra sola nunca, reportar los dos valores, no bloquear la corrida. **Y el límite es del instrumento, no una omisión:** el testigo compara **rótulos, no contenido** — `C-09` es la prueba, y tiene que estar dicho en el código y no sólo en `D-31`. Prompt: `docs/Prompts/2026-08-16_2_testigo_encabezado_conectado.md` |
-| 13 | **La migración, por tandas** — son **78** marcadores, no 51 (medido 15/08) · ⛔ **la tanda 1 NO arranca hasta que cierre la Parte C del piloto** (usuario, 16/08): si el piloto no reproduce, no hay tanda. Y va **después del 12 bis**. ⚠ **`frecuencia`/`gcba_frecuencia` SALEN de la tanda 1** — ver la nota del canario al pie de esta tabla | Empieza por los que **ya tienen la dimensión escrita en el `filtro`** y sólo hay que sacarla del nombre: los `mail_*`/`gcba_mail_*` y `frecuencia`/`gcba_frecuencia`. **No son "los nueve pares `gcba_*`"** —eso era una cifra del snapshot del 11/08 que la medición corrigió—, y **los tres pares `pauta_*` NO entran**: tienen filtro vacío en los dos lados, así que son un número publicado dos veces y van a validación (`PENDIENTES`). **Cada tanda se compara contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`, no contra la corrida anterior** — así los errores no se acumulan de tanda en tanda. **No bloquea a nadie:** lo nuevo ya nace con la estructura buena |
+| 13 | **La migración, por tandas** — son **78** marcadores, no 51 (medido 15/08) · ✅ **AUTORIZADO: el piloto pasó el 16/08.** Prompt de la tanda 1 escrito (`2026-08-16_4`), pendiente de que lo revise el usuario. Va **después del 12 bis**. ⚠ **`frecuencia`/`gcba_frecuencia` SALEN de la tanda 1** — ver la nota del canario al pie de esta tabla | Empieza por los que **ya tienen la dimensión escrita en el `filtro`** y sólo hay que sacarla del nombre: los `mail_*`/`gcba_mail_*` y `frecuencia`/`gcba_frecuencia`. **No son "los nueve pares `gcba_*`"** —eso era una cifra del snapshot del 11/08 que la medición corrigió—, y **los tres pares `pauta_*` NO entran**: tienen filtro vacío en los dos lados, así que son un número publicado dos veces y van a validación (`PENDIENTES`). **Cada tanda se compara contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`, no contra la corrida anterior** — así los errores no se acumulan de tanda en tanda. **No bloquea a nadie:** lo nuevo ya nace con la estructura buena |
 | 14 | **El catálogo de tokens generado desde `MARCADORES`** — qué mide cada uno, de dónde sale, con qué operación y con qué filtro · **primera versión hecha 16/08**: `tools/catalogo.js` → `docs/CATALOGO_tokens.md` | **Es el objetivo declarado de todo esto:** que alguien del equipo arme una filmina eligiendo tokens documentados que dicen qué son y cómo se arman. **Generado, no escrito a mano** — a mano se desincroniza en la primera migración. — **Se regenera después de cada tanda** (usuario, 16/08): es parte de cerrar la tanda, no una tarea aparte. ⚠ **Y para cuando se defina el formato definitivo: la columna `config` es el acierto de la primera versión y hay que conservarla como distinción.** Dice **"la fila está bien armada"**, no *"el token anda"* — y son cosas distintas: el cruce estático da **78 de 78** mientras el motor publica **diez en error**, porque ésos fallan en ejecución. Llamarla `estado` habría hecho leer lo segundo donde sólo dice lo primero |
 
 ### El canario, y por qué `frecuencia`/`gcba_frecuencia` salen de la tanda 1

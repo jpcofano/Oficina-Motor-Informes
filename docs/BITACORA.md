@@ -10441,3 +10441,62 @@ y que se va a volver a hacer en cada tanda.
 `clasp push` corrido y **verificado contra el remoto**: el proyecto dice `semanal` y tiene las
 tres funciones nuevas. **La hoja ya la había corregido el usuario a mano**, así que hoja, seed y
 proyecto coinciden y no queda divergencia.
+
+---
+
+## ✅ El piloto de `D-33` pasó — y qué lo decidió, que no fue la igualdad de valores (2026-08-16)
+
+**Los ocho marcadores de `looker/DIGITAL/Impresiones` quedan migrados y verificados. Autoriza el
+frente 13, la migración por tandas.**
+
+**Ventana:** 24–30/07/2026, la que el motor resuelve por defecto (`CONFIG`), la misma en las dos
+tomas. **Testigo: 15/08 21:26** (`docs/_snapshots/TESTIGO_impresiones_2026-08-15_2126.md`).
+**Migración: 15/08 22:40. Parte C: 16/08 11:58.**
+
+### El criterio, en el orden del Addendum 1 — y el paso 0 es el que hizo falta dos veces
+
+| # | qué | resultado |
+|---|---|---|
+| 0 | **canario `gcba_frecuencia`** | de `0` a **1,6409** → `looker` estable, el log se puede leer |
+| 1 | **cuentas de filas** | **idénticas**: 46, 313, 14, 12, 20, 82, 84, 147 |
+| 2 | valores | subieron **0,3%–2,1%**, todos en la misma dirección |
+| 3 | **descuadre** | **cero exacto** en los dos ámbitos |
+| 4 | `frecuencia`, **sin migrar** | 12,63 → **13,20** |
+
+**La regla que decidió: mismas filas y otro número es la fuente; otras filas sería la migración.**
+Si la dimensión tradujera mal la condición **cambiaría la cuenta de filas**, no sólo la suma. No
+cambió. Y el paso 4 lo confirma **desde afuera**: un marcador que la migración no tocó se movió en
+la misma dirección.
+
+**El canario se ganó su lugar dos veces.** Los dos intentos de Parte C del 15/08 dieron "no
+concluyente" **y no era la migración** — era `looker` recalculando. Sin el canario, esos dos
+habrían leído como piloto roto y se habría revertido un cambio que estaba bien.
+
+### ⚠ El límite honesto, escrito para que no se lea de más
+
+**La migración NO se verificó por igualdad de valores, y no se podía.** Con `looker` recibiendo
+datos de una ventana ya cerrada —el 15/08 movió **138.427 impresiones en 1h45**— **el valor
+absoluto no es un testigo estable**, y exigir igualdad habría dado un rojo falso.
+
+**Se verificó por identidad de filas + descuadre en cero + canario.** Los ocho números de hoy
+**son distintos** a los del testigo, y eso está bien. **No es una comparación exacta y nunca lo
+fue.**
+
+### Dos reservas del cierre, que no cambian el veredicto y sí cambian la próxima tanda
+
+- **El testigo no guardó las cuentas de filas, que son el criterio principal.** Tiene los ocho
+  valores y el descuadre, y nada más. **El artefacto diseñado para comparar omitió justo el número
+  contra el que se compara**, y las ocho cuentas sobrevivieron **de casualidad**: quedaron citadas
+  en esta bitácora y en el Addendum 3 del prompt. → Ahora es requisito explícito en el prompt de
+  la tanda 1.
+- **Tres de los ocho valores base están inferidos**, no confirmados: los
+  `gcba_imp_{meta,google,prog}` traen el valor pero **su asignación a cada token se dedujo del
+  orden de la suma** — el propio testigo lo advirtió. **No afecta al cierre**, porque el descuadre
+  usa la suma (igual en cualquier orden) y el criterio es la cuenta de filas. **Pero la
+  comparación uno a uno de esos tres no es firme** y no debe citarse como si lo fuera. → También
+  es requisito en la tanda 1: cada valor atribuido a **su** token, nominalmente.
+
+**Verificado de mi lado antes de coincidir:** el descuadre del testigo da cero exacto en los dos
+ámbitos —`3.229.815 + 2.203.210 + 27.976.790 = 33.409.815` y
+`31.204.680 + 53.969.375 + 163.706.084 = 248.880.139`—. **El log del 11:58 no lo tengo**: sus
+números entran como reportados, y lo que verifiqué es el criterio y la línea base.

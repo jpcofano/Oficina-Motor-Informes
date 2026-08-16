@@ -23,11 +23,18 @@
 
 ---
 
-## 1 · `testigoDeImpresiones()` — la Parte C del piloto · **⚠ LEER EL CANARIO PRIMERO**
+## ~~1 · `testigoDeImpresiones()` — la Parte C del piloto~~ — ✅ **CORRIDA, 16/08 11:58**
 
-**Qué destraba:** el frente 13 entero, la migración por tandas. Los ocho marcadores de
-`looker/DIGITAL/Impresiones` están **migrados y sin verificar** desde el 15/08, y hasta que esto
-se lea no se sabe si `D-33` reproduce los números. **Es la corrida más importante de la lista.**
+**El piloto pasó y el frente 13 quedó autorizado.** El canario volvió (`gcba_frecuencia` de `0` a
+`1,6409`), las ocho cuentas de filas dieron **idénticas**, el descuadre **cero** en los dos
+ámbitos, y `frecuencia` —sin migrar— subió de 12,63 a 13,20, confirmando desde afuera que **se
+movió la base y no el motor**.
+
+⚠ **No se verificó por igualdad de valores**: se verificó por **identidad de filas + descuadre +
+canario**. Criterio completo en `PLAN.md` §1.
+
+**Lo que sigue de este frente es la tanda 1**, abajo. El texto original de esta entrada queda
+como referencia de cómo se leyó:
 
 **Antes de leer nada, el canario.** La función ya lo imprime en su log:
 
