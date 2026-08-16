@@ -3,7 +3,19 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-16, al cerrar la corrida nocturna `2026-08-16_1` (cinco bloques)
+**Última actualización:** 2026-08-16, al aplicar la decisión del usuario sobre el orden de trabajo
+
+## ⭐ La decisión que ordena todo: **primero se cierra la migración, después se cablea**
+
+Usuario, 16/08. La secuencia viva es **una sola línea y no tiene ramas**:
+
+```
+Parte C del piloto  →  12 bis (conectar el testigo de D-31)  →  tanda 1
+```
+
+**El frente 7 (`C-61`) y el 8 bajaron a `PLAN.md` §3 como bloqueados por esa decisión**, no como
+pendientes sueltos. **Los `cc_*` siguen publicando `—` por `_32.2`** — eso está decidido y no se
+reabre.
 
 ## ▶ Empezar por acá: **`docs/CORRIDAS_pendientes_2026-08-16.md`**
 
@@ -13,10 +25,13 @@ del 15/08. En resumen, y el detalle está allá:
 | # | qué correr | qué destraba | ¿decide el usuario? |
 |---|---|---|---|
 | **1** | **`testigoDeImpresiones()`** — la Parte C del piloto. **⚠ Leer el canario primero: si `gcba_frecuencia` da `0`, `looker` está recalculando y no se lee nada** | el frente 13, la migración por tandas. **La corrida más importante** | **sí, si no reproduce.** La reversión no se corre por criterio propio |
-| **2** | **`censarSolapasParaAlta()`** sobre `looker/CC` — qué columnas, qué títulos, qué letras | el frente 7 (`C-61`), que bloquea el embudo de Call Center | **sí, y es previa:** dónde se inserta la columna |
-| **3** | **La Parte A de `R-26`** — no es un botón: es el prompt del 13/08, sólo lectura, y **nunca corrió** | el frente 9, **independiente de todo lo demás** | **sí**, gate explícito antes de la Parte B |
-| **4** | *(nada que correr)* — el frente 8 está bloqueado por una **decisión**, no por una medición | — | **sí**, las dos de abajo |
-| **5** | una corrida del motor para completar el catálogo de tokens | mejora el frente 14, no bloquea | **sí**, pero de **formato** |
+| **2** | **La Parte A de `R-26`** — no es un botón: es el prompt del 13/08, sólo lectura, y **nunca corrió** | el frente 9, **independiente de todo lo demás** | **sí**, gate explícito antes de la Parte B |
+| **3** | **`censarSolapasParaAlta()`** sobre `looker/CC` — sólo lectura, se puede adelantar | el frente 7, hoy **diferido detrás de la migración** | la decisión de **dónde se inserta la columna** está **diferida** |
+| — | *(nada que correr para el frente 8)* — bloqueado por una **decisión**, no por una medición | — | **media tomada:** los `cc_*` siguen en `—` |
+| **4** | una corrida del motor para completar el catálogo de tokens | mejora el frente 14, no bloquea | **sí**, pero de **formato** |
+
+**El orden cambió respecto de esta mañana:** `R-26` sube porque es lo único **independiente de la
+migración**, y el censo de `looker/CC` baja porque lo que destrabaría está diferido.
 
 ## El estado real, en tres líneas
 
@@ -25,8 +40,18 @@ del 15/08. En resumen, y el detalle está allá:
   `estado=Activa`. **La Parte C está abierta porque `looker` estaba recalculando**, no por falta
   de tiempo. **No se revierte** mientras tanto.
 - **Los frentes 1, 2, 4 y 6 están hechos** (el alta de las 24 solapas, `D-32`, `D-33`, `D-31`).
-  **El primer frente vivo es el 7.**
-- **El frente 8 cambió de enunciado**, ver abajo.
+- **El frente vivo es el 12 bis** — conectar el testigo de `D-31`, prompt escrito en
+  `docs/Prompts/2026-08-16_2_testigo_encabezado_conectado.md`. Va **antes de la tanda 1**.
+- **El frente 8 cambió de enunciado** —el viejo era falso— y bajó a bloqueado, ver abajo.
+
+⚠ **`frecuencia`/`gcba_frecuencia` SALEN de la tanda 1, y el motivo hay que saberlo.** Medido el
+16/08: **`looker` tiene exactamente diez marcadores** —los ocho del piloto y ese par—, así que si
+la tanda 1 se los lleva **quedan cero marcadores de `looker` sin migrar** y se pierde el canario
+de la base que demostró moverse. **La tanda 1 queda en `mail_*`/`gcba_mail_*`**, que además viven
+en `digital/Directa Mail` y **nunca necesitaron un canario de `looker`**: necesitan uno de
+`digital`, y ahí sí hay —los cuatro grupos de `digital/Directa IVR`, con `filtro` vacío, que no se
+migran en ninguna tanda. **Lo que generaliza: la propiedad de un canario no es "nunca migrado",
+es "no lo toca el cambio que estoy midiendo".**
 
 ⚠ **Dos cosas del 15/08 que hay que saber antes de tocar configuración:**
 

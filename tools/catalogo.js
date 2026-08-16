@@ -16,6 +16,15 @@
  * lleva cada cosa de cara al equipo, si `-` y `---` significan algo— **es una decisión del
  * usuario** y no se toma acá.
  *
+ * **Cuándo se re-corre: después de cada tanda de la migración** (usuario, 16/08). Es parte de
+ * cerrar la tanda, no una tarea aparte — un catálogo que se regenera cuando alguien se acuerda
+ * es exactamente el `.md` a mano que esto vino a reemplazar.
+ *
+ * **Y para el día que se defina el formato definitivo: la columna `config` se conserva como
+ * distinción.** Dice **"la fila está bien armada"**, no *"el token anda"*, y son cosas distintas
+ * — ver el bloque de abajo. Llamarla `estado` habría hecho leer lo segundo donde sólo dice lo
+ * primero, y ése es el acierto de esta primera versión que no hay que perder al rediseñarla.
+ *
  * **La causa de un marcador en error se DERIVA, no se transcribe.** Un catálogo que sólo lista
  * lo que funciona miente por omisión, así que los que fallan entran igual. Pero la causa sale de
  * cruzar los tres registros de la MISMA fecha —`MARCADORES` × `SOLAPAS` × `MAPEO`— y no de citar

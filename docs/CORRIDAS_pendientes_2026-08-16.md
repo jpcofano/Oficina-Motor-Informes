@@ -6,6 +6,11 @@
 >
 > **Ordenada por lo que destraba**, no por cómo aparecieron.
 >
+> ⚠ **Actualizada el 16/08 con la decisión del usuario: *primero se cierra la migración, después
+> se cablea*.** Cambió el orden — la **2** y la **3** están intercambiadas respecto de la primera
+> versión: `R-26` sube porque es lo único **independiente de la migración**, y el censo de
+> `looker/CC` baja porque lo que destrabaría quedó **diferido**. **La 1 sigue siendo la 1.**
+>
 > Se corren desde el editor de Apps Script: elegir la función en el desplegable de arriba y
 > **Ejecutar**; el resultado sale en **Registro de ejecución**. `clasp logs` no anda — el
 > proyecto no tiene GCP propio.
@@ -57,41 +62,22 @@ propio**: se reporta y decide el usuario.
 
 ---
 
-## 2 · La forma de `looker/CC` — lo que destraba `C-61`, el frente 7
+## 1 bis · Después de que la Parte C cierre — el frente **12 bis**, no la tanda 1
 
-**Qué destraba:** el frente 7, que a su vez bloquea el embudo de Call Center (frente 11).
+**No es una corrida: es el prompt siguiente**, `docs/Prompts/2026-08-16_2_testigo_encabezado_conectado.md`.
+Va **entre** la Parte C y la tanda 1 (usuario, 16/08). Se anota acá porque quien lea esta lista de
+arriba abajo tiene que saber que **cerrar la 1 no habilita la migración todavía**.
 
-**La mitad de escritorio ya está hecha** (bloque 2 de la nocturna, contra el código y los
-snapshots del 15/08), y cambió el cuadro:
-
-- **El motor lee por POSICIÓN.** La letra de `MAPEO` se vuelve índice, de ahí sale el título, y
-  con el título se extrae. El encabezado es **derivado** de la posición, nunca un criterio propio.
-- **`looker/CC` tiene CERO filas de `MAPEO` y CERO marcadores.** No hay mapeo de `CC` que un
-  corrimiento pueda romper hoy.
-
-**Lo que falta medir, y necesita la planilla:**
-
-| # | qué medir | con qué |
-|---|---|---|
-| 2.1 | **qué columnas tiene hoy `looker/CC`, con qué títulos y en qué letras** | `censarSolapasParaAlta()` — sin esto no se puede escribir una sola fila de `MAPEO` |
-| 2.2 | **la fila de encabezado real**, contra lo que declara `SOLAPAS` | mismo censo. El desalineamiento entre declarado y real ya produjo `sin_datos` con un síntoma que no se parecía a la causa (`_44`) |
-| 2.3 | **cuántos tokens ya validados cambiarían de valor** | hoy la respuesta esperada es **ninguno**, pero hay que confirmarlo **contra la planilla viva y no contra el snapshot**: `MAPEO` se escribe desde dos herramientas |
-
-⚠ **Ojo con lo que ya se sabe de `looker/CC` y no hay que volver a medir:** `X-21` la censó en
-vivo el 12/08 y tiene **cinco columnas y ninguna más** —`ID Cuentas`, `Base enviada`,
-`Base barrida`, `Contactados`, `Efectivos`—. Sin fecha, sin campaña, sin estado. Si el censo de
-mañana da otra cosa, **eso es el hallazgo**, no un detalle.
-
-**¿Necesita decisión del usuario?** **Sí, y es previa a escribir nada:** **dónde se inserta la
-columna de `C-61`.** A la derecha del todo, ninguna letra se corre y el riesgo es cero; en el
-medio, corre todas las letras a su derecha y el mapeo apunta una más allá **sin fallar**.
+⚠ **Y cuando llegue la tanda 1: `frecuencia`/`gcba_frecuencia` NO entran.** `looker` tiene
+exactamente diez marcadores —los ocho del piloto y ese par—, así que migrarlos deja **cero
+marcadores de `looker` sin migrar** y sin canario. Detalle en el Addendum 4 del prompt del piloto.
 
 ---
 
-## 3 · La Parte A de `R-26` — el "1 a 1" se comunica sólo por digital
+## 2 · La Parte A de `R-26` — el "1 a 1" se comunica sólo por digital
 
-**Qué destraba:** el frente 9, que es **independiente de todo lo demás** y por eso puede
-adelantarse si la 1 queda esperando a que `looker` se estabilice.
+**Qué destraba:** el frente 9. **Es lo único de esta lista independiente de la migración**, y por
+eso subió: mientras la 1 espera a que `looker` se estabilice, esto se puede hacer igual.
 
 ⚠ **Esto NO es un botón del desplegable.** No hay función escrita: es la Parte A del prompt
 `docs/Prompts/2026-08-13_1_R-26_uno_a_uno_solo_digital.md`, sólo lectura, y necesita una sesión
@@ -108,7 +94,44 @@ pasa no se escribe nada y `R-26` queda como hueco, que está bien.
 
 ---
 
-## 4 · Nada que correr para el frente 8 — está bloqueado por una decisión, no por una medición
+## 3 · La forma de `looker/CC` — sólo lectura, y se puede adelantar
+
+**Qué destraba:** el frente 7, que a su vez bloquea el embudo de Call Center (frente 11).
+
+⚠ **El frente 7 está DIFERIDO detrás de la migración** (usuario, 16/08), así que esto **no es
+urgente**. Se deja en la lista porque **es sólo lectura y se puede adelantar sin comprometer
+nada**: el censo no escribe, y tenerlo medido el día que el frente se destrabe ahorra una corrida.
+
+**La mitad de escritorio ya está hecha** (bloque 2 de la nocturna, contra el código y los
+snapshots del 15/08), y cambió el cuadro:
+
+- **El motor lee por POSICIÓN.** La letra de `MAPEO` se vuelve índice, de ahí sale el título, y
+  con el título se extrae. El encabezado es **derivado** de la posición, nunca un criterio propio.
+- **`looker/CC` tiene CERO filas de `MAPEO` y CERO marcadores.** No hay mapeo de `CC` que un
+  corrimiento pueda romper hoy.
+
+**Lo que falta medir, y necesita la planilla:**
+
+| # | qué medir | con qué |
+|---|---|---|
+| 3.1 | **qué columnas tiene hoy `looker/CC`, con qué títulos y en qué letras** | `censarSolapasParaAlta()` — sin esto no se puede escribir una sola fila de `MAPEO` |
+| 3.2 | **la fila de encabezado real**, contra lo que declara `SOLAPAS` | mismo censo. El desalineamiento entre declarado y real ya produjo `sin_datos` con un síntoma que no se parecía a la causa (`_44`) |
+| 3.3 | **cuántos tokens ya validados cambiarían de valor** | hoy la respuesta esperada es **ninguno**, pero hay que confirmarlo **contra la planilla viva y no contra el snapshot**: `MAPEO` se escribe desde dos herramientas |
+
+⚠ **Ojo con lo que ya se sabe de `looker/CC` y no hay que volver a medir:** `X-21` la censó en
+vivo el 12/08 y tiene **cinco columnas y ninguna más** —`ID Cuentas`, `Base enviada`,
+`Base barrida`, `Contactados`, `Efectivos`—. Sin fecha, sin campaña, sin estado. Si el censo de
+mañana da otra cosa, **eso es el hallazgo**, no un detalle.
+
+**¿Necesita decisión del usuario?** **Sí, pero está DIFERIDA** (16/08): **dónde se inserta la
+columna de `C-61`** —a la derecha del todo, ninguna letra se corre y el riesgo es cero; en el
+medio, corre todas las letras a su derecha y el mapeo apunta una más allá **sin fallar**—. Queda
+anotada en `PLAN.md` §3 como bloqueada por *primero se cierra la migración*, no como pendiente
+suelta. **El censo puede correrse igual**, porque no la necesita.
+
+---
+
+## — · Nada que correr para el frente 8 — está bloqueado por una decisión, no por una medición
 
 **No hay instrumento que correr, y es un resultado del bloque 3, no un olvido.**
 
@@ -121,17 +144,21 @@ tokens sin fila que publican `—` por decisión de `_32.2`— **y ningún `enc_
 `ignorar` no se lee, no se audita y no se mapea (`CLAUDE.md` §2), y el motor la rechaza solo.
 Escribir un instrumento que la lea sería reproducir peor lo que el motor ya hace.
 
-**Lo que decide el usuario, y destraba el frente:**
+**De las dos decisiones, una ya está tomada:**
 
-1. **¿`reuniones/Call` o `Métricas EDVs` pasan a `fuente`, o el corte se declara sin leerlas?** Es
-   una escritura en `SOLAPAS` y revierte una decisión de hace un día. `Métricas EDVs` tiene el
-   agravante de que su dueño es otra planilla y su clave es `ID Reunión`, no `ID Cuentas`.
-2. **¿Los `cc_*` de las láminas 2 y 5 siguen publicando `—`?** Si sí, el frente 8 no es sobre
-   ellos. Si no, se está derogando `_32.2` y eso necesita decirse.
+1. ~~**¿Los `cc_*` de las láminas 2 y 5 siguen publicando `—`?**~~ — **SÍ** (usuario, 16/08).
+   `_32.2` sigue en pie y no se reabre. **El frente 8 no es sobre ellos.**
+2. **¿`reuniones/Call` o `Métricas EDVs` pasan a `fuente`, o el recorte se declara sin leerlas?**
+   **Diferida**, detrás de la migración. Es una escritura en `SOLAPAS` que revierte una decisión
+   de hace un día; `Métricas EDVs` tiene además dueño en otra planilla y clave `ID Reunión`, no
+   `ID Cuentas`. Anotada en `PLAN.md` §3.
+
+**El frente entero bajó a `PLAN.md` §3 con su enunciado corregido** — el viejo era falso y queda
+escrito cuál era, para que no vuelva por la misma puerta.
 
 ---
 
-## 5 · Una corrida del motor para completar el catálogo de tokens — **no urgente**
+## 4 · Una corrida del motor para completar el catálogo de tokens — **no urgente**
 
 **Qué destraba:** nada bloqueado; mejora el frente 14.
 

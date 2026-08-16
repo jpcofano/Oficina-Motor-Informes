@@ -10118,3 +10118,84 @@ de haberse apretado de más.
 
 **Ninguna hoja de registro se tocó, ninguna plantilla, y los ocho del piloto quedaron como
 estaban.**
+
+---
+
+## La decisión del orden: primero se cierra la migración, después se cablea (2026-08-16)
+
+> Decisión del usuario, 16/08, aplicada al plan y a los prompts. **Ninguna hoja de registro se
+> tocó.**
+
+**Lo decidido, en una línea:** la secuencia viva es **Parte C del piloto → 12 bis → tanda 1**, y
+todo lo que sea cableado espera. Los `cc_*` **siguen publicando `—` por `_32.2`** y eso no se
+reabre.
+
+### 1 · El frente 8 se corrigió y bajó a bloqueado — no se borró
+
+Bajó del *Próximo* a *Planificado y bloqueado* con **el enunciado real** —*los nueve `enc_*` leen
+un agregado por encuentro calculado río arriba y nadie declaró qué tipos de llamado entran en
+él*— y con **la premisa falsa escrita adentro**, para que no vuelva por la misma puerta: decía
+*"`enc_*` filtra por tipo de llamado, `cc_*` no filtra"* y las dos mitades son falsas.
+
+**Queda dicho de dónde salió, porque es el aprendizaje reusable:** el frente venía de un reporte
+de validación que **se pasó al plan sin cruzarlo contra `MARCADORES`**. Una cita no es la fuente.
+
+**De sus dos decisiones, una está tomada** (los `cc_*` siguen en `—`) y la otra —si
+`reuniones/Call` o `Métricas EDVs` pasan a `fuente`— queda **diferida detrás de la migración**,
+igual que la de `C-61`. **Las dos son filas de §3 con su destrabe nombrado, no pendientes
+sueltas.**
+
+### 2 · Frente nuevo, `12 bis` — conectar el testigo de `D-31`, antes de la tanda 1
+
+Prompt escrito: `docs/Prompts/2026-08-16_2_testigo_encabezado_conectado.md`. Lleva las tres
+condiciones que puso el usuario, y una medición propia que las respalda:
+
+- **La política ya está en `D-31` y la función la aplica, no la reinventa**: no corregir la letra
+  sola nunca, reportar los dos valores, no bloquear la corrida.
+- **El testigo compara rótulos, no contenido, y eso va en el código.** `C-09` es la prueba: en
+  `RDV_otros_ministros` los encabezados están corridos **en origen**, así que el testigo va a
+  coincidir siempre. Una guarda cuyo límite vive en otro documento se lee como si no lo tuviera.
+- **La prueba se escribe antes y tiene que fallar.** Con el control positivo mínimo en **dos**
+  casos, porque el segundo es el que suele faltar: *esperado ≠ real* reporta, y *esperado = real*
+  **no reporta nada** — sin ése, una función que reporta siempre pasa el primero. Más un tercero
+  que es el estado real de 7 filas: `encabezado` **vacío** no es desalineamiento.
+
+**Se numeró `12 bis` y no se renumeró la tabla a propósito:** la bitácora es append-only y ya cita
+"frente 7", "frente 13", "frente 14". Renumerar rompería citas que no se pueden editar.
+
+### 3 · El canario sucesor no existe, y por eso `frecuencia`/`gcba_frecuencia` salen de la tanda 1
+
+**El pedido era elegir un canario sucesor** —*sin migrar, de otra solapa, y que ya salga en el
+log*—. **La medición dice que no existe:**
+
+**`looker` tiene exactamente diez marcadores** — los ocho del piloto (`DIGITAL/Impresiones`, ya
+migrados) y `frecuencia`/`gcba_frecuencia` (`resumen_metricas_dinamico`). **No hay un tercer
+grupo.** Si la tanda 1 se lleva el par, quedan **cero** marcadores de `looker` sin migrar, y se
+pierde el canario de la base que **demostró moverse**.
+
+**Así que el par sale de la tanda 1**, que queda en `mail_*`/`gcba_mail_*` y nada más.
+
+**Y hay un segundo camino que llegó a lo mismo, que además explica de dónde venía la confusión:**
+los `mail_*` viven en **`digital/Directa Mail`**, no en `looker`. **La tanda 1 nunca necesitó un
+canario de `looker`: necesita uno de `digital`** — y ahí sí hay, los cuatro grupos de
+`digital/Directa IVR`, con **`filtro` vacío**, que **no se migran en ninguna tanda** y ya salen en
+el log. Eran dos preguntas leídas como una.
+
+**Lo que generaliza, y es lo que sobrevive:** **la propiedad de un canario no es *"nunca
+migrado"*, es *"no lo toca el cambio que estoy midiendo"*.** Escrita así, el canario de cada tanda
+se elige solo y deja de hacer falta que exista un marcador virgen para siempre — que es justo lo
+que esta medición mostró que no se puede garantizar.
+
+Todo esto quedó en el **Addendum 4** del prompt del piloto, con la advertencia para el día que el
+par migre: **su propia verificación no va a tener un marcador sin migrar de esa base en el que
+apoyarse.**
+
+### 4 · El catálogo se regenera después de cada tanda
+
+Anotado en `PLAN.md` (frente 14) y en el encabezado de `tools/catalogo.js`: **es parte de cerrar
+la tanda, no una tarea aparte.** Un catálogo que se regenera cuando alguien se acuerda es el `.md`
+a mano que esto vino a reemplazar.
+
+**Y anotado para el rediseño: la columna `config` se conserva como distinción.** Dice *"la fila
+está bien armada"*, no *"el token anda"* — el cruce estático da **78 de 78** mientras el motor
+publica **diez en error**.

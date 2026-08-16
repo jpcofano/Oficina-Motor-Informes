@@ -300,3 +300,75 @@ causa.
 2. ¿`gcba_frecuencia` sigue en 0?  →  SÍ: parar, la base está en tránsito. Volver más tarde.
 3. NO  →  comparar traza, después valores, después descuadre.
 ```
+
+---
+
+## Addendum 4 — 16/08/2026 · el canario sucesor no existe, y qué se hace con eso
+
+> El cuerpo no se edita. Esto responde al pedido del usuario del 16/08 —*"antes de tocar
+> `frecuencia`/`gcba_frecuencia` en la tanda 1, elegí otro canario y dejalo escrito acá: uno sin
+> migrar, de otra solapa, y que ya salga en el log"*— y **reporta que ese canario no existe**.
+
+### La medición, primero
+
+Contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`: **`looker` tiene exactamente diez
+marcadores.**
+
+| grupo | cuáles | estado |
+|---|---|---|
+| `looker/DIGITAL/Impresiones/SUMA` | los ocho del piloto | **migrados** |
+| `looker/resumen_metricas_dinamico/dig_impresiones/alcance/RATIO` | `frecuencia`, `gcba_frecuencia` | sin migrar — **el canario de hoy** |
+
+**No hay un tercer grupo.** Si la tanda 1 se lleva el par, **quedan cero marcadores de `looker`
+sin migrar**, y el proyecto se queda sin forma barata de saber si la base está en tránsito —
+justo la base que **demostró moverse**: 138.427 impresiones en 1h45 sobre una ventana ya cerrada,
+y un numerador en cero.
+
+Así que las tres condiciones del pedido —**sin migrar**, de otra solapa, y que **ya salga en el
+log**— **son insatisfacibles para `looker`** una vez migrado el par. No es que no se haya
+encontrado: no existe.
+
+### La salida, y llegó por dos caminos independientes
+
+**`frecuencia`/`gcba_frecuencia` salen de la tanda 1.** La tanda 1 queda en `mail_*`/`gcba_mail_*`
+y nada más.
+
+**El segundo camino, que confirma el primero y explica de dónde venía la confusión:** los `mail_*`
+viven en **`digital/Directa Mail`**, no en `looker`. **La tanda 1 nunca necesitó un canario de
+`looker`: necesita uno de `digital`.** Eran dos preguntas y se estaban leyendo como una.
+
+### El canario de la tanda 1, que ése sí existe
+
+Cualquiera de los cuatro grupos de **`digital/Directa IVR`**:
+
+`enc_atendidos`/`ivr_atendidos` · `enc_e75`/`ivr_75` · `enc_e75_pct`/`ivr_75_pct` ·
+`enc_marque1`/`ivr_marque1`
+
+Cumplen las tres condiciones **y una cuarta que las hace mejores**: tienen **`filtro` vacío**, así
+que **no son candidatos a migración de dimensión en ninguna tanda**, ni en ésta ni en las que
+vengan. Están en otra solapa de la misma base y **ya salen en el log**: el testigo agrupa por
+medida y emite todo grupo de dos o más.
+
+*(Sí son candidatos a la **unificación** `enc_*`/`ivr_*` de `PLAN.md` §3 — otra cosa, bloqueada
+por `C-01`. El día que eso avance, este canario se elige de nuevo.)*
+
+### Lo que generaliza, y es la parte que sobrevive a este prompt
+
+**La propiedad que hace a un canario no es *"nunca migrado"*: es *"no lo toca el cambio que estoy
+midiendo"*.**
+
+Escrita así, el canario de cada tanda se elige solo —uno de la misma base, de otra solapa, que esa
+tanda no toque— y **deja de hacer falta que exista un marcador virgen para siempre**, que es lo que
+esta medición mostró que no se puede garantizar. Es la misma regla de `CLAUDE.md` §4 dicha del lado
+del canario: el instrumento no puede depender de lo que el cambio modifica.
+
+### Cuándo migra el par, entonces
+
+**En la última tanda de `looker`, y después de que esta Parte C cierre.** Con una advertencia que
+va escrita ahora y no cuando se tropiece: **su propia verificación no va a poder apoyarse en un
+marcador sin migrar de esa base, porque no va a quedar ninguno.** Las opciones de ese día —una
+toma doble separada en el tiempo, o apoyarse en los ocho del piloto ya confirmados como
+referencia— **se deciden ahí, con el dato de ese momento**, no acá.
+
+**Mientras tanto, `gcba_frecuencia` sigue siendo el canario de esta Parte C** y no cambia nada de
+lo que dice el Addendum 3.
