@@ -554,6 +554,7 @@ Plan Inicial/PROYECTO.md            maestro histórico — CONGELADO 01/08/2026
 Plan Inicial/_archivo/              historial: docs superados, plantillas .pptx espejo
 docs/RUNBOOK.md                     guía de operación
 docs/TOKENS.md                      diccionario de tokens
+docs/CATALOGO_tokens.md             qué mide cada token — salida de tools/catalogo.js, no se edita
 docs/PENDIENTES_consistencia.md     inconsistencias abiertas
 docs/Prompts/                       Paso-N / DOC-N / AUD-N
 docs/BITACORA.md                    qué hizo cada paso (append-only, solo Code)
@@ -592,6 +593,7 @@ distintas nunca compiten. La precedencia entra solo como desempate, al final.
 | ¿Cómo se elige el universo de encuentros de un informe? | **`R-21` y sólo ahí** — la cascada de tres niveles con sus addenda. **No se copia acá**: duplicarla garantiza que las dos versiones se separen, que es lo que ya pasó entre `R-16` y `R-17`. Esta fila es el puntero, no el contenido | los dos |
 | ¿Qué supuesto se está asumiendo? | `docs/SUPUESTOS.md`, ID `S-NN`, ídem | los dos |
 | ¿Cómo se llama este token? | `docs/TOKENS.md` | los dos |
+| ¿Qué mide cada token, de dónde sale y con qué operación y filtro? | **`tools/catalogo.js`, re-corrido** — nunca el `.md`. `docs/CATALOGO_tokens.md` es su salida y **declara en la primera línea de qué snapshot salió**: es evidencia fechada, mismo criterio que `inventario.js` y `escritores.js`. Distinto de `TOKENS.md`, que responde **cómo se llama** y dónde se usa; esto responde **qué es**. ⚠ **Su columna `config` dice sólo que la configuración resuelve** — no que el token publique bien, y menos que el número salga de las filas correctas | los dos; el `.md` no se edita, se regenera |
 | ¿Qué inconsistencia documental sigue abierta? | `docs/PENDIENTES_consistencia.md` | los dos |
 | ¿Qué se le preguntó al equipo y sigue sin respuesta? | `docs/PENDIENTES_consistencia.md`, sección propia "Preguntas al equipo" (nacen en docs congelados como `VALIDACION` §7; al congelarse el doc, la pregunta viva se copia ahí) | los dos |
 | ¿Qué número dio una medición y contra qué se verificó? | `docs/VALIDACION_*.md` + su CSV de casos — congelados, uno nuevo por corrida de validación | nadie edita; se crea uno nuevo |
