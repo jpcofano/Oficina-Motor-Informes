@@ -2359,28 +2359,57 @@ function testigoDeImpresiones() {
  */
 function verificarEncabezadosDeMapeo() {
   var mapa = leerMapeo();
-  var revisadas = 0;
-  var sinTestigo = 0;
-  var noFuente = 0;
+  /* ⚠ **TODOS los contadores cuentan FILAS de `MAPEO`, y eso es el arreglo del 16/08.**
+   *
+   * La primera versión contaba `revisadas` **por columna** y los otros dos **por fila**, con las
+   * unidades mezcladas y sin decirlo. Contra la hoja viva dio `114 + 2 + 35 = 151` sobre **161
+   * filas**: **diez filas que no aparecían en ninguna categoría.**
+   *
+   * **Las diez estaban comparadas** —son el segundo (y tercer) `campo_logico` de nueve grupos
+   * donde una misma columna física está mapeada dos veces, como `digital/Directa IVR/D` bajo
+   * `ivr_inicio` y bajo `fecha_periodo`—, **así que no había un hueco de cobertura: había un
+   * conteo que mentía.** Pero eso no se podía saber leyendo el reporte, que es exactamente el
+   * problema: **una guarda que no dice qué dejó afuera tiene un punto ciego del tamaño de ese
+   * resto**, y el modo de falla es el de siempre — no avisa nada y parece verde.
+   *
+   * Se informan **las dos unidades por separado y rotuladas**, porque las dos importan y son
+   * distintas: la comparación se hace **por columna** (una letra, un encabezado real), y la
+   * cobertura se mide **por fila**, que es lo que `MAPEO` tiene. */
+  var filasRevisadas = 0;
+  var columnasComparadas = 0;
+  var filasSinTestigo = 0;
+  var filasNoFuente = 0;
+  var filasSinColumna = [];
+  var filasIlegibles = 0;
   var ilegibles = [];
   var desalineadas = [];
+  var totalFilas = 0;
 
   Object.keys(mapa).sort().forEach(function (baseId) {
     Object.keys(mapa[baseId]).sort().forEach(function (solapa) {
+      var campos = Object.keys(mapa[baseId][solapa]);
+      totalFilas += campos.length;
+
       /* Una solapa que no es `fuente` no se lee nunca, así que compararla sería inventar
        * trabajo — y si es `ignorar`, además está prohibido tocarla (`CLAUDE.md` §2). */
       if (usoSolapa_(baseId, solapa) !== 'fuente') {
-        noFuente += Object.keys(mapa[baseId][solapa]).length;
+        filasNoFuente += campos.length;
         return;
       }
 
-      // Se agrupa por LETRA y no por `campo_logico`, igual que el comparador, porque hay 12
-      // grupos donde varios campos apuntan a la misma columna con testigos distintos.
+      // Se agrupa por LETRA y no por `campo_logico`, igual que el comparador, porque hay grupos
+      // donde varios campos apuntan a la misma columna con testigos distintos.
       var porLetra = {};
-      Object.keys(mapa[baseId][solapa]).forEach(function (campoLogico) {
+      campos.forEach(function (campoLogico) {
         var fila = mapa[baseId][solapa][campoLogico];
         var letra = String(fila.columna || '').trim().toUpperCase();
-        if (!letra) return;
+        if (!letra) {
+          // Una fila de `MAPEO` sin letra no se puede comparar — y **no se descarta en
+          // silencio**, que es lo que hacía antes. Hoy son cero; el día que aparezca una, sale
+          // nombrada en vez de desaparecer del cuadre.
+          filasSinColumna.push(baseId + '/' + solapa + '/' + campoLogico);
+          return;
+        }
         if (!porLetra[letra]) porLetra[letra] = { esperados: [], campos: [] };
         porLetra[letra].campos.push(campoLogico);
         if (fila.encabezado) porLetra[letra].esperados.push(fila.encabezado);
@@ -2388,16 +2417,18 @@ function verificarEncabezadosDeMapeo() {
 
       Object.keys(porLetra).forEach(function (letra) {
         var grupo = porLetra[letra];
-        if (!grupo.esperados.length) { sinTestigo += grupo.campos.length; return; }
+        if (!grupo.esperados.length) { filasSinTestigo += grupo.campos.length; return; }
 
         var real = encabezadoEnColumna_(baseId, solapa, letra);
         if (real === undefined) {
           // La solapa no se pudo abrir. **No es un desalineamiento** y mezclarlo con los otros
           // sería reportar un problema de acceso como si fuera de mapeo.
           ilegibles.push(baseId + '/' + solapa);
+          filasIlegibles += grupo.campos.length;
           return;
         }
-        revisadas++;
+        columnasComparadas++;
+        filasRevisadas += grupo.campos.length;
         var d = desalineamientoDeEncabezado_(grupo.esperados, real);
         if (d) {
           desalineadas.push({
@@ -2410,16 +2441,40 @@ function verificarEncabezadosDeMapeo() {
     });
   });
 
+  /* ═══ EL CUADRE, y es lo primero que se imprime ═══════════════════════════════════════════
+   * Toda fila de `MAPEO` cae en exactamente uno de estos cinco baldes. **Si no suman el total,
+   * el reporte lo dice y devuelve `ok: false`**: un resto sin explicar es un punto ciego del
+   * tamaño de ese resto, y sin esta guarda se ve igual que un verde. */
+  var repartidas = filasRevisadas + filasSinTestigo + filasNoFuente +
+                   filasSinColumna.length + filasIlegibles;
+
   Logger.log('== D-31 · testigo de encabezados, sólo lectura ==');
-  Logger.log('  columnas comparadas: ' + revisadas +
-    ' · sin testigo declarado: ' + sinTestigo +
-    ' · en solapas que no son fuente: ' + noFuente +
-    ' · desalineadas: ' + desalineadas.length);
+  Logger.log('  CUADRE · ' + totalFilas + ' fila(s) de MAPEO = ' +
+    filasRevisadas + ' comparadas + ' +
+    filasSinTestigo + ' sin testigo + ' +
+    filasNoFuente + ' en solapas que no son fuente + ' +
+    filasSinColumna.length + ' sin letra + ' +
+    filasIlegibles + ' en solapas ilegibles');
+
+  if (repartidas !== totalFilas) {
+    Logger.log('  ❌ EL CUADRE NO CIERRA: ' + repartidas + ' repartidas contra ' + totalFilas +
+      ' filas · **faltan ' + (totalFilas - repartidas) + '**. Este reporte NO se puede leer ' +
+      'como cobertura: hay filas que no entraron en ninguna categoría y no se sabe cuáles.');
+  }
+
+  Logger.log('  columnas comparadas: ' + columnasComparadas + ' (las ' + filasRevisadas +
+    ' filas comparadas se agrupan en esa cantidad de columnas: varios `campo_logico` pueden ' +
+    'apuntar a la misma letra) · desalineadas: ' + desalineadas.length);
+
+  if (filasSinColumna.length) {
+    Logger.log('  ⚠ ' + filasSinColumna.length + ' fila(s) de MAPEO **sin letra de columna**, ' +
+      'imposibles de comparar: ' + filasSinColumna.join(' · '));
+  }
 
   if (ilegibles.length) {
     var unicas = ilegibles.filter(function (v, i) { return ilegibles.indexOf(v) === i; });
-    Logger.log('  ⚠ ' + unicas.length + ' solapa(s) no se pudieron abrir, y eso NO es un ' +
-      'desalineamiento: ' + unicas.join(' · '));
+    Logger.log('  ⚠ ' + unicas.length + ' solapa(s) no se pudieron abrir (' + filasIlegibles +
+      ' fila(s)), y eso NO es un desalineamiento: ' + unicas.join(' · '));
   }
 
   if (!desalineadas.length) {
@@ -2436,8 +2491,19 @@ function verificarEncabezadosDeMapeo() {
       'encabezados corridos en origen el rótulo miente de entrada.');
   }
 
-  return { ok: true, revisadas: revisadas, sin_testigo: sinTestigo,
-           no_fuente: noFuente, ilegibles: ilegibles, desalineadas: desalineadas };
+  /* `ok` es el CUADRE, no la ausencia de desalineamientos. Son dos cosas distintas: cero
+   * desalineadas con el cuadre roto es un reporte que no se puede leer, y tiene que decirlo
+   * por el valor de retorno además de por el log. */
+  return { ok: repartidas === totalFilas,
+           total_filas: totalFilas,
+           filas_comparadas: filasRevisadas,
+           columnas_comparadas: columnasComparadas,
+           filas_sin_testigo: filasSinTestigo,
+           filas_no_fuente: filasNoFuente,
+           filas_sin_columna: filasSinColumna,
+           filas_ilegibles: filasIlegibles,
+           ilegibles: ilegibles,
+           desalineadas: desalineadas };
 }
 
 /**
