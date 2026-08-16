@@ -918,7 +918,20 @@ function limpiarHojaPorDefecto_(ss) {
 // en la subcarpeta `_backups` de la carpeta de plantillas, y ese nombre es su registro.
 var SEED_INFORMES_ = [
   { informe_id: 'jm', nombre: 'Informe semanal JM', plantilla_id: '117I0qn1XP1JCiz2mU32hUY1iiMUmrAAvHOsczd7u6jI', periodicidad: 'semanal', familias: 'ecv,enc,m2,camp,mail,gcba,rrss', activo: 'sí', notas: '22 slides' },
-  { informe_id: 'secco', nombre: 'Seguimiento SECCO-SSCDI', plantilla_id: '1_ZKjWhL-bhCP8yHQ8PJ33ymyjSXu3thh7MKMOxB4-n8', periodicidad: 'mensual', familias: 'ecv,et,emin,m2,camp,conv,rep,rrss', activo: 'sí', notas: '29 slides' }
+  /* `periodicidad: 'semanal'` — corregido el 16/08/2026 (declaración del usuario). Decía
+   * `mensual`, y era falso.
+   *
+   * ⚠ **Hoy esta columna NO TIENE UN SOLO LECTOR**, medido el 16/08: aparece en el comentario de
+   * contrato de `leerInformes()`, en la lista de headers de acá arriba, y en estos dos valores —
+   * y **nadie la consulta**. La ventana real la resuelve la cadena de `D-20`, cuyos cinco
+   * eslabones son campaña → `periodo_ref` → sección → `CONFIG` → `R-11` calculado: **ninguno
+   * mira `informe_id`**, así que `jm` y `secco` caen los dos en `CONFIG` y resuelven la misma.
+   *
+   * **Entonces por qué corregirla igual, si no la lee nadie:** porque **una celda que dice lo
+   * contrario de la realidad es peor que una vacía.** El día que alguien conecte `periodicidad`
+   * a la cadena de resolución, va a heredar el valor viejo **creyendo que estaba verificado** —
+   * un dato declarado y nunca leído no acumula evidencia de estar bien, sólo apariencia de. */
+  { informe_id: 'secco', nombre: 'Seguimiento SECCO-SSCDI', plantilla_id: '1_ZKjWhL-bhCP8yHQ8PJ33ymyjSXu3thh7MKMOxB4-n8', periodicidad: 'semanal', familias: 'ecv,et,emin,m2,camp,conv,rep,rrss', activo: 'sí', notas: '29 slides' }
 ];
 
 var SEED_BASES_ = [
