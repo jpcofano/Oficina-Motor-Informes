@@ -193,3 +193,59 @@ lado*, y el descuadre en cero, que no depende del momento.
 `docs/_snapshots/TESTIGO_impresiones_AAAA-MM-DD_HHMM.md`. Dos testigos del mismo día son valores
 distintos, y sin la hora no hay forma de saber cuál es cuál — que es exactamente el problema que
 tuvo el snapshot del 11/08, un nivel más fino.
+
+---
+
+## Addendum 2 — 15/08/2026 · la migración corrió sin la columna y dejó los ocho rotos
+
+> El cuerpo no se edita. Esto corrige la secuencia y agrega una guarda que el prompt no pedía.
+
+### Qué pasó
+
+`migrarPilotoDeImpresiones()` corrió a las 22:40 **sin que `instalar()` hubiera creado la columna
+`dimensiones`**. `curarCamposMarcadores_` escribe campo por campo, así que **escribió los ocho
+`filtro` y falló en `dimensiones`**:
+
+```
+imp_total · filtro: "nombre_campaña~=JM && estado=Activa" → "estado=Activa"   ×8
+⚠ SIN FILA EN LA HOJA (8): imp_total||jm.dimensiones (columna inexistente)
+```
+
+**Los ocho quedaron sin ámbito y sin plataforma**, o sea publicando **todos el mismo número** —
+todas las impresiones activas—, **y ninguno fallando**. Es el modo de falla del proyecto: no
+rompe, publica mal. El reporte decía `SIN FILA (8)` y el daño ya estaba hecho.
+
+### La secuencia, corregida
+
+```
+instalar()                    ← crea la columna `dimensiones` por COLUMNAS_DELTA_
+testigoDeImpresiones()        ← el testigo, con la columna ya creada
+migrarPilotoDeImpresiones()   ← ESCRIBE
+testigoDeImpresiones()        ← Parte C
+```
+
+**No van seguidas en una sesión**, como decía el Addendum 1: cada testigo tarda ~4 minutos contra
+un límite de 6. Van por separado — y por eso la Parte C compara **traza y descuadre antes que
+valores**, que es lo que ese addendum ya ajustó.
+
+### La guarda: el escritor valida el lote entero antes de tocar una celda
+
+**`curarCamposMarcadores_` pasa a ser todo o nada.** Si alguna columna de algún cambio no existe,
+**no escribe ninguna celda** y devuelve el motivo con el puntero a `instalar()`.
+
+**Va en el escritor y no en la migración**, y ésa es la parte que importa: media operación de dos
+pasos deja el sistema en un estado que ninguno de los dos lados contempla, y eso **no lo arregla
+el orden en que se corren las cosas**. Puesta acá protege a todo llamador, no al que se acordó.
+
+Se valida la **columna** —el error estructural—. Una clave que no existe en la hoja se sigue
+reportando por `sin_fila` sin frenar el lote: eso es un dato que falta, no un esquema que no
+coincide.
+
+### La reversión
+
+`revertirPilotoDeImpresiones()` devuelve los ocho `filtro` al estado de
+`docs/_snapshots/MARCADORES_2026-08-15.tsv` y vacía `dimensiones`.
+
+⚠ **Los ocho filtros se generaron leyendo el TSV, no transcribiéndolos**: `nombre_campaña` lleva
+una `ñ`, y una transcripción que la rompa produce un filtro que **no matchea ninguna fila y
+devuelve cero sin fallar** — el mismo modo de falla que se está reparando, en el reparador.

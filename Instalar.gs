@@ -3045,6 +3045,42 @@ function curarCamposMarcadores_(cambios) {
     filaDe[clave] = f;
   }
 
+  /* `2026-08-15` — **TODO O NADA: se valida el lote entero antes de escribir la primera celda.**
+   *
+   * **Pasó, y el costo fue exactamente el que esta guarda evita.** El piloto de `D-33` pide dos
+   * campos por fila —sacar el corte de `filtro` y ponerlo en `dimensiones`—, corrió **sin que la
+   * columna `dimensiones` existiera**, escribió los ocho `filtro` y falló en el segundo campo.
+   * Los ocho marcadores quedaron **sin ámbito y sin plataforma**, publicando el mismo número, y
+   * **ninguno falló**: el reporte decía `SIN FILA (8)` y el daño ya estaba hecho.
+   *
+   * **Media operación de dos pasos deja el sistema en un estado que ninguno de los dos lados
+   * contempla**, y eso no lo arregla el orden en que se corren las cosas: lo tiene que impedir
+   * el escritor. Por eso la guarda va acá y no en la migración — protege a todo llamador, no al
+   * que se acordó.
+   *
+   * Se valida la **columna**, que es el error estructural. Una clave que no existe en la hoja
+   * sigue reportándose por `sin_fila` sin frenar el lote: eso es un dato que falta, no un
+   * esquema que no coincide. */
+  var columnasFaltantes = [];
+  cambios.forEach(function (c) {
+    Object.keys(c).forEach(function (campo) {
+      if (campo === 'marcador' || campo === 'informe_id') return;
+      if (headers.indexOf(campo) === -1 && columnasFaltantes.indexOf(campo) === -1) {
+        columnasFaltantes.push(campo);
+      }
+    });
+  });
+  if (columnasFaltantes.length) {
+    return {
+      ok: false,
+      motivo: 'MARCADORES no tiene la(s) columna(s): ' + columnasFaltantes.join(', ') +
+        '. No se escribió ninguna celda — correr `instalar()` primero, que las crea por ' +
+        '`COLUMNAS_DELTA_`.',
+      columnas_faltantes: columnasFaltantes,
+      aplicados: [], sin_fila: [], cambios_escritos: 0
+    };
+  }
+
   var aplicados = [];
   var sinFila = [];
   cambios.forEach(function (c) {
@@ -3583,5 +3619,49 @@ function migrarPilotoDeImpresiones() {
     r.sin_fila.forEach(function (s) { Logger.log('   ' + s); });
   }
   Logger.log('Ahora: correr testigoDeImpresiones() y comparar los ocho contra el testigo de la Parte A.');
+  return r;
+}
+
+/**
+ * **Revierte el piloto al estado de la línea base.** `2026-08-15_1`, Parte C punto 4.
+ *
+ * **Los ocho `filtro` salen textuales de `docs/_snapshots/MARCADORES_2026-08-15.tsv`**, generados
+ * leyendo el archivo y no transcribiéndolo a mano: `nombre_campaña` tiene una `ñ`, y una
+ * transcripción que la rompa produce un filtro que **no matchea ninguna fila** y devuelve cero
+ * sin fallar.
+ *
+ * **Por qué existe además del "no correr la migración":** el 15/08 a las 22:40 la migración
+ * corrió **sin que la columna `dimensiones` existiera**, escribió los ocho `filtro` y no pudo
+ * escribir las dimensiones. Los ocho quedaron con `filtro = estado=Activa` — **sin ámbito y sin
+ * plataforma**—, o sea publicando los ocho el mismo número, y **ninguno fallando**. Es el modo
+ * de falla del proyecto: no rompe, publica mal.
+ */
+function revertirPilotoImpresiones_() {
+  var cambios = [
+    { marcador: 'imp_total', informe_id: 'jm', filtro: 'nombre_campaña~=JM && estado=Activa', dimensiones: '' },
+    { marcador: 'imp_meta', informe_id: 'jm', filtro: 'nombre_campaña~=JM && estado=Activa && Plataforma=Meta', dimensiones: '' },
+    { marcador: 'imp_google', informe_id: 'jm', filtro: 'nombre_campaña~=JM && estado=Activa && Plataforma=Google ads', dimensiones: '' },
+    { marcador: 'imp_prog', informe_id: 'jm', filtro: 'nombre_campaña~=JM && estado=Activa && Plataforma!=Meta && Plataforma!=Google ads', dimensiones: '' },
+    { marcador: 'gcba_imp_total', informe_id: 'jm', filtro: 'nombre_campaña!~=JM && estado=Activa', dimensiones: '' },
+    { marcador: 'gcba_imp_meta', informe_id: 'jm', filtro: 'nombre_campaña!~=JM && estado=Activa && Plataforma=Meta', dimensiones: '' },
+    { marcador: 'gcba_imp_google', informe_id: 'jm', filtro: 'nombre_campaña!~=JM && estado=Activa && Plataforma=Google ads', dimensiones: '' },
+    { marcador: 'gcba_imp_prog', informe_id: 'jm', filtro: 'nombre_campaña!~=JM && estado=Activa && Plataforma!=Meta && Plataforma!=Google ads', dimensiones: '' }
+  ];
+  return curarCamposMarcadores_(cambios);
+}
+
+/** Wrapper público de la reversión — el que se elige en el desplegable (`CLAUDE.md` §2). */
+function revertirPilotoDeImpresiones() {
+  var r = revertirPilotoImpresiones_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== reversión del piloto: ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" → "' + a.nuevo + '"');
+  });
+  if (r.sin_fila.length) {
+    Logger.log('⚠ no se pudo tocar (' + r.sin_fila.length + '):');
+    r.sin_fila.forEach(function (s) { Logger.log('   ' + s); });
+  }
+  Logger.log('MARCADORES vuelve al estado de MARCADORES_2026-08-15.tsv para estos ocho.');
   return r;
 }
