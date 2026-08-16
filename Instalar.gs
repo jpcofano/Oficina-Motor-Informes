@@ -3647,7 +3647,32 @@ function revertirPilotoImpresiones_() {
     { marcador: 'gcba_imp_google', informe_id: 'jm', filtro: 'nombre_campaña!~=JM && estado=Activa && Plataforma=Google ads', dimensiones: '' },
     { marcador: 'gcba_imp_prog', informe_id: 'jm', filtro: 'nombre_campaña!~=JM && estado=Activa && Plataforma!=Meta && Plataforma!=Google ads', dimensiones: '' }
   ];
-  return curarCamposMarcadores_(cambios);
+
+  /* **Si la columna `dimensiones` no existe, no hay nada que vaciar — y revertir tiene que poder
+   * igual.**
+   *
+   * La guarda todo-o-nada de `curarCamposMarcadores_` frenaba esta reversión por pedir una
+   * columna inexistente, que es justamente el estado que la reversión viene a reparar: los ocho
+   * `filtro` quedaron pisados **porque** la columna no estaba. Una reversión que necesita el
+   * esquema completo para arreglar un daño causado por el esquema incompleto no sirve.
+   *
+   * **Se mira el esquema y se arma el lote en consecuencia**, en vez de intentar y reintentar sin
+   * `dimensiones` si falla: un `catch` que reintenta con otra forma es tolerar dos contratos, y
+   * acá el esquema se puede leer y saber. */
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) return { ok: false, motivo: 'La hoja MARCADORES no existe.' };
+  var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
+  var hayDimensiones = headers.indexOf('dimensiones') !== -1;
+
+  if (!hayDimensiones) {
+    cambios = cambios.map(function (c) {
+      return { marcador: c.marcador, informe_id: c.informe_id, filtro: c.filtro };
+    });
+  }
+
+  var r = curarCamposMarcadores_(cambios);
+  r.columna_dimensiones = hayDimensiones ? 'existe: se vació' : 'no existe: sólo se restauró `filtro`';
+  return r;
 }
 
 /** Wrapper público de la reversión — el que se elige en el desplegable (`CLAUDE.md` §2). */
@@ -3662,6 +3687,7 @@ function revertirPilotoDeImpresiones() {
     Logger.log('⚠ no se pudo tocar (' + r.sin_fila.length + '):');
     r.sin_fila.forEach(function (s) { Logger.log('   ' + s); });
   }
+  Logger.log('columna `dimensiones`: ' + r.columna_dimensiones);
   Logger.log('MARCADORES vuelve al estado de MARCADORES_2026-08-15.tsv para estos ocho.');
   return r;
 }
