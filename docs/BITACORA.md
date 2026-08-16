@@ -9768,3 +9768,118 @@ error caro:
 `informe_id` quedó **reemplazada** —sin régimen de transición, porque `S-05` está vivo y hay un
 solo lector— dejando dicho que su premisa **se invierte** cuando el corte deja de estar en el
 nombre: lo que hacía a un token específico de un informe era justamente el prefijo.
+
+---
+
+## El piloto de `D-33` — migrado y **sin verificar**, con `looker` en tránsito (2026-08-15)
+
+> Entrada de cierre del 15/08, escrita el 16/08 en el bloque 1 de la corrida nocturna
+> `2026-08-16_1`. Cubre el `2026-08-15_1` completo, que quedó sin bitácora: la del `_2` cerró en
+> `D-33` escrita y el piloto arrancó después.
+
+### El estado, primero, porque es lo que hay que saber mañana
+
+**Los ocho marcadores de `looker/DIGITAL/Impresiones` están migrados y su resultado no está
+confirmado.** No es "en curso": la escritura terminó, los ocho tienen `dimensiones` poblada y su
+`filtro` reducido a `estado=Activa`. Lo que falta es la Parte C, y **no falta por tiempo: falta
+porque `looker` estaba recalculando y una comparación contra una base en tránsito no significa
+nada**, ni a favor ni en contra.
+
+**La precondición para leerla es el canario `gcba_frecuencia`.** Mientras dé `0`, la base no está
+estable. Está en el log de cada corrida de `testigoDeImpresiones()`.
+
+### Parte A — el testigo, y el descubrimiento de que el testigo se mueve
+
+`testigoDeImpresiones()` (`Auditoria.gs`), sólo lectura, con la ventana nombrada. Dos corridas de
+la **misma ventana** separadas 1h45 dieron números distintos:
+
+| marcador | 19:41 | 21:26 | drift |
+|---|---|---|---|
+| `imp_total` | 33.374.988 | 33.409.815 | **+34.827** |
+| `gcba_imp_total` | 248.741.712 | 248.880.139 | **+138.427** |
+| `imp_meta` | 3.200.046 | 3.229.815 | +29.769 |
+| `imp_google` | 2.198.152 | 2.203.210 | +5.058 |
+| `imp_prog` | 27.976.790 | 27.976.790 | 0 |
+
+**Eso derogó el criterio de la Parte C tal como estaba escrito** —*"los ocho números tienen que
+dar exactamente igual"*—: el valor absoluto no es un testigo estable cuando la fuente sigue
+recibiendo datos de una ventana ya cerrada. El Addendum 1 lo reemplazó por un orden de lectura
+—**traza de filas primero, después valores, después descuadre**— y por versionar el testigo con
+**hora**, no sólo con fecha (`docs/_snapshots/TESTIGO_impresiones_2026-08-15_2126.md`).
+
+**Lo que sí sobrevivió al drift es el descuadre**, y no por suerte: el movimiento del total es
+**exactamente** el de las partes en los dos ámbitos —`29.769 + 5.058 + 0 = 34.827` y
+`63.537 + 74.890 + 0 = 138.427`—. `total = suma de partes` es estructural, así que sirve de
+control aunque los absolutos se muevan.
+
+### Parte B — la columna `dimensiones`, y la migración que corrió sin ella
+
+Se agregó `dimensiones` a `MARCADORES` por `COLUMNAS_DELTA_` (`Instalar.gs`), su traducción a
+condición física en `Fuentes.gs` —donde corresponde: datos, no aritmética ni despacho— y
+`migrarPilotoDeImpresiones()`. `estado=Activa` **se quedó en `filtro`**: es restricción técnica,
+no dimensión, y `R-24` no se derogó — `programmatic` se sigue calculando por resta.
+
+**Pero la migración corrió a las 22:40 antes de que `instalar()` creara la columna.**
+`curarCamposMarcadores_` escribía campo por campo, así que **escribió los ocho `filtro` y falló en
+`dimensiones`**:
+
+```
+imp_total · filtro: "nombre_campaña~=JM && estado=Activa" → "estado=Activa"   ×8
+⚠ SIN FILA EN LA HOJA (8): imp_total||jm.dimensiones (columna inexistente)
+```
+
+Los ocho quedaron **sin ámbito y sin plataforma** —publicando todos el mismo número, todas las
+impresiones activas— **y ninguno fallando**. El modo de falla de siempre: no rompe, publica mal.
+
+**La reparación fue al escritor, no a la migración.** `curarCamposMarcadores_` pasó a ser **todo o
+nada**: si alguna columna de algún cambio no existe, no escribe ninguna celda y devuelve el motivo
+con el puntero a `instalar()`. Puesta ahí protege a todo llamador y no sólo al que se acordó de
+correr las cosas en orden — media operación de dos pasos deja el sistema en un estado que ninguno
+de los dos lados contempla, y eso no lo arregla el orden. Se valida la **columna**, que es el
+error estructural; una clave que no existe se sigue reportando por `sin_fila` sin frenar el lote.
+
+`revertirPilotoDeImpresiones()` existe, está probada, y **sus ocho filtros se generaron leyendo el
+TSV, no transcribiéndolos**: `nombre_campaña` lleva `ñ`, y una transcripción que la rompa produce
+un filtro que no matchea ninguna fila y devuelve cero sin fallar — el mismo modo de falla, dentro
+del reparador.
+
+### Parte C — abierta, y **no** por la migración
+
+`imp_meta` sumó `0` en vez de 3.249.453; `gcba_imp_meta` dio 2.424.456 en vez de 31.252.043.
+Parece una migración rota y no lo es, con dos pruebas independientes:
+
+1. **Las ocho cuentas de filas son idénticas al testigo** —46, 313, 14, 12, 20, 82, 84, 147—. Si
+   la dimensión tradujera mal la condición, cambiaría la **cuenta**, no sólo la suma.
+2. **Dos marcadores sin migrar se movieron igual o más.** `frecuencia` y `gcba_frecuencia` tienen
+   `dimensiones` vacío, salen de `resumen_metricas_dinamico`, y su numerador pasó de 6.010.469 a
+   4.663.092 y de 2.048.748 a **0**. La migración no los tocó.
+
+**Los ocho quedan migrados.** Revertir por un síntoma ya explicado por otra causa sería tirar
+trabajo bueno.
+
+### Las tres reglas que dejó, y son el saldo real del día
+
+- **Un instrumento que mide un cambio no puede depender de lo que el cambio modifica.** El testigo
+  agrupaba exigiendo que los marcadores **difirieran en el `filtro`**; migrados, el corte pasó a
+  `dimensiones` y los ocho comparten `filtro` — **dejó de verlos justo después de migrarlos**,
+  devolvió 14 de 22 y nada falló. Se corrigió a agrupar **por la medida** y leer el corte de los
+  dos lados.
+- **Y su contracara: la comparación no puede depender de lo que se mueve solo.** De ahí el canario,
+  y de ahí que el canario tenga que ser un marcador que la migración **no toca**.
+- **Lo que distingue "se rompió" de "la base se movió" es la cuenta de filas, no el valor.**
+
+Las tres están escritas en `CLAUDE.md` §4.
+
+### Y un detalle de emisión que se arregló de paso
+
+El separador de `dimensiones` se emite **con espacios**, como el resto del motor (`Fuentes.gs`).
+
+### Lo que cerró el 15/08, en una línea cada uno
+
+| qué | estado |
+|---|---|
+| **`D-31`** — la letra manda, el título es testigo | **cerrado.** 154 filas de `MAPEO` con `encabezado`. Con el límite que expuso `C-09`: el testigo documenta **el rótulo, no el contenido**, y **nunca es fallback** |
+| **`D-32`** — el sembrador no degrada en silencio | **cerrado, verificado punta a punta.** Con `reuniones/Agenda funcionarios` puesta a mano en `fuente` contra un seed que decía `ignorar`, el sembrador **no la revirtió** |
+| **El alta de las 24 solapas de `reuniones`** | **cerrada.** 2 `fuente` · 5 `referencia` · 17 `ignorar` |
+| **`D-33`** — medida + dimensiones | **escrita.** 78 marcadores medidos, tres dimensiones (`ambito`, `plataforma`, `tipo_envio`), la frontera dimensión / restricción técnica trazada |
+| **El piloto (frente 5)** | **migrado, sin verificar.** Ocho marcadores esperando que `looker` se estabilice |
