@@ -2286,10 +2286,17 @@ function testigoDeImpresiones() {
         ' · diferencia=' + d + (d === 0 ? '  ✔ CUADRA' : '  ⚠ NO CUADRA'));
     });
 
-    Logger.log('  == TESTIGO (copiar tal cual) ==');
+    /* El testigo lleva **la traza al lado del valor**, y no es adorno: `looker` sigue recibiendo
+     * datos de una ventana ya cerrada — medido el 15/08, +138.427 impresiones en 1h45 sobre la
+     * misma ventana—. **El valor absoluto no distingue "la migración rompió algo" de "entraron
+     * filas nuevas".** Las cuentas de filas de la traza sí. */
+    Logger.log('  == TESTIGO (copiar tal cual: marcador \t valor \t estado \t traza) ==');
     grupo.forEach(function (m) {
-      Logger.log('  ' + m.marcador + '	' + valorDe[m.marcador] + '	' + (estadoDe[m.marcador] || ''));
-      testigo.push({ marcador: m.marcador, valor: valorDe[m.marcador], estado: estadoDe[m.marcador] });
+      var t = (trazaDe[m.marcador] || '').replace(/\s+/g, ' ');
+      Logger.log('  ' + m.marcador + '	' + valorDe[m.marcador] + '	' +
+        (estadoDe[m.marcador] || '') + '	' + t);
+      testigo.push({ marcador: m.marcador, valor: valorDe[m.marcador],
+                     estado: estadoDe[m.marcador], traza: t });
     });
   });
 
