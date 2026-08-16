@@ -134,3 +134,62 @@ explícito? La Parte B no arranca sin esto.
 - **No migra los otros 70.** Eso es el frente 13 y depende de que esto pase.
 - **No toca los `pauta_*` ni los `enc_*`/`ivr_*`.** Tienen sus propios destinos en `D-33`.
 - **No toca plantillas.**
+
+---
+
+## Addendum — 15/08/2026 · la base se mueve, y la Parte C cambia de criterio
+
+> El cuerpo no se edita. Esto corrige la Parte C, que estaba escrita sobre una premisa que la
+> medición desmintió.
+
+### El hallazgo: `looker` sigue recibiendo datos de una ventana ya cerrada
+
+Dos corridas del testigo, **misma ventana**, 1h45 de diferencia:
+
+| marcador | 19:41 | 21:26 | drift |
+|---|---|---|---|
+| `imp_total` | 33.374.988 | 33.409.815 | **+34.827** |
+| `gcba_imp_total` | 248.741.712 | 248.880.139 | **+138.427** |
+| `imp_meta` | 3.200.046 | 3.229.815 | +29.769 |
+| `imp_google` | 2.198.152 | 2.203.210 | +5.058 |
+| `imp_prog` | 27.976.790 | 27.976.790 | 0 |
+
+**Eso rompe la premisa de la Parte C tal como estaba escrita:** *"los ocho números tienen que dar
+exactamente igual"* sólo vale si no pasa tiempo entre la toma y la verificación. **El valor
+absoluto no es un testigo estable.**
+
+### 1 · Las tres corridas van seguidas, en una sola sesión
+
+Testigo → migración → verificación, **sin dormir en el medio**. Con 1h45 el drift ya es de seis
+cifras; con una noche, la comparación no significa nada.
+
+### 2 · Un valor distinto NO prueba que falló la migración — primero se mira la traza
+
+**El orden de lectura es éste y no el inverso:**
+
+1. **Las cuentas de filas consideradas** que la traza reporta —46, 313, 14, 12, 20, 82, 84, 147—.
+2. **Si las filas cambiaron, es la base.** El drift explica el número y la migración no está en
+   discusión.
+3. **Si las filas son idénticas y el número no, es la migración.** Ahí sí se detiene el piloto.
+
+**Sin este paso, el drift se lee como una migración rota** y se revierte un cambio que estaba
+bien — o peor, se "ajusta" la dimensión hasta que el número cuadre contra un testigo viejo, que
+es cómo se fabrica un número que reproduce por casualidad.
+
+### 3 · El descuadre es el control que sobrevive al drift, y hay que verificarlo además de los valores
+
+**`total = suma de partes` aguantó un movimiento de 138.427 impresiones y siguió dando cero.**
+
+Y hay algo más fuerte, medido sobre las dos corridas: **el drift del total es exactamente el drift
+de las partes**, en los dos ámbitos — `29.769 + 5.058 + 0 = 34.827` y
+`63.537 + 74.890 + 0 = 138.427`. **La invariante no aguantó por suerte: es estructural.** Por eso
+sirve como control de la migración aunque los valores absolutos se muevan.
+
+**La Parte C verifica las dos cosas:** los valores contra el testigo *leídos con la traza al
+lado*, y el descuadre en cero, que no depende del momento.
+
+### 4 · El testigo se versiona con la HORA, no sólo con la fecha
+
+`docs/_snapshots/TESTIGO_impresiones_AAAA-MM-DD_HHMM.md`. Dos testigos del mismo día son valores
+distintos, y sin la hora no hay forma de saber cuál es cuál — que es exactamente el problema que
+tuvo el snapshot del 11/08, un nivel más fino.

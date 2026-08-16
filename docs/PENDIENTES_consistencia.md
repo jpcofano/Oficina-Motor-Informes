@@ -4107,3 +4107,56 @@ validación con su propio prompt**, no un paso de la migración.
 ⚠ **No entra a la migración del frente 4**, y queda dicho acá para que nadie lo levante como
 "tanda fácil": los tres pares son el caso que **más** se parece a una migración y el que menos lo
 es.
+
+---
+
+## Diez marcadores en `error` sobre 78 — y nueve son `D-30` funcionando, no un bug — 15/08/2026
+
+`resolverMarcadores('jm')` reporta `ok=61 · sin_datos=7 · revisar=0 · error=10`. **El número
+estaba a la vista desde hace tiempo y nadie lo había abierto.** Ninguno de los ocho del piloto
+está entre ellos —los ocho dan `ok`—, así que esto no lo afecta.
+
+### Los nueve de `reuniones/Agenda JM`: no están rotos
+
+Son marcadores cuyo **grano es la cuenta** —`cc_base_total`, `cc_base_discada`, `cc_contactados`,
+`cc_contactados_pct`, `cc_efectivos`, `cc_efectivos_pct`, `imp_totales`, `alc_potencial`,
+`alc_cobertura_pct`— emitidos **sin `id_cuenta` en el contexto**.
+
+**Es `D-30` funcionando exactamente como se diseñó.** `SOLAPAS.campo_id_cuenta` hace que un
+marcador lea la fila de **su** encuentro; sin `id_cuenta`, la rama **falla con motivo** en vez de
+caer a leer la solapa entera. Caer sería publicar el agregado de 154 encuentros creyendo que
+publicó uno — el número plausible.
+
+⚠ **Sólo resuelven dentro de una sección que itere encuentros.** Corridos sueltos, como los corre
+`resolverMarcadores('jm')` sin contexto de ítem, **tienen que fallar**.
+
+**Queda escrito así porque leído de otra manera parece que nueve marcadores están rotos**, y el
+próximo que mire el `error=10` va a salir a arreglarlos. **No hay nada que arreglar acá.**
+
+### El décimo sí es un hallazgo: `enc_alcance`
+
+**Falla porque `digital/Alcance` no declara `fecha_periodo` en `MAPEO`.**
+
+**Y eso obliga a revisar la conclusión de `A-14` y `A-15`.** Los dos casos concluyen que
+`enc_alcance` *"no tiene fuente medible **porque la base está incompleta**"* — `A-14` mide
+PRE+POST de `reuniones` y cierra uno de seis; `A-15` confirma que `Base_Digital` no agrega
+información. Esa evaluación **de la fuente candidata sigue en pie**.
+
+**Lo que cambia es la causa del síntoma de hoy.** Si `enc_alcance` falla por **una fila de
+`MAPEO` que falta**, entonces:
+
+| pregunta | qué la responde | estado |
+|---|---|---|
+| ¿`reuniones` puede ser la fuente de `enc_alcance`? | `A-14` / `A-15` | sin medir — la base está incompleta |
+| ¿por qué `enc_alcance` no publica **hoy**? | **una `fecha_periodo` que falta en `digital/Alcance`** | **abierto, y es más chico de lo que parecía** |
+
+**Es la tercera vez que estas dos preguntas se responden con una sola.** La anterior fue el
+14/08, con `digital/Digital` en `ignorar`. Cada vez que aparece una causa nueva del `—` de
+`enc_alcance`, la conclusión de `A-14`/`A-15` se lee como si ya lo explicara.
+
+**Qué lo destraba:** medir si `digital/Alcance` tiene alguna columna temporal que mapear. Si no
+la tiene, es el caso de `R-25` —una solapa sin fecha propia toma la ventana de otra por
+`ventana_ref`— y no una fila de `MAPEO` que alguien olvidó.
+
+**No se arregla acá.** `digital/Alcance` es `uso = fuente` y tocarla afecta a `alc_alcance` y
+`alc_frecuencia`, que hoy publican bien.
