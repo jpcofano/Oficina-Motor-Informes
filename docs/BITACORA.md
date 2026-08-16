@@ -9883,3 +9883,111 @@ El separador de `dimensiones` se emite **con espacios**, como el resto del motor
 | **El alta de las 24 solapas de `reuniones`** | **cerrada.** 2 `fuente` · 5 `referencia` · 17 `ignorar` |
 | **`D-33`** — medida + dimensiones | **escrita.** 78 marcadores medidos, tres dimensiones (`ambito`, `plataforma`, `tipo_envio`), la frontera dimensión / restricción técnica trazada |
 | **El piloto (frente 5)** | **migrado, sin verificar.** Ocho marcadores esperando que `looker` se estabilice |
+
+---
+
+## Bloque 2 — `C-61`: el motor lee por **posición**, y `looker/CC` no tiene ni una fila de `MAPEO` (2026-08-16)
+
+> Reporte previo del frente 7, la mitad que no necesita planilla. **No se tocó `C-61` ni se
+> agregó ninguna columna.**
+
+### 1 · El camino de lectura, paso por paso, y con qué se identifica la columna en cada uno
+
+Recorrido sobre el código vivo. **La premisa del prompt —*"un marcador de `looker/CC`"*— es
+falsa** (punto 2), así que el recorrido se hace sobre `looker/DIGITAL`, que **es el mismo código
+sin una sola bifurcación por base ni por solapa**: `resolverDatosDeMarcador_` no ramifica por
+`base_id`. Eso se dice acá y no se da por obvio.
+
+| # | dónde | qué identifica la columna |
+|---|---|---|
+| 1 | `MARCADORES.campo_logico` | **nombre lógico** (`Impresiones`) — no toca la planilla fuente |
+| 2 | `buscarMapeo(base, solapa, campo_logico)` · `Config.gs:245` | devuelve **`{ ok, hoja, columna }`** y `columna` es **la letra**. Antes valida `usoSolapa_ === 'fuente'` |
+| 3 | `encabezadoEnColumna_(base, solapa, letra)` · `Union.gs:29` | abre la solapa, lee la fila de encabezado que resuelve `resolverFilaEncabezado_`, y hace `headers[columnaLetraAIndice_(letra)]` — **la letra se convierte en índice: `A`→0, `B`→1** (`Fuentes.gs:508`) |
+| 4 | `leerFuente` · `Fuentes.gs:915` | arma cada fila como objeto **indexado por el texto del encabezado**: `obj[h] = fila[i]` |
+| 5 | `valoresDeCtx_` · `Marcadores.gs:66` | extrae con `ctx.encabezado`, **el nombre**, nunca la letra. `ctx.columna` va sólo para la traza |
+
+**La respuesta a la pregunta del frente 7, en una línea: el motor lee por POSICIÓN.** El
+encabezado aparece en el camino, pero **es derivado de la posición**, no un criterio
+independiente: el paso 3 usa la letra para *averiguar* el título, y el paso 5 usa ese título para
+extraer. **Nunca se busca una columna por su nombre.**
+
+### 2 · Contra el snapshot — y acá se rompe la premisa
+
+**Snapshot usado: `docs/_snapshots/MAPEO_2026-08-15.tsv`, del 15/08/2026**, el más reciente.
+
+**`looker/CC` tiene CERO filas en `MAPEO` y CERO marcadores en `MARCADORES_2026-08-15.tsv`.**
+
+`looker` tiene 35 filas de `MAPEO`, repartidas en tres solapas y ninguna es `CC`:
+
+| solapa | filas de `MAPEO` | `SOLAPAS.uso` |
+|---|---|---|
+| `resumen_metricas_dinamico` | 27 | `fuente` |
+| `DIGITAL` | 5 | `fuente` |
+| `Cuentas` | 3 | `fuente` |
+| **`CC`** | **0** | **`fuente`** |
+
+Las 35 referencian **por letra** —`columna` cargada, `A`/`B`/`C`/`D`/`F`/`I`— y **ninguna por
+título**: `encabezado` viaja al lado como testigo de `D-31`, no como criterio.
+
+**Esto confirma la nota del handoff** —*"`looker/CC` está `uso = fuente` y no es legible"*— y la
+precisa: no es que le falte `fecha_periodo`, es que **no tiene ni una sola fila**. Los 10
+marcadores de `looker` apuntan 8 a `DIGITAL` y 2 a `resumen_metricas_dinamico`.
+
+**Y cambia el signo de `C-61`.** El riesgo que el frente 7 declaraba —*"insertar una columna corre
+las letras y rompe lo ya mapeado"*— **no tiene hoy ningún mapeo de `CC` que romper.** Lo que
+queda del riesgo es otro y hay que decirlo entero, abajo.
+
+### 3 · La consecuencia, escrita — y lo que el testigo de `D-31` NO detecta
+
+**Insertar una columna a la izquierda de una mapeada corre las letras y el motor apunta una más
+allá sin fallar.** Con el paso 3 recién trazado se ve por qué **no** hay error posible: la letra
+corrida da un índice válido, `headers[idx]` devuelve el título del **vecino**, y `obj[titulo]`
+devuelve el valor del vecino. Un `SUMA` sobre la columna de al lado es un número, no una
+excepción.
+
+**Y hay un agravante que el frente no tenía escrito.** El paso 4 arma el objeto con
+`if (h) obj[h] = fila[i]`, así que **con títulos repetidos gana el último**. En estas bases los
+títulos repetidos son la norma —`Base_Digital` tiene ocho `ID Cuentas`, `Agenda JM | Post` cuatro
+`% CTR`—. O sea: después de un corrimiento, el motor puede devolver **ni siquiera el vecino**,
+sino el valor de la última columna que comparta ese título.
+
+**Qué detectaría hoy el testigo de `D-31`: nada, automáticamente.** Está poblado —154 filas— y
+**`leerMapeoSinCache_` (`Config.gs:139`) ni siquiera indexa la columna `encabezado`**: lee
+`base_id`, `solapa`, `campo_logico`, `hoja`, `columna`, `tipo_esperado`, `valores_incluidos` y
+`notas`. `buscarMapeo` devuelve `{ hoja, columna }`. **No hay un solo punto del camino de lectura
+que compare el título esperado contra el encontrado.** Es coherente con lo decidido —*"la función
+que valida se difiere"* (usuario, 14/08)— y hay que tenerlo presente: **el frente 6 dejó el dato,
+no la alarma.**
+
+Lo que el testigo **sí** habilita, y es lo que lo hace valioso: **un corrimiento pasa a ser
+detectable por comparación**, en cuanto exista quien compare. Sin él ni eso.
+
+Y lo que **no** habilitaría ni con la función escrita, porque es el límite de `C-09`: **el testigo
+documenta el rótulo, no el contenido.** Una columna insertada cuyo título coincida con el
+esperado —o dos columnas homónimas intercambiadas— pasan el chequeo. **Nunca es fallback**, y el
+motivo es que los títulos se repiten.
+
+### 4 · Lo que falta medir con la planilla — va al bloque 5
+
+1. **¿La solapa `CC` de `looker` tiene hoy columnas que valga la pena mapear, y con qué títulos y
+   en qué letras?** Sin eso no se puede escribir una sola fila de `MAPEO`, y es la medición que
+   destraba el frente 7 entero. Instrumento: `censarSolapasParaAlta()` / `diagFormaDeSolapaExterna_`.
+2. **¿Cuál es la fila de encabezado real de `looker/CC`?** `SOLAPAS` la declara; hay que
+   verificarla contra la hoja, porque el desalineamiento entre lo declarado y lo real ya produjo
+   `sin_datos` sin síntoma parecido a la causa (`_44`).
+3. **La segunda medición que el frente 7 pide y que no se puede hacer sin la hoja: cuántos tokens
+   ya validados cambian de valor.** Con cero mapeos de `CC`, hoy la respuesta esperada es
+   **ninguno** — pero eso hay que confirmarlo contra la planilla viva y no contra el snapshot,
+   porque el snapshot es del 15/08 y `MAPEO` se escribe desde dos herramientas.
+4. **¿El alta de columna de `C-61` es a la izquierda o a la derecha de las columnas existentes?**
+   Si va **a la derecha del todo**, ninguna letra se corre y el riesgo es cero. **Eso no lo
+   decide esta corrida** — es del usuario, y está anotado abajo.
+
+### Lo que quedó anotado como decisión del usuario, no resuelta acá
+
+- **Dónde se inserta la columna de `C-61`.** A la derecha del todo el riesgo de corrimiento
+  desaparece; en el medio, no. Es la diferencia entre un alta trivial y una que obliga a
+  reescribir letras.
+- **Si se escribe ya la función que valida el testigo de `D-31`.** Está diferida por decisión
+  del 14/08 y esta medición muestra exactamente qué se gana escribiéndola — pero la decisión
+  sigue siendo del usuario.
