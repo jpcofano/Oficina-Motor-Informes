@@ -150,11 +150,20 @@ grep -rn "function nombreNuevo_" *.gs
   vía el caché de módulo en `Fuentes.gs`.
 - Archivos `.gs` en PascalCase (`Fuentes.gs`, `Marcadores.gs`). Funciones privadas con
   sufijo `_`.
-- **Toda función pensada para que la corra una persona desde el editor va SIN `_` final.**
-  Apps Script trata el sufijo como privado y **no la lista en el desplegable de ejecución**: una
-  función de diagnóstico con `_` es una función que nadie puede correr. Ya pasó dos veces —
-  `diagPlanillaExterna_` se midió y su resultado no quedó en ningún lado, y `diffSolapasSinAplicar_`
-  se pusheó sin forma de invocarla.
+- **Toda función pensada para que la corra una persona desde el editor va SIN `_` final Y SIN
+  PARÁMETROS.** Son **dos** condiciones y hay que cumplir las dos: Apps Script no lista en el
+  desplegable ni las que terminan en `_` —trata el sufijo como privado— **ni las que reciben
+  argumentos**, porque no tiene dónde pedírselos. Una función que falla cualquiera de las dos es
+  una función que nadie puede correr.
+  - **La primera mitad ya costó dos veces:** `diagPlanillaExterna_` se midió y su resultado no
+    quedó en ningún lado, y `diffSolapasSinAplicar_` se pusheó sin forma de invocarla.
+  - **La segunda se agregó el 16/08, y es la tercera vez que aparece:**
+    `censarTokensEnPlantilla(informeId, tokensCsv)` se pusheó como wrapper público, sin `_`, y
+    **igual no aparecía en el desplegable**. La salida es un wrapper **sin argumentos** que la
+    llama con los valores del caso — `censarTokensDelPiloto()` —, no cambiarle la firma a la que
+    ya sirve para otros usos.
+  - **El síntoma es el mismo en los tres casos y no se parece a un error:** la función está
+    pusheada, el código es correcto, y la persona simplemente **no la encuentra en la lista**.
   - **El interior sigue con `_`**, y eso no cambia: lo que se agrega es un **wrapper público**
     que lo llama. Así el motor conserva su namespace y la persona tiene su botón.
   - **Un wrapper que corre varias cosas las corre en el orden que corresponde**, y es la mitad
