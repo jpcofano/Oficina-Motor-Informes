@@ -372,3 +372,61 @@ referencia— **se deciden ahí, con el dato de ese momento**, no acá.
 
 **Mientras tanto, `gcba_frecuencia` sigue siendo el canario de esta Parte C** y no cambia nada de
 lo que dice el Addendum 3.
+
+---
+
+## Addendum 5 — 16/08/2026 · el punto 4 de la Parte A, cerrado contra la plantilla viva
+
+> El cuerpo no se edita. Esto cierra el único punto de la Parte A que había quedado medido contra
+> una cita en vez de contra la fuente.
+
+### Qué había quedado abierto, y por qué importaba
+
+El punto 4 pedía **los consumidores**: *"qué láminas y qué informes usan esos ocho tokens. Si
+alguno no está en ninguna plantilla, decirlo: un marcador sin consumidor se migra igual, pero no
+se puede verificar contra un deck."*
+
+Se respondió mirando `docs/TOKENS.md`, que **es un relevamiento fechado y no la plantilla**. Y ahí
+los cuatro `gcba_imp_*` no estaban listados: la lámina 3 decía *"los mismos con prefijo `gcba_`"*,
+que **describe un conjunto sin enumerarlo** — no se puede verificar, y no se puede saber si sobra
+o falta uno.
+
+### La medición
+
+`censarTokensDelPiloto()` — **16/08/2026, 19:16**, contra la plantilla de `jm`.
+
+| token | láminas |
+|---|---|
+| `imp_total` | **2 y 5** |
+| `imp_meta` | 2 |
+| `imp_google` | 2 |
+| `imp_prog` | 2 |
+| `gcba_imp_total` | 3 |
+| `gcba_imp_meta` | 3 |
+| `gcba_imp_google` | 3 |
+| `gcba_imp_prog` | 3 |
+
+**Los ocho tienen consumidor.** Ninguno queda sin lámina, así que **los ocho se pueden verificar
+contra un deck** — que era la pregunta que el punto 4 hacía de verdad.
+
+### Lo que esto cambia para la Parte C
+
+**`imp_total` está en DOS láminas, la 2 y la 5, y es el único de los ocho.** Al verificar contra
+un deck generado hay que saberlo: **el mismo token aparece dos veces y tiene que dar el mismo
+número en las dos.** Si difiere, no es la migración — es la lámina 5, que tiene su propia historia
+(`R-15` addendum 1: los seis marcadores de `ecv_alcance_semanal` contaban doce figuras en vez de
+una).
+
+**Los cuatro `gcba_imp_*` viven todos en la lámina 3, solos.** No comparten lámina con sus pares
+de `jm`, así que **una comparación visual entre ámbitos exige mirar dos láminas distintas** — y no
+se puede confundir un `gcba_` con su par mirando una sola.
+
+### Y una consecuencia para el vocabulario, que conviene anotar acá
+
+**La partición de ámbito coincide exactamente con la partición de láminas**: los cuatro de `jm` en
+la 2, los cuatro de `gcba` en la 3. Eso es lo que hace que **el prefijo en el nombre haya
+funcionado hasta hoy** — y también por qué migrarlo a `dimensiones` no rompe nada visible: la
+lámina ya separa lo que el prefijo separaba.
+
+⚠ **Lo medido son los ocho de `Impresiones` y nada más.** Los quince `gcba_*` restantes de la
+lámina 3 **siguen sin medir uno por uno**, y `TOKENS.md` lo dice ahí donde están.

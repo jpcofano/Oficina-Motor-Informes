@@ -139,11 +139,30 @@ de abajo ya no repiten esos dos puntos como pendientes.
 
 **`jm` — 22 láminas**
 
+> **Los ocho de `Impresiones` están medidos contra la plantilla viva** — `censarTokensDelPiloto()`,
+> **16/08/2026, 19:16**. Es lo único de esta tabla que tiene fecha de medición propia; el resto
+> viene de relevamientos anteriores y envejece como cualquier otra cita.
+>
+> | token | láminas |
+> |---|---|
+> | `imp_total` | **2 y 5** |
+> | `imp_meta` · `imp_google` · `imp_prog` | 2 |
+> | `gcba_imp_total` · `gcba_imp_meta` · `gcba_imp_google` · `gcba_imp_prog` | 3 |
+>
+> **Se nombran los cuatro `gcba_imp_*` porque *"los mismos con prefijo `gcba_`"* no se puede
+> verificar mirando la plantilla**: describe un conjunto sin enumerarlo, así que nadie puede
+> decir si sobra o falta uno. **Los demás `gcba_*` siguen sin medir uno por uno** y se dejan como
+> estaban — extrapolar de los cuatro medidos a los quince restantes sería fabricar el dato que
+> esta corrida vino a reemplazar.
+>
+> ⚠ **Los órdenes son de la PLANTILLA, no del deck expandido**, que es la advertencia general de
+> arriba: una sección repetible ya duplicó sus copias antes de que el deck se numere.
+
 | # | estado | primer texto de la lámina | n | tokens |
 |---|---|---|---|---|
 | 1 | | *(sólo el token)* | 1 | `periodo` |
 | 2 | | Resumen Ejecutivo - JM | 21 | `cc_base` `cc_campanias` `cc_contact_pct` `cc_contactados` `contenidos_total` `frecuencia` `imp_google` `imp_meta` `imp_prog` `imp_total` `ivr_at_pct` `ivr_atendidos` `ivr_campanias` `ivr_llamados` `mail_aperturas` `mail_entregados` `mail_envios` `mail_or` `pauta_google` `pauta_meta` `pauta_prog` |
-| 3 | | Resumen Ejecutivo - GCBA | 19 | los mismos con prefijo `gcba_` + `gcba_sms_entregados` `gcba_sms_envios` (sin `gcba_ivr_*`) |
+| 3 | | Resumen Ejecutivo - GCBA | 19 | **`gcba_imp_total` `gcba_imp_meta` `gcba_imp_google` `gcba_imp_prog`** *(medidos contra la plantilla viva el 16/08/2026)* · el resto: los mismos de la lámina 2 con prefijo `gcba_`, **sin medir uno por uno** + `gcba_sms_entregados` `gcba_sms_envios` (sin `gcba_ivr_*`) |
 | 4 | | Encuentros con vecinos | 0 | *(separador)* |
 | 5 | | Encuentros con vecinos: alcance semanal por herramienta | 31 | `alcance` `cc_base` `cc_contact_pct` `cc_contactados` `clics` `ecv_asistentes` `ecv_barrio1-3` `ecv_barrios` `ecv_encuentros` `ecv_insc_{cc,dif,digital,ivr,mail}` + sus `_pct` `ecv_inscriptos` `imp_total` `ivr_75` `ivr_75_pct` `ivr_atendidos` `ivr_marque1` `mail_aperturas` `mail_entregados` `mail_or` **`periodo`** |
 | 6 | | Benchmarks: Mail JM… *(la lámina del Iceberg)* | 30 | `ecv_*` (asistentes, barrio, insc_*, inscriptos, poblacion) + `enc_*` (alcance, alcance_pct, alcance_potencial, aperturas, atendidos, audiencia, base_llamada, base_total, clics_ctor, ctor, e75, e75_pct, impresiones, ll_contactados, ll_contactados_pct, ll_efectivos, ll_efectivos_pct, mails_entregados, mails_enviados, marque1, or) |
@@ -235,7 +254,7 @@ que SECCO).
 |---|---|---|
 | 1 | Portada | `periodo` |
 | 2 | Resumen Ejecutivo **JM** | `mail_envios`, `imp_google/prog/total/meta`, `contenidos_total`, `pauta_meta/google/prog`, `frecuencia`, `mail_entregados`, `mail_aperturas/or`, `cc_campanias/base/contactados/contact_pct`, `ivr_campanias/llamados/atendidos/at_pct` |
-| 3 | Resumen Ejecutivo **GCBA** | mismos con prefijo `gcba_*` + `gcba_sms_envios/entregados` |
+| 3 | Resumen Ejecutivo **GCBA** | **`gcba_imp_total`, `gcba_imp_meta`, `gcba_imp_google`, `gcba_imp_prog`** *(medidos 16/08/2026)* · el resto, mismos con prefijo `gcba_*` **sin medir** + `gcba_sms_envios/entregados` |
 | 4 | ECV (separador) | estático |
 | 5 | ECV — alcance por herramienta | `ecv_insc_*` (+pct), `ecv_inscriptos/asistentes/encuentros`, `ecv_barrios/barrio1-3`, `mail_aperturas/or`, `cc_contactados/base`, `ivr_atendidos/75`, `mail_entregados`, `clics`, `imp_total` — **⚠ revisar posiciones** |
 | 6 | ECV — Iceberg | `enc_*` (clics/ctor, aperturas/or, ll_efectivos, ll_contactados, mails_entregados/enviados, audiencia, impresiones, audiencia_ivr, base_llamada, alcance_potencial, atendidos, marque1, e75), `ecv_*` (insc, inscriptos, asistentes, poblacion, barrio) — **⚠ revisar posiciones** |
