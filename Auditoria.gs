@@ -2616,9 +2616,31 @@ function censarTokensDelPiloto() {
  * lógica que el motor ya tiene, peor, que es el error que `CLAUDE.md` §4 documenta.
  */
 function filasDeTraza_(traza) {
-  var m = /(\d+)\s+de\s+(\d+)\s+fila/.exec(String(traza || ''));
-  if (!m) return null;
-  return { quedan: Number(m[1]), universo: Number(m[2]) };
+  var t = String(traza || '');
+
+  /* ⚠ **La traza tiene DOS etapas y cada una dice `N de M`**, así que tomar la primera que
+   * aparezca mezcla niveles. Es el bug que se corrigió el 17/08:
+   *
+   *     filtro `mail_tipo=Convocatoria` … → 359 de 2239 fila(s)      ← etapa FILTRO
+   *     recorte por ventana sobre "…": 11 de 359 fila(s)             ← etapa VENTANA
+   *
+   * Con `11` de una etapa y `359` de la otra, el control de cobertura dio
+   * `11 + 25 + 323 = 359`: **una suma que cierra y no significa nada**. Es el mismo patrón que
+   * el cuadre de `verificarEncabezadosDeMapeo()` la semana pasada — baldes que cuentan cosas
+   * distintas y una suma que cierra igual.
+   *
+   * Por eso cada etapa se ancla en **su propio rótulo** y se devuelven **las dos por separado**:
+   * quien compare tiene que elegir una y **decir cuál**, no recibir un número sin nivel. */
+  var f = /filtro\s+`[^`]*`[^→]*→\s*(\d+)\s+de\s+(\d+)\s+fila/.exec(t);
+  var v = /recorte por ventana[^:]*:\s*(\d+)\s+de\s+(\d+)\s+fila/.exec(t);
+
+  if (!f && !v) return null;
+  return {
+    filtro:  f ? { quedan: Number(f[1]), universo: Number(f[2]) } : null,
+    ventana: v ? { quedan: Number(v[1]), universo: Number(v[2]) } : null,
+    // El número final que el marcador efectivamente usó: la última etapa que haya corrido.
+    final:   v ? Number(v[1]) : (f ? Number(f[1]) : null)
+  };
 }
 
 /**
@@ -2651,8 +2673,13 @@ function testigoDeMarcadores_(nombres, titulo) {
     var t = String(r.traza || '').replace(/\s+/g, ' ');
     var c = filasDeTraza_(t);
     filas.push({ marcador: n, valor: r.valor, estado: r.estado || '', traza: t, filas: c });
-    Logger.log('  ' + n + '\t' + r.valor + '\t' + (r.estado || '') + '\t' +
-      (c ? c.quedan + ' de ' + c.universo : '(sin cuenta legible)') + '\t' + t);
+    // Las dos etapas se imprimen **rotuladas y por separado**: un `N de M` sin nivel es lo que
+    // produjo la suma sin significado del 17/08.
+    var etapas = c
+      ? (c.filtro ? 'filtro ' + c.filtro.quedan + '/' + c.filtro.universo : 'filtro —') + ' · ' +
+        (c.ventana ? 'ventana ' + c.ventana.quedan + '/' + c.ventana.universo : 'ventana —')
+      : '(sin cuenta legible)';
+    Logger.log('  ' + n + '\t' + r.valor + '\t' + (r.estado || '') + '\t' + etapas + '\t' + t);
   });
 
   if (faltantes.length) {
@@ -2699,7 +2726,11 @@ function testigoDeRdv() {
   var cuentas = {};
   t.filas.forEach(function (f) {
     if (!f.filas) return;
-    var k = f.filas.quedan + ' de ' + f.filas.universo;
+    // Se compara **la firma de las DOS etapas**, no un número suelto: dos marcadores pueden
+    // coincidir después de la ventana y haber partido de filtros distintos.
+    var c = f.filas;
+    var k = (c.filtro ? c.filtro.quedan + '/' + c.filtro.universo : '—') + ' → ' +
+            (c.ventana ? c.ventana.quedan + '/' + c.ventana.universo : 'sin recorte');
     if (!cuentas[k]) cuentas[k] = [];
     cuentas[k].push(f.marcador);
   });
@@ -2768,10 +2799,32 @@ function testigoDeRdv() {
  * propiedad del código, no del dato, y **no hay que volver a medirla**.
  */
 function testigoDeTanda2() {
-  var LOS_13 = [
-    'enc_mails_enviados', 'enc_mails_entregados', 'enc_aperturas', 'enc_clics_ctor', 'enc_or', 'enc_ctor',
+  /* ⚠ **La tanda son SIETE, no trece — los seis `enc_mails_*` salieron el 17/08.**
+   *
+   * **Motivo: no publican.** Dan `sin_datos` con `«FALTA:@ultimo_ambiguo»` — dos filas de
+   * `Directa Mail` comparten la fecha más alta con valores distintos y `opULTIMO` **se niega a
+   * elegir**, que es el comportamiento correcto (guarda del `_39`).
+   *
+   * **Un marcador que hoy no produce valor no se puede migrar y verificar:** la Parte C
+   * compararía `sin_datos` contra `sin_datos`, **reproduce trivialmente y no prueba nada**. Es
+   * el mismo razonamiento por el que el piloto no se verificó contra marcadores en error.
+   *
+   * **Se siguen midiendo igual** —quedan en la lista de abajo— porque su cuenta de filas es la
+   * que da el lado `convocatoria` de la cobertura, y esa parte sí funciona: el filtro corre y
+   * recorta; lo que falla es la operación `ULTIMO`, después.
+   *
+   * ⚠ **Consecuencia para `D-33`: `tipo_envio` queda migrada A MEDIAS**, con `m2` en
+   * `dimensiones` y `convocatoria` todavía en `filtro`. **Las dos formas conviven**, que es lo
+   * que el piloto ya estableció como aceptable — pero hay que saberlo, porque un censo de
+   * dimensiones que no lo espere va a leerlo como inconsistencia. */
+  var LOS_7 = [
     'm2_envios', 'm2_mails_enviados', 'm2_mails_entregados', 'm2_aperturas', 'm2_clics', 'm2_or', 'm2_ctor'
   ];
+  // Se miden pero NO se migran: dan la cuenta de filas del lado `convocatoria` de la cobertura.
+  var SEIS_QUE_NO_PUBLICAN = [
+    'enc_mails_enviados', 'enc_mails_entregados', 'enc_aperturas', 'enc_clics_ctor', 'enc_or', 'enc_ctor'
+  ];
+  var LOS_13 = SEIS_QUE_NO_PUBLICAN.concat(LOS_7);
   // El canario de `digital`, ya probado en la tanda 1: filtro vacío en los dos, no se migran.
   var CANARIO = ['enc_atendidos', 'ivr_atendidos'];
 
@@ -2800,28 +2853,48 @@ function testigoDeTanda2() {
    * subconjuntos y el resto en la misma proporción.** Se escribe así a propósito: un control débil
    * presentado como fuerte es peor que no tenerlo. **El control principal de esta tanda son los
    * valores idénticos**, que en `digital` alcanzan porque está probada quieta. */
-  var conv = null, m2 = null, universo = null;
-  ['enc_mails_enviados', 'enc_aperturas', 'enc_or'].forEach(function (n) {
-    if (conv === null && porNombre[n] && porNombre[n].filas) {
-      conv = porNombre[n].filas.quedan; universo = porNombre[n].filas.universo;
+  /* ⚠ **Los tres números salen de LA MISMA ETAPA: la del FILTRO, antes del recorte por ventana.**
+   *
+   * **El 17/08 esto estaba mal y produjo una suma sin significado:** tomaba `quedan` de la etapa
+   * de ventana (11 y 25) y `universo` de la etapa de filtro (359), y reportaba
+   * `11 + 25 + 323 = 359`. Cerraba, y no quería decir nada.
+   *
+   * **Se elige la etapa de FILTRO y no la de ventana**, y el motivo es que es la única donde el
+   * universo está disponible: el `M` del filtro **es** el total de la solapa. Después del recorte
+   * por ventana, el universo en ventana **no lo publica ningún marcador** —haría falta uno sin
+   * filtro sobre esa solapa, y no existe—, así que ahí el control no se puede armar.
+   *
+   * **Consecuencia que hay que tener presente:** este control mide la traducción de la dimensión
+   * **antes** de la ventana. Es exactamente lo que se quiere —la dimensión traduce un corte, no
+   * una fecha— pero **no dice nada sobre el recorte temporal**, y eso lo cubren los valores. */
+  var etapaDe = function (nombres) {
+    for (var i = 0; i < nombres.length; i++) {
+      var f = porNombre[nombres[i]];
+      if (f && f.filas && f.filas.filtro) return { fuente: nombres[i], etapa: f.filas.filtro };
     }
-  });
-  ['m2_mails_enviados', 'm2_aperturas', 'm2_or'].forEach(function (n) {
-    if (m2 === null && porNombre[n] && porNombre[n].filas) {
-      m2 = porNombre[n].filas.quedan; if (universo === null) universo = porNombre[n].filas.universo;
-    }
-  });
+    return null;
+  };
+  var eConv = etapaDe(['enc_mails_enviados', 'enc_aperturas', 'enc_or']);
+  var eM2 = etapaDe(['m2_mails_enviados', 'm2_aperturas', 'm2_or']);
 
   Logger.log('');
-  Logger.log('== LA COBERTURA — el control de esta tanda ==');
-  if (conv === null || m2 === null || universo === null) {
-    Logger.log('   ⚠ NO SE PUDO CALCULAR: falta alguna cuenta de filas legible. Ver el aviso de arriba.');
+  Logger.log('== LA COBERTURA — el control de esta tanda · ETAPA: FILTRO (antes de la ventana) ==');
+  if (!eConv || !eM2) {
+    Logger.log('   ⚠ NO SE PUDO CALCULAR: falta la etapa de filtro en alguno de los dos lados.');
+    Logger.log('      Ver el aviso de cuentas ilegibles, arriba. **No inventar el número.**');
+  } else if (eConv.etapa.universo !== eM2.etapa.universo) {
+    Logger.log('   ❌ LOS DOS LADOS PARTEN DE UNIVERSOS DISTINTOS — ' + eConv.etapa.universo +
+      ' (' + eConv.fuente + ') contra ' + eM2.etapa.universo + ' (' + eM2.fuente + ').');
+    Logger.log('      **No son comparables y la resta no significa nada. Parar y reportar.**');
   } else {
+    var universo = eConv.etapa.universo;
+    var conv = eConv.etapa.quedan, m2 = eM2.etapa.quedan;
     var resto = universo - conv - m2;
-    Logger.log('   convocatoria: ' + conv + ' filas');
-    Logger.log('   m2:           ' + m2 + ' filas');
-    Logger.log('   universo:     ' + universo + ' filas de digital/Directa Mail');
-    Logger.log('   RESTO (ni convocatoria ni m2): ' + resto + ' filas   ← esto es lo que no se puede mover');
+    Logger.log('   universo (solapa entera):      ' + universo + '  ← el M de la etapa de filtro');
+    Logger.log('   convocatoria:                  ' + conv + '  (de ' + eConv.fuente + ')');
+    Logger.log('   m2:                            ' + m2 + '  (de ' + eM2.fuente + ')');
+    Logger.log('   RESTO (ni convocatoria ni m2): ' + resto + '  ← esto es lo que no se puede mover');
+    Logger.log('   comprobación: ' + conv + ' + ' + m2 + ' + ' + resto + ' = ' + universo);
     if (resto < 0) {
       Logger.log('   ❌ RESTO NEGATIVO — los dos conjuntos se superponen, y eso contradice la');
       Logger.log('      disjunción que el código garantiza. **Parar y reportar**: o cambió');
