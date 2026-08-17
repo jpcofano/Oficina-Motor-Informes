@@ -4214,3 +4214,63 @@ siembra; 15/08) y el código sin pushear (16/08). Las tres se ven igual. `CLAUDE
 
 **La tabla completa de qué hoja propaga una corrección y cuál no está en `docs/ESCRITORES.md`
 §1 bis.**
+
+---
+
+## Seis marcadores de convocatoria no publican: `«FALTA:@ultimo_ambiguo»` en `Directa Mail` — 17/08/2026
+
+**El hecho, medido:** los seis `enc_mails_*` —`enc_mails_enviados`, `enc_mails_entregados`,
+`enc_aperturas`, `enc_clics_ctor`, `enc_or`, `enc_ctor`— dan **`sin_datos`** con
+`«FALTA:@ultimo_ambiguo»`.
+
+**La causa, y el motor hace lo correcto:** dos filas de `digital/Directa Mail` **comparten la
+fecha más alta con valores distintos**, y `opULTIMO` **se niega a elegir**. Es la guarda que
+introdujo el `_39` el 12/08 — antes elegía por posición y publicaba un número que parecía bueno.
+**Preferir el hueco al número arbitrario es la decisión correcta y no se revierte.**
+
+**Qué significa hoy, dicho para que nadie lo descubra mirando el deck:** **la lámina de
+convocatoria tiene seis huecos.** No es un token sin cablear ni una migración a medias: están
+cableados, la fuente resuelve, el filtro corre — **y la operación no puede decidir**.
+
+⚠ **Es una pregunta del DOMINIO, no del vocabulario, y NO bloquea la migración.** Lo que falta es
+que alguien diga **cuál de las dos filas vale** cuando dos envíos comparten la fecha más alta —o
+si hay que desempatar por otra columna—. Eso lo decide quien conoce el dato, no el motor.
+
+**Consecuencia inmediata, ya aplicada (17/08):** los seis **salieron de la tanda 2**, que queda en
+los siete `m2_*`. Un marcador que no produce valor **no se puede migrar y verificar**: la Parte C
+compararía `sin_datos` contra `sin_datos`, que **reproduce trivialmente y no prueba nada**.
+
+⚠ **Y deja `tipo_envio` migrada a medias**, con `m2` en `dimensiones` y `convocatoria` todavía en
+`filtro`. **Las dos formas conviven** —que el piloto ya estableció como aceptable— pero un censo
+de dimensiones que no lo espere lo va a leer como inconsistencia.
+
+**Qué lo destraba:** una decisión del usuario sobre el desempate. Mientras tanto los seis siguen
+publicando el hueco, que es la conducta correcta.
+
+---
+
+## Sin recorte por ventana, los canales de `rdv` suman 1 más que `inscriptos` — 17/08/2026
+
+**El hecho, medido** con `medirUnoAUnoDeRdv()` sobre los 23 encuentros `"1 a 1"`, **sin ventana**:
+
+```
+insc_mail + insc_digital = 18 + 4.313 = 4.331
+inscriptos                              = 4.330
+                                  sobra   1
+```
+
+**Y en la ventana semanal la identidad cierra exacta**: `testigoDeRdv()` la midió el mismo día en
+**2.307** contra 2.307, con los cinco canales. **El descuadre aparece sólo sin recorte temporal.**
+
+**Por qué es un hallazgo y no un error a corregir:** una diferencia de **1 en 4.330** no mueve
+ninguna conclusión —`R-26` se apoya en un 99,61% contra un 0,42%— pero **significa que sobre el
+histórico completo los cinco canales no son una partición exacta de `inscriptos`**, y eso vale
+saberlo antes de usar esa identidad como control en otra medición.
+
+**Las explicaciones posibles son distintas entre sí y ninguna está medida:** una fila con doble
+conteo, un inscripto que entró por una vía no listada, o un valor tipeado a mano. **No se elige la
+más probable** — medir cuál es, es lo que destraba esto.
+
+⚠ **No confundir con la identidad en ventana, que sí cierra y sí sirve como control.** Son dos
+mediciones distintas del mismo campo y **la que vale como invariante estructural es la de
+ventana**, que es la que una migración va a tener que reproducir.

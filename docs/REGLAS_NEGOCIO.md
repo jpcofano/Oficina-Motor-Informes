@@ -1704,3 +1704,69 @@ misma regla prohíbe. Las excluidas se listan con motivo, citando `D-19`.
   correcto**: el ancla decide qué fila de `rdv` se lee, así que emitirlo publicaría barrio,
   inscriptos y población de una fila que el motor no está seguro de haber acertado. Es la misma
   clase de falla que `D-19` y `D-21` cierran en los otros caminos.
+
+---
+
+## R-26 — El encuentro "1 a 1" se convoca **sólo por digital**, como **régimen** y no como invariante aritmética
+
+**Origen:** decisión del usuario, 13/08/2026. **Medida el 17/08/2026** con
+`medirUnoAUnoDeRdv()` sobre `rdv/RVD JM-CM - ES`, **sin recorte por ventana** — se quería el
+comportamiento del **tipo de encuentro**, no el de una semana.
+
+### La medición
+
+**23 encuentros `"1 a 1"`, los 23 de Jorge Macri.**
+
+| canal | suma | filas con valor ≠ 0 | share |
+|---|---|---|---|
+| `insc_digital` | **4.313** | **23 de 23** | **99,61%** |
+| `insc_mail` | 18 | **17 de 23** | 0,42% |
+| `insc_cc` | 0 | **0 de 23** | — |
+| `insc_ivr` | 0 | **0 de 23** | — |
+| `insc_dif` | 0 | **0 de 23** | — |
+
+### El enunciado, y por qué es un régimen
+
+**El "1 a 1" se convoca por el canal digital. Call center, IVR y difusión valen cero por diseño,
+no por falta de dato** — son **cero absoluto**: ni una sola fila de las 23.
+
+⚠ **Pero el mail NO es cero, y por eso la regla NO es una invariante aritmética.** Aparece en
+**17 de los 23 encuentros** y suma **18 inscriptos en total** — cerca de **uno por encuentro**.
+**Eso no es un canal de convocatoria: es un residuo.**
+
+**La diferencia importa y es la mitad que sirve:**
+
+- **Como régimen**, la regla dice *"así se convoca este tipo de encuentro"*, y un mail suelto no
+  la contradice: la confirma, porque muestra que el canal existe y **no se usa para convocar**.
+- **Como invariante aritmética** —*"los canales no digitales son siempre cero"*— la regla sería
+  **falsa**, y cualquiera que la usara para validar encontraría 17 contraejemplos.
+
+### La consecuencia operativa, que es para qué existe la regla
+
+**Un `ecv_insc_*` no digital en cero sobre un "1 a 1" es correcto y NO se reporta como hueco de
+cableado.** Es el modo de falla que esta regla evita: alguien ve `insc_cc = 0` en la lámina del
+"1 a 1", lo toma por un token sin cablear, y "arregla" algo que estaba bien.
+
+⚠ **Y las 17 filas que traen mail SE PUBLICAN, no se recortan.** La regla describe cómo se
+convoca, **no autoriza a filtrar** las filas que se apartan. Recortarlas sería fabricar el dato
+que confirma la regla — exactamente lo que `D-19` y `D-21` prohíben en los otros caminos: ninguna
+fila entra ni se excluye en silencio.
+
+### Hallazgo aparte — el descuadre de 1 sin ventana, que NO cambia la regla
+
+**`insc_mail + insc_digital = 18 + 4.313 = 4.331`, contra `inscriptos = 4.330`. Sobra 1.**
+
+**Y en la ventana semanal la identidad cerraba exacta** (2.307, medido el mismo día con
+`testigoDeRdv()`). Así que el descuadre **aparece sólo sin recorte temporal**.
+
+**No cambia el enunciado de arriba** —una diferencia de 1 en 4.330 no mueve un 99,61%— pero **se
+deja anotado y no se deja pasar**: significa que sobre el histórico completo los canales no suman
+exactamente el total, y las explicaciones posibles son distintas entre sí —una fila con doble
+conteo, un inscripto por una vía no listada, un valor tipeado— **y ninguna está medida**. Es una
+pregunta del dominio y va a `PENDIENTES`.
+
+### Su reversión
+
+Si aparecieran encuentros "1 a 1" con **call center o IVR distintos de cero**, esta regla deja de
+describir el régimen y hay que reescribirla. El mail ya está contemplado: **su presencia no la
+deroga**, y por eso la regla se escribió así y no como *"los demás canales son cero"*.

@@ -14,8 +14,28 @@
 
 | valor de `tipo_envio` | marcadores | filtro de hoy |
 |---|---|---|
-| `convocatoria` | `enc_mails_enviados`, `enc_mails_entregados`, `enc_aperturas`, `enc_clics_ctor`, `enc_or`, `enc_ctor` | `mail_tipo=Convocatoria` |
+| ~~`convocatoria`~~ | ~~`enc_mails_enviados`, `enc_mails_entregados`, `enc_aperturas`, `enc_clics_ctor`, `enc_or`, `enc_ctor`~~ | **SALEN — ver abajo** |
 | `m2` | `m2_envios`, `m2_mails_enviados`, `m2_mails_entregados`, `m2_aperturas`, `m2_clics`, `m2_or`, `m2_ctor` | `mail_tipo~=M2` |
+
+> ## ⚠ Corrección del 17/08 — la tanda son **SIETE**, no trece
+>
+> **Los seis `enc_mails_*` no publican.** Dan `sin_datos` con `«FALTA:@ultimo_ambiguo»`: dos filas
+> de `Directa Mail` comparten la fecha más alta con valores distintos y `opULTIMO` **se niega a
+> elegir**, que es el comportamiento correcto (guarda del `_39`).
+>
+> **Un marcador que hoy no produce valor no se puede migrar y verificar:** la Parte C compararía
+> `sin_datos` contra `sin_datos`, **reproduce trivialmente y no prueba nada.**
+>
+> **Se siguen MIDIENDO igual** —dan la cuenta de filas del lado `convocatoria` de la cobertura, y
+> esa parte sí funciona: el filtro corre y recorta; lo que falla es la operación, después.
+>
+> ⚠ **Esto deja `tipo_envio` migrada A MEDIAS**, con `m2` en `dimensiones` y `convocatoria`
+> todavía en `filtro`. **Las dos formas conviven**, que el piloto ya estableció como aceptable —
+> pero hay que saberlo, porque un censo de dimensiones que no lo espere lo va a leer como
+> inconsistencia.
+>
+> **El `@ultimo_ambiguo` es hallazgo propio y está en `PENDIENTES`**: es una pregunta del dominio
+> —cuál de las dos filas vale— **y no bloquea la migración**.
 
 **Cuatro cosas la hacen la siguiente, y las cuatro están medidas:**
 
@@ -78,9 +98,18 @@ disjunción, pero cambia qué significa cada conjunto.
    divergen entre sí, parar — el problema es el instrumento.
 2. **Los trece valores**, con **la cuenta de filas de cada uno**, y **cada valor atribuido a su
    token nominalmente**. Los dos requisitos que el testigo del piloto no pudo cumplir.
-3. **Los tres números del control**: `filas(convocatoria)`, `filas(m2)`, y **el total de
-   `Directa Mail` en la ventana**. El resto sale por diferencia y hay que **escribirlo explícito**,
-   no dejarlo para que lo calcule quien lea.
+3. **Los tres números del control, TODOS DE LA MISMA ETAPA.** ⚠ **Acá se rompió el 17/08 y hay que
+   saber cómo:** la traza tiene **dos** etapas que dicen `N de M` —la del **filtro**
+   (`359 de 2239`) y la del **recorte por ventana** (`11 de 359`)— y el instrumento tomaba
+   `quedan` de una y `universo` de la otra. Reportó `11 + 25 + 323 = 359`: **una suma que cierra y
+   no significa nada**, el mismo patrón que el cuadre de `D-31` la semana anterior.
+   - **Se usa la etapa de FILTRO en los tres**, y el motivo es que es la única donde el universo
+     existe: el `M` del filtro **es** el total de la solapa. **Después de la ventana el universo no
+     lo publica ningún marcador** —haría falta uno sin filtro sobre esa solapa y no hay—.
+   - **Consecuencia a tener presente:** el control mide la traducción de la dimensión **antes** de
+     la ventana. Es lo que se quiere —la dimensión traduce un corte, no una fecha— pero **no dice
+     nada del recorte temporal**, y eso lo cubren los valores.
+   - El resto sale por diferencia y **se escribe explícito**, con la comprobación al lado.
 4. **Guardar en `docs/_snapshots/TESTIGO_tipo_envio_AAAA-MM-DD_HHMM.md`, con la HORA.**
 5. **Los consumidores**: `censarTokensEnPlantilla` con los trece. ⚠ **Escribir el wrapper sin
    argumentos** —`censarTokensDeTanda2()`— porque una función con parámetros **no aparece en el

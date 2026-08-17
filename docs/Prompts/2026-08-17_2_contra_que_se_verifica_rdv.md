@@ -48,10 +48,14 @@ como pasó en la tanda 1 con `digital`.
 **Cómo se mide, y es barato:** dos tomas de los 17 separadas en el tiempo, **sin tocar nada en el
 medio**. Si dan idénticas, `rdv` se comporta como `snapshot`.
 
-- **Cuánto separarlas: decirlo con criterio, no elegir un número redondo.** En `looker` el drift se
-  vio en **1h45**; en `digital`, en más de una hora no se movió nada. **Una hora es el piso
-  razonable**, y conviene además una toma en un día distinto: `rdv` es una base de **carga humana**
-  —alguien agrega encuentros— así que su patrón de cambio puede ser diario y no continuo.
+- ✅ **Cuánto separarlas: DOS O TRES DÍAS, y no es una estimación.** El usuario midió que **`rdv`
+  se actualiza en ese ritmo** (17/08/2026). Una segunda toma al día siguiente **no distingue
+  "quieta" de "todavía no la tocaron"** — daría idénticas por cadencia, no por estabilidad, y esa
+  es la conclusión falsa más fácil de sacar acá.
+- **Por qué no vale el criterio de las otras dos bases:** en `looker` el drift se vio en **1h45**
+  y en `digital` no hubo movimiento en más de una hora, así que ahí una hora alcanzaba. **`rdv` es
+  una base de carga humana** —alguien agrega encuentros— y su patrón de cambio es **diario, no
+  continuo**: el reloj que corresponde es el de quien la carga, no el del reloj.
 - ⚠ **Un "no se movió" en una ventana cerrada no prueba que nunca se mueva.** Decir sobre qué
   ventana se midió, y si esa ventana ya está cerrada o es la corriente. **Es la diferencia entre
   *"está quieta"* y *"esta semana no la tocaron"*.**
@@ -83,6 +87,29 @@ medio, y **cada `testigoDeImpresiones()` cuesta ~3m30s contra un límite de 6 mi
 
 **Medir qué agrega sobre la salida 1**, porque puede ser la misma medición con otro nombre. Si
 `rdv` resultó quieta, esto **no agrega nada** y no se hace.
+
+---
+
+---
+
+## ✅ Primera toma: 17/08/2026 — **los dos hallazgos cierran**
+
+| hallazgo | resultado |
+|---|---|
+| **1 · las 17 cuentas de filas** | **idénticas**: 4 de 15 en los diecisiete |
+| **2 · las cinco identidades de canal** | **cierran exacto: 2.307** |
+
+**La identidad de canales es entonces la invariante estructural equivalente al descuadre del
+piloto**, y sirve como control que **sobrevive al drift**: no depende del momento sino de que las
+partes cubran el total.
+
+⚠ **Con un borde medido el mismo día y que no la invalida:** **sin recorte por ventana** la
+identidad **no** cierra —sobra 1 sobre 4.330 (`PENDIENTES`, 17/08)—. **La que vale como control es
+la de ventana**, que es la que una migración va a tener que reproducir. Son dos mediciones
+distintas del mismo campo y **no se pueden usar indistintamente**.
+
+**Falta la segunda toma**, que es la que contesta la pregunta 1. Va a **dos o tres días** de la
+primera, por el motivo de arriba.
 
 ---
 
