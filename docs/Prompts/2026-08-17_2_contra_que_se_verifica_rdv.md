@@ -108,8 +108,24 @@ identidad **no** cierra —sobra 1 sobre 4.330 (`PENDIENTES`, 17/08)—. **La qu
 la de ventana**, que es la que una migración va a tener que reproducir. Son dos mediciones
 distintas del mismo campo y **no se pueden usar indistintamente**.
 
-**Falta la segunda toma**, que es la que contesta la pregunta 1. Va a **dos o tres días** de la
-primera, por el motivo de arriba.
+## Segunda lectura: 17/08/2026, **12 horas después — NO responde la pregunta 1**
+
+Dio **idéntica**: 4 de 15 en los diecisiete, identidad de canales en **2.307**, los 17 valores
+iguales.
+
+⚠ **Y aun así no cuenta como respuesta**, porque **12 horas no distinguen *"quieta"* de *"todavía
+no la tocaron"*** con una cadencia de carga de dos o tres días. **Es exactamente lo que la
+advertencia de arriba anticipaba**, y por eso se registra como lo que es:
+
+> **Una tercera lectura consistente con las otras dos. Sirve para confirmar que el instrumento es
+> estable —tres corridas, mismos números— y nada más.**
+
+**Contarla como respuesta sería el error que este prompt existe para evitar:** tomar una identidad
+producida por la **cadencia** y leerla como **estabilidad**. Sería un verde que no probó lo que
+dice — el mismo patrón de la prueba de `ULTIMO` que pasó meses afirmando algo que no verificaba.
+
+**La toma que decide va el miércoles 19 o el jueves 20**, con **dos o tres días** de separación
+real de la primera.
 
 ---
 

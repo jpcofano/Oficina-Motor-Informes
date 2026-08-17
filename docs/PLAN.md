@@ -1255,20 +1255,36 @@ verificados. 16 de 78 marcadores migrados.**
 
 #### ⚠ Reprodujo por **igualdad exacta**, y eso NO significa que siempre se pueda
 
-**`digital` es `snapshot` y no se movió**, así que admitió la comparación exacta — la que el
-prompt del piloto pedía originalmente y **allá no se pudo**. El piloto se cerró por *identidad de
-filas + descuadre + canario*, con los ocho números **distintos**.
+**La ventana de julio de `digital` no se movió**, así que admitió la comparación exacta — la que
+el prompt del piloto pedía originalmente y **allá no se pudo**. El piloto se cerró por *identidad
+de filas + descuadre + canario*, con los ocho números **distintos**.
 
-**El criterio que admite cada base es una propiedad de la base, no del método:**
+> ⚠ **Corrección del 17/08/2026 — no es que `digital` esté quieta.** Entre el testigo de la tanda
+> 1 (16/08 23:31) y una corrida del 17/08 12:54, **`digital/Directa Mail` creció**: universo
+> **2.239 → 2.241**, `convocatoria` **359 → 361**, `m2` **745 = 745**. **Las dos filas nuevas caen
+> FUERA de la ventana**: en ventana sigue dando 11 de 361 y 25 de 745, y los siete valores de
+> `m2_*` son idénticos.
+>
+> **Lo que sostuvo la verificación de la tanda 1 no fue que la base esté quieta, sino que la
+> ventana cerrada de julio no se mueve.** Son dos cosas distintas, y la segunda es más chica y más
+> verdadera.
+>
+> **Es la misma distinción que el prompt de `rdv` ya tenía escrita** —*"un «no se movió» en una
+> ventana cerrada no prueba que nunca se mueva"*— **y que no se había aplicado a `digital`.**
 
-| base | comportamiento | criterio |
+**Lo que admite cada base depende de qué se compara, no sólo de qué base es:**
+
+| base | qué se midió | criterio que admite |
 |---|---|---|
-| `digital` | `snapshot`, quieta | **igualdad exacta de valores** |
-| `looker` | recibe datos de ventanas ya cerradas | **identidad de filas + invariante + canario** |
+| `digital`, **en ventana cerrada** | 11 de 361 y 25 de 745, estables | **igualdad exacta de valores** |
+| `digital`, **universo completo** | 2.239 → 2.241 en 13 horas | **se mueve: no admite igualdad** |
+| `looker`, en ventana cerrada | 138.427 impresiones en 1h45 | **identidad de filas + invariante + canario** |
 
 **Y está medido, no supuesto:** en la misma hora, `looker` movió `imp_total` de **34.289.779 a
 34.293.287** mientras los ocho de mail no cambiaron ni un dígito. **El instrumento distingue una
-base viva de una quieta**, que era la duda de fondo del piloto.
+base viva de una quieta**, que era la duda de fondo del piloto. ⚠ **Con la precisión del 17/08: lo
+que estaba quieto era la ventana, no la base** — `looker` movía datos **dentro** de una ventana
+cerrada y `digital` sólo **fuera** de ella.
 
 #### El control fue la partición, y `mail_or` no lo era
 
@@ -1453,7 +1469,8 @@ sola vez y las dos tandas heredan la respuesta**: `docs/Prompts/2026-08-17_2_con
 que **no migra nada** y mide tres salidas — ¿está quieta `rdv`? ¿hay una medida legible por dos
 caminos? ¿sirve la toma doble?
 
-⚠ **Y hay una asimetría que conviene esperar:** `digital` resultó quieta y `looker` no. Es
+⚠ **Y hay una asimetría que conviene esperar:** la **ventana cerrada** de `digital` resultó
+estable y la de `looker` no (17/08: `digital` sí crece, pero **fuera** de la ventana). Es
 probable que la respuesta **no sea la misma para las dos bases**, y el prompt dice explícitamente
 que no se fuerce una respuesta única.
 

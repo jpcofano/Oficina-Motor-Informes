@@ -39,9 +39,14 @@
 
 **Cuatro cosas la hacen la siguiente, y las cuatro están medidas:**
 
-1. **Misma base y solapa que la tanda 1** — `digital/Directa Mail`, que **acaba de probar que está
-   quieta**: los ocho de mail dieron idénticos dígito por dígito entre las 22:20 y las 23:31,
+1. **Misma base y solapa que la tanda 1** — `digital/Directa Mail`, cuya **ventana cerrada de
+   julio** dio idéntica: los ocho de mail no cambiaron ni un dígito entre las 22:20 y las 23:31,
    mientras `looker` movía `imp_total` de 34.289.779 a 34.293.287 en la misma hora.
+   - ⚠ **Precisión del 17/08: `digital` NO está quieta.** Entre el 16/08 23:31 y el 17/08 12:54 el
+     universo de `Directa Mail` pasó de **2.239 a 2.241** y `convocatoria` de **359 a 361**. **Las
+     dos filas nuevas caen fuera de la ventana** — en ventana sigue dando 11 y 25, y los siete
+     `m2_*` son idénticos. **Lo estable es la ventana cerrada, no la base**, y es lo único que la
+     verificación necesita.
 2. **El canario ya está probado**: `enc_atendidos`/`ivr_atendidos` (`digital/Directa IVR`, filtro
    vacío, no se migran en ninguna tanda). Dio 71.234 · 2 de 60 en las dos tomas de la tanda 1.
 3. **Una sola dimensión**, como la tanda 1.
@@ -71,8 +76,30 @@ tenerlo:**
 | qué detecta | cualquier corte mal traducido rompe la suma | un corte mal traducido mueve el resto |
 | qué NO detecta | — | **un error que mueva los dos subconjuntos y el resto en la misma proporción** |
 
-**Lo compensan filas + valores exactos**, que en `digital` alcanzan porque está probada quieta.
-**El control principal de esta tanda son los valores idénticos**, y el resto es el respaldo.
+**Lo compensan filas + valores exactos**, que alcanzan porque **la ventana cerrada de `digital` es
+estable**. **El control principal de esta tanda son los valores idénticos**, y el resto es el
+respaldo.
+
+### ⚠ El `RESTO` SÍ se mueve entre tomas, y hay que saberlo antes de leerlo como una falla
+
+**Éste es el borde que distingue este control del de la tanda 1, y es lo que más fácil se lee
+mal.** La partición de la tanda 1 usaba **sólo cuentas en ventana** —311 y 1.928 sobre 2.239— y
+por eso era estable. **La cobertura de esta tanda usa el UNIVERSO COMPLETO, que sí crece.**
+
+Medido el 17/08: en **13 horas** el universo pasó de **2.239 a 2.241** y `convocatoria` de **359 a
+361**. Un `RESTO` distinto entre la Parte A y la Parte C **es lo esperable, no una anomalía**.
+
+**Cómo se lee, y el orden importa:**
+
+1. **¿Cambió el universo?** Si creció, **el `RESTO` puede cambiar sin que nada esté mal**. Mirar
+   entonces si `convocatoria` y `m2` se movieron **en la misma cantidad** que el universo.
+2. **¿Se movió `m2`, que es lo que se está migrando?** Si el universo creció y `m2` no, la
+   migración no está en discusión.
+3. **Sólo si el universo NO cambió y el `RESTO` sí**, la dimensión traduce distinto. **Ése es el
+   único caso que acusa a la migración.**
+
+**Es la misma disciplina que el piloto: primero se descarta que se movió la fuente.** Sin este
+paso, el crecimiento normal de la base se lee como una migración rota.
 
 ### La disjunción entre `convocatoria` y `m2`: **resuelta por construcción, no hace falta medirla**
 
@@ -143,8 +170,8 @@ disjunción, pero cambia qué significa cada conjunto.
 |---|---|---|
 | 0 | **canario** | si se movió, `digital` está en tránsito y no se lee nada |
 | 1 | **cuentas de filas** de los trece | si cambiaron, es la base |
-| 2 | **los valores** | **acá se exige igualdad exacta**: `digital` está probada quieta |
-| 3 | **`filas(convocatoria)`, `filas(m2)` y el resto** | el respaldo — si el resto se movió, la dimensión traduce distinto |
+| 2 | **los valores** | **acá se exige igualdad exacta**: la ventana cerrada de `digital` es estable |
+| 3 | **`filas(convocatoria)`, `filas(m2)` y el resto** | el respaldo — ⚠ **mirar primero si creció el universo**: el resto se mueve solo, ver arriba |
 
 **Contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`**, la línea base, no contra la corrida
 anterior.

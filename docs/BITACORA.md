@@ -10500,3 +10500,59 @@ fue.**
 ámbitos —`3.229.815 + 2.203.210 + 27.976.790 = 33.409.815` y
 `31.204.680 + 53.969.375 + 163.706.084 = 248.880.139`—. **El log del 11:58 no lo tengo**: sus
 números entran como reportados, y lo que verifiqué es el criterio y la línea base.
+
+---
+
+## Corrección — `digital` no está quieta: lo estable es la ventana cerrada (2026-08-17)
+
+**Se venía afirmando que `digital` está quieta y es falso.** Entre el testigo de la tanda 1
+(16/08 23:31) y una corrida del 17/08 12:54, `digital/Directa Mail` creció:
+
+| | 16/08 23:31 | 17/08 12:54 | |
+|---|---|---|---|
+| universo | 2.239 | **2.241** | +2 |
+| `convocatoria` | 359 | **361** | +2 |
+| `m2` | 745 | 745 | = |
+
+**Las dos filas nuevas caen FUERA de la ventana.** En ventana sigue dando 11 de 361 y 25 de 745, y
+**los siete valores de `m2_*` son idénticos**.
+
+**La afirmación correcta es más chica y más verdadera: la ventana cerrada de julio no se mueve.**
+Eso es lo que sostuvo la verificación por igualdad exacta de la tanda 1 — no la quietud de la base.
+
+**Y la distinción ya estaba escrita, para otra base.** El prompt de `rdv` decía *"un «no se movió»
+en una ventana cerrada no prueba que nunca se mueva… es la diferencia entre «está quieta» y «esta
+semana no la tocaron»"*. **Se escribió para `rdv` y no se aplicó a `digital`** — una regla puesta
+en el lugar donde se descubrió y no en el lugar donde se usa.
+
+**Corregido en:** `PLAN.md` (tres lugares), el prompt de la tanda 1, el de la tanda 2 y el testigo
+del 16/08 23:31, que lleva addendum en vez de edición.
+
+### La consecuencia práctica, que vale para todas las tandas que vienen
+
+⚠ **El control de cobertura de la tanda 2 usa el UNIVERSO COMPLETO, así que SÍ se mueve entre
+tomas.** El de la tanda 1 usaba **sólo cuentas en ventana** —311 y 1.928— y por eso era estable.
+
+**Un `RESTO` distinto entre la Parte A y la Parte C es lo esperable, no una anomalía**, y hay que
+leerlo en orden: ¿creció el universo? → ¿se movió `m2`, que es lo que se migra? → **sólo si el
+universo NO cambió y el `RESTO` sí**, la dimensión traduce distinto. Sin ese orden, el crecimiento
+normal de la base se lee como una migración rota.
+
+---
+
+## La segunda toma de `rdv` no responde la pregunta, y se registra así (2026-08-17)
+
+Dio **idéntica** a la primera —4 de 15, identidad de canales en 2.307, los 17 valores iguales—
+**pero fue 12 horas después, no dos o tres días.**
+
+**Con una cadencia de carga de dos o tres días, 12 horas no distinguen *"quieta"* de *"todavía no
+la tocaron"*.** Es exactamente lo que la advertencia del prompt anticipaba cuando se escribió.
+
+**Queda registrada como una tercera lectura consistente** —tres corridas, mismos números, sirve
+para confirmar que el instrumento es estable— **y nada más.**
+
+**Contarla como respuesta habría sido el error que ese prompt existe para evitar:** tomar una
+identidad producida por la **cadencia** y leerla como **estabilidad**. Un verde que no prueba lo
+que dice, del mismo tipo que la prueba de `ULTIMO` que pasó meses afirmando algo que no verificaba.
+
+**La toma que decide va el miércoles 19 o jueves 20.**
