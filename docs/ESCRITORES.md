@@ -82,17 +82,20 @@ existe.**
 | `PERIODOS` | `upsertPorClave_` | ✅ **sí** |
 | `SOLAPAS` | `aplicarClasificacionSolapas_` | ⚠ **parcial.** Siembra cinco columnas —`uso`, `fila_encabezado`, `ventana_ref`, `campo_id_cuenta`, `notas`— y de ésas **`uso` está protegido por `D-32`**: el sembrador nunca degrada un `uso` que la hoja ya tiene. Las otras cuatro llegan. Las columnas de medición (`filas_datos`, `filas_crudas`, `firma_encabezado`) son de `inventariarSolapas` y el seed no las toca |
 | **`CONFIG`** | `seedConfigConfig_` | ❌ **NO — sólo escribe si la celda está vacía.** **Es deliberado y está explicado**: el default es **piso, no autoridad**, y el humano edita valores que el seed no debe pisar |
-| **`SECCIONES`** | `sembrarSecciones_` | ❌ **NO — sólo inserta filas nuevas, nunca actualiza.** ⚠ **Y acá no hay nota que lo justifique**: no se sabe si es decisión o descuido. → `PENDIENTES_consistencia.md` |
+| **`SECCIONES`** | `sembrarSecciones_` | ❌ **NO — sólo inserta filas nuevas, nunca actualiza. Por decisión** (usuario, 16/08/2026): **igual que `CONFIG`, la hoja manda y el seed sólo siembra lo ausente.** No hubo código que tocar — ya se comportaba así; lo que faltaba era la decisión declarada, que está al lado de la función en `Instalar.gs` |
 | **`MARCADORES`** | **sin sembrador** | — **No compite con ningún seed.** La migración escribe por `curarCamposMarcadores_`, que desde el 15/08 es **todo o nada**. Es la línea que más tranquiliza antes de la tanda 1 |
 | `CAMPANAS` | sin sembrador, a propósito | — curada a mano, cambia cada semana |
 | `REUNIONES` | sin sembrador, a propósito | — ídem, más `cargarTemarioReuniones_` |
 | `LAMINAS` | sin seed posible | — su contenido se **deriva de las plantillas**: no hay valor declarado contra el cual diffear |
 
-**El síntoma de las dos hojas que no propagan, escrito porque no se parece a un error:** un valor
-corregido en el seed produce **una corrida que dice "sin cambios" y una hoja que no se mueve**, y
-**las dos cosas son ciertas por separado**. Es una operación que **no falla y no hace** — lo mismo
-que `D-32` vino a evitar del otro lado. La salida es editar la celda a mano, sabiendo que se está
-haciendo eso.
+**Las dos hojas que no propagan lo hacen POR DECISIÓN, y las dos dicen lo mismo:** el valor del
+seed es **piso, no autoridad**. Lo que una persona editó en la hoja gana, porque ahí vive una
+decisión que el código no conoce. Es la misma idea que `D-32` para `SOLAPAS.uso`.
+
+**El síntoma, escrito porque no se parece a un error:** un valor corregido en el seed produce
+**una corrida que dice "sin cambios" y una hoja que no se mueve**, y **las dos cosas son ciertas
+por separado**. Es una operación que **no falla y no hace** — lo mismo que `D-32` vino a evitar
+del otro lado. **La salida es editar la celda a mano, sabiendo que se está haciendo eso.**
 
 ⚠ **Y antes de mirar esta tabla, mirar la de más atrás: un cambio de seed no existe hasta que se
 empuja.** `CLAUDE.md` §4. Que la hoja no cambie tiene **dos** causas posibles antes que ésta —la

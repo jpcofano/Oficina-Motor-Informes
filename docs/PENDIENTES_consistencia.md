@@ -4163,7 +4163,24 @@ la tiene, es el caso de `R-25` —una solapa sin fecha propia toma la ventana de
 
 ---
 
-## `sembrarSecciones_` nunca actualiza, y no se sabe si es decisión o descuido — 16/08/2026
+## ~~`sembrarSecciones_` nunca actualiza, y no se sabe si es decisión o descuido~~ — **RESUELTO 16/08/2026**
+
+> **Decisión del usuario, 16/08: `SECCIONES` se comporta como `CONFIG` — la hoja manda, el seed
+> sólo siembra lo ausente.** No hubo código que tocar: `sembrarSecciones_` **ya se comportaba
+> así**. Lo que faltaba era que fuera **decisión** y no *"la regla simple y segura"*, que es como
+> estaba escrito — un default prudente se revisa cuando molesta; una decisión hay que superseder.
+> El motivo quedó al lado de la función, en `Instalar.gs`.
+>
+> **La entrada no se borra**, y el diagnóstico de abajo sigue siendo el correcto: lo único que
+> cambia es que la pregunta abierta ahora tiene respuesta. **El síntoma sigue vigente y hay que
+> conocerlo** — un valor corregido en `SEED_SECCIONES_` no llega a la hoja, en silencio.
+>
+> ⚠ **Una corrección a lo que decía esta entrada:** *"no hay nota que lo justifique"* era
+> **demasiado fuerte**. La nota existía y explicaba el mecanismo —no hay columna `origen` en
+> `SECCIONES` para distinguir lo sembrado de lo editado a mano—; lo que no había era una decisión
+> declarada.
+
+### El diagnóstico original, que sigue valiendo
 
 **El hecho, medido:** `sembrarSecciones_` (`Instalar.gs`) **sólo inserta filas nuevas**. Filtra
 `SEED_SECCIONES_` por las `seccion_id` que no están en la hoja y agrega esas; **para una fila que
