@@ -1237,6 +1237,56 @@ hoy **son distintos** a los del testigo, y eso está bien.
   cualquier orden, y el criterio es la cuenta de filas— pero **la comparación uno a uno de esos
   tres no es firme**, y no debe citarse como si lo fuera.
 
+### ✅ Tanda 1 CERRADA — 16/08/2026 · y acá el criterio fue **más fuerte** que en el piloto
+
+**Los ocho `mail_*`/`gcba_mail_*` de `digital/Directa Mail` quedan migrados a `ambito` y
+verificados. 16 de 78 marcadores migrados.**
+
+**Ventana:** la misma en las dos tomas. **Parte A: 16/08 22:20**
+(`docs/_snapshots/TESTIGO_mail_2026-08-16_2220.md`). **Parte C: 16/08, después de migrar**
+(`TESTIGO_mail_2026-08-16_ParteC.md`).
+
+| control | resultado |
+|---|---|
+| **0 · canario** `enc_atendidos`/`ivr_atendidos` | **71.234**, 2 de 60 — **igual en las dos tomas** |
+| **1 · filas** | **7 de 311** (`jm`) · **80 de 1.928** (`gcba`) — **idénticas** |
+| **2 · valores** | los ocho, **idénticos dígito por dígito** |
+| **3 · partición** | **311 + 1.928 = 2.239** ✔ |
+
+#### ⚠ Reprodujo por **igualdad exacta**, y eso NO significa que siempre se pueda
+
+**`digital` es `snapshot` y no se movió**, así que admitió la comparación exacta — la que el
+prompt del piloto pedía originalmente y **allá no se pudo**. El piloto se cerró por *identidad de
+filas + descuadre + canario*, con los ocho números **distintos**.
+
+**El criterio que admite cada base es una propiedad de la base, no del método:**
+
+| base | comportamiento | criterio |
+|---|---|---|
+| `digital` | `snapshot`, quieta | **igualdad exacta de valores** |
+| `looker` | recibe datos de ventanas ya cerradas | **identidad de filas + invariante + canario** |
+
+**Y está medido, no supuesto:** en la misma hora, `looker` movió `imp_total` de **34.289.779 a
+34.293.287** mientras los ocho de mail no cambiaron ni un dígito. **El instrumento distingue una
+base viva de una quieta**, que era la duda de fondo del piloto.
+
+#### El control fue la partición, y `mail_or` no lo era
+
+**`mail_or` se cumple por construcción**: comparte filtro con `mail_aperturas` y
+`mail_entregados`, así que el `PCT` es el ratio de dos sumas **sobre las mismas filas** y un corte
+mal traducido lo dejaría igual. Lo reemplazó la **partición de ámbito**, que es **disjunta y
+exhaustiva** y vive en la **cuenta de filas**. ⚠ Los `m2_*` **no entran** en esa suma: cortan la
+misma solapa por `tipo_envio` y toman 745 de las 2.239, **superpuestas con las dos ramas**.
+
+#### Los consumidores, y una diferencia con el piloto
+
+**Tres tokens están en dos láminas** —`mail_entregados`, `mail_aperturas` y `mail_or`, en la 2 y
+la 5—, contra **uno solo** en el piloto. **El mismo token en dos láminas tiene que dar el mismo
+número en las dos**; si difiere **no es la migración**, es la lámina 5 (`R-15` addendum 1).
+
+**Y la partición de láminas ya no coincide con la de ámbito.** En el piloto era limpia —los `jm`
+en la 2, los `gcba` en la 3—; acá los `jm` se reparten entre la 2 y la 5.
+
 ### Addendum 1 a `D-33` — 16/08/2026 · **la ventana pertenece al informe, no al token**
 
 > El cuerpo de `D-33` no se edita. Esto agrega una propiedad del vocabulario global que no

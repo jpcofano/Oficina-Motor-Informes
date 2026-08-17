@@ -149,6 +149,19 @@ de abajo ya no repiten esos dos puntos como pendientes.
 > | `imp_meta` · `imp_google` · `imp_prog` | 2 |
 > | `gcba_imp_total` · `gcba_imp_meta` · `gcba_imp_google` · `gcba_imp_prog` | 3 |
 >
+> **Y los ocho de mail, medidos igual** —`censarTokensDeTanda1Mail()`, 16/08/2026—:
+>
+> | token | láminas |
+> |---|---|
+> | `mail_entregados` · `mail_aperturas` · `mail_or` | **2 y 5** |
+> | `mail_envios` | 2 |
+> | `gcba_mail_envios` · `gcba_mail_entregados` · `gcba_mail_aperturas` · `gcba_mail_or` | 3 |
+>
+> ⚠ **Acá son TRES los repetidos en dos láminas, no uno.** **El mismo token en dos láminas tiene
+> que dar el mismo número en las dos** — y si difiere, **no es el cableado del token**: es la
+> lámina 5, que tiene historia propia (`R-15` addendum 1, los seis marcadores de
+> `ecv_alcance_semanal` contando doce figuras en vez de una).
+>
 > **Se nombran los cuatro `gcba_imp_*` porque *"los mismos con prefijo `gcba_`"* no se puede
 > verificar mirando la plantilla**: describe un conjunto sin enumerarlo, así que nadie puede
 > decir si sobra o falta uno. **Los demás `gcba_*` siguen sin medir uno por uno** y se dejan como
