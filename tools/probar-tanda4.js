@@ -160,19 +160,45 @@ console.log('\n3 · control negativo — dos filtros NO complementarios se detec
 
 /* ── 4 · los dos operandos del RATIO se leen de la traza ─────────────────────────────────────
  * El formato lo produce `opRATIO` (`Marcadores.gs`): `RATIO num/den = N/D`. */
-console.log('\n4 · los operandos del RATIO se extraen de la traza');
+/* ⚠ **ESTE CASO ESTABA MAL Y PASABA. El fixture era inventado.**
+ *
+ * La primera versión usaba `RATIO dig_impresiones/alcance = …`, leído del **template** de
+ * `opRATIO` (`nombreNum + '/' + nombreDen`) sin mirar **qué le pasa el despachador**:
+ * `Generador.gs` arma los nombres como `nombre + ' (col ' + columna + ')'`. La traza real es
+ *
+ *     RATIO dig_impresiones (col H)/alcance (col K) = 6729844/475723
+ *
+ * y el extractor, anclado en `[^\s\/]+` —"un nombre no tiene espacios"—, **no matcheaba nada**.
+ * La prueba daba verde porque el fixture compartía el error del código: **los dos suponían lo
+ * mismo**, así que no había dato que los distinguiera. Es exactamente el caso de `ULTIMO` que
+ * `CLAUDE.md` §4 documenta — un control que pasa afirmando otra cosa.
+ *
+ * **Ahora el fixture es la traza REAL, copiada del log del 17/08 a las 19:08.** */
+console.log('\n4 · los operandos del RATIO se extraen de la traza REAL (no de una inventada)');
 {
-  const traza = 'RATIO dig_impresiones/alcance = 34293287/2884511, 01/07/2026–31/07/2026 · ' +
-    'filtro `campana~=JM` sobre 26 fila(s) → 4 de 26 fila(s) · solapa "resumen_metricas_dinamico"';
+  const traza = 'RATIO dig_impresiones (col H)/alcance (col K) = 6729844/475723, ' +
+    '01/07/2026–31/07/2026 · filtro `campana~=JM` sobre 26 fila(s) → 4 de 26 fila(s) · ' +
+    'solapa "resumen_metricas_dinamico"';
   const o = M.operandosDeRatio_(traza);
-  afirmar(o !== null, 'devuelve algo sobre una traza con la forma real');
-  afirmar(o && o.numerador === 34293287, 'numerador = 34293287 — vino ' + (o && o.numerador));
-  afirmar(o && o.denominador === 2884511, 'denominador = 2884511 — vino ' + (o && o.denominador));
-  afirmar(o && o.nombre_num === 'dig_impresiones' && o.nombre_den === 'alcance',
-    'los nombres salen bien — vino ' + (o && o.nombre_num + '/' + o.nombre_den));
+  afirmar(o !== null, 'matchea la traza REAL, con `(col H)` en el medio del nombre');
+  afirmar(o && o.numerador === 6729844, 'numerador = 6729844 — vino ' + (o && o.numerador));
+  afirmar(o && o.denominador === 475723, 'denominador = 475723 — vino ' + (o && o.denominador));
+  afirmar(o && o.nombre_num === 'dig_impresiones (col H)' && o.nombre_den === 'alcance (col K)',
+    'los nombres salen enteros — vino ' + (o && o.nombre_num + ' / ' + o.nombre_den));
+  // La forma SIN `(col X)`, que es el fallback de `opRATIO` cuando el ctx no trae los nombres.
+  // Las dos tienen que andar: el extractor no puede depender de cuál de los dos caminos corrió.
+  const s = M.operandosDeRatio_('RATIO dig_impresiones/alcance = 100/25');
+  afirmar(s && s.numerador === 100 && s.nombre_num === 'dig_impresiones',
+    'y también la forma sin `(col X)` — el fallback de opRATIO');
+  // PCT antepone `PCT — ` a la misma traza.
+  const p = M.operandosDeRatio_('PCT — RATIO a (col A)/b (col B) = 3/4, 01/07/2026–31/07/2026');
+  afirmar(p && p.numerador === 3 && p.denominador === 4, 'anda sobre un PCT, que envuelve al RATIO');
   // Decimales: `opRATIO` suma con `reduce`, así que los operandos pueden no ser enteros.
   const d = M.operandosDeRatio_('RATIO a/b = 10.5/2.5');
   afirmar(d && d.numerador === 10.5 && d.denominador === 2.5, 'soporta operandos con decimales');
+  // Denominador cero: `opRATIO` agrega un sufijo que no tiene que confundir al extractor.
+  const z = M.operandosDeRatio_('RATIO a (col A)/b (col B) = 5/0 (denominador vacío o cero)');
+  afirmar(z && z.numerador === 5 && z.denominador === 0, 'lee el caso denominador = 0');
   // Y el caso que tiene que dar `null` en vez de un número inventado.
   afirmar(M.operandosDeRatio_('SUMA de `Impresiones` sobre 26 fila(s)') === null,
     'una traza que NO es RATIO devuelve null, no un operando fabricado');

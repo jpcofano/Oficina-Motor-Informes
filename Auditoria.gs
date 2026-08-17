@@ -3052,13 +3052,28 @@ function medirUnoAUnoDeRdv() {
  */
 function operandosDeRatio_(traza) {
   var t = String(traza || '');
-  // Los nombres no llevan espacios (`dig_impresiones/alcance`); los números son los que
-  // `opRATIO` produjo con `reduce`, así que pueden venir con decimales o en notación exponencial.
-  var m = /RATIO\s+([^\s\/]+)\/([^\s]+)\s*=\s*(-?[\d.]+(?:[eE][+-]?\d+)?)\/(-?[\d.]+(?:[eE][+-]?\d+)?)/.exec(t);
+
+  /* ⚠ **Los nombres LLEVAN ESPACIOS, y suponer que no los llevaban fue el bug del 17/08.**
+   *
+   * La traza real es `RATIO dig_impresiones (col H)/alcance (col K) = 6729844/475723`: el
+   * despachador arma los nombres como `nombre + ' (col ' + columna + ')'` (`Generador.gs`), no
+   * como el `campo_logico` pelado. La primera versión de esto ancló en `[^\s\/]+` —"un nombre no
+   * tiene espacios"— y **no matcheó nada**, así que el testigo informó *"cambió el formato de la
+   * traza"* con el texto correcto tres líneas más arriba en el mismo log.
+   *
+   * **Ahora se ancla en lo estable: el rótulo `RATIO`, el ` = ` y el par `N/D`.** Los nombres se
+   * toman como lo que haya en el medio, que es justamente la parte que puede cambiar de forma. */
+  var m = /RATIO\s+(.+?)\s*=\s*(-?[\d.]+(?:[eE][+-]?\d+)?)\s*\/\s*(-?[\d.]+(?:[eE][+-]?\d+)?)/.exec(t);
   if (!m) return null;
+
+  // `campo_logico` se declara `numerador/denominador`, así que hay **una** barra separando los
+  // dos nombres. Se corta en la primera: `(col H)` no trae barras.
+  var nombres = String(m[1]);
+  var corte = nombres.indexOf('/');
   return {
-    nombre_num: m[1], nombre_den: m[2],
-    numerador: Number(m[3]), denominador: Number(m[4])
+    nombre_num: corte === -1 ? nombres.trim() : nombres.slice(0, corte).trim(),
+    nombre_den: corte === -1 ? '' : nombres.slice(corte + 1).trim(),
+    numerador: Number(m[2]), denominador: Number(m[3])
   };
 }
 
@@ -3105,13 +3120,30 @@ function testigoDeFrecuencia() {
       '\t' + (o ? o.numerador : '⚠ no legible') +
       '\t' + (o ? o.denominador : '⚠ no legible'));
   });
+  /* ⚠ **Los avisos se ACUMULAN y se imprimen AL FINAL, después del veredicto.**
+   *
+   * **Motivo, medido el 17/08:** el aviso *"sin operandos legibles"* salió acá, en el medio del
+   * reporte, y **abajo el bloque de la partición terminaba en `✅ CIERRA`**. Se leyó como verde
+   * **dos corridas seguidas**. Un `⚠` sepultado arriba de un `✅` no es un aviso: es ruido con
+   * forma de aviso.
+   *
+   * **La combinación exacta a evitar es «partición cerrando sobre un operando ilegible»**, porque
+   * el control principal da verde mientras el que distingue *se movió el numerador* de *se movió
+   * el denominador* no se puede leer — justo en la tanda donde los valores son el dato débil. */
+  var avisos = [];
   var sinOperandos = EL_PAR.filter(function (n) {
     return porNombre[n] && !operandosDeRatio_(porNombre[n].traza);
   });
   if (sinOperandos.length) {
-    Logger.log('   ⚠ SIN OPERANDOS LEGIBLES: ' + sinOperandos.join(', ') + ' — cambió el formato');
-    Logger.log('     de la traza de `opRATIO`. El control 3 de la Parte C no se va a poder leer.');
+    avisos.push('SIN OPERANDOS LEGIBLES: ' + sinOperandos.join(', ') + '. El control 3 no se ' +
+      'puede leer: no se va a poder distinguir si se movió el numerador o el denominador.');
   }
+  EL_PAR.forEach(function (n) {
+    if (!porNombre[n]) avisos.push('`' + n + '` NO ESTÁ en el informe — el par está incompleto.');
+    else if (porNombre[n].estado && porNombre[n].estado !== 'ok') {
+      avisos.push('`' + n + '` está en estado `' + porNombre[n].estado + '`, no `ok`.');
+    }
+  });
 
   /* ── 2 · LA PARTICIÓN, que es el control principal de esta tanda ──────────────────────────
    * `campana~=JM` y `campana!~=JM` son **complementarios por CÓDIGO**, no por dato:
@@ -3178,14 +3210,33 @@ function testigoDeFrecuencia() {
   Logger.log('   Lo reemplaza el INTERVALO CORTO: migrar y volver a correr esto en la MISMA sesión.');
   Logger.log('   ⚠ Un canario de otra base no sirve — mediría esa base, no `looker`.');
 
+  /* ── 4 · EL ESTADO DEL INSTRUMENTO, LO ÚLTIMO QUE SE IMPRIME ─────────────────────────────
+   * **Va al final a propósito**: es lo que quedó tapado el 17/08. Y dice explícitamente que la
+   * partición cerrando **no cubre** un instrumento a medias, porque ésa es la lectura que hay que
+   * impedir — no alcanza con imprimir el aviso, hay que decir qué NO significa el verde de arriba. */
+  Logger.log('');
+  Logger.log('== 4 · ESTADO DEL INSTRUMENTO — se lee DESPUÉS del veredicto, no antes ==');
+  if (!avisos.length) {
+    Logger.log('   ✅ Sin avisos: los dos marcadores publican y los operandos se leen.');
+  } else {
+    Logger.log('   ⚠⚠ ' + avisos.length + ' AVISO(S) — **el veredicto de arriba NO los cubre:**');
+    avisos.forEach(function (a) { Logger.log('      · ' + a); });
+    Logger.log('   ⚠ Una partición que cierra sobre un instrumento incompleto NO es luz verde.');
+    Logger.log('     Arreglar el instrumento y volver a correr ANTES de migrar.');
+  }
+
   Logger.log('');
   Logger.log('== Guardar en docs/_snapshots/TESTIGO_frecuencia_AAAA-MM-DD_HHMM.md CON LA HORA ==');
   Logger.log('   Después: migrarTanda4DeFrecuencia() y volver a correr ESTO en la misma sesión.');
+  Logger.log('   ⚠ La migración tiene que reportar 4 celdas (2 marcadores x 2 columnas).');
+  Logger.log('     Si dice 0, ahora FALLA con el motivo en vez de seguir: no se migró nada,');
+  Logger.log('     y dos testigos idénticos NO prueban que haya reproducido.');
   Logger.log('   ⚠ En la Parte C el orden de lectura se INVIERTE respecto de las tandas 2 y 3:');
   Logger.log('     (1) la partición — si cierra, la migración está bien;');
   Logger.log('     (2) las cuentas de filas;');
   Logger.log('     (3) los valores, que son el dato MÁS DÉBIL: `looker` recalcula dentro de la');
   Logger.log('         ventana. **Un valor distinto NO detiene la tanda si la partición cierra**,');
   Logger.log('         y los operandos dicen si el que se movió fue el numerador o el denominador.');
+  t.avisos = avisos;
   return t;
 }

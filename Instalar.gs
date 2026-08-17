@@ -3128,6 +3128,60 @@ function curarCamposMarcadores_(cambios) {
     });
   });
 
+  /* `2026-08-17` — **UN LOTE QUE NO ESCRIBE NADA FALLA, Y DICE CUÁL DE LAS TRES CAUSAS ES.**
+   *
+   * **El caso que la instaló:** `migrarTanda4DeFrecuencia()` reportó *"0 celda(s)"*, siguió
+   * imprimiendo las instrucciones de cómo leer la Parte C, y los dos testigos de las 19:08 y las
+   * 19:15 dieron idénticos **porque en el medio no pasó nada**. Una migración que no ocurrió se
+   * veía igual que una que reprodujo exacto — el peor resultado posible, porque el criterio de
+   * éxito de la tanda es justamente la igualdad.
+   *
+   * **Es el mismo modo de falla del 15/08 con el alta de las 20 solapas** —corrida que termina
+   * bien, hoja que no se mueve— y esta vez el escritor tenía todo para avisar: sabía que no había
+   * escrito nada y sabía por qué.
+   *
+   * **Va acá y no en cada wrapper**, por el mismo motivo que la guarda de columnas de arriba:
+   * protege a **todo** llamador, no al que se acordó. Los wrappers ya hacen
+   * `if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }`, así que heredan el diagnóstico
+   * sin tocarlos — y, sobre todo, **dejan de imprimir el paso siguiente**.
+   *
+   * ⚠ **«Ya estaba aplicado» también falla, y es deliberado.** Es idempotencia, no rotura, y el
+   * motivo lo dice con todas las letras; pero presentarlo como éxito es exactamente lo que hizo
+   * que la tanda 4 se leyera como ejecutada. Quien re-corre a propósito lee el motivo y sigue. */
+  if (cambios.length && !aplicados.length) {
+    var diagnostico = cambios.map(function (c) {
+      var claveD = c.marcador + '||' + (c.informe_id || '');
+      if (!(claveD in filaDe)) {
+        return '  · ' + claveD + ' → NO HAY FILA con ese `marcador` + `informe_id` en MARCADORES.';
+      }
+      var filaD = filaDe[claveD];
+      var detalle = Object.keys(c).filter(function (campo) {
+        return campo !== 'marcador' && campo !== 'informe_id';
+      }).map(function (campo) {
+        var actual = datos[filaD][headers.indexOf(campo)];
+        return campo + ': hoja="' + actual + '" · pedido="' + c[campo] + '"' +
+          (String(actual) === String(c[campo]) ? ' → YA ESTABA' : ' → DIFIERE (debería haberse escrito)');
+      }).join(' | ');
+      return '  · ' + claveD + ' (fila ' + (filaD + 1) + ') → ' + detalle;
+    }).join('\n');
+
+    var hayHuerfanas = cambios.some(function (c) {
+      return !((c.marcador + '||' + (c.informe_id || '')) in filaDe);
+    });
+
+    return {
+      ok: false,
+      motivo: 'EL LOTE NO ESCRIBIÓ NINGUNA CELDA (' + cambios.length + ' cambio(s) pedidos). ' +
+        (hayHuerfanas
+          ? 'Hay claves `marcador||informe_id` que NO existen en MARCADORES — revisar los nombres.'
+          : 'Todas las filas existen: o los valores YA ESTABAN (idempotencia, no es rotura), ' +
+            'o hay un campo que difiere y no se escribió, que sí sería un bug.') +
+        '\n' + diagnostico,
+      diagnostico: diagnostico,
+      aplicados: [], sin_fila: sinFila, cambios_escritos: 0
+    };
+  }
+
   return { ok: true, aplicados: aplicados, sin_fila: sinFila, cambios_escritos: aplicados.length };
 }
 
