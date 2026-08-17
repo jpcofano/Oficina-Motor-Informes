@@ -2881,6 +2881,23 @@ var SEED_SECCIONES_ = [
  * una persona", así que la regla simple y segura es "solo agregar lo que
  * falta". Correr `instalar()` dos veces no duplica ni pisa nada (Paso 2.9G,
  * test de aceptación).
+ *
+ * ─── DECISIÓN DEL USUARIO, 16/08/2026: `SECCIONES` se comporta como `CONFIG` ───────────────
+ *
+ * **La hoja manda; el seed sólo siembra lo ausente.** Lo de arriba describía el *mecanismo* y
+ * lo justificaba como *"la regla simple y segura"* — o sea, un **default prudente**. Ahora es
+ * una **decisión tomada**, y la diferencia importa: un default se revisa cuando molesta, una
+ * decisión hay que superseder.
+ *
+ * **Es lo mismo que `D-32` para el sembrador de `SOLAPAS`**, y lo mismo que `seedConfigConfig_`
+ * hace con `CONFIG`: el valor del seed es **piso, no autoridad**. Lo que una persona editó en la
+ * hoja gana, porque es donde vive una decisión que el código no conoce.
+ *
+ * ⚠ **La consecuencia que hay que tener presente al corregir un `SEED_SECCIONES_`, porque no se
+ * parece a un error:** un valor corregido en el seed produce **una corrida que dice "sin cambios"
+ * y una hoja que no se mueve**, y **las dos cosas son ciertas por separado**. No falla y no hace.
+ * **Para cambiar el valor de una fila que ya existe hay que editar la celda**, sabiendo que se
+ * está haciendo eso. La tabla de qué hoja propaga y cuál no está en `docs/ESCRITORES.md` §1 bis.
  */
 function sembrarSecciones_(hoja) {
   var datos = hoja.getDataRange().getValues();
