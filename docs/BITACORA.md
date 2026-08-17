@@ -10720,3 +10720,75 @@ las únicas dos filas `Activa` de la ventana eran las dos de `JM` y `gcba_frecue
 **0 de 26** — *"un par complementario con una mitad vacía no es un universo"*. **No hay guarda que
 derogar.** Es el único caso de las cuatro tandas donde la ausencia de restricción técnica es una
 decisión documentada, así que se cita en vez de asumirse.
+
+---
+
+## 2026-08-17 — La tanda 4 NO se ejecutó, y los dos bugs que lo dejaron pasar
+
+`migrarTanda4DeFrecuencia()` reportó **0 celdas** a las 19:10 y los testigos de las **19:08** y
+las **19:15** dieron idénticos **porque en el medio no hubo migración**: el `filtro` seguía en
+`campana~=JM` y `campana!~=JM`. **No reprodujo: no pasó nada.**
+
+### Bug 1 · un lote vacío informaba cero y seguía con el paso siguiente
+
+**Es el mismo modo de falla del 15/08 con el alta de las 20 solapas** —corrida que termina bien,
+hoja que no se mueve— y esta vez el escritor tenía todo para avisar: sabía que no había escrito
+nada y sabía por qué.
+
+⚠ **Lo que lo hace caro es que el cero se disfraza de éxito justo donde el criterio es la
+igualdad.** *"Los dos testigos coinciden"* es la definición de tanda cerrada, y una migración que
+no ocurrió **la satisface perfecto**. El log de las 19:10 explicaba cómo leer una Parte C que
+nunca iba a existir.
+
+**`curarCamposMarcadores_` ahora devuelve `ok:false` cuando el lote no escribe ninguna celda**,
+con el diagnóstico por marcador: si existe la fila, qué dice la hoja y qué se pedía, campo por
+campo. Distingue las tres causas que había que separar —clave inexistente, valor ya aplicado,
+campo que difiere y no se escribió—.
+
+**Va en el escritor y no en cada wrapper**, por el mismo motivo que la guarda de todo-o-nada de
+arriba: protege a **todos** los llamadores, no al que se acordó. Los **once** wrappers ya hacían
+`if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }`, así que heredaron el diagnóstico sin
+tocarlos — y, sobre todo, **dejaron de imprimir el paso siguiente**.
+
+⚠ **«Ya estaba aplicado» también falla, y es deliberado**: es idempotencia y no rotura, el motivo
+lo dice con todas las letras, pero presentarla como éxito es exactamente lo que hizo que esta
+tanda se leyera como ejecutada.
+
+### Bug 2 · el extractor de operandos no matcheaba, y la prueba lo tapaba
+
+El testigo informó *"cambió el formato de la traza de `opRATIO`"* **con el texto correcto tres
+líneas más arriba en el mismo log**: `RATIO dig_impresiones (col H)/alcance (col K) =
+6729844/475723`. **No cambió el formato — el extractor nunca lo había matcheado.**
+
+**La causa es un fixture inventado en vez de copiado.** La prueba usaba
+`RATIO dig_impresiones/alcance = …`, deducido del *template* de `opRATIO`
+(`nombreNum + '/' + nombreDen`), sin mirar **qué le pasa el despachador**: `Generador.gs` arma los
+nombres como `nombre + ' (col ' + columna + ')'`. **El fixture y el código compartían el mismo
+supuesto falso**, así que no había dato que los distinguiera y las seis afirmaciones daban verde
+sobre un extractor que no matcheaba nada en producción. Es el caso de `ULTIMO` otra vez.
+
+**Verificado como control de mutación:** el extractor viejo devuelve `null` sobre la traza real y
+matchea el fixture inventado. Ahora se ancla en lo estable —el rótulo `RATIO`, el ` = ` y el par
+`N/D`— y el fixture es **la traza real copiada del log de las 19:08**. `tools/probar-tanda4.js`
+pasó de 22 a **26 afirmaciones**, con la forma sin `(col X)`, el `PCT` que envuelve al `RATIO` y
+el denominador cero.
+
+### El patrón que hay que registrar: un `⚠` arriba de un `✅` se lee como verde
+
+**El instrumento avisó, con la palabra correcta, y el aviso pasó inadvertido dos corridas
+seguidas.** Salía en el medio del reporte; abajo, el bloque de la partición cerraba con
+`✅ CIERRA`.
+
+⚠ **La combinación exacta a evitar tiene nombre: control principal en verde sobre instrumento
+incompleto.** El que estaba roto era justo el que distingue *se movió el numerador* de *se movió
+el denominador* — en la tanda donde los valores son el dato débil.
+
+**Ahora los avisos se acumulan y se imprimen ÚLTIMOS**, después del veredicto, en un bloque que
+dice **qué NO cubre** el verde de arriba. No alcanza con emitir el aviso: hay que ponerlo donde
+termina la lectura.
+
+### Y una corrección de premisa
+
+**La migración tiene que reportar 4 celdas, no 14**: son 2 marcadores × 2 columnas, y
+`cambios_escritos` cuenta celdas efectivamente cambiadas. **Un 14 sería un bug.** Las tandas
+grandes daban más porque tenían más filas — la 3 escribió 34 sobre 17 marcadores.

@@ -422,6 +422,33 @@ ni a favor ni en contra.
   fueron idénticas —46, 313, 14, 12, 20, 82, 84, 147— con valores muy distintos, y eso solo
   descartó la migración como causa.
 
+**Una corrida que no hizo nada tiene que fallar, no informar cero.** Van **dos casos** con el
+mismo modo de falla: la corrida termina bien, la hoja no se mueve, y **el reporte sigue con el
+paso siguiente como si hubiera pasado algo**. El 15/08 fue el alta de las 20 solapas; el 17/08,
+`migrarTanda4DeFrecuencia()` informó *"0 celda(s)"*, imprimió cómo leer la Parte C, y los dos
+testigos dieron idénticos **porque en el medio no hubo migración**.
+
+- ⚠ **Lo que hace caro este caso es que el cero se disfraza de éxito justo donde el criterio es la
+  igualdad.** *"Los dos testigos coinciden"* es la definición de tanda cerrada. Una migración que
+  no ocurrió **la satisface perfecto**, y ninguna verificación posterior la distingue.
+- **La guarda va en el escritor, no en el llamador**, por el mismo motivo que la de todo-o-nada:
+  protege a todos, no al que se acordó. `curarCamposMarcadores_` ahora devuelve `ok:false` con el
+  diagnóstico por marcador —¿existe la fila?, ¿qué dice la hoja?, ¿qué se pedía?—, así que los
+  once wrappers lo heredaron sin tocarlos y **dejaron de imprimir el paso siguiente**.
+- **«Ya estaba aplicado» también falla, y es deliberado**: es idempotencia y no rotura, pero
+  presentarla como éxito es exactamente lo que hizo que la tanda 4 se leyera como ejecutada.
+
+**Un `⚠` en el medio de un reporte que termina en `✅` se lee como verde.** El testigo de la tanda
+4 avisó *"sin operandos legibles"* **con la palabra correcta**, y abajo el bloque de la partición
+cerraba con `✅ CIERRA`. **El aviso pasó inadvertido dos corridas seguidas.**
+
+- **La combinación a evitar tiene nombre: un control principal en verde sobre un instrumento
+  incompleto.** El que estaba roto era justo el que distingue *se movió el numerador* de *se movió
+  el denominador*, en la tanda donde los valores son el dato débil.
+- **Lo accionable: los avisos se acumulan y se imprimen ÚLTIMOS, después del veredicto**, y el
+  bloque final dice **qué NO cubre** el verde de arriba. No alcanza con emitir el aviso; hay que
+  ponerlo donde termina la lectura.
+
 **Y el control verde también se lee, porque una prueba puede probar lo contrario de lo que
 dice.** `Pruebas.gs:456` afirmaba *"ULTIMO saltea la celda vacía del final"* sobre el fixture
 `[10, 5, '']`. Pasaba desde el día que se escribió — y lo que verificaba era **"ULTIMO elige
@@ -440,6 +467,19 @@ vacío, que seguía intacto.
 - **Cuando un control se pone rojo al cambiar una función, la primera pregunta es qué probaba
   de verdad** — no cómo hacerlo pasar de nuevo. Ajustar el fixture para que vuelva a verde es
   cómo se pierde el hallazgo.
+- **Y la variante más barata de cometer: un fixture inventado en vez de copiado.** El 17/08 la
+  prueba de `operandosDeRatio_` usaba `RATIO dig_impresiones/alcance = …`, deducido del *template*
+  de `opRATIO`; la traza real es `RATIO dig_impresiones (col H)/alcance (col K) = …`, porque el
+  despachador arma los nombres con la columna pegada. **El fixture y el código compartían el mismo
+  supuesto falso**, así que no había dato que los distinguiera y las seis afirmaciones daban verde
+  sobre un extractor que **no matcheaba nada en producción**.
+  - **La regla operativa: un fixture de formato se COPIA de una salida real, nunca se deduce del
+    código que lo emite.** Deducirlo prueba que sabés leer el template — que es justo lo que no
+    hace falta verificar.
+  - **El síntoma, otra vez, no es un error:** el instrumento informó *"cambió el formato de la
+    traza"*, que es lo que hay que decir cuando el formato cambió, **con el texto correcto tres
+    líneas más arriba en el mismo log**. Un instrumento no puede distinguir *"el mundo cambió"* de
+    *"yo lo estoy leyendo mal"*: esa pregunta la tiene que hacer quien lee.
 
 **Un test puede acertar el hecho y errar la inferencia.** `getFormulas()` sobre las dos
 hojas de `looker` devolvió bien "esta tiene fórmula"; la conclusión "por lo tanto deriva

@@ -7,6 +7,24 @@
 > `testigoDeFrecuencia()`, **las tres en la misma sesión**. La reversión es
 > `revertirTanda4DeFrecuencia()`.
 >
+> ## ⚠ Intento fallido del 17/08 19:08–19:15 — **la tanda NO se ejecutó**
+>
+> `migrarTanda4DeFrecuencia()` reportó **0 celdas** y los dos testigos dieron idénticos **porque
+> en el medio no pasó nada**: el `filtro` seguía en `campana~=JM` y `campana!~=JM`. **Eso no es
+> haber reproducido.** Dos bugs del instrumento, los dos corregidos:
+>
+> | # | qué pasó | arreglo |
+> |---|---|---|
+> | 1 | el lote vacío imprimía *"0 celda(s)"* y **seguía con las instrucciones de la Parte C** | `curarCamposMarcadores_` ahora **falla** con el diagnóstico por marcador |
+> | 2 | `operandosDeRatio_` no matcheaba la traza real y avisaba *"cambió el formato"* | anclado en el rótulo, no en la forma del nombre |
+>
+> ### ⚠ La migración tiene que reportar **4 celdas**, no 14
+>
+> Son **2 marcadores × 2 columnas** (`filtro` y `dimensiones`). `cambios_escritos` cuenta
+> **celdas efectivamente cambiadas**, así que 4 es el máximo y el esperado. **Un 14 sería un bug**,
+> no un éxito. (Las tandas grandes daban más porque tenían más filas: la 3 escribió 34 sobre 17
+> marcadores.)
+>
 > **Objetivo único:** que el par de `looker/resumen_metricas_dinamico` declare su corte de
 > `ambito` en `dimensiones`. **Con esto la migración queda completa sobre todo lo que se puede
 > migrar** — 42 de 48; los seis restantes están bloqueados por un hueco de dato, no de vocabulario.
