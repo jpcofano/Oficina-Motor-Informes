@@ -24,22 +24,22 @@ Por eso la columna se llama `config` y **no** `estado`: una etiqueta verde que s
 
 | token | informe | medida (`campo_logico`) | base / solapa | operación | filtro | dimensiones | formato | config |
 |---|---|---|---|---|---|---|---|---|
-| **`ecv_encuentros`** | `jm` | `inscriptos` | `rdv/RVD JM-CM - ES` | `CONTEO` | `figura=Jorge Macri` | — | `numero` | resuelve |
-| **`ecv_insc_mail_pct`** | `jm` | `insc_mail/inscriptos` | `rdv/RVD JM-CM - ES` | `PCT` | `figura=Jorge Macri` | — | `porcentaje_sin_signo` | resuelve |
-| **`ecv_insc_cc_pct`** | `jm` | `insc_cc/inscriptos` | `rdv/RVD JM-CM - ES` | `PCT` | `figura=Jorge Macri` | — | `porcentaje_sin_signo` | resuelve |
-| **`ecv_insc_ivr_pct`** | `jm` | `insc_ivr/inscriptos` | `rdv/RVD JM-CM - ES` | `PCT` | `figura=Jorge Macri` | — | `porcentaje_sin_signo` | resuelve |
-| **`ecv_insc_digital_pct`** | `jm` | `insc_digital/inscriptos` | `rdv/RVD JM-CM - ES` | `PCT` | `figura=Jorge Macri` | — | `porcentaje_sin_signo` | resuelve |
-| **`ecv_insc_dif_pct`** | `jm` | `insc_dif/inscriptos` | `rdv/RVD JM-CM - ES` | `PCT` | `figura=Jorge Macri` | — | `porcentaje_sin_signo` | resuelve |
-| **`ecv_barrios`** | `jm` | `barrio` | `rdv/RVD JM-CM - ES` | `LISTA` | `figura=Jorge Macri` | — | — | resuelve |
-| **`ecv_inscriptos`** | `jm` | `inscriptos` | `rdv/RVD JM-CM - ES` | `SUMA` | `figura=Jorge Macri` | — | `numero` | resuelve |
-| **`ecv_asistentes`** | `jm` | `asistentes` | `rdv/RVD JM-CM - ES` | `SUMA` | `figura=Jorge Macri` | — | `numero` | resuelve |
-| **`ecv_insc_mail`** | `jm` | `insc_mail` | `rdv/RVD JM-CM - ES` | `SUMA` | `figura=Jorge Macri` | — | `numero` | resuelve |
-| **`ecv_insc_cc`** | `jm` | `insc_cc` | `rdv/RVD JM-CM - ES` | `SUMA` | `figura=Jorge Macri` | — | `numero` | resuelve |
-| **`ecv_insc_ivr`** | `jm` | `insc_ivr` | `rdv/RVD JM-CM - ES` | `SUMA` | `figura=Jorge Macri` | — | `numero` | resuelve |
-| **`ecv_insc_digital`** | `jm` | `insc_digital` | `rdv/RVD JM-CM - ES` | `SUMA` | `figura=Jorge Macri` | — | `numero` | resuelve |
-| **`ecv_insc_dif`** | `jm` | `insc_dif` | `rdv/RVD JM-CM - ES` | `SUMA` | `figura=Jorge Macri` | — | `numero` | resuelve |
-| **`ecv_barrio`** | `jm` | `barrio` | `rdv/RVD JM-CM - ES` | `ULTIMO` | `figura=Jorge Macri` | — | — | resuelve |
-| **`ecv_poblacion`** | `jm` | `poblacion` | `rdv/RVD JM-CM - ES` | `ULTIMO` | `figura=Jorge Macri` | — | `miles` | resuelve |
+| **`ecv_encuentros`** | `jm` | `inscriptos` | `rdv/RVD JM-CM - ES` | `CONTEO` | — | `ambito=jm` | `numero` | resuelve |
+| **`ecv_insc_mail_pct`** | `jm` | `insc_mail/inscriptos` | `rdv/RVD JM-CM - ES` | `PCT` | — | `ambito=jm` | `porcentaje_sin_signo` | resuelve |
+| **`ecv_insc_cc_pct`** | `jm` | `insc_cc/inscriptos` | `rdv/RVD JM-CM - ES` | `PCT` | — | `ambito=jm` | `porcentaje_sin_signo` | resuelve |
+| **`ecv_insc_ivr_pct`** | `jm` | `insc_ivr/inscriptos` | `rdv/RVD JM-CM - ES` | `PCT` | — | `ambito=jm` | `porcentaje_sin_signo` | resuelve |
+| **`ecv_insc_digital_pct`** | `jm` | `insc_digital/inscriptos` | `rdv/RVD JM-CM - ES` | `PCT` | — | `ambito=jm` | `porcentaje_sin_signo` | resuelve |
+| **`ecv_insc_dif_pct`** | `jm` | `insc_dif/inscriptos` | `rdv/RVD JM-CM - ES` | `PCT` | — | `ambito=jm` | `porcentaje_sin_signo` | resuelve |
+| **`ecv_barrios`** | `jm` | `barrio` | `rdv/RVD JM-CM - ES` | `LISTA` | — | `ambito=jm` | — | resuelve |
+| **`ecv_inscriptos`** | `jm` | `inscriptos` | `rdv/RVD JM-CM - ES` | `SUMA` | — | `ambito=jm` | `numero` | resuelve |
+| **`ecv_asistentes`** | `jm` | `asistentes` | `rdv/RVD JM-CM - ES` | `SUMA` | — | `ambito=jm` | `numero` | resuelve |
+| **`ecv_insc_mail`** | `jm` | `insc_mail` | `rdv/RVD JM-CM - ES` | `SUMA` | — | `ambito=jm` | `numero` | resuelve |
+| **`ecv_insc_cc`** | `jm` | `insc_cc` | `rdv/RVD JM-CM - ES` | `SUMA` | — | `ambito=jm` | `numero` | resuelve |
+| **`ecv_insc_ivr`** | `jm` | `insc_ivr` | `rdv/RVD JM-CM - ES` | `SUMA` | — | `ambito=jm` | `numero` | resuelve |
+| **`ecv_insc_digital`** | `jm` | `insc_digital` | `rdv/RVD JM-CM - ES` | `SUMA` | — | `ambito=jm` | `numero` | resuelve |
+| **`ecv_insc_dif`** | `jm` | `insc_dif` | `rdv/RVD JM-CM - ES` | `SUMA` | — | `ambito=jm` | `numero` | resuelve |
+| **`ecv_barrio`** | `jm` | `barrio` | `rdv/RVD JM-CM - ES` | `ULTIMO` | — | `ambito=jm` | — | resuelve |
+| **`ecv_poblacion`** | `jm` | `poblacion` | `rdv/RVD JM-CM - ES` | `ULTIMO` | — | `ambito=jm` | `miles` | resuelve |
 
 ## Familia `enc` — 22 token(s)
 
@@ -57,7 +57,7 @@ Por eso la columna se llama `config` y **no** `estado`: una etiqueta verde que s
 | **`enc_clics_ctor`** | `jm` | `mail_clics` | `digital/Directa Mail` | `ULTIMO` | `mail_tipo=Convocatoria` | — | `numero` | resuelve |
 | **`enc_or`** | `jm` | `mail_or` | `digital/Directa Mail` | `ULTIMO` | `mail_tipo=Convocatoria` | — | `fraccion` | resuelve |
 | **`enc_ctor`** | `jm` | `mail_ctor` | `digital/Directa Mail` | `ULTIMO` | `mail_tipo=Convocatoria` | — | `fraccion` | resuelve |
-| **`enc_evento`** | `jm` | `evento` | `rdv/RVD JM-CM - ES` | `ULTIMO` | `figura=Jorge Macri` | — | — | resuelve |
+| **`enc_evento`** | `jm` | `evento` | `rdv/RVD JM-CM - ES` | `ULTIMO` | — | `ambito=jm` | — | resuelve |
 | **`enc_base_total`** | `jm` | `cc_base_total` | `reuniones/Agenda JM` | `ULTIMO` | `cc_base_total!=0` | — | `numero` | resuelve |
 | **`enc_base_llamada`** | `jm` | `cc_base_discada` | `reuniones/Agenda JM` | `ULTIMO` | `cc_base_discada!=0` | — | `numero` | resuelve |
 | **`enc_ll_contactados`** | `jm` | `cc_contactados` | `reuniones/Agenda JM` | `ULTIMO` | `cc_contactados!=0` | — | `numero` | resuelve |
@@ -118,13 +118,13 @@ Por eso la columna se llama `config` y **no** `estado`: una etiqueta verde que s
 
 | token | informe | medida (`campo_logico`) | base / solapa | operación | filtro | dimensiones | formato | config |
 |---|---|---|---|---|---|---|---|---|
-| **`m2_envios`** | `jm` | `mail_id_cuenta` | `digital/Directa Mail` | `CONTEO` | `mail_tipo~=M2` | — | `miles` | resuelve |
-| **`m2_mails_enviados`** | `jm` | `mail_enviados` | `digital/Directa Mail` | `SUMA` | `mail_tipo~=M2` | — | `miles` | resuelve |
-| **`m2_mails_entregados`** | `jm` | `mail_entregados` | `digital/Directa Mail` | `SUMA` | `mail_tipo~=M2` | — | `miles` | resuelve |
-| **`m2_aperturas`** | `jm` | `mail_aperturas` | `digital/Directa Mail` | `SUMA` | `mail_tipo~=M2` | — | `miles` | resuelve |
-| **`m2_clics`** | `jm` | `mail_clics` | `digital/Directa Mail` | `SUMA` | `mail_tipo~=M2` | — | `miles` | resuelve |
-| **`m2_or`** | `jm` | `mail_aperturas/mail_entregados` | `digital/Directa Mail` | `PCT` | `mail_tipo~=M2` | — | `porcentaje_sin_signo` | resuelve |
-| **`m2_ctor`** | `jm` | `mail_clics/mail_aperturas` | `digital/Directa Mail` | `PCT` | `mail_tipo~=M2` | — | `porcentaje_sin_signo` | resuelve |
+| **`m2_envios`** | `jm` | `mail_id_cuenta` | `digital/Directa Mail` | `CONTEO` | — | `tipo_envio=m2` | `miles` | resuelve |
+| **`m2_mails_enviados`** | `jm` | `mail_enviados` | `digital/Directa Mail` | `SUMA` | — | `tipo_envio=m2` | `miles` | resuelve |
+| **`m2_mails_entregados`** | `jm` | `mail_entregados` | `digital/Directa Mail` | `SUMA` | — | `tipo_envio=m2` | `miles` | resuelve |
+| **`m2_aperturas`** | `jm` | `mail_aperturas` | `digital/Directa Mail` | `SUMA` | — | `tipo_envio=m2` | `miles` | resuelve |
+| **`m2_clics`** | `jm` | `mail_clics` | `digital/Directa Mail` | `SUMA` | — | `tipo_envio=m2` | `miles` | resuelve |
+| **`m2_or`** | `jm` | `mail_aperturas/mail_entregados` | `digital/Directa Mail` | `PCT` | — | `tipo_envio=m2` | `porcentaje_sin_signo` | resuelve |
+| **`m2_ctor`** | `jm` | `mail_clics/mail_aperturas` | `digital/Directa Mail` | `PCT` | — | `tipo_envio=m2` | `porcentaje_sin_signo` | resuelve |
 
 ## Familia `mail` — 4 token(s)
 

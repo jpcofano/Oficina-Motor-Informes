@@ -10602,3 +10602,58 @@ corregida era más chica y más verdadera.**
 **Las 24 reversiones se generaron leyendo `MARCADORES_2026-08-17.tsv` y se verificaron carácter a
 carácter contra él.** `figura=Jorge Macri` lleva un espacio interno y `mail_tipo~=M2` un `~=`:
 transcribirlos a mano produce filtros que **no matchean ninguna fila y devuelven cero sin fallar**.
+
+---
+
+## Tandas 2 y 3 cerradas — 40 de 48, y el método quedó probado (2026-08-17)
+
+**Las dos por igualdad exacta, las dos con verificación en la misma sesión.**
+
+| tanda | qué | testigo | migración | verificación | intervalo |
+|---|---|---|---|---|---|
+| **2** | siete `m2_*` → `tipo_envio=m2` | 13:59 | 14:04 | 14:10 | 11 min |
+| **3** | 17 de `rdv` → `ambito=jm` | 14:19:06 | 14:19:39 | 14:24:58 | 5 min 52 s |
+
+**Tanda 2:** canario 71.234 · los siete idénticos · cobertura `361 + 745 + 1.136 = 2.242` ·
+universo sin moverse entre tomas.
+
+**Tanda 3:** los 17 idénticos · **las 17 cuentas iguales entre sí, 4 de 15** · **identidad de
+canales exacta en 2.307**. Sin canario y sin necesitarlo.
+
+**Verificado contra la hoja, por fuera del motor:** `MARCADORES_2026-08-17.tsv` muestra **40 de 78
+con `dimensiones` poblada**. Catálogo regenerado contra ese snapshot.
+
+### Lo que probaron sobre el método, que es lo reutilizable
+
+**La verificación en la misma sesión funciona.** Con minutos entre tomas el drift no alcanza a
+intervenir, y si interviniera **las cuentas de filas lo delatarían antes que los valores**.
+
+**Y vale aunque la base se mueva:** `digital` crece de a una o dos filas por hora —2.239 → 2.241 →
+2.242 en un día— y los siete `m2_*` dieron idénticos igual, **porque en once minutos no se movió**.
+
+⚠ **El universo estable entre tomas es lo que hizo legible la cobertura, y no estaba garantizado.**
+Si hubiera crecido, el `RESTO` habría cambiado sin que la migración tuviera nada que ver — por eso
+el orden de lectura empieza por *"¿creció el universo?"*.
+
+### El estado: los ocho que quedan están bloqueados por causas distintas
+
+**No son "lo que falta de la cola": son dos problemas separados y sólo uno es una tanda.**
+
+- **`frecuencia`/`gcba_frecuencia`** — la tanda 4, **destrabada**, prompt escrito. Era el canario
+  de `looker` y por eso iba última.
+- **Los seis `enc_mails_*`** — ⚠ **no es un problema de migración.** No publican por
+  `«FALTA:@ultimo_ambiguo»`, así que **no hay contra qué verificar**. Su destrabe es **una decisión
+  del usuario sobre el dato**: cuál de las dos filas del 28/07 vale.
+
+**Cuando la tanda 4 cierre, la migración estará completa sobre todo lo que se puede migrar: 42 de
+48.** Los seis no son deuda de vocabulario, son un hueco de dato.
+
+### Y por qué la tanda 4 invierte el orden de sus controles
+
+**`looker` se mueve DENTRO de ventanas cerradas** —+138.427 impresiones en 1h45 el 15/08, y un
+numerador en cero durante un recálculo—, mientras `digital` crecía **fuera**. Así que **la
+igualdad exacta puede no darse aunque la migración esté bien**.
+
+**El control principal pasa a ser la partición:** `frecuencia` lee 4 de 26 y `gcba_frecuencia` 22
+de 26, y **4 + 22 = 26** es exhaustiva por construcción. **La cuenta de filas no depende del drift
+de los números** — `looker` puede recalcular impresiones sin que cambie cuántas campañas hay.
