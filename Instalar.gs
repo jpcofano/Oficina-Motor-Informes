@@ -3854,3 +3854,187 @@ function censarTokensDeTanda1Mail() {
     'mail_envios,mail_entregados,mail_aperturas,mail_or,' +
     'gcba_mail_envios,gcba_mail_entregados,gcba_mail_aperturas,gcba_mail_or');
 }
+
+/**
+ * `2026-08-17_1` Parte B — **tanda 2: los siete `m2_*` pasan a `tipo_envio=m2`.**
+ *
+ * **Son SIETE y no trece.** Los seis `enc_mails_*` salieron el 17/08: dan `sin_datos` con
+ * `«FALTA:@ultimo_ambiguo»` y **un marcador que no produce valor no se puede verificar** — la
+ * Parte C compararía `sin_datos` contra `sin_datos`.
+ *
+ * ⚠ **Esto deja `tipo_envio` migrada A MEDIAS**, y es deliberado: `m2` queda en `dimensiones` y
+ * `convocatoria` sigue en `filtro`. **Las dos formas conviven**, que el piloto ya estableció como
+ * aceptable. Un censo de dimensiones que no lo espere lo va a leer como inconsistencia — está en
+ * `PENDIENTES` junto con el `@ultimo_ambiguo` que lo causa.
+ *
+ * **El `filtro` queda vacío en los siete**: su filtro es **sólo** el corte de `tipo_envio` y no
+ * hay restricción técnica que preservar, igual que en la tanda 1.
+ */
+function migrarTanda2M2ADimensiones_() {
+  var cambios = [
+    { marcador: 'm2_envios',           informe_id: 'jm', filtro: '', dimensiones: 'tipo_envio=m2' },
+    { marcador: 'm2_mails_enviados',   informe_id: 'jm', filtro: '', dimensiones: 'tipo_envio=m2' },
+    { marcador: 'm2_mails_entregados', informe_id: 'jm', filtro: '', dimensiones: 'tipo_envio=m2' },
+    { marcador: 'm2_aperturas',        informe_id: 'jm', filtro: '', dimensiones: 'tipo_envio=m2' },
+    { marcador: 'm2_clics',            informe_id: 'jm', filtro: '', dimensiones: 'tipo_envio=m2' },
+    { marcador: 'm2_or',               informe_id: 'jm', filtro: '', dimensiones: 'tipo_envio=m2' },
+    { marcador: 'm2_ctor',             informe_id: 'jm', filtro: '', dimensiones: 'tipo_envio=m2' }
+  ];
+  return curarCamposMarcadores_(cambios);
+}
+
+/** Wrapper público de la tanda 2. ⚠ **ESCRIBE en `MARCADORES`.** */
+function migrarTanda2DeM2() {
+  var r = migrarTanda2M2ADimensiones_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== tanda 2 (m2): ' + r.cambios_escritos + ' celda(s) escrita(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" -> "' + a.nuevo + '"');
+  });
+  if (r.sin_fila.length) {
+    Logger.log('⚠ SIN FILA EN LA HOJA (' + r.sin_fila.length + '):');
+    r.sin_fila.forEach(function (s) { Logger.log('   ' + s); });
+  }
+  Logger.log('Ahora: testigoDeTanda2() y comparar. ⚠ Si el RESTO cambió, mirar PRIMERO si crecio');
+  Logger.log('el universo: usa el universo COMPLETO, que si se mueve entre tomas (2.239 -> 2.241');
+  Logger.log('en 13 horas el 17/08). Solo si el universo NO cambio y el RESTO si, es la migracion.');
+  return r;
+}
+
+/**
+ * **Revierte la tanda 2.** ⚠ Los siete `filtro` salen textuales de
+ * `docs/_snapshots/MARCADORES_2026-08-17.tsv`, **generados leyendo el archivo**, y verificados
+ * carácter a carácter contra él antes de commitear.
+ */
+function revertirTanda2M2ADimensiones_() {
+  var cambios = [
+    { marcador: 'm2_envios',           informe_id: 'jm', filtro: 'mail_tipo~=M2', dimensiones: '' },
+    { marcador: 'm2_mails_enviados',   informe_id: 'jm', filtro: 'mail_tipo~=M2', dimensiones: '' },
+    { marcador: 'm2_mails_entregados', informe_id: 'jm', filtro: 'mail_tipo~=M2', dimensiones: '' },
+    { marcador: 'm2_aperturas',        informe_id: 'jm', filtro: 'mail_tipo~=M2', dimensiones: '' },
+    { marcador: 'm2_clics',            informe_id: 'jm', filtro: 'mail_tipo~=M2', dimensiones: '' },
+    { marcador: 'm2_or',               informe_id: 'jm', filtro: 'mail_tipo~=M2', dimensiones: '' },
+    { marcador: 'm2_ctor',             informe_id: 'jm', filtro: 'mail_tipo~=M2', dimensiones: '' }
+  ];
+  return curarCamposMarcadores_(cambios);
+}
+
+/** Wrapper público de la reversión de la tanda 2. ⚠ **ESCRIBE en `MARCADORES`.** */
+function revertirTanda2DeM2() {
+  var r = revertirTanda2M2ADimensiones_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== reversión tanda 2 (m2): ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" -> "' + a.nuevo + '"');
+  });
+  return r;
+}
+
+/**
+ * `2026-08-17_3` Parte B — **tanda 3: los 17 de `rdv` pasan a `ambito=jm`.** La tanda más grande:
+ * 17 de 48. Después de ésta quedan 24.
+ *
+ * **Los 17 comparten el filtro `figura=Jorge Macri`**, que es la expresión física de `ambito=jm`
+ * en esta base según `DIMENSIONES_`. **Cero líneas de `.gs`**: la traducción ya existe.
+ *
+ * ⚠ **`rdv` NO tiene canario posible** —los 17 comparten filtro, así que la migración los toca a
+ * todos y no queda ninguno afuera—. **No hace falta**, y el motivo está en `CLAUDE.md` §4: la
+ * verificación corre **testigo → migración → testigo en la misma sesión**, con minutos entre
+ * tomas, así que el drift no alcanza a intervenir. Dos lecturas a **12 horas** dieron idénticas
+ * (17/08), y si en cinco minutos cambiara algo **las 17 cuentas de filas lo delatarían**.
+ *
+ * **Y `rdv` tiene dos invariantes que no dependen del drift**, medidas el 17/08:
+ *
+ *   1. **las 17 cuentas de filas son iguales** — 4 de 15, en los diecisiete;
+ *   2. **la identidad de canales cierra**: `insc_mail + insc_cc + insc_ivr + insc_digital +
+ *      insc_dif = inscriptos`, exacto en **2.307** dentro de la ventana.
+ *
+ * **Si alguna se rompe después de migrar, es la migración.** Son el equivalente del descuadre del
+ * piloto: estructurales, no dependen del momento.
+ *
+ * ⚠ **Los cinco `_pct` NO son control.** Mismo caso que `mail_or`: comparten filtro con sus dos
+ * sumas, así que el `PCT` es el ratio de dos sumas **sobre las mismas filas** y un corte mal
+ * traducido lo dejaría igual. **Se cumplen por construcción.**
+ */
+function migrarTanda3RdvADimensiones_() {
+  var cambios = [
+    { marcador: 'ecv_encuentros',       informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_inscriptos',       informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_asistentes',       informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_barrios',          informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_barrio',           informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_poblacion',        informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'enc_evento',           informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_insc_mail',        informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_insc_cc',          informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_insc_ivr',         informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_insc_digital',     informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_insc_dif',         informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_insc_mail_pct',    informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_insc_cc_pct',      informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_insc_ivr_pct',     informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_insc_digital_pct', informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'ecv_insc_dif_pct',     informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' }
+  ];
+  return curarCamposMarcadores_(cambios);
+}
+
+/** Wrapper público de la tanda 3. ⚠ **ESCRIBE en `MARCADORES`. 17 filas, la tanda más grande.** */
+function migrarTanda3DeRdv() {
+  var r = migrarTanda3RdvADimensiones_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== tanda 3 (rdv): ' + r.cambios_escritos + ' celda(s) escrita(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" -> "' + a.nuevo + '"');
+  });
+  if (r.sin_fila.length) {
+    Logger.log('⚠ SIN FILA EN LA HOJA (' + r.sin_fila.length + '):');
+    r.sin_fila.forEach(function (s) { Logger.log('   ' + s); });
+  }
+  Logger.log('Ahora: testigoDeRdv() EN ESTA MISMA SESION. Los dos controles estructurales:');
+  Logger.log('  (1) las 17 cuentas de filas siguen iguales entre si — daban 4 de 15;');
+  Logger.log('  (2) la identidad de canales sigue cerrando — daba 2.307 exacto.');
+  Logger.log('Si alguno se rompe, es la migracion. Los cinco _pct NO son control.');
+  return r;
+}
+
+/**
+ * **Revierte la tanda 3.** ⚠ Los 17 `filtro` salen textuales de
+ * `docs/_snapshots/MARCADORES_2026-08-17.tsv`, **generados leyendo el archivo**. `figura=Jorge
+ * Macri` lleva un espacio interno: una transcripción que lo colapse o lo duplique produce un
+ * filtro que **no matchea ninguna fila y devuelve cero sin fallar**.
+ */
+function revertirTanda3RdvADimensiones_() {
+  var F = 'figura=Jorge Macri';
+  var cambios = [
+    { marcador: 'ecv_encuentros',       informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_inscriptos',       informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_asistentes',       informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_barrios',          informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_barrio',           informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_poblacion',        informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'enc_evento',           informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_insc_mail',        informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_insc_cc',          informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_insc_ivr',         informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_insc_digital',     informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_insc_dif',         informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_insc_mail_pct',    informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_insc_cc_pct',      informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_insc_ivr_pct',     informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_insc_digital_pct', informe_id: 'jm', filtro: F, dimensiones: '' },
+    { marcador: 'ecv_insc_dif_pct',     informe_id: 'jm', filtro: F, dimensiones: '' }
+  ];
+  return curarCamposMarcadores_(cambios);
+}
+
+/** Wrapper público de la reversión de la tanda 3. ⚠ **ESCRIBE en `MARCADORES`.** */
+function revertirTanda3DeRdv() {
+  var r = revertirTanda3RdvADimensiones_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== reversión tanda 3 (rdv): ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" -> "' + a.nuevo + '"');
+  });
+  return r;
+}
