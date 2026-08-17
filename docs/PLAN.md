@@ -1469,6 +1469,14 @@ sola vez y las dos tandas heredan la respuesta**: `docs/Prompts/2026-08-17_2_con
 que **no migra nada** y mide tres salidas — ¿está quieta `rdv`? ¿hay una medida legible por dos
 caminos? ¿sirve la toma doble?
 
+✅ **CERRADO el 17/08: `rdv` se verifica SIN canario y no hay que esperar ninguna toma.** La
+pregunta estaba mal planteada — la verificación corre **testigo → migración → testigo en la misma
+sesión**, con minutos entre tomas, así que el drift no alcanza a intervenir. Dos lecturas a 12
+horas dieron idénticas, y `rdv` tiene **dos invariantes que no dependen del drift**: las 17
+cuentas de filas iguales y la identidad de canales en 2.307. **El criterio corregido está en
+`CLAUDE.md` §4** y vale para todas las tandas: la pregunta no es *"¿está quieta la base?"* sino
+**"¿se mueve dentro del intervalo de la verificación?"**.
+
 ⚠ **Y hay una asimetría que conviene esperar:** la **ventana cerrada** de `digital` resultó
 estable y la de `looker` no (17/08: `digital` sí crece, pero **fuera** de la ventana). Es
 probable que la respuesta **no sea la misma para las dos bases**, y el prompt dice explícitamente

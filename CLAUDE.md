@@ -396,8 +396,23 @@ está midiendo. Cuando la fuente se mueve por su cuenta —`looker` recalcula, y
 138.427 impresiones en 1h45 y dejó un numerador en **cero**— un valor distinto **no dice nada**,
 ni a favor ni en contra.
 
-- **Antes de comparar, verificar que la base esté quieta.** La forma barata es un **canario: un
-  valor que el cambio NO toca**. En el piloto de `D-33` es `gcba_frecuencia` —sin migrar, de otra
+- ⚠ **Y la pregunta correcta no es «¿está quieta la base?» sino «¿se mueve DENTRO del intervalo
+  de la verificación?»** (17/08/2026). Las dos se confunden fácil y llevan a conclusiones
+  opuestas:
+  - **`digital` parecía quieta y no lo está**: su universo creció de 2.239 a 2.241 en 13 horas.
+    Lo estable era **la ventana cerrada de julio**, que es lo único que la comparación miraba.
+  - **`rdv` no necesita canario aunque no tenga ninguno posible.** La verificación corre
+    **testigo → migración → testigo en la misma sesión**, con **minutos** entre tomas — y dos
+    lecturas separadas **12 horas** dieron idénticas. En cinco minutos no cambia; y si cambiara,
+    **las cuentas de filas lo delatarían**.
+  - **La consecuencia práctica:** una base que se mueve **no** bloquea la verificación si el
+    intervalo es corto. Lo que bloquea es comparar contra un testigo **de otro día** — que es lo
+    que pasó en el piloto, y por eso allá el canario sí hizo falta.
+  - **Y el corolario para elegir controles:** los que dependen del **universo completo** se mueven
+    entre tomas; los que viven **dentro de la ventana** no. Un `RESTO` que cambia no acusa a la
+    migración hasta haber mirado si creció el universo.
+- **Cuando el intervalo es largo, la forma barata es un canario: un valor que el cambio NO
+  toca.** En el piloto de `D-33` es `gcba_frecuencia` —sin migrar, de otra
   solapa— y ya viene en el log de cada corrida: mientras dé `0`, la base está en tránsito y la
   comparación no se lee.
 - **Un canario propio cuesta menos que cualquier verificación escrita**, y mide mejor: es el

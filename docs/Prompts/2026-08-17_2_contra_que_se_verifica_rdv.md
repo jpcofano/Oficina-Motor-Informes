@@ -1,6 +1,31 @@
 # 2026-08-17_2 — ¿Contra qué se verifica una migración en `rdv`?
 
-> **Estado:** no ejecutado · **reemplaza:** nada · **subagente:** ninguno
+> **Estado:** ✅ **CERRADO el 17/08/2026** · **reemplaza:** nada · **subagente:** ninguno
+>
+> ## La respuesta: **`rdv` se verifica sin canario, y no hace falta esperar ninguna toma**
+>
+> **La pregunta 1 estaba mal planteada, y ése es el hallazgo.** Preguntaba *"¿está quieta `rdv`?"*
+> para saber si se podía comparar entre tomas separadas por días. **No hace falta comparar así:**
+> la verificación corre **testigo → migración → testigo en la misma sesión**, con **minutos**
+> entre tomas.
+>
+> **La evidencia:** dos lecturas separadas **12 horas** (17/08) dieron **idénticas** — 4 de 15 en
+> los diecisiete, identidad de canales en 2.307, los 17 valores iguales. **Si en 12 horas no
+> cambió, en cinco minutos no cambia**; y si cambiara, **las 17 cuentas de filas lo delatarían**,
+> que es el primer control que se mira.
+>
+> **Y `rdv` tiene además dos invariantes que no dependen del drift**, medidas el 17/08:
+> **(1)** las 17 cuentas de filas son iguales entre sí, y **(2)** la identidad de canales cierra
+> exacto en 2.307. **Con eso alcanza; el canario sobra.**
+>
+> **El criterio corregido, que es lo reutilizable y quedó en `CLAUDE.md` §4:** la pregunta no es
+> *"¿está quieta la base?"* sino **"¿se mueve dentro del intervalo de la verificación?"**. Una
+> base que se mueve **no** bloquea la verificación si el intervalo es corto — lo que bloquea es
+> comparar contra un testigo **de otro día**, que es lo que pasó en el piloto y por eso allá el
+> canario sí hizo falta.
+>
+> **La tanda 3 queda destrabada** (`2026-08-17_3`, en el propio código: `migrarTanda3DeRdv()`).
+> **No se espera al miércoles.**
 >
 > ## No migra nada. **Es un prompt de medición y termina en reportar y parar.**
 >

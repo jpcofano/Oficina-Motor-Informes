@@ -10556,3 +10556,49 @@ identidad producida por la **cadencia** y leerla como **estabilidad**. Un verde 
 que dice, del mismo tipo que la prueba de `ULTIMO` que pasó meses afirmando algo que no verificaba.
 
 **La toma que decide va el miércoles 19 o jueves 20.**
+
+---
+
+## `rdv` destrabada: la pregunta estaba mal planteada (2026-08-17)
+
+**Cambio de criterio del usuario, y con él se destraba la tanda más grande.**
+
+La pregunta 1 del `2026-08-17_2` era *"¿está quieta `rdv`?"*, y se hacía para saber **si se puede
+comparar entre tomas separadas por días**. **No hace falta comparar así.** La verificación corre
+**testigo → migración → testigo en la misma sesión**, con **minutos** entre tomas.
+
+**La evidencia que lo sostiene:** dos lecturas separadas **12 horas** dieron idénticas — 4 de 15
+en los diecisiete, identidad de canales en 2.307, los 17 valores iguales. **Si en 12 horas no
+cambió, en cinco minutos no cambia**; y si cambiara, **las 17 cuentas de filas lo delatarían**,
+que es el primer control que se mira.
+
+**Más las dos invariantes que no dependen del drift:** las 17 cuentas iguales entre sí, y la
+identidad de canales cerrando exacto. **Con eso alcanza; el canario sobra.**
+
+### El criterio corregido, que es lo reutilizable — `CLAUDE.md` §4
+
+**La pregunta no es *"¿está quieta la base?"* sino *"¿se mueve DENTRO del intervalo de la
+verificación?"***. Las dos se confunden fácil y llevan a conclusiones opuestas:
+
+- **`digital` parecía quieta y no lo está** — creció de 2.239 a 2.241 en 13 horas. Lo estable era
+  **la ventana cerrada**.
+- **`rdv` no necesita canario aunque no tenga ninguno posible**, porque el intervalo es de minutos.
+- **Una base que se mueve NO bloquea la verificación si el intervalo es corto.** Lo que bloquea es
+  comparar contra un testigo **de otro día** — que es lo que pasó en el piloto, y por eso allá el
+  canario sí hizo falta.
+- **Y para elegir controles:** los que dependen del **universo completo** se mueven entre tomas;
+  los que viven **dentro de la ventana** no.
+
+**Es la tercera vez que una regla de este proyecto se corrige por alcance y no por contenido** —
+`D-31` (el testigo compara rótulos, no contenido), *"`digital` está quieta"* → *"la ventana está
+quieta"*, y ahora *"¿está quieta?"* → *"¿se mueve en el intervalo?"*. **Las tres veces la versión
+corregida era más chica y más verdadera.**
+
+### Lo que quedó escrito en código
+
+`migrarTanda2DeM2()` / `revertirTanda2DeM2()` — los siete `m2_*` a `tipo_envio=m2`.
+`migrarTanda3DeRdv()` / `revertirTanda3DeRdv()` — los 17 de `rdv` a `ambito=jm`.
+
+**Las 24 reversiones se generaron leyendo `MARCADORES_2026-08-17.tsv` y se verificaron carácter a
+carácter contra él.** `figura=Jorge Macri` lleva un espacio interno y `mail_tipo~=M2` un `~=`:
+transcribirlos a mano produce filtros que **no matchean ninguna fila y devuelven cero sin fallar**.
