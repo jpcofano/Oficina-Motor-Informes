@@ -2588,3 +2588,371 @@ function censarTokensDelPiloto() {
     'imp_total,imp_meta,imp_google,imp_prog,' +
     'gcba_imp_total,gcba_imp_meta,gcba_imp_google,gcba_imp_prog');
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * Testigos por lista explícita de marcadores — `2026-08-17`
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * **Por qué hacen falta, habiendo `testigoDeImpresiones()`.** Aquélla agrupa por medida y emite
+ * **sólo los grupos de dos o más**, porque nació para el caso *"varios marcadores que sólo
+ * difieren en el filtro"*. Medido el 17/08 contra `MARCADORES_2026-08-17.tsv`:
+ *
+ *   - **de `rdv` no emite NADA**: sus 17 marcadores son todos grupo de uno;
+ *   - de los 13 de la tanda 2 emite **4**, los `m2_*` que comparten medida con los `mail_*`.
+ *
+ * **O sea que el instrumento del piloto no sirve para estas dos tandas**, y no por un defecto:
+ * mide otra cosa. Éstos toman una **lista explícita** y reportan lo que esa lista tenga.
+ */
+
+/**
+ * La cuenta de filas que la traza reporta, o `null` si no se pudo extraer.
+ *
+ * ⚠ **Lee el TEXTO de la traza, y eso es una dependencia frágil declarada.** El formato es
+ * `«filtro ... → N de M fila(s)»` (`Generador.gs`). Si cambia, esto devuelve `null` **y el
+ * llamador lo dice** en vez de comparar menos marcadores en silencio — que es el modo de falla
+ * que se está tratando de evitar en todo el proyecto.
+ *
+ * **No se reimplementa el filtrado para obtener el número por otro lado**: eso sería reproducir
+ * lógica que el motor ya tiene, peor, que es el error que `CLAUDE.md` §4 documenta.
+ */
+function filasDeTraza_(traza) {
+  var m = /(\d+)\s+de\s+(\d+)\s+fila/.exec(String(traza || ''));
+  if (!m) return null;
+  return { quedan: Number(m[1]), universo: Number(m[2]) };
+}
+
+/**
+ * Resuelve el informe una vez y devuelve los marcadores pedidos, con valor, estado, traza y la
+ * cuenta de filas extraída. **Sólo lectura.**
+ *
+ * ⚠ **Costo: ~3m30s contra un límite de 6 minutos**, porque `resolverMarcadores` resuelve los 78
+ * del informe y de ésos se usan los de la lista. No se acota por el mismo motivo que en
+ * `testigoDeImpresiones()`: acotarlo sería tocar el motor o reimplementarlo por fuera.
+ */
+function testigoDeMarcadores_(nombres, titulo) {
+  var res = resolverMarcadores('jm');
+  if (!res || !res.ok || !res.resultados) {
+    Logger.log('resolverMarcadores no devolvió resultados: ' + JSON.stringify(res));
+    return { ok: false, motivo: 'sin resultados' };
+  }
+
+  var por = {};
+  res.resultados.forEach(function (r) { por[r.marcador] = r; });
+
+  Logger.log('== ' + titulo + ' == (' + nombres.length + ' marcador(es) pedidos)');
+  Logger.log('resolverMarcadores(jm) → ' + res.resumen.total + ' · ok=' + res.resumen.ok +
+    ' · sin_datos=' + res.resumen.sin_datos + ' · error=' + res.resumen.error);
+
+  var filas = [];
+  var faltantes = [];
+  nombres.forEach(function (n) {
+    var r = por[n];
+    if (!r) { faltantes.push(n); return; }
+    var t = String(r.traza || '').replace(/\s+/g, ' ');
+    var c = filasDeTraza_(t);
+    filas.push({ marcador: n, valor: r.valor, estado: r.estado || '', traza: t, filas: c });
+    Logger.log('  ' + n + '\t' + r.valor + '\t' + (r.estado || '') + '\t' +
+      (c ? c.quedan + ' de ' + c.universo : '(sin cuenta legible)') + '\t' + t);
+  });
+
+  if (faltantes.length) {
+    Logger.log('⚠ NO ESTÁN en el informe (' + faltantes.length + '): ' + faltantes.join(', '));
+  }
+  var sinCuenta = filas.filter(function (f) { return !f.filas; }).map(function (f) { return f.marcador; });
+  if (sinCuenta.length) {
+    Logger.log('⚠ SIN CUENTA DE FILAS LEGIBLE (' + sinCuenta.length + '): ' + sinCuenta.join(', ') +
+      ' — cambió el formato de la traza; los conteos de abajo cubren menos marcadores de los pedidos.');
+  }
+  return { ok: true, filas: filas, faltantes: faltantes, sin_cuenta: sinCuenta };
+}
+
+/**
+ * **`2026-08-17_2` — el testigo de `rdv`.** Sólo lectura, no migra nada.
+ *
+ * Responde las dos mediciones que el prompt pide con nombre propio, más la toma de valores que
+ * sirve para la pregunta 1 (*¿está quieta `rdv`?*), que se contesta **corriendo esto dos veces
+ * separadas en el tiempo y comparando**.
+ *
+ * ⚠ **`rdv` es una base de carga humana** —alguien agrega encuentros—, así que su patrón de
+ * cambio puede ser **diario y no continuo**: conviene una segunda toma en **otro día**, no sólo
+ * separada por una hora.
+ */
+function testigoDeRdv() {
+  var LOS_17 = [
+    'ecv_encuentros', 'ecv_inscriptos', 'ecv_asistentes', 'ecv_barrios', 'ecv_barrio',
+    'ecv_poblacion', 'enc_evento',
+    'ecv_insc_mail', 'ecv_insc_cc', 'ecv_insc_ivr', 'ecv_insc_digital', 'ecv_insc_dif',
+    'ecv_insc_mail_pct', 'ecv_insc_cc_pct', 'ecv_insc_ivr_pct', 'ecv_insc_digital_pct',
+    'ecv_insc_dif_pct'
+  ];
+  var t = testigoDeMarcadores_(LOS_17, 'TESTIGO rdv/RVD JM-CM - ES — 2026-08-17_2');
+  if (!t.ok) return t;
+
+  var valor = {};
+  t.filas.forEach(function (f) { valor[f.marcador] = f.valor; });
+
+  /* ── HALLAZGO 1 · las 17 cuentas de filas tienen que ser IGUALES ──────────────────────────
+   * Los 17 comparten el filtro `figura=Jorge Macri` (medido sobre el snapshot), así que leen el
+   * mismo conjunto. **Si alguna difiere, es un hallazgo ANTES de migrar nada** — significa que
+   * algo más además del filtro está recortando, y la migración de `ambito` se estaría escribiendo
+   * sobre un supuesto falso. */
+  var cuentas = {};
+  t.filas.forEach(function (f) {
+    if (!f.filas) return;
+    var k = f.filas.quedan + ' de ' + f.filas.universo;
+    if (!cuentas[k]) cuentas[k] = [];
+    cuentas[k].push(f.marcador);
+  });
+  var distintas = Object.keys(cuentas);
+  Logger.log('');
+  Logger.log('== HALLAZGO 1 · ¿las 17 cuentas de filas son iguales? ==');
+  if (distintas.length === 1) {
+    Logger.log('  ✅ SÍ — todas ' + distintas[0] + '. Comparten filtro y leen el mismo conjunto.');
+  } else {
+    Logger.log('  ❌ NO — ' + distintas.length + ' cuentas distintas. **Es un hallazgo y va antes de migrar:**');
+    distintas.forEach(function (k) { Logger.log('     ' + k + ' → ' + cuentas[k].join(', ')); });
+  }
+
+  /* ── HALLAZGO 2 · las cinco identidades de canal ──────────────────────────────────────────
+   * ¿`insc_mail + insc_cc + insc_ivr + insc_digital + insc_dif` da `inscriptos`?
+   *
+   * **Si cierra, es la invariante estructural equivalente al descuadre del piloto**: sobrevive al
+   * drift, porque no depende del momento sino de que las partes cubran el total.
+   *
+   * ⚠ **Si NO cierra, es un hallazgo PROPIO y NO un obstáculo para la migración.** Significa que
+   * los cinco canales no son una partición de `inscriptos` —puede haber inscriptos por una vía no
+   * listada, o doble conteo— y eso es una pregunta del dominio, no del vocabulario. **Se reporta
+   * aparte para que no se lea como que la migración está bloqueada.** */
+  var canales = ['ecv_insc_mail', 'ecv_insc_cc', 'ecv_insc_ivr', 'ecv_insc_digital', 'ecv_insc_dif'];
+  var num = function (v) { var n = Number(String(v).replace(/\./g, '').replace(',', '.')); return isNaN(n) ? null : n; };
+  var partes = canales.map(function (c) { return num(valor[c]); });
+  var total = num(valor['ecv_inscriptos']);
+
+  Logger.log('');
+  Logger.log('== HALLAZGO 2 · ¿las cinco identidades de canal cierran? ==');
+  if (partes.some(function (p) { return p === null; }) || total === null) {
+    Logger.log('  ⚠ NO SE PUDO CALCULAR — algún valor no es numérico. Valores crudos:');
+    canales.concat(['ecv_inscriptos']).forEach(function (c) { Logger.log('     ' + c + ' = ' + valor[c]); });
+  } else {
+    var suma = partes.reduce(function (a, b) { return a + b; }, 0);
+    Logger.log('     ' + canales.map(function (c, i) { return c + '=' + partes[i]; }).join(' + '));
+    Logger.log('     suma = ' + suma + ' · ecv_inscriptos = ' + total + ' · diferencia = ' + (total - suma));
+    if (total - suma === 0) {
+      Logger.log('  ✅ CIERRA — es la invariante estructural: sirve como control que sobrevive al drift.');
+    } else {
+      Logger.log('  ⚠ NO CIERRA — **hallazgo propio, NO bloquea la migración.** Los cinco canales');
+      Logger.log('     no son una partición de `inscriptos`: puede faltar una vía o haber doble conteo.');
+      Logger.log('     Es una pregunta del dominio, no del vocabulario.');
+    }
+  }
+
+  Logger.log('');
+  Logger.log('== PREGUNTA 1 · ¿está quieta `rdv`? ==');
+  Logger.log('   Se contesta corriendo ESTO DOS VECES separadas en el tiempo y comparando.');
+  Logger.log('   Si los 17 dan idénticos, la tanda de `rdv` se verifica por igualdad exacta y el canario sobra.');
+  Logger.log('   ⚠ `rdv` es de carga humana: la segunda toma conviene en OTRO DÍA, no sólo una hora después.');
+  return t;
+}
+
+/**
+ * **`2026-08-17_1` Parte A — el testigo de la tanda 2 (`tipo_envio`).** Sólo lectura.
+ *
+ * Mide lo único que quedó abierto: **la cobertura**. Cuántas filas toma `convocatoria`, cuántas
+ * `m2`, y **cuántas quedan afuera de los dos** — ese resto es el control de la Parte C: si la
+ * dimensión traduce bien, no se mueve.
+ *
+ * ⚠ **La DISJUNCIÓN no se mide, y no por pereza: está cerrada por CÓDIGO.** `cumpleCondicion_`
+ * (`Generador.gs`) hace `v === esperado` para `=` y `indexOf !== -1` para `~=`. Entonces
+ * `mail_tipo=Convocatoria` exige la celda **exactamente** `Convocatoria`, y `Convocatoria` **no
+ * contiene** `M2`. **Ninguna fila puede caer en los dos, cualquiera sea el dato.** Es una
+ * propiedad del código, no del dato, y **no hay que volver a medirla**.
+ */
+function testigoDeTanda2() {
+  var LOS_13 = [
+    'enc_mails_enviados', 'enc_mails_entregados', 'enc_aperturas', 'enc_clics_ctor', 'enc_or', 'enc_ctor',
+    'm2_envios', 'm2_mails_enviados', 'm2_mails_entregados', 'm2_aperturas', 'm2_clics', 'm2_or', 'm2_ctor'
+  ];
+  // El canario de `digital`, ya probado en la tanda 1: filtro vacío en los dos, no se migran.
+  var CANARIO = ['enc_atendidos', 'ivr_atendidos'];
+
+  var t = testigoDeMarcadores_(CANARIO.concat(LOS_13), 'TESTIGO tanda 2 · tipo_envio — 2026-08-17_1');
+  if (!t.ok) return t;
+
+  var porNombre = {};
+  t.filas.forEach(function (f) { porNombre[f.marcador] = f; });
+
+  Logger.log('');
+  Logger.log('== CANARIO (primero, antes de leer nada más) ==');
+  var a = porNombre['enc_atendidos'], b = porNombre['ivr_atendidos'];
+  if (a && b) {
+    Logger.log('   enc_atendidos = ' + a.valor + ' · ivr_atendidos = ' + b.valor);
+    Logger.log(String(a.valor) === String(b.valor)
+      ? '   ✅ coinciden entre sí — el instrumento está sano. Comparar contra 71.234 · 2 de 60.'
+      : '   ❌ NO coinciden — el problema es el INSTRUMENTO, no la base. Parar.');
+  }
+
+  /* ── LA COBERTURA, que es el control de esta tanda ────────────────────────────────────────
+   * Los tres números salen del mismo universo. `convocatoria` y `m2` son subconjuntos **disjuntos
+   * pero NO exhaustivos**, así que el resto es lo que hay que mirar.
+   *
+   * ⚠ **Es un control MÁS DÉBIL que la partición de la tanda 1** —aquélla era exhaustiva y
+   * cualquier corte mal traducido rompía la suma— y **no detecta un error que mueva los dos
+   * subconjuntos y el resto en la misma proporción.** Se escribe así a propósito: un control débil
+   * presentado como fuerte es peor que no tenerlo. **El control principal de esta tanda son los
+   * valores idénticos**, que en `digital` alcanzan porque está probada quieta. */
+  var conv = null, m2 = null, universo = null;
+  ['enc_mails_enviados', 'enc_aperturas', 'enc_or'].forEach(function (n) {
+    if (conv === null && porNombre[n] && porNombre[n].filas) {
+      conv = porNombre[n].filas.quedan; universo = porNombre[n].filas.universo;
+    }
+  });
+  ['m2_mails_enviados', 'm2_aperturas', 'm2_or'].forEach(function (n) {
+    if (m2 === null && porNombre[n] && porNombre[n].filas) {
+      m2 = porNombre[n].filas.quedan; if (universo === null) universo = porNombre[n].filas.universo;
+    }
+  });
+
+  Logger.log('');
+  Logger.log('== LA COBERTURA — el control de esta tanda ==');
+  if (conv === null || m2 === null || universo === null) {
+    Logger.log('   ⚠ NO SE PUDO CALCULAR: falta alguna cuenta de filas legible. Ver el aviso de arriba.');
+  } else {
+    var resto = universo - conv - m2;
+    Logger.log('   convocatoria: ' + conv + ' filas');
+    Logger.log('   m2:           ' + m2 + ' filas');
+    Logger.log('   universo:     ' + universo + ' filas de digital/Directa Mail');
+    Logger.log('   RESTO (ni convocatoria ni m2): ' + resto + ' filas   ← esto es lo que no se puede mover');
+    if (resto < 0) {
+      Logger.log('   ❌ RESTO NEGATIVO — los dos conjuntos se superponen, y eso contradice la');
+      Logger.log('      disjunción que el código garantiza. **Parar y reportar**: o cambió');
+      Logger.log('      `cumpleCondicion_`, o alguno de los dos filtros ya no es el que se midió.');
+    }
+    Logger.log('   ⚠ Una celda como "Convocatoria M2" NO entra en convocatoria (no es igualdad');
+    Logger.log('      estricta) pero SÍ en m2. No rompe la disjunción; cambia qué significa cada conjunto.');
+  }
+  return t;
+}
+
+/**
+ * **`2026-08-13_1` Parte A — `R-26`: ¿el "1 a 1" se comunica sólo por digital?** Sólo lectura.
+ *
+ * ⚠ **Wrapper público sin `_` y sin parámetros** (`CLAUDE.md` §2).
+ *
+ * **NO escribe nada y NO decide.** Puede **falsar la premisa**: si aparecen encuentros "1 a 1"
+ * con inscriptos por mail o call center, la regla *"sólo digital"* no se escribe, y `R-26` queda
+ * como hueco — que está bien y es un resultado.
+ *
+ * ─── Tres decisiones de medición, y cada una tiene su motivo ──────────────────────────────
+ *
+ * 1. **SIN recorte por ventana** (`sin_recorte_por_ventana`). Se quiere el comportamiento del
+ *    **tipo de encuentro**, no el de una semana: una regla del dominio no puede salir de la
+ *    muestra de siete días que toque.
+ *
+ * 2. **NO se asume la forma exacta de `"1 a 1"`.** Se listan **todos** los valores distintos de
+ *    `evento` con su conteo, y recién después se marca cuáles matchean. `HALLAZGOS_validacion_decks`
+ *    registró la celda como `"1 a 1"`, pero **eso es una cita fechada y no la fuente** — puede
+ *    tener otro espaciado, otro case, o convivir con variantes.
+ *
+ * 3. **El CONTEO de filas con valor distinto de cero importa más que la suma**, y es el punto
+ *    fino del prompt: **una sola fila con mail rompe un "siempre cero"**, y en una suma de miles
+ *    esa fila desaparece. Por eso se cuentan filas, no se suman valores.
+ *
+ * ⚠ **Y no se mezcla con `testigoDeRdv()` aunque lean la misma base.** Son universos distintos
+ * —aquélla mide **con** la ventana del informe, ésta **sin** ninguna— y ésta **puede falsar su
+ * propia premisa**: mezclarlas haría que un resultado arrastre al otro.
+ */
+function medirUnoAUnoDeRdv() {
+  var BASE = 'rdv';
+  var solapa = (leerBases()[BASE] || {}).hoja_default;
+  if (!solapa) { Logger.log('BASES.rdv no declara hoja_default'); return { ok: false }; }
+
+  var lectura = leerFuente(BASE, null, solapa, { sin_recorte_por_ventana: true });
+  if (!lectura.ok) { Logger.log('no se pudo leer ' + BASE + '/' + solapa + ': ' + lectura.motivo); return lectura; }
+
+  // Los campos se resuelven por `MAPEO`, no se adivinan — y si falta alguno se dice **cuál**,
+  // nombrando base y solapa: un "no está" sin ámbito no se puede verificar (`CLAUDE.md` §4).
+  var CAMPOS = ['evento', 'figura', 'inscriptos', 'insc_mail', 'insc_cc', 'insc_ivr', 'insc_digital', 'insc_dif'];
+  var enc = {}, faltan = [];
+  CAMPOS.forEach(function (c) {
+    var m = buscarMapeo(BASE, solapa, c);
+    if (!m.ok) { faltan.push(c + ' (' + m.motivo + ')'); return; }
+    enc[c] = encabezadoEnColumna_(BASE, solapa, m.columna);
+    if (enc[c] === undefined) faltan.push(c + ' (columna ' + m.columna + ' ilegible)');
+  });
+
+  Logger.log('== R-26 Parte A · ' + BASE + '/' + solapa + ' · SIN recorte por ventana ==');
+  Logger.log('   ' + lectura.filas.length + ' fila(s) leídas');
+  if (faltan.length) {
+    Logger.log('⚠ CAMPOS QUE NO RESUELVEN en ' + BASE + '/' + solapa + ' (' + faltan.length + '): ' + faltan.join(' · '));
+    Logger.log('   Los conteos de abajo omiten esos canales — no valen como "siempre cero".');
+  }
+
+  /* ── 1 · TODOS los valores de `evento`, sin asumir cuál es el "1 a 1" ─────────────────── */
+  var porEvento = {};
+  lectura.filas.forEach(function (f) {
+    var v = normalizarValorDeclarado_(f[enc['evento']]);
+    porEvento[v] = (porEvento[v] || 0) + 1;
+  });
+  var eventos = Object.keys(porEvento).sort(function (a, b) { return porEvento[b] - porEvento[a]; });
+  Logger.log('');
+  Logger.log('== 1 · valores distintos de `evento` (' + eventos.length + ') ==');
+  eventos.forEach(function (v) {
+    var marca = /1\s*a\s*1/i.test(v) ? '   ← matchea "1 a 1"' : '';
+    Logger.log('   ' + porEvento[v] + '\t"' + v + '"' + marca);
+  });
+
+  var candidatos = eventos.filter(function (v) { return /1\s*a\s*1/i.test(v); });
+  if (!candidatos.length) {
+    Logger.log('');
+    Logger.log('❌ NINGÚN valor de `evento` matchea "1 a 1". **La premisa de R-26 no se puede evaluar**');
+    Logger.log('   con este dato: o el tipo se llama de otra forma, o no está en esta solapa.');
+    Logger.log('   Reportar y parar — NO escribir R-26.');
+    return { ok: true, eventos: porEvento, candidatos: [] };
+  }
+
+  /* ── 2 y 3 · el universo del "1 a 1" y el reparto por canal ───────────────────────────── */
+  var CANALES = ['insc_mail', 'insc_cc', 'insc_ivr', 'insc_digital', 'insc_dif'];
+  var num = function (v) {
+    if (v === '' || v === null || v === undefined) return 0;
+    var n = Number(v);
+    return isNaN(n) ? 0 : n;
+  };
+
+  candidatos.forEach(function (ev) {
+    var filas = lectura.filas.filter(function (f) {
+      return normalizarValorDeclarado_(f[enc['evento']]) === ev;
+    });
+    var conFigura = filas.filter(function (f) {
+      return normalizarValorDeclarado_(f[enc['figura']]) === 'Jorge Macri';
+    });
+
+    Logger.log('');
+    Logger.log('== 2 · universo de "' + ev + '" ==');
+    Logger.log('   ' + filas.length + ' fila(s) · ' + conFigura.length + ' con figura = Jorge Macri');
+
+    Logger.log('== 3 · reparto por canal — el CONTEO manda sobre la suma ==');
+    Logger.log('   canal            suma        filas con valor ≠ 0');
+    CANALES.concat(['inscriptos']).forEach(function (c) {
+      if (!enc[c]) { Logger.log('   ' + c + '\t(no resuelve, omitido)'); return; }
+      var suma = 0, nz = 0;
+      filas.forEach(function (f) {
+        var v = num(f[enc[c]]);
+        suma += v;
+        if (v !== 0) nz++;
+      });
+      var alerta = (CANALES.indexOf(c) !== -1 && c !== 'insc_digital' && nz > 0)
+        ? '   ⚠ ROMPE el "sólo digital"' : '';
+      Logger.log('   ' + c + '\t' + suma + '\t' + nz + ' de ' + filas.length + alerta);
+    });
+
+    Logger.log('');
+    Logger.log('   ⚠ Cómo leer esto: **una sola fila con mail o call center rompe un "siempre cero"**.');
+    Logger.log('      Si aparecen, R-26 no se escribe como invariante aritmética sino como RÉGIMEN');
+    Logger.log('      de convocatoria, diciendo cuántas filas la contradicen — y esas filas SE');
+    Logger.log('      PUBLICAN, no se recortan.');
+  });
+
+  Logger.log('');
+  Logger.log('== Reportar y parar. La Parte B espera confirmación del usuario. ==');
+  return { ok: true, eventos: porEvento, candidatos: candidatos, filas_leidas: lectura.filas.length };
+}
