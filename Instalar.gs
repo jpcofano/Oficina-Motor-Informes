@@ -3721,3 +3721,136 @@ function revertirPilotoDeImpresiones() {
   Logger.log('MARCADORES vuelve al estado de MARCADORES_2026-08-15.tsv para estos ocho.');
   return r;
 }
+
+/**
+ * `2026-08-16_4` Parte B — **la tanda 1: los ocho de `mail_*`/`gcba_mail_*` pasan a declarar su
+ * corte en `dimensiones` (`D-33`)**.
+ *
+ * **Autorizada por el piloto**, que pasó el 16/08 11:58: ocho cuentas de filas idénticas,
+ * descuadre cero en los dos ámbitos, y el canario sin migrar confirmando desde afuera.
+ *
+ * **Por el escritor declarado**, `curarCamposMarcadores_` — corrige campos de filas que ya
+ * existen, sin crear ni borrar (`ESCRITORES.md`). Desde el 15/08 es **todo o nada**: si alguna
+ * columna de algún cambio no existe, no escribe ninguna celda. Esa guarda existe porque la
+ * migración del piloto corrió antes de que existiera `dimensiones` y **escribió los ocho `filtro`
+ * sin escribir el corte** — ocho marcadores publicando el mismo número y ninguno fallando.
+ *
+ * ─── La diferencia con el piloto, y hay que verla antes de leer el diff ────────────────────
+ *
+ * **Acá el `filtro` queda VACÍO, no con un resto.** En el piloto sobrevivía `estado=Activa`, que
+ * es una restricción técnica (`D-33`). Los ocho de mail **no tienen ninguna**: su `filtro` es
+ * **sólo** la condición de ámbito, así que al migrar el corte no queda nada.
+ *
+ *   filtro        "mail_remitente=jorge.macri@buenosaires.gob.ar"  ->  "" (vacío)
+ *   dimensiones   (vacío)                                          ->  "ambito=jm"
+ *
+ * **Un `filtro` vacío es un estado normal y no un error** — los cuatro grupos de `Directa IVR` lo
+ * tienen hoy. Pero conviene saberlo al mirar el diff: **ocho celdas que se vacían** se parece a
+ * un borrado accidental y no lo es.
+ *
+ * **El corte sale del `filtro` en la misma operación en que entra a `dimensiones`.** Dejarlo en
+ * los dos lados daría el mismo número —filtrar dos veces por lo mismo es idempotente— y sería
+ * una tanda que no puede fallar. **Y no probaría nada**: lo que se verifica es que la traducción
+ * de dimensión reproduzca la condición que el filtro tenía.
+ *
+ * **`ambito` es la única dimensión de esta tanda.** No hay `plataforma` ni `tipo_envio` acá: los
+ * `m2_*` cortan la misma solapa por `tipo_envio=m2` y **se migran aparte**, porque meterlos
+ * convertiría una tanda de una dimensión en una de dos.
+ *
+ * **Idempotente**: `curarCamposMarcadores_` no escribe una celda que ya tiene el valor pedido.
+ */
+function migrarTanda1MailADimensiones_() {
+  var cambios = [
+    { marcador: 'mail_envios',          informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'mail_entregados',      informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'mail_aperturas',       informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'mail_or',              informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'gcba_mail_envios',     informe_id: 'jm', filtro: '', dimensiones: 'ambito=gcba' },
+    { marcador: 'gcba_mail_entregados', informe_id: 'jm', filtro: '', dimensiones: 'ambito=gcba' },
+    { marcador: 'gcba_mail_aperturas',  informe_id: 'jm', filtro: '', dimensiones: 'ambito=gcba' },
+    { marcador: 'gcba_mail_or',         informe_id: 'jm', filtro: '', dimensiones: 'ambito=gcba' }
+  ];
+  return curarCamposMarcadores_(cambios);
+}
+
+/**
+ * Wrapper público de la tanda 1 — el que se elige en el desplegable (`CLAUDE.md` §2: sin `_`
+ * final y **sin parámetros**).
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`.** Antes de correrla tiene que existir el testigo de la Parte A —
+ * `docs/_snapshots/TESTIGO_mail_2026-08-16_2220.md` —: sin él la Parte C no tiene contra qué
+ * comparar y la tanda no se puede verificar ni revertir con criterio.
+ */
+function migrarTanda1DeMail() {
+  var r = migrarTanda1MailADimensiones_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== tanda 1 (mail): ' + r.cambios_escritos + ' celda(s) escrita(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" -> "' + a.nuevo + '"');
+  });
+  if (r.sin_fila.length) {
+    Logger.log('⚠ SIN FILA EN LA HOJA (' + r.sin_fila.length + '):');
+    r.sin_fila.forEach(function (s) { Logger.log('   ' + s); });
+  }
+  Logger.log('Ahora: correr testigoDeImpresiones() y comparar contra el testigo del 16/08 22:20,');
+  Logger.log('EN ESTE ORDEN: (0) canario enc_atendidos/ivr_atendidos · (1) cuentas de filas ·');
+  Logger.log('(2) valores · (3) la partición 311 + 1.928 = 2.239, que es el control.');
+  return r;
+}
+
+/**
+ * **Revierte la tanda 1 al estado de la línea base.** `2026-08-16_4`, Parte C.
+ *
+ * ⚠ **Los ocho `filtro` salen textuales de `docs/_snapshots/MARCADORES_2026-08-15.tsv`, generados
+ * LEYENDO el archivo y no transcribiéndolos a mano.** El remitente lleva `@` y un punto, y una
+ * transcripción rota produce un filtro que **no matchea ninguna fila y devuelve cero sin fallar**
+ * — el mismo modo de falla que se está reparando, dentro del reparador. Es la misma precaución
+ * que tomó `revertirPilotoImpresiones_` con la `ñ` de `nombre_campaña`.
+ *
+ * **Cuándo se corre:** sólo si la Parte C no reproduce **con las cuentas de filas idénticas**. Si
+ * las filas cambiaron, es la base y no la migración — revertir ahí sería tirar trabajo bueno, que
+ * es exactamente lo que el canario del piloto evitó dos veces.
+ */
+function revertirTanda1MailADimensiones_() {
+  var cambios = [
+    { marcador: 'mail_envios',          informe_id: 'jm', filtro: 'mail_remitente=jorge.macri@buenosaires.gob.ar',  dimensiones: '' },
+    { marcador: 'mail_entregados',      informe_id: 'jm', filtro: 'mail_remitente=jorge.macri@buenosaires.gob.ar',  dimensiones: '' },
+    { marcador: 'mail_aperturas',       informe_id: 'jm', filtro: 'mail_remitente=jorge.macri@buenosaires.gob.ar',  dimensiones: '' },
+    { marcador: 'mail_or',              informe_id: 'jm', filtro: 'mail_remitente=jorge.macri@buenosaires.gob.ar',  dimensiones: '' },
+    { marcador: 'gcba_mail_envios',     informe_id: 'jm', filtro: 'mail_remitente!=jorge.macri@buenosaires.gob.ar', dimensiones: '' },
+    { marcador: 'gcba_mail_entregados', informe_id: 'jm', filtro: 'mail_remitente!=jorge.macri@buenosaires.gob.ar', dimensiones: '' },
+    { marcador: 'gcba_mail_aperturas',  informe_id: 'jm', filtro: 'mail_remitente!=jorge.macri@buenosaires.gob.ar', dimensiones: '' },
+    { marcador: 'gcba_mail_or',         informe_id: 'jm', filtro: 'mail_remitente!=jorge.macri@buenosaires.gob.ar', dimensiones: '' }
+  ];
+  return curarCamposMarcadores_(cambios);
+}
+
+/** Wrapper público de la reversión de la tanda 1. ⚠ **ESCRIBE en `MARCADORES`.** */
+function revertirTanda1DeMail() {
+  var r = revertirTanda1MailADimensiones_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== reversión tanda 1 (mail): ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" -> "' + a.nuevo + '"');
+  });
+  return r;
+}
+
+/**
+ * Los ocho de la tanda 1, en la plantilla de `jm` — **el punto 5 de la Parte A: los consumidores.**
+ *
+ * Wrapper **sin argumentos** de `censarTokensEnPlantilla` (`CLAUDE.md` §2). Mismo criterio que
+ * `censarTokensDelPiloto()`: una función con parámetros no aparece en el desplegable aunque no
+ * termine en `_`.
+ *
+ * **Para qué sirve el resultado:** un marcador sin consumidor se migra igual, **pero no se puede
+ * verificar contra un deck**. Y si alguno aparece en **dos** láminas —como `imp_total` en el
+ * piloto, que está en la 2 y en la 5— hay que saberlo antes de la Parte C: el mismo token tiene
+ * que dar el mismo número en las dos.
+ */
+function censarTokensDeTanda1Mail() {
+  return censarTokensEnPlantilla('jm',
+    'mail_envios,mail_entregados,mail_aperturas,mail_or,' +
+    'gcba_mail_envios,gcba_mail_entregados,gcba_mail_aperturas,gcba_mail_or');
+}
