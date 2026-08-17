@@ -4038,3 +4038,77 @@ function revertirTanda3DeRdv() {
   });
   return r;
 }
+
+/**
+ * **Tanda 4 (`2026-08-17_4`) — el par de `looker/resumen_metricas_dinamico` a `dimensiones`.**
+ *
+ * **Con esto la migración de `D-33` queda completa sobre todo lo migrable: 42 de 48.** Los seis
+ * `enc_mails_*` que faltan están bloqueados por `@ultimo_ambiguo`, que es un hueco de **dato** y
+ * no de vocabulario.
+ *
+ * ⚠ **El `filtro` queda VACÍO en los dos, y acá hay que decir por qué no se pierde nada.** Las
+ * notas de las dos filas en `MARCADORES` declaran que **no llevan `estado=Activa` a propósito**:
+ * con ese filtro las únicas dos filas `Activa` de la ventana son las dos de `JM` y
+ * `gcba_frecuencia` quedaba en **0 de 26**. Así que el `filtro` de estas dos filas es **sólo** el
+ * corte de ámbito: no hay restricción técnica que preservar, y vaciarlo no deroga ninguna guarda.
+ * Es el mismo caso que las tandas 1, 2 y 3 — pero es el único donde la ausencia de la guarda es
+ * una decisión escrita, así que se cita en vez de asumirse.
+ */
+function migrarTanda4FrecuenciaADimensiones_() {
+  var cambios = [
+    { marcador: 'frecuencia',      informe_id: 'jm', filtro: '', dimensiones: 'ambito=jm' },
+    { marcador: 'gcba_frecuencia', informe_id: 'jm', filtro: '', dimensiones: 'ambito=gcba' }
+  ];
+  return curarCamposMarcadores_(cambios);
+}
+
+/** Wrapper público de la tanda 4. ⚠ **ESCRIBE en `MARCADORES`. 2 filas, la tanda más chica.** */
+function migrarTanda4DeFrecuencia() {
+  var r = migrarTanda4FrecuenciaADimensiones_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== tanda 4 (looker/resumen_metricas_dinamico): ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" -> "' + a.nuevo + '"');
+  });
+  if (r.sin_fila.length) {
+    Logger.log('⚠ SIN FILA EN LA HOJA (' + r.sin_fila.length + '):');
+    r.sin_fila.forEach(function (s) { Logger.log('   ' + s); });
+  }
+  Logger.log('Ahora: testigoDeFrecuencia() EN ESTA MISMA SESION.');
+  Logger.log('⚠ El orden de lectura se INVIERTE respecto de las tandas 2 y 3:');
+  Logger.log('  (1) LA PARTICION es el control principal — daba 4 + 22 = 26;');
+  Logger.log('  (2) las dos cuentas de filas;');
+  Logger.log('  (3) los valores, el dato MAS DEBIL: looker recalcula DENTRO de la ventana.');
+  Logger.log('     Un valor distinto NO detiene la tanda si la particion cierra. Los operandos');
+  Logger.log('     del RATIO dicen si se movio el numerador o el denominador.');
+  return r;
+}
+
+/**
+ * **Revierte la tanda 4.** ⚠ Los dos `filtro` salen textuales de
+ * `docs/_snapshots/MARCADORES_2026-08-17.tsv`, **generados leyendo el archivo**.
+ *
+ * ⚠ **`~=` y `!~=` son operadores distintos y el error de transcripción no falla: devuelve un
+ * conjunto equivocado en silencio.** Peor que en la tanda 3, donde el riesgo era un espacio de
+ * más en `Jorge Macri`: acá los dos textos difieren en **un carácter**, y confundirlos deja las
+ * dos filas leyendo **la misma mitad** del universo — la partición seguiría cerrando en apariencia
+ * (`4 + 4 = 8`) pero contra un universo que ya no es el de nadie.
+ */
+function revertirTanda4FrecuenciaADimensiones_() {
+  var cambios = [
+    { marcador: 'frecuencia',      informe_id: 'jm', filtro: 'campana~=JM',  dimensiones: '' },
+    { marcador: 'gcba_frecuencia', informe_id: 'jm', filtro: 'campana!~=JM', dimensiones: '' }
+  ];
+  return curarCamposMarcadores_(cambios);
+}
+
+/** Wrapper público de la reversión de la tanda 4. ⚠ **ESCRIBE en `MARCADORES`.** */
+function revertirTanda4DeFrecuencia() {
+  var r = revertirTanda4FrecuenciaADimensiones_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== reversión tanda 4: ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" -> "' + a.nuevo + '"');
+  });
+  return r;
+}

@@ -3029,3 +3029,163 @@ function medirUnoAUnoDeRdv() {
   Logger.log('== Reportar y parar. La Parte B espera confirmación del usuario. ==');
   return { ok: true, eventos: porEvento, candidatos: candidatos, filas_leidas: lectura.filas.length };
 }
+
+/**
+ * Los dos operandos de un `RATIO`/`PCT`, leídos de la traza que emite `opRATIO`.
+ *
+ * **Por qué hace falta, y por qué recién en la tanda 4.** Las tandas 1 a 3 compararon el
+ * **valor**; acá el valor puede moverse legítimamente porque `looker` recalcula dentro de
+ * ventanas cerradas. Con los dos operandos a la vista, un ratio distinto deja de ser ambiguo:
+ *
+ *   - **mismos operandos y otro ratio** → imposible; sería un bug de `opRATIO`;
+ *   - **otros operandos y la partición cerrando** → es `looker`, que recalculó;
+ *   - **otros operandos y la partición rota** → es la migración.
+ *
+ * Sin esto, las tres se ven igual: «el número cambió».
+ *
+ * ⚠ **Lee el TEXTO de la traza**, igual que `filasDeTraza_`, y es la misma dependencia frágil
+ * declarada: el formato es `RATIO num/den = N/D` (`Marcadores.gs`, `opRATIO`). Si cambia,
+ * devuelve `null` **y el llamador lo dice**, en vez de comparar de menos en silencio.
+ *
+ * **No se recalculan los operandos por fuera del motor.** Sería reimplementar lo que el motor
+ * ya hace, que es exactamente el error que `CLAUDE.md` §4 documenta en tres casos.
+ */
+function operandosDeRatio_(traza) {
+  var t = String(traza || '');
+  // Los nombres no llevan espacios (`dig_impresiones/alcance`); los números son los que
+  // `opRATIO` produjo con `reduce`, así que pueden venir con decimales o en notación exponencial.
+  var m = /RATIO\s+([^\s\/]+)\/([^\s]+)\s*=\s*(-?[\d.]+(?:[eE][+-]?\d+)?)\/(-?[\d.]+(?:[eE][+-]?\d+)?)/.exec(t);
+  if (!m) return null;
+  return {
+    nombre_num: m[1], nombre_den: m[2],
+    numerador: Number(m[3]), denominador: Number(m[4])
+  };
+}
+
+/**
+ * **`2026-08-17_4` Parte A — el testigo de la tanda 4 (`frecuencia` / `gcba_frecuencia`).**
+ * Sólo lectura, no migra nada.
+ *
+ * ⚠ **Emite valor nominal, cuenta de filas y los dos operandos ANTES de cualquier veredicto**, y
+ * eso es una corrección de método, no un detalle de formato. **Es la tercera vez que un testigo
+ * se queda corto y se arregla después de haberlo usado:** el de impresiones nació sin cuentas de
+ * filas, el de mail dejó tres valores inferidos del orden, y el de las tandas 2 y 3 cerró sobre
+ * *"los siete idénticos"* y *"los 17 idénticos"* **sin un solo valor marcador por marcador** — así
+ * que hoy no hay contra qué comparar 20 de esos 24. **Acá son dos marcadores: no hay excusa de
+ * volumen.**
+ *
+ * **El orden importa:** primero los datos crudos y atribuidos, después los controles. Un veredicto
+ * impreso antes que el dato del que sale es un veredicto que nadie puede auditar.
+ */
+function testigoDeFrecuencia() {
+  var EL_PAR = ['frecuencia', 'gcba_frecuencia'];
+  var t = testigoDeMarcadores_(EL_PAR, 'TESTIGO tanda 4 · frecuencia/gcba_frecuencia — 2026-08-17_4');
+  if (!t.ok) return t;
+
+  var porNombre = {};
+  t.filas.forEach(function (f) { porNombre[f.marcador] = f; });
+
+  /* ── 1 · LOS DATOS CRUDOS, atribuidos y nominales ─────────────────────────────────────────
+   * ⚠ **Esto se imprime SIEMPRE y antes que todo lo demás**, incluso si después algún control
+   * falla: es lo que hay que poder copiar al snapshot para que la corrida sirva de referencia
+   * dentro de una semana. Un testigo que sólo dice «coinciden» no es un testigo. */
+  Logger.log('');
+  Logger.log('== 1 · LOS DOS MARCADORES, NOMINALES — copiar TAL CUAL al snapshot ==');
+  Logger.log('   marcador\tvalor\testado\tfiltro(N/M)\tventana(N/M)\tnumerador\tdenominador');
+  EL_PAR.forEach(function (n) {
+    var f = porNombre[n];
+    if (!f) { Logger.log('   ' + n + '\t⚠ NO ESTÁ EN EL INFORME'); return; }
+    var c = f.filas;
+    var o = operandosDeRatio_(f.traza);
+    Logger.log('   ' + n +
+      '\t' + f.valor +
+      '\t' + (f.estado || '') +
+      '\t' + (c && c.filtro ? c.filtro.quedan + '/' + c.filtro.universo : '—') +
+      '\t' + (c && c.ventana ? c.ventana.quedan + '/' + c.ventana.universo : '—') +
+      '\t' + (o ? o.numerador : '⚠ no legible') +
+      '\t' + (o ? o.denominador : '⚠ no legible'));
+  });
+  var sinOperandos = EL_PAR.filter(function (n) {
+    return porNombre[n] && !operandosDeRatio_(porNombre[n].traza);
+  });
+  if (sinOperandos.length) {
+    Logger.log('   ⚠ SIN OPERANDOS LEGIBLES: ' + sinOperandos.join(', ') + ' — cambió el formato');
+    Logger.log('     de la traza de `opRATIO`. El control 3 de la Parte C no se va a poder leer.');
+  }
+
+  /* ── 2 · LA PARTICIÓN, que es el control principal de esta tanda ──────────────────────────
+   * `campana~=JM` y `campana!~=JM` son **complementarios por CÓDIGO**, no por dato:
+   * `valorPasaFiltro_` calcula `coincide` una sola vez y devuelve `coincide` o `!coincide` según
+   * `negado`. Los dos operadores comparten `op: '~='` y difieren **sólo** en ese booleano
+   * (`OPERADORES_FILTRO_`), así que sobre la misma celda devuelven exactamente lo contrario.
+   * **Toda fila cae en exactamente una de las dos, cualquiera sea el dato.**
+   *
+   * ⚠ **Incluida la celda vacía**, que es el único caso que la complementariedad no cubriría si
+   * el operador tratara el vacío aparte — y no lo trata: `normalizarValorDeclarado_('')` da `''`,
+   * `''.indexOf('JM')` da `-1`, así que `~=` es falso y `!~=` verdadero. **Una fila sin campaña
+   * cargada cae en `gcba` y no se pierde**, que es lo mismo que se midió en `Directa Mail` para
+   * `=`/`!=` y lo que `D-33` ya dejó escrito: `gcba` es *todo lo que no es `jm`*.
+   *
+   * **Lo que esto NO garantiza**, y por eso el control se corre igual: que las dos filas lean el
+   * **mismo universo**. La complementariedad es sobre una fila; la partición exige además que los
+   * dos marcadores partan del mismo conjunto. Si un día difieren en solapa, en ventana o en
+   * `periodo_ref`, `4 + 22 = 26` deja de significar algo aunque los operadores sigan siendo
+   * complementarios. **Eso sí es del dato y se mide acá.** */
+  Logger.log('');
+  Logger.log('== 2 · LA PARTICIÓN — el control PRINCIPAL de esta tanda ==');
+  var jm = porNombre['frecuencia'], gcba = porNombre['gcba_frecuencia'];
+  var cJm = jm && jm.filas && jm.filas.filtro, cGcba = gcba && gcba.filas && gcba.filas.filtro;
+
+  if (!cJm || !cGcba) {
+    Logger.log('   ⚠ NO SE PUEDE ARMAR — falta la cuenta de la etapa de FILTRO en ' +
+      (!cJm ? 'frecuencia' : '') + (!cJm && !cGcba ? ' y ' : '') + (!cGcba ? 'gcba_frecuencia' : '') + '.');
+    Logger.log('   **Parar: el control principal de la tanda no está disponible.**');
+  } else if (cJm.universo !== cGcba.universo) {
+    // Este es el modo de falla que la suma sola no detectaría: 4 de 26 y 22 de 30 suman 26 igual.
+    Logger.log('   ❌ LOS DOS NO LEEN EL MISMO UNIVERSO: ' + cJm.universo + ' vs ' + cGcba.universo + '.');
+    Logger.log('   **La partición no se puede evaluar** — la suma daría un número sin significado.');
+    Logger.log('   Parar y reportar: es un hallazgo previo a la migración.');
+  } else {
+    var suma = cJm.quedan + cGcba.quedan;
+    Logger.log('   frecuencia (jm)      = ' + cJm.quedan + ' de ' + cJm.universo);
+    Logger.log('   gcba_frecuencia      = ' + cGcba.quedan + ' de ' + cGcba.universo);
+    Logger.log('   ' + cJm.quedan + ' + ' + cGcba.quedan + ' = ' + suma + ' · universo = ' + cJm.universo);
+    if (suma === cJm.universo) {
+      Logger.log('   ✅ CIERRA — partición exhaustiva. Es el control que la Parte C tiene que reproducir.');
+      if (cJm.universo !== 26) {
+        Logger.log('   ⚠ El universo NO es 26 sino ' + cJm.universo + ': `looker` recalculó desde la');
+        Logger.log('     medición del 17/08. **No es un problema** — la Parte C compara contra ESTE');
+        Logger.log('     número, no contra 26. Anotarlo en el snapshot.');
+      }
+    } else {
+      Logger.log('   ❌ NO CIERRA — sobran o faltan ' + (cJm.universo - suma) + ' fila(s).');
+      Logger.log('   ⚠ **PARAR Y NO MIGRAR.** Un control que nace roto no detecta nada después:');
+      Logger.log('     si ya no cierra ANTES de tocar nada, en la Parte C no distinguiría la');
+      Logger.log('     migración de lo que sea que lo esté rompiendo hoy.');
+    }
+  }
+
+  /* ── 3 · SIN CANARIO, y es correcto ──────────────────────────────────────────────────────
+   * `looker` tiene **exactamente diez** marcadores —los ocho del piloto, ya migrados, y estos
+   * dos—, así que después de esta tanda **no queda ninguno sin migrar** que pueda hacer de
+   * canario. **Lo reemplaza el intervalo corto**, que es lo que destrabó `rdv` el 17/08.
+   *
+   * ⚠ **No inventar un canario de otra base**: mediría que **esa** base esté quieta, que no es la
+   * pregunta. Es la confusión que la tanda 1 casi comete. */
+  Logger.log('');
+  Logger.log('== 3 · SIN CANARIO, a propósito ==');
+  Logger.log('   `looker` tiene 10 marcadores y 8 ya están migrados: no queda ninguno afuera.');
+  Logger.log('   Lo reemplaza el INTERVALO CORTO: migrar y volver a correr esto en la MISMA sesión.');
+  Logger.log('   ⚠ Un canario de otra base no sirve — mediría esa base, no `looker`.');
+
+  Logger.log('');
+  Logger.log('== Guardar en docs/_snapshots/TESTIGO_frecuencia_AAAA-MM-DD_HHMM.md CON LA HORA ==');
+  Logger.log('   Después: migrarTanda4DeFrecuencia() y volver a correr ESTO en la misma sesión.');
+  Logger.log('   ⚠ En la Parte C el orden de lectura se INVIERTE respecto de las tandas 2 y 3:');
+  Logger.log('     (1) la partición — si cierra, la migración está bien;');
+  Logger.log('     (2) las cuentas de filas;');
+  Logger.log('     (3) los valores, que son el dato MÁS DÉBIL: `looker` recalcula dentro de la');
+  Logger.log('         ventana. **Un valor distinto NO detiene la tanda si la partición cierra**,');
+  Logger.log('         y los operandos dicen si el que se movió fue el numerador o el denominador.');
+  return t;
+}
