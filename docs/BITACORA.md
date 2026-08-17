@@ -10657,3 +10657,66 @@ igualdad exacta puede no darse aunque la migración esté bien**.
 **El control principal pasa a ser la partición:** `frecuencia` lee 4 de 26 y `gcba_frecuencia` 22
 de 26, y **4 + 22 = 26** es exhaustiva por construcción. **La cuenta de filas no depende del drift
 de los números** — `looker` puede recalcular impresiones sin que cambie cuántas campañas hay.
+
+---
+
+## 2026-08-17 — Tanda 4: el código, y el testigo que esta vez nace completo
+
+**Escritas las cuatro funciones** que el `2026-08-17_4` nombraba y todavía no existían:
+`testigoDeFrecuencia()` y `operandosDeRatio_()` en `Auditoria.gs`, `migrarTanda4DeFrecuencia()` y
+`revertirTanda4DeFrecuencia()` en `Instalar.gs`. **Pusheadas y verificadas con `clasp pull` a un
+temporal** — las cuatro están en el proyecto de Apps Script, no sólo en el repo.
+
+### El testigo emite valores nominales desde el principio, y es una corrección de método
+
+**Es la tercera vez que un testigo se queda corto y se arregla después de haberlo usado:** el de
+impresiones nació sin cuentas de filas, el de mail dejó tres valores inferidos del orden, y el de
+las tandas 2 y 3 cerró sobre *"los siete idénticos"* y *"los 17 idénticos"* **sin un solo valor
+marcador por marcador** — así que hoy 20 de esos 24 no tienen valor de referencia registrado.
+
+**Acá son dos marcadores: no hay excusa de volumen.** `testigoDeFrecuencia()` emite valor, cuenta
+de filas con las dos etapas rotuladas, y **los dos operandos del `RATIO`** —`dig_impresiones` y
+`alcance`— **antes de cualquier veredicto**, aun si después un control falla.
+
+**Por qué los operandos, y por qué acá más que en las otras tandas:** son lo único que distingue
+tres cosas que se ven igual cuando el ratio cambia. Mismos operandos y otro ratio es imposible —
+sería un bug de `opRATIO`—; operandos distintos con la partición cerrando es `looker` recalculando;
+operandos distintos con la partición rota es la migración. **Se leen de la traza que el motor ya
+emite**, no se recalculan por fuera.
+
+### La partición está cerrada por CÓDIGO, y ahora está ejecutada
+
+`valorPasaFiltro_` calcula `coincide` **una sola vez** y devuelve `coincide` o `!coincide` según
+`negado`; `~=` y `!~=` comparten `op` y difieren **sólo** en ese booleano. **Sobre la misma celda
+devuelven exactamente lo contrario, cualquiera sea el dato.** Mismo tipo de cierre que resolvió la
+disjunción de la tanda 2 leyendo `cumpleCondicion_`.
+
+**El caso de borde que faltaba confirmar —la celda vacía— no rompe nada:**
+`normalizarValorDeclarado_('')` da `''`, `''.indexOf('JM')` da `-1`, así que `~=` es falso y `!~=`
+verdadero. **Una fila sin campaña cargada cae en `gcba` y no se pierde**, que es lo que `D-33` ya
+declaraba: `gcba` es *todo lo que no es `jm`*.
+
+**`tools/probar-tanda4.js`** lo prueba con **22 afirmaciones en verde**, sobre código **extraído
+del repo por texto** y evaluado en un solo scope. Cubre siete valores de celda incluidos el vacío
+y el de sólo espacios, **y lleva un control negativo** —`~=JM` contra `~=GCBA`, que **no**
+particionan— sin el cual la prueba pasaría con un comparador que devolviera cualquier cosa.
+
+### Dos cosas que el testigo mide y el control positivo no puede
+
+- **Que los dos lean el MISMO universo.** La complementariedad es sobre **una fila**; la partición
+  exige además que ambos partan del mismo conjunto. `4 de 26` y `22 de 30` suman 26 igual y no
+  querrían decir nada. Si los universos difieren, el testigo **para y lo dice** en vez de sumar.
+- **Que la cuenta de filas siga siendo legible después de migrar.** Es lo que `CLAUDE.md` §4 pide
+  explícitamente: el instrumento no puede depender de lo que el cambio modifica. Verificado en el
+  código —las dimensiones se traducen a condiciones y pasan por el **mismo**
+  `aplicarFiltroDeMarcador_`, así que la traza conserva el rótulo `filtro`— y afirmado en la
+  prueba: lo que cambia es el texto **dentro** de las comillas, y `filasDeTraza_` no lo usa como
+  ancla.
+
+### El `filtro` queda vacío, y acá está escrito por qué no se pierde nada
+
+Las notas de las dos filas declaran que **no llevan `estado=Activa` a propósito**: con ese filtro
+las únicas dos filas `Activa` de la ventana eran las dos de `JM` y `gcba_frecuencia` quedaba en
+**0 de 26** — *"un par complementario con una mitad vacía no es un universo"*. **No hay guarda que
+derogar.** Es el único caso de las cuatro tandas donde la ausencia de restricción técnica es una
+decisión documentada, así que se cita en vez de asumirse.

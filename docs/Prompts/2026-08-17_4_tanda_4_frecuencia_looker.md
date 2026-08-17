@@ -1,6 +1,11 @@
 # 2026-08-17_4 — Tanda 4: `frecuencia` / `gcba_frecuencia`, la última de `looker`
 
-> **Estado:** no ejecutado · **reemplaza:** nada · **subagente:** ninguno
+> **Estado:** no ejecutado · **código escrito y control positivo en verde** · **reemplaza:** nada ·
+> **subagente:** ninguno
+>
+> **Qué correr, en este orden:** `testigoDeFrecuencia()` → `migrarTanda4DeFrecuencia()` →
+> `testigoDeFrecuencia()`, **las tres en la misma sesión**. La reversión es
+> `revertirTanda4DeFrecuencia()`.
 >
 > **Objetivo único:** que el par de `looker/resumen_metricas_dinamico` declare su corte de
 > `ambito` en `dimensiones`. **Con esto la migración queda completa sobre todo lo que se puede
@@ -59,6 +64,51 @@ distinto como una falla.
 **Es disjunta y exhaustiva por construcción**, igual que la de la tanda 1: `campana~=JM` y
 `campana!~=JM` son complementarios, así que **toda fila cae en exactamente una de las dos**.
 
+### ✅ Verificado en el código, y es una propiedad del código — no del dato
+
+`valorPasaFiltro_` (`Generador.gs`) calcula la coincidencia **una sola vez** y devuelve una cosa o
+su negación según un booleano:
+
+```js
+var coincide = cond.op === '~=' ? v.indexOf(esperado) !== -1 : v === esperado;
+return cond.negado ? !coincide : coincide;
+```
+
+Y los dos operadores comparten `op` y difieren **sólo** en ese booleano (`OPERADORES_FILTRO_`):
+
+```js
+{ simbolo: '!~=', op: '~=', negado: true },
+{ simbolo: '~=',  op: '~=', negado: false },
+```
+
+**Entonces sobre la misma celda devuelven exactamente lo contrario, cualquiera sea el dato.** Es
+el mismo tipo de cierre que resolvió la disjunción de la tanda 2 leyendo `cumpleCondicion_`: se
+mira el código y **no hay que volver a medirlo nunca**.
+
+### ⚠ El caso de borde: la fila con `nombre_campaña` vacío
+
+Es el único que podría hacer desaparecer una fila **de los dos lados** y romper la partición por un
+motivo que no es la migración. **No pasa, y está verificado ejecutando el código:**
+
+`normalizarValorDeclarado_('')` da `''` · `''.indexOf('JM')` da `-1` · entonces `coincide` es
+**falso** → `~=` falso, `!~=` verdadero. **La fila cae en `gcba` y no se pierde.**
+
+Es lo mismo que se midió en `Directa Mail` para `=`/`!=`, y coincide con lo que `D-33` ya tenía
+escrito: **`gcba` es *todo lo que no es `jm`***, así que una fila sin el campo cargado cae ahí y no
+afuera de las dos.
+
+**El control positivo está en `tools/probar-tanda4.js`** — 22 afirmaciones, en verde, sobre el
+código **extraído del repo por texto**. Cubre siete valores de celda incluidos el vacío y el de
+sólo espacios, **más un control negativo** (`~=JM` contra `~=GCBA`, que **no** particionan) sin el
+cual la prueba pasaría con un comparador que devolviera cualquier cosa. Se corre con
+`node tools/probar-tanda4.js` y **no necesita la planilla**.
+
+⚠ **Lo que ese control NO cubre, y por eso la Parte A lo mide igual:** que los dos marcadores lean
+**el mismo universo**. La complementariedad es sobre **una fila**; la partición exige además que
+los dos partan del mismo conjunto. Si difirieran en solapa, ventana o `periodo_ref`, `4 + 22 = 26`
+dejaría de significar algo aunque los operadores siguieran siendo complementarios. **Eso sí es del
+dato.**
+
 **Si la dimensión traduce mal, esa suma deja de dar 26.** Y a diferencia de los valores, **la
 cuenta de filas no depende del drift de los números** — `looker` puede recalcular impresiones sin
 que cambie cuántas campañas hay.
@@ -76,12 +126,51 @@ mirar que **las dos partes sumen el nuevo total**, no que den 4 y 22.
 
 ---
 
-## Parte A — el testigo, **sólo lectura**
+## Parte A — el testigo, **sólo lectura** · `testigoDeFrecuencia()`
 
-1. **Los dos valores**, con **la cuenta de filas de cada uno**, atribuidos nominalmente.
-2. **La partición**: `filas(frecuencia) + filas(gcba_frecuencia)` y el **universo**. Verificar que
-   sumen. ⚠ **Si ya no cierra antes de migrar, parar y reportar** — un control que nace roto no
-   detecta nada después.
+### ⚠ Emite los valores nominales ANTES de cualquier veredicto, y eso es una corrección de método
+
+**Es la tercera vez que un testigo se queda corto y se arregla después de haberlo usado:**
+
+| testigo | qué le faltó | cuándo se notó |
+|---|---|---|
+| impresiones | las **cuentas de filas** | al necesitarlas para el control |
+| mail | tres valores **inferidos del orden** | al comparar |
+| tandas 2 y 3 | **los valores marcador por marcador** | al guardar el snapshot |
+
+El de las tandas 2 y 3 cerró sobre *"los siete idénticos"* y *"los 17 idénticos"*, así que hoy
+**20 de esos 24 marcadores no tienen valor de referencia registrado**. **Acá son dos marcadores:
+no hay excusa de volumen.**
+
+**Lo que emite, en este orden y siempre — aun si después un control falla:**
+
+| # | qué | por qué |
+|---|---|---|
+| 1 | **valor nominal** de los dos | es lo que se copia al snapshot |
+| 2 | **cuenta de filas** de cada uno, con las dos etapas rotuladas | el control principal |
+| 3 | **los dos operandos del `RATIO`** — `dig_impresiones` y `alcance` | ⭐ **abajo** |
+
+### ⭐ Por qué los operandos importan más acá que en cualquier tanda anterior
+
+**Son la única forma de distinguir tres cosas que se ven igual** cuando el ratio cambia:
+
+| operandos | partición | qué es |
+|---|---|---|
+| **iguales** | cierra | **imposible** — sería un bug de `opRATIO`, no de la migración |
+| **distintos** | cierra | **es `looker`**, que recalculó |
+| **distintos** | **rota** | **es la migración** |
+
+Sin ellos, las tres se leen como *"el número cambió"*. **Se sacan de la traza que el motor ya
+emite** (`RATIO num/den = N/D`), no se recalculan por fuera — reimplementar lo que el motor hace
+es el error que `CLAUDE.md` §4 documenta tres veces.
+
+### Los pasos
+
+1. **Los dos valores**, con **la cuenta de filas y los dos operandos**, atribuidos nominalmente.
+2. **La partición**: `filas(frecuencia) + filas(gcba_frecuencia)` contra el **universo**.
+   ⚠ **Verifica primero que los dos universos coincidan** — `4 de 26` y `22 de 30` suman 26 igual
+   y no querría decir nada. ⚠ **Si ya no cierra antes de migrar, parar y reportar**: un control
+   que nace roto no detecta nada después.
 3. **Guardar en `docs/_snapshots/TESTIGO_frecuencia_AAAA-MM-DD_HHMM.md`, con la HORA.**
 4. **Los consumidores**: en qué láminas están los dos. Wrapper **sin argumentos**
    (`CLAUDE.md` §2).
@@ -99,6 +188,13 @@ migrado el par, y **el intervalo corto lo reemplaza**. No inventar uno de otra b
 ⚠ **El `filtro` queda VACÍO en los dos**: su filtro es sólo el corte de ámbito, sin restricción
 técnica que preservar — igual que en las tandas 1, 2 y 3.
 
+**Y acá eso está escrito, no asumido.** Las notas de las dos filas en `MARCADORES` declaran que
+**no llevan `estado=Activa` a propósito**: con ese filtro las únicas dos filas `Activa` de la
+ventana eran las dos de `JM` y `gcba_frecuencia` quedaba en **0 de 26** — *"un par complementario
+con una mitad vacía no es un universo"*. Así que vaciar el `filtro` **no deroga ninguna guarda**:
+no hay ninguna. Es el único caso de las cuatro tandas donde la ausencia de la restricción técnica
+es una decisión documentada, y por eso se cita en vez de darse por sentada.
+
 **Reversión con los filtros generados LEYENDO `docs/_snapshots/MARCADORES_2026-08-17.tsv`** y
 verificados carácter a carácter. Son `campana~=JM` y `campana!~=JM`: el `~=` y el `!~=` son
 operadores distintos y confundirlos **da un filtro que no matchea nada y devuelve cero sin
@@ -114,7 +210,7 @@ fallar**.
 |---|---|---|
 | **1** | **la partición** `filas(jm) + filas(gcba) = universo` | ⭐ **el control principal.** Si no cierra, es la migración |
 | 2 | las cuentas de filas, una a una | si cambiaron **las dos** y la partición cierra, es la base |
-| 3 | los valores | ⚠ **pueden diferir sin que nada esté mal** — `looker` recalcula. **Un valor distinto NO detiene la tanda si la partición cierra** |
+| 3 | los valores **y sus dos operandos** | ⚠ **pueden diferir sin que nada esté mal** — `looker` recalcula. **Un valor distinto NO detiene la tanda si la partición cierra**, y los operandos dicen **cuál** de los dos se movió |
 
 **El orden es éste y no el inverso.** Es la inversión respecto de las tandas 2 y 3: acá **los
 valores son el dato más débil**, no el criterio.
