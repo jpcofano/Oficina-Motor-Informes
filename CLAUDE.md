@@ -111,6 +111,23 @@ grep -rn "function nombreNuevo_" *.gs
   datos y caché → `Fuentes.gs`; aritmética → `Marcadores.gs`; despacho y reemplazo en
   Slides → `Generador.gs`. Es la forma larga de la regla de oro: si un módulo hace el
   trabajo de otro, el número puede dar bien igual y la arquitectura ya está rota.
+- **Todo marcador nuevo nace con el corte en `dimensiones`. Nunca en `filtro`, nunca en el
+  nombre.** (17/08/2026, al cerrar la migración.) `filtro` queda **sólo** para **restricciones
+  técnicas** — `estado=Activa`, las guardas `!=0` —, que son reglas de validez de la fila y no
+  cortes que alguien del equipo pediría.
+  - **La frontera es la misma que fijó `D-33` para migrar, aplicada al alta:** una **dimensión** es
+    un corte que alguien pediría (*"esto pero de GCBA"*, *"esto pero de Meta"*); una **restricción
+    técnica** es lo que hace válida a la fila. Si dudás, preguntá si el equipo lo pediría por
+    nombre: `ambito=gcba` sí, `estado=Activa` no.
+  - **Por qué se escribe acá y no en el prompt de cada cableado:** la migración sacó el corte de
+    `filtro` en **42 marcadores** y ese trabajo se revierte de a uno. **El primer cableado con
+    apuro reinstala el problema**, y no falla — publica un número correcto con el corte en el lugar
+    equivocado, que es como llegaron los 42.
+  - **El caso bien hecho ya está en la hoja y sirve de molde:** `enc_impresiones` tiene
+    `filtro = imp_totales!=0` y `dimensiones` vacío. **Eso es correcto**: no tiene corte, tiene una
+    guarda. Vaciarle el `filtro` "para ser consistente" sería el error simétrico.
+  - **Un marcador sin ningún corte lleva `dimensiones` vacío**, y eso no es deuda: **ausente
+    significa «todas»** (decisión del usuario, 15/08). No se inventa un valor `todas`.
 - **Un token es una medida más sus dimensiones, y el corte no va en el nombre** (`D-33`,
   15/08/2026). El vocabulario es **global**: `ambito` (`jm`/`gcba`), `plataforma`
   (`meta`/`google`/`programmatic`) y `tipo_envio` (`convocatoria`/`m2`) son cortes declarados, no

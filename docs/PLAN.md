@@ -1336,6 +1336,30 @@ movió**. **La pregunta no es si la base está quieta, es si se mueve dentro del
 garantizado. Si hubiera crecido, el `RESTO` habría cambiado **sin que la migración tuviera nada
 que ver** — por eso el orden de lectura empieza por *"¿creció el universo?"*.
 
+### Addendum 2 a `D-33` — 17/08/2026 · **el alta también, no sólo la migración**
+
+> El cuerpo de `D-33` no se edita. Esto cierra el hueco que dejó: la decisión se escribió para
+> **reordenar lo que ya existía**, y no decía nada sobre **lo que se da de alta a partir de ahora**.
+
+**Todo marcador nuevo nace con el corte en `dimensiones`. Nunca en `filtro`, nunca en el nombre.**
+
+`filtro` queda **sólo** para **restricciones técnicas** —`estado=Activa`, las nueve guardas
+`!=0`—, que son reglas de validez de la fila y no cortes que alguien del equipo pediría. **Es la
+misma frontera que `D-33` trazó para migrar**, aplicada en la otra dirección.
+
+**Por qué hace falta decirlo aparte, habiendo migrado 42 marcadores:** una migración **ordena el
+pasado y no obliga al futuro**. La forma vieja siguió siendo la más fácil de escribir —un texto en
+`filtro` y listo— y **no falla**: publica un número correcto con el corte en el lugar equivocado,
+que es exactamente cómo llegaron a ser 42. **El primer cableado con apuro reinstala el problema**,
+de a un marcador por vez y sin que nada lo señale.
+
+⚠ **Y el error simétrico, que ya tiene un caso vivo:** `enc_impresiones` lleva
+`filtro = imp_totales!=0` con `dimensiones` vacío, **y está bien**. No tiene corte: tiene una
+guarda. Vaciarle el `filtro` "para ser consistente con los 42" sería romperlo. **Un marcador sin
+corte lleva `dimensiones` vacío**, y ausente significa **«todas»** — no se inventa un valor `todas`.
+
+**La forma operativa está en `CLAUDE.md` §2**, que es donde lo lee quien está por escribir la fila.
+
 ### Addendum 1 a `D-33` — 16/08/2026 · **la ventana pertenece al informe, no al token**
 
 > El cuerpo de `D-33` no se edita. Esto agrega una propiedad del vocabulario global que no
