@@ -1644,12 +1644,28 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
   }
 
   if (fuente === 'CAMPANAS') {
+    /* `CAMPANAS` es una **lista** desde el 18/08: se recorren filas, no claves. */
     var campanas = leerCampanas();
     var items2 = [];
     var excluidos = [];
-    Object.keys(campanas).forEach(function (id) {
-      var c = campanas[id];
-      if (String(c.informe_id || '').trim() !== informeId) return;
+    campanas.forEach(function (c) {
+      var id = String(c.campana_id || '').trim();
+      /* ⚠ **El filtro por `informe_id` SE SACÓ** (decisión del usuario, 18/08): *"no importa de
+       * qué informe sean las campañas — la campaña no pertenece a un informe"*. Puede presentarse
+       * en cualquiera, y los decks lo muestran: «Programas y actividades para personas mayores»
+       * sale en `jm` y en `secco` la misma semana.
+       *
+       * **Hoy es observablemente un no-op**: las tres filas cargadas son de `secco` y las tres
+       * tienen `periodo_id` vacío, así que `D-19` ya las excluía a todas. Se anota para que el
+       * día que cambie el conteo nadie lo lea como una regresión.
+       *
+       * ⚠ **Y lo que esto DEJA ABIERTO, dicho acá porque es donde se va a notar:** con el
+       * `informe_id` afuera, lo único que decide en qué corrida sale una campaña es `periodo_id`
+       * — y esta rama sólo exige que **no esté vacío**, no que **coincida con el período de la
+       * corrida**. Con campañas cargadas, las tres saldrían en **todos** los informes. **La
+       * selección semanal todavía no está implementada**, y `itemsDeSeccion_` ni siquiera recibe
+       * el `periodo_id` de la corrida (recibe `ventanaInforme`). Es una decisión de diseño
+       * pendiente, no un olvido de este cambio. */
       if (String(c.mostrar || '').trim().toLowerCase() !== 'sí') {
         excluidos.push({ campana: id, motivo: 'mostrar ≠ sí' });
         return;
@@ -1682,12 +1698,24 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
         etiqueta: c.nombre || id,
         // Sin `ventana`: la campaña es el PRIMER eslabón de `D-20` y `resolverVentana` usa
         // su `desde`/`hasta`. Pasarle la del informe sería justo lo que el paso prohíbe.
-        opciones: { campana: id, seccion_id: seccion.seccion_id, filtro_seccion: seccion.filtro },
+        //
+        // ⚠ **`periodo_id` viaja con el ítem**, y no es opcional: con la lista, `campana_id` solo
+        // ya no identifica una fila. Sin esto `resolverVentana` no puede saber de qué semana es la
+        // ventana y falla por ambigua — que es el comportamiento correcto, pero acá tenemos el
+        // dato y hay que pasarlo.
+        opciones: {
+          campana: id,
+          periodo_id: String(c.periodo_id || '').trim(),
+          seccion_id: seccion.seccion_id,
+          filtro_seccion: seccion.filtro
+        },
         id_cuenta: '',
-        motivo: ''
+        motivo: '',
+        orden: Number(c.orden || 0)
       });
     });
-    items2.sort(function (a, b) { return Number(campanas[a.clave].orden || 0) - Number(campanas[b.clave].orden || 0); });
+    // El orden viaja en el ítem: con la lista ya no hay `campanas[clave]` al que volver.
+    items2.sort(function (a, b) { return a.orden - b.orden; });
     return { ok: true, items: items2, excluidos: excluidos };
   }
 

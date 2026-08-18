@@ -3361,3 +3361,154 @@ function censarTokensSinMarcador() {
   Logger.log('  Para saber qué publica FALTA de verdad hace falta una corrida: es otra pregunta.');
   return { ok: true, por_lamina: sinPorLamina, distintos: Object.keys(universoSin).sort() };
 }
+
+/**
+ * **Paso 2 de la carga de campañas: ¿los tres nombres resuelven a un `Id cuentas`?** Sólo lectura.
+ *
+ * **Corre acá y no en `tools/` porque desde afuera NO SE PUEDE.** El token de `tools/token.js`
+ * alcanza la planilla de control pero **devuelve 404 sobre las bases externas** —medido el 18/08
+ * contra `digital`—, así que la única forma de leerlas es desde el proyecto, que las abre con
+ * `SpreadsheetApp.openById()`. Es el mismo motivo por el que `tools/snapshot.js` sólo vuelca las
+ * once hojas de registro.
+ *
+ * ⚠ **La campaña se identifica por NOMBRE DE TEXTO LIBRE, y ahí está el riesgo.** El ámbito se
+ * identificaba por valores cerrados —`Jorge Macri`, una casilla, `JM` como subcadena—; la campaña
+ * se identifica por un título tipeado, **distinto en cada base**: hay **once** `campo_logico`
+ * distintos que la nombran. Un join por nombre acierta a veces y **erra en silencio** el resto.
+ *
+ * **Por eso esto reporta tres niveles y no un booleano:**
+ *
+ *   - **exacto** — `R-10` sobre los dos lados: colapsa espacios y `trim()`, **preservando
+ *     mayúsculas y acentos**. Es lo que el motor haría con `=`;
+ *   - **plegado** — además sin acentos y sin case. **NO es lo que el motor hace**: si un nombre
+ *     sólo matchea acá, el filtro `=` **fallaría**. Se muestra para que se vea qué habría que
+ *     corregir;
+ *   - **contiene** — el nombre está adentro de otro más largo. Es lo que haría `~=`, y es el
+ *     caso probable: el deck dice *"Decreto: Declaración de servicios esenciales"* y la base
+ *     puede decir sólo una parte.
+ *
+ * **No corrige nada ni carga nada.** Si un nombre no resuelve, la decisión —corregir el nombre o
+ * poner el `id_cuenta` a mano— es del usuario.
+ */
+function medirCampanasParaCarga() {
+  var NOMBRES = [
+    'Declaración de servicios esenciales',
+    'Programas y actividades para personas mayores',
+    'Egreso de mil cadetes'
+  ];
+
+  /* Los campos que nombran una campaña, medidos sobre `MAPEO_2026-08-18.tsv`. **Once formas.**
+   * `digital/Digital` queda afuera a propósito: la solapa está en `uso = ignorar` y no se lee
+   * nunca (`CLAUDE.md` §2). */
+  var DONDE = [
+    { base: 'looker', solapa: 'resumen_metricas_dinamico', campo: 'campana', idc: 'id_cuenta' },
+    { base: 'looker', solapa: 'DIGITAL', campo: 'nombre_campaña', idc: '' },
+    { base: 'digital', solapa: 'Directa Mail', campo: 'mail_campana', idc: 'mail_id_cuenta' },
+    { base: 'digital', solapa: 'Directa SMS', campo: 'sms_campana', idc: '' },
+    { base: 'digital', solapa: 'Directa IVR', campo: 'ivr_campana', idc: '' },
+    { base: 'digital', solapa: 'Seguimiento digital', campo: 'sd_campana_cuentas', idc: '' },
+    { base: 'digital', solapa: 'Seguimiento digital', campo: 'sd_campana_digital', idc: '' },
+    { base: 'digital', solapa: 'Digital 2026 acumulado', campo: 'acum_campana', idc: '' },
+    { base: 'm2', solapa: 'M2 periodo DIRECTA', campo: 'campana', idc: '' },
+    { base: 'm2', solapa: 'M2 periodo DIGITAL', campo: 'campana_dig', idc: '' },
+    { base: 'm2', solapa: 'Cuentas', campo: 'campana', idc: '' }
+  ];
+
+  var plegar = function (s) {
+    return normalizarValorDeclarado_(s).toLowerCase()
+      .replace(/[áàä]/g, 'a').replace(/[éèë]/g, 'e').replace(/[íìï]/g, 'i')
+      .replace(/[óòö]/g, 'o').replace(/[úùü]/g, 'u').replace(/ñ/g, 'n');
+  };
+
+  Logger.log('== ¿Los tres nombres resuelven a un `Id cuentas`? — sólo lectura ==');
+  Logger.log('⚠ La campaña se identifica por NOMBRE LIBRE en ' + DONDE.length + ' campos distintos.');
+  Logger.log('');
+
+  var resumen = {};
+  NOMBRES.forEach(function (n) { resumen[n] = { exacto: 0, plegado: 0, contiene: 0, ids: {} }; });
+
+  DONDE.forEach(function (d) {
+    var etiqueta = d.base + '/' + d.solapa + ' · ' + d.campo;
+
+    if (usoSolapa_(d.base, d.solapa) === 'ignorar') {
+      Logger.log('-- ' + etiqueta + ': solapa `ignorar`, NO se lee (CLAUDE.md §2)');
+      return;
+    }
+    var mapa = buscarMapeo(d.base, d.solapa, d.campo);
+    if (!mapa || !mapa.columna) {
+      Logger.log('-- ' + etiqueta + ': ⚠ el campo NO está en MAPEO para esa base/solapa');
+      return;
+    }
+    // `sin_recorte_por_ventana`: se busca en TODO el histórico. Recortar acá haría que un nombre
+    // "no resuelva" sólo porque su campaña es de otra semana, que es la conclusión falsa más fácil.
+    var lectura = leerFuente(d.base, null, d.solapa, { sin_recorte_por_ventana: true });
+    if (!lectura || !lectura.ok) {
+      Logger.log('-- ' + etiqueta + ': ⚠ no se pudo leer — ' + (lectura && lectura.motivo));
+      return;
+    }
+    var filas = lectura.filas || [];
+    var clave = claveDeFila_(filas, d.campo, encabezadoEnColumna_(d.base, d.solapa, mapa.columna));
+    var claveIdc = d.idc
+      ? claveDeFila_(filas, d.idc, (function () {
+          var m = buscarMapeo(d.base, d.solapa, d.idc);
+          return m && m.columna ? encabezadoEnColumna_(d.base, d.solapa, m.columna) : '';
+        })())
+      : '';
+
+    Logger.log('-- ' + etiqueta + ' (col ' + mapa.columna + ') — ' + filas.length + ' fila(s)');
+
+    NOMBRES.forEach(function (n) {
+      var nn = normalizarValorDeclarado_(n), np = plegar(n);
+      var ex = [], pl = [], co = [];
+      filas.forEach(function (f, i) {
+        var v = normalizarValorDeclarado_(f[clave]);
+        if (v === '') return;
+        var idc = claveIdc ? normalizarValorDeclarado_(f[claveIdc]) : '';
+        var ref = { fila: i + 1, v: v, idc: idc };
+        if (v === nn) ex.push(ref);
+        else if (plegar(v) === np) pl.push(ref);
+        else if (plegar(v).indexOf(np) !== -1 || np.indexOf(plegar(v)) !== -1) {
+          if (plegar(v).length > 10) co.push(ref);
+        }
+      });
+      if (!ex.length && !pl.length && !co.length) return;
+      resumen[n].exacto += ex.length; resumen[n].plegado += pl.length; resumen[n].contiene += co.length;
+      [].concat(ex, pl, co).forEach(function (r) { if (r.idc) resumen[n].ids[r.idc] = true; });
+
+      var muestra = function (a) {
+        return a.slice(0, 3).map(function (r) {
+          return 'f' + r.fila + ' "' + r.v + '"' + (r.idc ? ' → id ' + r.idc : '');
+        }).join(' · ');
+      };
+      Logger.log('     "' + n + '"');
+      if (ex.length) Logger.log('        exacto  ' + ex.length + ': ' + muestra(ex));
+      if (pl.length) Logger.log('        plegado ' + pl.length + ' ⚠ el motor NO matchearía con `=`: ' + muestra(pl));
+      if (co.length) Logger.log('        contiene ' + co.length + ' (sería `~=`): ' + muestra(co));
+    });
+  });
+
+  Logger.log('');
+  Logger.log('== VEREDICTO POR NOMBRE ==');
+  NOMBRES.forEach(function (n) {
+    var r = resumen[n];
+    var ids = Object.keys(r.ids);
+    Logger.log('  "' + n + '"');
+    Logger.log('     exacto=' + r.exacto + ' · plegado=' + r.plegado + ' · contiene=' + r.contiene +
+      ' · id_cuenta distintos: ' + (ids.length ? ids.join(', ') : 'NINGUNO'));
+    if (!r.exacto && !r.plegado && !r.contiene) {
+      Logger.log('     ❌ NO RESUELVE en ninguna base. **Decidir antes de cargar**: corregir el');
+      Logger.log('        nombre o poner el `id_cuenta` a mano.');
+    } else if (!r.exacto) {
+      Logger.log('     ⚠ NO hay match EXACTO. Un filtro `=` fallaría; sólo andaría `~=`.');
+      Logger.log('        Es decisión del usuario: corregir el nombre o cablear con `~=`.');
+    } else if (ids.length > 1) {
+      Logger.log('     ⚠ Matchea exacto pero cae en ' + ids.length + ' `id_cuenta` distintos:');
+      Logger.log('        el nombre NO identifica una cuenta sola. Hay que declarar cuál.');
+    } else {
+      Logger.log('     ✅ resuelve exacto' + (ids.length ? ' a un solo id_cuenta' : ''));
+    }
+  });
+  Logger.log('');
+  Logger.log('== Reportar y parar. La carga la autoriza el usuario. ==');
+  return resumen;
+}

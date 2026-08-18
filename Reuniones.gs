@@ -7,7 +7,12 @@
  *
  * Expone:
  *   leerReuniones_() -> filas con mostrar='sí', ordenadas por orden. Mismo
- *     contrato que leerCampanas() (Config.gs).
+ *     contrato que leerCampanas() (Config.gs) — **y recién desde el 18/08/2026**.
+ *     ⚠ Esta línea afirmaba lo mismo desde antes y era FALSA: `leerCampanas()`
+ *     devolvía un mapa indexado por `campana_id` y **perdía filas repetidas en
+ *     silencio**, mientras que ésta siempre devolvió una lista. La afirmación
+ *     describía el diseño que se quería, no el que había, y sobrevivió sin que
+ *     nada la contradijera. Hoy las dos hojas son listas de lo que se publica.
  *   parsearLineaReunion_(lineaCruda) -> objeto fila propuesto. SIEMPRE conserva
  *     `texto_original`; si no pudo interpretar, deja el resto vacío y
  *     `notas='no se pudo parsear'`. Nunca marca `mostrar='sí'` sola — eso lo

@@ -18,7 +18,8 @@
  *   usoSolapa_(base_id, solapa) -> 'fuente'/'derivada'/'referencia'/'ignorar'/'revisar', o
  *     '' si la solapa no está registrada en SOLAPAS (mismo trato que 'revisar': no se lee)
  *   leerPeriodos()        -> { periodo_id: {desde, hasta, notas} }
- *   leerCampanas()        -> { campana_id: {nombre, informe_id, base_id, tipo, desde, hasta, mostrar, orden} }
+ *   leerCampanas()        -> [ {periodo_id, campana_id, nombre, informe_id, base_id, tipo,
+ *                               desde, hasta, mostrar, orden} ] — **LISTA, no mapa** (18/08/2026)
  *   escribirConfig(k, v)  -> setea una clave en CONFIG
  * Regla: NADIE hace cuentas de fechas fuera de este módulo y Fuentes.gs.
  * leerBases/leerInformes: Paso 1. leerConfig: Paso 1.6 v2.
@@ -88,8 +89,62 @@ function leerPeriodos() {
   return leerRegistro_('PERIODOS', 'periodo_id');
 }
 
+/**
+ * **`CAMPANAS` se lee como LISTA, no como registro indexado** (18/08/2026).
+ *
+ * ⚠ **Antes era `leerRegistro_('CAMPANAS', 'campana_id')`, y eso PERDÍA FILAS EN SILENCIO.**
+ * `leerRegistroSinCache_` hace `registro[clave] = obj` recorriendo: dos filas con el mismo
+ * `campana_id` dejaban **una sola**, sin error y sin aviso.
+ *
+ * **Por qué la clave era falsa, y lo es por tres motivos a la vez** (decisión del usuario, 18/08):
+ *
+ *   1. **Las campañas destacadas se eligen cada semana**, como el temario. La misma campaña
+ *      vuelve a salir con otro `periodo_id` — «Declaración de servicios esenciales» declara
+ *      período **24/06–08/07**, que abarca varios informes semanales.
+ *   2. **La campaña no pertenece a un informe.** Puede presentarse en cualquiera: «Programas y
+ *      actividades para personas mayores» sale en el deck de `jm` **y** en el de `secco` de la
+ *      misma semana, y con la clave vieja una de las dos filas desaparecía.
+ *   3. Entonces la identidad real es la **fila**, no la campaña.
+ *
+ * **El patrón se copia de `REUNIONES`, que ya resolvió exactamente esto:** `leerReuniones_`
+ * devuelve un arreglo y por eso admite N filas por lo mismo. **La hoja es una lista de lo que se
+ * publica, no un catálogo de lo que existe.**
+ */
 function leerCampanas() {
-  return leerRegistro_('CAMPANAS', 'campana_id');
+  return memoRegistro_('CAMPANAS', leerCampanasSinCache_);
+}
+
+function leerCampanasSinCache_() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CAMPANAS');
+  if (!hoja) return [];
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos.shift();
+  var iId = headers.indexOf('campana_id');
+
+  return datos
+    .filter(function (fila) { return iId === -1 ? false : String(fila[iId]).trim() !== ''; })
+    .map(function (fila) {
+      var obj = {};
+      headers.forEach(function (h, i) { obj[h] = fila[i]; });
+      return obj;
+    });
+}
+
+/**
+ * Las filas de una campaña, opcionalmente acotadas a un `periodo_id`.
+ *
+ * ⚠ **Existe porque con la lista el id solo puede devolver VARIAS filas**, y quien pregunta por
+ * la ventana de una campaña necesita **una**. Devolver la primera sería reinstalar la pérdida
+ * silenciosa que el cambio vino a sacar — sólo que en el consumidor en vez de en el lector.
+ */
+function filasDeCampana_(campanaId, periodoId) {
+  var id = normalizarValorDeclarado_(campanaId);
+  var per = normalizarValorDeclarado_(periodoId);
+  return leerCampanas().filter(function (c) {
+    if (normalizarValorDeclarado_(c.campana_id) !== id) return false;
+    return per === '' || normalizarValorDeclarado_(c.periodo_id) === per;
+  });
 }
 
 /**

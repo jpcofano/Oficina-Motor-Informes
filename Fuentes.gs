@@ -247,11 +247,31 @@ function resolverVentana(opciones) {
   opciones = opciones || {};
 
   if (opciones.campana) {
-    var campanas = leerCampanas();
-    var campana = campanas[opciones.campana];
-    if (!campana) {
-      return { ok: false, motivo: 'La campaña "' + opciones.campana + '" no existe en CAMPANAS' };
+    /* `CAMPANAS` pasó a leerse como **lista** (18/08), así que un `campana_id` puede traer
+     * **varias filas** —una por semana en que se eligió—. La que vale es la del `periodo_id` del
+     * ítem, que `itemsDeSeccion_` pasa junto con el id.
+     *
+     * ⚠ **Si quedan dos, FALLA en vez de elegir.** Tomar la primera sería mover la pérdida
+     * silenciosa del lector al consumidor: el motor publicaría la ventana de una semana ajena y
+     * el número saldría plausible. Es el modo de falla más caro del proyecto. */
+    var filas = filasDeCampana_(opciones.campana, opciones.periodo_id);
+    if (!filas.length) {
+      return {
+        ok: false,
+        motivo: 'La campaña "' + opciones.campana + '" no existe en CAMPANAS' +
+          (opciones.periodo_id ? ' para el período "' + opciones.periodo_id + '"' : '')
+      };
     }
+    if (filas.length > 1) {
+      return {
+        ok: false,
+        motivo: 'La campaña "' + opciones.campana + '" tiene ' + filas.length + ' filas en ' +
+          'CAMPANAS' + (opciones.periodo_id ? ' para el período "' + opciones.periodo_id + '"' : '') +
+          ' — ambigua. La clave real es (campana_id, periodo_id): dos filas con el mismo par es ' +
+          'un duplicado que hay que resolver en la hoja, no acá.'
+      };
+    }
+    var campana = filas[0];
     var desdeCampana = parsearFechaCelda_(campana.desde);
     var hastaCampana = parsearFechaCelda_(campana.hasta);
     if (!desdeCampana || !hastaCampana) {
