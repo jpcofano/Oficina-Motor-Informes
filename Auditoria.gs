@@ -3240,3 +3240,124 @@ function testigoDeFrecuencia() {
   t.avisos = avisos;
   return t;
 }
+
+/**
+ * **Enumera los tokens de la plantilla de `jm` que NO tienen fila en `MARCADORES`.** Sólo lectura.
+ *
+ * **Por qué hace falta habiendo `censarTokensEnPlantilla`:** aquélla **busca tokens que ya se
+ * conocen** —recibe la lista y dice dónde están—, así que no puede contestar *"¿qué hay en la
+ * plantilla que nadie cableó?"*. Ésta va al revés: **enumera lo que hay** y cruza contra el
+ * registro. Son preguntas distintas y por eso son dos funciones.
+ *
+ * **Tampoco lo contesta `FALTANTES`**, y la trampa está escrita en `CLAUDE.md` §4: **lista por
+ * ítem, no por token**, con sufijo `@<ítem>` — contar ahí mezcla láminas, y de ahí salió una vez
+ * un "nueve" que eran diez.
+ *
+ * ⚠ **LO QUE ESTO MIDE Y LO QUE NO, porque la diferencia es exactamente el error caro del
+ * proyecto.** Mide **«sin fila en `MARCADORES`»**. Eso **NO es lo mismo** que *"publica
+ * `«FALTA:»`"*:
+ *
+ *   - un token de una **sección repetible** puede resolverse desde el ítem y no desde `MARCADORES`,
+ *     así que aparecería acá sin estar roto — por eso las láminas que iteran salen **marcadas**;
+ *   - y al revés, un token **con** fila puede publicar `«FALTA:»` igual si falla en ejecución —hoy
+ *     hay diez así—, y **éstos no los ve este censo**.
+ *
+ * **Quien lea la salida tiene que saber cuál de las dos preguntas contestó.** Es la misma
+ * distinción que la columna `config` del catálogo: *"la fila está bien armada"* no es *"el token
+ * anda"*.
+ *
+ * **Las láminas escondidas se cuentan aparte y no se saltean.** `tokensDeSlide_` las descarta a
+ * propósito —no se emiten, así que cablearlas es trabajo sobre algo que nadie ve—, pero **un censo
+ * tiene que verlas**: la lámina del "1 a 1" puede estar escondida mientras se arma, y decir que no
+ * hay nada que cablear ahí sería falso.
+ */
+function censarTokensSinMarcador() {
+  var informe = leerInformes()['jm'];
+  if (!informe || !informe.plantilla_id) {
+    Logger.log('FALLÓ: el informe `jm` no tiene `plantilla_id`.');
+    return { ok: false, motivo: 'sin plantilla_id' };
+  }
+
+  // El registro, indexado por nombre. `leerMarcadores_()` trae la hoja entera.
+  var conFila = {};
+  leerMarcadores_().forEach(function (m) { conFila[m.marcador] = m.informe_id || ''; });
+
+  // Qué láminas iteran, para poder marcarlas: sus tokens pueden venir del ítem.
+  // ⚠ `leerRegistro_` devuelve un **objeto indexado por la clave**, no un arreglo: se recorren sus
+  // valores. Tratarlo como arreglo no falla —`undefined.forEach` sí, pero un `{}` vacío no— y
+  // dejaría el marcado de láminas que iteran silenciosamente en cero.
+  var iteran = {};
+  try {
+    var laminas = leerRegistro_('LAMINAS', 'lamina_id');
+    Object.keys(laminas).forEach(function (k) {
+      var l = laminas[k];
+      if (l.informe_id === 'jm' && String(l.itera_sobre || '').trim() !== '') {
+        iteran[String(l.orden_plantilla)] = l.itera_sobre;
+      }
+    });
+  } catch (e) {
+    Logger.log('⚠ no pude leer LAMINAS (' + e.message + '): no voy a poder marcar las que iteran.');
+  }
+
+  var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+  Logger.log('== CENSO de tokens SIN FILA en MARCADORES — plantilla de `jm`, ' + slides.length + ' láminas ==');
+  Logger.log('⚠ «sin fila» NO es «publica FALTA». Ver el encabezado de la función antes de citar esto.');
+  Logger.log('');
+
+  var totalSin = 0, totalTokens = 0;
+  var sinPorLamina = [];
+  var universoSin = {};
+
+  slides.forEach(function (slide, i) {
+    var n = i + 1;
+    var escondida = esLaminaEscondida_(slide);
+    var vistos = {};
+    piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+      var m;
+      RE_TOKEN_.lastIndex = 0;
+      while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) vistos[m[1]] = true;
+    });
+    var tokens = Object.keys(vistos).sort();
+    if (!tokens.length) return;
+    totalTokens += tokens.length;
+
+    var sin = tokens.filter(function (t) { return !(t in conFila); });
+    if (!sin.length) return;
+    sin.forEach(function (t) { universoSin[t] = true; });
+    totalSin += sin.length;
+    sinPorLamina.push({ lamina: n, escondida: escondida, itera: iteran[String(n)] || '', tokens: sin });
+
+    Logger.log('  lámina ' + String(n).padStart(2) + (escondida ? ' (ESCONDIDA)' : '') +
+      (iteran[String(n)] ? ' [itera sobre ' + iteran[String(n)] + ']' : '') +
+      ' — ' + sin.length + ' de ' + tokens.length + ' sin fila:');
+    Logger.log('      ' + sin.join(', '));
+  });
+
+  Logger.log('');
+  Logger.log('== RESUMEN ==');
+  Logger.log('  tokens distintos sin fila: ' + Object.keys(universoSin).length +
+    ' · apariciones: ' + totalSin + ' sobre ' + totalTokens + ' tokens leídos');
+  Logger.log('  láminas con faltantes: ' + sinPorLamina.length);
+
+  /* La lámina más cargada suele ser la respuesta a *"¿de dónde salen tantos?"*, y conviene que el
+   * instrumento la nombre en vez de dejar que alguien la deduzca de la lista. */
+  var mayor = sinPorLamina.slice().sort(function (a, b) { return b.tokens.length - a.tokens.length; })[0];
+  if (mayor) {
+    Logger.log('  la que más concentra: lámina ' + mayor.lamina + ' con ' + mayor.tokens.length +
+      (mayor.escondida ? ' (escondida)' : ''));
+  }
+
+  var conIteracion = sinPorLamina.filter(function (l) { return l.itera; });
+  if (conIteracion.length) {
+    Logger.log('');
+    Logger.log('  ⚠ ' + conIteracion.length + ' lámina(s) ITERAN: sus tokens pueden resolverse desde el');
+    Logger.log('    ítem y NO estar rotos. No sumarlos a "lo que falta cablear" sin mirarlos:');
+    conIteracion.forEach(function (l) {
+      Logger.log('      lámina ' + l.lamina + ' sobre ' + l.itera + ' — ' + l.tokens.length + ' token(s)');
+    });
+  }
+
+  Logger.log('');
+  Logger.log('  Para saber qué publica FALTA de verdad hace falta una corrida: es otra pregunta.');
+  return { ok: true, por_lamina: sinPorLamina, distintos: Object.keys(universoSin).sort() };
+}
