@@ -10792,3 +10792,62 @@ termina la lectura.
 **La migración tiene que reportar 4 celdas, no 14**: son 2 marcadores × 2 columnas, y
 `cambios_escritos` cuenta celdas efectivamente cambiadas. **Un 14 sería un bug.** Las tandas
 grandes daban más porque tenían más filas — la 3 escribió 34 sobre 17 marcadores.
+
+---
+
+## 2026-08-17 — Tanda 4 cerrada: **la migración de `D-33` está completa sobre lo migrable, 42 de 48**
+
+`frecuencia`/`gcba_frecuencia` declaran su `ambito` en `dimensiones`, con `filtro` vacío.
+Verificado por fuera del motor: `MARCADORES_2026-08-18.tsv` muestra **42 de 78** con `dimensiones`
+poblada, contra **40** en el del 17/08. **Las dos fotos enmarcan la migración.**
+
+**El diagnóstico del escritor funcionó en su primera corrida real.** Dijo filas 32 y 43, `filtro` y
+`dimensiones`, `YA ESTABA` en los cuatro campos — en vez de informar cero y seguir con las
+instrucciones del paso siguiente, que es lo que había hecho a las 19:10.
+
+### El control 3 resolvió, en su primera lectura útil, la pregunta abierta de la tanda
+
+**Los dos denominadores —475.723 y 1.249.387— idénticos en las tres tomas**, con el numerador de
+`frecuencia` moviéndose (6.399.346 → 6.282.424 → 6.763.034).
+
+**Denominador quieto y numerador moviéndose es `looker` acumulando, no la dimensión leyendo otras
+filas.** Si el corte se hubiera traducido mal, **el alcance habría cambiado también**: es la misma
+lectura, sobre las mismas filas, en la misma corrida.
+
+⚠ **Ese control existió recién esa noche**, después de arreglar `operandosDeRatio_` —que nunca
+había matcheado la traza real—. **La tanda 4 es la única de las cuatro donde la igualdad de valores
+no podía ser el criterio**, y es también la única donde el instrumento que la reemplazaba estuvo
+roto hasta el día del cierre.
+
+### El testigo pre se reconstruyó, y eso queda dicho
+
+**No se tomó para esta tanda.** Las corridas del **16/08 22:20** y **17/08 11:58** registran los dos
+marcadores con `dimensiones: (vacío)` explícito, así que sirven — pero **el orden previsto no se
+cumplió**: la migración ya estaba aplicada cuando se fue a correr la Parte A. La partición cerró
+`4 + 22 = 26` en las tres tomas.
+
+⚠ **Lo que el testigo NO tiene:** los numeradores de `gcba_frecuencia` toma por toma. Se dice para
+que nadie los cite como si estuvieran; lo que sí está medido es que su denominador no se movió.
+
+### El hueco de trazabilidad, y una hoja que no puede responderlo
+
+**No se sabe en qué corrida se aplicó** — entre las 11:58 y las 19:08 del 17/08. **`CORRIDAS` no lo
+puede responder y no es falla suya:** registra generaciones de informe y es un **insumo, no un log**
+(`D-07`). **Ninguna hoja de registro fecha una escritura sobre `MARCADORES`.** A `PENDIENTES`.
+
+### Y dos problemas de `tools/snapshot.js`, encontrados al guardar la evidencia
+
+**Los dos son de la misma familia: el nombre del archivo es la única identidad del snapshot, y nada
+la protege.**
+
+1. **Fecha en UTC.** `new Date().toISOString()` con la máquina en ART (UTC−3): la corrida de las
+   **22:31 del 17/08** escribió once archivos `*_2026-08-18.tsv`. Regenerados con `--fecha`.
+2. **Re-correr el mismo día pisa la evidencia anterior.** El `MARCADORES_2026-08-17.tsv`
+   pre-migración se sobrescribió con el estado post-migración; **la única copia del estado previo
+   quedó en git** y se recuperó con `git checkout`. Es justo el archivo que citan los cierres de
+   las tandas 1 a 3 y los filtros de reversión de la 4.
+
+**Frente 13 cerrado. Frente 13 bis destrabado** — `DIMENSIONES_` a hoja ya no colisiona con la
+migración, que era el único motivo por el que esperaba. Los seis `enc_mails_*` quedan como hueco
+de dato, no como deuda de vocabulario: **42 de 48 no es "faltan seis", es "está completo"** sobre
+todo lo que hoy se puede migrar y verificar.

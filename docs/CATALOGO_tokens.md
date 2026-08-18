@@ -1,6 +1,6 @@
-# Catálogo de tokens — generado desde `MARCADORES_2026-08-17.tsv`
+# Catálogo de tokens — generado desde `MARCADORES_2026-08-18.tsv`
 
-> **Generado por `tools/catalogo.js` desde `docs/_snapshots/MARCADORES_2026-08-17.tsv`, `SOLAPAS_2026-08-17.tsv` y `MAPEO_2026-08-17.tsv` — los tres del 17/08/2026.** Es **evidencia fechada, no el estado de hoy**: para saber qué hay ahora se re-corre el script contra un snapshot nuevo. El dueño de la pregunta es el script, nunca este archivo.
+> **Generado por `tools/catalogo.js` desde `docs/_snapshots/MARCADORES_2026-08-18.tsv`, `SOLAPAS_2026-08-18.tsv` y `MAPEO_2026-08-18.tsv` — los tres del 18/08/2026.** Es **evidencia fechada, no el estado de hoy**: para saber qué hay ahora se re-corre el script contra un snapshot nuevo. El dueño de la pregunta es el script, nunca este archivo.
 
 **Primera versión (frente 14).** Emite lo que `MARCADORES` ya tiene, sin columnas ni categorías inventadas: **el formato definitivo del catálogo es una decisión del usuario y no está tomada.**
 
@@ -8,7 +8,7 @@
 
 **`config` dice si la configuración resuelve, y nada más.** Sale de cruzar los tres registros de esta misma fecha: la solapa tiene que estar `uso = fuente` en `SOLAPAS`, y cada campo lógico —el del marcador y los que menciona el filtro— tiene que tener fila en `MAPEO`.
 
-**Contra el juego del 2026-08-17 da 78 de 78 que resuelven, y el motor publica DIEZ marcadores en error en una corrida real.** No es una contradicción: son dos preguntas distintas, y confundirlas es el modo de falla que este proyecto ya pagó.
+**Contra el juego del 2026-08-18 da 78 de 78 que resuelven, y el motor publica DIEZ marcadores en error en una corrida real.** No es una contradicción: son dos preguntas distintas, y confundirlas es el modo de falla que este proyecto ya pagó.
 
 | | |
 |---|---|
@@ -72,7 +72,7 @@ Por eso la columna se llama `config` y **no** `estado`: una etiqueta verde que s
 
 | token | informe | medida (`campo_logico`) | base / solapa | operación | filtro | dimensiones | formato | config |
 |---|---|---|---|---|---|---|---|---|
-| **`frecuencia`** | `jm` | `dig_impresiones/alcance` | `looker/resumen_metricas_dinamico` | `RATIO` | `campana~=JM` | — | `numero` | resuelve |
+| **`frecuencia`** | `jm` | `dig_impresiones/alcance` | `looker/resumen_metricas_dinamico` | `RATIO` | — | `ambito=jm` | `numero` | resuelve |
 
 ## Familia `gcba` — 11 token(s)
 
@@ -88,7 +88,7 @@ Por eso la columna se llama `config` y **no** `estado`: una etiqueta verde que s
 | **`gcba_pauta_meta`** | `jm` | `sd_pauta_meta` | `digital/Seguimiento digital` | `SUMA` | — | — | `miles` | resuelve |
 | **`gcba_pauta_prog`** | `jm` | `sd_pauta_prog` | `digital/Seguimiento digital` | `SUMA` | — | — | `miles` | resuelve |
 | **`gcba_imp_total`** | `jm` | `Impresiones` | `looker/DIGITAL` | `SUMA` | `estado=Activa` | `ambito=gcba` | `miles` | resuelve |
-| **`gcba_frecuencia`** | `jm` | `dig_impresiones/alcance` | `looker/resumen_metricas_dinamico` | `RATIO` | `campana!~=JM` | — | `numero` | resuelve |
+| **`gcba_frecuencia`** | `jm` | `dig_impresiones/alcance` | `looker/resumen_metricas_dinamico` | `RATIO` | — | `ambito=gcba` | `numero` | resuelve |
 
 ## Familia `imp` — 7 token(s)
 

@@ -4274,3 +4274,56 @@ más probable** — medir cuál es, es lo que destraba esto.
 ⚠ **No confundir con la identidad en ventana, que sí cierra y sí sirve como control.** Son dos
 mediciones distintas del mismo campo y **la que vale como invariante estructural es la de
 ventana**, que es la que una migración va a tener que reproducir.
+
+---
+
+## Ninguna hoja de registro fecha una escritura sobre `MARCADORES` — 17/08/2026
+
+**El caso que lo destapó:** la tanda 4 de `D-33` **estaba aplicada y nadie sabe en qué corrida**.
+A las 11:58 del 17/08 los dos marcadores tenían `dimensiones` vacío; a las 19:10
+`curarCamposMarcadores_` los reportó como `YA ESTABA` en los cuatro campos. **La escritura ocurrió
+en esa ventana de siete horas y ninguna corrida la reclama.**
+
+**`CORRIDAS` no lo puede responder, y no es una falla suya.** Registra **generaciones de informe**
+—`corrida_id`, `informe_id`, `periodo_id`, `deck_id`, `fecha_generacion`, `tokens_reemplazados`,
+`faltantes`, `mapa_tokens`— y es un **insumo, no un log** (`D-07`). Las escrituras de
+configuración van por otro camino —el menú, los wrappers de migración, `upsertPorClave_`— y
+**ninguno deja rastro fechado**.
+
+**Lo único que acota la ventana son los snapshots**, y dan el día pero no la hora:
+`MARCADORES_2026-08-17.tsv` tiene **40** marcadores con `dimensiones`,
+`MARCADORES_2026-08-18.tsv` tiene **42**.
+
+⚠ **Es menor mientras los controles cierren, y por eso no bloqueó la tanda.** Se anota porque
+**un cambio en una hoja de registro sin corrida que lo reclame es exactamente el caso donde hace
+falta poder decir cuándo pasó** — y porque el repo tiene el precedente inverso: `abrirCorrida_`
+existe para que una generación que muere deje su fila igual. Las escrituras de configuración no
+tienen ese equivalente.
+
+**No se propone solución acá.** Un log de escrituras es una hoja nueva y una decisión de esquema;
+lo que corresponde es dejar dicho que hoy la pregunta *"¿cuándo se escribió esto?"* **no tiene
+dueño**.
+
+## `tools/snapshot.js` fecha en UTC y adelanta un día después de las 21:00 — 17/08/2026
+
+`const fecha = opcion(argv, 'fecha', new Date().toISOString().slice(0, 10));` — **`toISOString()`
+es UTC**, y la máquina corre en ART (UTC−3). **Todo snapshot tomado después de las 21:00 locales
+se archiva con la fecha del día siguiente.**
+
+**Medido:** a las 22:31 del 17/08 la corrida escribió once archivos `*_2026-08-18.tsv`.
+
+⚠ **Importa más de lo que parece porque estos archivos son evidencia fechada** (§7): son la
+respuesta a *"¿qué decía una hoja de registro en una fecha dada?"*, y **la fecha del nombre es lo
+único que los ordena**. Un snapshot adelantado un día hace que una cita al *"snapshot del 18"*
+describa el estado del 17 — que es la clase de error que el versionado de snapshots vino a evitar.
+
+**El taller ya tiene la salida:** el script acepta `--fecha=AAAA-MM-DD`, y se usó para corregir la
+tanda de las 22:31. **Pero un default que hay que acordarse de corregir a mano es deuda**, y de la
+clase que no falla: el archivo se escribe igual, con el nombre equivocado, sin que nada avise.
+
+⚠ **Y un segundo efecto, que se pagó el mismo día: re-correr el snapshot el mismo día PISA la
+evidencia anterior.** El `MARCADORES_2026-08-17.tsv` pre-migración se sobrescribió con el estado
+post-migración, y **la única copia del estado previo quedó en git**. Se recuperó con
+`git checkout`, pero **nada en el script advierte que está por pisar un archivo ya versionado**.
+Los dos problemas son de la misma familia: **el nombre del archivo es la única identidad del
+snapshot, y nada protege esa identidad.**

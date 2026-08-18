@@ -1419,23 +1419,64 @@ migra sin apuro — por eso la migración de los 51 no bloquea a nadie, pero la 
 | 11 | **El embudo de Call Center** | Depende de **7 y 8**: sin el alta de columna no hay dato, y sin la regla no está declarado qué universo se cuenta |
 | 12 | **`alcance` y `clics` de campaña destacada, y `m2_campanias`** como `LISTA + CUENTA(LISTA)` | `m2_campanias` además espera una definición del usuario |
 | **12 bis** | ~~**Conectar el testigo de `D-31`**~~ — **HECHO la noche del 16/08.** `leerMapeoSinCache_` indexa `encabezado` (ésa era la causa raíz), `desalineamientoDeEncabezado_` compara —y recibe una **lista** de esperados, porque hay **12 grupos (base, solapa, letra) con más de una fila**—, el aviso sale por el cierre de corrida, y `verificarEncabezadosDeMapeo()` barre todo `MAPEO` sin generar informe. **El valor devuelto no cambia nunca.** Control positivo fuera de Apps Script extrayendo el código real: 13 afirmaciones, y los 5 mutantes mueren. **Falta su primera medición contra la planilla** | **El frente 6 dejó el dato y no la alarma**, y eso se midió el 16/08: `leerMapeoSinCache_` **ni siquiera indexa** la columna `encabezado`, y `buscarMapeo` devuelve sólo `{ hoja, columna }` — **no hay un punto del camino de lectura que compare nada**. Con el motor leyendo **por posición**, un corrimiento de columna hace que el mapeo apunte una más allá **sin fallar**; y con títulos repetidos —`Base_Digital` tiene ocho `ID Cuentas`— `obj[h] = fila[i]` **gana el último**, así que puede devolver **ni siquiera la columna vecina**. Va antes de la tanda 1 porque la migración toca muchas filas de configuración y conviene tener la alarma puesta antes, no después. ⚠ **La política ya está decidida en `D-31` y la función la aplica, no la reinventa:** no corregir la letra sola nunca, reportar los dos valores, no bloquear la corrida. **Y el límite es del instrumento, no una omisión:** el testigo compara **rótulos, no contenido** — `C-09` es la prueba, y tiene que estar dicho en el código y no sólo en `D-31`. Prompt: `docs/Prompts/2026-08-16_2_testigo_encabezado_conectado.md` |
-| 13 | **La migración, por tandas** — ⚠ **el alcance real son 48, no 78** (17/08; ver *"Tres cifras corregidas"*). ✅ **40 de 48 migrados: piloto, tanda 1, tanda 2 y tanda 3 cerradas.** **Queda la tanda 4** —`frecuencia`/`gcba_frecuencia` de `looker`, `2026-08-17_4`— **y con ella se cierra la migración de lo que se puede migrar.** ⚠ **Los otros seis NO son una tanda pendiente: están bloqueados por otra causa** — ver abajo | Empieza por los que **ya tienen la dimensión escrita en el `filtro`** y sólo hay que sacarla del nombre: los `mail_*`/`gcba_mail_*` y `frecuencia`/`gcba_frecuencia`. **No son "los nueve pares `gcba_*`"** —eso era una cifra del snapshot del 11/08 que la medición corrigió—, y **los tres pares `pauta_*` NO entran**: tienen filtro vacío en los dos lados, así que son un número publicado dos veces y van a validación (`PENDIENTES`). **Cada tanda se compara contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`, no contra la corrida anterior** — así los errores no se acumulan de tanda en tanda. **No bloquea a nadie:** lo nuevo ya nace con la estructura buena |
-| **13 bis** | **`DIMENSIONES_` pasa a ser hoja de registro** — ✅ **DECIDIDO** (usuario, 16/08): la tabla de traducción de dimensión lógica a expresión física **tiene que ser una hoja**, no un mapa en código. Es lo que `D-33` promete con la simetría hacia `MAPEO` y **hoy cumple a medias**: `MAPEO` es una hoja y agregar un mapeo es una fila; `DIMENSIONES_` vive en `Fuentes.gs` y agregar un valor exige **editar un `.gs` y pushear** — justo lo que `D-01` mide. ⛔ **Va DESPUÉS de cerrar la migración, y el motivo va escrito: mover la tabla mientras se migra es cambiar el traductor y lo traducido al mismo tiempo, y ninguna comparación aguanta las dos variables juntas.** Prompt: `docs/Prompts/2026-08-16_6_dimensiones_a_hoja.md`, **sin ejecutar** |
+| 13 | **La migración, por tandas** — ⚠ **el alcance real son 48, no 78** (17/08; ver *"Tres cifras corregidas"*). ✅ **CERRADO 17/08/2026 — 42 de 48, que es TODO LO MIGRABLE.** Piloto, tandas 1, 2, 3 y 4 cerradas. ⚠ **Los seis restantes NO son una tanda pendiente ni deuda de vocabulario: son un hueco de dato** (`@ultimo_ambiguo`) — ver abajo. **Esto destraba el 13 bis** | Empieza por los que **ya tienen la dimensión escrita en el `filtro`** y sólo hay que sacarla del nombre: los `mail_*`/`gcba_mail_*` y `frecuencia`/`gcba_frecuencia`. **No son "los nueve pares `gcba_*`"** —eso era una cifra del snapshot del 11/08 que la medición corrigió—, y **los tres pares `pauta_*` NO entran**: tienen filtro vacío en los dos lados, así que son un número publicado dos veces y van a validación (`PENDIENTES`). **Cada tanda se compara contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`, no contra la corrida anterior** — así los errores no se acumulan de tanda en tanda. **No bloquea a nadie:** lo nuevo ya nace con la estructura buena |
+| **13 bis** | **`DIMENSIONES_` pasa a ser hoja de registro** — ✅ **DECIDIDO** (usuario, 16/08): la tabla de traducción de dimensión lógica a expresión física **tiene que ser una hoja**, no un mapa en código. Es lo que `D-33` promete con la simetría hacia `MAPEO` y **hoy cumple a medias**: `MAPEO` es una hoja y agregar un mapeo es una fila; `DIMENSIONES_` vive en `Fuentes.gs` y agregar un valor exige **editar un `.gs` y pushear** — justo lo que `D-01` mide. ✅ **DESTRABADO el 17/08 al cerrar la tanda 4.** El motivo por el que esperaba sigue valiendo y conviene no perderlo: **mover la tabla mientras se migra es cambiar el traductor y lo traducido al mismo tiempo, y ninguna comparación aguanta las dos variables juntas.** Con la migración cerrada (42 de 48) esa colisión ya no existe. Prompt: `docs/Prompts/2026-08-16_6_dimensiones_a_hoja.md`, **sin ejecutar** |
 | 14 | **El catálogo de tokens generado desde `MARCADORES`** — qué mide cada uno, de dónde sale, con qué operación y con qué filtro · **primera versión hecha 16/08**: `tools/catalogo.js` → `docs/CATALOGO_tokens.md` | **Es el objetivo declarado de todo esto:** que alguien del equipo arme una filmina eligiendo tokens documentados que dicen qué son y cómo se arman. **Generado, no escrito a mano** — a mano se desincroniza en la primera migración. — **Se regenera después de cada tanda** (usuario, 16/08): es parte de cerrar la tanda, no una tarea aparte. ⚠ **Y para cuando se defina el formato definitivo: la columna `config` es el acierto de la primera versión y hay que conservarla como distinción.** Dice **"la fila está bien armada"**, no *"el token anda"* — y son cosas distintas: el cruce estático da **78 de 78** mientras el motor publica **diez en error**, porque ésos fallan en ejecución. Llamarla `estado` habría hecho leer lo segundo donde sólo dice lo primero |
 
-### Los ocho que quedan, y están bloqueados por causas **distintas** — 17/08/2026
+### ✅ Tanda 4 CERRADA — 17/08/2026 · **la migración está completa sobre lo migrable: 42 de 48**
 
-**40 de 48 migrados. Los ocho restantes no son "lo que falta de la cola": son dos problemas
-separados y sólo uno es una tanda.**
+**El par `frecuencia`/`gcba_frecuencia` de `looker/resumen_metricas_dinamico` declara su
+`ambito` en `dimensiones`, con `filtro` vacío en los dos.**
+
+| toma | cuándo | `dimensiones` |
+|---|---|---|
+| **pre** | 16/08 22:20 · 17/08 11:58 | vacío en los dos |
+| **post** | **17/08 22:21** | `ambito=jm` / `ambito=gcba` |
+
+⚠ **El testigo pre no se tomó para esta tanda: se reconstruyó de dos corridas anteriores** que
+registran los dos marcadores con `dimensiones: (vacío)` explícito. **El orden previsto no se
+cumplió** — la migración ya estaba aplicada cuando se fue a correr la Parte A.
+
+| # | control | resultado |
+|---|---|---|
+| **1** | **la partición** ⭐ | **`4 + 22 = 26` en las tres tomas** |
+| 2 | cuentas de filas | `4/26` y `22/26`, idénticas |
+| 3 | valores | **numerador movido, denominadores quietos** — ver abajo |
+
+**El criterio NO fue la igualdad de valores, y es la única tanda donde no podía serlo.** `looker`
+se mueve **dentro** de ventanas cerradas mientras `digital` crecía **fuera**; el prompt lo dejó
+escrito **antes** de correr para que un valor distinto no se leyera como falla.
+
+#### ⭐ El control 3 resolvió la pregunta que la tanda tenía abierta desde que se escribió
+
+**Los dos denominadores —475.723 y 1.249.387— idénticos en las tres tomas**, con el numerador de
+`frecuencia` moviéndose (6.399.346 → 6.282.424 → 6.763.034). **Denominador quieto y numerador
+moviéndose es `looker` acumulando, no la dimensión leyendo otras filas:** si el corte se hubiera
+traducido mal, el alcance habría cambiado también — es la misma lectura, sobre las mismas filas,
+en la misma corrida.
+
+⚠ **Ese control existió recién esa noche**, después de arreglar `operandosDeRatio_` —que **nunca**
+había matcheado la traza real—, y **en su primera lectura útil cerró la tanda**. Detalle en
+`docs/_snapshots/TESTIGO_frecuencia_2026-08-17_2221.md`.
+
+#### El hueco de trazabilidad: no se sabe en qué corrida se aplicó
+
+**Entre las 11:58 y las 19:08 del 17/08**, y **ninguna corrida la reclama**. `CORRIDAS` no lo puede
+responder y no es falla suya: registra **generaciones de informe** y es un **insumo, no un log**
+(`D-07`). **Ninguna hoja de registro fecha una escritura sobre `MARCADORES`.** Lo único que acota
+la ventana son los snapshots —**40** el 17/08, **42** el 18/08—, que dan el día y no la hora.
+Menor acá porque los controles cerraron igual; anotado en `PENDIENTES` porque un cambio de
+configuración sin corrida que lo reclame es justo el caso donde hace falta poder decir cuándo pasó.
+
+### Los seis que quedan — **un hueco de dato, no una tanda** — 17/08/2026
 
 | qué | cuántos | por qué no están migrados | qué lo destraba |
 |---|---|---|---|
-| **`frecuencia` / `gcba_frecuencia`** (`looker/resumen_metricas_dinamico`) | **2** | **Es la última tanda y estaba diferida a propósito:** era el canario de `looker`, y migrarlo deja esa base sin ninguno sin migrar | **nada — está destrabada.** Prompt `2026-08-17_4` |
-| **Los seis `enc_mails_*`** (`digital/Directa Mail`) | **6** | ⚠ **NO es un problema de migración. No publican:** dan `sin_datos` con `«FALTA:@ultimo_ambiguo»`, así que **no hay contra qué verificar** — la Parte C compararía `sin_datos` contra `sin_datos` | **una decisión del usuario sobre el dato**: cuál de las dos filas del 28/07 vale cuando comparten la fecha más alta. `PENDIENTES`, 17/08 |
+| **Los seis `enc_mails_*`** (`digital/Directa Mail`) | **6** | ⚠ **NO es un problema de migración. No publican:** dan `sin_datos` con `«FALTA:@ultimo_ambiguo»`, así que **no hay contra qué verificar** — se compararía `sin_datos` contra `sin_datos` | **una decisión del usuario sobre el dato**: cuál de las dos filas del 28/07 vale cuando comparten la fecha más alta. `PENDIENTES`, 17/08 |
 
-**La distinción importa para leer el avance:** cuando la tanda 4 cierre, **la migración estará
-completa sobre todo lo que se puede migrar**. Los seis no son deuda de vocabulario — son un hueco
-de dato, y su corte sigue en `filtro` mientras tanto.
+**La distinción importa para leer el avance:** **42 de 48 no es "faltan seis", es "está
+completo"** sobre todo lo que hoy se puede migrar y verificar. Su corte sigue en `filtro` mientras
+tanto, y **eso es correcto**: migrar un marcador que no publica sería escribir sin poder comprobar.
 
 ⚠ **Consecuencia ya conocida: `tipo_envio` queda migrada a medias** —`m2` en `dimensiones`,
 `convocatoria` en `filtro`— y un censo de dimensiones que no lo espere lo va a leer como
