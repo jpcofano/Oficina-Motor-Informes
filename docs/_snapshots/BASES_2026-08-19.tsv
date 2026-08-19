@@ -1,0 +1,7 @@
+base_id	nombre	sheet_id	hoja_default	fila_encabezado	modo_periodo	tipo	activo	notas
+rdv	RDV JM CM ES + funcionarios	1ZpHO6Ru1uY2r9WfBF_yFtu5z7ip7F3Q6VOoRJN5vLAo	RVD JM-CM - ES	1	filtrar	google_sheets	sí	Encuentros
+digital	Seguimiento Digital	1LadILzFpyCrZRapxgDOFOldSoRawjKkWMaFci_ilhPY	Seguimiento digital	1	snapshot	google_sheets	sí	Campaña por canal. Paso 2.3: snapshot — sus solapas usan fecha de inicio de campaña (lead 3-7 días), el recorte por período lo hace el agregador vía link campaña↔encuentro, no ventana de fecha cruda.
+looker	Base Looker	1t6Ji4Cd5lTeBEBBVIoIJUOWjvsOzWBDZmKN163rHKaQ	resumen_metricas_dinamico	1	filtrar	google_sheets	sí	Consolidado. Fuente = resumen_metricas_dinamico (S-01, Paso 2.9 Parte C, 31/07): QUERY() viva sobre Cuentas; resumen_metricas es un pegado que devolvió 899 de 903 filas sin fecha — DOC-3 Parte A cerrada.
+m2	M2 Reporte para Fede 2026	1_GS01-TXrhez0GlpFf4bUjWLNQPfaW9BOFFXz0hZNvY		3	snapshot	google_sheets	sí	Directa + Digital en hojas separadas. Sin hoja_default (Paso 2.10 Parte C): m2 sin fuente activa para m2_*.
+miba	Integración MiBA			1	filtrar	google_sheets	no	Parqueada
+reuniones	Base reuniones - Digital - Call Center	12b0v67FbxjuIndK7DgVU3MYxx-k0yBIS9gtyV45rFaY	Agenda JM	1	snapshot	google_sheets	sí	Una fila por encuentro, clave ID = id_cuenta del anclaje. PRE en Agenda JM y POST en Agenda JM | Post, con el MISMO id (C-50): la clave del par es (ID, solapa). snapshot porque el recorte lo hace campo_id_cuenta (D-30), no la fecha.
