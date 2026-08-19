@@ -201,3 +201,40 @@ dentro de ventanas cerradas está medido; **cuánto y por qué, no**.
 ⚠ **Lo que esto NO autoriza:** dar por buena la diferencia porque *"`looker` se mueve"*. Es
 exactamente la lectura que `CLAUDE.md` §4 previene — *"un `RESTO` que cambia no acusa a la
 migración hasta haber mirado si creció el universo"*, y acá el universo no se miró.
+
+---
+
+# Addendum 2 — 19/08/2026 · el alcance de la base se mueve, y eso toca la lectura de `X-19`
+
+> **Addendum fechado, no edición.** Refuerza el addendum del 19/08 de más arriba; **no lo
+> contesta.**
+
+**Medido el 19/08 a las 18:38**, sobre la ventana `24–30/07` —**cerrada hace tres semanas**— y
+contra la toma del 17/08:
+
+```
+alcance (denominador de `frecuencia`)   475.723  →  745.632     +56,7 %  en 48 h
+```
+
+## Qué cambia para `X-19`
+
+**La diferencia de −4,3 % en alcance NO se puede leer como un desvío estable.** El addendum del
+19/08 comparó el deck (3.178.282) contra la base (3.042.983) y anotó la diferencia como pregunta
+abierta. **Con la base moviéndose así, esa comparación vale para el instante en que se hizo y no
+más.**
+
+⚠ **No la contesta: la refuerza.** Que el alcance se mueva **explica que haya diferencia**, no
+**cuál es el valor correcto** — y menos aún el `8,4` publicado, que sigue sin reproducir ni por
+ratio ni por `looker/ALCANCE`.
+
+## Lo que sigue siendo cierto de `X-19`, sin tocar
+
+**Las otras tres campañas destacadas de esa lámina truncan bien a un decimal.** Ese dato **no
+depende del drift**: es una propiedad de la misma lámina, medida en la misma toma. **Sigue
+descartando el formato y dejándolo como problema de qué se calculó.**
+
+## La consecuencia operativa
+
+**Toda cifra de `looker` que se cite en un caso lleva la hora de la corrida al lado.** Una tabla de
+números de esta base **sin hora no se puede citar dos días después** — y ésta es evidencia que la
+ventana de validación va a consumir.

@@ -10851,3 +10851,70 @@ la protege.**
 migración, que era el único motivo por el que esperaba. Los seis `enc_mails_*` quedan como hueco
 de dato, no como deuda de vocabulario: **42 de 48 no es "faltan seis", es "está completo"** sobre
 todo lo que hoy se puede migrar y verificar.
+
+---
+
+## 2026-08-19 — Parte 0 del `2026-08-19_1`: el alcance de `looker` se mueve, y `R-24` se confirmó sola
+
+**Los nueve ítems medidos, y dos hallazgos que el prompt no pedía.**
+
+### El alcance creció **+56,7 % en dos días**, sobre una ventana cerrada
+
+| | 17/08 | 19/08 18:38 | |
+|---|---|---|---|
+| `frecuencia` · numerador | 6.763.034 | 7.671.871 | +13,4 % |
+| `frecuencia` · **denominador** | **475.723** | **745.632** | **+56,7 %** |
+| `frecuencia` · valor | ~14,22 | 10,29 | −27,6 % |
+| `gcba_frecuencia` · denominador | 1.249.387 | 1.253.901 | +0,36 % |
+| cuentas de filas | 4/26 · 22/26 | **idénticas** | — |
+
+**Ventana `2026-07-24–2026-07-30`, cerrada hace tres semanas.**
+
+⚠ **Esto NO reabre la tanda 4, y se dice acá justamente para que nadie la reabra al leer el
++56,7 %.** Las cuentas de filas son idénticas, la partición `4 + 22 = 26` cierra, y **el criterio de
+cierre de esa tanda fue la partición, no los valores** — precisamente porque esto pasa. Estaba
+escrito antes de correrla: *"la igualdad exacta puede NO darse aunque la migración esté bien"*.
+
+**Lo que el hallazgo sí hace es retirar la mitad de un argumento auxiliar.** El *"denominador quieto
+y numerador moviéndose es `looker` acumulando"* del 17/08 **describía esa tarde, no un régimen**.
+Dos días después el denominador se movió **más** que el numerador.
+
+**Y una consecuencia de método, que es lo reutilizable:** *"si los denominadores se movieron,
+parar"* **deja de ser un gate utilizable entre corridas separadas por días** — dispara siempre, y un
+gate que dispara siempre es ruido que se aprende a ignorar. El criterio pasa a ser **la partición y
+las cuentas de filas**, con la comparación de valores **sólo dentro de la misma sesión**. Es
+`CLAUDE.md` §4 otra vez: la pregunta no es si la base está quieta, sino si se mueve **dentro del
+intervalo de la verificación**.
+
+### ⭐ `R-24` confirmado por un caso que nadie buscó
+
+`digital/CAMPAÑAS_DESGLOCE_DIGITAL` (5.037 filas) devolvió, por cuenta:
+
+```
+3305  15 filas   Meta(2) · TikTok(3) · Google ads(6) · DV360(4)
+3410  12 filas   Meta(2) · Google ads(4) · DV360(6)
+3258   2 filas   Meta(2)
+3139   6 filas   Meta(2) · Google ads(2) · DV360(2)
+```
+
+**Aparecieron `TikTok` y `DV360`.** `R-24` define `programmatic` **por resta** —*todo lo que no es
+Meta ni Google ads*— y no por lista; **las dos caen adentro solas**. Son exactamente las que una
+enumeración habría dejado afuera, y **el día que aparecieran nadie se habría enterado**: el token
+habría publicado un número más chico, plausible, sin fallar.
+
+**Es la mejor confirmación que tuvo esa regla, y llegó midiendo otra cosa.**
+
+### Las dos fuentes sin cablear, medidas y **sin cablear**
+
+`camp_dir_impl` — `CONTEO` de filas de `digital/Directa Mail` reproduce el número del deck en **dos
+de tres** campañas. ⛔ **No se cablea con eso.** El pareo número↔lado se hizo **por orden de lectura
+sobre el texto del `.pptx`, sin coordenadas**, que es el error que el proyecto ya se anotó el 12/08.
+Va a la ventana de validación como caso numerado.
+
+⚠ **Y hay un dato que el conteo simple ignora:** `3258` tiene **dos filas el mismo día (29/06)** y
+`3139` **las dos el mismo día (23/06)**. Si el deck cuenta *envíos* y la base trae dos filas por
+envío, `CONTEO` **acierta por casualidad en unos casos y falla en otros** — que es justo el patrón
+de *"reproduce en dos de tres"*.
+
+`camp_dig_impl` — **ninguna definición reproduce**: ni filas ni plataformas, en ninguna de las tres.
+`Nomenclatura` (col L) queda como candidata y **medirla es otro prompt**.

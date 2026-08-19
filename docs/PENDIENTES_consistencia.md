@@ -4340,3 +4340,57 @@ post-migración, y **la única copia del estado previo quedó en git**. Se recup
 `git checkout`, pero **nada en el script advierte que está por pisar un archivo ya versionado**.
 Los dos problemas son de la misma familia: **el nombre del archivo es la única identidad del
 snapshot, y nada protege esa identidad.**
+
+---
+
+## El alcance de `looker` se recalcula **hacia arriba** sobre ventanas cerradas — 19/08/2026
+
+**Dos tomas del mismo período, `2026-07-24–2026-07-30`, cerrado hace tres semanas:**
+
+| | 17/08 | 19/08 18:38 |
+|---|---|---|
+| alcance `jm` (denominador de `frecuencia`) | **475.723** | **745.632** · **+56,7 %** |
+| alcance `gcba` | 1.249.387 | 1.253.901 · +0,36 % |
+| impresiones `jm` (numerador) | 6.763.034 | 7.671.871 · +13,4 % |
+| **cuentas de filas** | 4/26 · 22/26 | **idénticas** |
+
+**Mismas filas, otros números.** Por la regla de `CLAUDE.md` §4 eso descarta que la causa sea un
+recorte distinto: **la fuente reescribió los valores en su lugar.**
+
+⚠ **Un acumulado no baja, y tampoco salta 56,7 % tres semanas después.** Las explicaciones posibles
+son **distintas entre sí y ninguna está medida**:
+
+1. **recálculo de la deduplicación** — el alcance es deduplicado, así que puede recalcularse en
+   cualquier dirección;
+2. **cambio de universo** — filas que entraron o salieron de la campaña sin cambiar el conteo de
+   filas de la solapa;
+3. **carga tardía** — datos de julio que llegaron en agosto.
+
+**No se elige la más probable.** Medir cuál es, es lo que destraba esto.
+
+⚠ **Y el asimétrico que hay que explicar igual:** `jm` se movió **+56,7 %** y `gcba` **+0,36 %**,
+en la misma solapa y la misma toma. **Cualquier explicación tiene que dar cuenta de esa
+diferencia** — un recálculo global no la produce.
+
+### Lo que ya cambió por esto, y no espera a resolverse
+
+- **Los gates de verificación no pueden usar «el valor se movió» entre corridas de días
+  distintos.** El criterio pasa a ser **partición + cuentas de filas**, y la comparación de valores
+  **sólo dentro de la misma sesión**.
+- **Toda cifra de `looker` citada en un caso lleva hora.**
+
+## `SOLAPAS.filas_datos` envejece sin avisar — 19/08/2026
+
+`digital/CAMPAÑAS_DESGLOCE_DIGITAL` declara **4.904 filas** en `SOLAPAS` y la solapa tiene
+**5.037** (medido el 19/08 leyéndola directo). **133 filas de diferencia, y nada lo señaló.**
+
+**No es un bug: es una medición de `inventariarSolapas` que no se re-corrió.** Pero es del mismo
+tipo que las otras columnas de medición del repo —`filas_crudas`, `firma_encabezado`— y **el
+problema es que se leen como si fueran el estado de hoy**.
+
+⚠ **Es la regla de la evidencia fechada aplicada a una columna:** un número medido una vez, guardado
+en una hoja, **no declara cuándo se midió**. A diferencia de un snapshot —que lleva la fecha en el
+nombre— acá no hay forma de saber si está vieja **sin volver a medir**.
+
+**Lo accionable:** re-correr `inventariarSolapas` y, antes de citar `filas_datos` para decidir algo,
+**mirar si la cifra la produjo esta semana o hace un mes**.
