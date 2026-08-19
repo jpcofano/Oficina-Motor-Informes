@@ -148,6 +148,18 @@ function formatearValorMarcador_(valor, formato) {
   if (valor === '' || valor === null || valor === undefined) return '';
   var f = String(formato || '').trim().toLowerCase();
 
+  // Sufijo `_revisar` (2026-08-19_1 Parte C) — desconfianza declarada por una PERSONA sobre
+  // un número que se publica igual, entre guiones (`-8,89-`). No es un estado nuevo: los
+  // cuatro estados ya están cerrados y `REVISAR` significa otra cosa (valor vacío con
+  // rechazos, R-18 addendum 1) — reusar ese nombre acá rompería esa afirmación. Se resuelve
+  // el formato base (`numero_revisar` → `numero`, etc.) y se envuelve el resultado en
+  // guiones; el valor crudo no cambia, así que sigue siendo el que se audita. Quitar la
+  // marca el día que se confirme es editar una celda de MARCADORES, sin clasp push (D-01).
+  // El motor no pone ni saca este sufijo solo: sólo lo pinta cuando ya está declarado.
+  if (f.length > 8 && f.slice(-8) === '_revisar') {
+    return '-' + formatearValorMarcador_(valor, f.slice(0, -8)) + '-';
+  }
+
   if (f === 'texto' || f === '') return String(valor);
   if (f === 'fecha') {
     var fecha = (valor instanceof Date) ? valor : parsearFechaCelda_(valor);
