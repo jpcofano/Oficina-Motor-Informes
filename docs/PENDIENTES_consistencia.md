@@ -4304,7 +4304,20 @@ tienen ese equivalente.
 lo que corresponde es dejar dicho que hoy la pregunta *"¿cuándo se escribió esto?"* **no tiene
 dueño**.
 
-## `tools/snapshot.js` fecha en UTC y adelanta un día después de las 21:00 — 17/08/2026
+## ~~`tools/snapshot.js` fecha en UTC y adelanta un día después de las 21:00~~ — ✅ **CERRADO 17/08/2026**
+
+> **Arreglado el mismo día, y no fue a la cola.** Decisión del usuario: *"es el mecanismo que
+> sostiene todas las verificaciones que vienen"*. Las dos cosas quedaron hechas —**fecha local** y
+> **no pisar nunca**— con control positivo en `tools/probar-snapshot.js`, **16 afirmaciones**, sobre
+> un sistema de archivos inyectado: una prueba de *"no pises archivos"* que necesitara archivos de
+> verdad sería la primera candidata a hacer justamente eso.
+>
+> **La garantía nueva, dicha como propiedad:** un archivo de snapshot **nunca cambia de contenido
+> una vez escrito**. Si la hoja cambió, la toma nueva va a `<HOJA>_<fecha>_<HHMM>.tsv` y la primera
+> del día conserva el nombre pelado — que es al que apuntan las citas ya escritas. Si no cambió, no
+> se escribe nada.
+>
+> Se deja el diagnóstico abajo porque explica **por qué** el archivo es como es.
 
 `const fecha = opcion(argv, 'fecha', new Date().toISOString().slice(0, 10));` — **`toISOString()`
 es UTC**, y la máquina corre en ART (UTC−3). **Todo snapshot tomado después de las 21:00 locales

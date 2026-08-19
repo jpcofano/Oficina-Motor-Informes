@@ -149,3 +149,55 @@ es vacío. No hay código nuevo, hay un estado condicional.
 3. **Las 14 filas de `looker/DIGITAL` sin `Id cuentas`** (`C-43`) — dos de ellas son dato publicado.
 4. **Quién produce la agrupación editorial de M2** (`X-18`).
 5. **`C-21` sigue sin hacerse**: los fixtures viven sólo en la máquina del usuario.
+
+---
+
+# Addendum — 19/08/2026 · los cuatro números de «Egreso de mil cadetes», medidos contra la base
+
+> **Addendum fechado, no edición.** El archivo es append-only y el cuerpo de arriba no se toca.
+> Medido por el validador el 19/08/2026 contra `looker`, cuenta **`3305-JULSEGGJ`**, sobre la
+> lámina 17 del deck **JM 24–31/07**.
+
+## Tres reproducen con diferencia, uno no reproduce
+
+| medida | deck | base (19/08) | diferencia |
+|---|---|---|---|
+| Entregados | 348.035 | 348.010 | **−25** |
+| Usuarios alcanzados | 3.178.282 | 3.042.983 | **−4,3 %** |
+| Impresiones | 28.253.288 | 28.584.788 | **+1,2 %** |
+| Frecuencia | **8,4** | **no reproduce** | — |
+
+## `X-19` confirmado, y con una vía más descartada
+
+**La frecuencia publicada no es el cociente de los otros dos números publicados en la misma
+lámina:** `28.253.288 / 3.178.282 = 8,89`.
+
+**Y lo nuevo de esta medición: `looker/ALCANCE` da 2,27 para esa cuenta, que tampoco es 8,4.** Así
+que no es *"salió de otra solapa"* — al menos no de ésa.
+
+⚠ **El dato que descarta el formato y lo deja como problema de cálculo:** **las otras tres campañas
+destacadas de esa lámina truncan bien a un decimal.** Si fuera redondeo o formato, fallarían las
+cuatro. **Falla una sola, y es la que no cierra contra sus propios operandos.**
+
+**Sigue siendo un error publicado, no una pregunta abierta del motor:** el motor todavía no publica
+`camp_frecuencia`. Lo que esto agrega es que **cuando se cablee, no hay que reproducir el 8,4**.
+
+## Pregunta abierta: el alcance cayó 4,3 %
+
+**Los otros tres desvíos son drift esperable** —el deck es de julio y la base sigue acumulando—,
+y el signo lo confirma: impresiones **+1,2 %**, entregados **−25 sobre 348.035** (0,007 %).
+
+⚠ **Pero el alcance bajó 4,3 % en tres semanas, sobre una campaña TERMINADA.** Un acumulado no
+baja; y si el alcance es deduplicado, puede recalcularse hacia abajo, pero **4,3 % es mucho**.
+
+**Se anota como pregunta abierta, no como hallazgo cerrado.** Las explicaciones posibles son
+distintas entre sí y **ninguna está medida**: recálculo de la deduplicación, cambio en la ventana
+que la fila declara, o filas que salieron del universo. **No se elige la más probable.**
+
+**Y hay un precedente que la hace verosímil sin resolverla:** el 15/08 `looker` movió **138.427
+impresiones en 1h45** y dejó un numerador en **cero** durante un recálculo. Que esta base se mueva
+dentro de ventanas cerradas está medido; **cuánto y por qué, no**.
+
+⚠ **Lo que esto NO autoriza:** dar por buena la diferencia porque *"`looker` se mueve"*. Es
+exactamente la lectura que `CLAUDE.md` §4 previene — *"un `RESTO` que cambia no acusa a la
+migración hasta haber mirado si creció el universo"*, y acá el universo no se miró.

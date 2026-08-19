@@ -498,6 +498,23 @@ vacío, que seguía intacto.
     líneas más arriba en el mismo log**. Un instrumento no puede distinguir *"el mundo cambió"* de
     *"yo lo estoy leyendo mal"*: esa pregunta la tiene que hacer quien lee.
 
+**Un comentario que afirma un contrato es una premisa sin testigo.** `Reuniones.gs` declaraba
+*"`leerReuniones_()` … mismo contrato que `leerCampanas()`"*. **Era falso**: `leerReuniones_`
+devolvía una **lista** y `leerCampanas` un **mapa indexado** que **perdía filas repetidas en
+silencio**. La línea sobrevivió porque **nada la contradecía** — describía el diseño que se quería,
+no el que había, y no existe nada que compare un comentario contra el código que acompaña.
+
+- **Es la misma familia que la regla del instrumento**, un escalón más abajo: allá el criterio se
+  escribe mirando el estado de hoy y deja de medir cuando el estado cambia; acá la afirmación
+  **nunca fue cierta** y igual duró, porque un comentario no falla nunca.
+- **Lo accionable, y es barato:** cuando un comentario afirma que **dos cosas se comportan igual**
+  —mismo contrato, mismo formato, misma forma de retorno—, **abrí las dos**. Es la única
+  verificación posible y toma un minuto. Un comentario que dice *"igual que X"* es una invitación a
+  no mirar X, que es exactamente lo contrario de lo que debería producir.
+- ⚠ **Y el que más engaña es el que se vuelve cierto solo.** Éste lo es **desde el 18/08**, cuando
+  `CAMPANAS` pasó a leerse como lista. Si alguien lo mira hoy, verifica y confirma, **no se entera
+  de que estuvo mintiendo meses** — y el hallazgo, que era que las dos hojas divergían, se pierde.
+
 **Un test puede acertar el hecho y errar la inferencia.** `getFormulas()` sobre las dos
 hojas de `looker` devolvió bien "esta tiene fórmula"; la conclusión "por lo tanto deriva
 de la otra hoja del par" era falsa — la fórmula era un `QUERY()` sobre una **tercera**
@@ -706,6 +723,7 @@ distintas nunca compiten. La precedencia entra solo como desempate, al final.
 | ¿Qué decía una hoja de registro en una fecha dada? | `docs/_snapshots/AAAA-MM-DD_<hoja>.*`, generados por `tools/snapshot.js`. **Se versionan, y por eso existen**: el "snapshot del 11/08" se venía citando en cuatro documentos **como si fuera de hoy** porque no estaba en el repo y nadie podía mirarle la fecha. Un snapshot es **evidencia fechada** — al entrar uno nuevo, se revisa que ningún documento vivo cite cifras del viejo sin decir de cuándo son | nadie edita; se crea uno nuevo |
 | ¿Qué corridas de Apps Script están esperando, y qué destraba cada una? | `docs/CORRIDAS_pendientes_AAAA-MM-DD.md` — **una sola lista, ordenada por lo que destraba**. Nace de una corrida nocturna y **se consume**: cuando sus ítems se corrieron, el documento queda como evidencia congelada y el siguiente lo reemplaza. Distinto de `PLAN.md`, que ordena **frentes**: esto ordena **botones que hay que apretar** | los dos |
 | ¿Qué solapas tiene una base, con qué forma, y cuáles registra `SOLAPAS`? | `docs/CENSO_solapas_*_AAAA-MM-DD.md` — congelado, uno nuevo por corrida de censo. **Existe porque un censo que sólo vive en un reporte no se puede citar ni verificar**, y así se perdió el de la Parte A2 del `2026-08-14_1`: cuando el alta fue a escribirse, el repo nombraba 3 de 20 solapas. Es la evidencia que un alta de `SOLAPAS` **cita**; no clasifica —eso es del alta— y envejece como cualquier medición: para saber qué hay hoy se re-corre `censarSolapasParaAlta()` | nadie edita; se crea uno nuevo |
+| ¿Con qué `Id cuentas` se identifica una campaña, y por qué no por nombre? | `docs/CENSO_ids_campanas_AAAA-MM-DD.md` — congelado, uno nuevo por corrida. **Existe porque el nombre NO sirve como clave**: cuatro solapas dan cuatro grafías, ninguna igual a la del deck, y una fila de `Directa Mail` trae el nombre de **otra** campaña. Es la evidencia que una carga de `CAMPANAS` **cita**; no decide qué campañas van —eso es del usuario— y envejece como cualquier medición | nadie edita; se crea uno nuevo |
 | ¿Qué dio una corrida de protocolo de prueba y contra qué se verificó? | `docs/PROTOCOLO_*_corrida_*.md` — congelados, uno nuevo por corrida. Distinto de `VALIDACION_*`: eso mide números del informe contra las bases, esto verifica el comportamiento del motor contra un protocolo escrito | nadie edita; se crea uno nuevo |
 | ¿Cómo se opera / se corre algo? | `docs/RUNBOOK.md` — setup y ciclo de desarrollo | los dos |
 | ¿Qué hace una persona para sacar el informe de la semana? | `docs/PROCESO_SEMANAL.md` — la secuencia de uso, de la lista de WhatsApp al deck, con cada paso marcado **[hoy]** o **[falta]**. Distinto del RUNBOOK: ése cubre el setup y el desarrollo, éste el uso. Es además la especificación del panel, que es esta secuencia con botones | los dos |

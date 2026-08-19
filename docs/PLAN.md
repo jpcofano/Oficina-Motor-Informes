@@ -1828,6 +1828,8 @@ Cada ítem nombra **qué lo destraba y de quién depende**.
 
 | qué | qué lo destraba | depende de |
 |---|---|---|
+| ⭐ **`D-NN` — el motor no sabe PARA QUÉ CORRIDA está resolviendo. UNA pieza, dos síntomas.** Ver la entrada larga debajo de esta tabla: **se anota como una sola porque arreglarla dos veces la va a arreglar distinto** | **una decisión de diseño**: qué identifica una corrida y cómo viaja. Los dos síntomas la necesitan igual | usuario |
+| **`CAMPANAS` necesita columna de `Id cuentas`** — medido el 19/08: sus diez columnas no la tienen, y **el nombre no sirve como clave** (`docs/CENSO_ids_campanas_2026-08-19.md`). Los cuatro ids ya están medidos | **agregar la columna por `COLUMNAS_DELTA_`**, con su fila en `ESCRITORES.md`. ⛔ **Es lo que falta antes de cargar las campañas** | interno |
 | **`R-NN` del recorte heredado de Call Center** — *(era el frente 8 del Próximo; bajó acá el 16/08)*. **Los nueve `enc_*` de Call Center leen `reuniones/Agenda JM`, que es un agregado por encuentro ya calculado río arriba, y nadie declaró qué tipos de llamado entran en ese agregado.** El corte por `Tipo de llamado` existe una capa más abajo —en `reuniones/Call`— y el motor no lo ve: **hoy hereda un recorte que no eligió y que no está escrito en ninguna parte.** Es `C-64` otra vez, filas contra agregado. ⚠ **La premisa anterior era falsa y queda escrita para que no vuelva:** decía *"`enc_*` filtra `Tipo de llamado IN (Convocatoria, IVR convocatoria)` y `cc_*` no filtra"*, y **las dos mitades son falsas** (medido el 16/08 contra los snapshots del 15/08) — **no existe ningún marcador `cc_*`** (son tokens de las láminas 2 y 5 **sin fila**, que publican `—` por `_32.2`) **y ningún `enc_*` filtra por `Tipo de llamado`** (los nueve llevan guardas `!=0`, que `D-33` clasificó como restricción técnica). El único filtro `Convocatoria` es `mail_tipo=Convocatoria`, que es **mail**. El frente salió de un reporte de validación que se pasó al plan **sin cruzarlo contra `MARCADORES`** | **la decisión sobre los `cc_*`**, que el usuario ya tomó en su primera mitad: **siguen publicando `—` por `_32.2`** (16/08). Lo que falta es la otra mitad — **si `reuniones/Call` o `Métricas EDVs` pasan a `fuente`, o si el recorte se declara sin leerlas**. Hoy las dos están fuera del alcance de lectura a propósito, y `Métricas EDVs` además tiene dueño en otra planilla y clave `ID Reunión`, no `ID Cuentas`. **Subordinado a *primero se cierra la migración, después se cablea*** | usuario |
 | **`C-61` — dónde se inserta la columna que mueve 229 cuentas** *(era la decisión 1 del reporte del 16/08)*. La mitad de escritorio está medida: **el motor lee por posición**, y **`looker/CC` tiene cero filas de `MAPEO` y cero marcadores**, así que hoy no hay mapeo de `CC` que un corrimiento pueda romper. Falta el censo de la solapa y la decisión de **a la derecha del todo** (riesgo cero) **o en el medio** (corre todas las letras a su derecha, y el mapeo apunta una más allá **sin fallar**) | **la decisión del 16/08: *primero se cierra la migración, después se cablea*.** No es un pendiente suelto: está **diferido a propósito** detrás de la migración. El censo (`censarSolapasParaAlta()` sobre `looker/CC`) puede correrse antes, porque es sólo lectura | usuario |
 | **Unificar los cuatro pares `enc_*` / `ivr_*`** — `enc_atendidos`/`ivr_atendidos`, `enc_e75`/`ivr_75`, `enc_e75_pct`/`ivr_75_pct`, `enc_marque1`/`ivr_marque1` | **el piloto de `D-33`**, y después `C-01`. Misma base, misma solapa, mismo campo, sin filtro: **no es descuido, es una migración a medio hacer** — `TOKENS.md` ya declara `enc_*` como canónico y los `ivr_*` siguen cableados porque las **láminas 2 y 5** los usan. **Decidido (usuario, 15/08): sobrevive `enc_*`.** No entra al `_2` porque unificar es **renombrar tokens en la plantilla**, que es de `C-01`, y arrastra esas dos láminas | usuario, por `C-01` |
@@ -1854,6 +1856,61 @@ Paso 4 van a emitir `«FALTA:miba_*»` en `FALTANTES` en cada corrida. **Lo post
 auto-reporta.**
 
 ---
+
+### ⭐ La pieza que falta: **el motor no sabe para qué corrida ni para qué informe está resolviendo**
+
+> **Una sola pieza, dos síntomas.** Se anota junta a propósito: **si se arregla por separado se va
+> a arreglar dos veces y distinto** — dos formas de decir "para qué corrida", que después hay que
+> reconciliar.
+
+**La causa es la misma en los dos casos y ya estaba medida el 16/08:** las funciones que resuelven
+**no reciben la identidad de la corrida**. Reciben la *ventana*, que es una consecuencia, no la
+identidad.
+
+| dónde | qué recibe | qué le falta |
+|---|---|---|
+| `resolverVentana(opciones)` | `campana`, `periodo_ref`, … | **`informe_id`** |
+| `itemsDeSeccion_(seccion, informeId, ventanaInforme)` | `ventanaInforme` | **el `periodo_id` de la corrida** |
+
+#### Síntoma 1 · `jm` y `secco` resuelven la MISMA ventana (16/08)
+
+Los cinco eslabones de `D-20` son **campaña → `periodo_ref` del marcador → sección → `CONFIG` →
+`R-11` calculado**, y **no hay eslabón de informe**. Como `CONFIG` es **un único par de celdas
+global**, los dos informes caen ahí y resuelven **24–30/07** con origen `config`. Los eslabones 2 y
+3 no se disparan nunca: `periodo_ref` está vacío en los **78 marcadores** y en las **36 secciones**.
+
+**Se puede forzar a mano** —`generarInforme(informeId, periodoId)` pisa la cadena entera— **pero no
+se resuelve solo.**
+
+**Qué necesita:** que `informe_id` entre a la cadena de `D-20` como eslabón, por encima de
+`CONFIG`.
+
+#### Síntoma 2 · la selección semanal de campañas no existe (18/08)
+
+Con `CAMPANAS` como lista y sin el filtro por `informe_id`, **lo único que decide en qué corrida
+sale una campaña es `periodo_id`** — y la rama `CAMPANAS` de `itemsDeSeccion_` sólo exige que **no
+esté vacío**, no que **coincida con el período de la corrida**.
+
+⚠ **Consecuencia concreta y verificable: con las tres campañas cargadas, las tres saldrían en
+TODOS los informes.** No es un olvido del cambio del 18/08: es esta pieza.
+
+**Qué necesita:** que `itemsDeSeccion_` reciba el `periodo_id` de la corrida y compare contra
+`CAMPANAS.periodo_id`. Hoy no lo tiene — la rama `REUNIONES` se lo saca a `anclarEncuentros`, que
+es una fuente distinta y no le sirve a `CAMPANAS`.
+
+#### Por qué es una sola pieza y no dos
+
+**Las dos preguntas son la misma:** *"¿de qué corrida es esto?"*. Un arreglo que le pase
+`periodo_id` a `itemsDeSeccion_` sin tocar `resolverVentana` deja el motor sabiendo la corrida para
+elegir ítems y **sin saberla para resolver la ventana** — que es de donde salen los números. Y al
+revés, ídem.
+
+**El precedente de este repo dice qué pasa cuando se parte una decisión así:** `R-16` y `R-17` se
+separaron y las dos versiones divergieron hasta que `R-21` tuvo que unificarlas. La fila de §7 que
+declara a `R-21` dueña única de esa pregunta existe por eso.
+
+⚠ **Y lo que NO es:** no es un bug de `CAMPANAS` ni de `D-20`. Los dos módulos hacen bien lo que
+tienen delante; **lo que falta es un dato que nadie les pasa**.
 
 ## 4 · Backlog (sin orden, sin fecha)
 
