@@ -1841,7 +1841,11 @@ var SEED_SOLAPAS_ = [].concat(
 
   // looker — "Base Looker"
   [
-    filaSolapa_('looker', 'resumen_metricas_dinamico', 'fuente', 'Paso 2.9 Parte C (S-01): QUERY() viva sobre Cuentas, no deriva de resumen_metricas — hoja_default'),
+    // `2026-08-19_1` Parte B — `campo_id_cuenta: 'id_cuenta'`: el grano de esta solapa ES la
+    // campaña (995 filas, 1 por id_cuenta, medido el 19/08), y la campaña es el ítem de la
+    // iteración de la lámina de resultados agregados — así que el recorte lo hace la cuenta y
+    // NO la fecha (D-30 + R-17: el temario ya seleccionó).
+    filaSolapa_('looker', 'resumen_metricas_dinamico', 'fuente', 'Paso 2.9 Parte C (S-01): QUERY() viva sobre Cuentas, no deriva de resumen_metricas — hoja_default', { campo_id_cuenta: 'id_cuenta' }),
     filaSolapa_('looker', 'resumen_metricas', 'derivada', 'Paso 2.9 Parte C (S-01): pegado de valores; devolvió 899 de 903 filas sin fecha'),
     filaSolapa_('looker', 'MAIL', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 5748 }),
     filaSolapa_('looker', 'IVR', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 190 }),

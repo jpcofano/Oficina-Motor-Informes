@@ -88,6 +88,16 @@ existe.**
 | `REUNIONES` | sin sembrador, a propósito | — ídem, más `cargarTemarioReuniones_` |
 | `LAMINAS` | sin seed posible | — su contenido se **deriva de las plantillas**: no hay valor declarado contra el cual diffear |
 
+⚠ **`campo_id_cuenta` NO tiene la protección de `D-32`, aunque comparta fila con `uso`.** La
+protección de `D-32` es específica de esa columna —`usoAEscribir_` conserva el `uso` de la hoja
+incluso con `origen = 'seed'`—; `campo_id_cuenta` no tiene ese mecanismo: `aplicarClasificacionSolapas_`
+la siembra siempre con `obj.campo_id_cuenta || ''`, y `upsertPorClave_` reescribe la fila entera
+con `(h in obj) ? obj[h] : ''`. Sólo se salva con `origen = 'manual'` en la fila entera —protección
+de fila, no de columna—; en cualquier fila `origen = 'seed'` (como `looker/resumen_metricas_dinamico`,
+`_44`/`D-30`, 19/08), una edición a mano de `campo_id_cuenta` no sobrevive al próximo "Aplicar
+configuración". **Es `D-31` con `encabezado`, textual**: una columna que el seed conoce y no
+declara se blanquea sola.
+
 **Las dos hojas que no propagan lo hacen POR DECISIÓN, y las dos dicen lo mismo:** el valor del
 seed es **piso, no autoridad**. Lo que una persona editó en la hoja gana, porque ahí vive una
 decisión que el código no conoce. Es la misma idea que `D-32` para `SOLAPAS.uso`.
