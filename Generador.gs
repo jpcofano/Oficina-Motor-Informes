@@ -345,8 +345,44 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
    * un filtro declarativo no sirve acá porque `parsearCondicionFiltro_` toma el valor **literal**,
    * el mismo texto para las seis láminas. */
   var campoCuenta = campoIdCuentaDeSolapa_(fila.base_id, solapa);
+  var idCuentaItem = opciones && opciones.id_cuenta;
+
+  /* ── `A` (19/08/2026) · **`campo_id_cuenta` deja de ser todo-o-nada** ──────────────────────
+   *
+   * **El problema que resuelve.** Declarar `campo_id_cuenta` en una solapa obligaba a que **todos**
+   * sus marcadores se emitieran dentro de un ítem con cuenta. Para poner los `camp_*` a leer por
+   * campaña había que declararlo en `looker/resumen_metricas_dinamico`, y eso **rompía
+   * `frecuencia` y `gcba_frecuencia`** —la tanda 4— que son agregados globales legítimos y no
+   * tienen ítem del que sacar una cuenta.
+   *
+   * **Alcance real, medido el 19/08 y más chico de lo que parecía:** son **2** marcadores, no 36.
+   * Las solapas de `digital` **nunca llegan hasta acá** —la rama de `digital` de más arriba las
+   * atrapa y ya tiene su propio agregado global desde el 15/08—, así que declarar
+   * `campo_id_cuenta` en ellas no cambiaba nada. La colisión existía **sólo** en las bases que no
+   * son `rdv` ni `digital`.
+   *
+   * **Qué hace ahora:** con cuenta, la rama por cuenta —base entera, sin ventana, `R-17`—. Sin
+   * cuenta, **cae a la rama general** en vez de fallar, que es lo mismo que `digital` ya hacía.
+   *
+   * ⚠ **Y lo que se pierde con esto, dicho porque es real y fue una decisión, no un descuido.** La
+   * guarda que se afloja existía por un buen motivo, escrito en `planDeLecturaPorCuenta_`: *leer
+   * una solapa de grano cuenta sin cuenta no es una lectura más amplia, es otra pregunta*. Con la
+   * guarda, un marcador que **debía** leer por cuenta y se emitió sin ítem fallaba ruidoso; ahora
+   * **publica el agregado**, que es un número grande y plausible.
+   *
+   * **La contención es la traza, y por eso el origen lo dice con todas las letras** —
+   * `agregado global … la solapa declara campo_id_cuenta`—: el caso no desaparece, se vuelve
+   * legible. **Se evaluó declararlo por marcador** (una columna en `MARCADORES`) en vez de
+   * inferirlo de la ausencia; el usuario eligió esta vía el 19/08. Si el agregado plausible
+   * aparece, **ésa es la salida y ya está pensada**. */
+  var avisoAgregadoDeclarado = '';
+  if (campoCuenta && !idCuentaItem) {
+    avisoAgregadoDeclarado = ' — ⚠ la solapa declara `campo_id_cuenta = ' + campoCuenta +
+      '` y este marcador se emite SIN ítem: se lee como AGREGADO GLOBAL de todas las cuentas (A, 19/08)';
+    campoCuenta = null;
+  }
+
   if (campoCuenta) {
-    var idCuentaItem = opciones && opciones.id_cuenta;
     var plan = planDeLecturaPorCuenta_(fila.marcador, fila.base_id, solapa, campoCuenta,
       idCuentaItem, buscarMapeo(fila.base_id, solapa, campoCuenta));
     if (!plan.ok) return { ok: false, motivo: plan.motivo };
@@ -392,7 +428,7 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     filas: lectura.filas,
     encabezado: encabezado,
     columna: campo.columna,
-    origen: 'leerFuente(' + fila.base_id + '/' + solapa + ')'
+    origen: 'leerFuente(' + fila.base_id + '/' + solapa + ')' + avisoAgregadoDeclarado
   };
 }
 
