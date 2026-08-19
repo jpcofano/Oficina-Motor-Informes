@@ -307,6 +307,26 @@ function cargarTemarioCampanas_(textoPegado, periodoId, informeId) {
       // `AJ-1` — ante la duda entra. El paréntesis no se interpreta.
       mostrar: 'sí',
       orden: p.orden,
+      /* `2026-08-19_1` Parte A — **la clave de join de toda la sección de campañas.**
+       *
+       * **El hueco que cierra:** este cargador resuelve el `ID Cuentas` desde el 08/08 y lo escribe
+       * en `campana_id`; la columna `id_cuenta` **nació el 18/08**, así que hasta hoy salía vacía y
+       * `itemsDeSeccion_` pasaba `id_cuenta: c.id_cuenta` **en blanco** al ítem. **El temario ya
+       * traía el id y el ítem no lo recibía.**
+       *
+       * **Por qué DOS columnas y no reusar `campana_id`, aunque hoy traigan el mismo valor:**
+       *
+       *   - **`campana_id` es la clave de la fila y tiene que existir siempre.** Cuando el nombre no
+       *     resuelve vale `SIN_ID_<nombre>`, que **no es un id de cuenta**: usarla como join haría
+       *     que el motor buscara `SIN_ID_egreso_de_cadetes` en la base y **encontrara cero filas sin
+       *     poder decir por qué**.
+       *   - **`id_cuenta` vacío significa exactamente una cosa: el temario no resolvió.** Es la
+       *     señal que la lámina necesita para publicar un hueco visible en vez de un número.
+       *
+       * ⚠ **Y el caso que obliga a que sean dos y no un renombre:** una campaña puede entrar al
+       * informe **sin id** (`AJ-1`, *ante la duda entra*), y esa fila **tiene que poder completarse
+       * a mano después**. Con una sola columna, completar el id **cambiaría la clave de la fila**. */
+      id_cuenta: r.id || '',
       notas: nota
     };
     filas.push(headers.map(function (h) { return (h in fila) ? fila[h] : ''; }));
