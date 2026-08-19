@@ -1745,7 +1745,12 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
           seccion_id: seccion.seccion_id,
           filtro_seccion: seccion.filtro
         },
-        id_cuenta: '',
+        /* `2026-08-19` — **la cuenta de la campaña viaja con el ítem.** Estaba en `''` desde que
+         * la rama existe: el slot ya estaba y sólo le faltaba el dato. Con esto los `camp_*` leen
+         * por la misma vía que los `enc_*` — rama por cuenta, base entera, **sin recorte por
+         * ventana** (`R-17`: el temario ya seleccionó) — en cuanto la solapa declare su
+         * `campo_id_cuenta` en `SOLAPAS`. Sin esa declaración, esto es inerte y no cambia nada. */
+        id_cuenta: String(c.id_cuenta || '').trim(),
         motivo: '',
         orden: Number(c.orden || 0)
       });

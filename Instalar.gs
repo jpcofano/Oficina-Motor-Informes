@@ -143,7 +143,10 @@ var HOJAS_CONFIG_ = {
   // Paso 2.15 Parte B — `periodo_id` primera: es clave foránea a PERIODOS, se lee como
   // identidad y no como dato suelto. Ver D-19 para qué hace el motor con una fila vacía.
   CAMPANAS: {
-    headers: ['periodo_id', 'campana_id', 'nombre', 'informe_id', 'base_id', 'tipo', 'desde', 'hasta', 'mostrar', 'orden']
+    // `id_cuenta` (19/08): la campaña se une al dato por cuenta, no por nombre. El motivo largo
+    // está en `COLUMNAS_DELTA_.CAMPANAS`. Va acá **además** del delta porque esta lista es la que
+    // vale para una planilla nueva, que no pasa por el delta.
+    headers: ['periodo_id', 'campana_id', 'nombre', 'informe_id', 'base_id', 'tipo', 'desde', 'hasta', 'mostrar', 'orden', 'id_cuenta']
   },
   PERIODOS: {
     headers: ['periodo_id', 'desde', 'hasta', 'notas']
@@ -298,7 +301,30 @@ var COLUMNAS_DELTA_ = {
     // primera. Las entradas se evalúan en orden en el forEach de aplicarInstalacion_:
     // una entrada nueva adelante correría los índices 6 y 7 de las que ya están, que
     // asumen el esquema previo (mismo caso que documenta la nota de MARCADORES).
-    { nombre: 'periodo_id', indice: 1 }
+    { nombre: 'periodo_id', indice: 1 },
+    /* `2026-08-19` — **`id_cuenta`: la campaña se une al dato por CUENTA, no por nombre.**
+     *
+     * **Medido, y es lo que obliga a esta columna:** cuatro solapas dan cuatro grafías distintas
+     * de la misma campaña y **ninguna coincide con la del deck** —*"Egreso más de 1000 Cadetes"*
+     * contra *"Egreso de mil cadetes"*—. Y el caso que ninguna normalización arregla: en
+     * `digital/Directa Mail` la fila del 20/07 de la cuenta `3305` trae el nombre de **otra**
+     * campaña. **Un filtro por nombre pierde esa fila; uno por `Id cuentas` la trae.** Verificado
+     * el 19/08: filtrando por id, `3305` da **4** filas en esa solapa.
+     *
+     * **La resolución nombre → id la hace una persona UNA VEZ, al cargar**, contra
+     * `digital/Seguimiento digital`, que es la tabla puente: columna A `ID Cuentas`, B `Nombre
+     * campaña | Cuentas`, C `Nombre campaña | Digital`. **El motor nunca ve la ambigüedad**; si un
+     * nombre da dos ids, decide el usuario. Es el mismo criterio que `R-02` para el temario: lo
+     * que se publica se declara, no se deduce.
+     *
+     * **`nombre` queda como etiqueta del deck** y se escribe con la grafía de `Nombre campaña |
+     * Cuentas`, que es la que pega con el id — así la fila es verificable contra la columna B en
+     * vez de ser un texto suelto.
+     *
+     * Al final del array por lo mismo que explica la nota de arriba, y con la misma salvedad: el
+     * índice se cuenta sobre el esquema del momento y la columna puede terminar en otro. **No
+     * importa: todo se lee por nombre, nunca por posición.** */
+    { nombre: 'id_cuenta', indice: 10 }
   ],
   // Paso 2.15 Parte B: REUNIONES entra al delta ANTES de que su `headers` gane
   // `periodo_id`. Sin esto cae en la rama `else` de aplicarInstalacion_, que reescribe
