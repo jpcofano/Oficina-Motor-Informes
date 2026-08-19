@@ -4196,3 +4196,138 @@ function revertirTanda4DeFrecuencia() {
   });
   return r;
 }
+
+/**
+ * **`2026-08-19_1` Parte D — el alta de los nueve `camp_*` de la lámina de resultados agregados.**
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`.** Va por `curarMarcadores_`, que es la puerta declarada para
+ * agregar filas enteras por decisión de una persona: **no hay `SEED_MARCADORES_` y no lo va a
+ * haber** (`D-17`).
+ *
+ * **Las cinco decisiones que hay adentro, porque ninguna es obvia:**
+ *
+ * **1 · `ULTIMO` y no `SUMA`, aunque con una fila den lo mismo.** Los hermanos que ya publican
+ * estas medidas —`imp_total`, `mail_entregados`, `mail_aperturas`— usan `SUMA`. **El grano es
+ * distinto y por eso la operación también:** aquéllos leen solapas con muchas filas por cuenta y su
+ * trabajo es agregarlas; acá la lectura por cuenta devuelve **una sola fila** (medido el 19/08:
+ * 1 de 995 para los cuatro ids). ⚠ **El desempate es qué pasa el día que haya dos:** `SUMA` sumaría
+ * en silencio un **alcance**, que es deduplicado y **no se suma**, dando un número grande y
+ * plausible; `ULTIMO` **elige por fecha y lo dice en la traza**.
+ *
+ * **2 · `camp_frecuencia` es el `RATIO`, no la columna `frecuencia_total` (col M).** La solapa
+ * tiene las dos vías. Se elige el ratio porque **el hecho «frecuencia» ya tiene una sola definición
+ * en este motor** —`frecuencia`/`gcba_frecuencia`, `RATIO dig_impresiones/alcance`— y leer la
+ * columna acá crearía **dos definiciones del mismo hecho**, que es lo que `D-33` terminó de cerrar.
+ * El ratio además deja numerador y denominador en la traza, que es lo que permitió cerrar la
+ * tanda 4.
+ *
+ * **3 · `camp_titulo` sale de la BASE, no de `CAMPANAS.nombre`.** El título es `Nombre campaña |
+ * Cuentas`, la **misma columna** contra la que `catalogoDeCampanas_` resuelve el id: así **lo que
+ * se publica y lo que se matcheó son el mismo texto**, y `CAMPANAS.nombre` queda como el nombre que
+ * escribió la persona en el temario. Llega por la rama de `digital` (unión por cuenta), y
+ * `sd_campana_cuentas` ya está en `CAMPOS_DIMENSION_MAESTRA_` — **verificado el 19/08**.
+ *
+ * **4 · `dimensiones` vacío, y NO es una excepción a la regla del 17/08.** *«Todo marcador nuevo
+ * nace con el corte en `dimensiones`»* — y **éstos no tienen corte**. La campaña no es una
+ * dimensión: es **el ítem de la iteración**, y ya es contexto por dos vías. Ponerle `campana=X` a un
+ * marcador que se emite dentro de una lámina por campaña **recortaría lo mismo dos veces**.
+ *
+ * **5 · `filtro` vacío, sin guarda `!=0`.** Los `enc_*` llevan `imp_totales!=0` porque la fila del
+ * encuentro existe siempre y el cero significa *"no hubo"*. Acá una campaña **sin fila no publica**,
+ * y una fila con cero **es un cero real**. ⚠ **Agregar la guarda por simetría convertiría un cero
+ * verdadero en `«FALTA»`** — el error simétrico de `D-33` addendum 2.
+ */
+function altaMarcadoresDeCampana_() {
+  var N = function (via) {
+    return '2026-08-19_1 — ' + via + '. SIN VALIDAR';
+  };
+  var RAMA_CUENTA = 'rama por cuenta (`D-30`/`R-17`), 1 fila por id medida el 19/08';
+
+  var agregar = [
+    { marcador: 'camp_impresiones', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'dig_impresiones', operacion: 'ULTIMO',
+      filtro: '', dimensiones: '', formato: 'miles', notas: N(RAMA_CUENTA) },
+    { marcador: 'camp_visualizaciones', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'dig_visualizaciones', operacion: 'ULTIMO',
+      filtro: '', dimensiones: '', formato: 'miles', notas: N(RAMA_CUENTA) },
+    { marcador: 'camp_clics', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'dig_clics', operacion: 'ULTIMO',
+      filtro: '', dimensiones: '', formato: 'miles', notas: N(RAMA_CUENTA) },
+    /* ⚠ `camp_alcance` NO lleva `_revisar`, y es una decisión (addendum `_1.1` §3): la marca dice
+     * *"este número no está confirmado por ninguna vía"* y ése es el caso de `camp_frecuencia`.
+     * **`camp_alcance` reproduce, con drift** — marcarlo también **diluiría la marca hasta volverla
+     * decorativa**. El drift va en la nota, que es donde sirve. */
+    { marcador: 'camp_alcance', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'alcance', operacion: 'ULTIMO',
+      filtro: '', dimensiones: '', formato: 'miles',
+      notas: N(RAMA_CUENTA + '. El alcance de esta base se movió +56,7% en dos días sobre una ' +
+        'ventana cerrada (19/08): dos corridas del mismo período pueden dar distinto y NO es un ' +
+        'bug del motor. Mapea a la columna `meta_alcance` — ver A-12') },
+    { marcador: 'camp_entregados', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'mail_entregados', operacion: 'ULTIMO',
+      filtro: '', dimensiones: '', formato: 'miles', notas: N(RAMA_CUENTA) },
+    { marcador: 'camp_aperturas', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'mail_aperturas', operacion: 'ULTIMO',
+      filtro: '', dimensiones: '', formato: 'miles', notas: N(RAMA_CUENTA) },
+    { marcador: 'camp_ctor', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'mail_clics/mail_aperturas',
+      operacion: 'PCT', filtro: '', dimensiones: '', formato: 'porcentaje_sin_signo',
+      notas: N(RAMA_CUENTA + '. PCT sobre los agregados de la fila, no promedio de una tasa') },
+    /* ⚠ `numero_revisar` porque `X-19` sigue abierta: el deck publica **8,4** para `3305` y eso
+     * **no es** el ratio (28.253.288 / 3.178.282 = 8,89) **ni** `looker/ALCANCE` (2,27). **El número
+     * que salga es del motor, y no hay que reproducir el 8,4.** El hallazgo del 19/08 lo refuerza:
+     * con el denominador moviéndose 56,7% en dos días, el valor **va a cambiar entre corridas**, y
+     * los guiones son exactamente la señal de que ese número no está cerrado. */
+    { marcador: 'camp_frecuencia', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'dig_impresiones/alcance',
+      operacion: 'RATIO', filtro: '', dimensiones: '', formato: 'numero_revisar',
+      notas: N(RAMA_CUENTA + '. RATIO y no la columna `frecuencia_total` (col M): el hecho ' +
+        '«frecuencia» ya tiene una sola definición en el motor (D-33). X-19 ABIERTA: el 8,4 ' +
+        'publicado no reproduce ni por ratio ni por looker/ALCANCE — NO hay que reproducirlo') },
+    { marcador: 'camp_titulo', familia: 'camp', informe_id: 'jm', base_id: 'digital',
+      solapa: 'Seguimiento digital', campo_logico: 'sd_campana_cuentas', operacion: 'ULTIMO',
+      filtro: '', dimensiones: '', formato: 'texto',
+      notas: N('unión digital por cuenta; `sd_campana_cuentas` es la MISMA columna contra la que ' +
+        'catalogoDeCampanas_ resuelve el id, así que lo publicado y lo matcheado son el mismo texto') }
+  ];
+
+  return curarMarcadores_([], agregar);
+}
+
+/** Wrapper público del alta de los nueve `camp_*`. ⚠ **ESCRIBE en `MARCADORES`.** */
+function darDeAltaMarcadoresDeCampana() {
+  var r = altaMarcadoresDeCampana_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== alta de los nueve camp_* ==');
+  Logger.log('  agregadas (' + r.agregadas.length + '): ' + r.agregadas.join(', '));
+  if (r.quitadas.length) {
+    Logger.log('  ⚠ REEMPLAZADAS/QUITADAS (' + r.quitadas.length + '):');
+    r.quitadas.forEach(function (q) { Logger.log('     ' + q.marcador + ' (' + q.informe_id + ') — ' + q.motivo); });
+  }
+  Logger.log('  filas finales en MARCADORES: ' + r.filas_finales + '  (esperado: 87)');
+  if (r.filas_finales !== 87) {
+    Logger.log('  ⚠ NO son 87. Eran 78 y se agregan 9. Revisar antes de seguir.');
+  }
+  Logger.log('');
+  Logger.log('Ahora, la Parte E. ⭐ EL CONTROL PRINCIPAL es la TRAZA, no el numero:');
+  Logger.log('  tiene que decir `rama por cuenta`, NO `agregado global`.');
+  Logger.log('  Si campo_id_cuenta no llego o el item no trae cuenta, IGUAL sale un numero');
+  Logger.log('  -el agregado de 995 filas- y va a ser grande y plausible. Leer la traza es');
+  Logger.log('  lo unico que distingue los dos casos: tiene que decir `sin recorte por');
+  Logger.log('  ventana` y el id_cuenta del item.');
+  Logger.log('⚠ Y los nueve valores se reportan CON LA HORA al lado: esta base se movio 56,7%');
+  Logger.log('  en dos dias, asi que una tabla sin hora no se puede citar dos dias despues.');
+  return r;
+}
+
+/** Revierte el alta de los nueve. ⚠ **ESCRIBE en `MARCADORES`.** */
+function revertirAltaMarcadoresDeCampana() {
+  var LOS_9 = ['camp_impresiones', 'camp_visualizaciones', 'camp_clics', 'camp_alcance',
+    'camp_entregados', 'camp_aperturas', 'camp_ctor', 'camp_frecuencia', 'camp_titulo'];
+  var r = curarMarcadores_(LOS_9, []);
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== reversión del alta: ' + r.quitadas.length + ' fila(s) quitada(s) ==');
+  r.quitadas.forEach(function (q) { Logger.log('   ' + q.marcador + ' (' + q.informe_id + ')'); });
+  Logger.log('  filas finales: ' + r.filas_finales + '  (esperado: 78)');
+  return r;
+}
