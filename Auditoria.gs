@@ -3485,3 +3485,130 @@ function medirCampanasParaCarga() {
   Logger.log('== Reportar y parar. La carga la autoriza el usuario. ==');
   return { total: total, sin_dato: sinDato, solapas_leidas: solapasOk };
 }
+
+/**
+ * **`2026-08-19_1` Parte 0, ítem 9 — las dos fuentes candidatas de `camp_dir_impl` y
+ * `camp_dig_impl`.** Sólo lectura. **No cablea nada y no escribe en ninguna hoja.**
+ *
+ * Son los dos únicos tokens de la lámina 18 **sin fuente**. Esto mide qué hay hoy para que el
+ * usuario decida; **cablearlos es otro prompt** y el `2026-08-19_1` lo dice explícitamente.
+ *
+ * ⚠ **`camp_dig_impl` se lee CRUDO, y hace falta decir por qué.** `CLAUDE.md` §4 prohíbe
+ * reimplementar lo que el motor ya hace —ahí el motor gana siempre—. Acá **no hay nada que
+ * reimplementar**: `digital/CAMPAÑAS_DESGLOCE_DIGITAL` **no tiene un solo `campo_logico` en
+ * `MAPEO`** (medido el 19/08), así que `buscarMapeo` no resuelve y `leerFuente` no puede
+ * direccionar ninguna columna. La lectura cruda es **la única vía**, y es legítima porque mide
+ * algo que el motor todavía no puede ver. **El día que la solapa entre a `MAPEO`, esto sobra.**
+ *
+ * ⚠ **Y el ámbito va nombrado entero en todo el reporte**, porque hay DOS solapas que se llaman
+ * igual: `digital/CAMPAÑAS_DESGLOCE_DIGITAL` (`uso = fuente`, 4904 filas) y
+ * `m2/CAMPAÑAS_DESGLOCE_DIGITAL` (`uso = ignorar`, 4891 filas). Un *"tiene N filas"* sin base es
+ * una conclusión que nadie puede verificar — es la regla de los tres nombres parecidos.
+ */
+function medirFuentesDeImplementaciones() {
+  var IDS = ['3305-JULSEGGJ', '3410-JULSEGGJ', '3258-JUNJDGGJ', '3139-JUNDHHGC'];
+
+  Logger.log('== Parte 0 ítem 9 — las dos fuentes sin cablear. SÓLO LECTURA ==');
+  Logger.log('');
+
+  /* ── A · `camp_dir_impl` — `digital/Directa Mail`, por la vía normal ─────────────────────
+   * Esta sí está mapeada, así que se lee con `leerFuente` + `buscarMapeo` como cualquier otra:
+   * **no se inventa un camino cuando el del motor existe.** */
+  Logger.log('-- A · camp_dir_impl · digital/Directa Mail (CONTEO por Id cuentas) --');
+  var mapaId = buscarMapeo('digital', 'Directa Mail', 'mail_id_cuenta');
+  var mapaFecha = buscarMapeo('digital', 'Directa Mail', 'fecha_periodo');
+  if (!mapaId || !mapaId.columna) {
+    Logger.log('   ⚠ `mail_id_cuenta` no está en MAPEO — no se puede contar por cuenta.');
+  } else {
+    var lec = leerFuente('digital', null, 'Directa Mail', { sin_recorte_por_ventana: true });
+    if (!lec || !lec.ok) {
+      Logger.log('   ⚠ no se pudo leer: ' + (lec && lec.motivo));
+    } else {
+      var filas = lec.filas || [];
+      var kId = claveDeFila_(filas, 'mail_id_cuenta', encabezadoEnColumna_('digital', 'Directa Mail', mapaId.columna));
+      var kFecha = (mapaFecha && mapaFecha.columna)
+        ? claveDeFila_(filas, 'fecha_periodo', encabezadoEnColumna_('digital', 'Directa Mail', mapaFecha.columna))
+        : '';
+      Logger.log('   ' + filas.length + ' fila(s) en total, sin recorte por ventana');
+      IDS.forEach(function (id) {
+        var buscado = normalizarIdCuenta_(id);
+        var suyas = filas.filter(function (f) { return normalizarIdCuenta_(f[kId]) === buscado; });
+        var fechas = kFecha
+          ? suyas.map(function (f) { return formatearFecha_(parsearFechaCelda_(f[kFecha])) || '(sin fecha)'; })
+          : ['(fecha_periodo no mapeada)'];
+        Logger.log('     ' + id + '  CONTEO = ' + suyas.length + '   fechas: ' + fechas.join(' · '));
+      });
+      Logger.log('   ⚠ El CONTEO es de FILAS de la solapa, no de "implementaciones" — que nadie');
+      Logger.log('     declaró todavía qué son. Si una campaña manda dos veces el mismo envío,');
+      Logger.log('     son dos filas y una implementación. **Eso lo decide el usuario.**');
+    }
+  }
+
+  /* ── B · `camp_dig_impl` — `digital/CAMPAÑAS_DESGLOCE_DIGITAL`, CRUDO ───────────────────
+   * Sin `MAPEO`, las columnas se ubican **por texto de encabezado normalizado** (`R-10`: colapsa
+   * espacios y `trim`, preservando mayúsculas y acentos). Si no aparecen, **se listan los
+   * encabezados que sí hay** en vez de devolver cero: un cero sin explicación es indistinguible
+   * de "no hay datos", y acá lo probable es que la columna se llame distinto. */
+  Logger.log('');
+  Logger.log('-- B · camp_dig_impl · digital/CAMPAÑAS_DESGLOCE_DIGITAL (CRUDO, sin MAPEO) --');
+  var SOLAPA = 'CAMPAÑAS_DESGLOCE_DIGITAL';
+  if (usoSolapa_('digital', SOLAPA) === 'ignorar') {
+    Logger.log('   solapa `ignorar` — no se lee.');
+    return { ok: false };
+  }
+  var abierto = abrirHoja('digital', SOLAPA);
+  if (!abierto || !abierto.ok) {
+    Logger.log('   ⚠ no se pudo abrir: ' + (abierto && abierto.motivo));
+    return { ok: false };
+  }
+  var datos = abierto.hoja.getDataRange().getValues();
+  var filaEnc = resolverFilaEncabezado_('digital', SOLAPA, abierto.base.fila_encabezado);
+  var headers = datos[filaEnc - 1] || [];
+  var cuerpo = datos.slice(filaEnc);
+
+  var norm = function (v) { return normalizarValorDeclarado_(v); };
+  var buscarCol = function (alternativas) {
+    for (var i = 0; i < headers.length; i++) {
+      var hh = norm(headers[i]);
+      for (var j = 0; j < alternativas.length; j++) {
+        if (hh.toLowerCase() === alternativas[j].toLowerCase()) return i;
+      }
+    }
+    return -1;
+  };
+
+  var iId = buscarCol(['Id cuentas', 'ID Cuentas', 'id_cuentas', 'Id Cuenta']);
+  var iPlat = buscarCol(['Plataforma', 'plataforma']);
+
+  Logger.log('   ' + cuerpo.length + ' fila(s) de datos · encabezado en fila ' + filaEnc);
+  Logger.log('   encabezados: ' + headers.slice(0, 14).map(function (h, i) {
+    return String.fromCharCode(65 + i) + '=' + norm(h);
+  }).join(' | '));
+
+  if (iId === -1) {
+    Logger.log('   ❌ NO encontré la columna de `Id cuentas` por encabezado. **No se puede contar');
+    Logger.log('      por cuenta.** Los encabezados están arriba: la columna se llama distinto.');
+    return { ok: false };
+  }
+  Logger.log('   columna de cuenta: ' + String.fromCharCode(65 + iId) + ' "' + norm(headers[iId]) + '"' +
+    (iPlat === -1 ? ' · ⚠ NO encontré `Plataforma`' : ' · plataforma: ' + String.fromCharCode(65 + iPlat)));
+
+  IDS.forEach(function (id) {
+    var buscado = normalizarIdCuenta_(id);
+    var suyas = cuerpo.filter(function (f) { return normalizarIdCuenta_(f[iId]) === buscado; });
+    var plats = {};
+    if (iPlat !== -1) suyas.forEach(function (f) { var p = norm(f[iPlat]); if (p) plats[p] = (plats[p] || 0) + 1; });
+    var lista = Object.keys(plats);
+    Logger.log('     ' + id + '  ' + suyas.length + ' fila(s)' +
+      (iPlat !== -1 ? '   ' + lista.length + ' plataforma(s): ' +
+        (lista.length ? lista.map(function (p) { return p + '(' + plats[p] + ')'; }).join(' · ') : '—') : ''));
+  });
+
+  Logger.log('');
+  Logger.log('   ⚠ "Formatos digitales implementados" NO es evidentemente ninguna de estas dos');
+  Logger.log('     cuentas: puede ser plataformas distintas, piezas distintas, o filas. **Es una');
+  Logger.log('     definición del dominio que falta**, y por eso el prompt no lo cablea.');
+  Logger.log('');
+  Logger.log('== Reportar y parar. Las partes A–E las autoriza el usuario. ==');
+  return { ok: true };
+}
