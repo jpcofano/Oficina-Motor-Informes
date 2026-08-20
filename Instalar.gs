@@ -4331,3 +4331,95 @@ function revertirAltaMarcadoresDeCampana() {
   Logger.log('  filas finales: ' + r.filas_finales + '  (esperado: 78)');
   return r;
 }
+
+
+/**
+ * **`frecuencia` y `gcba_frecuencia` pasan a `numero_revisar`** — decisión del usuario, 19/08/2026.
+ *
+ * **Dos celdas de `formato` en `MARCADORES`, sin `clasp push`**: el sufijo ya vive en el formateador
+ * desde la Parte C del `2026-08-19_1`. **Ése es exactamente el punto de que sea un formato y no un
+ * estado** (`D-01`): el día que se explique el movimiento, sacar la marca es editar la celda.
+ *
+ * **El motivo, que es lo que la marca comunica:** el denominador de `frecuencia` —el **alcance**,
+ * col K— pasó de **475.723** (17/08 22:21) a **745.632** (19/08), **+56,7 % en dos días sobre una
+ * ventana cerrada de julio**, mientras el numerador subía 15,2 %. **No hay explicación medida.**
+ *
+ * ⚠ **Publicar entre guiones dice eso sin dejar de publicar**, que es la diferencia con `«FALTA:»`:
+ * el número **se calcula bien**; lo que no está cerrado es **de qué universo sale**. Un token en
+ * blanco afirmaría que no se pudo calcular, y sería falso.
+ *
+ * **Por qué las DOS y no sólo `frecuencia`**, aunque el salto grande sea el de `jm`: son la misma
+ * medida sobre la misma columna y el par se lee junto. Marcar una sola haría creer que la otra está
+ * verificada, cuando lo único medido es que **se movió menos** (+0,36 %). **«Se movió poco» no es
+ * «se explicó».**
+ *
+ * ⚠ **Las `notas` se AGREGAN, no se reemplazan, y por eso esta función lee antes de escribir.**
+ * `curarCamposMarcadores_` reescribe la celda con lo que se le pase: mandarle el motivo pelado
+ * **borraría la historia de esas dos filas** —`SIN VALIDAR - demo 12/08`, el re-apuntado del
+ * `_27 2.1`, el porqué de no llevar `estado=Activa`—, que es una decisión que alguien tomó y que no
+ * está en ningún otro lado (`CLAUDE.md` §4: no pisar lo que ya está).
+ *
+ * **Idempotente por marca de texto**: si la nota ya trae el sello, no se vuelve a agregar. Sin eso,
+ * dos corridas dejarían el motivo duplicado en la celda.
+ */
+var SELLO_REVISAR_FRECUENCIA_ = '`_revisar` (19/08/2026)';
+
+function marcarFrecuenciaComoRevisar_() {
+  var MOTIVO = SELLO_REVISAR_FRECUENCIA_ + ': el denominador (alcance, col K) pasó de 475.723 el ' +
+    '17/08 a 745.632 el 19/08 — +56,7% en dos días sobre una ventana CERRADA de julio, sin ' +
+    'explicación medida. El número se calcula bien; lo que no está cerrado es de qué universo ' +
+    'sale. Se saca el sufijo editando esta celda cuando se explique (D-01, sin clasp push).';
+
+  var EL_PAR = ['frecuencia', 'gcba_frecuencia'];
+  var actuales = {};
+  leerMarcadores_().forEach(function (m) {
+    if (EL_PAR.indexOf(m.marcador) !== -1 && String(m.informe_id).trim() === 'jm') {
+      actuales[m.marcador] = String(m.notas || '');
+    }
+  });
+
+  var faltan = EL_PAR.filter(function (n) { return !(n in actuales); });
+  if (faltan.length) {
+    return { ok: false, motivo: 'No están en MARCADORES (informe jm): ' + faltan.join(', ') };
+  }
+
+  var cambios = EL_PAR.map(function (n) {
+    var previa = actuales[n];
+    var nueva = previa.indexOf(SELLO_REVISAR_FRECUENCIA_) !== -1
+      ? previa                                   // ya sellada: no se duplica
+      : (previa ? previa + ' · ' : '') + MOTIVO;
+    return { marcador: n, informe_id: 'jm', formato: 'numero_revisar', notas: nueva };
+  });
+  return curarCamposMarcadores_(cambios);
+}
+
+/** Wrapper público. ⚠ **ESCRIBE en `MARCADORES`: `formato` y `notas` de dos filas.** */
+function marcarFrecuenciaComoRevisar() {
+  var r = marcarFrecuenciaComoRevisar_();
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== frecuencia y gcba_frecuencia -> numero_revisar: ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + String(a.anterior).slice(0, 60) +
+      '" -> "' + String(a.nuevo).slice(0, 60) + '"');
+  });
+  Logger.log('Los dos publican ahora entre guiones: -10.45- en vez de 10.45.');
+  Logger.log('⚠ El separador decimal es PUNTO, no coma: `numero` usa String(Math.round(n*100)/100),');
+  Logger.log('  sin toLocaleString, mientras `miles` sí usa es-AR. El deck publica 8,4 con coma.');
+  Logger.log('  Es PREEXISTENTE -ya está en las notas de los cinco ecv_insc_*_pct- y NO se arregla acá.');
+  return r;
+}
+
+/** Revierte las dos a `numero`. ⚠ **ESCRIBE en `MARCADORES`.** Deja la nota: es historia. */
+function revertirMarcaDeFrecuencia() {
+  var r = curarCamposMarcadores_([
+    { marcador: 'frecuencia', informe_id: 'jm', formato: 'numero' },
+    { marcador: 'gcba_frecuencia', informe_id: 'jm', formato: 'numero' }
+  ]);
+  if (!r.ok) { Logger.log('FALLÓ: ' + r.motivo); return r; }
+  Logger.log('== reversión del formato: ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" -> "' + a.nuevo + '"');
+  });
+  Logger.log('⚠ La nota NO se borra: dice por qué estuvo marcado, y eso sigue siendo cierto.');
+  return r;
+}
