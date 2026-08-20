@@ -1499,6 +1499,26 @@ techo de 350 s existe para cortar antes **con dignidad** — con barrida, con `F
 con la fila de `CORRIDAS` cerrada. Subirlo mueve el problema al límite duro, donde no hay nada de
 eso.
 
+### El costo por ítem, y qué pasa con el `2026-08-20_10` — 20/08/2026
+
+El `2026-08-20_11` atacó los 200 s de la pasada por ítem: `leerFuente` no cacheaba el dato y hacía
+**304 lecturas completas de solapa por corrida**, que con caché son **40**.
+
+⚠ **Pero el `_10` NO deja de ser urgente, y conviene escribirlo con el número delante.** La corrida
+posterior al caché **volvió a cortar**: `jm-20260820-175132`, 311 s de 350, **26 ítems emitidos y 10
+sin emitir**. La corrida creció —más ítems, no más costo por ítem— y **el techo sigue quedando
+corto**.
+
+⭐ **Lo que cambió es la razón por la que hace falta**, y eso ordena la cola: antes el `_10` habría
+sostenido un motor que releía la misma solapa 38 veces por ítem; ahora sostendría uno que
+**tiene más trabajo del que entra en seis minutos**, que es el problema que el `_10` viene a
+resolver de verdad. **Bajar el costo no volvió innecesario al mecanismo — lo dejó apuntando a la
+causa correcta.**
+
+**Y el orden se sostiene igual:** las 49 `*` de `secco` todavía no entraron. Cuando entren, el
+deck de `secco` suma sus propios ítems. `D-35` sigue en pie — mientras la corrida se corte, ningún
+deck es evidencia.
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
