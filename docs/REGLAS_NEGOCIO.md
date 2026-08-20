@@ -583,6 +583,53 @@ arranca el vie 26/06 termina el **jue 02/07**. Lo segundo sigue en pie y por un 
 fuerte: **no se toca porque lo cargó una persona**, y el punto 2 dice que eso manda. La
 discrepancia queda anotada en `docs/PENDIENTES_consistencia.md`, no corregida en la hoja.
 
+
+### Addendum 2 — 20/08/2026, decisión del usuario: **cuál semana se propone es la última cerrada**
+
+El enunciado de `R-11` no se altera, y el Addendum 1 tampoco. Esto responde una pregunta que
+**ninguno de los dos hacía**.
+
+**`R-11` define qué ES la semana** —siete días, viernes a jueves, extremos inclusive— **y nunca
+dijo CUÁL se elige respecto de la fecha de corrida.** Eso lo eligió el código, sin regla detrás:
+`semanaR11_` devolvía la semana que **contiene** a la fecha. Por eso esto entra como addendum y
+**no como derogación**: no hay enunciado previo que contradecir.
+
+**Lo que se decide:** cuando el motor propone una semana —el eslabón 5 de la cadena de `D-20`, el
+que corre con `CONFIG` vacío— propone **la última semana CERRADA**.
+
+| se corre el… | propone |
+|---|---|
+| jueves 20/08/2026 | **14/08 – 20/08** — el jueves cierra su propia semana |
+| **viernes 21/08/2026** | **14/08 – 20/08**, no 21–27: la semana que arranca ese viernes todavía no cerró |
+| sábado 22/08 · miércoles 26/08 | 14/08 – 20/08 — la propuesta no se mueve |
+| jueves 27/08/2026 | 21/08 – 27/08 |
+
+⚠ **El viernes es el único día donde esto difiere de la lectura anterior, y es exactamente el día
+en que se genera `jm`.** Los otros seis días del ciclo las dos lecturas coinciden. Es lo que hace
+que la decisión importe y, a la vez, lo que la vuelve fácil de verificar mal: **un caso de prueba
+tomado un jueves no distingue una lectura de la otra.**
+
+**Lo que NO cambia, y conviene decirlo porque es lo que más se confunde:**
+
+- **El punto 2 del Addendum 1 sigue intacto**: *configurar es el caso normal, el cálculo es el
+  piso*. Lo cargado en `CONFIG` sigue mandando siempre. Esto sólo dice **qué se calcula cuando no
+  hay nada cargado**.
+- **`semanaR11_` no cambió de comportamiento.** Sigue devolviendo la semana que **contiene** a la
+  fecha, y sigue siendo la correcta para agrupar un encuentro por su semana
+  (`diagEncuentrosPorSemana_`) — ahí "la última cerrada" no significa nada, porque la pregunta es
+  sobre un hecho pasado y no sobre una propuesta. La función nueva **se apoya** en ella: le
+  pregunta por el jueves anterior o igual a la fecha de corrida.
+
+**Origen:** decisión del usuario, 20/08/2026, ejecutada en `docs/Prompts/2026-08-20_2_semana_por_defecto.md`.
+
+**Cómo se verifica:** `node tools/probar-semana-cerrada.js`, sin planilla y sin esperar a un
+viernes. Incluye las nueve afirmaciones de `semanaR11_` tal como están, para poder demostrar que la
+función vieja no se tocó.
+
+**Si falla:** si el equipo decide que la propuesta debe ser la semana en curso, se marca este
+addendum derogado con fecha y el eslabón 5 vuelve a llamar a `semanaR11_` directamente. La función
+vieja sigue ahí, intacta, justamente para que esa reversión sea de una línea.
+
 ---
 
 ## R-12 — Ampliar antes de rendirse: no se reporta "sin match" sin haber buscado fuera de la ventana corta

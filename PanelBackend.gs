@@ -31,6 +31,86 @@ function fechaLegible_(valor) {
 }
 
 /**
+ * `2026-08-20_2` Parte B (20/08/2026) — **qué le falta a la ventana propuesta para ser
+ * confiable.** Devuelve una lista de `{ nivel, texto }`; vacía significa que no falta nada.
+ *
+ * ⚠ **Corrige una premisa del prompt, y la corrección importa más que el aviso.** El prompt daba
+ * por medido que *"una ventana propuesta sin fila en `PERIODOS` no se puede correr"*, y **eso es
+ * falso para el camino por defecto**. Medido el 20/08 sobre el código:
+ *
+ *   - `generarInforme(id, periodoId, opciones)` sólo exige que el `periodo_id` exista en
+ *     `PERIODOS` **cuando se le pasa uno**. El panel manda `''` cuando la persona deja el selector
+ *     en "por defecto", y ahí la cadena de `D-20` resuelve sola — **hasta el eslabón 5, que ahora
+ *     calcula la semana cerrada**. El deck se genera, sobre la ventana correcta, sin fila alguna.
+ *   - Lo que **sí** cambia sin período es otra cosa, y es peor porque no se ve:
+ *     `anclarEncuentrosSinCache_` saca el período **del `origen` de la ventana**, mirando si
+ *     empieza con `periodo_ref:`. Una ventana calculada trae `origen = 'R-11 (calculado)'`, así
+ *     que **el recorte de `D-19` no se aplica** y entran todas las filas con `mostrar=sí`.
+ *
+ * **El número que lo vuelve concreto, medido el 20/08 en la hoja viva:** `REUNIONES` tiene 12
+ * filas con `mostrar=sí` y son de **dos períodos distintos** —8 de `julio_24_30` y 4 de
+ * `junio_sem2`—. Sobre una ventana calculada, las 12 entran al anclaje. Las que no anclen contra
+ * `rdv` van a caer solas, **pero por el motivo equivocado**: no las excluye el período, las excluye
+ * no haber encontrado fila. Y cualquiera que sí ancle, entra.
+ *
+ * ⭐ **Por eso el aviso dice lo que dice.** *"No se puede correr"* habría sido falso y habría
+ * frenado a la persona sin motivo; *"salen todas las reuniones visibles"* es lo que efectivamente
+ * pasa. **Mostrar una advertencia equivocada es tan caro como no mostrar ninguna**, porque la
+ * próxima se lee con la misma desconfianza.
+ *
+ * El aviso **no bloquea el botón**: la corrida es válida y la ventana es la correcta. Lo que hace
+ * es que la persona sepa, antes de esperar cinco minutos, que las secciones repetibles no están
+ * recortadas por período.
+ */
+function avisosDeVentanaPropuesta_(ventana) {
+  var avisos = [];
+  if (!ventana || !ventana.ok) return avisos;
+
+  var origen = String(ventana.origen || '');
+  var traeperiodo = origen.indexOf('periodo_ref:') === 0;
+  if (traeperiodo) return avisos;
+
+  // Sin `periodo_ref:` en el origen no hay recorte de `D-19`. Se dice con el número adelante,
+  // porque "hay reuniones de otros períodos" y "hay 4 reuniones de junio" no se leen igual.
+  //
+  // ⚠ El conteo sale de `leerReuniones_()` **tal cual**, sin volver a filtrar por `mostrar`:
+  // esa función ya aplica el filtro con `esVerdadero_` y exige `eje`. Reproducir acá ese criterio
+  // sería el error que `CLAUDE.md` §4 documenta —*el instrumento que reproduce lógica del motor y
+  // la reproduce peor*—, y encima el aviso quedaría diciendo un número distinto del que el motor
+  // va a usar, que es justo lo que este aviso existe para evitar.
+  var deOtros = 0;
+  var visibles = 0;
+  try {
+    leerReuniones_().forEach(function (r) {
+      visibles++;
+      if (String(r.periodo_id || '').trim()) deOtros++;
+    });
+  } catch (e) {
+    // Un panel que no puede leer `REUNIONES` sigue sirviendo para generar: el aviso se degrada
+    // a genérico en vez de tumbar la pantalla.
+    avisos.push({
+      nivel: 'aviso',
+      texto: 'La ventana propuesta no tiene período con nombre, así que las secciones repetibles ' +
+        'no se recortan por período (D-19). No pude leer REUNIONES para decir cuántas entrarían.'
+    });
+    return avisos;
+  }
+
+  if (visibles) {
+    avisos.push({
+      nivel: 'aviso',
+      texto: 'La semana propuesta no tiene fila en PERIODOS. El informe se genera igual y sobre ' +
+        'estas fechas, pero las secciones repetibles NO se recortan por período: entran las ' +
+        visibles + ' reunión(es) con mostrar=sí' +
+        (deOtros ? ', incluidas ' + deOtros + ' que ya tienen otro período asignado' : '') +
+        '. Para que el recorte se aplique hay que elegir un período de la lista, o crear la fila.'
+    });
+  }
+
+  return avisos;
+}
+
+/**
  * Todo lo que el panel necesita para pintarse, en **una** llamada.
  *
  * Tres round-trips de `google.script.run` sobre un sidebar son tres esperas visibles y tres
@@ -92,7 +172,11 @@ function panel_getEstado() {
       etiqueta: formatearPeriodoLamina_(ventana),
       desde: formatearFecha_(ventana.desde),
       hasta: formatearFecha_(ventana.hasta),
-      origen: ventana.origen
+      origen: ventana.origen,
+      // `2026-08-20_2` Parte B — la propuesta viaja **con lo que le falta para ser confiable**.
+      // Ver `avisosDeVentanaPropuesta_`: NO es "no se puede correr" (sí se puede), es que las
+      // secciones repetibles no se recortan por período si la ventana no trae uno.
+      avisos: avisosDeVentanaPropuesta_(ventana)
     }
     : { ok: false, motivo: ventana.motivo };
 

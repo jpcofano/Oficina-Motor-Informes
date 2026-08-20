@@ -56,7 +56,7 @@ agujero del patrón.
 | `MAPEO` | `SEED_MAPEO_` vía upsert | upsert · `promoverFechasElegidas` + `migrarPrefijosFechaPeriodo_` (`Fechas.gs`) · migraciones `eliminarMapeoAlcanceDigitalObsoleto_`, `alinearMapeoLookerADinamico_`, `backfillSolapaMapeo_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ⚠ **dos escritores de contenido vivos**: el upsert y `promoverFechasElegidas`. El segundo sigue sin declarar — ver §2.1 |
 | `CONFIG` | `SEED_CONFIG_DEFAULTS_` vía `seedConfigConfig_` (solo completa vacíos) | `seedConfigConfig_` únicamente | ✅ un camino; el humano edita valores y el seed no los pisa |
 | `INFORMES` | `SEED_INFORMES_` vía upsert, **`plantilla_id` incluido** (cambió el 03/08/2026 — ver abajo) | upsert · `clasificarArchivoPlantilla_` (registro de plantillas, escribe `plantilla_id`) · ~~`repuntarPlantillaCanonicaJM_`~~ (retirada del código el 03/08/2026) | ✅ dos caminos, los dos declarados, con el seed como dueño de la columna |
-| `PERIODOS` | `SEED_PERIODOS_` vía upsert | upsert únicamente | ✅ |
+| `PERIODOS` | `SEED_PERIODOS_` vía upsert | upsert únicamente | ✅ un escritor **declarado**. ⚠ Pero eso **no** significa que una fila a mano no sobreviva — ver §PERIODOS abajo (20/08/2026) |
 | `SOLAPAS` | `SEED_SOLAPAS_` vía `aplicarClasificacionSolapas_` (clasificación) + `inventariarSolapas` (medición) | upsert de clasificación · `inventariarSolapas` (`Solapas.gs:119-147`: `filas_datos`, `filas_crudas`, `firma_encabezado`) · migraciones `alinearSolapasLookerADinamico_`, `reclasificarSolapasM2Invertidas_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ✅ tres caminos, los tres declarados. El reparto seed/inventario viene de C.2-7; la migración de looker dejó de escribir `notas` en la Parte E |
 | `SECCIONES` | `SEED_SECCIONES_` vía `sembrarSecciones_` | `sembrarSecciones_` únicamente | ✅ |
 | `CAMPANAS` | curada a mano (sin sembrador, a propósito) | **cero escritores en el código** | ✅ consistente con `ALCANCE_REGISTROS_` |
@@ -262,6 +262,27 @@ sólo se registra que fue el motivo del cambio de dueño.
 |---|---|---|---|
 | `upsertPorClave_` | `setValues` | Instalar.gs:1563 | vía aplicarSeedConfiguracion_ (Instalar.gs:1393) |
 | `upsertPorClave_` | `setValues` | Instalar.gs:1572 | vía aplicarSeedConfiguracion_ (Instalar.gs:1393) |
+
+**⚠ «Único escritor declarado» es cierto como declaración y falso como restricción** (20/08/2026,
+`2026-08-20_2` Parte B). El comentario de `SEED_PERIODOS_` dice *"el seed es el único escritor
+declarado de `PERIODOS`"*, y esta tabla lo repetía. Las dos cosas son ciertas **sobre el código** y
+se leían como *"para dar de alta un período hay que editar `Instalar.gs` y pushear"*, **que no es
+cierto**.
+
+**El mecanismo que lo garantiza, verificado en el código:** `calcularDiffUpsert_` junta en
+`soloEnHoja` las claves que están en la hoja y no en el seed, y `upsertPorClave_` las devuelve con
+el comentario puesto — `soloEnHoja: diff.soloEnHoja // C.2-5: se reporta, nunca se borra`. El upsert
+**agrega** las filas nuevas del seed y **actualiza** las que comparten clave; una fila escrita a mano
+con una clave que el seed no conoce **no se toca**.
+
+**Lo accionable:** dar de alta la semana en `PERIODOS` es **escribir una fila en la hoja**, no un
+`clasp push`. Sobrevive a *Aplicar configuración*.
+
+⚠ **Lo que sí hay que saber, y es la contracara:** una fila a mano **no vuelve** si alguien recrea la
+hoja, porque no está en ningún seed. Y sigue sin haber un escritor **programático** declarado — el
+día que el panel cree períodos, eso es un escritor nuevo y necesita su fila acá. **No se retira la
+declaración del seed**: sigue siendo el escritor declarado; lo que se agrega es qué pasa con lo que
+él no declara.
 
 ### SOLAPAS
 

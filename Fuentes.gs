@@ -345,7 +345,13 @@ function resolverVentana(opciones) {
   // acá la función devolvía error; ahora responde una semana. Lo cargado en `CONFIG` sigue
   // mandando siempre —`R-11` Addendum 1 punto 2: configurar es el caso normal, el cálculo es
   // el piso—, así que este eslabón sólo entra con `CONFIG` vacío o ilegible.
-  var semana = semanaR11_(new Date());
+  //
+  // `2026-08-20_2` Parte A, camino B (20/08/2026) — **la que se propone es la última semana
+  // CERRADA**, no la que contiene a la fecha de corrida. El motivo de elegir B y no dejar el
+  // cálculo acá y la propuesta en el panel: "el motor propone la semana por defecto" es **una**
+  // afirmación, y con dos definiciones el panel diría una semana y el motor resolvería otra
+  // —divergen justo el viernes, que es el día en que se genera `jm`—.
+  var semana = ultimaSemanaCerradaR11_(new Date());
   return {
     ok: true, desde: semana.desde, hasta: semana.hasta, origen: 'R-11 (calculado)',
     calculado: true,
@@ -378,6 +384,43 @@ function semanaR11_(fechaCorrida) {
   var hasta = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate() + 6);
 
   return { desde: desde, hasta: hasta };
+}
+
+/**
+ * `2026-08-20_2` Parte A (20/08/2026) — **la última semana cerrada**, viernes a jueves.
+ *
+ * **Decisión del usuario, 20/08/2026:** el motor propone la semana **cerrada** más reciente, no la
+ * que contiene a la fecha de corrida. Corriendo el jueves 20/08 propone 14/08–20/08; corriendo el
+ * viernes 21/08 **sigue proponiendo 14/08–20/08**, porque la semana que arranca ese viernes todavía
+ * no cerró. Entra como Addendum a `R-11`, **no como derogación**: `R-11` define qué es la semana
+ * —siete días, viernes a jueves, extremos inclusive— y nunca dijo **cuál** se elige respecto de la
+ * fecha de corrida. Eso lo eligió el código sin regla detrás.
+ *
+ * ⭐ **Reusa `semanaR11_` y NO reimplementa el corte viernes–jueves.** La forma, que es la mitad del
+ * valor de esta función: **el jueves anterior o igual a la fecha de corrida es el último día de su
+ * propia semana**, así que la última semana cerrada es la que `semanaR11_` devuelve para ese jueves.
+ * Un segundo cálculo del corte es el error que este repo ya cometió cuatro veces (`CLAUDE.md` §4);
+ * acá el corte sigue viviendo en un solo lugar y esto es una elección de **qué fecha preguntarle**.
+ *
+ * ⚠ **`semanaR11_` no cambia de comportamiento y su control positivo queda intacto.** Sigue
+ * devolviendo la semana que **contiene** a la fecha, que es lo que necesita
+ * `diagEncuentrosPorSemana_` para agrupar un encuentro por su semana — ahí "la última cerrada" no
+ * significa nada, porque la pregunta es sobre un hecho pasado y no sobre una propuesta.
+ *
+ * **El viernes es el único día donde las dos lecturas difieren**, y es justo el día en que se
+ * genera `jm`. El jueves coinciden —cierra su propia semana en las dos—, así que un fixture de
+ * jueves **no distingue las dos funciones**: el caso que las separa es el viernes.
+ */
+function ultimaSemanaCerradaR11_(fechaCorrida) {
+  var JUEVES = 4; // getDay(): 0 domingo … 4 jueves
+  var base = new Date(fechaCorrida.getFullYear(), fechaCorrida.getMonth(), fechaCorrida.getDate());
+
+  // El jueves anterior o igual. Si la corrida ES jueves, el retroceso es cero: el jueves cierra
+  // su propia semana, y eso vale en las dos lecturas.
+  var retroceso = (base.getDay() - JUEVES + 7) % 7;
+  var jueves = new Date(base.getFullYear(), base.getMonth(), base.getDate() - retroceso);
+
+  return semanaR11_(jueves);
 }
 
 /* ============ Paso 2.16 (D-21) — lista blanca de valores por columna ============ */

@@ -113,8 +113,18 @@ Preguntas que siguen abiertas:
 
 ### 1.2 Período
 
-**[OK]** Semana cerrada, de `CONFIG.periodo_desde` a `periodo_hasta`.
-**[?]** ¿El motor propone la última semana cerrada por defecto, o siempre se carga a mano?
+**[OK]** Semana cerrada, de `CONFIG.periodo_desde` a `periodo_hasta` **cuando están cargados** —
+lo que decidió una persona no se recalcula solo (`R-11` Addendum 1 punto 2).
+**[OK]** *¿El motor propone la última semana cerrada por defecto, o siempre se carga a mano?* →
+**propone** (decisión del usuario, 20/08/2026). Con `CONFIG` vacío, el eslabón 5 de `D-20` calcula
+**la última semana cerrada**, viernes a jueves: corriendo el viernes 21/08 propone 14/08–20/08 y no
+21–27, porque la semana que arranca ese viernes todavía no cerró. El detalle y el porqué viven en
+`docs/REGLAS_NEGOCIO.md`, `R-11` **Addendum 2** — acá no se copia, para que no se separen.
+
+⚠ **Y lo que la propuesta NO trae**, porque se confunde fácil: una ventana calculada **no tiene**
+período con nombre, así que las secciones repetibles **no se recortan por período** (`D-19`). El deck
+se genera igual y sobre las fechas correctas — el panel avisa, no bloquea. Ver
+`docs/PROCESO_SEMANAL.md`, «El selector de período».
 
 ### 1.3 Bloques con período propio
 

@@ -11273,3 +11273,111 @@ nombres de vecinos, barrios y volúmenes de envío a una conversación. **Es exa
 documento en vez de abrirse como pendiente.** Un pendiente invita a cerrarlo; una nota dice qué
 habría que medir **si** el criterio de privacidad cambiara. La distinción importa: no es una tarea
 que nadie hizo, es una que se decidió no hacer.
+
+---
+
+## Paso `2026-08-20_2` — el default es la última semana cerrada (2026-08-20) — commit de esta entrada
+
+- **Qué pedía el prompt:** que el motor proponga **la semana cerrada más reciente** en vez de lo que
+  haya en `CONFIG`. Camino **B** —el eslabón 5 también pasa a la cerrada— elegido por el usuario.
+- **Qué se hizo:** `ultimaSemanaCerradaR11_` nueva en `Fuentes.gs`, que **reusa `semanaR11_`** y no
+  reimplementa el corte. El eslabón 5 de `resolverVentana` la llama. `panel_getEstado` devuelve la
+  propuesta **con sus avisos** (`avisosDeVentanaPropuesta_`), y `Panel.html` los pinta. Control
+  positivo nuevo: `tools/probar-semana-cerrada.js`.
+- **Prueba:** 24 afirmaciones en verde, **más un control negativo**. `node tools/listas.js` verde.
+  Sintaxis validada con `node --check` sobre los tres archivos. `clasp push` corrido **y verificado
+  con `clasp pull`**: el proyecto vivo tiene las dos funciones.
+- **Pendientes/decisiones:** la fila de `PERIODOS` para la semana propuesta **no se creó** — el
+  prompt lo prohíbe explícitamente y va en un prompt propio.
+
+### ⭐ La precondición se cumplió, y por eso el camino B **sí** es observable
+
+El prompt advertía que con `CONFIG` cargado el eslabón 4 corta antes del 5 y B quedaría
+*implementado y no observable*, y mandaba **verificar esas dos celdas y reportarlo**. Se verificó
+contra la planilla viva, con un volcado nuevo a un temporal:
+
+```
+periodo_desde   (vacío)
+periodo_hasta   (vacío)
+```
+
+**El usuario las vació.** Así que el eslabón 4 ya no corta, la cadena llega al 5 en cada corrida sin
+`periodo_id`, y **el cambio se observa desde la primera corrida**. No hizo falta reportar el caso
+degradado.
+
+### ⚠ Una premisa central de la Parte B era falsa, y la corrección cambió lo que dice el panel
+
+El prompt daba por medido —desde el punto 4 de su propia Parte 0— que *"una ventana propuesta sin
+fila en `PERIODOS` no se puede correr"*, y mandaba que el panel dijera exactamente eso.
+
+**Es falso para el camino por defecto.** `generarInforme(id, periodoId, opciones)` exige que el
+`periodo_id` exista en `PERIODOS` **sólo cuando se le pasa uno**; el panel manda `''` cuando el
+selector está en "por defecto", y ahí la cadena de `D-20` resuelve sola hasta el eslabón 5. **El
+deck se genera, sobre las fechas correctas, sin fila alguna.**
+
+⚠ **La medición del punto 4 no estaba mal: estaba respondiendo a la otra mitad de la pregunta.**
+Mide el camino del *override explícito*, que es el que sí exige la fila. El error fue extenderla al
+camino por defecto, que es justamente el que la propuesta usa.
+
+**Lo que sí pasa sin período con nombre, y es peor porque no se ve:**
+`anclarEncuentrosSinCache_` saca el período **del `origen` de la ventana**, mirando si empieza con
+`periodo_ref:`. Una ventana calculada trae `origen = 'R-11 (calculado)'`, así que **el recorte de
+`D-19` no se aplica**.
+
+**El número que lo vuelve concreto, medido en la hoja viva el 20/08:** `REUNIONES` tiene **12 filas
+con `mostrar=sí`, de dos períodos distintos** —8 de `julio_24_30`, 4 de `junio_sem2`—. Sobre una
+ventana calculada las 12 entran al anclaje. Las que no anclen contra `rdv` van a caer solas, **pero
+por el motivo equivocado**: no las excluye el período, las excluye no haber encontrado fila.
+
+⭐ **Por eso el aviso dice lo que dice y el botón no se bloquea.** *"No se puede correr"* habría sido
+falso y habría frenado a la persona sin motivo. **Una advertencia equivocada cuesta lo mismo que
+ninguna**, porque la próxima se lee con la misma desconfianza.
+
+### El control positivo, y el negativo que confirma qué distingue
+
+`tools/probar-semana-cerrada.js`, **24 afirmaciones**, extrayendo las dos funciones reales de
+`Fuentes.gs`. Incluye las **nueve afirmaciones de `semanaR11_` tal como están**, que es el punto 6
+de la Parte C: sirven para demostrar que la función vieja no se tocó sin abrir Apps Script.
+
+**El control negativo fue romperla de la forma más tentadora** —que la función nueva fuera un alias
+de la vieja—: cayeron **8 afirmaciones**.
+
+⭐ **Y lo que el negativo confirmó vale más que el conteo: NO cayó el caso del jueves.** El jueves
+cierra su propia semana en las dos lecturas, así que **un fixture de jueves no distingue una
+función de la otra**. Es exactamente el modo de falla que `CLAUDE.md` §4 documenta con
+`[10, 5, '']`, y acá quedó demostrado en vez de argumentado. **El caso que separa las dos es el
+viernes** — y es el día en que se genera `jm`.
+
+### Lo que se midió para la Parte B bis, y salió a medias
+
+El prompt pedía confirmar contra la hoja que *"el grano mensual ya existe en el motor"*. Sale **la
+mitad**:
+
+- `PERIODOS` **sí** tiene `m2_mensual` (01/06–30/06). ✓
+- **`MARCADORES.periodo_ref` está vacío en las 87 filas.** Y `SECCIONES.periodo_ref` —el eslabón
+  3— **también está vacío en todas**.
+
+O sea: **el grano mensual existe como mecanismo y tiene cero usuarios.** El modo "mes" del selector
+no inventaría un grano nuevo, pero tampoco se apoyaría en algo probado: **la primera vez que alguien
+use `periodo_ref` va a ser también la primera vez que ese eslabón corra de verdad.** Quedó escrito
+así en `PROCESO_SEMANAL.md` en vez de la versión optimista.
+
+### La corrección a `ESCRITORES.md`, verificada antes de escribirla
+
+El prompt afirmaba que *"«el seed es el único escritor declarado de `PERIODOS`» es cierto como
+declaración y falso como restricción"*. **Se verificó en el código y es correcto:**
+`upsertPorClave_` devuelve `soloEnHoja: diff.soloEnHoja // C.2-5: se reporta, nunca se borra`, y
+sólo agrega filas nuevas del seed o actualiza las que comparten clave.
+
+**Lo accionable que esto destraba:** dar de alta la semana en `PERIODOS` es **escribir una fila en
+la hoja**, no editar `Instalar.gs` y pushear. La contracara quedó escrita al lado: una fila a mano
+**no vuelve** si alguien recrea la hoja, y sigue sin haber escritor programático declarado.
+
+### Dónde quedó cada cosa, que es lo que §7 obliga a decidir
+
+- **La regla** —cuál semana se elige— en `docs/REGLAS_NEGOCIO.md`, **`R-11` Addendum 2**. Es una
+  regla del dominio, no una decisión de arquitectura.
+- **`D-20` no se editó ni se supersedió.** La cadena sigue con los mismos cinco eslabones en el
+  mismo orden; **cambió el contenido del quinto, no su lugar**. `PLAN.md` lleva una nota que apunta
+  a `R-11` Addendum 2 y no repite el contenido.
+- **El selector de tres modos** en `docs/PROCESO_SEMANAL.md`, que es la especificación del panel.

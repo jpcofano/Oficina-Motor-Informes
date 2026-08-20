@@ -351,6 +351,20 @@ en las dos decisiones para que nadie las unifique por parecerse.
 > Se deja así. Si alguna vez molesta, va a aparecer como **un número que no cierra**, y ahí
 > se decide con un caso real a la vista en vez de en abstracto.
 
+> **Nota del 20/08/2026 — el eslabón 5 cambió de contenido, no de lugar.** `D-20` **no se edita**
+> y esto no la supersede: la cadena sigue teniendo los mismos cinco eslabones, en el mismo orden,
+> y el quinto sigue siendo *la semana de `R-11`*. Lo que cambió es **cuál** semana devuelve — pasa
+> de la que **contiene** a la fecha de corrida a **la última cerrada** (decisión del usuario,
+> `2026-08-20_2`). **Eso no es una decisión de arquitectura y por eso no vive acá**: es una regla
+> del dominio, y su dueño es `docs/REGLAS_NEGOCIO.md`, `R-11` **Addendum 2** (`CLAUDE.md` §7).
+> Esta nota es el puntero, no el contenido.
+
+> ⚠ **Y el eslabón 5 dejó de ser teórico el 20/08**, que es lo que hay que saber para leer el resto
+> del plan: `CONFIG.periodo_desde`/`periodo_hasta` **se vaciaron** ese día por decisión del usuario,
+> así que el eslabón 4 ya no corta antes y **la cadena llega al 5 en cada corrida sin `periodo_id`**.
+> El texto de arriba dice *"hoy, en ese lugar, la función devuelve error"*: eso dejó de ser cierto el
+> 17/08, cuando el eslabón 5 se implementó.
+
 **`D-21` — Las filas se excluyen por lista blanca declarada, nunca por exclusión.**
 Una columna puede declarar en `MAPEO.valores_incluidos` **qué valores entran**; toda fila
 cuyo valor no esté en esa lista queda afuera. Decisión del usuario, 02/08/2026, aplicada

@@ -443,6 +443,14 @@ function vistaGenerar(){
          ? '<p class="hint">Si no elegís, sale ' + esc(S.porDefecto.etiqueta) +
            '. Podés cambiarlo en la lista.</p>'
          : '<p class="hint">Elegí el período del informe.</p>');
+
+  /* `2026-08-20_2` Parte B — lo que le falta a la propuesta para ser confiable, ANTES de que la
+   * persona espere cinco minutos. Sólo se pinta cuando el selector está en "por defecto": si
+   * eligió un período de la lista, el recorte se aplica y no hay nada que avisar. */
+  var avisosVentana = (!S.periodoId && S.porDefecto && S.porDefecto.ok && S.porDefecto.avisos) || [];
+  avisosVentana.forEach(function(a){
+    h += '<p class="hint-error">' + esc(a.texto) + '</p>';
+  });
   var roto = S.periodos.filter(function(p){
     return String(p.desde).indexOf('ilegible') !== -1 || String(p.hasta).indexOf('ilegible') !== -1;
   });

@@ -90,6 +90,72 @@ las verificaciones. Ésa es la pregunta que el subagente `verificador` incorpor�
 
 Hoy termina en el deck generado. El sellado sobre plantilla es la Fase 2 y está esperando.
 
+
+---
+
+## El selector de período — tres modos, uno construido **[hoy]** y dos **[falta]**
+
+Decisión del usuario, 20/08/2026 (`2026-08-20_2` Parte B bis). Está acá y no en un documento nuevo
+porque este archivo es **la especificación del panel** (`CLAUDE.md` §7).
+
+| modo | qué elige la persona | estado |
+|---|---|---|
+| **semana** | una semana viernes–jueves, con la última **cerrada** propuesta | **[hoy]** |
+| **mes** | un mes calendario | **[falta]** |
+| **libre** | dos fechas, las que quiera | **[falta]** |
+
+**Lo que entró el 20/08:** el motor propone **la última semana cerrada**, no la que contiene a la
+fecha de corrida. Corriendo el jueves 20/08 propone 14/08–20/08; corriendo el **viernes 21/08 sigue
+proponiendo 14/08–20/08**, porque la semana que arranca ese viernes todavía no cerró. **El viernes
+es el único día donde las dos lecturas difieren**, y es justo el día en que se genera `jm`.
+
+### ⭐ Lo que bloquea a los tres modos es **una sola pieza**, y por eso no son tres frentes
+
+Los tres modos son **tres formas de proponer un par de fechas**, y las tres chocan contra lo mismo:
+**una ventana sin período con nombre no recorta las secciones repetibles.**
+
+⚠ **Y no es lo que parece a primera vista.** Lo intuitivo —*"sin fila en `PERIODOS` no se puede
+correr"*— **es falso**, medido el 20/08: `generarInforme` sólo exige que el `periodo_id` exista
+**cuando se le pasa uno**, y el camino "por defecto" no le pasa ninguno. **El deck se genera, sobre
+las fechas correctas.**
+
+Lo que sí pasa es más silencioso: `anclarEncuentrosSinCache_` saca el período **del `origen` de la
+ventana**, y una ventana calculada trae `origen = 'R-11 (calculado)'`. Sin `periodo_ref:` adelante,
+**el recorte de `D-19` no se aplica** y entran todas las reuniones con `mostrar=sí` — al 20/08 son
+**12, de dos períodos distintos** (8 de `julio_24_30`, 4 de `junio_sem2`). Las que no anclen contra
+`rdv` caen solas, **pero por el motivo equivocado**.
+
+**Por eso el panel avisa en vez de bloquear**, y el aviso dice eso y no *"no se puede correr"*:
+una advertencia equivocada cuesta lo mismo que ninguna, porque la próxima se lee con la misma
+desconfianza.
+
+**El trabajo que destraba los tres modos es uno solo:** que una ventana elegida pueda tener fila en
+`PERIODOS`. Eso es un **escritor nuevo de hoja de registro**, con su fila en `ESCRITORES.md` y su
+decisión sobre el formato del `periodo_id`. Va en un prompt propio. **Escribirlo así evita que "el
+selector mensual" se planifique como un frente separado cuando es la misma pieza.**
+
+### El modo "mes" no inventa un grano nuevo — pero el que hay no tiene usuarios
+
+⚠ **Confirmado contra la hoja viva el 20/08, y sale a medias:**
+
+- `PERIODOS` **sí** tiene `m2_mensual` (01/06–30/06). ✓
+- `MARCADORES.periodo_ref` es el **eslabón 2** de la cadena de `D-20` y funciona… pero **está
+  vacío en las 87 filas**. `SECCIONES.periodo_ref` —el eslabón 3— **también está vacío en todas**.
+
+O sea: **el grano mensual existe como mecanismo y tiene cero usuarios.** El modo "mes" del selector
+no inventaría un grano nuevo, pero tampoco se apoyaría en algo probado en producción. **La primera
+vez que alguien use `periodo_ref` va a ser también la primera vez que ese eslabón corra de verdad**,
+y eso conviene saberlo antes y no durante.
+
+### ⚠ Qué NO alcanza con un selector, y es el límite honesto
+
+Elegir la ventana **no arregla** que `resolverVentana` no reciba `informe_id`, ni que
+`itemsDeSeccion_` no reciba el `periodo_id` de la corrida — la pieza faltante que `PLAN.md` §3
+tiene anotada como `D-NN`, *"el motor no sabe PARA QUÉ CORRIDA está resolviendo"*.
+
+**Un selector más rico sobre esa pieza faltante ofrece precisión que el motor no tiene.** Es la
+razón por la que los dos modos futuros están escritos y no construidos.
+
 ---
 
 ## Lo que el panel tiene que ser
