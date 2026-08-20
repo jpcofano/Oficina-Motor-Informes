@@ -400,6 +400,27 @@ cruce *definición → número publicado* se hace entero sin conectarse a nada.
 de ella, y **el fixture no vuelve verificable nada de lo que depende de la base viva** — los nueve
 `camp_*`, la rama por cuenta y la selección semanal siguen exactamente donde estaban.
 
+**Un símbolo que no distingue «no se cableó» de «no se llegó» convierte un problema de tiempo en
+un diagnóstico de cableado.** Es la familia del número plausible, movida a la capa de presentación:
+el glifo no miente sobre un valor, miente sobre **por qué no hay valor** — y las dos causas mandan
+a trabajos opuestos.
+
+- **El caso, medido el 20/08/2026:** la corrida de `jm` de las 15:45 se cortó por presupuesto y el
+  deck salió con **269 `/////`**, de los cuales **264 eran del corte**. `/////` significa *nadie lo
+  cableó*, así que el deck mandaba a cablear 264 tokens **que ya estaban cableados**. Lo que hacía
+  falta era correr de nuevo.
+- **Por qué no lo atajaba nada:** los cuatro símbolos del `2026-08-20_1` se eligen por el **estado
+  del marcador**, y un token que la corrida no alcanzó a mirar **no tiene estado**. Cae en *«sin
+  información suficiente → el símbolo más ruidoso»*, que era la regla correcta cuando se escribió
+  — con una causa menos.
+- ⭐ **Lo accionable, y es una pregunta que se hace al agregar cualquier símbolo:** *¿qué trabajo
+  manda a hacer este glifo, y hay más de una causa que lleve a él?* Si dos causas distintas
+  comparten símbolo y **piden acciones distintas**, falta un símbolo — no una nota al pie.
+- ⚠ **Y el corolario sobre el reporte, que es la mitad barata:** mientras el glifo se decide, **el
+  reporte lo dice en su primera línea**. Un deck cortado era indistinguible de uno completo mirando
+  el deck, y sus conteos se leían como cobertura. Lo que cambia cómo se lee todo lo demás va
+  arriba, no en un bloque lateral.
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue

@@ -1481,6 +1481,24 @@ detalle de `jm`**, y eso toca las plantillas — `C-01`, del equipo.
 mismo 20/08, las láminas 19 y 20 de `jm` pasaron de 9 y 14 tokens a **31 y 50**. La plantilla se
 movió mientras se la medía. Vale el censo de las 13:02.
 
+**`D-35` — Mientras la corrida se corte, ningún deck es evidencia.** El corte va por encima del
+cableado en el orden de trabajo. Decisión del usuario, 20/08/2026 (`2026-08-20_9`).
+
+**El dato que lo funda:** la corrida de `jm` del 20/08 a las 15:45 gastó **321 s de un techo de
+350** y publicó **9 números limpios sobre 343 tokens**. No es un problema de cobertura: son ~15 s
+por valor impreso, y el trabajo no está donde se creía.
+
+⭐ **La consecuencia práctica, y es la que ordena la cola:** cablear un token más no se puede
+verificar mientras la corrida no llegue hasta él. Un deck cortado **no prueba ni que el cableado
+ande ni que no ande** — sus huecos son de tiempo, no de configuración. Por eso el frente del corte
+va antes que cualquier cableado, incluidos los 56 compartidos que `D-34` señala como el lote más
+rentable.
+
+⚠ **Y lo que NO autoriza esta decisión: subir el techo.** Apps Script corta a los 6 minutos y el
+techo de 350 s existe para cortar antes **con dignidad** — con barrida, con `FALTANTES` escrito y
+con la fila de `CORRIDAS` cerrada. Subirlo mueve el problema al límite duro, donde no hay nada de
+eso.
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
