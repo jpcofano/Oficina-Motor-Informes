@@ -11381,3 +11381,127 @@ la hoja**, no editar `Instalar.gs` y pushear. La contracara quedó escrita al la
   mismo orden; **cambió el contenido del quinto, no su lugar**. `PLAN.md` lleva una nota que apunta
   a `R-11` Addendum 2 y no repite el contenido.
 - **El selector de tres modos** en `docs/PROCESO_SEMANAL.md`, que es la especificación del panel.
+
+---
+
+## Paso `2026-08-19_2` — el panel por secciones (2026-08-20) — commit de esta entrada
+
+- **Qué pedía el prompt:** que el panel muestre el estado de carga **por sección** y permita pegar
+  el temario desde ahí, con un botón **Proponer** que precarga lo de la ventana. No cablea
+  marcadores ni genera decks distintos: es el camino de entrada del usuario.
+- **Qué se hizo:** `cuadradosDeInforme_` deriva el mapa desde `SECCIONES`; `panel_getEstado` lo
+  devuelve por informe y acepta un `periodoId` opcional; `panel_proponerTemario` y
+  `panel_cargarTemario` son las dos puertas nuevas; `cargarTemarioReuniones_` dejó de hacer append
+  ciego; `Panel.html` pinta los cuadrados. Control nuevo: `tools/probar-temario-reuniones.js`.
+- **Prueba:** 14 afirmaciones en verde, **con el control negativo adentro**. `node tools/listas.js`
+  verde. Los tres controles anteriores siguen verdes. Sintaxis validada. `clasp push` corrido **y
+  verificado con `clasp pull`**.
+- **Pendientes/decisiones:** el criterio de `mostrar` **sigue sin unificar** entre los dos
+  cargadores, y es deliberado — el prompt manda reportarlo, no unificarlo.
+
+### ⛔ El gate del punto 5 se disparó, y la salida estaba en la decisión del usuario del mismo día
+
+El prompt proponía como clave de deduplicación `periodo_id + eje + nombre + fecha`, y su gate decía:
+*"si la clave candidata ya tiene colisiones legítimas en la hoja actual, parar y reportar cuáles.
+Una clave que declara duplicado algo que no lo es sería peor que el append."*
+
+**Colisiona.** Medido sobre las 13 filas vivas: **11 claves distintas, 2 colisiones** —
+`San Cristóbal 23/07` y `Retiro 24/07`, **dos veces cada uno**. Y las cuatro filas son legítimas:
+
+```
+San Cristóbal  2026-07-23  etapa=pre    orden=1
+Retiro         2026-07-24  etapa=pre    orden=2
+San Cristóbal  2026-07-23  etapa=post   orden=4
+Retiro         2026-07-24  etapa=post   orden=5
+```
+
+⭐ **La colisión es exactamente `pre` contra `post`, que es el mismo hecho que la decisión del
+usuario sobre el proponedor** —*emite DOS líneas cuando el encuentro tiene pre y post, no una con
+"(pre + post)"*—. Si el temario los escribe separados, la clave tiene que poder separarlos. Con
+`etapa` adentro: **13 claves sobre 13 filas, cero colisiones.**
+
+Por eso no se paró: el gate protegía contra una clave que declarara duplicado algo que no lo es, y
+la corrección la fija el usuario en el mismo turno. Queda dicho igual, porque **la clave del prompt
+tal como estaba escrita habría borrado la mitad de los encuentros con dos etapas**.
+
+### El append ciego, y por qué se arregla antes de poner el botón
+
+`cargarTemarioReuniones_` escribía con `getRange(getLastRow() + 1, …)` sin mirar nada, y su
+comentario decía *"no pisa filas existentes, solo agrega"* — **cierto, y por eso mismo cargar dos
+veces el mismo temario dejaba trece filas duplicadas**. Con el gesto detrás de un menú y un
+`prompt` de texto casi no pasaba; **el panel lo pone a un clic**.
+
+Copia el patrón que `cargarTemarioCampanas_` ya tenía —fila existente se reporta y no se escribe—
+en vez de inventar uno nuevo. Lo que cambia es la clave, porque `CAMPANAS` tiene `campana_id` y
+`REUNIONES` no tiene identificador propio.
+
+⭐ **Y dedupea también DENTRO del texto pegado**, no sólo contra la hoja: si alguien aprieta
+*Proponer* y pega encima de lo que ya había, que la segunda copia entre "porque todavía no estaba
+en la hoja" sería el mismo bug con otro origen.
+
+### Proponer devuelve TEXTO, y `R-02` es el motivo entero
+
+Los dos proponedores arman el texto y lo ponen en la caja. **No escriben una sola fila.** Si
+escribieran, **la ventana estaría eligiendo qué entra al deck**, que es literalmente lo que `R-02`
+prohíbe: *el temario define el universo del informe, no la fecha*. Con texto en una caja, lo que
+entra sigue siendo lo que una persona pegó, y el botón es una comodidad de tipeo.
+
+### ⚠ El parser lee UN solo paréntesis, y eso el prompt no lo podía prever
+
+B.1 pedía dos cosas que compiten por el mismo lugar: que la línea lleve `(pre)`/`(post)` **y** que
+el `status` de `rdv` vaya *"como texto entre paréntesis, que es donde el parser lo manda a
+`notas`"*. `parsearLineaReunion_` matchea `/\(([^)]*)\)\s*$/` — **el último paréntesis y nada más**.
+
+**Se resolvió corriendo el parser real** en vez de razonar sobre él, que es lo que la regla del
+fixture copiado exige:
+
+| línea | resultado |
+|---|---|
+| `JM \| ECV San Cristóbal 23/07 (post)` | `etapa=post`, `nombre="San Cristóbal"` |
+| `JM \| ECV San Cristóbal 23/07 (Cancelada) (post)` | `etapa=post`, `nombre="San Cristóbal"`, `notas=""` |
+| `JM \| ECV San Cristóbal 23/07 (Cancelada)` | `etapa=""`, `notas="Cancelada"` |
+
+⭐ **El estado va ANTES de la etapa y todo funciona**, por un motivo que no era obvio: `(Cancelada)`
+queda **después de la fecha**, y el recorte del nombre —`nombreYFecha.slice(0, matchFecha.index)`—
+lo descarta. Resultado: `etapa` correcta, `nombre` limpio, **la persona ve el estado en la caja**
+—que es para lo que estaba— y el texto entero sobrevive en `texto_original`. **El parser no se
+tocó.**
+
+### El mapa de cuadrados, medido y con una diferencia respecto del prompt
+
+Derivado de `SECCIONES` viva, no escrito a mano:
+
+| informe | temario:REUNIONES | temario:CAMPANAS | ventana | manual |
+|---|---|---|---|---|
+| `jm` (26 secciones) | `encuentro` + `comunicaciones_post` (`etapa=post`) | `campana` | 22 | 1 |
+| `secco` (35 secciones) | `encuentro` + `comunicaciones_post` | `campana` | 26 | 6 |
+
+⚠ **`secco` tiene 35 secciones, no 29** como decía el prompt. Premisa vencida, sin consecuencia
+sobre el diseño.
+
+⚠ **Y una diferencia que sí conviene saber sobre los cinco `itera_sobre` que no son registros.** El
+prompt esperaba que los cinco —`AUDIENCIAS`, `remitente (JM / GCBA)`, `red social`, `proveedor`,
+`tema`— cayeran en `ventana` con motivo. **Tres de ellos ya son `estado = manual`**
+(`analisis_comparativo`, `nuevos_proveedores`, `analisis_tematico`), así que los agarra la regla 1
+antes que la 3. Los que llegan a la 3 con motivo son `AUDIENCIAS` y `remitente (JM / GCBA)`, los
+dos en `revisar`.
+
+**El resultado visible es el mismo —ninguno ofrece caja de temario— pero por dos caminos
+distintos**, y quedó anotado arriba de la función: alguien que "simplifique" el orden de las reglas
+haría que tres secciones de redacción empiecen a ofrecer una caja que no escribe en ningún lado.
+
+### Los dos criterios de `mostrar`, reportados y **sin unificar**
+
+- `REUNIONES`: `parsearLineaReunion_` **nunca** marca `sí` — la persona confirma.
+- `CAMPANAS`: `cargarTemarioCampanas_` **sí** lo pone (`AJ-1`, *ante la duda entra*).
+
+Son dos criterios distintos para el mismo gesto, y ahora el panel los pone uno al lado del otro.
+Por eso `estadoDeTemario_` calcula `sin_confirmar` distinto para cada fuente: en `REUNIONES` es
+`mostrar` vacío, en `CAMPANAS` son las notas con `SIN CONFIRMAR`/`SIN ID`. **Unificarlos es
+decisión del usuario**, y el prompt lo excluye explícitamente.
+
+### Lo que quedó afuera y por qué
+
+⛔ **No se escribe en `SECCIONES.periodo_ref`.** Es el eslabón 3 de `D-20` y arrastra la pieza
+faltante de `PLAN.md` §3 — se resuelve entera o no se toca. Confirmado de paso que **sigue vacía en
+las 36 secciones**: el eslabón 3 nunca se disparó.

@@ -3,7 +3,11 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-20, al cerrar el `2026-08-20_1` (cuatro símbolos en el deck)
+**Última actualización:** 2026-08-20, al cerrar el `2026-08-19_2` (panel por secciones)
+
+⚠ **Lo que espera al usuario, en una línea:** correr **`censarTokensSinMarcador()`** (censo de `jm`)
+y decidir cómo censar `secco` — la función **está clavada en `'jm'`** (`Auditoria.gs:3275`) y el
+`2026-08-20_4` no puede escribir una sola `*` sin ese censo.
 
 ## ⭐ Dónde estamos: **el deck ya distingue quién arregla qué**
 
