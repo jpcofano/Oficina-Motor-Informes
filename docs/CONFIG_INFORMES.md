@@ -861,6 +861,45 @@ semana, o con una pantalla del panel (Pasos 6–9) que pida solo los manuales? *
 segunda es mucho mejor** para el usuario final, y es una buena razón para no dejar el
 panel para el final.
 
+### 4.4 Cómo se escribe un hueco en el deck — los cuatro símbolos
+
+**Decisión editorial del usuario, 20/08/2026.** Implementada el mismo día
+(`docs/Prompts/2026-08-20_1_cuatro_simbolos.md`). Hasta ese día los tres primeros casos salían
+todos como `—` y el deck no distinguía entre ellos. **[OK]**
+
+| en el deck | qué significa | de dónde sale |
+|---|---|---|
+| `/////` | **falta el token**: nadie lo cableó, o el motor no llegó a resolverlo | sin fila en `MARCADORES`, y los tokens que la barrida final no alcanzó |
+| `---` | **falló**: hay fila, se intentó leer y no salió | `estado = error` · `estado = REVISAR` |
+| `-` | **no hay dato**: se preguntó bien y la respuesta fue vacía | `estado = sin_datos` |
+| `-1.234-` | **dudoso**: publicado, con desconfianza declarada por una persona | sufijo `_revisar` en `MARCADORES.formato` (`2026-08-19_1` Parte C) — no es de este cambio |
+
+**La línea que separa `/////` de `---` es *¿existe la fila de `MARCADORES`?*, y lo que decide es
+quién arregla qué.** `/////` es trabajo de **cableado**; `---` es trabajo de **fuente o de
+filtro**. Con un solo símbolo para los dos había que abrir `FALTANTES` para saber cuál de los dos
+oficios hacía falta, y eso es justamente lo que el deck ahora contesta solo.
+
+**Por qué `REVISAR` va a `---` y no a `-`:** `R-18` addendum 1 dice que `sin_datos` **afirma que
+no había nada**. `REVISAR` es lo contrario — había filas y ninguna se pudo publicar. Escribirlo
+como `-` publicaría esa afirmación falsa.
+
+⚠ **Ante ausencia de información el símbolo es el más ruidoso, y es regla y no default.** Un punto
+de escritura que no tiene a mano el resultado del marcador escribe `/////`, **nunca `-`**: `-` es
+una afirmación *sobre el dato*, y quien no tiene el resultado no está en condiciones de hacerla.
+El caso real es la barrida final, que por diseño sólo conoce el nombre del token — medido el
+20/08: no recibe resultados de marcador y no puede recibirlos, porque un token que barre es uno
+que la corrida **no llegó a resolver**.
+
+**El modo crudo no se retira, y por eso esto es un modo y no un reemplazo.** El checkbox del panel
+—*"Los huecos se ven como símbolos"*, tildado por defecto— elige entre los cuatro símbolos y
+`«FALTA:token»`, que sigue diciendo **cuál** token es y sigue siendo el modo de trabajo. Es lo que
+mantiene vivo `S-05` punto 3 (ver `docs/SUPUESTOS.md`).
+
+⚠ **El símbolo es del deck; el motivo es de la hoja.** `FALTANTES` sigue recibiendo su fila con el
+motivo completo en los cuatro casos, y el reporte de corrida sigue contando los cuatro estados por
+separado. Un deck más callado con una hoja igual de habladora es exactamente el intercambio que
+esta decisión hace — no se pierde registro en ningún lado.
+
 ---
 
 ## 5. Cómo se completa este documento

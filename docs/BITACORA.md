@@ -11049,3 +11049,137 @@ que habla de otra cosa— quedó como **una línea en la entrada de `snapshot.js
 la misma familia y ya lo dice con todas las letras: *el nombre del archivo es la única identidad de
 la evidencia, y nada protege esa identidad*. Los dos casos concretos están reparados; **el modo de
 falla no**, y no se abrió frente por pedido del usuario.
+
+---
+
+## Paso `2026-08-20_1` — cuatro símbolos en el deck (2026-08-20) — commit de esta entrada
+
+- **Qué pedía el prompt:** que el deck distinga **el token que nadie cableó**, **el que se cableó
+  y falló**, y **el que se preguntó bien y no tenía dato**. Hasta hoy los tres salían `—`. No toca
+  `MARCADORES`, ni ninguna operación, ni ningún valor publicado: cambia **cómo se escribe la
+  ausencia**, y nada más.
+- **Qué se hizo:** `textoFaltante_` (`Generador.gs`) pasó de `(token, comoRaya)` a
+  `(token, resultado, conSimbolos)` y decide con **el estado y la existencia de la fila**. Los tres
+  puntos de escritura le pasan lo que tienen. `presentacion_faltantes` pasa de `'raya'` a
+  `'simbolos'`. En `Panel.html` se retiró el `|| S.faltantesComoRaya` y se reescribió la etiqueta
+  del checkbox; `PanelDemo.html` tenía la frase escrita a mano y se actualizó. Control positivo
+  nuevo: `tools/probar-simbolos-faltante.js`.
+- **Prueba:** las 25 afirmaciones del control nuevo en verde, **más dos controles negativos**
+  (abajo). `node tools/listas.js` en verde, 11 hojas en las tres listas.
+  `tools/probar-formato-revisar.js` sigue verde. Sintaxis de los cuatro archivos validada con
+  `node --check`. `clasp push` corrido **y verificado con `clasp pull` a un temporal**: el proyecto
+  vivo tiene la función nueva y el `||` retirado.
+- **Pendientes/decisiones:** el **censo por símbolo** del punto 4 de la Parte 0 sigue abierto y
+  **no es de Code** — lo corre el usuario con `censarTokensSinMarcador()` más una generación. Por
+  decisión del usuario, la Parte A **no lo esperó**.
+
+### La decisión del usuario, 20/08/2026 — y la línea que la hace útil
+
+| en el deck | qué significa | de dónde sale |
+|---|---|---|
+| `/////` | falta el token | sin fila en `MARCADORES`, y lo que la barrida no alcanzó |
+| `---` | falló | `estado = error` · `estado = REVISAR` |
+| `-` | no hay dato | `estado = sin_datos` |
+| `-1.234-` | dudoso | sufijo `_revisar` — ya existía, no se tocó |
+
+**La línea que separa `/////` de `---` decide quién arregla qué:** cableado o fuente. Con un solo
+símbolo había que abrir `FALTANTES` para saberlo. **`REVISAR` va a `---` y no a `-`** porque
+`R-18` addendum 1 dice que `sin_datos` **afirma que no había nada**, y `REVISAR` es lo contrario.
+
+### La medición que decidió el diseño, y el caso que NO se pudo hacer alcanzable
+
+La Parte 0 preguntó qué sabe cada punto de escritura **en el momento de escribir**. Dos de los tres
+—la rama por ítem y la pasada de tokens fijos— **ya tenían el resultado en scope y ya lo usaban**,
+en la línea de al lado, para escribir el motivo en `FALTANTES`. Así que el dato no hubo que
+traerlo: estaba.
+
+⚠ **El tercero no puede, y se dijo en vez de inventarle un estado.** `barrerTokensNoAlcanzados_`
+recibe una presentación, el mapa de la etapa 2 y el modo — **ningún resultado de marcador**. Y no
+es un problema de firma: un token que la barrida alcanza es, por definición, uno que la corrida
+**no llegó a resolver** —cortó por presupuesto o murió antes—, así que no existe un `estado` para
+él ni aunque se le pasara el mapa entero. **Su único símbolo posible es `/////`**, y el llamador
+pasa `null` explícito, que es la verdad y no un atajo.
+
+Esto convirtió *"ante ausencia de información, el símbolo es el más ruidoso"* en **una regla
+escrita en la función** y no en un default accidental: sin resultado, o con un estado que la
+función no conozca, sale `/////`. **Nunca `-`** — `-` es una afirmación *sobre el dato*, y quien no
+tiene el resultado no está en condiciones de hacerla.
+
+### Los estados son cuatro, verificados contra el código y no contra la documentación
+
+`ok`, `sin_datos`, `REVISAR`, `error`. **No hay un quinto** — el gate del prompt no se disparó. Se
+verificó recorriendo los 13 `return base` de `resolverMarcadores`: **todos** están precedidos por
+una asignación de `base.estado`, y `base` se inicializa sin ese campo, así que un camino sin
+asignar habría dado `undefined`. No hay ninguno.
+
+⚠ **Un desalineamiento documental que quedó a la vista y no se tocó:** la entrada del 08/08 de
+esta misma bitácora todavía dice *"`ok`, `sin_datos` y `error` son los tres que hay"*. Es evidencia
+fechada de antes de que entrara `REVISAR`, y la bitácora es append-only — se anota acá en vez de
+editarla.
+
+### El lector roto del panel: se retiró el `||`, no se actualizó
+
+`Panel.html` comparaba `r.presentacion_faltantes === 'raya' || S.faltantesComoRaya`. **El segundo
+término es estado local del front**, así que con el checkbox tildado la frase decía *"una raya"*
+aunque el backend mandara otra cosa — sin fallar. Actualizar sólo el literal habría dejado el
+agravante intacto: **el `||` es el que hace que el front conteste por su cuenta una pregunta del
+backend**, que es la misma clase de falla que un testigo que no mide el cambio. Se retiró, y si el
+valor no se reconoce ahora se lo muestra crudo en vez de inventar la frase.
+
+Los cuatro lectores de `presentacion_faltantes` quedaron medidos: dos lo pasan a través sin
+mirarlo, uno lo comparaba (`Panel.html`) y el cuarto (`PanelDemo.html`) **no lo lee** — tiene la
+frase escrita a mano porque es el mock del video, y ya estaba desactualizada.
+
+### Lo que NO se renombró, y por qué
+
+**La clave de cable `opciones.faltantes_como_raya` conserva el nombre.** `generarInforme` es
+invocable por la API **por nombre** (`fn=generarInforme`, con `args` como array de JSON), así que
+esa clave es formato de cable y renombrarla rompería a un llamador que no vive en este repo. Lo que
+sí dice la verdad es **el nombre local** (`conSimbolos`) y **el valor que declara el modo hacia
+afuera** (`presentacion_faltantes: 'simbolos'`). Queda anotado en el comentario de `generarInforme`
+para que nadie lo "arregle" sin ver el costo.
+
+Tampoco se renombró el `id="f-raya"` del DOM en los dos paneles: es un identificador interno, no
+una afirmación sobre el comportamiento, y tocarlo agrega riesgo por cero ganancia semántica.
+
+### Un comentario que mentía, corregido de paso porque estaba en la línea que se tocaba
+
+El encabezado de `generarInforme` decía *"Hoy lleva una sola clave, `faltantes_como_raya`"*. **Son
+dos** — `secciones` entró después y nadie actualizó el comentario. Es exactamente el caso que
+`CLAUDE.md` §4 describe: *un comentario que afirma un contrato es una premisa sin testigo*, y no
+falla nunca. Se corrigió porque el mismo párrafo tenía que cambiar igual.
+
+### El control positivo, y los dos controles negativos que se corrieron
+
+`tools/probar-simbolos-faltante.js`, 25 afirmaciones, **extrayendo la función real de
+`Generador.gs`** con el mismo `extraerFuncion` que `probar-formato-revisar.js` — una copia pegada
+probaría la copia, y el extractor **falla** si el nombre no está, así que un renombre no pasa en
+silencio.
+
+⚠ **Un verde no se aceptó sin verlo ponerse rojo**, que es lo que `CLAUDE.md` §4 pide después del
+caso de `Pruebas.gs:456`:
+
+| se rompió a propósito | afirmaciones que cayeron |
+|---|---|
+| `sin fila` devolviendo `---` (colapsa las dos que deciden quién arregla qué) | **4** |
+| `REVISAR` cayendo a `sin_datos` (el error que `R-18` prohíbe) | **6** |
+
+En los dos casos cayeron **las afirmaciones correctas**, incluida *"los tres símbolos son distintos
+entre sí"* — que es la que existe justamente para que tres constantes iguales no pasen las tres
+afirmaciones individuales por separado. Después de restaurar, verde de nuevo.
+
+El control también fija que **el modo se enciende con `=== true` y no con truthy** (`'true'` de
+texto y `1` **no** lo encienden), que es la guarda que ya tenía el código y que nadie estaba
+verificando.
+
+### La salvaguarda de `PLAN.md` §3, verificada y no asumida
+
+*"El reporte de corrida tiene que seguir distinguiendo «no calculable» de «falló el cableado»
+aunque el deck deje de hacerlo."* Se verificó contra el código: `r.marcadores` es
+`resolucion.resumen`, que trae los cuatro conteos, y el reporte imprime
+`Marcadores: N resueltos · N sin dato · N a revisar · N en error`. **No cambió nada de eso**, y era
+la condición bajo la cual la decisión del 16/08 se había tomado.
+
+**No se corrió una generación para verificar esto**, y es deliberado (Parte D punto 4): el cambio
+es puro, el control lo cubre, y una corrida de cinco minutos no agrega evidencia — mezcla este
+cambio con el drift de las bases, que el 15/08 movió 138.427 impresiones en 1h45.
