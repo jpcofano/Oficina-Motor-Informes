@@ -11721,3 +11721,83 @@ antes que un deck.
 `campo_id_cuenta`)—. ⛔ `encontrarFilaRdvDeReunion_`. ⛔ La ventana de ningún marcador agregado:
 `imp_*`, `mail_*`, `m2_*` y el status semanal siguen leyendo la semana, porque **ampliarles la
 ventana los multiplicaría en silencio**.
+
+---
+
+## Paso `2026-08-20_9` — el corte por presupuesto y el símbolo que lo esconde (2026-08-20) — commit de esta entrada
+
+- **Qué pedía el prompt:** que una corrida de `jm` termine dentro del techo, y que si no termina
+  **el deck lo diga**.
+- **Qué se hizo:** Parte A entera. Parte B **no aplica nada, con el motivo medido**. `D-35` en
+  `PLAN.md`, la regla del símbolo en `CLAUDE.md` §4, la línea de base en `PENDIENTES`.
+- **Prueba:** los seis controles de `tools/` en verde, `listas.js` en verde, sintaxis validada,
+  `clasp push` **verificado con `clasp pull`**. ⏸ **La corrida de verificación la corre el usuario.**
+- **Pendientes/decisiones:** ⏸ el **glifo del corte** lo elige el usuario; mientras tanto vale
+  `/////` y el reporte nombra la decisión pendiente.
+
+### ⭐ El hallazgo que desbloquea al `_10`: el instrumento se borraba a sí mismo
+
+La Parte 0 pedía el desglose de gasto por etapa. **La instrumentación ya existía** —`marcarEtapa_`
+escribe cinco marcas acumuladas— **pero no se podía leer**: escribe en la columna `faltantes`, que
+hace de campo de estado (`T2.1.2`), y el cierre la pisa con `avisosDeLaFila_(...)`, que devuelve el
+conteo y **no conserva nada del recorrido**.
+
+⚠ **Mientras la corrida vive, la celda tiene el desglose; en cuanto cierra, un número.** La corrida
+de las 15:45 cerró, así que su desglose ya no existe. Es la familia de *«un instrumento que mide un
+cambio no puede depender de lo que el cambio modifica»* en su versión más literal.
+
+**Arreglado:** `RASTRO_ETAPAS_` acumula en memoria y el cierre lo antepone. La próxima corrida deja
+el desglose escrito, termine o no.
+
+⚠ **Y cómo se lee, porque es contraintuitivo:** `marcarEtapa_` se llama **antes** de cada etapa, así
+que las marcas son **tiempos de arranque, no duraciones**. La duración es la resta con la siguiente,
+y **`2 · mapa +Bs` es el costo fijo de arranque** — la etapa 1 contiene `duplicarBloquesRepetibles_`,
+que llama a `itemsDeSeccion_`, que llama a `anclarEncuentros` y `unirDigitalPorCuenta`. Ése es el
+número que el `2026-08-20_10` necesita.
+
+### Parte A — el corte deja de esconderse
+
+**A.1 · el símbolo.** La barrida ahora recibe la señal del corte y sus tokens salen por
+`SIMBOLO_CORTE_`. **De 269 `/////` de la corrida del 20/08, 264 eran del corte**: el deck afirmaba
+*«nadie cableó esto»* sobre tokens que estaban cableados. ⏸ El glifo lo elige el usuario y **este
+código no lo inventa** — vale `/////` hasta entonces, así el cambio es una constante y no una
+migración de dos plantillas.
+
+**A.2 · el reporte.** El corte va en la **primera línea**, con *«correr de nuevo, no cablear»*.
+⚠ **Y se retiró un bloque duplicado:** `T2.1.1` decía *«si cortó, se dice primero»* y su bloque
+vivía **después de todos los conteos**. Repetir el corte en dos lugares hace que el segundo se lea
+como otra cosa.
+
+**A.3 · el previsor deja de ser un cartel.** El reporte cruza el piso de `preverSimbolosDelDeck_`
+contra lo que salió. ⭐ **El aviso es asimétrico a propósito:** menos que el piso acusa a la corrida;
+**más que el piso acusa al previsor**, porque un piso no puede quedarse corto. Sin la asimetría, un
+previsor roto se leería como una corrida buena.
+
+### Parte B — no se aplicó ninguna optimización, y ése es el resultado
+
+El prompt dice *«se ataca lo que la Parte 0 midió, en orden de gasto, y nada más»*. **Sin desglose
+no hay orden de gasto.** Lo que sí quedó es el veredicto de los tres candidatos:
+
+| candidato | veredicto |
+|---|---|
+| lecturas repetidas de la planilla | ⛔ **descartado** — `leerMapeo`/`leerSolapas` ya pasan por `memoRegistro_` y `generarInforme` enciende el caché en `try/finally` |
+| anclaje recalculado | ⛔ **descartado** — cachea por `desde‖hasta‖origen`, y las dos secciones sobre `REUNIONES` entran con la misma ventana |
+| ⭐ escrituras a Slides de a una | ✅ **confirmado, y es el único vivo** — ocho sitios, todos individuales, y `appsscript.json` tiene `dependencies` vacío: **no hay `batchUpdate` posible sin declarar el servicio avanzado** |
+
+⭐ **Y un cuarto que el prompt no listaba:** `Union.gs` hace **`SpreadsheetApp.flush()` una vez por
+reunión** dentro del anclaje — 12 volcados forzados dentro de la etapa que concentra el costo fijo.
+
+**Optimizar las escrituras exige declarar el servicio avanzado**, lo que cambia `appsscript.json` y
+obliga a re-autorizar. Hacerlo antes de saber si el gasto está ahí o en el `flush()` es justo lo
+que el punto 4 de la Parte C prohíbe.
+
+### Los 49 crudos: no es un bug, y le pone una precondición al `_10`
+
+`mapaTokenObjectId_` **excluye a propósito** los tokens de láminas escondidas, y la barrida recorre
+`mapa.tokens`. Las láminas 12, 21 y 29 están escondidas: sus **49 tokens quedan crudos en toda
+corrida, corte o no**. Correcto por diseño — pero el invariante que el motor declara está enunciado
+de más: *«ningún `{{token}}` crudo sobrevive a una corrida»* vale para las **visibles**.
+
+⭐ **Y es una precondición que la Parte A del `_10` no contempla:** ese prompt usa los crudos como
+checkpoint —*«los que quedan crudos son exactamente lo que falta»*— y **49 son crudos permanentes**.
+Una reanudación guiada por los crudos no terminaría nunca.
