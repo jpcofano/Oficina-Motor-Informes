@@ -10983,3 +10983,69 @@ vivos: el README de `_fixtures/` y `PENDIENTES`.
 - **`docs/Sesiones/` lo escribe claude.ai, y acá escribió Code.** El prompt lo pide explícitamente y
   el usuario lo confirmó; queda dicho porque §5 dice lo contrario y la excepción tiene que ser
   visible, no tácita.
+
+---
+
+## 2026-08-20 — `C-21` se cierra sin subir un archivo: el repo guarda la huella, no el dato
+
+Decisión del usuario del 19/08: **salida 3**, con la vuelta que la hace suficiente. Un commit.
+
+### Qué se decidió, y por qué el motivo importa más que el resultado
+
+**Los fixtures no van al repo, y `.gitignore` se queda como está.** Su motivo sigue valiendo: el
+repo es público y las bases traen nombres de funcionarios, barrios, volúmenes de envío y respuestas
+de vecinos (`DOC-5` Parte 2, 31/07). No se pidió excepción y no se creó ninguna.
+
+Viven en `docs/_fixtures/`, **en disco y fuera de git**, y se pasan a demanda por el chat. **Lo que
+el repo guarda no son los archivos: es dónde están y cómo se reconocen.**
+
+### La vuelta, que es la mitad que hace que funcione
+
+- El estado `[falta]` **estaba mal y era engañoso**: mandaba a buscar algo que ya se tenía. Pasa a
+  `[local]` / `[no está]` según lo que haya realmente en la carpeta.
+- La **ruta local absoluta**, arriba de la tabla.
+- Una **tabla de huellas**: por cada archivo presente, **tamaño en bytes y `sha256`**.
+- El protocolo, en una línea: **el usuario adjunta el fixture; quien lo recibe verifica el sha
+  contra la tabla ANTES de citar un número.**
+
+⚠ **El sha no es prolijidad.** Un archivo pegado en un chat, sin huella, es **anónimo** — nada
+distingue el export del 12/08 del que le siguió dos días después, y se llaman casi igual. Un caso
+`exacto` medido contra un archivo anónimo **no es reproducible**, que es exactamente lo que `C-21`
+venía a arreglar.
+
+### Y sirvió en su primer uso, antes de que nadie lo usara para lo previsto
+
+Los dos `.zip` que el usuario copió a `docs/_fixtures/` resultaron **idénticos byte a byte** —mismo
+sha, mismos bytes— a los que ya estaban en `Plan Inicial/_archivo/samples/Informes ejemplo/` desde
+el **03/08** y el **06/08**.
+
+**Dos de los ocho fixtures llevaban dos semanas en el disco del repo y nadie lo sabía**, porque sin
+huella nada relacionaba una copia con la otra. El argumento de la tabla, hecho con la tabla misma.
+
+### El riesgo aceptado, escrito antes de que pase
+
+La salida elegida deja los fixtures **fuera de todo respaldo versionado**. Si la carpeta local se
+pierde, **los 104 casos `exacto` dejan de ser reproducibles** y el índice sólo sirve para saber
+exactamente qué se perdió. **No es un efecto colateral: es la mitad de lo que se eligió**, y queda
+escrito en los tres lugares (README, `PENDIENTES`, nota de `C-21`). Las otras dos salidas **no se
+borraron**.
+
+### ⚠ Lo que se hizo contra la regla, dicho para que se pueda revertir
+
+**Se editó la nota de `C-21` dentro de `docs/casos_validacion_2026-08-19.csv`, que es un archivo
+congelado** — §7 dice *"nadie edita; se crea uno nuevo"*, y el `Addendum 1` del handoff de la rama
+dice *"congelado al entrar"*. Se hizo porque el usuario lo pidió explícitamente y es dueño del
+archivo, y porque `C-21` no es un caso de medición: su reproducibilidad no depende del congelado.
+
+**Lo verificable, que es lo que hace reversible la excepción:** el diff es de **una línea** —218
+casos antes y después, 218 ids únicos, ninguna otra fila tocada— y **la nota original se conserva
+entera** dentro de la nueva, detrás de `NOTA ORIGINAL, que se conserva:`. Si la excepción se
+considera un error, se revierte sin perder nada.
+
+### Lateral anotado, sin frente abierto
+
+El modo de falla de `ee1d9d5` y `f19f637` —evidencia fechada renombrada o duplicada por un commit
+que habla de otra cosa— quedó como **una línea en la entrada de `snapshot.js` del 17/08**, que es de
+la misma familia y ya lo dice con todas las letras: *el nombre del archivo es la única identidad de
+la evidencia, y nada protege esa identidad*. Los dos casos concretos están reparados; **el modo de
+falla no**, y no se abrió frente por pedido del usuario.

@@ -4341,6 +4341,16 @@ post-migración, y **la única copia del estado previo quedó en git**. Se recup
 Los dos problemas son de la misma familia: **el nombre del archivo es la única identidad del
 snapshot, y nada protege esa identidad.**
 
+⚠ **Y el modo de falla no es sólo de `snapshot.js`: alcanza a toda la evidencia fechada, y volvió a
+aparecer el 19/08 en `docs/` — dos veces.** `f19f637` dejó **dos** archivos llamados
+`casos_validacion_CONSOLIDADO_2026-08-14.csv` con contenidos distintos, y el congelado quedó cinco
+días atrasado respecto de la corrida que decía congelar; `ee1d9d5` **renombró** ese CSV a
+`casos_validacion 2026-08-19.csv` —con espacio en vez de guion bajo— dentro de un commit que habla
+de testigos y **no lo menciona en ninguna línea**. Los dos casos ya están reparados
+(`2026-08-19_3`); lo que sigue sin protección es lo mismo de arriba, un escalón más arriba: **un
+archivo de evidencia fechada renombrado o duplicado por un commit que habla de otra cosa no falla,
+y el nombre es toda su identidad.** Anotado, sin frente abierto.
+
 ---
 
 ## El alcance de `looker` se recalcula **hacia arriba** sobre ventanas cerradas — 19/08/2026
@@ -4468,7 +4478,41 @@ lámina más**. Se registra acá porque ahora afecta a un token que se está dan
 
 ---
 
-## Los fixtures de validación no están en el repo: los 104 casos `exacto` sólo los puede reproducir el usuario — 19/08/2026
+## ~~Los fixtures de validación no están en el repo: los 104 casos `exacto` sólo los puede reproducir el usuario~~ — ✅ **CERRADO 20/08/2026, por decisión de privacidad**
+
+> **Resuelto sin subir nada, y el motivo importa: no se hizo la tarea, se decidió que no se hace.**
+> Decisión del usuario, 19/08 — **salida 3**, con la vuelta que la hace suficiente. `.gitignore`
+> **se queda como está** y su motivo sigue valiendo. Los fixtures viven en la carpeta local
+> `docs/_fixtures/`, fuera de git, y **se pasan a demanda por el chat**.
+>
+> **Lo que el repo guarda ahora no son los archivos: es dónde están y cómo se reconocen.**
+> `docs/_fixtures/README.md` lleva la ruta local absoluta, el estado real de cada uno
+> —`[local]` / `[no está]`, nunca `[falta]` sobre algo que existe— y, por cada archivo presente,
+> **tamaño en bytes y `sha256`**.
+>
+> ⚠ **El sha es la mitad que hace que la decisión funcione.** Un archivo pegado en un chat, sin
+> huella, es **anónimo**: nada distingue el export del 12/08 del que le siguió dos días después, y
+> los dos se llaman casi igual. Un caso `exacto` medido contra un archivo anónimo **no es
+> reproducible**, que es justo lo que este pendiente quería arreglar. Con el sha en el repo, quien
+> recibe el adjunto puede afirmar **contra cuál midió**. El protocolo: **verificar el sha contra la
+> tabla ANTES de citar un número.**
+>
+> **Y sirvió en su primer uso:** los dos `.zip` que el usuario copió a `docs/_fixtures/` resultaron
+> **idénticos byte a byte** a los que ya estaban en `Plan Inicial/_archivo/samples/Informes
+> ejemplo/` desde el 03/08 y el 06/08. **Dos de los ocho fixtures ya estaban en el disco del repo
+> hacía dos semanas y nadie lo sabía**, porque sin huella nada relacionaba una copia con la otra.
+>
+> ⚠ **El riesgo que se acepta, escrito antes de que pase.** La salida elegida deja los fixtures
+> **fuera de todo respaldo versionado**: si la carpeta local se pierde —disco, sincronización de
+> OneDrive, borrado a mano—, **los 104 casos `exacto` dejan de ser reproducibles** y el índice sólo
+> sirve para saber **exactamente qué se perdió**. Eso no es un efecto colateral: **es la mitad de
+> lo que se eligió.** La contrapartida es que ningún dato personal de un vecino entra a un repo
+> público.
+>
+> **Las tres salidas de abajo NO se borran.** Se eligió la 3; las otras dos quedan escritas por si
+> el riesgo cambia de tamaño. Registrado también en la nota de `C-21` del CSV de casos.
+>
+> Se deja el diagnóstico abajo porque explica **por qué** la decisión es la que es.
 
 **Qué pasa.** La rama de validación produjo **218 casos**, de los cuales **104 están en estado
 `exacto`**. Cada uno afirma que un número publicado en un deck coincide con lo que dice una base, y
