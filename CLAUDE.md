@@ -421,6 +421,25 @@ a trabajos opuestos.
   el deck, y sus conteos se leían como cobertura. Lo que cambia cómo se lee todo lo demás va
   arriba, no en un bloque lateral.
 
+**Un caché que guarda el handle y no el dato no cachea nada, y el síntoma es un costo por ítem que
+parece trabajo real.** `cacheBases_` guardaba el **archivo abierto** de cada base y el nombre decía
+«caché de bases», así que durante semanas nadie miró más abajo: **cada llamada a `leerFuente` hacía
+su propio `getDataRange().getValues()`**, una lectura completa de la solapa. Y `leerFuente` se llama
+**una vez por marcador**, no una vez por solapa — 38 marcadores de un ítem de encuentro tocan 5
+solapas y hacían **38 lecturas enteras**.
+
+- **Por qué no se veía:** el gasto se reparte perfectamente entre los ítems, así que se lee como
+  *«cada encuentro cuesta 25 s»* — una frase que suena a trabajo del dominio y no a un bug. **Un
+  costo lineal en la unidad de trabajo es el mejor escondite de una relectura**, porque la
+  proporcionalidad parece explicarlo.
+- ⭐ **La pregunta que lo destapa, y es barata:** *¿qué guarda exactamente este caché — el acceso o
+  el contenido?* Son dos cosas y sólo una ahorra el viaje.
+- ⚠ **Y la trampa al arreglarlo, que es donde se rompe un número:** la clave tiene que garantizar
+  **exactamente las mismas filas**, no parecerse. Cachear el **dato crudo** por `base‖hoja` es
+  seguro porque el recorte sigue corriendo después; meter la ventana en la clave para que "pegue
+  más seguido" **cambia qué filas ve el consumidor**, y eso es un valor movido, no una
+  optimización.
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue

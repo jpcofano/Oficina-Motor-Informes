@@ -2329,9 +2329,14 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos, hub
  */
 function generarInforme(informeId, periodoId, opciones) {
   abrirCacheRegistros_();
+  // `2026-08-20_11` — y el de los datos crudos de las solapas de las bases, que es el que se lleva
+  // los 200 s de la pasada por ítem: `leerFuente` se llama una vez por MARCADOR y hasta hoy cada
+  // llamada releía la solapa entera. Mismo `try/finally` y mismo alcance que el otro.
+  abrirCacheDatosHoja_();
   try {
     return generarInformeConCache_(informeId, periodoId, opciones);
   } finally {
+    cerrarCacheDatosHoja_();
     cerrarCacheRegistros_();
   }
 }

@@ -4955,3 +4955,92 @@ barrida sigue afirmando lo que no es.**
 
 **Quién lo destraba:** el usuario. ⛔ **Lo que no puede quedar es el estado actual**, donde la regla
 promete una cosa y el motor hace otra sin que nada lo diga.
+
+---
+
+## `leerFuente` no cacheaba nada: 304 lecturas completas por corrida — 20/08/2026
+
+**El hallazgo, medido leyendo el código.** `cacheBases_` guarda el **archivo abierto**, pero cada
+llamada a `leerFuente` hacía su propio `getDataRange().getValues()` — **una lectura completa de la
+solapa**. Y `leerFuente` se llama **una vez por marcador**, no una vez por solapa.
+
+Contado sobre `MARCADORES` al 20/08, para **un** ítem de encuentro:
+
+| base / solapa | marcadores | lecturas completas antes | con caché |
+|---|---|---|---|
+| `rdv/RVD JM-CM - ES` | 17 | 17 | 1 |
+| `reuniones/Agenda JM` | 9 | 9 | 1 |
+| `digital/Directa Mail` | 6 | 6 | 1 |
+| `digital/Directa IVR` | 5 | 5 | 1 |
+| `digital/Alcance` | 1 | 1 | 1 |
+| **total por ítem** | **38** | **38** | **5** |
+
+**× 8 encuentros: 304 lecturas completas → 40.** A ~0,65 s cada una, eso explica los 200 s.
+
+### La corrección, y por qué da exactamente las mismas filas
+
+Se cachean **los datos crudos de la hoja**, con clave `base‖hoja`. Todo lo que viene después —fila
+de encabezado, las tres guardas de `R-19`, el recorte por ventana— sigue corriendo igual sobre ese
+array. **Lo único que se evita es volver a pedirle a Sheets algo que ya está en memoria.**
+
+⚠ **La clave NO lleva la ventana, y eso es correcto y no un atajo:** los datos crudos de una hoja
+no dependen de ninguna ventana. `encontrarFilaRdvDeReunion_` **sigue armando su ventana de un día
+por reunión** y sigue devolviendo ocho conjuntos distintos de filas — lo que deja de hacer es
+releer `rdv` ocho veces. **Usar una ventana común habría cambiado qué filas ve el matcher, y por
+eso quedó afuera.**
+
+Apagado por defecto, igual que `cacheRegistros_`. Sólo `generarInforme` lo enciende, con
+`try/finally`.
+
+### ⚠ El testigo NO es concluyente sobre el tiempo, y decirlo es parte del resultado
+
+| etapa | `171421` (antes) | `175132` (después) |
+|---|---|---|
+| expansión | 80 s | 70 s |
+| mapa | 16 s | 21 s |
+| **pasada por ítem** | **200 s** | **204 s** |
+| tokens fijos | 11 s | 7 s |
+
+**Las dos corridas no son comparables ítem a ítem, y el motivo es mío:** el "≈25 s por ítem" que
+fundó este prompt salió de dividir 200 s por **8 encuentros**, y ese 8 lo **inferí de la lista
+`con_valor`** — no de una medición. La corrida `171421` **no reportó cuántos ítems emitió**, porque
+`items_emitidos` sólo aparece cuando hay corte, y ésa no cortó.
+
+La de después sí cortó y sí lo dice: **26 emitidos y 10 sin emitir**. O sea que la pasada por ítem
+hizo **el mismo tiempo de pared procesando más ítems** — pero **no se sabe cuántos hacía antes**, así
+que el cociente no se puede comparar.
+
+⭐ **Lo único medido igual de los dos lados es el costo del último ítem**, que el corte reporta como
+*"lo que costó el anterior"*: **27 s el 20/08 a las 15:45 · 20 s a las 17:51.** Mismo instrumento,
+misma definición, dos momentos. Es una señal, no una prueba: entre las dos corridas también cambió
+el temario.
+
+**Por eso la evidencia que sostiene el cambio es estructural y no cronométrica:** las 304 lecturas
+se cuentan sobre `MARCADORES`, no se estiman. **Que 304 lecturas completas de solapa pasen a 40 no
+depende de ninguna corrida.**
+
+### Lo que queda sin medir, y cómo se mediría bien
+
+⛔ **No hay un A/B limpio del caché**, porque no se puede apagar sin editar código y las dos corridas
+disponibles tienen composición de ítems distinta. El testigo correcto sería **dos corridas seguidas
+sobre el mismo temario, una con el caché apagado**, y eso hoy exige un `clasp push` en el medio —
+que es exactamente lo que el proyecto no acepta como testigo.
+
+**Lo accionable si alguna vez importa:** que el caché se pueda apagar desde `CONFIG`, como el
+presupuesto. Entonces el A/B es dos corridas y ninguna edición.
+
+### El `flush()` del anclaje: medido y NO tocado
+
+Está en `Union.gs`, una vez por reunión, **justo después del `Logger.log`** — y su docstring lo
+declara: *«Deja rastro mientras corre (Logger + `SpreadsheetApp.flush()` por reunión)»*. **Es un
+diagnóstico deliberado, no un descuido**, y vive en la fase de expansión (70–80 s), no en los 200 s
+de la pasada por ítem. Sacarlo sería perder el rastro en vivo de la etapa más larga, que es
+justamente donde hace falta.
+
+### `batchUpdate`: reportado con el número al lado, y afuera
+
+Las 8 escrituras a Slides son individuales y `appsscript.json` tiene `dependencies` **vacío**:
+juntarlas exige **declarar el servicio avanzado de Slides y re-autorizar**. Eso es un costo
+operativo del usuario y **queda fuera de este prompt por decisión escrita**. El número para
+decidir: la etapa de **tokens fijos cuesta 7–11 s** sobre ~270 tokens, así que el pintado **no es
+el gasto principal** — el gasto está en leer, y eso ya se atacó.

@@ -914,6 +914,59 @@ function entraPorSolape_(inicioStr, finStr, desdeStr, hastaStr) {
  * misma base (caso M2: MAPEO tiene campos en "M2 periodo DIGITAL" además de
  * la hoja default "M2 periodo DIRECTA").
  */
+/**
+ * `2026-08-20_11` Parte A (20/08/2026) — **los datos crudos de una solapa, leídos UNA vez por
+ * corrida.**
+ *
+ * ⭐ **El hallazgo: `leerFuente` no cacheaba nada.** `cacheBases_` guarda el **archivo abierto**,
+ * pero cada llamada hacía su propio `getDataRange().getValues()` — una lectura completa de la
+ * solapa. Y `leerFuente` se llama **una vez por marcador**, no una vez por solapa.
+ *
+ * **Medido sobre `MARCADORES` al 20/08:** un ítem de encuentro resuelve **38 marcadores** de las
+ * familias `ecv_`/`enc_`, y esos 38 tocan **5 solapas distintas**:
+ *
+ * ```
+ * rdv/RVD JM-CM - ES     17 marcadores -> 17 lecturas completas
+ * reuniones/Agenda JM     9 marcadores ->  9
+ * digital/Directa Mail    6 marcadores ->  6
+ * digital/Directa IVR     5 marcadores ->  5
+ * digital/Alcance         1 marcador   ->  1
+ * ```
+ *
+ * **38 lecturas completas por ítem × 8 encuentros = 304.** Con caché, **40**. A ~0,65 s cada una
+ * eso explica los **200 s** de la pasada por ítem, que era exactamente el número a bajar.
+ *
+ * ⚠ **La clave es `base‖hoja` y NO lleva la ventana, y eso es lo correcto — no un atajo.** Lo que
+ * se cachea son **los datos crudos de la hoja**, que no dependen de ninguna ventana. Todo lo que
+ * viene después —la fila de encabezado, las tres guardas de `R-19`, el recorte por ventana— sigue
+ * corriendo igual sobre esos datos. **El recorte da exactamente las mismas filas**: lo único que
+ * se evita es volver a pedirle a Sheets un array que ya está en memoria.
+ *
+ * ⚠ **Y por eso la trampa que el prompt marca no se toca:** `encontrarFilaRdvDeReunion_` arma una
+ * ventana de un día por reunión, y **sigue armándola**. Sus ocho llamadas siguen recortando por
+ * ocho ventanas distintas y devolviendo ocho conjuntos distintos de filas — lo que dejan de hacer
+ * es releer `rdv` ocho veces. **Usar una ventana común habría cambiado qué filas ve el matcher, y
+ * eso queda afuera.**
+ *
+ * **Apagado por defecto**, igual que `cacheRegistros_`: `null` significa *sin caché* y el
+ * comportamiento es idéntico al de antes. Sólo `generarInforme` lo enciende, con `try/finally`.
+ * Un diagnóstico que quiera leer dos veces la misma solapa y ver un cambio sigue pudiendo.
+ */
+var cacheDatosHoja_ = null;
+
+function abrirCacheDatosHoja_() { cacheDatosHoja_ = {}; }
+function cerrarCacheDatosHoja_() { cacheDatosHoja_ = null; }
+
+/** Los valores crudos de la solapa, memoizados por corrida si el caché está abierto. */
+function datosDeHoja_(baseId, hoja) {
+  if (cacheDatosHoja_ === null) return hoja.getDataRange().getValues();
+  var clave = baseId + '||' + hoja.getName();
+  if (!Object.prototype.hasOwnProperty.call(cacheDatosHoja_, clave)) {
+    cacheDatosHoja_[clave] = hoja.getDataRange().getValues();
+  }
+  return cacheDatosHoja_[clave];
+}
+
 function leerFuente(baseId, ventana, nombreHojaOverride, opcionesLectura) {
   var abierto = abrirHoja(baseId, nombreHojaOverride);
   if (!abierto.ok) return { ok: false, base_id: baseId, motivo: abierto.motivo };
@@ -949,7 +1002,7 @@ function leerFuente(baseId, ventana, nombreHojaOverride, opcionesLectura) {
     return { ok: false, base_id: baseId, motivo: 'La hoja "' + hoja.getName() + '" no tiene fila de encabezado (fila_encabezado=0 en SOLAPAS)' };
   }
 
-  var datos = hoja.getDataRange().getValues();
+  var datos = datosDeHoja_(baseId, hoja);
   if (datos.length < filaEncabezado) {
     return { ok: false, base_id: baseId, motivo: 'La hoja "' + hoja.getName() + '" no tiene fila de encabezado ' + filaEncabezado };
   }
