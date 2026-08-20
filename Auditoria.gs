@@ -3633,3 +3633,92 @@ function medirFuentesDeImplementaciones() {
   Logger.log('== Reportar y parar. Las partes A–E las autoriza el usuario. ==');
   return { ok: true };
 }
+
+/**
+ * `2026-08-20_7` Parte C punto 2 — **cuántos tokens de cada símbolo debería tener el deck, ANTES
+ * de generarlo.**
+ *
+ * ⭐ **Es el control que no existía, y su ausencia tenía un costo concreto:** un deck lleno de
+ * `/////` es hoy indistinguible de un deck que no cableó nada. Con el número escrito antes, la
+ * corrida se lee en diez segundos en vez de mirando láminas.
+ *
+ * **No genera nada y no toca la plantilla.** Cruza tres cosas que ya existen:
+ *   - los tokens de la plantilla (`tokensPorSlide_`, que baja a tablas y grupos),
+ *   - `MARCADORES` filtrado como lo filtra el motor —`informe_id === informeId || '*'`—,
+ *   - y `resolverMarcadores`, que devuelve el `estado` real de cada fila sin escribir un deck.
+ *
+ * ⚠ **Lo que este control NO puede predecir, dicho para que nadie lea el número como una promesa:**
+ *   - **la barrida final.** Si la corrida se corta por presupuesto, tokens que acá cuentan como
+ *     número van a salir `/////`. Es un piso, no un pronóstico.
+ *   - **las secciones repetibles.** Los conteos son de la pasada de tokens fijos; un token de
+ *     sección repetible se emite **una vez por ítem** y acá cuenta una sola vez.
+ *   - **los rechazos parciales de `R-18` punto 3**, que publican y además dejan fila en
+ *     `FALTANTES`.
+ *
+ * **Por qué igual sirve con esas tres limitaciones:** las tres hacen que el deck real tenga **más**
+ * huecos que lo previsto, nunca menos. Así que **si el deck sale con menos números que este
+ * número, algo pasó**; si sale con más, el instrumento está mal.
+ */
+function preverSimbolosDelDeck_(informeId) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) {
+    Logger.log('FALLÓ: el informe `' + informeId + '` no tiene `plantilla_id`.');
+    return { ok: false };
+  }
+
+  var enPlantilla = Object.keys(tokensPorSlide_(SlidesApp.openById(informe.plantilla_id)));
+
+  // `MARCADORES` como lo ve el motor para ESTE informe: el suyo y los compartidos.
+  var suyas = {};
+  leerMarcadores_().forEach(function (m) {
+    var suyo = String(m.informe_id || '').trim();
+    if (suyo === informeId || suyo === '*') suyas[m.marcador] = m;
+  });
+
+  var resolucion = resolverMarcadores(informeId);
+  var estadoDe = {};
+  if (resolucion && resolucion.ok) {
+    resolucion.resultados.forEach(function (r) { estadoDe[r.marcador] = r; });
+  }
+
+  var cuenta = { numero: 0, entre_guiones: 0, barra: 0, fallo: 0, sin_dato: 0 };
+  var detalle = { barra: [], fallo: [], sin_dato: [], entre_guiones: [] };
+
+  enPlantilla.forEach(function (t) {
+    var fila = suyas[t];
+    if (!fila) { cuenta.barra++; detalle.barra.push(t); return; }
+
+    var r = estadoDe[t];
+    var estado = r ? String(r.estado || '') : '';
+    if (estado === 'error' || estado === 'REVISAR') { cuenta.fallo++; detalle.fallo.push(t); return; }
+    if (estado === 'sin_datos') { cuenta.sin_dato++; detalle.sin_dato.push(t); return; }
+    if (estado !== 'ok') { cuenta.barra++; detalle.barra.push(t); return; }
+
+    // Publica. La pregunta que queda es si lo hace con desconfianza declarada.
+    var f = String(fila.formato || '').trim().toLowerCase();
+    if (f.length > 8 && f.slice(-8) === '_revisar') { cuenta.entre_guiones++; detalle.entre_guiones.push(t); }
+    else cuenta.numero++;
+  });
+
+  Logger.log('== SÍMBOLOS ESPERADOS · `' + informeId + '` · ' + enPlantilla.length + ' tokens en la plantilla ==');
+  Logger.log('   número limpio            : ' + cuenta.numero);
+  Logger.log('   -entre guiones-          : ' + cuenta.entre_guiones + '   (publican, con desconfianza declarada)');
+  Logger.log('   /////  falta cablearlo   : ' + cuenta.barra);
+  Logger.log('   ---    falló             : ' + cuenta.fallo);
+  Logger.log('   -      sin dato          : ' + cuenta.sin_dato);
+  Logger.log('   ─────────────────────────────');
+  Logger.log('   PUBLICAN ALGO            : ' + (cuenta.numero + cuenta.entre_guiones) +
+    ' de ' + enPlantilla.length);
+  if (detalle.fallo.length) Logger.log('   los `---`: ' + detalle.fallo.sort().join(', '));
+  if (detalle.sin_dato.length) Logger.log('   los `-`  : ' + detalle.sin_dato.sort().join(', '));
+  Logger.log('');
+  Logger.log('   ⚠ Es un PISO, no un pronóstico: la barrida final, las secciones repetibles y los');
+  Logger.log('     rechazos parciales sólo pueden AGREGAR huecos. Si el deck sale con menos');
+  Logger.log('     números que esto, algo pasó; si sale con más, el instrumento está mal.');
+
+  return { ok: true, informe_id: informeId, en_plantilla: enPlantilla.length, cuenta: cuenta, detalle: detalle };
+}
+
+function preverSimbolosJM() { return preverSimbolosDelDeck_('jm'); }
+
+function preverSimbolosSecco() { return preverSimbolosDelDeck_('secco'); }

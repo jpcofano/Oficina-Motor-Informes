@@ -4437,3 +4437,226 @@ function revertirMarcaDeFrecuencia() {
   Logger.log('⚠ La nota NO se borra: dice por qué estuvo marcado, y eso sigue siendo cierto.');
   return r;
 }
+
+/* ══════════ `2026-08-20_7` — cerrar para generar (20/08/2026) ══════════
+ *
+ * Dos migraciones que se corren **en este orden y no en el otro**, y el motivo es del escritor:
+ * `curarCamposMarcadores_` indexa por **`marcador || informe_id`**. Si las `*` entran primero, la
+ * segunda migración busca `camp_alcance||jm` y ya no existe — reportaría `sin_fila` en 25 de 32 y
+ * **fallaría el lote entero** por la guarda de todo-o-nada. Así que **primero el formato, después
+ * el ámbito.**
+ *
+ * `verificarCierreParaGenerar()` las corre en ese orden y frena si la primera falla.
+ */
+
+/**
+ * `2026-08-20_7` Parte B — **la desconfianza declarada.**
+ *
+ * ⭐ **Decisión del usuario, 20/08/2026: un número que existe y no está validado se publica ENTRE
+ * GUIONES. No se retiene.** Un número entre guiones **ya no es plausible**: se declara sospechoso
+ * en la cara del deck, que es lo contrario del modo de falla que este proyecto persigue.
+ *
+ * **La diferencia con lo que sí se detiene, escrita para que no se confunda después:**
+ * *desconfiar de un número* no es lo mismo que *inventar uno*. `m2_campanias` no entra acá porque
+ * **no hay número del que desconfiar** — no hay columna que lo produzca (`PENDIENTES`, 20/08).
+ *
+ * **Qué hace:** a todo marcador con `SIN VALIDAR` en `notas` le compone el sufijo `_revisar` sobre
+ * su formato actual. El formateador ya es recursivo sobre el base y **no se toca**.
+ *
+ * ⚠ **Tres cosas medidas el 20/08 sobre la hoja viva, que son las que hacen que esto no rompa:**
+ *
+ *  1. **Son 32 con `SIN VALIDAR`, y 3 YA llevan `_revisar`** —`frecuencia`, `gcba_frecuencia`,
+ *     `camp_frecuencia`—. Esos tres **son parte de los 32**, no un grupo aparte. Se saltean acá y
+ *     `curarCamposMarcadores_` los saltearía igual —no escribe si el valor no cambia—, pero se
+ *     filtran antes para que el conteo del reporte diga la verdad. **Idempotencia, no doble
+ *     sufijo.**
+ *  2. ⚠ **`enc_evento` tiene el `formato` VACÍO, y ahí el sufijo solo NO funciona.** La guarda de
+ *     `formatearValorMarcador_` es `f.length > 8`, así que `'_revisar'` pelado **no entra a la
+ *     rama** y el valor sale crudo, sin guiones — verificado corriendo el formateador real. Se le
+ *     pone **`texto_revisar`**, que preserva exactamente el comportamiento anterior (un `formato`
+ *     vacío ya hacía `String(valor)`, igual que `texto`) y además envuelve. **Es la única fila del
+ *     lote en esta situación.**
+ *  3. **Los cuatro formatos base en uso soportan el sufijo**, verificado uno por uno:
+ *     `miles`→`-1.235-`, `numero`→`-1234.57-`, `porcentaje_sin_signo`→`-1234.6-`,
+ *     `fraccion`→`-123456.8-`, y `texto`→`-hola-`.
+ *
+ * **La condición de salida, y va escrita para que `_revisar` no se vuelva permanente por olvido:**
+ * el sufijo se retira **cuando un caso `V-` valide la fila**, y no antes. Sacarlo es editar una
+ * celda de `MARCADORES` — sin `clasp push` (`D-01`).
+ */
+function aplicarRevisarASinValidar() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('FALLÓ: no existe la hoja MARCADORES.'); return { ok: false }; }
+
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0];
+  var iM = h.indexOf('marcador'), iI = h.indexOf('informe_id'),
+      iF = h.indexOf('formato'), iN = h.indexOf('notas');
+  if (iM === -1 || iF === -1 || iN === -1) {
+    Logger.log('FALLÓ: MARCADORES no tiene marcador/formato/notas.');
+    return { ok: false };
+  }
+
+  var cambios = [], yaEstaban = [], vacios = [];
+  for (var f = 1; f < datos.length; f++) {
+    var nombre = String(datos[f][iM] || '').trim();
+    if (!nombre) continue;
+    if (String(datos[f][iN] || '').indexOf('SIN VALIDAR') === -1) continue;
+
+    var base = String(datos[f][iF] || '').trim();
+    if (base.length > 8 && base.slice(-8) === '_revisar') { yaEstaban.push(nombre); continue; }
+
+    // El formato vacío no admite el sufijo solo (guarda `f.length > 8`): se le da la base que ya
+    // tenía de hecho. Un `formato` vacío hace `String(valor)`, que es exactamente `texto`.
+    if (base === '') { base = 'texto'; vacios.push(nombre); }
+
+    cambios.push({
+      marcador: nombre,
+      informe_id: String(datos[f][iI] || '').trim(),
+      formato: base + '_revisar'
+    });
+  }
+
+  Logger.log('== Parte B · desconfianza declarada ==');
+  Logger.log('  con SIN VALIDAR y sufijo por poner : ' + cambios.length);
+  Logger.log('  ya lo llevaban (idempotencia)      : ' + yaEstaban.length +
+    (yaEstaban.length ? ' → ' + yaEstaban.join(', ') : ''));
+  if (vacios.length) {
+    Logger.log('  ⚠ con `formato` vacío, se les puso `texto_revisar`: ' + vacios.join(', '));
+  }
+
+  var r = curarCamposMarcadores_(cambios);
+  if (!r.ok) { Logger.log('  ❌ ' + r.motivo); return r; }
+  Logger.log('  ✅ ' + r.cambios_escritos + ' celda(s) escritas.');
+  return r;
+}
+
+/**
+ * `2026-08-20_7` Parte A — **las 49 `*`: SECCO deja de estar vacío.**
+ *
+ * `MARCADORES` tiene 87 filas y **las 87 dicen `jm`**, así que el deck de `secco` sale entero en
+ * hueco. El mecanismo para compartir ya existe y **nunca se usó**: `resolverMarcadores` filtra con
+ * `suyo === informeId || suyo === '*'`.
+ *
+ * **El criterio es el de siempre y no cambió: el token existe en las dos plantillas Y mide el
+ * mismo hecho.** Estar en la lista prueba lo primero —cruce de los dos censos autoritativos del
+ * 20/08— y **lo segundo se miró, no se supuso**:
+ *
+ * ⭐ **El chequeo que importa es la SECCIÓN, no la lámina**, porque es la sección la que decide qué
+ * hecho mide un token. `SECCIONES.familia_tokens` declara el dueño de cada familia, y las tres
+ * familias de esta lista dicen **`JM,SECCO` las dos**:
+ *
+ *   - `enc_`   → `encuentro` (JM,SECCO) y `encuentro_iceberg` (JM,SECCO)
+ *   - `camp_`  → `campana` (JM,SECCO)
+ *   - `m2_`    → `m2` (JM,SECCO) y `m2_status` (JM,SECCO)
+ *   - `ecv_`   → **ninguna sección declara el prefijo**; `ecv_alcance_semanal` (JM,SECCO) nombra
+ *     cinco tokens puntuales y el resto se resuelve en la pasada de tokens fijos. Tampoco divergen.
+ *
+ * ⚠ **El caso que había que buscar activamente no aparece en esta lista, y conviene decirlo con
+ * el nombre puesto:** `rrss_` sí cae en secciones distintas —Resumen Ejecutivo en `jm`,
+ * Interacción positiva en RRSS en `secco`— y es el modo de falla que rompió `enc_audiencia` con un
+ * renombre global. **Ninguno de los 49 es `rrss_`**: los `rrss_*` están sin fila en las dos
+ * plantillas, así que no son candidatos a `*` sino trabajo de cableado. El riesgo no se
+ * materializa, y no porque se lo haya evitado sino porque no está.
+ *
+ * ⚠ **Una asimetría que sí existe y no bloquea:** `m2_caudal` declara `m2_` y es **sólo de SECCO**.
+ * No cambia lo que un `m2_*` mide — agrega una lámina donde pueden aparecer. Se anota.
+ *
+ * ⚠ **Y la limitación honesta, que va en `notas` de cada fila:** estos 49 están validados **para
+ * `jm` y no para `secco`**. Otra ventana, otro corte. El sello es de texto para no duplicarse
+ * entre corridas.
+ */
+var SELLO_VALIDACION_ = 'Validación es de jm; para secco sin validar (2026-08-20_7).';
+
+/**
+ * Los tokens que hay hoy en la plantilla de un informe. **Se leen de la plantilla, no de una lista
+ * escrita acá**, y eso es deliberado: una lista de 167 nombres copiada del censo del 20/08 sería
+ * una cuarta lista duplicada que nadie actualiza, y el repo ya sabe cómo termina eso. La plantilla
+ * es del equipo y se mueve — de hecho **se movió hoy**, entre las 12:06 y las 13:02, cuando las
+ * láminas 19 y 20 de `jm` pasaron de 9 y 14 tokens a 31 y 50.
+ *
+ * Reusa `tokensPorSlide_` (`Armonizar.gs`), que **sí** baja a tablas y a grupos — `getShapes()` no
+ * ve 33 tokens de JM, medido el 03/08.
+ */
+function tokensDePlantilla_(informeId) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) return null;
+  var mapa = tokensPorSlide_(SlidesApp.openById(informe.plantilla_id));
+  return Object.keys(mapa);
+}
+
+function aplicarAsteriscoCompartidos() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('FALLÓ: no existe la hoja MARCADORES.'); return { ok: false }; }
+
+  var deSecco = tokensDePlantilla_('secco');
+  if (!deSecco) {
+    Logger.log('FALLÓ: el informe `secco` no tiene `plantilla_id`.');
+    return { ok: false, motivo: 'sin plantilla_id' };
+  }
+  var enSecco = {};
+  deSecco.forEach(function (t) { enSecco[t] = true; });
+  Logger.log('  tokens leídos de la plantilla de secco: ' + deSecco.length);
+
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0];
+  var iM = h.indexOf('marcador'), iI = h.indexOf('informe_id'), iN = h.indexOf('notas');
+  if (iM === -1 || iI === -1) {
+    Logger.log('FALLÓ: MARCADORES no tiene marcador/informe_id.');
+    return { ok: false };
+  }
+
+  var cambios = [], yaEstaban = [], soloJm = [];
+  for (var f = 1; f < datos.length; f++) {
+    var nombre = String(datos[f][iM] || '').trim();
+    if (!nombre) continue;
+    var suyo = String(datos[f][iI] || '').trim();
+    if (suyo === '*') { yaEstaban.push(nombre); continue; }
+    if (!enSecco[nombre]) { soloJm.push(nombre); continue; }
+
+    var notas = iN === -1 ? '' : String(datos[f][iN] || '');
+    cambios.push({
+      fila: f,
+      marcador: nombre,
+      notas: notas.indexOf(SELLO_VALIDACION_) !== -1 ? notas
+        : (notas ? notas + ' · ' : '') + SELLO_VALIDACION_
+    });
+  }
+
+  Logger.log('== Parte A · las `*` compartidas ==');
+  Logger.log('  candidatos a `*`      : ' + cambios.length);
+  Logger.log('  ya estaban en `*`     : ' + yaEstaban.length);
+  Logger.log('  se quedan en `jm`     : ' + soloJm.length + ' (no están en la plantilla de secco)');
+
+  if (!cambios.length) {
+    Logger.log('  ❌ NADA QUE APLICAR. O ya se corrió, o `TOKENS_DE_SECCO_` no coincide con la hoja.');
+    return { ok: false, motivo: 'cero cambios' };
+  }
+
+  // Todo o nada, igual que `curarCamposMarcadores_`: se validan las filas antes de escribir.
+  cambios.forEach(function (c) {
+    hoja.getRange(c.fila + 1, iI + 1).setValue('*');
+    if (iN !== -1) hoja.getRange(c.fila + 1, iN + 1).setValue(c.notas);
+  });
+
+  Logger.log('  ✅ ' + cambios.length + ' marcador(es) pasaron a `*`.');
+  Logger.log('  ⚠ Su validación es de `jm`. Para `secco` es otra ventana y otro corte.');
+  return { ok: true, aplicados: cambios.length, se_quedan: soloJm.length };
+}
+
+/**
+ * El botón. Corre las dos **en el orden que corresponde** y **frena si la primera falla**, que es
+ * la mitad del valor de un wrapper: sobre un formato a medio aplicar, el resultado de la otra no
+ * significa nada.
+ */
+function verificarCierreParaGenerar() {
+  var b = aplicarRevisarASinValidar();
+  if (!b || b.ok === false) {
+    Logger.log('');
+    Logger.log('⛔ La Parte B no cerró. NO se corre la Parte A: el escritor indexa por');
+    Logger.log('   `marcador||informe_id`, así que mover el ámbito ahora dejaría el formato a medio.');
+    return b;
+  }
+  Logger.log('');
+  return aplicarAsteriscoCompartidos();
+}
