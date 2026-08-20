@@ -3,7 +3,15 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-20, al cerrar el `2026-08-20_8` (anclaje en dos pasos)
+**Última actualización:** 2026-08-20, al cerrar el `2026-08-20_10` (corrida desatendida)
+
+⚠ **LA PRÓXIMA EJECUCIÓN VA A PEDIR RE-AUTORIZAR.** `appsscript.json` sumó el scope
+`script.scriptapp`, sin el cual `ScriptApp.getProjectTriggers()` falla y **el mecanismo
+desatendido entero no puede funcionar**. Es un diálogo de permisos, no un error.
+
+⛔ **Y antes de confiar en el mecanismo: `verificarAlcanceDesatendido()`.** Un trigger corre **sin
+usuario delante**, con los permisos del **dueño del script**, y las bases son planillas de otras
+cuentas compartidas con él.
 
 ## ⏸ Los cuatro botones que esperan, en orden
 

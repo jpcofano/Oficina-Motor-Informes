@@ -487,43 +487,99 @@ function iniciarCorridaDesatendidaSecco() { return iniciarCorridaDesatendida_('s
  * pendiente sin que nadie entienda por qué.
  *
  * Se corre **una vez, a mano**, antes de confiar en el mecanismo.
+ *
+ * ═══ ⭐ Por qué esta función tiene una guarda de cobertura, y es una corrección de sí misma ═══
+ *
+ * **La primera versión no verificó ni una base y dio veredicto igual.** El bloque de bases no
+ * imprimió **ni una línea** —ni `ok` ni `FALLA`— y la función reportó como único problema el de
+ * triggers. **Un control que no controla y emite diagnóstico es peor que no tenerlo, porque su
+ * verde se cita.**
+ *
+ * **La causa, y es exactamente la que `CLAUDE.md` §4 documenta:** `leerRegistro_` hace
+ * `obj.activo = esVerdadero_(obj.activo)`, así que **`activo` es un booleano real**. El filtro
+ * escrito acá era `String(b.activo || '').trim().toLowerCase() !== 'sí'` — y `String(true)` es
+ * `'true'`, que nunca es `'sí'`. **Descartaba las cinco bases, en silencio.** Los otros seis
+ * lectores del repo usan el idioma correcto —`if (!base.activo || !base.sheet_id) return;`— y este
+ * verificador fue el único que convirtió antes de mirar. *Convertir antes de mirar el tipo destruye
+ * el tipo*, y acá lo destruyó dentro de un verificador, que es donde más caro sale.
+ *
+ * **Por eso la guarda: cero bases verificadas es un PROBLEMA, no un silencio.** Y el log dice
+ * `n de m`, porque un conteo es lo único que distingue *"todas pasaron"* de *"no se probó ninguna"*.
  */
 function verificarAlcanceDesatendido() {
   var problemas = [];
   Logger.log('== alcance para la corrida desatendida ==');
+  Logger.log('');
 
-  Object.keys(leerBases()).forEach(function (baseId) {
-    var b = leerBases()[baseId];
-    if (String(b.activo || '').trim().toLowerCase() !== 'sí') return;
-    if (!b.sheet_id) return;
+  // ── las bases ────────────────────────────────────────────────────────────────────────────
+  var bases = leerBases();
+  var candidatas = [];
+  Object.keys(bases).forEach(function (baseId) {
+    var b = bases[baseId];
+    // El idioma del repo, no una conversión propia: `activo` ya viene booleano.
+    if (!b.activo || !b.sheet_id) return;
+    candidatas.push(baseId);
+  });
+
+  var verificadas = 0;
+  candidatas.forEach(function (baseId) {
     try {
-      SpreadsheetApp.openById(b.sheet_id).getName();
-      Logger.log('   ok   base ' + baseId);
+      SpreadsheetApp.openById(bases[baseId].sheet_id).getName();
+      Logger.log('   ok    base ' + baseId);
+      verificadas++;
     } catch (e) {
       Logger.log('   FALLA base ' + baseId + ': ' + e.message);
       problemas.push('base ' + baseId);
+      verificadas++;
     }
   });
 
-  try {
-    var triggers = ScriptApp.getProjectTriggers().length;
-    Logger.log('   ok   triggers: ' + triggers + ' instalado(s) de 20 slots');
-    if (triggers >= 18) problemas.push('quedan menos de 3 slots de trigger');
-  } catch (e) {
-    Logger.log('   FALLA no se pudieron listar los triggers: ' + e.message);
-    problemas.push('triggers');
+  Logger.log('   → ' + verificadas + ' de ' + candidatas.length + ' base(s) activa(s) con `sheet_id` verificadas' +
+    ' (sobre ' + Object.keys(bases).length + ' fila(s) en BASES)');
+
+  /* ⭐ La guarda de cobertura. **Cero verificadas es un problema, no un silencio** — y las tres
+   * causas posibles se nombran, porque cada una manda a mirar otro lado. */
+  if (!candidatas.length) {
+    Logger.log('   ⛔ NINGUNA base para verificar. Esto NO es "todo bien": es que el control no midió.');
+    Logger.log('      Puede ser (a) BASES vacía, (b) ninguna fila con `activo` verdadero, o');
+    Logger.log('      (c) ninguna activa con `sheet_id` cargado. Mirar la hoja antes de seguir.');
+    problemas.push('cero bases verificadas — el control no midió');
   }
 
+  // ── los triggers ─────────────────────────────────────────────────────────────────────────
+  Logger.log('');
+  try {
+    var triggers = ScriptApp.getProjectTriggers();
+    var mios = triggers.filter(function (t) { return t.getHandlerFunction() === FN_CONTINUACION_; });
+    Logger.log('   ok    triggers: ' + triggers.length + ' instalado(s) de 20 slots · ' +
+      mios.length + ' de continuación');
+    if (triggers.length >= 18) problemas.push('quedan menos de 3 slots de trigger');
+  } catch (e) {
+    Logger.log('   FALLA no se pudieron listar los triggers: ' + e.message);
+    Logger.log('      ⚠ Si dice que falta autorización, es el scope `script.scriptapp` de');
+    Logger.log('      `appsscript.json`. Sin él el mecanismo desatendido NO puede funcionar.');
+    problemas.push('triggers: ' + e.message);
+  }
+
+  // ── el lock ──────────────────────────────────────────────────────────────────────────────
   try {
     var l = LockService.getScriptLock();
-    if (l.tryLock(1000)) { l.releaseLock(); Logger.log('   ok   LockService'); }
-    else problemas.push('el lock estaba tomado');
-  } catch (e) { problemas.push('LockService: ' + e.message); }
+    if (l.tryLock(1000)) { l.releaseLock(); Logger.log('   ok    LockService'); }
+    else { Logger.log('   FALLA el lock estaba tomado'); problemas.push('el lock estaba tomado'); }
+  } catch (e) {
+    Logger.log('   FALLA LockService: ' + e.message);
+    problemas.push('LockService: ' + e.message);
+  }
 
+  // ── el veredicto, que ahora sabe cuánto midió ────────────────────────────────────────────
   Logger.log('');
-  Logger.log(problemas.length
-    ? 'NO confiar en el mecanismo todavía: ' + problemas.join(' · ')
-    : 'Alcance ok. Ojo: esto corre COMO VOS. Un trigger corre como el dueño del script, y si no ' +
-      'sos vos, hay que re-correrlo desde esa cuenta.');
-  return { ok: problemas.length === 0, problemas: problemas };
+  if (problemas.length) {
+    Logger.log('⛔ NO confiar en el mecanismo todavía:');
+    problemas.forEach(function (p) { Logger.log('   · ' + p); });
+  } else {
+    Logger.log('✅ Alcance ok, sobre ' + verificadas + ' base(s) verificada(s).');
+    Logger.log('   ⚠ Ojo: esto corrió COMO VOS. Un trigger corre como el DUEÑO DEL SCRIPT, y si no');
+    Logger.log('   sos vos, hay que re-correr esto desde esa cuenta — el verde de acá no la cubre.');
+  }
+  return { ok: problemas.length === 0, problemas: problemas, bases_verificadas: verificadas, bases_candidatas: candidatas.length };
 }

@@ -660,6 +660,17 @@ prompt antes de que nadie lo verificara contra el motor**.
   mirar `typeof` **sobre el valor crudo**, y contrastar contra lo que el motor lee de esa misma
   columna. Son dos instrumentos y tienen que coincidir; si no coinciden, el equivocado suele ser
   el de afuera.
+- ⚠ **Y volvió a pasar el 20/08, dentro de un VERIFICADOR, que es donde más caro sale.**
+  `verificarAlcanceDesatendido()` filtraba con `String(b.activo).toLowerCase() !== 'sí'` y
+  `leerRegistro_` devuelve `activo` **ya booleano** (`Config.gs`, `esVerdadero_`): `String(true)` es
+  `'true'`, así que **descartó las cinco bases en silencio** y la función **emitió veredicto igual**.
+  Los otros seis lectores del repo usan `if (!base.activo || …)` — el único que convirtió fue el que
+  verificaba.
+- ⭐ **Lo accionable que faltaba, y es la regla nueva: un control tiene que declarar CUÁNTO midió.**
+  «Ningún problema» y «no se probó nada» se ven idénticos en un log sin conteo. **Cero unidades
+  verificadas es un problema, no un silencio**, y el log dice `n de m`. Sin eso, el verde de un
+  control se cita como evidencia de algo que nunca se ejecutó.
+
 - **Es el mismo error que `looker ilegible entero`** del 08/08 —una llamada mal construida leída
   como propiedad del dato— y por eso van juntos: **cuando la medición propia contradice al motor,
   la primera hipótesis es que la medición está mal**, no el motor.

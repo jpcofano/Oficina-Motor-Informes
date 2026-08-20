@@ -5044,3 +5044,81 @@ juntarlas exige **declarar el servicio avanzado de Slides y re-autorizar**. Eso 
 operativo del usuario y **queda fuera de este prompt por decisión escrita**. El número para
 decidir: la etapa de **tokens fijos cuesta 7–11 s** sobre ~270 tokens, así que el pintado **no es
 el gasto principal** — el gasto está en leer, y eso ya se atacó.
+
+---
+
+## El verificador del alcance no verificó ni una base y dio veredicto igual — 20/08/2026
+
+**Encontrado por el usuario** leyendo la corrida de las 18:50: el bloque de bases de
+`verificarAlcanceDesatendido()` **no imprimió ni una línea** —ni `ok` ni `FALLA`— y la función
+reportó como único problema el de triggers, o sea que **emitió un diagnóstico sin haber medido lo
+más importante que dice medir**.
+
+### La causa, medida — y es literal la que `CLAUDE.md` §4 documenta
+
+`leerRegistro_` (`Config.gs:402`) hace `obj.activo = esVerdadero_(obj.activo)`: **`activo` es un
+booleano real**, no el texto de la celda. El filtro escrito en el verificador era
+
+```js
+if (String(b.activo || '').trim().toLowerCase() !== 'sí') return;
+```
+
+y `String(true)` es `'true'`, que **nunca** es `'sí'`. **Descartaba las cinco bases, en silencio.**
+
+⚠ **Los otros seis lectores del repo usan el idioma correcto** —`if (!base.activo || !base.sheet_id)
+return;`, en `Auditoria.gs` ×3, `Fechas.gs` ×2 y `Armonizar.gs`—. **El verificador fue el único que
+convirtió antes de mirar**, que es exactamente lo que la regla prohíbe: *convertir antes de mirar el
+tipo destruye el tipo; un `String(celda)` puesto para «normalizar» disfraza un booleano de texto*.
+
+**El denominador que se perdía:** `BASES` tiene 6 filas, **5 activas con `sheet_id`** —`rdv`,
+`digital`, `looker`, `m2`, `reuniones`— y `miba` parqueada. **Se verificaron 0 de 5.**
+
+### Por qué esto es peor que un bug común
+
+⭐ **Un control que no mide lo que dice medir es peor que no tenerlo, porque su verde se cita.** La
+función existe para contestar *«¿un trigger llega a las bases?»* antes de confiar en un mecanismo
+desatendido. Un `ok` suyo habría autorizado a soltar el mecanismo **sin haber probado nunca lo
+único que no se puede probar de otra forma**.
+
+Es la familia que este repo ya persigue —el instrumento que se lee como evidencia— y esta vez
+apareció **dentro de un verificador**, que es donde más caro sale.
+
+### La corrección, y la guarda que la sostiene
+
+1. **El filtro usa el idioma del repo**, sin conversión propia.
+2. ⭐ **Cero bases verificadas es un PROBLEMA, no un silencio.** El veredicto entra a `problemas` y
+   el log nombra **las tres causas posibles** —`BASES` vacía · ninguna con `activo` verdadero ·
+   ninguna activa con `sheet_id`—, porque cada una manda a mirar otro lado.
+3. **El log dice `n de m`.** Un conteo es lo único que distingue *«todas pasaron»* de *«no se probó
+   ninguna»*, y su ausencia es lo que dejó pasar esto.
+
+⚠ **Y el aviso que el verde no cubre, que se conserva:** la función corre **como quien la aprieta**,
+y el trigger corre **como el dueño del script**. Si no son la misma cuenta, este verde no dice nada
+sobre el alcance real.
+
+---
+
+## `batchUpdate` de Slides: **NO se agrega**, y el número está al lado — 20/08/2026
+
+**El viaje de re-autorización se aprovechó para el scope `script.scriptapp`, que sí hacía falta.**
+La pregunta era si convenía meter en el mismo viaje el servicio avanzado de Slides.
+
+**Recomendación: no, y el número la sostiene.**
+
+| etapa de la corrida | costo medido |
+|---|---|
+| expansión (anclaje + unión digital) | 70–80 s |
+| mapa token→objectId | 16–21 s |
+| **pasada por ítem** | **200–204 s** |
+| ⭐ **tokens fijos — todo el pintado** | **7–11 s** |
+| cierre | 3 s |
+
+⭐ **El pintado de ~270 tokens cuesta 7–11 s sobre una corrida de 311.** Aun suponiendo que
+`batchUpdate` lo lleve a cero —que no lo hace—, **el techo de la ganancia es el 3 % de la corrida**.
+El gasto estaba en **leer**, y eso ya se atacó (`2026-08-20_11`: 304 lecturas completas → 40).
+
+**Lo que costaría:** declarar el servicio avanzado en `appsscript.json`, re-autorizar **otra vez**,
+y reescribir los ocho sitios de `replaceAllText` a una API distinta con su propio manejo de errores.
+
+**Si alguna vez cambia:** el número a mirar es el de la etapa `4 · tokens fijos` del rastro de
+`CORRIDAS`. **Mientras esté en un dígito de segundos, esto no se toca.** `dependencies` queda vacío.
