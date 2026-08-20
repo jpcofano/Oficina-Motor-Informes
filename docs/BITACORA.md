@@ -11183,3 +11183,93 @@ la condición bajo la cual la decisión del 16/08 se había tomado.
 **No se corrió una generación para verificar esto**, y es deliberado (Parte D punto 4): el cambio
 es puro, el control lo cubre, y una corrida de cinco minutos no agrega evidencia — mezcla este
 cambio con el drift de las bases, que el 15/08 movió 138.427 impresiones en 1h45.
+
+---
+
+## Paso `2026-08-20_3` — el fixture como tercer camino de verificación (2026-08-20) — commit de esta entrada
+
+- **Qué pedía el prompt:** escribir que **Code puede verificar un número contra un fixture de
+  disco**, y escribir con la misma claridad **qué no puede verificar así**. No mide ningún número:
+  es el ajuste de método.
+- **Qué se hizo:** `CLAUDE.md` §4 gana la tabla de los tres caminos y sus cuatro reglas.
+  `docs/_fixtures/README.md` gana lo que la Parte 0 midió —solapas por archivo, cobertura por
+  fecha, la asimetría de credenciales—. `docs/PENDIENTES_consistencia.md` gana la entrada que dice
+  **qué caso se contesta con qué archivo**.
+- **Prueba:** no aplica — es documentación. Lo medible fue la Parte 0, y está abajo.
+- **Pendientes/decisiones:** ninguno nuevo. Los seis casos de `reuniones` esperan **copiar un
+  archivo**, no una decisión.
+
+### ⚠ La premisa central del prompt era falsa, y eso cambió qué se escribió
+
+El prompt abría diciendo que *"la regla vigente es «Code no valida contra las bases externas: su
+token sólo alcanza la planilla de control; escribe el instrumento y el usuario corre»"*, y proponía
+reemplazarla.
+
+**Esa formulación no existe en el repo.** Se grepearon sus partes —`no valida contra las bases`,
+`bases externas`, `token sólo alcanza`, `planilla de control`, `el usuario corre`— en `CLAUDE.md` y
+en todo `docs/`: **cero apariciones**. Lo que §4 sí dice sobre quién verifica qué es *quien
+implementa no se autoverifica*, y eso **no es lo mismo** ni entra en conflicto con los tres
+caminos.
+
+**Decisión del usuario, 20/08/2026: los tres caminos se escriben por primera vez y no reemplazan
+nada.** Es una diferencia de fondo, no de redacción — reemplazar una regla obliga a decir qué
+deroga; escribir una nueva sólo obliga a que sea cierta. La nota quedó en el propio bloque de
+`CLAUDE.md` para que nadie vuelva a buscar la regla vieja.
+
+### Lo que la Parte 0 midió, y por qué cada medición cambió algo
+
+**La tabla de huellas estaba exacta: 2 coinciden, 0 en disco sin fila, 0 con fila y sin archivo.**
+Y la afirmación que el propio README hacía —que los dos zips son idénticos byte a byte a las copias
+de `Plan Inicial/_archivo/samples/`— **se verificó y es cierta**: cuatro archivos, dos shas. La
+regla 1 de los tres caminos ya se puede aplicar y da verde.
+
+⭐ **Lo que no estaba medido y resultó ser lo importante: un `.pptx` se abre igual que un `.xlsx`.**
+Los dos son `.zip`, y la biblioteca estándar alcanza para los dos. Verificado sobre el deck JM
+24-31/07 que viene **dentro** del fixture del 31/07: **30 láminas, 12.600 caracteres**, y la lámina
+17 —la de `X-19`— con 88 runs de texto, 40 con dígitos.
+
+**Eso es lo que hace que el camino del fixture no sea una versión pobre de la corrida, sino otra
+cosa:** la base y el número publicado que salió de ella **están en el mismo archivo, del mismo
+día**. Ninguno de los otros dos caminos puede cruzar esas dos mitades sin depender de que algo esté
+quieto.
+
+**Cobertura por fecha, que es lo que decide qué se puede cerrar:** `looker` sólo tiene el export
+del 31/07; `digital`, `m2` y `rdv` tienen 31/07 y 06/08; **`reuniones` no tiene ninguno**.
+
+### El cruce contra los casos frenados: 23 de 33
+
+Ya no esperan una corrida. **`A-11`** —el alcance con −4,3 %— es el caso limpio para empezar, y
+**`X-19`** también es contestable hoy aunque en el CSV figure sin base, porque lo que necesita es
+la lámina 17 del deck que está adentro del zip.
+
+⚠ **Y un caso que NO se puede cerrar, que quedó citado como testigo de la regla 3:** `X-17`. Su
+propia nota dice *"el conteo nuevo 16/14/21 salió de una base de 4.904 filas y el fixture del 31/07
+tiene 4.569"*. Cerrarlo con el export equivocado daría un número plausible y falso.
+
+⭐ **Los seis de `reuniones` los destraba copiar un archivo.** `C-53`, `C-63`, `A-12`, `A-14`,
+`A-15`, `X-23`, entre ellos los tres de `enc_alcance`. Es el ítem de mayor rendimiento de la lista
+y no depende de ninguna decisión.
+
+### La asimetría de credenciales: anotada, y deliberadamente sin medir del todo
+
+Verificando que los dos decks de Drive se alcanzan por ID —se alcanzan, y devuelven el texto **por
+lámina con la numeración puesta**— quedó claro que **hay dos credenciales, no una**:
+
+| camino | qué alcanza |
+|---|---|
+| `tools/token.js` (Bearer de `clasp`) | `drive.file` + `drive.metadata.readonly`, **sin `spreadsheets`** |
+| **el conector de Drive** | los dos decks… **y la planilla viva de una base** |
+
+`BASES.looker.sheet_id` devolvió metadata de la planilla real, compartida el 28/07 y modificada el
+mismo 20/08. Así que la frontera *"Code no llega a las bases"* es **más movible de lo que se venía
+suponiendo**.
+
+⚠ **Y acá está la parte que se decidió NO medir.** Metadata alcanzable **no es** contenido legible
+—*un test puede acertar el hecho y errar la inferencia*— y la prueba que lo dirimiría volcaría
+nombres de vecinos, barrios y volúmenes de envío a una conversación. **Es exactamente lo que
+`C-21` decidió evitar.**
+
+**Decisión del usuario, 20/08/2026: se queda en tres caminos, y la pregunta se anota en el
+documento en vez de abrirse como pendiente.** Un pendiente invita a cerrarlo; una nota dice qué
+habría que medir **si** el criterio de privacidad cambiara. La distinción importa: no es una tarea
+que nadie hizo, es una que se decidió no hacer.

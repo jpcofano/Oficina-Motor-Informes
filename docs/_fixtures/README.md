@@ -94,6 +94,68 @@ a byte** a `Plan Inicial/_archivo/samples/Informes ejemplo/Informe 2026-07-31.zi
 sabía**, porque sin huella nada relacionaba una copia con la otra. Es el argumento de esta tabla,
 hecho con la tabla misma.
 
+
+### Verificación del 20/08/2026 — la tabla está exacta, y no hizo falta agregarle una fila
+
+Medido por `2026-08-20_3` Parte 0, con `sha256sum` sobre los dos archivos:
+
+| categoría | cuántos |
+|---|---|
+| **coincide** — en disco, con fila, sha idéntico | **2** |
+| **está en disco sin fila** | **0** |
+| **tiene fila y no está** | **0** |
+
+**La afirmación de identidad de la sección de arriba también se verificó**, y es cierta: los dos
+archivos de esta carpeta y sus copias en `Plan Inicial/_archivo/samples/Informes ejemplo/` dan los
+mismos dos shas. Cuatro archivos, dos huellas.
+
+---
+
+## Qué trae cada fixture por dentro — medido, no citado
+
+Sale de leer `xl/workbook.xml` de cada `.xlsx` con la biblioteca estándar. **Sólo nombres de
+solapa**: ningún dato de ninguna celda se copió acá, ni hace falta.
+
+**`Informe 2026-07-31.zip`** — 8 archivos: las **cuatro** bases y **dos decks**.
+
+| archivo | solapas |
+|---|---|
+| `Base Looker.xlsx` | **14** · `resumen_metricas_dinamico` `resumen_metricas` `Cuentas` `MAIL` `IVR` `SMS` `CC` `DIGITAL` `ALCANCE` `URLs` `Desglose Alcance` `Audiencias` `Audiencias Conectadas` `Desplegables` |
+| `Seguimiento Digital.xlsx` | **22** · `Digital` `Filter unificado` `EDV` `Cuentas` `Directa Mail` `Directa IVR` `Directa SMS` `CAMPAÑAS_DESGLOCE_DIGITAL` `Seguimiento digital` `m2 digital` `Digital 2026 acumulado` `Buscador por periodo digital` `Buscador por periodo directa` `Mail per` `Alcance` `RDV` `Nomalización de barrios` `RDV JM 2 VECES` `Metricas informe` `INFORME` `Limpia Fun` `Barrio Hab` |
+| `M2 Reporte para Fede 2026.xlsx` | **12** · `Cuentas` `Cuentas M2` `Directa mail` `Digital acumulado` `Seguimiento digital` `CAMPAÑAS_DESGLOCE_DIGITAL` `Alcance` `M2 Directa` `M2 digital` `M2 periodo DIGITAL` `M2 periodo DIRECTA` `Mail per` |
+| `RDV JM CM ES + funcionarios.xlsx` | **36** · incluye `RVD JM-CM - ES`, `RDV CONJUNTO`, `Agenda`, `RDV_otros_ministros`, `Comunas`, más 14 pivots y copias de trabajo |
+| `Informe semanal JM (24-07 al 31-07) .pptx` | **30 láminas** |
+| `Seguimiento SECCO - SSCDI (31-07).pptx` | deck SECCO |
+
+**`Seguimiento Digital2026-08-06.zip`** — 4 archivos, **sin `Base Looker`**: `Seguimiento
+Digital.xlsx`, `M2 Reporte para Fede 2026.xlsx` y `RDV JM CM ES + funcionarios.xlsx` con **las
+mismas solapas** que en el otro zip, más el deck SECCO 07/08.
+
+⭐ **El deck se abre igual que las bases, y eso es lo que hace útil a esta carpeta.** Un `.pptx` es
+un `.zip`: el texto de cada lámina sale de `ppt/slides/slideN.xml` con la biblioteca estándar.
+Verificado sobre el JM 24-31/07 — **30 láminas, 12.600 caracteres**, y la lámina 17 (la de `X-19`)
+trae 88 runs de texto, **40 con dígitos**. **La base y el número publicado que salió de ella están
+en el mismo archivo, del mismo día**: ése es el cruce que el camino del fixture hace y ningún otro
+puede.
+
+### ⚠ La cobertura tiene fecha, y no es la misma para todas las bases
+
+| base | qué fechas hay en disco |
+|---|---|
+| `looker` | **sólo 31/07** |
+| `digital` · `m2` · `rdv` | 31/07 **y** 06/08 |
+| `reuniones` | **ninguna** — su export es uno de los `[no está]` |
+
+**Copiar `Base_reuniones` a esta carpeta destraba seis casos de una vez** (`C-53`, `C-63`, `A-12`,
+`A-14`, `A-15`, `X-23`), entre ellos los tres de `enc_alcance`. Es el ítem de mayor rendimiento
+de la lista de `[no está]`.
+
+### ⚠ El «ocho» del título de la sección de arriba no se puede verificar
+
+Viene textual de la §8 del handoff del 19/08 —*"Ya son ocho archivos"*—, pero la tabla tiene
+**cinco filas** que cubren **nueve archivos** si se desglosan los *"sueltos del 14/08"*. No cambia
+nada operativo; **no citar el «ocho» como conteo**.
+
 ## Los decks que viven en Drive se listan por ID, no se bajan
 
 No tienen bases propias asociadas, así que no son fixtures: son la contraparte publicada contra la
@@ -101,6 +163,35 @@ que se mide. Se citan por ID y se leen con el conector de Drive.
 
 - **JM 19/06–26/06** — `1Y_2TWYmkxOdUZQZMVVU-DW3roShbbXf7DUq6k-yMcXI`
 - **JM 31/07–07/08** — `10hoJur_ACZW2eqyJE6WGskIRiQrCFGbChR_PBYohHJU`
+
+**Alcanzados los dos, verificado el 20/08/2026.** El conector devuelve el texto **por lámina, con
+la numeración puesta** (`# 7 of 27`) y las tablas renderizadas, así que un número publicado se lee
+y se cita sin bajar el archivo. El primero pesa 10,4 MB y es de `seguimientoydatos@gmail.com`; el
+segundo 65,8 MB, de `sabai.deco.arg@gmail.com`, compartido el 14/08.
+
+### ⚠ Una asimetría de credenciales que conviene tener escrita
+
+Al verificar lo de arriba quedó claro que **no hay una credencial, hay dos**, y alcanzan cosas
+distintas:
+
+| camino | qué alcanza |
+|---|---|
+| `tools/token.js` (el Bearer de `clasp`) | scopes `drive.file` + `drive.metadata.readonly`, **sin `spreadsheets`** — de ahí que llegue a la planilla de control y no a una base ajena |
+| **el conector de Drive** | los dos decks… **y también la planilla viva de una base** |
+
+`BASES.looker.sheet_id` devolvió metadata de la planilla real —*Base Looker*, de
+`dgples.comunicacion@gmail.com`, compartida el 28/07—, así que la frontera *"Code no llega a las
+bases"* es **más movible de lo que se venía suponiendo**.
+
+⚠ **Y acá está la parte deliberada: NO se probó si el conector lee el CONTENIDO de esa base, sólo
+su metadata.** Son dos cosas distintas —*un test puede acertar el hecho y errar la inferencia*— y
+la prueba **no se va a hacer**: leer el contenido volcaría nombres de vecinos, barrios y volúmenes
+de envío a una conversación, que es exactamente lo que `C-21` decidió evitar cuando eligió dejar
+los fixtures fuera de git.
+
+**Esto queda anotado y NO es un pendiente** (decisión del usuario, 20/08/2026). Los caminos de
+verificación son **tres** y el de la base viva no es uno de ellos. Si algún día cambia el criterio
+de privacidad, esta nota dice qué habría que medir primero y por qué no se midió.
 
 ---
 

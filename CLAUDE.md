@@ -355,6 +355,51 @@ Quien implementa no se autoverifica. Los errores del Paso 2.2 se cazaron verific
 archivos vivos, no leyendo los reportes de las funciones. Reportar lo que se hizo, no
 declarar que funciona.
 
+**Hay tres caminos para verificar un número, y cada uno tiene algo que NO contesta.** Se escriben
+acá por primera vez (20/08/2026, `2026-08-20_3`). ⚠ **Esto no deroga ninguna regla**: la
+formulación que se venía citando de memoria —*"Code no valida contra las bases externas; escribe el
+instrumento y el usuario corre"*— **nunca estuvo escrita en este archivo ni en `docs/`**, se buscó
+y no está. Lo que sigue vigente y no cambia es *quien implementa no se autoverifica*, arriba.
+
+| camino | contesta | **no** contesta |
+|---|---|---|
+| **estructural, desde el log** | partición, identidad de filas, cuentas — lo que se lee del reporte sin ver el dato | nada sobre el valor absoluto |
+| **fixture, Code sobre disco** | *¿la definición de este marcador produce el número publicado?* | qué dice la base **hoy** |
+| **corrida, el usuario** | la traza, la rama, el estado de la hoja viva | nada reproducible seis semanas después |
+
+**Lo que habilita el camino del medio, y por qué es nuevo:** `docs/_fixtures/` tiene exports en
+disco —fuera de git, por la decisión de privacidad de `C-21`— que Code puede abrir con la
+biblioteca estándar, sin instalar nada: un `.zip` y un `.xlsx` son lo mismo, y un `.pptx` también.
+**Las bases y el deck que salió de ellas viven en el mismo archivo del mismo día**, así que el
+cruce *definición → número publicado* se hace entero sin conectarse a nada.
+
+**Cuatro reglas que van con el camino nuevo, y ninguna es opcional:**
+
+1. ⭐ **El `sha256` se verifica contra la tabla de huellas ANTES de citar un número.** Ya está
+   escrito en el `README.md` de la carpeta; acá se eleva a regla de método. Un archivo pegado en
+   un chat, sin huella, es **anónimo**: nada distingue un export del que le siguió dos días
+   después, y los dos se llaman casi igual. Un caso `exacto` medido contra un archivo anónimo **no
+   es reproducible**, que es lo que `C-21` vino a arreglar.
+2. ⭐ **Reproducir el cálculo en node o Python es una reimplementación**, y es el error que este
+   repo ya cometió cuatro veces —*el instrumento que reproduce lógica del motor y la reproduce
+   peor*—. **Cuando la lógica existe en un `.gs`, se extrae la función real**, como hacen
+   `tools/probar-formato-revisar.js` y `tools/probar-simbolos-faltante.js`. Reescribirla a mano se
+   permite **sólo** cuando lo que se verifica es la **definición del negocio** y no el motor, y
+   **el reporte tiene que decir cuál de las dos cosas hizo**.
+3. **Un fixture es una foto fechada, y su fecha es parte del resultado.** Un número medido sobre el
+   export del 31/07 responde por el 31/07 y por ningún otro día. Es la misma disciplina que los
+   snapshots de `_snapshots/`, que se citaban como si fueran de hoy hasta que se versionaron.
+   **El caso testigo ya existe y conviene citarlo en vez de volver a descubrirlo:** `X-17` no se
+   puede cerrar con lo que hay en disco, y su propia nota dice por qué — *"el conteo nuevo 16/14/21
+   salió de una base de 4.904 filas y el fixture del 31/07 tiene 4.569"*.
+4. **Un número reproducido contra un fixture no prueba que el motor lo lea así.** Prueba que **la
+   definición** es correcta. Son dos afirmaciones distintas y el caso de validación tiene que decir
+   cuál está haciendo — **si difieren, eso es el hallazgo, no el ruido.**
+
+⚠ **Lo que esto NO cambia:** la corrida sigue siendo del usuario, la traza sigue sin existir fuera
+de ella, y **el fixture no vuelve verificable nada de lo que depende de la base viva** — los nueve
+`camp_*`, la rama por cuenta y la selección semanal siguen exactamente donde estaban.
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue

@@ -4550,3 +4550,61 @@ que volver a tomar.
 
 **Quién lo destraba:** el usuario, eligiendo una de las tres. **Ninguna es gratis**, y por eso esto
 es un pendiente y no una tarea.
+
+---
+
+## 23 de 33 casos frenados dejan de esperar una corrida: los contesta un fixture — 20/08/2026
+
+**Es la mitad accionable del `2026-08-20_3`.** Sin esto la regla de los tres caminos existe y nadie
+la usa: alguien tiene que decir **cuál caso se contesta con cuál archivo**.
+
+Frenados = `abierto` (13) + `contradice` (20) = **33**, sobre los 218 de
+`docs/casos_validacion_2026-08-19.csv`. Cruzados contra las bases que **hoy** están en disco en
+`docs/_fixtures/` — medido el 20/08, no citado.
+
+### ✅ Contestables con lo que ya está en disco — **23**
+
+| base | casos |
+|---|---|
+| `looker` (sólo export 31/07) | `C-12` `C-22` `C-24` `C-61` `A-06` `A-07` `A-11` `X-16` `X-22` `X-26` |
+| `rdv` (31/07 y 06/08) | `C-01` `C-02` `C-03` `C-04` `C-07` `C-08` `C-09` |
+| `digital` (31/07 y 06/08) | `C-13` `C-14` `C-67` `X-18` `X-27` |
+| `m2` (31/07 y 06/08) | `C-06` |
+
+⭐ **`A-11` es el caso limpio por donde conviene empezar** — el alcance con −4,3 %: necesita
+`looker/ALCANCE` y `looker/DIGITAL` contra el deck **JM 24-31/07**, y **las dos mitades están
+dentro del mismo zip, del mismo día**. Es literalmente *¿la definición produce el número
+publicado?*, que es lo que el camino del fixture contesta.
+
+**Más `X-19`**, que en el CSV figura sin base (`-`) pero **también es contestable hoy**: lo que
+necesita es la **lámina 17 del deck JM 24-31/07** —que está dentro del fixture— más
+`looker/ALCANCE` para el `2,27`.
+
+### ❌ Su base NO está en disco — **6**, y los destraba un solo archivo
+
+`C-53` `C-63` `A-12` `A-14` `A-15` `X-23` — todos de `reuniones`, cuyo export es uno de los
+`[no está]` del README.
+
+⭐ **Copiar `Base_reuniones` a `docs/_fixtures/` cierra los seis de una vez**, entre ellos los tres
+de `enc_alcance` (`A-12`/`A-14`/`A-15`). **Es el ítem de mayor rendimiento de toda esta lista**, y
+no depende de ninguna decisión: es copiar un archivo y anotarle el sha.
+
+### ⚠ Sin base declarada — **4**, hay que mirarlos uno por uno
+
+`C-05` y `C-32` apuntan al resumen ejecutivo y a `looker`; hay que abrirlos para decidir.
+
+⚠ **`X-17` NO se puede cerrar con lo que hay, y su propia nota dice por qué:** *"el conteo nuevo
+16/14/21 salió de una base de 4.904 filas y el fixture del 31/07 tiene 4.569"*. **Es el caso
+testigo de la regla 3** de los tres caminos —*un fixture es una foto fechada*— y por eso queda
+citado ahí: intentar cerrarlo con el export equivocado daría un número plausible y falso, que es
+el modo de falla que este proyecto persigue.
+
+### Lo que esto NO afirma
+
+**Que un caso sea contestable no lo cierra.** Dice que **existe el archivo con qué contestarlo** y
+que no hace falta esperar una corrida. Y lo que se contestaría es *la definición es correcta*, que
+**no** es *el motor lo lee así* — regla 4 de los tres caminos. Si las dos difieren, eso es el
+hallazgo.
+
+**Quién lo destraba:** nadie. Ya está destrabado — se mide cuando se quiera. Lo único que espera a
+alguien son los seis de `reuniones`, y espera un `copiar y pegar`.
