@@ -135,3 +135,46 @@ Commit: `docs — bitacora y pendientes: rama de validacion ordenada`
 - Ningún caso del CSV se edita, se renumera ni se reordena. Entra tal cual.
 - Ningún archivo de `_archivo/` se borra.
 - Si una parte encuentra que su premisa no se cumple, para y reporta. No compensa.
+
+---
+
+## Addendum 1 — 19/08/2026 · qué encontró la Parte 0 y en qué cambió el paso
+
+Escrito por Code al ejecutar. **No altera una línea del cuerpo de arriba**: lo corrige desde acá,
+que es el mecanismo que `CLAUDE.md` §7 declara para un prompt ya en ejecución.
+
+**El archivo se llama `_3`, no `_1`.** El encabezado y la línea `> Destino:` dicen
+`2026-08-19_1_ordenar_rama_validacion.md`, y ese número ya lo tenía
+`2026-08-19_1_camp_del_temario_al_deck.md`; el `_2`, el panel por secciones. Este prompt es el
+**tercero** del 19/08.
+
+**Cuatro premisas de la Parte 0 estaban vencidas**, todas por la misma causa: el commit `ee1d9d5`
+—de documentación sobre testigos— ya había movido el CSV, con el nombre mal y sin mencionarlo.
+
+| punto | qué decía | qué había |
+|---|---|---|
+| 2 | `docs/…CONSOLIDADO_2026-08-14.csv` existe, 214 casos | ya no existe en `docs/`; en `HEAD~1` tenía exactamente esos 214 |
+| 3 | no existe ningún CSV del 19/08 en `docs/` | existía, como `casos_validacion 2026-08-19.csv` — **con espacio** |
+| 4 | los dos archivos están en la raíz | estaban en `~/Downloads`, y del handoff había **dos** versiones del mismo día |
+| 12 | tres CSV viejos en `_archivo/docs/` | hay **cinco** |
+
+**Y un hallazgo que el prompt no contemplaba:** existían **dos** archivos con el nombre
+`casos_validacion_CONSOLIDADO_2026-08-14.csv` y contenidos distintos desde `f19f637` — 214 casos en
+`docs/`, **193** en el archivado. El congelado llevaba cinco días atrasado respecto de la corrida
+que decía congelar.
+
+**La premisa 5 —la que más importaba— resistió intacta**, verificada contra `HEAD~1` y no contra el
+disco: sólo `C-67`, `C-68`, `V-102` y `X-27` son nuevos; ninguno falta; ninguno se modificó.
+Cabeceras idénticas, 218 ids únicos. Las premisas 6 a 11 también se confirmaron.
+
+**En qué cambió la Parte A.** Como estaba escrita no se podía ejecutar —no había nada que mover de
+la raíz ni que archivar de `docs/`—. Lo que se hizo, autorizado por el usuario: renombrar el CSV a
+`casos_validacion_2026-08-19.csv` y reparar la copia archivada del 14/08 a sus 214 casos. **Partes
+B, C y D corrieron tal cual**, con el handoff de las 23:46 —el único con `Addendum 1`— y sin subir
+fixtures.
+
+**Parte D punto 3, confirmado:** `CLAUDE.md` §7 ya declara la convención fechada
+(*"congelados, uno nuevo por corrida de validación; nadie edita"*). **No se tocó `CLAUDE.md`.**
+
+**Lo que quedó abierto:** los ocho fixtures no entran hasta que se decida el punto de privacidad —
+`docs/_fixtures/README.md` y `docs/PENDIENTES_consistencia.md` tienen las tres salidas.

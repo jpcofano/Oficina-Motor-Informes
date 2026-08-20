@@ -4465,3 +4465,44 @@ deduplicación · cambio de universo · carga tardía · o que la columna no sea
 «unidades de pct sin signo»"*— así que **no es un hallazgo nuevo: es el mismo, llegando a una
 lámina más**. Se registra acá porque ahora afecta a un token que se está dando de alta
 (`camp_frecuencia`, con `numero_revisar`, que hereda el punto).
+
+---
+
+## Los fixtures de validación no están en el repo: los 104 casos `exacto` sólo los puede reproducir el usuario — 19/08/2026
+
+**Qué pasa.** La rama de validación produjo **218 casos**, de los cuales **104 están en estado
+`exacto`**. Cada uno afirma que un número publicado en un deck coincide con lo que dice una base, y
+la prueba de esa afirmación son **ocho exports** que viven **sólo en la máquina del usuario**. Si
+se pierden, los 104 casos no dejan de ser ciertos: dejan de ser **verificables**, que a los efectos
+del repo es lo mismo. Nadie más puede repetir una medición ni auditar una que salió mal.
+
+El inventario de los ocho está en `docs/_fixtures/README.md`, con la tabla copiada de la §8 de
+`docs/Sesiones/HANDOFF_validacion_2026-08-19.md`. Hoy: **ocho de ocho `[falta]`**.
+
+**Por qué sobrevivió sin que nadie lo mirara.** El CSV registra esto como `C-21` **en estado
+`cerrado`** —y la nota del propio caso dice *"ninguno archivado en el repo"*—. Un caso cerrado que
+describe una tarea sin hacer no aparece en ninguna revisión de pendientes. El CSV es congelado y no
+se edita, así que la única salida era declararlo en un documento vivo. Ésta es esa declaración.
+
+⚠ **Lo que lo destraba NO es tocar `.gitignore`, y ahí está lo que hay que decidir.** `.gitignore`
+excluye `*.xlsx` y `*.zip` —que es **todo** lo de la tabla— y lo hace con el motivo escrito al lado
+desde el 31/07 (`DOC-5` Parte 2):
+
+> *el repo es público y las bases tienen datos reales de GCBA (nombres de funcionarios, barrios,
+> volúmenes de envío, respuestas de vecinos)*
+
+O sea que las dos mitades de este pendiente **se contradicen**: archivar los fixtures hace
+reproducible la validación **y** publica datos personales de vecinos en un repo público. No es un
+descuido de configuración que se arregla con una excepción; es una decisión de privacidad que hay
+que volver a tomar.
+
+**Las tres salidas, para que quien decida las tenga a la vista** (están también en el README):
+
+1. **Repo privado aparte** para los fixtures, referenciado desde `docs/_fixtures/README.md`.
+2. **Anonimizar antes de subir** — barato en volúmenes, caro en nombres, y rompe la reproducción
+   exacta de cualquier caso que dependa de un nombre.
+3. **Dejarlos fuera y aceptar el riesgo**, con el inventario como única red: si se pierden, al menos
+   se sabe exactamente qué se perdió.
+
+**Quién lo destraba:** el usuario, eligiendo una de las tres. **Ninguna es gratis**, y por eso esto
+es un pendiente y no una tarea.

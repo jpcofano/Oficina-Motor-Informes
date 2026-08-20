@@ -10918,3 +10918,68 @@ de *"reproduce en dos de tres"*.
 
 `camp_dig_impl` — **ninguna definición reproduce**: ni filas ni plataformas, en ninguna de las tres.
 `Nomenclatura` (col L) queda como candidata y **medirla es otro prompt**.
+
+---
+
+## 2026-08-19 — La rama de validación entra al repo, y el commit anterior ya la había movido a medias
+
+Prompt `docs/Prompts/2026-08-19_3_ordenar_rama_validacion.md`. **Sólo `docs/`**, ningún `.gs`,
+ningún seed, ninguna hoja de registro. Cuatro commits.
+
+### La Parte 0 desmintió cuatro premisas, y una cambiaba la Parte A entera
+
+El prompt suponía que el usuario dejaba dos archivos en la raíz y que `docs/` todavía tenía el CSV
+del 14/08. **Nada de eso era cierto**, y el motivo estaba en el commit inmediatamente anterior:
+
+`ee1d9d5` —un commit **de documentación sobre testigos**— había renombrado
+`docs/casos_validacion_CONSOLIDADO_2026-08-14.csv` a `docs/casos_validacion 2026-08-19.csv` y le
+había sumado los 4 casos nuevos. **Con espacio en vez de guion bajo**, y sin una línea del mensaje
+que lo mencionara. La Parte A ya estaba hecha, mal, y de contrabando.
+
+Los dos archivos, mientras tanto, estaban en `~/Downloads` — y del handoff había **dos versiones**
+del mismo día: la de las 23:15 y la de las 23:46. Sólo la segunda trae el `Addendum 1`.
+
+**El hallazgo que el prompt no contemplaba:** existían **dos** archivos llamados
+`casos_validacion_CONSOLIDADO_2026-08-14.csv` con contenidos distintos desde `f19f637` — el de
+`docs/` con 214 casos y el archivado con **193**. La copia congelada llevaba cinco días atrasada
+respecto de la corrida que decía congelar.
+
+### Lo que sí hacía falta hacer
+
+| parte | qué quedó |
+|---|---|
+| **A** | el CSV pasa a `docs/casos_validacion_2026-08-19.csv` (guion bajo, como manda el `Addendum 1`); la copia archivada del 14/08 se repara a sus 214 casos |
+| **B** | `docs/Sesiones/HANDOFF_validacion_2026-08-19.md` — **primer `HANDOFF_validacion_*` que entra al repo**, 367 líneas, copia idéntica |
+| **C** | `docs/_fixtures/` con su README: los ocho fixtures listados, **ocho de ocho `[falta]`** |
+| **D** | esta entrada y la de `PENDIENTES` |
+
+**El diff de casos se verificó contra `HEAD~1`, no contra el disco:** los únicos nuevos son `C-67`,
+`C-68`, `V-102` y `X-27`; ninguno falta del viejo; **ninguno se modificó**. Cabeceras idénticas,
+218 ids únicos, cero repetidos. La premisa 5 del prompt era la única que resistió intacta, y es la
+que más importaba.
+
+Cero referencias vivas a `casos_validacion_CONSOLIDADO_2026-08-14` fuera de `_archivo/`: nada que
+editar en la Parte A punto 4.
+
+### `C-21` no se cerró, y ahora se ve por qué
+
+La Parte C creó el contenedor y el índice. Los archivos no entraron, y **el bloqueo no es
+configuración**: `.gitignore` excluye `*.xlsx` y `*.zip` —que es todo lo de la tabla— con el motivo
+escrito al lado desde el 31/07 (`DOC-5` Parte 2): *el repo es público y las bases traen nombres de
+funcionarios, barrios y respuestas de vecinos*. La excepción que `C-21` pide **es revisar una
+decisión de privacidad**, no tocar una línea. Queda sin decidir, con las tres salidas anotadas en
+el README.
+
+⚠ **Y el detalle que explica cómo sobrevivió cinco días:** el CSV marca `C-21` como **`cerrado`**, y
+su propia nota dice *"ninguno archivado en el repo"*. Un caso cerrado que describe algo no hecho no
+lo mira nadie. El CSV no se edita —es congelado—, así que el hueco quedó declarado en dos lugares
+vivos: el README de `_fixtures/` y `PENDIENTES`.
+
+### Lo que este paso deja anotado y no arregló
+
+- **El prompt entró como `_3`, no como `_1`.** El `_1` del 19/08 ya lo tenía
+  `2026-08-19_1_camp_del_temario_al_deck.md` y el `_2` el panel por secciones. El encabezado del
+  prompt sigue diciendo `_1` — se corrige por addendum fechado, no editando el cuerpo.
+- **`docs/Sesiones/` lo escribe claude.ai, y acá escribió Code.** El prompt lo pide explícitamente y
+  el usuario lo confirmó; queda dicho porque §5 dice lo contrario y la excepción tiene que ser
+  visible, no tácita.
