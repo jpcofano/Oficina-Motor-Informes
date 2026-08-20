@@ -4737,3 +4737,72 @@ cambiar la operación sería mover un número hacia otro que tampoco es el publi
 2. ⭐ **¿`Nombre campaña | Cuentas` va a volver al grano de proyecto, o el cambio del 06/08 es la
    convención nueva?** Sin esa respuesta, cualquier cableado sobre esa columna es provisorio, y
    conviene saberlo antes y no cuando el número cambie solo.
+
+---
+
+## La expansión de secciones repetibles no es idempotente, y sobre un deck reusado **duplica al cuadrado** — 20/08/2026
+
+**Medido leyendo el código, no corriendo nada** (`2026-08-20_10` Parte 0). ⚠ **No es un bug de hoy:
+es la precondición que bloquea la corrida desatendida.** Hoy toda corrida hace `makeCopy` de la
+plantilla, así que siempre arranca con las láminas modelo intactas y esto no se puede disparar.
+
+### El mecanismo, en tres líneas de `Generador.gs`
+
+`slidesModeloDe_` decide qué es una «lámina modelo» con un solo criterio: **que lleve algún token
+crudo de la familia** (`RE_TOKEN_` sobre `{{…}}`). Después, `duplicarBloquesRepetibles_`:
+
+```
+1. por cada ítem, duplica cada modelo          -> copias
+2. modelosSlides.forEach(m => m.remove())      -> los modelos DESAPARECEN
+3. mueve las copias a su lugar
+```
+
+**El paso 2 es el que rompe la reanudación.** En la ejecución siguiente ya no hay láminas modelo —
+se borraron— y **las copias que quedaron sin pintar todavía tienen sus tokens crudos**. Para
+`slidesModeloDe_` son indistinguibles de un modelo.
+
+### Por qué es cuadrático y no «el doble»
+
+Una sección con **N ítems**, cortada después de expandir y antes de pintar:
+
+| ejecución | láminas con crudos al empezar | qué hace | resultado |
+|---|---|---|---|
+| 1 | 1 modelo | 1 × N ítems | **N** copias, el modelo borrado |
+| 2 | **N** (las copias sin pintar) | **N × N ítems** | **N²** láminas |
+
+Con 2 encuentros: 2 → 4. Con 4: 4 → **16**. Y cada ronda vuelve a multiplicar.
+
+⚠ **El caso mixto es peor de leer, no mejor:** si la ejecución 1 alcanzó a pintar algunas copias,
+ésas pierden sus crudos y **dejan de ser detectadas**. La ejecución 2 expande sólo las que quedaron
+crudas, así que el deck termina con **unas láminas correctas y otras multiplicadas**, sin ningún
+patrón que lo delate a simple vista.
+
+### Qué NO alcanza para arreglarlo
+
+⛔ **La idempotencia de `replaceAllText` no ayuda acá**, y conviene decirlo porque es la respuesta
+intuitiva: es cierta —un token ya reemplazado no se encuentra— y **cubre el pintado, no la
+expansión**. Son dos operaciones distintas sobre el mismo deck y sólo una es segura de repetir.
+
+⛔ **Tampoco alcanza con marcar la sección como `hecha` en el plan.** Una ejecución puede morir
+**entre** el `duplicate()` y el `remove()`, o entre el `remove()` y el marcado. El plan diría
+`pendiente` sobre un deck ya expandido.
+
+### Las tres salidas, para que quien decida las tenga a la vista
+
+1. ⭐ **Separar expansión de pintado en el plan**, con dos estados por sección —`expandida` y
+   `pintada`— y **marcar `expandida` inmediatamente después del `remove()`**. La ventana de riesgo
+   se reduce a una escritura de celda. Es la más barata y la que menos toca el motor.
+2. **Que la reanudación no vuelva a expandir nunca**: leer las asignaciones de la ejecución 1
+   —`objectIdSlide` por ítem, que ya se calculan y hoy mueren con la ejecución— desde el estado
+   caro de la Parte C. Es lo más correcto y **depende de que la Parte C exista primero**.
+3. **Que `slidesModeloDe_` distinga un modelo de una copia.** Hoy no puede: el criterio es el token
+   crudo y nada más. Habría que marcar las copias —`speakerNotes`, un token testigo— y eso **toca
+   el área que el sellado del `_11` usa**, así que arrastra otra decisión.
+
+**Quién lo destraba:** el usuario, eligiendo una. **La 1 y la 2 no compiten** — la 1 acota el daño
+y la 2 lo elimina; hacer las dos es coherente.
+
+⚠ **Y la razón por la que esto va acá y no en un prompt:** el `2026-08-20_10` lo pide resolver en su
+Parte A —*«medirlo y resolverlo acá, o el mecanismo publica un deck peor que el cortado»*— pero ese
+prompt **está bloqueado por otra cosa** (el costo de arranque del `_9`, que no existe). El hallazgo
+no depende de ese bloqueo y no tiene por qué esperarlo.
