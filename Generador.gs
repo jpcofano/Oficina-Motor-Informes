@@ -2701,8 +2701,13 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
     // en un ternario y el control lo cazó: con excepción **y** instrumento roto, la celda
     // sólo contaba la excepción. Justamente el caso en que más importa saber que el rastro
     // de etapas no es confiable.
+    // ⚠ El prefijo NO es `MARCA_ETAPAS_`, y la diferencia importa: ése dice `(en curso)` y es la
+    // señal de que la corrida está viva. Reusarlo acá hacía que una fila **cerrada** dijera
+    // «425 · (en curso) 1 · expandir…», o sea que el campo de estado afirmaba lo contrario de lo
+    // que el resto de la fila decía. Visto en la corrida de las 17:14, en la primera salida real
+    // del rastro preservado.
     faltantes: avisosDeLaFila_(faltantes.length, fallo, fallosDelReloj) +
-      (RASTRO_ETAPAS_.length ? ' · ' + MARCA_ETAPAS_ + RASTRO_ETAPAS_.join(' › ') : '')
+      (RASTRO_ETAPAS_.length ? ' · gasto: ' + RASTRO_ETAPAS_.join(' › ') : '')
   }, mapa.tokens, filaCorrida);
 
   var dueno = '';
