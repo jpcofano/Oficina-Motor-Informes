@@ -1496,6 +1496,26 @@ function avisosDeLaFila_(cuantosFaltantes, fallo, fallosInstrumento) {
   return avisos.length ? cuantosFaltantes + ' · ' + avisos.join(' · ') : cuantosFaltantes;
 }
 
+/**
+ * `2026-08-20_9` (20/08/2026) — **el rastro de etapas acumulado, en memoria, para que el cierre no
+ * lo borre.**
+ *
+ * ⚠ **El instrumento se estaba borrando a sí mismo, y por eso no había desglose que leer.**
+ * `marcarEtapa_` escribe en la columna `faltantes` —que hace de campo de estado (`T2.1.2`)— y el
+ * cierre la pisa con `avisosDeLaFila_(...)`, que devuelve el conteo y las advertencias **y no
+ * conserva nada del recorrido**. O sea: mientras la corrida vive, la celda dice el desglose; en
+ * cuanto cierra, lo reemplaza por un número. **Una corrida que terminó no deja medición de dónde
+ * gastó el tiempo.**
+ *
+ * Es la familia que `CLAUDE.md` §4 ya persigue —*un instrumento que mide un cambio no puede
+ * depender de lo que el cambio modifica*— en su versión más literal: acá el instrumento depende de
+ * una celda que el cierre reescribe.
+ *
+ * Se acumula en memoria y el cierre lo antepone. Cuesta nada y hace legible el número que decide
+ * el tamaño del chunk de la corrida desatendida (`2026-08-20_10`).
+ */
+var RASTRO_ETAPAS_ = [];
+
 function marcarEtapa_(numeroFila, etapa, t0) {
   if (numeroFila) {
     try {
@@ -1515,6 +1535,8 @@ function marcarEtapa_(numeroFila, etapa, t0) {
       // volcarse, y eso se leía como "no arrancó". Acumular cuesta un `getValue` por etapa
       // —cinco en total— y a cambio la fila dice **el recorrido**, no un punto.
       var marca = etapa + ' +' + seg + 's';
+      // En memoria además de en la celda: la celda la pisa el cierre.
+      if (RASTRO_ETAPAS_.indexOf(marca) === -1) RASTRO_ETAPAS_.push(marca);
       celda.setValue(previo.indexOf(MARCA_ETAPAS_) === 0
         ? previo + ' › ' + marca
         : MARCA_ETAPAS_ + marca);
@@ -2217,7 +2239,23 @@ function tokensVisiblesDe_(presentacion) {
  * 10-27 s y leer el mapa cuesta cero. Si el corte llegó antes de la etapa 2 no hay mapa, y
  * ahí sí se escanea; el retorno dice por cuál de los dos caminos fue.
  */
-function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos) {
+/**
+ * `2026-08-20_9` Parte A.1 — **el símbolo del corte.**
+ *
+ * ⭐ **Un token que no se resolvió porque la corrida se cortó NO es `/////`.** Los dos casos se ven
+ * igual en el papel y mandan a trabajos opuestos: `/////` manda a **cablear**, el corte manda a
+ * **correr de nuevo**. Medido en la corrida del 20/08 a las 15:45: de **269 `/////`, 264 eran del
+ * corte** — el deck afirmaba *"nadie cableó esto"* sobre 264 tokens que estaban cableados y que la
+ * corrida no alcanzó a mirar. **Es el número plausible y equivocado, en versión símbolo.**
+ *
+ * ⏸ **El glifo lo elige el usuario y este código NO lo inventa.** Mientras no esté elegido vale
+ * `/////`, que es lo que hace hoy — así el cambio de glifo es **una constante** y no una migración
+ * de plantilla. **La decisión está pendiente y el reporte la nombra**, en vez de estrenar un
+ * símbolo que después haya que cambiar en dos plantillas.
+ */
+var SIMBOLO_CORTE_ = '/////';
+
+function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos, huboCorte) {
   var origen = 'mapa de la etapa 2';
   var tokens = tokensDelMapa ? Object.keys(tokensDelMapa) : null;
   if (!tokens) {
@@ -2236,7 +2274,12 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos) {
     // resolver —cortó por presupuesto o murió antes—, así que no existe un `estado` para él ni
     // aunque le pasáramos el mapa entero. Su único símbolo posible es `/////`, y eso se dice
     // pasando `null` en vez de inventarle un estado (`2026-08-20_1` Parte 0 punto 2).
-    var n = presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token, null, conSimbolos), true);
+    // Con corte, el texto sale del símbolo del corte y no del mapeo por estado: acá no hay
+    // resultado que mirar y **la causa se sabe** — no es que nadie lo cableó, es que no se llegó.
+    var texto = (huboCorte && conSimbolos === true)
+      ? SIMBOLO_CORTE_
+      : textoFaltante_(token, null, conSimbolos);
+    var n = presentacion.replaceAllText('{{' + token + '}}', texto, true);
     if (n > 0) barridos.push(token);
   });
   return { barridos: barridos, origen: origen };
@@ -2362,6 +2405,7 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
   reiniciarInstrumento_();
 
   var t0Etapas = new Date().getTime();
+  RASTRO_ETAPAS_ = [];   // por corrida, no por ejecución del script
 
   var reemplazados = 0;
   var conValor = [];
@@ -2616,7 +2660,7 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
   // cero tokens y el deck saliera con `{{token}}` crudos — justo lo contrario de lo que
   // esta barrida garantiza. Si la corrida murió antes de la etapa 2 no hay mapa y hay que
   // re-escanear, que es para lo que `barrerTokensNoAlcanzados_` acepta `null`.
-  var barrida = barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null, conSimbolos);
+  var barrida = barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null, conSimbolos, !!(corte || fallo));
   barrida.barridos.forEach(function (token) {
     faltantes.push({
       corrida_id: corridaId,
@@ -2657,7 +2701,8 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
     // en un ternario y el control lo cazó: con excepción **y** instrumento roto, la celda
     // sólo contaba la excepción. Justamente el caso en que más importa saber que el rastro
     // de etapas no es confiable.
-    faltantes: avisosDeLaFila_(faltantes.length, fallo, fallosDelReloj)
+    faltantes: avisosDeLaFila_(faltantes.length, fallo, fallosDelReloj) +
+      (RASTRO_ETAPAS_.length ? ' · ' + MARCA_ETAPAS_ + RASTRO_ETAPAS_.join(' › ') : '')
   }, mapa.tokens, filaCorrida);
 
   var dueno = '';
@@ -2784,7 +2829,40 @@ function menuGenerarInformeCompleto_() {
   // porque `R-18` punto 3 escribe una fila para un token que **sí publicó**.
   var lineas = [
     r.deck.url,
-    '',
+    ''
+  ];
+
+  /* ⭐ `2026-08-20_9` Parte A.2 — **el corte va en la PRIMERA línea, antes que cualquier conteo.**
+   *
+   * Hasta hoy el corte aparecía en un bloque lateral del panel y el deck no lo mencionaba: **un
+   * deck cortado era indistinguible de uno completo mirando el deck**, y sus 264 huecos decían
+   * `/////`, que manda a cablear. Quien leía el reporte veía primero «Tokens distintos: 343» y un
+   * conteo prolijo debajo.
+   *
+   * Va arriba y no abajo porque **el resto del reporte no significa lo mismo si hubo corte**: los
+   * conteos son de una corrida que no terminó, y leerlos como cobertura es el error que esto
+   * evita. */
+  if (r.corte) {
+    lineas.push('⛔ LA CORRIDA SE CORTÓ — este deck NO está completo.');
+    lineas.push('   Etapa: ' + r.corte.etapa + ' · ' + r.corte.motivo);
+    if (r.presupuesto && r.presupuesto.barrida) {
+      lineas.push('   ' + r.presupuesto.barrida.tokens + ' token(s) quedaron sin resolver POR EL CORTE' +
+        ' — no por falta de cableado. **Correr de nuevo, no cablear.**');
+    }
+    lineas.push('   Se cortó a los ' + r.corte.segundos + ' s (techo ' +
+      (r.presupuesto ? r.presupuesto.techo_seg : '?') + ' s, reserva ' +
+      (r.presupuesto ? r.presupuesto.reserva_seg : '?') + ' s)' +
+      (r.corte.items_sin_emitir ? ' · ' + r.corte.items_sin_emitir + ' ítem(s) sin emitir' : ''));
+    lineas.push('   ⏸ El glifo propio del corte está sin elegir: por ahora salen como `/////`,' +
+      ' igual que los que nadie cableó. Elegirlo es una decisión del usuario.');
+    lineas.push('');
+  } else if (r.fallo) {
+    lineas.push('⛔ LA CORRIDA MURIÓ POR UNA EXCEPCIÓN — este deck NO está completo.');
+    lineas.push('   Etapa "' + r.fallo.etapa + '": ' + r.fallo.mensaje);
+    lineas.push('');
+  }
+
+  lineas.push(
     'Deck: ' + r.deck.nombre,
     'Informe: ' + r.informe_id + ' · corrida ' + r.corrida_id,
     'Período: ' + r.periodo.lamina + ' (' + r.periodo.origen + (r.periodo.calculado ? ', calculado' : '') + ')',
@@ -2794,7 +2872,46 @@ function menuGenerarInformeCompleto_() {
     'Impresiones con valor (token × lámina): ' + r.tokens.reemplazados,
     'Filas en FALTANTES (una por token y por ítem): ' + r.tokens.faltantes,
     'Los huecos se imprimieron como: ' + r.presentacion_faltantes
-  ];
+  );
+
+  /* ⭐ `2026-08-20_9` Parte A.3 — **el previsor se cruza con lo que salió.**
+   *
+   * `preverSimbolosJM()` declara un piso: cuántos tokens *deberían* publicar. Hasta hoy ese número
+   * vivía en un log aparte y **nadie lo comparaba con nada** — o sea que era un cartel, no un
+   * control. La corrida del 20/08 publicó **9 números limpios sobre 343 tokens** y el previsor no
+   * dijo nada, porque nadie se lo preguntó.
+   *
+   * El cruce se hace acá, con el previsor corriendo sobre la misma configuración, y **avisa cuando
+   * la diferencia es grande**. Es barato: `preverSimbolosDelDeck_` no genera nada.
+   *
+   * ⚠ **El piso puede fallar en una sola dirección, y por eso el aviso es asimétrico.** Menos
+   * números que lo previsto significa que algo pasó —corte, excepción, una fuente caída—; más
+   * números que lo previsto significa que **el instrumento está mal**, y eso también se dice.
+   * Sin la asimetría, un previsor roto se leería como una corrida buena. */
+  try {
+    if (typeof preverSimbolosDelDeck_ === 'function') {
+      var previsto = preverSimbolosDelDeck_(r.informe_id);
+      if (previsto && previsto.ok) {
+        var pisoPublica = previsto.cuenta.numero + previsto.cuenta.entre_guiones;
+        var salieron = r.tokens.reemplazados;
+        lineas.push('');
+        lineas.push('Previsto vs obtenido: el piso era ' + pisoPublica + ' token(s) publicando y ' +
+          'salieron ' + salieron + '.');
+        if (salieron < pisoPublica * 0.9) {
+          lineas.push('   ⛔ SALIÓ MUCHO MENOS QUE EL PISO. ' + (r.corte || r.fallo
+            ? 'La corrida no terminó — es esperable, y es la medida de cuánto faltó.'
+            : 'Y NO hubo corte ni excepción, así que esto hay que mirarlo.'));
+        } else if (salieron > pisoPublica) {
+          lineas.push('   ⚠ Salió MÁS que el piso, y el piso no puede quedarse corto: ' +
+            'el previsor está mal, no la corrida.');
+        }
+      }
+    }
+  } catch (e) {
+    // Un previsor que falla no puede tumbar el reporte de una corrida que sí salió.
+    lineas.push('');
+    lineas.push('⚠ No se pudo cruzar contra el previsor: ' + e.message);
+  }
   // El desglose de la pasada de tokens fijos, que el alert nunca mostraba: `4 en error` es lo
   // que manda a mirar el deck, y estaba sólo en el JSON del retorno.
   if (r.marcadores) {
@@ -2850,18 +2967,10 @@ function menuGenerarInformeCompleto_() {
     lineas.push('   El cierre se escribió igual: la fila de CORRIDAS está cerrada y los ' +
       r.presupuesto.barrida.tokens + ' token(s) crudos quedaron en FALTANTES con este motivo.');
   }
-  // `T2.1.1` — si cortó, se dice primero: el deck es válido pero está incompleto, y quien
-  // lo mira tiene que saberlo antes que ningún conteo.
-  if (r.corte) {
-    lineas.push('');
-    lineas.push('⚠ CORTE POR TIEMPO en la etapa ' + r.corte.etapa +
-      ' a los ' + r.corte.segundos + ' s (techo ' + r.presupuesto.techo_seg +
-      ' s, reserva ' + r.presupuesto.reserva_seg + ' s).');
-    lineas.push('   ' + r.corte.motivo);
-    if (r.corte.items_sin_emitir) lineas.push('   Ítems sin emitir: ' + r.corte.items_sin_emitir);
-    lineas.push('   El deck no tiene tokens crudos: ' + r.presupuesto.barrida.tokens +
-      ' quedaron como «FALTA:…» y están en FALTANTES con el motivo del corte.');
-  }
+  // `T2.1.1` decía «si cortó, se dice primero», y el bloque vivía acá — o sea **después** de
+  // todos los conteos. `2026-08-20_9` A.2 lo movió arriba de verdad, con el motivo completo, y
+  // este duplicado se retiró: repetir el corte en dos lugares hace que el segundo se lea como
+  // otra cosa.
   r.repetibles.secciones.forEach(function (s) {
     lineas.push('  ' + (s.ok ? '·' : '⚠') + ' ' + s.seccion + ': ' + (s.motivo || ((s.emitidos || []).length + ' emitido(s)')));
     // 07/08 — `e.campana` a secas daba `excluida undefined`. Los excluidos vienen de dos
