@@ -80,3 +80,35 @@ la reclama**.
 `docs/_snapshots/MARCADORES_2026-08-18.tsv` —volcado directo de Google, sin pasar por ningún
 `.gs`— muestra las dos filas con `filtro` **vacío** y `dimensiones` en `ambito=jm` y `ambito=gcba`,
 y **42 de 78 marcadores con `dimensiones` poblada**.
+
+
+---
+
+## ⚠ Addendum — 19/08/2026 22:59 · **el supuesto que hacía fuerte al control 3 no se sostiene**
+
+> **Addendum fechado. El cuerpo de arriba no se altera.**
+
+| | 17/08 22:21 | 19/08 22:59 | |
+|---|---|---|---|
+| numerador | 6.763.034 | 7.791.187 | **+15,2 %** |
+| **denominador** | **475.723** | **745.632** | **+56,7 %** |
+| `frecuencia` | 14,22 | 10,45 | **−26,5 %** |
+
+**La tanda 4 NO se cae, y hay que decirlo primero para que nadie la reabra:** la partición
+`4 + 22 = 26` sigue cerrando y las cuentas de filas siguen idénticas. **El criterio de cierre fue
+la partición, no los valores.**
+
+⚠ **Lo caro no es el movimiento: es que este testigo se apoyó en que el denominador estaba
+quieto.** El control 3 decía, textual:
+
+> *"denominador quieto y numerador moviéndose es `looker` acumulando, no la dimensión leyendo otras
+> filas"*
+
+**Ese razonamiento sigue siendo válido como forma, y su premisa era una observación de esa tarde.**
+Dos días después el denominador se movió **más** que el numerador — así que el argumento auxiliar
+que reforzaba la conclusión **ya no aplica**. La conclusión se sostiene por la partición sola.
+
+**Lo reutilizable:** un control construido sobre *"esta magnitud está quieta"* **hereda la vida útil
+de esa quietud**, y nadie mide cuánto dura. Cuando el control es auxiliar —como acá— eso se
+absorbe; si hubiera sido el principal, la tanda habría cerrado sobre una premisa vencida sin que
+nada lo señalara.

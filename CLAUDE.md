@@ -466,6 +466,28 @@ cerraba con `✅ CIERRA`. **El aviso pasó inadvertido dos corridas seguidas.**
   bloque final dice **qué NO cubre** el verde de arriba. No alcanza con emitir el aviso; hay que
   ponerlo donde termina la lectura.
 
+**Un testigo que no mide el cambio no es testigo del cambio, por más que dé verde.** Van **tres
+casos** y el tercero es el más limpio: el gate de la Parte B del `2026-08-19_1` comparó
+`testigoDeFrecuencia()` antes y después de declarar `campo_id_cuenta`, y **los dos salieron
+idénticos byte a byte**. Eso satisface *"se aplicó y no rompió"* **y** *"no se aplicó"* —las dos
+por igual—, así que el verde no distingue nada.
+
+- **La causa es concreta y verificable, no una metáfora:** el testigo lee `SOLAPAS`… **no**, y ahí
+  está todo. Imprime `traza`, y el aviso que delataría el caso —*"la solapa declara
+  `campo_id_cuenta` y este marcador se emite SIN ítem"*— vive en `origen`, que **es otro campo y no
+  entra en la traza**. El instrumento no puede ver lo que cambió aunque el motor lo esté diciendo.
+- **Es la misma familia que las dos reglas de arriba**, con la diferencia que la hace peor: allá la
+  corrida no hacía nada y **el reporte lo decía mal**; acá la corrida hace lo correcto y **el
+  reporte no puede saberlo**. Un cero disfrazado de éxito se arregla haciendo fallar al escritor;
+  esto no se arregla en el escritor.
+- **Lo accionable, y es la pregunta que hay que hacerse ANTES de correr el par de testigos:** *¿qué
+  campo de esta salida cambiaría si el cambio NO se hubiera aplicado?* Si la respuesta es
+  «ninguno», el testigo mide otra cosa y **hace falta mirar la hoja a mano** — que es lo que se
+  hizo el 19/08, y está bien que se haya hecho; lo que no está bien es no haberlo dicho.
+- ⚠ **Y el corolario para quien escriba el próximo:** un testigo de una declaración de esquema
+  **tiene que leer el esquema**, no sólo sus consecuencias. Comparar números para saber si una
+  celda se escribió es medir el eco en vez de la voz.
+
 **Y el control verde también se lee, porque una prueba puede probar lo contrario de lo que
 dice.** `Pruebas.gs:456` afirmaba *"ULTIMO saltea la celda vacía del final"* sobre el fixture
 `[10, 5, '']`. Pasaba desde el día que se escribió — y lo que verificaba era **"ULTIMO elige

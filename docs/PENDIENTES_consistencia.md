@@ -4394,3 +4394,74 @@ nombre— acá no hay forma de saber si está vieja **sin volver a medir**.
 
 **Lo accionable:** re-correr `inventariarSolapas` y, antes de citar `filas_datos` para decidir algo,
 **mirar si la cifra la produjo esta semana o hace un mes**.
+
+
+---
+
+## El `alcance` de `looker` — **tres observaciones del mismo campo, en una sola entrada** — 19/08/2026
+
+> Van juntas a propósito: son **el mismo campo** —`alcance`, `looker/resumen_metricas_dinamico`
+> col K, encabezado `meta_alcance`— visto desde tres lados. En tres entradas separadas se leerían
+> como tres problemas, y **cualquier explicación tiene que dar cuenta de las tres a la vez**.
+
+### 1 · Se recalcula **hacia arriba** sobre ventanas cerradas
+
+Ventana `2026-07-24–2026-07-30`, cerrada hace tres semanas:
+
+| | 17/08 22:21 | 19/08 22:59 |
+|---|---|---|
+| alcance `jm` | **475.723** | **745.632** · **+56,7 %** |
+| alcance `gcba` | 1.249.387 | 1.253.901 · +0,36 % |
+| impresiones `jm` | 6.763.034 | 7.791.187 · +15,2 % |
+| **cuentas de filas** | 4/26 · 22/26 | **idénticas** |
+
+**Mismas filas, otros números**: la fuente reescribió los valores en su lugar.
+
+### 2 · Y en otra medición **bajó** — la caída de `3305`
+
+El addendum a `X-19` midió el 19/08 el alcance de la campaña `3305-JULSEGGJ`: el deck de julio
+publica **3.178.282** y la base daba **3.042.983**, **−4,3 %**.
+
+⚠ **Sube en un corte y baja en otro, el mismo día y sobre el mismo campo.** Cualquier explicación
+tiene que producir **las dos direcciones**.
+
+### 3 · `A-12` — la columna dice **Meta** y el deck dice *"Usuarios alcanzados"*
+
+`alcance` mapea a la columna cuyo encabezado es **`meta_alcance`**, y el deck lo publica **sin
+plataforma**. Si la columna es sólo de Meta, **el alcance publicado no es el total** — y eso
+explicaría un desvío estable, aunque no el movimiento.
+
+### Lo que NO se elige
+
+**Las explicaciones posibles son distintas entre sí y ninguna está medida:** recálculo de la
+deduplicación · cambio de universo · carga tardía · o que la columna no sea lo que el token cree.
+**No se elige la más probable.**
+
+⚠ **Y el asimétrico que cualquier explicación tiene que cubrir:** `jm` **+56,7 %** contra `gcba`
+**+0,36 %**, misma solapa, misma toma. **Un recálculo global no produce eso.**
+
+### Lo que ya cambió por esto, sin esperar a resolverse
+
+- **`frecuencia` y `gcba_frecuencia` publican con `numero_revisar`** (19/08) — entre guiones, con
+  el motivo en sus `notas`. **Publican igual**: el número se calcula bien, lo que no está cerrado
+  es de qué universo sale.
+- **Los gates de verificación no pueden usar «el valor se movió» entre corridas de días
+  distintos.** El criterio es **partición + cuentas de filas**; los valores, sólo en la misma
+  sesión.
+- **Toda cifra de `looker` citada en un caso lleva la hora de la corrida.**
+
+## Dos convenciones decimales conviven en la misma lámina — 19/08/2026
+
+**Preexistente. Se anota y NO se arregla acá.**
+
+| formato | implementación | salida |
+|---|---|---|
+| `miles` | `toLocaleString('es-AR')` | `3.042.983` |
+| `numero` | `String(Math.round(n*100)/100)` | `8.89` — **punto**, no coma |
+
+**En la lámina de campaña destacada van a convivir las dos**, y el deck publica **`8,4` con coma**.
+
+⚠ **Ya está anotado en las notas de los cinco `ecv_insc_*_pct`** desde el 05/08 —*"falta el formato
+«unidades de pct sin signo»"*— así que **no es un hallazgo nuevo: es el mismo, llegando a una
+lámina más**. Se registra acá porque ahora afecta a un token que se está dando de alta
+(`camp_frecuencia`, con `numero_revisar`, que hereda el punto).
