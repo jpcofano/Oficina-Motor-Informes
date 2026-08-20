@@ -1411,6 +1411,76 @@ se puede forzar **a mano**, pasando `periodoId` a `generarInforme` —el panel y
 **no se resuelve sola**. La propiedad de arriba describe cómo tiene que comportarse el motor, y
 el eslabón que falta es prompt propio.
 
+**`D-34` — Un número que existe y no está validado se publica ENTRE GUIONES. No se retiene.**
+Decisión del usuario, 20/08/2026, ejecutada por `docs/Prompts/2026-08-20_7_cerrar_para_generar.md`.
+
+| situación | qué sale en el deck |
+|---|---|
+| hay número y está validado | **el número** |
+| **hay número y no está validado** | **`-1.234-`** — sufijo `_revisar` en `MARCADORES.formato` |
+| no hay fuente para el token | `/////` — sin fila en `MARCADORES` |
+| hay fila y falló | `---` |
+| se preguntó y no había dato | `-` |
+
+**Por qué esto NO contradice el principio de siempre.** *Plausible pero equivocado* sigue siendo el
+enemigo del proyecto — y **un número entre guiones ya no es plausible**: se declara sospechoso en
+la cara del deck, delante de quien lo lee. Retenerlo no lo vuelve más verdadero; sólo lo vuelve
+invisible, y un hueco donde había un dato es **otra** afirmación falsa.
+
+⭐ **La frontera, escrita con las dos palabras que la separan: desconfiar de un número no es lo
+mismo que inventar uno.**
+
+- **Se publica entre guiones** lo que el motor calculó y nadie validó. Hay número; falta el aval.
+- **NO se publica** lo que no tiene fuente. `m2_campanias` es el caso: ninguna columna reproduce el
+  `12` del deck, y la candidata **cambió de grano entre dos exports** —11 valores de proyecto el
+  31/07, 18 de envío el 06/08, sobre las mismas 25 filas de una ventana cerrada—. **Ahí no hay
+  número del que desconfiar.** Sale `/////`, que es la verdad: nadie lo cableó porque no hay de
+  dónde.
+
+**Qué gobierna esto de acá en adelante:** todo el cableado que falta. Un token nuevo que produce un
+número **entra con `_revisar`** y sale de ahí cuando un caso `V-` lo valide, no antes. Es lo que
+permite que el deck avance sin que ninguna corrida publique una certeza que nadie tiene.
+
+**La medición que la hizo urgente, del 20/08:** `MARCADORES` tenía **32 filas con `SIN VALIDAR` en
+`notas` y sólo 3 con formato `_revisar`**. El mecanismo existía desde el 19/08 y estaba usado en 3
+de 87 filas — o sea que **29 números se publicaban con la misma cara que los validados**.
+
+⚠ **Supersede en la práctica a la lectura restrictiva de `S-05` punto 3**, sin derogarla: aquélla
+difería los símbolos hasta que hubiera lector externo, y el `2026-08-20_1` ya los metió como modo
+sin retirar el crudo. `D-34` es el paso siguiente — no cambia **cómo** se rinde un hueco, cambia
+**qué se hace con un número dudoso**. Los dos mecanismos conviven y son independientes.
+
+### El cruce `jm` / `secco`, medido el 20/08/2026
+
+Los dos censos son **autoritativos** —`censarTokensSinMarcador()` y `censarTokensSinMarcadorSecco()`,
+corridos a las 13:02 y 13:11— y el instrumento **calibró**: la lectura independiente por el conector
+de Drive coincidió lámina por lámina, 19 de 19, sin un token perdido.
+
+| cruce | tokens | reparto |
+|---|---|---|
+| **secco con fila `jm` ya escrita** | **49** | `enc_` 20 · `ecv_` 13 · `camp_` 9 · `m2_` 7 |
+| ⭐ **sin fila en las DOS plantillas** | **56** | **44 son `camp_`** |
+| sólo secco | 62 | `conv_` 13 · `rep_` 11 · `emin_` 10 · `et_` 9 |
+| sólo jm | 203 | `camp_` 50 · `u1_` 32 · `post_` 29 · `m2_` 23 · `gcba_` 19 |
+
+⭐ **Los 56 compartidos sin fila son el lote más rentable que queda**, y por eso el número está acá y
+no en un reporte: **cablear uno sirve para los dos informes a la vez**, y 44 de los 56 son de una
+sola familia. Es el frente que conviene tomar antes que cualquier otro cableado.
+
+**Las dos afirmaciones del usuario quedaron confirmadas con instrumento:** `gcba_*` son **19 y
+ninguno está en secco** —son los agregados del principio que `secco` no tiene—; `emin_*` son **10 y
+sólo están en secco**.
+
+⚠ **Pero «casi iguales» no es lo que dicen los números, y hay que verlo antes de armonizar:** 203
+sólo en `jm` contra 62 sólo en `secco`. La diferencia **no es de láminas, es de granularidad** — la
+lámina de comunicaciones post tiene en `jm` 4 campañas × 8 campos y en `secco` 3 × 2, con la misma
+tabla de 7 columnas y sólo dos marcadas. **Armonizar no es poner `*`: es decidir si `secco` sube al
+detalle de `jm`**, y eso toca las plantillas — `C-01`, del equipo.
+
+⚠ **Y el censo es evidencia fechada, con un caso que lo prueba:** entre las 12:06 y las 13:02 del
+mismo 20/08, las láminas 19 y 20 de `jm` pasaron de 9 y 14 tokens a **31 y 50**. La plantilla se
+movió mientras se la medía. Vale el censo de las 13:02.
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)

@@ -905,6 +905,34 @@ que la corrida **no llegó a resolver**.
 `«FALTA:token»`, que sigue diciendo **cuál** token es y sigue siendo el modo de trabajo. Es lo que
 mantiene vivo `S-05` punto 3 (ver `docs/SUPUESTOS.md`).
 
+### 4.5 El quinto estado: la desconfianza declarada — `D-34`
+
+**Decisión editorial del usuario, 20/08/2026.** Los cuatro símbolos de §4.4 dicen **por qué no hay
+número**. Éste dice algo distinto: **hay número, y no está validado.** **[OK]**
+
+| en el deck | qué significa |
+|---|---|
+| `1.234` | hay número y está validado |
+| **`-1.234-`** | **hay número y NO está validado** — se publica igual, con la desconfianza a la vista |
+| `/////` · `---` · `-` | no hay número, por los tres motivos de §4.4 |
+
+**Un número que existe y no está validado se publica ENTRE GUIONES. No se retiene.** Retenerlo no
+lo vuelve más verdadero: lo vuelve invisible, y un hueco donde había un dato es **otra** afirmación
+falsa. Un número entre guiones **ya no es plausible** — se declara sospechoso delante de quien lo lee.
+
+⭐ **La frontera, con las dos palabras que la separan: desconfiar de un número no es lo mismo que
+inventar uno.** Se publica entre guiones lo que el motor calculó y nadie validó; **no** se publica
+lo que no tiene fuente. `m2_campanias` es el caso del segundo tipo y sale `/////`.
+
+**Cómo se pone y cómo se saca:** el sufijo `_revisar` sobre el formato de `MARCADORES` —
+`miles` → `miles_revisar`—. **Se retira cuando un caso `V-` valide la fila, y no antes**; sacarlo es
+editar una celda, sin `clasp push`. Al 20/08 había **32 filas con `SIN VALIDAR` y sólo 3 con el
+sufijo**: 29 números se publicaban con la misma cara que los validados.
+
+⚠ **`enc_evento` es el único caso donde el sufijo solo no alcanza:** tiene el `formato` vacío, y la
+guarda del formateador (`f.length > 8`) hace que `_revisar` pelado no envuelva nada. Lleva
+`texto_revisar`, que preserva exactamente lo que hacía y además declara la desconfianza.
+
 ⚠ **El símbolo es del deck; el motivo es de la hoja.** `FALTANTES` sigue recibiendo su fila con el
 motivo completo en los cuatro casos, y el reporte de corrida sigue contando los cuatro estados por
 separado. Un deck más callado con una hoja igual de habladora es exactamente el intercambio que

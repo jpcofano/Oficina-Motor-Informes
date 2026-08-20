@@ -11505,3 +11505,130 @@ decisión del usuario**, y el prompt lo excluye explícitamente.
 ⛔ **No se escribe en `SECCIONES.periodo_ref`.** Es el eslabón 3 de `D-20` y arrastra la pieza
 faltante de `PLAN.md` §3 — se resuelve entera o no se toca. Confirmado de paso que **sigue vacía en
 las 36 secciones**: el eslabón 3 nunca se disparó.
+
+---
+
+## Paso `2026-08-20_7` — cerrar para generar: las 49 `*` y la desconfianza declarada (2026-08-20) — commit de esta entrada
+
+- **Qué pedía el prompt:** que los dos decks se puedan generar hoy, con cada número diciendo cuánto
+  se confía en él. Reemplaza al `2026-08-20_4`, que quedó sin ejecutar y marcado.
+- **Qué se hizo:** `aplicarRevisarASinValidar()` y `aplicarAsteriscoCompartidos()`, con el wrapper
+  `verificarCierreParaGenerar()` que las corre en orden; `preverSimbolosJM()` /
+  `preverSimbolosSecco()`, el conteo por símbolo esperado. `D-34` en `PLAN.md`, §4.5 en
+  `CONFIG_INFORMES.md`.
+- **Prueba:** los cinco controles de `tools/` en verde, `node tools/listas.js` en verde, sintaxis
+  validada, `clasp push` **verificado con `clasp pull`**. ⏸ **Las dos migraciones no se corrieron:
+  escriben en `MARCADORES` y las corre el usuario**, con los números esperados a la vista.
+- **Pendientes/decisiones:** `m2_campanias` sigue sin cablear, y ahora con motivo escrito en `D-34`.
+
+### ⭐ `D-34`, que es lo que va a gobernar todo el cableado que falta
+
+**Un número que existe y no está validado se publica entre guiones. No se retiene.** Retenerlo no
+lo vuelve más verdadero — lo vuelve invisible, y **un hueco donde había un dato es otra afirmación
+falsa**. Un número entre guiones ya no es plausible: se declara sospechoso delante de quien lo lee.
+
+⭐ **La frontera, con las dos palabras que la separan: desconfiar de un número no es lo mismo que
+inventar uno.** `m2_campanias` no entra porque **no hay número del que desconfiar** — ninguna
+columna reproduce el `12` del deck y la candidata cambió de grano entre exports.
+
+**La medición que la hizo urgente:** 32 filas con `SIN VALIDAR` y **sólo 3 con `_revisar`**. El
+mecanismo existía desde el 19/08 y estaba usado en 3 de 87 filas — **29 números se publicaban con
+la misma cara que los validados**.
+
+### La Parte 0 confirmó las premisas y encontró una que el prompt no podía prever
+
+Contra la hoja viva: **87 filas, las 87 `jm`, 32 con `SIN VALIDAR`, 3 con `_revisar`** — los tres
+números del prompt, exactos.
+
+⚠ **Y los 3 que ya lo llevan SON parte de los 32**, no un grupo aparte: `frecuencia`,
+`gcba_frecuencia`, `camp_frecuencia`. Así que el lote real son **29 filas**, no 32. Se filtran
+antes de llamar al escritor para que el conteo del reporte diga la verdad — `curarCamposMarcadores_`
+los saltearía igual (no escribe si el valor no cambia), pero entonces el número informado y el
+número escrito no coincidirían.
+
+⭐ **Lo que el prompt pedía reportar y apareció: un formato base que no soporta el sufijo.**
+`enc_evento` tiene el `formato` **vacío**, y la guarda de `formatearValorMarcador_` es
+`f.length > 8` — así que `'_revisar'` pelado **no entra a la rama** y el valor sale **crudo, sin
+guiones**. Verificado corriendo el formateador real, no leyendo el código:
+
+```
+formato="_revisar"                    -> "1234.5678"     <-- NO envuelve
+formato="texto_revisar"               -> "-1234.5678-"
+formato="miles_revisar"               -> "-1.235-"
+formato="fraccion_revisar"            -> "-123456.8-"
+formato="porcentaje_sin_signo_revisar"-> "-1234.6-"
+```
+
+**Se le pone `texto_revisar`**, que preserva exactamente el comportamiento anterior —un `formato`
+vacío ya hacía `String(valor)`, que es lo mismo que `texto`— y además envuelve. Es **la única fila
+del lote** en esa situación; las otras dos con formato vacío (`ecv_barrios`, `ecv_barrio`) no
+tienen `SIN VALIDAR` y no entran.
+
+### El orden de las dos migraciones no es preferencia: lo impone el escritor
+
+`curarCamposMarcadores_` indexa por **`marcador || informe_id`**. Si las `*` entraran primero, la
+otra migración buscaría `camp_alcance||jm` y ya no existiría — reportaría `sin_fila` en 25 de 32 y
+**la guarda de todo-o-nada fallaría el lote entero**. Por eso `verificarCierreParaGenerar()` corre
+**primero el formato y después el ámbito**, y **frena si la primera falla**: sobre un formato a
+medio aplicar, el resultado de la otra no significa nada.
+
+### El chequeo de la Parte A es la SECCIÓN, no la lámina
+
+El criterio no cambió —*el token existe en las dos plantillas Y mide el mismo hecho*— y la lista de
+49 prueba lo primero. **Lo segundo se miró contra `SECCIONES.familia_tokens`**, que es quien
+declara qué sección posee cada familia, porque **es la sección la que decide qué hecho mide un
+token**:
+
+| familia | secciones que la declaran |
+|---|---|
+| `enc_` | `encuentro` (JM,SECCO) · `encuentro_iceberg` (JM,SECCO) |
+| `camp_` | `campana` (JM,SECCO) |
+| `m2_` | `m2` (JM,SECCO) · `m2_status` (JM,SECCO) |
+| `ecv_` | ninguna declara el prefijo; `ecv_alcance_semanal` (JM,SECCO) nombra cinco tokens sueltos |
+
+**Las tres familias dicen `JM,SECCO` en las dos. Ninguno de los 49 diverge.**
+
+⚠ **El caso que había que buscar activamente no está en la lista, y conviene decirlo con el nombre
+puesto:** `rrss_` **sí** cae en secciones distintas —Resumen Ejecutivo en `jm`, Interacción positiva
+en RRSS en `secco`— y es el modo de falla que rompió `enc_audiencia`. **Ninguno de los 49 es
+`rrss_`**: los `rrss_*` están sin fila en las dos plantillas, así que son trabajo de cableado y no
+candidatos a `*`. **El riesgo no se materializa, y no porque se lo haya evitado sino porque no
+está** — que es una razón más débil y por eso queda escrita.
+
+⚠ **Una asimetría que sí existe y no bloquea:** `m2_caudal` declara `m2_` y es **sólo de SECCO**. No
+cambia lo que un `m2_*` mide; agrega una lámina donde pueden aparecer.
+
+### La lista de tokens de `secco` se lee en la corrida, no se escribe en el código
+
+`aplicarAsteriscoCompartidos()` abre la plantilla de `secco` y saca sus tokens con
+`tokensPorSlide_`. **Una lista de 167 nombres copiada del censo sería una cuarta lista duplicada que
+nadie actualiza**, y el repo ya sabe cómo termina eso.
+
+⚠ **Y hay un caso del mismo día que lo justifica sin metáforas:** entre las **12:06 y las 13:02** la
+plantilla de `jm` se movió — las láminas 19 y 20 pasaron de 9 y 14 tokens a **31 y 50**, y el censo
+total de 285 a 343. **La plantilla es del equipo y cambia mientras se la mide.**
+
+### El control que no existía: el conteo por símbolo esperado
+
+`preverSimbolosJM()` / `preverSimbolosSecco()` cruzan la plantilla, `MARCADORES` filtrado como lo
+filtra el motor (`informe_id === informeId || '*'`) y los estados de `resolverMarcadores`, y dicen
+**cuántos tokens deberían salir como número, entre guiones, `/////`, `---` y `-`**.
+
+⭐ **Sin esto, un deck lleno de `/////` es indistinguible de un deck que no cableó nada** — y ésa era
+justamente la lectura que iba a hacer falta después de las `*`.
+
+⚠ **Y dice qué NO puede predecir**, porque un instrumento que no declara su alcance se lee como una
+promesa: la barrida final, las secciones repetibles —que emiten una vez por ítem— y los rechazos
+parciales de `R-18` punto 3. **Las tres sólo pueden agregar huecos**, así que el número es un
+**piso**: si el deck sale con menos números que eso, algo pasó; si sale con más, el instrumento está
+mal.
+
+### Lo que quedó afuera, y por qué
+
+⛔ **Las dos migraciones no se corrieron.** Escriben en `MARCADORES` y **la corrida es del usuario**,
+que es la regla de siempre. El prompt además pide que el `N` de `secco` se escriba **antes**, y para
+eso está el previsor.
+
+⛔ **No se cambió la operación de `m2_envios`.** Entra al lote de `_revisar` y se queda como está:
+publica 25 donde el deck dice 26, y **eso es un número no validado, no uno roto**. Moverlo con la
+evidencia de hoy sería llevarlo hacia otro número que tampoco es el publicado.
