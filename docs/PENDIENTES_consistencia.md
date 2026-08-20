@@ -4608,3 +4608,66 @@ hallazgo.
 
 **Quién lo destraba:** nadie. Ya está destrabado — se mide cuando se quiera. Lo único que espera a
 alguien son los seis de `reuniones`, y espera un `copiar y pegar`.
+
+---
+
+## `m2_campanias` no tiene columna, y `m2_envios` publica 25 donde el deck dice 18 — 20/08/2026
+
+**Medido contra `docs/_fixtures/Seguimiento Digital2026-08-06.zip`** (sha `9a1ee89d…76b2e9`), solapa
+`digital/Directa Mail`, con el corte `tipo_envio=m2` traducido como lo traduce el motor
+(`mail_tipo~=M2`, `Fuentes.gs`) y la ventana `julio_24_30`. **Evidencia fechada del export del
+06/08**: responde por ese día y por ninguno otro.
+
+**El deck de esa semana dice: 18 envíos · 11 campañas.**
+
+| candidato | distintos | ¿es 18? | ¿es 11? |
+|---|---|---|---|
+| filas (lo que hoy devuelve `CONTEO`) | **25** | no | no |
+| col A `ID Cuentas` (`mail_id_cuenta`) | **18** | ⭐ **sí** | no |
+| col U `Nombre campaña \| Cuentas` | **18** | ⭐ **sí** | no |
+| col H `Nombre campaña \| Directa` (`mail_campana`) | 24 | no | no |
+| col K `Nomenclatura` | 25 | no | no |
+| col T `Área` | 6 | no | no |
+
+### ⭐ Hallazgo 1 — `m2_envios` está mal, y `CUENTA_DISTINTOS` lo arregla
+
+`m2_envios` es hoy `CONTEO` sobre `mail_id_cuenta`, o sea **cuenta filas: 25**. El deck dice **18**,
+y **`CUENTA_DISTINTOS` sobre el mismo campo da exactamente 18**.
+
+**No es un empate casual**: las 25 filas traen 18 `ID Cuentas` distintos, y col U —otra columna,
+otro origen— da **también 18**. Dos caminos independientes al mismo número, y ese número es el
+publicado.
+
+⚠ **La nota de la fila de `m2_envios` ya venía avisando y nadie lo leyó como esto:** dice
+*"SIN VALIDAR - demo 12/08"* y menciona que el universo no está acotado. El problema no era el
+universo: es que **una fila no es un envío**.
+
+⚠ **Y hay que decir qué NO prueba esto:** que el fixture del 06/08 reproduzca el 18 de un deck de
+julio dice que **la definición es correcta**; **no** dice que el motor lo lea así hoy. Son las dos
+afirmaciones que `CLAUDE.md` §4 manda separar. Confirmarlo es una corrida.
+
+### ⭐ Hallazgo 2 — `m2_campanias` no tiene columna, y por eso NO se cablea
+
+**Ninguna de las cinco columnas da 11.** Y mirando los valores se ve por qué: el `11` es una
+**agrupación humana a nivel proyecto** que ninguna columna carga.
+
+Sobre los 18 distintos de col U, agrupando a ojo por proyecto:
+`Vacaciones de Invierno` aparece como **tres** valores —*Invierno en las plazas*, *Parque de
+invierno*, *Estación invierno*— y `Más servicios en tu barrio` como **cinco**, uno por barrio y
+fecha. Colapsados a proyecto dan **12**, contra los 11 del deck.
+
+**Por eso este token se detiene y no se publica el normalizado.** La decisión del usuario del
+20/08 —*un error de una base ajena no frena el cableado; se anota y se sigue*— **no aplica acá**:
+esto no es ruido de grafía, es que **la medida que el token dice hacer no está en la base**. Y la
+misma decisión pone el límite: *"lo que sí se detiene es cualquier cosa que publicaría un número
+que no es el que el token dice medir"*. Publicar 18 o 24 bajo el nombre `m2_campanias` sería
+exactamente eso — **un número plausible**, del tamaño correcto, y de otra cosa.
+
+**Quién lo destraba:** el equipo, diciendo qué es una «campaña» a ese grano. Hay dos salidas y las
+dos son suyas: **(a)** una columna nueva en la base que declare el proyecto, o **(b)** aceptar que
+`m2_campanias` se carga a mano, como el resto de la capa editorial.
+
+⛔ **Lo que NO hay que hacer, escrito porque es la salida tentadora:** derivar el proyecto
+partiendo el nombre por `|` o por `-`. Acertaría en `Vacaciones de Invierno | …` y erraría en
+`DGPLES | MEPHU | REPARACIÓN DE VEREDAS`, que tiene dos barras y es **un** proyecto. Sería lógica
+de negocio inventada adentro del motor, y del peor tipo: la que funciona en la muestra que se miró.
