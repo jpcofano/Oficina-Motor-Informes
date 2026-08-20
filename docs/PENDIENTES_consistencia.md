@@ -4902,3 +4902,56 @@ corrida»* vale para las láminas **visibles**, no para el deck.
 ⭐ **Y es una precondición del `2026-08-20_10` que su Parte A no contempla:** ese prompt propone usar
 los tokens crudos como checkpoint —*«los que quedan crudos son exactamente lo que falta»*—, y **49
 de ellos son crudos permanentes**. Una reanudación que se guíe por los crudos no terminaría nunca.
+
+---
+
+## El invariante «ningún `{{token}}` crudo sobrevive a una corrida» es falso hoy — 20/08/2026
+
+**Anotado sin arreglar, por pedido del usuario.** La decisión —barrer las escondidas o reescribir
+el invariante— es suya.
+
+### Qué dice el motor y qué hace
+
+El comentario de la barrida lo declara sin condiciones:
+
+> *«la barrida final. **Corre siempre, haya habido corte o no**: es lo único que garantiza que el
+> deck no salga con `{{token}}` crudos»*
+
+**Y el deck sale con crudos igual, en toda corrida.** Medido sobre la del 20/08 a las 15:45:
+**49 `{{token}}` crudos en las láminas 12, 21 y 29** — las tres escondidas.
+
+### Por qué, y no es un bug
+
+`mapaTokenObjectId_` **excluye a propósito** los tokens de láminas escondidas: los junta aparte en
+`tokensEscondidos` y **nunca los mete en `tokens`**. La barrida recorre `mapa.tokens`, así que no
+los ve. Y está bien que sea así: una lámina que no se emite no vale el gasto de pintarla — es la
+misma decisión que `tokensVisiblesDe_` toma para la pasada de tokens fijos.
+
+⚠ **Lo que está mal es el enunciado, no el comportamiento.** El invariante vale para las láminas
+**visibles**; el comentario lo declara para el deck.
+
+### Por qué importa, más allá de la prolijidad
+
+⭐ **Una regla que dice una cosa y un motor que hace otra es exactamente el material del que salen
+los diagnósticos falsos**, y este caso ya tuvo su primera víctima: el `2026-08-20_10` `v1` proponía
+usar los tokens crudos como checkpoint de la reanudación —*«los que quedan crudos son exactamente lo
+que falta»*— **y 49 son crudos permanentes**. Una reanudación guiada por los crudos no habría
+terminado nunca.
+
+**El `v2` ya lo corrige**: el checkpoint es el plan por secciones, y los crudos sólo garantizan que
+repintar es inocuo. Pero la corrección vive en un prompt, no en el motor: **el comentario de la
+barrida sigue afirmando lo que no es.**
+
+### Las dos salidas, y ninguna es gratis
+
+1. **Barrer también las escondidas.** El invariante pasa a ser cierto y el deck deja de tener
+   crudos. ⚠ Cuesta: son 49 `replaceAllText` más por corrida **sobre láminas que nadie mira**, y
+   hoy el gasto es justamente el problema (`D-35`). Y las escondidas dejarían de distinguirse de
+   las emitidas al abrir el deck.
+2. **Reescribir el invariante** para que diga lo que el motor hace: *ningún `{{token}}` crudo
+   sobrevive a una corrida **en las láminas visibles***. Cuesta cero y es lo que ya pasa. ⚠ Pero
+   deja el deck con crudos, y quien lo abra sin saber esto va a leerlos como un motor roto — el
+   mismo problema que el sello de en-proceso resuelve para el deck cortado.
+
+**Quién lo destraba:** el usuario. ⛔ **Lo que no puede quedar es el estado actual**, donde la regla
+promete una cosa y el motor hace otra sin que nada lo diga.
