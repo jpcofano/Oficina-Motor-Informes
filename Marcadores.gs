@@ -410,6 +410,79 @@ function opLISTA(ctx) {
   };
 }
 
+/**
+ * `2026-08-20_5` Parte A (20/08/2026) — **cuenta valores DISTINTOS.** Es la octava operación, y la
+ * primera que responde *"¿cuántas cosas distintas hay?"* en vez de *"cuánto suma"* o *"cuántas
+ * filas hay"*.
+ *
+ * **Es genérica y no sabe de campañas ni de M2.** El campo lo declara la fila de `MARCADORES`,
+ * igual que las siete que ya existen. Una operación con `'m2'` adentro serviría para un token y
+ * para ninguno más, que es lo que `D-01` mide.
+ *
+ * **Las cuatro decisiones de comportamiento, y ninguna se infiere:**
+ *
+ * **1 · La celda vacía NO cuenta como valor distinto.** Mismo criterio que `opLISTA`, donde una
+ * vacía **no es un rechazo y no entra a la lista**. Contarla como una campaña más sería inventar
+ * una — y con 713 celdas vacías sobre 2.886 filas en `digital/Directa Mail` (medido sobre el
+ * fixture del 06/08), no es un caso de borde: es el 25 % del universo.
+ *
+ * **2 · La normalización es la de `R-10`:** colapsar espacios internos a uno y recortar bordes,
+ * **preservando mayúsculas y acentos**. Se reusa `normalizarValorDeclarado_` (`Fuentes.gs`), que
+ * ya es exactamente esa forma — **no se escribe un quinto normalizador**, que es lo que `CLAUDE.md`
+ * §2 pide mirar antes de agregar uno.
+ *   ⚠ **Y la contracara, que es una decisión y no un descuido:** plegar mayúsculas colapsaría
+ *   campañas que el equipo escribe distinto a propósito. Medido sobre el fixture: normalizar con
+ *   `R-10` lleva 1.400 grafías crudas a **1.375**; plegar además el case colapsaría **4 más**.
+ *   Esos 4 no se colapsan acá. Si alguna vez hay que hacerlo, es otra decisión con su medición.
+ *
+ * **3 · Cero filas devuelve vacío, no `0`.** El despachador lo baja a `sin_datos`, y ésa es la
+ * diferencia que importa: **`0` afirma "no hubo ninguna campaña"** y `sin_datos` dice "no había
+ * filas". Es la misma distinción que `R-18` addendum 1 sostiene entre `sin_datos` y `REVISAR`, y
+ * la que los cuatro símbolos del deck publican distinto desde el `2026-08-20_1` — un `0` publicado
+ * y un `-` son dos afirmaciones distintas sobre el mundo.
+ *   ⚠ **Ojo con el caso que se parece y no es el mismo:** filas que existen pero traen **todas** la
+ *   celda vacía. Ahí sí hubo filas, así que **no es `sin_datos`**: el valor es `0` y la traza dice
+ *   cuántas vacías salteó. Un token que publica `0` con la traza diciendo *"84 fila(s), 84
+ *   vacía(s)"* manda a mirar la columna; uno que publica `-` manda a mirar el filtro. Son dos
+ *   trabajos distintos.
+ *
+ * **4 · La traza dice cuántas filas leyó, cuántas vacías salteó y cuántos distintos publicó.** Sin
+ * los tres números, un conteo que da de más es indistinguible de uno correcto — y en esta columna
+ * **da de más seguro**: `C-68` midió que la misma campaña aparece con cuatro grafías distintas en
+ * cuatro solapas, y que hay al menos una fila donde el nombre es el de **otra** campaña.
+ *
+ * ⛔ **No se toca `opLISTA`.** Comparten idea y no código: aquélla publica una lista canonizada
+ * **contra un catálogo**, ésta cuenta. Unificarlas ataría el conteo a que exista catálogo, y el
+ * caso que motiva esta operación —`m2_campanias`— no tiene ninguno.
+ */
+function opCUENTA_DISTINTOS(ctx) {
+  var valores = valoresDeCtx_(ctx);
+  var vacias = 0;
+  var distintos = {};
+
+  valores.forEach(function (v) {
+    var crudo = (v === undefined || v === null) ? '' : String(v);
+    var clave = normalizarValorDeclarado_(crudo);
+    if (clave === '') { vacias++; return; }
+    distintos[clave] = true;
+  });
+
+  var cuantos = Object.keys(distintos).length;
+
+  // Cero FILAS es `sin_datos` (valor vacío); cero distintos habiendo filas es un `0` legítimo.
+  // La diferencia la decide `valores.length`, no `cuantos`.
+  var valor = valores.length ? cuantos : '';
+
+  var traza = 'CUENTA_DISTINTOS de "' + ctx.campo_logico + '" sobre ' + valores.length +
+    ' fila(s) de ' + ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') +
+    ' · ' + cuantos + ' distinto(s)' +
+    (vacias ? ' · ' + vacias + ' celda(s) vacía(s), no cuentan' : '') +
+    ' · normalizado por R-10 (espacios y bordes; NO se pliega case ni acentos)' +
+    trazaDeVentana_(ctx);
+
+  return { valor: valor, traza: traza, filas: valores.length, vacias: vacias, distintos: cuantos };
+}
+
 var OPERACIONES_ = {
   SUMA: opSUMA,
   CONTEO: opCONTEO,
@@ -417,7 +490,9 @@ var OPERACIONES_ = {
   RATIO: opRATIO,
   PCT: opPCT,
   TEXTO: opTEXTO,
-  LISTA: opLISTA
+  LISTA: opLISTA,
+  // `2026-08-20_5` (20/08/2026) — la octava. Cuenta valores distintos; ver su comentario.
+  CUENTA_DISTINTOS: opCUENTA_DISTINTOS
 };
 
 /**

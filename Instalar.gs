@@ -1628,7 +1628,21 @@ var SEED_PERIODOS_ = [
   // fue la razón por la que el `_30` B.2 quedó bloqueado: no existía el `periodo_id` contra el
   // cual filtrar `REUNIONES`. El nombre lleva el rango adentro a propósito: `julio_sem4` obligaba
   // a contar viernes para saber cuál es.
-  { periodo_id: 'julio_24_30', desde: '2026-07-24', hasta: '2026-07-30', notas: 'Semana vie-jue del informe vigente — alta para la demo del 12/08' }
+  { periodo_id: 'julio_24_30', desde: '2026-07-24', hasta: '2026-07-30', notas: 'Semana vie-jue del informe vigente — alta para la demo del 12/08' },
+  // 20/08/2026 — **la semana que el motor propone hoy**, y entra porque sin ella el temario no se
+  // puede cargar: `cargarTemario` exige un `periodo_id` que exista en `PERIODOS` (`D-19`), así que
+  // con `CONFIG` vaciado el panel proponía una semana contra la cual no se podía cargar nada.
+  //
+  // ⚠ **Esto es un tapón, no la solución.** Una fila de seed por semana significa `clasp push` cada
+  // viernes, que es exactamente la línea de `.gs` que `D-01` mide. Lo que corresponde es que el
+  // panel cree el período — y eso es un **escritor nuevo** de hoja de registro, con su fila en
+  // `docs/ESCRITORES.md`. Mientras tanto: **una fila escrita a mano en la hoja también sirve y
+  // sobrevive** a *Aplicar configuración*, porque `upsertPorClave_` reporta `soloEnHoja` y nunca
+  // borra. Quien tenga la planilla abierta no necesita esperar un push.
+  //
+  // El nombre lleva el rango adentro por la convención que fijó `julio_24_30`: `agosto_sem3`
+  // obligaría a contar viernes para saber cuál es.
+  { periodo_id: 'agosto_14_20', desde: '2026-08-14', hasta: '2026-08-20', notas: 'Semana vie-jue que el motor propone al 20/08 (R-11 Addendum 2). Alta para destrabar la carga de temario.' }
 ];
 
 // Paso 2.11 Parte A — antes vivían en HOJAS_CONFIG_.CAMPANAS.ejemplos y

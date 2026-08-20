@@ -3271,10 +3271,11 @@ function testigoDeFrecuencia() {
  * tiene que verlas**: la lámina del "1 a 1" puede estar escondida mientras se arma, y decir que no
  * hay nada que cablear ahí sería falso.
  */
-function censarTokensSinMarcador() {
-  var informe = leerInformes()['jm'];
+function censarTokensSinMarcador_(informeId) {
+  informeId = String(informeId || 'jm').trim();
+  var informe = leerInformes()[informeId];
   if (!informe || !informe.plantilla_id) {
-    Logger.log('FALLÓ: el informe `jm` no tiene `plantilla_id`.');
+    Logger.log('FALLÓ: el informe `' + informeId + '` no tiene `plantilla_id`.');
     return { ok: false, motivo: 'sin plantilla_id' };
   }
 
@@ -3291,7 +3292,7 @@ function censarTokensSinMarcador() {
     var laminas = leerRegistro_('LAMINAS', 'lamina_id');
     Object.keys(laminas).forEach(function (k) {
       var l = laminas[k];
-      if (l.informe_id === 'jm' && String(l.itera_sobre || '').trim() !== '') {
+      if (l.informe_id === informeId && String(l.itera_sobre || '').trim() !== '') {
         iteran[String(l.orden_plantilla)] = l.itera_sobre;
       }
     });
@@ -3300,7 +3301,7 @@ function censarTokensSinMarcador() {
   }
 
   var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
-  Logger.log('== CENSO de tokens SIN FILA en MARCADORES — plantilla de `jm`, ' + slides.length + ' láminas ==');
+  Logger.log('== CENSO de tokens SIN FILA en MARCADORES — plantilla de `' + informeId + '`, ' + slides.length + ' láminas ==');
   Logger.log('⚠ «sin fila» NO es «publica FALTA». Ver el encabezado de la función antes de citar esto.');
   Logger.log('');
 
@@ -3361,6 +3362,26 @@ function censarTokensSinMarcador() {
   Logger.log('  Para saber qué publica FALTA de verdad hace falta una corrida: es otra pregunta.');
   return { ok: true, por_lamina: sinPorLamina, distintos: Object.keys(universoSin).sort() };
 }
+
+/**
+ * Los dos botones del censo. **Van sin `_` y SIN PARÁMETROS las dos**, que son las dos
+ * condiciones que Apps Script exige para listar una función en el desplegable (`CLAUDE.md` §2).
+ * El interior sigue siendo privado y toma el informe; acá sólo se le pasa el valor del caso.
+ *
+ * ⚠ **`censarTokensSinMarcador()` era la de `jm` y lo sigue siendo**, con el mismo nombre y el
+ * mismo resultado: quien ya la tenía en el desplegable no tiene que buscar otra. Lo que cambió es
+ * que **el informe dejó de estar clavado adentro** — hasta el 20/08 la función hacía
+ * `leerInformes()['jm']` y era **la única de seis** que hardcodeaba el informe, así que censar
+ * `secco` era literalmente imposible sin tocar código. Eso trababa la armonización entera.
+ */
+function censarTokensSinMarcador() {
+  return censarTokensSinMarcador_('jm');
+}
+
+function censarTokensSinMarcadorSecco() {
+  return censarTokensSinMarcador_('secco');
+}
+
 
 /**
  * **Paso 2 de la carga de campañas: ¿los cuatro `Id cuentas` resuelven en las solapas de los
