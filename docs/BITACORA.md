@@ -11801,3 +11801,86 @@ de más: *«ningún `{{token}}` crudo sobrevive a una corrida»* vale para las *
 ⭐ **Y es una precondición que la Parte A del `_10` no contempla:** ese prompt usa los crudos como
 checkpoint —*«los que quedan crudos son exactamente lo que falta»*— y **49 son crudos permanentes**.
 Una reanudación guiada por los crudos no terminaría nunca.
+
+---
+
+## Paso `2026-08-20_10` — la corrida se reanuda sola (2026-08-20) — commit de esta entrada
+
+- **Qué pedía el prompt:** que una corrida que no entra en seis minutos **termine sola**, en varias
+  ejecuciones, sin que nadie apriete nada. Con el `10.1` aplicado desde la Parte 0.
+- **Qué se hizo:** Partes A, B, D y E. **La C no** — ver abajo. `Desatendida.gs` nuevo, la hoja
+  `PLAN_CORRIDA`, `CONFIG.tope_continuaciones`, y en `Generador.gs` el deck reusable, el sello, la
+  barrida condicionada y la fase atómica de expansión.
+- **Prueba:** `probar-planificador.js` con **18 afirmaciones** y su control negativo (rompe las 4
+  del diagnóstico). Los seis controles previos siguen verdes. `listas.js` verde. `clasp push`
+  **verificado con `clasp pull`** — 27 archivos, el nuevo incluido.
+- **Pendientes/decisiones:** ⛔ **la Parte C no está**, así que el mecanismo **funciona y todavía no
+  rinde**.
+
+### ⭐ La corrección medida al `10.1`: la unidad no es el ítem, es la asignación
+
+El addendum decía «36 ítems». **Son 16 ítems lógicos y 36 asignaciones.** `asignaciones.push`
+ocurre **por ítem × por lámina modelo** (`Generador.gs`), y el bucle del presupuesto recorre
+`expansion.asignaciones` — así que **la unidad de trabajo es la asignación**, con 2,25 láminas
+modelo por ítem.
+
+Medido sobre las hojas vivas: `encuentro` 12 ítems · `comunicaciones_post` 2 · `campana` 2 = **16**,
+que expandidos dan los 36 que la corrida reportó.
+
+**Consecuencia práctica:** un planificador que cuenta ítems se equivoca por más del doble, y el
+síntoma sería **una corrida que corta cuando el plan decía que entraba**. El planificador cuenta
+asignaciones.
+
+⭐ **Y el umbral, que es la respuesta al punto 1 del `10.1`:** con ~270 s útiles y 5,7 s por
+asignación entran **~47**. `encuentro` —la sección más grande— tiene **27**. **Ninguna sección
+excede hoy**, así que aplica el punto 3: el chunk por asignación **no se implementa, pero sí se
+detecta**. El umbral está en **~22 encuentros**.
+
+### La expansión: fase atómica, y por qué no la salida por sección
+
+La N² está medida y documentada en `PENDIENTES`. La salida elegida —**expandir todo en la ejecución
+1 y no expandir nunca más**— se implementó así: la ejecución 2 recibe las `asignaciones` con el
+`objectIdSlide` de cada copia, o sea **la respuesta a "qué lámina es de qué ítem" sin volver a
+decidir qué es modelo y qué es copia**.
+
+⭐ **Marcar `expandida` por sección no habría alcanzado**, y es lo que descartó esa salida: deja
+viva la ventana entre el `duplicate()` y el `remove()`. **Con la fase atómica no hay ninguna
+decisión que tomar en la ejecución 2, porque nadie expande.**
+
+**Y separar "expandir todo" de "resolver una parte" hizo falta explícitamente:** `opciones.secciones`
+decidía las dos cosas a la vez. Entró `opciones.solo_secciones`, que recorta **después** de expandir.
+
+### El sello: lo pone el arranque y lo quita el CIERRE
+
+⚠ **No lo quita la última ejecución, y la diferencia importa:** una ejecución no puede distinguir
+*«terminé yo»* de *«me quedé sin presupuesto»*. Sólo el cierre sabe que no hubo corte ni excepción.
+
+**Y se pone siempre, no sólo en corridas desatendidas:** una corrida normal que muere por excepción
+también deja un deck a medio hacer, y hasta hoy salía con nombre de deck final.
+
+### La barrida: la condición es `continuable`, no `corte`
+
+⚠ El prompt dice *«la barrida NO corre si la corrida se cortó»*. Implementado tal cual, **una
+corrida cortada que nadie va a continuar dejaría el deck con crudos y sin nadie que los resuelva**,
+que es peor que `/////`. La condición implementada es **cortada Y hay plan**: sólo se saltea cuando
+existe alguien que va a volver.
+
+### ⛔ La Parte C no se hizo, y decirlo es parte del resultado
+
+**El anclaje y la unión digital no se persisten.** Cada ejecución vuelve a pagar los **70–80 s** de
+arranque; con tres son 210 s — **casi una corrida entera gastada en recalcular lo mismo**.
+
+⚠ **Por eso el mecanismo funciona y todavía no rinde**, y conviene tenerlo escrito antes de confiar
+en él: hoy reanudar cuesta casi tanto como empezar. La Parte C **no es una optimización** — es lo
+que hace que partir la corrida valga la pena.
+
+**No se hizo porque toca de dónde salen los anclajes**, o sea números publicados, y con la clave
+atada al `corrida_id` que `D-36` exige. Es un trabajo con su propio testigo y merece su corrida.
+
+### Lo que no se probó, y no se puede probar desde acá
+
+⛔ **El mecanismo entero no corrió nunca.** Lo verificado es el planificador —puro, 18
+afirmaciones— y la sintaxis. **El lock, el trigger, la reanudación real y el alcance sin usuario
+delante necesitan una corrida**, y esa corrida es del usuario. `verificarAlcanceDesatendido()`
+existe para eso y **hay que correrla antes que nada**: si el trigger no alcanza las bases, la
+primera continuación falla y el plan se queda pendiente sin explicación.
