@@ -102,7 +102,7 @@ es decidir si `secco` sube al detalle de `jm`**, y eso es `C-01`, del equipo.
 | frente 13 bis — `DIMENSIONES_` a hoja | `2026-08-16_6`, ⚠ se revisa antes de correr: es del 16/08 |
 | `2026-08-16_5` — los `pauta_*` duplicados | escrito, sin ejecutar |
 
-## Controles vivos — los seis en verde
+## Controles vivos — los siete en verde
 
 `probar-simbolos-faltante` (25) · `probar-semana-cerrada` (24) · `probar-cuenta-distintos` (22) ·
 `probar-temario-reuniones` (14) · `probar-anclaje-dos-pasos` (21) · `probar-formato-revisar` · `listas`.
