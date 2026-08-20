@@ -140,10 +140,87 @@ function parsearLineaReunion_(lineaCruda) {
 }
 
 /**
+ * `2026-08-19_2` Parte C (20/08/2026) — **la clave que identifica una fila de `REUNIONES`.**
+ *
+ * Pura y sin planilla a propósito: es lo que hace verificable el salteo (`tools/probar-temario-reuniones.js`).
+ *
+ * ⭐ **`etapa` es parte de la clave, y NO es un detalle: sin ella la clave declara duplicado un
+ * encuentro que tiene `pre` y `post`.** El prompt proponía `periodo_id + eje + nombre + fecha` y su
+ * propio gate mandaba parar si esa clave ya colisionaba en la hoja. **Colisiona**, medido el
+ * 20/08 sobre las 13 filas vivas: `San Cristóbal 23/07` y `Retiro 24/07` aparecen **dos veces cada
+ * uno**, y las dos veces son legítimas — una fila `pre` y una `post`. Con `etapa` adentro son
+ * **13 claves distintas sobre 13 filas, cero colisiones**.
+ *
+ * ⚠ **Es el mismo hecho que la decisión del usuario sobre el proponedor** —*emite DOS líneas cuando
+ * el encuentro tiene pre y post, no una con "(pre + post)"*—: si el temario los escribe separados,
+ * la clave tiene que poder separarlos.
+ *
+ * **La fecha se normaliza a `yyyy-MM-dd` porque los dos lados llegan distintos:** de la hoja viene
+ * un `Date` de Sheets y del parser viene un `Date` construido, y comparar `Date` contra `Date` con
+ * `===` no matchea nunca. El resto de los campos se colapsa con la forma de `R-10` —espacios
+ * internos a uno y `trim()`, **preservando mayúsculas y acentos**—, que es lo que ya hace
+ * `normalizarValorDeclarado_` y no hace falta un quinto normalizador.
+ */
+function claveReunion_(fila) {
+  var texto = function (v) {
+    return String(v === null || v === undefined ? '' : v).replace(/\s+/g, ' ').trim();
+  };
+  var fecha = fila.fecha;
+  if (fecha instanceof Date && !isNaN(fecha.getTime())) fecha = formatearFecha_(fecha);
+  else fecha = texto(fecha).slice(0, 10);
+
+  return [
+    texto(fila.periodo_id),
+    texto(fila.eje),
+    texto(fila.nombre),
+    fecha,
+    texto(fila.etapa)
+  ].join('||');
+}
+
+/**
+ * `2026-08-19_2` Parte C — separa las propuestas en **las que hay que escribir** y **las que ya
+ * están**. Pura: recibe las claves existentes y no toca la hoja.
+ *
+ * `existentes` es un objeto `{ clave: true }`. Devuelve `{ nuevas, salteadas }`, donde `salteadas`
+ * lleva el objeto entero para poder reportarlo con nombre.
+ *
+ * ⚠ **Dedupe también DENTRO del texto pegado**, no sólo contra la hoja. Si alguien pega la misma
+ * línea dos veces —o aprieta *Proponer* y pega encima de lo que ya había— el append ciego escribía
+ * las dos. Que la segunda entre porque "todavía no estaba en la hoja" sería el mismo bug con otro
+ * origen.
+ */
+function separarReunionesNuevas_(propuestas, existentes) {
+  var vistas = {};
+  var nuevas = [];
+  var salteadas = [];
+  (propuestas || []).forEach(function (p) {
+    var k = claveReunion_(p);
+    if (existentes[k] || vistas[k]) { salteadas.push(p); return; }
+    vistas[k] = true;
+    nuevas.push(p);
+  });
+  return { nuevas: nuevas, salteadas: salteadas };
+}
+
+/**
  * Agrega a REUNIONES una fila por cada línea no vacía de `textoPegado`, con
- * `mostrar=''` siempre — la persona confirma cuáles entran al informe. No pisa
- * filas existentes, solo agrega (mismo criterio que `inventariarSolapas()`: no
- * se adivina, se descubre y se dejan las decisiones para quien mira la hoja).
+ * `mostrar=''` siempre — la persona confirma cuáles entran al informe.
+ *
+ * ⭐ `2026-08-19_2` Parte C (20/08/2026) — **saltea lo que ya existe.** Antes era un append ciego
+ * —`getRange(getLastRow() + 1, …)` sin mirar nada— y el comentario decía *"no pisa filas
+ * existentes, solo agrega"*: cierto, y por eso mismo **cargar dos veces el mismo temario dejaba
+ * trece filas duplicadas**. Con el gesto detrás de un menú y un `prompt` de texto casi no pasaba;
+ * el panel lo pone a un clic, y **abaratar un gesto destructivo sin arreglarlo primero es lo que
+ * lo hace pasar**.
+ *
+ * **Copia el comportamiento que `cargarTemarioCampanas_` ya tenía** —fila existente se reporta y
+ * no se escribe— en vez de inventar uno nuevo. Lo que cambia es la clave, porque `CAMPANAS` tiene
+ * `campana_id` y `REUNIONES` no tiene identificador propio: ver `claveReunion_`.
+ *
+ * ⛔ **No toca `parsearLineaReunion_` ni el criterio de `mostrar`.** Que este cargador deje
+ * `mostrar` vacío y `cargarTemarioCampanas_` ponga `sí` son dos criterios distintos para el mismo
+ * gesto, y unificarlos es decisión del usuario, no de acá.
  */
 function cargarTemarioReuniones_(textoPegado, periodoId) {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('REUNIONES');
@@ -154,17 +231,44 @@ function cargarTemarioReuniones_(textoPegado, periodoId) {
 
   var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
   var sinParsear = 0;
-  var filas = lineas.map(function (linea) {
+  var propuestas = lineas.map(function (linea) {
     var propuesta = parsearLineaReunion_(linea);
     // Paso 2.15 Parte B: el período lo pone el llamador, que ya lo validó contra
     // PERIODOS. Acá no se valida de nuevo ni se completa con un default.
     propuesta.periodo_id = periodoId;
     if (propuesta.notas === 'no se pudo parsear' || propuesta.notas.indexOf('no se encontró fecha') !== -1) sinParsear++;
-    return headers.map(function (h) { return (h in propuesta) ? propuesta[h] : ''; });
+    return propuesta;
   });
 
-  hoja.getRange(hoja.getLastRow() + 1, 1, filas.length, headers.length).setValues(filas);
-  return { ok: true, agregadas: filas.length, sinParsear: sinParsear };
+  // Las claves de lo que ya está. Se arman con los mismos nombres de columna que usa la
+  // propuesta, así que un cambio de encabezado rompe de los dos lados a la vez y no de uno solo.
+  var datos = hoja.getDataRange().getValues();
+  var existentes = {};
+  for (var i = 1; i < datos.length; i++) {
+    var fila = {};
+    headers.forEach(function (h, j) { fila[h] = datos[i][j]; });
+    existentes[claveReunion_(fila)] = true;
+  }
+
+  var reparto = separarReunionesNuevas_(propuestas, existentes);
+
+  if (reparto.nuevas.length) {
+    var filas = reparto.nuevas.map(function (p) {
+      return headers.map(function (h) { return (h in p) ? p[h] : ''; });
+    });
+    hoja.getRange(hoja.getLastRow() + 1, 1, filas.length, headers.length).setValues(filas);
+  }
+
+  return {
+    ok: true,
+    agregadas: reparto.nuevas.length,
+    sinParsear: sinParsear,
+    // Se reportan con nombre, no con un conteo: "3 salteadas" no deja saber si salteó las que
+    // correspondía. `cargarTemarioCampanas_` ya devuelve su lista igual.
+    salteadas: reparto.salteadas.map(function (p) {
+      return (p.nombre || p.texto_original || '(sin nombre)') + (p.etapa ? ' (' + p.etapa + ')' : '');
+    })
+  };
 }
 
 /**

@@ -175,6 +175,15 @@ select:focus,input[type=text]:focus{outline:2px solid var(--color-primary);outli
 .box{background:var(--surface-sunken);border-radius:var(--radius-md);padding:var(--space-3);font-size:var(--text-sm)}
 .muted{font-size:var(--text-xs);color:var(--text-tertiary);line-height:1.4}
 .list-reset{list-style:none;margin:0;padding:0}
+.cuadro{border:1px solid var(--border-default);border-radius:var(--radius-md,6px);padding:var(--space-3);margin-bottom:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)}
+.cuadro-tit{font-size:var(--text-sm);color:var(--text-primary);font-weight:600}
+.cuadro-secs{font-size:var(--text-xs);color:var(--text-tertiary)}
+.cuadro-est{font-size:var(--text-xs);color:var(--text-secondary)}
+.cuadro-msg{font-size:var(--text-xs);color:var(--text-secondary)}
+.cuadro-btns{display:flex;gap:var(--space-2)}
+.temario{width:100%;font-family:var(--font-mono,monospace);font-size:var(--text-xs);padding:var(--space-2);border:1px solid var(--border-default);border-radius:var(--radius-sm,4px);background:var(--surface-page);color:var(--text-primary);resize:vertical}
+.alerta{color:var(--color-error)}
+.mono{font-family:var(--font-mono,monospace)}
 .section-title{font-size:var(--text-2xs);text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--text-tertiary)}
 
 /* ── Pie institucional, a sangre ──────────────────────────────────────────────────── */
@@ -227,6 +236,7 @@ var S = {
   informeId: '', periodoId: '',
   secciones: {},            // seccion_id -> bool
   conSimbolos: true,        // los cuatro símbolos del `2026-08-20_1`; en falso, el crudo `«FALTA:token»`
+  temarioMsg: {},           // clave de cuadrado -> {texto, error}
   estado: 'form',           // form | generando | listo | fallo
   forzarForm: false,        // "generar de nuevo, a sabiendas"
   resultado: null, motivo: null,
@@ -375,6 +385,146 @@ function generar(){
 }
 
 /* ── pintado ─────────────────────────────────────────────────────────────────────── */
+
+/* ── `2026-08-19_2` Parte D — los cuadrados ──────────────────────────────────────────
+ *
+ * ⚠ **Nada de lógica de negocio acá.** Qué secciones alimenta un cuadrado y qué modo tiene lo
+ * decide `cuadradosDeInforme_` en el backend. Si el HTML lo derivara habría dos definiciones del
+ * mismo mapa, y **la del HTML no tiene prueba**. Esto sólo pinta lo que llega. */
+function pintarCuadrados(){
+  var inf = informeActual();
+  var cuadros = (inf && inf.cuadrados) || [];
+  if (!cuadros.length) return '';
+
+  var h = '<div class="bloque"><span class="section-title">Carga por sección</span>';
+
+  cuadros.forEach(function(c){
+    h += '<div class="cuadro">';
+    h += '<div class="cuadro-tit">' + esc(c.titulo) + '</div>';
+
+    // Las secciones que alimenta, con su filtro. Es lo que hace visible que UN temario
+    // alimenta DOS secciones.
+    h += '<div class="cuadro-secs">' + c.secciones.map(function(s){
+      return esc(s.nombre) + (s.filtro ? ' <span class="mono">(' + esc(s.filtro) + ')</span>' : '');
+    }).join(' · ') + '</div>';
+
+    if (c.modo === 'temario'){
+      var t = c.temario || {};
+      h += '<textarea class="temario" id="ta-' + esc(c.clave) + '" rows="6" ' +
+           'placeholder="Pegá el temario acá, o apretá Proponer."></textarea>';
+      h += '<div class="cuadro-btns">' +
+           '<button class="btn btn-secondary" data-proponer="' + esc(c.clave) + '"' +
+             (t.puede_proponer ? '' : ' disabled') + '>Proponer</button>' +
+           '<button class="btn btn-primary" data-cargar="' + esc(c.clave) + '">Cargar</button>' +
+           '</div>';
+      h += '<div class="cuadro-est" id="est-' + esc(c.clave) + '">' +
+           (S.periodoId
+             ? (t.filas_cargadas || 0) + ' fila(s) cargada(s) para <span class="mono">' + esc(S.periodoId) + '</span>' +
+               (t.sin_confirmar ? ' · <span class="alerta">' + t.sin_confirmar + ' sin confirmar</span>' : '')
+             : 'Elegí un período de la lista para ver qué hay cargado y para poder cargar.') +
+           '</div>';
+      if (S.temarioMsg[c.clave]){
+        h += '<div class="cuadro-msg' + (S.temarioMsg[c.clave].error ? ' alerta' : '') + '">' +
+             esc(S.temarioMsg[c.clave].texto) + '</div>';
+      }
+    } else if (c.modo === 'manual'){
+      h += '<div class="cuadro-est">Se carga a mano' + (c.motivo ? ' — ' + esc(c.motivo) : '') + '</div>';
+    } else {
+      h += '<div class="cuadro-est">' +
+           (c.ventana ? 'Ventana: ' + esc(c.ventana.etiqueta) + ' <span class="mono">(' + esc(c.ventana.origen) + ')</span>'
+                      : 'Sin ventana resuelta') +
+           (c.motivo ? '<br><span class="alerta">' + esc(c.motivo) + '</span>' : '') +
+           '</div>';
+    }
+
+    h += '</div>';
+  });
+
+  return h + '</div>';
+}
+
+function conectarCuadrados(){
+  Array.prototype.forEach.call(document.querySelectorAll('[data-proponer]'), function(b){
+    b.onclick = function(){
+      var clave = b.getAttribute('data-proponer');
+      S.temarioMsg[clave] = { texto: 'Proponiendo…', error: false };
+      pintar();
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (!r || !r.ok){
+            S.temarioMsg[clave] = { texto: (r && r.motivo) || 'No se pudo proponer.', error: true };
+            pintar(); return;
+          }
+          /* El texto va a la caja y NO se escribe ninguna fila: `R-02`, el temario define el
+           * universo del informe y la ventana sólo calcula. La persona lo edita y recién
+           * entonces aprieta Cargar. */
+          var ta = el('ta-' + clave);
+          if (ta) ta.value = r.texto || '';
+          S.temarioMsg[clave] = {
+            texto: r.propuestas
+              ? r.propuestas + ' línea(s) propuesta(s) sobre ' + r.ventana.etiqueta +
+                (r.afuera && r.afuera.length ? ' · ' + r.afuera.length + ' fuera, ver detalle' : '') +
+                ' — revisalas y apretá Cargar.'
+              : (r.motivo_vacio || 'No hay nada para proponer en esta ventana.'),
+            error: false
+          };
+          pintar();
+          var ta2 = el('ta-' + clave);
+          if (ta2) ta2.value = r.texto || '';
+        })
+        .withFailureHandler(function(e){
+          S.temarioMsg[clave] = { texto: (e && e.message) || String(e), error: true };
+          pintar();
+        })
+        .panel_proponerTemario(clave, S.periodoId);
+    };
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-cargar]'), function(b){
+    b.onclick = function(){
+      var clave = b.getAttribute('data-cargar');
+      var ta = el('ta-' + clave);
+      var texto = ta ? ta.value : '';
+      S.temarioMsg[clave] = { texto: 'Cargando…', error: false };
+      pintar();
+      google.script.run
+        .withSuccessHandler(function(r){
+          if (!r || !r.ok){
+            S.temarioMsg[clave] = { texto: (r && r.motivo) || 'No se pudo cargar.', error: true };
+            pintar(); return;
+          }
+          var partes = [];
+          if (r.agregadas !== undefined) partes.push(r.agregadas + ' agregada(s)');
+          if (r.escritas !== undefined) partes.push(r.escritas.length + ' agregada(s)');
+          if (r.salteadas && r.salteadas.length) partes.push(r.salteadas.length + ' ya estaba(n)');
+          if (r.sinParsear) partes.push(r.sinParsear + ' sin parsear');
+          if (r.sinId && r.sinId.length) partes.push(r.sinId.length + ' sin id');
+          S.temarioMsg[clave] = { texto: partes.join(' · ') || 'Listo.', error: false };
+          refrescarEstado();
+        })
+        .withFailureHandler(function(e){
+          S.temarioMsg[clave] = { texto: (e && e.message) || String(e), error: true };
+          pintar();
+        })
+        .panel_cargarTemario(clave, texto, S.periodoId, S.informeId);
+    };
+  });
+}
+
+/* Vuelve a pedir el estado para que los cuadrados cuenten sobre el período elegido. */
+function refrescarEstado(){
+  google.script.run
+    .withSuccessHandler(function(r){
+      if (r && r.ok){
+        S.informes = r.informes || S.informes;
+        S.porDefecto = r.por_defecto || S.porDefecto;
+      }
+      pintar();
+    })
+    .withFailureHandler(function(){ pintar(); })
+    .panel_getEstado(S.periodoId);
+}
+
 function pintar(){
   pintarTabs();
   var c = el('cuerpo');
@@ -497,6 +647,10 @@ function vistaGenerar(){
     h += '<p class="hint">Sacar una acorta la corrida — el techo es de 350 s.</p></div>';
   }
 
+  /* `2026-08-19_2` — los cuadrados van DESPUÉS del selector de período y ANTES del botón de
+   * generar: el orden de la pantalla es el orden del proceso (`docs/PROCESO_SEMANAL.md`). */
+  h += pintarCuadrados();
+
   h += '<label class="check"><input type="checkbox" id="f-raya"' + (S.conSimbolos?' checked':'') + '>' +
        '<span class="check-text"><span class="check-label">Los huecos se ven como símbolos</span>' +
        '<span class="check-sub">/////&nbsp;falta cablearlo · ---&nbsp;falló · -&nbsp;sin dato. ' +
@@ -514,12 +668,18 @@ function conectarGenerar(){
     S.informeId = fi.value; S.forzarForm = false; resetSecciones(); pintar();
   };
   var fp = el('f-periodo');
-  if (fp) fp.onchange = function(){ S.periodoId = fp.value; S.forzarForm = false; pintar(); };
+  if (fp) fp.onchange = function(){
+    S.periodoId = fp.value; S.forzarForm = false;
+    /* Los cuadrados cuentan por período, así que cambiar de período los invalida. Se vuelve a
+     * pedir el estado en vez de recalcular en el front: el mapa lo decide el backend. */
+    refrescarEstado();
+  };
   var fr = el('f-raya');
   if (fr) fr.onchange = function(){ S.conSimbolos = fr.checked; };
   Array.prototype.forEach.call(document.querySelectorAll('[data-seccion]'), function(cb){
     cb.onchange = function(){ S.secciones[cb.getAttribute('data-seccion')] = cb.checked; };
   });
+  conectarCuadrados();
   var bg = el('b-generar'); if (bg) bg.onclick = generar;
   var bd = el('b-denuevo'); if (bd) bd.onclick = function(){ S.forzarForm = true; pintar(); };
   var bo = el('b-otro'); if (bo) bo.onclick = function(){

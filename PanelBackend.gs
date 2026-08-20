@@ -121,7 +121,11 @@ function avisosDeVentanaPropuesta_(ventana) {
  * eslabón de más arriba gana, el panel muestra lo que realmente va a pasar y no lo que dice
  * una celda. Es la diferencia entre mostrar el estado y reimplementarlo.
  */
-function panel_getEstado() {
+function panel_getEstado(periodoId) {
+  // `2026-08-19_2` — el parámetro es **opcional y nuevo**: el front vuelve a pedir el estado
+  // cuando la persona cambia de período, para que los cuadrados de temario digan cuántas filas
+  // hay cargadas **para ese** período. Sin argumento se comporta igual que antes.
+  periodoId = String(periodoId || '').trim();
   var informes = [];
   var registro = leerInformes();
   var cableados = {};
@@ -179,6 +183,12 @@ function panel_getEstado() {
       avisos: avisosDeVentanaPropuesta_(ventana)
     }
     : { ok: false, motivo: ventana.motivo };
+
+  // `2026-08-19_2` Parte A — el mapa de cuadrados, uno por FUENTE DE TEMARIO y no por sección.
+  // Va por informe porque `secco` y `jm` no comparten ni las secciones ni los modos.
+  informes.forEach(function (inf) {
+    inf.cuadrados = cuadradosDeInforme_(inf.id, ventana, periodoId);
+  });
 
   return {
     ok: true,
@@ -322,4 +332,360 @@ function abrirPanel() {
   var html = HtmlService.createHtmlOutputFromFile('Panel')
     .setTitle('Motor de Informes');
   SpreadsheetApp.getUi().showSidebar(html);
+}
+
+/* ═══════════════ `2026-08-19_2` — el panel por secciones (20/08/2026) ═══════════════
+ *
+ * **Un cuadrado por FUENTE DE TEMARIO, no por sección**, y esa diferencia es toda la Parte A.
+ * `encuentro` y `comunicaciones_post` son dos secciones que iteran las dos sobre `REUNIONES`; lo
+ * que las separa es el **filtro** (`etapa=post`), no la carga. **Un temario, dos secciones.**
+ *
+ * ⚠ **No es una comodidad de layout: es la guarda.** Con un cuadrado por sección habría dos cajas
+ * escribiendo en la misma hoja, y el día que aparezca una tercera sección sobre `REUNIONES` serían
+ * tres. `cargarTemarioReuniones_` ya no hace append ciego (Parte C), así que hoy no duplicaría —
+ * pero tres cajas para un temario siguen siendo tres formas de contradecirse.
+ */
+
+/** Filas de una hoja de registro como objetos, con los encabezados vivos. Sólo lectura. */
+function filasDeHojaRegistro_(nombreHoja) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombreHoja);
+  if (!hoja) return [];
+  var datos = hoja.getDataRange().getValues();
+  if (datos.length < 2) return [];
+  var headers = datos.shift();
+  return datos.map(function (fila) {
+    var o = {};
+    headers.forEach(function (h, i) { o[h] = fila[i]; });
+    return o;
+  });
+}
+
+/**
+ * Lo que hay cargado para una fuente y un período. `sin_confirmar` es lo que la persona todavía
+ * tiene que mirar, y **cada fuente lo define distinto a propósito** — ver el punto 6 de la Parte 0
+ * del prompt, que manda reportarlo y **no unificarlo**:
+ *
+ *   - `REUNIONES`: `mostrar` vacío. `parsearLineaReunion_` **nunca** marca `sí` — la persona
+ *     confirma cuáles entran.
+ *   - `CAMPANAS`: `mostrar` ya viene en `sí` (`AJ-1`, *ante la duda entra*), así que lo que queda
+ *     por confirmar es el **id**: las notas con `SIN CONFIRMAR` o `SIN ID`.
+ *
+ * Son **dos criterios distintos para el mismo gesto** y el panel los pone uno al lado del otro.
+ * Unificarlos es decisión del usuario, no de este código.
+ */
+function estadoDeTemario_(fuente, periodoId) {
+  var filas = filasDeHojaRegistro_(fuente).filter(function (f) {
+    return String(f.periodo_id || '').trim() === String(periodoId || '').trim();
+  });
+
+  var sinConfirmar = 0;
+  if (fuente === 'REUNIONES') {
+    filas.forEach(function (f) { if (!String(f.mostrar || '').trim()) sinConfirmar++; });
+  } else if (fuente === 'CAMPANAS') {
+    filas.forEach(function (f) {
+      var n = String(f.notas || '');
+      if (n.indexOf('SIN CONFIRMAR') !== -1 || n.indexOf('SIN ID') !== -1) sinConfirmar++;
+    });
+  }
+
+  return {
+    filas_cargadas: filas.length,
+    sin_confirmar: sinConfirmar,
+    puede_proponer: fuente === 'REUNIONES' || fuente === 'CAMPANAS'
+  };
+}
+
+/**
+ * Parte A — **el mapa de cuadrados, derivado de `SECCIONES` y nunca escrito a mano.**
+ *
+ * Las tres reglas de derivación, en el orden en que se evalúan:
+ *
+ *   1. **`manual`** cuando `SECCIONES.estado = 'manual'`. Gana sobre todo lo demás: si es
+ *      redacción, no hay caja ni ventana que ofrecer.
+ *   2. **`temario`** cuando es `repetible` **y** su `itera_sobre` está en `FUENTES_ITERACION_`.
+ *      Las secciones se agrupan por `itera_sobre`: un cuadrado por fuente.
+ *   3. **`ventana`** en el resto.
+ *
+ * ⚠ **El caso que NO puede caer en la 2 por descuido:** una sección `repetible` cuyo `itera_sobre`
+ * **no** es fuente de iteración. Al 20/08 son cinco —`AUDIENCIAS`, `remitente (JM / GCBA)`,
+ * `red social`, `proveedor`, `tema`— y **no tienen hoja donde escribir**. Van a `ventana` con el
+ * motivo declarado: **ofrecerles una caja sería una caja que no escribe en ningún lado**, y eso es
+ * peor que no ofrecerla.
+ *
+ * ⓘ Medido el 20/08: de esas cinco, **tres ya son `manual`** —`red social`, `proveedor`, `tema`—
+ * así que las agarra la regla 1 antes que la 3. Las que llegan a la 3 con motivo son `AUDIENCIAS`
+ * y `remitente (JM / GCBA)`, las dos en `estado = revisar`. El resultado visible es el mismo
+ * —ninguna ofrece caja— pero por dos caminos distintos, y conviene saberlo antes de "simplificar"
+ * el orden de las reglas.
+ */
+function cuadradosDeInforme_(informeId, ventana, periodoId) {
+  var todas = leerSeccionesPlano_();
+  var mias = Object.keys(todas)
+    .map(function (id) {
+      var s = todas[id];
+      s.seccion_id = s.seccion_id || id;
+      return s;
+    })
+    .filter(function (s) {
+      var informes = String(s.informes || '').split(',').map(function (i) { return i.trim().toLowerCase(); });
+      return informes.indexOf(String(informeId).toLowerCase()) !== -1;
+    })
+    .sort(function (a, b) { return (Number(a.orden) || 0) - (Number(b.orden) || 0); });
+
+  var porFuente = {};   // itera_sobre -> cuadrado de temario
+  var sueltos = [];
+
+  mias.forEach(function (s) {
+    var resumenSeccion = {
+      id: s.seccion_id,
+      nombre: String(s.nombre || s.seccion_id),
+      filtro: String(s.filtro || '').trim()
+    };
+    var modo = String(s.modo || '').trim();
+    var estado = String(s.estado || '').trim();
+    var itera = String(s.itera_sobre || '').trim();
+
+    // 1 · manual
+    if (estado === 'manual') {
+      sueltos.push({
+        clave: 'seccion:' + s.seccion_id,
+        titulo: resumenSeccion.nombre,
+        modo: 'manual',
+        secciones: [resumenSeccion],
+        motivo: String(s.falta || '').trim() || 'se carga a mano: es redacción, no dato'
+      });
+      return;
+    }
+
+    // 2 · temario — un cuadrado por fuente, y las secciones se acumulan adentro
+    if (modo === 'repetible' && FUENTES_ITERACION_.indexOf(itera) !== -1) {
+      if (!porFuente[itera]) {
+        porFuente[itera] = {
+          clave: itera,
+          titulo: 'Temario — ' + (itera === 'REUNIONES' ? 'encuentros' : 'campañas'),
+          modo: 'temario',
+          secciones: [],
+          // Lo cargado se cuenta para el período que la persona tiene elegido. Con el selector
+          // en "por defecto" no hay período con nombre y el conteo da cero — que es la verdad:
+          // `D-19` dice que una fila sin período no entra a ningún informe, así que "cuántas hay
+          // cargadas para esta corrida" **no tiene respuesta** hasta que se elija uno.
+          temario: estadoDeTemario_(itera, periodoId)
+        };
+      }
+      porFuente[itera].secciones.push(resumenSeccion);
+      return;
+    }
+
+    // 3 · ventana — con motivo cuando itera sobre algo que no es un registro del motor
+    sueltos.push({
+      clave: 'seccion:' + s.seccion_id,
+      titulo: resumenSeccion.nombre,
+      modo: 'ventana',
+      secciones: [resumenSeccion],
+      motivo: (modo === 'repetible' && itera)
+        ? 'itera sobre "' + itera + '", que no es un registro del motor: no hay hoja donde escribir un temario'
+        : '',
+      ventana: ventana && ventana.ok ? {
+        etiqueta: formatearPeriodoLamina_(ventana),
+        desde: formatearFecha_(ventana.desde),
+        hasta: formatearFecha_(ventana.hasta),
+        origen: ventana.origen
+      } : null
+    });
+  });
+
+  // Los cuadrados de temario van primero: son los que la persona toca.
+  var conTemario = FUENTES_ITERACION_
+    .filter(function (f) { return porFuente[f]; })
+    .map(function (f) { return porFuente[f]; });
+
+  return conTemario.concat(sueltos);
+}
+
+/* ─────────────────────────── Parte B — **Proponer** ───────────────────────────
+ *
+ * ⭐ **La regla que gobierna los dos proponedores: devuelven TEXTO, no filas.** El proponedor arma
+ * el texto del temario y lo pone en la caja; **no escribe una sola fila**. La persona lo lee, lo
+ * edita, y recién entonces aprieta cargar — el mismo cargador y la misma confirmación de siempre.
+ *
+ * ⚠ **Por qué, y es `R-02` literal:** *el temario define el universo del informe, no la fecha*. Si
+ * Proponer escribiera filas, **la ventana estaría eligiendo qué entra al deck**, que es justo lo
+ * que `R-02` prohíbe. Con texto en una caja, lo que entra sigue siendo lo que una persona pegó, y
+ * el botón es una comodidad de tipeo y no una fuente de verdad.
+ */
+
+/**
+ * B.1 — propone reuniones desde `rdv`, en el formato que `parsearLineaReunion_` ya sabe leer.
+ *
+ * ⭐ **Una línea por etapa: si el encuentro va a tener `pre` y `post`, salen DOS líneas**
+ * (decisión del usuario, 20/08/2026), no una sola con `(pre + post)`. El parser reconoce
+ * `(pre)` y `(post)` **exactos** y nada más — y eso está bien: es el formato que el temario real
+ * usa, y es lo que hace que `claveReunion_` pueda distinguirlas.
+ *
+ * ⚠ **`status` NO filtra: se muestra.** `rdv` es la fuente de verdad de fecha y estado, y un
+ * encuentro cancelado o reprogramado **tiene que verse en la propuesta para que la persona lo
+ * saque**. Sacarlo automáticamente sería la ventana eligiendo otra vez.
+ *
+ * ⚠ **Y dónde va el estado, que es lo que el prompt no podía prever:** el parser lee **un solo**
+ * paréntesis, el último de la línea. Con `(pre)`/`(post)` ocupando ese lugar, el estado no puede
+ * ir también ahí. Va **antes de la etapa** —`… 23/07 (Cancelada) (post)`—, y se verificó corriendo
+ * el parser real: el paréntesis final gana la `etapa`, y `(Cancelada)` queda **después de la
+ * fecha**, así que el recorte del nombre lo descarta. Resultado: `nombre` sale limpio, `etapa` sale
+ * bien, **la persona ve el estado en la caja** y el texto entero sobrevive en `texto_original`.
+ */
+function proponerTemarioReuniones_(ventana) {
+  var lectura = leerFuente('rdv', ventana);
+  if (!lectura.ok) return { ok: false, motivo: 'no pude leer rdv: ' + lectura.motivo };
+
+  var hoja = lectura.hoja;
+  var cFecha = buscarMapeo('rdv', hoja, 'fecha');
+  var cFigura = buscarMapeo('rdv', hoja, 'figura');
+  var cBarrio = buscarMapeo('rdv', hoja, 'barrio');
+  var cEvento = buscarMapeo('rdv', hoja, 'evento');
+  var cStatus = buscarMapeo('rdv', hoja, 'status');
+  if (!cFecha.ok || !cBarrio.ok) {
+    return { ok: false, motivo: 'falta MAPEO de fecha/barrio para rdv/' + hoja };
+  }
+
+  var lineas = [];
+  var afuera = [];
+  var orden = 0;
+
+  lectura.filas.forEach(function (f) {
+    var cruda = valorPorColumna_(f, 'rdv', hoja, cFecha.columna);
+    var fecha = (cruda instanceof Date) ? cruda : parsearFechaCelda_(cruda);
+    if (!fecha) { afuera.push({ que: '(fila sin fecha legible)', motivo: 'no se pudo leer la fecha' }); return; }
+
+    var barrio = String(cBarrio.ok ? valorPorColumna_(f, 'rdv', hoja, cBarrio.columna) : '').trim();
+    if (!barrio) { afuera.push({ que: formatearFecha_(fecha), motivo: 'sin barrio' }); return; }
+
+    var figura = String(cFigura.ok ? valorPorColumna_(f, 'rdv', hoja, cFigura.columna) : '').trim();
+    var evento = String(cEvento.ok ? valorPorColumna_(f, 'rdv', hoja, cEvento.columna) : '').trim();
+    var status = String(cStatus.ok ? valorPorColumna_(f, 'rdv', hoja, cStatus.columna) : '').trim();
+
+    // El eje sale de la figura: `Jorge Macri` es `JM` y todo lo demás es `Ministros`, que es el
+    // mismo corte que `ambito` (`D-33`) expresado en el vocabulario del temario.
+    var eje = normalizar_(figura) === normalizar_('Jorge Macri') ? 'JM' : 'Ministros';
+
+    var dia = Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM');
+    var cuerpo = (evento ? evento + ' ' : '') + barrio + ' ' + dia + (status ? ' (' + status + ')' : '');
+
+    // Dos líneas: una por etapa. La persona borra la que no corresponda — que es más barato que
+    // tipear la que falta.
+    ['pre', 'post'].forEach(function (etapa) {
+      orden++;
+      lineas.push(orden + ') ' + eje + ' | ' + cuerpo + ' (' + etapa + ')');
+    });
+  });
+
+  return {
+    ok: true,
+    texto: lineas.join('\n'),
+    propuestas: lineas.length,
+    encuentros: lineas.length / 2,
+    afuera: afuera,
+    // B.3 — una propuesta vacía dice POR QUÉ, en vez de devolver una caja vacía indistinguible
+    // de "no hay nada esta semana".
+    motivo_vacio: lineas.length ? '' : (
+      lectura.filas.length
+        ? 'rdv trajo ' + lectura.filas.length + ' fila(s) en la ventana y ninguna quedó utilizable — ver el detalle'
+        : 'rdv no trajo ninguna fila en la ventana ' + formatearFecha_(ventana.desde) + '–' + formatearFecha_(ventana.hasta)
+    )
+  };
+}
+
+/**
+ * B.2 — propone campañas desde `catalogoDeCampanas_()`, en el formato que
+ * `parsearLineaCampana_` lee, **con el encabezado `> Campañas destacadas`**: sin ese encabezado el
+ * cargador no encuentra el bloque y falla con motivo.
+ *
+ * ⚠ **Solape, no contención.** Los períodos declarados abarcan varias semanas —*24/06 al 08/07*,
+ * *19/06 al 17/07*—, así que exigir que la campaña **empiece** dentro de la ventana dejaría afuera
+ * justo las largas, que son las destacadas.
+ *
+ * ⚠ **El nombre que se propone es el de la base**, no el del deck. Así la resolución nombre → id
+ * **acierta sola** y no queda ningún `SIN CONFIRMAR` que revisar. Es la diferencia entre proponer
+ * y adivinar: **se propone el texto que ya se sabe que resuelve.**
+ */
+function proponerTemarioCampanas_(ventana) {
+  var cat = catalogoDeCampanas_();
+  if (!cat.ok) return { ok: false, motivo: 'no pude leer el catálogo de campañas: ' + cat.motivo };
+
+  var lineas = [];
+  var afuera = [];
+  var orden = 0;
+
+  cat.lista.forEach(function (c) {
+    var desde = (c.desde instanceof Date) ? c.desde : parsearFechaCelda_(c.desde);
+    var hasta = (c.hasta instanceof Date) ? c.hasta : parsearFechaCelda_(c.hasta);
+    if (!desde || !hasta) { afuera.push({ que: c.nombre || c.id, motivo: 'sin desde/hasta legibles' }); return; }
+
+    // Solape: la campaña entra si su intervalo toca la ventana en algún punto.
+    if (hasta < ventana.desde || desde > ventana.hasta) {
+      afuera.push({
+        que: c.nombre || c.id,
+        motivo: 'no solapa la ventana (' + formatearFecha_(desde) + '–' + formatearFecha_(hasta) + ')'
+      });
+      return;
+    }
+
+    orden++;
+    lineas.push(orden + ') ' + (c.nombre || c.alterno || c.id));
+  });
+
+  return {
+    ok: true,
+    texto: lineas.length ? '> Campañas destacadas\n' + lineas.join('\n') : '',
+    propuestas: lineas.length,
+    afuera: afuera,
+    motivo_vacio: lineas.length ? '' : (
+      cat.lista.length
+        ? 'ninguna de las ' + cat.lista.length + ' campañas del catálogo solapa la ventana ' +
+          formatearFecha_(ventana.desde) + '–' + formatearFecha_(ventana.hasta)
+        : 'el catálogo de campañas vino vacío'
+    )
+  };
+}
+
+/**
+ * El botón **Proponer** del panel. `fuente` es `'REUNIONES'` o `'CAMPANAS'`.
+ *
+ * ⛔ **Sólo lectura, y es la propiedad que hay que poder verificar**: después de apretarlo,
+ * `REUNIONES` y `CAMPANAS` tienen exactamente las mismas filas que antes.
+ */
+function panel_proponerTemario(fuente, periodoId) {
+  var ref = String(periodoId || '').trim();
+  var ventana = ref ? resolverVentana({ periodo_ref: ref }) : resolverVentana({});
+  if (!ventana.ok) return { ok: false, motivo: 'no se pudo resolver el período: ' + ventana.motivo };
+
+  var r = String(fuente) === 'REUNIONES' ? proponerTemarioReuniones_(ventana)
+    : String(fuente) === 'CAMPANAS' ? proponerTemarioCampanas_(ventana)
+    : { ok: false, motivo: 'fuente desconocida: "' + fuente + '". Las que proponen son REUNIONES y CAMPANAS.' };
+
+  if (!r.ok) return r;
+  r.ventana = {
+    etiqueta: formatearPeriodoLamina_(ventana),
+    desde: formatearFecha_(ventana.desde),
+    hasta: formatearFecha_(ventana.hasta),
+    origen: ventana.origen
+  };
+  return r;
+}
+
+/**
+ * El botón **Cargar** del panel. Pasa por los cargadores de siempre — **no hay un segundo camino
+ * de escritura**, que es lo que `docs/ESCRITORES.md` exige de cualquier puerta nueva.
+ *
+ * El `periodo_id` es obligatorio y no se deduce: `D-19`, y `cargarTemario` ya falla explícito si
+ * falta. Acá se valida antes para no llegar con un error de más abajo.
+ */
+function panel_cargarTemario(fuente, texto, periodoId, informeId) {
+  var ref = String(periodoId || '').trim();
+  if (!ref) return { ok: false, motivo: 'Elegí un período de la lista antes de cargar: una fila sin período no entra a ningún informe (D-19).' };
+  if (!leerPeriodos()[ref]) return { ok: false, motivo: 'El período "' + ref + '" no existe en PERIODOS.' };
+  if (!texto || !String(texto).trim()) return { ok: false, motivo: 'La caja está vacía.' };
+
+  if (String(fuente) === 'REUNIONES') return cargarTemarioReuniones_(texto, ref);
+  if (String(fuente) === 'CAMPANAS') return cargarTemarioCampanas_(texto, ref, String(informeId || '').trim());
+  return { ok: false, motivo: 'fuente desconocida: "' + fuente + '"' };
 }
