@@ -2255,6 +2255,18 @@ function tokensVisiblesDe_(presentacion) {
  */
 var SIMBOLO_CORTE_ = '/////';
 
+/**
+ * `2026-08-20_10` A.0 — **el sello de en-proceso, en el nombre del archivo.**
+ *
+ * Va adelante y no atrás porque el nombre se lee de izquierda a derecha en la lista de Drive, y la
+ * pregunta *«¿este deck está listo?»* tiene que contestarse **antes** de leer el nombre entero.
+ *
+ * **Con sello y con crudos = checkpoint. Sin sello y con crudos = motor roto.** Lo quita el
+ * cierre, que es el único que sabe que la corrida terminó — no la última ejecución, que no puede
+ * distinguir *"terminé yo"* de *"me quedé sin presupuesto"*.
+ */
+var SELLO_EN_PROCESO_ = '[en proceso] ';
+
 function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos, huboCorte) {
   var origen = 'mapa de la etapa 2';
   var tokens = tokensDelMapa ? Object.keys(tokensDelMapa) : null;
@@ -2382,16 +2394,46 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
     return { ok: false, motivo: 'No se pudo abrir CONFIG.carpeta_salida: ' + e.message };
   }
 
-  var copia;
-  try {
-    copia = DriveApp.getFileById(informe.plantilla_id).makeCopy(informe.nombre + ' — ' + periodoLamina, carpeta);
-  } catch (e) {
-    return { ok: false, motivo: 'No se pudo copiar la plantilla: ' + e.message };
+  /* ── `2026-08-20_10` Parte A · el deck deja de copiarse cuando se continúa ────────────────
+   *
+   * **Ausente → copia la plantilla, como siempre. Presente → escribe sobre ése.** Un llamador que
+   * no conoce la opción no cambia de comportamiento, que es la condición de todo el mecanismo.
+   *
+   * ⭐ **A.0 — un deck a medio hacer se declara en el NOMBRE del archivo.** La corrida desatendida
+   * rompe a propósito el invariante *«ningún `{{token}}` crudo sobrevive a una corrida»*: los
+   * crudos son lo que hace que repintar sea inocuo. Pero entonces un deck intermedio abierto por
+   * cualquiera **es indistinguible de un motor roto**. Con `SELLO_EN_PROCESO_` en el nombre es un
+   * checkpoint; sin sello y con crudos, un error. **La distinción queda en lo primero que se ve,
+   * sin abrir nada.**
+   *
+   * ⚠ Y el sello se pone SIEMPRE, no sólo en corridas desatendidas: una corrida normal que muere
+   * por excepción también deja un deck a medio hacer, y hasta hoy salía con nombre de deck final.
+   * Se lo quita el cierre, que es el único que sabe que terminó. */
+  var deckId;
+  var continuando = !!(opciones.deck_id && String(opciones.deck_id).trim());
+
+  if (continuando) {
+    deckId = String(opciones.deck_id).trim();
+    try {
+      DriveApp.getFileById(deckId);
+    } catch (e) {
+      return { ok: false, motivo: 'No se pudo abrir el deck a continuar (' + deckId + '): ' + e.message };
+    }
+  } else {
+    var copia;
+    try {
+      copia = DriveApp.getFileById(informe.plantilla_id)
+        .makeCopy(SELLO_EN_PROCESO_ + informe.nombre + ' — ' + periodoLamina, carpeta);
+    } catch (e) {
+      return { ok: false, motivo: 'No se pudo copiar la plantilla: ' + e.message };
+    }
+    deckId = copia.getId();
   }
-  var deckId = copia.getId();
 
   var presentacion = SlidesApp.openById(deckId);
-  var corridaId = informeId + '-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
+  var corridaId = (continuando && opciones.corrida_id)
+    ? String(opciones.corrida_id).trim()
+    : informeId + '-' + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
 
   // La fila se abre ACÁ, con el deck ya creado y antes de todo el trabajo pesado. Si la
   // corrida muere en el medio, queda una fila con `deck_id` y sin conteos — que es
@@ -2447,7 +2489,32 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
   // 1 · Paso 5 — duplicar los bloques repetibles. **Sin reemplazar nada**: las copias
   //     tienen `objectId` propios y el mapa de `B.3` se toma después, una sola vez, sobre
   //     el deck ya expandido y todavía intacto.
-  expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana, opciones.secciones);
+  /* ⭐ `2026-08-20_10` A.3 — **la expansión es una FASE ATÓMICA y sólo la hace la ejecución 1.**
+   *
+   * ⚠ **El motivo, medido el 20/08: la expansión no es idempotente y no duplica — multiplica al
+   * cuadrado.** `slidesModeloDe_` identifica una lámina modelo por **un solo criterio, que lleve
+   * tokens crudos**, y `duplicarBloquesRepetibles_` **borra los modelos después de copiar**. En la
+   * ejecución 2 ya no hay modelos, pero **las copias sin pintar todavía tienen crudos y son
+   * indistinguibles de uno**: N ítems dan N láminas la primera vez y **N² la segunda**. Con 4
+   * encuentros, 4 → 16, y cada ronda vuelve a multiplicar.
+   *
+   * ⭐ **Por qué atómica y global, y no `expandida` por sección:** marcar por sección deja viva la
+   * ventana entre el `duplicate()` y el `remove()` — una ejecución que muere ahí devuelve la N².
+   * Con la fase atómica **no hay ninguna decisión que tomar en la ejecución 2** sobre qué es
+   * modelo y qué es copia, **porque nadie expande**. La ambigüedad desaparece en vez de
+   * administrarse.
+   *
+   * **Si la corrida muere DURANTE la expansión, el deck se descarta y se empieza de nuevo:**
+   * todavía no publicó nada, así que no hay checkpoint que perder. La fase atómica se paga con
+   * eso y es barato — el `2026-08-20_11` midió que lo caro de esta etapa es **leer** (anclaje y
+   * unión digital), no duplicar. */
+  if (continuando && opciones.asignaciones) {
+    expansion = { asignaciones: opciones.asignaciones, reporte: opciones.reporte_expansion || [] };
+    Logger.log('expansión: NO se expande — se continúa con ' + expansion.asignaciones.length +
+      ' asignación(es) del plan.');
+  } else {
+    expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana, opciones.secciones);
+  }
 
   etapaEnCurso = marcarEtapa_(filaCorrida, '2 · mapa token→objectId', t0Etapas);
   // 2 · El mapa, ANTES de tocar un solo token.
@@ -2665,7 +2732,19 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
   // cero tokens y el deck saliera con `{{token}}` crudos — justo lo contrario de lo que
   // esta barrida garantiza. Si la corrida murió antes de la etapa 2 no hay mapa y hay que
   // re-escanear, que es para lo que `barrerTokensNoAlcanzados_` acepta `null`.
-  var barrida = barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null, conSimbolos, !!(corte || fallo));
+  /* ⭐ `2026-08-20_10` A.2 — **la barrida NO corre si la corrida se cortó Y hay con qué
+   * continuar.** Es la condición sin la cual todo el mecanismo no sirve: la barrida convierte los
+   * crudos en `/////`, y **ahí se pierde la única garantía de que repintar sea inocuo**. Barrer es
+   * un gesto de cierre; una corrida cortada no cerró.
+   *
+   * ⚠ **La condición es `continuable`, no `corte` a secas, y la diferencia importa.** Una corrida
+   * cortada que NADIE va a continuar —el caso de siempre, sin plan— tiene que barrer igual: si no,
+   * el deck sale con crudos y sin nadie que los vaya a resolver, que es peor que `/////`. Sólo se
+   * saltea la barrida cuando existe un plan que dice que alguien va a volver. */
+  var continuable = !!(corte && opciones.continuable === true);
+  var barrida = continuable
+    ? { barridos: [], origen: 'no se barrió: la corrida se cortó y hay plan para continuarla' }
+    : barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null, conSimbolos, !!(corte || fallo));
   barrida.barridos.forEach(function (token) {
     faltantes.push({
       corrida_id: corridaId,
@@ -2714,6 +2793,21 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
     faltantes: avisosDeLaFila_(faltantes.length, fallo, fallosDelReloj) +
       (RASTRO_ETAPAS_.length ? ' · gasto: ' + RASTRO_ETAPAS_.join(' › ') : '')
   }, mapa.tokens, filaCorrida);
+
+  /* `2026-08-20_10` A.0 — **el sello lo quita el cierre, y sólo si la corrida terminó.** Cortada o
+   * muerta, el deck se queda con el sello puesto: es exactamente lo que declara. */
+  if (!corte && !fallo) {
+    try {
+      var archivoDeck = DriveApp.getFileById(deckId);
+      var nombreActual = archivoDeck.getName();
+      if (nombreActual.indexOf(SELLO_EN_PROCESO_) === 0) {
+        archivoDeck.setName(nombreActual.slice(SELLO_EN_PROCESO_.length));
+      }
+    } catch (e) {
+      // Un deck que no se puede renombrar no invalida la corrida: se anota y sigue.
+      Logger.log('⚠ no se pudo quitar el sello de en-proceso: ' + e.message);
+    }
+  }
 
   var dueno = '';
   try {
@@ -2803,6 +2897,23 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
       reserva_seg: reloj.reserva,
       gastado_seg: segundosGastados_(reloj),
       barrida: { tokens: barrida.barridos.length, origen: barrida.origen }
+    },
+    /* `2026-08-20_10` — lo que la reanudación necesita y hasta hoy moría con la ejecución.
+     *
+     * ⭐ **`asignaciones` es la pieza clave, y es más que un dato de estado:** lleva el
+     * `objectIdSlide` de cada copia, o sea **la respuesta a "qué lámina es de qué ítem" sin tener
+     * que volver a expandir**. Es lo que hace posible la fase atómica: la ejecución 2 no decide
+     * qué es modelo y qué es copia porque **recibe el mapa ya hecho**. */
+    continuacion: {
+      deck_id: deckId,
+      corrida_id: corridaId,
+      se_corto: !!corte,
+      sello_puesto: !!(corte || fallo),
+      asignaciones: expansion.asignaciones.map(function (a) {
+        return { objectIdSlide: a.objectIdSlide, seccion: a.seccion, item: a.item };
+      }),
+      // Cuáles ya se resolvieron: el índice donde cortó. Las anteriores están pintadas.
+      resueltas: porItem.length
     }
   };
 }
