@@ -1,6 +1,12 @@
 # 2026-08-20_4 — SECCO deja de estar vacío: el vocabulario compartido y los `emin_*`
 
-> **Estado:** no ejecutado · **reemplaza:** nada · **subagente:** ninguno
+> **Estado:** ⛔ **REEMPLAZADO por `2026-08-20_7_cerrar_para_generar.md` (20/08/2026) — no ejecutar.**
+> Su **Parte 0 sí corrió** y sus números viven adentro del `_7`, que los cita medidos en vez de
+> volver a pedirlos. Lo que este prompt no llegó a hacer —las `*`— lo hace el `_7` con el censo de
+> `secco` ya en la mano, que era justo lo que acá faltaba. **No se edita el texto de abajo:** queda
+> como estaba para que se pueda leer qué se planeaba antes de tener la medición.
+>
+> **Estado original:** no ejecutado · **reemplaza:** nada · **subagente:** ninguno
 >
 > **Objetivo único:** que los marcadores que sirven a los dos informes lo declaren con
 > `informe_id = '*'`, y que `ministros` publique.
