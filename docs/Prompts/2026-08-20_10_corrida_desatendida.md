@@ -1,7 +1,11 @@
 # 2026-08-20_10 — La corrida se reanuda sola: plan por secciones, deck como checkpoint, estado caro en hoja
 
-> **Estado:** no ejecutado · **subagente:** ninguno
-> **Precondición:** la Parte 0 del `2026-08-20_9` ya dio el desglose de gasto por etapa. **Sin ese
+> ## ⭐ `v2` — 20/08/2026, tarde. **Si este archivo no dice `v2` acá arriba, es el viejo y no se corre.**
+>
+> **Estado:** Parte 0 corrida sobre `v1`; A–E sin ejecutar · **subagente:** ninguno
+> **Precondición:** la Parte 0 del `2026-08-20_9` ya dio el desglose de gasto por etapa —
+> **incluido el costo de expandir todas las secciones**, que decide cuál de las dos salidas de la
+> Parte A se aplica. **Sin ese
 > número no se elige el tamaño del chunk** y este prompt se queda en la Parte 0.
 >
 > **Objetivo único:** que una corrida que no entra en seis minutos **termine sola**, en varias
@@ -15,8 +19,13 @@
 
 1. ⭐ **La unidad de trabajo es la sección.** El estado es *qué secciones faltan*, una lista corta —
    entra de sobra en los 9 KB por propiedad y, sobre todo, **es legible**.
-2. ⭐ **El deck es el checkpoint.** La ejecución siguiente escribe en el mismo deck: los tokens ya
-   reemplazados no están más, y los que quedan crudos **son exactamente lo que falta**.
+2. ⭐ **El deck es el checkpoint.** La ejecución siguiente escribe en el mismo deck en vez de copiar
+   la plantilla otra vez.
+   ⚠ **Y una precisión que evita un error caro: los crudos NO dicen qué falta.** Lo dice **el plan
+   por secciones**. Los crudos sólo garantizan que **repintar es inocuo**. La diferencia es
+   concreta y está medida: `mapaTokenObjectId_` **excluye a propósito los tokens de láminas
+   escondidas**, así que las láminas 12, 21 y 29 dejan **49 tokens crudos permanentes**, corte o no.
+   **Una reanudación guiada por los crudos no terminaría nunca.**
 3. ⭐ **Lo caro se persiste y se reusa dentro de la misma corrida.** El anclaje y la unión digital no
    se recalculan en cada ejecución.
 
@@ -52,7 +61,12 @@ diarios de runtime de triggers**, de los que las corridas manuales no descuentan
 6. **Cuenta y cuota**: si el proyecto corre bajo cuenta consumer o Workspace, y **cuántos triggers
    tiene hoy instalados**. Con 20 slots compartidos, un trigger huérfano por corrida agota el cupo
    en dos semanas.
-7. **`ESCRITORES.md`**: qué hojas de registro existen y cuáles son de escritura del motor. El plan
+7. ⚠ **El invariante roto, que hay que reportar aunque no se arregle acá:** el repo declara que
+   *ningún `{{token}}` crudo sobrevive a una corrida*, y **es falso hoy** — las láminas escondidas
+   quedan siempre con los suyos. Reportar cuántos y en qué láminas. **La decisión —barrerlas igual
+   o reescribir el invariante— es del usuario**; lo que no puede quedar es que la regla diga una
+   cosa y el motor haga otra.
+8. **`ESCRITORES.md`**: qué hojas de registro existen y cuáles son de escritura del motor. El plan
    de corrida y el estado caro van a ser hojas nuevas y necesitan su fila.
 
 ---
@@ -61,16 +75,51 @@ diarios de runtime de triggers**, de los que las corridas manuales no descuentan
 
 > **Modelo: Opus · effort alto.** Habilita escribir sobre un deck ya publicado.
 
+0. ⭐ **Un deck a medio hacer se declara como tal, en el nombre del archivo.** La Parte A rompe a
+   propósito el invariante *"ningún `{{token}}` crudo sobrevive a una corrida"* — los crudos **son**
+   el checkpoint. Pero entonces un deck intermedio abierto por cualquiera es indistinguible de un
+   motor roto. **El archivo lleva un sello de en-proceso mientras la corrida vive y lo pierde al
+   cerrar**: con sello es un checkpoint, sin sello y con crudos es un error. La distinción queda en
+   lo primero que se ve, sin abrir nada.
 1. **`generarInforme` acepta un deck existente.** Ausente → copia la plantilla, como hoy. Presente →
    escribe sobre ése. **Un llamador que no conoce la opción no cambia de comportamiento.**
 2. ⭐ **La barrida NO corre si la corrida se cortó.** Es la condición sin la cual todo lo demás no
    sirve: la barrida convierte los crudos en `/////` y **ahí se pierde la única información de qué
    faltaba**. Barrer es un gesto de cierre; una corrida cortada no cerró.
 3. **La escritura tiene que ser idempotente y hay que demostrarlo, no suponerlo:** `replaceAllText`
-   sobre un token ya reemplazado no encuentra nada. ⚠ **Lo que sí puede duplicar es la expansión de
-   secciones repetibles** — si la ejecución 2 vuelve a expandir la lámina modelo de una sección que
-   la 1 ya expandió, el deck sale con las láminas dos veces. **Medirlo y resolverlo acá, o el
-   mecanismo publica un deck peor que el cortado.**
+   sobre un token ya reemplazado no encuentra nada, y eso cubre **el pintado**.
+
+### ⭐ La expansión NO es idempotente, y no duplica: multiplica al cuadrado
+
+Medido el 20/08: `slidesModeloDe_` identifica una lámina modelo **por un solo criterio — que lleve
+tokens crudos**, y `duplicarBloquesRepetibles_` borra los modelos después de copiar. En la ejecución
+2 ya no hay modelos, pero **las copias sin pintar todavía tienen crudos y son indistinguibles de
+uno**: N ítems dan N láminas la primera vez y **N² la segunda**. Con 4 encuentros, 4 → 16, y cada
+ronda vuelve a multiplicar. ⚠ El caso mixto es peor de leer: las copias que la ejecución 1 sí pintó
+pierden los crudos y dejan de detectarse, así que el deck sale con unas láminas bien y otras
+multiplicadas, sin patrón visible.
+
+**La salida, decidida por el usuario el 20/08: la expansión es una fase atómica al principio, y
+después no se expande nunca más.**
+
+| ejecución | qué hace |
+|---|---|
+| **1** | **expande todas las secciones elegidas, antes de resolver nada**, y recién después resuelve lo que entre |
+| **2+** | **sólo resuelve. No expande.** |
+
+⭐ **El plan registra la expansión una vez y global, no por sección.** Así la ambigüedad
+desaparece en vez de administrarse: en la ejecución 2 **no hay ninguna decisión que tomar** sobre
+qué es modelo y qué es copia, porque nadie expande. **Marcar `expandida` por sección no alcanza** —
+una ejecución puede morir entre el `duplicate()` y el `remove()`, y esa ventana devuelve la N².
+
+**Si la corrida muere DURANTE la expansión, el deck se descarta y se empieza de nuevo.** Todavía no
+publicó nada, así que no hay checkpoint que perder. La fase atómica se paga con eso y es barato.
+
+⚠ **Lo único que puede tumbar esta salida: que expandir todo no entre en una ejecución.** Duplicar
+láminas es API de Slides y no lectura de bases, así que debería ser barato — **pero es una hipótesis
+y la mide el `2026-08-20_9`**. Si no entra, se cae a la alternativa: dos estados por sección con
+`expandida` marcada inmediatamente después del `remove()`, **aceptando la ventana a sabiendas y
+dejándola escrita**.
 
 ---
 
@@ -94,7 +143,8 @@ tiene que poder mirarse mientras corre, y una propiedad serializada no se mira. 
 3. Las resuelve, las marca `hecha` una por una **a medida que terminan**, no al final. Una ejecución
    que muere no puede dejar el plan mintiendo.
 4. Si quedan pendientes: **borra su propio trigger**, crea el siguiente, sale limpio.
-5. Si no quedan: **barre, cierra `CORRIDAS`, borra el trigger** y no crea otro.
+5. Si no quedan: **barre, quita el sello del nombre, cierra `CORRIDAS`, borra el trigger** y no
+   crea otro.
 
 **Cuatro guardas, y las cuatro son obligatorias:**
 
