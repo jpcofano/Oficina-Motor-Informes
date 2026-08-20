@@ -4611,6 +4611,15 @@ alguien son los seis de `reuniones`, y espera un `copiar y pegar`.
 
 ---
 
+## `m2_campanias` PERDIÓ su columna: el grano de `Nombre campaña | Cuentas` cambió entre dos exports — 20/08/2026
+
+> ⚠ **Esta entrada se reescribió el mismo día, y el motivo importa más que el contenido.** La
+> primera versión afirmaba que *«`m2_envios` publica 25 donde el deck dice 18»*. **El deck no dice
+> 18.** El `18` salía de `PLAN.md` §3, citado por el prompt `2026-08-20_5` como *«lo que la lámina
+> declara»*, y se tomó por bueno sin abrir el deck. **Al abrirlo —está adentro del fixture del
+> 31/07— dice `12 Campañas · 26 envíos`.** Es `CLAUDE.md` §4 al pie de la letra: *la cita no es la
+> fuente*, y un dato citado tres veces envejece igual que cualquier otro.
+
 ## `m2_campanias` no tiene columna, y `m2_envios` publica 25 donde el deck dice 18 — 20/08/2026
 
 **Medido contra `docs/_fixtures/Seguimiento Digital2026-08-06.zip`** (sha `9a1ee89d…76b2e9`), solapa
@@ -4671,3 +4680,60 @@ dos son suyas: **(a)** una columna nueva en la base que declare el proyecto, o *
 partiendo el nombre por `|` o por `-`. Acertaría en `Vacaciones de Invierno | …` y erraría en
 `DGPLES | MEPHU | REPARACIÓN DE VEREDAS`, que tiene dos barras y es **un** proyecto. Sería lógica
 de negocio inventada adentro del motor, y del peor tipo: la que funciona en la muestra que se miró.
+
+
+### ⭐ El hallazgo real: la columna cambió de grano entre el 31/07 y el 06/08
+
+**Mismas 25 filas, misma ventana cerrada (24–30/07), misma columna `U` — y el contenido es otro.**
+Medido sobre los dos fixtures, con sus `sha256` verificados contra la tabla de huellas:
+
+| export | col U, valores distintos | qué son |
+|---|---|---|
+| **`Informe 2026-07-31.zip`** | **11** — `Vacaciones de invierno 2026` ×8 · `M2` ×6 · `Poda` ×2 · `Reparación de veredas` ×2 · +7 sueltos | **proyectos** |
+| **`Seguimiento Digital2026-08-06.zip`** | **18** — `Vacaciones de Invierno \| Invierno en las plazas` · `Más servicios en tu barrio - 27/7 - San Telmo` · … | **envíos** |
+
+**No es drift de la base ni filas nuevas:** las filas son 25 en los dos, `col A` da 18 en los dos y
+`col H` da 24 en los dos. **Lo único que se movió es el contenido de `col U`**, que alguien
+reescribió pasándolo de nombre de proyecto a nombre de envío.
+
+⚠ **Entonces `m2_campanias` no es un token sin fuente: es un token que TENÍA fuente y la perdió.**
+El `11 campañas` de `PLAN.md` §3 no era una invención — es exactamente `col U` distinta en el
+export del 31/07. Se puede reproducir hoy, y por eso se sabe qué pasó.
+
+### Por qué esto es peor que un campo que falta
+
+**Nada en el motor puede notarlo.** La columna conserva el nombre —`Nombre campaña | Cuentas`—, la
+letra, el encabezado y el tipo. Un `CUENTA_DISTINTOS` cableado contra ella el 31/07 habría
+publicado `11` y hoy publicaría `18`, **sin fallar, sin `REVISAR`, sin una línea en `FALTANTES`**.
+El número cambia de significado y el token sigue diciendo lo mismo.
+
+Es la familia del *número plausible* que este proyecto persigue, con un agravante: los controles
+que existen —`filas_datos`, `firma_encabezado`— **miran la forma, no el grano**. Las tres cuentas
+que un cambio de grano deja intactas son justo las que se auditan.
+
+### Qué NO se puede afirmar, y qué queda decidido
+
+- **El deck dice `12 Campañas · 26 envíos`** para la semana 24–31/07, leído del `.pptx` que viene
+  adentro del fixture del 31/07 — no de una cita.
+- **Ninguna columna, en ninguna de las dos fechas de export, en ninguna de las dos ventanas
+  probadas, reproduce el `12` ni el `26`.** Lo más cerca: `col U` del 31/07 da 11 sobre 24–30/07.
+- ⚠ **Por eso el `18` tampoco es «los envíos del deck».** `col A` distinta da 18 en los dos exports
+  —es una cantidad estable— pero el deck dice 26. **Que dos números tengan el tamaño correcto no
+  los hace el mismo número**, y eso fue exactamente el error de la primera versión de esta entrada.
+
+⛔ **`m2_campanias` no se cablea, y ahora por un motivo más fuerte que «falta la columna»:** la
+columna candidata **cambia de significado entre exports**, así que cablearla ataría el token a una
+convención que la base no garantiza. Publicaría un número correcto el día que se mida y falso el
+mes siguiente, sin avisar.
+
+⛔ **`m2_envios` tampoco se toca todavía.** La idea de pasarlo de `CONTEO` a `CUENTA_DISTINTOS`
+salió de creer que el deck decía 18; el deck dice 26. **La operación nueva existe y es correcta; lo
+que no hay es evidencia de que `m2_envios` esté mal.** Sin el número real del deck reproducido,
+cambiar la operación sería mover un número hacia otro que tampoco es el publicado.
+
+**Quién lo destraba:** el equipo. Dos preguntas concretas, y la segunda es la que importa:
+
+1. ¿Qué es una «campaña» de M2 a nivel de la lámina — el proyecto, como estaba `col U` el 31/07?
+2. ⭐ **¿`Nombre campaña | Cuentas` va a volver al grano de proyecto, o el cambio del 06/08 es la
+   convención nueva?** Sin esa respuesta, cualquier cableado sobre esa columna es provisorio, y
+   conviene saberlo antes y no cuando el número cambie solo.
