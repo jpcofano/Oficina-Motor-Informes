@@ -458,6 +458,26 @@ avanza nada es **cuánta cuota queda**, y para cuando eso se nota ya se gastó.
   asignaciones**. Un planificador que cuenta la unidad equivocada se equivoca por más del doble, y
   el síntoma es una corrida que corta cuando el plan decía que entraba.
 
+**Cuando un paso se parte en dos, hay que preguntar de qué mitad cuelga el estado.** Partir
+«expandir y resolver» en dos operaciones es correcto; lo que no se ve es que **el marcado de
+«hecho» se queda pegado a la primera mitad** y pasa a mentir. El 20/08 la corrida desatendida
+expandía tres secciones, resolvía cero y **marcaba las tres `hecha`** — el deck salió con todos los
+tokens crudos y el plan decía que estaba completo.
+
+- **Por qué no se ve al partir:** antes de partir, las dos mitades eran la misma llamada y
+  cualquiera de las dos señales servía. El corte las separa **y las dos siguen compilando**.
+- ⭐ **La pregunta concreta, y hay que hacérsela al partir, no después:** *¿qué campo del resultado
+  prueba que la SEGUNDA mitad ocurrió?* Si la respuesta es el mismo que antes, el estado quedó del
+  lado equivocado. Acá `repetibles.secciones` es el reporte de expansión y `repetibles.items` el de
+  resolución — **dos campos del mismo objeto**, y el marcado leía el primero.
+- ⚠ **El síntoma no es un error: es un estado que dice «terminado» sobre trabajo que no se hizo**,
+  y todo lo que viene después lo cree. La huella que lo delató fue una columna de tiempos **vacía**
+  en filas marcadas `hecha`.
+- ⭐ **Y la defensa, cuando el mecanismo corre solo: un invariante que ligue las dos mitades.** Acá
+  es `corte ⇒ pendientes ≥ 1` — *«no terminé»* y *«no queda nada»* no pueden ser ciertas a la vez.
+  ⚠ **Tiene que ser automático:** entre el corte y la continuación pasa **un minuto**, así que
+  cualquier guarda que dependa de que alguien mire y cancele **no llega**.
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue

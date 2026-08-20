@@ -190,6 +190,91 @@ function marcarSeccionPlan_(corridaId, seccionId, estado, ejecucion, segundos) {
   return false;
 }
 
+/**
+ * ⭐ **Qué secciones RESOLVIÓ esta ejecución — no cuáles expandió.**
+ *
+ * ⚠ **La primera versión marcaba `hecha` desde `r.repetibles.secciones`, que es
+ * `expansion.reporte`: el reporte de la EXPANSIÓN.** Su `ok` significa *«se expandió bien»*, no
+ * *«se resolvieron sus ítems»*. Y como la Parte A separó expandir de resolver —`solo_secciones`
+ * recorta **después** de expandir— **la ejecución 1 expandía las tres secciones, resolvía cero, y
+ * marcaba las tres `hecha`.**
+ *
+ * **El síntoma medido, deck `jm-20260820-190943`:** tres filas `hecha` en la ejecución 1 **con
+ * `segundos` vacío** —porque el resolver nunca las tocó—, la ejecución 2 sin nada pendiente, y un
+ * deck con **todos** los tokens crudos.
+ *
+ * La señal correcta es `r.repetibles.items` (`porItem`), que se llena **dentro del bucle del
+ * presupuesto**, una entrada por asignación efectivamente pintada. Una sección está hecha cuando
+ * **todas sus asignaciones** aparecen ahí — no algunas: una sección a medio resolver que se marque
+ * `hecha` deja tokens crudos que nadie va a volver a mirar.
+ */
+function seccionesResueltas_(resultado, asignacionesDelChunk) {
+  var pintadasPorSeccion = {};
+  ((resultado.repetibles && resultado.repetibles.items) || []).forEach(function (i) {
+    if (i.ok === false) return;
+    pintadasPorSeccion[i.seccion] = (pintadasPorSeccion[i.seccion] || 0) + 1;
+  });
+
+  var esperadasPorSeccion = {};
+  (asignacionesDelChunk || []).forEach(function (a) {
+    esperadasPorSeccion[a.seccion] = (esperadasPorSeccion[a.seccion] || 0) + 1;
+  });
+
+  var completas = [], parciales = [];
+  Object.keys(esperadasPorSeccion).forEach(function (id) {
+    var pintadas = pintadasPorSeccion[id] || 0;
+    var esperadas = esperadasPorSeccion[id];
+    if (pintadas >= esperadas) completas.push({ seccion_id: id, asignaciones: pintadas });
+    else parciales.push({ seccion_id: id, pintadas: pintadas, esperadas: esperadas });
+  });
+  return { completas: completas, parciales: parciales };
+}
+
+/**
+ * ⭐ **Cierra el deck: barre los crudos y le quita el sello. Los TRES caminos de salida pasan por
+ * acá** — cierre normal, cancelación y fallo.
+ *
+ * ⚠ **La primera versión sólo lo hacía en el cierre normal, y el deck `jm-20260820-190943` quedó
+ * marcado `[en proceso]` para siempre:** la ejecución 2 encontró el plan sin pendientes, declaró
+ * *«está completa»*, **borró el estado y no tocó el deck**. Después
+ * `cancelarCorridaDesatendida()` dijo *«no había ninguna corrida en curso · triggers borrados: 0»*
+ * — correcto, y sin nada que arreglar ya: **el estado se había borrado sin quitar el sello.**
+ *
+ * **Un sello que se pone en un camino y se quita en otro deja decks marcados para siempre**, y un
+ * deck con sello permanente vuelve inútil la señal: si algunos terminados lo tienen, el sello deja
+ * de significar «no está listo».
+ *
+ * `barrer` es `false` cuando el deck queda a medio hacer a propósito (cancelación): ahí los crudos
+ * son lo que hay, y taparlos con `/////` sería afirmar *«nadie lo cableó»* sobre tokens que nadie
+ * llegó a mirar.
+ */
+function cerrarDeckDesatendido_(deckId, barrer) {
+  var r = { sello_quitado: false, barridos: 0, motivo: '' };
+  if (!deckId) { r.motivo = 'sin deck_id'; return r; }
+
+  try {
+    if (barrer) {
+      var pres = SlidesApp.openById(deckId);
+      var b = barrerTokensNoAlcanzados_(pres, null, true, false);
+      r.barridos = b.barridos.length;
+    }
+  } catch (e) {
+    r.motivo = 'no se pudo barrer: ' + e.message;
+  }
+
+  try {
+    var archivo = DriveApp.getFileById(deckId);
+    var nombre = archivo.getName();
+    if (nombre.indexOf(SELLO_EN_PROCESO_) === 0) {
+      archivo.setName(nombre.slice(SELLO_EN_PROCESO_.length));
+      r.sello_quitado = true;
+    }
+  } catch (e) {
+    r.motivo = (r.motivo ? r.motivo + ' · ' : '') + 'no se pudo quitar el sello: ' + e.message;
+  }
+  return r;
+}
+
 /* ═══════════════════ El ciclo de una ejecución ═══════════════════ */
 
 var FN_CONTINUACION_ = 'continuarCorridaDesatendida';
@@ -280,9 +365,36 @@ function correrUnaEjecucion_() {
     var plan = leerPlan_(estado.corrida_id);
     var pendientes = plan.filter(function (f) { return String(f.estado).trim() === 'pendiente'; });
     if (!pendientes.length) {
+      /* ⭐ **El invariante: si la ejecución anterior se CORTÓ, tiene que quedar al menos una
+       * pendiente.** Corte significa *«no terminé»*; cero pendientes significa *«terminé»*. Las dos
+       * cosas a la vez son imposibles, y esa contradicción **es el síntoma de que el marcado está
+       * mal** — que es exactamente lo que pasó con `jm-20260820-190943`, donde se marcaron tres
+       * secciones `hecha` sin resolver ninguna.
+       *
+       * ⚠ **Va acá y no en una revisión humana porque no hay tiempo humano:** entre el corte y la
+       * continuación pasa **un minuto**. Cualquier guarda que dependa de que alguien mire el plan
+       * y cancele **no llega**. Éste y la verificación del cierre son las únicas defensas, y por
+       * eso van las dos. */
+      if (estado.se_corto) {
+        Logger.log('⛔ INVARIANTE ROTO: la ejecución anterior se CORTÓ y el plan no tiene ninguna');
+        Logger.log('   sección pendiente. Las dos cosas no pueden ser ciertas a la vez.');
+        Logger.log('   Significa que algo marcó `hecha` una sección que no se resolvió.');
+        Logger.log('   NO se cierra el deck ni se le quita el sello: queda como está, para mirarlo.');
+        borrarEstadoCorrida_();
+        return { ok: false, motivo: 'invariante roto: corte con cero pendientes', deck_id: estado.deck_id };
+      }
+
+      // Cierre normal: se barre y se quita el sello. **Verificado, no supuesto.**
+      var cierre = cerrarDeckDesatendido_(estado.deck_id, true);
       Logger.log('No quedan secciones pendientes. La corrida ' + estado.corrida_id + ' está completa.');
+      Logger.log('   barridos: ' + cierre.barridos + ' · sello quitado: ' + cierre.sello_quitado +
+        (cierre.motivo ? ' · ⚠ ' + cierre.motivo : ''));
+      if (!cierre.sello_quitado) {
+        Logger.log('   ⛔ EL SELLO SIGUE PUESTO. El deck va a quedar marcado como en proceso para');
+        Logger.log('   siempre, y entonces el sello deja de significar nada. Revisar el deck.');
+      }
       borrarEstadoCorrida_();
-      return { ok: true, terminada: true };
+      return { ok: true, terminada: true, cierre: cierre };
     }
 
     var ejecucion = estado.ejecucion + 1;
@@ -312,15 +424,24 @@ function correrUnaEjecucion_() {
       return r || { ok: false };
     }
 
-    // Se marcan las secciones que esta ejecución resolvió, una por una y a medida que se confirman.
+    /* ⭐ Se marca por **resolución**, no por expansión — ver `seccionesResueltas_`. Y sólo las
+     * COMPLETAS: una sección a medio resolver marcada `hecha` deja tokens crudos que nadie va a
+     * volver a mirar. */
+    var delChunk = (estado.asignaciones || []).filter(function (a) {
+      return chunk.secciones.indexOf(a.seccion) !== -1;
+    });
+    var res = seccionesResueltas_(r, delChunk);
+
     var hechas = 0;
-    (r.repetibles && r.repetibles.secciones ? r.repetibles.secciones : []).forEach(function (s) {
-      if (chunk.secciones.indexOf(s.seccion) === -1) return;
-      if (!s.ok) return;
-      if (marcarSeccionPlan_(estado.corrida_id, s.seccion, 'hecha', ejecucion, s.seg_expansion || '')) hechas++;
+    res.completas.forEach(function (c) {
+      if (marcarSeccionPlan_(estado.corrida_id, c.seccion_id, 'hecha', ejecucion, c.asignaciones)) hechas++;
+    });
+    res.parciales.forEach(function (p) {
+      Logger.log('   · ' + p.seccion_id + ': ' + p.pintadas + ' de ' + p.esperadas +
+        ' asignación(es) — queda PENDIENTE, no se marca hecha');
     });
 
-    Logger.log('   secciones marcadas `hecha`: ' + hechas);
+    Logger.log('   secciones marcadas `hecha`: ' + hechas + ' de ' + chunk.secciones.length + ' del chunk');
 
     // Guarda 2 · sin progreso, no hay continuación.
     if (hechas === 0) {
@@ -333,6 +454,8 @@ function correrUnaEjecucion_() {
 
     estado.ejecucion = ejecucion;
     estado.asignaciones = (r.continuacion && r.continuacion.asignaciones) || estado.asignaciones;
+    // Lo que la próxima ejecución necesita para chequear el invariante `corte ⇒ pendientes ≥ 1`.
+    estado.se_corto = !!r.corte;
 
     var quedan = leerPlan_(estado.corrida_id)
       .filter(function (f) { return String(f.estado).trim() === 'pendiente'; });
@@ -402,11 +525,6 @@ function iniciarCorridaDesatendida_(informeId, periodoId) {
   (cont.asignaciones || []).forEach(function (a) {
     porSeccion[a.seccion] = (porSeccion[a.seccion] || 0) + 1;
   });
-  var resueltas = {};
-  (r.repetibles && r.repetibles.secciones ? r.repetibles.secciones : []).forEach(function (s) {
-    if (s.ok && !s.omitida) resueltas[s.seccion] = true;
-  });
-
   var filas = Object.keys(porSeccion).map(function (id) {
     return { seccion_id: id, asignaciones: porSeccion[id] };
   });
@@ -414,18 +532,39 @@ function iniciarCorridaDesatendida_(informeId, periodoId) {
 
   var hechas = 0;
   if (!r.corte) {
-    // Sin corte, la ejecución 1 hizo todo.
+    // Sin corte, la ejecución 1 hizo todo. `generarInforme` ya barrió y ya quitó el sello.
     filas.forEach(function (f) {
-      marcarSeccionPlan_(cont.corrida_id, f.seccion_id, 'hecha', 1, '');
+      marcarSeccionPlan_(cont.corrida_id, f.seccion_id, 'hecha', 1, f.asignaciones);
       hechas++;
     });
     Logger.log('La corrida entró en una sola ejecución. No hace falta reanudar nada.');
     return { ok: true, terminada: true, ejecuciones: 1, deck: r.deck };
   }
 
-  Object.keys(resueltas).forEach(function (id) {
-    if (marcarSeccionPlan_(cont.corrida_id, id, 'hecha', 1, '')) hechas++;
+  /* ⭐ Cortó. Se marcan **sólo las secciones RESUELTAS**, y resuelto significa que sus asignaciones
+   * se pintaron — no que se expandieron. Ver `seccionesResueltas_`: marcar desde el reporte de
+   * expansión es lo que dejó tres secciones `hecha` sin resolver ninguna. */
+  var res = seccionesResueltas_(r, cont.asignaciones || []);
+  res.completas.forEach(function (c) {
+    if (marcarSeccionPlan_(cont.corrida_id, c.seccion_id, 'hecha', 1, c.asignaciones)) hechas++;
   });
+  res.parciales.forEach(function (p) {
+    Logger.log('   · ' + p.seccion_id + ': ' + p.pintadas + ' de ' + p.esperadas +
+      ' asignación(es) — queda PENDIENTE');
+  });
+
+  /* ⭐ El invariante, chequeado ya en la ejecución 1: **cortó, así que tiene que quedar algo
+   * pendiente.** Si no queda nada, el marcado está mal y reanudar sería declarar completo un deck
+   * que no lo está. ⚠ Y no hay margen para que alguien lo mire: **el trigger dispara en un
+   * minuto.** */
+  var quedanTrasUno = leerPlan_(cont.corrida_id)
+    .filter(function (f) { return String(f.estado).trim() === 'pendiente'; });
+  if (!quedanTrasUno.length) {
+    Logger.log('⛔ INVARIANTE ROTO en la ejecución 1: la corrida se cortó y no quedó ninguna');
+    Logger.log('   sección pendiente. NO se crea el trigger. El deck conserva el sello.');
+    Logger.log('   deck: ' + r.deck.url);
+    return { ok: false, motivo: 'invariante roto: corte con cero pendientes', deck: r.deck };
+  }
 
   // El costo por asignación medido en ESTA corrida, que es mejor que cualquier default.
   var gastado = (r.presupuesto && r.presupuesto.gastado_seg) || 0;
@@ -442,7 +581,8 @@ function iniciarCorridaDesatendida_(informeId, periodoId) {
     ejecucion: 1,
     arranque_seg: arranque,
     seg_por_asignacion: segPorAsignacion,
-    con_simbolos: true
+    con_simbolos: true,
+    se_corto: true
   });
 
   crearTriggerDeContinuacion_(60);
@@ -464,11 +604,21 @@ function cancelarCorridaDesatendida() {
   var borrados = limpiarTriggersDeContinuacion_();
   borrarEstadoCorrida_();
   if (e) {
+    /* ⭐ **La cancelación también quita el sello, y es el tercer camino de salida.**
+     *
+     * ⚠ **NO se barre**: el deck queda a medio hacer a propósito, y tapar sus crudos con `/////`
+     * afirmaría *«nadie lo cableó»* sobre tokens que nadie llegó a mirar. Lo que sí se quita es el
+     * sello, porque **no hay nadie que vaya a volver**: un deck cancelado que conserva el sello
+     * queda marcado «en proceso» para siempre, y entonces el sello deja de significar nada. */
+    var cierre = cerrarDeckDesatendido_(e.deck_id, false);
     Logger.log('Cancelada la corrida ' + e.corrida_id + ' en la ejecución ' + e.ejecucion + '.');
-    Logger.log('   El deck y el plan NO se tocaron: quedan para mirar dónde se paró.');
-    Logger.log('   El deck conserva el sello de en-proceso, que dice que no está terminado.');
+    Logger.log('   sello quitado: ' + cierre.sello_quitado + (cierre.motivo ? ' · ⚠ ' + cierre.motivo : ''));
+    Logger.log('   El deck queda con sus tokens crudos y el plan sin tocar: es lo que hay para mirar.');
+    Logger.log('   NO se barrió a propósito: `/////` diría «nadie lo cableó», y nadie llegó a mirarlos.');
   } else {
     Logger.log('No había ninguna corrida desatendida en curso.');
+    Logger.log('   ⚠ Si hay un deck con `' + SELLO_EN_PROCESO_ + '` en el nombre, el sello quedó');
+    Logger.log('   huérfano: el estado se borró sin pasar por el cierre. Quitáselo a mano.');
   }
   Logger.log('   triggers borrados: ' + borrados);
   return { ok: true, triggers_borrados: borrados, corrida_id: e ? e.corrida_id : '' };

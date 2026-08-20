@@ -5122,3 +5122,75 @@ y reescribir los ocho sitios de `replaceAllText` a una API distinta con su propi
 
 **Si alguna vez cambia:** el número a mirar es el de la etapa `4 · tokens fijos` del rastro de
 `CORRIDAS`. **Mientras esté en un dígito de segundos, esto no se toca.** `dependencies` queda vacío.
+
+---
+
+## `jm-20260820-190943` — el estado se marcaba al EXPANDIR, no al resolver — 20/08/2026
+
+**Deck:** `jm-20260820-190943`. **Encontrado por el usuario** mirando el deck y el plan.
+
+**El síntoma:** el deck sigue con `[en proceso]` en el nombre y con **todos** los tokens crudos,
+**incluidos los fijos del Resumen Ejecutivo, que no pertenecen a ninguna sección repetible**. La
+ejecución 2 no barrió nada.
+
+⭐ **El diagnóstico correcto: no se resolvió NADA.** Se copió la plantilla, se expandió, y se
+marcaron las tres secciones `hecha`. **El anclaje sí corrió** —el log ancló las 10 reuniones— y ahí
+se fueron los 70–80 s.
+
+### La causa, confirmada contra el código
+
+`generarInforme` devuelve `repetibles: { secciones: expansion.reporte, items: porItem }`
+(`Generador.gs`). **Son dos cosas distintas:**
+
+- `expansion.reporte` — el reporte de la **EXPANSIÓN**. Su `ok` significa *«se expandió bien»*.
+- `porItem` — la **RESOLUCIÓN**, una entrada por asignación efectivamente pintada.
+
+El marcado leía **el primero**. Y como la Parte A del `_10` separó expandir de resolver
+—`solo_secciones` recorta **después** de expandir— **la ejecución 1 expandía las tres secciones,
+resolvía cero, y marcaba las tres `hecha`.**
+
+**La huella que lo confirma en la hoja:** tres filas `hecha` en la ejecución 1 **con `segundos`
+vacío**, porque el resolver nunca las tocó.
+
+**Y la cascada completa:** con cero pendientes, la ejecución 2 entró por el camino *«no quedan
+secciones pendientes»*, declaró la corrida completa, **borró el estado y no tocó el deck** — sin
+barrer y sin quitar el sello. Después `cancelarCorridaDesatendida()` a las 19:22 dijo *«no había
+ninguna corrida en curso · triggers borrados: 0»*, que era **cierto y ya inútil**.
+
+### ⭐ El requisito nuevo: no hay tiempo humano
+
+**Entre el corte y la continuación pasa un minuto.** Cualquier guarda que dependa de que alguien
+mire el plan y cancele **no llega a tiempo**. Eso descarta *«revisar antes de la próxima
+ejecución»* como defensa y obliga a que las defensas sean automáticas. Por eso van **las dos**:
+
+1. ⭐ **El invariante `corte ⇒ pendientes ≥ 1`.** Corte significa *«no terminé»* y cero pendientes
+   significa *«terminé»*: **las dos a la vez son imposibles**, y esa contradicción es el síntoma de
+   que el marcado está mal. Se chequea **en la ejecución 1** (antes de crear el trigger) y **en cada
+   continuación**. Roto: no se crea trigger, no se cierra el deck, se reporta.
+2. ⭐ **La verificación del cierre.** Quitar el sello no se supone: `cerrarDeckDesatendido_`
+   devuelve `sello_quitado`, y si es `false` el log lo dice con todas las letras. **Un sello que se
+   pone en un camino y se quita en otro deja decks marcados para siempre**, y entonces el sello deja
+   de significar nada.
+
+### Lo corregido
+
+| qué | cómo |
+|---|---|
+| el marcado | `seccionesResueltas_` cuenta **asignaciones pintadas** (`porItem`), no secciones expandidas. Y **sólo marca las COMPLETAS**: una sección a medio resolver marcada `hecha` deja crudos que nadie va a volver a mirar |
+| el cierre | `cerrarDeckDesatendido_`, **único y usado por los tres caminos** — cierre normal, cancelación y fallo |
+| la cancelación | quita el sello y **NO barre**: el deck queda a medio hacer a propósito, y `/////` afirmaría *«nadie lo cableó»* sobre tokens que nadie llegó a mirar |
+| el invariante | chequeado en los dos puntos, con el mensaje que nombra la causa |
+| el huérfano | `cancelarCorridaDesatendida()` sin corrida en curso **avisa** que si hay un deck con sello, quedó huérfano y hay que quitarlo a mano |
+
+**Control nuevo: `tools/probar-resueltas.js`**, 14 afirmaciones. Su primer bloque **es este caso**:
+reporte de expansión con las tres `ok` y cero ítems pintados → ninguna se marca. El control negativo
+reintroduce el bug exacto y devuelve *«vinieron 3»*.
+
+⚠ **Y la razón de fondo por la que esto se publicó: no había control que lo atrapara.** El
+planificador tenía el suyo; el marcado, ninguno. **La pieza que decide si una unidad de trabajo
+está terminada es tan crítica como la que decide cuál tomar**, y sólo una tenía prueba.
+
+### ⛔ Lo que hay que hacer a mano
+
+El deck **`jm-20260820-190943` sigue con el sello puesto** y su corrida ya no existe. **Quitarle
+`[en proceso] ` del nombre a mano**, o borrarlo: no publicó nada.
