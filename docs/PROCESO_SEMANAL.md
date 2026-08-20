@@ -156,6 +156,64 @@ tiene anotada como `D-NN`, *"el motor no sabe PARA QUÉ CORRIDA está resolviend
 **Un selector más rico sobre esa pieza faltante ofrece precisión que el motor no tiene.** Es la
 razón por la que los dos modos futuros están escritos y no construidos.
 
+
+---
+
+## Cuando una corrida se reanuda sola — qué ves y cómo la frenás **[hoy, parcial]**
+
+Decisión del usuario, 20/08/2026 (`2026-08-20_10`). El mecanismo está construido; **la Parte C —
+persistir el anclaje— no**, así que hoy cada ejecución vuelve a pagar los 70–80 s de arranque.
+
+### Qué ves mientras corre
+
+| dónde | qué dice |
+|---|---|
+| **el nombre del deck en Drive** | ⭐ arranca con **`[en proceso] `** adelante y **lo pierde al terminar**. Con sello es un checkpoint; **sin sello y con `{{token}}` crudos es un motor roto** |
+| la hoja **`PLAN_CORRIDA`** | una fila por sección: `pendiente` · `hecha` · `omitida` · `falló`, con en qué ejecución se hizo |
+| `CORRIDAS` | la fila de la corrida, con el rastro de etapas y el gasto |
+
+⭐ **El sello es lo primero que se ve y por eso está en el nombre**: contesta *«¿este deck está
+listo?»* sin abrirlo, desde la lista de Drive.
+
+⚠ **Los tokens crudos NO dicen qué falta** — lo dice el plan. Las láminas escondidas dejan **49
+crudos permanentes** en toda corrida, así que leerlos como *"lo que queda"* lleva a una reanudación
+que no termina nunca.
+
+### Cómo la frenás
+
+**`cancelarCorridaDesatendida()`**, sin argumentos, desde el editor.
+
+Borra los triggers y el estado. **No toca el deck ni el plan**: quedan para ver dónde se paró, y el
+deck conserva su sello, que es exactamente lo que declara. ⭐ **Un mecanismo desatendido sin botón
+de freno es peor que ninguno**, y por eso esto se construyó junto con el arranque y no después.
+
+### Cuándo para sola, y qué significa cada caso
+
+| para porque… | qué hacer |
+|---|---|
+| **terminó** | nada. El deck perdió el sello |
+| **tope de continuaciones** (`CONFIG.tope_continuaciones`, hoy 6) | la corrida es más grande de lo previsto. Mirá el plan: qué secciones quedaron |
+| ⚠ **sin progreso** | una ejecución no marcó ni una sección. **Algo falla**, no es que tarde |
+| ⭐ **una sección no entra sola** | **es otro problema**: la unidad de trabajo es más grande que una ejecución. Lo destraba partirla por asignación, no reintentar |
+
+⚠ **Los dos últimos se ven parecidos y son arreglos distintos**, y por eso el mecanismo los nombra
+distinto. Al 20/08 ninguna sección de `jm` lo necesita —`encuentro` tiene 27 asignaciones y entran
+~47— pero **el umbral está en ~22 encuentros**, que es una semana cargada.
+
+### Antes de confiar en el mecanismo, una vez
+
+**`verificarAlcanceDesatendido()`.** Un trigger corre **sin usuario delante**, con los permisos del
+**dueño del script** — y las bases son planillas de otras cuentas compartidas con él. Si ese alcance
+no llega, la primera continuación falla leyendo una base y el plan se queda pendiente sin que se
+entienda por qué. La función lo prueba **sin generar nada**.
+
+### **[falta]** — lo que este mecanismo todavía no hace
+
+- ⛔ **No persiste el anclaje entre ejecuciones** (Parte C del `_10`). Cada ejecución vuelve a pagar
+  **70–80 s** de arranque; con tres son 210 s, casi una corrida entera. **Es lo que haría que el
+  mecanismo rinda**, y hoy no está.
+- ⛔ **No corre sola los viernes.** Esto lo habilita; **agendarla es otra decisión.**
+
 ---
 
 ## Lo que el panel tiene que ser

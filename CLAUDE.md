@@ -440,6 +440,24 @@ solapas y hacían **38 lecturas enteras**.
   más seguido" **cambia qué filas ve el consumidor**, y eso es un valor movido, no una
   optimización.
 
+**Un mecanismo que se reanuda solo necesita una guarda de progreso; sin ella, «tarda» y «no
+avanza» se ven igual hasta que se agota la cuota.** Un proceso que se vuelve a agendar a sí mismo no
+tiene a nadie mirando: la única diferencia observable entre uno que avanza despacio y uno que no
+avanza nada es **cuánta cuota queda**, y para cuando eso se nota ya se gastó.
+
+- **La guarda concreta:** si una ejecución no marcó **ni una** unidad de trabajo como hecha, **la
+  siguiente no se crea**. Cuesta una comparación y convierte un consumo silencioso en un reporte.
+- ⭐ **Y la que hace falta al lado, que es menos obvia:** la guarda de progreso **corta bien y
+  diagnostica mal**. Si una sola unidad de trabajo es más grande que una ejecución, el mecanismo
+  la toma, no la termina, no la puede marcar hecha, y la siguiente vuelve a empezarla — la guarda
+  lo corta e informa *«no avanza»*, **cuando la verdad es «la unidad es demasiado grande»**. Son
+  dos arreglos distintos: uno se arregla mirando por qué falla, el otro **partiendo la unidad**.
+  **El planificador tiene que poder nombrar los dos casos distinto.**
+- ⚠ **Y contar la unidad correcta es parte de la guarda.** Acá la unidad no era la sección ni el
+  ítem: es la **asignación** —ítem × lámina modelo—, y medido daban **16 ítems contra 36
+  asignaciones**. Un planificador que cuenta la unidad equivocada se equivoca por más del doble, y
+  el síntoma es una corrida que corta cuando el plan decía que entraba.
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue

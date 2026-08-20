@@ -284,6 +284,30 @@ día que el panel cree períodos, eso es un escritor nuevo y necesita su fila ac
 declaración del seed**: sigue siendo el escritor declarado; lo que se agrega es qué pasa con lo que
 él no declara.
 
+### PLAN_CORRIDA — hoja nueva, 20/08/2026
+
+**No es hoja de registro**: es operativa, como `CORRIDAS` y `FALTANTES`. No entra a
+`ALCANCE_REGISTROS_` ni a las tres listas que `tools/listas.js` compara, y eso es a propósito.
+
+| función | método | camino |
+|---|---|---|
+| `escribirPlan_` | `setValues` | vía `iniciarCorridaDesatendida_`, una vez por corrida |
+| `marcarSeccionPlan_` | `setValue` | vía `correrUnaEjecucion_`, **una celda por sección a medida que termina** |
+| `hojaPlan_` | `insertSheet` | la crea si no existe |
+
+⭐ **Se marca de a una y a medida que terminan, no al final**, y es el motivo entero de que no sea
+un `setValues` al cierre: **una ejecución que muere no puede dejar el plan mintiendo.**
+
+⚠ **Y el escritor nuevo que este contrato no tenía: `continuarCorridaDesatendida` corre desde un
+TRIGGER, sin usuario delante**, con los permisos del dueño del script. Es la primera vez que una
+hoja de este libro se escribe sin que haya nadie mirando. Dos consecuencias:
+
+- **el alcance no es el de quien aprieta el botón**, sino el del dueño del script — las bases son
+  planillas de otras cuentas compartidas con él, y eso **hay que probarlo antes de confiar**:
+  `verificarAlcanceDesatendido()`;
+- **no hay a quién preguntarle nada**, así que todo lo que en una corrida manual sería un diálogo
+  acá tiene que ser una guarda que para y reporta.
+
 ### SOLAPAS
 
 | función | método | sitio | camino |

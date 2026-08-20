@@ -1519,6 +1519,28 @@ causa correcta.**
 deck de `secco` suma sus propios ítems. `D-35` sigue en pie — mientras la corrida se corte, ningún
 deck es evidencia.
 
+**`D-36` — La corrida que no entra en seis minutos termina sola, en varias ejecuciones.**
+Decisión del usuario, 20/08/2026 (`2026-08-20_10` `v2` + `10.1`). Tres pilares:
+
+1. **La unidad de trabajo es la sección**, y el estado —qué falta— vive en una **hoja**, no en
+   `PropertiesService`: tiene que poder **mirarse mientras corre**. Los 9 KB alcanzaban de sobra;
+   **la legibilidad es la razón, no el tamaño.**
+2. **El deck es el checkpoint.** ⚠ **Y los crudos NO dicen qué falta** — lo dice el plan. Los crudos
+   sólo garantizan que **repintar es inocuo**, y las láminas escondidas dejan **49 permanentes**.
+3. **Lo caro se persiste y se reusa dentro de la misma corrida.**
+
+⭐ **La condición que hace segura la tercera, y no es negociable: el estado caro se ata al
+`corrida_id` y NUNCA se reusa entre corridas.** Dentro de una corrida partida en cuatro ejecuciones
+reusarlo es lo correcto —las cuatro tienen que ser coherentes entre sí—; **entre corridas distintas
+sería publicar el anclaje del jueves en el informe del viernes, sin fallar.**
+
+⚠ **Y la corrección del `10.1`, medida: el planificador cuenta ASIGNACIONES** —ítem × lámina
+modelo—, no secciones ni ítems. **16 ítems lógicos dan 36 asignaciones.** Contar mal la unidad se
+equivoca por más del doble.
+
+**Estado al 20/08: Partes A, B y D construidas; la C —persistir el anclaje— NO.** Sin ella cada
+ejecución vuelve a pagar 70–80 s de arranque, así que el mecanismo **funciona y todavía no rinde**.
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
