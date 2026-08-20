@@ -99,6 +99,15 @@ existencia de la fila**.
 `'raya'`— **y todos sus lectores se actualizan en este prompt**. Un valor viejo que sobreviva en
 un `if` hace que el panel afirme lo que ya no es cierto, sin fallar.
 
+⭐ **El lector roto está medido y tiene un agravante que hay que quitar, no sólo actualizar.**
+`Panel.html` compara `r.presentacion_faltantes === 'raya' || S.faltantesComoRaya`: **el segundo
+término es estado local del front**, así que con el checkbox tildado la frase diría "una raya"
+aunque el backend mande `'simbolos'`. **El `||` se retira**: quien dice qué se imprimió es el
+backend, que es el que lo imprimió. Un front que responde por su cuenta una pregunta del backend
+es la misma clase de falla que un testigo que no mide el cambio.
+`PanelDemo.html` tiene la frase escrita a mano y ya está desactualizada: se corrige o se marca,
+pero **no se la deja afirmando lo que no pasa**.
+
 ⛔ **Lo que no cambia:** `FALTANTES` sigue recibiendo su fila con el motivo completo, igual que
 hoy, en los cuatro casos. **El símbolo es del deck; el motivo es de la hoja.** Un deck más callado
 con una hoja igual de habladora es exactamente el intercambio que esta decisión hace.
@@ -119,8 +128,13 @@ Sobre la función pura, en `tools/` o donde ya vivan los controles de formateo, 
 3. **Sin estado y sin fila → `/////`.** El caso de la barrida.
 4. **Modo crudo → `«FALTA:token»` en los cuatro**, con el token adentro.
 5. **El dudoso no se toca**: `formatearValorMarcador_(8.89, 'numero_revisar')` sigue dando
-   `-8,89-`. Va acá aunque no sea de este cambio, porque los símbolos conviven en la misma lámina
-   y **`-8,89-` y `-` se parecen lo suficiente como para que alguien los unifique después**.
+   **`-8.89-`, con punto** — `numero` es `String(Math.round(n*100)/100)` y no pasa por
+   `toLocaleString`. ⚠ **La ilustración con coma es un error de redacción de prompt que ya entró
+   dos veces por el mismo camino** y que `tools/probar-formato-revisar.js` documenta en su
+   encabezado. Va acá aunque no sea de este cambio, porque los símbolos conviven en la misma
+   lámina y **`-8.89-` y `-` se parecen lo suficiente como para que alguien los unifique
+   después**. El separador decimal de `numero` **no se arregla en este prompt** (preexistente
+   desde el 05/08, anotado).
 
 ---
 

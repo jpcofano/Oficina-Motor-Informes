@@ -76,11 +76,30 @@ segundo cálculo del corte es el error que este repo ya cometió cuatro veces (`
 | camino | qué cambia | qué cuesta |
 |---|---|---|
 | **A** — sólo el panel propone la cerrada; el eslabón 5 sigue con la que contiene | nada del motor | **dos definiciones de "la semana por defecto"**, y divergen justo el viernes |
-| **B** — el eslabón 5 también pasa a la cerrada | el motor, cuando `CONFIG` está vacío | una sola definición. Hoy no se dispara —`CONFIG` está cargado—, así que el cambio es **medible pero no observable** en una corrida |
+| **B** — el eslabón 5 también pasa a la cerrada | el motor, cuando `CONFIG` está vacío | una sola definición |
 
-⭐ **Elegir B salvo que la Parte 0 muestre algo que lo impida**, y escribir el motivo. "El motor
-propone la semana por defecto" es **una** afirmación: si el panel dice una semana y el motor
-resuelve otra, el día que alguien vacíe `CONFIG` el deck sale sobre una ventana que nadie eligió.
+⭐ **Se elige B.** "El motor propone la semana por defecto" es **una** afirmación: si el panel dice
+una semana y el motor resuelve otra, el deck sale sobre una ventana que nadie eligió.
+
+### ⚠ La precondición que la Parte 0 encontró, y sin la cual B no se observa
+
+**`CONFIG.periodo_desde/periodo_hasta` están cargados (24/07–30/07), así que el eslabón 4 corta
+antes del 5 y B no cambia nada de lo que pasa hoy.** Peor: la propuesta del panel también sale de
+`CONFIG` (`panel_getEstado` llama a `resolverVentana({})`), así que hacer que el panel proponga la
+semana cerrada **sin tocar `CONFIG`** produce una divergencia de casi un mes entre lo que se lee
+en pantalla y lo que genera el botón — el "número plausible y equivocado por la puerta del front"
+que la Parte B nombra, materializado el primer día.
+
+**Decisión del usuario, 20/08/2026: `CONFIG.periodo_desde` y `periodo_hasta` se vacían.** Es una
+acción en la hoja, no de este prompt.
+
+⚠ **Esto NO deroga `R-11` Addendum 1 punto 2** —*configurar es el caso normal, el cálculo es el
+piso*—. Configurar sigue disponible y sigue ganando: lo que cambia es que **hoy no hay nada
+configurado**, que es el caso que el punto 2 describe como aquel en que entra el cálculo.
+
+⛔ **Este prompt no escribe `CONFIG`.** La Parte A **verifica el estado de esas dos celdas y lo
+reporta**; si siguen cargadas, dice con todas las letras que B quedó implementado y **no
+observable**, en vez de dar por hecho un efecto que no ocurre.
 
 ⛔ **`diagEncuentrosPorSemana_` no se toca en ninguno de los dos caminos.** Su pregunta es otra.
 **Y `semanaR11_` tampoco cambia de comportamiento**: sigue devolviendo la semana que contiene la
@@ -99,6 +118,11 @@ sólo acepta un `periodo_id` de `PERIODOS`, entonces **una ventana propuesta sin
 no se puede correr**, y el panel tiene que decirlo con esas palabras: *"la semana propuesta no
 tiene fila en `PERIODOS`; creala o elegí un período de la lista"*.
 
+**Y el emparejamiento con corridas viejas se rompe callado, medido en la Parte 0:** el panel busca
+en `PERIODOS` una fila que coincida con las fechas propuestas, para ofrecer el deck ya generado.
+Con 14/08–20/08 no coincide ninguna. **El comportamiento es correcto —no ofrece nada— pero la vía
+queda muerta hasta que exista la fila**, y eso se dice en el reporte en vez de descubrirse.
+
 ⚠ **Mostrar una propuesta que el botón no puede ejecutar es peor que no proponerla**: la persona
 aprieta generar, sale el período viejo, y el deck es correcto para una semana que no es la que
 leyó en pantalla. **Número plausible y equivocado, por la puerta del front.**
@@ -106,6 +130,15 @@ leyó en pantalla. **Número plausible y equivocado, por la puerta del front.**
 ⛔ **Este prompt NO crea la fila de `PERIODOS`.** Sería un escritor nuevo de hoja de registro, con
 su fila en `ESCRITORES.md` y su decisión sobre el formato del `periodo_id`. **Va en un prompt
 propio**; acá queda medido y dicho.
+
+**Lo que sí se corrige acá, porque la Parte 0 lo dejó a la vista:** `SEED_PERIODOS_` afirma en su
+comentario que *el seed es el único escritor declarado de `PERIODOS`*, y `ESCRITORES.md` lo repite.
+**Es cierto como declaración y falso como restricción:** `upsertPorClave_` reporta `soloEnHoja` y
+**nunca borra**, así que una fila escrita a mano en la hoja sobrevive a *Aplicar configuración*.
+Anotarlo en `ESCRITORES.md` —con el `soloEnHoja` citado como el mecanismo que lo garantiza— es lo
+que convierte "editar `Instalar.gs` y pushear" en "escribir una fila". ⚠ **No se retira la
+declaración del seed**: sigue siendo el escritor *declarado*. Lo que se agrega es qué pasa con lo
+que él no declara.
 
 ---
 
