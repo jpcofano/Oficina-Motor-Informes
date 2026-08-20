@@ -474,6 +474,64 @@ function ventanaCandidatosAnclajeAmpliadaDias_() {
   return (isNaN(valor) || valor <= 0) ? null : valor;
 }
 
+/**
+ * `2026-08-20_8` Parte A (20/08/2026) — **el anclaje busca en dos pasos: acotado primero, ampliado
+ * si no encuentra.** Completa la mitad que `R-12` declaró y `T2.9.2` dejó sin implementar.
+ *
+ * ⭐ **La propiedad que lo hace seguro: el recorte es PERFORMANCE, no criterio.** El primer paso
+ * decide **cuánto se tarda**, nunca **qué se encuentra**. Un recorte que pudiera cambiar el
+ * resultado sería un filtro disfrazado de optimización, y ésos fallan sin avisar.
+ *
+ * ⭐ **La regla de corte —lo que el paso 1 resuelve queda resuelto— NO es una optimización: es
+ * determinismo.** Sin ella, ampliar podría traer un candidato con mejor score y el mismo encuentro
+ * se anclaría distinto según cuántos días haya configurados. El resultado dependería de un número
+ * de `CONFIG` en vez de los datos.
+ *
+ * ⚠ **Y lo que este mecanismo NO arregla, medido antes de escribirlo** (Parte 0 del `2026-08-20_8`):
+ * **ninguno de los dos recortes pierde un candidato que arrancó 10 días antes.**
+ *
+ *   - el **universo** no se recorta: `digital` es `modo_periodo = snapshot`, así que `leerFuente`
+ *     *"ignora la ventana y devuelve todas las filas"*;
+ *   - la **cercanía** es `Math.abs(...) <= msVentana`, o sea **±14 días simétricos**, que cubre los
+ *     10 con margen.
+ *
+ * **Lo que sí lo pierde es el SCORE**, y ampliar no lo toca: `scoreMatchDigitalRdv_` da `+0.5` a
+ * menos de un día, `+0.25` hasta dos, y **cero más allá**. A 10 días el candidato **está en el
+ * conjunto y no suma nada por fecha**, así que sólo ancla si barrio + tipo + tokens lo llevan solos
+ * por encima del umbral (0,6). Traer más candidatos **no ayuda y puede empeorar**: la fecha es
+ * *"la única señal que separa"* dos campañas del mismo eje, y por eso existe el desempate.
+ *
+ * Por eso esto entra **con la ampliada vacía**, que es el comportamiento de hoy, y la decisión de
+ * los 10 días queda propuesta donde corresponde —el score— y **no aplicada acá**.
+ */
+function anclarEnDosPasos_(candidatosTodos, fecha, umbral, puntuar) {
+  var acotada = ventanaCandidatosAnclajeDias_();
+  var cercanos = candidatosCercanosPorFecha_(candidatosTodos, fecha, acotada);
+  var r = anclar_(cercanos, null, umbral, puntuar, fecha);
+  r.paso = 1;
+  r.candidatos_paso1 = cercanos.length;
+  r.ventana_paso1 = acotada;
+
+  // Lo que el paso 1 resuelve queda resuelto. La condición es **pasa el umbral**, no "hay algún
+  // candidato": un `bajaConfianza` del paso 1 sí merece el segundo intento.
+  if (r.pasaUmbral) return r;
+
+  var ampliada = ventanaCandidatosAnclajeAmpliadaDias_();
+  if (ampliada === null) return r;          // vacía = no ampliar, que es lo de siempre
+  if (ampliada <= acotada) return r;        // una ampliada más chica no amplía nada
+
+  var masCercanos = candidatosCercanosPorFecha_(candidatosTodos, fecha, ampliada);
+  if (masCercanos.length === cercanos.length) return r;   // no entró ninguno nuevo
+
+  var r2 = anclar_(masCercanos, null, umbral, puntuar, fecha);
+  r2.paso = 2;
+  r2.candidatos_paso1 = cercanos.length;
+  r2.candidatos_paso2 = masCercanos.length;
+  r2.ventana_paso1 = acotada;
+  r2.ventana_paso2 = ampliada;
+  return r2;
+}
+
 function candidatosCercanosPorFecha_(candidatos, fechaObjetivo, ventanaDias) {
   if (!fechaObjetivo) return candidatos;
   var msVentana = ventanaDias * 24 * 60 * 60 * 1000;
@@ -1021,14 +1079,19 @@ function anclarEncuentrosSinCache_(ventana) {
       item.confirmadoAMano = true;
       encuentros.push(item);
     } else {
-      var candidatosCercanos = candidatosCercanosPorFecha_(candidatosTodos, fecha, ventanaCandidatosAnclajeDias_());
       var campoEvento = buscarMapeo('rdv', filaRdv.hoja, 'evento');
       var campoBarrio = buscarMapeo('rdv', filaRdv.hoja, 'barrio');
       var evento = campoEvento.ok ? valorPorColumna_(filaRdv.fila, 'rdv', filaRdv.hoja, campoEvento.columna) : '';
       var barrio = campoBarrio.ok ? valorPorColumna_(filaRdv.fila, 'rdv', filaRdv.hoja, campoBarrio.columna) : '';
 
-      var resultado = anclar_(candidatosCercanos, null, umbral,
-        function (c) { return scoreMatchDigitalRdv_(c, evento, barrio, fecha); }, fecha);
+      var resultado = anclarEnDosPasos_(candidatosTodos, fecha, umbral,
+        function (c) { return scoreMatchDigitalRdv_(c, evento, barrio, fecha); });
+      // Qué paso resolvió y con cuántos candidatos: sin esto el cambio es invisible, y el conteo
+      // de cuántos encuentros necesitaron el paso 2 es lo único que dice si el recorte está bien
+      // calibrado — si casi todos amplían, no sirve de nada; si no amplía ninguno, sospechar que
+      // no se aplicó.
+      item.paso_anclaje = resultado.paso;
+      item.candidatos_anclaje = (resultado.paso === 2 ? resultado.candidatos_paso2 : resultado.candidatos_paso1);
 
       item.idCuenta = resultado.mejor ? resultado.mejor.idCuenta : '';
       item.score = resultado.score;
