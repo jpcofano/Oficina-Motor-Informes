@@ -436,7 +436,9 @@ function vistaGenerar(){
   }
 
   h += '<label class="check"><input type="checkbox" id="f-raya" checked>' +
-       '<span class="check-text"><span class="check-label">Los huecos se ven como «—»</span></span></label>';
+       '<span class="check-text"><span class="check-label">Los huecos se ven como símbolos</span>' +
+       '<span class="check-sub">/////&nbsp;falta cablearlo · ---&nbsp;falló · -&nbsp;sin dato.</span>' +
+       '</span></label>';
   h += '<button class="btn btn-primary" id="b-generar">Generar informe</button>';
   return h;
 }
@@ -522,7 +524,11 @@ function vistaListo(){
     stat('Datos que faltaron', 'uno por dato y por lámina', c.faltaron) +
     '</div>';
 
-  h += '<p class="muted">Los huecos se imprimieron como una raya. La corrida tardó ' +
+  /* `2026-08-20_1` Parte A — este panel es el mock del video (`_50`) y su corrida es fija, así
+   * que la frase va escrita a mano y no puede leer `presentacion_faltantes`. Se actualiza para
+   * que no afirme lo que ya no pasa; si algún día el mock se conecta, esta línea sale y se lee
+   * el valor del backend, como en `Panel.html`. */
+  h += '<p class="muted">Los huecos se imprimieron como símbolos (/////, ---, -). La corrida tardó ' +
     c.segundos + ' s de un techo de ' + TECHO_S + ' s.</p>';
 
   h += '<div><span class="section-title">Secciones repetibles</span><ul class="list-reset">' +

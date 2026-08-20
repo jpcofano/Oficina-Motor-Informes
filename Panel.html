@@ -226,7 +226,7 @@ var S = {
   informes: [], periodos: [], porDefecto: null, informeActivo: '',
   informeId: '', periodoId: '',
   secciones: {},            // seccion_id -> bool
-  faltantesComoRaya: true,
+  conSimbolos: true,        // los cuatro símbolos del `2026-08-20_1`; en falso, el crudo `«FALTA:token»`
   estado: 'form',           // form | generando | listo | fallo
   forzarForm: false,        // "generar de nuevo, a sabiendas"
   resultado: null, motivo: null,
@@ -371,7 +371,7 @@ function generar(){
       clearInterval(S.tick); S.tick = null;
       S.estado = 'fallo'; S.motivo = (e && e.message) || String(e); pintar();
     })
-    .panel_generar(S.informeId, S.periodoId, S.faltantesComoRaya, elegidas);
+    .panel_generar(S.informeId, S.periodoId, S.conSimbolos, elegidas);
 }
 
 /* ── pintado ─────────────────────────────────────────────────────────────────────── */
@@ -489,8 +489,10 @@ function vistaGenerar(){
     h += '<p class="hint">Sacar una acorta la corrida — el techo es de 350 s.</p></div>';
   }
 
-  h += '<label class="check"><input type="checkbox" id="f-raya"' + (S.faltantesComoRaya?' checked':'') + '>' +
-       '<span class="check-text"><span class="check-label">Los huecos se ven como «—»</span></span></label>';
+  h += '<label class="check"><input type="checkbox" id="f-raya"' + (S.conSimbolos?' checked':'') + '>' +
+       '<span class="check-text"><span class="check-label">Los huecos se ven como símbolos</span>' +
+       '<span class="check-sub">/////&nbsp;falta cablearlo · ---&nbsp;falló · -&nbsp;sin dato. ' +
+       'Destildado sale «FALTA:token», que dice cuál es.</span></span></label>';
 
   if (!sinDefecto){
     h += '<button class="btn btn-primary" id="b-generar">Generar informe</button>';
@@ -506,7 +508,7 @@ function conectarGenerar(){
   var fp = el('f-periodo');
   if (fp) fp.onchange = function(){ S.periodoId = fp.value; S.forzarForm = false; pintar(); };
   var fr = el('f-raya');
-  if (fr) fr.onchange = function(){ S.faltantesComoRaya = fr.checked; };
+  if (fr) fr.onchange = function(){ S.conSimbolos = fr.checked; };
   Array.prototype.forEach.call(document.querySelectorAll('[data-seccion]'), function(cb){
     cb.onchange = function(){ S.secciones[cb.getAttribute('data-seccion')] = cb.checked; };
   });
@@ -572,8 +574,16 @@ function vistaListo(){
     stat('Datos que faltaron', 'uno por dato y por lámina', c.filas_en_faltantes) +
     '</div>';
 
+  /* `2026-08-20_1` Parte A — **quien dice qué se imprimió es el backend, que es el que lo
+   * imprimió.** Acá había un `|| S.faltantesComoRaya`, y ese segundo término es estado local
+   * del front: con el checkbox tildado la frase decía "una raya" aunque el backend mandara otra
+   * cosa, sin fallar. Un front que contesta por su cuenta una pregunta del backend es la misma
+   * clase de falla que un testigo que no mide el cambio. El `||` se retira; si el valor no se
+   * reconoce, se lo muestra crudo en vez de inventar la frase. */
   h += '<p class="muted">Los huecos se imprimieron como ' +
-    (r.presentacion_faltantes === 'raya' || S.faltantesComoRaya ? 'una raya' : 'un aviso de falta') +
+    (r.presentacion_faltantes === 'simbolos' ? 'símbolos (/////, ---, -)'
+      : r.presentacion_faltantes === '«FALTA:token»' ? 'un aviso de falta'
+      : esc(String(r.presentacion_faltantes || '(sin declarar)'))) +
     '. La corrida tardó ' + S.elapsed + ' s de un techo de ' + TECHO_S + ' s.</p>';
 
   var secs = r.secciones || [];

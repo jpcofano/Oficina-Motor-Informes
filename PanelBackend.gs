@@ -124,13 +124,17 @@ function panel_getEstado() {
  * catálogo le rechazó parte de la lista. Un total inventado acá sería exactamente el número
  * plausible que este proyecto viene cazando.
  */
-function panel_generar(informeId, periodoId, faltantesComoRaya, secciones) {
+function panel_generar(informeId, periodoId, conSimbolos, secciones) {
   var id = String(informeId || '').trim();
   if (!id) return { ok: false, motivo: 'No se eligió informe.' };
 
   var ref = String(periodoId || '').trim();
   var opciones = {
-    faltantes_como_raya: faltantesComoRaya === true,
+    // ⚠ La clave sigue siendo `faltantes_como_raya` porque es formato de cable hacia
+    // `generarInforme`, que la API puede invocar por nombre (`2026-08-20_1` Parte A). Lo que
+    // el tercer argumento significa desde el 20/08 es otra cosa —los cuatro símbolos contra el
+    // crudo—, y por eso el parámetro sí se llama como lo que es.
+    faltantes_como_raya: conSimbolos === true,
     // El panel manda SIEMPRE la lista de las tildadas, aunque esté vacía: destildar todas es
     // una elección válida —"ninguna sección repetible"— y no un pedido de correrlas todas.
     // `undefined` queda para los llamadores que no conocen la opción.

@@ -1199,7 +1199,39 @@ function resolverMarcadores(informeId, opciones) {
  * `_27` bloque 1.2 (11/08/2026) — segundo modo, **opción de la corrida y nunca default**.
  * `«FALTA:token»` es el modo de trabajo y sigue siéndolo: dice qué token es y se ve de lejos.
  * Pero una lámina con veinte de ésos se lee como un motor roto aunque el motor esté bien, y
- * para mostrarlo hay un modo que rinde el hueco como una raya.
+ * para mostrarlo hay un modo que rinde el hueco con un símbolo.
+ *
+ * `2026-08-20_1` Parte A — **el símbolo sale del estado, no de un booleano.** Hasta hoy los
+ * tres casos salían `—` y el deck no distinguía **quién arregla qué**: un token que nadie
+ * cableó es trabajo de cableado, y uno que se cableó y falló es trabajo de fuente o de filtro.
+ * Con un solo glifo había que abrir `FALTANTES` para saber cuál de los dos oficios hacía falta.
+ *
+ * **Los cuatro símbolos, y la decisión del usuario del 20/08/2026 que los funda:**
+ *
+ *   - `/////` — **falta el token**: no hay fila en `MARCADORES`, o el motor no llegó a
+ *     resolverlo. Es trabajo de cableado.
+ *   - `---` — **falló**: hay fila, se intentó leer y no salió. `error` y `REVISAR`.
+ *   - `-` — **no hay dato**: se preguntó bien y la respuesta fue vacía. Sólo `sin_datos`.
+ *   - `-1.234-` — **dudoso**: publicado con desconfianza declarada. No es de acá: lo pone el
+ *     sufijo `_revisar` de `MARCADORES.formato` en `formatearValorMarcador_`, y por eso un
+ *     valor dudoso **no pasa nunca por esta función**.
+ *
+ * ⚠ **Por qué `REVISAR` va a `---` y no a `-`.** `R-18` addendum 1: **`sin_datos` afirma que
+ * no había nada.** `REVISAR` es lo contrario — había filas y ninguna se pudo publicar.
+ * Escribirlo como `-` publicaría esa afirmación falsa, que es el modo de falla que este
+ * proyecto persigue. Los dos estados se parecen en que el valor vino vacío y **no se parecen
+ * en nada más**.
+ *
+ * ⚠ **Ante ausencia de información, el símbolo es el más ruidoso, y es una regla, no un
+ * default accidental.** Quien llama sin resultado —la barrida final, que sólo tiene el nombre
+ * del token— obtiene `/////`. **Nunca `-`**: `-` es una afirmación *sobre el dato*, y quien no
+ * tiene el resultado no está en condiciones de hacerla. Lo mismo vale para un estado que esta
+ * función no conozca: un quinto estado sin símbolo asignado sale `/////` y no se lo adivina.
+ *
+ * **El mapeo vive acá y en ningún llamador** (Parte A regla 1). Los tres puntos de escritura
+ * pasan lo que tienen —el token y el resultado del marcador, que puede no existir— y esta
+ * función devuelve el texto. Repartir el mapeo entre los llamadores daría tres convenciones
+ * en cuanto alguien toque una.
  *
  * **La contraparte es lo que hace que esto no sea esconder el problema, y es estructural, no
  * una promesa:** esta función sólo decide el TEXTO que va a la caja. Los tres puntos que la
@@ -1208,12 +1240,36 @@ function resolverMarcadores(informeId, opciones) {
  * registro**: son dos caminos distintos y ninguna opción toca el segundo. Si algún día se
  * pudieran tocar juntos, el modo no se usa (`_27` 1.2).
  *
- * La raya no vive en `CONFIG` a propósito: no es un parámetro de negocio que alguien vaya a
+ * **El modo crudo se conserva entero**, y es la flexibilidad que sostiene a `S-05` punto 3:
+ * con `conSimbolos` en falso los cuatro casos salen `«FALTA:token»` **con el nombre adentro**,
+ * igual que hoy. Nada de mezclar: o los cuatro símbolos, o el crudo.
+ *
+ * El símbolo no vive en `CONFIG` a propósito: no es un parámetro de negocio que alguien vaya a
  * querer cambiar sin tocar código —el criterio de `D-01`— sino cómo se rinde un hueco, y el
  * modo se elige por corrida, no por instalación.
+ *
+ * `resultado` es el objeto que devuelve `resolverMarcadores` para ese token, o `undefined` /
+ * `null` cuando no hay fila en `MARCADORES` o cuando el llamador no lo tiene.
  */
-function textoFaltante_(token, comoRaya) {
-  return comoRaya === true ? '—' : '«FALTA:' + token + '»';
+function textoFaltante_(token, resultado, conSimbolos) {
+  if (conSimbolos !== true) return '«FALTA:' + token + '»';
+
+  // Los tres glifos van literales y no en constantes de módulo: Apps Script concatena todos los
+  // `.gs` en un único scope global (`CLAUDE.md` §1), y tres nombres nuevos ahí arriba costarían
+  // superficie de colisión para algo que se usa una vez cada uno, en esta función y en ninguna otra.
+
+  // Sin resultado no hay nada que afirmar sobre el dato: es el caso de la barrida final, que
+  // por diseño sólo tiene el nombre del token, y el de un token sin fila en `MARCADORES`.
+  if (!resultado) return '/////';
+
+  var estado = String(resultado.estado || '');
+  if (estado === 'error' || estado === 'REVISAR') return '---';
+  if (estado === 'sin_datos') return '-';
+
+  // `ok` no debería llegar acá —los dos puntos que pintan vuelven antes— y un estado que esta
+  // función no conoce tampoco. En los dos casos falta información para afirmar algo sobre el
+  // dato, así que sale el símbolo más ruidoso.
+  return '/////';
 }
 
 /**
@@ -2161,7 +2217,7 @@ function tokensVisiblesDe_(presentacion) {
  * 10-27 s y leer el mapa cuesta cero. Si el corte llegó antes de la etapa 2 no hay mapa, y
  * ahí sí se escanea; el retorno dice por cuál de los dos caminos fue.
  */
-function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, comoRaya) {
+function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos) {
   var origen = 'mapa de la etapa 2';
   var tokens = tokensDelMapa ? Object.keys(tokensDelMapa) : null;
   if (!tokens) {
@@ -2175,7 +2231,12 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, comoRaya) {
   tokens.sort().forEach(function (token) {
     // `replaceAllText` no falla si el token ya no está: los que la corrida sí alcanzó
     // devuelven cero reemplazos y no cuestan una lectura previa.
-    var n = presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token, comoRaya), true);
+    // `null` como resultado, y es la verdad y no un atajo: acá sólo hay el nombre del token.
+    // Un token que la barrida alcanza es, por definición, uno que la corrida NO llegó a
+    // resolver —cortó por presupuesto o murió antes—, así que no existe un `estado` para él ni
+    // aunque le pasáramos el mapa entero. Su único símbolo posible es `/////`, y eso se dice
+    // pasando `null` en vez de inventarle un estado (`2026-08-20_1` Parte 0 punto 2).
+    var n = presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token, null, conSimbolos), true);
     if (n > 0) barridos.push(token);
   });
   return { barridos: barridos, origen: origen };
@@ -2207,11 +2268,21 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, comoRaya) {
  * la misma invocación —el ítem de menú, por ejemplo— sirviéndole config leída hace minutos.
  */
 /**
- * `_27` bloque 1.2 — `opciones` es el tercer parámetro y es **opcional**. Hoy lleva una sola
- * clave, `faltantes_como_raya`, y por eso no reemplaza a `periodoId`: los dos llamadores que
- * ya existen —el ítem de menú y la API— siguen llamando con uno o dos argumentos y no cambia
- * nada para ellos. Un objeto de opciones que además absorbiera `periodoId` habría obligado a
- * tocar los dos caminos por una opción de presentación.
+ * `_27` bloque 1.2 — `opciones` es el tercer parámetro y es **opcional**, y por eso no
+ * reemplaza a `periodoId`: los dos llamadores que ya existen —el ítem de menú y la API— siguen
+ * llamando con uno o dos argumentos y no cambia nada para ellos. Un objeto de opciones que
+ * además absorbiera `periodoId` habría obligado a tocar los dos caminos por una opción de
+ * presentación.
+ *
+ * **Las claves son dos**: `faltantes_como_raya` y `secciones`. (El comentario decía "una sola"
+ * hasta el 20/08 — `secciones` entró después y nadie lo actualizó. Un comentario no falla
+ * nunca, que es por lo que `CLAUDE.md` §4 los manda abrir cuando afirman un contrato.)
+ *
+ * ⚠ **`faltantes_como_raya` ya no elige una raya** (`2026-08-20_1`): elige el juego de cuatro
+ * símbolos —`/////`, `---`, `-`— contra el crudo `«FALTA:token»`. **La clave conserva el
+ * nombre a propósito**, porque es formato de cable y la API invoca a esta función por nombre;
+ * renombrarla rompería a un llamador que no vive en este repo. Lo que declara el modo hacia
+ * afuera es `presentacion_faltantes`, y ése **sí** cambió de valor: `'simbolos'`.
  */
 function generarInforme(informeId, periodoId, opciones) {
   abrirCacheRegistros_();
@@ -2227,7 +2298,12 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
   // `=== true` y no truthy: la opción entra desde un `<select>`, desde un JSON de la API y
   // desde una llamada a mano. Un `"false"` de un query string es truthy y encendería el modo
   // justo por el camino en que nadie lo está mirando.
-  var faltantesComoRaya = opciones.faltantes_como_raya === true;
+  // ⚠ La clave del pedido sigue llamándose `faltantes_como_raya` y **no se renombra acá**:
+  // `generarInforme` es invocable por la API por nombre (`fn=generarInforme`, `Api.gs`), así que
+  // esa clave es formato de cable y cambiarla rompería a un llamador que no está en este repo.
+  // El nombre local sí dice lo que la opción significa desde el `2026-08-20_1`: no elige una
+  // raya, elige el juego de cuatro símbolos contra el crudo.
+  var conSimbolos = opciones.faltantes_como_raya === true;
   // T2.1.1 — el reloj arranca acá y es el único de la corrida. Ojo: la plataforma cuenta
   // desde `doPost` o desde el trigger del menú, no desde esta línea; lo que gasta el
   // llamador antes de entrar ya está descontado en el default de `presupuesto_corrida_seg`.
@@ -2386,7 +2462,7 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
         conValor.push(token + ' @' + asignacion.item.clave);
         return;
       }
-      slide.replaceAllText('{{' + token + '}}', textoFaltante_(token, faltantesComoRaya), true);
+      slide.replaceAllText('{{' + token + '}}', textoFaltante_(token, r, conSimbolos), true);
       faltantes.push({
         corrida_id: corridaId,
         informe_id: informeId,
@@ -2498,8 +2574,10 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
       return;
     }
 
-    presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token, faltantesComoRaya), true);
+    // `fila` se resuelve ANTES de pintar: el símbolo sale de su `estado`, y el motivo de
+    // `FALTANTES` sale de la misma variable. Un solo lector para las dos cosas.
     var fila = porMarcador[token];
+    presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token, fila, conSimbolos), true);
     faltantes.push({
       corrida_id: corridaId,
       informe_id: informeId,
@@ -2538,7 +2616,7 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
   // cero tokens y el deck saliera con `{{token}}` crudos — justo lo contrario de lo que
   // esta barrida garantiza. Si la corrida murió antes de la etapa 2 no hay mapa y hay que
   // re-escanear, que es para lo que `barrerTokensNoAlcanzados_` acepta `null`.
-  var barrida = barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null, faltantesComoRaya);
+  var barrida = barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null, conSimbolos);
   barrida.barridos.forEach(function (token) {
     faltantes.push({
       corrida_id: corridaId,
@@ -2609,7 +2687,7 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
     // `_27` 1.2 — con qué modo salió ESTE deck. Sin esto, un deck en modo raya y uno con
     // todos los datos se leen igual una semana después, que es justo cuando alguien lo va a
     // mirar sin acordarse de cómo lo generó.
-    presentacion_faltantes: faltantesComoRaya ? 'raya' : '«FALTA:token»',
+    presentacion_faltantes: conSimbolos ? 'simbolos' : '«FALTA:token»',
     tokens: {
       en_plantilla: mapa.lista.length,
       reemplazados: reemplazados,
