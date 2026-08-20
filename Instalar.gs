@@ -2279,6 +2279,11 @@ var SEED_CONFIG_DEFAULTS_ = {
   // poner un número acá para que la clave "quede completa" sería inventarlo (`CLAUDE.md` §4).
   // La clave existe para que la decisión se tome editando una celda, no el código.
   ventana_candidatos_anclaje_ampliada_dias: '',
+  // `2026-08-20_10` — cuántas veces se reanuda sola una corrida antes de parar y reportar.
+  // ⚠ **Es una guarda de cuota, no una preferencia.** En cuenta consumer hay 90 minutos diarios
+  // de runtime de triggers; una corrida que se reanuda para siempre los consume y deja al motor
+  // sin cupo el resto del día. Con 6 y ejecuciones de ~5 min son 30 min, un tercio del día.
+  tope_continuaciones: '6',
   // T2.1.1 (06/08): el reloj de la corrida. Mismo patrón que el umbral — helper
   // como único lector en Generador.gs, constante de módulo sólo como default.
   // Bajar `presupuesto_corrida_seg` a 60 desde la hoja es la forma barata de

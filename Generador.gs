@@ -2516,6 +2516,24 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
     expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana, opciones.secciones);
   }
 
+  /* ⭐ `2026-08-20_10` — **expandir todo y resolver una parte son dos cosas distintas, y hasta hoy
+   * eran la misma.** `opciones.secciones` decide **qué se expande**; la corrida desatendida
+   * necesita expandir TODO —fase atómica— y resolver **sólo lo que entra en esta ejecución**.
+   *
+   * Por eso el recorte del trabajo va acá, DESPUÉS de expandir, y por sección: el plan es por
+   * sección (`_10` Parte B) y las asignaciones ya vienen etiquetadas con la suya.
+   *
+   * ⚠ **Ausente significa «todas», igual que `secciones`** — un llamador que no conoce la opción
+   * resuelve todo, como siempre. */
+  if (opciones.solo_secciones && expansion.asignaciones.length) {
+    var pendientes = {};
+    opciones.solo_secciones.forEach(function (id) { pendientes[String(id).trim()] = true; });
+    var antes = expansion.asignaciones.length;
+    expansion.asignaciones = expansion.asignaciones.filter(function (a) { return pendientes[a.seccion]; });
+    Logger.log('chunk: se resuelven ' + expansion.asignaciones.length + ' de ' + antes +
+      ' asignación(es) — secciones: ' + opciones.solo_secciones.join(', '));
+  }
+
   etapaEnCurso = marcarEtapa_(filaCorrida, '2 · mapa token→objectId', t0Etapas);
   // 2 · El mapa, ANTES de tocar un solo token.
   mapa = mapaTokenObjectId_(presentacion);
