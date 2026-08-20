@@ -11632,3 +11632,92 @@ eso está el previsor.
 ⛔ **No se cambió la operación de `m2_envios`.** Entra al lote de `_revisar` y se queda como está:
 publica 25 donde el deck dice 26, y **eso es un número no validado, no uno roto**. Moverlo con la
 evidencia de hoy sería llevarlo hacia otro número que tampoco es el publicado.
+
+---
+
+## Paso `2026-08-20_8` — el anclaje busca en dos pasos (2026-08-20) — commit de esta entrada
+
+- **Qué pedía el prompt:** que un encuentro del temario encuentre su campaña aunque haya arrancado
+  antes de la ventana de la corrida. Completar la mitad ampliada que `R-12`/`T2.9.2` dejó
+  declarada y sin implementar.
+- **Qué se hizo:** `anclarEnDosPasos_` en `Union.gs`, consumida por `anclarEncuentrosSinCache_`.
+  Control nuevo: `tools/probar-anclaje-dos-pasos.js`. `R-12` Addendum 1 y 1 bis,
+  `CONFIG_INFORMES.md` §4.4 bis, `T2.9.2` cerrado en `PLAN.md`.
+- **Prueba:** 21 afirmaciones en verde **más el control negativo que el prompt pide explícitamente**
+  —romper la regla de corte— que tumba 7, incluida la de determinismo. Los seis controles previos
+  siguen verdes. `clasp push` **verificado con `clasp pull`**.
+- **Pendientes/decisiones:** ⭐ **la decisión de los 10 días queda propuesta y sin aplicar**, porque
+  el lugar donde falta no es el recorte. Ver abajo.
+
+### ⭐ La Parte 0 dio vuelta el diagnóstico: ninguno de los dos recortes pierde el candidato
+
+El prompt planteaba dos recortes encadenados y pedía decir cuál es el culpable **antes** de tocar
+nada, con la instrucción explícita de *"decirlo en vez de aplicar el cambio donde no toca"*. La
+medición dice **ninguno**:
+
+| recorte | ¿pierde un candidato a 10 días? | por qué |
+|---|---|---|
+| el **universo** (`unirDigitalPorCuenta`) | **No** | `BASES.digital.modo_periodo = snapshot`, y `leerFuente` *"ignora la ventana y devuelve todas las filas"*. **No se recorta nada** |
+| la **cercanía** (`candidatosCercanosPorFecha_`) | **No** | el filtro es `Math.abs(...) <= msVentana`: **±14 días simétricos**. Los 10 entran con margen |
+
+⭐ **El que lo pierde es el SCORE**, y ampliar el recorte no lo toca. `scoreMatchDigitalRdv_`:
+
+```
+menos de 1 día  → +0,50
+hasta 2 días    → +0,25
+más de 2 días   → +0      (no suma; tampoco resta, a propósito)
+```
+
+Con el umbral en `0,6`, un candidato a 10 días **ya está en el conjunto y no suma nada por fecha**:
+ancla sólo si barrio (0,5) + tipo (0,2) + tokens lo llevan solos por encima. Barrio exacto **más**
+tipo alcanza (0,7); barrio solo, no (0,5).
+
+⚠ **Y ampliar no sería neutro: podría empeorar.** El comentario de esa función dice que la fecha es
+*"la única señal que separa"* dos campañas del mismo eje — es lo que puso once números de Orden
+Público en la cuenta equivocada (`3347` en vez de `3387`). Traer más candidatos que puntúan cero
+por fecha **aumenta los empates que el desempate tiene que resolver**.
+
+**Por eso el mecanismo entró con la ampliada vacía y la decisión de los 10 días quedó propuesta:**
+son un hecho del negocio que el motor no honra, pero el lugar donde faltan es el score. Cambiar el
+reparto de puntaje mueve **qué cuenta se ancla a qué encuentro**, y de ahí salen números
+publicados — es decisión del usuario con su propia medición, no un efecto colateral de implementar
+`R-12`.
+
+### La corrección del usuario, verificada
+
+*«`encontrarFilaRdvDeReunion_` ya busca por la fecha propia del encuentro y NO por la ventana de la
+corrida»* — **cierto**, y se verificó en el código antes de aceptarlo: la función arma
+`ventanaDia = { desde: mediodia, hasta: mediodia }` a partir de `reunion.fecha`, no de la ventana
+recibida. Es el patrón que este prompt extiende, no algo a corregir. No se tocó.
+
+### La regla de corte es determinismo, y el control negativo lo demuestra
+
+*Lo que el paso 1 resuelve queda resuelto.* Sin esa regla, ampliar podría traer un candidato con
+mejor score y **el mismo encuentro se anclaría distinto según cuántos días haya configurados**: el
+resultado dependería de un número de `CONFIG` en vez de los datos.
+
+El prompt pedía romperla a propósito antes de dar el verde. Se hizo —se sacó el `if (r.pasaUmbral)
+return r;`— y **cayeron 7 afirmaciones**, entre ellas las dos que importan:
+
+```
+XX  gana el del paso 1 aunque el ampliado tenga uno mejor — vino mejorPeroLejos
+XX  con la ampliada en 400 días da lo MISMO: el resultado no depende de `CONFIG`
+```
+
+⭐ **Un control que sólo mirara el resultado final no habría distinguido** *"buscó en dos pasos"* de
+*"buscó una vez en el conjunto grande"*. Por eso el fixture instrumenta `anclar_` y cuenta las
+llamadas: la afirmación **el paso 2 no corrió** no se puede hacer mirando lo que devuelve.
+
+### Una afirmación del control que existe para proteger la medición
+
+El punto 6 comprueba que la ventana de cercanía es **simétrica** —10 días antes y 10 después entran
+los dos, 15 queda afuera—. No prueba el mecanismo nuevo: **congela el hecho que hizo que la
+decisión no se implementara como recorte.** Si alguien la vuelve asimétrica, se entera esta prueba
+antes que un deck.
+
+### Lo que no se tocó
+
+⛔ La sección `campana` y la rama por cuenta —ya se resuelven sin recorte por ventana (`R-17` +
+`campo_id_cuenta`)—. ⛔ `encontrarFilaRdvDeReunion_`. ⛔ La ventana de ningún marcador agregado:
+`imp_*`, `mail_*`, `m2_*` y el status semanal siguen leyendo la semana, porque **ampliarles la
+ventana los multiplicaría en silencio**.

@@ -905,6 +905,25 @@ que la corrida **no llegó a resolver**.
 `«FALTA:token»`, que sigue diciendo **cuál** token es y sigue siendo el modo de trabajo. Es lo que
 mantiene vivo `S-05` punto 3 (ver `docs/SUPUESTOS.md`).
 
+### 4.4 bis · El anclaje de reuniones busca en dos pasos
+
+**Decisión del usuario, 20/08/2026**, implementada el mismo día. **[OK]** el mecanismo · **[?]** el número.
+
+| clave de `CONFIG` | hoy | qué significa |
+|---|---|---|
+| `ventana_candidatos_anclaje_dias` | `14` | el recorte acotado, **±14 días simétricos** alrededor del encuentro |
+| `ventana_candidatos_anclaje_ampliada_dias` | **vacía** | **vacía = no ampliar**, que es el comportamiento de siempre. Con un número, dispara el segundo paso |
+
+**El recorte es performance, no criterio**, y la regla de corte —*lo que el paso 1 resuelve queda
+resuelto*— es lo que hace que el resultado no dependa de estos números. El detalle vive en
+`docs/REGLAS_NEGOCIO.md`, `R-12` Addendum 1; acá va sólo el valor.
+
+⚠ **La ampliada queda vacía a propósito, y no es que falte decidir el número:** la medición del
+20/08 mostró que **los 10 días del negocio ya entran en el acotado de 14**, y que el candidato a
+esa distancia se pierde **por el score**, no por el recorte. Cargar un número acá no arreglaría el
+caso y traería más empates. **Lo que falta decidir es el reparto de puntaje por fecha**, y eso está
+en el addendum.
+
 ### 4.5 El quinto estado: la desconfianza declarada — `D-34`
 
 **Decisión editorial del usuario, 20/08/2026.** Los cuatro símbolos de §4.4 dicen **por qué no hay

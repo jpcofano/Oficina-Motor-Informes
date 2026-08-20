@@ -1760,8 +1760,15 @@ probó de punta a punta. → `PENDIENTES_consistencia.md`, `P1`.
 
 **`T2.9` · el matcher (`Union.gs`).** Cuatro cosas que tocan la misma función.
 - `T2.9.1` — `R-12`: ampliar la búsqueda de candidatos antes de declarar `sin_link`
-- `T2.9.2` — los dos valores de ventana a `CONFIG`: la corta (hoy constante de módulo) y la
-  ampliada (no existe)
+- ~~`T2.9.2` — los dos valores de ventana a `CONFIG`: la corta (hoy constante de módulo) y la
+  ampliada (no existe)~~ — ✅ **CERRADO 20/08/2026** (`2026-08-20_8`). Las dos claves están en
+  `CONFIG` desde el 07/08 y **la mitad ampliada ya se consume**: `anclarEnDosPasos_` busca acotado
+  primero y amplía sólo si no encontró, con la regla de corte *lo que el paso 1 resuelve queda
+  resuelto* sosteniendo el determinismo. ⚠ **Entra con la ampliada vacía**, y eso no es que falte
+  el número: la medición mostró que **ninguno de los dos recortes pierde el candidato** —`digital`
+  es `snapshot` y la cercanía es ±14 simétrica— y que **el que lo pierde es el score**, que da cero
+  más allá de 2 días. **Queda propuesto y sin aplicar** el reparto de puntaje por fecha, que es
+  decisión del usuario: mueve qué cuenta se ancla a qué encuentro. Ver `R-12` Addendum 1
 - `T2.9.3` — el empate técnico que `DISENO_match_temario.md` §6.4 declara y ningún código
   implementa
 - `T2.9.4` — retirar `VALOR_STATUS_REALIZADA_` (`Union.gs:219`), que hoy filtra dos veces por lo

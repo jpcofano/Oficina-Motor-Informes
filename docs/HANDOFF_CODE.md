@@ -3,7 +3,7 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-20, al cerrar el `2026-08-20_7` (cerrar para generar)
+**Última actualización:** 2026-08-20, al cerrar el `2026-08-20_8` (anclaje en dos pasos)
 
 ## ⏸ Los cuatro botones que esperan, en orden
 
@@ -72,6 +72,14 @@ es decidir si `secco` sube al detalle de `jm`**, y eso es `C-01`, del equipo.
 
 ## Lo que sigue abierto y no se toca
 
+0. ⭐ **Los 10 días de la campaña de una reunión: decidido por el usuario, NO aplicado, y el motivo
+   importa.** El `2026-08-20_8` implementó el anclaje en dos pasos —`R-12`/`T2.9.2` cerrados— pero
+   la medición mostró que **ninguno de los dos recortes pierde el candidato**: `digital` es
+   `snapshot` (universo sin recortar) y la cercanía es **±14 simétrica**, así que los 10 días ya
+   entran. **El que lo pierde es el score**, que da `+0` más allá de 2 días con el umbral en 0,6.
+   **Lo que falta decidir es el reparto de puntaje por fecha** — mueve qué cuenta se ancla a qué
+   encuentro, así que es tuyo. Ver `R-12` Addendum 1 bis.
+
 1. ⛔ **`m2_campanias` no se cablea.** Ninguna columna reproduce el `12` del deck, y la candidata
    **cambió de grano entre exports**: 11 valores de proyecto el 31/07, 18 de envío el 06/08, sobre
    las **mismas 25 filas** de una ventana cerrada. **Nada en el motor puede notarlo** — mismo
@@ -97,5 +105,5 @@ es decidir si `secco` sube al detalle de `jm`**, y eso es `C-01`, del equipo.
 ## Controles vivos — los seis en verde
 
 `probar-simbolos-faltante` (25) · `probar-semana-cerrada` (24) · `probar-cuenta-distintos` (22) ·
-`probar-temario-reuniones` (14) · `probar-formato-revisar` · `listas`.
-**Los cuatro nuevos se corrieron también en rojo a propósito**, no sólo en verde.
+`probar-temario-reuniones` (14) · `probar-anclaje-dos-pasos` (21) · `probar-formato-revisar` · `listas`.
+**Los cinco nuevos se corrieron también en rojo a propósito**, no sólo en verde.

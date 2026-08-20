@@ -673,6 +673,70 @@ truncó, para que un `sin_link` nunca se confunda con "busqué todo".
 
 ---
 
+### Addendum 1 — 20/08/2026: la mitad ampliada se implementa, y el recorte queda declarado como performance
+
+El enunciado de arriba no se altera. Esto implementa lo que `R-12` declaró y `T2.9.2` dejó
+esperando, y **agrega la propiedad que lo hace seguro**.
+
+**Decisión del usuario, 20/08/2026:** *la campaña de una reunión puede arrancar hasta 10 días antes
+del encuentro. Se busca en ese recorte; si no encuentra, se amplía.*
+
+⭐ **La propiedad, escrita como regla porque es la que hay que sostener: el recorte es
+PERFORMANCE, no criterio.** Un candidato que existe tiene que aparecer igual — el primer paso
+decide **cuánto se tarda**, nunca **qué se encuentra**. Un recorte que pudiera cambiar el resultado
+sería un filtro disfrazado de optimización, y ésos fallan sin avisar.
+
+**El escalón, con su regla de corte:**
+
+1. Se busca con el recorte acotado (`CONFIG.ventana_candidatos_anclaje_dias`).
+2. **Si encuentra por encima del umbral, se queda con eso y NO amplía.**
+3. Si no, se amplía (`…_ampliada_dias`) y se vuelve a buscar.
+
+⭐ **La regla 2 no es una optimización: es determinismo.** Sin ella, ampliar podría traer un
+candidato con mejor score y **el mismo encuentro se anclaría distinto según cuántos días haya
+configurados** — el resultado dependería de un número de `CONFIG` en vez de los datos.
+
+**Vacío significa no ampliar**, que es el comportamiento anterior. El cambio se apaga desde
+`CONFIG` sin tocar código.
+
+---
+
+### ⚠ Addendum 1 bis — lo que la medición encontró, y por qué los 10 días NO se implementan como un recorte
+
+**Medido el 20/08 antes de escribir una línea** (`2026-08-20_8` Parte 0). La pregunta era cuál de
+los dos recortes encadenados pierde el candidato. **La respuesta es ninguno de los dos:**
+
+| recorte | qué lo controla | ¿pierde un candidato a 10 días? |
+|---|---|---|
+| **el universo** — `unirDigitalPorCuenta` sobre `digital/Seguimiento digital` | la ventana de la corrida | **No.** `BASES.digital.modo_periodo = snapshot`, y `leerFuente` *"ignora la ventana y devuelve todas las filas"*. El universo **no se recorta** |
+| **la cercanía** — `candidatosCercanosPorFecha_` | `CONFIG`, hoy `14` | **No.** El filtro es `Math.abs(...) <= msVentana`: **±14 días simétricos**. Los 10 entran con margen |
+
+⭐ **Lo que sí lo pierde es el SCORE, y ampliar el recorte no lo toca.**
+`scoreMatchDigitalRdv_` reparte por fecha así:
+
+```
+menos de 1 día  → +0,50
+hasta 2 días    → +0,25
+más de 2 días   → +0      (no suma; tampoco resta, a propósito)
+```
+
+Con el umbral en `0,6`, un candidato a 10 días **ya está en el conjunto** y **no suma nada por
+fecha**: ancla sólo si barrio (0,5) + tipo (0,2) + tokens (0,3 × solapamiento) lo llevan solos por
+encima. Barrio exacto **más** tipo alcanza (0,7); barrio solo no (0,5).
+
+⚠ **Y ampliar no es neutro: puede empeorar.** El comentario de esa función dice que la fecha es
+*"la única señal que separa"* dos campañas del mismo eje — es lo que puso once números de Orden
+Público en la cuenta equivocada (`3347` en vez de `3387`, medido el 10/08). **Traer más candidatos
+que puntúan cero por fecha aumenta los empates que el desempate tiene que resolver.**
+
+**Consecuencia para la decisión del usuario:** los 10 días son un hecho del negocio y el motor hoy
+**no los honra** — pero el lugar donde faltan es **el score**, no el recorte. Se anota como
+propuesta y **no se aplica en este paso**: mover el reparto de puntaje por fecha cambia qué cuenta
+se ancla a qué encuentro, y de ahí salen números publicados. **Es una decisión del usuario con su
+propia medición**, no un efecto colateral de implementar `R-12`.
+
+---
+
 ## R-13 — Los `m2_*` usan la ventana del informe, y el motor va a diferir de lo publicado
 
 **Enunciado:** los tokens `m2_*` **no llevan `periodo_ref` propio**. Su ventana es la del
