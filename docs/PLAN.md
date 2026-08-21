@@ -2108,6 +2108,10 @@ tienen delante; **lo que falta es un dato que nadie les pasa**.
 
 ## 4 · Backlog (sin orden, sin fecha)
 
+- **Un banco de láminas compartidas** — Parte 0 escrita, sin correr; la premisa dura es si la API
+  permite insertar una slide de otra presentación.
+  (`docs/Prompts/2026-08-21_12_banco_de_laminas.md`. ⚠ **Un prompt sin correr que no está en el
+  plan no lo encuentra nadie** — por eso la línea, decisión del usuario 21/08.)
 - **El tercer informe.** *(Bajó de "Planificado y bloqueado" el 14/08, aplicando la prueba de §9.)*
   Su columna de destrabe decía *"no es prioritario: el objetivo es la capacidad de incorporar
   informes, no un informe puntual"* — **eso es una razón para no hacerlo, no algo que lo
