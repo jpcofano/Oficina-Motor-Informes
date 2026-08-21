@@ -512,6 +512,38 @@ tokens crudos y el plan decía que estaba completo.
   ⚠ **Tiene que ser automático:** entre el corte y la continuación pasa **un minuto**, así que
   cualquier guarda que dependa de que alguien mire y cancele **no llega**.
 
+**Una rama nueva que nunca se ejecutó no está sin probar: está sin escribir el control.** Las dos
+cosas se ven igual en un tablero de suites verdes, y son opuestas. *Sin probar* es código que un
+control mira y todavía no cubre del todo; *sin control* es código que **ninguna afirmación toca**, y
+ahí el verde de al lado no dice absolutamente nada sobre él.
+
+- **El caso, medido el 21/08/2026:** el retorno de `generarInformeConCache_` resolvía el deck con
+  `copia.getName()`, y `copia` **sólo se asigna en la rama que copia la plantilla**. Al continuar un
+  deck quedaba `undefined` y tiraba `TypeError` **fuera del `try/catch`** — o sea que **la
+  reanudación real no podía terminar nunca**. Vivió desde el 20/08 con las **tres** suites del repo
+  en verde: 18 afirmaciones del planificador, 14 de `resueltas`, 17 del reloj. **Ninguna tocaba esa
+  rama.**
+- ⚠ **Y lo que lo hizo indetectable no fue la falta de corridas, sino que la única corrida real
+  salió por otro camino.** La corrida desatendida del 20/08 terminó por *«no quedan secciones
+  pendientes»*, que **devuelve antes de llamar a `generarInforme`**. O sea: el mecanismo *se probó*,
+  y la prueba pasó sin ejecutar una línea de lo que se había agregado. **Una corrida que termina
+  bien es evidencia sobre el camino que tomó, no sobre la función que la contiene.**
+- ⭐ **Lo accionable, y es una pregunta que se hace al agregar la rama, no después del primer
+  incidente:** *¿qué afirmación existente falla si esta rama nueva no funciona?* Si la respuesta es
+  «ninguna», el trabajo no está terminado, por más que el código esté escrito y pusheado. **El
+  control mínimo es que la rama VUELVA** — ni siquiera que haga lo correcto: el bug de acá lo
+  habría cazado una sola afirmación que dijera *«continuar sobre un deck existente devuelve `ok`»*.
+- ⚠ **Y el corolario que hace falta al lado, porque el banco recién escrito cae en él:** un
+  `ok: true` puede convivir con un fallo adentro. `generarInforme` **atrapa las excepciones a
+  propósito** —así la fila de `CORRIDAS` cierra igual— y devuelve `ok: true` con el `fallo` en el
+  resultado. El primer intento del control nuevo pasó **seis afirmaciones sobre un recorrido que
+  murió en la etapa 2** por un stub de menos. **Un control de «vuelve» tiene que afirmar también
+  que volvió sin fallo y sin corte**, o mide que la función existe.
+- **El barrido va con el arreglo, y no sólo la línea que falló.** Toda variable asignada en una sola
+  rama de un `if/else` y leída después es el mismo error esperando, y **las dos ramas compilan**.
+  Acá el barrido dio **una sola** —`copia`— y ese cero medido también se escribe: un cero que nadie
+  buscó no se distingue de «no miré».
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue

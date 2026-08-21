@@ -12021,3 +12021,76 @@ que tiene que escribir necesita una corrida**, y esa corrida es del usuario.
 
 ⭐ **Y el primer paso es de la hoja, no del código:** si `CONFIG.presupuesto_corrida_seg` sigue en
 `150`, el motor ahora **corta bien** — y va a cortar siempre.
+
+---
+
+## 2026-08-21 · `2026-08-21_2` — la rama de continuación devuelve `ok`, y ahora tiene control
+
+**Objetivo único:** que continuar un deck existente vuelva en vez de tirar. Nada más.
+
+### El bug
+
+El retorno de `generarInformeConCache_` resolvía el deck con `copia.getName()` y `copia.getUrl()`, y
+**`copia` sólo se asigna en la rama que copia la plantilla**. Al continuar (`opciones.deck_id`)
+quedaba `undefined` y tiraba `TypeError` **fuera del `try/catch`** que protege las etapas — o sea
+**después** de que el cierre ya escribió `CORRIDAS` y quitó el sello. `correrUnaEjecucion_` no lo
+atrapa: no marca secciones `hecha`, no guarda el estado y no crea el trigger siguiente. **La
+reanudación real no podía terminar nunca.**
+
+### Parte 0 — el barrido, y el cero se escribe
+
+**Una sola variable: `copia`.** Las tres `var` sin inicializar de la función son `carpeta`, `deckId`
+y `copia`; las dos primeras no se desreferencian nunca. El error simétrico —algo asignado sólo bajo
+`if (continuando)` y leído después— **no existe**: `deckId` se asigna en las dos ramas.
+
+**El cero se escribe igual**, y el barrido quedó automatizado como el bloque 4 del control nuevo: un
+cero que nadie buscó no se distingue de «no miré».
+
+### Parte A — el arreglo
+
+`nombre`, `url` y `dueno` salen de **un solo `DriveApp.getFileById(deckId)`**, dentro del `try/catch`
+que ya existía para el dueño — ampliado a las tres lecturas, con valores de reemplazo que dicen qué
+pasó. Un deck que no se puede abrir no invalida una corrida que ya escribió su fila.
+
+⭐ **Y corrige de paso un error silencioso del camino que SÍ andaba:** el cierre le quita el sello de
+en-proceso **antes** del retorno, así que `copia.getName()` devolvía el nombre **con** sello. Nadie
+lo había notado porque ese nombre sólo se mira en el reporte. Ahora sale del archivo.
+
+### Parte B — el control que faltaba
+
+**`tools/probar-continuacion-deck.js`, 22 afirmaciones.** Real todo `generarInformeConCache_` de la
+primera línea al `return` —con `SpreadsheetApp` en memoria, así que `abrirCorrida_`,
+`marcarEtapa_`, `escribirFaltantes_` y `escribirCorrida_` corren de verdad—; falseadas las
+plataformas y lo de otros archivos. **Importa que el cierre sea real: el bug estaba después de él.**
+
+Los cuatro bloques: continuar devuelve `ok`; **romper a propósito** —se reintroduce `copia` en el
+fuente y se verifica que tire `TypeError` en `getName`—; el caso simétrico sin `deck_id`, porque un
+arreglo que rompiera el camino de siempre pasaría el primero; y el barrido sobre el fuente.
+
+⚠ **Dos rojos del propio banco, y los dos enseñan más que el arreglo:**
+
+1. ⭐ **`ok: true` convivía con un `fallo` adentro.** El primer intento corrió con un stub de menos,
+   la corrida murió por excepción en la etapa 2, `generarInforme` la atrapó —que es lo correcto— y
+   devolvió `ok: true`. **Seis afirmaciones en verde sobre un recorrido que no llegó al cierre**, o
+   sea sobre el lugar exacto donde vive el bug. Se agregó `fallo === null` y `corte === null`, y
+   eso destapó **dos** stubs faltantes, uno por vez.
+2. **`instanceof TypeError` no cruza los realms de `vm`.** El error nace dentro del contexto, que
+   tiene sus propios constructores, así que el rojo era del banco y no del código. Se compara por
+   `name`, que es lo que se puede afirmar de verdad.
+
+### ⭐ Por qué se publicó, que es lo que hay que no repetir
+
+Al 21/08 las **tres** suites del repo estaban en verde —18 del planificador, 14 de `resueltas`, 17
+del reloj— y **ninguna tocaba la rama de continuación**. Esa rama no tenía **una sola afirmación**.
+
+⚠ **Y lo que lo hizo indetectable no fue la falta de corridas.** La única corrida desatendida real
+—`jm-20260820-190943`— salió por *«no quedan secciones pendientes»*, que **devuelve antes de llamar
+a `generarInforme`**. El mecanismo se probó, y la prueba pasó **sin ejecutar una línea de lo que se
+había agregado**. Regla en `CLAUDE.md` §4: *una rama nueva que nunca se ejecutó no está sin probar,
+está sin escribir el control*.
+
+### Lo que no se probó
+
+⛔ **El ciclo desatendido no corrió.** Este control afirma que la rama **vuelve**; no que la
+reanudación produzca el deck correcto —en el banco se pinta cero— ni que el ciclo cierre, que
+necesita trigger, lock y una corrida real. **Eso es lo que sigue.**

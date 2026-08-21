@@ -3,7 +3,7 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-21, al cerrar el `2026-08-21_1` (el reloj en todas las etapas)
+**Última actualización:** 2026-08-21, al cerrar el `2026-08-21_2` (la rama de continuación)
 
 ---
 
@@ -77,28 +77,48 @@ otras cuentas compartidas con él.
 
 ---
 
-## ⛔ Lo que sigue roto y no se tocó
+## ✅ El `TypeError` de la reanudación: cerrado
 
-**`generarInforme` tira `TypeError` al continuar un deck.** El retorno arma
-`deck: { nombre: copia.getName(), … }` y **`copia` sólo se asigna en la rama que copia la
-plantilla**: al continuar queda `undefined`, y tira **fuera del `try/catch`**, después de que el
-cierre ya corrió. **La reanudación real nunca puede terminar.**
+`generarInforme` tiraba al continuar un deck — `copia.getName()` sobre una variable que sólo se
+asigna en la rama que copia la plantilla, y **fuera del `try/catch`**, o sea después de que el cierre
+ya escribió `CORRIDAS` y quitó el sello. **La reanudación real no podía terminar nunca.**
 
-Nunca se vio porque la única corrida desatendida real salió por *«no quedan secciones pendientes»*,
-que devuelve **antes** de llamar a `generarInforme`. **El arreglo es de una línea** —resolver el
-archivo por `deckId`— **y necesita su propio prompt**: toca el camino de reanudación, que el
-`2026-08-21_1` declara fuera de alcance. Detalle en `docs/PENDIENTES_consistencia.md`.
+Arreglado en el `2026-08-21_2`: `nombre`, `url` y `dueno` salen de **un solo
+`DriveApp.getFileById(deckId)`**, que existe en los dos caminos. **El barrido de la misma clase de
+bug dio una sola variable** —`copia`— y no hay más.
 
-⚠ **Consecuencia práctica: el mecanismo desatendido no sirve todavía.** Hasta que eso se arregle, una
-corrida que corta hay que continuarla a mano.
+⭐ **Y el control que no existía ya existe:** `tools/probar-continuacion-deck.js`, 22 afirmaciones,
+con la rotura a propósito adentro. Hasta el 21/08 las tres suites del repo estaban **todas en
+verde** y **ninguna tocaba esa rama**.
+
+---
+
+## ⏸ Lo que sigue: probar el ciclo desatendido
+
+**Es lo próximo y ya no está bloqueado.** Lo que falta medir necesita trigger, lock y una corrida
+real, y por eso es del usuario:
+
+- que la ejecución 1 corte y deje plan,
+- que el trigger dispare y la continuación **entre a `generarInforme` y vuelva** — el camino que
+  hasta hoy tiraba,
+- que las secciones se marquen `hecha` por resolución,
+- que el cierre quite el sello.
+
+⚠ **Antes de eso, `verificarAlcanceDesatendido()`**: un trigger corre **sin usuario delante**, con
+los permisos del **dueño del script**, y las bases son planillas de otras cuentas.
 
 ---
 
 ## Lo verificado desde acá, y lo que eso no alcanza a decir
 
-`node tools/probar-reloj-etapas.js` — **17 afirmaciones en verde**, incluida la etapa 1 corriendo de
-verdad con `Date` reemplazado, y **la rotura a propósito automatizada**: el banco saca del fuente la
-llamada de control de la etapa 2 y verifica que la afirmación caiga nombrando esa etapa.
+Las cuatro suites, en verde: `probar-reloj-etapas` (**17**), `probar-continuacion-deck` (**22**),
+`probar-planificador` (**18**) y `probar-resueltas` (**14**). Las dos primeras tienen **la rotura a
+propósito automatizada**: sacan del fuente la línea que protegen y verifican que la afirmación caiga.
+
+⚠ **Y una lección del banco nuevo que conviene tener a mano antes de escribir el próximo:**
+`generarInforme` **atrapa las excepciones a propósito** y devuelve `ok: true` con el `fallo` adentro.
+Un control que sólo mire `ok` pasa sobre corridas que murieron en el medio — pasó, con seis
+afirmaciones en verde. **Afirmar `fallo === null` es lo que hace que las otras signifiquen algo.**
 
 ⚠ **Ninguna corrida real.** Lo verificado es la decisión, el cableado de los controles y el recorrido
 de la etapa 1 sobre un reloj simulado. **Que el corte ordenado alcance a escribir todo lo que tiene

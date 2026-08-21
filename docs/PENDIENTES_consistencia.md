@@ -5315,10 +5315,33 @@ muerta. Mientras esté, `iniciarCorridaDesatendida_` **se niega a arrancar otra*
 
 ---
 
-## 2026-08-21 · ⛔ `generarInforme` tira una excepción al continuar un deck — la reanudación no puede terminar
+## 2026-08-21 · ~~⛔ `generarInforme` tira una excepción al continuar un deck~~ — CERRADO
 
-**Estado:** ABIERTO. Encontrado midiendo el caso de arriba; **no se tocó**, porque es el mecanismo
-desatendido y el `2026-08-21_1` lo declara fuera de alcance.
+**Estado:** ✅ **CERRADO el 21/08/2026** por el `2026-08-21_2`. Se deja la descripción entera porque
+el modo de falla es lo que vale, no el arreglo — que es de una línea.
+
+**El arreglo:** `nombre`, `url` y `dueno` salen de **un solo `DriveApp.getFileById(deckId)`**, y
+`deckId` existe en los dos caminos. ⭐ **Y corrige de paso un error silencioso del camino que SÍ
+andába:** el cierre le quita el sello de en-proceso **antes** del retorno, así que `copia.getName()`
+devolvía el nombre **con** sello. Nadie lo había notado porque el nombre del retorno sólo se mira en
+el reporte.
+
+**El barrido de la misma clase de bug** —toda variable asignada en una sola rama y leída después—
+dio **una sola**: `copia`. Las otras dos `var` sin inicializar de la función (`carpeta`, `deckId`) no
+se desreferencian, y la única desreferencia que le queda a `copia` —`deckId = copia.getId()`— está
+adentro de la rama que la asigna. **El cero se escribe igual**: un cero que nadie buscó no se
+distingue de «no miré».
+
+**El control:** `tools/probar-continuacion-deck.js`, 22 afirmaciones, con la rotura a propósito
+adentro. ⚠ **Y una lección del propio control, que vale más que el arreglo:** su primer intento
+pasó **seis afirmaciones sobre un recorrido que murió en la etapa 2** por un stub de menos —
+`generarInforme` atrapa las excepciones a propósito y devuelve `ok: true` con el `fallo` adentro.
+Afirmar `fallo === null` además de `ok === true` es lo que hace que las otras signifiquen algo. La
+regla quedó en `CLAUDE.md` §4.
+
+---
+
+### La descripción original, del 21/08 a la mañana
 
 `generarInformeConCache_` arma su valor de retorno con:
 
@@ -5341,6 +5364,7 @@ el trigger siguiente. **La corrida se detiene con el plan a medias y el estado v
 
 **El arreglo es de una línea** —resolver el archivo por `deckId` en vez de por `copia`— pero
 necesita su propio prompt: toca el camino de reanudación y hay que verificar qué más asume `copia`.
+*(Ese prompt fue el `2026-08-21_2`, corrido el mismo día. Ver arriba.)*
 
 ⚠ **Y es la familia del comentario que afirma un contrato** (`CLAUDE.md` §4): nada compara una rama
 contra la otra, y las dos compilan.
