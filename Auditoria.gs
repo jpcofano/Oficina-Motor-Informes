@@ -3866,8 +3866,15 @@ var MAPA_SECCION_LAMINAS_ = {
   'L-001': 'portada',                 // pos 1 · "Seguimiento · {{fecha_dia}} de {{fecha_mes}}"
   'L-002': 'indice',                  // pos 2 · "3 · 4 · 5"
   'L-003': 'portada_digital_directa', // pos 3 · "Comunicación Digital y Directa"
-  'L-004': 'uno_a_uno_comunas',       // pos 4 · "Uno a uno en comunas · Comuna {{ecv_comuna}}"
-  'L-005': 'uno_a_uno_comunas',       // pos 5 · "Plataforma · Objetivo · Alcance"
+  /* ⭐ `2026-08-21_11.2` §1 — **van a `encuentro`, no a `uno_a_uno_comunas`.** Decisión del
+   * usuario, 21/08, y el motivo está medido: **`REUNIONES` no tiene `informe_id`**, así que
+   * `encuentro` expande **los mismos dos ítems en las dos plantillas**. Con la condición sólo en
+   * `jm`, el 1 a 1 de `secco` saldría con el iceberg.
+   *
+   * Con esto el bloque de `encuentro` de `secco` es **4-5-6-7-8**, verificado contiguo **por el
+   * ancla** y no por `orden_plantilla`. */
+  'L-004': 'encuentro',               // pos 4 · "Uno a uno en comunas · Comuna {{ecv_comuna}}"
+  'L-005': 'encuentro',               // pos 5 · "Plataforma · Objetivo · Alcance"
   'L-006': 'encuentro',               // pos 6 · "Encuentro temático · {{et_nombre}}"
   'L-007': 'encuentro',               // pos 7 · estrategia de comunicación
   'L-008': 'encuentro',               // pos 8 · el iceberg

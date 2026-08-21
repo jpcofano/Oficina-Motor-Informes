@@ -3053,7 +3053,7 @@ var SEED_SECCIONES_ = [
    * ⚠ **Sus tokens no están cableados**: `L-005` lleva `ecv_` y `u1_`, y ningún `u1_*` tiene fila
    * en `MARCADORES`. La sección existe para que las dos láminas **pertenezcan**; publicar es otro
    * trabajo. Por eso `estado: 'manual'` y el `falta` lo dice. */
-  filaSeccion_({ id: 'uno_a_uno_comunas', orden: 18, nombre: 'Uno a uno en comunas', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'pendiente a cablear — L-005 lleva u1_ y ecv_, y ningún u1_* tiene fila en MARCADORES (21/08)' }),
+  filaSeccion_({ id: 'uno_a_uno_comunas', orden: 18, nombre: 'Uno a uno en comunas', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: '⚠ SIN NINGUNA LÁMINA desde el 21/08: L-004 y L-005 pasaron a `encuentro` (2026-08-21_11.2 §1) porque REUNIONES no tiene informe_id y encuentro expande los mismos ítems en las dos plantillas. La fila NO se borra (D-23 punto 11) — una decisión que el diseño esquivó se marca, no se hace desaparecer' }),
 
   /* `analisis_datos` — la portáda de la sección de análisis, que existe en **las dos** plantillas
    * y no tenía sección: `jm` `L-049` (*"Análisis y datos · INFORME SEMANAL"*) y `secco` `L-024`
