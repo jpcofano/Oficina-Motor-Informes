@@ -5430,7 +5430,15 @@ contra la otra, y las dos compilan.
 **Estado:** las seis ABIERTAS. Ninguna se tocó — los dos prompts son diagnóstico y declaran parar.
 La medición completa está en `docs/BITACORA.md`, entradas del 21/08.
 
-### 1 · ⛔ Una lámina de la plantilla de `jm` no está en el registro
+### 1 · ~~⛔ Una lámina de la plantilla de `jm` no está en el registro~~ — ✅ CERRADA (21/08)
+
+> **El usuario selló la plantilla el 21/08 y la lámina tomó `L-053`.** `verificarLaminas()` cierra:
+> **53 láminas, 53 filas, 53 anclas, ninguna sin ancla.** Y desde el `2026-08-21_11` la lámina
+> **pertenece**: `seccion_id = encuentro`, `filtro = tipo=Uno a uno`, `rol = motor`.
+>
+> ⚠ **Pertenecer no es publicar** — ver la inconsistencia 2, que sigue abierta.
+
+**La descripción original:**
 
 `verificarLaminas()`: **53 láminas en las plantillas contra 52 filas en `LAMINAS` y 52 anclas.** La
 lámina de **`jm` posición 8 no tiene ancla ni fila** — el sellado no la alcanzó. Es **la del 1 a 1**:
@@ -5443,7 +5451,22 @@ no existe.
 ⚠ **El instrumento ya lo decía y nadie lo había corrido.** `verificarLaminas()` existe, es sólo
 lectura, y reporta esto en su primera pantalla. **Un control que nadie corre no protege nada.**
 
-### 2 · ⛔ Los 32 tokens `u1_` no tienen fila en `MARCADORES`
+### 2 · ⛔ Los 32 tokens `u1_` no tienen fila en `MARCADORES` — SIGUE ABIERTA, y ahora es lo único que falta
+
+> **Revisada contra el `2026-08-21_11` (21/08).** Las otras dos causas se cerraron: la lámina está
+> sellada (inconsistencia 1) y **pertenece** a `encuentro` con su condición. **Ésta es la tercera y
+> no la tocó nadie.**
+>
+> ⭐ **Y lo que cambió a favor: el trabajo ya no está bloqueado.** El `2026-08-21_7` mapeó
+> `digital/CAMPAÑAS_DESGLOCE_DIGITAL` —18 filas, con las claves `Id cuentas` y `Plataforma`— y
+> `R-28` fijó qué suma cada `u1_total_*`. **Falta escribir las filas de `MARCADORES`**, con dos
+> huecos declarados: de dónde sale el alcance, y los seis `u1_bench_*` (sin prioridad).
+>
+> ⚠ **El síntoma visible cambia con este paso**: hasta ayer la lámina no salía; ahora **sale una vez
+> por cada encuentro de tipo `Uno a uno`, con sus 32 tokens en hueco.** Es correcto y es más
+> ruidoso — conviene saberlo antes de leerlo como una regresión.
+
+**La descripción original:**
 
 Los prefijos cableados son `enc_ ecv_ gcba_ camp_ m2_ ivr_ mail_ imp_ pauta_ frecuencia`. **`u1_` no
 existe.** `diagTokensDeLamina_("jm", 8)` da `con_fila 2 · sin_fila 34`.
@@ -5520,7 +5543,17 @@ texto.**
 mismo deck.** El default no se invirtió y el panel está bien; lo que falta es que el default viva en
 un solo lugar en vez de en cada llamador.
 
-### 6 · ⚠ El seed de `LAMINAS` y la Parte A del `2026-08-21_4` dicen lo contrario
+### 6 · ~~⚠ El seed de `LAMINAS` y la Parte A del `2026-08-21_4` dicen lo contrario~~ — ✅ CERRADA (21/08)
+
+> **La resolvió `D-37`, y no por decreto sino con el número que faltaba.** La Parte A.1 decía que
+> `seccion_id` vacío significa *no se expande ni se resuelve*; medido, **eso dejaba sin publicar 29
+> de las 53 láminas**, portadas incluidas. La salida no fue elegir uno de los dos textos: fue
+> **declarar las 53** y recién entonces darle a la celda vacía el significado de la A.1.
+>
+> ⚠ **La corrección es sólo sobre `seccion_id`.** `modo`, `itera_sobre` y `filtro` **siguen
+> heredando**, y el comentario del seed quedó reescrito para decir exactamente eso.
+
+**La descripción original:**
 
 El seed: *"`seccion_id`, `modo`, `itera_sobre` y `filtro` vacíos significan **hereda de
 `SECCIONES`**, no «sin declarar»"* (`PLAN.md` §2).
@@ -5848,3 +5881,58 @@ tokens específicos del temático.
 
 ⛔ **Corregirlo es tocar la plantilla, y la plantilla es del equipo** (`C-01`). Lo que corresponde
 acá es **reportar el conteo**: cuántos ítems emiten `L-008` con sus `et_` en hueco.
+
+---
+
+## 2026-08-21 · ⏸ Treinta y tres secciones quedaron sin ninguna lámina declarada
+
+**Sale de la Parte 0 punto 5 del `2026-08-21_11`, medido sobre las 53 láminas de las dos
+plantillas.** ⛔ **Ninguna fila se borró** (`D-23` punto 11) y ninguna se arregla acá: *"una sección
+sin láminas o sobra o le falta algo"*, y cuál de las dos es se decide por sección.
+
+**De las 36 secciones de la hoja, 21 no reciben ninguna lámina** —más `uno_a_uno_comunas`, que
+quedó vacía al mover `L-004` y `L-005`—. Los tres grupos, que se atacan distinto:
+
+### ✅ Las que no son un problema: las ocho hijas de `campana` y las de `encuentro`
+
+`campana_portada`, `campana_objetivo`, `campana_herramientas`, `campana_formatos`,
+`campana_agregados`, `campana_desag_digital`, `campana_desag_mail`, `campana_desag_respuestas`,
+`campana_audiencia` · `encuentro_portada`, `encuentro_estrategia`, `encuentro_iceberg`,
+`encuentro_resultados`.
+
+⭐ **Describen por nombre exactamente las láminas que su padre reclama**, y quedaron vacías **a
+propósito**: son `modo = unica`, y asignarles las láminas **las sacaría del bloque repetible y el
+padre dejaría de expandirse**. Es el mismo motivo por el que `L-035` va a `encuentro` y no a
+`encuentro_iceberg`.
+
+⚠ **Quedan como documentación de la estructura del bloque**, que es un uso legítimo — pero hay que
+saber que **no gobiernan nada**, o el día que alguien las edite esperando un efecto no va a pasar
+nada.
+
+### ⏸ Las cinco `repetible` que no despiertan, y por qué
+
+`analisis_comparativo` · `analisis_tematico` · `nuevos_proveedores` (las tres `estado = manual`) ·
+`campana_audiencia` · `campana_desag_respuestas` (`revisar`).
+
+**La Parte C quitó la exigencia de `familia_tokens` y la reemplazó por «al menos una lámina
+declarada».** ⚠ **El filtro de `estado = activa` se conserva**, así que **ninguna de las cinco
+despierta** — ni siquiera si alguien les declarara láminas. **Verificado por afirmación** en
+`tools/probar-laminas-declaradas.js` bloque 7, no por este párrafo.
+
+**Lo que sí hay que saber:** el día que una pase a `activa` **y** tenga láminas declaradas,
+**expande**. Antes hacía falta además `familia_tokens`; ahora no.
+
+### ⛔ Las que sobran o les falta algo, y son las que hay que mirar
+
+`miba` · `impacto_comunicacional` *(tiene dos láminas: `L-027` y `L-028`)* · `otros_temas`
+*(tiene `L-026`)* · `aud_formatos` · `aud_directa` · `aud_contacto_ciudadano` ·
+`uno_a_uno_comunas` · `analisis_datos` *(tiene dos)*.
+
+⚠ **Las tres `aud_*` son las que más llaman la atención:** describen una audiencia de campaña y
+**ninguna lámina de ninguna de las dos plantillas las reclama**. O la plantilla no las contempla —y
+entonces son secciones curadas contra un deck que no existe— o hay láminas que nadie clasificó bien.
+**No se decide acá.**
+
+⭐ **Y el motivo por el que esto se anota en vez de limpiarse:** una sección sin láminas **ya no
+hace nada** desde la Parte C —antes tampoco, pero por otra razón—, así que **no molesta**. Lo que
+molesta es no saber cuáles sobran: borrar una que hacía falta cuesta mucho más que dejar diez que no.
