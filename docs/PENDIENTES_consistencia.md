@@ -5194,3 +5194,153 @@ está terminada es tan crítica como la que decide cuál tomar**, y sólo una te
 
 El deck **`jm-20260820-190943` sigue con el sello puesto** y su corrida ya no existe. **Quitarle
 `[en proceso] ` del nombre a mano**, o borrarlo: no publicó nada.
+
+---
+
+## 2026-08-21 · El techo declaraba 150 y la corrida llegó al muro de 360
+
+**Estado:** el mecanismo de corte, corregido y con control (`2026-08-21_1`). **La limpieza a mano
+sigue abierta** — ver la lista del final.
+
+### Lo observado
+
+**"Se ha superado el tiempo máximo de ejecución", dos veces**, generando `jm` desde el panel con el
+temario del 21/08 cargado. Corrida `jm-20260821-094731`.
+
+⭐ **Y el dato que cambia el diagnóstico entero: `CONFIG.presupuesto_corrida_seg` estaba en 150, no
+en 350.** Quedó bajo de la prueba del mecanismo desatendido de la noche anterior. O sea que el motor
+tenía que cortar a los 150 s y llegó al muro duro de Apps Script, **360** — **más del doble del
+techo declarado**.
+
+**Eso descarta la explicación fácil.** No es *"hay más trabajo del que entra en seis minutos"* —el
+temario del 21/08 trae dos campañas nuevas, y ésa era la hipótesis—: es que **el presupuesto no se
+respetaba**. Con 210 s de sobregiro sobre el techo, el trabajo extra no explica nada.
+
+### La causa, medida sobre el código
+
+**El reloj se consultaba en exactamente dos sitios**, los dos adentro del bucle de asignaciones:
+
+| etapa | ¿consultaba el reloj? |
+|---|---|
+| precondiciones + copia de la plantilla | **no** |
+| 1 · expandir secciones repetibles (anclaje, unión digital, duplicación) | **no** |
+| 2 · mapa token→objectId | **no** |
+| 3 · pasada por ítem | sí, antes de cada ítem |
+| 4 · tokens fijos | sí, una vez |
+| 5 · cierre (barrida, `FALTANTES`, `CORRIDAS`, sello) | **no** |
+
+⭐ **La etapa 1 es la que se pasó, y es la que no podía cortar.** Se lleva el arranque entero
+—anclaje ~50 s + unión digital ~27 s, medidos en 70-80 s juntos el 20/08— más una llamada a la API
+de Slides por cada duplicación. Con dos campañas nuevas, la sección `campana` tiene **ocho láminas
+modelo**, así que cada campaña agrega ocho asignaciones y sus `duplicate()` + `move()`.
+
+⚠ **Y había un segundo agujero, más chico y del mismo tipo: el primer ítem entraba siempre.**
+`costoUltimoItemSeg` arrancaba en `0`, así que el control preguntaba *"¿queda algo por encima de la
+reserva?"* en vez de *"¿entra un ítem?"*. Con 2 s disponibles el ítem arrancaba igual y costaba ~6.
+
+### Lo que NO era la causa
+
+- **El cronómetro no arrancaba tarde.** `relojDeCorrida_()` se llamaba después de abrir dos cachés
+  que sólo asignan `{}`. Se movió igual a la primera línea de `generarInforme` —porque un reloj que
+  arranca después del gasto real es una premisa que hay que volver a verificar cada vez— pero **la
+  diferencia es de milésimas y no explica nada**.
+- **El caché de arranque pega.** `anclarEncuentros` y `unirDigitalPorCuenta` se cachean por ventana
+  (`cacheAnclaje_`, `cacheUnionDigital_`), `itemsDeSeccion_` recibe **el mismo objeto `ventana`**
+  para las tres secciones y los marcadores por ítem viajan con `opciones.ventana = ventanaInforme`.
+  El arranque se paga **una vez por ejecución**. ⚠ El borde que queda: un marcador con `periodo_ref`
+  propio genera otra clave de caché y **paga la unión de nuevo, adentro del bucle** — no se midió si
+  hay alguno así hoy.
+- **El panel no reintenta.** `generar()` en `Panel.html` no tiene reintento: el `withFailureHandler`
+  sólo pinta el error. **Las dos ejecuciones fueron dos cosas distintas** — la del panel, y la
+  continuación desatendida que arrancó por trigger. Cada una vuelve a pagar el arranque entero y
+  **el caché muere con la ejecución**, así que la segunda no heredó nada de la primera.
+
+### ⭐ El techo estaba declarado en dos lugares, y el panel mostraba el equivocado
+
+`Panel.html` tenía `var TECHO_S = 350; // límite duro de una corrida`, **y las dos mitades estaban
+mal**: el techo real es `CONFIG.presupuesto_corrida_seg` —que esa mañana valía **150**— y el límite
+duro es **360**, de Apps Script, no 350.
+
+**La regla del cronómetro dibujó una escala hasta 350 mientras el motor tenía 150**, así que el
+contador pasó el techo real sin ponerse en rojo y siguió hasta el muro pareciendo normal. Es
+`CLAUDE.md` §2 en su forma más literal —un valor de negocio escrito en el código— con el agravante
+de que **el lugar equivocado era justo el que la persona mira**.
+
+### Lo corregido
+
+| qué | cómo |
+|---|---|
+| el control por etapa | `controlDeEtapa_(reloj, etapa, estimado, clase)` — un punto de control antes de cada etapa declarada en `ETAPAS_CON_CONTROL_`, no sólo entre asignaciones |
+| dentro del arranque | dos controles en `duplicarBloquesRepetibles_`: uno **después de la primera lectura** (el arranque ya se pagó; la única decisión posible es no seguir) y uno **antes de cada sección siguiente**, contra lo que costó la anterior |
+| la clase del corte | `arranque_no_entra` vs `presupuesto`. *"El arranque no entra en el techo"* manda a subir el techo o partirlo; *"me quedé sin presupuesto"* manda a correr de nuevo. **Son dos arreglos distintos** y el reporte los nombra distinto |
+| el primer ítem gratis | la semilla sale de `CONFIG.costo_item_seg` (6 s medidos). La observación de la corrida la sigue pisando |
+| el cierre | **se mide** (`presupuesto.cierre_seg`) y `avisoDeReserva_` avisa si no entra en `reserva_cierre_seg`, con el valor que habría que poner |
+| el techo del panel | sale de `panel_getEstado().reloj`, de `CONFIG`. `MURO_S = 360` es lo único que queda como constante, porque no lo elige nadie de este proyecto |
+| el cronómetro | arranca en la primera línea de `generarInforme` y baja por parámetro |
+
+**El cierre no lleva punto de control, y es deliberado:** barrida, `FALTANTES`, `CORRIDAS` y sello
+**tienen que correr siempre**, cortada la corrida o no. Lo que lo protege no es un control sino la
+reserva — por eso se mide en vez de controlarse.
+
+**Controles nuevos:** `verificarRelojDeEtapas()` en `Pruebas.gs` (4 pruebas) y
+`tools/probar-reloj-etapas.js` (17 afirmaciones, corre la etapa 1 de verdad con `Date` reemplazado).
+**La rotura a propósito está automatizada**: el banco saca del fuente la llamada de control de la
+etapa 2 y verifica que la afirmación caiga **nombrando esa etapa**.
+
+### ⛔ Lo que hay que limpiar a mano, y qué hay que mirar antes
+
+**Tres decks para borrar. Ninguno publicó nada:**
+
+- `jm-20260820-190943` — el del sello permanente, ya anotado arriba.
+- Los **dos de la mañana del 21/08**, los dos con `[en proceso] ` en el nombre.
+
+**Y cuatro cosas que hay que mirar en la planilla, porque una corrida que muere en el muro no
+escribe nada** —ni cierra su fila, ni barre, ni quita el sello—:
+
+1. ⭐ **`CONFIG.presupuesto_corrida_seg`.** Si sigue en `150`, subirlo. **Es el primer paso y sin él
+   todo lo demás sobra**: con el techo en 150 el motor ahora **corta bien**, y va a cortar siempre.
+2. **`CORRIDAS`** — la fila de `jm-20260821-094731` quedó abierta, con `deck_id` y sin
+   `fecha_generacion`. ⭐ **Su columna `faltantes` tiene el rastro de etapas con los segundos de cada
+   una** (`marcarEtapa_` escribe con `flush()` por etapa, así que **sobrevive al muro**). Es la única
+   medición directa de dónde se fue el tiempo del 21/08 y conviene copiarla antes de tocar la fila.
+3. **`PLAN_CORRIDA`** — filas de `jm-20260821-094731` sin cerrar.
+4. **Triggers huérfanos** — `correrUnaEjecucion_` borra el trigger que la disparó **antes** de
+   generar, así que la ejecución que murió en el muro no debería haber dejado ninguno. Verificar
+   igual con `cancelarCorridaDesatendida()`, que además borra el estado en `PropertiesService`.
+
+⚠ **Y hay un estado en `PropertiesService` que probablemente quedó vivo:** la ejecución desatendida
+murió **antes** de `guardarEstadoCorrida_`, así que `corrida_desatendida` conserva lo de la corrida
+muerta. Mientras esté, `iniciarCorridaDesatendida_` **se niega a arrancar otra**.
+`cancelarCorridaDesatendida()` lo limpia.
+
+---
+
+## 2026-08-21 · ⛔ `generarInforme` tira una excepción al continuar un deck — la reanudación no puede terminar
+
+**Estado:** ABIERTO. Encontrado midiendo el caso de arriba; **no se tocó**, porque es el mecanismo
+desatendido y el `2026-08-21_1` lo declara fuera de alcance.
+
+`generarInformeConCache_` arma su valor de retorno con:
+
+```js
+deck: { id: deckId, nombre: copia.getName(), url: copia.getUrl(), dueno: dueno },
+```
+
+**`copia` sólo se asigna en la rama que copia la plantilla.** Cuando se continúa un deck
+(`opciones.deck_id`), la rama `else` no corre y `copia` queda `undefined` — `copia.getName()` tira
+`TypeError`, **fuera del `try/catch`** que protege las etapas.
+
+**Por qué no se vio hasta hoy:** la única corrida desatendida real —`jm-20260820-190943`— nunca
+entró a ese camino. Su ejecución 2 salió por *«no quedan secciones pendientes»*, que **devuelve
+antes de llamar a `generarInforme`**. La rama que continúa de verdad no se ejecutó nunca.
+
+**Qué pasa si se ejecuta:** el cierre ya corrió —`CORRIDAS` cerrada, sello quitado— y **después**
+tira. `correrUnaEjecucion_` no lo atrapa: no marca secciones `hecha`, no guarda el estado, no crea
+el trigger siguiente. **La corrida se detiene con el plan a medias y el estado viejo en
+`PropertiesService`.**
+
+**El arreglo es de una línea** —resolver el archivo por `deckId` en vez de por `copia`— pero
+necesita su propio prompt: toca el camino de reanudación y hay que verificar qué más asume `copia`.
+
+⚠ **Y es la familia del comentario que afirma un contrato** (`CLAUDE.md` §4): nada compara una rama
+contra la otra, y las dos compilan.

@@ -11884,3 +11884,140 @@ afirmaciones— y la sintaxis. **El lock, el trigger, la reanudación real y el 
 delante necesitan una corrida**, y esa corrida es del usuario. `verificarAlcanceDesatendido()`
 existe para eso y **hay que correrla antes que nada**: si el trigger no alcanza las bases, la
 primera continuación falla y el plan se queda pendiente sin explicación.
+
+---
+
+## 2026-08-21 · `2026-08-21_1` — el reloj se consulta en todas las etapas, no sólo en el bucle
+
+**Objetivo único:** que ninguna corrida llegue al muro de los seis minutos. El techo existe para
+cortar antes **con dignidad**; una corrida que muere en el límite duro no barre, no escribe
+`FALTANTES`, no cierra `CORRIDAS` y no deja evidencia de por qué.
+
+### Parte 0 — lo medido
+
+⭐ **La premisa del prompt estaba corregida por el usuario antes de arrancar, y la corrección es el
+diagnóstico entero:** `CONFIG.presupuesto_corrida_seg` estaba en **150**, no en 350 — quedó bajo de
+la prueba del mecanismo desatendido de la noche anterior. La corrida llegó igual a **360 s**, el
+muro duro de Apps Script. **Más del doble del techo declarado.**
+
+Eso mata la hipótesis fácil del prompt —*"dos campañas nuevas, más asignaciones sobre el mismo
+techo"*—: con 210 s de sobregiro, el trabajo extra no explica nada. **El presupuesto no se
+respetaba.**
+
+**1 · Dónde se consultaba el reloj.** En **dos** sitios, los dos dentro del bucle de asignaciones:
+antes de cada ítem de la etapa 3 y una vez antes de la etapa 4. La hipótesis del prompt queda
+**confirmada**: precondiciones, copia de la plantilla, etapa 1, etapa 2 y cierre corrían sin ningún
+punto de control.
+
+⭐ **La etapa que se pasó de los 150 s sin consultar el reloj es la 1**, y no puede ser otra: se
+lleva el arranque entero (anclaje ~50 s + unión digital ~27 s) más un `duplicate()` y un `move()` de
+la API de Slides por asignación. Con dos campañas nuevas, `campana` tiene **ocho láminas modelo**,
+así que cada campaña agrega ocho asignaciones.
+
+**2 · Cuándo arrancaba el cronómetro.** Prácticamente al principio: `relojDeCorrida_()` corría
+después de `abrirCacheRegistros_()` y `abrirCacheDatosHoja_()`, que sólo asignan `{}`. **No es la
+causa de nada.** Se movió igual a la primera línea de `generarInforme` (A.3), porque un reloj que
+arranca después del gasto real es una premisa que hay que volver a verificar cada vez.
+
+**3 · Cuántas veces se llaman `anclarEncuentros` y `unirDigitalPorCuenta`.** **Una vez por
+ejecución cada uno.** El caché pega en las tres secciones: `itemsDeSeccion_` recibe el mismo objeto
+`ventana`, y los marcadores por ítem viajan con `opciones.ventana = ventanaInforme`. ⚠ El borde que
+queda abierto: un marcador con `periodo_ref` propio genera otra clave y **paga la unión de nuevo,
+adentro del bucle**; no se midió si hay alguno así.
+
+**4 · Qué fueron las dos ejecuciones.** **El panel no reintenta** — `generar()` en `Panel.html`
+sólo pinta el error en el `withFailureHandler`. Fueron dos cosas distintas: la del panel y la
+continuación desatendida por trigger. Cada una vuelve a pagar el arranque entero y **el caché muere
+con la ejecución**.
+
+**5 · El costo del arranque.** No es medible desde acá y **no se inventa**. La medición directa
+existe y está en la planilla: `marcarEtapa_` escribe el rastro de etapas con los segundos de cada
+una **con `flush()` por etapa**, así que **sobrevive al muro**. Está en la columna `faltantes` de la
+fila `jm-20260821-094731` de `CORRIDAS`, y hay que copiarla antes de tocar la fila.
+
+**6 · Qué quedó sucio.** `CORRIDAS` con la fila abierta, dos decks con `[en proceso] ` en el nombre,
+`PLAN_CORRIDA` con filas sin cerrar y —lo que no estaba en la lista del prompt— **el estado
+`corrida_desatendida` vivo en `PropertiesService`**, que impide arrancar otra corrida desatendida.
+Triggers huérfanos no debería haber: `correrUnaEjecucion_` borra el suyo **antes** de generar.
+
+### ⭐ Un hallazgo que el prompt no pedía y explica lo que la persona vio
+
+`Panel.html` tenía `var TECHO_S = 350; // límite duro de una corrida`, **y las dos mitades estaban
+mal**: el techo real es `CONFIG.presupuesto_corrida_seg` —150 esa mañana— y el límite duro es 360.
+**La regla del cronómetro dibujó una escala hasta 350 mientras el motor tenía 150**, así que el
+contador pasó el techo real sin ponerse en rojo. Un techo declarado en dos lugares mintió justo en
+el que la persona mira.
+
+### Parte A — lo construido
+
+- `controlDeEtapa_(reloj, etapa, estimado, clase, contexto)` — el punto de control, con la **clase**
+  del corte adentro. `ETAPAS_CON_CONTROL_` declara qué etapas lo llevan.
+- **Dos controles dentro de la etapa 1** (`duplicarBloquesRepetibles_`, que ahora recibe el reloj):
+  uno **después de la primera lectura** —el arranque ya se pagó, la única decisión posible es no
+  seguir— y uno **antes de cada sección siguiente**, contra lo que costó la anterior.
+  ⚠ **El arranque se descuenta de la sección que lo pagó**: sin eso la segunda se estimaría en 115 s
+  en vez de 35 y cortaría siempre, culpando a trabajo que entra de sobra.
+  ⚠ **Se corta ENTRE secciones, nunca adentro de una**: la ventana entre `duplicate()` y `remove()`
+  es la que devuelve la expansión al cuadrado de `2026-08-20_10` A.3.
+- **Control antes de la etapa 2**, con el mapa armándose igual — es el insumo de la barrida y
+  saltearlo no ahorra un segundo, sólo mueve el gasto adentro de la reserva.
+- **El primer ítem deja de entrar gratis**: `costoUltimoItemSeg` arrancaba en `0`, así que el
+  control preguntaba *"¿queda algo?"* en vez de *"¿entra un ítem?"*. Ahora la semilla sale de
+  `CONFIG.costo_item_seg`.
+- **El cierre se mide** (`presupuesto.cierre_seg`) y `avisoDeReserva_` avisa si no entra en la
+  reserva, **con el valor que habría que poner**. A.4 pedía dimensionar la reserva con un número
+  medido: el número lo produce la corrida, y el aviso es lo que hace que se vea.
+- **Tres valores nuevos en `CONFIG`** —`costo_arranque_seg`, `costo_mapa_seg`, `costo_item_seg`—,
+  con su seed. Son **semillas**, no criterios: la observación de la corrida las pisa.
+- **El techo del panel sale de `panel_getEstado().reloj`.** `MURO_S = 360` queda como constante
+  porque no lo elige nadie de este proyecto.
+- **`presupuesto` salió de la lista de avisos crudos del panel.** Viajaba siempre, así que pintaba
+  un cartel de advertencia con el JSON entero **en toda corrida, incluidas las que terminaron bien**
+  — y tapaba a los tres que sí importan. Ahora el reloj tiene su bloque propio, **último**.
+
+⛔ **El techo no se subió**, como el prompt manda. El muro está en 360 y no se movió.
+
+### Parte B — los controles
+
+`verificarRelojDeEtapas()` (`Pruebas.gs`, sin `_` y sin parámetros) y
+**`tools/probar-reloj-etapas.js`**, que es el que hace el trabajo pesado: **corre la etapa 1 de
+verdad**, con dependencias falsas y **`Date` reemplazado dentro del contexto**, así que el reloj del
+presupuesto y los cronómetros por sección leen el mismo tiempo simulado.
+
+⚠ **Sin ese reemplazo el banco no medía nada** y el primer intento lo demostró: las secciones falsas
+tardan 0 s de reloj de pared, así que `costoUltimaSeccionSeg` —que es justamente lo que hay que
+verificar— salía siempre 0 y las tres afirmaciones daban verde sin tocar el descuento del arranque.
+
+**17 afirmaciones, todas en verde**, incluidas las cuatro que corren la etapa 1: sin corte con techo
+holgado, `arranque_no_entra` cuando el arranque solo se pasa, corte genérico en la segunda sección
+con la estimación descontada, y **el mismo trabajo entrando entero con el techo real** — que es la
+mitad que suele faltar: un control que corta siempre satisface *"corta cuando no hay presupuesto"* y
+no sirve para nada.
+
+⭐ **B.4, romper a propósito, está automatizado.** El banco saca del fuente la llamada de control de
+la etapa 2 y verifica que la afirmación **caiga nombrando esa etapa**. Cae, la nombra, y las otras
+tres siguen verdes — la rotura es del cableado, no de la decisión.
+
+⚠ **Lo que los controles NO cubren, y va dicho porque el verde de arriba no lo dice:** cuánto cuesta
+cada etapa de verdad (los segundos del banco son inventados para recorrer los casos), si el cierre
+entra en la reserva (sale de una corrida real) y qué techo tiene la hoja hoy.
+
+### ⛔ Un hallazgo que NO se arregló, y por qué
+
+`generarInformeConCache_` arma su retorno con `copia.getName()`, y **`copia` sólo se asigna en la
+rama que copia la plantilla**. Al continuar un deck queda `undefined` y tira `TypeError` **fuera del
+`try/catch`**, después de que el cierre ya corrió. **La reanudación real nunca puede terminar.**
+
+No se vio hasta hoy porque la única corrida desatendida real salió por *«no quedan secciones
+pendientes»*, que devuelve **antes** de llamar a `generarInforme`. **El arreglo es de una línea y
+necesita su propio prompt**: toca el camino de reanudación, que este prompt declara fuera de
+alcance. Anotado en `docs/PENDIENTES_consistencia.md`.
+
+### Lo que no se probó, y no se puede probar desde acá
+
+⛔ **Ninguna corrida real.** Lo verificado es la decisión, el cableado de los controles y el
+recorrido de la etapa 1 sobre un reloj simulado. **Que el corte ordenado alcance a escribir todo lo
+que tiene que escribir necesita una corrida**, y esa corrida es del usuario.
+
+⭐ **Y el primer paso es de la hoja, no del código:** si `CONFIG.presupuesto_corrida_seg` sigue en
+`150`, el motor ahora **corta bien** — y va a cortar siempre.

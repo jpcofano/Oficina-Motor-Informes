@@ -458,6 +458,40 @@ avanza nada es **cuánta cuota queda**, y para cuando eso se nota ya se gastó.
   asignaciones**. Un planificador que cuenta la unidad equivocada se equivoca por más del doble, y
   el síntoma es una corrida que corta cuando el plan decía que entraba.
 
+**Un presupuesto que sólo se consulta en el bucle no protege las etapas que están fuera del bucle, y
+el síntoma es llegar al límite duro con un techo declarado.** El techo de una corrida sólo existe
+donde alguien lo mira. Si el reloj se consulta entre unidades de trabajo —entre ítems, entre
+archivos, entre filas—, todo lo que pasa **antes de la primera** y **después de la última** corre sin
+freno, y el corte ordenado nunca llega a ejecutarse.
+
+- **El caso, medido el 21/08/2026:** `CONFIG.presupuesto_corrida_seg` estaba en **150** —quedó bajo
+  de una prueba de la noche anterior— y la corrida de `jm` llegó igual al muro duro de Apps Script,
+  **360 s**. Más del doble del techo. El reloj se miraba en **dos** sitios, los dos dentro del bucle
+  de asignaciones; el arranque —anclaje + unión digital + duplicación, 70-80 s más una llamada a la
+  API de Slides por lámina— corría **sin ningún punto de control**.
+- ⚠ **Lo que hace caro este modo de falla es que el sobregiro no deja evidencia.** Un corte ordenado
+  escribe: barre los crudos, cierra la fila, quita el sello. **El muro no escribe nada** — ni la
+  causa. Así que la corrida que más falta hace diagnosticar es exactamente la que no dejó con qué.
+- ⭐ **La pregunta concreta, y se hace al escribir el techo, no al primer muro:** *¿cuál es el tramo
+  más largo entre dos consultas del reloj?* Si ese tramo puede durar más que el techo, el techo es
+  decorativo. **No alcanza con un control «antes de entrar» a la etapa cara**: si la etapa es
+  indivisible y se pasa sola, el control de la entrada la dejó pasar con toda razón.
+- ⭐ **Y el corolario que vale para cualquier corte: la clase del corte importa tanto como el corte.**
+  *«El arranque no entra en el techo»* y *«me quedé sin presupuesto en el medio»* mandan a trabajos
+  **opuestos** —subir el techo o partir el arranque contra correr de nuevo—, y un corte genérico los
+  confunde. Es la misma familia que el `/////` que no distinguía *«nadie lo cableó»* de *«no se
+  llegó»*: el símbolo no miente sobre un valor, miente sobre **por qué**.
+- ⚠ **La reserva del cierre se mide, no se elige.** Si la reserva no cubre el cierre completo, el
+  corte ordenado **igual muere en el muro** y toda la maquinaria de corte no sirve para nada. Un
+  número elegido a ojo que nadie vuelve a mirar es indistinguible de uno correcto hasta el día que
+  no alcanza — así que el cierre se cronometra y el reporte avisa cuando no entra.
+- ⚠ **Y el mismo día, la mitad barata del mismo problema: un techo declarado en dos lugares es un
+  techo que puede mentir en uno de los dos.** El panel tenía `var TECHO_S = 350` escrito en el HTML
+  mientras el motor leía `150` de la hoja, así que **la regla del cronómetro dibujó una escala hasta
+  350 y el contador pasó el techo real sin ponerse en rojo**. Mintió justo en el lugar que la persona
+  mira. Es `CLAUDE.md` §2 en su forma más literal, y el arreglo es que el front pregunte en vez de
+  contestar — la misma corrección que el `|| S.faltantesComoRaya` del 20/08.
+
 **Cuando un paso se parte en dos, hay que preguntar de qué mitad cuelga el estado.** Partir
 «expandir y resolver» en dos operaciones es correcto; lo que no se ve es que **el marcado de
 «hecho» se queda pegado a la primera mitad** y pasa a mentir. El 20/08 la corrida desatendida
