@@ -1703,8 +1703,12 @@ function claveDeFila_(filas, claveLogica, encabezadoReal) {
 }
 
 /** Las secciones `repetible` y `activa` que declaran a este informe y tienen familias. */
-function seccionesRepetiblesDe_(informeId) {
+function seccionesRepetiblesDe_(informeId, filasLaminasOpcional) {
   var todas = leerSeccionesPlano_();
+  // El registro se recibe si el llamador ya lo leyó — la expansión lo lee **una vez por corrida**
+  // y no conviene releerlo por sección. Sin argumento se lee acá, para los otros llamadores.
+  var regL = filasLaminasOpcional ? { ok: true, filas: filasLaminasOpcional } : leerLaminas_();
+  var filasLaminas = regL.ok ? regL.filas : [];
   return Object.keys(todas)
     .map(function (id) {
       var s = todas[id];
@@ -1717,7 +1721,20 @@ function seccionesRepetiblesDe_(informeId) {
       var informes = String(s.informes || '').split(',').map(function (i) { return i.trim().toLowerCase(); });
       return informes.indexOf(String(informeId).toLowerCase()) !== -1;
     })
-    .filter(function (s) { return familiasDeSeccion_(s).length > 0; });
+    /* ⭐ `2026-08-21_11` Parte C punto 5 — **deja de exigir `familia_tokens` y pasa a exigir al
+     * menos una lámina declarada.** Con `D-37` la pertenencia la dice `LAMINAS`, así que una
+     * sección repetible **sin** `familia_tokens` pero **con** láminas declaradas tiene que poder
+     * expandirse — que es justo lo que este cambio vuelve posible.
+     *
+     * ⚠ **El filtro de `estado = activa` se conserva**, y eso importa: de las cinco secciones
+     * `repetible` que hoy no tienen láminas, tres son `manual` y dos `revisar`. **Ninguna
+     * despierta por este cambio** — y el control lo afirma en vez de confiar en este comentario. */
+    .filter(function (s) {
+      return filasLaminas.some(function (f) {
+        return String(f.informe_id || '').trim() === String(informeId).trim() &&
+               String(f.seccion_id || '').trim() === s.seccion_id;
+      });
+    });
 }
 
 /**
@@ -1824,6 +1841,19 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
         etiqueta: e.reunion,
         opciones: opciones,
         id_cuenta: e.idCuenta || '',
+        /* ⭐ `2026-08-21_11` Parte C — **`tipo` y `etapa` viajan con el ítem, y sin eso
+         * `LAMINAS.filtro` no puede decidir nada.** El ítem tenía cinco campos y `tipo` no estaba
+         * entre ellos: un `filtro = tipo=Uno a uno` sobre una fila de `LAMINAS` leería `undefined`
+         * y **no matchearía ninguna lámina, sin fallar**.
+         *
+         * ⚠ **Es el mismo hueco que el `2026-08-21_8` cerró un escalón más arriba**, en el ítem
+         * que arma el anclaje — y volvió a aparecer acá porque **son dos objetos distintos**: el
+         * crudo del anclaje y el ítem del generador. Que uno lo tenga no le sirve al otro.
+         *
+         * **Se agregan estos dos y nada más**, por el mismo motivo que allá: `asignaciones` viaja
+         * a `PropertiesService` en la corrida desatendida. Lo que se necesita se declara. */
+        tipo: e.tipo || '',
+        etapa: e.etapa || '',
         motivo: e.idCuenta ? '' : ('sin cuenta digital anclada' + (e.motivo ? ': ' + e.motivo : ''))
       };
     });
@@ -1959,6 +1989,18 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
   var reporte = [];
   var reclamadas = {};
 
+  /* ⭐ `2026-08-21_11` Parte C — **el índice y el registro se leen UNA vez, ANTES de duplicar.**
+   * No es una optimización: es lo que mata la N². `slide.duplicate()` copia las notas del orador
+   * —medido—, así que una copia hereda el ancla de su modelo; resolver por `lamina_id` sobre un
+   * deck ya expandido devolvería copias. Calculado acá, no hay copias todavía. */
+  var indiceLaminas = indiceDeLaminasPorAncla_(presentacion);
+  var regLaminas = leerLaminas_();
+  var filasLaminas = regLaminas.ok ? regLaminas.filas : [];
+  if (!regLaminas.ok) {
+    reporte.push({ seccion: '(todas)', ok: false, motivo: '⛔ no se pudo leer LAMINAS: ' + regLaminas.motivo +
+      ' — sin el registro ninguna sección repetible tiene bloque (D-37)' });
+  }
+
   /* ⭐ `2026-08-21_1` A.2 — **el control del reloj DENTRO de la etapa más cara.**
    *
    * Ésta es la etapa que se pasó de los 150 s el 21/08 sin consultar el reloj ni una vez, y no
@@ -1996,6 +2038,9 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
   var corteExpansion = null;
   var costoUltimaSeccionSeg = 0;
   var arranqueMedido = false;
+  /* ⛔ `D-37` punto 5 — el invariante: un ítem sin ninguna lámina **frena la corrida entera**.
+   * Se guarda acá y no se devuelve desde el `forEach`, que no puede frenar nada. */
+  var invarianteRoto = null;
 
   // `_27` bloque 3 — qué secciones entran en ESTA corrida.
   //
@@ -2015,7 +2060,10 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
     seccionesElegidas.forEach(function (id) { elegidas[String(id).trim()] = true; });
   }
 
-  seccionesRepetiblesDe_(informeId).forEach(function (seccion) {
+  seccionesRepetiblesDe_(informeId, filasLaminas).forEach(function (seccion) {
+    // Con el invariante roto no se expande nada más: la corrida va a frenar igual.
+    if (invarianteRoto) return;
+
     // Ya se cortó: las que quedan **se reportan** con ese motivo, `D-21`. Un corte que hace
     // desaparecer secciones del reporte es indistinguible de una sección que nadie configuró.
     if (corteExpansion) {
@@ -2054,14 +2102,22 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
         seccion: seccion.seccion_id, ok: true, omitida: true, items: [], excluidos: [],
         motivo: 'fuera de esta corrida — no se la eligió. El bloque modelo queda como está y ' +
           'sus tokens caen a la pasada de tokens fijos',
-        slides_modelo: slidesModeloDe_(presentacion, familiasDeSeccion_(seccion)).map(function (i) { return i + 1; })
+        // `D-37` — también acá las láminas salen de `LAMINAS`: si el reporte de una sección
+        // omitida siguiera infiriendo por familia, diría otras láminas que las que se habrían
+        // expandido, y un reporte que no coincide con el motor es peor que uno vacío.
+        laminas_modelo: laminasDeSeccion_(filasLaminas, informeId, seccion.seccion_id, indiceLaminas)
+          .conSlide.map(function (l) { return l.lamina_id; })
       });
       return;
     }
 
     var t0Seccion = new Date().getTime();
+    /* ⭐ `2026-08-21_11` Parte C — **el bloque sale de `LAMINAS`, no de la familia de tokens.**
+     * `slidesModeloDe_(familias)` dejó de decidir (`D-37`). `familias` se conserva **sólo para el
+     * mensaje de error**: sigue siendo lo que le dice a una persona qué tokens esperaba ver. */
     var familias = familiasDeSeccion_(seccion);
-    var modelos = slidesModeloDe_(presentacion, familias);
+    var deLamina = laminasDeSeccion_(filasLaminas, informeId, seccion.seccion_id, indiceLaminas);
+    var modelos = deLamina.conSlide.map(function (l) { return l.indice; });
 
     var t0Items = new Date().getTime();
     // Cuánto de ESTA sección fue arranque. Por iteración: no hay nada que poner en cero después.
@@ -2097,10 +2153,19 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
     }
 
     if (!modelos.length) {
+      /* `D-37` — el motivo cambió de sentido y por eso se reescribe: antes decía *"ninguna slide
+       * lleva tokens de X"*, que era una afirmación sobre el CONTENIDO. Ahora es sobre el
+       * REGISTRO: nadie declaró ninguna lámina para esta sección. Son dos trabajos distintos —
+       * el viejo mandaba a mirar la plantilla, éste manda a mirar `LAMINAS`. */
       reporte.push({
         seccion: seccion.seccion_id, ok: false,
-        motivo: '⚠ hay ' + resultado.items.length + ' ítem(s) pero ninguna slide de la plantilla lleva tokens de ' +
-          familias.join('/') + ' — es una sección curada contra una plantilla que no la contempla',
+        motivo: '⚠ hay ' + resultado.items.length + ' ítem(s) y **ninguna fila de `LAMINAS` declara ' +
+          '`seccion_id = ' + seccion.seccion_id + '` para el informe `' + informeId + '`**' +
+          (deLamina.sinSlide.length
+            ? ' — ⚠ hay ' + deLamina.sinSlide.length + ' fila(s) que sí la declaran pero su ancla no ' +
+              'está en la plantilla: ' + deLamina.sinSlide.join(', ')
+            : '') +
+          '. (Los tokens que esta sección esperaba son ' + (familias.join('/') || '(sin familia declarada)') + '.)',
         items: resultado.items.map(function (i) { return i.clave; }),
         excluidos: resultado.excluidos
       });
@@ -2173,14 +2238,50 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
     // **pegada a su original**, así que mover mientras se duplica corre los índices de lo que
     // todavía falta copiar. Primero se duplica todo, después se quitan los modelos, y recién
     // entonces se ordenan las copias con posiciones que ya no se mueven.
+    /* ⭐ `2026-08-21_11` Parte C — **`LAMINAS.filtro` se evalúa POR ÍTEM**, y es lo que hace que
+     * el "1 a 1" lleve `L-053` y el resto el iceberg. La portada, con `filtro` vacío, entra para
+     * todos.
+     *
+     * ⚠ **El bloque de un ítem NO tiene por qué ser contiguo, y el de la sección sí.** Con
+     * `L-052 · L-035 · L-053` en las posiciones 6-7-8, el 1 a 1 copia la 6 y la 8 y se saltea la 7.
+     * Las copias se ubican con el mismo `inicio + k` corrido, que **nunca depende** de que las
+     * copias de un ítem sean tantas como las de otro. */
     var copias = [];
-    resultado.items.forEach(function (item) {
-      modelosSlides.forEach(function (modelo) {
-        var copia = modelo.duplicate();
+    var porItemLaminas = [];
+    for (var iIt = 0; iIt < resultado.items.length; iIt++) {
+      var item = resultado.items[iIt];
+      var suyas = [];
+      var descartadas = [];
+      for (var iM = 0; iM < deLamina.conSlide.length; iM++) {
+        var decision = laminaEntraParaItem_(deLamina.conSlide[iM], item);
+        if (decision.entra) suyas.push({ meta: deLamina.conSlide[iM], slide: modelosSlides[iM] });
+        else descartadas.push(deLamina.conSlide[iM].lamina_id + ' (' + decision.motivo + ')');
+      }
+
+      /* ⛔ **`D-37` punto 5 — un ítem sin ninguna lámina es un invariante roto, no un caso a
+       * manejar.** Decisión del usuario: *"eso no puede pasar"*. Frena nombrando **sección e
+       * ítem**, y no se emite un deck a medias con un encuentro que desapareció en silencio. */
+      if (!suyas.length) {
+        /* ⚠ **`return` desde acá sólo saltea la sección**: estamos dentro del `forEach` de
+         * secciones, y un objeto devuelto ahí se descarta. El invariante se guarda afuera y lo
+         * lee el llamador — que es lo único que puede frenar de verdad. */
+        invarianteRoto = {
+          seccion: seccion.seccion_id, item: item.clave, informe_id: informeId,
+          motivo: 'ninguna de las ' + deLamina.conSlide.length + ' lámina(s) declaradas para la ' +
+            'sección "' + seccion.seccion_id + '" entra para el ítem "' + item.clave + '". ' +
+            'Descartes: ' + (descartadas.join(' · ') || '(ninguno — la sección no tiene láminas)') +
+            '. Revisar LAMINAS.filtro: con todas las condiciones excluyentes, el ítem se queda sin bloque.'
+        };
+        return;   // sale del forEach de secciones; el guard de arriba frena a las que siguen
+      }
+
+      porItemLaminas.push({ item: item.clave, laminas: suyas.map(function (x) { return x.meta.lamina_id; }) });
+      suyas.forEach(function (x) {
+        var copia = x.slide.duplicate();
         copias.push(copia);
         asignaciones.push({ objectIdSlide: copia.getObjectId(), item: item, seccion: seccion.seccion_id });
       });
-    });
+    }
 
     modelosSlides.forEach(function (modelo) { modelo.remove(); });
 
@@ -2191,6 +2292,13 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
       seccion: seccion.seccion_id, ok: true,
       itera_sobre: seccion.itera_sobre,
       slides_modelo: modelos.map(function (i) { return i + 1; }),
+      // `2026-08-21_11.2` §3 — **cuántas láminas modelo y CUÁLES**, con su `lamina_id`. Sin esto,
+      // un bloque que crece se descubre mirando un deck. Dos crecieron el 21/08: `jm campana`
+      // de 8 a 9 y `secco comunicaciones_post` de 1 a 2, las dos por la portada del bloque.
+      laminas_modelo: deLamina.conSlide.map(function (l) { return l.lamina_id; }),
+      laminas_declaradas_sin_slide: deLamina.sinSlide,
+      // Y cuál lámina le tocó a cada ítem — es lo que hace verificable la condición del 1 a 1.
+      laminas_por_item: porItemLaminas,
       emitidos: resultado.items.map(function (i) { return i.clave + (i.motivo ? ' ⚠ ' + i.motivo : ''); }),
       excluidos: resultado.excluidos,
       // `_27` bloque 3 — lo que costó DUPLICAR esta sección. Es sólo una parte de lo que
@@ -2206,7 +2314,13 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
       Math.round((new Date().getTime() - t0Seccion) / 1000) - segArranqueAca);
   });
 
-  return { asignaciones: asignaciones, reporte: reporte, corte: corteExpansion };
+  return {
+    asignaciones: asignaciones, reporte: reporte, corte: corteExpansion,
+    invariante_roto: invarianteRoto,
+    // `2026-08-21_11.2` §5 — las láminas del deck **sin ancla**. ⚠ *"Nadie la clasificó"* y *"no
+    // tiene tokens"* mandan a trabajos opuestos, y sin este aviso se leen igual.
+    laminas_sin_ancla: indiceLaminas.sinAncla
+  };
 }
 
 /**
@@ -2895,6 +3009,22 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana, opciones.secciones, reloj);
       // La expansión puede cortar adentro: por sección, o porque el arranque solo ya se pasó.
       if (expansion.corte) corte = expansion.corte;
+
+      /* ⛔ `D-37` punto 5 — **un ítem sin ninguna lámina FRENA.** No es un caso a manejar: es un
+       * invariante roto, y un deck a medias con un encuentro que desapareció en silencio es peor
+       * que no tener deck. Se sale por `ok: false`, que es lo que ya usan las precondiciones — y
+       * como esto pasa **antes** de pintar nada, el deck copiado no llegó a publicar. */
+      if (expansion.invariante_roto) {
+        var inv = expansion.invariante_roto;
+        Logger.log('⛔ INVARIANTE ROTO (D-37 punto 5): ' + inv.motivo);
+        return {
+          ok: false,
+          motivo: '⛔ La sección "' + inv.seccion + '" dejó al ítem "' + inv.item + '" sin ninguna ' +
+            'lámina. ' + inv.motivo,
+          invariante_roto: inv,
+          deck: { id: deckId }
+        };
+      }
     }
   }
 
@@ -3592,4 +3722,99 @@ function menuGenerarInformeCompleto_() {
 
   ui.alert('Generar informe completo', lineas.join('\n'), ui.ButtonSet.OK);
   return r;
+}
+
+/* ═══════════ `2026-08-21_11` Parte C — el bloque de una sección sale de `LAMINAS` ═══════════
+ *
+ * ⭐ **`D-37`: la pertenencia se declara, no se infiere.** `slidesModeloDe_(familias)` deja de
+ * decidir qué láminas son el bloque de una sección. Ahora lo dicen las filas de `LAMINAS` con ese
+ * `informe_id` y ese `seccion_id`, resueltas a índice de slide **por el ancla** — nunca por
+ * `orden_plantilla`, que es reportado y jamás autoritativo (`2026-08-21_6`).
+ *
+ * **Los dos casos que lo forzaron son el mismo error con dos caras**, y los dos están medidos:
+ * la lámina que no pertenece a nada —`L-053`, 32 tokens `u1_` y ninguna sección declara esa
+ * familia— y la copia indistinguible del modelo, que es la N² del `2026-08-20_13`.
+ */
+
+/**
+ * ⭐ **El índice `lamina_id → posición`, calculado UNA vez y ANTES de duplicar. Es lo que mata la
+ * N², y el motivo está medido.**
+ *
+ * `slide.duplicate()` **copia las notas del orador** —medido el 21/08 con
+ * `medirSiLaCopiaHeredaElAncla()`: `hereda_ancla: true`—, así que **una copia lleva el ancla de su
+ * modelo**. Resolver el modelo por `lamina_id` sobre el deck ya expandido devolvería copias, y una
+ * copia sin pintar es indistinguible de un modelo — exactamente el bug que esto viene a matar.
+ *
+ * ⛔ **La otra salida —borrarle las notas a cada copia, 0,013 s medidos— se descarta**, y conviene
+ * que quede el motivo: destruiría notas del orador legítimas. `secco` 8 y 25 tienen texto del
+ * equipo, y hay un documento entero del repo dedicado a haberlas rescatado.
+ *
+ * ⚠ **La fase atómica del `2026-08-20_10` se conserva igual: dos defensas, no una.**
+ *
+ * `sinAncla` no es un descarte silencioso: son las láminas que el reporte tiene que nombrar.
+ */
+function indiceDeLaminasPorAncla_(presentacion) {
+  var porId = {};
+  var sinAncla = [];
+  presentacion.getSlides().forEach(function (slide, i) {
+    var id = String(anclaDeLamina_(slide) || '').trim();
+    if (!id || id === '(sin id)') { sinAncla.push(i + 1); return; }
+    // El primero gana. Antes de duplicar no hay copias, así que esto sólo se activa si una
+    // plantilla ya trae dos láminas con el mismo ancla — y entonces `verificarLaminas()` lo dice.
+    if (!(id in porId)) porId[id] = i;
+  });
+  return { porId: porId, sinAncla: sinAncla };
+}
+
+/**
+ * Las filas de `LAMINAS` de una sección, en el orden en que están en el deck.
+ *
+ * ⚠ **Una fila cuyo `lamina_id` no aparece en el deck NO se ignora**: viaja en `sin_slide` para que
+ * el reporte la nombre. Una fila de registro que apunta a una lámina que no existe es un hallazgo,
+ * no ruido.
+ */
+function laminasDeSeccion_(filasLaminas, informeId, seccionId, indice) {
+  var conSlide = [];
+  var sinSlide = [];
+  filasLaminas.forEach(function (f) {
+    if (String(f.informe_id || '').trim() !== informeId) return;
+    if (String(f.seccion_id || '').trim() !== seccionId) return;
+    var id = String(f.lamina_id || '').trim();
+    if (id in indice.porId) conSlide.push({ lamina_id: id, indice: indice.porId[id], filtro: f.filtro });
+    else sinSlide.push(id);
+  });
+  conSlide.sort(function (a, b) { return a.indice - b.indice; });
+  return { conSlide: conSlide, sinSlide: sinSlide };
+}
+
+/**
+ * ⭐ **`LAMINAS.filtro`, evaluado POR ÍTEM.** Es lo que hace que el "1 a 1" lleve `L-053` y el
+ * resto el iceberg. Vacío = la lámina entra siempre.
+ *
+ * Usa `parsearFiltro_` y el mismo `leerAtributo` que la rama `REUNIONES` de `itemsDeSeccion_` — el
+ * que ya prueba `probar-tipo-en-item.js`. **Una sola sintaxis de filtro en todo el motor.**
+ *
+ * ⚠ **La columna existía en el esquema desde el `_11` y nunca tuvo lector.** Es el mismo caso que
+ * `CLAUDE.md` §4 describe: una columna declarada sin consumidor es letra muerta hasta que alguien
+ * la lee, y nadie se entera de que no hace nada.
+ */
+function laminaEntraParaItem_(filaLamina, item) {
+  var f = parsearFiltro_(filaLamina.filtro);
+  if (!f.ok) return { entra: false, motivo: 'LAMINAS.filtro de "' + filaLamina.lamina_id + '": ' + f.motivo };
+  if (f.vacio) return { entra: true, motivo: '' };
+
+  /* ⚠ **Los atributos se leen del ÍTEM, y por eso el ítem tiene que declararlos.** `itemsDeSeccion_`
+   * arma un ítem de cinco campos —`clave`, `etiqueta`, `opciones`, `id_cuenta`, `motivo`— y `tipo`
+   * **no estaba entre ellos**: un filtro `tipo=Uno a uno` leía `undefined` y **no matcheaba ninguna
+   * lámina, sin fallar**. Es el mismo hueco que el `2026-08-21_8` cerró un escalón más arriba, en
+   * el ítem del anclaje — y volvió a aparecer acá porque son dos objetos distintos.
+   *
+   * `__clave__` se resuelve aparte, igual que en `filtrarItemsPorSeccion_`: **una sola sintaxis de
+   * filtro en todo el motor.** */
+  var falla = primeraCondicionQueFalla_(f.condiciones, function (campo) {
+    return campo === '__clave__' ? item.clave : item[campo];
+  });
+  return falla
+    ? { entra: false, motivo: falla.campo + ' = "' + normalizarValorDeclarado_(item[falla.campo]) + '"' }
+    : { entra: true, motivo: '' };
 }

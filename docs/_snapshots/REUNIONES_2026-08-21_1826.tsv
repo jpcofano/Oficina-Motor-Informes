@@ -1,0 +1,16 @@
+periodo_id	orden	eje	tipo	nombre	fecha	etapa	mostrar	texto_original	notas
+julio_24_30	1	JM	Uno a uno	San Cristóbal	2026-07-23	pre	sí	JM | Uno a uno en San Cristóbal 23/07 (pre)	
+julio_24_30	2	JM	Uno a uno	Retiro	2026-07-24	pre	sí	2) JM | Uno a uno en Retiro 24/07 (pre)	
+julio_24_30	3	JM	Encuentro Temático	Orden Público	2026-07-28		sí	JM | Encuentro Temático Orden Público 28/07	
+julio_24_30	4	JM	Uno a uno	San Cristóbal	2026-07-23	post	sí	JM | Uno a uno en San Cristóbal 23/07 (POST)	
+julio_24_30	5	JM	Uno a uno	Retiro	2026-07-24	post	sí	JM | Uno a uno en Retiro 24/07 (post)	
+julio_24_30	6	Ministros	Agregado	Reuniones de la semana	2026-07-24		sí	Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)	24/07 al 30/07 inclusive
+julio_24_30	7	M2	Agregado	Campañas y enviados de la semana	2026-07-24		sí	6) M2 | Campañas y enviados de la semana del 24/07 al 30/07	
+julio_24_30		JM	Primera persona	Villa Urquiza	27/07/2026		sí	JM | Primera persona en Villa Urquiza 27/07	
+junio_sem2		JM		Boedo	12/06/2026		sí	JM | Boedo 12/06	
+junio_sem2		JM	Encuentro Temático	Almagro	16/06/2026		no	JM | Encuentro Temático en Almagro 16/06	
+junio_sem2		JM	Uno a uno	Boedo	17/06/2026		sí	JM | Uno a uno en Boedo 17/06	
+junio_sem2		JM		Mataderos	18/06/2026		sí	JM | Mataderos 18/06	
+junio_sem2		JM	Encuentro Temático	Educación	16/06/2026		sí	JM | Encuentro Temático Educación 16/06	
+agosto_14_20	1	JM	Uno a uno	Parque Avellaneda	12/08/2026		si	1) JM | Uno a uno en Parque Avellaneda 12/08 (pre + post)	pre + post
+agosto_14_20	2	JM	Encuentro Temático	: Salud	14/08/2026		si	2) JM | Encuentro Temático: Salud 14/08	

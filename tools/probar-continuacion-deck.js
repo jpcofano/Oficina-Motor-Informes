@@ -142,7 +142,14 @@ function contexto(nombreInicial) {
   };
 
   vm.createContext(ctx);
-  vm.runInContext(fs.readFileSync(path.join(RAIZ, 'Generador.gs'), 'utf8'), ctx, { filename: 'Generador.gs' });
+  /* ⚠ **`Sellador.gs` entró el 21/08 y no fue una elección de estilo: el aserto de `fallo === null`
+   * lo exigió.** La Parte C del `_11` hizo que la expansión resuelva las láminas por el ancla, o sea
+   * que `duplicarBloquesRepetibles_` pasó a llamar `anclaDeLamina_`, que vive ahí. Sin el archivo,
+   * la corrida moría por excepción en la etapa 1 y **`ok: true` la tapaba** — tercera vez en el día
+   * que ese aserto caza un banco incompleto. */
+  for (const f of ['Sellador.gs', 'Generador.gs']) {
+    vm.runInContext(fs.readFileSync(path.join(RAIZ, f), 'utf8'), ctx, { filename: f });
+  }
   ctx.__drive = drive;
   ctx.__hojas = hojas;
   return ctx;

@@ -4004,3 +4004,51 @@ function escribirRolDeLaminas() {
   Logger.log(JSON.stringify(r, null, 2));
   return r;
 }
+
+/* ═════ `2026-08-21_11.2` §2 — los `LAMINAS.filtro` de la condición del "1 a 1" ═════
+ *
+ * ⭐ **Es lo que hace que el 1 a 1 lleve su lámina de plataforma y el resto el iceberg.** La
+ * portada va con `filtro` vacío: entra para todos.
+ *
+ * ⚠ **`tipo!=Uno a uno` y no una enumeración de tipos, por dos motivos medidos:**
+ *
+ * 1. **`REUNIONES` tiene filas sin `tipo`**, y lo decidido es que lleven iceberg. Con una
+ *    enumeración se quedarían sin ninguna lámina — y eso frena la corrida por `D-37` punto 5.
+ * 2. **El iceberg es genérico**: `docs/SECCIONES.md` Corrección 5 lo midió sobre informes
+ *    publicados — aparece con un ECV, no sólo con el temático.
+ *
+ * **Las cuatro grafías de `tipo` medidas el 21/08**: `Uno a uno` (6) · `Encuentro Temático` (4,
+ * **con tilde**) · `Primera persona` (1) · `Agregado` (2). Las tres últimas caen en
+ * `tipo!=Uno a uno`.
+ *
+ * ⚠ **Y `secco` `L-006`/`L-007` llevan `tipo=Encuentro Temático`, así que un `Primera persona`
+ * NO recibe la lámina de estrategia** — le quedan la portada y el iceberg, que son dos, así que el
+ * invariante no se rompe. Está dicho porque es el caso que se olvida.
+ */
+var MAPA_FILTRO_LAMINAS_ = {
+  // jm — bloque 6-7-8, contiguo verificado por el ancla
+  'L-052': '',                          // portada del encuentro: va para todos
+  'L-035': 'tipo!=Uno a uno',           // el iceberg
+  'L-053': 'tipo=Uno a uno',            // resultados de plataforma del 1 a 1
+
+  // secco — bloque 4-5-6-7-8, contiguo verificado por el ancla
+  'L-004': 'tipo=Uno a uno',            // "Uno a uno en comunas" — portada del 1 a 1
+  'L-005': 'tipo=Uno a uno',            // resultados de plataforma
+  'L-006': 'tipo=Encuentro Temático',   // portada del temático
+  'L-007': 'tipo=Encuentro Temático',   // estrategia de comunicación
+  'L-008': 'tipo!=Uno a uno'            // el iceberg
+};
+
+/** Dry-run de los filtros. Sin `_` y sin parámetros (`CLAUDE.md` §2). */
+function preverFiltroDeLaminas() {
+  var r = escribirColumnaLaminas_(MAPA_FILTRO_LAMINAS_, 'filtro', { dryRun: true });
+  Logger.log(JSON.stringify(r, null, 2));
+  return r;
+}
+
+/** Escribe los filtros. El detalle por celda del retorno **es el respaldo**. */
+function escribirFiltroDeLaminas() {
+  var r = escribirColumnaLaminas_(MAPA_FILTRO_LAMINAS_, 'filtro');
+  Logger.log(JSON.stringify(r, null, 2));
+  return r;
+}

@@ -107,15 +107,36 @@ function planificarChunk_(pendientes, presupuestoUtilSeg, segPorAsignacion) {
  */
 function asignacionesPorSeccion_(presentacion, informeId, ventana) {
   var filas = [];
-  seccionesRepetiblesDe_(informeId).forEach(function (seccion) {
+  /* ⭐ `2026-08-21_11` Parte C — **el conteo sale de `LAMINAS` y del filtro por ítem, no de
+   * `items × modelos`.**
+   *
+   * ⚠ **Con `LAMINAS.filtro` el producto DEJÓ DE SER CIERTO**, y era exactamente el modo de falla
+   * que el `2026-08-20_10.1` documenta: *"un planificador que cuenta la unidad equivocada se
+   * equivoca por más del doble, y el síntoma es una corrida que corta cuando el plan decía que
+   * entraba"*. Ahora **no todos los ítems llevan las mismas láminas**: en `jm`, un "Uno a uno"
+   * copia la portada y `L-053`, y un temático la portada y el iceberg — dos cada uno, pero el día
+   * que una condición no sea simétrica el producto miente. **Se cuenta sumando, no multiplicando.** */
+  var indice = indiceDeLaminasPorAncla_(presentacion);
+  var regL = leerLaminas_();
+  var filasLaminas = regL.ok ? regL.filas : [];
+
+  seccionesRepetiblesDe_(informeId, filasLaminas).forEach(function (seccion) {
     var r = itemsDeSeccion_(seccion, informeId, ventana);
-    var items = (r && r.ok) ? r.items.length : 0;
-    var modelos = slidesModeloDe_(presentacion, familiasDeSeccion_(seccion)).length;
+    var items = (r && r.ok) ? r.items : [];
+    var deLamina = laminasDeSeccion_(filasLaminas, informeId, seccion.seccion_id, indice);
+
+    var asignaciones = 0;
+    items.forEach(function (item) {
+      deLamina.conSlide.forEach(function (l) {
+        if (laminaEntraParaItem_(l, item).entra) asignaciones++;
+      });
+    });
+
     filas.push({
       seccion_id: seccion.seccion_id,
-      items: items,
-      modelos: modelos,
-      asignaciones: items * modelos,
+      items: items.length,
+      modelos: deLamina.conSlide.length,
+      asignaciones: asignaciones,
       motivo: (r && r.ok) ? '' : ((r && r.motivo) || 'no se pudieron listar los ítems')
     });
   });
