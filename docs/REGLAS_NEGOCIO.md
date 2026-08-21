@@ -1881,3 +1881,67 @@ pregunta del dominio y va a `PENDIENTES`.
 Si aparecieran encuentros "1 a 1" con **call center o IVR distintos de cero**, esta regla deja de
 describir el régimen y hay que reescribirla. El mail ya está contemplado: **su presencia no la
 deroga**, y por eso la regla se escribió así y no como *"los demás canales son cero"*.
+
+
+---
+
+## R-28 — Los totales del "1 a 1" suman **una** etapa, no las dos
+
+**Decisión editorial del equipo, medida el 21/08/2026.** No se tomó acá: se leyó del deck publicado
+y se verificó contra la base del mismo día.
+
+**Enunciado.** En la lámina del "1 a 1", los totales de arriba **no son la suma de las cinco filas
+de la campaña**. Cada total suma **la etapa que corresponde a lo que esa etapa mide**:
+
+| token | qué suma | por qué |
+|---|---|---|
+| `u1_total_clics` | sólo las filas **PRE** | el PRE es convocatoria, y la lámina lo rotula `CLICS (CTR)` |
+| `u1_total_vistas` | sólo las filas **POST** | el POST es difusión, y la lámina lo rotula `VISUALIZACIONES (VTR)` |
+| `u1_total_impresiones` | **las dos** etapas | es el volumen total, no una medida de una etapa |
+| `u1_total_frecuencia` | `impresiones / alcance` | verificado: 377.997 / 55.255 = 6,84 · publicado **6,8** |
+| `u1_total_alcance` | ⛔ **otra fuente** | son **usuarios únicos y no se suman**. `digital/Alcance` (`alc_alcance`) es el candidato — **no se asume** |
+
+**No es un capricho, y por eso la regla se sostiene sola:** la propia lámina rotula el PRE por
+clics y el POST por visualizaciones. Sumar las dos etapas en el mismo total mezcla dos preguntas
+distintas —cuánta gente respondió a la convocatoria, y cuánta vio la difusión— en un número que no
+contesta ninguna.
+
+### La evidencia
+
+Medida el 21/08/2026 sobre el fixture `Seguimiento Digital  2026-08-20.zip` —huella registrada en
+`docs/_fixtures/README.md`—, que trae **la base y el deck del mismo día**, así que el cruce
+*definición → número publicado* se hace entero sin conectarse a nada (`CLAUDE.md` §4).
+
+**Cuenta `3487-AGOJDGAG`** (Uno a uno en Parque Avellaneda, 12/08), lámina 5 del deck
+`Informe semanal JM - (14_08 al 21_08)`. **Cinco filas en `digital/CAMPAÑAS_DESGLOCE_DIGITAL`**, que
+son el producto etapa × plataforma:
+
+| etapa | plataforma | impresiones | visualizaciones | clics |
+|---|---|---|---|---|
+| PRE | DV360 | 86.572 | 0 | 148 |
+| PRE | Meta | 65.554 | 0 | 1.324 |
+| POST | DV360 | 35.605 | 21.425 | 81 |
+| POST | Google ads | 132.310 | 115.968 | 118 |
+| POST | Meta | 74.639 | 11.121 | 208 |
+
+### ⭐ El contraejemplo, que es la mitad que importa
+
+**Cablear `u1_total_clics` como "SUMA sobre las tres plataformas" —que es lo que parece obvio—
+publicaría 1.879 contra 1.472.** Un **28 % de más**, plausible y equivocado.
+
+Es exactamente el modo de falla que este proyecto persigue: **el número correcto salido de las filas
+equivocadas**. No falla, no avisa, y `1.879` al lado de `1.472` no se ve mal — se ve como un buen
+dato. **Una regla que no dice qué error evita se lee como burocracia**, y por eso el contraejemplo
+va adentro de la regla y no en una nota al pie.
+
+### Lo que esta regla NO dice
+
+⚠ **No dice de dónde sale el alcance.** `u1_total_alcance` publicó **55.255**, y no es la suma de
+los `ALCANCE` del propio deck (21.401 + 44.296 = 65.697): el alcance son usuarios únicos y sumarlo
+los cuenta dos veces. La solapa `digital/Alcance` ya está mapeada y es el candidato — **queda
+abierto**.
+
+⚠ **Y un cabo suelto del deck de origen, dicho para que no se lea como un error del motor:**
+`u1_total_impresiones` publica 377.997 y la suma de las propias celdas del deck da 378.267. **Los
+270 de diferencia son del deck contra sí mismo** — el total y el desagregado parecen tomados en
+momentos distintos.
