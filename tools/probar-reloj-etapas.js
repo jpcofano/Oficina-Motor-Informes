@@ -55,6 +55,21 @@ function nuevoContexto(config) {
     Math,
     Date: FakeDate,
     Logger: { log: () => {} },
+    /* ⚠ **Las dos las introdujo el `_11`, y este banco quedó ROJO EN SILENCIO desde entonces:**
+     * viven en `Sellador.gs`, que el banco no carga, así que `duplicarBloquesRepetibles_` moría
+     * con `ReferenceError` antes del primer aserto. **La protección del reloj por etapa se estuvo
+     * citando como verificada sin que el banco corriera.** Es la familia de *un cambio no puede
+     * dejar sin instrumento al control que lo protege*.
+     *
+     * ⛔ **No alcanza con devolver vacío**, y ahí está lo instructivo: con `leerLaminas_: () => []`
+     * el banco arranca **y los cinco asertos siguen rojos**, porque `seccionesRepetiblesDe_` exige
+     * al menos una lámina declarada y ninguna sección expande — un stub que hace correr el código
+     * pero le saca el trabajo mide otra cosa. Cada sección falsa declara **su** lámina, anclada a
+     * la slide del mismo índice. */
+    anclaDeLamina_: (slide) => 'L-' + (slide.getObjectId() || '').replace('oid', ''),
+    leerLaminas_: () => ({ ok: true, filas: SECCIONES_FALSAS.map((id, i) => ({
+      informe_id: 'jm', seccion_id: id, lamina_id: 'L-' + i, filtro: ''
+    })) }),
     leerConfig: () => config || {}
   };
   vm.createContext(ctx);

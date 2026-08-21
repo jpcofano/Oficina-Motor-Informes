@@ -325,22 +325,50 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     }
 
     var canal = SOLAPAS_CANAL_DIGITAL_.filter(function (c) { return c.solapa === solapa; })[0];
-    if (!canal) {
+
+    /* ⭐ `2026-08-21_15` — **la rama de `digital` CEDE cuando la solapa declara
+     * `campo_id_cuenta`.** No resuelve: deja seguir, y la atiende la rama por cuenta declarativa
+     * de `D-30`, más abajo.
+     *
+     * **El bug que arregla, medido en la corrida `194602`:** los 24 `u1_` salieron `---` con
+     * `«FALTA:…@solapa_digital_desconocida»`. `CAMPAÑAS_DESGLOCE_DIGITAL` declara
+     * `campo_id_cuenta = des_id_cuenta` en `SOLAPAS`, **pero nunca llegaba a la rama que lo lee**:
+     * esta rama la atrapaba antes. El comentario de la rama declarativa lo decía con todas las
+     * letras —*"las solapas de `digital` nunca llegan hasta acá"*— y era una descripción del
+     * problema, no una decisión.
+     *
+     * ⚠ **Se descartó agregarla a `SOLAPAS_CANAL_DIGITAL_`**, que era el atajo: eso la metería en
+     * la **unión** del Paso 2.4, que responde otra pregunta —unir canales **por cuenta**— y esta
+     * solapa tiene grano **campaña × plataforma**. Además tiene 135 filas duplicadas medidas: la
+     * unión las cruzaría todas.
+     *
+     * ⛔ **El fallo NO se afloja: se conserva para las solapas que no declaran nada.** Es el que
+     * avisa de una solapa de `digital` que nadie configuró, y perderlo cambiaría un error ruidoso
+     * por un silencio. **Ceder y fallar son dos caminos distintos y los dos siguen existiendo.**
+     *
+     * **Alcance medido antes de escribir esto (Parte A):** exactamente **una** solapa de `digital`
+     * declara `campo_id_cuenta`, y **ninguna** de las cinco de canal ni la maestra lo declaran —
+     * así que este `if` **no le cambia el camino a ningún marcador que hoy publique**. */
+    if (!canal && campoIdCuentaDeSolapa_(fila.base_id, solapa)) {
+      // Cede. La rama declarativa de `D-30` la atiende y su `origen` dirá por dónde salió.
+    } else if (!canal) {
       return {
         ok: false,
         motivo: '«FALTA:' + fila.marcador + '@solapa_digital_desconocida» — "' + solapa + '" no es una de las ' +
-          'solapas de canal que une el Paso 2.4 (' + SOLAPAS_CANAL_DIGITAL_.map(function (c) { return c.solapa; }).join(', ') + ')'
+          'solapas de canal que une el Paso 2.4 (' + SOLAPAS_CANAL_DIGITAL_.map(function (c) { return c.solapa; }).join(', ') + ')' +
+          ' y tampoco declara `SOLAPAS.campo_id_cuenta`, que es la otra vía (D-30)'
+      };
+    } else {
+
+      var filasCanal = registro[canal.prefijo + '_filas'] || [];
+      return {
+        ok: true,
+        filas: filasCanal,
+        encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+        columna: campo.columna,
+        origen: 'union digital por cuenta (' + solapa + ', ' + filasCanal.length + ' fila(s) de la cuenta ' + idCuenta + ')'
       };
     }
-
-    var filasCanal = registro[canal.prefijo + '_filas'] || [];
-    return {
-      ok: true,
-      filas: filasCanal,
-      encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
-      columna: campo.columna,
-      origen: 'union digital por cuenta (' + solapa + ', ' + filasCanal.length + ' fila(s) de la cuenta ' + idCuenta + ')'
-    };
   }
 
   /* ── `_44` / `D-30` · la rama por cuenta declarativa ────────────────────────────────────
