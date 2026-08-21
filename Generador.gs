@@ -891,6 +891,31 @@ function resolverMarcadores(informeId, opciones) {
     return suyo === informeId || suyo === '*';
   });
 
+  /* ⭐ `2026-08-21_14` — **`solo_marcadores`: resolver los de UNA lámina en vez de los del informe.**
+   *
+   * **El problema, medido el 21/08:** la pasada por ítem llama acá **una vez por asignación** y
+   * después usa sólo los tokens que esa lámina tiene. Con 111 marcadores y ~15 tokens por lámina,
+   * **el 87 % del trabajo se tira**. La etapa 3 se llevaba el **62-88 %** del techo
+   * (`docs/AUDITORIA_tiempos_2026-08-21.md`).
+   *
+   * ⭐ **Y el ahorro es real porque el costo es TODO por marcador, medido y no supuesto:**
+   * `resolverMarcadores('secco')` —que tiene **cero** marcadores cableados— tarda **0,000 s**
+   * tibio, y `jm` con 111 tarda **19,9 s**. **Costo fijo por llamada: cero. Por marcador: 0,18 s.**
+   * Una asignación con 15 marcadores pasa de 19,9 s a **2,7 s**.
+   *
+   * ⚠ **`resumen` pasa a contar los marcadores de la lámina y no los del informe, y eso CAMBIA el
+   * reporte** — para bien: hasta hoy cada ítem publicaba el **mismo** resumen de 111, repetido, que
+   * no decía nada del ítem. Ahora dice cuántos de **su** lámina salieron `ok`. Se declara porque un
+   * número del reporte que cambia sin aviso se lee como una regresión.
+   *
+   * ⛔ **Ausente = todos, como siempre.** La etapa 4 y todos los otros llamadores —la API, el
+   * previsor, los diagnósticos— no la pasan y **no cambian de comportamiento**. */
+  if (opciones.solo_marcadores && opciones.solo_marcadores.length) {
+    var quiere = {};
+    opciones.solo_marcadores.forEach(function (t) { quiere[String(t).trim()] = true; });
+    delInforme = delInforme.filter(function (m) { return quiere[String(m.marcador).trim()] === true; });
+  }
+
   var cache = {};
   var resultados = delInforme.map(function (fila) {
     var base = {
@@ -3101,12 +3126,30 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       continue;
     }
 
-    var resolucionItem = resolverMarcadores(informeId, asignacion.item.opciones);
+    /* ⭐ `2026-08-21_14` — **se resuelven sólo los tokens de ESTA lámina.**
+     *
+     * `tokensDeSlide_(slide)` se llamaba **tres líneas más abajo** para decidir qué pintar; ahora
+     * se calcula antes y también decide **qué resolver**. El dato ya estaba ahí.
+     *
+     * ⚠ **`periodo` no es un marcador y por eso no molesta si viene en la lista:** el filtro de
+     * `resolverMarcadores` lo descarta —no tiene fila— y el pintado lo resuelve por su rama
+     * propia, igual que antes.
+     *
+     * ⚠ **Una lámina escondida devuelve `[]`** y entonces no se resuelve nada, que es correcto:
+     * sus tokens tampoco se pintan. Antes se resolvían los 111 para no usar ninguno. */
+    var tokensDeEstaSlide = tokensDeSlide_(slide);
+    var opcionesItem = {};
+    Object.keys(asignacion.item.opciones || {}).forEach(function (k) {
+      opcionesItem[k] = asignacion.item.opciones[k];
+    });
+    opcionesItem.solo_marcadores = tokensDeEstaSlide;
+
+    var resolucionItem = resolverMarcadores(informeId, opcionesItem);
     var porMarcadorItem = {};
     resolucionItem.resultados.forEach(function (r) { porMarcadorItem[r.marcador] = r; });
 
     var reemplazadosItem = 0;
-    tokensDeSlide_(slide).forEach(function (token) {
+    tokensDeEstaSlide.forEach(function (token) {
       var r = porMarcadorItem[token];
       if (r && r.estado === 'ok') {
         slide.replaceAllText('{{' + token + '}}', String(r.valor_formateado), true);

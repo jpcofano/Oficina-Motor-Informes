@@ -4052,3 +4052,93 @@ function escribirFiltroDeLaminas() {
   Logger.log(JSON.stringify(r, null, 2));
   return r;
 }
+
+/**
+ * ⭐ **`2026-08-21_14` Parte 0 — cuánto de `resolverMarcadores` es FIJO y cuánto por marcador.**
+ *
+ * La auditoría del 21/08 midió que cada asignación cuesta **14,6 s** y proyectó el ahorro de
+ * resolver sólo los marcadores de la lámina suponiendo que **escala con la cantidad**. ⚠ **Esa
+ * suposición no estaba medida**, y si buena parte del costo fuera fijo por llamada, el arreglo
+ * rendiría mucho menos de lo prometido. Esto la mide antes de escribir una línea.
+ *
+ * ⭐ **La medición es limpia porque existe un cero natural: `secco` no tiene NINGÚN marcador
+ * cableado** —111 filas de `MARCADORES`, las 111 de `jm`—. Así que:
+ *
+ *   - `resolverMarcadores('secco')` = **el costo fijo puro**: leer `MARCADORES`, `MAPEO`,
+ *     `SOLAPAS`, resolver la ventana, armar el resumen. Cero marcadores resueltos.
+ *   - `resolverMarcadores('jm')` = **fijo + 111 marcadores**.
+ *
+ * La resta da el costo por marcador **sin instrumentar nada por dentro**, que es lo que la haría
+ * discutible: un instrumento adentro de la función mediría también su propio costo.
+ *
+ * ⚠ **Se corre dos veces cada uno y se reporta el segundo**: la primera llamada paga el caché de
+ * `2026-08-20_11` —`cacheDatosHoja_`— y la segunda mide el régimen, que es el de una corrida con
+ * 22 asignaciones. **Reportar la primera como si fuera el costo típico sería medir el arranque.**
+ *
+ * Sólo lectura: `resolverMarcadores` no escribe nada. Sin `_` y sin parámetros (`CLAUDE.md` §2).
+ */
+function medirCostoDeResolverMarcadores() {
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  var r = { ok: true };
+  try {
+    var medir = function (informeId) {
+      var t0 = new Date().getTime();
+      var res = resolverMarcadores(informeId, {});
+      var seg = (new Date().getTime() - t0) / 1000;
+      return { seg: seg, marcadores: (res.resultados || []).length };
+    };
+
+    var seccoFrio = medir('secco');
+    var seccoTibio = medir('secco');
+    var jmFrio = medir('jm');
+    var jmTibio = medir('jm');
+
+    r.secco = { frio_seg: seccoFrio.seg, tibio_seg: seccoTibio.seg, marcadores: seccoTibio.marcadores };
+    r.jm = { frio_seg: jmFrio.seg, tibio_seg: jmTibio.seg, marcadores: jmTibio.marcadores };
+
+    var fijo = seccoTibio.seg;
+    var porMarcador = jmTibio.marcadores > 0
+      ? (jmTibio.seg - fijo) / jmTibio.marcadores
+      : 0;
+
+    r.fijo_seg = Math.round(fijo * 1000) / 1000;
+    r.por_marcador_seg = Math.round(porMarcador * 1000) / 1000;
+    r.pct_fijo = jmTibio.seg > 0 ? Math.round(100 * fijo / jmTibio.seg) : 0;
+
+    /* ⭐ Lo que la auditoría necesita saber: con 15 marcadores en vez de 111, ¿cuánto queda? */
+    r.proyeccion = {
+      hoy_una_asignacion_seg: Math.round(jmTibio.seg * 100) / 100,
+      con_15_marcadores_seg: Math.round((fijo + porMarcador * 15) * 100) / 100,
+      ahorro_pct: jmTibio.seg > 0
+        ? Math.round(100 * (jmTibio.seg - (fijo + porMarcador * 15)) / jmTibio.seg)
+        : 0
+    };
+
+    Logger.log('── costo de resolverMarcadores ──');
+    Logger.log('  secco (0 marcadores): frío ' + seccoFrio.seg + ' s · tibio ' + seccoTibio.seg + ' s');
+    Logger.log('  jm (' + jmTibio.marcadores + ' marcadores): frío ' + jmFrio.seg + ' s · tibio ' + jmTibio.seg + ' s');
+    Logger.log('');
+    Logger.log('  COSTO FIJO por llamada: ' + r.fijo_seg + ' s  (' + r.pct_fijo + ' % del total de jm)');
+    Logger.log('  COSTO POR MARCADOR: ' + r.por_marcador_seg + ' s');
+    Logger.log('');
+    Logger.log('  una asignación hoy (111 marcadores): ' + r.proyeccion.hoy_una_asignacion_seg + ' s');
+    Logger.log('  con sólo los ~15 de su lámina:       ' + r.proyeccion.con_15_marcadores_seg + ' s');
+    Logger.log('  ahorro: ' + r.proyeccion.ahorro_pct + ' %');
+    Logger.log('');
+    if (r.pct_fijo > 50) {
+      Logger.log('  ⛔ MÁS DE LA MITAD ES FIJO. Resolver menos marcadores NO alcanza:');
+      Logger.log('     hay que llamar MENOS VECES (cachear por ítem), no resolver menos por vez.');
+    } else {
+      Logger.log('  ✅ El costo escala con la cantidad de marcadores: resolver sólo los de la');
+      Logger.log('     lámina es la salida correcta, y el ahorro proyectado se sostiene.');
+    }
+  } catch (e) {
+    r.ok = false; r.motivo = e.message; r.stack = String(e.stack || '');
+    Logger.log('FALLÓ: ' + e.message);
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+  return r;
+}
