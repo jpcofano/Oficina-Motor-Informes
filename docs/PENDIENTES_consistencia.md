@@ -5398,7 +5398,18 @@ existe.** `diagTokensDeLamina_("jm", 8)` da `con_fila 2 · sin_fila 34`.
 declararle sección **no la hace publicar nada**. Son tres trabajos en fila — sellar, declarar,
 cablear— y hacer uno solo mueve el síntoma sin resolverlo.
 
-### 3 · ⚠ `orden_plantilla` usado como clave de mapa
+### 3 · ~~⚠ `orden_plantilla` usado como clave de mapa~~ — ✅ CERRADA por el `2026-08-21_6`
+
+> **Cerrada el 21/08.** El mapa se indexa por `lamina_id` y la identidad de la lámina del deck sale
+> de su ancla. Una lámina **sin** ancla ya no se resuelve por posición — antes se le asignaba el
+> `itera_sobre` de otra —: se cuenta aparte y el resumen la nombra. Control:
+> `tools/probar-lamina-por-id.js`, que reproduce la colisión **sobre el snapshot vivo**: indexar por
+> orden deja 22 claves para 23 láminas de `jm`, por id quedan las 23.
+>
+> ⚠ **Lo que NO se tocó, a propósito:** el `orden_plantilla` de las 17 filas viejas. Es reportado, y
+> estar viejo es inofensivo justamente porque ya nadie decide por él.
+
+**La descripción original:**
 
 `Auditoria.gs:3296` — `iteran[String(l.orden_plantilla)] = l.itera_sobre`. **Con dos láminas del
 mismo `orden_plantilla`, una pisa a la otra en silencio.**
@@ -5426,7 +5437,21 @@ sección repetible con cero ítems se reporta como *"sin ítems — el bloque mo
 que se lee como *"no había nada"* y no como *"faltó tildar `mostrar`"*. **Son dos causas con el mismo
 texto.**
 
-### 5 · ⚠ Dos de los cuatro llamadores de `generarInforme` no pasan el modo de símbolos
+### 5 · ~~⚠ Dos de los cuatro llamadores no pasan el modo de símbolos~~ — ✅ CERRADA por el `2026-08-21_5`
+
+> **Cerrada el 21/08.** El default vive en `CONFIG.presentacion_faltantes_defecto` y lo resuelve un
+> solo lector, `modoFaltantesDe_`. Un llamador que no pasa la opción recibe el default; uno que la
+> pasa gana igual, en los dos sentidos.
+>
+> ⚠ **La guarda del `=== true` se conservó y se amplió:** `"false"` de query string sigue dando
+> crudo, y `"true"` ahora da símbolos — antes daba lo contrario de lo pedido. Lo que faltaba no era
+> aflojar la guarda sino **distinguir «no vino» de «vino en false»**, y eso es el tercer estado
+> (`null`) de `normalizarModoFaltantes_`.
+>
+> Y el resultado dice **de dónde salió** el modo, no sólo cuál fue. Control:
+> `tools/probar-modo-faltantes.js`, 24 afirmaciones.
+
+**La descripción original:**
 
 `conSimbolos = opciones.faltantes_como_raya === true`, y `undefined === true` es `false`.
 

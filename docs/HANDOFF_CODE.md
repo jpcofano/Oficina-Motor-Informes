@@ -3,15 +3,15 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-21, al cerrar la Parte 0 del `2026-08-21_4`
+**Última actualización:** 2026-08-21, al cerrar el `2026-08-21_6`
 
 ---
 
 ## ⛔ Lo primero: el deck no está mal por un bug — está mal por tres cosas que faltan
 
-El 21/08 se corrieron cuatro prompts. Los dos primeros (`_1` y `_2`) arreglaron código y están
-cerrados. **Los dos últimos (`_3` y `_4`) son diagnóstico y pararon a propósito**: la medición
-desmintió las premisas con las que se habían escrito.
+El 21/08 se corrieron seis prompts. Cuatro arreglaron código y están cerrados (`_1`, `_2`, `_5` y
+`_6`). **Los otros dos (`_3` y `_4`) son diagnóstico y pararon a propósito**: la medición desmintió
+las premisas con las que se habían escrito.
 
 **Lo que NO pasó, y conviene descartarlo antes de seguir buscando:**
 
@@ -68,6 +68,21 @@ usuario.**
 
 ---
 
+## ✅ Dos de las seis inconsistencias, cerradas
+
+- **5 · el modo de los huecos** (`2026-08-21_5`). El default era el crudo **y no lo había elegido
+  nadie**: `undefined === true` es `false`, y dos de los cuatro llamadores no pasaban la opción.
+  Ahora vive en `CONFIG.presentacion_faltantes_defecto` con un solo lector, y el resultado dice **de
+  dónde salió** el modo. ⚠ La guarda contra el `"false"` de query string se conservó.
+- **3 · `orden_plantilla` como clave** (`2026-08-21_6`). El seed lo prohíbe y el censo lo hacía.
+  Ahora se indexa por `lamina_id` y la identidad sale del ancla. **Medido: indexar por orden pierde
+  1 de las 23 láminas de `jm` en silencio.**
+
+⚠ **Ninguna de las dos cambia lo que sale en el deck de esta semana.** Lo que lo cambia es la lista
+de arriba, y el punto 1 es tuyo.
+
+---
+
 ## Lo que cerró hoy y está pusheado
 
 - **`2026-08-21_1`** — el reloj se consulta en **todas** las etapas, no sólo en el bucle. Con el
@@ -78,9 +93,10 @@ usuario.**
   sobre una variable de una sola rama). **La reanudación real no podía terminar nunca.** Arreglado
   con un solo `getFileById(deckId)`.
 
-**Las cuatro suites en verde:** `probar-reloj-etapas` (17), `probar-continuacion-deck` (22),
-`probar-planificador` (18), `probar-resueltas` (14). Las dos primeras traen **la rotura a propósito
-automatizada**.
+**Las seis suites en verde:** `probar-reloj-etapas` (17), `probar-continuacion-deck` (22),
+`probar-modo-faltantes` (24), `probar-lamina-por-id` (11), `probar-planificador` (18),
+`probar-resueltas` (14). **Las cuatro primeras traen la rotura a propósito automatizada**: sacan del
+fuente la línea que protegen y verifican que la afirmación caiga.
 
 ---
 
@@ -89,7 +105,7 @@ automatizada**.
 | # | qué correr | qué destraba |
 |---|---|---|
 | 1 | ⭐ **Tildar `mostrar`** en las dos filas de `REUNIONES` de `agosto_14_20` | que el deck tenga encuentros |
-| 2 | **Aplicar configuración** | siembra `costo_arranque_seg`, `costo_mapa_seg` y `costo_item_seg`, que **no están** en `CONFIG` (el motor usa los defaults de módulo, así que no rompe nada) |
+| 2 | **Aplicar configuración** | siembra `costo_arranque_seg`, `costo_mapa_seg`, `costo_item_seg` y **`presentacion_faltantes_defecto`**, que no están en `CONFIG`. El motor usa los defaults de módulo, así que no rompe nada — pero mientras no se siembre, el default de los huecos vive sólo en el código |
 | 3 | **`verificarRelojDeEtapas()`** | las cuatro pruebas del reloj dentro de Apps Script; dice el techo vigente |
 | 4 | **`verificarLaminas()`** | el cruce ancla ↔ `LAMINAS`. **Correrlo cada vez que se toca una plantilla** |
 | 5 | **`preverSimbolosJM()`** | el conteo esperado **antes** de generar |
@@ -113,8 +129,8 @@ automatizada**.
 
 ## Cómo leer esto desde afuera
 
-- **Qué se hizo y qué se midió** → `docs/BITACORA.md`, entradas del 2026-08-21 (cuatro: `_1`, `_2`,
-  `_3` Parte 0 y `_4` Parte 0).
+- **Qué se hizo y qué se midió** → `docs/BITACORA.md`, seis entradas del 2026-08-21: `_1`, `_2`,
+  `_3` Parte 0, `_4` Parte 0, `_5` y `_6`.
 - **Qué sigue abierto, con el número medido** → `docs/PENDIENTES_consistencia.md`, entrada del
   2026-08-21.
 - **Qué decía cada hoja de registro hoy** → `docs/_snapshots/*_2026-08-21.tsv`, las 11 hojas.

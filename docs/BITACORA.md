@@ -12274,3 +12274,92 @@ y su columna `falta` dice, textual:
 
 ⭐ **La pregunta ya estaba registrada en la hoja**, y el censo la confirma: los 4 `ecv_` conviven con
 los 32 `u1_` en la misma lámina.
+
+---
+
+## 2026-08-21 · `2026-08-21_5` — el modo de los huecos tiene un default y un solo lector
+
+Cierra la inconsistencia **5** del 21/08.
+
+**El modo salía de `opciones.faltantes_como_raya === true`, y `undefined === true` es `false`:
+el default real era el crudo y no lo había elegido nadie.** De los cuatro llamadores de
+`generarInforme`, **dos no pasaban la opción** — el ítem de menú (`generarInforme(informeId)` a
+secas) y la ejecución 1 de la corrida desatendida (`{ continuable: true }`).
+
+⚠ **El caso peor era la desatendida, porque las dos mitades no coincidían:** ejecución 1 en crudo,
+continuaciones en símbolos, **sobre el mismo deck**. Y nada lo avisaba.
+
+### ⭐ Lo que NO había que hacer, y por qué
+
+**El `=== true` no era un descuido: era una guarda deliberada.** El comentario que lo acompañaba lo
+decía — la opción entra desde un `<select>`, desde un JSON de la API y desde una llamada a mano, y
+un `"false"` de query string **es truthy**. **Aflojar la guarda habría cambiado un bug por el otro.**
+
+Lo que faltaba era **distinguir «no vino» de «vino en false»**, que con `=== true` se ven idénticos.
+`normalizarModoFaltantes_` devuelve un **tercer estado, `null`**, y ahí es donde se aplica el default.
+
+### Lo construido
+
+- **`CONFIG.presentacion_faltantes_defecto`** (`simbolos`), sembrado. El valor de negocio sale del
+  código (`CLAUDE.md` §2).
+- **`modoFaltantesDe_(opciones)`** — un solo lector. Devuelve `{ simbolos, origen }`.
+- ⭐ **El resultado dice de dónde salió el modo**, no sólo cuál fue: un deck en crudo porque alguien
+  lo pidió y uno en crudo porque el llamador se olvidó **se ven idénticos y mandan a trabajos
+  opuestos**. `presentacion_faltantes_origen` los separa.
+- **Un valor no reconocido cae al default y lo AVISA** en vez de tragárselo.
+- ⚠ **La desatendida guarda el modo que la ejecución 1 usó de verdad** (`con_simbolos:
+  r.presentacion_faltantes === 'simbolos'`) en vez de afirmar `true`. Es la familia del comentario
+  que afirma un contrato: una constante puesta a mano no se entera de que dejó de ser cierta.
+- **La clave `faltantes_como_raya` NO se renombró** — es formato de cable hacia la API.
+
+### El control: `tools/probar-modo-faltantes.js`, 24 afirmaciones
+
+Los cinco bloques: el default aplica en las cinco formas de «no vino»; el pedido explícito gana en
+los **dos** sentidos; **la guarda del query string sigue viva** —`"false"` sigue dando crudo, y
+ahora `"true"` da símbolos, que antes daba lo contrario de lo pedido—; la rotura a propósito; y que
+la decisión ya no vive en los llamadores.
+
+⚠ **Un rojo del propio control, y enseña:** la afirmación *"ya no queda ningún
+`opciones.faltantes_como_raya === true`"* salió roja — **los dos aciertos estaban en comentarios**,
+que citan el patrón viejo justamente para explicar qué se cambió. **Un instrumento que mide código
+mirando texto no puede distinguir el código de su explicación.** La salida fácil —borrar la
+afirmación— habría perdido el control; se le agregó un despojador de comentarios **y un control
+negativo** que afirma que el patrón sí sigue en los comentarios, para que la primera no pase por
+vacía.
+
+---
+
+## 2026-08-21 · `2026-08-21_6` — `orden_plantilla` deja de ser clave
+
+Cierra la inconsistencia **3** del 21/08.
+
+**La regla ya estaba escrita, en el seed de `LAMINAS`:** *"`orden_plantilla` es reportado, NUNCA
+autoritativo. **Nada del motor puede decidir en base a ese número**. La identidad es `lamina_id`."*
+Y `censarTokensSinMarcador_` la violaba: indexaba su mapa `iteran` por `orden_plantilla`.
+
+**El caso no era hipotético.** `L-052` se insertó en la posición 6 de la plantilla de `jm` y corrió
+a `L-035` a la 7, pero la hoja dice `6` para las dos. ⭐ **Eso es lo esperado y no hay nada que
+arreglar ahí** —el id existe justamente para que el orden no importe—: **el problema es sólo donde
+alguien decide por ese número.**
+
+⚠ **No se disparaba** porque `itera_sobre` está vacío en las 52 filas, así que el `if` nunca entra.
+**Era un bug esperando la primera fila que lo declarara.**
+
+### Lo construido
+
+- El mapa se indexa por **`lamina_id`**.
+- La identidad de una lámina del deck sale de **`anclaDeLamina_`**, que es para lo que se selló.
+- ⚠ **Una lámina sin ancla ya no se resuelve por posición.** Antes se le buscaba el `itera_sobre`
+  por su número y, si alguna fila declaraba ese número, **se lo asignaba a la lámina equivocada**.
+  Ahora se cuenta aparte y el resumen la nombra — con el caso medido de la lámina 8 de `jm`, que no
+  tiene ancla ni fila.
+- El aviso va **al final del resumen**, después del veredicto.
+
+### El control: `tools/probar-lamina-por-id.js`, 11 afirmaciones
+
+Ningún `.gs` indexa por `orden_plantilla` —medido sobre el **código**, no sobre el texto—; el censo
+resuelve por el ancla; la rotura a propósito; y el generador, que **nunca** dependió del orden.
+
+⭐ **El bloque 3 reproduce la colisión sobre el snapshot vivo y no sobre un fixture inventado**
+(`CLAUDE.md` §4): de las 23 láminas de `jm`, **indexar por orden deja 22 claves — pierde una fila en
+silencio**; indexar por id conserva las 23. **El daño está demostrado, no argumentado.**
