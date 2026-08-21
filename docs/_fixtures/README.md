@@ -86,6 +86,14 @@ otra fila.
 |---|---|---|
 | `Informe 2026-07-31.zip` | 56.434.396 | `97310e16f49d2726e0b46d515f13d68d84f5ba13791c7bc57b05c8495e9a0ecb` |
 | `Seguimiento Digital2026-08-06.zip` | 98.332.566 | `9a1ee89d0e0b0aa6619c5efa3cd9ee9409269ce44ff856523b9ed4bcbf76b2e9` |
+| `Seguimiento Digital  2026-08-20.zip` | 78.942.640 | `f8ef3227fc6cc73ef5879948451093f8e7a278c0baf1f4341d187958f0f8cc87` |
+
+⚠ **La tercera se registró el 21/08, después de usarla y antes de citar un solo número.**
+Llegó sin huella, y un archivo sin huella es **anónimo**: nada lo distingue del export que le
+sigue dos días después, y los dos se llaman casi igual. De ella salen las letras de columna de
+`SEED_MAPEO_DESGLOCE_` y la reproducción de `V-21`…`V-26`. **Trae los siete archivos del día,
+incluidos los dos decks** — `Informe semanal JM - (14_08 al 21_08).pptx` y
+`Seguimiento SECCO - SSCDI (21-08) .pptx`.
 
 ⚠ **Y el sha ya sirvió para algo en su primer uso:** los dos archivos de arriba son **idénticos byte
 a byte** a `Plan Inicial/_archivo/samples/Informes ejemplo/Informe 2026-07-31.zip` y

@@ -1343,6 +1343,58 @@ var SEED_MAPEO_REUNIONES_ = [
 ];
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_REUNIONES_);
 
+/* `2026-08-21_7` — **`digital/CAMPAÑAS_DESGLOCE_DIGITAL`, la fuente de los `u1_*` del "1 a 1".**
+ *
+ * ⭐ **La decisión no es nueva y no se toma acá: está desde el 14/08.** `SEED_SOLAPAS_` ya declara
+ * esta solapa como `fuente` con el motivo escrito —*"impresiones, clics y visualizaciones por
+ * plataforma, con filtro Id cuentas + Plataforma (V-21 a V-26)"*— y `D-32` existe **porque el
+ * sembrador la revirtió una vez**. Lo único que faltaba era el `MAPEO`: la solapa estaba declarada
+ * fuente y **no tenía ni una fila mapeada**, así que ningún marcador podía leerla.
+ *
+ * **De dónde salen las letras.** Del fixture `Seguimiento Digital  2026-08-20.zip`, hoja
+ * `CAMPAÑAS_DESGLOCE_DIGITAL` del `Seguimiento Digital  (4).xlsx` — huella registrada en
+ * `docs/_fixtures/README.md`. ⚠ **Es una foto del 20/08** (`CLAUDE.md` §4): las letras valen para
+ * ese día, y `verificarEncabezadosDeMapeo()` es lo que dice si siguen valiendo hoy. Por eso cada
+ * fila lleva su `encabezado` como testigo (`D-31`) — **testigo, nunca fallback**.
+ *
+ * **Verificado, y es lo que hace citable a las letras:** cuatro de los seis casos `V-21`…`V-26` se
+ * reproducen **exactos** sobre el fixture con estas columnas. Los dos que no —`V-25` y `V-26`— no
+ * fallan por la columna: **la cuenta `3346-JULJDGAG` tiene dos filas Meta idénticas** con distinto
+ * `Id accion`, y su campaña seguía corriendo entre la validación del 19/08 y el fixture del 20/08.
+ * Ver `docs/PENDIENTES_consistencia.md`, 21/08.
+ *
+ * ⚠ **`des_id_accion` no es decorativo: es lo único que separa un duplicado.** Medido sobre el
+ * fixture: **61 grupos duplicados, 135 filas de más sobre 5.161**. Un `SUMA` por
+ * `Id cuentas` + `Plataforma` los cuenta dos veces.
+ *
+ * ⚠ **Y `des_campana` tampoco:** el pre y el post de un encuentro viven en la **misma** cuenta y
+ * la **misma** plataforma, y se distinguen por el nombre — `"Agenda con 1 - 1 A 1 - San Cristobal"`
+ * contra `"Agenda Post con 1 - 1 A 1 - Retiro"`.
+ *
+ * ⛔ **Lo que este seed NO hace:** no cablea ningún `u1_*`. Mapear es declarar dónde está una
+ * columna; cuál token la usa, con qué operación y con qué corte es `MARCADORES`, y eso necesita
+ * las decisiones que siguen abiertas — entre ellas de dónde salen los seis `u1_bench_*`, que es
+ * una pregunta anterior a todo esto (`CONFIG_INFORMES.md` §2.1). */
+var SEED_MAPEO_DESGLOCE_ = [
+  // Las dos claves: sin éstas la solapa no se puede recortar ni por encuentro ni por plataforma.
+  { base_id: 'digital', campo_logico: 'des_id_cuenta', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'B', encabezado: 'Id cuentas', notas: 'clave del encuentro — la nombra SOLAPAS.campo_id_cuenta (D-30). Es la misma clave que V-21…V-26' },
+  { base_id: 'digital', campo_logico: 'des_plataforma', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'F', encabezado: 'Plataforma', notas: 'el corte. Valores medidos 20/08: Meta 1840 · DV360 1678 · Google ads 1417 · TikTok 55 · Mercado Libre 27 · Twitter 12 · Twitch 5 · Uber 5 · 122 vacíos. OJO: se escriben así, con mayúscula y espacio — "Google ads", no "google"' },
+  // Las tres métricas que los casos de validación nombran.
+  { base_id: 'digital', campo_logico: 'des_impresiones', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'O', encabezado: 'Impresiones', notas: 'V-21 (17.401) y V-23 (25.099) reproducidos exactos sobre el fixture del 20/08' },
+  { base_id: 'digital', campo_logico: 'des_visualizaciones', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'P', encabezado: 'Visualizaciones', notas: 'el numerador de vtr. V-26 apunta acá' },
+  { base_id: 'digital', campo_logico: 'des_clics', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'Q', encabezado: 'Clics', notas: 'el numerador de ctr. V-22 (496) y V-24 (778) reproducidos exactos' },
+  // Lo que hace falta para separar filas que las claves solas no separan.
+  { base_id: 'digital', campo_logico: 'des_id_accion', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'A', encabezado: 'Id accion', notas: '⚠ lo único que distingue dos filas por lo demás idénticas. 61 grupos duplicados / 135 filas de más sobre 5.161 (fixture 20/08)' },
+  { base_id: 'digital', campo_logico: 'des_campana', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'E', encabezado: 'Nombre Campaña', notas: '⚠ acá vive el pre/post: "Agenda con 1 - 1 A 1 - X" contra "Agenda Post con 1 - 1 A 1 - X", misma cuenta y misma plataforma' },
+  // Fechas y estado — declarados, sin consumidor todavía.
+  { base_id: 'digital', campo_logico: 'des_fecha_inicio', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'I', encabezado: 'Fecha inicio', notas: '' },
+  { base_id: 'digital', campo_logico: 'des_fecha_fin', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'J', encabezado: 'Fecha fin', notas: 'el candidato de u1_fecha_fin' },
+  { base_id: 'digital', campo_logico: 'des_estado', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'K', encabezado: 'Estado', notas: '⚠ los valores van en MAYÚSCULA — FINALIZADA 4338, PAUSADA 433, ACTIVA 229. Un filtro `estado=Activa` copiado de imp_* NO matchea acá (R-10 preserva mayúsculas)' }
+];
+
+SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_DESGLOCE_);
+
+
 // `hoja_default`) — `solapa` es exactamente ese mismo valor, así que se deriva
 // acá en vez de tipearlo dos veces por fila.
 SEED_MAPEO_.forEach(function (fila) { fila.solapa = fila.hoja; });
@@ -1826,7 +1878,12 @@ var SEED_SOLAPAS_ = [].concat(
    *
    * `R-22` no se deroga: sigue siendo la regla correcta. Lo que venció es la **medición** que la
    * aplicaba a esta solapa, que es justo el caso de "un dato medido una vez y citado tres veces". */
-  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'fuente de los u1_* del "1 a 1" — impresiones, clics y visualizaciones por plataforma, con filtro Id cuentas + Plataforma (V-21 a V-26, consolidado 14/08). Repuesta a fuente el 14/08: el seed la tenía en ignorar por una medición de R-22 del 09/08 que venció'),
+  /* `2026-08-21_7` — **`campo_id_cuenta` faltaba, y sin él el `MAPEO` no sirve por ítem.**
+   * `SOLAPAS.campo_id_cuenta` es lo que `datosDeMarcador_` usa para quedarse con la fila del
+   * encuentro (`D-30`); sin declararlo, un marcador con `id_cuenta` falla con
+   * `@campo_id_cuenta_no_mapeado` en vez de recortar. Apunta a la fila de `MAPEO`
+   * `des_id_cuenta` — columna B, `Id cuentas`, la misma clave de `V-21`…`V-26`. */
+  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'fuente de los u1_* del "1 a 1" — impresiones, clics y visualizaciones por plataforma, con filtro Id cuentas + Plataforma (V-21 a V-26, consolidado 14/08). Repuesta a fuente el 14/08: el seed la tenía en ignorar por una medición de R-22 del 09/08 que venció. Mapeada el 21/08 (SEED_MAPEO_DESGLOCE_)', { campo_id_cuenta: 'des_id_cuenta' }),
   // Las cinco de abajo estaban en `referencia` y bajan a `ignorar` por `R-22`: `referencia`
   // sugiere que sirven para consultar, y éstas no sirven para nada. Las tres de período
   // manual las veta `R-02`; las dos de `#REF!` están rotas.
