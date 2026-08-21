@@ -12094,3 +12094,183 @@ está sin escribir el control*.
 ⛔ **El ciclo desatendido no corrió.** Este control afirma que la rama **vuelve**; no que la
 reanudación produzca el deck correcto —en el banco se pinta cero— ni que el ciclo cierre, que
 necesita trigger, lock y una corrida real. **Eso es lo que sigue.**
+
+---
+
+## 2026-08-21 · `2026-08-21_3` Parte 0 — el diagnóstico: no hubo regresión de código
+
+**Diagnóstico puro, sin arreglar nada.** El prompt pedía separar tres cosas mezcladas: una
+regresión, una pieza que nunca existió y un modo de salida mal elegido. **Ninguna de las tres
+resultó ser lo que se creía.**
+
+### ⭐ La causa raíz, y no estaba entre las tres
+
+**`REUNIONES.mostrar` está vacío en las dos filas de `agosto_14_20`.** `leerReuniones_` filtra
+`esVerdadero_(mostrar)`, así que las descarta. **Verificado contra el lector vivo, no contra la
+hoja:** `node tools/api.js registros hoja=REUNIONES` devuelve **12 filas y ninguna del período
+vigente** — 8 de `julio_24_30`, 4 de `junio_sem2`.
+
+**Consecuencia:** `encuentro` y `comunicaciones_post` emiten **0 ítems**, sus bloques modelo quedan
+sin expandir y sin poblar, y las láminas de encuentro que se ven en el deck **son las láminas modelo
+de la plantilla**, no ítems.
+
+⚠ **Y no es un bug:** `cargarTemarioReuniones_` deja `mostrar=''` **a propósito** —"la persona
+confirma"— e imprime *"Ninguna quedó con mostrar=sí: confirmá a mano cuáles entran al informe"*.
+**Es un paso de dato que no se hizo.**
+
+### La regresión de código no existe
+
+**`MARCADORES` es idéntica celda por celda entre el snapshot del 20/08 y la hoja viva del 21/08**:
+87 filas, 0 altas, 0 bajas, 0 cambios en las 11 columnas comparadas. `SECCIONES`, `SOLAPAS`,
+`MAPEO`, `BASES`, `INFORMES` y `LAMINAS`: **idénticas también**.
+
+Lo que cambió es **dato**: `REUNIONES` (+2 filas sin `mostrar`), `CAMPANAS` (las 3 de julio a
+`mostrar=no`, +2 de agosto en `sí`, 3 huérfanas borradas), `PERIODOS` (+3) y `CONFIG`
+(`periodo_desde`/`periodo_hasta` **vacíos**).
+
+⛔ **Y la premisa del punto 4 estaba al revés: el `_7` no está aplicado.** Las 87 filas tienen
+`informe_id = jm` y **ninguna pasó a `*`**; hay **3** filas `_revisar`, no 32 — las 3 previas, que
+explican los 4 valores entre guiones del deck. **No hay testigo que citar porque no hay migración
+que testificar.**
+
+### El modo crudo: dos de los cuatro llamadores nunca pasan la opción
+
+El default no se invirtió y el panel está bien (`conSimbolos: true`, label claro).
+
+| llamador | pasa `faltantes_como_raya` | modo |
+|---|---|---|
+| `panel_generar` | sí | símbolos |
+| `menuGenerarInformeCompleto_` | **no** | **crudo** |
+| `iniciarCorridaDesatendida_` (ejec. 1) | **no** | **crudo** |
+| `correrUnaEjecucion_` (ejec. ≥2) | sí | símbolos |
+
+`conSimbolos = opciones.faltantes_como_raya === true`, y `undefined === true` es `false`. ⚠ **La
+desatendida es el caso peor: ejecución 1 en crudo y las continuaciones en símbolos, sobre el mismo
+deck.**
+
+### El rastro de etapas — y todas las corridas cortan en el mismo lugar
+
+De `panel_ultimasCorridas` (sólo lectura). El deck de hoy es **`jm-20260821-114540`**: 170
+reemplazados, 515 faltantes, 321 s.
+
+```
+114540 (21/8)  etapa1 +0   etapa2 +68   etapa3 +78    etapa4 +311   etapa5 +321
+171421 (20/8)  etapa1 +0   etapa2 +80   etapa3 +96    etapa4 +296   etapa5 +307
+```
+
+⭐ **Las dos cortaron en la etapa 4, y también `172003` (+303) y `175132` (+295).** Con techo 350 y
+reserva 30 quedan 320 útiles y la etapa 4 pide 60. **Ninguna corrida reciente pintó jamás los tokens
+fijos — el deck "que estaba bien" tampoco.** Y hoy hizo **más** trabajo, no menos: 170 impresiones
+contra 155.
+
+⚠ **Los 49 `{{token}}` crudos no son nuevos:** son los *49 crudos permanentes* de las láminas
+escondidas 12, 21 y 29, ya documentados. Están en todos los decks.
+
+### Lo que NO se pudo contestar, y por qué
+
+⛔ **El punto 6 —qué tokens tenían valor el 20/08 y no hoy— no se puede contestar desde disco.**
+`FALTANTES` se pisa en cada corrida (`D-12`), así que la lista del 20/08 ya no existe, y `con_valor`
+sólo vive en el retorno de la corrida, que muere con la ejecución. **El único testigo que sobrevive
+es el deck de `171421`** (`1iPQcoQY11lVhxM-P16R-8iVp5xS1D6YrfDELuU3XRDw`) — **no borrarlo.**
+
+⛔ **El punto 9 —qué solapa debería leer el 1 a 1— tampoco.** Ninguna solapa de `rdv` se llama algo
+parecido a *uno a uno*; las dos con `uso=fuente` son `RVD JM-CM - ES` y `RDV_otros_ministros`. **Lo
+decide una persona.**
+
+### Correcciones a lo documentado el 21/08 a la mañana
+
+- **`jm-20260821-094731` está cerrada**, no abierta: 0 reemplazados, 0 faltantes, 96 s. La que
+  **nunca cerró** es **`jm-20260821-100211`**. Y hubo **cuatro** corridas ese día, no dos.
+- **`presupuesto_corrida_seg` ya está en 350.** Pero **"Aplicar configuración" no se corrió**: las
+  tres claves nuevas del `_1` no están en `CONFIG` y el motor usa los defaults de módulo.
+
+---
+
+## 2026-08-21 · `2026-08-21_4` Parte 0 — la lámina del 1 a 1 no está en el registro
+
+**Sólo la Parte 0. La Parte A NO se ejecutó**, y el motivo es el resultado: **cuatro premisas del
+prompt no sobreviven la medición.**
+
+### ⭐ `verificarLaminas()` ya lo decía, y nadie lo había corrido
+
+```
+plantillas: 53 láminas · hoja: 52 filas · anclas: 52
+sin ancla:  jm · orden 8 · «(ninguna)»
+anclas_sin_fila: []  filas_sin_ancla: []  ids_repetidos: []  huecos: []
+17 desajustes de orden
+```
+
+**Hay una lámina en la plantilla de `jm`, posición 8, sin ancla y sin fila en `LAMINAS`.** El
+sellado no la alcanzó. Los 17 desajustes reconstruyen la plantilla real:
+
+```
+pos 1-5  L-030…L-034     pos 6  L-052 ⭐   pos 7  L-035
+pos 8    SIN ANCLA ⛔    pos 9  L-036     pos 10 L-037 …
+```
+
+⭐ **`L-052` no aparece en los desajustes: está exactamente donde la hoja dice.** El diseño del
+`lamina_id` funcionó — se insertó en la 6, corrió a `L-035` a la 7, y no hubo que renumerar nada.
+**La que corre todo lo demás una posición más es la lámina sin sellar de la 8.**
+
+### Las cuatro premisas que caen
+
+| premisa del prompt | medido |
+|---|---|
+| *"la lámina 8 de jm es `L-037`"* | **falso** — `L-037` está en la posición **10**. La 8 no tiene ancla ni fila |
+| *"el 1 a 1 usa `L-037`"* | **falso** — el 1 a 1 es la lámina **sin sellar** de la posición 8 |
+| *"sus 36 tokens son familia `u1_`"* | **32 de 36**; los otros 4 son `ecv_` (`ecv_asistentes`, `ecv_comuna`, `ecv_fecha`, `ecv_inscriptos`) |
+| *"`LAMINAS` 51 filas, las 51 selladas"* | **52 filas y 52 anclas**, pero la plantilla tiene **53 láminas** |
+
+### ⭐ La causa se parte en tres, y la Parte A ataca una sola
+
+`diagTokensDeLamina_("jm", 8)` → **`total 36 · con_fila 2 · sin_fila 34`**. Los prefijos cableados
+en `MARCADORES` son `enc_ ecv_ gcba_ camp_ m2_ ivr_ mail_ imp_ pauta_ frecuencia`: **`u1_` no
+existe**.
+
+1. **La lámina no está en el registro.** No se le puede llenar `seccion_id` a una fila que no
+   existe: hay que volver a sellar para que tome `L-053`.
+2. **Ninguna sección la reclama.** Cierto, y es lo que el prompt dice.
+3. **Sus 32 `u1_` no están cableados.** Aunque se resolviera, saldría igual de vacía.
+
+⛔ **Y llenar `seccion_id` sin lo demás empeora el síntoma visible:** la lámina pasaría a expandirse
+por ítem y produciría **N copias vacías** en vez de una.
+
+### ⚠ La Parte A punto 1 contradice al seed
+
+`Instalar.gs`, sobre `LAMINAS`: *"`seccion_id`, `modo`, `itera_sobre` y `filtro` vacíos significan
+**hereda de `SECCIONES`**, no «sin declarar»"* (`PLAN.md` §2: celda vacía = hereda).
+
+La Parte A.1 dice que una lámina sin `seccion_id` **no se expande ni se resuelve**. Con las 52 filas
+vacías, eso deja **el deck entero en blanco**. La A.3 dice lo contrario —avisa y usa la inferencia—
+y **el seed le da la razón a la A.3**. Hay que resolver esa contradicción antes de escribir código.
+
+### Punto 3 — sitios que resuelven por orden: dos, y ninguno en el generador
+
+| sitio | qué hace | riesgo |
+|---|---|---|
+| `Auditoria.gs:3296` | `iteran[String(l.orden_plantilla)] = l.itera_sobre` | ⛔ **`orden_plantilla` como clave de mapa**: con dos láminas del mismo orden, una pisa a la otra en silencio. Hoy no se dispara sólo porque `itera_sobre` está vacío en las 52 |
+| `Auditoria.gs:796` | `var i = Number(ordenPlantilla) - 1; … slides[i]` | ubica por posición; es de diagnóstico y toma el orden por parámetro. **Es lo que hizo censar la lámina equivocada creyéndola `L-037`** |
+
+**El generador no usa `orden_plantilla` en ningún lado.** ✓
+
+**Qué gobierna el orden del deck de salida:** la posición en la plantilla y sólo eso —
+`duplicarBloquesRepetibles_` mueve las copias a `inicio + k`, con `inicio` el índice mínimo de las
+láminas modelo. `SECCIONES.orden` **no ordena láminas**. ⚠ Y `seccionesRepetiblesDe_` devuelve las
+secciones en **orden de fila de la hoja**, no por `SECCIONES.orden`: cuál sección reclama primero
+una lámina disputada depende del orden de las filas.
+
+### Punto 6 — `rol` y `cobertura`
+
+`cobertura` está definida en el seed: *"¿los tokens de esta lámina tienen fuente validada?"*, con
+valores `cerrada` / `parcial` / `abierta`, distinta de `SECCIONES.estado` que es de ejecución.
+**`rol` no está definida en ningún lado** — sólo aparece en la lista de headers. Son de otra fase.
+
+### Un hallazgo lateral que contesta la pregunta del `_3`
+
+Existe una sección **`encuentro_iceberg`** (`padre = encuentro`, `modo = unica`, `estado = revisar`)
+y su columna `falta` dice, textual:
+
+> **"ecv_* se usa para ECV y para Uno a uno — definir si es genérico"**
+
+⭐ **La pregunta ya estaba registrada en la hoja**, y el censo la confirma: los 4 `ecv_` conviven con
+los 32 `u1_` en la misma lámina.

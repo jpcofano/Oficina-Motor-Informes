@@ -3,125 +3,121 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-21, al cerrar el `2026-08-21_2` (la rama de continuación)
+**Última actualización:** 2026-08-21, al cerrar la Parte 0 del `2026-08-21_4`
 
 ---
 
-## ⛔ Lo primero, y sin esto nada de lo demás sirve
+## ⛔ Lo primero: el deck no está mal por un bug — está mal por tres cosas que faltan
 
-⭐ **Mirar `CONFIG.presupuesto_corrida_seg`.** La mañana del 21/08 estaba en **150** —quedó bajo de
-la prueba del mecanismo desatendido de la noche anterior— y la corrida de `jm` llegó igual al muro
-duro de Apps Script, **360 s**. Ése fue el diagnóstico entero: el presupuesto no se respetaba porque
-el reloj sólo se consultaba dentro del bucle de asignaciones.
+El 21/08 se corrieron cuatro prompts. Los dos primeros (`_1` y `_2`) arreglaron código y están
+cerrados. **Los dos últimos (`_3` y `_4`) son diagnóstico y pararon a propósito**: la medición
+desmintió las premisas con las que se habían escrito.
 
-**Eso está arreglado. Y por eso el techo importa ahora más que antes:** con 150 el motor **corta
-bien**, y va a cortar siempre. Subirlo es el primer paso.
+**Lo que NO pasó, y conviene descartarlo antes de seguir buscando:**
 
-⚠ **La corrida del 21/08 murió en el muro y una corrida que muere en el muro no escribe nada** — ni
-cierra su fila, ni barre, ni quita el sello. Lo que hay que limpiar y qué mirar antes está en
-`docs/PENDIENTES_consistencia.md`, entrada del 2026-08-21. En resumen:
+- ⛔ **No hubo regresión de código entre el 20 y el 21/08.** `MARCADORES` es **idéntica celda por
+  celda** — 87 filas, 0 altas, 0 bajas, 0 cambios en las 11 columnas. `SECCIONES`, `SOLAPAS`,
+  `MAPEO`, `BASES`, `INFORMES` y `LAMINAS` también. Lo que cambió es **dato**.
+- ⛔ **El `_7` no está aplicado.** Las 87 filas siguen en `informe_id = jm`, **ninguna pasó a `*`**,
+  y hay **3** filas `_revisar`, no 32. No hay migración que testificar.
+- ⛔ **Los 49 `{{token}}` crudos no son nuevos**: son los *49 crudos permanentes* de las láminas
+  escondidas 12, 21 y 29.
+- ⛔ **Ninguna corrida reciente pintó los tokens fijos**, ni siquiera la que se recuerda como buena:
+  `171421`, `172003`, `175132` y `114540` **cortaron las cuatro en la etapa 4**.
 
-| # | qué | por qué antes que lo demás |
+---
+
+## Las tres cosas que sí faltan, en orden
+
+**El detalle medido está en `docs/PENDIENTES_consistencia.md`, entrada del 2026-08-21 (seis
+inconsistencias). Acá va sólo el orden.**
+
+| # | qué falta | por qué va antes que lo siguiente |
 |---|---|---|
-| 1 | ⭐ **Copiar la columna `faltantes` de la fila `jm-20260821-094731` de `CORRIDAS`** | tiene el **rastro de etapas con los segundos de cada una** — `marcarEtapa_` escribe con `flush()`, así que **sobrevive al muro**. Es la única medición directa de dónde se fue el tiempo, y se pierde al tocar la fila |
-| 2 | **`cancelarCorridaDesatendida()`** | limpia el estado `corrida_desatendida` de `PropertiesService`, que quedó vivo. Mientras esté, **no se puede arrancar otra corrida desatendida** |
-| 3 | **Borrar tres decks** | `jm-20260820-190943` y los **dos del 21/08 con `[en proceso]`**. Ninguno publicó nada |
-| 4 | **Cerrar a mano** la fila de `CORRIDAS` y las de `PLAN_CORRIDA` de `jm-20260821-094731` | |
+| 1 | ⭐ **Tildar `REUNIONES.mostrar`** en las dos filas de `agosto_14_20` | Sin eso `leerReuniones_` devuelve **cero** encuentros del período, `encuentro` y `comunicaciones_post` emiten **0 ítems**, y sus bloques modelo salen crudos. **Es un paso de dato, no un bug** — el cargador deja `mostrar=''` a propósito |
+| 2 | **Sellar la lámina 8 de `jm`** | La plantilla tiene **53 láminas y `LAMINAS` 52 filas**: la del 1 a 1 **no tiene ancla ni fila**. No se le puede declarar `seccion_id` a una fila que no existe |
+| 3 | **Cablear los 32 `u1_`** | No tienen **ninguna** fila en `MARCADORES`. Sellar y declarar sección **no la hace publicar nada** |
+
+⚠ **Son tres causas independientes del mismo síntoma**, y hacer una sola mueve el síntoma sin
+resolverlo. En particular: **declarar `seccion_id` sin cablear produce N copias vacías en vez de una**.
 
 ---
 
-## Lo que cambió en el motor
+## Sobre el `2026-08-21_4`: la Parte A NO se ejecutó
 
-**El reloj se consulta ahora en todas las etapas declaradas**, no sólo entre asignaciones.
+`verificarLaminas()` —que ya existía, es sólo lectura, y **nadie había corrido**— desmiente cuatro
+premisas del prompt:
 
-- `controlDeEtapa_` es el único punto de decisión y `ETAPAS_CON_CONTROL_` declara qué etapas lo
-  llevan. **Un corte trae su clase**: `arranque_no_entra` manda a subir el techo o partir el
-  arranque; `presupuesto` manda a correr de nuevo. **Son dos arreglos distintos** y el reporte los
-  nombra distinto.
-- **Dentro de la etapa 1 hay dos controles**: uno después de la primera lectura (el arranque ya se
-  pagó) y uno antes de cada sección siguiente. Se corta **entre secciones, nunca adentro de una**.
-- **El cierre no lleva punto de control, y es deliberado**: tiene que correr siempre. Lo que lo
-  protege es la reserva — así que **se mide** (`presupuesto.cierre_seg`) y el reporte avisa si no
-  entra, con el valor que habría que poner.
-- **El techo del panel sale de `CONFIG`**, no de una constante del HTML. Antes decía 350 mientras el
-  motor tenía 150, y la regla del cronómetro pasó el techo real sin ponerse en rojo.
+| premisa | medido |
+|---|---|
+| *"la lámina 8 de jm es `L-037`"* | **falso** — `L-037` está en la posición **10** |
+| *"el 1 a 1 usa `L-037`"* | **falso** — es la lámina **sin sellar** de la posición 8 |
+| *"sus 36 tokens son familia `u1_`"* | **32 de 36**; los otros 4 son `ecv_` |
+| *"`LAMINAS` 51 filas, las 51 selladas"* | **52 filas y 52 anclas** contra **53 láminas** |
 
-**Tres claves nuevas de `CONFIG`**, sembradas: `costo_arranque_seg` (80), `costo_mapa_seg` (25),
-`costo_item_seg` (6). Son **semillas**, no criterios: la observación de la corrida las pisa.
+La plantilla real de `jm`: `pos 1-5 = L-030…L-034 · pos 6 = L-052 · pos 7 = L-035 · **pos 8 = SIN
+ANCLA** · pos 9 = L-036 · pos 10 = L-037 …`
+
+⭐ **`L-052` está exactamente donde la hoja dice** — el diseño del `lamina_id` funcionó: se insertó
+en la 6, corrió a `L-035` a la 7, y no hubo que renumerar nada.
+
+⚠ **Y hay una contradicción a resolver antes de escribir código:** el seed dice que `seccion_id`
+vacío significa **hereda de `SECCIONES`**; la Parte A.1 dice que significa **no se expande ni se
+resuelve**. Con las 52 filas vacías, la A.1 deja el deck entero en blanco. **La decisión es del
+usuario.**
 
 ---
 
-## ⏸ Los botones que esperan, en orden
+## Lo que cerró hoy y está pusheado
 
-**Todo está pusheado** (`clasp push`, 21/08). Estos escriben en hojas de registro o generan, así que
-los corre el usuario.
+- **`2026-08-21_1`** — el reloj se consulta en **todas** las etapas, no sólo en el bucle. Con el
+  techo en 150 la corrida llegaba al muro de 360. `controlDeEtapa_` + `ETAPAS_CON_CONTROL_`, con la
+  **clase** del corte (`arranque_no_entra` vs `presupuesto`). El cierre se **mide**
+  (`presupuesto.cierre_seg`) en vez de controlarse. El techo del panel sale de `CONFIG`.
+- **`2026-08-21_2`** — `generarInforme` tiraba `TypeError` al continuar un deck (`copia.getName()`
+  sobre una variable de una sola rama). **La reanudación real no podía terminar nunca.** Arreglado
+  con un solo `getFileById(deckId)`.
+
+**Las cuatro suites en verde:** `probar-reloj-etapas` (17), `probar-continuacion-deck` (22),
+`probar-planificador` (18), `probar-resueltas` (14). Las dos primeras traen **la rotura a propósito
+automatizada**.
+
+---
+
+## ⏸ Los botones que esperan
 
 | # | qué correr | qué destraba |
 |---|---|---|
-| 0 | ⭐ **Subir `CONFIG.presupuesto_corrida_seg`** y limpiar lo del 21/08 (arriba) | con 150 el motor corta siempre |
-| 1 | **`verificarRelojDeEtapas()`** | las cuatro pruebas del reloj **adentro de Apps Script**. Barato, y dice el techo vigente en su reporte |
-| 2 | **Aplicar configuración** | siembra las tres claves nuevas de `CONFIG` y `agosto_14_20` en `PERIODOS` |
-| 3 | ⭐ **`verificarCierreParaGenerar()`** | las dos migraciones del `_7`, en orden y frenando si la primera falla |
-| 4 | **`preverSimbolosJM()`** y **`preverSimbolosSecco()`** | el conteo por símbolo esperado, **antes** de generar |
-| 5 | **Generar** los dos decks | con los números del punto 4 a la vista |
+| 1 | ⭐ **Tildar `mostrar`** en las dos filas de `REUNIONES` de `agosto_14_20` | que el deck tenga encuentros |
+| 2 | **Aplicar configuración** | siembra `costo_arranque_seg`, `costo_mapa_seg` y `costo_item_seg`, que **no están** en `CONFIG` (el motor usa los defaults de módulo, así que no rompe nada) |
+| 3 | **`verificarRelojDeEtapas()`** | las cuatro pruebas del reloj dentro de Apps Script; dice el techo vigente |
+| 4 | **`verificarLaminas()`** | el cruce ancla ↔ `LAMINAS`. **Correrlo cada vez que se toca una plantilla** |
+| 5 | **`preverSimbolosJM()`** | el conteo esperado **antes** de generar |
 
-⚠ **El 3 antes del 4, y el 4 antes del 5.** `preverSimbolos*` leído después de generar ya no es un
-control: es una explicación.
+⚠ **`presupuesto_corrida_seg` ya está en 350** — eso ya se subió.
 
 ⚠ **`verificarAlcanceDesatendido()` antes de confiar en el mecanismo desatendido.** Un trigger corre
-**sin usuario delante**, con los permisos del **dueño del script**, y las bases son planillas de
-otras cuentas compartidas con él.
-
-⚠ **La próxima ejecución puede pedir re-autorizar.** `appsscript.json` sumó el scope
-`script.scriptapp` el 20/08. Es un diálogo de permisos, no un error.
+**sin usuario delante**, con los permisos del **dueño del script**.
 
 ---
 
-## ✅ El `TypeError` de la reanudación: cerrado
+## ⛔ Evidencia que no se puede perder
 
-`generarInforme` tiraba al continuar un deck — `copia.getName()` sobre una variable que sólo se
-asigna en la rama que copia la plantilla, y **fuera del `try/catch`**, o sea después de que el cierre
-ya escribió `CORRIDAS` y quitó el sello. **La reanudación real no podía terminar nunca.**
-
-Arreglado en el `2026-08-21_2`: `nombre`, `url` y `dueno` salen de **un solo
-`DriveApp.getFileById(deckId)`**, que existe en los dos caminos. **El barrido de la misma clase de
-bug dio una sola variable** —`copia`— y no hay más.
-
-⭐ **Y el control que no existía ya existe:** `tools/probar-continuacion-deck.js`, 22 afirmaciones,
-con la rotura a propósito adentro. Hasta el 21/08 las tres suites del repo estaban **todas en
-verde** y **ninguna tocaba esa rama**.
+- **El deck de `171421`** (`1iPQcoQY11lVhxM-P16R-8iVp5xS1D6YrfDELuU3XRDw`) es **el único testigo
+  que queda** de qué publicaba el motor el 20/08: `FALTANTES` se pisa en cada corrida (`D-12`) y
+  `con_valor` muere con la ejecución. **No borrarlo.**
+- **`jm-20260821-100211` es la corrida que nunca cerró** — `094731` sí cerró, contra lo que se
+  documentó a la mañana del 21/08. Hubo **cuatro** corridas ese día, no dos.
 
 ---
 
-## ⏸ Lo que sigue: probar el ciclo desatendido
+## Cómo leer esto desde afuera
 
-**Es lo próximo y ya no está bloqueado.** Lo que falta medir necesita trigger, lock y una corrida
-real, y por eso es del usuario:
-
-- que la ejecución 1 corte y deje plan,
-- que el trigger dispare y la continuación **entre a `generarInforme` y vuelva** — el camino que
-  hasta hoy tiraba,
-- que las secciones se marquen `hecha` por resolución,
-- que el cierre quite el sello.
-
-⚠ **Antes de eso, `verificarAlcanceDesatendido()`**: un trigger corre **sin usuario delante**, con
-los permisos del **dueño del script**, y las bases son planillas de otras cuentas.
-
----
-
-## Lo verificado desde acá, y lo que eso no alcanza a decir
-
-Las cuatro suites, en verde: `probar-reloj-etapas` (**17**), `probar-continuacion-deck` (**22**),
-`probar-planificador` (**18**) y `probar-resueltas` (**14**). Las dos primeras tienen **la rotura a
-propósito automatizada**: sacan del fuente la línea que protegen y verifican que la afirmación caiga.
-
-⚠ **Y una lección del banco nuevo que conviene tener a mano antes de escribir el próximo:**
-`generarInforme` **atrapa las excepciones a propósito** y devuelve `ok: true` con el `fallo` adentro.
-Un control que sólo mire `ok` pasa sobre corridas que murieron en el medio — pasó, con seis
-afirmaciones en verde. **Afirmar `fallo === null` es lo que hace que las otras signifiquen algo.**
-
-⚠ **Ninguna corrida real.** Lo verificado es la decisión, el cableado de los controles y el recorrido
-de la etapa 1 sobre un reloj simulado. **Que el corte ordenado alcance a escribir todo lo que tiene
-que escribir —barrida, `FALTANTES`, `CORRIDAS`, sello— necesita una corrida**, y `cierre_seg` de esa
-corrida es lo que dice si la reserva de 30 s alcanza. Si no alcanza, **el corte ordenado igual muere
-en el muro** y el reporte lo va a decir con el número.
+- **Qué se hizo y qué se midió** → `docs/BITACORA.md`, entradas del 2026-08-21 (cuatro: `_1`, `_2`,
+  `_3` Parte 0 y `_4` Parte 0).
+- **Qué sigue abierto, con el número medido** → `docs/PENDIENTES_consistencia.md`, entrada del
+  2026-08-21.
+- **Qué decía cada hoja de registro hoy** → `docs/_snapshots/*_2026-08-21.tsv`, las 11 hojas.
+- **Las dos reglas nuevas** → `CLAUDE.md` §4: *un presupuesto que sólo se consulta en el bucle no
+  protege las etapas que están fuera del bucle*, y *una rama nueva que nunca se ejecutó no está sin
+  probar, está sin escribir el control*.

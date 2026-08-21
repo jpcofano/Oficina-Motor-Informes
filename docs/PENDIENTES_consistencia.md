@@ -5368,3 +5368,110 @@ necesita su propio prompt: toca el camino de reanudación y hay que verificar qu
 
 ⚠ **Y es la familia del comentario que afirma un contrato** (`CLAUDE.md` §4): nada compara una rama
 contra la otra, y las dos compilan.
+
+---
+
+## 2026-08-21 · Seis inconsistencias abiertas, medidas por el `_3` y el `_4` Parte 0
+
+**Estado:** las seis ABIERTAS. Ninguna se tocó — los dos prompts son diagnóstico y declaran parar.
+La medición completa está en `docs/BITACORA.md`, entradas del 21/08.
+
+### 1 · ⛔ Una lámina de la plantilla de `jm` no está en el registro
+
+`verificarLaminas()`: **53 láminas en las plantillas contra 52 filas en `LAMINAS` y 52 anclas.** La
+lámina de **`jm` posición 8 no tiene ancla ni fila** — el sellado no la alcanzó. Es **la del 1 a 1**:
+36 tokens, 32 `u1_` y 4 `ecv_`.
+
+**Qué la destraba:** volver a correr el sellador para que tome `L-053`. ⚠ **Y hay que hacerlo antes
+que cualquier trabajo sobre `LAMINAS.seccion_id`**: no se le puede llenar una columna a una fila que
+no existe.
+
+⚠ **El instrumento ya lo decía y nadie lo había corrido.** `verificarLaminas()` existe, es sólo
+lectura, y reporta esto en su primera pantalla. **Un control que nadie corre no protege nada.**
+
+### 2 · ⛔ Los 32 tokens `u1_` no tienen fila en `MARCADORES`
+
+Los prefijos cableados son `enc_ ecv_ gcba_ camp_ m2_ ivr_ mail_ imp_ pauta_ frecuencia`. **`u1_` no
+existe.** `diagTokensDeLamina_("jm", 8)` da `con_fila 2 · sin_fila 34`.
+
+⚠ **Es una causa independiente de la 1 y de la 3**, y por eso van juntas acá: sellar la lámina y
+declararle sección **no la hace publicar nada**. Son tres trabajos en fila — sellar, declarar,
+cablear— y hacer uno solo mueve el síntoma sin resolverlo.
+
+### 3 · ⚠ `orden_plantilla` usado como clave de mapa
+
+`Auditoria.gs:3296` — `iteran[String(l.orden_plantilla)] = l.itera_sobre`. **Con dos láminas del
+mismo `orden_plantilla`, una pisa a la otra en silencio.**
+
+**Hoy no se dispara** sólo porque `itera_sobre` está vacío en las 52 filas, así que el `if` nunca
+entra. **Es un bug latente que se activa con la primera fila que declare `itera_sobre`.**
+
+⚠ Y contradice al seed, que lo dice con todas las letras: *"`orden_plantilla` es reportado, NUNCA
+autoritativo. **Nada del motor puede decidir en base a ese número**"*. **El generador cumple; la
+auditoría no.**
+
+**Lo que NO es un problema:** `L-052` con `orden_plantilla = 6` conviviendo con `L-035`. Es el caso
+de uso para el que el `lamina_id` existe (decisión del usuario, 21/08) y la medición lo confirma:
+`L-052` **está** en la posición 6 y `L-035` corrió a la 7.
+
+### 4 · ⚠ `REUNIONES.mostrar` vacío deja el período sin encuentros, y nada lo avisa al generar
+
+`leerReuniones_` filtra `esVerdadero_(mostrar)`. Con las dos filas de `agosto_14_20` en blanco,
+devuelve **12 filas y ninguna del período vigente**, así que `encuentro` y `comunicaciones_post`
+emiten **0 ítems** y sus bloques modelo salen crudos.
+
+**No es un bug del cargador:** `cargarTemarioReuniones_` deja `mostrar=''` a propósito —"la persona
+confirma"— y lo avisa **al cargar**. ⚠ **Lo que falta es el aviso del otro lado**: al generar, una
+sección repetible con cero ítems se reporta como *"sin ítems — el bloque modelo queda como está"*,
+que se lee como *"no había nada"* y no como *"faltó tildar `mostrar`"*. **Son dos causas con el mismo
+texto.**
+
+### 5 · ⚠ Dos de los cuatro llamadores de `generarInforme` no pasan el modo de símbolos
+
+`conSimbolos = opciones.faltantes_como_raya === true`, y `undefined === true` es `false`.
+
+| llamador | pasa la opción | modo |
+|---|---|---|
+| `panel_generar` | sí | símbolos |
+| `menuGenerarInformeCompleto_` | **no** | **crudo** |
+| `iniciarCorridaDesatendida_` (ejec. 1) | **no** | **crudo** |
+| `correrUnaEjecucion_` (ejec. ≥2) | sí | símbolos |
+
+⚠ **El caso peor es la desatendida: ejecución 1 en crudo y las continuaciones en símbolos, sobre el
+mismo deck.** El default no se invirtió y el panel está bien; lo que falta es que el default viva en
+un solo lugar en vez de en cada llamador.
+
+### 6 · ⚠ El seed de `LAMINAS` y la Parte A del `2026-08-21_4` dicen lo contrario
+
+El seed: *"`seccion_id`, `modo`, `itera_sobre` y `filtro` vacíos significan **hereda de
+`SECCIONES`**, no «sin declarar»"* (`PLAN.md` §2).
+
+La Parte A.1 del `_4`: *"una lámina sin fila o sin `seccion_id` **no se expande ni se resuelve**"*.
+Con las 52 filas vacías eso deja **el deck entero en blanco**. La A.3 del mismo prompt dice lo
+contrario —avisa y usa la inferencia de hoy— y **el seed le da la razón a la A.3**.
+
+**Hay que decidir qué significa la celda vacía antes de escribir código**, y la decisión es del
+usuario: hoy está declarada como *hereda*.
+
+---
+
+### ✅ Lo que quedó descartado, y conviene que quede escrito
+
+- **No hubo regresión de código entre el 20 y el 21/08.** `MARCADORES` es **idéntica celda por
+  celda** (87 filas, 0 cambios en las 11 columnas comparadas), y `SECCIONES`, `SOLAPAS`, `MAPEO`,
+  `BASES`, `INFORMES` y `LAMINAS` también. Lo que cambió es dato: `REUNIONES`, `CAMPANAS`,
+  `PERIODOS` y `CONFIG`.
+- **El `_7` no está aplicado.** Las 87 filas tienen `informe_id = jm`, **ninguna pasó a `*`**, y hay
+  **3** filas `_revisar`, no 32. **No hay testigo que citar porque no hay migración que testificar.**
+- **Los 49 `{{token}}` crudos no son nuevos:** son los *49 crudos permanentes* de las láminas
+  escondidas 12, 21 y 29.
+- **Ninguna corrida reciente pintó los tokens fijos**, ni siquiera la que se recuerda como buena:
+  `171421`, `172003`, `175132` y `114540` **cortaron las cuatro en la etapa 4**.
+
+### ⛔ Evidencia que no se puede perder
+
+- **El deck de `171421`** (`1iPQcoQY11lVhxM-P16R-8iVp5xS1D6YrfDELuU3XRDw`) es **el único testigo que
+  queda** de qué publicaba el motor el 20/08: `FALTANTES` se pisa en cada corrida (`D-12`) y
+  `con_valor` muere con la ejecución. **No borrarlo.**
+- **`jm-20260821-100211` nunca cerró** (la que quedó abierta; `094731` sí cerró, contra lo que se
+  documentó a la mañana). Hubo **cuatro** corridas el 21/08, no dos.
