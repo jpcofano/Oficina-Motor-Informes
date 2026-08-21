@@ -3145,11 +3145,35 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
     }
   }
 
+  /* ⭐ `2026-08-21_2` — **el deck del retorno se resuelve por `deckId`, que existe en los dos
+   * caminos.**
+   *
+   * ⚠ **Acá decía `nombre: copia.getName(), url: copia.getUrl()`, y `copia` sólo se asigna en la
+   * rama que copia la plantilla.** Al continuar un deck (`opciones.deck_id`) esa rama no corre,
+   * `copia` queda `undefined` y las dos llamadas tiran `TypeError` — **fuera del `try/catch`**
+   * que protege las etapas, o sea **después** de que el cierre ya escribió `CORRIDAS` y quitó el
+   * sello. `correrUnaEjecucion_` no lo atrapa: no marca secciones `hecha`, no guarda el estado y
+   * no crea el trigger siguiente. **La reanudación real no podía terminar nunca.**
+   *
+   * **Se leen del archivo, no de la variable**, y de un solo `getFileById` — el nombre además
+   * puede haber cambiado en esta misma corrida: el cierre le quita el sello de en-proceso, así
+   * que `copia.getName()` habría devuelto el nombre **con** sello en el camino que sí andaba.
+   *
+   * ⚠ **Y el `try/catch` cubre las tres lecturas, no sólo el dueño.** Un deck que no se puede
+   * abrir no invalida una corrida que ya escribió su fila y su lista de faltantes; lo que no
+   * puede pasar es que la respuesta se pierda por eso. Los valores de reemplazo lo dicen. */
   var dueno = '';
+  var nombreDeck = '';
+  var urlDeck = '';
   try {
-    var propietario = DriveApp.getFileById(deckId).getOwner();
+    var archivoFinal = DriveApp.getFileById(deckId);
+    nombreDeck = archivoFinal.getName();
+    urlDeck = archivoFinal.getUrl();
+    var propietario = archivoFinal.getOwner();
     dueno = propietario ? propietario.getEmail() : '(sin dueño legible)';
   } catch (e) {
+    if (!nombreDeck) nombreDeck = '(no se pudo leer el nombre: ' + e.message + ')';
+    if (!urlDeck) urlDeck = 'https://docs.google.com/presentation/d/' + deckId + '/edit';
     dueno = '(no se pudo leer: ' + e.message + ')';
   }
 
@@ -3157,7 +3181,7 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
     ok: true,
     corrida_id: corridaId,
     informe_id: informeId,
-    deck: { id: deckId, nombre: copia.getName(), url: copia.getUrl(), dueno: dueno },
+    deck: { id: deckId, nombre: nombreDeck, url: urlDeck, dueno: dueno },
     periodo: {
       lamina: periodoLamina,
       desde: formatearFecha_(ventana.desde),
