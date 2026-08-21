@@ -444,11 +444,36 @@ junio— y **ninguna cubre la semana del informe**. No hace falta que la cubra: 
 
 ## Marcar y clasificar una lámina
 
-> **⚠ Nada de lo que sigue existe todavía.** *Sellar plantilla* **no está en el menú** y no la
-> vas a encontrar ahí: es la Fase 2 de `D-23`, sin implementar. **La hoja `LAMINAS` tampoco
-> existe** — la crea la misma operación. Y **la función que limpia el ancla de un informe
-> generado tampoco**. Esta sección describe el flujo decidido el 07/08/2026 para que quede
-> escrito antes de construirlo, no una operación disponible hoy.
+> **⚠ Este aviso decía que nada de esto existía, y venció.** Al 21/08/2026 **`sellarPlantilla`,
+> `verificarLaminas()` y la hoja `LAMINAS` existen y están pobladas** — 53 filas, las 53 con
+> `seccion_id` y `rol` declarados. Lo que sigue abajo describe el flujo decidido el 07/08; **el
+> ciclo que hay que seguir HOY está en el bloque de acá arriba.**
+
+### ⛔ El ciclo de una lámina nueva — 21/08/2026
+
+**Desde que el generador lee `LAMINAS`, una lámina nueva en una plantilla NO se emite hasta que
+esté declarada.** ⚠ **Y no falla: se reporta y sale en hueco**, que es peor de detectar. La
+inferencia por familia de tokens —que la emitía sola— **se retiró** (`D-37`).
+
+**Los cinco pasos, en orden:**
+
+1. **Se toca la plantilla.** La toca el equipo o el usuario, **nunca el motor sin autorización**
+   (`C-01`).
+2. **`sellarPlantilla(informe_id)`** — la lámina nueva toma su `L-NNN` y su fila en `LAMINAS`.
+3. **`verificarLaminas()`** — cierra el cruce ancla ↔ hoja. ⭐ **Correrlo cada vez que se toca una
+   plantilla.** Ya estaba escrito y nadie lo corría: el 21/08 encontró una lámina de `jm` **sin
+   ancla y sin fila** — la del "1 a 1" — que llevaba días ahí sin que nada la nombrara.
+4. **Declarar `seccion_id`** — y `rol`, y `filtro` si la lámina es condicional. **Sin `seccion_id`
+   no pertenece a ningún bloque.**
+5. Recién ahí emite.
+
+⚠ **Y el aviso del otro lado, que es el que faltó con `REUNIONES.mostrar`:** el reporte de la
+corrida **nombra las láminas sin `seccion_id` con su `lamina_id`**. *"Nadie la clasificó"* y *"no
+tiene tokens"* mandan a trabajos opuestos y sin ese aviso se leen igual — exactamente como
+*"sin ítems"* se leía igual que *"faltó tildar `mostrar`"*.
+
+---
+
 
 1. **Agregás la lámina** a la plantilla en Slides, con números de ejemplo o vacía. **Es el
    único paso que no pasa por el motor**, y es provisorio: pedirla en lenguaje natural es la
