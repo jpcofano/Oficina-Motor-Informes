@@ -3013,6 +3013,36 @@ var SEED_SECCIONES_ = [
   filaSeccion_({ id: 'otros_temas', orden: 16, nombre: 'Otros temas', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'sin marcar en la plantilla' }),
   filaSeccion_({ id: 'cierre', orden: 17, nombre: 'Cierre', informes: 'JM,SECCO', modo: 'unica' }),
 
+  /* ⭐ `2026-08-21_11` Parte A — **las dos secciones que faltaban para que ninguna lámina quede
+   * sin dueño** (`D-37` punto 2). Salieron de titular las 53 láminas de las dos plantillas y
+   * cruzarlas contra las 36 secciones: dos grupos no encajaban en ninguna.
+   *
+   * ⛔ **Las dos son `unica` y no `repetible`**, que es la guarda de la Parte A: una sección nueva
+   * `repetible` con láminas declaradas **expande**, y este paso declara pertenencia, no agrega
+   * bloques repetibles. */
+
+  /* `uno_a_uno_comunas` — **decisión del usuario, 21/08.** Las láminas `L-004` y `L-005` de
+   * `secco` —*"Uno a uno en comunas · Comuna {{ecv_comuna}} ({{ecv_fecha}})"* y su lámina de
+   * resultados de plataforma— **no van dentro de `encuentro`**: son una sección propia.
+   *
+   * ⚠ **Y es asimétrica con `jm` a propósito.** En `jm` el 1 a 1 (`L-053`) **sí** vive dentro de
+   * `encuentro`, como variante condicional del iceberg. Acá no: `secco` lo trata como un bloque
+   * aparte — el título lo dice, es *"en comunas"*, no el mismo objeto.
+   *
+   * ⚠ **Sus tokens no están cableados**: `L-005` lleva `ecv_` y `u1_`, y ningún `u1_*` tiene fila
+   * en `MARCADORES`. La sección existe para que las dos láminas **pertenezcan**; publicar es otro
+   * trabajo. Por eso `estado: 'manual'` y el `falta` lo dice. */
+  filaSeccion_({ id: 'uno_a_uno_comunas', orden: 18, nombre: 'Uno a uno en comunas', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'pendiente a cablear — L-005 lleva u1_ y ecv_, y ningún u1_* tiene fila en MARCADORES (21/08)' }),
+
+  /* `analisis_datos` — la portáda de la sección de análisis, que existe en **las dos** plantillas
+   * y no tenía sección: `jm` `L-049` (*"Análisis y datos · INFORME SEMANAL"*) y `secco` `L-024`
+   * (*"{{fecha_mes}} 2026 · Análisis y Datos"*).
+   *
+   * ⚠ **No se confunde con `analisis_comparativo` ni `analisis_tematico`**, que son `SECCO`, y
+   * ninguna de las dos describe una portáda: describen contenido que hoy no está marcado en la
+   * plantilla. Esta es la lámina separadora. */
+  filaSeccion_({ id: 'analisis_datos', orden: 19, nombre: 'Análisis y datos — portada', informes: 'JM,SECCO', modo: 'unica', estado: 'manual', falta: 'lámina separadora, sin tokens — la escribe el equipo (rol = equipo)' }),
+
   // Hijos de 'campana' — largo variable (3 a 21 láminas según canales usados,
   // docs/SECCIONES.md Corrección 1).
   filaSeccion_({ id: 'campana_portada', padre: 'campana', orden: 1, nombre: 'Campaña — portada', informes: 'JM,SECCO', modo: 'unica' }),
