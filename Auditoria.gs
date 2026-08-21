@@ -3765,3 +3765,145 @@ function preverSimbolosDelDeck_(informeId) {
 function preverSimbolosJM() { return preverSimbolosDelDeck_('jm'); }
 
 function preverSimbolosSecco() { return preverSimbolosDelDeck_('secco'); }
+
+/**
+ * `2026-08-21_11.1` §3 — **el título real de cada lámina DE LA PLANTILLA, con su `lamina_id`.**
+ *
+ * ⭐ **Existe porque el método que el addendum propone no funciona por posición.** El addendum
+ * manda cruzar cada lámina "contra los decks de los informes publicados que están en
+ * `docs/_fixtures/`". **Medido el 21/08: el deck publicado de `secco` tiene 61 láminas y su
+ * plantilla 29** — el deck sale *expandido*, así que su posición **no** corresponde a `L-0NN`.
+ * Indexar el deck por posición asigna la lámina equivocada: la 12 del deck es el "1 a 1" y
+ * `L-012` de la plantilla es la de ministros.
+ *
+ * ⚠ Es el mismo error que `2026-08-21_6` sacó del censo, entrando por otra puerta: **la posición
+ * no es la identidad.** Acá el título se lee de la plantilla y el id sale del **ancla**.
+ *
+ * Sólo lectura: abre las dos plantillas y no escribe nada.
+ *
+ * Sin `_` y sin parámetros — las dos condiciones para que Apps Script la liste (`CLAUDE.md` §2).
+ */
+function titularLaminasDeLasPlantillas() {
+  var salida = [];
+  Object.keys(leerInformes()).forEach(function (informeId) {
+    var informe = leerInformes()[informeId];
+    if (!informe.plantilla_id) return;
+    var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+    Logger.log('== ' + informeId + ' — ' + slides.length + ' láminas en la PLANTILLA ==');
+    slides.forEach(function (slide, i) {
+      var textos = [];
+      piezasDeTextoDeSlide_(slide).forEach(function (p) {
+        var t = String(p.texto || '').replace(/\s+/g, ' ').trim();
+        // Se saltean las cajas que son sólo tokens: el título es texto fijo.
+        if (t && !/^(\{\{[^}]+\}\}\s*)+$/.test(t)) textos.push(t);
+      });
+      var fila = {
+        informe_id: informeId,
+        lamina_id: anclaDeLamina_(slide) || '(sin ancla)',
+        orden: i + 1,
+        escondida: esLaminaEscondida_(slide),
+        titulo: textos.slice(0, 3).join(' · ').slice(0, 110)
+      };
+      salida.push(fila);
+      Logger.log('  ' + fila.lamina_id + ' · pos ' + fila.orden + (fila.escondida ? ' (esc)' : '') +
+        ' — ' + (fila.titulo || '(sin texto fijo)'));
+    });
+    Logger.log('');
+  });
+  return { ok: true, laminas: salida };
+}
+
+/* ═══════════ `2026-08-21_11` Parte B — el mapa `lamina_id → seccion_id` de las 53 ═══════════
+ *
+ * ⭐ **Confirmado por el usuario el 21/08, contra el título real de cada lámina.** El título salió
+ * de `titularLaminasDeLasPlantillas()` sobre las **plantillas**, no sobre los decks publicados: el
+ * deck de `secco` tiene 61 láminas contra 29 de su plantilla —sale expandido—, así que cruzarlo por
+ * posición asigna la lámina equivocada.
+ *
+ * **El criterio, en dos reglas y en este orden:**
+ *
+ * 1. ⭐ **La que hoy reclama una sección repetible se le asigna a ESA MISMA.** La asignación
+ *    **transcribe el comportamiento medido, no lo reinterpreta** — es lo que hace que esto no sea
+ *    una regresión. ⚠ Por eso las ocho de campaña van a `campana` y **no** a las ocho secciones
+ *    hijas `campana_*`, que existen y describen exactamente esas ocho láminas por nombre: son
+ *    `modo = unica`, y asignarlas ahí **las sacaría del bloque y `campana` dejaría de expandirse**.
+ *    Las hijas quedan como documentación. Mismo motivo por el que `L-035` va a `encuentro` y no a
+ *    `encuentro_iceberg`.
+ * 2. Las demás, a la sección que les corresponde por contenido; y si no había, se creó (Parte A).
+ *
+ * ⚠ **`secco` `L-004` y `L-005` NO van en `encuentro`** — decisión del usuario, 21/08: son
+ * `uno_a_uno_comunas`, sección propia. Con eso el bloque de `encuentro` de `secco` queda **6-7-8**
+ * y sigue siendo contiguo.
+ */
+var MAPA_SECCION_LAMINAS_ = {
+  // ── jm ──────────────────────────────────────────────────────────────────────────────────
+  'L-030': 'portada',                 // pos 1 · sin texto fijo, sólo {{periodo}}
+  'L-031': 'resumen_ejecutivo',       // pos 2 · "Resumen Ejecutivo - JM"
+  'L-032': 'resumen_ejecutivo',       // pos 3 · "Resumen Ejecutivo - GCBA"
+  'L-033': 'ecv_alcance_semanal',     // pos 4 · "Encuentros con vecinos · Alcance semanal"
+  'L-034': 'ecv_alcance_semanal',     // pos 5 · "…alcance semanal por herramienta"
+  'L-052': 'encuentro',               // pos 6 · portada del encuentro — va SIEMPRE
+  'L-035': 'encuentro',               // pos 7 · el iceberg — filtro tipo!=Uno a uno
+  'L-053': 'encuentro',               // pos 8 · el 1 a 1 — filtro tipo=Uno a uno
+  'L-036': 'comunicaciones_post',     // pos 9 · "Campañas · DIGITAL · Período"
+  'L-037': 'm2',                      // pos 10 · "Comunicaciones M2 · Alcance semanal"
+  'L-038': 'm2_status',               // pos 11 · "Directa | Status semanal de M2"
+  'L-039': 'm2',                      // pos 12 (escondida) · "M2 · Clics · Audiencia"
+  'L-040': 'campana',                 // pos 13 · "Campañas destacadas GCBA"
+  'L-041': 'campana',                 // pos 14 · "Campaña destacada {{camp_titulo}}"
+  'L-042': 'campana',                 // pos 15 · objetivo y período
+  'L-043': 'campana',                 // pos 16 · herramientas y audiencias
+  'L-044': 'campana',                 // pos 17 · formatos digitales
+  'L-045': 'campana',                 // pos 18 · resultados agregados
+  'L-046': 'campana',                 // pos 19 · desagregados Digital
+  'L-047': 'campana',                 // pos 20 · desagregados Directa: mail
+  'L-048': 'campana',                 // pos 21 (escondida) · desagregados Directa: respuestas
+  'L-049': 'analisis_datos',          // pos 22 · "Análisis y datos · INFORME SEMANAL"
+  'L-050': 'resumen_ejecutivo',       // pos 23 · "Resumen Ejecutivo · Sentiment" — D-23 lo nombra
+  'L-051': 'cierre',                  // pos 24 · "MUCHAS GRACIAS"
+
+  // ── secco ───────────────────────────────────────────────────────────────────────────────
+  'L-001': 'portada',                 // pos 1 · "Seguimiento · {{fecha_dia}} de {{fecha_mes}}"
+  'L-002': 'indice',                  // pos 2 · "3 · 4 · 5"
+  'L-003': 'portada_digital_directa', // pos 3 · "Comunicación Digital y Directa"
+  'L-004': 'uno_a_uno_comunas',       // pos 4 · "Uno a uno en comunas · Comuna {{ecv_comuna}}"
+  'L-005': 'uno_a_uno_comunas',       // pos 5 · "Plataforma · Objetivo · Alcance"
+  'L-006': 'encuentro',               // pos 6 · "Encuentro temático · {{et_nombre}}"
+  'L-007': 'encuentro',               // pos 7 · estrategia de comunicación
+  'L-008': 'encuentro',               // pos 8 · el iceberg
+  'L-009': 'comunicaciones_post',     // pos 9 · "Comunicaciones Post · Semana JM"
+  'L-010': 'comunicaciones_post',     // pos 10 · "Digital | Comunicaciones post"
+  'L-011': 'ministros',               // pos 11 · "Encuentros de ministros · Métricas"
+  'L-012': 'ministros',               // pos 12 · "Encuentros de ministros · Semana del {{periodo}}"
+  'L-013': 'm2',                      // pos 13 · "M2 · Alcance semanal"
+  'L-014': 'm2_status',               // pos 14 · "Directa | Status semanal de M2"
+  'L-015': 'm2_caudal',               // pos 15 · "Caudal semanal de M2"
+  'L-016': 'campana',                 // pos 16 · "Campaña destacada {{camp_titulo}}"
+  'L-017': 'campana',                 // pos 17 · objetivo y período
+  'L-018': 'campana',                 // pos 18 · herramientas y audiencias
+  'L-019': 'campana',                 // pos 19 · formatos digitales
+  'L-020': 'campana',                 // pos 20 · resultados agregados
+  'L-021': 'campana',                 // pos 21 · desagregados Digital
+  'L-022': 'campana',                 // pos 22 · desagregados Directa: mail
+  'L-023': 'campana',                 // pos 23 (escondida) · desagregados Directa: respuestas
+  'L-024': 'analisis_datos',          // pos 24 · "{{fecha_mes}} 2026 · Análisis y Datos"
+  'L-025': 'semana_jm_conversacion',  // pos 25 (esc) · "Semana JM - Conversación en X"
+  'L-026': 'otros_temas',             // pos 26 (esc) · "xx · xx · xx" — placeholder del equipo
+  'L-027': 'impacto_comunicacional',  // pos 27 (esc) · "Repercusiones en X - JM + GCBA"
+  'L-028': 'impacto_comunicacional',  // pos 28 (esc) · "Semana JM - Interacción positiva en RRSS"
+  'L-029': 'cierre'                   // pos 29 · "¡Muchas gracias!"
+};
+
+/** Dry-run: dice qué escribiría y no escribe. Sin `_` y sin parámetros (`CLAUDE.md` §2). */
+function preverSeccionIdDeLaminas() {
+  var r = escribirColumnaLaminas_(MAPA_SECCION_LAMINAS_, 'seccion_id', { dryRun: true });
+  Logger.log(JSON.stringify(r, null, 2));
+  return r;
+}
+
+/** Escribe de verdad. El detalle por celda del retorno **es el respaldo**. */
+function escribirSeccionIdDeLaminas() {
+  var r = escribirColumnaLaminas_(MAPA_SECCION_LAMINAS_, 'seccion_id');
+  Logger.log(JSON.stringify(r, null, 2));
+  return r;
+}
