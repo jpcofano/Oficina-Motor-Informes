@@ -1543,6 +1543,49 @@ ejecución vuelve a pagar 70–80 s de arranque, así que el mecanismo **funcion
 
 ---
 
+**`D-37` — La pertenencia de una lámina a una sección se **declara** en `LAMINAS.seccion_id`, no se
+infiere de los tokens que la lámina lleva.** Decisión del usuario, 21/08/2026 (`2026-08-21_10`
+Parte B; la implementa el `2026-08-21_11`).
+
+1. **`LAMINAS.seccion_id` es la fuente de la pertenencia.** El generador deja de deducirla con
+   `slidesModeloDe_(familia_tokens)`.
+2. ⭐ **Las 53 láminas la declaran. No existe una lámina sin sección** — si una no encaja en ninguna
+   de las que hay, **se agrega la sección que falta**, no se deja la celda vacía.
+3. **La celda vacía deja de significar «hereda».** Pasa a significar *"nadie la clasificó"*: se
+   reporta con su `lamina_id` y **no entra a ningún bloque repetible**.
+   ⚠ **Esto supersede el comentario del seed de `LAMINAS`** (`Instalar.gs`), que hoy dice lo
+   contrario. **La corrección es sólo sobre `seccion_id`**: `modo`, `itera_sobre` y `filtro`
+   **siguen heredando**. Y `D-23` ya lo decía — *"identidad y estado propio no se heredan nunca"*—,
+   así que esto es aplicarlo, no cambiarlo.
+4. **La condición por lámina vive en `LAMINAS.filtro`**, que existe en el esquema desde el `_11` y
+   **nunca tuvo lector**. Se evalúa **por ítem**, con la misma sintaxis de `SECCIONES.filtro`.
+5. ⛔ **Un ítem que se queda sin ninguna lámina es un invariante roto, no un caso a manejar**
+   (decisión del usuario: *"eso no puede pasar"*). Se reporta nombrando sección e ítem y **no se
+   emite un deck a medias**.
+
+**Por qué, y conviene decirlo sin exagerar.** El argumento del ahorro existe —deja de escanearse
+cada lámina y cada caja de texto una vez por sección repetible— pero ⚠ **no está medido**, y el
+usuario decidió avanzar sin medirlo. **La razón verificada es otra: el motor deja de adivinar.**
+
+**Los dos casos que lo fuerzan son el mismo error con dos caras**, y los dos están medidos:
+
+- **La lámina que no pertenece a nada.** `L-053` —el 1 a 1 de `jm`, sellada el 21/08— lleva 32
+  tokens `u1_` y **ninguna sección declara `u1_`**, así que hoy no entra a ningún bloque y nadie
+  lo reporta. Lo mismo en `secco` con `L-005`.
+- **La copia indistinguible del modelo.** `slidesModeloDe_` identifica un modelo **porque lleva
+  tokens crudos**, y una copia sin pintar también los lleva — la N² del `2026-08-20_13`.
+  ⚠ **Medido el 21/08: `slide.duplicate()` copia las notas del orador**, así que la copia **hereda
+  el ancla**. Resolver el modelo por `lamina_id` **no mata la N² por sí solo**; la salida es
+  calcular el conjunto de modelos **una sola vez por corrida, antes de duplicar**. ⛔ Borrarle las
+  notas a cada copia —0,013 s, medido— **se descarta**: destruiría notas del orador legítimas, y
+  hay un documento entero del repo dedicado a rescatar las de `secco` 8 y 25.
+
+**Y lo que `D-37` NO hace:** no retira `familia_tokens`. La columna queda; deja de ser el mecanismo
+de pertenencia. Retirarla es la Fase 4 de `D-23` y tiene su propio costo.
+
+---
+
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### Los frentes abiertos al 14/08/2026 — el orden
