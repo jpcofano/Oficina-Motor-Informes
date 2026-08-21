@@ -3,7 +3,7 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-21, al cerrar el `2026-08-21_6`
+**Última actualización:** 2026-08-21, con la Parte 0 del `_4` completa — falta decidir
 
 ---
 
@@ -63,8 +63,32 @@ en la 6, corrió a `L-035` a la 7, y no hubo que renumerar nada.
 
 ⚠ **Y hay una contradicción a resolver antes de escribir código:** el seed dice que `seccion_id`
 vacío significa **hereda de `SECCIONES`**; la Parte A.1 dice que significa **no se expande ni se
-resuelve**. Con las 52 filas vacías, la A.1 deja el deck entero en blanco. **La decisión es del
-usuario.**
+resuelve**. **Medido: la A.1 dejaría sin publicar 29 de las 53 láminas**, portadas incluidas.
+
+### ⭐ La Parte 0 punto 5 está hecha: la propuesta de `seccion_id` para las 53
+
+`diagTokensDeLamina_` sobre las 53 láminas de las dos plantillas, cruzado contra
+`SECCIONES.familia_tokens`. **Nada escrito** — la asignación la hace una persona. Cinco grupos:
+
+| grupo | qué son | cuántas | qué hay que decidir |
+|---|---|---|---|
+| A | sin ningún token | 13 | nada |
+| B | una candidata y repetible (`camp_`, `post_`) | 18 | nada: propuesta directa |
+| C | varias candidatas, todas padre/hijo | 6 | **una** regla, no seis decisiones |
+| D | una candidata, modo `agregado` | 2 | confirmar |
+| E | con tokens y ninguna sección los declara | 14 | separar contenido fijo de hueco real |
+
+**El detalle completo está en `docs/BITACORA.md`**, entrada del 21/08.
+
+⛔ **Y dos premisas más que caen:** `L-037` **no tiene 36 tokens, tiene CERO** — es una lámina de
+diseño; los 36 son de la lámina sin ancla. Y **el 1 a 1 existe en las dos plantillas**: `secco`
+`L-005` tiene `u1_×3`.
+
+### ⛔ Las cinco decisiones que hacen falta
+
+Están en `docs/PENDIENTES_consistencia.md`, «Preguntas al equipo», entrada del 21/08: qué significa
+`seccion_id` vacío · padre o hijo · si `ecv_*` es genérico · si el 1 a 1 es sección propia · de qué
+solapa salen los `u1_`. **Ninguna la puede contestar una medición.**
 
 ---
 

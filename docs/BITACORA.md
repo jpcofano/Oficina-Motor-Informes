@@ -12363,3 +12363,76 @@ resuelve por el ancla; la rotura a propósito; y el generador, que **nunca** dep
 ⭐ **El bloque 3 reproduce la colisión sobre el snapshot vivo y no sobre un fixture inventado**
 (`CLAUDE.md` §4): de las 23 láminas de `jm`, **indexar por orden deja 22 claves — pierde una fila en
 silencio**; indexar por id conserva las 23. **El daño está demostrado, no argumentado.**
+
+---
+
+## 2026-08-21 · `2026-08-21_4` Parte 0 punto 5 — la propuesta de `seccion_id`, medida sobre las dos plantillas
+
+**Sólo lectura. No se escribió ninguna celda de `LAMINAS`** — la asignación la hace una persona
+(Parte A.4 del prompt).
+
+**Cómo se midió:** `diagTokensDeLamina_` sobre las **53 láminas** (24 de `jm`, 29 de `secco`), y el
+cruce contra `SECCIONES.familia_tokens` por prefijo, que es exactamente lo que hace
+`tokenEsDeFamilia_`. La posición → `lamina_id` sale de `verificarLaminas()`: `secco` no tiene
+desajustes, `jm` tiene 17 y el mapa real es `1-5 = L-030…L-034 · 6 = L-052 · 7 = L-035 · 8 = SIN
+ANCLA · 9 = L-036 · 10 = L-037 … 24 = L-051`.
+
+### ⛔ Otra premisa del prompt que cae: `L-037` no tiene 36 tokens — tiene CERO
+
+El prompt dice *"El 1 a 1 usa `L-037`. Sus 36 tokens son familia `u1_`"*. **`L-037` no tiene ningún
+token**: es una lámina de diseño. Los 36 tokens —32 `u1_` + 4 `ecv_`— son de la **lámina sin ancla
+de la posición 8**.
+
+### ⭐ Y el 1 a 1 existe en las DOS plantillas
+
+`secco` **`L-005`** tiene `ecv_×4` y **`u1_×3`**. O sea que la familia `u1_` no es un experimento de
+`jm`: está sellada en `secco` desde el `_11` y tampoco la declara ninguna sección.
+
+### Los cinco grupos, que es lo que vuelve decidible el trabajo
+
+| grupo | qué son | cuántas | qué hay que decidir |
+|---|---|---|---|
+| **A** | **sin ningún token** — diseño, separadores | **13** | nada: no necesitan `seccion_id` jamás |
+| **B** | una sola sección candidata **y repetible** | **18** | nada: la propuesta es directa (`camp_` → `campana`, `post_` → `comunicaciones_post`) |
+| **C** | **varias candidatas**, todas por jerarquía padre/hijo | **6** | ⭐ elegir padre o hijo — es **una** decisión, no seis |
+| **D** | una candidata, **no repetible** | **2** | confirmar que una `agregado`/`unica` lleve `seccion_id` |
+| **E** | **con tokens y ninguna sección los declara** | **14** | ⚠ separar «contenido fijo, correcto así» de «falta la sección» |
+
+**Grupo A (13):** `jm` L-033, L-037, L-040, L-049, L-051 · `secco` L-002, L-003, L-009, L-011,
+L-013, L-015, L-026, L-029.
+
+**Grupo B (18):** las ocho de `camp_` de cada plantilla —`jm` L-041…L-048, `secco` L-016…L-023— más
+`jm` L-036 y `secco` L-010, las dos de `post_`.
+
+**Grupo C (6):** `jm` L-052 y L-035 (`encuentro` | `encuentro_iceberg`) · `jm` L-038 y L-039
+(`m2` | `m2_status`) · `secco` L-008 (`ecv_alcance_semanal` | `encuentro` | `encuentro_iceberg`) ·
+`secco` L-014 (`m2` | `m2_caudal` | `m2_status`).
+
+**Grupo D (2):** `jm` L-034 → `ecv_alcance_semanal` (modo `agregado`) · `secco` L-012 → `ministros`
+(modo `agregado`).
+
+**Grupo E (14):**
+
+| lámina | tokens | familias | qué parece ser |
+|---|---|---|---|
+| `jm` L-030 | 1 | `periodo` | portada — lo produce la generación, no un marcador |
+| `jm` L-031 | 21 | `cc_ contenidos_ frecuencia imp_ ivr_ mail_ pauta_` | contenido fijo del informe |
+| `jm` L-032 | 19 | `gcba_` | contenido fijo — los 14 `gcba_*` están cableados |
+| ⛔ `jm` pos 8 | **36** | `u1_ ecv_` | **el 1 a 1: sin ancla, sin fila, sin sección y sin cablear** |
+| `jm` L-050 | 21 | `rrss_` | contenido fijo |
+| `secco` L-001, L-024 | 2, 1 | `fecha_` | portadas |
+| `secco` L-004 | 2 | `ecv_` | ⚠ `ecv_` suelto fuera de `ecv_alcance_semanal` |
+| ⛔ `secco` L-005 | 7 | `ecv_ u1_` | **el 1 a 1 de `secco`** |
+| `secco` L-006, L-007 | 2, 9 | `et_` | contenido fijo |
+| `secco` L-025, L-027, L-028 | 13, 11, 9 | `conv_ rep_ rrss_` | las tres **escondidas** |
+
+⭐ **La mitad del grupo E no es un hueco: es contenido fijo que se resuelve en la etapa 4 y está
+bien así.** Llamarlo *"sin sección candidata"* mezcla dos cosas — y es lo mismo que hacía el prompt
+al atribuirle a `L-037` una causa que no tiene.
+
+### Lo que esto le cambia a la Parte A
+
+⚠ **La Parte A.1 —*"una lámina sin `seccion_id` no se expande ni se resuelve"*— dejaría sin publicar
+a los grupos A, D y E enteros: 29 de 53 láminas.** Entre ellas las portadas y todo el contenido fijo
+de las dos plantillas. **El seed dice lo contrario** (celda vacía = hereda) y la medición le da la
+razón: `seccion_id` sólo tiene sentido para las repetibles.

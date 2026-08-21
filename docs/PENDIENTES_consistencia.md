@@ -1844,6 +1844,48 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
 > nacieron en documentos hoy congelados y necesitan un lugar vivo. Al responderse, la
 > respuesta va al documento dueño del hecho y la pregunta se tacha acá.
 
+### 2026-08-21 · Las cinco decisiones que traba el `2026-08-21_4` (Parte A sin ejecutar)
+
+**Todo lo medible ya está medido** — la propuesta de `seccion_id` para las 53 láminas, agrupada en
+cinco casos, está en `docs/BITACORA.md`, entrada del 21/08. **Lo que queda es decidir.** Ninguna de
+las cinco la puede contestar una medición.
+
+**D1 · ¿Qué significa `LAMINAS.seccion_id` vacío?** El seed dice **hereda de `SECCIONES`**; la
+Parte A.1 del `_4` dice **no se expande ni se resuelve**. ⚠ **Medido: la A.1 dejaría sin publicar 29
+de las 53 láminas** — las 13 sin tokens, las 2 de modo `agregado` y las 14 de contenido fijo, entre
+ellas **las portadas de las dos plantillas**. La medición le da la razón al seed: `seccion_id` sólo
+tiene sentido para las repetibles. **Confirmar o corregir.**
+
+**D2 · Padre o hijo, para las 6 láminas con varias candidatas.** Las tres ambigüedades son de
+jerarquía y se resuelven con **una** regla, no con seis decisiones:
+`encuentro` vs `encuentro_iceberg` · `m2` vs `m2_status` · `m2` vs `m2_caudal`.
+⭐ **Sólo el padre es `repetible`; los hijos son `unica`.** Si la regla es *"gana el padre
+repetible"*, las seis se resuelven solas y no hace falta elegir de a una.
+
+**D3 · ¿`ecv_*` es genérico?** Ya está escrito en `SECCIONES.encuentro_iceberg.falta`: *"ecv_* se
+usa para ECV y para Uno a uno — definir si es genérico"*. **Medido:** `ecv_` aparece en **cinco**
+láminas de tres contextos distintos — `jm` L-034 (con `ecv_alcance_semanal`), `jm` L-035 y L-052
+(con `enc_`), `jm` pos 8 y `secco` L-005 (con `u1_`), y `secco` L-004 (solo, 2 tokens). **La
+respuesta decide si el 1 a 1 necesita marcadores propios o reusa los `ecv_`.**
+
+**D4 · ¿El 1 a 1 es una sección propia o una variante de `encuentro`?** ⭐ **Existe en las dos
+plantillas** —`jm` posición 8 y `secco` `L-005`— y **ninguna sección declara `u1_`**. Si es propia,
+hay que crear la fila en `SECCIONES` con `familia_tokens = u1_` y decidir `itera_sobre`. Si es una
+variante, hay que resolver antes cómo un marcador lee **otra solapa según el tipo de ítem** —
+mecanismo que **hoy no existe** (medido en el `_3`: la solapa está clavada en la fila de
+`MARCADORES` y `opciones.hoja_rdv` es una guarda, no un selector).
+
+**D5 · ¿De qué solapa salen los 32 `u1_`?** No tienen **ninguna** fila en `MARCADORES`, y ninguna
+solapa de `rdv` se llama algo parecido a *uno a uno* — las dos con `uso=fuente` son
+`RVD JM-CM - ES` y `RDV_otros_ministros`. ⚠ **Sin esto la lámina sigue en blanco aunque se selle y
+se le declare sección.**
+
+⛔ **Y una acción que no es una decisión pero bloquea igual: sellar la lámina 8 de `jm`.** No se le
+puede escribir `seccion_id` a una fila que no existe. `probarSelladoSobreCopia('jm')` lo ensaya sin
+tocar la plantilla; `sellarPlantilla('jm')` lo aplica.
+
+---
+
 - ~~**Las 7 filas de `REUNIONES`: ¿son todas encuentros de Jorge Macri, o incluyen
   ministros?**~~ — **RESPONDIDA (usuario, 07/08/2026): `REUNIONES` es JM.** La lámina 6 es el
   desglose de la 5, así que **mismo universo**. Abierta y cerrada el mismo día.
