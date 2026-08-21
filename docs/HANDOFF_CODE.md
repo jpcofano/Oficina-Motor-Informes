@@ -3,194 +3,137 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-21, con la Parte 0 del `_4` completa — falta decidir
+**Última actualización:** 2026-08-21, al cerrar el `2026-08-21_11` (el generador lee `LAMINAS`)
 
 ---
 
-## ⛔ Lo primero: el deck no está mal por un bug — está mal por tres cosas que faltan
+## ⛔ Lo primero: generá y mirá el deck. El próximo sale distinto
 
-El 21/08 se corrieron seis prompts. Cuatro arreglaron código y están cerrados (`_1`, `_2`, `_5` y
-`_6`). **Los otros dos (`_3` y `_4`) son diagnóstico y pararon a propósito**: la medición desmintió
-las premisas con las que se habían escrito.
+**No es una advertencia formal: tres cosas cambian a la vista**, y las tres son consecuencias
+declaradas, no regresiones.
 
-**Lo que NO pasó, y conviene descartarlo antes de seguir buscando:**
-
-- ⛔ **No hubo regresión de código entre el 20 y el 21/08.** `MARCADORES` es **idéntica celda por
-  celda** — 87 filas, 0 altas, 0 bajas, 0 cambios en las 11 columnas. `SECCIONES`, `SOLAPAS`,
-  `MAPEO`, `BASES`, `INFORMES` y `LAMINAS` también. Lo que cambió es **dato**.
-- ⛔ **El `_7` no está aplicado.** Las 87 filas siguen en `informe_id = jm`, **ninguna pasó a `*`**,
-  y hay **3** filas `_revisar`, no 32. No hay migración que testificar.
-- ⛔ **Los 49 `{{token}}` crudos no son nuevos**: son los *49 crudos permanentes* de las láminas
-  escondidas 12, 21 y 29.
-- ⛔ **Ninguna corrida reciente pintó los tokens fijos**, ni siquiera la que se recuerda como buena:
-  `171421`, `172003`, `175132` y `114540` **cortaron las cuatro en la etapa 4**.
-
----
-
-## Las tres cosas que sí faltan, en orden
-
-**El detalle medido está en `docs/PENDIENTES_consistencia.md`, entrada del 2026-08-21 (seis
-inconsistencias). Acá va sólo el orden.**
-
-| # | qué falta | por qué va antes que lo siguiente |
+| qué | antes | ahora |
 |---|---|---|
-| 1 | ⭐ **Tildar `REUNIONES.mostrar`** en las dos filas de `agosto_14_20` | Sin eso `leerReuniones_` devuelve **cero** encuentros del período, `encuentro` y `comunicaciones_post` emiten **0 ítems**, y sus bloques modelo salen crudos. **Es un paso de dato, no un bug** — el cargador deja `mostrar=''` a propósito |
-| 2 | **Sellar la lámina 8 de `jm`** | La plantilla tiene **53 láminas y `LAMINAS` 52 filas**: la del 1 a 1 **no tiene ancla ni fila**. No se le puede declarar `seccion_id` a una fila que no existe |
-| 3 | **Cablear los 32 `u1_`** | No tienen **ninguna** fila en `MARCADORES`. Sellar y declarar sección **no la hace publicar nada** |
+| `jm` `campana` | 8 láminas modelo | **9** — entra `L-040`, la portada del bloque |
+| `secco` `comunicaciones_post` | 1 | **2** — entra `L-009`, la portada |
+| un encuentro `Uno a uno` | portada + iceberg | **portada + `L-053`** |
 
-⚠ **Son tres causas independientes del mismo síntoma**, y hacer una sola mueve el síntoma sin
-resolverlo. En particular: **declarar `seccion_id` sin cablear produce N copias vacías en vez de una**.
+⭐ **Las dos primeras son una mejora:** son la portada de su bloque y llevan el nombre del ítem. Hoy
+la portada de campaña sale **una vez para ocho campañas** — lo mismo que le pasaba al bloque de
+encuentro antes del `_35`.
 
----
-
-## Sobre el `2026-08-21_4`: la Parte A NO se ejecutó
-
-`verificarLaminas()` —que ya existía, es sólo lectura, y **nadie había corrido**— desmiente cuatro
-premisas del prompt:
-
-| premisa | medido |
-|---|---|
-| *"la lámina 8 de jm es `L-037`"* | **falso** — `L-037` está en la posición **10** |
-| *"el 1 a 1 usa `L-037`"* | **falso** — es la lámina **sin sellar** de la posición 8 |
-| *"sus 36 tokens son familia `u1_`"* | **32 de 36**; los otros 4 son `ecv_` |
-| *"`LAMINAS` 51 filas, las 51 selladas"* | **52 filas y 52 anclas** contra **53 láminas** |
-
-La plantilla real de `jm`: `pos 1-5 = L-030…L-034 · pos 6 = L-052 · pos 7 = L-035 · **pos 8 = SIN
-ANCLA** · pos 9 = L-036 · pos 10 = L-037 …`
-
-⭐ **`L-052` está exactamente donde la hoja dice** — el diseño del `lamina_id` funcionó: se insertó
-en la 6, corrió a `L-035` a la 7, y no hubo que renumerar nada.
-
-⚠ **Y hay una contradicción a resolver antes de escribir código:** el seed dice que `seccion_id`
-vacío significa **hereda de `SECCIONES`**; la Parte A.1 dice que significa **no se expande ni se
-resuelve**. **Medido: la A.1 dejaría sin publicar 29 de las 53 láminas**, portadas incluidas.
-
-### ⭐ La Parte 0 punto 5 está hecha: la propuesta de `seccion_id` para las 53
-
-`diagTokensDeLamina_` sobre las 53 láminas de las dos plantillas, cruzado contra
-`SECCIONES.familia_tokens`. **Nada escrito** — la asignación la hace una persona. Cinco grupos:
-
-| grupo | qué son | cuántas | qué hay que decidir |
-|---|---|---|---|
-| A | sin ningún token | 13 | nada |
-| B | una candidata y repetible (`camp_`, `post_`) | 18 | nada: propuesta directa |
-| C | varias candidatas, todas padre/hijo | 6 | **una** regla, no seis decisiones |
-| D | una candidata, modo `agregado` | 2 | confirmar |
-| E | con tokens y ninguna sección los declara | 14 | separar contenido fijo de hueco real |
-
-**El detalle completo está en `docs/BITACORA.md`**, entrada del 21/08.
-
-⛔ **Y dos premisas más que caen:** `L-037` **no tiene 36 tokens, tiene CERO** — es una lámina de
-diseño; los 36 son de la lámina sin ancla. Y **el 1 a 1 existe en las dos plantillas**: `secco`
-`L-005` tiene `u1_×3`.
-
-### ⛔ Las cinco decisiones que hacen falta
-
-Están en `docs/PENDIENTES_consistencia.md`, «Preguntas al equipo», entrada del 21/08: qué significa
-`seccion_id` vacío · padre o hijo · si `ecv_*` es genérico · si el 1 a 1 es sección propia · de qué
-solapa salen los `u1_`. **Ninguna la puede contestar una medición.**
+⚠ **Y la tercera trae ruido nuevo y correcto:** `L-053` tiene **32 tokens `u1_` sin cablear**, así
+que **sale una vez por cada encuentro `Uno a uno`, con sus 32 huecos**. Hasta ayer esa lámina no
+salía. **Es lo esperado**, no una regresión — es la inconsistencia 2, que sigue abierta.
 
 ---
 
-## ⏸ Lo que espera una confirmación tuya, y es lo único que bloquea
+## ⛔ Y desde ahora: una lámina sin `seccion_id` no se emite
 
-⭐ **La tabla `lamina_id → seccion_id` de las 53.** La Parte 0 del `2026-08-21_11` la mide y **para
-antes de escribir una celda** — es la regla del prompt. Estado:
+La inferencia por familia de tokens **se retiró**. Una lámina nueva en una plantilla **no falla: se
+reporta y sale en hueco**, que es peor de detectar.
 
-| | |
-|---|---|
-| **21 láminas** | sección clara: es la que **hoy** reclama una repetible. La asignación transcribe el comportamiento medido |
-| **13 láminas** | **sin ningún token** — el `rol` del addendum §2 las llama `equipo` |
-| **19 láminas** | con tokens y **ninguna sección las reclama**. Siete grupos ya tienen destino propuesto; **seis esperan la propuesta contra los decks publicados** (addendum §3) |
+**El ciclo está en `docs/RUNBOOK.md`** y son cinco pasos:
 
-⛔ **Nada escrito en `LAMINAS`.** Ni una celda.
+1. Se toca la plantilla — la toca el equipo o el usuario, **nunca el motor sin autorización**.
+2. **`sellarPlantilla(informe_id)`** — la lámina toma su `L-NNN` y su fila.
+3. **`verificarLaminas()`** — cierra el cruce ancla ↔ hoja. ⭐ **Cada vez que se toca una plantilla.**
+4. **Declarar `seccion_id`** — y `rol`, y `filtro` si es condicional.
+5. Recién ahí emite.
 
 ---
 
-## ✅ Escrito hoy: `R-28` y `D-37`, más las dos notas editoriales
+## Lo que hay en la hoja hoy
 
-- **`R-28`** — los totales del 1 a 1 suman **una** etapa. `u1_total_clics` sólo el PRE,
-  `u1_total_vistas` sólo el POST. ⭐ Con el contraejemplo adentro: la suma «obvia» publicaría
-  **1.879 contra 1.472**.
-- **`D-37`** — la pertenencia se declara en `LAMINAS.seccion_id`; vacío deja de significar
-  «hereda». ⚠ **Supersede el comentario del seed, y sólo para `seccion_id`.**
+**`LAMINAS`: 53 filas, 53 anclas, ninguna sin ancla.** Las 53 con `seccion_id` y `rol`; **7 con
+`filtro`**. `verificarLaminas()` cierra.
+
+```
+jm     encuentro   L-052 (portada, sin filtro) · L-035 (tipo!=Uno a uno) · L-053 (tipo=Uno a uno)
+secco  encuentro   L-004 · L-005 (tipo=Uno a uno) · L-006 · L-007 (tipo=Encuentro Temático) · L-008 (tipo!=Uno a uno)
+```
+
+⚠ **`rol = motor` no significa «publica»:** **25 de las 40** `motor` tienen **cero** tokens
+cableados. El rol dice quién **debe** llenarla.
+
+**`MAPEO`:** `digital/CAMPAÑAS_DESGLOCE_DIGITAL` con **18 filas** — 10 con las claves y métricas
+verificadas, 8 marcadas `REVISAR` en `notas`.
+
+---
+
+## ⏸ Lo único que falta para que el 1 a 1 publique
+
+**Cablear los 32 `u1_`.** Las otras dos causas se cerraron: la lámina está sellada y **pertenece**.
+
+**Lo que ya está resuelto y no hay que volver a preguntar:**
+
+- **la fuente** — `digital/CAMPAÑAS_DESGLOCE_DIGITAL`, decidida desde el 14/08 (`D-32`) y **mapeada**;
+- **las claves** — `Id cuentas` + `Plataforma`, con seis casos validados `exacto`;
+- **qué suma cada total** — `R-28`. ⭐ **`u1_total_clics` es sólo el PRE y `u1_total_vistas` sólo el
+  POST**: cablearlos como "SUMA sobre las tres plataformas" publicaría 1.879 contra 1.472.
+
+**Los dos huecos declarados:** de dónde sale el alcance —son usuarios únicos y **no se suman**— y
+los seis `u1_bench_*`, **sin prioridad** por decisión tuya.
+
+---
+
+## ⏸ Lo que espera de tu lado
+
+| # | qué | por qué |
+|---|---|---|
+| 1 | ⭐ **Generar `jm`** | es lo único que verifica que el deck salga bien. El control dice **qué** láminas copia cada ítem; que se copien, se ordenen y se pinten necesita una corrida |
+| 2 | **Aplicar configuración** | faltan entrar **8 filas `REVISAR`** del `MAPEO`. Las dos secciones nuevas ya entraron |
+| 3 | **`verificarLaminas()`** | cada vez que toques una plantilla |
+
+⚠ **`campana` de `secco` emitiría cero ítems** — sus tres filas de `CAMPANAS` fallan las dos
+condiciones de `D-19` a la vez. Es dato, no motor, y está anotado.
+
+---
+
+## Las ocho suites, en verde
+
+`laminas-declaradas` (24) · `tipo-en-item` (10) · `modo-faltantes` (24) · `lamina-por-id` (11) ·
+`reloj-etapas` (17) · `continuacion-deck` (22) · `planificador` (18) · `resueltas` (14).
+
+**Cinco traen la rotura a propósito automatizada**: sacan del fuente la línea que protegen y
+verifican que la afirmación caiga.
+
+⚠ **Y una lección del día que conviene tener a mano antes de escribir el próximo banco:**
+`generarInforme` **atrapa las excepciones a propósito** y devuelve `ok: true` con el `fallo` adentro.
+**El aserto de `fallo === null` cazó tres bancos incompletos en un solo día.** Un control que sólo
+mire `ok` pasa sobre corridas que murieron en el medio.
+
+---
+
+## Lo que se decidió hoy y quedó escrito
+
+- **`R-28`** (`REGLAS_NEGOCIO.md`) — los totales del 1 a 1 suman **una** etapa, con el contraejemplo
+  adentro de la regla.
+- **`D-37`** (`PLAN.md`) — la pertenencia se **declara**. ✅ Implementada. Con esto **`D-23` cierra
+  su Fase 2 del lado del consumo**; la Fase 4 —retirar `familia_tokens`— sigue abierta.
 - **`CONFIG_INFORMES.md` §1.10** (la condición del 1 a 1) y **§4.5 bis** (el puente
-  `MAPEO.notas` → sufijo `_revisar`). ⛔ **§4.4 bis no se tocó.**
-
-⚠ **Y una medición del 21/08 que gobierna el diseño del `_11`:** `slide.duplicate()` **copia las
-notas del orador**, así que la copia **hereda el ancla**. Resolver el modelo por `lamina_id` **no
-mata la N² por sí solo** — la salida es calcular los modelos **una vez por corrida, antes de
-duplicar**. Borrarle las notas a cada copia (0,013 s) **se descarta**: destruiría notas del orador
-legítimas. Instrumento: `medirSiLaCopiaHeredaElAncla()`.
-
----
-
-## ✅ Dos de las seis inconsistencias, cerradas
-
-- **5 · el modo de los huecos** (`2026-08-21_5`). El default era el crudo **y no lo había elegido
-  nadie**: `undefined === true` es `false`, y dos de los cuatro llamadores no pasaban la opción.
-  Ahora vive en `CONFIG.presentacion_faltantes_defecto` con un solo lector, y el resultado dice **de
-  dónde salió** el modo. ⚠ La guarda contra el `"false"` de query string se conservó.
-- **3 · `orden_plantilla` como clave** (`2026-08-21_6`). El seed lo prohíbe y el censo lo hacía.
-  Ahora se indexa por `lamina_id` y la identidad sale del ancla. **Medido: indexar por orden pierde
-  1 de las 23 láminas de `jm` en silencio.**
-
-⚠ **Ninguna de las dos cambia lo que sale en el deck de esta semana.** Lo que lo cambia es la lista
-de arriba, y el punto 1 es tuyo.
-
----
-
-## Lo que cerró hoy y está pusheado
-
-- **`2026-08-21_1`** — el reloj se consulta en **todas** las etapas, no sólo en el bucle. Con el
-  techo en 150 la corrida llegaba al muro de 360. `controlDeEtapa_` + `ETAPAS_CON_CONTROL_`, con la
-  **clase** del corte (`arranque_no_entra` vs `presupuesto`). El cierre se **mide**
-  (`presupuesto.cierre_seg`) en vez de controlarse. El techo del panel sale de `CONFIG`.
-- **`2026-08-21_2`** — `generarInforme` tiraba `TypeError` al continuar un deck (`copia.getName()`
-  sobre una variable de una sola rama). **La reanudación real no podía terminar nunca.** Arreglado
-  con un solo `getFileById(deckId)`.
-
-**Las seis suites en verde:** `probar-reloj-etapas` (17), `probar-continuacion-deck` (22),
-`probar-modo-faltantes` (24), `probar-lamina-por-id` (11), `probar-planificador` (18),
-`probar-resueltas` (14). **Las cuatro primeras traen la rotura a propósito automatizada**: sacan del
-fuente la línea que protegen y verifican que la afirmación caiga.
-
----
-
-## ⏸ Los botones que esperan
-
-| # | qué correr | qué destraba |
-|---|---|---|
-| 1 | ⭐ **Tildar `mostrar`** en las dos filas de `REUNIONES` de `agosto_14_20` | que el deck tenga encuentros |
-| 2 | **Aplicar configuración** | siembra `costo_arranque_seg`, `costo_mapa_seg`, `costo_item_seg` y **`presentacion_faltantes_defecto`**, que no están en `CONFIG`. El motor usa los defaults de módulo, así que no rompe nada — pero mientras no se siembre, el default de los huecos vive sólo en el código |
-| 3 | **`verificarRelojDeEtapas()`** | las cuatro pruebas del reloj dentro de Apps Script; dice el techo vigente |
-| 4 | **`verificarLaminas()`** | el cruce ancla ↔ `LAMINAS`. **Correrlo cada vez que se toca una plantilla** |
-| 5 | **`preverSimbolosJM()`** | el conteo esperado **antes** de generar |
-
-⚠ **`presupuesto_corrida_seg` ya está en 350** — eso ya se subió.
-
-⚠ **`verificarAlcanceDesatendido()` antes de confiar en el mecanismo desatendido.** Un trigger corre
-**sin usuario delante**, con los permisos del **dueño del script**.
+  `MAPEO.notas` → sufijo `_revisar`).
+- **`CLAUDE.md` §4** — tres reglas nuevas hoy: el presupuesto fuera del bucle, la rama sin control,
+  y **inferir la identidad por el contenido**.
 
 ---
 
 ## ⛔ Evidencia que no se puede perder
 
-- **El deck de `171421`** (`1iPQcoQY11lVhxM-P16R-8iVp5xS1D6YrfDELuU3XRDw`) es **el único testigo
-  que queda** de qué publicaba el motor el 20/08: `FALTANTES` se pisa en cada corrida (`D-12`) y
-  `con_valor` muere con la ejecución. **No borrarlo.**
-- **`jm-20260821-100211` es la corrida que nunca cerró** — `094731` sí cerró, contra lo que se
-  documentó a la mañana del 21/08. Hubo **cuatro** corridas ese día, no dos.
+- **El deck de `171421`** (`1iPQcoQY11lVhxM-P16R-8iVp5xS1D6YrfDELuU3XRDw`) — el único testigo de qué
+  publicaba el motor el 20/08. `FALTANTES` se pisa en cada corrida.
+- **Los tres fixtures**, con su huella en `docs/_fixtures/README.md`. El del 20/08 trae **la base y
+  el deck del mismo día**, que es lo que hizo verificable `R-28`.
+- ⚠ **Dos `.pptx` de decks reales quedaron en el historial de git** (commit `7e48725`). Riesgo
+  asumido por decisión tuya: no se reescribe historia. Ya no están rastreados.
 
 ---
 
 ## Cómo leer esto desde afuera
 
-- **Qué se hizo y qué se midió** → `docs/BITACORA.md`, seis entradas del 2026-08-21: `_1`, `_2`,
-  `_3` Parte 0, `_4` Parte 0, `_5` y `_6`.
-- **Qué sigue abierto, con el número medido** → `docs/PENDIENTES_consistencia.md`, entrada del
-  2026-08-21.
-- **Qué decía cada hoja de registro hoy** → `docs/_snapshots/*_2026-08-21.tsv`, las 11 hojas.
-- **Las dos reglas nuevas** → `CLAUDE.md` §4: *un presupuesto que sólo se consulta en el bucle no
-  protege las etapas que están fuera del bucle*, y *una rama nueva que nunca se ejecutó no está sin
-  probar, está sin escribir el control*.
+- **Qué se hizo y qué se midió** → `docs/BITACORA.md`, entradas del 2026-08-21.
+- **Qué sigue abierto** → `docs/PENDIENTES_consistencia.md`, y las decisiones sin responder en
+  «Preguntas al equipo».
+- **Qué decía cada hoja** → `docs/_snapshots/*_2026-08-21*.tsv`, versionados por hora.
+- **Qué se decidió y no se corrió** → `docs/Prompts/2026-08-21_12_banco_de_laminas.md`, anotado en
+  el Backlog de `PLAN.md`.

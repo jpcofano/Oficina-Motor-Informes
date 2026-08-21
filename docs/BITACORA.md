@@ -12483,3 +12483,101 @@ candidatas"* cruzaba familias de tokens contra **todas** las secciones, y el mot
 `seccionesRepetiblesDe_` exige `repetible` **y** `activa` **y** `familia_tokens` no vacía, así que de
 cada grupo hay **una sola elegible**. `encuentro_iceberg` falla dos de las tres. **Las seis láminas
 nunca estuvieron en disputa.** El error era mío, no del repo.
+
+---
+
+## 2026-08-21 · `2026-08-21_11` + `_11.1` + `_11.2` — el generador lee `LAMINAS`
+
+**`slidesModeloDe_` dejó de tener llamadores.** El bloque de una sección repetible sale de las filas
+de `LAMINAS` con ese `informe_id` y ese `seccion_id`, resueltas a índice de slide **por el ancla** —
+nunca por `orden_plantilla`. Y `LAMINAS.filtro` se evalúa **por ítem**, que es lo que hace que el
+"1 a 1" lleve su lámina de plataforma y el resto el iceberg.
+
+### Lo que se escribió en la hoja
+
+**53 celdas de `seccion_id`** (dry-run: 53 escritas, 0 no encontradas) · **53 de `rol`** (13
+`equipo`, 40 `motor`) · **7 de `filtro`**. Más **dos secciones nuevas**, las dos `unica`:
+`uno_a_uno_comunas` y `analisis_datos`.
+
+⚠ **Y dos correcciones sobre lo ya escrito, las dos del usuario:** `L-004` y `L-005` fueron a
+`uno_a_uno_comunas` y **volvieron a `encuentro`** —porque `REUNIONES` no tiene `informe_id` y
+`encuentro` expande los mismos ítems en las dos plantillas—; `uno_a_uno_comunas` quedó vacía, **no
+se borró**, y su `falta` dice qué pasó.
+
+### ⭐ Frené el método del `_11.1` §3 antes de usarlo
+
+Decía cruzar cada lámina contra los decks publicados de `docs/_fixtures/`. **El deck de `secco`
+tiene 61 láminas y su plantilla 29** — sale expandido, así que la posición **no** corresponde a
+`L-0NN`: la lámina 12 del deck es el 1 a 1 y `L-012` de la plantilla es la de ministros.
+**Indexar el deck por posición asigna la lámina equivocada.**
+
+Se escribió `titularLaminasDeLasPlantillas()`, que lee el título **de la plantilla** y el id **del
+ancla**. ⚠ **Es el mismo error que el `2026-08-21_6` sacó del censo, entrando por otra puerta.**
+
+### ⭐ La N²: medida, no razonada
+
+`medirSiLaCopiaHeredaElAncla()` sobre una copia desechable que se mandó a la papelera:
+
+```
+modelo (L-030): notas "#lamina: L-030\n"
+copia:          notas "#lamina: L-030\n"   ->  hereda_ancla: true
+duplicate() 0,012 s  ·  borrar las notas 0,013 s
+```
+
+⚠ **Confirma el temor del prompt: resolver el modelo por `lamina_id` NO mata la N² por sí solo.**
+Lo que la mata es **calcular el índice una vez, ANTES de la primera duplicación**. ⛔ La otra salida
+—borrarle las notas a cada copia, que costaría 0,5 s en 36 asignaciones— **se descartó con motivo
+escrito: destruiría notas del orador legítimas.**
+
+### Tres cosas que aparecieron al implementar, y ninguna estaba en el prompt
+
+**1 · ⛔ Mi invariante no frenaba.** Lo escribí devolviendo el objeto desde el `forEach` de
+secciones, que **sólo saltea esa sección** — el valor devuelto ahí se descarta. Se guarda afuera y
+lo lee el llamador, que es lo único que puede frenar de verdad. La afirmación 4 del control lo mide.
+
+**2 · ⚠ `tipo` se perdía en un TERCER lugar.** `itemsDeSeccion_` arma un ítem de cinco campos y
+`tipo` no estaba entre ellos. **Es el mismo hueco que el `2026-08-21_8` cerró un escalón más
+arriba**, en el ítem del anclaje — y volvió a aparecer **porque son dos objetos distintos**. Que uno
+lo tenga no le sirve al otro.
+
+**3 · ⚠ El planificador de la desatendida contaba mal.** Hacía `items × modelos`, y **con el filtro
+por ítem el producto dejó de ser cierto**: no todos los ítems llevan las mismas láminas. Ahora suma
+en vez de multiplicar. **Es literalmente el modo de falla que el `2026-08-20_10.1` documenta** — *un
+planificador que cuenta la unidad equivocada se equivoca por más del doble*.
+
+### El control: `tools/probar-laminas-declaradas.js`, 24 afirmaciones
+
+Fixture: **las filas reales del snapshot**, no un fixture deducido. Con la rotura a propósito, y con
+las dos afirmaciones del `_11.2` §3 (los bloques que crecen) y la del §4 (las escondidas).
+
+⭐ **El número que se lee mal, y por eso está afirmado aparte:** `encuentro` de `jm` emite **4**
+asignaciones antes y **4** después. **El conteo no cambia; cambia cuál lámina le toca a cada ítem.**
+Un control que sólo mirara el total daría verde sin que nada se hubiera aplicado.
+
+### ⚠ Y el aserto de `fallo === null` cazó un banco incompleto por TERCERA vez en el día
+
+`probar-continuacion-deck` no cargaba `Sellador.gs`, donde vive `anclaDeLamina_`. La corrida moría
+por excepción en la etapa 1 y **`ok: true` lo tapaba**. Sin ese aserto —agregado esta mañana, y por
+el mismo motivo— la suite habría quedado en verde sobre un recorrido que no llegaba al cierre.
+
+### Lo que cambia en el deck, declarado y no descubierto
+
+| sección | antes | ahora | por qué |
+|---|---|---|---|
+| `jm` `campana` | 8 láminas modelo | **9** | entra `L-040`, la portada del bloque |
+| `secco` `comunicaciones_post` | 1 | **2** | entra `L-009`, la portada |
+| `jm` `encuentro` · `Uno a uno` | portada + iceberg | **portada + `L-053`** | la condición |
+
+⭐ **Las dos primeras son una mejora, no una regresión:** son la portada de su bloque y llevan el
+nombre del ítem. Hoy la portada de campaña sale **una vez para ocho campañas** — lo mismo que le
+pasaba al bloque de encuentro antes del `_35`.
+
+⛔ **Y desde ahora una lámina sin `seccion_id` no se emite.** El ciclo quedó en `docs/RUNBOOK.md`:
+tocar plantilla → `sellarPlantilla` → `verificarLaminas()` → declarar `seccion_id` → recién ahí
+emite.
+
+### Lo que no se probó
+
+⛔ **Ninguna corrida real.** El control decide **qué** láminas copia cada ítem; que se copien, se
+ordenen y se pinten necesita generar. Y **la N² muerta es estructural** —el índice se calcula antes
+de duplicar— pero medirlo pide expandir dos veces sobre un deck de verdad.
