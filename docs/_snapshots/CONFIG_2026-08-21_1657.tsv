@@ -1,0 +1,22 @@
+clave	valor
+periodo_desde	
+periodo_hasta	
+informe_activo	jm
+carpeta_salida	1LAEVlWZXoGjon2cnaMjGksV0THz3Ejlz
+carpeta_plantillas	1Q5At-COhFbidKCfYrwXhN6kZAbuxgYpi
+umbral_anclaje_reunion	0.6
+carpeta_motor	1EyTlfg16vpyrftpUXgacShFk8iSbX_fJ
+presupuesto_corrida_seg	350
+reserva_cierre_seg	30
+costo_resolucion_etapa4_seg	60
+ventana_candidatos_anclaje_dias	14
+ventana_candidatos_anclaje_ampliada_dias	
+centinelas_lectura	#REF!,#N/A,#ERROR!,#VALUE!,#NAME?,#DIV/0!,Loading...
+umbral_similitud_campana	0.8
+margen_similitud_campana	0.2
+mails_autorizados	jpcofanogcba1@gmail.com, reporteseinformesgcba@gmail.com, jpcofano@gmail.com, jpcofano2@gmail.com
+tope_continuaciones	6
+costo_arranque_seg	80
+costo_mapa_seg	25
+costo_item_seg	6
+presentacion_faltantes_defecto	simbolos

@@ -232,8 +232,29 @@ var HOJAS_CONFIG_ = {
   // del motor puede depender de ella. Esconder o mostrar desde el motor **no está autorizado**
   // (`C-01` addendum 1).
   //
-  // `seccion_id`, `modo`, `itera_sobre` y `filtro` vacíos significan **hereda de `SECCIONES`**,
-  // no "sin declarar" (`PLAN.md` §2: las dos son configuración, celda vacía = hereda).
+  // `modo`, `itera_sobre` y `filtro` vacíos significan **hereda de `SECCIONES`**, no "sin
+  // declarar" (`PLAN.md` §2: las dos son configuración, celda vacía = hereda).
+  //
+  // ⚠ **`seccion_id` YA NO hereda — `D-37` (21/08/2026) lo supersede.** Vacío pasa a significar
+  // *"nadie la clasificó"*: la lámina se reporta con su `lamina_id` y **no entra a ningún bloque
+  // repetible**. La corrección es **sólo sobre `seccion_id`**; las otras tres siguen heredando. Y
+  // `D-23` ya lo decía — *"identidad y estado propio no se heredan nunca"*.
+  //
+  /* ⭐ **`rol` — quién llena la lámina** (`2026-08-21_11.1` §2, decisión del usuario 21/08). La
+   * columna existía en el esquema desde el `_11` y **nunca se había definido**. Dos valores:
+   *
+   *   - **`motor`** — el contenido lo pone la corrida: la lámina lleva tokens.
+   *   - **`equipo`** — el contenido lo escribe una persona: la lámina **no lleva ningún token**.
+   *
+   * El criterio es medible y no se opina. Al 21/08: **13 `equipo` y 40 `motor`**.
+   *
+   * ⚠ **Las que tienen tokens y NINGUNO cableado son `motor` igual** — el rol dice quién **debe**
+   * llenarla, no quién la llena hoy. **25 de las 40** están en ese caso, entre ellas las dos del
+   * "1 a 1". Leer `rol = motor` como *"esta lámina publica"* es el error que la columna no evita.
+   *
+   * ⛔ **Ningún código la lee, y no se le van a dar lectores en este paso.** Es documentación
+   * operativa, y hay que decirlo acá: **una columna que parece una guarda y no lo es es peor que
+   * ninguna.** */
   LAMINAS: {
     headers: ['lamina_id', 'informe_id', 'seccion_id', 'orden_plantilla', 'escondida', 'origen',
       'modo', 'itera_sobre', 'filtro', 'rol', 'cobertura', 'falta', 'notas']

@@ -3907,3 +3907,93 @@ function escribirSeccionIdDeLaminas() {
   Logger.log(JSON.stringify(r, null, 2));
   return r;
 }
+
+/* ═══════════ `2026-08-21_11.1` §2 — `rol`: quién llena cada lámina ═══════════
+ *
+ * **Decisión del usuario, 21/08.** Muchas láminas son de relleno: el equipo escribe su contenido a
+ * mano. Eso **no** es *"no tiene sección"* —siguen perteneciendo a su bloque— sino una propiedad
+ * distinta, y la columna para decirlo **ya existía y nunca se había definido**.
+ *
+ * ⛔ **NINGÚN código lee `rol`, y esto no le da lectores.** Es documentación operativa, y hay que
+ * decirlo: **una columna que parece una guarda y no lo es es peor que ninguna.**
+ *
+ * **El criterio es medible y no se opina:**
+ *
+ * - una lámina **sin ningún token** → `equipo` — son **13**;
+ * - una lámina **con tokens** → `motor` — son **40**.
+ *
+ * ⚠ **Y el borde que importa: las que tienen tokens y NINGUNO cableado son `motor` igual.** El rol
+ * dice quién **debe** llenarla, no quién la llena hoy. Medido el 21/08: **25 de las 40** están en
+ * ese caso — entre ellas `L-053` y `L-005`, las dos del "1 a 1", y `L-036` con sus 32 `post_`.
+ * Leer `rol = motor` como *"esta lámina publica"* sería exactamente el error que la columna no
+ * puede evitar por sí sola.
+ */
+var MAPA_ROL_LAMINAS_ = {
+  'L-001': 'motor',
+  'L-002': 'equipo',
+  'L-003': 'equipo',
+  'L-004': 'motor',
+  'L-005': 'motor',
+  'L-006': 'motor',
+  'L-007': 'motor',
+  'L-008': 'motor',
+  'L-009': 'equipo',
+  'L-010': 'motor',
+  'L-011': 'equipo',
+  'L-012': 'motor',
+  'L-013': 'equipo',
+  'L-014': 'motor',
+  'L-015': 'equipo',
+  'L-016': 'motor',
+  'L-017': 'motor',
+  'L-018': 'motor',
+  'L-019': 'motor',
+  'L-020': 'motor',
+  'L-021': 'motor',
+  'L-022': 'motor',
+  'L-023': 'motor',
+  'L-024': 'motor',
+  'L-025': 'motor',
+  'L-026': 'equipo',
+  'L-027': 'motor',
+  'L-028': 'motor',
+  'L-029': 'equipo',
+  'L-030': 'motor',
+  'L-031': 'motor',
+  'L-032': 'motor',
+  'L-033': 'equipo',
+  'L-034': 'motor',
+  'L-035': 'motor',
+  'L-036': 'motor',
+  'L-037': 'equipo',
+  'L-038': 'motor',
+  'L-039': 'motor',
+  'L-040': 'equipo',
+  'L-041': 'motor',
+  'L-042': 'motor',
+  'L-043': 'motor',
+  'L-044': 'motor',
+  'L-045': 'motor',
+  'L-046': 'motor',
+  'L-047': 'motor',
+  'L-048': 'motor',
+  'L-049': 'equipo',
+  'L-050': 'motor',
+  'L-051': 'equipo',
+  'L-052': 'motor',
+  'L-053': 'motor'
+};
+
+/** Dry-run del `rol`. Sin `_` y sin parámetros (`CLAUDE.md` §2). */
+function preverRolDeLaminas() {
+  var r = escribirColumnaLaminas_(MAPA_ROL_LAMINAS_, 'rol', { dryRun: true });
+  Logger.log(JSON.stringify(r, null, 2));
+  return r;
+}
+
+/** Escribe el `rol` de verdad. El detalle por celda del retorno **es el respaldo**. */
+function escribirRolDeLaminas() {
+  var r = escribirColumnaLaminas_(MAPA_ROL_LAMINAS_, 'rol');
+  Logger.log(JSON.stringify(r, null, 2));
+  return r;
+}
