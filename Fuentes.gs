@@ -1618,12 +1618,52 @@ var DIMENSIONES_ = {
     }
   },
   plataforma: {
-    meta: { 'looker|DIGITAL': 'Plataforma=Meta' },
-    google: { 'looker|DIGITAL': 'Plataforma=Google ads' },
+    /* `2026-08-21_13` — la segunda solapa que declara `plataforma`. Los valores de
+     * `digital|CAMPAÑAS_DESGLOCE_DIGITAL` se **midieron** sobre el fixture del 20/08 y **no** son
+     * los mismos textos que en `looker|DIGITAL`: acá son `Meta` 1840 · `DV360` 1678 ·
+     * `Google ads` 1417 · `TikTok` 55 · `Mercado Libre` 27 · `Twitter` 12 · `Twitch` 5 · `Uber` 5.
+     * ⚠ **Que la dimensión se llame igual no quiere decir que el valor físico sea el mismo** — es
+     * exactamente para eso que `DIMENSIONES_` indexa por `base|solapa`. */
+    meta: {
+      'looker|DIGITAL': 'Plataforma=Meta',
+      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_plataforma=Meta'
+    },
+    google: {
+      'looker|DIGITAL': 'Plataforma=Google ads',
+      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_plataforma=Google ads'
+    },
     // `R-24` NO se deroga: `programmatic` es **todo lo que no es Meta ni Google ads**, por resta
     // y no por lista. Darle un valor propio sería enumerar en vez de derivar, y el día que
     // aparezca una plataforma nueva quedaría afuera en silencio.
-    programmatic: { 'looker|DIGITAL': 'Plataforma!=Meta && Plataforma!=Google ads' }
+    //
+    // ⭐ **Y acá la resta se gana el sueldo**: en esta solapa la tercera plataforma se llama
+    // `DV360` y el deck la rotula `Programmatic`. Enumerarla habría exigido saber ese nombre;
+    // restando, entra sola — junto con TikTok, Twitter, Twitch, Mercado Libre y Uber, que es lo
+    // que el deck agrupa bajo el mismo rótulo.
+    programmatic: {
+      'looker|DIGITAL': 'Plataforma!=Meta && Plataforma!=Google ads',
+      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_plataforma!=Meta && des_plataforma!=Google ads'
+    }
+  },
+  /* ⭐ `2026-08-21_13` — **`etapa`: la cuarta dimensión del vocabulario global.**
+   *
+   * Un encuentro tiene **dos campañas**: la de convocatoria (*pre*) y la de difusión (*post*).
+   * **Comparten `Id cuentas` y comparten `Plataforma`**, así que las dos claves juntas NO las
+   * separan — medido el 21/08 sobre `3487-AGOJDGAG`, cinco filas = etapa × plataforma.
+   *
+   * **Lo que las separa es el NOMBRE de la campaña**: `Agenda con 1 A 1 - X` contra
+   * `Agenda Post con 1 A 1 - X`.
+   *
+   * ⚠ **`pre` se define por resta, igual que `gcba` y `programmatic`**, y por el mismo motivo: si
+   * mañana aparece una tercera etapa con otro nombre, cae en `pre` y se ve, en vez de quedar
+   * afuera de las dos en silencio (`D-33`).
+   *
+   * ⚠ **Y esto es lo que hace que los tokens `u1_pre_*` / `u1_post_*` sean correctos aunque su
+   * NOMBRE tenga el corte adentro**: el nombre lo fija la plantilla, que es del equipo (`C-01`);
+   * la definición pone el corte donde `D-33` manda, en `dimensiones`. */
+  etapa: {
+    post: { 'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana~=Agenda Post' },
+    pre: { 'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana!~=Agenda Post' }
   },
   tipo_envio: {
     convocatoria: { 'digital|Directa Mail': 'mail_tipo=Convocatoria' },

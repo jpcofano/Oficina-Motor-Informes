@@ -4837,3 +4837,148 @@ function verificarCierreParaGenerar() {
   Logger.log('');
   return aplicarAsteriscoCompartidos();
 }
+
+/**
+ * ⭐ **`2026-08-21_13` — el alta de los `u1_*` del "1 a 1".**
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`.** Va por `curarMarcadores_`, que es la puerta declarada: **no hay
+ * `SEED_MARCADORES_` y no lo va a haber** (`D-17`).
+ *
+ * **La fuente no se decide acá: está decidida desde el 14/08.**
+ * `digital/CAMPAÑAS_DESGLOCE_DIGITAL`, `uso = fuente`, y `D-32` existe **porque el sembrador la
+ * revirtió una vez**. El `2026-08-21_7` la mapeó — 18 filas — y los seis casos `V-21`…`V-26` la
+ * validan con las claves `Id cuentas` + `Plataforma`.
+ *
+ * **Las cinco decisiones que hay adentro, porque ninguna es obvia:**
+ *
+ * **1 · `SUMA` y no `ULTIMO`, al revés que los `camp_*`.** Aquéllos leen una solapa que devuelve
+ * **una fila por cuenta** y por eso eligen. Acá la lectura por cuenta devuelve **cinco filas**
+ * —etapa × plataforma, medido sobre `3487-AGOJDGAG`— y el trabajo del marcador **es agregarlas**
+ * dentro de su corte. Con `plataforma` y `etapa` declaradas, cada token ve **una** fila; `SUMA` es
+ * lo correcto igual y **es lo que aguanta el día que haya dos**.
+ *
+ * ⚠ **Y el riesgo que `SUMA` trae, dicho porque está medido:** la solapa tiene **61 grupos de filas
+ * duplicadas, 135 filas de más sobre 5.161** — misma cuenta, misma plataforma, mismo nombre, mismas
+ * métricas, distinto `Id accion`. `SUMA` **las cuenta dos veces**. `3487-AGOJDGAG` no tiene
+ * duplicados, así que hoy no muerde; el día que una cuenta del temario los tenga, publica el doble
+ * **sin fallar**. `des_id_accion` está mapeado justamente para eso, y **el motor todavía no lo usa**.
+ *
+ * **2 · El corte va en `dimensiones`, nunca en `filtro` ni en el nombre** (`D-33`, `CLAUDE.md` §2).
+ * ⚠ **Los tokens se llaman `u1_pre_meta_impresiones`, con los dos cortes adentro del nombre** — es
+ * el estilo anterior a `D-33`. **El nombre lo fija la plantilla y la plantilla es del equipo**
+ * (`C-01`), así que no se renombra; lo que sí se hace bien es la definición. **Un nombre viejo con
+ * una definición correcta es reversible; una definición con el corte en `filtro` es la deuda que la
+ * migración de 42 marcadores vino a sacar.**
+ *
+ * **3 · `filtro` queda VACÍO, y también es una decisión.** Los `imp_*` de `looker` llevan
+ * `estado=Activa`, y copiarlo acá habría sido el error: **en esta solapa los valores van en
+ * MAYÚSCULA** —`FINALIZADA` 4338, `PAUSADA` 433, `ACTIVA` 229— así que `estado=Activa` **no
+ * matchearía ninguna fila** (`R-10` preserva mayúsculas). Y aunque matcheara sería incorrecto: la
+ * campaña de un encuentro pasado está `FINALIZADA`. **La restricción real es la cuenta**, y la
+ * pone `SOLAPAS.campo_id_cuenta` (`D-30`), no un filtro.
+ *
+ * **4 · `_revisar` en TODOS, y se retira de a uno.** `D-34`: hay número y no está validado. Los
+ * seis casos `V-` validan `Impresiones`, `Clics` y `Visualizaciones` de **dos** cuentas de julio;
+ * ninguno valida un `ctr`, un `vtr`, ni la cuenta de esta semana. **Publicar entre guiones es
+ * exactamente lo que corresponde** hasta que un caso `V-` los toque.
+ *
+ * **5 · `ctr` y `vtr` son `PCT` sobre los agregados, no promedio de tasas.** Mismo criterio que
+ * `camp_ctor` y `enc_e75_pct`: se dividen los dos totales del corte, no se promedian porcentajes.
+ *
+ * ⛔ **Ocho tokens NO se cablean, y cada uno tiene su motivo escrito:**
+ *
+ * - los **seis `u1_bench_*`** — pregunta abierta desde antes (`CONFIG_INFORMES.md` §2.1) y **sin
+ *   prioridad** por decisión del usuario. Medido el 21/08: **no salen de la cuenta del encuentro**
+ *   —el CTR real de Meta en el PRE es 2,02 % contra un benchmark publicado de 2,1 %—, así que son
+ *   referencias externas y **no hay de dónde leerlos**;
+ * - **`u1_total_alcance`** — el deck publica 55.255 y las dos filas de `digital/Alcance` de esa
+ *   cuenta dan 20.897 y 43.639: **la suma es 64.536, no 55.255**. El alcance son usuarios únicos y
+ *   **no se suma** (`R-28`). No hay fuente para el total;
+ * - **`u1_total_frecuencia`** — es `impresiones / alcance` y depende del anterior.
+ *
+ * ⚠ **`u1_pre_meta_alcance` y `u1_post_meta_alcance` sí se cablean**, y por una evidencia distinta:
+ * `digital/Alcance` tiene **exactamente dos filas** para la cuenta —una por etapa— y `R-27` dice que
+ * **el alcance lo aporta sólo Meta**. Van con `_revisar` como todos.
+ */
+function altaMarcadoresUnoAUno_() {
+  var N = function (extra) {
+    return '2026-08-21_13 — fuente digital/CAMPAÑAS_DESGLOCE_DIGITAL (D-32, decidida 14/08; ' +
+      'mapeada por el _7). Clave: Id cuentas via SOLAPAS.campo_id_cuenta (D-30). ' +
+      (extra ? extra + '. ' : '') + 'SIN VALIDAR';
+  };
+  var B = 'digital', S = 'CAMPAÑAS_DESGLOCE_DIGITAL';
+
+  // Una fila por (medida × plataforma × etapa). El corte SIEMPRE en `dimensiones`.
+  var fila = function (marcador, campo, op, formato, dims, extra) {
+    return {
+      marcador: marcador, familia: 'u1', informe_id: 'jm', base_id: B, solapa: S,
+      campo_logico: campo, operacion: op, filtro: '', dimensiones: dims,
+      formato: formato, notas: N(extra)
+    };
+  };
+
+  var PLAT = [
+    { tok: 'meta',   dim: 'plataforma=meta' },
+    { tok: 'google', dim: 'plataforma=google' },
+    { tok: 'prog',   dim: 'plataforma=programmatic' }
+  ];
+
+  var agregar = [];
+
+  /* ── PRE · convocatoria ─────────────────────────────────────────────────────────────────
+   * La lámina rotula el PRE como `CLICS (CTR)`: impresiones, clics y su tasa. */
+  PLAT.forEach(function (p) {
+    var d = 'etapa=pre && ' + p.dim;
+    agregar.push(fila('u1_pre_' + p.tok + '_impresiones', 'des_impresiones', 'SUMA', 'miles_revisar', d));
+    agregar.push(fila('u1_pre_' + p.tok + '_clics', 'des_clics', 'SUMA', 'miles_revisar', d));
+    agregar.push(fila('u1_pre_' + p.tok + '_ctr', 'des_clics/des_impresiones', 'PCT',
+      'porcentaje_sin_signo_revisar', d, 'PCT sobre los agregados del corte, no promedio de tasas'));
+  });
+
+  /* ── POST · difusión ────────────────────────────────────────────────────────────────────
+   * La lámina rotula el POST como `VISUALIZACIONES (VTR)`. */
+  PLAT.forEach(function (p) {
+    var d = 'etapa=post && ' + p.dim;
+    agregar.push(fila('u1_post_' + p.tok + '_impresiones', 'des_impresiones', 'SUMA', 'miles_revisar', d));
+    agregar.push(fila('u1_post_' + p.tok + '_vistas', 'des_visualizaciones', 'SUMA', 'miles_revisar', d));
+    agregar.push(fila('u1_post_' + p.tok + '_vtr', 'des_visualizaciones/des_impresiones', 'PCT',
+      'porcentaje_sin_signo_revisar', d, 'PCT sobre los agregados del corte, no promedio de tasas'));
+  });
+
+  /* ── Los totales ── `R-28`: cada uno suma UNA etapa, y no las dos. ⭐ Cablearlos como "SUMA sobre
+   * las tres plataformas" publicaría 1.879 contra 1.472 — un 28 % de más, plausible y equivocado. */
+  agregar.push(fila('u1_total_impresiones', 'des_impresiones', 'SUMA', 'miles_revisar', '',
+    'R-28: las DOS etapas, todas las plataformas'));
+  agregar.push(fila('u1_total_clics', 'des_clics', 'SUMA', 'miles_revisar', 'etapa=pre',
+    'R-28: SOLO el PRE — el POST tiene clics y NO se suman'));
+  agregar.push(fila('u1_total_vistas', 'des_visualizaciones', 'SUMA', 'miles_revisar', 'etapa=post',
+    'R-28: SOLO el POST — el PRE tiene 0 visualizaciones'));
+
+  /* ── La fecha de fin ── el deck publica "Fecha de fin: 24/08" y la columna J lo trae. */
+  agregar.push(fila('u1_fecha_fin', 'des_fecha_fin', 'ULTIMO', 'fecha_revisar', 'etapa=post',
+    'la campaña que termina última es la del post'));
+
+  /* ── El alcance por etapa ── ⚠ OTRA solapa y otra evidencia: `digital/Alcance` tiene DOS filas
+   * para la cuenta, una por etapa, y `R-27` dice que el alcance lo aporta sólo Meta. */
+  ['pre', 'post'].forEach(function (et) {
+    agregar.push({
+      marcador: 'u1_' + et + '_meta_alcance', familia: 'u1', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Alcance', campo_logico: 'alc_alcance', operacion: 'ULTIMO',
+      filtro: '', dimensiones: '', formato: 'miles_revisar',
+      notas: '2026-08-21_13 — digital/Alcance, misma vía que enc_alcance. ⚠ La solapa tiene DOS ' +
+        'filas por cuenta (20.897 y 43.639 para 3487-AGOJDGAG) que son pre y post, y NO están ' +
+        'separadas: falta mapear su columna de nombre de campaña. ULTIMO elige una y lo dice en la ' +
+        'traza. R-27: el alcance lo aporta sólo Meta. SIN VALIDAR'
+    });
+  });
+
+  Logger.log('Alta de ' + agregar.length + ' marcador(es) `u1_*`.');
+  var r = curarMarcadores_([], agregar);
+  Logger.log(JSON.stringify(r, null, 2));
+  return r;
+}
+
+/** El botón: sin `_` y sin parámetros, las dos condiciones de `CLAUDE.md` §2. */
+function altaMarcadoresUnoAUno() {
+  return altaMarcadoresUnoAUno_();
+}
