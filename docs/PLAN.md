@@ -1583,6 +1583,21 @@ usuario decidió avanzar sin medirlo. **La razón verificada es otra: el motor d
 **Y lo que `D-37` NO hace:** no retira `familia_tokens`. La columna queda; deja de ser el mecanismo
 de pertenencia. Retirarla es la Fase 4 de `D-23` y tiene su propio costo.
 
+> **✅ IMPLEMENTADA el 21/08/2026** (`2026-08-21_11` Partes A–D). `slidesModeloDe_` **dejó de tener
+> llamadores**: el bloque de una sección sale de las filas de `LAMINAS`, resueltas por el ancla, y
+> `LAMINAS.filtro` se evalúa por ítem. Las 53 láminas declaran `seccion_id` y `rol`; siete declaran
+> `filtro`. Control: `tools/probar-laminas-declaradas.js`, 24 afirmaciones con la rotura a propósito.
+>
+> **Con esto `D-23` cierra su Fase 2 del lado del consumo.** El sello existía desde el `_11` del
+> 09/08 y **nadie lo leía**: los únicos lectores de `LAMINAS` eran el censo y el sellador. Ahora la
+> hoja gobierna la expansión. ⚠ **La Fase 4 —retirar `familia_tokens`— sigue abierta.**
+>
+> ⚠ **Y dos cosas que cambiaron en el deck y hay que saber**, porque no son regresiones sino
+> consecuencias declaradas: `jm campana` pasó de **8 a 9** láminas modelo y `secco
+> comunicaciones_post` de **1 a 2**, las dos por la portada del bloque, que hasta hoy salía una vez
+> para todos los ítems. El conteo de `encuentro` **no** cambia —dos por ítem antes y después—;
+> cambia **cuál** lámina le toca a cada uno.
+
 ---
 
 

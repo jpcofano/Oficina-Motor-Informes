@@ -544,6 +544,31 @@ ahí el verde de al lado no dice absolutamente nada sobre él.
   Acá el barrido dio **una sola** —`copia`— y ese cero medido también se escribe: un cero que nadie
   buscó no se distingue de «no miré».
 
+**Inferir la identidad de algo por su contenido funciona hasta que el contenido cambia — y los dos
+síntomas no se parecen entre sí, que es lo que hace cara la lección.** Cuando el motor deduce *qué
+es* una cosa mirando *qué tiene adentro*, la deducción vale mientras el adentro sea distintivo. Deja
+de valer por dos lados a la vez, y **parecen dos bugs distintos**.
+
+- **El caso, medido el 21/08/2026.** `slidesModeloDe_` decidía a qué sección pertenece una lámina
+  **por la familia de los tokens que lleva**. Salió mal en las dos direcciones posibles:
+  - **Por defecto:** la lámina del "1 a 1" lleva 32 tokens `u1_`, **ninguna sección declara esa
+    familia**, y entonces no pertenecía a nada — no se expandía, no se resolvía y **nadie la
+    nombraba**. Estuvo así sin que ninguna verificación la señalara.
+  - **Por exceso:** una copia sin pintar lleva los mismos tokens crudos que su modelo, así que
+    **es indistinguible de un modelo** — la N² que multiplica las láminas en cada ronda.
+- ⭐ **Son el mismo error con dos caras, y por eso el arreglo es uno solo:** que la identidad se
+  **declare** en vez de deducirse. `D-37` la pone en `LAMINAS.seccion_id` y el modelo se resuelve
+  por el ancla, no por lo que la lámina tiene adentro.
+- ⚠ **Y la trampa al arreglarlo, que hay que MEDIR y no razonar:** el sustituto también puede
+  viajar con la copia. Acá el ancla vive en las notas del orador y **`slide.duplicate()` copia las
+  notas** — medido, no supuesto —, así que **resolver por `lamina_id` sobre un deck ya expandido
+  devuelve copias y no mata la N² por sí solo**. Lo que la mata es **calcular el conjunto una vez,
+  antes de la primera duplicación**. La otra salida —borrarle la marca a cada copia— se descartó
+  con motivo: destruiría notas del orador legítimas.
+- **La pregunta accionable, antes de escribir cualquier inferencia:** *¿qué pasa cuando el contenido
+  que estoy mirando aparece donde no debería, y qué pasa cuando no aparece donde sí?* Las dos
+  respuestas tienen que ser un reporte, no un silencio.
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue
