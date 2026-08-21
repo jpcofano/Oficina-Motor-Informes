@@ -1204,3 +1204,118 @@ function contarAnclasDeLaminas() {
 
   return salida;
 }
+
+/* ═══════════ `2026-08-21_11` Parte 0 punto 3 — ¿la copia hereda el ancla? ═══════════
+ *
+ * ⭐ **Es la medición de la que depende la Parte C punto 7, y hay que MEDIRLA, no razonarla.**
+ * El ancla `#lamina: L-0NN` vive en las notas del orador. Si `slide.duplicate()` las copia, la
+ * copia queda con el ancla del modelo — y entonces **resolver el modelo por `lamina_id` NO mata
+ * la N² por sí solo**: una copia sin pintar seguiría siendo indistinguible de un modelo, que es
+ * exactamente el bug que ese cambio venía a matar.
+ *
+ * ⚠ **Y no alcanza con leer el comentario que ya existe.** `Generador.gs` afirma que
+ * *"`duplicate()` copia el estado de la modelo"*, pero lo dice sobre `escondida` — otra
+ * propiedad. `CLAUDE.md` §4: un comentario que afirma un contrato es una premisa sin testigo.
+ *
+ * **Qué toca y qué no.** Copia la plantilla a la carpeta de backups, duplica UNA lámina sobre la
+ * copia, lee, y **manda la copia a la papelera**. ⛔ **No toca la plantilla, ni `LAMINAS`, ni
+ * ninguna hoja de registro.** Es el mismo camino que `probarSelladoSobreCopia`.
+ *
+ * Sin `_` y sin parámetros: las dos condiciones para que Apps Script la liste (`CLAUDE.md` §2).
+ */
+function medirSiLaCopiaHeredaElAncla() {
+  var informeId = 'jm';
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) {
+    Logger.log('FALLÓ: el informe `' + informeId + '` no tiene plantilla_id.');
+    return { ok: false, motivo: 'sin plantilla_id' };
+  }
+
+  var copia = null;
+  var r = { ok: true, informe_id: informeId };
+  try {
+    // ⚠ `asegurarCarpetaBackups_` devuelve `{ ok, carpeta }`, no un `Folder`. Pasarlo entero
+    // hace que `makeCopy` falle con "los parámetros no coinciden con la firma" — medido.
+    var backups = asegurarCarpetaBackups_();
+    if (!backups.ok) {
+      Logger.log('FALLÓ: ' + backups.motivo);
+      return { ok: false, motivo: backups.motivo };
+    }
+
+    var t0 = new Date().getTime();
+    copia = DriveApp.getFileById(informe.plantilla_id)
+      .makeCopy('[temporal] medición de duplicate() — ' + new Date().toISOString(), backups.carpeta);
+    r.seg_copia = Math.round((new Date().getTime() - t0) / 1000);
+
+    var pres = SlidesApp.openById(copia.getId());
+    var slides = pres.getSlides();
+
+    // Se elige una lámina que TENGA ancla: sin ancla, la medición no distingue nada.
+    var modelo = null, iModelo = -1;
+    for (var i = 0; i < slides.length; i++) {
+      if (anclaDeLamina_(slides[i])) { modelo = slides[i]; iModelo = i; break; }
+    }
+    if (!modelo) {
+      r.ok = false; r.motivo = 'ninguna lámina de la copia tiene ancla — no hay nada que medir';
+      Logger.log('⛔ ' + r.motivo);
+      return r;
+    }
+
+    r.modelo = { posicion: iModelo + 1, ancla: anclaDeLamina_(modelo), notas: notasDeLamina_(modelo) };
+
+    var t1 = new Date().getTime();
+    var dup = modelo.duplicate();
+    r.seg_duplicate = ((new Date().getTime() - t1) / 1000);
+
+    r.copia = { ancla: anclaDeLamina_(dup), notas: notasDeLamina_(dup) };
+    r.hereda_ancla = r.copia.ancla === r.modelo.ancla && r.copia.ancla !== '';
+    r.hereda_notas = r.copia.notas === r.modelo.notas;
+
+    /* ⭐ La segunda mitad de la medición: **cuánto cuesta borrarle el ancla a la copia**, que es
+     * una de las dos salidas de la Parte C punto 7. Sin este número no se puede decir si esa
+     * salida es viable — con 36 asignaciones, un segundo por copia son 36 s del techo. */
+    var t2 = new Date().getTime();
+    try {
+      var shape = dup.getNotesPage().getSpeakerNotesShape();
+      if (shape) shape.getText().setText('');
+      r.seg_borrar_notas = ((new Date().getTime() - t2) / 1000);
+      r.ancla_tras_borrar = anclaDeLamina_(dup);
+    } catch (e) {
+      r.seg_borrar_notas = null;
+      r.error_al_borrar = e.message;
+    }
+
+  } catch (e) {
+    r.ok = false; r.motivo = e.message; r.stack = String(e.stack || '');
+  } finally {
+    // ⚠ La copia se tira SIEMPRE, haya salido bien o mal. Un temporal que sobrevive a una
+    // medición se confunde con un deck real dos días después.
+    if (copia) {
+      try { copia.setTrashed(true); r.copia_borrada = true; }
+      catch (e) { r.copia_borrada = false; r.copia_id_a_borrar_a_mano = copia.getId(); }
+    }
+  }
+
+  Logger.log('── ¿la copia hereda el ancla? ──');
+  Logger.log('  modelo: lámina ' + (r.modelo ? r.modelo.posicion : '?') + ' · ancla ' + (r.modelo ? r.modelo.ancla : '?'));
+  Logger.log('  copia:  ancla ' + (r.copia ? (r.copia.ancla || '(ninguna)') : '?'));
+  Logger.log('');
+  Logger.log('  HEREDA EL ANCLA: ' + (r.hereda_ancla ? 'SÍ' : 'NO'));
+  Logger.log('  hereda las notas enteras: ' + (r.hereda_notas ? 'sí' : 'no'));
+  Logger.log('');
+  Logger.log('  costo copiar la plantilla: ' + r.seg_copia + ' s');
+  Logger.log('  costo de un duplicate(): ' + r.seg_duplicate + ' s');
+  Logger.log('  costo de borrarle las notas a una copia: ' + r.seg_borrar_notas + ' s');
+  Logger.log('  ancla tras borrar las notas: "' + (r.ancla_tras_borrar || '(ninguna)') + '"');
+  Logger.log('  copia temporal borrada: ' + (r.copia_borrada ? 'sí' : '⚠ NO — ' + r.copia_id_a_borrar_a_mano));
+  Logger.log('');
+  if (r.hereda_ancla) {
+    Logger.log('⚠ HEREDA: resolver el modelo por `lamina_id` NO mata la N² por sí solo. La copia');
+    Logger.log('  sin pintar es indistinguible del modelo, igual que con los tokens crudos.');
+    Logger.log('  Salidas: borrarle el ancla a la copia (' + r.seg_borrar_notas + ' s cada una), o');
+    Logger.log('  calcular el conjunto de modelos UNA vez por corrida, antes de duplicar.');
+  } else {
+    Logger.log('✅ NO hereda: el ancla distingue modelo de copia por sí sola, y eso sí mata la N².');
+  }
+  return r;
+}
