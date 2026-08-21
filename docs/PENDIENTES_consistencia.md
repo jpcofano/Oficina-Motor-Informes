@@ -5786,3 +5786,65 @@ el árbol de trabajo los ve. Lo que queda es que **`git show 7e48725` los recupe
 dato:** el costo de reescribir la historia de un repo que es **backup y canal de contexto con la
 sesión de claude.ai** es mayor que el riesgo de que dos decks de una semana estén en un repo
 privado. **Si el repo dejara de ser privado, la decisión cambia.**
+
+---
+
+## 2026-08-21 · Tres consecuencias de declarar `LAMINAS.seccion_id` — ninguna se arregla acá
+
+**Salen del `2026-08-21_11.2` §6.** Las tres son **dato medido**, no propuestas: se anotan para que
+el día que muerdan no haya que descubrirlas.
+
+### 1 · ⏸ `jm` `m2` quedó **no contiguo**, y hoy no importa
+
+Medido por el ancla sobre las plantillas vivas:
+
+```
+L-037  pos 10   m2          "Comunicaciones M2 · Alcance semanal"
+L-038  pos 11   m2_status   "Directa | Status semanal de M2"
+L-039  pos 12   m2          "M2 · Clics · Audiencia"
+```
+
+**`m2` reclama la 10 y la 12, con `m2_status` en el medio.**
+
+⭐ **Hoy no rompe nada porque `m2` es `modo = agregado` y no expande** — la guarda de contigüidad
+sólo corre para las repetibles. ⚠ **El día que alguien la haga `repetible`, la guarda la frena** con
+*"las láminas modelo no son consecutivas"* y la sección **no se expande**, que es el comportamiento
+correcto y va a parecer un bug.
+
+**Las dos salidas, para que no haya que pensarlas ahí:** mover `L-039` al lado de `L-037` en la
+plantilla —es del equipo—, o declarar las tres en la misma sección. **No se elige acá.**
+
+### 2 · ⏸ `campana` en `secco` emitiría **cero ítems**, y sus ocho láminas saldrían crudas
+
+`CAMPANAS` **sí** tiene `informe_id` y `D-19` filtra por él. Las tres filas de `secco`, medidas el
+21/08:
+
+| `periodo_id` | `campana_id` | `mostrar` |
+|---|---|---|
+| *(vacío)* | `serv_esenciales` | `no` |
+| *(vacío)* | `encuentros_min` | `no` |
+| *(vacío)* | `prov_uber` | `no` |
+
+**Fallan las dos condiciones a la vez**: `mostrar ≠ sí` y `periodo_id` vacío, que `D-19` excluye por
+separado.
+
+⭐ **Es el mismo síntoma que tenía `encuentro` antes de tildar `mostrar`, por la misma causa y en
+otra hoja** — una sección repetible que emite cero ítems y cuyas láminas modelo salen con los tokens
+crudos. Se reporta como *"sin ítems — el bloque modelo queda como está"*, que **se lee como «no
+había nada» y no como «faltó cargar el dato»**.
+
+⚠ **Es dato del usuario, no del motor.** Se anota para que cuando `secco` se genere no se lea como
+una regresión de este cambio.
+
+### 3 · ⏸ `secco` `L-008` lleva `enc_`, `ecv_` **y dos `et_` juntos**
+
+Con `filtro = tipo!=Uno a uno`, esa lámina emite **para todos los encuentros que no sean 1 a 1** —
+incluidos los que no son temáticos. **Ahí sus dos `et_` no tienen valor** y salen en hueco.
+
+**No es un error de la condición**: la condición es correcta, porque el iceberg **es genérico**
+(`docs/SECCIONES.md` Corrección 5 lo midió sobre informes publicados — aparece con un ECV, no sólo
+con el temático). **Lo que está mezclado es la lámina**, que junta el iceberg genérico con dos
+tokens específicos del temático.
+
+⛔ **Corregirlo es tocar la plantilla, y la plantilla es del equipo** (`C-01`). Lo que corresponde
+acá es **reportar el conteo**: cuántos ítems emiten `L-008` con sus `et_` en hueco.
