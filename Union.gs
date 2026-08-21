@@ -1041,7 +1041,24 @@ function anclarEncuentrosSinCache_(ventana) {
       (fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd') : 'sin_fecha') +
       '|' + (reunion.etapa || '');
 
-    var item = { reunion: reunion.nombre, fecha: reunion.fecha, etapa: reunion.etapa, idCuenta: '', score: 0, registroDigital: null, candidatoNombre: '' };
+    /* ⭐ `2026-08-21_8` — **`tipo` viaja con el ítem, y sin eso ningún filtro por tipo funciona.**
+     *
+     * `leerReuniones_` devuelve la fila entera de `REUNIONES` —`tipo` incluido— pero este objeto
+     * la recortaba a seis campos, así que **`tipo` se perdía justo acá**, entre la hoja y el
+     * generador. `filtrarItemsPorSeccion_` lee los atributos con `e[campo]` sobre este mismo
+     * objeto: un `SECCIONES.filtro = tipo=Uno a uno` leía `undefined` y **no matcheaba ninguna
+     * fila, sin fallar** — el modo de falla de siempre, una sección que emite de menos en
+     * silencio.
+     *
+     * Es la misma familia que `CLAUDE.md` §2 describe al revés: allá una columna nueva llega al
+     * seed y no a todos los lectores; acá la columna existe hace meses en la hoja y **no llega al
+     * consumidor**. El síntoma es idéntico: un `undefined` que nadie ve.
+     *
+     * ⚠ **Se agrega `tipo` y nada más.** Copiar la fila entera al ítem sería más simple y es
+     * peor: `asignaciones` viaja a `PropertiesService` en la corrida desatendida
+     * (`2026-08-20_10`), y engordar el ítem con diez columnas que nadie pidió agranda un estado
+     * que tiene tope de tamaño. Lo que se necesita se declara. */
+    var item = { reunion: reunion.nombre, tipo: reunion.tipo, fecha: reunion.fecha, etapa: reunion.etapa, idCuenta: '', score: 0, registroDigital: null, candidatoNombre: '' };
     var confirmado = anclajeYaConfirmado_(indicePendiente, 'reunion', nombreBuscado);
     var filaRdv = encontrarFilaRdvDeReunion_(reunion);
 
