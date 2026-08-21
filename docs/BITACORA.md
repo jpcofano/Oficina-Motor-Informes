@@ -12436,3 +12436,50 @@ al atribuirle a `L-037` una causa que no tiene.
 a los grupos A, D y E enteros: 29 de 53 láminas.** Entre ellas las portadas y todo el contenido fijo
 de las dos plantillas. **El seed dice lo contrario** (celda vacía = hereda) y la medición le da la
 razón: `seccion_id` sólo tiene sentido para las repetibles.
+
+---
+
+## 2026-08-21 · `2026-08-21_10` — cinco decisiones tomadas, escritas donde §7 declara al dueño
+
+**Ninguna decisión se tomó acá.** Todas estaban tomadas y vivían en la conversación o en un mensaje
+de commit, que según §7 dicen **qué se construyó**, no **qué es cierto hoy**. Un lector nuevo las
+vuelve a preguntar — ya había pasado: `PENDIENTES` seguía preguntando *"¿vale la regla gana el padre
+repetible?"* después de que la medición cerrara el tema.
+
+### Parte 0 — las cuatro premisas verificaron, cero ediciones
+
+`R-28` y `D-37` coinciden con el repo (últimos: `R-27` y `D-36`). `CONFIG_INFORMES.md` §1.9, §4.4
+bis y §4.5 existen y abren como el prompt cree. Y `u1_total` **no aparece** en `TOKENS.md`,
+`CATALOGO_tokens.md`, el CSV de casos ni `REGLAS_NEGOCIO.md`: `R-28` no estaba dicho en otro lado.
+
+⚠ **Y un error propio, corregido antes de escribir nada:** afirmé que §4.5 no existía porque el
+grep de encabezados se cortó en los primeros 30. **Existe, en la línea 927.** Es la tercera vez en el
+día que una afirmación de ausencia sale de una búsqueda incompleta — la misma familia que los `u1_`.
+
+### Lo escrito
+
+- **`R-28`** (`REGLAS_NEGOCIO.md`) — los totales del 1 a 1 suman **una** etapa. Con la evidencia
+  adentro y ⭐ **el contraejemplo también**: cablearlo como *"SUMA sobre las tres plataformas"*
+  publicaría 1.879 contra 1.472, un 28 % de más. **Una regla que no dice qué error evita se lee como
+  burocracia.**
+- **`D-37`** (`PLAN.md`) — la pertenencia se declara en `LAMINAS.seccion_id`. ⚠ **Supersede el
+  comentario del seed**, y **sólo para `seccion_id`**. Con el argumento del ahorro marcado como **no
+  medido** —el usuario decidió avanzar sin medirlo— y la razón verificada dicha aparte: el motor deja
+  de adivinar.
+- **`CONFIG_INFORMES.md` §1.10** — la condición del 1 a 1, con `tipo!=Uno a uno` y el motivo de por
+  qué no se enumeran tipos.
+- **`CONFIG_INFORMES.md` §4.5 bis** — el puente entre `MAPEO.notas` y el deck: la marca `REVISAR` no
+  llega sola a la lámina, la lleva el sufijo `_revisar` del formato.
+- **`PENDIENTES`** — `D1`, `D2` y `D4` tachadas con su respuesta; los dos `.pptx` del historial como
+  riesgo asumido, con los tres pasos que harían falta para sacarlos y **el motivo de por qué hoy no**.
+
+⛔ **`§4.4 bis` no se tocó ni lleva nota**, como el prompt manda. Verificado: el diff de
+`CONFIG_INFORMES.md` son **46 líneas insertadas y cero borradas**, y no menciona esa sección.
+
+### ⭐ Lo que salió de la Parte D y vale más que la respuesta
+
+**`D2` no tenía respuesta: tenía un instrumento mal.** La agrupación que reportaba *"varias
+candidatas"* cruzaba familias de tokens contra **todas** las secciones, y el motor no hace eso —
+`seccionesRepetiblesDe_` exige `repetible` **y** `activa` **y** `familia_tokens` no vacía, así que de
+cada grupo hay **una sola elegible**. `encuentro_iceberg` falla dos de las tres. **Las seis láminas
+nunca estuvieron en disputa.** El error era mío, no del repo.

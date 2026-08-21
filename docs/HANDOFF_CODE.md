@@ -92,6 +92,39 @@ solapa salen los `u1_`. **Ninguna la puede contestar una medición.**
 
 ---
 
+## ⏸ Lo que espera una confirmación tuya, y es lo único que bloquea
+
+⭐ **La tabla `lamina_id → seccion_id` de las 53.** La Parte 0 del `2026-08-21_11` la mide y **para
+antes de escribir una celda** — es la regla del prompt. Estado:
+
+| | |
+|---|---|
+| **21 láminas** | sección clara: es la que **hoy** reclama una repetible. La asignación transcribe el comportamiento medido |
+| **13 láminas** | **sin ningún token** — el `rol` del addendum §2 las llama `equipo` |
+| **19 láminas** | con tokens y **ninguna sección las reclama**. Siete grupos ya tienen destino propuesto; **seis esperan la propuesta contra los decks publicados** (addendum §3) |
+
+⛔ **Nada escrito en `LAMINAS`.** Ni una celda.
+
+---
+
+## ✅ Escrito hoy: `R-28` y `D-37`, más las dos notas editoriales
+
+- **`R-28`** — los totales del 1 a 1 suman **una** etapa. `u1_total_clics` sólo el PRE,
+  `u1_total_vistas` sólo el POST. ⭐ Con el contraejemplo adentro: la suma «obvia» publicaría
+  **1.879 contra 1.472**.
+- **`D-37`** — la pertenencia se declara en `LAMINAS.seccion_id`; vacío deja de significar
+  «hereda». ⚠ **Supersede el comentario del seed, y sólo para `seccion_id`.**
+- **`CONFIG_INFORMES.md` §1.10** (la condición del 1 a 1) y **§4.5 bis** (el puente
+  `MAPEO.notas` → sufijo `_revisar`). ⛔ **§4.4 bis no se tocó.**
+
+⚠ **Y una medición del 21/08 que gobierna el diseño del `_11`:** `slide.duplicate()` **copia las
+notas del orador**, así que la copia **hereda el ancla**. Resolver el modelo por `lamina_id` **no
+mata la N² por sí solo** — la salida es calcular los modelos **una vez por corrida, antes de
+duplicar**. Borrarle las notas a cada copia (0,013 s) **se descarta**: destruiría notas del orador
+legítimas. Instrumento: `medirSiLaCopiaHeredaElAncla()`.
+
+---
+
 ## ✅ Dos de las seis inconsistencias, cerradas
 
 - **5 · el modo de los huecos** (`2026-08-21_5`). El default era el crudo **y no lo había elegido
