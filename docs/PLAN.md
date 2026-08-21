@@ -1014,6 +1014,72 @@ fila, la del medio— **no coincide** con "la primera", ni con "la última", ni 
 distingue las cuatro implementaciones. Uno de dos filas con la buscada adelante habría pasado con
 todas.
 
+**Addendum al `D-30` — 21/08/2026. Dos derogaciones: la rama de `digital` cede, y «sin `id_cuenta`
+falla» dejó de ser cierto el 19/08 sin que nadie lo escribiera.**
+
+El texto de arriba no se edita (`CLAUDE.md` §7). Esto corrige dos de sus afirmaciones, con la
+fecha en que cada una dejó de valer.
+
+**C.1 · «Qué NO cambia» ya no es cierto para `digital`.** Decía que las dos ramas cableadas siguen
+primero y sin tocar. La de `rdv` sí; la de `digital` **cede** desde el `2026-08-21_15`, y la
+condición exacta que la hace ceder son **tres cosas a la vez**:
+
+> la solapa **no** está en `SOLAPAS_CANAL_DIGITAL_`, **no** es `SOLAPA_MAESTRA_DIGITAL_`, y
+> **declara** `SOLAPAS.campo_id_cuenta`.
+
+Cumplidas las tres, la rama de `digital` no resuelve: deja seguir, y la atiende la rama declarativa.
+**Fuera de esas tres, todo queda como estaba** — incluido el fallo `@solapa_digital_desconocida`,
+que se conserva para las solapas que no declaran nada y es el que avisa de una solapa que nadie
+configuró. **Ceder y fallar son dos caminos distintos y los dos siguen existiendo.**
+
+**El orden entre las otras dos no cambia, y el motivo es que no comparten el caso.** La rama de
+`rdv` se activa por `opciones.fila_rdv` —una fila que ya eligió el temario, no una solapa que se
+lee—, así que no hay solapa de `rdv` que pueda declarar `campo_id_cuenta` y llegar a competir. La
+de `digital` sí compartía el caso, y por eso es la que cede.
+
+**Lo que motivó el cambio, medido:** los 24 `u1_` salieron `---` en la corrida `194602` con
+`«FALTA:u1_total_impresiones@solapa_digital_desconocida»`. `CAMPAÑAS_DESGLOCE_DIGITAL` declara
+`campo_id_cuenta = des_id_cuenta` desde el `2026-08-19_1`, **y nunca llegaba a la rama que lo lee**.
+El propio comentario de la rama declarativa lo decía —*"las solapas de `digital` nunca llegan hasta
+acá"*— y era **una descripción del problema, no una decisión**; es la misma familia que
+`Reuniones.gs` afirmando un contrato que el código no cumplía.
+
+⚠ **Se descartó el atajo**, que era agregarla a `SOLAPAS_CANAL_DIGITAL_`: eso la metería en la
+**unión** del Paso 2.4, que responde otra pregunta —unir canales **por cuenta**— y esta solapa tiene
+grano **campaña × plataforma**.
+
+**Alcance, medido antes de escribir el `if`:** exactamente **una** solapa de `digital` declara
+`campo_id_cuenta`, y **ninguna** de las cinco de canal ni la maestra lo declaran. El cambio no le
+mueve el camino a ningún marcador que hoy publique.
+
+**C.2 · El punto 3 está derogado desde el 19/08/2026, y esto es lo primero que lo escribe.** Decía
+*"Sin `id_cuenta`, falla; no cae a leer la solapa entera"*. El código hace lo contrario desde el
+`2026-08-19_1`, donde el usuario eligió que `campo_id_cuenta` **dejara de ser todo-o-nada**: un
+marcador de una solapa que declara, emitido sin ítem, **no falla** — cae al agregado. Esa decisión
+**vivía sólo en un comentario de `Generador.gs`**: grepeada, no estaba en `PLAN.md`, ni en
+`PENDIENTES_consistencia.md`, ni en `BITACORA.md`.
+
+La contención que se declaró en su lugar es un aviso en `origen`:
+
+> `⚠ la solapa declara `campo_id_cuenta = <campo>` y este marcador se emite SIN ítem: se lee como
+> AGREGADO GLOBAL de todas las cuentas (A, 19/08)`
+
+**Se evaluó declararlo por marcador** —una columna en `MARCADORES`— en vez de inferirlo de la
+ausencia; el usuario eligió esta vía.
+
+⛔ **Y la consecuencia nueva, que es de este paso y no del 19/08.** Después de C.1,
+`CAMPAÑAS_DESGLOCE_DIGITAL` es **la primera solapa que llega a esta rama y además puede emitirse
+sin ítem**. Un `u1_` fuera de una lámina de encuentro publicaría la suma de todas las cuentas de la
+solapa — **grande, plausible y equivocada**, que es el modo de falla de siempre.
+
+⛔ **Con un agravante que no estaba previsto y salió de un rojo del control de la Parte B: para las
+solapas de `digital` el aviso NO se emite.** `avisoAgregadoDeclarado` vive en la rama declarativa, y
+la rama de `digital` atrapa el caso sin `id_cuenta` **antes**, con su propio `if`, devolviendo un
+`origen` sin aviso. Así que el riesgo del párrafo anterior **no tiene la contención que la Parte A
+daba por existente**. Queda anotado en `docs/PENDIENTES_consistencia.md`; no se arregla acá porque
+tocar el agregado global de `digital` estaba explícitamente fuera del alcance del paso.
+
+
 ---
 
 **`D-31` — `MAPEO` referencia la columna **por letra**, y documenta en `encabezado` qué título hay

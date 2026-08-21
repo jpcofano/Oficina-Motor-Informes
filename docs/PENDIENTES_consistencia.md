@@ -5936,3 +5936,39 @@ entonces son secciones curadas contra un deck que no existe— o hay láminas qu
 ⭐ **Y el motivo por el que esto se anota en vez de limpiarse:** una sección sin láminas **ya no
 hace nada** desde la Parte C —antes tampoco, pero por otra razón—, así que **no molesta**. Lo que
 molesta es no saber cuáles sobran: borrar una que hacía falta cuesta mucho más que dejar diez que no.
+
+---
+
+### P1 · Un `u1_` fuera de una lámina de encuentro publicaría la suma de todas las cuentas, y para `digital` el aviso que lo delataría NO se emite (21/08/2026)
+
+**Abierto.** Nace del `2026-08-21_15` Parte C, y está en `docs/PLAN.md` como addendum al `D-30`.
+
+**El riesgo.** Después de la Parte B, `digital/CAMPAÑAS_DESGLOCE_DIGITAL` es **la primera solapa que
+llega a la rama por cuenta declarativa y que además puede emitirse sin ítem**. Un `u1_` colocado
+fuera de una lámina de encuentro no falla: cae al agregado y publica **la suma de todas las cuentas
+de la solapa**. Es exactamente el modo de falla de siempre — **grande, plausible y equivocada** —, y
+es el mismo que produjo los doce encuentros de la lámina 5 (`R-15` addendum 1).
+
+**La contención que se declaró el 19/08 y por qué acá no llega.** Cuando `campo_id_cuenta` dejó de
+ser todo-o-nada, se aceptó que el caso sin ítem publicara el agregado **a cambio de un aviso en
+`origen`**: *"la solapa declara `campo_id_cuenta = …` y este marcador se emite SIN ítem: se lee como
+AGREGADO GLOBAL de todas las cuentas"*. Eso hacía el caso **legible**, que era el trato.
+
+⛔ **Para las solapas de `digital` el aviso no se emite**, y esto salió de un rojo del control de la
+Parte B — no se ajustó el fixture. `avisoAgregadoDeclarado` vive en la rama declarativa, y la rama de
+`digital` atrapa el caso sin `id_cuenta` **antes**, con su propio `if (!idCuenta)`, devolviendo un
+`origen` que dice `agregado global de digital/…` **sin ninguna advertencia**. Así que el número sale
+igual de plausible, y **sin nada que lo señale**.
+
+**Por qué no se arregló en el mismo paso.** La regla 3 del prompt decía explícitamente que el
+agregado global de `digital` sin `id_cuenta` **no se toca**. Y no es sólo obediencia: hacer ceder
+también ese caso cambiaría `recortar_por_ventana`, que decide **qué filas ve el consumidor** — un
+valor movido disfrazado de arreglo.
+
+**Qué lo destraba.** Un paso propio que decida una de dos: mover el aviso a un lugar que las dos
+ramas atraviesen, o hacer que la rama de `digital` sin `id_cuenta` también ceda, midiendo primero
+qué le pasa al recorte por ventana de las cinco solapas de canal.
+
+⚠ **Hoy no está disparado**, y eso es lo que lo mantiene en P1 y no en P0: los 24 `u1_` viven todos
+en láminas de la sección `uno_a_uno_comunas`, que itera por encuentro y les da `id_cuenta`. El
+riesgo se activa el día que alguien ponga un `u1_` en una lámina fija.
