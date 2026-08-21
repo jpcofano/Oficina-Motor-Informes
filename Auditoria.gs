@@ -3283,17 +3283,34 @@ function censarTokensSinMarcador_(informeId) {
   var conFila = {};
   leerMarcadores_().forEach(function (m) { conFila[m.marcador] = m.informe_id || ''; });
 
-  // Qué láminas iteran, para poder marcarlas: sus tokens pueden venir del ítem.
-  // ⚠ `leerRegistro_` devuelve un **objeto indexado por la clave**, no un arreglo: se recorren sus
-  // valores. Tratarlo como arreglo no falla —`undefined.forEach` sí, pero un `{}` vacío no— y
-  // dejaría el marcado de láminas que iteran silenciosamente en cero.
+  /* Qué láminas iteran, para poder marcarlas: sus tokens pueden venir del ítem.
+   *
+   * ⚠ `leerRegistro_` devuelve un **objeto indexado por la clave**, no un arreglo: se recorren sus
+   * valores. Tratarlo como arreglo no falla —`undefined.forEach` sí, pero un `{}` vacío no— y
+   * dejaría el marcado de láminas que iteran silenciosamente en cero.
+   *
+   * ⭐ `2026-08-21_6` — **el mapa se indexa por `lamina_id`, no por `orden_plantilla`.**
+   *
+   * Acá decía `iteran[String(l.orden_plantilla)] = l.itera_sobre`, y el seed de `LAMINAS` lo
+   * prohíbe con todas las letras: *"`orden_plantilla` es reportado, NUNCA autoritativo. **Nada del
+   * motor puede decidir en base a ese número**"*. **Con dos láminas del mismo orden, una pisaba a
+   * la otra en silencio** — y ese caso ya existe: medido el 21/08, `L-052` y `L-035` declaran las
+   * dos `orden_plantilla = 6`, porque `L-052` se insertó después y la hoja de `L-035` quedó vieja.
+   *
+   * **No se disparaba** sólo porque `itera_sobre` está vacío en las 52 filas, así que el `if` nunca
+   * entraba. Era un bug esperando la primera fila que lo declarara.
+   *
+   * **La identidad es el `lamina_id`, y en el deck vive en el ancla de las notas** — que es
+   * exactamente para lo que se selló. Una lámina sin ancla no se adivina por posición: se cuenta
+   * aparte y el resumen la nombra. */
   var iteran = {};
+  var sinAncla = [];
   try {
     var laminas = leerRegistro_('LAMINAS', 'lamina_id');
     Object.keys(laminas).forEach(function (k) {
       var l = laminas[k];
       if (l.informe_id === informeId && String(l.itera_sobre || '').trim() !== '') {
-        iteran[String(l.orden_plantilla)] = l.itera_sobre;
+        iteran[String(l.lamina_id || k).trim()] = l.itera_sobre;
       }
     });
   } catch (e) {
@@ -3311,6 +3328,8 @@ function censarTokensSinMarcador_(informeId) {
 
   slides.forEach(function (slide, i) {
     var n = i + 1;
+    // `2026-08-21_6` — la identidad de la lámina sale del ancla, no de su posición.
+    var idLamina = anclaDeLamina_(slide);
     var escondida = esLaminaEscondida_(slide);
     var vistos = {};
     piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
@@ -3326,10 +3345,17 @@ function censarTokensSinMarcador_(informeId) {
     if (!sin.length) return;
     sin.forEach(function (t) { universoSin[t] = true; });
     totalSin += sin.length;
-    sinPorLamina.push({ lamina: n, escondida: escondida, itera: iteran[String(n)] || '', tokens: sin });
+    var itera = idLamina ? (iteran[idLamina] || '') : '';
+    if (!idLamina) sinAncla.push(n);
 
-    Logger.log('  lámina ' + String(n).padStart(2) + (escondida ? ' (ESCONDIDA)' : '') +
-      (iteran[String(n)] ? ' [itera sobre ' + iteran[String(n)] + ']' : '') +
+    sinPorLamina.push({
+      lamina: n, lamina_id: idLamina || '(sin ancla)', escondida: escondida,
+      itera: itera, tokens: sin
+    });
+
+    Logger.log('  lámina ' + String(n).padStart(2) + ' · ' + (idLamina || '⚠ SIN ANCLA') +
+      (escondida ? ' (ESCONDIDA)' : '') +
+      (itera ? ' [itera sobre ' + itera + ']' : '') +
       ' — ' + sin.length + ' de ' + tokens.length + ' sin fila:');
     Logger.log('      ' + sin.join(', '));
   });
@@ -3344,8 +3370,25 @@ function censarTokensSinMarcador_(informeId) {
    * instrumento la nombre en vez de dejar que alguien la deduzca de la lista. */
   var mayor = sinPorLamina.slice().sort(function (a, b) { return b.tokens.length - a.tokens.length; })[0];
   if (mayor) {
-    Logger.log('  la que más concentra: lámina ' + mayor.lamina + ' con ' + mayor.tokens.length +
-      (mayor.escondida ? ' (escondida)' : ''));
+    Logger.log('  la que más concentra: lámina ' + mayor.lamina + ' · ' + mayor.lamina_id +
+      ' con ' + mayor.tokens.length + (mayor.escondida ? ' (escondida)' : ''));
+  }
+
+  /* ⭐ `2026-08-21_6` — **las láminas sin ancla se cuentan y se nombran.**
+   *
+   * Antes este censo resolvía por posición, así que una lámina sin sellar se veía igual que
+   * cualquier otra: se le buscaba el `itera_sobre` por su número y, si alguna fila declaraba ese
+   * número, **se lo asignaba a la lámina equivocada**. Ahora no se adivina — y el hueco se
+   * declara, que es lo que lo vuelve accionable.
+   *
+   * El caso está medido: la lámina 8 de `jm` —la del 1 a 1— no tiene ancla ni fila en `LAMINAS`,
+   * y `verificarLaminas()` lo venía diciendo sin que nadie lo corriera. */
+  if (sinAncla.length) {
+    Logger.log('');
+    Logger.log('  ⚠ ' + sinAncla.length + ' lámina(s) SIN ANCLA en las notas: ' + sinAncla.join(', '));
+    Logger.log('    No están en `LAMINAS` y el censo no puede saber si iteran. **No se resuelven');
+    Logger.log('    por posición**: el `orden_plantilla` es reportado, nunca autoritativo. Correr');
+    Logger.log('    `verificarLaminas()` para el cuadro completo, y sellar antes de configurarlas.');
   }
 
   var conIteracion = sinPorLamina.filter(function (l) { return l.itera; });
