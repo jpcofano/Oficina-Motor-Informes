@@ -581,7 +581,17 @@ function iniciarCorridaDesatendida_(informeId, periodoId) {
     ejecucion: 1,
     arranque_seg: arranque,
     seg_por_asignacion: segPorAsignacion,
-    con_simbolos: true,
+    /* `2026-08-21_5` — **el modo que la ejecución 1 usó DE VERDAD, no uno afirmado acá.**
+     *
+     * ⚠ Decía `true` fijo, y eso era falso justo cuando importaba: la ejecución 1 no pasaba la
+     * opción, así que salía en **crudo**, y las continuaciones leían este `true` y salían en
+     * **símbolos** — dos vocabularios en el mismo deck, sin que nada lo avisara.
+     *
+     * Ahora las dos mitades resuelven lo mismo porque la segunda **hereda lo que la primera
+     * midió**, en vez de volver a declararlo. Es la misma familia que el comentario que afirma un
+     * contrato (`CLAUDE.md` §4): una constante puesta a mano no se entera de que dejó de ser
+     * cierta. */
+    con_simbolos: r.presentacion_faltantes === 'simbolos',
     se_corto: true
   });
 

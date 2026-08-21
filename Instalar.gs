@@ -2321,6 +2321,21 @@ var SEED_CONFIG_DEFAULTS_ = {
   // Un ítem: `seg_por_asignacion` medido en ~6 s (`2026-08-20_10.1`). Es la semilla del primer
   // ítem, que hasta hoy entraba gratis porque el costo previo arrancaba en 0.
   costo_item_seg: '6',
+  /* `2026-08-21_5` — **cómo se rinde un hueco cuando el llamador no lo pide.**
+   *
+   * ⭐ Hasta hoy el default era el crudo **y no lo había elegido nadie**: el modo salía de
+   * `opciones.faltantes_como_raya === true`, y `undefined === true` es `false`. De los cuatro
+   * llamadores de `generarInforme`, dos no pasaban la opción — el ítem de menú y la ejecución 1
+   * de la corrida desatendida—, así que sus decks salían en crudo por omisión.
+   *
+   * Valores: `simbolos` (los cuatro glifos del `2026-08-20_1`) o `crudo` (`«FALTA:token»`).
+   *
+   * ⚠ **Esto es el DEFAULT, no el criterio:** un llamador que pide el modo explícitamente sigue
+   * ganando, en los dos sentidos. Lo que la clave decide es qué pasa cuando nadie pide nada.
+   *
+   * ⚠ Y el borde de siempre: `seedConfigConfig_` **sólo completa celdas vacías**, así que si la
+   * fila ya existe este valor no la repunta. */
+  presentacion_faltantes_defecto: 'simbolos',
   // `_46` (13/08) — la lista blanca de la Barrera 1 sale del código. Era `API_AUTORIZADOS_`
   // en `Api.gs`, un array con un solo mail: sumar a alguien exigía `clasp push`, que es el
   // mismo argumento del umbral de anclaje de más arriba. Es la **pieza 1 de `D-16`**.

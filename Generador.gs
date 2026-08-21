@@ -1251,6 +1251,78 @@ function resolverMarcadores(informeId, opciones) {
  * `resultado` es el objeto que devuelve `resolverMarcadores` para ese token, o `undefined` /
  * `null` cuando no hay fila en `MARCADORES` o cuando el llamador no lo tiene.
  */
+/* ═══════════ `2026-08-21_5` — quién decide el modo, y por qué había que sacarlo del llamador ═══
+ *
+ * ⭐ **Hasta hoy el default real era el crudo, y no lo había elegido nadie.** El modo salía de
+ * `opciones.faltantes_como_raya === true`, y `undefined === true` es `false`: o sea que **un
+ * llamador que no pasaba la opción obtenía el crudo**, no por decisión sino por omisión. Medido el
+ * 21/08: de los cuatro llamadores de `generarInforme`, **dos no la pasan** —el ítem de menú y la
+ * ejecución 1 de la corrida desatendida—.
+ *
+ * ⚠ **El caso peor es la desatendida**, porque las dos mitades no coinciden: la ejecución 1 escribía
+ * en crudo y las continuaciones en símbolos, **sobre el mismo deck**. El deck salía con dos
+ * vocabularios y nada lo avisaba.
+ *
+ * ⚠ **Y el `=== true` NO era un descuido: era una guarda deliberada** —la opción entra desde un
+ * `<select>`, desde un JSON de la API y desde una llamada a mano, y un `"false"` de query string
+ * **es truthy**—. Lo que faltaba no era aflojarla, sino **distinguir «no vino» de «vino en false»**,
+ * que con `=== true` se ven idénticos. Eso es exactamente lo que hace `modoFaltantesDe_`: el
+ * ausente cae al default de `CONFIG`, y el presente se interpreta **explícitamente**, con la guarda
+ * del string intacta y ahora también en el otro sentido (`"true"` como texto ya no significa crudo).
+ */
+
+/** Sólo si `CONFIG` no dice nada. Los símbolos son el default desde el `2026-08-20_1`. */
+var MODO_FALTANTES_DEFECTO_ = 'simbolos';
+
+function modoFaltantesDefecto_() {
+  var v = normalizarModoFaltantes_(leerConfig().presentacion_faltantes_defecto);
+  if (v !== null) return v;
+  return MODO_FALTANTES_DEFECTO_ === 'simbolos';
+}
+
+/**
+ * Un valor suelto → `true` (símbolos), `false` (crudo) o `null` (no dice nada).
+ *
+ * **`null` es el tercer estado y es el que faltaba.** Sin él, «no vino» y «vino en false» son la
+ * misma cosa y el default no tiene dónde aplicarse.
+ */
+function normalizarModoFaltantes_(v) {
+  if (v === true) return true;
+  if (v === false) return false;
+  if (v === undefined || v === null) return null;
+  var s = String(v).trim().toLowerCase();
+  if (s === '') return null;
+  if (s === 'true' || s === '1' || s === 'si' || s === 'sí' || s === 'simbolos' || s === 'símbolos') return true;
+  if (s === 'false' || s === '0' || s === 'no' || s === 'crudo') return false;
+  return null;   // texto que nadie reconoce: no se adivina, cae al default
+}
+
+/**
+ * El modo de esta corrida. Devuelve `{ simbolos, origen }` — **y el `origen` no es decoración**:
+ * *"lo eligió el llamador"* y *"salió del default"* son dos cosas distintas, y un reporte que no
+ * las separa hace que nadie pueda saber si la opción llegó.
+ */
+function modoFaltantesDe_(opciones) {
+  opciones = opciones || {};
+  var pedido = normalizarModoFaltantes_(opciones.faltantes_como_raya);
+
+  if (pedido === null) {
+    var porDefecto = modoFaltantesDefecto_();
+    var vino = Object.prototype.hasOwnProperty.call(opciones, 'faltantes_como_raya') &&
+      opciones.faltantes_como_raya !== undefined && opciones.faltantes_como_raya !== null &&
+      String(opciones.faltantes_como_raya).trim() !== '';
+    return {
+      simbolos: porDefecto,
+      origen: vino
+        ? '⚠ el llamador mandó "' + opciones.faltantes_como_raya + '", que no se reconoce — se usó ' +
+          'el default de CONFIG.presentacion_faltantes_defecto'
+        : 'default de CONFIG.presentacion_faltantes_defecto (el llamador no lo pidió)'
+    };
+  }
+
+  return { simbolos: pedido, origen: 'lo pidió el llamador' };
+}
+
 function textoFaltante_(token, resultado, conSimbolos) {
   if (conSimbolos !== true) return '«FALTA:' + token + '»';
 
@@ -2636,15 +2708,17 @@ function generarInforme(informeId, periodoId, opciones) {
 
 function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   opciones = opciones || {};
-  // `=== true` y no truthy: la opción entra desde un `<select>`, desde un JSON de la API y
-  // desde una llamada a mano. Un `"false"` de un query string es truthy y encendería el modo
-  // justo por el camino en que nadie lo está mirando.
-  // ⚠ La clave del pedido sigue llamándose `faltantes_como_raya` y **no se renombra acá**:
-  // `generarInforme` es invocable por la API por nombre (`fn=generarInforme`, `Api.gs`), así que
-  // esa clave es formato de cable y cambiarla rompería a un llamador que no está en este repo.
-  // El nombre local sí dice lo que la opción significa desde el `2026-08-20_1`: no elige una
-  // raya, elige el juego de cuatro símbolos contra el crudo.
-  var conSimbolos = opciones.faltantes_como_raya === true;
+  /* `2026-08-21_5` — **el modo lo resuelve `modoFaltantesDe_`, no este llamador.** Acá vivía
+   * `opciones.faltantes_como_raya === true`, que hacía del crudo el default por omisión; el motivo
+   * y la medición están arriba de esa función.
+   *
+   * ⚠ La clave del pedido sigue llamándose `faltantes_como_raya` y **no se renombra**:
+   * `generarInforme` es invocable por la API por nombre (`fn=generarInforme`, `Api.gs`), así que esa
+   * clave es formato de cable y cambiarla rompería a un llamador que no está en este repo. El
+   * nombre local sí dice lo que la opción significa desde el `2026-08-20_1`: no elige una raya,
+   * elige el juego de cuatro símbolos contra el crudo. */
+  var modoFaltantes = modoFaltantesDe_(opciones);
+  var conSimbolos = modoFaltantes.simbolos;
   // T2.1.1 — el reloj es el único de la corrida. Ojo: la plataforma cuenta desde `doPost` o
   // desde el trigger del menú, no desde esta línea; lo que gasta el llamador antes de entrar
   // ya está descontado en el default de `presupuesto_corrida_seg`.
@@ -3197,6 +3271,10 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
     // todos los datos se leen igual una semana después, que es justo cuando alguien lo va a
     // mirar sin acordarse de cómo lo generó.
     presentacion_faltantes: conSimbolos ? 'simbolos' : '«FALTA:token»',
+    // `2026-08-21_5` — **de dónde salió ese modo**, que es una pregunta distinta de cuál fue.
+    // Un deck en crudo porque alguien lo pidió y uno en crudo porque el llamador se olvidó de
+    // pasar la opción se ven idénticos, y mandan a trabajos opuestos.
+    presentacion_faltantes_origen: modoFaltantes.origen,
     tokens: {
       en_plantilla: mapa.lista.length,
       reemplazados: reemplazados,
