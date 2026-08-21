@@ -1875,7 +1875,13 @@ variante, hay que resolver antes cómo un marcador lee **otra solapa según el t
 mecanismo que **hoy no existe** (medido en el `_3`: la solapa está clavada en la fila de
 `MARCADORES` y `opciones.hoja_rdv` es una guarda, no un selector).
 
-**D5 · ¿De qué solapa salen los 32 `u1_`?** No tienen **ninguna** fila en `MARCADORES`, y ninguna
+**D5 · ~~¿De qué solapa salen los 32 `u1_`?~~ — ⚠ ESTE BLOQUE ESTÁ MAL. Ver la auditoría del
+21/08 al final de este documento: la solapa **ya estaba decidida desde el 14/08**
+(`digital/CAMPAÑAS_DESGLOCE_DIGITAL`, `D-32`) y hay seis valores validados como `exacto`
+(`V-21`…`V-26`). Lo que falta es el `MAPEO` de esa solapa. Se deja el texto original porque el
+error de método —afirmar una ausencia sin greppear los documentos— es lo que vale.**
+
+~~D5 · ¿De qué solapa salen los 32 `u1_`?** No tienen **ninguna** fila en `MARCADORES`, y ninguna
 solapa de `rdv` se llama algo parecido a *uno a uno* — las dos con `uso=fuente` son
 `RVD JM-CM - ES` y `RDV_otros_ministros`. ⚠ **Sin esto la lámina sigue en blanco aunque se selle y
 se le declare sección.**
@@ -5542,3 +5548,77 @@ usuario: hoy está declarada como *hereda*.
   `con_valor` muere con la ejecución. **No borrarlo.**
 - **`jm-20260821-100211` nunca cerró** (la que quedó abierta; `094731` sí cerró, contra lo que se
   documentó a la mañana). Hubo **cuatro** corridas el 21/08, no dos.
+
+---
+
+## 2026-08-21 · ⚠ Auditoría de la memoria: tres afirmaciones mías sobre los `u1_` estaban mal
+
+**Pedido del usuario, 21/08: *"audita la memoria, mucho de esto ya estaba"*. Tenía razón.** Lo que
+sigue corrige lo que este mismo documento afirmó horas antes en el bloque `D5`.
+
+### Lo que ya estaba escrito, y yo no busqué antes de afirmar
+
+| ya estaba | dónde | desde |
+|---|---|---|
+| ⭐ **La solapa fuente de los `u1_*` es `digital/CAMPAÑAS_DESGLOCE_DIGITAL`** | `PLAN.md` `D-32` y este documento, entrada del 14/08 | **14/08/2026** |
+| Que esa decisión es **del usuario** y que el sembrador la revirtió una vez | ídem — `D-32` existe **por** ese incidente | 14/08 |
+| **Seis valores ya validados como `exacto`** contra esa solapa | `docs/casos_validacion_2026-08-19.csv`, `V-21` a `V-26` | 19/08 |
+| Que `u1_bench_*` **no se sabe de dónde sale** | `CONFIG_INFORMES.md` §2.1, marcado `[?]` | — |
+| Que la lámina de `secco` con `u1_bench_*` tiene **tres salidas y ninguna elegida** | `CONFIG_INFORMES.md` §1.9 y `PLAN.md` | — |
+| Que el enganche **reunión → sus campañas, pre y post**, *"no se diseñó"* | `BITACORA.md`, 09/08 | 09/08 |
+| ⭐ Decisión del usuario: **el temario emite DOS líneas cuando el encuentro tiene pre y post**, no una con `"(pre + post)"` | `BITACORA.md` | — |
+
+### Las tres afirmaciones mías que caen
+
+**1 · ❌ *"`looker/DIGITAL` sólo tiene mapeada `Impresiones`; hay que mapear clics, vistas, ctr,
+vtr, alcance y frecuencia."*** — **Base equivocada.** La fuente de los `u1_` no es `looker/DIGITAL`:
+es **`digital/CAMPAÑAS_DESGLOCE_DIGITAL`**. Llegué a `looker/DIGITAL` por parecido con `imp_meta` y
+`gcba_imp_*` en vez de buscar en los documentos, que es exactamente el error que `CLAUDE.md` §4
+describe: *dos cosas que se llaman igual no son la misma cosa*, y un "no está" **sin nombrar el
+ámbito en el que se buscó** no lo puede verificar nadie.
+
+**Lo que sí es cierto, y es el hallazgo que queda:** `digital/CAMPAÑAS_DESGLOCE_DIGITAL` está en
+`SOLAPAS` con `uso = fuente`, y **no tiene NI UNA fila en `MAPEO`**. Las columnas que los casos de
+validación nombran —`Impresiones`, `Clics`, `Visualizaciones`— y las claves `Id cuentas` y
+`Plataforma` **no están mapeadas**. Ése es el trabajo real.
+
+**2 · ❌ *"Falta el corte `pre`/`post`, que hoy no es una dimensión declarada en ningún lado."***
+— **No es una dimensión y no falta: es `REUNIONES.etapa`, que existe desde siempre.** `pre` y `post`
+son **dos filas de temario** con **dos `Id cuentas` distintos**, no un corte sobre una fila.
+
+⚠ **Y la fila cargada hoy contradice una decisión ya tomada.** El temario de `agosto_14_20` tiene
+**una** fila con `etapa` **vacía** y el texto `"(pre + post)"`, cuando la decisión del usuario dice
+que **el proponedor emite DOS líneas**. Consecuencia medible: `comunicaciones_post` filtra
+`etapa=post`, así que **emite cero ítems aunque `mostrar` esté tildado**.
+
+**3 · ❌ *"Falta cómo se restringe al encuentro: `imp_*` corta por ámbito, no por campaña ni por
+reunión."*** — **El mecanismo existe y es el que `digital` ya usa.** La clave de los casos
+validados es `Id cuentas=3354-JULJDGAG`, y ése es exactamente el `opciones.id_cuenta` que
+`itemsDeSeccion_` ya pasa por ítem (`if (e.idCuenta) opciones.id_cuenta = e.idCuenta`). No hay nada
+que inventar.
+
+### Lo que de verdad falta para los 32 `u1_`
+
+| grupo | n | estado real |
+|---|---|---|
+| `u1_pre_*` / `u1_post_*` | 20 | fuente y claves **decididas y validadas**; falta el `MAPEO` de esa solapa y las filas de `MARCADORES` |
+| `u1_bench_*` | 6 | ⛔ **pregunta abierta desde antes** (`CONFIG_INFORMES` §2.1): ¿fijos del año o recalculados? |
+| `u1_total_*` | 5 | sin declarar: presumiblemente suma de las tres plataformas — **no se asume** |
+| `u1_fecha_fin` | 1 | sin declarar |
+
+⚠ **Y una divergencia de nombres que hay que mirar antes de cablear:** los casos validados proponen
+`u1_google_impresiones` / `u1_meta_clics`; **la plantilla de hoy tiene `u1_pre_meta_impresiones` y
+`u1_post_meta_impresiones`**. La columna del CSV se llama `token_propuesto` — eran propuestas, no
+tokens existentes. **Los nombres de la plantilla mandan** (`C-01`), pero la diferencia no es
+cosmética: los de la plantilla meten `pre`/`post` **adentro del nombre**, que es el estilo anterior
+a `D-33`.
+
+### La lección, que es de método y no de este caso
+
+⭐ **Antes de declarar que algo "falta", greppear los documentos.** `CLAUDE.md` §3 ya lo pide para
+las correcciones —*"antes de pedir que se corrija algo en un archivo existente, grepearlo primero"*—
+y acá se ve que vale igual para **afirmar una ausencia**. Las tres afirmaciones se escribieron
+mirando sólo `MAPEO` y `MARCADORES`, que son el estado, sin mirar `PLAN.md`, `CONFIG_INFORMES.md`
+ni los casos de validación, que son la **decisión**. **El estado dice qué hay; los documentos dicen
+qué se decidió, y una decisión sin implementar se ve exactamente igual que una decisión que nadie
+tomó.**
