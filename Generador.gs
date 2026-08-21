@@ -1882,10 +1882,48 @@ function slidesModeloDe_(presentacion, familias) {
  *
  * Devuelve `{ asignaciones: [{ slide, item }], reporte: [...] }` con `slide` 1-based.
  */
-function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, seccionesElegidas) {
+function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, seccionesElegidas, reloj) {
   var asignaciones = [];
   var reporte = [];
   var reclamadas = {};
+
+  /* ⭐ `2026-08-21_1` A.2 — **el control del reloj DENTRO de la etapa más cara.**
+   *
+   * Ésta es la etapa que se pasó de los 150 s el 21/08 sin consultar el reloj ni una vez, y no
+   * alcanza con un control antes de entrar: la primera sección paga el arranque entero —anclaje
+   * y unión digital, 70-80 s— y las siguientes pagan duplicación, que es una llamada a la API
+   * de Slides por asignación. Son dos gastos de naturaleza distinta y los dos viven acá.
+   *
+   * **Dos controles, y hacen falta los dos:**
+   *
+   *  1. **Después de la primera lectura** — el arranque ya se pagó y lo único que se puede
+   *     decidir es no seguir. Si se pasó, el corte sale con clase `arranque_no_entra`, que es
+   *     un **diagnóstico** —*"la corrida no tenía con qué empezar"*— y no un corte genérico.
+   *  2. **Antes de cada sección siguiente**, contra lo que costó la anterior. Mismo criterio
+   *     que el bucle de ítems: el costo es un dato de esta corrida, no una constante.
+   *
+   * ⚠ **Se corta ENTRE secciones, nunca adentro de una.** Entre el `duplicate()` y el
+   * `remove()` de los modelos hay una ventana en la que las copias sin pintar son
+   * indistinguibles de un modelo, y cortar ahí devuelve la expansión al cuadrado que describe
+   * `2026-08-20_10` A.3. Una sección que no se expande queda **exactamente** en el estado que
+   * el motor ya sabe manejar —la misma que una sección destildada en el panel—: su bloque
+   * modelo queda como está y sus tokens caen a la pasada de tokens fijos.
+   *
+   * ⚠ **El arranque se descuenta del costo de la sección que lo pagó, y sin eso la estimación
+   * miente por 80 s.** La primera sección que lee paga anclaje + unión + su propia duplicación;
+   * las siguientes pagan **sólo** duplicación, porque el caché ya tiene lo caro. Estimar la
+   * segunda con lo que costó la primera la haría cortar siempre, y el corte diría *«no entra»*
+   * sobre trabajo que entra de sobra. Por eso el descuento es **por iteración** y no una
+   * variable que haya que acordarse de poner en cero.
+   *
+   * ⚠ **Y lo que esto deja abierto, dicho acá porque es donde se va a notar:** una sección que
+   * no se expandió **no tiene asignaciones**, así que no entra al plan de la corrida
+   * desatendida, que se escribe desde `cont.asignaciones`. La reanudación no la va a ver. Está
+   * anotado en `docs/PENDIENTES_consistencia.md` y **no se arregla acá**: tocarlo es tocar el
+   * mecanismo desatendido, que este paso declara fuera de alcance. */
+  var corteExpansion = null;
+  var costoUltimaSeccionSeg = 0;
+  var arranqueMedido = false;
 
   // `_27` bloque 3 — qué secciones entran en ESTA corrida.
   //
@@ -1906,6 +1944,36 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
   }
 
   seccionesRepetiblesDe_(informeId).forEach(function (seccion) {
+    // Ya se cortó: las que quedan **se reportan** con ese motivo, `D-21`. Un corte que hace
+    // desaparecer secciones del reporte es indistinguible de una sección que nadie configuró.
+    if (corteExpansion) {
+      reporte.push({
+        seccion: seccion.seccion_id, ok: true, omitida: true, items: [], excluidos: [],
+        motivo: 'no se expandió: la corrida se cortó por presupuesto en la etapa 1 (' +
+          corteExpansion.clase + '). El bloque modelo queda como está y sus tokens caen a la ' +
+          'pasada de tokens fijos'
+      });
+      return;
+    }
+
+    // Checkpoint · antes de esta sección, contra lo que costó la anterior.
+    if (reloj) {
+      corteExpansion = controlDeEtapa_(reloj, '1 · expandir secciones repetibles',
+        costoUltimaSeccionSeg, CORTE_PRESUPUESTO_, {
+          item: seccion.seccion_id,
+          motivo: 'expandir la sección "' + seccion.seccion_id + '" se estimó en ' +
+            costoUltimaSeccionSeg + ' s (lo que costó la anterior) y quedaban ' +
+            entraEnElPresupuesto_(reloj, 0).disponible + ' s por encima de la reserva'
+        });
+      if (corteExpansion) {
+        reporte.push({
+          seccion: seccion.seccion_id, ok: true, omitida: true, items: [], excluidos: [],
+          motivo: corteExpansion.motivo
+        });
+        return;
+      }
+    }
+
     // `D-21` — una sección que queda afuera **se reporta**, nunca desaparece. Sus slides
     // modelo se quedan como están y sus tokens caen a la pasada de tokens fijos, que es
     // exactamente lo que ya pasa con una sección sin ítems: no es un camino nuevo.
@@ -1923,7 +1991,34 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
     var familias = familiasDeSeccion_(seccion);
     var modelos = slidesModeloDe_(presentacion, familias);
 
+    var t0Items = new Date().getTime();
+    // Cuánto de ESTA sección fue arranque. Por iteración: no hay nada que poner en cero después.
+    var segArranqueAca = 0;
     var resultado = itemsDeSeccion_(seccion, informeId, ventanaInforme);
+
+    /* ⭐ El control del arranque. Va **acá y no antes**: `itemsDeSeccion_` es quien paga
+     * `anclarEncuentros` y `unirDigitalPorCuenta`, y el caché los cobra una sola vez por
+     * corrida, así que el arranque es exactamente lo que costó esta primera llamada.
+     *
+     * `estimadoSeg = 0` porque la pregunta ya no es *"¿entra lo que viene?"* sino **"¿ya me
+     * pasé?"**. Es indivisible —el anclaje no acepta un subconjunto—, así que la única
+     * decisión posible es no seguir. Y el corte sale con nombre propio: *"el arranque no
+     * entra en el techo"* manda a subir el techo o a partir el arranque; *"me quedé sin
+     * presupuesto"* manda a correr de nuevo. Son dos arreglos distintos. */
+    if (reloj && !arranqueMedido) {
+      arranqueMedido = true;
+      segArranqueAca = Math.round((new Date().getTime() - t0Items) / 1000);
+      corteExpansion = controlDeEtapa_(reloj, '1 · expandir secciones repetibles', 0, CORTE_ARRANQUE_,
+        { item: seccion.seccion_id });
+      if (corteExpansion) {
+        reporte.push({
+          seccion: seccion.seccion_id, ok: true, omitida: true, items: [], excluidos: [],
+          motivo: corteExpansion.motivo
+        });
+        return;
+      }
+    }
+
     if (!resultado.ok) {
       reporte.push({ seccion: seccion.seccion_id, ok: false, motivo: resultado.motivo, slides_modelo: modelos.map(function (i) { return i + 1; }) });
       return;
@@ -2033,9 +2128,13 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
       // muchos ítems.
       seg_expansion: Math.round((new Date().getTime() - t0Seccion) / 1000)
     });
+
+    // Lo que costó ESTA sección **sin el arranque** es lo que se estima para la siguiente.
+    costoUltimaSeccionSeg = Math.max(0,
+      Math.round((new Date().getTime() - t0Seccion) / 1000) - segArranqueAca);
   });
 
-  return { asignaciones: asignaciones, reporte: reporte };
+  return { asignaciones: asignaciones, reporte: reporte, corte: corteExpansion };
 }
 
 /**
@@ -2185,6 +2284,38 @@ function costoResolucionEtapa4Seg_() {
   return isNaN(valor) || valor <= 0 ? COSTO_RESOLUCION_ETAPA4_SEG_DEFECTO_ : valor;
 }
 
+/* `2026-08-21_1` A.1 — los tres costos que faltaban, y van a `CONFIG` por el mismo motivo que
+ * los tres de arriba (`CLAUDE.md` §2): bajarlos desde la hoja es la forma barata de probar el
+ * corte de cada etapa sin esperar a que la plataforma mate la corrida. */
+
+/** El arranque: anclaje (~50 s) + unión digital (~27 s), medidos el 20/08 en 70-80 s juntos. */
+var COSTO_ARRANQUE_SEG_DEFECTO_ = 80;
+/** El mapa token→objectId. El comentario de `barrerTokensNoAlcanzados_` lo mide en 10-27 s. */
+var COSTO_MAPA_SEG_DEFECTO_ = 25;
+/**
+ * ⭐ El costo de **un** ítem, y existe para tapar un agujero concreto: `costoUltimoItemSeg`
+ * arrancaba en `0`, así que **el primer ítem entraba siempre**, aunque quedaran 2 s sobre la
+ * reserva. Un ítem cuesta ~6 s medidos (`seg_por_asignacion`, `2026-08-20_10.1`), así que un
+ * primer ítem gratis es hasta 6 s de sobregiro que nadie autorizó. El valor de la corrida sigue
+ * pisando a éste en cuanto hay una observación propia: esto es la semilla, no el criterio.
+ */
+var COSTO_ITEM_SEG_DEFECTO_ = 6;
+
+function costoArranqueSeg_() {
+  var valor = Number(leerConfig().costo_arranque_seg);
+  return isNaN(valor) || valor <= 0 ? COSTO_ARRANQUE_SEG_DEFECTO_ : valor;
+}
+
+function costoMapaSeg_() {
+  var valor = Number(leerConfig().costo_mapa_seg);
+  return isNaN(valor) || valor <= 0 ? COSTO_MAPA_SEG_DEFECTO_ : valor;
+}
+
+function costoItemSeg_() {
+  var valor = Number(leerConfig().costo_item_seg);
+  return isNaN(valor) || valor <= 0 ? COSTO_ITEM_SEG_DEFECTO_ : valor;
+}
+
 /**
  * El único lugar del flujo que hace cuentas de tiempo. Devuelve si entra un trabajo que se
  * estima en `costoSeg`, dejando la reserva del cierre intacta.
@@ -2192,8 +2323,23 @@ function costoResolucionEtapa4Seg_() {
  * `reloj` es `{ t0, presupuesto, reserva }`, armado una sola vez al entrar a
  * `generarInforme`. Ninguna otra parte arranca un cronómetro por su lado.
  */
-function relojDeCorrida_() {
-  return { t0: new Date().getTime(), presupuesto: presupuestoCorridaSeg_(), reserva: reservaCierreSeg_() };
+/**
+ * `2026-08-21_1` A.3 — **`t0` entra por parámetro.** El arranque del cronómetro pasó a la
+ * primera línea de `generarInforme`, que es la primera línea de la ejecución; acá se lo recibe
+ * para no tener dos criterios de "cuándo empieza la corrida". Sin argumento sigue arrancando
+ * ahora, que es lo que hacen los llamadores de prueba.
+ *
+ * ⚠ **Lo que esto NO arregla, y hay que saberlo:** la plataforma cuenta desde `doPost`, desde
+ * el trigger o desde el click del panel, no desde esta línea. Lo que el llamador gasta **antes**
+ * de entrar —el lock y la lectura del plan en `correrUnaEjecucion_`, por ejemplo— sigue fuera
+ * del reloj y sale del colchón entre el techo y el muro.
+ */
+function relojDeCorrida_(t0) {
+  return {
+    t0: t0 || new Date().getTime(),
+    presupuesto: presupuestoCorridaSeg_(),
+    reserva: reservaCierreSeg_()
+  };
 }
 
 function segundosGastados_(reloj) {
@@ -2204,6 +2350,136 @@ function entraEnElPresupuesto_(reloj, costoSeg) {
   var gastado = (new Date().getTime() - reloj.t0) / 1000;
   var disponible = reloj.presupuesto - reloj.reserva - gastado;
   return { entra: disponible >= costoSeg, disponible: Math.round(disponible), gastado: Math.round(gastado) };
+}
+
+/* ═══════════════════ `2026-08-21_1` — el control de etapa ═══════════════════
+ *
+ * ⭐ **Un presupuesto que sólo se consulta en el bucle no protege las etapas que están fuera del
+ * bucle.** Hasta el 21/08 el reloj se miraba en exactamente **dos** sitios —antes de cada ítem de
+ * la etapa 3 y antes de la etapa 4—, así que el arranque (anclaje + unión digital + duplicación),
+ * el mapa de tokens y el cierre corrían **sin ningún punto de control**: ninguno podía cortar y
+ * ninguno podía siquiera informar que se había pasado.
+ *
+ * **El síntoma medido, corrida `jm` del 21/08 por la mañana:** `CONFIG.presupuesto_corrida_seg`
+ * estaba en **150** —quedó bajo de la prueba del mecanismo desatendido de la noche anterior— y la
+ * corrida llegó igual al muro duro de Apps Script, **360 s**. Más del doble del techo declarado.
+ * No es que hubiera más trabajo del que entra en seis minutos: es que **el presupuesto no se
+ * consultaba** en el tramo donde se gastó.
+ *
+ * ⚠ **Y el corte que muere en el muro no deja nada**: sin barrida, sin `FALTANTES`, sin cerrar la
+ * fila de `CORRIDAS` y con el deck sellado `[en proceso]` para siempre.
+ *
+ * **La clase del corte importa tanto como el corte.** *"El arranque no entra en el techo"* y
+ * *"me quedé sin presupuesto en el medio"* mandan a trabajos opuestos: el primero se arregla
+ * subiendo el techo o partiendo el arranque, el segundo corriendo de nuevo o eligiendo menos
+ * secciones. Un corte genérico los confunde, que es la misma familia del `/////` que no
+ * distinguía *«nadie lo cableó»* de *«no se llegó»*.
+ */
+
+/** Clases de corte. No son cosmética: cada una manda a un arreglo distinto. */
+var CORTE_PRESUPUESTO_ = 'presupuesto';
+var CORTE_ARRANQUE_ = 'arranque_no_entra';
+
+/**
+ * ⭐ **Las etapas que TIENEN que llevar control, declaradas en un solo lugar.**
+ *
+ * La lista es la **declaración**; las llamadas a `controlDeEtapa_` en el código son la
+ * **implementación**. Son dos cosas distintas a propósito: `controlPorEtapa_()` compara una
+ * contra la otra, así que sacar un control del flujo hace caer su afirmación (`CLAUDE.md` §4 —
+ * un instrumento no puede depender de lo que el cambio modifica).
+ *
+ * ⚠ **El cierre no está y no es un olvido:** barrida, `FALTANTES`, `CORRIDAS` y sello **tienen
+ * que correr siempre**, cortada la corrida o no. Lo que lo protege no es un punto de control sino
+ * la reserva, y por eso el cierre se **mide** (`presupuesto.cierre_seg`) en vez de controlarse.
+ */
+var ETAPAS_CON_CONTROL_ = [
+  '1 · expandir secciones repetibles',
+  '2 · mapa token→objectId',
+  '3 · pasada por ítem',
+  '4 · tokens fijos'
+];
+
+/**
+ * El punto de control de una etapa. `null` = entra y la etapa arranca; un objeto `corte` = no
+ * entra, y la corrida sale **declarada** en vez de morir en el muro.
+ *
+ * `estimadoSeg` es lo que se estima que cuesta la etapa. Con `0` la pregunta es la otra —
+ * *"¿ya me pasé?"*—, que es la forma del control del arranque: ahí el gasto ya ocurrió y lo
+ * único que se puede hacer es no seguir.
+ */
+function controlDeEtapa_(reloj, etapa, estimadoSeg, clase, contexto) {
+  var chequeo = entraEnElPresupuesto_(reloj, estimadoSeg);
+  if (chequeo.entra) return null;
+
+  contexto = contexto || {};
+  clase = clase || CORTE_PRESUPUESTO_;
+
+  var motivo = (clase === CORTE_ARRANQUE_)
+    ? 'el arranque de la corrida —anclaje, unión digital y duplicación— gastó ' + chequeo.gastado +
+      ' s y el techo útil es ' + (reloj.presupuesto - reloj.reserva) + ' s (techo ' + reloj.presupuesto +
+      ' menos reserva ' + reloj.reserva + '). **El arranque no entra en el techo**: no es que la ' +
+      'corrida se haya quedado sin tiempo en el medio, es que no tenía con qué empezar. Lo destraba ' +
+      'subir el techo o partir el arranque, no correr de nuevo.'
+    : 'la etapa "' + etapa + '" se estimó en ' + estimadoSeg + ' s y quedaban ' + chequeo.disponible +
+      ' s por encima de la reserva';
+
+  return {
+    etapa: etapa,
+    clase: clase,
+    item: contexto.item || '',
+    items_emitidos: contexto.items_emitidos || 0,
+    items_sin_emitir: contexto.items_sin_emitir || 0,
+    segundos: chequeo.gastado,
+    disponible_seg: chequeo.disponible,
+    estimado_seg: estimadoSeg,
+    motivo: contexto.motivo || motivo
+  };
+}
+
+/**
+ * ⭐ **Qué etapas declaradas tienen efectivamente su control en el flujo.** Es el control
+ * positivo de la Parte B.4: se saca una llamada a `controlDeEtapa_` y esta función lo dice.
+ *
+ * Lee el **código fuente** de las dos funciones que llevan el flujo (`Function.prototype
+ * .toString`), no su comportamiento: un control que se pregunta *"¿cortó?"* necesitaría una
+ * corrida real de seis minutos por etapa, y eso no es un control que alguien vaya a correr.
+ *
+ * Devuelve `{ etapas: [{etapa, tiene}], con_control, total }` — **con el `n de m` adentro**,
+ * porque «ningún problema» y «no se probó nada» se ven idénticos en un log sin conteo.
+ */
+function controlPorEtapa_(fuenteOpcional) {
+  // El parámetro existe **sólo para el control negativo** de la Parte B: sin él no habría forma
+  // de probar que este instrumento sabe decir «no». Un instrumento que siempre dice «sí» y del
+  // que nadie vio un «no» no es evidencia de nada.
+  var fuente = (typeof fuenteOpcional === 'string')
+    ? fuenteOpcional
+    : String(generarInformeConCache_) + '\n' + String(duplicarBloquesRepetibles_);
+  var etapas = ETAPAS_CON_CONTROL_.map(function (nombre) {
+    var patron = new RegExp("controlDeEtapa_\\(\\s*reloj\\s*,\\s*'" +
+      nombre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + "'");
+    return { etapa: nombre, tiene: patron.test(fuente) };
+  });
+  return {
+    etapas: etapas,
+    con_control: etapas.filter(function (e) { return e.tiene; }).length,
+    total: etapas.length
+  };
+}
+
+/**
+ * ⚠ **A.4 — la reserva tiene que cubrir el cierre COMPLETO**: barrida, `FALTANTES`, `CORRIDAS`
+ * y sello. Si no lo cubre, el corte ordenado igual muere en el muro y toda la maquinaria de
+ * corte no sirve para nada.
+ *
+ * **No se elige un número: se mide el cierre y se compara.** `presupuesto.cierre_seg` sale de
+ * cada corrida y este aviso es lo que hace que un desajuste se vea en vez de descubrirse la
+ * próxima vez que la corrida muera en el muro.
+ */
+function avisoDeReserva_(cierreSeg, reservaSeg) {
+  if (!(cierreSeg > 0) || cierreSeg <= reservaSeg) return '';
+  return '⚠ EL CIERRE NO ENTRA EN LA RESERVA: costó ' + cierreSeg + ' s y CONFIG.reserva_cierre_seg ' +
+    'es ' + reservaSeg + ' s. Un corte ordenado con esta reserva vuelve a morir en el muro. ' +
+    'Subir `reserva_cierre_seg` a por lo menos ' + (Math.ceil(cierreSeg / 10) * 10 + 10) + '.';
 }
 
 /**
@@ -2340,20 +2616,25 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos, hub
  * afuera es `presentacion_faltantes`, y ése **sí** cambió de valor: `'simbolos'`.
  */
 function generarInforme(informeId, periodoId, opciones) {
+  /* `2026-08-21_1` A.3 — **el cronómetro arranca en la primera línea de la ejecución.** Antes
+   * arrancaba adentro de `generarInformeConCache_`, después de abrir los dos cachés. Medido, la
+   * diferencia es de milésimas y **no es la causa de nada**; se mueve igual porque un reloj que
+   * arranca después del gasto real es una premisa que hay que volver a verificar cada vez. */
+  var t0Corrida = new Date().getTime();
   abrirCacheRegistros_();
   // `2026-08-20_11` — y el de los datos crudos de las solapas de las bases, que es el que se lleva
   // los 200 s de la pasada por ítem: `leerFuente` se llama una vez por MARCADOR y hasta hoy cada
   // llamada releía la solapa entera. Mismo `try/finally` y mismo alcance que el otro.
   abrirCacheDatosHoja_();
   try {
-    return generarInformeConCache_(informeId, periodoId, opciones);
+    return generarInformeConCache_(informeId, periodoId, opciones, t0Corrida);
   } finally {
     cerrarCacheDatosHoja_();
     cerrarCacheRegistros_();
   }
 }
 
-function generarInformeConCache_(informeId, periodoId, opciones) {
+function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   opciones = opciones || {};
   // `=== true` y no truthy: la opción entra desde un `<select>`, desde un JSON de la API y
   // desde una llamada a mano. Un `"false"` de un query string es truthy y encendería el modo
@@ -2364,10 +2645,11 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
   // El nombre local sí dice lo que la opción significa desde el `2026-08-20_1`: no elige una
   // raya, elige el juego de cuatro símbolos contra el crudo.
   var conSimbolos = opciones.faltantes_como_raya === true;
-  // T2.1.1 — el reloj arranca acá y es el único de la corrida. Ojo: la plataforma cuenta
-  // desde `doPost` o desde el trigger del menú, no desde esta línea; lo que gasta el
-  // llamador antes de entrar ya está descontado en el default de `presupuesto_corrida_seg`.
-  var reloj = relojDeCorrida_();
+  // T2.1.1 — el reloj es el único de la corrida. Ojo: la plataforma cuenta desde `doPost` o
+  // desde el trigger del menú, no desde esta línea; lo que gasta el llamador antes de entrar
+  // ya está descontado en el default de `presupuesto_corrida_seg`.
+  // `2026-08-21_1` A.3 — el `t0` viene de la primera línea de `generarInforme`.
+  var reloj = relojDeCorrida_(t0Corrida);
   var corte = null;
 
   var informe = leerInformes()[informeId];
@@ -2513,7 +2795,33 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
     Logger.log('expansión: NO se expande — se continúa con ' + expansion.asignaciones.length +
       ' asignación(es) del plan.');
   } else {
-    expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana, opciones.secciones);
+    /* ⭐ `2026-08-21_1` A.1 — **el primer punto de control, antes de la etapa más cara.**
+     *
+     * Hasta hoy la etapa 1 arrancaba sin preguntarle nada al reloj, y es la que se lleva el
+     * arranque entero: anclaje, unión digital y una llamada a la API de Slides por cada
+     * duplicación. Con el techo en 150 s eso se pasó sin que nada lo mirara.
+     *
+     * Se estima contra `CONFIG.costo_arranque_seg` y **no contra el costo de la expansión**,
+     * que nadie midió: lo que se sabe caro es el arranque, y si ése ya no entra, la etapa no
+     * tiene por qué empezar. El control fino —por sección, y el del arranque ya gastado— vive
+     * adentro de `duplicarBloquesRepetibles_`, que es donde se puede medir de verdad. */
+    corte = controlDeEtapa_(reloj, '1 · expandir secciones repetibles', costoArranqueSeg_());
+    if (corte) {
+      /* `D-21` — **ninguna sección desaparece en silencio, ni siquiera cuando no llegó a
+       * mirarse ninguna.** Sin esto la expansión sale con el reporte vacío y el panel muestra
+       * cero secciones repetibles, que se lee como *"este informe no tiene"* en vez de
+       * *"no se llegó a expandir"*. Son dos cosas distintas y mandan a trabajos distintos. */
+      expansion.reporte = seccionesRepetiblesDe_(informeId).map(function (s) {
+        return {
+          seccion: s.seccion_id, ok: true, omitida: true, items: [], excluidos: [],
+          motivo: 'no se expandió: la corrida cortó ANTES de la etapa 1. ' + corte.motivo
+        };
+      });
+    } else {
+      expansion = duplicarBloquesRepetibles_(presentacion, informeId, ventana, opciones.secciones, reloj);
+      // La expansión puede cortar adentro: por sección, o porque el arranque solo ya se pasó.
+      if (expansion.corte) corte = expansion.corte;
+    }
   }
 
   /* ⭐ `2026-08-20_10` — **expandir todo y resolver una parte son dos cosas distintas, y hasta hoy
@@ -2534,6 +2842,15 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
       ' asignación(es) — secciones: ' + opciones.solo_secciones.join(', '));
   }
 
+  /* `2026-08-21_1` A.1 — punto de control antes del mapa.
+   *
+   * ⚠ **Y el mapa se arma igual si el control corta, que no es una contradicción.** El mapa es
+   * también el insumo de la barrida final: sin él, `barrerTokensNoAlcanzados_` re-escanea el
+   * deck con `tokensVisiblesDe_`, que cuesta **lo mismo** (10-27 s). O sea que saltearlo no
+   * ahorra un segundo, sólo mueve el gasto adentro de la reserva, que es el peor lugar posible.
+   * Lo que el control decide acá es que **no arranquen las etapas 3 y 4**, no que el mapa no se
+   * arme. */
+  if (!corte) corte = controlDeEtapa_(reloj, '2 · mapa token→objectId', costoMapaSeg_());
   etapaEnCurso = marcarEtapa_(filaCorrida, '2 · mapa token→objectId', t0Etapas);
   // 2 · El mapa, ANTES de tocar un solo token.
   mapa = mapaTokenObjectId_(presentacion);
@@ -2542,30 +2859,33 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
   //     el `id_cuenta` del encuentro, o la campaña con su propia ventana. Es lo que hace
   //     que `digital` deje de salir `«FALTA:…@digital_sin_cuenta»`.
   etapaEnCurso = marcarEtapa_(filaCorrida, '3 · pasada por ítem', t0Etapas);
-  // T2.1.1 — el costo del ítem anterior **de esta misma corrida**. Arranca en 0 a propósito:
-  // el primer ítem no tiene observación previa, así que entra si queda algo sobre la reserva.
-  // No hay ninguna constante de segundos acá: el costo por ítem es un dato de la corrida.
-  var costoUltimoItemSeg = 0;
-  // `for` y no `forEach` porque el corte tiene que poder salir del loop sin excepción.
-  for (var iAsignacion = 0; iAsignacion < expansion.asignaciones.length; iAsignacion++) {
+  /* T2.1.1 — el costo del ítem anterior **de esta misma corrida**.
+   *
+   * ⭐ `2026-08-21_1` A.1 — **ya no arranca en 0.** Arrancaba así "porque el primer ítem no
+   * tiene observación previa", y la consecuencia era que el primer ítem **entraba siempre**:
+   * con 2 s por encima de la reserva, el control lo dejaba pasar y el ítem costaba 6. Un ítem
+   * gratis por corrida es sobregiro que nadie autorizó, y en una corrida que corta temprano —la
+   * que más importa— es el único ítem que hay. La semilla sale de `CONFIG.costo_item_seg`; en
+   * cuanto hay una observación propia, ésta la pisa. */
+  var costoUltimoItemSeg = costoItemSeg_();
+  /* `for` y no `forEach` porque el corte tiene que poder salir del loop sin excepción.
+   *
+   * ⚠ **`!corte` en la condición, y no es decorativo:** desde el `2026-08-21_1` las etapas 1 y 2
+   * también pueden cortar, y el control de adentro **asigna** `corte` —`null` incluido—. Sin esta
+   * guarda, un corte de la etapa 2 lo borraba el primer ítem que sí entraba, y la corrida salía
+   * declarando que había terminado bien. */
+  for (var iAsignacion = 0; !corte && iAsignacion < expansion.asignaciones.length; iAsignacion++) {
     var asignacion = expansion.asignaciones[iAsignacion];
 
     // Checkpoint 1 · antes de cada ítem.
-    var chequeoItem = entraEnElPresupuesto_(reloj, costoUltimoItemSeg);
-    if (!chequeoItem.entra) {
-      corte = {
-        etapa: '3 · pasada por ítem',
-        item: asignacion.item.clave,
-        items_emitidos: porItem.length,
-        items_sin_emitir: expansion.asignaciones.length - iAsignacion,
-        segundos: chequeoItem.gastado,
-        disponible_seg: chequeoItem.disponible,
-        estimado_seg: costoUltimoItemSeg,
-        motivo: 'el próximo ítem se estimó en ' + costoUltimoItemSeg + ' s (lo que costó el ' +
-          'anterior) y quedaban ' + chequeoItem.disponible + ' s por encima de la reserva'
-      };
-      break;
-    }
+    corte = controlDeEtapa_(reloj, '3 · pasada por ítem', costoUltimoItemSeg, CORTE_PRESUPUESTO_, {
+      item: asignacion.item.clave,
+      items_emitidos: porItem.length,
+      items_sin_emitir: expansion.asignaciones.length - iAsignacion,
+      motivo: 'el próximo ítem se estimó en ' + costoUltimoItemSeg + ' s y quedaban ' +
+        entraEnElPresupuesto_(reloj, 0).disponible + ' s por encima de la reserva'
+    });
+    if (corte) break;
     var t0Item = new Date().getTime();
 
     var slide = null;
@@ -2648,20 +2968,11 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
     // Ya se cortó en la etapa 3. Un corte es un corte: no se abre una etapa nueva.
   } else {
     var costoEtapa4 = costoResolucionEtapa4Seg_();
-    var chequeoEtapa4 = entraEnElPresupuesto_(reloj, costoEtapa4);
-    if (!chequeoEtapa4.entra) {
-      corte = {
-        etapa: '4 · tokens fijos',
-        item: '',
-        items_emitidos: porItem.length,
-        items_sin_emitir: 0,
-        segundos: chequeoEtapa4.gastado,
-        disponible_seg: chequeoEtapa4.disponible,
-        estimado_seg: costoEtapa4,
-        motivo: 'la resolución de la etapa 4 es atómica y se estima en ' + costoEtapa4 +
-          ' s; quedaban ' + chequeoEtapa4.disponible + ' s por encima de la reserva'
-      };
-    }
+    corte = controlDeEtapa_(reloj, '4 · tokens fijos', costoEtapa4, CORTE_PRESUPUESTO_, {
+      items_emitidos: porItem.length,
+      motivo: 'la resolución de la etapa 4 es atómica y se estima en ' + costoEtapa4 +
+        ' s; quedaban ' + entraEnElPresupuesto_(reloj, 0).disponible + ' s por encima de la reserva'
+    });
   }
 
   if (!corte) {
@@ -2759,6 +3070,13 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
    * cortada que NADIE va a continuar —el caso de siempre, sin plan— tiene que barrer igual: si no,
    * el deck sale con crudos y sin nadie que los vaya a resolver, que es peor que `/////`. Sólo se
    * saltea la barrida cuando existe un plan que dice que alguien va a volver. */
+  /* ⭐ `2026-08-21_1` A.4 — **el cierre se mide.** La reserva existe para cubrirlo entero
+   * —barrida, `FALTANTES`, `CORRIDAS`, sello— y hasta hoy su valor (30 s) salía de dos
+   * mediciones sueltas del 06/08 y de un margen elegido a mano. Si la reserva se queda corta,
+   * el corte ordenado **igual muere en el muro** y toda la maquinaria de corte no sirve.
+   * Desde acá el número sale de cada corrida y el aviso está en `avisoDeReserva_`. */
+  var t0Cierre = new Date().getTime();
+
   var continuable = !!(corte && opciones.continuable === true);
   var barrida = continuable
     ? { barridos: [], origen: 'no se barrió: la corrida se cortó y hay plan para continuarla' }
@@ -2914,6 +3232,13 @@ function generarInformeConCache_(informeId, periodoId, opciones) {
       techo_seg: reloj.presupuesto,
       reserva_seg: reloj.reserva,
       gastado_seg: segundosGastados_(reloj),
+      // `2026-08-21_1` A.4 — lo que costó el cierre completo, para poder dimensionar la reserva
+      // con un número medido en vez de uno elegido. `aviso_reserva` es `''` cuando entra.
+      cierre_seg: Math.round((new Date().getTime() - t0Cierre) / 1000),
+      aviso_reserva: avisoDeReserva_(Math.round((new Date().getTime() - t0Cierre) / 1000), reloj.reserva),
+      // Qué etapas declaradas tienen su punto de control en el flujo, con el `n de m` adentro:
+      // «ningún problema» y «no se probó nada» se ven idénticos en un log sin conteo.
+      control_por_etapa: controlPorEtapa_(),
       barrida: { tokens: barrida.barridos.length, origen: barrida.origen }
     },
     /* `2026-08-20_10` — lo que la reanudación necesita y hasta hoy moría con la ejecución.
@@ -2982,11 +3307,25 @@ function menuGenerarInformeCompleto_() {
    * conteos son de una corrida que no terminó, y leerlos como cobertura es el error que esto
    * evita. */
   if (r.corte) {
-    lineas.push('⛔ LA CORRIDA SE CORTÓ — este deck NO está completo.');
+    /* ⭐ `2026-08-21_1` B.2 — **la clase del corte, en el título.** *«El arranque no entra en el
+     * techo»* y *«me quedé sin presupuesto en el medio»* mandan a trabajos opuestos: el primero
+     * se destraba subiendo el techo o partiendo el arranque, el segundo corriendo de nuevo. Un
+     * corte genérico los confunde, que es la misma familia del `/////` que no distinguía
+     * *«nadie lo cableó»* de *«no se llegó»*. */
+    if (r.corte.clase === CORTE_ARRANQUE_) {
+      lineas.push('⛔ EL ARRANQUE NO ENTRA EN EL TECHO — este deck NO está completo.');
+      lineas.push('   No es que la corrida se haya quedado sin tiempo en el medio: **no tenía con');
+      lineas.push('   qué empezar**. Correr de nuevo da el mismo resultado. Lo destraba subir');
+      lineas.push('   `CONFIG.presupuesto_corrida_seg` o partir el arranque.');
+    } else {
+      lineas.push('⛔ LA CORRIDA SE CORTÓ — este deck NO está completo.');
+    }
     lineas.push('   Etapa: ' + r.corte.etapa + ' · ' + r.corte.motivo);
     if (r.presupuesto && r.presupuesto.barrida) {
       lineas.push('   ' + r.presupuesto.barrida.tokens + ' token(s) quedaron sin resolver POR EL CORTE' +
-        ' — no por falta de cableado. **Correr de nuevo, no cablear.**');
+        ' — no por falta de cableado. ' + (r.corte.clase === CORTE_ARRANQUE_
+          ? '**No cablear, y correr de nuevo tampoco: subir el techo.**'
+          : '**Correr de nuevo, no cablear.**'));
     }
     lineas.push('   Se cortó a los ' + r.corte.segundos + ' s (techo ' +
       (r.presupuesto ? r.presupuesto.techo_seg : '?') + ' s, reserva ' +
@@ -3120,6 +3459,35 @@ function menuGenerarInformeCompleto_() {
       lineas.push('      excluida ' + (e.campana || e.item || '(el ítem no trae nombre)') + ' — ' + e.motivo);
     });
   });
+
+  /* ⭐ `2026-08-21_1` A.4 — **los avisos del reloj van ÚLTIMOS, después del veredicto.**
+   * `CLAUDE.md` §4: un `⚠` en el medio de un reporte que termina en `✅` se lee como verde, y el
+   * aviso de la tanda 4 pasó inadvertido dos corridas seguidas por estar en el medio. */
+  if (r.presupuesto) {
+    lineas.push('');
+    lineas.push('Reloj: ' + r.presupuesto.gastado_seg + ' s de un techo de ' + r.presupuesto.techo_seg +
+      ' s (reserva ' + r.presupuesto.reserva_seg + ' s) · el cierre costó ' +
+      (r.presupuesto.cierre_seg === undefined ? '?' : r.presupuesto.cierre_seg) + ' s.');
+
+    var cpe = r.presupuesto.control_por_etapa;
+    if (cpe) {
+      // **El `n de m` adentro**: «ningún problema» y «no se probó nada» se ven idénticos sin él.
+      lineas.push('   Etapas con punto de control: ' + cpe.con_control + ' de ' + cpe.total + '.');
+      if (cpe.con_control < cpe.total) {
+        lineas.push('   ⛔ HAY ETAPAS SIN CONTROL DEL RELOJ — una corrida que se pase ahí muere en');
+        lineas.push('   el muro de los 360 s sin barrida, sin FALTANTES y sin cerrar CORRIDAS:');
+        cpe.etapas.filter(function (e) { return !e.tiene; }).forEach(function (e) {
+          lineas.push('      · ' + e.etapa);
+        });
+      }
+    }
+    if (r.presupuesto.aviso_reserva) lineas.push('   ' + r.presupuesto.aviso_reserva);
+    lineas.push('   ⚠ Lo que este bloque NO cubre: el cierre no tiene punto de control **a');
+    lineas.push('   propósito** —tiene que correr siempre— y lo único que lo protege es la');
+    lineas.push('   reserva. Y el reloj arranca en la primera línea de `generarInforme`: lo que');
+    lineas.push('   gasta el llamador antes de entrar sale del colchón entre el techo y el muro.');
+  }
+
   ui.alert('Generar informe completo', lineas.join('\n'), ui.ButtonSet.OK);
   return r;
 }

@@ -1519,3 +1519,250 @@ function verificarGateDeUso() {
   Logger.log(lineas.join('\n'));
   return lineas.join('\n');
 }
+
+/* ═══════════════════ `2026-08-21_1` Parte B — el reloj en todas las etapas ═══════════════════
+ *
+ * ⭐ **Por qué estos controles y no una corrida de prueba.** Lo que hay que verificar es que
+ * *"con presupuesto agotado, la etapa no arranca"*, y probarlo de punta a punta cuesta una
+ * corrida de seis minutos **por etapa**. Un control que nadie va a correr no protege nada.
+ *
+ * Los tres primeros son **puros**: arman un reloj sintético y miden `controlDeEtapa_`, que es
+ * la única función que decide. El cuarto es **estructural** y es el que cierra el agujero real:
+ * un control perfecto que nadie llama desde el flujo deja la etapa desprotegida igual, y eso es
+ * exactamente lo que pasaba hasta el 21/08 con el arranque, el mapa y el cierre.
+ *
+ * ⚠ **Los cuatro declaran cuánto midieron.** «Ningún problema» y «no se probó nada» se ven
+ * idénticos en un log sin conteo (`CLAUDE.md` §4, el caso de `verificarAlcanceDesatendido`).
+ */
+
+/** Un reloj sintético. `gastadoSeg` es cuánto lleva corrido; el resto es el techo declarado. */
+function relojFalso_(gastadoSeg, techoSeg, reservaSeg) {
+  return {
+    t0: new Date().getTime() - (gastadoSeg * 1000),
+    presupuesto: techoSeg,
+    reserva: reservaSeg
+  };
+}
+
+/**
+ * B.1 — **con presupuesto ya agotado al entrar a una etapa, esa etapa no arranca.** Una
+ * afirmación por etapa declarada, y el conteo dice cuántas se midieron.
+ *
+ * El caso negativo va en la misma prueba y es la mitad que importa: un control que corta
+ * **siempre** también satisface "corta cuando no hay presupuesto", y no sirve para nada.
+ */
+function probarCorteConPresupuestoAgotado_() {
+  var cortadas = 0;
+  var pasadas = 0;
+
+  ETAPAS_CON_CONTROL_.forEach(function (etapa) {
+    // Agotado: 200 s corridos de un techo de 150 con 30 de reserva. Disponible = -80.
+    var agotado = controlDeEtapa_(relojFalso_(200, 150, 30), etapa, 5);
+    afirmar_(agotado !== null, 'B.1 — la etapa "' + etapa + '" arrancó con el presupuesto agotado');
+    afirmar_(agotado.etapa === etapa, 'B.1 — el corte de "' + etapa + '" no dice su etapa');
+    afirmar_(agotado.clase === CORTE_PRESUPUESTO_,
+      'B.1 — el corte de "' + etapa + '" tendría que ser de clase presupuesto y es ' + agotado.clase);
+    afirmar_(agotado.segundos === 200,
+      'B.1 — el corte de "' + etapa + '" informa ' + agotado.segundos + ' s en vez de 200');
+    cortadas++;
+
+    // Holgado: 10 s corridos del mismo techo. Disponible = 110, y la etapa cuesta 5.
+    afirmar_(controlDeEtapa_(relojFalso_(10, 150, 30), etapa, 5) === null,
+      'B.1 — la etapa "' + etapa + '" cortó con 110 s disponibles y un costo de 5');
+    pasadas++;
+  });
+
+  // ⚠ Cero etapas medidas es un problema, no un silencio: sin esto la prueba pasaría con la
+  // lista vacía y el verde se citaría como evidencia de algo que nunca se ejecutó.
+  afirmar_(cortadas === ETAPAS_CON_CONTROL_.length && cortadas > 0,
+    'B.1 — se midieron ' + cortadas + ' etapas de ' + ETAPAS_CON_CONTROL_.length);
+
+  /* **El borde**, que es donde un `>` en vez de un `>=` no se nota.
+   *
+   * ⚠ **El borde EXACTO no se puede probar con un reloj de pared y no se finge que sí:**
+   * `relojFalso_(115, 150, 30)` deja disponible en 5,000 menos los milisegundos que tarda la
+   * llamada, así que contra un costo de 5 la afirmación daría al azar. Un fixture que pasa a
+   * veces es peor que ninguno. Se prueba un segundo a cada lado, que es lo que el instrumento
+   * puede afirmar de verdad. */
+  afirmar_(controlDeEtapa_(relojFalso_(114, 150, 30), 'x', 5) === null,
+    'B.1 — con un segundo más que el costo tiene que entrar');
+  afirmar_(controlDeEtapa_(relojFalso_(116, 150, 30), 'x', 5) !== null,
+    'B.1 — con un segundo menos que el costo no tiene que entrar');
+
+  return 'B.1 · ' + cortadas + ' de ' + ETAPAS_CON_CONTROL_.length + ' etapas cortan con el ' +
+    'presupuesto agotado y ' + pasadas + ' arrancan con presupuesto de sobra, más los dos bordes';
+}
+
+/**
+ * ⭐ B.2 — **con el arranque más caro que el techo, la corrida aborta con el diagnóstico
+ * correcto**, no con un corte genérico.
+ *
+ * Son dos arreglos distintos: *"el arranque no entra"* se destraba subiendo el techo o
+ * partiendo el arranque; *"me quedé sin presupuesto"* se destraba corriendo de nuevo. Un
+ * símbolo que no distingue las dos causas manda a trabajar al lugar equivocado — la misma
+ * familia del `/////` que confundía «nadie lo cableó» con «no se llegó».
+ */
+function probarClaseDelCorte_() {
+  // El arranque ya gastó 190 s de un techo útil de 120. `estimadoSeg = 0`: la pregunta es
+  // «¿ya me pasé?», no «¿entra lo que viene?».
+  var arranque = controlDeEtapa_(relojFalso_(190, 150, 30), '1 · expandir secciones repetibles',
+    0, CORTE_ARRANQUE_);
+  afirmar_(arranque !== null, 'B.2 — el arranque gastó 190 s de 120 útiles y no cortó');
+  afirmar_(arranque.clase === CORTE_ARRANQUE_,
+    'B.2 — el corte del arranque salió con clase "' + arranque.clase + '"');
+  afirmar_(arranque.motivo.indexOf('no entra en el techo') !== -1,
+    'B.2 — el motivo del arranque no lo nombra: "' + arranque.motivo + '"');
+  // ⚠ Y dice qué lo destraba, que NO es correr de nuevo.
+  afirmar_(arranque.motivo.indexOf('subir el techo') !== -1,
+    'B.2 — el motivo del arranque no dice qué lo destraba');
+  afirmar_(arranque.motivo.indexOf('no correr de nuevo') !== -1,
+    'B.2 — el motivo del arranque no descarta el consejo equivocado');
+
+  // El mismo reloj, la misma etapa, y clase distinta: la clase la elige el sitio de llamada
+  // según qué pregunta hizo, no el estado del reloj. Sin este par, una implementación que
+  // marcara TODO corte como `arranque_no_entra` pasaría igual.
+  var generico = controlDeEtapa_(relojFalso_(190, 150, 30), '1 · expandir secciones repetibles', 5);
+  afirmar_(generico !== null, 'B.2 — el corte genérico no salió');
+  afirmar_(generico.clase === CORTE_PRESUPUESTO_,
+    'B.2 — el corte genérico salió con clase "' + generico.clase + '"');
+  afirmar_(generico.motivo.indexOf('no entra en el techo') === -1,
+    'B.2 — el corte genérico está usando el motivo del arranque');
+
+  // Un arranque que SÍ entra no inventa un corte.
+  afirmar_(controlDeEtapa_(relojFalso_(80, 350, 30), '1 · expandir secciones repetibles',
+    0, CORTE_ARRANQUE_) === null,
+    'B.2 — un arranque de 80 s con techo 350 no tendría que cortar');
+
+  return 'B.2 · las dos clases de corte se distinguen sobre el mismo reloj y el mismo nombre de ' +
+    'etapa, y el arranque que entra no corta (8 afirmaciones)';
+}
+
+/**
+ * B.3 — **la reserva alcanza para el cierre.** Si no alcanza, el corte ordenado igual muere en
+ * el muro y toda la maquinaria de corte no sirve.
+ *
+ * ⚠ **Lo que esta prueba NO contesta, y hay que decirlo:** cuánto cuesta el cierre de verdad.
+ * Eso sale de `presupuesto.cierre_seg` de una corrida real. Acá se verifica que el aviso
+ * distinga los cuatro casos y que el número que propone sea mayor que lo medido — o sea que el
+ * instrumento sirva el día que llegue el dato.
+ */
+function probarReservaCubreElCierre_() {
+  afirmar_(avisoDeReserva_(12, 30) === '', 'B.3 — un cierre de 12 s bajo una reserva de 30 avisó');
+  afirmar_(avisoDeReserva_(30, 30) === '', 'B.3 — un cierre igual a la reserva no es un desajuste');
+  afirmar_(avisoDeReserva_(0, 30) === '', 'B.3 — un cierre sin medir no puede avisar nada');
+
+  var aviso = avisoDeReserva_(47, 30);
+  afirmar_(aviso !== '', 'B.3 — un cierre de 47 s bajo una reserva de 30 no avisó');
+  afirmar_(aviso.indexOf('47') !== -1 && aviso.indexOf('30') !== -1,
+    'B.3 — el aviso no dice los dos números: "' + aviso + '"');
+
+  // El valor propuesto tiene que ser MAYOR que lo medido; proponer un número que ya se sabe
+  // corto es peor que no proponer ninguno.
+  var propuesto = Number((aviso.match(/(\d+)\.\s*$/) || [])[1]);
+  afirmar_(propuesto > 47, 'B.3 — el aviso propone ' + propuesto + ' s para un cierre de 47');
+
+  return 'B.3 · el aviso de reserva distingue los cuatro casos y propone ' + propuesto +
+    ' s para un cierre de 47 (6 afirmaciones). NO mide cuánto cuesta el cierre: eso sale de una corrida.';
+}
+
+/**
+ * ⭐ B.4 — **romper a propósito.** Cada etapa declarada tiene su punto de control **en el
+ * flujo**. Un control perfecto que nadie llama deja la etapa desprotegida igual, que es
+ * exactamente lo que pasaba hasta el 21/08 con el arranque y el mapa.
+ *
+ * **Cómo romperlo a mano:** sacar de `generarInformeConCache_` la línea
+ * `corte = controlDeEtapa_(reloj, '2 · mapa token→objectId', costoMapaSeg_());` y correr esta
+ * prueba. Tiene que caer nombrando esa etapa. Si no cae, el control no mide lo que dice.
+ *
+ * El control negativo hace lo mismo sin editar nada: le pasa una fuente sin controles y afirma
+ * que el instrumento sabe decir «cero de cuatro». Un instrumento del que nadie vio un «no» no
+ * es evidencia de nada.
+ */
+function probarTodasLasEtapasTienenControl_() {
+  var real = controlPorEtapa_();
+  afirmar_(real.total === ETAPAS_CON_CONTROL_.length && real.total > 0,
+    'B.4 — se midieron ' + real.total + ' etapas declaradas');
+
+  var sinControl = real.etapas.filter(function (e) { return !e.tiene; })
+    .map(function (e) { return e.etapa; });
+  afirmar_(sinControl.length === 0,
+    'B.4 — ' + sinControl.length + ' de ' + real.total + ' etapas NO tienen punto de control ' +
+    'en el flujo: ' + sinControl.join(', ') + '. Una corrida que se pase ahí muere en el muro ' +
+    'de los 360 s sin barrida, sin FALTANTES y sin cerrar CORRIDAS.');
+
+  // Control negativo: el instrumento sabe decir «no».
+  var vacio = controlPorEtapa_('function nada() { return 1; }');
+  afirmar_(vacio.con_control === 0 && vacio.total === real.total,
+    'B.4 — sobre una fuente sin controles el instrumento informó ' + vacio.con_control +
+    ' de ' + vacio.total + ': no sabe distinguir presente de ausente');
+
+  // Y sabe decir «una sí y las otras no», que es la forma exacta de la rotura real.
+  var una = controlPorEtapa_("corte = controlDeEtapa_(reloj, '" + ETAPAS_CON_CONTROL_[0] + "', 5);");
+  afirmar_(una.con_control === 1,
+    'B.4 — sobre una fuente con UN control informó ' + una.con_control + ' de ' + una.total);
+
+  return 'B.4 · ' + real.con_control + ' de ' + real.total + ' etapas declaradas tienen su punto ' +
+    'de control en el flujo, y el instrumento distingue 0, 1 y ' + real.total;
+}
+
+/**
+ * ⭐ El botón. **Sin `_` y sin parámetros**, que son las dos condiciones para que Apps Script
+ * lo liste en el desplegable (`CLAUDE.md` §2), y devuelve por `Logger.log` porque el editor no
+ * muestra el valor de retorno.
+ *
+ * ⚠ **El orden importa y no es alfabético:** B.4 —¿están los controles en el flujo?— va
+ * **primero**, porque si una etapa no tiene punto de control, que las otras tres afirmaciones
+ * den verde sobre `controlDeEtapa_` no significa nada. Un control principal en verde sobre un
+ * instrumento incompleto es la combinación que este proyecto ya pagó dos veces.
+ */
+function verificarRelojDeEtapas() {
+  var pruebas = [
+    probarTodasLasEtapasTienenControl_,
+    probarCorteConPresupuestoAgotado_,
+    probarClaseDelCorte_,
+    probarReservaCubreElCierre_
+  ];
+
+  var lineas = ['── Reloj de etapas · `2026-08-21_1` Parte B ──', ''];
+  var fallas = 0;
+  pruebas.forEach(function (p) {
+    try {
+      lineas.push('✅ ' + p());
+    } catch (e) {
+      fallas++;
+      lineas.push('❌ ' + (e && e.message ? e.message : e));
+    }
+  });
+
+  lineas.push('');
+  lineas.push(fallas === 0
+    ? 'Las ' + pruebas.length + ' pruebas pasaron.'
+    : fallas + ' de ' + pruebas.length + ' fallaron.');
+
+  // El techo vigente, que es la mitad del diagnóstico del 21/08: la hoja decía 150 y nadie lo
+  // miró. Un control del reloj que no dice contra qué techo corre el motor deja abierto
+  // exactamente el hueco que este paso vino a cerrar.
+  lineas.push('');
+  lineas.push('Techo vigente (CONFIG.presupuesto_corrida_seg): ' + presupuestoCorridaSeg_() + ' s · ' +
+    'reserva ' + reservaCierreSeg_() + ' s · muro duro de Apps Script 360 s.');
+  if (presupuestoCorridaSeg_() > 350) {
+    lineas.push('⛔ EL TECHO ESTÁ POR ENCIMA DE 350. El muro es 360 y el cierre necesita su reserva.');
+  }
+
+  /* ⚠ Los avisos van ÚLTIMOS, después del veredicto, y dicen QUÉ NO CUBRE el verde de arriba.
+   * `CLAUDE.md` §4: un `⚠` en el medio de un reporte que termina en `✅` se lee como verde. */
+  lineas.push('');
+  lineas.push('⚠ Lo que estas cuatro pruebas NO cubren:');
+  lineas.push('   · Cuánto cuesta de verdad cada etapa. Los costos son semillas de CONFIG');
+  lineas.push('     (costo_arranque_seg, costo_mapa_seg, costo_item_seg) y la corrida los pisa.');
+  lineas.push('   · Que el cierre entre en la reserva. Eso sale de presupuesto.cierre_seg de una');
+  lineas.push('     corrida real, y el aviso aparece en el reporte del panel y del menú.');
+  lineas.push('   · El cierre no tiene punto de control **a propósito**: tiene que correr siempre.');
+  lineas.push('     Lo único que lo protege es la reserva.');
+  lineas.push('   · Lo que gasta el llamador ANTES de entrar a generarInforme. El reloj arranca en');
+  lineas.push('     su primera línea; la plataforma cuenta desde el trigger o desde el panel.');
+
+  var texto = lineas.join('\n');
+  Logger.log(texto);
+  return texto;
+}

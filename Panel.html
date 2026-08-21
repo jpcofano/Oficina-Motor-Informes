@@ -226,7 +226,18 @@ select:focus,input[type=text]:focus{outline:2px solid var(--color-primary);outli
  * contrato** y el README es explícito en no inventarles nombres de función ni de campo. */
 var FLAGS = { anclajes: false, personalizado: false, proximo: true };
 
-var TECHO_S = 350;      // límite duro de una corrida
+/* ⭐ `2026-08-21_1` — **el techo lo dice el backend, que es el que lo aplica.**
+ *
+ * Acá decía `var TECHO_S = 350; // límite duro de una corrida`, y las dos mitades estaban mal:
+ * el techo real es `CONFIG.presupuesto_corrida_seg` —que la mañana del 21/08 valía **150**— y
+ * el límite duro es **360**, de Apps Script, no 350. La regla dibujó una escala hasta 350
+ * mientras el motor tenía 150, así que el cronómetro pasó el techo real sin ponerse en rojo.
+ * **Un front que contesta por su cuenta una pregunta del backend** es la misma clase de falla
+ * que el `|| S.faltantesComoRaya` que se retiró el 20/08.
+ *
+ * El 350 queda como semilla hasta que llega `panel_getEstado`, y sólo por eso. */
+var TECHO_S = 350;
+var MURO_S = 360;         // el límite duro de Apps Script. Ése sí es una constante.
 var RANGO_S = [120, 320]; // el rango habitual medido — la banda de la regla
 
 var S = {
@@ -324,6 +335,8 @@ function arrancar(){
       S.periodos = r.periodos || [];
       S.porDefecto = r.por_defecto || null;
       S.informeActivo = r.informe_activo || '';
+      // El techo real, de CONFIG. Sin esto la regla dibuja una escala que el motor no usa.
+      if (r.reloj && r.reloj.techo_seg > 0){ TECHO_S = r.reloj.techo_seg; MURO_S = r.reloj.muro_seg || 360; }
       S.informeId = S.informeActivo || (S.informes[0] && S.informes[0].id) || '';
       resetSecciones();
       pintar();
@@ -517,6 +530,7 @@ function refrescarEstado(){
     .withSuccessHandler(function(r){
       if (r && r.ok){
         S.informes = r.informes || S.informes;
+        if (r.reloj && r.reloj.techo_seg > 0){ TECHO_S = r.reloj.techo_seg; MURO_S = r.reloj.muro_seg || 360; }
         S.porDefecto = r.por_defecto || S.porDefecto;
       }
       pintar();
@@ -700,8 +714,11 @@ function vistaEsperando(){
 function timerHtml(){
   var pct = Math.min(100, (S.elapsed / TECHO_S) * 100);
   var clase = S.elapsed > (TECHO_S - 30) ? ' is-danger' : (S.elapsed > RANGO_S[1] ? ' is-warn' : '');
-  var bandaL = (RANGO_S[0] / TECHO_S) * 100;
-  var bandaW = ((RANGO_S[1] - RANGO_S[0]) / TECHO_S) * 100;
+  /* La banda del rango habitual se recorta contra el techo vigente. Con el techo en 150 s la
+   * banda 120–320 se salía de la regla y dibujaba un «rango habitual» que no entra en el techo,
+   * que es exactamente lo contrario de lo que la banda quiere decir. */
+  var bandaL = Math.min(100, (RANGO_S[0] / TECHO_S) * 100);
+  var bandaW = Math.max(0, Math.min(100 - bandaL, ((RANGO_S[1] - RANGO_S[0]) / TECHO_S) * 100));
   var etapa = S.elapsed < 30 ? 'copiando la plantilla'
             : (S.elapsed < 90 ? 'expandiendo secciones' : 'resolviendo marcadores');
   return '<div class="timer-top"><span class="timer-secs">' + S.elapsed + ' s</span>' +
@@ -710,7 +727,8 @@ function timerHtml(){
       '<div class="rule-band" style="left:' + bandaL + '%;width:' + bandaW + '%"></div>' +
       '<div class="rule-mark' + clase + '" style="left:' + pct + '%"></div>' +
     '</div>' +
-    '<div class="rule-scale"><span>0 s</span><span>rango habitual 120–320 s</span><span>techo ' + TECHO_S + ' s</span></div>';
+    '<div class="rule-scale"><span>0 s</span><span>rango habitual ' + RANGO_S[0] + '–' + RANGO_S[1] +
+      ' s</span><span>techo ' + TECHO_S + ' s · muro ' + MURO_S + ' s</span></div>';
 }
 function pintarTimer(){ var t = el('timer'); if (t) t.innerHTML = timerHtml(); }
 
@@ -728,11 +746,22 @@ function vistaListo(){
     esc(r.periodo || '') + ' · corrida ' + esc(r.corrida_id || ''));
 
   /* Los avisos van ANTES que los números: cambian cómo se lee todo lo de abajo. */
-  ['corte','fallo','instrumento','presupuesto'].forEach(function(k){
+  /* ⭐ `2026-08-21_1` — **`presupuesto` salió de esta lista.** Viaja siempre, así que caía
+   * siempre en el `||` final y pintaba un cartel de advertencia con el JSON entero **en toda
+   * corrida, incluidas las que terminaron bien**. Un aviso que aparece siempre deja de leerse,
+   * y éste tapaba a los tres que sí importan. Ahora el reloj tiene su propio bloque, abajo,
+   * y sólo avisa cuando hay algo que decir.
+   *
+   * ⚠ Y el corte dice **su clase** en el título: «el arranque no entra en el techo» manda a
+   * subir el techo, «me quedé sin presupuesto» manda a correr de nuevo. Dos arreglos distintos. */
+  ['corte','fallo','instrumento'].forEach(function(k){
     var a = r[k];
     if (!a) return;
     var txt = (typeof a === 'string') ? a : (a.motivo || a.mensaje || JSON.stringify(a));
-    h += '<div class="alert alert-warning"><div class="alert-title">' + esc(k) + '</div>' + esc(txt) + '</div>';
+    var titulo = (k === 'corte' && a.clase === 'arranque_no_entra')
+      ? 'el arranque no entra en el techo — correr de nuevo da lo mismo'
+      : k;
+    h += '<div class="alert alert-warning"><div class="alert-title">' + esc(titulo) + '</div>' + esc(txt) + '</div>';
   });
 
   var c = r.conteos || {};
@@ -763,6 +792,29 @@ function vistaListo(){
         return '<li class="dot-row"><span class="dot ' + (emitida?'dot-on':'dot-off') + '"></span>' +
           esc(id) + '</li>';
       }).join('') + '</ul></div>';
+  }
+
+  /* ⭐ `2026-08-21_1` A.4 — **el bloque del reloj va ÚLTIMO, después del veredicto.**
+   * `CLAUDE.md` §4: un `⚠` en el medio de un reporte que termina bien se lee como verde. */
+  var pr = r.presupuesto;
+  if (pr){
+    var avisos = [];
+    var cpe = pr.control_por_etapa;
+    if (cpe && cpe.con_control < cpe.total){
+      avisos.push('⛔ ' + (cpe.total - cpe.con_control) + ' etapa(s) sin punto de control del reloj: ' +
+        cpe.etapas.filter(function(e){ return !e.tiene; }).map(function(e){ return e.etapa; }).join(', ') +
+        '. Una corrida que se pase ahí muere en el muro sin dejar nada.');
+    }
+    if (pr.aviso_reserva) avisos.push(pr.aviso_reserva);
+
+    h += '<div class="box"><span class="section-title">Reloj</span>' +
+      '<p class="muted">' + pr.gastado_seg + ' s de un techo de ' + pr.techo_seg +
+      ' s (muro ' + MURO_S + ' s) · reserva ' + pr.reserva_seg + ' s · el cierre costó ' +
+      (pr.cierre_seg === undefined ? '?' : pr.cierre_seg) + ' s.' +
+      (cpe ? ' Etapas con punto de control: ' + cpe.con_control + ' de ' + cpe.total + '.' : '') +
+      '</p>' +
+      avisos.map(function(a){ return '<p class="muted">' + esc(a) + '</p>'; }).join('') +
+      '</div>';
   }
 
   h += '<button class="btn btn-secondary" id="b-otro">Generar otro</button>';

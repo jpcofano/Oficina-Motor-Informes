@@ -195,7 +195,25 @@ function panel_getEstado(periodoId) {
     informes: informes,
     informe_activo: String(leerConfig().informe_activo || '').trim(),
     periodos: periodos,
-    por_defecto: porDefecto
+    por_defecto: porDefecto,
+    /* ⭐ `2026-08-21_1` — **el techo que la regla del panel dibuja sale de `CONFIG`, no de una
+     * constante del HTML.**
+     *
+     * `TECHO_S = 350` estaba escrito en `Panel.html` y **el motor no lo leía de ahí**: el techo
+     * real es `CONFIG.presupuesto_corrida_seg`. La mañana del 21/08 la hoja decía **150** —quedó
+     * bajo de la prueba del mecanismo desatendido— y la regla del panel siguió dibujando una
+     * escala hasta 350, así que el cronómetro pasó los 150 sin que nada se pusiera en rojo.
+     * **Un techo declarado en dos lugares es un techo que puede mentir en uno de los dos**, y
+     * mintió justo en el que la persona mira. Es la regla de `CLAUDE.md` §2 en su forma más
+     * literal: un valor de negocio escrito en el código.
+     *
+     * `muro_seg` es el límite duro de Apps Script y **ése sí es una constante**: no lo elige
+     * nadie de este proyecto y no cambia editando una celda. */
+    reloj: {
+      techo_seg: presupuestoCorridaSeg_(),
+      reserva_seg: reservaCierreSeg_(),
+      muro_seg: 360
+    }
   };
 }
 

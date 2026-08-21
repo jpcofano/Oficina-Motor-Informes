@@ -2303,6 +2303,24 @@ var SEED_CONFIG_DEFAULTS_ = {
   // cortando ahí sin motivo. Es atómico —resolverMarcadores no acepta resolver un
   // subconjunto—, así que la única decisión posible es entrar o no entrar.
   costo_resolucion_etapa4_seg: '60',
+  /* `2026-08-21_1` A.1 — los tres costos que faltaban para que el reloj se consulte en TODAS
+   * las etapas y no sólo en el bucle de ítems.
+   *
+   * ⚠ **Ninguno de los tres es un criterio: los tres son SEMILLAS.** Con el techo en 150 s la
+   * corrida `jm` del 21/08 llegó igual al muro de 360 porque el arranque y el mapa corrían sin
+   * ningún punto de control. Estos valores son lo que se estima **antes** de tener una medición
+   * propia; en cuanto la corrida mide, la medición pisa a la semilla.
+   *
+   * **Y están en `CONFIG` por el mismo motivo que los tres de arriba** (`CLAUDE.md` §2): bajar
+   * `costo_arranque_seg` a 400 desde la hoja hace que la etapa 1 no entre nunca, que es la
+   * forma barata de probar el corte de esa etapa sin esperar seis minutos. */
+  // Anclaje (~50 s) + unión digital (~27 s), medidos juntos en 70-80 s el 20/08.
+  costo_arranque_seg: '80',
+  // El mapa token→objectId. `barrerTokensNoAlcanzados_` lo tiene medido en 10-27 s.
+  costo_mapa_seg: '25',
+  // Un ítem: `seg_por_asignacion` medido en ~6 s (`2026-08-20_10.1`). Es la semilla del primer
+  // ítem, que hasta hoy entraba gratis porque el costo previo arrancaba en 0.
+  costo_item_seg: '6',
   // `_46` (13/08) — la lista blanca de la Barrera 1 sale del código. Era `API_AUTORIZADOS_`
   // en `Api.gs`, un array con un solo mail: sumar a alguien exigía `clasp push`, que es el
   // mismo argumento del umbral de anclaje de más arriba. Es la **pieza 1 de `D-16`**.
