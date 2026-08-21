@@ -1850,13 +1850,17 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
 cinco casos, está en `docs/BITACORA.md`, entrada del 21/08. **Lo que queda es decidir.** Ninguna de
 las cinco la puede contestar una medición.
 
-**D1 · ¿Qué significa `LAMINAS.seccion_id` vacío?** El seed dice **hereda de `SECCIONES`**; la
+**D1 · ~~¿Qué significa `LAMINAS.seccion_id` vacío?~~ — ✅ RESPONDIDA (usuario, 21/08): vacío pasa a significar «nadie la clasificó» y la lámina no entra a ningún bloque. Escrita como `D-37` en `PLAN.md`, que **supersede el comentario del seed** — y sólo para `seccion_id`: `modo`, `itera_sobre` y `filtro` siguen heredando.**
+
+**La pregunta original:** El seed dice **hereda de `SECCIONES`**; la
 Parte A.1 del `_4` dice **no se expande ni se resuelve**. ⚠ **Medido: la A.1 dejaría sin publicar 29
 de las 53 láminas** — las 13 sin tokens, las 2 de modo `agregado` y las 14 de contenido fijo, entre
 ellas **las portadas de las dos plantillas**. La medición le da la razón al seed: `seccion_id` sólo
 tiene sentido para las repetibles. **Confirmar o corregir.**
 
-**D2 · Padre o hijo, para las 6 láminas con varias candidatas.** Las tres ambigüedades son de
+**D2 · ~~Padre o hijo, para las 6 láminas con varias candidatas.~~ — ✅ CERRADA POR MEDICIÓN (21/08): ⭐ **nunca hubo ambigüedad.** `seccionesRepetiblesDe_` exige `modo = repetible` **y** `estado = activa` **y** `familia_tokens` no vacía, así que de cada grupo hay **una sola sección elegible**. `encuentro_iceberg` es `unica` + `revisar`: falla dos de las tres. La agrupación que reportaba «varias candidatas» cruzaba familias contra **todas** las secciones, que no es lo que hace el motor. ⚠ **El error era del instrumento, no del repo.**
+
+**La pregunta original:** Las tres ambigüedades son de
 jerarquía y se resuelven con **una** regla, no con seis decisiones:
 `encuentro` vs `encuentro_iceberg` · `m2` vs `m2_status` · `m2` vs `m2_caudal`.
 ⭐ **Sólo el padre es `repetible`; los hijos son `unica`.** Si la regla es *"gana el padre
@@ -1868,7 +1872,9 @@ láminas de tres contextos distintos — `jm` L-034 (con `ecv_alcance_semanal`),
 (con `enc_`), `jm` pos 8 y `secco` L-005 (con `u1_`), y `secco` L-004 (solo, 2 tokens). **La
 respuesta decide si el 1 a 1 necesita marcadores propios o reusa los `ecv_`.**
 
-**D4 · ¿El 1 a 1 es una sección propia o una variante de `encuentro`?** ⭐ **Existe en las dos
+**D4 · ~~¿El 1 a 1 es una sección propia o una variante de `encuentro`?~~ — ✅ RESPONDIDA (usuario, 21/08): **variante de `encuentro`.** La lámina del 1 a 1 va **en vez del iceberg**, no además; el resto de los encuentros lleva iceberg, y la portada va en los dos casos. La condición está en `CONFIG_INFORMES.md` §1.10 y se implementa con `LAMINAS.filtro` (`D-37` punto 4).
+
+**La pregunta original:** ⭐ **Existe en las dos
 plantillas** —`jm` posición 8 y `secco` `L-005`— y **ninguna sección declara `u1_`**. Si es propia,
 hay que crear la fila en `SECCIONES` con `familia_tokens = u1_` y decidir `itera_sobre`. Si es una
 variante, hay que resolver antes cómo un marcador lee **otra solapa según el tipo de ítem** —
@@ -5732,3 +5738,51 @@ externos**, no calculados sobre estas cinco filas.
 
 **Qué lo destraba:** que alguien diga si son fijos del año o se recalculan, y contra qué universo.
 Mientras tanto, esos seis tokens publican su hueco y **eso es correcto**.
+
+---
+
+## 2026-08-21 · ⏸ RIESGO ASUMIDO — dos `.pptx` de decks reales quedaron en el historial de git
+
+**Decisión del usuario, 21/08/2026: queda anotado y NO se reescribe historia.** Se escribe acá para
+que el día que alguien decida sacarlos no tenga que investigar de nuevo qué son ni qué haría falta.
+
+### Qué son y dónde están
+
+| | |
+|---|---|
+| **archivos** | `docs/_fixtures/Seguimiento Digital  2026-08-20/Informe semanal JM - (14_08 al 21_08).pptx` y `…/Seguimiento SECCO - SSCDI (21-08) .pptx` |
+| **commit** | `7e48725` — *"docs — _4 Parte 0 punto 5: la propuesta de seccion_id…"* |
+| **quitados en** | `0338c87` — dejaron de estar rastreados el mismo día |
+| **qué son** | los **decks reales publicados** de la semana 14-21/08, los dos informes |
+
+### Cómo pasó, que es lo que hay que no repetir
+
+Un **`git add -A docs/`** los arrastró. El `.gitignore` tenía `*.xlsx` y `*.zip`, que cubre los
+exports comprimidos, **pero no un `.zip` ya descomprimido**: el usuario había abierto
+`Seguimiento Digital  2026-08-20.zip` minutos antes y la carpeta extraída estaba en disco durante
+esa ventana. ⚠ **La regla de `C-21` no falló: falló el patrón que la implementaba.**
+
+**Ya corregido**, en el mismo commit que los quitó: `docs/_fixtures/*` bloqueado entero, con
+`!docs/_fixtures/README.md` exceptuado — el README es la tabla de huellas `sha256` y **sí** tiene
+que estar versionado.
+
+### ⚠ Lo que sobrevive es el historial, no el árbol
+
+**Hoy `git ls-files docs/_fixtures/` devuelve sólo el `README.md`.** Nadie que clone el repo y mire
+el árbol de trabajo los ve. Lo que queda es que **`git show 7e48725` los recupera**, y un
+`git clone` se los trae dentro del `.git`.
+
+### Qué haría falta para sacarlos de verdad
+
+1. **Reescribir la historia** — `git filter-repo --path <archivo> --invert-paths` sobre los dos, o
+   `git filter-branch` si no está disponible.
+2. **`git push --force`** al remoto. ⚠ `CLAUDE.md` §4: el force-push **requiere confirmación
+   explícita del usuario pedida en el momento**, y hay que mirar antes qué commits se estarían
+   tirando. Este repo se edita desde dos herramientas que no se ven entre sí, así que un
+   force-push pisa trabajo que puede no estar a la vista.
+3. **Avisar a cualquier clon existente**, que tendría que re-clonar o rebasar.
+
+⭐ **Y el motivo por el que hoy no se hace, dicho para que se pueda revisar la decisión con el mismo
+dato:** el costo de reescribir la historia de un repo que es **backup y canal de contexto con la
+sesión de claude.ai** es mayor que el riesgo de que dos decks de una semana estén en un repo
+privado. **Si el repo dejara de ser privado, la decisión cambia.**
