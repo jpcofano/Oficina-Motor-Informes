@@ -648,6 +648,31 @@ pida, y `jm` es hoy el único que lo pide.
 > Mientras `S-05` esté vivo, la opción 3 no cuesta nada; el día que caiga, hay que elegir. **No
 > se decide acá.**
 
+### 1.10 La condición del "1 a 1" — decisión del usuario, 21/08/2026
+
+**El bloque de un encuentro no es siempre el mismo, y depende del `tipo` de la reunión.** En `jm`
+son **dos** láminas: la portada, que va **siempre**, y una segunda que cambia.
+
+| `REUNIONES.tipo` | segunda lámina | qué muestra |
+|---|---|---|
+| `Uno a uno` | `L-053` | resultados de plataforma del 1 a 1 |
+| **todo el resto** | `L-035` | el iceberg |
+
+⚠ **Los de `tipo` vacío llevan iceberg, y está dicho a propósito.** La condición se escribe
+`tipo!=Uno a uno`, no enumerando tipos, **porque `REUNIONES` tiene filas sin `tipo`** y porque el
+iceberg **es genérico** — `docs/SECCIONES.md` Corrección 5 lo mide sobre informes publicados:
+aparece con un ECV, no sólo con el temático.
+
+**La portada va en los dos casos.**
+
+⭐ **Y el bloque variable por ítem no es una idea nueva de este cambio: está medido.**
+`docs/SECCIONES.md` Corrección 6, sobre **tres informes publicados**, encontró bloques de **2 o 3
+láminas** según el caso — y **ni siquiera dos "Uno a uno" tienen la misma cantidad**. Es lo que una
+sola familia de tokens no puede expresar y lo que `LAMINAS.filtro` por ítem vuelve decible (`D-37`).
+
+**En `secco` el bloque es de cuatro láminas** (posiciones 5 a 8) y la condición se expresa igual;
+la tabla completa está en `docs/Prompts/2026-08-21_11.1_addendum_secco_y_rol.md` §1.
+
 ---
 
 ## 2. Informe semanal SECCO-SSCDI
@@ -956,6 +981,27 @@ guarda del formateador (`f.length > 8`) hace que `_revisar` pelado no envuelva n
 motivo completo en los cuatro casos, y el reporte de corrida sigue contando los cuatro estados por
 separado. Un deck más callado con una hoja igual de habladora es exactamente el intercambio que
 esta decisión hace — no se pierde registro en ningún lado.
+
+#### 4.5 bis · El puente entre `MAPEO.notas` y el deck — 21/08/2026
+
+**El caso concreto.** Las ocho columnas dudosas de `digital/CAMPAÑAS_DESGLOCE_DIGITAL` quedaron
+marcadas **`REVISAR`** en `MAPEO.notas` el 21/08 — entre ellas las dos que `D-31` describe: la
+solapa tiene **dos** encabezados `Estado` (col K mayúscula, col Y minúscula) y **dos** de nombre de
+campaña (col E y col V), y nadie confirmó cuál manda. La marca fue al campo `notas` **porque
+`MAPEO` no tiene columna de estado**.
+
+⭐ **Esa marca no llega sola al deck, y ahí está el puente.** `MAPEO` declara **dónde está una
+columna**; no llega a la lámina. Cuando se cablee un token sobre una de esas columnas, **el
+marcador lleva el sufijo `_revisar` en `MARCADORES.formato`** y entonces publica `-1.234-` en vez de
+un número liso — que es exactamente lo que dice §4.5: **hay número y no está validado.**
+
+⚠ **Sin ese puente, una columna que nadie confirmó publica con la misma cara que una verificada.**
+Es el mismo hueco que §4.5 vino a cerrar del lado de `V-`, visto desde el otro extremo de la
+cadena: allá el número no tenía caso de validación, acá la **columna de la que sale** no tiene
+confirmación. **Los dos publican igual de seguros si nadie los marca.**
+
+**Y se retira igual que el otro:** cuando alguien confirme qué significa la columna, se saca el
+`REVISAR` de `MAPEO.notas` **y** el sufijo del formato. Son dos celdas y ningún `clasp push`.
 
 ---
 
