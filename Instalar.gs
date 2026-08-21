@@ -1394,6 +1394,37 @@ var SEED_MAPEO_DESGLOCE_ = [
 
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_DESGLOCE_);
 
+/* `2026-08-21_7` segunda tanda — **el resto de las columnas de la solapa, con los dudosos
+ * marcados** (decisión del usuario: *"los dudosos mapeálos y que queden en revisar"*).
+ *
+ * ⚠ **`MAPEO` no tiene columna de estado**, así que el `REVISAR` va en `notas`, en mayúscula.
+ * Es el único lugar donde se puede leer, y conviene saber que **no lo frena nada**: mapear es
+ * declarar dónde está una columna, y una fila mapeada se puede usar aunque diga REVISAR. Lo que
+ * la marca dice es *"nadie confirmó qué significa esta columna"*, no *"no la uses"*.
+ *
+ * ⭐ **Y hay dos pares de encabezados repetidos en la misma solapa**, que es justo el caso que
+ * `D-31` describe: `Estado` (K) contra `estado` (Y), y `Nombre Campaña` (E) contra
+ * `nombre_campaña` (V). **Por eso la letra es la referencia y el encabezado sólo el testigo**: un
+ * fallback por título elegiría el primero de los dos y acertaría a veces. */
+var SEED_MAPEO_DESGLOCE_REVISAR_ = [
+  // ⭐ El corte de ámbito — es el mismo `ambito=jm` que ya usan `imp_*` y `gcba_imp_*`, pero
+  // sobre esta solapa y con OTROS valores. No se copia el filtro: se mira la columna.
+  { base_id: 'digital', campo_logico: 'des_ambito', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'T', encabezado: 'JM | GCBA | POLICIA', tipo_esperado: 'texto', notas: 'REVISAR — parece el corte de ámbito (el mismo que ambito=jm de imp_*), pero los valores de ESTA solapa no se midieron. Confirmar antes de filtrar' },
+  // El tipo de campaña: las filas del 1 a 1 y de RDV traen `RDV`. Candidato para separar una
+  // campaña de encuentro de una campaña general, que hoy no tiene forma declarada.
+  { base_id: 'digital', campo_logico: 'des_tipo_campana', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'S', encabezado: 'Tipo Campaña', tipo_esperado: 'texto', notas: 'REVISAR — las filas del 1 a 1 de Parque Avellaneda y las de Retiro traen "RDV". Candidato para distinguir campaña de encuentro de campaña general' },
+  { base_id: 'digital', campo_logico: 'des_objetivo', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'R', encabezado: 'Objetivo', tipo_esperado: 'texto', notas: 'REVISAR — las cinco filas del 1 a 1 traen "ALCANCE". Sin consumidor declarado' },
+  { base_id: 'digital', campo_logico: 'des_eje', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'H', encabezado: 'Eje', tipo_esperado: 'texto', notas: 'REVISAR — sin consumidor declarado' },
+  { base_id: 'digital', campo_logico: 'des_consumo', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'N', encabezado: 'Consumo', tipo_esperado: 'numero', notas: 'REVISAR — sin consumidor declarado. Ningún token de las dos plantillas pide inversión' },
+  { base_id: 'digital', campo_logico: 'des_presupuesto', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'M', encabezado: 'Presupuesto', tipo_esperado: 'numero', notas: 'REVISAR — ídem des_consumo' },
+  // ⚠ Los dos encabezados repetidos. Se mapean con nombre distinto y la marca dice por qué.
+  { base_id: 'digital', campo_logico: 'des_estado_2', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'Y', encabezado: 'estado', tipo_esperado: 'texto', notas: 'REVISAR — ⚠ SEGUNDA columna llamada estado: K es "Estado" (FINALIZADA/PAUSADA/ACTIVA) y ésta es "estado", minúscula. No se sabe cuál manda ni si dicen lo mismo. D-31: la letra es la referencia, el título sólo testigo' },
+  { base_id: 'digital', campo_logico: 'des_campana_2', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'V', encabezado: 'nombre_campaña', tipo_esperado: 'texto', notas: 'REVISAR — ⚠ SEGUNDA columna de nombre: E es "Nombre Campaña" y de ahí sale el pre/post verificado. Ésta no se midió' }
+];
+
+SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_DESGLOCE_REVISAR_);
+
+
 
 // `hoja_default`) — `solapa` es exactamente ese mismo valor, así que se deriva
 // acá en vez de tipearlo dos veces por fila.
