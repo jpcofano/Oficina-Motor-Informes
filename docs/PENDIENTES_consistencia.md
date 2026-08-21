@@ -5622,3 +5622,113 @@ mirando sólo `MAPEO` y `MARCADORES`, que son el estado, sin mirar `PLAN.md`, `C
 ni los casos de validación, que son la **decisión**. **El estado dice qué hay; los documentos dicen
 qué se decidió, y una decisión sin implementar se ve exactamente igual que una decisión que nadie
 tomó.**
+
+---
+
+## 2026-08-21 · `u1_total_*` validado contra el deck nuevo — y NO son "la suma de las tres plataformas"
+
+**Pedido del usuario: *"validá el `u1_total` contra el informe nuevo"*.** Hecho enteramente sobre el
+fixture `Seguimiento Digital  2026-08-20.zip`, que trae **la base y el deck del mismo día** — el
+cruce *definición → número publicado* sin conectarse a nada (`CLAUDE.md` §4). Huella verificada.
+
+⚠ **Esto verifica la DEFINICIÓN DEL NEGOCIO, no el motor.** Ningún `u1_*` está cableado, así que no
+hay nada del motor que medir todavía.
+
+### La lámina y la cuenta
+
+**Lámina 5 del deck `Informe semanal JM - (14_08 al 21_08)`**, titulada `Uno a uno en Parque
+Avellaneda (12/08)`, con `PRE + POST`, `Resultados parciales` y `Fecha de fin: 24/08`.
+
+**La cuenta es `3487-AGOJDGAG`** y tiene **exactamente cinco filas** en
+`CAMPAÑAS_DESGLOCE_DIGITAL`, que son el producto etapa × plataforma:
+
+| etapa | plataforma | campaña | impresiones | visualizaciones | clics |
+|---|---|---|---|---|---|
+| PRE | DV360 | `Agenda con 1 A 1 - Parque Avellaneda - 12/08` | 86.572 | 0 | 148 |
+| PRE | Meta | `Agenda con 1 A 1 - Parque Avellaneda - 12/08` | 65.554 | 0 | 1.324 |
+| POST | DV360 | `Agenda Post con 1 A 1 - Parque Avellaneda - 12` | 35.605 | 21.425 | 81 |
+| POST | Google ads | `Agenda Post con 1 A 1 - Parque Avellaneda - 12` | 132.310 | 115.968 | 118 |
+| POST | Meta | `Agenda Post con 1 A 1 - Parque Avellaneda - 12` | 74.639 | 11.121 | 208 |
+
+⭐ **Confirma lo medido el 21/08: el pre y el post comparten cuenta y plataforma y se separan por el
+NOMBRE de la campaña** (`Agenda` contra `Agenda Post`). Y confirma que **`Programmatic` = `DV360`**
+en esta solapa.
+
+### El PRE cierra exacto; el POST no, y eso NO es un error
+
+| celda | deck | base (20/08) | |
+|---|---|---|---|
+| PRE · Meta · impresiones | 65.554 | 65.554 | **=** |
+| PRE · Meta · clics | 1.324 | 1.324 | **=** |
+| PRE · Programmatic · impresiones | 86.572 | 86.572 | **=** |
+| PRE · Programmatic · clics | 148 | 148 | **=** |
+| POST · Meta · impresiones | 71.565 | 74.639 | difiere |
+| POST · Meta · visualizaciones | 10.609 | 11.121 | difiere |
+| POST · Google · impresiones | 126.047 | 132.310 | difiere |
+| POST · Google · visualizaciones | 110.364 | 115.968 | difiere |
+| POST · Programmatic · impresiones | 28.529 | 35.605 | difiere |
+| POST · Programmatic · visualizaciones | 17.170 | 21.425 | difiere |
+
+⭐ **Las diez diferencias caen del mismo lado y por el mismo motivo: el PRE terminó y el POST sigue
+corriendo.** El encuentro fue el 12/08 y el propio deck dice `Fecha de fin: 24/08`; el deck se armó
+antes del 20/08 y el fixture es del 20/08. **Mismas cinco filas, valores distintos sólo en la etapa
+viva** — que es exactamente el criterio de `CLAUDE.md` §4 para distinguir *"se rompió"* de *"la base
+se movió"*: **la cuenta de filas, no el valor.**
+
+### ⭐ Y el hallazgo que cambia el cableado: los totales suman UNA etapa, no las dos
+
+| token | publicado | ¿suma de las 5 filas? | qué es en realidad |
+|---|---|---|---|
+| `u1_total_clics` | **1.472** | ❌ 1.879 (dif 407) | ⭐ **sólo el PRE** — 1.324 + 148. Los 407 clics del POST **no se suman** |
+| `u1_total_vistas` | **138.143** | ❌ 148.514 | ⭐ **sólo el POST** — el PRE tiene 0 visualizaciones en la base |
+| `u1_total_impresiones` | **377.997** | ❌ 394.680 | PRE + POST — ver la nota de abajo |
+| `u1_total_frecuencia` | **6,8** | — | ✅ `impresiones / alcance` = 377.997 / 55.255 = **6,84** |
+| `u1_total_alcance` | **55.255** | ⛔ | **no hay columna de alcance en esta solapa** |
+
+**Y es editorialmente coherente, no un capricho:** la lámina rotula el PRE como `CLICS (CTR)` y el
+POST como `VISUALIZACIONES (VTR)`. **El PRE se mide por clics —convocatoria— y el POST por vistas
+—difusión—.** Sumar las dos etapas en el mismo total sería mezclar dos preguntas.
+
+⚠ **Si se hubiera cableado `u1_total_clics` como "SUMA sobre las tres plataformas" —que es lo que
+parecía obvio— habría publicado 1.879 contra 1.472.** Un 28 % de más, plausible y equivocado.
+
+**Dos cabos sueltos, dichos y no resueltos:**
+
+1. **`u1_total_impresiones` difiere en 270 de la suma de las propias celdas del deck** (378.267
+   contra 377.997). No es la base moviéndose —esto es el deck contra sí mismo—: el total y el
+   desagregado parecen tomados en momentos distintos. **Es del deck de origen, no del motor.**
+2. **`u1_total_alcance` necesita otra fuente.** No es la suma de los `ALCANCE` del deck
+   (21.401 + 44.296 = 65.697 ≠ 55.255), y tiene sentido: **el alcance son usuarios únicos y no se
+   suma.** La solapa `digital/Alcance` ya está mapeada (`alc_alcance`, `alc_frecuencia`) y es el
+   candidato — **no se asume**.
+
+### Lo que esto deja listo y lo que no
+
+**Listo para cablear**, con definición medida: `u1_total_clics` (SUMA de clics, etapa PRE),
+`u1_total_vistas` (SUMA de visualizaciones, etapa POST), `u1_total_impresiones` (SUMA de las dos
+etapas), `u1_fecha_fin` (columna `J`, y el deck publica `24/08`, que coincide).
+
+⛔ **No listo:** `u1_total_alcance` y `u1_total_frecuencia` —dependen de la fuente de alcance— y los
+seis `u1_bench_*`.
+
+---
+
+## 2026-08-21 · ⏸ SIN PRIORIDAD — de dónde salen los seis `u1_bench_*`
+
+**Decisión del usuario, 21/08: queda como pendiente sin prioridad.** No bloquea el cableado del
+resto de los `u1_*`.
+
+`u1_bench_google_ctr` · `u1_bench_google_vtr` · `u1_bench_meta_ctr` · `u1_bench_meta_vtr` ·
+`u1_bench_prog_ctr` · `u1_bench_prog_vtr`.
+
+**La pregunta no es nueva:** está en `docs/CONFIG_INFORMES.md` §2.1 desde antes, marcada `[?]` —
+*"`u1_bench_*` (benchmarks de plataforma): ¿de dónde salen? ¿Son fijos del año o se recalculan?"*.
+
+**Lo que se sabe hoy, medido sobre el deck del 20/08 (lámina 5):** los valores publicados son
+`Meta CTR 2,1 %` · `Programmatic CTR 1,34 %` para el PRE, y `Meta VTR 6,6 %` · `Google VTR 81,8 %` ·
+`Programmatic VTR 70,15 %` para el POST. ⚠ **Ninguno sale de la cuenta del encuentro** — el CTR real
+de Meta en el PRE es 2,02 % contra un benchmark de 2,1 %, así que son **números de referencia
+externos**, no calculados sobre estas cinco filas.
+
+**Qué lo destraba:** que alguien diga si son fijos del año o se recalculan, y contra qué universo.
+Mientras tanto, esos seis tokens publican su hueco y **eso es correcto**.
