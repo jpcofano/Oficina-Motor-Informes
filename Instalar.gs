@@ -3086,7 +3086,7 @@ var SEED_SECCIONES_ = [
   // de láminas (docs/SECCIONES.md Corrección 6).
   filaSeccion_({ id: 'encuentro_portada', padre: 'encuentro', orden: 1, nombre: 'Encuentro — portada', informes: 'JM,SECCO', modo: 'unica' }),
   filaSeccion_({ id: 'encuentro_estrategia', padre: 'encuentro', orden: 2, nombre: 'Encuentro — estrategia', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'el tipo de encuentro tiene bloque de estrategia (temático/uno a uno)', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
-  filaSeccion_({ id: 'encuentro_iceberg', padre: 'encuentro', orden: 3, nombre: 'Encuentro — iceberg', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'el encuentro tiene datos de convocatoria por canal', familia: 'enc_', estado: 'revisar', falta: 'ecv_* se usa para ECV y para Uno a uno — definir si es genérico' }),
+  filaSeccion_({ id: 'encuentro_iceberg', padre: 'encuentro', orden: 3, nombre: 'Encuentro — iceberg', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'el encuentro tiene datos de convocatoria por canal', familia: 'enc_', estado: 'revisar', falta: '' }),
   filaSeccion_({ id: 'encuentro_resultados', padre: 'encuentro', orden: 4, nombre: 'Encuentro — resultados', informes: 'JM,SECCO', modo: 'unica', opcional: 'sí', condicion: 'hay resultados post-encuentro', estado: 'revisar', falta: 'condición de activación inferida de 3 informes' }),
 
   // Hijos de 'm2' — Status semanal + Caudal semanal (2-3 láminas).

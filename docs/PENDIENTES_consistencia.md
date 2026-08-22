@@ -1907,11 +1907,29 @@ jerarquía y se resuelven con **una** regla, no con seis decisiones:
 ⭐ **Sólo el padre es `repetible`; los hijos son `unica`.** Si la regla es *"gana el padre
 repetible"*, las seis se resuelven solas y no hace falta elegir de a una.
 
-**D3 · ¿`ecv_*` es genérico?** Ya está escrito en `SECCIONES.encuentro_iceberg.falta`: *"ecv_* se
+**D3 · ~~¿`ecv_*` es genérico?~~ — ✅ RESPONDIDA (usuario, 21/08): **sí, entre tipos de encuentro.**
+Consecuencia directa: **el 1 a 1 NO necesita marcadores propios equivalentes — reusa los `ecv_*`.**
+Es la misma conclusión que `docs/SECCIONES.md` Corrección 5 ya había sacado para `enc_`, y ya
+estaba documentado en `TOKENS.md`, que lista la lámina 4 de `secco` reusando `ecv_comuna` y
+`ecv_fecha` de `jm`. **No hay que renombrar nada.**
+
+⚠ **El límite, que el "sí" NO cubre y hay que escribir para que no se lo lleve puesto:**
+*genérico entre **tipos de encuentro*** no es *genérico entre **informes***. `TOKENS.md` deja un
+contraejemplo vivo: **`ecv_poblacion` es *"Habitantes del Barrio"* en `jm` y *"Habitantes del eje"*
+en `secco`**, y un eje agrupa varios barrios — **no puede ser el mismo cálculo**. Esa pregunta
+sigue **sin cerrar** y `D3` no la contesta. Vive en `TOKENS.md` con su puntero.
+
+⛔ **Y una cosa que hay que hacer a mano, porque el seed no llega:** el motivo se vació en
+`SEED_SECCIONES_` (`Instalar.gs`), pero **`sembrarSecciones_` sólo inserta filas nuevas y nunca
+actualiza** — decisión del usuario del 16/08, igual que `CONFIG`: la hoja manda
+(`docs/ESCRITORES.md` §1 bis). Así que **la hoja viva sigue diciendo *"definir si es
+genérico"*** hasta que alguien borre esa celda a mano. Sin esta línea, el cambio del seed se
+leería como aplicado.
+
+**La pregunta original:** Ya estaba escrito en `SECCIONES.encuentro_iceberg.falta`: *"ecv_* se
 usa para ECV y para Uno a uno — definir si es genérico"*. **Medido:** `ecv_` aparece en **cinco**
 láminas de tres contextos distintos — `jm` L-034 (con `ecv_alcance_semanal`), `jm` L-035 y L-052
-(con `enc_`), `jm` pos 8 y `secco` L-005 (con `u1_`), y `secco` L-004 (solo, 2 tokens). **La
-respuesta decide si el 1 a 1 necesita marcadores propios o reusa los `ecv_`.**
+(con `enc_`), `jm` pos 8 y `secco` L-005 (con `u1_`), y `secco` L-004 (solo, 2 tokens).
 
 **D4 · ~~¿El 1 a 1 es una sección propia o una variante de `encuentro`?~~ — ✅ RESPONDIDA (usuario, 21/08): **variante de `encuentro`.** La lámina del 1 a 1 va **en vez del iceberg**, no además; el resto de los encuentros lleva iceberg, y la portada va en los dos casos. La condición está en `CONFIG_INFORMES.md` §1.10 y se implementa con `LAMINAS.filtro` (`D-37` punto 4).
 
