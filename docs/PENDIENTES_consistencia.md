@@ -7141,3 +7141,50 @@ los **2.772.141** que publica el motor —1,55×—. Programmatic coincide al 3 
 (`CLAUDE.md` §4: cuando la medición propia reimplementa lógica del motor y lo contradice, la primera
 hipótesis es que la medición está mal). El `~=` del motor puede comparar distinto; **no está medido
 y no se afirma**.
+
+### ⛔ P0 · `unirDigitalPorCuenta` cuesta ≥325 s con la ventana de julio y 33 s con la de agosto — cualquier corrida de un temario grande muere (22/08/2026)
+
+**Medido, no estimado.** Sale de instrumentar `verificarAgregadoDeJulio()` después de que la
+primera versión muriera en el muro sin dejar nada.
+
+**El reparto del tiempo, corrida del 22/08 a las 16:07 sobre `julio_24_30`:**
+
+| etapa | duró | |
+|---|---|---|
+| 1 · `resolverVentana` + 2 · `leerReuniones_` | **1 s** | 14 con `mostrar=sí`, **6** de julio sin `Agregado` |
+| 3 · `encontrarFilaRdvDeReunion_` × 6 | **49 s** | 10 · 7 · 7 · 10 · 8 · 7 — **las 6 encontraron fila** |
+| **4 · `unirDigitalPorCuenta`** | ⛔ **≥325 s** | **murió sin devolver**, a los 375 s del arranque |
+
+⭐ **Y el contraste que lo vuelve P0, contra el testigo `jm-20260821-234927`:** ese deck se generó
+**entero en 192 s** sobre `agosto_14_20`, y su rastro dice que **la etapa 1 —que incluye anclaje,
+unión digital Y duplicación— duró 33 s**. **La misma unión cuesta 33 s con agosto y más de 325 con
+julio: diez veces.**
+
+⛔ **Entonces esto no es un problema del botón: es que una corrida de un período con temario grande
+no entra en los seis minutos de Apps Script.** El desatendido tampoco lo salva — la unión es
+**indivisible** y no se puede partir entre ejecuciones.
+
+**Lo que la medición descartó, y hay que decirlo porque era la sospecha escrita:** que el costo
+estuviera en `encontrarFilaRdvDeReunion_`. **El mecanismo sospechado es real** —cada reunión arma
+una ventana de un día, `claveCacheLectura_` incluye las dos fechas, y por eso cada una paga una
+lectura completa de `rdv`: se ve en los 7-10 s por reunión, uniformes—. **Pero 49 s de 270 no matan
+nada.** La sospecha estaba escrita antes de medir justamente para que la medición pudiera
+desmentirla, y la desmintió como causa.
+
+⚠ **Y una limitación del instrumento, que es la lección del `2026-08-21_1` repitiéndose:** el freno
+chequea el presupuesto **antes de cada etapa** y la etapa 4 **entró con 49 s de 270**, o sea con
+toda la razón. *"No alcanza con un control «antes de entrar» a la etapa cara: si la etapa es
+indivisible y se pasa sola, el control de la entrada la dejó pasar."* **El botón cortó bien y murió
+igual** — y por eso el reporte de etapas no llegó a imprimirse.
+
+**Lo que falta medir, y es el paso siguiente:** `unirDigitalPorCuenta` une **seis solapas de
+`digital`** por cuenta. Hay que cronometrar **cada `leerFuente` por separado** con la ventana de
+julio y con la de agosto, que es divisible y entra en el techo. Recién con eso se sabe si el costo
+está en una solapa, en el recorte, o en el cruce.
+
+⛔ **No se optimizó nada** (instrucción del usuario, 22/08): este paso mide y para.
+
+⚠ **Y la consecuencia inmediata, que conviene tener a la vista antes de la próxima corrida:** el
+temario de `agosto_14_20` tiene **2** encuentros y el de `julio_24_30` **6**. Si la semana que viene
+entra un temario de cinco o seis, **el deck no va a salir** — y el síntoma va a ser el muro, que no
+deja rastro.
