@@ -87,6 +87,17 @@ otra fila.
 | `Informe 2026-07-31.zip` | 56.434.396 | `97310e16f49d2726e0b46d515f13d68d84f5ba13791c7bc57b05c8495e9a0ecb` |
 | `Seguimiento Digital2026-08-06.zip` | 98.332.566 | `9a1ee89d0e0b0aa6619c5efa3cd9ee9409269ce44ff856523b9ed4bcbf76b2e9` |
 | `Seguimiento Digital  2026-08-20.zip` | 78.942.640 | `f8ef3227fc6cc73ef5879948451093f8e7a278c0baf1f4341d187958f0f8cc87` |
+| `Testigo 2026-08-22 1402 Informe semanal JM — vie 14_08 — jue 20_08.zip` | 11.935.542 | `cd6f0050f3f0cf5effdf54204c10f91f6fdb773a6e0c8a239d8d969efcd353b3` |
+
+⭐ **La cuarta es de otra clase y conviene decirlo: NO es un export de una base, es un DECK DEL MOTOR.**
+Es la salida de la corrida de `jm` de las 14:02 del 22/08 sobre `agosto_14_20`, con `R-21` nivel 1 ya
+implementado. Entra a esta carpeta por el mismo motivo que los otros —**para poder citar contra qué se
+midió**— y se registra igual: sin huella, un deck del motor es indistinguible del de la corrida anterior,
+y esta semana hubo **siete**. Su par de comparación es el deck del equipo que viaja adentro del zip del
+20/08.
+
+⚠ **Y por eso su nombre lleva la hora**, no sólo la fecha: dos corridas del mismo día son dos archivos
+distintos y el nombre tiene que poder separarlos.
 
 ⚠ **La tercera se registró el 21/08, después de usarla y antes de citar un solo número.**
 Llegó sin huella, y un archivo sin huella es **anónimo**: nada lo distingue del export que le
