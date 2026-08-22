@@ -3,8 +3,48 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-22, madrugada — al cerrar el `2026-08-21_19` (el desatendido entra
-al panel) y la validación deck contra deck.
+**Última actualización:** 2026-08-22 — al cerrar el `2026-08-22_23` (las dos fases del proyecto).
+Lo de más abajo viene de la madrugada, al cerrar el `2026-08-21_19` y la validación deck contra
+deck, y **sigue vigente**: no se reescribió lo que no cambió.
+
+---
+
+## ⭐ Lo primero, porque cambia cómo se lee todo lo demás: el proyecto tiene dos fases
+
+**`D-38`, aprobada por el usuario el 22/08.** **`informe semanal`** —el motor genera el deck y cada
+número publicado está verificado— **y después `informe actualizable`** —un deck ya publicado
+refresca sus números en el lugar sin tirar el trabajo del equipo—. La segunda **no empieza hasta que
+cierre la primera**, y el motivo va escrito con la decisión: refrescar un número que todavía no está
+validado es **automatizar la publicación de un número mal**.
+
+**Todo lo que está en `PLAN.md` §2 es fase `informe semanal`.** El prompt de la otra está escrito,
+sin correr y en el Backlog.
+
+### Cómo cierra, y qué destraba eso
+
+**Cierra cuando vos, mirando un deck completo, declarás que los faltantes que quedan no son
+relevantes.** No hay umbral ni conteo: **es revisión humana**. Con dos consecuencias que van con el
+criterio:
+
+1. ⭐ **No es que no haya faltantes: es que estén a la vista para poder juzgarlos.** Por eso el P1 de
+   `FALTANTES` —**se pisa en cada corrida y no tiene lector fuera del editor**— dejó de ser un
+   pendiente más: **es el instrumento del cierre de la fase**. Hoy esa declaración **no se puede
+   hacer**, y esto es lo que la destraba.
+2. **La declaración va pegada a un `corrida_id`.** Sin corrida es una frase, no un cierre.
+
+### ⛔ Y una regla que salió de equivocarme: el testigo es `jm-20260821-234927`
+
+Puse una condición del criterio en ⛔ citando *"la misma lámina tres veces con tres juegos de
+cifras"*. **Esa evidencia es de `230048`** —la del temario de 12 encuentros—, y §4.3/§4.4 son de
+`194602`. **Sobre el testigo nadie la midió**, y lo que vos revisaste a mano **da bien**: *Eje Sur*
+es el nombre y *Parque Patricios* el barrio.
+
+**Es la tercera conclusión sobre el producto sacada de `230048`.** La regla quedó registrada con las
+tres: ninguna conclusión sale de otra corrida sin decir por qué. **`230048` engaña porque es más
+grande, y más grande se lee como más completo.**
+
+⚠ **Lo único medido sobre el testigo es la condición 1.** Las demás salen de otras corridas, y el
+criterio pide que se cumplan **todas sobre la misma**.
 
 ---
 

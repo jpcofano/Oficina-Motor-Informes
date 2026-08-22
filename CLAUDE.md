@@ -204,7 +204,22 @@ con la fecha real del día en que se escriben y un número de orden dentro del d
 entra más de uno por día: sin el `N`, dos prompts distintos del mismo día se leen como el
 mismo, y el nombre deja de ordenar. El `N` cuenta sólo los archivos que siguen esta
 convención — un número que cuenta archivos que no la llevan no se puede verificar mirando la
-carpeta. Relevamientos o hallazgos fechados: **ninguno nuevo** — la
+carpeta.
+
+- ⭐ **El `N` reinicia con la fecha: es un orden DENTRO del día, no una serie continua.** Al cambiar
+  el día vuelve a `1`, aunque la sesión siga siendo la misma y aunque el número anterior parezca
+  seguir libre. **Esto se agrega el 22/08/2026 y no es una regla nueva**: es la misma de arriba
+  dicha en voz alta, porque *"dentro del día"* la deja implícita y **el incumplimiento no se ve
+  leyendo la regla**. Una convención que se puede cumplir mal leyéndola bien está mal escrita.
+- **Tres colisiones en dos días, y las tres por seguir la numeración a través del cambio de
+  fecha**: `2026-08-21_20` con `2026-08-22_20`, y un `2026-08-21_15` que nació sobre uno ya
+  ejecutado y hubo que renumerar a `2026-08-22_24`. **Lo ejecutado no se renumera** —los commits lo
+  nombran, y ese es el único cruce que existe entre prompt y commit—, así que se convive con
+  ellas; están registradas en `docs/PENDIENTES_consistencia.md`.
+- **Antes de escribir el nombre, mirar la carpeta filtrando por la fecha de hoy**, no por el último
+  número que uno recuerde haber usado.
+
+Relevamientos o hallazgos fechados: **ninguno nuevo** — la
 conclusión va al documento que §7 declara dueño de esa pregunta; si es estructural, a
 `docs/PLAN.md` como `D-NN`.
 

@@ -1720,8 +1720,115 @@ de pertenencia. Retirarla es la Fase 4 de `D-23` y tiene su propio costo.
 
 ---
 
+**`D-38` — El proyecto tiene dos fases y son secuenciales: `informe semanal` primero,
+`informe actualizable` después.** Decisión del usuario, 22/08/2026 (`2026-08-22_23` Parte A y su
+addendum del mismo día).
+
+1. **`informe semanal`** — el motor genera el deck de `jm` de la semana y **cada número publicado
+   está verificado** contra el fixture o contra el deck del equipo. Cuando cierra, la fase **queda
+   así**: el motor produce un deck y ahí termina su relación con él.
+2. **`informe actualizable`** — un deck ya publicado, sobre el que el equipo trabajó —editó textos,
+   agregó láminas, reordenó—, **refresca sus números en el lugar** sin tirar el trabajo humano. Hoy
+   volver a generar produce un deck nuevo y pierde todo lo que el equipo hizo encima.
+
+**El motivo del orden, que es lo único que lo hace no negociable:** refrescar en el lugar un número
+que todavía no está validado es **automatizar la publicación de un número mal**. La segunda fase
+multiplica lo que produce la primera — si eso está mal, lo multiplica igual.
+
+⚠ **Se nombran por su nombre, y el número puede acompañar pero nunca ir solo.** `D-23` ya usa
+*"Fase 1 / Fase 2 / Fase 3"* para el sellado de láminas: dos juegos de "Fase N" conviviendo le
+piden al lector que recuerde cuál es cuál, y **renombrar cuesta menos que una nota al lado**.
+
+#### ✅ Cómo cierra la fase `informe semanal` — aprobado por el usuario, 22/08/2026
+
+**Cierra cuando el usuario, mirando un deck completo, declara que los faltantes que quedan no son
+relevantes.**
+
+⚠ **No hay umbral, no hay conteo, no hay lista de familias obligatorias.** El criterio es de
+**revisión humana**: no es una condición que el motor pueda evaluar solo, y no se le inventa una
+métrica para que lo parezca.
+
+**Las dos consecuencias que lo vuelven verificable, y van con él:**
+
+1. ⭐ **El criterio no es que no haya faltantes: es que estén a la vista para poder juzgarlos.** Una
+   declaración sobre faltantes que no se pueden leer se hace a ciegas — y hoy `FALTANTES` **se pisa
+   en cada corrida y no tiene lector fuera del editor**. Eso deja de ser un pendiente más: es **el
+   instrumento del cierre de esta fase** (anotado así en `docs/PENDIENTES_consistencia.md`).
+2. **La declaración se hace sobre una corrida nombrada**, pegada a un `corrida_id`. *"Estos
+   faltantes no son relevantes"* sin corrida **es una frase, no un cierre**.
+
+**Y cinco condiciones más**, que son las que hacen que ese deck sea un deck que se puede juzgar.
+Salen de lo ya medido: el testigo `jm-20260821-234927`,
+`docs/VALIDACION_deck_generado_vs_equipo_2026-08-22.md` y `docs/casos_validacion_2026-08-19.csv`
+—**220 filas de caso**, contadas el 22/08.
+
+**Por qué hace falta un criterio y no alcanza con *"el informe sale"*:** el deck de `230048`
+**salió**, con seis encuentros de más y **sin que nada fallara**.
+
+⛔ **Y todo se mide contra el testigo, que es `jm-20260821-234927`** —período elegido, temario
+correcto, sin corte—. Ninguna conclusión sobre el producto sale de otra corrida sin decir por qué;
+la regla y las tres veces que se incumplió están en `docs/PENDIENTES_consistencia.md`.
+
+| # | condición | cómo se verifica | hoy |
+|---|---|---|---|
+| 1 | **Una corrida entera y nombrada** — un solo deck de `jm` que llegó al final: el archivo **no** conserva el sello `[en proceso]` | el nombre del archivo en Drive y su fila de `CORRIDAS` | ✅ **ya pasó**: `jm-20260821-234927`, sin corte |
+| 2 | **El universo correcto** — los encuentros que publica el deck son los del deck del equipo de esa semana, **ni uno más** | contar portadas e icebergs contra el deck del equipo | ⚠ **medido sobre `194602`**, no sobre el testigo: ahí salen los dos, los mismos. Con período calculado, `230048` publicó **seis de más** — es el P1 del 21/08 |
+| 3 | **Cada número en su lámina** — ninguna copia con cifras de otro ítem, ninguna portada delante de contenido ajeno, ninguna lámina multiplicada por los ítems de otra sección | recorrer el deck del testigo | ⚠ **sin medir sobre el testigo, y lo que se revisó dio bien.** Ver la nota de abajo |
+| 4 | **El usuario declara que los faltantes que quedan no son relevantes** — arriba, con sus dos consecuencias. ⚠ **Reemplaza** a la condición que decía *"cero `/////` que no esté declarado"*: era la misma idea en una forma más exigente y mecánica, y ponía al motor a decidir algo que decide el usuario | revisión humana de un deck completo, sobre una corrida nombrada | ⛔ **hoy no se puede hacer**: los faltantes no se pueden leer fuera del editor. En el testigo son **127 impresos y 277 faltantes** sobre 404 |
+| 5 | **Nada que el motor no escribió se lee como de esta semana** — el caso RRSS: un bloque sin tokens sale intacto, con los datos de la semana pasada y **sin marca** | listar las láminas sin tokens y declarar una por una si es intencional | ⛔ abierto (§3.6 del reporte) |
+| 6 | **Cada número publicado tiene su caso en estado terminal** —`exacto`, `cerrado`, o `aproximado` con la tolerancia escrita— y **cero `contradice` sobre un número que el deck publica** | cruce del CSV contra los tokens impresos de la corrida testigo | 104 `exacto` · 54 `cerrado` · 20 `contradice` · 13 `abierto` (22/08) |
+
+**7 · Y las seis valen sobre la MISMA corrida.** Un criterio que se satisface eligiendo la mejor
+corrida para cada condición no mide el producto: mide el archivo de corridas. ⚠ **Hoy sólo la 1
+está medida sobre el testigo** — la 2 sale de `194602` y la 3 salía de `230048`. El reporte dice
+que `194602` y `234927` comparten período **y temario**, pero **heredar el temario no es haber
+medido el deck**.
+
+⛔ **La condición 3 estaba evaluada contra la corrida equivocada, y se corrige acá.** Las *"tres
+copias con tres juegos de cifras"* son de `230048` (§4.1), y las duplicaciones de §4.3 y §4.4 son
+de `194602`. **Sobre el testigo nadie la midió.** Lo único que hay es la revisión a mano del
+usuario, y **da bien**: la portada dice *Encuentro Temático Salud - Eje Sur* y el iceberg dice
+*Parque Patricios* porque **uno es el nombre y el otro el barrio** — no es una portada cruzada.
+
+⭐ **Una dependencia que esta decisión destapa:** la condición 6 **no se puede aplicar hoy**,
+porque los estados del CSV **no están declarados en ningún lado** — es lo que mide
+`docs/Prompts/2026-08-21_20_estados_del_csv.md`, que hoy se declara ⏸ diferido con la nota *"no
+bloquea nada"*. **Con la condición 6 aprobada, bloquea** — no se puede exigir un estado terminal
+cuando el vocabulario de estados no está escrito en ningún lado. Sacarle esa nota es trabajo de la
+Parte B del `2026-08-22_23`.
+
+⛔ **Lo que el criterio NO exige, y hay que decirlo o se vuelve inalcanzable:** que el motor
+reproduzca contra el fixture volúmenes que el fixture no puede sostener. El addendum **A.1** del
+reporte del 22/08 ya lo plantea: si las bases de ese zip se bajaron el jueves, **un fixture
+desactualizado es un límite del fixture y no un bug del motor**, y esos marcadores quedan sin
+resolver **por esa razón dicha** — no con un veredicto que la evidencia no sostiene.
+
+**La fase `informe actualizable` ya tiene su prompt escrito y sin correr:**
+`docs/Prompts/2026-08-22_24_refresco_de_deck_publicado.md` — **sólo Parte A, sólo lectura**, un
+censo de viabilidad sin diseño. Su §A.1 punto 3 —*¿una lámina repetida conserva algo que diga de
+qué ítem es?*— puede cerrar el tema antes de empezar. ⏸ Diferido en su propio encabezado; **no se
+agarra hasta que la otra fase cierre**.
+
+---
+
 
 ## 2 · Próximo (ordenado, con dependencias)
+
+### El encuadre: todo lo de abajo es la fase `informe semanal` — `D-38`
+
+> **Puntero, no copia.** La decisión —las dos fases, el motivo del orden y el criterio de cierre
+> con sus seis condiciones— vive en **`D-38`** (§1), **aprobada por el usuario el 22/08/2026**. Acá
+> queda sólo lo que hace falta para leer la lista.
+>
+> **Todos los frentes de abajo son de la fase `informe semanal`.** La fase `informe actualizable`
+> **no empieza hasta que ésa cierre**, y no es preferencia de orden: refrescar en el lugar un
+> número que todavía no está validado es automatizar la publicación de un número mal. Su prompt
+> está escrito y sin correr —`docs/Prompts/2026-08-22_24_refresco_de_deck_publicado.md`, ⏸ diferido.
+>
+> ⚠ **El criterio de cierre es de revisión humana**, no una condición que el motor evalúe solo:
+> cierra cuando el usuario, mirando un deck completo, declara que los faltantes que quedan no son
+> relevantes (`D-38`). **No ordena la lista de abajo** — el orden dentro de la fase sigue siendo
+> del usuario.
 
 ### Los frentes — reordenados el 21/08/2026 (`2026-08-21_17` Parte A)
 
@@ -2268,6 +2375,13 @@ tienen delante; **lo que falta es un dato que nadie les pasa**.
 
 ## 4 · Backlog (sin orden, sin fecha)
 
+- **El refresco de un deck ya publicado** — es la fase `informe actualizable` de `D-38`, y **no
+  empieza hasta que cierre la otra**. Parte A escrita y sin correr: un censo de viabilidad, sólo
+  lectura, cuyo §A.1 punto 3 —*¿una lámina repetida conserva algo que diga de qué ítem es?*— puede
+  cerrar el tema antes de empezar.
+  (`docs/Prompts/2026-08-22_24_refresco_de_deck_publicado.md`, ⏸ diferido en su propio encabezado.
+  Va acá y no a §2 por lo mismo que el banco de láminas: un prompt escrito y sin correr que no está
+  en el plan no lo encuentra nadie.)
 - **Un banco de láminas compartidas** — Parte 0 escrita, sin correr; la premisa dura es si la API
   permite insertar una slide de otra presentación.
   (`docs/Prompts/2026-08-21_12_banco_de_laminas.md`. ⚠ **Un prompt sin correr que no está en el

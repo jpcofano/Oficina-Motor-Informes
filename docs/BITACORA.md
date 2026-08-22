@@ -13050,3 +13050,73 @@ más chico que "cablear IVR", y estaba escondido detrás de un guión.
 bases —todo es deck contra deck— y **la ventana de ocho días del título del equipo** (*14_08 al
 21_08*) contra los siete de `R-11` **no se descartó** como causa de las diferencias de volumen. Es lo
 primero que hay que medir antes de perseguir Programmatic.
+
+---
+
+## 2026-08-22 · `2026-08-22_23` — el proyecto se parte en dos fases, y la primera tiene criterio de cierre
+
+**Documentación, sin código.** Partes A, B y C, más el addendum que el usuario escribió después de
+la Parte A. `docs/PLAN.md`, `CLAUDE.md`, `docs/PENDIENTES_consistencia.md`, `docs/Prompts/`.
+
+### `D-38` — las dos fases, aprobada por el usuario el 22/08
+
+**`informe semanal`** —el motor genera el deck de `jm` y cada número publicado está verificado—
+**y después `informe actualizable`** —un deck ya publicado refresca sus números en el lugar sin
+tirar el trabajo del equipo—. **El motivo del orden va escrito con la decisión**, que es lo único
+que lo hace no negociable: refrescar un número que todavía no está validado es **automatizar la
+publicación de un número mal**.
+
+⚠ **Se nombran por su nombre y nunca por su número solo.** `D-23` ya usaba "Fase 1 / Fase 2 / Fase
+3" para el sellado de láminas; dos juegos de "Fase N" conviviendo le piden al lector que recuerde
+cuál es cuál, y **renombrar costó menos que una nota al lado**.
+
+### ⭐ Cómo cierra la fase, definido por el usuario
+
+**Cierra cuando el usuario, mirando un deck completo, declara que los faltantes que quedan no son
+relevantes.** No hay umbral, no hay conteo, no hay lista de familias obligatorias: **es revisión
+humana**, no una condición que el motor pueda evaluar solo.
+
+**Las dos consecuencias que lo vuelven verificable van escritas con él**, y la primera mueve un
+pendiente de lugar:
+
+1. ⭐ **El criterio no es que no haya faltantes: es que estén a la vista para poder juzgarlos.** Eso
+   convierte el P1 de `FALTANTES` —se pisa en cada corrida, sin lector fuera del editor— en **el
+   instrumento del cierre de la fase**. Anotado en su entrada de `PENDIENTES`.
+2. **La declaración va pegada a un `corrida_id`.** Sin corrida es una frase, no un cierre.
+
+**Reemplaza a la condición 4 de la propuesta**, que pedía *"cero `/////` que no esté declarado"*:
+era la misma idea en una forma más exigente y mecánica, y **ponía al motor a decidir algo que
+decide el usuario**. Las otras cinco condiciones quedan, y el punto 7 —**las condiciones se cumplen
+sobre la MISMA corrida o no se cumplieron**— pesa más que antes.
+
+### ⛔ Una condición estaba medida contra la corrida equivocada
+
+La propuesta ponía *"cada número en su lámina"* en ⛔ citando **tres copias con tres juegos de
+cifras**. Al ir a buscar de dónde salía cada pieza, ninguna era del testigo: §4.1 es de `230048`
+—la que corrió con `R-11 (calculado)` y trajo doce encuentros de junio y julio— y §4.3/§4.4 son de
+`194602`. **Sobre `jm-20260821-234927` nadie la midió.** Lo único que hay es la revisión a mano del
+usuario, y **da bien**: *Eje Sur* es el nombre y *Parque Patricios* el barrio — no hay portada
+cruzada.
+
+⛔ **Es la tercera conclusión sobre el producto sacada de `230048`**, y por eso quedó registrada la
+regla con las tres: **el testigo de la fase es `jm-20260821-234927`** y ninguna conclusión sale de
+otra corrida sin decir por qué. **Que un deck exista no lo hace comparable** — y `230048` engaña
+justamente porque es más grande, que se lee como más completo.
+
+### El prompt de los estados del CSV dejó de "no bloquear nada"
+
+`2026-08-21_20_estados_del_csv` se declaraba ⏸ diferido *"no bloquea nada"*. **La condición 6 de
+`D-38` exige estado terminal en cada caso publicado, y eso no se puede exigir con el vocabulario de
+estados sin declarar.** Destrabado con addendum fechado en su propio archivo; el estado viejo se
+tachó, no se borró. Anotado también que su `0.1` espera diez estados y **hoy hay once** —entró
+`pendiente` con el `_18`—, lo que **confirma** su instrucción de no partir de ninguna lista previa.
+
+### La convención de nombres se podía cumplir mal leyéndola bien
+
+Tres colisiones de designador en dos días. **La convención sí estaba en `CLAUDE.md` §3** —el
+hallazgo no fue que faltara—: decía *"un número de orden dentro del día"* y **no decía que reinicia
+con la fecha**, así que seguir la numeración a través del cambio de día la incumple sin que se note.
+Precisada ahí, con las tres colisiones como testigo. `PENDIENTES` registra sólo las colisiones.
+⛔ **Nada ejecutado se renumeró:** los commits nombran el designador y es el único cruce que existe
+entre prompt y commit.
+

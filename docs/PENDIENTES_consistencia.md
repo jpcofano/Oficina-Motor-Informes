@@ -6333,6 +6333,15 @@ vuelca las once de registro. **La lista de trabajo de lo que falta cablear no se
 desde afuera del editor**, así que la mitad de esta entrada —cuál de las dos causas le tocó a
 `camp_titulo` en la lámina puntual— **quedó sin medir**. Es lo que hay que destrabar primero.
 
+⭐ **Y desde el 22/08 esto deja de ser un pendiente más: es el instrumento del cierre de la fase
+`informe semanal`** (`D-38`, aprobada ese día). La fase **cierra cuando el usuario, mirando un deck
+completo, declara que los faltantes que quedan no son relevantes** — no hay umbral ni conteo, es
+revisión humana. **El criterio no es que no haya faltantes: es que estén a la vista para poder
+juzgarlos**, y una declaración sobre faltantes que no se pueden leer **se hace a ciegas**. Con
+`FALTANTES` pisándose en cada corrida y sin lector fuera del editor, **hoy esa declaración no se
+puede hacer**. Lo mismo vale para la otra mitad del criterio: la declaración va pegada a un
+`corrida_id`, así que una hoja que se pisa tampoco puede sostenerla después.
+
 ---
 
 ### ⛔ P1 · La fila 9 de `PERIODOS` se lee «por defecto», no lo es, y produce un deck con cero encuentros (22/08/2026)
@@ -6557,3 +6566,54 @@ válida como filtro aunque haya dejado de ser el complemento.
 encuentro**, donde entran por `opciones.fila_rdv` y `dimensiones` **no se aplica**. O sea que **el
 mismo marcador se comporta distinto según dónde salga**, y cualquier cambio al universo del
 agregado tiene que dejar intacto el camino por ítem.
+
+### ⛔ P1 · Tres conclusiones sobre el producto salieron de `230048`, que no es el testigo (22/08/2026)
+
+**Anotado con su regla, no arreglado.** Sale del addendum del `2026-08-22_23`, que frenó la tercera
+antes de que se publicara como criterio.
+
+⭐ **La regla, en una línea: el testigo de la fase `informe semanal` (`D-38`) es
+`jm-20260821-234927`** —período elegido, temario correcto, sin corte— **y ninguna conclusión sobre
+el producto sale de otra corrida sin decir por qué.** Que un deck exista no lo hace comparable.
+
+**Las tres, con lo que cada una concluyó:**
+
+| # | dónde | qué se concluyó de `230048` |
+|---|---|---|
+| 1 | esta lista, 21/08 (*"elegir el período o dejarlo calcular…"*) | los **228 impresos** se leyeron como cobertura — *"la desatendida pinta más"*—, y lo que pintó de más son encuentros de junio y julio |
+| 2 | `VALIDACION_deck_generado_vs_equipo_2026-08-22.md` §4.1 | *"las portadas no corresponden a su contenido"*, medido **sobre `230048`** y presentado como **el hallazgo más grave del documento** |
+| 3 | la propuesta de cierre de `D-38`, condición 3 | *"cada número en su lámina"* en ⛔, citando las tres copias de §4.1 — **corregida el mismo día**: sobre el testigo nadie la midió |
+
+⚠ **Por qué `230048` engaña y no se nota:** corrió con `R-11 (calculado)`, así que trajo **doce
+encuentros** de junio y julio en vez de dos. Sus números **están bien calculados** y salen de las
+filas equivocadas — la familia del número plausible de `CLAUDE.md` §4. Un deck más grande se lee
+como un deck más completo.
+
+⚠ **Y el caso 3 tiene una segunda mitad que conviene tener escrita, porque es lo contrario del
+defecto:** el usuario revisó la lámina del testigo a mano y **da bien**. La portada dice *Encuentro
+Temático Salud - Eje Sur* y el iceberg dice *Parque Patricios* **porque uno es el nombre y el otro
+el barrio** — no es una portada cruzada. Un cruce aparente que no lo es cuesta igual que uno real
+si nadie lo mira.
+
+**Lo que falta, y no se hace acá:** medir la condición 3 recorriendo el deck de `234927` entero.
+Hoy sólo la condición 1 de `D-38` está medida sobre el testigo.
+
+### P2 · Tres designadores de prompt colisionaron en dos días — la regla ya está en `CLAUDE.md` §3 (22/08/2026)
+
+**Registrado para convivir con ellas, no para arreglarlas.** ⛔ **Nada ejecutado se renumera:** los
+commits nombran el designador, y ése es el único cruce que existe entre un prompt y el commit que
+lo ejecutó. Renumerar rompería justo eso.
+
+| designador | los dos archivos | estado |
+|---|---|---|
+| `_20` | `2026-08-21_20_estados_del_csv` · `2026-08-22_20_camp_por_cuenta_y_ventana` | **conviven**; el `_20` del 22 está ejecutado |
+| `_15` | `2026-08-21_15_digital_cede_a_D-30` (ejecutado) · el prompt del refresco | **resuelto renumerando el que no había corrido** → `2026-08-22_24` |
+| `_16` | `2026-08-21_16_anclajes_en_el_panel` (ejecutado) · referencias internas del anterior | **resuelto**: las referencias se reescribieron sin número |
+
+**La causa, medida y dicha por el usuario:** la numeración **reinicia con la fecha**, y en la sesión
+del 21 al 22 se la siguió a través del cambio de día.
+
+⭐ **La regla vive en `CLAUDE.md` §3, no acá** —es donde §7 la pone y donde alguien la va a leer
+justo antes de repetir el error—. Lo que se precisó el 22/08 es que *"un número de orden dentro del
+día"* **no decía** *"reinicia con la fecha"*: el hallazgo no fue que la convención faltara, sino que
+**se podía incumplir leyéndola bien**. Esta entrada registra sólo las colisiones.
