@@ -7401,6 +7401,69 @@ los datos, es la del recorte**.
 **(b)** acotar la duración máxima de una cuenta para que entre a una ventana semanal;
 **(c)** declararlo aceptado y marcar `_revisar` todo lo que dependa de `ventana_ref`.
 
+#### ⭐ La medición que pedía la decisión (22/08, tarde): **de las 27, 17 MOVIERON y 10 quedaron quietas**
+
+**El criterio, declarado antes de medir:** si la cuenta tiene **filas nuevas o valores que
+crecieron** entre los dos exports, la campaña siguió de verdad y **congelarla la cortaría mal**. Si
+los datos están quietos y sólo se movió la fecha, es **deriva pura**.
+
+| | |
+|---|---|
+| **movieron** — extensión real | **17** |
+| **quietas** — deriva pura | **10** |
+
+⚠ **Pero las 10 quietas no son diez: son dos.** **Ocho de ellas tienen CERO filas en las dos fotos**
+—`2482`, `1942`, `1943`, `1946`, `1964`, `2033`, `2994`, `3369`—, así que **congelarlas no cambia
+ningún número**: no aportan nada por ninguno de los dos caminos. **Las únicas dos deriva-pura con
+datos** son `2145-OCTVINGC` (15 filas / 2.352.745, idénticas) y `3418-JULDECVC` (1 fila / 330.012).
+
+⛔⛔ **Y el resultado que decide, porque tumba a (a) por su propio caso: `2976-MAYPCCVC` MOVIÓ.**
+
+```
+2976-MAYPCCVC · «Campañas genéricias RDV JM» · 27/07 → 31/12 (+157 d)
+DIGITAL: 10 filas / 30.714.053  →  10 filas / 15.724.289     ⇒ MOVIÓ
+```
+
+**La cuenta que motivó todo `X-29` no es deriva: es una campaña genérica que corre de verdad hasta
+fin de año** —210 días de duración declarada—. **Congelarla al primer avistaje daría el número
+correcto por casualidad**, y el resultado pasaría a depender de **cuándo se vio la cuenta por
+primera vez**, que no es una propiedad del negocio.
+
+⭐ **El balance de (a), en una línea: beneficia a 2, perjudica a 17, y no arregla el caso que la
+motivó.**
+
+#### Lo que hace (b), medido sobre la misma ventana
+
+Ventana **14–20/08**, 73 cuentas con filas en `DIGITAL`:
+
+| tope | quedan | deja afuera (top por impresiones) |
+|---|---|---|
+| ≤ 14 d | 37 | `2961` (332,6 M) · `3197` (49,9 M) · `3305` (44,5 M) |
+| ⭐ **≤ 30 d** | **51** | ídem, **y `2976`** |
+| ≤ 90 d | 61 | `2961` · `2322` (38,4 M) |
+| sin tope | 73 | — |
+
+**Las duraciones que importan:**
+
+| cuenta | duración | |
+|---|---|---|
+| `2976-MAYPCCVC` | **210 d** | la del sobreconteo — cae con cualquier tope ≤ 180 d |
+| `3289-JUNJDGAG` | **34 d** | cae con ≤ 30 d |
+| ⭐ **`3488-AGOJDGAG`** | **7 d** | **el encuentro real: sobrevive a cualquier tope** |
+
+⭐⭐ **Y una convergencia que hay que anotar sin sobrevenderla:** un tope de **30 días** deja afuera
+a `2976` **y** a `3289` en agosto, y conserva a `3488`. **`3289` en agosto es exactamente lo que le
+faltaba a `JDGAG` para cerrar `X-28`** — o sea que **una sola decisión destrabaría los dos**.
+⚠ **Pero `duración ≤ 30 d` era uno de los tres desempates que `X-28` no pudo separar**, así que
+esto **no es evidencia de que 30 sea el número**: es una razón más para conseguir el tercer `.zip`.
+
+⚠ **Lo que (b) rompe, y hay que decirlo:** una campaña larga **legítima** deja de contar. Con ≤ 30 d
+son **22 de 73 cuentas** las que salen. Si el negocio dice *"la semana muestra lo que corrió esa
+semana"*, eso es correcto; si dice *"muestra todo lo vigente"*, es un recorte que falta información.
+
+**⛔ Nada implementado** (instrucción del usuario): esto mide, y la elección entre (a), (b) y (c) es
+suya.
+
 ---
 
 ### ⛔ CORRECCIÓN (22/08/2026, del usuario) — son DOS problemas distintos con el mismo síntoma, y arriba estaban mezclados
