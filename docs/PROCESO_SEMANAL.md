@@ -234,3 +234,64 @@ vacías**, con el comentario *"se completa en Pasos 6-8"*. `Panel.html` es un st
 
 **El orden de construcción sale solo:** *Vista previa* primero, porque es la única que no escribe
 nada y ya tiene de dónde leer.
+
+---
+
+## Addendum · 2026-08-21 · La confirmación de anclajes pasa a **[hoy]**, y la sección de arriba está vencida
+
+**Addendum fechado** (`CLAUDE.md` §7): el texto anterior no se edita. `2026-08-21_16` Partes A y D.
+
+### D.1 · Confirmar el anclaje de un encuentro — **[hoy]**
+
+**Dónde entra en el camino:** entre el Paso 2 (se pega el temario) y el Paso 4 (se genera). Si el
+motor no puede asociar un encuentro con su campaña **con suficiente confianza**, lo registra y no
+adivina (`D-29`). Antes eso quedaba sólo en `excluidos` y en la hoja `ANCLAJE_PENDIENTE`; **ahora
+se resuelve desde el panel**, pestaña `Anclajes`: cada encuentro con sus tres candidatos, el
+puntaje de cada uno **contra el umbral**, y un botón por candidato. Desconfirmar también.
+
+**Los tres límites, que son parte del paso y no una nota al pie** (addendum a `D-29`, mismo día):
+
+1. **Muestra lo pendiente de confirmar, no todo lo anclable.** Un encuentro que todavía no pasó
+   por ninguna corrida **no está en la hoja** y no aparece. Si hace falta verlo antes de correr,
+   la salida es un botón *"recalcular"* que pague los ~50 s — **no existe**.
+2. ⚠ **Puede mostrar filas de más.** La hoja **acumula** y nada la limpia, así que puede haber
+   anclajes de encuentros que ya no van al deck. La pantalla **los marca** como *"ninguna reunión
+   vigente la reclama"* y **no los borra**: borrar una decisión que alguien tomó es peor que
+   dejarla a la vista.
+3. ⛔ **No cubre los empates arriba del umbral.** Un encuentro cuyo mejor candidato **pasa** el
+   umbral no entra en esta pantalla — el motor ancla solo. Si dos candidatos empatan arriba,
+   decide un desempate temporal y **nadie pregunta**. Ése es el modo de falla del `3347` y
+   **sigue abierto**: es del motor, no del panel.
+
+⚠ **Y lo que este paso NO prueba:** que el motor **respete** el `elegido` escrito. Lo hace
+`anclajeYaConfirmado_`, que existe desde el Paso 2.9F, pero **el circuito completo nunca corrió de
+punta a punta** — está anotado como pendiente y sigue abierto.
+
+### D.2 · «Lo que el panel tiene que ser» describe un panel que ya no existe
+
+La sección de arriba fue escrita cuando el panel no estaba construido, y **hoy es falsa en sus
+tres afirmaciones**. Medido contra los archivos el 21/08/2026:
+
+| lo que dice | lo que hay |
+|---|---|
+| *"las cinco funciones… **todas vacías**"* | **cuatro de las cinco ni siquiera existen** — `panel_getPeriodos`, `panel_getCamposFuente`, `panel_getPreview` y `panel_addMarcador` no están escritas. La quinta, `panel_generar`, **funciona**. Y hay **siete** funciones `panel_*` que la lista no nombra |
+| *"`Panel.html` es un stub con tres TODOs"* | **1013 líneas y cero TODOs** |
+| la tabla de cuatro pantallas | las pestañas de hoy son **`Generar`, `Anclajes`, `Corridas`, `Próximo`** — ninguna se llama como las cuatro de la tabla |
+
+⭐ **Pero la tabla no está equivocada como diseño, y por eso no se borra:** describe las pantallas
+que la **secuencia** pide, y tres de las cuatro siguen faltando. Lo que venció es la parte que
+afirma el **estado del código**, no la que dice qué haría falta.
+
+**La correspondencia, para que las dos tablas se puedan leer juntas:**
+
+| pantalla de la tabla | estado |
+|---|---|
+| **Pegar temario** | parcial — `panel_cargarTemario` y `panel_proponerTemario` existen; la pantalla propia no |
+| **Confirmar** | **la mitad construida**: `Anclajes` resuelve los encuentros; la lista de `SIN CONFIRMAR` de campañas es **otro circuito** y sigue faltando |
+| **Vista previa** | **falta** — `panel_getPreview` no existe |
+| **Estado** | parcial — la pestaña `Corridas` muestra las últimas corridas y sus faltantes; `FALTANTES` y `REVISAR` en pantalla, no |
+
+⚠ **Y la frase final —*"el orden de construcción sale solo: Vista previa primero"*— tampoco se
+cumplió**, y conviene decirlo en vez de dejarla en pie: se construyó `Generar` primero. No es un
+error a corregir; es que el orden lo decidió otra cosa. Pero leerla hoy como si fuera el plan
+vigente manda a construir lo que no toca.
