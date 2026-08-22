@@ -23,6 +23,32 @@ es un riesgo real, no teórico — ya pasó con `parsearFecha_`.
 grep -rn "function nombreNuevo_" *.gs
 ```
 
+**Y antes de medir un número, buscarlo en los casos validados.** `docs/casos_validacion_*.csv` y
+los `docs/VALIDACION_*.md` tienen los números **ya medidos**, con su universo, su operación y su
+estado. Un caso `exacto` es un **número esperado**: el control es **reproducirlo**, no volver a
+medirlo y compararlo contra sí mismo. Un caso `contradice` dice qué publica el motor hoy y **por
+qué está mal** — es la otra mitad del control, y sin ella no se sabe hacia dónde tiene que moverse.
+
+- **Volver a medir lo ya validado no es prudencia: produce un número nuevo sin testigo** y descarta
+  el trabajo que le dio universo al viejo. Si el caso existe y el motor no lo reproduce, **el paso
+  falló** — no se ajusta el número esperado.
+- **Si al buscar no hay caso, eso se dice**, y el número que salga **nace sin validar**, no
+  validado. Son dos estados distintos y sólo uno se puede citar.
+- ⚠ **La CLAVE de un caso manda sobre su NOTA.** `V-38` declara
+  `clave = "Figura=Jorge Macri; STATUS=Realizada; FECHA 23/07-31/07"` —una ventana sobre `rdv`— y
+  su nota dice *"universo del TEMARIO (5 encuentros)"*. **La nota describe el deck del equipo, no
+  lo que el caso mide**, y creerle costó un prompt entero (22/08). Es la misma familia que *un
+  comentario que afirma un contrato es una premisa sin testigo* (§4), aplicada al CSV.
+- ⚠ **Y el cruce se hace sobre el BLOQUE entero, no sobre los casos que el prompt nombra.** El
+  mismo día, `V-71` estaba en el bloque `agregado_semana_jm` —y era el único que sí medía el
+  universo del temario— y no entró al reporte porque el prompt no lo nombraba. **Un prompt nombra
+  los casos que conoce, que es exactamente el sesgo que hay que compensar.**
+
+**Origen:** decisión del usuario, 22/08/2026. Se escribió un paso entero alrededor de *"medir el
+agregado y comparar contra un umbral"* cuando los siete números **ya estaban validados como
+`exacto` desde el 09/08**. Es la forma que §7 ya previene para las reglas —*buscar la regla antes
+de tratar algo como pregunta abierta*— aplicada a los números.
+
 ---
 
 ## 2. Reglas de código — invariantes
@@ -1003,7 +1029,7 @@ distintas nunca compiten. La precedencia entra solo como desempate, al final.
 | ¿Qué mide cada token, de dónde sale y con qué operación y filtro? | **`tools/catalogo.js`, re-corrido** — nunca el `.md`. `docs/CATALOGO_tokens.md` es su salida y **declara en la primera línea de qué snapshot salió**: es evidencia fechada, mismo criterio que `inventario.js` y `escritores.js`. Distinto de `TOKENS.md`, que responde **cómo se llama** y dónde se usa; esto responde **qué es**. ⚠ **Su columna `config` dice sólo que la configuración resuelve** — no que el token publique bien, y menos que el número salga de las filas correctas | los dos; el `.md` no se edita, se regenera |
 | ¿Qué inconsistencia documental sigue abierta? | `docs/PENDIENTES_consistencia.md` | los dos |
 | ¿Qué se le preguntó al equipo y sigue sin respuesta? | `docs/PENDIENTES_consistencia.md`, sección propia "Preguntas al equipo" (nacen en docs congelados como `VALIDACION` §7; al congelarse el doc, la pregunta viva se copia ahí) | los dos |
-| ¿Qué número dio una medición y contra qué se verificó? | `docs/VALIDACION_*.md` + su CSV de casos — congelados, uno nuevo por corrida de validación | nadie edita; se crea uno nuevo |
+| ¿Qué número dio una medición y contra qué se verificó? | `docs/VALIDACION_*.md` + su CSV de casos — congelados, uno nuevo por corrida de validación. ⭐ **Y se consulta ANTES de medir, no después**: un caso `exacto` es un número **esperado** y el control es reproducirlo (§1). ⚠ Manda la **clave** del caso, no su nota | nadie edita; se crea uno nuevo |
 | ¿Qué decía una hoja de registro en una fecha dada? | `docs/_snapshots/AAAA-MM-DD_<hoja>.*`, generados por `tools/snapshot.js`. **Se versionan, y por eso existen**: el "snapshot del 11/08" se venía citando en cuatro documentos **como si fuera de hoy** porque no estaba en el repo y nadie podía mirarle la fecha. Un snapshot es **evidencia fechada** — al entrar uno nuevo, se revisa que ningún documento vivo cite cifras del viejo sin decir de cuándo son | nadie edita; se crea uno nuevo |
 | ¿Qué corridas de Apps Script están esperando, y qué destraba cada una? | `docs/CORRIDAS_pendientes_AAAA-MM-DD.md` — **una sola lista, ordenada por lo que destraba**. Nace de una corrida nocturna y **se consume**: cuando sus ítems se corrieron, el documento queda como evidencia congelada y el siguiente lo reemplaza. Distinto de `PLAN.md`, que ordena **frentes**: esto ordena **botones que hay que apretar** | los dos |
 | ¿Qué solapas tiene una base, con qué forma, y cuáles registra `SOLAPAS`? | `docs/CENSO_solapas_*_AAAA-MM-DD.md` — congelado, uno nuevo por corrida de censo. **Existe porque un censo que sólo vive en un reporte no se puede citar ni verificar**, y así se perdió el de la Parte A2 del `2026-08-14_1`: cuando el alta fue a escribirse, el repo nombraba 3 de 20 solapas. Es la evidencia que un alta de `SOLAPAS` **cita**; no clasifica —eso es del alta— y envejece como cualquier medición: para saber qué hay hoy se re-corre `censarSolapasParaAlta()` | nadie edita; se crea uno nuevo |
