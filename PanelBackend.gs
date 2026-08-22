@@ -96,14 +96,66 @@ function avisosDeVentanaPropuesta_(ventana) {
     return avisos;
   }
 
+  /* ⛔ `2026-08-22_22` §5 — **la premisa de este aviso era FALSA, y el aviso es el único de la
+   * pantalla.**
+   *
+   * Decía *"La semana propuesta **no tiene fila en PERIODOS**"* mirando **sólo** si el `origen`
+   * empieza con `periodo_ref:`. Medido el 22/08 en la hoja viva: la ventana propuesta es
+   * `2026-08-14 → 2026-08-20` y **`agosto_14_20` es exactamente esa fila**. La consecuencia que
+   * el aviso describe —que el recorte de `D-19` no se aplica— **es cierta**; la causa que le
+   * atribuye, no.
+   *
+   * ⚠ **Y eso es tan caro como no avisar nada.** `CLAUDE.md` §4 lo tiene escrito para este mismo
+   * aviso, cuando se lo redactó: *"mostrar una advertencia equivocada es tan caro como no mostrar
+   * ninguna, porque la próxima se lee con la misma desconfianza"*. Ésta se leyó con desconfianza
+   * dos días después de escribirla.
+   *
+   * ⭐ **El arreglo es buscar la fila que coincide, que es lo que el front ya sabe hacer** —
+   * `periodoBuscado()` empareja por `desde`/`hasta` para la vía rápida—. Con eso el aviso deja de
+   * ser una alarma y pasa a decir **qué apretar**: *"elegí `agosto_14_20`"*.
+   *
+   * ⚠ **Se compara por ventana y NO por nombre, y eso importa acá más que en el front:** hay dos
+   * filas con la misma ventana —`agosto_14_20` y `'vie 14/08 -- jue 20/08 (por defecto)'`, la
+   * fila 9 anotada como P1— y **elegir la equivocada produce un deck con cero encuentros**. Por
+   * eso se ofrecen **todas** las que coinciden, no la primera: la pantalla no puede elegir por la
+   * persona cuando una de las opciones vacía el informe. */
+  var coincidentes = [];
+  try {
+    var periodos = leerPeriodos();
+    Object.keys(periodos).forEach(function (id) {
+      var p = periodos[id];
+      var d = parsearFechaCelda_(p.desde), h = parsearFechaCelda_(p.hasta);
+      if (!d || !h) return;
+      if (formatearFecha_(d) === formatearFecha_(ventana.desde) &&
+          formatearFecha_(h) === formatearFecha_(ventana.hasta)) coincidentes.push(id);
+    });
+  } catch (e) {
+    // Un panel que no puede leer `PERIODOS` sigue sirviendo: el aviso se degrada, no se cae.
+    coincidentes = [];
+  }
+
   if (visibles) {
+    var causa = coincidentes.length
+      ? 'La semana propuesta **sí** tiene fila en PERIODOS —' +
+        coincidentes.map(function (id) { return '"' + id + '"'; }).join(' y ') +
+        '—, pero el selector quedó en «por defecto», así que la ventana se calculó y no se eligió.'
+      : 'La semana propuesta no tiene fila en PERIODOS.';
+
+    var salida = coincidentes.length === 1
+      ? ' Para que el recorte se aplique, elegí "' + coincidentes[0] + '" en el selector.'
+      : coincidentes.length > 1
+        ? ' Para que el recorte se aplique hay que elegir una de esas filas en el selector. ' +
+          '⚠ Son varias con la misma ventana: el recorte usa el `periodo_id`, así que la que ' +
+          'ninguna reunión tenga cargada va a dejar el informe SIN encuentros.'
+        : ' Para que el recorte se aplique hay que elegir un período de la lista, o crear la fila.';
+
     avisos.push({
       nivel: 'aviso',
-      texto: 'La semana propuesta no tiene fila en PERIODOS. El informe se genera igual y sobre ' +
-        'estas fechas, pero las secciones repetibles NO se recortan por período: entran las ' +
-        visibles + ' reunión(es) con mostrar=sí' +
+      texto: causa + ' El informe se genera igual y sobre estas fechas, pero las secciones ' +
+        'repetibles NO se recortan por período: entran las ' + visibles + ' reunión(es) con ' +
+        'mostrar=sí' +
         (deOtros ? ', incluidas ' + deOtros + ' que ya tienen otro período asignado' : '') +
-        '. Para que el recorte se aplique hay que elegir un período de la lista, o crear la fila.'
+        '.' + salida
     });
   }
 
