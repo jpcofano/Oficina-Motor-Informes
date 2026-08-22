@@ -7008,3 +7008,103 @@ la medición, no la regla.
   información que hoy sí sirve para otra cosa.
 
 ⚠ **Lo que NO es salida: seguir buscando la operación correcta.** No la hay.
+
+### ⭐ El Call Center del Resumen sale de `looker/CC`, que ya es `fuente` y **no la lee nadie** (22/08/2026)
+
+**Anotado, no cableado.** Sale de buscar de dónde salen los tres `/////` del Resumen Ejecutivo, por
+la corazonada del usuario del 22/08 —*"de algún lado sale y creo que ya lo habíamos calculado"*—.
+
+**La solapa existe, está registrada y tiene los datos:**
+
+```
+SOLAPAS · looker/CC · uso = fuente · 1.317 filas · origen = seed
+firma: ID Cuentas · Base enviada · Base barrida · Contactados · Efectivos · Tipo de llamado
+notas: "detalle por canal, con ID cuentas"
+```
+
+⛔ **Y ningún marcador la lee.** Los tres casilleros del Resumen —«N campañas de Call Center», «Base
+discada», «Contactados»— salen `/////`, que significa exactamente eso: **nadie lo cableó**.
+
+**Lo medido contra el fixture, ventana 14–20/08, ámbito JM:**
+
+| | fixture `looker/CC` | el equipo | |
+|---|---|---|---|
+| filas | 2 | «**3** campañas de Call Center» | |
+| **`Base enviada`** | **6.673** | **«Base discada» 6.851** | ✅ **−2,6 %** |
+| `Base barrida` | 6.011 | — | −12 % contra el mismo casillero |
+| `Contactados` | 1.878 | 1.616 (24 %) | +16 % |
+| `Efectivos` | 1.661 | — | |
+
+⭐⭐ **Y el hallazgo de definición, que es lo accionable: «Base discada» del equipo es
+`Base enviada`, NO `Base barrida`.** Los nombres invitan a lo contrario —*discada* suena a
+*barrida*— y elegir mal da un número **12 % abajo, plausible y sin nada que lo delate**. Con
+`Base enviada` cierra a −2,6 %.
+
+⚠ **`Contactados` queda +16 % y no se fuerza.** Cae bajo `R-29`: `looker/CC` **no tiene fecha
+propia** —toma la ventana de `Cuentas` por pertenencia— así que es una solapa **de estado**, y sus
+dos filas JM traen el acumulado de campañas que arrancaron antes. Que `Base enviada` cierre y
+`Contactados` no es coherente con eso: la base se envía una vez al arrancar y los contactos siguen
+sumando.
+
+**Lo que hace falta para cablearlo, y no entra acá:** las tres filas de `MARCADORES`
+—`CONTEO` de filas para las campañas, `SUMA` de `Base enviada`, `SUMA` de `Contactados`— más las
+filas de `MAPEO` de esa solapa, que **hoy no tiene ninguna**. Es un paso de cableado con su propio
+control contra estos números.
+
+---
+
+### ⚠ Y una distinción que hay que escribir: hay dos clases de `uso = ignorar` y `CLAUDE.md` §2 sólo describe una
+
+**Anotado, no arreglado.** Apareció al buscar lo de arriba, con el usuario pidiendo expresamente
+mirar las solapas en `ignorar`.
+
+`CLAUDE.md` §2 dice: *"Una solapa con `uso = 'ignorar'` no se toca nunca… **ya se decidieron**. Son
+pivots, backups, copias de trabajo y duplicados — el caso `digital/RDV` duplica la base `rdv` y
+leerla produce doble conteo. **Auditarlas es tiempo perdido y, peor, reabre discusiones
+cerradas**"*.
+
+⛔ **Eso describe una clase. Hay otra, y su nota lo dice con todas las letras:**
+
+| solapa | filas | nota registrada |
+|---|---|---|
+| `looker/MAIL` | 5.864 | *"R-22 (09/08): **sin columna de fecha y sin fila en MAPEO** → ilegible para el motor"* |
+| `looker/IVR` | 195 | ídem |
+| `looker/SMS` | 97 | ídem |
+| `looker/ALCANCE` | 776 | ídem |
+
+**Ésas no son duplicados ni copias de trabajo: son solapas con datos reales que el motor no puede
+leer todavía.** `ignorar` ahí no significa *"ya se decidió que no va"*, significa *"no se puede
+leer con lo que hay hoy"* — y **son dos estados distintos que comparten valor**.
+
+⚠ **El costo de que compartan valor es el que se pagó hoy:** buscar de dónde sale un número obliga a
+saltear la regla, y saltearla es exactamente lo que la regla existe para evitar. **La regla es
+buena; el vocabulario es el que no alcanza.**
+
+**Dos salidas, sin elegir:** **(a)** un valor nuevo —`ilegible`, `sin_mapeo`— que separe *"decidido
+que no"* de *"no se puede todavía"*; **(b)** dejar `ignorar` y que la regla de `CLAUDE.md` §2 diga
+que **la nota manda** sobre por qué está ignorada. La (b) no toca ninguna hoja y ya es medio cierta
+—las notas ya lo dicen—; la (a) lo hace verificable.
+
+ⓘ **Y el resultado de haber mirado, para que no se pierda:** de las cuatro, ninguna resuelve el
+Resumen. `looker/SMS` e `IVR` **no tienen una sola fila JM** en la ventana —o sea que el `0 campañas
+de IVR` y los `-` que publica el motor para JM **son correctos**— y del lado GCBA dan acumulados que
+no reproducen. **La que tenía la respuesta era `looker/CC`, que no está en `ignorar`: está en
+`fuente` y sin leer.**
+
+### ⛔ Corrección del 22/08: el fixture NO está desactualizado para GCBA
+
+**Dicho el mismo día y antes de que nadie lo citara.** Este documento y el addendum del reporte de
+validación afirmaron que *"para GCBA el fixture está desactualizado"*, porque da **61 envíos** de
+mail contra los **73** que publica el equipo, y **−12,8 %** en entregados.
+
+⛔ **Es falso. Dato del usuario, 22/08: GCBA se hace el jueves**, así que el export del 20/08 tiene
+la semana completa. **El fixture está bien y la diferencia es real.**
+
+⭐ **Y la conclusión correcta es más útil que la equivocada:** si el fixture está bien, la
+diferencia de 61 contra 73 **no se resuelve esperando un export más fresco** — hay que buscarla en
+el dato. Queda abierta, y `R-29` da la primera pista: puede que el equipo cuente envíos de una
+solapa distinta de `digital/Directa Mail`.
+
+⚠ **El error de método fue el de siempre:** *
+tomé la explicación cómoda —la fecha del export— sin verificarla contra cómo trabaja el equipo. Es
+la misma forma que `CLAUDE.md` §4 nombra para el número plausible, en la capa del diagnóstico.

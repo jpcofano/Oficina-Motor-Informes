@@ -1979,3 +1979,63 @@ abierto**.
 `u1_total_impresiones` publica 377.997 y la suma de las propias celdas del deck da 378.267. **Los
 270 de diferencia son del deck contra sí mismo** — el total y el desagregado parecen tomados en
 momentos distintos.
+
+---
+
+## R-29 — Una fila de evento se puede sumar por semana; una fila de estado, no
+
+**Enunciado:** las bases traen dos formas de fila y **sólo una admite un agregado por período**.
+
+| forma | cómo crece | ejemplo medido | ¿se puede sumar por semana? |
+|---|---|---|---|
+| **evento** | **agrega una fila** por cada hecho, **con su propia fecha** | `digital/Directa Mail` — una fila por envío, con `Fecha envio` | ✅ **sí** |
+| **estado** | **actualiza la fila** de la entidad; el valor es el **acumulado desde que arrancó** | `looker/DIGITAL` — una fila por campaña × plataforma, **sin columna de fecha propia** | ⛔ **no** |
+
+⭐ **Sobre una fila de estado, ningún recorte por ventana arregla el número.** El recorte elige
+**qué filas** entran; **no puede recortar lo que hay adentro de una fila**. Si el rótulo dice *"de
+la semana"* y la fila dice *"desde que arrancó"*, el resultado es **grande, plausible y de otra
+pregunta** — el modo de falla que este proyecto persigue desde el 07/08.
+
+**Cómo se reconoce, y se hace ANTES de cablear, no después:**
+
+1. **¿La solapa tiene columna de fecha propia?** Si `SOLAPAS.ventana_ref` apunta a otra solapa, es
+   señal fuerte de que **no la tiene** — y una fila sin fecha propia rara vez es un evento.
+2. **¿Se repite la clave?** Una fila por `(entidad, dimensión)` y sin repetir es estado. Medido el
+   22/08 sobre las dos campañas del temario: **una sola fila** por `(cuenta, plataforma)`.
+3. **¿El valor crece solo entre dos exports?** Un evento no cambia después de ocurrido; un estado
+   sí.
+
+**Origen:** medido el 22/08/2026 contra `docs/_fixtures/Seguimiento Digital  2026-08-20.zip`
+(`sha256 f8ef3227…`). Dato del usuario —*"lo que se actualiza es la fila misma, no se agregan
+filas"*— confirmado sobre el archivo.
+
+**Lo medido, que es lo que la funda:**
+
+- **`digital/Directa Mail` reproduce EXACTO.** Ventana 14–20/08, lista blanca de `D-21` y corte de
+  `R-15`: **6 filas** y el equipo publica **«6 envíos»**; `538.291` entregados contra **538.291**.
+  Y `digital/Directa SMS`: **3 filas** contra **3**.
+- **`looker/DIGITAL` no puede.** Programmatic da 7,26× lo que publica el equipo. La resta lo prueba:
+  el equipo le atribuye **379.512** a Autódromo y su fila de DV360 dice **3.756.321** — **factor
+  9,9**. Autódromo arrancó **ocho días antes** de la ventana.
+- ⭐ **Y la contraprueba está en la misma medición:** el narco arrancó **cuatro días antes** y su
+  lámina reproduce plataforma por plataforma, dentro del ±10 %. **A menos acumulado previo, mejor
+  cierra.** Una sola variable explica los dos casos, que es lo que la vuelve regla y no anécdota.
+
+**Cómo se verifica:** tomar un marcador que sume sobre una solapa sin fecha propia y comparar contra
+lo que el equipo publica **para una entidad que arrancó dentro de la ventana** y **otra que arrancó
+mucho antes**. La primera cierra y la segunda no. Si las dos cierran, la solapa no es de estado.
+
+**Si falla:** si una solapa de estado empieza a reproducir el semanal, **la salida no es celebrar**:
+es mirar si le agregaron una columna de fecha o si pasó a agregar filas. **Que el número dé bien no
+prueba que la forma cambió** — puede ser que todas las entidades de esa semana hayan arrancado
+dentro de ella, que es el caso del narco.
+
+⚠ **Lo que esta regla NO dice:** que el número de una fila de estado esté mal. `28.988.260` es de
+verdad el acumulado de las campañas de la semana, y **para esa pregunta es correcto**. Lo que está
+mal es el rótulo. Elegir entre cambiar el rótulo, conseguir el dato semanal o publicar `/////` es
+una **decisión editorial** y vive en `docs/CONFIG_INFORMES.md`, no acá.
+
+**Alcance medido al 22/08 — las solapas de `looker` son TODAS de estado.** `DIGITAL`, `CC`, `SMS`,
+`IVR` y `resumen_metricas_dinamico` toman la ventana de `Cuentas` por pertenencia (`R-25`) y ninguna
+tiene fecha propia. Las de `digital` —`Directa Mail`, `Directa SMS`, `Directa IVR`— **sí la tienen**
+y son de evento.
