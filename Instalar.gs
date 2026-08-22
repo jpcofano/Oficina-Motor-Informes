@@ -4761,6 +4761,89 @@ function cablearEnviosComoConteo() {
   return r;
 }
 
+
+/* ══════════ `2026-08-22` — Programmatic pasa a `_revisar` ══════════
+ *
+ * ⭐ **Desconfianza declarada por una persona, que es exactamente para lo que el sufijo existe**
+ * (`2026-08-19_1` Parte C). El número sigue publicándose —envuelto en guiones— porque **no es
+ * basura: es el acumulado**, y para esa pregunta está bien.
+ *
+ * **Lo medido el 22/08 contra `Seguimiento Digital  2026-08-20.zip` (`sha256 f8ef3227…`):**
+ * `looker/DIGITAL` **actualiza la fila, no agrega filas** —dato del usuario, verificado: una sola
+ * fila por (cuenta, plataforma) para las dos campañas del temario—, así que su columna
+ * `Impresiones` es el **acumulado desde que la campaña arrancó**.
+ *
+ * ⭐⭐ **El número que lo prueba es una resta.** El equipo publica `Programmatic 3.415.037` en el
+ * Resumen JM y `3.035.525` en su lámina del narco, o sea que le atribuye **379.512** a Autódromo —
+ * cuya fila de DV360 dice **3.756.321**. **Factor 9,9.** Y Google, que casi no acumuló antes,
+ * cierra a **1,05×**. Autódromo arrancó el 6/08, **ocho días antes** de la ventana.
+ *
+ * ⭐ **La contraprueba:** el narco arrancó el 10/08 —cuatro días antes— y su lámina reproduce
+ * plataforma por plataforma, dentro del ±10 %. **A menos acumulado previo, mejor cierra.**
+ *
+ * ⛔ **Por qué esto NO se arregla cableando:** el dato semanal **no existe en la base**.
+ * `looker/DIGITAL` no tiene columna temporal propia y `CAMPAÑAS_DESGLOCE_DIGITAL` —que es más
+ * fino— tiene grano **MES**. El recorte por ventana elige **qué filas** entran; **no puede recortar
+ * lo que hay adentro de una fila**. Ninguna operación ni ningún filtro cambia eso.
+ *
+ * ⚠ **Y por eso se marca en vez de apagarse.** `/////` diría *"nadie lo cableó"*, que es falso;
+ * `-` diría *"no hay dato"*, que también. `-24.783.992-` dice **"hay un número y no confíes"**, que
+ * es la verdad, y deja el valor a la vista para el día que se decida el rótulo.
+ *
+ * ⚠ **Sólo Programmatic, por pedido del usuario.** `imp_total`, `imp_meta` e `imp_google` tienen
+ * **la misma causa** —y `imp_total` además **incluye** a Programmatic, así que arrastra el error
+ * entero: 28.988.260 contra 6.487.855—. Que no se marquen es una decisión pendiente, no un
+ * descuido: está escrita en `PENDIENTES_consistencia.md`.
+ *
+ * **La nota de `MARCADORES` no se toca**: dice por qué el marcador está cableado como está
+ * (`R-24` por resta, `R-25` la ventana) y **eso sigue siendo cierto**. El motivo de la marca vive
+ * en `PENDIENTES`, que es donde se puede escribir largo.
+ */
+function marcarProgrammaticARevisar() {
+  var r = curarCamposMarcadores_([
+    { marcador: 'imp_prog',      informe_id: 'jm', formato: 'miles_revisar' },
+    { marcador: 'gcba_imp_prog', informe_id: 'jm', formato: 'miles_revisar' }
+  ]);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+  if (!r.cambios_escritos) {
+    Logger.log('ⓘ Cero celdas escritas: los dos ya estaban en `miles_revisar`. No se tocó nada.');
+    return r;
+  }
+  Logger.log('== Programmatic a revisar: ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" → "' + a.nuevo + '"');
+  });
+  Logger.log('');
+  Logger.log('Los dos publican ahora entre guiones: -24.783.992- en vez de 24.783.992.');
+  Logger.log('El motivo está en docs/PENDIENTES_consistencia.md — «looker/DIGITAL guarda el');
+  Logger.log('acumulado de la campaña, no lo de la semana». La marca se saca con');
+  Logger.log('`revertirMarcaDeProgrammatic()` el día que se decida el rótulo o llegue el dato.');
+  return r;
+}
+
+/**
+ * Saca la marca. ⚠ **ESCRIBE en `MARCADORES`.**
+ *
+ * ⭐ **Existe desde el mismo commit que la pone, y eso no es simetría decorativa:** `CLAUDE.md` §4
+ * dice que *"una marca que hay que sacar a mano es deuda, y de la peor clase: nadie la saca"*. Con
+ * el botón, sacarla cuesta lo mismo que ponerla.
+ */
+function revertirMarcaDeProgrammatic() {
+  var r = curarCamposMarcadores_([
+    { marcador: 'imp_prog',      informe_id: 'jm', formato: 'miles' },
+    { marcador: 'gcba_imp_prog', informe_id: 'jm', formato: 'miles' }
+  ]);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+  if (!r.cambios_escritos) { Logger.log('ⓘ Cero celdas: ya estaban en `miles`.'); return r; }
+  Logger.log('== marca retirada: ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" → "' + a.nuevo + '"');
+  });
+  Logger.log('⚠ La entrada de PENDIENTES NO se borra: dice por qué estuvo marcado y por qué dejó');
+  Logger.log('  de estarlo. Si se retira sin que el dato haya cambiado, eso hay que escribirlo.');
+  return r;
+}
+
 /* ══════════ `2026-08-20_7` — cerrar para generar (20/08/2026) ══════════
  *
  * Dos migraciones que se corren **en este orden y no en el otro**, y el motivo es del escritor:
