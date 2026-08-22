@@ -1346,8 +1346,9 @@ function verificarAgregadoDeJulio() {
      * el próximo que lea estos tiempos los va a comparar contra los 49 s de la corrida anterior
      * —que fueron sin caché— y va a restar dos cosas distintas, que es exactamente lo que anuló
      * el `_28`. */
-    Logger.log('   ⚠ etapas 3 a 7 corrieron CON cacheDatosHoja_ encendida — como dentro de');
-    Logger.log('     generarInforme. Los 49 s de la corrida anterior fueron SIN caché.');
+    Logger.log('   ⚠ etapas 3 a 7 corrieron con LAS DOS cachés —cacheRegistros_ y cacheDatosHoja_—');
+    Logger.log('     igual que dentro de generarInforme. Corridas anteriores: 49 s sin ninguna,');
+    Logger.log('     58 s con sólo la de datos (o sea, sin efecto: la que domina es la otra).');
     var previo = 0;
     etapas.forEach(function (e) {
       Logger.log('   ' + e.etapa + ' · terminó a los ' + e.al_seg + ' s · duró ' + (e.al_seg - previo) + ' s');
@@ -1396,13 +1397,35 @@ function verificarAgregadoDeJulio() {
    *
    * ⭐ **Y con esto la etapa 3 pasa a medir otra cosa, que hay que leer sabiéndolo:** sus seis
    * llamadas **siguen recortando por seis ventanas de un día distintas** —eso es a propósito y no
-   * se toca— pero **dejan de releer `rdv` seis veces**. Los 49 s de la corrida anterior son el
-   * costo SIN caché; lo que salga ahora es el costo real dentro de una corrida. */
+   * se toca— pero **dejan de releer `rdv` seis veces**.
+   *
+   * ⛔⛔ **Y SON DOS CACHÉS, no una. Encender sólo `cacheDatosHoja_` fue el MISMO error de
+   * medición, cometido por segunda vez el mismo día.** La corrida con una sola encendida dio
+   * etapa 3 en **58 s** —contra 49 sin ninguna, o sea sin efecto— y la etapa 4 murió igual, a los
+   * 316 s. `generarInforme` enciende **las dos**:
+   *
+   * ```
+   * abrirCacheRegistros_();     // SOLAPAS, MAPEO, BASES — la planilla de control
+   * abrirCacheDatosHoja_();     // los datos crudos de las solapas de las bases
+   * ```
+   *
+   * ⭐ **Y la que faltaba es la que domina acá.** `buscarMapeo` **no cachea por su cuenta**: cada
+   * llamada relee `SOLAPAS` y `MAPEO` **enteras**. `encontrarFilaRdvDeReunion_` hace tres por
+   * reunión, y `unirDigitalPorCuenta` una por canal más las de dimensión — su propio comentario
+   * del 04/08 dice que **eso** era lo que la mataba: *"eran ~13.000 lecturas de la planilla de
+   * control y se comían los 6 minutos"*. Con `cacheDatosHoja_` sola, el ahorro de no releer las
+   * bases queda **tapado** por el costo de releer la planilla de control.
+   *
+   * ⭐⭐ **La lección, y es la que evita la tercera vez: un instrumento que quiere medir lo que
+   * cuesta una corrida no ARMA su preámbulo, lo COPIA.** Reconstruirlo de memoria es adivinar qué
+   * prepara `generarInforme`, y adivinar mal deja al instrumento midiendo otra cosa **sin que nada
+   * falle**. Las dos líneas de abajo son las mismas dos de `Generador.gs`, en el mismo orden. */
+  abrirCacheRegistros_();
   abrirCacheDatosHoja_();
   try {
 
   Logger.log('');
-  Logger.log('== 3 · encontrarFilaRdvDeReunion_, una por una · CON cacheDatosHoja_ ==');
+  Logger.log('== 3 · encontrarFilaRdvDeReunion_, una por una · CON LAS DOS cachés ==');
   var conFila = 0;
   for (var i = 0; i < delPeriodo.length; i++) {
     if (seg() >= TECHO_SEG) {
@@ -1490,6 +1513,7 @@ function verificarAgregadoDeJulio() {
      * que corra en esta misma invocación. Una caché que sobrevive a su instrumento es peor que no
      * tenerla: el siguiente diagnóstico leería datos viejos sin enterarse. */
     cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
   }
 }
 
