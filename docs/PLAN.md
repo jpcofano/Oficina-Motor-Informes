@@ -1830,68 +1830,123 @@ agarra hasta que la otra fase cierre**.
 > relevantes (`D-38`). **No ordena la lista de abajo** — el orden dentro de la fase sigue siendo
 > del usuario.
 
-### Los frentes — reordenados el 21/08/2026 (`2026-08-21_17` Parte A)
+### Las tres sub-etapas — decididas por el usuario el 22/08/2026
 
-> **Reemplaza a la tabla de catorce frentes del 14–18/08**, que quedó con **seis de quince filas
-> tachadas** y **sin nada del trabajo del 19 al 21/08** — catorce entradas de bitácora que
-> ninguna fila mencionaba. Una lista donde lo cerrado ocupa la mitad no ordena nada.
+> **Reemplaza a la lista de siete frentes del 21/08** (`2026-08-21_17` Parte A), que quedó vieja:
+> **dos de sus siete estaban cerrados** y otros dos, a medias. Se midió antes de reescribir; el
+> resultado está en la tabla de abajo.
 >
-> ⛔ **Lo cerrado no se borró: salió de acá.** Su rastro está en `BITACORA.md`, que es el dueño de
-> *"qué se hizo y cuándo"* (`CLAUDE.md` §7), y los frentes cerrados conservan su texto completo
-> en el historial de este archivo.
+> ⛔ **Lo cerrado no se borró: salió de acá.** Su rastro está en `BITACORA.md`, dueño de *"qué se
+> hizo y cuándo"* (`CLAUDE.md` §7), y el texto completo de cada frente cerrado queda en el
+> historial de este archivo. Es el mismo criterio con el que la lista de siete reemplazó a la de
+> catorce.
 >
-> **Los `T<tramo>.<n>` de abajo no se retiran ni se renumeran** — sigue valiendo: son la
-> estructura del corte vertical y su texto es la especificación de cada pieza. Lo que se ordena
-> acá son los frentes.
->
-> ⚠ **Y el detalle largo se movió, no se borró.** Diez de las quince filas viejas pasaban de un
-> párrafo —la peor, 1667 caracteres— contra la regla de apertura de este archivo. Las mediciones
-> que traían adentro ya viven en `BITACORA.md` y en `D-31`; acá queda el puntero.
+> ⭐ **`A`, `B` y `C` son sub-etapas DE la fase `informe semanal`, no una fase nueva.** `D-38` sigue
+> teniendo dos fases y sólo dos. Lo que se ordena acá es **el camino hasta su criterio de cierre**.
 
-**El criterio del orden no cambia** (usuario, 16/08): la **definición del vocabulario va antes que
-todo cableado nuevo**, y **primero se cierra la migración, después se cablea**. La migración cerró
-el 17/08 (42 de 48, todo lo migrable), así que esa condición **ya no bloquea a nadie**.
+#### Lo que se midió antes de reescribir (22/08/2026)
 
-⚠ **Lo que este reordenamiento NO hizo:** inventar prioridades. Donde el orden entre dos ítems no
-sale de una dependencia escrita, quedaron como estaban — se dice abajo cuáles son.
-
-| # | frente | qué lo ordena |
+| # | frente del 21/08 | medido hoy |
 |---|---|---|
-| 1 | **`2026-08-19_1` Parte E — verificar la tanda de los nueve `camp_*`** | ⭐ **Es lo más viejo abierto y lo único que quedó vivo de ese prompt.** Medido el 21/08: sus Partes **A, B, C y D ya las hicieron pasos posteriores** —el cargador escribe `id_cuenta` (`Campanas.gs`), `campo_id_cuenta` está en el seed, el formato `_revisar` existe (`D-34`), y los **nueve `camp_*` están en `MARCADORES`**—, y los cuatro archivados del addendum `1.1` también. **Falta sólo verificar**, y su punto 2 es el control que importa: la traza tiene que decir `rama por cuenta`, no `agregado global` — si `campo_id_cuenta` no llegó, **igual sale un número**, grande y plausible. Necesita una corrida |
-| 2 | **`12 bis` — la primera medición del testigo de `D-31` contra la planilla** | El código está hecho desde el 16/08 y **nunca se midió contra datos**. `verificarEncabezadosDeMapeo()` barre todo `MAPEO` sin generar informe: es una corrida barata y **destraba saber si hay mapeos corridos** |
-| 3 | **`C-64` aplicado a `pauta_*` y Alerta Naranja** | El caso está cerrado como explicación —filas contra agregado, resuelto en call center, IVR y mail—; **lo que queda es aplicar el mismo criterio**. Decide **de qué capa se lee**, así que condiciona todo cableado posterior |
-| 4 | **`13 bis` — `DIMENSIONES_` pasa a ser hoja de registro** | ✅ **Decidido y destrabado**; el prompt existe (`2026-08-16_6_dimensiones_a_hoja.md`) y **no corrió**. Es `D-01` en su forma más directa: agregar un valor de dimensión hoy exige editar un `.gs` y pushear. Esperaba a que cerrara la migración —mover el traductor y lo traducido a la vez no lo aguanta ninguna comparación— y **eso ya pasó** |
-| 5 | **`enc_visualizaciones` y `enc_clics`** | Los dos que faltan cablear del frente 10; `enc_impresiones` ya existe. Operación confirmada 4 de 4, y **el bloqueo que tenían no existe**: cero marcadores apuntan a `digital/Digital` (medido 18/08) |
-| 6 | **`alcance` y `clics` de campaña destacada, y `m2_campanias`** | `m2_campanias` espera una definición del usuario; los otros dos no dependen de nada |
-| 7 | **`14` — regenerar `CATALOGO_tokens.md`** | **No es una tarea aparte: es parte de cerrar cada tanda** (usuario, 16/08). Se corre `tools/catalogo.js`; a mano se desincroniza en la primera migración |
+| 1 | verificar la tanda de los nueve `camp_*` | ✅ **cerrado** — el arreglo es `c50984b`, *"la cuenta de la campaña entra donde el consumidor la busca"*, y la lámina de campaña reproduce por plataforma |
+| 2 | `12 bis` — testigo de `D-31` contra la planilla | ✅ **cerrado** — `verificarEncabezadosDeMapeo()` corrió el 22/08, después del arreglo del IVR |
+| 3 | `C-64` a `pauta_*` y Alerta Naranja | 🟡 **a medias** — los seis `pauta_*` están medidos (las columnas son **flags 0/1** y publican `1·1·1`). **Alerta Naranja sigue sin tocar** |
+| 4 | `13 bis` — `DIMENSIONES_` a hoja de registro | ⛔ **abierto** — sigue siendo una `var` en `Instalar.gs` y `SOLAPAS` no tiene ninguna fila `DIMENSIONES` |
+| 5 | `enc_visualizaciones` y `enc_clics` | ⛔ **abierto** — no están en `MARCADORES`; el único de la familia es `enc_impresiones` |
+| 6 | `alcance`/`clics` de campaña + `m2_campanias` | 🟡 **a medias** — `camp_alcance` y `camp_clics` **ya están cableados**; queda **sólo `m2_campanias`**, que espera una definición del usuario |
+| 7 | regenerar `CATALOGO_tokens.md` | ⛔ **desactualizado** — salió del snapshot del **18/08** y `MARCADORES` se tocó el 22 |
 
-**Sin orden entre sí, y se dice en vez de inventarlo:** los frentes **5, 6 y 7** no tienen ninguna
-dependencia escrita que los ordene entre ellos ni contra el 3 y el 4. Quedaron en el orden que
-traían. **El orden es del usuario.**
+**Los que siguen abiertos —3 (lo que queda), 4, 5, 6 (lo que queda) y 7— no desaparecen: pasan a
+`Higiene`**, más abajo, porque ninguno bloquea el cierre de `D-38` y ninguno tiene dependencia
+escrita contra otro. **El orden entre ellos es del usuario.**
 
-**Lo que bajó a §3 y sigue allá:** el frente **7 (`C-61`)**, el alta de columna que mueve 229
-cuentas, y el **8**, la regla del recorte heredado de Call Center — con el **11**, el embudo, que
-depende de los dos. La razón por la que bajaron (*"primero se cierra la migración"*) **ya se
-cumplió**, así que lo que los mantiene allá es su propio destrabe, no aquélla.
+---
 
-**El frente 9 se cerró midiendo, no por inferencia.** `R-26` **está escrita** en
-`REGLAS_NEGOCIO.md`, con medición del **17/08/2026** sobre 23 encuentros. La nota de `R-27` que
-decía *"reservado… al 14/08/2026 no se ejecutó"* es **anterior** y quedó vencida — por el
-desempate de §7 gana la fecha escrita más reciente. ⚠ **Esa nota sigue en pie y hay que saberlo
-al leerla**: `REGLAS_NEGOCIO.md` es append-only, así que no se edita — se deroga con fecha, y eso
-es otro paso.
+### A · Cerrar el informe
 
-#### Lo del 19 al 21/08 que entró al plan y no estaba
+**Qué lo ordena: es lo único que produce el deck que `C` necesita mirar.**
 
-Catorce entradas de bitácora que **ninguna fila de la tabla vieja mencionaba**. No van como
-ítems porque **están cerradas**; se listan para que el plan deje de ignorarlas:
+| | qué | quién |
+|---|---|---|
+| **A.1** | **La corrida de `agosto_14_20`** que confirma los 🟡 del tablero — los tres «N envíos» (6 · 73 · 3) y los ocho `imp_*` en `_revisar`. ⚠ **Ninguna escritura en `MARCADORES` prueba que el deck salga con el número esperado**: eso lo dice una corrida y nada más | usuario |
+| **A.2** | **El ítem de IVR del iceberg** — `X-30`. La lámina 6 está 🟡 y **no le falta cablear ni decidir: le falta UNA traza**, qué `id_cuenta` recibe el ítem de Salud con el temario correcto. `V-106` ya probó que con `3488-AGOJDGAG` la solapa tiene filas y `enc_audiencia` da **107.194 exacto** | usuario |
+| **A.3** | **Medir `L-036`** — ver la contradicción de abajo. **Se mide antes de cablear nada** | Code |
+| **A.4** | **`X-29` — decidido el 22/08: va la salida (b), tope de duración**, con el tope en `CONFIG` y la regla en `REGLAS_NEGOCIO.md`. ⛔ **No cierra `X-28`** — ver abajo | Code |
 
-`camp_*` del temario al deck (Parte 0) · el panel por secciones · la rama de validación · `C-21`
-cerrada por huella · el reloj por etapas y el límite duro · el `TypeError` de continuación · el
-diagnóstico de la regresión · los cuatro símbolos de faltante · la semana por defecto · el
-fixture como verificación · el vocabulario compartido · cerrar para generar · el anclaje en dos
-pasos · el corte por presupuesto · las cinco decisiones sin dueño · **`LAMINAS` declaradas y
-`D-37`** · la cesión de `digital` a `D-30` · **el panel de anclajes y el addendum a `D-29`**.
+⚠ **`X-28` no está acá y es a propósito: no lo destraba el trabajo, lo destraba un archivo.** Espera
+un tercer `.zip` del equipo —**deck publicado** + `Base Looker` del mismo día— que consigue el
+usuario. **No bloquea a `A`**: es qué cuenta de Call Center publica el Resumen, y el iceberg es IVR.
+Son láminas distintas.
+
+⛔⛔ **Y `X-29` NO se cierra con `X-28`, aunque un tope de 30 días tocara a los dos.** Son preguntas
+distintas y se cierran por separado: **`X-29` sólo necesita las ventanas**, que ya están medidas
+sobre los dos exports; **`X-28` necesita un tercer DECK publicado**. Que `duración ≤ 30 d` fuera uno
+de los tres desempates que `X-28` no pudo separar **no es evidencia de que 30 sea el número correcto
+para aquéllo**.
+
+#### ⚠ La contradicción de `L-036`, anotada y **no resuelta** — se mide en `A.3`
+
+**Tres fuentes, tres respuestas, y ninguna se puede descartar leyendo:**
+
+| dice | qué |
+|---|---|
+| `docs/CIERRE_POR_LAMINA.md` | lámina **7**, *"Campañas · pie"*, **4 tokens** `camp1-4`, tabla 7×8 |
+| `Auditoria.gs:4131` | `L-036` = `comunicaciones_post`, **pos 9**, *"Campañas · DIGITAL · Período"* |
+| `Auditoria.gs:4217` | *"`L-036` **con sus 32 `post_`**"* |
+| `LAMINAS` (snapshot 21/08) | `L-036` · `seccion_id = comunicaciones_post` · `orden_plantilla = 7` |
+
+⛔ **No es una discrepancia de nombre: son 4 tokens contra 32, y dos posiciones distintas.**
+⚠ **Y `orden_plantilla` no arbitra** — `CLAUDE.md` §2 dice que es reportado y **nunca autoritativo**.
+**Se mide contra la plantilla viva.**
+
+---
+
+### B · Mejorar el front
+
+⭐⭐ **El motivo del orden, que es lo que hay que dejar escrito: los tres P1 de instrumento SON el
+front.** No son tres pendientes técnicos que casualmente van juntos — **son las tres cosas que el
+panel tendría que mostrar y no muestra**: qué falta, por qué falta, y qué encuentro se cayó.
+
+| | qué | por qué en este lugar |
+|---|---|---|
+| **B.1** | **`FALTANTES` no tiene lector** fuera del editor | ⭐ **Primero porque es el instrumento del cierre de `D-38`.** El criterio es que el usuario mire un deck y declare que lo que falta no es relevante — **y hoy no hay dónde leer qué falta** |
+| **B.2** | **El aviso «quedó crudo sin corte» no distingue «nadie lo cableó» de «se cableó y no se pisó»** | ⭐ **Segundo aunque `sinLink` sea más grave**, y el motivo es de uso: **una lista de faltantes que no dice la causa no se puede repartir en trabajos**. Sin esto, `B.1` entrega una lista que no se puede accionar |
+| **B.3** | **Un encuentro que no ancla a ninguna cuenta no queda anotado en ningún lado** (`sinLink`) | Es **el más grave de los tres** y va tercero por lo de arriba: sin `B.1` y `B.2` no hay dónde mostrarlo |
+| **B.4** | **El `_19` — el desatendido al panel**, lo que quedó de él | Al final: es comodidad de operación, no instrumento de cierre |
+
+---
+
+### C · La declaración de `D-38`
+
+**El usuario mira el deck completo y declara que los faltantes que quedan no son relevantes.**
+
+⛔ **Va después de `A` y `B`, y el motivo es concreto: se hace mirando el deck con la lista de
+faltantes legible al lado.** Sin `A` no hay deck que mirar; **sin `B` la declaración se haría de
+memoria**, que es exactamente lo que `D-38` no quiere — su criterio es de revisión humana, y una
+revisión humana sin el instrumento delante no es una revisión.
+
+---
+
+### Después de `C` — la fase `informe actualizable`
+
+**Sin cambios.** `docs/Prompts/2026-08-22_24_refresco_de_deck_publicado.md`, escrito y **⏸ sin
+correr**. No empieza hasta que `C` cierre, y no es preferencia de orden: refrescar en el lugar un
+número que todavía no está validado es **automatizar la publicación de un número mal**.
+
+---
+
+#### Lo del 19 al 22/08 que entró al plan y no estaba
+
+Se listan para que el plan deje de ignorarlas; **no van como ítems porque están cerradas**:
+
+`camp_*` del temario al deck · el panel por secciones · la rama de validación · `C-21` cerrada por
+huella · el reloj por etapas y el límite duro · el `TypeError` de continuación · los cuatro símbolos
+de faltante · la semana por defecto · el fixture como verificación · el anclaje en dos pasos · el
+corte por presupuesto · **`LAMINAS` declaradas y `D-37`** · la cesión de `digital` a `D-30` · el
+panel de anclajes y el addendum a `D-29` · **`R-21` nivel 1** · **el agregado por temario, que
+reproduce `V-71`** · **las dos cachés y el P0 de tiempo cerrado como falso positivo** · **el tablero
+`CIERRE_POR_LAMINA.md`** · **el `MAPEO` de `looker/CC`** · **el veredicto idempotente de
+`curarCamposMarcadores_`**.
 
 ### ✅ Tanda 4 CERRADA — 17/08/2026 · **la migración está completa sobre lo migrable: 42 de 48**
 
