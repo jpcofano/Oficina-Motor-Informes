@@ -6434,3 +6434,126 @@ queda con qué auditar un deck viejo. Es el mismo modo que el `periodo_id` que m
 —sin candidatos, que es justamente lo que hay que decir—; **(b)** que el reporte de corrida
 persista los `motivo` por ítem. La (a) hace que la pantalla de anclajes muestre el caso; la (b)
 hace auditable un deck ya generado. **No son la misma cosa y probablemente hagan falta las dos.**
+
+### ⛔ P0 · `REUNIONES.nombre` del Encuentro Temático de Salud es `': Salud'`, y eso bloquea el nivel 1 de `R-21` (22/08/2026)
+
+**Anotado, no arreglado. Frenó la Parte A del `2026-08-22_22`** antes de la primera línea de código.
+
+**Lo medido, en vivo, con `encontrarFilaRdvDeReunion_` sobre los dos ítems del temario de
+`agosto_14_20`:**
+
+| ítem del temario | fecha | ¿encuentra su fila en `rdv`? |
+|---|---|---|
+| `Parque Avellaneda` | 12/08 | ✅ **sí** — `Figura: Jorge Macri`, `Barrio: Parque Avellaneda` |
+| `: Salud` | 14/08 | ⛔ **no** — *"No se encontró un encuentro para «: Salud» (14/08/2026)"* |
+
+⭐ **El nombre está corrupto y es un artefacto de parseo.** La línea del temario es *"2) JM |
+Encuentro Temático: Salud 14/08"* y `parsearLineaReunion_` cortó por el `|` y dejó **`': Salud'`**
+—con los dos puntos adelante— como `nombre`. `encontrarFilaRdvDeReunion_` busca por nombre y fecha,
+y con ese nombre no matchea nada.
+
+⛔ **Por qué esto frena el paso y no es un detalle:** el `2026-08-22_22` y su addendum piden anclar
+el agregado `ecv_*` al temario (nivel 1 de `R-21`), con el control *"`ecv_encuentros` tiene que dar
+**2** — hoy da 1"*. **Con el dato de hoy seguiría dando 1**, y no por el mecanismo: porque de los
+dos ítems, uno no puede alcanzar su fila. **El control del paso no se puede cumplir hasta que el
+nombre esté bien.**
+
+⚠ **Y da 1 distinto, que es peor que dar 1.** Hoy el agregado publica la fila de **Parque
+Patricios** (Salud) porque es la única con `figura=Jorge Macri` dentro de la ventana 14–20/08.
+Anclado al temario publicaría la de **Parque Avellaneda**, porque es la única alcanzable por
+nombre. **Mismo número, otro encuentro, y el cambio se vería como si no hubiera pasado nada.**
+
+⭐⭐ **El corolario, que es el hallazgo grande y confirma la decisión del usuario:** los `855`
+inscriptos y `186` asistentes que **coinciden exacto con el deck del equipo** salen hoy de
+**ventana + figura**, no del temario. Coinciden **por casualidad** — la fila de Salud es la única de
+Jorge Macri en esa ventana. Es el *número plausible* en su forma más pura: **el número correcto
+saliendo del camino equivocado**, y por eso el universo hay que arreglarlo aunque el número de hoy
+cierre.
+
+**Tres salidas, sin elegir** (el temario lo carga una persona): **(a)** corregir el `nombre` en
+`REUNIONES` a mano —es una celda, y destraba el paso—; **(b)** arreglar `parsearLineaReunion_` para
+que no deje el separador en el nombre, que evita el próximo; **(c)** que
+`encontrarFilaRdvDeReunion_` normalice los bordes de puntuación antes de comparar. **(a) y (b) no
+compiten**: la primera destraba hoy, la segunda evita mañana.
+
+⚠ **Y lo que hay que mirar al corregir el nombre:** `ANCLAJE_PENDIENTE` indexa por
+`normalizar_(nombre)|fecha|etapa`, así que cambiar el nombre **cambia la clave** y cualquier
+decisión de anclaje ya tomada para esa reunión queda huérfana. Hoy no hay ninguna para Salud
+—verificado—, pero la próxima vez sí puede haberla.
+
+---
+
+### ⏸ El encabezado de `digital/Directa IVR`: la hoja perdió su fila de títulos — dos salidas, ninguna sin el usuario (22/08/2026)
+
+Sale de la Parte 0.4 del `2026-08-22_22`. **Las dos hipótesis del prompt quedaron descartadas por
+medición**, no por opinión.
+
+**Lo leído en vivo con `diagFormaDeSolapaExterna_`, las dos primeras filas de la solapa:**
+
+| fila | col A | col I | col J | col L |
+|---|---|---|---|---|
+| **1** | `2450-ENEJDGAG` | `Reunión de vecinos JM Boedo 9/1` | 12.049 | 11.592 |
+| **2** | `2239-NOVSALGC` | `PM \| Cuidados del Calor - Prevención` | 60.114 | 50.294 |
+
+**Las dos son datos, y las dos son de enero.**
+
+- ⛔ **No es `fila_encabezado = 2`**: la fila 2 tampoco tiene rótulos.
+- ⛔ **No «crece por arriba»**: si creciera, la fila 1 sería la más nueva y es de enero. **Crece por
+  abajo.**
+- ✅ **Las columnas siguen bien**: col J = Audiencia y col L = Atendidos en las dos filas, coherente
+  con el `MAPEO` y con la `firma_encabezado` registrada.
+
+**Entonces lo que pasó es que la fila de títulos se borró**, y `SOLAPAS.fila_encabezado = 1` hace
+que el motor tome la primera fila de datos como encabezado: **pierde esa fila entera**, la de la
+cuenta `2450-ENEJDGAG`.
+
+**Las dos salidas, con su costo:**
+
+| | qué | qué cuesta |
+|---|---|---|
+| **(a)** | que el equipo reponga la fila de títulos | ⭐ **cero código**, y deja a `D-31` con testigo. Es su planilla (`C-01`: la plantilla y las bases son del equipo) |
+| **(b)** | `fila_encabezado = 0` — `SOLAPAS` ya lo contempla (*"sin fila de títulos"*, `Fuentes.gs`) | recupera la fila perdida, pero **deja a `D-31` sin testigo en esa solapa**: el motor leería por letra sin nada que lo contradiga, que es exactamente lo que `D-31` existe para evitar |
+
+⛔ **Ninguna se ejecuta sin decisión del usuario**, y por eso este paso no la tomó.
+
+**Los doce marcadores que se mueven en cualquiera de los dos casos:** `enc_audiencia`,
+`enc_atendidos`, `enc_e75`, `enc_marque1`, `enc_e75_pct` (bloque de encuentro) y `ivr_campanias`,
+`ivr_llamados`, `ivr_atendidos`, `ivr_at_pct`, `ivr_75`, `ivr_75_pct`, `ivr_marque1` (resumen
+ejecutivo).
+
+ⓘ **Y una premisa del `2026-08-21_19` que queda corregida acá:** decía que `ivr_audiencia` e
+`ivr_llamados` *"podrían estar leyendo la misma columna"* por compartir el rótulo falso `12049`.
+**Es falso.** Son dos columnas distintas de la misma fila, donde audiencia y llamados realizados
+coinciden porque se llama a toda la audiencia — en la fila 2 dan `60.114` y `60.114` por lo mismo.
+**Ese riesgo no existe.**
+
+---
+
+### ⏸ `DIMENSIONES_.ambito.gcba` sobre `rdv` niega una definición que va a dejar de existir (22/08/2026)
+
+**Anotado, no arreglado.** Sale de la Parte 0.2 del `2026-08-22_22`, y **hoy no cuesta nada** — se
+escribe para que el día que cueste, cueste una lectura y no un número.
+
+Medido sobre `MARCADORES` viva: **26** marcadores usan `ambito=jm` y **9** usan `ambito=gcba`.
+
+| par `base\|solapa` | `jm` | `gcba` |
+|---|---|---|
+| `rdv\|RVD JM-CM - ES` | **17** | **0** |
+| `digital\|Directa Mail` | 4 | 4 |
+| `looker\|DIGITAL` | 4 | 4 |
+| `looker\|resumen_metricas_dinamico` | 1 | 1 |
+
+⭐ **Sobre `rdv` no hay ni un `gcba_*`**, así que cuando el universo de `jm` en esa base pase a ser
+el temario (`R-21` nivel 1), **cero marcadores quedan colgando** de la resta de `D-33`.
+
+⚠ **Pero la declaración sigue armada.** `DIMENSIONES_.ambito.gcba` mantiene
+`'rdv|RVD JM-CM - ES': 'figura!=Jorge Macri'`, y `D-33` define `gcba` **negando** a `jm`. El día que
+alguien cablee un `gcba_*` sobre esa solapa, la resta va a negar *"no es Jorge Macri"* cuando `jm`
+ya no signifique eso — **y va a publicar un número plausible**, porque la condición sigue siendo
+válida como filtro aunque haya dejado de ser el complemento.
+
+**Y hay un segundo dato de la misma medición que conviene tener escrito:** tres de los 17
+—`ecv_barrio`, `ecv_poblacion` y `enc_evento`— **se emiten también dentro del bloque de
+encuentro**, donde entran por `opciones.fila_rdv` y `dimensiones` **no se aplica**. O sea que **el
+mismo marcador se comporta distinto según dónde salga**, y cualquier cambio al universo del
+agregado tiene que dejar intacto el camino por ítem.
