@@ -13220,3 +13220,63 @@ con la formulación redactada, **para que lo decida el usuario**.
 
 **Commits:** `0da2b25` (los envíos), `d671c60` (la marca de Programmatic y su reversión), `9cb6227`
 (la huella del testigo), `9e7d4ff` y `b93e3ae` (los hallazgos y las dos preguntas).
+
+
+---
+
+## 2026-08-22 — Paso `_27` Partes 0 y A: el tablero de cierre, y una premisa central que era mía
+
+**El veredicto de `curarCamposMarcadores_`, primero.** `marcarProgrammaticARevisar()` encontró las
+ocho filas ya en `miles_revisar` y el wrapper imprimió **«⛔ FALLÓ»** aclarando en el mismo mensaje
+que era idempotencia. Decisión del usuario: **cero escrituras con todas las filas en el estado
+pedido es ÉXITO.** La guarda del 17/08 fusionaba tres causas en un solo `ok:false`; ahora se
+separan —falta la fila → falla · difiere y no se escribió → falla · **todas ya están → `ok:true`
+con `idempotente:true`**—. ⭐ **No reabre el agujero del 17/08**, que era *«la hoja no quedó como se
+pidió»*: eso sigue fallando por las dos primeras. ⚠ Y el cero no se vuelve silencioso: el aviso
+sale por `Logger.log` **desde el escritor**, así lo heredan los once wrappers sin tocarlos. Control
+nuevo, `tools/probar-veredicto-idempotente.js`, **22 afirmaciones** incluido el negativo que rompe
+el veredicto a propósito.
+
+### ⛔⛔ La Parte 0 tumbó la premisa central de la Parte B, y el error de origen era mío
+
+El hallazgo que escribí el 22/08 —*«Base discada» es `Base enviada`, NO `Base barrida`*— salió de
+**`3289-JUNJDGAG`, una cuenta de JUNIO**, medida contra un deck publicado de **agosto**. Sus cuatro
+números son, textualmente, los que `V-92` ya tenía sobre el export del 31/07.
+
+La cuenta de la ventana 14–20/08 es **`3488-AGOJDGAG`**, con **tres** filas —que son las «3
+campañas de Call Center» del equipo, contadas exacto—. ⚠ **En esa cuenta `Base enviada` y `Base
+barrida` son idénticas**, así que agosto no puede distinguirlas. Lo deciden `V-64`, `V-66` y `V-92`
+sobre `3289`, donde sí difieren: **es `Base barrida`**. `V-66` lo separa por el **porcentaje** —31 %
+= `1878/6011`, contra 28 % con la otra columna— y **estaba escrito desde el 19/08 para exactamente
+esto**.
+
+⭐⭐ **Lo que tendría que haberlo frenado sin necesidad de `V-66` estaba en la tabla misma: las dos
+columnas se movían en direcciones OPUESTAS** —`Base enviada` −2,6 % y `Contactados` +16 % entre las
+mismas dos fechas, sobre la misma solapa—. **Dos columnas del mismo hecho que divergen de signo no
+son «la base se movió»: son las filas equivocadas.** La nota lo vio y lo explicó con `R-29` en vez
+de tratarlo como la señal que era — **una explicación plausible tapó una contradicción**. Con la
+cuenta correcta dan **+3,6 % y +5,8 %**: mismo signo, misma magnitud, una solapa de estado que
+acumula.
+
+**Lo demás que midió la Parte 0:** son **cuatro** casilleros y no tres · **`cc_base_total` no es un
+token del Resumen** sino un `campo_logico` de `reuniones/Agenda JM` que `enc_base_total` ya lee
+desde el `_44` · `cc_base`/`cc_contactados`/`cc_contact_pct` **viven en dos láminas** · `MAPEO`
+tiene **cero** filas para `looker/CC` · la forma se copia de `looker/DIGITAL`, por **pertenencia**
+(`_23`) · ✅ **`Tipo de llamado` existe y el freno del `0.4` no se dispara** · y ⭐ **el Resumen NO
+filtra por tipo** (`V-92`): el filtro de `V-91`/`S-01` es de la lámina del iceberg, y aplicarlo acá
+daría 6.294 en vez de 7.096 — plausible, y mal.
+
+### Parte A — nace `docs/CIERRE_POR_LAMINA.md`
+
+Una fila por lámina de `jm`, cuatro estados, y **el ✅ lo pone el usuario, nunca Code**. Estado
+inicial **medido**: `0 ✅ · 5 🟡 · 18 ⛔` sobre 23 filas de `LAMINAS`. Los tres «N envíos» y los ocho
+`imp_*` entran como 🟡 **con su número esperado anotado** —los confirma la próxima corrida, no el
+log de un botón que escribió en `MARCADORES`—, y `ecv_asistentes = 485` tiene su renglón propio como
+número que **nace sin validar**.
+
+**La Parte B no se ejecutó**: su control nombraba el token equivocado y su número esperado salía de
+la cuenta de junio. **El control correcto es el deck del 31/07**, donde `V-64` y `V-92` dan `6.011`
+y `1.878` **exacto** — un ±% contra una base que acumula no sirve de control.
+
+**Commits:** `85f4a4f` (el prompt), `48d8395` (el veredicto y su control), `ad62103` (la Parte 0 y
+la corrección), `2fc2616` (el tablero).
