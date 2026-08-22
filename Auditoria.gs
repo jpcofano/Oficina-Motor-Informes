@@ -1268,6 +1268,139 @@ function diagEnlaceDigitalDeEncuentros_(periodoRef) {
  */
 function diagEnlaceJM() { return diagEnlaceDigitalDeEncuentros_('agosto_14_20'); }
 
+/**
+ * ⭐ **La Parte C.1 del `2026-08-22_25`: el control de VALORES del agregado por temario, sobre
+ * `julio_24_30`.**
+ *
+ * ⭐⭐ **Reproduce números ya validados; no mide de nuevo.** `CLAUDE.md` §1: *un caso `exacto` es un
+ * número esperado, y el control es reproducirlo*. Los dos que se comparan salen de
+ * `docs/casos_validacion_2026-08-19.csv`, bloque `agregado_semana_jm`:
+ *
+ *   - **`V-71` — `ecv_inscriptos` = 2333**, `exacto`, con la clave *"los 4 encuentros que el deck
+ *     publica individualmente"* y la nota que los desglosa.
+ *   - **`ecv_encuentros` = 4**, que es el conjunto que `V-71` declara.
+ *
+ * ⛔ **Y el control fuerte es el tercero, la IDENTIDAD**: que 2333 sea `138 + 98 + 1344 + 753`,
+ * con cada sumando validado por su cuenta —`V-01` San Cristóbal, `V-03` Retiro, Villa Urquiza,
+ * `V-05` Orden Público—. **Si el total da 2333 pero un sumando no es el suyo, el número está bien
+ * por el camino equivocado**, que es el modo de falla de los `855/186` del 21/08.
+ *
+ * ⚠ **Esto NO reemplaza una corrida y no lo pretende.** Verifica `resolverMarcadores`, o sea **el
+ * valor**; que el deck se expanda, se pinte y salga entero es otra cosa y se ve generando. Se
+ * escribe así porque **el valor no necesita un deck** y una corrida de `julio_24_30` cuesta cinco
+ * minutos para contestar una pregunta de treinta segundos.
+ *
+ * ⚠ **ESCRIBE y tarda ~50 s.** Pasa por `anclarEncuentros`, que registra en `ANCLAJE_PENDIENTE` los
+ * anclajes por debajo del umbral. Correrla una vez y leer el log entero.
+ *
+ * ⚠ **`V-38`…`V-44` NO se usan acá, a propósito.** Miden `rdv` recortada por una **ventana de
+ * nueve días** —su clave lo dice— y **no el universo del temario**; su nota *"universo del TEMARIO
+ * (5 encuentros)"* describe lo que el equipo publicó. Cruzarlos contra esto fue lo que hizo caer al
+ * prompt original, y por eso el CSV lleva la advertencia al lado.
+ */
+function verificarAgregadoDeJulio() {
+  var ESPERADO_INSCRIPTOS = 2333;   // V-71, exacto
+  var ESPERADO_ENCUENTROS = 4;      // el conjunto que V-71 declara
+  var SUMANDOS = [
+    { nombre: 'San Cristóbal', inscriptos: 138,  caso: 'V-01' },
+    { nombre: 'Retiro',        inscriptos: 98,   caso: 'V-03' },
+    { nombre: 'Villa Urquiza', inscriptos: 1344, caso: '(nota de V-71)' },
+    { nombre: 'Belgrano / Orden Público', inscriptos: 753, caso: 'V-05' }
+  ];
+
+  var ventana = resolverVentana({ periodo_ref: 'julio_24_30' });
+  if (!ventana.ok) { Logger.log('⛔ no se pudo resolver la ventana: ' + ventana.motivo); return ventana; }
+  Logger.log('ventana: ' + formatearFecha_(ventana.desde) + ' → ' + formatearFecha_(ventana.hasta) +
+    ' (' + ventana.origen + ')');
+
+  var temario = filasRdvDelTemario_('jm', ventana);
+  Logger.log('temario: ' + temario.items + ' encuentro(s) distinto(s) · ' + temario.filas.length +
+    ' fila(s) de rdv/' + temario.hoja +
+    (temario.sin_fila ? ' · ⚠ ' + temario.sin_fila + ' ítem(s) SIN fila de rdv' : ''));
+
+  if (!temario.filas.length) {
+    Logger.log('⛔ CERO filas. El agregado por temario no se está aplicando. Revisar que');
+    Logger.log('   SECCIONES.ecv_alcance_semanal.itera_sobre diga "REUNIONES" EN LA HOJA —');
+    Logger.log('   el seed no actualiza filas existentes: `declararIteraDelAgregado()`.');
+    return { ok: false, motivo: 'temario sin filas' };
+  }
+
+  /* ⭐ **La identidad se mira ANTES que el total.** Un total correcto sobre los sumandos
+   * equivocados es indistinguible de uno correcto, y es lo que hay que poder distinguir. */
+  Logger.log('');
+  Logger.log('== identidad: de qué filas sale el total ==');
+  var campo = buscarMapeo('rdv', temario.hoja, 'inscriptos');
+  var enc = campo.ok ? encabezadoEnColumna_('rdv', temario.hoja, campo.columna) : '';
+  var vistos = [];
+  temario.filas.forEach(function (f) {
+    var barrio = f['Barrio'] !== undefined ? f['Barrio'] : '(sin Barrio)';
+    var v = (enc && (enc in f)) ? f[enc] : '(no se pudo leer)';
+    vistos.push({ barrio: String(barrio), inscriptos: Number(v) || 0 });
+    Logger.log('   ' + String(barrio) + ' → ' + v);
+  });
+
+  var faltan = [];
+  SUMANDOS.forEach(function (s) {
+    var hay = vistos.filter(function (v) { return v.inscriptos === s.inscriptos; }).length;
+    if (!hay) faltan.push(s.nombre + ' (' + s.inscriptos + ', ' + s.caso + ')');
+  });
+  if (faltan.length) {
+    Logger.log('   ⛔ NO aparece(n): ' + faltan.join(' · '));
+    Logger.log('   El total puede dar bien igual, y sería el número correcto por el camino');
+    Logger.log('   equivocado. ESTO es lo que hay que mirar, no el total.');
+  } else {
+    Logger.log('   ✅ los cuatro sumandos validados están, uno por fila.');
+  }
+
+  var r = resolverMarcadores('jm', {
+    ventana: ventana,
+    filas_rdv: temario.filas,
+    hoja_rdv: temario.hoja,
+    temario_sin_fila: temario.sin_fila,
+    solo_marcadores: ['ecv_inscriptos', 'ecv_encuentros', 'ecv_asistentes', 'ecv_barrios']
+  });
+
+  var por = {};
+  r.resultados.forEach(function (x) { por[x.marcador] = x; });
+
+  Logger.log('');
+  Logger.log('== valores ==');
+  ['ecv_inscriptos', 'ecv_encuentros', 'ecv_asistentes', 'ecv_barrios'].forEach(function (m) {
+    var x = por[m];
+    Logger.log('   ' + m + ' = ' + (x ? x.valor : '(no resolvió)') + (x ? ' · ' + x.estado : ''));
+    if (x && x.traza) Logger.log('       ' + String(x.traza).slice(0, 220));
+  });
+
+  /* ⚠ El veredicto se arma con `===` sobre números y **no se redondea**: un control que tolera
+   * cerca deja de distinguir «reproduce» de «se parece». */
+  var vi = por.ecv_inscriptos && Number(por.ecv_inscriptos.valor);
+  var ve = por.ecv_encuentros && Number(por.ecv_encuentros.valor);
+  var okI = vi === ESPERADO_INSCRIPTOS;
+  var okE = ve === ESPERADO_ENCUENTROS;
+
+  Logger.log('');
+  Logger.log('== veredicto ==');
+  Logger.log('   ecv_inscriptos : ' + vi + ' contra ' + ESPERADO_INSCRIPTOS + ' (V-71) → ' + (okI ? '✅ REPRODUCE' : '⛔ NO'));
+  Logger.log('   ecv_encuentros : ' + ve + ' contra ' + ESPERADO_ENCUENTROS + ' → ' + (okE ? '✅ REPRODUCE' : '⛔ NO'));
+
+  if (!okI || !okE) {
+    Logger.log('');
+    Logger.log('⛔ NO reproduce. Reportar el número obtenido, el esperado y el camino, y PARAR.');
+    Logger.log('   NO se ajusta el motor hasta que dé, y NO se marca el marcador como dudoso:');
+    Logger.log('   un marcador con caso `exacto` se corrige o se frena, no se publica con desconfianza.');
+  }
+
+  /* ⚠ Los avisos van ÚLTIMOS, después del veredicto: un `⚠` en el medio de un reporte que termina
+   * en `✅` se lee como verde (`CLAUDE.md` §4). */
+  Logger.log('');
+  Logger.log('⚠ Lo que este control NO contesta:');
+  Logger.log('   · Que el deck se expanda y se pinte. Eso es una corrida.');
+  Logger.log('   · Los cinco ecv_insc_*_pct, que no tienen caso propio y nacen sin validar.');
+  Logger.log('   · ecv_barrios, cuyo único caso es C-03 y es `contradice`: se mira contra REUNIONES.');
+
+  return { ok: okI && okE, inscriptos: vi, encuentros: ve, esperados: [ESPERADO_INSCRIPTOS, ESPERADO_ENCUENTROS] };
+}
+
 /* ============================================================================
  * `_40` — censo de una planilla EXTERNA, todavía no registrada en `BASES`.
  *
