@@ -2114,14 +2114,14 @@ limpia nunca.
 
 ### Tramo 4 — panel (`D-04`)
 
-- **Revisar y confirmar anclajes desde el panel** — escrito, sin correr. Es el front que `D-29`
-  declara faltante con todas las letras: *"la salida es que el usuario confirme o corrija el
-  anclaje, y eso es una capacidad del front"*, y su cláusula *"hasta que el front exista"* espera
-  justamente esto. **No hay nada que diseñar en el motor** — `anclarEncuentros`,
-  `ANCLAJE_PENDIENTE` y `anclajeYaConfirmado_` ya existen; falta la pantalla.
-  (`docs/Prompts/2026-08-21_16_anclajes_en_el_panel.md`. ⚠ **Un prompt sin correr que no está en
-  el plan no lo encuentra nadie** — misma razón que la línea del `_12` en Backlog, decisión del
-  usuario 21/08.)
+- ✅ **Revisar y confirmar anclajes desde el panel** — **hecho el 21/08/2026**
+  (`2026-08-21_16` + su addendum; bitácora del día). La pestaña `Anclajes` lista lo pendiente con
+  sus candidatos y puntajes y escribe `elegido`. `D-29` tiene su addendum: la cláusula *"hasta que
+  el front exista"* dejó de aplicar.
+  ⛔ **Lo que sigue abierto y no es esto:** los anclajes que **empatan arriba** del umbral no pasan
+  por `ANCLAJE_PENDIENTE`, así que **esta pantalla no los ve** — el modo de falla del `3347`. Es
+  del motor (`scoreMatchDigitalRdv_`), remitido a `D-29`. Y **el circuito completo sigue sin
+  correr de punta a punta**: falta ver que un `elegido` cargado haga anclar.
 - `T4.1` — **primero:** qué devuelve `getActiveUser()` con el despliegue *"ejecuta el usuario que
   accede"*. Si vuelve vacío, `D-15` se revisa **antes** de escribir código de panel.
 - `T4.2` — `doGet`, selección de informes, corrida a demanda

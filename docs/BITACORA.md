@@ -12655,3 +12655,80 @@ ningún lado y se imprime en un solo lugar (grepeado).
 ⚠ **Lo que este paso NO contesta:** si los 24 `u1_` publican el número **correcto**. El control fija
 el **ruteo**; el valor sale de la base y se ve en un deck. Y las 8 filas `REVISAR` de `MAPEO` siguen
 sin sembrar — falta correr *Aplicar configuración*.
+
+## 2026-08-21 · `2026-08-21_16` — el panel confirma anclajes, y `D-29` deja de esperar al front
+
+**Parte 0 — las cinco verificaciones pasaron.** La descripción del backend que el prompt daba "de
+memoria de lectura" resultó exacta en los cuatro puntos: `anclarEncuentros` devuelve las tres
+listas con `umbral`, `HEADERS_ANCLAJE_PENDIENTE_` tiene los nueve, `registrarAnclajePendiente_`
+no pisa una fila con `elegido` —`if (existente && existente.elegido) return;`, primera línea— y
+`anclajeYaConfirmado_` es lo que evita repreguntar. El costo: **~50 s el anclaje solo**, y
+`cacheAnclaje_` es una global de módulo, así que **por ejecución**.
+
+⭐ **Y `ANCLAJE_PENDIENTE` ya no está vacía: dos filas reales, las dos sin `elegido`.** Eso cambió
+qué se podía probar — la pantalla se construyó contra datos verdaderos, sin forzar nada.
+
+**Parte A — la decisión, como addendum a `D-29`.** La pantalla **lee la hoja**, no corre
+`anclarEncuentros`. El motivo de costo es obvio; el que de verdad decide no: **la hoja no es un
+caché**, es el registro que el motor consulta antes de anclar, así que confirmar ahí es confirmar
+**exactamente lo que la próxima corrida va a leer**.
+
+⛔ **Tres límites, y dos no estaban en el prompt.** El previsto es que **falta por abajo** —un
+encuentro sin corrida no está en la hoja—. Los otros dos salieron de mirar las filas reales:
+
+- **Sobra por arriba.** `registrarAnclajePendiente_` **nunca borra** y la hoja **acumula**. De las
+  dos filas, `almagro|2026-06-16|` viene de una fila de `REUNIONES` con **`mostrar = no`**, y
+  `leerReuniones_` filtra por `mostrar`: **hoy no podría escribirse**. La pantalla ofrecería
+  confirmar un encuentro que ya no va al deck, y nada lo distinguiría. La contención es cruzar
+  contra `REUNIONES` **por la clave** y marcarlas — **sin borrarlas ni esconderlas**.
+- **Y el hueco que esta pantalla no tapa:** los que **empatan arriba** del umbral no pasan por la
+  hoja. Son **dos huecos** y este paso tapa uno.
+
+ⓘ **De paso se resolvió la sospecha del addendum**, que era si las dos filas eran el mismo
+encuentro duplicado: **no**. `REUNIONES` tiene dos filas distintas para el 16/06, las dos
+`Encuentro Temático`, con `nombre` `Almagro` y `Educación` y **`mostrar` distinto**. `D-29`
+documenta sólo la segunda porque es la que se muestra.
+
+**Parte B — el backend, dos funciones.** `panel_getAnclajes` usa `getSheetByName` y **no**
+`obtenerHojaAnclajePendiente_`, que crearía la hoja: **abrir una pestaña no debería dejar una hoja
+nueva en la planilla**. `panel_confirmarAnclaje` escribe **por la clave `(tipo, nombre_buscado)`**
+—escribir por índice pondría la decisión en la fila equivocada **sin que nada falle**— y **sólo la
+celda `elegido`**. `validarEleccionAnclaje_` es la mitad pura: acepta un candidato de esa fila o
+vacío, y rechaza todo lo demás, porque un `elegido` que nadie puntuó **reabre por la puerta nueva
+el agujero que `D-29` cierra**.
+
+**Control:** `tools/probar-confirmar-anclaje.js`, 18 afirmaciones con romper a propósito. El
+fixture usa tres candidatos que **no son prefijo unos de otros**, para que no pase igual con una
+comparación por `indexOf`.
+
+⚠ **Y una trampa del censo de escritores, que costó una reversión.** La fila de `ESCRITORES.md`
+**se regenera, no se redacta** — pero `node tools/escritores.js` emite **sólo la matriz**, así que
+redirigirlo sobre el archivo **pisa la prosa escrita a mano** (pasó: 334 líneas borradas, se
+revirtió con `git checkout`). Se reemplazó **sólo la ficha**. El censo resolvió el escritor nuevo
+a `ANCLAJE_PENDIENTE`, no a `(sin resolver)`.
+
+**Parte C — la pestaña `Anclajes`, con `FLAGS.anclajes = true`.** Una caja por anclaje con sus
+candidatos y **el puntaje contra el umbral** —un `0,54` no significa nada sin el `0,6` al lado—,
+un botón por candidato y desconfirmar. Las confirmadas **visibles y aparte**. Dice en pantalla de
+cuándo es lo que se está mirando y sus límites. El cartel de vacío dice **por qué** puede estarlo
+—ninguna corrida, o ningún encuentro bajo umbral, que es el caso bueno—, no un "no hay datos" que
+se lee como error. Incluye la **D.3**: sale *"Confirmar el anclaje"* de `Próximo`.
+
+⚠ **Un detalle de reentrancia que hay que saber:** `vistaAnclajes()` corre **desde adentro** de
+`pintar()`, así que la carga no puede llamar a `pintar()` — reentraría en el que no terminó.
+
+**Parte D — `PROCESO_SEMANAL.md`**, addendum fechado. La confirmación de anclajes pasa a **[hoy]**
+con sus tres límites. Y la sección *"Lo que el panel tiene que ser"* estaba vencida en sus tres
+afirmaciones, **medido y no leído**: de las cinco funciones que da por *"todas vacías"*, **cuatro
+no existen** y la quinta funciona; `Panel.html` tiene **1013 líneas y cero TODOs**; y las pestañas
+son otras. ⭐ **La tabla de cuatro pantallas NO se borró**: como diseño sigue valiendo y tres de
+las cuatro faltan — lo que venció es lo que afirma el estado del código.
+
+**Parte E — el pendiente del score saturado**, con addendum fechado y **sin cerrarlo**. Dos de sus
+afirmaciones están vencidas: la hoja ya no está vacía y sí cayeron casos bajo umbral. Lo que
+cambia es que **el motor escribió**, que nunca se había visto; lo que no cambia es que el score
+sigue saturando en `1,00` y **este paso no lo toca**.
+
+⚠ **Lo que el `_16` NO prueba:** que el motor **respete** el `elegido` escrito. Eso es
+`anclajeYaConfirmado_` y necesita una corrida — el circuito completo sigue sin correr de punta a
+punta.
