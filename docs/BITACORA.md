@@ -12803,3 +12803,68 @@ que lo ataja en un comando —contar los `^## ` del generador contra los del `.m
 antes de generalizar: son dos, no uno.** `escritores.js` emite 4 de 7 secciones e `inventario.js`
 no emite el bloque que declara congelado a su archivo; `catalogo.js` y `snapshot.js` escriben su
 archivo ellos mismos y no tienen el problema.
+
+## 2026-08-21 · `2026-08-21_18` — el alcance del 1 a 1 sale de `reuniones`, una solapa por etapa
+
+**Parte 0 — el conflicto del `0.1` se resolvió a favor de `id_cuenta`, y el error era mío.**
+`SOLAPAS.campo_id_cuenta` es la **columna 11 de 12** y yo había leído la **6**, `firma_encabezado`
+—que en esas dos filas está vacía—. No fue un desplazamiento de una posición: fue el campo
+equivocado, y **el resultado era plausible**. La hoja viva declara `id_cuenta` en las dos solapas
+de `reuniones`, y también `looker/resumen_metricas_dinamico` y
+`digital/CAMPAÑAS_DESGLOCE_DIGITAL`: cuatro filas en toda la hoja.
+
+⚠ **Los snapshots decían `id_cuenta` todo el tiempo.** No hubo divergencia hoja↔seed y **no hay
+hallazgo sobre el sembrador** — el prompt había previsto ese escenario y no se dio.
+
+⭐ **Y la pregunta que hubo que hacerse sin que nadie la pidiera:** las compuertas A.2 y A.3 del
+`_15` se midieron con el mismo instrumento. **Están bien** — su resultado coincide exacto con la
+columna 11 leída ahora. El `_15` no se toca.
+
+**El radio, medido en el escenario que salió: cero.** Los **nueve** marcadores de `Agenda JM`
+—seis `cc_*`, `enc_alcance_potencial`, `enc_alcance_pct`, `enc_impresiones`— **ya leen por
+cuenta**, porque la solapa ya lo declaraba. `Agenda JM | Post` tiene **cero**. Y **cero marcadores
+leían `alc_real`**, como decía la premisa.
+
+**Parte A — dos celdas, ningún `.gs`.** Por `curarCamposMarcadores_`, el camino declarado en
+`ESCRITORES.md`: los dos `u1_*_meta_alcance` pasan de `digital/Alcance`·`alc_alcance` a
+`reuniones/Agenda JM`·`alc_real` (col `AF`) y `reuniones/Agenda JM | Post`·`alc_real` (col `G`).
+**8 celdas escritas, `sin_fila` vacío**, verificado con snapshot nuevo.
+
+⭐ **`dimensiones` sigue vacío y ahora significa otra cosa** — antes era *"no hay nada que
+separe"*, que era el bug; ahora es *"no hace falta"*, porque **el corte lo hace la solapa**. Es el
+mismo texto con otro sentido, así que quedó dicho en `notas`. `formato = miles_revisar` se
+conservó: el número sigue sin validar.
+
+**B.3 — la regla ya existía: cero ediciones, y el cero se registra.** El prompt pedía escribir *"el
+único alcance que existe es el de Meta"* como `R-NN` nuevo. Grepeado antes de tocar nada: **`R-27`
+la dice entera desde el 14/08**, con el fundamento estructural —*no existe banda de alcance de
+Google ni de Programmatic en `Base_Digital`*—, el rótulo `Acumulado` mal puesto y el corolario de
+la lámina.
+
+⭐ **Y de yapa validó la Parte A por un camino independiente y celda a celda**, escrito una semana
+antes: `Agenda JM!AF` es `Base_Digital!K`, banda `Alcance Meta Convocatoria`, **San Cristóbal
+1.412**; del lado POST, **Retiro 47.753**.
+
+**Lo único que faltaba fue como addendum a `R-27`:** `u1_total_frecuencia` publica
+**377.997 / 55.255 = 6,84**, o sea **impresiones de tres plataformas sobre alcance de una**. La
+división está bien hecha y el número reproduce; **lo que está mal es qué significa**. No se
+resuelve —el token es uno de los ocho `/////` deliberados— pero el día que alguien lo cablee,
+`6,84` **va a parecer una división obvia**: es la familia del número plausible, y sin la nota la
+trampa queda armada.
+
+**B.1 y B.2.** El hueco pasó a **resuelto por addendum fechado**, con el texto original entero
+—describe el estado del que se salió—. ⭐ **La pista del usuario salió más barata de lo que el
+pendiente anotaba:** decía que faltaría *"confirmar qué campo de esas dos solapas es el alcance"*,
+y **el par ya estaba mapeado** — el trabajo era repuntar dos filas, no mapear nada.
+
+Casos **`V-103`** y **`V-104`**, ids libres (el máximo era `V-102`). ⚠ **Estado `pendiente`, que
+es un valor nuevo en ese CSV** —los once `abierto` que ya tiene significan otra cosa: una pregunta
+sin contestar, no una medición esperando corrida—. La nota dice **qué afirma** y no sólo el
+número: *que PRE y POST son distintos y salen de solapas distintas*. **Un caso que sólo registrara
+un valor no habría detectado el bug anterior**, porque cada token por separado se veía bien.
+
+⚠ **Lo que este paso NO cierra, y son tres:** que los números sean correctos —hace falta una
+corrida, y el control es que PRE y POST salgan **distintos**—; ⛔ **la tasa de carga de `alc_real`**,
+que requiere ver la base y no está medida —la solapa entera es carga a mano, *"0 fórmulas en 44
+columnas × 154 filas"*—; y `u1_total_alcance` / `u1_total_frecuencia`, que siguen entre los
+`/////` porque **el alcance son usuarios únicos y no se suma**.
