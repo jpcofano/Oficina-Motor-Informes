@@ -6202,3 +6202,84 @@ completo.
 ⚠ **Y el dato que hace urgente decidir algo: la brecha se está abriendo, no cerrando.** Cinco de
 los doce son de los últimos **tres días** — el 42 % del problema entero se produjo en el 2 % del
 tiempo del proyecto.
+
+### P1 · Elegir el período o dejarlo calcular da la misma ventana y **distinto temario**: seis veces más encuentros, sin que nada falle (21/08/2026)
+
+**Anotado, no arreglado.** Sale de la Parte 0 del `2026-08-21_19` (punto 0.4), que lo midió
+buscando otra cosa: verificar que `R-11 (calculado)` y `agosto_14_20` fueran la misma semana. **Lo
+son.** Lo que no es lo mismo es qué encuentros entran al deck.
+
+**El mecanismo, en una línea de código.** `anclarEncuentros` recorta `REUNIONES` por `periodo_id`
+**sólo si el `origen` de la ventana empieza con `periodo_ref:`** (`Union.gs`, el bloque
+`PREFIJO_PERIODO_REF_`). Y el `origen` lo fija qué eslabón de `D-20` resolvió la ventana:
+
+| lo que se manda | `origen` que devuelve `resolverVentana` | ¿filtra `D-19`? |
+|---|---|---|
+| `agosto_14_20` desde el panel | `periodo_ref:agosto_14_20` (eslabón 1) | **sí** |
+| nada, con `CONFIG` vacío | `R-11 (calculado)` (eslabón 5) | **no** |
+
+**Las dos ventanas son idénticas** — medido: `PERIODOS_2026-08-21.tsv` da `agosto_14_20` =
+`2026-08-14 → 2026-08-20`, y `ultimaSemanaCerradaR11_` corriendo el viernes 21/08 retrocede al
+jueves 20/08 y devuelve **vie 14/08 → jue 20/08**. La misma semana, al día.
+
+**Los universos no.** Medido sobre `REUNIONES_2026-08-21_2225.tsv`: 15 filas, 14 con
+`mostrar = sí`, 2 de `tipo = Agregado` que el anclaje excluye siempre.
+
+| origen de la ventana | encuentros que entran | cuáles |
+|---|---|---|
+| `periodo_ref:agosto_14_20` | **2** | Parque Avellaneda 12/08 · Encuentro Temático Salud 14/08 |
+| `R-11 (calculado)` | **12** | los 2 de agosto **más** los 6 de `julio_24_30` y los 4 de `junio_sem2` |
+
+**Las tres corridas del 21/08 lo muestran sin ambigüedad**, y por eso conviene tenerlas al lado:
+
+| corrida | período | impresos | universo de tokens |
+|---|---|---|---|
+| `jm-20260821-194602` | `agosto_14_20` | 92 | 404 |
+| `jm-20260821-224727` | `agosto_14_20` | 65 | 404 |
+| `jm-20260821-230048` | `R-11 (calculado)` | **228** | — |
+
+⚠ **Los 228 de la tercera no son una corrida mejor: son otro deck.** Se leyeron como cobertura
+—*"la desatendida pinta más"*— y lo que pintó de más son encuentros de junio y de julio. Es la
+familia del **número plausible** que `CLAUDE.md` §4 persigue: cada número está bien calculado y
+sale de las filas equivocadas.
+
+⛔ **Y lo que hace que nadie se entere: el aviso existe, está escrito, y no lo lee nadie.**
+`anclarEncuentros` devuelve `periodo_id: ''` con el comentario *"`''` significa **no se filtró**, y
+el consumidor tiene que poder decirlo en el reporte"*. `itemsDeSeccion_` lo repite —*"`''` = no se
+filtró por período. El reporte lo dice en vez de dejarlo suponer"*— y ahí **muere**: los cuatro
+`reporte.push` de la expansión llevan `excluidos` y **ninguno lleva `periodo_id`**. El único lugar
+del repo que lo dice con todas las letras es `diagEnlaceDigitalDeEncuentros_`, un diagnóstico que
+se corre a mano y que **recibe el `periodoRef` por parámetro**, o sea que no pasa por este camino.
+
+**Y `excluidos` tampoco delata nada**, que es lo que cierra el agujero: en este caso **no hay
+excluidos** — el filtro no corrió, así que no excluyó a nadie. La lista sale vacía, que es
+exactamente lo que sale cuando todo está bien.
+
+⚠ **El comportamiento es deliberado y su motivo sigue siendo bueno.** El código lo dice: la cadena
+de `D-20` puede terminar en `CONFIG`, que no tiene `periodo_id`, y *"filtrar por un período
+adivinado a partir del rango sería exactamente la «semana adivinada» que `R-21` prohíbe. Emitir de
+más y avisar es recuperable; emitir cero en silencio, no"*. **Lo que falló no es la decisión: es la
+mitad del «y avisar».**
+
+**Por qué P1 y no P0:** hoy el camino del panel manda `periodo_ref` siempre, así que la corrida que
+una persona dispara **sí** filtra. El expuesto es el camino que no elige período —el desatendido
+del editor, y cualquier corrida con `CONFIG` vacío—, que es justo el que el `2026-08-21_19` viene a
+cablear al panel.
+
+⛔ **Lo que este hallazgo NO hace, y es deliberado: no lo arregla.** Cómo se arregla es una
+decisión, y son tres cosas distintas:
+
+- **(a) Que el aviso llegue.** Lo más barato: `periodo_id` viaja al reporte de expansión y de ahí
+  al panel, que dice *"sin filtro por período — entran los 12 encuentros con `mostrar = sí`"*. No
+  cambia ningún número; cambia que se vea.
+- **(b) Que el desatendido mande el período.** Es la regla 1 de la Parte A del `2026-08-21_19` y
+  tapa el caso concreto, no el mecanismo.
+- **(c) Que el eslabón 5 declare un `periodo_id`.** Que `R-11 (calculado)` resuelva contra la fila
+  de `PERIODOS` cuyas fechas coinciden —hoy existiría: `agosto_14_20` es exactamente esa ventana—.
+  Es lo que cierra el agujero de verdad y **es el que más hay que pensar**: si no hay fila que
+  coincida, ¿emite de más, o no emite nada? La respuesta la fija `R-21`, no este pendiente.
+
+ⓘ **Al margen, medido de paso y sin abrir pendiente propio:** `PERIODOS` tiene hoy `julio_24_30`
+**dos veces** (filas idénticas) y una fila cuyo `periodo_id` es `vie 14/08 -- jue 20/08 (por
+defecto)`, con la nota *"Puesto a mano"* — un id que parece una etiqueta de lámina. `leerPeriodos()`
+devuelve un mapa, así que el duplicado colapsa sin fallar.
