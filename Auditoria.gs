@@ -4515,3 +4515,96 @@ function diagTopeDeVentana() {
   Logger.log('   que ser\u00eda un hallazgo distinto y mandar\u00eda a revisar el criterio, no la siembra.');
   return { ok: true, tope: topeDiasVentanaCuenta_() };
 }
+
+
+/**
+ * `X-32` — **¿dónde se trunca la frecuencia?** Numerador, denominador, valor crudo del `RATIO` y
+ * valor después del formato, para `frecuencia` y `gcba_frecuencia`.
+ *
+ * ⭐ **Existe porque la anomalía es más fuerte que la definición.** Con `formato = numero`, que hace
+ * `Math.round(v*100)/100`, sacar **exactamente `6`** y después **exactamente `6.1`** cae en bandas
+ * de **1 % de ancho** dos veces seguidas. Eso es demasiada coincidencia: **algo está truncando a un
+ * decimal y no se encontró dónde leyendo el código.** Las tres etapas se imprimen por separado
+ * porque **cada una acusa a un culpable distinto**:
+ *
+ * | si el corte aparece en… | el culpable es |
+ * |---|---|
+ * | `numerador` o `denominador` | **la fuente** — la columna ya viene redondeada |
+ * | `valor crudo` del `RATIO` | **la operación** — `opRATIO` no divide como se cree |
+ * | sólo el valor final | **el formato** — y entonces `numero` no es lo que se leyó |
+ *
+ * ⛔ **Y el criterio fácil está descartado de antemano por `X-19`: «que reproduzca el deck» NO
+ * puede decidir esto.** El deck del equipo publica **8,4** donde la cuenta da **8,89** — o sea que
+ * **el equipo también se equivoca**. Si el motor truncara para parecerse, **heredaría el error del
+ * equipo sin dejar rastro**, que es peor que la diferencia.
+ *
+ * ⚠ **No toca nada.** Sólo lectura: resuelve los dos marcadores y muestra las etapas.
+ *
+ * Sin parámetros y sin `_`, para que aparezca en el desplegable (`CLAUDE.md` §2).
+ */
+function diagTrazaDeFrecuencia() {
+  Logger.log('== X-32 · dónde se trunca la frecuencia ==');
+
+  var ventana = resolverVentana({ periodo_ref: 'agosto_14_20' });
+  if (!ventana.ok) { Logger.log('⛔ ' + ventana.motivo); return ventana; }
+  Logger.log('   ventana: ' + formatearFecha_(ventana.desde) + ' → ' + formatearFecha_(ventana.hasta));
+
+  /* Mismo preámbulo que `generarInforme`, verbatim. `CLAUDE.md` §4: un instrumento que mide una
+   * corrida COPIA su preámbulo, no lo arma — y acá además evita 13.000 lecturas de la planilla. */
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+    var r = resolverMarcadores('jm', {
+      ventana: ventana,
+      solo_marcadores: ['frecuencia', 'gcba_frecuencia', 'imp_total', 'gcba_imp_total']
+    });
+
+    var por = {};
+    r.resultados.forEach(function (x) { por[x.marcador] = x; });
+
+    ['frecuencia', 'gcba_frecuencia'].forEach(function (m) {
+      var x = por[m];
+      Logger.log('');
+      Logger.log('── ' + m + ' ──');
+      if (!x) { Logger.log('   (no resolvió)'); return; }
+
+      Logger.log('   estado          : ' + x.estado);
+      /* Los operandos NO son campos del resultado: viven en la traza, y se leen con
+       * `operandosDeRatio_` (`Auditoria.gs`), que YA existe y ya aprendio la trampa del 17/08
+       * —los nombres llevan espacios, `dig_impresiones (col H)`—. Reimplementar el parseo aca
+       * seria el instrumento que reproduce logica del motor y la reproduce peor (`CLAUDE.md` §4). */
+      var ops = operandosDeRatio_(x.traza);
+      if (ops && ops.ok) {
+        Logger.log('   numerador       : ' + ops.numerador);
+        Logger.log('   denominador     : ' + ops.denominador);
+        Logger.log('   division a mano : ' + (ops.denominador ? (ops.numerador / ops.denominador).toFixed(10) : '(cero)'));
+      } else {
+        Logger.log('   ⚠ no se pudieron leer los operandos de la traza — puede haber cambiado su formato');
+      }
+      Logger.log('   VALOR CRUDO     : ' + JSON.stringify(x.valor) + '   (typeof ' + (typeof x.valor) + ')');
+      /* ⚠ El crudo se imprime con TODOS sus decimales antes de cualquier formato. Si acá ya
+       * viene con uno, el corte NO es del formato y hay que mirar la fuente o la operación. */
+      if (typeof x.valor === 'number') {
+        Logger.log('   crudo sin cortar: ' + x.valor.toFixed(10));
+        Logger.log('   round a 2 (lo que hace `numero`) : ' + (Math.round(x.valor * 100) / 100));
+        Logger.log('   truncado a 1 (lo que dice V-72)  : ' + (Math.floor(x.valor * 10) / 10));
+      }
+      Logger.log('   formato declarado: ' + x.formato);
+      Logger.log('   VALOR PUBLICADO  : ' + formatearValorMarcador_(x.valor, x.formato));
+      if (x.traza) Logger.log('   traza: ' + x.traza);
+    });
+
+    Logger.log('');
+    Logger.log('⭐ CÓMO SE LEE, y cada línea acusa a otro:');
+    Logger.log('   · si `numerador` o `denominador` ya vienen con pocos decimales → LA FUENTE');
+    Logger.log('   · si el CRUDO tiene un solo decimal → LA OPERACIÓN (opRATIO no divide plano)');
+    Logger.log('   · si el crudo tiene muchos y el publicado uno → EL FORMATO');
+    Logger.log('');
+    Logger.log('⛔ Y NO se decide por «cuál se parece al deck»: X-19 mide que el equipo publica');
+    Logger.log('   8,4 donde la cuenta da 8,89. Truncar para parecerse hereda el error del equipo.');
+    return { ok: true };
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+}

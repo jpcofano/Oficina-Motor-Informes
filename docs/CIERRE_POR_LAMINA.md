@@ -81,8 +81,8 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | **14** · Herramientas y audiencias | `L-043` | ⛔ | Sin cablear — ídem | 22/08 |
 | **15** · Formatos digitales | `L-044` | ⛔ | Sin cablear — ídem | 22/08 |
 | **16** · Resultados agregados | `L-045` | ⛔ | 11 tokens. Sin cablear | 22/08 |
-| **17** · Desagregados · Digital | `L-046` | ⛔ | 9 tokens. Sin cablear | 22/08 |
-| **18** · Desagregados · Mail | `L-047` | ⛔ | 14 tokens. Sin cablear. ⚠ Las celdas están **combinadas**, no vacías | 22/08 |
+| **17** · Desagregados · Digital | `L-046` | ⛔ | Tabla 4×9 + TOTALES. ⭐ **La fila de TOTALES YA está cableada** —lee los `camp_*` agregados— y **las tres filas por plataforma no existen como marcador**: no hay ningún `camp_meta_*`, `camp_google_*` ni `camp_prog_*` (`X-34`). ⛔ **Bench CTR, Bench VTR e Insight SALEN DEL ALCANCE: son texto que escribe el equipo**, no tokens de dato — su `/////` **no es «nadie lo cableó»** y no se vuelven a contar como faltantes | 22/08 |
+| **18** · Desagregados · Mail | `L-047` | ⛔ | 5 envíos + GLOBAL, 9 columnas. **Mismo patrón que la 17**: el GLOBAL trae 263.794 / 68.092 / 1,3 porque lee `camp_entregados`, `camp_aperturas` y `camp_ctor`; **las cinco filas de envío caen en `X-33`** — `camp_env1-5_*` son tokens **indexados** y el motor no tiene la primitiva. ⚠ Las celdas están **combinadas**, no vacías | 22/08 |
 | **19** · Desagregados · Respuestas | `L-048` | ⛔ | 15 tokens. Sin cablear. `escondida = sí` | — |
 | **20** · «Análisis y datos» | `L-049` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | **21** · Resumen Ejecutivo RRSS | `L-050` | ⛔ | 21 tokens. ⛔⛔ **Publica los datos de la semana pasada y NADA lo dice** — es un número plausible sin marca | 22/08 |
