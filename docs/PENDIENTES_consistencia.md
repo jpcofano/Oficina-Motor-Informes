@@ -1885,6 +1885,70 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
 > nacieron en documentos hoy congelados y necesitan un lugar vivo. Al responderse, la
 > respuesta va al documento dueño del hecho y la pregunta se tacha acá.
 
+### 2026-08-22 · Las dos preguntas del Resumen Ejecutivo, con todo lo medible ya medido
+
+> **Las dos salen del camino del fixture**, contra `Seguimiento Digital  2026-08-20.zip`
+> (`sha256 f8ef3227…`, verificado). Se preguntan porque **el fixture no las puede contestar**: no
+> es que falte medir, es que hace falta saber qué decidió una persona.
+
+---
+
+**1 · ¿De dónde salen los «Total de contenidos implementados» — 28 en JM y 270 en GCBA?**
+
+**No es `digital/Seguimiento digital`, y está medido.** Las tres columnas que `MAPEO` declara como
+`sd_pauta_google` (T), `sd_pauta_prog` (U) y `sd_pauta_meta` (V) **son flags 0/1**, no cantidades:
+
+```
+Google        927 ceros · 22 unos · 29 vacías
+Programmatic  918 ceros · 36 unos · 24 vacías
+Meta          912 ceros · 43 unos · 23 vacías
+```
+
+En la ventana 14–20/08 entran **75 filas por solape** y **una sola** tiene el flag prendido en cada
+plataforma. **El fixture reproduce EXACTO el `1 · 1 · 1` que publica el motor**, así que el motor
+lee bien: lo que está mal es la fuente.
+
+**Las dos alternativas que se probaron y tampoco dan:**
+
+| dónde se contó | Meta | Google | Programmatic | total |
+|---|---|---|---|---|
+| filas de `looker/DIGITAL` con `nombre_campaña~=JM` en la ventana | 16 | 10 | 15 | **41** |
+| filas de las 2 campañas del temario | 2 | 2 | 3 | **7** |
+| **el equipo publica** | **10** | **8** | **10** | **28** |
+
+⚠ **41 y 28 están en el mismo orden**, así que la respuesta probablemente sea *"filas de `DIGITAL`,
+pero con un recorte que no es la ventana"*. **Cuál es ese recorte es la pregunta.**
+
+---
+
+**2 · ¿Qué recorta el Resumen Ejecutivo, si a nivel campaña la definición ya coincide?**
+
+⭐ **El dato que hace precisa la pregunta:** la lámina de campaña del propio deck del equipo **sí
+reproduce** contra el fixture. Para la campaña `3509-AGOSEGGJ` (*Desarticulación de banda narco*),
+el equipo publica `TOTAL 4.509.115` y el fixture da **4.721.383** — **+4,7 %, dentro del ±10 %**.
+
+**Pero el agregado semanal no.** Recortando `looker/DIGITAL` por las **dos campañas del temario**:
+
+| | Meta | Google | Programmatic | total |
+|---|---|---|---|---|
+| fixture, recorte por temario | 2.562.104 | **894.337** | 6.964.100 | 10.420.541 |
+| **el equipo** | 2.167.036 | **905.782** | **3.415.037** | 6.487.855 |
+| | +18 % | **−1,3 %** ✅ | **+104 %** ⛔ | +61 % |
+
+**Google cierra. Programmatic queda al doble.** Y la desproporción dice que no es un problema de
+filas: el equipo publica **10 filas** de Programmatic contra 15 (1,5×) pero **3,4 M contra 25,6 M**
+de impresiones cuando se mira la ventana entera (7,5×). **Sobran filas de mucho volumen, no faltan
+filas.**
+
+**La pregunta, entonces, es una sola y concreta:** ¿el Resumen Ejecutivo suma **todas** las
+impresiones de las campañas de la semana, o sólo **la parte de la semana** de campañas que
+arrancaron antes? Las dos del temario corren 6/08–3/09 y 10/08–24/08, o sea que **las dos empezaron
+antes de la ventana**, y prorratear explicaría que Programmatic —la de más volumen acumulado— sea
+la que más se pasa.
+
+⛔ **Lo que NO se hizo, a propósito:** seguir probando definiciones hasta que un número diera.
+Adivinar hasta acertar es cómo se llega a un número correcto por el camino equivocado.
+
 ### 2026-08-21 · Las cinco decisiones que traba el `2026-08-21_4` (Parte A sin ejecutar)
 
 **Todo lo medible ya está medido** — la propuesta de `seccion_id` para las 53 láminas, agrupada en
@@ -6781,3 +6845,88 @@ que **la nota no cambia la medición**: no altera qué se midió ni con qué res
 contra una lectura que el propio archivo inducía. Si el criterio se quiere otro —una fila de
 addendum, un archivo nuevo, o §7 modificada—, **esta entrada es dónde empezar**, porque el
 precedente ya está sentado.
+
+### ✅ La ventana de ocho días queda DESCARTADA como causa (22/08/2026)
+
+**Medido, no razonado**, sobre `docs/_fixtures/Seguimiento Digital  2026-08-20.zip`
+(`sha256 f8ef3227…`, verificado antes de citar):
+
+| ventana | filas JM | enviados | entregados | aperturas |
+|---|---|---|---|---|
+| **7 días** 14→20 | 6 | 541.002 | 538.291 | 200.767 |
+| **8 días** 14→21 | **6** | **541.002** | **538.291** | **200.767** |
+
+**Idénticos: la base no tiene una sola fila del viernes 21.** Es el dato del usuario del 22/08 —las
+bases se bajaron el jueves— confirmado sobre el archivo: **una base que corta el jueves no puede
+haber producido un número de ocho días**. El título *"(14_08 al 21_08)"* del deck del equipo es
+decorativo y **`R-11` estaba bien**.
+
+⛔ **Consecuencia, y es la que importa:** la recomendación de
+`docs/VALIDACION_deck_generado_vs_equipo_2026-08-22.md` —*"antes de perseguir Programmatic, medir
+la ventana"*— **queda vencida**. Las diferencias de volumen **vuelven a estar sin explicar** y hay
+que buscarlas en otro lado. Está escrito como addendum en ese documento.
+
+⚠ **Y esto NO decide sobre el alta de `agosto_14_21`**, que sigue siendo una decisión abierta del
+usuario: lo que se descarta es la ventana **como causa de las diferencias**, no la utilidad de
+tener la fila.
+
+---
+
+### ✅ Corrección: la `Frecuencia` de JM en `-` NO es un defecto — no hay dato (22/08/2026)
+
+`docs/VALIDACION_deck_generado_vs_equipo_2026-08-22.md` §3.3 dice *"`Frecuencia` no sale en ninguno
+de los dos ámbitos: JM `-` contra `6`"* y lo cuenta entre los defectos. **Para JM está mal contado.**
+
+Medido sobre el fixture, `looker/resumen_metricas_dinamico`, `ambito=jm` (`campana~=JM`), ventana
+14–20/08 con `fecha_periodo` = `fecha_inicio`:
+
+```
+jm    →  0 filas.  impresiones 0 · alcance 0 · RATIO = división por cero
+gcba  → 25 filas.  impresiones 5.985.524 · alcance 1.779.147 · RATIO 3,36
+```
+
+⭐ **Ninguna campaña JM EMPIEZA entre el 14 y el 20/08**, así que el `-` es la respuesta correcta:
+el marcador está cableado, resolvió, y no hay filas. **El motor no está fallando.** Sacar esa fila
+de la lista de defectos de JM.
+
+⚠ **GCBA sigue abierto y con tres números distintos:** fixture 3,36 · motor `-5.94-` · equipo 18,5.
+Los tres difieren y ninguno explica a los otros; no se persigue acá.
+
+---
+
+### ⏸ El Resumen Ejecutivo: tres definiciones probadas y ninguna reproduce (22/08/2026)
+
+**Anotado, no arreglado.** El fixture **no** reproduce las impresiones que publica el equipo, y se
+escribe **qué se descartó** para que el próximo no vuelva a probar lo mismo.
+
+**JM, `looker/DIGITAL`, `nombre_campaña~=JM`:**
+
+| definición probada | Meta | Google | Programmatic | total |
+|---|---|---|---|---|
+| **solape con la ventana** *(lo que hace el motor)* | 4.310.676 | 1.698.445 | 25.596.519 | 31.605.640 |
+| punto — la campaña **empieza** en la ventana | 0 | 0 | 0 | 0 |
+| punto + `estado = implementado` | 0 | 0 | 0 | 0 |
+| **recorte por las 2 campañas del temario** | 2.562.104 | **894.337** | 6.964.100 | 10.420.541 |
+| **el equipo publica** | 2.167.036 | **905.782** | 3.415.037 | 6.487.855 |
+
+⭐ **Y hay dos señales fuertes que conviene no perder:**
+
+1. **El recorte por temario acerca muchísimo a Google —894.337 contra 905.782, −1,3 %—** y a Meta a
+   +18 %. **Programmatic queda al doble.** O sea que el temario **es** la dirección correcta y algo
+   más recorta a Programmatic.
+2. ⭐⭐ **La lámina de campaña del equipo SÍ reproduce.** Su deck publica, para la campaña del narco,
+   `Meta 1.026.469 · Google 447.121 · Programmatic 3.035.525 · TOTAL 4.509.115`; el fixture da
+   **4.721.383** para esa cuenta — **+4,7 %, dentro del ±10 %**. **A nivel campaña la definición del
+   motor y la del equipo coinciden.** Lo que no coincide es el **agregado semanal**.
+
+⚠ **La desproporción dice dónde mirar:** el equipo publica **10 filas** de Programmatic contra 15
+del fixture (1,5×) pero **3,4 M de impresiones contra 25,6 M (7,5×)**. Si sólo faltaran filas, los
+dos ratios se parecerían. **No faltan filas: sobran filas de mucho volumen.**
+
+⛔ **No se siguió probando definiciones**, y es deliberado: adivinar hasta que un número dé es cómo
+se llega a un número correcto por el camino equivocado. Va como pregunta al equipo, abajo.
+
+ⓘ **Predicción verificable, del punto 2:** cuando los ocho `camp_*` publiquen por cuenta —el
+arreglo de `c50984b`, ya pusheado— **la lámina de campaña destacada del motor debería dar los
+números del equipo**. Si no los da, el problema no es el recorte sino la lectura, y eso es otro
+trabajo.

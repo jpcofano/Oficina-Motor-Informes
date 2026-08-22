@@ -383,3 +383,33 @@ dejó ver. **La conclusión no dependía de esta corrida, pero ahora tiene su co
 
 ⚠ **Y es el testigo que hay que citar de acá en más**, no `194602`: mismo período y temario, y **la
 única de la semana que llegó al final sin cortar**.
+
+---
+
+## Addendum · 2026-08-22 (noche) · El camino del fixture, recorrido
+
+**No se edita una línea de arriba.** §6 decía que ninguna causa estaba medida contra las bases y
+que el camino del fixture **no se había recorrido**. Se recorrió, y **corrige tres cosas de este
+documento**.
+
+**B.1 · ⛔ «Antes de perseguir Programmatic, medir la ventana» queda VENCIDO.** La ventana de ocho
+días **no cambia nada**: 14→20 y 14→21 dan las mismas 6 filas, los mismos 541.002 enviados y los
+mismos 538.291 entregados. **La base no tiene una sola fila del viernes 21** — se bajó el jueves.
+El título del equipo es decorativo. **Programmatic vuelve a estar sin explicar.**
+
+**B.2 · ✅ La `Frecuencia` de JM en `-` NO es un defecto.** §3.3 la cuenta entre los que no salen.
+Medido: **cero campañas JM empiezan entre el 14 y el 20/08** en `resumen_metricas_dinamico`. El
+marcador está cableado, resolvió, y no hay filas. **El `-` es la respuesta correcta.** GCBA sigue
+abierto —fixture 3,36 · motor `-5.94-` · equipo 18,5, los tres distintos—.
+
+**B.3 · ⭐⭐ §3.1 queda RESUELTO, y lo resolvió el fixture.** «N envíos de Mail» no era una
+definición para discutir: `digital/Directa Mail` con la lista blanca de `D-21` y el corte de
+`R-15` da **6 filas** en la ventana, y el equipo publica **6**. En SMS, **3 filas** contra **3**.
+El casillero cuenta **filas**, y el molde ya estaba en la hoja: `m2_envios` es `CONTEO` desde
+antes. Cableado en `cablearEnviosComoConteo()`.
+
+**B.4 · ⭐ Y lo que el camino del fixture SÍ confirmó, que es la mejor noticia:** la lámina de
+**campaña** del equipo reproduce. Para `3509-AGOSEGGJ` el equipo publica `TOTAL 4.509.115` y el
+fixture da **4.721.383** — **+4,7 %**. **A nivel campaña la definición del motor y la del equipo
+coinciden**; lo que no cierra es el agregado semanal. Las tres definiciones probadas para ése
+están en `PENDIENTES_consistencia.md`, con las dos preguntas al equipo.
