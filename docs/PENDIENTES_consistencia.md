@@ -5018,10 +5018,27 @@ de ellos son crudos permanentes**. Una reanudación que se guíe por los crudos 
 
 ---
 
-## El invariante «ningún `{{token}}` crudo sobrevive a una corrida» es falso hoy — 20/08/2026
+## ⏸ El invariante «ningún `{{token}}` crudo sobrevive a una corrida» es falso hoy — 20/08/2026
 
 **Anotado sin arreglar, por pedido del usuario.** La decisión —barrer las escondidas o reescribir
 el invariante— es suya.
+
+> **⏸ SIN NINGUNA PRIORIDAD — decisión del usuario, 21/08/2026.** *Cuando se activen, se ve.* Las
+> láminas 12, 21 y 29 están escondidas y sus 49 crudos **no molestan a nadie mientras lo estén**:
+> no se emiten, no se publican y no confunden a ningún lector del deck.
+>
+> **Las dos opciones de abajo quedan escritas y sin elegir**, a propósito — son el trabajo que
+> habría que hacer el día que una de esas láminas se active, y borrarlas obligaría a
+> redescubrirlas.
+>
+> ⛔ **Es un diferimiento, no un cierre**: el pendiente **no se tacha ni se archiva**, cambia de
+> estado con su fecha y su dueño. **Y no se vuelve sobre esto** — está decidido.
+>
+> ⚠ **Lo único que SÍ sigue vivo de este bloque, y no es la decisión diferida:** el invariante
+> **está enunciado de más** en el comentario del motor, y eso ya se llevó puesta una premisa del
+> `2026-08-20_10` —que proponía usar los crudos como checkpoint de reanudación—. **49 crudos
+> permanentes hacen que una reanudación guiada por crudos no termine nunca.** Eso es una trampa
+> para el próximo que lea el comentario, y no depende de que las láminas se activen.
 
 ### Qué dice el motor y qué hace
 

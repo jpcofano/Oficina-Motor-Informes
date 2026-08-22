@@ -648,6 +648,22 @@ pida, y `jm` es hoy el único que lo pide.
 > Mientras `S-05` esté vivo, la opción 3 no cuesta nada; el día que caiga, hay que elegir. **No
 > se decide acá.**
 
+**✅ Decidido el 21/08/2026 (usuario): la salida 2 — se cablea con los mismos tokens que `jm`.**
+El motivo, con sus palabras: **`secco` es prácticamente el mismo informe.** Con eso, la decisión
+editorial del enunciado de arriba **deja de ser de un informe solo**, que es exactamente lo que la
+salida 2 anticipaba.
+
+⏸ **Y está DIFERIDA: se hace más adelante, no ahora.** No hay fecha ni destrabe — es una decisión
+tomada esperando su turno, no un pendiente esperando un dato.
+
+⚠ **Las salidas 1 y 3 quedan escritas arriba a propósito, y no se borran:** sirven para entender
+**por qué** se eligió ésta. Un menú del que se borran las opciones no elegidas deja una decisión
+que parece que nunca tuvo alternativas.
+
+⛔ **Esto es un diferimiento, no un cierre.** El pendiente no se tacha ni se archiva: cambia de
+estado a ⏸ con su fecha y su dueño. Un pendiente borrado **vuelve a descubrirse dentro de dos
+meses**, y entonces se rediscute desde cero.
+
 ### 1.10 La condición del "1 a 1" — decisión del usuario, 21/08/2026
 
 **El bloque de un encuentro no es siempre el mismo, y depende del `tipo` de la reunión.** En `jm`
