@@ -5387,3 +5387,70 @@ function altaMarcadoresUnoAUno_() {
 function altaMarcadoresUnoAUno() {
   return altaMarcadoresUnoAUno_();
 }
+
+
+/**
+ * `2026-08-22` — **el alta de `ecv_fecha`, la fecha de la reunión.** Dato del usuario, verificado.
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`**, por `curarMarcadores_`, que es la puerta declarada para agregar
+ * filas enteras por decisión de una persona (`D-17`: **no hay `SEED_MARCADORES_` y no lo va a
+ * haber**).
+ *
+ * ⭐ **Por qué es un botón propio y NO entra al seed — es la decisión de diseño de acá.** En la
+ * misma cola está sembrar `CONFIG.tope_dias_ventana_cuenta = 90` (`R-30`), que **mueve los ocho
+ * `imp_*`**. Si este cableado viajara en un `SEED_*`, las dos cosas llegarían al deck **con la
+ * misma corrida de «Aplicar configuración»** y un número movido **no se podría atribuir a ninguna
+ * de las dos**. *Dos cambios en el mismo deck no se pueden separar* (decisión del usuario, 22/08).
+ * Con el botón aparte, **el orden lo elige la persona**.
+ *
+ * **De dónde sale cada campo, y ninguno es una elección nueva:**
+ *
+ * - **`campo_logico = fecha_periodo`** — es lo que `Marcadores.gs` **ya declara** para este token en
+ *   `TOKENS_CORTE_VERTICAL_`, desde el corte vertical del `2.9E`. **No se inventa un mapeo: se usa
+ *   el que ya estaba escrito** — col. E de `RVD JM-CM - ES`, que `MAPEO` describe como *"filtro de
+ *   período"*.
+ * - **`ULTIMO`** — la lectura por ítem devuelve **una fila** (`D-30`), así que hoy suma y último
+ *   darían lo mismo. ⚠ **El desempate es qué pasa el día que haya dos:** `ULTIMO` **elige por fecha
+ *   y lo dice en la traza**; una fecha **no se suma**. Mismo criterio que los nueve `camp_*` del
+ *   `_19` Parte D.
+ * - **`dimensiones = ambito=jm`** — igual que sus hermanos `ecv_*`. Por `D-33` el corte va en
+ *   `dimensiones`, **nunca** en `filtro` ni en el nombre.
+ * - **`formato = fecha`** — ⭐ **verificado contra `formatearValorMarcador_` (`Generador.gs`) antes
+ *   de escribirlo**, no supuesto: la rama existe y devuelve `dd/MM/yyyy`. El primer intento decía
+ *   `fecha_corta`, que **no existe** — habría publicado el valor crudo de la celda sin fallar.
+ *
+ * ⛔ **`ecv_barrio1`, `ecv_barrio2` y `ecv_barrio3` NO entran acá, y no es olvido:** necesitan una
+ * operación que el motor **no tiene** — *"el N-ésimo valor distinto"*. Las ocho de `OPERACIONES_`
+ * no la cubren: `LISTA` publica **todos juntos** (es exactamente lo que hace `ecv_barrios`) y
+ * `CUENTA_DISTINTOS` cuenta. **Agregar la novena es una decisión de diseño con su propio motivo
+ * escrito** (`CLAUDE.md` §2), no un cableado.
+ */
+function cablearEcvFecha() {
+  var r = curarMarcadores_([], [{
+    marcador: 'ecv_fecha', familia: 'ecv', informe_id: 'jm',
+    base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'fecha_periodo',
+    operacion: 'ULTIMO', dimensiones: 'ambito=jm', formato: 'fecha',
+    notas: 'la fecha de la reunion (dato del usuario, 22/08). campo_logico y columna salen de ' +
+      'TOKENS_CORTE_VERTICAL_ en Marcadores.gs, donde ya estaban declarados desde el 2.9E'
+  }]);
+
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  /* ⚠ El campo es `agregadas`, no `agregados`. El primer intento decía `agregados` y **no habría
+   * fallado**: `undefined` → 0, y el reporte diría «0 filas agregadas» sobre un alta que sí ocurrió.
+   * Es la familia del cero disfrazado de éxito, en la capa del log. */
+  Logger.log('== ecv_fecha: ' + ((r.agregadas || []).length) + ' fila(s) agregada(s) · ' +
+    r.filas_finales + ' filas en MARCADORES ==');
+  if (!(r.agregadas || []).length) {
+    Logger.log('ⓘ Cero altas: la fila ya existía. Es idempotencia, no rotura.');
+  }
+  Logger.log('');
+  Logger.log('⭐ ORDEN SUGERIDO, y el motivo importa más que el orden:');
+  Logger.log('   1. Sembrar CONFIG («Aplicar configuración») y correr jm → verificar el tope de R-30');
+  Logger.log('   2. RECIÉN AHÍ este botón, y otra corrida');
+  Logger.log('   Si las dos cosas llegan al mismo deck, un número movido no se puede atribuir.');
+  Logger.log('');
+  Logger.log('⛔ ecv_barrio1/2/3 NO se cablearon: necesitan una operación «N-ésimo distinto» que el');
+  Logger.log('   motor no tiene. Es decisión de diseño, no cableado.');
+  return r;
+}
