@@ -6444,7 +6444,20 @@ queda con qué auditar un deck viejo. Es el mismo modo que el `periodo_id` que m
 persista los `motivo` por ítem. La (a) hace que la pantalla de anclajes muestre el caso; la (b)
 hace auditable un deck ya generado. **No son la misma cosa y probablemente hagan falta las dos.**
 
-### ⛔ P0 · `REUNIONES.nombre` del Encuentro Temático de Salud es `': Salud'`, y eso bloquea el nivel 1 de `R-21` (22/08/2026)
+### ✅ ~~P0 · `REUNIONES.nombre` del Encuentro Temático de Salud es `': Salud'`, y eso bloquea el nivel 1 de `R-21`~~ — **CERRADO 22/08/2026**
+
+> **Cerrado por el matcher, no por el dato.** Decisión del usuario, 22/08: **el nombre queda como
+> está y el arreglo va en `encontrarFilaRdvDeReunion_`**, que ahora le recorta los separadores de
+> los **bordes** al término de búsqueda. Local a esa función, sin tocar `normalizar_` —que lo usa
+> todo el proyecto, incluido el scoring del anclaje digital— y sin obligar a nadie a editar la
+> base. `": Salud"` encuentra su fila; un separador **del medio** se sigue comparando tal cual; y
+> un nombre que sea sólo puntuación **falla con motivo** en vez de matchear la primera fila de la
+> fecha. Control: `tools/probar-matcher-rdv.js`, 14 afirmaciones.
+
+> ⚠ **Lo que el cierre NO cubre queda abierto abajo, en dos entradas propias:** el parseo sigue
+> produciendo el fragmento, y el match sigue siendo en una sola dirección.
+
+**El texto original, que es lo que se midió:**
 
 **Anotado, no arreglado. Frenó la Parte A del `2026-08-22_22`** antes de la primera línea de código.
 
@@ -6492,7 +6505,17 @@ decisión de anclaje ya tomada para esa reunión queda huérfana. Hoy no hay nin
 
 ---
 
-### ⏸ El encabezado de `digital/Directa IVR`: la hoja perdió su fila de títulos — dos salidas, ninguna sin el usuario (22/08/2026)
+### ✅ ~~El encabezado de `digital/Directa IVR`: la hoja perdió su fila de títulos~~ — **CERRADO 22/08/2026**
+
+> **Lo resolvió el usuario del lado del dato: repuso la fila de títulos en la planilla.** Es la
+> salida (a) de las dos que estaban escritas, la que no cuesta código y deja a `D-31` con testigo.
+> **`fila_encabezado = 0` no hizo falta.**
+
+> ⭐ **Verificado antes de darlo por hecho, con `verificarEncabezadosDeMapeo()` sobre la hoja
+> viva:** **124 filas comparadas, 114 columnas, `desalineadas: 0`, `ilegibles: 0`**. Las doce de
+> esa solapa desaparecieron **y no apareció ninguna nueva**, que era la otra mitad del control.
+
+**El texto original, que es lo que se midió:**
 
 Sale de la Parte 0.4 del `2026-08-22_22`. **Las dos hipótesis del prompt quedaron descartadas por
 medición**, no por opinión.
@@ -6617,3 +6640,70 @@ del 21 al 22 se la siguió a través del cambio de día.
 justo antes de repetir el error—. Lo que se precisó el 22/08 es que *"un número de orden dentro del
 día"* **no decía** *"reinicia con la fecha"*: el hallazgo no fue que la convención faltara, sino que
 **se podía incumplir leyéndola bien**. Esta entrada registra sólo las colisiones.
+
+### P2 · `parsearLineaReunion_` deja el separador del título pegado al nombre — el matcher lo tolera, no lo arregla (22/08/2026)
+
+**Anotado, no arreglado.** Es la deuda que queda del cierre del P0 de `': Salud'`, y se escribe
+aparte a propósito: **el motor tolerando un dato mal parseado es una deuda, no una solución.**
+
+**El caso, medido.** La línea del temario es *"2) JM | Encuentro Temático: Salud 14/08"* y
+`parsearLineaReunion_` corta por el `|`, dejando `nombre = ': Salud'` — con los dos puntos del
+título adelante. La celda de `REUNIONES` **quedó así en la hoja** y va a seguir así.
+
+⚠ **Va a volver a pasar con cualquier reunión que use esa forma.** El patrón *"Tipo: Nombre"* es
+como el equipo escribe los encuentros temáticos, así que no es un caso raro: es la forma normal
+del temario para esa familia. Cada uno va a entrar con el separador pegado.
+
+⭐ **Y lo que hace que esto siga importando aunque el matcher lo tolere:** el nombre mal parseado
+**no vive sólo en el matcher**. Es la clave de `ANCLAJE_PENDIENTE`
+—`normalizar_(nombre)|fecha|etapa`—, es lo que se muestra en la pantalla de anclajes, y es lo que
+va a la etiqueta del ítem. **El recorte del matcher arregla un consumidor de los cuatro.**
+
+**Dos salidas, sin elegir:** **(a)** que `parsearLineaReunion_` no deje el separador —arregla el
+origen y todos los consumidores de una—; **(b)** dejarlo y que cada consumidor recorte, que es lo
+que hay hoy y multiplica el recorte por consumidor. ⚠ **La (a) tiene un costo que hay que mirar
+antes:** cambiar cómo se parsea **cambia el `nombre` de las filas nuevas**, y con él la clave de
+`ANCLAJE_PENDIENTE` — las decisiones de anclaje ya tomadas para un encuentro con esa forma
+quedarían huérfanas. Hoy no hay ninguna (verificado el 22/08: sólo `almagro` y `educacion`), así
+que **es barato ahora y caro después**.
+
+---
+
+### P1 · El matcher de `rdv` compara en una sola dirección, y ésa es la fragilidad de fondo (22/08/2026)
+
+**Anotado, no arreglado.** Sale del mismo trabajo que el anterior, y es **la próxima vez que esto
+va a doler**.
+
+`encontrarFilaRdvDeReunion_` pregunta si el texto de `rdv` **contiene** al nombre del temario:
+
+```js
+if (normalizar_(barrio).indexOf(nombreBuscado) !== -1 ||
+    normalizar_(evento).indexOf(nombreBuscado) !== -1) { … }
+```
+
+⛔ **Entonces el match funciona sólo cuando el nombre del temario es igual o más corto que el de
+`rdv`.** Falla, **sin ningún separador de por medio**, en los tres casos que el temario produce
+naturalmente:
+
+| lo que el temario dice | lo que `rdv` dice | ¿matchea? |
+|---|---|---|
+| `Salud` | `Encuentro Temático Salud Eje Sur` | ✅ sí — el temario es más corto |
+| `Encuentro Temático Salud Eje Sur` | `Salud` | ⛔ **no** — el temario es más largo |
+| `Salud Eje Sur` | `Eje Sur Salud` | ⛔ **no** — otro orden |
+
+⚠ **Y el modo de falla es el de siempre: no falla ruidoso.** El encuentro queda `sinLink`, que
+—como ya está anotado más arriba— **no deja rastro en ninguna hoja**. Un encuentro que no matchea
+por longitud es indistinguible de uno que ancló bien.
+
+⭐ **Lo que lo vuelve una fragilidad y no un bug puntual:** el nombre del temario lo escribe una
+persona, semana a semana, en texto libre, y `rdv` lo escribe **otra persona en otra planilla**. Que
+uno sea prefijo del otro es una coincidencia que se sostuvo hasta hoy, no una propiedad.
+
+**Tres salidas, sin elegir:** **(a)** comparar en las dos direcciones —`a.indexOf(b) || b.indexOf(a)`—,
+que es una línea y tapa el caso 2 pero no el 3 y **afloja el match**: un nombre corto como `Sur`
+empezaría a matchear de más; **(b)** comparar por **palabras en común** con un umbral, que tapa los
+tres y es el mismo tipo de scoring que el anclaje digital ya tiene; **(c)** dejarlo y que el
+`sinLink` sea visible —lo que destraba el P1 de arriba— para que al menos **se vea cuando falla**.
+
+⚠ **La (c) no compite con las otras dos: es la que hay que hacer igual.** Cualquier match por texto
+va a errar alguna vez; lo que no puede pasar es que erre **en silencio**.
