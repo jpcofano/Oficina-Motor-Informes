@@ -6402,3 +6402,35 @@ alta: una fila que contradice una regla en silencio es peor que no tenerla.**
 viernes→viernes de ocho días hace que **el viernes se cuente en dos informes seguidos**. `R-11` son
 siete días justamente para que no se solape. Con `agosto_14_21` disponible como opción, dos
 corridas de semanas consecutivas pueden sumar el mismo día dos veces **sin que nada falle**.
+
+### P1 · Un encuentro que NO ancla a ninguna cuenta no queda anotado en ningún lado (22/08/2026)
+
+**Anotado, no arreglado.** Sale de la Parte B del `2026-08-22_20` (addendum), donde bloqueó la
+medición.
+
+`anclarEncuentros` reparte cada encuentro en tres montones: `encuentros` (ancló), `bajaConfianza`
+(ancló por debajo del umbral) y `sinLink` (**no encontró ninguna cuenta**). Sólo el segundo escribe
+en `ANCLAJE_PENDIENTE`, vía `registrarAnclajePendiente_`. **`sinLink` no deja rastro en ninguna
+hoja.**
+
+⛔ **La consecuencia, y es la que lo vuelve caro:** un encuentro sin cuenta y un encuentro que ancló
+perfecto **se ven exactamente igual desde afuera** — los dos están ausentes de
+`ANCLAJE_PENDIENTE`. Para distinguirlos hay que correr el anclaje otra vez y mirar el retorno, que
+cuesta ~50 s y **escribe**.
+
+**El caso que lo destapó, medido el 22/08:** el Encuentro Temático de Salud publica sus cuatro
+números de IVR en `-`, y `ANCLAJE_PENDIENTE` **no tiene fila para `salud`**. Eso admite dos
+lecturas opuestas —*ancló por encima del umbral* o *quedó `sinLink`*— y **la hoja no puede
+separarlas**. Es la familia de *«un control tiene que declarar CUÁNTO midió»* (`CLAUDE.md` §4):
+«ningún problema» y «no se probó nada» se ven idénticos en un registro sin conteo.
+
+⚠ **Y el ítem sí trae el dato, sólo que muere en el reporte de la corrida.** `itemsDeSeccion_` pone
+`motivo: 'sin cuenta digital anclada'` en cada ítem sin cuenta, y `porItem` lo publica — pero eso
+vive en el retorno de `generarInforme` y **no se persiste**: la corrida siguiente lo reemplaza y no
+queda con qué auditar un deck viejo. Es el mismo modo que el `periodo_id` que muere entre
+`itemsDeSeccion_` y los `reporte.push`.
+
+**Dos salidas, sin elegir:** **(a)** que `sinLink` también escriba su fila en `ANCLAJE_PENDIENTE`
+—sin candidatos, que es justamente lo que hay que decir—; **(b)** que el reporte de corrida
+persista los `motivo` por ítem. La (a) hace que la pantalla de anclajes muestre el caso; la (b)
+hace auditable un deck ya generado. **No son la misma cosa y probablemente hagan falta las dos.**
