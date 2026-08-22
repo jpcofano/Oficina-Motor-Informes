@@ -340,3 +340,46 @@ encuentros que salen **son exactamente los dos del deck del equipo**.
   de perseguir Programmatic.
 - **`224727` no se leyó**: cortó, y su deck sigue sellado. Se lo cita sólo por el sello.
 - **Los 552 faltantes de `230048`** no se miraron; van contra `FALTANTES`, no contra un deck.
+
+---
+
+## Addendum · 2026-08-22 (tarde) · Dos correcciones al documento de arriba
+
+**No se edita una línea del texto original** — describe lo que se midió el 22/08 a la mañana y ése
+es el dato. Lo que sigue lo corrige con lo medido después, el mismo día (`CLAUDE.md` §7, addenda
+fechados).
+
+### A.1 · ⏸ La recomendación «mirar primero la ventana de ocho días» queda **condicionada**
+
+§6 y la tabla del §5 dicen que antes de perseguir Programmatic hay que descartar la ventana de ocho
+días del título del equipo. **Eso sigue siendo lo correcto como orden**, pero ya no es una tarea
+abierta: **la mide la Parte 0.2 del `2026-08-22_21`**, con un dato que este documento no tenía.
+
+⭐ **El dato, del usuario, 22/08: las bases de ese zip se bajaron el jueves.** Eso no bloquea la
+medición — **la hace más limpia**, porque una base que corta el jueves **no puede** haber producido
+un número de ocho días. Los dos desenlaces y qué le pasa a este documento en cada uno:
+
+| desenlace | qué le pasa a este reporte |
+|---|---|
+| **los siete días reproducen** | el título del equipo es decorativo, `R-11` estaba bien, y **la ventana queda descartada como causa**. ⛔ Entonces la recomendación de arriba **queda vencida** y hay que leerla al revés: Programmatic 3,6–7,2× y las demás diferencias de volumen **vuelven a estar sin explicar**, y el trabajo es buscarlas en otro lado |
+| **no reproducen** | el equipo generó su deck con una base **más fresca** que este fixture. Entonces **este fixture no puede cerrar volúmenes**, y eso es un límite del fixture y no un bug del motor. Los marcadores de volumen van `sin_resolver` **por fixture desactualizado** — no con un veredicto que la evidencia no sostiene |
+
+⚠ **En los dos casos, todo lo que siga usa siete días.**
+
+### A.2 · ⭐ Hay una cuarta corrida, y es mejor testigo que las tres de la tabla
+
+La tabla del §1 lista tres corridas. **Falta la que corrió después y es la buena**, leída de
+`CORRIDAS` el 22/08:
+
+| corrida | período | impresos | faltaron | etapa 4 | corte |
+|---|---|---|---|---|---|
+| `jm-20260821-234927` | `agosto_14_20` | **127** | 277 | **48 s** (209 → 257) | **ninguno** |
+
+⭐ **Cierra retroactivamente el 0.3 del `2026-08-21_19`, y por el lado que faltaba.** Aquél
+concluyó que `224727` pintó menos **porque cortó**, no por una regresión del `_15`. Ésta lo
+confirma por el otro extremo: **mismo período, mismo universo de 404 datos, sin corte, y 127
+impresos** — 35 más que los 92 de `194602`, que es el efecto del `_15` que la corrida cortada no
+dejó ver. **La conclusión no dependía de esta corrida, pero ahora tiene su control positivo.**
+
+⚠ **Y es el testigo que hay que citar de acá en más**, no `194602`: mismo período y temario, y **la
+única de la semana que llegó al final sin cortar**.

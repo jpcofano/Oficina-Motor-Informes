@@ -6302,3 +6302,103 @@ decisión, y son tres cosas distintas:
 **dos veces** (filas idénticas) y una fila cuyo `periodo_id` es `vie 14/08 -- jue 20/08 (por
 defecto)`, con la nota *"Puesto a mano"* — un id que parece una etiqueta de lámina. `leerPeriodos()`
 devuelve un mapa, así que el duplicado colapsa sin fallar.
+
+### P1 · El aviso «quedó crudo sin corte» no distingue «nadie lo cableó» de «se cableó y no se pisó» (22/08/2026)
+
+**Anotado, no arreglado.** Sale de la Parte C del `2026-08-22_20`. Es la familia del `/////` que no
+separaba causas, en la capa del reporte: **el glifo no miente sobre un valor, miente sobre por qué
+no hay valor**, y las dos causas mandan a trabajos opuestos.
+
+**Medido sobre `MARCADORES` viva el 22/08, los dos tokens que la corrida `jm-20260821-234927` dejó
+crudos:**
+
+| token | ¿tiene fila en `MARCADORES`? | qué es de verdad |
+|---|---|---|
+| `camp_remitente` | ⛔ **no** | **nadie lo cableó** — trabajo de cableado |
+| `camp_titulo` | ✅ sí — `digital / Seguimiento digital · sd_campana_cuentas · ULTIMO` | se cableó, resuelve en otras láminas de la misma corrida (con `@ultimo_ambiguo`), y **acá no se pintó** |
+
+**Los dos salen con el mismo texto:** *"quedó crudo en el deck sin que hubiera corte por tiempo —
+revisar"*. Ese mensaje es correcto para el segundo y **engañoso para el primero**: manda a
+investigar al escritor cuando lo que falta es una fila.
+
+⭐ **La pregunta que lo cierra es la de `CLAUDE.md` §4, aplicada al reporte y no al glifo:** *¿qué
+trabajo manda a hacer este aviso, y hay más de una causa que lleve a él?* Hay dos, piden cosas
+distintas, y **falta un aviso** — no una nota al pie. El motor ya tiene el dato para separarlas: si
+el token tiene fila en `MARCADORES` o no es una consulta que ya hace.
+
+⛔ **Y un hueco que apareció al querer medir esto, y que lo vuelve caro:** `FALTANTES` **no tiene
+lector**. Ni por la API del motor —*"hoja sin lector: FALTANTES — válidas: CONFIG, BASES, INFORMES,
+PERIODOS, CAMPANAS, MAPEO, SOLAPAS, REUNIONES, SECCIONES"*— ni por `tools/snapshot.js`, que sólo
+vuelca las once de registro. **La lista de trabajo de lo que falta cablear no se puede consultar
+desde afuera del editor**, así que la mitad de esta entrada —cuál de las dos causas le tocó a
+`camp_titulo` en la lámina puntual— **quedó sin medir**. Es lo que hay que destrabar primero.
+
+---
+
+### ⛔ P1 · La fila 9 de `PERIODOS` se lee «por defecto», no lo es, y produce un deck con cero encuentros (22/08/2026)
+
+**Anotado, no arreglado. ⛔ No se borra ni se renombra: es configuración y la decide el usuario.**
+
+Medido sobre `PERIODOS` viva el 22/08 — **10 filas, 9 de datos, 8 ids distintos**:
+
+```
+fila 9   periodo_id = 'vie 14/08 -- jue 20/08 (por defecto)'   2026-08-14 → 2026-08-20   'Puesto a mano'
+fila 10  periodo_id = 'agosto_14_20'                            2026-08-14 → 2026-08-20
+```
+
+**La fila 9 no es una rareza inerte: es una trampa viva**, y el mecanismo es exacto.
+
+1. `panel_getEstado` lista `PERIODOS` en el selector, así que **la fila 9 aparece en el
+   desplegable** con un rótulo que se lee *«vie 14/08 — jue 20/08 (por defecto)»*.
+2. **No es «por defecto».** Elegirla es un override explícito: `resolverVentana` devuelve
+   `origen = 'periodo_ref:vie 14/08 -- jue 20/08 (por defecto)'`.
+3. Ese prefijo **activa el recorte de `D-19`** en `anclarEncuentros`, que filtra `REUNIONES` por
+   `periodo_id` **igual a esa cadena**.
+4. **Ninguna fila de `REUNIONES` tiene ese `periodo_id`** — las de agosto tienen `agosto_14_20`.
+
+⭐ **Resultado: un deck con cero encuentros, y nada falla.** La ventana de fechas es la correcta, el
+motor hace exactamente lo que se le pidió, y el reporte de la corrida dice *"excluidas por
+período"* con todas adentro. Es el modo de falla de este proyecto en su forma más limpia: **la
+opción que el usuario elegiría por parecer la segura es la que vacía el informe.**
+
+⚠ **Y la opción de al lado —`agosto_14_20`— tiene exactamente la misma ventana de fechas**, así que
+las dos se ven idénticas en el selector y una funciona y la otra no.
+
+**Tres salidas, sin elegir** (es configuración): **(a)** borrar la fila 9 —el usuario decide, y hay
+que mirar antes si algo la cita—; **(b)** renombrarla a un id que no se confunda con «por defecto»;
+**(c)** que el panel **no ofrezca** períodos sin ninguna fila de `REUNIONES` que los reclame, o los
+ofrezca diciendo *«0 encuentros»* al lado. La (c) es la única que además protege del próximo
+período que se cargue mal.
+
+ⓘ **El otro hallazgo de la misma lectura sí es inerte y sólo se anota:** `julio_24_30` está
+**duplicado** (filas 7 y 8, idénticas byte a byte). `leerPeriodos()` devuelve un mapa por
+`periodo_id`, así que el duplicado colapsa sin fallar y sin cambiar ningún número.
+
+---
+
+### ⏸ El alta de `agosto_14_21` queda BLOQUEADA por la Parte 0.2 del `2026-08-22_21` (22/08/2026)
+
+La Parte D del `2026-08-22_20` pide dar de alta `agosto_14_21` —`2026-08-14` → `2026-08-21`, ocho
+días— como la ventana que publica el equipo. **No se dio de alta, y el motivo es de orden, no de
+desacuerdo.**
+
+⚠ **El `2026-08-22_21` tiene una Parte 0.2 diseñada exactamente para decidir esto**, con el dato
+del usuario del 22/08: **las bases de ese zip se bajaron el jueves**, así que una base que corta el
+jueves **no puede** haber producido un número de ocho días. Sus dos desenlaces:
+
+- **si los siete días reproducen** → el título del equipo es decorativo, `R-11` estaba bien, y
+  **`agosto_14_21` no hace falta**: darlo de alta ahora sería agregar al selector una opción que la
+  medición está por declarar innecesaria — y el selector ya tiene el problema de arriba;
+- **si no reproducen** → el fixture es más viejo que el deck del equipo, y **tampoco** se cierra
+  nada dando de alta la fila.
+
+⛔ **Y la condición que el addendum del `_20` deja escrita vale igual el día que se dé de alta:**
+son **ocho días** y el Addendum 1 de `R-11` fija **siete, inclusive**. La nota de la fila tiene que
+decir con todas las letras que contradice el Addendum 1, y por qué —el equipo actualiza el archivo
+el viernes al mediodía, así que su corte incluye el viernes de cierre—. **Sin esa frase no se da de
+alta: una fila que contradice una regla en silencio es peor que no tenerla.**
+
+⚠ **Y la consecuencia que no es obvia, que va escrita ahora aunque el alta no ocurra:** una ventana
+viernes→viernes de ocho días hace que **el viernes se cuente en dos informes seguidos**. `R-11` son
+siete días justamente para que no se solape. Con `agosto_14_21` disponible como opción, dos
+corridas de semanas consecutivas pueden sumar el mismo día dos veces **sin que nada falle**.
