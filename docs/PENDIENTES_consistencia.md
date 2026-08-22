@@ -6243,17 +6243,36 @@ jueves 20/08 y devuelve **vie 14/08 → jue 20/08**. La misma semana, al día.
 familia del **número plausible** que `CLAUDE.md` §4 persigue: cada número está bien calculado y
 sale de las filas equivocadas.
 
-⛔ **Y lo que hace que nadie se entere: el aviso existe, está escrito, y no lo lee nadie.**
-`anclarEncuentros` devuelve `periodo_id: ''` con el comentario *"`''` significa **no se filtró**, y
-el consumidor tiene que poder decirlo en el reporte"*. `itemsDeSeccion_` lo repite —*"`''` = no se
-filtró por período. El reporte lo dice en vez de dejarlo suponer"*— y ahí **muere**: los cuatro
-`reporte.push` de la expansión llevan `excluidos` y **ninguno lleva `periodo_id`**. El único lugar
-del repo que lo dice con todas las letras es `diagEnlaceDigitalDeEncuentros_`, un diagnóstico que
-se corre a mano y que **recibe el `periodoRef` por parámetro**, o sea que no pasa por este camino.
+### ⛔ Corrección del 22/08/2026, escrita el mismo día y antes de que nadie la citara
 
-**Y `excluidos` tampoco delata nada**, que es lo que cierra el agujero: en este caso **no hay
-excluidos** — el filtro no corrió, así que no excluyó a nadie. La lista sale vacía, que es
-exactamente lo que sale cuando todo está bien.
+**La primera versión de esta entrada decía que el aviso «existe, está escrito y no lo lee nadie».
+Eso es FALSO y hay que dejarlo dicho, porque cambia qué trabajo manda a hacer.**
+
+`PanelBackend.gs` tiene `avisosDeVentanaPropuesta_` **desde el 20/08** (`2026-08-20_2` Parte B),
+que dice exactamente esto —*"las secciones repetibles NO se recortan por período: entran las N
+reunión(es) con `mostrar=sí`"*— con el conteo adelante, viaja en `panel_getEstado().por_defecto.avisos`
+y **`Panel.html:616` lo pinta** cuando el selector queda en «por defecto». Su comentario ya medía
+las 12 filas de dos períodos. **Estaba todo hecho, y esta entrada lo desconoció por no haberlo
+grepeado.** Es, literalmente, la regla de `CLAUDE.md` §3 —*grepear antes de pedir que se corrija
+algo*— incumplida por quien la escribió.
+
+**Lo que SÍ sigue en pie, y es más chico y más preciso:**
+
+1. ⚠ **El aviso es preventivo, no forense.** Avisa **antes** de generar y sólo en el panel. Una vez
+   que el deck existe, **nada en él ni en el reporte de la corrida dice que el temario no se
+   recortó**: `itemsDeSeccion_` pone `periodo_id: ''` con el comentario *"el reporte lo dice en vez
+   de dejarlo suponer"*, y ahí **muere** — los cuatro `reporte.push` de la expansión llevan
+   `excluidos` y **ninguno lleva `periodo_id`**. Un deck de la semana pasada no se puede auditar.
+2. ⚠ **Y `excluidos` no lo delata**: el filtro no corrió, así que no excluyó a nadie y la lista sale
+   **vacía** — que es exactamente lo que sale cuando todo está bien.
+3. ⛔ **El camino desatendido no pasa por el panel y por lo tanto no tiene aviso ninguno.**
+   `jm-20260821-230048` se arrancó con `iniciarCorridaDesatendidaJM()` desde el editor: nadie vio
+   `avisosDeVentanaPropuesta_` porque esa función vive en `panel_getEstado`. **El aviso protege el
+   camino que ya era el menos expuesto** —el panel manda `periodo_ref` casi siempre— y no protege
+   el que sí lo estaba.
+
+**Baja de prioridad, entonces:** de lo que parecía un agujero sin ninguna contención a **un aviso
+que existe y no cubre dos casos** — el forense y el desatendido.
 
 ⚠ **El comportamiento es deliberado y su motivo sigue siendo bueno.** El código lo dice: la cadena
 de `D-20` puede terminar en `CONFIG`, que no tiene `periodo_id`, y *"filtrar por un período
@@ -6269,9 +6288,9 @@ cablear al panel.
 ⛔ **Lo que este hallazgo NO hace, y es deliberado: no lo arregla.** Cómo se arregla es una
 decisión, y son tres cosas distintas:
 
-- **(a) Que el aviso llegue.** Lo más barato: `periodo_id` viaja al reporte de expansión y de ahí
-  al panel, que dice *"sin filtro por período — entran los 12 encuentros con `mostrar = sí`"*. No
-  cambia ningún número; cambia que se vea.
+- **(a) Que el aviso sea también forense.** `periodo_id` viaja al reporte de expansión y de ahí al
+  reporte de corrida, así que un deck ya generado se puede auditar. No cambia ningún número;
+  cambia que se pueda saber después. (El aviso **previo** ya existe — ver la corrección de arriba.)
 - **(b) Que el desatendido mande el período.** Es la regla 1 de la Parte A del `2026-08-21_19` y
   tapa el caso concreto, no el mecanismo.
 - **(c) Que el eslabón 5 declare un `periodo_id`.** Que `R-11 (calculado)` resuelva contra la fila
