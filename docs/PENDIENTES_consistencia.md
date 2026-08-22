@@ -5972,3 +5972,60 @@ qué le pasa al recorte por ventana de las cinco solapas de canal.
 ⚠ **Hoy no está disparado**, y eso es lo que lo mantiene en P1 y no en P0: los 24 `u1_` viven todos
 en láminas de la sección `uno_a_uno_comunas`, que itera por encuentro y les da `id_cuenta`. El
 riesgo se activa el día que alguien ponga un `u1_` en una lámina fija.
+
+---
+
+### ⏸ P3 · Los dos alcances del 1 a 1 (PRE y POST) están cableados a la misma fila y publicarían el mismo número (21/08/2026)
+
+**Abierto y sin prioridad, por decisión del usuario (21/08/2026).** Nace del `2026-08-21_15`
+Parte C.3. Queda escrito para no volver a preguntarlo.
+
+**El hueco.** El deck publica **dos** alcances distintos para el 1 a 1 —uno PRE y uno POST— y
+salen de **filas distintas** (dicho por el usuario, 21/08). Pero `MARCADORES` tiene las dos filas
+cableadas idénticas:
+
+| marcador | base/solapa | campo | operación | dimensiones | filtro | formato |
+|---|---|---|---|---|---|---|
+| `u1_pre_meta_alcance` | `digital/Alcance` | `alc_alcance` | `ULTIMO` | *(vacío)* | *(vacío)* | `miles_revisar` |
+| `u1_post_meta_alcance` | `digital/Alcance` | `alc_alcance` | `ULTIMO` | *(vacío)* | *(vacío)* | `miles_revisar` |
+
+**No difieren en nada.** Si resolvieran, publicarían **el mismo número en los dos casilleros**.
+
+**Y no hay con qué separarlas hoy.** `MAPEO` mapea tres columnas de `digital/Alcance` —`A`
+`alc_id_cuenta`, `B` `alc_alcance`, `C` `alc_frecuencia`— y **ninguna nombra la campaña ni la
+etapa**; `DIMENSIONES_.etapa` sabe expresarse **sólo** sobre `digital|CAMPAÑAS_DESGLOCE_DIGITAL`.
+Así que el corte no se puede declarar ni por `dimensiones` ni por `filtro` con lo que existe.
+
+**La pista del usuario (21/08), y al verificarla resultó más fuerte de lo que decía.** El alcance
+por etapa probablemente **no salga de `digital/Alcance`**: en la base `reuniones` el par pre/post
+está separado **por solapa** —`Agenda JM` y `Agenda JM | Post`, las dos `uso = fuente`, medido—.
+Es la misma forma que `D-30` punto 1 cita de `C-50`: el par comparte `ID` en dos solapas
+distintas, así que la clave es `(ID, solapa)` y **no hace falta ninguna dimensión nueva** — son
+dos filas de `MARCADORES` apuntando a dos solapas.
+
+⭐ **Y lo que corrige la pista, medido y no supuesto: el mapeo del par YA EXISTE.** El prompt decía
+que ahí *"ya lee `enc_alcance_potencial`"*; eso es el nombre del **token**, no del campo lógico, y
+el campo que usa —`alc_potencial`— está mapeado en **una sola** solapa. El que está mapeado en
+**las dos** es otro:
+
+| campo lógico | `reuniones/Agenda JM` | `reuniones/Agenda JM \| Post` |
+|---|---|---|
+| `alc_real` | col `AF` | col `G` ← **el par, ya mapeado** |
+| `alc_potencial` | col `AG` | — |
+| `alc_cobertura_pct` | col `AH` | — |
+
+`alc_real` está mapeado en las dos solapas y **ningún marcador lo usa todavía** (grepeado sobre
+`MARCADORES` viva: el único que toca esa familia es `enc_alcance_potencial`, sobre `alc_potencial`
+de `Agenda JM`). O sea que el cableado que cerraría este hueco tendría la infraestructura hecha:
+dos filas, misma medida, dos solapas.
+
+**Lo que faltaría si algún día sube de prioridad:** confirmar cuál de los dos campos es el alcance
+del 1 a 1 —`alc_real` es el candidato por estar en las dos— y si `Call Center` entra en la cuenta.
+⛔ **Code no lo puede medir**: no tiene acceso a las bases. Es una pregunta al equipo o una corrida
+del usuario.
+
+⚠ **Hoy los dos tokens salen `-`, y eso es benigno pero no cubre esto.** Las dos filas llevan
+`formato = miles_revisar`, así que el día que resuelvan publican `-val-` (`CONFIG_INFORMES.md`
+§4.5 bis). Pero **el `-val-` avisa que el número no está validado, no que los dos casilleros
+muestren el mismo**. Son dos cosas distintas, y ésta no está cubierta por ningún símbolo: dos
+casilleros con el mismo `-val-` se leen como dos mediciones que coincidieron.
