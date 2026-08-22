@@ -6707,3 +6707,77 @@ tres y es el mismo tipo de scoring que el anclaje digital ya tiene; **(c)** deja
 
 ⚠ **La (c) no compite con las otras dos: es la que hay que hacer igual.** Cualquier match por texto
 va a errar alguna vez; lo que no puede pasar es que erre **en silencio**.
+
+### ⏸ `SECCIONES.itera_sobre` pasa a significar dos cosas, y el día que se separen la columna no alcanza (22/08/2026)
+
+**Anotado, no arreglado.** Decisión del usuario del 22/08: **reutilizar la columna en vez de abrir
+una nueva**, y esto escribe el costo para que el día que aparezca no se descubra.
+
+Desde el `2026-08-22_25`, `itera_sobre` responde **dos preguntas distintas**:
+
+| | qué dice | quién la lee |
+|---|---|---|
+| **universo** | de dónde salen las filas del cálculo | `filasRdvDelTemario_`, y sólo cuando `modo = 'agregado'` |
+| **expansión** | sobre qué se duplican las láminas | `itemsDeSeccion_`, y sólo cuando `modo = 'repetible'` |
+
+**Hoy no chocan porque `modo` las separa**, y eso está verificado: ningún lector de `itera_sobre` lo
+lee sin chequear `modo` antes (`0.5` del `_25`).
+
+⚠ **El día que la columna no alcance, y son dos casos concretos:**
+
+1. **Una sección `agregado` que necesite iterar de verdad** — emitir una lámina por ítem *y* un
+   total. Hoy `modo` sólo admite uno de los dos.
+2. **Una `repetible` cuyo universo sea distinto del que expande** — por ejemplo expandir por
+   campaña y agregar por temario. La columna diría una sola cosa y la otra no tendría dónde vivir.
+
+**La salida, el día que pase, es una columna propia** —`universo_sobre`, o el nombre que
+corresponda—, no un valor compuesto en ésta. **Lo que no hay que hacer es inferir cuál de los dos
+significados vale mirando otra columna**, que es como se llega a que un cambio de `modo` mueva
+números sin que nadie lo pida.
+
+---
+
+### ⏸ Ocho de los 17 marcadores de `rdv|RVD JM-CM - ES` no tienen caso de validación (22/08/2026)
+
+**Anotado, no arreglado.** Medido en el `0.3` del `2026-08-22_25`, cruzando `MARCADORES` viva
+contra `docs/casos_validacion_2026-08-19.csv` **entero**.
+
+| marcador | qué le pasa |
+|---|---|
+| `ecv_insc_mail_pct` · `ecv_insc_cc_pct` · `ecv_insc_ivr_pct` · `ecv_insc_digital_pct` · `ecv_insc_dif_pct` | ⏸ **derivables, no validados**. Sus numeradores y su denominador sí tienen caso (`V-39`…`V-42`, `V-38`/`V-71`), pero **el cociente no**. Decisión del usuario, 22/08: **se calculan, se publican con su cuenta a la vista —`1170/2445`— y nacen SIN VALIDAR.** No se marcan dudosos: nadie declaró desconfianza sobre ellos |
+| `ecv_barrio` · `ecv_poblacion` · `enc_evento` | ⏸ sin caso propio. Son los tres que se emiten **también** dentro del bloque de encuentro, y su control es el **positivo por los dos caminos** que el banco del `_25` ya fija: el camino por ítem no se mueve |
+
+⭐ **Y una corrección al prompt que conviene no perder:** `ecv_barrios` **sí** tiene caso, pero es
+`C-03` y es `contradice` —`"Belgrano, Caballito, Retiro, Villa Urquiza"`, los cuatro de la
+ventana—. O sea que hay **un número que el motor publica mal y ninguno esperado**: su control es
+contra `REUNIONES`, no contra un caso.
+
+⛔ **Y `ecv_barrio1`, `ecv_barrio2`, `ecv_barrio3` no están diferidos: NO EXISTEN en `MARCADORES`.**
+El seed de `ecv_alcance_semanal` los nombra en `familia_tokens` y **no hay fila para ninguno**.
+Cablearlos no entró en el `_25`; sacarlos de la familia declarada tampoco. **Quedan las dos cosas
+por hacer y son una sola decisión**: o se cablean, o se sacan de la familia — dejarlos nombrados
+sin fila es lo que hace que una lista de familia no signifique nada.
+
+---
+
+### ⚠ Se editó por primera vez un CSV de casos que `CLAUDE.md` §7 declara congelado (22/08/2026)
+
+**Hecho, y se escribe porque abre un precedente.** El addendum del `2026-08-22_25` pidió agregar
+**una nota** a `V-38` y `V-44` de `docs/casos_validacion_2026-08-19.csv` diciendo que ese bloque
+**no mide el universo del temario** — para que el próximo que lo lea no repita el cruce que hizo
+caer al prompt.
+
+`CLAUDE.md` §7 dice de esos archivos: *"nadie edita; se crea uno nuevo"*.
+
+**Lo que se hizo y lo que no:**
+
+- ✅ **Se agregó texto al campo `nota`**, precedido de `· ATENCION (22/08/2026):`, en dos filas.
+- ⛔ **No se tocó `valor_esperado` ni `estado`**: los dos siguen `exacto`, con 2445 y 5. **Los casos
+  no se retractan** — miden bien lo que su clave declara.
+- ⛔ **No se renumeró ni se reusó ningún caso.**
+
+⚠ **La tensión con §7 es real y queda dicha en vez de resuelta.** El criterio que la sostiene es
+que **la nota no cambia la medición**: no altera qué se midió ni con qué resultado, sólo advierte
+contra una lectura que el propio archivo inducía. Si el criterio se quiere otro —una fila de
+addendum, un archivo nuevo, o §7 modificada—, **esta entrada es dónde empezar**, porque el
+precedente ya está sentado.
