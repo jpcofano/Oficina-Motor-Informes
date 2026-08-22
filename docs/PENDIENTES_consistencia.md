@@ -7292,6 +7292,54 @@ los **2.772.141** que publica el motor —1,55×—. Programmatic coincide al 3 
 hipótesis es que la medición está mal). El `~=` del motor puede comparar distinto; **no está medido
 y no se afirma**.
 
+### ⛔ CORRECCIÓN (22/08/2026, del usuario) — son DOS problemas distintos con el mismo síntoma, y arriba estaban mezclados
+
+**Lo de arriba habla del Resumen y arrastraba el «1 a 1» con la misma frase.** No es lo mismo, y
+mezclarlos manda a buscar una causa común que no existe.
+
+| | qué le pasa | evidencia |
+|---|---|---|
+| **el «1 a 1»** (`u1_*`) | ⛔ **un agujero de FUENTE, y sólo en Programmatic** | `X-05` · `C-57` |
+| **el Resumen** (`imp_*`) | ⛔ **un universo DEMASIADO ANCHO, en los tres** | `A-06` · `A-07` · `C-25` |
+
+**1 · En el «1 a 1» los otros dos están EXACTOS, y eso hay que decirlo.**
+
+| caso | token | valor | |
+|---|---|---|---|
+| `V-21` | `u1_google_impresiones` | **17.401** | ✅ `exacto` |
+| `V-23` | `u1_meta_impresiones` (San Cristóbal pre) | **25.099** | ✅ `exacto` |
+| `V-25` | `u1_meta_impresiones` (Retiro pre) | **18.015** | ✅ `exacto` |
+
+⛔ **El único sin fuente es `u1_prog_impresiones`:** los **94.955** del **POST de San Cristóbal**.
+`C-57` lo cerró con búsqueda exhaustiva — **no aparecen en ninguna celda numérica de los siete
+libros de los dos fixtures**, ni en la base de reuniones nueva. **No es un universo mal recortado:
+el número no está en ningún lado.** Es `X-05`, `sin_fuente`.
+
+**2 · En el Resumen fallan los tres, y la evidencia es de otra clase.**
+
+`A-06` da **614.140** de Google contra los 531.403 publicados —**+15,6 %**— y `A-07` **5.992.841**
+contra 5.194.898 —**+15,4 %**—, los dos **sobre un fixture ANTERIOR al deck**.
+
+⭐ **Y eso es lo que lo convierte en diagnóstico y no en observación**, vía `C-25`: el fixture es
+anterior, así que toda métrica **acumulativa** medida sobre él tiene que dar **menor o igual** que
+lo publicado. **Un valor MAYOR no se explica por el desfasaje.** Es universo, no tiempo.
+
+**3 · Por qué los ocho siguen marcados igual, que es la parte que NO cambia.**
+
+La causa del Resumen es **común a las tres columnas**: `2976-MAYPCCVC` —*Campañas genéricas RDV JM*,
+`04/06 → 31/12`— **entra por las tres**, y una campaña genérica de siete meses solapa cualquier
+semana del año.
+
+⛔ **Desmarcar Meta y Google diría que el Resumen está bien, y no lo está.** El marcado no es por
+plataforma: es por **el universo del que salen las tres**. Los ocho `imp_*` quedan en
+`_revisar`.
+
+⚠ **Lo accionable, y son dos trabajos que no se tocan:** el «1 a 1» necesita que **aparezca una
+fuente** para el POST de Programmatic —o que se acepte que no la hay—; el Resumen necesita que **se
+recorte el universo**. Ninguno de los dos arregla al otro, y **el mismo `/////` o el mismo `_revisar`
+en los dos esconde esa diferencia** — es la familia del símbolo que no distingue *«no se cableó»* de
+*«no se llegó»* (`CLAUDE.md` §4).
+
 ### ✅ ~~P0 · `unirDigitalPorCuenta` cuesta ≥325 s con la ventana de julio~~ — **FALSO POSITIVO, cerrado el 22/08/2026**
 
 > ⛔ **Cerrado el mismo día, y el motivo es de método: el instrumento corría sin las cachés que

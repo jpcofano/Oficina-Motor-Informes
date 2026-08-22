@@ -73,7 +73,7 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | **20** · «Análisis y datos» | `L-049` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | **21** · Resumen Ejecutivo RRSS | `L-050` | ⛔ | 21 tokens. ⛔⛔ **Publica los datos de la semana pasada y NADA lo dice** — es un número plausible sin marca | 22/08 |
 | **22** · MUCHAS GRACIAS | `L-051` | 🟡 | Cierre, `rol = equipo`, cero tokens. **Nada que cablear** | — |
-| *(orden 8)* · «1 a 1» | `L-053` | ⛔ | `filtro = tipo=Uno a uno`. Nace con `D-37`; **sin medir** — es la lámina de 32 tokens `u1_` que **ninguna sección declaraba** | 21/08 |
+| *(orden 8)* · «1 a 1» | `L-053` | ⛔ | `filtro = tipo=Uno a uno`, 32 tokens `u1_`. Nace con `D-37`. ⭐ **Las impresiones del PRE reproducen exacto** — `V-21` Google **17.401**, `V-23` Meta **25.099**, `V-25` Meta Retiro **18.015**. ⛔ **El único roto es `u1_prog_impresiones`, y es un agujero de FUENTE**: los 94.955 del **POST de San Cristóbal** no están en ninguna celda de los siete libros de los dos fixtures (`X-05`, `C-57`). **Distinto del problema del Resumen** — acá falta el dato, allá sobra universo | 22/08 |
 
 **Conteo: 0 ✅ · 5 🟡 · 18 ⛔ · 0 ⏳**, sobre 23 filas de `LAMINAS` para `jm`.
 
@@ -103,9 +103,14 @@ Las ocho filas ya tenían `formato = miles_revisar`; el lote **no escribió ning
 correcto** (ver la corrección del veredicto, abajo).
 
 **Esperado: los ocho publican su valor envuelto en guiones**, que es lo que `_revisar` declara —
-*"este número no es de confiar"*—. ⛔ **No es un arreglo del número**: Programmatic sigue **3,6 a
-7,2×** por encima de lo que publica el equipo, porque `looker/DIGITAL` trae **estado acumulado** y
-el rótulo del deck promete la semana.
+*"este número no es de confiar"*—. ⛔ **No es un arreglo del número.**
+
+⚠ **Y el marcado es por UNIVERSO, no por plataforma** — por eso son ocho y no dos. `A-06` da
+**+15,6 %** en Google y `A-07` **+15,4 %** en Programmatic **sobre un fixture anterior al deck**, y
+por `C-25` una métrica acumulativa medida sobre una foto anterior **no puede dar más** que lo
+publicado: es universo, no desfasaje. La causa es común a las tres columnas —`2976-MAYPCCVC`,
+*Campañas genéricas RDV JM*, `04/06 → 31/12`, **entra por las tres**—. ⛔ **Desmarcar Meta y Google
+diría que el Resumen está bien, y no lo está.**
 
 ⭐ **Y la decisión que sigue abierta es del usuario, no de Code** — tres salidas, ninguna elegida:
 **(a)** cambiar el rótulo a *"acumulado de las campañas de la semana"*, que hace correcto el número
