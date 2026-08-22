@@ -1,6 +1,40 @@
 # 2026-08-22_28 — Cada fuente se lee una vez por corrida
 
-> **Estado:** no ejecutado · **subagente:** ninguno
+> # ⛔ ANULADO — 22/08/2026, **antes de ejecutarse**. No correr.
+>
+> **Estado:** ⛔ **anulado** · nunca se ejecutó · **subagente:** ninguno
+>
+> **El motivo, en una línea: comparó una corrida CON caché contra un instrumento SIN caché, y
+> leyó la diferencia como «trabajo por elemento».**
+>
+> Los 33 s del testigo `jm-20260821-234927` son de `generarInforme`, que enciende
+> `cacheDatosHoja_` (`Generador.gs:3023`, con `try/finally`). Los ≥325 s salieron de
+> `verificarAgregadoDeJulio()`, que corre **fuera** de esa ventana — y la caché está **apagada por
+> defecto**, por decisión del `2026-08-20_11`: *"un diagnóstico que quiera leer dos veces la misma
+> solapa y ver un cambio sigue pudiendo"*. **La comparación no era válida**, así que el número que
+> fundaba el P0 no medía lo que decía medir.
+>
+> ⭐ **Y la Parte A lo confirmó por el otro lado, que es lo que lo cierra:**
+> `unirDigitalPorCuenta` llama a `leerFuente` **exactamente 6 veces** —una maestra más los cinco
+> canales de `SOLAPAS_CANAL_DIGITAL_`— **siempre con la ventana de la corrida**. No varía por
+> cuenta ni por encuentro. **Con dos encuentros o con seis hace exactamente lo mismo**, y
+> `cacheUnionDigital_` la memoiza entera. **No hay trabajo repetido por elemento donde el prompt lo
+> suponía.**
+>
+> ⚠ **Lo que del prompt sí era cierto y NO se anula:** `encontrarFilaRdvDeReunion_` arma una
+> ventana de un día por reunión y la caché nunca acierta por clave. **Pero eso ya está resuelto y
+> era deliberado** — el comentario del `2026-08-20_11` lo dice: con `cacheDatosHoja_` encendida
+> deja de releer `rdv`, y **seguir recortando por seis ventanas distintas es a propósito**, porque
+> una ventana común cambiaría qué filas ve el matcher. Los 49 s medidos son **sin** caché.
+>
+> **Lo reemplaza:** encender `cacheDatosHoja_` alrededor de la lectura en
+> `verificarAgregadoDeJulio()` y volver a medir. Si entra en el techo, el P0 se cierra como falso
+> positivo.
+>
+> ⛔ **Y la lección, que es la que hay que no repetir:** *dos mediciones sólo se restan si corrieron
+> en las mismas condiciones.* Acá el instrumento y el testigo diferían en algo que ninguno de los
+> dos declaraba — **el estado de una caché apagada por defecto** — y la diferencia se leyó como una
+> propiedad del dato.
 >
 > **P0.** Con seis encuentros el deck **no sale**, y el síntoma es el muro de los 360 s, que **no
 > deja rastro**. El testigo `jm-20260821-234927` corrió con dos.
