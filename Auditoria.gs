@@ -1342,6 +1342,12 @@ function verificarAgregadoDeJulio() {
     Logger.log('');
     Logger.log('══════ dónde se fue el tiempo ══════');
     Logger.log('   estado: ' + estado + ' · total ' + seg() + ' s');
+    /* ⚠ Que la caché estuvo encendida se dice EN EL REPORTE, no sólo en el código: sin esa línea,
+     * el próximo que lea estos tiempos los va a comparar contra los 49 s de la corrida anterior
+     * —que fueron sin caché— y va a restar dos cosas distintas, que es exactamente lo que anuló
+     * el `_28`. */
+    Logger.log('   ⚠ etapas 3 a 7 corrieron CON cacheDatosHoja_ encendida — como dentro de');
+    Logger.log('     generarInforme. Los 49 s de la corrida anterior fueron SIN caché.');
     var previo = 0;
     etapas.forEach(function (e) {
       Logger.log('   ' + e.etapa + ' · terminó a los ' + e.al_seg + ' s · duró ' + (e.al_seg - previo) + ' s');
@@ -1369,8 +1375,34 @@ function verificarAgregadoDeJulio() {
    * reporte diga **por reunión** cuánto cuesta y no un promedio. Un promedio no distingue *"todas
    * cuestan 40 s"* de *"una cuesta 200 y el resto nada"*, y son dos arreglos distintos. */
   if (!entra('3 · fila de rdv por reunión')) return { ok: false, etapas: etapas };
+
+  /* ⭐ **La caché de datos se enciende ACÁ y no al principio del botón** (22/08/2026, tras anular
+   * el `_28`).
+   *
+   * ⛔ **El error que esto corrige es de MEDICIÓN, no de código.** La primera corrida murió en el
+   * muro y se comparó contra los 33 s del testigo `jm-20260821-234927` — pero ese testigo es
+   * `generarInforme`, que **enciende `cacheDatosHoja_`** (`Generador.gs`, con `try/finally`), y
+   * este botón corría **fuera** de esa ventana. **Se restaron dos mediciones que no corrieron en
+   * las mismas condiciones**, y la diferencia se leyó como *"trabajo por elemento"*. No lo era:
+   * `unirDigitalPorCuenta` hace **6 lecturas fijas** con la ventana de la corrida, con dos
+   * encuentros o con seis.
+   *
+   * ⚠ **Se enciende sólo alrededor de las etapas que LEEN, y se apaga en `finally`.** Que la caché
+   * esté apagada por defecto es una decisión del `2026-08-20_11` y tiene motivo:
+   * *"un diagnóstico que quiera leer dos veces la misma solapa y ver un cambio sigue pudiendo"*.
+   * **Un instrumento que la deja encendida de punta a punta deja de ser un instrumento de
+   * diagnóstico** — así que se abre lo más tarde posible y se cierra pase lo que pase, incluidos
+   * los cortes por presupuesto y el muro.
+   *
+   * ⭐ **Y con esto la etapa 3 pasa a medir otra cosa, que hay que leer sabiéndolo:** sus seis
+   * llamadas **siguen recortando por seis ventanas de un día distintas** —eso es a propósito y no
+   * se toca— pero **dejan de releer `rdv` seis veces**. Los 49 s de la corrida anterior son el
+   * costo SIN caché; lo que salga ahora es el costo real dentro de una corrida. */
+  abrirCacheDatosHoja_();
+  try {
+
   Logger.log('');
-  Logger.log('== 3 · encontrarFilaRdvDeReunion_, una por una ==');
+  Logger.log('== 3 · encontrarFilaRdvDeReunion_, una por una · CON cacheDatosHoja_ ==');
   var conFila = 0;
   for (var i = 0; i < delPeriodo.length; i++) {
     if (seg() >= TECHO_SEG) {
@@ -1451,6 +1483,14 @@ function verificarAgregadoDeJulio() {
 
   reportar(okI && okE ? 'completo · reproduce' : 'completo · NO reproduce');
   return { ok: okI && okE, inscriptos: vi, encuentros: ve, etapas: etapas };
+
+  } finally {
+    /* ⚠ **En `finally` y no al final del cuerpo**: arriba hay seis `return` tempranos —los cortes
+     * por presupuesto— y cualquiera de ellos dejaría la caché encendida para la próxima función
+     * que corra en esta misma invocación. Una caché que sobrevive a su instrumento es peor que no
+     * tenerla: el siguiente diagnóstico leería datos viejos sin enterarse. */
+    cerrarCacheDatosHoja_();
+  }
 }
 
 /* ============================================================================
