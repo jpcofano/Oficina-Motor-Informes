@@ -632,6 +632,40 @@ secciones. Se revirtió con `git checkout` y se reemplazó **sólo la ficha** qu
   archivo resultante es Markdown válido, se ve prolijo, y **la matriz que uno fue a actualizar está
   perfecta**. Lo que falta no está a la vista de quien acaba de hacer el cambio que sí quería.
 
+**Un instrumento que mide lo que cuesta una corrida no ARMA su preámbulo: lo COPIA.** Y dos
+mediciones sólo se restan si corrieron **en las mismas condiciones** — condiciones que hay que
+poder nombrar, no suponer. Costó **tres corridas y un prompt anulado** el 22/08/2026.
+
+- **El caso, con los tres números al lado.** `verificarAgregadoDeJulio()` medía el agregado por
+  temario sobre `julio_24_30`, seis encuentros. Murió en el muro de los 360 s **dos veces** y se
+  comparó contra el testigo `jm-20260821-234927`, que generó **el deck entero en 192 s** con dos
+  encuentros. De ahí salió un P0 —*"con seis encuentros el deck no sale"*— y un prompt entero para
+  arreglar un «trabajo repetido por elemento» **que no existía**.
+
+  | qué corrió | etapa 3 | `unirDigitalPorCuenta` | total |
+  |---|---|---|---|
+  | sin ninguna caché | 49 s | ⛔ ≥325 s, muere | ⛔ ≥375 s |
+  | con `cacheDatosHoja_` sola | 58 s | ⛔ 316 s, muere | ⛔ ≥375 s |
+  | ⭐ **con las dos, como `generarInforme`** | **12 s** | **6 s** | **35 s** |
+
+- ⭐ **`generarInforme` enciende DOS cachés** —`abrirCacheRegistros_()` y `abrirCacheDatosHoja_()`,
+  con `try/finally`— y **las dos están apagadas por defecto a propósito**, para que un diagnóstico
+  pueda leer dos veces y ver un cambio. **Un instrumento que corre afuera mide otra cosa**, y
+  `unirDigitalPorCuenta` de 6 s a 325 es un factor **54**.
+- ⚠ **Encender «la que parece» es peor que no encender ninguna**, porque produce un número que
+  parece corregido. Con `cacheDatosHoja_` sola no cambió nada: **la que domina es la de registros**,
+  porque `buscarMapeo` **no cachea por su cuenta** y cada llamada relee `SOLAPAS` y `MAPEO` enteras.
+  Eso **ya estaba escrito** en el comentario de `unirDigitalPorCuenta` desde el 04/08 —*"eran
+  ~13.000 lecturas de la planilla de control y se comían los 6 minutos"*— y describía exactamente
+  el síntoma que se estaba midiendo.
+- ⭐ **Lo accionable, en una línea:** copiar el preámbulo **verbatim**, y que **el reporte declare
+  bajo qué condiciones corrió**. Sin esa línea, el próximo resta contra los números viejos y repite
+  el error — que es como se llegó a la segunda corrida.
+- ⚠ **Y el corolario sobre el diagnóstico, que es lo caro:** el síntoma —*"muere en el muro"*— era
+  real las tres veces. **Lo que estaba mal era la atribución**, y una atribución equivocada manda a
+  reescribir código que funciona. El `2026-08-22_28` llegó a estar escrito y commiteado antes de
+  que la Parte A lo tumbara.
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue
