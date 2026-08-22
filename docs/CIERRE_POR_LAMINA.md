@@ -193,6 +193,16 @@ la semana — julio `3289` (2 filas), agosto `3488` (3 filas). **En julio el tem
 con filas en `CC` y el deck usó una.** No hay regla que diga cuál, y **eso no se inventa**
 (`CLAUDE.md` §4). Es pregunta al equipo.
 
+⛔⛔ **Barrido a ciegas contra los dos períodos (22/08, tarde): 0 de 13 propiedades simples aciertan
+en los dos.** Sobreviven 3 de 78 pares y 18 de 286 ternas, y **`JDGAG` está en las 21** — es el
+candidato fuerte. Le falta sólo excluir a `3289` en agosto, **y `3289` está ahí por la deriva de
+`fecha_fin`**. Los tres desempates que cierran —`Finalizada`, `duración ≤ 30 d`, `≤ 14 d`— aciertan
+**por igual**, y dos períodos no los separan: **por eso no se escribió ninguna regla.**
+
+⛔ **El tercer fixture no existe.** `Seguimiento Digital2026-08-06.zip` no trae `Base Looker` ni deck
+de `jm`. **Lo que destraba `X-28` es un tercer `.zip` del equipo**, deck + `Base Looker` del mismo
+día.
+
 ⚠⚠ **La trampa material, medida al paso, y explica el error del 22/08 mejor que el descuido:**
 `3289-JUNJDGAG` tiene `fecha_fin` = **30/07** en el export del 31/07 y **20/08** en el del 20/08.
 **La ventana de una cuenta se extiende**, así que en agosto una cuenta de **junio** cae dentro de la
@@ -220,6 +230,12 @@ aplicada antes de que el número salga.
 - **Si una lámina 🟡 se ve bien.** 🟡 dice que el número está entendido, no que la caja lo muestre
   como corresponde.
 - **Nada sobre `secco`.** Este tablero es de `jm`. `secco` tiene 29 láminas y ninguna fila acá.
+- ⛔⛔ **Y una advertencia que cruza el tablero entero, `X-29`: la `fecha_fin` de una cuenta se
+  extiende sola.** Medido entre los dos fixtures: **27 de 959 cuentas se extendieron**, mediana 21
+  días, máximo **157**. La ventana **14–20/08** pasa de **14 a 32 cuentas**, y **18 entran sólo por
+  la deriva**. Afecta a **todo lo que use `ventana_ref: 'Cuentas'`** — hoy `looker/DIGITAL` y
+  `looker/CC`, o sea los ocho `imp_*`, los cuatro `cc_*` y sus `gcba_*`. **No rompe: agranda**, y
+  ninguna verificación del motor lo puede ver porque el motor hace lo que se le pidió.
 
 ---
 

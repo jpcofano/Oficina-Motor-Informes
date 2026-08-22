@@ -7292,6 +7292,117 @@ los **2.772.141** que publica el motor —1,55×—. Programmatic coincide al 3 
 hipótesis es que la medición está mal). El `~=` del motor puede comparar distinto; **no está medido
 y no se afirma**.
 
+### ⛔⛔ `X-28` NO cierra, y el motivo de fondo es que **el tercer fixture no existe** (22/08/2026)
+
+**Se pidió cerrarlo contra tres períodos. Hay dos.** `Seguimiento Digital2026-08-06.zip` **no trae
+`Base Looker.xlsx` ni deck de JM** —sólo `Seguimiento SECCO - SSCDI (07-08).pptx`—, y `CC` no está
+en ninguno de sus tres libros (verificado hoja por hoja). `looker/CC` vive **sólo** en los dos
+`Base Looker`, y decks del equipo de `jm` hay **dos**.
+
+⚠ **Y el límite es de decks, no de bases.** Del export del 20/08 se puede leer cualquier ventana,
+pero eso no da un tercer **valor publicado** contra el cual comparar — que es la mitad que falta.
+
+**Las dos parejas (ventana → publicado) que sí existen:**
+
+| | ventana | candidatas con filas en `CC` | publicó |
+|---|---|---|---|
+| deck 31/07 | 24–31/07 | **18** | `3289-JUNJDGAG` · 2 filas · 6.011 |
+| deck 20/08 | 14–20/08 | **21** | `3488-AGOJDGAG` · 3 filas · 6.851 |
+
+#### El barrido, corrido a ciegas: **0 de 13 propiedades simples aciertan en los dos**
+
+Las trece se declararon **antes** de mirar el resultado, y ninguna sola alcanza:
+
+| falla | por qué |
+|---|---|
+| más filas en `CC` | julio elige `3387-JULJDGGC` (3 filas) |
+| mayor `Base barrida` | los dos períodos eligen `3144-JUNSALGC` (41.620 / 52.240) |
+| `fecha_fin` más reciente | los dos eligen `2322-NOVEDUGC` |
+| `nombre_campaña` contiene «JM» | agosto elige `3289`, la cuenta de junio |
+| ⭐ **`*JDGAG`** | julio ✅ acierta solo · **agosto da DOS**: `3289` **y** `3488` |
+
+⭐⭐ **`JDGAG` es el candidato fuerte, y hay un dato que lo dice sin ambigüedad: aparece en las 21
+reglas que sobreviven** —3 de 78 pares y 18 de 286 ternas—. **Ninguna regla sobreviviente prescinde
+de él.**
+
+⛔ **Pero lo único que le falta a `JDGAG` para cerrar solo es excluir a `3289` en agosto — y `3289`
+está ahí por la deriva de `fecha_fin`** (entrada de abajo). O sea: **el desempate lo fuerza un
+artefacto del dato, no el negocio.**
+
+⛔⛔ **Y por eso no se escribe ninguna regla: los tres desempates empatan.** `Finalizada`,
+`duración ≤ 30 d` y `duración ≤ 14 d` aciertan **los dos períodos por igual**, y **dos períodos no
+los pueden separar**. Elegir uno sería exactamente lo que el prompt prohíbe — *la regla tiene que
+decir qué cuenta se toma antes de mirar el resultado*.
+
+⚠ **Un aviso más sobre `JDGAG`, para que no se lea más fuerte de lo que es:** hay **124 cuentas
+`JDGAG` con filas en `CC`** en la solapa. No es una etiqueta rara que señale al encuentro de la
+semana: es la familia de Jefatura de Gabinete, y **lo que la recorta a una es la ventana**. Además
+`3354-JULJDGAG` y `3346-JULJDGAG` —los «1 a 1» de San Cristóbal y Retiro— **también son `JDGAG`**, y
+sólo no compiten porque no tienen filas en `CC`. **Una semana en que un «1 a 1» tenga filas rompe la
+regla**, y eso no está descartado por nada.
+
+**Qué haría falta para cerrarlo, en orden de costo:**
+
+1. ⭐ **Un tercer deck de `jm` del equipo con su `Base Looker` del mismo día.** Es lo único que
+   separa los tres desempates. **Un `.zip` más y esto se cierra o se cae.**
+2. Que el equipo conteste `X-28` directamente — sigue en *"Preguntas al equipo"*.
+
+---
+
+### ⛔⛔ La `fecha_fin` de una cuenta SE EXTIENDE SOLA, y eso afecta a TODO lo que use `ventana_ref: 'Cuentas'` (22/08/2026)
+
+**Medido comparando `looker/Cuentas` entre los dos fixtures**, 959 cuentas comunes:
+
+| | |
+|---|---|
+| `fecha_fin` cambiada | **28 de 959** (2,9 %) — **27 se extendieron**, 1 se acortó |
+| días extendidos | mín **1** · mediana **21** · máx **157** |
+| `fecha_inicio` cambiada | 1 |
+
+⭐ **El 2,9 % engaña: lo que importa no es cuántas cambian, sino a cuántas ventanas las meten.**
+
+| ventana | con las fechas **viejas** | con las **nuevas** | entran **sólo por la deriva** |
+|---|---|---|---|
+| **14–20/08** | 14 cuentas | **32** | ⛔ **18** — **+129 %** |
+| 24–31/07 | 90 | 98 | 8 |
+
+⛔⛔ **Y la que más se extendió es exactamente la que ya teníamos identificada como culpable del
+sobreconteo de `imp_*`:**
+
+```
+2976-MAYPCCVC · «Campañas genéricias RDV JM» · 27/07 → 31/12  (+157 días)
+```
+
+⭐⭐ **Eso conecta dos hallazgos que veníamos tratando como separados.** La entrada de más arriba
+dice que `2976-MAYPCCVC` aporta **15,4 M de los 25,6 M** de Programmatic y **entra por las tres
+plataformas**; lo que faltaba era **cómo entra**, y es esto: **su ventana se estiró hasta fin de
+año, así que solapa cualquier semana**. `A-06` y `A-07` —los `+15,6 %` y `+15,4 %` **por encima**
+sobre una foto **anterior**, que por `C-25` no se explican por el desfasaje— **tienen acá su
+mecanismo**.
+
+**Por qué es más grande que el Call Center:** hoy `ventana_ref: 'Cuentas'` lo usan **`looker/DIGITAL`
+y `looker/CC`**, y son las fuentes de **los ocho `imp_*`, los cuatro `cc_*` y los `gcba_*`
+equivalentes**. **Todos comparten el mismo mecanismo de recorte, y todos heredan la deriva.**
+
+⚠ **Lo que hace caro este modo de falla es que no rompe nada: agranda.** Una cuenta que no debería
+estar suma sus filas y el total sube; el número sigue siendo un número, con su formato y su celda.
+**Es el número plausible de `CLAUDE.md` §4, producido por el dato en vez de por el código** — y por
+eso ninguna verificación del motor lo puede ver: el motor está haciendo exactamente lo que se le
+pidió.
+
+⚠⚠ **Y la trampa de método, que ya cobró una vez hoy:** una medición de pertenencia **no es
+reproducible sin decir de qué export salieron las fechas**. La misma ventana sobre el mismo `CC`
+da **14 o 32 cuentas** según qué `Cuentas` se use. Es `CLAUDE.md` §4 —*un fixture es una foto
+fechada y su fecha es parte del resultado*— con un agravante: acá **la foto que cambia no es la de
+los datos, es la del recorte**.
+
+**Anotado, no arreglado.** Tres salidas, ninguna elegida y todas del usuario:
+**(a)** congelar la ventana de una cuenta la primera vez que se la ve —haría falta dónde guardarlo—;
+**(b)** acotar la duración máxima de una cuenta para que entre a una ventana semanal;
+**(c)** declararlo aceptado y marcar `_revisar` todo lo que dependa de `ventana_ref`.
+
+---
+
 ### ⛔ CORRECCIÓN (22/08/2026, del usuario) — son DOS problemas distintos con el mismo síntoma, y arriba estaban mezclados
 
 **Lo de arriba habla del Resumen y arrastraba el «1 a 1» con la misma frase.** No es lo mismo, y
