@@ -12581,3 +12581,77 @@ emite.
 ⛔ **Ninguna corrida real.** El control decide **qué** láminas copia cada ítem; que se copien, se
 ordenen y se pinten necesita generar. Y **la N² muerta es estructural** —el índice se calcula antes
 de duplicar— pero medirlo pide expandir dos veces sobre un deck de verdad.
+
+## 2026-08-21 · `2026-08-21_15` — la rama de `digital` cede cuando la solapa declara `campo_id_cuenta`
+
+**Parte A — las dos compuertas pasaron.** El fallo salía donde el prompt suponía: dentro de la rama
+`digital`, después de la guarda de la maestra y del lookup de canal, **antes** de la rama
+declarativa de `D-30`. Alcance medido sobre `SOLAPAS` viva: **una sola** solapa de `digital`
+declara `campo_id_cuenta` (`CAMPAÑAS_DESGLOCE_DIGITAL` → `des_id_cuenta`), y **ninguna** de las
+cinco de canal ni la maestra lo declaran. Snapshot de respaldo: `docs/_snapshots/*_2026-08-21_2045`.
+
+**A.6 dio 18, no 8.** Las **dieciocho** filas de `MAPEO` de esa solapa tienen `encabezado` vacío,
+no sólo las ocho marcadas `REVISAR` — y el seed las declara. O sea que hay un escritor que descarta
+la columna. No se llenó: el alta es otro paso (`D-31`).
+
+**Parte B — el `if`.** `datosDeMarcador_` cede cuando se cumplen **tres** cosas a la vez: la solapa
+no está en `SOLAPAS_CANAL_DIGITAL_`, no es `SOLAPA_MAESTRA_DIGITAL_`, y declara `campo_id_cuenta`.
+Fuera de esas tres nada cambia — **el fallo `@solapa_digital_desconocida` se conservó** para las
+solapas que no declaran nada, y su texto ahora nombra las dos vías. Se descartó el atajo de meterla
+en `SOLAPAS_CANAL_DIGITAL_`: eso la llevaría a la **unión** del Paso 2.4, que responde otra pregunta
+—unir canales por cuenta— y esta solapa tiene grano campaña × plataforma.
+
+**Control nuevo:** `tools/probar-ruteo-solapa-digital.js`, diez afirmaciones, con los tres asertos
+que el prompt exigía —canal → unión, declara → rama declarativa, no declara → **sigue fallando**— y
+romper a propósito.
+
+⛔ **Un rojo del control resultó hallazgo, y no se ajustó el fixture.** La afirmación que A.4 daba
+por cierta —*"la solapa que declara, emitida sin ítem, cae al agregado **con el aviso** del 19/08"*—
+**es falsa para las solapas de `digital`**: `avisoAgregadoDeclarado` vive en la rama declarativa y
+la rama de `digital` atrapa ese caso antes, con su propio `if (!idCuenta)`, devolviendo un `origen`
+sin advertencia. **El riesgo que C.2 documenta no tiene la contención que la Parte A daba por
+existente.** No se arregló: la regla 3 del prompt dice que el agregado global sin `id_cuenta` no se
+toca, y hacerlo ceder cambiaría `recortar_por_ventana`, que decide qué filas ve el consumidor.
+
+⛔ **Y al margen, `tools/probar-reloj-etapas.js` estaba ROJO EN SILENCIO desde el `_11`.**
+`anclaDeLamina_` y `leerLaminas_` viven en `Sellador.gs`, que ese banco no carga, así que moría con
+`ReferenceError` **antes del primer aserto**: la protección del reloj por etapa se estuvo citando
+como verificada sin que el banco corriera. Se arregló porque se estaba por pushear al motor. **Y un
+paso instructivo del arreglo:** con `leerLaminas_: () => []` el banco arrancaba y los cinco asertos
+seguían rojos, porque ninguna sección expandía — **un stub que hace correr el código pero le saca el
+trabajo mide otra cosa**.
+
+**Parte C — dos derogaciones de `D-30`, como addendum fechado.** C.1: *"las dos ramas cableadas
+siguen primero y sin tocar"* ya no vale para `digital`; el orden entre las otras dos no cambia
+porque **no comparten el caso** —la de `rdv` se activa por `opciones.fila_rdv`, no por una solapa
+que se lee—. C.2: el punto 3 —*"sin `id_cuenta`, falla"*— **está derogado desde el 19/08 y esto es
+lo primero que lo escribe**: vivía sólo en un comentario de `Generador.gs`; grepeado, no estaba en
+`PLAN.md`, ni en `PENDIENTES`, ni acá. El riesgo nuevo quedó como P1 en `PENDIENTES`.
+
+**C.3 — el hueco de `alcance` del 1 a 1**, escrito en `PENDIENTES` como P3 sin prioridad (decisión
+del usuario). `u1_pre_meta_alcance` y `u1_post_meta_alcance` están cableados **idénticos** —misma
+solapa, mismo `alc_alcance`, `ULTIMO`, `dimensiones` y `filtro` vacíos— así que publicarían el mismo
+número en los dos casilleros, y no hay con qué separarlos: las tres columnas mapeadas de
+`digital/Alcance` no nombran campaña ni etapa, y `DIMENSIONES_.etapa` sólo sabe expresarse sobre
+`CAMPAÑAS_DESGLOCE_DIGITAL`.
+
+⭐ **Al verificar la pista del usuario resultó más fuerte de lo que decía el prompt, con el nombre
+corrido.** `enc_alcance_potencial` es el **token**, no el campo lógico, y su campo —`alc_potencial`,
+col `AG`— está mapeado en **una sola** solapa. El que está mapeado en **las dos** es `alc_real`:
+`Agenda JM` col `AF` y `Agenda JM | Post` col `G`, y **ningún marcador lo usa todavía**. O sea que
+la infraestructura del par pre/post por solapa —la forma `(ID, solapa)` de `C-50` que `D-30` punto 1
+cita— **ya existe**. Lo que Code no puede medir es cuál de los dos campos es el alcance del 1 a 1:
+no tiene acceso a las bases.
+
+**Parte D — el `[object Object]` del panel.** `generarInforme` devuelve `periodo` como objeto y el
+front hacía `esc(r.periodo)`. **El arreglo fue del lado del backend, y eso se midió en vez de
+suponerlo:** el encabezado de `PanelBackend.gs` declara que `panel_generar` devuelve *"el reporte de
+corrida, **ya presentable**"*, así que el que le debe una cadena al front es ese adaptador. `deck`
+viaja como objeto **a propósito** —el front lo desarma en `deckCard`—; `periodo` no se desarma en
+ningún lado y se imprime en un solo lugar (grepeado).
+
+**Commits:** `de265b2` (B), `19a94e9` (C.1+C.2), `23ac217` (D), más el snapshot y C.3.
+
+⚠ **Lo que este paso NO contesta:** si los 24 `u1_` publican el número **correcto**. El control fija
+el **ruteo**; el valor sale de la base y se ve en un deck. Y las 8 filas `REVISAR` de `MAPEO` siguen
+sin sembrar — falta correr *Aplicar configuración*.

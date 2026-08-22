@@ -2060,6 +2060,14 @@ limpia nunca.
 
 ### Tramo 4 — panel (`D-04`)
 
+- **Revisar y confirmar anclajes desde el panel** — escrito, sin correr. Es el front que `D-29`
+  declara faltante con todas las letras: *"la salida es que el usuario confirme o corrija el
+  anclaje, y eso es una capacidad del front"*, y su cláusula *"hasta que el front exista"* espera
+  justamente esto. **No hay nada que diseñar en el motor** — `anclarEncuentros`,
+  `ANCLAJE_PENDIENTE` y `anclajeYaConfirmado_` ya existen; falta la pantalla.
+  (`docs/Prompts/2026-08-21_16_anclajes_en_el_panel.md`. ⚠ **Un prompt sin correr que no está en
+  el plan no lo encuentra nadie** — misma razón que la línea del `_12` en Backlog, decisión del
+  usuario 21/08.)
 - `T4.1` — **primero:** qué devuelve `getActiveUser()` con el despliegue *"ejecuta el usuario que
   accede"*. Si vuelve vacío, `D-15` se revisa **antes** de escribir código de panel.
 - `T4.2` — `doGet`, selección de informes, corrida a demanda
