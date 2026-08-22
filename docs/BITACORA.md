@@ -12868,3 +12868,185 @@ corrida, y el control es que PRE y POST salgan **distintos**—; ⛔ **la tasa d
 que requiere ver la base y no está medida —la solapa entera es carga a mano, *"0 fórmulas en 44
 columnas × 154 filas"*—; y `u1_total_alcance` / `u1_total_frecuencia`, que siguen entre los
 `/////` porque **el alcance son usuarios únicos y no se suma**.
+
+
+## 2026-08-22 · `2026-08-21_19` — el desatendido entra al camino del usuario
+
+**Parte 0 · las cinco premisas, y una que hizo falta corregir del prompt.** El cableado que faltaba
+se confirmó entero: `panel_generar` no pasaba `continuable`, `PanelBackend.gs` y `Codigo.gs` no
+mencionan `ScriptApp` ni `PropertiesService` —grepeado, cero— y las únicas entradas al mecanismo
+eran los dos wrappers del editor, el handler del trigger y el freno. **Ninguna en el menú.**
+
+⛔ **0.3 no se podía verificar como el prompt lo pedía, y eso es un hallazgo sobre el instrumento.**
+`corte` **no se persiste en ninguna hoja** —`CORRIDAS` tiene ocho columnas y `avisosDeLaFila_` sólo
+escribe `fallo` y fallos del instrumento—, y el único rastro persistente era `FALTANTES.motivo`, que
+`escribirFaltantes_` **borra en cada corrida**. `jm-20260821-230048` corrió después: pisó las dos.
+**El reporte de corte de una corrida pasada no existe.**
+
+**Se cerró igual, por dos caminos que sí quedaron.** El primero lo trajo el usuario, de la celda
+`faltantes` de `CORRIDAS`, que conserva el `· gasto:` que `RASTRO_ETAPAS_` antepone:
+
+| corrida | llega a etapa 4 | **dura** etapa 4 | impresos | universo |
+|---|---|---|---|---|
+| `jm-20260821-194602` | +191 s | **49 s** | 92 | 404 |
+| `jm-20260821-224727` | +257 s | **10 s** | 65 | 404 |
+
+**49 s es la etapa 4 corriendo** —`costo_resolucion_etapa4_seg` vale 60—; **10 s no es una etapa 4
+corta: es una que no arrancó**, porque con `corte` ya puesto la rama la saltea entera. El segundo
+camino apareció después y es independiente: **el deck de `224727` todavía conserva el `[en proceso]`
+en Drive y el de `194602` no.** `generarInforme` sólo quita el sello con `!corte && !fallo`, así que
+**el nombre del archivo es la declaración del corte**, y sobrevive a que `FALTANTES` se haya pisado.
+
+⭐ **Y estructuralmente el `_15` no podía ser la causa:** su Parte B cambió una rama que **antes
+devolvía `ok:false`** por una que cede a la rama declarativa de `D-30`. Sólo puede convertir un
+`«FALTA»` en un intento de resolución, nunca al revés. **Una regresión de −27 impresos no es una
+forma que ese cambio pueda tomar.**
+
+⚠ **Una premisa del prompt corregida, y el usuario la aceptó:** *"la segunda tiene el `_15`
+aplicado"* era incompleto. Entre las dos corridas hay commits del `_15`, el `_16`, el `_17` **y el
+`_18`** —éste dieciocho minutos antes—, y **commit ≠ `clasp push`**, así que qué versión corrió a
+las 22:47 no se puede saber desde el repo.
+
+⭐ **0.4 resultó más grande que la pantalla que se venía a construir**, y salió como pendiente P1
+propio antes de tocar código: `agosto_14_20` y `R-11 (calculado)` resuelven **la misma ventana de
+fechas** —vie 14/08 → jue 20/08, las dos— y **distinto temario**, porque `anclarEncuentros` recorta
+`REUNIONES` por `periodo_id` **sólo si el `origen` empieza con `periodo_ref:`**. Medido sobre los
+snapshots del 21/08: **2 encuentros contra 12**, con junio y julio adentro.
+
+⛔ **Y la primera versión de ese pendiente afirmó algo falso, corregido el mismo día.** Decía que el
+aviso *"existe y no lo lee nadie"*. `avisosDeVentanaPropuesta_` **está desde el 20/08**, viaja en
+`panel_getEstado().por_defecto.avisos` y `Panel.html:616` lo pinta. Es literalmente la regla de
+`CLAUDE.md` §3 —*grepear antes de pedir que se corrija algo*— incumplida por quien la escribió. Lo
+que sobrevive es más chico: **el aviso es preventivo y no forense** —ningún `reporte.push` de la
+expansión lleva `periodo_id`, así que un deck ya generado no se puede auditar—, **`excluidos` sale
+vacío igual que cuando todo está bien**, y **el camino desatendido no pasa por el panel**, que es
+justo por donde salió `jm-20260821-230048`.
+
+**Parte A · el botón.** `iniciarCorridaDesatendida_` toma **`opciones` completo** —decisión del
+usuario: la misma forma que `generarInforme` ya recibe, así no nace una tercera firma que se
+desincronice, y una opción nueva se propaga sin tocar la cadena—. ⛔ **`continuable` lo pone el
+mecanismo y se ignora si llega de afuera**: que el panel pueda pedir una corrida no continuable por
+el camino desatendido sería reinstalar el problema por la puerta nueva. ⚠ **Las cuatro claves de
+continuación —`deck_id`, `corrida_id`, `asignaciones`, `solo_secciones`— NO se filtran**, y quedó
+escrito como pregunta abierta y no como decisión: el mismo argumento les aplica, hoy ningún llamador
+las manda, y no se resolvió de apuro.
+
+`panel_generarDesatendida` tiene **la misma firma** que `panel_generar` y las opciones de los dos
+salen de **un solo constructor**, `panel_opcionesDeGeneracion_` — que es lo que impide que los dos
+botones se separen: con uno por camino, el día que se agregue una opción entra en uno y no en el
+otro **y ninguno falla**.
+
+⚠ **El botón viejo no se retiró**, y el motivo es de costo medido: el arranque cuesta **70–80 s por
+ejecución**, así que una corrida partida en tres lo paga tres veces.
+
+**Parte B · ver la corrida mientras corre.** `panel_estadoDesatendida`, sólo lectura, sale de
+`leerEstadoCorrida_` y `leerPlan_` y **no recalcula nada**. ⭐ Contesta *«¿está listo?»* por el
+**sello del nombre del deck**, no por los tokens: las láminas escondidas dejan **49 crudos
+permanentes** en toda corrida. ⭐ **Y cuando la corrida termina la pantalla no se apaga:** el estado
+se borra en los cinco caminos de salida —bien, es lo que declara que no hay nada corriendo— y con él
+el `corrida_id`, así que `ultimaCorridaDelPlan_()` lo recupera de `PLAN_CORRIDA`, **que no se borra
+nunca**. Sin escritor nuevo.
+
+Pestaña **Corrida**, con botón de actualizar —sin autorefresco, y con la hora de lectura arriba de
+los números— y freno con confirmación. El invariante `corte ⇒ pendientes ≥ 1` se muestra si se rompe,
+y una fila `hecha` con `segundos` **vacío** llega tal cual: es la huella exacta que delató el bug del
+20/08 y no se rellena.
+
+**Parte C · archivar las anclas huérfanas.** Columna propia `archivada`, **no un valor reservado en
+`elegido`**: `elegido` tiene un significado que el motor consulta y `validarEleccionAnclaje_` rechaza
+a propósito lo que no sea candidato o vacío; un centinela ahí obligaría a que todos los lectores lo
+conozcan, y al primero que se olvide el motor ancla contra una cadena inventada.
+
+⚠ **Va al final de `HEADERS_ANCLAJE_PENDIENTE_` y eso importa:** `registrarAnclajePendiente_`
+reescribe la fila **por posición** con nueve valores, así que la décima no la toca — una archivada
+sigue archivada aunque la corrida siguiente le refresque los candidatos. Una columna en el medio
+habría corrido las posiciones y ese escritor pondría puntajes donde van nombres, **sin fallar**.
+
+⭐ **La condición de esconder es `archivada && !vigente`, y ahí está toda la reversibilidad:** si la
+reunión vuelve a `mostrar = sí`, la fila **reaparece sola**. Archivar significa *«no me muestres esta
+huérfana»*, no *«no me muestres nunca esta clave»* — y la segunda es la que se olvida encendida. Una
+vigente **no se puede archivar**: se rechaza con motivo en vez de aceptarse sin efecto. Y
+**`sin_reunion` no baja al archivar**: si contara sólo las visibles, el problema parecería resolverse
+solo.
+
+**Parte D · el `[object Object]`, medido antes de elegir el lado.** El comentario que el `_15` dejó
+en `PanelBackend.gs` —*"`deck` viaja como objeto a propósito porque el front lo desarma en
+`deckCard`"*— **era falso**: `deckCard` trataba su primer argumento como **id**, y de sus dos
+llamadores uno le pasa un id (la vía rápida, andaba) y el otro el objeto entero (la pantalla de
+listo, no andaba). **Nadie desarmaba nada.** Es la familia de *un comentario que afirma un contrato
+es una premisa sin testigo*, con el agravante de que mandaba al lector al archivo equivocado. Ahora
+`deckCard` acepta las dos formas y usa la `url` que emitió el motor; y **sin id no dibuja un enlace
+roto** — un `<a>` a `/d//edit` parece bueno y lleva a un error de Drive, y un enlace roto miente más
+que uno ausente.
+
+**Controles.** `tools/probar-desatendida-en-el-panel.js` nuevo, **33 afirmaciones** con romper a
+propósito, cargando `Desatendida.gs` y `PanelBackend.gs` **en el mismo contexto** —que es como corren
+de verdad—. Cinco secciones nuevas en `probar-confirmar-anclaje.js` que **ejecutan** el lector en vez
+de mirarle el fuente: una regex habría pasado igual con la condición al revés. **Las 23 suites del
+repo en verde.**
+
+⚠ **Y el primer intento del «romper a propósito» falló ruidosamente, que es para lo que está la
+guarda:** el parche era una cadena literal con `\n` y los `.gs` están en CRLF, así que no matcheaba
+nada. Sin `parche.exige`, esa sección habría quedado **en verde sin haber roto nada**.
+
+**Al margen, una línea:** el hint de secciones decía *"el techo es de 350 s"* escrito a mano
+mientras `TECHO_S` existía al lado — el mismo defecto que el `2026-08-21_1` sacó de la regla del
+cronómetro. Ahora lo lee.
+
+**Commits:** `414cc69` (A+B+D), `a7f3a23` (C), más `8579a40` (el prompt), `ebbb8eb` y `d17e546` (el
+pendiente P1 y su corrección) y `ae7e3da` (la validación de decks).
+
+⚠ **Lo que este paso NO cierra:** el desatendido **nunca corrió de punta a punta con más de una
+continuación**. Los controles fijan las decisiones —qué opciones viajan, qué se muestra— y eso no es
+lo mismo que haberlo visto terminar. Y **persistir el anclaje entre ejecuciones sigue sin
+construirse**, que es lo que haría que el mecanismo rinda.
+
+## 2026-08-22 · `VALIDACION_deck_generado_vs_equipo` — el deck del motor contra el del equipo, misma semana
+
+**Primero de la serie que compara producto terminado contra producto terminado.** Los dos anteriores
+median números contra las bases; éste mide el deck que salió contra el que publicó el equipo. Fixture
+verificado por `sha256` **antes de citar un número** (`f8ef3227…`, coincide con la tabla de huellas);
+deck del equipo **19 láminas exactas**, leídas con `zipfile` sobre `ppt/slides/slideN.xml`; decks del
+motor leídos por ID con el conector de Drive.
+
+⭐ **Lo que reproduce exacto es más de lo que se esperaba.** Las **seis** cifras del alcance del
+encuentro —Mail 619, Digital 96, Difusión 10, Inscriptos 855, Asistentes 186— y la cuarta es más
+fuerte que una coincidencia: el equipo publica `Call + IVR: 130` sumados y **el motor publica `101` y
+`29` desagregados**, que suman exacto. Mails entregados de JM: **538.290 contra 538.291, difieren en
+uno**. Aperturas de M2 a **0,16 %**. Y **la aritmética de los dos resúmenes cierra en los dos decks**,
+o sea que el motor no se equivoca sumando: lo que difiere es **qué filas entran**.
+
+**Lo que no cierra, por familia:**
+
+- ⛔ **`N envíos de Mail` y `N envíos de SMS` miden piezas, no envíos** — 541.002 contra **6**;
+  2.361.163 contra **73**; 29.979 contra **3**. En los tres casos el número está apenas por encima
+  del «entregados» de la misma lámina, que es la relación enviados → entregados. **El número es
+  correcto para otra pregunta**, que es el peor caso.
+- ⛔ **Los seis `pauta_*` publican `1`** — Meta 1 · Google 1 · Programmatic 1, contra 10/8/10 y
+  95/63/112, con el total en `/////`.
+- ⛔ **Programmatic 3,6–7,2×** mientras Meta y Google están en 1,3–3×. Los ratios son **distintos por
+  plataforma**, así que no es un multiplicador global ni una ventana que afecte a todos por igual.
+- ⛔ **M2 con el numerador quieto y el denominador corrido**: aperturas −0,16 %, enviados y entregados
+  **−9,6 %**. Si el motor leyera menos filas, las aperturas también bajarían. No bajan.
+- ⛔ **La lámina de RRSS publica la semana pasada sin marcarlo.** Su primer bloque **no tiene tokens**
+  —es texto fijo de la plantilla— así que el motor no lo toca y sale intacto; el segundo sí los tiene
+  y sale `/////`. **La misma lámina miente de dos formas opuestas a la vez**, y la peligrosa es la que
+  el motor no toca: un `/////` manda a cablear, un número viejo no manda a nada.
+
+**Y dos estructurales, medidos sobre `230048`:**
+
+⛔ **Las portadas no corresponden a su contenido.** *Encuentro con Vecinos — **Boedo*** seguido de
+*Estrategia de comunicación: **San Cristóbal***; un iceberg de **Retiro** sin portada delante; y **la
+misma lámina del Encuentro Temático de Salud tres veces con tres juegos de cifras** —Digital
+1.141/223/96, Inscriptos 1.901/983/855— de las cuales **una sola es la buena**.
+
+⭐⭐ **Y el hallazgo que cambia una prioridad: los cuatro números de IVR y Call Center que publica el
+equipo —96.549 atendidos, 304 marque 1, 33.139 escucha +75 %, 107.194— el motor los tiene EXACTOS**,
+en la copia equivocada de la lámina. En la corrida con el temario correcto esos mismos casilleros
+salen `-`. **El cableado existe y da exacto; lo que falla es qué ítem le llega** — un trabajo mucho
+más chico que "cablear IVR", y estaba escondido detrás de un guión.
+
+⚠ **Lo que el documento no contesta, y está escrito adentro:** ninguna causa está medida contra las
+bases —todo es deck contra deck— y **la ventana de ocho días del título del equipo** (*14_08 al
+21_08*) contra los siete de `R-11` **no se descartó** como causa de las diferencias de volumen. Es lo
+primero que hay que medir antes de perseguir Programmatic.

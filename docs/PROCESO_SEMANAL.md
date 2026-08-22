@@ -295,3 +295,101 @@ afirma el **estado del código**, no la que dice qué haría falta.
 cumplió**, y conviene decirlo en vez de dejarla en pie: se construyó `Generar` primero. No es un
 error a corregir; es que el orden lo decidió otra cosa. Pero leerla hoy como si fuera el plan
 vigente manda a construir lo que no toca.
+
+---
+
+## Addendum · 2026-08-22 · El desatendido entra al camino del usuario
+
+`2026-08-21_19`, Partes A, B, C y E. **No se edita ninguna línea de arriba**: se declara qué venció
+y con qué se reemplaza, que es la convención de este archivo desde el addendum del 21/08.
+
+### E.1 · ⛔ El hallazgo, que es de proceso y no de código
+
+**Hasta hoy el botón del camino del usuario podía cortar y dejar un deck incompleto sin forma de
+continuarlo.** `panel_generar` llamaba a `generarInforme` **sin `continuable`**, así que no escribía
+`PLAN_CORRIDA` ni creaba trigger: si la corrida no entraba en el techo, el deck quedaba a medias,
+sellado, y la única salida era generar de nuevo desde cero.
+
+⚠ **Y no se había notado porque ninguna corrida había cortado.** El mecanismo desatendido existía
+desde el 20/08 y se probaba desde el editor; el camino que la persona usa todas las semanas nunca
+se había topado con el límite. **Una capacidad que sólo falta cuando algo sale mal es indistinguible
+de una que no falta** — hasta el día que algo sale mal.
+
+**Las dos corridas que lo mostraron, medidas sobre `CORRIDAS` la noche del 21/08. Misma semana
+(`agosto_14_20`), mismo universo de 404 datos:**
+
+| corrida | impresos | faltaron | llega a la etapa 4 | **dura** la etapa 4 | deck |
+|---|---|---|---|---|---|
+| `jm-20260821-194602` | 92 | 312 | +191 s | **49 s** | sin sello — cerró |
+| `jm-20260821-224727` | 65 | 339 | +257 s | **10 s** | ⛔ **`[en proceso]`** — cortó |
+
+⭐ **La segunda pintó 27 valores menos habiendo corrido una quinta parte del tiempo en la etapa que
+pinta.** No es un problema de cableado —en el medio se habían agregado tokens resueltos, no
+quitado—: es que cortó. **Y el nombre del archivo en Drive lo sigue diciendo hoy**, porque el sello
+sólo se quita cuando la corrida termina.
+
+### E.2 · Los dos botones — cuál conviene
+
+La sección *«Cuando una corrida se reanuda sola»* de arriba pasa de **[hoy, parcial]** a **[hoy]**,
+y su frase *«`cancelarCorridaDesatendida()`, sin argumentos, desde el editor»* queda **vencida**:
+ahora hay botón.
+
+| botón | qué hace | cuándo conviene |
+|---|---|---|
+| **Generar informe** | corre de una vez y devuelve el deck en la pantalla | **es lo más rápido cuando entra en el techo.** Sigue siendo el caso normal |
+| **Generar y que siga sola** | arranca la corrida desatendida: si corta, se reanuda sola hasta terminar | cuando la semana trae muchos encuentros y la corrida de una sola vez viene cortando |
+
+⚠ **El botón viejo NO se retiró, y el motivo es de costo medido:** el arranque —anclaje más unión
+digital— cuesta **70–80 s por ejecución**, así que una corrida partida en tres paga ese arranque
+tres veces. Mientras el desatendido no esté probado punta a punta, la corrida de una sola ejecución
+sigue siendo la barata.
+
+⭐ **Y el período viaja por los dos botones**, que no es un detalle: una corrida arrancada sin el
+período elegido da **la misma ventana de fechas y otro temario**, porque el recorte por período
+(`D-19`) sólo se aplica cuando la ventana vino por `periodo_ref`. El 21/08 eso puso **seis
+encuentros de junio y julio** en un deck, sin que nada fallara.
+
+### E.3 · Ver la corrida mientras corre — pestaña **Corrida** **[hoy]**
+
+| qué muestra | de dónde sale |
+|---|---|
+| `corrida_id`, informe, período, **ejecución N de 6** | el estado guardado entre ejecuciones |
+| el plan por sección, con `pendiente` / `hecha`, en qué ejecución y cuántos segundos | la hoja `PLAN_CORRIDA` |
+| ⭐ **si el deck está listo** | el **sello** del nombre del archivo, no los tokens |
+| el botón de **frenar**, con confirmación | `cancelarCorridaDesatendida()` |
+
+⚠ **No se refresca sola, a propósito, y dice a qué hora leyó.** Una pantalla que se actualiza sola
+parece siempre actual aunque el backend haya dejado de responder; una con la hora de lectura a la
+vista, no.
+
+⚠ **Sigue valiendo lo de arriba: los tokens crudos NO dicen qué falta.** Las láminas escondidas
+dejan **49 crudos permanentes** en toda corrida, incluso en una que terminó perfecta. Por eso la
+pantalla contesta *«¿está listo?»* con el sello.
+
+**Y cuando la corrida termina, la pantalla no se apaga:** el estado se borra —es lo que declara que
+no hay nada corriendo— pero `PLAN_CORRIDA` no se borra nunca, así que se sigue viendo en qué terminó
+la última.
+
+### E.4 · Archivar una ancla huérfana — pestaña **Anclajes** **[hoy]**
+
+Las filas marcadas *«ninguna reunión vigente la reclama»* ahora tienen botón **Archivar**.
+
+- **Archivar no borra.** La fila se queda: es el registro que el motor consulta antes de anclar, y
+  borrarla haría que la próxima corrida vuelva a preguntar lo mismo.
+- ⭐ **Vuelve sola.** Si la reunión pasa otra vez a `mostrar = sí`, la fila reaparece **sin que
+  nadie tenga que desarchivarla**: archivar significa *«no me muestres esta huérfana»*, no *«no me
+  muestres nunca esta clave»*.
+- ⛔ **Una vigente no se puede archivar** — se rechaza con el motivo dicho. Esconder algo que la
+  próxima corrida sí va a mirar es lo contrario de lo que este botón hace.
+- ⚠ **El contador de huérfanas no baja al archivar.** Sigue diciendo cuántas hay y cuántas están
+  escondidas. Si bajara, el problema **parecería resolverse solo**.
+
+### **[falta]** — lo que sigue sin estar
+
+- ⛔ **Persistir el anclaje entre ejecuciones** (Parte C del `_10`). Es lo que haría que el
+  desatendido **rinda**, y sigue sin construirse. Sin eso, partir una corrida en tres cuesta 210 s
+  de arranque.
+- ⛔ **Correr sola los viernes.** Esto lo habilita; agendarla es otra decisión.
+- ⚠ **El desatendido nunca corrió de punta a punta con más de una continuación.** Los controles
+  fijan las decisiones —qué opciones viajan, qué se muestra— y **eso no es lo mismo que haberlo
+  visto terminar**.
