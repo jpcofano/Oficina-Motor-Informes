@@ -13120,3 +13120,103 @@ Precisada ahí, con las tres colisiones como testigo. `PENDIENTES` registra sól
 ⛔ **Nada ejecutado se renumeró:** los commits nombran el designador y es el único cruce que existe
 entre prompt y commit.
 
+
+
+## 2026-08-22 · El camino del fixture, recorrido — el Resumen Ejecutivo JM contra las bases
+
+**Es la primera vez que se recorre.** `VALIDACION_deck_generado_vs_equipo_2026-08-22.md` §6 decía
+que ninguna causa estaba medida contra las bases y que este camino **no se había recorrido**. Se
+recorrió, con el `.xlsx` abierto desde `docs/_fixtures/Seguimiento Digital  2026-08-20.zip`
+(`sha256 f8ef3227…`, verificado antes de citar un número) y con un lector escrito con la biblioteca
+estándar — un `.xlsx` es un `.zip`.
+
+⚠ **Y qué clase de verificación fue cada una, porque no son iguales** (`CLAUDE.md` §4): en
+`Directa Mail`, `Directa SMS` y `Seguimiento digital` se reprodujo **la definición del negocio** a
+mano, que es lo permitido. En `looker/DIGITAL` hubo que **reimplementar lógica del motor** —el `~=`
+y el join de ventana contra `Cuentas`—, y ahí **el motor gana ante la duda**.
+
+**El testigo entró a la carpeta con su huella**, y es de otra clase que los tres anteriores: **no es
+un export de una base, es un deck del motor** —la corrida de las 14:02 sobre `agosto_14_20`, con
+`R-21` nivel 1 ya implementado—. Se registra igual, y **su nombre lleva la hora**: esta semana hubo
+siete decks y sin huella son indistinguibles.
+
+### ⭐ Lo que cerró, y tres de las cuatro las cerró el dato, no una decisión
+
+**1 · «N envíos de Mail» y «de SMS» cuentan FILAS.** Sobre la ventana 14–20/08, con la lista blanca
+de `D-21` y el corte de `R-15`: `Directa Mail` con `ambito=jm` da **6 filas** y el equipo publica
+**6**; `Directa SMS` da **3** y el equipo publica **3**. El motor publicaba `541.002` y `29.979`,
+que son **los mails y los SMS enviados** — correctos para otra pregunta, que es el peor caso: la
+aritmética cerraba, nada fallaba, y **el rótulo mentía por seis órdenes de magnitud**.
+
+⭐ **Y el molde ya estaba en la misma hoja:** `m2_envios` está cableado `CONTEO` sobre
+`mail_id_cuenta` desde antes. No se inventó una forma; se calcó la que funciona.
+`cablearEnviosComoConteo()`.
+
+**2 · `mail_entregados` de JM reproduce EXACTO.** 538.291 contra 538.291. Es la confirmación de que
+el método sirve — sin un caso que cierre, un documento de validación sólo tiene malas noticias y no
+se sabe si el instrumento anda.
+
+**3 · ⭐ La `Frecuencia` de JM en `-` NO era un defecto, y estaba mal contada esta mañana.** Cero
+campañas JM **empiezan** entre el 14 y el 20/08 en `resumen_metricas_dinamico`. El marcador está
+cableado, resolvió, y no hay filas. **El `-` es la respuesta correcta.**
+
+**4 · ⭐ La ventana de ocho días queda DESCARTADA.** 14→20 y 14→21 dan **idénticos** — mismas 6
+filas, mismos 541.002, mismos 538.291. **La base no tiene una sola fila del viernes 21**: se bajó el
+jueves. El título del equipo es decorativo y `R-11` estaba bien. ⛔ **Y con eso queda vencida la
+recomendación de esta mañana** —*"antes de perseguir Programmatic, medir la ventana"*—, escrita
+como addendum fechado en ese mismo reporte.
+
+### ⛔ Programmatic — resuelto como diagnóstico, abierto como decisión
+
+**El dato lo trajo el usuario y el fixture lo confirmó:** en `looker/DIGITAL` **la fila se actualiza,
+no se agregan filas**. Una sola por (cuenta, plataforma) para las dos campañas del temario, con el
+**acumulado desde que la campaña arrancó**.
+
+⭐⭐ **El número que lo prueba es una resta.** El equipo publica `Programmatic 3.415.037` en el
+Resumen JM y `3.035.525` en su lámina del narco, o sea que le atribuye **379.512** a Autódromo —
+cuya fila de DV360 dice **3.756.321**. **Factor 9,9.** Y `Google ads` de la misma campaña, que casi
+no acumuló antes, cierra a **1,05×**. Autódromo arrancó el **6/08**, ocho días antes de la ventana.
+
+⭐ **La contraprueba cierra el caso:** el narco arrancó el 10/08 —cuatro días antes— y su lámina
+reproduce **plataforma por plataforma**: Meta +2,9 %, Google +2,4 %, Programmatic +5,7 %, total
++4,7 %. **A menos acumulado previo, mejor cierra.** Una sola variable explica los dos casos.
+
+⛔ **Y por eso es P0 y no un cableado:** el dato semanal **no existe en ninguna solapa**.
+`looker/DIGITAL` no tiene columna temporal propia —por eso `ventana_ref = 'Cuentas'`— y
+`CAMPAÑAS_DESGLOCE_DIGITAL`, que es más fino, tiene grano **MES**: siete filas para las dos
+campañas. **El recorte por ventana elige qué filas entran; no puede recortar lo que hay adentro de
+una fila.**
+
+**Se marcó `_revisar`** (`marcarProgrammaticARevisar()`, con su `revertirMarcaDeProgrammatic()` en el
+mismo commit). Se marca en vez de apagarse porque `/////` diría *"nadie lo cableó"* y `-` diría *"no
+hay dato"*, **y las dos son falsas**: `-24.783.992-` dice *"hay un número y no confíes"*, que es la
+verdad. ⚠ **Sólo Programmatic, por pedido del usuario** — `imp_total`, `imp_meta` e `imp_google`
+tienen la misma causa, y `imp_total` además **incluye** a Programmatic.
+
+### ⏸ Lo que queda como pregunta, y no bloquea
+
+**Los `pauta_*`.** Las columnas que `MAPEO` declara —`Google` (T), `Programmatic` (U), `Meta` (V) de
+`Seguimiento digital`— **son flags 0/1**: 927 ceros contra 22 unos en Google. En la ventana entran
+75 filas y **una sola** tiene el flag prendido por plataforma. **El fixture reproduce EXACTO el
+`1 · 1 · 1` que publica el motor**, así que el motor lee bien y **la fuente es otra**. Se probaron
+dos alternativas: contar filas de `DIGITAL` da **41** contra los 28 del equipo, y por temario da
+**7**. Ninguna cierra.
+
+⚠ **Va como pregunta al equipo y el paso no espera la respuesta** (decisión del usuario, 22/08). Lo
+medible ya está medido; lo que falta es saber qué decidió una persona.
+
+⭐ **Y una predicción verificable que quedó escrita:** a nivel **campaña** la definición del motor y
+la del equipo **ya coinciden**. Cuando los ocho `camp_*` publiquen por cuenta —el arreglo de
+`c50984b`, pusheado— la lámina de campaña destacada **debería dar los números del equipo**. Si no los
+da, el problema no es el recorte sino la lectura, y es otro trabajo.
+
+### ⚠ Y el patrón que quedó a la vista, que vale más que cualquiera de los casos
+
+`digital/Directa Mail` **reproduce exacto** y `looker/DIGITAL` **no puede**. La diferencia no es el
+cableado: **una agrega una fila por evento, con su fecha, y la otra actualiza una fila por
+entidad**. Sobre la primera, una `SUMA` recortada por ventana da el período; sobre la segunda da el
+acumulado, **y ninguna operación lo cambia**. Está escrito en `PENDIENTES` como candidato a `R-NN`,
+con la formulación redactada, **para que lo decida el usuario**.
+
+**Commits:** `0da2b25` (los envíos), `d671c60` (la marca de Programmatic y su reversión), `9cb6227`
+(la huella del testigo), `9e7d4ff` y `b93e3ae` (los hallazgos y las dos preguntas).

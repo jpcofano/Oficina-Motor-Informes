@@ -3,7 +3,8 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-22 — al cerrar el `2026-08-22_23` (las dos fases del proyecto).
+**Última actualización:** 2026-08-22, noche — al recorrer el camino del fixture sobre el Resumen
+Ejecutivo JM. Antes de eso, el `2026-08-22_25` (`R-21` nivel 1) y el `2026-08-22_23` (las dos fases).
 Lo de más abajo viene de la madrugada, al cerrar el `2026-08-21_19` y la validación deck contra
 deck, y **sigue vigente**: no se reescribió lo que no cambió.
 
@@ -84,11 +85,42 @@ mide producto terminado contra producto terminado, y cambia qué conviene hacer 
 
 | # | qué | por qué |
 |---|---|---|
-| 1 | ⭐ **`clasp push`** | los cambios del `_19` están commiteados y **no pusheados al proyecto de Apps Script**. Nada de abajo se puede probar sin esto |
-| 2 | ⭐ **Abrir el panel y mirar la pestaña «Corrida»** | es nueva. Con el estado vacío tiene que decir *«no hay ninguna corrida desatendida»* y no romperse |
-| 3 | **Probar «Generar y que siga sola»** en una semana que venga cortando | ⛔ **el desatendido nunca corrió de punta a punta con más de una continuación** |
-| 4 | **Archivar `almagro\|2026-06-16\|`** en la pestaña Anclajes | es la huérfana real. La primera vez crea la columna `archivada` sola |
+| 1 | ⭐ **`cablearEnviosComoConteo()`** | tres marcadores pasan a `CONTEO`. El fixture ya dijo el número: **6** envíos de Mail JM y **3** de SMS, exactos contra el equipo |
+| 2 | ⭐ **`marcarProgrammaticARevisar()`** | `imp_prog` y `gcba_imp_prog` pasan a publicar entre guiones. Se saca con `revertirMarcaDeProgrammatic()` |
+| 3 | ⛔ **Decidir el rótulo de Programmatic** — ver abajo | es lo único que lo destraba, y **no depende del equipo** |
+| 4 | **Generar `jm`** con `agosto_14_20` | para ver 1 y 2 en el deck, y para verificar la predicción de la lámina de campaña |
 | 5 | **Aplicar configuración** | siguen faltando las **8 filas `REVISAR`** del `MAPEO` |
+
+⚠ **Las dos preguntas al equipo NO bloquean nada** (decisión tuya, 22/08). Están en
+`PENDIENTES_consistencia.md` con todo lo medible ya medido, esperando sin frenar.
+
+---
+
+## ⛔ Lo que necesitás decidir sobre Programmatic, y es una sola cosa
+
+**El diagnóstico está cerrado y el número no está roto: es el ACUMULADO.** `looker/DIGITAL`
+actualiza la fila y no agrega filas, así que `Impresiones` trae todo desde que la campaña arrancó.
+Autódromo empezó ocho días antes de la ventana y el equipo le atribuye **379.512** donde su fila
+dice **3.756.321** — factor 9,9. Google, que casi no acumuló antes, cierra a **1,05×**.
+
+⛔ **El dato semanal no existe en ninguna solapa**: `DIGITAL` no tiene columna temporal y
+`CAMPAÑAS_DESGLOCE_DIGITAL` tiene grano **mes**. **Ninguna operación arregla esto.**
+
+**Las tres salidas, y son excluyentes:**
+
+| | qué | qué cuesta |
+|---|---|---|
+| **(a)** | **Cambiar el rótulo** a *"acumulado de las campañas de la semana"* | ⭐ **cero código.** El número que el motor publica **ya es correcto para esa pregunta**. Es la barata y no depende de nadie |
+| **(b)** | Pedirle al equipo el dato semanal | es la única que hace el número de la semana. Depende de ellos |
+| **(c)** | Publicar `/////` hasta que exista el dato | honesto, cuesta una celda, y **pierde** un número que hoy sirve para otra cosa |
+
+**Mientras no decidas, queda `_revisar`** — que dice *"hay un número y no confíes"*, que es la
+verdad, y **no es una de las tres salidas: es el estado de espera.**
+
+⚠ **Y lo que va con la decisión:** `imp_total`, `imp_meta` e `imp_google` **tienen la misma causa**,
+y `imp_total` además **incluye** a Programmatic —28.988.260 contra 6.487.855—. Hoy **no están
+marcados**, por pedido tuyo. Si la salida es (a), el rótulo los cubre a los cuatro; si es (c),
+habría que decidir de nuevo por cada uno.
 
 ---
 
