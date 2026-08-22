@@ -6111,3 +6111,51 @@ del usuario.
 §4.5 bis). Pero **el `-val-` avisa que el número no está validado, no que los dos casilleros
 muestren el mismo**. Son dos cosas distintas, y ésta no está cubierta por ningún símbolo: dos
 casilleros con el mismo `-val-` se leen como dos mediciones que coincidieron.
+
+---
+
+### P2 · El cruce que dice si un paso corrió está perdiendo cobertura: 12 pasos con commit y sin bitácora (21/08/2026)
+
+**Anotado, no arreglado.** Sale de la Parte 0 del `2026-08-21_17`, que lo midió sin que se lo
+pidieran. Son **dos problemas de distinto tamaño y distinta urgencia**, y por eso van con las
+cifras separadas.
+
+**El único cruce válido, y por qué importa que funcione.** Para saber si un prompt se ejecutó, lo
+que vale es **el designador de paso contra los encabezados de `docs/BITACORA.md`** — está en
+`CLAUDE.md` §3, y la Parte 0 lo **confirmó cobrando el precio**: intentarlo por nombre de archivo
+devolvió **113 falsos positivos**, porque los commits nombran el designador (`Paso 2026-08-12_39`)
+y no el archivo (`2026-08-12_39_enc_alcance_y_la_rama_que_falta.md`). **No hay otro cruce.**
+
+**Las dos cifras, medidas el 21/08/2026 sobre los 242 archivos de `docs/Prompts/`:**
+
+| cuántos | qué les pasa | tamaño |
+|---|---|---|
+| **12** | tienen **commit** y **ninguna entrada de `BITACORA.md`** | ⚠ **el problema real** — cinco son de los últimos tres días |
+| **89** | no tienen designador que ubique **ni bitácora ni commit** | histórico, casi todo de agosto temprano |
+
+⭐ **El de 12 es el que importa, y no por ser más chico.** Son pasos que **sí corrieron** —hay
+commit— y que el cruce **no puede ver**. Cada uno es un agujero en el único instrumento que
+responde *"¿esto ya se hizo?"*. Los cinco recientes son `2026-08-20_5`, `2026-08-20_11`,
+`2026-08-21_11.1`, `2026-08-21_11.2` y los huecos de `_13`/`_14`.
+
+**El de 89 es otra cosa** y conviene no mezclarlos: son mayormente archivos cuyo nombre **no sigue
+la convención `AAAA-MM-DD_N_descripcion`** —los cuatro `Pedido-N`, los `ADDENDUM` en mayúsculas,
+los sin número— así que el designador ni siquiera se puede extraer. `CLAUDE.md` §3 ya prevé este
+caso: *"ojo con los pasos sin número: se escapan de ese cruce"*, y dice que por eso uno quedó sin
+entrada hasta que lo encontró el censo del `DOC-7`. **Ahora hay número.**
+
+⛔ **Lo que este hallazgo NO hace, y es deliberado: no escribe las 12 entradas faltantes ni censa
+las 89.** `BITACORA.md` es **append-only y es del usuario**, y **rellenar retroactivamente
+entradas que nadie escribió en su momento es inventar historia** — quedarían indistinguibles de
+las escritas el día que pasaron, que es justo lo que la bitácora existe para evitar. Lo que hace
+falta primero es **decidir qué se hace**, y esa decisión es del usuario.
+
+**Tres salidas posibles, sin elegir:** (a) escribir las 12 entradas faltantes **marcadas como
+reconstruidas a posteriori**, con su fecha real de escritura; (b) dejar las 12 y **agregar un
+control** que avise cuando un commit de paso no tiene entrada, para que no crezca; (c) aceptar que
+el cruce tiene esta cobertura y **decirlo en `CLAUDE.md` §3**, que hoy lo presenta como si fuera
+completo.
+
+⚠ **Y el dato que hace urgente decidir algo: la brecha se está abriendo, no cerrando.** Cinco de
+los doce son de los últimos **tres días** — el 42 % del problema entero se produjo en el 2 % del
+tiempo del proyecto.
