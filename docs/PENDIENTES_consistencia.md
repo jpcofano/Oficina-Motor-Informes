@@ -7108,3 +7108,36 @@ solapa distinta de `digital/Directa Mail`.
 ⚠ **El error de método fue el de siempre:** *
 tomé la explicación cómoda —la fecha del export— sin verificarla contra cómo trabaja el equipo. Es
 la misma forma que `CLAUDE.md` §4 nombra para el número plausible, en la capa del diagnóstico.
+
+### ⭐ Las 41 filas listadas: una campaña genérica de siete meses aporta 15,4 M de los 25,6 M (22/08/2026)
+
+**Anotado, y es lo que hizo ampliar la marca de `_revisar` de dos marcadores a ocho.** Sale de
+listar —en vez de sumar— las filas que el motor agrega para `imp_*` de JM sobre el fixture.
+
+| cuenta | campaña | ventana de `Cuentas` | aporta |
+|---|---|---|---|
+| **`2976-MAYPCCVC`** | *Campañas genéricas RDV JM* | **`04/06 → 31/12`** | **15,4 M** en 4 filas de DV360 |
+| `3289-JUNJDGAG` | *Primera Persona · Paula Pareto 27/7* | `17/07 → 20/08` | 5,8 M |
+| las otras 5 | 1 a 1 de agosto, Mail Infraestructura | dentro o cerca | el resto |
+
+⭐ **Una campaña genérica de siete meses solapa CUALQUIER semana del año.** Entra por `R-29` —la
+fila trae el acumulado y el solape la deja pasar— y **entra en las tres plataformas por el mismo
+camino**. De los 25,6 M de Programmatic, sólo **~3,5 M** salen de campañas que arrancaron cerca de
+la ventana; el equipo publica **3.415.037**.
+
+⛔ **Por eso marcar sólo Programmatic era peor que no marcar nada:** habría dicho que Meta y Google
+están bien, y es el mismo acumulado repartido en tres columnas. **Un marcado parcial sobre una causa
+común declara confianza donde no la hay.** Los ocho `imp_*` quedan en `_revisar`.
+
+⚠ **Y una corrección de método que sale de acá y ya está aplicada en `R-29`:** el chequeo *"¿se
+repite la clave?"* que la regla proponía **no sirve**. Lo medí sobre las dos campañas del temario
+—una fila por `(cuenta, plataforma)`— y lo generalicé; al listar el conjunto hay **845 pares
+repetidos de 1.451**, y `2976-MAYPCCVC` tiene cuatro filas de DV360. **Generalizar desde el
+subconjunto que uno está mirando era el error, no el criterio.**
+
+ⓘ **Y un aviso sobre mi propia reproducción, que hay que tener presente al comparar:** mi filtro de
+`ambito=jm` es `nombre_campaña` **contiene** `"jm"` en minúsculas, y da **4.310.676** de Meta contra
+los **2.772.141** que publica el motor —1,55×—. Programmatic coincide al 3 %. **Ahí gana el motor**
+(`CLAUDE.md` §4: cuando la medición propia reimplementa lógica del motor y lo contradice, la primera
+hipótesis es que la medición está mal). El `~=` del motor puede comparar distinto; **no está medido
+y no se afirma**.

@@ -4798,23 +4798,39 @@ function cablearEnviosComoConteo() {
  * **La nota de `MARCADORES` no se toca**: dice por qué el marcador está cableado como está
  * (`R-24` por resta, `R-25` la ventana) y **eso sigue siendo cierto**. El motivo de la marca vive
  * en `PENDIENTES`, que es donde se puede escribir largo.
- */
+ *
+ * ⭐ **AMPLIADO a los ocho `imp_*` el mismo día** (decisión del usuario tras ver el listado de las
+ * 41 filas). El primer alcance eran los dos `*_prog`; se extendió al resto **porque la causa es una
+ * sola y el listado la puso a la vista**: la cuenta `2976-MAYPCCVC` —*"Campañas genéricas RDV JM"*,
+ * ventana `04/06 → 31/12`— aporta **15,4 M de los 25,6 M** de Programmatic en cuatro filas de
+ * DV360. **Una campaña genérica de siete meses solapa cualquier semana del año**, y entra en Meta y
+ * en Google por el mismo camino. `imp_total` además **los suma a los tres**.
+ *
+ * ⚠ **Marcar sólo Programmatic habría dicho que los otros tres están bien**, y el listado muestra
+ * que no: es el mismo acumulado repartido en tres columnas. Un marcado parcial sobre una causa
+ * común es peor que ninguno — **declara confianza donde no la hay**. */
 function marcarProgrammaticARevisar() {
   var r = curarCamposMarcadores_([
-    { marcador: 'imp_prog',      informe_id: 'jm', formato: 'miles_revisar' },
-    { marcador: 'gcba_imp_prog', informe_id: 'jm', formato: 'miles_revisar' }
+    { marcador: 'imp_meta',        informe_id: 'jm', formato: 'miles_revisar' },
+    { marcador: 'imp_google',      informe_id: 'jm', formato: 'miles_revisar' },
+    { marcador: 'imp_prog',        informe_id: 'jm', formato: 'miles_revisar' },
+    { marcador: 'imp_total',       informe_id: 'jm', formato: 'miles_revisar' },
+    { marcador: 'gcba_imp_meta',   informe_id: 'jm', formato: 'miles_revisar' },
+    { marcador: 'gcba_imp_google', informe_id: 'jm', formato: 'miles_revisar' },
+    { marcador: 'gcba_imp_prog',   informe_id: 'jm', formato: 'miles_revisar' },
+    { marcador: 'gcba_imp_total',  informe_id: 'jm', formato: 'miles_revisar' }
   ]);
   if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
   if (!r.cambios_escritos) {
-    Logger.log('ⓘ Cero celdas escritas: los dos ya estaban en `miles_revisar`. No se tocó nada.');
+    Logger.log('ⓘ Cero celdas escritas: los ocho ya estaban en `miles_revisar`. No se tocó nada.');
     return r;
   }
-  Logger.log('== Programmatic a revisar: ' + r.cambios_escritos + ' celda(s) ==');
+  Logger.log('== impresiones a revisar: ' + r.cambios_escritos + ' celda(s) ==');
   r.aplicados.forEach(function (a) {
     Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" → "' + a.nuevo + '"');
   });
   Logger.log('');
-  Logger.log('Los dos publican ahora entre guiones: -24.783.992- en vez de 24.783.992.');
+  Logger.log('Los ocho publican ahora entre guiones: -24.783.992- en vez de 24.783.992.');
   Logger.log('El motivo está en docs/PENDIENTES_consistencia.md — «looker/DIGITAL guarda el');
   Logger.log('acumulado de la campaña, no lo de la semana». La marca se saca con');
   Logger.log('`revertirMarcaDeProgrammatic()` el día que se decida el rótulo o llegue el dato.');
@@ -4830,8 +4846,14 @@ function marcarProgrammaticARevisar() {
  */
 function revertirMarcaDeProgrammatic() {
   var r = curarCamposMarcadores_([
-    { marcador: 'imp_prog',      informe_id: 'jm', formato: 'miles' },
-    { marcador: 'gcba_imp_prog', informe_id: 'jm', formato: 'miles' }
+    { marcador: 'imp_meta',        informe_id: 'jm', formato: 'miles' },
+    { marcador: 'imp_google',      informe_id: 'jm', formato: 'miles' },
+    { marcador: 'imp_prog',        informe_id: 'jm', formato: 'miles' },
+    { marcador: 'imp_total',       informe_id: 'jm', formato: 'miles' },
+    { marcador: 'gcba_imp_meta',   informe_id: 'jm', formato: 'miles' },
+    { marcador: 'gcba_imp_google', informe_id: 'jm', formato: 'miles' },
+    { marcador: 'gcba_imp_prog',   informe_id: 'jm', formato: 'miles' },
+    { marcador: 'gcba_imp_total',  informe_id: 'jm', formato: 'miles' }
   ]);
   if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
   if (!r.cambios_escritos) { Logger.log('ⓘ Cero celdas: ya estaban en `miles`.'); return r; }

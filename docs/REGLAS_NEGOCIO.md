@@ -2000,8 +2000,13 @@ pregunta** — el modo de falla que este proyecto persigue desde el 07/08.
 
 1. **¿La solapa tiene columna de fecha propia?** Si `SOLAPAS.ventana_ref` apunta a otra solapa, es
    señal fuerte de que **no la tiene** — y una fila sin fecha propia rara vez es un evento.
-2. **¿Se repite la clave?** Una fila por `(entidad, dimensión)` y sin repetir es estado. Medido el
-   22/08 sobre las dos campañas del temario: **una sola fila** por `(cuenta, plataforma)`.
+2. ⛔ **«¿Se repite la clave?» NO sirve, y se corrige el mismo día que se escribió.** La primera
+   versión de esta regla lo daba como señal —*"una fila por `(entidad, dimensión)` y sin repetir es
+   estado"*— sobre haberlo medido en **las dos campañas del temario**, donde efectivamente hay una
+   sola fila por `(cuenta, plataforma)`. **Al listar el conjunto entero aparecieron 845 pares
+   repetidos de 1.451**: `2976-MAYPCCVC` tiene **cuatro** filas de DV360. **Una solapa de estado
+   puede repetir la clave**, así que la ausencia de repetición no prueba nada y su presencia
+   tampoco. **Generalizar desde el subconjunto que uno está mirando es el error, no el criterio.**
 3. **¿El valor crece solo entre dos exports?** Un evento no cambia después de ocurrido; un estado
    sí.
 
