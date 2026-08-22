@@ -848,6 +848,28 @@ no el que había, y no existe nada que compare un comentario contra el código q
   `CAMPANAS` pasó a leerse como lista. Si alguien lo mira hoy, verifica y confirma, **no se entera
   de que estuvo mintiendo meses** — y el hallazgo, que era que las dos hojas divergían, se pierde.
 
+**Toda comparación entre dos fotos declara CON QUÉ CLAVE unió las filas — y prueba al menos dos.**
+Sin eso, un porcentaje de cambio no mide el dato: mide la clave. Vale para **cualquier** cruce
+fixture-contra-fixture, no sólo para medir estabilidad, y por eso está acá y no en la regla que lo
+descubrió.
+
+- **El caso, medido el 22/08/2026 (`C-74`):** `digital/CAMPAÑAS_DESGLOCE_DIGITAL` parecía moverse en
+  el **56 %** de sus filas entre los dos exports, con deltas de **±32 M**. **Era falso.** `Id accion`
+  —que parece un identificador y **no es estable entre exports**— hacía que se compararan filas
+  distintas. Con la clave fina —`Id accion` + `Plataforma` + `Nombre Campaña` + `nombre_campaña`— el
+  movimiento real es **3,6 %**. Un factor **15**.
+- ⭐ **La firma que lo delata, y es barata de mirar:** un porcentaje alto **con subidas y bajadas
+  simétricas** y **magnitudes enormes** no es un dato — es identidad de fila mal resuelta. Un dato
+  que se mueve de verdad suele tener dirección; una clave rota reparte al azar.
+- ⭐ **Lo accionable, en dos partes:** **(1)** el reporte dice la clave, siempre; **(2)** se corre con
+  **dos claves de distinta finura** y se comparan los dos resultados. Si difieren mucho, **gana la
+  fina y el hallazgo es la clave**, no el dato.
+- ⚠ **Y el corolario que lo hace peor de lo que parece:** esto no falla, **publica**. Un 56 % es un
+  número perfectamente citable, y en este repo un número plausible sin testigo sobrevive meses
+  —es la familia de *el número correcto que sale de las filas equivocadas*, movida al instrumento—.
+  **La otra mitad del error también existe:** una clave demasiado gruesa **oculta** movimiento real
+  al promediar filas distintas en una sola.
+
 **Un test puede acertar el hecho y errar la inferencia.** `getFormulas()` sobre las dos
 hojas de `looker` devolvió bien "esta tiene fórmula"; la conclusión "por lo tanto deriva
 de la otra hoja del par" era falsa — la fórmula era un `QUERY()` sobre una **tercera**

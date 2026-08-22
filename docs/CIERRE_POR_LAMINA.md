@@ -35,6 +35,20 @@ no una contradicción.**
 medir"* y uno que dice *"falta cablear"* mandan a trabajos distintos, y ésa es la mitad del valor
 de esta tabla.
 
+### ⭐⭐ Y la marca de estabilidad, que manda a DOS trabajos distintos (`R-31`, 22/08)
+
+Va **al lado del estado**, no sólo en la regla, porque cambia **qué control es posible** en esa
+lámina:
+
+| marca | qué pasa | qué control admite |
+|---|---|---|
+| **inestable por ALTA** | la celda estaba **vacía** y se llenó después — carga manual literal | ⭐ **De DIRECCIÓN: el valor sube o queda, NUNCA baja.** Si baja, **es bug**. Y **sirve esperar**: la ventana del viernes después de las 12 |
+| **inestable por CAMBIO** | **recálculo**, cero altas — el dato ya estaba y la fuente lo reescribió | ⛔ **Esperar NO sirve**: puede volver a moverse. Va `_revisar` |
+
+⚠ **Y en las láminas 2 y 3 el `_revisar` ya estaba puesto por el universo ancho — ahora tiene un
+SEGUNDO motivo, y son independientes.** Si mañana se arregla el universo, **el campo sigue siendo
+inestable** y la marca se queda. Sacarla junto con el arreglo del universo sería el error.
+
 ---
 
 ## Cómo leer la columna «lámina»
@@ -52,11 +66,11 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | lámina | `lamina_id` | estado | qué falta para el check | último cambio |
 |---|---|---|---|---|
 | **1** · Portada | `L-030` | ⛔ | **sin medir** — un solo token, `periodo`, y ninguna verificación lo mira | — |
-| **2** · Resumen Ejecutivo JM | `L-031` | ⛔ | 21 tokens. **Los cuatro `cc_*`: `MAPEO` escrito, cableado FRENADO por `X-28`** — la columna y la operación están validadas, **qué cuentas entran no** · `contenidos_total` publica `1` → **pregunta al equipo** · `frecuencia` no publica → sin medir · los 8 `imp_*` y los 3 «N envíos» están 🟡, abajo | 22/08 |
-| **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) · `gcba_sms_*` 🟡 | 22/08 |
+| **2** · Resumen Ejecutivo JM | `L-031` | ⛔ **inestable por CAMBIO** | 21 tokens. **Los cuatro `cc_*`: `MAPEO` escrito, cableado FRENADO por `X-28`** — la columna y la operación están validadas, **qué cuentas entran no** · `contenidos_total` publica `1` → **pregunta al equipo** · `frecuencia` no publica → sin medir · los 8 `imp_*` y los 3 «N envíos» están 🟡, abajo | 22/08 |
+| **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ **inestable por CAMBIO** | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) · `gcba_sms_*` 🟡 | 22/08 |
 | **4** · «Encuentros con vecinos» | `L-033` | 🟡 | **Cero tokens y `rol = equipo`: no hay nada que cablear.** Es un separador. Falta sólo que el usuario lo mire | — |
-| **5** · ECV: alcance semanal | `L-034` | ⛔ | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUCEN** contra `V-71`, con `ecv_barrios` confirmando la identidad de los sumandos. Falta: **`ecv_asistentes` = 485 sin validar** (abajo) · ⚠ **los 3 `cc_*` se van a PINTAR ACÁ SIN CONTROL** (abajo) · `ecv_barrio1-3` nombrados en el seed y **sin fila en `MARCADORES`** | 22/08 |
-| **6** · Benchmarks / Iceberg | `L-035` `L-052` | 🟡 **candidata a ✅** | ⭐⭐⭐ **CIERRA. La corrida del 22/08 publicó los cuatro de IVR exactos** — Audiencia **107.194** · Atendidos **96.549** · Escucharon +75 % **33.139** · Marque 1 **304**. **`X-30` se cerró solo: el ítem llegó con `3488-AGOJDGAG` y no hizo falta tocar nada.** Con las seis cifras del alcance que ya cerraban al dígito, **la lámina está completa**. ⛔ **El ✅ lo pone el usuario** | 22/08 |
+| **5** · ECV: alcance semanal | `L-034` | ⛔ **inestable por ALTA** | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUJERON** contra `V-71`. ⚠ **Pero `rdv` es inestable por ALTA (`R-31`), así que eso no se puede EXIGIR en cada corrida** — el control posible es **de dirección: sube o queda, nunca baja; si baja es bug**. Falta: `ecv_asistentes` = 485 sin validar · los 3 `cc_*` **pintados sin control** · `ecv_fecha` y `ecv_barrio1-3` **sin fila en `MARCADORES`** | 22/08 |
+| **6** · Benchmarks / Iceberg | `L-035` `L-052` | ✅ | ⭐⭐⭐ **CERRADA — el usuario la declaró el 22/08.** Publicó los cuatro de IVR exactos: Audiencia **107.194** · Atendidos **96.549** · Escucharon +75 % **33.139** · Marque 1 **304**, más las seis cifras del alcance al dígito. **`X-30` se cerró solo: el ítem llegó con `3488-AGOJDGAG`.** ⭐ **Y es la única lámina con control por igualdad exacta garantizado**: sus cinco campos de `digital/Directa IVR` son **estables** (`R-31`) | 22/08 |
 | **7** · Campañas · DIGITAL · Período | `L-036` | ⛔ | ⭐ **Resuelto sin medir por la corrida del 22/08: la tabla del deck es 4 filas × 8 columnas = 32 casilleros, todos en `/////`.** Los **32 `post_`** de `Auditoria.gs` eran correctos y **este tablero estaba mal** —decía *"4 tokens `camp1-4`, tabla 7×8"*—. Falta **cablear los 32** | 22/08 |
 | **8** · «Comunicaciones M2» | `L-037` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | **9** · Directa · Status M2 | `L-038` | ⛔ | 8 tokens. ⭐ **El numerador coincide y el denominador no** (−9,6 % en enviados/entregados, con el numerador quieto) → falta **decidir** de qué universo sale el denominador | 22/08 |
@@ -75,7 +89,7 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | **22** · MUCHAS GRACIAS | `L-051` | 🟡 | Cierre, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | *(orden 8)* · «1 a 1» | `L-053` | ⛔ | `filtro = tipo=Uno a uno`, 32 tokens `u1_`. Nace con `D-37`. ⭐ **Las impresiones del PRE reproducen exacto** — `V-21` Google **17.401**, `V-23` Meta **25.099**, `V-25` Meta Retiro **18.015**. ⛔ **El único roto es `u1_prog_impresiones`, y es un agujero de FUENTE**: los 94.955 del **POST de San Cristóbal** no están en ninguna celda de los siete libros de los dos fixtures (`X-05`, `C-57`). **Distinto del problema del Resumen** — acá falta el dato, allá sobra universo. ⚠ **Y 4 de sus 36 tokens son `ecv_`** —`ecv_asistentes`, `ecv_comuna`, `ecv_fecha`, `ecv_inscriptos`—: **`ecv_fecha` es la fecha de la reunión** (`rdv` · `fecha_periodo` · col. E de `RVD JM-CM - ES`, que `MAPEO` describe como *"filtro de período"*) y **NO tiene fila en `MARCADORES`**. Sólo vive en `TOKENS_CORTE_VERTICAL_` (`Marcadores.gs`), una lista del diagnóstico `corteVerticalRetiro2407_()`. **Mismo hueco que `ecv_barrio1-3`** | 22/08 |
 
-**Conteo: 0 ✅ · 6 🟡 · 17 ⛔ · 0 ⏳**, sobre 23 filas de `LAMINAS` para `jm`.
+**Conteo: 1 ✅ · 5 🟡 · 17 ⛔ · 0 ⏳**, sobre 23 filas de `LAMINAS` para `jm`.
 
 ---
 
