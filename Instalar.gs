@@ -2436,6 +2436,32 @@ var SEED_CONFIG_DEFAULTS_ = {
   // constante en Union.gs) y pasa a ser parámetro de negocio — cambiarlo ya no
   // exige clasp push. Ver umbralAnclajeReunion_() en Union.gs.
   umbral_anclaje_reunion: '0.6',
+  /* `R-30` / `X-29` (22/08/2026) — **tope de duración para entrar a una ventana por pertenencia.**
+   * Una cuenta cuya ventana declarada dura más que esto NO entra. `0` desactiva.
+   *
+   * **De dónde sale el 90, y NO es de ajustar contra un resultado.** Se midió la distribución de
+   * duración de las **cuentas de encuentro del temario** en las dos ventanas que hay:
+   *
+   *   julio  (8 cuentas):  5 · 6 · 8 · 9 · 10 · 10 · 13 · **21**
+   *   agosto (7 cuentas):  5 · 7 · 17 · 18 · 22 · 24 · **34**
+   *
+   * **Máximo observado: 34 días**, y ese 34 es `3289-JUNJDGAG` **con la `fecha_fin` ya derivada**.
+   * Del otro lado, las campañas genéricas que motivaron todo arrancan en **210** —`2975` y `2976`,
+   * *"Campañas genéricas RDV"*—. **Entre 40 y 60 días hay un hueco vacío** en la distribución de
+   * las 73 cuentas de la ventana de agosto.
+   *
+   * ⭐ **90 = un trimestre**, que es un período con nombre y no un número sacado del dato, con
+   * **2,6× de margen** sobre el encuentro más largo y **2,3×** por debajo de las genéricas.
+   *
+   * ⛔ **NO es 30, y el motivo es la medición:** un tope de 30 **cortaría un encuentro real** —el de
+   * 34 días—. Que `duración ≤ 30 d` cerrara `X-28` en los dos períodos **no es evidencia**: `X-28`
+   * es otra pregunta y necesita un tercer deck publicado.
+   *
+   * ⚠ **Lo que este tope saca y hay que verificar en la primera corrida:** en la ventana 14–20/08
+   * deja afuera **12 de 73** cuentas, entre ellas `2961-ABRSEGGJ` (108 d) con **332 M de
+   * impresiones**, la más grande del conjunto. **El efecto sobre `imp_*` y `gcba_imp_*` es grande
+   * y no está verificado contra un deck.** */
+  tope_dias_ventana_cuenta: '90',
   // `R-19` (08/08) — los centinelas de la capa 1: si el encabezado de una solapa trae uno de
   // estos, el espejo se rompió y la lectura **falla** en vez de devolver cero filas.
   //

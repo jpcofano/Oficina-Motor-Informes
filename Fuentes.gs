@@ -830,6 +830,23 @@ function conjuntoDeClavesEnVentana_(baseId, solapaRef, ventana) {
   return resultado;
 }
 
+/**
+ * `R-30` — el tope de duración de `CONFIG`, leído con la misma forma que `umbralAnclajeReunion_()`
+ * en `Union.gs`: la constante es **sólo el default si `CONFIG` no lo trae**, y nunca se usa directo.
+ *
+ * ⚠ **El default es `0` = desactivado, y es deliberado.** Un default distinto de cero cambiaría
+ * números publicados **en cualquier instalación que todavía no sembró la clave**, en silencio. El
+ * valor de negocio lo pone el seed (`SEED_CONFIG_DEFAULTS_`), que sí es visible en el diff de
+ * `instalar()`.
+ */
+var TOPE_DIAS_VENTANA_CUENTA_DEFECTO_ = 0;
+
+function topeDiasVentanaCuenta_() {
+  var valor = Number(leerConfig().tope_dias_ventana_cuenta);
+  if (isNaN(valor) || valor < 0) return TOPE_DIAS_VENTANA_CUENTA_DEFECTO_;
+  return valor;
+}
+
 function calcularConjuntoDeClaves_(baseId, solapaRef, ventana) {
   var etiqueta = baseId + '/' + solapaRef;
 
@@ -855,9 +872,61 @@ function calcularConjuntoDeClaves_(baseId, solapaRef, ventana) {
   var enVentana = {};
   var tamano = 0;
   var sinClave = 0;
+
+  /* `R-30` (22/08/2026) — **el tope de duración: una cuenta cuya ventana declarada es más larga
+   * que el tope NO entra a una ventana semanal por pertenencia.**
+   *
+   * **Por qué existe, con el número que lo motivó:** `X-29` midió que **la `fecha_fin` de una
+   * cuenta se extiende sola** —27 de 959 entre dos exports, mediana 21 días, **máximo 157**— y que
+   * la ventana **14–20/08** pasa de **14 cuentas a 32**: **18 entran sólo por la deriva, +129 %**.
+   * La peor es `2976-MAYPCCVC`, *"Campañas genéricias RDV JM"*, **27/07 → 31/12**, que aporta
+   * **15,4 M de los 25,6 M** de Programmatic y **entra por las tres plataformas**. Una campaña
+   * genérica de siete meses **solapa cualquier semana del año**, así que atribuirla a una es
+   * exactamente el número plausible de `CLAUDE.md` §4, producido por el dato.
+   *
+   * ⭐ **Por qué acá y no en `leerFuente`:** esto corrige **la pertenencia**, no el recorte por
+   * fecha propia. Una solapa con su columna temporal ya se recorta bien; el problema es sólo de
+   * las que **toman la ventana prestada** (`ventana_ref`, `_23`/`D-24`). Ponerlo en `leerFuente`
+   * cambiaría también lo que ya funciona.
+   *
+   * ⚠ **La descartada, y el motivo, porque va a volver a proponerse:** la otra salida era
+   * **congelar la ventana de una cuenta la primera vez que se la ve**. Se midió y **se cayó por su
+   * propio caso**: de las 27 extendidas **17 movieron de verdad** —tienen filas nuevas o valores
+   * que crecieron— y **`2976` es una de ellas**. O sea que congelar habría dado el número correcto
+   * **por casualidad**, y habría hecho depender el resultado de **cuándo se vio la cuenta por
+   * primera vez**, que no es una propiedad del negocio. Beneficiaba a 2 cuentas y perjudicaba a 17.
+   *
+   * ⛔ **Y esto NO resuelve `X-28`.** Que `duración ≤ 30 d` fuera uno de los tres desempates que
+   * `X-28` no pudo separar **no es evidencia** de que sirva para aquello: `X-28` es *qué cuenta de
+   * Call Center publica el Resumen* y necesita un tercer **deck publicado**. Son dos preguntas y se
+   * cierran por separado.
+   *
+   * **El tope vive en `CONFIG.tope_dias_ventana_cuenta`** (`D-01`, `CLAUDE.md` §2: nada de valores
+   * de negocio en el código). **`0` o vacío lo desactiva**, y eso es a propósito: el mecanismo
+   * tiene que poder apagarse sin `clasp push` para comparar contra el comportamiento viejo.
+   *
+   * ⚠ **Las filas sin fecha NO se descartan acá.** No tener fecha no es tener una ventana larga:
+   * `leerFuente` ya las cuenta en `filas_sin_fecha` y ésa es su discusión, no ésta. */
+  var topeDias = topeDiasVentanaCuenta_();
+  var mapIni = buscarMapeo(baseId, solapaRef, 'fecha_periodo');
+  var mapFin = buscarMapeo(baseId, solapaRef, 'fecha_fin_periodo');
+  var puedeTopar = topeDias > 0 && mapIni.ok && mapFin.ok;
+  var encIni = puedeTopar ? lectura.encabezados[columnaLetraAIndice_(mapIni.columna)] : null;
+  var encFin = puedeTopar ? lectura.encabezados[columnaLetraAIndice_(mapFin.columna)] : null;
+  var fueraPorTope = 0;
+  var clavesPorTope = {};
+
   lectura.filas.forEach(function (o) {
     var v = normalizarIdCuenta_(o[encabezado]);
     if (v === '') { sinClave++; return; }
+    if (puedeTopar) {
+      var d1 = parsearFechaCelda_(o[encIni]);
+      var d2 = parsearFechaCelda_(o[encFin]);
+      if (d1 && d2) {
+        var dias = Math.round((d2.getTime() - d1.getTime()) / 86400000);
+        if (dias > topeDias) { fueraPorTope++; clavesPorTope[v] = dias; return; }
+      }
+    }
     if (!Object.prototype.hasOwnProperty.call(enVentana, v)) { enVentana[v] = true; tamano++; }
   });
 
@@ -876,7 +945,16 @@ function calcularConjuntoDeClaves_(baseId, solapaRef, ventana) {
     filas_ref_totales: lectura.filas_totales,
     filas_ref_en_ventana: lectura.filas_en_ventana,
     filas_ref_sin_fecha: lectura.filas_sin_fecha,
-    filas_ref_sin_clave: sinClave
+    filas_ref_sin_clave: sinClave,
+    /* ⭐ **La exclusión por tope se REPORTA, no se hace en silencio**, y es la mitad de `R-30`. Sin
+     * estos dos campos el mecanismo saca cuentas del universo y nadie se entera — que es
+     * literalmente el modo de falla que la regla vino a arreglar, con el signo cambiado.
+     * `CLAUDE.md` §4: *un control tiene que declarar CUÁNTO midió; cero unidades es un problema, no
+     * un silencio*. `tope_dias_aplicado: 0` significa **desactivado**, y se distingue de
+     * `fuera_por_tope: 0`, que significa **activo y no sacó a nadie**. */
+    tope_dias_aplicado: puedeTopar ? topeDias : 0,
+    filas_ref_fuera_por_tope: fueraPorTope,
+    claves_fuera_por_tope: clavesPorTope
   };
 }
 
@@ -1172,7 +1250,12 @@ function leerFuente(baseId, ventana, nombreHojaOverride, opcionesLectura) {
       filas_ref_totales: conjunto.filas_ref_totales,
       filas_ref_en_ventana: conjunto.filas_ref_en_ventana,
       filas_ref_sin_fecha: conjunto.filas_ref_sin_fecha,
-      filas_ref_sin_clave: conjunto.filas_ref_sin_clave
+      filas_ref_sin_clave: conjunto.filas_ref_sin_clave,
+      // `R-30`: viaja hasta acá para que la traza de CUALQUIER marcador que lea por pertenencia
+      // pueda decir si el tope estaba activo y a quién sacó. Ver `calcularConjuntoDeClaves_`.
+      tope_dias_aplicado: conjunto.tope_dias_aplicado,
+      filas_ref_fuera_por_tope: conjunto.filas_ref_fuera_por_tope,
+      claves_fuera_por_tope: conjunto.claves_fuera_por_tope
     };
     // Los tres conteos que hacen explicable un total corto, más el universo de referencia.
     resultado.claves_en_ventana = conjunto.tamano;

@@ -2044,3 +2044,89 @@ una **decisión editorial** y vive en `docs/CONFIG_INFORMES.md`, no acá.
 `IVR` y `resumen_metricas_dinamico` toman la ventana de `Cuentas` por pertenencia (`R-25`) y ninguna
 tiene fecha propia. Las de `digital` —`Directa Mail`, `Directa SMS`, `Directa IVR`— **sí la tienen**
 y son de evento.
+
+
+---
+
+## R-30 — Una cuenta cuya ventana declarada dura más que el tope no entra a una ventana semanal por pertenencia
+
+**22/08/2026.** Decidida por el usuario tras la medición de `X-29`. Implementada en
+`calcularConjuntoDeClaves_` (`Fuentes.gs`), con el tope en **`CONFIG.tope_dias_ventana_cuenta`**.
+
+**El enunciado:** cuando una solapa toma su ventana **prestada** de otra —`SOLAPAS.ventana_ref`,
+el mecanismo del `_23`/`D-24`—, una fila de la solapa de referencia cuya **duración declarada**
+(`fecha_fin − fecha_inicio`) supere el tope **no aporta su clave al conjunto**. `0` desactiva.
+
+### Por qué existe
+
+**`X-29`, medido comparando `looker/Cuentas` entre los exports del 31/07 y del 20/08**, 959 cuentas
+comunes: **28 cambiaron `fecha_fin`**, **27 se extendieron**, mediana **21 días**, máximo **157**.
+
+⭐ **El porcentaje engaña; lo que importa es a cuántas ventanas las mete.** La ventana **14–20/08**
+pasa de **14 cuentas** con las fechas viejas a **32** con las nuevas: **18 entran sólo por la
+deriva, +129 %.**
+
+**El caso que la motivó** es `2976-MAYPCCVC`, *"Campañas genéricias RDV JM"*, **27/07 → 31/12**
+(+157 d): aporta **15,4 M de los 25,6 M** de Programmatic y **entra por las tres plataformas**.
+Una campaña genérica de siete meses **solapa cualquier semana del año**.
+
+⚠ **No rompe: agranda.** El número sigue siendo un número, y **ninguna verificación del motor lo
+puede ver, porque el motor hace exactamente lo que se le pidió.** Es el número plausible de
+`CLAUDE.md` §4, producido por el **dato** en vez de por el código.
+
+### El número es **90** y sale de una medición, no de un ajuste
+
+Se midió la duración declarada de las **cuentas de encuentro del temario** en las dos ventanas que
+existen:
+
+| | duraciones (días) |
+|---|---|
+| julio, 8 cuentas | 5 · 6 · 8 · 9 · 10 · 10 · 13 · **21** |
+| agosto, 7 cuentas | 5 · 7 · 17 · 18 · 22 · 24 · **34** |
+
+**Máximo observado: 34 días** —y ese 34 es `3289-JUNJDGAG` **con la `fecha_fin` ya derivada**—.
+Del otro lado, las genéricas arrancan en **210** (`2975` y `2976`). Entre **40 y 60** días hay un
+**hueco vacío** en la distribución de las 73 cuentas de la ventana de agosto.
+
+⭐ **90 es un trimestre** —un período con nombre, no un número sacado del dato— con **2,6× de
+margen** sobre el encuentro más largo y **2,3×** por debajo de las genéricas.
+
+⛔ **No es 30, y el motivo es la medición: un tope de 30 cortaría un encuentro real**, el de 34
+días. Eso es exactamente lo que la medición previa a fijar el número tenía que encontrar.
+
+### Lo que descarta, y por qué se descartó
+
+La otra salida era **congelar la ventana de una cuenta la primera vez que se la ve**. **Se cayó por
+su propio caso:** de las 27 extendidas, **17 movieron de verdad** —filas nuevas o valores que
+crecieron— **y `2976` es una de ellas**. Congelarla habría dado el número correcto **por
+casualidad**, y habría hecho depender el resultado de **cuándo se vio la cuenta por primera vez**,
+que no es una propiedad del negocio. **Beneficiaba a 2 cuentas y perjudicaba a 17.**
+
+⚠ De las 10 quietas, **ocho tienen cero filas en las dos fotos**: congelarlas no cambia ningún
+número. Las únicas deriva-pura **con datos** son `2145-OCTVINGC` y `3418-JULDECVC`.
+
+### ⛔ Lo que esta regla NO resuelve
+
+**No cierra `X-28`.** Que `duración ≤ 30 d` fuera **uno de los tres desempates** que `X-28` no pudo
+separar **no es evidencia** de que un tope sirva para aquello. `X-28` es *qué cuenta de Call Center
+publica el Resumen* y **necesita un tercer deck publicado**; `X-29` sólo necesitaba las ventanas,
+que ya estaban medidas. **Son dos preguntas y se cierran por separado.**
+
+### Alcance y lo que falta verificar
+
+**Aplica sólo a las solapas con `ventana_ref`** —hoy `looker/DIGITAL` y `looker/CC`, o sea los ocho
+`imp_*`, los cuatro `cc_*` y sus `gcba_*`—. Una solapa con **fecha propia** se recorta como siempre:
+esta regla corrige **la pertenencia**, no el recorte temporal.
+
+⚠ **Las filas sin fecha NO se descartan.** No tener fecha no es tener una ventana larga; `leerFuente`
+ya las cuenta en `filas_sin_fecha` y ésa es otra discusión.
+
+⚠⚠ **El efecto sobre los números publicados es GRANDE y no está verificado contra un deck.** En la
+ventana 14–20/08 el tope deja afuera **12 de 73** cuentas, entre ellas `2961-ABRSEGGJ` (108 d) con
+**332 M de impresiones**, la más grande del conjunto. **La primera corrida con el tope activo tiene
+que mirarse contra el deck del equipo antes de dar nada por bueno.**
+
+⭐ **Y la exclusión se reporta, nunca se hace en silencio:** la traza trae `tope_dias_aplicado`,
+`filas_ref_fuera_por_tope` y `claves_fuera_por_tope`. `tope_dias_aplicado: 0` significa
+**desactivado**; `filas_ref_fuera_por_tope: 0` con el tope activo significa **no sacó a nadie**. Son
+dos cosas distintas y el log las distingue.
