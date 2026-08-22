@@ -1671,6 +1671,47 @@ encabezado— desde que existe.
 `ANCLAJE_PENDIENTE` **en vez de resolverse por proximidad**; y **probar el circuito completo
 con un caso forzado**, que es la única forma de saber que funciona.
 
+**Addendum · 21/08/2026 — dos afirmaciones de arriba están vencidas, y el pendiente NO se cierra.**
+(`2026-08-21_16` Parte E. El texto anterior no se edita — `CLAUDE.md` §7.)
+
+Medido sobre la hoja viva el 21/08/2026, leyendo `ANCLAJE_PENDIENTE` por API:
+
+| lo que dice arriba | lo medido |
+|---|---|
+| *"la hoja está vacía —sólo el encabezado— desde que existe"* | **tiene dos filas de datos**, las dos sin `elegido` |
+| *"nunca se ejecutó porque ningún caso cayó bajo umbral"* | **cayeron dos**, con su mejor candidato en **0,54** |
+
+Las dos claves son `almagro|2026-06-16|` y `educacion|2026-06-16|`, las dos `tipo = reunion`, con
+puntajes **0,54 / 0,50 / 0,50** cada una. ⭐ **Y no son un encuentro duplicado**, que era la
+sospecha: `REUNIONES` tiene **dos filas distintas** para el 16/06, `Encuentro Temático` las dos,
+con `nombre` `Almagro` y `Educación` — y **`mostrar` distinto**: `no` y `sí`. `D-29` documenta
+sólo la segunda porque es la que se muestra.
+
+⚠ **De ahí salió un hallazgo aparte que vale por sí solo:** `leerReuniones_` **filtra por
+`mostrar`**, así que la fila `almagro` **hoy no podría escribirse** — quedó de una corrida
+anterior. `registrarAnclajePendiente_` **nunca borra** y la hoja **acumula**. Eso es el límite 2
+del addendum a `D-29`, y la pantalla del `2026-08-21_16` lo contiene marcando esas filas sin
+borrarlas.
+
+⭐ **Lo que sí cambia para este pendiente: el circuito ya no está entero sin usar — le falta la
+última mitad.** El motor **escribió**, que es lo que nunca se había visto. Lo que sigue sin
+probarse de punta a punta es que un `elegido` cargado **haga anclar** — eso es
+`anclajeYaConfirmado_` y necesita una corrida.
+
+⛔ **Y lo que NO cambia, que es la mitad que este pendiente reclama:** el score sigue saturando
+en `1,00` y **el `2026-08-21_16` no lo toca**. Son **dos huecos distintos** y conviene no
+confundirlos:
+
+| caso | ¿pasa por `ANCLAJE_PENDIENTE`? | ¿lo cubre la pantalla nueva? |
+|---|---|---|
+| **cae bajo el umbral** | sí | **sí** — es lo que se construyó el 21/08 |
+| **empata arriba del umbral** | **no** | **no** |
+
+Los que empatan en el techo **no llegan a la hoja**: ahí actúa el desempate temporal y el motor
+elige solo, que es el modo de falla del `3347`. Eso es de `scoreMatchDigitalRdv_`, sigue remitido
+a `D-29` —*"no se toca por un caso"*— y **este pendiente sigue abierto por eso**. Que exista una
+pantalla nueva **no debe leerse como que el circuito quedó cerrado.**
+
 
 ### P2 · `ecv_barrio` no puede usarse como prefijo de familia
 
