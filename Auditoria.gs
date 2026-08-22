@@ -4466,10 +4466,25 @@ function diagTopeDeVentana() {
 
   /* Las dos solapas que hoy toman la ventana prestada. Se descubren leyendo `SOLAPAS`, no de una
    * lista escrita ac\u00e1: si ma\u00f1ana hay una tercera, este diagn\u00f3stico la tiene que ver sola. */
+  /* ⛔ **`leerSolapas()` devuelve un MAPA ANIDADO `{base_id: {solapa: {...}}}`, no un array**, y la
+   * primera versión de esto le hacía `.forEach` directo — `TypeError` en la corrida del 22/08.
+   *
+   * ⭐ **El grep que sigue a un bug así, y su resultado, porque el cero también se escribe:** se
+   * revisaron **los 18 consumidores** de `leerSolapas()` y **éste era el único** que lo trataba como
+   * lista. **No es un lector con dos formas de retorno** —la sospecha razonable— **es un consumidor
+   * mal escrito**, y la forma está documentada desde siempre en `Config.gs:15`.
+   *
+   * ⚠ **Lo que sí explica la confusión, y es la familia de `CLAUDE.md` §4 —*dos cosas que se llaman
+   * igual no son la misma cosa*—:** existe `leerFilasSolapas_(hoja)` en `Solapas.gs`, que **sí
+   * devuelve una lista**. Dos funciones con nombres casi iguales y formas distintas. */
+  var registradas = leerSolapas();
   var conRef = [];
-  leerSolapas().forEach(function (s) {
-    if (String(s.uso || '').trim() === 'ignorar') return;
-    if (referenciaDeVentana_(s.base_id, s.solapa)) conRef.push(s);
+  Object.keys(registradas).forEach(function (baseId) {
+    Object.keys(registradas[baseId]).forEach(function (solapa) {
+      var s = registradas[baseId][solapa];
+      if (String(s.uso || '').trim() === 'ignorar') return; // `CLAUDE.md` §2: no se tocan
+      if (referenciaDeVentana_(baseId, solapa)) conRef.push({ base_id: baseId, solapa: solapa });
+    });
   });
   Logger.log('   solapas con `ventana_ref`: ' + conRef.length);
 
