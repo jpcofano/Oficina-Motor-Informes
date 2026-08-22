@@ -120,7 +120,38 @@ emitirse sin ítem. Un `u1_` fuera de una lámina de encuentro publicaría la su
 las cuentas de la solapa — grande, plausible y equivocada. Anotarlo en
 `docs/PENDIENTES_consistencia.md` como riesgo abierto, sin arreglarlo acá.
 
-Sin Parte B verde, esta parte no corre.
+**C.3 · El hueco de `alcance` del 1 a 1, escrito.** En `docs/PENDIENTES_consistencia.md`, con
+lo que A.5 haya medido. El enunciado:
+
+> El deck publica **dos** alcances distintos para el 1 a 1 —uno PRE y uno POST— y salen de
+> **filas distintas** de `digital/Alcance` (dicho por el usuario, 21/08). `MARCADORES` tiene
+> las dos filas cableadas a la misma solapa, el mismo `alc_alcance`, la misma operación
+> `ULTIMO` y `dimensiones` vacío en las dos: **hoy no hay nada que las separe**, así que si
+> resolvieran publicarían el mismo número en los dos casilleros. `MAPEO` mapea tres columnas
+> de esa solapa —`A` id_cuenta, `B` alcance, `C` frecuencia— y ninguna nombra la campaña ni
+> la etapa; `DIMENSIONES_.etapa` sólo sabe expresarse sobre `digital|CAMPAÑAS_DESGLOCE_DIGITAL`.
+>
+> **La pista, dada por el usuario el 21/08, y su prioridad.** El alcance por etapa
+> probablemente **no salga de `digital/Alcance`**: en la base `reuniones` el par pre/post está
+> separado **por solapa** —`Agenda JM` y `Agenda JM | Post`, las dos `uso = fuente`— y ahí ya
+> lee `enc_alcance_potencial`. Es la misma forma que `D-30` punto 1 cita de `C-50`: el par
+> comparte `ID` en **dos solapas distintas**, así que la clave es `(ID, solapa)` y no hace falta
+> ninguna dimensión nueva — son dos filas de `MARCADORES` apuntando a dos solapas.
+>
+> ⏸ **Sin prioridad, por decisión del usuario (21/08).** Queda escrito para no volver a
+> preguntarlo. Los dos tokens siguen saliendo `-`.
+>
+> **Lo que faltaría si algún día sube:** confirmar qué campo de esas dos solapas es el alcance
+> del 1 a 1 y si `Call Center` entra en la cuenta. **Code no lo puede medir** — no tiene acceso
+> a las bases.
+>
+> **Hoy los dos tokens salen `-`, y eso es benigno.** Las dos filas ya llevan
+> `formato = miles_revisar`, así que el día que resuelvan publican `-val-` (§4.5 bis) — pero
+> el `-val-` avisa que el número no está validado, **no** que los dos casilleros muestren el
+> mismo. Son dos cosas distintas y ésta no está cubierta.
+
+Sin Parte B verde, esta parte no corre. **C.3 sí corre igual**, aunque A.2 haya hecho parar
+el resto: documentar un hueco no depende del cambio de código.
 
 ---
 
