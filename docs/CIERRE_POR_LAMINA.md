@@ -52,10 +52,10 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | lámina | `lamina_id` | estado | qué falta para el check | último cambio |
 |---|---|---|---|---|
 | **1** · Portada | `L-030` | ⛔ | **sin medir** — un solo token, `periodo`, y ninguna verificación lo mira | — |
-| **2** · Resumen Ejecutivo JM | `L-031` | ⛔ | 21 tokens. **Cablear los cuatro `cc_*`** (definición ya medida, abajo) · `contenidos_total` publica `1` → **pregunta al equipo** · `frecuencia` no publica → sin medir · los 8 `imp_*` y los 3 «N envíos» están 🟡, abajo | 22/08 |
+| **2** · Resumen Ejecutivo JM | `L-031` | ⛔ | 21 tokens. **Los cuatro `cc_*`: `MAPEO` escrito, cableado FRENADO por `X-28`** — la columna y la operación están validadas, **qué cuentas entran no** · `contenidos_total` publica `1` → **pregunta al equipo** · `frecuencia` no publica → sin medir · los 8 `imp_*` y los 3 «N envíos» están 🟡, abajo | 22/08 |
 | **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) · `gcba_sms_*` 🟡 | 22/08 |
 | **4** · «Encuentros con vecinos» | `L-033` | 🟡 | **Cero tokens y `rol = equipo`: no hay nada que cablear.** Es un separador. Falta sólo que el usuario lo mire | — |
-| **5** · ECV: alcance semanal | `L-034` | ⛔ | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUCEN** contra `V-71`, con `ecv_barrios` confirmando la identidad de los sumandos. Falta: **`ecv_asistentes` = 485 sin validar** (abajo) · los 3 `cc_*` sin cablear · `ecv_barrio1-3` nombrados en el seed y **sin fila en `MARCADORES`** | 22/08 |
+| **5** · ECV: alcance semanal | `L-034` | ⛔ | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUCEN** contra `V-71`, con `ecv_barrios` confirmando la identidad de los sumandos. Falta: **`ecv_asistentes` = 485 sin validar** (abajo) · ⚠ **los 3 `cc_*` se van a PINTAR ACÁ SIN CONTROL** (abajo) · `ecv_barrio1-3` nombrados en el seed y **sin fila en `MARCADORES`** | 22/08 |
 | **6** · Benchmarks / Iceberg | `L-035` `L-052` | ⛔ | ⭐⭐ **Las seis cifras del alcance cierran AL DÍGITO** —Mail 619, Digital 96, Difusión 10, Call+IVR 101+29=130, Inscriptos 855, Asistentes 186—. **Es la lámina más terminada del deck.** Falta: los **cuatro casilleros de IVR salen `-`** en la corrida con temario correcto y **exactos en la copia equivocada** → falta **medir** cuál de los dos candidatos es (anclaje o ventana de `R-11`) | 22/08 |
 | **7** · Campañas · pie | `L-036` | ⛔ | 4 tokens `camp1-4`, tabla 7×8. **Sin medir** | — |
 | **8** · «Comunicaciones M2» | `L-037` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
@@ -160,10 +160,50 @@ porque la corrección de premisa de abajo cambió el número esperado y eso lo m
   cablear uno pinta las dos. **Los tres casos validados están etiquetados `resumen_ejecutivo_jm` y
   ninguno mide la lámina 5.** Hay que decidir si son el mismo universo **antes** de escribir la fila.
 
-**El control de cableado, que es contra el deck del 31/07 y no contra el de agosto:** `V-64` y
-`V-92` dan `cc_base` = **6.011** y `cc_contactados` = **1.878**, `exacto` contra lo publicado. El
-fixture de agosto da 7.096 / 1.710 contra 6.851 / 1.616 —**+3,6 % y +5,8 %**, la solapa de estado
-acumulando entre el armado del deck y el export— y **un ±% no sirve de control**.
+**Lo que la Parte B escribió, y es la mitad de abajo:** `MAPEO` para `looker/CC` —cuatro filas,
+`clave_ventana` y `lcc_id_cuenta` en la col. A, `lcc_base_barrida` en la C, `lcc_contactados` en la
+D— más `ventana_ref: 'Cuentas'` en `SOLAPAS`. **`Base enviada` no se mapea, a propósito.** Control:
+`tools/probar-mapeo-cc.js`, 24 afirmaciones.
+
+⭐ **Y el control de la definición cerró exacto**, contra el deck del equipo del 31/07 y la
+`Base Looker` **del mismo archivo** (`V-105`): «2 campañas · Base discada 6.011 · Contactados 1.878
+(31 %)», y `3289-JUNJDGAG` da 2 filas, 6.011, 1.878, 31,2 % → 31. **Cuatro de cuatro.**
+
+### ⛔ Pero el cableado está FRENADO, y el motivo es `X-28`
+
+**Ninguna regla escrita reproduce QUÉ CUENTAS entran.** Medido el 22/08:
+
+| candidato | da | publicado |
+|---|---|---|
+| pertenencia sola (`ventana_ref` → `Cuentas`) | **18 cuentas · 22 filas · 100.197** | 2 · 6.011 |
+| `nombre_campaña CONTIENE JM` — la clave de `V-64` | **2 cuentas · 5 filas · 13.965** | 2 · 6.011 |
+| «las cuentas que el temario nombra» | ídem: julio nombra `3289` **y** `3387` | 2 · 6.011 |
+
+⛔ **Y el filtro por nombre está mal por los dos lados a la vez:** deja entrar `3387-JULJDGGC`, que
+también dice «JM», **y deja afuera la cuenta correcta de agosto** — `3488-AGOJDGAG` se llama
+*"TE CUENTO | SALUD Eje Sur Viernes 14/8"* y **no dice «JM» en ninguna parte**.
+
+⭐ **Lo que sí se observa en los dos decks: el bloque publica UNA SOLA CUENTA**, no un agregado de
+la semana — julio `3289` (2 filas), agosto `3488` (3 filas). **En julio el temario tenía dos cuentas
+con filas en `CC` y el deck usó una.** No hay regla que diga cuál, y **eso no se inventa**
+(`CLAUDE.md` §4). Es pregunta al equipo.
+
+⚠⚠ **La trampa material, medida al paso, y explica el error del 22/08 mejor que el descuido:**
+`3289-JUNJDGAG` tiene `fecha_fin` = **30/07** en el export del 31/07 y **20/08** en el del 20/08.
+**La ventana de una cuenta se extiende**, así que en agosto una cuenta de **junio** cae dentro de la
+ventana por pertenencia — y un filtro por nombre la elige antes que a la de agosto.
+
+### ⚠ Y la lámina 5 queda pintada sin control
+
+`cc_base`, `cc_contactados` y `cc_contact_pct` **viven también en la lámina 5**, así que el día que
+se cableen **la 5 se pinta con ellos**. ⛔ **Los tres casos —`V-64`, `V-66`, `V-92`, y el `V-105` que
+sale de ellos— están etiquetados `resumen_ejecutivo_jm` y NINGUNO mide la lámina 5.**
+
+**Eso no la cierra de arrastre.** Un token verificado en una lámina no está verificado en la otra:
+puede ser el mismo número por diseño o puede ser que la 5 quiera otro universo, y **hoy nadie lo
+midió**. Cuando se cablee, la 5 sigue ⛔ con *"pintada sin control"* hasta que exista un caso que la
+mida — es la forma de `CLAUDE.md` §4 —*un número correcto puede salir de las filas equivocadas*—
+aplicada antes de que el número salga.
 
 ---
 
@@ -183,3 +223,4 @@ acumulando entre el armado del deck y el export— y **un ±% no sirve de contro
 | fecha | qué |
 |---|---|
 | 22/08/2026 | Nace con la Parte A del `_27`. Estado inicial: 0 ✅ · 5 🟡 · 18 ⛔ |
+| 22/08/2026 | Parte C del `_27`. **Ninguna fila se movió de estado, y eso es el resultado**: la 2 y la 5 siguen ⛔. Lo que cambió es el *«qué falta»* — el Call Center pasó de *"sin cablear"* a **`MAPEO` escrito y cableado frenado por `X-28`**, que es un bloqueo con nombre en vez de un hueco. Y la 5 queda anotada como **pintada sin control**, para que no se cierre de arrastre el día que se cablee la 2 |

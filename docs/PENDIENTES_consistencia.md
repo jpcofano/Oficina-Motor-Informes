@@ -1885,6 +1885,49 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
 > nacieron en documentos hoy congelados y necesitan un lugar vivo. Al responderse, la
 > respuesta va al documento dueño del hecho y la pregunta se tacha acá.
 
+### 2026-08-22 (tarde) · La tercera: ¿qué cuentas entran en el bloque Call Center? — `X-28`
+
+> ⛔ **Bloquea el cableado de los cuatro `cc_*`.** El `MAPEO` de `looker/CC` ya está escrito y la
+> definición de la columna está validada `exacto` (`V-105`); **lo único que falta es esto**.
+
+**3 · El bloque Call Center del Resumen publica UNA SOLA CUENTA. ¿Cuál, y por qué ésa?**
+
+**Todo lo medible está medido**, y ninguna regla escrita reproduce la selección:
+
+| candidato | da, para 24–31/07 | el deck publica |
+|---|---|---|
+| pertenencia sola (`ventana_ref` → `Cuentas`, `R-16`) | **18 cuentas · 22 filas · 100.197** | 2 · 6.011 |
+| `nombre_campaña CONTIENE JM` — la clave de `V-64` | **2 cuentas · 5 filas · 13.965** | 2 · 6.011 |
+| «las cuentas que el temario nombra» | ídem — julio nombra `3289` **y** `3387` | 2 · 6.011 |
+
+⭐ **El primero es el gabinete entero** —`RDV Ministros | <cada ministro>`—, misma familia que
+`R-15` addendum 1. Factor **16,7**.
+
+⛔ **Y el filtro por nombre falla por los dos lados a la vez**, que es lo que lo descarta del todo:
+deja entrar `3387-JULJDGGC`, que también dice «JM» y también es del temario, **y deja afuera la
+cuenta correcta de agosto** — `3488-AGOJDGAG` se llama *"TE CUENTO | SALUD Eje Sur Viernes 14/8"* y
+**no dice «JM» en ninguna parte**.
+
+**Lo único consistente en los dos decks: una sola cuenta.** Julio `3289` (2 filas), agosto `3488`
+(3 filas). **En julio el temario tenía dos cuentas con filas en `CC` y el deck usó una**, y no hay
+columna, fecha ni nombre que diga cuál.
+
+**Las tres formas que podría tener la respuesta**, para que se pueda contestar corto:
+**(a)** *"es el encuentro destacado de la semana, lo elige una persona"* → hace falta una columna
+que lo declare; **(b)** *"es el último / el primero del temario"* → es una regla y se cablea;
+**(c)** *"debería ser la suma de todos y el deck de julio está mal"* → entonces el número esperado
+es 5 filas / 13.965 y `V-64` hay que revisarlo.
+
+⚠ **No se elige por descarte.** `CLAUDE.md` §4: *no inventar el faltante* — un supuesto razonable
+metido en silencio es indistinguible de una instrucción y sobrevive a la corrida.
+
+⚠⚠ **Y un dato que hay que pasarle a quien conteste, porque cambia lo que puede afirmar:** la
+ventana de una cuenta **se extiende sola**. `3289-JUNJDGAG` tiene `fecha_fin` = **30/07** en el
+export del 31/07 y **20/08** en el del 20/08. Así que **una cuenta de junio cae dentro de la ventana
+de agosto por pertenencia**, y cualquier regla que dependa sólo de fechas la va a tomar.
+
+---
+
 ### 2026-08-22 · Las dos preguntas del Resumen Ejecutivo, con todo lo medible ya medido
 
 > **Las dos salen del camino del fixture**, contra `Seguimiento Digital  2026-08-20.zip`
