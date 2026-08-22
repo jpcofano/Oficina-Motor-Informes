@@ -13333,3 +13333,63 @@ control»**: los tres `cc_*` viven también ahí, y los cuatro casos que los val
 
 **Commits:** `1bf35f5` (`V-105`, `C-69`, `C-70`), `5b75625` (el `MAPEO`, el freno y su control),
 `8e2a517` (el tablero y `X-28`).
+
+
+---
+
+## 2026-08-22 (tarde) — `X-28` no cierra, y aparece `X-29`, que es más grande
+
+**El pedido era cerrar `X-28` contra tres fixtures. Hay dos.**
+`Seguimiento Digital2026-08-06.zip` **no trae `Base Looker.xlsx` ni deck de `jm`** —sólo el `.pptx`
+de SECCO— y `CC` no está en ninguno de sus tres libros, verificado hoja por hoja. ⚠ **El límite es
+de decks, no de bases:** del export del 20/08 se puede leer cualquier ventana, pero eso no da un
+tercer **valor publicado** contra el cual comparar.
+
+### El barrido, a ciegas — 0 de 13
+
+Las trece propiedades se declararon **antes** de mirar el resultado, como pidió el prompt.
+**Ninguna sola acierta en los dos períodos.** Sobreviven **3 de 78** pares y **18 de 286** ternas.
+
+⭐⭐ **`JDGAG` está en las 21 reglas sobrevivientes** — ninguna prescinde de él. Acierta solo en
+julio; en agosto da **dos** cuentas, `3289` y `3488`.
+
+⛔ **Y lo único que le falta para cerrar solo es excluir a `3289` en agosto — que está ahí por la
+deriva de `fecha_fin`.** O sea: **el desempate lo fuerza un artefacto del dato, no el negocio.**
+
+⛔⛔ **No se escribió ninguna regla, y el motivo es que los tres desempates empatan:** `Finalizada`,
+`duración ≤ 30 d` y `≤ 14 d` aciertan **los dos períodos por igual**. Elegir uno sería lo que el
+prompt prohíbe — *la regla tiene que decir qué cuenta se toma antes de mirar el resultado*.
+
+⚠ **Y una advertencia sobre `JDGAG` para que no se lea más fuerte de lo que es:** hay **124 cuentas
+`JDGAG` con filas en `CC`**. No señala al encuentro de la semana — **lo recorta la ventana**. Los
+«1 a 1» `3354-JULJDGAG` y `3346-JULJDGAG` **también son `JDGAG`** y sólo no compiten porque no
+tienen filas en `CC`.
+
+### ⛔⛔ `X-29` — la `fecha_fin` de una cuenta se extiende sola
+
+**Medido entre los dos fixtures**, 959 cuentas comunes: **28 cambiaron `fecha_fin`**, **27 se
+extendieron**, mediana **21 días**, máximo **157**.
+
+⭐ **El 2,9 % engaña: lo que importa es a cuántas ventanas las mete.** La ventana **14–20/08** pasa
+de **14 cuentas** con las fechas viejas a **32** con las nuevas — **18 entran sólo por la deriva,
++129 %**.
+
+⭐⭐ **Y la mayor extensión conecta dos hallazgos que veníamos tratando por separado:**
+`2976-MAYPCCVC`, *"Campañas genéricias RDV JM"*, **27/07 → 31/12, +157 días** — **es exactamente la
+cuenta que aporta 15,4 M de los 25,6 M de Programmatic y entra por las tres plataformas**. Lo que
+faltaba era **cómo entra**, y es esto: su ventana se estiró hasta fin de año, así que solapa
+cualquier semana. `A-06` y `A-07` **tienen acá su mecanismo**.
+
+**Alcance:** todo lo que use `ventana_ref: 'Cuentas'` — hoy `looker/DIGITAL` y `looker/CC`, o sea
+los ocho `imp_*`, los cuatro `cc_*` y sus `gcba_*`.
+
+⚠ **No rompe: agranda.** El número sigue siendo un número, y **ninguna verificación del motor lo
+puede ver porque el motor hace exactamente lo que se le pidió.** Es el número plausible de
+`CLAUDE.md` §4 **producido por el dato en vez de por el código**.
+
+⚠⚠ **Trampa de método que sale de acá:** una medición de pertenencia **no es reproducible sin decir
+de qué export salieron las fechas** — la misma ventana sobre el mismo `CC` da **14 o 32** cuentas.
+Es *un fixture es una foto fechada*, con el agravante de que **la foto que cambia no es la de los
+datos: es la del recorte**.
+
+**Commits:** `4922705` (la corrección del 1 a 1 contra el Resumen), y el de `X-28`/`X-29`.
