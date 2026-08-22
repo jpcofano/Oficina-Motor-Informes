@@ -4696,6 +4696,71 @@ function revertirMarcaDeFrecuencia() {
   return r;
 }
 
+
+/* ══════════ `2026-08-22` — «N envíos» cuenta ENVÍOS, no piezas ══════════
+ *
+ * ⭐ **La definición la contestó el fixture, no una decisión.** Medido el 22/08 sobre
+ * `docs/_fixtures/Seguimiento Digital  2026-08-20.zip` (`sha256 f8ef3227…`), ventana 14–20/08,
+ * con la lista blanca de `D-21` (`mail_estado ∈ {Implementado, En curso}`) y el corte de `R-15`
+ * (`mail_remitente = jorge.macri@…` para `jm`):
+ *
+ * ```
+ * digital/Directa Mail · ambito=jm    →  6 filas · 541.002 enviados · 538.291 entregados
+ * digital/Directa SMS  · sin ámbito   →  3 filas
+ * ```
+ *
+ * **El deck del equipo publica «6 envíos de Mail» y «3 envíos de SMS».** Los tres casilleros
+ * cuentan **filas de la solapa**, no la suma de la columna `Enviados`.
+ *
+ * ⛔ **Lo que publicaba el motor era correcto para otra pregunta**, que es el peor caso: `541.002`
+ * es de verdad la cantidad de mails enviados, y al lado del rótulo «6 envíos» del equipo se lee
+ * como un error de seis órdenes de magnitud. La aritmética cerraba, nada fallaba, y el rótulo
+ * mentía.
+ *
+ * ⭐ **Y el molde ya estaba en la misma hoja: `m2_envios`.** Está cableado
+ * `CONTEO` sobre `mail_id_cuenta` desde antes, y publica 33 contra los 24 del equipo — el mismo
+ * orden. **No se inventa una forma: se calca la que ya funciona.**
+ *
+ * ⚠ **`CONTEO` cuenta FILAS, no valores no vacíos** — `opCONTEO` devuelve `valores.length` y
+ * `valoresDeCtx_` mapea 1:1 sin filtrar. Por eso el `campo_logico` pasa a ser la columna de la
+ * clave (`*_id_cuenta`) y no la de volumen: da lo mismo para el número, y **dice lo que cuenta**.
+ *
+ * ⚠ **Lo que este cambio NO cierra:** `gcba_sms_entregados`. El equipo publica 3.614 y el fixture
+ * da **0** — las tres filas de la ventana todavía no tenían los volúmenes cargados el 20/08.
+ * **Es un límite del fixture, no un defecto del motor**, y se mide con un export más fresco.
+ */
+function cablearEnviosComoConteo() {
+  var r = curarCamposMarcadores_([
+    { marcador: 'mail_envios',      informe_id: 'jm', operacion: 'CONTEO', campo_logico: 'mail_id_cuenta' },
+    { marcador: 'gcba_mail_envios', informe_id: 'jm', operacion: 'CONTEO', campo_logico: 'mail_id_cuenta' },
+    { marcador: 'gcba_sms_envios',  informe_id: 'jm', operacion: 'CONTEO', campo_logico: 'sms_id_cuenta' }
+  ]);
+
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  /* ⚠ **Cero celdas escritas NO es éxito.** `curarCamposMarcadores_` falla con diagnóstico cuando
+   * no encuentra la fila, pero «ya estaba» también da cero — y son dos cosas distintas. Se dicen
+   * distinto: una corrida que no hizo nada tiene que decirlo (`CLAUDE.md` §4). */
+  if (!r.cambios_escritos) {
+    Logger.log('ⓘ Cero celdas escritas: los tres ya estaban en CONTEO. No se tocó nada.');
+    return r;
+  }
+
+  Logger.log('== «N envíos» pasa a CONTEO: ' + r.cambios_escritos + ' celda(s) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" → "' + a.nuevo + '"');
+  });
+  Logger.log('');
+  Logger.log('Esperado en la próxima corrida de `jm` sobre agosto_14_20, contra el deck del equipo:');
+  Logger.log('   «N envíos de Mail» JM   →  6   (publicaba 541.002)');
+  Logger.log('   «N envíos de Mail» GCBA →  73  (publicaba 2.361.163) · el fixture del 20/08 da 61,');
+  Logger.log('                                   que es la base sin terminar de cargar, no un error');
+  Logger.log('   «N envíos de SMS»  GCBA →  3   (publicaba 29.979)');
+  Logger.log('');
+  Logger.log('⚠ Los ENTREGADOS no se tocan: mail_entregados de JM ya reproduce EXACTO (538.291).');
+  return r;
+}
+
 /* ══════════ `2026-08-20_7` — cerrar para generar (20/08/2026) ══════════
  *
  * Dos migraciones que se corren **en este orden y no en el otro**, y el motivo es del escritor:
