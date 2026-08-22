@@ -2121,6 +2121,30 @@ esta regla corrige **la pertenencia**, no el recorte temporal.
 ⚠ **Las filas sin fecha NO se descartan.** No tener fecha no es tener una ventana larga; `leerFuente`
 ya las cuenta en `filas_sin_fecha` y ésa es otra discusión.
 
+### ✅ VERIFICADO CONTRA DATOS — 22/08/2026, corrida de `jm` sobre `agosto_14_20` (`V-108`)
+
+**El tope actuó y el control cierra.** Hasta acá la regla sólo tenía el control de las 21 cuentas
+medidas en `tools/probar-tope-ventana.js`; **esto es la corrida**, con
+`CONFIG.tope_dias_ventana_cuenta = 90` sembrado y leído.
+
+| | antes | después | |
+|---|---|---|---|
+| **`imp_prog` JM** | 24.783.992 | **9.794.231** | **−14,99 M**, contra los **15,4 M** medidos para `2976-MAYPCCVC` |
+| impresiones GCBA | 166,7 M | **89,0 M** | |
+| `imp_meta` JM | — | — | bajó **~500 mil** |
+| `imp_google` JM | — | — | bajó **~420 mil** |
+
+⭐⭐ **Y el control que descarta la sobre-corrección es la ASIMETRÍA, no la baja.** Programmatic cayó
+**15 M** y Meta y Google **medio millón cada uno**. **Si el tope hubiera cortado cuentas de
+encuentros, las tres habrían caído parejo** — una cuenta de encuentro pauta en las tres plataformas.
+La asimetría es la firma de que sacó **una cuenta genérica de DV360**, que es exactamente lo que se
+quería. Coherente con que `3488-AGOJDGAG` dure **7 días** y sobreviva a cualquier tope.
+
+⚠ **Y lo que NO cambia: los ocho siguen en `_revisar`.** **El tope arregla el UNIVERSO, no la
+naturaleza de la fuente** — `looker/DIGITAL` sigue siendo solapa de **estado** (`R-29`) e
+**inestable por CAMBIO** (`R-31`). Son motivos independientes: **arreglar uno no saca la marca del
+otro.**
+
 ⚠⚠ **El efecto sobre los números publicados es GRANDE y no está verificado contra un deck.** En la
 ventana 14–20/08 el tope deja afuera **12 de 73** cuentas, entre ellas `2961-ABRSEGGJ` (108 d) con
 **332 M de impresiones**, la más grande del conjunto. **La primera corrida con el tope activo tiene
