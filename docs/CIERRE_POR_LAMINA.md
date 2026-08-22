@@ -119,6 +119,25 @@ que ya sale, cuesta cero código y no depende de nadie; **(b)** pedirle el dato 
 
 ---
 
+## ⏸ En espera de la corrida de `agosto_14_20` — no se cablea nada antes
+
+**Decisión del usuario, 22/08.** `ecv_fecha` y `ecv_barrio1-3` **no se cablean todavía**, y el
+motivo no es de prioridad:
+
+⛔ **`R-30` entra con `tope_dias_ventana_cuenta = 90` y saca 12 de 73 cuentas de la ventana — una
+con 332 M de impresiones—, así que mueve los ocho `imp_*` sin verificar.** Meter un cableado nuevo
+en el mismo deck haría **dos cambios a la vez**.
+
+⭐ **Y dos cambios en el mismo deck no se pueden separar.** Si un número se mueve, no hay forma de
+saber cuál de los dos lo movió — y las dos causas mandan a trabajos opuestos: revisar el tope, o
+revisar el cableado. Es la misma disciplina del canario y del testigo: **una comparación sólo
+significa algo si la única diferencia entre las dos tomas es el cambio que se está midiendo**.
+
+**El orden, entonces:** corrida con el tope → verificar `imp_*` contra el deck del equipo → recién
+ahí el cableado nuevo.
+
+---
+
 ## Números que nacen sin validar
 
 ⚠ **Un número publicado sin caso no es un número verificado, y conviene que tenga su renglón** —

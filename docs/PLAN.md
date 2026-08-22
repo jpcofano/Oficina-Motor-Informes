@@ -1850,7 +1850,7 @@ agarra hasta que la otra fase cierre**.
 |---|---|---|
 | 1 | verificar la tanda de los nueve `camp_*` | ✅ **cerrado** — el arreglo es `c50984b`, *"la cuenta de la campaña entra donde el consumidor la busca"*, y la lámina de campaña reproduce por plataforma |
 | 2 | `12 bis` — testigo de `D-31` contra la planilla | ✅ **cerrado** — `verificarEncabezadosDeMapeo()` corrió el 22/08, después del arreglo del IVR |
-| 3 | `C-64` a `pauta_*` y Alerta Naranja | 🟡 **a medias** — los seis `pauta_*` están medidos (las columnas son **flags 0/1** y publican `1·1·1`). **Alerta Naranja sigue sin tocar** |
+| 3 | `C-64` aplicado a los seis `pauta_*` | 🟡 **a medias** — los seis `pauta_*` están medidos (las columnas son **flags 0/1** y publican `1·1·1`); falta aplicarles el criterio de `C-64`. ⛔ **Alerta Naranja SALIÓ de este frente** — ver abajo |
 | 4 | `13 bis` — `DIMENSIONES_` a hoja de registro | ⛔ **abierto** — sigue siendo una `var` en `Instalar.gs` y `SOLAPAS` no tiene ninguna fila `DIMENSIONES` |
 | 5 | `enc_visualizaciones` y `enc_clics` | ⛔ **abierto** — no están en `MARCADORES`; el único de la familia es `enc_impresiones` |
 | 6 | `alcance`/`clics` de campaña + `m2_campanias` | 🟡 **a medias** — `camp_alcance` y `camp_clics` **ya están cableados**; queda **sólo `m2_campanias`**, que espera una definición del usuario |
@@ -1859,6 +1859,21 @@ agarra hasta que la otra fase cierre**.
 **Los que siguen abiertos —3 (lo que queda), 4, 5, 6 (lo que queda) y 7— no desaparecen: pasan a
 `Higiene`**, más abajo, porque ninguno bloquea el cierre de `D-38` y ninguno tiene dependencia
 escrita contra otro. **El orden entre ellos es del usuario.**
+
+#### ⛔ Alerta Naranja salió del frente 3 — decisión del usuario, 22/08/2026
+
+**Entró por error.** No se descartó por costo ni por prioridad: **nunca tuvo que estar ahí.** El
+frente 3 queda **sólo con los seis `pauta_*` y `C-64`**.
+
+⭐ **Se escribe en vez de borrarse en silencio, y el motivo es concreto:** si más adelante aparece
+un token o una lámina de Alerta Naranja, **tiene que saberse que esto ya se decidió y no volver a
+discutirse**. Un ítem que desaparece sin dejar rastro vuelve a la lista en la próxima
+reorganización, y entonces nadie sabe si salió por decisión o por olvido.
+
+⚠ **Y hay que saber que la formulación vieja sigue en pie donde no se puede editar:**
+`docs/BITACORA.md` dice *"lo que queda es aplicar el mismo criterio a `pauta_*` y Alerta Naranja"*
+— es **append-only** y no se toca (`CLAUDE.md` §7). Por el desempate de §7 **gana esta línea, que
+es la más reciente**. Mismo caso que la nota vencida de `R-27`.
 
 ---
 
