@@ -224,7 +224,7 @@ select:focus,input[type=text]:focus{outline:2px solid var(--color-primary);outli
 /* Lo que todavía no tiene backend. Prenderlas sin escribir el backend primero sería ofrecer
  * botones que fallan: `Confirmar anclaje` y `Informe personalizado` están diseñados **sin
  * contrato** y el README es explícito en no inventarles nombres de función ni de campo. */
-var FLAGS = { anclajes: false, personalizado: false, proximo: true };
+var FLAGS = { anclajes: true, personalizado: false, proximo: true };
 
 /* ⭐ `2026-08-21_1` — **el techo lo dice el backend, que es el que lo aplica.**
  *
@@ -248,6 +248,8 @@ var S = {
   secciones: {},            // seccion_id -> bool
   conSimbolos: true,        // los cuatro símbolos del `2026-08-20_1`; en falso, el crudo `«FALTA:token»`
   temarioMsg: {},           // clave de cuadrado -> {texto, error}
+  anclajes: null,           // `2026-08-21_16` — lo que devolvió panel_getAnclajes(); null = sin pedir
+  anclajesMsg: null,        // el resultado de la última confirmación, {ok, texto}
   estado: 'form',           // form | generando | listo | fallo
   forzarForm: false,        // "generar de nuevo, a sabiendas"
   resultado: null, motivo: null,
@@ -852,6 +854,84 @@ function vistaCorridas(){
   }).join('');
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * Anclajes — `2026-08-21_16` Parte C
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * `D-29` (addendum 21/08) decidió que esta pantalla **lee `ANCLAJE_PENDIENTE`** y no corre
+ * `anclarEncuentros`, que tardaría ~50 s en cada apertura. Lo que se ve es lo que dejó la última
+ * corrida — **y es exactamente lo que la próxima va a leer**, porque la hoja no es un caché: es
+ * el registro que el motor consulta con `anclajeYaConfirmado_` antes de anclar.
+ */
+function cargarAnclajes(){
+  /* ⚠ **Sin `pintar()` acá**, y no es un olvido: `vistaAnclajes()` llama a esta función, y
+   * `vistaAnclajes()` corre **desde adentro** de `pintar()`. Pintar de nuevo desde acá reentra en
+   * el mismo `pintar()` que todavía no terminó. El estado `'cargando'` alcanza: quien llamó ya
+   * está por escribir el HTML, y el handler pinta cuando llega la respuesta. */
+  S.anclajes = 'cargando';
+  google.script.run
+    .withSuccessHandler(function(r){ S.anclajes = r || {ok:false, motivo:'sin respuesta'}; pintar(); })
+    .withFailureHandler(function(e){ S.anclajes = {ok:false, motivo:String(e && e.message || e)}; pintar(); })
+    .panel_getAnclajes();
+}
+
+function confirmarAnclaje(tipo, nombre, elegido){
+  S.anclajesMsg = null;
+  google.script.run
+    .withSuccessHandler(function(r){
+      S.anclajesMsg = r && r.ok
+        ? {ok:true, texto: (r.accion === 'confirmado' ? 'Confirmado: ' + r.elegido : 'Desconfirmado')}
+        : {ok:false, texto: (r && r.motivo) || 'no se pudo escribir'};
+      // Se relee la hoja: lo que vale es lo que quedó escrito, no lo que se pidió.
+      cargarAnclajes();
+      pintar();
+    })
+    .withFailureHandler(function(e){
+      S.anclajesMsg = {ok:false, texto:String(e && e.message || e)};
+      pintar();
+    })
+    .panel_confirmarAnclaje(tipo, nombre, elegido);
+}
+
+/** Una fila de anclaje, con sus candidatos y el umbral al lado. */
+function filaAnclaje(a, umbral, confirmada){
+  var tipo = JSON.stringify(a.tipo), nom = JSON.stringify(a.nombre_buscado);
+
+  var cands = (a.candidatos || []).map(function(c){
+    var p = Number(c.puntaje);
+    /* ⚠ El puntaje se muestra CONTRA EL UMBRAL, no solo. Un 0,54 no significa nada sin el 0,6
+     * al lado — es la misma razón por la que `D-29` los reporta juntos en `excluidos`. */
+    var bajo = !isNaN(p) && !isNaN(umbral) && p < umbral;
+    var elegido = confirmada && a.elegido === c.nombre;
+    return '<li class="run">' +
+      '<div><div class="run-name">' + esc(c.nombre) + (elegido ? ' ✓' : '') + '</div>' +
+      '<div class="run-when"><span class="mono">' + esc(isNaN(p) ? String(c.puntaje) : p.toFixed(2)) +
+      '</span>' + (bajo ? ' · por debajo del umbral ' : ' · umbral ') +
+      '<span class="mono">' + esc(String(umbral)) + '</span></div></div>' +
+      (elegido
+        ? '<button type="button" onclick=\'confirmarAnclaje(' + tipo + ',' + nom + ',"")\'>Desconfirmar</button>'
+        : '<button type="button" onclick=\'confirmarAnclaje(' + tipo + ',' + nom + ',' +
+          JSON.stringify(c.nombre) + ')\'>Elegir</button>') +
+      '</li>';
+  }).join('');
+
+  /* ⛔ El límite 2 del addendum a `D-29`: la hoja ACUMULA y `registrarAnclajePendiente_` nunca
+   * borra, así que puede haber filas de encuentros que ya no van al deck. Se marcan — no se
+   * borran ni se esconden. */
+  var vieja = a.vigente === false
+    ? '<div class="run-when">⚠ <strong>ninguna reunión vigente la reclama</strong> — quedó de una ' +
+      'corrida anterior, o la reunión pasó a <span class="mono">mostrar = no</span>. ' +
+      'Confirmarla no cambia el deck de esta semana.</div>'
+    : '';
+
+  return '<div class="box">' +
+    '<div class="run-name">' + esc(a.nombre_buscado) + ' <span class="mono">(' + esc(a.tipo) + ')</span></div>' +
+    vieja +
+    (cands ? '<ul class="list-reset">' + cands + '</ul>'
+           : '<p class="muted">Sin candidatos puntuados. No hay nada que elegir desde acá.</p>') +
+    '</div>';
+}
+
 function vistaAnclajes(){
   if (!FLAGS.anclajes){
     return '<div class="box">Confirmar a mano el encuentro de una campaña está diseñado, pero ' +
@@ -859,14 +939,64 @@ function vistaAnclajes(){
       '<p class="muted">Mientras tanto, un encuentro que el motor no puede asociar con seguridad ' +
       'queda listado aparte con su puntaje, y lo decide una persona.</p>';
   }
-  return '<p class="muted">—</p>';
+
+  if (S.anclajes === null){ cargarAnclajes(); return '<p class="muted">Leyendo…</p>'; }
+  if (S.anclajes === 'cargando'){ return '<p class="muted">Leyendo…</p>'; }
+  if (!S.anclajes.ok){
+    return '<div class="box">No se pudo leer <span class="mono">ANCLAJE_PENDIENTE</span>: ' +
+      esc(S.anclajes.motivo || '') + '</div>';
+  }
+
+  var d = S.anclajes;
+  var h = '';
+
+  if (S.anclajesMsg){
+    h += '<div class="box">' + (S.anclajesMsg.ok ? '✅ ' : '⛔ ') + esc(S.anclajesMsg.texto) + '</div>';
+  }
+
+  /* ⭐ **De cuándo es lo que se está mirando, dicho en pantalla** — es lo que decidió la Parte A.
+   * Sin esta línea, la pantalla se lee como el estado de hoy y no lo es. */
+  h += '<p class="muted">Esto es lo que dejó <strong>la última corrida</strong>, no un cálculo de ' +
+    'ahora — y es exactamente lo que va a leer la próxima. Un encuentro que todavía no pasó por ' +
+    'ninguna corrida <strong>no aparece acá</strong>: esta pantalla muestra lo pendiente de ' +
+    'confirmar, no todo lo anclable.</p>';
+
+  if (!d.existe_hoja || (!d.pendientes.length && !d.confirmadas.length)){
+    /* ⚠ El cartel dice POR QUÉ puede estar vacía. Un "no hay datos" a secas se lee como error, y
+     * acá vacío es el estado normal: significa que ningún anclaje cayó bajo el umbral. */
+    h += '<div class="box">No hay ningún anclaje esperando decisión.</div>' +
+      '<p class="muted">Puede ser por dos motivos, y los dos son normales: <strong>todavía no ' +
+      'corrió ningún informe</strong> en esta planilla, o <strong>ningún encuentro quedó por ' +
+      'debajo del umbral</strong> <span class="mono">' + esc(String(d.umbral)) + '</span> — que ' +
+      'es el caso bueno. No es un error.</p>';
+    return h;
+  }
+
+  h += '<h3>Esperando decisión (' + d.pendientes.length + ')</h3>';
+  h += d.pendientes.length
+    ? d.pendientes.map(function(a){ return filaAnclaje(a, d.umbral, false); }).join('')
+    : '<p class="muted">Ninguno. Todos los anclajes registrados ya tienen decisión.</p>';
+
+  /* ⚠ Las confirmadas van VISIBLES y no escondidas: son las decisiones que la próxima corrida va
+   * a respetar sin volver a preguntar, y esconderlas las vuelve invisibles. */
+  h += '<h3>Ya decididos (' + d.confirmadas.length + ')</h3>';
+  h += '<p class="muted">La próxima corrida los respeta <strong>sin volver a preguntar</strong>.</p>';
+  h += d.confirmadas.length
+    ? d.confirmadas.map(function(a){ return filaAnclaje(a, d.umbral, true); }).join('')
+    : '<p class="muted">Ninguno todavía.</p>';
+
+  if (d.sin_reunion > 0){
+    h += '<p class="muted">⚠ ' + d.sin_reunion + ' de estas filas no las reclama ninguna reunión ' +
+      'vigente. Quedan a la vista igual: la hoja acumula y nada se borra desde acá.</p>';
+  }
+  return h;
 }
+
 
 function vistaProximo(){
   var items = [
     ['Pegar el temario', 'Pegar la agenda y que el motor detecte los encuentros.'],
     ['Vista previa antes de generar', 'Ver las láminas que van a salir antes de esperar la corrida.'],
-    ['Confirmar el anclaje', 'Ligar a mano un encuentro con su campaña. Diseñado, sin backend.'],
     ['Informe personalizado', 'Armar un informe agregando bloques por tipo. Diseñado, sin backend.'],
     ['Agregar un marcador desde el panel', 'Necesita su propio camino declarado en ESCRITORES.md.'],
     ['Aviso por mail al terminar', 'Para no tener que quedarse mirando la corrida.']
