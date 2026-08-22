@@ -1723,51 +1723,68 @@ de pertenencia. Retirarla es la Fase 4 de `D-23` y tiene su propio costo.
 
 ## 2 · Próximo (ordenado, con dependencias)
 
-### Los frentes abiertos al 14/08/2026 — el orden
+### Los frentes — reordenados el 21/08/2026 (`2026-08-21_17` Parte A)
 
-> **Esta lista manda sobre el orden; los tramos de abajo siguen describiendo el trabajo.** Los
-> `T<tramo>.<n>` no se retiran ni se renumeran: son la estructura del corte vertical y su texto
-> es la especificación de cada pieza. Lo que cambió es que el trabajo de agosto dejó de entrar
-> por tramos y entra por frentes, así que **el orden vive acá y el detalle allá**.
-
-**El criterio del orden, y es la mitad de la decisión:** la **definición del vocabulario va antes
-que todo cableado nuevo.** Cada marcador que se crea con la estructura vieja es deuda que se
-contrae **sabiendo** que es deuda. Una vez tomada la decisión, lo nuevo nace bien y lo viejo se
-migra sin apuro — por eso la migración de los 51 no bloquea a nadie, pero la decisión sí.
-
-> **La decisión que ordena todo lo demás (usuario, 16/08): primero se cierra la migración,
-> después se cablea.** Por eso el frente 7 (`C-61`) y el 8 bajaron a §3 como **bloqueados por esa
-> decisión**, no como pendientes sueltos. La secuencia viva es: **Parte C del piloto → 12 bis →
-> tanda 1**.
+> **Reemplaza a la tabla de catorce frentes del 14–18/08**, que quedó con **seis de quince filas
+> tachadas** y **sin nada del trabajo del 19 al 21/08** — catorce entradas de bitácora que
+> ninguna fila mencionaba. Una lista donde lo cerrado ocupa la mitad no ordena nada.
 >
-> **Estado al 16/08/2026** (bloque 1 de la corrida nocturna `2026-08-16_1`): **los frentes 1, 2,
-> 4 y 6 están hechos**, y el **5 está migrado y pendiente de verificación** — no "en curso": la
-> escritura terminó, lo que falta es leer la Parte C, y falta porque `looker` estaba
-> recalculando. **La precondición para leerla es el canario `gcba_frecuencia`**: mientras dé `0`,
-> la base está en tránsito y el resultado no significa nada.
+> ⛔ **Lo cerrado no se borró: salió de acá.** Su rastro está en `BITACORA.md`, que es el dueño de
+> *"qué se hizo y cuándo"* (`CLAUDE.md` §7), y los frentes cerrados conservan su texto completo
+> en el historial de este archivo.
 >
-> **El frente 7 ya no es el primero vivo**: su mitad de escritorio está medida (el motor lee por
-> posición, y `looker/CC` no tiene ni una fila de `MAPEO`) y el resto quedó **diferido detrás de la
-> migración**, en §3.
+> **Los `T<tramo>.<n>` de abajo no se retiran ni se renumeran** — sigue valiendo: son la
+> estructura del corte vertical y su texto es la especificación de cada pieza. Lo que se ordena
+> acá son los frentes.
+>
+> ⚠ **Y el detalle largo se movió, no se borró.** Diez de las quince filas viejas pasaban de un
+> párrafo —la peor, 1667 caracteres— contra la regla de apertura de este archivo. Las mediciones
+> que traían adentro ya viven en `BITACORA.md` y en `D-31`; acá queda el puntero.
 
-| # | frente | por qué va acá |
+**El criterio del orden no cambia** (usuario, 16/08): la **definición del vocabulario va antes que
+todo cableado nuevo**, y **primero se cierra la migración, después se cablea**. La migración cerró
+el 17/08 (42 de 48, todo lo migrable), así que esa condición **ya no bloquea a nadie**.
+
+⚠ **Lo que este reordenamiento NO hizo:** inventar prioridades. Donde el orden entre dos ítems no
+sale de una dependencia escrita, quedaron como estaban — se dice abajo cuáles son.
+
+| # | frente | qué lo ordena |
 |---|---|---|
-| 1 | ~~**El alta de las 20 solapas de `reuniones`**, con su censo volcado a un documento de evidencia en `docs/` **antes** de escribirla~~ — **hecho 15/08**: son **24** filas, en **2 `fuente` · 5 `referencia` · 17 `ignorar`** | Cierra el `_1`. Es el punto 5 del `_4`, **frenado porque la medición existía sólo en un reporte de conversación** — el alta se escribe citando el documento, y cada nota de `ignorar` sale de una fila medida y no de una frase |
-| 2 | ~~**El sembrador deja de pisar un `uso` existente** *(`_3`)*~~ — **hecho 15/08, `D-32` verificado punta a punta**: `reuniones/Agenda funcionarios` puesta a mano en `fuente` contra un seed que decía `ignorar`, y el sembrador **no la revirtió** | **Va antes de la migración.** Ésa toca muchas filas de configuración y hoy existe un mecanismo que puede revertirlas en silencio — ya pasó con `CAMPAÑAS_DESGLOCE_DIGITAL` esta semana |
-| 3 | **`C-64` — las dos capas de la base**, aplicado a lo que falta | El caso **está cerrado como explicación**: filas contra agregado, resuelto en call center (`C-62`), IVR (`V-98`) y mail (`V-99`), y explica el patrón `X-16`/`X-17`. **Lo que queda es aplicar el mismo criterio a `pauta_*` y Alerta Naranja.** Va acá porque decide **de qué capa se lee**, no cómo se nombra: es independiente del vocabulario y condiciona todo cableado posterior |
-| 4 | ~~**`_2` — censo de dimensiones y `D-NN` del vocabulario**~~ — **hecho 15/08: `D-33` escrita**, sobre las 78 filas medidas, con las tres dimensiones y la frontera dimensión / restricción técnica trazada | La decisión de estructura: una medida, y el corte como **dimensión**. **Todo lo que se cablee antes de esto nace con el corte metido en el nombre** |
-| 5 | ~~**El piloto: `imp_total` y sus siete hermanos**~~ — ✅ **PASÓ, 16/08/2026 11:58.** Las ocho cuentas de filas **idénticas** al testigo, descuadre **cero** en los dos ámbitos, y el canario sin migrar confirmando desde afuera que se movió la base. ⚠ **No se verificó por igualdad de valores** —con `looker` moviéndose no se puede—: se verificó por **identidad de filas + descuadre + canario**. Detalle y criterio completo en §1, *"El piloto de `D-33` PASÓ"*. **Esto autoriza el frente 13** | **Es el caso que justifica el frente entero**, medido el 15/08: una medida × `ambito` (2) × `plataforma` (3, con `programmatic` por resta) = **ocho nombres para un solo hecho**. Se migra a una medida con dos dimensiones y se verifica que `jm` reproduzca los mismos números **contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`**, que es la línea base de `D-33`. Barato, y **si no reproduce, el plan se detiene acá** |
-| 6 | ~~**La letra manda, el título valida** — cada fila de `MAPEO` lleva el encabezado que espera encontrar en esa letra *(`_6`)*~~ — **hecho 14–15/08, `D-31`**: 154 filas con `encabezado`, las 7 vacías son las de `promoverFechasElegidas()`. **Con el límite que expuso `C-09`: el testigo documenta el rótulo, no el contenido**, y **nunca es fallback** | **Va antes de `C-61` porque le saca el filo.** Hoy insertar una columna corre todas las letras a su derecha y el mapeo apunta una más allá **sin fallar**: un `SUMA` sobre la columna de al lado devuelve un número, no un error. El título como testigo convierte eso en falla ruidosa. **La función que valida se difiere** (usuario, 14/08); **poblar la columna ya mide**, y esa medición puede encontrar mapeos ya corridos |
-| 7 | **`C-61`** — el alta de columna que mueve 229 cuentas · ⬇ **DIFERIDO a §3** (usuario, 16/08): *primero se cierra la migración, después se cablea*. La medición (a) ya está hecha y queda acá; el censo de `looker/CC` puede adelantarse porque es sólo lectura | **Bloquea el embudo de Call Center.** Dos mediciones antes de escribir: **(a)** si el motor lee CC **por encabezado o por posición** — si es por posición, una columna nueva corre todo lo demás **sin que nada falle**; **(b)** cuántos tokens ya validados cambian de valor, y **ninguno de los exactos vigentes puede moverse**. — **Medido el 16/08 (bloque 2 de la nocturna, sólo código y snapshot): el motor lee por POSICIÓN.** La letra de `MAPEO` se convierte en índice (`columnaLetraAIndice_`), de ahí sale el título, y con el título se extrae — **el encabezado es derivado de la posición, nunca un criterio propio**. **Y el riesgo cambia de signo: `looker/CC` tiene CERO filas de `MAPEO` y CERO marcadores**, así que hoy no hay mapeo de `CC` que un corrimiento pueda romper. **Lo que falta es de planilla** y está en la lista de corridas |
-| 8 | ⬇ **BAJADO a §3, Planificado y bloqueado** (usuario, 16/08) — el enunciado era falso y lo que queda depende de una decisión | Ver la fila *"`R-NN` del recorte heredado de Call Center"* en §3. **No se borra**: la entrada de allá dice cuál era la premisa anterior y por qué era falsa |
-| 9 | **`R-26`** — el "1 a 1" se comunica sólo por digital | **Independiente de todo lo demás**, y por eso puede adelantarse. Su Parte A puede falsar la premisa; si eso pasa, no se escribe nada y `R-26` queda como hueco |
-| 10 | **`enc_impresiones` / `enc_visualizaciones` / `enc_clics`** — ✅ **DESBLOQUEADO 18/08.** Falta cablear **dos**: `enc_visualizaciones` y `enc_clics` (sin fila). `enc_impresiones` **ya existe** en `reuniones/Agenda JM`, `ULTIMO`, `filtro = imp_totales!=0` | Operación confirmada 4 de 4. Se cablea **ya con el vocabulario decidido** (`D-33` addendum 2). ⚠ ~~**Antes hay que resolver si su solapa sigue apagada**: `digital/Digital` está en `ignorar` y cuatro marcadores la apuntan~~ — **PREMISA VENCIDA, medida el 18/08: hoy CERO marcadores apuntan a `digital/Digital`.** `enc_alcance` se re-apuntó a `digital/Alcance` el 12/08 (`_39`) y `enc_impresiones` vive en `reuniones`. **El bloqueo no existe.** Es la cuarta cifra del plan corregida midiendo |
-| 11 | **El embudo de Call Center** | Depende de **7 y 8**: sin el alta de columna no hay dato, y sin la regla no está declarado qué universo se cuenta |
-| 12 | **`alcance` y `clics` de campaña destacada, y `m2_campanias`** como `LISTA + CUENTA(LISTA)` | `m2_campanias` además espera una definición del usuario |
-| **12 bis** | ~~**Conectar el testigo de `D-31`**~~ — **HECHO la noche del 16/08.** `leerMapeoSinCache_` indexa `encabezado` (ésa era la causa raíz), `desalineamientoDeEncabezado_` compara —y recibe una **lista** de esperados, porque hay **12 grupos (base, solapa, letra) con más de una fila**—, el aviso sale por el cierre de corrida, y `verificarEncabezadosDeMapeo()` barre todo `MAPEO` sin generar informe. **El valor devuelto no cambia nunca.** Control positivo fuera de Apps Script extrayendo el código real: 13 afirmaciones, y los 5 mutantes mueren. **Falta su primera medición contra la planilla** | **El frente 6 dejó el dato y no la alarma**, y eso se midió el 16/08: `leerMapeoSinCache_` **ni siquiera indexa** la columna `encabezado`, y `buscarMapeo` devuelve sólo `{ hoja, columna }` — **no hay un punto del camino de lectura que compare nada**. Con el motor leyendo **por posición**, un corrimiento de columna hace que el mapeo apunte una más allá **sin fallar**; y con títulos repetidos —`Base_Digital` tiene ocho `ID Cuentas`— `obj[h] = fila[i]` **gana el último**, así que puede devolver **ni siquiera la columna vecina**. Va antes de la tanda 1 porque la migración toca muchas filas de configuración y conviene tener la alarma puesta antes, no después. ⚠ **La política ya está decidida en `D-31` y la función la aplica, no la reinventa:** no corregir la letra sola nunca, reportar los dos valores, no bloquear la corrida. **Y el límite es del instrumento, no una omisión:** el testigo compara **rótulos, no contenido** — `C-09` es la prueba, y tiene que estar dicho en el código y no sólo en `D-31`. Prompt: `docs/Prompts/2026-08-16_2_testigo_encabezado_conectado.md` |
-| 13 | **La migración, por tandas** — ⚠ **el alcance real son 48, no 78** (17/08; ver *"Tres cifras corregidas"*). ✅ **CERRADO 17/08/2026 — 42 de 48, que es TODO LO MIGRABLE.** Piloto, tandas 1, 2, 3 y 4 cerradas. ⚠ **Los seis restantes NO son una tanda pendiente ni deuda de vocabulario: son un hueco de dato** (`@ultimo_ambiguo`) — ver abajo. **Esto destraba el 13 bis** | Empieza por los que **ya tienen la dimensión escrita en el `filtro`** y sólo hay que sacarla del nombre: los `mail_*`/`gcba_mail_*` y `frecuencia`/`gcba_frecuencia`. **No son "los nueve pares `gcba_*`"** —eso era una cifra del snapshot del 11/08 que la medición corrigió—, y **los tres pares `pauta_*` NO entran**: tienen filtro vacío en los dos lados, así que son un número publicado dos veces y van a validación (`PENDIENTES`). **Cada tanda se compara contra `docs/_snapshots/MARCADORES_2026-08-15.tsv`, no contra la corrida anterior** — así los errores no se acumulan de tanda en tanda. **No bloquea a nadie:** lo nuevo ya nace con la estructura buena |
-| **13 bis** | **`DIMENSIONES_` pasa a ser hoja de registro** — ✅ **DECIDIDO** (usuario, 16/08): la tabla de traducción de dimensión lógica a expresión física **tiene que ser una hoja**, no un mapa en código. Es lo que `D-33` promete con la simetría hacia `MAPEO` y **hoy cumple a medias**: `MAPEO` es una hoja y agregar un mapeo es una fila; `DIMENSIONES_` vive en `Fuentes.gs` y agregar un valor exige **editar un `.gs` y pushear** — justo lo que `D-01` mide. ✅ **DESTRABADO el 17/08 al cerrar la tanda 4.** El motivo por el que esperaba sigue valiendo y conviene no perderlo: **mover la tabla mientras se migra es cambiar el traductor y lo traducido al mismo tiempo, y ninguna comparación aguanta las dos variables juntas.** Con la migración cerrada (42 de 48) esa colisión ya no existe. Prompt: `docs/Prompts/2026-08-16_6_dimensiones_a_hoja.md`, **sin ejecutar** |
-| 14 | **El catálogo de tokens generado desde `MARCADORES`** — qué mide cada uno, de dónde sale, con qué operación y con qué filtro · **primera versión hecha 16/08**: `tools/catalogo.js` → `docs/CATALOGO_tokens.md` | **Es el objetivo declarado de todo esto:** que alguien del equipo arme una filmina eligiendo tokens documentados que dicen qué son y cómo se arman. **Generado, no escrito a mano** — a mano se desincroniza en la primera migración. — **Se regenera después de cada tanda** (usuario, 16/08): es parte de cerrar la tanda, no una tarea aparte. ⚠ **Y para cuando se defina el formato definitivo: la columna `config` es el acierto de la primera versión y hay que conservarla como distinción.** Dice **"la fila está bien armada"**, no *"el token anda"* — y son cosas distintas: el cruce estático da **78 de 78** mientras el motor publica **diez en error**, porque ésos fallan en ejecución. Llamarla `estado` habría hecho leer lo segundo donde sólo dice lo primero |
+| 1 | **`2026-08-19_1` Parte E — verificar la tanda de los nueve `camp_*`** | ⭐ **Es lo más viejo abierto y lo único que quedó vivo de ese prompt.** Medido el 21/08: sus Partes **A, B, C y D ya las hicieron pasos posteriores** —el cargador escribe `id_cuenta` (`Campanas.gs`), `campo_id_cuenta` está en el seed, el formato `_revisar` existe (`D-34`), y los **nueve `camp_*` están en `MARCADORES`**—, y los cuatro archivados del addendum `1.1` también. **Falta sólo verificar**, y su punto 2 es el control que importa: la traza tiene que decir `rama por cuenta`, no `agregado global` — si `campo_id_cuenta` no llegó, **igual sale un número**, grande y plausible. Necesita una corrida |
+| 2 | **`12 bis` — la primera medición del testigo de `D-31` contra la planilla** | El código está hecho desde el 16/08 y **nunca se midió contra datos**. `verificarEncabezadosDeMapeo()` barre todo `MAPEO` sin generar informe: es una corrida barata y **destraba saber si hay mapeos corridos** |
+| 3 | **`C-64` aplicado a `pauta_*` y Alerta Naranja** | El caso está cerrado como explicación —filas contra agregado, resuelto en call center, IVR y mail—; **lo que queda es aplicar el mismo criterio**. Decide **de qué capa se lee**, así que condiciona todo cableado posterior |
+| 4 | **`13 bis` — `DIMENSIONES_` pasa a ser hoja de registro** | ✅ **Decidido y destrabado**; el prompt existe (`2026-08-16_6_dimensiones_a_hoja.md`) y **no corrió**. Es `D-01` en su forma más directa: agregar un valor de dimensión hoy exige editar un `.gs` y pushear. Esperaba a que cerrara la migración —mover el traductor y lo traducido a la vez no lo aguanta ninguna comparación— y **eso ya pasó** |
+| 5 | **`enc_visualizaciones` y `enc_clics`** | Los dos que faltan cablear del frente 10; `enc_impresiones` ya existe. Operación confirmada 4 de 4, y **el bloqueo que tenían no existe**: cero marcadores apuntan a `digital/Digital` (medido 18/08) |
+| 6 | **`alcance` y `clics` de campaña destacada, y `m2_campanias`** | `m2_campanias` espera una definición del usuario; los otros dos no dependen de nada |
+| 7 | **`14` — regenerar `CATALOGO_tokens.md`** | **No es una tarea aparte: es parte de cerrar cada tanda** (usuario, 16/08). Se corre `tools/catalogo.js`; a mano se desincroniza en la primera migración |
+
+**Sin orden entre sí, y se dice en vez de inventarlo:** los frentes **5, 6 y 7** no tienen ninguna
+dependencia escrita que los ordene entre ellos ni contra el 3 y el 4. Quedaron en el orden que
+traían. **El orden es del usuario.**
+
+**Lo que bajó a §3 y sigue allá:** el frente **7 (`C-61`)**, el alta de columna que mueve 229
+cuentas, y el **8**, la regla del recorte heredado de Call Center — con el **11**, el embudo, que
+depende de los dos. La razón por la que bajaron (*"primero se cierra la migración"*) **ya se
+cumplió**, así que lo que los mantiene allá es su propio destrabe, no aquélla.
+
+**El frente 9 se cerró midiendo, no por inferencia.** `R-26` **está escrita** en
+`REGLAS_NEGOCIO.md`, con medición del **17/08/2026** sobre 23 encuentros. La nota de `R-27` que
+decía *"reservado… al 14/08/2026 no se ejecutó"* es **anterior** y quedó vencida — por el
+desempate de §7 gana la fecha escrita más reciente. ⚠ **Esa nota sigue en pie y hay que saberlo
+al leerla**: `REGLAS_NEGOCIO.md` es append-only, así que no se edita — se deroga con fecha, y eso
+es otro paso.
+
+#### Lo del 19 al 21/08 que entró al plan y no estaba
+
+Catorce entradas de bitácora que **ninguna fila de la tabla vieja mencionaba**. No van como
+ítems porque **están cerradas**; se listan para que el plan deje de ignorarlas:
+
+`camp_*` del temario al deck (Parte 0) · el panel por secciones · la rama de validación · `C-21`
+cerrada por huella · el reloj por etapas y el límite duro · el `TypeError` de continuación · el
+diagnóstico de la regresión · los cuatro símbolos de faltante · la semana por defecto · el
+fixture como verificación · el vocabulario compartido · cerrar para generar · el anclaje en dos
+pasos · el corte por presupuesto · las cinco decisiones sin dueño · **`LAMINAS` declaradas y
+`D-37`** · la cesión de `digital` a `D-30` · **el panel de anclajes y el addendum a `D-29`**.
 
 ### ✅ Tanda 4 CERRADA — 17/08/2026 · **la migración está completa sobre lo migrable: 42 de 48**
 
