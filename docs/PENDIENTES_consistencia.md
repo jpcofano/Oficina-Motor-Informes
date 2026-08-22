@@ -6051,7 +6051,7 @@ riesgo se activa el día que alguien ponga un `u1_` en una lámina fija.
 
 ---
 
-### ⏸ P3 · Los dos alcances del 1 a 1 (PRE y POST) están cableados a la misma fila y publicarían el mismo número (21/08/2026)
+### ✅ ~~P3 · Los dos alcances del 1 a 1 (PRE y POST) están cableados a la misma fila y publicarían el mismo número~~ — **RESUELTO 21/08/2026**
 
 **Abierto y sin prioridad, por decisión del usuario (21/08/2026).** Queda escrito para no volver
 a preguntarlo.
@@ -6111,6 +6111,49 @@ del usuario.
 §4.5 bis). Pero **el `-val-` avisa que el número no está validado, no que los dos casilleros
 muestren el mismo**. Son dos cosas distintas, y ésta no está cubierta por ningún símbolo: dos
 casilleros con el mismo `-val-` se leen como dos mediciones que coincidieron.
+
+---
+
+**Addendum · 21/08/2026 — RESUELTO por el `2026-08-21_18`.** (El texto de arriba no se edita —
+`CLAUDE.md` §7. Se deja entero: describe el estado del que se salió y por qué era peligroso.)
+
+**Qué se hizo:** dos celdas de `MARCADORES`, ningún `.gs`, ninguna dimensión y ninguna columna
+nueva.
+
+| marcador | antes | ahora |
+|---|---|---|
+| `u1_pre_meta_alcance` | `digital/Alcance` · `alc_alcance` | **`reuniones/Agenda JM`** · `alc_real` (col `AF`) |
+| `u1_post_meta_alcance` | `digital/Alcance` · `alc_alcance` | **`reuniones/Agenda JM \| Post`** · `alc_real` (col `G`) |
+
+**La etapa la separa la solapa**, que es la forma `(ID, solapa)` que `D-30` punto 1 cita de `C-50`.
+`dimensiones` sigue vacío **y ahora significa otra cosa**: antes era *"no hay nada que separe"*,
+ahora es *"no hace falta"*. `formato = miles_revisar` se conservó — el número sigue sin validar.
+
+⭐ **La pista del usuario era correcta y salió más barata de lo que este pendiente anotaba.** Acá
+arriba decía que *"faltaría confirmar qué campo de esas dos solapas es el alcance"*. **El par ya
+estaba mapeado**: `alc_real` en las dos, `AF` y `G`, y **ningún marcador lo usaba** — así que el
+trabajo no era mapear nada, era **repuntar dos filas**.
+
+⭐ **Y lo que este pendiente no sabía: `R-27` ya lo había verificado celda a celda, desde el
+14/08.** `Agenda JM!AF` es `Base_Digital!K`, banda `Alcance Meta Convocatoria`, **San Cristóbal
+1.412**; y del lado POST, **Retiro 47.753**. Es evidencia independiente de que `alc_real` es el
+campo correcto, y estuvo escrita todo el tiempo en el documento dueño de la pregunta.
+
+**Evidencia:** `MARCADORES_2026-08-21_2225.tsv` (post-escritura), casos `V-103` y `V-104` en
+`docs/casos_validacion_2026-08-19.csv`, y el addendum del 21/08 a `R-27`.
+
+⚠ **Lo que NO cierra este addendum, y son tres cosas:**
+
+1. **Que los números sean correctos.** Los casos quedaron en estado **`pendiente`**, no `exacto`:
+   un caso `exacto` cita la lámina del deck y **todavía no hubo corrida**. El control es que PRE y
+   POST publiquen números **distintos**; si salen iguales, el corte por solapa no funcionó.
+2. ⛔ **La tasa de carga de `alc_real`.** La solapa entera es carga a mano —*"0 fórmulas en 44
+   columnas × 154 filas"*— y **cuántas filas la traen cargada no está medido**: requiere ver la
+   base. Si está mayormente vacía, los tokens publican `-` igual que antes, **pero por el motivo
+   correcto**, que es la diferencia entre un cableado que falta y uno que espera dato.
+3. **`u1_total_alcance` y `u1_total_frecuencia` siguen entre los ocho `/////`.** Que exista
+   `alc_real` **no los resuelve**: da el alcance **por etapa**, no un total sumable — el alcance
+   son usuarios únicos y no se suma (`21.401 + 44.296 = 65.697 ≠ 55.255`).
 
 ---
 
