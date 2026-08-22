@@ -3,10 +3,50 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-22, noche — al recorrer el camino del fixture sobre el Resumen
-Ejecutivo JM. Antes de eso, el `2026-08-22_25` (`R-21` nivel 1) y el `2026-08-22_23` (las dos fases).
-Lo de más abajo viene de la madrugada, al cerrar el `2026-08-21_19` y la validación deck contra
-deck, y **sigue vigente**: no se reescribió lo que no cambió.
+**Última actualización:** 2026-08-22, tarde — al cerrar el `2026-08-22_27` (tablero de cierre por
+lámina + `MAPEO` de `looker/CC`). Antes: el camino del fixture sobre el Resumen Ejecutivo JM, el
+`_25` (`R-21` nivel 1) y el `_23` (las dos fases). Lo de más abajo **sigue vigente**: no se
+reescribió lo que no cambió.
+
+---
+
+## ⏱ Dónde estamos ahora mismo
+
+**El `_27` cerró con sus tres partes hechas y una frenada a propósito.**
+
+- ✅ **Nace `docs/CIERRE_POR_LAMINA.md`** — el tablero por lámina que `D-38` pedía y no tenía dónde
+  vivir. Estado inicial medido: **0 ✅ · 5 🟡 · 18 ⛔** sobre 23 filas de `LAMINAS`. **El ✅ lo pone
+  el usuario, nunca Code.**
+- ✅ **`MAPEO` de `looker/CC`** — cuatro filas + `ventana_ref: 'Cuentas'`. `Base enviada` **no se
+  mapea, a propósito**. Control: `tools/probar-mapeo-cc.js`, 24 afirmaciones.
+- ⛔ **El cableado de los cuatro `cc_*` está FRENADO por `X-28`** — ver abajo.
+- ✅ **El veredicto de `curarCamposMarcadores_`** — cero escrituras con **todas** las filas en el
+  estado pedido es **éxito idempotente**. Control: `tools/probar-veredicto-idempotente.js`, 22
+  afirmaciones.
+
+**28 suites, 0 en rojo. `clasp push` hecho. Todo pusheado.**
+
+### ⛔ Lo único que bloquea el Call Center: `X-28`
+
+La **definición** está cerrada `exacto` (`V-105`, cuatro de cuatro contra el deck del 31/07):
+«Base discada» = **`Base barrida`**, y el Resumen **no filtra** por `Tipo de llamado`. Lo que falta
+es **qué cuentas entran**, y **ninguna regla escrita lo reproduce**: la pertenencia sola da el
+gabinete entero (22 filas / 100.197 contra 2 / 6.011) y el filtro por nombre falla por los dos lados
+—deja entrar `3387`, y deja afuera `3488-AGOJDGAG`, que **no dice «JM»**—.
+
+⭐ **Los dos decks publican UNA SOLA CUENTA.** No hay regla que diga cuál. **Es pregunta al equipo**,
+escrita en `PENDIENTES` con las tres formas que podría tener la respuesta.
+
+### Lo que espera al usuario
+
+1. **Correr `jm` sobre `agosto_14_20`** — confirma los 🟡: los tres «N envíos» (6 · 73 · 3) y los
+   ocho `imp_*` en `_revisar`. **Ninguna escritura en `MARCADORES` prueba que el deck salga bien.**
+2. **Decidir el rótulo de Programmatic** — (a) cambiarlo a *"acumulado de las campañas de la
+   semana"*, cero código y no depende de nadie · (b) pedir el dato semanal · (c) `/////`.
+3. **Contestar `X-28`**, o pasársela al equipo.
+
+⚠ **Y lo que sigue sin medirse:** que una corrida real con **seis** encuentros entre en el techo. Lo
+medido es que el agregado por temario cuesta **35 s**; el testigo con **dos** tardó 192 s.
 
 ---
 
