@@ -2130,3 +2130,109 @@ que mirarse contra el deck del equipo antes de dar nada por bueno.**
 `filas_ref_fuera_por_tope` y `claves_fuera_por_tope`. `tope_dias_aplicado: 0` significa
 **desactivado**; `filas_ref_fuera_por_tope: 0` con el tope activo significa **no sacó a nadie**. Son
 dos cosas distintas y el log las distingue.
+
+
+---
+
+## R-31 — Un campo de carga manual no admite control por igualdad exacta
+
+**22/08/2026.** Premisa corregida por el usuario: **las bases son de carga MANUAL y no se completan
+de una vez.** Distintas láminas se llenan en momentos distintos, así que **una fila puede estar
+incompleta cuando el motor la lee y completarse después**. Un valor que no reproduce exacto contra
+el deck del equipo **puede ser eso y no un bug**.
+
+**Lo que un campo inestable sí admite es un rango o una dirección**, y eso **se dice caso por caso,
+nunca globalmente**: el rango depende de qué campo, de cuánto se movió históricamente y de si se
+mueve para arriba, para abajo o las dos.
+
+### ⛔ La guarda, que es la mitad importante de esta regla
+
+**Esta regla NO explica cualquier diferencia.** El riesgo es exactamente ése: que **una definición
+mal cableada se lea como «carga tardía»** y el bug quede cerrado con una excusa.
+
+⭐ **Un caso se cierra por `R-31` SÓLO si el campo está en la lista de los que se movieron entre las
+dos fotos.** Si el campo es estable y el número no reproduce, **es un bug** y sigue abierto.
+
+### La medición — los dos exports, 31/07 y 20/08
+
+**Método:** se comparó **la misma fila** en las dos fotos, sobre claves **únicas en las dos**, y se
+separaron **tres clases de movimiento**, porque mandan a lecturas distintas:
+
+| clase | qué es |
+|---|---|
+| **ALTA** | `'' → valor` — la celda estaba vacía y se cargó después. **Carga manual pura** |
+| **CAMBIO** | `v → v'` — un valor ya cargado se corrigió. **Más grave: alguien lo dio por bueno y no lo era** |
+| **BORRADO** | `valor → ''` — se vació |
+
+#### ✅ Los ESTABLES — cero movimientos sobre filas comparables
+
+| base · solapa | campos | filas |
+|---|---|---|
+| **`digital/Directa IVR`** | `ivr_audiencia` · `ivr_llamados` · `ivr_atendidos` · `ivr_e75` · `ivr_marque1` | **44** |
+| **`digital/Directa SMS`** | `sms_enviados` · `sms_entregados` · `sms_clics` | 28 |
+| **`rdv`** | `poblacion` | **713** |
+
+⭐⭐ **Los cinco de IVR son los del iceberg, y eso es lo que hace citable a `V-99`, `V-86` y
+`V-106`:** ese bloque **sí admite control por igualdad exacta**, y cuando no reproduce **es un bug**.
+
+#### ⛔ Los INESTABLES, con su porcentaje y su clase
+
+| base · solapa | campo | movidos | alta | cambio | baja mín |
+|---|---|---|---|---|---|
+| `rdv` | `asistentes` | 32/718 (4,5 %) | **32** | 0 | — |
+| `rdv` | `insc_digital` | 30/716 (4,2 %) | 28 | 2 | −23 |
+| `rdv` | `inscriptos` | 28/719 (3,9 %) | 26 | 2 | — |
+| `rdv` | `insc_dif` | 27/677 (4,0 %) | 26 | 1 | −6 |
+| `rdv` | `insc_mail` | 27/716 (3,8 %) | **27** | 0 | — |
+| `rdv` | `insc_cc` | 22/638 (3,4 %) | 20 | 2 | −12 |
+| `rdv` | `insc_ivr` | 20/636 (3,1 %) | **20** | 0 | — |
+| `digital/Directa Mail` | `mail_aperturas` | 19/1687 (1,1 %) | 10 | 9 | — |
+| `digital/Directa Mail` | `mail_clics` | 16/1687 (0,9 %) | 10 | 6 | — |
+| **`digital/Directa Mail`** | **`mail_entregados`** | **14/1687 (0,8 %)** | 10 | 4 | **−27** |
+| `digital/Directa Mail` | `mail_enviados` | 11/1687 (0,7 %) | 10 | 1 | — |
+| `digital/CAMPAÑAS_DESGLOCE_DIGITAL` | `des_impresiones` | 76/2085 (3,6 %) | 0 | **76** | −184.648 |
+| `digital/CAMPAÑAS_DESGLOCE_DIGITAL` | `des_clics` | 68/2085 (3,3 %) | 0 | **68** | −14.660 |
+| `looker/DIGITAL` | `dig_impresiones` | 19/503 (3,8 %) | 0 | **19** | −893 |
+| `looker/DIGITAL` | `dig_clics` | 14/503 (2,8 %) | 0 | **14** | −23 |
+| `looker/CC` | `cc_base_barrida` · `cc_contactados` | 1/680 (0,1 %) | 0 | 1 | — |
+
+### ⭐⭐ Y la distinción que la medición destapó: son DOS fenómenos, no uno
+
+- **`rdv` se mueve por ALTA** —la celda estaba vacía—. Es **carga manual** en el sentido literal del
+  usuario: alguien llena la planilla después. `asistentes`, `insc_mail` e `insc_ivr` son **100 %
+  alta**: ni un solo valor cargado se corrigió.
+- **`looker` y `DESGLOCE` se mueven por CAMBIO** —cero altas—. **Eso no es carga tardía: es
+  recálculo.** El dato ya estaba y la fuente lo reescribió.
+
+⚠ **Tienen el mismo síntoma y distinta cura.** Contra una **alta** sirve esperar; contra un
+**cambio**, esperar no sirve — el valor puede volver a moverse indefinidamente, y ahí lo que
+corresponde es `_revisar` o un rango declarado.
+
+### ⚠ La trampa de método que se cobró en esta misma medición
+
+**La primera pasada dijo que `CAMPAÑAS_DESGLOCE_DIGITAL` se movía en el 56 % de sus filas**, con
+deltas de ±32 M. **Era falso: era la clave.** Con `Id accion` sola —que **no es estable entre
+exports**— se comparaban filas distintas; con la clave fina (`Id accion` + `Plataforma` +
+`Nombre Campaña` + `nombre_campaña`) el movimiento baja a **3,6 %**.
+
+⭐ **Es `CLAUDE.md` §4 al pie de la letra:** *cuando la medición propia contradice, la primera
+hipótesis es que la medición está mal.* Un 56 % con subidas y bajadas simétricas y magnitudes
+enormes **no es un dato: es una identidad de fila mal resuelta.** **Cualquier medición de
+estabilidad tiene que declarar con qué clave comparó**, y probar al menos dos.
+
+### Qué láminas quedan sin control por igualdad exacta
+
+- **Todo lo que sale de `rdv`** —`ecv_inscriptos`, `ecv_asistentes`, los cinco `ecv_insc_*` y los
+  `enc_*` del alcance— **es inestable por alta**. `V-71` reprodujo `2.333` exacto, y eso sigue
+  valiendo como evidencia **de esa foto**; lo que no se puede es **exigirlo** en cada corrida.
+- **Todo lo que sale de `looker/DIGITAL`** —los ocho `imp_*` y sus `gcba_*`— **es inestable por
+  cambio**, que es la clase peor. Se suma a que ya están en `_revisar` por universo.
+- ✅ **El bloque IVR del iceberg y los SMS admiten control exacto**, y son los únicos.
+
+### ⛔ Y no se pueden congelar las bases en copias fijas — se intentó y no se puede
+
+**`Base_Digital`, `Desglose impresiones` y `ALCANCE` viven de `IMPORTRANGE`**: el `.xlsx` **no
+materializa sus valores** y al convertir a Sheets dan **`#REF!`**.
+
+⚠ **Aplanar no es salida: congelaría el error como si fuera dato.** Queda escrito para que **no se
+reintente**.

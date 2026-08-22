@@ -139,10 +139,51 @@ que ya sale, cuesta cero código y no depende de nadie; **(b)** pedirle el dato 
 | | el deck | el fixture | veredicto |
 |---|---|---|---|
 | `imp_prog` JM | **24.783.992** | — | ⛔ **el tope NO actuó** — es el total con `2976` adentro |
-| `mail_entregados` JM | **538.276** | **538.291** | ⛔ **−15, y la base BAJÓ** |
+| `mail_entregados` JM | **538.276** | **538.291** | ✅ **CERRADO — campo inestable** (`R-31`), no bug |
 | «N envíos» Mail GCBA | **63** | **63** | ✅ **EXACTO** — el 73 era una expectativa, no una medición |
-| «N envíos» SMS GCBA | **4** | **3** | ⚠ **+1: apareció un envío nuevo** |
+| «N envíos» SMS GCBA | **4** | **3** | ✅ **campo estable, fila nueva** — `Directa SMS` es de evento |
 | Call Center, láminas 2 y 5 | `/////` | — | ✅ **esperado** — no se cableó ningún `cc_*`, frenado por `X-28` |
+
+---
+
+## ⭐⭐ `R-31` — qué se puede controlar por igualdad exacta y qué no
+
+**Premisa corregida por el usuario, 22/08: las bases son de carga MANUAL y no se completan de una
+vez.** Una fila puede estar incompleta cuando el motor la lee y completarse después.
+
+**Medido entre los dos exports, comparando la misma fila y separando las tres clases de
+movimiento** —`ALTA` (`'' → valor`), `CAMBIO` (`v → v'`), `BORRADO`—:
+
+### ✅ Los ESTABLES — cero movimientos, y son los únicos que admiten control exacto
+
+| base · solapa | campos | filas |
+|---|---|---|
+| **`digital/Directa IVR`** | los **cinco** del iceberg | **44** |
+| `digital/Directa SMS` | los tres | 28 |
+| `rdv` | `poblacion` | **713** |
+
+### ⛔ Qué láminas quedan **sin control por igualdad exacta**
+
+| lámina | por qué |
+|---|---|
+| **5** · ECV alcance · y todo lo que salga de `rdv` | `inscriptos`, `asistentes` y los cinco `insc_*` se mueven **3–4,5 %, casi todo por ALTA**. `asistentes` es **100 % alta**: 32 de 32 son celdas vacías que se llenaron |
+| **2 y 3** · los ocho `imp_*` y sus `gcba_*` | `looker/DIGITAL` se mueve **2,8–3,8 %, TODO por CAMBIO** — cero altas. Se suma a que ya están en `_revisar` por universo |
+| **7** · los 32 `post_` | `CAMPAÑAS_DESGLOCE_DIGITAL` se mueve **3,3–3,6 %, todo cambio** |
+
+⭐⭐ **Y la distinción que la medición destapó, porque manda a curas distintas: `rdv` se mueve por
+ALTA y `looker` por CAMBIO.** Contra una **alta** sirve esperar a que terminen de cargar; contra un
+**cambio** esperar no sirve — el valor puede volver a moverse, y ahí lo que corresponde es
+`_revisar` o un rango declarado.
+
+⛔ **`R-31` NO explica cualquier diferencia**, y ésa es la mitad importante: **un caso se cierra así
+sólo si el campo está en la lista de los que se movieron.** Si el campo es estable y el número no
+reproduce, **es un bug**. `V-71` (2.333) sigue valiendo como evidencia **de su foto**; lo que no se
+puede es exigirlo en cada corrida.
+
+⚠ **Y las bases no se pueden congelar en copias fijas** (`C-73`): `Base_Digital`,
+`Desglose impresiones` y `ALCANCE` viven de `IMPORTRANGE`, el `.xlsx` no materializa sus valores y
+al convertir a Sheets dan **`#REF!`**. **Aplanar congelaría el error como si fuera dato. No se
+reintenta.**
 
 ---
 
