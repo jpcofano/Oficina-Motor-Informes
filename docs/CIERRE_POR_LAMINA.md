@@ -56,7 +56,7 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) · `gcba_sms_*` 🟡 | 22/08 |
 | **4** · «Encuentros con vecinos» | `L-033` | 🟡 | **Cero tokens y `rol = equipo`: no hay nada que cablear.** Es un separador. Falta sólo que el usuario lo mire | — |
 | **5** · ECV: alcance semanal | `L-034` | ⛔ | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUCEN** contra `V-71`, con `ecv_barrios` confirmando la identidad de los sumandos. Falta: **`ecv_asistentes` = 485 sin validar** (abajo) · ⚠ **los 3 `cc_*` se van a PINTAR ACÁ SIN CONTROL** (abajo) · `ecv_barrio1-3` nombrados en el seed y **sin fila en `MARCADORES`** | 22/08 |
-| **6** · Benchmarks / Iceberg | `L-035` `L-052` | ⛔ | ⭐⭐ **Las seis cifras del alcance cierran AL DÍGITO** —Mail 619, Digital 96, Difusión 10, Call+IVR 101+29=130, Inscriptos 855, Asistentes 186—. **Es la lámina más terminada del deck.** Falta: los **cuatro casilleros de IVR salen `-`** en la corrida con temario correcto y **exactos en la copia equivocada** → falta **medir** cuál de los dos candidatos es (anclaje o ventana de `R-11`) | 22/08 |
+| **6** · Benchmarks / Iceberg | `L-035` `L-052` | 🟡 | ⭐⭐ **Las seis cifras del alcance cierran AL DÍGITO** —Mail 619, Digital 96, Difusión 10, Call+IVR 101+29=130, Inscriptos 855, Asistentes 186—. ⭐ **Y el IVR también está bien cableado**: `enc_audiencia` = **107.194** exacto (`V-106`). **Falta un solo dato y es una corrida, no una decisión**: la traza de qué `id_cuenta` recibe el ítem de Salud (`X-30`) | 22/08 |
 | **7** · Campañas · pie | `L-036` | ⛔ | 4 tokens `camp1-4`, tabla 7×8. **Sin medir** | — |
 | **8** · «Comunicaciones M2» | `L-037` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | **9** · Directa · Status M2 | `L-038` | ⛔ | 8 tokens. ⭐ **El numerador coincide y el denominador no** (−9,6 % en enviados/entregados, con el numerador quieto) → falta **decidir** de qué universo sale el denominador | 22/08 |
@@ -75,7 +75,7 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | **22** · MUCHAS GRACIAS | `L-051` | 🟡 | Cierre, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | *(orden 8)* · «1 a 1» | `L-053` | ⛔ | `filtro = tipo=Uno a uno`, 32 tokens `u1_`. Nace con `D-37`. ⭐ **Las impresiones del PRE reproducen exacto** — `V-21` Google **17.401**, `V-23` Meta **25.099**, `V-25` Meta Retiro **18.015**. ⛔ **El único roto es `u1_prog_impresiones`, y es un agujero de FUENTE**: los 94.955 del **POST de San Cristóbal** no están en ninguna celda de los siete libros de los dos fixtures (`X-05`, `C-57`). **Distinto del problema del Resumen** — acá falta el dato, allá sobra universo | 22/08 |
 
-**Conteo: 0 ✅ · 5 🟡 · 18 ⛔ · 0 ⏳**, sobre 23 filas de `LAMINAS` para `jm`.
+**Conteo: 0 ✅ · 6 🟡 · 17 ⛔ · 0 ⏳**, sobre 23 filas de `LAMINAS` para `jm`.
 
 ---
 
@@ -219,6 +219,56 @@ puede ser el mismo número por diseño o puede ser que la 5 quiera otro universo
 midió**. Cuando se cablee, la 5 sigue ⛔ con *"pintada sin control"* hasta que exista un caso que la
 mida — es la forma de `CLAUDE.md` §4 —*un número correcto puede salir de las filas equivocadas*—
 aplicada antes de que el número salga.
+
+---
+
+## ⭐ La lámina 6 pasa a 🟡 — el iceberg de IVR no era lo que el documento suponía
+
+**Medido el 22/08 sobre el fixture del 20/08.** El `VALIDACION_*` dejaba **dos candidatos y ninguno
+medido** para los cuatro casilleros de IVR que salen `-`. **Los dos caen.**
+
+**1 · Los cuatro son idénticos en configuración**, y difieren **sólo en la columna**:
+
+```
+enc_audiencia · enc_atendidos · enc_e75 · enc_marque1
+base digital · solapa Directa IVR · SUMA · filtro VACÍO · dimensiones VACÍO
+```
+
+⭐ Por eso **se mueven juntos**, y por eso un `-` en los cuatro es **del recorte de filas**, no de la
+definición de ninguno.
+
+**2 · ⛔ El candidato «la ventana sin filtro de `R-11`» queda excluido por lógica.** Una ventana
+demasiado ancha trae **más** filas, nunca cero. **Un `-` es ausencia de filas, y ensanchar no
+produce ausencia.**
+
+**3 · ⭐ El candidato «el anclaje le asigna al ítem la cuenta de otro» queda confirmado por el
+dato.** `V-106`: con `ID cuentas = 3488-AGOJDGAG` la solapa **sí** tiene filas y `enc_audiencia` da
+**107.194**, que es **exactamente** lo que publica el equipo. **Si el ítem hubiera llegado con esa
+cuenta, `enc_audiencia` habría tenido valor. Como salió `-`, el ítem no llegó con esa cuenta.**
+
+⭐⭐ **Eso convierte la lámina 6 en la más cerca de ✅ de todo el deck: no le falta cablear ni
+decidir — le falta UNA traza.** Qué `id_cuenta` recibe el ítem de Salud en una corrida con el
+temario correcto. **Es una corrida del usuario**, no se lee del fixture.
+
+### ⚠ Y una trampa que hay que conocer antes de intentar validar los otros tres
+
+**Las filas de IVR de Salud están A MEDIO DISCAR en el export del 20/08.** Las dos de
+`3488-AGOJDGAG` traen `llamados = 11.000` y `11.000` —**números redondos**— contra audiencias de
+54.107 y 53.087: **18,7 % y 19,2 % de atendidos**.
+
+⛔ **Todas las demás filas de encuentros JM del mismo export tienen `llamados == audiencia` y entre
+83 % y 93 %** — `2763`, `2798`, `2997`, `3110`, `3143`, `3216`, `3387`. Y lo publicado por el equipo,
+**96.549 (90 %)**, es el 90 % de 107.194: **tiene la forma de la fila completa**.
+
+⭐ **Coherente con `C-25`**: el fixture es anterior y da **menos** (20.322 < 96.549).
+
+⚠ **Consecuencia de método:** de los cuatro casilleros, **contra este fixture sólo `enc_audiencia`
+es verificable**. Los otros tres necesitan un export **posterior al cierre del discado**, y un caso
+que los midiera contra éste **nacería `contradice` por una razón que no es del motor** (`C-71`).
+
+⚠⚠ **Y el aviso para cuando se resuelva `X-30`:** el par `3347-JULJDGAG` / `3387-JULJDGGC` de julio
+tiene **la misma audiencia** —40.874— y **distinto discado**: 17,3 % contra 90,7 %. **Elegir mal la
+cuenta ahí no da `-`: da un número plausible cinco veces más chico.**
 
 ---
 
