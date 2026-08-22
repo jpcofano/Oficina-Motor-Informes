@@ -569,6 +569,28 @@ de valer por dos lados a la vez, y **parecen dos bugs distintos**.
   que estoy mirando aparece donde no debería, y qué pasa cuando no aparece donde sí?* Las dos
   respuestas tienen que ser un reporte, no un silencio.
 
+**Un generador que emite UNA SECCIÓN no se redirige sobre un archivo que tiene prosa: se regenera y
+se reemplaza la sección.** `node tools/escritores.js > docs/ESCRITORES.md` **borró 334 líneas
+escritas a mano** —las secciones §1, §1 bis, §2 y las dos finales— y dejó el archivo con 4 de sus 7
+secciones. Se revirtió con `git checkout` y se reemplazó **sólo la ficha** que había cambiado.
+
+- **Por qué no lo atajó nada, y es lo que lo hace repetible:** el archivo **declara en su
+  encabezado** que *"la matriz de abajo se regenera con `node tools/escritores.js`"*, y eso se lee
+  como *"el archivo se regenera"*. **Dice «la matriz», no «el archivo»** — la diferencia es una
+  palabra y trescientas líneas.
+- ⭐ **La pregunta concreta, antes de redirigir cualquier generador:** *¿lo que emite es el archivo
+  entero, o una parte?* Se contesta en un comando: `node tools/X.js | grep -c '^## '` contra
+  `grep -c '^## ' docs/Y.md`. **Si los números no coinciden, redirigir destruye.**
+- **Medido el 21/08, y son dos, no uno.** `escritores.js` emite **4** secciones y `ESCRITORES.md`
+  tiene **7**; `inventario.js` arranca en `## Resumen` y `INVENTARIO_CODIGO.md` arranca con su
+  título y el bloque que lo declara **congelado**. Los otros dos —`catalogo.js` y `snapshot.js`—
+  **escriben su archivo ellos mismos** y no se redirigen, así que no tienen el problema;
+  `listas.js` no produce ningún `.md`.
+- ⚠ **Y el corolario que vale aunque el diff se vea bien:** `git diff --stat` lo dice al instante
+  —*"103 insertions, 334 deletions"*— **pero sólo si alguien lo mira antes de commitear**. El
+  archivo resultante es Markdown válido, se ve prolijo, y **la matriz que uno fue a actualizar está
+  perfecta**. Lo que falta no está a la vista de quien acaba de hacer el cambio que sí quería.
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue
