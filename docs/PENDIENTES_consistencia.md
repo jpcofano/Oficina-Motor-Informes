@@ -5977,8 +5977,14 @@ riesgo se activa el día que alguien ponga un `u1_` en una lámina fija.
 
 ### ⏸ P3 · Los dos alcances del 1 a 1 (PRE y POST) están cableados a la misma fila y publicarían el mismo número (21/08/2026)
 
-**Abierto y sin prioridad, por decisión del usuario (21/08/2026).** Nace del `2026-08-21_15`
-Parte C.3. Queda escrito para no volver a preguntarlo.
+**Abierto y sin prioridad, por decisión del usuario (21/08/2026).** Queda escrito para no volver
+a preguntarlo.
+
+⚠ **Procedencia, corregida:** nació de un `C.3` que se le agregó al `2026-08-21_15` **después**
+de que el prompt corriera. Eso no corresponde —un prompt ejecutado sólo lleva addendum
+(`CLAUDE.md` §7)—, así que el `_15` volvió a la versión que corrió y **el prompt de esta entrada
+es `docs/Prompts/Addendum_2026-08-21_Paso-15_hueco_alcance.md`**. El contenido no cambia: lo que
+sigue es lo que ese addendum pide, **más** la corrección medida de su último bloque.
 
 **El hueco.** El deck publica **dos** alcances distintos para el 1 a 1 —uno PRE y uno POST— y
 salen de **filas distintas** (dicho por el usuario, 21/08). Pero `MARCADORES` tiene las dos filas
