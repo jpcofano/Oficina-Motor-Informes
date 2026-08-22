@@ -1445,6 +1445,70 @@ var SEED_MAPEO_DESGLOCE_REVISAR_ = [
 
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_DESGLOCE_REVISAR_);
 
+/* `2026-08-22_27` Parte B — **`looker/CC`, la fuente del bloque Call Center del Resumen.**
+ *
+ * La solapa está declarada `fuente` desde el seed y **no tenía ni una fila en `MAPEO`**, así que
+ * ningún marcador podía leerla: los cuatro casilleros del Resumen salen `/////`, que ahí dice la
+ * verdad — *nadie lo cableó*.
+ *
+ * ⛔ **ESTE SEED NO CABLEA NINGÚN `cc_*`, Y NO ES PRUDENCIA: ES QUE FALTA UNA DECISIÓN.** Mapear es
+ * declarar **dónde está una columna**; qué token la usa, con qué operación y **con qué corte** es
+ * `MARCADORES`, y el corte está abierto en `X-28`. Mismo reparto que el `2026-08-21_7` dejó escrito
+ * para `CAMPAÑAS_DESGLOCE_DIGITAL`.
+ *
+ * **Lo que sí está decidido y por eso estas filas se pueden escribir hoy** — `V-105`, medido
+ * contra el deck del equipo del 31/07 **y la `Base Looker` del mismo archivo**, cuatro de cuatro:
+ *
+ *   | casillero | publicado | de dónde sale |
+ *   |---|---|---|
+ *   | «2 campañas de Call Center» | 2 | CONTEO de filas |
+ *   | «Base discada» | 6.011 | **`Base barrida`** (col. C) |
+ *   | «Contactados» | 1.878 | `Contactados` (col. D) |
+ *   | «(31 %)» | 31 % | `1878/6011` = 31,2 % |
+ *
+ * ⭐ **«Base discada» es `Base barrida`, NO `Base enviada`, y el que lo decide es el porcentaje.**
+ * Los nombres invitan a lo contrario. `V-66` lo separa solo: con `Base enviada` (6.673) el ratio
+ * daría `1878/6673` = 28,1 % → **28 %**, y el deck dice **31**. Por eso `Base enviada` **no se
+ * mapea acá**: una fila declarada es una invitación a usarla, y ésta ya se usó mal una vez.
+ *
+ * ⚠ **Y el recorte de `V-91`/`S-01` —`Convocatoria` + `IVR convocatoria`— NO va acá.** Es de la
+ * **lámina del iceberg**, que mide otro universo. `V-92` dice que el Resumen **no filtra por tipo**,
+ * y las «3 campañas» de agosto son las **tres** filas de `3488-AGOJDGAG`, `Reconfirmación`
+ * incluida. Aplicado al Resumen habría dado **6.294 contra 7.096**: plausible, y mal. **El próximo
+ * que lea `S-01` lo va a querer aplicar** — está escrito acá para que se lo encuentre antes.
+ *
+ * **De dónde salen las letras.** De los dos fixtures, `Informe 2026-07-31.zip` y `Seguimiento
+ * Digital  2026-08-20.zip`, hoja `CC` de la `Base Looker` — huellas en `docs/_fixtures/README.md`.
+ * ⚠ Fotos del 31/07 y del 20/08 (`CLAUDE.md` §4); `verificarEncabezadosDeMapeo()` dice si las
+ * letras siguen valiendo hoy, y por eso cada fila lleva su `encabezado` como testigo (`D-31`) —
+ * **testigo, nunca fallback**.
+ *
+ * ⚠ **`C-70`: la sexta columna es NUEVA.** El export del 31/07 tiene **cinco** columnas y 1.301
+ * filas; el del 20/08 tiene **seis** —suma `Tipo de llamado`— y 1.338. Nada de lo que se mapea acá
+ * la necesita, así que estas cuatro filas andan sobre **las dos** formas. Un lector que exija la
+ * sexta rompe sobre el archivo viejo.
+ *
+ * ⚠ **El prefijo es `lcc_` a propósito y no es capricho:** `cc_contactados` y `cc_efectivos` **ya
+ * son `campo_logico` de `reuniones/Agenda JM`** —los lee `enc_ll_contactados` desde el `_44`— y
+ * `TIPO_ESPERADO_POR_CAMPO_` ya los tiene declarados. `buscarMapeo` scopea por base + solapa, así
+ * que reusarlos *funcionaría*; lo que no sobrevive es la lectura humana. `CLAUDE.md` §4 tiene la
+ * regla con nombre: *dos cosas que se llaman igual no son la misma cosa, y en este repo pasa
+ * seguido*. Por lo mismo `cc_base_total` **no se toca**: es de `Agenda JM` y `enc_base_total` ya lo
+ * lee. */
+var SEED_MAPEO_CC_ = [
+  // La clave de pertenencia. `looker/CC` NO tiene columna temporal propia: toma la ventana de
+  // `Cuentas` por `SOLAPAS.ventana_ref` (`_23`, `D-24`), y `clave_ventana` es el nombre que el
+  // mecanismo busca — no es libre.
+  { base_id: 'looker', campo_logico: 'clave_ventana', hoja: 'CC', columna: 'A', encabezado: 'ID Cuentas', notas: 'clave del conjunto de pertenencia (_23) — encabezado real "ID Cuentas", con D mayúscula y sin guión bajo, distinto de looker/Cuentas que escribe "id_cuentas"' },
+  // Las dos métricas que el Resumen publica, con su número esperado al lado.
+  { base_id: 'looker', campo_logico: 'lcc_base_barrida', hoja: 'CC', columna: 'C', encabezado: 'Base barrida', notas: '⭐ ES «Base discada» del deck, pese al nombre. V-105: 4726+1285=6011 exacto contra lo publicado el 31/07. Con Base enviada (6.673) el porcentaje daría 28 y el deck dice 31 — V-66 lo decide solo' },
+  { base_id: 'looker', campo_logico: 'lcc_contactados', hoja: 'CC', columna: 'D', encabezado: 'Contactados', notas: 'V-105: 1380+498=1878 exacto. Es también el numerador del 31 % de «Contactados»' },
+  // Declarada sin consumidor: la necesita el CONTEO de «N campañas», que cuenta FILAS.
+  { base_id: 'looker', campo_logico: 'lcc_id_cuenta', hoja: 'CC', columna: 'A', encabezado: 'ID Cuentas', notas: 'la misma columna que clave_ventana, con otro nombre lógico: el CONTEO de «N campañas de Call Center» cuenta filas por esta columna (el molde es ivr_campanias, que hace CONTEO sobre ivr_id_cuenta). Sin consumidor hasta que X-28 decida el corte' }
+];
+
+SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_CC_);
+
 
 
 // `hoja_default`) — `solapa` es exactamente ese mismo valor, así que se deriva
@@ -1492,6 +1556,9 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   mail_enviados: 'numero', mail_entregados: 'numero', mail_aperturas: 'numero',
   mail_clics: 'numero', mail_or: 'numero', mail_ctor: 'numero',
   cc_contactados: 'numero', cc_efectivos: 'numero',
+  // `_27` — los de `looker/CC`. Prefijo `lcc_` porque los dos de arriba son de
+  // `reuniones/Agenda JM` y se llaman igual; ver el seed de `SEED_MAPEO_CC_`.
+  lcc_base_barrida: 'numero', lcc_contactados: 'numero', lcc_id_cuenta: 'texto',
   ivr_audiencia: 'numero', ivr_atendidos: 'numero', ivr_escucha75: 'numero',
   ivr_marque1: 'numero', ivr_llamados: 'numero', ivr_at_pct: 'numero', ivr_e75: 'numero',
   ivr_e75_pct: 'numero', ivr_marque1_pct: 'numero',
@@ -1973,7 +2040,18 @@ var SEED_SOLAPAS_ = [].concat(
     filaSolapa_('looker', 'MAIL', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 5748 }),
     filaSolapa_('looker', 'IVR', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 190 }),
     filaSolapa_('looker', 'SMS', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 86 }),
-    filaSolapa_('looker', 'CC', 'fuente', 'detalle por canal, con ID cuentas', { filas_datos: 1299 }),
+    /* `_27` (22/08) — **`ventana_ref` a `Cuentas`, igual que `DIGITAL`.** `looker/CC` **no tiene
+     * columna temporal propia** —lo dice su propia firma: `ID Cuentas · Base enviada · Base
+     * barrida · Contactados · Efectivos`—, así que sin esto una lectura recortada por ventana no
+     * tiene con qué recortar y **devuelve la solapa entera**: 1.301 filas del gabinete completo
+     * donde el Resumen publica 2.
+     *
+     * ⚠ **Y la pertenencia sola NO alcanza como corte**, que es el hallazgo de la Parte 0 y por eso
+     * se escribe acá al lado: para 24-31/07 da **18 cuentas / 22 filas / 100.197** —factor 16,7
+     * sobre lo publicado— porque `looker/Cuentas` trae **el gabinete entero**. Es la misma familia
+     * que `R-15` addendum 1. Qué cuentas entran es `X-28` y sigue abierto; esto declara **cómo se
+     * recorta por tiempo**, no **quién entra**. */
+    filaSolapa_('looker', 'CC', 'fuente', 'detalle por canal, con ID cuentas · ventana por referencia a Cuentas (_27): no tiene columna temporal propia', { filas_datos: 1299, ventana_ref: 'Cuentas' }),
     // `_23` (10/08) — la única solapa del repo con `ventana_ref`. `C-19` midió que `DIGITAL`
     // **no tiene ninguna columna temporal**: `fecha_inicio` y `fecha_fin` viven en `Cuentas`.
     // Sin esta declaración `leerFuente` falla con `«FALTA:fecha_periodo@looker/DIGITAL»`, que
