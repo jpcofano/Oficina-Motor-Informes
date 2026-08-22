@@ -835,7 +835,44 @@ function encontrarFilaRdvDeReunion_(reunion) {
   // `campoStatus` se sigue exigiendo más arriba a propósito: si el mapeo de `status`
   // desapareciera, la lista blanca dejaría de filtrar y este matcher empezaría a encontrar
   // encuentros suspendidos **sin decirlo**. La precondición se queda; el filtro se va.
-  var nombreBuscado = normalizar_(reunion.nombre);
+  /* ⭐ `2026-08-22_22` — **al término de búsqueda se le recortan los separadores de los bordes.**
+   *
+   * **El caso, medido en vivo el 22/08:** el temario trae `nombre = ": Salud"` —con los dos puntos
+   * adelante—, porque `parsearLineaReunion_` corta *"2) JM | Encuentro Temático: Salud 14/08"* por
+   * el `|` y deja el separador del título pegado al nombre. Con ese término, el `indexOf` de abajo
+   * **no matchea nada**: `rdv` dice `Salud`, no `: Salud`. El encuentro quedaba sin fila de `rdv`,
+   * y con él **sin los `ecv_*` de su lámina y sin poder entrar al agregado del temario** — que es
+   * lo que frenó el nivel 1 de `R-21`.
+   *
+   * ⛔ **Y por qué acá y NO en `normalizar_`** (decisión del usuario, 22/08): `normalizar_` lo usa
+   * **todo el proyecto**, incluido el scoring del anclaje digital. Sacarle la puntuación ahí
+   * cambiaría matcheos que hoy funcionan, en lugares que este paso no midió. Esto es **local al
+   * matcher**, no cambia ningún otro matcheo, y no obliga a nadie a editar la base.
+   *
+   * ⚠ **Sólo los bordes, y eso es la mitad del arreglo.** Un separador **en el medio** es parte
+   * del nombre: `"Encuentro Temático: Salud"` matchea bien hoy si `rdv` dice lo mismo, y
+   * recortarlo por dentro rompería ese caso para arreglar el otro.
+   *
+   * **No es un normalizador nuevo** en el sentido de `CLAUDE.md` §2 —no canonicaliza para
+   * comparar dos lados, ni se aplica al dato de la base—: recorta **un término de búsqueda**, de
+   * un solo lado, dentro de una sola función. Los cuatro que ya existen se miraron y ninguno hace
+   * esto; `normalizar_` es el que se le aplica antes y sigue haciendo su trabajo. */
+  var nombreBuscado = normalizar_(reunion.nombre).replace(/^[\s:;,./|\-–—]+|[\s:;,./|\-–—]+$/g, '');
+
+  /* ⛔ **Vacío no se busca: falla.** Un `nombreBuscado` vacío convierte el `indexOf` de abajo en un
+   * **match universal** —`''` está contenido en cualquier cadena—, así que **la primera fila de
+   * `rdv` de esa fecha ganaría**, y sería la fila equivocada con forma de acierto. Es exactamente
+   * el modo de falla que este arreglo no puede introducir: un número plausible del encuentro de
+   * otro. */
+  if (!nombreBuscado) {
+    return {
+      ok: false,
+      motivo: 'REUNIONES "' + reunion.nombre + '" no deja nada para buscar: el nombre es sólo ' +
+        'separadores o espacios. NO se busca con un término vacío — encontraría la primera fila ' +
+        'de rdv de esa fecha, que sería la del encuentro equivocado. Corregí el nombre en REUNIONES.'
+    };
+  }
+
   var encontrada = null;
   lectura.filas.forEach(function (fila) {
     if (encontrada) return;
