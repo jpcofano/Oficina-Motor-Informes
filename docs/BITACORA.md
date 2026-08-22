@@ -12732,3 +12732,74 @@ sigue saturando en `1,00` y **este paso no lo toca**.
 ⚠ **Lo que el `_16` NO prueba:** que el motor **respete** el `elegido` escrito. Eso es
 `anclajeYaConfirmado_` y necesita una corrida — el circuito completo sigue sin correr de punta a
 punta.
+
+## 2026-08-21 · `2026-08-21_17` — `PLAN.md §2` vuelve a decir qué sigue, y tres decisiones se asientan
+
+**Parte 0 — el censo.** De los quince frentes, **seis cerrados**, **ocho abiertos** y **uno** que
+desde `PLAN.md` no se podía decidir. Y §2 **no mencionaba nada** del 19 al 21/08: catorce entradas
+de bitácora sin una sola fila que las nombrara. **Diez de las quince filas** pasaban de un párrafo
+—la peor, **1667 caracteres**— contra la regla de apertura del propio archivo.
+
+⚠ **Y una trampa de método que costó dos minutos y vale escribirla:** el cruce *"¿este prompt
+corrió?"* por **nombre de archivo** devolvió **113 falsos positivos**. Los commits nombran el
+**designador** (`Paso 2026-08-12_39`), no el archivo. Es `CLAUDE.md` §3 al pie de la letra, y la
+Parte 0 lo confirmó pagándolo.
+
+**Parte A — siete frentes, de quince.** Lo cerrado **salió** de §2 sin borrarse: su rastro está en
+la bitácora y su texto en el historial del archivo.
+
+⭐ **El frente 1 salió de medir, no de leer.** El `2026-08-19_1` figuraba como si sólo hubiera
+corrido su Parte 0 — y es cierto, pero **sus Partes A, B, C y D ya las hicieron pasos
+posteriores**: el cargador escribe `id_cuenta` (`Campanas.gs`), `campo_id_cuenta` está en el seed,
+el formato `_revisar` existe (`D-34`) y los **nueve `camp_*` están en `MARCADORES`**. Los cuatro
+archivados de su addendum `1.1` también. **Lo único vivo es la Parte E, verificar**, y su punto 2
+es el control que importa: si `campo_id_cuenta` no llegó, **igual sale un número** —el agregado de
+995 filas—, grande y plausible, y **leer la traza es lo único que distingue los dos casos**.
+
+**El frente 9 se cerró por el desempate de §7, no por inferencia.** `R-26` **está escrita** en
+`REGLAS_NEGOCIO.md` con medición del **17/08** sobre 23 encuentros; la nota de `R-27` que la daba
+por *"reservada, al 14/08 no se ejecutó"* es **anterior**. ⚠ Esa nota **sigue en pie** y hay que
+saberlo: el archivo es append-only, así que no se edita — se deroga con fecha, y eso es otro paso.
+
+**Lo que NO se hizo, y se dice en vez de inventarlo:** los frentes 5, 6 y 7 **no tienen ninguna
+dependencia escrita** que los ordene entre sí. Quedaron como estaban. **El orden es del usuario.**
+
+**Parte B — tres decisiones del 21/08, cada una a su dueño.**
+
+- **B.1 · `ecv_*` es genérico entre tipos de encuentro** — `D3` respondida. **El 1 a 1 no necesita
+  marcadores propios: reusa los `ecv_*`.** ⚠ **Y el límite, que el "sí" no cubre:** *genérico entre
+  tipos de encuentro* **no** es *genérico entre informes* — `ecv_poblacion` es *"Habitantes del
+  Barrio"* en `jm` y *"Habitantes del eje"* en `secco`, **no puede ser el mismo cálculo**, y eso
+  sigue sin cerrar.
+  ⛔ **El motivo se vació en el seed y NO llega a la hoja:** `sembrarSecciones_` sólo inserta filas
+  nuevas y nunca actualiza (usuario, 16/08). **La hoja viva sigue diciendo *"definir si es
+  genérico"*** hasta que alguien borre esa celda a mano.
+- **B.2 · La lámina de plataforma de `secco`** — se elige la **salida 2**, mismos tokens que `jm`,
+  porque *"`secco` es prácticamente el mismo informe"*. ⏸ **Diferida.**
+- **B.3 · Los 49 crudos de las láminas 12, 21 y 29** — ⏸ **sin ninguna prioridad.**
+
+⭐ **Las dos diferidas llevan el mismo tratamiento y es deliberado:** las opciones **no elegidas
+quedan escritas** —sirven para entender por qué se eligió ésa, y un menú del que se borran las
+alternativas deja una decisión que parece que nunca las tuvo— y el pendiente **no se tacha ni se
+archiva**: cambia de estado con su fecha y su dueño. **Un pendiente borrado vuelve a descubrirse
+dentro de dos meses.**
+
+⚠ **Y en B.3 se separó lo que NO queda diferido:** el invariante *"ningún `{{token}}` crudo
+sobrevive a una corrida"* sigue **enunciado de más** en el comentario del motor, y eso **ya se
+llevó puesta una premisa del `2026-08-20_10`** —que proponía usar los crudos como checkpoint de
+reanudación, con 49 crudos permanentes—. Es una trampa para el próximo que lo lea y **no depende
+de que las láminas se activen.**
+
+**Parte C — el cruce está perdiendo cobertura.** **12 prompts con commit y sin entrada de
+bitácora**, cinco de los últimos tres días, y **89 archivos** históricos cuyo nombre no permite ni
+extraer el designador. ⛔ **Anota, no arregla:** `BITACORA.md` es append-only y del usuario, y
+**rellenar retroactivamente entradas que nadie escribió en su momento es inventar historia** —
+quedarían indistinguibles de las escritas el día que pasaron. Van tres salidas, sin elegir.
+
+**Parte D — la trampa del censo, a `CLAUDE.md` §4.** `node tools/escritores.js > docs/ESCRITORES.md`
+**borró 334 líneas de prosa**. El encabezado dice *"la **matriz** de abajo se regenera"* y se lee
+como *"el archivo se regenera"* — **una palabra y trescientas líneas**. ⭐ Se escribió la pregunta
+que lo ataja en un comando —contar los `^## ` del generador contra los del `.md`— y **se midió
+antes de generalizar: son dos, no uno.** `escritores.js` emite 4 de 7 secciones e `inventario.js`
+no emite el bloque que declara congelado a su archivo; `catalogo.js` y `snapshot.js` escriben su
+archivo ellos mismos y no tienen el problema.
