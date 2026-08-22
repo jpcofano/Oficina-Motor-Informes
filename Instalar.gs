@@ -2998,16 +2998,39 @@ var SEED_SECCIONES_ = [
   filaSeccion_({ id: 'semana_jm_conversacion', orden: 5, nombre: 'Semana JM — conversación X', informes: 'SECCO', modo: 'unica' }),
   filaSeccion_({ id: 'miba', orden: 6, nombre: 'Integración MiBA', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'fuente sin definir en el motor; el bloque ya se publica lleno a mano' }),
   filaSeccion_({ id: 'portada_digital_directa', orden: 7, nombre: 'Portada Digital/Directa', informes: 'JM,SECCO', modo: 'unica' }),
-  // `Pedido-4` Parte A (05/08) — la lámina del alcance semanal por herramienta. Hermana de
-  // `encuentro` y en modo `agregado`: **que no itere sobre `REUNIONES` es todo el punto.**
-  // `orden: 7.5` a propósito, para no renumerar ninguna fila curada — la sección va entre la
+  /* `Pedido-4` Parte A (05/08) — la lámina del alcance semanal por herramienta. Hermana de
+   * `encuentro` y en modo `agregado`.
+   *
+   * ⭐ **`2026-08-22_25` — declara `itera: 'REUNIONES'`, y el comentario que había acá decía lo
+   * contrario: *"que no itere sobre `REUNIONES` es todo el punto"*. Se reescribe porque
+   * `itera_sobre` pasa a significar DOS cosas y la frase vieja sólo veía una:**
+   *
+   *   - **universo** — de dónde salen las filas. Del **temario**, que es lo que `R-21` nivel 1 y
+   *     el `Addendum 1` de `R-17` mandan desde el 09/08: *"el agregado `ecv_*` suma los encuentros
+   *     que `R-21` seleccionó, no los que caen en la ventana"*.
+   *   - **expansión** — cuántas láminas se emiten. **Una sola**, porque `modo = 'agregado'`, y eso
+   *     no lo decide esta columna sino `modo`.
+   *
+   * **La frase vieja era cierta sobre la segunda y falsa sobre la primera**, y por eso se leía
+   * como que la sección no debía mirar el temario — que es justo lo contrario de la regla.
+   *
+   * ⚠ **Verificado antes de declararla** (`0.5` del `_25`): **ningún lector de
+   * `SECCIONES.itera_sobre` lo lee sin chequear `modo === 'repetible'` primero** —
+   * `seccionesRepetiblesDe_` corta por `modo`, y `cuadradosDeInforme_` exige `repetible` **y** que
+   * la fuente esté en `FUENTES_ITERACION_`. Declararlo acá **no le cambia el comportamiento a
+   * nadie**: la sección sigue sin expandirse y sin aparecer como cuadrado de temario.
+   *
+   * ⛔ **Y sólo ella.** `ministros` y `m2` siguen por ventana: `R-21` dice expresamente que **no
+   * iteran `REUNIONES`**, y `Union.gs` ya excluye `tipo = 'Agregado'` del anclaje.
+   *
+   * `orden: 7.5` a propósito, para no renumerar ninguna fila curada — la sección va entre la
   // portada de Digital/Directa y el bloque de encuentro, que es donde está la lámina.
   // La familia lista los **10 tokens exactos** de agregado semanal puro en vez del prefijo
   // `ecv_`: el prefijo se llevaría también los 7 ambiguos y los 2 de encuentro, que viven en
   // la lámina del iceberg y no acá. Un token completo es un prefijo válido de sí mismo
   // (`tokenEsDeFamilia_` compara con `indexOf(f) === 0`), así que la semántica no cambia.
   // ⚠ `ecv_barrio` NO está en la lista y no puede estarlo: es prefijo de `ecv_barrio1/2/3`.
-  filaSeccion_({ id: 'ecv_alcance_semanal', orden: 7.5, nombre: 'Encuentros con vecinos — alcance semanal por herramienta', informes: 'JM,SECCO', modo: 'agregado',
+  filaSeccion_({ id: 'ecv_alcance_semanal', orden: 7.5, nombre: 'Encuentros con vecinos — alcance semanal por herramienta', informes: 'JM,SECCO', modo: 'agregado', itera: 'REUNIONES',
     familia: 'ecv_encuentros,ecv_barrios,ecv_barrio1,ecv_barrio2,ecv_barrio3,ecv_insc_mail_pct,ecv_insc_cc_pct,ecv_insc_ivr_pct,ecv_insc_digital_pct,ecv_insc_dif_pct',
     notas: 'los 10 de agregado semanal puro (Pedido-4 0bis.1). Los 7 ambiguos (ecv_inscriptos, ecv_asistentes, los cinco ecv_insc_*) quedan diferidos por la opción C del 05/08 y siguen en el bloque de encuentro' }),
   // `Pedido-4` Parte A (05/08) — la familia dice **con qué se reconoce el bloque modelo en

@@ -1017,6 +1017,39 @@ function anclarEncuentros(ventana) {
   return resultado;
 }
 
+/**
+ * ⭐ `2026-08-22_25` Parte B — **qué filas de `PERIODOS` describen esta ventana.** Devuelve una
+ * lista de `periodo_id`, vacía si ninguna coincide.
+ *
+ * **Leer no es adivinar**, y ésa es toda la diferencia con lo que `R-21` prohíbe: acá no se deduce
+ * un período del rango, se le pregunta al registro cuáles de sus filas **son** ese rango.
+ *
+ * ⚠ **Devuelve lista y no una sola, porque hoy hay dos filas con la misma ventana** y elegir una
+ * sería exactamente el paso que hay que no dar. Ver el comentario del llamador.
+ *
+ * ⚠ **Una fila con fechas ilegibles se saltea en silencio y eso es deliberado:** su ventana no se
+ * puede comparar, así que no puede describir ninguna. Tumbar el anclaje por una fila mal tipeada
+ * de `PERIODOS` sería peor — y `panel_getEstado` ya la muestra como `(fecha ilegible)`.
+ */
+function periodosQueDescribenLaVentana_(ventana) {
+  if (!ventana || !ventana.desde || !ventana.hasta) return [];
+  var salida = [];
+  try {
+    var periodos = leerPeriodos();
+    Object.keys(periodos).forEach(function (id) {
+      var p = periodos[id];
+      var d = parsearFechaCelda_(p.desde), h = parsearFechaCelda_(p.hasta);
+      if (!d || !h) return;
+      if (formatearFecha_(d) === formatearFecha_(ventana.desde) &&
+          formatearFecha_(h) === formatearFecha_(ventana.hasta)) salida.push(id);
+    });
+  } catch (e) {
+    // Sin `PERIODOS` legible no se filtra, que es el comportamiento de antes.
+    return [];
+  }
+  return salida;
+}
+
 function anclarEncuentrosSinCache_(ventana) {
   var precondicion = verificarPrecondicionAnclaje_();
   if (!precondicion.ok) return { ok: false, motivo: precondicion.motivo };
@@ -1040,22 +1073,51 @@ function anclarEncuentrosSinCache_(ventana) {
    */
   var PREFIJO_PERIODO_REF_ = 'periodo_ref:';
   var origen = String((ventana && ventana.origen) || '');
-  var periodoDeLaVentana = origen.indexOf(PREFIJO_PERIODO_REF_) === 0
-    ? origen.slice(PREFIJO_PERIODO_REF_.length) : '';
+
+  /* ⭐ `2026-08-22_25` Parte B — **el recorte se EXTIENDE a la ventana calculada. No se agrega un
+   * segundo filtro: se le ensancha el disparador al que ya estaba.**
+   *
+   * ⛔ **El hueco, que es el nivel 1 de `R-21` sin implementar.** El párrafo de arriba dice *"sin
+   * override no se filtra"* y lo justificaba con que la cadena de `D-20` puede terminar en `CONFIG`
+   * y **filtrar por un período adivinado a partir del rango sería la «semana adivinada» que `R-21`
+   * prohíbe**. El razonamiento sigue siendo bueno; lo que estaba mal es la conclusión, porque
+   * **preguntarle a `PERIODOS` cuáles de sus filas describen esta ventana no es adivinar: es
+   * leer.** Medido el 21/08: sin override entran **12 encuentros en vez de 2**, con junio y julio
+   * adentro, y el deck sale sin que nada falle.
+   *
+   * ⭐ **Se resuelve como CONJUNTO y no como uno solo, y eso no es prolijidad.** Hay dos filas de
+   * `PERIODOS` con la ventana `2026-08-14 → 2026-08-20` —`agosto_14_20` y
+   * `'vie 14/08 -- jue 20/08 (por defecto)'`, la fila 9 anotada como P1—. Elegir "la primera" sería
+   * adivinar, y elegir la equivocada **deja el informe sin ningún encuentro**. Con el conjunto no
+   * hay nada que elegir: **una reunión entra si su `periodo_id` es cualquiera de los que describen
+   * esta ventana**, y la fila que ninguna reunión tenga cargada simplemente no aporta a nadie.
+   *
+   * ⚠ **Y si NINGUNA fila describe la ventana, no se filtra** — que es el comportamiento de antes y
+   * sigue siendo el correcto: ahí sí no hay período que leer, y `avisosDeVentanaPropuesta_` ya lo
+   * dice en el panel antes de generar. **Emitir de más y avisar es recuperable; emitir cero en
+   * silencio, no.** */
+  var periodosDeLaVentana = origen.indexOf(PREFIJO_PERIODO_REF_) === 0
+    ? [origen.slice(PREFIJO_PERIODO_REF_.length)]
+    : periodosQueDescribenLaVentana_(ventana);
 
   var excluidasPorPeriodo = [];
-  if (periodoDeLaVentana) {
+  if (periodosDeLaVentana.length) {
     reuniones = reuniones.filter(function (r) {
       var suyo = String(r.periodo_id || '').trim();
-      if (suyo === periodoDeLaVentana) return true;
+      if (suyo && periodosDeLaVentana.indexOf(suyo) !== -1) return true;
       // `D-19` — una fila sin período no se asigna a la semana vigente: se lista.
       excluidasPorPeriodo.push({
         item: r.nombre + (r.etapa ? ' (' + r.etapa + ')' : ''),
-        motivo: 'periodo_id ' + (suyo ? '"' + suyo + '"' : 'vacío') + ' ≠ "' + periodoDeLaVentana + '" (D-19)'
+        motivo: 'periodo_id ' + (suyo ? '"' + suyo + '"' : 'vacío') + ' no está en [' +
+          periodosDeLaVentana.join(', ') + '] (D-19)'
       });
       return false;
     });
   }
+
+  // Se conserva el nombre `periodoDeLaVentana` para los consumidores del retorno —`itemsDeSeccion_`
+  // y `diagEnlaceDigitalDeEncuentros_`—, que lo imprimen. `''` sigue significando **no se filtró**.
+  var periodoDeLaVentana = periodosDeLaVentana.join(', ');
 
   if (!reuniones.length) {
     return {

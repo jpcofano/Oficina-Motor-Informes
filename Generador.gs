@@ -260,6 +260,47 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     };
   }
 
+  /* ⭐ `2026-08-22_25` Parte A — **el agregado sobre las filas del TEMARIO**, que es lo que `R-21`
+   * nivel 1 y el `Addendum 1` de `R-17` mandan desde el 09/08: *"el agregado `ecv_*` suma los
+   * encuentros que `R-21` seleccionó, no los que caen en la ventana"*.
+   *
+   * ⛔ **Lo que reemplaza, y por qué era un proxy y no el temario.** Los 17 marcadores de este par
+   * declaran `dimensiones = ambito=jm`, que `DIMENSIONES_` traduce a `figura=Jorge Macri`, y caían
+   * a `leerFuente` — o sea **la base entera recortada por figura y por ventana**. Medido el 22/08
+   * sobre `agosto_14_20`: `1 de 3 filas`, `ecv_encuentros = 1`, con un temario de **2** ítems. Y
+   * peor: el ítem del 12/08 **no puede** entrar por ventana aunque la figura estuviera bien.
+   *
+   * ⚠ **Va DEBAJO de la rama singular y eso es el invariante que no se puede romper.**
+   * `ecv_barrio`, `ecv_poblacion` y `enc_evento` se emiten **también** dentro del bloque de
+   * encuentro, donde llegan con `fila_rdv` (una sola) y tienen que seguir dando lo de ese
+   * encuentro. **El mismo marcador se comporta distinto según dónde salga**, y el orden de estos
+   * dos `if` es lo único que lo sostiene.
+   *
+   * ⚠ **Y acá `dimensiones` NO se aplica, a propósito:** las filas ya vienen elegidas por el
+   * temario, y volver a recortarlas por `figura=Jorge Macri` sería filtrar dos veces por lo mismo
+   * — con la diferencia de que la segunda vez sacaría encuentros que el temario **sí** eligió.
+   * Es la misma decisión que la rama singular tomó el 11/08.
+   *
+   * ⭐ **Las filas vienen SIN DUPLICAR, y eso se hace en el productor**, no acá: `julio_24_30`
+   * tiene San Cristóbal y Retiro **dos veces cada uno** —`pre` y `post`— y las dos filas del
+   * temario apuntan al mismo encuentro de `rdv`. Sumar sin deduplicar publicaría San Cristóbal dos
+   * veces, con un total grande y plausible. Ver `filasRdvDelTemario_`. */
+  if (fila.base_id === 'rdv' && opciones && opciones.filas_rdv && opciones.filas_rdv.length &&
+      opciones.hoja_rdv === solapa) {
+    return {
+      ok: true,
+      filas: opciones.filas_rdv,
+      encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+      columna: campo.columna,
+      origen: 'las ' + opciones.filas_rdv.length + ' fila(s) de rdv/' + solapa + ' de los ' +
+        'encuentros del TEMARIO (R-21 nivel 1 · R-17 Addendum 1) — sin recorte por ventana ni por ' +
+        '`dimensiones`: el temario ya seleccionó' +
+        (opciones.temario_sin_fila
+          ? ' · ⚠ ' + opciones.temario_sin_fila + ' ítem(s) del temario NO tienen fila en rdv y NO entran'
+          : '')
+    };
+  }
+
   if (fila.base_id === 'digital') {
     var idCuenta = opciones && opciones.id_cuenta;
     if (!idCuenta) {
@@ -1838,6 +1879,81 @@ function filtrarItemsPorSeccion_(seccion, crudos, leerAtributo) {
   };
 }
 
+/**
+ * ⭐ `2026-08-22_25` Parte A — **las filas de `rdv` de los encuentros del temario, sin duplicar.**
+ *
+ * Devuelve `{ filas, hoja, items, sin_fila }`. `filas` vacío significa *"no hay agregado por
+ * temario que aplicar"* y el llamador no cambia nada — no es un error.
+ *
+ * **No inventa mecanismo:** `itemsDeSeccion_` ya sabe resolver `itera_sobre === 'REUNIONES'` →
+ * `anclarEncuentros` → ítems con su `fila_rdv`. Lo único que agrega esta función es **pedirle ese
+ * conjunto a una sección de agregado**, que es lo que no existía.
+ *
+ * ⭐⭐ **La deduplicación es la mitad del trabajo y no es prolijidad.** `julio_24_30` tiene San
+ * Cristóbal y Retiro **dos veces cada uno** —`etapa = pre` y `etapa = post`—: son cuatro filas de
+ * `REUNIONES` y **dos encuentros**, que apuntan a la **misma** fila de `rdv`. Sumar sin deduplicar
+ * publicaría los inscriptos de San Cristóbal dos veces, con un total **grande y plausible** — el
+ * modo de falla de siempre. Se deduplica por `(nombre, fecha)` y **no por identidad del objeto**:
+ * la identidad depende de que el caché devuelva la misma referencia, y apoyarse en eso sería que
+ * el número dependa de un detalle de implementación del caché.
+ *
+ * ⚠ **Un ítem sin fila de `rdv` NO aporta una fila vacía: no aporta nada, y se cuenta aparte.**
+ * Meterle una fila sintética haría que `ecv_encuentros` diera el número correcto mientras
+ * `ecv_inscriptos` suma cero por él — que es peor que un conteo corto, porque el conteo corto se
+ * ve. `sin_fila` viaja hasta la traza del marcador.
+ *
+ * ⭐ **Y con esto `ecv_encuentros` deja de contar sobre `inscriptos` sin tocar su fila de
+ * `MARCADORES`:** `opCONTEO` devuelve `valores.length` y `valoresDeCtx_` mapea 1:1 sin filtrar
+ * vacíos —verificado—, así que contar sobre estas filas **es** contar encuentros. Lo que cambió es
+ * el universo, no la operación.
+ */
+function filasRdvDelTemario_(informeId, ventanaInforme) {
+  var vacio = { filas: [], hoja: '', items: 0, sin_fila: 0 };
+  var secciones;
+  try { secciones = leerSeccionesPlano_(); } catch (e) { return vacio; }
+
+  // La sección de agregado que declara sobre qué itera. Hoy es una sola —`ecv_alcance_semanal`—
+  // y el bucle está para que una segunda no exija tocar esto.
+  var elegida = null;
+  Object.keys(secciones).forEach(function (id) {
+    if (elegida) return;
+    var s = secciones[id];
+    if (String(s.modo || '').trim() !== 'agregado') return;
+    if (String(s.itera_sobre || '').trim() !== 'REUNIONES') return;
+    if (String(s.estado || '').trim() !== 'activa') return;
+    var informes = String(s.informes || '').split(',').map(function (i) { return i.trim().toLowerCase(); });
+    if (informes.indexOf(String(informeId).toLowerCase()) === -1) return;
+    s.seccion_id = s.seccion_id || id;
+    elegida = s;
+  });
+  if (!elegida) return vacio;
+
+  var r;
+  try { r = itemsDeSeccion_(elegida, informeId, ventanaInforme); } catch (e) { return vacio; }
+  if (!r || !r.ok) return vacio;
+
+  var vistos = {};
+  var filas = [];
+  var hoja = '';
+  var sinFila = 0;
+  (r.items || []).forEach(function (item) {
+    /* La clave es **nombre + fecha**, y `etapa` NO entra: `pre` y `post` son el mismo encuentro y
+     * comparten fila de `rdv`. ⚠ **La fecha tampoco sobra**: `junio_sem2` tiene *dos* encuentros
+     * en Boedo —12/06 y 17/06— y con el nombre solo se fusionarían en uno. */
+    var f = (item.fecha instanceof Date) ? item.fecha : parsearFechaCelda_(item.fecha);
+    var clave = normalizar_(item.etiqueta || item.clave) + '|' + (f ? formatearFecha_(f) : 'sin_fecha');
+    if (vistos[clave]) return;
+    vistos[clave] = true;
+
+    var filaRdv = item.opciones && item.opciones.fila_rdv;
+    if (!filaRdv) { sinFila++; return; }
+    hoja = hoja || String((item.opciones && item.opciones.hoja_rdv) || '');
+    filas.push(filaRdv);
+  });
+
+  return { filas: filas, hoja: hoja, items: Object.keys(vistos).length, sin_fila: sinFila };
+}
+
 function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
   var fuente = String(seccion.itera_sobre || '').trim();
 
@@ -1907,6 +2023,16 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
          * a `PropertiesService` en la corrida desatendida. Lo que se necesita se declara. */
         tipo: e.tipo || '',
         etapa: e.etapa || '',
+        /* ⭐ `2026-08-22_25` — **la fecha viaja con el ítem, y es lo que separa dos encuentros del
+         * mismo barrio.** `filasRdvDelTemario_` deduplica por `(nombre, fecha)` para no sumar dos
+         * veces la fila de `rdv` que comparten el `pre` y el `post` de un mismo encuentro; con el
+         * nombre solo, `junio_sem2` **fusionaría** sus dos Boedo —12/06 y 17/06— en uno y el
+         * agregado publicaría un encuentro de menos, sin fallar.
+         *
+         * ⚠ Es el mismo hueco que el `2026-08-21_11` cerró para `tipo`: el ítem tenía los campos
+         * justos y el consumidor nuevo necesitaba uno más. **Se agrega éste y nada más**, por el
+         * motivo de siempre: `asignaciones` viaja a `PropertiesService` en la corrida desatendida. */
+        fecha: e.fecha || '',
         motivo: e.idCuenta ? '' : ('sin cuenta digital anclada' + (e.motivo ? ': ' + e.motivo : ''))
       };
     });
@@ -3281,7 +3407,27 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   }
 
   if (!corte) {
-  var resolucionEtapa4 = resolverMarcadores(informeId, periodoId ? { ventana: ventana } : {});
+  /* ⭐ `2026-08-22_25` Parte A — **el contexto del agregado por temario entra acá**, en la única
+   * pasada que resuelve marcadores **sin ítem**. Las láminas de `ecv_alcance_semanal` no se
+   * expanden —`modo = 'agregado'`— así que sus tokens se pintan en esta etapa, y hasta hoy salían
+   * del proxy `figura=Jorge Macri` + ventana.
+   *
+   * ⚠ **Alcanza a todo marcador de `rdv/RVD JM-CM - ES` de esta etapa, y ése es exactamente el
+   * conjunto que `R-17 Addendum 1` cubre.** Los tres que también viven en el bloque de encuentro
+   * —`ecv_barrio`, `ecv_poblacion`, `enc_evento`— **ya se pintaron en la etapa 3** con la fila de
+   * su ítem; lo que resuelvan acá sólo se usa si su token quedó crudo en una lámina que no se
+   * emitió, donde el agregado del temario es una respuesta mejor que la base entera.
+   *
+   * **Cuesta nada:** `anclarEncuentros` está cacheado por corrida, así que si la sección de
+   * encuentro ya corrió, esto no lee una fila más. */
+  var opcionesEtapa4 = periodoId ? { ventana: ventana } : {};
+  var temario = filasRdvDelTemario_(informeId, ventana);
+  if (temario.filas.length) {
+    opcionesEtapa4.filas_rdv = temario.filas;
+    opcionesEtapa4.hoja_rdv = temario.hoja;
+    opcionesEtapa4.temario_sin_fila = temario.sin_fila;
+  }
+  var resolucionEtapa4 = resolverMarcadores(informeId, opcionesEtapa4);
   resolucion = resolucionEtapa4;
   resolucion.resultados.forEach(function (r) { porMarcador[r.marcador] = r; });
 
