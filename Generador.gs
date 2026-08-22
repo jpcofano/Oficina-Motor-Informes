@@ -1974,28 +1974,58 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
           return;
         }
       }
+      // Sin `ventana`: la campaña es el PRIMER eslabón de `D-20` y `resolverVentana` usa
+      // su `desde`/`hasta`. Pasarle la del informe sería justo lo que el paso prohíbe.
+      //
+      // ⚠ **`periodo_id` viaja con el ítem**, y no es opcional: con la lista, `campana_id` solo
+      // ya no identifica una fila. Sin esto `resolverVentana` no puede saber de qué semana es la
+      // ventana y falla por ambigua — que es el comportamiento correcto, pero acá tenemos el
+      // dato y hay que pasarlo.
+      var opcionesCampana = {
+        campana: id,
+        periodo_id: String(c.periodo_id || '').trim(),
+        seccion_id: seccion.seccion_id,
+        filtro_seccion: seccion.filtro
+      };
+      var cuentaCampana = String(c.id_cuenta || '').trim();
+
+      /* ⭐ `2026-08-22_20` Parte A (addendum tras la Parte 0) — **la cuenta entra DONDE EL
+       * CONSUMIDOR LA BUSCA, que es adentro de `opciones`.**
+       *
+       * ⛔ **El bug, medido el 22/08 y con las dos mitades a la vista.** Esto ya ponía
+       * `id_cuenta` en el ítem —abajo, como hermano de `opciones`— y **nadie lo leía**: la rama
+       * por cuenta de `datosDeMarcador_` lee `opciones.id_cuenta`, y `opciones` es lo único que
+       * viaja: `opcionesItem` copia **sólo `asignacion.item.opciones`**. El productor llenaba un
+       * campo y el consumidor leía otro, **y ninguno de los dos fallaba**.
+       *
+       * **La consecuencia publicada:** los ocho `camp_*` de `looker/resumen_metricas_dinamico`
+       * leyeron el **agregado global de todas las cuentas** en vez de la campaña destacada, y la
+       * corrida `jm-20260821-234927` lo dejó a la vista — `ULTIMO` se negó a elegir entre
+       * 160 / 507 / 12.985 / 14.040 / 84.325 / 103.639. **La guarda de `ULTIMO` es lo único que
+       * evitó que se publicara un número plausible.**
+       *
+       * ⚠ **Y el comentario que estaba acá era falso, por eso se reescribe entero.** Decía que
+       * esto quedaba *"inerte hasta que la solapa declare su `campo_id_cuenta`"*. **La solapa lo
+       * declara desde antes** —`SOLAPAS.looker/resumen_metricas_dinamico.campo_id_cuenta =
+       * `id_cuenta`, verificado en la hoja viva el 22/08— y seguía inerte igual. Es la familia de
+       * `CLAUDE.md` §4: un comentario que afirma un contrato es una premisa sin testigo, y
+       * sobrevive porque nada lo contradice.
+       *
+       * ⭐ **Se calca la forma de la rama `REUNIONES`** —`if (e.idCuenta) opciones.id_cuenta = …`—
+       * y no se toca el consumidor: `REUNIONES` ya funciona contra él, y moverlo rompería lo que
+       * anda para arreglar lo que no.
+       *
+       * ⚠ **Y el hermano se conserva**, porque tiene un lector propio y medido: el reporte
+       * `porItem` lo publica (`id_cuenta: asignacion.item.id_cuenta`). Grepeado el 22/08, es el
+       * único. Los dos quedan hasta saber cuál sobra — quitar el que parece redundante **antes**
+       * de saberlo es cómo se rompe un reporte sin que nada falle. */
+      if (cuentaCampana) opcionesCampana.id_cuenta = cuentaCampana;
+
       items2.push({
         clave: id,
         etiqueta: c.nombre || id,
-        // Sin `ventana`: la campaña es el PRIMER eslabón de `D-20` y `resolverVentana` usa
-        // su `desde`/`hasta`. Pasarle la del informe sería justo lo que el paso prohíbe.
-        //
-        // ⚠ **`periodo_id` viaja con el ítem**, y no es opcional: con la lista, `campana_id` solo
-        // ya no identifica una fila. Sin esto `resolverVentana` no puede saber de qué semana es la
-        // ventana y falla por ambigua — que es el comportamiento correcto, pero acá tenemos el
-        // dato y hay que pasarlo.
-        opciones: {
-          campana: id,
-          periodo_id: String(c.periodo_id || '').trim(),
-          seccion_id: seccion.seccion_id,
-          filtro_seccion: seccion.filtro
-        },
-        /* `2026-08-19` — **la cuenta de la campaña viaja con el ítem.** Estaba en `''` desde que
-         * la rama existe: el slot ya estaba y sólo le faltaba el dato. Con esto los `camp_*` leen
-         * por la misma vía que los `enc_*` — rama por cuenta, base entera, **sin recorte por
-         * ventana** (`R-17`: el temario ya seleccionó) — en cuanto la solapa declare su
-         * `campo_id_cuenta` en `SOLAPAS`. Sin esa declaración, esto es inerte y no cambia nada. */
-        id_cuenta: String(c.id_cuenta || '').trim(),
+        opciones: opcionesCampana,
+        id_cuenta: cuentaCampana,
         motivo: '',
         orden: Number(c.orden || 0)
       });
