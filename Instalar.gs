@@ -3285,6 +3285,64 @@ function curarSecciones_(cambios) {
 }
 
 /**
+ * ⭐ **El botón que hace llegar `itera_sobre` a `ecv_alcance_semanal`** (`2026-08-22_25` Parte A).
+ *
+ * ⛔ **Por qué hace falta un botón para una celda, y es la regla de `CLAUDE.md` §4 incumplida al
+ * escribir el paso.** La Parte A declaró `itera: 'REUNIONES'` en `SEED_SECCIONES_` — y **el seed
+ * de `SECCIONES` no actualiza filas que ya existen**: `sembrarSecciones_` hace
+ * `SEED_SECCIONES_.filter(s => !existentes[s.seccion_id])`, y `docs/ESCRITORES.md` lo declara con
+ * todas las letras — *"NO — sólo inserta filas nuevas, nunca actualiza. Por decisión (usuario,
+ * 16/08/2026): igual que `CONFIG`, la hoja manda y el seed sólo siembra lo ausente"*.
+ *
+ * **El síntoma fue exactamente el que la regla anticipa:** la corrida `jm-20260822-132206` tenía el
+ * código pusheado, las dos reuniones del temario en la hoja, **y el agregado no se movió** — ni el
+ * conteo ni los inscriptos. `filasRdvDelTemario_` exige `itera_sobre === 'REUNIONES'` **en la
+ * hoja**, que es lo que el motor lee, y ahí seguía vacío. *"Que el seed llegue no garantiza que la
+ * hoja cambie."*
+ *
+ * ⭐ **Va por `curarSecciones_` y no a mano ni por el sembrador**, y eso no es formalidad:
+ * `curarSecciones_` es el **segundo escritor declarado** de esta hoja (`ESCRITORES.md`, 05/08), la
+ * puerta para corregir **un campo de una fila que ya existe**. Cambiar `sembrarSecciones_` para que
+ * pise sería derogar una decisión del usuario del 16/08 para acomodar un paso.
+ *
+ * **Sin `_` y sin argumentos** porque Apps Script no lista en el desplegable ni las privadas ni las
+ * que reciben parámetros — las dos condiciones, `CLAUDE.md` §2.
+ *
+ * ⚠ **Y distingue los tres finales, que es la mitad de su valor** (*una corrida que no hizo nada
+ * tiene que decirlo, no informar éxito*): escribió · ya estaba · no encontró la fila.
+ */
+function declararIteraDelAgregado() {
+  var r = curarSecciones_([{ seccion_id: 'ecv_alcance_semanal', itera_sobre: 'REUNIONES' }]);
+
+  if (!r.ok) {
+    Logger.log('⛔ NO se pudo: ' + r.motivo);
+    return r;
+  }
+  if (r.sin_fila.length) {
+    Logger.log('⛔ NO se aplicó: ' + r.sin_fila.join(', '));
+    Logger.log('   La fila `ecv_alcance_semanal` tiene que existir en SECCIONES. Si falta, corré');
+    Logger.log('   primero «Aplicar configuración», que SÍ agrega filas ausentes.');
+    return r;
+  }
+  if (!r.cambios_escritos) {
+    /* ⚠ «Ya estaba» NO es lo mismo que «se escribió», y confundirlos es cómo una corrida que no
+     * hizo nada se lee como éxito. Acá además es información útil: si ya estaba y el agregado
+     * igual no cambia, el problema es otro y hay que buscarlo en otro lado. */
+    Logger.log('ⓘ Ya estaba: `ecv_alcance_semanal.itera_sobre` ya decía "REUNIONES". No se escribió nada.');
+    Logger.log('   Si el agregado igual no cambió, el problema NO es la declaración.');
+    return r;
+  }
+
+  r.aplicados.forEach(function (a) {
+    Logger.log('✅ ' + a.seccion_id + '.' + a.campo + ': "' + a.anterior + '" → "' + a.nuevo + '"');
+  });
+  Logger.log('');
+  Logger.log('Ahora sí: generá `jm` con el período `agosto_14_20` y mirá la lámina del alcance');
+  Logger.log('semanal. `ecv_encuentros` tiene que dar 2 y `ecv_barrios` listar los dos barrios.');
+  return r;
+}
+
+/**
  * `B.1` de las once respuestas (07/08) — la puerta para **corregir un campo** de un marcador
  * que ya existe. Es a `MARCADORES` lo que `curarSecciones_` es a `SECCIONES`, y nace por la
  * misma falta: `curarMarcadores_` **agrega y quita filas enteras**, y cambiar el `formato` de
