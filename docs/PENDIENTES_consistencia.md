@@ -7142,7 +7142,33 @@ los **2.772.141** que publica el motor —1,55×—. Programmatic coincide al 3 
 hipótesis es que la medición está mal). El `~=` del motor puede comparar distinto; **no está medido
 y no se afirma**.
 
-### ⛔ P0 · `unirDigitalPorCuenta` cuesta ≥325 s con la ventana de julio y 33 s con la de agosto — cualquier corrida de un temario grande muere (22/08/2026)
+### ✅ ~~P0 · `unirDigitalPorCuenta` cuesta ≥325 s con la ventana de julio~~ — **FALSO POSITIVO, cerrado el 22/08/2026**
+
+> ⛔ **Cerrado el mismo día, y el motivo es de método: el instrumento corría sin las cachés que
+> `generarInforme` enciende.** No había ningún problema de escala.
+>
+> | qué corrió | etapa 3 | `unirDigitalPorCuenta` | total |
+> |---|---|---|---|
+> | sin ninguna caché | 49 s | ⛔ ≥325 s, muere | ⛔ ≥375 s |
+> | con `cacheDatosHoja_` sola | 58 s | ⛔ 316 s, muere | ⛔ ≥375 s |
+> | ⭐ **con las dos, como `generarInforme`** | **12 s** | **6 s** | ✅ **35 s** |
+>
+> **`unirDigitalPorCuenta` de 325 s a 6: un factor 54.** Y la etapa 3 de 49 a 12, con las llamadas
+> 2 a 6 en **1-2 s** cada una — la primera paga 5 s y el resto son aciertos de caché.
+>
+> ⭐ **La que faltaba era `cacheRegistros_`, no la de datos**, porque `buscarMapeo` relee `SOLAPAS`
+> y `MAPEO` enteras en cada llamada. Con `cacheDatosHoja_` sola **no cambió nada** (58 s contra 49).
+>
+> **La lección quedó en `CLAUDE.md` §4** y el `2026-08-22_28` —escrito para arreglar el problema
+> inexistente— quedó **anulado antes de ejecutarse**.
+>
+> ⚠ **Lo que NO se cierra con esto:** que una corrida real con seis encuentros entre en el techo
+> **sigue sin medirse**. Lo medido es que **el agregado por temario cuesta 35 s**, no que el deck
+> completo salga. El testigo con dos encuentros tardó 192 s; con seis, nadie corrió todavía.
+
+**El texto original, que es lo que se midió:**
+
+### ⛔ ~~P0 · `unirDigitalPorCuenta` cuesta ≥325 s con la ventana de julio y 33 s con la de agosto — cualquier corrida de un temario grande muere~~ (22/08/2026)
 
 **Medido, no estimado.** Sale de instrumentar `verificarAgregadoDeJulio()` después de que la
 primera versión muriera en el muro sin dejar nada.
@@ -7188,3 +7214,32 @@ está en una solapa, en el recorte, o en el cruce.
 temario de `agosto_14_20` tiene **2** encuentros y el de `julio_24_30` **6**. Si la semana que viene
 entra un temario de cinco o seis, **el deck no va a salir** — y el síntoma va a ser el muro, que no
 deja rastro.
+
+### ⏸ `ecv_asistentes` sobre el temario da 485 y NO tiene caso: nace sin validar (22/08/2026)
+
+**Anotado, no resuelto.** Sale de la Parte C.1 del `2026-08-22_25`, que sí reprodujo los dos
+números que tenían caso.
+
+| marcador | dio | esperado | |
+|---|---|---|---|
+| `ecv_inscriptos` | **2333** | 2333 (`V-71`) | ✅ reproduce |
+| `ecv_encuentros` | **4** | 4 | ✅ reproduce |
+| `ecv_barrios` | Belgrano · Retiro · San Cristóbal · Villa Urquiza | — | ⭐ **son los cuatro sumandos de `V-71`** |
+| **`ecv_asistentes`** | **485** | ⛔ **ninguno** | ⏸ **sin validar** |
+
+⚠ **`V-43` dice 497 y NO sirve como esperado**: mide la ventana de nueve días sobre `rdv`, no el
+universo del temario — la misma trampa que anuló el cruce de `V-38`…`V-44` y que ya tiene su
+advertencia en el CSV. **Compararlos sería restar dos universos distintos.**
+
+⭐ **Y `ecv_barrios` es el control de identidad que faltaba**, por otra vía: lista exactamente los
+cuatro encuentros que `V-71` declara —Belgrano es el barrio de *Orden Público*—, así que **el 2333
+sale de las filas correctas** y no de un total que coincide por casualidad.
+
+**Qué haría falta:** un caso propio para `ecv_asistentes` sobre el universo del temario. Hasta
+entonces se publica —nadie declaró desconfianza— pero **nace sin validar, no validado**
+(`CLAUDE.md` §1).
+
+ⓘ **Y de paso, la corrida contestó la ambigüedad que el P1 de `sinLink` dejaba abierta para
+julio:** el log dice **6 anclados · 0 baja confianza · 0 `sinLink`**, con scores de 0,81 y cinco
+de 1,00. **Todos anclaron por encima del umbral.** La hoja `ANCLAJE_PENDIENTE` no podía decirlo
+—por eso el P1 sigue abierto— pero **para este período ya está contestado**.
