@@ -1884,8 +1884,10 @@ es la más reciente**. Mismo caso que la nota vencida de `R-27`.
 | | qué | quién |
 |---|---|---|
 | **A.1** | **La corrida de `agosto_14_20`** que confirma los 🟡 del tablero — los tres «N envíos» (6 · 73 · 3) y los ocho `imp_*` en `_revisar`. ⚠ **Ninguna escritura en `MARCADORES` prueba que el deck salga con el número esperado**: eso lo dice una corrida y nada más | usuario |
-| **A.2** | **El ítem de IVR del iceberg** — `X-30`. La lámina 6 está 🟡 y **no le falta cablear ni decidir: le falta UNA traza**, qué `id_cuenta` recibe el ítem de Salud con el temario correcto. `V-106` ya probó que con `3488-AGOJDGAG` la solapa tiene filas y `enc_audiencia` da **107.194 exacto** | usuario |
-| **A.3** | **Medir `L-036`** — ver la contradicción de abajo. **Se mide antes de cablear nada** | Code |
+| ~~**A.2**~~ | ✅ **CERRADO el 22/08 por la corrida.** El iceberg publicó los cuatro de IVR exactos —Audiencia 107.194 · Atendidos 96.549 · +75 % 33.139 · Marque 1 304— y **`X-30` se cerró solo: el ítem llegó con `3488-AGOJDGAG`**. No hizo falta tocar nada | — |
+| ~~**A.3**~~ | ✅ **CERRADO el 22/08, y sin medir**: el deck mostró la tabla de `L-036` con **4 filas × 8 columnas = 32 casilleros**. Los 32 `post_` de `Auditoria.gs` eran correctos; el tablero estaba mal y se corrigió | — |
+| **A.5** | ⛔ **El tope de `R-30` NO actuó en la corrida del 22/08** — `imp_prog` salió 24.783.992, el total con `2976-MAYPCCVC` adentro. Sospecha medida: `CONFIG` **sólo siembra lo ausente** y su sembrador es el ítem **«Aplicar configuración»**, no `instalar()`; un `clasp push` no escribe una celda. Lo confirma `diagTopeDeVentana()` | usuario |
+| **A.6** | ⛔ **`X-31` — `mail_entregados` bajó 15** (538.276 contra 538.291 del fixture). Descartados el cambio de operación y `R-30`; **queda que la base se movió, y hacia abajo**, que es lo que `R-29` dice que no pasa con un evento | Code + usuario |
 | **A.4** | **`X-29` — decidido el 22/08: va la salida (b), tope de duración**, con el tope en `CONFIG` y la regla en `REGLAS_NEGOCIO.md`. ⛔ **No cierra `X-28`** — ver abajo | Code |
 
 ⚠ **`X-28` no está acá y es a propósito: no lo destraba el trabajo, lo destraba un archivo.** Espera
@@ -1899,20 +1901,19 @@ sobre los dos exports; **`X-28` necesita un tercer DECK publicado**. Que `duraci
 de los tres desempates que `X-28` no pudo separar **no es evidencia de que 30 sea el número correcto
 para aquéllo**.
 
-#### ⚠ La contradicción de `L-036`, anotada y **no resuelta** — se mide en `A.3`
+#### ✅ La contradicción de `L-036` se resolvió — 22/08/2026, y sin medir
 
-**Tres fuentes, tres respuestas, y ninguna se puede descartar leyendo:**
+**Se anotó sin resolver y la corrida la contestó sola.** El deck mostró la tabla: **4 filas × 8
+columnas = 32 casilleros**, todos en `/////`.
 
-| dice | qué |
-|---|---|
-| `docs/CIERRE_POR_LAMINA.md` | lámina **7**, *"Campañas · pie"*, **4 tokens** `camp1-4`, tabla 7×8 |
-| `Auditoria.gs:4131` | `L-036` = `comunicaciones_post`, **pos 9**, *"Campañas · DIGITAL · Período"* |
-| `Auditoria.gs:4217` | *"`L-036` **con sus 32 `post_`**"* |
-| `LAMINAS` (snapshot 21/08) | `L-036` · `seccion_id = comunicaciones_post` · `orden_plantilla = 7` |
+⭐ **Ganaba `Auditoria.gs`, no el tablero.** Sus *"32 `post_`"* eran correctos;
+`CIERRE_POR_LAMINA.md` decía *"4 tokens `camp1-4`, tabla 7×8"* y estaba mal. **Se corrigió el
+tablero, no el código.**
 
-⛔ **No es una discrepancia de nombre: son 4 tokens contra 32, y dos posiciones distintas.**
-⚠ **Y `orden_plantilla` no arbitra** — `CLAUDE.md` §2 dice que es reportado y **nunca autoritativo**.
-**Se mide contra la plantilla viva.**
+⚠ **Y la lección de método, que es barata y vale para la próxima:** las tres fuentes se
+contradecían y **ninguna se podía descartar leyendo** — se descartó **mirando el deck**, que es la
+única autoridad sobre cuántos casilleros tiene una lámina. **Salió más barato que la medición que
+se había planificado**, y el ítem `A.3` se cerró sin ejecutarse.
 
 ---
 

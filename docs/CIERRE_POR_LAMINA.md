@@ -56,8 +56,8 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) · `gcba_sms_*` 🟡 | 22/08 |
 | **4** · «Encuentros con vecinos» | `L-033` | 🟡 | **Cero tokens y `rol = equipo`: no hay nada que cablear.** Es un separador. Falta sólo que el usuario lo mire | — |
 | **5** · ECV: alcance semanal | `L-034` | ⛔ | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUCEN** contra `V-71`, con `ecv_barrios` confirmando la identidad de los sumandos. Falta: **`ecv_asistentes` = 485 sin validar** (abajo) · ⚠ **los 3 `cc_*` se van a PINTAR ACÁ SIN CONTROL** (abajo) · `ecv_barrio1-3` nombrados en el seed y **sin fila en `MARCADORES`** | 22/08 |
-| **6** · Benchmarks / Iceberg | `L-035` `L-052` | 🟡 | ⭐⭐ **Las seis cifras del alcance cierran AL DÍGITO** —Mail 619, Digital 96, Difusión 10, Call+IVR 101+29=130, Inscriptos 855, Asistentes 186—. ⭐ **Y el IVR también está bien cableado**: `enc_audiencia` = **107.194** exacto (`V-106`). **Falta un solo dato y es una corrida, no una decisión**: la traza de qué `id_cuenta` recibe el ítem de Salud (`X-30`) | 22/08 |
-| **7** · Campañas · pie | `L-036` | ⛔ | 4 tokens `camp1-4`, tabla 7×8. **Sin medir** | — |
+| **6** · Benchmarks / Iceberg | `L-035` `L-052` | 🟡 **candidata a ✅** | ⭐⭐⭐ **CIERRA. La corrida del 22/08 publicó los cuatro de IVR exactos** — Audiencia **107.194** · Atendidos **96.549** · Escucharon +75 % **33.139** · Marque 1 **304**. **`X-30` se cerró solo: el ítem llegó con `3488-AGOJDGAG` y no hizo falta tocar nada.** Con las seis cifras del alcance que ya cerraban al dígito, **la lámina está completa**. ⛔ **El ✅ lo pone el usuario** | 22/08 |
+| **7** · Campañas · DIGITAL · Período | `L-036` | ⛔ | ⭐ **Resuelto sin medir por la corrida del 22/08: la tabla del deck es 4 filas × 8 columnas = 32 casilleros, todos en `/////`.** Los **32 `post_`** de `Auditoria.gs` eran correctos y **este tablero estaba mal** —decía *"4 tokens `camp1-4`, tabla 7×8"*—. Falta **cablear los 32** | 22/08 |
 | **8** · «Comunicaciones M2» | `L-037` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | **9** · Directa · Status M2 | `L-038` | ⛔ | 8 tokens. ⭐ **El numerador coincide y el denominador no** (−9,6 % en enviados/entregados, con el numerador quieto) → falta **decidir** de qué universo sale el denominador | 22/08 |
 | **10** · M2 *(escondida)* | `L-039` | ⛔ | 23 tokens. **Sin medir** — la lámina está `escondida = sí` | — |
@@ -119,7 +119,34 @@ que ya sale, cuesta cero código y no depende de nadie; **(b)** pedirle el dato 
 
 ---
 
-## ⏸ En espera de la corrida de `agosto_14_20` — no se cablea nada antes
+## La corrida de `agosto_14_20` del 22/08 — qué contestó y qué abrió
+
+**Corrió con el `_25`, `R-30` pusheado y los tres botones aplicados.**
+
+### ✅ Lo que cerró
+
+- ⭐⭐⭐ **El iceberg (`L-035`), completo.** Los cuatro de IVR exactos, y **`X-30` se cerró solo**:
+  el ítem llegó con `3488-AGOJDGAG` sin tocar una línea. **El diagnóstico de la lámina 6 era
+  correcto y el problema no existía en esta corrida.**
+- **`L-034`**: `ecv_encuentros` = **2**, barrios **Parque Avellaneda** y **Parque Patricios**.
+  ⭐ Coherente con el iceberg: `3488-AGOJDGAG` es *"TE CUENTO | SALUD **Eje Sur**"*, y Parque
+  Patricios es del sur. **El `_25` cierra.**
+- **`L-036`**: 4 filas × 8 columnas = **32 casilleros**. La contradicción se resolvió **sin medir**:
+  `Auditoria.gs` tenía razón con sus 32 `post_`.
+
+### ⛔ Lo que abrió, medido contra el fixture del 20/08
+
+| | el deck | el fixture | veredicto |
+|---|---|---|---|
+| `imp_prog` JM | **24.783.992** | — | ⛔ **el tope NO actuó** — es el total con `2976` adentro |
+| `mail_entregados` JM | **538.276** | **538.291** | ⛔ **−15, y la base BAJÓ** |
+| «N envíos» Mail GCBA | **63** | **63** | ✅ **EXACTO** — el 73 era una expectativa, no una medición |
+| «N envíos» SMS GCBA | **4** | **3** | ⚠ **+1: apareció un envío nuevo** |
+| Call Center, láminas 2 y 5 | `/////` | — | ✅ **esperado** — no se cableó ningún `cc_*`, frenado por `X-28` |
+
+---
+
+## ⏸ En espera — no se cablea nada antes de la corrida con el tope activo
 
 **Decisión del usuario, 22/08.** `ecv_fecha` y `ecv_barrio1-3` **no se cablean todavía**, y el
 motivo no es de prioridad:

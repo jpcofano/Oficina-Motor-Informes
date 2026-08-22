@@ -4425,3 +4425,78 @@ function medirCostoDeResolverMarcadores() {
   }
   return r;
 }
+
+/**
+ * `R-30` — **¿el tope de duración está actuando, y a quién sacó?**
+ *
+ * ⭐ **Existe porque «el tope no está sembrado» y «el tope está y no saca a nadie» producen el
+ * MISMO número publicado**, y mandan a trabajos opuestos: sembrar contra volver a medir el
+ * criterio. La corrida del 22/08 sobre `agosto_14_20` public\u00f3 `imp_prog` = **24.783.992**, que es
+ * el total SIN tope —`2976-MAYPCCVC` aporta 15,4 M y sigue adentro—, y desde el deck **no se puede
+ * saber cuál de las dos causas es**.
+ *
+ * ⚠ **La sospecha que este bot\u00f3n pone a prueba primero, dicha para que el reporte pueda
+ * desmentirla:** `CONFIG` **s\u00f3lo siembra lo ausente** y el sembrador es el \u00edtem de men\u00fa
+ * **«Aplicar configuraci\u00f3n»**, no `instalar()`. Un `clasp push` lleva el `SEED_*` al proyecto y
+ * **no escribe una sola celda de la hoja**. Si la medici\u00f3n dice otra cosa, gana la medici\u00f3n.
+ *
+ * Sin par\u00e1metros y sin `_`, para que aparezca en el desplegable (`CLAUDE.md` \u00a72).
+ */
+function diagTopeDeVentana() {
+  Logger.log('== R-30 \u00b7 \u00bfel tope de ventana est\u00e1 actuando? ==');
+
+  var crudo = leerConfig().tope_dias_ventana_cuenta;
+  Logger.log('   CONFIG.tope_dias_ventana_cuenta = ' + JSON.stringify(crudo) +
+    '  (typeof ' + (typeof crudo) + ')');
+  Logger.log('   topeDiasVentanaCuenta_() = ' + topeDiasVentanaCuenta_());
+  Logger.log('   el seed declara: ' + (SEED_CONFIG_DEFAULTS_.tope_dias_ventana_cuenta || '(nada)'));
+
+  if (!topeDiasVentanaCuenta_()) {
+    Logger.log('');
+    Logger.log('\u26d4 EL TOPE EST\u00c1 DESACTIVADO. El default del c\u00f3digo es 0 a prop\u00f3sito, as\u00ed que');
+    Logger.log('   ninguna instalaci\u00f3n sin la clave sembrada mueve n\u00fameros en silencio.');
+    Logger.log('   \u2192 Correr el \u00edtem de men\u00fa "Aplicar configuraci\u00f3n" (NO alcanza `instalar()`,');
+    Logger.log('     que crea y repara hojas pero no siembra), y volver a correr esto.');
+  }
+
+  var ventana = resolverVentana({ periodo_ref: 'agosto_14_20' });
+  if (!ventana.ok) { Logger.log('\u26d4 ' + ventana.motivo); return ventana; }
+  Logger.log('');
+  Logger.log('   ventana: ' + formatearFecha_(ventana.desde) + ' \u2192 ' + formatearFecha_(ventana.hasta));
+
+  /* Las dos solapas que hoy toman la ventana prestada. Se descubren leyendo `SOLAPAS`, no de una
+   * lista escrita ac\u00e1: si ma\u00f1ana hay una tercera, este diagn\u00f3stico la tiene que ver sola. */
+  var conRef = [];
+  leerSolapas().forEach(function (s) {
+    if (String(s.uso || '').trim() === 'ignorar') return;
+    if (referenciaDeVentana_(s.base_id, s.solapa)) conRef.push(s);
+  });
+  Logger.log('   solapas con `ventana_ref`: ' + conRef.length);
+
+  conRef.forEach(function (s) {
+    var c = conjuntoDeClavesEnVentana_(s.base_id, referenciaDeVentana_(s.base_id, s.solapa), ventana);
+    Logger.log('');
+    Logger.log('   \u2500\u2500 ' + s.base_id + '/' + s.solapa + ' \u2192 referencia ' +
+      referenciaDeVentana_(s.base_id, s.solapa));
+    if (!c.ok) { Logger.log('      \u26d4 ' + c.motivo); return; }
+    Logger.log('      claves en ventana : ' + c.tamano + ' de ' + c.tamano_universo);
+    Logger.log('      tope_dias_aplicado: ' + c.tope_dias_aplicado +
+      (c.tope_dias_aplicado ? '' : '   \u2190 0 = DESACTIVADO, distinto de "activo y no sac\u00f3 a nadie"'));
+    Logger.log('      fuera por tope    : ' + c.filas_ref_fuera_por_tope);
+    var quienes = Object.keys(c.claves_fuera_por_tope || {});
+    quienes.sort(function (a, b) { return c.claves_fuera_por_tope[b] - c.claves_fuera_por_tope[a]; });
+    quienes.slice(0, 15).forEach(function (k) {
+      Logger.log('         ' + k + '  \u00b7 ' + c.claves_fuera_por_tope[k] + ' d\u00edas');
+    });
+    if (quienes.length > 15) Logger.log('         \u2026 y ' + (quienes.length - 15) + ' m\u00e1s');
+    if (c.tope_dias_aplicado && quienes.indexOf('2976-MAYPCCVC') === -1 && s.solapa === 'DIGITAL') {
+      Logger.log('      \u26a0 2976-MAYPCCVC NO est\u00e1 en la lista y deber\u00eda: es la de 210 d\u00edas.');
+    }
+  });
+
+  Logger.log('');
+  Logger.log('\u2b50 C\u00d3MO SE LEE: `tope_dias_aplicado: 0` = desactivado (falta sembrar).');
+  Logger.log('   `tope_dias_aplicado: 90` con `fuera por tope: 0` = activo y no sac\u00f3 a nadie,');
+  Logger.log('   que ser\u00eda un hallazgo distinto y mandar\u00eda a revisar el criterio, no la siembra.');
+  return { ok: true, tope: topeDiasVentanaCuenta_() };
+}
