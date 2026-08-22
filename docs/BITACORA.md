@@ -13280,3 +13280,56 @@ y `1.878` **exacto** — un ±% contra una base que acumula no sirve de control.
 
 **Commits:** `85f4a4f` (el prompt), `48d8395` (el veredicto y su control), `ad62103` (la Parte 0 y
 la corrección), `2fc2616` (el tablero).
+
+
+---
+
+## 2026-08-22 — Paso `_27` Partes B y C: el `MAPEO` de `looker/CC` entra, el cableado no
+
+**Lo que entró.** Cuatro filas de `MAPEO` para `looker/CC` —`clave_ventana` y `lcc_id_cuenta` en la
+col. A, `lcc_base_barrida` en la C, `lcc_contactados` en la D— más `ventana_ref: 'Cuentas'` en
+`SEED_SOLAPAS_`, porque la solapa **no tiene columna temporal propia**. Prefijo `lcc_` a propósito:
+`cc_contactados` y `cc_efectivos` **ya son `campo_logico` de `reuniones/Agenda JM`** desde el `_44`.
+
+⭐ **`Base enviada` no se mapea, y es deliberado.** «Base discada» es `Base barrida`, y el que lo
+decide es el porcentaje: con `Base enviada` (6.673) el ratio daría 28 % y el deck dice **31**.
+**Una fila declarada es una invitación a usarla**, y ésa ya se eligió mal una vez. El control nuevo
+—`tools/probar-mapeo-cc.js`, **24 afirmaciones**— tiene esa negativa como su afirmación central.
+
+**`V-105` cerró el control de la definición: cuatro de cuatro** contra el deck del equipo del 31/07
+y la `Base Looker` **del mismo archivo** — «2 campañas · 6.011 · 1.878 · 31 %».
+
+### ⛔ Y el freno, que apareció midiendo *de qué filas sale* el 6.011
+
+**Ninguna regla escrita reproduce la selección de cuentas.** La pertenencia sola da **18 cuentas /
+22 filas / 100.197** —**el gabinete entero**, misma familia que `R-15` addendum 1, factor 16,7—.
+`nombre_campaña CONTIENE JM`, que es la clave de `V-64`, da **5 filas / 13.965**, porque
+`3387-JULJDGGC` también es del temario y también dice «JM».
+
+⛔ **Y ese filtro falla por los dos lados a la vez**, que es lo que lo descarta: deja entrar `3387`
+**y deja afuera la cuenta correcta de agosto** — `3488-AGOJDGAG` se llama *"TE CUENTO | SALUD Eje
+Sur Viernes 14/8"* y **no dice «JM»**.
+
+⭐ **Lo único consistente en los dos decks: el bloque publica UNA SOLA CUENTA**, no un agregado de la
+semana. En julio el temario tenía dos cuentas con filas en `CC` y el deck usó una. **No hay regla
+que diga cuál**, así que no se inventa: es `X-28` y es pregunta al equipo, escrita con las tres
+formas que podría tener la respuesta.
+
+⚠⚠ **La trampa material, medida al paso, y explica el error de la mañana mejor que el descuido:**
+`3289-JUNJDGAG` tiene `fecha_fin` = **30/07** en el export del 31/07 y **20/08** en el del 20/08.
+**La ventana de una cuenta se extiende sola**, así que en agosto una cuenta de **junio** cae dentro
+por pertenencia — y un filtro por nombre la elige antes que a la de agosto. `V-105` quedó corregido
+el mismo día: lo validado es **la columna y la operación**, no qué cuentas entran.
+
+### Parte C
+
+**Ninguna fila del tablero cambió de estado, y eso es el resultado.** Lo que cambió es el *«qué
+falta»*: el Call Center pasó de *"sin cablear"* a **`MAPEO` escrito y cableado frenado por `X-28`**
+—un bloqueo con nombre en vez de un hueco—. Y la **lámina 5 queda anotada como «pintada sin
+control»**: los tres `cc_*` viven también ahí, y los cuatro casos que los validan están etiquetados
+`resumen_ejecutivo_jm`. **Un token verificado en una lámina no está verificado en la otra.**
+
+**28 suites, 0 en rojo.** `clasp push` hecho.
+
+**Commits:** `1bf35f5` (`V-105`, `C-69`, `C-70`), `5b75625` (el `MAPEO`, el freno y su control),
+`8e2a517` (el tablero y `X-28`).
