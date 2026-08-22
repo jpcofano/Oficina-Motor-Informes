@@ -7025,31 +7025,138 @@ notas: "detalle por canal, con ID cuentas"
 ⛔ **Y ningún marcador la lee.** Los tres casilleros del Resumen —«N campañas de Call Center», «Base
 discada», «Contactados»— salen `/////`, que significa exactamente eso: **nadie lo cableó**.
 
-**Lo medido contra el fixture, ventana 14–20/08, ámbito JM:**
+> # ⛔⛔ CORREGIDO EL 22/08/2026, MISMO DÍA — LA MEDICIÓN DE ABAJO SALIÓ DE UNA CUENTA DE JUNIO
+>
+> **La tabla tachada midió `3289-JUNJDGAG`** —`JUN`, la cuenta de *Primera Persona* del 27/07—
+> **contra un deck publicado de agosto**. Sus cuatro números son, textualmente, los que `V-92` ya
+> tenía medidos sobre el export del 31/07: `6.673 / 6.011 / 1.878 / 1.661`.
+>
+> **La cuenta que corresponde a la ventana 14–20/08 es `3488-AGOJDGAG`**, y tiene **tres** filas
+> —que son las «3 campañas de Call Center» del equipo, contadas exacto:
+>
+> | `3488-AGOJDGAG` | `Base enviada` | `Base barrida` | `Contactados` | `Efectivos` |
+> |---|---|---|---|---|
+> | Convocatoria | 6.000 | 6.000 | 1.249 | 1.043 |
+> | Reconfirmación | 802 | 802 | 348 | 338 |
+> | IVR convocatoria | 294 | 294 | 113 | 103 |
+> | **suma de las tres** | **7.096** | **7.096** | **1.710** | **1.484** |
+>
+> | casillero | esperado | el equipo | |
+> |---|---|---|---|
+> | «N campañas» | **3** | 3 | ✅ **exacto** |
+> | «Base discada» | 7.096 | 6.851 | **+3,6 %** |
+> | «Contactados» | 1.710 | 1.616 (24 %) | **+5,8 %** |
+>
+> ⭐ **Y el hallazgo de definición queda AL REVÉS de como estaba escrito: «Base discada» es
+> `Base barrida`, no `Base enviada`.** No lo decide agosto —en `3488` **las dos columnas son
+> idénticas**, así que esa cuenta no puede distinguirlas—: lo deciden los tres casos que el repo
+> ya tenía, medidos sobre la única cuenta donde difieren.
+>
+> | | dice |
+> |---|---|
+> | `V-64` | `cc_base` = **6.011** = `Base barrida` sobre `3289`. Con `Base enviada` daría 6.673 |
+> | `V-66` | `cc_contact_pct` publicado **31 %** = `1878/6011`. Con `Base enviada`: `1878/6673` = **28 %** |
+> | `V-92` | el Resumen **no filtra por tipo**; las dos filas de `3289` publican `6.011` y `1.878` |
+>
+> ⛔ **`V-66` es un discriminador limpio y estaba escrito para esto** —*"el porcentaje no se deriva
+> del otro número publicado"*—. **Existía desde el 19/08 y no lo miré.** `CLAUDE.md` §1 manda leer
+> los casos validados antes de medir; ésta es la regla que yo mismo escribí hoy, incumplida el
+> mismo día.
+>
+> ⭐⭐ **Y lo que tendría que haber frenado esto sin necesidad de `V-66`, porque estaba en la tabla
+> misma: las dos columnas se movían en direcciones OPUESTAS.** `Base enviada` −2,6 % y
+> `Contactados` +16 % entre las mismas dos fechas, sobre la misma solapa. **Dos columnas del mismo
+> hecho que divergen de signo no son «la base se movió»: son las filas equivocadas.** La nota de
+> abajo lo vio y lo explicó con `R-29` en vez de tratarlo como la señal que era — **una explicación
+> plausible tapó una contradicción**. Con la cuenta correcta los dos van **+3,6 % y +5,8 %**: mismo
+> signo, misma magnitud, una solapa de estado que acumula. Eso sí es la base moviéndose.
+>
+> ⚠ **El control de cableado NO es ninguno de estos números**, y es el corolario práctico: 7.096 y
+> 1.710 son contra una base que sigue creciendo. **El control es el deck del 31/07**, donde `V-64`
+> y `V-92` dan `6.011` y `1.878` **exacto** contra lo publicado.
+>
+> **Lo que sí queda en pie de la nota de abajo:** que `looker/CC` es `fuente`, que **ningún**
+> marcador la lee, que `MAPEO` no tiene ni una fila suya, y que los casilleros salen `/////`.
 
-| | fixture `looker/CC` | el equipo | |
+~~**Lo medido contra el fixture, ventana 14–20/08, ámbito JM:**~~
+
+| | ~~fixture `looker/CC`~~ | ~~el equipo~~ | |
 |---|---|---|---|
-| filas | 2 | «**3** campañas de Call Center» | |
-| **`Base enviada`** | **6.673** | **«Base discada» 6.851** | ✅ **−2,6 %** |
-| `Base barrida` | 6.011 | — | −12 % contra el mismo casillero |
-| `Contactados` | 1.878 | 1.616 (24 %) | +16 % |
-| `Efectivos` | 1.661 | — | |
+| ~~filas~~ | ~~2~~ | ~~«**3** campañas de Call Center»~~ | |
+| ~~**`Base enviada`**~~ | ~~**6.673**~~ | ~~**«Base discada» 6.851**~~ | ~~−2,6 %~~ |
+| ~~`Base barrida`~~ | ~~6.011~~ | ~~—~~ | ~~−12 % contra el mismo casillero~~ |
+| ~~`Contactados`~~ | ~~1.878~~ | ~~1.616 (24 %)~~ | ~~+16 %~~ |
+| ~~`Efectivos`~~ | ~~1.661~~ | ~~—~~ | |
 
-⭐⭐ **Y el hallazgo de definición, que es lo accionable: «Base discada» del equipo es
+~~⭐⭐ **Y el hallazgo de definición, que es lo accionable: «Base discada» del equipo es
 `Base enviada`, NO `Base barrida`.** Los nombres invitan a lo contrario —*discada* suena a
 *barrida*— y elegir mal da un número **12 % abajo, plausible y sin nada que lo delate**. Con
-`Base enviada` cierra a −2,6 %.
+`Base enviada` cierra a −2,6 %.~~
 
-⚠ **`Contactados` queda +16 % y no se fuerza.** Cae bajo `R-29`: `looker/CC` **no tiene fecha
+~~⚠ **`Contactados` queda +16 % y no se fuerza.** Cae bajo `R-29`: `looker/CC` **no tiene fecha
 propia** —toma la ventana de `Cuentas` por pertenencia— así que es una solapa **de estado**, y sus
 dos filas JM traen el acumulado de campañas que arrancaron antes. Que `Base enviada` cierre y
 `Contactados` no es coherente con eso: la base se envía una vez al arrancar y los contactos siguen
-sumando.
+sumando.~~
 
-**Lo que hace falta para cablearlo, y no entra acá:** las tres filas de `MARCADORES`
+~~**Lo que hace falta para cablearlo, y no entra acá:** las tres filas de `MARCADORES`
 —`CONTEO` de filas para las campañas, `SUMA` de `Base enviada`, `SUMA` de `Contactados`— más las
-filas de `MAPEO` de esa solapa, que **hoy no tiene ninguna**. Es un paso de cableado con su propio
-control contra estos números.
+filas de `MAPEO` de esa solapa, que **hoy no tiene ninguna**.~~ **Son cuatro, no tres — medido en
+la Parte 0 del `_27`, abajo.**
+
+### ⛔ Parte 0 del `_27` — el Call Center son CUATRO celdas, y el token que el prompt pone como control no existe (22/08/2026)
+
+**Sólo lectura. La Parte B del `_27` no se ejecutó**: su control nombra un token que no es lo que
+el prompt cree, y su número esperado es el de la cuenta de junio que se corrige arriba.
+
+**1 · Son cuatro casilleros, no tres.** Medido sobre el testigo `2026-08-22 1402`:
+
+| token | en el deck | el equipo publica |
+|---|---|---|
+| `cc_campanias` | `///// campañas de Call Center` | **3** |
+| `cc_base` | `Base discada: /////` | **6.851** |
+| `cc_contactados` | `Contactados: /////` | **1.616** |
+| `cc_contact_pct` | `(/////%)` | **24 %** |
+
+⚠ **Y el cuarto no es decorativo: es el que decide la definición.** `V-66` usa exactamente ese
+porcentaje para separar `Base barrida` de `Base enviada`. Dejarlo sin cablear saca del deck el
+único control que se verifica solo.
+
+**2 · ⛔ `cc_base_total` no es un token del Resumen — es un `campo_logico` de `reuniones/Agenda
+JM`.** El prompt lo pone como control (*"`cc_base_total` da 6.673"*) y en `MARCADORES` es la
+columna que lee **`enc_base_total`**, de la lámina del iceberg, cableada desde el `_44` (12/08).
+**Son dos láminas distintas y dos fuentes distintas** — `looker/CC` contra `reuniones/Agenda JM`.
+Un control escrito contra el token equivocado habría dado verde sobre trabajo ya hecho.
+
+**3 · `cc_base`, `cc_contactados` y `cc_contact_pct` viven en DOS láminas**, no en una:
+`TOKENS.md` los lista en la 2 (Resumen Ejecutivo JM) **y en la 5** (ECV alcance semanal). Cablear
+uno pinta las dos. ⚠ **Antes de escribir la fila hay que decidir si son el mismo universo**: los
+casos `V-64`/`V-66`/`V-92` están etiquetados `resumen_ejecutivo_jm` y **ninguno mide la lámina 5**.
+Es la pregunta de *"¿de qué filas sale?"* de `CLAUDE.md` §4, en el momento en que se hace barata.
+
+**4 · `MAPEO` para `looker/CC`: cero filas, confirmado.** `looker` sólo tiene
+`resumen_metricas_dinamico` (27), `DIGITAL` (5) y `Cuentas` (3).
+
+**5 · La forma se copia de `looker/DIGITAL`, que anda, y el mecanismo es el `_23`:** la solapa
+**no tiene fecha propia** y toma la ventana por **pertenencia**, declarando `clave_ventana` sobre
+su columna de cuenta. `DIGITAL` lo hace con `Id cuentas` (col. A) contra `Cuentas.fecha_inicio` /
+`fecha_fin`. `CC` necesita lo mismo sobre `ID Cuentas` (col. A), más las cuatro columnas de
+medida. **Firma verificada en el fixture del 20/08**, 1.338 filas de datos:
+
+```
+ID Cuentas · Base enviada · Base barrida · Contactados · Efectivos · Tipo de llamado
+```
+
+**6 · ✅ El freno del `0.4` NO se dispara: la columna `Tipo de llamado` existe.** Con los valores
+que `S-01` y `V-91` nombran —`Convocatoria`, `IVR convocatoria`, `Reconfirmación`, `Informativo`,
+`Cancelación`—. ⚠ **Verificado sobre el fixture, no sobre la planilla viva**: el fixture se bajó
+el 20/08 de esa misma base, así que la columna existía ese día; que siga existiendo hoy no lo
+prueba nadie desde acá.
+
+⭐ **Y el recorte por tipo es al revés de lo que el prompt supone: el Resumen NO filtra.** `V-92`
+lo dice y `3488` lo confirma —las «3 campañas» son las **tres** filas, `Reconfirmación` incluida—.
+El filtro `Convocatoria + IVR convocatoria` de `V-91`/`S-01` es de la **lámina del iceberg**, que
+es otra. **Aplicarlo al Resumen daría 6.294 en vez de 7.096**: plausible, y mal.
 
 ---
 
