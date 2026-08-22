@@ -6930,3 +6930,81 @@ se llega a un número correcto por el camino equivocado. Va como pregunta al equ
 arreglo de `c50984b`, ya pusheado— **la lámina de campaña destacada del motor debería dar los
 números del equipo**. Si no los da, el problema no es el recorte sino la lectura, y eso es otro
 trabajo.
+
+### ⛔ P0 · `looker/DIGITAL` guarda el ACUMULADO de la campaña, no lo de la semana — y el rótulo dice «de la semana» (22/08/2026)
+
+**Anotado, no arreglado.** Es el diagnóstico completo de Programmatic, y **no se arregla con una
+operación ni con un filtro**: el dato semanal **no existe en la base**.
+
+**El hecho, dicho por el usuario el 22/08 y verificado sobre el fixture:** en `looker/DIGITAL` **la
+fila se actualiza; no se agregan filas**. Para las dos campañas del temario de `agosto_14_20` hay
+**una sola fila por (cuenta, plataforma)** —7 filas para las dos campañas— y su columna
+`Impresiones` es el **acumulado desde que la campaña arrancó**.
+
+⭐⭐ **El número que lo prueba, y es una resta.** El Resumen Ejecutivo del equipo publica
+`Programmatic 3.415.037` para JM, y su propia lámina de la campaña del narco publica `3.035.525`.
+**Lo que aporta Autódromo es 3.415.037 − 3.035.525 = 379.512.** Y la fila de `DIGITAL` de Autódromo
+en DV360 dice **3.756.321**.
+
+| campaña · plataforma | arrancó | fila de `DIGITAL` (acumulado) | lo que el equipo le atribuye | factor |
+|---|---|---|---|---|
+| Autódromo · **DV360** | **6/08** | 3.756.321 | **379.512** | ⛔ **9,9×** |
+| Autódromo · Google ads | 6/08 | 436.601 | 458.661 | ✅ **1,05×** |
+| Autódromo · Meta | 6/08 | 1.506.236 | 1.140.567 | 0,76× |
+
+⭐ **Y encaja exactamente con «la fila se actualiza»:** Autódromo arrancó **ocho días antes** de la
+ventana, así que su fila de DV360 trae ocho días de acumulado que **no son de esta semana**.
+Google, que casi no acumuló antes, **cierra al 5 %**. La plataforma que más se pasa es la que más
+volumen acumula, no la que está peor leída.
+
+⭐ **Y la contraprueba, que es la que cierra el caso:** la campaña del narco arrancó el **10/08**,
+sólo cuatro días antes, y **su lámina reproduce plataforma por plataforma**:
+
+| plataforma | equipo | fixture | |
+|---|---|---|---|
+| Meta | 1.026.469 | 1.055.868 | ✅ +2,9 % |
+| Google/YouTube | 447.121 | 457.736 | ✅ +2,4 % |
+| Programmatic (DV360) | 3.035.525 | 3.207.779 | ✅ +5,7 % |
+| **TOTAL** | **4.509.115** | **4.721.383** | ✅ **+4,7 %** |
+
+**A menos acumulado previo, mejor cierra.** Es la misma variable explicando los dos casos.
+
+---
+
+⛔ **Y lo que hace que esto sea P0 y no un cableado más: el dato semanal no está en ninguna solapa
+del fixture.**
+
+- `looker/DIGITAL` — una fila por campaña × plataforma, **sin ninguna columna temporal propia**
+  (`SOLAPAS.ventana_ref = 'Cuentas'` justamente porque no la tiene).
+- `digital/CAMPAÑAS_DESGLOCE_DIGITAL` — grano campaña × plataforma × **MES** (`Año`, `Mes`), **7
+  filas** para las dos campañas. Es más fino que `DIGITAL`, y **sigue sin ser semanal**.
+
+**Entonces ninguna operación arregla esto.** `SUMA`, `ULTIMO`, un filtro nuevo, otra dimensión: todo
+devuelve el mismo acumulado. **No es que el motor lea mal: es que la pregunta que el rótulo hace no
+tiene respuesta en el dato.**
+
+⭐ **La regla que esto merece, y que hoy no está escrita en ningún lado:**
+
+> **Una `SUMA` sobre una base cuyas filas se ACTUALIZAN en el lugar devuelve el acumulado, no el
+> período — y ningún recorte por ventana lo arregla.** El recorte elige **qué filas** entran; no
+> puede recortar **lo que hay adentro de una fila**. Cuando el rótulo dice *"de la semana"* y la
+> fila dice *"desde que arrancó"*, el número es grande, plausible y de otra pregunta.
+>
+> **Cómo se reconoce, antes de cablear:** ¿la base agrega una fila por evento, o actualiza una fila
+> por entidad? `digital/Directa Mail` es lo primero —una fila por envío, con su fecha— y por eso
+> **reproduce exacto**. `looker/DIGITAL` es lo segundo, y por eso no.
+
+**Va a `docs/REGLAS_NEGOCIO.md` como `R-NN` si el usuario lo decide** — acá queda el hallazgo con
+la medición, no la regla.
+
+**Tres salidas, sin elegir:**
+
+- **(a) Pedirle al equipo el dato semanal.** Es la única que hace el número correcto. Va con la
+  pregunta 2 de *"Preguntas al equipo"*.
+- **(b) Cambiar el rótulo**, y que el Resumen diga *"acumulado de las campañas de la semana"*. El
+  número que el motor publica **ya es correcto para esa pregunta** — 28.988.260 es de verdad el
+  acumulado. Es la salida barata y **es una decisión editorial del usuario**.
+- **(c) Publicar `/////`** hasta que exista el dato. Honesto y cuesta una celda, pero pierde
+  información que hoy sí sirve para otra cosa.
+
+⚠ **Lo que NO es salida: seguir buscando la operación correcta.** No la hay.
