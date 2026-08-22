@@ -258,7 +258,21 @@ function panel_generar(informeId, periodoId, conSimbolos, secciones) {
   return {
     ok: true,
     deck: r.deck,
-    periodo: r.periodo,
+    /* ⭐ `2026-08-21_15` Parte D — **la lámina, no el objeto.** El panel mostraba
+     * `[object Object] · corrida jm-…`: `generarInforme` devuelve `periodo` como un objeto
+     * —`lamina`, `desde`, `hasta`, `origen`, `calculado`, `traza`— y el front hace
+     * `esc(r.periodo || '')` sobre él.
+     *
+     * **El arreglo va acá y no en el front, y eso se midió en vez de suponerlo:** el encabezado de
+     * este archivo declara que `panel_generar` devuelve *"el reporte de corrida, **ya
+     * presentable**"*. El que le debe una cadena al front es este adaptador. `deck` viaja como
+     * objeto **a propósito** —el front lo desarma en `deckCard`—; `periodo` no se desarma en
+     * ningún lado: se imprime como etiqueta y en un solo lugar.
+     *
+     * ⚠ Se pierden `desde`, `hasta`, `calculado` y `traza`, y hoy **no los lee nadie** (grepeado:
+     * `r.periodo` aparece una sola vez en `Panel.html`). El día que el panel quiera marcar una
+     * ventana calculada, el campo vuelve como uno propio — no reabriendo el objeto entero. */
+    periodo: (r.periodo && r.periodo.lamina) || '',
     corrida_id: r.corrida_id,
     presentacion_faltantes: r.presentacion_faltantes,
     // Cada conteo con su unidad dicha. `marcadores` es el resumen de la pasada de tokens
