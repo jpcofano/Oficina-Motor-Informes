@@ -176,6 +176,35 @@ function leerPlan_(corridaId) {
   return filas;
 }
 
+/**
+ * ⭐ `2026-08-21_19` Parte B — **la última corrida que dejó plan, para que la pantalla no quede
+ * ciega cuando la corrida termina.**
+ *
+ * El estado en `PropertiesService` se borra en los cinco caminos de salida —y está bien: es lo
+ * que declara que no hay nada corriendo—, pero con él se va el `corrida_id`, que es la clave de
+ * `leerPlan_`. Sin esto, **la pantalla muestra el avance mientras corre y se queda muda justo
+ * cuando terminó**, que es el momento en que alguien la abre a mirar.
+ *
+ * `PLAN_CORRIDA` no se borra nunca, así que la respuesta ya está en la hoja: es el `corrida_id`
+ * de la última fila. **No se agrega ningún escritor** — es la salida barata frente a guardar una
+ * propiedad más, que habría que acordarse de mantener.
+ *
+ * ⚠ **Es la última por ORDEN DE ESCRITURA, no por fecha**, porque la hoja no tiene fecha.
+ * `escribirPlan_` hace append, así que las dos coinciden mientras nadie ordene la hoja a mano.
+ * Si alguien la ordena, esto devuelve otra corrida y **no falla** — el modo de siempre.
+ */
+function ultimaCorridaDelPlan_() {
+  var datos = hojaPlan_().getDataRange().getValues();
+  var h = datos[0];
+  var iC = h.indexOf('corrida_id');
+  if (iC < 0) return '';
+  for (var i = datos.length - 1; i >= 1; i--) {
+    var v = String(datos[i][iC] || '').trim();
+    if (v) return v;
+  }
+  return '';
+}
+
 function escribirPlan_(corridaId, informeId, secciones) {
   var hoja = hojaPlan_();
   var filas = secciones.map(function (s) {
@@ -512,25 +541,59 @@ function continuarCorridaDesatendida() {
 /* ═══════════════════ El arranque, y el freno ═══════════════════ */
 
 /**
+ * ⭐ `2026-08-21_19` Parte A — **las opciones de la corrida viajan enteras, en la misma forma que
+ * `generarInforme` ya recibe.**
+ *
+ * Hasta hoy la ejecución 1 llamaba con `{ continuable: true }` y nada más, así que un llamador
+ * que no fuera el editor **perdía lo que el usuario eligió en pantalla**: la lista de secciones
+ * tildadas y el modo de faltantes. El panel arma ese objeto desde el `2026-08-19_2`; se pasa
+ * entero en vez de desarmarlo y rearmarlo.
+ *
+ * **Por qué `opciones` y no `secciones` + `conSimbolos` sueltos** (decisión del usuario,
+ * 22/08/2026): es la forma que `generarInforme` ya recibe, así que no nace una tercera firma que
+ * se desincronice; y una opción nueva se propaga sin tocar la cadena.
+ *
+ * ⛔ **`continuable` lo pone el mecanismo, no el llamador.** Si llega en `opciones` se ignora.
+ * Que el panel pueda pedir una corrida **no** continuable por el camino desatendido no tiene
+ * sentido y sería una forma de romperlo desde afuera.
+ *
+ * ⚠ **Las cuatro claves de continuación —`deck_id`, `corrida_id`, `asignaciones`,
+ * `solo_secciones`— NO se filtran, y eso es una pregunta abierta, no una decisión.** El mismo
+ * argumento de `continuable` les aplica: un `deck_id` de afuera haría que la ejecución 1 escriba
+ * sobre un deck ajeno. Hoy **ningún llamador las manda** —`panel_opcionesDeGeneracion_` arma tres
+ * claves y ninguna es ésas—, así que el agujero es teórico; se deja nombrado para que la decisión
+ * la tome quien corresponde y no una línea escrita de apuro.
+ */
+/**
  * Arranca una corrida desatendida. **La ejecución 1 expande TODO** —fase atómica— y resuelve lo
  * que entre; las siguientes sólo resuelven.
  *
  * ⚠ **Si ya hay una corrida en curso, NO arranca otra.** Dos corridas desatendidas a la vez se
  * pisarían el estado en `PropertiesService` y los triggers, y el lock no alcanza para eso: el lock
  * evita que dos ejecuciones escriban a la vez, no que dos corridas se confundan de deck.
+ *
+ * ⭐ **Y el motivo de que devuelva `ejecucion` en ese caso:** el panel tiene que poder decir
+ * *"hay una corrida en curso, es ésta, va por la ejecución N"* y ofrecer la salida. Hasta hoy eso
+ * sólo iba al `Logger`, que en el camino del usuario es no decir nada.
  */
-function iniciarCorridaDesatendida_(informeId, periodoId) {
+function iniciarCorridaDesatendida_(informeId, periodoId, opciones) {
   if (leerEstadoCorrida_()) {
     var e = leerEstadoCorrida_();
     Logger.log('Ya hay una corrida desatendida en curso: ' + e.corrida_id + ' (ejecución ' +
       e.ejecucion + '). Cancelala con `cancelarCorridaDesatendida()` antes de arrancar otra.');
-    return { ok: false, motivo: 'ya hay una corrida en curso', corrida_id: e.corrida_id };
+    return {
+      ok: false, motivo: 'ya hay una corrida en curso',
+      corrida_id: e.corrida_id, ejecucion: e.ejecucion, deck_id: e.deck_id || ''
+    };
   }
 
   limpiarTriggersDeContinuacion_();
 
   // La ejecución 1 es una corrida normal, continuable, sobre un deck nuevo. Expande todo.
-  var r = generarInforme(informeId, periodoId || undefined, { continuable: true });
+  var opc = {};
+  Object.keys(opciones || {}).forEach(function (k) { opc[k] = opciones[k]; });
+  opc.continuable = true;   // se pone DESPUÉS de copiar: pisa lo que haya venido de afuera
+  var r = generarInforme(informeId, periodoId || undefined, opc);
   if (!r || !r.ok) {
     Logger.log('La ejecución 1 falló: ' + ((r && r.motivo) || '(sin motivo)'));
     return r || { ok: false };

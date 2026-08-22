@@ -236,12 +236,18 @@ function panel_getEstado(periodoId) {
  * catálogo le rechazó parte de la lista. Un total inventado acá sería exactamente el número
  * plausible que este proyecto viene cazando.
  */
-function panel_generar(informeId, periodoId, conSimbolos, secciones) {
-  var id = String(informeId || '').trim();
-  if (!id) return { ok: false, motivo: 'No se eligió informe.' };
-
-  var ref = String(periodoId || '').trim();
-  var opciones = {
+/**
+ * ⭐ `2026-08-21_19` Parte A — **las opciones de una generación se arman en UN solo lugar.**
+ *
+ * Los dos botones del panel —la corrida de una ejecución y la desatendida— tienen que mandar
+ * exactamente lo mismo, y la única forma de garantizarlo es que no haya dos constructores. Con
+ * uno por camino, el día que se agregue una opción entra en uno y no en el otro, **y ninguno de
+ * los dos falla**: el segundo botón simplemente empieza a hacer otra cosa. Es la misma familia
+ * que las tres listas de hojas de registro de `CLAUDE.md` §2, con la diferencia de que acá la
+ * duplicación **no** es el diseño y se puede eliminar.
+ */
+function panel_opcionesDeGeneracion_(conSimbolos, secciones) {
+  return {
     // ⚠ La clave sigue siendo `faltantes_como_raya` porque es formato de cable hacia
     // `generarInforme`, que la API puede invocar por nombre (`2026-08-20_1` Parte A). Lo que
     // el tercer argumento significa desde el 20/08 es otra cosa —los cuatro símbolos contra el
@@ -252,6 +258,14 @@ function panel_generar(informeId, periodoId, conSimbolos, secciones) {
     // `undefined` queda para los llamadores que no conocen la opción.
     secciones: secciones || []
   };
+}
+
+function panel_generar(informeId, periodoId, conSimbolos, secciones) {
+  var id = String(informeId || '').trim();
+  if (!id) return { ok: false, motivo: 'No se eligió informe.' };
+
+  var ref = String(periodoId || '').trim();
+  var opciones = panel_opcionesDeGeneracion_(conSimbolos, secciones);
   var r = generarInforme(id, ref || undefined, opciones);
   if (!r.ok) return { ok: false, motivo: r.motivo };
 
@@ -265,9 +279,21 @@ function panel_generar(informeId, periodoId, conSimbolos, secciones) {
      *
      * **El arreglo va acá y no en el front, y eso se midió en vez de suponerlo:** el encabezado de
      * este archivo declara que `panel_generar` devuelve *"el reporte de corrida, **ya
-     * presentable**"*. El que le debe una cadena al front es este adaptador. `deck` viaja como
-     * objeto **a propósito** —el front lo desarma en `deckCard`—; `periodo` no se desarma en
-     * ningún lado: se imprime como etiqueta y en un solo lugar.
+     * presentable**"*. El que le debe una cadena al front es este adaptador. `periodo` no se
+     * desarma en ningún lado: se imprime como etiqueta y en un solo lugar.
+     *
+     * ⛔ **Corrección del `2026-08-21_19` Parte D: la frase que seguía acá —*"`deck` viaja como
+     * objeto a propósito, el front lo desarma en `deckCard`"*— era FALSA**, y por eso el href
+     * decía `/presentation/d/[object Object]/edit`. Medido: `deckCard(deckId, …)` trata su primer
+     * argumento como **id**, y de sus dos llamadores uno le pasa un id (`previa.deck_id`, la vía
+     * rápida — funciona) y el otro el objeto entero (`r.deck`, la pantalla de listo — no
+     * funciona). **Nadie desarmaba nada.**
+     *
+     * **Es exactamente el caso que `CLAUDE.md` §4 describe:** un comentario que afirma un
+     * contrato es una premisa sin testigo, y sobrevive porque nada lo contradice. Éste además
+     * mandaba al lector al archivo equivocado. `deck` sigue viajando como objeto —el front ahora
+     * sí lo desarma, y usa su `url`, que es la que emitió el motor y no una reconstruida—, pero
+     * eso se arregló en `Panel.html`, que es donde estaba el bug.
      *
      * ⚠ Se pierden `desde`, `hasta`, `calculado` y `traza`, y hoy **no los lee nadie** (grepeado:
      * `r.periodo` aparece una sola vez en `Panel.html`). El día que el panel quiera marcar una
@@ -917,4 +943,212 @@ function panel_confirmarAnclaje(tipo, nombreBuscado, elegido) {
       '" en ANCLAJE_PENDIENTE. No se inventa la fila: el motor la escribe cuando un anclaje ' +
       'cae bajo el umbral'
   };
+}
+
+/* ═════════ `2026-08-21_19` — el desatendido entra al camino del usuario (22/08/2026) ═════════
+ *
+ * `Desatendida.gs` tenía el mecanismo completo desde el 20/08 —plan por sección, encadenado por
+ * triggers, autolimpieza, freno y cuatro guardas— y **no estaba cableado a ningún lado**: se
+ * arrancaba con `iniciarCorridaDesatendidaJM()` desde el editor.
+ *
+ * ⛔ **Lo que eso significaba en el camino del usuario, y por qué ya estaba mordiendo:**
+ * `panel_generar` llama a `generarInforme` **sin `continuable`**, así que no escribe
+ * `PLAN_CORRIDA` ni crea trigger — **el botón podía cortar y dejar un deck incompleto sin forma
+ * de continuarlo**. Hasta el 21/08 no se notaba porque ninguna corrida había cortado; esa noche
+ * cortaron dos, y la evidencia sobrevive en el nombre del archivo: el deck de
+ * `jm-20260821-224727` **todavía conserva el `[en proceso]`** y el de `jm-20260821-194602` no.
+ *
+ * ⚠ **El botón viejo NO se retira, y no es prudencia genérica:** una corrida que entra en una
+ * sola ejecución es más barata —el arranque cuesta 70-80 s **por ejecución**, así que tres
+ * ejecuciones pagan 210 s de anclaje y unión que la corrida única paga una vez—. Mientras el
+ * desatendido no esté probado punta a punta, sacarle al usuario la única forma que funciona hoy
+ * es un cambio en la dirección equivocada. **Dos botones, y la pantalla dice cuál conviene.**
+ *
+ * Las tres funciones de acá abajo son **el adaptador y nada más**: arrancan, leen y frenan. No
+ * reimplementan el mecanismo — `iniciarCorridaDesatendida_`, `leerEstadoCorrida_`, `leerPlan_` y
+ * `cancelarCorridaDesatendida()` ya existían y hacen todo el trabajo.
+ */
+
+/**
+ * Arranca la corrida **desatendida** con lo que el usuario eligió en pantalla.
+ *
+ * ⭐ **Misma firma que `panel_generar`, a propósito.** El front no tiene que aprender una forma
+ * nueva para el segundo botón, y las opciones salen del mismo constructor
+ * (`panel_opcionesDeGeneracion_`), que es lo que impide que los dos caminos se separen.
+ *
+ * ⚠ **La guarda de «ya hay una corrida en curso» se devuelve, no se esconde.** Hasta hoy sólo iba
+ * al `Logger`, que en el camino del usuario es no decir nada: el botón parecía no hacer efecto.
+ */
+function panel_generarDesatendida(informeId, periodoId, conSimbolos, secciones) {
+  var id = String(informeId || '').trim();
+  if (!id) return { ok: false, motivo: 'No se eligió informe.' };
+
+  var ref = String(periodoId || '').trim();
+  var r = iniciarCorridaDesatendida_(id, ref || undefined,
+    panel_opcionesDeGeneracion_(conSimbolos, secciones));
+
+  if (!r || !r.ok) {
+    return {
+      ok: false,
+      motivo: (r && r.motivo) || 'La ejecución 1 no devolvió resultado.',
+      // Con el motivo «ya hay una corrida en curso» estos dos son la salida: cuál está
+      // corriendo y por dónde va. Sin ellos el cartel no dice qué hacer.
+      corrida_id: (r && r.corrida_id) || '',
+      ejecucion: (r && r.ejecucion) || 0,
+      deck: (r && r.deck) || panel_deckDeId_((r && r.deck_id) || '')
+    };
+  }
+
+  return {
+    ok: true,
+    // `terminada` = entró en una sola ejecución y no hay nada que reanudar. `continua` = cortó,
+    // quedó plan y hay un trigger andando. **Son dos finales distintos y la pantalla los dice
+    // distinto**: uno manda a abrir el deck, el otro a mirar el avance.
+    terminada: r.terminada === true,
+    continua: r.continua === true,
+    corrida_id: r.corrida_id || '',
+    ejecuciones: r.ejecuciones || 1,
+    deck: r.deck || null
+  };
+}
+
+/**
+ * ⭐ **El estado de la corrida desatendida, SÓLO LECTURA.** No recalcula nada: sale de
+ * `leerEstadoCorrida_` y `leerPlan_`, que ya existían.
+ *
+ * Sin esto el botón de la Parte A es **peor** que el actual: hoy el usuario ve el resultado; con
+ * el desatendido vería nada durante minutos.
+ *
+ * ⭐ **Y contesta «¿está listo?» por el sello, no por los tokens.** El sello vive en el nombre del
+ * deck y es la única señal que lo dice: **los crudos NO dicen qué falta** — `mapaTokenObjectId_`
+ * excluye a propósito los de láminas escondidas, así que las láminas 12, 21 y 29 dejan **49 crudos
+ * permanentes en toda corrida**, incluso en una que terminó perfecta.
+ *
+ * ⚠ **Con la corrida terminada el estado ya no está, y por eso se cae a `PLAN_CORRIDA`.** Los
+ * cinco caminos de salida borran la propiedad —bien: es lo que declara que no hay nada
+ * corriendo— y con ella se va el `corrida_id`. La hoja del plan no se borra nunca, así que
+ * `ultimaCorridaDelPlan_()` recupera la clave sin agregar ningún escritor. Es la diferencia
+ * entre una pantalla que se apaga justo cuando terminó y una que muestra en qué terminó.
+ */
+function panel_estadoDesatendida() {
+  var estado = leerEstadoCorrida_();
+  var corridaId = estado ? String(estado.corrida_id || '') : ultimaCorridaDelPlan_();
+
+  var base = {
+    ok: true,
+    en_curso: !!estado,
+    corrida_id: corridaId,
+    // El reloj de la lectura. **La pantalla tiene que poder decir de cuándo es lo que muestra**;
+    // sin esto, una pantalla vieja y una recién leída se ven igual.
+    leido: formatearFechaHora_(new Date()),
+    tope: topeContinuaciones_(),
+    plan: [],
+    deck: null,
+    informe_id: '', periodo_id: '', ejecucion: 0, se_corto: false
+  };
+
+  if (!corridaId) {
+    base.motivo = 'No hay ninguna corrida desatendida en curso, y PLAN_CORRIDA no tiene ' +
+      'ninguna fila: nunca corrió una.';
+    return base;
+  }
+
+  var filas = leerPlan_(corridaId);
+
+  if (estado) {
+    base.informe_id = String(estado.informe_id || '');
+    base.periodo_id = String(estado.periodo_id || '');
+    base.ejecucion = Number(estado.ejecucion) || 0;
+    base.se_corto = estado.se_corto === true;
+    base.deck = panel_deckDeId_(estado.deck_id || '');
+  } else {
+    base.informe_id = filas.length ? String(filas[0].informe_id || '') : '';
+    base.motivo = 'No hay ninguna corrida desatendida en curso. Lo que se muestra es el plan ' +
+      'de la última que dejó filas, ' + corridaId + '.';
+  }
+
+  base.plan = filas.map(function (f) {
+    return {
+      seccion_id: String(f.seccion_id || ''),
+      asignaciones: Number(f.asignaciones) || 0,
+      // Hoy el motor sólo escribe `pendiente` y `hecha`; los otros dos estados están en el
+      // vocabulario y **nadie los escribe todavía**. Se pasa el valor crudo en vez de mapearlo:
+      // inventarle un estado a una celda vacía es exactamente lo que no hay que hacer.
+      estado: String(f.estado || '').trim(),
+      ejecucion: (f.ejecucion === '' || f.ejecucion === null) ? '' : Number(f.ejecucion),
+      // ⚠ **Vacío acá es una señal, no un hueco.** Una fila `hecha` con `segundos` vacío es la
+      // huella que delató el bug del 20/08 —tres secciones marcadas hechas que el resolver
+      // nunca tocó—, así que se muestra como está.
+      segundos: (f.segundos === '' || f.segundos === null) ? '' : Number(f.segundos)
+    };
+  });
+
+  base.pendientes = base.plan.filter(function (f) { return f.estado === 'pendiente'; }).length;
+  base.hechas = base.plan.filter(function (f) { return f.estado === 'hecha'; }).length;
+
+  /* ⭐ El invariante que el mecanismo chequea entre ejecuciones, dicho también acá para que se
+   * vea desde afuera: **corte ⇒ pendientes ≥ 1**. «No terminé» y «no queda nada» no pueden ser
+   * ciertas a la vez, y cuando lo son significa que algo marcó `hecha` una sección que no se
+   * resolvió. Entre el corte y la continuación pasa **un minuto**, así que nadie llega a mirar
+   * esto a tiempo — se muestra para diagnosticar después, no para intervenir. */
+  if (estado && base.se_corto && base.pendientes === 0) {
+    base.invariante_roto = 'la ejecución anterior CORTÓ y el plan no tiene ninguna sección ' +
+      'pendiente. Las dos cosas no pueden ser ciertas a la vez: algo marcó `hecha` una sección ' +
+      'que no se resolvió.';
+  }
+
+  return base;
+}
+
+/**
+ * El freno, desde la pantalla. **Un mecanismo desatendido sin botón de freno es peor que
+ * ninguno**, y por eso el freno se construyó junto con el arranque.
+ *
+ * No reimplementa nada: `cancelarCorridaDesatendida()` borra los triggers y el estado, y quita el
+ * sello **sin barrer** — el deck queda con sus crudos a propósito, porque taparlos con `/////`
+ * afirmaría «nadie lo cableó» sobre tokens que nadie llegó a mirar.
+ */
+function panel_cancelarDesatendida() {
+  var e = leerEstadoCorrida_();
+  var deck = e ? panel_deckDeId_(e.deck_id || '') : null;
+  var r = cancelarCorridaDesatendida();
+  return {
+    ok: true,
+    // `false` = no había nada que frenar. La pantalla lo dice en vez de festejar una cancelación
+    // que no ocurrió: una corrida que no hizo nada tiene que informarlo, no informar éxito.
+    habia: !!e,
+    corrida_id: (r && r.corrida_id) || '',
+    triggers_borrados: (r && r.triggers_borrados) || 0,
+    deck: deck
+  };
+}
+
+/**
+ * Un deck presentable a partir de su id: `{ id, url, nombre, sellado }`.
+ *
+ * ⭐ **`sellado` es lo que contesta «¿está listo?»**, y se lee del nombre del archivo porque es
+ * ahí donde vive (`SELLO_EN_PROCESO_`). Un deck sellado **no está terminado**, diga lo que diga
+ * el conteo de tokens.
+ *
+ * ⚠ **Un fallo de Drive no puede voltear la pantalla**: se devuelve el id con `nombre` vacío y
+ * `sellado: null`. `null` es "no se pudo saber" y es distinto de `false`, "no está sellado" —
+ * dos cosas que mandan a lecturas opuestas y que un booleano solo confundiría.
+ */
+function panel_deckDeId_(deckId) {
+  var id = String(deckId || '').trim();
+  if (!id) return null;
+  var salida = {
+    id: id,
+    url: 'https://docs.google.com/presentation/d/' + id + '/edit',
+    nombre: '',
+    sellado: null
+  };
+  try {
+    var nombre = DriveApp.getFileById(id).getName();
+    salida.nombre = nombre;
+    salida.sellado = nombre.indexOf(SELLO_EN_PROCESO_) === 0;
+  } catch (e) {
+    salida.motivo = 'no se pudo leer el nombre del deck: ' + e.message;
+  }
+  return salida;
 }

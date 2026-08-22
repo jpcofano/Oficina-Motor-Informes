@@ -255,7 +255,11 @@ var S = {
   resultado: null, motivo: null,
   elapsed: 0, tick: null,
   tab: 'generar',
-  corridas: null, corridasCargando: false
+  corridas: null, corridasCargando: false,
+  /* `2026-08-21_19` — la corrida desatendida. `des` es lo que devolvió `panel_estadoDesatendida`
+   * (`null` = todavía no se pidió); `desArranque` es el resultado del botón, que se muestra una
+   * vez y no se vuelve a pedir. **Nada se deriva acá**: el front pinta lo que llega. */
+  des: null, desCargando: false, desArranque: null, desMsg: null
 };
 
 /* ── utilidades ──────────────────────────────────────────────────────────────────── */
@@ -397,6 +401,97 @@ function generar(){
       S.estado = 'fallo'; S.motivo = (e && e.message) || String(e); pintar();
     })
     .panel_generar(S.informeId, S.periodoId, S.conSimbolos, elegidas);
+}
+
+/* ⭐ `2026-08-21_19` Parte A — **el mismo formulario, el otro motor.**
+ *
+ * ⚠ **Manda exactamente lo mismo que `generar()`**, y eso no es una comodidad: es la diferencia
+ * entre `agosto_14_20` y `R-11 (calculado)`. Una corrida arrancada sin el período **da la misma
+ * ventana de fechas y otro temario** —`anclarEncuentros` sólo recorta `REUNIONES` cuando el
+ * origen empieza con `periodo_ref:`—, y el 21/08 eso puso seis encuentros de junio y julio en un
+ * deck sin que nada fallara. El botón no puede perder lo que la persona eligió en pantalla.
+ *
+ * **No hay cronómetro y no es un olvido:** esto vuelve en segundos porque sólo arranca la
+ * ejecución 1; lo que tarda pasa después, en el servidor, y se mira en la pestaña «Corrida». */
+function generarDesatendida(){
+  S.desArranque = null;
+  S.desMsg = null;
+  S.estado = 'generando';
+  S.elapsed = 0;
+  pintar();
+  S.tick = setInterval(function(){ S.elapsed++; pintarTimer(); }, 1000);
+
+  var elegidas = [];
+  Object.keys(S.secciones).forEach(function(k){ if (S.secciones[k]) elegidas.push(k); });
+
+  google.script.run
+    .withSuccessHandler(function(r){
+      clearInterval(S.tick); S.tick = null;
+      S.estado = 'form';
+      S.desArranque = r || { ok:false, motivo:'El backend no devolvió nada.' };
+      // Se salta a la pestaña que muestra el avance: es donde está lo que sigue pasando.
+      S.tab = 'desatendida';
+      cargarDesatendida();
+      cargarCorridas();
+    })
+    .withFailureHandler(function(e){
+      clearInterval(S.tick); S.tick = null;
+      S.estado = 'fallo'; S.motivo = (e && e.message) || String(e); pintar();
+    })
+    .panel_generarDesatendida(S.informeId, S.periodoId, S.conSimbolos, elegidas);
+}
+
+/* Sólo lectura, y **sin autorefresco**: un botón de actualizar alcanza y **no esconde cuándo se
+ * leyó**. Una pantalla que se refresca sola parece siempre actual aunque el backend haya dejado
+ * de responder; una con la hora de lectura a la vista, no. */
+function cargarDesatendida(){
+  S.desCargando = true;
+  pintar();
+  google.script.run
+    .withSuccessHandler(function(r){
+      S.desCargando = false;
+      S.des = r || { ok:false, motivo:'El backend no devolvió estado.' };
+      pintar();
+    })
+    .withFailureHandler(function(e){
+      S.desCargando = false;
+      S.des = { ok:false, motivo:(e && e.message) || String(e) };
+      pintar();
+    })
+    .panel_estadoDesatendida();
+}
+
+/* ⭐ **El freno.** Un mecanismo desatendido sin botón de freno es peor que ninguno.
+ *
+ * ⚠ **Con confirmación**, porque no es reversible: cancelar borra el trigger y el estado, y el
+ * deck queda a medio hacer. Y el texto dice **qué queda**, no sólo qué se pierde — el deck y el
+ * plan no se tocan, que es lo que hay para mirar después. */
+function cancelarDesatendida(){
+  var d = S.des || {};
+  if (!window.confirm('Frenar la corrida ' + (d.corrida_id || '') + '?\n\n' +
+      'Se borra el trigger que la reanuda. El deck queda a medio hacer, con sus tokens sin ' +
+      'pintar, y el plan queda como está: es lo que hay para mirar. No se puede deshacer — ' +
+      'para terminarlo hay que generar de nuevo.')) return;
+
+  S.desCargando = true;
+  pintar();
+  google.script.run
+    .withSuccessHandler(function(r){
+      S.desMsg = (r && r.habia)
+        ? { ok:true, texto:'Frenada la corrida ' + (r.corrida_id || '') + '. Triggers borrados: ' +
+            (r.triggers_borrados || 0) + '.' }
+        // «No había ninguna» NO se festeja como cancelación: una operación que no hizo nada
+        // tiene que decirlo, no informar éxito (`CLAUDE.md` §4).
+        : { ok:false, texto:'No había ninguna corrida desatendida en curso. No se frenó nada; ' +
+            'triggers borrados: ' + ((r && r.triggers_borrados) || 0) + '.' };
+      cargarDesatendida();
+    })
+    .withFailureHandler(function(e){
+      S.desCargando = false;
+      S.desMsg = { ok:false, texto:'No se pudo frenar: ' + ((e && e.message) || String(e)) };
+      pintar();
+    })
+    .panel_cancelarDesatendida();
 }
 
 /* ── pintado ─────────────────────────────────────────────────────────────────────── */
@@ -553,6 +648,13 @@ function pintar(){
   if (S.tab === 'corridas') { c.innerHTML = vistaCorridas(); return; }
   if (S.tab === 'anclajes') { c.innerHTML = vistaAnclajes(); return; }
   if (S.tab === 'proximo')  { c.innerHTML = vistaProximo(); return; }
+  if (S.tab === 'desatendida'){
+    /* La primera vez que se entra a la pestaña se pide el estado. Va acá y no en el `onclick` de
+     * la solapa para cubrir también la entrada desde el botón, que salta a esta pestaña sola.
+     * No hay recursión: `cargarDesatendida` deja `desCargando` en `true` antes de repintar. */
+    if (S.des === null && !S.desCargando){ cargarDesatendida(); return; }
+    c.innerHTML = vistaDesatendida(); conectarDesatendida(); return;
+  }
   c.innerHTML = vistaGenerar();
   conectarGenerar();
 }
@@ -560,6 +662,7 @@ function pintar(){
 function pintarTabs(){
   var tabs = [
     { id:'generar', txt:'Generar' },
+    { id:'desatendida', txt:'Corrida' },
     { id:'anclajes', txt:'Anclajes' },
     { id:'corridas', txt:'Corridas' },
     { id:'proximo', txt:'Próximo' }
@@ -660,7 +763,10 @@ function vistaGenerar(){
         (s.itera_sobre ? '<span class="check-sub">itera sobre ' + esc(s.itera_sobre) + '</span>' : '') +
         '</span></label>';
     }).join('');
-    h += '<p class="hint">Sacar una acorta la corrida — el techo es de 350 s.</p></div>';
+    /* El techo lo dice el backend. Decía `350` escrito a mano, que es exactamente lo que el
+     * `2026-08-21_1` sacó de la regla del cronómetro tres bloques más abajo: **un techo declarado
+     * en dos lugares es un techo que puede mentir en uno de los dos.** */
+    h += '<p class="hint">Sacar una acorta la corrida — el techo es de ' + TECHO_S + ' s.</p></div>';
   }
 
   /* `2026-08-19_2` — los cuadrados van DESPUÉS del selector de período y ANTES del botón de
@@ -672,8 +778,26 @@ function vistaGenerar(){
        '<span class="check-sub">/////&nbsp;falta cablearlo · ---&nbsp;falló · -&nbsp;sin dato. ' +
        'Destildado sale «FALTA:token», que dice cuál es.</span></span></label>';
 
+  /* ⭐ `2026-08-21_19` Parte A — **dos botones, y la pantalla dice cuál conviene.**
+   *
+   * ⚠ **El botón viejo NO se retira, y el motivo es de costo medido:** el arranque —anclaje más
+   * unión digital— cuesta **70-80 s por ejecución**, así que una corrida que entra en una sola
+   * es más barata que la misma partida en tres, que pagarían ese arranque tres veces. Mientras el
+   * desatendido no esté probado punta a punta, sacarle a la persona la única forma que funciona
+   * hoy sería un cambio en la dirección equivocada.
+   *
+   * **El rótulo dice qué pasa, no cómo se llama el mecanismo.** «Se reanuda sola» es lo que le
+   * importa a quien aprieta; «desatendida» es vocabulario nuestro. */
   if (!sinDefecto){
+    h += '<div class="field">';
     h += '<button class="btn btn-primary" id="b-generar">Generar informe</button>';
+    h += '<button class="btn btn-secondary" id="b-generar-des">Generar y que siga sola</button>';
+    h += '<p class="hint"><b>Generar informe</b> corre de una vez y devuelve el deck acá: es lo ' +
+         'más rápido cuando entra en el techo de ' + TECHO_S + ' s. ' +
+         '<b>Generar y que siga sola</b> deja la corrida reanudándose por su cuenta hasta ' +
+         'terminar, y el avance se mira en la pestaña «Corrida». Conviene cuando la semana trae ' +
+         'muchos encuentros y la corrida de una sola vez viene cortando.</p>';
+    h += '</div>';
   }
   return h;
 }
@@ -697,6 +821,7 @@ function conectarGenerar(){
   });
   conectarCuadrados();
   var bg = el('b-generar'); if (bg) bg.onclick = generar;
+  var bgd = el('b-generar-des'); if (bgd) bgd.onclick = generarDesatendida;
   var bd = el('b-denuevo'); if (bd) bd.onclick = function(){ S.forzarForm = true; pintar(); };
   var bo = el('b-otro'); if (bo) bo.onclick = function(){
     S.estado = 'form'; S.forzarForm = true; S.resultado = null; pintar();
@@ -734,9 +859,38 @@ function timerHtml(){
 }
 function pintarTimer(){ var t = el('timer'); if (t) t.innerHTML = timerHtml(); }
 
-function deckCard(deckId, nombre, meta){
+/* ⭐ `2026-08-21_19` Parte D — **el `[object Object]` del href, y dónde estaba de verdad.**
+ *
+ * El `_15` Parte D arregló el rótulo y dejó el enlace apuntando a
+ * `.../presentation/d/[object Object]/edit`. El comentario que quedó en `PanelBackend.gs` decía
+ * que `deck` viajaba como objeto *"a propósito, porque el front lo desarma en `deckCard`"*, y
+ * **medirlo antes de elegir el lado mostró que era falso**: `deckCard` trataba su primer
+ * argumento como **id**, y de sus dos llamadores uno le pasaba un id (`previa.deck_id`, la vía
+ * rápida — andaba) y el otro el objeto entero (`r.deck`, la pantalla de listo — no andaba).
+ * **Nadie desarmaba nada.** Es la familia de `CLAUDE.md` §4: un comentario que afirma un contrato
+ * es una premisa sin testigo, y encima mandaba al lector al archivo equivocado.
+ *
+ * ⭐ **El arreglo va acá, y acepta las dos formas** — un id o el `{id, url, nombre}` que emite el
+ * motor —, porque los dos llamadores son legítimos y ninguno tiene por qué conocer la forma del
+ * otro. Con el objeto usa **su `url`**, que es la que emitió `generarInforme`, no una
+ * reconstruida.
+ *
+ * ⚠ **Y si no hay id, la tarjeta NO se dibuja como enlace.** Un `<a>` a
+ * `/presentation/d//edit` es un enlace que parece bueno y lleva a un error de Drive; una tarjeta
+ * sin enlace que dice *"el deck no viajó"* manda al trabajo correcto. **Un enlace roto y uno
+ * ausente no son lo mismo**, y el que miente es el roto. */
+function deckCard(deck, nombre, meta){
+  var id  = (deck && typeof deck === 'object') ? String(deck.id || '') : String(deck || '');
+  var url = (deck && typeof deck === 'object' && deck.url) ? String(deck.url) : '';
+  if (!id && !url){
+    return '<div class="deck">' +
+      '<div class="deck-name">' + esc(nombre) + '</div>' +
+      '<div class="deck-meta">' + meta + '</div>' +
+      '<div class="deck-meta">⚠ el identificador del deck no llegó al panel — la corrida puede ' +
+      'haber salido bien igual; buscalo en «Corridas».</div></div>';
+  }
   return '<a class="deck" target="_blank" rel="noopener" ' +
-    'href="https://docs.google.com/presentation/d/' + esc(deckId) + '/edit">' +
+    'href="' + esc(url || ('https://docs.google.com/presentation/d/' + id + '/edit')) + '">' +
     '<div class="deck-name">' + esc(nombre) + '</div>' +
     '<div class="deck-meta">' + meta + '</div></a>';
 }
@@ -834,6 +988,130 @@ function vistaFallo(){
     esc(S.motivo || '') + '</div>' +
     '<p class="muted">No se generó ningún deck ni quedó registrada una corrida cerrada.</p>' +
     '<button class="btn btn-secondary" id="b-volver">Volver</button>';
+}
+
+/* ═══ `2026-08-21_19` Parte B — ver la corrida mientras corre ════════════════════════════════
+ *
+ * Sin esta pantalla el botón desatendido es **peor** que el de siempre: hoy la persona ve el
+ * resultado, y con el desatendido no vería nada durante minutos.
+ *
+ * ⚠ **Nada se calcula acá.** Los estados, los conteos y el sello los decide `panel_estadoDesatendida`,
+ * que los lee de `PLAN_CORRIDA` y del estado guardado. Un front que contesta por su cuenta una
+ * pregunta del backend es la misma clase de falla que el `TECHO_S = 350` escrito a mano.
+ */
+function vistaDesatendida(){
+  var h = '';
+
+  // El resultado del botón se muestra una vez, arriba, y **dice los dos finales distinto**:
+  // «entró de una» manda a abrir el deck; «cortó y sigue» manda a mirar el plano de abajo.
+  var a = S.desArranque;
+  if (a){
+    if (!a.ok){
+      h += '<div class="alert alert-error"><div class="alert-title">No arrancó.</div>' +
+        esc(a.motivo || '') +
+        (a.corrida_id ? '<br>Corrida en curso: <b>' + esc(a.corrida_id) + '</b>' +
+          (a.ejecucion ? ' (ejecución ' + esc(a.ejecucion) + ')' : '') +
+          '. Frenala con el botón de abajo antes de arrancar otra.' : '') +
+        '</div>';
+    } else if (a.terminada){
+      h += '<div class="alert alert-warning"><div class="alert-title">Entró en una sola ejecución.</div>' +
+        'No hizo falta reanudar nada — la corrida terminó completa. Para una semana así, el botón ' +
+        '<b>Generar informe</b> es más barato: no paga el arranque dos veces.</div>';
+    } else if (a.continua){
+      h += '<div class="alert alert-warning"><div class="alert-title">La corrida cortó y sigue sola.</div>' +
+        'Quedó plan y hay un trigger andando: la próxima ejecución arranca en un minuto. ' +
+        'Esta pantalla no se refresca sola.</div>';
+    }
+  }
+
+  if (S.desMsg){
+    h += '<div class="alert ' + (S.desMsg.ok ? 'alert-warning' : 'alert-error') + '">' +
+      esc(S.desMsg.texto) + '</div>';
+  }
+
+  if (S.desCargando || S.des === null){
+    return h + '<p class="muted">Leyendo el estado de la corrida…</p>' +
+      '<button class="btn btn-secondary" id="b-des-refrescar">Actualizar</button>';
+  }
+
+  var d = S.des;
+  if (!d.ok){
+    return h + '<div class="alert alert-error"><div class="alert-title">No se pudo leer el estado.</div>' +
+      esc(d.motivo || '') + '</div>' +
+      '<button class="btn btn-secondary" id="b-des-refrescar">Actualizar</button>';
+  }
+
+  /* ⭐ De cuándo es lo que se está mirando. Va ARRIBA de los números y no al pie: si el dato es
+   * viejo, eso cambia cómo se lee todo lo demás. */
+  h += '<p class="muted">Leído a las ' + esc(d.leido) + '. Esta pantalla no se actualiza sola.</p>';
+
+  if (!d.corrida_id){
+    return h + '<p class="muted">' + esc(d.motivo || 'No hay ninguna corrida desatendida.') + '</p>' +
+      '<button class="btn btn-secondary" id="b-des-refrescar">Actualizar</button>';
+  }
+
+  h += '<div class="bloque"><span class="section-title">' +
+    (d.en_curso ? 'Corrida en curso' : 'Última corrida con plan') + '</span>' +
+    '<p class="muted">' + esc(d.corrida_id) +
+    (d.informe_id ? ' · informe ' + esc(d.informe_id) : '') +
+    (d.periodo_id ? ' · período ' + esc(d.periodo_id) : '') +
+    (d.en_curso ? ' · ejecución ' + esc(d.ejecucion) + ' de ' + esc(d.tope) : '') +
+    '</p>';
+  if (!d.en_curso && d.motivo) h += '<p class="muted">' + esc(d.motivo) + '</p>';
+  h += '</div>';
+
+  /* ⛔ El invariante roto va antes que nada: significa que algo marcó `hecha` una sección que no
+   * se resolvió, y entonces **todo el plan de abajo miente**. */
+  if (d.invariante_roto){
+    h += '<div class="alert alert-error"><div class="alert-title">⛔ Invariante roto</div>' +
+      esc(d.invariante_roto) + '</div>';
+  }
+
+  /* ⭐ **El sello es lo que contesta «¿está listo?»**, y vive en el nombre del deck. No se deduce
+   * de los tokens: los crudos NO dicen qué falta — las láminas escondidas dejan 49 crudos
+   * permanentes en toda corrida, incluso en una que terminó perfecta. */
+  if (d.deck){
+    h += deckCard(d.deck, d.deck.nombre || d.informe_id || 'deck',
+      d.deck.sellado === true  ? '⛔ sellado «[en proceso]» — NO está terminado'
+    : d.deck.sellado === false ? '✅ sin sello — está terminado'
+    : '⚠ no se pudo leer el nombre del deck, así que no se sabe si está sellado' +
+      (d.deck.motivo ? ': ' + esc(d.deck.motivo) : ''));
+  }
+
+  var plan = d.plan || [];
+  h += '<div><span class="section-title">Plan por sección</span>';
+  if (!plan.length){
+    h += '<p class="muted">El plan no tiene filas.</p>';
+  } else {
+    h += '<p class="muted">' + d.hechas + ' hecha(s) · ' + d.pendientes + ' pendiente(s) de ' +
+      plan.length + '.</p>';
+    h += '<ul class="list-reset">' + plan.map(function(f){
+      var hecha = f.estado === 'hecha';
+      /* ⚠ **`hecha` con `segundos` vacío se marca**: ésa es la huella exacta que delató el bug
+       * del 20/08 —tres secciones marcadas hechas que el resolver nunca tocó— y la única que se
+       * ve desde afuera. No se esconde y no se rellena. */
+      var sospechosa = hecha && (f.segundos === '' || f.segundos === null);
+      return '<li class="dot-row"><span class="dot ' + (hecha?'dot-on':'dot-off') + '"></span>' +
+        esc(f.seccion_id) + ' — <b>' + esc(f.estado || '(sin estado)') + '</b>' +
+        ' · ' + f.asignaciones + ' asignación(es)' +
+        (f.ejecucion !== '' ? ' · ejecución ' + esc(f.ejecucion) : '') +
+        (f.segundos !== '' ? ' · ' + esc(f.segundos) + ' s' : '') +
+        (sospechosa ? ' <b>⚠ marcada hecha sin tiempo: el resolver puede no haberla tocado</b>' : '') +
+        '</li>';
+    }).join('') + '</ul>';
+  }
+  h += '</div>';
+
+  h += '<button class="btn btn-secondary" id="b-des-refrescar">Actualizar</button>';
+  if (d.en_curso){
+    h += '<button class="btn btn-secondary" id="b-des-frenar">Frenar la corrida</button>';
+  }
+  return h;
+}
+
+function conectarDesatendida(){
+  var br = el('b-des-refrescar'); if (br) br.onclick = cargarDesatendida;
+  var bf = el('b-des-frenar');    if (bf) bf.onclick = cancelarDesatendida;
 }
 
 function vistaCorridas(){
