@@ -1234,6 +1234,40 @@ function diagEnlaceDigitalDeEncuentros_(periodoRef) {
   };
 }
 
+/**
+ * ⭐ **El botón de `diagEnlaceDigitalDeEncuentros_` para la semana `agosto_14_20`.**
+ *
+ * ⛔ **Sin esto la función no se puede correr, y no es un permiso: no se puede seleccionar.**
+ * Apps Script no lista en el desplegable de «Ejecutar» ni las que terminan en `_` —trata el
+ * sufijo como privado— **ni las que reciben argumentos**, porque no tiene dónde pedírselos.
+ * `diagEnlaceDigitalDeEncuentros_(periodoRef)` falla **las dos** condiciones a la vez.
+ *
+ * ⚠ **Es la cuarta vez que pasa lo mismo en este repo** (`CLAUDE.md` §2): `diagPlanillaExterna_`,
+ * `diffSolapasSinAplicar_`, `censarTokensEnPlantilla(informeId, tokensCsv)` — y ahora ésta. **El
+ * síntoma nunca se parece a un error:** la función está pusheada, el código es correcto, y la
+ * persona simplemente **no la encuentra en la lista**.
+ *
+ * ⭐ **Y la salida es la que la regla ya fija: un wrapper SIN argumentos que llama a la que sirve
+ * para otros usos**, no cambiarle la firma a aquélla. `diagEnlaceDigitalDeEncuentros_` recibe el
+ * `periodoRef` a propósito —sirve para cualquier semana— y eso no se toca.
+ *
+ * ⚠ **Escribe y tarda ~50 s.** Va por `anclarEncuentros`, que registra en `ANCLAJE_PENDIENTE` los
+ * anclajes por debajo del umbral. **Correrla una sola vez y copiar el log entero** antes de hacer
+ * cualquier otra cosa: la corrida siguiente pisa el contexto contra el que se lee.
+ *
+ * **Qué contesta, y por qué hace falta ahora** (`2026-08-22_20` Parte B, addendum): qué cuenta
+ * recibió cada ítem de la semana. Los cuatro números de IVR del equipo —96.549 · 304 · 33.139 ·
+ * 107.194— el motor **los publica exactos, en la copia equivocada de la lámina**, y con el temario
+ * correcto salen `-`. La lámina es la correcta; **la cuenta es la equivocada**, y esto dice cuál
+ * recibió cada uno.
+ *
+ * ⛔ **Y lo que hay que mirar en el log además del reparto:** si el encuentro de Salud aparece en
+ * `sinLink`. `ANCLAJE_PENDIENTE` **no lo puede decir** —sólo registra los de baja confianza, así
+ * que un encuentro sin cuenta y uno que ancló perfecto se ven idénticos desde la hoja—, y ése es
+ * el hueco que bloqueó la medición del 22/08.
+ */
+function diagEnlaceJM() { return diagEnlaceDigitalDeEncuentros_('agosto_14_20'); }
+
 /* ============================================================================
  * `_40` — censo de una planilla EXTERNA, todavía no registrada en `BASES`.
  *
