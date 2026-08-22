@@ -373,9 +373,10 @@ hoja de este libro se escribe sin que haya nadie mirando. Dos consecuencias:
 
 | función | método | sitio | camino |
 |---|---|---|---|
-| `obtenerHojaAnclajePendiente_` | `setValues` | Union.gs:405 | directo |
-| `registrarAnclajePendiente_` | `setValues` | Union.gs:451 | vía anclarEncuentros (Union.gs:548) |
-| `registrarAnclajePendiente_` | `appendRow` | Union.gs:453 | vía anclarEncuentros (Union.gs:548) |
+| `panel_confirmarAnclaje` | `setValue` | PanelBackend.gs:903 | directo |
+| `obtenerHojaAnclajePendiente_` | `setValues` | Union.gs:874 | directo |
+| `registrarAnclajePendiente_` | `setValues` | Union.gs:920 | vía anclarEncuentrosSinCache_ (Union.gs:1132) |
+| `registrarAnclajePendiente_` | `appendRow` | Union.gs:922 | vía anclarEncuentrosSinCache_ (Union.gs:1132) |
 
 ### AUD_SOLAPAS
 

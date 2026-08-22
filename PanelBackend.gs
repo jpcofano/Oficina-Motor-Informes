@@ -721,3 +721,200 @@ function panel_cargarTemario(fuente, texto, periodoId, informeId) {
   if (String(fuente) === 'CAMPANAS') return cargarTemarioCampanas_(texto, ref, String(informeId || '').trim());
   return { ok: false, motivo: 'fuente desconocida: "' + fuente + '"' };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * Anclajes — `2026-08-21_16` Partes A y B
+ * ══════════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * `D-29` (addendum 21/08/2026) decidió que la pantalla **lee `ANCLAJE_PENDIENTE` y no corre
+ * `anclarEncuentros`**, por dos motivos: los ~50 s por apertura —`cacheAnclaje_` es una global de
+ * módulo y en Apps Script eso se reinicia entre invocaciones— y, el que de verdad decide, que
+ * **la hoja no es un caché**: es el registro que el motor consulta con `anclajeYaConfirmado_`
+ * antes de anclar. Confirmar ahí es confirmar lo que la próxima corrida va a leer.
+ */
+
+/** La clave de una fila de `ANCLAJE_PENDIENTE`, la misma que arma `indiceAnclajePendiente_`. */
+function claveAnclaje_(tipo, nombreBuscado) {
+  return String(tipo || '').trim() + '||' + String(nombreBuscado || '').trim();
+}
+
+/**
+ * Los tres candidatos de una fila, en orden y sin los huecos.
+ *
+ * ⚠ **Una fila puede traer menos de tres**: `registrarAnclajePendiente_` escribe `''` cuando el
+ * top-3 no llega a tres. Un candidato vacío **no es elegible**, y por eso se filtra acá y no en
+ * cada consumidor — si cada uno lo filtrara por su cuenta, el que se olvide acepta el `''` como
+ * si fuera un candidato y `elegido` queda vacío pareciendo confirmado.
+ */
+function candidatosDeAnclaje_(fila) {
+  var salida = [];
+  for (var i = 1; i <= 3; i++) {
+    var nombre = String(fila['candidato_' + i] == null ? '' : fila['candidato_' + i]).trim();
+    if (!nombre) continue;
+    salida.push({ nombre: nombre, puntaje: fila['puntaje_' + i] });
+  }
+  return salida;
+}
+
+/**
+ * ⭐ **Pura, y es la mitad que el control positivo puede fijar.** Decide si un `elegido` es
+ * aceptable para una fila dada.
+ *
+ * **La regla y su motivo:** el valor tiene que ser **uno de los candidatos de esa fila**, o
+ * **vacío** para desconfirmar. Cualquier otra cosa se rechaza. Un `elegido` que nadie puntuó hace
+ * que el motor ancle contra algo que ningún score miró — que es **el modo de falla que `D-29`
+ * viene a cerrar, entrando por la puerta nueva**.
+ *
+ * ⚠ **Desconfirmar tiene que ser posible**, y no es una comodidad: si `elegido` sólo se puede
+ * poner y no sacar, un error de tipeo obliga a ir a la planilla y el panel deja de ser el camino.
+ *
+ * ⚠ **Los dos lados se normalizan** (`CLAUDE.md` §2): el valor viaja por el front y vuelve, y la
+ * celda puede traer espacios de más. Comparar crudo falla en silencio.
+ */
+function validarEleccionAnclaje_(fila, elegido) {
+  var valor = String(elegido == null ? '' : elegido).trim();
+  if (valor === '') return { ok: true, valor: '' };
+
+  var candidatos = candidatosDeAnclaje_(fila);
+  var coincide = candidatos.filter(function (c) { return c.nombre === valor; })[0];
+  if (coincide) return { ok: true, valor: coincide.nombre };
+
+  return {
+    ok: false,
+    motivo: 'el valor "' + valor + '" no es ninguno de los candidatos de esta fila (' +
+      (candidatos.length ? candidatos.map(function (c) { return '"' + c.nombre + '"'; }).join(', ')
+        : 'no tiene candidatos') + '). Se rechaza: un `elegido` que nadie puntuó ancla contra ' +
+      'algo que ningún score miró, que es el modo de falla que `D-29` cierra'
+  };
+}
+
+/**
+ * B.1 · Lee `ANCLAJE_PENDIENTE` para la pantalla.
+ *
+ * ⛔ **Leer no escribe: si la hoja no existe devuelve vacío y NO la crea.** Por eso va con
+ * `getSheetByName` y no con `obtenerHojaAnclajePendiente_`, que la crearía — una pestaña que se
+ * abre no debería dejar una hoja nueva en la planilla del usuario.
+ *
+ * **Separa pendientes de confirmadas** porque son dos cosas distintas en pantalla: las
+ * confirmadas son decisiones que la próxima corrida va a respetar **sin volver a preguntar**, y
+ * esconderlas las vuelve invisibles.
+ *
+ * ⛔ **Y marca las que ninguna reunión vigente reclama — el límite 2 del addendum a `D-29`.**
+ * `registrarAnclajePendiente_` **nunca borra**: la hoja acumula. Medido el 21/08: de las dos
+ * filas que tenía, una venía de una fila de `REUNIONES` con `mostrar = no`, y `leerReuniones_`
+ * filtra por `mostrar` — o sea que **hoy no podría escribirse** y quedó de una corrida anterior.
+ * Sin este cruce, la pantalla ofrecería confirmar un encuentro que ya no va al deck y **nada la
+ * distinguiría de una vigente**.
+ *
+ * ⚠ **El cruce es por la clave, no por el nombre**: la clave es
+ * `normalizar_(nombre)|fecha|etapa` y dos reuniones distintas pueden compartir nombre.
+ * ⚠ **Se marca, no se borra ni se esconde** — borrar una decisión que alguien tomó es lo que
+ * `CLAUDE.md` §4 prohíbe, y esconderla reinstala el silencio que `D-19`/`D-21` cierran.
+ */
+function panel_getAnclajes() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ANCLAJE_PENDIENTE');
+  if (!hoja) {
+    return {
+      ok: true, existe_hoja: false, umbral: umbralAnclajeReunion_(),
+      pendientes: [], confirmadas: [], sin_reunion: 0
+    };
+  }
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos.shift() || [];
+
+  // Las claves de las reuniones que HOY se muestran, para el cruce del límite 2.
+  var vigentes = {};
+  leerReuniones_().forEach(function (r) {
+    var fecha = (r.fecha instanceof Date) ? r.fecha : parsearFechaCelda_(r.fecha);
+    vigentes[claveAnclaje_('reunion', normalizar_(r.nombre) + '|' +
+      (fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd') : 'sin_fecha') +
+      '|' + (r.etapa || ''))] = true;
+  });
+
+  var pendientes = [];
+  var confirmadas = [];
+  var sinReunion = 0;
+
+  datos.forEach(function (cruda) {
+    var fila = {};
+    headers.forEach(function (h, i) { fila[h] = cruda[i]; });
+
+    var tipo = String(fila.tipo || '').trim();
+    var nombreBuscado = String(fila.nombre_buscado || '').trim();
+    if (!tipo && !nombreBuscado) return;   // fila en blanco al final de la hoja
+
+    var vigente = vigentes[claveAnclaje_(tipo, nombreBuscado)] === true;
+    if (!vigente) sinReunion++;
+
+    var item = {
+      tipo: tipo,
+      nombre_buscado: nombreBuscado,
+      candidatos: candidatosDeAnclaje_(fila),
+      elegido: String(fila.elegido == null ? '' : fila.elegido).trim(),
+      vigente: vigente
+    };
+    if (item.elegido) confirmadas.push(item);
+    else pendientes.push(item);
+  });
+
+  return {
+    ok: true,
+    existe_hoja: true,
+    umbral: umbralAnclajeReunion_(),
+    pendientes: pendientes,
+    confirmadas: confirmadas,
+    sin_reunion: sinReunion
+  };
+}
+
+/**
+ * B.2 · Escribe `elegido` en la fila de un `(tipo, nombre_buscado)`.
+ *
+ * ⚠ **La clave es `(tipo, nombre_buscado)`, no la posición de fila**, y eso no es prolijidad: el
+ * panel puede estar mostrando una lista vieja y la fila puede haberse movido. Escribir por índice
+ * pondría la decisión en la fila equivocada **sin que nada falle**.
+ *
+ * ⛔ **No inventa filas.** Si la clave no está en la hoja, falla con motivo — igual que
+ * `curarCamposMarcadores_`: una corrida que no hizo nada tiene que fallar, no informar cero.
+ */
+function panel_confirmarAnclaje(tipo, nombreBuscado, elegido) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ANCLAJE_PENDIENTE');
+  if (!hoja) return { ok: false, motivo: 'la hoja ANCLAJE_PENDIENTE no existe todavía' };
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0] || [];
+  var idx = {};
+  headers.forEach(function (h, i) { idx[h] = i; });
+  if (idx.elegido === undefined) {
+    return { ok: false, motivo: 'ANCLAJE_PENDIENTE no tiene columna `elegido`' };
+  }
+
+  var buscada = claveAnclaje_(tipo, nombreBuscado);
+  for (var f = 1; f < datos.length; f++) {
+    if (claveAnclaje_(datos[f][idx.tipo], datos[f][idx.nombre_buscado]) !== buscada) continue;
+
+    var fila = {};
+    headers.forEach(function (h, i) { fila[h] = datos[f][i]; });
+
+    var v = validarEleccionAnclaje_(fila, elegido);
+    if (!v.ok) return { ok: false, motivo: v.motivo };
+
+    hoja.getRange(f + 1, idx.elegido + 1).setValue(v.valor);
+    SpreadsheetApp.flush();
+    return {
+      ok: true,
+      tipo: String(tipo || '').trim(),
+      nombre_buscado: String(nombreBuscado || '').trim(),
+      elegido: v.valor,
+      accion: v.valor ? 'confirmado' : 'desconfirmado'
+    };
+  }
+
+  return {
+    ok: false,
+    motivo: 'no hay ninguna fila con tipo="' + tipo + '" y nombre_buscado="' + nombreBuscado +
+      '" en ANCLAJE_PENDIENTE. No se inventa la fila: el motor la escribe cuando un anclaje ' +
+      'cae bajo el umbral'
+  };
+}
