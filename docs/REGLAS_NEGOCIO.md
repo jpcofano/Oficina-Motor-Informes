@@ -1686,6 +1686,40 @@ sostenerlo sola.
 alcance **en la tarjeta de Meta porque es de Meta**, no por conveniencia de diseño. Quien vea el
 alcance junto a Meta y sospeche un error de maquetación, que lea esto antes de moverlo.
 
+**Addendum · 21/08/2026 — la segunda consecuencia: `u1_total_frecuencia` mezcla universos.**
+(`2026-08-21_18` B.3. El texto de arriba no se edita — `CLAUDE.md` §7.)
+
+⛔ **Esta regla no se reescribió, y ése es el resultado correcto.** El `_18` pedía escribirla como
+`R-NN` nuevo con dos consecuencias; grepeado antes de tocar nada, **la primera ya estaba entera
+acá desde el 14/08** —el enunciado, el fundamento estructural de `Base_Digital`, el rótulo
+`Acumulado` mal puesto y el corolario de la lámina—. **Cero ediciones de la regla, y el cero se
+registra.** Lo que sigue es lo único que faltaba.
+
+**La consecuencia que no estaba escrita.** El deck publica hoy `u1_total_frecuencia` como
+**`impresiones / alcance` = 377.997 / 55.255 = 6,84** (`PENDIENTES`, 21/08). Con esta regla eso
+deja de ser una sospecha y **pasa a ser un hecho sobre la definición**:
+
+| operando | de dónde sale | universo |
+|---|---|---|
+| numerador — `377.997` impresiones | `digital/CAMPAÑAS_DESGLOCE_DIGITAL` | **las tres plataformas** |
+| denominador — `55.255` alcance | `reuniones`, banda `Alcance Meta …` | **Meta sola** |
+
+**Impresiones de tres plataformas sobre alcance de una.** No es un error de cálculo: la división
+está bien hecha y el `6,84` reproduce. Lo que está mal es **qué significa** — una frecuencia es
+impresiones por persona alcanzada, y estas impresiones incluyen personas que ese alcance no
+cuenta.
+
+⛔ **No se resuelve acá, y es deliberado.** El token está entre los ocho `/////` deliberados, junto
+con `u1_total_alcance` —que además no tiene fuente: *"el alcance son usuarios únicos y no se
+suma"*, `21.401 + 44.296 = 65.697 ≠ 55.255`—. Que ahora exista `alc_real` **no los resuelve**: da
+el alcance **por etapa**, no un total sumable.
+
+⭐ **Por qué se escribe igual, que es todo el punto:** el día que alguien vaya a cablearlo, `6,84`
+**va a parecer una división obvia** — los dos operandos existen, el resultado es plausible y nada
+en la hoja lo contradice. Es exactamente la familia del número plausible que este repo ya pagó
+tres veces. **Sin esta nota, la trampa está armada y no hay quién la vea.**
+
+
 ### Qué la desmiente
 
 Que aparezca en `Base_Digital` —o en cualquier fuente del bloque digital— una banda de alcance de
