@@ -3449,7 +3449,33 @@ function curarCamposMarcadores_(cambios) {
    *
    * ⚠ **«Ya estaba aplicado» también falla, y es deliberado.** Es idempotencia, no rotura, y el
    * motivo lo dice con todas las letras; pero presentarlo como éxito es exactamente lo que hizo
-   * que la tanda 4 se leyera como ejecutada. Quien re-corre a propósito lee el motivo y sigue. */
+   * que la tanda 4 se leyera como ejecutada. Quien re-corre a propósito lee el motivo y sigue.
+   *
+   * ─────────────────────────────────────────────────────────────────────────────────────────
+   * ⭐ **`2026-08-22` — EL PÁRRAFO DE ARRIBA QUEDA SUPERSEDIDO EN SU VEREDICTO, NO EN SU
+   * DIAGNÓSTICO.** Decisión del usuario, y el caso que la fuerza es de hoy:
+   * `marcarProgrammaticARevisar()` encontró las **ocho** filas ya en `miles_revisar`, y el
+   * wrapper imprimió **«⛔ FALLÓ»** aclarando en el mismo mensaje que era idempotencia. **Un
+   * veredicto que se contradice a sí mismo tres palabras después no es un veredicto.**
+   *
+   * **La regla nueva, que es la de las TRES causas separadas y no dos:**
+   *
+   * | qué pasó | veredicto |
+   * |---|---|
+   * | falta la fila `marcador‖informe_id` | ⛔ **falla** — la clave no existe |
+   * | la fila existe y **difiere** del pedido, y no se escribió | ⛔ **falla** — eso sí es un bug |
+   * | **todas** las filas ya están en el estado pedido | ✅ **éxito idempotente** |
+   *
+   * ⭐ **Y por qué esto NO reabre el agujero del 17/08, que es lo único que importa acá:** lo que
+   * la tanda 4 tenía que cazar era *«la hoja no quedó como se pidió»*, y **eso sigue fallando por
+   * las dos primeras filas de la tabla**. Lo que se deja de castigar es el caso en que la hoja
+   * quedó **exactamente** como se pidió — donde el paso siguiente que el wrapper imprime es
+   * legítimo, porque el estado que ese paso necesita **es el que hay**.
+   *
+   * ⚠ **Pero el cero no puede volverse silencioso**, que era la mitad correcta de la regla vieja.
+   * Por eso el éxito idempotente sale **por `Logger.log` desde acá y no desde el wrapper**: así
+   * lo heredan los once sin tocarlos, igual que heredaron el diagnóstico. Un `ok:true` con
+   * `cambios_escritos: 0` que no se anuncia es indistinguible de uno que escribió. */
   if (cambios.length && !aplicados.length) {
     var diagnostico = cambios.map(function (c) {
       var claveD = c.marcador + '||' + (c.informe_id || '');
@@ -3471,13 +3497,37 @@ function curarCamposMarcadores_(cambios) {
       return !((c.marcador + '||' + (c.informe_id || '')) in filaDe);
     });
 
+    /* La tercera causa, que es la única que ahora es éxito: **todas** las filas existen y
+     * **todos** los campos pedidos ya dicen lo pedido. Se recalcula acá en vez de deducirse del
+     * diagnóstico —que es texto— porque un veredicto no se lee de un string formateado. */
+    var todasYaEstaban = !hayHuerfanas && cambios.every(function (c) {
+      var filaY = filaDe[c.marcador + '||' + (c.informe_id || '')];
+      return Object.keys(c).every(function (campo) {
+        if (campo === 'marcador' || campo === 'informe_id') return true;
+        return String(datos[filaY][headers.indexOf(campo)]) === String(c[campo]);
+      });
+    });
+
+    if (todasYaEstaban) {
+      var motivoIdem = 'CERO CELDAS ESCRITAS, y está bien: las ' + cambios.length +
+        ' fila(s) YA ESTABAN en el estado pedido. Es idempotencia, no rotura — la hoja quedó ' +
+        'exactamente como este lote la quiere.';
+      Logger.log('ⓘ ' + motivoIdem);
+      Logger.log(diagnostico);
+      return {
+        ok: true, idempotente: true, motivo: motivoIdem, diagnostico: diagnostico,
+        aplicados: [], sin_fila: sinFila, cambios_escritos: 0
+      };
+    }
+
     return {
       ok: false,
       motivo: 'EL LOTE NO ESCRIBIÓ NINGUNA CELDA (' + cambios.length + ' cambio(s) pedidos). ' +
         (hayHuerfanas
           ? 'Hay claves `marcador||informe_id` que NO existen en MARCADORES — revisar los nombres.'
-          : 'Todas las filas existen: o los valores YA ESTABAN (idempotencia, no es rotura), ' +
-            'o hay un campo que difiere y no se escribió, que sí sería un bug.') +
+          : 'Todas las filas existen y NO todas están en el estado pedido: hay al menos un campo ' +
+            'que difiere y no se escribió, que es un bug del escritor. (El caso «ya estaban ' +
+            'todas» ya no llega hasta acá: desde el 22/08 devuelve `ok:true · idempotente`.)') +
         '\n' + diagnostico,
       diagnostico: diagnostico,
       aplicados: [], sin_fila: sinFila, cambios_escritos: 0
