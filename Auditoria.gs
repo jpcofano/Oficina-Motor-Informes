@@ -1299,106 +1299,158 @@ function diagEnlaceJM() { return diagEnlaceDigitalDeEncuentros_('agosto_14_20');
  * prompt original, y por eso el CSV lleva la advertencia al lado.
  */
 function verificarAgregadoDeJulio() {
-  var ESPERADO_INSCRIPTOS = 2333;   // V-71, exacto
-  var ESPERADO_ENCUENTROS = 4;      // el conjunto que V-71 declara
-  var SUMANDOS = [
-    { nombre: 'San Cristóbal', inscriptos: 138,  caso: 'V-01' },
-    { nombre: 'Retiro',        inscriptos: 98,   caso: 'V-03' },
-    { nombre: 'Villa Urquiza', inscriptos: 1344, caso: '(nota de V-71)' },
-    { nombre: 'Belgrano / Orden Público', inscriptos: 753, caso: 'V-05' }
-  ];
+  /* ⭐ **Instrumentado y con freno propio (22/08/2026), después de morir en el muro.**
+   *
+   * La primera versión estimaba ~50 s y **no llegó en 360**: el log completo fue *"ventana:
+   * 2026-07-24 → 2026-07-30"* y `Exceeded maximum execution time`. **Resolvió el período y nada
+   * más.**
+   *
+   * ⭐⭐ **Y lo que lo vuelve un problema del motor y no de este botón:** el testigo
+   * `jm-20260821-234927` generó **el deck entero en 192 s** sobre `agosto_14_20`, que tiene **2**
+   * encuentros. Julio tiene **6** no-`Agregado`. **Tres veces el trabajo, más de siete veces el
+   * tiempo** — y esto ni siquiera pinta. Si el anclaje escala peor que lineal con la cantidad de
+   * encuentros, **toda corrida con temario grande está en riesgo**, no sólo este botón.
+   *
+   * ⚠ **Este paso MIDE y no optimiza** (instrucción del usuario). Las etapas se cronometran por
+   * separado **llamando a las piezas del motor tal como están** — no se toca `anclarEncuentros` ni
+   * `encontrarFilaRdvDeReunion_`. Lo que se busca es **dónde se va el tiempo**, no arreglarlo.
+   *
+   * ⭐ **La sospecha que el orden de las etapas pone a prueba primero, dicha para que el reporte
+   * pueda desmentirla:** `encontrarFilaRdvDeReunion_` arma una ventana de UN DÍA por reunión
+   * —`{desde: mediodía, hasta: mediodía}`— y `claveCacheLectura_` incluye las dos fechas, así que
+   * **cada reunión sería un cache miss y una lectura completa de `rdv`**. Con 6 reuniones, 6
+   * lecturas. **Si la medición dice otra cosa, gana la medición.**
+   *
+   * ⚠ **El freno va ANTES de cada etapa y no dentro del bucle solamente** — es la lección del
+   * `2026-08-21_1`: *un presupuesto que sólo se consulta en el bucle no protege las etapas que
+   * están fuera del bucle*. Y la reserva existe para que **el reporte salga siempre**: una corrida
+   * que muere en el muro no deja nada, que es justo lo que pasó la primera vez.
+   */
+  var TECHO_SEG = 270;      // debajo del muro de 360, con margen para loguear
+  var t0 = new Date().getTime();
+  var etapas = [];
+  function seg() { return Math.round((new Date().getTime() - t0) / 1000); }
+  function marcar(nombre) { etapas.push({ etapa: nombre, al_seg: seg() }); }
+  function entra(nombre) {
+    if (seg() < TECHO_SEG) return true;
+    Logger.log('');
+    Logger.log('⛔ CORTE por presupuesto ANTES de "' + nombre + '", a los ' + seg() + ' s de ' + TECHO_SEG + '.');
+    reportar('cortado antes de ' + nombre);
+    return false;
+  }
+  function reportar(estado) {
+    Logger.log('');
+    Logger.log('══════ dónde se fue el tiempo ══════');
+    Logger.log('   estado: ' + estado + ' · total ' + seg() + ' s');
+    var previo = 0;
+    etapas.forEach(function (e) {
+      Logger.log('   ' + e.etapa + ' · terminó a los ' + e.al_seg + ' s · duró ' + (e.al_seg - previo) + ' s');
+      previo = e.al_seg;
+    });
+  }
+
+  Logger.log('== verificarAgregadoDeJulio · instrumentado · techo propio ' + TECHO_SEG + ' s ==');
 
   var ventana = resolverVentana({ periodo_ref: 'julio_24_30' });
-  if (!ventana.ok) { Logger.log('⛔ no se pudo resolver la ventana: ' + ventana.motivo); return ventana; }
-  Logger.log('ventana: ' + formatearFecha_(ventana.desde) + ' → ' + formatearFecha_(ventana.hasta) +
+  marcar('1 · resolverVentana');
+  if (!ventana.ok) { Logger.log('⛔ ' + ventana.motivo); reportar('sin ventana'); return ventana; }
+  Logger.log('   ventana: ' + formatearFecha_(ventana.desde) + ' → ' + formatearFecha_(ventana.hasta) +
     ' (' + ventana.origen + ')');
 
+  if (!entra('2 · leerReuniones_')) return { ok: false, etapas: etapas };
+  var todas = leerReuniones_();
+  var delPeriodo = todas.filter(function (r) {
+    return r.tipo !== 'Agregado' && String(r.periodo_id || '').trim() === 'julio_24_30';
+  });
+  marcar('2 · leerReuniones_');
+  Logger.log('   ' + todas.length + ' con mostrar=sí · ' + delPeriodo.length + ' de julio_24_30 sin Agregado');
+
+  /* ⭐ **La etapa que se mide primero es la sospechada, y de a una reunión por vez**, para que el
+   * reporte diga **por reunión** cuánto cuesta y no un promedio. Un promedio no distingue *"todas
+   * cuestan 40 s"* de *"una cuesta 200 y el resto nada"*, y son dos arreglos distintos. */
+  if (!entra('3 · fila de rdv por reunión')) return { ok: false, etapas: etapas };
+  Logger.log('');
+  Logger.log('== 3 · encontrarFilaRdvDeReunion_, una por una ==');
+  var conFila = 0;
+  for (var i = 0; i < delPeriodo.length; i++) {
+    if (seg() >= TECHO_SEG) {
+      Logger.log('   ⛔ corte: se midieron ' + i + ' de ' + delPeriodo.length + ' reuniones.');
+      marcar('3 · fila de rdv (CORTADO en ' + i + '/' + delPeriodo.length + ')');
+      reportar('cortado en la etapa 3');
+      return { ok: false, etapas: etapas };
+    }
+    var tR = new Date().getTime();
+    var fr = encontrarFilaRdvDeReunion_(delPeriodo[i]);
+    var dur = Math.round((new Date().getTime() - tR) / 1000);
+    if (fr.ok) conFila++;
+    Logger.log('   ' + (i + 1) + '/' + delPeriodo.length + ' · ' + delPeriodo[i].nombre +
+      (delPeriodo[i].etapa ? ' (' + delPeriodo[i].etapa + ')' : '') +
+      ' → ' + (fr.ok ? 'fila encontrada' : 'SIN fila') + ' · ' + dur + ' s' +
+      (fr.ok && fr.filasEnVentana !== undefined ? ' · ' + fr.filasEnVentana + ' fila(s) en su día' : ''));
+  }
+  marcar('3 · fila de rdv por reunión');
+  Logger.log('   ' + conFila + ' de ' + delPeriodo.length + ' con fila de rdv');
+
+  if (!entra('4 · unirDigitalPorCuenta')) return { ok: false, etapas: etapas };
+  var union = unirDigitalPorCuenta(ventana);
+  marcar('4 · unirDigitalPorCuenta');
+  Logger.log('');
+  Logger.log('   unión: ' + (union.ok ? Object.keys(union.porCuenta).length + ' cuenta(s)' : '⛔ ' + union.motivo));
+
+  if (!entra('5 · anclarEncuentros')) return { ok: false, etapas: etapas };
+  var anclaje = anclarEncuentros(ventana);
+  marcar('5 · anclarEncuentros');
+  Logger.log('   anclaje: ' + (anclaje.ok
+    ? anclaje.encuentros.length + ' anclados · ' + anclaje.bajaConfianza.length + ' baja confianza · ' +
+      anclaje.sinLink.length + ' sinLink'
+    : '⛔ ' + anclaje.motivo));
+
+  if (!entra('6 · filasRdvDelTemario_')) return { ok: false, etapas: etapas };
   var temario = filasRdvDelTemario_('jm', ventana);
-  Logger.log('temario: ' + temario.items + ' encuentro(s) distinto(s) · ' + temario.filas.length +
-    ' fila(s) de rdv/' + temario.hoja +
-    (temario.sin_fila ? ' · ⚠ ' + temario.sin_fila + ' ítem(s) SIN fila de rdv' : ''));
+  marcar('6 · filasRdvDelTemario_');
+  Logger.log('   temario: ' + temario.items + ' encuentro(s) · ' + temario.filas.length + ' fila(s)' +
+    (temario.sin_fila ? ' · ⚠ ' + temario.sin_fila + ' sin fila' : ''));
 
   if (!temario.filas.length) {
-    Logger.log('⛔ CERO filas. El agregado por temario no se está aplicando. Revisar que');
-    Logger.log('   SECCIONES.ecv_alcance_semanal.itera_sobre diga "REUNIONES" EN LA HOJA —');
-    Logger.log('   el seed no actualiza filas existentes: `declararIteraDelAgregado()`.');
-    return { ok: false, motivo: 'temario sin filas' };
+    Logger.log('⛔ CERO filas: el agregado por temario no se está aplicando. Revisar que');
+    Logger.log('   SECCIONES.ecv_alcance_semanal.itera_sobre diga "REUNIONES" EN LA HOJA.');
+    reportar('temario sin filas');
+    return { ok: false, etapas: etapas };
   }
 
-  /* ⭐ **La identidad se mira ANTES que el total.** Un total correcto sobre los sumandos
-   * equivocados es indistinguible de uno correcto, y es lo que hay que poder distinguir. */
-  Logger.log('');
-  Logger.log('== identidad: de qué filas sale el total ==');
-  var campo = buscarMapeo('rdv', temario.hoja, 'inscriptos');
-  var enc = campo.ok ? encabezadoEnColumna_('rdv', temario.hoja, campo.columna) : '';
-  var vistos = [];
-  temario.filas.forEach(function (f) {
-    var barrio = f['Barrio'] !== undefined ? f['Barrio'] : '(sin Barrio)';
-    var v = (enc && (enc in f)) ? f[enc] : '(no se pudo leer)';
-    vistos.push({ barrio: String(barrio), inscriptos: Number(v) || 0 });
-    Logger.log('   ' + String(barrio) + ' → ' + v);
-  });
-
-  var faltan = [];
-  SUMANDOS.forEach(function (s) {
-    var hay = vistos.filter(function (v) { return v.inscriptos === s.inscriptos; }).length;
-    if (!hay) faltan.push(s.nombre + ' (' + s.inscriptos + ', ' + s.caso + ')');
-  });
-  if (faltan.length) {
-    Logger.log('   ⛔ NO aparece(n): ' + faltan.join(' · '));
-    Logger.log('   El total puede dar bien igual, y sería el número correcto por el camino');
-    Logger.log('   equivocado. ESTO es lo que hay que mirar, no el total.');
-  } else {
-    Logger.log('   ✅ los cuatro sumandos validados están, uno por fila.');
-  }
-
+  if (!entra('7 · resolverMarcadores')) return { ok: false, etapas: etapas };
   var r = resolverMarcadores('jm', {
-    ventana: ventana,
-    filas_rdv: temario.filas,
-    hoja_rdv: temario.hoja,
+    ventana: ventana, filas_rdv: temario.filas, hoja_rdv: temario.hoja,
     temario_sin_fila: temario.sin_fila,
     solo_marcadores: ['ecv_inscriptos', 'ecv_encuentros', 'ecv_asistentes', 'ecv_barrios']
   });
+  marcar('7 · resolverMarcadores');
 
   var por = {};
   r.resultados.forEach(function (x) { por[x.marcador] = x; });
-
   Logger.log('');
   Logger.log('== valores ==');
   ['ecv_inscriptos', 'ecv_encuentros', 'ecv_asistentes', 'ecv_barrios'].forEach(function (m) {
     var x = por[m];
     Logger.log('   ' + m + ' = ' + (x ? x.valor : '(no resolvió)') + (x ? ' · ' + x.estado : ''));
-    if (x && x.traza) Logger.log('       ' + String(x.traza).slice(0, 220));
   });
 
-  /* ⚠ El veredicto se arma con `===` sobre números y **no se redondea**: un control que tolera
-   * cerca deja de distinguir «reproduce» de «se parece». */
+  /* Los cuatro sumandos validados uno por uno. La identidad se mira **antes** que el total: un
+   * total correcto sobre los sumandos equivocados es indistinguible de uno correcto. */
   var vi = por.ecv_inscriptos && Number(por.ecv_inscriptos.valor);
   var ve = por.ecv_encuentros && Number(por.ecv_encuentros.valor);
-  var okI = vi === ESPERADO_INSCRIPTOS;
-  var okE = ve === ESPERADO_ENCUENTROS;
-
+  var okI = vi === 2333, okE = ve === 4;
   Logger.log('');
   Logger.log('== veredicto ==');
-  Logger.log('   ecv_inscriptos : ' + vi + ' contra ' + ESPERADO_INSCRIPTOS + ' (V-71) → ' + (okI ? '✅ REPRODUCE' : '⛔ NO'));
-  Logger.log('   ecv_encuentros : ' + ve + ' contra ' + ESPERADO_ENCUENTROS + ' → ' + (okE ? '✅ REPRODUCE' : '⛔ NO'));
-
+  Logger.log('   ecv_inscriptos : ' + vi + ' contra 2333 (V-71) → ' + (okI ? '✅ REPRODUCE' : '⛔ NO'));
+  Logger.log('   ecv_encuentros : ' + ve + ' contra 4 → ' + (okE ? '✅ REPRODUCE' : '⛔ NO'));
   if (!okI || !okE) {
-    Logger.log('');
-    Logger.log('⛔ NO reproduce. Reportar el número obtenido, el esperado y el camino, y PARAR.');
-    Logger.log('   NO se ajusta el motor hasta que dé, y NO se marca el marcador como dudoso:');
-    Logger.log('   un marcador con caso `exacto` se corrige o se frena, no se publica con desconfianza.');
+    Logger.log('   ⛔ Reportar el obtenido, el esperado y el camino, y PARAR. Un marcador con caso');
+    Logger.log('      `exacto` se corrige o se frena, no se publica con desconfianza.');
   }
 
-  /* ⚠ Los avisos van ÚLTIMOS, después del veredicto: un `⚠` en el medio de un reporte que termina
-   * en `✅` se lee como verde (`CLAUDE.md` §4). */
-  Logger.log('');
-  Logger.log('⚠ Lo que este control NO contesta:');
-  Logger.log('   · Que el deck se expanda y se pinte. Eso es una corrida.');
-  Logger.log('   · Los cinco ecv_insc_*_pct, que no tienen caso propio y nacen sin validar.');
-  Logger.log('   · ecv_barrios, cuyo único caso es C-03 y es `contradice`: se mira contra REUNIONES.');
-
-  return { ok: okI && okE, inscriptos: vi, encuentros: ve, esperados: [ESPERADO_INSCRIPTOS, ESPERADO_ENCUENTROS] };
+  reportar(okI && okE ? 'completo · reproduce' : 'completo · NO reproduce');
+  return { ok: okI && okE, inscriptos: vi, encuentros: ve, etapas: etapas };
 }
 
 /* ============================================================================
