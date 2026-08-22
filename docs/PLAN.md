@@ -956,6 +956,60 @@ caer. No se insistió y no se tocó `CONFIG.umbral_anclaje_reunion`.
 un caso. Si el matcher hay que mejorarlo, se mide sobre los encuentros de varias semanas y se
 decide con esa medición, no con el que falló hoy.
 
+**Addendum al `D-29` — 21/08/2026. El front existe, y la decisión de dónde saca los datos, con
+sus tres límites.** (`2026-08-21_16` Parte A. El texto de arriba no se edita — `CLAUDE.md` §7.)
+
+**La cláusula *"hasta que el front exista"* deja de aplicar.** El panel tiene la pestaña
+`Anclajes`: lista lo pendiente de confirmar con sus tres candidatos y sus puntajes, y escribe
+`elegido`. El listado en `excluidos` **se conserva** — no era un sustituto del front sino el
+cierre del silencio, y sigue siendo el registro de la corrida.
+
+**La decisión de la Parte A: la pantalla lee `ANCLAJE_PENDIENTE`, no corre `anclarEncuentros`.**
+Las dos formas no son equivalentes y la elección tiene un motivo cada mitad:
+
+- **El costo.** `anclarEncuentros` tarda **~50 s** (medido, `Union.gs` y `Generador.gs`) y
+  `cacheAnclaje_` es una global de módulo: en Apps Script eso **se reinicia entre invocaciones**,
+  así que **cada apertura de la pestaña lo pagaría entero**. Una pantalla que tarda 50 s en
+  pintar no se usa.
+- ⭐ **Y el motivo que no es de costo, que es el que de verdad decide: la hoja no es un caché.**
+  Es el registro que el propio motor consulta con `anclajeYaConfirmado_` **antes** de anclar.
+  Confirmar ahí es confirmar **exactamente lo que la próxima corrida va a leer**, no una foto de
+  algo que después se recalcula.
+
+⚠ **Límite 1 — falta por abajo.** Un encuentro que todavía no pasó por ninguna corrida **no está
+en la hoja**, y por lo tanto no aparece. La pestaña muestra **lo pendiente de confirmar, no todo
+lo anclable**.
+
+⛔ **Límite 2 — y sobra por arriba, que es el que no estaba previsto y salió de mirar las filas
+reales.** `registrarAnclajePendiente_` **nunca borra**: la hoja **acumula**. De las dos filas que
+tiene hoy, una —`almagro|2026-06-16|`— corresponde a una fila de `REUNIONES` con **`mostrar =
+no`**, y `leerReuniones_` filtra por `mostrar`: **hoy esa fila no podría escribirse**. Quedó de
+una corrida anterior. **Así que la pantalla puede ofrecer confirmar un encuentro que ya no va al
+deck**, y nada en la hoja lo distingue de uno vigente.
+
+- **La contención, y es barata:** la pantalla **cruza contra `REUNIONES`** y marca las filas que
+  ninguna reunión vigente reclama. **No las borra** —borrar una decisión que alguien tomó es lo
+  que `CLAUDE.md` §4 prohíbe— y **no las esconde**: las muestra aparte, dichas como viejas.
+- ⚠ **Y el cruce se hace por la clave, no por el nombre**, porque la clave es
+  `normalizar_(nombre)|fecha|etapa` y el nombre solo no alcanza.
+
+⛔ **Límite 3 — el hueco que esta pantalla NO tapa, y hay que decirlo para que nadie lea la
+pestaña nueva como que el circuito quedó cerrado.** Son **dos** huecos:
+
+| caso | ¿pasa por `ANCLAJE_PENDIENTE`? | ¿lo cubre esta pantalla? |
+|---|---|---|
+| **cae bajo el umbral** | sí | **sí** — es lo que este paso construye |
+| **empata arriba del umbral** | **no** | **no** |
+
+Los cinco anclajes que dan `1,00` exacto **empatan en el techo**, y ahí actúa el desempate
+temporal y **el motor elige solo** — que es el modo de falla del `3347`. Eso es del motor
+(`scoreMatchDigitalRdv_`), sigue **remitido a este mismo `D-29`** —*"no se toca por un caso"*— y
+está fuera del alcance del `2026-08-21_16`.
+
+**Lo que queda fuera y por qué:** un botón *"recalcular"* que sí pague los 50 s. No se construye
+acá. ⓘ Anotado para cuando exista: `cacheAnclaje_` **sí** ahorra **dentro** de una ejecución, así
+que ese botón, si además pinta la pantalla, paga los ~50 s **una vez y no dos**.
+
 ---
 
 **`D-30` — Una solapa declara en `SOLAPAS.campo_id_cuenta` qué campo suyo lleva la cuenta, y con
