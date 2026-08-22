@@ -861,6 +861,7 @@ function panel_getAnclajes() {
   var pendientes = [];
   var confirmadas = [];
   var sinReunion = 0;
+  var archivadas = 0;
 
   datos.forEach(function (cruda) {
     var fila = {};
@@ -873,12 +874,29 @@ function panel_getAnclajes() {
     var vigente = vigentes[claveAnclaje_(tipo, nombreBuscado)] === true;
     if (!vigente) sinReunion++;
 
+    /* ⭐ `2026-08-21_19` Parte C — **archivar esconde huérfanas, nunca vigentes.**
+     *
+     * La condición es `archivada && !vigente`, y ahí está toda la reversibilidad que el paso pide:
+     * **si la reunión vuelve a `mostrar = sí`, la fila reaparece sola**, sin que nadie tenga que
+     * acordarse de desarchivarla. Archivar significa *«no me muestres esta huérfana»*, no *«no me
+     * muestres nunca esta clave»* — son dos cosas distintas y la segunda es la que se olvida
+     * encendida.
+     *
+     * ⚠ **Y la fila NO se borra**: es el registro que el motor consulta antes de anclar
+     * (`anclajeYaConfirmado_`), y borrarla haría que la próxima corrida vuelva a preguntar lo
+     * mismo — el paso humano dejaría de ser control y pasaría a trámite. */
+    var archivada = esVerdadero_(fila.archivada);
+    if (archivada && !vigente) { archivadas++; return; }
+
     var item = {
       tipo: tipo,
       nombre_buscado: nombreBuscado,
       candidatos: candidatosDeAnclaje_(fila),
       elegido: String(fila.elegido == null ? '' : fila.elegido).trim(),
-      vigente: vigente
+      vigente: vigente,
+      // Viaja aunque hoy sólo importe cuando es `false`: una vigente marcada archivada se muestra
+      // igual, y la pantalla tiene que poder decir por qué reapareció.
+      archivada: archivada
     };
     if (item.elegido) confirmadas.push(item);
     else pendientes.push(item);
@@ -890,8 +908,103 @@ function panel_getAnclajes() {
     umbral: umbralAnclajeReunion_(),
     pendientes: pendientes,
     confirmadas: confirmadas,
-    sin_reunion: sinReunion
+    // ⚠ Cuenta TODAS las que ninguna reunión vigente reclama, archivadas incluidas. Si contara
+    // sólo las visibles, archivar haría bajar el número y **el problema parecería resolverse
+    // solo** — que es exactamente lo que archivar no hace.
+    sin_reunion: sinReunion,
+    // Y cuántas de ésas están escondidas, para que el total nunca baje en silencio.
+    archivadas: archivadas
   };
+}
+
+/**
+ * ⭐ C.2 · Archiva —o desarchiva— una fila huérfana de `ANCLAJE_PENDIENTE`.
+ *
+ * ⚠ **La clave es `(tipo, nombre_buscado)`, no la posición de fila**, por lo mismo que
+ * `panel_confirmarAnclaje`: el panel puede estar mostrando una lista vieja, y escribir por índice
+ * pondría la marca en la fila equivocada **sin que nada falle**.
+ *
+ * ⛔ **No inventa filas.** Si la clave no está, falla con motivo — una corrida que no hizo nada
+ * tiene que fallar, no informar cero (`CLAUDE.md` §4).
+ *
+ * ⛔ **Y no archiva una vigente.** Sería la única forma de esconder algo que la próxima corrida
+ * sí va a mirar, y el pedido explícito era el contrario: lo que está marcado *«ninguna reunión
+ * vigente la reclama»* es lo archivable. Se rechaza con el motivo dicho en vez de aceptarlo y no
+ * tener efecto — una escritura que se acepta y no cambia nada es un cero disfrazado de éxito.
+ */
+function panel_archivarAnclaje(tipo, nombreBuscado, archivar) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ANCLAJE_PENDIENTE');
+  if (!hoja) return { ok: false, motivo: 'la hoja ANCLAJE_PENDIENTE no existe todavía' };
+
+  var col = columnaArchivadaDeAnclaje_(hoja);
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0] || [];
+  var idx = {};
+  headers.forEach(function (h, i) { idx[h] = i; });
+
+  var buscada = claveAnclaje_(tipo, nombreBuscado);
+  for (var f = 1; f < datos.length; f++) {
+    if (claveAnclaje_(datos[f][idx.tipo], datos[f][idx.nombre_buscado]) !== buscada) continue;
+
+    if (archivar === true) {
+      // La misma clave que arma `panel_getAnclajes`, y por el mismo camino: `leerReuniones_` ya
+      // filtra por `mostrar`. Reproducir acá ese criterio sería el instrumento que reimplementa
+      // al motor y lo reimplementa peor.
+      var vigente = false;
+      leerReuniones_().forEach(function (r) {
+        var fecha = (r.fecha instanceof Date) ? r.fecha : parsearFechaCelda_(r.fecha);
+        var clave = claveAnclaje_('reunion', normalizar_(r.nombre) + '|' +
+          (fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd') : 'sin_fecha') +
+          '|' + (r.etapa || ''));
+        if (clave === buscada) vigente = true;
+      });
+      if (vigente) {
+        return {
+          ok: false,
+          motivo: 'esa fila SÍ la reclama una reunión vigente, así que no se archiva: la próxima ' +
+            'corrida la va a mirar y esconderla sería esconder una decisión que hace falta. ' +
+            'Archivar es para las que dicen "ninguna reunión vigente la reclama".'
+        };
+      }
+    }
+
+    hoja.getRange(f + 1, col).setValue(archivar === true ? 'sí' : '');
+    SpreadsheetApp.flush();
+    return {
+      ok: true,
+      tipo: String(tipo || '').trim(),
+      nombre_buscado: String(nombreBuscado || '').trim(),
+      archivada: archivar === true,
+      accion: archivar === true ? 'archivada' : 'desarchivada'
+    };
+  }
+
+  return {
+    ok: false,
+    motivo: 'no hay ninguna fila con tipo="' + tipo + '" y nombre_buscado="' + nombreBuscado +
+      '" en ANCLAJE_PENDIENTE. No se inventa la fila.'
+  };
+}
+
+/**
+ * El número de columna de `archivada`, **creándola si la hoja es vieja**.
+ *
+ * ⚠ La hoja se crea con `HEADERS_ANCLAJE_PENDIENTE_` y sólo esa vez, así que agregar el nombre a
+ * la lista no migra ninguna hoja existente. Esto es el `COLUMNAS_DELTA_` de esta hoja —que no es
+ * de registro y por eso no lo tiene—, reducido a lo único que hace falta: **agregar al final**.
+ *
+ * ⭐ **Al final y nunca en el medio.** `registrarAnclajePendiente_` reescribe la fila por posición
+ * con nueve valores; una columna insertada antes de la novena haría que ese escritor empiece a
+ * poner puntajes donde van nombres, **y no fallaría**.
+ */
+function columnaArchivadaDeAnclaje_(hoja) {
+  var ultima = hoja.getLastColumn();
+  var headers = hoja.getRange(1, 1, 1, ultima).getValues()[0];
+  var i = headers.indexOf('archivada');
+  if (i >= 0) return i + 1;
+  hoja.getRange(1, ultima + 1).setValue('archivada');
+  SpreadsheetApp.flush();
+  return ultima + 1;
 }
 
 /**

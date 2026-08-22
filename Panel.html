@@ -1171,6 +1171,33 @@ function confirmarAnclaje(tipo, nombre, elegido){
     .panel_confirmarAnclaje(tipo, nombre, elegido);
 }
 
+/* ⭐ `2026-08-21_19` Parte C — **archivar una huérfana, y poder traerla de vuelta.**
+ *
+ * ⚠ **Archivar no borra**: la fila se queda, porque es el registro que el motor consulta antes de
+ * anclar y borrarla haría que la próxima corrida vuelva a preguntar lo mismo. Lo único que cambia
+ * es que deja de ocupar la pantalla.
+ *
+ * **Y se relee la hoja después**, igual que al confirmar: lo que vale es lo que quedó escrito, no
+ * lo que se pidió. */
+function archivarAnclaje(tipo, nombre, archivar){
+  S.anclajesMsg = null;
+  google.script.run
+    .withSuccessHandler(function(r){
+      S.anclajesMsg = r && r.ok
+        ? {ok:true, texto:(r.accion === 'archivada'
+            ? 'Archivada: ' + r.nombre_buscado + '. La fila sigue en la hoja — sólo se sacó de la vista.'
+            : 'Vuelve a la vista: ' + r.nombre_buscado)}
+        : {ok:false, texto:(r && r.motivo) || 'no se pudo escribir'};
+      cargarAnclajes();
+      pintar();
+    })
+    .withFailureHandler(function(e){
+      S.anclajesMsg = {ok:false, texto:String(e && e.message || e)};
+      pintar();
+    })
+    .panel_archivarAnclaje(tipo, nombre, archivar);
+}
+
 /** Una fila de anclaje, con sus candidatos y el umbral al lado. */
 function filaAnclaje(a, umbral, confirmada){
   var tipo = JSON.stringify(a.tipo), nom = JSON.stringify(a.nombre_buscado);
@@ -1199,12 +1226,26 @@ function filaAnclaje(a, umbral, confirmada){
   var vieja = a.vigente === false
     ? '<div class="run-when">⚠ <strong>ninguna reunión vigente la reclama</strong> — quedó de una ' +
       'corrida anterior, o la reunión pasó a <span class="mono">mostrar = no</span>. ' +
-      'Confirmarla no cambia el deck de esta semana.</div>'
+      'Confirmarla no cambia el deck de esta semana. ' +
+      /* ⭐ Parte C — el botón vive **acá y sólo acá**: en la fila que ya está marcada como
+       * huérfana. Una fila vigente no lo ofrece, y el backend además lo rechaza. */
+      '<button type="button" onclick=\'archivarAnclaje(' + tipo + ',' + nom + ',true)\'>' +
+      'Archivar</button></div>'
+    : '';
+
+  /* ⚠ Una fila archivada que VOLVIÓ a estar vigente se muestra igual —la condición de esconder es
+   * `archivada && !vigente`— y hay que decir por qué reapareció, o parece que el archivado no
+   * funcionó. */
+  var revivio = (a.archivada === true && a.vigente === true)
+    ? '<div class="run-when">↩ estaba archivada y <strong>volvió</strong>: una reunión vigente la ' +
+      'reclama otra vez. ' +
+      '<button type="button" onclick=\'archivarAnclaje(' + tipo + ',' + nom + ',false)\'>' +
+      'Sacarle la marca</button></div>'
     : '';
 
   return '<div class="box">' +
     '<div class="run-name">' + esc(a.nombre_buscado) + ' <span class="mono">(' + esc(a.tipo) + ')</span></div>' +
-    vieja +
+    vieja + revivio +
     (cands ? '<ul class="list-reset">' + cands + '</ul>'
            : '<p class="muted">Sin candidatos puntuados. No hay nada que elegir desde acá.</p>') +
     '</div>';
@@ -1263,9 +1304,20 @@ function vistaAnclajes(){
     ? d.confirmadas.map(function(a){ return filaAnclaje(a, d.umbral, true); }).join('')
     : '<p class="muted">Ninguno todavía.</p>';
 
+  /* ⭐ Parte C — **el total NO baja al archivar, y ésa es la mitad del valor.** `sin_reunion`
+   * cuenta todas las huérfanas, archivadas incluidas; si contara sólo las visibles, archivar haría
+   * bajar el número y el problema **parecería resolverse solo** — que es justo lo que archivar no
+   * hace. Lo que se dice al lado es cuántas están escondidas. */
   if (d.sin_reunion > 0){
+    var arch = Number(d.archivadas) || 0;
     h += '<p class="muted">⚠ ' + d.sin_reunion + ' de estas filas no las reclama ninguna reunión ' +
-      'vigente. Quedan a la vista igual: la hoja acumula y nada se borra desde acá.</p>';
+      'vigente' + (arch ? ', y ' + arch + ' de ésas están <strong>archivadas</strong> y no se ' +
+      'muestran arriba' : '') + '. Nada se borra: archivar sólo las saca de la vista, y vuelven ' +
+      'solas si una reunión vigente las reclama de nuevo.</p>';
+    if (arch){
+      h += '<p class="muted">Para ver una archivada hay que abrir <span class="mono">' +
+        'ANCLAJE_PENDIENTE</span> y vaciar su celda <span class="mono">archivada</span>.</p>';
+    }
   }
   return h;
 }

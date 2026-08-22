@@ -864,7 +864,29 @@ function encontrarFilaRdvDeReunion_(reunion) {
  * preguntar en la corrida siguiente (`anclajeYaConfirmado_`) — si cada corrida
  * repreguntara lo mismo, el paso humano deja de ser control y pasa a trámite.
  */
-var HEADERS_ANCLAJE_PENDIENTE_ = ['tipo', 'nombre_buscado', 'candidato_1', 'puntaje_1', 'candidato_2', 'puntaje_2', 'candidato_3', 'puntaje_3', 'elegido'];
+/* ⭐ `2026-08-21_19` Parte C — **`archivada` va AL FINAL, y es una columna propia y no un valor
+ * reservado en `elegido`.**
+ *
+ * **Por qué no un centinela en `elegido`, que era la otra salida posible:** `elegido` tiene un
+ * significado que el motor consulta —`anclajeYaConfirmado_` devuelve su contenido como el
+ * candidato elegido— y `validarEleccionAnclaje_` **rechaza a propósito** todo lo que no sea un
+ * candidato de esa fila o vacío, porque *"un `elegido` que nadie puntuó reabre por la puerta nueva
+ * el agujero que `D-29` cierra"*. Meterle un centinela obligaría a que **todos** los lectores lo
+ * conozcan, y al primero que se olvide el motor ancla contra una cadena inventada. **Archivar y
+ * elegir son dos decisiones distintas: una columna cada una.**
+ *
+ * ⚠ **Al final del array, y eso importa:** `registrarAnclajePendiente_` reescribe la fila con
+ * `getRange(fila, 1, 1, fila.length)` y arma **nueve** valores por posición. Con la columna décima,
+ * esa reescritura **no la toca** — o sea que una fila archivada sigue archivada aunque la corrida
+ * siguiente le refresque los candidatos. Una columna insertada en el medio habría corrido las
+ * posiciones y el escritor habría empezado a poner puntajes donde van nombres, **sin fallar**.
+ *
+ * ⚠ **Y la hoja vieja no tiene esta columna.** `obtenerHojaAnclajePendiente_` sólo escribe los
+ * encabezados cuando CREA la hoja, así que agregar el nombre acá no migra nada: eso lo hace
+ * `columnaArchivadaDeAnclaje_`, que la crea al vuelo la primera vez que alguien archiva. Es el
+ * mismo problema que `COLUMNAS_DELTA_` resuelve para las hojas de registro — y esta hoja no es
+ * una: es operativa, como `CORRIDAS` y `PLAN_CORRIDA`, y no está en ninguna de las tres listas. */
+var HEADERS_ANCLAJE_PENDIENTE_ = ['tipo', 'nombre_buscado', 'candidato_1', 'puntaje_1', 'candidato_2', 'puntaje_2', 'candidato_3', 'puntaje_3', 'elegido', 'archivada'];
 
 function obtenerHojaAnclajePendiente_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
