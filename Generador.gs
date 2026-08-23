@@ -3146,6 +3146,118 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos, hub
   return { barridos: barridos, origen: origen };
 }
 
+/* ═══════════ `2026-08-23_1` Parte C — el aviso de crudos, con causa ═══════════════════════
+ *
+ * ⛔ **Hasta hoy, un token que quedó crudo sin corte y sin excepción salía con UN solo texto:**
+ * *«⚠ quedó crudo en el deck sin que hubiera corte por tiempo — revisar»*. Ese aviso era
+ * **correcto** y **no decía nada accionable**, porque tapa tres situaciones que mandan a tres
+ * oficios distintos:
+ *
+ *   - **no tiene fila** → cablear;
+ *   - ⛔ **tiene fila, resolvió con valor, y el escritor no lo pisó** → es un bug del escritor;
+ *   - **tiene fila y falló al resolver** → mirar la traza.
+ *
+ * ⭐ **El del medio es el que no existía y es el que importa.** Un token que resuelve y no se
+ * escribe **no aparece en `FALTANTES` por el camino normal** —los dos puntos que pintan vuelven
+ * antes de empujar la fila— **ni se distingue en el deck**, donde su hueco se ve igual que
+ * cualquier otro. Era el único de los tres modos de falla que no dejaba rastro en ningún lado.
+ *
+ * **El caso real contra el que se probó:** el 23/08, `camp_remitente` y `camp_titulo` salieron con
+ * ese texto **teniendo fila los dos**. El aviso era correcto para ambos y seguía sin decir por qué.
+ *
+ * ⚠ **Es la misma familia que el `/////` que mentía sobre la causa** (`CLAUDE.md` §4): el símbolo
+ * no miente sobre un valor, miente sobre **por qué no hay valor** — y las causas mandan a trabajos
+ * opuestos. Acá, a *cablear* contra *arreglar el escritor*.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Los tokens que **tienen fila en `MARCADORES`** para este informe.
+ *
+ * ⚠ **El filtro es EL MISMO que usa `resolverMarcadores`** —`informe_id === informeId || '*'`— y
+ * eso no es una coincidencia que se pueda dejar librada: un diagnóstico que filtre distinto diría
+ * *«sin fila»* sobre un token que el resolvedor sí ve, y mandaría a cablear algo que ya está
+ * cableado. Es la regla del control positivo que **comparte camino**: sirve porque mira lo mismo.
+ * Si algún día cambia el criterio de allá, tiene que cambiar acá.
+ *
+ * ⚠ **Y si no se puede leer, lo dice en vez de contestar.** Corre en el cierre, después de que la
+ * corrida ya pudo morir; `leerMarcadores_()` puede tirar. Un `catch` que devolviera el conjunto
+ * vacío haría que **todos** los crudos salieran «nadie lo cableó» — un diagnóstico falso y
+ * dramático, exactamente del tipo que manda a borrar configuración.
+ */
+function tokensConFilaEnMarcadores_(informeId) {
+  try {
+    var set = {};
+    leerMarcadores_().forEach(function (m) {
+      var suyo = String(m.informe_id || '').trim();
+      if (suyo !== informeId && suyo !== '*') return;
+      set[String(m.marcador).trim()] = true;
+    });
+    return { ok: true, tokens: set };
+  } catch (e) {
+    return { ok: false, tokens: {}, motivo: String((e && e.message) ? e.message : e) };
+  }
+}
+
+/** Un valor largo no puede comerse la celda del motivo: es evidencia, no el dato. */
+function recorteDeValor_(valor) {
+  var texto = String(valor == null ? '' : valor);
+  return texto.length > 120 ? texto.slice(0, 117) + '…' : texto;
+}
+
+/**
+ * Un token que la barrida encontró crudo **sin corte y sin excepción** → `{ causa, motivo }`.
+ *
+ * `resultado` es lo que dejó la resolución de la etapa 4 para ese token, o `undefined`.
+ * `conFila` es lo que devuelve `tokensConFilaEnMarcadores_`.
+ */
+function diagnosticoDeCrudo_(token, resultado, conFila) {
+  // Sin poder leer `MARCADORES` no se afirma nada sobre el cableado: se dice que no se sabe.
+  if (!conFila.ok) {
+    return {
+      causa: 'sin_clasificar',
+      motivo: '⚠ quedó crudo sin corte por tiempo, y NO se pudo leer MARCADORES para decir por qué: ' +
+        conFila.motivo
+    };
+  }
+
+  if (conFila.tokens[token] !== true) {
+    return {
+      causa: 'sin_fila',
+      motivo: 'quedó crudo y no tiene fila en MARCADORES para este informe — nadie lo cableó'
+    };
+  }
+
+  if (!resultado) {
+    /* La cuarta situación, que el prompt no nombra y existe igual: el token TIENE fila y la
+     * resolución nunca lo miró, sin que hubiera corte ni excepción. Pasa cuando queda fuera del
+     * conjunto que la etapa 4 resuelve —una lámina escondida, un bloque modelo que no se expandió—.
+     * No es «nadie lo cableó» y no es «falló»: **es que no se lo alcanzó**, y el oficio es mirar
+     * por qué quedó fuera. Meterlo en cualquiera de los otros dos mandaría al trabajo equivocado. */
+    return {
+      causa: 'no_alcanzado',
+      motivo: '⚠ tiene fila en MARCADORES y la corrida NO lo resolvió, sin corte ni excepción — ' +
+        'quedó fuera del conjunto que se resuelve (¿lámina escondida? ¿bloque modelo sin expandir?)'
+    };
+  }
+
+  var estado = String(resultado.estado || '');
+  if (estado === 'ok') {
+    /* ⛔ El del medio. **Tiene fila, resolvió con valor, y el deck salió crudo igual.** El motivo
+     * lleva el valor adentro a propósito: es la evidencia de que había qué escribir, y sin ella el
+     * aviso se lee como una sospecha. */
+    return {
+      causa: 'escritor',
+      motivo: '⛔ tiene fila y RESOLVIÓ con valor ("' + recorteDeValor_(resultado.valor_formateado) +
+        '"), y el escritor no lo pisó — es un bug del escritor, no del cableado'
+    };
+  }
+
+  return {
+    causa: causaDeResultado_(resultado),
+    motivo: 'tiene fila y no publicó — ' + estado + ': ' + resultado.traza
+  };
+}
+
 /**
  * Paso 4 — copia la plantilla, reemplaza los `{{token}}` por su `valor_formateado`, escribe
  * `«FALTA:token»` en los que no tienen valor, guarda en `CONFIG.carpeta_salida` y devuelve
@@ -3715,25 +3827,47 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   var barrida = continuable
     ? { barridos: [], origen: 'no se barrió: la corrida se cortó y hay plan para continuarla' }
     : barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null, conSimbolos, !!(corte || fallo));
+  /* ⭐ `2026-08-23_1` Parte C — el cableado se lee **una sola vez y sólo si hace falta**.
+   *
+   * Con corte o con excepción la causa ya se sabe —la corrida no llegó— y preguntarle a
+   * `MARCADORES` no agregaría nada; además es justo el caso en que menos presupuesto queda. Sin
+   * corte, en cambio, hay tres situaciones distintas detrás del mismo hueco y hay que separarlas.
+   * `leerMarcadores_()` viene del caché de registros que `generarInforme` tiene encendido, así que
+   * en el camino normal ni siquiera toca la planilla. */
+  var conFilaEnMarcadores = (barrida.barridos.length && !corte && !fallo)
+    ? tokensConFilaEnMarcadores_(informeId)
+    : { ok: true, tokens: {} };
+
+  /* El desglose por causa del barrido, para el reporte. **Se acumula acá y no se recalcula
+   * después**: recorrer `faltantes` al final volvería a mezclar los barridos con los que ya
+   * venían de las etapas 3 y 4, que es justo la distinción que este bloque produce. */
+  var barridoPorCausa = {};
   barrida.barridos.forEach(function (token) {
+    // Con corte o con fallo la causa **se sabe** y es la misma: la corrida no llegó hasta acá, y
+    // el oficio es correr de nuevo, no cablear. Sin ninguno de los dos, la Parte C separa las tres
+    // situaciones que hasta hoy compartían un único texto.
+    var diag = corte
+      ? { causa: 'no_alcanzado', motivo: MOTIVO_CORTE_TIEMPO_ + ' (' + corte.etapa + ')' }
+      : (fallo
+        ? { causa: 'no_alcanzado', motivo: MOTIVO_EXCEPCION_ + ' (etapa "' + fallo.etapa + '"): ' + fallo.mensaje }
+        : diagnosticoDeCrudo_(token, porMarcador[token], conFilaEnMarcadores));
+
     faltantes.push({
       corrida_id: corridaId,
       informe_id: informeId,
       token: token,
-      base_id: '',
-      solapa: '',
+      base_id: (porMarcador[token] && porMarcador[token].base_id) || '',
+      solapa: (porMarcador[token] && porMarcador[token].solapa) || '',
       campo_logico: '',
-      // Tres motivos distintos que en el deck se leen igual. Sin corte y sin fallo no
-      // debería quedar ninguno: si aparece, no se lo disfraza de ninguna de las dos cosas.
-      motivo: corte
-        ? MOTIVO_CORTE_TIEMPO_ + ' (' + corte.etapa + ')'
-        : (fallo
-          ? MOTIVO_EXCEPCION_ + ' (etapa "' + fallo.etapa + '"): ' + fallo.mensaje
-          : '⚠ quedó crudo en el deck sin que hubiera corte por tiempo — revisar'),
-      // Con corte o con fallo la causa **se sabe** y es la misma: la corrida no llegó hasta acá,
-      // y el oficio es correr de nuevo, no cablear. El tercer caso lo abre la Parte C.
-      causa: (corte || fallo) ? 'no_alcanzado' : 'sin_clasificar'
+      motivo: diag.motivo,
+      causa: diag.causa
     });
+
+    if (!barridoPorCausa[diag.causa]) barridoPorCausa[diag.causa] = { tokens: [], cuantos: 0 };
+    barridoPorCausa[diag.causa].cuantos++;
+    // Hasta cinco nombres: el reporte tiene que poder nombrar el caso, no listarlo entero.
+    // Un aviso sin un solo nombre obliga a abrir la hoja, que es lo que se está evitando.
+    if (barridoPorCausa[diag.causa].tokens.length < 5) barridoPorCausa[diag.causa].tokens.push(token);
   });
 
   marcarEtapa_(filaCorrida, '5 · escribir faltantes', t0Etapas);
@@ -3910,7 +4044,12 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       // Qué etapas declaradas tienen su punto de control en el flujo, con el `n de m` adentro:
       // «ningún problema» y «no se probó nada» se ven idénticos en un log sin conteo.
       control_por_etapa: controlPorEtapa_(),
-      barrida: { tokens: barrida.barridos.length, origen: barrida.origen }
+      barrida: {
+        tokens: barrida.barridos.length, origen: barrida.origen,
+        // `2026-08-23_1` Parte C — qué oficio manda a hacer cada crudo. Sin esto, el conteo de
+        // barridos es un número que no dice si hay que cablear, correr de nuevo o mirar el escritor.
+        por_causa: barridoPorCausa
+      }
     },
     /* `2026-08-20_10` — lo que la reanudación necesita y hasta hoy moría con la ejecución.
      *
@@ -4008,6 +4147,40 @@ function menuGenerarInformeCompleto_() {
   } else if (r.fallo) {
     lineas.push('⛔ LA CORRIDA MURIÓ POR UNA EXCEPCIÓN — este deck NO está completo.');
     lineas.push('   Etapa "' + r.fallo.etapa + '": ' + r.fallo.mensaje);
+    lineas.push('');
+  }
+
+  /* ⭐ `2026-08-23_1` Parte C — **crudos SIN corte y SIN excepción: el bloque que faltaba.**
+   *
+   * Va arriba, con el corte y la excepción, y por el mismo motivo: **cambia cómo se lee el resto
+   * del reporte**. Un token que la barrida encontró crudo en una corrida que terminó bien no es
+   * un faltante más — es que algo pasó y nadie lo dijo.
+   *
+   * ⚠ **Y el desglose por causa es todo el punto.** Hasta hoy los tres casos —nadie lo cableó, el
+   * escritor no lo pisó, no se lo alcanzó— salían con un único texto que era correcto y no era
+   * accionable. Cada línea de acá nombra el oficio y da hasta cinco tokens: un aviso sin un solo
+   * nombre obliga a abrir la hoja, que es justo lo que la Parte B vino a evitar. */
+  var barridoSinCorte = (!r.corte && !r.fallo && r.presupuesto && r.presupuesto.barrida &&
+    r.presupuesto.barrida.tokens) ? r.presupuesto.barrida : null;
+  if (barridoSinCorte) {
+    var causas = barridoSinCorte.por_causa || {};
+    // `escritor` primero, siempre: es el único que acusa al motor. Los demás dicen qué falta.
+    var orden = ['escritor', 'sin_clasificar', 'no_alcanzado', 'fallo', 'sin_datos', 'sin_fila'];
+    var hayBug = causas.escritor || causas.sin_clasificar;
+    lineas.push((hayBug ? '⛔' : '⚠') + ' ' + barridoSinCorte.tokens +
+      ' token(s) quedaron CRUDOS sin que hubiera corte ni excepción.');
+    orden.forEach(function (causa) {
+      if (!causas[causa]) return;
+      var def = CAUSAS_FALTANTE_[causa] || CAUSAS_FALTANTE_.sin_clasificar;
+      lineas.push('   · ' + causas[causa].cuantos + ' — ' + def.texto + ' → ' + def.oficio +
+        ': ' + causas[causa].tokens.join(', ') +
+        (causas[causa].cuantos > causas[causa].tokens.length ? ', …' : ''));
+    });
+    if (hayBug) {
+      lineas.push('   ⛔ Un token que resolvió con valor y salió crudo NO aparece en el deck como');
+      lineas.push('      distinto de cualquier otro hueco. La fila de FALTANTES trae el valor que');
+      lineas.push('      se había resuelto: es la evidencia de que había qué escribir.');
+    }
     lineas.push('');
   }
 

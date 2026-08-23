@@ -281,6 +281,84 @@ console.log('\n4 · el lector del panel parte el sufijo `@ítem` y no lava el no
   }
 }
 
+/* ════════════════════════════════════════════════════════════════════════════════════════
+ * 5 · Parte C — el crudo sin corte, separado en sus tres (cuatro) situaciones
+ * ════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n5 · un token crudo sin corte: cuál de los oficios manda a hacer');
+{
+  const ctx = contextoGenerador({ FALTANTES: hojaEnMemoria(HEADERS_VIEJOS) });
+  ctx.__conFila = { ok: true, tokens: { camp_titulo: true, camp_remitente: true, enc_alcance: true } };
+  const diag = (token, resultado) => {
+    ctx.__t = token; ctx.__r = resultado;
+    return vm.runInContext('diagnosticoDeCrudo_(__t, __r, __conFila)', ctx);
+  };
+
+  af(diag('post_alcance', undefined).causa === 'sin_fila',
+    'sin fila en MARCADORES → `sin_fila` (cablear)');
+
+  /* ⭐⭐ **El caso real del 23/08, y es el que fundó la Parte C.** `camp_remitente` y `camp_titulo`
+   * salieron *«quedó crudo sin corte por tiempo — revisar»* **teniendo fila los dos**. El aviso era
+   * correcto y no decía por qué. Acá los dos con fila tienen que salir por caminos DISTINTOS. */
+  const escritor = diag('camp_titulo', { estado: 'ok', valor_formateado: '1.234' });
+  af(escritor.causa === 'escritor',
+    'con fila y estado `ok` → `escritor`: resolvió y el escritor no lo pisó');
+  /* ⭐ El valor viaja en el motivo, y es la evidencia de que había qué escribir. Sin él, el aviso
+   * es una sospecha; con él, es un hallazgo. */
+  af(escritor.motivo.indexOf('1.234') !== -1,
+    'y el motivo trae el valor resuelto — la evidencia, no una sospecha', escritor.motivo);
+
+  const fallo = diag('camp_remitente', { estado: 'error', traza: 'sin mapeo para "remitente"' });
+  af(fallo.causa === 'fallo', 'con fila y estado `error` → `fallo` (mirar la traza)');
+  af(fallo.motivo.indexOf('sin mapeo') !== -1, 'y el motivo trae la traza');
+  /* ⭐ **Los dos tokens del caso real salen distinto, que es exactamente lo que faltaba.** Sin esta
+   * afirmación el bloque pasaría igual con las dos ramas devolviendo lo mismo. */
+  af(escritor.causa !== fallo.causa,
+    'y los dos del 23/08 —ambos con fila— ya no comparten diagnóstico');
+
+  af(diag('enc_alcance', { estado: 'sin_datos', traza: 'cero filas en la ventana' }).causa === 'sin_datos',
+    'con fila y `sin_datos` → `sin_datos` (mirar la fuente o la ventana)');
+
+  /* La cuarta, que el prompt no nombra y existe igual: tiene fila y la resolución nunca lo miró,
+   * sin corte ni excepción. No es «nadie lo cableó» y no es «falló». */
+  af(diag('enc_alcance', undefined).causa === 'no_alcanzado',
+    'con fila y sin resultado → `no_alcanzado`: no se lo alcanzó, y no es ninguna de las otras');
+
+  /* ⛔ Y lo que pasa cuando el instrumento no puede leer `MARCADORES`. Un `catch` que devolviera el
+   * conjunto vacío haría que TODOS los crudos salieran «nadie lo cableó»: un diagnóstico falso,
+   * dramático y del tipo que manda a borrar configuración. */
+  ctx.__conFila = { ok: false, tokens: {}, motivo: 'la hoja no existe' };
+  const ciego = diag('camp_titulo', { estado: 'ok', valor_formateado: '9' });
+  af(ciego.causa === 'sin_clasificar',
+    'si no se pudo leer MARCADORES, no afirma nada sobre el cableado');
+  af(ciego.motivo.indexOf('la hoja no existe') !== -1,
+    'y dice por qué no pudo — «no sé» con motivo, no «nadie lo cableó»');
+}
+
+console.log('\n5b · el filtro por informe es EL MISMO que usa resolverMarcadores');
+{
+  /* ⚠ **Un diagnóstico que filtre distinto que el resolvedor diría «sin fila» sobre un token que el
+   * resolvedor sí ve**, y mandaría a cablear algo ya cableado. Las dos expresiones se comparan por
+   * texto: si alguien cambia una y no la otra, esto se pone rojo. Es el control positivo que
+   * comparte camino, aplicado a un criterio en vez de a un dato. */
+  const texto = fs.readFileSync(path.join(RAIZ, 'Generador.gs'), 'utf8');
+  const criterio = "return suyo === informeId || suyo === '*';";
+  const enDiagnostico = "if (suyo !== informeId && suyo !== '*') return;";
+  af(texto.indexOf(criterio) !== -1,
+    '`resolverMarcadores` sigue filtrando por `informe_id === informeId || "*"`');
+  af(texto.indexOf(enDiagnostico) !== -1,
+    'y `tokensConFilaEnMarcadores_` usa el mismo criterio, negado');
+}
+
+console.log('\n5c · con corte o con excepción NO se le pregunta a MARCADORES');
+{
+  /* ⭐ La causa ya se sabe —la corrida no llegó— y es justo el caso en que menos presupuesto queda.
+   * Se afirma sobre el texto porque el efecto es una lectura que NO ocurre, y una lectura que no
+   * ocurre no deja rastro que un banco pueda observar. */
+  const texto = fs.readFileSync(path.join(RAIZ, 'Generador.gs'), 'utf8');
+  const guarda = 'var conFilaEnMarcadores = (barrida.barridos.length && !corte && !fallo)';
+  af(texto.indexOf(guarda) !== -1,
+    'la lectura de MARCADORES está detrás de `!corte && !fallo` y de que haya barridos');
+}
 /* ════════════════════════════════════════════════════════════════════════════════════════ */
 console.log('');
 if (avisos.length) {
