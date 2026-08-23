@@ -848,6 +848,32 @@ no el que había, y no existe nada que compare un comentario contra el código q
   `CAMPANAS` pasó a leerse como lista. Si alguien lo mira hoy, verifica y confirma, **no se entera
   de que estuvo mintiendo meses** — y el hallazgo, que era que las dos hojas divergían, se pierde.
 
+**Los tokens de una tabla se cablean contra el CENSO, uno por uno — nunca generando N × M.**
+El censo es **la lista**; la forma de la tabla es **el modelo mental**, y no coinciden.
+
+- **El caso, medido el 22/08/2026 sobre `L-047`:** la tabla se ve como *5 envíos × 9 campos = 45*.
+  **El censo dice 40**, repartidos `9 · 8 · 8 · 7 · 8`. Sólo el envío 1 tiene `_rem` —el remitente
+  está en una celda combinada— y **`camp_env4_fecha` no existe**, porque la fecha también está
+  agrupada: `10/08` cubre dos filas y `12/08` las otras dos. **Un producto cartesiano habría
+  inventado cinco tokens.**
+- ⭐ **La irregularidad no es un descuido de la plantilla: es su diseño.** Una celda combinada es
+  una decisión de presentación del equipo, y el token vive donde la celda existe.
+- ⚠ **Y el síntoma de inventarlos es mudo:** un marcador cuyo token no está en ninguna lámina **no
+  falla** — resuelve, no encuentra dónde pintarse y no aparece en `FALTANTES`. Queda una fila de
+  `MARCADORES` que nadie va a poder explicar.
+
+**Antes de cablear una tabla, mirar el TIPO de cada columna en el deck del equipo.**
+**Una columna de texto cableada como métrica publica vacío sin fallar.**
+
+- **El caso, el mismo día:** `camp_env1_aud` parece «audiencia» y suena a número. En el deck dice
+  **«Barrios cercanos»**, **«Vecinos de Villa…»** — **es el nombre del segmento**. Una `SUMA` sobre
+  esa columna devuelve `sin_datos` y el casillero sale con el símbolo de sin dato, **que se lee como
+  "el dato no llegó" cuando el dato está y es texto**.
+- ⭐ **Es la familia del glifo que miente sobre la causa**, en la capa del cableado: el error no
+  produce un número malo, produce **una ausencia que apunta al lugar equivocado**.
+- **Se mira en el deck del equipo, no en la base**, porque lo que hay que reproducir es **lo que el
+  equipo publica** en esa celda; qué columna lo alimenta es la pregunta siguiente.
+
 **«Un cambio por deck» es para lo que MUEVE un número publicado, no para lo que LLENA un hueco.**
 La regla existe para que una diferencia se pueda atribuir; **una celda que estaba en `/////` y ahora
 tiene valor no produce ninguna diferencia que atribuir** — no había número antes. Dos cableados de
