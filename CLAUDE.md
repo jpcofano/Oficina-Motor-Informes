@@ -936,6 +936,15 @@ distinguir «no está» de «no miré»**, y las dos salidas se ven idénticas e
 - ⭐ **Y el control positivo tiene que poder fallar por la misma causa que lo que se mide**: sirve
   porque comparte lector, plantilla y camino. Uno que se resuelva por otra vía no prueba nada.
 
+⭐ **Y la otra mitad de lo mismo: un control negativo puede dar ROJO por el motivo equivocado, y
+ahí tampoco prueba lo que dice.** (23/08/2026.) Romper a propósito y ver rojo **no alcanza**: hay
+que mirar **cuál** afirmación cayó y **con qué motivo**. Al desactivar la guarda del orden de
+`opFILA`, la afirmación *«sin `separador` devuelve hueco»* **siguió en verde** — la atrapaba una
+segunda guarda—, así que no medía la guarda que decía medir. Es `Pruebas.gs:456` otra vez: un
+fixture cuyo dato satisface **más de una** afirmación no distingue entre ellas. **Se arregla
+exigiendo el motivo, no el resultado.** Junto con el control positivo que comparte camino, son las
+dos mitades: uno prueba que el instrumento ve, el otro que ve **lo que dice**.
+
 **Un control no se afloja para que entre algo nuevo: lo nuevo va aparte, y con un control de otra
 clase.** (23/08/2026, decisión del usuario.) Cuando un control cruza contra **evidencia fechada**
 —un censo, un snapshot, un fixture— y algo legítimo **no pasa**, la tentación es ensanchar el

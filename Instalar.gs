@@ -1257,6 +1257,13 @@ var SEED_MAPEO_ = [
   { base_id: 'digital', campo_logico: 'mail_clics', hoja: 'Directa Mail', columna: 'Q', notas: '' },
   { base_id: 'digital', campo_logico: 'mail_ctor', hoja: 'Directa Mail', columna: 'R', notas: '' },
   { base_id: 'digital', campo_logico: 'mail_area', hoja: 'Directa Mail', columna: 'T', notas: '' },
+  /* ⭐ `X-35` (23/08/2026) — **`Segmentacion` (J) es la audiencia de cada envio, y es TEXTO.**
+   * Es la fuente de los cinco `camp_env*_aud` de `L-047`. Medido sobre el fixture del 20/08:
+   * **cero de 2.877 filas parecen numero** y 1.124 vienen vacias. Los valores son del tipo
+   * *"Geo a los barrios Barracas + Parque Patricios"*, *"Inscriptos al formulario"*.
+   * ⛔ **Cablearla con una operacion numerica devuelve `sin_datos` y el casillero sale con el
+   * simbolo de sin dato** — *"el dato no llego"* sobre un dato que esta (`CLAUDE.md` §4). */
+  { base_id: 'digital', campo_logico: 'mail_segmentacion', hoja: 'Directa Mail', columna: 'J', notas: 'la audiencia/segmento de cada envio — TEXTO. Fuente de los camp_env*_aud de L-047 (X-35). Medido: 0 de 2877 filas numericas' },
   // Paso 2.16 — la columna `Estado` (D) no estaba mapeada. Entra con su lista blanca:
   // sólo `Implementado` y `En curso` alimentan el informe. Medido el 02/08/2026 sobre
   // 2114 filas: entran 2073, quedan afuera 30 `Proyectado` y 11 con el estado vacío.
@@ -1583,6 +1590,8 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   sd_campana_cuentas: 'texto', sd_campana_digital: 'texto', sd_estado: 'texto',
   acum_id_cuenta: 'texto', acum_campana: 'texto', acum_estado: 'texto',
   dig_id_cuenta: 'texto', mail_id_cuenta: 'texto', sms_id_cuenta: 'texto',
+  // `X-35` — la audiencia de un envio es el NOMBRE del segmento, no un numero.
+  mail_segmentacion: 'texto',
   ivr_id_cuenta: 'texto', alc_id_cuenta: 'texto', sd_id_cuenta: 'texto',
 
   // fecha
@@ -1763,6 +1772,7 @@ var ENCABEZADO_POR_MAPEO_ = {
   'digital|Directa Mail|mail_clics': 'Clics',
   'digital|Directa Mail|mail_ctor': '% CTOR',
   'digital|Directa Mail|mail_area': 'Área',
+  'digital|Directa Mail|mail_segmentacion': 'Segmentacion',
   'digital|Directa Mail|fecha_periodo': 'Fecha envio',
   'digital|Directa Mail|mail_estado': 'Estado',
   'digital|Directa Mail|mail_tipo': 'Tipo de mail',
@@ -5765,6 +5775,350 @@ function cablearEcvBarrios123() {
  * ⚠ **Y `formato = fecha`**, verificado contra `formatearValorMarcador_` — la rama existe y da
  * `dd/MM/yyyy`. No se supone: ya me costó una vez escribir `fecha_corta`, que no existe.
  */
+/**
+ * ⭐⭐ **`L-047` — los 40 tokens de la tabla de envios.** Publico y sin parametros.
+ *
+ * **SON 40 Y NO 45, y salen del censo uno por uno.** El reparto es **`9 · 8 · 8 · 7 · 8`**,
+ * verificado contra `docs/CENSO_tokens_sin_fila_2026-08-22.md` el 23/08:
+ *
+ *   - **Solo `env1` tiene `_rem`** — el remitente esta en una celda combinada.
+ *   - ⛔ **`camp_env4_fecha` NO EXISTE**, y no es un olvido de la plantilla: cuando dos envios
+ *     comparten dia el equipo **combina la celda de fecha**. La irregularidad **es el diseno**.
+ *   - **Un producto cartesiano habria inventado cinco tokens** que no estan en ninguna lamina.
+ *     Un marcador cuyo token no existe **no falla**: resuelve, no encuentra donde pintarse y no
+ *     entra a `FALTANTES`. `tools/probar-tabla-envios.js` cruza los 40 contra el censo.
+ *
+ * ⚠ **Y una trampa de nombre medida el 23/08: `camp_enviados` empieza con `camp_env`.** Filtrar
+ * por prefijo lo mete en la tabla, y es el GLOBAL, no un envio. Es el primo del `N × M`.
+ *
+ * ### La operacion es `FILA` (`X-35`), y el orden va declarado
+ *
+ * `separador = fecha_periodo` en las 40 filas — **el orden va en configuracion, no en el codigo**.
+ * `ELEMENTO` no servia: colapsa repetidos y ordena **por columna**, asi que cada celda de la fila 1
+ * podia venir de un envio distinto.
+ *
+ * ⚠ **El empate esta medido y va a ocurrir:** `3488-AGOJDGAG` tiene 5 filas y **4 fechas
+ * distintas** —dos envios el 07/08—, y en la solapa entera **144 de 508 cuentas** con 2+ filas
+ * tienen fechas repetidas. `FILA` desempata por orden de origen **y lo declara en la traza**;
+ * `R-32` dice que comparar `camp_env1_aud` entre corridas puede comparar envios distintos.
+ *
+ * ### Los tipos, medidos y no supuestos
+ *
+ * ⛔ **`_aud` es TEXTO** — `Segmentacion` (col J): cero de 2.877 filas numericas. Una operacion
+ * numerica ahi devuelve `sin_datos` y el casillero miente sobre la causa. `_fecha` va `fecha`,
+ * `_or` y `_ctor` `porcentaje_sin_signo`, el resto `miles`.
+ */
+function cablearTablaDeEnvios() {
+  var r = curarMarcadores_([], [
+    {
+      marcador: 'camp_env1_aperturas', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_aperturas',
+      operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 1 de L-047, campo aperturas (col O). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env1_aud', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_segmentacion',
+      operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
+      formato: 'texto',
+      notas: 'envio 1 de L-047, campo aud (col J). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env1_clics', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_clics',
+      operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 1 de L-047, campo clics (col Q). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env1_ctor', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_ctor',
+      operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
+      formato: 'porcentaje_sin_signo',
+      notas: 'envio 1 de L-047, campo ctor (col R). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env1_entregados', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_entregados',
+      operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 1 de L-047, campo entregados (col N). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env1_enviados', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_enviados',
+      operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 1 de L-047, campo enviados (col M). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env1_fecha', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'fecha_periodo',
+      operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
+      formato: 'fecha',
+      notas: 'envio 1 de L-047, campo fecha (col F). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env1_or', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_or',
+      operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
+      formato: 'porcentaje_sin_signo',
+      notas: 'envio 1 de L-047, campo or (col P). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env1_rem', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_remitente',
+      operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
+      formato: 'texto',
+      notas: 'envio 1 de L-047, campo rem (col G). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env2_aperturas', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_aperturas',
+      operacion: 'FILA', valor_fijo: 2, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 2 de L-047, campo aperturas (col O). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env2_aud', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_segmentacion',
+      operacion: 'FILA', valor_fijo: 2, separador: 'fecha_periodo',
+      formato: 'texto',
+      notas: 'envio 2 de L-047, campo aud (col J). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env2_clics', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_clics',
+      operacion: 'FILA', valor_fijo: 2, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 2 de L-047, campo clics (col Q). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env2_ctor', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_ctor',
+      operacion: 'FILA', valor_fijo: 2, separador: 'fecha_periodo',
+      formato: 'porcentaje_sin_signo',
+      notas: 'envio 2 de L-047, campo ctor (col R). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env2_entregados', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_entregados',
+      operacion: 'FILA', valor_fijo: 2, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 2 de L-047, campo entregados (col N). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env2_enviados', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_enviados',
+      operacion: 'FILA', valor_fijo: 2, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 2 de L-047, campo enviados (col M). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env2_fecha', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'fecha_periodo',
+      operacion: 'FILA', valor_fijo: 2, separador: 'fecha_periodo',
+      formato: 'fecha',
+      notas: 'envio 2 de L-047, campo fecha (col F). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env2_or', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_or',
+      operacion: 'FILA', valor_fijo: 2, separador: 'fecha_periodo',
+      formato: 'porcentaje_sin_signo',
+      notas: 'envio 2 de L-047, campo or (col P). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env3_aperturas', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_aperturas',
+      operacion: 'FILA', valor_fijo: 3, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 3 de L-047, campo aperturas (col O). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env3_aud', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_segmentacion',
+      operacion: 'FILA', valor_fijo: 3, separador: 'fecha_periodo',
+      formato: 'texto',
+      notas: 'envio 3 de L-047, campo aud (col J). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env3_clics', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_clics',
+      operacion: 'FILA', valor_fijo: 3, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 3 de L-047, campo clics (col Q). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env3_ctor', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_ctor',
+      operacion: 'FILA', valor_fijo: 3, separador: 'fecha_periodo',
+      formato: 'porcentaje_sin_signo',
+      notas: 'envio 3 de L-047, campo ctor (col R). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env3_entregados', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_entregados',
+      operacion: 'FILA', valor_fijo: 3, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 3 de L-047, campo entregados (col N). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env3_enviados', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_enviados',
+      operacion: 'FILA', valor_fijo: 3, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 3 de L-047, campo enviados (col M). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env3_fecha', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'fecha_periodo',
+      operacion: 'FILA', valor_fijo: 3, separador: 'fecha_periodo',
+      formato: 'fecha',
+      notas: 'envio 3 de L-047, campo fecha (col F). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env3_or', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_or',
+      operacion: 'FILA', valor_fijo: 3, separador: 'fecha_periodo',
+      formato: 'porcentaje_sin_signo',
+      notas: 'envio 3 de L-047, campo or (col P). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env4_aperturas', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_aperturas',
+      operacion: 'FILA', valor_fijo: 4, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 4 de L-047, campo aperturas (col O). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env4_aud', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_segmentacion',
+      operacion: 'FILA', valor_fijo: 4, separador: 'fecha_periodo',
+      formato: 'texto',
+      notas: 'envio 4 de L-047, campo aud (col J). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env4_clics', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_clics',
+      operacion: 'FILA', valor_fijo: 4, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 4 de L-047, campo clics (col Q). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env4_ctor', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_ctor',
+      operacion: 'FILA', valor_fijo: 4, separador: 'fecha_periodo',
+      formato: 'porcentaje_sin_signo',
+      notas: 'envio 4 de L-047, campo ctor (col R). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env4_entregados', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_entregados',
+      operacion: 'FILA', valor_fijo: 4, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 4 de L-047, campo entregados (col N). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env4_enviados', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_enviados',
+      operacion: 'FILA', valor_fijo: 4, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 4 de L-047, campo enviados (col M). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env4_or', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_or',
+      operacion: 'FILA', valor_fijo: 4, separador: 'fecha_periodo',
+      formato: 'porcentaje_sin_signo',
+      notas: 'envio 4 de L-047, campo or (col P). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env5_aperturas', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_aperturas',
+      operacion: 'FILA', valor_fijo: 5, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 5 de L-047, campo aperturas (col O). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env5_aud', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_segmentacion',
+      operacion: 'FILA', valor_fijo: 5, separador: 'fecha_periodo',
+      formato: 'texto',
+      notas: 'envio 5 de L-047, campo aud (col J). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env5_clics', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_clics',
+      operacion: 'FILA', valor_fijo: 5, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 5 de L-047, campo clics (col Q). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env5_ctor', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_ctor',
+      operacion: 'FILA', valor_fijo: 5, separador: 'fecha_periodo',
+      formato: 'porcentaje_sin_signo',
+      notas: 'envio 5 de L-047, campo ctor (col R). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env5_entregados', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_entregados',
+      operacion: 'FILA', valor_fijo: 5, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 5 de L-047, campo entregados (col N). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env5_enviados', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_enviados',
+      operacion: 'FILA', valor_fijo: 5, separador: 'fecha_periodo',
+      formato: 'miles',
+      notas: 'envio 5 de L-047, campo enviados (col M). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env5_fecha', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'fecha_periodo',
+      operacion: 'FILA', valor_fijo: 5, separador: 'fecha_periodo',
+      formato: 'fecha',
+      notas: 'envio 5 de L-047, campo fecha (col F). FILA ordena por fecha_periodo y desempata por orden de origen'
+    },
+    {
+      marcador: 'camp_env5_or', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_or',
+      operacion: 'FILA', valor_fijo: 5, separador: 'fecha_periodo',
+      formato: 'porcentaje_sin_signo',
+      notas: 'envio 5 de L-047, campo or (col P). FILA ordena por fecha_periodo y desempata por orden de origen'
+    }
+  ]);
+
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== L-047 tabla de envíos: ' + ((r.agregadas || []).length) + ' fila(s) · ' +
+    r.filas_finales + ' filas en MARCADORES ==');
+  if (!(r.agregadas || []).length) {
+    Logger.log('ⓘ Cero altas: los 40 ya existían. Es idempotencia, no rotura.');
+  }
+  Logger.log('');
+  Logger.log('⭐ EL CONTROL PRIMARIO ES LA COHERENCIA DE FILA, y no depende del equipo:');
+  Logger.log('   los nueve campos de env1 tienen que salir de LA MISMA fila de la fuente.');
+  Logger.log('   Para 3488-AGOJDGAG el 07/08 hay DOS envíos; sea cual sea el que salga primero,');
+  Logger.log('   sus enviados/entregados/aperturas tienen que ser 84.608/83.298/18.253');
+  Logger.log('   O BIEN 121.983/120.091/24.908 — nunca cruzados.');
+  Logger.log('');
+  Logger.log('⭐ CONTROL SECUNDARIO — la fila GLOBAL, con la hipótesis declarada ANTES:');
+  Logger.log('   SI camp_enviados suma los cinco envíos, tiene que dar la suma de los cinco.');
+  Logger.log('   SI NO CIERRA, no es un bug del cableado: es evidencia de que el GLOBAL suma');
+  Logger.log('   otro universo — que es justo lo que está preguntado al equipo. Los dos');
+  Logger.log('   resultados informan y ninguno frena el paso.');
+  Logger.log('');
+  Logger.log('⛔ LOS SEIS DE L-047 QUE NO ENTRAN:');
+  Logger.log('   camp_bench_remitente · camp_mail_insight → texto del equipo');
+  Logger.log('   camp_remitente                           → DIFERIDO desde el 07/08');
+  Logger.log('   camp_enviados · camp_or · camp_mail_clics → son la fila GLOBAL, no un envío');
+  return r;
+}
+
 /**
  * ⭐ **`camp_dig_impl`, `camp_dir_impl` y `camp_eje` — los tres que `X-39` destrabó.** Público y
  * sin parámetros.
