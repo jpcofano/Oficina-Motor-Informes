@@ -215,6 +215,32 @@ select:focus,input[type=text]:focus{outline:2px solid var(--color-primary);outli
   overflow-wrap:anywhere;
 }
 
+/* ── Veredicto de publicación y leyenda · `2026-08-23_1` Parte E ───────────────────── */
+/* Tres estados y no dos: «no está completo», «se puede con reparos» y «terminó entera».
+ * El color va en el borde izquierdo y en el título, no en un fondo saturado: esto se lee de
+ * arriba de la pantalla, y un bloque rojo lleno compite con el link al deck que está debajo. */
+.veredicto{
+  border-radius:var(--radius-md);padding:var(--space-3);
+  border-left:3px solid var(--border-default);background:var(--surface-sunken);
+  font-size:var(--text-sm);line-height:1.45;
+}
+.veredicto-tit{font-weight:500;margin-bottom:var(--space-2)}
+.veredicto li{margin-bottom:var(--space-2)}
+.veredicto li:last-child{margin-bottom:0}
+/* Los reparos, cuando hay frenos, van más chicos: son ciertos y no son lo que frena. */
+.veredicto-menor{margin-top:var(--space-2);font-size:var(--text-xs);color:var(--text-secondary)}
+.veredicto.is-freno{border-left-color:var(--color-error);background:var(--surface-error-subtle)}
+.veredicto.is-freno .veredicto-tit{color:var(--color-error)}
+.veredicto.is-reparo{border-left-color:var(--color-warning);background:var(--surface-warning-subtle)}
+.veredicto.is-reparo .veredicto-tit{color:var(--color-warning)}
+.veredicto.is-ok{border-left-color:var(--color-success)}
+.veredicto.is-ok .veredicto-tit{color:var(--color-success)}
+
+/* El glifo con ancho fijo: la gracia de la leyenda es poder barrer la columna de símbolos
+ * de un vistazo y encontrar el que se tiene delante. */
+.leyenda{display:flex;gap:var(--space-3);align-items:baseline;padding:3px 0;font-size:var(--text-sm)}
+.leyenda-glifo{flex:none;min-width:72px;color:var(--text-secondary)}
+
 /* ── Pie institucional, a sangre ──────────────────────────────────────────────────── */
 .banner{display:block;width:100%;height:auto}
 </style>
@@ -244,10 +270,16 @@ select:focus,input[type=text]:focus{outline:2px solid var(--color-primary);outli
  * Sin build, sin React, sin librerías: Apps Script sirve este archivo tal cual.
  * **Sin `localStorage` ni `sessionStorage`** — no hay estado entre recargas, a propósito.
  *
- * El contrato es el de `PanelBackend.gs` y no se inventa nada: las cuatro funciones que
- * existen son `panel_getEstado`, `panel_generar`, `panel_ultimasCorridas` y `abrirPanel`.
- * `panel_getPeriodos`, `panel_getCamposFuente`, `panel_getPreview` y `panel_addMarcador`
- * **no existen**, así que las pantallas que las necesitarían quedan detrás de `FLAGS`.
+ * El contrato es el de `PanelBackend.gs` y no se inventa nada: **el front no llama a ninguna
+ * función que ese archivo no exponga**, y las pantallas que necesitarían una que no existe quedan
+ * detrás de `FLAGS`.
+ *
+ * ⛔ **Acá había una lista de «las cuatro funciones que existen» y era falsa desde hacía meses**
+ * —`panel_getAnclajes`, `panel_generarDesatendida`, `panel_estadoDesatendida` y ocho más entraron
+ * después y nadie la actualizó—. Es exactamente lo que `CLAUDE.md` §4 llama *un comentario que
+ * afirma un contrato*: una premisa sin testigo, que sobrevive porque nada la contradice. **La
+ * lista no se reemplaza por otra lista**, que envejecería igual: se reemplaza por la regla, y
+ * quién existe hoy se contesta con `grep -c "^function panel_" PanelBackend.gs`.
  * ═══════════════════════════════════════════════════════════════════════════════════════ */
 
 /* Lo que todavía no tiene backend. Prenderlas sin escribir el backend primero sería ofrecer
@@ -934,10 +966,131 @@ function deckCard(deck, nombre, meta){
     '<div class="deck-meta">' + meta + '</div></a>';
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-23_1` Parte E — el veredicto de publicación y la leyenda
+ *
+ * ⭐ **Quién usa esto y para qué manda sobre cualquier decisión estética:** una persona que acaba
+ * de generar un deck y necesita saber, **en diez segundos, si puede publicarlo**. No es un tablero
+ * de monitoreo ni una herramienta de análisis.
+ *
+ * ⚠ **Lo que hay que destacar NO es la cantidad de faltantes.** Un deck con cien `/////` es normal
+ * y publicable: los huecos están marcados y quien lo mira los ve. Lo que frena la publicación es
+ * **que algo haya salido mal en silencio** — un número viejo publicado sin marca es peor que
+ * cualquier `/////`.
+ *
+ * ⛔ **Y el front NO contesta por su cuenta ninguna pregunta del backend** —la regla del 20/08 que
+ * retiró el `|| S.faltantesComoRaya`—. Acá no se inventa ningún hecho: se **componen** los que el
+ * backend ya mandó (`corte`, `fallo`, `instrumento`, `presupuesto.barrida.por_causa`) y **cada
+ * línea nombra el suyo**. Si el backend no manda el campo, la línea no aparece; no se deduce.
+ * ═══════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * ¿Se puede publicar este deck? Devuelve el HTML del veredicto, o `''` si no hay nada que decir.
+ *
+ * **Tres niveles y no dos**, porque «no está completo» y «salió mal» mandan a cosas distintas:
+ * a **correr de nuevo** y a **arreglar algo**. Un cartel único los confundiría, que es la misma
+ * familia del `/////` que no distinguía «nadie lo cableó» de «no se llegó».
+ */
+function veredictoDePublicacion(r){
+  var frenos = [];   // el deck no está completo, o algo salió mal
+  var reparos = [];  // se puede publicar, pero hay que saber esto
+
+  if (r.corte){
+    frenos.push(r.corte.clase === 'arranque_no_entra'
+      ? 'El arranque no entra en el techo: la corrida no llegó a empezar el trabajo. Correr de nuevo da lo mismo — hay que subir el techo o partir el arranque.'
+      : 'La corrida se cortó por presupuesto: faltan láminas por llenar. Correr de nuevo, no cablear.');
+  }
+  if (r.fallo){
+    frenos.push('La corrida murió por una excepción en la etapa "' + (r.fallo.etapa || '?') +
+      '". No es corte por tiempo, y correr de nuevo sin arreglarlo da lo mismo.');
+  }
+
+  /* ⛔ Lo que hasta hoy no se veía en ningún lado: un token que **resolvió con valor** y salió
+   * crudo igual. En el deck su hueco se ve idéntico a cualquier otro, y no entra a `FALTANTES`
+   * por el camino normal. Viene de `presupuesto.barrida.por_causa`, que lo emite la Parte C. */
+  var causas = (r.presupuesto && r.presupuesto.barrida && r.presupuesto.barrida.por_causa) || {};
+  if (!r.corte && !r.fallo){
+    if (causas.escritor){
+      frenos.push(causas.escritor.cuantos + ' dato(s) se calcularon bien y NO llegaron al deck. ' +
+        'Es un bug del escritor, no del cableado: ' + causas.escritor.tokens.join(', ') + '.');
+    }
+    if (causas.sin_clasificar){
+      frenos.push(causas.sin_clasificar.cuantos + ' dato(s) quedaron crudos y el motor no pudo ' +
+        'decir por qué. Mirar FALTANTES antes de publicar.');
+    }
+    if (causas.no_alcanzado){
+      reparos.push(causas.no_alcanzado.cuantos + ' dato(s) están cableados y la corrida no los miró ' +
+        '(¿lámina escondida? ¿bloque sin expandir?): ' + causas.no_alcanzado.tokens.join(', ') + '.');
+    }
+  }
+
+  if (r.instrumento && r.instrumento.fallos && r.instrumento.fallos.length){
+    /* ⚠ Va como reparo y no como freno, y la distinción importa: el instrumento falló, o sea que
+     * **el rastro de la corrida está incompleto** — pero eso no dice nada sobre el deck. Lo que
+     * cambia es cuánto se puede confiar en los conteos de abajo. */
+    reparos.push('El instrumento falló ' + r.instrumento.fallos.length + ' vez/veces: el rastro de ' +
+      'etapas está incompleto y los tiempos de abajo no sirven para diagnosticar. El deck no cambia.');
+  }
+
+  if (frenos.length){
+    return '<div class="veredicto is-freno">' +
+      '<div class="veredicto-tit">⛔ Antes de publicarlo, mirá esto</div>' +
+      '<ul class="list-reset">' + frenos.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' +
+      (reparos.length ? '<ul class="list-reset veredicto-menor">' + reparos.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' : '') +
+      '</div>';
+  }
+  if (reparos.length){
+    return '<div class="veredicto is-reparo">' +
+      '<div class="veredicto-tit">⚠ Se puede publicar, sabiendo esto</div>' +
+      '<ul class="list-reset">' + reparos.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join('') + '</ul>' +
+      '</div>';
+  }
+  /* ⚠ **El verde dice QUÉ cubre, y no «está todo bien».** Los huecos marcados siguen ahí y son
+   * normales; lo que se afirma es que la corrida terminó y nada quedó sin marca. Un verde que
+   * promete más de lo que midió es peor que ninguno. */
+  return '<div class="veredicto is-ok">' +
+    '<div class="veredicto-tit">✅ La corrida terminó entera y nada quedó sin marcar</div>' +
+    '<p class="muted">Los huecos que hayan quedado están marcados con su símbolo, así que se ven. ' +
+    'Esto no dice que los números sean los correctos — eso lo dice quien mira el deck.</p></div>';
+}
+
+/**
+ * ⭐ **La leyenda de los símbolos, en la interfaz y no en la cabeza de nadie.**
+ *
+ * Hasta hoy la premisa escrita era que el deck sólo lo miraba quien lo desarrolla, y eso está por
+ * dejar de ser cierto. **Un símbolo que no se explica es un número que alguien va a interpretar
+ * mal** — y el peor caso no es no entenderlo: es leer un `-` como «no hubo nada» cuando significa
+ * otra cosa.
+ *
+ * ⚠ **Y la leyenda dice dónde MIENTE hoy.** `/////` cubre dos causas que mandan a trabajos
+ * opuestos —*nadie lo cableó* y *no se llegó*— porque el glifo propio del corte está sin elegir,
+ * y eso es una decisión del usuario. Callarlo acá haría que la leyenda sea la que engaña.
+ */
+function leyendaSimbolos(){
+  var filas = [
+    ['/////', 'Falta el dato', 'nadie lo cableó todavía, o el motor no llegó a resolverlo'],
+    ['---', 'Se intentó y falló', 'el dato está cableado y no se pudo leer — mirar la traza'],
+    ['-', 'No hay dato', 'se preguntó bien y la respuesta vino vacía'],
+    ['-1.234-', 'Dato dudoso', 'se publicó, con la desconfianza declarada — la fuente se mueve sola']
+  ];
+  return '<div class="box"><div class="section-title">Qué significa cada símbolo del deck</div>' +
+    '<ul class="list-reset">' + filas.map(function(f){
+      return '<li class="leyenda"><span class="leyenda-glifo mono">' + esc(f[0]) + '</span>' +
+        '<span><strong>' + esc(f[1]) + '</strong> — ' + esc(f[2]) + '</span></li>';
+    }).join('') + '</ul>' +
+    '<p class="muted">⚠ <span class="mono">/////</span> tapa <strong>dos</strong> cosas que mandan a ' +
+    'trabajos opuestos: <em>nadie lo cableó</em> (hay que cablearlo) y <em>la corrida no llegó</em> ' +
+    '(hay que correr de nuevo). El símbolo propio del corte está sin elegir, y elegirlo es una ' +
+    'decisión del usuario. Mientras tanto, el aviso de arriba dice cuál de las dos fue.</p></div>';
+}
+
 function vistaListo(){
   var r = S.resultado;
   var inf = informeActual();
-  var h = deckCard(r.deck, (inf && inf.nombre) || S.informeId,
+  /* ⭐ Parte E regla 1 — **el veredicto va PRIMERO, antes del link al deck.** Lo que se necesita
+   * saber en diez segundos es si se puede publicar; el link está justo abajo y no se pierde. */
+  var h = veredictoDePublicacion(r);
+  h += deckCard(r.deck, (inf && inf.nombre) || S.informeId,
     esc(r.periodo || '') + ' · corrida ' + esc(r.corrida_id || ''));
 
   /* Los avisos van ANTES que los números: cambian cómo se lee todo lo de abajo. */
@@ -977,6 +1130,11 @@ function vistaListo(){
       : r.presentacion_faltantes === '«FALTA:token»' ? 'un aviso de falta'
       : esc(String(r.presentacion_faltantes || '(sin declarar)'))) +
     '. La corrida tardó ' + S.elapsed + ' s de un techo de ' + TECHO_S + ' s.</p>';
+
+  /* ⭐ Parte E regla 2 — la leyenda **sólo si el deck salió con símbolos**. Con el modo crudo los
+   * huecos dicen `«FALTA:token»` con el nombre adentro y una leyenda de glifos no aplicaría a
+   * nada: explicaría algo que no está en el deck que la persona tiene delante. */
+  if (r.presentacion_faltantes === 'simbolos') h += leyendaSimbolos();
 
   var secs = r.secciones || [];
   if (secs.length){
@@ -1557,6 +1715,9 @@ function vistaFaltantes(){
   h += d.grupos.length
     ? d.grupos.map(grupoFaltante).join('')
     : '<div class="box">Esta corrida no dejó ningún faltante.</div>';
+
+  // La misma leyenda que la pantalla de listo: los símbolos se explican donde se los mira.
+  h += leyendaSimbolos();
 
   /* ⚠ **Un instrumento declara qué NO contesta**, y acá son dos cosas concretas. Va al final,
    * después del conteo, porque es lo que cambia cómo se lee el número de arriba. */
