@@ -1901,19 +1901,36 @@ sobre los dos exports; **`X-28` necesita un tercer DECK publicado**. Que `duraci
 de los tres desempates que `X-28` no pudo separar **no es evidencia de que 30 sea el número correcto
 para aquéllo**.
 
-#### ✅ La contradicción de `L-036` se resolvió — 22/08/2026, y sin medir
+#### ⛔⛔ `L-036` — la resolución del 22/08 (mañana) ERA FALSA, y se corrige acá
 
-**Se anotó sin resolver y la corrida la contestó sola.** El deck mostró la tabla: **4 filas × 8
-columnas = 32 casilleros**, todos en `/////`.
+**Lo que se escribió a la mañana:** *"el deck mostró 4×8 = 32 casilleros; los 32 `post_` de
+`Auditoria.gs` eran correctos y el tablero estaba mal"*.
 
-⭐ **Ganaba `Auditoria.gs`, no el tablero.** Sus *"32 `post_`"* eran correctos;
-`CIERRE_POR_LAMINA.md` decía *"4 tokens `camp1-4`, tabla 7×8"* y estaba mal. **Se corrigió el
-tablero, no el código.**
+⛔ **Es al revés.** El tablero decía bien —`camp1-4`— y **`Auditoria.gs` está mal redactado**:
+confundió el `seccion_id = comunicaciones_post` de la fila con **una familia de tokens `post_`**.
 
-⚠ **Y la lección de método, que es barata y vale para la próxima:** las tres fuentes se
-contradecían y **ninguna se podía descartar leyendo** — se descartó **mirando el deck**, que es la
-única autoridad sobre cuántos casilleros tiene una lámina. **Salió más barato que la medición que
-se había planificado**, y el ítem `A.3` se cerró sin ejecutarse.
+**Tres fuentes lo desmienten, y una está medida sobre la plantilla VIVA:**
+
+| fuente | qué dice |
+|---|---|
+| `TOKENS.md` §2.1 | lámina **7** de `jm` = **`camp1-4`**, *"numera bien y describe bien"*. Y explícito: ***"`jm` no tiene ninguna lámina `post_`, y no tiene por qué tenerla con esos nombres"*** |
+| `P2` de `PENDIENTES`, **06/08, plantilla viva** | `slidesModeloDe_(presentacion, ['post_'])` devuelve **la lista vacía** — *"ninguna lámina de la plantilla lleva tokens de la familia `post_`"*. Verificado en una corrida real |
+| el espejo `JM_marcada.pptx` | slide 7: **`camp1..camp4`** en la primera columna, filas 3-6. **Cero `post_` en todo el archivo** |
+
+⭐ **`post_camp1-3` y `post_estado1-3` existen, pero son de `secco`** —su lámina 10, tabla 4×7—.
+`TOKENS.md` ya había reconciliado esto y lo dejó escrito: *"la confusión venía de mezclar las dos
+plantillas"*. **Yo volví a mezclarlas.**
+
+⚠⚠ **El error de método, y es uno que este archivo ya nombra:** *un test puede acertar el hecho y
+errar la inferencia*. **El hecho era correcto** —el deck mostró 32 casilleros— y de ahí salté a
+*"entonces `Auditoria.gs` tenía razón"*, **sin abrir la fuente que lo contradecía**. `CLAUDE.md` §4
+lo pide con todas las letras: *cuando un instrumento devuelve una etiqueta, verificar el dato crudo
+del que salió, no la etiqueta*. Y §1 pide **buscar el caso antes de tratar algo como pregunta
+abierta** — el `P2` estaba escrito desde el 06/08.
+
+**Lo que queda abierto, y ahora sí está bien planteado:** la tabla es **4×8** y `camp1-4` ocupa
+**una** columna. **Qué hay en las otras siete no se puede saber desde el espejo** (`C-76`: sirve
+para afirmar lo que hay, no lo que falta). Se resuelve con el censo contra la **plantilla viva**.
 
 ---
 
