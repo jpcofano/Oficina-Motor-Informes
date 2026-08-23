@@ -6439,6 +6439,30 @@ trabajo manda a hacer este aviso, y hay más de una causa que lleve a él?* Hay 
 distintas, y **falta un aviso** — no una nota al pie. El motor ya tiene el dato para separarlas: si
 el token tiene fila en `MARCADORES` o no es una consulta que ya hace.
 
+#### ⚠ Vuelto a medir el 23/08, y la tabla de arriba YA NO DESCRIBE EL ESTADO — se anota sin editarla
+
+**En `jm-20260823-113545` los dos salen con el mismo aviso, y `camp_remitente` AHORA TIENE FILA.**
+La tabla de arriba es del 22/08 y decía que no la tenía. **No se edita: es una medición fechada y
+sigue siendo cierta para su fecha.**
+
+⛔⛔ **Y eso deja una pregunta abierta que hay que hacer antes de seguir: nadie sabe quién escribió
+esa fila.** `MARCADORES` tiene **tres** escritores —`curarMarcadores_`, `curarCamposMarcadores_`
+(que corrige campos, no crea) y `migrarCalculoAOperacion_`—, y **ninguno de los tres wrappers
+corridos el 23/08 incluye `camp_remitente`**: ni `cablearDesglosePorPlataforma()`, ni
+`cablearMetaFrecuencia()`, ni `cablearLosChicos()` del 22. Así que **o se cargó a mano en la hoja,
+o hay un camino que no está en el inventario de escritores.**
+
+⭐ **La diferencia importa para esta entrada, y en la dirección que la mejora:** con las dos filas
+existiendo, el aviso *"quedó crudo… revisar"* **ya no es engañoso para uno y correcto para el
+otro — es correcto para los dos y sigue sin decir por qué**. El pedido no cambia (falta un aviso
+que separe causas); lo que cambia es que el ejemplo ya no ilustra *"manda a investigar al escritor
+cuando lo que falta es una fila"*. **Hace falta un caso nuevo para esa mitad, o el pedido se
+sostiene solo sobre la otra.**
+
+⚠ **`camp_remitente` está DIFERIDO desde el 07/08** (`CONFIG_INFORMES.md` §2.5: *"los tres
+remitentes sueltos quedan diferidos… no se cablean, no se borran, no se tocan"*). **Una fila nueva
+para un token diferido es, en sí, algo que hay que explicar** — no un avance.
+
 ⛔ **Y un hueco que apareció al querer medir esto, y que lo vuelve caro:** `FALTANTES` **no tiene
 lector**. Ni por la API del motor —*"hoja sin lector: FALTANTES — válidas: CONFIG, BASES, INFORMES,
 PERIODOS, CAMPANAS, MAPEO, SOLAPAS, REUNIONES, SECCIONES"*— ni por `tools/snapshot.js`, que sólo
@@ -6771,6 +6795,20 @@ del temario para esa familia. Cada uno va a entrar con el separador pegado.
 **no vive sólo en el matcher**. Es la clave de `ANCLAJE_PENDIENTE`
 —`normalizar_(nombre)|fecha|etapa`—, es lo que se muestra en la pantalla de anclajes, y es lo que
 va a la etiqueta del ítem. **El recorte del matcher arregla un consumidor de los cuatro.**
+
+#### ⭐ Confirmado en corrida el 23/08, y en el consumidor que esta entrada nombraba como cuarto
+
+**`jm-20260823-113545`: `enc_alcance_pct` aparece en `FALTANTES` con el sufijo `@: Salud`.** El
+nombre del ítem viaja con el separador pegado, literal, hasta la etiqueta del reporte.
+
+⭐ **Esto cierra el pronóstico de arriba sin agregar nada nuevo:** la entrada decía que *"el
+recorte del matcher arregla un consumidor de los cuatro"*, y acá se ve otro — **la etiqueta del
+ítem** — fallando con el dato crudo. Ya no es un riesgo declarado: es un caso con `corrida_id`.
+
+⚠ **Y lo que lo vuelve más incómodo de lo que parece: el sufijo `@ítem` es hoy la herramienta que
+distingue si dos marcadores se resolvieron para el mismo ítem** —es lo que contestó `X-40`—. Un
+nombre de ítem mal parseado **degrada el instrumento que estamos usando para diagnosticar todo lo
+demás.**
 
 **Dos salidas, sin elegir:** **(a)** que `parsearLineaReunion_` no deje el separador —arregla el
 origen y todos los consumidores de una—; **(b)** dejarlo y que cada consumidor recorte, que es lo

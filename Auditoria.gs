@@ -4872,3 +4872,114 @@ function diagL046() {
 
   return { ok: true, sin_fila: sinFila, ausentes: ausentes, informe_id_sospechoso: infRaro, celdas: celdas };
 }
+
+/**
+ * ⭐ `diagDondeVivenLosIvr()` — **qué lámina pinta los seis `ivr_*`.** Público, sin parámetros,
+ * sólo lee. Recorre **las dos plantillas** (`jm` y `secco`) porque la pregunta admite que la
+ * respuesta esté en la otra.
+ *
+ * **Por qué hace falta, y sale de una medición de corrida:** en `jm-20260823-113545` los seis
+ * —`ivr_llamados`, `ivr_atendidos`, `ivr_at_pct`, `ivr_75`, `ivr_75_pct`, `ivr_marque1`— aparecen
+ * en `FALTANTES` **sin sufijo `@ítem`**, mientras todo lo demás que itera **sí lo tiene**
+ * (`u1_bench_*` dice `@Parque Avellaneda`, los `camp_*` dicen `@3481-AGOINFAN`). **Resolvieron en
+ * la etapa de tokens fijos, con la ventana del informe.** O sea que **no los pinta ninguna lámina
+ * que itere** — y los cuatro casilleros del iceberg los pinta `enc_*`, no éstos.
+ *
+ * ⛔ **Las tres respuestas posibles mandan a trabajos distintos, y por eso el reporte las separa:**
+ *
+ *   1. **Viven en una lámina visible que no itera** → están bien donde están y el `/////` es un
+ *      hueco normal.
+ *   2. **Viven en una lámina ESCONDIDA** → son crudos permanentes y **no hay nada que arreglar**;
+ *      lo que hay que hacer es contarlos en los «49 crudos» y no perseguirlos.
+ *   3. ⛔⛔ **No están en ninguna lámina de ninguna plantilla** → **seis filas de `MARCADORES`
+ *      cableadas contra una caja que ya no existe.** Ése es el caso que no falla solo: el marcador
+ *      resuelve, no encuentra dónde pintarse, **no entra a `FALTANTES` por lámina** y nadie se
+ *      entera. Es el mismo modo de falla que `probar-desglose-plataforma.js` previene al cruzar
+ *      contra el censo.
+ *
+ * ⚠ **Y una cuarta que hay que poder distinguir de la 3:** que estén en una lámina **sin ancla**.
+ * Ahí sí están, pero `LAMINAS` no las conoce, así que ninguna sección las puede reclamar.
+ */
+function diagDondeVivenLosIvr() {
+  var BUSCADOS = ['ivr_llamados', 'ivr_atendidos', 'ivr_at_pct', 'ivr_75', 'ivr_75_pct', 'ivr_marque1',
+    'ivr_audiencia', 'ivr_campanias'];
+  // Control positivo: éstos SÍ se pintan hoy. Si salen igual que los buscados, el instrumento
+  // está midiendo mal y no hay que creerle nada.
+  var CONTROL = ['enc_audiencia', 'enc_atendidos', 'enc_e75', 'enc_marque1'];
+  var TODOS = BUSCADOS.concat(CONTROL);
+
+  var informes = leerRegistro_('INFORMES');
+  var donde = {};
+  TODOS.forEach(function (t) { donde[t] = []; });
+
+  Object.keys(informes).forEach(function (id) {
+    var inf = informes[id];
+    if (!inf || !inf.plantilla_id) { Logger.log('  ⚠ ' + id + ' sin plantilla_id, se saltea'); return; }
+    var slides;
+    try { slides = SlidesApp.openById(inf.plantilla_id).getSlides(); }
+    catch (e) { Logger.log('  ⚠ no pude abrir la plantilla de ' + id + ': ' + e.message); return; }
+
+    slides.forEach(function (slide, i) {
+      var ancla = anclaDeLamina_(slide);
+      var escondida = esLaminaEscondida_(slide);
+      var vistos = {};
+      // `piezasDeTextoDeSlide_` es el MISMO lector que usa la corrida (`tokensDeSlide_`) y que el
+      // censo: llega a tablas y a grupos. Usar otro acá mediría una plantilla distinta.
+      piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+        var m; RE_TOKEN_.lastIndex = 0;
+        while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) vistos[m[1]] = true;
+      });
+      TODOS.forEach(function (t) {
+        if (vistos[t]) {
+          donde[t].push(id + ' · lámina ' + (i + 1) + ' · ' + (ancla || '⚠ SIN ANCLA') +
+            (escondida ? ' (ESCONDIDA)' : ''));
+        }
+      });
+    });
+  });
+
+  Logger.log('== diagDondeVivenLosIvr ==');
+  Logger.log('');
+  Logger.log('-- los seis que resolvieron SIN ítem, más sus dos hermanos --');
+  var huerfanos = [], escondidos = [], sinAncla = [];
+  BUSCADOS.forEach(function (t) {
+    var d = donde[t];
+    if (!d.length) { huerfanos.push(t); Logger.log('  ⛔⛔ ' + t + ' — EN NINGUNA LÁMINA DE NINGUNA PLANTILLA'); return; }
+    d.forEach(function (x) {
+      if (x.indexOf('ESCONDIDA') !== -1 && escondidos.indexOf(t) === -1) escondidos.push(t);
+      if (x.indexOf('SIN ANCLA') !== -1 && sinAncla.indexOf(t) === -1) sinAncla.push(t);
+      Logger.log('  ✅ ' + t + ' → ' + x);
+    });
+  });
+
+  Logger.log('');
+  Logger.log('-- control positivo: los cuatro que SÍ se pintan hoy --');
+  CONTROL.forEach(function (t) {
+    var d = donde[t];
+    Logger.log('  ' + (d.length ? '✅' : '⛔') + ' ' + t + ' → ' + (d.length ? d.join(' | ') : 'EN NINGUNA'));
+  });
+  var controlOk = CONTROL.filter(function (t) { return donde[t].length; }).length;
+
+  Logger.log('');
+  Logger.log('== VEREDICTO ==');
+  if (controlOk !== CONTROL.length) {
+    Logger.log('  ⛔ EL CONTROL POSITIVO FALLÓ: ' + controlOk + ' de ' + CONTROL.length +
+      ' se encontraron. El instrumento está midiendo mal — NO leer nada de arriba.');
+    return { ok: false, motivo: 'control positivo en rojo' };
+  }
+  Logger.log('  ✅ control positivo: los ' + CONTROL.length + ' se encontraron, el lector funciona.');
+  Logger.log('  huérfanos (en ninguna lámina) : ' + huerfanos.length + (huerfanos.length ? ' → ' + huerfanos.join(', ') : ''));
+  Logger.log('  en lámina escondida           : ' + escondidos.length + (escondidos.length ? ' → ' + escondidos.join(', ') : ''));
+  Logger.log('  en lámina sin ancla           : ' + sinAncla.length + (sinAncla.length ? ' → ' + sinAncla.join(', ') : ''));
+  Logger.log('');
+  if (huerfanos.length) {
+    Logger.log('  ⛔⛔ HAY FILAS DE MARCADORES CABLEADAS CONTRA UNA CAJA QUE NO EXISTE.');
+    Logger.log('     No fallan solas: resuelven, no encuentran dónde pintarse y nadie se entera.');
+  } else if (escondidos.length) {
+    Logger.log('  ⭐ Están en lámina escondida: son crudos permanentes y NO hay nada que arreglar.');
+    Logger.log('     Lo que corresponde es contarlos con los «49 crudos», no perseguirlos.');
+  } else {
+    Logger.log('  ⭐ Están en láminas visibles que no iteran: el ///// es un hueco normal.');
+  }
+  return { ok: true, donde: donde, huerfanos: huerfanos, escondidos: escondidos, sin_ancla: sinAncla };
+}
