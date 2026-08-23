@@ -293,7 +293,10 @@ var S = {
    * `'cargando'` = pedido en vuelo. `faltCual` elige entre la última corrida y la anterior;
    * `faltAbierto` guarda qué grupos de causa están desplegados, por causa. **Nada se deriva
    * acá**: el front pinta lo que llega, incluidos los conteos. */
-  falt: null, faltCual: 'actual', faltAbierto: {}
+  falt: null, faltCual: 'actual', faltAbierto: {},
+  /* `2026-08-23_1` Parte D — la última medición del anclaje. Es lo que separa «no corrió» de
+   * «corrió y nadie cayó bajo el umbral», que hasta hoy eran la misma pantalla vacía. */
+  medAnclaje: null
 };
 
 /* ── utilidades ──────────────────────────────────────────────────────────────────── */
@@ -1287,6 +1290,70 @@ function filaAnclaje(a, umbral, confirmada){
     '</div>';
 }
 
+/* ⭐ `2026-08-23_1` Parte D — **la medición del anclaje, arriba de los pendientes.**
+ *
+ * ⛔ Una pantalla de anclajes vacía significa dos cosas opuestas —«no corrió» y «corrió y nadie
+ * cayó bajo el umbral»— y mandan a trabajos distintos. La medición es lo que las separa: con
+ * `intentados > 0` y cero pendientes, el vacío de abajo es un resultado y no un silencio.
+ *
+ * ⚠ **Va ARRIBA de los pendientes**, no en un pie, porque cambia cómo se lee todo lo de abajo.
+ */
+function bloqueMedicionAnclaje(){
+  var m = S.medAnclaje;
+  if (m === null || m === 'cargando'){
+    return '<p class="muted">Leyendo la última medición del anclaje…</p>';
+  }
+  if (!m.ok){
+    return '<div class="alert alert-warning"><div class="alert-title">No se pudo leer la medición.</div>' +
+      esc(m.motivo || '') + '</div>';
+  }
+  if (!m.hay){
+    /* ⚠ Y esto tampoco dice «no ancló nunca»: la hoja nació el 23/08. Es «no sé», con el motivo. */
+    return '<div class="box"><div class="section-title">Cuánto se midió</div>' +
+      '<p class="muted">' + esc(m.motivo) + '. <strong>Mientras tanto, una lista vacía abajo no ' +
+      'distingue «no corrió» de «corrió y nadie quedó dudoso».</strong></p></div>';
+  }
+
+  var noAnclo = m.sin_link + m.baja_confianza;
+  var detalle = m.sin_link_detalle.length
+    /* ⭐ Tal cual llegan, con su motivo. Un conteo de `sin_link` sin los nombres dice que hubo un
+     * problema y no dice cuál; los nombres son lo que permite ir a mirar la fila de `rdv`. */
+    ? '<ul class="list-reset falt-lista">' + m.sin_link_detalle.map(function(t){
+        return '<li class="falt-token"><div class="falt-motivo">' + esc(t) + '</div></li>';
+      }).join('') + '</ul>'
+    : '';
+
+  return '<div class="falt-grupo' + (noAnclo ? ' is-frena' : '') + '">' +
+    '<div class="falt-head" style="cursor:default">' +
+    '<div><div class="run-name">' + num(m.anclados) + ' de ' + num(m.intentados) + ' encuentro(s) anclaron</div>' +
+    '<div class="run-when">' + esc(m.cuando) +
+      (m.ventana ? ' · ventana ' + esc(m.ventana) : '') +
+      (m.periodo_id ? ' · ' + esc(m.periodo_id) : ' · sin filtrar por período') +
+      ' · umbral ' + esc(String(m.umbral)) + '</div></div>' +
+    '<span class="run-count">' + (noAnclo ? '⚠ ' + num(noAnclo) + ' sin anclar' : 'todos') + '</span>' +
+    '</div>' +
+    (noAnclo
+      ? '<ul class="list-reset falt-lista">' +
+        '<li class="falt-token"><div class="run-name">' + num(m.sin_link) + ' sin cuenta digital (sinLink)</div>' +
+        '<div class="run-when">salen igual en el deck (<span class="mono">R-02</span>), con sus números de digital en falta</div>' +
+        (detalle ? '</li>' : '</li>') +
+        (detalle ? '<li class="falt-token">' + detalle + '</li>' : '') +
+        '<li class="falt-token"><div class="run-name">' + num(m.baja_confianza) + ' por debajo del umbral</div>' +
+        '<div class="run-when">no se emiten, para no publicar la fila de <span class="mono">rdv</span> equivocada — son los de abajo</div></li>' +
+        '</ul>'
+      : '') +
+    '</div>';
+}
+
+function cargarMedicionAnclaje(){
+  // Sin `pintar()` acá: `vistaAnclajes()` corre desde adentro de `pintar()`.
+  S.medAnclaje = 'cargando';
+  google.script.run
+    .withSuccessHandler(function(r){ S.medAnclaje = r || {ok:false, motivo:'sin respuesta'}; pintar(); })
+    .withFailureHandler(function(e){ S.medAnclaje = {ok:false, motivo:String(e && e.message || e)}; pintar(); })
+    .panel_ultimaMedicionAnclaje();
+}
+
 function vistaAnclajes(){
   if (!FLAGS.anclajes){
     return '<div class="box">Confirmar a mano el encuentro de una campaña está diseñado, pero ' +
@@ -1309,6 +1376,11 @@ function vistaAnclajes(){
     h += '<div class="box">' + (S.anclajesMsg.ok ? '✅ ' : '⛔ ') + esc(S.anclajesMsg.texto) + '</div>';
   }
 
+  /* ⭐ Parte D — **la medición va arriba de todo, y no en un pie.** Es lo que le da sentido a lo
+   * que sigue: sin ella, una lista vacía abajo no distingue «no corrió» de «no hubo dudosos». */
+  if (S.medAnclaje === null) cargarMedicionAnclaje();
+  h += bloqueMedicionAnclaje();
+
   /* ⭐ **De cuándo es lo que se está mirando, dicho en pantalla** — es lo que decidió la Parte A.
    * Sin esta línea, la pantalla se lee como el estado de hoy y no lo es. */
   h += '<p class="muted">Esto es lo que dejó <strong>la última corrida</strong>, no un cálculo de ' +
@@ -1316,6 +1388,8 @@ function vistaAnclajes(){
     'ninguna corrida <strong>no aparece acá</strong>: esta pantalla muestra lo pendiente de ' +
     'confirmar, no todo lo anclable.</p>';
 
+  /* ⚠ **El camino de la hoja vacía también pasa por acá con la medición ya puesta arriba**, y ése
+   * es el caso que la Parte D vino a arreglar: es justo cuando la pantalla no decía nada. */
   if (!d.existe_hoja || (!d.pendientes.length && !d.confirmadas.length)){
     /* ⚠ El cartel dice POR QUÉ puede estar vacía. Un "no hay datos" a secas se lee como error, y
      * acá vacío es el estado normal: significa que ningún anclaje cayó bajo el umbral. */

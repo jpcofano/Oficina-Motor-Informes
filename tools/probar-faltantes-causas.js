@@ -45,6 +45,9 @@ function hojaEnMemoria(headers) {
     getMaxColumns: () => vivos.length,
     insertColumnsAfter: () => {},
     setFrozenRows: () => {},
+    appendRow: (f) => { filas.push(f.slice()); },
+    // `deleteRows(desde, cuantas)` con `desde` 1-basado. La poda de `ANCLAJE_MEDICION` la usa.
+    deleteRows: (desde, cuantas) => { filas.splice(desde - 1, cuantas); },
     getDataRange: () => ({ getValues: () => filas.map(f => f.slice()) }),
     getRange: (fila, col, nFilas, nCols) => ({
       getValues: () => {
@@ -358,6 +361,150 @@ console.log('\n5c · con corte o con excepción NO se le pregunta a MARCADORES')
   const guarda = 'var conFilaEnMarcadores = (barrida.barridos.length && !corte && !fallo)';
   af(texto.indexOf(guarda) !== -1,
     'la lectura de MARCADORES está detrás de `!corte && !fallo` y de que haya barridos');
+}
+/* ════════════════════════════════════════════════════════════════════════════════════════
+ * 6 · Parte D — la medición del anclaje deja rastro
+ * ════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Contexto con sólo las funciones de medición de `Union.gs`, extraídas del archivo real. */
+function contextoMedicion(hojas) {
+  const ctx = {
+    console, Math, JSON, Date, String, Number, Object, Array, RegExp, isNaN, Error,
+    Logger: { log: () => {} },
+    SpreadsheetApp: {
+      getActiveSpreadsheet: () => ({
+        getSheetByName: (n) => hojas[n] || null,
+        insertSheet: (n) => (hojas[n] = hojaEnMemoria(ctx.HEADERS_ANCLAJE_MEDICION_))
+      }),
+      flush: () => {}
+    }
+  };
+  vm.createContext(ctx);
+  const texto = fs.readFileSync(path.join(RAIZ, 'Union.gs'), 'utf8');
+  // Sólo el bloque de la medición: `Union.gs` entero arrastra el motor de unión y no es lo que
+  // se mide acá. Se extrae por nombre, que es lo que sobrevive a que el archivo se mueva.
+  const trozos = [
+    texto.match(/var HEADERS_ANCLAJE_MEDICION_ = [\s\S]*?\];/),
+    texto.match(/var TOPE_MEDICIONES_ANCLAJE_ = \d+;/),
+    texto.match(/function obtenerHojaAnclajeMedicion_\(\)[\s\S]*?\n}\n/),
+    texto.match(/function registrarMedicionAnclaje_\(resultado, ventana\)[\s\S]*?\n}\n/)
+  ];
+  if (trozos.some(t => !t)) return null;
+  vm.runInContext(trozos.map(t => t[0]).join('\n'), ctx, { filename: 'Union.gs (extracto)' });
+  return ctx;
+}
+
+console.log('\n6 · la medición del anclaje: cuántos se intentaron, cuántos anclaron, quiénes no');
+{
+  const hojas = {};
+  const ctx = contextoMedicion(hojas);
+  if (!ctx) {
+    mal++;
+    console.log('  ❌ no se pudieron extraer las funciones de medición de Union.gs');
+  } else {
+    // Hay que agregar la hoja en memoria con los headers que declara el propio código.
+    hojas.ANCLAJE_MEDICION = undefined;
+    ctx.__r = {
+      encuentros: [{ reunion: 'Boedo', etapa: 'pre' }, { reunion: 'Almagro', etapa: '' }],
+      // ⭐ El nombre SUCIO, copiado del caso real del 23/08: llega con el separador crudo adentro.
+      sinLink: [{ reunion: ': Salud', etapa: '', motivo: 'sin fila en rdv' }],
+      bajaConfianza: [{ reunion: 'Flores', etapa: 'post' }],
+      umbral: 0.6,
+      periodo_id: 'agosto_14_20',
+      excluidas_por_periodo: [{ item: 'Once' }]
+    };
+    ctx.__v = { desde: new Date(2026, 7, 14), hasta: new Date(2026, 7, 20) };
+    const r = vm.runInContext('registrarMedicionAnclaje_(__r, __v)', ctx);
+
+    af(r.ok === true, 'la medición se escribió', JSON.stringify(r));
+    /* ⭐ **El denominador es lo que separa «no corrió» de «corrió y no hubo dudosos»**, y es la
+     * suma de las TRES listas, no de las que anclaron. Contar mal la unidad es contar otra cosa. */
+    af(r.intentados === 4, 'y los intentados son 2 + 1 + 1 = 4, las tres listas', 'dio ' + r.intentados);
+
+    const hoja = hojas.ANCLAJE_MEDICION;
+    af(!!hoja, 'la hoja ANCLAJE_MEDICION se creó');
+    const headers = hoja ? hoja.__filas[0] : [];
+    const fila = hoja ? hoja.__filas[1] : [];
+    const val = (h) => fila[headers.indexOf(h)];
+
+    /* ⭐ Control positivo por nombre: los cinco números tienen que estar y en su columna. Un
+     * `getLastRow() === 2` pasaría igual con las columnas cruzadas. */
+    af(val('intentados') === 4 && val('anclados') === 2 && val('baja_confianza') === 1 && val('sin_link') === 1,
+      'y los cuatro conteos quedaron cada uno en su columna',
+      [val('intentados'), val('anclados'), val('baja_confianza'), val('sin_link')].join('/'));
+    af(val('umbral') === 0.6, 'con el umbral al lado — un puntaje sin umbral no significa nada');
+    af(String(val('periodo_id')) === 'agosto_14_20', 'y el período con el que se filtró');
+
+    /* ⭐⭐ **Los nombres, y SUCIOS.** El conteo dice que hubo un problema; el nombre dice cuál. Y
+     * limpiarlo acá escondería el bug del parseo justo en el instrumento con el que se diagnostica
+     * todo lo demás (`X-40` se diagnosticó mirando estos sufijos). */
+    af(String(val('sin_link_detalle')).indexOf(': Salud') !== -1,
+      'y el que no ancló está NOMBRADO, con el `: ` crudo adentro — no se lava',
+      String(val('sin_link_detalle')));
+    af(String(val('sin_link_detalle')).indexOf('sin fila en rdv') !== -1,
+      'y con su motivo al lado');
+  }
+}
+
+console.log('\n6b · cero sin_link con intentados > 0 NO es lo mismo que no haber corrido');
+{
+  const hojas = {};
+  const ctx = contextoMedicion(hojas);
+  if (ctx) {
+    ctx.__r = { encuentros: [{ reunion: 'A' }, { reunion: 'B' }], sinLink: [], bajaConfianza: [], umbral: 0.6 };
+    ctx.__v = null;
+    const r = vm.runInContext('registrarMedicionAnclaje_(__r, __v)', ctx);
+    /* ⛔ **Ésta es la afirmación por la que existe toda la Parte D.** Hoy `ANCLAJE_PENDIENTE`
+     * vacío es indistinguible de «no corrió»; con la fila escrita, `intentados: 2` con `sin_link: 0`
+     * dice *«corrí y no hubo dudosos»*, que es lo que no se podía afirmar. */
+    af(r.ok === true && r.intentados === 2,
+      'una corrida sin ningún dudoso deja fila igual, con `intentados` > 0');
+    const hoja = hojas.ANCLAJE_MEDICION;
+    const headers = hoja.__filas[0];
+    af(hoja.__filas[1][headers.indexOf('sin_link')] === 0,
+      'y `sin_link` en 0 — un resultado, no un silencio');
+    af(String(hoja.__filas[1][headers.indexOf('periodo_id')]) === '',
+      'y sin período: la celda vacía significa «no se filtró», y el consumidor lo puede decir');
+  }
+}
+
+console.log('\n6c · el instrumento no puede voltear el anclaje, pero deja rastro de su fallo');
+{
+  const ctx = contextoMedicion({});
+  if (ctx) {
+    // Una planilla que tira al pedir la hoja: el peor caso del instrumento.
+    ctx.SpreadsheetApp = {
+      getActiveSpreadsheet: () => { throw new Error('la planilla no responde'); },
+      flush: () => {}
+    };
+    ctx.__r = { encuentros: [], sinLink: [], bajaConfianza: [], umbral: 0.6 };
+    ctx.__v = null;
+    let tiro = false;
+    let r = null;
+    try { r = vm.runInContext('registrarMedicionAnclaje_(__r, __v)', ctx); } catch (e) { tiro = true; }
+    af(!tiro, 'no tira: un instrumento no puede costar el trabajo que estaba midiendo');
+    /* ⚠ Y no se lo traga: `marcarEtapa_` empezó con un `catch` vacío y eso hacía que la fila
+     * quedara diciendo una etapa vieja, que se lee como «murió ahí» — una conclusión falsa
+     * fabricada por el instrumento mismo. */
+    af(r && r.ok === false && String(r.motivo).indexOf('la planilla no responde') !== -1,
+      'y devuelve `ok: false` con el motivo — el fallo se publica, no se traga', JSON.stringify(r));
+  }
+}
+
+console.log('\n6d · la medición se escribe donde SE ANCLA, no donde se pregunta');
+{
+  /* ⚠ `anclarEncuentros` cachea; `anclarEncuentrosSinCache_` es la que de verdad ancla.
+   * `itemsDeSeccion_` llama a la primera **una vez por sección**, así que escribir desde allá
+   * daría una fila por consumidor y el conteo pasaría a decir cuántas veces se preguntó. Es
+   * *«contar la unidad correcta es parte de la guarda»* (`CLAUDE.md` §4). */
+  const texto = fs.readFileSync(path.join(RAIZ, 'Union.gs'), 'utf8');
+  const desdeSinCache = texto.indexOf('function anclarEncuentrosSinCache_');
+  const llamada = texto.indexOf('salida.medicion = registrarMedicionAnclaje_(salida, ventana);');
+  af(desdeSinCache !== -1 && llamada > desdeSinCache,
+    'la llamada vive adentro de `anclarEncuentrosSinCache_`, después de su apertura');
+  const cuerpoCacheado = texto.slice(texto.indexOf('function anclarEncuentros(ventana) {'), desdeSinCache);
+  af(cuerpoCacheado.indexOf('registrarMedicionAnclaje_') === -1,
+    'y NO en la envoltura que cachea — si no, contaría preguntas y no anclajes');
 }
 /* ════════════════════════════════════════════════════════════════════════════════════════ */
 console.log('');

@@ -925,6 +925,99 @@ function encontrarFilaRdvDeReunion_(reunion) {
  * una: es operativa, como `CORRIDAS` y `PLAN_CORRIDA`, y no está en ninguna de las tres listas. */
 var HEADERS_ANCLAJE_PENDIENTE_ = ['tipo', 'nombre_buscado', 'candidato_1', 'puntaje_1', 'candidato_2', 'puntaje_2', 'candidato_3', 'puntaje_3', 'elegido', 'archivada'];
 
+/* ═══════════ `2026-08-23_1` Parte D — la medición del anclaje deja rastro ═════════════════
+ *
+ * *«Un instrumento que no declara cuánto midió contamina toda conclusión que se apoye en él.»*
+ *
+ * ⛔ **Hoy `ANCLAJE_PENDIENTE` vacío no distingue «no corrió» de «corrió y nadie cayó bajo el
+ * umbral».** Las dos son la misma pantalla vacía y mandan a cosas opuestas: la primera a correr, la
+ * segunda a no tocar nada. Y los `sinLink` —los encuentros que no ancló— **no dejan rastro en
+ * ninguna hoja**: viven en el retorno de `anclarEncuentros` y mueren con la ejecución.
+ *
+ * ⭐ **Lo mínimo que arregla las dos cosas es lo mismo: escribir cuántos se intentaron, cuántos
+ * anclaron y cuántos no, con nombre.** Una fila por corrida del anclaje. Con ella, una hoja **con
+ * filas y cero pendientes** dice *«corrí y no hubo dudosos»*, que es exactamente lo que hoy no se
+ * puede afirmar.
+ *
+ * ⚠ **No es hoja de registro**: es operativa, como `CORRIDAS`, `FALTANTES` y `PLAN_CORRIDA`. No
+ * entra a `ALCANCE_REGISTROS_` ni a las tres listas que compara `tools/listas.js`, y eso es a
+ * propósito — nadie la siembra y nadie la edita a mano.
+ *
+ * ⚠ **Y acumula, a diferencia de `FALTANTES`.** Acá el valor está justamente en la serie: *«esta
+ * semana anclaron 4 de 6 y la anterior 6 de 6»* es la lectura que hace falta, y una fila por
+ * corrida no crece como 190. El tope lo pone `TOPE_MEDICIONES_ANCLAJE_`, que poda las viejas.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+var HEADERS_ANCLAJE_MEDICION_ = ['cuando', 'ventana_desde', 'ventana_hasta', 'periodo_id',
+  'intentados', 'anclados', 'baja_confianza', 'sin_link', 'umbral', 'sin_link_detalle', 'excluidas_por_periodo'];
+
+/**
+ * Cuántas mediciones se guardan. Una fila por corrida del anclaje: con dos o tres corridas por
+ * semana, 200 filas son más de un año. **Se poda desde arriba** —las viejas— para que la hoja no
+ * crezca sin límite en un libro que ya tiene veinte hojas.
+ */
+var TOPE_MEDICIONES_ANCLAJE_ = 200;
+
+function obtenerHojaAnclajeMedicion_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('ANCLAJE_MEDICION');
+  if (!hoja) {
+    hoja = ss.insertSheet('ANCLAJE_MEDICION');
+    hoja.getRange(1, 1, 1, HEADERS_ANCLAJE_MEDICION_.length).setValues([HEADERS_ANCLAJE_MEDICION_]);
+    hoja.setFrozenRows(1);
+  }
+  return hoja;
+}
+
+/**
+ * Escribe la medición de una corrida del anclaje.
+ *
+ * ⚠ **No puede voltear el anclaje.** Es un instrumento, y `CLAUDE.md` §4 ya tiene el precedente
+ * con `marcarEtapa_`: un fallo del instrumento no puede costar el trabajo que estaba midiendo. Lo
+ * que sí hace, y `marcarEtapa_` no hacía al principio, es **dejar rastro de su propio fallo** — un
+ * `catch` vacío haría que la hoja mienta por omisión, que es el modo de falla que esto viene a
+ * cerrar.
+ *
+ * ⚠ **Los nombres van TAL CUAL** —sin normalizar, sin limpiar—. Si el nombre de un encuentro llega
+ * sucio, eso es un hallazgo sobre el parseo y tiene que verse. Un instrumento que lava sus datos
+ * de entrada esconde el bug justo donde se diagnostica.
+ */
+function registrarMedicionAnclaje_(resultado, ventana) {
+  try {
+    var hoja = obtenerHojaAnclajeMedicion_();
+    var intentados = resultado.encuentros.length + resultado.sinLink.length + resultado.bajaConfianza.length;
+    var nombre = function (e) { return String(e.reunion || '') + (e.etapa ? ' (' + e.etapa + ')' : ''); };
+
+    hoja.appendRow([
+      new Date(),
+      ventana && ventana.desde ? ventana.desde : '',
+      ventana && ventana.hasta ? ventana.hasta : '',
+      // `''` significa **no se filtró por período**, y el consumidor tiene que poder decirlo.
+      resultado.periodo_id || '',
+      intentados,
+      resultado.encuentros.length,
+      resultado.bajaConfianza.length,
+      resultado.sinLink.length,
+      resultado.umbral,
+      // ⭐ Con nombre y motivo: un conteo de `sin_link` sin los nombres dice que hubo un problema
+      // y no dice cuál. Los nombres son lo que permite ir a mirar la fila de `rdv`.
+      resultado.sinLink.map(function (e) { return nombre(e) + ' — ' + (e.motivo || e.motivoAmbiguo || 'sin motivo'); }).join(' | '),
+      (resultado.excluidas_por_periodo || []).map(function (e) { return String(e.item || e.campana || ''); }).join(' | ')
+    ]);
+
+    // Poda de las viejas. `getLastRow()` cuenta el encabezado, así que el excedente se mide
+    // contra `TOPE + 1`.
+    var sobran = hoja.getLastRow() - (TOPE_MEDICIONES_ANCLAJE_ + 1);
+    if (sobran > 0) hoja.deleteRows(2, sobran);
+    SpreadsheetApp.flush();
+    return { ok: true, intentados: intentados };
+  } catch (e) {
+    var mensaje = String((e && e.message) ? e.message : e);
+    try { Logger.log('registrarMedicionAnclaje_ falló: ' + mensaje); } catch (e2) { /* ni el log */ }
+    return { ok: false, motivo: mensaje };
+  }
+}
+
 function obtenerHojaAnclajePendiente_() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var hoja = ss.getSheetByName('ANCLAJE_PENDIENTE');
@@ -1261,13 +1354,27 @@ function anclarEncuentrosSinCache_(ventana) {
     SpreadsheetApp.flush();
   });
 
-  return {
+  var salida = {
     ok: true, encuentros: encuentros, sinLink: sinLink, bajaConfianza: bajaConfianza, umbral: umbral,
     // `_31.1` B.4 — quién quedó afuera por período, y con qué período se filtró. `''` significa
     // **no se filtró**, y el consumidor tiene que poder decirlo en el reporte.
     periodo_id: periodoDeLaVentana,
     excluidas_por_periodo: excluidasPorPeriodo
   };
+
+  /* ⭐ `2026-08-23_1` Parte D — **la medición se escribe acá y no en `anclarEncuentros`.**
+   *
+   * Esta función es la que **de verdad ancla**; la de afuera puede devolver el caché y entonces no
+   * midió nada. Escribir desde allá produciría una fila por cada consumidor —`itemsDeSeccion_` la
+   * llama una vez por sección— y el conteo pasaría a decir cuántas veces se preguntó, no cuántos
+   * encuentros se intentaron. Es la misma familia que *«contar la unidad correcta es parte de la
+   * guarda»* de `CLAUDE.md` §4.
+   *
+   * ⚠ **El resultado del instrumento viaja en la salida**, en vez de descartarse: si la medición
+   * falló, nada de lo que se lea después en `ANCLAJE_MEDICION` se puede tomar como completo, y una
+   * hoja incompleta que nadie sabe que lo está es peor que ninguna hoja. */
+  salida.medicion = registrarMedicionAnclaje_(salida, ventana);
+  return salida;
 }
 
 /**
@@ -1392,10 +1499,35 @@ function menuProbarUnionYAnclaje_() {
   if (!anclaje.ok) {
     lineas.push('  ⚠ ' + anclaje.motivo);
   } else {
+    /* ⭐ `2026-08-23_1` Parte D — **el denominador primero.** Los tres conteos de abajo no dicen
+     * nada sin él: «0 sin link» sobre 6 intentos es un resultado, y sobre 0 intentos es que no se
+     * midió nada. Un control que no declara cuánto midió contamina toda conclusión que se apoye
+     * en él (`CLAUDE.md` §4). */
+    var intentadosAnclaje = anclaje.encuentros.length + anclaje.sinLink.length + anclaje.bajaConfianza.length;
+    lineas.push('  Encuentros que se intentaron anclar: ' + intentadosAnclaje +
+      (intentadosAnclaje === 0 ? '  ⚠ CERO — los conteos de abajo no dicen nada' : ''));
     lineas.push('  Umbral (CONFIG.umbral_anclaje_reunion): ' + anclaje.umbral);
     lineas.push('  Reuniones linkeadas: ' + anclaje.encuentros.length);
     lineas.push('  Sin candidato/sin fila en rdv (sinLink): ' + anclaje.sinLink.length);
     lineas.push('  Baja confianza (en ANCLAJE_PENDIENTE): ' + anclaje.bajaConfianza.length);
+
+    /* ⭐ Los `sinLink` CON NOMBRE. Hasta hoy sólo se contaban, y un conteo sin nombres dice que
+     * hubo un problema sin decir cuál — para ir a mirar la fila de `rdv` hace falta el nombre.
+     * Van con su motivo, tal cual lo dejó el anclaje y sin limpiar. */
+    if (anclaje.sinLink.length) {
+      lineas.push('', '  Sin link — quiénes, y por qué:');
+      anclaje.sinLink.slice(0, 15).forEach(function (item) {
+        lineas.push('    · ' + item.reunion + (item.etapa ? ' (' + item.etapa + ')' : '') +
+          ' — ' + (item.motivo || item.motivoAmbiguo || 'sin motivo'));
+      });
+      if (anclaje.sinLink.length > 15) lineas.push('    · … y ' + (anclaje.sinLink.length - 15) + ' más');
+    }
+
+    // ⚠ Si el instrumento falló, se dice: una hoja de mediciones incompleta que nadie sabe que
+    // lo está es peor que ninguna hoja.
+    if (anclaje.medicion && anclaje.medicion.ok === false) {
+      lineas.push('  ⚠ la medición NO se pudo escribir en ANCLAJE_MEDICION: ' + anclaje.medicion.motivo);
+    }
 
     if (anclaje.bajaConfianza.length) {
       lineas.push('', '  Baja confianza — candidato y score, para ver por qué no cerró:');

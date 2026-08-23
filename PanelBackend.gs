@@ -1467,3 +1467,66 @@ function panel_faltantes(cual) {
     tokens: Object.keys(distintos).length
   };
 }
+
+/**
+ * ⭐ `2026-08-23_1` Parte D · **la última medición del anclaje — lo que `ANCLAJE_PENDIENTE` no
+ * puede decir.**
+ *
+ * ⛔ Una pantalla de anclajes vacía significa **dos cosas opuestas**: *«no corrió»* y *«corrió y
+ * nadie cayó bajo el umbral»*. La primera manda a generar; la segunda, a no tocar nada. Sin una
+ * medición escrita, las dos son la misma pantalla en blanco.
+ *
+ * ⚠ **Los nombres se devuelven TAL CUAL están en la hoja, sin limpiar.** `enc_alcance_pct @: Salud`
+ * llega con el separador crudo adentro, y **eso es el requisito, no un descuido**: el sufijo
+ * `@ítem` de `FALTANTES` es la herramienta con la que se diagnosticó `X-40`, y un nombre que la
+ * vista lava esconde el bug del parseo justo en el instrumento con el que se mira todo lo demás.
+ *
+ * ⛔ **Leer no escribe.** Si la hoja no existe se devuelve `existe_hoja: false` y **no se la crea**:
+ * abrir una pestaña no debe dejar una hoja nueva en la planilla del usuario.
+ */
+function panel_ultimaMedicionAnclaje() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ANCLAJE_MEDICION');
+  if (!hoja) {
+    return {
+      ok: true, existe_hoja: false, hay: false,
+      /* ⚠ El texto dice lo que la ausencia significa, y **no dice que no haya corrido**: la hoja
+       * nació el 23/08, así que una corrida anterior a eso tampoco la escribió. «No sé» con motivo
+       * vale más que una afirmación cómoda. */
+      motivo: 'todavía no hay ninguna medición registrada — la hoja se escribe en cada anclaje, ' +
+        'y no existe si el motor no ancló desde que esto se instaló'
+    };
+  }
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos.shift() || [];
+  var filas = datos.filter(function (f) { return f[0] !== '' && f[0] !== null; });
+  if (!filas.length) {
+    return { ok: true, existe_hoja: true, hay: false, motivo: 'la hoja existe y no tiene ninguna fila' };
+  }
+
+  var cruda = filas[filas.length - 1];
+  var m = {};
+  headers.forEach(function (h, i) { m[String(h || '').trim()] = cruda[i]; });
+
+  var lista = function (v) {
+    return String(v || '').split(' | ').filter(function (t) { return t !== ''; });
+  };
+
+  return {
+    ok: true, existe_hoja: true, hay: true,
+    mediciones: filas.length,
+    cuando: (m.cuando instanceof Date) ? formatearFechaHora_(m.cuando) : String(m.cuando || ''),
+    ventana: (m.ventana_desde instanceof Date && m.ventana_hasta instanceof Date)
+      ? fechaLegible_(m.ventana_desde) + ' al ' + fechaLegible_(m.ventana_hasta)
+      : '',
+    periodo_id: String(m.periodo_id || ''),
+    intentados: Number(m.intentados) || 0,
+    anclados: Number(m.anclados) || 0,
+    baja_confianza: Number(m.baja_confianza) || 0,
+    sin_link: Number(m.sin_link) || 0,
+    umbral: m.umbral,
+    // Sin limpiar: si un nombre llega sucio, hay que verlo.
+    sin_link_detalle: lista(m.sin_link_detalle),
+    excluidas_por_periodo: lista(m.excluidas_por_periodo)
+  };
+}
