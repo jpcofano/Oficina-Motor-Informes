@@ -188,6 +188,34 @@ que ya sale, cuesta cero código y no depende de nadie; **(b)** pedirle el dato 
 
 ---
 
+## ⛔⛔ `C-80` — el Resumen Ejecutivo tiene DOS universos, y nada en el deck lo dice
+
+**Medido el 22/08, y es más grande que los `cc_*` que lo destaparon.**
+
+| bloque | qué universo publica |
+|---|---|
+| **mail** e **impresiones** (`mail_*`, los ocho `imp_*`) | ⭐ **TODO JM de la semana** — `mail_entregados` por **fecha propia** + `mail_remitente`; los `imp_*` por **pertenencia** + `nombre_campaña ~= JM`. Incluye campañas destacadas y mail masivo |
+| **Call Center** (`cc_*`) | ⛔ **UNA cuenta.** El equipo publica 3 / 6.851 / 1.616 en agosto y 2 / 6.011 / 1.878 en julio — **y en los dos casos eso es una sola cuenta** |
+
+⚠ **Las cajas están una al lado de la otra, con el mismo formato, y se leen como si respondieran la
+misma pregunta.** No la responden.
+
+⭐⭐⭐ **Y esto explica por qué `X-28` no cerraba: se buscaba una regla de VENTANA para algo que no
+es de ventana.** El barrido a ciegas dio **0 de 13 propiedades** porque **ninguna propiedad de la
+ventana puede explicar un recorte que no sale de la ventana.**
+
+**`X-28` queda reformulado.** La pregunta deja de ser *"¿cuál de las cuentas que entran?"* y pasa a
+ser ***"¿por qué el bloque Call Center mira otro universo?"***. ⭐ **Y eso cambia qué hace falta para
+cerrarlo: la contesta el equipo en una frase, no un tercer `.zip`** — ¿es el del encuentro de la
+semana, el de la campaña destacada, o un acumulado?
+
+⚠ **Y la pregunta que no se deriva sola, anotada sin medir (`X-38`): si una lámina puede tener dos
+universos, hay que mirar si pasa en otras.** Candidatas: los `u1_*` conviviendo con cuatro `ecv_*`
+en la lámina del «1 a 1»; el iceberg mezclando `enc_*` de `Directa IVR` con `ecv_*` de `rdv`; el
+agregado semanal de `L-034`. **Cuesta nada anticiparla y cuesta un número cuando aparece.**
+
+---
+
 ## ⭐⭐ `R-31` — qué se puede controlar por igualdad exacta y qué no
 
 **Premisa corregida por el usuario, 22/08: las bases son de carga MANUAL y no se completan de una
