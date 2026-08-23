@@ -7621,3 +7621,50 @@ entonces se publica —nadie declaró desconfianza— pero **nace sin validar, n
 julio:** el log dice **6 anclados · 0 baja confianza · 0 `sinLink`**, con scores de 0,81 y cinco
 de 1,00. **Todos anclaron por encima del umbral.** La hoja `ANCLAJE_PENDIENTE` no podía decirlo
 —por eso el P1 sigue abierto— pero **para este período ya está contestado**.
+
+---
+
+### P1 · `D-17` nombra dos funciones que no existen en ningún `.gs` (23/08/2026)
+
+**La decisión sigue siendo correcta; lo que no está escrito es el mecanismo que describe.**
+
+`D-17` (`docs/PLAN.md` §1) dice que las filas de `MARCADORES` *"se siembran leyendo los `{{token}}`
+de las plantillas de Slides (**`sembrarMarcadoresDesdePlantillas`** + **`upsertSoloVacias_`**,
+`Paso-2.5`)"*. **Ninguna de las dos existe.** Medido el 23/08 con
+`grep -rniE "vacias|desdeplantilla" *.gs`: los únicos aciertos son `filas_vacias`, que es un
+conteo informativo de `Fuentes.gs` y no tiene nada que ver.
+
+⭐ **Lo que sí es cierto, y por eso la decisión no se toca:** la plantilla **es** la dueña en el
+sentido que importa — decide **qué filas deberían existir**. Y `docs/ESCRITORES.md` lo dice bien:
+*"sigue sin sembrador, y es a propósito"*, con el sembrador real *"en el `Paso-2.5`, **que todavía
+no corrió**"*. Los escritores vivos son **tres**: `curarMarcadores_`, `curarCamposMarcadores_` y
+`migrarCalculoAOperacion_`.
+
+⚠ **El daño concreto, y es el que hay que anticipar:** alguien que lea `D-17` antes de dar un alta
+va a suponer que **hay dos caminos escribiendo la misma fila** y va a frenar, o peor, va a esperar
+a que el sembrador la escriba. **Pasó el 23/08**, con el alta de `camp_meta_frecuencia`: la
+pregunta *"¿entra por el sembrador o hace falta alta a mano?"* costó una verificación entera, y la
+respuesta es que **el alta a mano es el único camino y no se puede duplicar**.
+
+⛔ **Es la tercera vez esta semana que un contrato afirmado sin testigo cuesta tiempo**, y las
+otras dos ya están escritas:
+
+| | dónde | qué afirmaba |
+|---|---|---|
+| 1 | `Reuniones.gs` (`CLAUDE.md` §4) | *"`leerReuniones_()` … mismo contrato que `leerCampanas()`"* — era falso: una devolvía lista y la otra un mapa que **perdía filas repetidas en silencio** |
+| 2 | la rama de reanudación (`P0` del 21/08, arriba) | anotado ahí mismo como *"la familia del comentario que afirma un contrato"* |
+| 3 | **`D-17`** | nombra dos funciones que no existen |
+
+⭐ **Y el patrón que comparten los tres, que es lo accionable: los tres describen algo que
+*debería* pasar y nadie compara la descripción contra el código.** Un comentario no falla nunca.
+
+**Las dos salidas, y ninguna es editar `D-17`** —una decisión no se edita, se supersede—:
+
+- **(a)** un addendum fechado en `PLAN.md` bajo `D-17` que diga *"al 23/08 estas dos funciones no
+  existen; el mecanismo es el `Paso-2.5`, sin correr"*. Barato y suficiente.
+- **(b)** que el `Paso-2.5` se escriba, y ahí `D-17` pasa a describir algo real.
+
+⚠ **Mientras tanto, lo que hay que saber antes de cualquier alta: no hay dos caminos.** Si el
+`Paso-2.5` alguna vez corre, `ESCRITORES.md` declara que *"completa vacías"* y por lo tanto no
+pisaría una fila ya cableada — **declarado, no verificable**, porque la función no existe para
+mirarla.

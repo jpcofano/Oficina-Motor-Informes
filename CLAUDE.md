@@ -858,6 +858,30 @@ vacío, que seguía intacto.
     líneas más arriba en el mismo log**. Un instrumento no puede distinguir *"el mundo cambió"* de
     *"yo lo estoy leyendo mal"*: esa pregunta la tiene que hacer quien lee.
 
+**Un control no se afloja para que entre algo nuevo: lo nuevo va aparte, y con un control de otra
+clase.** (23/08/2026, decisión del usuario.) Cuando un control cruza contra **evidencia fechada**
+—un censo, un snapshot, un fixture— y algo legítimo **no pasa**, la tentación es ensanchar el
+control. **Las dos formas de hacerlo lo destruyen:** permitir lo que no está en la evidencia lo
+vuelve decorativo, y **regenerar la evidencia para que entre** es ajustar el fixture hasta que
+pase, que es como se pierde un hallazgo.
+
+- **El caso:** `probar-desglose-plataforma.js` exige que **cada uno de los 17 marcadores de `L-046`
+  esté en el censo de tokens sin fila del 22/08**. Ése es el control que hace fallar a un token
+  inventado — y hace falta porque **un marcador cuyo token no existe en ninguna lámina no falla
+  solo**: resuelve, no encuentra dónde pintarse, no entra a `FALTANTES`, y queda como una fila que
+  nadie va a poder explicar. El 23/08 el usuario agregó `{{camp_meta_frecuencia}}` a la plantilla:
+  token legítimo, **nacido después del censo**, y el cruce lo habría rechazado con razón.
+- ⭐ **La salida es separar, no aflojar.** El token nuevo va en **su propio wrapper**, con **su
+  propio control** — acá el censo **vivo**, corrido **antes y después**: antes tiene que aparecer
+  *(eso es lo que prueba que el `{{token}}` quedó bien escrito en la plantilla, y no hay otra forma
+  de saberlo — un token mal tipeado no falla, simplemente no existe para nadie)* y después no.
+- ⭐⭐ **Y el control viejo gana afirmaciones NEGATIVAS en vez de perder exigencia:** que el token
+  nuevo **no** esté en el lote y **no** esté en el censo congelado. Si algún día apareciera ahí, se
+  pone rojo — y estaría diciendo la verdad: **que el censo dejó de ser el del 22/08.**
+- **La regla, en una línea: si algo nuevo no pasa un control contra evidencia fechada, la evidencia
+  no está mal — lo nuevo es posterior.** Y el control que le corresponde es **de otra clase**: acá
+  el congelado no podía servir y el vivo sí.
+
 **Un comentario que afirma un contrato es una premisa sin testigo.** `Reuniones.gs` declaraba
 *"`leerReuniones_()` … mismo contrato que `leerCampanas()`"*. **Era falso**: `leerReuniones_`
 devolvía una **lista** y `leerCampanas` un **mapa indexado** que **perdía filas repetidas en
