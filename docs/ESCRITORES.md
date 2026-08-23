@@ -308,6 +308,35 @@ hoja de este libro se escribe sin que haya nadie mirando. Dos consecuencias:
 - **no hay a quién preguntarle nada**, así que todo lo que en una corrida manual sería un diálogo
   acá tiene que ser una guarda que para y reporta.
 
+### FALTANTES_PREVIO — hoja nueva, 23/08/2026
+
+**No es hoja de registro**, igual que `PLAN_CORRIDA`, `CORRIDAS` y `FALTANTES`: no entra a
+`ALCANCE_REGISTROS_` ni a las tres listas que `tools/listas.js` compara.
+
+| función | método | camino |
+|---|---|---|
+| `rotarFaltantes_` | `setValues` | vía `escribirFaltantes_`, en el cierre de cada corrida |
+| `rotarFaltantes_` | `clearContent` | ídem — se pisa entera, guarda **una** corrida de profundidad |
+| `hojaDeSalida_` | `insertSheet` | la crea la primera vez que hay algo que archivar |
+
+⭐ **Guarda una sola corrida, y es una decisión medida.** Una corrida deja del orden de 190 filas;
+acumular por `corrida_id` daría ~10.000 en cincuenta corridas y convertiría la lista de trabajo en
+un log, que es justo lo que `D-12` no quiere. La pregunta que esto contesta —*«¿este faltante ya
+estaba antes de mi cambio?»*— es la única que se hizo hasta hoy, y necesita una sola de profundidad.
+
+⚠ **Copia lo que la hoja TIENE, no lo que la corrida anterior quiso escribir.** Si la anterior murió
+en el muro y nunca llegó al cierre, no hay nada que copiar y el archivo queda como estaba. **No se
+inventa una foto**, y el reporte de la corrida lo dice: `faltantes_previo` viaja con `ok` y `filas`
+por separado, porque *«no había nada que archivar»* y *«el archivado falló»* mandan a cosas
+distintas.
+
+⚠ **Y `escribirFaltantes_` ahora reconcilia los headers de `FALTANTES` antes de escribir**
+(`reconciliarHeadersDeSalida_`). Es lo que hace que una columna nueva del esquema llegue a una hoja
+que ya existe: `hojaDeSalida_` sólo escribe headers cuando la hoja **no está**, así que sin esto la
+columna entra a `HOJAS_CONFIG_` y **la celda nunca se escribe, sin error** — el modo de falla de
+`CLAUDE.md` §2. Sólo **agrega al final**; nunca reordena ni renombra, y por eso no sirve para una
+hoja de registro: ahí está `COLUMNAS_DELTA_`, que además siembra.
+
 ### SOLAPAS
 
 | función | método | sitio | camino |
