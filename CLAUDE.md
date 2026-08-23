@@ -885,6 +885,41 @@ marcador admite control exacto. Hace falta cruzarla con la operación.**
   avisar. **Una marca que está en todos lados no distingue nada**, que es la misma familia del
   glifo que miente sobre la causa.
 
+**Antes de depender del deck del equipo, buscá una identidad INTERNA — y si existe, vale más.** Una
+identidad interna es una relación que el propio producto tiene que cumplir consigo mismo: **las
+partes suman el total**, el porcentaje es el cociente de sus dos operandos, el detalle cuadra con el
+agregado. **No necesita el deck del equipo ni una foto de la base**, así que se puede exigir en
+**cada** corrida y **no envejece**.
+
+- **El caso, 23/08/2026:** `V-111` sobre `L-046` — Meta + Google + Programmatic = TOTALES, exacto en
+  impresiones (6.055.442), vistas (3.003.515) y clics (4.513). ⭐ **Ni la inestabilidad por CAMBIO
+  de la fuente (`R-31`) ni el acumulado de `R-29` la rompen: si la fuente se mueve, se mueven las
+  partes Y el total, y la suma sigue cerrando.** Es el único control de esa lámina inmune a las dos
+  cosas que arruinaron el testigo `V-110`.
+- ⭐⭐ **Y el par vale más que cualquiera de los dos solo:** `V-109` midió la misma identidad **en la
+  fuente** y `V-111` **en el producto**. Que las dos cierren es lo que permite decir que **el
+  cableado no inventó nada en el medio** — ninguna de las dos, por separado, lo dice.
+- **Lo accionable, al cablear una tabla:** preguntar *¿hay una fila TOTALES, un porcentaje, un
+  agregado que estas celdas tienen que reproducir?* **antes** de escribir el valor esperado contra
+  el deck del equipo. Si la hay, ése es el control primario y el deck pasa a ser el secundario.
+- ⚠ **Lo que una identidad interna NO prueba:** que los valores sean los que corresponden. `V-111`
+  cierra con Programmatic trayendo el acumulado —**el 65 % del total**—, porque cierra sobre lo que
+  el motor leyó. **Consistente no es correcto**, y las dos preguntas siguen siendo dos.
+
+**Cuando el instrumento está bien y la entrada está mal, el error se ve igual — y es el que menos
+se anota.** (23/08/2026.) Medio día de diagnóstico sobre `L-046`: los 18 tokens recién cableados
+salían `/////`, se revisó el símbolo, la resolución, el `informe_id`, el lector de la plantilla.
+**No había ningún bug: el deck que se estaba mirando era el de la corrida anterior**, con el mismo
+nombre de archivo que el nuevo.
+
+- ⭐ **Va escrito al lado de los otros corolarios a propósito**, porque todos ellos entrenan a
+  sospechar del código — y éste es el caso simétrico. **La primera pregunta ante un síntoma raro
+  también es *¿estoy mirando lo que creo que estoy mirando?***: el archivo, la corrida, la fecha.
+- ⚠ **Y lo que lo hace probable acá y no en cualquier lado:** el motor **nombra los decks por
+  informe y sello**, así que dos corridas seguidas producen nombres casi idénticos. **La forma
+  barata de no volver a caer es citar el `corrida_id`**, que ya viaja en el nombre — un número que
+  distingue no sirve si nadie lo lee.
+
 **Un diagnóstico sin control positivo no es un diagnóstico: todo instrumento nuevo lleva algo que
 TIENE que aparecer.** (23/08/2026.) Un instrumento que sólo busca lo que sospecha **no puede
 distinguir «no está» de «no miré»**, y las dos salidas se ven idénticas en el log.
