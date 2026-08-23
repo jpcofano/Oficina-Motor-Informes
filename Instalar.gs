@@ -5529,3 +5529,87 @@ function cablearEcvBarrios123() {
   Logger.log('   Lo exigible es EL CONJUNTO, y eso ya lo mide `ecv_barrios`.');
   return r;
 }
+
+
+/**
+ * `2026-08-22` — **la tanda de «los chicos»: los huecos que NO tocan esquema.**
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`**, por `curarMarcadores_` (`D-17`). Botón propio, no seed.
+ *
+ * ⛔⛔ **DE LOS OCHO QUE SE PIDIERON, SÓLO ENTRAN TRES — y los cinco que quedan afuera no son
+ * olvido.** Se midió uno por uno antes de escribir, y *«chico»* resultó no ser lo mismo que
+ * *«sin bloqueo»*:
+ *
+ * | token | por qué no entra |
+ * |---|---|
+ * | `periodo` | ⛔ **No se cablea NUNCA: lo produce la generación.** `Generador.gs` lo dice con todas las letras — *"`{{periodo}}` lo produce la generación, no un marcador: sale del período que efectivamente se usó"*. Aparece en el censo como «sin fila» y **es correcto que no la tenga**. Es exactamente el falso faltante contra el que el propio censo advierte en su encabezado |
+ * | `contenidos_total` · `gcba_contenidos_total` | ⛔ Es la **pregunta abierta al equipo**: los seis `pauta_*` son flags 0/1 y publican `1·1·1`. Cablearlo a algo plausible es lo que este proyecto persigue |
+ * | `camp_dig_impl` | ⛔ **Bloqueado por `X-39`.** El equipo publica **4 implementaciones** y eso es el **CONTEO de filas de `looker/DIGITAL` para la cuenta** —cuatro plataformas—, que necesita `campo_id_cuenta` en esa solapa |
+ * | `camp_dir_impl` | ⛔ **Mismo bloqueo, otra solapa.** El equipo publica **3**, que es el conteo de envíos de `digital/Directa Mail` para la cuenta, y esa solapa **también** tiene `campo_id_cuenta` vacío |
+ *
+ * ⭐ **Los tres que sí entran, con de dónde sale cada uno:**
+ *
+ * - **`camp_desde` y `camp_hasta`** — `looker/resumen_metricas_dinamico`, columnas `C (fecha_inicio)`
+ *   y `D (fecha_fin)`, **las dos ya mapeadas**. Esa solapa **ya tiene `campo_id_cuenta = id_cuenta`**,
+ *   así que la rama por cuenta funciona sin tocar nada: es la misma fuente y el mismo camino que los
+ *   `camp_*` agregados que ya publican. ⭐ **Verificado contra el deck del equipo**: para la campaña
+ *   del narco dice *"Período: del 10/08 al 24/08"*, y `CAMPANAS` declara `3509-AGOSEGGJ` con
+ *   `10/08/2026 → 24/08/2026`. **Las dos fechas, exactas.**
+ * - **`m2_campanias`** — `CUENTA_DISTINTOS` sobre `mail_campana`. **La octava operación es
+ *   exactamente esto** y no hacía falta nada nuevo. Copia la configuración de su hermano
+ *   `m2_envios` —misma base, misma solapa, `dimensiones = tipo_envio=m2`— y **sólo cambia la
+ *   pregunta**: aquél cuenta **envíos** (`CONTEO` de filas), éste cuenta **campañas distintas**.
+ *
+ * ⚠ **`ULTIMO` y no `TEXTO` para las dos fechas**, aunque hoy la lectura por cuenta devuelva una
+ * sola fila: `ULTIMO` **elige por fecha y lo dice en la traza**, y el desempate es qué pasa el día
+ * que haya dos. Mismo criterio que los nueve `camp_*` del `_19` Parte D.
+ *
+ * ⚠ **Y `formato = fecha`**, verificado contra `formatearValorMarcador_` — la rama existe y da
+ * `dd/MM/yyyy`. No se supone: ya me costó una vez escribir `fecha_corta`, que no existe.
+ */
+function cablearLosChicos() {
+  var r = curarMarcadores_([], [
+    {
+      marcador: 'camp_desde', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'resumen_metricas_dinamico', campo_logico: 'fecha_inicio',
+      operacion: 'ULTIMO', formato: 'fecha',
+      notas: 'inicio de la campania destacada. Col C de resumen_metricas_dinamico, ya mapeada. ' +
+        'La solapa ya declara campo_id_cuenta, asi que la rama por cuenta anda sin tocar esquema. ' +
+        'Verificado contra el deck del equipo: 3509-AGOSEGGJ dice «del 10/08 al 24/08»'
+    },
+    {
+      marcador: 'camp_hasta', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'resumen_metricas_dinamico', campo_logico: 'fecha_fin',
+      operacion: 'ULTIMO', formato: 'fecha',
+      notas: 'fin de la campania destacada. Col D, ya mapeada. Idem camp_desde'
+    },
+    {
+      marcador: 'm2_campanias', familia: 'm2', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_campana',
+      operacion: 'CUENTA_DISTINTOS', dimensiones: 'tipo_envio=m2', formato: 'miles',
+      notas: 'campanias DISTINTAS de M2, no envios. Copia la config de su hermano m2_envios y ' +
+        'solo cambia la pregunta: aquel es CONTEO de filas, este CUENTA_DISTINTOS sobre el nombre'
+    }
+  ]);
+
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== los chicos: ' + ((r.agregadas || []).length) + ' fila(s) agregada(s) · ' +
+    r.filas_finales + ' filas en MARCADORES ==');
+  if (!(r.agregadas || []).length) {
+    Logger.log('ⓘ Cero altas: las tres ya existían. Es idempotencia, no rotura.');
+  }
+  Logger.log('');
+  Logger.log('⭐ ESPERADO, contra el deck del equipo:');
+  Logger.log('   camp_desde / camp_hasta → las fechas de la campaña destacada. Para la del narco');
+  Logger.log('                             (3509-AGOSEGGJ) el equipo publica «del 10/08 al 24/08».');
+  Logger.log('   m2_campanias           → campañas DISTINTAS de M2 en la ventana, no envíos.');
+  Logger.log('');
+  Logger.log('⛔ LOS CINCO QUE NO ENTRARON, y ninguno es olvido:');
+  Logger.log('   periodo               → NO SE CABLEA: lo produce la generación (Generador.gs).');
+  Logger.log('                           Es un falso faltante del censo.');
+  Logger.log('   contenidos_total ×2   → pregunta abierta al equipo (los pauta_* son flags 0/1).');
+  Logger.log('   camp_dig_impl         → X-39: necesita campo_id_cuenta en looker/DIGITAL.');
+  Logger.log('   camp_dir_impl         → mismo bloqueo en digital/Directa Mail.');
+  return r;
+}
