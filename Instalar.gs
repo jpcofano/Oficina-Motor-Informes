@@ -1144,6 +1144,33 @@ var SEED_MAPEO_ = [
   // que la `SUMA` devuelva cero **sin fallar**, que es el modo de falla caro de este proyecto.
   { base_id: 'looker', campo_logico: 'Impresiones', hoja: 'DIGITAL', columna: 'C', notas: 'la métrica de los seis imp_* — medida numérica: 4888 number, 15 vacías, cero texto (10/08)' },
 
+  /* ── `X-39` (23/08/2026) · lo que falta para el desglose por plataforma de `L-046` ──────
+   *
+   * **`Visualizaciones` (D) y `Clics` (E) nunca se mapearon**, y no fue un olvido: el `_25`
+   * mapeó `Impresiones` porque los seis `imp_*` era todo lo que consumía esta solapa. Los
+   * quince `camp_{meta,google,prog}_*` necesitan las tres. **Los campos lógicos siguen la
+   * convención de sus hermanas** —se leen igual que el encabezado— por el motivo que ya está
+   * escrito arriba: el filtro se escribe `Plataforma=Meta` y una traducción de más no la pidió
+   * nadie. `V-109` midió que las dos fuentes cierran: DV360 + Meta + Google + ML da exactamente
+   * el `digital_impresiones` de `resumen_metricas_dinamico` para la misma cuenta. */
+  { base_id: 'looker', campo_logico: 'Visualizaciones', hoja: 'DIGITAL', columna: 'D', notas: 'X-39 — la métrica de los camp_*_vistas. La firma del _25 ya la medía en la columna D; lo que faltaba era la fila' },
+  { base_id: 'looker', campo_logico: 'Clics', hoja: 'DIGITAL', columna: 'E', notas: 'X-39 — la métrica de los camp_*_clics; ídem' },
+
+  /* ⭐ **`ldig_id_cuenta` es la MISMA columna A que `clave_ventana`, con otro nombre lógico, y
+   * es deliberado.** El molde exacto es `lcc_id_cuenta` (`_27`, `looker/CC`), que hizo lo mismo
+   * y dejó escrito por qué.
+   *
+   * Son dos roles distintos que hoy coinciden en la letra: `clave_ventana` es el nombre del
+   * **cruce de ventana** (`D-24`, `SOLAPAS.ventana_ref`) y `SOLAPAS.campo_id_cuenta` es el
+   * nombre del **grano por cuenta** (`D-30`). ⚠ **Atarlos al mismo campo lógico haría que mover
+   * uno mueva el otro en silencio** — y el que se mueve es el de la ventana, que ya cambió de
+   * solapa una vez.
+   *
+   * ⛔ **No se llama `dig_id_cuenta`: ése ya es de `digital/Digital` (col. T)**, y
+   * `TIPO_ESPERADO_POR_CAMPO_` indexa **por campo lógico, no por base** — reusarlo sería
+   * declarar que son el mismo campo. */
+  { base_id: 'looker', campo_logico: 'ldig_id_cuenta', hoja: 'DIGITAL', columna: 'A', notas: 'X-39 — el grano por cuenta de la solapa (D-30). Misma columna que clave_ventana, otro nombre lógico; el molde es lcc_id_cuenta del _27' },
+
   // m2 — DIRECTA en 'M2 periodo DIRECTA', DIGITAL en 'M2 periodo DIGITAL'
   { base_id: 'm2', campo_logico: 'campana', hoja: 'M2 periodo DIRECTA', columna: 'B', notas: '' },
   // Paso 2.9 Parte D (S-02): 'fecha' es el contrato viejo, igual que en looker.
@@ -1559,6 +1586,11 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   insc_digital: 'numero', insc_dif: 'numero', asistentes: 'numero', poblacion: 'numero',
   dig_impresiones: 'numero', dig_visualizaciones: 'numero', dig_clics: 'numero',
   'Impresiones': 'numero', // `_25` — medida: 4888 `number`, cero `string`
+  // `X-39` — las otras dos métricas de `looker/DIGITAL`. ⚠ **No están medidas como lo está
+  // `Impresiones`**: se declaran `numero` por analogía con su hermana de al lado, y lo que las
+  // mide de verdad es `DIAG_BASES` sobre la solapa viva. Si alguna llega como texto, la `SUMA`
+  // devuelve cero **sin fallar**, que es el modo de falla caro de este proyecto.
+  'Visualizaciones': 'numero', 'Clics': 'numero',
   alcance: 'numero', frecuencia: 'numero',
   mail_enviados: 'numero', mail_entregados: 'numero', mail_aperturas: 'numero',
   mail_clics: 'numero', mail_or: 'numero', mail_ctor: 'numero',
@@ -1566,6 +1598,9 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   // `_27` — los de `looker/CC`. Prefijo `lcc_` porque los dos de arriba son de
   // `reuniones/Agenda JM` y se llaman igual; ver el seed de `SEED_MAPEO_CC_`.
   lcc_base_barrida: 'numero', lcc_contactados: 'numero', lcc_id_cuenta: 'texto',
+  // `X-39` — el grano por cuenta de `looker/DIGITAL`. Prefijo `ldig_` por lo mismo que `lcc_`:
+  // `dig_id_cuenta` ya es de `digital/Digital` y este mapa es por campo lógico, no por base.
+  ldig_id_cuenta: 'texto',
   ivr_audiencia: 'numero', ivr_atendidos: 'numero', ivr_escucha75: 'numero',
   ivr_marque1: 'numero', ivr_llamados: 'numero', ivr_at_pct: 'numero', ivr_e75: 'numero',
   ivr_e75_pct: 'numero', ivr_marque1_pct: 'numero',
@@ -1684,6 +1719,11 @@ var ENCABEZADO_POR_MAPEO_ = {
   'looker|DIGITAL|estado': 'estado',
   'looker|DIGITAL|Plataforma': 'Plataforma',
   'looker|DIGITAL|Impresiones': 'Impresiones',
+  // `X-39` — los tres testigos nuevos. `ldig_id_cuenta` repite el rótulo de `clave_ventana`
+  // porque **es la misma columna**: el testigo documenta el rótulo, no el rol (`D-31`).
+  'looker|DIGITAL|Visualizaciones': 'Visualizaciones',
+  'looker|DIGITAL|Clics': 'Clics',
+  'looker|DIGITAL|ldig_id_cuenta': 'Id cuentas',
   'digital|Digital|clave': 'Nombre campaña | Digital',
   'digital|Digital|dig_campana': 'Nombre campaña | Digital',
   'digital|Digital|dig_jm_gcba': 'JM | GCBA | POLICIA',
@@ -1963,7 +2003,27 @@ var SEED_SOLAPAS_ = [].concat(
 
   // digital — "Seguimiento Digital"
   [filaSolapa_('digital', 'Digital', 'ignorar', 'R-22 (09/08): CONGELADA — sus 205 filas JM llegan a diciembre de 2025, cero datos de 2026. Era hoja_default; el default se movió a Seguimiento digital en la misma corrida')],
-  filasSolapa_('digital', ['Directa Mail', 'Directa IVR', 'Directa SMS'], 'fuente', 'canales de directa'),
+  /* ⛔ **`Directa Mail` sigue separada de sus dos hermanas, y la separación se queda aunque la
+   * declaración se haya ido.** Las tres compartían una sola llamada, así que declarar
+   * `campo_id_cuenta` en el grupo se lo ponía también a `Directa IVR` y `Directa SMS` — **que no
+   * tienen ese campo lógico en `MAPEO`**, y ahí un marcador con ítem falla con
+   * `@campo_id_cuenta_no_mapeado` en vez de leer. Es el modo de falla del `_44` exacto: la
+   * declaración entra en un lugar y no en los otros, y **los `ivr_*` del iceberg publican
+   * números validados `exacto`**.
+   *
+   * ⭐ **Separarla no cambia ni una celda** —produce la misma fila que producía el grupo— **y
+   * deja la trampa desarmada para el día que la declaración vuelva.** Por eso no se revierte
+   * junto con `X-39`: lo que se revirtió es la declaración, no el cuidado.
+   *
+   * ⭐ **Su testigo salió idéntico en las dos corridas del 23/08** —`mail_entregados` JM 538.276
+   * y GCBA 2.334.767, los dos al dígito—, así que **ésta nunca fue la sospechosa**.
+   *
+   * ⚠ **Pero eso es evidencia, no una propiedad, y conviene no leerlo de más:** `R-31` tiene a
+   * `mail_entregados` **en la lista de inestables** —`14/1687` (0,8 %), 10 altas y 4 cambios,
+   * mínimo `−27`—. Que reprodujera dos veces se explica por **el intervalo corto entre tomas**,
+   * no por la clase del campo. La próxima vez puede no reproducir **sin que nada esté roto**. */
+  [filaSolapa_('digital', 'Directa Mail', 'fuente', 'canales de directa', { campo_id_cuenta: 'mail_id_cuenta' })],
+  filasSolapa_('digital', ['Directa IVR', 'Directa SMS'], 'fuente', 'canales de directa'),
   [filaSolapa_('digital', 'Seguimiento digital', 'fuente', 'maestra de la unión del Paso 2.4')],
   [filaSolapa_('digital', 'Alcance', 'fuente', 'usada por Union.gs')],
   [filaSolapa_('digital', 'RDV', 'ignorar', '⚠ duplica la base rdv — si se lee, hay doble conteo')],
@@ -2063,7 +2123,41 @@ var SEED_SOLAPAS_ = [].concat(
     // **no tiene ninguna columna temporal**: `fecha_inicio` y `fecha_fin` viven en `Cuentas`.
     // Sin esta declaración `leerFuente` falla con `«FALTA:fecha_periodo@looker/DIGITAL»`, que
     // es el modo de falla correcto — pero deja la solapa ilegible y con ella los tres `imp_*`.
-    filaSolapa_('looker', 'DIGITAL', 'fuente', 'detalle por canal, con ID cuentas · ventana por referencia a Cuentas (_23): no tiene columna temporal propia', { filas_datos: 4563, ventana_ref: 'Cuentas' }),
+    /* ⭐ `X-39` (23/08/2026) — **`campo_id_cuenta` habilita la rama por cuenta de `D-30`.** Sin
+     * esto un marcador que lea esta solapa no se puede acotar a la cuenta de la campaña:
+     * recorta por pertenencia + ámbito, que es el universo de los `imp_*` y **no** el de una
+     * campaña. Es lo que habilita los quince `camp_{meta,google,prog}_*` de `L-046`.
+     *
+     * ⛔⛔ **Se declaró, se revirtió y se repuso EL MISMO DÍA. La historia entera va acá porque
+     * sin ella la línea se lee como si nunca hubiera pasado nada, y lo que pasó es lo caro.**
+     *
+     * **Qué se midió:** con la declaración puesta, los cuatro `imp_*` de JM quedaron
+     * **idénticos** al testigo `V-110` (uno a ±1) y los cuatro `gcba_imp_*` subieron **+0,37 %**
+     * (`+295.578` meta · `+239.473` google · `+46.703` prog). Se revirtió por el criterio duro
+     * del usuario —*si alguno se movió, se revierte, no se explica*— y **la reversión salió
+     * limpia**, que era lo que había que probar.
+     *
+     * ⭐⭐ **Y después se cerró SIN corrida, con un argumento que sale del propio esquema:
+     * `campo_id_cuenta` es por SOLAPA, no por marcador.** Los ocho `imp_*` —los cuatro de JM y
+     * los cuatro de GCBA— leen **esta misma solapa** con la **misma** operación (`SUMA` sobre
+     * `Impresiones`, `filtro = estado=Activa`) y difieren **sólo** en `dimensiones`
+     * (`ambito=jm` / `ambito=gcba`). **Un cambio de esquema de la solapa no puede mover un
+     * ámbito y dejar el otro idéntico al dígito.** JM salió idéntico ⇒ la lectura no cambió.
+     *
+     * ⭐ **El canario lo confirma desde afuera:** `gcba_frecuencia` pasó de `-6.1-` a `-6.25-` en
+     * la misma corrida, y lee `looker/resumen_metricas_dinamico` — una solapa que `X-39` **no
+     * tocó**. Un marcador que se mueve sobre una solapa intacta sólo se explica por la fuente.
+     *
+     * **La causa real es `R-31`: esta solapa es inestable por CAMBIO** —`19/503` filas, **cero
+     * altas**, recálculo en el lugar—, y el universo de GCBA es mucho más grande que el de JM,
+     * así que tiene mucha más chance de contener una de las 19. **El testigo `V-110` le exigió
+     * igualdad exacta a un campo que `R-31` ya había medido como inestable**: el error estaba en
+     * el criterio del testigo, no acá. Addendum del 23/08 en
+     * `docs/_snapshots/TESTIGO_esquema_id_cuenta_2026-08-22.md`.
+     *
+     * ⚠ **Lo que sí cambia y no es regresión:** la traza gana el aviso «se lee como AGREGADO
+     * GLOBAL» en los marcadores sin ítem (`C-81`). **Se comparan valores, nunca trazas.** */
+    filaSolapa_('looker', 'DIGITAL', 'fuente', 'detalle por canal, con ID cuentas · ventana por referencia a Cuentas (_23): no tiene columna temporal propia', { filas_datos: 4563, ventana_ref: 'Cuentas', campo_id_cuenta: 'ldig_id_cuenta' }),
     filaSolapa_('looker', 'ALCANCE', 'ignorar', 'R-22 (09/08): sin columna de fecha y sin fila en MAPEO — ilegible para el motor', { filas_datos: 727 })
   ],
   // Paso 2.12 Parte 2, Grupo A.
