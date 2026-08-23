@@ -1237,6 +1237,39 @@ function resolverMarcadores(informeId, opciones) {
       ctx.catalogo = cat.catalogo;
       ctx.separador = fila.separador;
     }
+    /* ⭐ `X-35` (23/08/2026) — **el orden de `FILA`, resuelto acá y no adentro de la operación.**
+     *
+     * Mismo reparto que `ctx.fechas`: **resolver qué columna es un campo lógico es acceso a datos**
+     * y vive en este módulo; `opFILA` sólo ordena y elige (la regla de oro de `CLAUDE.md` §2).
+     *
+     * `MARCADORES.separador` trae el **campo lógico** por el que ordenar —`mail_fecha`, por
+     * ejemplo—, así que el orden va **en configuración y no en el código**: la próxima tabla ordena
+     * por otra cosa y no hay que tocar `Marcadores.gs`.
+     *
+     * ⛔ **Si no resuelve, NO se pasa nada y `opFILA` falla con motivo propio.** No cae a la
+     * posición de la hoja: eso es lo que el `_39` sacó de `ULTIMO` el 12/08, y `FILA` no lo
+     * reinstala. */
+    if (String(fila.operacion || '').trim() === 'FILA') {
+      ctx.separador = fila.separador;
+      var campoOrden = String(fila.separador || '').trim();
+      if (campoOrden) {
+        var mapOrden = buscarMapeo(fila.base_id, solapa.solapa, campoOrden);
+        if (mapOrden.ok) {
+          var claveOrden = claveDeFila_(datos.filas, campoOrden,
+            encabezadoEnColumna_(fila.base_id, solapa.solapa, mapOrden.columna));
+          ctx.ordenPor = {
+            campo: campoOrden,
+            valores: datos.filas.map(function (o) {
+              var crudoOrden = claveOrden && (claveOrden in o) ? o[claveOrden] : '';
+              // Una fecha se compara como fecha; lo demás va tal cual. `opFILA` normaliza `Date`
+              // a milisegundos y deja el resto al comparador natural.
+              return parsearFechaCelda_(crudoOrden) || crudoOrden;
+            })
+          };
+        }
+      }
+    }
+
     var salida = despacharOperacion_(fila.operacion, ctx);
     if (!salida.ok) {
       base.estado = 'error';

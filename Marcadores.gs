@@ -680,6 +680,211 @@ function operacionNecesitaCatalogo_(operacion) {
   return !!OPERACIONES_CON_CATALOGO_[String(operacion || '').trim()];
 }
 
+/* ===================== La décima: `FILA` (23/08/2026, `X-35`) ==========================
+ *
+ * **El campo X de la N-ésima FILA de una lista de entidades**, sin colapsar y con un orden
+ * declarado. `FILA` es a `ULTIMO` lo que `ELEMENTO` es a `LISTA`: aquélla elige **una** fila entre
+ * varias; ésta **las enumera todas**.
+ *
+ * ### ⛔⛔ Por qué NO es "el orden de la hoja", y esto hay que leerlo antes de tocar nada
+ *
+ * La propuesta natural era *«la N-ésima en el orden en que la fuente las trae»* — y **el orden de
+ * la fuente hoy coincide con el de la fecha**, medido sobre `3488-AGOJDGAG` el 23/08. **Se
+ * descartó, y el motivo es que `opULTIMO` ya recorrió ese camino y volvió.** El `_39` (12/08) sacó
+ * a `ULTIMO` de elegir por posición **sobre esta misma solapa**, y su comentario lo dice: *«sin
+ * fecha, elegir por posición es elegir por el orden de la hoja, que es exactamente lo que el bloque
+ * de arriba vino a matar»*. Una planilla de carga manual se reordena y el número cambia sin que
+ * salte nada.
+ *
+ * ⇒ **`FILA` ordena por un campo DECLARADO —nunca por posición— y falla ruidoso si nadie lo
+ * declaró.** No hay default: un default sería el orden de la hoja con otro nombre.
+ *
+ * ### Los dos invariantes, que son distintos y sólo uno está en juego
+ *
+ * | | |
+ * |---|---|
+ * | ⭐ **coherencia de fila** — los nueve campos de `env1` salen de la **misma** fila | **imprescindible**, y es lo que `X-35` reporta roto en `ELEMENTO` |
+ * | **identidad de fila** — que `env1` sea el envío que el equipo llama 1 | **con empate de fecha NO está determinada por los datos** |
+ *
+ * **Medido el 23/08 sobre el fixture del 20/08:** de 508 cuentas con 2+ filas en
+ * `digital/Directa Mail`, **144 (28 %) tienen fechas repetidas** — `3488-AGOJDGAG` entre ellas, con
+ * dos envíos el 07/08. **Ninguna implementación puede dar identidad de fila ahí**, porque el dato
+ * no la tiene.
+ *
+ * ⭐⭐ **Por eso el empate NO devuelve hueco** —que sería la doctrina de `ULTIMO` trasladada—: eso
+ * dejaría **sin tabla al 28 % de las cuentas, incluida aquella contra la que se verifica todo lo
+ * demás**. Una operación que no se puede probar contra el único caso medido no es más rigurosa: es
+ * no verificable. Se desempata **por el índice de origen**, que es determinista y compartido, **y
+ * la traza lo declara cuando ocurre**.
+ *
+ * ⚠ **El límite de eso, y hay que tenerlo escrito porque es fácil leerlo de más:** que el equipo
+ * combine la celda de fecha cuando dos envíos comparten día dice que **la permutación es invisible
+ * en su deck**, no que sea inocua. `R-32` ya lo fija — **un token indexado publica una POSICIÓN, no
+ * una cosa** —, así que **comparar `camp_env1_aud` entre dos corridas puede estar comparando envíos
+ * distintos** si el empate se desempató al revés. No es un bug de esta operación: es lo que
+ * significa un índice.
+ *
+ * ### Contrato
+ *
+ *   - **`valor_fijo` = N**, **entero pelado y 1-based**. ⛔ Nada de `2/5`: Sheets lo convierte en
+ *     fecha (`C-83`, costó una corrida el 22/08).
+ *   - **`separador` = el campo lógico por el que ordenar** (ej. `mail_fecha`). Va en configuración
+ *     y no en el código, porque **la próxima tabla ordena por otra cosa**.
+ *   - **`campo_logico`** es el campo que se publica — el mismo mecanismo que el resto.
+ *   - **N mayor que la cantidad de filas es `sin_datos`, no error.** El deck tiene cinco casilleros
+ *     y la campaña puede tener tres envíos; eso es *"no hay tanto envío"*, y el símbolo `-` lo dice
+ *     mejor que un `---`.
+ *
+ * ⚠ **`ctx.ordenPor` lo arma el despachador**, igual que `ctx.fechas`: resolver qué columna es un
+ * campo lógico es **acceso a datos** y vive en `Generador.gs`. Acá sólo se ordena y se elige, que
+ * es la parte que sí es de este módulo (la regla de oro de `CLAUDE.md` §2).
+ */
+
+/* ⚠ **Memo propio, y NO se reusa `claveConjuntoLista_`.** Dos motivos. **(1)** Esa clave incluye
+ * `ctx.campo_logico`, y acá los nueve marcadores de una fila tienen campos **distintos**: cada uno
+ * tendría su entrada y su propio orden, que es exactamente lo que hay que evitar. **(2)** Esa clave
+ * menciona `ctx.filtro` y `ctx.dimensiones`, **que el despachador no pone en `ctx`** — quedan
+ * `undefined` (verificado el 23/08 en `Generador.gs`; anotado aparte, no se toca desde acá).
+ *
+ * ⭐ En vez de enumerar componentes y esperar no olvidar ninguno, la clave es una **huella de las
+ * filas mismas** más el campo de orden. Eso *garantiza* las mismas filas en vez de *parecerse* a
+ * ellas, que es lo que `CLAUDE.md` §4 exige de la clave de una caché.
+ *
+ * ⚠ **Y memoiza por el motivo de `R-31`, no por velocidad:** la base se mueve durante la corrida,
+ * así que dos lecturas pueden ver universos distintos y publicar filas que no son consecutivas. El
+ * conjunto ordenado se arma **una vez y se reparte**. */
+var cacheFilasOrdenadas_ = {};
+
+function huellaDeFilas_(filas, campoOrden) {
+  var partes = [campoOrden, String(filas.length)];
+  filas.forEach(function (f, i) {
+    var claves = Object.keys(f).sort();
+    partes.push(i + ':' + claves.map(function (k) { return k + '=' + String(f[k]); }).join('\u0001'));
+  });
+  return partes.join('\u0002');
+}
+
+function filasOrdenadas_(ctx) {
+  var campoOrden = String(ctx.separador === undefined || ctx.separador === null ? '' : ctx.separador).trim();
+  var filas = ctx.filas || [];
+  var clave = huellaDeFilas_(filas, campoOrden);
+  if (Object.prototype.hasOwnProperty.call(cacheFilasOrdenadas_, clave)) {
+    return cacheFilasOrdenadas_[clave];
+  }
+
+  var orden = (ctx.ordenPor && ctx.ordenPor.valores) || null;
+
+  /* Decorar → ordenar → desdecorar. **El índice va en la comparación, no en un `sort` estable**:
+   * apoyarse en la estabilidad del motor sería una premisa sin testigo, y acá el desempate es lo
+   * que garantiza que los nueve marcadores coincidan. */
+  var decoradas = filas.map(function (f, i) {
+    return { fila: f, i: i, orden: orden ? orden[i] : null };
+  });
+
+  var empates = 0;
+  decoradas.sort(function (a, b) {
+    var va = a.orden, vb = b.orden;
+    var na = (va === null || va === undefined || va === '');
+    var nb = (vb === null || vb === undefined || vb === '');
+    // Las filas sin valor de orden van al final, y entre ellas por índice.
+    if (na && nb) return a.i - b.i;
+    if (na) return 1;
+    if (nb) return -1;
+    var ca = (va instanceof Date) ? va.getTime() : va;
+    var cb = (vb instanceof Date) ? vb.getTime() : vb;
+    if (ca < cb) return -1;
+    if (ca > cb) return 1;
+    empates++;
+    return a.i - b.i;
+  });
+
+  var salida = { filas: decoradas.map(function (d) { return d.fila; }), empates: empates, campo: campoOrden };
+  cacheFilasOrdenadas_[clave] = salida;
+  return salida;
+}
+
+function opFILA(ctx) {
+  var campoOrden = String(ctx.separador === undefined || ctx.separador === null ? '' : ctx.separador).trim();
+
+  /* ⛔ **Sin campo de orden declarado no se ordena por posición: se falla.** Un default acá sería
+   * el orden de la hoja con otro nombre, que es lo que el `_39` sacó de `ULTIMO`. */
+  if (!campoOrden) {
+    return {
+      valor: '',
+      ambiguo: true,
+      traza: '«FALTA:@fila_sin_orden» — `FILA` necesita el campo lógico de orden en ' +
+        '`MARCADORES.separador` (ej. `mail_fecha`). **No hay default**: ordenar por la posición de ' +
+        'la hoja es lo que el `_39` sacó de ULTIMO el 12/08, y una planilla de carga manual se ' +
+        'reordena sin que salte nada.',
+      filas: (ctx.filas || []).length
+    };
+  }
+
+  var crudo = ctx.valor_fijo;
+  var n = (typeof crudo === 'number') ? crudo : parseInt(String(crudo === undefined || crudo === null ? '' : crudo).trim(), 10);
+  /* ⛔ `C-83` — Sheets convierte `1/3` en FECHA y `01` pierde el cero. El índice va **entero
+   * pelado**, y si llegó otra cosa se dice con el valor crudo adelante, que es lo que permitió
+   * diagnosticar el caso de `ecv_barrio1-3` sin deducir nada. */
+  if (!(n >= 1) || String(n) !== String(crudo).trim()) {
+    return {
+      valor: '',
+      ambiguo: true,
+      traza: '«FALTA:@fila_indice_invalido» — `FILA` necesita el índice en `MARCADORES.valor_fijo` ' +
+        'como **entero pelado y 1-based**. Llegó ' + JSON.stringify(crudo) + ' [' + (typeof crudo) +
+        ']. ⚠ Formas que Sheets se come: `1/3` y `3-1` → fecha, `01` → pierde el cero (`C-83`).',
+      filas: (ctx.filas || []).length
+    };
+  }
+
+  if (!ctx.ordenPor || !ctx.ordenPor.valores) {
+    return {
+      valor: '',
+      ambiguo: true,
+      traza: '«FALTA:@fila_orden_no_mapeado» — `separador` declara ordenar por `' + campoOrden +
+        '` y el despachador no pudo resolver esa columna en ' + ctx.base_id +
+        (ctx.solapa ? '/' + ctx.solapa : '') + '. Sin los valores de orden **no se ordena por ' +
+        'posición**: se falla.',
+      filas: (ctx.filas || []).length
+    };
+  }
+
+  var orden = filasOrdenadas_(ctx);
+  var total = orden.filas.length;
+
+  /* **Más índice que filas es `sin_datos`, no error.** El deck tiene cinco casilleros y la campaña
+   * puede tener tres envíos: eso no es un fallo, es que no hay tanto envío. El símbolo `-` lo dice
+   * y el `---` mentiría sobre la causa. */
+  if (n > total) {
+    return {
+      valor: '',
+      sin_datos: true,
+      traza: 'FILA ' + n + ' de "' + ctx.campo_logico + '": la fuente tiene **' + total +
+        ' fila(s)** para este recorte, así que no hay una ' + n + '.ª. Ordenado por `' + campoOrden +
+        '`' + trazaDeVentana_(ctx),
+      filas: total
+    };
+  }
+
+  var elegida = orden.filas[n - 1];
+  var clave = ctx.encabezado;
+  var valor = (clave && (clave in elegida)) ? elegida[clave] : '';
+
+  var avisoEmpate = orden.empates
+    ? ' ⚠ **' + orden.empates + ' empate(s) en `' + campoOrden + '` desempatados por orden de ' +
+      'origen** — determinista y compartido por todos los marcadores de esta tabla, pero `R-32` ' +
+      'vale: este token publica una POSICIÓN, así que comparar esta celda entre dos corridas ' +
+      'puede estar comparando entidades distintas.'
+    : '';
+
+  return {
+    valor: valor,
+    traza: 'FILA ' + n + ' de ' + total + ', ordenadas por `' + campoOrden + '`, campo "' +
+      ctx.campo_logico + '" (col ' + ctx.columna + ') de ' + ctx.base_id +
+      (ctx.solapa ? '/' + ctx.solapa : '') + avisoEmpate + trazaDeVentana_(ctx),
+    filas: total
+  };
+}
+
 var OPERACIONES_ = {
   SUMA: opSUMA,
   CONTEO: opCONTEO,
@@ -691,7 +896,12 @@ var OPERACIONES_ = {
   // `2026-08-20_5` (20/08/2026) — la octava. Cuenta valores distintos; ver su comentario.
   CUENTA_DISTINTOS: opCUENTA_DISTINTOS,
   // `2026-08-22` — la novena. El N-ésimo de lo que `LISTA` publicaría entero; ver su comentario.
-  ELEMENTO: opELEMENTO
+  ELEMENTO: opELEMENTO,
+  /* `2026-08-23` (`X-35`) — la décima. El campo X de la N-ésima FILA, **sin colapsar** y con el
+   * orden declarado en `separador`. `ELEMENTO` no sirve para una tabla por filas: colapsa
+   * repetidos y ordena alfabéticamente **por columna**, así que cada celda de la fila 1 puede
+   * venir de un envío distinto. Ver su comentario, que explica por qué NO ordena por posición. */
+  FILA: opFILA
 };
 
 /**

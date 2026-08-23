@@ -2316,3 +2316,32 @@ podrían ver universos distintos** —la base se mueve durante la corrida, `R-31
 ⚠ **El supuesto del memo, dicho en voz alta:** la clave incluye base, solapa, campo, filtro,
 dimensiones, catálogo y los dos extremos de la ventana — o sea **asume que la configuración
 determina qué se lee**, que en producción vale porque la configuración **es** la lectura.
+
+### ⭐ Addendum 23/08/2026 — vale igual para `FILA`, la décima, y ahí el ejemplo es más filoso
+
+**`R-32` no era sólo de `ELEMENTO`.** `FILA` (`X-35`) indexa **filas** en vez de elementos de una
+columna, y el límite es el mismo: **publica una posición.**
+
+⚠ **Y la forma de intercambio es distinta, así que conviene tenerla escrita:** `ELEMENTO` se
+permuta cuando **entra una fila nueva** antes; `FILA` se permuta cuando **dos filas empatan en el
+campo de orden**. Medido el 23/08 sobre `digital/Directa Mail`: de **508** cuentas con dos o más
+filas, **144 tienen fechas repetidas — el 28 %**. `3488-AGOJDGAG` es una de ellas, con **dos envíos
+el 07/08**.
+
+⛔ **El ejemplo concreto, que es lo accionable:** comparar **`camp_env1_aud` entre dos corridas
+puede estar comparando envíos distintos.** Los dos números serían correctos, los dos vendrían de
+una fila coherente, y **la diferencia no sería un cambio del dato sino una permutación de la
+etiqueta**. Un `contradice` levantado sobre eso perseguiría un bug que no existe.
+
+⭐ **Lo que sí se puede exigir, y es lo mismo que la regla ya dice para `ELEMENTO`:** que el
+**conjunto** coincida —las cinco filas son las cinco— y que cada fila sea **coherente consigo
+misma**. Eso último es lo que `FILA` garantiza y `ELEMENTO` no: los nueve campos de un envío salen
+de **una sola lectura de la fila**, no de nueve independientes.
+
+⚠ **Y el argumento de la celda combinada no borra esto, aunque lo parezca.** Que el equipo combine
+la celda de fecha cuando dos envíos comparten día dice que **la permutación es invisible en su
+deck** — no que sea inocua. En un caso de validación, en una comparación entre corridas o en un
+testigo, **sigue siendo una permutación**.
+
+⭐ **La contención es la traza:** `FILA` **declara el empate cuando lo hay** y nombra esta regla. Un
+empate silencioso sería el mismo modo de falla que la regla previene.
