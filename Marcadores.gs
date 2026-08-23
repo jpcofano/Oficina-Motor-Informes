@@ -553,10 +553,13 @@ function opCUENTA_DISTINTOS(ctx) {
  * que el nombre no lleva parámetros —, y **no se agrega una columna**, que según `CLAUDE.md` §2
  * cuesta tocar N lectores y ya salió mal tres veces.
  *
- *   - `valor_fijo = '2'`     → el segundo elemento. **Sin control de desborde.**
- *   - `valor_fijo = '2/3'`   → el segundo **de tres cajas**. ⭐ **Con control de desborde**, y es la
- *                              forma recomendada: cualquiera de los tres marcadores puede detectar
- *                              que hay más elementos que cajas, sin saber nada de sus hermanos.
+ *   - **`valor_fijo = 2`** → el segundo elemento. **ENTERO PELADO, siempre.**
+ *   - **`separador = 3`**  → hay **tres cajas**. Opcional; habilita el control de desborde, y
+ *                            cualquiera de los tres marcadores lo detecta **sin saber nada de sus
+ *                            hermanos**.
+ *
+ * ⛔⛔ **La forma `'2/3'` NO se puede usar, y costó una corrida el 22/08: Sheets la convierte en
+ * FECHA.** Se escribió `'1/3'` y el motor leyó `"Sun Mar 01 2026"`. Ver el bloque del parseo.
  *
  * **Los dos bordes, y son opuestos a propósito:**
  *
@@ -581,23 +584,58 @@ function opELEMENTO(ctx) {
   var c = conjuntoDeLista_(ctx);
   var publicados = c.publicados;
 
-  var crudo = String(ctx.valor_fijo === undefined || ctx.valor_fijo === null ? '' : ctx.valor_fijo).trim();
-  if (crudo === '') {
-    throw new Error('ELEMENTO necesita el índice en `MARCADORES.valor_fijo`. Formas válidas: ' +
-      '`2` (el segundo, sin control de desborde) o `2/3` (el segundo de tres cajas, con control). ' +
-      'El índice arranca en 1 y NO va en el nombre del token (`D-33`).');
+  /* ⛔⛔ **`2026-08-22` — EL ÍNDICE VA COMO ENTERO PELADO, Y LA FORMA `N/M` NO SE PUEDE USAR.**
+   *
+   * **El bug, encontrado por `diagBarriosIndexados()` y no deducido del símbolo:** se escribió
+   * `valor_fijo = '1/3'` y **Sheets lo interpretó como FECHA**. El motor lo leyó como
+   * `"Sun Mar 01 2026 00:00:00 GMT-0300"`, `Number(partes[0])` dio `NaN`, y los tres
+   * `ecv_barrio*` publicaron `---`. **El catálogo resolvía `ok=true` en las cuatro filas y
+   * `ELEMENTO` funcionaba**: lo que estaba roto era el valor que llegó a la celda.
+   *
+   * ⭐⭐ **Y el corolario es más grande que este bug: `valor_fijo` viaja por una CELDA DE SHEETS**,
+   * así que **todo lo que se escriba ahí pasa por la interpretación automática de tipos**. `'3-1'`,
+   * `'1-2'`, `'01'`, `'1/3'` — la próxima operación que use cualquiera de esas formas **se come lo
+   * mismo**. La regla está escrita al lado de la columna, en `Instalar.gs`, y en `CLAUDE.md` §4.
+   *
+   * **Entonces: el índice es un entero y nada más.** El total de cajas —que habilita el control de
+   * desborde— se declara **en `separador`**, también como entero pelado.
+   *
+   * ⚠ **Sí, `separador` se llama así por `LISTA` y acá significa otra cosa, y eso es deuda
+   * declarada.** Se eligió igual porque: **(1)** es una columna que ya existe y ya viaja al
+   * contexto, y agregar una nueva cuesta tocar N lectores (`CLAUDE.md` §2, y el `_44` es el
+   * precedente); **(2)** un entero es **inmune** a la coerción de Sheets, que es justamente lo que
+   * acaba de romper; **(3)** `LISTA` y `ELEMENTO` nunca comparten fila. **Si aparece una tercera
+   * operación que necesite las dos cosas, ahí sí hace falta la columna.** */
+  var crudoIndice = ctx.valor_fijo;
+  if (crudoIndice instanceof Date) {
+    throw new Error('ELEMENTO: `valor_fijo` llegó como FECHA (' + crudoIndice +
+      '). Sheets convierte a fecha lo que parece una — `1/3`, `3-1`, `1-2`. ' +
+      'El índice se escribe como ENTERO PELADO: 1, 2, 3. El total de cajas va en `separador`.');
   }
-
-  var partes = crudo.split('/');
-  var indice = Number(partes[0]);
-  var cajas = partes.length > 1 ? Number(partes[1]) : 0;
-
+  var indice = Number(String(crudoIndice === undefined || crudoIndice === null ? '' : crudoIndice).trim());
   if (!indice || indice < 1 || Math.floor(indice) !== indice) {
-    throw new Error('ELEMENTO: `valor_fijo` = "' + crudo + '" no declara un índice entero ≥ 1.');
+    throw new Error('ELEMENTO necesita el índice en `MARCADORES.valor_fijo` como ENTERO ≥ 1, y ' +
+      'llegó ' + JSON.stringify(crudoIndice) + '. ⛔ NO se escribe `2/3`: Sheets lo convierte en ' +
+      'fecha. El total de cajas —opcional, habilita el control de desborde— va en `separador`. ' +
+      'Y el índice NO va en el nombre del token (`D-33`).');
   }
-  if (partes.length > 1 && (!cajas || cajas < indice)) {
-    throw new Error('ELEMENTO: `valor_fijo` = "' + crudo + '" declara ' + cajas + ' caja(s) y pide ' +
-      'la ' + indice + '. El total tiene que ser ≥ al índice.');
+
+  var crudoCajas = ctx.separador;
+  var cajas = 0;
+  if (crudoCajas !== undefined && crudoCajas !== null && String(crudoCajas).trim() !== '') {
+    if (crudoCajas instanceof Date) {
+      throw new Error('ELEMENTO: `separador` llegó como FECHA. El total de cajas es un entero.');
+    }
+    cajas = Number(String(crudoCajas).trim());
+    if (!cajas || cajas < 1 || Math.floor(cajas) !== cajas) {
+      throw new Error('ELEMENTO: `separador` declara el total de cajas y llegó ' +
+        JSON.stringify(crudoCajas) + '. Tiene que ser un entero ≥ 1, o vacío para desactivar el ' +
+        'control de desborde.');
+    }
+    if (cajas < indice) {
+      throw new Error('ELEMENTO: `separador` declara ' + cajas + ' caja(s) y `valor_fijo` pide la ' +
+        indice + '. El total tiene que ser ≥ al índice.');
+    }
   }
 
   /* Borde 2 — más elementos que cajas. Va ANTES de resolver el valor: si el conjunto no entra,

@@ -79,7 +79,14 @@ var HOJAS_CONFIG_ = {
   INFORMES: {
     headers: ['informe_id', 'nombre', 'plantilla_id', 'periodicidad', 'familias', 'activo', 'notas']
   },
-  // solapa/operacion/valor_fijo (DOC-2 Parte A): operacion reemplaza a calculo
+  /* ⛔⛔ `valor_fijo` VIAJA POR UNA CELDA DE SHEETS, ASÍ QUE PASA POR SU COERCIÓN DE TIPOS.
+   * Medido el 22/08: se escribió `'1/3'` como índice de `ELEMENTO` y la celda lo guardó como
+   * **FECHA** (`Sun Mar 01 2026`). Los tres `ecv_barrio*` publicaron `---` una corrida después.
+   * **Las formas que se come: `1/3`, `3-1`, `1-2` → fecha; `01` → pierde el cero; `=algo` →
+   * fórmula.** Lo que se escriba acá va como **entero pelado** o con un prefijo que no parezca
+   * nada. Y el escritor **relee**: `curarMarcadores_` devuelve `releido`. Ver `CLAUDE.md` §4.
+   *
+   * solapa/operacion/valor_fijo (DOC-2 Parte A): operacion reemplaza a calculo
   // (migración idempotente en migrarCalculoAOperacion_); valor_fijo es para
   // operacion=TEXTO; solapa entra en la clave de MAPEO y, si viene vacía, la
   // regla de resolución (docs/TOKENS.md, PROYECTO.md §3) decide si se infiere
@@ -3333,7 +3340,38 @@ function curarMarcadores_(quitar, agregar) {
     ok: true,
     quitadas: quitadas,
     agregadas: agregadas,
-    filas_finales: Math.max(hoja.getLastRow() - 1, 0)
+    filas_finales: Math.max(hoja.getLastRow() - 1, 0),
+    /* ⛔⛔ `2026-08-22` — **EL ESCRITOR RELEE LO QUE QUEDÓ EN LA CELDA, NO LO QUE PIDIÓ ESCRIBIR.**
+     *
+     * **El caso:** el alta de `ecv_barrio1-3` pidió `valor_fijo = '1/3'`, reportó **«3 filas
+     * agregadas»** — y las tres celdas tenían **`Sun Mar 01 2026`**. Sheets convirtió el índice en
+     * fecha al escribirlo. **El reporte decía la verdad sobre lo que pidió y mentía sobre lo que
+     * quedó**, y el síntoma —tres `---`— apareció una corrida después.
+     *
+     * ⭐ **Un escritor que no relee es la mitad del bug.** La otra mitad es la coerción de tipos, que
+     * no se puede evitar: **toda celda de Sheets interpreta lo que se le escribe**. Lo único que
+     * está bajo control del motor es **enterarse**.
+     *
+     * **`releido` trae lo que la hoja devuelve DESPUÉS de escribir**, y `diferencias` los campos
+     * donde lo leído no coincide con lo pedido. ⚠ Se comparan como **texto normalizado**: una fecha
+     * y un `'1/3'` difieren obviamente, pero `3` numérico y `'3'` texto **no son una diferencia**
+     * y marcarlos sería ruido que nadie va a leer. */
+    releido: (function () {
+      var out = {};
+      var frescos = hoja.getDataRange().getValues();
+      var hs = frescos[0];
+      agregadas.forEach(function (clave) {
+        for (var f = 1; f < frescos.length; f++) {
+          if (frescos[f][hs.indexOf('marcador')] + '||' +
+              (hs.indexOf('informe_id') === -1 ? '' : frescos[f][hs.indexOf('informe_id')]) !== clave) continue;
+          var fila = {};
+          hs.forEach(function (h, i) { fila[h] = frescos[f][i]; });
+          out[clave] = fila;
+          break;
+        }
+      });
+      return out;
+    })()
   };
 }
 
@@ -5504,7 +5542,10 @@ function cablearEcvBarrios123() {
     var o = {};
     Object.keys(comun).forEach(function (k) { o[k] = comun[k]; });
     o.marcador = 'ecv_barrio' + n;
-    o.valor_fijo = n + '/3';
+    /* ⛔ ENTEROS PELADOS, los dos. La primera versión escribió `n + '/3'` y **Sheets lo guardó
+     * como fecha** — los tres publicaron `---` (22/08). El total va en `separador`. */
+    o.valor_fijo = n;
+    o.separador = 3;
     return o;
   });
 
@@ -5516,6 +5557,28 @@ function cablearEcvBarrios123() {
   if (!(r.agregadas || []).length) {
     Logger.log('ⓘ Cero altas: las tres ya existían. Es idempotencia, no rotura.');
   }
+
+  /* ⛔⛔ **SE VERIFICA LO QUE QUEDÓ EN LA CELDA, NO LO QUE SE PIDIÓ ESCRIBIR.** El 22/08 este mismo
+   * botón reportó «3 filas agregadas» con una FECHA donde iba el índice, y el síntoma —tres
+   * `---`— apareció una corrida después. **Un escritor que no relee es la mitad del bug.** */
+  var malas = [];
+  Object.keys(r.releido || {}).forEach(function (clave) {
+    var fila = r.releido[clave];
+    var vf = fila.valor_fijo;
+    if (vf instanceof Date || Number(vf) < 1 || Math.floor(Number(vf)) !== Number(vf)) {
+      malas.push(clave + ' · valor_fijo quedó ' + JSON.stringify(String(vf)) +
+        (vf instanceof Date ? '  ← SHEETS LO CONVIRTIÓ EN FECHA' : ''));
+    }
+  });
+  Logger.log('');
+  if (malas.length) {
+    Logger.log('⛔ LA CELDA NO QUEDÓ COMO SE PIDIÓ — ' + malas.length + ' fila(s):');
+    malas.forEach(function (m) { Logger.log('   ' + m); });
+    Logger.log('   El índice tiene que ser un ENTERO PELADO. NO se corrige solo: se reporta.');
+    return { ok: false, motivo: 'celdas mal escritas', malas: malas, resultado: r };
+  }
+  Logger.log('✅ RELEÍDO: las ' + Object.keys(r.releido || {}).length + ' fila(s) tienen un índice');
+  Logger.log('   entero en `valor_fijo`. La celda quedó como se pidió.');
   Logger.log('');
   Logger.log('⚠ ESPERADO en la próxima corrida de `jm` sobre `agosto_14_20`, y NO son tres valores:');
   Logger.log('   ecv_barrio1 y ecv_barrio2 → los dos barrios que ya publica `ecv_barrios`');

@@ -848,6 +848,23 @@ no el que había, y no existe nada que compare un comentario contra el código q
   `CAMPANAS` pasó a leerse como lista. Si alguien lo mira hoy, verifica y confirma, **no se entera
   de que estuvo mintiendo meses** — y el hallazgo, que era que las dos hojas divergían, se pierde.
 
+**Todo lo que se escribe en una celda de Sheets pasa por su interpretación automática de tipos — y
+el escritor VERIFICA lo que quedó, no lo que pidió escribir.**
+
+- **El caso, 22/08/2026:** el alta de `ecv_barrio1-3` escribió `valor_fijo = '1/3'` y **Sheets lo
+  guardó como FECHA**. El motor leyó `"Sun Mar 01 2026 00:00:00 GMT-0300"` y los tres publicaron
+  `---`. ⚠ **El alta había reportado «3 filas agregadas»** — decía la verdad sobre lo que pidió y
+  **mentía sobre lo que quedó**.
+- ⭐ **Las formas que se come:** `1/3`, `3-1`, `1-2` → fecha. `01`, `007` → número, pierde el cero.
+  `+54…`, `=algo` → fórmula. **Un identificador o un índice se escribe como entero pelado o con un
+  prefijo que no parezca nada.**
+- ⭐⭐ **Y la mitad que sí está bajo control: enterarse.** La coerción no se puede evitar; releer sí.
+  `curarMarcadores_` devuelve `releido` con lo que la hoja tiene **después** de escribir, y el
+  llamador compara contra lo que pidió. **Un escritor que no relee es la mitad del bug.**
+- ⚠ **El síntoma llega tarde y en otro lado.** Acá el alta fue el 22 a la tarde y el `---` apareció
+  en la corrida siguiente, en una lámina distinta de la que se estaba mirando. Es la misma familia
+  que el `"undefined"` como texto del `_44`, que tardó **un mes**.
+
 **Los tokens de una tabla se cablean contra el CENSO, uno por uno — nunca generando N × M.**
 El censo es **la lista**; la forma de la tabla es **el modelo mental**, y no coinciden.
 
