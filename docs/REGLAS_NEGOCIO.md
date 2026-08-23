@@ -2260,3 +2260,59 @@ materializa sus valores** y al convertir a Sheets dan **`#REF!`**.
 
 ⚠ **Aplanar no es salida: congelaría el error como si fuera dato.** Queda escrito para que **no se
 reintente**.
+
+
+---
+
+## R-32 — Un token indexado publica una POSICIÓN, no una cosa
+
+**22/08/2026.** Decisión del usuario. Nace con la novena operación, `ELEMENTO` (`X-33`).
+
+**El enunciado:** `ELEMENTO` devuelve **el N-ésimo elemento del conjunto que `LISTA` publicaría
+entero** — mismo universo, mismo orden, mismo cálculo; lo único que cambia es que se toma uno. El
+índice se declara en **`MARCADORES.valor_fijo`**, con la forma `2` o `2/3` (*el segundo de tres
+cajas*), **nunca en el nombre del token** (`D-33`).
+
+### ⚠⚠ El límite, y va acá porque no se ve en el resultado
+
+**El orden lo fija el orden de las filas de la fuente**, y en `rdv` eso es **carga manual**.
+
+⛔ **Una fila que entre antes intercambia el 1 y el 2 sin que nada falle.** El conjunto sigue siendo
+el mismo y la lista completa no cambia: **cambia cuál caja muestra cuál elemento**.
+
+⭐ **La consecuencia práctica, que es lo accionable:** **comparar el token `1` entre dos corridas es
+comparar posiciones, no cosas.** Un caso de validación sobre `ecv_barrio1` **no puede ser `exacto`**
+en el sentido en que lo son los demás — lo que se puede exigir es que **el conjunto** coincida, que
+es lo que ya mide `ecv_barrios`.
+
+**No bloquea el cableado.** Se escribe porque **un número que cambia de caja sin cambiar de valor no
+tiene síntoma**: nada falla, nada se marca, y quien mire dos decks va a ver dos barrios distintos en
+la misma posición y va a buscar el bug donde no está.
+
+### Los dos bordes, opuestos a propósito
+
+| | qué pasa | por qué |
+|---|---|---|
+| **Menos elementos que cajas** | ✅ **Caso NORMAL.** La caja sobrante sale con el **símbolo de sin dato que ya existe** | Esta semana hay **dos barrios y tres cajas**. ⛔ **No se inventa un símbolo nuevo** — sería la familia del glifo que no distingue causas, otra vez |
+| **Más elementos que cajas** | ⛔ **Reporta y PARA** | Que la última caja junte dos, o que el resto se pierda, es **decisión editorial** y el motor no la toma. Sale con el símbolo de **falló**, distinto del de sin dato, que es justo la distinción que hace falta |
+
+### ⭐ Y lo que esto NO implementa, con su motivo
+
+**El agrupamiento de a cuatro por página NO se implementa** (decisión del usuario, 22/08). Con
+`ELEMENTO`, la lámina de cuatro cajas se llena con `post_camp1..4` y **el motor no necesita saber
+paginar**.
+
+**Paginar es lo caro** —duplicar láminas por grupo, con la trampa de que `slide.duplicate()`
+**hereda el `#lamina:` de las notas del orador**, que es la misma N² que costó el `D-37`— y **hoy no
+hay ningún caso real con más de cuatro**. Se decide **cuando aparezca uno**, no antes.
+
+### La garantía de que es *el mismo* conjunto
+
+`ELEMENTO` y `LISTA` **llaman al mismo código** (`conjuntoDeLista_`), no a copias paralelas. Y el
+conjunto **se memoiza por configuración**: si `camp1` y `camp2` recalcularan cada uno, **dos lecturas
+podrían ver universos distintos** —la base se mueve durante la corrida, `R-31`— y publicar elementos
+**que no son consecutivos**. **El conjunto se arma una vez y se reparte.**
+
+⚠ **El supuesto del memo, dicho en voz alta:** la clave incluye base, solapa, campo, filtro,
+dimensiones, catálogo y los dos extremos de la ventana — o sea **asume que la configuración
+determina qué se lee**, que en producción vale porque la configuración **es** la lectura.

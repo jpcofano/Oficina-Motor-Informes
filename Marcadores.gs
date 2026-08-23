@@ -345,16 +345,53 @@ function opTEXTO(ctx) {
  * indistinguible de "todos los valores están mal": los cuatro barrios buenos irían a rechazo
  * y el informe diría que el dato está sucio cuando el problema es de acceso.
  */
-function opLISTA(ctx) {
+/* ⭐ `2026-08-22` — **el núcleo compartido de `LISTA` y `ELEMENTO`, extraído a propósito.**
+ *
+ * `ELEMENTO` devuelve *"el N-ésimo de lo que `LISTA` publicaría entero"*, y la decisión del usuario
+ * dice **mismo universo, mismo orden, mismo cálculo**. La única forma de garantizar eso es que
+ * **las dos llamen al mismo código**: una copia paralela sería el error que este repo ya cometió
+ * cuatro veces —*el instrumento que reproduce lógica del motor y la reproduce peor*
+ * (`CLAUDE.md` §4)— y acá el síntoma sería peor que un instrumento malo: **dos tokens de la misma
+ * caja publicando elementos de listas distintas**.
+ *
+ * ⚠ **Y memoiza, que es el requisito 1 y no es una optimización.** Si `camp1` y `camp2` recalculan
+ * la lista cada uno, **dos lecturas pueden ver universos distintos** —la base se mueve durante la
+ * corrida, `R-31`— y publicar elementos **que no son consecutivos**. El conjunto se arma **una vez
+ * y se reparte**. Es la misma forma del arreglo que el `_28` resultó no necesitar.
+ *
+ * ⚠⚠ **La clave del memo tiene que garantizar LAS MISMAS FILAS, no parecerse** —la trampa que
+ * `CLAUDE.md` §4 nombra para las cachés—: por eso incluye base, solapa, campo, filtro, dimensiones,
+ * catálogo **y los dos extremos de la ventana**. Meter menos haría que dos conjuntos distintos
+ * compartan entrada, que es un valor movido y no una optimización.
+ */
+var cacheConjuntoLista_ = {};
+
+function claveConjuntoLista_(ctx) {
+  var v = ctx.ventana || {};
+  return [
+    ctx.base_id, ctx.solapa, ctx.campo_logico, ctx.filtro, ctx.dimensiones,
+    (ctx.catalogo && ctx.catalogo.origen) || '',
+    v.desde ? String(v.desde) : '', v.hasta ? String(v.hasta) : ''
+  ].join('||');
+}
+
+function conjuntoDeLista_(ctx) {
+  var clave = claveConjuntoLista_(ctx);
+  if (Object.prototype.hasOwnProperty.call(cacheConjuntoLista_, clave)) {
+    return cacheConjuntoLista_[clave];
+  }
+  var r = calcularConjuntoDeLista_(ctx);
+  cacheConjuntoLista_[clave] = r;
+  return r;
+}
+
+function calcularConjuntoDeLista_(ctx) {
   var catalogo = ctx.catalogo;
   if (!catalogo || !catalogo.lista || !catalogo.lista.length) {
-    throw new Error('LISTA necesita un catálogo con al menos una entrada' +
+    throw new Error('LISTA/ELEMENTO necesita un catálogo con al menos una entrada' +
       (catalogo && catalogo.motivo ? ' — ' + catalogo.motivo : '') +
       '. Se declara en `MARCADORES.catalogo` con la forma `base/solapa`.');
   }
-
-  var separador = (ctx.separador === undefined || ctx.separador === null || ctx.separador === '')
-    ? ', ' : String(ctx.separador);
 
   // Índice del catálogo por clave normalizada: es el match barato y el que cubre el caso común.
   var canonPorClave = {};
@@ -390,6 +427,20 @@ function opLISTA(ctx) {
   // cada dato y cambia sin que cambie el dato.
   var publicados = Object.keys(publicadosPorClave).map(function (k) { return publicadosPorClave[k]; });
   publicados.sort(function (a, b) { return a.localeCompare(b, 'es'); });
+
+  return {
+    publicados: publicados, valores: valores, vacias: vacias,
+    rechazados: rechazados, repetidos: repetidos, catalogo: catalogo
+  };
+}
+
+function opLISTA(ctx) {
+  var c = conjuntoDeLista_(ctx);
+  var catalogo = c.catalogo, publicados = c.publicados, valores = c.valores;
+  var vacias = c.vacias, rechazados = c.rechazados, repetidos = c.repetidos;
+
+  var separador = (ctx.separador === undefined || ctx.separador === null || ctx.separador === '')
+    ? ', ' : String(ctx.separador);
 
   var traza = 'LISTA de "' + ctx.campo_logico + '" sobre ' + valores.length + ' fila(s) de ' +
     ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') +
@@ -483,6 +534,100 @@ function opCUENTA_DISTINTOS(ctx) {
   return { valor: valor, traza: traza, filas: valores.length, vacias: vacias, distintos: cuantos };
 }
 
+
+/**
+ * `2026-08-22` — **`ELEMENTO`, la novena operación: el N-ésimo de lo que `LISTA` publicaría entero.**
+ * Decisión del usuario, 22/08. Resuelve `X-33` **con una sola pieza**.
+ *
+ * **Mismo universo, mismo orden, mismo cálculo** — lo único que cambia es que se toma uno. Por eso
+ * llama a `conjuntoDeLista_`, **el mismo código que usa `LISTA`**, y no a una copia.
+ *
+ * ⭐⭐ **Y por eso NO hace falta que el motor sepa paginar.** La lámina de cuatro cajas se llena con
+ * `post_camp1..4` y listo. **El agrupamiento de a cuatro no se implementa** (decisión del usuario):
+ * paginar es lo caro —duplicar láminas por grupo, con la trampa de que `duplicate()` **hereda el
+ * `#lamina:` de las notas del orador**— y **hoy no hay ningún caso real con más de cuatro**. Se
+ * decide cuando aparezca uno.
+ *
+ * **Cómo se declara, sin columna nueva:** el índice va en **`MARCADORES.valor_fijo`**, que ya está
+ * en el esquema y ya viaja al contexto. ⭐ **No va en el nombre del token** — `D-33` es explícito en
+ * que el nombre no lleva parámetros —, y **no se agrega una columna**, que según `CLAUDE.md` §2
+ * cuesta tocar N lectores y ya salió mal tres veces.
+ *
+ *   - `valor_fijo = '2'`     → el segundo elemento. **Sin control de desborde.**
+ *   - `valor_fijo = '2/3'`   → el segundo **de tres cajas**. ⭐ **Con control de desborde**, y es la
+ *                              forma recomendada: cualquiera de los tres marcadores puede detectar
+ *                              que hay más elementos que cajas, sin saber nada de sus hermanos.
+ *
+ * **Los dos bordes, y son opuestos a propósito:**
+ *
+ * **1 · MENOS elementos que cajas es el CASO NORMAL, no un error.** Esta semana hay **dos barrios y
+ * tres cajas**. La caja sobrante devuelve `valor: ''`, que el despachador baja a `sin_datos` y el
+ * deck pinta con el **símbolo de sin dato que ya existe**. ⛔ **No se inventa un símbolo nuevo**
+ * (decisión del usuario) — sería la familia del glifo que no distingue causas, otra vez.
+ *
+ * **2 · MÁS elementos que cajas: se reporta y se PARA.** Que la última caja junte dos, o que el
+ * resto se pierda, es **decisión editorial** y no la toma el motor. Tira, y el despachador lo baja
+ * a `error` con el motivo — que sale con el símbolo de falló, distinto del de sin dato, que es
+ * justamente la distinción que hace falta.
+ *
+ * ⚠⚠ **EL LÍMITE, y va escrito acá y en `R-32` porque no se ve en el resultado:** el orden lo fija
+ * `localeCompare('es')` sobre el valor publicado, pero **de qué filas sale el conjunto lo fija el
+ * orden de las filas de la fuente**, y en `rdv` eso es **carga manual**. **Una fila que entre antes
+ * puede intercambiar el 1 y el 2 sin que nada falle** — la lista sigue siendo la misma, cambia
+ * cuál caja muestra cuál. **No bloquea, pero tiene que estar dicho**: si alguien compara el token
+ * `1` entre dos corridas, está comparando posiciones, no cosas.
+ */
+function opELEMENTO(ctx) {
+  var c = conjuntoDeLista_(ctx);
+  var publicados = c.publicados;
+
+  var crudo = String(ctx.valor_fijo === undefined || ctx.valor_fijo === null ? '' : ctx.valor_fijo).trim();
+  if (crudo === '') {
+    throw new Error('ELEMENTO necesita el índice en `MARCADORES.valor_fijo`. Formas válidas: ' +
+      '`2` (el segundo, sin control de desborde) o `2/3` (el segundo de tres cajas, con control). ' +
+      'El índice arranca en 1 y NO va en el nombre del token (`D-33`).');
+  }
+
+  var partes = crudo.split('/');
+  var indice = Number(partes[0]);
+  var cajas = partes.length > 1 ? Number(partes[1]) : 0;
+
+  if (!indice || indice < 1 || Math.floor(indice) !== indice) {
+    throw new Error('ELEMENTO: `valor_fijo` = "' + crudo + '" no declara un índice entero ≥ 1.');
+  }
+  if (partes.length > 1 && (!cajas || cajas < indice)) {
+    throw new Error('ELEMENTO: `valor_fijo` = "' + crudo + '" declara ' + cajas + ' caja(s) y pide ' +
+      'la ' + indice + '. El total tiene que ser ≥ al índice.');
+  }
+
+  /* Borde 2 — más elementos que cajas. Va ANTES de resolver el valor: si el conjunto no entra,
+   * publicar los primeros N sería tomar la decisión editorial en silencio. */
+  if (cajas && publicados.length > cajas) {
+    throw new Error('ELEMENTO: hay ' + publicados.length + ' elemento(s) y sólo ' + cajas +
+      ' caja(s) declarada(s) en `valor_fijo`. Sobran ' + (publicados.length - cajas) + '. ' +
+      'QUÉ HACER CON EL RESTO ES DECISIÓN EDITORIAL —¿la última caja junta dos?, ¿el resto se ' +
+      'pierde?— y el motor no la toma. Los elementos son: ' + publicados.join(' | '));
+  }
+
+  /* Borde 1 — menos elementos que cajas: NORMAL. `''` → el despachador lo baja a `sin_datos` y
+   * el deck usa el símbolo de sin dato que ya existe. */
+  var valor = (indice <= publicados.length) ? publicados[indice - 1] : '';
+
+  var traza = 'ELEMENTO ' + indice + (cajas ? ' de ' + cajas + ' caja(s)' : '') +
+    ' sobre la LISTA de "' + ctx.campo_logico + '" · ' + publicados.length + ' elemento(s): ' +
+    (publicados.join(' | ') || '(ninguno)') +
+    (valor === '' ? ' · ⚠ la caja ' + indice + ' queda SIN DATO, que es el caso normal cuando hay ' +
+      'menos elementos que cajas' : ' · publica "' + valor + '"') +
+    ' · orden alfabético `es` — ⚠ el orden de las filas de la fuente puede intercambiar posiciones ' +
+    'entre corridas (`R-32`)' +
+    ' · ' + c.valores.length + ' fila(s) de ' + ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') +
+    (c.repetidos ? ' · ' + c.repetidos + ' repetido(s) colapsado(s)' : '') +
+    (c.rechazados.length ? ' · ⚠ ' + c.rechazados.length + ' fuera del catálogo' : '') +
+    trazaDeVentana_(ctx);
+
+  return { valor: valor, traza: traza, filas: c.valores.length, rechazados: c.rechazados };
+}
+
 var OPERACIONES_ = {
   SUMA: opSUMA,
   CONTEO: opCONTEO,
@@ -492,7 +637,9 @@ var OPERACIONES_ = {
   TEXTO: opTEXTO,
   LISTA: opLISTA,
   // `2026-08-20_5` (20/08/2026) — la octava. Cuenta valores distintos; ver su comentario.
-  CUENTA_DISTINTOS: opCUENTA_DISTINTOS
+  CUENTA_DISTINTOS: opCUENTA_DISTINTOS,
+  // `2026-08-22` — la novena. El N-ésimo de lo que `LISTA` publicaría entero; ver su comentario.
+  ELEMENTO: opELEMENTO
 };
 
 /**
