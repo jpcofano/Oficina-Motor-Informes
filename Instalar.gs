@@ -1091,7 +1091,17 @@ var SEED_MAPEO_ = [
   { base_id: 'looker', campo_logico: 'dig_clics', hoja: 'resumen_metricas_dinamico', columna: 'J', notas: '' },
   { base_id: 'looker', campo_logico: 'alcance', hoja: 'resumen_metricas_dinamico', columna: 'K', notas: '' },
   { base_id: 'looker', campo_logico: 'frecuencia', hoja: 'resumen_metricas_dinamico', columna: 'M',
-    notas: 'M=frecuencia_total; existe también meta_frecuencia en L — elección sin confirmar con el equipo (DOC-3 Parte C)' },
+    notas: 'M=frecuencia_total; existe también meta_frecuencia en L — elección sin confirmar con el equipo (DOC-3 Parte C). Mapeada la L el 23/08, ver la fila de abajo: no reemplaza a ésta, convive' },
+  /* ⭐ `23/08/2026` — **la columna `L` se mapea, y llevaba dos años señalada sin mapear.** La nota
+   * de `frecuencia` (arriba) ya decía *"existe también `meta_frecuencia` en L"* desde el `DOC-3`, y
+   * `V-109` la midió: **`meta_frecuencia` (L) = 1,737** junto a **`frecuencia_total` (M) = 6,573**
+   * para `3481-AGOINFAN`. Lo que faltaba era **la fila de `MAPEO` y el token en la plantilla** — y
+   * el token lo agregó el usuario el 23/08 (`{{camp_meta_frecuencia}}`, `L-046`, fila Meta).
+   *
+   * ⚠ **Convive con `frecuencia`, no la reemplaza.** Son dos columnas distintas y dos hechos
+   * distintos: `M` es la frecuencia total y `L` la de Meta. La elección de `M` para `frecuencia`
+   * **sigue sin confirmar con el equipo** y esta fila no la toca. */
+  { base_id: 'looker', campo_logico: 'meta_frecuencia', hoja: 'resumen_metricas_dinamico', columna: 'L', notas: 'frecuencia de Meta — la que V-109 midió en 1,737 junto a frecuencia_total (M) = 6,573. Fuente de camp_meta_frecuencia' },
   { base_id: 'looker', campo_logico: 'mail_enviados', hoja: 'resumen_metricas_dinamico', columna: 'N', notas: '' },
   { base_id: 'looker', campo_logico: 'mail_entregados', hoja: 'resumen_metricas_dinamico', columna: 'O', notas: '' },
   { base_id: 'looker', campo_logico: 'mail_aperturas', hoja: 'resumen_metricas_dinamico', columna: 'P', notas: '' },
@@ -1592,6 +1602,9 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   // devuelve cero **sin fallar**, que es el modo de falla caro de este proyecto.
   'Visualizaciones': 'numero', 'Clics': 'numero',
   alcance: 'numero', frecuencia: 'numero',
+  // `23/08` — la frecuencia de Meta (col. L de `resumen_metricas_dinamico`). Es otra columna que
+  // `frecuencia` (M), no un alias.
+  meta_frecuencia: 'numero',
   mail_enviados: 'numero', mail_entregados: 'numero', mail_aperturas: 'numero',
   mail_clics: 'numero', mail_or: 'numero', mail_ctor: 'numero',
   cc_contactados: 'numero', cc_efectivos: 'numero',
@@ -1696,6 +1709,7 @@ var ENCABEZADO_POR_MAPEO_ = {
   'looker|resumen_metricas_dinamico|dig_clics': 'digital_clics',
   'looker|resumen_metricas_dinamico|alcance': 'meta_alcance',
   'looker|resumen_metricas_dinamico|frecuencia': 'frecuencia_total',
+  'looker|resumen_metricas_dinamico|meta_frecuencia': 'meta_frecuencia',
   'looker|resumen_metricas_dinamico|mail_enviados': 'mails_enviados',
   'looker|resumen_metricas_dinamico|mail_entregados': 'mails_entregados',
   'looker|resumen_metricas_dinamico|mail_aperturas': 'mails_aperturas',
@@ -5751,6 +5765,329 @@ function cablearEcvBarrios123() {
  * ⚠ **Y `formato = fecha`**, verificado contra `formatearValorMarcador_` — la rama existe y da
  * `dd/MM/yyyy`. No se supone: ya me costó una vez escribir `fecha_corta`, que no existe.
  */
+/**
+ * ⭐ **`camp_dig_impl`, `camp_dir_impl` y `camp_eje` — los tres que `X-39` destrabó.** Público y
+ * sin parámetros.
+ *
+ * **Dos láminas en un paso, y está bien: los tres son huecos.** `camp_dig_impl` y `camp_dir_impl`
+ * son de `L-045`, `camp_eje` de `L-046`. La regla de *«un cambio por deck»* es para lo que **mueve
+ * un número publicado**; los tres salen hoy en `/////`, así que **no hay nada que atribuir**
+ * (`CLAUDE.md` §4).
+ *
+ * ### Los dos `impl` — el bloqueo era `X-39` y ya no está
+ *
+ * Los dos son **`CONTEO` de filas para la cuenta de la campaña**, y los dos estaban frenados por lo
+ * mismo: sin `SOLAPAS.campo_id_cuenta` no se pueden acotar a la cuenta y contarían la solapa
+ * entera. El molde es `ivr_campanias` (`CONTEO` sobre `ivr_id_cuenta`, sin filtro ni dimensiones).
+ *
+ *   - **`camp_dig_impl`** → `looker/DIGITAL`, contando por `ldig_id_cuenta`. El equipo publica
+ *     **4**, que son **las cuatro plataformas de esa cuenta**. `V-109` lo corrobora sin haberlo
+ *     buscado: `3481-AGOINFAN` tiene DV360 + Meta + Google ads + Mercado Libre, **cuatro filas**.
+ *   - **`camp_dir_impl`** → `digital/Directa Mail`, contando por `mail_id_cuenta`. El equipo
+ *     publica **3**, los envíos de esa campaña.
+ *
+ * ⛔ **`filtro` vacío, por el mismo motivo que los quince del desglose** — y acá hay uno más: si
+ * `estado=Activa` dejara afuera una plataforma, el conteo diría **3** donde el equipo publica 4, y
+ * sería un número plausible y equivocado. **Es el modo de falla que este proyecto persigue.**
+ *
+ * ⭐⭐ **Y nacen SIN `_revisar`, al revés que los dieciocho de anoche. El motivo es preciso y vale
+ * la pena tenerlo escrito: un `CONTEO` es inmune a la inestabilidad por CAMBIO.** `R-31` mide
+ * `looker/DIGITAL` como inestable por **CAMBIO** —`19/503` filas, **cero altas**—, o sea que
+ * **los valores se reescriben pero las filas no se agregan ni se borran**. Un conteo de filas no
+ * lo puede notar. Los quince del desglose sí, porque suman **valores**.
+ *
+ * ### `camp_eje` — el único de los ocho de `L-046` que no es texto del equipo
+ *
+ * Los otros siete —los seis `camp_bench_*` y `camp_dig_insight`— **los escribe una persona**. Éste
+ * no: **`eje` está mapeado, columna `E` de `looker/resumen_metricas_dinamico`**, verificado contra
+ * `MAPEO` antes de escribir la fila. Molde: **`camp_titulo`**, que es el otro texto que el motor sí
+ * pinta — `ULTIMO` y `formato = texto`.
+ *
+ * ⚠ **Es TEXTO y se cablea como texto**, que es la mitad que se equivoca sola: una `SUMA` sobre una
+ * columna de texto devuelve `sin_datos` y **el casillero sale con el símbolo de sin dato**, que se
+ * lee como *"el dato no llegó"* cuando el dato está (`CLAUDE.md` §4).
+ */
+function cablearImplementacionesYEje() {
+  var r = curarMarcadores_([], [
+    {
+      marcador: 'camp_dig_impl', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'ldig_id_cuenta',
+      operacion: 'CONTEO', formato: 'numero',
+      notas: 'implementaciones digitales = CONTEO de filas de looker/DIGITAL para la cuenta de la ' +
+        'campania, una por plataforma. Destrabado por X-39. Molde: ivr_campanias. Sin filtro: ' +
+        'estado=Activa podria dejar afuera una plataforma y dar 3 donde el equipo publica 4'
+    },
+    {
+      marcador: 'camp_dir_impl', familia: 'camp', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_id_cuenta',
+      operacion: 'CONTEO', formato: 'numero',
+      notas: 'implementaciones de directa = CONTEO de envios de digital/Directa Mail para la ' +
+        'cuenta. Destrabado por X-39. Molde: ivr_campanias. Sin dimensiones: el corte lo pone el ' +
+        'item de campania via campo_id_cuenta, no un tipo_envio'
+    },
+    {
+      marcador: 'camp_eje', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'resumen_metricas_dinamico', campo_logico: 'eje',
+      operacion: 'ULTIMO', formato: 'texto',
+      notas: 'el eje de la campania destacada. TEXTO, no metrica: molde camp_titulo. Columna E de ' +
+        'resumen_metricas_dinamico, ya mapeada — verificado contra MAPEO antes de escribir. Es el ' +
+        'unico de los ocho de L-046 que no lo escribe una persona'
+    }
+  ]);
+
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== impl + eje: ' + ((r.agregadas || []).length) + ' fila(s) agregada(s) · ' +
+    r.filas_finales + ' filas en MARCADORES ==');
+  if (!(r.agregadas || []).length) {
+    Logger.log('ⓘ Cero altas: los tres ya existían. Es idempotencia, no rotura.');
+  }
+  Logger.log('');
+  Logger.log('⭐ ESPERADO, contra el deck del equipo:');
+  Logger.log('   camp_dig_impl → 4  (las cuatro plataformas de la cuenta)');
+  Logger.log('   camp_dir_impl → 3  (los envíos de la campaña)');
+  Logger.log('   camp_eje      → el eje, en TEXTO. Si sale con símbolo de sin dato,');
+  Logger.log('                   el sospechoso es la operación, no la fuente.');
+  Logger.log('');
+  Logger.log('⛔ Y CORRÉ censarTokensSinMarcador(): L-045 tiene que desaparecer de la lista');
+  Logger.log('   —sus dos eran los únicos— y L-046 tiene que bajar de 8 a 7.');
+  Logger.log('   Los 7 que quedan son texto del equipo y NO se cablean:');
+  Logger.log('   los seis camp_bench_* y camp_dig_insight.');
+  return r;
+}
+
+/**
+ * ⭐ **`camp_meta_frecuencia` — la frecuencia de Meta de `L-046`.** Público y sin parámetros.
+ *
+ * ⛔⛔ **VA SOLO Y NO SE MEZCLA CON `cablearDesglosePorPlataforma()`, y el motivo es el control.**
+ * Aquellos 17 se cruzan contra `docs/CENSO_tokens_sin_fila_2026-08-22.md`, que es **evidencia
+ * congelada del 22/08**. Este token **nació en la plantilla el 23/08**, así que **no puede estar en
+ * ese censo** — meterlo en el mismo lote rompería el cruce, o peor, obligaría a aflojarlo.
+ * **Su control es otro: el censo VIVO, corrido antes y después.**
+ *
+ * ⚠ **Y por eso el orden importa y no es negociable:**
+ *   1. `censarTokensSinMarcador()` **ANTES** → tiene que listar `camp_meta_frecuencia` en `L-046`.
+ *      **Eso es lo que prueba que el token quedó bien escrito en la plantilla**, y es la única
+ *      forma de saberlo: un `{{token}}` mal tipeado no falla, simplemente no existe para nadie.
+ *   2. Esta función.
+ *   3. `censarTokensSinMarcador()` **DESPUÉS** → ya no tiene que aparecer.
+ *
+ * ⭐ **La fuente no es `looker/DIGITAL` como sus catorce hermanos de lámina, y esto hay que
+ * entenderlo o el número sale mal:** la frecuencia de Meta vive en **`looker/resumen_metricas_
+ * dinamico`, columna `L`** — `V-109` la midió en **1,737** junto a `frecuencia_total` (M) =
+ * **6,573**. Esa solapa tiene **una fila por campaña y una columna por plataforma**.
+ *
+ * ⭐⭐ **De ahí sale la única decisión de diseño de esta fila: `dimensiones` va VACÍO, y no es un
+ * incumplimiento de `D-33`.** En `looker/DIGITAL` la plataforma es una **dimensión de fila**
+ * —`Plataforma=Meta`, y por eso los quince llevan `plataforma=meta`—. Acá la plataforma es una
+ * **columna**, así que el corte no se puede expresar como un filtro de filas: `DIMENSIONES_` ni
+ * siquiera declara `plataforma` para esta solapa, y declararla fallaría.
+ * **El molde ya estaba en la hoja: `camp_alcance` hace exactamente esto** — se llama genérico y
+ * lee `meta_alcance` (K), con `ULTIMO` y sin dimensiones.
+ *
+ * ⚠ **Nace `numero_revisar`, igual que su hermano `camp_frecuencia`**: es la primera lectura de una
+ * columna recién mapeada y no hay caso validado del valor publicado.
+ *
+ * ⛔ **La celda de TOTALES no se toca** (decisión del usuario, 23/08). `camp_frecuencia` sigue
+ * siendo `RATIO dig_impresiones/alcance` sobre la misma solapa.
+ */
+function cablearMetaFrecuencia() {
+  var r = curarMarcadores_([], [
+    {
+      marcador: 'camp_meta_frecuencia', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'resumen_metricas_dinamico', campo_logico: 'meta_frecuencia',
+      operacion: 'ULTIMO', formato: 'numero_revisar',
+      notas: 'frecuencia de Meta, columna L, mapeada el 23/08. Molde: camp_alcance, que lee ' +
+        'meta_alcance (K) con ULTIMO y sin dimensiones. dimensiones VACIO a proposito: aca la ' +
+        'plataforma es una COLUMNA y no una dimension de fila, al reves que en looker/DIGITAL'
+    }
+  ]);
+
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== camp_meta_frecuencia: ' + ((r.agregadas || []).length) +
+    ' fila(s) agregada(s) · ' + r.filas_finales + ' filas en MARCADORES ==');
+  if (!(r.agregadas || []).length) {
+    Logger.log('ⓘ Cero altas: ya existía. Es idempotencia, no rotura.');
+  }
+  Logger.log('');
+  Logger.log('⛔ AHORA CORRÉ censarTokensSinMarcador() DE NUEVO.');
+  Logger.log('   camp_meta_frecuencia NO tiene que aparecer más en L-046.');
+  Logger.log('   Si sigue apareciendo: la fila se escribió pero el token de la plantilla');
+  Logger.log('   no se llama así. Si no aparecía ANTES tampoco, el token nunca se leyó.');
+  Logger.log('');
+  Logger.log('⭐ ESPERADO, contra V-109 (fixture del 20/08, cuenta 3481-AGOINFAN):');
+  Logger.log('   meta_frecuencia (col L) = 1,737 · frecuencia_total (col M) = 6,573');
+  Logger.log('   El deck publica la de Meta en la fila Meta y la total en TOTALES.');
+  Logger.log('   ⚠ Sale entre guiones: nace numero_revisar, como camp_frecuencia.');
+  return r;
+}
+
+/**
+ * ⭐ **`L-046` — el desglose por plataforma, 17 tokens.** Público y sin parámetros: aparece en el
+ * desplegable del editor.
+ *
+ * **Los 17 salen del censo, uno por uno, no de multiplicar 3 × 5.** `docs/CENSO_tokens_sin_fila_2026-08-22.md`
+ * lista **25** tokens sin fila en `L-046`; de ésos, **15** son el desglose por plataforma y **2**
+ * son la fila TOTALES (`camp_ctr`, `camp_vtr`). Los otros 8 **no entran y ninguno es olvido** —
+ * ver el final de esta función. `tools/probar-desglose-plataforma.js` vuelve a cruzar la lista
+ * contra el censo, que es la forma de que un token inventado **falle** en vez de quedar como una
+ * fila de `MARCADORES` que nadie va a poder explicar.
+ *
+ * **El molde no se inventó: son los `u1_*`** sobre `digital/CAMPAÑAS_DESGLOCE_DIGITAL` — la misma
+ * forma (plataforma × métrica), `SUMA` para las tres métricas, `PCT` con `numerador/denominador`
+ * para los dos ratios, y **el corte en `dimensiones`, nunca en `filtro`** (`D-33`).
+ * `DIMENSIONES_.plataforma` **ya declara `looker|DIGITAL`** para las tres, así que no hace falta
+ * vocabulario nuevo — y `programmatic` entra **por resta** (`R-24`), que es lo que hace que `DV360`
+ * y las cinco plataformas chicas caigan donde el deck las agrupa.
+ *
+ * ⛔⛔ **`filtro` va VACÍO, y es una diferencia deliberada con los ocho `imp_*`, que llevan
+ * `estado=Activa`.** El motivo es `V-109`: midió que las filas por plataforma de `looker/DIGITAL`
+ * **suman exacto** el `digital_impresiones` de `resumen_metricas_dinamico` para la misma cuenta
+ * —DV360 3.756.321 + Meta 1.506.236 + Google ads 436.601 + Mercado Libre 0 = **5.699.158**, y el
+ * agregado dice 5.699.158—. **Ese sumatorio no lleva `estado=Activa`.** Agregarlo acá rompería la
+ * única identidad que este bloque tiene validada: que las partes cierran contra el total.
+ *
+ * ⚠ **Nacen todos `_revisar`, y no es prudencia genérica: son dos motivos medidos.** `looker/DIGITAL`
+ * es **de estado** (`R-29`) —la fila se actualiza y no se agregan filas, así que `Impresiones` trae
+ * **todo lo acumulado desde que la campaña arrancó**, que es el problema abierto de Programmatic—
+ * y es **inestable por CAMBIO** (`R-31`, 19/503 filas, cero altas). Los `u1_*`, que leen la solapa
+ * análoga, nacieron igual.
+ *
+ * ⚠ **Y lo que este cableado NO contesta:** si el número es el de la semana. La decisión del rótulo
+ * de Programmatic sigue abierta y **los alcanza a los quince**.
+ */
+function cablearDesglosePorPlataforma() {
+  var r = curarMarcadores_([], [
+    {
+      marcador: 'camp_meta_impresiones', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Impresiones',
+      operacion: 'SUMA', dimensiones: 'plataforma=meta', formato: 'miles_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_meta_vistas', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Visualizaciones',
+      operacion: 'SUMA', dimensiones: 'plataforma=meta', formato: 'miles_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_meta_clics', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Clics',
+      operacion: 'SUMA', dimensiones: 'plataforma=meta', formato: 'miles_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_meta_ctr', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Clics/Impresiones',
+      operacion: 'PCT', dimensiones: 'plataforma=meta', formato: 'porcentaje_sin_signo_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_meta_vtr', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Visualizaciones/Impresiones',
+      operacion: 'PCT', dimensiones: 'plataforma=meta', formato: 'porcentaje_sin_signo_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_google_impresiones', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Impresiones',
+      operacion: 'SUMA', dimensiones: 'plataforma=google', formato: 'miles_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_google_vistas', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Visualizaciones',
+      operacion: 'SUMA', dimensiones: 'plataforma=google', formato: 'miles_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_google_clics', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Clics',
+      operacion: 'SUMA', dimensiones: 'plataforma=google', formato: 'miles_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_google_ctr', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Clics/Impresiones',
+      operacion: 'PCT', dimensiones: 'plataforma=google', formato: 'porcentaje_sin_signo_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_google_vtr', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Visualizaciones/Impresiones',
+      operacion: 'PCT', dimensiones: 'plataforma=google', formato: 'porcentaje_sin_signo_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_prog_impresiones', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Impresiones',
+      operacion: 'SUMA', dimensiones: 'plataforma=programmatic', formato: 'miles_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_prog_vistas', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Visualizaciones',
+      operacion: 'SUMA', dimensiones: 'plataforma=programmatic', formato: 'miles_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_prog_clics', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Clics',
+      operacion: 'SUMA', dimensiones: 'plataforma=programmatic', formato: 'miles_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_prog_ctr', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Clics/Impresiones',
+      operacion: 'PCT', dimensiones: 'plataforma=programmatic', formato: 'porcentaje_sin_signo_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_prog_vtr', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL', campo_logico: 'Visualizaciones/Impresiones',
+      operacion: 'PCT', dimensiones: 'plataforma=programmatic', formato: 'porcentaje_sin_signo_revisar',
+      notas: 'L-046 desglose por plataforma. Molde: los u1_* sobre CAMPANAS_DESGLOCE_DIGITAL. Habilitado por X-39 (campo_id_cuenta en looker/DIGITAL): el corte por cuenta lo pone el item de campania'
+    },
+    {
+      marcador: 'camp_ctr', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'resumen_metricas_dinamico', campo_logico: 'dig_clics/dig_impresiones',
+      operacion: 'PCT', formato: 'porcentaje_sin_signo',
+      notas: 'fila TOTALES de L-046. Molde exacto: camp_ctor, que ya vive ahi con PCT sobre la misma solapa. NO necesitaba X-39: resumen_metricas_dinamico declara campo_id_cuenta desde el 19/08'
+    },
+    {
+      marcador: 'camp_vtr', familia: 'camp', informe_id: 'jm',
+      base_id: 'looker', solapa: 'resumen_metricas_dinamico', campo_logico: 'dig_visualizaciones/dig_impresiones',
+      operacion: 'PCT', formato: 'porcentaje_sin_signo',
+      notas: 'fila TOTALES de L-046, idem camp_ctr'
+    }
+  ]);
+
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== L-046 desglose por plataforma: ' + ((r.agregadas || []).length) +
+    ' fila(s) agregada(s) · ' + r.filas_finales + ' filas en MARCADORES ==');
+  if (!(r.agregadas || []).length) {
+    Logger.log('ⓘ Cero altas: los 17 ya existían. Es idempotencia, no rotura.');
+  }
+  Logger.log('');
+  Logger.log('⭐ EL CONTROL QUE VALE, y no necesita un «antes» — se mide DENTRO de la corrida:');
+  Logger.log('   camp_meta_impresiones + camp_google_impresiones + camp_prog_impresiones');
+  Logger.log('   tiene que dar camp_impresiones. V-109 lo midió sobre 3481-AGOINFAN:');
+  Logger.log('   3.756.321 + 1.506.236 + 436.601 + 0 = 5.699.158, exacto.');
+  Logger.log('   Ídem vistas (2.833.650) y clics (4.250).');
+  Logger.log('   ⚠ Si NO cierra, el sospechoso es el filtro, no la fuente.');
+  Logger.log('');
+  Logger.log('⛔ LOS OCHO DE L-046 QUE NO ENTRAN, y ninguno es olvido:');
+  Logger.log('   camp_bench_{meta,google,prog}_{ctr,vtr}  → 6 · TEXTO DEL EQUIPO, fuera de alcance');
+  Logger.log('   camp_dig_insight                        → TEXTO DEL EQUIPO, ídem');
+  Logger.log('   camp_eje                                → sin decidir de qué columna sale');
+  Logger.log('');
+  Logger.log('ⓘ Y dos que X-39 también destrabó y NO entran acá porque son de OTRA lámina:');
+  Logger.log('   camp_dig_impl (L-045) y camp_dir_impl (L-045). Van en su propio paso.');
+  return r;
+}
+
 function cablearLosChicos() {
   var r = curarMarcadores_([], [
     {

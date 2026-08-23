@@ -4709,3 +4709,166 @@ function diagBarriosIndexados() {
   Logger.log('   el problema es la COLUMNA catalogo de la fila, no la operación.');
   return { ok: true };
 }
+
+/**
+ * ⭐⭐ `diagL046()` — por qué los 18 de `L-046` salen `/////` teniendo fila, y dónde quedó
+ * `{{camp_meta_frecuencia}}`. Público y sin parámetros. **Sólo lee.**
+ *
+ * ### Lo que ya dice el código, y es lo que hace que este diagnóstico apunte donde apunta
+ *
+ * `textoFaltante_` (`Generador.gs`) devuelve `/////` **en un solo caso relevante: cuando NO hay
+ * resultado para el token.** Un marcador que tiene fila y falla al leer vuelve con `estado`, y
+ * eso pinta `---` (error) o `-` (sin dato) — **nunca `/////`**.
+ *
+ * ⇒ **`/////` sobre un token cableado significa que `resolverMarcadores` no devolvió nada para
+ * él**, y esa función tiene exactamente **dos** filtros: `informe_id` (`=== informeId` o `'*'`) y
+ * `solo_marcadores`. El segundo no puede ser —la lista sale de los tokens de esa misma lámina—,
+ * así que **o el `informe_id` de la fila no matchea, o el texto de `marcador` no es idéntico al
+ * del token.**
+ *
+ * ⚠ **Es una predicción, no una conclusión**, y esta función existe para falsarla: si algún
+ * marcador vuelve con `estado` en vez de ausente, **la lectura de arriba está mal y eso es el
+ * hallazgo**.
+ *
+ * ### Bloque 2 — la plantilla, celda por celda
+ *
+ * `camp_meta_frecuencia` no se puede ubicar desde `MARCADORES`: hay que mirar **dónde está el
+ * `{{token}}`**. Este bloque recorre `L-046` **forma por forma y celda por celda de tabla**, así
+ * que dice **exactamente qué celda tiene qué token** — que es lo único que permite decir cuál
+ * tocar.
+ */
+function diagL046() {
+  var LOS_18 = [
+    'camp_meta_impresiones', 'camp_meta_vistas', 'camp_meta_clics', 'camp_meta_ctr', 'camp_meta_vtr',
+    'camp_google_impresiones', 'camp_google_vistas', 'camp_google_clics', 'camp_google_ctr', 'camp_google_vtr',
+    'camp_prog_impresiones', 'camp_prog_vistas', 'camp_prog_clics', 'camp_prog_ctr', 'camp_prog_vtr',
+    'camp_ctr', 'camp_vtr', 'camp_meta_frecuencia'
+  ];
+  // Los que SÍ publicaron en la corrida. Son el control positivo: si éstos aparecen igual que los
+  // 18, el instrumento está midiendo mal y no hay que creerle nada.
+  var LOS_QUE_ANDAN = ['camp_impresiones', 'camp_alcance', 'camp_frecuencia', 'camp_clics', 'camp_visualizaciones'];
+
+  Logger.log('== diagL046 · BLOQUE 1 — la fila cruda en MARCADORES ==');
+  Logger.log('⚠ El informe_id va con JSON.stringify a propósito: un espacio o un salto invisible');
+  Logger.log('  se ve igual que "jm" en la celda y NO matchea en el filtro.');
+  Logger.log('');
+
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ no existe la hoja MARCADORES'); return { ok: false }; }
+  var datos = hoja.getDataRange().getValues();
+  var hs = datos[0];
+  var iMar = hs.indexOf('marcador'), iInf = hs.indexOf('informe_id');
+  var iFam = hs.indexOf('familia'), iBase = hs.indexOf('base_id'), iSol = hs.indexOf('solapa');
+  var iOp = hs.indexOf('operacion');
+
+  var porNombre = {};
+  for (var f = 1; f < datos.length; f++) {
+    var nom = String(datos[f][iMar]);
+    if (!porNombre[nom]) porNombre[nom] = [];
+    porNombre[nom].push(datos[f]);
+  }
+
+  var sinFila = [], infRaro = [], conFila = 0;
+  LOS_18.concat(LOS_QUE_ANDAN).forEach(function (m) {
+    var filas = porNombre[m] || [];
+    var esperado = LOS_18.indexOf(m) !== -1 ? '18' : 'anda';
+    if (!filas.length) {
+      Logger.log('  ⛔ ' + m + ' (' + esperado + ') — SIN FILA en MARCADORES');
+      sinFila.push(m);
+      return;
+    }
+    conFila++;
+    filas.forEach(function (fila) {
+      var inf = fila[iInf];
+      var ok = (typeof inf === 'string') && inf === 'jm';
+      if (!ok) infRaro.push(m + ' → ' + JSON.stringify(inf));
+      Logger.log('  ' + (ok ? '✅' : '⛔') + ' ' + m + ' (' + esperado + ')' +
+        ' · informe_id=' + JSON.stringify(inf) + ' [' + (typeof inf) + ']' +
+        ' · familia=' + JSON.stringify(fila[iFam]) +
+        ' · ' + fila[iBase] + '/' + fila[iSol] + ' · ' + fila[iOp] +
+        ' · marcador=' + JSON.stringify(String(fila[iMar])));
+    });
+  });
+
+  Logger.log('');
+  Logger.log('== BLOQUE 2 — qué devuelve resolverMarcadores para los 18 ==');
+  Logger.log('⚠ Se llama SIN ítem, así que lo que lea por cuenta va a fallar — y eso está bien:');
+  Logger.log('  lo que se mide acá es si el marcador APARECE en el resultado, no su valor.');
+  Logger.log('');
+  var r = resolverMarcadores('jm', { solo_marcadores: LOS_18.concat(LOS_QUE_ANDAN) });
+  var vistos = {};
+  (r.resultados || []).forEach(function (x) { vistos[x.marcador] = x; });
+
+  var ausentes = [];
+  LOS_18.concat(LOS_QUE_ANDAN).forEach(function (m) {
+    var x = vistos[m];
+    if (!x) { ausentes.push(m); Logger.log('  ⛔ ' + m + ' — AUSENTE del resultado → pinta /////'); return; }
+    Logger.log('  ✅ ' + m + ' — vuelve con estado=' + x.estado + ' → pintaría ' +
+      (x.estado === 'ok' ? 'el valor' : (x.estado === 'sin_datos' ? '«-»' : '«---»')));
+  });
+
+  Logger.log('');
+  Logger.log('== VEREDICTO DEL BLOQUE 1+2 ==');
+  Logger.log('  con fila en MARCADORES : ' + conFila + ' de ' + (LOS_18.length + LOS_QUE_ANDAN.length));
+  Logger.log('  sin fila               : ' + sinFila.length + (sinFila.length ? ' → ' + sinFila.join(', ') : ''));
+  Logger.log('  informe_id sospechoso  : ' + infRaro.length + (infRaro.length ? ' → ' + infRaro.join(' · ') : ''));
+  Logger.log('  ausentes del resultado : ' + ausentes.length + (ausentes.length ? ' → ' + ausentes.join(', ') : ''));
+  Logger.log('');
+  if (!ausentes.length) {
+    Logger.log('  ⭐⭐ NINGUNO AUSENTE. Entonces la lectura del símbolo estaba MAL y eso es el');
+    Logger.log('     hallazgo: los 18 tienen fila, resuelven, y el ///// vino por otro lado.');
+    Logger.log('     Mirar FALTANTES: su columna motivo trae el estado y la traza de cada uno.');
+  } else {
+    Logger.log('  ⭐ Los ausentes son la causa del /////. Si su fila existe y su informe_id dice');
+    Logger.log('     "jm", el que no matchea es el TEXTO del marcador — comparar los');
+    Logger.log('     JSON.stringify de arriba contra el token de la plantilla, abajo.');
+  }
+
+  Logger.log('');
+  Logger.log('== BLOQUE 3 — L-046 en la plantilla, celda por celda ==');
+  Logger.log('⚠ Esto es lo único que puede decir QUÉ CELDA tocar. El resto son suposiciones.');
+  Logger.log('');
+
+  var informe = leerRegistro_('INFORMES')['jm'];
+  var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+  var objetivo = null, posicion = 0;
+  slides.forEach(function (sl, i) {
+    if (anclaDeLamina_(sl) === 'L-046') { objetivo = sl; posicion = i + 1; }
+  });
+  if (!objetivo) {
+    Logger.log('⛔ no encontré L-046 por su ancla en las notas del orador.');
+    return { ok: false, motivo: 'L-046 sin ancla' };
+  }
+  Logger.log('  L-046 es la lámina ' + posicion + ' de ' + slides.length + '.');
+
+  var celdas = [];
+  objetivo.getShapes().forEach(function (sh, k) {
+    var t = '';
+    try { t = sh.getText().asString(); } catch (e) { return; }
+    var toks = (t.match(/\{\{([a-zA-Z0-9_]+)\}\}/g) || []);
+    if (toks.length) celdas.push({ donde: 'forma ' + (k + 1), tokens: toks.join(' ') });
+  });
+  objetivo.getTables().forEach(function (tabla, nt) {
+    for (var fi = 0; fi < tabla.getNumRows(); fi++) {
+      for (var ci = 0; ci < tabla.getNumColumns(); ci++) {
+        var txt = '';
+        try { txt = tabla.getCell(fi, ci).getText().asString(); } catch (e) { continue; }
+        var tk = (txt.match(/\{\{([a-zA-Z0-9_]+)\}\}/g) || []);
+        if (tk.length) {
+          celdas.push({
+            donde: 'tabla ' + (nt + 1) + ' · fila ' + (fi + 1) + ' · col ' + (ci + 1),
+            tokens: tk.join(' ')
+          });
+        }
+      }
+    }
+  });
+
+  celdas.forEach(function (c) { Logger.log('  ' + c.donde + '  →  ' + c.tokens); });
+  Logger.log('');
+  Logger.log('  ' + celdas.length + ' celda(s)/forma(s) con token en L-046.');
+  Logger.log('  ⭐ Buscar camp_meta_frecuencia acá: dice en qué fila y columna quedó.');
+  Logger.log('  ⭐ Y mirar qué token tiene la celda de la fila Meta, columna Frecuencia.');
+
+  return { ok: true, sin_fila: sinFila, ausentes: ausentes, informe_id_sospechoso: infRaro, celdas: celdas };
+}
