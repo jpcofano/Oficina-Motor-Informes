@@ -4829,7 +4829,10 @@ function diagL046() {
   Logger.log('⚠ Esto es lo único que puede decir QUÉ CELDA tocar. El resto son suposiciones.');
   Logger.log('');
 
-  var informe = leerRegistro_('INFORMES')['jm'];
+  // ⛔ `leerInformes()`, NO `leerRegistro_('INFORMES')`. Sin la clave primaria,
+  // `leerRegistroSinCache_` hace `fila[headers.indexOf(undefined)]` -> `fila[-1]` -> `undefined`,
+  // y `if (!clave) return` **saltea todas las filas**: devuelve `{}` sin fallar. Medido el 23/08.
+  var informe = leerInformes()['jm'];
   var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
   var objetivo = null, posicion = 0;
   slides.forEach(function (sl, i) {
@@ -4908,7 +4911,10 @@ function diagDondeVivenLosIvr() {
   var CONTROL = ['enc_audiencia', 'enc_atendidos', 'enc_e75', 'enc_marque1'];
   var TODOS = BUSCADOS.concat(CONTROL);
 
-  var informes = leerRegistro_('INFORMES');
+  // ⛔ Ver la nota de `diagL046()`: `leerRegistro_` sin clave primaria devuelve `{}` en
+  // silencio. Acá costó una corrida entera — el recorrido no se ejecutó y el reporte dijo
+  // «EN NINGUNA LÁMINA» sobre ocho tokens. **Lo atajó el control positivo, no el código.**
+  var informes = leerInformes();
   var donde = {};
   TODOS.forEach(function (t) { donde[t] = []; });
 
