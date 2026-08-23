@@ -3,14 +3,33 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-22, tarde — al cerrar el `2026-08-22_27` (tablero de cierre por
-lámina + `MAPEO` de `looker/CC`). Antes: el camino del fixture sobre el Resumen Ejecutivo JM, el
-`_25` (`R-21` nivel 1) y el `_23` (las dos fases). Lo de más abajo **sigue vigente**: no se
-reescribió lo que no cambió.
+**Última actualización:** 2026-08-23 — al documentar `D-39` (tres láminas fuera de alcance).
+Antes: el `2026-08-22_27` (tablero de cierre por lámina + `MAPEO` de `looker/CC`), el camino del
+fixture sobre el Resumen Ejecutivo JM, el `_25` (`R-21` nivel 1) y el `_23` (las dos fases). Lo de
+más abajo **sigue vigente**: no se reescribió lo que no cambió.
 
 ---
 
 ## ⏱ Dónde estamos ahora mismo
+
+### ⭐ Lo último (23/08): tres láminas salen del alcance — `D-39`, cero código
+
+`L-039` (M2), `L-048` (Desagregados · Respuestas) y `L-050` (RRSS) **no se cablean**. El tablero
+pasa de **17 ⛔** a **14 ⛔ · 3 🚫**, y del censo **57 de 192** tokens dejan de ser faltantes:
+quedan **135**. ⚠ El pedido decía 58 — son **58 apariciones y 57 distintos**, porque
+`camp_remitente` vive también en `L-047`, que sigue en el alcance.
+
+⭐⭐ **RRSS cierra el peor abierto que teníamos.** Su primer bloque **no tiene tokens** y publicaba
+los datos de la semana pasada **sin ninguna marca**; el usuario la escondió y eso lo resuelve de
+raíz — no se publica. ⛔⛔ **Pero la causa no se arregló: si alguien la vuelve a mostrar sin cablear
+los 21 tokens, el problema vuelve entero.** El motivo está escrito en `CIERRE_POR_LAMINA.md` y en
+`CONFIG_INFORMES.md` §1.11, y el tablero dice **cuántos tokens quedan dormidos en cada lámina**
+—23 · 14 · 21— para saberlo **antes** de mostrarla.
+
+⚠ **Y un número que quedó viejo:** los **«49 crudos permanentes»** de `Desatendida.gs` se midieron
+con `L-050` visible. Suben; **cuánto lo dice una corrida, no una suma.**
+
+---
 
 **El `_27` cerró con sus tres partes hechas y una frenada a propósito.**
 
@@ -113,7 +132,7 @@ mide producto terminado contra producto terminado, y cambia qué conviene hacer 
 | ⛔ los seis `pauta_*` | chico | publican **`1`** contra 28 y 270 |
 | ⛔ Programmatic 3,6–7,2× | mediano | Meta y Google están en 1,3–3×. **Los ratios difieren por plataforma**, así que no es la ventana |
 | ⛔ M2 −9,6 % | mediano | **numerador quieto, denominador corrido** — no salen del mismo conjunto de filas |
-| ⛔ RRSS | ⚠ **peligroso** | publica **la semana pasada sin marcarlo**: su primer bloque no tiene tokens, el motor no lo toca, y sale intacto |
+| ~~⛔ RRSS~~ | ✅ **cerrado el 22/08** | publicaba **la semana pasada sin marcarlo**: su primer bloque no tiene tokens, el motor no lo toca, y salía intacto. **El usuario escondió la lámina** (`D-39`) — ya no se publica. ⛔ **La causa sigue ahí**: mostrarla de nuevo lo reabre entero |
 | ⛔⛔ el reparto de ítems entre copias | grande | la misma lámina sale **tres veces con tres juegos de cifras** |
 
 ⚠ **Antes de perseguir Programmatic, medir una cosa barata:** el equipo titula *"14_08 al 21_08"* —
@@ -177,7 +196,8 @@ sacarte la única forma que funciona hoy va para el lado equivocado.
 
 **Pestaña «Corrida»** — sólo lectura: `corrida_id`, ejecución N de 6, el plan por sección, y el
 **freno** con confirmación. ⭐ Contesta *«¿está listo?»* con el **sello del nombre del deck**, no con
-los tokens: las láminas escondidas dejan **49 crudos permanentes** en toda corrida. **No se refresca
+los tokens: las láminas escondidas dejan **49 crudos permanentes** en toda corrida — ⚠ **medidos
+antes de que RRSS se escondiera; hoy son más y hay que re-medirlos**. **No se refresca
 sola y dice a qué hora leyó** — una pantalla que se actualiza sola parece siempre actual aunque el
 backend haya dejado de responder.
 

@@ -1633,6 +1633,12 @@ puede empeorar.
 Hoy figura sólo en una lista vieja de familias numeradas, que **no es lo mismo que estar
 anotada**: ahí se lee como un token más y no como dos cajas que comparten nombre.
 
+⭐ **Y desde el 22/08 sigue abierto pero ya no molesta a nadie: la slide 21 de `jm` —`L-050`, RRSS—
+quedó FUERA DE ALCANCE por decisión del usuario y el usuario la escondió** (`D-39`;
+`CONFIG_INFORMES.md` §1.11). **No se cierra por eso** —la colisión sigue en la plantilla— y por eso
+queda acá: **es una de las cosas que hay que mirar el día que alguien vuelva a mostrar esa lámina**,
+junto con los **21 tokens dormidos** que `CIERRE_POR_LAMINA.md` cuenta.
+
 
 ### P2 · `enc_e75_pct` da 38,74 contra el 39% publicado — **no es un error, no se ajusta**
 

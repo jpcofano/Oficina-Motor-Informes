@@ -1809,6 +1809,36 @@ censo de viabilidad sin diseño. Su §A.1 punto 3 —*¿una lámina repetida con
 qué ítem es?*— puede cerrar el tema antes de empezar. ⏸ Diferido en su propio encabezado; **no se
 agarra hasta que la otra fase cierre**.
 
+**`D-39` — Una lámina puede quedar FUERA DE ALCANCE de la fase `informe semanal`, y eso no es ni
+un pendiente ni un cierre: es un tercer estado que saca sus tokens del conteo de faltantes.**
+Decisión del usuario, 22/08/2026. Cita a `D-38` y **no la supersede**: le declara el alcance.
+
+**Las tres primeras, y por ahora las únicas:** `L-039` (M2, escondida), `L-048` (Desagregados ·
+Respuestas, escondida) y `L-050` (Resumen Ejecutivo RRSS, **que el usuario escondió ese día**).
+
+**Por qué es estructural y no sólo editorial:** `D-38` cierra la fase cuando el usuario, mirando un
+deck completo, declara que los faltantes que quedan no son relevantes. **Eso exige que el conjunto
+de faltantes sea decible**, y hasta hoy incluía tokens sobre los que **ya se había decidido que no
+se hace nada**. Un faltante sobre el que no hay trabajo pendiente no es un faltante: es ruido en el
+único instrumento que la fase usa para cerrar.
+
+| dónde vive | qué |
+|---|---|
+| **la decisión** | `docs/CONFIG_INFORMES.md` §1.11 — es editorial: *qué lleva el informe* |
+| **el conteo** | `docs/CIERRE_POR_LAMINA.md`, estado **🚫** — **57 de 192 tokens del censo dejan de ser faltantes; quedan 135**, y cada lámina declara **cuántos tokens le quedan dormidos** |
+| **la lista de tokens** | `docs/CENSO_tokens_sin_fila_2026-08-22.md`, que **los sigue listando y está bien**: mide la plantilla, no el alcance |
+
+⭐ **El mecanismo es el de siempre y no se toca: `LAMINAS.escondida` se refleja, no se decide.**
+Esconder una lámina lo hace **una persona en la plantilla** (`C-01` addendum 1); el motor la saltea
+porque `laminasEscondidas_` lee `isSkipped()` de la plantilla viva. **Ninguna línea de código
+cambia con esta decisión** — lo único que cambia es qué se cuenta.
+
+⚠ **Y lo que `D-39` NO hace:** no cierra la **condición 5** de `D-38` —*«nada que el motor no
+escribió se lee como de esta semana»*—. Cierra **el caso RRSS**, que era el único medido y el peor:
+su primer bloque, sin tokens, publicaba los datos de la semana pasada **sin marca**. La condición
+sigue pidiendo el censo de láminas sin tokens, una por una. ⛔ **Y esconder no es arreglar: si
+alguien vuelve a mostrar `L-050` sin cablear los 21 tokens, el problema vuelve entero.**
+
 ---
 
 

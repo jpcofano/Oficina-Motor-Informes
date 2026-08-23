@@ -13393,3 +13393,82 @@ Es *un fixture es una foto fechada*, con el agravante de que **la foto que cambi
 datos: es la del recorte**.
 
 **Commits:** `4922705` (la corrección del 1 a 1 contra el Resumen), y el de `X-28`/`X-29`.
+
+---
+
+## 2026-08-23 — Tres láminas salen del alcance (`D-39`), y esconder RRSS cierra el peor abierto
+
+- **Qué pidió el usuario:** documentar que `L-039`, `L-048` y `L-050` salen del alcance por decisión
+  del 22/08, **sacarlas del conteo de faltantes**, anotar lo que eso implica para el censo, y —como
+  condición— **que el tablero diga cuántos tokens quedan dormidos en cada una**.
+- **Qué se hizo:** cuatro documentos, **cero código**. `D-39` en `PLAN.md`; la decisión editorial en
+  `CONFIG_INFORMES.md` §1.11; el estado **🚫** y el conteo en `CIERRE_POR_LAMINA.md`; una nota en el
+  `P2` de `rrss_area1` en `PENDIENTES`.
+
+### ⭐⭐ RRSS: esconderla es un cierre, no una postergación — y por qué hay que escribir el motivo
+
+El primer bloque de `L-050` **no tiene tokens**: es texto fijo de la plantilla, el motor no lo toca
+y **salía intacto con los datos de la semana pasada, sin ninguna marca** (`85 % · 99 % · 98 % · 98
+%`, promedio `95 %`, *"8.813 menciones… 4.7M"*, el tema del video de Palermo — §3.6 de la
+`VALIDACION` del 22/08). El segundo bloque, con tokens, salía entero `/////`.
+
+**La misma lámina mentía de dos formas opuestas a la vez.** Un número obsoleto sin marca es **peor
+que un `/////`**: el `/////` manda a cablear, el número viejo **no manda a nada porque nadie sabe
+que está viejo**. Esconderla lo resuelve de raíz — no se publica, así que no queda texto que alguien
+pueda leer como de esta semana.
+
+⛔⛔ **Y queda escrito con el motivo porque la causa no se arregló:** el día que alguien vuelva a
+mostrar `L-050` sin cablear los 21 tokens, **el problema vuelve entero**. Mostrarla pide **dos**
+cosas: cablear los 21, **y** decidir qué se hace con el bloque sin tokens — y esa segunda no se
+arregla con código (`C-01`: la plantilla es del equipo).
+
+### ⛔ La condición del usuario: cuántos tokens quedan dormidos
+
+| lámina | tokens | **dormidos** |
+|---|---|---|
+| `L-039` · M2 | 23 | **23** — entera |
+| `L-048` · Desagregados · Respuestas | 15 | **14** |
+| `L-050` · RRSS | 21 | **21** — entera |
+
+**«Dormido» = el día que alguien la muestre, esos tokens salen `/////` en la corrida siguiente.** El
+número va en el tablero **para saberlo antes de mostrarla, no después de ver el deck** — es la
+familia del glifo que miente sobre la causa: 21 `/////` de golpe se leen como *«se rompió algo»*.
+
+⭐ **`L-048` salva uno y el dato no es una medición, es una deducción declarada como tal:** su único
+token con fila es **`camp_titulo`**, cruzando el censo (*"14 de 15"*) con
+`MARCADORES_2026-08-21_2225.tsv`. Cierra en las cinco láminas de campaña —`L-042` 1 de 3, `L-043`
+1 de 7, `L-045` 9 de 11, `L-046` 6 de 31, `L-047` 4 de 50—, y en todas la diferencia son exactamente
+los `camp_*` cableados.
+
+### ⚠ La premisa que no cerró: son 57, no 58
+
+El pedido decía **58 de 192**. Las tres láminas suman **58 apariciones**, pero **57 tokens
+distintos**: **`camp_remitente` vive también en `L-047`**, que sigue en el alcance. Quedan **135**
+faltantes, no 134.
+
+**No es una corrección cosmética: es la misma trampa que el censo ya declara en su encabezado** —
+192 distintos sobre **197** apariciones, porque cinco tokens están en dos láminas. **Un token no
+sale del conteo mientras le quede una lámina viva.**
+
+### La cuarta causa de «sin fila»
+
+A las tres de `C-82` —nadie lo cableó · otro mecanismo lo produce (`periodo`) · es texto que escribe
+una persona— se agrega **fuera de alcance por decisión**. ⚠ **El censo no las puede distinguir y no
+es un defecto suyo: `LAMINAS` no tiene columna de alcance**, así que el único lugar donde vive la
+causa 4 es `CIERRE_POR_LAMINA.md`. Quien cite el 192 como *"lo que falta cablear"* suma cuatro cosas
+distintas.
+
+### Dos cosas del mecanismo que conviene tener escritas
+
+- ✅ **La corrida ya saltea `L-050`**: `laminasEscondidas_` lee `isSkipped()` **de la plantilla
+  viva**, no del registro. No hace falta correr nada.
+- ⚠ **`LAMINAS.escondida` va a seguir vacío para `L-050` hasta el próximo sellado**, y no es una
+  inconsistencia a arreglar a mano: **se refleja, no se decide** (`Instalar.gs` `B.3`), y ningún
+  código lo lee para decidir. **Esconder desde el motor no está autorizado** (`C-01` addendum 1),
+  así que la forma correcta es exactamente la que se usó: una persona lo hace en la plantilla.
+- ⚠ **Y un número que quedó viejo: los «49 crudos permanentes»** de `Desatendida.gs`. Se midieron
+  sobre el **deck expandido** y con `L-050` visible. Con RRSS escondida **sube**, y cuánto **lo dice
+  una corrida, no una suma**.
+
+**Conteo del tablero:** de **1 ✅ · 5 🟡 · 17 ⛔** a **1 ✅ · 5 🟡 · 14 ⛔ · 3 🚫**. Las tres no se
+cerraron: **se sacaron del alcance**, que es un estado distinto y el único que saca del conteo.

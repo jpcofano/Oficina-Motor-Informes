@@ -15,7 +15,7 @@
 
 ---
 
-## Los cuatro estados
+## Los cinco estados
 
 | | |
 |---|---|
@@ -23,6 +23,16 @@
 | 🟡 | **medida y entendida**, falta un paso mecánico ya definido |
 | ⛔ | **abierta** — falta cablear, decidir o medir |
 | ⏳ | hay un paso corriendo sobre ella |
+| 🚫 | **fuera de alcance** — el usuario decidió que no se cablea. **No cuenta como faltante** |
+
+⭐⭐ **El 🚫 nace el 22/08/2026 y no es un ⛔ postergado ni un ✅ anticipado.** Un ⛔ dice *«falta
+trabajo»* y vuelve a levantarse en cada revisión; un ✅ dice *«lo miré y lo que falta no importa»*.
+🚫 dice **«esto no entra en la fase»**, que es una tercera cosa y la única que **saca la lámina del
+conteo**. Es la misma figura que `docs/CONFIG_INFORMES.md` §2.5 ya usaba para `camp_bench_*` —
+*fuera de alcance con fecha*—, ahora aplicada a una lámina entera.
+
+⚠ **Y lo que un 🚫 NO es: un cierre.** Nadie verificó esas láminas. Si alguna vuelve al alcance,
+vuelve como ⛔ y con todo su trabajo por delante — ver la sección de abajo, que dice cuánto es.
 
 ⛔ **El ✅ lo pone el usuario, nunca Code.** Code puede mover una fila a 🟡 **con evidencia**, y ahí
 para. Es la marca de verificación humana de `CLAUDE.md` aplicada acá.
@@ -69,9 +79,10 @@ había, no hay nada que atribuir.
 `post_` de `L-036`, y las cuatro láminas de campaña (13 a 16) más las dos de desagregados. **Entran
 juntos.**
 
-**Y lo que va solo es corto:** **RRSS** (`L-050`), cuando el usuario decida — hoy publica los datos
-de la semana pasada, o sea que **hay un número y está mal**—, y **cualquier cambio en la
-frecuencia** (`X-32`), que reescribe un valor que ya sale.
+**Y lo que va solo es corto:** **cualquier cambio en la frecuencia** (`X-32`), que reescribe un
+valor que ya sale. ⭐ **RRSS (`L-050`) salió de esta lista el 22/08**: era el caso de *«hay un número
+y está mal»*, y **esconder la lámina lo resolvió de raíz** — no queda número que mover porque no se
+publica nada. Ver 🚫, abajo.
 
 ⚠ **El borde, que hay que mirar igual:** un token nuevo **dentro de una operación compartida** puede
 mover a sus hermanos. `ELEMENTO` memoiza el conjunto, así que agregar un consumidor cambia **cuándo**
@@ -102,7 +113,7 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | **7** · Campañas · DIGITAL · Período | `L-036` | ⛔ 🕳 | **32 de 32 tokens sin fila** — los **ocho `post_` × 4 envíos**, confirmados por el censo contra la **plantilla viva** (22/08). ⚠ **Esta fila cambió dos veces en un día y la tercera es la buena**: `Auditoria.gs` tenía razón; `TOKENS.md` §2.1, el `P2` del 06/08 y el espejo están **los tres viejos** (`C-77`, retractado). ⛔ **Ojo al cablear: `ELEMENTO` NO alcanza para una tabla por filas** — ver abajo | 22/08 |
 | **8** · «Comunicaciones M2» | `L-037` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | **9** · Directa · Status M2 | `L-038` | ⛔ ↕ | 8 tokens. ⭐ **El numerador coincide y el denominador no** (−9,6 % en enviados/entregados, con el numerador quieto) → falta **decidir** de qué universo sale el denominador | 22/08 |
-| **10** · M2 *(escondida)* | `L-039` | ⛔ 🕳 | 23 tokens. **Sin medir** — la lámina está `escondida = sí` | — |
+| **10** · M2 *(escondida)* | `L-039` | 🚫 **fuera de alcance** | **No se cablea** — decisión del usuario, 22/08. **23 tokens dormidos** (los 23 de la lámina). Nunca se midió y **no se va a medir**: sale del conteo de faltantes | 22/08 |
 | **11** · «Campañas destacadas GCBA» | `L-040` | ⛔ | Separador `rol = equipo`, pero ⛔ **se duplica por ítem de campaña** junto con la lámina de M2 digital | 22/08 |
 | **12** · Campaña destacada | `L-041` | ⛔ ↕ | ⛔ **La campaña destacada no coincide con la del equipo y en la última corrida sale vacía** | 22/08 |
 | **13** · Objetivo y período | `L-042` | ⛔ 🕳 | Sin cablear — sale prácticamente entera en `/////` | 22/08 |
@@ -111,13 +122,146 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | **16** · Resultados agregados | `L-045` | ⛔ 🕳 | 11 tokens. Sin cablear | 22/08 |
 | **17** · Desagregados · Digital | `L-046` | ⛔ ↕ | ⛔⛔ **El censo por celda encontró un BUG, no un faltante: la fila META publica el TOTAL de la campaña.** Meta y TOTALES coinciden **exacto** en Alcance (867.025) y Frecuencia (−6.85−) porque esas celdas de Meta tienen el token **agregado** — no existe ningún `camp_meta_*`. Por eso va **↕ y no 🕳**: hay un número y está mal. ⚠ Google y Programmatic **no tienen token** ahí: su `-` es **texto tipeado por el equipo** (`C-75`), no el símbolo de sin dato. ⛔ **Bench CTR, Bench VTR e Insight fuera del alcance: son texto del equipo** | 22/08 |
 | **18** · Desagregados · Mail | `L-047` | ⛔ 🕳 | 5 envíos + GLOBAL, 9 columnas. **Mismo patrón que la 17**: el GLOBAL trae 263.794 / 68.092 / 1,3 porque lee `camp_entregados`, `camp_aperturas` y `camp_ctor`; **las cinco filas de envío caen en `X-33`** — `camp_env1-5_*` son tokens **indexados** y el motor no tiene la primitiva. ⚠ Las celdas están **combinadas**, no vacías | 22/08 |
-| **19** · Desagregados · Respuestas | `L-048` | ⛔ 🕳 | 15 tokens. Sin cablear. `escondida = sí` | — |
+| **19** · Desagregados · Respuestas | `L-048` | 🚫 **fuera de alcance** | **No se cablea** — decisión del usuario, 22/08. 15 tokens, **14 dormidos**: el único con fila es `camp_titulo`. Ya estaba diferida desde el 05/08 (`CONFIG_INFORMES.md` §2.5, los once `camp_resp_*`); ahora es la lámina entera y sale del conteo | 22/08 |
 | **20** · «Análisis y datos» | `L-049` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
-| **21** · Resumen Ejecutivo RRSS | `L-050` | ⛔ ↕ | 21 tokens. ⛔⛔ **Publica los datos de la semana pasada y NADA lo dice** — es un número plausible sin marca | 22/08 |
+| **21** · Resumen Ejecutivo RRSS | `L-050` | 🚫 **fuera de alcance** | ⭐⭐ **No se cablea, y el usuario la escondió** — 22/08. **21 tokens dormidos** (los 21 de la lámina). ⛔⛔ **Esconderla cierra el peor abierto que tenía el proyecto**: su primer bloque publicaba los datos de la semana pasada **sin ninguna marca**. Ver la sección 🚫, abajo — **el motivo hay que leerlo antes de volver a mostrarla** | 22/08 |
 | **22** · MUCHAS GRACIAS | `L-051` | 🟡 | Cierre, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | *(orden 8)* · «1 a 1» | `L-053` | ⛔ 🕳 | `filtro = tipo=Uno a uno`, 32 tokens `u1_`. Nace con `D-37`. ⭐ **Las impresiones del PRE reproducen exacto** — `V-21` Google **17.401**, `V-23` Meta **25.099**, `V-25` Meta Retiro **18.015**. ⛔ **El único roto es `u1_prog_impresiones`, y es un agujero de FUENTE**: los 94.955 del **POST de San Cristóbal** no están en ninguna celda de los siete libros de los dos fixtures (`X-05`, `C-57`). **Distinto del problema del Resumen** — acá falta el dato, allá sobra universo. ⚠ **Y 4 de sus 36 tokens son `ecv_`** —`ecv_asistentes`, `ecv_comuna`, `ecv_fecha`, `ecv_inscriptos`—: **`ecv_fecha` es la fecha de la reunión** (`rdv` · `fecha_periodo` · col. E de `RVD JM-CM - ES`, que `MAPEO` describe como *"filtro de período"*) y **NO tiene fila en `MARCADORES`**. Sólo vive en `TOKENS_CORTE_VERTICAL_` (`Marcadores.gs`), una lista del diagnóstico `corteVerticalRetiro2407_()`. **Mismo hueco que `ecv_barrio1-3`** | 22/08 |
 
-**Conteo: 1 ✅ · 5 🟡 · 17 ⛔ · 0 ⏳**, sobre 23 filas de `LAMINAS` para `jm`.
+**Conteo: 1 ✅ · 5 🟡 · 14 ⛔ · 0 ⏳ · 3 🚫**, sobre 23 filas de `LAMINAS` para `jm`.
+
+⭐ **Las tres 🚫 salieron del conteo de ⛔ el 22/08** —eran 17— **y no se cerraron: se sacaron del
+alcance.** El total de filas no cambia, y ése es el punto: una lámina fuera de alcance **sigue
+existiendo en la plantilla**, con sus tokens adentro.
+
+---
+
+## 🚫 Las tres láminas fuera de alcance — decisión del usuario, 22/08/2026
+
+**No se cablean, no se miden y no cuentan como faltantes.** Las tres siguen en la plantilla y las
+tres siguen teniendo tokens adentro: lo que cambió es que **el motor ya no tiene trabajo pendiente
+ahí**, y por lo tanto el tablero no puede seguir contándolas como si lo tuviera.
+
+### ⛔ Cuántos tokens quedan dormidos en cada una — la condición del usuario
+
+| lámina | `lamina_id` | tokens en la lámina | **dormidos** | escondida |
+|---|---|---|---|---|
+| **10** · M2 | `L-039` | 23 | **23** — la lámina **entera** | **sí**, y ya lo estaba: `LAMINAS` del 21/08 la trae `escondida = sí` |
+| **19** · Desagregados · Respuestas | `L-048` | 15 | **14** | **sí**, ídem |
+| **21** · Resumen Ejecutivo RRSS | `L-050` | 21 | **21** — la lámina **entera** | ⭐ **sí, la escondió el usuario el 22/08.** Antes estaba visible |
+| | | **59** | **58** | |
+
+⭐⭐ **«Dormido» significa una cosa y hay que leerla literal: el día que alguien muestre la lámina,
+esos tokens salen `/////` en la corrida siguiente.** No hay paso intermedio ni degradación suave —
+una lámina que vuelve a mostrarse **sale entera en símbolos de sin cablear**, porque ninguno de sus
+tokens tiene fila en `MARCADORES`.
+
+⛔ **Por eso el número va en el tablero y no en una nota al pie: hay que saberlo ANTES de mostrarla,
+no después de ver el deck.** Es la misma familia que el glifo que miente sobre la causa
+(`CLAUDE.md` §4): quien muestre una de éstas y vea 21 `/////` va a leerlo como *«se rompió algo»*
+cuando la verdad es *«esto nunca se cableó, y está escrito desde el 22/08»*.
+
+**Las dos que salvan un token, y de dónde sale el dato:**
+
+- **`L-048` tiene 14 dormidos y no 15**: su único token con fila es **`camp_titulo`**. ⚠ **Es una
+  deducción, no una medición** — sale de cruzar el censo del 22/08 (*"14 de 15 sin fila"*) con el
+  snapshot `MARCADORES_2026-08-21_2225.tsv`, y **cierra en las cinco láminas de campaña**: `L-042`
+  1 de 3, `L-043` 1 de 7, `L-045` 9 de 11, `L-046` 6 de 31, `L-047` 4 de 50 — en todas, la
+  diferencia son exactamente los `camp_*` cableados, y `camp_titulo` aparece en todas.
+- **`L-039` y `L-050` no salvan ninguno**: el censo las mide **23 de 23** y **21 de 21**.
+
+### ⭐⭐ RRSS es la que hay que leer con cuidado, porque esconderla CIERRA un abierto
+
+**El primer bloque de `L-050` no tiene tokens: es texto fijo de la plantilla, y el motor no lo
+toca.** Lo medido el 22/08 (`VALIDACION_deck_generado_vs_equipo_2026-08-22.md` §3.6): el deck del
+motor publicaba `85 % · 99 % · 98 % · 98 %`, promedio `95 %`, *"8.813 menciones… 4.7M
+visualizaciones"* y el tema *"video de un hombre agrediendo a una niña en Palermo"* — **los datos de
+la semana pasada, intactos y sin una sola marca que lo dijera**. El segundo bloque, que sí tiene
+tokens, salía entero `/////`.
+
+⚠ **La misma lámina mentía de dos formas opuestas a la vez**, y ésa era la parte cara: el bloque que
+el motor **no toca** publicaba datos viejos **sin marca**, y el que sí toca declaraba correctamente
+que nadie lo cableó. **Un número obsoleto sin marca es peor que un `/////`**: el `/////` manda a
+cablear, el número viejo **no manda a nada, porque nadie sabe que está viejo**.
+
+⭐ **Esconderla lo resuelve de raíz, y por eso se anota como cierre y no como postergación.** No
+quedó un número viejo tapado ni marcado: **no se publica**. La lámina no sale en el deck, así que no
+hay texto que alguien pueda leer como si fuera de esta semana.
+
+⛔⛔ **Y la advertencia, que es el motivo entero de escribir esto acá: el día que alguien vuelva a
+mostrar `L-050` sin cablear los 21 tokens, el problema vuelve ENTERO.** No vuelve a medias y no
+vuelve degradado — vuelve exactamente igual, porque **la causa nunca se arregló**: el primer bloque
+sigue sin tokens y el motor sigue sin poder tocarlo. Esconderla es lo que lo tapa, no un arreglo.
+
+**Lo que haría falta para mostrarla de nuevo sin reabrirlo, y son dos cosas, no una:**
+
+1. **Cablear los 21 tokens** del segundo bloque — hoy no hay ninguno con fila.
+2. ⭐ **Resolver el primer bloque, que es el problema de verdad y NO se arregla cableando.** Un
+   bloque sin tokens es invisible para el motor: o se le ponen tokens en la plantilla —y eso es del
+   equipo, `C-01`—, o se lo borra, o se acepta explícitamente que ahí va texto que escribe una
+   persona. **Las tres son decisiones del equipo o del usuario; ninguna es código.**
+
+⚠ **Y esto tampoco cierra la condición 5 de `D-38` en general** —*«nada que el motor no escribió se
+lee como de esta semana»*—: cierra **el caso RRSS**, que era el único medido. La condición pide
+**listar las láminas sin tokens y declarar una por una si es intencional**, y ese censo sigue sin
+hacerse.
+
+### Cómo se ejecuta el «escondida», y por qué el registro va a decir otra cosa un rato
+
+⭐ **`LAMINAS.escondida` se refleja, no se decide** (`Instalar.gs`, `B.3`): sale de `isSkipped()` y
+lo escribe el sellador. **Esconder o mostrar desde el motor no está autorizado** — `C-01`
+addendum 1: la plantilla es del equipo. O sea que **la única forma correcta de sacar `L-050` es
+justo la que se usó: que una persona la esconda a mano en la plantilla.**
+
+**Las dos consecuencias, y conviene tenerlas separadas:**
+
+- ✅ **La corrida ya la saltea**, desde el momento en que se escondió. `laminasEscondidas_`
+  (`Armonizar.gs:180`) lee `isSkipped()` **de la plantilla viva**, no del registro — no hace falta
+  correr nada para que tome efecto.
+- ⚠ **`LAMINAS` va a seguir diciendo `escondida` vacío para `L-050` hasta el próximo sellado.** No
+  es una inconsistencia a arreglar a mano: es un espejo que todavía no se refrescó, y **ningún
+  código lo lee para decidir** (los dos únicos lectores, en `Auditoria.gs`, lo imprimen en un
+  reporte). Se corrige solo la próxima vez que corra el sellador.
+
+⚠ **Y un número que queda desactualizado y hay que RE-MEDIR, no calcular:** los **«49 crudos
+permanentes»** que `Desatendida.gs` declara en su encabezado. Ese 49 se midió **sobre el deck
+expandido** —donde las secciones repetibles duplican sus láminas— y con `L-050` visible. Con RRSS
+escondida el número sube; **cuánto exactamente lo dice una corrida, no una suma.** Lo que no cambia
+es lo que ese comentario protege: **una reanudación guiada por los crudos no terminaría nunca**, y
+ahora menos.
+
+### Lo que esto le hace al censo — la cuarta causa de «sin fila»
+
+**El censo del 22/08 los sigue listando, y está bien: mide la plantilla, no el alcance.** Un token
+sin fila en `MARCADORES` es un hecho sobre el registro, y sacar una lámina del alcance no le cambia
+el hecho. **El que tiene que distinguirlos es este tablero.**
+
+| | |
+|---|---|
+| tokens distintos sin fila (censo 22/08) | **192** |
+| **dejan de ser faltantes** | **57** |
+| **quedan como faltantes** | **135** |
+
+⚠ **Y son 57, no 58 — la diferencia es real y conviene saber de dónde sale.** Las tres láminas
+suman **58 apariciones**, pero **`camp_remitente` vive también en `L-047`** (Desagregados · Mail),
+que **sigue en el alcance**. El censo cuenta **192 distintos sobre 197 apariciones** justamente
+porque cinco tokens aparecen en dos láminas; éste es uno de los cinco. **Un token no sale del
+conteo mientras le quede una lámina viva.**
+
+⭐ **Y con esto, «sin fila» pasa a tener CUATRO causas, y sólo una es un faltante.** Las tres
+primeras son de `C-82` (22/08):
+
+| # | causa | ejemplo | ¿es faltante? |
+|---|---|---|---|
+| 1 | **nadie lo cableó** | los 32 `post_` de `L-036` | ✅ **sí** |
+| 2 | **otro mecanismo lo produce** | `periodo` — el **único** token que `Generador.gs` produce fuera de `MARCADORES`, medido greppeando | ❌ no |
+| 3 | **es texto que escribe una persona** | los `*_bench_*`, los `*_insight` | ❌ no |
+| 4 | ⭐ **fuera de alcance por decisión** — nace hoy | los 57 de estas tres láminas | ❌ no |
+
+⚠ **El censo las lista juntas y no las distingue, y eso no es un defecto suyo: no tiene con qué.**
+La causa 4 no está en ninguna hoja de registro —`LAMINAS` no tiene columna de alcance— así que **el
+único lugar donde vive es este documento**. Quien cite el 192 como *"lo que falta cablear"* está
+sumando cuatro cosas distintas.
 
 ---
 
@@ -479,3 +623,4 @@ cuenta ahí no da `-`: da un número plausible cinco veces más chico.**
 |---|---|
 | 22/08/2026 | Nace con la Parte A del `_27`. Estado inicial: 0 ✅ · 5 🟡 · 18 ⛔ |
 | 22/08/2026 | Parte C del `_27`. **Ninguna fila se movió de estado, y eso es el resultado**: la 2 y la 5 siguen ⛔. Lo que cambió es el *«qué falta»* — el Call Center pasó de *"sin cablear"* a **`MAPEO` escrito y cableado frenado por `X-28`**, que es un bloqueo con nombre en vez de un hueco. Y la 5 queda anotada como **pintada sin control**, para que no se cierre de arrastre el día que se cablee la 2 |
+| 22/08/2026 | ⭐ **Tres láminas salen del alcance por decisión del usuario** — `L-039`, `L-048` y `L-050`. Nace el estado **🚫** y el conteo pasa de **17 ⛔** a **14 ⛔ · 3 🚫**. Del censo, **57 de 192** tokens dejan de ser faltantes y quedan **135**. **RRSS es la que cierra un abierto**: escondida, ya no publica los datos de la semana pasada sin marca |

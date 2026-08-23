@@ -689,6 +689,45 @@ sola familia de tokens no puede expresar y lo que `LAMINAS.filtro` por ítem vue
 **En `secco` el bloque es de cuatro láminas** (posiciones 5 a 8) y la condición se expresa igual;
 la tabla completa está en `docs/Prompts/2026-08-21_11.1_addendum_secco_y_rol.md` §1.
 
+### 1.11 Tres láminas FUERA DE ALCANCE — decisión del usuario, 22/08/2026
+
+**No se cablean.** Es la misma figura que §2.5 ya usa para `camp_bench_*` —*fuera de alcance con
+fecha*— aplicada por primera vez a láminas enteras: **no es "resuelta" y no es "abierta"**. Una
+pregunta abierta vuelve a levantarse en cada revisión; ésta **no se vuelve a levantar en ningún
+prompt**. Si algún día se decide cablearlas, se reabre explícitamente.
+
+| lámina | `lamina_id` | tokens que quedan dormidos |
+|---|---|---|
+| **10** · M2 *(escondida)* | `L-039` | **23** — la lámina entera |
+| **19** · Desagregados · Respuestas *(escondida)* | `L-048` | **14** de 15 |
+| **21** · Resumen Ejecutivo RRSS | `L-050` | **21** — la lámina entera, ⭐ **y el usuario la escondió** |
+
+⛔ **El conteo de dormidos vive en `docs/CIERRE_POR_LAMINA.md`, no acá**, y ahí está el detalle de
+cómo se midió. Esta ficha es la **decisión**; ése es el **tablero**.
+
+**Las dos primeras ya estaban escondidas** y su contenido ya venía diferido en parte —los once
+`camp_resp_*` de `L-048` están diferidos desde el 05/08, §2.5—. Lo que cambia es que ahora la
+decisión es **de la lámina completa** y sale del conteo de faltantes.
+
+#### ⭐⭐ RRSS es distinta: esconderla CIERRA un problema, no lo posterga
+
+**El primer bloque de `L-050` no tiene tokens** — es texto fijo de la plantilla, así que el motor no
+lo toca y **salía intacto con los datos de la semana pasada, sin ninguna marca**. Medido el 22/08
+(`docs/VALIDACION_deck_generado_vs_equipo_2026-08-22.md` §3.6): `85 % · 99 % · 98 % · 98 %`,
+promedio `95 %`, *"8.813 menciones… 4.7M visualizaciones"*, el tema del video de Palermo. El segundo
+bloque, que sí tiene tokens, salía entero `/////`.
+
+⚠ **Un número obsoleto sin marca es peor que un `/////`:** el `/////` manda a cablear, el número
+viejo **no manda a nada porque nadie sabe que está viejo**. Esconder la lámina lo resuelve **de
+raíz**: no se publica, así que no hay nada que alguien pueda leer como de esta semana.
+
+⛔⛔ **Y por eso queda escrito con el motivo: si alguien vuelve a mostrar `L-050` sin cablear los 21
+tokens, el problema vuelve ENTERO.** La causa nunca se arregló —el primer bloque sigue sin tokens y
+el motor sigue sin poder tocarlo—; esconderla es lo que lo tapa. **Mostrarla de nuevo pide dos
+cosas, no una:** cablear los 21, **y** decidir qué se hace con el bloque sin tokens (ponerle tokens
+en la plantilla es del equipo, `C-01`; las otras salidas son borrarlo o declarar explícitamente que
+ahí escribe una persona).
+
 ---
 
 ## 2. Informe semanal SECCO-SSCDI
