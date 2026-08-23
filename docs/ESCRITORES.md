@@ -308,6 +308,41 @@ hoja de este libro se escribe sin que haya nadie mirando. Dos consecuencias:
 - **no hay a quién preguntarle nada**, así que todo lo que en una corrida manual sería un diálogo
   acá tiene que ser una guarda que para y reporta.
 
+### ANCLAJE_MEDICION — hoja nueva, 23/08/2026
+
+**No es hoja de registro**, igual que `ANCLAJE_PENDIENTE`, `CORRIDAS`, `FALTANTES` y
+`PLAN_CORRIDA`: no entra a `ALCANCE_REGISTROS_` ni a las tres listas de `tools/listas.js`.
+**Nadie la siembra y nadie la edita a mano.**
+
+| función | método | camino |
+|---|---|---|
+| `registrarMedicionAnclaje_` | `appendRow` | vía `anclarEncuentrosSinCache_`, **una fila por anclaje real** |
+| `registrarMedicionAnclaje_` | `deleteRows` | poda las viejas al pasar de `TOPE_MEDICIONES_ANCLAJE_` (200) |
+| `obtenerHojaAnclajeMedicion_` | `insertSheet` | la crea la primera vez |
+
+⛔ **Por qué existe:** hasta hoy, `ANCLAJE_PENDIENTE` vacío significaba **dos cosas opuestas** —*«no
+corrió»* y *«corrió y nadie cayó bajo el umbral»*—, y las dos eran la misma pantalla en blanco. Y
+los `sinLink` **no dejaban rastro en ninguna hoja**: vivían en el retorno de `anclarEncuentros` y
+morían con la ejecución. Con una fila escrita, `intentados > 0` con `sin_link: 0` **afirma** que se
+midió, que es lo que no se podía decir.
+
+⭐ **Escribe `anclarEncuentrosSinCache_` y no `anclarEncuentros`**, y la diferencia es el conteo:
+la de afuera cachea, y `itemsDeSeccion_` la llama **una vez por sección**. Desde allá habría una
+fila por consumidor y el número diría cuántas veces se preguntó, no cuántos encuentros se
+intentaron anclar.
+
+⚠ **Acumula, a diferencia de `FALTANTES`**, y es a propósito: acá el valor está en la serie —*«esta
+semana anclaron 4 de 6 y la anterior 6 de 6»*—, y una fila por corrida no crece como 190.
+
+⚠ **Los nombres van sin normalizar.** Si un nombre de encuentro llega sucio, eso es un hallazgo
+sobre el parseo y tiene que verse: el sufijo `@ítem` de `FALTANTES` fue la herramienta con la que
+se diagnosticó `X-40`, y un instrumento que lava sus datos de entrada esconde el bug justo donde se
+diagnostica.
+
+⚠ **No puede voltear el anclaje, y tampoco se traga su propio fallo.** Devuelve `ok: false` con el
+motivo, y el reporte de la unión lo publica — una hoja de mediciones incompleta que nadie sabe que
+lo está es peor que ninguna hoja. Es el precedente de `marcarEtapa_`.
+
 ### FALTANTES_PREVIO — hoja nueva, 23/08/2026
 
 **No es hoja de registro**, igual que `PLAN_CORRIDA`, `CORRIDAS` y `FALTANTES`: no entra a
