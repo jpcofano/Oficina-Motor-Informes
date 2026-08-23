@@ -4904,12 +4904,30 @@ function diagL046() {
  * Ahí sí están, pero `LAMINAS` no las conoce, así que ninguna sección las puede reclamar.
  */
 function diagDondeVivenLosIvr() {
-  var BUSCADOS = ['ivr_llamados', 'ivr_atendidos', 'ivr_at_pct', 'ivr_75', 'ivr_75_pct', 'ivr_marque1',
-    'ivr_audiencia', 'ivr_campanias'];
+  /* ⛔⛔ **La lista sale de `MARCADORES`, NO escrita a mano — y esto se corrige el 23/08 después de
+   * que la versión a mano produjera una alarma falsa.** El array literal incluía `ivr_audiencia`,
+   * que **no es un marcador**: es un `campo_logico` de `MAPEO` (`digital/Directa IVR`, columna J,
+   * encabezado «Audiencia»). El diagnóstico lo reportó como *«fila cableada contra una caja que no
+   * existe»* **sobre una fila que nunca existió**.
+   *
+   * ⭐ **Es la misma regla que `probar-desglose-plataforma.js` aplica al cablear** —*los tokens se
+   * cruzan contra el registro, uno por uno, nunca contra una lista de memoria*— y la incumplí en el
+   * instrumento en vez de en el cableado. Un nombre de `MAPEO` y uno de `MARCADORES` se parecen
+   * demasiado para escribirlos de memoria. */
+  var BUSCADOS = leerMarcadores_()
+    .filter(function (m) { return String(m.marcador || '').indexOf('ivr_') === 0; })
+    .map(function (m) { return String(m.marcador).trim(); })
+    .sort();
   // Control positivo: éstos SÍ se pintan hoy. Si salen igual que los buscados, el instrumento
   // está midiendo mal y no hay que creerle nada.
   var CONTROL = ['enc_audiencia', 'enc_atendidos', 'enc_e75', 'enc_marque1'];
   var TODOS = BUSCADOS.concat(CONTROL);
+  if (!BUSCADOS.length) {
+    // Cero medido es un problema, no un silencio (`CLAUDE.md` §4).
+    Logger.log('⛔ MARCADORES no tiene ninguna fila `ivr_*`. No hay nada que buscar — y eso,');
+    Logger.log('   si no se esperaba, es el hallazgo.');
+    return { ok: false, motivo: 'cero marcadores ivr_* en MARCADORES' };
+  }
 
   // ⛔ Ver la nota de `diagL046()`: `leerRegistro_` sin clave primaria devuelve `{}` en
   // silencio. Acá costó una corrida entera — el recorrido no se ejecutó y el reporte dijo
