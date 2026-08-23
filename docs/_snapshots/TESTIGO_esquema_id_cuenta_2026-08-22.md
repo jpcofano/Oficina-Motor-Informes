@@ -31,21 +31,21 @@ explica.**
 
 ## Los valores del ANTES
 
-> ⏳ **PENDIENTE — se completa con la corrida de `jm` sobre `agosto_14_20` del 22/08.**
-> Hasta que estén, **este documento no habilita el cambio de esquema.**
+> ✅ **COMPLETO — corrida de `jm` sobre `agosto_14_20` del 22/08.** El cambio de esquema queda
+> habilitado en cuanto se cierre el fallo de `ecv_barrio1-3`, que va antes.
 
 ### `looker/DIGITAL` — los ocho `imp_*`
 
 | marcador | valor publicado |
 |---|---|
-| `imp_meta` | ⏳ |
-| `imp_google` | ⏳ |
-| `imp_prog` | ⏳ |
-| `imp_total` | ⏳ |
-| `gcba_imp_meta` | ⏳ |
-| `gcba_imp_google` | ⏳ |
-| `gcba_imp_prog` | ⏳ |
-| `gcba_imp_total` | ⏳ |
+| `imp_meta` | **-2.457.901-** |
+| `imp_google` | **-1.011.829-** |
+| `imp_prog` | **-9.794.231-** |
+| `imp_total` | **-13.263.960-** ⚠ ver abajo |
+| `gcba_imp_meta` | **-31.102.999-** |
+| `gcba_imp_google` | **-36.689.459-** |
+| `gcba_imp_prog` | **-89.037.219-** |
+| `gcba_imp_total` | **-156.829.677-** |
 
 ⚠ **Van con el formato tal como sale**, envuelto en guiones: los ocho están en `miles_revisar`.
 
@@ -53,13 +53,34 @@ explica.**
 
 | marcador | valor publicado |
 |---|---|
-| `mail_entregados` | ⏳ |
-| `gcba_mail_entregados` | ⏳ |
-| `mail_envios` | ⏳ |
-| `gcba_mail_envios` | ⏳ |
-| `mail_aperturas` · `mail_or` | ⏳ |
-| `m2_envios` · `m2_mails_enviados` · `m2_mails_entregados` · `m2_aperturas` · `m2_clics` · `m2_or` | ⏳ |
-| **`m2_campanias`** *(nuevo)* | ⏳ |
+| `mail_entregados` JM | **538.276** |
+| `mail_entregados` GCBA | **2.334.767** |
+| `mail_envios` JM | **6** |
+| `gcba_mail_envios` | **63** |
+| `gcba_sms_envios` | **4** |
+| `m2_envios` | **33** |
+| `m2_mails_enviados` | **687.457** |
+| `m2_mails_entregados` | **679.897** |
+| `m2_aperturas` · `m2_or` | **197.099** · **29 %** |
+| `m2_clics` · `m2_ctor` | **3.676** · **1,9 %** |
+| **`m2_campanias`** *(nuevo)* | **21** |
+
+⭐ **`m2_campanias` = 21 contra `m2_envios` = 33** — el `CUENTA_DISTINTOS` funciona y la
+diferencia es la que tiene que haber: **hay campañas con más de un envío**.
+
+### ⚠⚠ Y un hallazgo que cambia el criterio del testigo
+
+**`imp_total` JM dio `-13.263.960-` y en la corrida anterior `-13.263.961-`: UN PESO de diferencia,
+sin que nada haya cambiado en su camino.**
+
+⛔ **Entonces el testigo NO puede exigir igualdad al último dígito en los `imp_*`.** No se persigue
+ahora —es del «antes», no del cambio— pero **queda escrito como criterio**: una diferencia de ±1 en
+un agregado de millones no acusa al cambio de esquema.
+
+⭐ **Y conviene saber qué NO explica:** no es `R-31` —el campo no cambió entre fotos, la corrida es
+la misma base— ni el tope de `R-30`, que ya estaba activo en las dos. Lo más probable es
+**redondeo en la suma**, y por eso el criterio correcto es una tolerancia declarada y no una
+persecución.
 
 ⭐⭐ **`mail_entregados` es el que más importa y el motivo hay que tenerlo presente:** ya se miró
 **dos veces** —los 15 de diferencia que resultaron ser **carga manual** (`X-31`, `R-31`)—. **Si

@@ -4608,3 +4608,104 @@ function diagTrazaDeFrecuencia() {
     cerrarCacheRegistros_();
   }
 }
+
+
+/**
+ * `2026-08-22` — **por qué los tres `ecv_barrio*` publican `---`.** Trae **el motivo**, que es lo
+ * único que decide, en vez de deducirlo del símbolo.
+ *
+ * ⛔ **`---` significa «falló», no «sin dato»**, y el despachador **ya tiene el motivo**: envuelve
+ * la excepción en `operacion "ELEMENTO" falló: <mensaje>` y la deja en `traza`. **El síntoma está
+ * escrito y nadie lo estaba leyendo** — es la misma familia que el `P2` de `comunicaciones_post`,
+ * que el motor reportaba y nadie miraba.
+ *
+ * ⚠ **Por qué no alcanzó el control de `node`:** `tools/probar-elemento.js` corre 32 afirmaciones,
+ * **seis de ellas por el despachador**, y **todas pasan**. Con el catálogo presente el camino
+ * funciona. Así que lo que falla está **antes de la operación**, en cómo el marcador llega — y eso
+ * sólo se ve contra las hojas vivas.
+ *
+ * **Qué imprime, y cada línea acusa a un culpable distinto:**
+ *
+ * | si falla en… | el culpable es |
+ * |---|---|
+ * | la fila de `MARCADORES` | el alta — `curarMarcadores_` no escribió alguna columna |
+ * | `resolverCatalogoDeMarcador_` | el catálogo — `rdv/Comunas` no resuelve |
+ * | `despacharOperacion_` | la operación — y el motivo lo dice |
+ *
+ * ⭐ **Compara contra `ecv_barrios`, que SÍ publica en la misma lámina y la misma corrida.** Las
+ * dos filas difieren en tres columnas y nada más; el diff las pone al lado.
+ *
+ * Sin parámetros y sin `_`, para el desplegable (`CLAUDE.md` §2).
+ */
+function diagBarriosIndexados() {
+  Logger.log('== por qué ecv_barrio1-3 publican --- ==');
+
+  var COLS = ['marcador', 'familia', 'informe_id', 'base_id', 'solapa', 'campo_logico',
+    'operacion', 'valor_fijo', 'filtro', 'dimensiones', 'formato', 'catalogo', 'separador'];
+  var reg = leerRegistro_('MARCADORES', 'marcador');
+
+  Logger.log('');
+  Logger.log('1 · LAS FILAS, la que anda y las tres que no');
+  ['ecv_barrios', 'ecv_barrio1', 'ecv_barrio2', 'ecv_barrio3'].forEach(function (m) {
+    var f = reg[m];
+    if (!f) { Logger.log('   ⛔ ' + m + ' — NO TIENE FILA en MARCADORES'); return; }
+    var partes = COLS.map(function (c) { return c + '=' + JSON.stringify(f[c]); });
+    Logger.log('   ' + m + ':');
+    Logger.log('      ' + partes.join(' · '));
+  });
+
+  /* ⚠ El diff explícito: mirar dos listas largas y encontrar la diferencia a ojo es exactamente
+   * como se pasan por alto. Se calcula, no se lee. */
+  Logger.log('');
+  Logger.log('2 · EN QUÉ DIFIEREN de ecv_barrios (que sí publica)');
+  var base = reg['ecv_barrios'];
+  if (base) {
+    ['ecv_barrio1', 'ecv_barrio2', 'ecv_barrio3'].forEach(function (m) {
+      var f = reg[m];
+      if (!f) return;
+      var difs = COLS.filter(function (c) { return String(base[c]) !== String(f[c]); })
+        .map(function (c) { return c + ': "' + base[c] + '" → "' + f[c] + '"'; });
+      Logger.log('   ' + m + ': ' + (difs.length ? difs.join(' · ') : '(idénticas)'));
+    });
+  }
+
+  Logger.log('');
+  Logger.log('3 · EL CATÁLOGO — resolverCatalogoDeMarcador_ para cada una');
+  ['ecv_barrios', 'ecv_barrio1'].forEach(function (m) {
+    var f = reg[m];
+    if (!f) return;
+    var cat = resolverCatalogoDeMarcador_(f);
+    Logger.log('   ' + m + ': ok=' + cat.ok +
+      (cat.ok ? ' · ' + (cat.catalogo.lista || []).length + ' entrada(s) · origen ' + cat.catalogo.origen
+              : ' · ⛔ ' + cat.motivo));
+  });
+
+  Logger.log('');
+  Logger.log('4 · LA RESOLUCIÓN REAL, con el motivo entero');
+  var ventana = resolverVentana({ periodo_ref: 'agosto_14_20' });
+  if (!ventana.ok) { Logger.log('   ⛔ ' + ventana.motivo); return ventana; }
+
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+    var r = resolverMarcadores('jm', {
+      ventana: ventana,
+      solo_marcadores: ['ecv_barrios', 'ecv_barrio1', 'ecv_barrio2', 'ecv_barrio3']
+    });
+    r.resultados.forEach(function (x) {
+      Logger.log('   ── ' + x.marcador + ' · estado=' + x.estado);
+      Logger.log('      valor: ' + JSON.stringify(x.valor));
+      Logger.log('      traza: ' + x.traza);
+    });
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+
+  Logger.log('');
+  Logger.log('⭐ CÓMO SE LEE: el motivo del --- está en `traza`, después de');
+  Logger.log('   «operacion "ELEMENTO" falló: ». Ese texto es la respuesta, no el símbolo.');
+  Logger.log('⚠ Si el punto 3 dice ok=false para ecv_barrio1 y ok=true para ecv_barrios,');
+  Logger.log('   el problema es la COLUMNA catalogo de la fila, no la operación.');
+  return { ok: true };
+}

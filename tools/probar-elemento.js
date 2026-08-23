@@ -203,6 +203,73 @@ console.log('6 · control negativo — que la sección 1 sepa ponerse roja');
     'se calculó ' + veces() + ' — si diera 1, la clave estaría fusionando conjuntos distintos');
 }
 
+
+
+/* ─────────────────────────────────────────────────────────────────────────────────────────
+ * 7 · ⛔⛔ EL CAMINO QUE INVOCA — agregado el 22/08 después de que los tres `ecv_barrio*`
+ *     publicaran `---` con las 26 afirmaciones de arriba en verde.
+ *
+ * ⭐ **Es C-78 otra vez, y el usuario lo nombró:** aquella vez el control probaba la operación en
+ * aislamiento y el hueco estaba en el despachador. Volvió a pasar. **Así que esta sección no
+ * llama a `opELEMENTO`: llama a `despacharOperacion_`, con el `ctx` armado COMO LO ARMA
+ * `Generador.gs`** — que es donde puede faltar algo.
+ * ───────────────────────────────────────────────────────────────────────────────────────── */
+console.log('');
+console.log('7 · ⛔⛔ por el DESPACHADOR, con el ctx tal como lo arma Generador.gs');
+{
+  const desp = extraer('despacharOperacion_');
+  const cuerpo = [
+    'var cacheConjuntoLista_ = {};',
+    'var PREFIJO_FN_ = "FN:";',
+    'var FUNCIONES_PROPIAS_ = {};',
+    extraer('valoresDeCtx_'),
+    'function trazaDeVentana_(ctx) { return ""; }',
+    'function normalizar_(s) { return String(s || "").trim().toLowerCase(); }',
+    extraer('claveConjuntoLista_'),
+    extraer('conjuntoDeLista_'),
+    extraer('calcularConjuntoDeLista_'),
+    extraer('opLISTA'),
+    extraer('opELEMENTO'),
+    'var OPERACIONES_ = { LISTA: opLISTA, ELEMENTO: opELEMENTO };',
+    desp,
+    'return despacharOperacion_;'
+  ].join('\n');
+  const despachar = new Function(cuerpo)();
+
+  /* ⚠ El `ctx` de `Generador.gs` NO trae `filtro` ni `dimensiones`: se copia tal cual para que
+   * este control vea lo mismo que ve el motor. Copiar el ctx es la lección del 22/08 sobre los
+   * instrumentos que arman su propio preámbulo. */
+  function ctxGenerador(valorFijo, conCatalogo) {
+    const c = {
+      marcador: 'ecv_barrio' + String(valorFijo).charAt(0),
+      base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'barrio',
+      columna: 'B', encabezado: 'Barrio',
+      ventana: { desde: 'A', hasta: 'B' },
+      valores: ['Parque Avellaneda', 'Parque Patricios'],
+      valor_fijo: valorFijo
+    };
+    if (conCatalogo) { c.catalogo = CAT; c.separador = ''; }
+    return c;
+  }
+
+  const r1 = despachar('ELEMENTO', ctxGenerador('1/3', true));
+  af('con catálogo, el despachador devuelve ok', r1.ok === true, 'motivo: ' + r1.motivo);
+  af('y publica el primer barrio', r1.valor === 'Parque Avellaneda', 'dio ' + JSON.stringify(r1.valor));
+
+  const r3 = despachar('ELEMENTO', ctxGenerador('3/3', true));
+  af('la caja 3 devuelve ok con valor vacío (NO error)', r3.ok === true && r3.valor === '',
+    'ok=' + r3.ok + ' valor=' + JSON.stringify(r3.valor) + ' motivo=' + r3.motivo);
+
+  /* ⭐ LA AFIRMACIÓN QUE FALTABA: sin catálogo el despachador NO tira, devuelve ok:false — y eso
+   * es lo que el deck pinta como `---`. Si el camino real no le pasa el catálogo, ÉSTE es el
+   * síntoma exacto que se vio. */
+  const sinCat = despachar('ELEMENTO', ctxGenerador('1/3', false));
+  af('SIN catálogo el despachador devuelve ok:false con motivo legible', sinCat.ok === false);
+  af('el motivo nombra el catálogo', /cat[aá]logo/i.test(sinCat.motivo || ''), sinCat.motivo);
+  af('ELEMENTO está en OPERACIONES_ del archivo real',
+    /ELEMENTO:\s*opELEMENTO/.test(FUENTE), 'sin esto el despachador diría «operacion desconocida»');
+}
+
 console.log('');
 console.log('══════════════════════════════════════════');
 console.log('  ' + ok + ' afirmación(es) en verde · ' + mal + ' en rojo');
