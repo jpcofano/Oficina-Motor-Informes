@@ -114,3 +114,141 @@ y tiene su propio agregado global desde el 15/08.
 predicción así falló: entró al seed y a **un** consumidor, no a `leerFilasSolapas_`, y el síntoma
 —`"undefined"` como texto— llegó **un mes después**. **La predicción dice dónde mirar, no reemplaza
 mirar.**
+
+---
+
+# ⭐⭐ ADDENDUM — 23/08/2026 · el criterio de este testigo estaba mal, y se corrige acá
+
+> **El texto de arriba no se toca** (es evidencia fechada). Esto es un addendum: corrige **el
+> criterio de comparación**, no los números del «antes».
+
+## Qué pasó — la corrida del 23/08 con `X-39` aplicado
+
+| grupo | resultado |
+|---|---|
+| `mail_entregados` JM **538.276** · GCBA **2.334.767** | ✅ **idénticos, los dos** |
+| envíos **6 · 63 · 4** | ✅ idénticos |
+| `imp_meta` · `imp_prog` · `imp_total` de **JM** | ✅ idénticos |
+| `imp_google` JM **-1.011.828-** contra `-1.011.829-` | ✅ **±1**, dentro de la tolerancia que este mismo testigo declaró |
+| ⛔ `gcba_imp_meta` | **-31.398.577-** contra `-31.102.999-` → **+295.578 (+0,95 %)** |
+| ⛔ `gcba_imp_google` | **-36.928.932-** contra `-36.689.459-` → **+239.473 (+0,65 %)** |
+| ⛔ `gcba_imp_prog` | **-89.083.922-** contra `-89.037.219-` → **+46.703 (+0,05 %)** |
+| ⛔ `gcba_imp_total` | **-157.411.431-** contra `-156.829.677-` → **+581.754 (+0,37 %)** |
+
+**`X-39` se revirtió**, por el criterio del usuario: *si alguno se movió, se revierte, no se
+explica.* La reversión es del **seed**; las tres filas de `MAPEO` se quedan, porque sin
+`campo_id_cuenta` ninguna se lee y sacarlas las dejaría huérfanas en la hoja.
+
+## ⛔ Por qué el criterio estaba mal — este testigo no podía dar otro resultado
+
+**Los ocho `imp_*` salen de `looker/DIGITAL`, y `R-31` la mide `inestable por CAMBIO`:
+`dig_impresiones` se movió en `19/503` filas (3,8 %) entre los dos exports, con **cero altas y 19
+cambios**, mínimo `−893`.** Recálculo en el lugar: mismas filas, otros valores.
+
+⛔⛔ **Un campo que `R-31` clasifica `CAMBIO` no admite control por igualdad exacta, y este testigo
+se lo exigió igual.** No es que la corrida haya salido mal: **el testigo estaba mal construido**, y
+habría producido un «se movió» tarde o temprano sin que nada estuviera roto.
+
+⚠ **Y la regla ya estaba escrita** — `CLAUDE.md` §4: *«la comparación no puede depender de lo que
+se mueve solo»*. No es un aprendizaje nuevo: es uno que no se aplicó al armar el testigo.
+
+## ⚠ La corrección que hay que leer con cuidado: `mail_entregados` TAMPOCO era de igualdad
+
+Al revertir se dijo que *«`mail_entregados` sí admite igualdad porque es de evento»*. **`R-31` dice
+que no:** `digital/Directa Mail · mail_entregados` está **en la lista de inestables** — `14/1687`
+(0,8 %), **10 altas y 4 cambios**, mínimo `−27`. Y el propio cuerpo de este testigo ya lo decía con
+otras palabras: *«ya se miró dos veces, los 15 de diferencia resultaron ser carga manual»*.
+
+⭐ **Que haya salido idéntico dos veces es evidencia, no una propiedad.** Lo que lo hizo reproducible
+no es la clase del campo: es que **el intervalo entre las dos tomas fue corto** — que es la pregunta
+que `CLAUDE.md` §4 manda hacer, *«¿se mueve DENTRO del intervalo de la verificación?»*, y no
+*«¿está quieta la base?»*.
+
+## ✅ El criterio corregido — por marcador, y sale de `R-31`, no del autor del testigo
+
+| clase (`R-31`) | qué control admite | quién cae acá, de los de este testigo |
+|---|---|---|
+| **estable** | ✅ **igualdad exacta**, y si no reproduce **es un bug** | `gcba_sms_envios` (`digital/Directa SMS`, cero movimientos sobre 28 filas) |
+| **inestable por ALTA** | **dirección**: sube o queda, **nunca baja**; si baja es bug | — (ninguno de éstos es de `rdv`) |
+| **inestable por CAMBIO** | ⛔ **ni igualdad ni dirección**: rango declarado o `_revisar` | **los ocho `imp_*`** (`looker/DIGITAL`) |
+| **mixto** (alta + cambio) | igualdad **como evidencia**, nunca como exigencia | `mail_entregados` de los dos ámbitos, `mail_envios`, `gcba_mail_envios` |
+| ⚠ **sin medir** | **no se le exige nada, y se dice que no se midió** | los seis `m2_*` y `m2_campanias` — `R-31` no midió la base `m2` |
+
+⭐⭐ **La regla que sale de acá, y es la que hay que aplicar al próximo testigo: un testigo hereda
+la estabilidad de sus campos, así que la clasificación se hace ANTES de tomarlo, no al leer el
+resultado.** Este mezcló cinco clases bajo un solo criterio y llamó «movimiento» a lo que `R-31` ya
+había medido como comportamiento normal de la fuente.
+
+## ⭐⭐ Lo que faltaba y era barato: el canario, que además ya existía
+
+**`gcba_frecuencia` pasó de `-6.1-` a `-6.25-` en la misma corrida — y lee
+`looker/resumen_metricas_dinamico`, que `X-39` NO tocó** y que ya declaraba `campo_id_cuenta` desde
+el 19/08. **Un marcador que se mueve sobre una solapa intacta sólo se explica por la fuente.**
+
+⚠ **Su procedencia es más débil que la del resto y hay que decirlo:** el `-6.1-` **no está en la
+tabla de arriba** — este testigo nunca lo guardó —, así que sale de otra corrida. Vale como
+indicio fuerte, no como medición del par antes/después.
+
+⭐ **Y el canario no hubo que inventarlo: `gcba_frecuencia` ya era EL canario del piloto de `D-33`**,
+por el mismo motivo — vive en otra solapa y viene en el log de cada corrida. **Lo que faltó fue
+declararlo en el testigo.** Todo testigo de un cambio de esquema lleva, desde hoy, **al menos un
+valor que el cambio no puede tocar**, y lo dice por nombre.
+
+## ⛔ El segundo argumento, que no necesita otra corrida
+
+**`campo_id_cuenta` es por SOLAPA, no por marcador.** Los ocho `imp_*` —los cuatro de JM y los
+cuatro de GCBA— leen **la misma solapa** con la **misma** operación (`SUMA` sobre `Impresiones`,
+`filtro = estado=Activa`) y difieren **sólo** en `dimensiones` (`ambito=jm` / `ambito=gcba`).
+
+⭐ **Un cambio de esquema de la solapa no puede mover un ámbito y dejar el otro idéntico al
+dígito.** Los cuatro de JM salieron idénticos. Entonces la lectura no cambió, y lo que cambió es
+**qué filas contiene cada universo** — y el de GCBA es mucho más grande, así que tiene mucha más
+chance de contener alguna de las 19 filas que `looker` recalcula.
+
+## ⚠ Y un límite de la prueba de reversión, que hay que saber ANTES de leer su resultado
+
+La reversión se corre para separar *«fue el esquema»* de *«fue la base»*. **Pero si fue la base, la
+base tampoco se queda quieta para la corrida de control**, así que hay **tres** desenlaces y no dos:
+
+| qué sale | qué significa |
+|---|---|
+| los `gcba_*` vuelven **exactos** a los valores de arriba | **fue el esquema** |
+| se quedan en los nuevos, **o siguen derivando** | **fue la base** — y la deriva extra lo confirma en vez de enturbiarlo |
+| ⚠ vuelven **cerca pero no exactos** | **no decide nada por sí solo** → mirar el canario |
+
+⭐ **Por eso el canario se mira en las dos corridas.** Si `gcba_frecuencia` se mueve **otra vez** con
+`X-39` ya revertido, la fuente queda probada sin depender de los `gcba_*`.
+
+**La predicción, escrita antes de la corrida** (que es como este repo la quiere): los `gcba_*`
+**no** van a volver a los valores de arriba.
+
+## ⛔ Qué haría falta para reponer `X-39`
+
+**No alcanza con volver a escribir la línea.** Hace falta un testigo que la inestabilidad no
+arruine, y las piezas ya están todas medidas:
+
+1. **Criterio por marcador**, el de la tabla de arriba — nunca igualdad exacta sobre `looker/DIGITAL`.
+2. **Un canario declarado por nombre**, en una solapa que el cambio no toque.
+3. ⭐ **El control que sí discrimina, y es el más barato de los tres: comparar JM contra GCBA dentro
+   de la MISMA corrida.** Los dos leen la misma solapa por el mismo camino; si el esquema cambiara
+   la lectura, **los dos se moverían**. Eso no necesita un «antes» y por lo tanto **la
+   inestabilidad de la fuente no lo puede arruinar**.
+
+## ✅ CERRADO el 23/08 — sin la segunda corrida, y `X-39` queda repuesto
+
+**La prueba de reversión no llegó a correrse, y no hizo falta.** El argumento de más arriba
+—`campo_id_cuenta` es por **solapa**, los ocho `imp_*` la leen igual y sólo difieren en
+`dimensiones`, y los cuatro de JM salieron **idénticos al dígito**— cierra el caso solo. El
+canario lo confirma desde otra solapa.
+
+**Lo que la reversión sí probó, y por eso valió la pena hacerla:** que el cambio **se deshace
+limpio**. El seed emite `campo_id_cuenta` siempre —con `''` cuando no se declara—, así que
+`upsertPorClave_` blanquea la celda y *"Aplicar configuración"* revierte de verdad. Eso ahora
+tiene su afirmación en `tools/probar-id-cuenta-declarada.js`, escrita **sobre el mecanismo y no
+sobre el valor de hoy**, para que siga valiendo con la declaración puesta.
+
+⛔ **Y lo que NO queda cerrado: este testigo.** `V-110` no puede volver a usarse con criterio de
+igualdad sobre los `imp_*`. Su reemplazo lleva las tres piezas de arriba —criterio por marcador,
+canario declarado por nombre, y el control JM-contra-GCBA dentro de la misma corrida—, y esa
+tercera es la que conviene mirar primero: **no necesita un «antes», así que la inestabilidad de la
+fuente no la puede arruinar.**

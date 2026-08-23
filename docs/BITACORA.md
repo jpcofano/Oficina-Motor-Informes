@@ -13472,3 +13472,79 @@ distintas.
 
 **Conteo del tablero:** de **1 ✅ · 5 🟡 · 17 ⛔** a **1 ✅ · 5 🟡 · 14 ⛔ · 3 🚫**. Las tres no se
 cerraron: **se sacaron del alcance**, que es un estado distinto y el único que saca del conteo.
+
+---
+
+## 2026-08-23 — `X-39`: declarado, revertido y repuesto el mismo día, y el testigo era el que estaba mal
+
+- **Qué se hizo:** `SOLAPAS.campo_id_cuenta` en `looker/DIGITAL` (`ldig_id_cuenta`) y en
+  `digital/Directa Mail` (`mail_id_cuenta`), más tres filas de `MAPEO` — `Visualizaciones` (D),
+  `Clics` (E), `ldig_id_cuenta` (A) —, con su encabezado testigo (`D-31`) y su `tipo_esperado`.
+  Es lo que habilita los quince `camp_{meta,google,prog}_*` de `L-046`.
+- **Control nuevo:** `tools/probar-id-cuenta-declarada.js`, **27 afirmaciones** sobre 108 solapas
+  y 179 filas de `MAPEO`. Control negativo corrido.
+
+### ⛔ La trampa que hubo que desarmar ANTES de escribir la declaración
+
+`Directa Mail` **no estaba sola**: compartía una llamada a `filasSolapa_` con `Directa IVR` y
+`Directa SMS`, así que declarar `campo_id_cuenta` en el grupo se lo ponía a las tres — **y las
+otras dos no tienen ese campo lógico en `MAPEO`**. Ahí un marcador con ítem no publica: falla con
+`@campo_id_cuenta_no_mapeado`. **Es el `_44` exacto**, y los `ivr_*` del iceberg son de los pocos
+números validados `exacto`. Se separó `Directa Mail`; la separación **produce la misma fila y no
+cambia una celda**, y queda como guarda con su afirmación negativa en el control.
+
+### La corrida, y la reversión
+
+Con la declaración puesta: los cuatro `imp_*` de **JM idénticos** al testigo `V-110` (uno a ±1) y
+los cuatro `gcba_imp_*` **+0,37 %** (`+295.578` meta · `+239.473` google · `+46.703` prog).
+`mail_entregados` de los dos ámbitos, **idénticos**. Se revirtió por el criterio duro del usuario
+—*si alguno se movió, se revierte, no se explica*—, y **la reversión salió limpia**.
+
+### ⭐⭐ Y después se cerró SIN la segunda corrida — el argumento sale del propio esquema
+
+**`campo_id_cuenta` es por SOLAPA, no por marcador.** Los ocho `imp_*` —cuatro de JM y cuatro de
+GCBA— leen **la misma solapa** con la **misma** operación (`SUMA` sobre `Impresiones`,
+`filtro = estado=Activa`) y difieren **sólo** en `dimensiones` (`ambito=jm` / `ambito=gcba`). **Un
+cambio de esquema de la solapa no puede mover un ámbito y dejar el otro idéntico al dígito.** JM
+idéntico ⇒ la lectura no cambió; lo que cambió es **qué filas contiene cada universo**.
+
+⭐ **El canario lo confirma desde afuera:** `gcba_frecuencia` pasó de `-6.1-` a `-6.25-` en la
+misma corrida y lee **`looker/resumen_metricas_dinamico`**, solapa que `X-39` no tocó. Verificado
+en el snapshot de `MARCADORES`, no supuesto.
+
+**La causa real es `R-31`:** `looker/DIGITAL` es **inestable por CAMBIO** —`19/503` filas, **cero
+altas**, recálculo en el lugar— y el universo de GCBA es mucho más grande que el de JM, así que
+tiene mucha más chance de contener una de las 19.
+
+### ⛔ El hallazgo que sobrevive al caso: `V-110` estaba mal construido
+
+**Le exigió igualdad exacta a un campo que `R-31` ya había medido como inestable.** No es que la
+corrida salió mal: **el testigo habría producido un «se movió» tarde o temprano sin que nada
+estuviera roto.** La regla ya estaba escrita en `CLAUDE.md` §4 —*«la comparación no puede depender
+de lo que se mueve solo»*—; lo que faltó fue aplicarla al armarlo.
+
+⚠ **Y una corrección a la clasificación que se hizo al revertir:** se dijo que `mail_entregados`
+sí admitía igualdad *«porque es de evento»*. **`R-31` lo tiene en la lista de inestables** —
+`14/1687` (0,8 %), 10 altas y 4 cambios, mínimo `−27`—. Que saliera idéntico dos veces es
+**evidencia, no una propiedad**: lo explica **el intervalo corto entre tomas**, que es la pregunta
+que `CLAUDE.md` §4 manda hacer.
+
+**El criterio corregido quedó por marcador**, en un addendum fechado al testigo: cinco clases, y de
+los que `V-110` vigila **sólo `gcba_sms_envios` admite igualdad exacta**. Los seis `m2_*` van a
+**«sin medir»** — `R-31` nunca midió la base `m2`, y eso se dice en vez de asumir.
+
+### ⛔⛔ `CLAUDE.md` §4 tenía una regla ciega, y se corrigió
+
+*«Lo que distingue "se rompió" de "la base se movió" es la cuenta de filas»* **supone que la base
+se mueve por ALTA**. Una base inestable por **CAMBIO** mueve valores **sin mover una sola fila**, y
+ahí la regla **acusa al código que no tocó nada** — que es exactamente lo que pasó acá. La
+corrección escribe el caso, nombra el canario como el discriminador que sí sirve, y le pone el
+límite que lo vuelve usable: **tiene que leer una solapa intacta Y estar declarado en el testigo
+ANTES**. Éste cumplía lo primero y no lo segundo, y por eso su `-6.1-` fue **indicio fuerte y no
+medición del par**.
+
+⭐ **Y deja escrito el discriminador mejor, que no necesita un «antes»:** dos marcadores que
+comparten camino y difieren sólo en el corte, medidos **dentro de la misma corrida**. La
+inestabilidad de la fuente no lo puede arruinar.
+
+**Commits:** `b425b25` (el código) y el de esta entrada.

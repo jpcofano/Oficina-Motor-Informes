@@ -3,7 +3,8 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-23 — al documentar `D-39` (tres láminas fuera de alcance).
+**Última actualización:** 2026-08-23 — al cerrar `X-39` (`campo_id_cuenta` en `looker/DIGITAL`).
+Antes ese mismo día: `D-39` (tres láminas fuera de alcance).
 Antes: el `2026-08-22_27` (tablero de cierre por lámina + `MAPEO` de `looker/CC`), el camino del
 fixture sobre el Resumen Ejecutivo JM, el `_25` (`R-21` nivel 1) y el `_23` (las dos fases). Lo de
 más abajo **sigue vigente**: no se reescribió lo que no cambió.
@@ -12,7 +13,30 @@ más abajo **sigue vigente**: no se reescribió lo que no cambió.
 
 ## ⏱ Dónde estamos ahora mismo
 
-### ⭐ Lo último (23/08): tres láminas salen del alcance — `D-39`, cero código
+### ⭐ Lo último (23/08): `X-39` cerrado — `L-046` ya no tiene nada que lo bloquee
+
+**`SOLAPAS.campo_id_cuenta` declarado** en `looker/DIGITAL` (`ldig_id_cuenta`) y `digital/Directa
+Mail` (`mail_id_cuenta`), más tres filas de `MAPEO`. **Los quince `camp_{meta,google,prog}_*` de
+`L-046` quedan destrabados**, y con `camp_ctr`/`camp_vtr` son **17 tokens** listos para cablear.
+
+⛔⛔ **Se declaró, se revirtió y se repuso el mismo día, y eso hay que saberlo antes de leer
+cualquier número de esta solapa.** Con la declaración puesta los `imp_*` de JM salieron
+**idénticos** al testigo `V-110` y los `gcba_imp_*` **+0,37 %**. **No fue el cambio:**
+`campo_id_cuenta` es **por solapa**, los ocho `imp_*` la leen igual y sólo difieren en
+`dimensiones` — un cambio de esquema **no puede** mover un ámbito y dejar el otro idéntico al
+dígito. El canario `gcba_frecuencia`, que lee **otra solapa**, se movió igual.
+
+⚠ **La causa es `R-31`: `looker/DIGITAL` es inestable por CAMBIO** (`19/503`, cero altas). **El
+testigo `V-110` no se puede volver a usar con criterio de igualdad sobre los `imp_*`** — su
+criterio corregido, por marcador, está en el addendum del 23/08 del testigo.
+
+⭐ **Y `CLAUDE.md` §4 se corrigió:** *"la cuenta de filas distingue se rompió de la base se movió"*
+**sólo vale cuando la base se mueve por ALTA**. Con inestabilidad por CAMBIO la regla acusa al
+código que no tocó nada.
+
+---
+
+### Lo anterior del 23/08: tres láminas salen del alcance — `D-39`, cero código
 
 `L-039` (M2), `L-048` (Desagregados · Respuestas) y `L-050` (RRSS) **no se cablean**. El tablero
 pasa de **17 ⛔** a **14 ⛔ · 3 🚫**, y del censo **57 de 192** tokens dejan de ser faltantes:

@@ -749,6 +749,33 @@ ni a favor ni en contra.
   Mismas filas y otro número es el cambio; otras filas es la fuente. El 15/08 las ocho cuentas
   fueron idénticas —46, 313, 14, 12, 20, 82, 84, 147— con valores muy distintos, y eso solo
   descartó la migración como causa.
+- ⛔⛔ **Y la corrección que hace falta para no usar mal la regla de arriba: la cuenta de filas
+  distingue sólo cuando la base se mueve por ALTA.** (23/08/2026.) `R-31` mide **dos** clases de
+  inestabilidad y la regla de arriba supone la primera: un **alta** trae filas nuevas, así que la
+  cuenta la delata. Un **cambio** —recálculo en el lugar— **mueve valores sin mover una sola
+  fila**, y ahí *"mismas filas y otro número"* deja de significar *"fue el código"*. **Aplicada al
+  pie, la regla acusa a un cambio que no tocó nada.**
+  - **El caso, con los números:** `X-39` declaró `campo_id_cuenta` en `looker/DIGITAL` y la
+    corrida siguiente movió los cuatro `gcba_imp_*` **+0,37 %** contra el testigo `V-110`. Mismas
+    filas, otro número → por la regla vieja, culpable. **No lo era:** `R-31` ya tenía a esa solapa
+    como **inestable por CAMBIO** —`19/503` filas, **cero altas**—, y el testigo le estaba
+    exigiendo igualdad exacta a un campo que no la admite.
+  - ⭐⭐ **Lo que sí distingue ahí es un canario: un valor que el cambio NO tocó.** Acá fue
+    `gcba_frecuencia`, que lee `looker/resumen_metricas_dinamico` —solapa intacta— y se movió de
+    `-6.1-` a `-6.25-` **en la misma corrida**. Un marcador que se mueve sobre una solapa que
+    nadie tocó **sólo se explica por la fuente**.
+  - ⚠ **Y el límite del canario, que es lo que lo vuelve usable: tiene que leer una solapa intacta
+    Y estar declarado en el testigo ANTES de la primera toma.** Éste cumplía lo primero y **no lo
+    segundo** — `V-110` nunca guardó el `-6.1-`, así que sale de otra corrida. Por eso fue
+    **indicio fuerte y no medición del par**. Un canario que se elige después de ver el resultado
+    es una explicación, no un control.
+  - ⭐ **El otro discriminador, cuando existe, es mejor todavía porque no necesita un «antes»:
+    dos marcadores que comparten camino y difieren sólo en el corte.** Los ocho `imp_*` leen la
+    **misma solapa** con la **misma** operación y sólo difieren en `dimensiones`
+    (`ambito=jm` / `ambito=gcba`). Un cambio de esquema **de la solapa** no puede mover un ámbito
+    y dejar el otro **idéntico al dígito** — y los cuatro de JM salieron idénticos. **Eso cerró el
+    caso sin una segunda corrida**, y la inestabilidad de la fuente no lo puede arruinar porque
+    las dos mitades se miden **dentro de la misma corrida**.
 
 **Una corrida que no hizo nada tiene que fallar, no informar cero.** Van **dos casos** con el
 mismo modo de falla: la corrida termina bien, la hoja no se mueve, y **el reporte sigue con el
