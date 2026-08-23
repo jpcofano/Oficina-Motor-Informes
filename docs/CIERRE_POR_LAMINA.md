@@ -51,6 +51,34 @@ inestable** y la marca se queda. Sacarla junto con el arreglo del universo serí
 
 ---
 
+### ⭐⭐ Y la columna que decide CÓMO entra: ¿llena un hueco o mueve un número? (22/08)
+
+**Es la distinción de `CLAUDE.md` §4 convertida en criterio de tanda.** La regla de *«un cambio por
+deck»* existe para que una diferencia se pueda **atribuir** — y **una celda que estaba en `/////` y
+ahora tiene valor no produce ninguna diferencia que atribuir**.
+
+| marca | qué significa | cómo entra |
+|---|---|---|
+| **🕳 hueco** | hoy sale `/////` o vacío. **No hay número que mover** | ⭐ **En tanda, todos juntos en la misma corrida** |
+| **↕ mueve** | hay un número publicado y el cambio lo reescribe | ⛔ **Va SOLO**, en su propio deck |
+
+⭐ **La pregunta que las separa, y se hace antes de agrupar: *¿había un número ahí ayer?*** Si no
+había, no hay nada que atribuir.
+
+**Hoy la tanda de huecos es todo el grueso de lo que falta:** los `camp1-4` de la lámina 7, los 32
+`post_` de `L-036`, y las cuatro láminas de campaña (13 a 16) más las dos de desagregados. **Entran
+juntos.**
+
+**Y lo que va solo es corto:** **RRSS** (`L-050`), cuando el usuario decida — hoy publica los datos
+de la semana pasada, o sea que **hay un número y está mal**—, y **cualquier cambio en la
+frecuencia** (`X-32`), que reescribe un valor que ya sale.
+
+⚠ **El borde, que hay que mirar igual:** un token nuevo **dentro de una operación compartida** puede
+mover a sus hermanos. `ELEMENTO` memoiza el conjunto, así que agregar un consumidor cambia **cuándo**
+se calcula, no **qué** — mientras el cálculo sea el mismo, sigue siendo llenar huecos.
+
+---
+
 ## Cómo leer la columna «lámina»
 
 El número es **`LAMINAS.orden_plantilla`**, que es como habla la documentación del proyecto
@@ -65,29 +93,29 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 
 | lámina | `lamina_id` | estado | qué falta para el check | último cambio |
 |---|---|---|---|---|
-| **1** · Portada | `L-030` | ⛔ | **sin medir** — un solo token, `periodo`, y ninguna verificación lo mira | — |
-| **2** · Resumen Ejecutivo JM | `L-031` | ⛔ **inestable por CAMBIO** | 21 tokens. **Los cuatro `cc_*`: `MAPEO` escrito, cableado FRENADO por `X-28`** — la columna y la operación están validadas, **qué cuentas entran no** · `contenidos_total` publica `1` → **pregunta al equipo** · `frecuencia` no publica → sin medir · los 8 `imp_*` y los 3 «N envíos» están 🟡, abajo | 22/08 |
-| **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ **inestable por CAMBIO** | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) · `gcba_sms_*` 🟡 | 22/08 |
+| **1** · Portada | `L-030` | ⛔ 🕳 | **sin medir** — un solo token, `periodo`, y ninguna verificación lo mira | — |
+| **2** · Resumen Ejecutivo JM | `L-031` | ⛔ **inestable por CAMBIO** 🕳 | 21 tokens. **Los cuatro `cc_*`: `MAPEO` escrito, cableado FRENADO por `X-28`** — la columna y la operación están validadas, **qué cuentas entran no** · `contenidos_total` publica `1` → **pregunta al equipo** · `frecuencia` no publica → sin medir · los 8 `imp_*` y los 3 «N envíos» están 🟡, abajo | 22/08 |
+| **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ **inestable por CAMBIO** 🕳 | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) · `gcba_sms_*` 🟡 | 22/08 |
 | **4** · «Encuentros con vecinos» | `L-033` | 🟡 | **Cero tokens y `rol = equipo`: no hay nada que cablear.** Es un separador. Falta sólo que el usuario lo mire | — |
-| **5** · ECV: alcance semanal | `L-034` | ⛔ **inestable por ALTA** | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUJERON** contra `V-71`. ⚠ **Pero `rdv` es inestable por ALTA (`R-31`), así que eso no se puede EXIGIR en cada corrida** — el control posible es **de dirección: sube o queda, nunca baja; si baja es bug**. Falta: `ecv_asistentes` = 485 sin validar · los 3 `cc_*` **pintados sin control** · `ecv_fecha` y `ecv_barrio1-3` **sin fila en `MARCADORES`** | 22/08 |
+| **5** · ECV: alcance semanal | `L-034` | ⛔ **inestable por ALTA** 🕳 | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUJERON** contra `V-71`. ⚠ **Pero `rdv` es inestable por ALTA (`R-31`), así que eso no se puede EXIGIR en cada corrida** — el control posible es **de dirección: sube o queda, nunca baja; si baja es bug**. Falta: `ecv_asistentes` = 485 sin validar · los 3 `cc_*` **pintados sin control** · `ecv_fecha` y `ecv_barrio1-3` **sin fila en `MARCADORES`** | 22/08 |
 | **6** · Benchmarks / Iceberg | `L-035` `L-052` | ✅ | ⭐⭐⭐ **CERRADA — el usuario la declaró el 22/08.** Publicó los cuatro de IVR exactos: Audiencia **107.194** · Atendidos **96.549** · Escucharon +75 % **33.139** · Marque 1 **304**, más las seis cifras del alcance al dígito. **`X-30` se cerró solo: el ítem llegó con `3488-AGOJDGAG`.** ⭐ **Y es la única lámina con control por igualdad exacta garantizado**: sus cinco campos de `digital/Directa IVR` son **estables** (`R-31`) | 22/08 |
-| **7** · Campañas · DIGITAL · Período | `L-036` | ⛔ | ⭐ **Resuelto sin medir por la corrida del 22/08: la tabla del deck es 4 filas × 8 columnas = 32 casilleros, todos en `/////`.** Los **32 `post_`** de `Auditoria.gs` eran correctos y **este tablero estaba mal** —decía *"4 tokens `camp1-4`, tabla 7×8"*—. Falta **cablear los 32** | 22/08 |
+| **7** · Campañas · DIGITAL · Período | `L-036` | ⛔ 🕳 | ⭐ **Resuelto sin medir por la corrida del 22/08: la tabla del deck es 4 filas × 8 columnas = 32 casilleros, todos en `/////`.** Los **32 `post_`** de `Auditoria.gs` eran correctos y **este tablero estaba mal** —decía *"4 tokens `camp1-4`, tabla 7×8"*—. Falta **cablear los 32** | 22/08 |
 | **8** · «Comunicaciones M2» | `L-037` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
-| **9** · Directa · Status M2 | `L-038` | ⛔ | 8 tokens. ⭐ **El numerador coincide y el denominador no** (−9,6 % en enviados/entregados, con el numerador quieto) → falta **decidir** de qué universo sale el denominador | 22/08 |
-| **10** · M2 *(escondida)* | `L-039` | ⛔ | 23 tokens. **Sin medir** — la lámina está `escondida = sí` | — |
+| **9** · Directa · Status M2 | `L-038` | ⛔ ↕ | 8 tokens. ⭐ **El numerador coincide y el denominador no** (−9,6 % en enviados/entregados, con el numerador quieto) → falta **decidir** de qué universo sale el denominador | 22/08 |
+| **10** · M2 *(escondida)* | `L-039` | ⛔ 🕳 | 23 tokens. **Sin medir** — la lámina está `escondida = sí` | — |
 | **11** · «Campañas destacadas GCBA» | `L-040` | ⛔ | Separador `rol = equipo`, pero ⛔ **se duplica por ítem de campaña** junto con la lámina de M2 digital | 22/08 |
-| **12** · Campaña destacada | `L-041` | ⛔ | ⛔ **La campaña destacada no coincide con la del equipo y en la última corrida sale vacía** | 22/08 |
-| **13** · Objetivo y período | `L-042` | ⛔ | Sin cablear — sale prácticamente entera en `/////` | 22/08 |
-| **14** · Herramientas y audiencias | `L-043` | ⛔ | Sin cablear — ídem | 22/08 |
-| **15** · Formatos digitales | `L-044` | ⛔ | Sin cablear — ídem | 22/08 |
-| **16** · Resultados agregados | `L-045` | ⛔ | 11 tokens. Sin cablear | 22/08 |
-| **17** · Desagregados · Digital | `L-046` | ⛔ | Tabla 4×9 + TOTALES. ⭐ **La fila de TOTALES YA está cableada** —lee los `camp_*` agregados— y **las tres filas por plataforma no existen como marcador**: no hay ningún `camp_meta_*`, `camp_google_*` ni `camp_prog_*` (`X-34`). ⛔ **Bench CTR, Bench VTR e Insight SALEN DEL ALCANCE: son texto que escribe el equipo**, no tokens de dato — su `/////` **no es «nadie lo cableó»** y no se vuelven a contar como faltantes | 22/08 |
-| **18** · Desagregados · Mail | `L-047` | ⛔ | 5 envíos + GLOBAL, 9 columnas. **Mismo patrón que la 17**: el GLOBAL trae 263.794 / 68.092 / 1,3 porque lee `camp_entregados`, `camp_aperturas` y `camp_ctor`; **las cinco filas de envío caen en `X-33`** — `camp_env1-5_*` son tokens **indexados** y el motor no tiene la primitiva. ⚠ Las celdas están **combinadas**, no vacías | 22/08 |
-| **19** · Desagregados · Respuestas | `L-048` | ⛔ | 15 tokens. Sin cablear. `escondida = sí` | — |
+| **12** · Campaña destacada | `L-041` | ⛔ ↕ | ⛔ **La campaña destacada no coincide con la del equipo y en la última corrida sale vacía** | 22/08 |
+| **13** · Objetivo y período | `L-042` | ⛔ 🕳 | Sin cablear — sale prácticamente entera en `/////` | 22/08 |
+| **14** · Herramientas y audiencias | `L-043` | ⛔ 🕳 | Sin cablear — ídem | 22/08 |
+| **15** · Formatos digitales | `L-044` | ⛔ 🕳 | Sin cablear — ídem | 22/08 |
+| **16** · Resultados agregados | `L-045` | ⛔ 🕳 | 11 tokens. Sin cablear | 22/08 |
+| **17** · Desagregados · Digital | `L-046` | ⛔ ↕ | ⛔⛔ **El censo por celda encontró un BUG, no un faltante: la fila META publica el TOTAL de la campaña.** Meta y TOTALES coinciden **exacto** en Alcance (867.025) y Frecuencia (−6.85−) porque esas celdas de Meta tienen el token **agregado** — no existe ningún `camp_meta_*`. Por eso va **↕ y no 🕳**: hay un número y está mal. ⚠ Google y Programmatic **no tienen token** ahí: su `-` es **texto tipeado por el equipo** (`C-75`), no el símbolo de sin dato. ⛔ **Bench CTR, Bench VTR e Insight fuera del alcance: son texto del equipo** | 22/08 |
+| **18** · Desagregados · Mail | `L-047` | ⛔ 🕳 | 5 envíos + GLOBAL, 9 columnas. **Mismo patrón que la 17**: el GLOBAL trae 263.794 / 68.092 / 1,3 porque lee `camp_entregados`, `camp_aperturas` y `camp_ctor`; **las cinco filas de envío caen en `X-33`** — `camp_env1-5_*` son tokens **indexados** y el motor no tiene la primitiva. ⚠ Las celdas están **combinadas**, no vacías | 22/08 |
+| **19** · Desagregados · Respuestas | `L-048` | ⛔ 🕳 | 15 tokens. Sin cablear. `escondida = sí` | — |
 | **20** · «Análisis y datos» | `L-049` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
-| **21** · Resumen Ejecutivo RRSS | `L-050` | ⛔ | 21 tokens. ⛔⛔ **Publica los datos de la semana pasada y NADA lo dice** — es un número plausible sin marca | 22/08 |
+| **21** · Resumen Ejecutivo RRSS | `L-050` | ⛔ ↕ | 21 tokens. ⛔⛔ **Publica los datos de la semana pasada y NADA lo dice** — es un número plausible sin marca | 22/08 |
 | **22** · MUCHAS GRACIAS | `L-051` | 🟡 | Cierre, `rol = equipo`, cero tokens. **Nada que cablear** | — |
-| *(orden 8)* · «1 a 1» | `L-053` | ⛔ | `filtro = tipo=Uno a uno`, 32 tokens `u1_`. Nace con `D-37`. ⭐ **Las impresiones del PRE reproducen exacto** — `V-21` Google **17.401**, `V-23` Meta **25.099**, `V-25` Meta Retiro **18.015**. ⛔ **El único roto es `u1_prog_impresiones`, y es un agujero de FUENTE**: los 94.955 del **POST de San Cristóbal** no están en ninguna celda de los siete libros de los dos fixtures (`X-05`, `C-57`). **Distinto del problema del Resumen** — acá falta el dato, allá sobra universo. ⚠ **Y 4 de sus 36 tokens son `ecv_`** —`ecv_asistentes`, `ecv_comuna`, `ecv_fecha`, `ecv_inscriptos`—: **`ecv_fecha` es la fecha de la reunión** (`rdv` · `fecha_periodo` · col. E de `RVD JM-CM - ES`, que `MAPEO` describe como *"filtro de período"*) y **NO tiene fila en `MARCADORES`**. Sólo vive en `TOKENS_CORTE_VERTICAL_` (`Marcadores.gs`), una lista del diagnóstico `corteVerticalRetiro2407_()`. **Mismo hueco que `ecv_barrio1-3`** | 22/08 |
+| *(orden 8)* · «1 a 1» | `L-053` | ⛔ 🕳 | `filtro = tipo=Uno a uno`, 32 tokens `u1_`. Nace con `D-37`. ⭐ **Las impresiones del PRE reproducen exacto** — `V-21` Google **17.401**, `V-23` Meta **25.099**, `V-25` Meta Retiro **18.015**. ⛔ **El único roto es `u1_prog_impresiones`, y es un agujero de FUENTE**: los 94.955 del **POST de San Cristóbal** no están en ninguna celda de los siete libros de los dos fixtures (`X-05`, `C-57`). **Distinto del problema del Resumen** — acá falta el dato, allá sobra universo. ⚠ **Y 4 de sus 36 tokens son `ecv_`** —`ecv_asistentes`, `ecv_comuna`, `ecv_fecha`, `ecv_inscriptos`—: **`ecv_fecha` es la fecha de la reunión** (`rdv` · `fecha_periodo` · col. E de `RVD JM-CM - ES`, que `MAPEO` describe como *"filtro de período"*) y **NO tiene fila en `MARCADORES`**. Sólo vive en `TOKENS_CORTE_VERTICAL_` (`Marcadores.gs`), una lista del diagnóstico `corteVerticalRetiro2407_()`. **Mismo hueco que `ecv_barrio1-3`** | 22/08 |
 
 **Conteo: 1 ✅ · 5 🟡 · 17 ⛔ · 0 ⏳**, sobre 23 filas de `LAMINAS` para `jm`.
 
