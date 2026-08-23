@@ -858,6 +858,33 @@ vacío, que seguía intacto.
     líneas más arriba en el mismo log**. Un instrumento no puede distinguir *"el mundo cambió"* de
     *"yo lo estoy leyendo mal"*: esa pregunta la tiene que hacer quien lee.
 
+**Qué tipo de OPERACIÓN es sensible a qué tipo de INESTABILIDAD — no todas lo son, y hasta hoy se
+trataba a todas igual.** (23/08/2026.) `R-31` mide **dos** clases de inestabilidad —**ALTA**, la
+celda estaba vacía y se llenó; **CAMBIO**, recálculo en el lugar— y de ahí sale una consecuencia
+que la regla no decía: **la clase de inestabilidad de una fuente no alcanza para decidir si un
+marcador admite control exacto. Hace falta cruzarla con la operación.**
+
+| operación | ALTA (filas/celdas nuevas) | CAMBIO (recálculo en el lugar) |
+|---|---|---|
+| **`SUMA`** sobre valores | ⛔ sensible — el total sube | ⛔ sensible — el total se mueve |
+| ⭐ **`CONTEO`** de filas | ⛔ sensible — hay una fila más | ✅ **inmune**: los valores se reescriben, **las filas no se mueven** |
+| **`ULTIMO`** de un texto | ⛔ sensible si la celda estaba vacía | ⛔ sensible |
+
+- **El caso que lo destapó:** `camp_dig_impl` y `camp_dir_impl` son **`CONTEO` de filas** sobre
+  `looker/DIGITAL`, que `R-31` mide **inestable por CAMBIO con cero altas** (`19/503`). **Cero
+  altas quiere decir que ninguna fila apareció ni desapareció** — sólo se reescribieron valores. Un
+  conteo de filas **no lo puede notar**, así que nacen **sin `_revisar`**. Los quince del desglose,
+  que **suman valores** sobre la misma solapa, sí lo notan y nacen `_revisar`.
+- ⭐ **Lo accionable, y se pregunta al elegir el `formato`, no después del primer número raro:**
+  *¿qué tendría que cambiar en la fuente para mover este marcador, y esa clase de cambio está
+  medida en `R-31`?* Un `CONTEO` y una `SUMA` sobre **la misma solapa** pueden merecer marcas
+  distintas, y marcarlos igual **por venir del mismo lado es lo que hace que `_revisar` deje de
+  significar algo**.
+- ⚠ **Y el error simétrico, que es el caro:** poner `_revisar` a todo *"por las dudas"* es gratis de
+  escribir y caro de leer — el día que la mitad del deck sale entre guiones, los guiones dejan de
+  avisar. **Una marca que está en todos lados no distingue nada**, que es la misma familia del
+  glifo que miente sobre la causa.
+
 **Un control no se afloja para que entre algo nuevo: lo nuevo va aparte, y con un control de otra
 clase.** (23/08/2026, decisión del usuario.) Cuando un control cruza contra **evidencia fechada**
 —un censo, un snapshot, un fixture— y algo legítimo **no pasa**, la tentación es ensanchar el

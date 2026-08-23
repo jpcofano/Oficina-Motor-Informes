@@ -7668,3 +7668,27 @@ otras dos ya están escritas:
 `Paso-2.5` alguna vez corre, `ESCRITORES.md` declara que *"completa vacías"* y por lo tanto no
 pisaría una fila ya cableada — **declarado, no verificable**, porque la función no existe para
 mirarla.
+
+---
+
+### P0 · `X-40` — la ventana del informe puede no estar recortando en las secciones que iteran (23/08/2026)
+
+**Puntero, no copia: la medición entera vive en `X-40`** (`docs/casos_validacion_2026-08-19.csv`),
+con el `sha256` del fixture y los dos casos que lo discriminan. Acá va sólo por qué es `P0`.
+
+**El hecho, en una línea:** el deck `jm-20260821-234927`, corrido sobre `agosto_14_20`, publicó un
+número que **sale de filas fechadas 08/08–13/08** — fuera de esa ventana. La solapa entera termina
+el 13/08 y **cero de sus 60 filas** solapan 14–20/08.
+
+⛔⛔ **Es `P0` por el alcance, no por el tamaño del número: si un ítem se selecciona con la ventana
+del informe en vez de la suya, afecta a TODO marcador que itere**, no sólo al iceberg. Y la rama
+peor —que no se aplique ninguna ventana— **acierta mientras cada cuenta tenga una sola campaña**, y
+empieza a mentir cuando tenga dos.
+
+⭐ **Lo que lo vuelve accionable y barato: el número no discrimina, pero hay dos cuentas que sí.**
+`2961-ABRSEGGJ` y `3110-MAYJDGAG` tienen filas en **ventanas disjuntas** dentro del mismo fixture.
+Resolver un `enc_*` para una de ellas con una ventana que cubra **sólo una** de las dos contesta la
+pregunta de un saque.
+
+⚠ **No confundir con `X-29`** —la `fecha_fin` que se extiende sola en `looker/Cuentas`—: aquello es
+la fuente moviendo el recorte, esto es el motor pareciendo no recortar.
