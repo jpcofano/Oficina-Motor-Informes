@@ -1207,10 +1207,27 @@ function resolverMarcadores(informeId, opciones) {
       ctx.numeradorNombre = partido.numeradorNombre;
       ctx.denominadorNombre = partido.denominadorNombre;
     }
-    // 5 bis · El catálogo de `LISTA`. Se resuelve **acá y no adentro de la operación**: leer
-    //         una hoja es acceso a datos, y `Marcadores.gs` sólo hace la cuenta. La
-    //         operación recibe la lista ya traída.
-    if (String(fila.operacion || '').trim() === 'LISTA') {
+    /* 5 bis · El catálogo. Se resuelve **acá y no adentro de la operación**: leer una hoja es
+     *         acceso a datos, y `Marcadores.gs` sólo hace la cuenta. La operación recibe la lista
+     *         ya traída.
+     *
+     * ⛔⛔ **`2026-08-22` — ACÁ FALTABA `ELEMENTO`, y es el modo de falla que `CLAUDE.md` §4 nombra
+     * con todas las letras.** La condición decía `=== 'LISTA'` a secas. La novena operación
+     * comparte `conjuntoDeLista_` con `LISTA` y **exige el catálogo igual**, así que sin esta
+     * línea **los tres `ecv_barrio*` habrían tirado en la primera corrida**, con el mensaje
+     * *"necesita un catálogo"* apuntando a un `MARCADORES.catalogo` **que estaba perfectamente
+     * declarado**. El diagnóstico habría mandado a mirar la hoja, que era el único lugar donde no
+     * estaba el problema.
+     *
+     * ⭐ **Lo que lo hace citable: `tools/probar-elemento.js` pasó con 20 afirmaciones y NO lo
+     * vio.** El control prueba la operación **en aislamiento** y el hueco estaba **en el
+     * despachador**. Es exactamente la pregunta de §4 —*¿qué afirmación existente falla si esta
+     * rama nueva no funciona?*— con la respuesta *ninguna*, demostrada.
+     *
+     * ⚠ **Y por eso la condición pasa a preguntar por una PROPIEDAD y no por un nombre:** la
+     * décima operación que use catálogo se va a olvidar de tocar esta línea, igual que se olvidó
+     * la novena. */
+    if (operacionNecesitaCatalogo_(fila.operacion)) {
       var cat = resolverCatalogoDeMarcador_(fila);
       if (!cat.ok) {
         base.estado = 'error';

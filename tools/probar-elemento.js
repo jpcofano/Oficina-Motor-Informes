@@ -161,6 +161,36 @@ console.log('5 bis · ⚠ el supuesto del memo, afirmado en vez de supuesto');
 }
 
 console.log('');
+console.log('5 ter · ⛔⛔ EL DESPACHADOR le trae el catálogo — la afirmación que faltaba');
+{
+  /* ⭐ Esta sección se agregó DESPUÉS de que las otras 20 pasaran en verde **y el cableado real
+   * igual estuviera roto**: `Generador.gs` resolvía el catálogo sólo con `operacion === 'LISTA'`,
+   * así que `ELEMENTO` habría tirado en la primera corrida por un `MARCADORES.catalogo` que
+   * estaba bien declarado. **El control probaba la operación en aislamiento y el hueco estaba en
+   * el despachador.** Es `CLAUDE.md` §4: *¿qué afirmación existente falla si esta rama nueva no
+   * funciona?* — la respuesta era «ninguna», y acá está la que faltaba. */
+  const marc = fs.readFileSync(path.join(RAIZ, 'Marcadores.gs'), 'utf8');
+  const gen = fs.readFileSync(path.join(RAIZ, 'Generador.gs'), 'utf8');
+
+  const mapa = (marc.match(/var OPERACIONES_CON_CATALOGO_ = \{([^}]*)\}/) || [])[1] || '';
+  af('existe el mapa OPERACIONES_CON_CATALOGO_', mapa !== '',
+    'sin el mapa, la condición vuelve a ser un nombre suelto en Generador.gs');
+  af('declara LISTA', /LISTA\s*:\s*true/.test(mapa));
+  af('declara ELEMENTO', /ELEMENTO\s*:\s*true/.test(mapa),
+    'si falta, ELEMENTO tira «necesita un catálogo» con el catálogo bien declarado');
+  af('el despachador pregunta por la PROPIEDAD, no por el nombre',
+    /operacionNecesitaCatalogo_\(fila\.operacion\)/.test(gen),
+    'una comparación `=== "LISTA"` deja afuera a la décima operación igual que dejó a la novena');
+  af('ya no queda la comparación vieja contra el nombre',
+    !/operacion \|\| ''\)\.trim\(\) === 'LISTA'/.test(gen));
+
+  /* Y la otra mitad del contrato: `valor_fijo` tiene que viajar SIEMPRE, no sólo para TEXTO. */
+  af('el ctx del despachador lleva `valor_fijo` para toda operación',
+    /valor_fijo:\s*fila\.valor_fijo/.test(gen),
+    'ELEMENTO lee el índice de ahí');
+}
+
+console.log('');
 console.log('6 · control negativo — que la sección 1 sepa ponerse roja');
 {
   af('si el memo no memoizara, el conteo daría 4 y no 1', true,

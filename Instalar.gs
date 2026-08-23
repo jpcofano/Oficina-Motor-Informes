@@ -5454,3 +5454,77 @@ function cablearEcvFecha() {
   Logger.log('   motor no tiene. Es decisión de diseño, no cableado.');
   return r;
 }
+
+
+/**
+ * `2026-08-22` — **el alta de `ecv_barrio1`, `ecv_barrio2` y `ecv_barrio3`**, los tres primeros
+ * consumidores de `ELEMENTO` (`R-32`, `X-33`). Primero de los tres cableados, **el de menos
+ * riesgo** (orden del usuario, 22/08).
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`**, por `curarMarcadores_` (`D-17`: no hay `SEED_MARCADORES_`).
+ * **Botón propio, no seed**, por el mismo motivo que `cablearEcvFecha()`: así el orden de lo que
+ * llega al deck lo elige la persona y **dos cambios no viajan en la misma corrida**.
+ *
+ * **Las cuatro columnas se COPIAN de `ecv_barrios`, no se eligen de nuevo**, y eso es lo que
+ * garantiza *mismo universo* — la fila viva declara:
+ *
+ *   `base_id = rdv` · `solapa = RVD JM-CM - ES` · `campo_logico = barrio`
+ *   `dimensiones = ambito=jm` · `catalogo = rdv/Comunas` · `filtro` y `formato` vacíos
+ *
+ * ⭐ **`catalogo = rdv/Comunas` es lo que hace que esto funcione**, y conviene decir por qué:
+ * `ELEMENTO` lo exige igual que `LISTA` —comparten `conjuntoDeLista_`—, y esa solapa está
+ * declarada `uso = referencia` con **68 barrios**. Sin catálogo las dos operaciones tiran, así que
+ * copiarlo no es prolijidad: es el requisito.
+ *
+ * **`valor_fijo = 'N/3'` y no `'N'`**, a propósito: la forma con denominador es la que **habilita
+ * el control de desborde**. Con tres cajas declaradas, cualquiera de los tres marcadores detecta
+ * solo que el temario trajo un cuarto barrio, **sin saber nada de sus hermanos**, y para en vez de
+ * decidir qué hacer con el que sobra.
+ *
+ * ⚠ **Lo esperado en la próxima corrida NO es que las tres cajas tengan valor.** Esta semana el
+ * temario tiene **dos** encuentros y `ecv_barrios` publicó **Parque Avellaneda, Parque Patricios**:
+ * la caja 3 tiene que salir con el **símbolo de sin dato**, y eso es el **caso normal** (`R-32`),
+ * no un faltante que haya que cablear.
+ *
+ * ⛔ **Y lo que NO se puede exigir, que es `R-32` en su forma práctica:** que `ecv_barrio1` valga
+ * *"Parque Avellaneda"* **en la corrida siguiente**. El orden sale del orden de las filas de `rdv`,
+ * que es carga manual. **Lo exigible es el conjunto**, y eso ya lo mide `ecv_barrios`.
+ */
+function cablearEcvBarrios123() {
+  var comun = {
+    familia: 'ecv', informe_id: 'jm',
+    base_id: 'rdv', solapa: 'RVD JM-CM - ES', campo_logico: 'barrio',
+    operacion: 'ELEMENTO', dimensiones: 'ambito=jm', catalogo: 'rdv/Comunas',
+    notas: 'ELEMENTO N de 3 sobre el mismo conjunto que ecv_barrios (R-32). Las columnas se ' +
+      'copian de ecv_barrios: mismo universo, mismo orden. valor_fijo con denominador para ' +
+      'habilitar el control de desborde. OJO R-32: publica una POSICION, no una cosa'
+  };
+  var filas = [1, 2, 3].map(function (n) {
+    var o = {};
+    Object.keys(comun).forEach(function (k) { o[k] = comun[k]; });
+    o.marcador = 'ecv_barrio' + n;
+    o.valor_fijo = n + '/3';
+    return o;
+  });
+
+  var r = curarMarcadores_([], filas);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== ecv_barrio1-3: ' + ((r.agregadas || []).length) + ' fila(s) agregada(s) · ' +
+    r.filas_finales + ' filas en MARCADORES ==');
+  if (!(r.agregadas || []).length) {
+    Logger.log('ⓘ Cero altas: las tres ya existían. Es idempotencia, no rotura.');
+  }
+  Logger.log('');
+  Logger.log('⚠ ESPERADO en la próxima corrida de `jm` sobre `agosto_14_20`, y NO son tres valores:');
+  Logger.log('   ecv_barrio1 y ecv_barrio2 → los dos barrios que ya publica `ecv_barrios`');
+  Logger.log('                               (esta semana: Parque Avellaneda y Parque Patricios)');
+  Logger.log('   ecv_barrio3 → SÍMBOLO DE SIN DATO. Dos barrios, tres cajas: es el CASO NORMAL');
+  Logger.log('                 de `R-32`, no un faltante que haya que cablear.');
+  Logger.log('');
+  Logger.log('⛔ Y lo que NO se puede exigir (R-32): que `ecv_barrio1` valga lo mismo la semana');
+  Logger.log('   que viene. El orden sale del orden de las filas de `rdv`, que es carga manual —');
+  Logger.log('   una fila que entre antes intercambia el 1 y el 2 sin que nada falle.');
+  Logger.log('   Lo exigible es EL CONJUNTO, y eso ya lo mide `ecv_barrios`.');
+  return r;
+}

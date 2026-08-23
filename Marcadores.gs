@@ -628,6 +628,20 @@ function opELEMENTO(ctx) {
   return { valor: valor, traza: traza, filas: c.valores.length, rechazados: c.rechazados };
 }
 
+/**
+ * Las operaciones que necesitan que el despachador les traiga el CATALOGO ya leido.
+ *
+ * Se declara como MAPA, igual que `OPERACIONES_`, para que la lista sea exacta por construccion
+ * y no una condicion suelta en `Generador.gs` que hay que acordarse de tocar. El 22/08 la
+ * condicion decia `=== 'LISTA'` a secas y `ELEMENTO` —que comparte `conjuntoDeLista_`— habria
+ * tirado en la primera corrida por un catalogo que estaba bien declarado.
+ */
+var OPERACIONES_CON_CATALOGO_ = { LISTA: true, ELEMENTO: true };
+
+function operacionNecesitaCatalogo_(operacion) {
+  return !!OPERACIONES_CON_CATALOGO_[String(operacion || '').trim()];
+}
+
 var OPERACIONES_ = {
   SUMA: opSUMA,
   CONTEO: opCONTEO,
