@@ -6805,10 +6805,35 @@ nombre del ítem viaja con el separador pegado, literal, hasta la etiqueta del r
 recorte del matcher arregla un consumidor de los cuatro"*, y acá se ve otro — **la etiqueta del
 ítem** — fallando con el dato crudo. Ya no es un riesgo declarado: es un caso con `corrida_id`.
 
-⚠ **Y lo que lo vuelve más incómodo de lo que parece: el sufijo `@ítem` es hoy la herramienta que
-distingue si dos marcadores se resolvieron para el mismo ítem** —es lo que contestó `X-40`—. Un
-nombre de ítem mal parseado **degrada el instrumento que estamos usando para diagnosticar todo lo
-demás.**
+#### ⭐⭐ Y el argumento que sube este `P2` de prioridad: el nombre del ítem NO es una etiqueta, es el instrumento
+
+**Esto dejó de ser *"una etiqueta fea"* el 23/08, cuando `X-40` se resolvió leyéndola.**
+
+**Cómo se resolvió `X-40`, y es literal:** en `FALTANTES` de `jm-20260823-113545`, los seis `ivr_*`
+aparecen **sin sufijo `@ítem`** mientras **todo lo demás que itera sí lo tiene** — `u1_bench_*` dice
+`@Parque Avellaneda`, los `camp_*` dicen `@3481-AGOINFAN` y `@3509-AGOSEGGJ`, y
+`enc_alcance_pct` dice… `@: Salud`. **De esa ausencia salió el diagnóstico**: los seis se
+resolvieron en la etapa de tokens fijos, con la ventana del informe, y por lo tanto **no los pinta
+ninguna lámina que itere**. Sin ese contraste, `X-40` seguiría abierto.
+
+⛔⛔ **Y ahí está el problema, porque la lectura que lo resolvió es BINARIA: hay sufijo o no hay.**
+Eso vale mientras el nombre del ítem sea un nombre. **Un nombre que empieza con el separador ya
+hace dudar de qué es nombre y qué es basura de parseo** — `@: Salud` se lee tres veces antes de
+entender que el ítem se llama así. El caso límite es peor y es de la misma raíz: **si un parseo
+devolviera un nombre vacío, el sufijo se renderiza como `token @` — y «sin sufijo» es exactamente
+la señal que significa «se resolvió sin ítem».** Una resolución por ítem se leería como una de
+token fijo.
+
+⚠ **Los dos no están al mismo nivel de evidencia y conviene decirlo:** el nombre sucio está
+**medido** (`@: Salud`, esta corrida); el nombre vacío **no se observó** — `parsearLineaReunion_`
+devolvió `': Salud'`, que es feo pero no vacío. Se escribe igual porque **la causa es la misma** y
+porque el costo de confundir esas dos lecturas ya está demostrado.
+
+⭐ **Lo accionable, en una línea: el nombre del ítem es la clave de `ANCLAJE_PENDIENTE`, la etiqueta
+de la pantalla, la etiqueta del deck — y ahora también el testigo con el que se diagnostica el
+motor.** Son cuatro consumidores, no tres, y el cuarto es el único que se usa **para decidir si
+otra cosa está rota**. Un instrumento que se degrada con el dato que mide es el peor de los
+cuatro.
 
 **Dos salidas, sin elegir:** **(a)** que `parsearLineaReunion_` no deje el separador —arregla el
 origen y todos los consumidores de una—; **(b)** dejarlo y que cada consumidor recorte, que es lo
