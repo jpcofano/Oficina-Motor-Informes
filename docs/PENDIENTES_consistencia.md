@@ -7764,3 +7764,51 @@ pregunta de un saque.
 
 ⚠ **No confundir con `X-29`** —la `fecha_fin` que se extiende sola en `looker/Cuentas`—: aquello es
 la fuente moviendo el recorte, esto es el motor pareciendo no recortar.
+
+---
+
+### P2 · `LAMINAS` no tiene columna de alcance, y por eso el conteo de faltantes suma cuatro cosas distintas (23/08/2026)
+
+**No es un hallazgo nuevo: `docs/CIERRE_POR_LAMINA.md` ya lo dice con todas las letras** —*"la
+causa 4 no está en ninguna hoja de registro, `LAMINAS` no tiene columna de alcance, así que el
+único lugar donde vive es este documento"*—. Entra a `PENDIENTES` porque el `2026-08-23_1` lo
+convirtió en un límite **del panel**, que es donde alguien lo va a leer sin saber que existe.
+
+**Lo concreto:** la pestaña *Faltantes* agrupa por las causas que el motor **puede probar** —sin
+fila, falló, sin datos, el escritor no lo pisó, no se llegó—. Las dos que el prompt también pedía,
+**fuera de alcance** y **texto del equipo**, son decisiones del usuario que no viven en ninguna hoja.
+
+⭐ **No se las inventó, y ésa es la decisión que hay que conocer:** la vista declara al pie que el
+conteo **no las descuenta** y remite a `CIERRE_POR_LAMINA.md`. Clasificar por una lista escrita a
+mano en el `.gs` habría violado *nada de valores hardcodeados* (`CLAUDE.md` §2) y, peor, habría
+producido un conteo **que parece medido y no lo es**.
+
+**Qué lo destraba:** una columna `alcance` en `LAMINAS` —o su equivalente por token— que alguien
+llene. Es alta de columna en hoja de registro: `COLUMNAS_DELTA_`, el seed, y los `N` lectores que
+`CLAUDE.md` §2 obliga a greppear. **No se hizo de noche a propósito**: toca una hoja de registro y
+no había nadie para verificarlo.
+
+⚠ **Y mientras tanto el número del panel es más grande que el trabajo real que queda**, en la
+misma proporción que el censo: 192 tokens sin fila de los cuales 57 salieron del alcance el 22/08.
+
+---
+
+### P2 · `FALTANTES` no guarda la lámina, y no es derivable con confianza (23/08/2026)
+
+El primer pedido de la Parte B del `2026-08-23_1` era una vista *"agrupada por lámina y por causa"*.
+**La causa sí; la lámina no se pudo, y conviene que quede escrito por qué** para que el próximo no
+lo vuelva a intentar creyendo que es un olvido.
+
+- `FALTANTES` tiene `token`, `base_id`, `solapa` y ahora `causa`. **Lámina, no.**
+- El `mapa_tokens` de `CORRIDAS` sí guarda una ubicación, pero es el **índice de slide del deck ya
+  expandido** — y las secciones repetibles duplican láminas, así que ese índice **no es un
+  `lamina_id`**. `LAMINAS.orden_plantilla` tampoco sirve de puente: es reportado y nunca
+  autoritativo (`D-37`).
+- Lo que sí hay y se usa es el sufijo `@ítem`, que agrupa por **instancia emitida**. Es otra
+  pregunta y contesta bastante: dice si un token falta en todas las láminas o en una.
+
+**Qué lo destrabaría:** que la fila de `FALTANTES` la escriba quien conoce la lámina. En la pasada
+por ítem eso es la asignación, que ya lleva `objectIdSlide`; en la pasada de tokens fijos habría que
+resolver la lámina desde el ancla. **No es caro, y es un cambio en el camino de escritura de una
+corrida** — o sea que necesita una corrida real para verificarse.
+

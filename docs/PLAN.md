@@ -1842,6 +1842,60 @@ alguien vuelve a mostrar `L-050` sin cablear los 21 tokens, el problema vuelve e
 ---
 
 
+**`D-40` — Un faltante declara su CAUSA, y la causa nombra el oficio que lo cierra. Y una hoja de
+salida puede ganar columnas sin que nadie recree la hoja.** (23/08/2026, `2026-08-23_1`.)
+
+Cita a `D-12` y **no la supersede**: `FALTANTES` **sigue pisándose** en cada corrida y sigue siendo
+la lista de trabajo de la última, no un historial. Lo que se agrega es qué dice cada fila y una
+corrida de profundidad.
+
+**Por qué es estructural y no una mejora de reporte.** `D-38` cierra la fase cuando el usuario mira
+un deck y **declara que lo que falta no es relevante**. Esa declaración necesita saber **qué** falta
+y **por qué**, y hasta hoy los cuatro modos de falla —nadie lo cableó, falló al resolver, no había
+dato, la corrida no llegó— **llegaban al mismo texto libre** en una hoja que no tenía más lector que
+el editor de planillas. El criterio de cierre de la fase se estaba apoyando en un instrumento que
+no distinguía nada.
+
+⭐ **El criterio de qué es una causa, que es lo que evita que la lista crezca por matices: una causa
+nombra un OFICIO.** Si dos situaciones mandan a la misma persona a hacer lo mismo, son una sola
+causa. Es la misma pregunta que fundó los cuatro símbolos del `2026-08-20_1` —*¿qué trabajo manda a
+hacer este glifo, y hay más de una causa que lleve a él?*— movida de la capa de presentación a la
+del registro.
+
+⛔ **Y una causa que el motor NO puede probar no se inventa.** *Fuera de alcance* y *texto del
+equipo* son decisiones del usuario que **no viven en ninguna hoja de registro** —`LAMINAS` no tiene
+columna de alcance— así que el panel **declara que su conteo no las descuenta** en vez de fabricar
+una clasificación que parecería medida. Un conteo que suma cuatro cosas distintas y lo dice vale
+más que uno que las separa adivinando.
+
+**Lo que la decisión fija, y aplica a toda hoja de salida futura:**
+
+1. **Toda fila de `FALTANTES` lleva `causa`**, escrita por el punto que la empuja —el que sabe por
+   qué falta— y nunca deducida leyendo el `motivo` río abajo.
+2. ⭐ **Una hoja de SALIDA reconcilia sus headers antes de escribir** (`reconciliarHeadersDeSalida_`).
+   `hojaDeSalida_` sólo escribe encabezados cuando la hoja **no existe**, así que sin esto una
+   columna nueva entra al esquema y **la celda no se escribe nunca, sin error** — el modo de falla
+   de `CLAUDE.md` §2. Sólo **agrega al final**: nunca reordena ni renombra, porque mover una columna
+   cambia el significado de las filas ya escritas.
+   ⚠ **No sirve para una hoja de registro**, y la frontera importa: allá está `COLUMNAS_DELTA_`, que
+   además siembra y respeta lo escrito a mano. Esto vale **porque** la hoja se pisa entera igual.
+3. **Una corrida de profundidad, y ni una más.** `FALTANTES_PREVIO` contesta *«¿este faltante ya
+   estaba antes de mi cambio?»* — la única pregunta que se hizo hasta hoy, y la que el 23/08 se
+   contestó **copiando la hoja a mano antes de que la próxima corrida la pisara**. Acumular por
+   `corrida_id` daría ~10.000 filas en cincuenta corridas y volvería a `FALTANTES` un log, que es lo
+   que `D-12` decidió que no fuera.
+4. ⭐ **Un instrumento que mide una etapa deja su medición escrita, con el denominador.**
+   `ANCLAJE_MEDICION` nace de esto: `ANCLAJE_PENDIENTE` vacío significaba **dos cosas opuestas**
+   —*«no corrió»* y *«corrió y nadie cayó bajo el umbral»*— y las dos eran la misma pantalla en
+   blanco. **Cero sobre un denominador es un resultado; cero sin denominador es un silencio.**
+
+⚠ **Lo que `D-40` NO hace:** no dice en qué **lámina** falta cada token. `FALTANTES` no la guarda y
+el `mapa_tokens` de `CORRIDAS` guarda el índice de slide del **deck expandido**, que no es un
+`lamina_id`. Queda en `PENDIENTES` con el mecanismo escrito.
+
+---
+
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### El encuadre: todo lo de abajo es la fase `informe semanal` — `D-38`

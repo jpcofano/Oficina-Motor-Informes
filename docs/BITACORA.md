@@ -13548,3 +13548,68 @@ comparten camino y difieren sólo en el corte, medidos **dentro de la misma corr
 inestabilidad de la fuente no lo puede arruinar.
 
 **Commits:** `b425b25` (el código) y el de esta entrada.
+
+## 2026-08-23 (noche) — `2026-08-23_1`: el motor aprende a declarar qué NO hizo
+
+- **Qué pedía el prompt:** los tres P1 abiertos son la misma cosa — `FALTANTES` no tiene lector
+  fuera del editor y se pisa entera; el aviso de crudos no distingue *«nadie lo cableó»* de *«se
+  cableó y el escritor no lo pisó»*; y `sinLink` no deja rastro, así que *«no corrió»* y *«corrió y
+  nadie cayó bajo el umbral»* se ven igual. **Corrida nocturna, sin usuario**: nada de lo que se
+  toca mueve un número publicado.
+- **Se ejecutaron las cinco partes.** Commits: `5d63fcf` (B), `1b76324` (docs B), `9481a5c` (C),
+  `82eeca0` (D), `62aa5f2` (docs D), `1345155` (E).
+
+### Qué se hizo
+
+**Parte A — lectura.** Quince `panel_*` (el prompt decía trece), `Panel.html` sin build ni
+librerías con los tokens de diseño copiados a mano, `FALTANTES` de siete columnas pisada entera en
+el cierre, cuatro símbolos confirmados en `textoFaltante_`, y el `_19` **ya ejecutado** — su
+pestaña *Corrida* y el archivado de anclajes están vivos, así que esta tanda lo **complementa** y
+no lo supersede.
+
+**Parte B — `FALTANTES` con lector.** Columna `causa` (última, después de `motivo`), poblada en los
+cuatro puntos de escritura con el vocabulario `CAUSAS_FALTANTE_` — **una causa por oficio, no por
+matiz**. `reconciliarHeadersDeSalida_` hace que la columna llegue a una hoja que ya existe.
+`FALTANTES_PREVIO` guarda **una** corrida de profundidad. Pestaña *Faltantes* en el panel
+(`panel_faltantes`), agrupada por causa y ordenada por cuánto frena la publicación.
+
+**Parte C — el aviso de crudos, con causa.** `diagnosticoDeCrudo_` separa las cuatro situaciones
+que hasta hoy compartían un único texto. El del medio —**tiene fila, resolvió con valor y el
+escritor no lo pisó**— no dejaba rastro en ningún lado: no entra a `FALTANTES` por el camino normal
+y en el deck se ve igual que cualquier otro hueco. Su motivo lleva **el valor resuelto adentro**.
+
+**Parte D — `sinLink` visible.** Hoja `ANCLAJE_MEDICION`, una fila por anclaje real, con los que no
+anclaron **nombrados y con su motivo**. El reporte de la unión gana el denominador y los nombres.
+
+**Parte E — el diseño.** Veredicto de publicación arriba de todo en la pantalla de listo, con tres
+estados. Leyenda de los cuatro símbolos en pantalla, **que dice dónde miente hoy**.
+
+### Prueba
+
+`tools/probar-faltantes-causas.js`, **56 afirmaciones, todas en verde**, con control positivo por
+nombre en cada bloque y control negativo con motivo en la reconciliación. `probar-continuacion-deck.js`
+actualizado y en verde. Las 41 herramientas de `tools/` corren sin fallar. `node --check` sobre los
+cuatro `.gs` tocados y sobre el `<script>` de `Panel.html`. Las trece llamadas `google.script.run`
+del front cruzadas contra `PanelBackend.gs`, una por una.
+
+⛔ **Nada de esto se verificó contra una corrida real: no hubo `clasp push`.** Ver el handoff.
+
+### Pendientes / decisiones
+
+- ⛔ **`clasp push` sin correr, a propósito** — el código está en git y **no** en el proyecto de
+  Apps Script. Pushear de noche dejaría al trigger de la desatendida corriendo código que nadie
+  miró. Es lo primero de mañana.
+- ⚠ **Dos causas que el prompt pide y el motor NO puede probar: *fuera de alcance* y *texto del
+  equipo*.** No están en ninguna hoja de registro — `docs/CIERRE_POR_LAMINA.md` ya lo dice: *"la
+  causa 4 no está en ninguna hoja de registro, `LAMINAS` no tiene columna de alcance"*. **No se las
+  inventó**: la vista declara que el conteo no las descuenta. El mecanismo que lo destrabaría es
+  una columna `alcance` en `LAMINAS`, y necesita a alguien que la llene → `PENDIENTES`.
+- ⚠ **La vista no agrupa por lámina**, que era el primer pedido de la Parte B. `FALTANTES` no
+  guarda la lámina y no es derivable con confianza: el `mapa_tokens` de `CORRIDAS` guarda el índice
+  de slide del **deck expandido**, que no es un `lamina_id`. Se agrupa por causa y por ítem emitido,
+  y la vista lo dice → `PENDIENTES`.
+- **Premisa del prompt que no se cumplió:** `/mnt/skills/public/frontend-design/SKILL.md` no existe
+  en esta máquina (es una ruta de Linux). La Parte E se hizo con las tres reglas que el propio
+  prompt escribe, que son la sustancia.
+- El parseo del nombre del ítem sigue **sin arreglar**, como el prompt pide: la vista y la hoja
+  muestran el nombre **sucio**, con su `: ` crudo, y hay afirmaciones que exigen que siga así.

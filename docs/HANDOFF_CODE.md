@@ -3,8 +3,10 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-23 — al cerrar `X-39` (`campo_id_cuenta` en `looker/DIGITAL`).
-Antes ese mismo día: `D-39` (tres láminas fuera de alcance).
+**Última actualización:** 2026-08-23, de noche — el `2026-08-23_1`, las cinco partes: el motor ya
+puede declarar **qué NO hizo**. ⛔ **Nada de eso está en Apps Script todavía: falta `clasp push`.**
+Antes ese mismo día: `X-39` (`campo_id_cuenta` en `looker/DIGITAL`) y `D-39` (tres láminas fuera de
+alcance).
 Antes: el `2026-08-22_27` (tablero de cierre por lámina + `MAPEO` de `looker/CC`), el camino del
 fixture sobre el Resumen Ejecutivo JM, el `_25` (`R-21` nivel 1) y el `_23` (las dos fases). Lo de
 más abajo **sigue vigente**: no se reescribió lo que no cambió.
@@ -13,7 +15,71 @@ más abajo **sigue vigente**: no se reescribió lo que no cambió.
 
 ## ⏱ Dónde estamos ahora mismo
 
-### ⭐ Lo último (23/08): `X-39` cerrado — `L-046` ya no tiene nada que lo bloquee
+### ⭐ Lo último (23/08, noche): el motor ya puede declarar qué NO hizo — `2026-08-23_1`, las cinco partes
+
+⛔⛔ **LO PRIMERO DE MAÑANA, ANTES DE CUALQUIER OTRA COSA: `clasp push`.** Todo esto está en git y
+**no** está en el proyecto de Apps Script. Se dejó sin pushear a propósito: la corrida desatendida
+se reanuda sola por trigger, y pushear de noche la habría puesto a correr código que nadie miró.
+**Un push que no corrió es indistinguible de uno que corrió antes del cambio** (`CLAUDE.md` §4), así
+que hasta que se haga, **nada de lo de abajo existe para el motor**.
+
+**Los cinco commits:** `5d63fcf` (B) · `9481a5c` (C) · `82eeca0` (D) · `1345155` (E), más
+`1b76324` y `62aa5f2` de documentación.
+
+**Qué cambia, en una línea por parte:**
+
+- **B — `FALTANTES` tiene lector.** Columna `causa` en la hoja, pestaña **Faltantes** en el panel
+  agrupada por causa, y `FALTANTES_PREVIO` con la corrida anterior. Es el instrumento que `D-38`
+  necesita: hasta hoy el usuario declaraba el cierre **de memoria**.
+- **C — el aviso de crudos dice qué oficio manda a hacer.** ⭐ **El caso nuevo es el que importa:
+  un token que resolvió con valor y quedó crudo** — hasta hoy no dejaba rastro **en ningún lado**.
+- **D — hoja `ANCLAJE_MEDICION`.** Una fila por anclaje, con los que no anclaron **nombrados**.
+  `ANCLAJE_PENDIENTE` vacío deja de significar dos cosas opuestas.
+- **E — veredicto de publicación arriba de todo** en la pantalla de listo, y **leyenda de los cuatro
+  símbolos** en pantalla, que además dice dónde miente hoy.
+
+**Prueba:** `tools/probar-faltantes-causas.js` — **56 afirmaciones, todas verdes**, con control
+positivo por nombre y control negativo con motivo. Las 41 herramientas de `tools/` en verde.
+⛔ **Ninguna corrida real:** nada de esto se vio funcionando contra la planilla.
+
+#### Qué necesita una corrida de `jm` para verificarse
+
+Todo lo de abajo está **escrito y sin ejecutar una sola vez**. La corrida los cubre a los cuatro de
+una pasada, y el orden es el de cuánto duele si falla:
+
+1. ⛔ **Que `escribirFaltantes_` no rompa el cierre.** Es lo único que toca el camino crítico:
+   agrega un rotado y una reconciliación de headers **dentro de la reserva del cierre**, que está
+   medida y es ajustada. Si la reserva no alcanza, el corte ordenado muere en el muro y **no deja
+   nada** — que es exactamente lo que la reserva existe para evitar. Mirar `cierre_seg` en el
+   reporte y compararlo contra `reserva_seg`.
+2. **Que la columna `causa` llegue a la hoja viva.** La hoja `FALTANTES` **ya existe** con siete
+   columnas, y `hojaDeSalida_` no la toca. El banco prueba la reconciliación sobre una hoja en
+   memoria; lo que ninguna prueba dice es qué hace Sheets. **Si la columna 8 sale vacía, la
+   reconciliación no corrió.**
+3. **Que las causas sean las correctas.** El deck de `agosto_14_20` tiene `post_` sin cablear
+   (→ `sin_fila`) y encuentros con `sin_datos`. ⭐ **Y lo que hay que mirar con más atención es si
+   aparece alguno con causa `escritor`**: si aparece, es un bug real que estuvo invisible todo este
+   tiempo, y **el motivo de su fila trae el valor que se había resuelto**.
+4. **Que `ANCLAJE_MEDICION` se escriba.** Una fila, con `intentados` = anclados + baja confianza +
+   sin link. Si `intentados` sale más grande de lo esperado, la medición se está escribiendo desde
+   la envoltura cacheada y no desde el anclaje real — hay una afirmación que lo cubre, pero mide el
+   texto del archivo, no la corrida.
+
+#### Lo que se decidió NO hacer, y por qué
+
+- ⚠ **Las causas *fuera de alcance* y *texto del equipo* no se implementaron.** No están en ninguna
+  hoja de registro y **no se las inventó**: la vista declara que el conteo no las descuenta. →
+  `PENDIENTES`, `P2`, con el mecanismo (columna `alcance` en `LAMINAS`).
+- ⚠ **La vista no agrupa por lámina.** `FALTANTES` no la guarda y no es derivable con confianza. →
+  `PENDIENTES`, `P2`, con qué la destrabaría.
+- **El parseo del nombre del ítem sigue roto y a propósito**, como pedía el prompt: la vista muestra
+  el nombre **sucio** (`enc_alcance_pct @: Salud`), y hay afirmaciones que **exigen** que siga así.
+- **Premisa del prompt que no se cumplió:** `/mnt/skills/public/frontend-design/SKILL.md` no existe
+  en esta máquina. La Parte E se hizo con las tres reglas que el propio prompt escribe.
+
+---
+
+### Antes, el mismo 23/08: `X-39` cerrado — `L-046` ya no tiene nada que lo bloquee
 
 **`SOLAPAS.campo_id_cuenta` declarado** en `looker/DIGITAL` (`ldig_id_cuenta`) y `digital/Directa
 Mail` (`mail_id_cuenta`), más tres filas de `MAPEO`. **Los quince `camp_{meta,google,prog}_*` de
