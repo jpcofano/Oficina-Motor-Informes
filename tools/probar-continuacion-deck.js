@@ -58,18 +58,39 @@ function hojaEnMemoria(headers) {
     getDataRange: () => ({ getValues: () => filas.map(f => f.slice()) }),
     appendRow: (f) => { filas.push(f.slice()); },
     setFrozenRows: () => {},
+    /* `2026-08-23_1` — lo que necesita `reconciliarHeadersDeSalida_` para agregar una columna.
+     * La hoja en memoria no tiene ancho fijo, así que `getMaxColumns` devuelve el ancho actual y
+     * `insertColumnsAfter` no hace nada: lo que se está probando es que el HEADER se escriba. */
+    getMaxColumns: () => headers.length,
+    insertColumnsAfter: () => {},
     getRange: (fila, col, nFilas, nCols) => ({
       getValues: () => {
         const out = [];
+        // `nCols` manda cuando viene: `reconciliarHeadersDeSalida_` pide un ancho explícito y
+        // devolver `headers.length` le escondería la columna recién agregada.
+        const ancho = nCols || headers.length;
         for (let i = 0; i < (nFilas || 1); i++) {
           const origen = filas[fila - 1 + i] || [];
-          out.push(headers.map((_, k) => origen[col - 1 + k] !== undefined ? origen[col - 1 + k] : ''));
+          const linea = [];
+          for (let k = 0; k < ancho; k++) linea.push(origen[col - 1 + k] !== undefined ? origen[col - 1 + k] : '');
+          out.push(linea);
         }
         return out;
       },
       getValue: () => (filas[fila - 1] || [])[col - 1] || '',
       setValue: (v) => { while (filas.length < fila) filas.push([]); filas[fila - 1][col - 1] = v; },
-      setValues: (m) => { m.forEach((f, i) => { while (filas.length < fila + i) filas.push([]); filas[fila - 1 + i] = f.slice(); }); },
+      setValues: (m) => {
+        m.forEach((f, i) => {
+          const n = fila - 1 + i;
+          while (filas.length <= n) filas.push([]);
+          // Escritura parcial: `reconciliarHeadersDeSalida_` escribe SÓLO las columnas nuevas,
+          // desde `col`. Pisar la fila entera borraría las que ya estaban.
+          const destino = filas[n];
+          f.forEach((v, k) => { destino[col - 1 + k] = v; });
+        });
+        // La fila 1 es el esquema: si se le agregó una columna, la hoja se ensanchó.
+        if (fila === 1) { headers.length = 0; filas[0].forEach(h => headers.push(h)); }
+      },
       clearContent: () => { filas.length = 1; }
     })
   };
@@ -80,7 +101,27 @@ function hojaEnMemoria(headers) {
 const HEADERS = {
   CORRIDAS: ['corrida_id', 'informe_id', 'periodo_id', 'deck_id', 'fecha_generacion',
     'tokens_reemplazados', 'faltantes', 'mapa_tokens'],
+  /* ⭐ `2026-08-23_1` — **la hoja arranca con el esquema VIEJO, de siete columnas, a propósito.**
+   *
+   * Es el estado real de cualquier instalación que ya existía: `hojaDeSalida_` sólo escribe
+   * headers cuando la hoja **no está**, así que la columna `causa` que nació hoy **no llega sola**
+   * a una hoja que ya existe. Con el esquema nuevo acá, `reconciliarHeadersDeSalida_` no tendría
+   * nada que hacer y el control no probaría nada — el fixture pasaría igual con la reconciliación
+   * borrada, que es `Pruebas.gs:456` otra vez. */
   FALTANTES: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo']
+};
+
+/* El esquema que declara `Instalar.gs`. **Se copia, no se importa**, por lo mismo que las tres
+ * listas de hojas de registro de `CLAUDE.md` §2: un banco que leyera el esquema del código que
+ * audita dejaría de ser independiente. Si se desalinea, lo dice la afirmación de la reconciliación. */
+const HOJAS_CONFIG_ = {
+  CORRIDAS: { headers: HEADERS.CORRIDAS },
+  FALTANTES: {
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa']
+  },
+  FALTANTES_PREVIO: {
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa']
+  }
 };
 
 /**
@@ -136,6 +177,10 @@ function contexto(nombreInicial) {
     // `Secciones.gs`. Sin secciones repetibles el camino de la plantilla no expande nada, que es
     // lo que hace falta acá: lo que este control mira es el RETORNO, no la expansión.
     leerSeccionesPlano_: () => [],
+
+    // `Instalar.gs` — el esquema de las hojas de salida. `escribirFaltantes_` lo lee para
+    // reconciliar columnas nuevas sobre una hoja que ya existe.
+    HOJAS_CONFIG_,
 
     // ── de Generador.gs, pero fuera de lo que este control mira ──
     resolverMarcadores: () => ({ resultados: [], resumen: null })

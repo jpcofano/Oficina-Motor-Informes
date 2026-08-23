@@ -203,8 +203,46 @@ var HOJAS_CONFIG_ = {
   // Paso 4 `B.7` (`D-12`) — se **pisa** en cada corrida, a propósito: es la lista de trabajo
   // de lo que falta cablear, no un historial. Si algún día hace falta la serie,
   // `tools/snapshot.js` ya la archivaría.
+  //
+  /* ⭐ `2026-08-23_1` Parte B — **`causa` es columna, no una lectura del `motivo`.**
+   *
+   * El agrupamiento por causa es lo que vuelve útil a la hoja: cada causa manda a un oficio
+   * distinto —cablear, mirar la traza, mirar la fuente, correr de nuevo— y hasta hoy las cuatro
+   * llegaban al mismo texto libre. Derivar la causa **leyendo el `motivo`** en el panel habría
+   * sido un parser de prosa en el consumidor: el que sabe por qué falta el token es el punto que
+   * lo empuja, no el que lo lee después.
+   *
+   * ⚠ **La columna se agrega y la hoja viva NO se recrea**, así que `escribirFaltantes_` la
+   * reconcilia con `reconciliarHeadersDeSalida_` antes de escribir. Sin eso pasa exactamente lo
+   * que `CLAUDE.md` §2 describe: la columna entra al esquema, `hojaDeSalida_` sólo actúa cuando
+   * la hoja **no existe**, y en la hoja de siempre la celda **nunca se escribe** — un `undefined`
+   * silencioso, sin error. Es barato porque `FALTANTES` es salida y se pisa entera igual.
+   *
+   * ⛔ **Y va ÚLTIMA, después de `motivo`, y eso no es estética.** `aplicarInstalacion_` reescribe
+   * la fila 1 de una hoja sin `COLUMNAS_DELTA_` **por posición**: metida en el medio, `causa`
+   * pisaría el título de `motivo` y la columna de motivos quedaría rotulada `causa` hasta la
+   * próxima corrida. Al final, la reescritura posicional de `instalar()` y el agregado por nombre
+   * de `reconciliarHeadersDeSalida_` **coinciden**, y ninguna columna existente se mueve. */
   FALTANTES: {
-    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo']
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa']
+  },
+  /* ⭐ `2026-08-23_1` Parte B — **la corrida anterior, y una sola.**
+   *
+   * `D-12` decidió que `FALTANTES` se pisa, y eso **no se supersede acá**: sigue siendo la lista
+   * de trabajo de la última corrida y no un historial. Lo que se agrega es lo mínimo que el
+   * cierre de fase (`D-38`) necesita y que hoy no existe: **poder comparar contra la corrida
+   * anterior** sin haberla copiado a mano antes de que la próxima la pisara — que es literalmente
+   * como se diagnosticó `X-40` el 23/08.
+   *
+   * ⚠ **Una sola corrida de profundidad, y es una decisión medida, no pereza.** Una corrida
+   * genera del orden de 190 filas; acumular por `corrida_id` daría ~10.000 filas en cincuenta
+   * corridas y **convertiría la lista de trabajo en un log**, que es justo lo que `D-12` no
+   * quiere. Con una de profundidad, el costo es constante y la pregunta que se contesta
+   * —*«¿esto ya estaba antes de mi cambio?»*— es la única que se hizo hasta hoy.
+   *
+   * Mismos headers que `FALTANTES`, a propósito: **un solo lector sirve para las dos**. */
+  FALTANTES_PREVIO: {
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa']
   },
   // `_5` (08/08) — la primera solapa de equivalencias de la planilla. Sigue la forma del
   // precedente `docs/PERSONAS_equivalencias.csv` —canónico / variante / dónde— adaptada al

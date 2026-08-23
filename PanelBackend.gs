@@ -1317,3 +1317,153 @@ function panel_deckDeId_(deckId) {
   }
   return salida;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-23_1` Parte B — Faltantes con lector
+ *
+ * ⭐ **El instrumento del cierre de fase, no una mejora.** `D-38` cierra una lámina cuando el
+ * usuario la mira y declara que lo que falta no es relevante. Hasta hoy esa declaración se hacía
+ * **de memoria**: `FALTANTES` no tenía más lector que el editor de planillas, y se pisaba entera
+ * en cada corrida.
+ *
+ * ⚠ **Lo que esta vista NO contesta, y va dicho acá y no en una nota al pie** (`CLAUDE.md` §4:
+ * un control declara cuánto midió):
+ *
+ *   - **La lámina.** `FALTANTES` no tiene columna de lámina y **no es derivable con confianza**:
+ *     el `mapa_tokens` de `CORRIDAS` guarda el índice de slide del **deck expandido**, que no es
+ *     `lamina_id` —las secciones repetibles duplican— y `LAMINAS.orden_plantilla` es reportado y
+ *     nunca autoritativo. Lo que sí hay es el sufijo `@ítem`, que agrupa por instancia emitida.
+ *   - **Fuera de alcance y texto del equipo.** Son decisiones del usuario y no viven en ninguna
+ *     hoja de registro (`docs/CIERRE_POR_LAMINA.md`: *"`LAMINAS` no tiene columna de alcance"*).
+ *     El conteo **no las descuenta**, y lo dice, en vez de inventar una clasificación.
+ * ═══════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * ⭐ **El sufijo `@ítem` es lo que separa «este token falta en todas las láminas» de «falta en
+ * una».** Se parte por el PRIMER ` @` y **el resto viaja tal cual, sin limpiar** — Parte D: si el
+ * nombre del ítem llega sucio (`enc_alcance_pct @: Salud`), hay que verlo. Un nombre que la vista
+ * lava esconde el bug del parseo justo en el instrumento con el que se diagnostica todo lo demás.
+ */
+function partirTokenDeFaltante_(valor) {
+  var texto = String(valor == null ? '' : valor);
+  var corte = texto.indexOf(' @');
+  if (corte === -1) return { token: texto.trim(), item: '' };
+  return { token: texto.slice(0, corte).trim(), item: texto.slice(corte + 2) };
+}
+
+/**
+ * Una hoja de faltantes → sus filas normalizadas, agrupadas por causa.
+ *
+ * ⚠ **Una fila sin `causa` no se adivina leyendo el `motivo`.** La columna nació el 23/08; las
+ * filas de una corrida anterior no la tienen, y un parser de prosa sobre el motivo produciría una
+ * clasificación **que parece medida y no lo es**. Se marcan `sin_clasificar` y el conteo lo dice.
+ */
+function leerHojaDeFaltantes_(nombreHoja) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombreHoja);
+  // ⛔ Leer no crea. Una pestaña que se abre no debe dejar una hoja nueva en la planilla.
+  if (!hoja) return { existe: false, filas: [] };
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos.shift() || [];
+  var idx = {};
+  headers.forEach(function (h, i) { idx[String(h || '').trim()] = i; });
+
+  var filas = [];
+  datos.forEach(function (cruda) {
+    var tokenCrudo = idx.token === undefined ? '' : cruda[idx.token];
+    if (!String(tokenCrudo || '').trim()) return;   // filas en blanco al final
+
+    var partes = partirTokenDeFaltante_(tokenCrudo);
+    var causa = idx.causa === undefined ? '' : String(cruda[idx.causa] || '').trim();
+    if (!CAUSAS_FALTANTE_[causa]) causa = 'sin_clasificar';
+
+    filas.push({
+      corrida_id: idx.corrida_id === undefined ? '' : String(cruda[idx.corrida_id] || ''),
+      informe_id: idx.informe_id === undefined ? '' : String(cruda[idx.informe_id] || ''),
+      token: partes.token,
+      item: partes.item,
+      base_id: idx.base_id === undefined ? '' : String(cruda[idx.base_id] || ''),
+      solapa: idx.solapa === undefined ? '' : String(cruda[idx.solapa] || ''),
+      causa: causa,
+      motivo: idx.motivo === undefined ? '' : String(cruda[idx.motivo] || '')
+    });
+  });
+
+  return { existe: true, filas: filas };
+}
+
+/**
+ * B.1 · Lo que dejó la última corrida (`cual = 'actual'`) o la anterior (`cual = 'previa'`).
+ *
+ * Devuelve los grupos **ordenados por el `orden` de `CAUSAS_FALTANTE_`**, que no es alfabético ni
+ * por tamaño: es por **cuánto frena la publicación**. Un token que resolvió y no se pintó es un
+ * bug del escritor y va antes que cien tokens sin cablear, aunque sea uno solo.
+ *
+ * ⚠ **Los conteos vienen en dos unidades y las dos van nombradas** (`_27` bloque 1.3): `filas`
+ * son apariciones —una por token **y por ítem**— y `tokens` son nombres distintos. `filas > tokens`
+ * es lo normal en un deck con secciones repetibles y **no es un bug del motor**.
+ */
+function panel_faltantes(cual) {
+  var previa = String(cual || '') === 'previa';
+  var hoja = previa ? 'FALTANTES_PREVIO' : 'FALTANTES';
+  var leido = leerHojaDeFaltantes_(hoja);
+
+  if (!leido.existe) {
+    return {
+      ok: true, cual: previa ? 'previa' : 'actual', hoja: hoja, existe_hoja: false,
+      grupos: [], corridas: [], filas: 0, tokens: 0
+    };
+  }
+
+  var porCausa = {};
+  var distintos = {};
+  var corridas = {};
+
+  leido.filas.forEach(function (f) {
+    if (!porCausa[f.causa]) porCausa[f.causa] = {};
+    if (!porCausa[f.causa][f.token]) porCausa[f.causa][f.token] = [];
+    porCausa[f.causa][f.token].push(f);
+    distintos[f.token] = true;
+    if (f.corrida_id) corridas[f.corrida_id] = (corridas[f.corrida_id] || 0) + 1;
+  });
+
+  var grupos = Object.keys(porCausa).map(function (causa) {
+    var def = CAUSAS_FALTANTE_[causa] || CAUSAS_FALTANTE_.sin_clasificar;
+    var tokens = Object.keys(porCausa[causa]).sort().map(function (token) {
+      var apariciones = porCausa[causa][token];
+      return {
+        token: token,
+        // Los ítems tal cual llegan, sin limpiar y sin deduplicar por nombre normalizado:
+        // dos grafías del mismo encuentro son un hallazgo, no ruido a esconder (Parte D).
+        items: apariciones.map(function (a) { return a.item; }).filter(function (i) { return i !== ''; }),
+        base_id: apariciones[0].base_id,
+        solapa: apariciones[0].solapa,
+        // Un solo motivo por token: los de un mismo token y causa dicen lo mismo, y repetirlo
+        // una vez por ítem convierte la vista en el volcado de la hoja que vino a reemplazar.
+        motivo: apariciones[0].motivo,
+        apariciones: apariciones.length
+      };
+    });
+    return {
+      causa: causa, oficio: def.oficio, texto: def.texto, orden: def.orden,
+      tokens: tokens,
+      cuenta_tokens: tokens.length,
+      cuenta_filas: tokens.reduce(function (n, t) { return n + t.apariciones; }, 0)
+    };
+  }).sort(function (a, b) { return a.orden - b.orden; });
+
+  return {
+    ok: true,
+    cual: previa ? 'previa' : 'actual',
+    hoja: hoja,
+    existe_hoja: true,
+    grupos: grupos,
+    /* ⚠ **Más de un `corrida_id` en la hoja es un hallazgo, no un detalle de presentación.**
+     * `escribirFaltantes_` pisa la hoja entera, así que lo normal es **uno**. Dos significa que
+     * una corrida murió antes del cierre y dejó la lista de otra mezclada — exactamente el caso
+     * que costó medio día el 23/08, cuando el deck que se estaba mirando era el anterior. */
+    corridas: Object.keys(corridas).sort().map(function (id) { return { corrida_id: id, filas: corridas[id] }; }),
+    filas: leido.filas.length,
+    tokens: Object.keys(distintos).length
+  };
+}

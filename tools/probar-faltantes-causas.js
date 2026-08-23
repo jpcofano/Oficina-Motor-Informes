@@ -1,0 +1,303 @@
+/**
+ * `2026-08-23_1` Partes B y C — el banco de `FALTANTES`: causas, rotado y reconciliación.
+ *
+ * ⭐ **Extrae las funciones reales de `Generador.gs` y `PanelBackend.gs`, no las reimplementa.**
+ * `CLAUDE.md` §4: reproducir la lógica en node es el error que este repo ya cometió cuatro veces.
+ * Acá lo único falseado es la plataforma —`SpreadsheetApp` y una hoja en memoria—; el código que
+ * se afirma es el que se pushea.
+ *
+ * ⭐ **Y cada bloque lleva un control POSITIVO: algo que TIENE que aparecer.** Un banco que sólo
+ * busca lo que sospecha no distingue «no está» de «no miré», y las dos salidas se leen igual.
+ *
+ * Corre con: `node tools/probar-faltantes-causas.js`
+ */
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+const RAIZ = path.join(__dirname, '..');
+
+let ok = 0;
+let mal = 0;
+const avisos = [];
+
+function af(cond, texto, detalle) {
+  if (cond) { ok++; console.log('  ✅ ' + texto); }
+  else { mal++; console.log('  ❌ ' + texto + (detalle ? ' — ' + detalle : '')); }
+}
+
+/**
+ * Una hoja de Sheets en memoria, con el ancho vivo en `headers`.
+ *
+ * ⚠ **`setValues` escribe SÓLO las columnas que le mandan, desde `col`.** Pisar la fila entera
+ * haría que la reconciliación —que escribe únicamente las columnas nuevas— borrara las viejas, y
+ * el banco mediría un bug que la plataforma real no tiene.
+ */
+function hojaEnMemoria(headers) {
+  const filas = [headers.slice()];
+  const vivos = headers.slice();
+  const hoja = {
+    getName: () => 'hoja',
+    getLastRow: () => filas.length,
+    getLastColumn: () => vivos.length,
+    getMaxColumns: () => vivos.length,
+    insertColumnsAfter: () => {},
+    setFrozenRows: () => {},
+    getDataRange: () => ({ getValues: () => filas.map(f => f.slice()) }),
+    getRange: (fila, col, nFilas, nCols) => ({
+      getValues: () => {
+        const ancho = nCols || vivos.length;
+        const out = [];
+        for (let i = 0; i < (nFilas || 1); i++) {
+          const origen = filas[fila - 1 + i] || [];
+          const linea = [];
+          for (let k = 0; k < ancho; k++) linea.push(origen[col - 1 + k] !== undefined ? origen[col - 1 + k] : '');
+          out.push(linea);
+        }
+        return out;
+      },
+      setValues: (m) => {
+        m.forEach((f, i) => {
+          const n = fila - 1 + i;
+          while (filas.length <= n) filas.push([]);
+          f.forEach((v, k) => { filas[n][col - 1 + k] = v; });
+        });
+        if (fila === 1) { vivos.length = 0; filas[0].forEach(h => vivos.push(h)); }
+      },
+      clearContent: () => { filas.length = 1; }
+    })
+  };
+  hoja.__filas = filas;
+  hoja.__headers = vivos;
+  return hoja;
+}
+
+/* El esquema de `Instalar.gs`, **copiado y no importado** — mismo criterio que las tres listas de
+ * hojas de registro de `CLAUDE.md` §2: un banco que lee el esquema del código que audita deja de
+ * ser independiente. El desalineamiento lo delata la afirmación de la reconciliación. */
+const HOJAS_CONFIG_ = {
+  FALTANTES: {
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa']
+  },
+  FALTANTES_PREVIO: {
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa']
+  }
+};
+
+/** El esquema VIEJO, de siete columnas: el que tiene hoy cualquier instalación que ya existía. */
+const HEADERS_VIEJOS = ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo'];
+
+/**
+ * Contexto con `Generador.gs` cargado. `textoGenerador` permite cargar una versión modificada,
+ * que es lo que necesita el control negativo.
+ */
+function contextoGenerador(hojas, textoGenerador) {
+  const ctx = {
+    console, Math, JSON, Date, String, Number, Object, Array, RegExp, isNaN, Error,
+    parseInt, parseFloat,
+    Logger: { log: () => {} },
+    HOJAS_CONFIG_,
+    SpreadsheetApp: {
+      getActiveSpreadsheet: () => ({
+        getSheetByName: (n) => hojas[n] || null,
+        insertSheet: (n) => (hojas[n] = hojaEnMemoria(HOJAS_CONFIG_[n].headers))
+      }),
+      flush: () => {}
+    }
+  };
+  vm.createContext(ctx);
+  const texto = textoGenerador !== undefined
+    ? textoGenerador
+    : fs.readFileSync(path.join(RAIZ, 'Generador.gs'), 'utf8');
+  vm.runInContext(texto, ctx, { filename: 'Generador.gs' });
+  return ctx;
+}
+
+console.log('FALTANTES — causas, rotado y reconciliación · código cargado de Generador.gs y PanelBackend.gs\n');
+
+/* ════════════════════════════════════════════════════════════════════════════════════════
+ * 1 · La reconciliación de headers sobre una hoja que YA existe
+ * ════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('1 · una hoja con el esquema viejo gana la columna `causa` sin perder ninguna');
+{
+  const hojas = { FALTANTES: hojaEnMemoria(HEADERS_VIEJOS) };
+  const ctx = contextoGenerador(hojas);
+  ctx.__h = hojas.FALTANTES;
+  const salida = vm.runInContext('reconciliarHeadersDeSalida_(__h, "FALTANTES")', ctx);
+
+  af(salida.indexOf('causa') !== -1, '`causa` aparece en los headers devueltos');
+  af(hojas.FALTANTES.__filas[0].indexOf('causa') === 7,
+    'y quedó ESCRITA en la fila 1, en la columna 8', 'quedó en ' + hojas.FALTANTES.__filas[0].indexOf('causa'));
+  /* ⭐ Control positivo: las siete de siempre tienen que seguir donde estaban. Una reconciliación
+   * que reordena cambia el significado de las filas ya escritas, que es peor que no tener la
+   * columna. Sin esta afirmación, «agregó `causa`» y «reescribió la fila 1» se ven igual. */
+  af(HEADERS_VIEJOS.every((h, i) => hojas.FALTANTES.__filas[0][i] === h),
+    'y las siete viejas siguen en su posición original — no se reordenó nada');
+
+  // Idempotente: correrla de nuevo no agrega una segunda `causa`.
+  vm.runInContext('reconciliarHeadersDeSalida_(__h, "FALTANTES")', ctx);
+  af(hojas.FALTANTES.__filas[0].filter(h => h === 'causa').length === 1,
+    'correrla dos veces no duplica la columna');
+}
+
+/* ⛔ El control NEGATIVO, y con MOTIVO: no alcanza con ver rojo. Se rompe la reconciliación y hay
+ * que verificar que caiga **la afirmación de la columna**, no otra por carambola. */
+console.log('\n1b · romper la reconciliación a propósito: la columna NO tiene que aparecer');
+{
+  const texto = fs.readFileSync(path.join(RAIZ, 'Generador.gs'), 'utf8');
+  const buena = '  hoja.getRange(1, desde, 1, faltan.length).setValues([faltan]);';
+  if (texto.indexOf(buena) === -1) {
+    avisos.push('⚠ no se encontró la línea que escribe los headers nuevos: el control negativo NO corrió. ' +
+      'Cambió el código y este banco lo está leyendo mal — que es distinto de que el código esté bien.');
+    console.log('  ⚠ salteado: la línea a romper cambió de forma');
+  } else {
+    const hojas = { FALTANTES: hojaEnMemoria(HEADERS_VIEJOS) };
+    const ctx = contextoGenerador(hojas, texto.replace(buena, '  // roto a propósito'));
+    ctx.__h = hojas.FALTANTES;
+    vm.runInContext('reconciliarHeadersDeSalida_(__h, "FALTANTES")', ctx);
+    af(hojas.FALTANTES.__filas[0].indexOf('causa') === -1,
+      'con la escritura desactivada, `causa` no aparece — el banco la estaba viendo de verdad');
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════════════════
+ * 2 · El rotado a `FALTANTES_PREVIO`
+ * ════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n2 · la corrida anterior se archiva antes de que la nueva pise la hoja');
+{
+  const hojas = { FALTANTES: hojaEnMemoria(HEADERS_VIEJOS) };
+  // Lo que dejó "la corrida anterior".
+  hojas.FALTANTES.__filas.push(['C-VIEJA', 'jm', 'post_alcance', '', '', '', 'sin fila en MARCADORES']);
+  hojas.FALTANTES.__filas.push(['C-VIEJA', 'jm', 'camp_titulo', '', '', '', 'sin fila en MARCADORES']);
+
+  const ctx = contextoGenerador(hojas);
+  ctx.__nuevas = [
+    { corrida_id: 'C-NUEVA', informe_id: 'jm', token: 'enc_alcance @Boedo', base_id: 'rdv', solapa: 'RDV', campo_logico: '', motivo: 'sin_datos: …', causa: 'sin_datos' }
+  ];
+  const r = vm.runInContext('escribirFaltantes_(__nuevas)', ctx);
+
+  af(r.filas === 1, 'la hoja nueva quedó con 1 fila', 'quedó con ' + r.filas);
+  af(r.previo.ok === true && r.previo.filas === 2,
+    'y las 2 de la corrida anterior se archivaron', JSON.stringify(r.previo));
+
+  const previo = hojas.FALTANTES_PREVIO;
+  af(!!previo, 'la hoja FALTANTES_PREVIO se creó');
+  /* ⭐ Control positivo por nombre y no por conteo: un token que TIENE que estar. Un `filas === 2`
+   * solo pasaría igual con las filas copiadas al revés o con columnas cruzadas. */
+  const tokens = previo ? previo.__filas.slice(1).map(f => f[2]) : [];
+  af(tokens.indexOf('post_alcance') !== -1 && tokens.indexOf('camp_titulo') !== -1,
+    'y los dos tokens de la corrida anterior están ahí, por nombre', tokens.join(' | '));
+  af(previo && previo.__filas.slice(1).every(f => f[0] === 'C-VIEJA'),
+    'con su `corrida_id` — el archivo dice de qué corrida es');
+
+  // Y la hoja viva ya no tiene nada de la anterior: es la lista de trabajo de HOY.
+  const vivos = hojas.FALTANTES.__filas.slice(1).map(f => f[0]);
+  af(vivos.length === 1 && vivos[0] === 'C-NUEVA',
+    'y FALTANTES quedó sólo con la corrida nueva — `D-12` sigue en pie');
+
+  // La `causa` llegó a la hoja, que es todo el punto de la reconciliación.
+  const iCausa = hojas.FALTANTES.__filas[0].indexOf('causa');
+  af(iCausa !== -1 && hojas.FALTANTES.__filas[1][iCausa] === 'sin_datos',
+    'y la columna `causa` se escribió con su valor', 'índice ' + iCausa);
+}
+
+console.log('\n2b · la PRIMERA corrida de todas: no hay nada que archivar, y eso no es un fallo');
+{
+  const hojas = { FALTANTES: hojaEnMemoria(HEADERS_VIEJOS) };
+  const ctx = contextoGenerador(hojas);
+  ctx.__nuevas = [];
+  const r = vm.runInContext('escribirFaltantes_(__nuevas)', ctx);
+  /* ⚠ `filas: 0` con `ok: true` es el caso legítimo, y por eso el `ok` viaja al lado del número y
+   * no en su lugar: «no había nada» y «el archivado falló» mandan a cosas distintas. */
+  af(r.previo.ok === true && r.previo.filas === 0,
+    'informa `ok` con 0 filas, y dice el motivo', JSON.stringify(r.previo));
+  af(!hojas.FALTANTES_PREVIO, 'y no crea la hoja de archivo sin nada que guardar');
+}
+
+/* ════════════════════════════════════════════════════════════════════════════════════════
+ * 3 · El vocabulario de causas
+ * ════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n3 · una causa por oficio — y `ok` es la que no existía');
+{
+  const ctx = contextoGenerador({ FALTANTES: hojaEnMemoria(HEADERS_VIEJOS) });
+  const causa = (r) => { ctx.__r = r; return vm.runInContext('causaDeResultado_(__r)', ctx); };
+
+  af(causa(null) === 'sin_fila', 'sin resultado → `sin_fila` (cablear)');
+  af(causa({ estado: 'error' }) === 'fallo', '`error` → `fallo` (mirar la traza)');
+  af(causa({ estado: 'REVISAR' }) === 'fallo', '`REVISAR` → `fallo` — no es «sin datos»');
+  af(causa({ estado: 'sin_datos' }) === 'sin_datos', '`sin_datos` → `sin_datos` (mirar la fuente)');
+  /* ⭐ **La que importa, y la que no existía hasta hoy** (Parte C): un token que resolvió bien y
+   * quedó crudo es un bug del escritor, y hasta el 23/08 caía en el mismo texto que «nadie lo
+   * cableó» — dos oficios opuestos con el mismo aviso. */
+  af(causa({ estado: 'ok' }) === 'escritor', '`ok` → `escritor` — resolvió y el escritor no lo pisó');
+  af(causa({ estado: 'algo_nuevo' }) === 'sin_clasificar',
+    'un estado que la función no conoce → `sin_clasificar`, no se lo adivina');
+
+  const causas = vm.runInContext('Object.keys(CAUSAS_FALTANTE_)', ctx);
+  af(causas.indexOf('no_alcanzado') !== -1,
+    'y existe `no_alcanzado`: «no se llegó» no es «nadie lo cableó»');
+  const ordenes = vm.runInContext('Object.keys(CAUSAS_FALTANTE_).map(function(k){return CAUSAS_FALTANTE_[k].orden;})', ctx);
+  af(new Set(ordenes).size === ordenes.length, 'y ninguna causa comparte `orden` con otra');
+}
+
+/* ════════════════════════════════════════════════════════════════════════════════════════
+ * 4 · El lector del panel — y el nombre del ítem SIN limpiar
+ * ════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n4 · el lector del panel parte el sufijo `@ítem` y no lava el nombre');
+{
+  const ctx = { console, Math, JSON, Date, String, Number, Object, Array, RegExp, isNaN, Error };
+  vm.createContext(ctx);
+  // Sólo la función que se afirma: `PanelBackend.gs` entero arrastra la planilla, y lo que se
+  // mide acá es un parseo de texto puro.
+  const texto = fs.readFileSync(path.join(RAIZ, 'PanelBackend.gs'), 'utf8');
+  const m = texto.match(/function partirTokenDeFaltante_[\s\S]*?\n}\n/);
+  if (!m) {
+    mal++;
+    console.log('  ❌ no se encontró `partirTokenDeFaltante_` en PanelBackend.gs');
+  } else {
+    vm.runInContext(m[0], ctx, { filename: 'PanelBackend.gs (extracto)' });
+    const partir = (v) => { ctx.__v = v; return vm.runInContext('partirTokenDeFaltante_(__v)', ctx); };
+
+    af(partir('camp_titulo').token === 'camp_titulo' && partir('camp_titulo').item === '',
+      'un token fijo no tiene ítem');
+    af(partir('enc_alcance @Boedo (pre)').token === 'enc_alcance',
+      'y con sufijo, el token sale limpio');
+    af(partir('enc_alcance @Boedo (pre)').item === 'Boedo (pre)',
+      'y el ítem sale entero, con su etapa');
+    /* ⭐⭐ **El fixture está COPIADO de una salida real** (`CLAUDE.md` §4: un fixture de formato se
+     * copia, nunca se deduce del código que lo emite). `enc_alcance_pct @: Salud` es lo que se vio
+     * el 23/08 — el nombre del ítem llega con el separador crudo adentro.
+     *
+     * ⚠ **La afirmación es que el `: ` SOBREVIVE.** Limpiarlo acá arreglaría la pantalla y
+     * escondería el bug del parseo justo en el instrumento con el que se diagnostica todo lo
+     * demás. Que se vea sucio ES el requisito. */
+    af(partir('enc_alcance_pct @: Salud').item === ': Salud',
+      'y un nombre mal parseado llega SUCIO a la vista, con su `: ` — no se lava',
+      JSON.stringify(partir('enc_alcance_pct @: Salud').item));
+    af(partir('t @Uno @Dos').item === 'Uno @Dos',
+      'parte por el PRIMER ` @`: un ítem con arroba adentro no se pierde');
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('');
+if (avisos.length) {
+  // ⚠ Los avisos van ÚLTIMOS, después del veredicto, porque un `⚠` en el medio de un reporte que
+  // termina en `✅` se lee como verde (`CLAUDE.md` §4, la tanda 4).
+  console.log(mal ? '❌ ' + mal + ' afirmación(es) fallaron.' : '✅ Todas las afirmaciones pasaron.');
+  console.log('   ' + ok + ' de ' + (ok + mal) + ' verificadas.\n');
+  console.log('⚠ Avisos — el verde de arriba NO los cubre:');
+  avisos.forEach(a => console.log('   · ' + a));
+} else {
+  console.log(mal ? '❌ ' + mal + ' afirmación(es) fallaron.' : '✅ Todas las afirmaciones pasaron.');
+  console.log('   ' + ok + ' de ' + (ok + mal) + ' verificadas.');
+}
+console.log('\n⚠ Lo que este control NO contesta:');
+console.log('   · Si el panel PINTA bien lo que el backend devuelve. Acá no hay DOM.');
+console.log('   · Si una corrida real deja las causas correctas: eso necesita una corrida de `jm`.');
+console.log('   · Nada sobre «fuera de alcance» ni «texto del equipo» — no están en ninguna hoja');
+console.log('     de registro, así que el motor no los puede clasificar y este banco tampoco.');
+
+process.exit(mal ? 1 : 0);

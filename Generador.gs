@@ -1600,24 +1600,152 @@ function hojaDeSalida_(nombre) {
   return hoja;
 }
 
+/* ═══════════ `2026-08-23_1` Partes B y C — el vocabulario de causas ═══════════════════════
+ *
+ * ⭐ **Una causa no describe el hueco: nombra el OFICIO que lo cierra.** Ése es todo el criterio
+ * para que exista una causa nueva, y el que evita que la lista crezca por matices: si dos
+ * situaciones mandan a la misma persona a hacer lo mismo, son una sola causa.
+ *
+ * ⚠ **Y es la misma pregunta que fundó los cuatro símbolos** (`2026-08-20_1`, y la regla de
+ * `CLAUDE.md` §4 que salió del deck con 269 `/////`): *¿qué trabajo manda a hacer esto, y hay más
+ * de una causa que lleve al mismo lugar?* Si dos causas distintas comparten etiqueta **y piden
+ * acciones distintas**, falta una etiqueta — no una nota al pie.
+ *
+ * ⛔ **Dos de las causas que el `2026-08-23_1` pide NO están acá, y hay que saber por qué**:
+ * *fuera de alcance* y *texto del equipo*. Las dos son decisiones del usuario y **no viven en
+ * ninguna hoja de registro** — `docs/CIERRE_POR_LAMINA.md` lo dice con todas las letras: *"la
+ * causa 4 no está en ninguna hoja de registro — `LAMINAS` no tiene columna de alcance"*. El motor
+ * no las puede probar, así que **no se las inventa**: el panel declara que el conteo no las
+ * descuenta, en vez de fabricar una clasificación que nadie escribió. El mecanismo que
+ * destrabaría esto es una columna `alcance` en `LAMINAS`, y necesita a alguien que la llene.
+ */
+var CAUSAS_FALTANTE_ = {
+  sin_fila:      { orden: 1, oficio: 'cablear', texto: 'sin fila en MARCADORES' },
+  fallo:         { orden: 2, oficio: 'mirar la traza', texto: 'falló al resolver' },
+  sin_datos:     { orden: 3, oficio: 'mirar la fuente o la ventana', texto: 'sin datos' },
+  escritor:      { orden: 4, oficio: 'es un bug del escritor', texto: 'resolvió y el escritor no lo pisó' },
+  no_alcanzado:  { orden: 5, oficio: 'correr de nuevo o continuar', texto: 'la corrida no llegó a este token' },
+  fuera_catalogo:{ orden: 6, oficio: 'mirar el catálogo', texto: 'publicó, con valores fuera del catálogo' },
+  sin_clasificar:{ orden: 7, oficio: 'mirar la fila', texto: 'sin clasificar' }
+};
+
+/**
+ * El resultado de `resolverMarcadores` para un token → su causa.
+ *
+ * ⚠ **`ok` devuelve `escritor` y no es un caso raro: es el modo de falla que hasta hoy no dejaba
+ * rastro en ningún lado** (Parte C). Un token que resolvió bien **no entra a `FALTANTES` por el
+ * camino normal** —los dos puntos que pintan vuelven antes— y en el deck sale igual que cualquier
+ * otro hueco. Si llega acá, es porque quedó crudo con un valor listo al lado.
+ */
+function causaDeResultado_(resultado) {
+  if (!resultado) return 'sin_fila';
+  var estado = String(resultado.estado || '');
+  if (estado === 'error' || estado === 'REVISAR') return 'fallo';
+  if (estado === 'sin_datos') return 'sin_datos';
+  if (estado === 'ok') return 'escritor';
+  return 'sin_clasificar';
+}
+
+/**
+ * ⭐ `2026-08-23_1` Parte B — **las columnas nuevas de una hoja de SALIDA llegan solas.**
+ *
+ * `hojaDeSalida_` sólo escribe headers cuando la hoja **no existe**, así que una columna
+ * agregada a `HOJAS_CONFIG_` no aparece nunca en la hoja de siempre — y `escribirFaltantes_`
+ * arma cada fila **contra los headers vivos**, con lo cual el valor se descarta **sin error**.
+ * Es el modo de falla de `CLAUDE.md` §2 (*«el síntoma nunca es un error»*) aplicado a salida.
+ *
+ * ⚠ **Sólo agrega al final, nunca reordena ni renombra.** Una columna que se mueve cambia el
+ * significado de las filas ya escritas; una que se agrega al final no le hace nada a nadie. Y por
+ * eso esto **no sirve para hojas de registro** —ahí está `COLUMNAS_DELTA_`, que además siembra—:
+ * vale porque `FALTANTES` es salida y se pisa entera en la misma llamada.
+ *
+ * Devuelve los headers vivos ya reconciliados, para no volver a leerlos.
+ */
+function reconciliarHeadersDeSalida_(hoja, nombre) {
+  var esperados = HOJAS_CONFIG_[nombre].headers;
+  var vivos = hoja.getRange(1, 1, 1, Math.max(hoja.getLastColumn(), 1)).getValues()[0]
+    .map(function (h) { return String(h == null ? '' : h).trim(); });
+
+  var faltan = esperados.filter(function (h) { return vivos.indexOf(h) === -1; });
+  if (!faltan.length) return vivos;
+
+  var desde = vivos.length + 1;
+  if (hoja.getMaxColumns() < vivos.length + faltan.length) {
+    hoja.insertColumnsAfter(hoja.getMaxColumns(), vivos.length + faltan.length - hoja.getMaxColumns());
+  }
+  hoja.getRange(1, desde, 1, faltan.length).setValues([faltan]);
+  return vivos.concat(faltan);
+}
+
+/**
+ * ⭐ `2026-08-23_1` Parte B — **la corrida anterior se guarda antes de pisar la actual.**
+ *
+ * `D-12` sigue en pie: `FALTANTES` es la lista de trabajo de la última corrida. Lo que faltaba
+ * era poder contestar *«¿este faltante ya estaba antes de mi cambio?»* sin haber copiado la hoja
+ * a mano de antemano — que es exactamente lo que hubo que hacer el 23/08 para diagnosticar `X-40`,
+ * **y sólo salió bien porque alguien se acordó a tiempo**.
+ *
+ * ⚠ **Copia lo que la hoja TIENE, no lo que la corrida anterior quiso escribir**, y esa distinción
+ * es la que la hace confiable: si la corrida anterior murió en el muro y nunca escribió, acá no
+ * hay nada que copiar y `FALTANTES_PREVIO` queda igual que estaba. No se inventa una foto.
+ *
+ * ⚠ **No falla la corrida.** Corre dentro de la reserva del cierre (`2026-08-21_1` A.4), y un
+ * problema al archivar una copia de conveniencia no puede costar el `FALTANTES` de hoy ni la fila
+ * de `CORRIDAS`. Si rompe, se dice y se sigue.
+ */
+function rotarFaltantes_(hojaActual) {
+  if (hojaActual.getLastRow() < 2) return { ok: true, filas: 0, motivo: 'la corrida anterior no dejó filas' };
+  try {
+    var headersOrigen = reconciliarHeadersDeSalida_(hojaActual, 'FALTANTES');
+    var datos = hojaActual.getRange(2, 1, hojaActual.getLastRow() - 1, headersOrigen.length).getValues();
+
+    var previo = hojaDeSalida_('FALTANTES_PREVIO');
+    var headersDestino = reconciliarHeadersDeSalida_(previo, 'FALTANTES_PREVIO');
+    if (previo.getLastRow() > 1) {
+      previo.getRange(2, 1, previo.getLastRow() - 1, previo.getLastColumn()).clearContent();
+    }
+    // Por nombre y no por posición: las dos hojas declaran los mismos headers, pero una de las
+    // dos puede venir de un esquema viejo y **copiar por índice mezclaría columnas en silencio**.
+    var filas = datos.map(function (fila) {
+      return headersDestino.map(function (h) {
+        var i = headersOrigen.indexOf(h);
+        return i === -1 ? '' : fila[i];
+      });
+    });
+    previo.getRange(2, 1, filas.length, headersDestino.length).setValues(filas);
+    return { ok: true, filas: filas.length };
+  } catch (e) {
+    return { ok: false, filas: 0, motivo: String((e && e.message) ? e.message : e) };
+  }
+}
+
 /**
  * `B.7` (`D-12`) — `FALTANTES` **se pisa** en cada corrida: es la lista de trabajo de lo
  * que falta cablear, no un historial. Una fila por token faltante, con base, solapa, campo
  * y motivo, para poder atacarlos de a uno.
+ *
+ * ⭐ `2026-08-23_1` Parte B — antes de pisar, la corrida anterior se archiva en
+ * `FALTANTES_PREVIO` (una sola de profundidad, ver el comentario del esquema).
+ *
+ * Devuelve `{ filas, previo }` — **y ya no un número**. El llamador reportaba `faltantesEscritos`
+ * tal cual; ahora también tiene que poder decir si el archivado de la anterior salió bien, porque
+ * *«no había nada que archivar»* y *«el archivado falló»* se ven igual desde afuera.
  */
 function escribirFaltantes_(faltantes) {
   var hoja = hojaDeSalida_('FALTANTES');
+  var previo = rotarFaltantes_(hoja);
+
+  var headers = reconciliarHeadersDeSalida_(hoja, 'FALTANTES');
   if (hoja.getLastRow() > 1) {
     hoja.getRange(2, 1, hoja.getLastRow() - 1, hoja.getLastColumn()).clearContent();
   }
-  if (!faltantes.length) return 0;
+  if (!faltantes.length) return { filas: 0, previo: previo };
 
-  var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
   var filas = faltantes.map(function (f) {
     return headers.map(function (h) { return (h in f) ? f[h] : ''; });
   });
   hoja.getRange(2, 1, filas.length, headers.length).setValues(filas);
-  return filas.length;
+  return { filas: filas.length, previo: previo };
 }
 
 /**
@@ -3407,7 +3535,8 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
         campo_logico: '',
         motivo: r
           ? (r.estado + ': ' + r.traza)
-          : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó'
+          : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó',
+        causa: causaDeResultado_(r)
       });
     });
 
@@ -3514,7 +3643,10 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
           solapa: resultado.solapa || '',
           campo_logico: '',
           motivo: 'fuera del catálogo, NO publicado(s): ' + resultado.rechazados.join(' | ') +
-            ' — el token publicó los que sí matchean'
+            ' — el token publicó los que sí matchean',
+          // No es `escritor`: acá el token SÍ se pintó. Lo que falta es parte del contenido, y
+          // manda a mirar el catálogo — otro oficio, otra causa.
+          causa: 'fuera_catalogo'
         });
       }
       return;
@@ -3533,7 +3665,8 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       campo_logico: '',
       motivo: fila
         ? (fila.estado + ': ' + fila.traza)
-        : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó'
+        : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó',
+      causa: causaDeResultado_(fila)
     });
   });
   }
@@ -3596,7 +3729,10 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
         ? MOTIVO_CORTE_TIEMPO_ + ' (' + corte.etapa + ')'
         : (fallo
           ? MOTIVO_EXCEPCION_ + ' (etapa "' + fallo.etapa + '"): ' + fallo.mensaje
-          : '⚠ quedó crudo en el deck sin que hubiera corte por tiempo — revisar')
+          : '⚠ quedó crudo en el deck sin que hubiera corte por tiempo — revisar'),
+      // Con corte o con fallo la causa **se sabe** y es la misma: la corrida no llegó hasta acá,
+      // y el oficio es correr de nuevo, no cablear. El tercer caso lo abre la Parte C.
+      causa: (corte || fallo) ? 'no_alcanzado' : 'sin_clasificar'
     });
   });
 
@@ -3741,7 +3877,13 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
         items: porItem.filter(function (i) { return i.seccion === s.seccion; }).length
       };
     }),
-    faltantes_escritos: faltantesEscritos,
+    faltantes_escritos: faltantesEscritos.filas,
+    /* ⭐ `2026-08-23_1` Parte B — el archivado de la corrida anterior se REPORTA.
+     * `FALTANTES_PREVIO` es lo que hace comparable un cambio contra el estado de ayer, y un
+     * archivado que falló en silencio deja al próximo diagnóstico comparando contra una foto
+     * que no es la que cree. `filas: 0` con `ok: true` es el caso legítimo —la anterior no
+     * dejó nada— y por eso el `ok` viaja al lado del número y no en su lugar. */
+    faltantes_previo: faltantesEscritos.previo,
     mapa_tokens: { cabe_en_la_celda: celdaMapa.entra, caracteres: celdaMapa.caracteres },
     // `T2.1.1` · `null` si la corrida hizo todo el trabajo. **Una corrida cortada no es una
     // corrida fallida**: produjo un deck y una lista, así que sigue siendo `ok: true` —

@@ -186,6 +186,35 @@ select:focus,input[type=text]:focus{outline:2px solid var(--color-primary);outli
 .mono{font-family:var(--font-mono,monospace)}
 .section-title{font-size:var(--text-2xs);text-transform:uppercase;letter-spacing:var(--tracking-label);color:var(--text-tertiary)}
 
+/* ── Faltantes · `2026-08-23_1` Parte B ───────────────────────────────────────────── */
+/* Sin componentes nuevos donde alcanza uno viejo: `.run-name`, `.run-when`, `.run-count`,
+ * `.stats` y `.alert` son los mismos de las otras pestañas. Lo que sí necesita forma propia es
+ * el grupo plegable por causa, que no existe en ningún otro lado. */
+.falt-switch{display:flex;gap:var(--space-2)}
+.falt-switch .btn.is-on{
+  background:var(--surface-primary-subtle);color:var(--text-link);
+  border-color:var(--color-primary);
+}
+.falt-grupo{border:1px solid var(--border-subtle);border-radius:var(--radius-md);overflow:hidden}
+/* El borde izquierdo, y no un fondo rojo: lo que frena la publicación ya tiene su alerta
+ * arriba. Acá alcanza con poder encontrarlo al bajar. */
+.falt-grupo.is-frena{border-left:3px solid var(--color-error)}
+.falt-head{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);
+  padding:var(--space-3);cursor:pointer;background:var(--surface-page);
+}
+.falt-head:hover{background:var(--surface-hover)}
+.falt-lista{border-top:1px solid var(--border-subtle);background:var(--surface-sunken)}
+.falt-token{padding:var(--space-3);border-bottom:1px solid var(--border-subtle)}
+.falt-token:last-child{border-bottom:0}
+/* El motivo es la traza del motor: monoespaciada, chica, y **entera**. Recortarla con
+ * ellipsis escondería justo la parte que dice por qué falló. */
+.falt-motivo{
+  font-family:var(--font-mono,monospace);font-size:var(--text-2xs);
+  color:var(--text-secondary);line-height:1.5;margin-top:4px;
+  overflow-wrap:anywhere;
+}
+
 /* ── Pie institucional, a sangre ──────────────────────────────────────────────────── */
 .banner{display:block;width:100%;height:auto}
 </style>
@@ -259,7 +288,12 @@ var S = {
   /* `2026-08-21_19` — la corrida desatendida. `des` es lo que devolvió `panel_estadoDesatendida`
    * (`null` = todavía no se pidió); `desArranque` es el resultado del botón, que se muestra una
    * vez y no se vuelve a pedir. **Nada se deriva acá**: el front pinta lo que llega. */
-  des: null, desCargando: false, desArranque: null, desMsg: null
+  des: null, desCargando: false, desArranque: null, desMsg: null,
+  /* `2026-08-23_1` Parte B — los faltantes de la corrida. `null` = todavía no se pidió,
+   * `'cargando'` = pedido en vuelo. `faltCual` elige entre la última corrida y la anterior;
+   * `faltAbierto` guarda qué grupos de causa están desplegados, por causa. **Nada se deriva
+   * acá**: el front pinta lo que llega, incluidos los conteos. */
+  falt: null, faltCual: 'actual', faltAbierto: {}
 };
 
 /* ── utilidades ──────────────────────────────────────────────────────────────────── */
@@ -647,6 +681,7 @@ function pintar(){
   }
   if (S.tab === 'corridas') { c.innerHTML = vistaCorridas(); return; }
   if (S.tab === 'anclajes') { c.innerHTML = vistaAnclajes(); return; }
+  if (S.tab === 'faltantes'){ c.innerHTML = vistaFaltantes(); conectarFaltantes(); return; }
   if (S.tab === 'proximo')  { c.innerHTML = vistaProximo(); return; }
   if (S.tab === 'desatendida'){
     /* La primera vez que se entra a la pestaña se pide el estado. Va acá y no en el `onclick` de
@@ -664,6 +699,7 @@ function pintarTabs(){
     { id:'generar', txt:'Generar' },
     { id:'desatendida', txt:'Corrida' },
     { id:'anclajes', txt:'Anclajes' },
+    { id:'faltantes', txt:'Faltantes' },
     { id:'corridas', txt:'Corridas' },
     { id:'proximo', txt:'Próximo' }
   ];
@@ -1322,6 +1358,169 @@ function vistaAnclajes(){
   return h;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+ * Faltantes — `2026-08-23_1` Parte B
+ *
+ * ⭐ **Quién mira esto y para qué:** una persona que acaba de generar un deck y necesita saber, en
+ * diez segundos, **si puede publicarlo**. Por eso lo que va arriba no es el conteo de faltantes
+ * —un deck con cien `/////` es normal y publicable— sino **lo que salió mal en silencio**: un
+ * token que resolvió y no se pintó, o una hoja con dos `corrida_id` mezclados.
+ *
+ * ⚠ **El agrupamiento es por CAUSA y no por tamaño**, porque cada causa manda a un oficio
+ * distinto. Un solo token en «el escritor no lo pisó» vale más que cien sin cablear.
+ * ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Las causas que frenan la publicación. **No es «las graves»**: son las dos que significan que el
+ * motor hizo algo mal, contra las que significan que falta trabajo declarado. */
+var CAUSAS_QUE_FRENAN = { escritor: true, sin_clasificar: true };
+
+function cargarFaltantes(){
+  /* ⚠ Sin `pintar()` acá, igual que en anclajes: `vistaFaltantes()` corre **desde adentro** de
+   * `pintar()`, y repintar desde acá reentraría en el mismo `pintar()` que no terminó. */
+  S.falt = 'cargando';
+  google.script.run
+    .withSuccessHandler(function(r){ S.falt = r || {ok:false, motivo:'sin respuesta'}; pintar(); })
+    .withFailureHandler(function(e){ S.falt = {ok:false, motivo:String(e && e.message || e)}; pintar(); })
+    .panel_faltantes(S.faltCual);
+}
+
+/** Un grupo de causa, plegado por defecto salvo los que frenan la publicación. */
+function grupoFaltante(g){
+  var abierto = (S.faltAbierto[g.causa] === undefined)
+    ? CAUSAS_QUE_FRENAN[g.causa] === true
+    : S.faltAbierto[g.causa] === true;
+  var frena = CAUSAS_QUE_FRENAN[g.causa] === true;
+
+  var cabecera = '<div class="falt-head" data-causa="' + esc(g.causa) + '">' +
+    '<div><div class="run-name">' + (frena ? '⚠ ' : '') + esc(g.texto) + '</div>' +
+    '<div class="run-when">' + esc(g.oficio) + '</div></div>' +
+    '<span class="run-count">' + num(g.cuenta_tokens) + ' token(s)' +
+    (g.cuenta_filas !== g.cuenta_tokens ? ' · ' + num(g.cuenta_filas) + ' fila(s)' : '') +
+    '</span></div>';
+
+  if (!abierto) return '<div class="falt-grupo' + (frena ? ' is-frena' : '') + '">' + cabecera + '</div>';
+
+  var cuerpo = g.tokens.map(function(t){
+    /* ⭐ Los ítems van **tal cual llegan**, sin limpiar (Parte D): `enc_alcance_pct @: Salud`
+     * muestra el separador crudo, y eso es un hallazgo sobre el parseo del nombre, no ruido.
+     * Un nombre que la vista lava esconde el bug en el instrumento con el que se diagnostica
+     * todo lo demás. */
+    var items = t.items.length
+      ? '<div class="run-when">en: ' + t.items.map(function(i){ return '<span class="mono">' + esc(i) + '</span>'; }).join(' · ') + '</div>'
+      : '';
+    var fuente = (t.base_id || t.solapa)
+      ? '<div class="run-when"><span class="mono">' + esc(t.base_id) + (t.solapa ? '/' + esc(t.solapa) : '') + '</span></div>'
+      : '';
+    return '<li class="falt-token"><div class="run-name mono">' + esc(t.token) +
+      (t.apariciones > 1 ? ' <span class="run-when">×' + num(t.apariciones) + '</span>' : '') + '</div>' +
+      fuente + items +
+      '<div class="falt-motivo">' + esc(t.motivo) + '</div></li>';
+  }).join('');
+
+  return '<div class="falt-grupo' + (frena ? ' is-frena' : '') + '">' + cabecera +
+    '<ul class="list-reset falt-lista">' + cuerpo + '</ul></div>';
+}
+
+function vistaFaltantes(){
+  if (S.falt === null){ cargarFaltantes(); return '<p class="muted">Leyendo lo que dejó la corrida…</p>'; }
+  if (S.falt === 'cargando') return '<p class="muted">Leyendo lo que dejó la corrida…</p>';
+  if (!S.falt.ok){
+    return '<div class="alert alert-error"><div class="alert-title">No se pudo leer FALTANTES.</div>' +
+      esc(S.falt.motivo || '') + '</div>';
+  }
+
+  var d = S.falt;
+  var h = '';
+
+  h += '<div class="falt-switch">' +
+    '<button class="btn btn-secondary' + (d.cual==='actual'?' is-on':'') + '" data-cual="actual">Última corrida</button>' +
+    '<button class="btn btn-secondary' + (d.cual==='previa'?' is-on':'') + '" data-cual="previa">La anterior</button>' +
+    '</div>';
+
+  if (!d.existe_hoja){
+    h += '<div class="box">La hoja <span class="mono">' + esc(d.hoja) + '</span> todavía no existe. ' +
+      (d.cual === 'previa'
+        ? 'Se escribe recién cuando una segunda corrida pisa a la primera.'
+        : 'Se escribe al cerrar una corrida.') + '</div>';
+    return h;
+  }
+
+  /* ⭐ **Lo que frena la publicación va arriba y sin scroll.** Las alertas de acá no son
+   * «muchos faltantes»: son «el motor hizo algo mal y no lo dijo». */
+  var frenan = d.grupos.filter(function(g){ return CAUSAS_QUE_FRENAN[g.causa] === true; });
+  if (frenan.length){
+    h += '<div class="alert alert-error"><div class="alert-title">Algo salió mal en silencio.</div>' +
+      frenan.map(function(g){
+        return num(g.cuenta_tokens) + ' token(s) — ' + esc(g.texto) + ' · ' + esc(g.oficio);
+      }).join('<br>') +
+      '</div>';
+  }
+
+  /* ⚠ Más de un `corrida_id` en la hoja no es un detalle: `escribirFaltantes_` la pisa entera,
+   * así que dos significa que una corrida murió antes del cierre y dejó la lista de otra
+   * mezclada. Es el caso que costó medio día el 23/08. */
+  if (d.corridas.length > 1){
+    h += '<div class="alert alert-warning"><div class="alert-title">Hay ' + num(d.corridas.length) +
+      ' corridas mezcladas en esta hoja.</div>Se pisa entera en cada corrida, así que debería haber una sola. ' +
+      d.corridas.map(function(c){ return '<span class="mono">' + esc(c.corrida_id) + '</span> (' + num(c.filas) + ')'; }).join(' · ') +
+      '</div>';
+  }
+
+  h += '<div class="stats">' +
+    '<div class="stat"><div><div class="stat-label">Tokens distintos</div>' +
+    '<span class="stat-unit">un nombre, aunque falte en varias láminas</span></div>' +
+    '<div class="stat-value">' + num(d.tokens) + '</div></div>' +
+    '<div class="stat"><div><div class="stat-label">Filas</div>' +
+    '<span class="stat-unit">una por token y por ítem emitido</span></div>' +
+    '<div class="stat-value">' + num(d.filas) + '</div></div>' +
+    (d.corridas.length === 1
+      ? '<div class="stat"><div><div class="stat-label">Corrida</div></div>' +
+        '<div class="stat-value mono">' + esc(d.corridas[0].corrida_id) + '</div></div>'
+      : '') +
+    '</div>';
+
+  h += d.grupos.length
+    ? d.grupos.map(grupoFaltante).join('')
+    : '<div class="box">Esta corrida no dejó ningún faltante.</div>';
+
+  /* ⚠ **Un instrumento declara qué NO contesta**, y acá son dos cosas concretas. Va al final,
+   * después del conteo, porque es lo que cambia cómo se lee el número de arriba. */
+  h += '<div class="box"><div class="section-title">Lo que este conteo no descuenta</div>' +
+    '<p class="muted"><strong>Fuera de alcance</strong> y <strong>texto del equipo</strong> no están en ' +
+    'ninguna hoja de registro — <span class="mono">LAMINAS</span> no tiene columna de alcance —, ' +
+    'así que el motor no los puede distinguir y el número de arriba los incluye. ' +
+    'Quién está fuera de alcance vive hoy sólo en <span class="mono">docs/CIERRE_POR_LAMINA.md</span>.</p>' +
+    '<p class="muted">Tampoco dice <strong>en qué lámina</strong> falta cada token: ' +
+    '<span class="mono">FALTANTES</span> no guarda la lámina, y el mapa de la corrida guarda el ' +
+    'índice de slide del deck ya expandido, que no es un <span class="mono">lamina_id</span>. ' +
+    'Lo que sí hay es el ítem emitido, y va tal cual lo escribió el motor.</p></div>';
+
+  return h;
+}
+
+function conectarFaltantes(){
+  Array.prototype.forEach.call(document.querySelectorAll('.falt-switch button'), function(b){
+    b.onclick = function(){
+      var cual = b.getAttribute('data-cual');
+      if (cual === S.faltCual) return;
+      S.faltCual = cual;
+      // Se relee: la vista no filtra una foto en memoria, pide la hoja que corresponde.
+      cargarFaltantes();
+      pintar();
+    };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('.falt-head'), function(cab){
+    cab.onclick = function(){
+      var causa = cab.getAttribute('data-causa');
+      var abiertoAhora = (S.faltAbierto[causa] === undefined)
+        ? CAUSAS_QUE_FRENAN[causa] === true
+        : S.faltAbierto[causa] === true;
+      S.faltAbierto[causa] = !abiertoAhora;
+      pintar();
+    };
+  });
+}
 
 function vistaProximo(){
   var items = [
