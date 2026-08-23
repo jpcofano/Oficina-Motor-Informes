@@ -6452,6 +6452,15 @@ corridos el 23/08 incluye `camp_remitente`**: ni `cablearDesglosePorPlataforma()
 `cablearMetaFrecuencia()`, ni `cablearLosChicos()` del 22. Así que **o se cargó a mano en la hoja,
 o hay un camino que no está en el inventario de escritores.**
 
+⛔⛔ **Y el 23/08 el usuario confirmó que NO la cargó a mano.** Entonces quedan dos posibilidades
+y ninguna es cómoda: **o hay un cuarto escritor que `ESCRITORES.md` no declara**, o alguno de los
+tres declarados escribe más de lo que dice. **Anotado y no perseguido** —decisión del usuario, el
+mismo día—; se retoma cuando alguien tenga motivo para mirar `MARCADORES` de nuevo.
+
+⭐ **Lo barato, para cuando toque:** `camp_remitente` está en el censo del 22/08 como **sin fila**,
+así que la fila nació entre el 22 y el 23. Es una ventana de un día con muy pocas corridas: el
+historial de versiones de la planilla lo puede decir sin adivinar.
+
 ⭐ **La diferencia importa para esta entrada, y en la dirección que la mejora:** con las dos filas
 existiendo, el aviso *"quedó crudo… revisar"* **ya no es engañoso para uno y correcto para el
 otro — es correcto para los dos y sigue sin decir por qué**. El pedido no cambia (falta un aviso

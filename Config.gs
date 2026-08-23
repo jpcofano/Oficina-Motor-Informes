@@ -386,6 +386,26 @@ function leerRegistro_(nombreHoja, clavePrimaria) {
 }
 
 function leerRegistroSinCache_(nombreHoja, clavePrimaria) {
+  /* ⛔⛔ **`clavePrimaria` NO es opcional, y hasta el 23/08/2026 se comportaba como si lo fuera.**
+   *
+   * **El modo de falla, medido:** sin el argumento, `headers.indexOf(undefined)` da `-1`,
+   * `fila[-1]` da `undefined`, y el `if (!clave) return` de abajo **saltea todas las filas**. La
+   * funcion devolvia **`{}` sin fallar** — un registro vacio indistinguible de una hoja vacia.
+   *
+   * **Lo que costo:** `diagDondeVivenLosIvr()` llamo `leerRegistro_('INFORMES')` sin clave, el
+   * recorrido no se ejecuto, **no se imprimio ningun aviso** porque `Object.keys({})` no itera, y
+   * el reporte salio limpio diciendo que **ocho tokens no estaban en ninguna lamina**. Falso. Lo
+   * atajo el control positivo del propio diagnostico, no el codigo.
+   *
+   * ⭐ **Por eso tira en vez de devolver vacio:** es *una corrida que no hizo nada tiene que
+   * fallar, no informar cero* (`CLAUDE.md` §4) aplicado al lector. Los **siete** llamadores sanos
+   * del repo pasan la clave, asi que esta guarda **no puede romper ninguno**: solo alcanza a los
+   * que ya estaban leyendo mal. */
+  if (!clavePrimaria) {
+    throw new Error('leerRegistro_("' + nombreHoja + '") sin `clavePrimaria`. No es opcional: ' +
+      'sin ella se saltean TODAS las filas y el registro vuelve vacio sin fallar. ' +
+      'Para INFORMES usa leerInformes(); ver Config.gs para el resto de los lectores.');
+  }
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombreHoja);
   if (!hoja) return {};
 

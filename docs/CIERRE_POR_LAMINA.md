@@ -25,6 +25,8 @@
 | ⏳ | hay un paso corriendo sobre ella |
 | 🚫 | **fuera de alcance** — el usuario decidió que no se cablea. **No cuenta como faltante** |
 
+🌐 **no es un estado, es una marca**: la lámina publica **el universo de la ventana** y no las cuentas del temario (`X-41`). Va **al lado** del estado porque no lo reemplaza — una lámina puede estar ⛔ y además 🌐, y son dos trabajos distintos. Ver la sección propia, más abajo.
+
 ⭐⭐ **El 🚫 nace el 22/08/2026 y no es un ⛔ postergado ni un ✅ anticipado.** Un ⛔ dice *«falta
 trabajo»* y vuelve a levantarse en cada revisión; un ✅ dice *«lo miré y lo que falta no importa»*.
 🚫 dice **«esto no entra en la fase»**, que es una tercera cosa y la única que **saca la lámina del
@@ -105,10 +107,10 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | lámina | `lamina_id` | estado | qué falta para el check | último cambio |
 |---|---|---|---|---|
 | **1** · Portada | `L-030` | ⛔ 🕳 | **sin medir** — un solo token, `periodo`, y ninguna verificación lo mira | — |
-| **2** · Resumen Ejecutivo JM | `L-031` | ⛔ **inestable por CAMBIO** 🕳 | 21 tokens. **Los cuatro `cc_*`: `MAPEO` escrito, cableado FRENADO por `X-28`** — la columna y la operación están validadas, **qué cuentas entran no** · `contenidos_total` publica `1` → **pregunta al equipo** · `frecuencia` no publica → sin medir · los 8 `imp_*` y los 3 «N envíos» están 🟡, abajo | 22/08 |
-| **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ **inestable por CAMBIO** 🕳 | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) · `gcba_sms_*` 🟡 | 22/08 |
+| **2** · Resumen Ejecutivo JM | `L-031` | ⛔ **inestable por CAMBIO** 🕳 🌐 | 21 tokens. **Los cuatro `cc_*`: `MAPEO` escrito, cableado FRENADO por `X-28`** — la columna y la operación están validadas, **qué cuentas entran no** · `contenidos_total` publica `1` → **pregunta al equipo** · `frecuencia` no publica → sin medir · los 8 `imp_*` y los 3 «N envíos» están 🟡, abajo | 22/08 |
+| **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ **inestable por CAMBIO** 🕳 🌐 | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) · `gcba_sms_*` 🟡 | 22/08 |
 | **4** · «Encuentros con vecinos» | `L-033` | 🟡 | **Cero tokens y `rol = equipo`: no hay nada que cablear.** Es un separador. Falta sólo que el usuario lo mire | — |
-| **5** · ECV: alcance semanal | `L-034` | ⛔ **inestable por ALTA** 🕳 | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUJERON** contra `V-71`. ⚠ **Pero `rdv` es inestable por ALTA (`R-31`), así que eso no se puede EXIGIR en cada corrida** — el control posible es **de dirección: sube o queda, nunca baja; si baja es bug**. Falta: `ecv_asistentes` = 485 sin validar · los 3 `cc_*` **pintados sin control** · `ecv_fecha` y `ecv_barrio1-3` **sin fila en `MARCADORES`** | 22/08 |
+| **5** · ECV: alcance semanal | `L-034` | ⛔ **inestable por ALTA** 🕳 🌐 | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUJERON** contra `V-71`. ⚠ **Pero `rdv` es inestable por ALTA (`R-31`), así que eso no se puede EXIGIR en cada corrida** — el control posible es **de dirección: sube o queda, nunca baja; si baja es bug**. Falta: `ecv_asistentes` = 485 sin validar · los 3 `cc_*` **pintados sin control** · `ecv_fecha` y `ecv_barrio1-3` **sin fila en `MARCADORES`** | 22/08 |
 | **6** · Benchmarks / Iceberg | `L-035` `L-052` | ✅ | ⭐⭐⭐ **CERRADA — el usuario la declaró el 22/08.** Publicó los cuatro de IVR exactos: Audiencia **107.194** · Atendidos **96.549** · Escucharon +75 % **33.139** · Marque 1 **304**, más las seis cifras del alcance al dígito. **`X-30` se cerró solo: el ítem llegó con `3488-AGOJDGAG`.** ⭐ **Y es la única lámina con control por igualdad exacta garantizado**: sus cinco campos de `digital/Directa IVR` son **estables** (`R-31`) | 22/08 |
 | **7** · Campañas · DIGITAL · Período | `L-036` | ⛔ 🕳 | **32 de 32 tokens sin fila** — los **ocho `post_` × 4 envíos**, confirmados por el censo contra la **plantilla viva** (22/08). ⚠ **Esta fila cambió dos veces en un día y la tercera es la buena**: `Auditoria.gs` tenía razón; `TOKENS.md` §2.1, el `P2` del 06/08 y el espejo están **los tres viejos** (`C-77`, retractado). ⛔ **Ojo al cablear: `ELEMENTO` NO alcanza para una tabla por filas** — ver abajo | 22/08 |
 | **8** · «Comunicaciones M2» | `L-037` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
@@ -133,6 +135,30 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 ⭐ **Las tres 🚫 salieron del conteo de ⛔ el 22/08** —eran 17— **y no se cerraron: se sacaron del
 alcance.** El total de filas no cambia, y ése es el punto: una lámina fuera de alcance **sigue
 existiendo en la plantilla**, con sus tokens adentro.
+
+---
+
+## 🌐 Universo ancho, mecanismo pendiente — `L-031`, `L-032` y `L-034` (`X-41`, 23/08/2026)
+
+**Se marca y no se toca. Decisión del usuario.** Las tres publican **el universo de la ventana**,
+no las cuentas del temario, y eso ya está escrito — no es un hallazgo nuevo cada vez que alguien
+mire un número.
+
+**El hueco es uno solo y está en tres lugares:** los `cc_*` de Call Center (`L-031`/`L-032`), los
+cuatro `ivr_*` del Resumen (`L-031`) y los cuatro del agregado semanal (`L-034`). **Las tres son
+láminas FIJAS**, así que no tienen ítem del que sacar una cuenta, y **el motor no tiene forma de
+decir «sumá sólo las cuentas del temario»**. Hasta que ese mecanismo exista, cablear cualquiera de
+los tres publica de más.
+
+⚠ **Y lo que hay que saber para no confundirlos: los dos se ven distinto.** El de Call Center da
+**el gabinete entero** —factor 14 contra lo esperado, `X-37`—, así que grita. El de IVR recorta por
+la fecha propia de la solapa y da **sólo las campañas de esa ventana**: un número **plausible**.
+Medido sobre el fixture del 20/08, **45 de 53 ventanas contienen más de una cuenta**, pero mezclan
+poco. **Mismo hueco, distinta visibilidad** — y por eso el de IVR sobrevivió mientras el de CC se
+frenó.
+
+⛔ **No es candidato a cerrarse con un cableado.** Lo que falta es el mecanismo, y es previo a los
+tres.
 
 ---
 

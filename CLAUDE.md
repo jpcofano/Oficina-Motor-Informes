@@ -885,6 +885,22 @@ marcador admite control exacto. Hace falta cruzarla con la operación.**
   avisar. **Una marca que está en todos lados no distingue nada**, que es la misma familia del
   glifo que miente sobre la causa.
 
+**Un diagnóstico sin control positivo no es un diagnóstico: todo instrumento nuevo lleva algo que
+TIENE que aparecer.** (23/08/2026.) Un instrumento que sólo busca lo que sospecha **no puede
+distinguir «no está» de «no miré»**, y las dos salidas se ven idénticas en el log.
+
+- **El caso, y son dos en el mismo día con el mismo instrumento.** `diagDondeVivenLosIvr()` incluyó
+  cuatro marcadores que **sí se pintan todos los días**. La primera corrida dijo *«los ocho `ivr_*`
+  en ninguna lámina de ninguna plantilla»* — y **los cuatro de control tampoco aparecieron**, así
+  que abortó: `leerRegistro_` sin clave primaria devolvía `{}` en silencio. La segunda, ya
+  arreglada, marcó `ivr_audiencia` como huérfano — **y ése era un `campo_logico` de `MAPEO` que yo
+  había puesto en la lista a mano**.
+- ⭐ **Las dos veces lo atajó el contraste, no el código.** Sin esos cuatro, el log publicaba **dos
+  hallazgos dramáticos y falsos seguidos**, del tipo *«hay filas cableadas contra cajas que no
+  existen»* — que manda a borrar configuración.
+- ⭐ **Y el control positivo tiene que poder fallar por la misma causa que lo que se mide**: sirve
+  porque comparte lector, plantilla y camino. Uno que se resuelva por otra vía no prueba nada.
+
 **Un control no se afloja para que entre algo nuevo: lo nuevo va aparte, y con un control de otra
 clase.** (23/08/2026, decisión del usuario.) Cuando un control cruza contra **evidencia fechada**
 —un censo, un snapshot, un fixture— y algo legítimo **no pasa**, la tentación es ensanchar el
