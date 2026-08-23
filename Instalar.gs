@@ -3356,14 +3356,21 @@ function curarMarcadores_(quitar, agregar) {
      * donde lo leído no coincide con lo pedido. ⚠ Se comparan como **texto normalizado**: una fecha
      * y un `'1/3'` difieren obviamente, pero `3` numérico y `'3'` texto **no son una diferencia**
      * y marcarlos sería ruido que nadie va a leer. */
+    /* ⛔ **`agregadas` NO son claves: son textos de reporte** con la forma `marcador (informe)`.
+     * La primera versión de esto comparaba contra `marcador||informe` y **nunca matcheaba**, así
+     * que devolvía `{}` y el llamador imprimía «✅ 0 filas verificadas». Se recorre `agregar`, que
+     * son los objetos pedidos, y **no** la lista de display. */
     releido: (function () {
       var out = {};
       var frescos = hoja.getDataRange().getValues();
       var hs = frescos[0];
-      agregadas.forEach(function (clave) {
+      var iM = hs.indexOf('marcador');
+      var iI = hs.indexOf('informe_id');
+      agregar.forEach(function (o) {
+        var clave = o.marcador + '||' + (o.informe_id || '');
         for (var f = 1; f < frescos.length; f++) {
-          if (frescos[f][hs.indexOf('marcador')] + '||' +
-              (hs.indexOf('informe_id') === -1 ? '' : frescos[f][hs.indexOf('informe_id')]) !== clave) continue;
+          var claveFila = frescos[f][iM] + '||' + (iI === -1 ? '' : frescos[f][iI]);
+          if (claveFila !== clave) continue;
           var fila = {};
           hs.forEach(function (h, i) { fila[h] = frescos[f][i]; });
           out[clave] = fila;
@@ -3371,7 +3378,11 @@ function curarMarcadores_(quitar, agregar) {
         }
       });
       return out;
-    })()
+    })(),
+    /* ⭐ **Se declara CUÁNTAS se pidieron, para que el llamador pueda comparar contra eso y no
+     * contra sí mismo.** `CLAUDE.md` §4: *un control tiene que declarar CUÁNTO midió; cero
+     * unidades verificadas es un problema, no un silencio.* */
+    pedidas: agregar.length
   };
 }
 
@@ -5570,21 +5581,37 @@ function cablearEcvBarrios123() {
         (vf instanceof Date ? '  ← SHEETS LO CONVIRTIÓ EN FECHA' : ''));
     }
   });
+  /* ⛔⛔ **CERO VERIFICADO NO ES ÉXITO, ES «NO VERIFIQUÉ».** La primera versión imprimía
+   * `✅ RELEÍDO: las 0 fila(s)…` sobre tres altas, porque el lector no matcheaba. **Un control que
+   * se declara verde cuando no midió nada es la misma familia que el `⛔ FALLÓ` sobre ocho filas
+   * correctas, con el signo cambiado** (`CLAUDE.md` §4). Por eso el conteo se compara contra
+   * `pedidas`, **no contra sí mismo**. */
+  var releidas = Object.keys(r.releido || {}).length;
+  var pedidas = r.pedidas === undefined ? 3 : r.pedidas;
   Logger.log('');
+  if (releidas !== pedidas) {
+    Logger.log('⛔ NO SE PUDO VERIFICAR: se pidieron ' + pedidas + ' fila(s) y se releyeron ' +
+      releidas + '. Cero verificado NO es éxito.');
+    return { ok: false, motivo: 'relectura incompleta: ' + releidas + ' de ' + pedidas, resultado: r };
+  }
   if (malas.length) {
-    Logger.log('⛔ LA CELDA NO QUEDÓ COMO SE PIDIÓ — ' + malas.length + ' fila(s):');
+    Logger.log('⛔ LA CELDA NO QUEDÓ COMO SE PIDIÓ — ' + malas.length + ' de ' + pedidas + ':');
     malas.forEach(function (m) { Logger.log('   ' + m); });
     Logger.log('   El índice tiene que ser un ENTERO PELADO. NO se corrige solo: se reporta.');
     return { ok: false, motivo: 'celdas mal escritas', malas: malas, resultado: r };
   }
-  Logger.log('✅ RELEÍDO: las ' + Object.keys(r.releido || {}).length + ' fila(s) tienen un índice');
-  Logger.log('   entero en `valor_fijo`. La celda quedó como se pidió.');
+  Logger.log('✅ RELEÍDO ' + releidas + ' de ' + pedidas + ': todas tienen un índice ENTERO en');
+  Logger.log('   `valor_fijo`. La celda quedó como se pidió.');
   Logger.log('');
-  Logger.log('⚠ ESPERADO en la próxima corrida de `jm` sobre `agosto_14_20`, y NO son tres valores:');
-  Logger.log('   ecv_barrio1 y ecv_barrio2 → los dos barrios que ya publica `ecv_barrios`');
-  Logger.log('                               (esta semana: Parque Avellaneda y Parque Patricios)');
-  Logger.log('   ecv_barrio3 → SÍMBOLO DE SIN DATO. Dos barrios, tres cajas: es el CASO NORMAL');
-  Logger.log('                 de `R-32`, no un faltante que haya que cablear.');
+  /* ⛔ **CORREGIDO 22/08 con la traza de `diagBarriosIndexados()`:** el esperado decía *"los dos
+   * barrios, Parque Avellaneda y Parque Patricios"* y **era falso**. `ecv_barrios` publica **UNA**
+   * fila —**1 de 3 después del filtro `figura=Jorge Macri`**—, así que sólo hay **un** elemento y
+   * **dos** cajas quedan sin dato. **El esperado salía de mirar el deck y no la traza.** */
+  Logger.log('⚠ ESPERADO en la próxima corrida de `jm` sobre `agosto_14_20` — UN valor, no tres:');
+  Logger.log('   ecv_barrio1 → «Parque Patricios». `ecv_barrios` publica UNA fila: 1 de 3 después');
+  Logger.log('                 del filtro figura=Jorge Macri (medido en la traza, 22/08).');
+  Logger.log('   ecv_barrio2 y ecv_barrio3 → SÍMBOLO DE SIN DATO. Un elemento, tres cajas: es el');
+  Logger.log('                 CASO NORMAL de `R-32`, no un faltante que haya que cablear.');
   Logger.log('');
   Logger.log('⛔ Y lo que NO se puede exigir (R-32): que `ecv_barrio1` valga lo mismo la semana');
   Logger.log('   que viene. El orden sale del orden de las filas de `rdv`, que es carga manual —');
