@@ -1017,6 +1017,21 @@ El censo es **la lista**; la forma de la tabla es **el modelo mental**, y no coi
   falla** — resuelve, no encuentra dónde pintarse y no aparece en `FALTANTES`. Queda una fila de
   `MARCADORES` que nadie va a poder explicar.
 
+⭐⭐ **Y el `N × M` con otra cara, que es la que engaña: un filtro por PREFIJO es una lista
+generada, no un cruce contra el censo.** (23/08/2026.) `grep`ear `camp_env` para armar la tabla de
+`L-047` **mete `camp_enviados`**, que es la fila **GLOBAL** y no un envío. El prefijo del token de
+la tabla es prefijo de un token que no es de la tabla, y **nada lo señala**: la lista sale con 41
+nombres plausibles.
+
+- ⛔ **El error se comete justo cuando uno cree que está cumpliendo la regla.** Filtrar por prefijo
+  *se siente* como leer el censo —sale del registro, no de la cabeza— pero **genera** en vez de
+  **cruzar**: cualquier token que empiece igual entra, exista o no en esa lámina.
+- ⭐ **La forma correcta es la misma de siempre y no cambia: cada nombre se busca en la lista del
+  censo, uno por uno.** Cruzar es una pertenencia; filtrar es una regla. **Sólo la primera falla
+  cuando el nombre no está.**
+- ⚠ **Y el síntoma es el de siempre:** el marcador de más **no falla** — resuelve, no encuentra
+  dónde pintarse, no entra a `FALTANTES` y queda como una fila que nadie va a poder explicar.
+
 **Antes de cablear una tabla, mirar el TIPO de cada columna en el deck del equipo.**
 **Una columna de texto cableada como métrica publica vacío sin fallar.**
 
