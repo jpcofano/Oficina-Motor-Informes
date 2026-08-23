@@ -201,6 +201,33 @@ reintenta.**
 
 ---
 
+## 🟡 Los cuatro tokens nuevos — el control es DEL CONJUNTO, no de cuatro corridas
+
+**Corridos los dos botones el 22/08:** `cablearEcvFecha()` y `cablearEcvBarrios123()`. **115 filas
+en `MARCADORES`.** Son los primeros consumidores de `ELEMENTO`, la novena operación.
+
+⚠ **Los dos cableados llegaron al MISMO deck, contra el aviso que el wrapper imprimía — y está
+bien.** Los cuatro tokens salían `/////`, así que **no mueven ningún número existente: llenan
+celdas vacías.** La regla de *«un cambio por deck»* es para lo que **mueve** un número ya publicado
+(`CLAUDE.md` §4, ampliada el 22/08 con este caso).
+
+⭐ **Entonces el control es de los cuatro juntos**, y no hacen falta cuatro corridas limpias:
+
+| token | esperado |
+|---|---|
+| `ecv_fecha` | la fecha del encuentro, `dd/MM/yyyy` |
+| `ecv_barrio1` · `ecv_barrio2` | los dos barrios que ya publica `ecv_barrios` — esta semana **Parque Avellaneda** y **Parque Patricios** |
+| **`ecv_barrio3`** | ⭐ **símbolo de SIN DATO.** Dos barrios, tres cajas: **es el caso normal** de `R-32`, **no un faltante** |
+
+⛔ **Y lo que NO se puede exigir** (`R-32`): que `ecv_barrio1` valga lo mismo la semana que viene.
+El orden sale del orden de las filas de `rdv`, que es **carga manual**. **Lo exigible es el
+conjunto**, y eso ya lo mide `ecv_barrios`.
+
+⚠ **Lo que sí sigue sin poder compartir deck con nada:** el tope de `R-30`, que **mueve los ocho
+`imp_*`**.
+
+---
+
 ## ⏸ En espera — no se cablea nada antes de la corrida con el tope activo
 
 **Decisión del usuario, 22/08.** `ecv_fecha` y `ecv_barrio1-3` **no se cablean todavía**, y el

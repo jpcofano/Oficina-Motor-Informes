@@ -848,6 +848,24 @@ no el que había, y no existe nada que compare un comentario contra el código q
   `CAMPANAS` pasó a leerse como lista. Si alguien lo mira hoy, verifica y confirma, **no se entera
   de que estuvo mintiendo meses** — y el hallazgo, que era que las dos hojas divergían, se pierde.
 
+**«Un cambio por deck» es para lo que MUEVE un número publicado, no para lo que LLENA un hueco.**
+La regla existe para que una diferencia se pueda atribuir; **una celda que estaba en `/////` y ahora
+tiene valor no produce ninguna diferencia que atribuir** — no había número antes. Dos cableados de
+tokens vacíos pueden viajar juntos; **un cableado y un cambio de universo, no.**
+
+- **El caso, 22/08/2026:** `cablearEcvFecha()` y `cablearEcvBarrios123()` llegaron al mismo deck
+  contra el aviso que el propio wrapper imprimía. **No rompió nada, y el motivo es exactamente
+  éste:** los cuatro tokens salían `/////`. El control es **del conjunto de los cuatro**, y no hacen
+  falta cuatro corridas limpias.
+- ⚠ **Lo que sí no puede compartir deck** es lo que reescribe un valor existente: el tope de `R-30`
+  **mueve los ocho `imp_*`**, así que meterle un cableado al lado deja un número movido sin dueño.
+- ⭐ **La pregunta que separa los dos casos, y se hace antes de agrupar:** *¿había un número ahí
+  ayer?* Si no había, no hay nada que atribuir. Si había, va solo.
+- ⚠ **Y el borde que hay que mirar igual:** un token nuevo **dentro de una operación compartida**
+  sí puede mover a sus hermanos — `ELEMENTO` memoiza el conjunto, así que agregar un consumidor
+  cambia **cuándo** se calcula, no **qué**. Mientras el cálculo sea el mismo, sigue siendo llenar
+  huecos.
+
 **Toda comparación entre dos fotos declara CON QUÉ CLAVE unió las filas — y prueba al menos dos.**
 Sin eso, un porcentaje de cambio no mide el dato: mide la clave. Vale para **cualquier** cruce
 fixture-contra-fixture, no sólo para medir estabilidad, y por eso está acá y no en la regla que lo

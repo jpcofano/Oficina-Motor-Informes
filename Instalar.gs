@@ -5445,13 +5445,14 @@ function cablearEcvFecha() {
     Logger.log('ⓘ Cero altas: la fila ya existía. Es idempotencia, no rotura.');
   }
   Logger.log('');
-  Logger.log('⭐ ORDEN SUGERIDO, y el motivo importa más que el orden:');
-  Logger.log('   1. Sembrar CONFIG («Aplicar configuración») y correr jm → verificar el tope de R-30');
-  Logger.log('   2. RECIÉN AHÍ este botón, y otra corrida');
-  Logger.log('   Si las dos cosas llegan al mismo deck, un número movido no se puede atribuir.');
+  Logger.log('⭐ Va junto con `cablearEcvBarrios123()`, y el control es DE LOS CUATRO TOKENS:');
+  Logger.log('   ecv_fecha + ecv_barrio1 + ecv_barrio2 + ecv_barrio3. No hace falta una corrida');
+  Logger.log('   limpia por cada uno — los cuatro salían `/////`, así que NO MUEVEN NINGÚN NÚMERO');
+  Logger.log('   EXISTENTE: llenan celdas vacías. La regla de «un cambio por deck» es para lo que');
+  Logger.log('   mueve un número ya publicado, no para lo que llena un hueco (`CLAUDE.md` §4).');
   Logger.log('');
-  Logger.log('⛔ ecv_barrio1/2/3 NO se cablearon: necesitan una operación «N-ésimo distinto» que el');
-  Logger.log('   motor no tiene. Es decisión de diseño, no cableado.');
+  Logger.log('⚠ Lo que SÍ no puede viajar en el mismo deck que esto: el tope de R-30, que mueve');
+  Logger.log('   los ocho `imp_*`. Ahí un número movido no se podría atribuir.');
   return r;
 }
 
