@@ -5776,6 +5776,56 @@ function cablearEcvBarrios123() {
  * `dd/MM/yyyy`. No se supone: ya me costó una vez escribir `fecha_corta`, que no existe.
  */
 /**
+ * ⭐ **`corregirFormatoDeRatiosDeEnvio()` — los diez `_or`/`_ctor` de `L-047` pasan de
+ * `porcentaje_sin_signo` a `fraccion`.** Publico y sin parametros.
+ *
+ * ⛔ **Fue un error de eleccion de formato, mio, y el cuadro que lo evita estaba escrito al lado.**
+ * `formatearValorMarcador_` (`Generador.gs`, `T2.5` del 07/08) es un **2x2 de unidad de entrada x
+ * lleva el signo**:
+ *
+ *   - `porcentaje`            — entrada en **unidades de pct**, con signo  → `26.4` → "26.4%"
+ *   - `porcentaje_sin_signo`  — entrada en **unidades de pct**, sin signo  → `26.4` → "26.4"
+ *   - ⭐ **`fraccion`**       — entrada **0-1**, sin signo                 → `0.2818` → "28.2"
+ *
+ * **Las columnas `P` (% OR) y `R` (% CTOR) de `digital/Directa Mail` guardan FRACCIONES**, medido
+ * el 23/08 sobre el fixture del 20/08: `P = Aperturas/Entregados` exacto —`0.2191` contra
+ * `18.253/83.298`— y el **maximo sobre 2.266 filas con valor es `1.0000`**. Con
+ * `porcentaje_sin_signo` el formateador redondea a un decimal **sin multiplicar**, asi que `0.4738`
+ * salia `0.5` y `0.011` salia `0`.
+ *
+ * ⭐⭐ **Por que el GLOBAL andaba y los envios no, que es la pregunta que lo destrabo:** son **dos
+ * caminos distintos en la misma lamina**. `camp_ctor` **calcula** con `PCT`, y `opPCT` es
+ * `opRATIO * 100` — el x100 esta en la OPERACION. Los `camp_env*` **leen una columna que ya trae la
+ * fraccion**, asi que el x100 tiene que venir del FORMATO. **El que andaba era el molde**, y
+ * mirarlo primero evito tocar la operacion, que no tenia nada.
+ *
+ * ⚠ **Va por `curarCamposMarcadores_` y no por `curarMarcadores_`**: corrige **un campo** de filas
+ * que ya existen. La otra herramienta borra y reescribe la fila entera al final de la hoja, que es
+ * exactamente lo que `ESCRITORES.md` dice que hay que evitar para un cambio de `formato`.
+ */
+function corregirFormatoDeRatiosDeEnvio() {
+  var cambios = [];
+  [1, 2, 3, 4, 5].forEach(function (n) {
+    ['or', 'ctor'].forEach(function (suf) {
+      cambios.push({ marcador: 'camp_env' + n + '_' + suf, informe_id: 'jm', formato: 'fraccion' });
+    });
+  });
+
+  var r = curarCamposMarcadores_(cambios);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== formato de los ratios de envío: ' + r.cambios_escritos + ' celda(s) sobre ' +
+    cambios.length + ' pedida(s) ==');
+  (r.aplicados || []).forEach(function (a) { Logger.log('   ' + JSON.stringify(a)); });
+  Logger.log('');
+  Logger.log('⭐ ESPERADO en la próxima corrida, con los números que ya viste:');
+  Logger.log('   %OR  51.321/108.334 = 47,4 % → publica «47.4», no «0.5»');
+  Logger.log('   %CTOR   562/51.321  =  1,1 % → publica «1.1», no «0»');
+  Logger.log('   Y camp_ctor del GLOBAL NO se toca: usa PCT y ya publicaba bien.');
+  return r;
+}
+
+/**
  * ⭐⭐ **`L-047` — los 40 tokens de la tabla de envios.** Publico y sin parametros.
  *
  * **SON 40 Y NO 45, y salen del censo uno por uno.** El reparto es **`9 · 8 · 8 · 7 · 8`**,
@@ -5835,7 +5885,7 @@ function cablearTablaDeEnvios() {
       marcador: 'camp_env1_ctor', familia: 'camp', informe_id: 'jm',
       base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_ctor',
       operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
-      formato: 'porcentaje_sin_signo',
+      formato: 'fraccion',
       notas: 'envio 1 de L-047, campo ctor (col R). FILA ordena por fecha_periodo y desempata por orden de origen'
     },
     {
@@ -5863,7 +5913,7 @@ function cablearTablaDeEnvios() {
       marcador: 'camp_env1_or', familia: 'camp', informe_id: 'jm',
       base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_or',
       operacion: 'FILA', valor_fijo: 1, separador: 'fecha_periodo',
-      formato: 'porcentaje_sin_signo',
+      formato: 'fraccion',
       notas: 'envio 1 de L-047, campo or (col P). FILA ordena por fecha_periodo y desempata por orden de origen'
     },
     {
@@ -5898,7 +5948,7 @@ function cablearTablaDeEnvios() {
       marcador: 'camp_env2_ctor', familia: 'camp', informe_id: 'jm',
       base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_ctor',
       operacion: 'FILA', valor_fijo: 2, separador: 'fecha_periodo',
-      formato: 'porcentaje_sin_signo',
+      formato: 'fraccion',
       notas: 'envio 2 de L-047, campo ctor (col R). FILA ordena por fecha_periodo y desempata por orden de origen'
     },
     {
@@ -5926,7 +5976,7 @@ function cablearTablaDeEnvios() {
       marcador: 'camp_env2_or', familia: 'camp', informe_id: 'jm',
       base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_or',
       operacion: 'FILA', valor_fijo: 2, separador: 'fecha_periodo',
-      formato: 'porcentaje_sin_signo',
+      formato: 'fraccion',
       notas: 'envio 2 de L-047, campo or (col P). FILA ordena por fecha_periodo y desempata por orden de origen'
     },
     {
@@ -5954,7 +6004,7 @@ function cablearTablaDeEnvios() {
       marcador: 'camp_env3_ctor', familia: 'camp', informe_id: 'jm',
       base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_ctor',
       operacion: 'FILA', valor_fijo: 3, separador: 'fecha_periodo',
-      formato: 'porcentaje_sin_signo',
+      formato: 'fraccion',
       notas: 'envio 3 de L-047, campo ctor (col R). FILA ordena por fecha_periodo y desempata por orden de origen'
     },
     {
@@ -5982,7 +6032,7 @@ function cablearTablaDeEnvios() {
       marcador: 'camp_env3_or', familia: 'camp', informe_id: 'jm',
       base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_or',
       operacion: 'FILA', valor_fijo: 3, separador: 'fecha_periodo',
-      formato: 'porcentaje_sin_signo',
+      formato: 'fraccion',
       notas: 'envio 3 de L-047, campo or (col P). FILA ordena por fecha_periodo y desempata por orden de origen'
     },
     {
@@ -6010,7 +6060,7 @@ function cablearTablaDeEnvios() {
       marcador: 'camp_env4_ctor', familia: 'camp', informe_id: 'jm',
       base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_ctor',
       operacion: 'FILA', valor_fijo: 4, separador: 'fecha_periodo',
-      formato: 'porcentaje_sin_signo',
+      formato: 'fraccion',
       notas: 'envio 4 de L-047, campo ctor (col R). FILA ordena por fecha_periodo y desempata por orden de origen'
     },
     {
@@ -6031,7 +6081,7 @@ function cablearTablaDeEnvios() {
       marcador: 'camp_env4_or', familia: 'camp', informe_id: 'jm',
       base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_or',
       operacion: 'FILA', valor_fijo: 4, separador: 'fecha_periodo',
-      formato: 'porcentaje_sin_signo',
+      formato: 'fraccion',
       notas: 'envio 4 de L-047, campo or (col P). FILA ordena por fecha_periodo y desempata por orden de origen'
     },
     {
@@ -6059,7 +6109,7 @@ function cablearTablaDeEnvios() {
       marcador: 'camp_env5_ctor', familia: 'camp', informe_id: 'jm',
       base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_ctor',
       operacion: 'FILA', valor_fijo: 5, separador: 'fecha_periodo',
-      formato: 'porcentaje_sin_signo',
+      formato: 'fraccion',
       notas: 'envio 5 de L-047, campo ctor (col R). FILA ordena por fecha_periodo y desempata por orden de origen'
     },
     {
@@ -6087,7 +6137,7 @@ function cablearTablaDeEnvios() {
       marcador: 'camp_env5_or', familia: 'camp', informe_id: 'jm',
       base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_or',
       operacion: 'FILA', valor_fijo: 5, separador: 'fecha_periodo',
-      formato: 'porcentaje_sin_signo',
+      formato: 'fraccion',
       notas: 'envio 5 de L-047, campo or (col P). FILA ordena por fecha_periodo y desempata por orden de origen'
     }
   ]);

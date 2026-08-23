@@ -179,8 +179,18 @@ FILAS.filter((f) => /_aud$/.test(f.marcador)).forEach((f) => {
 af('los 5 `_fecha`… son 4 y van `formato: fecha`',
   FILAS.filter((f) => /_fecha$/.test(f.marcador)).every((f) => f.formato === 'fecha') &&
   FILAS.filter((f) => /_fecha$/.test(f.marcador)).length === 4);
-af('`_or` y `_ctor` van porcentaje_sin_signo',
-  FILAS.filter((f) => /_(or|ctor)$/.test(f.marcador)).every((f) => f.formato === 'porcentaje_sin_signo'));
+/* ⛔ **`fraccion`, NO `porcentaje_sin_signo`, y la corrección es del 23/08.** Las columnas `P`
+ * (% OR) y `R` (% CTOR) guardan **fracciones 0–1** — medido: `P = Aperturas/Entregados` exacto y
+ * el máximo sobre 2.266 filas con valor es `1.0000`. `porcentaje_sin_signo` **no multiplica**:
+ * espera unidades de porcentaje, así que `0.4738` salía `0.5`.
+ * ⚠ **`camp_ctor` del GLOBAL sí va con `PCT`** —`opPCT` es `opRATIO * 100`, el ×100 está en la
+ * operación— y por eso publicaba bien. Son dos caminos en la misma lámina y el que andaba era el
+ * molde: mirarlo primero evitó tocar la operación, que no tenía nada. */
+af('`_or` y `_ctor` van `fraccion` — las columnas P y R guardan 0–1',
+  FILAS.filter((f) => /_(or|ctor)$/.test(f.marcador)).every((f) => f.formato === 'fraccion'),
+  'con porcentaje_sin_signo un 47,4 % sale «0.5»');
+af('y son diez: cinco `_or` y cinco `_ctor`',
+  FILAS.filter((f) => /_(or|ctor)$/.test(f.marcador)).length === 10);
 
 // ── 4 · La operación y el orden, en las 40 ─────────────────────────────────────────────
 console.log('\n4 · Las 40 usan FILA con el orden declarado');
