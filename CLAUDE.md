@@ -515,6 +515,31 @@ avanza nada es **cuánta cuota queda**, y para cuando eso se nota ya se gastó.
   asignaciones**. Un planificador que cuenta la unidad equivocada se equivoca por más del doble, y
   el síntoma es una corrida que corta cuando el plan decía que entraba.
 
+**Cuando una etapa se parte para que entre en el presupuesto, la unidad de partición es la LÁMINA —
+nunca el marcador.** (24/08/2026, decisión del usuario, `D-40`.) Dos tandas del mismo deck están
+separadas en el tiempo, así que **cada unidad de partición es una foto de un momento distinto**. Si
+la unidad es más chica que la lámina, **dos cajas de la misma lámina pueden venir de dos momentos**
+— y eso es `C-80`: cajas una al lado de la otra, con el mismo formato, que se leen como si
+respondieran la misma pregunta y no lo hacen.
+
+- **El caso, y por qué no se había visto:** la etapa 3 ya se partía y **nunca tuvo el problema**,
+  porque parte por **ítem** y un ítem **es** una lámina entera. La etapa 4 resuelve los tokens
+  **fijos** —el Resumen Ejecutivo entre ellos—, así que partirla por marcador dejaría
+  `mail_entregados` de la tanda 1 al lado de `imp_meta` de la tanda 2, **en la misma caja**.
+- ⭐ **La pregunta concreta, y se hace al elegir la unidad, no después del primer deck raro:**
+  *¿dos unidades distintas pueden terminar en la misma lámina?* Si la respuesta es sí, la unidad es
+  demasiado chica. **No alcanza con que el corte sea ordenado: tiene que ser ordenado en el eje que
+  el lector mira**, y el lector mira una lámina por vez.
+- ⚠ **El límite que esto NO elimina, y va declarado en vez de descubierto:** partir por lámina acota
+  la inconsistencia a **entre** láminas. Con una fuente inestable por CAMBIO (`R-31`), la lámina 2
+  puede resolverse en una tanda y la 3 en otra y publicar números de dos momentos. **Es un límite
+  conocido del deck en tandas, no un problema a resolver** — y por eso `CORRIDAS.ejecucion` existe:
+  para que se **vea** cuál vino de dónde en vez de descubrirlo comparando.
+- ⭐ **Y el tamaño del lote se mide, no se elige:** el presupuesto decide **cuántas láminas** entran
+  comparando lo que queda de reloj contra lo que costó la última. Un número fijo de unidades por
+  lote sería una constante más de las que nadie vuelve a mirar — y el mismo día fallaron **tres de
+  tres** por exactamente eso.
+
 **Un presupuesto que sólo se consulta en el bucle no protege las etapas que están fuera del bucle, y
 el síntoma es llegar al límite duro con un techo declarado.** El techo de una corrida sólo existe
 donde alguien lo mira. Si el reloj se consulta entre unidades de trabajo —entre ítems, entre
