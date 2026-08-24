@@ -961,6 +961,29 @@ nombre de archivo que el nuevo.
   barata de no volver a caer es citar el `corrida_id`**, que ya viaja en el nombre — un número que
   distingue no sirve si nadie lo lee.
 
+⛔⛔ **Un filtro que descarta ANTES y no cuenta es invisible, y el que sí cuenta se lleva la culpa.**
+(25/08/2026.) Cuando una cadena aplica varios filtros y **sólo el último informa cuántos descartó**,
+su número es correcto y **señala al lugar equivocado**. No es un conteo mal hecho: es un conteo
+completo de la mitad equivocada del camino.
+
+- **El caso, y costó una vuelta entera:** el anclaje avisó *«REUNIONES no tiene filas para anclar
+  en el período `julio_24_30` — descartadas por período: 6»*. Las cuatro filas de julio tenían
+  `mostrar` vacío, así que **`leerReuniones_` las descartó antes de que el anclaje las viera**, y
+  las 6 que el mensaje contaba eran **de junio y agosto**. El aviso decía la verdad y mandaba a
+  mirar el período, que estaba bien.
+- ⚠ **Por qué se lo cree, y es lo que lo hace caro:** el conteo es específico, tiene un número
+  exacto y nombra un filtro. **Se lee como un diagnóstico y es una observación** — la distinción de
+  «murió a los 324 s» contra «murió por el límite de 6 minutos», aplicada a un descarte.
+- ⭐ **La regla operativa, y es la que hay que hacer antes de creerle a un conteo de descarte:**
+  *cuando un conteo acusa a un filtro, verificar **qué llegó a ese filtro**.* **La función que
+  estás leyendo no es el camino completo** — el filtro que te falta suele estar en quien le pasa
+  los datos, no en el cuerpo que tenés delante. Acá estaba un nivel arriba, en `leerReuniones_`.
+- ⭐⭐ **Y la otra mitad, que es la que convierte el aviso en discriminador: tiene que hablar
+  también cuando NO encuentra nada.** *«Ninguna quedó afuera por `mostrar`, así que el problema es
+  el período»* descarta una causa; una lista vacía no descarta nada, sólo se calla. **Es la misma
+  forma que el control positivo**: sin la afirmación en el caso negativo, *«no hay»* y *«no miré»*
+  se ven igual.
+
 **Un diagnóstico sin control positivo no es un diagnóstico: todo instrumento nuevo lleva algo que
 TIENE que aparecer.** (23/08/2026.) Un instrumento que sólo busca lo que sospecha **no puede
 distinguir «no está» de «no miré»**, y las dos salidas se ven idénticas en el log.
