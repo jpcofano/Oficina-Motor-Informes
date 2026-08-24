@@ -5017,6 +5017,129 @@ function revertirAltaMarcadoresDeCampana() {
 
 
 /**
+ * ⭐⭐ **`L-047` — los TRES agregados del GLOBAL que faltaban** (24/08/2026). Publico y sin
+ * parametros.
+ *
+ * La fila GLOBAL de la lamina de mail tiene **nueve columnas** y seis ya publican desde el
+ * `2026-08-19_1`. Faltaban estas tres, que el censo del 22/08 lista en el bloque de `L-047`:
+ * **`camp_enviados`, `camp_or` y `camp_mail_clics`** — cruzadas **una por una** contra el censo,
+ * no derivadas del nombre de la columna.
+ *
+ * ### Los tipos, medidos en el deck del equipo y no supuestos
+ *
+ * Tabla de `L-047` del deck del 14-21/08 (fixture del 20/08, sha `f8ef3227…`), fila `GLOBAL`:
+ * `Enviados 302.008 · Entregados 299.798 · Aperturas 103.194 · % OR 34% · Clics 1.144 ·
+ * % CTOR 1.11%`. **Las tres columnas nuevas son numericas**; la trampa de esta lamina es
+ * `Audiencia`, que es TEXTO —`X-35`, el nombre del segmento— y no esta entre estas tres.
+ *
+ * ### ⭐⭐ La identidad interna, que es el control primario y sale del deck mismo
+ *
+ * **`% OR = Aperturas / Entregados`**, y el denominador **se midio, no se eligio**: con cuatro
+ * filas de envio, tres no distinguen —`enviados` y `entregados` redondean igual— y **la cuarta
+ * si**: `77.963/126.766 = 61,50 % → 62` contra `77.963/127.091 = 61,34 % → 61`. **El equipo
+ * publica 62.** Ademas coincide con las tres definiciones que el motor ya tiene del mismo hecho
+ * (`mail_or`, `gcba_mail_or`, `m2_or`), asi que **no se crea una segunda definicion** — es lo que
+ * `D-33` cierra.
+ *
+ * **`% CTOR = Clics / Aperturas`** cierra exacto en la fila GLOBAL: `1.144/103.194 = 1,109 % →
+ * 1,11 %` publicado. Es `camp_ctor`, que ya existe; se anota porque **junto con `camp_or` deja dos
+ * de las nueve columnas derivables de las otras siete**, y eso se puede exigir en cada corrida sin
+ * el deck del equipo delante — la forma de `V-111`.
+ *
+ * ⭐ **Y hay una segunda identidad, mas fuerte, que este alta habilita:** en el deck del equipo la
+ * fila GLOBAL es la **suma exacta** de las cuatro de envio, en las cuatro columnas de volumen —
+ * `18.616+119.471+127.091+36.830 = 302.008` enviados, `299.798` entregados, `103.194` aperturas y
+ * `164+194+617+169 = 1.144` clics. ⚠ **Pero cruza fuentes**: el GLOBAL lee
+ * `looker/resumen_metricas_dinamico` y las filas de envio `digital/Directa Mail`. **Que cierre
+ * dice que las dos fuentes coinciden**, que es mas de lo que dice una identidad interna pura — y
+ * por eso puede fallar legitimamente, y ahi el hallazgo es la divergencia de fuentes.
+ *
+ * ### Las decisiones, con su motivo
+ *
+ * **1 · Ninguno lleva `_revisar`, y no es descuido.** Sus tres hermanas de la misma solapa y la
+ * misma familia de operacion —`camp_entregados`, `camp_aperturas`, `camp_ctor`— no la llevan.
+ * ⚠ **La estabilidad de `looker/resumen_metricas_dinamico` NO esta medida en `R-31`** —no figura
+ * ni entre los estables ni entre los inestables—, asi que **estos numeros nacen SIN VALIDAR, que
+ * no es lo mismo que validados**, y **ningun control por igualdad exacta se puede exigir todavia**.
+ * Marcar estos tres y no sus hermanas diluiria la marca hasta volverla decorativa.
+ *
+ * **2 · `camp_or` es `PCT` sobre los agregados de la fila, no promedio de una tasa.** Mismo
+ * criterio que `camp_ctor`, y por el mismo motivo: promediar porcentajes de filas de tamaño
+ * distinto da un numero que no es el del deck.
+ *
+ * **3 · `filtro` y `dimensiones` vacios**, igual que las nueve del `2026-08-19_1`: la campaña **es
+ * el item de la iteracion**, no una dimension, y una fila con cero **es un cero real** — la guarda
+ * `!=0` convertiria ese cero en `«FALTA»`.
+ *
+ * ⚠⚠ **4 · `camp_mail_clics` NO es `camp_clics`, y los nombres invitan a confundirlos.**
+ * `camp_clics` es **digital** (`dig_clics`, col J) y ya publica en `L-045`; este es **mail**
+ * (`mail_clics`, col Q) y va en la fila GLOBAL de `L-047`. Son dos hechos distintos en dos laminas
+ * distintas, y elegir mal **no falla: publica**.
+ */
+function cablearAgregadosDelGlobal_() {
+  var N = function (extra) {
+    return '2026-08-24 — GLOBAL de L-047, rama por cuenta (`D-30`/`R-17`), misma solapa y misma ' +
+      'forma que camp_entregados/camp_aperturas/camp_ctor. ⚠ la estabilidad de esta solapa NO ' +
+      'esta medida en R-31: SIN VALIDAR, y no admite control por igualdad exacta todavia' +
+      (extra ? '. ' + extra : '');
+  };
+
+  return curarMarcadores_([], [
+    { marcador: 'camp_enviados', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'mail_enviados', operacion: 'ULTIMO',
+      filtro: '', dimensiones: '', formato: 'miles',
+      notas: N('columna "Enviados" del GLOBAL; el equipo publico 302.008 el 14-21/08') },
+    { marcador: 'camp_or', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'mail_aperturas/mail_entregados',
+      operacion: 'PCT', filtro: '', dimensiones: '', formato: 'porcentaje_sin_signo',
+      notas: N('% OR = aperturas/ENTREGADOS, denominador MEDIDO contra el deck: la fila de ' +
+        '77.963 da 62% sobre entregados y 61% sobre enviados, y el equipo publica 62. PCT sobre ' +
+        'los agregados de la fila, no promedio de una tasa') },
+    { marcador: 'camp_mail_clics', familia: 'camp', informe_id: 'jm', base_id: 'looker',
+      solapa: 'resumen_metricas_dinamico', campo_logico: 'mail_clics', operacion: 'ULTIMO',
+      filtro: '', dimensiones: '', formato: 'miles',
+      notas: N('⚠ clics de MAIL (col Q), NO camp_clics que es digital (col J) y vive en L-045. ' +
+        'El equipo publico 1.144 el 14-21/08, y camp_ctor = este/aperturas cierra en 1,11%') }
+  ]);
+}
+
+/** Wrapper publico del alta de los tres del GLOBAL. ⚠ **ESCRIBE en `MARCADORES`.** */
+function cablearAgregadosDelGlobal() {
+  var r = cablearAgregadosDelGlobal_();
+  if (!r.ok) { Logger.log('FALLO: ' + r.motivo); return r; }
+  Logger.log('== L-047 · los tres agregados del GLOBAL ==');
+  Logger.log('  agregadas (' + r.agregadas.length + '): ' + r.agregadas.join(', '));
+  if (r.quitadas.length) {
+    Logger.log('  ⚠ REEMPLAZADAS (' + r.quitadas.length + '):');
+    r.quitadas.forEach(function (q) { Logger.log('     ' + q.marcador + ' — ' + q.motivo); });
+  }
+  Logger.log('  filas finales en MARCADORES: ' + r.filas_finales);
+  Logger.log('');
+  Logger.log('⭐ EL CONTROL PRINCIPAL NO ES EL NUMERO: es la identidad interna de la fila.');
+  Logger.log('   Sobre el deck que salga, sin mirar nada mas:');
+  Logger.log('     % OR   = Aperturas / Entregados');
+  Logger.log('     % CTOR = Clics(mail) / Aperturas');
+  Logger.log('   Si alguna de las dos no cierra, el problema esta en esta fila y no en la fuente.');
+  Logger.log('⚠ Y el segundo control, cuando las cinco filas de envio publiquen: el GLOBAL tiene');
+  Logger.log('   que ser la SUMA de ellas en enviados, entregados, aperturas y clics. Ojo que');
+  Logger.log('   cruza fuentes -GLOBAL lee looker, los envios digital-, asi que si no cierra el');
+  Logger.log('   hallazgo es que las dos fuentes divergen, no necesariamente un bug del motor.');
+  Logger.log('⚠ La traza tiene que decir `rama por cuenta`, NO `agregado global`.');
+  return r;
+}
+
+/** Revierte el alta de los tres. ⚠ **ESCRIBE en `MARCADORES`.** */
+function revertirAgregadosDelGlobal() {
+  var r = curarMarcadores_(['camp_enviados', 'camp_or', 'camp_mail_clics'], []);
+  if (!r.ok) { Logger.log('FALLO: ' + r.motivo); return r; }
+  Logger.log('== reversion: ' + r.quitadas.length + ' fila(s) quitada(s) ==');
+  r.quitadas.forEach(function (q) { Logger.log('   ' + q.marcador + ' (' + q.informe_id + ')'); });
+  Logger.log('  filas finales: ' + r.filas_finales);
+  return r;
+}
+
+
+/**
  * **`frecuencia` y `gcba_frecuencia` pasan a `numero_revisar`** — decisión del usuario, 19/08/2026.
  *
  * **Dos celdas de `formato` en `MARCADORES`, sin `clasp push`**: el sufijo ya vive en el formateador
