@@ -1190,6 +1190,22 @@ prompt antes de que nadie lo verificara contra el motor**.
   mirar `typeof` **sobre el valor crudo**, y contrastar contra lo que el motor lee de esa misma
   columna. Son dos instrumentos y tienen que coincidir; si no coinciden, el equivocado suele ser
   el de afuera.
+- ⭐⭐ **Y el corolario de presentación, que es la misma trampa vista desde la hoja: el FORMATO de
+  una celda no dice su TIPO.** (25/08/2026.) Una carga nueva de `REUNIONES` se veía como
+  `23/07/2026` donde las filas viejas mostraban `2026-07-23`, y de ahí salió *«las fechas quedaron
+  como texto»*. **Medido corriendo el parser: escribe un `Date`** — lo que cambiaba era cómo la
+  celda lo muestra. **Mirar la celda es el `String(celda)` del párrafo de arriba, hecho con los
+  ojos.**
+  - ⭐ **El chequeo barato existe y son cuatro caracteres: `=ISNUMBER(celda)`** — `TRUE` es fecha
+    real, `FALSE` es texto.
+  - ⚠ **Pero la pregunta que de verdad importaba era otra, y conviene hacerla PRIMERO: ¿el
+    consumidor distingue?** Acá los dos que comparan fechas hacen
+    `instanceof Date ? x : parsearFechaCelda_(x)`, y ese segundo entiende `23/07/2026`. **El tipo
+    no cambiaba nada.** Se diagnosticó una diferencia que no tenía consecuencia — y la diferencia
+    era real, sólo que inofensiva.
+  - ⭐ **Y por eso el orden es: primero el consumidor, después el tipo.** Un tipo distinto sólo es
+    un problema si alguien lo trata distinto; empezar por el tipo puede costar medio diagnóstico
+    antes de descubrir que nadie mira.
 - ⚠ **Y volvió a pasar el 20/08, dentro de un VERIFICADOR, que es donde más caro sale.**
   `verificarAlcanceDesatendido()` filtraba con `String(b.activo).toLowerCase() !== 'sí'` y
   `leerRegistro_` devuelve `activo` **ya booleano** (`Config.gs`, `esVerdadero_`): `String(true)` es

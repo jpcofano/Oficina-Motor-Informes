@@ -200,6 +200,39 @@ console.log('\n7 · ⭐ BORDE 3 — 2 ítems para 4 ranuras: las filas 3 y 4 son
   });
 }
 
+
+console.log('\n8 · ⛔⛔ la lista de REVERSIÓN cubre lo que se llegó a escribir, no lo que se escribe hoy');
+{
+  /* El caso del 25/08: `revertirTablaPostReuniones()` derivaba sus nombres de
+   * `COLUMNAS_POST_L036_`. Cuando esa constante pasó de 5 columnas a 3, el reversor **dejó de ver
+   * los 8 que había que sacar** — quitó 12, informó 12, y no falló. Es `CLAUDE.md` §4 literal: un
+   * instrumento que mide un cambio no puede depender de lo que el cambio modifica. */
+  const m = FUENTE.match(/var MARCADORES_POST_L036_TODOS_ = \[([\s\S]*?)\n\];/);
+  af(!!m, 'existe `MARCADORES_POST_L036_TODOS_` — la lista literal de reversión');
+  const todos = m ? (m[1].match(/'post_[a-z0-9_]+'/g) || []).map((s) => s.replace(/'/g, '')) : [];
+  af(todos.length === 20, 'cubre los 20 que L-036 llegó a tener (' + todos.length + ')');
+
+  /* ⭐ Los 12 vigentes tienen que estar, y también los 8 RETIRADOS. Sin los retirados, el reversor
+   * vuelve a quedar ciego exactamente como el 25/08. */
+  filas.forEach((f) => {
+    af(todos.indexOf(f.marcador) !== -1, 'la reversión cubre el vigente ' + f.marcador);
+  });
+  ['vistas', 'vtr'].forEach((col) => {
+    for (let n = 1; n <= 4; n++) {
+      const t = 'post_' + col + n;
+      af(todos.indexOf(t) !== -1,
+        '⛔ y cubre el RETIRADO ' + t + ' — si se poda, queda huérfano y nadie lo puede sacar');
+    }
+  });
+
+  /* ⛔ Y la afirmación que hace que esto no se pueda romper como la vez pasada: la lista NO puede
+   * derivarse de `COLUMNAS_POST_L036_`. */
+  const cuerpo = FUENTE.slice(FUENTE.indexOf('function revertirTablaPostReuniones'),
+    FUENTE.indexOf('function repararTablaPostReuniones'));
+  af(cuerpo.indexOf('COLUMNAS_POST_L036_') === -1,
+    '⛔ y el reversor NO deriva de `COLUMNAS_POST_L036_` — derivar de lo que el cambio achica es lo que falló');
+}
+
 if (process.argv.indexOf('--autoprueba') !== -1) {
   console.log('\n== autoprueba: control negativo CON MOTIVO ==');
   let malas = 0;

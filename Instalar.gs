@@ -3907,16 +3907,86 @@ function cablearTablaPostReuniones() {
   return r;
 }
 
-/** Revierte el alta de los 20. ⚠ **ESCRIBE en `MARCADORES`.** */
+/**
+ * ⛔⛔ **TODOS los marcadores que `L-036` llegó a tener, escritos a mano y NO derivados.**
+ *
+ * **Por qué literal, y es la lección del 25/08.** `revertirTablaPostReuniones()` armaba esta lista
+ * recorriendo `COLUMNAS_POST_L036_`. Cuando esa constante pasó de **5 columnas a 3** —al retirar
+ * `vis_totales` y `vis_vtr_pct`—, **el reversor dejó de ver justo lo que había que sacar**: quitó
+ * 12, informó 12, y dejó los 8 de `vistas`/`vtr` cableados contra un `MAPEO` que ya no los tiene.
+ *
+ * ⭐ **Es `CLAUDE.md` §4 literal:** *un instrumento que mide un cambio no puede depender de lo que
+ * el cambio modifica*. El reversor derivaba su lista **de la misma constante que el cambio
+ * achicó**, así que se quedó ciego en el mismo commit que lo dejó ciego. **Y no falló**: quitar 12
+ * e informar 12 es una corrida perfectamente exitosa.
+ *
+ * ⚠ **Los retirados NO se borran de esta lista.** Una lista de reversión tiene que cubrir lo que
+ * el wrapper **llegó a escribir alguna vez**, no lo que escribe hoy: si se acorta con cada cambio,
+ * cada cambio deja huérfanos que nadie puede sacar. **Crece y no se poda.**
+ */
+var MARCADORES_POST_L036_TODOS_ = [
+  // Vigentes — las tres columnas de título único.
+  'post_habitantes1', 'post_habitantes2', 'post_habitantes3', 'post_habitantes4',
+  'post_alcance1', 'post_alcance2', 'post_alcance3', 'post_alcance4',
+  'post_impresiones1', 'post_impresiones2', 'post_impresiones3', 'post_impresiones4',
+  /* ⛔ RETIRADOS el 25/08: su título se repite cuatro veces en la solapa y el lector indexa por
+   * título. Siguen acá **porque estuvieron cableados** y hay que poder sacarlos. */
+  'post_vistas1', 'post_vistas2', 'post_vistas3', 'post_vistas4',
+  'post_vtr1', 'post_vtr2', 'post_vtr3', 'post_vtr4'
+];
+
+/** Revierte TODO lo que `L-036` llegó a tener. ⚠ **ESCRIBE en `MARCADORES`.** */
 function revertirTablaPostReuniones() {
-  var nombres = [];
-  COLUMNAS_POST_L036_.forEach(function (c) {
-    for (var n = 1; n <= 4; n++) nombres.push('post_' + c.tok + n);
-  });
-  var r = curarMarcadores_(nombres, []);
+  var r = curarMarcadores_(MARCADORES_POST_L036_TODOS_, []);
   if (!r.ok) { Logger.log('⛔ FALLO: ' + r.motivo); return r; }
-  Logger.log('== reversion: ' + r.quitadas.length + ' fila(s) quitada(s) · quedan ' + r.filas_finales + ' ==');
+  Logger.log('== reversion de L-036 ==');
+  Logger.log('  pedidos: ' + MARCADORES_POST_L036_TODOS_.length + '  ·  quitados: ' + r.quitadas.length);
+  Logger.log('  filas finales en MARCADORES: ' + r.filas_finales);
+  /* ⚠ **Quitar menos de los pedidos es NORMAL y no un fallo**: los que no estaban no se pueden
+   * quitar. Lo que NO es normal es quitar cero teniendo filas — eso es la lista mirando otro lado,
+   * que es exactamente lo que pasó el 25/08. */
+  if (!r.quitadas.length) {
+    Logger.log('  ⓘ Cero quitados: ninguno estaba. Es idempotencia, no rotura.');
+  }
   return r;
+}
+
+/**
+ * ⭐⭐ **El botón que arregla el estado inconsistente del 25/08.** Público y sin parámetros.
+ *
+ * **Qué pasó:** `revertirTablaPostReuniones()` corrió cuando su lista ya estaba achicada, así que
+ * quitó **los 12 que había que conservar** y dejó **los 8 que había que sacar**. El deck lo mostró
+ * exactamente invertido: las tres columnas con fuente en `/////` —sin fila— y las dos retiradas en
+ * `---` —con fila, fallando al resolver contra un `MAPEO` que ya no las tiene—.
+ *
+ * ⚠ **El orden importa y por eso esto es UN botón y no dos.** Primero se quitan los 20 —así los 8
+ * huérfanos se van— y recién después se cablean los 12. Al revés, la reversión se llevaría puesto
+ * lo que se acaba de escribir.
+ *
+ * ⚠ **Y el borrado de las dos filas de `MAPEO` NO importó para esto.** El reversor nunca iba a
+ * poder tocar los 8, con o sin `MAPEO`: no los tenía en su lista. El orden en que se hicieron las
+ * dos cosas no cambia nada.
+ */
+function repararTablaPostReuniones() {
+  Logger.log('== reparacion de L-036 (25/08) ==');
+  Logger.log('Paso 1 de 2 — sacar TODO lo que L-036 llego a tener, incluidos los 8 huerfanos.');
+  var r1 = revertirTablaPostReuniones();
+  if (!r1.ok) {
+    Logger.log('⛔ La reversion fallo. NO se cablea nada: sobre un estado que no se pudo limpiar,');
+    Logger.log('   cablear encima deja dos problemas en vez de uno.');
+    return r1;
+  }
+  Logger.log('');
+  Logger.log('Paso 2 de 2 — cablear las TRES columnas que se pueden leer sin ambiguedad.');
+  var r2 = cablearTablaPostReuniones();
+  Logger.log('');
+  Logger.log('⭐ Que tiene que verse en la proxima corrida, y separa los dos casos:');
+  Logger.log('   · las TRES columnas ya no pueden salir ///// —eso era «sin fila»—.');
+  Logger.log('   · si salen ---, resolvieron y fallaron: la traza dice por que.');
+  Logger.log('   · si dicen @post_sin_temario, el recorte por temario no trajo filas,');
+  Logger.log('     y el log de `agregado post` nombra cual de las tres causas es.');
+  Logger.log('   · Visualizaciones y VTR% pasan a ///// y ESO ES CORRECTO: se retiraron.');
+  return r2;
 }
 
 /**
