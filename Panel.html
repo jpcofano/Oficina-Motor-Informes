@@ -846,7 +846,7 @@ function vistaGenerar(){
 
   h += '<label class="check"><input type="checkbox" id="f-raya"' + (S.conSimbolos?' checked':'') + '>' +
        '<span class="check-text"><span class="check-label">Los huecos se ven como símbolos</span>' +
-       '<span class="check-sub">/////&nbsp;falta cablearlo · ---&nbsp;falló · -&nbsp;sin dato. ' +
+       '<span class="check-sub">/////&nbsp;falta cablearlo · »»»&nbsp;no se llegó · ---&nbsp;falló · -&nbsp;sin dato. ' +
        'Destildado sale «FALTA:token», que dice cuál es.</span></span></label>';
 
   /* ⭐ `2026-08-21_19` Parte A — **dos botones, y la pantalla dice cuál conviene.**
@@ -1062,13 +1062,17 @@ function veredictoDePublicacion(r){
  * mal** — y el peor caso no es no entenderlo: es leer un `-` como «no hubo nada» cuando significa
  * otra cosa.
  *
- * ⚠ **Y la leyenda dice dónde MIENTE hoy.** `/////` cubre dos causas que mandan a trabajos
- * opuestos —*nadie lo cableó* y *no se llegó*— porque el glifo propio del corte está sin elegir,
- * y eso es una decisión del usuario. Callarlo acá haría que la leyenda sea la que engaña.
+ * ⭐⭐ **24/08/2026 — la leyenda ya no tiene que declarar dónde miente: son CINCO y cada uno manda
+ * a un solo trabajo.** `»»»` separa *«la corrida no llegó»* de *«nadie lo cableó»*, que era la
+ * única ambigüedad que quedaba. ⚠ **Y el borde de la regla se explica en la leyenda**, porque es
+ * lo que hace confiable al glifo: un token **sin fila** sale `/////` **aunque la corrida haya
+ * cortado**, así que `»»»` significa siempre *«esto está cableado y se resuelve corriendo de
+ * nuevo»* — nunca tapa cableado que falta.
  */
 function leyendaSimbolos(){
   var filas = [
-    ['/////', 'Falta el dato', 'nadie lo cableó todavía, o el motor no llegó a resolverlo'],
+    ['/////', 'Falta cablearlo', 'nadie escribió su fila todavía — el trabajo es cablear'],
+    ['»»»', 'La corrida no llegó', 'está cableado y se cortó por presupuesto — el trabajo es correr de nuevo'],
     ['---', 'Se intentó y falló', 'el dato está cableado y no se pudo leer — mirar la traza'],
     ['-', 'No hay dato', 'se preguntó bien y la respuesta vino vacía'],
     ['-1.234-', 'Dato dudoso', 'se publicó, con la desconfianza declarada — la fuente se mueve sola']
@@ -1078,10 +1082,11 @@ function leyendaSimbolos(){
       return '<li class="leyenda"><span class="leyenda-glifo mono">' + esc(f[0]) + '</span>' +
         '<span><strong>' + esc(f[1]) + '</strong> — ' + esc(f[2]) + '</span></li>';
     }).join('') + '</ul>' +
-    '<p class="muted">⚠ <span class="mono">/////</span> tapa <strong>dos</strong> cosas que mandan a ' +
-    'trabajos opuestos: <em>nadie lo cableó</em> (hay que cablearlo) y <em>la corrida no llegó</em> ' +
-    '(hay que correr de nuevo). El símbolo propio del corte está sin elegir, y elegirlo es una ' +
-    'decisión del usuario. Mientras tanto, el aviso de arriba dice cuál de las dos fue.</p></div>';
+    '<p class="muted">⭐ <span class="mono">»»»</span> y <span class="mono">/////</span> mandan a ' +
+    'trabajos <strong>opuestos</strong> y por eso son dos símbolos: uno se arregla corriendo de ' +
+    'nuevo, el otro escribiendo una fila. ⚠ Un token <strong>sin fila</strong> sale ' +
+    '<span class="mono">/////</span> aunque la corrida se haya cortado — si no, el símbolo del ' +
+    'corte taparía el cableado que falta.</p></div>';
 }
 
 function vistaListo(){

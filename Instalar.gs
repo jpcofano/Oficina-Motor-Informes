@@ -2749,7 +2749,22 @@ var SEED_CONFIG_DEFAULTS_ = {
   // 30 sale del cierre medido en 0,8 s más la barrida final (~6 s reusando el
   // mapa de la etapa 2) más margen: tokensPorSlide_ dio 10,8 s y 26,9 s el mismo
   // día, y la reserva es lo único que no se puede quedar corto.
-  reserva_cierre_seg: '30',
+  /* ⛔⛔ ⭐ RECALIBRADA el 24/08/2026, y acá está CON QUÉ — que es la mitad del valor del número.
+   *
+   * **Lo que medía el 30, textual del comentario del reloj:** cierre **0,8 s** (06/08) + barrida
+   * **~6 s** + margen por varianza de `tokensPorSlide_` (**10,8 s y 26,9 s el mismo día**).
+   *
+   * **Lo que se midió el 24/08 en `jm-20260824-151555`: el cierre costó 25 s.** O sea que el
+   * componente que valía 0,8 pasó a valer 25 —factor **31**— porque el cierre hace tres cosas más
+   * que antes: `FALTANTES` con columna `causa`, `FALTANTES_PREVIO` y `ANCLAJE_MEDICION`.
+   *
+   * **60 = 25 (cierre medido) + 6 (barrida) + 27 (el techo de la varianza medida), redondeado.**
+   * No es un número elegido: es la misma suma de siempre con el sumando de hoy.
+   *
+   * ⚠ **Y ahora hay quien se entere cuando envejezca**: `avisoDeReserva_` dispara cuando el
+   * cierre solo se come el 80 % de la reserva. Con 60 eso son 48 s. El criterio viejo
+   * —`cierre > reserva`— **estaba conectado y se quedó callado con 25 contra 30**. */
+  reserva_cierre_seg: '60',
   // Re-medido el 06/08 después de T2.2.2, que bajó esta llamada de ~239 s a ~36:
   // tres muestras dieron 40,6 / 30,7 / 36,3 s, y 60 deja ~48% de margen sobre el
   // máximo observado. **El valor viejo era 240**, y dejarlo habría hecho que la

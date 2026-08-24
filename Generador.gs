@@ -1895,6 +1895,13 @@ function avisosDeLaFila_(cuantosFaltantes, fallo, fallosInstrumento) {
 var RASTRO_ETAPAS_ = [];
 
 function marcarEtapa_(numeroFila, etapa, t0) {
+  /* ⭐ `2026-08-24` — **el acumulado se registra SIEMPRE, aunque no haya fila.** Va antes del
+   * `if (numeroFila)` a propósito: la medición de estimaciones no puede depender de que la hoja
+   * `CORRIDAS` esté escribible. Si el instrumento de la celda falla —y tiene su propio contador
+   * de fallos, abajo— el desvío se sigue pudiendo leer del reporte. */
+  var segEtapa = Math.round((new Date().getTime() - t0) / 1000);
+  ACUMULADO_POR_ETAPA_.push({ etapa: etapa, acumulado: segEtapa });
+
   if (numeroFila) {
     try {
       var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
@@ -1903,7 +1910,7 @@ function marcarEtapa_(numeroFila, etapa, t0) {
       var col = headers.indexOf('faltantes') + 1;
       if (col < 1) throw new Error('CORRIDAS no tiene columna `faltantes`');
 
-      var seg = Math.round((new Date().getTime() - t0) / 1000);
+      var seg = segEtapa;
       var celda = hoja.getRange(numeroFila, col);
       var previo = String(celda.getValue() || '');
 
@@ -3157,7 +3164,140 @@ var ETAPAS_CON_CONTROL_ = [
  * *"¿ya me pasé?"*—, que es la forma del control del arranque: ahí el gasto ya ocurrió y lo
  * único que se puede hacer es no seguir.
  */
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-08-24` — **la corrida MIDE lo que estimó, y avisa cuando la estimación se aleja.**
+ *
+ * **El problema, con los tres casos del día y no en abstracto.** El motor tiene tres números en
+ * `CONFIG` que son **estimaciones de cosas que crecen**, y ninguno tenía quién se enterara:
+ *
+ * | constante | con qué se calibró | qué pasó |
+ * |---|---|---|
+ * | `reserva_cierre_seg = 30` | un cierre **medido en 0,8 s** (06/08) | el cierre pasó a **25 s** |
+ * | `costo_resolucion_etapa4_seg = 60` | **~87 marcadores** (06/08: 40,6 / 30,7 / 36,3 s) | hoy son **172**, y la etapa costó **158 s** |
+ * | `presupuesto_corrida_seg = 350` | el muro de Apps Script, **no medido** | el arranque creció y nadie lo re-midió |
+ *
+ * ⛔ **Dos de tres fallaron el 24/08 en la misma corrida**, y el sintoma fue un deck incompleto
+ * con 237 faltantes. **Un número elegido a ojo que nadie vuelve a mirar es indistinguible de uno
+ * correcto hasta el día que no alcanza.**
+ *
+ * ⭐ **Qué hace esto, y es lo que rompe el ciclo:** guarda lo **estimado** en cada punto de
+ * control y lo **real** de cada etapa, y al cerrar los compara. Una constante con un control que
+ * se entera **deja de ser una estimación que envejece en silencio** — es la forma de `C-79`
+ * (*medir cuántas veces se dispararía hoy*) aplicada a un presupuesto.
+ *
+ * ⚠ **NO corrige nada y no cambia ninguna decisión de la corrida.** Mide y avisa. Corregir un
+ * techo mientras la corrida usa el viejo sería mover el suelo bajo el reloj.
+ *
+ * ⚠ **Y los avisos salen ÚLTIMOS, después del veredicto** (`CLAUDE.md` §4): un `⚠` en el medio
+ * de un reporte que termina en `✅` se lee como verde, y eso ya pasó dos corridas seguidas con
+ * la tanda 4.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Lo que cada punto de control DIJO que iba a costar. Se llena en `controlDeEtapa_`. */
+var ESTIMADO_POR_ETAPA_ = {};
+
+/** Lo que cada etapa costó de verdad, en segundos acumulados desde `t0Etapas`. */
+var ACUMULADO_POR_ETAPA_ = [];
+
+/**
+ * Cuánto se pasa una estimación antes de que valga la pena avisar.
+ *
+ * ⛔ **No es un cuarto número elegido a ojo, y el motivo importa:** no decide **nada** de la
+ * corrida — sólo si se imprime una línea. Un umbral de aviso mal puesto cuesta un aviso de más o
+ * de menos; un techo mal puesto cuesta el deck. Son dos clases distintas de número.
+ *
+ * `1.25` = avisar cuando lo real se pasa **un cuarto** de lo estimado. Con eso, el caso del
+ * 24/08 —158 s reales contra 60 estimados, factor **2,6**— habría gritado en la primera corrida
+ * después de cablear `L-046`, no tres semanas después.
+ */
+var FACTOR_AVISO_DESVIO_ = 1.25;
+
+function reiniciarMedicionDeEstimaciones_() {
+  ESTIMADO_POR_ETAPA_ = {};
+  ACUMULADO_POR_ETAPA_ = [];
+}
+
+/** Las duraciones REALES por etapa, derivadas de los acumulados — que es como se leen a mano. */
+/** Los segundos REALES de una etapa por nombre. `0` si esa etapa no corrió — que es un dato. */
+function segundosDeEtapa_(nombre) {
+  var m = duracionPorEtapa_().filter(function (d) { return d.etapa === nombre; });
+  return m.length ? m[0].seg : 0;
+}
+
+function duracionPorEtapa_() {
+  var out = [];
+  var previo = 0;
+  ACUMULADO_POR_ETAPA_.forEach(function (m) {
+    out.push({ etapa: m.etapa, seg: m.acumulado - previo, acumulado: m.acumulado });
+    previo = m.acumulado;
+  });
+  return out;
+}
+
+/**
+ * ⭐ **El control: estimado contra real, más el cierre contra la reserva.**
+ *
+ * Devuelve una lista de avisos. **Vacía es un resultado**, y el reporte lo dice con el conteo:
+ * *«0 de N estimaciones desviadas»* distingue *«ninguna se pasó»* de *«no se midió nada»*, que
+ * es la mitad barata de todo control (`CLAUDE.md` §4).
+ */
+function desviosDeEstimacion_(cierreSeg, reservaSeg) {
+  var avisos = [];
+  var reales = duracionPorEtapa_();
+  var porNombre = {};
+  reales.forEach(function (r) { porNombre[r.etapa] = r.seg; });
+
+  var medidas = 0;
+  Object.keys(ESTIMADO_POR_ETAPA_).forEach(function (etapa) {
+    var estimado = ESTIMADO_POR_ETAPA_[etapa];
+    if (!estimado) return;
+    if (!(etapa in porNombre)) return;   // el control corrió y la etapa no: no hay par que comparar
+    medidas++;
+    var real = porNombre[etapa];
+    if (real > estimado * FACTOR_AVISO_DESVIO_) {
+      avisos.push('⚠ la etapa "' + etapa + '" se estimó en ' + estimado + ' s y costó ' + real +
+        ' s (×' + (Math.round((real / estimado) * 10) / 10) + '). **La estimación está vieja**: se ' +
+        'calibró con un informe más chico. Recalibrarla es una celda de `CONFIG`, y el comentario ' +
+        'de `Generador.gs` dice con qué se midió la anterior.');
+    }
+  });
+
+  /* ⛔ El cierre es el caso más caro y no tiene punto de control: **si la reserva no lo cubre, el
+   * corte ordenado muere en el muro y no deja nada**, que es justo lo que la reserva evita. */
+  /* El cierre lo evalúa `avisoDeReserva_`, que es la dueña del criterio — **no se duplica acá**.
+   * Vivió desde el 21/08 sin un solo llamador; éste es. */
+  if (cierreSeg > 0 && reservaSeg > 0) {
+    medidas++;
+    var aviso = avisoDeReserva_(cierreSeg, reservaSeg);
+    if (aviso) avisos.push(aviso);
+  }
+
+  return { avisos: avisos, medidas: medidas, reales: reales };
+}
+
+/**
+ * ⭐ **La etapa 2 no tiene estimación, así que se mide por unidad de trabajo.**
+ *
+ * Pedido del usuario el 24/08: *«son 61 s de mapa token→objectId y no la miramos nunca. Medila de
+ * paso: si crece con la cantidad de tokens, va a ser el próximo»*.
+ *
+ * **No se le pone un techo** —eso sería inventar la cuarta constante—: se publica el **costo por
+ * token**, que es lo único comparable entre corridas con decks de distinto tamaño. Dos corridas
+ * con 61 s y 400 tokens contra 61 s y 200 tokens dicen cosas opuestas, y el total solo no las
+ * distingue.
+ */
+function costoDelMapa_(segundos, tokens) {
+  if (!segundos || !tokens) return '';
+  return 'etapa 2 (mapa token→objectId): ' + segundos + ' s para ' + tokens + ' token(s) distinto(s) = ' +
+    Math.round((segundos / tokens) * 1000) + ' ms/token — ⚠ sin techo declarado a propósito. ' +
+    'Es la medición base para saber si crece con el deck.';
+}
+
 function controlDeEtapa_(reloj, etapa, estimadoSeg, clase, contexto) {
+  /* ⭐ El estimado se guarda ACA y no donde se decide entrar, y es a proposito: este es el
+   * unico lugar por el que pasan todos los controles, asi que ninguno se puede olvidar de
+   * declarar lo que estimo. Un registro que hay que acordarse de llenar no se llena. */
+  if (estimadoSeg) ESTIMADO_POR_ETAPA_[etapa] = estimadoSeg;
   var chequeo = entraEnElPresupuesto_(reloj, estimadoSeg);
   if (chequeo.entra) return null;
 
@@ -3225,11 +3365,33 @@ function controlPorEtapa_(fuenteOpcional) {
  * cada corrida y este aviso es lo que hace que un desajuste se vea en vez de descubrirse la
  * próxima vez que la corrida muera en el muro.
  */
+/* ⛔⛔ `2026-08-24` — **el aviso estaba conectado y se quedó callado igual, y ese es el punto.**
+ *
+ * Vive en `presupuesto.aviso_reserva` desde el 21/08 y se evalúa en cada corrida. El 24/08 el
+ * cierre costó **25 s** contra una reserva de **30** y **no dijo nada** — porque su criterio era
+ * `cierreSeg <= reservaSeg`. **Un aviso que existe, corre y calla es peor que uno que falta**: el
+ * que falta deja el terreno libre, éste da la impresión de que alguien está mirando.
+ *
+ * ⛔⛔ **Por qué el criterio estaba mal, y sólo se ve leyendo de dónde salió el 30.** El comentario del reloj lo dice: `30` = cierre medido en **0,8 s** + **barrida ~6 s** +
+ * margen por varianza de `tokensPorSlide_` (**10,8 s y 26,9 s el mismo día**). O sea que la
+ * reserva **no es el presupuesto del cierre: es el del cierre MÁS dos cosas más**.
+ *
+ * Con `cierreSeg <= reservaSeg` no avisaba, y **el 24/08 el cierre costó 25 contra una reserva de
+ * 30**: no avisó, y sin embargo ya no entraba —25 + 6 de barrida + varianza pasa 30 sin
+ * discusión—. **Un umbral que sólo mira una de las tres partes deja pasar el caso que importa.**
+ */
 function avisoDeReserva_(cierreSeg, reservaSeg) {
-  if (!(cierreSeg > 0) || cierreSeg <= reservaSeg) return '';
-  return '⚠ EL CIERRE NO ENTRA EN LA RESERVA: costó ' + cierreSeg + ' s y CONFIG.reserva_cierre_seg ' +
-    'es ' + reservaSeg + ' s. Un corte ordenado con esta reserva vuelve a morir en el muro. ' +
-    'Subir `reserva_cierre_seg` a por lo menos ' + (Math.ceil(cierreSeg / 10) * 10 + 10) + '.';
+  if (!(cierreSeg > 0) || !(reservaSeg > 0)) return '';
+  /* El `0,8` no es un número elegido: es *«el cierre solo ya se come el 80 % de una reserva que
+   * tiene que cubrir tres cosas»*. Con 30 de reserva dispara a los 24 s, y el caso del 24/08
+   * —25 s— habría gritado. */
+  if (cierreSeg <= reservaSeg * 0.8) return '';
+  var minimo = Math.ceil((cierreSeg + 6 + 27) / 10) * 10;
+  return '⛔ LA RESERVA YA NO CUBRE EL CIERRE: costó ' + cierreSeg + ' s y ' +
+    '`CONFIG.reserva_cierre_seg` es ' + reservaSeg + ' s. ⚠ **La reserva no es sólo el cierre**: ' +
+    'se derivó como cierre + barrida (~6 s) + margen por varianza de `tokensPorSlide_` (10,8 s y ' +
+    '26,9 s el mismo día). Un corte ordenado que no entra en la reserva **muere en el muro y no ' +
+    'deja nada escrito** — ni la causa. Subir `reserva_cierre_seg` a por lo menos ' + minimo + '.';
 }
 
 /**
@@ -3274,12 +3436,27 @@ function tokensVisiblesDe_(presentacion) {
  * corte** — el deck afirmaba *"nadie cableó esto"* sobre 264 tokens que estaban cableados y que la
  * corrida no alcanzó a mirar. **Es el número plausible y equivocado, en versión símbolo.**
  *
- * ⏸ **El glifo lo elige el usuario y este código NO lo inventa.** Mientras no esté elegido vale
- * `/////`, que es lo que hace hoy — así el cambio de glifo es **una constante** y no una migración
- * de plantilla. **La decisión está pendiente y el reporte la nombra**, en vez de estrenar un
- * símbolo que después haya que cambiar en dos plantillas.
+ * ⭐⭐ **ELEGIDO por el usuario el 24/08/2026: `»»»`.** Los tres criterios con que se eligió, para
+ * que un cambio futuro los tenga que contestar de nuevo:
+ *
+ *   1. **Manda a un trabajo y a uno solo** — *«corré de nuevo»*, contra el *«andá a cablear»* de
+ *      `/////`. Es la pregunta que `CLAUDE.md` §4 exige al agregar cualquier símbolo.
+ *   2. **Se distingue a tamaño chico** de los otros tres —`/////` falta cablearlo, `---` falló,
+ *      `-` sin dato—. `···` fue la segunda opción y se descartó por parecerse a `---`.
+ *   3. **La dirección se lee como «esto sigue en la próxima corrida»**, que es literalmente lo que
+ *      hace el desatendido.
+ *
+ * ⛔⛔ **Y la regla de asignación importa MÁS que el glifo, porque tiene un borde que no se ve.**
+ * NO es *«todo lo crudo después del corte»*: un token **sin fila en `MARCADORES`** tiene que
+ * seguir saliendo `/////` **aunque la corrida haya cortado**. Si no, el símbolo nuevo **tapa el
+ * cableado que falta** y el deck deja de mandar a cablear justo donde hay que cablear.
+ *
+ *   `sin_fila`  →  `/////`      ·      crudo + corte + **tiene fila**  →  `»»»`
+ *
+ * La distinción ya existe en la columna `causa` de `FALTANTES` desde el `2026-08-23_1`; acá se
+ * resuelve con el conjunto de marcadores del informe, que ya está cacheado.
  */
-var SIMBOLO_CORTE_ = '/////';
+var SIMBOLO_CORTE_ = '»»»';
 
 /**
  * `2026-08-20_10` A.0 — **el sello de en-proceso, en el nombre del archivo.**
@@ -3293,7 +3470,30 @@ var SIMBOLO_CORTE_ = '/////';
  */
 var SELLO_EN_PROCESO_ = '[en proceso] ';
 
-function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos, huboCorte) {
+/**
+ * ⭐ Los tokens del informe que **tienen fila en `MARCADORES`**, como conjunto.
+ *
+ * Es lo que separa `»»»` de `/////` en la barrida. Lee del mismo `leerMarcadores_()` que resuelve
+ * la corrida —cacheado por corrida—, así que no agrega una lectura: **la pregunta ya estaba
+ * contestada, sólo no se le preguntaba a nadie.**
+ */
+function tokensConFilaDe_(informeId) {
+  var set = {};
+  try {
+    leerMarcadores_().forEach(function (m) {
+      var suyo = String(m.informe_id || '').trim();
+      if (suyo === informeId || suyo === '*') set[String(m.marcador || '').trim()] = true;
+    });
+  } catch (e) {
+    /* ⚠ Sin la lista no se inventa una: se devuelve `null` y la barrida cae al comportamiento
+     * viejo —todo `/////`—, que es el conservador. Marcar `»»»` sobre un conjunto que no se pudo
+     * leer diría *«esto está cableado»* sin haberlo verificado. */
+    return null;
+  }
+  return set;
+}
+
+function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos, huboCorte, tokensConFila) {
   var origen = 'mapa de la etapa 2';
   var tokens = tokensDelMapa ? Object.keys(tokensDelMapa) : null;
   if (!tokens) {
@@ -3314,7 +3514,12 @@ function barrerTokensNoAlcanzados_(presentacion, tokensDelMapa, conSimbolos, hub
     // pasando `null` en vez de inventarle un estado (`2026-08-20_1` Parte 0 punto 2).
     // Con corte, el texto sale del símbolo del corte y no del mapeo por estado: acá no hay
     // resultado que mirar y **la causa se sabe** — no es que nadie lo cableó, es que no se llegó.
-    var texto = (huboCorte && conSimbolos === true)
+    /* ⛔ **El borde de la regla, y es lo que evita que el símbolo nuevo tape el cableado que
+     * falta:** `»»»` sólo va si el token **tiene fila**. Sin fila, el corte es irrelevante — el
+     * token no se habría resuelto igual, y el trabajo que manda a hacer sigue siendo cablearlo.
+     * ⚠ Sin `tokensConFila` no se adivina: se cae al comportamiento viejo, que es el conservador. */
+    var tieneFila = tokensConFila ? !!tokensConFila[token] : true;
+    var texto = (huboCorte && conSimbolos === true && tieneFila)
       ? SIMBOLO_CORTE_
       : textoFaltante_(token, null, conSimbolos);
     var n = presentacion.replaceAllText('{{' + token + '}}', texto, true);
@@ -3599,6 +3804,7 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
 
   var t0Etapas = new Date().getTime();
   RASTRO_ETAPAS_ = [];   // por corrida, no por ejecución del script
+  reiniciarMedicionDeEstimaciones_();
 
   var reemplazados = 0;
   var conValor = [];
@@ -4030,7 +4236,8 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   var continuable = !!(corte && opciones.continuable === true);
   var barrida = continuable
     ? { barridos: [], origen: 'no se barrió: la corrida se cortó y hay plan para continuarla' }
-    : barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null, conSimbolos, !!(corte || fallo));
+    : barrerTokensNoAlcanzados_(presentacion, mapa.lista.length ? mapa.tokens : null, conSimbolos,
+        !!(corte || fallo), tokensConFilaDe_(informeId));
   /* ⭐ `2026-08-23_1` Parte C — el cableado se lee **una sola vez y sólo si hace falta**.
    *
    * Con corte o con excepción la causa ya se sabe —la corrida no llegó— y preguntarle a
@@ -4152,6 +4359,14 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
     dueno = '(no se pudo leer: ' + e.message + ')';
   }
 
+  /* ⭐⭐ `2026-08-24` — **el cierre se mide y las estimaciones se comparan, ANTES de armar el
+   * reporte.** Va acá y no adentro del objeto porque `cierre_seg` se calculaba dos veces con dos
+   * `new Date()` distintos: los dos valores podían diferir en un segundo y el aviso se evaluaba
+   * contra uno mientras el reporte publicaba el otro. Un número que se mide dos veces es dos
+   * números. */
+  var cierreSeg = Math.round((new Date().getTime() - t0Cierre) / 1000);
+  var desvios = desviosDeEstimacion_(cierreSeg, reloj.reserva);
+
   return {
     ok: true,
     corrida_id: corridaId,
@@ -4243,8 +4458,23 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       gastado_seg: segundosGastados_(reloj),
       // `2026-08-21_1` A.4 — lo que costó el cierre completo, para poder dimensionar la reserva
       // con un número medido en vez de uno elegido. `aviso_reserva` es `''` cuando entra.
-      cierre_seg: Math.round((new Date().getTime() - t0Cierre) / 1000),
-      aviso_reserva: avisoDeReserva_(Math.round((new Date().getTime() - t0Cierre) / 1000), reloj.reserva),
+      cierre_seg: cierreSeg,
+      aviso_reserva: desvios.avisos.length ? desvios.avisos[desvios.avisos.length - 1] : '',
+      /* ⭐⭐ `2026-08-24` — **lo estimado contra lo real, por etapa.** Es lo que evita que
+       * esto vuelva en tres semanas: una constante con un control que se entera deja de ser una
+       * estimación que envejece en silencio.
+       *
+       * ⚠ `medidas` va al lado de `avisos` a propósito: **«ninguna se desvió» y «no se midió
+       * nada» se ven idénticos en un reporte sin conteo**, y un cero que nadie buscó no se
+       * distingue de «no miré». */
+      estimado_vs_real: {
+        avisos: desvios.avisos,
+        medidas: desvios.medidas,
+        por_etapa: desvios.reales
+      },
+      // La etapa 2 no tiene estimación: se publica su costo POR TOKEN, que es lo unico
+      // comparable entre corridas con decks de distinto tamaño (pedido del usuario, 24/08).
+      costo_del_mapa: costoDelMapa_(segundosDeEtapa_('2 · mapa token→objectId'), mapa.tokens ? Object.keys(mapa.tokens).length : 0),
       // Qué etapas declaradas tienen su punto de control en el flujo, con el `n de m` adentro:
       // «ningún problema» y «no se probó nada» se ven idénticos en un log sin conteo.
       control_por_etapa: controlPorEtapa_(),
