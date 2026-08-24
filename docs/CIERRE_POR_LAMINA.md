@@ -112,7 +112,7 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | **4** · «Encuentros con vecinos» | `L-033` | 🟡 | **Cero tokens y `rol = equipo`: no hay nada que cablear.** Es un separador. Falta sólo que el usuario lo mire | — |
 | **5** · ECV: alcance semanal | `L-034` | ⛔ **inestable por ALTA** 🕳 🌐 | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUJERON** contra `V-71`. ⚠ **Pero `rdv` es inestable por ALTA (`R-31`), así que eso no se puede EXIGIR en cada corrida** — el control posible es **de dirección: sube o queda, nunca baja; si baja es bug**. Falta: `ecv_asistentes` = 485 sin validar · los 3 `cc_*` **pintados sin control** · `ecv_fecha` y `ecv_barrio1-3` **sin fila en `MARCADORES`** | 22/08 |
 | **6** · Benchmarks / Iceberg | `L-035` `L-052` | ✅ | ⭐⭐⭐ **CERRADA — el usuario la declaró el 22/08.** Publicó los cuatro de IVR exactos: Audiencia **107.194** · Atendidos **96.549** · Escucharon +75 % **33.139** · Marque 1 **304**, más las seis cifras del alcance al dígito. **`X-30` se cerró solo: el ítem llegó con `3488-AGOJDGAG`.** ⭐ **Y es la única lámina con control por igualdad exacta garantizado**: sus cinco campos de `digital/Directa IVR` son **estables** (`R-31`) | 22/08 |
-| **7** · Campañas · DIGITAL · Período | `L-036` | ⛔ 🕳 | **32 de 32 tokens sin fila** — los **ocho `post_` × 4 envíos**, confirmados por el censo contra la **plantilla viva** (22/08). ⚠ **Esta fila cambió dos veces en un día y la tercera es la buena**: `Auditoria.gs` tenía razón; `TOKENS.md` §2.1, el `P2` del 06/08 y el espejo están **los tres viejos** (`C-77`, retractado). ⛔ **Ojo al cablear: `ELEMENTO` NO alcanza para una tabla por filas** — ver abajo | 22/08 |
+| **7** · Digital \| ECVs: post reuniones | `L-036` | ⛔ 🕳 | **32 de 32 tokens sin fila** — **ocho columnas × 4 filas**, cruzados uno por uno contra el censo (22/08) y contra la tabla del deck testigo: sin celdas combinadas y **sin fila de totales**. ⚠ **Esta fila cambió dos veces en un día y la tercera es la buena**: `Auditoria.gs` tenía razón; `TOKENS.md` §2.1, el `P2` del 06/08 y el espejo están **los tres viejos** (`C-77`, retractado). ⭐ **24/08: la fila es una REUNIÓN del temario con comunicación post** (usuario), fuente `reuniones/Agenda JM \| Post` (`C-50`). **Cinco de las ocho columnas ya tienen `MAPEO`**; las otras tres son pregunta al equipo, sin prioridad. ⛔ **Lo que falta no es cableado: es de dónde salen las 4 filas** — ver abajo | 24/08 |
 | **8** · «Comunicaciones M2» | `L-037` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | **9** · Directa · Status M2 | `L-038` | ⛔ ↕ | 8 tokens. ⭐ **El numerador coincide y el denominador no** (−9,6 % en enviados/entregados, con el numerador quieto) → falta **decidir** de qué universo sale el denominador | 22/08 |
 | **10** · M2 *(escondida)* | `L-039` | 🚫 **fuera de alcance** | **No se cablea** — decisión del usuario, 22/08. **23 tokens dormidos** (los 23 de la lámina). Nunca se midió y **no se va a medir**: sale del conteo de faltantes | 22/08 |
@@ -347,6 +347,32 @@ que ya sale, cuesta cero código y no depende de nadie; **(b)** pedirle el dato 
   Patricios es del sur. **El `_25` cierra.**
 - **`L-036`**: 4 filas × 8 columnas = **32 casilleros**. La contradicción se resolvió **sin medir**:
   `Auditoria.gs` tenía razón con sus 32 `post_`.
+
+  > **Addendum 24/08/2026 — lo que se midió después, y cambia qué falta.** La estructura salió de la
+  > tabla del deck **testigo del motor** (22/08 14:02, sha `cd6f0050…`): banner `Campañas` +
+  > `DIGITAL`, encabezado en la tercera fila del bloque —`Período · Formato · Habitantes · Alcance ·
+  > Impresiones · Visualizaciones · VTR%`— y **cuatro filas de datos**. El `8 × 4` **da bien acá**,
+  > pero se verificó contra el censo casillero por casillero, no se supuso: 32 de 32, sin huérfanos
+  > en ninguna dirección y sin trampa de prefijo (cero tokens `post*` en las otras 14 láminas).
+  >
+  > ⭐⭐ **La identidad interna existe y es el control primario:** `VTR% = Visualizaciones /
+  > Impresiones`, exacta en **98 de 98** filas de la fuente, más `% Cobertura = Alcance / Habitantes`
+  > en **89 de 89**. Como en `V-111`, **si la fuente se mueve se mueven los dos lados**, así que se
+  > puede exigir en cada corrida y no envejece.
+  >
+  > ⛔ **Y lo que bloquea no es el cableado: es de dónde salen las cuatro filas.** La sección
+  > `comunicaciones_post` es `repetible` sobre `REUNIONES` con `items_por_lamina = 4`, y esa columna
+  > **no tiene ningún consumidor** —greppeada: sólo `Instalar.gs`, headers y seed—, así que hoy el
+  > motor emitiría **una lámina por reunión POST**, no cuatro filas en una. La pieza que resuelve
+  > esto **ya existe para `rdv`**: `filasRdvDelTemario_`, que trae las filas del temario **sin ítem**
+  > (`R-21` nivel 1, `_25`). Falta la análoga para `reuniones/Agenda JM | Post`, que se resolvería
+  > por `id_cuenta` del anclaje — y con eso `FILA 1..4` ordenado por `fecha_periodo` da los cuatro
+  > casilleros, que es el molde de `L-047`.
+  >
+  > ⚠ **`etapa` está poblada en 4 de 15 filas de `REUNIONES`, todas de `julio_24_30`.** Para
+  > `agosto_14_20` el filtro `etapa=post` da **cero ítems**, y por eso el testigo tiene una sola
+  > lámina con los 32 `/////`. **Una corrida de una semana sin `etapa` cargada no puede verificar
+  > esta lámina aunque estuviera cableada.**
 
 ### ⛔ Lo que abrió, medido contra el fixture del 20/08
 

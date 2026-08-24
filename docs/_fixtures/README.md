@@ -161,13 +161,41 @@ puede.
 
 | base | qué fechas hay en disco |
 |---|---|
-| `looker` | **sólo 31/07** |
-| `digital` · `m2` · `rdv` | 31/07 **y** 06/08 |
-| `reuniones` | **ninguna** — su export es uno de los `[no está]` |
+| `looker` | 31/07 **y 20/08** |
+| `digital` · `m2` · `rdv` | 31/07 · 06/08 **y 20/08** |
+| ⭐ `reuniones` | **20/08** — ver la corrección de abajo |
 
-**Copiar `Base_reuniones` a esta carpeta destraba seis casos de una vez** (`C-53`, `C-63`, `A-12`,
-`A-14`, `A-15`, `X-23`), entre ellos los tres de `enc_alcance`. Es el ítem de mayor rendimiento
-de la lista de `[no está]`.
+### ⭐⭐ Corrección del 24/08/2026 — `reuniones` SÍ tiene fixture, y lo tenía hace tres días
+
+**Esta tabla decía `reuniones` → «ninguna», y era falso.** El `.zip` del 20/08 trae **seis
+archivos**, y uno es la base de reuniones con **otro nombre**:
+
+| archivo dentro del `.zip` | qué base es |
+|---|---|
+| `Base Looker (3).xlsx` | `looker` — **14** solapas |
+| ⭐ `DGPLES _ Seguimiento ECVs (1).xlsx` | **`reuniones`** — **24** solapas, entre ellas `Agenda JM`, `Agenda JM \| Post`, `Base_Digital`, `Total` |
+| `Seguimiento Digital  (4).xlsx` | `digital` |
+| `M2 Reporte para Fede 2026 (4).xlsx` | `m2` |
+| `RDV JM CM ES + funcionarios (5).xlsx` | `rdv` — 36 solapas |
+| `Informe semanal JM - (14_08 al 21_08).pptx` · `Seguimiento SECCO - SSCDI (21-08) .pptx` | los dos decks del equipo |
+
+⚠ **Por qué nadie se enteró, y es la lección que sobrevive al caso:** `BASES.reuniones.nombre` dice
+**`Base reuniones - Digital - Call Center`** y el archivo se llama **`DGPLES _ Seguimiento ECVs`**.
+Son el mismo `sheet_id` y **ningún nombre se parece al otro**, así que buscar el fixture por el
+nombre de la base da cero. Es la familia de *dos cosas que se llaman igual no son la misma cosa*
+(`CLAUDE.md` §4), en su forma inversa: **la misma cosa con dos nombres distintos**.
+
+⭐ **La forma barata de no repetirlo: mirar las SOLAPAS, no el nombre del archivo.** Un `.xlsx` es un
+`.zip` y `xl/workbook.xml` lista los nombres de solapa con la biblioteca estándar; contra
+`SEED_SOLAPAS_` la base se identifica sola. Costó tres días de creer que `reuniones` no era
+verificable.
+
+**Lo que esto destraba, medido el 24/08:** el `MAPEO` de `reuniones/Agenda JM | Post` pasó de 2
+campos a 7, con letras, encabezados y tipos **medidos** en vez de supuestos — y con tres identidades
+internas exactas (`% VTR = M/J` en 98 de 98, `% Cobertura = G/F` en 89 de 89, `% CTR = K/J` en 98 de
+98). **Los seis casos que la fila vieja decía que esperaban un archivo** —`C-53`, `C-63`, `A-12`,
+`A-14`, `A-15`, `X-23`, entre ellos los tres de `enc_alcance`— **ya tienen contra qué medirse**; que
+se cierren es otro trabajo, pero dejaron de estar bloqueados por falta de fixture.
 
 ### ⚠ El «ocho» del título de la sección de arriba no se puede verificar
 

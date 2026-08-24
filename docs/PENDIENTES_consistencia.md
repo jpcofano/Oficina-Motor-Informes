@@ -1891,6 +1891,39 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
 > nacieron en documentos hoy congelados y necesitan un lugar vivo. Al responderse, la
 > respuesta va al documento dueño del hecho y la pregunta se tacha acá.
 
+### 2026-08-24 · ¿De dónde salen `Campañas`, `Período` y `Formato` de `L-036`? — **sin prioridad**
+
+> ⚠ **No bloquea nada y así lo decidió el usuario (24/08): se anota y se sigue.** Las otras cinco
+> columnas de la lámina ya tienen fuente, `MAPEO` escrito y control (`tools/probar-mapeo-post.js`).
+
+`L-036` —*"Digital | ECVs: post reuniones"*— es una tabla de **8 columnas × 4 filas**, y la fila es
+**una reunión del temario que tuvo comunicación post** (usuario, 24/08). La fuente es
+`reuniones/Agenda JM | Post`, la que `C-50` empareja con la PRE por `ID`.
+
+**Cinco de las ocho columnas están en esa solapa y quedaron mapeadas el 24/08.** Las otras tres
+**no existen en ninguna solapa `fuente`** — ni de `reuniones` ni de `digital`:
+
+| casillero | encabezado en la plantilla | qué se buscó |
+|---|---|---|
+| `post_camp1-4` | **Campañas** | ninguna columna de `Agenda JM \| Post`. Los `Nombre campaña` que hay son de `digital` y nombran **campañas digitales**, no la comunicación post de un encuentro |
+| `post_periodo1-4` | **Período** | sólo hay `E Fecha`, **una** fecha; «período» sugiere un rango como el *"del 10/08 al 24/08"* que el equipo publica en otras láminas |
+| `post_formato1-4` | **Formato** | **cero columnas «Formato»** en las diez solapas `fuente` de las dos bases |
+
+**Cómo se midió, para que se pueda repetir:** barrido de los encabezados (filas 1 y 2) de las diez
+solapas `fuente` por `formato|campa|período|pieza`, sobre el fixture del 20/08
+(`DGPLES _ Seguimiento ECVs` y `Seguimiento Digital`, sha `f8ef3227…`).
+
+⭐ **Lo que hace falta del equipo es una frase, no un archivo:** ¿de dónde sacan esas tres celdas
+cuando arman la lámina a mano? Puede ser una columna que nadie mapeó, otra solapa, o carga manual —
+y en el tercer caso la respuesta correcta es que **no se cablean**, como los `camp_*_insight`.
+
+⛔ **Lo que NO se va a hacer mientras tanto, y está guardado por control:** elegir una columna que
+«parezca». `tools/probar-mapeo-post.js` afirma en negativo que los tres **no** tienen fila en ningún
+seed, y se pone rojo si aparece una. Una columna elegida a ojo para llenar un casillero **no falla:
+publica**, que es como nace un número plausible.
+
+---
+
 ### 2026-08-22 (tarde) · La tercera: ¿qué cuentas entran en el bloque Call Center? — `X-28`
 
 > ⛔ **Bloquea el cableado de los cuatro `cc_*`.** El `MAPEO` de `looker/CC` ya está escrito y la
@@ -7811,4 +7844,35 @@ lo vuelva a intentar creyendo que es un olvido.
 por ítem eso es la asignación, que ya lleva `objectIdSlide`; en la pasada de tokens fijos habría que
 resolver la lámina desde el ancla. **No es caro, y es un cambio en el camino de escritura de una
 corrida** — o sea que necesita una corrida real para verificarse.
+
+---
+
+## 2026-08-24 · `filasRdvDelTemario_` elige **la primera** sección agregada, y su comentario dice que no
+
+**Encontrado al preparar `L-036`, no medido en una corrida — se anota y no se toca.**
+
+`filasRdvDelTemario_` (`Generador.gs`) busca la sección con `modo = agregado` +
+`itera_sobre = REUNIONES` + `estado = activa`, y su comentario dice:
+
+> *"Hoy es una sola —`ecv_alcance_semanal`— y **el bucle está para que una segunda no exija tocar
+> esto**."*
+
+⛔ **El bucle no hace eso.** Asigna `elegida` en el primer match y las siguientes salen por
+`if (elegida) return;`. Con dos secciones que califiquen, **toma una según el orden de
+`Object.keys` y la otra desaparece en silencio** — y las filas del temario que devuelve serían las
+de la sección equivocada.
+
+⚠ **Por qué importa ahora y no antes:** el candidato natural a ser la segunda es
+**`comunicaciones_post`**, que hoy es `repetible` y que —si `L-036` se resuelve por `FILA` sobre una
+lámina única— tendría que pasar a `agregado` sobre `REUNIONES`. **La segunda sección llegaría por la
+puerta del trabajo que la necesita**, que es cuando menos se la mira.
+
+⭐ **Es la familia de *un comentario que afirma un contrato es una premisa sin testigo*** (`CLAUDE.md`
+§4): la línea describe el diseño que se quería, no el que hay, y **nada la contradice** porque hoy
+hay una sola sección que califica. Se vuelve falsa el día que deja de haberla.
+
+**Qué lo destrabaría:** decidir qué significa que haya dos —¿cada una trae sus propias filas?, ¿la
+función pasa a tomar el `seccion_id`?— y que **el caso de dos falle ruidoso** mientras no esté
+decidido. No se arregla acá porque el arreglo depende de esa decisión, y la decisión llega con el
+prompt de `L-036`.
 

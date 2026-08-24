@@ -13613,3 +13613,120 @@ del front cruzadas contra `PanelBackend.gs`, una por una.
   prompt escribe, que son la sustancia.
 - El parseo del nombre del ítem sigue **sin arreglar**, como el prompt pide: la vista y la hoja
   muestran el nombre **sucio**, con su `: ` crudo, y hay afirmaciones que exigen que siga así.
+
+---
+
+## 2026-08-24 — `L-036` Parte A: la POST tiene fuente, y el fixture de `reuniones` estaba en disco hace tres días
+
+**Commit de código:** `bc91fa2`. Documentación aparte.
+
+### Qué se pidió y qué frenó
+
+El pedido era **cablear los 32 `post_` de `L-036`**, ocho familias × 4, con `FILA` ya probada. Se
+frenó antes de la primera fila de `MARCADORES`, y el motivo no era el que el prompt anticipaba.
+
+### Las tres verificaciones que el prompt pedía
+
+1. **Censo contra la plantilla viva.** No se puede correr Apps Script desde acá, así que se cruzó
+   contra las dos mediciones que sí lo son, las dos del 22/08: el censo de las 22:39 y **la tabla
+   del deck testigo del motor** de las 14:02 (sha `cd6f0050…`, verificado contra la tabla de
+   huellas antes de citar nada).
+2. **Cruce uno por uno: 32 de 32**, sin huérfanos en ninguna dirección, sin celdas combinadas y
+   **sin fila de totales**. Cero tokens `post*` en las otras 14 láminas. ⚠ `et_post_periodo` lo
+   trae un `grep post_` y **no es de esta tabla**.
+3. **Tipos, medidos.** La estructura real de la lámina: banner `Campañas` + `DIGITAL`, y las
+   columnas `Período · Formato · Habitantes · Alcance · Impresiones · Visualizaciones · VTR%`.
+
+### ⭐⭐ El hallazgo que destrabó todo: `reuniones` SÍ tenía fixture
+
+`docs/_fixtures/README.md` declaraba `reuniones` → *«ninguna»*. **Era falso desde el 21/08**: el
+`.zip` del 20/08 trae `DGPLES _ Seguimiento ECVs (1).xlsx`, que es la base `reuniones` con **24
+solapas**, `Agenda JM | Post` entre ellas.
+
+⚠ **Nadie se enteró porque `BASES.reuniones.nombre` dice `Base reuniones - Digital - Call Center` y
+el archivo se llama `DGPLES _ Seguimiento ECVs`** — mismo `sheet_id`, ningún nombre parecido al
+otro. Es *dos cosas que se llaman igual no son la misma cosa* en su forma inversa: **la misma cosa
+con dos nombres distintos**. La forma barata de no repetirlo: **identificar un fixture por sus
+SOLAPAS, no por el nombre del archivo**.
+
+### Lo que se escribió — `MAPEO` de `reuniones/Agenda JM | Post`, de 2 campos a 7
+
+Medido sobre 102 filas de datos, encabezado en la fila 2:
+
+| campo lógico | col | encabezado | tipo crudo medido |
+|---|---|---|---|
+| `fecha_periodo` | E | Fecha | 99 `num` · 3 el texto `-` |
+| `poblacion` | F | Habitantes | 89 `num` · **13 el texto `-`** |
+| `imp_totales` | J | Impresiones totales | 102 `num` |
+| `vis_totales` | M | Visualizaciones | 102 `num` |
+| `vis_vtr_pct` | N | % VTR | 102 `num`, fracción |
+
+⭐⭐ **Tres identidades internas, exactas y sin una sola excepción** — el control primario de la
+lámina, en la forma de `V-111`: si la fuente se mueve, se mueven los dos lados.
+
+- `% VTR (N) = Visualizaciones (M) / Impresiones (J)` → **98 de 98**
+- `% Cobertura (I) = Alcance (G) / Habitantes (F)` → **89 de 89**
+- `% CTR (L) = Clics (K) / Impresiones (J)` → **98 de 98**
+
+⚠ `fecha_periodo` **no enciende ningún recorte**: `reuniones` es `modo_periodo = snapshot` y
+`leerFuente` ignora la ventana. Se declara porque es lo que `FILA` necesita en `separador`. **No
+mueve `alc_real`**, que ya publica.
+
+`poblacion` e `imp_totales` **se reusan a propósito** —`TIPO_ESPERADO_POR_CAMPO_` es por campo
+lógico y global—; `vis_totales` y `vis_vtr_pct` son nombres nuevos, greppeados antes de escribirlos.
+
+### El control
+
+`tools/probar-mapeo-post.js` — **30 afirmaciones verdes**. Control positivo por **camino
+compartido**: `id_cuenta` (A) y `alc_real` (G), que ya estaban, para que el verde distinga *«está
+bien»* de *«no leí la lista»*. Dos negativas: las bandas por plataforma (O–AC) **no** se mapean
+—`digital` manda, 14/08— y los tres tokens sin fuente **no** tienen fila. `--autoprueba` verifica
+que los **4 casos negativos caen por el motivo correcto**. Las 38 herramientas de `tools/` en verde.
+
+### ⛔ Lo que NO se cableó, y por qué
+
+**Ninguna fila de `MARCADORES`.** Dos motivos, y ninguno se arregla escribiéndolas:
+
+1. ⛔ **De dónde salen las cuatro filas.** `comunicaciones_post` es `repetible` sobre `REUNIONES`
+   con `items_por_lamina = 4`, y esa columna **no tiene consumidor** — greppeada, sólo `Instalar.gs`
+   (headers y seed), cero lectores en `.gs`, `Panel.html` y `tools/`. Hoy el motor emitiría **una
+   lámina por reunión POST**, no cuatro filas en una. ⭐ La pieza que lo resuelve **ya existe para
+   `rdv`**: `filasRdvDelTemario_`, que trae las filas del temario **sin ítem**. Falta la análoga
+   para esta solapa, por `id_cuenta` del anclaje; con eso `FILA 1..4` ordenado por `fecha_periodo`
+   da los cuatro casilleros, que es el molde de `L-047`.
+2. **Tres columnas sin fuente** — `post_camp`, `post_periodo`, `post_formato`. No existen en
+   **ninguna** solapa `fuente` de `reuniones` ni de `digital` (barrido por
+   `formato|campa|período|pieza` sobre las diez). Pregunta al equipo, **sin prioridad** (usuario,
+   24/08).
+
+⚠ **Y una premisa del prompt que se corrigió:** `post_camp`/`post_periodo` como `ELEMENTO`
+reinstala el bug que `X-35` documentó — `ELEMENTO` colapsa repetidos y ordena alfabético **por
+columna**, así que el nombre de la fila 1 no correspondería a sus números. Si la tabla se hace por
+`FILA`, van **las ocho** con el mismo `separador`.
+
+### Documentación puesta coherente
+
+- **`docs/PLAN.md`** — addendum fechado: el bloque *«la resolución del 22/08 (mañana) ERA FALSA»* es
+  la **segunda** retractación y **también está vencido**; manda el censo de las 22:39. ⚠ Quien abre
+  `PLAN.md` primero se comía la retractación vencida y no llegaba al censo — costó el arranque del
+  24/08.
+- **`docs/_fixtures/README.md`** — corregida la cobertura por base y documentados los seis archivos
+  del `.zip` del 20/08.
+- **`docs/CIERRE_POR_LAMINA.md`** — fila de `L-036` con el nombre real de la lámina y qué falta
+  ahora; addendum con la estructura medida y la identidad interna.
+- **`docs/PENDIENTES_consistencia.md`** — la pregunta al equipo (sin prioridad) y un hallazgo
+  nuevo: `filasRdvDelTemario_` **elige la primera** sección agregada y su comentario afirma que el
+  bucle está preparado para una segunda. **No lo está** — y la candidata a segunda es justamente
+  `comunicaciones_post`.
+
+### Pendientes / decisiones
+
+- ⛔ **Nada de esto está en Apps Script**: es seed, y necesita `clasp push` **y** el ítem de menú
+  **Aplicar configuración** — `instalar()` no siembra. *Que el seed llegue no garantiza que la hoja
+  cambie.*
+- **Lo verificable de esto no lo verifica una corrida de `agosto_14_20`:** `etapa` está poblada en
+  **4 de 15** filas de `REUNIONES`, todas de `julio_24_30`, así que `etapa=post` da **cero ítems** y
+  `L-036` sale con sus 32 `/////` igual.
+- **Lo que este control NO dice:** que la columna E siga llamándose `Fecha` en la planilla viva. Eso
+  es `verificarEncabezadosDeMapeo()`, y necesita una corrida.
+

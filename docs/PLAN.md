@@ -2016,6 +2016,35 @@ abierta** — el `P2` estaba escrito desde el 06/08.
 **una** columna. **Qué hay en las otras siete no se puede saber desde el espejo** (`C-76`: sirve
 para afirmar lo que hay, no lo que falta). Se resuelve con el censo contra la **plantilla viva**.
 
+#### ⛔⛔ ADDENDUM 24/08/2026 — el bloque de arriba es la **segunda** retractación, y también está vencido
+
+**No se edita una línea de lo de arriba** (`CLAUDE.md` §7); esto lo corrige y queda fechado.
+
+**La secuencia entera, que es el valor del addendum:**
+
+| # | cuándo | qué se dijo | contra qué se midió |
+|---|---|---|---|
+| 1 | 22/08 mañana | *«el deck mostró 32 casilleros → `Auditoria.gs` tenía razón»* | el deck, sin abrir la fuente que lo contradecía |
+| 2 | 22/08 tarde — **el bloque de arriba** | *«es al revés: `jm` no tiene tokens `post_`, son de `secco`»* | `TOKENS.md` §2.1 + el `P2` del 06/08 + el espejo |
+| ⭐ 3 | 22/08 **22:39** | **`L-036` tiene 32 tokens `post_`, ocho columnas × cuatro filas** | ⭐ **el censo contra la PLANTILLA VIVA** — `docs/CENSO_tokens_sin_fila_2026-08-22.md` |
+
+**Manda la 3**, y `docs/CIERRE_POR_LAMINA.md` ya la refleja desde el 22/08.
+
+⭐⭐ **Por qué la 2 se equivocó teniendo tres fuentes de acuerdo, y es la lección que sobrevive:**
+**no eran independientes, eran la misma foto contada tres veces.** `TOKENS.md`, el `P2` y el espejo
+descienden todos del mismo relevamiento viejo. **La concordancia entre fuentes viejas se parece a
+una corroboración y no lo es** — y **tres documentos de acuerdo pesan menos que una medición contra
+la cosa viva**, que es el orden que `CLAUDE.md` §7 ya declara.
+
+⚠ **Y por qué este addendum hace falta aunque el tablero esté bien:** quien abre `PLAN.md` primero
+—que es lo normal, es el dueño del plan— **se come la retractación vencida y no llega al censo**.
+Costó el arranque de `L-036` el 24/08. Una corrección que vive sólo en el documento correcto no
+protege a quien entra por el otro.
+
+**Lo que sigue abierto de `L-036` no es esto**: es de dónde salen sus cuatro filas —
+`items_por_lamina` **no tiene consumidor** — y las tres columnas sin fuente, que son pregunta al
+equipo sin prioridad. Todo eso está en `docs/CIERRE_POR_LAMINA.md` y en `PENDIENTES`.
+
 ---
 
 ### B · Mejorar el front
