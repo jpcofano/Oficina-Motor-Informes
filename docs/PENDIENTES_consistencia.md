@@ -7999,3 +7999,25 @@ más grande: la rama por cuenta de `L-036` entera.
 `comunicaciones_post` (el único que decide algo), la clave/etiqueta del ítem, la clave de carga del
 temario, y `filasRdvDelTemario_` que la **excluye**. ⚠ **Los 24 `u1_*` NO son lectores** — ver la
 advertencia de `CLAUDE.md` §4 sobre `reuniones` contra `REUNIONES`.
+
+---
+
+## 2026-08-25 · ⏸ La etapa 2 se desvió ×1,4 — anotado, no perseguido
+
+**`costo_mapa_seg = 25` y la corrida de `julio_24_30` midió 35 s.** El aviso de desvío lo dijo solo,
+que es para lo que se escribió.
+
+⭐ **Es la que estaba anunciada.** El 24/08 quedó escrito que la etapa 2 —el mapa
+`token→objectId`— era *«la próxima en crecer»* y que se mediría **por token** justamente porque el
+total solo no distingue un deck más grande de una etapa más lenta. **Ahora hay dos puntos**: 61 s
+el 24/08 y 35 s el 25/08, con decks de tamaño distinto.
+
+⚠ **No se toca todavía, y el motivo es de método:** con dos mediciones sobre dos decks distintos
+**no se puede separar «creció el deck» de «se puso más lenta»**. El `costo_del_mapa` que el reporte
+ya publica —ms por token— es lo que las separa, y hace falta la próxima corrida para tener el par
+comparable.
+
+⛔ **Y `25` NO se recalibra a ojo mientras tanto.** Subirlo a 40 para que deje de avisar sería
+apagar el único instrumento que va a decir cuándo esto importa de verdad — el error simétrico de
+las tres constantes que fallaron el 24/08. **Un aviso que molesta y es cierto no se silencia: se
+mide.**
