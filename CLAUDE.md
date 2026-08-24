@@ -436,6 +436,22 @@ cruce *definición → número publicado* se hace entero sin conectarse a nada.
 4. **Un número reproducido contra un fixture no prueba que el motor lo lea así.** Prueba que **la
    definición** es correcta. Son dos afirmaciones distintas y el caso de validación tiene que decir
    cuál está haciendo — **si difieren, eso es el hallazgo, no el ruido.**
+5. ⭐⭐ **Para saber QUÉ BASE es un fixture, la firma es su lista de SOLAPAS — nunca el nombre del
+   archivo, y el `sheet_id` no está disponible.** (24/08/2026, decisión del usuario.)
+   - ⛔ **Medido, y corrige lo que parecía obvio: un `.xlsx` exportado de Google Sheets NO conserva
+     el `sheet_id`** — cero rastros en `docProps/app.xml`, `core.xml` y `custom.xml` de los 19
+     libros de los seis `.zip`. **Matchear por id no es una operación disponible sobre un fixture.**
+   - ⛔ **Y el nombre miente:** `BASES.reuniones.nombre` es `Base reuniones - Digital - Call Center`
+     y el archivo se llama `DGPLES _ Seguimiento ECVs`. Mismo `sheet_id`, ningún nombre parecido al
+     otro. **Esa base estuvo tres días en disco tratada como inexistente**, y con ella los seis
+     casos que decían esperar un archivo.
+   - ⭐ **La lista de solapas contra `SEED_SOLAPAS_` resolvió los 19 al 100 %, y lo que la hace
+     citable es el MARGEN**: `DGPLES` da **24 de 24** contra `reuniones` y **1 de 9** contra el
+     segundo candidato. No es un empate a desempatar — es una firma. Cuesta leer
+     `xl/workbook.xml` con la biblioteca estándar.
+   - ⚠ **Es la forma inversa de *dos cosas que se llaman igual no son la misma cosa*** (§4, abajo):
+     acá es **la misma cosa con dos nombres distintos**, y el síntoma no es una confusión sino un
+     **cero** — se busca por nombre, no aparece, y se concluye que no está.
 
 ⚠ **Lo que esto NO cambia:** la corrida sigue siendo del usuario, la traza sigue sin existir fuera
 de ella, y **el fixture no vuelve verificable nada de lo que depende de la base viva** — los nueve
@@ -944,6 +960,24 @@ segunda guarda—, así que no medía la guarda que decía medir. Es `Pruebas.gs
 fixture cuyo dato satisface **más de una** afirmación no distingue entre ellas. **Se arregla
 exigiendo el motivo, no el resultado.** Junto con el control positivo que comparte camino, son las
 dos mitades: uno prueba que el instrumento ve, el otro que ve **lo que dice**.
+
+⭐⭐ **Y falta una tercera, que es la más barata y la que estaba abierta: el control negativo tiene
+que verificar que la MUTACIÓN OCURRIÓ.** (24/08/2026.) Una prueba que rompe a propósito compara
+*antes* contra *después* — y si el parche no aplicó, **no hay después**: el control corre sobre el
+código intacto, da verde, y eso se lee como *«el negativo pasó»*.
+
+- **El caso:** los tres casos negativos de `probar-agregados-global.js` parcheaban `Instalar.gs`
+  con patrones que llevaban `\n`, y **el archivo está en CRLF**. Dos de los tres **no matchearon
+  nada**. La guarda `if (mutado === FUENTE) → rojo` los cazó en la primera corrida.
+- ⭐ **Lo accionable es una línea y va en todo control negativo:** *si el texto mutado es idéntico
+  al original, el caso falla* — no se saltea, **falla**. Sin eso, `probar-mapeo-post.js` y éste
+  habrían reportado *«los N casos negativos caen por el motivo correcto»* **sin tocar una línea**.
+- ⚠ **Y el corolario sobre el parche mismo: los patrones van por fragmento de UNA línea, nunca por
+  bloques con `\n`.** El final de línea es del archivo, no del que escribe la prueba.
+- **Es la tercera vez en la semana que un control da verde sin haber probado nada**, y las tres
+  causas son distintas: **(1)** el instrumento no ve —falta control positivo—; **(2)** ve pero cae
+  por otro motivo —falta exigir el motivo—; **(3)** ⭐ **no llegó a mirar nada** —falta exigir que
+  la mutación ocurra—. **Son tres afirmaciones separadas y ninguna implica a las otras dos.**
 
 **Un control no se afloja para que entre algo nuevo: lo nuevo va aparte, y con un control de otra
 clase.** (23/08/2026, decisión del usuario.) Cuando un control cruza contra **evidencia fechada**

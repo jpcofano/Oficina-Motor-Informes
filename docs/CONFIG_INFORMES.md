@@ -256,6 +256,33 @@ separado y **dieron lo mismo**.
 `camp_dig_insight`, `camp_mail_insight` y `camp_resp_insight` son **texto editorial**, no salen
 de ninguna base. **Salen del cableado pendiente** y no vuelven a contarse como huecos técnicos.
 
+#### **[MANUAL]** `camp_audiencia1-3` y `camp_formato1-3` (`L-043`) — decisión del usuario, 24/08/2026
+
+⭐ **REVERSIBLE, y por eso lleva fecha: si el equipo contesta que hay fuente, se cablean.** No es
+un cierre definitivo — es la decisión correcta **con lo que hay medido hoy**, y la pregunta sigue
+abierta en `docs/PENDIENTES_consistencia.md` (*Preguntas al equipo*, 24/08).
+
+**La evidencia que la sostiene, medida el 24/08 sobre los dos decks en disco y las 13 solapas
+`fuente` de las tres bases:**
+
+| | |
+|---|---|
+| columnas «Formato» en solapas `fuente` | **cero**. Un barrido **por contenido** —`placa · bumper · demand gen · banner · carrusel · reel · story`— dio 16 aciertos y **los 16 son nombres de campaña** |
+| la única candidata real | `CAMPAÑAS_DESGLOCE_DIGITAL.Nomenclatura`: campos variables (9, 7, 6) y ⛔ **para la campaña destacada del 14-21/08 sus dos filas no traen formato** |
+| ítems del deck que están **literales** en `mail_segmentacion` | ⛔ **0 de 5.** El equipo acorta y reescribe: `Barrios cercanos interesados en seguridad ( Flores, …)` sale como `Interesados en seguridad de barrios cercanos` |
+| audiencias contra ranuras | **4-5 contra 3.** Y uno de los cinco es la audiencia **digital**, que vive en `digital/Digital` — solapa `uso = ignorar` |
+
+⚠ **Por qué cablearlos sería peor que dejarlos vacíos:** el modo de falla de esta lámina **no es un
+número raro**. Publicaría las tres primeras segmentaciones crudas, con su texto largo y sus
+paréntesis, **y se leería perfectamente bien diciendo otra cosa que la que el equipo publica**. Es
+la familia del número plausible movida al texto — y sin `separador` el desborde de la cuarta
+audiencia se resolvería **en silencio**, que es tomar la decisión editorial sin decirlo.
+
+⭐ **Qué haría falta para revertirla, en orden de dificultad:** **(a)** una columna de formato que
+hoy no existe en ninguna parte; **(b)** la audiencia digital fuera de una solapa `ignorar`; **(c)**
+una decisión editorial sobre qué pasa cuando hay más audiencias que cajas. **Con (a) y (b) sin
+resolver, (c) no se llega a preguntar.**
+
 > **⚠ Un dato para cuando se carguen las primeras filas de `jm`** (usuario, 08/08/2026):
 > **ninguna campaña de `jm` se solapa con la semana del informe.** **Eso NO impide que entren** —
 > es exactamente lo que dice `R-17`: **el temario selecciona y la ventana no filtra campañas.**

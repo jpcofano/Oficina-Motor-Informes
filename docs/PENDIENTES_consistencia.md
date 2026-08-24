@@ -1893,6 +1893,15 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
 
 ### 2026-08-24 · `camp_audiencia1-3` y `camp_formato1-3` (`L-043`): ¿son texto del equipo?
 
+> ⭐ **DECIDIDO el 24/08 con la evidencia de abajo: van como TEXTO DEL EQUIPO** — decisión del
+> usuario. **Y es REVERSIBLE a propósito: si el equipo contesta que hay fuente, se cablean.** La
+> decisión vive en `docs/CONFIG_INFORMES.md` §2.5 (`[MANUAL]`, la fila dueña de *qué va a mano*);
+> **la pregunta sigue abierta acá**, que es lo que la hace reversible en vez de un cierre.
+>
+> ⚠ **Lo que hay que entender antes de revertirla:** hacen falta **(a)** una columna de formato que
+> hoy no existe, **(b)** la audiencia digital fuera de una solapa `ignorar` y **(c)** una decisión
+> editorial sobre el desborde. Con (a) y (b) sin resolver, (c) no se llega a preguntar.
+
 > ⚠ **La pregunta correcta no es «con qué operación se cablean».** El censo del 22/08 ya había
 > decidido eso —*«son indexados de UNA columna: caen en `ELEMENTO`, no en la décima»*— y **da
 > igual**: lo que falta es la **fuente**, y ninguna primitiva la fabrica.
