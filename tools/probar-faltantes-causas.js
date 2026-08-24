@@ -291,9 +291,10 @@ console.log('\n5 · un token crudo sin corte: cuál de los oficios manda a hacer
 {
   const ctx = contextoGenerador({ FALTANTES: hojaEnMemoria(HEADERS_VIEJOS) });
   ctx.__conFila = { ok: true, tokens: { camp_titulo: true, camp_remitente: true, enc_alcance: true } };
+  ctx.__escondidas = {};
   const diag = (token, resultado) => {
     ctx.__t = token; ctx.__r = resultado;
-    return vm.runInContext('diagnosticoDeCrudo_(__t, __r, __conFila)', ctx);
+    return vm.runInContext('diagnosticoDeCrudo_(__t, __r, __conFila, __escondidas)', ctx);
   };
 
   af(diag('post_alcance', undefined).causa === 'sin_fila',
@@ -325,6 +326,23 @@ console.log('\n5 · un token crudo sin corte: cuál de los oficios manda a hacer
    * sin corte ni excepción. No es «nadie lo cableó» y no es «falló». */
   af(diag('enc_alcance', undefined).causa === 'no_alcanzado',
     'con fila y sin resultado → `no_alcanzado`: no se lo alcanzó, y no es ninguna de las otras');
+
+  /* ⛔⛔ **La QUINTA, y salió de la primera corrida del particionado (24/08).** `camp_titulo`
+   * apareció como `no_alcanzado` con **14 apariciones en el `mapa_tokens`** — un token en 14
+   * láminas que nadie mira no cierra. La respuesta: **las 14 están escondidas**, y `L-048` está
+   * escondida por `D-39` con `camp_titulo` como su único token con fila.
+   *
+   * ⭐ Es la regla de los símbolos aplicada a las causas: `no_alcanzado` tapaba *«está escondida,
+   * no hagas nada»* y *«quedó fuera por un bug, mirá por qué»*, que son trabajos **opuestos**. */
+  ctx.__escondidas = { camp_titulo: [14, 21, 23] };
+  const escondida = diag('camp_titulo', undefined);
+  af(escondida.causa === 'solo_escondidas',
+    '⭐ con fila, sin resultado y TODAS sus apariciones escondidas → `solo_escondidas` (no hacer nada)');
+  af(escondida.motivo.indexOf('14, 21, 23') !== -1,
+    'y el motivo NOMBRA las slides — contesta la pregunta en vez de hacerla', escondida.motivo);
+  af(escondida.causa !== diag('enc_alcance', undefined).causa,
+    '⛔ y NO comparte causa con el que quedó fuera sin estar escondido: son oficios opuestos');
+  ctx.__escondidas = {};
 
   /* ⛔ Y lo que pasa cuando el instrumento no puede leer `MARCADORES`. Un `catch` que devolviera el
    * conjunto vacío haría que TODOS los crudos salieran «nadie lo cableó»: un diagnóstico falso,

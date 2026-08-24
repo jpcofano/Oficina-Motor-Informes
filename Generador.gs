@@ -3252,16 +3252,22 @@ function desviosDeEstimacion_(cierreSeg, reservaSeg) {
 
   var medidas = 0;
   Object.keys(ESTIMADO_POR_ETAPA_).forEach(function (etapa) {
-    var estimado = ESTIMADO_POR_ETAPA_[etapa];
-    if (!estimado) return;
+    var reg = ESTIMADO_POR_ETAPA_[etapa];
+    if (!reg || !reg.suma) return;
     if (!(etapa in porNombre)) return;   // el control corrió y la etapa no: no hay par que comparar
     medidas++;
     var real = porNombre[etapa];
-    if (real > estimado * FACTOR_AVISO_DESVIO_) {
-      avisos.push('⚠ la etapa "' + etapa + '" se estimó en ' + estimado + ' s y costó ' + real +
-        ' s (×' + (Math.round((real / estimado) * 10) / 10) + '). **La estimación está vieja**: se ' +
-        'calibró con un informe más chico. Recalibrarla es una celda de `CONFIG`, y el comentario ' +
-        'de `Generador.gs` dice con qué se midió la anterior.');
+    /* ⭐ **La comparación es acumulado contra acumulado.** En una etapa partida, `suma` es lo que
+     * los N checkpoints declararon para las N unidades que corrieron, y `real` lo que costaron
+     * todas. Comparar una unidad contra el total da un factor que no significa nada — ver el
+     * comentario de `controlDeEtapa_`. */
+    if (real > reg.suma * FACTOR_AVISO_DESVIO_) {
+      var unidades = reg.veces > 1 ? ' en ' + reg.veces + ' unidad(es), o sea ' +
+        (Math.round((reg.suma / reg.veces) * 10) / 10) + ' s cada una' : '';
+      avisos.push('⚠ la etapa "' + etapa + '" se estimó en ' + reg.suma + ' s' + unidades +
+        ' y costó ' + real + ' s (×' + (Math.round((real / reg.suma) * 10) / 10) + '). **La ' +
+        'estimación está vieja**: se calibró con un informe más chico. Recalibrarla es una celda ' +
+        'de `CONFIG`, y el comentario de `Generador.gs` dice con qué se midió la anterior.');
     }
   });
 
@@ -3300,8 +3306,27 @@ function controlDeEtapa_(reloj, etapa, estimadoSeg, clase, contexto) {
   /* ⭐ El estimado se guarda ACA y no donde se decide entrar, y es a proposito: este es el
    * unico lugar por el que pasan todos los controles, asi que ninguno se puede olvidar de
    * declarar lo que estimo. Un registro que hay que acordarse de llenar no se llena. */
-  if (estimadoSeg) ESTIMADO_POR_ETAPA_[etapa] = estimadoSeg;
   var chequeo = entraEnElPresupuesto_(reloj, estimadoSeg);
+  var chequeoEntra = chequeo.entra;
+  /* ⛔⛔ `2026-08-24`, corregido en la primera corrida — **se ACUMULA, no se pisa.**
+   *
+   * La primera versión hacía `ESTIMADO_POR_ETAPA_[etapa] = estimadoSeg`, y en una etapa que
+   * chequea **una vez por unidad** eso deja el estimado de la ÚLTIMA. La corrida de las 17:33 lo
+   * mostró de inmediato: la etapa 4 avisó *«se estimó en 1 s y costó 33 s (×33)»* — **el 1 era la
+   * estimación de la última lámina y los 33 el total de todas**. La semilla de 30 estaba bien; lo
+   * que estaba mal era la comparación.
+   *
+   * ⚠ **Y el mismo defecto tenía la etapa 3 desde el minuto uno**, que también chequea por unidad.
+   * No se había visto porque nunca disparó — un control que no se ejecuta no está probado.
+   *
+   * ⭐ **Sólo se suma lo que efectivamente ENTRÓ.** El checkpoint que corta declara un estimado
+   * para una unidad que no corre: sumarlo compararía N+1 estimaciones contra N unidades de
+   * trabajo, que es el mismo error con el signo cambiado. */
+  if (estimadoSeg && chequeoEntra) {
+    if (!ESTIMADO_POR_ETAPA_[etapa]) ESTIMADO_POR_ETAPA_[etapa] = { suma: 0, veces: 0 };
+    ESTIMADO_POR_ETAPA_[etapa].suma += estimadoSeg;
+    ESTIMADO_POR_ETAPA_[etapa].veces++;
+  }
   if (chequeo.entra) return null;
 
   contexto = contexto || {};
@@ -3544,7 +3569,14 @@ function tokensVisiblesDe_(presentacion) {
     if (enVisible) visibles[token] = porSlide[token];
     else descartados.push(token);
   });
-  return { tokens: visibles, descartados: descartados.sort() };
+  /* ⭐ `2026-08-24` — **`detalle` contesta la pregunta que el diagnóstico venía haciendo.**
+   * Hasta hoy `descartados` era una lista de nombres y el aviso de crudos preguntaba *«¿lámina
+   * escondida?»*. La respuesta ya estaba acá y se tiraba: por cada token descartado, **en qué
+   * slides aparece**, todas escondidas por construcción. Un diagnóstico que pregunta lo que el
+   * motor ya sabe manda a alguien a averiguarlo a mano. */
+  var detalle = {};
+  descartados.forEach(function (t) { detalle[t] = porSlide[t] || []; });
+  return { tokens: visibles, descartados: descartados.sort(), detalle: detalle };
 }
 
 /**
@@ -3720,7 +3752,7 @@ function recorteDeValor_(valor) {
  * `resultado` es lo que dejó la resolución de la etapa 4 para ese token, o `undefined`.
  * `conFila` es lo que devuelve `tokensConFilaEnMarcadores_`.
  */
-function diagnosticoDeCrudo_(token, resultado, conFila) {
+function diagnosticoDeCrudo_(token, resultado, conFila, escondidas) {
   // Sin poder leer `MARCADORES` no se afirma nada sobre el cableado: se dice que no se sabe.
   if (!conFila.ok) {
     return {
@@ -3734,6 +3766,36 @@ function diagnosticoDeCrudo_(token, resultado, conFila) {
     return {
       causa: 'sin_fila',
       motivo: 'quedó crudo y no tiene fila en MARCADORES para este informe — nadie lo cableó'
+    };
+  }
+
+  /* ⛔⛔ `2026-08-24` — **la quinta causa, y nace de la primera corrida del particionado.**
+   *
+   * `camp_titulo` salió como *«tiene fila y la corrida NO lo resolvió»* con **14 apariciones** en
+   * el `mapa_tokens`, que es una combinación que no cierra: un token en 14 láminas que nadie mira.
+   *
+   * ⭐ **La respuesta es que las 14 están ESCONDIDAS.** La etapa 4 resuelve `tokensVisiblesDe_`, y
+   * un token cuyas apariciones son todas de láminas escondidas queda **legítimamente** afuera:
+   * `L-048` está escondida por decisión del usuario (`D-39`) y su único token con fila es
+   * justamente `camp_titulo`. **No hay nada que arreglar** — el token no se publica.
+   *
+   * ⚠ **Por qué aparece recién ahora, y es un efecto de este mismo prompt:** antes la etapa 4
+   * resolvía **todos** los marcadores del informe, así que `porMarcador` tenía entrada para
+   * `camp_titulo` aunque su lámina estuviera escondida, y el diagnóstico no se disparaba. Con
+   * `solo_marcadores` por lámina **deja de resolverse**, que es correcto y más barato. Lo que
+   * cambió no es el deck —idéntico— sino **qué se puede afirmar sobre él**.
+   *
+   * ⛔ **Y es la regla de los símbolos aplicada a las causas:** `no_alcanzado` tapaba dos
+   * situaciones que mandan a trabajos **opuestos** —*está escondida, no hagas nada* contra *quedó
+   * fuera por un bug, mirá por qué*—. Si dos causas piden acciones distintas, falta una causa. */
+  if (!resultado && escondidas && escondidas[token]) {
+    var slides = escondidas[token];
+    return {
+      causa: 'solo_escondidas',
+      motivo: 'tiene fila y NO se resolvió, y está bien: sus ' + slides.length + ' aparición(es) ' +
+        'están TODAS en láminas escondidas (slide' + (slides.length > 1 ? 's' : '') + ' ' +
+        slides.join(', ') + '). No se publica, así que no hay nada que hacer. ⚠ NO es un bug del ' +
+        'escritor ni un token sin cablear.'
     };
   }
 
@@ -3935,7 +3997,7 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   reiniciarInstrumento_();
 
   var t0Etapas = new Date().getTime();
-  RASTRO_ETAPAS_ = [];   // por corrida, no por ejecución del script
+  RASTRO_ETAPAS_ = [];   // por corrida, no por ejecución del script  var tokensSoloEnEscondidas = {};
   reiniciarMedicionDeEstimaciones_();
 
   var reemplazados = 0;
@@ -4291,7 +4353,11 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
    * `CONFIG.costo_lamina_etapa4_seg` es sólo la **semilla** de la primera. Un tamaño de lote
    * fijo sería la cuarta constante que nadie vuelve a mirar, y hoy fallaron tres de tres por eso.
    * ═══════════════════════════════════════════════════════════════════════════════════════ */
-  var tokensFijos = tokensVisiblesDe_(presentacion).tokens;
+  var visiblesEtapa4 = tokensVisiblesDe_(presentacion);
+  var tokensFijos = visiblesEtapa4.tokens;
+  /* Se guarda para el diagnóstico del cierre: es la diferencia entre *«nadie lo miró»* y *«está
+   * en una lámina escondida»*, y el cierre corre mucho después de acá. */
+  tokensSoloEnEscondidas = visiblesEtapa4.detalle || {};
   var laminasDeEtapa4 = agruparTokensPorLamina_(tokensFijos);
   var costoUltimaLaminaSeg = costoLaminaEtapa4Seg_();
   var laminasEtapa4Hechas = [];
@@ -4409,7 +4475,7 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       ? { causa: 'no_alcanzado', motivo: MOTIVO_CORTE_TIEMPO_ + ' (' + corte.etapa + ')' }
       : (fallo
         ? { causa: 'no_alcanzado', motivo: MOTIVO_EXCEPCION_ + ' (etapa "' + fallo.etapa + '"): ' + fallo.mensaje }
-        : diagnosticoDeCrudo_(token, porMarcador[token], conFilaEnMarcadores));
+        : diagnosticoDeCrudo_(token, porMarcador[token], conFilaEnMarcadores, tokensSoloEnEscondidas));
 
     faltantes.push({
       corrida_id: corridaId,
