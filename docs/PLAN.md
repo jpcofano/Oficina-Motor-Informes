@@ -1197,6 +1197,62 @@ una cosa —**que la letra siga apuntando donde el rótulo dice**— y ésa es s
 **Medición que lo funda**, `censarEncabezadosDeMapeo()` sobre las 161 filas vivas (14/08/2026):
 cero letras sin encabezado y cero títulos repetidos dentro de una misma solapa.
 
+
+#### ⛔⛔ ADDENDUM 25/08/2026 — la letra manda para ESCRIBIR el mapeo y **no para LEER el dato**
+
+**`D-31` no se deroga, pero su frase más citada —*«la letra es la referencia, el encabezado sólo
+testigo»*— no se sostiene en el camino de lectura, y el 25/08 costó una lámina.**
+
+**El hecho, medido en el código:** `leerFuente` arma cada fila **indexando por título**:
+
+```js
+headers.forEach(function (h, i) { if (h) obj[h] = fila[i]; });
+```
+
+⇒ **Con títulos repetidos, gana el último** — y `MAPEO.columna` no participa de esa búsqueda. La
+letra decide **qué columna se declara**; el lector después va a buscar **por nombre**.
+
+**El caso:** `vis_totales` (M) y `vis_vtr_pct` (N) se mapearon el 24/08 sobre
+`reuniones/Agenda JM | Post`, con la letra correcta. Sus títulos —`Visualizaciones` y `% VTR`—
+**aparecen cuatro veces cada uno** (M/R/W/AB y N/S/X/AC), así que el lector devolvía **la columna
+de Programmatic**, que en las filas de encuentro vale `-` y `0`. `L-036` publicó exactamente eso.
+
+⚠ **Y lo escribió el propio `D-31` como argumento a favor de la letra:** *«`Agenda JM | Post` tiene
+cuatro `% CTR`… buscar por título elegiría siempre el primero»*. **El diagnóstico era correcto y la
+conclusión no llegó hasta el lector.** Es un contrato afirmado en un lugar y no implementado en el
+otro.
+
+##### ⭐ Medido: es UN caso, no un agujero
+
+Sobre el fixture del 20/08, las solapas `fuente` de las cinco bases:
+
+| | |
+|---|---|
+| solapas `fuente` leídas | **12** |
+| con títulos repetidos | ⚠ **1** — `reuniones/Agenda JM | Post` |
+| filas de `MAPEO` que apuntan a una letra que **no** es la primera de su título | ⭐ **0** |
+
+**En esa única solapa hay cinco títulos repetidos:** `Clics` ×4, `% CTR` ×4, `Visualizaciones` ×4,
+`% VTR` ×4 e `Impresiones` ×3. Los cuatro campos que quedan mapeados ahí —`id_cuenta` (A),
+`alc_real` (G), `poblacion` (F), `imp_totales` (J), `fecha_periodo` (E)— **tienen título único**, y
+por eso funcionan.
+
+##### Qué se hizo y qué NO
+
+- **Se hizo:** retirar las dos filas de `MAPEO` y sus ocho marcadores. `L-036` queda con **tres
+  columnas de cinco** — decisión del usuario: *preferible a publicar las de Programmatic
+  disfrazadas de totales*.
+- ⛔ **NO se hizo:** una excepción de lectura por letra para esa solapa. **Nadie la va a recordar en
+  un mes**, y una regla que vale en un solo lugar es una trampa con fecha.
+- ⏸ **Queda abierto, y el número dice que no urge:** que el lector pueda resolver por letra cuando
+  el título es ambiguo. Con **1 de 12** solapas afectadas y **cero** mapeos rotos hoy, es un
+  pendiente, no un incendio. **Lo que lo volvería urgente es mapear cualquiera de los otros cuatro
+  títulos repetidos de esa solapa.**
+
+⚠ **Y la regla operativa mientras tanto, que es lo accionable:** **antes de mapear una columna,
+mirar si su título se repite en la solapa.** Si se repite, la letra no alcanza — o el campo sale de
+otra base, o no se mapea.
+
 ---
 
 **`D-32` — El sembrador **nunca pisa un `uso` que ya existe en `SOLAPAS`**. La hoja manda; la

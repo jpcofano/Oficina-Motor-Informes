@@ -1028,6 +1028,33 @@ pase, que es como se pierde un hallazgo.
   no está mal — lo nuevo es posterior.** Y el control que le corresponde es **de otra clase**: acá
   el congelado no podía servir y el vivo sí.
 
+⛔⛔ **Y la forma más cara de eso: un FALLBACK silencioso justificado por el estado actual del
+cableado. Tiene fecha de vencimiento y nadie la mira.** (25/08/2026.)
+
+Un fallback que no falla —sigue de largo y devuelve *algo*— se escribe con un comentario que
+explica **por qué no importa**. Y ese comentario suele ser **cierto el día que se escribe**: no
+importa *todavía*, porque el camino que lo dispararía está vacío. **El día que se llena, el
+comentario se vuelve falso y el fallback empieza a publicar.**
+
+- **El caso, y lo escribí yo a sabiendas.** `filasDeSolapaDelTemario_` devolvía cero filas y el
+  llamador hacía `else { Logger.log(…) }` y seguía. El comentario decía: *«no frena la corrida… los
+  `post_*` caen entonces por donde caían: sin fila en `MARCADORES`, `/////`»*. **Era cierto —no
+  había cableado— y se volvió falso el día que se cablearon los 20.** Con fila, dejaron de caer en
+  `/////` y pasaron a caer en **la solapa entera**: `L-036` publicó el *Recap de CABA*, con
+  **2.463.980 habitantes**, como si fuera un encuentro del temario. Plausible y de otro universo.
+- ⭐ **Lo que lo distingue de una premisa vencida cualquiera:** acá la premisa **no era sobre el
+  mundo, era sobre el propio repo** —*«esto todavía no está cableado»*—, y **el mismo proyecto la
+  invalida como parte de su plan**. No hace falta que cambie nada afuera: **el trabajo previsto es
+  la fecha de vencimiento.**
+- ⭐⭐ **La pregunta concreta, y se hace al escribir el fallback, no al primer número raro:**
+  *¿esta justificación sigue siendo cierta cuando termine el trabajo que ya está en la cola?* Si la
+  respuesta es no, **no es un fallback: es un bug con fecha diferida.**
+- ⚠ **Y la salida no es un comentario mejor: es fallar.** El motor ya tiene la forma escrita, en
+  `planDeLecturaPorCuenta_`: *«leerla sin cuenta no es una lectura más amplia, **es otra
+  pregunta**»*. **Un universo más ancho nunca es una degradación aceptable de un universo
+  recortado** — es el modo de falla más caro de este repo (`X-41`, los `cc_*`, `R-15` addendum 1) y
+  el único que no avisa.
+
 **Un comentario que afirma un contrato es una premisa sin testigo.** `Reuniones.gs` declaraba
 *"`leerReuniones_()` … mismo contrato que `leerCampanas()`"*. **Era falso**: `leerReuniones_`
 devolvía una **lista** y `leerCampanas` un **mapa indexado** que **perdía filas repetidas en
