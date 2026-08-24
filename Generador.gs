@@ -339,8 +339,11 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
         motivo: '«FALTA:' + fila.marcador + '@post_sin_temario» — ' + fila.base_id + '/' + solapa +
           ' la manda el TEMARIO y esta corrida no obtuvo ni una fila. **NO se cae a leer la solapa ' +
           'entera**: eso publicaría filas de otros encuentros con forma de acierto (el 25/08 salió ' +
-          'el Recap de CABA con 2.463.980 habitantes). Mirá el log de `agregado post`: separa ' +
-          '«la sección no calificó», «el ítem no tiene cuenta anclada» y «la cuenta no tiene fila».'
+          'el Recap de CABA con 2.463.980 habitantes). ⭐ POR QUÉ no hubo filas: ' +
+          (opciones.temario_post_diag || '(sin diagnóstico — la sección de post no está declarada ' +
+            'en CONFIG, así que esta rama no debería haber disparado)') +
+          ' · sin_cuenta = el ítem no ancló · sin_fila = ancló y su cuenta no está en la solapa ' +
+          '(¿el id del anclaje es el mismo que el ID de la solapa?) · sin_metrica = está y no midió.'
       };
     }
     return {
@@ -4387,11 +4390,26 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
        * como si fueran encuentros del temario. Plausible, sin fallar, y de otro universo. */
       opcionesEtapa4.base_temario = basePost;
       opcionesEtapa4.hoja_temario = hojaPost;
+      /* ⭐⭐ `2026-08-25` — **el diagnóstico viaja al FALTANTE, no se queda en el log.**
+       *
+       * ⛔ **Lo que estaba mal y costó un viaje entero:** el motivo del `@post_sin_temario` decía
+       * *«mirá el log de `agregado post`»*, y `Logger.log` **vive en la transcripción de la
+       * ejecución y desaparece**. Quien lee `FALTANTES` tres días después no tiene ese log — y es
+       * justo el que necesita el dato. Es la misma familia que *el rastro de etapas que el cierre
+       * pisaba*: **el discriminador estaba, en un lugar que nadie conserva.**
+       *
+       * ⭐ **Los tres contadores son el discriminador entero**, y por eso van juntos:
+       * `sin_cuenta` = el ítem no ancló · `sin_fila` = ancló y su cuenta no está en la solapa ·
+       * `sin_metrica` = está y no midió. **Mandan a tres trabajos distintos** y sin los tres el
+       * `@post_sin_temario` vuelve a ser un aviso que no dice qué hacer. */
+      opcionesEtapa4.temario_post_diag = postTemario.ok
+        ? ('items=' + postTemario.items + ' · sin_cuenta=' + postTemario.sin_cuenta +
+           ' · sin_fila=' + postTemario.sin_fila + ' · sin_metrica=' + (postTemario.sin_metrica || 0))
+        : ('la sección no resolvió — ' + postTemario.motivo);
       if (postTemario.ok && postTemario.filas.length) {
         opcionesEtapa4.filas_temario = postTemario;
       } else {
-        Logger.log('ⓘ agregado post: sin filas — ' + (postTemario.motivo ||
-          'la sección resolvió pero ningún ítem del temario tiene fila en ' + basePost + '/' + hojaPost));
+        Logger.log('ⓘ agregado post: sin filas — ' + opcionesEtapa4.temario_post_diag);
       }
     }
   }
