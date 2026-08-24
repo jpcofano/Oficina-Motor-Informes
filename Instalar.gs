@@ -2697,6 +2697,20 @@ var SEED_CONFIG_DEFAULTS_ = {
   // PRE y vive en su propia solapa, así que la clave del par es `(ID, solapa)`.
   base_agregado_post: 'reuniones',
   solapa_agregado_post: 'Agenda JM | Post',
+  // ⭐⭐ 25/08/2026 — que campos cuentan como METRICA DE RESULTADO para decidir si un encuentro
+  // tuvo comunicacion post. Decision del usuario: si ninguno es > 0, la fila NO va.
+  //
+  // Medido sobre el fixture del 20/08: de las 98 cuentas con fila en la solapa POST, 4 estan TODO
+  // en cero -incluido Alcance potencial, que es un objetivo y no un resultado-. Son filas creadas
+  // y nunca cargadas, y una es 3488-AGOJDGAG, el encuentro del temario de agosto.
+  //
+  // ⚠ NO va poblacion: los habitantes del barrio existen aunque no haya habido nada. Y no van los
+  // porcentajes: son derivados, no resultados.
+  //
+  // ⚠ Lo que refinaria esto si alguna vez hace falta: `alc_potencial` -un POST que ocurrio y midio
+  // cero igual tendria objetivo declarado-. Hoy los cuatro lo tienen en cero, asi que las dos
+  // reglas dan lo mismo y se elige la simple. Vacio = no se filtra.
+  campos_metrica_post: 'alc_real,imp_totales,vis_totales',
   /* `R-30` / `X-29` (22/08/2026) — **tope de duración para entrar a una ventana por pertenencia.**
    * Una cuenta cuya ventana declarada dura más que esto NO entra. `0` desactiva.
    *
@@ -3934,6 +3948,55 @@ function declararModoDelAgregadoPost() {
   Logger.log('⛔ Verificacion de que la correccion esta viva: el agregado semanal de L-034');
   Logger.log('  —ecv_encuentros, ecv_inscriptos— tiene que seguir dando lo mismo que antes.');
   Logger.log('  Si se movio, la seccion equivocada esta alimentando al otro agregado.');
+  return r;
+}
+
+/**
+ * ⛔⛔ `2026-08-25` — **`comunicaciones_post` pierde su `filtro = etapa=post`.**
+ *
+ * **Sin esto, el paso entero no funciona**, y el motivo es de una línea: con el parser nuevo
+ * `etapa` **deja de venir del temario**, así que un filtro por `etapa=post` seleccionaría **cero
+ * ítems** y la lámina saldría vacía por un motivo distinto del que la dejó vacía antes.
+ *
+ * ⭐ **Lo que lo reemplaza NO es otro filtro: es una regla derivada.** La sección pasa a iterar
+ * sobre **todos** los encuentros del temario, y el recorte lo hace `filasDeSolapaDelTemario_`
+ * preguntándole a la base: *¿esta cuenta tiene fila en la solapa POST **con métrica de resultado
+ * > 0**?* Es la regla del usuario —**el temario dice qué encuentros entran; las bases dicen qué
+ * etapas tuvo cada uno**— y el filtro declarativo no la puede expresar: mira los atributos del
+ * ítem, no la base.
+ *
+ * ⚠ **La columna `etapa` NO se borra**, y eso está evaluado y decidido (`PENDIENTES`, 25/08):
+ * queda sin escritor y sin lector, disponible para una carga manual que quiera forzar algo. Lo que
+ * cambia es que **nadie la consulta para decidir**.
+ */
+function quitarFiltroDeEtapaDelAgregadoPost() {
+  var r = curarSecciones_([{ seccion_id: 'comunicaciones_post', filtro: '' }]);
+  if (!r.ok) { Logger.log('⛔ NO se pudo: ' + r.motivo); return r; }
+  if (r.sin_fila.length) {
+    Logger.log('⛔ NO se aplicó: ' + r.sin_fila.join(', '));
+    return r;
+  }
+  if (!r.cambios_escritos) {
+    Logger.log('ⓘ Ya estaba: `comunicaciones_post.filtro` ya estaba vacío. No se escribió nada.');
+    return r;
+  }
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ✅ ' + a.seccion_id + '.' + a.campo + ': "' + a.antes + '" → "' + a.despues + '"');
+  });
+  Logger.log('');
+  Logger.log('⚠ Ahora la seccion itera sobre TODOS los encuentros del temario, y el recorte lo');
+  Logger.log('  hace la base: tiene fila en Agenda JM | Post CON metrica de resultado > 0.');
+  Logger.log('  Los campos que cuentan como metrica estan en CONFIG.campos_metrica_post.');
+  return r;
+}
+
+/** Repone el filtro viejo. ⚠ **ESCRIBE en `SECCIONES`.** Sólo sirve si `etapa` vuelve al temario. */
+function reponerFiltroDeEtapaDelAgregadoPost() {
+  var r = curarSecciones_([{ seccion_id: 'comunicaciones_post', filtro: 'etapa=post' }]);
+  if (!r.ok) { Logger.log('⛔ NO se pudo: ' + r.motivo); return r; }
+  Logger.log(r.cambios_escritos ? '✅ repuesto `etapa=post`.' : 'ⓘ Ya estaba.');
+  Logger.log('⚠ OJO: con el parser del 25/08 el temario NO escribe `etapa`, así que este filtro');
+  Logger.log('   selecciona CERO items. Sólo tiene sentido si alguien la carga a mano.');
   return r;
 }
 

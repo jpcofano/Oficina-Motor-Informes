@@ -331,6 +331,7 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
         'el temario ya seleccionó' +
         (t.sin_cuenta ? ' · ⚠ ' + t.sin_cuenta + ' ítem(s) SIN CUENTA ANCLADA — no es lo mismo que no existir' : '') +
         (t.sin_fila ? ' · ⚠ ' + t.sin_fila + ' ítem(s) con cuenta pero SIN FILA en esta solapa (encuentro sin comunicación post: caso normal)' : '') +
+        (t.sin_metrica ? ' · ⚠ ' + t.sin_metrica + ' ítem(s) CON fila y SIN métrica de resultado > 0 — fila creada y nunca cargada, alguien tiene que cargar la base (25/08)' : '') +
         (t.con_varias ? ' · ⛔ ' + t.con_varias + ' cuenta(s) con MÁS DE UNA fila — esta solapa está medida con una por encuentro; se tomó la primera y eso es elegir por orden de hoja' : '')
     };
   }
@@ -2214,7 +2215,7 @@ function seccionAgregadoPost_() {
  * ⚠ **Y un ítem cuya cuenta no tiene fila en ESTA solapa tampoco es un error**: es un encuentro
  * sin comunicación post, que es el caso normal. Sale en `sin_fila`.
  */
-function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, solapa) {
+function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, solapa, camposMetrica) {
   var vacio = { ok: false, filas: [], items: 0, sin_cuenta: 0, sin_fila: 0, motivo: '' };
   var secciones;
   try { secciones = leerSeccionesPlano_(); } catch (e) { vacio.motivo = 'no pude leer SECCIONES: ' + e; return vacio; }
@@ -2246,9 +2247,34 @@ function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, 
    * publicaría el mismo encuentro en dos ranuras. Es el mismo motivo por el que
    * `filasRdvDelTemario_` deduplica, con otra clave: allá es `(nombre, fecha)` porque la fila de
    * `rdv` se resuelve por ahí; acá la clave natural es la cuenta. */
+  /* ⭐⭐ `2026-08-25` — **«tiene fila» NO es «tuvo comunicación post»**, y ésta es la regla que lo
+   * separa. Decisión del usuario: **si no hay métrica de resultado > 0, la fila no va.**
+   *
+   * **Medido el 25/08 sobre el fixture del 20/08:** de las 98 cuentas con fila en la solapa POST,
+   * **4 están TODO en cero** —incluido `Alcance potencial`, que es un objetivo y no un resultado—.
+   * Son filas **creadas y nunca cargadas**. ⛔ Y una de ellas es `3488-AGOJDGAG`, *«TE CUENTO |
+   * SALUD Eje Sur»*: **el encuentro del temario de agosto**. Sin esta regla, `L-036` publicaría una
+   * fila de ceros como si fuera una comunicación que ocurrió.
+   *
+   * ⚠ **El límite, escrito porque es real:** deja afuera un POST que ocurrió y midió cero. Con los
+   * datos de hoy **ése es indistinguible de una fila vacía**, y publicar ceros como si fueran una
+   * comunicación es peor que omitirla. **Lo que refinaría esto, si algún día hace falta, es
+   * `Alcance potencial > 0`**: un POST que ocurrió y midió cero **igual tendría objetivo
+   * declarado**. Hoy los cuatro lo tienen en cero, así que las dos reglas dan lo mismo — y por eso
+   * se elige la simple.
+   *
+   * ⚠ **Los campos vienen por parámetro, no hardcodeados:** cuáles son «resultado» es un parámetro
+   * de negocio y vive en `CONFIG` (`CLAUDE.md` §2). Lista vacía = no se filtra, que es el
+   * comportamiento anterior. */
+  var metricas = [];
+  (camposMetrica || []).forEach(function (campo) {
+    var m = buscarMapeo(baseId, solapa, campo);
+    if (m.ok) metricas.push(encabezadoEnColumna_(baseId, solapa, m.columna));
+  });
+
   var vistos = {};
   var filas = [];
-  var sinCuenta = 0, sinFila = 0, conVarias = 0, items = 0;
+  var sinCuenta = 0, sinFila = 0, conVarias = 0, sinMetrica = 0, items = 0;
   (r.items || []).forEach(function (item) {
     var id = normalizarIdCuenta_(item.id_cuenta || '');
     if (!id) { sinCuenta++; return; }
@@ -2263,6 +2289,19 @@ function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, 
      * (`SOLAPAS`: *"POST — 104 filas al 14/08, mismo ID que la PRE"*), así que `con_varias > 0`
      * es un cambio de forma de la fuente, no un caso normal. */
     if (suyas.length > 1) conVarias++;
+
+    /* ⚠ **`sin_metrica` se cuenta APARTE de `sin_fila`, y no es prolijidad.** *«El encuentro no
+     * tuvo comunicación post»* y *«la fila existe y nadie la cargó»* mandan a trabajos distintos:
+     * el primero no es nada, el segundo es alguien que tiene que cargar la base. Un contador que
+     * los junte convierte un pendiente de carga en un silencio. */
+    if (metricas.length) {
+      var hayResultado = metricas.some(function (h) {
+        var v = suyas[0][h];
+        return (typeof v === 'number') && v > 0;
+      });
+      if (!hayResultado) { sinMetrica++; return; }
+    }
+
     filas.push(suyas[0]);
   });
 
@@ -2272,6 +2311,7 @@ function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, 
     items: items,
     sin_cuenta: sinCuenta,
     sin_fila: sinFila,
+    sin_metrica: sinMetrica,
     con_varias: conVarias,
     seccion_id: elegida.seccion.seccion_id,
     base_id: baseId,
@@ -4311,7 +4351,10 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
     var basePost = String(leerConfig().base_agregado_post || '').trim();
     var hojaPost = String(leerConfig().solapa_agregado_post || '').trim();
     if (basePost && hojaPost) {
-      postTemario = filasDeSolapaDelTemario_(informeId, ventana, seccionPost, basePost, hojaPost);
+      var camposMetrica = String(leerConfig().campos_metrica_post || '')
+        .split(',').map(function (c) { return c.trim(); }).filter(function (c) { return c !== ''; });
+      postTemario = filasDeSolapaDelTemario_(informeId, ventana, seccionPost, basePost, hojaPost,
+        camposMetrica);
       if (postTemario.ok && postTemario.filas.length) {
         opcionesEtapa4.filas_temario = postTemario;
         opcionesEtapa4.base_temario = postTemario.base_id;

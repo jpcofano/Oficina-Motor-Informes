@@ -385,6 +385,58 @@ console.log('\n═══ L · ⛔ la rama nueva de `datosDeMarcador_` y su guard
     '⛔ con OTRA solapa NO usa esas filas — la letra de columna vale para una solapa sola');
 }
 
+console.log('\n═══ N · ⭐⭐ la regla del 25/08: «métrica de resultado > 0», o la fila NO va ═══');
+{
+  const ctx = ctxGenerador(itemsJulio());
+  ctx.leerSeccionesPlano_ = () => ({
+    comunicaciones_post: { modo: 'agregado', itera_sobre: 'REUNIONES', estado: 'activa', informes: 'JM,SECCO' }
+  });
+  /* ⭐ Las filas son las REALES del fixture del 20/08: Retiro con datos, San Cristóbal TODO EN
+   * CEROS — una fila creada y nunca cargada, que es el caso que la regla saca. */
+  const RETIRO = { ID: 'A-RET', Habitantes: 41475, Alcance: 47753, 'Impresiones totales': 136971, Visualizaciones: 41204 };
+  const SANCRIS = { ID: 'A-SCR', Habitantes: 41240, Alcance: 0, 'Impresiones totales': 0, Visualizaciones: 0 };
+  ctx.itemsDeSeccion_ = () => ({ ok: true, items: [
+    { id_cuenta: 'A-RET', clave: 'Retiro' },
+    { id_cuenta: 'A-SCR', clave: 'San Cristóbal' }
+  ] });
+  ctx.campoIdCuentaDeSolapa_ = () => 'id_cuenta';
+  ctx.encabezadoEnColumna_ = (b, s, col) => ({ A: 'ID', G: 'Alcance', J: 'Impresiones totales', M: 'Visualizaciones' }[col] || col);
+  ctx.buscarMapeo = (b, s, campo) => ({ ok: true, columna:
+    ({ id_cuenta: 'A', alc_real: 'G', imp_totales: 'J', vis_totales: 'M' }[campo] || '?') });
+  ctx.normalizarIdCuenta_ = (x) => String(x || '').trim();
+  ctx.filtrarFilasPorCuenta_ = (fs, enc, id) => fs.filter((f) => f[enc] === id);
+  ctx.leerFuente = () => ({ ok: true, filas: [RETIRO, SANCRIS] });
+
+  const METRICAS = ['alc_real', 'imp_totales', 'vis_totales'];
+  const r = ctx.filasDeSolapaDelTemario_('jm', null, 'comunicaciones_post', 'reuniones', 'Agenda JM | Post', METRICAS);
+
+  afirmar(r.ok === true, 'resuelve');
+  afirmar(r.filas.length === 1 && r.filas[0].ID === 'A-RET',
+    '⭐ solo entra Retiro: San Cristobal tiene fila y NINGUNA metrica > 0 (' + r.filas.length + ')');
+  afirmar(r.sin_metrica === 1,
+    '⚠ y se cuenta en `sin_metrica`, NO en `sin_fila` — «no hubo post» y «nadie cargo la base» son dos oficios');
+  afirmar(r.sin_fila === 0, 'y `sin_fila` queda en 0: la fila existia');
+  afirmar(r.items === 2, 'los dos items se contaron igual (' + r.items + ')');
+
+  /* ⛔ Control negativo del propio control: SIN la lista de metricas, San Cristobal entra. Si esta
+   * afirmacion fallara, la de arriba estaria pasando por otro motivo. */
+  const sinRegla = ctx.filasDeSolapaDelTemario_('jm', null, 'comunicaciones_post', 'reuniones', 'Agenda JM | Post', []);
+  afirmar(sinRegla.filas.length === 2 && sinRegla.sin_metrica === 0,
+    '⛔ y SIN la lista de campos entran los dos — la regla es lo que saca a San Cristobal');
+
+  /* ⚠ Un campo que no mapea no puede volver la regla mas laxa en silencio sin que se vea: si
+   * ninguno resuelve, el conjunto queda vacio y no se filtra. Se afirma para que sea una decision
+   * y no una sorpresa. */
+  /* ⚠ Se rompe SOLO el mapeo de las metricas, no el de la clave: si la clave no mapea la funcion
+   * falla entera y con motivo -verificado al escribir esto-, que es otro caso y esta bien asi. */
+  ctx.buscarMapeo = (b, s2, campo) => (campo === 'id_cuenta'
+    ? { ok: true, columna: 'A' }
+    : { ok: false, motivo: 'no mapeado' });
+  const sinMapeo = ctx.filasDeSolapaDelTemario_('jm', null, 'comunicaciones_post', 'reuniones', 'Agenda JM | Post', METRICAS);
+  afirmar(sinMapeo.filas.length === 2,
+    '⚠ con los campos SIN MAPEAR no se filtra: entran los dos, y se ve en `sin_metrica`=0');
+}
+
 console.log('\n═══ M · ⚠ romper a propósito: volver a «la primera que califique» ═══');
 {
   /* ⭐ La sección `I` sólo prueba algo si **cae** cuando el resolver vuelve al comportamiento

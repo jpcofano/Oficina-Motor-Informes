@@ -95,11 +95,31 @@ function parsearLineaReunion_(lineaCruda) {
     dentroParen = parenFinal[1].trim();
     resto = resto.slice(0, parenFinal.index).trim();
   }
-  if (/^pre$/i.test(dentroParen)) {
-    propuesta.etapa = 'pre';
-  } else if (/^post$/i.test(dentroParen)) {
-    propuesta.etapa = 'post';
-  } else if (dentroParen) {
+  /* ⛔⛔ `2026-08-25` — **el temario ya NO escribe `etapa`, y la anotación se reconoce para poder
+   * DESCARTARLA.** Decisión del usuario, con la regla que la funda:
+   *
+   *   ⭐ **EL TEMARIO DICE QUÉ ENCUENTROS ENTRAN; LAS BASES DICEN QUÉ ETAPAS TUVO CADA UNO.**
+   *
+   * **Lo que había, y por qué estaba mal:** buscaba `(pre)` o `(post)` **exactos**, y todo lo demás
+   * caía a `notas`. Medido el 25/08 contra los dos primeros temarios REALES que tuvimos
+   * (`docs/TEMARIOS_reales_2026-08-25.md`): la forma que llega es **`(pre + post)` junto, en UNA
+   * línea por encuentro**, y muchas veces no se aclara nada. **Ninguna de las dos semanas usa la
+   * forma que el parser esperaba.**
+   *
+   * ⇒ Las dos filas por encuentro que había en `REUNIONES` **no salieron de ningún temario**:
+   * alguien lo partió a mano para que este `if` produjera algo. **Se estaba razonando sobre el
+   * efecto y tomándolo por la causa.**
+   *
+   * ⚠ **Por qué se reconoce en vez de ignorarse:** si no se reconociera, `pre + post` seguiría
+   * cayendo a `notas` y **ensuciaría una columna que significa otra cosa** —ahí van los rangos
+   * como *"24/07 al 30/07 inclusive - Acumulado"*—. Reconocer la anotación es lo que permite
+   * descartarla sin perderla: **el texto entero sobrevive en `texto_original`**, que es el registro
+   * de lo que se pegó.
+   *
+   * ⚠ **Y una línea SIN paréntesis es un encuentro igual**, que es el caso más frecuente. Eso ya
+   * funcionaba y no cambia; lo que cambia es que ahora **es el caso normal y no el degradado**. */
+  var esAnotacionDeEtapa = /^(pre|post)(\s*\+\s*(pre|post))?$/i.test(dentroParen);
+  if (dentroParen && !esAnotacionDeEtapa) {
     propuesta.notas = dentroParen; // ej. "24/07 al 30/07 inclusive - Acumulado"
   }
 
@@ -124,6 +144,30 @@ function parsearLineaReunion_(lineaCruda) {
     propuesta.fecha = fecha;
     var nombre = matchFecha ? nombreYFecha.slice(0, matchFecha.index) : nombreYFecha;
     nombre = nombre.replace(/^(en el|en la|en|del|de la|de)\s+/i, '').trim();
+    /* ⛔⛔ `2026-08-25` — **el separador entre el tipo y el nombre se recorta ACÁ, en el origen.**
+     *
+     * `JM | Encuentro Temático: Salud 14/08` producía **`nombre = ": Salud"`**, con los dos puntos
+     * adentro: el tipo matchea, y lo que queda del texto se tomaba tal cual. Es el mismo `: Salud`
+     * sucio que se veía en `FALTANTES` como `enc_alcance_pct @: Salud` y que estaba anotado como
+     * *«el parseo del nombre sigue roto y a propósito»*. **Lo que faltaba era el origen**, y son
+     * los temarios reales del 25/08 los que lo mostraron: unas líneas usan `:` entre el tipo y el
+     * nombre y otras no.
+     *
+     * ⭐ **Se arregla en el parser y no en los consumidores**, y eso no es preferencia: el nombre
+     * viaja a **tres** lugares —la clave de confirmación del anclaje, la etiqueta del ítem y
+     * `FALTANTES`— y limpiarlo en cada uno sería el quinto normalizador que `CLAUDE.md` §2 pide no
+     * escribir.
+     *
+     * ⚠ **Y la asimetría que esto elimina, que conviene tener escrita:** `Union.gs` ya recortaba
+     * este separador **para buscar** (`emparejarReunionConCuenta_`) y **no para la clave de
+     * confirmación** (`nombreBuscado` de `anclarEncuentros`). O sea que la búsqueda usaba el
+     * nombre limpio y la confirmación guardaba el sucio. No era un bug —la clave sólo tiene que
+     * ser consistente consigo misma— pero era una diferencia sin motivo. Con el nombre limpio
+     * desde el origen, **las dos miran lo mismo**.
+     *
+     * El juego de caracteres es el mismo que ya usa `Union.gs`, a propósito: dos recortes del
+     * mismo separador que difieran es peor que uno solo. */
+    nombre = nombre.replace(/^[\s:;,.\/|\-–—]+|[\s:;,.\/|\-–—]+$/g, '').trim();
     propuesta.nombre = nombre || nombreYFecha.trim();
   } else {
     propuesta.nombre = nombreYFecha.trim();
