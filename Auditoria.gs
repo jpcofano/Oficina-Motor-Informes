@@ -5007,3 +5007,189 @@ function diagDondeVivenLosIvr() {
   }
   return { ok: true, donde: donde, huerfanos: huerfanos, escondidos: escondidos, sin_ancla: sinAncla };
 }
+
+/**
+ * ⭐⭐ `diagPostYAnclaje()` — **el instrumento que mide lo que hay que saber ANTES de tocar nada**
+ * (25/08/2026). Sólo lectura: no escribe una celda.
+ *
+ * Contesta **tres** preguntas que hoy están abiertas y que se responden con la misma corrida.
+ * Van juntas porque comparten lectura, no por comodidad.
+ *
+ * ### 1 · Por qué `L-036` salió con cuatro `-` en vez de números plausibles
+ *
+ * ⛔ **La contradicción, escrita para que no se pierda:** con cero ítems del temario,
+ * `filas_temario` queda sin setear y la cadena de `datosDeMarcador_` **cae a la rama general** —
+ * `leerFuente('reuniones', …, 'Agenda JM | Post')`, la solapa entera—. Con ~102 filas, `opFILA`
+ * **tendría que publicar números**. Cuatro `-` significa que a la operación le llegó otra cosa.
+ *
+ * **Las tres candidatas que sobreviven, y cada una deja una huella distinta:**
+ *
+ * | qué pasó | `filas` | `valor` |
+ * |---|---|---|
+ * | no llegó nada | **0** | — |
+ * | llegaron las 102 y la **clave del campo** no matchea | **102** | `''` |
+ * | el temario sí funcionó | **2** | las filas 1-2 con valor |
+ *
+ * ⭐ La tercera columna es la que decide: `opFILA` devuelve `sin_datos` **por conteo** sólo cuando
+ * `n > total`; si el conteo alcanza y el valor sale vacío, **el problema es la clave**, no el
+ * universo. Esta función imprime las dos cosas.
+ *
+ * ### 2 · Cuánto cuesta la migración de `ANCLAJE_PENDIENTE`
+ *
+ * La clave del anclaje es `normalizar_(nombre) + '|' + fecha + '|' + etapa`. **Si `etapa` deja de
+ * venir del temario, toda confirmación guardada con `|pre` o `|post` deja de matchear** y el
+ * anclaje la vuelve a pedir. ⚠ **Y lo mismo pasa con el arreglo del nombre `: Salud`**: cambia
+ * `normalizar_(nombre)`, o sea **el otro tercio de la misma clave**.
+ *
+ * ⇒ **Los dos cambios invalidan la misma clave, así que la migración es una sola y tiene que
+ * cubrir los dos.** Esta función cuenta cuántas filas toca cada uno y cuántas los dos a la vez.
+ *
+ * ### 3 · Cuántos encuentros del temario tendrían fila POST con la regla nueva
+ *
+ * *«Métrica de resultado > 0»* — decisión del usuario, 25/08. Se mide **sobre las filas del
+ * temario**, no sobre la solapa entera, que es la pregunta que importa.
+ *
+ * ⚠ **Sin `_` no está** porque **sí** tiene que aparecer en el desplegable, y **sin parámetros**
+ * por lo mismo (`CLAUDE.md` §2, las dos condiciones).
+ */
+function diagPostYAnclaje() {
+  var informeId = String(leerConfig().informe_activo || 'jm').trim();
+  Logger.log('== diagPostYAnclaje · informe "' + informeId + '" · ' + new Date() + ' ==');
+  Logger.log('SOLO LECTURA: esta funcion no escribe ninguna celda.');
+
+  /* ── 1 · la solapa POST, tal como el motor la lee ─────────────────────────────────────── */
+  Logger.log('');
+  Logger.log('--- 1 · que devuelve leerFuente sobre reuniones/Agenda JM | Post ---');
+  var ventana = { ok: true, desde: new Date(2000, 0, 1), hasta: new Date(2100, 0, 1), origen: 'diag' };
+  var lectura;
+  try {
+    lectura = leerFuente('reuniones', ventana, 'Agenda JM | Post');
+  } catch (e) {
+    Logger.log('  ⛔ leerFuente TIRO: ' + e);
+    lectura = null;
+  }
+  if (!lectura) {
+    Logger.log('  ⛔ sin lectura. Esto solo ya explicaria los cuatro `-`: total = 0.');
+  } else if (!lectura.ok) {
+    Logger.log('  ⛔ leerFuente devolvio ok:false — ' + lectura.motivo);
+    Logger.log('  ⇒ CANDIDATA 1 CONFIRMADA: no llega nada, y por eso opFILA da sin_datos.');
+  } else {
+    Logger.log('  filas devueltas: ' + lectura.filas.length);
+    if (!lectura.filas.length) {
+      Logger.log('  ⇒ CANDIDATA 1 CONFIRMADA: cero filas.');
+    } else {
+      /* ⭐ **Las claves de la primera fila son el dato que decide la candidata 2.** Si la solapa se
+       * leyo con la fila de encabezado equivocada, las claves son las BANDAS de la fila 1
+       * —`Informacion del encuentro`, y muchas vacias— en vez de los titulos de la fila 2. */
+      var claves = Object.keys(lectura.filas[0]);
+      Logger.log('  claves de la fila 1 (' + claves.length + '): ' + claves.slice(0, 14).join(' · '));
+      ['ID', 'Habitantes', 'Alcance', 'Impresiones totales', 'Visualizaciones', '% VTR', 'Fecha']
+        .forEach(function (h) {
+          var esta = claves.indexOf(h) !== -1;
+          Logger.log('    ' + (esta ? '✅' : '⛔') + ' "' + h + '"' +
+            (esta ? '' : '  ← si falta, la CANDIDATA 2 es la buena: el valor sale vacio y opFILA da sin_datos'));
+        });
+    }
+  }
+
+  /* ── 2 · el temario del periodo activo y su anclaje ───────────────────────────────────── */
+  Logger.log('');
+  Logger.log('--- 2 · el temario del periodo activo ---');
+  var reuniones = [];
+  try { reuniones = leerReuniones_() || []; } catch (e) { Logger.log('  ⛔ no pude leer REUNIONES: ' + e); }
+  /* ⚠ **No se filtra por un `periodo_activo` de `CONFIG`: esa clave NO EXISTE.** Se agrupa por
+   * `periodo_id` y se imprimen todos — el que lee elige el suyo. Inventar una clave para que el
+   * diagnostico se vea mas prolijo seria fabricar una dependencia que despues hay que mantener. */
+  var porPeriodo = {};
+  reuniones.forEach(function (r) {
+    var k = String(r.periodo_id || '(sin periodo)').trim();
+    if (!porPeriodo[k]) porPeriodo[k] = [];
+    porPeriodo[k].push(r);
+  });
+  Logger.log('  filas de REUNIONES en total: ' + reuniones.length +
+    '  ·  periodos distintos: ' + Object.keys(porPeriodo).length);
+  Object.keys(porPeriodo).sort().forEach(function (k) {
+    var fs = porPeriodo[k];
+    Logger.log('  · ' + k + ': ' + fs.length + ' fila(s)  ·  con etapa=post: ' +
+      fs.filter(function (r) { return String(r.etapa || '').trim().toLowerCase() === 'post'; }).length);
+  });
+  var delPeriodo = reuniones;
+  Logger.log('  ⇒ si el periodo que corrio tiene 0 con etapa=post, el filtro de');
+  Logger.log('    comunicaciones_post no devuelve items — pero eso NO explica los cuatro `-`');
+  Logger.log('    por si solo: sin items la cadena cae al agregado y deberia publicar numeros.');
+  delPeriodo.forEach(function (r) {
+    Logger.log('    · nombre="' + r.nombre + '" · fecha=' + r.fecha + ' · etapa="' +
+      (r.etapa || '') + '" · notas="' + (r.notas || '') + '"');
+  });
+
+  /* ── 3 · la regla nueva, sobre el temario: metrica de resultado > 0 ───────────────────── */
+  Logger.log('');
+  Logger.log('--- 3 · con la REGLA NUEVA: cuantos encuentros del temario tendrian fila POST ---');
+  Logger.log('  (regla: la cuenta anclada tiene fila en la solapa Y alguna metrica de resultado > 0)');
+  var porId = {};
+  if (lectura && lectura.ok) {
+    lectura.filas.forEach(function (f) {
+      var id = String(f['ID'] === undefined ? '' : f['ID']).trim();
+      if (id) porId[id] = f;
+    });
+  }
+  var n = function (f, k) { var v = f[k]; return (typeof v === 'number') ? v : 0; };
+  delPeriodo.forEach(function (r) {
+    var id = String(r.id_cuenta || '').trim();
+    var fila = id ? porId[id] : null;
+    var res = fila ? (n(fila, 'Alcance') + n(fila, 'Impresiones totales') + n(fila, 'Visualizaciones')) : 0;
+    Logger.log('    · "' + r.nombre + '" · id_cuenta="' + id + '" · ' +
+      (!id ? '⚠ SIN CUENTA en la fila de REUNIONES (la pone el anclaje, no el temario)'
+        : (!fila ? '⛔ sin fila en la solapa POST — NO va'
+          : (res > 0 ? '✅ con metrica > 0 — VA' : '⛔ fila TODA EN CEROS — NO va (regla del 25/08)'))));
+  });
+  Logger.log('  ⚠ `id_cuenta` puede venir vacio acá: lo resuelve el anclaje en la corrida, no la hoja.');
+  Logger.log('    Si sale vacio en todas, esta parte no midio la regla — midio que falta el anclaje.');
+
+  /* ── 4 · lo que la MIGRACION de ANCLAJE_PENDIENTE va a costar ─────────────────────────── */
+  Logger.log('');
+  Logger.log('--- 4 · ANCLAJE_PENDIENTE: cuantas claves invalidan los dos cambios ---');
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ANCLAJE_PENDIENTE');
+  if (!hoja) {
+    Logger.log('  ⓘ la hoja no existe todavia: migracion de costo CERO.');
+  } else {
+    var datos = hoja.getDataRange().getValues();
+    var hs = datos[0];
+    var iNombre = hs.indexOf('nombre_buscado');
+    var iElegido = hs.indexOf('elegido');
+    if (iNombre === -1) {
+      Logger.log('  ⛔ no encuentro la columna `nombre_buscado`. Headers: ' + hs.join(' · '));
+    } else {
+      var total = 0, confirmadas = 0, conEtapaClave = 0, conNombreSucio = 0, ambas = 0;
+      for (var f = 1; f < datos.length; f++) {
+        var nb = String(datos[f][iNombre] || '');
+        if (!nb) continue;
+        total++;
+        var elegido = iElegido === -1 ? '' : String(datos[f][iElegido] || '').trim();
+        if (elegido) confirmadas++;
+        /* La clave es `nombre|fecha|etapa`: el tercer segmento es la etapa. */
+        var partes = nb.split('|');
+        var etapaEnClave = partes.length >= 3 && String(partes[2]).trim() !== '';
+        var nombreSucio = /^[\s:;,.\-]/.test(partes[0] || '');
+        if (etapaEnClave) conEtapaClave++;
+        if (nombreSucio) conNombreSucio++;
+        if (etapaEnClave && nombreSucio) ambas++;
+        if (elegido && (etapaEnClave || nombreSucio)) {
+          Logger.log('    ⚠ CONFIRMADA y se invalida: "' + nb + '" → elegido "' + elegido + '"' +
+            (etapaEnClave ? ' [etapa en la clave]' : '') + (nombreSucio ? ' [nombre sucio]' : ''));
+        }
+      }
+      Logger.log('  filas con clave: ' + total + '  ·  CONFIRMADAS (con `elegido`): ' + confirmadas);
+      Logger.log('  con `etapa` en la clave : ' + conEtapaClave + '  ← las invalida sacar etapa del temario');
+      Logger.log('  con nombre que arranca en separador: ' + conNombreSucio + '  ← las invalida el arreglo de ": Salud"');
+      Logger.log('  las dos cosas a la vez : ' + ambas);
+      Logger.log('  ⭐ LO QUE IMPORTA ES `CONFIRMADAS`: una fila sin `elegido` no se pierde,');
+      Logger.log('    se vuelve a proponer sola. Lo que cuesta re-hacer es lo que alguien decidio.');
+    }
+  }
+
+  Logger.log('');
+  Logger.log('⚠ Lo que este diagnostico NO contesta: si el id_cuenta que el anclaje asigna');
+  Logger.log('  coincide con el de Agenda JM | Post. Eso lo dice la corrida, no esto.');
+  return true;
+}
