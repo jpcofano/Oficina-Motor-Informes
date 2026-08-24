@@ -1264,6 +1264,30 @@ primera atribuyó la muerte al límite de 6 minutos sin evidencia que descartara
 de Sheets; la segunda lo corrigió. Y en ninguna se estaba aplicando conocimiento de Apps
 Script como plataforma, que es donde estaba la respuesta.
 
+⛔⛔ **El caso peor de eso ya tiene nombre y costó TRES errores en una semana: `reuniones` (la
+BASE) y `REUNIONES` (la HOJA DE REGISTRO).** (25/08/2026.) No se distinguen por el nombre —sólo por
+mayúsculas— y **no tienen nada que ver entre sí**:
+
+| | qué es | qué contiene |
+|---|---|---|
+| **`reuniones`** | una de las cinco **bases**, `BASES.reuniones` | `Agenda JM`, `Agenda JM \| Post`, `Base_Digital`… — el dato del equipo |
+| **`REUNIONES`** | una **hoja de registro** de la planilla de control | el **temario** de la semana, que se pega desde el panel |
+
+- **Tercer error, 25/08:** *«el alcance del 1 a 1 separa PRE de POST desde reuniones, una solapa
+  por etapa, así que ya hay un consumidor de `REUNIONES.etapa`»*. **Falso.** Los 24 `u1_*` filtran
+  por la **dimensión** `DIMENSIONES_.etapa`, que se resuelve sobre
+  `digital|CAMPAÑAS_DESGLOCE_DIGITAL` mirando el **nombre de la campaña** (`des_campana ~= Agenda
+  Post`) y **no toca `REUNIONES` en absoluto**. La frase era cierta sobre la **base** y falsa sobre
+  el **registro**.
+- ⚠ **Y `etapa` también existe dos veces**, que es lo que hace que el error se sienta correcto:
+  `REUNIONES.etapa` es `pre`/`post` del temario, y `DIMENSIONES_.etapa` es un corte sobre una
+  solapa de `digital`. **Dos columnas homónimas de dos cosas homónimas.**
+- ⭐ **Lo accionable, y es una sola frase: al escribir o leer «reuniones», decir cuál.** *«la base
+  `reuniones`»* o *«la hoja `REUNIONES`»*, nunca a secas. Un `grep -i reuniones` trae las dos y
+  **el resultado se lee como si fuera una**.
+- ⚠ **El síntoma no es un error: es una premisa que parece verificada.** Las tres veces la frase
+  venía de un documento del repo, era cierta sobre uno de los dos referentes, y se aplicó al otro.
+
 **Dos cosas que se llaman igual no son la misma cosa, y en este repo pasa seguido.** Antes de
 concluir *"eso no está mapeado"*, *"esa columna no existe"* o *"esa solapa no tiene el dato"*,
 **verificar sobre qué se buscó**. El caso que lo instaló, 07/08: se buscó la fuente de la

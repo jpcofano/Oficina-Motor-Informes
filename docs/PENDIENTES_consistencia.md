@@ -7941,3 +7941,61 @@ función pasa a tomar el `seccion_id`?— y que **el caso de dos falle ruidoso**
 decidido. No se arregla acá porque el arreglo depende de esa decisión, y la decisión llega con el
 prompt de `L-036`.
 
+---
+
+## 2026-08-25 · ⛔ EVALUADO Y DESCARTADO — derivar `REUNIONES.etapa` en vez de cargarla
+
+**La columna `etapa` se queda.** Decisión del usuario, 25/08/2026, **después de medir**. Se anota
+acá **cerrado, no como pregunta abierta**: si alguien lo vuelve a proponer, que encuentre por qué
+no.
+
+**Qué se proponía:** `pre` y `post` no son dos reuniones sino dos etapas de la misma, así que el
+motor debería **derivar** si un encuentro tiene POST —mirando si su cuenta anclada tiene filas en
+`reuniones/Agenda JM | Post`— en vez de pedir que alguien lo declare fila por fila. `C-50` lo
+apoyaba: PRE y POST comparten `ID Cuentas` y viven en dos solapas.
+
+### Las tres razones que lo tumbaron, todas medidas
+
+**1 · La duplicación está en lo que se pega, no en el motor.** El `texto_original` de
+`julio_24_30` lo dice literal: el temario trae **dos líneas** por encuentro —
+`JM | Uno a uno en San Cristóbal 23/07 (pre)` y `… (POST)`— y `cargarTemarioReuniones_` sólo lee el
+paréntesis final. **Cambiar esto es cambiar un formato que no controlamos.**
+
+**2 · «Tiene fila» NO es «tuvo comunicación post».** Medido sobre el fixture del 20/08
+(`DGPLES _ Seguimiento ECVs`, sha `f8ef3227…`):
+
+| | |
+|---|---|
+| ids en `Agenda JM` (PRE) | **153** |
+| ids en `Agenda JM \| Post` | **102** |
+| PRE **con** fila POST | **98 — 64 %** |
+| ⛔ de esos 98, **todo en ceros** | **4**, San Cristóbal incluido |
+| ⚠ ids en POST que **no** están en PRE | **4** |
+
+⭐ **La señal discrimina** —64/36, no la tienen todos— **y aun así no alcanza**: el derivado puro
+metería a San Cristóbal en `L-036` publicando una fila de ceros.
+
+**3 · Se perdería el override de `mostrar`.** Con dos filas, una persona pone `mostrar` distinto de
+`sí` **en la fila `post`** y saca ese encuentro sin tocar el `pre`. Con una fila por encuentro ese
+control desaparece salvo que se agregue otro campo.
+
+### ⭐ Y lo que cierra el argumento: el motor YA hace la distinción correcta
+
+`filasRdvDelTemario_` **excluye `etapa` de su clave de dedup a propósito** — *«`pre` y `post` son el
+mismo encuentro y comparten fila de `rdv`»*. **El motor ya los trata como un solo encuentro cuando
+agrega**; la columna sólo los parte **donde la lámina necesita partirlos**, que es
+`comunicaciones_post`. **No es una inconsistencia: es la distinción correcta, y ya está en el
+código.**
+
+### ⚠ El eslabón que NO se verificó, y es el que reabriría esto
+
+**Que el `id_cuenta` que el anclaje asigna al ítem sea el mismo que figura en
+`Agenda JM | Post`.** `C-50` lo afirma y el formato coincide (`3346-JULJDGAG`), pero **el cruce que
+se hizo fue por `Barrio / Comuna`, no por el id**. ⛔ **Lo cierra una corrida o la hoja `ANCLAJE`,
+no el fixture.** Si algún día se mide y **no** coincide, lo que se cae no es esta decisión sino algo
+más grande: la rama por cuenta de `L-036` entera.
+
+**Los lectores de `REUNIONES.etapa`, para que se sepa qué se tocaría:** el `filtro` de
+`comunicaciones_post` (el único que decide algo), la clave/etiqueta del ítem, la clave de carga del
+temario, y `filasRdvDelTemario_` que la **excluye**. ⚠ **Los 24 `u1_*` NO son lectores** — ver la
+advertencia de `CLAUDE.md` §4 sobre `reuniones` contra `REUNIONES`.
