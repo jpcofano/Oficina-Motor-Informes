@@ -463,6 +463,9 @@ function correrUnaEjecucion_() {
     var r = generarInforme(estado.informe_id, estado.periodo_id || undefined, {
       deck_id: estado.deck_id,
       corrida_id: estado.corrida_id,
+      // `D-40` — el número de tanda baja a `CORRIDAS.ejecucion`. Ya se calcula acá arriba para
+      // el tope de continuaciones; lo unico que faltaba era que llegara a la hoja.
+      ejecucion: ejecucion,
       asignaciones: estado.asignaciones,
       solo_secciones: chunk.secciones,
       continuable: true,

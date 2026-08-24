@@ -3014,6 +3014,9 @@ function verificarObjectIdDeCorrida_(corridaId, token) {
 var PRESUPUESTO_CORRIDA_SEG_DEFECTO_ = 350;
 var RESERVA_CIERRE_SEG_DEFECTO_ = 30;
 var COSTO_RESOLUCION_ETAPA4_SEG_DEFECTO_ = 240;
+/* ⭐ `2026-08-24` (`D-40`) — la **semilla** del costo de UNA lámina de la etapa 4. Sólo la usa la
+ * primera: a partir de ahí se mide y se adapta. Ver `costoLaminaEtapa4Seg_()`. */
+var COSTO_LAMINA_ETAPA4_SEG_DEFECTO_ = 30;
 
 /** Motivo de `FALTANTES` que distingue el corte por tiempo de un token sin cablear. */
 var MOTIVO_CORTE_TIEMPO_ = 'corte por tiempo: la corrida se quedó sin presupuesto antes de resolver este token';
@@ -3406,6 +3409,131 @@ function avisoDeReserva_(cierreSeg, reservaSeg) {
  * Un token sobrevive si aparece **en al menos una lámina visible**: el mismo token puede estar
  * en la 10 —escondida— y en la 5, y ahí sí hay que pintarlo.
  */
+/**
+ * ⭐⭐ `2026-08-24` (`D-40`) — **agrupa los tokens fijos POR LÁMINA, que es la unidad de partición.**
+ *
+ * `tokensVisiblesDe_` devuelve `{token: [nº de slide, …]}`; acá se invierte. **Un token que
+ * aparece en varias láminas se asigna a la PRIMERA**, y no es un detalle: si se asignara a todas,
+ * la segunda lámina lo volvería a resolver —mismo valor, doble costo— y, peor, **podría
+ * resolverlo en otra tanda y publicar dos valores distintos del mismo token en el mismo deck**.
+ * Con la primera, el token se resuelve una vez y `replaceAllText` lo pinta en todas sus cajas de
+ * una pasada, que es lo que ya hacía.
+ *
+ * ⚠ **El orden es por número de lámina** y no por cantidad de tokens: el deck se lee de adelante
+ * hacia atrás, así que si la corrida corta, lo que queda sin pintar es **el final del deck** y no
+ * una lámina salteada del medio. Un corte que deja huecos alternados es más difícil de leer que
+ * uno que deja una cola.
+ */
+function agruparTokensPorLamina_(tokensFijos) {
+  var porLamina = {};
+  Object.keys(tokensFijos).sort().forEach(function (token) {
+    var slides = tokensFijos[token] || [];
+    if (!slides.length) return;
+    var primera = slides.slice().sort(function (a, b) { return a - b; })[0];
+    if (!porLamina[primera]) porLamina[primera] = [];
+    porLamina[primera].push(token);
+  });
+  return Object.keys(porLamina)
+    .map(function (n) { return { slide: Number(n), tokens: porLamina[n] }; })
+    .sort(function (a, b) { return a.slide - b.slide; });
+}
+
+/**
+ * El costo de **una lámina** de la etapa 4. Es la **semilla** de la primera: a partir de ahí se
+ * mide y se adapta, igual que `costoUltimoItemSeg` en la etapa 3.
+ *
+ * ⛔ **No es un tamaño de lote**, y la diferencia es la que el usuario pidió que no se pierda: el
+ * presupuesto decide **cuántas láminas entran**, y eso sale de comparar lo que quedó de reloj
+ * contra lo que costó la última. Un número fijo de marcadores por lote sería la cuarta constante
+ * que nadie vuelve a mirar.
+ */
+function costoLaminaEtapa4Seg_() {
+  var valor = Number(leerConfig().costo_lamina_etapa4_seg);
+  return isNaN(valor) || valor <= 0 ? COSTO_LAMINA_ETAPA4_SEG_DEFECTO_ : valor;
+}
+
+/**
+ * Acumula el resultado de resolver una lámina sobre el de las anteriores.
+ *
+ * ⚠ Existe porque la etapa 4 pasó de **una** llamada a **N**: quedarse con la última haría que el
+ * reporte dijera que la etapa resolvió sólo la última lámina, y `resumen` se lee como el total.
+ */
+function acumularResolucion_(previa, nueva) {
+  if (!previa || !previa.resultados) return nueva;
+  var out = { ok: nueva.ok !== false && previa.ok !== false, informe_id: nueva.informe_id,
+    resultados: previa.resultados.concat(nueva.resultados), resumen: {} };
+  [previa.resumen || {}, nueva.resumen || {}].forEach(function (r) {
+    Object.keys(r).forEach(function (k) {
+      out.resumen[k] = (typeof r[k] === 'number') ? (Number(out.resumen[k] || 0) + r[k]) : r[k];
+    });
+  });
+  return out;
+}
+
+/**
+ * Pinta los tokens fijos de **una** lámina. Es el cuerpo que antes vivía dentro del `forEach`
+ * único de la etapa 4; se extrajo **sin cambiarle una decisión** para poder llamarlo por lámina.
+ *
+ * ⚠ Los contadores entran por `ctx` en vez de cerrarse sobre las variables de `generarInforme`:
+ * así la función es llamable desde un banco sin montar media corrida.
+ */
+function pintarTokensFijosDeLamina_(tokens, ctx) {
+  tokens.forEach(function (token) {
+    var resultado = ctx.porMarcador[token];
+
+    // `{{periodo}}` lo produce la generación, no un marcador: es el encabezado de la lámina
+    // y sale del período que **efectivamente se usó** (`B.5`). Si alguien le carga una fila
+    // en `MARCADORES`, esa fila gana — la hoja de registro manda sobre el default.
+    if (!resultado && token === 'periodo') {
+      ctx.presentacion.replaceAllText('{{' + token + '}}', ctx.periodoLamina, true);
+      ctx.contadores.sumarReemplazado(token);
+      return;
+    }
+
+    if (resultado && resultado.estado === 'ok') {
+      ctx.presentacion.replaceAllText('{{' + token + '}}', String(resultado.valor_formateado), true);
+      ctx.contadores.sumarReemplazado(token);
+      // `R-18` punto 3 — un valor que el catálogo rechazó **no llega al deck**, pero tampoco
+      // puede desaparecer: va a `FALTANTES` con su fila **aunque el token haya publicado bien
+      // el resto**. Sin esto, una lista que publica cuatro de cinco se ve idéntica a una que
+      // publica los cinco, y el barrio que falta no lo reclama nadie.
+      if (resultado.rechazados && resultado.rechazados.length) {
+        ctx.faltantes.push({
+          corrida_id: ctx.corridaId,
+          informe_id: ctx.informeId,
+          token: token,
+          base_id: resultado.base_id || '',
+          solapa: resultado.solapa || '',
+          campo_logico: '',
+          motivo: 'fuera del catálogo, NO publicado(s): ' + resultado.rechazados.join(' | ') +
+            ' — el token publicó los que sí matchean',
+          // No es `escritor`: acá el token SÍ se pintó. Lo que falta es parte del contenido, y
+          // manda a mirar el catálogo — otro oficio, otra causa.
+          causa: 'fuera_catalogo'
+        });
+      }
+      return;
+    }
+
+    // `fila` se resuelve ANTES de pintar: el símbolo sale de su `estado`, y el motivo de
+    // `FALTANTES` sale de la misma variable. Un solo lector para las dos cosas.
+    var fila = ctx.porMarcador[token];
+    ctx.presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token, fila, ctx.conSimbolos), true);
+    ctx.faltantes.push({
+      corrida_id: ctx.corridaId,
+      informe_id: ctx.informeId,
+      token: token,
+      base_id: fila ? (fila.base_id || '') : '',
+      solapa: fila ? (fila.solapa || '') : '',
+      campo_logico: '',
+      motivo: fila
+        ? (fila.estado + ': ' + fila.traza)
+        : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó',
+      causa: causaDeResultado_(fila)
+    });
+  });
+}
+
 function tokensVisiblesDe_(presentacion) {
   var porSlide = tokensPorSlide_(presentacion);
   var escondidas = laminasEscondidas_(presentacion.getSlides());
@@ -3791,6 +3919,10 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   // exactamente el rastro que faltaba para poder diagnosticar.
   var filaCorrida = abrirCorrida_({
     corrida_id: corridaId,
+    // `D-40` — qué TANDA es esta fila. Sin ella, saber qué lámina salió de qué momento exige
+    // cruzar los `mapa_tokens` de N filas a mano, y nadie lo hace. `1` cuando no viene: una
+    // corrida de un solo tiro es la tanda 1, no una tanda desconocida.
+    ejecucion: (opciones && opciones.ejecucion) ? Number(opciones.ejecucion) : 1,
     informe_id: informeId,
     periodo_id: periodoId || ventana.origen,
     deck_id: deckId,
@@ -4064,21 +4196,21 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   //     (`B.5`: el encabezado dice el período del informe, pero un token con ventana propia
   //     se calcula con la suya).
   //
-  // Checkpoint 2 (`T2.1.1`) · **la resolución de esta etapa es atómica**: `resolverMarcadores`
-  // no acepta un subconjunto —verificado en la Parte 0—, así que la única decisión posible es
-  // entrar o no entrar, contra `costo_resolucion_etapa4_seg`. El loop de pintado que viene
-  // después **no lleva checkpoint**: cuesta ~6 s, menos que la reserva, y cortarlo por la
-  // mitad dejaría tokens crudos sin ganar nada.
-  if (corte) {
-    // Ya se cortó en la etapa 3. Un corte es un corte: no se abre una etapa nueva.
-  } else {
-    var costoEtapa4 = costoResolucionEtapa4Seg_();
-    corte = controlDeEtapa_(reloj, '4 · tokens fijos', costoEtapa4, CORTE_PRESUPUESTO_, {
-      items_emitidos: porItem.length,
-      motivo: 'la resolución de la etapa 4 es atómica y se estima en ' + costoEtapa4 +
-        ' s; quedaban ' + entraEnElPresupuesto_(reloj, 0).disponible + ' s por encima de la reserva'
-    });
-  }
+  /* ⛔⛔ `2026-08-24` — **la compuerta atómica se RETIRA, y el motivo está en la premisa que la
+   * sostenía.** Decía: *«la resolución de esta etapa es atómica: `resolverMarcadores` no acepta un
+   * subconjunto, así que la única decisión posible es entrar o no entrar»*.
+   *
+   * **Esa premisa venció el 21/08** y nadie volvió acá: el `2026-08-21_14` le agregó
+   * `solo_marcadores` a `resolverMarcadores` **para la etapa 3**, y desde entonces la 4 podía
+   * partirse y siguió sin hacerlo. Es un *contrato-sin-testigo* de manual — el comentario afirmaba
+   * una limitación del motor que el motor ya no tenía.
+   *
+   * ⚠ **Y la segunda mitad del comentario también era falsa, y ésa costó los 158 s:** *«el loop de
+   * pintado que viene después no lleva checkpoint: cuesta ~6 s»*. El pintado cuesta poco; **lo que
+   * costaba era la resolución**, y estaba del lado de adentro sin ningún control.
+   *
+   * El techo de esta etapa ahora vive **por lámina**, abajo. Un corte de la etapa 3 sigue siendo
+   * un corte: el bucle de abajo no abre lámina nueva. */
 
   if (!corte) {
   /* ⭐ `2026-08-22_25` Parte A — **el contexto del agregado por temario entra acá**, en la única
@@ -4128,69 +4260,85 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       }
     }
   }
-  var resolucionEtapa4 = resolverMarcadores(informeId, opcionesEtapa4);
-  resolucion = resolucionEtapa4;
-  resolucion.resultados.forEach(function (r) { porMarcador[r.marcador] = r; });
-
-  // El filtro en el punto de llamada: `tokensPorSlide_` sigue viendo todo para quien la use
-  // para inventariar; la corrida no pinta láminas que no se emiten.
+  /* ═══════════════════════════════════════════════════════════════════════════════════════
+   * ⭐⭐ `2026-08-24` — **la etapa 4 se parte POR LÁMINA, y la lámina es la unidad porque el
+   * dato lo exige, no porque sea cómoda.**
+   *
+   * **Lo que había:** una sola llamada a `resolverMarcadores(informeId, …)` **sin subconjunto**,
+   * o sea el informe entero, y **atómica**: la única decisión era entrar o no entrar. Medido en
+   * `jm-20260824-151555`: **158 s contra los 60 estimados**, con la estimación calibrada el
+   * 06/08 sobre **~87 marcadores** cuando hoy son **~172**. Y **adentro no había ningún punto de
+   * control**, así que el techo era decorativo para esta etapa.
+   *
+   * ⛔⛔ **Por qué la unidad es la LÁMINA y no el marcador** (`D-40`, decisión del usuario):
+   * dos tandas del mismo deck están separadas en el tiempo, y **dos cajas de la misma lámina
+   * que vengan de dos momentos distintos son `C-80`** — se leen como si respondieran la misma
+   * pregunta y no lo hacen. La etapa 3 no tenía este problema porque parte por **ítem**, y un
+   * ítem **es** una lámina entera. La 4 resuelve los tokens **fijos**, que incluyen el Resumen
+   * Ejecutivo: partir por marcador podría dejar `mail_entregados` de la tanda 1 al lado de
+   * `imp_meta` de la tanda 2, en la misma caja de la misma lámina.
+   *
+   * ⇒ **El presupuesto decide cuántas LÁMINAS entran, nunca cuántos marcadores.**
+   *
+   * ⚠ **Y el límite conocido, declarado y NO resuelto acá** (`D-40`): partir por lámina acota
+   * la inconsistencia a *entre* láminas, **no la elimina**. Con `looker/DIGITAL` inestable por
+   * CAMBIO (`R-31`), la lámina 2 puede resolverse en la tanda 1 y la 3 en la tanda 2 y publicar
+   * números de dos momentos. **Es un límite del deck en tandas, no un problema a resolver
+   * ahora** — y por eso la columna `ejecucion` existe: para que se pueda **ver** cuál vino de
+   * dónde en vez de descubrirlo comparando.
+   *
+   * ⭐ **El costo por lámina se MIDE y se adapta**, igual que `costoUltimoItemSeg` en la etapa 3:
+   * `CONFIG.costo_lamina_etapa4_seg` es sólo la **semilla** de la primera. Un tamaño de lote
+   * fijo sería la cuarta constante que nadie vuelve a mirar, y hoy fallaron tres de tres por eso.
+   * ═══════════════════════════════════════════════════════════════════════════════════════ */
   var tokensFijos = tokensVisiblesDe_(presentacion).tokens;
-  Object.keys(tokensFijos).sort().forEach(function (token) {
-    var resultado = porMarcador[token];
+  var laminasDeEtapa4 = agruparTokensPorLamina_(tokensFijos);
+  var costoUltimaLaminaSeg = costoLaminaEtapa4Seg_();
+  var laminasEtapa4Hechas = [];
+  var laminasEtapa4Pendientes = [];
 
-    // `{{periodo}}` lo produce la generación, no un marcador: es el encabezado de la lámina
-    // y sale del período que **efectivamente se usó** (`B.5`). Si alguien le carga una fila
-    // en `MARCADORES`, esa fila gana — la hoja de registro manda sobre el default.
-    if (!resultado && token === 'periodo') {
-      presentacion.replaceAllText('{{' + token + '}}', periodoLamina, true);
-      reemplazados++;
-      conValor.push(token);
-      return;
-    }
+  for (var iLam = 0; iLam < laminasDeEtapa4.length; iLam++) {
+    var grupo = laminasDeEtapa4[iLam];
 
-    if (resultado && resultado.estado === 'ok') {
-      presentacion.replaceAllText('{{' + token + '}}', String(resultado.valor_formateado), true);
-      reemplazados++;
-      conValor.push(token);
-      // `R-18` punto 3 — un valor que el catálogo rechazó **no llega al deck**, pero tampoco
-      // puede desaparecer: va a `FALTANTES` con su fila **aunque el token haya publicado bien
-      // el resto**. Sin esto, una lista que publica cuatro de cinco se ve idéntica a una que
-      // publica los cinco, y el barrio que falta no lo reclama nadie.
-      if (resultado.rechazados && resultado.rechazados.length) {
-        faltantes.push({
-          corrida_id: corridaId,
-          informe_id: informeId,
-          token: token,
-          base_id: resultado.base_id || '',
-          solapa: resultado.solapa || '',
-          campo_logico: '',
-          motivo: 'fuera del catálogo, NO publicado(s): ' + resultado.rechazados.join(' | ') +
-            ' — el token publicó los que sí matchean',
-          // No es `escritor`: acá el token SÍ se pintó. Lo que falta es parte del contenido, y
-          // manda a mirar el catálogo — otro oficio, otra causa.
-          causa: 'fuera_catalogo'
-        });
-      }
-      return;
-    }
+    if (corte) { laminasEtapa4Pendientes.push(grupo.slide); continue; }
 
-    // `fila` se resuelve ANTES de pintar: el símbolo sale de su `estado`, y el motivo de
-    // `FALTANTES` sale de la misma variable. Un solo lector para las dos cosas.
-    var fila = porMarcador[token];
-    presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token, fila, conSimbolos), true);
-    faltantes.push({
-      corrida_id: corridaId,
-      informe_id: informeId,
-      token: token,
-      base_id: fila ? (fila.base_id || '') : '',
-      solapa: fila ? (fila.solapa || '') : '',
-      campo_logico: '',
-      motivo: fila
-        ? (fila.estado + ': ' + fila.traza)
-        : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó',
-      causa: causaDeResultado_(fila)
+    // Checkpoint · antes de cada lámina. **Acá vive el techo de esta etapa**, y antes no existía.
+    corte = controlDeEtapa_(reloj, '4 · tokens fijos', costoUltimaLaminaSeg, CORTE_PRESUPUESTO_, {
+      items_emitidos: porItem.length,
+      motivo: 'la próxima lámina de tokens fijos (slide ' + grupo.slide + ', ' +
+        grupo.tokens.length + ' token(s)) se estimó en ' + costoUltimaLaminaSeg + ' s y quedaban ' +
+        entraEnElPresupuesto_(reloj, 0).disponible + ' s por encima de la reserva. ⭐ La unidad es ' +
+        'la LÁMINA y no el marcador: dos cajas de la misma lámina de dos momentos distintos son C-80'
     });
-  });
+    if (corte) { laminasEtapa4Pendientes.push(grupo.slide); continue; }
+
+    var t0Lamina = new Date().getTime();
+
+    /* ⭐ **Sólo los marcadores de ESTA lámina.** Es lo mismo que el `2026-08-21_14` hizo con la
+     * etapa 3 y que a la 4 nunca se le aplicó — y es lo que vuelve al lote barato **además** de
+     * partible. Las `opcionesEtapa4` se copian enteras: llevan la ventana, las filas del temario
+     * y las de la POST, y perder una cambiaría de qué filas sale el número. */
+    var opcionesLamina = {};
+    Object.keys(opcionesEtapa4).forEach(function (k) { opcionesLamina[k] = opcionesEtapa4[k]; });
+    opcionesLamina.solo_marcadores = grupo.tokens;
+
+    var resolucionLamina = resolverMarcadores(informeId, opcionesLamina);
+    resolucionLamina.resultados.forEach(function (r) { porMarcador[r.marcador] = r; });
+    /* El resumen del reporte acumula: `resolucion` era una sola llamada y ahora son N.
+     * Quedarse con la última diría que la etapa resolvió sólo la última lámina. */
+    resolucion = acumularResolucion_(resolucion, resolucionLamina);
+
+    pintarTokensFijosDeLamina_(grupo.tokens, {
+      presentacion: presentacion, porMarcador: porMarcador, periodoLamina: periodoLamina,
+      conSimbolos: conSimbolos, corridaId: corridaId, informeId: informeId,
+      contadores: { sumarReemplazado: function (t) { reemplazados++; conValor.push(t); } },
+      faltantes: faltantes
+    });
+
+    costoUltimaLaminaSeg = Math.max(1, Math.round((new Date().getTime() - t0Lamina) / 1000));
+    laminasEtapa4Hechas.push(grupo.slide);
+  }
+
   }
 
   // 5 · Marcadores cableados que la plantilla no tiene. No es un faltante del informe: es
@@ -4478,6 +4626,15 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       // Qué etapas declaradas tienen su punto de control en el flujo, con el `n de m` adentro:
       // «ningún problema» y «no se probó nada» se ven idénticos en un log sin conteo.
       control_por_etapa: controlPorEtapa_(),
+      // ⭐ `D-40` — la etapa 4 en láminas: cuáles se pintaron y cuáles quedaron. `pendientes`
+      // NO vacío con `corte` es el caso normal; vacío con corte querría decir que el corte no
+      // fue de esta etapa.
+      etapa4_por_lamina: {
+        hechas: laminasEtapa4Hechas,
+        pendientes: laminasEtapa4Pendientes,
+        total: laminasDeEtapa4.length,
+        costo_ultima_seg: costoUltimaLaminaSeg
+      },
       barrida: {
         tokens: barrida.barridos.length, origen: barrida.origen,
         // `2026-08-23_1` Parte C — qué oficio manda a hacer cada crudo. Sin esto, el conteo de
@@ -4500,7 +4657,12 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
         return { objectIdSlide: a.objectIdSlide, seccion: a.seccion, item: a.item };
       }),
       // Cuáles ya se resolvieron: el índice donde cortó. Las anteriores están pintadas.
-      resueltas: porItem.length
+      resueltas: porItem.length,
+      /* ⭐ `D-40` — **las láminas de tokens fijos que YA se pintaron.** Es lo que la reanudación
+       * necesita para no repintarlas: sin esto, la tanda 2 volvería a resolver la lámina 2 —costo
+       * de más— y, peor, **podría publicar un valor distinto del que ya está en el deck**, que es
+       * justamente la inconsistencia entre tandas que `D-40` acota. */
+      laminas_etapa4_hechas: laminasEtapa4Hechas
     }
   };
 }

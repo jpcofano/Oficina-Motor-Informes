@@ -198,7 +198,21 @@ var HOJAS_CONFIG_ = {
   // para que la etapa 2 de `D-06` pueda escribir por identidad de elemento en vez de por
   // búsqueda de texto. Append: cada generación agrega una fila.
   CORRIDAS: {
-    headers: ['corrida_id', 'informe_id', 'periodo_id', 'deck_id', 'fecha_generacion', 'tokens_reemplazados', 'faltantes', 'mapa_tokens']
+    // ⭐⭐ `2026-08-24` (`D-40`) — `ejecucion`: qué TANDA escribió esta fila.
+    //
+    // `abrirCorrida_` abre una fila POR EJECUCIÓN con el MISMO `corrida_id`, así que un deck
+    // completado en tres tandas deja tres filas. Qué tanda pintó qué lámina ya era derivable
+    // cruzando los `mapa_tokens` de las N filas — pero a mano, y nadie lo hace.
+    //
+    // ⚠ Hace falta porque dos tandas están separadas en el tiempo: con `looker/DIGITAL`
+    // inestable por CAMBIO (`R-31`), la lámina 2 puede resolverse en una tanda y la 3 en otra y
+    // publicar números de dos momentos. Partir por lámina acota eso a ENTRE láminas y NO lo
+    // elimina (`D-40`, límite conocido y declarado). Esta columna lo vuelve VISIBLE en vez de
+    // algo que se descubre comparando.
+    //
+    // El número vive en `PropertiesService` (`estado.ejecucion`) desde el `2026-08-20_10`; acá
+    // baja a la hoja, que es donde se puede leer sin abrir el depurador.
+    headers: ['corrida_id', 'ejecucion', 'informe_id', 'periodo_id', 'deck_id', 'fecha_generacion', 'tokens_reemplazados', 'faltantes', 'mapa_tokens']
   },
   // Paso 4 `B.7` (`D-12`) — se **pisa** en cada corrida, a propósito: es la lista de trabajo
   // de lo que falta cablear, no un historial. Si algún día hace falta la serie,
@@ -484,6 +498,12 @@ var COLUMNAS_DELTA_ = {
   SECCIONES: [
     { nombre: 'periodo_ref', indice: 14 },
     { nombre: 'items_por_lamina', indice: 15 }
+  ],
+  // `D-40` — `ejecucion` entra por delta y no recreando la hoja: `CORRIDAS` es el historial de
+  // corridas y recrearla lo borraría. `indice: 1` = inmediatamente después de `corrida_id`,
+  // porque las dos juntas son la clave con la que se lee la tabla: qué corrida, qué tanda.
+  CORRIDAS: [
+    { nombre: 'ejecucion', indice: 1 }
   ]
 };
 
@@ -2771,7 +2791,39 @@ var SEED_CONFIG_DEFAULTS_ = {
   // etapa 4 no entrara nunca con el motor ya arreglado: la corrida seguiría
   // cortando ahí sin motivo. Es atómico —resolverMarcadores no acepta resolver un
   // subconjunto—, así que la única decisión posible es entrar o no entrar.
-  costo_resolucion_etapa4_seg: '60',
+  // ⛔⛔ ⭐ RECALIBRADA el 24/08/2026, Y LE CAMBIA EL PAPEL — las dos cosas juntas, porque
+  // separarlas rompe.
+  //
+  // Con qué se calibró el 60: 06/08, tres muestras de 40,6 / 30,7 / 36,3 s, con el informe en
+  // ~87 marcadores. Con qué se recalibra: `jm-20260824-151555`, la etapa 4 costó 158 s con
+  // ~172 marcadores. Factor 4,4 en el costo, 2 en los marcadores.
+  //
+  // ⛔ Y por eso sola no se podía tocar. Con el número honesto la etapa NO ENTRABA NUNCA:
+  // 350 de techo − 60 de reserva = 290 útiles, menos 137 que gastan las etapas 1-3 = 153, y la
+  // etapa costaba 158. Siendo UNA unidad, el desatendido la tomaría, no la terminaría, no la
+  // podría marcar hecha, y la guarda de progreso informaría «no avanza» cuando la verdad es
+  // «la unidad es demasiado grande». Son dos arreglos distintos y `CLAUDE.md` §4 ya los separa.
+  //
+  // ⭐ Qué es ahora: un TESTIGO, no una compuerta. La compuerta pasó a ser por lámina
+  // (`costo_lamina_etapa4_seg`, abajo). Éste queda como el costo declarado de la etapa entera
+  // —lo que valdría correrla sin partir— y es contra lo que el aviso de desvío la compara. Un
+  // número que ya no decide nada pero se sigue midiendo es lo que evita que envejezca en
+  // silencio.
+  costo_resolucion_etapa4_seg: '160',
+  // ⭐⭐ `D-40` — el costo de UNA lámina de la etapa 4, y es sólo la SEMILLA de la primera.
+  //
+  // De ahí en más se mide y se adapta, igual que `costoUltimoItemSeg` en la etapa 3: el
+  // presupuesto decide CUÁNTAS LÁMINAS entran comparando lo que queda de reloj contra lo que
+  // costó la última. ⛔ NO es un tamaño de lote en marcadores — eso sería la cuarta constante
+  // que nadie vuelve a mirar, y el 24/08 fallaron tres de tres por eso mismo.
+  //
+  // De dónde sale el 30: 158 s medidos para el informe entero, repartidos sobre las ~7 láminas
+  // con tokens fijos ≈ 22 s, redondeado HACIA ARRIBA. La asimetría es deliberada: una semilla
+  // alta hace cortar de más en la primera lámina y se corrige sola en la segunda; una baja SE
+  // PASA, que es el error que no se corrige. ⚠ Además el valor real va a ser bastante menor,
+  // porque ahora cada lámina resuelve `solo_marcadores` — el mismo salto que la etapa 3 dio el
+  // 21/08. La primera corrida lo mide.
+  costo_lamina_etapa4_seg: '30',
   /* `2026-08-21_1` A.1 — los tres costos que faltaban para que el reloj se consulte en TODAS
    * las etapas y no sólo en el bucle de ítems.
    *
