@@ -1433,7 +1433,13 @@ var SEED_MAPEO_REUNIONES_ = [
   { base_id: 'reuniones', campo_logico: 'imp_totales', hoja: 'Agenda JM', columna: 'AA', notas: '"Impresiones totales" — V-88: el bloque PRE del deck entero en una fila (San Cristóbal 42.500 exacto)' },
   { base_id: 'reuniones', campo_logico: 'alc_potencial', hoja: 'Agenda JM', columna: 'AG', notas: '"Alcance potencial" — el alcance objetivo del iceberg' },
   { base_id: 'reuniones', campo_logico: 'alc_cobertura_pct', hoja: 'Agenda JM', columna: 'AH', notas: '"% Cobertura" — ⚠ sale 0 en las 14 filas donde Habitantes es el texto "Revisar" (las de eje). Por eso su marcador lleva filtro !=0. ⚠ `2026-08-14_1`: PUEDE PASAR DE 100% (Retiro POST 47.753/41.475 = 115%). Ningún marcador la acota a 1 — acotarla publica 100% donde la medición dice 115% y nadie se entera' },
-  // La POST entra con su clave nada más: sus métricas las cablea el prompt que las pida.
+  /* `2026-08-24` — **las métricas de la POST, que es el prompt que las pidió.** Hasta hoy acá
+   * decía *"la POST entra con su clave nada más"*; entran cinco columnas más, medidas sobre
+   * el fixture del 20/08 (`DGPLES _ Seguimiento ECVs`, sha `f8ef3227…`), encabezado en la
+   * fila 2. Son las que `L-036` necesita y **no las ocho**: `post_camp`, `post_periodo` y
+   * `post_formato` no tienen columna en esta solapa ni en ninguna otra `fuente` de
+   * `reuniones`/`digital` — barrido por `formato|campa|período|pieza` sobre las diez. Van
+   * como pregunta al equipo en `PENDIENTES`, sin prioridad (usuario, 24/08). */
   { base_id: 'reuniones', campo_logico: 'id_cuenta', hoja: 'Agenda JM | Post', columna: 'A', notas: 'mismo ID que la PRE — la clave del par es (ID, solapa), C-50' },
 
   /* `2026-08-14_1` Parte B — **el alcance es lo único que `reuniones` aporta a la lámina del
@@ -1449,7 +1455,41 @@ var SEED_MAPEO_REUNIONES_ = [
    * la medida: meter el corte en el nombre es justo lo que el plan de vocabulario viene a
    * sacar. Hace par con `alc_potencial`, que es el objetivo contra el que se compara. */
   { base_id: 'reuniones', campo_logico: 'alc_real', hoja: 'Agenda JM', columna: 'AF', notas: '"Alcance manual" — alcance del encuentro, y es el de META: verificado como denominador de Frecuencia Meta (25.099/1.412 = 17,775) y de Frecuencia estimada (42.500/1.412 = 30,099). ⚠ es copia a mano de Base_Digital!K (banda "Alcance Meta Convocatoria"): 0 fórmulas entre las dos, coinciden porque alguien las copió' },
-  { base_id: 'reuniones', campo_logico: 'alc_real', hoja: 'Agenda JM | Post', columna: 'G', notas: '"Alcance" — el mismo hecho que AF de la PRE. ⚠ la banda de la fila 1 lo rotula "Acumulado" y ESE RÓTULO ESTÁ MAL: el número sale de Base_Digital!Z, banda "Alcance Meta Post" (Retiro 47.753, exacto). Es el alcance de Meta, no un acumulado de las tres plataformas' }
+  { base_id: 'reuniones', campo_logico: 'alc_real', hoja: 'Agenda JM | Post', columna: 'G', notas: '"Alcance" — el mismo hecho que AF de la PRE. ⚠ la banda de la fila 1 lo rotula "Acumulado" y ESE RÓTULO ESTÁ MAL: el número sale de Base_Digital!Z, banda "Alcance Meta Post" (Retiro 47.753, exacto). Es el alcance de Meta, no un acumulado de las tres plataformas' },
+
+  /* ⭐ **Las cinco de la POST, con su tipo MEDIDO sobre el fixture del 20/08 — 102 filas de datos.**
+   *
+   * | col | encabezado (fila 2) | tipo crudo medido |
+   * |---|---|---|
+   * | E | Fecha | 99 `num` (serial) · 3 el texto `-` |
+   * | F | Habitantes | 89 `num` · **13 el texto `-`** |
+   * | J | Impresiones totales | 102 `num` |
+   * | M | Visualizaciones | 102 `num` |
+   * | N | % VTR | 102 `num`, **fracción** |
+   *
+   * ⭐⭐ **Y tres identidades internas que cierran EXACTO, sin una sola excepción** — el control
+   * primario de `L-036`, que no depende del deck del equipo ni de una foto de la base porque si
+   * la fuente se mueve **se mueven los dos lados** (la forma de `V-111`):
+   *
+   *   - `% VTR (N) = Visualizaciones (M) / Impresiones totales (J)` → **98 de 98**
+   *   - `% Cobertura (I) = Alcance (G) / Habitantes (F)` → **89 de 89**
+   *   - `% CTR (L) = Clics (K) / Impresiones totales (J)` → **98 de 98**
+   *
+   * (las que no cuentan son filas con el divisor en cero o en `-`, no desvíos.)
+   *
+   * ⚠ **`fecha_periodo` acá NO enciende ningún recorte y eso es deliberado:** `reuniones` es
+   * `modo_periodo = snapshot`, así que `leerFuente` **ignora la ventana** y ni busca columna de
+   * fecha. Se declara porque es lo que `FILA` necesita en `separador` para ordenar — el orden va
+   * en configuración y no en el código (`X-35`). **No mueve `alc_real`, que ya publica.**
+   *
+   * ⚠ **No se mapean las bandas de plataforma (O-AC).** Es la decisión del 14/08 que ya está
+   * escrita arriba y en `SOLAPAS`: *digital manda* para el desglose. Mapearlas sería una segunda
+   * respuesta a una pregunta que ya tiene una. */
+  { base_id: 'reuniones', campo_logico: 'fecha_periodo', hoja: 'Agenda JM | Post', columna: 'E', notas: '"Fecha" — la del encuentro. ⚠ NO recorta: reuniones es modo_periodo=snapshot y leerFuente ignora la ventana. Se declara para que FILA la use en `separador` (X-35). 3 de 102 filas traen el texto "-" en vez de fecha' },
+  { base_id: 'reuniones', campo_logico: 'poblacion', hoja: 'Agenda JM | Post', columna: 'F', notas: '"Habitantes" — mismo campo lógico que rdv/RVD JM-CM - ES!AB, que es donde nació. ⚠ 13 de 102 filas traen el texto "-": ahí una operación numérica devuelve sin_datos, que es correcto. Es el denominador de % Cobertura (I) = G/F, exacta en 89 de 89' },
+  { base_id: 'reuniones', campo_logico: 'imp_totales', hoja: 'Agenda JM | Post', columna: 'J', notas: '"Impresiones totales" — el mismo campo lógico que AA de la PRE. Denominador de las dos identidades: % VTR (N) = M/J y % CTR (L) = K/J, exactas en 98 de 98' },
+  { base_id: 'reuniones', campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M', notas: '"Visualizaciones" — el acumulado, NO la banda por plataforma (esas son O-AC y no se mapean: digital manda). Numerador de % VTR = M/J' },
+  { base_id: 'reuniones', campo_logico: 'vis_vtr_pct', hoja: 'Agenda JM | Post', columna: 'N', notas: '"% VTR" — viene como FRACCIÓN (0,2094), formato `fraccion` como los cc_*_pct. ⚠ SOLAPAS avisa que sus % vuelven string en las filas en cero: medido, 102 de 102 number en el fixture del 20/08, pero la solapa viva puede tener filas en cero' }
 ];
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_REUNIONES_);
 
@@ -1679,7 +1719,12 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   cc_efectivos_pct: 'numero', imp_totales: 'numero', alc_potencial: 'numero',
   alc_cobertura_pct: 'numero',
   // `2026-08-14_1` B — el alcance medido, contra `alc_potencial` que es el objetivo.
-  alc_real: 'numero'
+  alc_real: 'numero',
+  /* `2026-08-24` — las dos de la POST (`reuniones/Agenda JM | Post`, M y N). ⚠ `vis_vtr_pct`
+   * es `numero` y no un tipo propio, igual que los `cc_*_pct` y `alc_cobertura_pct`: viene
+   * como fracción y `tipo_esperado` **describe el dato, no el formato con que se publica**.
+   * Medidos, no supuestos: 102 de 102 celdas `num` en el fixture del 20/08. */
+  vis_totales: 'numero', vis_vtr_pct: 'numero'
 };
 SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAMPO_[fila.campo_logico] || ''; });
 
@@ -1876,7 +1921,14 @@ var ENCABEZADO_POR_MAPEO_ = {
   'reuniones|Agenda JM|alc_cobertura_pct': '% Cobertura',
   'reuniones|Agenda JM|alc_real': 'Alcance manual',
   'reuniones|Agenda JM | Post|id_cuenta': 'ID',
-  'reuniones|Agenda JM | Post|alc_real': 'Alcance'
+  'reuniones|Agenda JM | Post|alc_real': 'Alcance',
+  // `2026-08-24` — los cinco de la POST. ⚠ El encabezado de esta solapa está en la FILA 2
+  // (`SOLAPAS.fila_encabezado = 2`): la fila 1 son las bandas `Comunicación Digital | …`.
+  'reuniones|Agenda JM | Post|fecha_periodo': 'Fecha',
+  'reuniones|Agenda JM | Post|poblacion': 'Habitantes',
+  'reuniones|Agenda JM | Post|imp_totales': 'Impresiones totales',
+  'reuniones|Agenda JM | Post|vis_totales': 'Visualizaciones',
+  'reuniones|Agenda JM | Post|vis_vtr_pct': '% VTR'
 };
 
 // Va DESPUÉS de que `fila.solapa` exista (se asigna desde `hoja` más arriba): la clave la usa.
