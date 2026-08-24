@@ -3765,6 +3765,186 @@ function curarSecciones_(cambios) {
  * ⚠ **Y distingue los tres finales, que es la mitad de su valor** (*una corrida que no hizo nada
  * tiene que decirlo, no informar éxito*): escribió · ya estaba · no encontró la fila.
  */
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `L-036` — la lámina de comunicaciones post, entera. (25/08/2026.)
+ *
+ * **Son DOS cosas y van en este orden**, porque la segunda no publica nada sin la primera:
+ *
+ *   1. `comunicaciones_post` pasa de `repetible` a **`agregado`** — una decisión de registro.
+ *   2. Los **20** marcadores de las cinco columnas que tienen fuente, por `FILA`.
+ *
+ * ### Por qué el cambio de `modo`, en una línea
+ *
+ * La lámina es **una** con **cuatro filas**, no cuatro láminas. Como `repetible`, el motor emitía
+ * **una copia por reunión POST** y los tokens indexados `post_*1..4` no significaban nada. Como
+ * `agregado`, la lámina no se expande y sus tokens caen a la pasada de tokens fijos, donde
+ * `filasDeSolapaDelTemario_` les pone **las filas de los encuentros del temario** y `FILA` elige
+ * la N-ésima. Es el molde de `cablearTablaDeEnvios()` (`L-047`).
+ *
+ * ⚠ **Y por eso el `seccion_id` explícito no era opcional:** con este cambio pasan a haber **DOS**
+ * secciones `agregado` + `REUNIONES` + `activa`, y `filasRdvDelTemario_` tomaba **la primera que
+ * calificara**. Sin la corrección del `2026-08-24`, el agregado semanal y el de post se pisarían
+ * según el orden de `Object.keys`. Los ids viven en `CONFIG`.
+ *
+ * ### Las cinco columnas, y por qué no son ocho
+ *
+ * `post_camp`, `post_periodo` y `post_formato` **no tienen columna en ninguna solapa `fuente`** —
+ * barrido del 24/08 sobre las diez de `reuniones` y `digital`. Van como pregunta al equipo, sin
+ * prioridad (`PENDIENTES`). **Cablearlas con lo que hay publicaría texto distinto del que el
+ * equipo publica**, que es peor que dejarlas en `/////`.
+ *
+ * ### `separador = fecha_periodo`, y el orden va en configuración
+ *
+ * `FILA` **no tiene default** y falla ruidoso sin campo de orden: ordenar por la posición de la
+ * hoja es lo que el `_39` sacó de `ULTIMO`. `fecha_periodo` es la columna `E` de la solapa,
+ * mapeada el 24/08. ⚠ **No enciende recorte**: `reuniones` es `modo_periodo = snapshot`.
+ *
+ * ### ⭐ Los tres bordes que `julio_24_30` ejercita, y por eso es el control
+ *
+ * Medido sobre el fixture del 20/08 (`DGPLES _ Seguimiento ECVs`, sha `f8ef3227…`):
+ *
+ *   1. **Retiro** (`3346-JULJDGAG`) tiene el camino entero — 41.475 · 47.753 · 136.971 · 41.204 ·
+ *      0,30082 — y **su identidad interna cierra al dígito**: `41.204 / 136.971 = 0,300822801…`,
+ *      exactamente la columna `% VTR`.
+ *   2. **San Cristóbal** (`3354-JULJDGAG`) está **en ceros**, así que ejercita *cero real* contra
+ *      *sin dato* — son dos cosas y el símbolo las distingue.
+ *   3. Son **2 ítems para 4 ranuras**: las ranuras 3 y 4 tienen que salir `sin_datos`, que es el
+ *      borde de `FILA` —*más índice que filas no es error, es que no hay tanto envío*—.
+ *
+ * ⚠ **El eslabón que NO está verificado**, y está anotado en `PENDIENTES`: que el `id_cuenta` que
+ * el anclaje asigna al ítem sea **el mismo** que figura en `Agenda JM | Post`. El cruce del 24/08
+ * fue por `Barrio / Comuna`. **Lo cierra una corrida, no el fixture** — y si no coincide, lo que
+ * se cae no es una fila sino la rama por cuenta de esta lámina entera.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Las cinco columnas de `L-036` que tienen fuente, con su campo y su formato. */
+var COLUMNAS_POST_L036_ = [
+  { tok: 'habitantes',  campo: 'poblacion',    formato: 'miles',
+    nota: 'col F "Habitantes". ⚠ 13 de 102 filas traen el texto "-": ahí sale sin_datos, que es correcto' },
+  { tok: 'alcance',     campo: 'alc_real',     formato: 'miles',
+    nota: 'col G "Alcance". Con poblacion forma % Cobertura = G/F, exacta en 89 de 89' },
+  { tok: 'impresiones', campo: 'imp_totales',  formato: 'miles',
+    nota: 'col J "Impresiones totales". Denominador de las dos identidades de la solapa' },
+  { tok: 'vistas',      campo: 'vis_totales',  formato: 'miles',
+    nota: 'col M "Visualizaciones" — el acumulado, NO la banda por plataforma (O-AC): digital manda' },
+  { tok: 'vtr',         campo: 'vis_vtr_pct',  formato: 'fraccion',
+    nota: 'col N "% VTR", viene como FRACCION (0,2094). Identidad interna: = M/J, exacta en 98 de 98' }
+];
+
+function cablearTablaPostReuniones_() {
+  var filas = [];
+  COLUMNAS_POST_L036_.forEach(function (c) {
+    for (var n = 1; n <= 4; n++) {
+      filas.push({
+        marcador: 'post_' + c.tok + n, familia: 'post', informe_id: 'jm',
+        base_id: 'reuniones', solapa: 'Agenda JM | Post', campo_logico: c.campo,
+        /* ⛔ ENTERO PELADO. `C-83`: Sheets convierte `1/4` en FECHA y `01` pierde el cero, y eso
+         * ya rompió `ecv_barrio1-3` el 22/08. El campo de orden va en `separador`. */
+        operacion: 'FILA', valor_fijo: n, separador: 'fecha_periodo',
+        filtro: '', dimensiones: '', formato: c.formato,
+        notas: 'fila ' + n + ' de 4 de L-036 (D-41). ' + c.nota +
+          '. FILA ordena por fecha_periodo; las filas ya vienen elegidas por el temario ' +
+          '(filasDeSolapaDelTemario_, por id_cuenta del anclaje). SIN VALIDAR contra la fuente'
+      });
+    }
+  });
+  return curarMarcadores_([], filas);
+}
+
+/** Wrapper público del alta de los 20. ⚠ **ESCRIBE en `MARCADORES`.** */
+function cablearTablaPostReuniones() {
+  var r = cablearTablaPostReuniones_();
+  if (!r.ok) { Logger.log('⛔ FALLO: ' + r.motivo); return r; }
+  Logger.log('== L-036 · las 5 columnas con fuente x 4 filas ==');
+  Logger.log('  pedidas: ' + r.pedidas + '  ·  agregadas: ' + (r.agregadas || []).length);
+  if (!(r.agregadas || []).length) {
+    Logger.log('  ⓘ Cero altas: ya existían. Es idempotencia, no rotura.');
+  }
+  /* ⛔⛔ SE VERIFICA LO QUE QUEDÓ EN LA CELDA, NO LO QUE SE PIDIÓ ESCRIBIR (`C-83`). */
+  var malas = 0;
+  Object.keys(r.releido || {}).forEach(function (k) {
+    var f = r.releido[k];
+    if (String(f.valor_fijo).trim() !== String(Number(f.valor_fijo)).trim()) {
+      malas++;
+      Logger.log('  ⛔ ' + k + ': `valor_fijo` volvió "' + f.valor_fijo + '" — Sheets lo coercionó.');
+    }
+  });
+  Logger.log('  índices releídos y sanos: ' + (Object.keys(r.releido || {}).length - malas) +
+    ' de ' + Object.keys(r.releido || {}).length);
+  Logger.log('');
+  Logger.log('⭐ EL CONTROL NO ES EL NUMERO, ES LA IDENTIDAD INTERNA, y se mira sobre el deck:');
+  Logger.log('     % VTR = Visualizaciones / Impresiones, en CADA fila que tenga datos.');
+  Logger.log('   Sobre julio_24_30, Retiro tiene que dar 41.204 / 136.971 = 30.1');
+  Logger.log('⚠ Y los tres bordes: San Cristobal en CEROS (cero real, no sin dato), y las');
+  Logger.log('   filas 3 y 4 en sin_datos —2 items para 4 ranuras, que NO es error—.');
+  Logger.log('⛔ Si las cuatro filas salen vacias, mira ANTES el modo de la seccion:');
+  Logger.log('   comunicaciones_post tiene que decir `agregado`. Corre declararModoDelAgregadoPost().');
+  return r;
+}
+
+/** Revierte el alta de los 20. ⚠ **ESCRIBE en `MARCADORES`.** */
+function revertirTablaPostReuniones() {
+  var nombres = [];
+  COLUMNAS_POST_L036_.forEach(function (c) {
+    for (var n = 1; n <= 4; n++) nombres.push('post_' + c.tok + n);
+  });
+  var r = curarMarcadores_(nombres, []);
+  if (!r.ok) { Logger.log('⛔ FALLO: ' + r.motivo); return r; }
+  Logger.log('== reversion: ' + r.quitadas.length + ' fila(s) quitada(s) · quedan ' + r.filas_finales + ' ==');
+  return r;
+}
+
+/**
+ * ⭐⭐ **El botón de registro: `comunicaciones_post` pasa a `agregado`.**
+ *
+ * Va por `curarSecciones_` y **no a mano ni por el sembrador**, por el mismo motivo que
+ * `declararIteraDelAgregado()`: `sembrarSecciones_` **sólo agrega filas ausentes** y nunca pisa
+ * una existente (decisión del usuario, 16/08). *Que el seed llegue no garantiza que la hoja
+ * cambie.*
+ *
+ * ⚠ **Lo que este botón HABILITA, dicho para que se pueda revisar:** con la sección en `agregado`,
+ * el motor deja de emitir una lámina por reunión POST y `L-036` queda **una sola vez**, con sus
+ * cuatro filas resueltas por `FILA`. Si algo sale mal, `volverComunicacionesPostARepetible()`
+ * deshace exactamente esto.
+ *
+ * **Sin `_` y sin parámetros** — las dos condiciones de `CLAUDE.md` §2.
+ */
+function declararModoDelAgregadoPost() {
+  var r = curarSecciones_([{ seccion_id: 'comunicaciones_post', modo: 'agregado' }]);
+
+  if (!r.ok) { Logger.log('⛔ NO se pudo: ' + r.motivo); return r; }
+  if (r.sin_fila.length) {
+    Logger.log('⛔ NO se aplicó: ' + r.sin_fila.join(', '));
+    Logger.log('   La fila `comunicaciones_post` tiene que existir en SECCIONES. Si falta, corré');
+    Logger.log('   primero «Aplicar configuración», que SÍ agrega filas ausentes.');
+    return r;
+  }
+  if (!r.cambios_escritos) {
+    Logger.log('ⓘ Ya estaba: `comunicaciones_post.modo` ya decía "agregado". No se escribió nada.');
+    Logger.log('   Si L-036 igual sale vacía, el problema NO es el modo.');
+    return r;
+  }
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ✅ ' + a.seccion_id + '.' + a.campo + ': "' + a.antes + '" → "' + a.despues + '"');
+  });
+  Logger.log('');
+  Logger.log('⚠ AHORA HAY DOS secciones agregado+REUNIONES, y eso es lo que hace que');
+  Logger.log('  importe el seccion_id explicito: filasRdvDelTemario_ tomaba LA PRIMERA que');
+  Logger.log('  calificara. Los ids viven en CONFIG (seccion_agregado_semanal / _post).');
+  Logger.log('⛔ Verificacion de que la correccion esta viva: el agregado semanal de L-034');
+  Logger.log('  —ecv_encuentros, ecv_inscriptos— tiene que seguir dando lo mismo que antes.');
+  Logger.log('  Si se movio, la seccion equivocada esta alimentando al otro agregado.');
+  return r;
+}
+
+/** Deshace el cambio de modo. ⚠ **ESCRIBE en `SECCIONES`.** */
+function volverComunicacionesPostARepetible() {
+  var r = curarSecciones_([{ seccion_id: 'comunicaciones_post', modo: 'repetible' }]);
+  if (!r.ok) { Logger.log('⛔ NO se pudo: ' + r.motivo); return r; }
+  Logger.log(r.cambios_escritos ? '✅ vuelto a `repetible`.' : 'ⓘ Ya estaba en `repetible`.');
+  return r;
+}
+
 function declararIteraDelAgregado() {
   var r = curarSecciones_([{ seccion_id: 'ecv_alcance_semanal', itera_sobre: 'REUNIONES' }]);
 
