@@ -198,7 +198,7 @@ var HOJAS_CONFIG_ = {
   // para que la etapa 2 de `D-06` pueda escribir por identidad de elemento en vez de por
   // búsqueda de texto. Append: cada generación agrega una fila.
   CORRIDAS: {
-    // ⭐⭐ `2026-08-24` (`D-40`) — `ejecucion`: qué TANDA escribió esta fila.
+    // ⭐⭐ `2026-08-24` (`D-41`) — `ejecucion`: qué TANDA escribió esta fila.
     //
     // `abrirCorrida_` abre una fila POR EJECUCIÓN con el MISMO `corrida_id`, así que un deck
     // completado en tres tandas deja tres filas. Qué tanda pintó qué lámina ya era derivable
@@ -207,7 +207,7 @@ var HOJAS_CONFIG_ = {
     // ⚠ Hace falta porque dos tandas están separadas en el tiempo: con `looker/DIGITAL`
     // inestable por CAMBIO (`R-31`), la lámina 2 puede resolverse en una tanda y la 3 en otra y
     // publicar números de dos momentos. Partir por lámina acota eso a ENTRE láminas y NO lo
-    // elimina (`D-40`, límite conocido y declarado). Esta columna lo vuelve VISIBLE en vez de
+    // elimina (`D-41`, límite conocido y declarado). Esta columna lo vuelve VISIBLE en vez de
     // algo que se descubre comparando.
     //
     // El número vive en `PropertiesService` (`estado.ejecucion`) desde el `2026-08-20_10`; acá
@@ -499,7 +499,7 @@ var COLUMNAS_DELTA_ = {
     { nombre: 'periodo_ref', indice: 14 },
     { nombre: 'items_por_lamina', indice: 15 }
   ],
-  // `D-40` — `ejecucion` entra por delta y no recreando la hoja: `CORRIDAS` es el historial de
+  // `D-41` — `ejecucion` entra por delta y no recreando la hoja: `CORRIDAS` es el historial de
   // corridas y recrearla lo borraría. `indice: 1` = inmediatamente después de `corrida_id`,
   // porque las dos juntas son la clave con la que se lee la tabla: qué corrida, qué tanda.
   CORRIDAS: [
@@ -2810,7 +2810,7 @@ var SEED_CONFIG_DEFAULTS_ = {
   // número que ya no decide nada pero se sigue midiendo es lo que evita que envejezca en
   // silencio.
   costo_resolucion_etapa4_seg: '160',
-  // ⭐⭐ `D-40` — el costo de UNA lámina de la etapa 4, y es sólo la SEMILLA de la primera.
+  // ⭐⭐ `D-41` — el costo de UNA lámina de la etapa 4, y es sólo la SEMILLA de la primera.
   //
   // De ahí en más se mide y se adapta, igual que `costoUltimoItemSeg` en la etapa 3: el
   // presupuesto decide CUÁNTAS LÁMINAS entran comparando lo que queda de reloj contra lo que

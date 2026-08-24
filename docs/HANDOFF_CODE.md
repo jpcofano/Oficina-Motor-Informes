@@ -3,85 +3,73 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-⛔⛔ **LO PRIMERO: la etapa 4 cuesta 158 s y se estimó en 60.** Medido en `jm-20260824-151555`.
-No usa `solo_marcadores` —la 3 sí, de ahí los 192 s del testigo—, es **atómica** y **adentro no hay
-punto de control**. Su estimación se calibró con **~87 marcadores** y hoy son **~172**.
-⏸ **Partirla por LÁMINAS es el próximo paso**, y la constante honesta tiene que viajar con el
-particionado: sola, la etapa 4 **no entra nunca** (290 útiles − 137 gastados = 153 < 158) y el
-desatendido informaría *«no avanza»* cuando la verdad es *«la unidad es demasiado grande»*.
-⚠ **Y `reserva_cierre_seg` hay que cambiarla A MANO a 60** — `CONFIG` sólo siembra lo ausente.
-
-**Última actualización:** 2026-08-24, noche — la pieza de `L-036`, la colisión de secciones y
-`L-043` decidido. Antes ese mismo día: `L-047` GLOBAL, el `MAPEO` de la POST y el cruce de
-fixtures. Lo de más abajo **sigue vigente**: no se reescribió lo que no cambió.
+**Última actualización:** 2026-08-25 — `D-41`, la etapa 4 partida por lámina: la corrida pasó de
+**330 s a 118** y el deck **sale entero**. Antes: la pieza de `L-036` escrita, `L-047` GLOBAL,
+`L-043` decidido. Lo de más abajo **sigue vigente**.
 
 ---
 
 ## ⏱ Dónde estamos ahora mismo
 
-### ⛔⛔ LO PRIMERO: `clasp push`, y después dos botones
+### ✅ La corrida entra, y con margen
 
-**Nada de las cinco commits de hoy está en Apps Script.** Y el push solo no alcanza:
-
-| # | qué correr | por qué |
+| | antes | ahora |
 |---|---|---|
-| 1 | **`clasp push`** | `Generador.gs` e `Instalar.gs` cambiaron |
-| 2 | **«Aplicar configuración»** | ⚠ **`CONFIG` sólo siembra lo AUSENTE** y hay **4 claves nuevas**; el `MAPEO` de la POST también entra acá. `instalar()` no siembra |
-| 3 | **`cablearAgregadosDelGlobal()`** | ⚠ **escribe en `MARCADORES`** — los 3 del GLOBAL de `L-047` |
-| 4 | **una corrida de `jm`** | ⛔ **ningún token de `L-047` se vio publicar todavía**: los 40 de envío tienen fila desde el 23/08 y los 3 del GLOBAL desde hoy |
+| total | 330 s de 350 | **118 s** |
+| etapa 4 | 158 s | **33 s** |
+| impresos · faltantes | 132 · 237 | **263 · 122** |
 
-### ✅ Lo de hoy, en una línea cada uno
+⭐⭐ **`L-047` cierra entera** y `V-113` quedó ampliado a las **cuatro** columnas del GLOBAL, todas
+al dígito y **cruzando dos bases**. La pregunta del universo está contestada.
 
-- **`L-047` GLOBAL completo** — `camp_enviados`, `camp_or`, `camp_mail_clics`. El denominador de
-  `% OR` se **midió** contra el deck (una sola fila discrimina: 62 vs 61). Controles primarios que
-  no dependen del deck: `% OR = aperturas/entregados`, `% CTOR = clics/aperturas`, y el GLOBAL =
-  suma de los envíos (ése **cruza fuentes**).
-- **`L-036`**: `MAPEO` de `reuniones/Agenda JM | Post` de 2 campos a 7, con tipos medidos y tres
-  identidades internas exactas. **Y la pieza** — abajo.
-- **`L-043` decidido**: los seis van como **texto del equipo**, reversible y fechado.
-- **Cruce de fixtures**: 19 archivos, **un solo** desalineado. Y `.xlsx` **no trae `sheet_id`**.
+### ⏸ Lo único que queda de la etapa A: la pieza de `L-036`
 
-### ⭐⭐ La pieza de `L-036`, y la colisión que arrastraba
+**Ya está escrita** (`filasDeSolapaDelTemario_`, commit `f69e37f`) con la sección resuelta por
+`seccion_id` **explícito** en las dos — nunca por «la primera que califique». Lo que falta para que
+publique es **una decisión de registro del usuario**: que `comunicaciones_post` pase de `repetible`
+a `agregado`, por `curarSecciones_` (precedente: `ponerIteraSobreEnEcvAlcance()`).
 
-**Dos cosas juntas, porque una sin la otra no sirve.**
+#### ⭐ Y `julio_24_30` SIRVE como control — medido, no supuesto
 
-**1 · La colisión.** `filasRdvDelTemario_` tomaba **la primera** sección `agregado` + `REUNIONES` +
-`activa`; su comentario afirmaba que soportaba una segunda y **no la soportaba**. Nunca fue un
-contrato: era la coincidencia de que hubiera una sola. Ahora
-`seccionAgregadaDeReuniones_(secciones, informeId, seccionId)` exige el id, verifica que exista y
-que califique, y **sin id no elige una: falla diciendo que no hay default**. Los ids viven en
-`CONFIG` (4 claves nuevas), no en el código.
+No hace falta poblar `etapa` en agosto. Medido sobre el fixture del 20/08
+(`DGPLES _ Seguimiento ECVs`, sha `f8ef3227…`), los dos ítems de `etapa=post` **tienen fila** en
+`reuniones/Agenda JM | Post`:
 
-**2 · La pieza.** `filasDeSolapaDelTemario_` trae las filas del temario de **cualquier** solapa,
-resolviendo por **`id_cuenta` del anclaje** contra `campo_id_cuenta` (`D-30`) — no por
-`(nombre, fecha)` como la de `rdv`. Deduplica por cuenta y **separa `sin_cuenta` de `sin_fila` de
-`con_varias`**, que mandan a trabajos distintos. Más una rama en `datosDeMarcador_` con su guarda
-de solapa, **antes** de la declarativa: sin eso un `post_*` sin ítem publicaría el agregado de las
-102 filas.
+| ítem | `id_cuenta` | Habitantes | Alcance | Impresiones | Visualizaciones | % VTR |
+|---|---|---|---|---|---|---|
+| **Retiro** (24/07) | `3346-JULJDGAG` | 41.475 | 47.753 | 136.971 | 41.204 | 0,30082 |
+| **San Cristóbal** (23/07) | `3354-JULJDGAG` | 41.240 | **0** | **0** | **0** | **0** |
 
-⛔ **Y lo que NO hace, a propósito: no publica nada.** `comunicaciones_post` sigue `repetible`, así
-que **no califica** y la pieza no aporta filas (el motivo sale en el log). `L-036` sigue con sus 32
-`/////`, **y eso es lo esperado**.
+⭐ **Retiro ejercita el camino entero y su identidad interna cierra al dígito**:
+`41.204 / 136.971 = 0,300822801…` = la columna `% VTR` exacta. Y `% Cobertura` da
+`47.753 / 41.475 = 115 %`, que es el caso conocido de cobertura sobre 100.
 
-**Control:** `probar-agregado-por-temario.js` de 26 a **41 afirmaciones**. Las nuevas existen porque
-**ninguna de las viejas falla si la rama nueva no funciona**. Incluye romper el resolver a propósito
-y verificar que la afirmación de la colisión **cae**. Las 39 de `tools/` en verde.
+⭐ **Y los tres bordes quedan cubiertos por el mismo control, que es lo que lo hace bueno:**
+**(1)** San Cristóbal con ceros ejercita *cero real* contra *sin dato*; **(2)** son **2 ítems para
+4 ranuras**, así que las ranuras 3 y 4 tienen que salir `sin_datos` —`FILA`: *más índice que filas
+no es error, es que no hay tanto*—; **(3)** el `id_cuenta` del anclaje es lo que encuentra la fila,
+que es justo lo que la pieza agrega.
 
----
+⚠ **Lo que `julio_24_30` NO contesta:** que el anclaje resuelva para un temario de agosto. Es otra
+pregunta y no es la que esta pieza responde.
 
-### ⏸ La única decisión abierta de la etapa A
+⚠ **Y siguen faltando tres de las ocho columnas** —`post_camp`, `post_periodo`, `post_formato`—,
+sin fuente en ninguna solapa. Pregunta al equipo, **sin prioridad**.
 
-⭐ **Que `comunicaciones_post` pase de `repetible` a `agregado`.** Es una decisión de registro y la
-toma el usuario; el camino es `curarSecciones_` (precedente: `ponerIteraSobreEnEcvAlcance()`, que
-existe justo para esto). Con eso hecho, la pieza empieza a traer filas y los `post_*` se pueden
-cablear con `FILA 1..4` ordenado por `fecha_periodo` — molde `cablearTablaDeEnvios()`.
+### ⛔ Escrito y SIN CORRER: la reanudación del particionado
 
-⚠ **Dos cosas que van a seguir faltando aunque el flip se haga:**
+`continuacion.laminas_etapa4_hechas` y `CORRIDAS.ejecucion` **no se ejercitaron nunca**: la corrida
+entró entera, así que no hubo tanda 2. **No se fabricó un corte para probarlo** (decisión del
+usuario, 25/08).
 
-1. **Tres de las ocho columnas no tienen fuente** —`post_camp`, `post_periodo`, `post_formato`—.
-   Pregunta al equipo, **sin prioridad**.
-2. **`etapa` está poblada en 4 de 15 filas de `REUNIONES`**, todas de `julio_24_30`. Una semana sin
-   `etapa` cargada da **cero ítems**, así que `agosto_14_20` no puede verificar esta lámina.
+⚠ **Y el día que haga falta va a ser justo el día de una corrida larga**, que es el peor momento
+para descubrir que no anda. Queda declarado como **escrito y sin ejecutar**, que es distinto de
+*probado* — *una rama nueva que nunca se ejecutó no está sin probar: está sin escribir el control*.
+
+### Lo que necesita el usuario
+
+1. ⚠ **`reserva_cierre_seg` a 60, A MANO** — `CONFIG` sólo siembra lo ausente.
+2. **La decisión de `comunicaciones_post` → `agregado`**, si va la pieza de `L-036`.
 
 ---
 

@@ -13986,3 +13986,103 @@ declarado**: el número de tanda vive en `PropertiesService` (`estado.ejecucion`
 - ⛔ **`clasp push`**, y ⚠ **`reserva_cierre_seg` hay que cambiarla A MANO**: `CONFIG` sólo siembra
   lo ausente.
 - ⏸ **Partir la etapa 4 por láminas**, con la columna `ejecucion` al lado. Es el próximo paso.
+
+---
+
+## 2026-08-25 — `D-41`: la etapa 4 partida por lámina. De 330 s a 118, y el deck sale entero
+
+**Commits:** `a58e742` (el particionado) · `be42ecb` (la regla) · `af45941` (las dos correcciones) ·
+`e15d7bf` (`V-113`).
+
+### El resultado, medido en `jm-20260824-173300`
+
+| | antes (24/08, 15:15) | después | |
+|---|---|---|---|
+| total | 330 s de 350 | **118 s** | ⭐ y el deck **sale entero** |
+| etapa 4 | **158 s** | **33 s** | `solo_marcadores` por lámina |
+| impresos | 132 | **263** | |
+| faltantes | 237 | **122** | |
+
+⭐⭐ **Lo que faltaba era `solo_marcadores` en la etapa 4.** El `2026-08-21_14` se lo puso a la
+etapa 3 —de ahí los 192 s del testigo— y a la 4 **nunca**, porque un comentario afirmaba que
+`resolverMarcadores` no aceptaba subconjuntos. **Era un contrato-sin-testigo doble**: esa premisa
+venció el 21/08, y la otra mitad —*«el loop de pintado cuesta ~6 s, no necesita checkpoint»*— era
+falsa por otro lado: el pintado cuesta poco, **lo caro era la resolución, y estaba adentro sin
+control**. Ésos son los 158 s.
+
+### `D-41` — la unidad de partición es la LÁMINA
+
+**Decisión del usuario, y quedó como regla en `CLAUDE.md` §4, no como nota de este paso.** Dos
+tandas del mismo deck están separadas en el tiempo, así que **cada unidad de partición es una foto
+de un momento distinto**. Si la unidad fuera el marcador, **dos cajas de la misma lámina podrían
+venir de dos momentos** — y eso es `C-80`.
+
+⭐ **La etapa 3 nunca tuvo el problema y por eso no se veía:** parte por **ítem**, y un ítem **es**
+una lámina entera. La 4 resuelve los tokens **fijos**, con el Resumen Ejecutivo adentro.
+
+**La pregunta accionable que quedó escrita:** *¿dos unidades distintas pueden terminar en la misma
+lámina?* Si sí, la unidad es demasiado chica. **No alcanza con que el corte sea ordenado: tiene que
+serlo en el eje que el lector mira**, y el lector mira una lámina por vez.
+
+⚠ **Límite declarado, no resuelto:** partir por lámina acota la inconsistencia a **entre** láminas
+y **no la elimina**. Con `looker/DIGITAL` inestable por CAMBIO (`R-31`), la lámina 2 puede
+resolverse en una tanda y la 3 en otra. Por eso existe `CORRIDAS.ejecucion`: para que se **vea**
+cuál vino de dónde en vez de descubrirlo comparando.
+
+### La constante, en el mismo commit y con su derivación
+
+`costo_resolucion_etapa4_seg` **60 → 160** y **le cambia el papel**: deja de ser compuerta y queda
+como **testigo**. La compuerta pasó a ser `costo_lamina_etapa4_seg`, que es sólo la **semilla** de
+la primera lámina — de ahí se mide y se adapta.
+
+⛔ **No se podían separar, y la cuenta lo dice:** con el número honesto y sin partir, la etapa **no
+entraba nunca** (290 útiles − 137 gastados = 153 < 158) y el desatendido habría informado *«no
+avanza»* cuando la verdad era *«la unidad es demasiado grande»*.
+
+### ⭐ Las dos correcciones que salieron de la primera corrida
+
+**1 · El aviso de desvío funcionó y se delató a sí mismo.** Dijo *«se estimó en 1 s y costó 33 s
+(×33)»*. **La semilla de 30 estaba bien**; lo que estaba mal era la comparación:
+`ESTIMADO_POR_ETAPA_[etapa] = estimadoSeg` **pisaba**, y en una etapa que chequea una vez por unidad
+eso deja el de la **última** lámina, comparado contra el total de **todas**.
+
+⚠ **El mismo defecto tenía la etapa 3 desde el minuto uno.** No se había visto **porque nunca
+disparó** — *un control que no se ejecuta no está probado*. Ahora acumula, y **sólo lo que
+efectivamente entró**: el checkpoint que corta declara un estimado para una unidad que no corre.
+
+**2 · La quinta causa: `solo_escondidas`.** `camp_titulo` salió como `no_alcanzado` con **14
+apariciones** — un token en 14 láminas que nadie mira no cierra. **Las 14 están escondidas**:
+`L-048` lo está por `D-39` y `camp_titulo` es su único token con fila. **No hay nada que arreglar.**
+
+⚠ **Y aparece recién ahora por este mismo prompt:** antes la etapa 4 resolvía *todos* los
+marcadores, así que `porMarcador` tenía entrada aunque la lámina estuviera escondida. **Lo que
+cambió no es el deck —idéntico— sino qué se puede afirmar sobre él.**
+
+⭐ El código **ya sospechaba** la causa —su motivo preguntaba *«¿lámina escondida?»*— y
+`tokensVisiblesDe_` **ya calculaba la respuesta y la tiraba**. Ahora la devuelve y el motivo
+**nombra las slides**. Es la regla de los símbolos aplicada a las causas: `no_alcanzado` tapaba
+*«está escondida, no hagas nada»* y *«quedó fuera por un bug»*, que son trabajos opuestos.
+
+### ✅ `L-047` cierra entera — `V-113` ampliado a las cuatro columnas
+
+`266.519 · 263.794 · 68.092 · 907`, las cuatro **al dígito**, y **cruzando dos bases**: los envíos
+por `FILA` sobre `digital/Directa Mail`, el GLOBAL por `ULTIMO` sobre
+`looker/resumen_metricas_dinamico`. Eso contesta la pregunta del universo. Más las dos derivadas,
+que son identidad **interna** de la fila: `%OR = 25,8` y `%CTOR = 1,33`.
+
+⚠ **Dos límites que no cambian:** prueba que **las fuentes coinciden**, no que el valor absoluto sea
+el de la semana; y `resumen_metricas_dinamico` **sigue sin medirse en `R-31`**.
+
+### ⛔ Lo que quedó escrito y SIN CORRER
+
+**La reanudación del particionado.** `continuacion.laminas_etapa4_hechas` y `CORRIDAS.ejecucion`
+**no se ejercitaron**: la corrida entró entera en 118 s, así que no hubo tanda 2.
+
+⚠ **Y el día que haga falta va a ser justo el día de una corrida larga**, que es el peor momento
+para descubrir que no anda. **No se fabricó un corte para probarlo** (decisión del usuario): queda
+declarado como *escrito y sin ejecutar*, que es distinto de *probado*.
+
+### Pendientes
+
+- ⏸ **Lo único que queda de la etapa A: la pieza de `L-036`.**
+- ⚠ **`reserva_cierre_seg` a 60 la cambia el usuario a mano** — `CONFIG` sólo siembra lo ausente.

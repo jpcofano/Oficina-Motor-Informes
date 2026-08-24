@@ -3014,7 +3014,7 @@ function verificarObjectIdDeCorrida_(corridaId, token) {
 var PRESUPUESTO_CORRIDA_SEG_DEFECTO_ = 350;
 var RESERVA_CIERRE_SEG_DEFECTO_ = 30;
 var COSTO_RESOLUCION_ETAPA4_SEG_DEFECTO_ = 240;
-/* ⭐ `2026-08-24` (`D-40`) — la **semilla** del costo de UNA lámina de la etapa 4. Sólo la usa la
+/* ⭐ `2026-08-24` (`D-41`) — la **semilla** del costo de UNA lámina de la etapa 4. Sólo la usa la
  * primera: a partir de ahí se mide y se adapta. Ver `costoLaminaEtapa4Seg_()`. */
 var COSTO_LAMINA_ETAPA4_SEG_DEFECTO_ = 30;
 
@@ -3435,7 +3435,7 @@ function avisoDeReserva_(cierreSeg, reservaSeg) {
  * en la 10 —escondida— y en la 5, y ahí sí hay que pintarlo.
  */
 /**
- * ⭐⭐ `2026-08-24` (`D-40`) — **agrupa los tokens fijos POR LÁMINA, que es la unidad de partición.**
+ * ⭐⭐ `2026-08-24` (`D-41`) — **agrupa los tokens fijos POR LÁMINA, que es la unidad de partición.**
  *
  * `tokensVisiblesDe_` devuelve `{token: [nº de slide, …]}`; acá se invierte. **Un token que
  * aparece en varias láminas se asigna a la PRIMERA**, y no es un detalle: si se asignara a todas,
@@ -3981,7 +3981,7 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   // exactamente el rastro que faltaba para poder diagnosticar.
   var filaCorrida = abrirCorrida_({
     corrida_id: corridaId,
-    // `D-40` — qué TANDA es esta fila. Sin ella, saber qué lámina salió de qué momento exige
+    // `D-41` — qué TANDA es esta fila. Sin ella, saber qué lámina salió de qué momento exige
     // cruzar los `mapa_tokens` de N filas a mano, y nadie lo hace. `1` cuando no viene: una
     // corrida de un solo tiro es la tanda 1, no una tanda desconocida.
     ejecucion: (opciones && opciones.ejecucion) ? Number(opciones.ejecucion) : 1,
@@ -4332,7 +4332,7 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
    * 06/08 sobre **~87 marcadores** cuando hoy son **~172**. Y **adentro no había ningún punto de
    * control**, así que el techo era decorativo para esta etapa.
    *
-   * ⛔⛔ **Por qué la unidad es la LÁMINA y no el marcador** (`D-40`, decisión del usuario):
+   * ⛔⛔ **Por qué la unidad es la LÁMINA y no el marcador** (`D-41`, decisión del usuario):
    * dos tandas del mismo deck están separadas en el tiempo, y **dos cajas de la misma lámina
    * que vengan de dos momentos distintos son `C-80`** — se leen como si respondieran la misma
    * pregunta y no lo hacen. La etapa 3 no tenía este problema porque parte por **ítem**, y un
@@ -4342,7 +4342,7 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
    *
    * ⇒ **El presupuesto decide cuántas LÁMINAS entran, nunca cuántos marcadores.**
    *
-   * ⚠ **Y el límite conocido, declarado y NO resuelto acá** (`D-40`): partir por lámina acota
+   * ⚠ **Y el límite conocido, declarado y NO resuelto acá** (`D-41`): partir por lámina acota
    * la inconsistencia a *entre* láminas, **no la elimina**. Con `looker/DIGITAL` inestable por
    * CAMBIO (`R-31`), la lámina 2 puede resolverse en la tanda 1 y la 3 en la tanda 2 y publicar
    * números de dos momentos. **Es un límite del deck en tandas, no un problema a resolver
@@ -4692,7 +4692,7 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       // Qué etapas declaradas tienen su punto de control en el flujo, con el `n de m` adentro:
       // «ningún problema» y «no se probó nada» se ven idénticos en un log sin conteo.
       control_por_etapa: controlPorEtapa_(),
-      // ⭐ `D-40` — la etapa 4 en láminas: cuáles se pintaron y cuáles quedaron. `pendientes`
+      // ⭐ `D-41` — la etapa 4 en láminas: cuáles se pintaron y cuáles quedaron. `pendientes`
       // NO vacío con `corte` es el caso normal; vacío con corte querría decir que el corte no
       // fue de esta etapa.
       etapa4_por_lamina: {
@@ -4724,10 +4724,10 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       }),
       // Cuáles ya se resolvieron: el índice donde cortó. Las anteriores están pintadas.
       resueltas: porItem.length,
-      /* ⭐ `D-40` — **las láminas de tokens fijos que YA se pintaron.** Es lo que la reanudación
+      /* ⭐ `D-41` — **las láminas de tokens fijos que YA se pintaron.** Es lo que la reanudación
        * necesita para no repintarlas: sin esto, la tanda 2 volvería a resolver la lámina 2 —costo
        * de más— y, peor, **podría publicar un valor distinto del que ya está en el deck**, que es
-       * justamente la inconsistencia entre tandas que `D-40` acota. */
+       * justamente la inconsistencia entre tandas que `D-41` acota. */
       laminas_etapa4_hechas: laminasEtapa4Hechas
     }
   };

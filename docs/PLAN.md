@@ -1895,6 +1895,44 @@ el `mapa_tokens` de `CORRIDAS` guarda el índice de slide del **deck expandido**
 
 ---
 
+**`D-41` — Cuando una etapa se parte para que entre en el presupuesto, la unidad de partición es
+la LÁMINA, nunca el marcador.** Decisión del usuario, 24/08/2026. **No supersede a nadie**: es una
+decisión nueva sobre cómo se corta una corrida.
+
+**El motivo es del dato, no de comodidad.** Dos tandas del mismo deck están separadas en el tiempo,
+así que **cada unidad de partición es una foto de un momento distinto**. Si la unidad es más chica
+que la lámina, **dos cajas de la misma lámina pueden venir de dos momentos** — y eso es `C-80`:
+cajas una al lado de la otra, con el mismo formato, que se leen como si respondieran la misma
+pregunta y no lo hacen.
+
+⭐ **La etapa 3 nunca tuvo el problema, y por eso no se veía:** parte por **ítem**, y un ítem **es**
+una lámina entera. La etapa 4 resuelve los tokens **fijos** —el Resumen Ejecutivo entre ellos—, así
+que partirla por marcador dejaría `mail_entregados` de la tanda 1 al lado de `imp_meta` de la
+tanda 2, en la misma caja.
+
+**Lo que se sigue de la decisión:**
+
+1. **El presupuesto decide cuántas LÁMINAS entran, nunca cuántos marcadores.** El tamaño se mide y
+   se adapta —`costo_lamina_etapa4_seg` es sólo la semilla de la primera—; un número fijo de
+   unidades por lote sería otra constante de las que nadie vuelve a mirar.
+2. **`CORRIDAS.ejecucion` declara qué tanda escribió cada fila.** Era derivable cruzando los
+   `mapa_tokens` de las N filas del mismo `corrida_id`, pero a mano, y nadie lo hace.
+3. **La pregunta que la vuelve accionable, y se hace al elegir la unidad:** *¿dos unidades
+   distintas pueden terminar en la misma lámina?* Si sí, la unidad es demasiado chica.
+
+⚠ **Lo que `D-41` NO hace, y va declarado en vez de descubierto:** partir por lámina acota la
+inconsistencia a **entre** láminas y **no la elimina**. Con una fuente inestable por CAMBIO
+(`R-31`), la lámina 2 puede resolverse en una tanda y la 3 en otra y publicar números de dos
+momentos. **Es un límite conocido del deck en tandas, no un problema a resolver** — y por eso la
+columna existe: para que se **vea** cuál vino de dónde.
+
+⚠ **Y la constante honesta no se puede separar del particionado.** Con `costo_resolucion_etapa4_seg`
+recalibrado a su valor real y **sin** partir, la etapa **no entraba nunca**: el desatendido la
+tomaría, no la terminaría, y la guarda de progreso informaría *«no avanza»* **cuando la verdad es
+«la unidad es demasiado grande»**.
+
+---
+
 
 ## 2 · Próximo (ordenado, con dependencias)
 

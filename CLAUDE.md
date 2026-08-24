@@ -516,7 +516,7 @@ avanza nada es **cuánta cuota queda**, y para cuando eso se nota ya se gastó.
   el síntoma es una corrida que corta cuando el plan decía que entraba.
 
 **Cuando una etapa se parte para que entre en el presupuesto, la unidad de partición es la LÁMINA —
-nunca el marcador.** (24/08/2026, decisión del usuario, `D-40`.) Dos tandas del mismo deck están
+nunca el marcador.** (24/08/2026, decisión del usuario, `D-41`.) Dos tandas del mismo deck están
 separadas en el tiempo, así que **cada unidad de partición es una foto de un momento distinto**. Si
 la unidad es más chica que la lámina, **dos cajas de la misma lámina pueden venir de dos momentos**
 — y eso es `C-80`: cajas una al lado de la otra, con el mismo formato, que se leen como si
