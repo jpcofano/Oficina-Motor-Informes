@@ -13896,3 +13896,93 @@ mismo y el verde no distinguía nada (`CLAUDE.md` §4).
   Hasta entonces `L-036` sigue con sus 32 `/////`, y eso es lo esperado.
 - ⚠ **`etapa` sigue poblada en 4 de 15 filas de `REUNIONES`**, todas de `julio_24_30`. Aun con el
   flip hecho, una semana sin `etapa` cargada da **cero ítems**.
+
+---
+
+## 2026-08-24 (noche, 2) — Por qué la corrida tarda 330 s: la etapa 4, medida
+
+**Commit:** `1480fa4`.
+
+### El rastro de `jm-20260824-151555`, por etapa
+
+| etapa | s | estimado |
+|---|---|---|
+| 1 · expandir | 0 | — |
+| 2 · mapa token→objectId | **61** | sin estimación |
+| 3 · pasada por ítem | 76 | — |
+| ⭐ **4 · tokens fijos** | **158** | **60** |
+| 5 · escribir faltantes | 20 | — |
+| cierre | **25** | reserva **30** |
+
+⭐⭐ **La causa es la etapa 4 y es aritmética, no una sospecha.** `resolverMarcadores` en la etapa 4
+**no usa `solo_marcadores`** —el `2026-08-21_14` filtró la etapa 3, que es de donde salieron los
+192 s del testigo, y la 4 quedó resolviendo el informe entero—. Es **atómica**: la única decisión
+es entrar o no entrar, y **adentro no hay ningún punto de control**. Su estimación, `60`, se midió
+el **06/08 con ~87 marcadores**; hoy son **~172**.
+
+⚠ **Las tres hipótesis del prompt, resueltas:** el front **no corre adentro** (cero `panel_*` en
+`Generador.gs`); el cierre explica sus 14 s y **ninguno de los 138**; los 61 marcadores nuevos son
+**la causa real pero por otra vía** — no encarecen la etapa 3 (que filtra), encarecen la **4**, que
+no.
+
+### Lo que se hizo
+
+1. ⭐⭐ **La corrida mide lo que estimó.** `controlDeEtapa_` guarda lo estimado y `marcarEtapa_` lo
+   real; `desviosDeEstimacion_` compara al cerrar. Con esto, el caso de hoy **habría gritado en la
+   primera corrida después de cablear `L-046`**.
+2. ⛔ **`avisoDeReserva_` estaba conectada y se quedó callada**, y ése es el hallazgo: su criterio
+   era `cierre > reserva` y el cierre costó 25 contra 30. **La reserva no es el presupuesto del
+   cierre** — el `30` era cierre 0,8 + barrida ~6 + varianza. Criterio corregido al 80 %.
+3. **`reserva_cierre_seg` 30 → 60**, con la derivación escrita: 25 + 6 + 27.
+4. **La etapa 2 se mide por costo/token**, sin techo a propósito.
+5. **`»»»` con su regla**: `sin_fila` → `/////`, crudo + corte + tiene fila → `»»»`.
+
+### ⛔⛔ Lo que NO se hizo, y el motivo es un número
+
+**`costo_resolucion_etapa4_seg` NO se recalibró, y partir la etapa 4 no se empezó.** No es
+prolijidad: **recalibrarlo solo empeora las cosas**, y la cuenta lo dice.
+
+```
+techo 350 − reserva 60         = 290 s útiles
+etapa 1 + 2 + 3 = 0 + 61 + 76  = 137 s gastados
+                                 ─────────────
+quedan                           153 s
+costo real de la etapa 4         158 s
+```
+
+⇒ **Con la estimación honesta, la etapa 4 no entra nunca.** Y como es **una sola unidad**, el
+desatendido la tomaría, no la terminaría, no la podría marcar hecha, y la siguiente volvería a
+empezarla — la guarda de progreso cortaría informando *«no avanza»* **cuando la verdad es «la
+unidad es demasiado grande»**. Es exactamente el caso que `CLAUDE.md` §4 ya describe, y son dos
+arreglos distintos.
+
+**Por eso la constante honesta y el particionado tienen que viajar juntos**, y el particionado es
+lo que la vuelve entrable. Mientras tanto el `60` queda **mintiendo a propósito y con testigo**:
+el aviso nuevo lo denuncia en cada corrida.
+
+### La consecuencia declarada del particionado, antes de construirlo
+
+**Un deck completado en dos tandas tiene valores de dos momentos.** Con `looker/DIGITAL` inestable
+por CAMBIO (`R-31`), dos mitades del mismo deck pueden no ser consistentes entre sí.
+
+⭐ **Y partir la etapa 4 es peor que partir la 3, que es lo que hoy ya se parte.** La 3 parte por
+**ítem**, y un ítem es una lámina entera: su lámina sale de un solo momento. La 4 resuelve los
+tokens **fijos**, que incluyen el Resumen Ejecutivo — **dos cajas de la misma lámina** podrían
+venir de dos tandas. Es la forma de `C-80`: cajas una al lado de la otra que se leen como si
+respondieran la misma pregunta.
+
+⇒ **El lote de la etapa 4 no puede partir una lámina.** La unidad es la lámina, y el presupuesto
+decide **cuántas láminas** entran, no cuántos marcadores.
+
+**Y sobre si el rastro puede declarar la tanda: casi, y falta poco.** `abrirCorrida_` **abre una
+fila nueva por ejecución** con el **mismo `corrida_id`**, y cada fila lleva su `mapa_tokens`. O sea
+que **qué tanda pintó qué lámina ya es derivable** cruzando las N filas. ⛔ **Pero no está
+declarado**: el número de tanda vive en `PropertiesService` (`estado.ejecucion`) y **no** en
+`CORRIDAS`, y `mapa_tokens` guarda el índice de slide del deck expandido, **no un `lamina_id`**.
+**Una columna `ejecucion` en `CORRIDAS` convierte un cruce a mano en un dato**, y es barata.
+
+### Pendientes
+
+- ⛔ **`clasp push`**, y ⚠ **`reserva_cierre_seg` hay que cambiarla A MANO**: `CONFIG` sólo siembra
+  lo ausente.
+- ⏸ **Partir la etapa 4 por láminas**, con la columna `ejecucion` al lado. Es el próximo paso.

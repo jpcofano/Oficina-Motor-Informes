@@ -3,6 +3,14 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
+⛔⛔ **LO PRIMERO: la etapa 4 cuesta 158 s y se estimó en 60.** Medido en `jm-20260824-151555`.
+No usa `solo_marcadores` —la 3 sí, de ahí los 192 s del testigo—, es **atómica** y **adentro no hay
+punto de control**. Su estimación se calibró con **~87 marcadores** y hoy son **~172**.
+⏸ **Partirla por LÁMINAS es el próximo paso**, y la constante honesta tiene que viajar con el
+particionado: sola, la etapa 4 **no entra nunca** (290 útiles − 137 gastados = 153 < 158) y el
+desatendido informaría *«no avanza»* cuando la verdad es *«la unidad es demasiado grande»*.
+⚠ **Y `reserva_cierre_seg` hay que cambiarla A MANO a 60** — `CONFIG` sólo siembra lo ausente.
+
 **Última actualización:** 2026-08-24, noche — la pieza de `L-036`, la colisión de secciones y
 `L-043` decidido. Antes ese mismo día: `L-047` GLOBAL, el `MAPEO` de la POST y el cruce de
 fixtures. Lo de más abajo **sigue vigente**: no se reescribió lo que no cambió.
