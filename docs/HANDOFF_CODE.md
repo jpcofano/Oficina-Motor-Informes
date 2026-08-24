@@ -3,95 +3,77 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-24, tarde — `L-047` cierra su fila GLOBAL, los seis de `L-043`
-quedan bloqueados por fuente, y el `MAPEO` de la POST de `L-036`. Antes: el `2026-08-23_1`, `X-39`
-y `D-39`. Lo de más abajo **sigue vigente**: no se reescribió lo que no cambió.
+**Última actualización:** 2026-08-24, noche — la pieza de `L-036`, la colisión de secciones y
+`L-043` decidido. Antes ese mismo día: `L-047` GLOBAL, el `MAPEO` de la POST y el cruce de
+fixtures. Lo de más abajo **sigue vigente**: no se reescribió lo que no cambió.
 
 ---
 
 ## ⏱ Dónde estamos ahora mismo
 
-### ⭐ Lo último (24/08) — tres commits: `bc91fa2` · `a4ad2f6` · `7329ec8`
+### ⛔⛔ LO PRIMERO: `clasp push`, y después dos botones
 
-#### ✅ `L-047` — la fila GLOBAL quedó completa
+**Nada de las cinco commits de hoy está en Apps Script.** Y el push solo no alcanza:
 
-`cablearAgregadosDelGlobal()` escribe los tres que faltaban: **`camp_enviados`, `camp_or`,
-`camp_mail_clics`**. Misma solapa y misma forma que sus tres hermanas del `2026-08-19_1`.
+| # | qué correr | por qué |
+|---|---|---|
+| 1 | **`clasp push`** | `Generador.gs` e `Instalar.gs` cambiaron |
+| 2 | **«Aplicar configuración»** | ⚠ **`CONFIG` sólo siembra lo AUSENTE** y hay **4 claves nuevas**; el `MAPEO` de la POST también entra acá. `instalar()` no siembra |
+| 3 | **`cablearAgregadosDelGlobal()`** | ⚠ **escribe en `MARCADORES`** — los 3 del GLOBAL de `L-047` |
+| 4 | **una corrida de `jm`** | ⛔ **ningún token de `L-047` se vio publicar todavía**: los 40 de envío tienen fila desde el 23/08 y los 3 del GLOBAL desde hoy |
 
-⭐⭐ **El denominador de `% OR` se midió contra el deck del equipo, no se eligió.** De las cuatro
-filas de envío, **tres no distinguen** —`enviados` y `entregados` redondean igual— y **la cuarta
-sí**: `77.963/126.766 = 61,50 → 62` contra `61,34 → 61`, y el equipo publica **62**. Es
-`aperturas/ENTREGADOS`, que además es la definición que el motor ya tenía en `mail_or`,
-`gcba_mail_or` y `m2_or`.
+### ✅ Lo de hoy, en una línea cada uno
 
-⭐ **El control primario NO depende del deck del equipo**, y hay dos:
+- **`L-047` GLOBAL completo** — `camp_enviados`, `camp_or`, `camp_mail_clics`. El denominador de
+  `% OR` se **midió** contra el deck (una sola fila discrimina: 62 vs 61). Controles primarios que
+  no dependen del deck: `% OR = aperturas/entregados`, `% CTOR = clics/aperturas`, y el GLOBAL =
+  suma de los envíos (ése **cruza fuentes**).
+- **`L-036`**: `MAPEO` de `reuniones/Agenda JM | Post` de 2 campos a 7, con tipos medidos y tres
+  identidades internas exactas. **Y la pieza** — abajo.
+- **`L-043` decidido**: los seis van como **texto del equipo**, reversible y fechado.
+- **Cruce de fixtures**: 19 archivos, **un solo** desalineado. Y `.xlsx` **no trae `sheet_id`**.
 
-- **de la fila**: `% OR = aperturas/entregados` y `% CTOR = clics/aperturas` (`1.144/103.194 = 1,11 %`
-  exacto). Se puede exigir en cada corrida.
-- **entre filas**: el GLOBAL es la **suma** de los cinco envíos. ⚠ **Cruza fuentes** —GLOBAL lee
-  `looker`, los envíos `digital`—, así que si no cierra el hallazgo es que **las fuentes divergen**.
+### ⭐⭐ La pieza de `L-036`, y la colisión que arrastraba
 
-**Ninguno lleva `_revisar`**: sus hermanas no la llevan y la estabilidad de esa solapa **no está
-medida en `R-31`**. Nacen **SIN VALIDAR**, que no es lo mismo que validados.
-**Control:** `tools/probar-agregados-global.js`, 34 verdes. Las 39 de `tools/` en verde.
+**Dos cosas juntas, porque una sin la otra no sirve.**
 
-#### ⛔ `L-043` — los seis NO se cablearon, y el bloqueo es de FUENTE
+**1 · La colisión.** `filasRdvDelTemario_` tomaba **la primera** sección `agregado` + `REUNIONES` +
+`activa`; su comentario afirmaba que soportaba una segunda y **no la soportaba**. Nunca fue un
+contrato: era la coincidencia de que hubiera una sola. Ahora
+`seccionAgregadaDeReuniones_(secciones, informeId, seccionId)` exige el id, verifica que exista y
+que califique, y **sin id no elige una: falla diciendo que no hay default**. Los ids viven en
+`CONFIG` (4 claves nuevas), no en el código.
 
-El prompt los daba por destrabados por `FILA`. **Dos correcciones:** el censo ya decía `ELEMENTO`,
-y **da igual** — falta la fuente, y ninguna primitiva la fabrica.
+**2 · La pieza.** `filasDeSolapaDelTemario_` trae las filas del temario de **cualquier** solapa,
+resolviendo por **`id_cuenta` del anclaje** contra `campo_id_cuenta` (`D-30`) — no por
+`(nombre, fecha)` como la de `rdv`. Deduplica por cuenta y **separa `sin_cuenta` de `sin_fila` de
+`con_varias`**, que mandan a trabajos distintos. Más una rama en `datosDeMarcador_` con su guarda
+de solapa, **antes** de la declarativa: sin eso un `post_*` sin ítem publicaría el agregado de las
+102 filas.
 
-- **`camp_formato1-3`**: cero columnas «Formato» en las 13 solapas `fuente`. Un barrido **por
-  contenido** dio 16 aciertos y **los 16 son nombres de campaña**. La única candidata real,
-  `DESGLOCE.Nomenclatura`, tiene campos variables y **para la campaña destacada del 14-21/08 sus dos
-  filas no traen formato**.
-- **`camp_audiencia1-3`**: la fuente mail existe (`mail_segmentacion`), pero **0 de los 5 ítems
-  publicados están literales** — el equipo acorta y reescribe. Uno de los cinco es la audiencia
-  **digital**, en solapa `ignorar`. Y **4-5 audiencias no entran en 3 cajas**.
+⛔ **Y lo que NO hace, a propósito: no publica nada.** `comunicaciones_post` sigue `repetible`, así
+que **no califica** y la pieza no aporta filas (el motivo sale en el log). `L-036` sigue con sus 32
+`/////`, **y eso es lo esperado**.
 
-⚠ **Cablearlos con lo que hay no produce un número raro: produce una celda que se lee bien y dice
-otra cosa.** → `PENDIENTES`, pregunta al equipo: *¿los escribe una persona, como los `camp_bench_*`?*
-
-#### ⭐ El cruce de fixtures contra `BASES` — da **uno solo**
-
-19 `.xlsx` en los seis `.zip`: **18 matchean por nombre**, **19 de 19 por lista de solapas**, y el
-único desalineado es el ya conocido `DGPLES _ Seguimiento ECVs` = `reuniones`.
-⛔ **Premisa corregida: el `.xlsx` no trae el `sheet_id` adentro** —cero rastros en `docProps` de los
-19—, así que matchear por id no es una operación disponible sobre un fixture. **Lo que identifica
-una base es su lista de solapas**, y el margen la hace confiable: 24/24 contra 1/9 del segundo.
-
-#### `L-036` — `MAPEO` de la POST puesto, la lámina sigue bloqueada
-
-`reuniones/Agenda JM | Post` de 2 campos a 7, con tipos medidos e identidades internas exactas
-(`% VTR = M/J` 98 de 98, `% Cobertura = G/F` 89 de 89). `tools/probar-mapeo-post.js`, 30 verdes.
-Falta lo estructural — abajo.
+**Control:** `probar-agregado-por-temario.js` de 26 a **41 afirmaciones**. Las nuevas existen porque
+**ninguna de las viejas falla si la rama nueva no funciona**. Incluye romper el resolver a propósito
+y verificar que la afirmación de la colisión **cae**. Las 39 de `tools/` en verde.
 
 ---
 
-### ⏸ Lo que sigue, y las dos decisiones que lo destraban
+### ⏸ La única decisión abierta de la etapa A
 
-**1 · La pieza de `L-036`** — la análoga de `filasRdvDelTemario_` para `reuniones/Agenda JM | Post`,
-resuelta por el `id_cuenta` del anclaje. **No se escribió a propósito**: el usuario la pidió *«cuando
-termines esos nueve»* y los nueve son **3 hechos y 6 bloqueados por una decisión suya**.
+⭐ **Que `comunicaciones_post` pase de `repetible` a `agregado`.** Es una decisión de registro y la
+toma el usuario; el camino es `curarSecciones_` (precedente: `ponerIteraSobreEnEcvAlcance()`, que
+existe justo para esto). Con eso hecho, la pieza empieza a traer filas y los `post_*` se pueden
+cablear con `FILA 1..4` ordenado por `fecha_periodo` — molde `cablearTablaDeEnvios()`.
 
-⚠ **Y arrastra una decisión propia:** para que la lámina sea **una con cuatro filas**,
-`comunicaciones_post` tiene que dejar de ser `repetible`. `filasRdvDelTemario_` exige
-`modo = agregado` + `itera_sobre = REUNIONES` — y ahí aparece la colisión que el usuario marcó:
-**toma la PRIMERA que califique** y su comentario afirma que soporta una segunda. **No la soporta.**
-⭐ Así que la pieza nueva **no se copia tal cual**: hay que resolver la sección **por `seccion_id`
-explícito** en las dos, o la del agregado semanal y la de post se pisan. El molde del cableado sigue
-siendo `cablearTablaDeEnvios()`; el botón de registro, `curarSecciones_` (precedente:
-`ponerIteraSobreEnEcvAlcance()`).
+⚠ **Dos cosas que van a seguir faltando aunque el flip se haga:**
 
-**2 · Los seis de `L-043`** — esperan la respuesta de si son texto del equipo.
-
-### ⛔ Lo que necesita el usuario, en orden
-
-1. **`clasp push`** — nada de lo de hoy está en Apps Script.
-2. **Correr `cablearAgregadosDelGlobal()`** — ⚠ **escribe en `MARCADORES`**; `instalar()` no lo hace.
-3. **Aplicar configuración** para que el `MAPEO` de la POST llegue a la hoja. *Que el seed llegue no
-   garantiza que la hoja cambie.*
-4. **Una corrida** — ningún token de `L-047` se vio publicar: los 40 de envío tienen fila desde el
-   23/08 y estos tres desde hoy.
+1. **Tres de las ocho columnas no tienen fuente** —`post_camp`, `post_periodo`, `post_formato`—.
+   Pregunta al equipo, **sin prioridad**.
+2. **`etapa` está poblada en 4 de 15 filas de `REUNIONES`**, todas de `julio_24_30`. Una semana sin
+   `etapa` cargada da **cero ítems**, así que `agosto_14_20` no puede verificar esta lámina.
 
 ---
 

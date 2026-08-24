@@ -13824,3 +13824,75 @@ otra cosa.** Van a `PENDIENTES` como pregunta al equipo — *¿los escribe una p
   esos nueve»*, y los nueve son **3 hechos y 6 bloqueados por una decisión que es suya**. La pieza
   además arrastra su propia decisión —`comunicaciones_post` tendría que pasar a `agregado`— y las
   dos convienen juntas.
+
+---
+
+## 2026-08-24 (noche) — La pieza de `L-036`, la colisión de secciones, y `L-043` decidido
+
+**Commits:** `e1bdb78` (decisión + reglas) · `f69e37f` (la pieza).
+
+### 1 · `L-043` — decisión del usuario: **texto del equipo**, reversible y fechada
+
+`camp_audiencia1-3` y `camp_formato1-3` pasan a `[MANUAL]` en `docs/CONFIG_INFORMES.md` §2.5, con
+la evidencia del 24/08 al lado. ⭐ **La pregunta queda ABIERTA en `PENDIENTES`, y eso es lo que la
+hace reversible en vez de un cierre**: si el equipo contesta que hay fuente, se cablean.
+
+### 2 · ⛔⛔ La colisión de secciones — el tercer contrato-sin-testigo de la semana
+
+`filasRdvDelTemario_` tomaba **la primera** sección `agregado` + `REUNIONES` + `activa`, y su
+comentario decía *«el bucle está para que una segunda no exija tocar esto»*. **No lo hacía**:
+asignaba en el primer match y salía por `if (elegida) return;`. Con dos secciones, elegía por orden
+de `Object.keys` y **la otra desaparecía en silencio**, devolviendo las filas del universo
+equivocado.
+
+⚠ **Nunca fue un contrato: era la coincidencia de que hubiera una sola sección que calificara.** Y
+como los otros dos de la semana, **no fallaba nunca** — nada lo contradecía mientras la condición
+accidental se cumpliera. ⭐ **La segunda sección llegaba por la puerta del trabajo que la
+necesita**, que es cuando menos se la mira.
+
+**Ahora:** `seccionAgregadaDeReuniones_(secciones, informeId, seccionId)` exige el id, verifica que
+la fila **exista** y que **califique**, y devuelve el motivo cuando no. **Sin id no elige una:**
+falla diciendo que no hay default. Los ids viven en `CONFIG` —cuatro claves nuevas— y no en el
+código: son nombres de filas de registro, y el precedente es `umbral_anclaje_reunion`.
+
+### 3 · ⭐ La pieza: `filasDeSolapaDelTemario_`
+
+| | cómo llega a la fila |
+|---|---|
+| `filasRdvDelTemario_` | por `item.opciones.fila_rdv` — el anclaje la resolvió por **nombre y fecha** |
+| ⭐ **la nueva** | por **`id_cuenta`** del anclaje contra el `campo_id_cuenta` de la solapa (`D-30`) |
+
+**Por eso sirve para `reuniones/Agenda JM | Post`**: `C-50` mide que la PRE y la POST comparten
+`ID` y viven en dos solapas, así que la clave del par es `(ID, solapa)`.
+
+⭐ **Separa tres casos que no son lo mismo**, y el `origen` los nombra a los tres:
+`sin_cuenta` (el encuentro no ancló) · `sin_fila` (encuentro **sin comunicación post**, el caso
+normal) · `con_varias` (la solapa cambió de forma — está medida con una fila por encuentro).
+
+⚠ **La rama nueva de `datosDeMarcador_` va ANTES de la declarativa por `campo_id_cuenta`**, y ése
+es el invariante: sin eso, un `post_*` emitido fuera de un ítem caería al agregado de las **102
+filas** de la solapa y publicaría un número grande y plausible de **todos los encuentros de la
+historia**.
+
+⛔ **Y lo que la pieza NO hace, a propósito: no publica nada.** `comunicaciones_post` sigue siendo
+`repetible` y por lo tanto **no califica**; la pieza no aporta filas y el motivo sale en el log.
+**El flip de `modo` a `agregado` es una decisión de registro**, va por `curarSecciones_` y la toma
+el usuario.
+
+### 4 · El control — de 26 a 41 afirmaciones
+
+**Las quince nuevas existen porque ninguna de las viejas falla si la rama nueva no funciona.** El
+fixture tenía **una sola** sección que calificaba, así que *«la primera»* y *«la pedida»* daban lo
+mismo y el verde no distinguía nada (`CLAUDE.md` §4).
+
+⭐ **Y la sección `M` rompe el resolver a propósito** y verifica que la afirmación de la colisión
+**cae** — con el parche verificando que la mutación ocurrió, que es la regla nueva de hoy.
+
+### Pendientes / decisiones
+
+- ⛔ **Nada está en Apps Script**: falta `clasp push`. Las cuatro claves de `CONFIG` nacen recién en
+  la próxima **«Aplicar configuración»** — `CONFIG` **sólo siembra lo ausente**.
+- ⏸ **La decisión que queda es una y es del usuario:** que `comunicaciones_post` pase a `agregado`.
+  Hasta entonces `L-036` sigue con sus 32 `/////`, y eso es lo esperado.
+- ⚠ **`etapa` sigue poblada en 4 de 15 filas de `REUNIONES`**, todas de `julio_24_30`. Aun con el
+  flip hecho, una semana sin `etapa` cargada da **cero ítems**.
