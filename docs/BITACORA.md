@@ -13730,3 +13730,97 @@ columna**, así que el nombre de la fila 1 no correspondería a sus números. Si
 - **Lo que este control NO dice:** que la columna E siga llamándose `Fecha` en la planilla viva. Eso
   es `verificarEncabezadosDeMapeo()`, y necesita una corrida.
 
+---
+
+## 2026-08-24 (tarde) — `L-047` cierra su fila GLOBAL; los seis de `L-043` no se cablean, y el cruce de fixtures da uno
+
+**Commit de código:** `7329ec8`. Documentación aparte.
+
+### 1 · El cruce de fixtures contra `BASES` — pedido del usuario, y da **uno solo**
+
+| | |
+|---|---|
+| archivos `.xlsx` en los seis `.zip` | **19** |
+| matchean por nombre contra `BASES.nombre` | **18** |
+| ⚠ no matchean por nombre | **1** — `DGPLES _ Seguimiento ECVs (1).xlsx` = `reuniones` |
+| matchean por **lista de solapas** contra `SEED_SOLAPAS_` | **19 de 19, al 100 %** |
+
+⛔ **Y una premisa del pedido que hubo que corregir: el `.xlsx` NO trae el `sheet_id` adentro.**
+Medido: cero rastros en `docProps/app.xml`, `core.xml` y `custom.xml` de los 19 libros. Un export de
+Google Sheets **pierde el id del documento**, así que *«matchear por `sheet_id`»* no es una
+operación disponible sobre un fixture.
+
+⭐⭐ **Lo que sí identifica una base es su lista de solapas, y el margen lo hace confiable:**
+`DGPLES` da **24 de 24** contra `reuniones` y **1 de 9** contra el segundo candidato. Es una firma,
+no un empate a desempatar. **El susto era razonable y el resultado es tranquilizador: era uno.**
+
+### 2 · `L-047` — los tres agregados del GLOBAL, cableados
+
+`camp_enviados`, `camp_or` y `camp_mail_clics`, por `cablearAgregadosDelGlobal()`. Misma solapa y
+misma forma que sus tres hermanas del `2026-08-19_1`: `looker/resumen_metricas_dinamico` por la rama
+por cuenta, sin `filtro` y sin `dimensiones`.
+
+⭐⭐ **El denominador de `% OR` se MIDIÓ, no se eligió.** Con las cuatro filas de envío del deck del
+equipo (14-21/08), **tres no distinguen** —`enviados` y `entregados` redondean al mismo entero— y
+**la cuarta sí**: `77.963/126.766 = 61,50 → 62` contra `77.963/127.091 = 61,34 → 61`, y **el equipo
+publica 62**. Coincide además con las tres definiciones que el motor ya tenía del mismo hecho
+(`mail_or`, `gcba_mail_or`, `m2_or`), así que no nace una segunda definición (`D-33`).
+
+⚠ **Que exista una sola fila discriminante es el caso de `Pruebas.gs:456`**, y por eso la prueba
+afirma **las dos cosas**: que `entregados` reproduce las cuatro **y que `enviados` reproduce sólo
+tres**. Si algún día reprodujera las cuatro, el fixture dejó de distinguir y esa afirmación no
+prueba lo que dice.
+
+⭐ **Dos identidades internas quedaron escritas como control primario:**
+
+- **de la fila**, sin el deck del equipo delante: `% OR = aperturas / entregados` y
+  `% CTOR = clics / aperturas` — `1.144/103.194 = 1,109 % → 1,11 %` publicado, exacto.
+- **entre filas**, más fuerte pero **cruza fuentes**: el GLOBAL es la **suma exacta** de los cuatro
+  envíos en las cuatro columnas de volumen. ⚠ El GLOBAL lee `looker` y los envíos `digital`, así que
+  si no cierra **el hallazgo es que las fuentes divergen**, no necesariamente un bug del motor.
+
+**Ninguno lleva `_revisar`**, y no es descuido: sus hermanas no la llevan, y la estabilidad de esa
+solapa **no está medida en `R-31`** — nacen **SIN VALIDAR**, que no es lo mismo que validados.
+
+**Control:** `tools/probar-agregados-global.js`, **34 afirmaciones verdes**, cruce uno por uno
+contra el censo y negativa por la trampa del prefijo (`camp_env` se come a `camp_enviados`).
+
+⚠ **Y la autoprueba cazó algo que valía la pena:** dos de los tres casos negativos **no aplicaban**
+—los patrones usaban `\n` y `Instalar.gs` está en **CRLF**—. La guarda de *«la mutación NO cambió
+nada»* los marcó en rojo. **Sin esa guarda habrían pasado en verde sin tocar una línea**, que es
+exactamente *un control negativo que da rojo por el motivo equivocado*, en su versión más barata:
+ni siquiera daba rojo.
+
+### 3 · ⛔ Los seis de `L-043` NO se cablean — y el bloqueo no es la operación
+
+El prompt los daba por destrabados por `FILA`. **Van dos correcciones:** el censo del 22/08 ya
+decía que son `ELEMENTO` y no la décima — y **da igual**, porque lo que falta es la **fuente**, y
+ninguna primitiva la fabrica.
+
+**`camp_formato1-3`:** cero columnas «Formato» en las 13 solapas `fuente` de las tres bases. Los 16
+aciertos de un barrido **por contenido** (`placa · bumper · demand gen · banner · carrusel · reel ·
+story`) son todos **nombres de campaña** que traen la palabra. La única candidata real es
+`CAMPAÑAS_DESGLOCE_DIGITAL.Nomenclatura`, de campos variables (9, 7, 6) — y ⛔ **para la campaña
+destacada del 14-21/08 sus dos filas no traen formato**. El equipo publicó **3** ítems el 31/07 y
+**1** el 20/08, frases compuestas a mano, una por plataforma cuando difieren.
+
+**`camp_audiencia1-3`:** la fuente del lado mail existe (`mail_segmentacion`), pero ⛔ **0 de los 5
+ítems publicados el 20/08 están literales en ella** — el equipo acorta y reescribe. Uno de los cinco
+es la audiencia **digital**, que vive en una solapa `ignorar`. Y **4-5 audiencias no entran en 3
+cajas**: `opELEMENTO` con `separador = 3` falla a propósito, y sin `separador` publicaría las tres
+primeras **en silencio**.
+
+⚠ **Cablearlos con lo que hay no produce un número raro: produce una celda que se lee bien y dice
+otra cosa.** Van a `PENDIENTES` como pregunta al equipo — *¿los escribe una persona, como los
+`camp_bench_*` y los `camp_*_insight`?* Todo lo medido apunta a que sí.
+
+### Pendientes / decisiones
+
+- ⛔ **Los tres del GLOBAL no están en Apps Script**: hace falta `clasp push` **y** correr
+  `cablearAgregadosDelGlobal()`, que **escribe en `MARCADORES`**. `instalar()` no lo hace.
+- ⛔ **Ningún token de `L-047` se vio publicar todavía.** Los 40 de envío tienen fila desde el 23/08
+  y estos tres desde hoy; falta la corrida.
+- ⏸ **La pieza de `L-036` no se escribió**, y es a propósito: el usuario la pidió *«cuando termines
+  esos nueve»*, y los nueve son **3 hechos y 6 bloqueados por una decisión que es suya**. La pieza
+  además arrastra su propia decisión —`comunicaciones_post` tendría que pasar a `agregado`— y las
+  dos convienen juntas.

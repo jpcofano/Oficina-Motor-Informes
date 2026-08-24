@@ -190,6 +190,31 @@ nombre de la base da cero. Es la familia de *dos cosas que se llaman igual no so
 `SEED_SOLAPAS_` la base se identifica sola. Costó tres días de creer que `reuniones` no era
 verificable.
 
+#### El cruce completo, 24/08 — 19 archivos, **un solo** desalineado
+
+Pedido del usuario tras el hallazgo: cruzar los `.xlsx` de **todos** los `.zip` contra `BASES`.
+
+| | |
+|---|---|
+| archivos `.xlsx` en los 6 `.zip` (incluidos los dos de `Plan Inicial/_archivo/`) | **19** |
+| matchean por **nombre de archivo** contra `BASES.nombre` | **18** |
+| ⚠ **no matchean por nombre** | **1** — `DGPLES _ Seguimiento ECVs (1).xlsx` |
+| matchean por **lista de solapas** contra `SEED_SOLAPAS_` | **19 de 19, al 100 %** |
+
+⭐ **El desalineado es uno solo y ya está identificado.** Los otros cinco libros —`Base Looker`,
+`Seguimiento Digital`, `M2 Reporte para Fede 2026`, `RDV JM CM ES + funcionarios`— llevan el nombre
+que `BASES` les da, con un `(n)` de descarga al final que se saca con una regex.
+
+⛔ **Y una premisa que hay que corregir, porque cambia cómo se hace este cruce: el `.xlsx` NO trae
+el `sheet_id` adentro.** Se midió: cero rastros en `docProps/app.xml`, `core.xml` y `custom.xml` de
+los 19 libros. **Un export de Google Sheets pierde el id del documento**, así que *«matchear por
+`sheet_id`»* no es una operación disponible sobre un fixture — la pregunta se contesta por otro
+lado.
+
+⭐⭐ **Lo que sí identifica una base es su lista de SOLAPAS**, y el margen es lo que lo hace
+confiable: `DGPLES _ Seguimiento ECVs` da **24 de 24** contra `reuniones` y **1 de 9** contra el
+segundo candidato. No es un empate que haya que desempatar — es una firma.
+
 **Lo que esto destraba, medido el 24/08:** el `MAPEO` de `reuniones/Agenda JM | Post` pasó de 2
 campos a 7, con letras, encabezados y tipos **medidos** en vez de supuestos — y con tres identidades
 internas exactas (`% VTR = M/J` en 98 de 98, `% Cobertura = G/F` en 89 de 89, `% CTR = K/J` en 98 de

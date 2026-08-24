@@ -3,72 +3,95 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-24 — `L-036` Parte A: el `MAPEO` de la POST, y el hallazgo de que
-`reuniones` tenía fixture en disco desde el 21/08. Antes: el `2026-08-23_1` (las cinco partes),
-`X-39` y `D-39`. Lo de más abajo **sigue vigente**: no se reescribió lo que no cambió.
+**Última actualización:** 2026-08-24, tarde — `L-047` cierra su fila GLOBAL, los seis de `L-043`
+quedan bloqueados por fuente, y el `MAPEO` de la POST de `L-036`. Antes: el `2026-08-23_1`, `X-39`
+y `D-39`. Lo de más abajo **sigue vigente**: no se reescribió lo que no cambió.
 
 ---
 
 ## ⏱ Dónde estamos ahora mismo
 
-### ⭐ Lo último (24/08): `L-036` tiene fuente para 5 de sus 8 columnas — commit `bc91fa2`
+### ⭐ Lo último (24/08) — tres commits: `bc91fa2` · `a4ad2f6` · `7329ec8`
 
-**Se pidió cablear los 32 `post_` y NO se cableó ninguno.** Lo que frenó no es lo que el prompt
-anticipaba, y está medido.
+#### ✅ `L-047` — la fila GLOBAL quedó completa
 
-⭐⭐ **El hallazgo que más rinde: `reuniones` SÍ tiene fixture.** El `.zip` del 20/08 trae
-`DGPLES _ Seguimiento ECVs (1).xlsx`, que es la base `reuniones` con 24 solapas. El README decía
-*«ninguna»* porque **`BASES.reuniones.nombre` es `Base reuniones - Digital - Call Center` y el
-archivo se llama distinto** — mismo `sheet_id`, ningún nombre parecido. ⭐ **Un fixture se
-identifica por sus SOLAPAS, no por el nombre del archivo.** Esto destraba medir contra `reuniones`
-en general, no sólo esta lámina.
+`cablearAgregadosDelGlobal()` escribe los tres que faltaban: **`camp_enviados`, `camp_or`,
+`camp_mail_clics`**. Misma solapa y misma forma que sus tres hermanas del `2026-08-19_1`.
 
-**Lo que quedó escrito:** `MAPEO` de `reuniones/Agenda JM | Post` de 2 campos a 7 —`fecha_periodo`
-(E), `poblacion` (F), `imp_totales` (J), `vis_totales` (M), `vis_vtr_pct` (N)—, con letra,
-encabezado testigo (`D-31`) y tipo **medidos** sobre 102 filas. Y `tools/probar-mapeo-post.js`: **30
-afirmaciones verdes**, control positivo por camino compartido y 4 negativos que caen por el motivo
-correcto (`--autoprueba`). Las 38 de `tools/` en verde.
+⭐⭐ **El denominador de `% OR` se midió contra el deck del equipo, no se eligió.** De las cuatro
+filas de envío, **tres no distinguen** —`enviados` y `entregados` redondean igual— y **la cuarta
+sí**: `77.963/126.766 = 61,50 → 62` contra `61,34 → 61`, y el equipo publica **62**. Es
+`aperturas/ENTREGADOS`, que además es la definición que el motor ya tenía en `mail_or`,
+`gcba_mail_or` y `m2_or`.
 
-⭐⭐ **La identidad interna de `L-036`, que es el control primario y no envejece** (forma de `V-111`
-— si la fuente se mueve, se mueven los dos lados): `% VTR = Visualizaciones / Impresiones` **98 de
-98**, y `% Cobertura = Alcance / Habitantes` **89 de 89**. Exactas, sin una sola excepción.
+⭐ **El control primario NO depende del deck del equipo**, y hay dos:
 
-#### ⛔ Los dos que faltan para cablear, y el orden importa
+- **de la fila**: `% OR = aperturas/entregados` y `% CTOR = clics/aperturas` (`1.144/103.194 = 1,11 %`
+  exacto). Se puede exigir en cada corrida.
+- **entre filas**: el GLOBAL es la **suma** de los cinco envíos. ⚠ **Cruza fuentes** —GLOBAL lee
+  `looker`, los envíos `digital`—, así que si no cierra el hallazgo es que **las fuentes divergen**.
 
-1. ⛔⛔ **De dónde salen las CUATRO filas — es lo único estructural.** `comunicaciones_post` es
-   `repetible` sobre `REUNIONES` con `items_por_lamina = 4`, y esa columna **no tiene consumidor**:
-   greppeada, sólo `Instalar.gs` (headers y seed), **cero** lectores en `.gs`, `Panel.html` y
-   `tools/`. Hoy el motor emitiría **una lámina por reunión POST**, no cuatro filas en una.
-   ⭐ **La pieza ya existe para `rdv`:** `filasRdvDelTemario_` trae las filas del temario **sin
-   ítem** (`R-21` nivel 1). Falta la análoga para `reuniones/Agenda JM | Post`, resuelta por
-   `id_cuenta` del anclaje; con eso `FILA 1..4` ordenado por `fecha_periodo` da los cuatro
-   casilleros — **el molde es `cablearTablaDeEnvios()` de `L-047`**.
-   ⚠ **Y al hacerlo hay que mirar `filasRdvDelTemario_`**: elige **la primera** sección
-   `agregado`+`REUNIONES` y su comentario afirma que el bucle soporta una segunda. **No la
-   soporta**, y la candidata a segunda es justamente `comunicaciones_post` → `PENDIENTES`.
-2. **Tres columnas sin fuente** — `post_camp`, `post_periodo`, `post_formato`. No existen en
-   **ninguna** solapa `fuente` de `reuniones` ni de `digital`. **Pregunta al equipo, sin
-   prioridad** (usuario, 24/08), en `PENDIENTES`. El control las guarda en negativo.
+**Ninguno lleva `_revisar`**: sus hermanas no la llevan y la estabilidad de esa solapa **no está
+medida en `R-31`**. Nacen **SIN VALIDAR**, que no es lo mismo que validados.
+**Control:** `tools/probar-agregados-global.js`, 34 verdes. Las 39 de `tools/` en verde.
 
-⚠ **Premisa del prompt corregida:** `post_camp`/`post_periodo` como `ELEMENTO` reinstala el bug de
-`X-35` —colapsa repetidos y ordena **por columna**, así que la fila 1 mezclaría entidades—. Si la
-tabla se hace por `FILA`, van **las ocho** con el mismo `separador`.
+#### ⛔ `L-043` — los seis NO se cablearon, y el bloqueo es de FUENTE
 
-#### Qué necesita para verificarse
+El prompt los daba por destrabados por `FILA`. **Dos correcciones:** el censo ya decía `ELEMENTO`,
+y **da igual** — falta la fuente, y ninguna primitiva la fabrica.
 
-- ⛔ **Es seed: necesita `clasp push` Y el ítem de menú «Aplicar configuración».** `instalar()` no
-  siembra. *Que el seed llegue no garantiza que la hoja cambie.*
-- ⚠ **Una corrida de `agosto_14_20` NO lo verifica.** `etapa` está poblada en **4 de 15** filas de
-  `REUNIONES`, todas de `julio_24_30`: `etapa=post` da **cero ítems** y `L-036` sale con sus 32
-  `/////` igual.
-- **Lo que el control no dice:** que la columna E siga llamándose `Fecha` en la planilla viva. Eso
-  es `verificarEncabezadosDeMapeo()`.
+- **`camp_formato1-3`**: cero columnas «Formato» en las 13 solapas `fuente`. Un barrido **por
+  contenido** dio 16 aciertos y **los 16 son nombres de campaña**. La única candidata real,
+  `DESGLOCE.Nomenclatura`, tiene campos variables y **para la campaña destacada del 14-21/08 sus dos
+  filas no traen formato**.
+- **`camp_audiencia1-3`**: la fuente mail existe (`mail_segmentacion`), pero **0 de los 5 ítems
+  publicados están literales** — el equipo acorta y reescribe. Uno de los cinco es la audiencia
+  **digital**, en solapa `ignorar`. Y **4-5 audiencias no entran en 3 cajas**.
 
-#### Lo que sigue, acordado con el usuario
+⚠ **Cablearlos con lo que hay no produce un número raro: produce una celda que se lee bien y dice
+otra cosa.** → `PENDIENTES`, pregunta al equipo: *¿los escribe una persona, como los `camp_bench_*`?*
 
-**Los tres agregados del GLOBAL sin cablear** —`camp_enviados`, `camp_or`, `camp_mail_clics`— y
-después los seis de `L-043` (`camp_audiencia1-3`, `camp_formato1-3`), que son **indexados de UNA
-columna: caen en `ELEMENTO`, no en `FILA`**. Con eso cierra la etapa A, salvo lo de `L-036`.
+#### ⭐ El cruce de fixtures contra `BASES` — da **uno solo**
+
+19 `.xlsx` en los seis `.zip`: **18 matchean por nombre**, **19 de 19 por lista de solapas**, y el
+único desalineado es el ya conocido `DGPLES _ Seguimiento ECVs` = `reuniones`.
+⛔ **Premisa corregida: el `.xlsx` no trae el `sheet_id` adentro** —cero rastros en `docProps` de los
+19—, así que matchear por id no es una operación disponible sobre un fixture. **Lo que identifica
+una base es su lista de solapas**, y el margen la hace confiable: 24/24 contra 1/9 del segundo.
+
+#### `L-036` — `MAPEO` de la POST puesto, la lámina sigue bloqueada
+
+`reuniones/Agenda JM | Post` de 2 campos a 7, con tipos medidos e identidades internas exactas
+(`% VTR = M/J` 98 de 98, `% Cobertura = G/F` 89 de 89). `tools/probar-mapeo-post.js`, 30 verdes.
+Falta lo estructural — abajo.
+
+---
+
+### ⏸ Lo que sigue, y las dos decisiones que lo destraban
+
+**1 · La pieza de `L-036`** — la análoga de `filasRdvDelTemario_` para `reuniones/Agenda JM | Post`,
+resuelta por el `id_cuenta` del anclaje. **No se escribió a propósito**: el usuario la pidió *«cuando
+termines esos nueve»* y los nueve son **3 hechos y 6 bloqueados por una decisión suya**.
+
+⚠ **Y arrastra una decisión propia:** para que la lámina sea **una con cuatro filas**,
+`comunicaciones_post` tiene que dejar de ser `repetible`. `filasRdvDelTemario_` exige
+`modo = agregado` + `itera_sobre = REUNIONES` — y ahí aparece la colisión que el usuario marcó:
+**toma la PRIMERA que califique** y su comentario afirma que soporta una segunda. **No la soporta.**
+⭐ Así que la pieza nueva **no se copia tal cual**: hay que resolver la sección **por `seccion_id`
+explícito** en las dos, o la del agregado semanal y la de post se pisan. El molde del cableado sigue
+siendo `cablearTablaDeEnvios()`; el botón de registro, `curarSecciones_` (precedente:
+`ponerIteraSobreEnEcvAlcance()`).
+
+**2 · Los seis de `L-043`** — esperan la respuesta de si son texto del equipo.
+
+### ⛔ Lo que necesita el usuario, en orden
+
+1. **`clasp push`** — nada de lo de hoy está en Apps Script.
+2. **Correr `cablearAgregadosDelGlobal()`** — ⚠ **escribe en `MARCADORES`**; `instalar()` no lo hace.
+3. **Aplicar configuración** para que el `MAPEO` de la POST llegue a la hoja. *Que el seed llegue no
+   garantiza que la hoja cambie.*
+4. **Una corrida** — ningún token de `L-047` se vio publicar: los 40 de envío tienen fila desde el
+   23/08 y estos tres desde hoy.
 
 ---
 

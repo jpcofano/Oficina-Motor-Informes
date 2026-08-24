@@ -1891,6 +1891,62 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
 > nacieron en documentos hoy congelados y necesitan un lugar vivo. Al responderse, la
 > respuesta va al documento dueño del hecho y la pregunta se tacha acá.
 
+### 2026-08-24 · `camp_audiencia1-3` y `camp_formato1-3` (`L-043`): ¿son texto del equipo?
+
+> ⚠ **La pregunta correcta no es «con qué operación se cablean».** El censo del 22/08 ya había
+> decidido eso —*«son indexados de UNA columna: caen en `ELEMENTO`, no en la décima»*— y **da
+> igual**: lo que falta es la **fuente**, y ninguna primitiva la fabrica.
+
+**Medido el 24/08 sobre los decks de las dos semanas que hay en disco y sobre las 13 solapas
+`fuente` de las tres bases.**
+
+#### `camp_formato1-3` — no hay columna, y la que se le parece no sirve
+
+- **Cero columnas «Formato»** en las solapas `fuente`. Los 16 aciertos de un barrido por contenido
+  —`placa · bumper · demand gen · banner · carrusel · reel · story`— son todos **nombres de
+  campaña** que casualmente traen la palabra (`Carrusel Refugios climáticos`, `Reels Experiencias
+  BA`).
+- **La única candidata real es `CAMPAÑAS_DESGLOCE_DIGITAL.Nomenclatura` (col L)**, un string con
+  pipes que **a veces** trae el formato al final: `… | Geo CABA | Geo Story`, `… | Carrusel |
+  Demand Gen`. ⛔ **Pero su cantidad de campos y su orden varían** —9, 7, 6— y, sobre todo,
+  **para la campaña destacada del 14-21/08 sus dos filas NO traen formato**: la de Meta termina en
+  el nombre de la campaña y la de Google en `YouTube |`. Parsear esa columna sería inventar un
+  campo que en el caso que hay que reproducir **no está**.
+- Lo que el equipo publicó: **3 ítems** el 31/07 —`Meta: Placa y video`, `Google: Placas Demand
+  Gen, Bumpers y Videos de YouTube`, `Programmatic: Banners y Videos`— y **1** el 20/08 —`Video
+  Meta, YouTube y Programmatic`—. Son **frases compuestas a mano**, una por plataforma cuando
+  difieren y una sola cuando coinciden.
+
+#### `camp_audiencia1-3` — hay fuente para la mitad, y el equipo la reescribe
+
+- La fuente del lado mail existe y está mapeada: `digital/Directa Mail.mail_segmentacion` (col J).
+- ⛔ **Pero de los 5 ítems que el equipo publicó el 20/08, CERO están literales en ella.** El
+  equipo **acorta y reescribe**: `Barrios cercanos interesados en seguridad ( Flores, Parque
+  Avellaneda, …)` sale publicado como `Interesados en seguridad de barrios cercanos`, y
+  `Apertores de los envios Operativo Saturacion en el barrio 1.11.4 y Orden en la villa 31.` como
+  `Apertores de envíos similares`.
+- ⛔ **Y uno de los cinco no es de mail:** `Vecinos de la Ciudad Autónoma de Buenos Aires` es la
+  audiencia **digital** —el bloque se rotula *«Digital y Directa»*—, y vive en `digital/Digital`,
+  que es `uso = ignorar`.
+- ⛔ **Además desborda las cajas:** la campaña tiene **4** segmentaciones distintas y la plantilla
+  **3** ranuras; el equipo publicó **5** el 20/08 y **4** el 31/07. `opELEMENTO` con
+  `separador = 3` **falla a propósito** en ese caso —*«qué hacer con el resto es decisión
+  editorial y el motor no la toma»*— y sin `separador` publicaría las 3 primeras **en silencio**,
+  que es tomar esa decisión sin decirlo.
+
+#### La pregunta, en una frase
+
+**¿Estos seis los escribe una persona, como los `camp_bench_*` y los `camp_*_insight`?** Todo lo
+medido apunta a que sí. Si la respuesta fuera que no, hace falta **(a)** una columna de formato que
+hoy no existe, **(b)** la audiencia digital fuera de una solapa `ignorar`, y **(c)** una decisión
+editorial sobre el desborde de 4-5 audiencias en 3 cajas.
+
+⚠ **No se cablearon, y cablearlos con lo que hay publicaría texto distinto del que el equipo
+publica** — el modo de falla de esta lámina no es un número raro, es una celda que se lee bien y
+dice otra cosa.
+
+---
+
 ### 2026-08-24 · ¿De dónde salen `Campañas`, `Período` y `Formato` de `L-036`? — **sin prioridad**
 
 > ⚠ **No bloquea nada y así lo decidió el usuario (24/08): se anota y se sigue.** Las otras cinco
