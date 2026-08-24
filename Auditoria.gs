@@ -5097,22 +5097,63 @@ function diagPostYAnclaje() {
   Logger.log('--- 2 · el temario del periodo activo ---');
   var reuniones = [];
   try { reuniones = leerReuniones_() || []; } catch (e) { Logger.log('  ⛔ no pude leer REUNIONES: ' + e); }
-  /* ⚠ **No se filtra por un `periodo_activo` de `CONFIG`: esa clave NO EXISTE.** Se agrupa por
-   * `periodo_id` y se imprimen todos — el que lee elige el suyo. Inventar una clave para que el
-   * diagnostico se vea mas prolijo seria fabricar una dependencia que despues hay que mantener. */
+  /* ⛔⛔ `2026-08-25` — **este bloque agrupaba con `.trim()`, y eso lavaba justo lo que hay que
+   * ver.** La candidata principal del fallo del 25/08 era que el `periodo_id` recargado trajera un
+   * espacio o un carácter invisible, y **el diagnóstico lo normalizaba antes de mostrarlo**.
+   *
+   * ⭐ **Un instrumento que normaliza su entrada no puede diagnosticar problemas de
+   * normalización.** Es la familia del `String(celda)` que disfrazó booleanos de texto y del
+   * formato de celda que se leyó como tipo — **tercera vez en la semana**, y las tres veces el
+   * instrumento contestó con seguridad sobre algo que ya había destruido.
+   *
+   * **Ahora se muestra el valor CRUDO**, con delimitadores, largo y tipo. Los tres juntos: los
+   * delimitadores muestran espacios de borde, el largo muestra caracteres invisibles que los
+   * delimitadores no revelan —un ` ` se ve igual que un espacio— y el tipo muestra el caso
+   * `1/3 → fecha` de `C-83`. */
   var porPeriodo = {};
+  var crudos = {};
   reuniones.forEach(function (r) {
-    var k = String(r.periodo_id || '(sin periodo)').trim();
-    if (!porPeriodo[k]) porPeriodo[k] = [];
+    var v = r.periodo_id;
+    var k = String(v === undefined || v === null ? '' : v);
+    if (!porPeriodo[k]) { porPeriodo[k] = []; crudos[k] = v; }
     porPeriodo[k].push(r);
   });
   Logger.log('  filas de REUNIONES en total: ' + reuniones.length +
-    '  ·  periodos distintos: ' + Object.keys(porPeriodo).length);
+    '  ·  valores DISTINTOS de periodo_id: ' + Object.keys(porPeriodo).length);
+  Logger.log('  ⚠ SIN normalizar: si dos lineas de abajo se ven iguales, NO son iguales.');
   Object.keys(porPeriodo).sort().forEach(function (k) {
     var fs = porPeriodo[k];
-    Logger.log('  · ' + k + ': ' + fs.length + ' fila(s)  ·  con etapa=post: ' +
+    var v = crudos[k];
+    var tipo = (v instanceof Date) ? 'Date' : typeof v;
+    Logger.log('  · [' + k + ']  largo=' + k.length + '  tipo=' + tipo +
+      '  ·  ' + fs.length + ' fila(s)  ·  con etapa=post: ' +
       fs.filter(function (r) { return String(r.etapa || '').trim().toLowerCase() === 'post'; }).length);
+    /* ⭐ Y el desglose por codigo de caracter **solo cuando hace falta**: si el valor tiene bordes
+     * en blanco o algo fuera de ASCII imprimible, se listan los codigos. Imprimirlo siempre seria
+     * ruido; imprimirlo nunca es el bug de arriba. */
+    if (/^\s|\s$/.test(k) || /[^\x20-\x7E]/.test(k)) {
+      var codigos = [];
+      for (var i = 0; i < k.length; i++) codigos.push(k.charCodeAt(i));
+      Logger.log('      ⛔ tiene bordes en blanco o caracteres no imprimibles. Codigos: ' + codigos.join(' '));
+    }
   });
+  /* ⚠ Y lo que decide el caso del 25/08: contra QUE se compara. `anclarEncuentros` filtra
+   * `periodo_id` contra los `periodo_id` de PERIODOS que describen la ventana, **con `.trim()` de
+   * un solo lado** —el de la fila— asi que un espacio en PERIODOS tambien rompe. Se muestran los
+   * dos lados crudos para que la comparacion se pueda hacer a ojo. */
+  Logger.log('');
+  Logger.log('  --- contra que se compara: los periodo_id de PERIODOS, tambien crudos ---');
+  try {
+    var pers = leerPeriodos() || {};
+    Object.keys(pers).forEach(function (id) {
+      Logger.log('  · [' + id + ']  largo=' + id.length +
+        '  ·  ' + (pers[id].desde || '?') + ' a ' + (pers[id].hasta || '?'));
+    });
+    Logger.log('  ⭐ El filtro del anclaje hace `String(fila.periodo_id).trim()` contra ESTOS,');
+    Logger.log('    sin trim del otro lado: un espacio del lado de PERIODOS NO se perdona.');
+  } catch (e) {
+    Logger.log('  ⛔ no pude leer PERIODOS: ' + e);
+  }
   var delPeriodo = reuniones;
   Logger.log('  ⇒ si el periodo que corrio tiene 0 con etapa=post, el filtro de');
   Logger.log('    comunicaciones_post no devuelve items — pero eso NO explica los cuatro `-`');

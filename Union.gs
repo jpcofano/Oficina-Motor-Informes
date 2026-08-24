@@ -1096,6 +1096,69 @@ function registrarAnclajePendiente_(hoja, indice, tipo, nombreBuscado, top3) {
  */
 var cacheAnclaje_ = {};
 
+/**
+ * ⛔⛔ `2026-08-25` — **un anclaje que FALLA también deja fila, y ésta es la mitad que faltaba.**
+ *
+ * **El hueco, medido el 25/08:** `registrarMedicionAnclaje_` se llama en **una sola línea, al
+ * final** de `anclarEncuentrosSinCache_`. Los `return { ok: false }` tempranos —*«REUNIONES no
+ * tiene filas para anclar»*, la precondición, la unión digital— **están 160 líneas antes y nunca
+ * llegan ahí**. ⇒ **La hoja registraba sólo los éxitos.**
+ *
+ * ⭐⭐ **Y eso hace que su última fila se lea como «lo último que pasó» cuando es «lo último que
+ * salió bien».** El 25/08 se comparó una fila de las 17:12 contra un fallo de las 20:07 y pareció
+ * que dos instrumentos de la misma corrida decían cosas opuestas. **Nadie mentía: al fallo le
+ * faltaba fila.**
+ *
+ * ⚠ **Es el mismo hueco que esta hoja vino a cerrar, un nivel más arriba.** `ANCLAJE_PENDIENTE`
+ * vacío significaba dos cosas opuestas y por eso nació `ANCLAJE_MEDICION`; ahora el cero tiene
+ * denominador **y el fallo no tiene fila**. La forma del bug sobrevivió al arreglo.
+ *
+ * ⭐ **Va en el punto CACHEADO y no en cada `return`**, y eso no es comodidad: los
+ * `return { ok: false }` son varios y **el próximo que se agregue no se va a acordar de
+ * registrar**. Un solo punto por el que pasan todos es la única forma de que ninguno se escape —
+ * el mismo argumento que puso el registro de estimaciones en `controlDeEtapa_`.
+ *
+ * ⛔⛔ **Y NO se agrega una columna, aunque una `resultado` sería más prolija.** `ANCLAJE_MEDICION`
+ * se crea a demanda y **sus headers sólo se escriben cuando la hoja no existe**: una columna nueva
+ * no llegaría nunca a la hoja viva, y el `appendRow` de 12 valores contra 11 encabezados
+ * **correría todas las columnas una posición, en silencio**. Es exactamente lo que `CLAUDE.md` §2
+ * describe para las hojas de salida. El motivo va en `sin_link_detalle`, que en un fallo no tiene
+ * otro uso.
+ *
+ * ⚠ **Y no puede voltear la corrida**, igual que `registrarMedicionAnclaje_`: un instrumento que
+ * rompe lo que mide es peor que no tenerlo.
+ */
+function registrarFalloAnclaje_(resultado, ventana) {
+  try {
+    var hoja = obtenerHojaAnclajeMedicion_();
+    hoja.appendRow([
+      new Date(),
+      ventana && ventana.desde ? ventana.desde : '',
+      ventana && ventana.hasta ? ventana.hasta : '',
+      /* ⚠ En un fallo temprano el período **puede no haberse resuelto todavía**, y eso es un dato:
+       * vacío acá significa *«ni llegó a mirarlo»*, no *«no filtró»*. */
+      (resultado && resultado.periodo_id) || '',
+      /* ⛔⛔ **Los contadores van VACÍOS, nunca en cero.** Un `0` se lee como *«se intentó anclar
+       * cero encuentros y salió bien»*, que es una afirmación — y falsa. **Vacío es «no se
+       * midió»**, que es la verdad. Es la distinción de `CLAUDE.md` §4: *cero con denominador es
+       * un resultado; cero sin denominador es un silencio*, y acá ni siquiera hubo denominador. */
+      '', '', '', '', '',
+      '⛔ FALLÓ: ' + String((resultado && resultado.motivo) || '(sin motivo)'),
+      ''
+    ]);
+
+    // Misma poda que el registro de éxito. `getLastRow()` cuenta el encabezado.
+    var sobran = hoja.getLastRow() - (TOPE_MEDICIONES_ANCLAJE_ + 1);
+    if (sobran > 0) hoja.deleteRows(2, sobran);
+    SpreadsheetApp.flush();
+    return { ok: true, registrado: 'fallo' };
+  } catch (e) {
+    var mensaje = String((e && e.message) ? e.message : e);
+    try { Logger.log('registrarFalloAnclaje_ falló: ' + mensaje); } catch (e2) { /* ni el log */ }
+    return { ok: false, motivo: mensaje };
+  }
+}
+
 function anclarEncuentros(ventana) {
   // `_31.1` B.4 — el `origen` entra en la clave. Dos períodos pueden tener el mismo rango de
   // fechas y seleccionar temarios distintos: sin esto, el segundo leería el anclaje del primero.
@@ -1106,6 +1169,9 @@ function anclarEncuentros(ventana) {
     return cacheAnclaje_[claveCache];
   }
   var resultado = anclarEncuentrosSinCache_(ventana);
+  /* ⭐ El fallo se registra **acá y sólo en el miss de caché**: una fila por intento real, no una
+   * por consulta. El éxito ya lo registra `anclarEncuentrosSinCache_` en su última línea. */
+  if (resultado && resultado.ok === false) registrarFalloAnclaje_(resultado, ventana);
   cacheAnclaje_[claveCache] = resultado;
   return resultado;
 }
