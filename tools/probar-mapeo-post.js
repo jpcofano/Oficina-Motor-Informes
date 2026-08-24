@@ -11,7 +11,7 @@
  * ### Lo que afirma, y por qué cada cosa
  *
  * ⭐ **El control positivo son `id_cuenta` (A) y `alc_real` (G)**, que existen desde el 14/08 y
- * **comparten lector, lista y camino** con las cinco nuevas. Si el extractor se rompe o la lista
+ * **comparten lector, lista y camino** con las tres que quedan. Si el extractor se rompe o la lista
  * se renombra, esos dos desaparecen también — y entonces el verde de las otras afirmaciones no
  * estaría diciendo nada. Un control que sólo busca lo que sospecha **no distingue «no está» de
  * «no miré»**.
@@ -77,13 +77,21 @@ const COL_AC = indiceDeColumna('AC'); // 29 — termina la banda Programmatic
 const ESPERADAS = [
   { campo: 'fecha_periodo', columna: 'E', encabezado: 'Fecha', tipo: 'fecha', nuevo: false },
   { campo: 'poblacion', columna: 'F', encabezado: 'Habitantes', tipo: 'numero', nuevo: false },
-  { campo: 'imp_totales', columna: 'J', encabezado: 'Impresiones totales', tipo: 'numero', nuevo: false },
-  { campo: 'vis_totales', columna: 'M', encabezado: 'Visualizaciones', tipo: 'numero', nuevo: true },
-  { campo: 'vis_vtr_pct', columna: 'N', encabezado: '% VTR', tipo: 'numero', nuevo: true }
+  { campo: 'imp_totales', columna: 'J', encabezado: 'Impresiones totales', tipo: 'numero', nuevo: false }
 ];
 
 /** Los tres tokens que quedaron sin fuente y sin prioridad. Ninguno puede tener fila. */
+/** Los tres sin columna. ⚠ Y los DOS campos retirados el 25/08, que es otro motivo. */
 const PARQUEADOS = ['post_camp', 'post_periodo', 'post_formato'];
+/* ⛔⛔ `2026-08-25` — **`vis_totales` y `vis_vtr_pct` NO se mapean, y la afirmación es NEGATIVA.**
+ * Estaban acá como positivas hasta hoy. Se retiraron porque `Visualizaciones` y `% VTR` aparecen
+ * CUATRO veces cada uno en el encabezado de la solapa y `leerFuente` indexa **por título**: gana
+ * la columna de Programmatic, que en las filas de encuentro vale `-` y `0`. `L-036` lo publicó
+ * así el 25/08.
+ *
+ * ⭐ **El control no se afloja: gana una afirmación en el otro sentido.** Si alguien las vuelve a
+ * mapear, esto se pone rojo. */
+const RETIRADOS = ['vis_totales', 'vis_vtr_pct'];
 
 function correr(fuente, silencioso) {
   const filas = new Function('return ' + extraer(fuente, 'SEED_MAPEO_REUNIONES_', '[', ']'))();
@@ -108,7 +116,7 @@ function correr(fuente, silencioso) {
   af('alc_real sigue en la G', !!post.alc_real && post.alc_real.columna === 'G');
 
   di('');
-  di('2 · las cinco columnas de L-036 que SÍ tienen fuente (5 de 8)');
+  di('2 · las TRES columnas de L-036 que se pueden leer sin ambigüedad (3 de 8)');
   ESPERADAS.forEach((e) => {
     const f = post[e.campo];
     af('`' + e.campo + '` está mapeado', !!f, 'no hay fila para ' + SOLAPA);
@@ -132,7 +140,11 @@ function correr(fuente, silencioso) {
     'solapa; mapear una banda es una segunda respuesta a una pregunta que ya tiene una (V-21…V-24)');
 
   di('');
-  di('4 · ⛔ NEGATIVA — los tres tokens sin fuente siguen sin fila (pregunta al equipo, 24/08)');
+  di('4 · ⛔ NEGATIVA — lo que NO se mapea, y son DOS motivos distintos');
+  RETIRADOS.forEach((campo) => {
+    af('`' + campo + '` NO está mapeado en esta solapa (retirado el 25/08)', !post[campo],
+      'su título se repite 4 veces y el lector indexa por título: la letra de MAPEO es decorativa');
+  });
   PARQUEADOS.forEach((t) => {
     const hay = new RegExp('campo_logico:\\s*.' + t + '.').test(fuente);
     af(t + ' NO tiene fila en ningún seed de MAPEO', !hay,
@@ -162,28 +174,32 @@ if (process.argv.indexOf('--autoprueba') !== -1) {
   let malas = 0;
   const casos = [
     {
-      nombre: 'saco la fila de `vis_totales`',
-      mutar: (s) => s.replace(/\n[^\n]*campo_logico: 'vis_totales'[^\n]*\n/, '\n'),
-      esperaQueCaiga: '`vis_totales` está mapeado'
+      nombre: 'saco la fila de `imp_totales`',
+      mutar: (s) => s.replace(/[^\r\n]*campo_logico: 'imp_totales', hoja: 'Agenda JM [|] Post'[^\r\n]*/, ''),
+      esperaQueCaiga: '`imp_totales` está mapeado'
     },
     {
       nombre: 'inyecto una fila para `post_formato`',
-      mutar: (s) => s.replace("  { base_id: 'reuniones', campo_logico: 'vis_totales'",
-        "  { base_id: 'reuniones', campo_logico: 'post_formato', hoja: 'Agenda JM | Post', columna: 'D' },\n" +
-        "  { base_id: 'reuniones', campo_logico: 'vis_totales'"),
+      mutar: (s) => s.replace("{ base_id: 'reuniones', campo_logico: 'poblacion'",
+        "{ base_id: 'reuniones', campo_logico: 'post_formato', hoja: 'Agenda JM | Post', columna: 'D' }, " +
+        "{ base_id: 'reuniones', campo_logico: 'poblacion'"),
       esperaQueCaiga: 'post_formato NO tiene fila en ningún seed de MAPEO'
     },
     {
-      nombre: 'muevo `vis_totales` a la banda de Meta (O)',
-      mutar: (s) => s.replace("campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M'",
-        "campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'O'"),
-      esperaQueCaiga: 'ninguna fila de esta solapa apunta a O–AC'
+      /* ⛔⛔ El caso que guarda lo del 25/08: si alguien vuelve a mapear `vis_totales`, la
+       * afirmación NEGATIVA tiene que caer. Sin este caso, esa afirmación podría estar pasando
+       * porque el campo no existe en ningún lado, y no porque el control lo vigile. */
+      nombre: 'vuelvo a mapear `vis_totales` (M)',
+      mutar: (s) => s.replace("{ base_id: 'reuniones', campo_logico: 'poblacion'",
+        "{ base_id: 'reuniones', campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M' }, " +
+        "{ base_id: 'reuniones', campo_logico: 'poblacion'"),
+      esperaQueCaiga: '`vis_totales` NO está mapeado en esta solapa (retirado el 25/08)'
     },
     {
-      nombre: 'le cambio el encabezado testigo a `vis_vtr_pct`',
-      mutar: (s) => s.replace("'reuniones|Agenda JM | Post|vis_vtr_pct': '% VTR'",
-        "'reuniones|Agenda JM | Post|vis_vtr_pct': 'VTR'"),
-      esperaQueCaiga: '  vis_vtr_pct lleva encabezado testigo (D-31) "% VTR"'
+      nombre: 'le cambio el encabezado testigo a `poblacion`',
+      mutar: (s) => s.replace("'reuniones|Agenda JM | Post|poblacion': 'Habitantes'",
+        "'reuniones|Agenda JM | Post|poblacion': 'Poblacion'"),
+      esperaQueCaiga: '  poblacion lleva encabezado testigo (D-31) "Habitantes"'
     }
   ];
   casos.forEach((c) => {

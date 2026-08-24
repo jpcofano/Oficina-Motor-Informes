@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * tools/probar-tabla-post.js — **la tabla de `L-036`**: los 20 marcadores y los tres bordes que
+ * tools/probar-tabla-post.js — **la tabla de `L-036`**: los 12 marcadores y los tres bordes que
  * `julio_24_30` ejercita (25/08/2026).
  *
  * Hermano de `probar-tabla-envios.js`. Guarda dos cosas distintas y conviene no mezclarlas:
  *
- *   - **el seed** — que los 20 existan, con la forma correcta, y que los 12 sin fuente NO existan;
+ *   - **el seed** — que los 12 existan, y que las CINCO que NO se cablean no aparezcan, con sus dos motivos
  *   - **el comportamiento de `opFILA`** sobre los datos reales de `julio_24_30`, que es lo que
  *     hace que este control valga como control y no como inventario.
  *
@@ -13,7 +13,7 @@
  * export del 20/08 (`DGPLES _ Seguimiento ECVs`, sha `f8ef3227…`), copiadas y no deducidas — la
  * regla del 17/08. Y por eso los tres bordes son los de verdad y no tres casos elegidos:
  *
- *   1. **Retiro** tiene el camino entero, y su identidad interna cierra **al dígito**.
+ *   1. **Retiro** tiene el camino entero, y las tres columnas salen de **su misma fila**.
  *   2. **San Cristóbal** está en **ceros** → *cero real*, que NO es *sin dato*.
  *   3. Son **2 ítems para 4 ranuras** → las filas 3 y 4 salen `sin_datos`, que **no es error**.
  *
@@ -92,30 +92,43 @@ const RETIRO = { ID: '3346-JULJDGAG', Habitantes: 41475, Alcance: 47753,
 const SAN_CRISTOBAL = { ID: '3354-JULJDGAG', Habitantes: 41240, Alcance: 0,
   'Impresiones totales': 0, Visualizaciones: 0, '% VTR': 0, Fecha: 46226 };
 
-console.log('== probar-tabla-post — los 20 de `L-036` y los tres bordes de julio_24_30 ==');
+console.log('== probar-tabla-post — los 12 de `L-036` y los tres bordes de julio_24_30 ==');
 
 console.log('\n1 · control positivo — el censo se leyó (32 tokens en L-036)');
 const censo = tokensDelCenso();
 af(censo.length === 32, 'el bloque de L-036 trae los 32 tokens (' + censo.length + ')');
 af(censo.indexOf('post_camp1') !== -1, 'y trae `post_camp1`, que es de los que NO se cablean');
 
-console.log('\n2 · cruce UNO POR UNO contra el censo — 5 columnas × 4 filas');
+console.log('\n2 · cruce UNO POR UNO contra el censo — 3 columnas × 4 filas');
 const filas = filasDelWrapper(FUENTE);
-af(filas.length === 20, 'el wrapper escribe 20 y nada más (' + filas.length + ')');
+af(filas.length === 12, 'el wrapper escribe 12 y nada más (' + filas.length + ')');
 const porNombre = {};
 filas.forEach((f) => { porNombre[f.marcador] = f; });
-['habitantes', 'alcance', 'impresiones', 'vistas', 'vtr'].forEach((col) => {
+['habitantes', 'alcance', 'impresiones'].forEach((col) => {
   for (let n = 1; n <= 4; n++) {
     const t = 'post_' + col + n;
     af(censo.indexOf(t) !== -1 && !!porNombre[t], t + ' está en el censo y tiene fila');
   }
 });
 
-console.log('\n3 · ⛔ NEGATIVA — las tres columnas SIN FUENTE no se cablean');
+console.log('\n3 · ⛔ NEGATIVA — las CINCO que NO se cablean, por dos motivos distintos');
 ['camp', 'periodo', 'formato'].forEach((col) => {
   const cableadas = [1, 2, 3, 4].filter((n) => !!porNombre['post_' + col + n]).length;
-  af(cableadas === 0, 'post_' + col + '1-4 NO tienen fila — no hay columna en ninguna solapa fuente',
+  af(cableadas === 0, 'post_' + col + '1-4 NO tienen fila — NO HAY COLUMNA en ninguna solapa fuente',
     'si aparecen, se eligió una columna a ojo y eso publica texto distinto del que el equipo publica');
+});
+/* ⛔⛔ `2026-08-25` — **estas dos se retiraron, y por un motivo DISTINTO de las tres de arriba.**
+ * Allá no hay columna; acá **la columna existe y no se puede nombrar**: `Visualizaciones` y
+ * `% VTR` aparecen **cuatro veces cada uno** en el encabezado de `Agenda JM | Post`, el lector
+ * indexa por título y **gana el de Programmatic**. El 25/08 `L-036` publicó `-` y `0` por eso.
+ *
+ * ⭐ Es la afirmación negativa que reemplaza a la positiva que había: **el control viejo no se
+ * afloja, gana una afirmación en el otro sentido.** Si alguien las vuelve a mapear, esto se pone
+ * rojo y lo manda a leer el comentario de `COLUMNAS_POST_L036_`. */
+['vistas', 'vtr'].forEach((col) => {
+  const cableadas = [1, 2, 3, 4].filter((n) => !!porNombre['post_' + col + n]).length;
+  af(cableadas === 0, '⛔ post_' + col + '1-4 NO se cablean — su título se repite 4 veces y gana Programmatic',
+    'la letra de MAPEO es correcta y el lector nunca la usa para buscar: indexa por título');
 });
 
 console.log('\n4 · la forma: FILA, orden declarado, índice entero');
@@ -126,13 +139,13 @@ filas.forEach((f) => {
     f.marcador + ' es FILA ordenada por `fecha_periodo` (no hay default: FILA falla sin orden)');
 });
 af(filas.every((f) => typeof f.valor_fijo === 'number' && f.valor_fijo >= 1 && f.valor_fijo <= 4),
-  '⛔ los 20 índices son ENTEROS PELADOS 1-4 — `1/4` lo convierte Sheets en fecha (C-83)');
+  '⛔ los 12 índices son ENTEROS PELADOS 1-4 — `1/4` lo convierte Sheets en fecha (C-83)');
 af(filas.every((f) => f.base_id === 'reuniones' && f.solapa === 'Agenda JM | Post'),
-  'los 20 leen `reuniones/Agenda JM | Post`, la solapa POST del par de C-50');
+  'los 12 leen `reuniones/Agenda JM | Post`, la solapa POST del par de C-50');
 af(filas.every((f) => !f.filtro && !f.dimensiones),
   'sin filtro y sin dimensiones: el temario ya seleccionó, y volver a recortar sacaría ítems que eligió');
 
-console.log('\n5 · ⭐ BORDE 1 — Retiro: el camino entero, y la identidad interna al dígito');
+console.log('\n5 · ⭐ BORDE 1 — Retiro: FILA elige la fila correcta y las tres columnas son de ELLA');
 {
   const ctx = contextoFila();
   const ctxFila = (campo, n, enc) => ({
@@ -141,13 +154,17 @@ console.log('\n5 · ⭐ BORDE 1 — Retiro: el camino entero, y la identidad int
     campo_logico: campo, encabezado: enc, columna: '?', base_id: 'reuniones', solapa: 'Agenda JM | Post'
   });
   /* Ordenado por fecha ascendente, San Cristóbal (46226) va PRIMERO y Retiro (46227) segundo. */
-  const vistas = ctx.opFILA(ctxFila('vis_totales', 2, 'Visualizaciones'));
   const impres = ctx.opFILA(ctxFila('imp_totales', 2, 'Impresiones totales'));
-  const vtr = ctx.opFILA(ctxFila('vis_vtr_pct', 2, '% VTR'));
-  af(vistas.valor === 41204 && impres.valor === 136971, 'la fila 2 es Retiro (ordena por fecha)');
-  af(Math.abs((vistas.valor / impres.valor) - vtr.valor) < 1e-12,
-    '⭐ % VTR = Visualizaciones / Impresiones, exacto — la identidad interna de la lámina');
-  af(!vtr.sin_datos && !vtr.ambiguo, 'y sale con valor, no con hueco');
+  const hab = ctx.opFILA(ctxFila('poblacion', 2, 'Habitantes'));
+  const alc = ctx.opFILA(ctxFila('alc_real', 2, 'Alcance'));
+  af(impres.valor === 136971 && hab.valor === 41475 && alc.valor === 47753,
+    '⭐ la fila 2 es Retiro y las TRES columnas salen de la MISMA fila — coherencia de fila');
+  af(!impres.sin_datos && !impres.ambiguo, 'y sale con valor, no con hueco');
+  /* ⚠ La identidad se verifica sobre el DATO, no sobre lo publicado: las dos columnas ya no se
+   * mapean. Queda como afirmación de que el fixture es el real — y la diferencia entre eso y un
+   * control del motor es exactamente lo que se perdió al retirarlas. */
+  af(Math.abs((RETIRO.Visualizaciones / RETIRO['Impresiones totales']) - RETIRO['% VTR']) < 1e-12,
+    '⚠ la identidad sigue siendo cierta EN EL DATO (41.204/136.971) pero YA NO SE PUBLICA');
 }
 
 console.log('\n6 · ⭐ BORDE 2 — San Cristóbal en CEROS: cero real, que NO es sin dato');
@@ -188,7 +205,7 @@ if (process.argv.indexOf('--autoprueba') !== -1) {
   let malas = 0;
   const casos = [
     {
-      nombre: 'le saco el `separador` a las 20 filas',
+      nombre: 'le saco el `separador` a las 12 filas',
       mutar: (s) => s.replace("operacion: 'FILA', valor_fijo: n, separador: 'fecha_periodo',",
         "operacion: 'FILA', valor_fijo: n, separador: '',"),
       probar: (f) => f.every((x) => x.separador === 'fecha_periodo')

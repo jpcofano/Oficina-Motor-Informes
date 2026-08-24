@@ -317,9 +317,32 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
    * se lee como AGREGADO GLOBAL»*—, y ése es el invariante: sin esto, un `post_*` emitido fuera de
    * un ítem caería al agregado de las 102 filas de la solapa y publicaría **un número grande y
    * plausible de todos los encuentros de la historia**. */
-  if (opciones && opciones.filas_temario && opciones.base_temario === fila.base_id &&
-      opciones.hoja_temario === solapa) {
+  if (opciones && opciones.base_temario === fila.base_id && opciones.hoja_temario === solapa) {
+    /* ⛔⛔ `2026-08-25` — **el fallback se cierra: sin filas del temario NO se lee la solapa
+     * entera.**
+     *
+     * **Lo que había:** si `filasDeSolapaDelTemario_` devolvía cero, esta rama no disparaba y la
+     * cadena caía a la general — `leerFuente` sobre las 103 filas—. `L-036` publicó el **Recap de
+     * CABA** como si fuera un encuentro del temario. **Plausible, sin fallar, y de otro universo.**
+     *
+     * ⭐ **El argumento es el de `planDeLecturaPorCuenta_`, palabra por palabra:** *«leerla sin
+     * cuenta no es una lectura más amplia, es otra pregunta»*. Acá, sin el temario no es un
+     * universo más ancho: **es el universo de otra cosa**.
+     *
+     * ⚠ **Y es la misma familia que `X-41` y que los `cc_*`:** una sección que debería recortar
+     * por las cuentas del temario y termina publicando el universo ancho. **Es el modo de falla
+     * más caro de este proyecto y el único que no avisa.** */
     var t = opciones.filas_temario;
+    if (!t || !t.filas || !t.filas.length) {
+      return {
+        ok: false,
+        motivo: '«FALTA:' + fila.marcador + '@post_sin_temario» — ' + fila.base_id + '/' + solapa +
+          ' la manda el TEMARIO y esta corrida no obtuvo ni una fila. **NO se cae a leer la solapa ' +
+          'entera**: eso publicaría filas de otros encuentros con forma de acierto (el 25/08 salió ' +
+          'el Recap de CABA con 2.463.980 habitantes). Mirá el log de `agregado post`: separa ' +
+          '«la sección no calificó», «el ítem no tiene cuenta anclada» y «la cuenta no tiene fila».'
+      };
+    }
     return {
       ok: true,
       filas: t.filas,
@@ -4355,10 +4378,17 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
         .split(',').map(function (c) { return c.trim(); }).filter(function (c) { return c !== ''; });
       postTemario = filasDeSolapaDelTemario_(informeId, ventana, seccionPost, basePost, hojaPost,
         camposMetrica);
+      /* ⛔⛔ `2026-08-25` — **`base_temario`/`hoja_temario` se declaran SIEMPRE, aunque no haya
+       * filas.** Esa es la corrección: son lo que le dice a `datosDeMarcador_` *«esta solapa la
+       * manda el temario»*, y sin ellas el marcador **caía a leer la solapa entera**.
+       *
+       * **Lo que publicó el 25/08 por no hacerlo:** las cuatro filas de `L-036` salieron de las
+       * primeras filas de la solapa —Liniers y el **Recap de CABA**, con 2.463.980 habitantes—
+       * como si fueran encuentros del temario. Plausible, sin fallar, y de otro universo. */
+      opcionesEtapa4.base_temario = basePost;
+      opcionesEtapa4.hoja_temario = hojaPost;
       if (postTemario.ok && postTemario.filas.length) {
         opcionesEtapa4.filas_temario = postTemario;
-        opcionesEtapa4.base_temario = postTemario.base_id;
-        opcionesEtapa4.hoja_temario = postTemario.hoja;
       } else {
         Logger.log('ⓘ agregado post: sin filas — ' + (postTemario.motivo ||
           'la sección resolvió pero ningún ítem del temario tiene fila en ' + basePost + '/' + hojaPost));

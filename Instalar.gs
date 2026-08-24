@@ -1508,8 +1508,6 @@ var SEED_MAPEO_REUNIONES_ = [
   { base_id: 'reuniones', campo_logico: 'fecha_periodo', hoja: 'Agenda JM | Post', columna: 'E', notas: '"Fecha" — la del encuentro. ⚠ NO recorta: reuniones es modo_periodo=snapshot y leerFuente ignora la ventana. Se declara para que FILA la use en `separador` (X-35). 3 de 102 filas traen el texto "-" en vez de fecha' },
   { base_id: 'reuniones', campo_logico: 'poblacion', hoja: 'Agenda JM | Post', columna: 'F', notas: '"Habitantes" — mismo campo lógico que rdv/RVD JM-CM - ES!AB, que es donde nació. ⚠ 13 de 102 filas traen el texto "-": ahí una operación numérica devuelve sin_datos, que es correcto. Es el denominador de % Cobertura (I) = G/F, exacta en 89 de 89' },
   { base_id: 'reuniones', campo_logico: 'imp_totales', hoja: 'Agenda JM | Post', columna: 'J', notas: '"Impresiones totales" — el mismo campo lógico que AA de la PRE. Denominador de las dos identidades: % VTR (N) = M/J y % CTR (L) = K/J, exactas en 98 de 98' },
-  { base_id: 'reuniones', campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M', notas: '"Visualizaciones" — el acumulado, NO la banda por plataforma (esas son O-AC y no se mapean: digital manda). Numerador de % VTR = M/J' },
-  { base_id: 'reuniones', campo_logico: 'vis_vtr_pct', hoja: 'Agenda JM | Post', columna: 'N', notas: '"% VTR" — viene como FRACCIÓN (0,2094), formato `fraccion` como los cc_*_pct. ⚠ SOLAPAS avisa que sus % vuelven string en las filas en cero: medido, 102 de 102 number en el fixture del 20/08, pero la solapa viva puede tener filas en cero' }
 ];
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_REUNIONES_);
 
@@ -1740,11 +1738,11 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   alc_cobertura_pct: 'numero',
   // `2026-08-14_1` B — el alcance medido, contra `alc_potencial` que es el objetivo.
   alc_real: 'numero',
-  /* `2026-08-24` — las dos de la POST (`reuniones/Agenda JM | Post`, M y N). ⚠ `vis_vtr_pct`
-   * es `numero` y no un tipo propio, igual que los `cc_*_pct` y `alc_cobertura_pct`: viene
-   * como fracción y `tipo_esperado` **describe el dato, no el formato con que se publica**.
-   * Medidos, no supuestos: 102 de 102 celdas `num` en el fixture del 20/08. */
-  vis_totales: 'numero', vis_vtr_pct: 'numero'
+  /* ⛔ `2026-08-25` — `vis_totales` y `vis_vtr_pct` SE RETIRARON. Ver el comentario de
+   * `COLUMNAS_POST_L036_`: sus títulos —`Visualizaciones` y `% VTR`— se repiten CUATRO veces en
+   * `Agenda JM | Post` y el lector indexa por título, así que la letra de `MAPEO` era decorativa
+   * y ganaba la columna de Programmatic. No se dejan declarados «por las dudas»: un tipo sin
+   * campo es una invitación a volver a mapearlos. */
 };
 SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAMPO_[fila.campo_logico] || ''; });
 
@@ -1947,8 +1945,6 @@ var ENCABEZADO_POR_MAPEO_ = {
   'reuniones|Agenda JM | Post|fecha_periodo': 'Fecha',
   'reuniones|Agenda JM | Post|poblacion': 'Habitantes',
   'reuniones|Agenda JM | Post|imp_totales': 'Impresiones totales',
-  'reuniones|Agenda JM | Post|vis_totales': 'Visualizaciones',
-  'reuniones|Agenda JM | Post|vis_vtr_pct': '% VTR'
 };
 
 // Va DESPUÉS de que `fila.solapa` exista (se asigna desde `hoja` más arriba): la clave la usa.
@@ -2710,7 +2706,7 @@ var SEED_CONFIG_DEFAULTS_ = {
   // ⚠ Lo que refinaria esto si alguna vez hace falta: `alc_potencial` -un POST que ocurrio y midio
   // cero igual tendria objetivo declarado-. Hoy los cuatro lo tienen en cero, asi que las dos
   // reglas dan lo mismo y se elige la simple. Vacio = no se filtra.
-  campos_metrica_post: 'alc_real,imp_totales,vis_totales',
+  campos_metrica_post: 'alc_real,imp_totales',
   /* `R-30` / `X-29` (22/08/2026) — **tope de duración para entrar a una ventana por pertenencia.**
    * Una cuenta cuya ventana declarada dura más que esto NO entra. `0` desactiva.
    *
@@ -3831,18 +3827,33 @@ function curarSecciones_(cambios) {
  * se cae no es una fila sino la rama por cuenta de esta lámina entera.
  * ═══════════════════════════════════════════════════════════════════════════════════════════ */
 
-/** Las cinco columnas de `L-036` que tienen fuente, con su campo y su formato. */
+/* ⛔⛔ `2026-08-25` — **son TRES, no cinco: `vis_totales` y `vis_vtr_pct` se retiraron.**
+ *
+ * **El motivo, medido:** `leerFuente` indexa cada fila **por título** (`obj[h] = fila[i]`), y en
+ * `Agenda JM | Post` **`Visualizaciones` aparece cuatro veces** —M, R, W, AB— y **`% VTR` otras
+ * cuatro** —N, S, X, AC—. **Gana el último**, que es el de **Programmatic**, y en las filas de
+ * encuentro vale `-` y `0`. Eso es exactamente lo que publicó `L-036` el 25/08.
+ *
+ * ⚠ **`SOLAPAS` lo avisaba desde el 14/08** —*«los títulos de la fila 2 se repiten y NO alcanzan
+ * para nombrar una columna»*, *«las columnas de plataforma no se mapean: digital manda»*— y se
+ * mapearon igual, confiando en la letra. **La letra es correcta en `MAPEO` y el lector nunca la
+ * usa para buscar.**
+ *
+ * ⭐ **No se sostiene una excepción de lectura por letra para una sola solapa** (decisión del
+ * usuario): nadie la va a recordar en un mes. Las dos columnas salen del `MAPEO` y `L-036` queda
+ * con **tres de cinco**, que es preferible a publicar las de Programmatic disfrazadas de totales.
+ *
+ * **Los tres que quedan tienen título único**: `Habitantes` (F), `Alcance` (G) —`Alcance
+ * potencial` es otro título— y `Impresiones totales` (J), que **no** es el `Impresiones` repetido
+ * de las bandas. */
+/** Las tres columnas de `L-036` que se pueden leer sin ambigüedad. */
 var COLUMNAS_POST_L036_ = [
   { tok: 'habitantes',  campo: 'poblacion',    formato: 'miles',
     nota: 'col F "Habitantes". ⚠ 13 de 102 filas traen el texto "-": ahí sale sin_datos, que es correcto' },
   { tok: 'alcance',     campo: 'alc_real',     formato: 'miles',
     nota: 'col G "Alcance". Con poblacion forma % Cobertura = G/F, exacta en 89 de 89' },
   { tok: 'impresiones', campo: 'imp_totales',  formato: 'miles',
-    nota: 'col J "Impresiones totales". Denominador de las dos identidades de la solapa' },
-  { tok: 'vistas',      campo: 'vis_totales',  formato: 'miles',
-    nota: 'col M "Visualizaciones" — el acumulado, NO la banda por plataforma (O-AC): digital manda' },
-  { tok: 'vtr',         campo: 'vis_vtr_pct',  formato: 'fraccion',
-    nota: 'col N "% VTR", viene como FRACCION (0,2094). Identidad interna: = M/J, exacta en 98 de 98' }
+    nota: 'col J "Impresiones totales". Denominador de las dos identidades de la solapa' }
 ];
 
 function cablearTablaPostReuniones_() {
