@@ -1209,6 +1209,52 @@ function periodosQueDescribenLaVentana_(ventana) {
   return salida;
 }
 
+/**
+ * ⭐ Las filas de `REUNIONES` que **`leerReuniones_` descarta por `mostrar`**, con su período.
+ *
+ * **Existe para un solo uso: el mensaje de «no hay filas para anclar».** `leerReuniones_` filtra
+ * `esVerdadero_(mostrar)` **antes** de que el anclaje vea nada, así que una fila sin confirmar es
+ * indistinguible de una que no existe — y el aviso terminaba señalando al filtro de período, que
+ * era inocente.
+ *
+ * ⚠ **No se cachea y no se llama en el camino feliz.** Es una lectura entera de la hoja; pagarla
+ * en cada corrida para un mensaje que casi nunca sale sería el gasto que `CLAUDE.md` §4 llama *un
+ * costo por ítem que parece trabajo real*.
+ *
+ * ⚠ **Y el criterio es EL MISMO que el de `leerReuniones_`** —`fila[eje] && esVerdadero_(mostrar)`—
+ * a propósito: un diagnóstico que filtre distinto del filtro que explica **nombra filas que el otro
+ * sí dejó pasar**, y manda a arreglar algo que no está roto. Si allá cambia, acá también.
+ */
+function reunionesOcultasPorMostrar_() {
+  try {
+    var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('REUNIONES');
+    if (!hoja) return [];
+    var datos = hoja.getDataRange().getValues();
+    var headers = datos.shift();
+    var idx = {};
+    headers.forEach(function (h, i) { idx[h] = i; });
+    if (idx.eje === undefined || idx.mostrar === undefined) return [];
+    var out = [];
+    datos.forEach(function (fila) {
+      if (!fila[idx.eje]) return;                       // sin eje no es una fila de temario
+      if (esVerdadero_(fila[idx.mostrar])) return;      // confirmada: no es de las ocultas
+      if (idx.tipo !== undefined && String(fila[idx.tipo]).trim() === 'Agregado') return;
+      out.push({
+        nombre: String(fila[idx.nombre] || '(sin nombre)'),
+        periodo_id: String(idx.periodo_id !== undefined ? fila[idx.periodo_id] : '') || '(sin período)',
+        /* El valor CRUDO de `mostrar`, sin normalizar: si alguien escribió `x` o `1`, eso es un
+         * hallazgo sobre la convención y tiene que verse. Un instrumento que lava su entrada no
+         * puede diagnosticar problemas de entrada. */
+        mostrar_crudo: JSON.stringify(fila[idx.mostrar])
+      });
+    });
+    return out;
+  } catch (e) {
+    /* Un instrumento no puede voltear lo que mide: sin la hoja, el mensaje sale sin este dato en
+     * vez de reemplazar un fallo de anclaje por una excepción. */
+    return [];
+  }
+}
 function anclarEncuentrosSinCache_(ventana) {
   var precondicion = verificarPrecondicionAnclaje_();
   if (!precondicion.ok) return { ok: false, motivo: precondicion.motivo };
@@ -1279,11 +1325,39 @@ function anclarEncuentrosSinCache_(ventana) {
   var periodoDeLaVentana = periodosDeLaVentana.join(', ');
 
   if (!reuniones.length) {
+    /* ⛔⛔ `2026-08-25` — **el mensaje contaba el filtro de PERÍODO y callaba el de `mostrar`, que
+     * corre ANTES.** Costó una vuelta entera de diagnóstico.
+     *
+     * **El caso:** las cuatro filas de `julio_24_30` tenían `mostrar` vacío, así que
+     * `leerReuniones_` —que filtra `esVerdadero_(mostrar)` **antes de que este código las vea**—
+     * las descartó. Las **6** que este mensaje reportaba *«descartadas por período»* eran de junio
+     * y agosto. ⇒ El aviso decía la verdad y **mandaba a mirar el período, que estaba bien**.
+     *
+     * ⭐ **Un filtro que descarta antes y no cuenta es invisible**, y el que sí cuenta se lleva la
+     * culpa. Es la familia del glifo que miente sobre la causa: el número era correcto y señalaba
+     * al lugar equivocado.
+     *
+     * ⚠ **La cuenta se hace SÓLO acá, en el camino del fallo**, y por eso no cuesta nada cuando
+     * todo anda: es una segunda lectura de la hoja que sólo ocurre cuando ya no hay nada que
+     * anclar. */
+    var ocultas = reunionesOcultasPorMostrar_();
     return {
       ok: false,
       motivo: 'REUNIONES no tiene filas para anclar' +
         (periodoDeLaVentana ? ' en el período "' + periodoDeLaVentana + '"' : ' (mostrar=sí)') +
-        ' — excluidas las de tipo Agregado. Descartadas por período: ' + excluidasPorPeriodo.length
+        ' — excluidas las de tipo Agregado. Descartadas por período: ' + excluidasPorPeriodo.length +
+        /* ⭐ El dato que faltaba, y va con los nombres: un conteo sin nombres obliga a abrir la
+         * hoja, que es lo que este mensaje existe para evitar. */
+        (ocultas.length
+          ? ' · ⛔ Y ANTES DE ESO, ' + ocultas.length + ' fila(s) quedaron afuera por `mostrar` ' +
+            'vacío o distinto de sí — se filtran en `leerReuniones_` y NUNCA llegan al filtro de ' +
+            'período, así que el conteo de arriba no las incluye: ' +
+            ocultas.slice(0, 6).map(function (o) {
+              return o.nombre + ' [' + o.periodo_id + ']';
+            }).join(' · ') + (ocultas.length > 6 ? ' …' : '') +
+            '. ⚠ Si alguna es del período que buscás, ÉSA es la causa y el período no tiene nada ' +
+            'que ver. `R-02`: el temario propone y la persona confirma poniendo `sí`.'
+          : ' · ⭐ y NINGUNA quedó afuera por `mostrar`, así que el problema es el período.')
     };
   }
 
