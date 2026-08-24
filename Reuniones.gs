@@ -143,7 +143,19 @@ function parsearLineaReunion_(lineaCruda) {
   if (fecha) {
     propuesta.fecha = fecha;
     var nombre = matchFecha ? nombreYFecha.slice(0, matchFecha.index) : nombreYFecha;
-    nombre = nombre.replace(/^(en el|en la|en|del|de la|de)\s+/i, '').trim();
+    /* ⭐ `2026-08-25` — **`con` entra a la lista, y el caso es `Primera persona con Pareto`**, que
+     * quedó cargado como **`"con Pareto"`**. Misma familia que el `: Salud` de abajo: el tipo
+     * matchea y **lo que queda del texto se toma tal cual**, preposición incluida.
+     *
+     * ⚠ **La lista es explícita y NO un patrón tipo «sacá la primera palabra corta»**, y eso es
+     * deliberado: hay barrios que empiezan con una palabra corta —`La Boca`, `El Talar`— y un
+     * patrón se los come. **Crece con evidencia**: cada preposición entra cuando aparece en un
+     * temario real, no antes.
+     *
+     * ⚠ **Y `con` no toca `Constitución`**: el `\s+` exige que la preposición sea una palabra
+     * entera. Sin él, `Con|stitución` se cortaría — que es el error simétrico y peor, porque
+     * produce un nombre que **casi** parece bien. */
+    nombre = nombre.replace(/^(en el|en la|en|del|de la|de|con)\s+/i, '').trim();
     /* ⛔⛔ `2026-08-25` — **el separador entre el tipo y el nombre se recorta ACÁ, en el origen.**
      *
      * `JM | Encuentro Temático: Salud 14/08` producía **`nombre = ": Salud"`**, con los dos puntos

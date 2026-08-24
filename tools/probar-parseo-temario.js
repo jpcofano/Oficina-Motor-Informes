@@ -153,6 +153,39 @@ console.log('\n7 · ⚠ el texto original sobrevive entero — es donde queda lo
   af(p(l).texto_original === l, 'la línea completa queda en `texto_original`');
 }
 
+
+console.log('\n8 · ⭐ la preposición se recorta, y el borde que evita comerse un barrio');
+{
+  /* `Primera persona con Pareto` quedó cargado como `"con Pareto"` el 25/08. Misma familia que
+   * `: Salud`: el tipo matchea y lo que queda se toma tal cual. */
+  af(p('JM | Primera persona con Pareto 27/07').nombre === 'Pareto',
+    '`con Pareto` sale `Pareto` (dijo "' + p('JM | Primera persona con Pareto 27/07').nombre + '")');
+  af(p('JM | Primera persona en Villa Urquiza 27/07').nombre === 'Villa Urquiza',
+    'y `en` sigue funcionando como antes — control positivo, no se rompió lo que andaba');
+  /* ⛔ El borde que hace segura a la lista: `\s+` exige palabra entera. Sin él, `Constitución`
+   * se cortaría en `stitución` — un nombre que CASI parece bien, que es el peor resultado. */
+  af(p('JM | Uno a uno en Constitución 12/08').nombre === 'Constitución',
+    '⛔ y NO se come `Constitución`: la preposición tiene que ser palabra entera');
+  af(p('JM | Uno a uno en Concordia 12/08').nombre === 'Concordia',
+    'ni `Concordia`, por lo mismo');
+}
+
+console.log('\n9 · ⭐ la fecha sale como Date, no como texto');
+{
+  /* Medido el 25/08 porque la carga nueva se veía como `23/07/2026` en la hoja. El parser
+   * escribe un Date; lo que se ve es el FORMATO de la celda, no el tipo. Y aunque quedara texto,
+   * los dos consumidores que comparan fechas hacen `instanceof Date ? x : parsearFechaCelda_(x)`
+   * y `parsearFechaCelda_('23/07/2026')` devuelve la fecha correcta — medido. */
+  ['1) JM | Uno a uno en San Cristóbal 23/07 (pre + post)',
+   '2) JM | Encuentro Temático: Salud 14/08',
+   'JM | Primera persona con Pareto 27/07'].forEach((l) => {
+    const r = p(l);
+    af(r.fecha instanceof Date, 'es Date, no texto: ' + r.nombre);
+  });
+  af(p('1) JM | Uno a uno en San Cristóbal 23/07 (pre + post)').fecha.getUTCMonth() === 6,
+    'y el mes es julio (6), no marzo — dd/mm y no mm/dd');
+}
+
 if (process.argv.indexOf('--autoprueba') !== -1) {
   console.log('\n== autoprueba: control negativo CON MOTIVO ==');
   let malas = 0;
