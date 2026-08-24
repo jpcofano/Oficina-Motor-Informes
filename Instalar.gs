@@ -2651,6 +2651,32 @@ var SEED_CONFIG_DEFAULTS_ = {
   // constante en Union.gs) y pasa a ser parámetro de negocio — cambiarlo ya no
   // exige clasp push. Ver umbralAnclajeReunion_() en Union.gs.
   umbral_anclaje_reunion: '0.6',
+  /* ⭐⭐ `2026-08-24` — **qué sección agregada lee cada consumidor del temario, por `seccion_id`
+   * EXPLÍCITO.**
+   *
+   * ⛔ **Lo que reemplazan:** `filasRdvDelTemario_` tomaba **la primera** sección
+   * `agregado` + `REUNIONES` + `activa` que encontrara, con un comentario que afirmaba que el
+   * bucle soportaba una segunda. **No la soportaba** — con dos, elegía por orden de `Object.keys`
+   * y la otra desaparecía en silencio, devolviendo las filas del universo equivocado. Nunca fue
+   * un contrato: era la coincidencia de que hubiera una sola.
+   *
+   * **Por qué en `CONFIG` y no en el código** (`CLAUDE.md` §2): son nombres de filas de registro,
+   * un parámetro de negocio puro. Cambiar cuál sección alimenta el agregado post **no debería
+   * exigir `clasp push`** — es exactamente el precedente de `umbral_anclaje_reunion`, acá arriba.
+   *
+   * ⚠ **`CONFIG` sólo siembra lo AUSENTE** (`docs/ESCRITORES.md`): estas cuatro nacen en la
+   * próxima **«Aplicar configuración»** y después la hoja manda. Si alguien las cambia a mano, el
+   * seed no las pisa — que es la decisión del usuario del 16/08 y acá conviene. */
+  seccion_agregado_semanal: 'ecv_alcance_semanal',
+  /* ⚠ **`comunicaciones_post` HOY es `repetible` y por lo tanto NO califica**, así que esto no
+   * aporta filas todavía y el motivo sale en el log. Es deliberado: **que la pieza exista no
+   * publica nada por sí sola** — el flip de `modo` a `agregado` es una decisión de registro, va
+   * por `curarSecciones_` y la toma el usuario. Ver `docs/CIERRE_POR_LAMINA.md`, `L-036`. */
+  seccion_agregado_post: 'comunicaciones_post',
+  // La solapa de la que salen las filas del agregado post. `C-50`: la POST comparte `ID` con la
+  // PRE y vive en su propia solapa, así que la clave del par es `(ID, solapa)`.
+  base_agregado_post: 'reuniones',
+  solapa_agregado_post: 'Agenda JM | Post',
   /* `R-30` / `X-29` (22/08/2026) — **tope de duración para entrar a una ventana por pertenencia.**
    * Una cuenta cuya ventana declarada dura más que esto NO entra. `0` desactiva.
    *

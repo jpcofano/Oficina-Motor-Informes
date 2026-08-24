@@ -301,6 +301,40 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     };
   }
 
+  /* ⭐⭐ `2026-08-24` — **las filas del TEMARIO en una solapa que NO es `rdv`**, que es lo que
+   * `L-036` necesita: su tabla es *una fila por reunión del temario que tuvo comunicación post*.
+   *
+   * Es la hermana de la rama de arriba con la misma doctrina —**el temario ya seleccionó, no se
+   * recorta por ventana ni por `dimensiones`**— y una diferencia: las filas se encontraron por
+   * `id_cuenta` del anclaje contra el `campo_id_cuenta` de la solapa (`D-30`), no por
+   * `(nombre, fecha)`.
+   *
+   * ⚠ **La guarda de solapa NO es paranoia, y vale lo mismo que en la rama de `rdv`:** `campo` se
+   * resolvió con `buscarMapeo(base, solapa)` y su letra vale para ESA solapa. Si el marcador
+   * apunta a otra, la letra no aplica y el valor saldría de la columna equivocada **sin fallar**.
+   *
+   * ⚠ **Va ANTES de la rama declarativa por `campo_id_cuenta`** —la del aviso *«se emite SIN ítem:
+   * se lee como AGREGADO GLOBAL»*—, y ése es el invariante: sin esto, un `post_*` emitido fuera de
+   * un ítem caería al agregado de las 102 filas de la solapa y publicaría **un número grande y
+   * plausible de todos los encuentros de la historia**. */
+  if (opciones && opciones.filas_temario && opciones.base_temario === fila.base_id &&
+      opciones.hoja_temario === solapa) {
+    var t = opciones.filas_temario;
+    return {
+      ok: true,
+      filas: t.filas,
+      encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+      columna: campo.columna,
+      origen: 'las ' + t.filas.length + ' fila(s) de ' + fila.base_id + '/' + solapa + ' de los ' +
+        'encuentros del TEMARIO (sección `' + t.seccion_id + '`, resuelta por `seccion_id` ' +
+        'explícito) — por `id_cuenta` del anclaje, sin recorte por ventana ni por `dimensiones`: ' +
+        'el temario ya seleccionó' +
+        (t.sin_cuenta ? ' · ⚠ ' + t.sin_cuenta + ' ítem(s) SIN CUENTA ANCLADA — no es lo mismo que no existir' : '') +
+        (t.sin_fila ? ' · ⚠ ' + t.sin_fila + ' ítem(s) con cuenta pero SIN FILA en esta solapa (encuentro sin comunicación post: caso normal)' : '') +
+        (t.con_varias ? ' · ⛔ ' + t.con_varias + ' cuenta(s) con MÁS DE UNA fila — esta solapa está medida con una por encuentro; se tomó la primera y eso es elegir por orden de hoja' : '')
+    };
+  }
+
   if (fila.base_id === 'digital') {
     var idCuenta = opciones && opciones.id_cuenta;
     if (!idCuenta) {
@@ -2085,26 +2119,169 @@ function filtrarItemsPorSeccion_(seccion, crudos, leerAtributo) {
  * vacíos —verificado—, así que contar sobre estas filas **es** contar encuentros. Lo que cambió es
  * el universo, no la operación.
  */
-function filasRdvDelTemario_(informeId, ventanaInforme) {
+/* ⛔⛔ **`2026-08-24` — la sección se resuelve por `seccion_id` EXPLÍCITO, nunca por «la primera
+ * que califique».**
+ *
+ * **Lo que había acá, textual:** un bucle que tomaba la primera sección `agregado` + `REUNIONES` +
+ * `activa` y salía, con el comentario *«hoy es una sola —`ecv_alcance_semanal`— y el bucle está
+ * para que una segunda no exija tocar esto»*.
+ *
+ * ⛔ **El bucle no hacía eso.** Asignaba `elegida` en el primer match y las demás salían por
+ * `if (elegida) return;`. Con dos secciones que califiquen **tomaba una según el orden de
+ * `Object.keys`** y la otra desaparecía en silencio — devolviendo las filas del temario **de la
+ * sección equivocada**, que es un número plausible salido de las filas de otro universo.
+ *
+ * ⚠ **Nunca fue un contrato: era una coincidencia** de que hubiera una sola sección que
+ * calificara. Es el **tercer contrato-sin-testigo de la semana** (`CLAUDE.md` §4, *un comentario
+ * que afirma un contrato es una premisa sin testigo*), y como los otros dos **no fallaba nunca**,
+ * porque nada lo contradecía mientras la condición accidental se cumpliera.
+ *
+ * ⭐ **Y la segunda sección llegaba por la puerta del trabajo que la necesita:**
+ * `comunicaciones_post` es la candidata, y el prompt que la vuelve `agregado` es exactamente el
+ * que habría destapado esto — en una corrida, con el agregado semanal ya publicando.
+ *
+ * **Qué hace ahora:** exige el id, verifica que la fila **exista** y que **califique**, y devuelve
+ * el motivo cuando no. Los ids viven en `CONFIG` y no en el código (`CLAUDE.md` §2: un parámetro
+ * de negocio no debería exigir `clasp push`).
+ */
+function seccionAgregadaDeReuniones_(secciones, informeId, seccionId) {
+  var id = String(seccionId || '').trim();
+  if (!id) {
+    return { ok: false, motivo: 'no se declaró qué sección agregada leer. Va en `CONFIG` — ver ' +
+      'seccionAgregadoSemanal_() / seccionAgregadoPost_(). **No hay default**: elegir «la primera ' +
+      'que califique» es lo que este bloque vino a sacar.' };
+  }
+  var s = secciones[id];
+  if (!s) {
+    return { ok: false, motivo: 'la sección "' + id + '" no existe en `SECCIONES`. Las que hay: ' +
+      Object.keys(secciones).join(', ') };
+  }
+  var falta = [];
+  if (String(s.modo || '').trim() !== 'agregado') falta.push('modo = "' + s.modo + '" y tiene que ser `agregado`');
+  if (String(s.itera_sobre || '').trim() !== 'REUNIONES') falta.push('itera_sobre = "' + s.itera_sobre + '" y tiene que ser `REUNIONES`');
+  if (String(s.estado || '').trim() !== 'activa') falta.push('estado = "' + s.estado + '" y tiene que ser `activa`');
+  var informes = String(s.informes || '').split(',').map(function (i) { return i.trim().toLowerCase(); });
+  if (informes.indexOf(String(informeId).toLowerCase()) === -1) {
+    falta.push('no declara al informe "' + informeId + '" (declara: "' + s.informes + '")');
+  }
+  if (falta.length) {
+    return { ok: false, motivo: 'la sección "' + id + '" no califica: ' + falta.join(' · ') };
+  }
+  s.seccion_id = s.seccion_id || id;
+  return { ok: true, seccion: s };
+}
+
+/** El `seccion_id` del agregado semanal. Vive en `CONFIG`, no acá. */
+function seccionAgregadoSemanal_() {
+  return String(leerConfig().seccion_agregado_semanal || '').trim();
+}
+
+/** El `seccion_id` del agregado de comunicaciones post. Vive en `CONFIG`, no acá. */
+function seccionAgregadoPost_() {
+  return String(leerConfig().seccion_agregado_post || '').trim();
+}
+
+/**
+ * ⭐⭐ **`2026-08-24` — las filas de una SOLAPA CUALQUIERA para los encuentros del temario.**
+ *
+ * Es la análoga de `filasRdvDelTemario_` que `L-036` necesita, y la diferencia está en **por dónde
+ * encuentra la fila**:
+ *
+ * | | cómo llega a la fila |
+ * |---|---|
+ * | `filasRdvDelTemario_` | por `item.opciones.fila_rdv`, que el anclaje ya resolvió por **nombre y fecha** de la reunión |
+ * | ⭐ **ésta** | por **`id_cuenta`** del anclaje, contra el `campo_id_cuenta` que la solapa declara (`D-30`) |
+ *
+ * **Por eso sirve para `reuniones/Agenda JM | Post`**: `C-50` mide que la PRE y la POST comparten
+ * `ID` y viven en dos solapas, así que la clave del par es `(ID, solapa)` — y el `id_cuenta` del
+ * ítem alcanza para encontrar la fila POST del mismo encuentro.
+ *
+ * ⚠ **No recorta por ventana, y es a propósito**, igual que la rama de `rdv`: **el temario ya
+ * seleccionó** (`R-17`/`R-21`). Además `reuniones` es `modo_periodo = snapshot` y `leerFuente`
+ * ignora la ventana de todos modos.
+ *
+ * ⚠ **Un ítem sin cuenta anclada no aporta fila, y se CUENTA.** No es lo mismo que no existir: un
+ * conteo que no distingue *«no hay encuentros»* de *«ningún encuentro ancló»* manda a trabajos
+ * opuestos. Sale en `sin_cuenta` y el `origen` lo dice.
+ *
+ * ⚠ **Y un ítem cuya cuenta no tiene fila en ESTA solapa tampoco es un error**: es un encuentro
+ * sin comunicación post, que es el caso normal. Sale en `sin_fila`.
+ */
+function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, solapa) {
+  var vacio = { ok: false, filas: [], items: 0, sin_cuenta: 0, sin_fila: 0, motivo: '' };
+  var secciones;
+  try { secciones = leerSeccionesPlano_(); } catch (e) { vacio.motivo = 'no pude leer SECCIONES: ' + e; return vacio; }
+
+  var elegida = seccionAgregadaDeReuniones_(secciones, informeId, seccionId);
+  if (!elegida.ok) { vacio.motivo = elegida.motivo; return vacio; }
+
+  var campoCuenta = campoIdCuentaDeSolapa_(baseId, solapa);
+  if (!campoCuenta) {
+    vacio.motivo = baseId + '/' + solapa + ' no declara `SOLAPAS.campo_id_cuenta`, que es la ' +
+      'única vía para encontrar la fila de un encuentro en esta solapa (`D-30`).';
+    return vacio;
+  }
+  var mapa = buscarMapeo(baseId, solapa, campoCuenta);
+  if (!mapa.ok) { vacio.motivo = mapa.motivo; return vacio; }
+
+  var r;
+  try { r = itemsDeSeccion_(elegida.seccion, informeId, ventanaInforme); } catch (e) {
+    vacio.motivo = 'itemsDeSeccion_ falló: ' + e; return vacio;
+  }
+  if (!r || !r.ok) { vacio.motivo = (r && r.motivo) || 'itemsDeSeccion_ no devolvió ítems'; return vacio; }
+
+  var lectura = leerFuente(baseId, ventanaInforme, solapa, { sin_recorte_por_ventana: true });
+  if (!lectura.ok) { vacio.motivo = lectura.motivo; return vacio; }
+  var encClave = encabezadoEnColumna_(baseId, solapa, mapa.columna);
+
+  /* Dedup por `id_cuenta`: `julio_24_30` trae San Cristóbal y Retiro **dos veces cada uno** —`pre`
+   * y `post`—, y las dos filas del temario apuntan al MISMO encuentro. Sin esto la tabla
+   * publicaría el mismo encuentro en dos ranuras. Es el mismo motivo por el que
+   * `filasRdvDelTemario_` deduplica, con otra clave: allá es `(nombre, fecha)` porque la fila de
+   * `rdv` se resuelve por ahí; acá la clave natural es la cuenta. */
+  var vistos = {};
+  var filas = [];
+  var sinCuenta = 0, sinFila = 0, conVarias = 0, items = 0;
+  (r.items || []).forEach(function (item) {
+    var id = normalizarIdCuenta_(item.id_cuenta || '');
+    if (!id) { sinCuenta++; return; }
+    if (vistos[id]) return;
+    vistos[id] = true;
+    items++;
+    var suyas = filtrarFilasPorCuenta_(lectura.filas, encClave, id);
+    if (!suyas.length) { sinFila++; return; }
+    /* ⚠ **Una fila por encuentro, y si hay más de una eso se REPORTA.** Quedarse con la primera
+     * en silencio sería elegir por el orden de la hoja, que es lo que el `_39` sacó de `ULTIMO`
+     * sobre esta misma familia de solapas. La solapa está medida con **una fila por encuentro**
+     * (`SOLAPAS`: *"POST — 104 filas al 14/08, mismo ID que la PRE"*), así que `con_varias > 0`
+     * es un cambio de forma de la fuente, no un caso normal. */
+    if (suyas.length > 1) conVarias++;
+    filas.push(suyas[0]);
+  });
+
+  return {
+    ok: true,
+    filas: filas,
+    items: items,
+    sin_cuenta: sinCuenta,
+    sin_fila: sinFila,
+    con_varias: conVarias,
+    seccion_id: elegida.seccion.seccion_id,
+    base_id: baseId,
+    hoja: solapa,
+    motivo: ''
+  };
+}
+
+function filasRdvDelTemario_(informeId, ventanaInforme, seccionId) {
   var vacio = { filas: [], hoja: '', items: 0, sin_fila: 0 };
   var secciones;
   try { secciones = leerSeccionesPlano_(); } catch (e) { return vacio; }
 
-  // La sección de agregado que declara sobre qué itera. Hoy es una sola —`ecv_alcance_semanal`—
-  // y el bucle está para que una segunda no exija tocar esto.
-  var elegida = null;
-  Object.keys(secciones).forEach(function (id) {
-    if (elegida) return;
-    var s = secciones[id];
-    if (String(s.modo || '').trim() !== 'agregado') return;
-    if (String(s.itera_sobre || '').trim() !== 'REUNIONES') return;
-    if (String(s.estado || '').trim() !== 'activa') return;
-    var informes = String(s.informes || '').split(',').map(function (i) { return i.trim().toLowerCase(); });
-    if (informes.indexOf(String(informeId).toLowerCase()) === -1) return;
-    s.seccion_id = s.seccion_id || id;
-    elegida = s;
-  });
-  if (!elegida) return vacio;
+  var resuelta = seccionAgregadaDeReuniones_(secciones, informeId,
+    seccionId === undefined ? seccionAgregadoSemanal_() : seccionId);
+  if (!resuelta.ok) return vacio;
+  var elegida = resuelta.seccion;
 
   var r;
   try { r = itemsDeSeccion_(elegida, informeId, ventanaInforme); } catch (e) { return vacio; }
@@ -3717,6 +3894,33 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
     opcionesEtapa4.filas_rdv = temario.filas;
     opcionesEtapa4.hoja_rdv = temario.hoja;
     opcionesEtapa4.temario_sin_fila = temario.sin_fila;
+  }
+
+  /* ⭐ `2026-08-24` — **lo mismo para la solapa POST**, que es lo que `L-036` necesita. Las dos
+   * secciones se nombran por `seccion_id` desde `CONFIG`: **ninguna se resuelve por «la primera
+   * que califique»**, que es lo que este prompt vino a sacar.
+   *
+   * ⚠ **No frena la corrida si no resuelve.** Si `CONFIG` no la nombra, si la sección no califica
+   * todavía —hoy `comunicaciones_post` sigue siendo `repetible`— o si la solapa no declara
+   * `campo_id_cuenta`, esto **no aporta filas y el motivo queda en el log**. Los `post_*` caen
+   * entonces por donde caían: sin fila en `MARCADORES`, `/////`. **Que la pieza exista no publica
+   * nada por sí sola**, y eso es deliberado: el flip de `modo` es una decisión de registro. */
+  var postTemario = null;
+  var seccionPost = seccionAgregadoPost_();
+  if (seccionPost) {
+    var basePost = String(leerConfig().base_agregado_post || '').trim();
+    var hojaPost = String(leerConfig().solapa_agregado_post || '').trim();
+    if (basePost && hojaPost) {
+      postTemario = filasDeSolapaDelTemario_(informeId, ventana, seccionPost, basePost, hojaPost);
+      if (postTemario.ok && postTemario.filas.length) {
+        opcionesEtapa4.filas_temario = postTemario;
+        opcionesEtapa4.base_temario = postTemario.base_id;
+        opcionesEtapa4.hoja_temario = postTemario.hoja;
+      } else {
+        Logger.log('ⓘ agregado post: sin filas — ' + (postTemario.motivo ||
+          'la sección resolvió pero ningún ítem del temario tiene fila en ' + basePost + '/' + hojaPost));
+      }
+    }
   }
   var resolucionEtapa4 = resolverMarcadores(informeId, opcionesEtapa4);
   resolucion = resolucionEtapa4;

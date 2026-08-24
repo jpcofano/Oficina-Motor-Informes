@@ -91,6 +91,15 @@ function itemsJulio() {
 
 function ctxGenerador(items) {
   const ctx = contexto('Generador.gs');
+  /* ⭐ `2026-08-24` — **`CONFIG` es de dónde salen los `seccion_id` ahora**, y se stubea acá en vez
+   * de pasarlos por parámetro **a propósito**: así el banco recorre el mismo camino que producción.
+   * Pasarlos a mano probaría que la función acepta un argumento, que no es lo que hay que verificar. */
+  ctx.leerConfig = () => ({
+    seccion_agregado_semanal: 'ecv_alcance_semanal',
+    seccion_agregado_post: 'comunicaciones_post',
+    base_agregado_post: 'reuniones',
+    solapa_agregado_post: 'Agenda JM | Post'
+  });
   ctx.leerSeccionesPlano_ = () => ({
     ecv_alcance_semanal: { modo: 'agregado', itera_sobre: 'REUNIONES', estado: 'activa', informes: 'JM,SECCO' },
     // ⚠ Distractores reales: `m2` y `ministros` son agregado y NO iteran REUNIONES; `encuentro`
@@ -238,6 +247,7 @@ console.log('\n═══ H · ⚠ romper a propósito: volver al filtro de uno s
     const ctx = contexto('Generador.gs', (t) => t.replace(
       /var clave = normalizar_\(item\.etiqueta \|\| item\.clave\) \+ '\|' \+ \(f \? formatearFecha_\(f\) : 'sin_fecha'\);/,
       "var clave = normalizar_(item.etiqueta || item.clave) + '|SIEMPRE_DISTINTO' + Math.random();"));
+    ctx.leerConfig = () => ({ seccion_agregado_semanal: 'ecv_alcance_semanal' });
     ctx.leerSeccionesPlano_ = () => ({ ecv_alcance_semanal: { modo: 'agregado', itera_sobre: 'REUNIONES', estado: 'activa', informes: 'JM' } });
     ctx.itemsDeSeccion_ = () => ({ ok: true, items: itemsJulio() });
     r = ctx.filasRdvDelTemario_('jm', null);
@@ -247,6 +257,160 @@ console.log('\n═══ H · ⚠ romper a propósito: volver al filtro de uno s
   const suma = r ? r.filas.reduce((a, f) => a + f.Inscriptos, 0) : 0;
   afirmar(r !== null && r.filas.length === 6 && suma === 2569,
     'anulada la deduplicación, salen 6 filas y 2569 — el número grande y plausible que la sección A evita');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-24` — la sección se resuelve por `seccion_id` EXPLÍCITO, y la pieza de `L-036`.
+ *
+ * ⚠ **Estas afirmaciones existen porque NINGUNA de las de arriba falla si la rama nueva no
+ * funciona** (`CLAUDE.md` §4: *una rama nueva que nunca se ejecutó no está sin probar: está sin
+ * escribir el control*). El fixture de arriba tiene **una sola** sección que califica, así que
+ * *«la primera que califique»* y *«la que se pidió»* dan lo mismo — y el verde no distingue nada.
+ * ══════════════════════════════════════════════════════════════════════════════════════════════ */
+
+console.log('\n═══ I · ⛔⛔ con DOS secciones agregado+REUNIONES, se elige la PEDIDA ═══');
+{
+  const ctx = ctxGenerador(itemsJulio());
+  /* ⭐ El orden importa: `comunicaciones_post` va **primero** en el objeto, así que un
+   * `Object.keys(...)[0]` la elegiría a ella. Es exactamente el caso que el código viejo perdía. */
+  ctx.leerSeccionesPlano_ = () => ({
+    comunicaciones_post: { modo: 'agregado', itera_sobre: 'REUNIONES', estado: 'activa', informes: 'JM,SECCO' },
+    ecv_alcance_semanal: { modo: 'agregado', itera_sobre: 'REUNIONES', estado: 'activa', informes: 'JM,SECCO' }
+  });
+  let pedidas = [];
+  ctx.itemsDeSeccion_ = (s) => { pedidas.push(s.seccion_id); return { ok: true, items: itemsJulio() }; };
+
+  const r = ctx.filasRdvDelTemario_('jm', null);
+  afirmar(pedidas.length === 1 && pedidas[0] === 'ecv_alcance_semanal',
+    '⭐ pidió los ítems de `ecv_alcance_semanal`, NO de la primera del objeto (pidió: ' + pedidas.join(',') + ')');
+  afirmar(r.filas.length === 4, 'y sigue devolviendo las 4 filas del agregado semanal');
+}
+
+console.log('\n═══ J · el resolver por id: existe, califica, y los motivos ═══');
+{
+  const ctx = ctxGenerador(itemsJulio());
+  const secciones = ctx.leerSeccionesPlano_();
+
+  const ok = ctx.seccionAgregadaDeReuniones_(secciones, 'jm', 'ecv_alcance_semanal');
+  afirmar(ok.ok === true, 'la que califica resuelve');
+
+  const noExiste = ctx.seccionAgregadaDeReuniones_(secciones, 'jm', 'no_existe');
+  afirmar(noExiste.ok === false && /no existe/.test(noExiste.motivo),
+    '⛔ un id que no existe falla NOMBRÁNDOLO, no en silencio');
+
+  const repetible = ctx.seccionAgregadaDeReuniones_(secciones, 'jm', 'encuentro');
+  afirmar(repetible.ok === false && /modo/.test(repetible.motivo),
+    '⛔ una `repetible` falla y el motivo dice `modo` — hoy `comunicaciones_post` cae acá');
+
+  const otroInforme = ctx.seccionAgregadaDeReuniones_(secciones, 'otro', 'ecv_alcance_semanal');
+  afirmar(otroInforme.ok === false && /no declara al informe/.test(otroInforme.motivo),
+    '⛔ un informe que la sección no declara falla con su motivo');
+
+  const sinId = ctx.seccionAgregadaDeReuniones_(secciones, 'jm', '');
+  afirmar(sinId.ok === false && /No hay default|no hay default/.test(sinId.motivo),
+    '⭐ sin id NO elige una: falla diciendo que no hay default');
+}
+
+console.log('\n═══ K · `filasDeSolapaDelTemario_` — la pieza de L-036, por `id_cuenta` ═══');
+{
+  const ctx = ctxGenerador(itemsJulio());
+  ctx.leerSeccionesPlano_ = () => ({
+    comunicaciones_post: { modo: 'agregado', itera_sobre: 'REUNIONES', estado: 'activa', informes: 'JM,SECCO' }
+  });
+  /* Seis filas de temario y cuatro encuentros, igual que arriba — dos comparten cuenta (pre/post).
+   * `Retiro` NO tiene fila en la solapa POST: es un encuentro sin comunicación post, el caso
+   * normal. Y uno de los ítems no ancló: eso NO es lo mismo que no existir. */
+  const its = [
+    { id_cuenta: 'A-1', clave: 'San Cristóbal (pre)' },
+    { id_cuenta: 'A-1', clave: 'San Cristóbal (post)' },
+    { id_cuenta: 'A-2', clave: 'Retiro (pre)' },
+    { id_cuenta: 'A-3', clave: 'Villa Urquiza' },
+    { id_cuenta: '',    clave: 'Orden Público' }
+  ];
+  ctx.itemsDeSeccion_ = () => ({ ok: true, items: its });
+  ctx.campoIdCuentaDeSolapa_ = () => 'id_cuenta';
+  ctx.buscarMapeo = () => ({ ok: true, columna: 'A' });
+  ctx.encabezadoEnColumna_ = () => 'ID';
+  ctx.normalizarIdCuenta_ = (s) => String(s || '').trim();
+  ctx.filtrarFilasPorCuenta_ = (filas, enc, id) => filas.filter((f) => f[enc] === id);
+  ctx.leerFuente = () => ({ ok: true, filas: [
+    { ID: 'A-1', Visualizaciones: 45806, Impresiones: 218662 },
+    { ID: 'A-3', Visualizaciones: 868747, Impresiones: 9063800 }
+  ] });
+
+  const r = ctx.filasDeSolapaDelTemario_('jm', null, 'comunicaciones_post', 'reuniones', 'Agenda JM | Post');
+  afirmar(r.ok === true, 'resuelve');
+  afirmar(r.items === 3, '⭐ cuenta 3 encuentros distintos sobre 5 filas de temario — dedup por cuenta (' + r.items + ')');
+  afirmar(r.filas.length === 2, 'y devuelve 2 filas: sólo las que existen en la solapa POST (' + r.filas.length + ')');
+  afirmar(r.sin_cuenta === 1, '⚠ 1 ítem SIN CUENTA anclada, contado aparte (' + r.sin_cuenta + ')');
+  afirmar(r.sin_fila === 1, '⚠ 1 ítem con cuenta y sin fila POST — encuentro sin comunicación post (' + r.sin_fila + ')');
+  afirmar(r.con_varias === 0, 'ninguna cuenta trajo más de una fila');
+  /* ⭐ El control que importa: la identidad interna de `L-036` sobre las filas que salieron. Si la
+   * pieza devolviera las filas de otro encuentro, esto seguiría cerrando —cierra sobre cualquier
+   * fila— así que **no reemplaza** a los conteos de arriba; los acompaña. */
+  const vtr = r.filas.map((f) => f.Visualizaciones / f.Impresiones);
+  afirmar(Math.abs(vtr[0] - 0.20948312921312345) < 1e-12 && Math.abs(vtr[1] - 0.09584798870231029) < 1e-12,
+    'y las dos filas reproducen % VTR = Visualizaciones / Impresiones al dígito');
+}
+
+console.log('\n═══ L · ⛔ la rama nueva de `datosDeMarcador_` y su guarda de solapa ═══');
+{
+  const ctx = ctxGenerador(itemsJulio());
+  ctx.buscarMapeo = () => ({ ok: true, columna: 'M' });
+  ctx.encabezadoEnColumna_ = () => 'Visualizaciones';
+  ctx.campoIdCuentaDeSolapa_ = () => '';
+  ctx.leerFuente = () => ({ ok: false, motivo: '(cortado por el banco: cayó a la rama general)' });
+  const fila = { base_id: 'reuniones', campo_logico: 'vis_totales', marcador: 'post_vistas1' };
+  const temario = {
+    filas: [{ Visualizaciones: 45806 }], seccion_id: 'comunicaciones_post',
+    sin_cuenta: 1, sin_fila: 1, con_varias: 0, base_id: 'reuniones', hoja: 'Agenda JM | Post'
+  };
+
+  const buena = ctx.datosDeMarcador_(fila, 'Agenda JM | Post', null, {}, {
+    filas_temario: temario, base_temario: 'reuniones', hoja_temario: 'Agenda JM | Post'
+  });
+  afirmar(buena.ok === true && buena.filas.length === 1, 'con la solapa correcta, devuelve la fila del temario');
+  afirmar(/TEMARIO/.test(buena.origen) && /seccion_id. expl/.test(buena.origen),
+    '⭐ y el origen declara que la sección se resolvió por `seccion_id` explícito');
+  afirmar(/SIN CUENTA ANCLADA/.test(buena.origen) && /SIN FILA/.test(buena.origen),
+    '⚠ y nombra los dos casos que NO son lo mismo: sin cuenta y sin fila');
+
+  /* ⚠ Acá sí hace falta una ventana: el punto de la afirmación es que **cae a la rama general**,
+   * y ésa arma su clave de caché con las fechas. Que necesite ventana es la prueba de que cayó. */
+  const otraSolapa = ctx.datosDeMarcador_(fila, 'Agenda JM',
+    { desde: new Date('2026-08-14T12:00:00Z'), hasta: new Date('2026-08-20T12:00:00Z') }, {}, {
+      filas_temario: temario, base_temario: 'reuniones', hoja_temario: 'Agenda JM | Post'
+    });
+  afirmar(!(otraSolapa.ok && /TEMARIO/.test(otraSolapa.origen || '')),
+    '⛔ con OTRA solapa NO usa esas filas — la letra de columna vale para una solapa sola');
+}
+
+console.log('\n═══ M · ⚠ romper a propósito: volver a «la primera que califique» ═══');
+{
+  /* ⭐ La sección `I` sólo prueba algo si **cae** cuando el resolver vuelve al comportamiento
+   * viejo. Sin esto, `I` podría estar pasando por cualquier motivo — es la mitad que
+   * `CLAUDE.md` §4 exige: mirar CUÁL afirmación cae y con qué motivo.
+   *
+   * ⚠ **Y el parche verifica que ocurrió**: `contexto()` tira si el `replace` no matchea nada.
+   * Un parche que no aplica corre sobre el código intacto y da verde sin haber probado nada. */
+  let elegida = null;
+  try {
+    const ctx = contexto('Generador.gs', (t) => t.replace(
+      '  var s = secciones[id];',
+      '  var s = secciones[id] || secciones[Object.keys(secciones)[0]];\n  id = s ? (s.seccion_id || Object.keys(secciones)[0]) : id;'));
+    ctx.leerConfig = () => ({ seccion_agregado_semanal: 'NO_EXISTE_A_PROPOSITO' });
+    ctx.leerSeccionesPlano_ = () => ({
+      comunicaciones_post: { modo: 'agregado', itera_sobre: 'REUNIONES', estado: 'activa', informes: 'JM,SECCO' },
+      ecv_alcance_semanal: { modo: 'agregado', itera_sobre: 'REUNIONES', estado: 'activa', informes: 'JM,SECCO' }
+    });
+    ctx.itemsDeSeccion_ = (s) => { elegida = s.seccion_id; return { ok: true, items: itemsJulio() }; };
+    ctx.filasRdvDelTemario_('jm', null);
+  } catch (e) {
+    fallas++; console.log('  ❌ el parche falló: ' + e.message);
+  }
+  afirmar(elegida === 'comunicaciones_post',
+    '⭐ con el resolver roto elige la PRIMERA del objeto (' + elegida + ') — o sea que la sección I ' +
+    'mide de verdad la corrección, y no está pasando por casualidad');
 }
 
 console.log('');
