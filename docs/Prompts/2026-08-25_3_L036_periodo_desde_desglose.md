@@ -225,3 +225,62 @@ Un commit.
 - **`docs/BITACORA.md`** y **`docs/HANDOFF_CODE.md`** — la vuelta entera.
 
 Commit de documentación separado.
+
+---
+---
+
+# ADDENDUM 1 — confirmado: la operación nueva indexa GRUPOS, y la clave es `id_cuenta`
+
+**La Parte A se ejecutó y su reporte está aceptado.** La objeción es correcta y la Parte 2 se corrige
+acá. El resto del prompt sigue vigente.
+
+## Lo confirmado
+
+- **Operación nueva, no extender `FILA_TEXTO`.** `opFILA` hace `orden.filas[n-1]` — indexa filas, y
+  la unidad acá es el grupo. `FILA_TEXTO` y `opFILA` quedan **intactos**, y los otros 41 marcadores
+  no se enteran.
+- **Las seis columnas de `Agenda JM | Post` siguen con `FILA`**, donde sí hay una fila por encuentro.
+  No se tocan.
+
+## ⛔⛔ La corrección: la clave del grupo es `id_cuenta`, NO `fecha_periodo`
+
+Agrupar por `fecha_periodo` **rompe con dos encuentros el mismo día**, y el caso está medido en
+`docs/FUENTE_post_reuniones_2026-08-25.md`: dentro de la ventana 24-30/07 hay dos con POST —
+`3389` (Nueva Pompeya 29/7) y `3420` (Caballito 29/7). Agrupados por fecha caen en **un solo grupo**,
+y el `min`–`max` abarcaría las campañas de los dos. Un período plausible, de dos encuentros, sin
+fallar.
+
+Hoy no entran al temario, así que no rompe. **Es la misma forma que San Cristóbal: un contrato que se
+sostiene por lo que la semana trajo.**
+
+⭐ **Y la distinción ya está escrita en el proyecto:** `id_cuenta` es la **identidad** de la fila
+(`D-30`, `campo_id_cuenta`); `fecha_periodo` es el campo de **orden**. Usar el separador como clave
+de agrupación es confundir las dos.
+
+⇒ La operación:
+
+1. **agrupa por `id_cuenta`** — la identidad;
+2. **ordena los grupos por `fecha_periodo`** — que ya viaja copiado de la lista única;
+3. toma el **n-ésimo grupo** y compone `min` de la fecha de inicio y `max` de la de fin.
+
+⚠ Y el desempate entre grupos con el mismo `fecha_periodo` tiene que ser **explícito y declarado**,
+no el orden de llegada de la hoja. Decí cuál elegiste.
+
+## El banco que fija esto
+
+⭐ **Construilo, no lo esperes de la corrida:** dos encuentros con el mismo `fecha_periodo` y períodos
+distintos publican **dos períodos distintos** en dos ranuras. Nueva Pompeya y Caballito, 29/07, son
+los ids reales. Hoy no entran al temario — por eso el banco es la única forma de tener el caso.
+
+Los tres bancos de la Parte 2 siguen en pie.
+
+## Y el hallazgo del prefijo va a `CLAUDE.md` §4
+
+`post_` matcheando `u1_post_` es la **segunda** vez que un filtro por prefijo o por símbolo informa
+un conteo equivocado — la primera fue el detector de suites filtrando por `❌`.
+
+> **Un filtro por prefijo tiene que verificarse contra los nombres completos, porque un prefijo es
+> una convención de nombre y no una clave.**
+
+Es la misma familia que *el exit code es un contrato; un glifo en un log es una convención*. Va en
+`CLAUDE.md` §4 con las otras, en la Parte 4.
