@@ -5234,3 +5234,92 @@ function diagPostYAnclaje() {
   Logger.log('  coincide con el de Agenda JM | Post. Eso lo dice la corrida, no esto.');
   return true;
 }
+
+/* ═══════════ `2026-08-25` — EL TESTIGO DE `DIMENSIONES_.etapa` ════════════════════════════
+ *
+ * ⛔ **Se corre ANTES de ampliar el criterio y DESPUÉS, en la misma sesión.** Ampliar `post` de
+ * `~=Agenda Post` a `~=Post` **mueve números publicados** de los 24 `u1_*` del «1 a 1», y ésta es
+ * la única forma de saber cuánto y hacia dónde.
+ *
+ * ⭐⭐ **Lleva su propio CANARIO adentro, y es de la clase buena: `u1_total_impresiones`.** Ese
+ * marcador tiene `dimensiones` **vacío** —o sea las DOS etapas— sobre la **misma solapa** y con la
+ * **misma operación** que los que sí se mueven. **El cambio no lo puede tocar**: mover una fila de
+ * `pre` a `post` no cambia la suma de las dos.
+ *
+ *   ⇒ Si `u1_total_impresiones` se movió, **NO fue este cambio: fue la fuente**, y la comparación
+ *     entera no se lee. Es el discriminador que `CLAUDE.md` §4 pide —*dos marcadores que comparten
+ *     camino y difieren sólo en el corte*— y vale **dentro de la misma corrida**, así que la
+ *     inestabilidad de `looker`/`digital` no lo puede arruinar.
+ *
+ * ⭐ **Y el criterio de aceptación, que es el que dio el usuario (`V-110`):** el `pre` es el
+ * **complemento** del `post` (`des_campana!~=…`), así que ampliar el post **tiene que sacarle filas
+ * al pre y a nadie más**. Un `u1_pre_*` que NO se mueve cuando su `u1_post_*` hermano sí, es un
+ * hallazgo: significa que la fila entró al post sin salir del pre.
+ *
+ * ⚠ **Lo que este testigo NO contesta:** si los valores nuevos son los CORRECTOS. Dice qué se movió
+ * y en qué dirección; que el número sea el de la semana lo dice el deck del equipo.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Los 21 marcadores que tocan `etapa`, más el canario. El orden agrupa por lo que se compara. */
+var MARCADORES_ETAPA_TESTIGO_ = [
+  // POST — los que GANAN filas. Tienen que subir o quedar, nunca bajar.
+  'u1_post_meta_impresiones', 'u1_post_meta_vistas', 'u1_post_meta_vtr',
+  'u1_post_google_impresiones', 'u1_post_google_vistas', 'u1_post_google_vtr',
+  'u1_post_prog_impresiones', 'u1_post_prog_vistas', 'u1_post_prog_vtr',
+  // PRE — los que PIERDEN las mismas filas. Tienen que bajar o quedar, nunca subir.
+  'u1_pre_meta_impresiones', 'u1_pre_meta_clics', 'u1_pre_meta_ctr',
+  'u1_pre_google_impresiones', 'u1_pre_google_clics', 'u1_pre_google_ctr',
+  'u1_pre_prog_impresiones', 'u1_pre_prog_clics', 'u1_pre_prog_ctr',
+  // Totales: dos tienen etapa y se mueven; el tercero es el CANARIO.
+  'u1_total_clics',        // `etapa=pre`  → puede bajar
+  'u1_total_vistas',       // `etapa=post` → puede subir
+  'u1_total_impresiones'   // ⭐ SIN etapa → NO se puede mover. El canario.
+];
+
+/**
+ * ⭐ **El testigo. Sin `_` y SIN PARÁMETROS**, que son las dos condiciones para que Apps Script lo
+ * liste en el desplegable (`CLAUDE.md` §2).
+ *
+ * Se corre **dos veces**: antes de tocar `DIMENSIONES_.etapa` y después, **en la misma sesión** —
+ * el intervalo corto es lo que hace que la comparación signifique algo con una fuente que se mueve
+ * sola (`R-31`).
+ *
+ * Devuelve por `Logger.log` **además** de por `return`: el editor no muestra el valor de retorno.
+ */
+function testigoDeEtapaPost() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('TESTIGO DE `DIMENSIONES_.etapa` — ' + new Date().toISOString());
+  Logger.log('criterio POST vigente en este momento: ' +
+    JSON.stringify(DIMENSIONES_.etapa.post['digital|CAMPAÑAS_DESGLOCE_DIGITAL']));
+  Logger.log('criterio PRE  vigente en este momento: ' +
+    JSON.stringify(DIMENSIONES_.etapa.pre['digital|CAMPAÑAS_DESGLOCE_DIGITAL']));
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ⛔ **El criterio se imprime desde `DIMENSIONES_`, no como texto fijo.** Un testigo que declara
+   * de memoria bajo qué criterio corrió es indistinguible de uno que corrió bajo el otro — y las
+   * dos tomas se llaman igual. Es la mitad barata de *«el reporte declara bajo qué condiciones
+   * corrió»*. */
+
+  var r = testigoDeMarcadores_(MARCADORES_ETAPA_TESTIGO_, 'etapa pre/post del «1 a 1»');
+  if (!r.ok) {
+    Logger.log('⛔ FALLÓ: ' + r.motivo);
+    return r;
+  }
+
+  Logger.log('');
+  Logger.log('── CÓMO LEER LA SEGUNDA TOMA ─────────────────────────────────────────');
+  Logger.log('1 ⭐ CANARIO PRIMERO: `u1_total_impresiones` suma las DOS etapas sobre la misma');
+  Logger.log('     solapa. Si se movió, NO fue el cambio — fue la fuente, y nada de lo demás');
+  Logger.log('     se puede leer. Es lo único que se mira antes que el resto.');
+  Logger.log('2  Los nueve `u1_post_*` pueden SUBIR o quedar. Si alguno BAJA, es un bug.');
+  Logger.log('3  Los nueve `u1_pre_*` pueden BAJAR o quedar. Si alguno SUBE, es un bug.');
+  Logger.log('4 ⭐ Y el par tiene que moverse JUNTO: el `pre` es el complemento del `post`, así');
+  Logger.log('     que una fila que entra al post SALE del pre. Un `u1_post_*` que sube con su');
+  Logger.log('     `u1_pre_*` hermano quieto significa que la fila entró sin salir de ningún lado.');
+  Logger.log('5  `u1_total_clics` (etapa=pre) puede bajar · `u1_total_vistas` (etapa=post) subir.');
+  Logger.log('');
+  Logger.log('⚠ Lo que este testigo NO contesta: si los valores nuevos son los CORRECTOS.');
+  Logger.log('  Dice qué se movió y hacia dónde; que el número sea el de la semana lo dice el');
+  Logger.log('  deck del equipo, y esta lámina no está en el fixture del 31/07.');
+  return r;
+}

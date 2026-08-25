@@ -1744,9 +1744,41 @@ var DIMENSIONES_ = {
    * ⚠ **Y esto es lo que hace que los tokens `u1_pre_*` / `u1_post_*` sean correctos aunque su
    * NOMBRE tenga el corte adentro**: el nombre lo fija la plantilla, que es del equipo (`C-01`);
    * la definición pone el corte donde `D-33` manda, en `dimensiones`. */
+  /* ⛔⛔ **`2026-08-25` — el criterio se AMPLÍA de `Agenda Post` a `Post`** (decisión del usuario).
+   *
+   * **El defecto, medido:** el equipo escribe «Post» **en cualquier posición del nombre**, y el
+   * patrón viejo exigía la secuencia `Agenda Post`. Las dos formas son **disjuntas**: `~=Agenda
+   * Post` daba **166** filas y `~=Post` da **318** — con **intersección cero** entre lo que una
+   * toma y la otra no. Conviven en 2026 y **no hay que preguntarle al equipo por qué**.
+   *
+   *   `Agenda Post con 1 - 1 A 1 - Retiro - 24/7`   ← la vieja tomaba ésta
+   *   `Post Agenda RDV Con 1 - Salud Eje Norte 10/6` ← y NO ésta
+   *   `Agenda con 1 Post - 1 A 1 - Comuna 1 - 17/4`  ← ni ésta
+   *   `RDV Post Agenda con 1 - Primera Persona 1/6`  ← ni ésta
+   *
+   * ⛔⛔ **El alcance NO era una semana: son SEIS MESES.** Medido sobre el fixture del 20/08 —
+   * **22 cuentas del «1 a 1»** y **71 filas**, repartidas marzo 1 · abril 11 · mayo 16 · junio 32 ·
+   * julio 8 · agosto 3. **Hay decks publicados con el POST incompleto**, y eso queda dicho acá y en
+   * `PENDIENTES` en vez de descubrirse comparando.
+   *
+   * ⭐ **Cero falsos positivos, y el cero se midió:** «Post» aparece **318 veces y siempre como
+   * palabra entera** — ningún `Poste`, `Postulación`, `Posta`. Es la pregunta que `camp_env` →
+   * `camp_enviados` obliga a hacer antes de un patrón por subcadena (`CLAUDE.md` §4), y acá la
+   * respuesta es limpia. Sin esa medición, ampliar el patrón habría sido exactamente ese error.
+   *
+   * ⚠ **Y el límite que queda declarado: `~=` es SENSIBLE AL CASE.** `normalizarValorDeclarado_`
+   * sigue `R-10` —colapsa espacios y `trim`, **preservando mayúsculas**—, así que esto matchea
+   * `Post` y **no** `post` ni `POST`. Medido: hoy existe **una sola grafía**, `Post`, en las 318.
+   * El día que alguien escriba `post` en minúscula, **no se ve y no falla**. No se pliega el case
+   * acá porque `valorPasaFiltro_` es el comparador de **todos** los filtros del motor y cambiarlo
+   * movería mucho más que esto.
+   *
+   * ⚠ **`pre` sigue siendo el COMPLEMENTO**, y por eso se edita igual: es lo que garantiza que una
+   * fila que entra al post **salga del pre y de ningún otro lado**. Es el criterio de aceptación
+   * del testigo (`testigoDeEtapaPost`). */
   etapa: {
-    post: { 'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana~=Agenda Post' },
-    pre: { 'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana!~=Agenda Post' }
+    post: { 'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana~=Post' },
+    pre: { 'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana!~=Post' }
   },
   tipo_envio: {
     convocatoria: { 'digital|Directa Mail': 'mail_tipo=Convocatoria' },
