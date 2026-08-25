@@ -3,11 +3,11 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-25 (cierre 3) - L-036 con 24 de 32 cableados: el nombre del encuentro se COMPONE con la operacion nueva FILA_TEXTO. Antes: D-31 resuelto (lectura por posicion) y el criterio de etapa ampliado.
+**Última actualización:** 2026-08-25 (cierre 4) - L-036 con 28 de 32 cableados: el Periodo sale de OTRA base con la operacion nueva GRUPO_TEXTO, y la lamina pasa a cruzar dos fuentes (D-42: la lista es una y la RANURA viaja sellada en la fila). Antes: el nombre compuesto con FILA_TEXTO, D-31 resuelto y el criterio de etapa ampliado.
 
-⚠ **Este archivo tuvo tres versiones el 25/08** y las secciones tachadas de abajo son las anteriores,
-conservadas a propósito — **cómo se llegó a una conclusión equivocada es la mitad de su valor**. Lo
-vigente es lo de arriba.
+⚠ **Este archivo tuvo cuatro versiones el 25/08** y las secciones tachadas de abajo son las
+anteriores, conservadas a propósito — **cómo se llegó a una conclusión equivocada es la mitad de su
+valor**. Lo vigente es lo de arriba.
 
 ⛔ **Nada de esto está en Apps Script todavía.** Ver *«Lo que te espera»*, abajo.
 
@@ -25,9 +25,23 @@ vigente es lo de arriba.
 | 6 | **`declararAlcanceDeLaminas()`** | puebla las dos columnas. **Después de 5**, o falla nombrando la que falta |
 | 7 | ⭐ **`declararModoDelAgregadoPost()`** | pone `comunicaciones_post` en `agregado`. **Desfrenado el 25/08** — su premisa nunca estuvo vencida. ⚠ `sembrarSecciones_` sólo agrega filas ausentes, así que el botón es el único camino |
 | 8 | ⭐⭐ **`verificarBloquesPostReuniones()`** | el testigo NUEVO de `D-31`, contra la planilla viva. **Antes de la corrida**: si no cierra, los bloques no están en M/R/W/AB y `L-036` publicaría la columna equivocada |
-| 9 | ⛔⛔ **`cablearTablaPostReuniones()`** | **EL PASO QUE FALTABA EN LA LISTA ANTERIOR, y por eso `L-036` salió toda en `/////`.** ⚠ **Ningún sembrador lo llama**: ni `instalar()` ni *Aplicar configuración*. Escribe los **24** marcadores de la lámina |
-| 10 | **Correr `jm` sobre `julio_24_30`** | esperado: **tres reuniones con datos**, la cuarta en `sin_datos`, **Retiro con 41.204** de visualizaciones, y la columna `Campañas` con `Jorge Macri — Uno a uno en Retiro (24/07)` |
+| 9 | ⛔⛔ **`cablearTablaPostReuniones()`** | **EL PASO QUE FALTABA EN LA LISTA ANTERIOR, y por eso `L-036` salió toda en `/////`.** ⚠ **Ningún sembrador lo llama**: ni `instalar()` ni *Aplicar configuración*. Escribe los **28** marcadores de la lámina — eran 24 hasta el `2026-08-25_3` |
+| 9 bis | ⚠ **Verificar `CONFIG.solapas_agregado_post` A MANO** | `CONFIG` **sólo siembra lo ausente**, así que el valor nuevo **no llega solo a una instalación viva**. Tiene que decir `reuniones\|Agenda JM \| Post; digital\|CAMPAÑAS_DESGLOCE_DIGITAL`. ⛔ **Si queda vacío, cae al par singular y los cuatro `post_periodo*` fallan con `@post_sin_temario`** — no publican un número equivocado, pero tampoco publican |
+| 10 | **Correr `jm` sobre `julio_24_30`** | esperado: **tres reuniones con datos**, la cuarta en `sin_datos`, **Retiro con 41.204** de visualizaciones, la columna `Campañas` con `Jorge Macri — Uno a uno en Retiro (24/07)` y el `Período` con **`30/07 — 09/08`** para esa misma fila (medido contra el fixture del 20/08) |
 | 11 | ⚠ **`reserva_cierre_seg` a 60, A MANO** | `CONFIG` **sólo siembra lo ausente**. Pendiente de antes |
+
+### ⭐⭐ Qué mirar en el deck de `L-036`, y en qué orden
+
+1. **La identidad interna de cada fila:** `%VTR = Visualizaciones / Impresiones`. **No depende del
+   deck del equipo ni de una foto de la base**, así que se exige en cada corrida.
+2. ⭐ **Que el `Período` y los números de la MISMA fila sean del mismo encuentro.** Es lo que `D-42`
+   garantiza y lo que hay que confirmar con los ojos: la fila de Retiro tiene que decir
+   `30/07 — 09/08`, y la de Orden Público `03/08 — 13/08`.
+3. ⚠ **Los cuatro períodos caen en AGOSTO**, no en julio: la pauta POST corre **después** del
+   encuentro. **Es correcto y se ve raro** — no es un error de ventana.
+4. ⚠ **Si alguna fila publica un `Período` y números en blanco (o al revés), eso es el hallazgo.**
+   Significa que un encuentro está en una fuente y no en la otra — la ranura lo deja **en su lugar**
+   y el hueco se ve, que es exactamente para lo que se hizo.
 
 ⛔⛔ **La lección del paso 9, y va acá porque es de método:** una lista que termina en *«correr `jm`»*
 **tiene que incluir el wrapper de cableado de cada lámina que se haya tocado**. Sembrar `MAPEO` y
@@ -52,14 +66,14 @@ a 71 filas en seis meses**.
 
 ---
 
-## ⭐ `L-036` — **24 de 32 cableados**, y los 8 que faltan son dos decisiones
+## ⭐ `L-036` — **28 de 32 cableados**, y los 4 que faltan son una decisión
 
-La tabla es de **ocho columnas × 4 filas** y se cablean **seis**: `Campañas`, `Habitantes`,
-`Alcance`, `Impresiones`, `Visualizaciones` y `VTR%`.
+La tabla es de **ocho columnas × 4 filas** y se cablean **siete**: `Campañas`, `Período`,
+`Habitantes`, `Alcance`, `Impresiones`, `Visualizaciones` y `VTR%`.
 
 ⭐⭐ **`Campañas` se COMPONE**, porque **ninguna de las 29 columnas de la solapa trae un nombre** —
 barrido completo contra el fixture del 20/08. Sale de `Funcionario` + `Tipo` + `Barrio` + `Fecha`
-(B/C/D/E) con la operación nueva **`FILA_TEXTO`**, y su forma la elegiste contra el deck del equipo:
+(B/C/D/E) con la operación **`FILA_TEXTO`**, y su forma la elegiste contra el deck del equipo:
 
 ```
 Jorge Macri — Uno a uno en Retiro (24/07)
@@ -68,10 +82,26 @@ Jorge Macri — Uno a uno en Retiro (24/07)
 ⚠ **`figura` entra por decisión, no porque aporte:** vale «Jorge Macri» en **todas** las filas de
 `jm`, así que no distingue una de otra.
 
-⛔ **Los 8 que faltan NO son un hueco, son dos decisiones** (`CONFIG_INFORMES.md` §2.3 bis):
-`post_formato*` **fuera de alcance** —el formato cambia por plataforma y una fila por encuentro no
-puede tener uno solo— y `post_periodo*` **pendiente**, porque viene de otra base y reabre el
-bloqueo B.
+### ⭐⭐ `Período` sale de OTRA base, y por eso la lámina cruza dos fuentes (`D-42`)
+
+**Esas mismas 29 columnas tampoco traen fecha de inicio ni de fin** — sólo `Fecha` (E), que es la
+**del encuentro**. El rango sale de `digital/CAMPAÑAS_DESGLOCE_DIGITAL` con la operación nueva
+**`GRUPO_TEXTO`**, que agrupa por `id_cuenta` y compone `min(Fecha inicio)` — `max(Fecha fin)`.
+
+⛔⛔ **El riesgo que eso trae, y cómo se cerró:** dos listas construidas por separado se indexan con
+el mismo `n`. Si descartan encuentros distintos, **la ranura 2 muestra el período de un encuentro y
+los números de otro, sin fallar**. Y ya se sabe que pueden diferir: San Cristóbal tiene **0 filas
+POST** en el desglose y cae por métrica del otro lado — **coincidían por dos caminos que nadie
+coordinó**.
+
+⭐ **La solución es `D-42`: la lista de encuentros es UNA, y la RANURA viaja sellada en cada fila**,
+calculada antes de que ninguna solapa se recorte y **con el mismo comparador** que usan las seis
+columnas numéricas. Un encuentro ausente en una fuente deja **un hueco en su ranura** y no mueve
+ninguna otra.
+
+⛔ **Los 4 que faltan NO son un hueco, son una decisión** (`CONFIG_INFORMES.md` §2.3 bis):
+`post_formato*` **fuera de alcance** — el formato cambia por plataforma y una fila por encuentro no
+puede tener uno solo.
 
 ### ⏸ Lo único vivo: el `id_cuenta` del anclaje
 
@@ -233,6 +263,13 @@ que vale en un solo lugar es una trampa con fecha»*—. **Reabrirlo es tuyo.**
 
 ⚠ **Y siguen faltando tres de las ocho columnas** —`post_camp`, `post_periodo`, `post_formato`—, sin
 fuente en ninguna solapa. Pregunta al equipo, **sin prioridad**.
+
+> ⛔ **VENCIDO el 25/08 (tarde), y se conserva porque el error es instructivo.** Dos de las tres se
+> cablearon el mismo día: `post_camp` **componiendo** cuatro columnas (`FILA_TEXTO`) y `post_periodo`
+> **agregando filas de otra base** (`GRUPO_TEXTO`). ⭐ **El párrafo decía *«sin fuente en ninguna
+> solapa»* y era cierto leído literalmente — no hay UNA columna que traiga el dato.** Lo que estaba
+> mal era la conclusión: *«no hay columna»* no implica *«no hay fuente»*. Sólo `post_formato` sigue
+> abierta, y **por otro motivo**: es fuera de alcance, no falta de dato.
 
 ---
 

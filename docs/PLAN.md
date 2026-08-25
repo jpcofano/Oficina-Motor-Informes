@@ -2057,6 +2057,84 @@ tomaría, no la terminaría, y la guarda de progreso informaría *«no avanza»*
 
 ---
 
+**`D-42` — Cuando una tabla cruza DOS fuentes, el `n` de sus tokens es una RANURA del universo, no
+una posición dentro de cada fuente. La ranura se calcula una vez, sobre una lista única, y viaja
+sellada en cada fila.** (25/08/2026, `2026-08-25_3` + su `ADDENDUM 1`.)
+
+`L-036` publica cuatro filas de encuentro con ocho columnas. Seis salen de
+`reuniones/Agenda JM | Post` y una —`Período`— de `digital/CAMPAÑAS_DESGLOCE_DIGITAL`, porque
+**ninguna de las 29 columnas de la primera trae fecha de inicio ni de fin**: sólo `Fecha`, la del
+encuentro. Los tokens de la fila 2 se indexan **todos con `valor_fijo = 2`**.
+
+⛔⛔ **El modo de falla que esta decisión cierra no produce ningún error.** Si cada fuente numerara
+sus propias filas, un encuentro presente en una y ausente en la otra **correría todas las ranuras
+siguientes**: la fila 3 del deck mostraría el período de un encuentro al lado de los números del que
+sigue, con formato perfecto. **Y ya se sabe que pueden diferir** — San Cristóbal tiene 0 filas POST
+en el desglose y cae por `campos_metrica_post` del otro lado. **Hoy coinciden por dos caminos que
+nadie coordinó**, y coincidir por casualidad no es un contrato.
+
+**Qué se decidió, en tres piezas:**
+
+1. **La lista de encuentros es UNA.** La arma `temarioPorSolapas_` desde la solapa que **CALIFICA**
+   —la primera de `CONFIG.solapas_agregado_post`—, y **cada otra solapa se joinea a ella por
+   `id_cuenta`**, nunca por posición ni por su propio orden.
+2. **La ranura se sella en la fila** (`__temario_slot__`), calculada **antes de que ninguna solapa se
+   recorte**. Un encuentro ausente en una fuente deja **un hueco en su ranura** y no mueve ninguna
+   otra: el casillero sale `sin_datos` **en su lugar**.
+3. ⭐⭐ **El orden no se reimplementa: se llama a `filasOrdenadas_`**, el comparador real de
+   `Marcadores.gs` que usan las seis columnas numéricas vía `opFILA`. **Coinciden por construcción,
+   no por parecerse.**
+
+⚠ **El desempate está declarado** porque el caso es real: dentro de `julio_24_30` hay **dos
+encuentros el 29/07** —`3389` Nueva Pompeya y `3420` Caballito—. Con la misma `fecha_periodo` gana
+**el orden de origen en la lista única, que es el orden del TEMARIO** — el `a.i - b.i` de
+`filasOrdenadas_`, el mismo que ya usaban las columnas numéricas. `R-32` sigue valiendo: con empate,
+la ranura publica una **posición**, no una cosa; lo que esto garantiza es que **las ocho columnas de
+esa ranura hablen del mismo encuentro**.
+
+⛔⛔ **Y la identidad del grupo es `id_cuenta`, no `fecha_periodo`.** Son dos campos con dos oficios:
+`id_cuenta` es la **identidad** de la fila (`D-30`), `fecha_periodo` es el campo de **orden**.
+Agrupados por fecha, Nueva Pompeya y Caballito caerían en **un solo grupo** y el período publicado
+abarcaría los dos — un rango más ancho, plausible, y de dos encuentros.
+
+### Las tres opciones que se evaluaron para el `n`
+
+| opción | por qué se descartó |
+|---|---|
+| **la n-ésima fila presente en cada fuente** | es el bug: dos fuentes que descartan distinto corren las ranuras y **nada falla** |
+| **rellenar la fuente corta con filas sintéticas** | una fila fantasma es indistinguible de una real para cualquier otro consumidor — un `CONTEO` la sumaría |
+| ⭐ **sellar la ranura en la fila** *(elegida)* | no inventa filas, el hueco queda donde corresponde, y el orden lo fija el comparador que ya existe |
+
+⚠ **Lo que `D-42` NO hace, y va declarado en vez de descubierto:** **quién califica lo decide la
+primera solapa de la lista.** Es `Agenda JM | Post` porque es la única con **una fila por encuentro
+aunque esté en ceros**. Si algún día un encuentro tuviera filas en el desglose y ceros ahí, **queda
+afuera de la lista entera** — no sólo de esa columna. Lo detectaría la identidad interna del bloque
+`G` de `probar-grupo-texto.js`, que dejaría de cerrar.
+
+⚠ **Y el límite de `D-41` sigue en pie, ampliado:** una lámina que cruza dos fuentes puede publicar
+filas de **dos momentos distintos** si la corrida se parte en el medio. Con `R-31` midiendo
+`digital` como inestable por CAMBIO, eso no es hipotético. **Es un límite conocido, no un problema a
+resolver.**
+
+### La excepción a la regla de oro: evaluada y DESCARTADA
+
+⭐ El prompt anticipaba una tensión —*agregar filas es aritmética, y toda la aritmética vive en
+`Marcadores.gs`*— y pedía registrarla como decisión. **No hizo falta, y el motivo se escribe porque
+la lectura fácil es la contraria:**
+
+- **`temarioPorSolapas_` no agrega nada.** Joinea por `id_cuenta`, copia la fecha del encuentro y
+  sella la ranura. **Ninguna suma, ningún `min`, ningún `max`.** Es preparación de filas, el mismo
+  rol que `unirDigitalPorCuenta` —que **pisa** campos de dimensión, no calcula—.
+- **La agregación entera vive en `opGRUPO_TEXTO`**, en `Marcadores.gs`, que es donde corresponde.
+- **Lo único que `Generador.gs` toma de `Marcadores.gs` es `filasOrdenadas_`**, y eso es lo mismo
+  que ya hacía al armar `ctx.ordenPor`: resolver estructura para que la operación calcule.
+
+⛔ **Registrar una excepción que no se ejerce sería peor que no tenerla:** dejaría escrito un permiso
+para poner aritmética en `Generador.gs` **que este diseño no necesitó**, y la próxima vez alguien lo
+citaría como precedente.
+
+---
+
 
 ## 2 · Próximo (ordenado, con dependencias)
 

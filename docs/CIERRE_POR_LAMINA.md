@@ -112,7 +112,7 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 | **4** · «Encuentros con vecinos» | `L-033` | 🟡 | **Cero tokens y `rol = equipo`: no hay nada que cablear.** Es un separador. Falta sólo que el usuario lo mire | — |
 | **5** · ECV: alcance semanal | `L-034` | ⛔ **inestable por ALTA** 🕳 🌐 | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUJERON** contra `V-71`. ⚠ **Pero `rdv` es inestable por ALTA (`R-31`), así que eso no se puede EXIGIR en cada corrida** — el control posible es **de dirección: sube o queda, nunca baja; si baja es bug**. Falta: `ecv_asistentes` = 485 sin validar · los 3 `cc_*` **pintados sin control** · `ecv_fecha` y `ecv_barrio1-3` **sin fila en `MARCADORES`** | 22/08 |
 | **6** · Benchmarks / Iceberg | `L-035` `L-052` | ✅ | ⭐⭐⭐ **CERRADA — el usuario la declaró el 22/08.** Publicó los cuatro de IVR exactos: Audiencia **107.194** · Atendidos **96.549** · Escucharon +75 % **33.139** · Marque 1 **304**, más las seis cifras del alcance al dígito. **`X-30` se cerró solo: el ítem llegó con `3488-AGOJDGAG`.** ⭐ **Y es la única lámina con control por igualdad exacta garantizado**: sus cinco campos de `digital/Directa IVR` son **estables** (`R-31`) | 22/08 |
-| **7** · Digital \| ECVs: post reuniones | `L-036` | 🟡 | ⭐⭐ **24 de 32 tokens CABLEADOS** (25/08) — la tabla es de **ocho columnas × 4 filas** y se cablean **seis**: `Campañas`, `Habitantes`, `Alcance`, `Impresiones`, `Visualizaciones` y `VTR%`. ⭐ **`Campañas` se COMPONE** de Funcionario+Tipo+Barrio+Fecha con `FILA_TEXTO`, porque **ninguna de las 29 columnas de la solapa trae un nombre** — barrido completo contra el fixture del 20/08. ⭐ **Y la lámina recupera su identidad interna**: `%VTR = Visualizaciones / Impresiones`, **exacta en 98 de 98**, que la pone al nivel de `V-111` y `V-113` — control que **no depende del deck del equipo**. ⛔ **Los 8 que faltan son DOS decisiones, no un hueco**: `post_formato1-4` **fuera de alcance** (`CONFIG_INFORMES` §2.3 bis — el formato cambia por plataforma y una fila por encuentro no puede tener uno solo) y `post_periodo1-4` **pendiente**, que reabre el bloqueo B por venir de otra base. ⚠ **Falta una corrida** para ver los 24 publicar, y el `id_cuenta` del anclaje sigue siendo lo único vivo | 25/08 |
+| **7** · Digital \| ECVs: post reuniones | `L-036` | 🟡 | ⭐⭐ **28 de 32 tokens CABLEADOS** (25/08, tarde) — la tabla es de **ocho columnas × 4 filas** y se cablean **siete**: `Campañas`, `Período`, `Habitantes`, `Alcance`, `Impresiones`, `Visualizaciones` y `VTR%`. ⭐ **`Campañas` se COMPONE** de Funcionario+Tipo+Barrio+Fecha con `FILA_TEXTO`, porque **ninguna de las 29 columnas de la solapa trae un nombre** — barrido completo contra el fixture del 20/08. ⭐⭐ **Y `Período` sale de OTRA base** —`digital/CAMPAÑAS_DESGLOCE_DIGITAL`, con la operación nueva `GRUPO_TEXTO`—, porque esas mismas 29 columnas tampoco traen fecha de inicio ni de fin. **Es la única lámina que cruza dos fuentes**, y eso es `D-42`: la lista de encuentros es **una** y la **ranura viaja sellada en la fila**, así que un encuentro ausente en una sola de las dos deja un hueco **en su lugar** en vez de correr las demás. ⭐ **La identidad interna sigue en pie**: `%VTR = Visualizaciones / Impresiones`, **exacta en 98 de 98**, al nivel de `V-111` y `V-113` — control que **no depende del deck del equipo**. ⛔ **Los 4 que faltan son UNA decisión, no un hueco**: `post_formato1-4` **fuera de alcance** (`CONFIG_INFORMES` §2.3 bis — el formato cambia por plataforma y una fila por encuentro no puede tener uno solo). ⚠ **Falta una corrida** para ver los 28 publicar, y el `id_cuenta` del anclaje sigue siendo lo único vivo. ⚠ **Y no admite control por igualdad exacta contra un testigo de otro día**: `Período` lee `digital`, que `R-31` mide inestable — ver la nota abajo | 25/08 |
 | **8** · «Comunicaciones M2» | `L-037` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
 | **9** · Directa · Status M2 | `L-038` | ⛔ ↕ | 8 tokens. ⭐ **El numerador coincide y el denominador no** (−9,6 % en enviados/entregados, con el numerador quieto) → falta **decidir** de qué universo sale el denominador | 22/08 |
 | **10** · M2 *(escondida)* | `L-039` | 🚫 **fuera de alcance** | **No se cablea** — decisión del usuario, 22/08. **23 tokens dormidos** (los 23 de la lámina). Nunca se midió y **no se va a medir**: sale del conteo de faltantes | 22/08 |
@@ -436,7 +436,31 @@ movimiento** —`ALTA` (`'' → valor`), `CAMBIO` (`v → v'`), `BORRADO`—:
 |---|---|
 | **5** · ECV alcance · y todo lo que salga de `rdv` | `inscriptos`, `asistentes` y los cinco `insc_*` se mueven **3–4,5 %, casi todo por ALTA**. `asistentes` es **100 % alta**: 32 de 32 son celdas vacías que se llenaron |
 | **2 y 3** · los ocho `imp_*` y sus `gcba_*` | `looker/DIGITAL` se mueve **2,8–3,8 %, TODO por CAMBIO** — cero altas. Se suma a que ya están en `_revisar` por universo |
-| **7** · los 32 `post_` | `CAMPAÑAS_DESGLOCE_DIGITAL` se mueve **3,3–3,6 %, todo cambio** |
+| **7** · los 4 `post_periodo*` | `CAMPAÑAS_DESGLOCE_DIGITAL` se mueve **3,3–3,6 %, todo cambio** |
+| **7** · los 24 restantes de `L-036` | ⛔ **`reuniones` NO fue medida por `R-31`** — ver la corrección de abajo |
+
+⛔⛔ **Corrección del 25/08, y es de atribución, no de número.** La fila de arriba decía *«los 32
+`post_`»* y citaba el movimiento de `CAMPAÑAS_DESGLOCE_DIGITAL`. **Sólo cuatro de los 32 leen esa
+solapa** —los `post_periodo*`, cableados el 25/08 (`D-42`)—. **Los otros 24 leen
+`reuniones/Agenda JM | Post`, que nunca entró a la medición de `R-31`**: las dos clases de
+movimiento se midieron entre los dos exports de `digital` y `rdv`, y `reuniones` no estaba.
+
+- ⚠ **Eso no los vuelve estables: los deja SIN MEDIR**, que es un tercer estado y no el
+  intermedio de los otros dos. *«No se movió»* y *«no se miró»* se ven igual en esta tabla, y ésa
+  es exactamente la distinción que `CLAUDE.md` §4 pide no perder.
+- ⛔ **Y el usuario declaró que `reuniones` también se mueve**, así que el default correcto es
+  **fuera del control por igualdad exacta** — no por evidencia, sino **por falta de ella**.
+- ⭐ **Lo que sí se puede exigir en cada corrida es la identidad interna**, que es inmune a las dos
+  clases de inestabilidad porque las partes y el total se mueven juntos: `%VTR = Visualizaciones /
+  Impresiones` para las seis columnas de `Agenda JM | Post`, y **la suma de las filas POST del
+  desglose contra col J y col M** para el cruce entre las dos fuentes (bloque `G` de
+  `probar-grupo-texto.js`).
+- ⭐ **Y `min`/`max` no son `SUMA`:** un recálculo en el lugar mueve valores, pero el `Período` sólo
+  cambia si se mueve **una fecha extremo**. Es la misma tabla operación × inestabilidad de
+  `CLAUDE.md` §4 —donde `CONTEO` es inmune a `CAMBIO`—, con una fila más: **`min`/`max` son
+  sensibles a `CAMBIO` sólo en los extremos, y a `ALTA` siempre**. `CAMPAÑAS_DESGLOCE_DIGITAL` se
+  mueve **todo por cambio**, así que el `Período` es **más estable que las sumas de su misma
+  solapa** — y eso se puede decir porque está medido.
 
 ⭐⭐ **Y la distinción que la medición destapó, porque manda a curas distintas: `rdv` se mueve por
 ALTA y `looker` por CAMBIO.** Contra una **alta** sirve esperar a que terminen de cargar; contra un

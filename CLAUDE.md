@@ -1175,6 +1175,26 @@ nombres plausibles.
 - ⚠ **Y el síntoma es el de siempre:** el marcador de más **no falla** — resuelve, no encuentra
   dónde pintarse, no entra a `FALTANTES` y queda como una fila que nadie va a poder explicar.
 
+⛔⛔ **Segundo caso, y generaliza la regla más allá del cableado: un prefijo es una CONVENCIÓN DE
+NOMBRE, no una clave — así que todo filtro por prefijo se verifica contra los nombres COMPLETOS.**
+(25/08/2026.) La primera vez fue armar una tabla; ésta fue **medir**, y el error es el mismo con
+otra ropa.
+
+- **El caso:** se buscó `post_.*des_impresiones` para contar qué marcadores del POST leen el
+  desglose. Dio **tres**, y los tres eran **`u1_post_*`** — del "1 a 1", no de `L-036`. El prefijo
+  `u1_post_` **contiene** `post_`, así que el patrón acertó y contó otra cosa. Lo atajó mirar los
+  nombres completos, no el conteo.
+- ⭐ **Por qué generaliza:** el caso de `camp_env` decía *«no generes la lista, cruzá contra el
+  censo»*, que se lee como una regla **de cableado**. Ésta dice lo mismo un escalón más arriba y
+  vale para cualquier medición: **un prefijo no delimita un conjunto, describe cómo se eligieron
+  unos nombres** — y nada impide que otro conjunto haya elegido los suyos igual. **Es la familia de
+  *dos cosas que se llaman igual no son la misma cosa*, aplicada a un fragmento de nombre.**
+- ⭐ **Lo accionable, y cuesta una línea:** **imprimir los nombres que matchearon, no sólo cuántos.**
+  Un conteo de un filtro por prefijo es **incitable sin la lista al lado**. Acá `3` era un número
+  perfectamente publicable y señalaba a la lámina equivocada.
+- ⚠ **Y el síntoma es el peor de este repo:** no es un error, es **un número plausible**. Tres
+  marcadores leyendo el desglose es exactamente lo que uno esperaría encontrar.
+
 **Antes de cablear una tabla, mirar el TIPO de cada columna en el deck del equipo.**
 **Una columna de texto cableada como métrica publica vacío sin fallar.**
 

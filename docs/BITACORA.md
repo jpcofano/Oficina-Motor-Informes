@@ -14954,3 +14954,111 @@ números salen de la misma fila**.
 - ⏸ `post_formato*` — **fuera de alcance** (`CONFIG_INFORMES.md` §2.6).
 - ⏸ `post_periodo*` — reabre el bloqueo B; no entra sin decidirlo.
 - ⏸ **`L-036`: el `id_cuenta` del anclaje**, lo único vivo.
+
+---
+
+## `2026-08-25_3` — `L-036`: el `Período` sale del desglose · **la lámina cruza dos fuentes** — 25/08/2026 (tarde)
+
+**Prompt:** `docs/Prompts/2026-08-25_3_L036_periodo_desde_desglose.md` + su `ADDENDUM 1`.
+**Tres commits de código, uno de documentación**, como pedía el prompt.
+
+⛔⛔ **El riesgo que ordena todo:** `L-036` iba a indexar **dos listas construidas por separado** con
+el mismo `valor_fijo: n` — una de `reuniones/Agenda JM | Post` y otra de
+`digital/CAMPAÑAS_DESGLOCE_DIGITAL`—. Si no tienen los mismos elementos en el mismo orden, **la
+ranura 2 muestra el período de un encuentro y los números de otro, y nada falla.** Y ya se sabía que
+pueden diferir: San Cristóbal tiene **0 filas POST** en el desglose y cae por `campos_metrica_post`
+del otro lado. **Coincidían por dos caminos que nadie coordinó.**
+
+### Parte 1 · el temario declara VARIAS solapas, y la guarda dispara sobre lo DECLARADO
+
+`CONFIG.solapas_agregado_post` admite **una lista** de pares `base|solapa`, **partida por el PRIMER
+`|`** — la solapa se llama `Agenda JM | Post` y **tiene uno adentro**; partir por todos la volvería
+inexistente, y el síntoma sería un cero, no un error. **La primera CALIFICA**; el resto se joinea por
+`id_cuenta`. Lista vacía cae al par singular, así que una instalación viva no cambia sola.
+
+⭐⭐ **Y la corrección que valía más que la lista:** la guarda de `datosDeMarcador_` comparaba un par
+singular, así que una solapa **declarada** cuya lectura fallara **caía a la cadena general** y leía
+la solapa entera — el universo ancho, el modo de falla más caro del repo. Ahora dispara sobre
+`opciones.claves_temario`, sembrado desde **lo declarado en `CONFIG`** y no desde lo que la corrida
+logró leer. Declarada y sin filas → `«FALTA:…@post_sin_temario»` con su diagnóstico.
+
+### Parte 2 · la lista es UNA y la RANURA viaja sellada en la fila (`D-42`)
+
+`temarioPorSolapas_` arma la lista desde la solapa que califica y **sella `__temario_slot__` en cada
+fila** que entrega, calculado **antes de que ninguna solapa se recorte**. Un encuentro ausente en una
+sola de las dos deja **un hueco en su ranura** y no mueve ninguna otra.
+
+⭐⭐ **El orden no se reimplementa: se llama a `filasOrdenadas_`**, el comparador real de
+`Marcadores.gs` que usan las seis columnas numéricas vía `opFILA`. **Coinciden por construcción, no
+por parecerse** — que es la diferencia entera de la pieza.
+
+⚠ **El desempate queda declarado**, y el caso es real: `3389` Nueva Pompeya y `3420` Caballito son
+**los dos del 29/07**. Gana **el orden del temario** — el `a.i - b.i` que ya usaban las columnas
+numéricas.
+
+### Parte 3 · `GRUPO_TEXTO`, la duodécima operación
+
+**No extiende `FILA_TEXTO`:** `opFILA` hace `orden.filas[n-1]` e **indexa filas**, y acá la unidad es
+el **grupo** —un encuentro tiene hasta cinco filas de plataforma con cinco pares de fechas—. `FILA`,
+`opFILA` y `FILA_TEXTO` quedan **intactos**: los usan 41 marcadores.
+
+Agrupa por **`id_cuenta`** (`D-30`), **nunca por `fecha_periodo`**, que es el campo de orden.
+Plantilla en `campo_logico` con el agregador en la ranura del formato —
+`{des_fecha_inicio:min:dd/MM} — {des_fecha_fin:max:dd/MM}`—, que **reusa `camposDePlantilla_` sin
+tocarla**. Agregadores `min`/`max`/`suma`/`conteo`; uno desconocido deja **hueco visible**. Sin
+`__temario_slot__` **falla** con `@grupo_sin_ranura` en vez de adivinar un orden.
+
+Corte POST en **`dimensiones`** (`etapa=post`), nunca en un `filtro` nuevo (`D-33`).
+`COLUMNAS_POST_L036_` **declara su alcance: 7 de 8**, con `Formato` fuera de alcance nombrado ahí
+mismo. Los cuatro entran a `MARCADORES_POST_L036_TODOS_`, que **crece y no se poda**.
+
+### La medición, contra el fixture del 20/08 (sha verificado)
+
+`tools/medir-periodo-julio-24-30.py`, con **control positivo que aborta** si algún id no aparece ni
+con filas PRE. Dio 5 de 5.
+
+| id_cuenta | encuentro | filas | POST | período |
+|---|---|---|---|---|
+| `3346-JULJDGAG` | Retiro 24/7 | 5 | 5 | **30/07 — 09/08** |
+| `3354-JULJDGAG` | San Cristóbal 23/7 | 3 | **0** | — |
+| `3387-JULJDGGC` | Orden Público 28/7 | 10 | **4** | **03/08 — 13/08** |
+| `3389-JULJDGAG` | Nueva Pompeya 29/7 | 5 | 3 | **04/08 — 14/08** |
+| `3420-JULJDGGC` | Caballito 29/7 | 6 | 3 | **03/08 — 13/08** |
+
+⛔ **Corrige al cuerpo del informe de fuente por ADDENDUM, sin editarlo: Orden Público tiene CUATRO
+filas POST, no tres** — hay **dos de DV360** con valores distintos.
+
+⭐⭐ **Y da la prueba MEDIDA de que agrupar por `fecha_periodo` sería un bug:** Nueva Pompeya y
+Caballito, los dos del 29/07, **tienen períodos distintos**. Fusionados darían `03/08 — 14/08`, que
+**no es el de ninguno de los dos**.
+
+### Controles
+
+**51 bancos, 0 en rojo.** Nuevo: `probar-grupo-texto.js` (**34 afirmaciones**), con control negativo
+que agrupa por fecha y **guarda de mutación**. En `probar-agregado-por-temario.js`, los bloques
+**O / P / Q** y **P bis** — `P` construye el caso que hoy no ocurre y `P bis` lo rompe a propósito
+volviendo a *«la n-ésima presente»*: vuelve `1,2,3` y **cruza dos ranuras**.
+
+⭐ **Y `probar-tabla-post` se puso rojo, con razón.** Su negativa de `periodo` decía *«NO HAY COLUMNA
+en ninguna solapa fuente»* y **era cierta**. **No se aflojó:** se partió en **cinco afirmaciones más
+exigentes** —apunta al desglose, usa `GRUPO_TEXTO`, declara `etapa=post`, `filtro` vacío, índice
+entero pelado—. Es el tercer caso de esta familia en el mismo archivo.
+
+### ⭐ Dos hallazgos de método, que valen más que la lámina
+
+1. ⛔ **21 de 51 bancos aportaban CERO al conteo del runner.** `suites.js` suma leyendo *«Las N
+   afirmaciones pasaron»* y esos 21 imprimen el banner **sin número**. Ponerle el conteo a **uno
+   solo** movió el total de **~527 a ~614**. El veredicto por exit code siempre estuvo bien; lo que
+   mentía era **cuánto midió**. Anotado en `PENDIENTES`, **no arreglado** — son 21 archivos fuera del
+   objetivo del prompt.
+2. ⛔ **Un filtro por prefijo contó tres marcadores que eran de otra lámina.** Se buscó
+   `post_.*des_impresiones` y dieron tres `u1_post_*` — el prefijo `u1_post_` **contiene** `post_`.
+   **Un prefijo es una convención de nombre, no una clave.** Va a `CLAUDE.md` §4, al lado del caso
+   de `camp_env`, con la forma general: **imprimir los nombres que matchearon, no sólo cuántos**.
+
+### Pendientes
+
+- ⛔ **`clasp push`** y **`cablearTablaPostReuniones()`** — ahora escribe **28** filas, no 24.
+- ⏸ `post_formato*` — **fuera de alcance** (`CONFIG_INFORMES.md` §2.3 bis).
+- ⏸ **`L-036`: el `id_cuenta` del anclaje**, lo único vivo. Lo cierra una corrida, no el fixture.
+- ⏸ Los 21 bancos sin conteo.

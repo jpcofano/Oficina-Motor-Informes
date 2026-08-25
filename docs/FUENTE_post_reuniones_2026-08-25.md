@@ -578,3 +578,74 @@ fila por encuentro no puede tener uno solo. **Declarado fuera de alcance** en `C
 ⭐ **`Funcionario`, `Barrio / Comuna` y `Tipo` son ÚNICOS**, así que **no llevan `por_posicion`**: su
 encabezado sigue siendo testigo, que es el caso normal de `D-31`. Sólo `vis_totales` (M) y
 `vis_vtr_pct` (N) necesitan la lectura por posición del `ADDENDUM 2`.
+
+---
+
+# ADDENDUM 4 — 25/08/2026 · **el `Período` sale del DESGLOSE, y los cuatro rangos medidos**
+
+> **No contradice al cuerpo ni a los tres addenda: los completa.** El `ADDENDUM 3` midió que ninguna
+> de las 29 columnas de `reuniones/Agenda JM | Post` trae fecha de inicio ni de fin — sólo `Fecha`
+> (E), que es **la del encuentro**. Éste dice de dónde sale entonces el rango, y **corrige un número
+> del cuerpo por addendum, no editándolo**.
+
+**Instrumento:** `tools/medir-periodo-julio-24-30.py`.
+**Fixture:** `Seguimiento Digital  2026-08-20.zip`, sha `f8ef3227…`, **verificado antes de citar**.
+**Qué reproduce:** la **definición** —el recorte `des_campana ~= Agenda Post` copiado de
+`DIMENSIONES_.etapa` y la identidad `Id cuentas` copiada de `SOLAPAS.campo_id_cuenta`—, **no el
+motor**. Que el motor lea así lo cierra una corrida.
+**Control positivo:** los cinco ids se buscan **sin** el recorte POST y el script **aborta** si
+alguno no aparece ni con filas PRE. Dieron 5 de 5.
+
+## Los cuatro rangos
+
+| id_cuenta | encuentro | filas | POST | ⭐ período |
+|---|---|---|---|---|
+| `3346-JULJDGAG` | Retiro 24/7 | 5 | **5** | **30/07 — 09/08** |
+| `3354-JULJDGAG` | San Cristóbal 23/7 | 3 | **0** | — |
+| `3387-JULJDGGC` | Orden Público 28/7 | 10 | **4** | **03/08 — 13/08** |
+| `3389-JULJDGAG` | Nueva Pompeya 29/7 | 5 | **3** | **04/08 — 14/08** |
+| `3420-JULJDGGC` | Caballito 29/7 | 6 | **3** | **03/08 — 13/08** |
+
+## ⛔ La corrección al cuerpo: **Orden Público tiene CUATRO filas POST, no tres**
+
+El cuerpo dice **3**. Son **4**, y el motivo es concreto: **hay dos filas de DV360** —`925.648` y
+`1.004.295` impresiones—, que **no son duplicados**: traen valores distintos. Meta, Google ads y
+DV360 ×2.
+
+⚠ **Y en Retiro pasa lo simétrico y sí es duplicado:** dos filas de Meta **idénticas al dígito**
+(`38.310` / `3.946`). **No afecta al `Período`** —`min` y `max` son idempotentes— pero **una `SUMA`
+sobre esas mismas filas contaría dos veces**. Queda dicho acá porque el bloque `G` de
+`probar-grupo-texto.js` exige que el desglose cuadre con `Agenda JM | Post`, y si esa fila está
+duplicada en la fuente, **el que no cuadra es el desglose y no el cableado**.
+
+## ⭐⭐ La prueba MEDIDA de que agrupar por `fecha_periodo` sería un bug
+
+`3389` Nueva Pompeya y `3420` Caballito son **los dos del 29/07**, y **sus períodos difieren**:
+`04/08 — 14/08` contra `03/08 — 13/08`. Agrupados por fecha darían **un solo grupo** con
+`03/08 — 14/08` — **un rango que no es el de ninguno de los dos**, perfectamente plausible y de dos
+encuentros.
+
+⭐ **Esto deja de ser un caso construido y pasa a ser uno medido.** `D-42` fija que la identidad del
+grupo es `id_cuenta` (`D-30`) y que `fecha_periodo` es sólo el campo de **orden**; acá está el dato
+que lo obliga.
+
+## ⚠ Tres cosas que conviene tener escritas antes de la corrida
+
+1. **Los cuatro períodos caen en AGOSTO**, no en julio. La pauta POST corre **después** del
+   encuentro, así que el deck de `julio_24_30` publica rangos de agosto. **Es correcto y se ve
+   raro** — dicho acá para que nadie lo lea como un error de ventana.
+2. **El rango CRUZA MESES** en Retiro (`30/07 — 09/08`), lo que confirma la nota de `MAPEO`: un
+   recorte por `Mes` **partiría el encuentro**. Por eso el recorte es por `id_cuenta` y no temporal.
+3. ⚠ **Cuatro encuentros con POST y la tabla tiene cuatro ranuras.** San Cristóbal queda afuera —0
+   filas POST acá, y del otro lado cae por `campos_metrica_post`—, así que **entra justo**. Si
+   apareciera un quinto, el quinto no se publica: `itemsPorLamina = 4` (`D-41`). **No es un bug, es
+   el tamaño de la lámina** — pero si pasa, el motor no lo va a avisar.
+
+## ⚠ Lo que este addendum NO contesta
+
+- **Qué dice la base hoy.** Es el export del **20/08/2026**, y estos rangos terminan el 09, 13 y 14
+  de agosto: una carga posterior los puede haber movido.
+- **Qué ranura le toca a cada encuentro.** Eso lo fija el **temario**, no esta solapa — y el orden
+  entre Nueva Pompeya y Caballito, que empatan en fecha, lo desempata el orden del temario (`D-42`).
+- **Que el `id_cuenta` del anclaje sea el mismo que el de la solapa.** Sigue abierto desde el 24/08
+  y lo cierra una corrida, no el fixture.

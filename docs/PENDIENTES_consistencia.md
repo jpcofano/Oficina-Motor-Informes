@@ -8211,6 +8211,37 @@ por qué estaba así.
 > **El análisis se conserva abajo**: si algún día `L-053` u otra lámina lee el desglose por
 > encuentro, los dos bloqueos vuelven **tal cual**.
 
+> ## ⭐⭐ REABIERTO Y RESUELTO — 25/08/2026 (tarde), `2026-08-25_3`
+>
+> ⛔ **«Algún día» fue el mismo día.** El texto de arriba cerró esto diciendo *«si algún día una
+> lámina lee el desglose por encuentro, los dos bloqueos vuelven tal cual»*. **Volvieron ese mismo
+> día**: el `ADDENDUM 3` midió que **ninguna de las 29 columnas de `Agenda JM | Post` trae fecha de
+> inicio ni de fin**, así que la columna `Período` **tiene** que salir del desglose. `L-036` cruza
+> dos fuentes.
+>
+> ⭐ **Es el caso literal de `CLAUDE.md` §4:** *un fallback justificado por el estado actual del
+> cableado tiene fecha de vencimiento, y el trabajo previsto es la fecha*. Acá la premisa no era
+> sobre el mundo sino sobre el propio repo —*«hoy ninguna lámina lee el desglose por encuentro»*— y
+> **el trabajo del día siguiente la invalidó**. No hizo falta que cambiara nada afuera.
+>
+> **Los dos bloqueos están resueltos, y el análisis de abajo describe cómo:**
+>
+> - **A · `suyas[0]`** — resuelto **sin tocar `filasDeSolapaDelTemario_`**. La agregación no se metió
+>   ahí: vive en `opGRUPO_TEXTO` (`Marcadores.gs`), la operación duodécima, que agrupa por
+>   `id_cuenta` y compone `min`/`max`. `FILA`, `opFILA` y `FILA_TEXTO` quedan **intactos** — los usan
+>   41 marcadores.
+> - **B · la solapa única de temario** — resuelto. `CONFIG.solapas_agregado_post` admite **una lista**
+>   de pares `base|solapa`, `opciones.filas_temario` es un **mapa** por esa clave, y **la guarda
+>   dispara sobre lo DECLARADO, no sobre lo que la corrida logró leer**: declarada y sin filas falla
+>   con `«FALTA:…@post_sin_temario»`, nunca cae a la cadena general.
+> - ⭐⭐ **Y apareció un tercer bloqueo que el análisis de abajo NO tenía**, que es el que valía más:
+>   **las dos listas se indexan con el mismo `n`**. Un encuentro presente en una y ausente en la otra
+>   correría las ranuras y publicaría el período de un encuentro al lado de los números de otro,
+>   **sin fallar**. Lo cierra `D-42`: la lista es una, y **la ranura se sella en la fila**.
+>
+> ⚠ **El análisis conservado sigue siendo cierto y no se edita** — describe lo que pasaría **sin**
+> estas piezas, que es exactamente lo que hay que saber si alguien las toca.
+
 ### El análisis, conservado — vale para cualquier lámina que lea el DESGLOSE por encuentro
 
 
@@ -8436,3 +8467,31 @@ lista *salvo* los marcadores, y el deck sale en `/////` sin que nada avise.
 
 **Lo accionable:** toda lista de pasos que termine en *«correr `jm`»* tiene que incluir el wrapper
 de cableado de las láminas que se hayan tocado. Está en `HANDOFF_CODE.md`, en la tabla de arranque.
+
+---
+
+## 2026-08-25 · **P1 · 21 de 51 bancos aportan CERO al conteo de afirmaciones del runner**
+
+`tools/suites.js` suma leyendo el texto *«Las N afirmaciones pasaron»* de cada banco. **21 imprimen
+`«Todas las afirmaciones pasaron»`, sin número**, así que su aporte es **cero** — y nadie se
+enteraba, porque el veredicto sale del **exit code** y ése sí es correcto.
+
+**El tamaño del hueco, medido:** al ponerle el conteo a **un solo** banco
+—`probar-agregado-por-temario.js`, 87 afirmaciones— el total del runner pasó de **~527 a ~614**.
+Con los 21 arreglados el número real es bastante mayor que el que se venía citando.
+
+⚠ **No es un problema de veredicto: es de CUÁNTO midió.** `CLAUDE.md` §4 lo pide con todas las
+letras — *«un control tiene que declarar CUÁNTO midió; “ningún problema” y “no se probó nada” se ven
+idénticos en un log sin conteo»*—. Un banco que se rompiera y dejara de correr afirmaciones seguiría
+imprimiendo su banner sin número y **el total no se movería**.
+
+⭐ **El arreglo es mecánico y de una línea por archivo:** contar en `afirmar()` y cambiar el banner
+final a `'✅ Las ' + corridas + ' afirmaciones pasaron.'`. **No se hizo en la vuelta del
+`2026-08-25_3` a propósito** — *mejorar no es ampliar*, y son 21 archivos fuera del objetivo del
+prompt.
+
+**Los 21:** `alcance-de-laminas`, `aviso-ventana`, `confirmar-anclaje`, `continuacion-deck`,
+`cuenta-de-campana`, `etapa-post`, `faltantes-causas`, `faltantes-por-lamina`, `lamina-por-id`,
+`laminas-declaradas`, `lectura-por-posicion`, `matcher-rdv`, `medicion-anclaje-en-el-panel`,
+`modo-faltantes`, `particion-etapa`, `rediseno-l036`, `reloj-etapas`, `ruteo-solapa-digital`,
+`solo-marcadores`, `tipo-en-item`, `vista-faltantes`.
