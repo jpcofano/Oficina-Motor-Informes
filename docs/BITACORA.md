@@ -14206,3 +14206,161 @@ actualizaron con afirmaciones **negativas** en vez de aflojarse. **Las 41 de `to
 - ⏸ **`L-036` quedó en `-`** con **una sola candidata viva**: el `id_cuenta` del anclaje contra el
   ID de `Agenda JM | Post`. **Se retoma con el usuario.**
 - ⚠ **`reserva_cierre_seg` a 60 la cambia el usuario a mano** — `CONFIG` sólo siembra lo ausente.
+
+---
+
+## 2026-08-25 — Corrida nocturna `2026-08-24_2`: el conteo de faltantes pasa a ser confiable
+
+**Commits:** `f81507d` (docs al día) · `17935e3` (Parte C) · `fd437b5` (Parte B) · `6c37341`
+(Parte D) · `55580c4` (Parte E) · `db8bf5c` (las seis solapas de `L-036`) · `00a4594` (higiene).
+
+**Las cinco partes se hicieron.** Ninguna movió un número publicado: todo lo que se tocó es **cómo
+se muestra y cómo se cuenta** lo que el motor ya calculó.
+
+### ⭐ El orden real de dependencia estaba invertido en el prompt: C habilita a B
+
+Las dos causas que faltaban —*fuera de alcance* y *texto del equipo*— se declaran **por lámina**, y
+`FALTANTES` **no guardaba de qué lámina venía cada token**. Sin la Parte C no hay con qué
+descontarlas. Se hizo **C primero**, y se reporta.
+
+### Parte C — `FALTANTES.lamina_id`
+
+**El dato llega por dos caminos y ninguno cuesta una llamada de más:** en una sección repetible
+viaja por la **asignación** —el `lamina_id` del **modelo**, que `duplicarBloquesRepetibles_` ya
+conocía y tiraba—; en los tokens fijos lo resuelve `resolvedorDeLaminaId_` leyendo el ancla,
+**perezoso y memoizado**, así que el costo es proporcional a las láminas **con** faltante y en un
+deck que publica es **cero**.
+
+⚠ **La celda puede traer varias**, separadas por ` · `: `replaceAllText` pinta el token en todas sus
+cajas, `camp_titulo` aparece en 14 y **falta en las 14**. Guardar sólo la primera diría que falta en
+una.
+
+⛔ **El barrido final NO resuelve la lámina si hubo corte o fallo**, y es de presupuesto: corre
+**dentro de la reserva de cierre**, y *si la reserva no cubre el cierre completo, el corte ordenado
+igual muere en el muro*. Además con corte la causa es `no_alcanzado` y su oficio es *correr de
+nuevo*, no *mirar la lámina*.
+
+### ⛔⛔ Y un hallazgo que no era de esta corrida: `probar-faltantes-causas.js` ya estaba en ROJO
+
+Su extractor iba por una regex terminada en salto-llave-salto y **los `.gs` están en CRLF**, así que
+el cierre real lleva el retorno de carro en el medio y **nunca matcheó**. **Las cinco afirmaciones
+del lector del panel no se ejecutaron un solo día desde `af45941`**, y el banco informaba *«no se
+encontró la función»* — que se lee como un cambio del código y era **el instrumento leyéndolo mal**.
+Verificado con `git stash` contra HEAD limpio. Corregido: **53 → 58** afirmaciones.
+
+⭐ Es la misma causa que dejó dos negativos en verde el 24/08. **El barrido del mismo patrón en
+`tools/` dio CERO**, y ese cero también se escribe.
+
+### Parte B — la lámina declara su alcance, y el conteo dice TRES números
+
+**Dos columnas y no una**, porque son dos declaraciones: `LAMINAS.alcance` es de la lámina,
+`LAMINAS.tokens_equipo` es del token. `L-046` está **en** alcance y sus siete `camp_bench_*`/insight
+no se cablean. `tokens_equipo` vive en `LAMINAS` y no en `MARCADORES` porque **estos tokens no
+tienen fila** — su causa es `sin_fila`.
+
+⛔ **`alcance` no es `escondida`.** `escondida` **se refleja** de `isSkipped()` y una lámina puede
+volver; `alcance` es una **decisión declarada** que sobrevive a que alguien la muestre. Son el hecho
+y la intención, y `D-39` es el caso donde hoy coinciden y **no tienen por qué coincidir siempre**.
+
+⭐⭐ **Se deriva en la vista, no se escribe en `causa`.** `causa` sale del estado del marcador y dice
+qué **oficio** cierra el hueco; el alcance es una decisión que puede cambiar **sin correr de
+nuevo**. Metida en `FALTANTES`, cada cambio de alcance exigiría regenerar el deck para verlo.
+
+⭐ **El criterio es TODAS sus láminas, nunca alguna** — el mismo con el que `solo_escondidas` ya
+decide. Si **una** está en alcance, hay que cablearlo. Con *«alguna está fuera de alcance»* un token
+vivo desaparecería del número que decide el cierre: **el error caro en la dirección que no avisa**.
+
+⚠ **`sin_declarar` es su propio número.** Todo `secco` queda sin declarar porque nadie escribió su
+alcance, y sumarlo metería en el número del cierre láminas que nadie miró.
+
+#### ⛔⛔ El prompt tenía una premisa falsa, y la cazó el censo
+
+Ubicaba `camp_mail_insight` en `L-046`; **el censo del 22/08 lo pone en `L-047`**. `L-046` declara
+**siete** tokens del equipo, no ocho — que es lo que el tablero decía. Es el error del filtro por
+prefijo: *se siente* como leer el censo y **genera** en vez de **cruzar**. Cada token se cruzó uno
+por uno, y las tres afirmaciones negativas que lo fijan están en el banco.
+
+### Parte D — el lector convertía el vacío en cero, y desarmaba lo de `9c48769`
+
+`registrarFalloAnclaje_` deja los contadores **vacíos a propósito** —*«un 0 se lee como "se intentó
+anclar cero y salió bien", que es una afirmación y es falsa»*— y el lector hacía `Number(x) || 0`.
+**El lector es del 23/08 y el escritor de anoche: nunca se cruzaron**, así que una fila de FALLO se
+veía como una corrida perfecta de cero encuentros. Es la familia del `String(celda)` sobre
+booleanos.
+
+⭐⭐ **Y lo que lo hace caro: `num()` en `Panel.html` YA devolvía `—` para `null`.** El front sabía
+leer el vacío y **el backend nunca se lo dejaba llegar**.
+
+**La otra mitad:** la vista trae ahora la hora de la **última corrida** al lado de la de la fila, con
+los minutos de desfase. Hasta `9c48769` un anclaje que fallaba no escribía fila, y el 25/08 eso hizo
+parecer que dos instrumentos de la misma corrida se contradecían —17:12 contra 20:07—. ⚠ **Reporta,
+no interpreta**, y con un minuto de margen: la medición se escribe **dentro** de la corrida, y sin
+tolerancia toda corrida sana avisaría.
+
+### Parte E — el número del cierre va solo y arriba, y el bloque final deja de mentir
+
+⛔⛔ **Lo primero es un bug y no estilo:** el bloque final decía *«`LAMINAS` no tiene columna de
+alcance»* y *«`FALTANTES` no guarda la lámina»*. **Las dos dejaron de ser ciertas con las Partes B y
+C de esta misma corrida**, y dejarlas habría sido el `var TECHO_S = 350` otra vez — el front
+declarando un límite que el backend ya no tiene, **justo donde la persona mira**.
+
+**Jerarquía por consecuencia:** `faltantes reales` va **solo y en grande**; los otros dos al lado y
+en gris. ⚠ **Se muestran, no se esconden**: sin ver cuánto se descontó, el número de arriba es una
+afirmación sin testigo. ⛔ **Sin color de alerta**, porque un deck con faltantes reales es normal y
+publicable — lo que frena ya tiene su alerta roja arriba.
+
+**El corte por lámina** convive con el de causa a propósito: por causa se contesta *«qué oficio
+cierra esto»* y por lámina *«puedo publicar ésta»*.
+
+### ⭐ Después de la tanda: `L-036`, la fuente NO está mal elegida
+
+**Pedido del usuario a mitad de turno, y va antes que el `id_cuenta`.** Se barrieron **las 24
+solapas** de la base `reuniones`, no las tres del pedido. Los dos ids de `julio_24_30` aparecen en
+**seis**. El informe congelado es `docs/FUENTE_post_reuniones_2026-08-25.md`.
+
+⭐ **`reuniones/Agenda JM | Post` es la única con las cinco columnas y con datos** — Retiro:
+Habitantes **41.475**, Alcance **47.753**, Impresiones totales **136.971**. Las dos alternativas
+caen **con dato**:
+
+- ⛔ **`Métricas EDVs`** es superconjunto por **esquema** y no por **dato**: `Alcance manual`,
+  `Impr. totales` y `Cobertura` están **en cero** para los dos encuentros, y **`Visualizaciones` no
+  existe en ningún nombre**.
+- ⛔ **`Digital | Base Post`** **no contiene ninguno de los dos ids**.
+
+⇒ **El `id_cuenta` sigue siendo la candidata viva.** La pregunta previa se contestó y **no cambió el
+rumbo**, que es un resultado y no un trámite.
+
+⛔⛔ **El punto 3 —cruzar contra el deck del equipo— NO se puede cerrar con lo que hay en disco**, y
+por dos motivos que se suman: **(1)** el deck del 24-31/07 **no tiene la lámina** que `L-036`
+reproduce —sus láminas de encuentro son *«Uno a uno en barrios»*—; **(2)** los cuatro libros del
+fixture del 31/07 son `looker`, `m2`, `rdv` y `digital`: **`reuniones` no está**. Base del 20/08
+contra deck del 31/07, veinte días sobre una métrica que acumula. **Es `X-17` otra vez.**
+
+⭐⭐ **El hallazgo lateral, y es el más valioso: los cuatro bloques repetidos son las PLATAFORMAS.**
+El deck del equipo publica el POST desglosado Meta/Google/Programmatic con la misma forma, y la
+identidad interna cierra al dígito: `41.204 / 136.971 = 0,300822801906973 = col13` exacto. **`col12`
+es el TOTAL.** Eso respalda `ae06a3b` con números —el motor habría publicado `21.229` y `69,0 %`
+donde el total es `41.204` y `30,1 %`— y agrega que **el dato SÍ existe**: lo que falta no es la
+fuente, es una forma de llegar a una columna cuyo título se repite. ⛔ **No se propone ninguna**:
+`D-31` ya decidió no hacer una excepción para un solo caso, y reabrirlo es del usuario.
+
+⚠ **Dos correcciones al propio instrumento**, las dos porque contradecía al motor —y ahí *la primera
+hipótesis es que la medición está mal*—: el encabezado **no está en la fila 1** (en
+`Agenda JM | Post` la 1 es un banner), y **las solapas llaman distinto a lo mismo**
+(`Alcance` / `Alcance manual`, `Impresiones totales` / `Impr. totales`). Sin las dos, el reporte
+informaba *«la columna no existe»* en las seis — **un cero fabricado por el lector**.
+
+### Controles
+
+**45 suites, 0 en rojo.** Cuatro bancos nuevos: `probar-faltantes-por-lamina.js` (35),
+`probar-alcance-de-laminas.js` (38), `probar-medicion-anclaje-en-el-panel.js` (27),
+`probar-vista-faltantes.js` (30). Los cuatro con **guarda de mutación aplicada** en sus negativos y
+**control positivo** en cada bloque. Las tres listas coinciden en 11.
+
+### Pendientes
+
+- ⛔ **`clasp push`** — nada de esto está en el proyecto de Apps Script todavía.
+- ⛔ **`instalar()`**, que crea las dos columnas de `LAMINAS` por `COLUMNAS_DELTA_`.
+- ⛔ **`declararAlcanceDeLaminas()`**, después de `instalar()`.
+- ⏸ `camp_bench_remitente` y el array posicional del sellador — los dos en `PENDIENTES`.
+- ⏸ **`L-036`**: el `id_cuenta`, con el usuario.

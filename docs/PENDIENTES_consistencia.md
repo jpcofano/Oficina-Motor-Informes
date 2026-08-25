@@ -7865,7 +7865,15 @@ la fuente moviendo el recorte, esto es el motor pareciendo no recortar.
 
 ---
 
-### P2 · `LAMINAS` no tiene columna de alcance, y por eso el conteo de faltantes suma cuatro cosas distintas (23/08/2026)
+### ✅ ~~P2 · `LAMINAS` no tiene columna de alcance, y por eso el conteo de faltantes suma cuatro cosas distintas~~ — **CERRADO el 25/08/2026** (`2026-08-24_2` Parte B)
+
+> **Cómo cerró:** `LAMINAS` gana **dos** columnas por `COLUMNAS_DELTA_`, no una — `alcance` es de la
+> lámina y `tokens_equipo` del token, porque `L-046` está **en** alcance y sus siete `camp_bench_*`
+> no se cablean. El conteo del panel pasa a decir **tres números** y el que decide el cierre de fase
+> es `faltantes reales`. Se pueblan con `declararAlcanceDeLaminas()`, cruzado contra el censo del
+> 22/08. ⚠ `secco` queda **sin declarar** a propósito, y ése es su propio número.
+
+<!-- texto original, conservado: -->
 
 **No es un hallazgo nuevo: `docs/CIERRE_POR_LAMINA.md` ya lo dice con todas las letras** —*"la
 causa 4 no está en ninguna hoja de registro, `LAMINAS` no tiene columna de alcance, así que el
@@ -7891,7 +7899,15 @@ misma proporción que el censo: 192 tokens sin fila de los cuales 57 salieron de
 
 ---
 
-### P2 · `FALTANTES` no guarda la lámina, y no es derivable con confianza (23/08/2026)
+### ✅ ~~P2 · `FALTANTES` no guarda la lámina, y no es derivable con confianza~~ — **CERRADO el 25/08/2026** (`2026-08-24_2` Parte C)
+
+> **Cómo cerró, y la premisa de abajo era correcta:** *no era derivable*, así que el motor lo
+> **declara**. En una sección repetible el `lamina_id` del **modelo** viaja por la asignación, sin
+> costar una llamada a la API; en los tokens fijos lo resuelve el ancla, **perezoso y memoizado**.
+> ⚠ La celda puede traer **varias** separadas por ` · ` — un token fijo se pinta con
+> `replaceAllText` y falta en todas sus láminas. ⛔ Sigue **sin** derivarse del `mapa_tokens`.
+
+<!-- texto original, conservado: -->
 
 El primer pedido de la Parte B del `2026-08-23_1` era una vista *"agrupada por lámina y por causa"*.
 **La causa sí; la lámina no se pudo, y conviene que quede escrito por qué** para que el próximo no
@@ -8021,3 +8037,51 @@ comparable.
 apagar el único instrumento que va a decir cuándo esto importa de verdad — el error simétrico de
 las tres constantes que fallaron el 24/08. **Un aviso que molesta y es cierto no se silencia: se
 mide.**
+
+---
+
+## 2026-08-25 · Lo que abrió la corrida nocturna del `2026-08-24_2`
+
+### ⏸ `camp_bench_remitente` (`L-047`): falta la decisión, no el prefijo
+
+`TOKENS_EQUIPO_JM_` declara **21** tokens de texto del equipo, cruzados uno por uno contra el censo
+del 22/08. **`camp_bench_remitente` NO está declarado, y es a propósito.**
+
+El nombre grita *benchmark* y sería cómodo meterlo con los otros seis `camp_bench_*`. ⛔ **Pero
+ningún documento lo dice texto del equipo**: el censo lo cuenta dentro de un *«~15»* aproximado y
+`CIERRE_POR_LAMINA.md` no lo nombra. **Declararlo por su prefijo es exactamente el error que
+`CLAUDE.md` §4 describe** — filtrar por prefijo *se siente* como leer el censo y **genera** en vez
+de **cruzar**, que es como `camp_env` se lleva puesto a `camp_enviados`.
+
+**Qué lo destraba:** una línea del usuario. Mientras tanto cuenta como **faltante real**, que es la
+dirección segura: un token de más en el número del cierre se ve; uno de menos, no.
+
+⭐ **Hay una afirmación negativa que lo fija** en `tools/probar-alcance-de-laminas.js`: si alguien lo
+agrega sin una decisión escrita, el banco se pone rojo.
+
+### ⏸ El array de `sellarPlantilla` es POSICIONAL, y `LAMINAS` ya tiene 15 columnas
+
+`Sellador.gs` escribe las filas nuevas con un array literal de **13 posiciones**, contra un esquema
+que ahora tiene **15**. **Hoy es seguro y medido**: el array **no llega** a `alcance` (14) ni a
+`tokens_equipo` (15), así que las dos nacen vacías — *«sin declarar»*, que es lo correcto.
+
+⚠ **Lo que lo vuelve deuda es la próxima columna.** Una que entre en el medio correría todo lo de la
+derecha una posición **en silencio** — el modo de falla que `CLAUDE.md` §2 describe para
+`ANCLAJE_MEDICION` (`appendRow` de 12 contra 11).
+
+**Qué lo destraba:** construir la fila contra `reg.headers` en vez de por posición. Son pocas líneas.
+⛔ **No se hizo en la corrida nocturna a propósito:** toca el escritor de una hoja de registro y no
+había nadie para verificar el sellado. Va con el usuario.
+
+⭐ **Hay una afirmación que lo fija** en `tools/probar-alcance-de-laminas.js`: si alguien alarga el
+array hasta las columnas nuevas, el banco se pone rojo **antes** de que el sellador escriba una
+clasificación que nadie decidió.
+
+### ⚠ El prompt de esta corrida es `2026-08-24_2` y no existe ningún `_1` de ese día
+
+`docs/Prompts/` no tiene ningún archivo con fecha `2026-08-24`. El nombre lo fijó el usuario y **se
+respetó tal cual**: renumerarlo a `_1` habría hecho que el nombre del archivo dejara de coincidir
+con el que nombran los commits, que es el único cruce que existe entre prompt y commit.
+
+**No se corrige.** Queda anotado junto a las tres colisiones de numeración del 21-22/08, por el mismo
+motivo que aquéllas: **se convive con ellas**.
