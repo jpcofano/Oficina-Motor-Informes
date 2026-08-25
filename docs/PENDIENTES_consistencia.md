@@ -8189,7 +8189,30 @@ por qué estaba así.
 
 ---
 
-## 2026-08-25 · ⛔⛔ El cableado de `L-036` contra el desglose está BLOQUEADO por DOS piezas del motor
+## 2026-08-25 · ✅ ~~El cableado de `L-036` contra el desglose está BLOQUEADO por DOS piezas del motor~~ — **SE CAE**
+
+> ⛔⛔ **Los dos bloqueos eran del DESGLOSE, y el desglose no es la fuente.** El `ADDENDUM 2` de
+> `docs/FUENTE_post_reuniones_2026-08-25.md` retracta al `ADDENDUM 1`: `reuniones/Agenda JM | Post`
+> **es** la fuente de `L-036`, con las cinco columnas y **una fila por reunión**.
+>
+> - **A · `suyas[0]`** rompía con **cinco filas por encuentro**, que es el desglose.
+>   `Agenda JM | Post` tiene **una** — medido —, y ahí `con_varias > 0` sigue siendo el aviso
+>   correcto.
+> - **B · la solapa única de temario** sólo hacía falta con **dos** fuentes. Con las cinco columnas
+>   en una sola solapa, **es una**.
+> - ⛔ **`X-41` NO aplica:** la solapa declara `campo_id_cuenta`, así que el recorte por cuenta del
+>   temario funciona y no hay riesgo de caer al universo ancho.
+>
+> ⭐ **Lo que SÍ queda vivo es `D-31`** — `Visualizaciones` y `% VTR` son títulos repetidos y hay
+> que leerlos **por posición** (col 12 y col 13). **Es la decisión que espera al usuario**, y
+> `SOLAPAS` lo advierte desde el 14/08: *«los títulos de la fila 2 se repiten y NO alcanzan para
+> nombrar una columna»*. Las otras tres columnas tienen título único y no dependen de eso.
+>
+> **El análisis se conserva abajo**: si algún día `L-053` u otra lámina lee el desglose por
+> encuentro, los dos bloqueos vuelven **tal cual**.
+
+### El análisis, conservado — vale para cualquier lámina que lea el DESGLOSE por encuentro
+
 
 **Se fue a cablear y aparecieron dos bloqueos estructurales.** Ninguno es de configuración: los dos
 piden cambiar el motor, y **el segundo es del modo de falla más caro del repo**.

@@ -144,9 +144,17 @@ console.log('\n2b · y el parser REAL reconoce las cinco cuentas de julio, GC in
 }
 
 /* ════════════════════════════════════════════════════════════════════════════════════════
- * 3 · Las dos fuentes de `L-036`, y por qué `Agenda JM | Post` no se saca
+ * 3 · La fuente de `L-036` es `Agenda JM | Post`, y el desglose es de `L-053`
+ *
+ * ⛔ **Este bloque decía «las dos fuentes» y estuvo mal unas horas.** El `ADDENDUM 2` de
+ * `docs/FUENTE_post_reuniones_2026-08-25.md` lo retracta: `Agenda JM | Post` tiene **las cinco
+ * columnas, con datos, una fila por reunión**. El desglose es su **origen**, no su reemplazo — y
+ * *«de dónde salen»* no es *«dónde están cargados»*.
+ *
+ * ⭐ **Las afirmaciones no cambian, sólo el marco:** los `des_*` siguen mapeados porque **`L-053`
+ * sí lee el desglose**, y `poblacion`/`alc_real` siguen sobre la solapa POST.
  * ════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n3 · dos fuentes: el desglose para las métricas, la derivada para dos columnas');
+console.log('\n3 · `Agenda JM | Post` es la fuente de L-036; el desglose es de L-053');
 {
   /* Cada campo se busca UNO POR UNO — pertenencia, no un filtro por prefijo `des_`, que GENERA en
    * vez de CRUZAR (`CLAUDE.md` §4). */
@@ -155,14 +163,15 @@ console.log('\n3 · dos fuentes: el desglose para las métricas, la derivada par
     af(instalar.indexOf("campo_logico: '" + campo + "'") !== -1, campo + ' está en `MAPEO`');
   });
 
-  /* ⭐⭐ Lo que impide que alguien lea «fuente equivocada» y borre las filas de la derivada:
-   * medido sobre el fixture, el desglose NO tiene Alcance ni Habitantes en ningún nombre. */
+  /* ⭐⭐ Y la afirmación que resume por qué la fuente nunca estuvo mal elegida: el desglose **no
+   * tiene** Alcance ni Habitantes, en ningún nombre — medido sobre el fixture. Una lámina que las
+   * necesita **no puede** salir de ahí. */
   af(instalar.indexOf("campo_logico: 'des_alcance'") === -1 &&
     instalar.indexOf("campo_logico: 'des_habitantes'") === -1,
-    '⭐ el desglose NO tiene `Alcance` ni `Habitantes` — por eso la derivada no se saca');
+    '⭐ el desglose NO tiene `Alcance` ni `Habitantes` — `L-036` no podría salir de ahí');
   af(instalar.indexOf("campo_logico: 'poblacion'") !== -1 &&
     instalar.indexOf("campo_logico: 'alc_real'") !== -1,
-    '⭐ y `poblacion` / `alc_real` siguen mapeados sobre `Agenda JM | Post`');
+    '⭐ y `poblacion` / `alc_real` están sobre `Agenda JM | Post`, que es LA fuente de `L-036`');
 }
 
 /* ════════════════════════════════════════════════════════════════════════════════════════

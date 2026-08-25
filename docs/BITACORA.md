@@ -14606,3 +14606,84 @@ negativo: *sin fecha no se reconoce*, que es lo que hace que el `true` de los ot
 - ⛔ **`declararModoDelAgregadoPost()`** — ahora sí, desfrenado.
 - ⏸ **Los marcadores contra el desglose**: el grano está cerrado, el cableado no se escribió.
 - ⏸ El `Formato` desde `Nomenclatura`.
+
+---
+
+## 2026-08-25 (cierre) — Se retracta el `ADDENDUM 1`: la fuente de `L-036` nunca estuvo mal elegida
+
+**El usuario revisó mi propio informe y tenía razón.** `reuniones/Agenda JM | Post` **es** la fuente
+de `L-036`, con las cinco columnas, con datos, **una fila por reunión**.
+
+### ⛔⛔ El error, y es de razonamiento sobre una medición correcta
+
+**Usé el ejemplo de `3143-JUNJDGAG` —ocho filas, tres POST— para concluir que había que cambiar de
+fuente.** Ese ejemplo muestra **de dónde SALEN** los números; no muestra **dónde están CARGADOS**.
+
+⚠ **Es la misma distinción que el usuario me había hecho un mensaje antes** —*«sólo JM tiene POST»
+dice quién genera el dato, no en qué solapa está*— y la volví a cruzar **en la dirección opuesta**:
+primero confundí el **nombre** de la solapa con el dato; después, el **origen** del dato con su
+fuente. **Son la misma confusión con dos caras.**
+
+⭐⭐ **Y lo delataba el propio `ADDENDUM 1`:** dice que `Agenda JM | Post` es un *«agregado derivado»*
+que **cierra al dígito**. Un agregado que tiene los números correctos, **en el grano que la lámina
+necesita —una fila por reunión— y con su clave declarada, ES la fuente.** Verifiqué que estaba bien y
+concluí que había que cambiarla.
+
+⭐ **Que un dato tenga un origen no lo vuelve una fuente peor.** `resumen_metricas_dinamico` es un
+`QUERY()` vivo y es `fuente` (`S-01`). **Derivada** significa *«no la leas, leé el original»*, y eso
+aplica cuando el original tiene lo que hace falta **en el grano que hace falta**. Acá el original
+tiene **cinco filas por reunión** y la lámina necesita **una**: el agregado es el que está en grano.
+
+### ⇒ Los dos bloqueos que había reportado SE CAEN — los dos eran del desglose
+
+| bloqueo | por qué se cae |
+|---|---|
+| `filasDeSolapaDelTemario_` hace `suyas[0]` | rompe con **cinco filas por encuentro**. `Agenda JM \| Post` tiene **una** |
+| la config declara **una** solapa de temario | sólo hacía falta con **dos** fuentes. Es **una** |
+
+⛔ **`X-41` no aplica:** la solapa declara `campo_id_cuenta`, así que el recorte por cuenta funciona.
+
+⇒ **`L-036` vuelve a donde estaba: una sola candidata viva, el `id_cuenta` del anclaje.**
+
+**El análisis de los dos bloqueos se conserva en `PENDIENTES`**: si alguna vez `L-053` u otra lámina
+lee el desglose **por encuentro**, vuelven tal cual.
+
+### ⚠ Lo único que queda vivo: `D-31`
+
+`Visualizaciones` y `% VTR` están **repetidos cuatro veces** y `leerFuente` gana el último
+—Programmatic: `21.229` y `0,69044` donde el total es `41.204` y `0,30082`—. **Hay que leerlos por
+POSICIÓN: col 12 y col 13.**
+
+⭐ **No es hallazgo del rodeo: `SOLAPAS` lo advierte desde el 14/08** — *«los títulos de la fila 2 se
+repiten y NO alcanzan para nombrar una columna»*—, y por eso `ae06a3b` los retiró del `MAPEO`. **Esa
+decisión sigue siendo correcta.** Las otras tres columnas tienen título único.
+
+**Es la decisión que espera al usuario**, y `D-31` ya midió el contexto: de 12 solapas fuente **una
+sola** tiene títulos repetidos, y decidió no hacer una excepción por letra para un caso.
+
+### ⭐ Lo que se gana del rodeo, y se conserva entero — nada de esto era de `L-036`
+
+1. ⭐⭐ **Los dos criterios de POST.** `~=Agenda Post` dejaba **71 filas ciegas en seis meses, 22
+   cuentas del «1 a 1»**. Corregido, con testigo y canario, y con la **partición verificada**:
+   4.843 + 318 = **5.161 exacto**, las 750 cuentas cumpliendo también en su grano.
+2. **`Agenda JM | Post` es un agregado derivado del desglose que cierra al dígito por plataforma** —
+   `col17` Meta, `col22` Google, `col27` Programmatic, `col12` el total. **Es una identidad interna
+   nueva y exigible sin depender del deck del equipo.**
+3. **El sufijo `GC` no afecta el anclaje**, con la rama del eje ejercitada por primera vez.
+4. **`unirDigitalPorCuenta` pisa sólo las dimensiones**, y el anclaje **acierta por el orden de la
+   hoja** — San Cristóbal, PRE 24/7 contra POST 23/7, y el temario dice 23/07.
+
+### ⚠ El aprendizaje de método, que es lo que hay que no repetir
+
+***«De dónde salen» y «dónde están cargados» son dos preguntas distintas, y la segunda es la que
+elige una fuente.*** La crucé dos veces en dos días: la primera por el **nombre** de la solapa, la
+segunda por el **origen** del dato.
+
+⭐ **Y lo que la caza es barato:** antes de cambiar de fuente, preguntar *¿la que tengo, tiene los
+datos que la lámina necesita, en el grano que los necesita?* Si la respuesta es sí —y yo mismo la
+había medido—, **el origen es una curiosidad, no un motivo.**
+
+### Controles
+
+**48 suites, 0 en rojo.** `probar-rediseno-l036.js` ajustó su narrativa —decía *«las dos fuentes»*—
+sin cambiar una afirmación: los `des_*` siguen mapeados porque **`L-053` sí lee el desglose**.

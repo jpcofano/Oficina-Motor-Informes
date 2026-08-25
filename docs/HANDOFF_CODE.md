@@ -3,9 +3,9 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-25 (noche). `etapa.post` se amplió a `~=Post` —**hay que correr su
-testigo**— y `L-036` queda **POR REUNIÓN**, que es el diseño original: el desglose por plataforma es
-del «1 a 1», no de esta lámina. Antes: la corrida nocturna `2026-08-24_2`, las cinco partes hechas.
+**Última actualización:** 2026-08-25 (cierre). `etapa.post` se amplió a `~=Post` —**hay que correr
+su testigo**— y `L-036` vuelve a donde estaba: **una sola candidata viva, el `id_cuenta` del
+anclaje**. Antes: la corrida nocturna `2026-08-24_2`, las cinco partes hechas.
 
 ⚠ **Este archivo tuvo tres versiones el 25/08** y las secciones tachadas de abajo son las anteriores,
 conservadas a propósito — **cómo se llegó a una conclusión equivocada es la mitad de su valor**. Lo
@@ -45,28 +45,41 @@ a 71 filas en seis meses**.
 
 ---
 
-## ⏸ `L-036` — POR REUNIÓN, el diseño original. Lo estructural listo
+## ⏸ `L-036` — **una sola candidata viva: el `id_cuenta` del anclaje**
 
-⭐ **`L-036` es una fila por encuentro con el TOTAL de esa reunión**, cuatro ranuras para cuatro
-encuentros. **El desglose por plataforma es del «1 a 1» (`L-053`), no de esta lámina.**
+⭐ **La fuente es `reuniones/Agenda JM | Post`, y siempre lo fue.** Las cinco columnas, con datos,
+**una fila por reunión**, y `campo_id_cuenta` declarado:
 
-**Las dos fuentes:**
+| columna | dónde | Retiro (fila 95) |
+|---|---|---:|
+| Habitantes | col 5 | **41.475** |
+| Alcance | col 6 | **47.753** |
+| Impresiones totales | col 9 | **136.971** |
+| Visualizaciones | ⚠ **col 12** — el TOTAL | **41.204** |
+| % VTR | ⚠ **col 13** — el TOTAL | **0,30082** |
 
-| columnas | de dónde |
-|---|---|
-| Impresiones · Visualizaciones · VTR% | **`digital/CAMPAÑAS_DESGLOCE_DIGITAL`**, el TOTAL de la reunión |
-| **Alcance · Habitantes** | **`reuniones/Agenda JM \| Post`**, que es donde están |
+⛔⛔ **Hubo un rodeo de un día que terminó donde empezó**, y está entero en
+`docs/FUENTE_post_reuniones_2026-08-25.md`: el `ADDENDUM 1` mandó la fuente al desglose y el
+`ADDENDUM 2` lo retracta. **No salió de una medición nueva sino de una conclusión equivocada sobre
+una medición correcta** — confundí *de dónde SALEN* los números con *dónde están CARGADOS*.
 
-⚠ **`Agenda JM | Post` NO se saca del `MAPEO`:** es la fuente **correcta** para esas dos —**no
-existen en el desglose, en ningún nombre**— y derivada para las otras. Y **lo medido encaja**:
-`col12` **es el TOTAL** (Retiro **41.204**, al dígito contra la suma de sus filas POST); los otros
-tres bloques son las plataformas, que esta lámina no usa.
+⇒ **Los dos bloqueos que reporté se caen: los dos eran del desglose.** `X-41` no aplica.
 
-**Lo que quedó hecho:** `des_nomenclatura` en `MAPEO`, `itemsPorLamina` de vuelta en **4**, y
-`declararModoDelAgregadoPost()` **desfrenado** — su premisa nunca estuvo vencida.
+**Lo que quedó hecho y sirve:** `itemsPorLamina` en **4**, `declararModoDelAgregadoPost()`
+**desfrenado**, y `des_nomenclatura` en `MAPEO` (útil para `L-053`, que sí lee el desglose).
 
-⛔ **Lo que NO se hizo:** los marcadores contra el desglose. El grano está cerrado (`S-06`
-**derogado**), el cableado no se escribió.
+### ⚠ Lo único que espera TU decisión: `D-31`
+
+`Visualizaciones` y `% VTR` están **repetidos cuatro veces** y `leerFuente` indexa por título y
+**gana el último** — Programmatic: `21.229` y `0,69044` donde el total es `41.204` y `0,30082`. **Hay
+que leerlos por POSICIÓN.**
+
+⭐ `SOLAPAS` lo advierte desde el **14/08**: *«los títulos de la fila 2 se repiten y NO alcanzan para
+nombrar una columna»*, y por eso `ae06a3b` los retiró del `MAPEO` — **esa decisión sigue siendo
+correcta**. `D-31` ya midió el contexto: de 12 solapas fuente **una sola** tiene títulos repetidos, y
+decidió no hacer una excepción de lectura por letra para un caso. **Reabrirlo es tuyo.**
+
+⚠ **Las otras tres columnas tienen título único y no dependen de esa decisión.**
 
 ### ⭐ El sufijo `GC` del anclaje: medido, y NO es el `X-28`
 

@@ -2,13 +2,16 @@
 
 > **Estado:** congelado · **fecha de la medición:** 2026-08-25 · **pedido por el usuario**
 >
-> ⛔⛔ **SU CONCLUSIÓN PRINCIPAL ES FALSA — ver el ADDENDUM 1 al final, del mismo día.** La fuente
-> de `L-036` es `digital/CAMPAÑAS_DESGLOCE_DIGITAL`. El cuerpo se conserva sin editar porque **cómo
-> se llegó a la conclusión equivocada es la mitad de su valor**.
+> ⭐ **LA CONCLUSIÓN DEL CUERPO ES CORRECTA.** `reuniones/Agenda JM | Post` **es** la fuente de
+> `L-036`: las cinco columnas, con datos, **una fila por reunión**, y `col12` es el **TOTAL**.
 >
-> ⚠ **Pero `reuniones/Agenda JM | Post` NO se saca del `MAPEO`:** es la fuente **correcta** para
-> `Habitantes` y `Alcance` —que no existen en el desglose— y **derivada** para las otras cinco.
-> *«Fuente equivocada»* a secas costaría las dos columnas que sí aporta.
+> ⛔⛔ **El `ADDENDUM 1` la retractó y estuvo MAL — el `ADDENDUM 2` lo retracta a él.** Los tres
+> textos quedan sin editar porque **la secuencia entera es el hallazgo**: el `ADDENDUM 1` no salió de
+> una medición nueva sino de **una conclusión equivocada sobre una medición correcta**. Confundí *de
+> dónde SALEN* los números con *dónde están CARGADOS*.
+>
+> ⚠ **Lo único que queda vivo es `D-31`:** `Visualizaciones` y `% VTR` son **títulos repetidos** y
+> hay que leerlos **por posición** (col 12 y col 13). Las otras tres columnas tienen título único.
 >
 > ⚠ **Es una foto fechada.** Todo lo de acá sale de dos fixtures en disco y responde por **sus**
 > días: la base por el **20/08/2026**, el deck del equipo por el **31/07/2026**. No dice qué hay hoy.
@@ -401,3 +404,112 @@ abierta del rediseño**, y `Alcance` no está en ninguna solapa medida hasta aho
   del equipo para esta semana, y el deck del 31/07 **no tiene esta lámina**.
 - **De dónde sale `Alcance`.** No está en el desglose ni se midió en otra solapa con ese grano.
 - **Si el `Formato` se puede extraer de `Nomenclatura`** sin un parser por plataforma.
+
+---
+---
+
+# ⛔⛔ ADDENDUM 2 — 25/08/2026 · **el ADDENDUM 1 se RETRACTA. El cuerpo tenía razón.**
+
+> **Retractación completa del `ADDENDUM 1`.** Ni él ni el cuerpo se editan: los tres textos quedan,
+> porque **la secuencia entera es el hallazgo**.
+
+**`reuniones/Agenda JM | Post` ES la fuente de `L-036`, y siempre lo fue.** El `ADDENDUM 1` no salió
+de una medición nueva: salió de **una conclusión mía sobre una medición correcta.**
+
+---
+
+## Lo que la medición decía, y sigue diciendo
+
+Está en el cuerpo, sin cambiar una cifra — **Retiro, fila 95**:
+
+| columna | valor | dónde |
+|---|---:|---|
+| Habitantes | **41.475** | col 5 |
+| Alcance | **47.753** | col 6 |
+| Impresiones totales | **136.971** | col 9 |
+| Visualizaciones | **41.204** | ⭐ **col 12 — el TOTAL** |
+| % VTR | **0,30082** | ⭐ **col 13 — el TOTAL** |
+
+**Las cinco columnas, con datos, una fila por reunión.** Y `campo_id_cuenta: 'id_cuenta'` está
+declarado en `SOLAPAS`; `BASES.reuniones` lo dice con todas las letras: *«Una fila por encuentro,
+clave ID = id_cuenta del anclaje»*.
+
+⇒ **Nada de eso cambió entre el cuerpo y hoy.** Lo que cambió fue lo que yo concluí.
+
+---
+
+## ⛔⛔ El error, y es de razonamiento, no de medición
+
+**Usé el ejemplo de `3143-JUNJDGAG` —ocho filas, tres POST— para concluir que había que cambiar de
+fuente.** Ese ejemplo muestra **de dónde SALEN los números**; no muestra **dónde están CARGADOS**.
+
+⚠ **Es exactamente la distinción que el usuario me había hecho un mensaje antes** —*«sólo JM tiene
+POST» dice quién genera el dato, no en qué solapa está*— y la volví a cruzar, **en la dirección
+opuesta**: primero confundí el nombre de la solapa con el dato, después confundí el origen del dato
+con su fuente.
+
+⭐⭐ **Y lo que lo vuelve evidente es que el propio `ADDENDUM 1` ya lo tenía escrito:** dice que
+`Agenda JM | Post` es un **«agregado derivado» que cierra al dígito**. Un agregado que **tiene los
+números correctos, en el grano que la lámina necesita —una fila por reunión— y con su clave
+declarada, ES la fuente.** Verifiqué que estaba bien y concluí que había que cambiarla.
+
+⭐ **Que un dato tenga un origen no lo vuelve una fuente peor.** `looker` deriva de otras hojas y es
+`fuente`; `resumen_metricas_dinamico` es un `QUERY()` vivo y es `fuente` (`S-01`). **Derivada** en
+`SOLAPAS` significa *«no la leas, leé el original»* — y eso aplica cuando el original tiene lo que
+hace falta **en el grano que hace falta**. Acá el original tiene **cinco filas por reunión** y la
+lámina necesita **una**: es el agregado el que está en el grano correcto.
+
+---
+
+## ⇒ Los dos bloqueos del cableado DESAPARECEN, porque los dos eran del desglose
+
+| bloqueo reportado | por qué se cae |
+|---|---|
+| **A · `filasDeSolapaDelTemario_` hace `suyas[0]`** | eso rompe con **cinco filas por encuentro**, que es el desglose. `Agenda JM \| Post` tiene **una**, medido — y `con_varias > 0` sigue siendo el aviso correcto para esa solapa |
+| **B · la config del temario declara una sola solapa** | sólo hacía falta si las columnas venían de **dos** fuentes. Con las cinco en `Agenda JM \| Post`, **es una sola** |
+
+⛔ **Y `X-41` no aplica**: la solapa declara `campo_id_cuenta`, así que el recorte por cuenta del
+temario funciona y no hay riesgo de caer al universo ancho.
+
+⇒ **`L-036` vuelve a donde estaba**: **una sola candidata viva, el `id_cuenta` del anclaje.**
+
+---
+
+## ⚠ Lo único que SÍ queda vivo de todo esto: `D-31`
+
+**`Visualizaciones` y `% VTR` son títulos repetidos cuatro veces**, y `leerFuente` indexa por título
+y **gana el último** —Programmatic: `21.229` y `0,69044` donde el total es `41.204` y `0,30082`—.
+**Hay que leerlos por POSICIÓN: col 12 y col 13.**
+
+⭐ **Y no es un hallazgo del rodeo: `SOLAPAS` lo dice desde el 14/08** — *«los títulos de la fila 2
+se repiten y NO alcanzan para nombrar una columna»*. Por eso `ae06a3b` retiró `vis_totales` y
+`vis_vtr_pct` del `MAPEO`, y esa decisión **sigue siendo correcta**.
+
+⛔ **Es lo que el usuario tiene que decidir**, y `D-31` ya midió el contexto: de 12 solapas fuente,
+**una sola** tiene títulos repetidos, y su addendum decidió **no** hacer una excepción de lectura por
+letra para un caso —*«una regla que vale en un solo lugar es una trampa con fecha»*—. **Reabrirlo es
+suyo.**
+
+⚠ **Las otras tres columnas —`Habitantes`, `Alcance`, `Impresiones totales`— tienen título único y
+no dependen de esa decisión.**
+
+---
+
+## ⭐ Lo que se gana del rodeo, y se conserva entero
+
+**Nada de esto era de `L-036`:**
+
+1. ⭐⭐ **Los dos criterios de POST.** `DIMENSIONES_.etapa` filtraba `~=Agenda Post` y el equipo
+   escribe «Post» en cualquier posición: **71 filas ciegas en seis meses, 22 cuentas del «1 a 1»**.
+   Corregido, con testigo y canario, y con la partición verificada —**4.843 + 318 = 5.161 exacto**—.
+2. **Que `Agenda JM | Post` sea un agregado derivado del desglose**, cerrando al dígito por
+   plataforma. **Es una identidad interna nueva y verificable** —`col17` Meta, `col22` Google,
+   `col27` Programmatic, `col12` el total— que se puede exigir sin depender del deck del equipo.
+3. **Que el sufijo `GC` no afecta el anclaje**, con la rama del eje ejercitada por primera vez.
+4. **Que `unirDigitalPorCuenta` pisa sólo las dimensiones**, y que el anclaje **acierta por el orden
+   de la hoja** — San Cristóbal, PRE 24/7 contra POST 23/7, y el temario dice 23/07.
+
+⚠ **Y el aprendizaje de método, que es lo que hay que no repetir:** *«de dónde salen» y «dónde están
+cargados» son dos preguntas distintas, y la segunda es la que elige una fuente.* La primera vez la
+crucé por el **nombre** de la solapa; la segunda, por el **origen** del dato. **Son la misma
+confusión con dos caras.**
