@@ -1415,6 +1415,93 @@ function partirLaminasDeFaltante_(valor) {
     .filter(function (x) { return x !== ''; });
 }
 
+/* ═══════════ `2026-08-24_2` Parte B — los tres números del conteo ═════════════════════════
+ *
+ * ⭐ **El conteo pasa a decir tres cosas, y la que decide el cierre de fase es la PRIMERA:**
+ * faltantes reales · fuera de alcance · texto del equipo. Hasta hoy los tres se sumaban en uno, y
+ * el número con el que se iba a declarar `D-38` incluía **57 tokens de tres láminas que nadie va a
+ * cablear nunca** y el texto que escribe una persona.
+ *
+ * ⭐⭐ **Se DERIVA en la vista, no se escribe en `causa`, y esa decisión importa.** `causa` sale del
+ * estado del marcador en el momento de pintar —dice qué **oficio** cierra el hueco— y el alcance es
+ * una **decisión del usuario que puede cambiar sin correr de nuevo**. Metida en `FALTANTES`, cada
+ * cambio de alcance exigiría regenerar el deck para verlo; derivada, se declara en `LAMINAS` y el
+ * panel lo refleja en la próxima lectura. **Son dos ejes y no uno.**
+ *
+ * ⚠ **`sin_declarar` es su propio número y no se pliega a «real».** Una lámina cuyo alcance nadie
+ * escribió —todo `secco`— no es lo mismo que una declarada en alcance, y contarlas juntas haría que
+ * el número que decide el cierre incluyera láminas que nadie miró. *Un control declara cuánto
+ * midió*, y ésta es la parte que no está declarada.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Lo que `LAMINAS` declara hoy sobre alcance y texto del equipo.
+ *
+ * ⚠ **Si la hoja no tiene las columnas, devuelve el mapa vacío y lo DICE.** Sin ese aviso, «nadie
+ * declaró nada» y «la columna todavía no existe» se ven idénticos desde el conteo — y mandan a
+ * trabajos opuestos: llenar la hoja contra correr `instalar()`.
+ */
+function declaracionesDeLaminas_() {
+  var reg = (typeof leerLaminas_ === 'function') ? leerLaminas_() : { ok: false, motivo: 'sin lector' };
+  if (!reg.ok) return { ok: false, motivo: reg.motivo, alcance: {}, tokens_equipo: {}, columnas: false };
+
+  var headers = (reg.headers || []).map(function (h) { return String(h == null ? '' : h).trim(); });
+  var tieneColumnas = headers.indexOf('alcance') !== -1 && headers.indexOf('tokens_equipo') !== -1;
+
+  var alcance = {};
+  var tokensEquipo = {};
+  reg.filas.forEach(function (f) {
+    var id = String(f.lamina_id || '').trim();
+    if (!id) return;
+    var a = String(f.alcance == null ? '' : f.alcance).trim();
+    if (a) alcance[id] = a;
+    var lista = String(f.tokens_equipo == null ? '' : f.tokens_equipo)
+      .split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+    if (lista.length) {
+      tokensEquipo[id] = {};
+      lista.forEach(function (t) { tokensEquipo[id][t] = true; });
+    }
+  });
+
+  return {
+    ok: true, alcance: alcance, tokens_equipo: tokensEquipo, columnas: tieneColumnas,
+    motivo: tieneColumnas ? '' :
+      'LAMINAS todavía NO tiene las columnas `alcance` y `tokens_equipo` — correr `instalar()`. ' +
+      'El conteo NO descuenta nada, y eso es distinto de que no haya nada que descontar.'
+  };
+}
+
+/**
+ * En cuál de los cuatro cubos cae una fila de faltantes.
+ *
+ * ⭐ **El criterio es TODAS sus láminas, nunca alguna**, y es el mismo con el que `solo_escondidas`
+ * ya decide: `camp_titulo` aparece en 14 láminas, y si una sola está en alcance el token **hay que
+ * cablearlo**. Bastaría con «alguna está fuera de alcance» para que un token vivo desapareciera del
+ * conteo que decide el cierre — que es el error caro en la dirección que no avisa.
+ *
+ * El orden de evaluación no es arbitrario: **el alcance manda sobre el texto del equipo**. Una
+ * lámina que no se cablea se lleva su contenido entero, y clasificar sus tokens como *texto del
+ * equipo* diría que alguien los va a escribir a mano.
+ */
+function clasificarFaltante_(fila, decl) {
+  if (!fila.laminas.length) return 'sin_lamina';
+
+  var declaradas = fila.laminas.filter(function (id) { return decl.alcance[id]; });
+  if (declaradas.length < fila.laminas.length) return 'sin_declarar';
+
+  if (fila.laminas.every(function (id) { return decl.alcance[id] === 'fuera_de_alcance'; })) {
+    return 'fuera_de_alcance';
+  }
+
+  if (fila.laminas.every(function (id) {
+    return decl.tokens_equipo[id] && decl.tokens_equipo[id][fila.token] === true;
+  })) {
+    return 'texto_equipo';
+  }
+
+  return 'real';
+}
+
 /**
  * ⭐⭐ `2026-08-24_2` Parte C — **las filas de faltantes, agrupadas por lámina.**
  *
@@ -1483,9 +1570,21 @@ function panel_faltantes(cual) {
   if (!leido.existe) {
     return {
       ok: true, cual: previa ? 'previa' : 'actual', hoja: hoja, existe_hoja: false,
-      grupos: [], laminas: [], corridas: [], filas: 0, tokens: 0, sin_lamina: 0
+      grupos: [], laminas: [], corridas: [], filas: 0, tokens: 0, sin_lamina: 0,
+      conteo: { real: 0, fuera_de_alcance: 0, texto_equipo: 0, sin_declarar: 0, sin_lamina: 0 },
+      declaracion: { ok: false, columnas: false, motivo: 'no hay hoja de faltantes que leer' }
     };
   }
+
+  /* ⭐ Parte B — cada fila se clasifica ANTES de agrupar, y la clasificación viaja pegada a la fila:
+   * los cortes por causa y por lámina la necesitan los dos, y calcularla dos veces sería la puerta
+   * para que difieran. */
+  var decl = declaracionesDeLaminas_();
+  var conteo = { real: 0, fuera_de_alcance: 0, texto_equipo: 0, sin_declarar: 0, sin_lamina: 0 };
+  leido.filas.forEach(function (f) {
+    f.clase = clasificarFaltante_(f, decl);
+    conteo[f.clase]++;
+  });
 
   var porCausa = {};
   var distintos = {};
@@ -1537,7 +1636,14 @@ function panel_faltantes(cual) {
     laminas: agruparFaltantesPorLamina_(leido.filas),
     /* ⚠ Se publica aparte y no adentro de un grupo `(sin lámina)`: **un control declara cuánto
      * midió**, y este número es exactamente la parte del corte por lámina que no se puede leer. */
-    sin_lamina: leido.filas.filter(function (f) { return !f.laminas.length; }).length,
+    sin_lamina: conteo.sin_lamina,
+    /* ⭐⭐ Parte B — **los tres números, y el que decide el cierre de fase (`D-38`) es `real`.**
+     * Los otros dos son trabajo que nadie va a hacer nunca y hasta hoy se contaban como faltantes.
+     * ⚠ `sin_declarar` NO se pliega a `real`: una lámina cuyo alcance nadie escribió no es lo mismo
+     * que una declarada en alcance, y sumarlas metería en el número del cierre láminas que nadie
+     * miró. `declaracion` dice si la hoja está en condiciones de contestar. */
+    conteo: conteo,
+    declaracion: { ok: decl.ok, columnas: decl.columnas, motivo: decl.motivo },
     /* ⚠ **Más de un `corrida_id` en la hoja es un hallazgo, no un detalle de presentación.**
      * `escribirFaltantes_` pisa la hoja entera, así que lo normal es **uno**. Dos significa que
      * una corrida murió antes del cierre y dejó la lista de otra mezclada — exactamente el caso

@@ -337,9 +337,12 @@ var HOJAS_CONFIG_ = {
    * ⛔ **Ningún código la lee, y no se le van a dar lectores en este paso.** Es documentación
    * operativa, y hay que decirlo acá: **una columna que parece una guarda y no lo es es peor que
    * ninguna.** */
+  /* ⭐ `2026-08-24_2` Parte B — `alcance` y `tokens_equipo` **entran por `COLUMNAS_DELTA_`**, no
+   * acá arriba: recrear `LAMINAS` borraría el sellado, que es irreproducible sin volver a tocar las
+   * notas de las plantillas. El motivo largo de las dos columnas está en su entrada del delta. */
   LAMINAS: {
     headers: ['lamina_id', 'informe_id', 'seccion_id', 'orden_plantilla', 'escondida', 'origen',
-      'modo', 'itera_sobre', 'filtro', 'rol', 'cobertura', 'falta', 'notas']
+      'modo', 'itera_sobre', 'filtro', 'rol', 'cobertura', 'falta', 'notas', 'alcance', 'tokens_equipo']
   }
 };
 
@@ -527,6 +530,39 @@ var COLUMNAS_DELTA_ = {
   // porque las dos juntas son la clave con la que se lee la tabla: qué corrida, qué tanda.
   CORRIDAS: [
     { nombre: 'ejecucion', indice: 1 }
+  ],
+  /* ⭐⭐ `2026-08-24_2` Parte B — **las dos declaraciones que le faltan al conteo de faltantes**, y
+   * son DOS y no una: el alcance es de la lámina, el texto del equipo es del token.
+   *
+   * **Por qué hacían falta:** el conteo es el instrumento con el que se declara el cierre de fase
+   * (`D-38`) y suma como faltantes cosas que nadie va a cablear nunca — los 57 tokens de `L-039`,
+   * `L-048` y `L-050` que salieron del alcance por `D-39`, y el texto que escribe una persona. El
+   * comentario de `CAUSAS_FALTANTE_` ya nombraba el mecanismo que lo destrabaría: *"una columna
+   * `alcance` en `LAMINAS`, y necesita a alguien que la llene"*.
+   *
+   * ⛔ **`alcance` NO es `escondida`, y confundirlas sería el error caro.** `escondida` **se
+   * refleja** de `isSkipped()` —el motor la lee y no la decide (`B.3`, `C-01` addendum 1)—; una
+   * lámina puede estar escondida hoy y volver mañana. `alcance` es **una decisión declarada**: dice
+   * *"esto no se cablea"*, y sobrevive a que alguien muestre la lámina. Son el hecho y la intención,
+   * y `D-39` es exactamente el caso donde coinciden hoy y no tienen por qué coincidir siempre.
+   * Valores: `en_alcance` · `fuera_de_alcance`. **Vacío = nadie lo declaró**, que no es lo mismo que
+   * `en_alcance` y el conteo lo dice por separado.
+   *
+   * ⭐ **`tokens_equipo` es por TOKEN aunque viva en la fila de la lámina**, y eso resuelve el caso
+   * que obliga a que sean dos columnas: `L-046` está **en alcance** y sus seis `camp_bench_*` no se
+   * cablean nunca. Vive acá y no en `MARCADORES` porque **estos tokens no tienen fila** —su causa es
+   * `sin_fila`—, así que no hay dónde ponerlo del otro lado sin inventarles una. Lista separada por
+   * comas.
+   *
+   * ⚠ **Al final las dos, y el motivo es concreto:** `sellarPlantilla` escribe las filas nuevas con
+   * un array literal de 13 posiciones. Con las columnas al final, ese array **queda corto y no corre
+   * nada** —las dos celdas nacen vacías, que es «sin declarar» y es correcto—. Metidas en el medio
+   * correrían todo lo de la derecha una posición **en silencio**, que es el modo de falla que
+   * `CLAUDE.md` §2 describe para `ANCLAJE_MEDICION`. ⏸ Que ese array sea posicional en vez de por
+   * nombre queda anotado en `PENDIENTES` — se toca con el usuario, no en una corrida nocturna. */
+  LAMINAS: [
+    { nombre: 'alcance', indice: 13 },
+    { nombre: 'tokens_equipo', indice: 14 }
   ]
 };
 
@@ -4336,6 +4372,249 @@ function curarCamposMarcadores_(cambios) {
   }
 
   return { ok: true, aplicados: aplicados, sin_fila: sinFila, cambios_escritos: aplicados.length };
+}
+
+/* ═══════════ `2026-08-24_2` Parte B — el alcance de una lámina, declarado ══════════════════
+ *
+ * ⭐ **Lo que esto destraba:** el conteo de faltantes es el instrumento del cierre de fase (`D-38`)
+ * y hoy suma como faltantes cosas que nadie va a cablear nunca. `CAUSAS_FALTANTE_` ya nombraba el
+ * mecanismo: *"una columna `alcance` en `LAMINAS`, y necesita a alguien que la llene"*.
+ *
+ * ⛔ **Y nada de esto se INVENTA: cada valor sale de una declaración que ya existe.** Las tres
+ * `fuera_de_alcance` son `D-39`, decisión del usuario del 22/08; los `tokens_equipo` están cruzados
+ * **uno por uno contra el censo del 22/08**, que es el único lugar donde la lista es la lista.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Escribe campos de `LAMINAS` por `lamina_id`. Mismo contrato que `curarCamposMarcadores_`, y las
+ * mismas tres guardas, que **no se reimplementan por gusto**: la clave de `LAMINAS` es
+ * `lamina_id` **sola** —no el par con `informe_id`— y meter esa variante en el otro curador le
+ * agregaría un modo a una función que ya escribe la hoja más delicada del repo.
+ *
+ * ⚠ **No pisa lo que ya está con un valor distinto: lo REPORTA y sigue.** Una celda con otro valor
+ * es una decisión que alguien tomó y que no está en ningún otro lado; pisarla la borra sin dejar
+ * rastro. Es la diferencia con `curarCamposMarcadores_`, y es deliberada: allá el lote **es** la
+ * decisión, acá el lote propone y la hoja manda.
+ */
+function curarLaminas_(cambios) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('LAMINAS');
+  if (!hoja) return { ok: false, motivo: 'La hoja LAMINAS no existe — correr `instalar()` primero.' };
+
+  cambios = cambios || [];
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0].map(function (h) { return String(h == null ? '' : h).trim(); });
+  var idxId = headers.indexOf('lamina_id');
+  if (idxId === -1) return { ok: false, motivo: 'LAMINAS no tiene columna `lamina_id`.' };
+
+  var filaDe = {};
+  for (var f = 1; f < datos.length; f++) {
+    var id = String(datos[f][idxId] || '').trim();
+    if (id) filaDe[id] = f;
+  }
+
+  /* Todo o nada sobre la COLUMNA, por el mismo motivo que en `curarCamposMarcadores_`: media
+   * operación de dos pasos deja el sistema en un estado que ninguno de los dos lados contempla. */
+  var columnasFaltantes = [];
+  cambios.forEach(function (c) {
+    Object.keys(c).forEach(function (campo) {
+      if (campo === 'lamina_id') return;
+      if (headers.indexOf(campo) === -1 && columnasFaltantes.indexOf(campo) === -1) columnasFaltantes.push(campo);
+    });
+  });
+  if (columnasFaltantes.length) {
+    return {
+      ok: false,
+      motivo: 'LAMINAS no tiene la(s) columna(s): ' + columnasFaltantes.join(', ') +
+        '. No se escribió ninguna celda — correr `instalar()` primero, que las crea por `COLUMNAS_DELTA_`.',
+      columnas_faltantes: columnasFaltantes, aplicados: [], sin_fila: [], ocupadas: [], cambios_escritos: 0
+    };
+  }
+
+  var aplicados = [];
+  var sinFila = [];
+  var ocupadas = [];
+  cambios.forEach(function (c) {
+    var id = String(c.lamina_id || '').trim();
+    if (!(id in filaDe)) { sinFila.push(id); return; }
+    var fila = filaDe[id];
+    Object.keys(c).forEach(function (campo) {
+      if (campo === 'lamina_id') return;
+      var col = headers.indexOf(campo);
+      var anterior = String(datos[fila][col] == null ? '' : datos[fila][col]).trim();
+      if (anterior === String(c[campo])) return;              // ya estaba
+      if (anterior !== '') {                                   // ⚠ ocupada con otro valor: no se pisa
+        ocupadas.push({ lamina_id: id, campo: campo, hoja: anterior, pedido: c[campo] });
+        return;
+      }
+      hoja.getRange(fila + 1, col + 1).setValue(c[campo]);
+      aplicados.push({ lamina_id: id, campo: campo, nuevo: c[campo] });
+    });
+  });
+
+  /* ⭐⭐ **RELEE lo que quedó, no lo que pidió escribir** (`CLAUDE.md` §4). Todo lo que entra a una
+   * celda de Sheets pasa por su interpretación de tipos, y un alta que reporta *«3 filas agregadas»*
+   * puede estar mintiendo sobre lo que la hoja tiene: `valor_fijo = '1/3'` se guardó como FECHA y
+   * los tres marcadores publicaron `---` en la corrida siguiente, en otra lámina.
+   *
+   * ⚠ Acá el riesgo es real y concreto: `tokens_equipo` es una lista separada por comas y `alcance`
+   * lleva guiones bajos. Ninguno de los dos **debería** coercionarse — pero *«no debería»* es
+   * exactamente lo que se creyó de `1/3`. **Un escritor que no relee es la mitad del bug.** */
+  var releido = hoja.getDataRange().getValues();
+  var difieren = aplicados.filter(function (a) {
+    var v = releido[filaDe[a.lamina_id]][headers.indexOf(a.campo)];
+    return String(v) !== String(a.nuevo);
+  }).map(function (a) {
+    return a.lamina_id + '.' + a.campo + ': pedido="' + a.nuevo + '" · la hoja guardó "' +
+      releido[filaDe[a.lamina_id]][headers.indexOf(a.campo)] + '" (' +
+      typeof releido[filaDe[a.lamina_id]][headers.indexOf(a.campo)] + ')';
+  });
+  if (difieren.length) {
+    return {
+      ok: false,
+      motivo: 'SHEETS COERCIONÓ ' + difieren.length + ' valor(es): lo que se pidió y lo que quedó ' +
+        'NO coinciden. El alta se escribió y la hoja NO dice lo que se quiso decir.\n  · ' +
+        difieren.join('\n  · '),
+      coercionados: difieren, aplicados: aplicados, sin_fila: sinFila, ocupadas: ocupadas,
+      cambios_escritos: aplicados.length
+    };
+  }
+
+  /* Las mismas tres causas de `curarCamposMarcadores_`, con una cuarta propia: **celdas ocupadas**.
+   * Un lote que no escribió nada porque todo estaba ocupado con OTRO valor no es idempotencia — es
+   * un lote que no se aplicó, y presentarlo como éxito es el `0 celda(s)` de la tanda 4. */
+  if (cambios.length && !aplicados.length) {
+    if (ocupadas.length) {
+      return {
+        ok: false,
+        motivo: 'CERO CELDAS ESCRITAS: ' + ocupadas.length + ' celda(s) ya tienen OTRO valor y no ' +
+          'se pisan. Alguien declaró algo distinto y esa decisión no está en ningún otro lado.\n  · ' +
+          ocupadas.map(function (o) {
+            return o.lamina_id + '.' + o.campo + ': hoja="' + o.hoja + '" · pedido="' + o.pedido + '"';
+          }).join('\n  · '),
+        aplicados: [], sin_fila: sinFila, ocupadas: ocupadas, cambios_escritos: 0
+      };
+    }
+    if (sinFila.length) {
+      return {
+        ok: false,
+        motivo: 'CERO CELDAS ESCRITAS: ' + sinFila.length + ' `lamina_id` no existen en LAMINAS — ' +
+          sinFila.join(', ') + '. ⚠ Una plantilla sin sellar no tiene filas: correr `sellarPlantilla`.',
+        aplicados: [], sin_fila: sinFila, ocupadas: ocupadas, cambios_escritos: 0
+      };
+    }
+    var motivoIdem = 'CERO CELDAS ESCRITAS, y está bien: las ' + cambios.length +
+      ' fila(s) YA ESTABAN en el estado pedido. Es idempotencia, no rotura.';
+    Logger.log('ⓘ ' + motivoIdem);
+    return {
+      ok: true, idempotente: true, motivo: motivoIdem,
+      aplicados: [], sin_fila: sinFila, ocupadas: ocupadas, cambios_escritos: 0
+    };
+  }
+
+  return {
+    ok: true, aplicados: aplicados, sin_fila: sinFila, ocupadas: ocupadas,
+    cambios_escritos: aplicados.length
+  };
+}
+
+/**
+ * ⭐ **El alcance de las 23 láminas de `jm`, copiado de `docs/CIERRE_POR_LAMINA.md` y de `D-39`.**
+ *
+ * ⛔ **Las tres `fuera_de_alcance` son decisión del usuario (22/08, `D-39`)** y no se deducen de
+ * `escondida`: una lámina escondida puede volver, y `alcance` dice *«esto no se cablea»* aunque
+ * vuelva. Son el hecho y la intención.
+ *
+ * ⚠ **`secco` (`L-001`–`L-029`) queda SIN DECLARAR a propósito.** Nadie escribió su alcance, y
+ * vacío significa *«nadie lo declaró»* — que el conteo informa por separado en vez de asumir que
+ * está en alcance. Inventarlo acá sería exactamente lo que el turno anterior evitó bien.
+ */
+var ALCANCE_LAMINAS_JM_ = {
+  fuera_de_alcance: ['L-039', 'L-048', 'L-050'],
+  en_alcance: ['L-030', 'L-031', 'L-032', 'L-033', 'L-034', 'L-035', 'L-036', 'L-037', 'L-038',
+    'L-040', 'L-041', 'L-042', 'L-043', 'L-044', 'L-045', 'L-046', 'L-047', 'L-049', 'L-051',
+    'L-052', 'L-053']
+};
+
+/**
+ * ⭐⭐ **Los tokens que escribe una PERSONA, cruzados UNO POR UNO contra el censo del 22/08.**
+ *
+ * ⛔ **No salen de un `grep` por prefijo, y la diferencia no es teórica: el prompt de este paso
+ * ubicaba `camp_mail_insight` en `L-046` y el censo lo pone en `L-047`.** Filtrar por prefijo *se
+ * siente* como leer el censo —sale del registro, no de la cabeza— pero **genera** en vez de
+ * **cruzar**, y `CLAUDE.md` §4 ya tiene el caso: `camp_env` se lleva puesto a `camp_enviados`.
+ *
+ * ⚠ **`L-048` no aparece acá aunque tenga `camp_resp_insight`:** la lámina entera está fuera de
+ * alcance, y declararle tokens del equipo sería clasificar dos veces lo mismo.
+ *
+ * ⏸ **`camp_bench_remitente` (`L-047`) queda SIN DECLARAR, y es a propósito.** El nombre grita
+ * *benchmark*, pero **ningún documento lo declara texto del equipo**: el censo lo cuenta dentro de
+ * un *«~15»* aproximado y el tablero no lo nombra. Declararlo por su prefijo es el error que el
+ * párrafo de arriba describe. **Va a `PENDIENTES` como pregunta al usuario.**
+ */
+var TOKENS_EQUIPO_JM_ = {
+  // Decidido el 24/08 (usuario): `audiencia` y `formato` van como texto del equipo — la decisión
+  // y su reversibilidad están en `CONFIG_INFORMES.md` §2.5.
+  'L-043': 'camp_audiencia1, camp_audiencia2, camp_audiencia3, camp_formato1, camp_formato2, camp_formato3',
+  // Los seis `camp_bench_*` de la lámina más `camp_dig_insight`. **Siete, no ocho.**
+  'L-046': 'camp_bench_google_ctr, camp_bench_google_vtr, camp_bench_meta_ctr, camp_bench_meta_vtr, ' +
+    'camp_bench_prog_ctr, camp_bench_prog_vtr, camp_dig_insight',
+  'L-047': 'camp_mail_insight',
+  // Los seis `u1_bench_*` del "1 a 1", en la fila «Texto del equipo» del censo del 22/08.
+  'L-053': 'u1_bench_google_ctr, u1_bench_google_vtr, u1_bench_meta_ctr, u1_bench_meta_vtr, ' +
+    'u1_bench_prog_ctr, u1_bench_prog_vtr'
+};
+
+/**
+ * ⭐ **El botón.** Sin `_` y **sin parámetros**, que son las dos condiciones para que Apps Script lo
+ * liste en el desplegable — la segunda ya costó tres veces (`CLAUDE.md` §2).
+ *
+ * Devuelve por `Logger.log` **además** de por `return`: el editor no muestra el valor de retorno, y
+ * una función que sólo retorna es, desde ahí, una que no dice nada.
+ */
+function declararAlcanceDeLaminas() {
+  var cambios = [];
+  Object.keys(ALCANCE_LAMINAS_JM_).forEach(function (valor) {
+    ALCANCE_LAMINAS_JM_[valor].forEach(function (id) {
+      cambios.push({ lamina_id: id, alcance: valor });
+    });
+  });
+  Object.keys(TOKENS_EQUIPO_JM_).forEach(function (id) {
+    cambios.push({ lamina_id: id, tokens_equipo: TOKENS_EQUIPO_JM_[id] });
+  });
+
+  var r = curarLaminas_(cambios);
+
+  if (!r.ok) {
+    Logger.log('⛔ FALLÓ: ' + r.motivo);
+    return r;
+  }
+
+  Logger.log('✅ ' + r.cambios_escritos + ' celda(s) escritas sobre ' + cambios.length + ' pedidas.');
+  Logger.log('   fuera de alcance: ' + ALCANCE_LAMINAS_JM_.fuera_de_alcance.join(', ') +
+    ' (D-39, decisión del usuario 22/08)');
+  Logger.log('   en alcance: ' + ALCANCE_LAMINAS_JM_.en_alcance.length + ' láminas de `jm`');
+  Logger.log('   tokens del equipo: ' + Object.keys(TOKENS_EQUIPO_JM_).join(', '));
+
+  /* ⚠ Los avisos van ÚLTIMOS, después del veredicto: un `⚠` en el medio de un reporte que termina
+   * en `✅` se lee como verde, y eso ya pasó inadvertido dos corridas seguidas (`CLAUDE.md` §4). */
+  if (r.ocupadas.length) {
+    Logger.log('');
+    Logger.log('⚠ ' + r.ocupadas.length + ' celda(s) YA tenían otro valor y NO se pisaron:');
+    r.ocupadas.forEach(function (o) {
+      Logger.log('   · ' + o.lamina_id + '.' + o.campo + ': hoja="' + o.hoja + '" · pedido="' + o.pedido + '"');
+    });
+  }
+  if (r.sin_fila.length) {
+    Logger.log('');
+    Logger.log('⚠ ' + r.sin_fila.length + ' `lamina_id` sin fila en LAMINAS: ' + r.sin_fila.join(', '));
+  }
+  Logger.log('');
+  Logger.log('⚠ Lo que este verde NO cubre:');
+  Logger.log('   · `secco` (L-001–L-029) queda SIN DECLARAR — nadie escribió su alcance.');
+  Logger.log('   · `camp_bench_remitente` (L-047) sin declarar: ningún documento lo dice texto del');
+  Logger.log('     equipo, y deducirlo del prefijo es el error que esta lista evita.');
+  Logger.log('   · Que el conteo del panel baje: eso lo dice una corrida, no esta escritura.');
+  return r;
 }
 
 /**
