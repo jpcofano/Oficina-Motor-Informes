@@ -8186,3 +8186,156 @@ el mismo formato, que se leen como si respondieran la misma pregunta. **Decisió
 motor y cambiarlo movería mucho más que esto. El límite queda fijado por una afirmación de
 `tools/probar-etapa-post.js`: si algún día se vuelve insensible, se pone roja y hay que venir a leer
 por qué estaba así.
+
+---
+
+## 2026-08-25 · ⛔⛔ El cableado de `L-036` contra el desglose está BLOQUEADO por DOS piezas del motor
+
+**Se fue a cablear y aparecieron dos bloqueos estructurales.** Ninguno es de configuración: los dos
+piden cambiar el motor, y **el segundo es del modo de falla más caro del repo**.
+
+### A · `filasDeSolapaDelTemario_` elige UNA fila, y el desglose tiene varias por encuentro
+
+```js
+if (suyas.length > 1) conVarias++;   // ⚠ sólo lo REPORTA
+…
+filas.push(suyas[0]);                // ⛔ y se queda con la primera
+```
+
+**Sobre `Agenda JM | Post` está bien** —una fila por encuentro, medido y declarado en `SOLAPAS`— y
+su propio comentario dice que `con_varias > 0` *«es un cambio de forma de la fuente, no un caso
+normal»*.
+
+⛔ **Sobre `CAMPAÑAS_DESGLOCE_DIGITAL` es al revés: varias filas por encuentro es LO NORMAL.**
+Medido sobre el fixture del 20/08: **Retiro 5 filas** (Meta ×2, Google ×2, DV360), **Orden Público
+3**. Con `suyas[0]`, `post_impresiones1` publicaría **la fila de Meta como si fuera el total** —
+`38.310` en vez de `136.971`.
+
+⚠ **Es el modo de falla más caro y el único que no avisa:** un número correcto en el lugar
+equivocado, plausible, sin fallar.
+
+**Qué lo destraba:** que la función pueda **agregar** las filas de la cuenta en vez de elegir una.
+El dato ya lo tiene (`suyas`); falta sumar los campos que correspondan. ⭐ **Y va por `CONFIG`, no
+hardcodeado** —`campos_agregar_post`, al lado de `campos_metrica_post`— porque cuáles se suman es un
+parámetro de negocio.
+
+⚠ **La tensión con la regla de oro hay que declararla:** sumar filas es aritmética, y *toda la
+aritmética vive en `Marcadores.gs`*. El argumento para que viva acá es que **no es el cálculo del
+marcador sino la preparación de su fila** —el mismo rol que `unirDigitalPorCuenta`—, y el marcador
+sigue haciendo su `FILA`/`ULTIMO` sobre el resultado. **Es una decisión de arquitectura y la toma el
+usuario.**
+
+### B · ⛔⛔ La config del temario declara UNA sola solapa, y `L-036` necesita DOS
+
+`CONFIG` tiene `base_agregado_post` y `solapa_agregado_post` — **en singular**. Y la rama que aplica
+el recorte del temario es **por marcador**:
+
+```js
+if (opciones.base_temario === fila.base_id && opciones.hoja_temario === solapa) { … }
+```
+
+⇒ **Si la config apunta al desglose, los marcadores que leen `Agenda JM | Post` —`post_alcance` y
+`post_habitantes`— dejan de entrar a esa rama** y caen a la cadena general: `leerFuente` sobre **la
+solapa entera**.
+
+⛔⛔ **Eso es exactamente lo que se cerró el 25/08 a la mañana**, y publicó el **Recap de CABA con
+2.463.980 habitantes** como si fuera un encuentro. **Es `X-41` y la familia de los `cc_*`: una
+sección que debería recortar por las cuentas del temario y termina publicando el universo ancho.**
+
+**Qué lo destraba:** que el temario pueda declarar **más de una solapa** —una lista, no un par— y que
+`opciones.filas_temario` sea un mapa por `base|solapa`.
+
+### ⇒ Lo que esto significa para el orden de trabajo
+
+**No es «cablear»: son dos cambios de motor con su banco cada uno**, y el B mueve el riesgo de
+publicar un universo ancho. **Se reporta y no se toca** — el cableado queda escrito como pendiente y
+el usuario decide si van, en qué orden y en qué deck.
+
+⚠ **Y una corrida de `jm` sobre `julio_24_30` HOY no puede mostrar lo esperado:** las tres métricas
+del desglose no tienen cómo llegar agregadas, y `Alcance`/`Habitantes` no tienen cómo conservar el
+recorte si se cambia la solapa. **Los 41.204 de Retiro no van a salir de esta corrida.**
+
+---
+
+## 2026-08-25 · ⭐ `unirDigitalPorCuenta` PISA — medido, sin arreglar
+
+**Pedido del usuario: medir y parar.** ⭐ **No es un hallazgo nuevo:** está instrumentado desde el
+09/08 (`N4`), que publica `filas_pisadas` y dice *«sigue pisando exactamente igual, y con qué
+reemplazarla es una decisión de diseño que espera al usuario»*.
+
+### ⭐⭐ Lo primero, porque acota el problema a una décima parte: sólo pisa las DIMENSIONES
+
+| qué | cómo se guarda | |
+|---|---|---|
+| los 5 campos de `CAMPOS_DIMENSION_MAESTRA_` | `porCuenta[id] = registro` | ⛔ **PISA** |
+| los hechos de cada canal (`mail_filas`, `ivr_filas`, `sms_filas`, `alc_filas`, `dig_filas`) | `…[claveFilas].push(fila)` | ✅ **ACUMULAN** |
+
+⇒ **Las métricas de mail, IVR, SMS, alcance y digital NO están afectadas.** El propio `Union.gs` lo
+dice: *«si una solapa trae varias filas por cuenta, NO se suma — se guarda el arreglo crudo»*.
+
+### 1 · Quiénes consumen, y cuáles están expuestos
+
+| consumidor | campo | ¿distingue etapa? | expuesto |
+|---|---|---|---|
+| **el anclaje** (`Union.gs`, `candidatosTodos`) | `sd_campana_digital` | ⛔ **no** | ⛔ **SÍ** |
+| **`camp_titulo`** | `sd_campana_cuentas` | ⛔ no | ✅ **no** — ver abajo |
+| `sd_pauta_google` · `sd_pauta_prog` · `sd_pauta_meta` | — | — | ✅ **ningún marcador los lee** (medido: 0) |
+
+### 2 · Cuántos ids tienen más de una fila — ⚠ el 10 % global esconde el dato que importa
+
+Sobre el fixture del 20/08, solapa `Seguimiento digital`: **978 filas · 802 ids · 176 filas pisadas**.
+**81 de 802 ids (10,1 %)** tienen más de una fila.
+
+⇒ **Globalmente NO es la mayoría.** ⛔ **Pero los CINCO encuentros del temario de julio pisan, los
+cinco** — `3346`, `3354`, `3387`, `3389`, `3420`, todos con su par pre/post.
+
+⭐⭐ **Ése es el matiz que cambia la lectura: el 10 % es sobre *todas* las cuentas de digital, y la
+población que importa es *las cuentas de encuentro*, donde pre+post es el caso NORMAL.** Un
+porcentaje sobre el universo equivocado hace pasar por borde lo que es la regla.
+
+⚠ Y hay un outlier: **un id con 96 filas**. No se persiguió.
+
+### 3 · ⭐⭐ Qué publican hoy — el anclaje ACIERTA con la última fila, y ahora se sabe por qué
+
+**`sd_campana_cuentas` NO difiere nunca** — **0 de 81**. Por eso **`camp_titulo` está a salvo**, y su
+propia nota ya decía el motivo: *«es la MISMA columna contra la que `catalogoDeCampanas_` resuelve el
+id, así que lo publicado y lo matcheado son el mismo texto»*.
+
+⛔ **`sd_campana_digital` difiere en 80 de 81**, y ahí **gana el POST**. Es el campo que usa el
+anclaje para parsear barrio, fecha y tipo.
+
+⭐ **¿Rompe el anclaje? No — y medido, lo MEJORA.** Se corrió `parsearNombreCampana_` real sobre los
+cinco pares pre/post de julio:
+
+| encuentro | fecha del PRE | fecha del POST | temario |
+|---|---|---|---|
+| Retiro | 24/07 | 24/07 | 24/07 |
+| ⛔ **San Cristóbal** | **24/07** | **23/07** | ⭐ **23/07** |
+| Orden Público | 28/07 | 28/07 | 28/07 |
+| Nueva Pompeya | 29/07 | 29/07 | — |
+| Caballito | 29/07 | 29/07 | — |
+
+⇒ **1 de 5 difiere, y el POST es el que tiene la fecha correcta.** El PRE se nombra con la fecha de
+la campaña de convocatoria; **el POST con la del encuentro**.
+
+⛔⛔ **La consecuencia, y es lo que había que entender antes de tocar: «arreglar» la pisada
+quedándose con la PRIMERA fila ROMPERÍA el anclaje de San Cristóbal**, que pasaría a buscar un
+encuentro del 24/07 cuando el temario dice 23/07.
+
+⭐ **No es que la pisada esté bien: es que el orden de la hoja está acertando.** Depender de eso es
+frágil —basta que alguien reordene la solapa— pero **cambiarlo por «la primera» es peor**, y por «la
+que tenga el nombre más parecido» es otra decisión.
+
+### ⇒ Lo que queda para el usuario
+
+**No se tocó nada.** Las tres salidas posibles, sin recomendar ninguna:
+
+1. **Dejarlo como está** y documentar que el anclaje depende del orden de la hoja.
+2. **Preferir explícitamente la fila POST** para `sd_campana_digital` — hace explícito lo que hoy
+   pasa por casualidad. ⚠ Necesita que la unión sepa de `etapa`, que hoy no sabe.
+3. **Guardar las N filas** como hacen los canales, y que cada consumidor elija. Es lo más limpio y
+   lo que más mueve.
+
+⚠ **Y lo que NO se midió, dicho para que no se lea como que no hay nada:** los tres `sd_pauta_*`
+salen del `MAPEO` y no de un título fijo, así que el instrumento **no los comparó**. **Ese cero es
+«no medí», no «no difieren»** — y son conteos de contenidos pauteados, así que si difieren, importan.
