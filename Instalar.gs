@@ -237,8 +237,31 @@ var HOJAS_CONFIG_ = {
    * pisaría el título de `motivo` y la columna de motivos quedaría rotulada `causa` hasta la
    * próxima corrida. Al final, la reescritura posicional de `instalar()` y el agregado por nombre
    * de `reconciliarHeadersDeSalida_` **coinciden**, y ninguna columna existente se mueve. */
+  /* ⭐⭐ `2026-08-24_2` Parte C — **`lamina_id`, porque la lámina es la unidad en la que se mira un
+   * deck.** `docs/CIERRE_POR_LAMINA.md` está organizado por lámina y `FALTANTES` no lo estaba, así
+   * que cruzarlos era a mano. Y el conteo es el instrumento con el que se declara el cierre de fase
+   * (`D-38`): un instrumento que no habla el idioma del tablero al que alimenta cuesta una
+   * traducción manual en cada lectura.
+   *
+   * ⭐ **Habilita a la Parte B, y ése es el orden real de dependencia.** Las dos causas que faltan
+   * —*fuera de alcance* y *texto del equipo*— se declaran **por lámina**, así que sin esta columna
+   * no hay con qué descontarlas: el prompt las pedía antes y **no se puede**.
+   *
+   * ⚠ **Puede traer VARIAS láminas, separadas por ` · `, y no es un descuido.** Un token fijo se
+   * pinta con `replaceAllText` sobre la presentación entera: `camp_titulo` aparece en 14 láminas y
+   * publica **un solo valor** en todas. Guardar sólo la primera diría que falta en una cuando falta
+   * en catorce, y es exactamente el dato que la Parte B necesita para decidir *«todas sus láminas
+   * están fuera de alcance»* — el mismo criterio que ya usa `solo_escondidas`.
+   *
+   * ⚠ **En una sección repetible es UNA sola**, la del modelo del que salió la copia, y viaja por
+   * la asignación **sin costar una llamada a la API**: `duplicarBloquesRepetibles_` ya conoce el
+   * `lamina_id` en el momento de duplicar y lo estaba tirando.
+   *
+   * ⛔ **Va última por el mismo motivo que `causa`**, y el motivo sigue siendo el de arriba: metida
+   * en el medio, la reescritura posicional de `aplicarInstalacion_` correría el rótulo de la
+   * columna siguiente hasta la próxima corrida. */
   FALTANTES: {
-    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa']
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa', 'lamina_id']
   },
   /* ⭐ `2026-08-23_1` Parte B — **la corrida anterior, y una sola.**
    *
@@ -256,7 +279,7 @@ var HOJAS_CONFIG_ = {
    *
    * Mismos headers que `FALTANTES`, a propósito: **un solo lector sirve para las dos**. */
   FALTANTES_PREVIO: {
-    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa']
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa', 'lamina_id']
   },
   // `_5` (08/08) — la primera solapa de equivalencias de la planilla. Sigue la forma del
   // precedente `docs/PERSONAS_equivalencias.csv` —canónico / variante / dónde— adaptada al

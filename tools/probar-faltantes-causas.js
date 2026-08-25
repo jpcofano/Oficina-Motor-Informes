@@ -82,10 +82,10 @@ function hojaEnMemoria(headers) {
  * ser independiente. El desalineamiento lo delata la afirmación de la reconciliación. */
 const HOJAS_CONFIG_ = {
   FALTANTES: {
-    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa']
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa', 'lamina_id']
   },
   FALTANTES_PREVIO: {
-    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa']
+    headers: ['corrida_id', 'informe_id', 'token', 'base_id', 'solapa', 'campo_logico', 'motivo', 'causa', 'lamina_id']
   }
 };
 
@@ -255,12 +255,22 @@ console.log('\n4 · el lector del panel parte el sufijo `@ítem` y no lava el no
   // Sólo la función que se afirma: `PanelBackend.gs` entero arrastra la planilla, y lo que se
   // mide acá es un parseo de texto puro.
   const texto = fs.readFileSync(path.join(RAIZ, 'PanelBackend.gs'), 'utf8');
-  const m = texto.match(/function partirTokenDeFaltante_[\s\S]*?\n}\n/);
-  if (!m) {
+  /* ⛔⛔ **El extractor iba por regex `\n}\n` y NO matcheaba NUNCA: los `.gs` están en CRLF**, así
+   * que el cierre real es `\r\n}\r\n` y el patrón exige un `\n` justo después de la llave. Corregido
+   * el 25/08; **las cinco afirmaciones de abajo no se ejecutaron un solo día desde que se escribieron**
+   * (`af45941`), y el banco informaba el fallo como *«no se encontró la función»* — que se lee como
+   * un cambio del código y era el instrumento leyéndolo mal.
+   *
+   * ⭐ Es literalmente la misma causa que ya había dejado dos controles negativos en verde el 24/08,
+   * y `CLAUDE.md` §4 lo tiene escrito: **el final de línea es del archivo, no del que escribe la
+   * prueba**. Se busca por posición, sin regex multilínea. */
+  const desde = texto.indexOf('function partirTokenDeFaltante_');
+  const fin = desde === -1 ? -1 : texto.indexOf('\n}', desde);
+  if (desde === -1 || fin === -1) {
     mal++;
     console.log('  ❌ no se encontró `partirTokenDeFaltante_` en PanelBackend.gs');
   } else {
-    vm.runInContext(m[0], ctx, { filename: 'PanelBackend.gs (extracto)' });
+    vm.runInContext(texto.slice(desde, fin + 2), ctx, { filename: 'PanelBackend.gs (extracto)' });
     const partir = (v) => { ctx.__v = v; return vm.runInContext('partirTokenDeFaltante_(__v)', ctx); };
 
     af(partir('camp_titulo').token === 'camp_titulo' && partir('camp_titulo').item === '',

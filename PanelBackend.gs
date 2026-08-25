@@ -1329,10 +1329,14 @@ function panel_deckDeId_(deckId) {
  * ⚠ **Lo que esta vista NO contesta, y va dicho acá y no en una nota al pie** (`CLAUDE.md` §4:
  * un control declara cuánto midió):
  *
- *   - **La lámina.** `FALTANTES` no tiene columna de lámina y **no es derivable con confianza**:
- *     el `mapa_tokens` de `CORRIDAS` guarda el índice de slide del **deck expandido**, que no es
- *     `lamina_id` —las secciones repetibles duplican— y `LAMINAS.orden_plantilla` es reportado y
- *     nunca autoritativo. Lo que sí hay es el sufijo `@ítem`, que agrupa por instancia emitida.
+ *   - ~~**La lámina.**~~ ✅ **Cerrado por el `2026-08-24_2` Parte C.** `FALTANTES` ahora **guarda
+ *     `lamina_id`**, escrito por el motor en el momento de pintar: en una sección repetible viaja
+ *     por la asignación —el `lamina_id` del **modelo**, no la posición de la copia— y en los tokens
+ *     fijos se resuelve por el ancla de las notas. ⚠ **La celda puede traer varias**, separadas por
+ *     ` · `, y eso es correcto: `replaceAllText` pinta el token en todas sus cajas.
+ *     ⛔ **Sigue sin derivarse del `mapa_tokens` de `CORRIDAS`**, que guarda el índice de slide del
+ *     deck expandido y **no** es un `lamina_id` — y `LAMINAS.orden_plantilla` es reportado y nunca
+ *     autoritativo (`A.2`). Lo que cambió es que el motor lo **declara**, no que se pueda deducir.
  *   - **Fuera de alcance y texto del equipo.** Son decisiones del usuario y no viven en ninguna
  *     hoja de registro (`docs/CIERRE_POR_LAMINA.md`: *"`LAMINAS` no tiene columna de alcance"*).
  *     El conteo **no las descuenta**, y lo dice, en vez de inventar una clasificación.
@@ -1385,11 +1389,79 @@ function leerHojaDeFaltantes_(nombreHoja) {
       base_id: idx.base_id === undefined ? '' : String(cruda[idx.base_id] || ''),
       solapa: idx.solapa === undefined ? '' : String(cruda[idx.solapa] || ''),
       causa: causa,
-      motivo: idx.motivo === undefined ? '' : String(cruda[idx.motivo] || '')
+      motivo: idx.motivo === undefined ? '' : String(cruda[idx.motivo] || ''),
+      /* ⭐ `2026-08-24_2` Parte C — puede traer varias separadas por ` · `. Vacío significa **«no se
+       * midió»**, no «no tiene lámina»: las filas anteriores al 25/08 no tienen la columna, y las
+       * del barrido tras un corte la dejan vacía a propósito (ver `Generador.gs`). Las dos se
+       * agrupan bajo `(sin lámina)` y **el conteo lo dice**, en vez de inventarles una. */
+      laminas: partirLaminasDeFaltante_(idx.lamina_id === undefined ? '' : cruda[idx.lamina_id])
     });
   });
 
   return { existe: true, filas: filas };
+}
+
+/**
+ * La celda `lamina_id` → lista de ids.
+ *
+ * ⚠ **Sin normalizar el id más allá del `trim`**, por lo mismo que el nombre del ítem viaja sucio:
+ * un `l-046` en minúscula o un id con un espacio adentro es un hallazgo del sellado, y una vista que
+ * lo lava esconde el bug en el instrumento con el que se diagnostica todo lo demás.
+ */
+function partirLaminasDeFaltante_(valor) {
+  return String(valor == null ? '' : valor)
+    .split('·')
+    .map(function (x) { return x.trim(); })
+    .filter(function (x) { return x !== ''; });
+}
+
+/**
+ * ⭐⭐ `2026-08-24_2` Parte C — **las filas de faltantes, agrupadas por lámina.**
+ *
+ * ⚠ **Una fila con varias láminas cuenta en cada una, y por eso la suma de las láminas puede ser
+ * MAYOR que el total de filas.** No es doble conteo: `camp_titulo` **falta de verdad** en las 14
+ * láminas donde aparece, y decir *«una»* para que los números cierren sería mentir sobre el deck
+ * para que cierre una suma. **El campo `filas` de arriba sigue siendo el total real**, y las dos
+ * unidades van nombradas — misma disciplina que `filas` contra `tokens` en el corte por causa.
+ *
+ * ⭐ **El orden es por `lamina_id`, no por cantidad.** El deck se lee de adelante hacia atrás y el
+ * tablero que esto alimenta también; ordenar por cuántos faltan pondría arriba la lámina más rota,
+ * que es útil para triage y **no** para la pregunta que esta vista contesta —*«voy lámina por
+ * lámina, ¿puedo publicar ésta?»*—. La jerarquía por consecuencia vive en el corte por causa.
+ *
+ * ⚠ **Las filas sin lámina NO entran acá**: se cuentan aparte en `sin_lamina`. Meterlas en un grupo
+ * `(sin lámina)` las haría parecer una lámina más del deck.
+ */
+function agruparFaltantesPorLamina_(filas) {
+  var porLamina = {};
+  filas.forEach(function (f) {
+    f.laminas.forEach(function (id) {
+      if (!porLamina[id]) porLamina[id] = [];
+      porLamina[id].push(f);
+    });
+  });
+
+  return Object.keys(porLamina).sort().map(function (id) {
+    var suyas = porLamina[id];
+    var causas = {};
+    var tokens = {};
+    suyas.forEach(function (f) {
+      causas[f.causa] = (causas[f.causa] || 0) + 1;
+      tokens[f.token] = true;
+    });
+    return {
+      lamina_id: id,
+      filas: suyas.length,
+      cuenta_tokens: Object.keys(tokens).length,
+      // Ordenadas por cuánto frena la publicación, igual que los grupos por causa: la lámina se
+      // lee de un vistazo y lo primero tiene que ser lo que más pesa.
+      causas: Object.keys(causas).map(function (c) {
+        var def = CAUSAS_FALTANTE_[c] || CAUSAS_FALTANTE_.sin_clasificar;
+        return { causa: c, texto: def.texto, oficio: def.oficio, orden: def.orden, cuantos: causas[c] };
+      }).sort(function (a, b) { return a.orden - b.orden; }),
+      tokens: Object.keys(tokens).sort()
+    };
+  });
 }
 
 /**
@@ -1411,7 +1483,7 @@ function panel_faltantes(cual) {
   if (!leido.existe) {
     return {
       ok: true, cual: previa ? 'previa' : 'actual', hoja: hoja, existe_hoja: false,
-      grupos: [], corridas: [], filas: 0, tokens: 0
+      grupos: [], laminas: [], corridas: [], filas: 0, tokens: 0, sin_lamina: 0
     };
   }
 
@@ -1458,6 +1530,14 @@ function panel_faltantes(cual) {
     hoja: hoja,
     existe_hoja: true,
     grupos: grupos,
+    /* ⭐⭐ `2026-08-24_2` Parte C — **la misma lista, cortada por lámina**, que es como el usuario
+     * mira un deck y como está organizado `docs/CIERRE_POR_LAMINA.md`. Hasta hoy cruzar los dos era
+     * a mano. **Los dos cortes conviven a propósito**: por causa se responde *«qué oficio cierra
+     * esto»* y por lámina *«puedo publicar esta lámina»* — son dos preguntas y la vista da las dos. */
+    laminas: agruparFaltantesPorLamina_(leido.filas),
+    /* ⚠ Se publica aparte y no adentro de un grupo `(sin lámina)`: **un control declara cuánto
+     * midió**, y este número es exactamente la parte del corte por lámina que no se puede leer. */
+    sin_lamina: leido.filas.filter(function (f) { return !f.laminas.length; }).length,
     /* ⚠ **Más de un `corrida_id` en la hoja es un hallazgo, no un detalle de presentación.**
      * `escribirFaltantes_` pisa la hoja entera, así que lo normal es **uno**. Dos significa que
      * una corrida murió antes del cierre y dejó la lista de otra mezclada — exactamente el caso

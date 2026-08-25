@@ -2916,7 +2916,13 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
       suyas.forEach(function (x) {
         var copia = x.slide.duplicate();
         copias.push(copia);
-        asignaciones.push({ objectIdSlide: copia.getObjectId(), item: item, seccion: seccion.seccion_id });
+        /* ⭐ `2026-08-24_2` Parte C — **el `lamina_id` del MODELO viaja con la asignación.** Acá se
+         * conoce sin costo y se estaba tirando; leerlo después, sobre la copia, costaría una llamada
+         * a la API por lámina para recuperar un dato que ya teníamos en la mano. */
+        asignaciones.push({
+          objectIdSlide: copia.getObjectId(), item: item, seccion: seccion.seccion_id,
+          lamina_id: x.meta.lamina_id
+        });
       });
     }
 
@@ -3530,6 +3536,60 @@ function agruparTokensPorLamina_(tokensFijos) {
 }
 
 /**
+ * ⭐⭐ `2026-08-24_2` Parte C — **posición de slide → `lamina_id`, resuelto TARDE y memoizado.**
+ *
+ * ⛔ **Por qué no se construye el mapa entero de una:** `anclaDeLamina_` cuesta una llamada a la API
+ * de Slides por lámina —`getNotesPage().getSpeakerNotesShape().getText()`—, y el deck expandido tiene
+ * del orden de 50-60. Un barrido completo agregaría ese costo **a toda corrida**, incluida la que
+ * no tiene un solo faltante, y `CLAUDE.md` §4 ya tiene el precedente: *el instrumento es parte del
+ * sistema*, y éste corre dentro de la etapa que el presupuesto ya aprieta.
+ *
+ * ⭐ **Perezoso, el costo es proporcional a las láminas CON faltante**, no al deck. En el caso bueno
+ * —un deck que publica— **no cuesta nada**; en el peor degrada a un barrido completo, que es lo que
+ * habría costado siempre. El caché es por posición y vive lo que vive la corrida.
+ *
+ * ⚠ **Devuelve `''` cuando la lámina no tiene ancla, y eso NO se rellena con la posición.** Un
+ * número de slide en una columna que dice `lamina_id` es la clase de dato que después alguien cruza
+ * contra `LAMINAS` — `orden_plantilla` es reportado y **nunca autoritativo** (`A.2`). Vacío dice
+ * *«esta lámina no está sellada»*, que es un hallazgo y no un hueco.
+ */
+function resolvedorDeLaminaId_(presentacion) {
+  var cache = {};
+  var slides = null;
+  return function (numeroSlide) {
+    var n = Number(numeroSlide);
+    if (!n || n < 1) return '';
+    if (n in cache) return cache[n];
+    if (!slides) slides = presentacion.getSlides();
+    var slide = slides[n - 1];
+    var id = '';
+    if (slide) {
+      id = String(anclaDeLamina_(slide) || '').trim();
+      if (id === '(sin id)') id = '';
+    }
+    cache[n] = id;
+    return id;
+  };
+}
+
+/**
+ * Las láminas de un token fijo, como texto para la celda.
+ *
+ * ⚠ **Todas, no la primera.** `replaceAllText` pinta el token en cada caja que lo tenga, así que un
+ * faltante de `camp_titulo` falta en las 14 — decir *«L-048»* a secas sería medir una y publicarlo
+ * como si fuera el total. La Parte B lo necesita entero para poder afirmar *«todas sus láminas están
+ * fuera de alcance»*, que es el mismo criterio con el que `solo_escondidas` ya decide.
+ */
+function laminasDeTokenFijo_(slides, resolver) {
+  var ids = [];
+  (slides || []).slice().sort(function (a, b) { return a - b; }).forEach(function (n) {
+    var id = resolver(n);
+    if (id && ids.indexOf(id) === -1) ids.push(id);
+  });
+  return ids.join(' · ');
+}
+
+/**
  * El costo de **una lámina** de la etapa 4. Es la **semilla** de la primera: a partir de ahí se
  * mide y se adapta, igual que `costoUltimoItemSeg` en la etapa 3.
  *
@@ -3600,7 +3660,8 @@ function pintarTokensFijosDeLamina_(tokens, ctx) {
             ' — el token publicó los que sí matchean',
           // No es `escritor`: acá el token SÍ se pintó. Lo que falta es parte del contenido, y
           // manda a mirar el catálogo — otro oficio, otra causa.
-          causa: 'fuera_catalogo'
+          causa: 'fuera_catalogo',
+          lamina_id: ctx.laminasDeToken ? ctx.laminasDeToken(token) : ''
         });
       }
       return;
@@ -3620,7 +3681,8 @@ function pintarTokensFijosDeLamina_(tokens, ctx) {
       motivo: fila
         ? (fila.estado + ': ' + fila.traza)
         : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó',
-      causa: causaDeResultado_(fila)
+      causa: causaDeResultado_(fila),
+      lamina_id: ctx.laminasDeToken ? ctx.laminasDeToken(token) : ''
     });
   });
 }
@@ -4291,7 +4353,10 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
         motivo: r
           ? (r.estado + ': ' + r.traza)
           : 'sin fila en MARCADORES — el token está en la plantilla y nadie lo cableó',
-        causa: causaDeResultado_(r)
+        causa: causaDeResultado_(r),
+        /* Una sola, y es la del **modelo** del que salió esta copia — no la posición de la copia en
+         * el deck expandido, que cambia con cuántos ítems se emitieron antes. */
+        lamina_id: asignacion.lamina_id || ''
       });
     });
 
@@ -4450,6 +4515,10 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
    * en una lámina escondida»*, y el cierre corre mucho después de acá. */
   tokensSoloEnEscondidas = visiblesEtapa4.detalle || {};
   var laminasDeEtapa4 = agruparTokensPorLamina_(tokensFijos);
+  /* ⭐ Perezoso a propósito: en un deck sin faltantes no hace **ninguna** llamada a la API. Ver el
+   * comentario de `resolvedorDeLaminaId_` — el instrumento corre dentro de la etapa que el
+   * presupuesto ya aprieta, y un barrido completo lo pagaría toda corrida. */
+  var resolverLaminaId = resolvedorDeLaminaId_(presentacion);
   var costoUltimaLaminaSeg = costoLaminaEtapa4Seg_();
   var laminasEtapa4Hechas = [];
   var laminasEtapa4Pendientes = [];
@@ -4489,7 +4558,11 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       presentacion: presentacion, porMarcador: porMarcador, periodoLamina: periodoLamina,
       conSimbolos: conSimbolos, corridaId: corridaId, informeId: informeId,
       contadores: { sumarReemplazado: function (t) { reemplazados++; conValor.push(t); } },
-      faltantes: faltantes
+      faltantes: faltantes,
+      /* ⭐ `2026-08-24_2` Parte C — **las láminas del token, TODAS**, no la del grupo. El grupo dice
+       * dónde se resolvió —la primera aparición, que es la unidad de partición de `D-41`—; la celda
+       * tiene que decir dónde **falta**, y `replaceAllText` lo pinta en todas sus cajas. */
+      laminasDeToken: function (t) { return laminasDeTokenFijo_(tokensFijos[t], resolverLaminaId); }
     });
 
     costoUltimaLaminaSeg = Math.max(1, Math.round((new Date().getTime() - t0Lamina) / 1000));
@@ -4558,6 +4631,27 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
    * después**: recorrer `faltantes` al final volvería a mezclar los barridos con los que ya
    * venían de las etapas 3 y 4, que es justo la distinción que este bloque produce. */
   var barridoPorCausa = {};
+
+  /* ⭐⭐ `2026-08-24_2` Parte C — **el barrido resuelve la lámina SÓLO si no hubo corte ni fallo**, y
+   * es el mismo criterio con el que `conFilaEnMarcadores` decide dos bloques más arriba.
+   *
+   * ⛔ **El motivo es de presupuesto y no de prolijidad.** Esto corre **después** de
+   * `marcarEtapa_('5 · escribir faltantes')`, o sea **dentro de la reserva de cierre** — y
+   * `CLAUDE.md` §4 lo dice con todas las letras: *si la reserva no cubre el cierre completo, el
+   * corte ordenado igual muere en el muro y toda la maquinaria de corte no sirve para nada*. Meterle
+   * un costo de API variable adentro, justo en la corrida que menos reloj tiene, es cómo se pierde
+   * el rastro de la corrida que más falta diagnosticar.
+   *
+   * ⚠ **Y en el caso del corte tampoco aportaría:** la causa es `no_alcanzado` y su oficio es
+   * *correr de nuevo*, no *mirar la lámina*. La celda queda vacía, que dice *«no se midió»* — no
+   * *«no tiene lámina»*. */
+  var resolverEnBarrido = (!corte && !fallo) ? resolvedorDeLaminaId_(presentacion) : null;
+  var laminasDelBarrido = function (token) {
+    if (!resolverEnBarrido) return '';
+    var ubicaciones = (mapa && mapa.tokens && mapa.tokens[token]) || [];
+    return laminasDeTokenFijo_(ubicaciones.map(function (u) { return u.slide; }), resolverEnBarrido);
+  };
+
   barrida.barridos.forEach(function (token) {
     // Con corte o con fallo la causa **se sabe** y es la misma: la corrida no llegó hasta acá, y
     // el oficio es correr de nuevo, no cablear. Sin ninguno de los dos, la Parte C separa las tres
@@ -4576,7 +4670,8 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       solapa: (porMarcador[token] && porMarcador[token].solapa) || '',
       campo_logico: '',
       motivo: diag.motivo,
-      causa: diag.causa
+      causa: diag.causa,
+      lamina_id: laminasDelBarrido(token)
     });
 
     if (!barridoPorCausa[diag.causa]) barridoPorCausa[diag.causa] = { tokens: [], cuantos: 0 };
