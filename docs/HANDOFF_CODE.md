@@ -3,9 +3,7 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-25 (cierre 2) — **`D-31` resuelto: lectura por posición**, `L-036` cableada con sus **20** marcadores y su identidad interna de vuelta. `etapa.post` se amplió a `~=Post` —**hay que correr
-su testigo**— y `L-036` vuelve a donde estaba: **una sola candidata viva, el `id_cuenta` del
-anclaje**. Antes: la corrida nocturna `2026-08-24_2`, las cinco partes hechas.
+**Última actualización:** 2026-08-25 (cierre 3) - L-036 con 24 de 32 cableados: el nombre del encuentro se COMPONE con la operacion nueva FILA_TEXTO. Antes: D-31 resuelto (lectura por posicion) y el criterio de etapa ampliado.
 
 ⚠ **Este archivo tuvo tres versiones el 25/08** y las secciones tachadas de abajo son las anteriores,
 conservadas a propósito — **cómo se llegó a una conclusión equivocada es la mitad de su valor**. Lo
@@ -27,8 +25,15 @@ vigente es lo de arriba.
 | 6 | **`declararAlcanceDeLaminas()`** | puebla las dos columnas. **Después de 5**, o falla nombrando la que falta |
 | 7 | ⭐ **`declararModoDelAgregadoPost()`** | pone `comunicaciones_post` en `agregado`. **Desfrenado el 25/08** — su premisa nunca estuvo vencida. ⚠ `sembrarSecciones_` sólo agrega filas ausentes, así que el botón es el único camino |
 | 8 | ⭐⭐ **`verificarBloquesPostReuniones()`** | el testigo NUEVO de `D-31`, contra la planilla viva. **Antes de la corrida**: si no cierra, los bloques no están en M/R/W/AB y `L-036` publicaría la columna equivocada |
-| 9 | **Correr `jm` sobre `julio_24_30`** | esperado: **tres reuniones con datos**, la cuarta en `sin_datos`, y **Retiro con 41.204** de visualizaciones |
-| 10 | ⚠ **`reserva_cierre_seg` a 60, A MANO** | `CONFIG` **sólo siembra lo ausente**. Pendiente de antes |
+| 9 | ⛔⛔ **`cablearTablaPostReuniones()`** | **EL PASO QUE FALTABA EN LA LISTA ANTERIOR, y por eso `L-036` salió toda en `/////`.** ⚠ **Ningún sembrador lo llama**: ni `instalar()` ni *Aplicar configuración*. Escribe los **24** marcadores de la lámina |
+| 10 | **Correr `jm` sobre `julio_24_30`** | esperado: **tres reuniones con datos**, la cuarta en `sin_datos`, **Retiro con 41.204** de visualizaciones, y la columna `Campañas` con `Jorge Macri — Uno a uno en Retiro (24/07)` |
+| 11 | ⚠ **`reserva_cierre_seg` a 60, A MANO** | `CONFIG` **sólo siembra lo ausente**. Pendiente de antes |
+
+⛔⛔ **La lección del paso 9, y va acá porque es de método:** una lista que termina en *«correr `jm`»*
+**tiene que incluir el wrapper de cableado de cada lámina que se haya tocado**. Sembrar `MAPEO` y
+`SECCIONES` deja la lámina lista **salvo los marcadores**, y el deck sale en `/////` sin que nada
+avise. **No es un bug** —el alta de marcadores es una decisión y por eso tiene botón propio— **pero
+sí una trampa para quien sigue la lista.**
 
 ---
 
@@ -47,7 +52,28 @@ a 71 filas en seis meses**.
 
 ---
 
-## ⏸ `L-036` — **una sola candidata viva: el `id_cuenta` del anclaje**
+## ⭐ `L-036` — **24 de 32 cableados**, y los 8 que faltan son dos decisiones
+
+La tabla es de **ocho columnas × 4 filas** y se cablean **seis**: `Campañas`, `Habitantes`,
+`Alcance`, `Impresiones`, `Visualizaciones` y `VTR%`.
+
+⭐⭐ **`Campañas` se COMPONE**, porque **ninguna de las 29 columnas de la solapa trae un nombre** —
+barrido completo contra el fixture del 20/08. Sale de `Funcionario` + `Tipo` + `Barrio` + `Fecha`
+(B/C/D/E) con la operación nueva **`FILA_TEXTO`**, y su forma la elegiste contra el deck del equipo:
+
+```
+Jorge Macri — Uno a uno en Retiro (24/07)
+```
+
+⚠ **`figura` entra por decisión, no porque aporte:** vale «Jorge Macri» en **todas** las filas de
+`jm`, así que no distingue una de otra.
+
+⛔ **Los 8 que faltan NO son un hueco, son dos decisiones** (`CONFIG_INFORMES.md` §2.3 bis):
+`post_formato*` **fuera de alcance** —el formato cambia por plataforma y una fila por encuentro no
+puede tener uno solo— y `post_periodo*` **pendiente**, porque viene de otra base y reabre el
+bloqueo B.
+
+### ⏸ Lo único vivo: el `id_cuenta` del anclaje
 
 ⭐ **La fuente es `reuniones/Agenda JM | Post`, y siempre lo fue.** Las cinco columnas, con datos,
 **una fila por reunión**, y `campo_id_cuenta` declarado:

@@ -8392,3 +8392,47 @@ insertar `/* x */` antes de `headers:` en el bloque `MAPEO`, y parsear con `node
 ⭐ **Y lo que sí está cubierto:** los `.gs` se parsean en cada verificación desde el 25/08, así que
 un archivo roto **no llega a un commit en silencio** — que es lo único que este pendiente necesitaba
 garantizar.
+
+---
+
+## 2026-08-25 · ⭐⭐ Un cableado PARCIAL sin un lugar donde conste que es parcial se lee como completo
+
+**Es el hueco de método que dejó `L-036`, y vale más que la lámina.**
+
+`COLUMNAS_POST_L036_` declaraba **cinco columnas de una tabla de OCHO**, y **nada en el repo decía
+que las otras tres no estaban**. La constante se llama «las columnas de `L-036`»; no dice «las que
+se pudieron leer». El comentario de arriba explicaba por qué esas cinco sí — y **el silencio sobre
+las otras tres se lee como que no existen**.
+
+⛔ **Lo que costó:** el `/////` de `post_camp*` pareció **un bug del motor** durante media vuelta de
+diagnóstico —se revisó el símbolo, `FALTANTES`, el mapa de la corrida, el modo de la sección—
+cuando era **trabajo que nunca se había hecho**.
+
+⚠ **Y el síntoma no se parece a la causa:** un token sin fila y un token mal cableado **salen igual
+en el deck**. La columna `causa` de `FALTANTES` los separa (`sin_fila`), pero **sólo si uno sabe que
+la lista es parcial**; si no, `sin_fila` se lee como *«el cableado se rompió»*.
+
+⭐ **Lo accionable, y es la pregunta que se hace al cablear una tabla:** *¿cuántas columnas tiene la
+tabla, y cuántas estoy cableando?* Si los dos números difieren, **el que falta va escrito en algún
+lado con su motivo** — no en el commit, que nadie relee, sino donde alguien lo va a buscar:
+`CIERRE_POR_LAMINA.md` para el estado y `CONFIG_INFORMES.md` para la decisión.
+
+**Cerrado para `L-036`:** el tablero dice **24 de 32** con los dos motivos separados, y
+`CONFIG_INFORMES` §2.3 bis declara `post_formato*` fuera de alcance y `post_periodo*` pendiente.
+
+⏸ **Abierto para el resto:** ninguna otra tabla del repo declara *cuántas de cuántas*. Las
+candidatas son `L-047` (5 envíos × 9 columnas) y `L-046` (17 tokens de 31). **No se revisaron.**
+
+---
+
+### ⛔ El paso que faltaba en la lista de arranque — `cablearTablaPostReuniones()`
+
+**`cablearTablaPostReuniones_()` no lo llama ningún sembrador.** Ni `instalar()`, ni *Aplicar
+configuración*: sólo su wrapper público y `repararTablaPostReuniones()`.
+
+⚠ **No es un bug** —el alta de marcadores es una decisión y por eso tiene botón propio— **pero sí
+es una trampa para quien sigue una lista de pasos**: sembrar `MAPEO` y `SECCIONES` deja la lámina
+lista *salvo* los marcadores, y el deck sale en `/////` sin que nada avise.
+
+**Lo accionable:** toda lista de pasos que termine en *«correr `jm`»* tiene que incluir el wrapper
+de cableado de las láminas que se hayan tocado. Está en `HANDOFF_CODE.md`, en la tabla de arranque.

@@ -14839,3 +14839,118 @@ con su reproductor y la regla operativa —usar `//` en esa zona—. ⭐ Y lo qu
 
 **49 bancos, 0 en rojo, ~489 afirmaciones** — ahora por `node tools/suites.js`, con veredicto por
 código de salida.
+
+---
+
+## 2026-08-25 (noche) — `L-036`: el sembrador que nadie llamaba, y el nombre del encuentro
+
+### ⛔⛔ El hallazgo de `8e327a4`, y la omisión fue mía
+
+El deck salió con `L-036` en `/////` y **los tokens no aparecían en `FALTANTES`**. Dos síntomas, y
+sólo el primero tenía explicación fácil.
+
+**`cablearTablaPostReuniones_()` no lo llama ningún sembrador** — sólo su wrapper público y
+`repararTablaPostReuniones()`. **En la lista de seis pasos que pasé no estaba**, así que *Aplicar
+configuración* sembró `MAPEO` y `SECCIONES` y **los 20 marcadores nunca se escribieron**. Sin fila
+en `MARCADORES` = `/////`.
+
+⚠ **El segundo síntoma no se explicaba con eso** —un token con `/////` debería entrar a
+`FALTANTES`— así que se escribió `diagPostL036()`, que separa las dos preguntas: *¿tienen fila?* y
+*¿el motor los miró?*. **Lo corrió el usuario y contestó las dos:** `20 de 20` con fila y `20 de 20`
+en el mapa de `jm-20260825-164524`, con control positivo `3 de 3`. ⇒ **La lámina publica.** Lo que
+seguía en `/////` era **otro conjunto**: `post_camp*`, `post_formato*` y `post_periodo*`, que
+**nunca entraron a `COLUMNAS_POST_L036_`** y `FALTANTES` reportaba como `sin_fila` — correcto.
+
+⭐ **El diagnóstico llevó control positivo y por eso se pudo leer:** si los tres tokens que se pintan
+todos los días tampoco hubieran aparecido, el instrumento estaría roto y **no habría hallazgo**.
+
+### ⭐ El nombre del encuentro — medido antes de cablear
+
+**Parte 0 contra el fixture del 20/08** (sha `f8ef3227…`, verificado antes de citar un número; el
+`.xlsx` identificado por su **lista de solapas**, 24 de 24). **Control positivo verde**: `F` y `G`
+dan `41.475`/`47.753` y `41.240`/`0`.
+
+⛔⛔ **Ninguna de las 29 columnas trae un nombre de campaña.** Se barrió la solapa **entera** —no las
+14 que el prompt pedía— buscando `nombre`, `campaña`, `formato`, `evento` y `encuentro`: **cero**.
+⚠ *Un prompt nombra los casos que conoce.*
+
+**Las tres columnas que el repo no tenía documentadas resultaron ser** `Funcionario` (B),
+`Barrio / Comuna` (C) y `Tipo` (D). ⇒ **El nombre se COMPONE**, decisión del usuario: B + C + D + E.
+
+⭐ **Y la forma la eligió contra el deck del equipo:** `Jorge Macri — Uno a uno en Retiro (24/07)`.
+El fragmento *«Uno a uno en Retiro (24/07)»* es **literalmente** lo que el deck del 31/07 rotula en
+su lámina de encuentro. Fecha en `dd/MM`.
+
+⚠ **`figura` entra por decisión, no porque aporte:** medido, vale «Jorge Macri» en **todas** las
+filas de `jm`, así que no distingue una de otra. Queda dicho para que nadie lo lea como clave.
+
+✅ **Confirmado además: no hay columna de `Formato` en toda la solapa** — respalda lo que
+`PENDIENTES` ya anotaba. Y los títulos de B, C y D son **únicos**, así que **no llevan
+`por_posicion`**: el encabezado sigue siendo su testigo, que es el caso normal de `D-31`.
+
+### `FILA_TEXTO` — la undécima operación
+
+La plantilla vive en `campo_logico`, que es **configuración pura** (`D-01`): cambiar el texto
+publicado **no exige `clasp push`**. Es la idea de `RATIO` con `numerador/denominador`,
+generalizada.
+
+```
+campo_logico = '{figura} — {tipo_encuentro} en {barrio} ({fecha_periodo:dd/MM})'
+```
+
+⭐⭐ **Reusa `opFILA` para elegir la fila, y eso no es comodidad: es el requisito.** Las seis
+columnas de la tabla tienen que salir de **la misma fila**. Si el nombre se resolviera por otro
+camino —otro orden, otro índice— **la fila 2 del deck mostraría el nombre de un encuentro y los
+números de otro, sin fallar**. Por eso `opFILA` ahora devuelve `filaElegida` —aditivo, ningún
+consumidor lo mira— en vez de repetir su lógica de orden.
+
+⚠ **Un campo que no resuelve deja el hueco VISIBLE** (`«?barrio»`), no vacío: *«Uno a uno en
+(24/07)»* se leería como un dato.
+
+**`figura` y `barrio` se REUSAN de `rdv/RVD JM-CM - ES`** — mismo concepto en otra base, que es para
+lo que sirve un campo lógico. Sólo `tipo_encuentro` es nuevo.
+
+### ⭐⭐ El banco encontró un bug en su primera corrida, y era del FIXTURE
+
+`probar-fila-texto.js` reportó `«?fecha_periodo»`. **La causa: puse la `Fecha` como el SERIAL que
+trae el `.xlsx` (`46227`), y Apps Script entrega un `Date`.**
+
+⇒ **Es la trampa del `String(celda)` en su versión más literal: copié el FORMATO DE ALMACENAMIENTO
+del archivo en vez del DATO QUE LE LLEGA AL MOTOR.** Un fixture de formato se copia de **lo que el
+consumidor recibe**, no de donde el dato duerme.
+
+⚠ **El límite del serial queda declarado como afirmación, no arreglado:** `parsearFechaCelda_` es el
+lector canónico —acepta `Date`, ISO y `dd/mm/aaaa`— y **no se le agrega un caso por comodidad**.
+
+### ⭐ Y un control que se puso rojo diciendo la verdad, otra vez
+
+`probar-tabla-post` tenía la negativa *«`post_camp1-4` NO tienen fila — NO HAY COLUMNA en ninguna
+solapa fuente»*, **y era cierta**. Se puso roja porque el estado cambió, que es para lo que se
+escribió.
+
+**No se aflojó:** sale de la lista de negativas y gana el bloque **4 bis**, que exige `operacion`,
+`separador`, índice entero, `formato` **y que la plantilla mencione los cuatro campos**. Cablearlo
+sin eso publicaría un nombre corrido de fila **sin fallar**. La lista de reversión pasa a **24** y
+**crece, no se poda**.
+
+### ⭐ El hueco de método que dejó esto, y vale más que la lámina
+
+**`COLUMNAS_POST_L036_` declaraba cinco columnas de una tabla de OCHO, y nada en el repo decía que
+las otras tres no estaban.** Un cableado parcial sin un lugar donde conste que es parcial **se lee
+como completo** — y por eso el `/////` de `post_camp*` pareció un bug del motor durante media vuelta,
+cuando era trabajo que nunca se había hecho.
+
+⇒ Queda anotado en `PENDIENTES`, y `CIERRE_POR_LAMINA.md` pasa a decir **cuántas de cuántas**.
+
+### Controles
+
+**50 bancos, 0 en rojo, ~527 afirmaciones.** Nuevo: `probar-fila-texto.js`, que **ejecuta
+`opFILA_TEXTO` real** sobre las dos filas reales y cuya afirmación central es que **el nombre y los
+números salen de la misma fila**.
+
+### Pendientes
+
+- ⛔ **`clasp push`** y **`cablearTablaPostReuniones()`** — el paso que faltaba en la lista.
+- ⏸ `post_formato*` — **fuera de alcance** (`CONFIG_INFORMES.md` §2.6).
+- ⏸ `post_periodo*` — reabre el bloqueo B; no entra sin decidirlo.
+- ⏸ **`L-036`: el `id_cuenta` del anclaje**, lo único vivo.

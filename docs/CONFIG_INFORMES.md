@@ -834,6 +834,47 @@ decirle al motor *cuál* es. Probablemente una fila en `CAMPANAS` con
 > **Reescrita el 07/08.** La especificación de esta sección vive ahora en **§1.8**, con las
 > siete decisiones del usuario del 06/08. Acá queda sólo lo propio de `secco`.
 
+#### ⭐ 2.3 bis · `L-036` de `jm` — qué columnas se cablean y cuál NO (25/08/2026)
+
+**La tabla tiene OCHO columnas y se cablean SEIS.** Decisión del usuario, y las tres partes tienen
+motivos distintos:
+
+| columna | estado | de dónde |
+|---|---|---|
+| **Campañas** | ✅ cableada | **se COMPONE** de `Funcionario` + `Tipo` + `Barrio` + `Fecha` (B/C/D/E) con `FILA_TEXTO` |
+| Habitantes · Alcance · Impresiones · Visualizaciones · VTR% | ✅ cableadas | `reuniones/Agenda JM \| Post`, una fila por reunión |
+| ⛔ **Formato** | **FUERA DE ALCANCE** | ver abajo |
+| ⏸ **Período** | pendiente, no bloqueado por dato | `digital/CAMPAÑAS_DESGLOCE_DIGITAL` (`des_fecha_inicio`/`des_fecha_fin`) |
+
+##### ⛔ `post_formato1..4` — FUERA DE ALCANCE para `jm`
+
+**Decisión del usuario, 25/08/2026.** No se cablea, y **no vuelve a contarse como hueco**.
+
+**El motivo está medido, y es de fuente, no de operación:**
+
+1. **No existe columna de `Formato` en `reuniones/Agenda JM | Post`** — se barrieron sus **29**
+   columnas el 25/08 contra el fixture del 20/08 (sha `f8ef3227…`): ninguna la trae.
+2. Lo más parecido es **`Nomenclatura`, en otra base** (`digital/CAMPAÑAS_DESGLOCE_DIGITAL`,
+   col. L), que ya está mapeada como `des_nomenclatura`.
+3. ⛔⛔ **Y ahí el formato CAMBIA POR PLATAFORMA para la misma campaña** — `Video` en Google,
+   `Banners` en DV360—, así que **una fila por encuentro no puede tener un solo formato**. No es que
+   falte un extractor: es que la pregunta no tiene una respuesta única en ese grano.
+
+⚠ **Es el mismo bloqueo que `camp_formato1-3` de `L-043`**, que ya está declarado fuera de alcance
+en §2.5. **Conviene resolverlos juntos el día que se resuelvan**, o dejar los dos declarados.
+
+⭐ **Es una decisión reversible y fechada**, como la de `L-043`: si el equipo empezara a cargar un
+formato por encuentro, se cablea y listo.
+
+##### ⏸ `post_periodo1..4` — pendiente, y NO por falta de dato
+
+El dato existe y está mapeado. ⛔ **Lo que lo frena es que sale de OTRA base**, y eso reabre el
+bloqueo B de `PENDIENTES_consistencia.md`: la config del temario declara **una sola** solapa, y con
+dos fuentes las columnas de la segunda **pierden el recorte por cuenta** y caen a leer la solapa
+entera. **Es el modo de falla que publicó el Recap de CABA con 2.463.980 habitantes.**
+
+**No entra hasta decidirlo**, y la decisión es del usuario.
+
 **Lo medido (07/08), sobre la plantilla viva.** Tabla **4×7**, encabezado en la fila 1:
 **Campaña · Estado · Período · Alcance · Impresiones · Vistas · VTR**. **Son exactamente las
 siete columnas que el usuario decidió el 06/08** — o sea que `secco` ya está en el destino y

@@ -513,3 +513,68 @@ no dependen de esa decisión.**
 cargados» son dos preguntas distintas, y la segunda es la que elige una fuente.* La primera vez la
 crucé por el **nombre** de la solapa; la segunda, por el **origen** del dato. **Son la misma
 confusión con dos caras.**
+
+---
+---
+
+# ADDENDUM 3 — 25/08/2026 · **el encabezado A–N medido, y las tres columnas que faltaban**
+
+> **No contradice al cuerpo ni al `ADDENDUM 2`: los completa.** El cuerpo midió *qué solapa tiene el
+> dato*; esto mide *qué columna es cada una*, incluidas las tres que el repo no tenía documentadas.
+
+**Fixture:** `Seguimiento Digital  2026-08-20.zip`, sha
+`f8ef3227fc6cc73ef5879948451093f8e7a278c0baf1f4341d187958f0f8cc87` — **verificado antes de citar un
+número**. Archivo interno `DGPLES _ Seguimiento ECVs (1).xlsx`, identificado por su **lista de
+solapas** (24 de 24), no por el nombre. ⚠ **Foto del 20/08/2026**, y su fecha es parte del resultado.
+
+⭐ **Control positivo VERDE**, y sin él nada de abajo se puede leer: `F` = **41.475** / **41.240** y
+`G` = **47.753** / **0**, exactamente lo esperado.
+
+## El encabezado, fila 2 — con las dos filas testigo
+
+| idx | col | título | Retiro (`3346-JULJDGAG`) | San Cristóbal (`3354-JULJDGAG`) |
+|---:|---|---|---|---|
+| 0 | A | `ID` | 3346-JULJDGAG | 3354-JULJDGAG |
+| 1 | **B** | **`Funcionario`** | Jorge Macri | Jorge Macri |
+| 2 | **C** | **`Barrio / Comuna`** | **Retiro** | **San Cristóbal** |
+| 3 | **D** | **`Tipo`** | Uno a uno | Uno a uno |
+| 4 | E | `Fecha` | 24/07 | 23/07 |
+| 5 | F | `Habitantes` | 41.475 | 41.240 |
+| 6 | G | `Alcance` | 47.753 | 0 |
+| 7 | H | `Alcance potencial` | 41.475 | 0 |
+| 8 | I | `% Cobertura` | 1,15137 | 0 |
+| 9 | J | `Impresiones totales` | 136.971 | 0 |
+| 10 | K | `Clics` | 197 | 0 |
+| 11 | L | `% CTR` | 0,00144 | 0 |
+| 12 | M | `Visualizaciones` | **41.204** | 0 |
+| 13 | N | `% VTR` | **0,30082** | 0 |
+
+**B, C y D eran las tres que el repo no tenía mapeadas ni documentadas.** Ahora las tres están en
+`MAPEO`: `figura`, `barrio` y `tipo_encuentro`.
+
+## ⛔⛔ Ninguna de las 29 columnas trae un nombre de campaña
+
+**Se barrió la solapa entera** —no sólo A–N— buscando `nombre`, `campaña`, `formato`, `evento` y
+`encuentro`: **cero**. ⚠ *Un prompt nombra los casos que conoce, y ése es el sesgo que hay que
+compensar.*
+
+Las 29 son: **A–N** (identificación + el bloque ACUMULADO) y **O–S · T–X · Y–AC**, los tres bloques
+por plataforma.
+
+⇒ **El nombre del encuentro se COMPONE** de B + C + D + E. Decisión del usuario, con la forma tomada
+del deck del equipo: `Jorge Macri — Uno a uno en Retiro (24/07)`.
+
+## ✅ Y no hay columna de `Formato` — confirma lo anotado en `PENDIENTES`
+
+En **ninguna** de las 29. Lo más parecido sigue siendo `Nomenclatura`, en `digital`, **cuyo formato
+cambia por plataforma** — `Video` en Google, `Banners` en DV360 para la misma campaña—, así que una
+fila por encuentro no puede tener uno solo. **Declarado fuera de alcance** en `CONFIG_INFORMES.md`
+§2.3 bis.
+
+## Los títulos repetidos, medidos
+
+`Clics` ×4 · `% CTR` ×4 · `Visualizaciones` ×4 · `% VTR` ×4 · `Impresiones` ×3.
+
+⭐ **`Funcionario`, `Barrio / Comuna` y `Tipo` son ÚNICOS**, así que **no llevan `por_posicion`**: su
+encabezado sigue siendo testigo, que es el caso normal de `D-31`. Sólo `vis_totales` (M) y
+`vis_vtr_pct` (N) necesitan la lectura por posición del `ADDENDUM 2`.
