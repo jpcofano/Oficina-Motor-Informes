@@ -5447,3 +5447,165 @@ function verificarBloquesPostReuniones() {
     sin_acumulado: sinAcumulado, fallan: fallan
   };
 }
+
+/* ═══════════ `2026-08-25` — POR QUÉ `L-036` SALIÓ `/////` Y NO ESTÁ EN `FALTANTES` ════════
+ *
+ * ⛔⛔ **Son DOS síntomas y hay que separarlos, porque mandan a trabajos distintos:**
+ *
+ *   - **`/////`** significa *«sin fila en `MARCADORES`, nadie lo cableó»* → **falta cablear**.
+ *   - **No estar en `FALTANTES`** significa que el motor **ni siquiera miró el token** → falta
+ *     entender **por qué no lo miró**, que es otra cosa.
+ *
+ * ⚠ **Un token con `/////` DEBERÍA estar en `FALTANTES`**: los tres caminos que pintan —etapa 3,
+ * etapa 4 y el barrido final— empujan la fila. Que salga uno sin el otro **es la pregunta**.
+ *
+ * ⭐ **Y lleva CONTROL POSITIVO**: mide también tokens que se pintan todos los días. Si ésos
+ * tampoco aparecen, el instrumento está roto y **no** hay hallazgo — es la regla que ya cazó dos
+ * falsos dramáticos en `diagDondeVivenLosIvr()`.
+ *
+ * ⚠ **Sin `_` y SIN PARÁMETROS**, las dos condiciones del desplegable.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Los 20 de `L-036`, derivados de la misma lista que los cablea — acá sí conviene, porque lo que
+ *  se pregunta es justamente si **esa** lista llegó a la hoja. */
+function tokensPostL036_() {
+  var out = [];
+  COLUMNAS_POST_L036_.forEach(function (c) {
+    for (var n = 1; n <= 4; n++) out.push('post_' + c.tok + n);
+  });
+  return out;
+}
+
+function diagPostL036() {
+  var INFORME = 'jm';
+  var LAMINA = 'L-036';
+  var esperados = tokensPostL036_();
+
+  /* ⭐ El control positivo: tokens que se pintan TODOS los días. Comparten lector, plantilla y
+   * camino con los `post_*`, que es lo que los hace válidos como control. */
+  var CONTROL = ['ecv_inscriptos', 'ecv_encuentros', 'camp_titulo'];
+
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('DIAG L-036 · ' + new Date().toISOString());
+  Logger.log('  Dos preguntas separadas: ¿tienen fila? y ¿el motor los miró?');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ── 1 · ¿Tienen fila en MARCADORES? Es lo que decide el `/////` ────────────────────── */
+  Logger.log('');
+  Logger.log('1 · ¿Tienen fila en MARCADORES?  (sin fila ⇒ /////)');
+  var reg = leerRegistro_('MARCADORES', 'marcador');
+  var conFila = [], sinFila = [];
+  esperados.forEach(function (t) { (reg[t] ? conFila : sinFila).push(t); });
+  Logger.log('   con fila: ' + conFila.length + ' de ' + esperados.length);
+  if (sinFila.length) Logger.log('   ⛔ SIN FILA (' + sinFila.length + '): ' + sinFila.join(', '));
+
+  var ctrlConFila = CONTROL.filter(function (t) { return !!reg[t]; });
+  Logger.log('   ⭐ control positivo: ' + ctrlConFila.length + ' de ' + CONTROL.length +
+    ' tokens que se pintan siempre TIENEN fila');
+  if (!ctrlConFila.length) {
+    Logger.log('   ⛔⛔ NINGÚN control tiene fila: el LECTOR está roto, no la configuración.');
+    Logger.log('      Nada de lo de abajo se puede leer. Frenar acá.');
+    return { ok: false, motivo: 'el control positivo no aparece: lector roto' };
+  }
+
+  /* ── 2 · ¿En qué modo quedó la sección? Decide QUÉ CAMINO los pinta ─────────────────── */
+  Logger.log('');
+  Logger.log('2 · ¿En qué modo quedó `comunicaciones_post`?  (decide qué etapa los pinta)');
+  var sec = leerRegistro_('SECCIONES', 'seccion_id')['comunicaciones_post'];
+  if (!sec) {
+    Logger.log('   ⛔ NO existe la fila `comunicaciones_post` en SECCIONES.');
+  } else {
+    Logger.log('   modo: "' + sec.modo + '"  ·  itera_sobre: "' + sec.itera_sobre +
+      '"  ·  filtro: "' + sec.filtro + '"  ·  items_por_lamina: "' + sec.items_por_lamina + '"');
+    if (String(sec.modo).trim() === 'agregado') {
+      Logger.log('   ⇒ AGREGADO: la lámina NO se expande y sus tokens caen a la ETAPA 4');
+      Logger.log('     (tokens fijos). La etapa 4 usa `tokensVisiblesDe_`, que EXCLUYE las');
+      Logger.log('     láminas escondidas — ver el punto 3.');
+    } else {
+      Logger.log('   ⇒ REPETIBLE: la lámina se expande por ítem y sus tokens se pintan en la');
+      Logger.log('     ETAPA 3, con el sufijo `@ítem`. ⚠ En FALTANTES aparecen como');
+      Logger.log('     `post_habitantes1 @Retiro`, NO como `post_habitantes1` a secas.');
+    }
+  }
+
+  /* ── 3 · ¿La lámina está escondida? Es la causa que explica los DOS síntomas ────────── */
+  Logger.log('');
+  Logger.log('3 · ¿`' + LAMINA + '` está escondida?  (escondida ⇒ ni se resuelve ni entra a FALTANTES)');
+  var fl = leerRegistro_('LAMINAS', 'lamina_id')[LAMINA];
+  if (!fl) {
+    Logger.log('   ⛔ NO hay fila `' + LAMINA + '` en LAMINAS. Sin ella la sección no la encuentra.');
+  } else {
+    Logger.log('   escondida: "' + fl.escondida + '"  ·  seccion_id: "' + fl.seccion_id +
+      '"  ·  informe_id: "' + fl.informe_id + '"  ·  alcance: "' + (fl.alcance || '') + '"');
+    if (esVerdadero_(fl.escondida)) {
+      Logger.log('   ⛔⛔ ESCONDIDA. Eso explica los DOS síntomas a la vez: sus tokens no entran');
+      Logger.log('      a `tokensVisiblesDe_`, así que no se resuelven NI entran a FALTANTES.');
+    }
+    if (!String(fl.seccion_id || '').trim()) {
+      Logger.log('   ⛔⛔ `seccion_id` VACÍO. Con `D-37`, vacío significa «nadie la clasificó»:');
+      Logger.log('      la lámina NO entra a ningún bloque repetible y sus tokens quedan afuera.');
+    }
+  }
+
+  /* ── 4 · ¿El motor los MIRÓ? El mapa de la última corrida lo dice ───────────────────── */
+  Logger.log('');
+  Logger.log('4 · ¿Están en el mapa de la última corrida?  (si no, el motor no los vio)');
+  var hojaC = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
+  if (!hojaC || hojaC.getLastRow() < 2) {
+    Logger.log('   ⛔ no hay corridas registradas');
+  } else {
+    var datosC = hojaC.getDataRange().getValues();
+    var hc = datosC.shift().map(function (h) { return String(h || '').trim(); });
+    var ult = datosC[datosC.length - 1];
+    var mapaTxt = String(ult[hc.indexOf('mapa_tokens')] || '');
+    Logger.log('   corrida: ' + ult[hc.indexOf('corrida_id')] +
+      '  ·  faltantes: ' + ult[hc.indexOf('faltantes')]);
+    var enMapa = esperados.filter(function (t) { return mapaTxt.indexOf('"' + t + '"') !== -1; });
+    Logger.log('   en el mapa: ' + enMapa.length + ' de ' + esperados.length);
+    if (!enMapa.length) {
+      Logger.log('   ⛔⛔ NINGUNO está en el mapa ⇒ el motor NO los miró, y por eso no hay');
+      Logger.log('      fila en FALTANTES. La causa está en el punto 2 o 3, no en el cableado.');
+    }
+    var ctrlEnMapa = CONTROL.filter(function (t) { return mapaTxt.indexOf('"' + t + '"') !== -1; });
+    Logger.log('   ⭐ control positivo: ' + ctrlEnMapa.length + ' de ' + CONTROL.length + ' en el mapa');
+    if (!ctrlEnMapa.length) {
+      Logger.log('   ⚠ tampoco los de control: el mapa puede estar truncado o vacío, y entonces');
+      Logger.log('     el «ninguno» de arriba NO significa nada.');
+    }
+  }
+
+  /* ── 5 · Qué dice FALTANTES, buscando por PREFIJO ───────────────────────────────────── */
+  Logger.log('');
+  Logger.log('5 · ¿Qué filas de FALTANTES mencionan `post_`?  (con y sin sufijo `@ítem`)');
+  var hojaF = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('FALTANTES');
+  if (!hojaF || hojaF.getLastRow() < 2) {
+    Logger.log('   ⛔ FALTANTES vacía o inexistente');
+  } else {
+    var datosF = hojaF.getDataRange().getValues();
+    var hf = datosF.shift().map(function (h) { return String(h || '').trim(); });
+    var iTok = hf.indexOf('token'), iCau = hf.indexOf('causa'), iLam = hf.indexOf('lamina_id');
+    var post = datosF.filter(function (f) { return String(f[iTok] || '').indexOf('post_') === 0; });
+    Logger.log('   filas totales: ' + datosF.length + '  ·  que empiezan con `post_`: ' + post.length);
+    post.slice(0, 12).forEach(function (f) {
+      Logger.log('     ' + f[iTok] + '\t' + (iCau === -1 ? '' : f[iCau]) +
+        '\t' + (iLam === -1 ? '(sin columna lamina_id)' : f[iLam]));
+    });
+    if (iLam === -1) {
+      Logger.log('   ⚠ la hoja NO tiene la columna `lamina_id`: se agregó el 25/08 y la escribe');
+      Logger.log('     `reconciliarHeadersDeSalida_` en la PRÓXIMA corrida.');
+    }
+  }
+
+  Logger.log('');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('CÓMO LEER ESTO — cada combinación manda a un trabajo distinto:');
+  Logger.log('  · sin fila (1) + SÍ en FALTANTES        ⇒ falta cablear. Corré');
+  Logger.log('    `cablearTablaPostReuniones()`.');
+  Logger.log('  · sin fila (1) + NO en FALTANTES + no en el mapa (4)  ⇒ el motor no los miró:');
+  Logger.log('    mirá `escondida` y `seccion_id` (3) y el `modo` (2).');
+  Logger.log('  · con fila (1) + NO en FALTANTES        ⇒ el token no está en la plantilla con');
+  Logger.log('    ese nombre, o la lámina no se emitió.');
+  Logger.log('  · en FALTANTES con sufijo `@ítem`       ⇒ están, y la sección es `repetible`:');
+  Logger.log('    buscá `post_habitantes1 @…`, no `post_habitantes1`.');
+  return { ok: true, sin_fila: sinFila, con_fila: conFila };
+}
