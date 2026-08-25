@@ -1181,13 +1181,19 @@ function resolverMarcadores(informeId, opciones) {
      * plantilla**, igual que `RATIO` lo hace con su numerador. Sin el override, `buscarMapeo`
      * recibiría la plantilla entera —`'{figura} — {tipo_encuentro}…'`— como si fuera un campo
      * lógico, y fallaría con un motivo que no dice nada sobre lo que pasó. */
-    var esPlantilla = String(fila.operacion || '').trim() === 'FILA_TEXTO';
+    /* ⭐ `2026-08-25_3` — **`GRUPO_TEXTO` comparte la rama entera y eso es deliberado.** Su
+     * `campo_logico` es una plantilla con la misma sintaxis, así que resuelve la solapa con el
+     * primer campo y sus campos con `resolverPlantillaTexto_` — el agregador viaja **dentro del
+     * formato** (`{des_fecha_inicio:min:dd/MM}`), que el regex de `camposDePlantilla_` ya ignora.
+     * Un agregador nuevo no exige tocar el despachador. */
+    var nombreOp = String(fila.operacion || '').trim();
+    var esPlantilla = (nombreOp === 'FILA_TEXTO' || nombreOp === 'GRUPO_TEXTO');
     var campoOverride = esRatio ? String(fila.campo_logico).split('/')[0].trim()
       : (esPlantilla ? primerCampoDePlantilla_(fila.campo_logico) : null);
     if (esPlantilla && !campoOverride) {
       base.estado = 'error';
-      base.traza = '«FALTA:' + fila.marcador + '@plantilla_sin_campos» — `FILA_TEXTO` espera una ' +
-        'plantilla con al menos un `{campo}` y recibió "' + fila.campo_logico + '" · ' + trazaVentana;
+      base.traza = '«FALTA:' + fila.marcador + '@plantilla_sin_campos» — `' + nombreOp + '` espera ' +
+        'una plantilla con al menos un `{campo}` y recibió "' + fila.campo_logico + '" · ' + trazaVentana;
       return base;
     }
 
@@ -1401,7 +1407,12 @@ function resolverMarcadores(informeId, opciones) {
      * seis columnas de la tabla tienen que elegir **la misma fila**. Si el orden se resolviera
      * distinto para el nombre, la fila 2 del deck mostraría el nombre de un encuentro y los números
      * de otro, **sin fallar**. */
-    if (['FILA', 'FILA_TEXTO'].indexOf(String(fila.operacion || '').trim()) !== -1) {
+    /* ⚠ `GRUPO_TEXTO` entra acá por el `separador` y por la plantilla, **no por `ordenPor`**: su
+     * orden no se recalcula, viene sellado desde la lista única. Si `fecha_periodo` no está mapeado
+     * en su solapa —no lo está en el desglose— `ordenPor` queda sin armar y **eso está bien**: la
+     * operación no lo mira. Lo que sí exige es el `separador`, para poder decir en la traza **por
+     * qué campo** se ordenaron los grupos. */
+    if (['FILA', 'FILA_TEXTO', 'GRUPO_TEXTO'].indexOf(nombreOp) !== -1) {
       ctx.separador = fila.separador;
       var campoOrden = String(fila.separador || '').trim();
       if (campoOrden) {

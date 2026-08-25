@@ -101,10 +101,10 @@ af(censo.indexOf('post_camp1') !== -1, 'y trae `post_camp1`, que es de los que N
 
 console.log('\n2 · cruce UNO POR UNO contra el censo — 3 columnas × 4 filas');
 const filas = filasDelWrapper(FUENTE);
-af(filas.length === 24, 'el wrapper escribe 24 y nada más (' + filas.length + ')');
+af(filas.length === 28, 'el wrapper escribe 28 y nada más (' + filas.length + ')');
 const porNombre = {};
 filas.forEach((f) => { porNombre[f.marcador] = f; });
-['habitantes', 'alcance', 'impresiones', 'vistas', 'vtr', 'camp'].forEach((col) => {
+['habitantes', 'alcance', 'impresiones', 'vistas', 'vtr', 'camp', 'periodo'].forEach((col) => {
   for (let n = 1; n <= 4; n++) {
     const t = 'post_' + col + n;
     af(censo.indexOf(t) !== -1 && !!porNombre[t], t + ' está en el censo y tiene fila');
@@ -122,11 +122,44 @@ console.log('\n3 · ⛔ NEGATIVA — las DOS que NO se cablean, por dos motivos 
  * (B/C/D/E) con `FILA_TEXTO`. Por eso la afirmación nueva no es *«existe»* sino **las cuatro
  * condiciones del bloque 4 bis**: sin ellas el marcador compila, corre, y publica un nombre corrido
  * de fila **sin fallar**. */
-['periodo', 'formato'].forEach((col) => {
+['formato'].forEach((col) => {
   const cableadas = [1, 2, 3, 4].filter((n) => !!porNombre['post_' + col + n]).length;
   af(cableadas === 0, 'post_' + col + '1-4 NO tienen fila',
     'si aparecen, se eligió una columna a ojo y eso publica texto distinto del que el equipo publica');
 });
+
+console.log('\n3 bis · ⭐⭐ `2026-08-25_3` — `periodo` SE CABLEA, y su afirmación gana EXIGENCIA');
+/* ⛔ La negativa de arriba decía *«NO HAY COLUMNA en ninguna solapa fuente»*, y **era cierta**: se
+ * barrieron las 29 columnas de `Agenda JM | Post` y ninguna trae fecha de inicio ni de fin. **Se
+ * puso roja hoy porque el estado cambió** — que es exactamente para lo que se escribió, y es el
+ * tercer caso de esta misma familia en este archivo (`camp`, `vistas`/`vtr`, y ahora éste).
+ *
+ * ⭐ **Lo que cambió no es que apareciera una columna: es que el rango sale de OTRA SOLAPA**, con
+ * una operación que agrupa por encuentro. Por eso la afirmación nueva no es *«existe»* sino las
+ * **cuatro condiciones** de abajo: sin ellas el marcador compila, corre, y publica un rango
+ * plausible del universo equivocado **sin fallar**.
+ *
+ * ⚠ **Y el control no se aflojó para que entre**: `formato` sigue en la negativa, y estas cuatro
+ * afirmaciones son **más** exigentes que el `cableadas === 0` que reemplazan. */
+{
+  const cableadas = [1, 2, 3, 4].filter((n) => !!porNombre['post_periodo' + n]).length;
+  af(cableadas === 4, '⭐ post_periodo1-4 SE CABLEAN — el rango sale del desglose',
+    'Agenda JM | Post no trae fecha de inicio ni de fin: se barrieron sus 29 columnas');
+  const p1 = porNombre.post_periodo1 || {};
+  af(p1.base_id === 'digital' && p1.solapa === 'CAMPAÑAS_DESGLOCE_DIGITAL',
+    '⛔ apunta a `digital/CAMPAÑAS_DESGLOCE_DIGITAL` — la ÚNICA de las siete que cruza de solapa',
+    'contra Agenda JM | Post no hay columna de fecha de inicio: publicaría un hueco o la columna equivocada');
+  af(p1.operacion === 'GRUPO_TEXTO',
+    '⛔⛔ y usa `GRUPO_TEXTO`, no `FILA_TEXTO`: un encuentro tiene hasta CINCO filas de plataforma',
+    '`opFILA` indexa FILAS — publicaría las fechas de una plataforma como si fueran las del encuentro');
+  af(String(p1.dimensiones || '').indexOf('etapa=post') !== -1,
+    '⭐ y el corte POST va en `dimensiones` (`etapa=post`), no en un `filtro` nuevo (`D-33`)',
+    'sin el corte, el rango abarcaría también las campañas PRE del mismo encuentro');
+  af(String(p1.filtro || '').trim() === '',
+    '⚠ y `filtro` queda vacío — es para restricciones técnicas, no para cortes que el equipo pediría');
+  af(String(p1.valor_fijo) === '1' && p1.separador === 'fecha_periodo',
+    '⭐ ranura entero pelado (`C-83`) y el campo de orden declarado, igual que las otras seis');
+}
 /* ⭐⭐ `2026-08-25` (tarde) — **`vistas` y `vtr` VUELVEN, y su afirmación gana EXIGENCIA.**
  *
  * ⛔ Estuvieron retiradas unas horas del mismo día, y la afirmación negativa que las vigilaba **se
@@ -161,8 +194,8 @@ console.log('\n4 · la forma: FILA/FILA_TEXTO, MISMO orden, índice entero');
 filas.forEach((f) => {
   const n = Number(f.marcador.slice(-1));
   if (f.marcador !== 'post_habitantes1' && n !== 1) return;   // una muestra por columna basta
-  af(['FILA', 'FILA_TEXTO'].indexOf(f.operacion) !== -1 && f.separador === 'fecha_periodo',
-    f.marcador + ' es FILA/FILA_TEXTO ordenada por `fecha_periodo` (no hay default: falla sin orden)');
+  af(['FILA', 'FILA_TEXTO', 'GRUPO_TEXTO'].indexOf(f.operacion) !== -1 && f.separador === 'fecha_periodo',
+    f.marcador + ' es FILA/FILA_TEXTO/GRUPO_TEXTO ordenada por `fecha_periodo` (no hay default: falla sin orden)');
 });
 
 console.log('\n4 bis · ⭐ el nombre compuesto: sus condiciones, y son varias');
@@ -190,10 +223,32 @@ console.log('\n4 bis · ⭐ el nombre compuesto: sus condiciones, y son varias')
 }
 af(filas.every((f) => typeof f.valor_fijo === 'number' && f.valor_fijo >= 1 && f.valor_fijo <= 4),
   '⛔ los 12 índices son ENTEROS PELADOS 1-4 — `1/4` lo convierte Sheets en fecha (C-83)');
-af(filas.every((f) => f.base_id === 'reuniones' && f.solapa === 'Agenda JM | Post'),
-  'los 12 leen `reuniones/Agenda JM | Post`, la solapa POST del par de C-50');
-af(filas.every((f) => !f.filtro && !f.dimensiones),
-  'sin filtro y sin dimensiones: el temario ya seleccionó, y volver a recortar sacaría ítems que eligió');
+/* ⭐ `2026-08-25_3` — **la afirmación se parte en dos y GANA exigencia.** Decía *«las 24 leen
+ * `Agenda JM | Post`»*, y con `periodo` dejó de ser cierta. La salida no es aflojarla a *«leen
+ * alguna solapa»* —eso no fallaría nunca— sino **nombrar exactamente cuáles leen dónde**: 24 la
+ * solapa del par de `C-50`, 4 el desglose, y **ninguna otra**. */
+{
+  const enPost = filas.filter((f) => f.base_id === 'reuniones' && f.solapa === 'Agenda JM | Post');
+  const enDesglose = filas.filter((f) => f.base_id === 'digital' && f.solapa === 'CAMPAÑAS_DESGLOCE_DIGITAL');
+  af(enPost.length === 24, 'las 24 de las seis columnas leen `reuniones/Agenda JM | Post` (' + enPost.length + ')');
+  af(enDesglose.length === 4, '⭐ y las 4 de `periodo` leen el desglose (' + enDesglose.length + ')');
+  af(enPost.length + enDesglose.length === filas.length,
+    '⛔ y no hay ninguna en una tercera solapa — el conjunto cierra');
+  af(enDesglose.every((f) => f.marcador.indexOf('post_periodo') === 0),
+    '⛔ y las del desglose son EXACTAMENTE las de `periodo`, verificadas por nombre completo',
+    'un filtro por prefijo no alcanza: es una convención de nombre, no una clave');
+}
+{
+  const conFiltro = filas.filter((f) => String(f.filtro || '').trim() !== '');
+  const conDim = filas.filter((f) => String(f.dimensiones || '').trim() !== '');
+  af(conFiltro.length === 0,
+    '⛔ ninguna de las 28 declara `filtro`: el temario ya seleccionó (' + conFiltro.length + ')');
+  /* ⭐ Y el corte dimensional está SÓLO donde hace falta. Las 24 de `Agenda JM | Post` no lo
+   * necesitan —esa solapa ya es la POST—; las 4 del desglose sí, porque ahí conviven PRE y POST en
+   * la misma solapa y se distinguen por el nombre de campaña (`D-33`). */
+  af(conDim.length === 4 && conDim.every((f) => f.marcador.indexOf('post_periodo') === 0),
+    '⭐ y `dimensiones` está SÓLO en las 4 del desglose, donde PRE y POST conviven (' + conDim.length + ')');
+}
 
 console.log('\n5 · ⭐ BORDE 1 — Retiro: FILA elige la fila correcta y las tres columnas son de ELLA');
 {
@@ -264,9 +319,11 @@ console.log('\n8 · ⛔⛔ la lista de REVERSIÓN cubre lo que se llegó a escri
    * que tiene hoy. Si alguna vez baja, alguien la podó — y eso deja huérfanos que el reversor no
    * puede sacar, informando éxito. Es exactamente lo que pasó el 25/08 con los ocho de `vistas`
    * y `vtr`. */
-  af(todos.length === 24, 'cubre los 24 que L-036 llegó a tener (' + todos.length + ')');
+  af(todos.length === 28, 'cubre los 28 que L-036 llegó a tener (' + todos.length + ')');
   af(todos.indexOf('post_camp1') !== -1 && todos.indexOf('post_camp4') !== -1,
     '⭐ y los cuatro `post_camp*` del nombre compuesto entraron a la lista de reversión');
+  af(todos.indexOf('post_periodo1') !== -1 && todos.indexOf('post_periodo4') !== -1,
+    '⭐ y los cuatro `post_periodo*` también — apuntan a OTRA base, y la reversión es por nombre');
 
   /* ⭐ Los 12 vigentes tienen que estar, y también los 8 RETIRADOS. Sin los retirados, el reversor
    * vuelve a quedar ciego exactamente como el 25/08. */

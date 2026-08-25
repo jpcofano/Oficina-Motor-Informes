@@ -974,6 +974,192 @@ function opFILA_TEXTO(ctx) {
   };
 }
 
+/**
+ * ⭐⭐ `2026-08-25_3` — **`GRUPO_TEXTO`: el texto del N-ésimo GRUPO, agregando sobre sus filas.**
+ *
+ * **Por qué existe, y por qué no es `FILA_TEXTO` con otra cara.** La columna `Período` de `L-036`
+ * publica *«24/07 — 06/08»* para un encuentro cuyo desglose tiene **cinco filas**, una por
+ * plataforma, con cinco pares de fechas distintos. La unidad de la tabla es **el encuentro**; la
+ * unidad de la fuente es **la fila de plataforma**. `opFILA` hace `orden.filas[n-1]` — **indexa
+ * filas**, así que `FILA` y `FILA_TEXTO` publicarían las fechas de *una* plataforma como si fueran
+ * las del encuentro. Son operaciones distintas y quedan **intactas**: las usan 41 marcadores.
+ *
+ * ⛔⛔ **La identidad del grupo es `id_cuenta`, NO `fecha_periodo`** (`D-30`). Es la corrección que
+ * el usuario marcó y el caso es real: dentro de `julio_24_30` hay **dos encuentros el 29/07**
+ * —`3389` Nueva Pompeya y `3420` Caballito—. Agrupados por fecha caerían en **un solo grupo**, y el
+ * período publicado abarcaría los dos: un rango más ancho, plausible, y de dos encuentros.
+ * `fecha_periodo` es el campo de **orden**; `id_cuenta` es el de **identidad**. No son
+ * intercambiables aunque en la mayoría de las semanas den lo mismo.
+ *
+ * ### El índice es la RANURA, no la posición entre los grupos presentes
+ *
+ * ⭐ El grupo se elige por `__temario_slot__`, que `temarioPorSolapas_` selló en cada fila **antes**
+ * de que ninguna solapa se recortara. Ahí ya se ordenó por `fecha_periodo` **con `filasOrdenadas_`,
+ * el mismo comparador que usan las seis columnas numéricas de la tabla** — así que el orden de los
+ * grupos y el de las filas de `Agenda JM | Post` no se parecen: **son el mismo**.
+ *
+ * ⛔ **Tomar «el n-ésimo grupo presente» sería el bug.** Un encuentro sin filas en el desglose
+ * correría todas las ranuras siguientes y la ranura 3 mostraría el período de un encuentro al lado
+ * de los números de otro, **sin fallar**. Con la ranura, ese encuentro deja **un hueco en su lugar**.
+ *
+ * ⚠ **El desempate entre dos encuentros del mismo día está declarado y es compartido:** el orden de
+ * origen en la lista única, que es **el orden del temario**. Es el `a.i - b.i` de `filasOrdenadas_`.
+ * `R-32` sigue valiendo: con empate, la ranura publica una **posición**, no una cosa — lo que esto
+ * garantiza es que las ocho columnas de esa ranura hablen del **mismo** encuentro.
+ *
+ * ### Contrato
+ *
+ *   - **`valor_fijo` = N**, entero pelado y 1-based — la ranura. `C-83`: nada de `2/5`.
+ *   - **`separador`** = el campo lógico por el que se ordenaron los grupos (`fecha_periodo`). **Sin
+ *     él se falla**, misma doctrina que `FILA`: no hay orden por defecto.
+ *   - **`campo_logico`** = la plantilla, con el agregador en la ranura del formato:
+ *
+ *         '{des_fecha_inicio:min:dd/MM} — {des_fecha_fin:max:dd/MM}'
+ *
+ *     ⭐ **La sintaxis reusa `camposDePlantilla_` sin tocarla**: el regex ya parte `{nombre:resto}`,
+ *     así que `min:dd/MM` viaja entero como «formato» y lo interpreta esta operación. Un agregador
+ *     nuevo no exige cambiar el despachador.
+ *   - **Agregadores:** `min` y `max` sobre fechas, `suma` y `conteo` sobre números. Ninguno más, y
+ *     un agregador desconocido **deja hueco visible** en vez de adivinar.
+ *   - **Ranura sin grupo → `sin_datos`**, no error: es *«ese encuentro no tuvo desglose»*.
+ *
+ * ⚠ **Sólo corre sobre filas selladas por el temario.** Sin `__temario_slot__` no hay ranura que
+ * respetar, y **inventar una ordenando lo que llegó sería exactamente el bug de arriba**: se falla
+ * con motivo propio.
+ */
+var CLAVE_SLOT_GRUPO_ = '__temario_slot__';
+var CLAVE_ID_GRUPO_ = '__temario_id__';
+var AGREGADORES_GRUPO_ = ['min', 'max', 'suma', 'conteo'];
+
+function opGRUPO_TEXTO(ctx) {
+  var plantilla = String(ctx.campo_logico || '');
+  var filas = ctx.filas || [];
+  var campos = (ctx.plantilla && ctx.plantilla.campos) || null;
+
+  if (!campos) {
+    return {
+      valor: '', ambiguo: true, filas: filas.length,
+      traza: '«FALTA:@plantilla_sin_resolver» — `GRUPO_TEXTO` necesita que el despachador resuelva ' +
+        'los campos de la plantilla "' + plantilla + '". Llegó sin `ctx.plantilla`.'
+    };
+  }
+
+  var campoOrden = String(ctx.separador === undefined || ctx.separador === null ? '' : ctx.separador).trim();
+  if (!campoOrden) {
+    return {
+      valor: '', ambiguo: true, filas: filas.length,
+      traza: '«FALTA:@grupo_sin_orden» — `GRUPO_TEXTO` necesita en `MARCADORES.separador` el campo ' +
+        'lógico por el que se ordenaron los grupos (`fecha_periodo`). **No hay default**: un orden ' +
+        'implícito es el orden de la hoja con otro nombre.'
+    };
+  }
+
+  var crudo = ctx.valor_fijo;
+  var n = (typeof crudo === 'number') ? crudo : parseInt(String(crudo === undefined || crudo === null ? '' : crudo).trim(), 10);
+  if (!(n >= 1) || String(n) !== String(crudo).trim()) {
+    return {
+      valor: '', ambiguo: true, filas: filas.length,
+      traza: '«FALTA:@grupo_indice_invalido» — la ranura va en `MARCADORES.valor_fijo` como ' +
+        '**entero pelado y 1-based**. Llegó ' + JSON.stringify(crudo) + ' [' + (typeof crudo) + ']. ' +
+        '⚠ Formas que Sheets se come: `1/3` y `3-1` → fecha, `01` → pierde el cero (`C-83`).'
+    };
+  }
+
+  /* ⛔ La guarda que hace que esta operación no pueda publicar un grupo corrido. */
+  var selladas = filas.filter(function (f) { return f && f[CLAVE_SLOT_GRUPO_] !== undefined; });
+  if (!selladas.length) {
+    return {
+      valor: '', ambiguo: true, filas: filas.length,
+      traza: '«FALTA:@grupo_sin_ranura» — ninguna de las ' + filas.length + ' fila(s) trae ' +
+        '`' + CLAVE_SLOT_GRUPO_ + '`. `GRUPO_TEXTO` sólo corre sobre filas selladas por el TEMARIO ' +
+        '(`temarioPorSolapas_`): la ranura se calcula **una vez, sobre la lista única**, antes de ' +
+        'que ninguna solapa se recorte. ⛔ Ordenar acá lo que llegó daría «el n-ésimo grupo ' +
+        'PRESENTE», que corre las ranuras cuando un encuentro falta en esta solapa y publica el ' +
+        'período de un encuentro al lado de los números de otro, sin fallar.'
+    };
+  }
+
+  /* Agrupar por `id_cuenta` — la IDENTIDAD. La ranura es la misma para todas las filas del grupo,
+   * porque se selló por encuentro. */
+  var porRanura = {};
+  var ranuras = [];
+  selladas.forEach(function (f) {
+    var r = f[CLAVE_SLOT_GRUPO_];
+    if (!porRanura[r]) { porRanura[r] = { filas: [], id: f[CLAVE_ID_GRUPO_] }; ranuras.push(r); }
+    porRanura[r].filas.push(f);
+  });
+
+  var grupo = porRanura[n];
+  if (!grupo) {
+    ranuras.sort(function (a, b) { return a - b; });
+    return {
+      valor: '', sin_datos: true, filas: filas.length,
+      traza: 'GRUPO_TEXTO ranura ' + n + ': **ningún grupo la ocupa**. Las ranuras con filas en ' +
+        ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') + ' son [' + ranuras.join(', ') + '] ' +
+        'sobre ' + selladas.length + ' fila(s). ⭐ Esto NO corre las demás: la ranura ' + n + ' es ' +
+        'un encuentro del temario que no tiene filas acá, y su casillero queda vacío **en su ' +
+        'lugar**. Ordenado por `' + campoOrden + '`.'
+    };
+  }
+
+  var faltantes = [];
+  var texto = plantilla.replace(/\{([^}:]+)(?::([^}]*))?\}/g, function (todo, nombre, resto) {
+    var clave = String(nombre).trim();
+    var campo = campos[clave];
+    if (!campo || !campo.clave) { faltantes.push(clave); return '«?' + clave + '»'; }
+
+    var partes = String(resto || '').split(':');
+    var agregador = String(partes[0] || '').trim().toLowerCase();
+    var fmt = partes.slice(1).join(':').trim();
+    if (AGREGADORES_GRUPO_.indexOf(agregador) === -1) {
+      faltantes.push(clave + ' (agregador "' + agregador + '" desconocido; hay ' +
+        AGREGADORES_GRUPO_.join('/') + ')');
+      return '«?' + clave + '»';
+    }
+
+    var valores = [];
+    grupo.filas.forEach(function (f) {
+      var v = (campo.clave in f) ? f[campo.clave] : '';
+      if (v === '' || v === null || v === undefined) return;
+      valores.push(v);
+    });
+    if (!valores.length) { faltantes.push(clave + ' (sin valores en el grupo)'); return '«?' + clave + '»'; }
+
+    if (agregador === 'conteo') return String(valores.length);
+    if (agregador === 'suma') {
+      var nums = valores.filter(function (v) { return typeof v === 'number' && !isNaN(v); });
+      if (!nums.length) { faltantes.push(clave + ' (ningún valor numérico)'); return '«?' + clave + '»'; }
+      return String(nums.reduce(function (a, b) { return a + b; }, 0));
+    }
+
+    /* `min` / `max` sobre fechas. Se reusa `parsearFechaCelda_`, el mismo lector que ya usan los dos
+     * consumidores que comparan fechas — no hay un parser nuevo (`CLAUDE.md` §2). */
+    var fechas = [];
+    valores.forEach(function (v) {
+      var f = (v instanceof Date) ? v : parsearFechaCelda_(v);
+      if (f) fechas.push(f);
+    });
+    if (!fechas.length) { faltantes.push(clave + ' (ningún valor es fecha)'); return '«?' + clave + '»'; }
+    var elegida = fechas.reduce(function (a, b) {
+      if (agregador === 'min') return b.getTime() < a.getTime() ? b : a;
+      return b.getTime() > a.getTime() ? b : a;
+    });
+    if (!fmt) return String(elegida);
+    return Utilities.formatDate(elegida, Session.getScriptTimeZone(), fmt);
+  });
+
+  return {
+    valor: texto,
+    traza: 'GRUPO_TEXTO ranura ' + n + ' de ' + ranuras.length + ' grupo(s) presentes, agrupados ' +
+      'por `id_cuenta` (' + grupo.id + ') sobre ' + grupo.filas.length + ' fila(s) de ' + ctx.base_id +
+      (ctx.solapa ? '/' + ctx.solapa : '') + '. ⭐ La ranura viene sellada por el TEMARIO y no se ' +
+      'recalcula acá: se ordenó por `' + campoOrden + '` con el mismo comparador que las columnas ' +
+      'numéricas de esta tabla' + (faltantes.length ? ' ⚠ campos sin resolver: ' + faltantes.join(', ') : '') +
+      trazaDeVentana_(ctx),
+    filas: grupo.filas.length
+  };
+}
+
 var OPERACIONES_ = {
   SUMA: opSUMA,
   CONTEO: opCONTEO,
@@ -994,7 +1180,12 @@ var OPERACIONES_ = {
   /* `2026-08-25_1` — la undécima. El TEXTO de la N-ésima fila, compuesto desde varios campos con
    * una plantilla en `campo_logico`. **Reusa `opFILA` para elegir la fila**, que es lo que
    * garantiza que el nombre y los números de esa fila del deck sean del mismo encuentro. */
-  FILA_TEXTO: opFILA_TEXTO
+  FILA_TEXTO: opFILA_TEXTO,
+  /* `2026-08-25_3` — la duodécima. El TEXTO del N-ésimo GRUPO, agregando sobre sus filas. **No es
+   * `FILA_TEXTO` con otra cara:** `opFILA` indexa FILAS y acá la unidad es el grupo —un encuentro
+   * con cinco filas de plataforma—. La identidad del grupo es `id_cuenta` (`D-30`) y el índice es
+   * la RANURA sellada por el temario, no la posición entre los grupos presentes. Ver su comentario. */
+  GRUPO_TEXTO: opGRUPO_TEXTO
 };
 
 /**

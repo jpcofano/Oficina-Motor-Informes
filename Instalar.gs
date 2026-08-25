@@ -1676,8 +1676,8 @@ var SEED_MAPEO_DESGLOCE_ = [
    * cómo extraer el formato de adentro es pregunta abierta** — es el mismo bloqueo que
    * `CIERRE_POR_LAMINA.md` ya declaró para `camp_formato1-3` de `L-043`. */
   { base_id: 'digital', campo_logico: 'des_nomenclatura', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'L', encabezado: 'Nomenclatura', tipo_esperado: 'texto', notas: 'REVISAR — de acá sale el Formato de L-036 (Banners/Video). ⚠ campos variables separados por " | " y la POSICIÓN cambia por plataforma: Meta trae "…| Meta | 15 | Alcance |…" y Google "…| YouTube | Video | Vistas". Sin extractor todavía' },
-  { base_id: 'digital', campo_logico: 'des_fecha_inicio', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'I', encabezado: 'Fecha inicio', notas: '' },
-  { base_id: 'digital', campo_logico: 'des_fecha_fin', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'J', encabezado: 'Fecha fin', notas: 'el candidato de u1_fecha_fin' },
+  { base_id: 'digital', campo_logico: 'des_fecha_inicio', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'I', encabezado: 'Fecha inicio', notas: 'consumidor desde el 25/08: el `min` del Período de L-036 (post_periodo1-4, GRUPO_TEXTO). ⚠ el rango CRUZA MESES — las dos filas de Google ads de Retiro son mes=JULIO y mes=AGOSTO con el mismo inicio, así que un recorte por Mes partiría el encuentro' },
+  { base_id: 'digital', campo_logico: 'des_fecha_fin', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'J', encabezado: 'Fecha fin', notas: 'el candidato de u1_fecha_fin. Consumidor desde el 25/08: el `max` del Período de L-036 (post_periodo1-4, GRUPO_TEXTO)' },
   { base_id: 'digital', campo_logico: 'des_estado', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'K', encabezado: 'Estado', notas: '⚠ los valores van en MAYÚSCULA — FINALIZADA 4338, PAUSADA 433, ACTIVA 229. Un filtro `estado=Activa` copiado de imp_* NO matchea acá (R-10 preserva mayúsculas)' }
 ];
 
@@ -4006,7 +4006,21 @@ function curarSecciones_(cambios) {
  * **Los tres que quedan tienen título único**: `Habitantes` (F), `Alcance` (G) —`Alcance
  * potencial` es otro título— y `Impresiones totales` (J), que **no** es el `Impresiones` repetido
  * de las bandas. */
-/** Las tres columnas de `L-036` que se pueden leer sin ambigüedad. */
+/**
+ * Las columnas de `L-036`, con su **alcance declarado**: **7 de las 8** que tiene la tabla.
+ *
+ * ⛔ **`Formato` queda FUERA DE ALCANCE, y se nombra acá** (`CONFIG_INFORMES` §2.3 bis). Sale de
+ * `des_nomenclatura` (col L), donde los campos van separados por `" | "` y **la posición cambia por
+ * plataforma** — Meta trae `…| Meta | 15 | Alcance |…` y Google `…| YouTube | Video | Vistas`. Sin
+ * extractor, cablearla publicaría texto distinto del que el equipo publica, que es peor que `/////`.
+ *
+ * ⭐ **El alcance se declara acá y no en el reporte de la corrida**, y es el hueco de método que
+ * dejó la vuelta anterior: una constante que se lee como *«las columnas de la lámina»* cuando en
+ * realidad son *«las que se pudieron»* hace que 7 de 8 se lea como 8 de 8.
+ *
+ * ⚠ **Seis salen de `reuniones/Agenda JM | Post` y una del desglose** (`periodo`). Es la única que
+ * cruza de solapa, y por eso `CONFIG.solapas_agregado_post` declara **las dos**.
+ */
 var COLUMNAS_POST_L036_ = [
   { tok: 'habitantes',  campo: 'poblacion',    formato: 'miles',
     nota: 'col F "Habitantes". ⚠ 13 de 102 filas traen el texto "-": ahí sale sin_datos, que es correcto' },
@@ -4049,7 +4063,38 @@ var COLUMNAS_POST_L036_ = [
    * **sin fallar**. */
   { tok: 'camp', campo: '{figura} — {tipo_encuentro} en {barrio} ({fecha_periodo:dd/MM})',
     operacion: 'FILA_TEXTO', formato: 'texto',
-    nota: 'la columna `Campañas`. Se COMPONE de B/C/D/E: ninguna de las 29 columnas trae un nombre. La forma sale del deck del equipo del 31/07. ⚠ `figura` vale "Jorge Macri" en todas las filas de jm' }
+    nota: 'la columna `Campañas`. Se COMPONE de B/C/D/E: ninguna de las 29 columnas trae un nombre. La forma sale del deck del equipo del 31/07. ⚠ `figura` vale "Jorge Macri" en todas las filas de jm' },
+  /* ⭐⭐ `2026-08-25_3` — **la columna `Período`, y es la ÚNICA que sale de OTRA solapa.**
+   *
+   * ⛔ **Medido: ninguna de las 29 columnas de `Agenda JM | Post` trae fecha de inicio ni de fin** —
+   * sólo `Fecha` (E), que es la **del encuentro**, no la de la pauta. El rango sale del desglose,
+   * donde cada plataforma trae su par `Fecha inicio` (I) / `Fecha fin` (J).
+   *
+   * ⭐ **Y por eso hace falta una operación nueva, no `FILA_TEXTO` con otra plantilla:** un
+   * encuentro tiene hasta **cinco** filas de plataforma con cinco pares de fechas distintos.
+   * `opFILA` indexa **filas**; acá la unidad es el **grupo**. `GRUPO_TEXTO` agrupa por `id_cuenta`
+   * —la IDENTIDAD (`D-30`), nunca por `fecha_periodo`, que es el campo de orden— y compone
+   * `min(inicio)` — `max(fin)`.
+   *
+   * ⛔⛔ **El índice es la RANURA sellada por el temario, no la posición entre los grupos
+   * presentes.** Las dos listas —ésta y la de `Agenda JM | Post`— se construyen por caminos
+   * distintos y **ya se sabe que pueden descartar encuentros distintos**: San Cristóbal tiene 0
+   * filas POST en el desglose y cae por métrica del otro lado. Sin la ranura, un encuentro ausente
+   * en una sola correría todas las siguientes y la fila 3 del deck publicaría el período de un
+   * encuentro al lado de los números de otro, **sin fallar**.
+   *
+   * ⭐ **El corte POST va en `dimensiones`, no en un `filtro` nuevo:** `DIMENSIONES_.etapa` ya lo
+   * expresa (`des_campana~=Post`) y es un corte que el equipo pediría por nombre — la frontera de
+   * `D-33`. ⚠ Se aplica **después** del join, así que `sin_fila` cuenta encuentros sin **ninguna**
+   * fila en el desglose, no sin fila POST.
+   *
+   * ⚠ **La forma del texto vive en `campo_logico`, que es configuración** (`D-01`): cambiar
+   * `dd/MM` por `dd/MM/yy` no exige `clasp push`. La forma de arranque sale del deck del equipo:
+   * `24/07 — 06/08`. */
+  { tok: 'periodo', campo: '{des_fecha_inicio:min:dd/MM} — {des_fecha_fin:max:dd/MM}',
+    operacion: 'GRUPO_TEXTO', formato: 'texto',
+    base_id: 'digital', solapa: 'CAMPAÑAS_DESGLOCE_DIGITAL', dimensiones: 'etapa=post',
+    nota: 'la columna `Período`, ÚNICA que sale de otra solapa: Agenda JM | Post no trae fecha de inicio ni de fin (medido sobre las 29). GRUPO_TEXTO agrupa por id_cuenta —no por fecha_periodo: dentro de julio_24_30 hay DOS encuentros el 29/07— y la ranura viene sellada por el temario, así que un encuentro ausente acá NO corre las demás' }
 ];
 
 function cablearTablaPostReuniones_() {
@@ -4058,17 +4103,25 @@ function cablearTablaPostReuniones_() {
     for (var n = 1; n <= 4; n++) {
       filas.push({
         marcador: 'post_' + c.tok + n, familia: 'post', informe_id: 'jm',
-        base_id: 'reuniones', solapa: 'Agenda JM | Post', campo_logico: c.campo,
+        /* ⭐ `2026-08-25_3` — **la base y la solapa salen de la columna**, con el par de siempre por
+         * defecto. `post_periodo*` es la única que apunta al desglose, y por eso `CONFIG` declara
+         * **las dos** solapas del temario: sin eso, este marcador caería a leer el desglose entero
+         * —5.161 filas— y publicaría el período de todas las campañas de la historia. */
+        base_id: c.base_id || 'reuniones', solapa: c.solapa || 'Agenda JM | Post',
+        campo_logico: c.campo,
         /* ⛔ ENTERO PELADO. `C-83`: Sheets convierte `1/4` en FECHA y `01` pierde el cero, y eso
          * ya rompió `ecv_barrio1-3` el 22/08. El campo de orden va en `separador`. */
         /* ⭐ La operación sale de la columna, con `FILA` por defecto: cinco de las seis son `FILA`
          * y la del nombre es `FILA_TEXTO`. ⚠ **Las dos comparten `valor_fijo` y `separador`**, que
          * es lo que las hace elegir la misma fila. */
         operacion: c.operacion || 'FILA', valor_fijo: n, separador: 'fecha_periodo',
-        filtro: '', dimensiones: '', formato: c.formato,
+        /* ⭐ `D-33`: el corte que el equipo pediría por nombre va en `dimensiones`; `filtro` queda
+         * para restricciones técnicas. Acá la única con corte es `periodo` (`etapa=post`). */
+        filtro: '', dimensiones: c.dimensiones || '', formato: c.formato,
         notas: 'fila ' + n + ' de 4 de L-036 (D-41). ' + c.nota +
-          '. FILA ordena por fecha_periodo; las filas ya vienen elegidas por el temario ' +
-          '(filasDeSolapaDelTemario_, por id_cuenta del anclaje). SIN VALIDAR contra la fuente'
+          '. El orden por fecha_periodo lo fija la LISTA ÚNICA del temario (temarioPorSolapas_), ' +
+          'que sella la RANURA en cada fila con filasOrdenadas_ —el mismo comparador que opFILA— ' +
+          'antes de que ninguna solapa se recorte. SIN VALIDAR contra la fuente'
       });
     }
   });
@@ -4136,7 +4189,11 @@ var MARCADORES_POST_L036_TODOS_ = [
    * ⛔ **Esta lista CRECE y NO SE PODA**, y es la lección que la hizo literal: derivarla de
    * `COLUMNAS_POST_L036_` dejó **ocho huérfanos** el 25/08 cuando esa constante se achicó, y el
    * reversor **informó éxito** — quitó 12, dijo 12, y no falló. */
-  'post_camp1', 'post_camp2', 'post_camp3', 'post_camp4'
+  'post_camp1', 'post_camp2', 'post_camp3', 'post_camp4',
+  /* ⭐ `2026-08-25_3` — la columna `Período` (`GRUPO_TEXTO`). ⚠ **Es la única de las siete que
+   * apunta a `digital/CAMPAÑAS_DESGLOCE_DIGITAL`**, así que si algún día hay que revertirla, se
+   * revierte por nombre como todas — la lista no distingue por base y no tiene que hacerlo. */
+  'post_periodo1', 'post_periodo2', 'post_periodo3', 'post_periodo4'
 ];
 
 /** Revierte TODO lo que `L-036` llegó a tener. ⚠ **ESCRIBE en `MARCADORES`.** */
