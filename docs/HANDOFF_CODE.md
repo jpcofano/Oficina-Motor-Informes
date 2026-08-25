@@ -3,7 +3,7 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-25 (cierre). `etapa.post` se amplió a `~=Post` —**hay que correr
+**Última actualización:** 2026-08-25 (cierre 2) — **`D-31` resuelto: lectura por posición**, `L-036` cableada con sus **20** marcadores y su identidad interna de vuelta. `etapa.post` se amplió a `~=Post` —**hay que correr
 su testigo**— y `L-036` vuelve a donde estaba: **una sola candidata viva, el `id_cuenta` del
 anclaje**. Antes: la corrida nocturna `2026-08-24_2`, las cinco partes hechas.
 
@@ -26,7 +26,9 @@ vigente es lo de arriba.
 | 5 | **`instalar()`** | crea `LAMINAS.alcance` y `LAMINAS.tokens_equipo` por `COLUMNAS_DELTA_` |
 | 6 | **`declararAlcanceDeLaminas()`** | puebla las dos columnas. **Después de 5**, o falla nombrando la que falta |
 | 7 | ⭐ **`declararModoDelAgregadoPost()`** | pone `comunicaciones_post` en `agregado`. **Desfrenado el 25/08** — su premisa nunca estuvo vencida. ⚠ `sembrarSecciones_` sólo agrega filas ausentes, así que el botón es el único camino |
-| 8 | ⚠ **`reserva_cierre_seg` a 60, A MANO** | `CONFIG` **sólo siembra lo ausente**. Pendiente de antes |
+| 8 | ⭐⭐ **`verificarBloquesPostReuniones()`** | el testigo NUEVO de `D-31`, contra la planilla viva. **Antes de la corrida**: si no cierra, los bloques no están en M/R/W/AB y `L-036` publicaría la columna equivocada |
+| 9 | **Correr `jm` sobre `julio_24_30`** | esperado: **tres reuniones con datos**, la cuarta en `sin_datos`, y **Retiro con 41.204** de visualizaciones |
+| 10 | ⚠ **`reserva_cierre_seg` a 60, A MANO** | `CONFIG` **sólo siembra lo ausente**. Pendiente de antes |
 
 ---
 
@@ -68,18 +70,24 @@ una medición correcta** — confundí *de dónde SALEN* los números con *dónd
 **Lo que quedó hecho y sirve:** `itemsPorLamina` en **4**, `declararModoDelAgregadoPost()`
 **desfrenado**, y `des_nomenclatura` en `MAPEO` (útil para `L-053`, que sí lee el desglose).
 
-### ⚠ Lo único que espera TU decisión: `D-31`
+### ✅ `D-31` — resuelto: se leen POR POSICIÓN, y la tabla pasa de 12 a 20
 
-`Visualizaciones` y `% VTR` están **repetidos cuatro veces** y `leerFuente` indexa por título y
-**gana el último** — Programmatic: `21.229` y `0,69044` donde el total es `41.204` y `0,30082`. **Hay
-que leerlos por POSICIÓN.**
+**Decisión tuya (25/08), y quedó como `ADDENDUM 2` de `D-31` en `PLAN.md`**, con la regla escrita en
+vez de una excepción suelta:
 
-⭐ `SOLAPAS` lo advierte desde el **14/08**: *«los títulos de la fila 2 se repiten y NO alcanzan para
-nombrar una columna»*, y por eso `ae06a3b` los retiró del `MAPEO` — **esa decisión sigue siendo
-correcta**. `D-31` ya midió el contexto: de 12 solapas fuente **una sola** tiene títulos repetidos, y
-decidió no hacer una excepción de lectura por letra para un caso. **Reabrirlo es tuyo.**
+> **Cuando el título de una columna se repite en la solapa, la letra manda y el encabezado deja de
+> ser testigo.** La lectura por posición **se declara en el `MAPEO`**, no en el código.
 
-⚠ **Las otras tres columnas tienen título único y no dependen de esa decisión.**
+**Tres piezas:** `MAPEO.por_posicion` (configuración), `leerFuente` **agrega** una clave por índice
+sin tocar las de título, y `claveDeLecturaEnColumna_` como único punto de decisión — los 16 puntos
+de `Generador.gs` lo heredan.
+
+⭐⭐ **El testigo de integridad cambió, porque el encabezado ya no puede serlo:** ahora es
+`M = R + W + AB`, que verifica **posición y semántica a la vez** y **confirma el orden de los
+bloques**. Lo corre **`verificarBloquesPostReuniones()`**. Medido: **66 de 66** evaluables cierran.
+
+⭐ **Y `L-036` recupera su identidad interna:** `%VTR = Visualizaciones / Impresiones`, **exacta en
+98 de 98** — al nivel de `V-111` y `V-113`.
 
 ### ⭐ El sufijo `GC` del anclaje: medido, y NO es el `X-28`
 

@@ -14687,3 +14687,88 @@ había medido—, **el origen es una curiosidad, no un motivo.**
 
 **48 suites, 0 en rojo.** `probar-rediseno-l036.js` ajustó su narrativa —decía *«las dos fuentes»*—
 sin cambiar una afirmación: los `des_*` siguen mapeados porque **`L-053` sí lee el desglose**.
+
+---
+
+## 2026-08-25 (cierre) — `D-31` addendum 2: la lectura POR POSICIÓN, y `L-036` recupera su identidad
+
+**Decisión del usuario: se leen por posición**, y confirma el orden de los cuatro bloques — **el
+primero es el ACUMULADO**, después Meta, Google y Programmatic.
+
+### ⭐ La regla, con su borde — escrita, no como excepción suelta
+
+> **Cuando el título de una columna se repite en la solapa, la letra manda y el encabezado deja de
+> ser testigo** — porque no puede distinguir cuál de las repetidas es. **La lectura por posición se
+> declara en el `MAPEO`, no en el código.**
+
+⭐ `D-31` **no se deroga** y su primera mitad se refuerza: *«el encabezado es testigo, nunca
+fallback»* sigue entero. Lo que se agrega es **qué pasa cuando el testigo no puede testificar**.
+
+⚠ **El borde vale tanto como la regla:** aplica **sólo** a títulos repetidos. **11 de 12** solapas
+`fuente` no tienen ninguno, y ahí no cambia nada.
+
+**Tres piezas, cero listas en el código:** `MAPEO.por_posicion` (configuración, `D-01`);
+`leerFuente` **agrega** una clave por índice sin tocar las de título; y `claveDeLecturaEnColumna_`
+como **único punto de decisión** — los **16** puntos de `Generador.gs` lo heredan sin tocarlos.
+
+### ⭐⭐ El testigo que reemplaza al encabezado
+
+**El testigo de `D-31` era el encabezado, y con títulos repetidos no puede saltar**: si alguien
+inserta una columna entre L y M, `vis_totales` pasa a leer `% Cobertura` y **nadie se entera**.
+
+**El reemplazo es la identidad de los bloques** — `M = R + W + AB` —, y **es más fuerte**: verifica
+la **posición** y la **semántica** a la vez. Un título puede coincidir con la columna equivocada;
+**la suma sólo cierra si las cuatro posiciones son las cuatro que se creen**. Y **confirma el orden**:
+si el equipo reordenara, no cerraría.
+
+**Medido: 66 de 66 filas evaluables cierran.** Las otras 36 traen `-` en **las tres** plataformas y
+se informan **aparte** — contarlas como fallo haría que el testigo diera rojo por una carga
+incompleta. ⚠ **Cero evaluables FALLA**: *«no se probó nada»* no puede leerse como *«todo bien»*.
+
+### ⭐ `L-036` recupera su identidad interna
+
+`%VTR = Visualizaciones / Impresiones`, **exacta en 98 de 98**. Eso la pone **al nivel de `V-111` y
+`V-113`**: las tres láminas con un control que **no depende del deck del equipo ni de una foto de la
+base**, así que se puede exigir en cada corrida. La tabla pasa de **12 a 20** marcadores.
+
+### ⛔⛔ Tres cosas que salieron de hacer esto, y ninguna estaba prevista
+
+**1 · Un `/* */` en cierta zona de `Instalar.gs` rompe el parseo.** Insertar un comentario de bloque
+antes de `headers:` en `MAPEO` deja el archivo inválido —reproducido en aislamiento sobre HEAD, y
+**un `/* prueba */` también lo rompe**, así que no es el contenido sino la posición—. Se resolvió con
+comentarios `//`. ⏸ **La causa no está entendida y queda anotada**: hay algo antes que desbalancea
+al parser en esa zona.
+
+**2 · El patrón `\n}\n` mordió por SEGUNDA vez en `probar-faltantes-causas.js`**, ahora en el
+extractor del bloque 6. Los `.gs` están en **CRLF** y ese patrón **no matchea**. Se destapó al
+insertar código en `Union.gs`. Corregido por posición, igual que el bloque 4.
+
+**3 · ⛔⛔ Mi detector de suites en rojo era DEFICIENTE.** Filtraba por el glifo `❌` y **hay bancos
+que reportan con `⛔`**, así que **no los veía**. Al cambiar al **código de salida** aparecieron
+**cuatro** en rojo donde yo venía contando uno. ⚠ **Verificado contra HEAD: los cuatro estaban
+verdes**, así que los reportes anteriores eran correctos *para su momento* — pero el método era
+débil y podría haber informado verde sobre rojo. **El criterio ahora es `exit code`.**
+
+### ⭐ Y los cuatro rojos eran controles diciendo la verdad
+
+- **`probar-mapeo-post` y `probar-tabla-post`**: sus afirmaciones **negativas** decían *«`vis_totales`
+  NO está mapeado»*. **Se pusieron rojas porque el estado cambió**, que es exactamente para lo que se
+  escribieron. ⭐ **No se aflojaron: cambiaron de sentido y GANARON exigencia** — ahora piden que
+  estén **y** que declaren `por_posicion`, porque cablearlas sin eso volvería a publicar `21.229`
+  **sin fallar**.
+- **`probar-agregado-por-temario` y `probar-ruteo-solapa-digital`**: sus stubs no conocían la función
+  nueva. Cambié una dependencia y los bancos que la usan lo dijeron.
+
+### Controles
+
+**49 suites, 0 en rojo** (por código de salida). Nuevo: `probar-lectura-por-posicion.js`, **32
+afirmaciones**, ejecutando `filaAObjeto` y `leePorPosicion_` reales — con la afirmación que fija el
+bug (*por título gana 21.229*) y la que impide que vuelva (*ninguna llamada a `encabezadoEnColumna_`
+queda en `Generador.gs`*). `probar-tabla-post` pasa de 67 a **77**; `probar-mapeo-post` a **24**.
+
+### Pendientes
+
+- ⛔ **`clasp push`**, `instalar()` —crea `MAPEO.por_posicion`—, y **Aplicar configuración**.
+- ⛔ **`verificarBloquesPostReuniones()`** contra la planilla viva, antes de la corrida.
+- ⏸ El `/* */` de `Instalar.gs`: causa no entendida.
+- ⏸ **`L-036`: el `id_cuenta` del anclaje** — lo único vivo.

@@ -1253,6 +1253,74 @@ por eso funcionan.
 mirar si su título se repite en la solapa.** Si se repite, la letra no alcanza — o el campo sale de
 otra base, o no se mapea.
 
+#### ⭐⭐ ADDENDUM 2 — 25/08/2026 (tarde) · **la lectura POR POSICIÓN, y el testigo que la acompaña**
+
+**Decisión del usuario: se leen por posición.** El addendum de arriba dejaba el pendiente abierto —
+*«que el lector pueda resolver por letra cuando el título es ambiguo»*—. **Se cierra, y con la regla
+escrita en vez de con una excepción suelta**, que es exactamente lo que el `ADDENDUM 1` se negó a
+hacer y con razón.
+
+##### La regla, con su borde
+
+> **Cuando el título de una columna se repite en la solapa, la letra manda y el encabezado deja de
+> ser testigo** — porque no puede distinguir cuál de las repetidas es. **La lectura por posición se
+> declara en el `MAPEO`, no en el código.**
+
+⭐ **`D-31` no se deroga y su primera mitad se refuerza:** *«el encabezado es testigo, nunca
+fallback»* sigue entero. Lo que este addendum agrega es **qué pasa cuando el testigo no puede
+testificar**.
+
+⚠ **El borde importa tanto como la regla:** esto vale **sólo** para títulos repetidos. Para los
+títulos únicos —que son la enorme mayoría: **11 de 12 solapas `fuente`** no tienen ninguno
+repetido— el encabezado sigue siendo el testigo y no cambia nada.
+
+##### Cómo se implementa — una columna, un resolvedor, cero listas en el código
+
+| pieza | qué hace |
+|---|---|
+| **`MAPEO.por_posicion`** | `sí` = leer por índice. Vacío = por título, el comportamiento de siempre. **La decisión es configuración**, no código (`D-01`) |
+| **`leerFuente`** | agrega a cada fila una clave por posición **además** de las de título. ⭐ **Se agrega, no reemplaza:** ningún consumidor cambia |
+| **`claveDeLecturaEnColumna_`** | el único punto que decide. Los **16** puntos de `Generador.gs` lo heredan sin tocarlos, y el próximo que se agregue **no se tiene que acordar** |
+
+⚠ **Y la colisión del prefijo se mide, no se supone:** si una solapa tuviera una columna titulada
+como el prefijo posicional, pisaría la celda. `leerFuente` lo verifica y avisa.
+
+##### ⛔⛔ Lo que esto ROMPE, y hay que decirlo: el testigo de integridad de `D-31`
+
+**El testigo era el encabezado.** Si la columna se corre, el título deja de coincidir y salta el
+aviso. **Con títulos repetidos no puede saltar**, porque el título de al lado es el mismo: si
+alguien inserta una columna entre L y M, `vis_totales` pasa a leer `% Cobertura` **y nadie se
+entera**.
+
+⭐⭐ **El reemplazo es la IDENTIDAD DE LOS BLOQUES, y es más fuerte que un encabezado:**
+
+```
+M (acumulado)  =  R (Meta)  +  W (Google)  +  AB (Programmatic)
+```
+
+**Verifica la POSICIÓN y la SEMÁNTICA a la vez.** Un encabezado sólo dice *«el título de esta letra
+es el esperado»* —y puede coincidir con la columna equivocada cuando el título se repite—; **la suma
+sólo cierra si las cuatro posiciones son las cuatro que se creen**. Lo corre
+`verificarBloquesPostReuniones()`.
+
+⭐ **Y de paso confirma el ORDEN de los bloques**, que es la otra decisión del usuario del 25/08:
+**el primero es el ACUMULADO**, después Meta, Google y Programmatic. Si el equipo reordenara, la
+suma no cerraría y el testigo lo diría.
+
+**Medido sobre el fixture del 20/08: 66 de 66 filas evaluables cierran.** Las otras 36 traen `-` en
+**las tres** plataformas y no se pueden evaluar — **se informan aparte y no cuentan como fallo**,
+porque si no el testigo daría rojo por una carga incompleta y dejaría de distinguir una columna
+corrida.
+
+⚠ **Cero evaluables FALLA**, y es deliberado: *«no se probó nada»* no puede leerse como *«todo
+bien»*. Una columna corrida que dejara las cuatro fuera de rango daría verde sin esa guarda.
+
+##### ⭐ Lo que se recupera: `L-036` vuelve a tener identidad interna
+
+Con `Visualizaciones` de vuelta, **`%VTR = Visualizaciones / Impresiones` cierra exacta en 98 de
+98**. Eso pone a `L-036` **al nivel de `V-111` y `V-113`**: las tres láminas con un control que **no
+depende del deck del equipo ni de una foto de la base**, así que **se puede exigir en cada corrida**.
+
 ---
 
 **`D-32` — El sembrador **nunca pisa un `uso` que ya existe en `SOLAPAS`**. La hoja manda; la

@@ -63,6 +63,7 @@ function contexto(parchear) {
     buscarMapeo: (b, s, campo) => ({ ok: true, columna: campo === 'des_id_cuenta' ? 'A' : 'C' }),
     normalizarIdCuenta_: (v) => String(v == null ? '' : v).trim(),
     encabezadoEnColumna_: (b, s, col) => 'enc_' + col,
+    claveDeLecturaEnColumna_: (b, s, col) => 'enc_' + col,
     // La cuenta 3387 existe en la unión, con dos filas del canal `Digital`.
     filasDigitalDeEncuentro: (id) => (id === '3387'
       ? { sd_x: 1, dig_filas: [{ enc_C: 10 }, { enc_C: 20 }], alc_filas: [{ enc_C: 5 }] }

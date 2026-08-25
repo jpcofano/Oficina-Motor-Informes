@@ -210,6 +210,67 @@ function encabezadoEnColumna_(baseId, solapa, columnaLetra) {
   return real;
 }
 
+/* ═══════════ `2026-08-25` — `D-31` ADDENDUM: la lectura POR POSICIÓN ══════════════════════
+ *
+ * ⭐⭐ **La regla, y su borde:** *«la letra es la referencia y el encabezado sólo testigo»* **no se
+ * sostiene en un lector que indexa por título.** Cuando el título de una columna **se repite en la
+ * solapa**, la letra manda **y el encabezado deja de ser testigo** — porque no puede distinguir cuál
+ * de las repetidas es. **La lectura por posición se declara en `MAPEO`, no en el código.**
+ *
+ * **El caso:** `reuniones/Agenda JM | Post` tiene `Visualizaciones` cuatro veces (M, R, W, AB) y
+ * `% VTR` otras cuatro (N, S, X, AC). Son **los cuatro bloques**: ⭐ **el primero es el ACUMULADO**
+ * y los otros tres Meta, Google y Programmatic (decisión del usuario, 25/08, y medido:
+ * `col12 = col17 + col22 + col27` cierra en **66 de 66** filas evaluables).
+ *
+ * ⛔⛔ **Y con esto el testigo de integridad de `D-31` DEJA DE FUNCIONAR para estas columnas.** El
+ * testigo era el **encabezado**: si la columna se corre, el título ya no coincide y salta el aviso.
+ * **Con títulos repetidos no puede saltar**, porque el título de al lado es el mismo. Si alguien
+ * inserta una columna entre L y M, `vis_totales` pasa a leer `% Cobertura` **y nadie se entera**.
+ *
+ * ⭐⭐ **El testigo que lo reemplaza, y es más fuerte: la IDENTIDAD DE LOS BLOQUES.**
+ *
+ *     col12 (acumulado)  =  col17 (Meta) + col22 (Google) + col27 (Programmatic)
+ *
+ * **Verifica la POSICIÓN y la SEMÁNTICA a la vez**, que es lo que un encabezado no hace: un título
+ * puede coincidir con la columna equivocada, pero **la suma sólo cierra si las cuatro posiciones son
+ * las cuatro que se creen**. Lo corre `verificarBloquesPostReuniones()`.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** El prefijo de las claves posicionales que `leerFuente` agrega a cada fila. */
+var PREFIJO_COLUMNA_POSICIONAL_ = '__pos__';
+
+/**
+ * La clave con la que un marcador tiene que leer esa columna: el **título**, o la **posición** si
+ * `MAPEO` lo declara.
+ *
+ * ⭐ **Se resuelve acá y no en cada llamador**, que es el mismo argumento de siempre: los siete
+ * puntos de `datosDeMarcador_` lo heredan sin tocarlos, y el próximo que se agregue **no se tiene
+ * que acordar**. La guarda va en el punto por el que pasan todos.
+ *
+ * ⚠ **Sigue llamando a `encabezadoEnColumna_` aunque vaya a devolver la posición**, y no es
+ * desperdicio: esa función es la que emite el aviso de `D-31`, y **querer leer por posición no es
+ * motivo para dejar de mirar qué hay en la columna**. El aviso cambia de sentido —ya no es el
+ * testigo— pero sigue siendo información.
+ */
+function claveDeLecturaEnColumna_(baseId, solapa, columnaLetra) {
+  var real = encabezadoEnColumna_(baseId, solapa, columnaLetra);
+  if (!leePorPosicion_(baseId, solapa, columnaLetra)) return real;
+  return PREFIJO_COLUMNA_POSICIONAL_ + columnaLetraAIndice_(columnaLetra);
+}
+
+/** ¿Alguna fila de `MAPEO` declara `por_posicion` para esa letra de esa solapa? */
+function leePorPosicion_(baseId, solapa, columnaLetra) {
+  var mapa = leerMapeo();
+  var deLaSolapa = mapa[baseId] && mapa[baseId][solapa];
+  if (!deLaSolapa) return false;
+  var letra = String(columnaLetra || '').trim().toUpperCase();
+  if (!letra) return false;
+  return Object.keys(deLaSolapa).some(function (campoLogico) {
+    var f = deLaSolapa[campoLogico];
+    return String(f.columna || '').trim().toUpperCase() === letra && esVerdadero_(f.por_posicion);
+  });
+}
+
 function valorPorColumna_(filaObjeto, baseId, solapa, columnaLetra) {
   var header = encabezadoEnColumna_(baseId, solapa, columnaLetra);
   if (header === undefined || header === null) return undefined;

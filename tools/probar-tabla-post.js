@@ -92,7 +92,7 @@ const RETIRO = { ID: '3346-JULJDGAG', Habitantes: 41475, Alcance: 47753,
 const SAN_CRISTOBAL = { ID: '3354-JULJDGAG', Habitantes: 41240, Alcance: 0,
   'Impresiones totales': 0, Visualizaciones: 0, '% VTR': 0, Fecha: 46226 };
 
-console.log('== probar-tabla-post — los 12 de `L-036` y los tres bordes de julio_24_30 ==');
+console.log('== probar-tabla-post — los 20 de `L-036` y los tres bordes de julio_24_30 ==');
 
 console.log('\n1 · control positivo — el censo se leyó (32 tokens en L-036)');
 const censo = tokensDelCenso();
@@ -101,10 +101,10 @@ af(censo.indexOf('post_camp1') !== -1, 'y trae `post_camp1`, que es de los que N
 
 console.log('\n2 · cruce UNO POR UNO contra el censo — 3 columnas × 4 filas');
 const filas = filasDelWrapper(FUENTE);
-af(filas.length === 12, 'el wrapper escribe 12 y nada más (' + filas.length + ')');
+af(filas.length === 20, 'el wrapper escribe 20 y nada más (' + filas.length + ')');
 const porNombre = {};
 filas.forEach((f) => { porNombre[f.marcador] = f; });
-['habitantes', 'alcance', 'impresiones'].forEach((col) => {
+['habitantes', 'alcance', 'impresiones', 'vistas', 'vtr'].forEach((col) => {
   for (let n = 1; n <= 4; n++) {
     const t = 'post_' + col + n;
     af(censo.indexOf(t) !== -1 && !!porNombre[t], t + ' está en el censo y tiene fila');
@@ -117,18 +117,30 @@ console.log('\n3 · ⛔ NEGATIVA — las CINCO que NO se cablean, por dos motivo
   af(cableadas === 0, 'post_' + col + '1-4 NO tienen fila — NO HAY COLUMNA en ninguna solapa fuente',
     'si aparecen, se eligió una columna a ojo y eso publica texto distinto del que el equipo publica');
 });
-/* ⛔⛔ `2026-08-25` — **estas dos se retiraron, y por un motivo DISTINTO de las tres de arriba.**
- * Allá no hay columna; acá **la columna existe y no se puede nombrar**: `Visualizaciones` y
- * `% VTR` aparecen **cuatro veces cada uno** en el encabezado de `Agenda JM | Post`, el lector
- * indexa por título y **gana el de Programmatic**. El 25/08 `L-036` publicó `-` y `0` por eso.
+/* ⭐⭐ `2026-08-25` (tarde) — **`vistas` y `vtr` VUELVEN, y su afirmación gana EXIGENCIA.**
  *
- * ⭐ Es la afirmación negativa que reemplaza a la positiva que había: **el control viejo no se
- * afloja, gana una afirmación en el otro sentido.** Si alguien las vuelve a mapear, esto se pone
- * rojo y lo manda a leer el comentario de `COLUMNAS_POST_L036_`. */
+ * ⛔ Estuvieron retiradas unas horas del mismo día, y la afirmación negativa que las vigilaba **se
+ * puso roja hoy y tenía razón**: el estado cambió. `Visualizaciones` y `% VTR` aparecen **cuatro
+ * veces cada uno** y el lector indexaba por título, así que ganaba Programmatic.
+ *
+ * ⭐ **Lo que cambió es el LECTOR:** `MAPEO.por_posicion` hace que se lean por índice (M = 12,
+ * N = 13). Por eso ahora se exige **que estén cableadas Y que su campo declare la lectura por
+ * posición** — cablearlas sin eso volvería a publicar `21.229` en vez de `41.204`, **sin fallar**. */
 ['vistas', 'vtr'].forEach((col) => {
   const cableadas = [1, 2, 3, 4].filter((n) => !!porNombre['post_' + col + n]).length;
-  af(cableadas === 0, '⛔ post_' + col + '1-4 NO se cablean — su título se repite 4 veces y gana Programmatic',
-    'la letra de MAPEO es correcta y el lector nunca la usa para buscar: indexa por título');
+  af(cableadas === 4, '⭐ post_' + col + '1-4 SE CABLEAN — vuelven con lectura por posición',
+    'se retiraron la mañana del 25/08 y volvieron esa tarde: lo que cambió es el lector');
+});
+
+/* ⭐⭐ Y la condición que las hace correctas, afirmada aparte porque es la que se puede olvidar:
+ * su campo lógico tiene que declarar `por_posicion` en el `SEED_MAPEO_`. Sin eso el cableado
+ * compila, corre, y publica la columna de Programmatic. */
+['vis_totales', 'vis_vtr_pct'].forEach((campo) => {
+  const i = FUENTE.indexOf("campo_logico: '" + campo + "'");
+  const fila = i === -1 ? '' : FUENTE.slice(i, FUENTE.indexOf('\n', i));
+  af(i !== -1 && fila.indexOf("por_posicion: 'sí'") !== -1,
+    '⭐ `' + campo + '` declara `por_posicion` en MAPEO — sin eso leería Programmatic',
+    'la letra M/N siempre fue correcta; lo que faltaba era que el lector la usara');
 });
 
 console.log('\n4 · la forma: FILA, orden declarado, índice entero');

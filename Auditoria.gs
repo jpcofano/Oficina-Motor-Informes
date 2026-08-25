@@ -5323,3 +5323,127 @@ function testigoDeEtapaPost() {
   Logger.log('  deck del equipo, y esta lámina no está en el fixture del 31/07.');
   return r;
 }
+
+/* ═══════════ `2026-08-25` — EL TESTIGO QUE REEMPLAZA AL ENCABEZADO ════════════════════════
+ *
+ * ⛔⛔ **Por qué hace falta uno nuevo:** el testigo de integridad de `D-31` **era el encabezado** —
+ * si la columna se corre, el título deja de coincidir y salta el aviso—. **Con títulos repetidos no
+ * puede saltar**, porque el título de al lado es el mismo. Si alguien inserta una columna entre L y
+ * M, `vis_totales` pasa a leer `% Cobertura` **y nadie se entera**.
+ *
+ * ⭐⭐ **El reemplazo es la IDENTIDAD DE LOS BLOQUES, y es más fuerte que un encabezado:**
+ *
+ *     M (acumulado)  =  R (Meta)  +  W (Google)  +  AB (Programmatic)
+ *
+ * **Verifica la POSICIÓN y la SEMÁNTICA a la vez.** Un encabezado sólo dice *«el título de esta
+ * letra es el esperado»* — y puede coincidir con la columna equivocada cuando el título se repite.
+ * **La suma sólo cierra si las cuatro posiciones son las cuatro que se creen.**
+ *
+ * ⭐ **Y de paso confirma el ORDEN de los bloques**, que es la decisión del usuario del 25/08: el
+ * primero es el **acumulado**. Si algún día el equipo reordenara y pusiera Meta primero, la suma
+ * **no cerraría** y esto lo diría.
+ *
+ * **Medido sobre el fixture del 20/08:** **66 de 66** filas evaluables cierran. Las otras 36 traen
+ * `-` en **las tres** plataformas —no en una— y por eso no se pueden evaluar; **eso se informa
+ * aparte y no se cuenta como fallo**.
+ *
+ * ⚠ **Sin `_` y SIN PARÁMETROS**, las dos condiciones del desplegable (`CLAUDE.md` §2).
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Las cuatro posiciones de los bloques de `Visualizaciones` en `reuniones/Agenda JM | Post`.
+ *
+ * ⚠ **Índices 0-based, que es como los entrega `leerFuente`**: M = 12, R = 17, W = 22, AB = 27.
+ * Coinciden con las letras de `MAPEO` — verificado contra `poblacion` (F = 5), `alc_real` (G = 6) e
+ * `imp_totales` (J = 9).
+ */
+var BLOQUES_VIS_POST_L036_ = { acumulado: 12, meta: 17, google: 22, programmatic: 27 };
+
+/** Tolerancia de la suma: media unidad. Las celdas son enteros; esto sólo absorbe el redondeo. */
+var TOLERANCIA_BLOQUES_VIS_ = 0.51;
+
+function verificarBloquesPostReuniones() {
+  var BASE = 'reuniones';
+  var HOJA = 'Agenda JM | Post';
+
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('TESTIGO DE BLOQUES · ' + BASE + '/' + HOJA + ' · ' + new Date().toISOString());
+  Logger.log('  M (acumulado) = R (Meta) + W (Google) + AB (Programmatic)');
+  Logger.log('  Reemplaza al encabezado como testigo de D-31: con el título repetido cuatro');
+  Logger.log('  veces, el encabezado no puede distinguir cuál de las repetidas es.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  var lectura = leerFuente(BASE, null, HOJA, { sin_recorte_por_ventana: true });
+  if (!lectura.ok) {
+    Logger.log('⛔ NO se pudo leer: ' + lectura.motivo);
+    return { ok: false, motivo: lectura.motivo };
+  }
+
+  var num = function (v) {
+    if (v === null || v === undefined || v === '' || v === '-') return null;
+    var n = Number(v);
+    return isNaN(n) ? null : n;
+  };
+  var celda = function (fila, i) { return num(fila[PREFIJO_COLUMNA_POSICIONAL_ + i]); };
+
+  var evaluadas = 0, cierran = 0, sinPartes = 0, sinAcumulado = 0;
+  var fallan = [];
+
+  lectura.filas.forEach(function (fila, n) {
+    var acu = celda(fila, BLOQUES_VIS_POST_L036_.acumulado);
+    if (acu === null) { sinAcumulado++; return; }
+    var partes = [BLOQUES_VIS_POST_L036_.meta, BLOQUES_VIS_POST_L036_.google,
+      BLOQUES_VIS_POST_L036_.programmatic].map(function (i) { return celda(fila, i); });
+    /* ⚠ **«No evaluable» NO es «falla».** Las 36 filas con `-` en las tres plataformas son filas
+     * sin desglose cargado; contarlas como fallo haría que el testigo diera rojo por un dato que
+     * falta, y ahí dejaría de distinguir una columna corrida de una carga incompleta. */
+    if (partes.indexOf(null) !== -1) { sinPartes++; return; }
+    evaluadas++;
+    var suma = partes[0] + partes[1] + partes[2];
+    if (Math.abs(acu - suma) <= TOLERANCIA_BLOQUES_VIS_) cierran++;
+    else if (fallan.length < 10) fallan.push({ fila: n + 1, acumulado: acu, suma: suma, partes: partes });
+  });
+
+  var ok = evaluadas > 0 && cierran === evaluadas;
+  Logger.log('');
+  Logger.log((ok ? '✅' : '⛔') + ' CIERRAN ' + cierran + ' de ' + evaluadas + ' filas evaluables');
+  Logger.log('   sin las tres plataformas (no evaluables): ' + sinPartes);
+  Logger.log('   sin acumulado (fila vacía o "-"):         ' + sinAcumulado);
+  Logger.log('   filas leídas:                             ' + lectura.filas.length);
+
+  /* ⭐⭐ **Cero evaluables es un PROBLEMA, no un silencio** (`CLAUDE.md` §4: *un control tiene que
+   * declarar cuánto midió*). Sin esto, «ninguna falló» y «no se probó nada» se ven idénticos — y
+   * una columna corrida que dejara las cuatro en `-` daría verde. */
+  if (!evaluadas) {
+    Logger.log('');
+    Logger.log('⛔ CERO FILAS EVALUABLES. El testigo NO verificó nada, que es distinto de que');
+    Logger.log('   esté todo bien. Puede ser una columna corrida que dejó las cuatro fuera de');
+    Logger.log('   rango, o una lectura vacía.');
+    return { ok: false, motivo: 'cero filas evaluables', evaluadas: 0, cierran: 0 };
+  }
+
+  if (!ok) {
+    Logger.log('');
+    Logger.log('⛔ LA IDENTIDAD NO CIERRA. Lo más probable es que alguien haya INSERTADO O');
+    Logger.log('   MOVIDO una columna en la solapa: los cuatro bloques dejaron de estar en');
+    Logger.log('   M/R/W/AB. ⚠ Y con el título repetido, el encabezado NO lo puede detectar —');
+    Logger.log('   por eso este testigo existe.');
+    Logger.log('   Primeras filas que fallan:');
+    fallan.forEach(function (f) {
+      Logger.log('     fila ' + f.fila + ': M=' + f.acumulado + ' contra R+W+AB=' + f.suma +
+        '  (' + f.partes.join(' + ') + ')');
+    });
+  }
+
+  Logger.log('');
+  Logger.log('⚠ Lo que este testigo NO contesta:');
+  Logger.log('   · Que los valores sean los CORRECTOS. Dice que las cuatro posiciones son las que');
+  Logger.log('     se creen y que la parte suma el total — no que el total sea el de la semana.');
+  Logger.log('   · Nada sobre las OTRAS columnas de la solapa. Su testigo sigue siendo el');
+  Logger.log('     encabezado, que para títulos únicos funciona perfecto.');
+
+  return {
+    ok: ok, evaluadas: evaluadas, cierran: cierran, sin_partes: sinPartes,
+    sin_acumulado: sinAcumulado, fallan: fallan
+  };
+}

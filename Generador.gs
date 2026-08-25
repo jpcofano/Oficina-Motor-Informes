@@ -254,7 +254,7 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     return {
       ok: true,
       filas: [opciones.fila_rdv],
-      encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+      encabezado: claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna),
       columna: campo.columna,
       origen: 'la fila de rdv/' + solapa + ' de este encuentro (1 fila, sin recorte por ventana: la eligió el temario)'
     };
@@ -290,7 +290,7 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     return {
       ok: true,
       filas: opciones.filas_rdv,
-      encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+      encabezado: claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna),
       columna: campo.columna,
       origen: 'las ' + opciones.filas_rdv.length + ' fila(s) de rdv/' + solapa + ' de los ' +
         'encuentros del TEMARIO (R-21 nivel 1 · R-17 Addendum 1) — sin recorte por ventana ni por ' +
@@ -349,7 +349,7 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     return {
       ok: true,
       filas: t.filas,
-      encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+      encabezado: claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna),
       columna: campo.columna,
       origen: 'las ' + t.filas.length + ' fila(s) de ' + fila.base_id + '/' + solapa + ' de los ' +
         'encuentros del TEMARIO (sección `' + t.seccion_id + '`, resuelta por `seccion_id` ' +
@@ -399,7 +399,7 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
       return {
         ok: true,
         filas: lecturaAgregada.filas,
-        encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+        encabezado: claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna),
         columna: campo.columna,
         recortar_por_ventana: true,
         origen: 'agregado global de ' + fila.base_id + '/' + solapa + ' (sin id_cuenta; ' +
@@ -466,7 +466,7 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
       return {
         ok: true,
         filas: filasCanal,
-        encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+        encabezado: claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna),
         columna: campo.columna,
         origen: 'union digital por cuenta (' + solapa + ', ' + filasCanal.length + ' fila(s) de la cuenta ' + idCuenta + ')'
       };
@@ -539,13 +539,13 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     var lecturaCuenta = cache[claveCuenta];
     if (!lecturaCuenta.ok) return { ok: false, motivo: lecturaCuenta.motivo };
 
-    var encClave = encabezadoEnColumna_(fila.base_id, solapa, plan.columnaClave);
+    var encClave = claveDeLecturaEnColumna_(fila.base_id, solapa, plan.columnaClave);
     var filasDeLaCuenta = filtrarFilasPorCuenta_(lecturaCuenta.filas, encClave, idCuentaItem);
 
     return {
       ok: true,
       filas: filasDeLaCuenta,
-      encabezado: encabezadoEnColumna_(fila.base_id, solapa, campo.columna),
+      encabezado: claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna),
       columna: campo.columna,
       origen: 'rama por cuenta declarativa (' + fila.base_id + '/' + solapa + ', `' + campoCuenta +
         '` = "' + idCuentaItem + '": ' + filasDeLaCuenta.length + ' de ' + lecturaCuenta.filas.length +
@@ -563,7 +563,7 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
   // `leerFuente` devuelve las filas como objetos indexados por NOMBRE de columna, así que
   // hace falta traducir la letra de MAPEO a su encabezado. Es resolución de estructura, no
   // aritmética: por eso vive acá y no en `Marcadores.gs`.
-  var encabezado = encabezadoEnColumna_(fila.base_id, solapa, campo.columna);
+  var encabezado = claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna);
 
   return {
     ok: true,
@@ -894,7 +894,7 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
     resueltas.push({
       cond: cond,
       columna: campo.columna,
-      clave: claveDeFila_(filas, cond.campo, encabezadoEnColumna_(fila.base_id, solapa, campo.columna))
+      clave: claveDeFila_(filas, cond.campo, claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna))
     });
   }
 
@@ -986,8 +986,8 @@ function partirCampoRatio_(fila, solapa, filas) {
     };
   }
 
-  var encNum = encabezadoEnColumna_(fila.base_id, solapa, mapNum.columna);
-  var encDen = encabezadoEnColumna_(fila.base_id, solapa, mapDen.columna);
+  var encNum = claveDeLecturaEnColumna_(fila.base_id, solapa, mapNum.columna);
+  var encDen = claveDeLecturaEnColumna_(fila.base_id, solapa, mapDen.columna);
   var extraer = function (encabezado) {
     return filas.map(function (f) { return encabezado && (encabezado in f) ? f[encabezado] : ''; });
   };
@@ -1175,7 +1175,7 @@ function resolverMarcadores(informeId, opciones) {
       // El caso especial por nombre daba `undefined` en las 979 filas de la maestra leída por
       // `leerFuente`, y con eso las seis `pauta_*` recortaban a cero teniendo fecha.
       var claveFecha = claveDeFila_(datos.filas, 'fecha_periodo',
-        encabezadoEnColumna_(fila.base_id, solapa.solapa, campoFechaMarcador.columna));
+        claveDeLecturaEnColumna_(fila.base_id, solapa.solapa, campoFechaMarcador.columna));
       fechasDeFilas = datos.filas.map(function (o) {
         return parsearFechaCelda_(o[claveFecha]) || null;
       });
@@ -1194,7 +1194,7 @@ function resolverMarcadores(informeId, opciones) {
         var campoFinMarcador = buscarMapeo(fila.base_id, solapa.solapa, 'fecha_fin_periodo');
         var claveFin = campoFinMarcador.ok
           ? claveDeFila_(datos.filas, 'fecha_fin_periodo',
-            encabezadoEnColumna_(fila.base_id, solapa.solapa, campoFinMarcador.columna))
+            claveDeLecturaEnColumna_(fila.base_id, solapa.solapa, campoFinMarcador.columna))
           : null;
 
         var antes = datos.filas.length;
@@ -1317,7 +1317,7 @@ function resolverMarcadores(informeId, opciones) {
         var mapOrden = buscarMapeo(fila.base_id, solapa.solapa, campoOrden);
         if (mapOrden.ok) {
           var claveOrden = claveDeFila_(datos.filas, campoOrden,
-            encabezadoEnColumna_(fila.base_id, solapa.solapa, mapOrden.columna));
+            claveDeLecturaEnColumna_(fila.base_id, solapa.solapa, mapOrden.columna));
           ctx.ordenPor = {
             campo: campoOrden,
             valores: datos.filas.map(function (o) {
@@ -2266,7 +2266,7 @@ function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, 
 
   var lectura = leerFuente(baseId, ventanaInforme, solapa, { sin_recorte_por_ventana: true });
   if (!lectura.ok) { vacio.motivo = lectura.motivo; return vacio; }
-  var encClave = encabezadoEnColumna_(baseId, solapa, mapa.columna);
+  var encClave = claveDeLecturaEnColumna_(baseId, solapa, mapa.columna);
 
   /* Dedup por `id_cuenta`: `julio_24_30` trae San Cristóbal y Retiro **dos veces cada uno** —`pre`
    * y `post`—, y las dos filas del temario apuntan al MISMO encuentro. Sin esto la tabla
@@ -2295,7 +2295,7 @@ function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, 
   var metricas = [];
   (camposMetrica || []).forEach(function (campo) {
     var m = buscarMapeo(baseId, solapa, campo);
-    if (m.ok) metricas.push(encabezadoEnColumna_(baseId, solapa, m.columna));
+    if (m.ok) metricas.push(claveDeLecturaEnColumna_(baseId, solapa, m.columna));
   });
 
   var vistos = {};
@@ -4125,7 +4125,8 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   reiniciarInstrumento_();
 
   var t0Etapas = new Date().getTime();
-  RASTRO_ETAPAS_ = [];   // por corrida, no por ejecución del script  var tokensSoloEnEscondidas = {};
+  RASTRO_ETAPAS_ = [];   // por corrida, no por ejecución del script
+  var tokensSoloEnEscondidas = {};
   reiniciarMedicionDeEstimaciones_();
 
   var reemplazados = 0;

@@ -411,11 +411,28 @@ function contextoMedicion(hojas) {
   const texto = fs.readFileSync(path.join(RAIZ, 'Union.gs'), 'utf8');
   // Sólo el bloque de la medición: `Union.gs` entero arrastra el motor de unión y no es lo que
   // se mide acá. Se extrae por nombre, que es lo que sobrevive a que el archivo se mueva.
+  /* ⛔⛔ **SEGUNDA vez que el patrón `\n}\n` muerde en este mismo banco.** Los `.gs` están en CRLF,
+   * así que el cierre real es `\r\n}\r\n` y **el `\n` que el patrón exige después de la llave no
+   * está**. La primera vez (bloque 4) dejó **cinco afirmaciones sin ejecutar un día entero**; ésta
+   * se destapó el 25/08 al insertar código en `Union.gs`, que corrió lo que el match arrastraba.
+   *
+   * ⭐ **Por eso acá se extrae por POSICIÓN**, igual que allá: `indexOf` de la firma y del primer
+   * `\n}` — que sí existe en CRLF, porque lo que falta es el salto **posterior**, no el previo.
+   *
+   * ⚠ **Y el fallo fue ruidoso**, que es lo que salva: `if (trozos.some(t => !t)) return null` y el
+   * banco lo reporta. Un extractor que devolviera un trozo parcial habría corrido afirmaciones
+   * sobre código incompleto. */
+  const porPosicion = (firma, cierre) => {
+    const desde = texto.indexOf(firma);
+    if (desde === -1) return null;
+    const fin = texto.indexOf(cierre, desde);
+    return fin === -1 ? null : [texto.slice(desde, fin + cierre.length)];
+  };
   const trozos = [
-    texto.match(/var HEADERS_ANCLAJE_MEDICION_ = [\s\S]*?\];/),
+    porPosicion('var HEADERS_ANCLAJE_MEDICION_ = ', '];'),
     texto.match(/var TOPE_MEDICIONES_ANCLAJE_ = \d+;/),
-    texto.match(/function obtenerHojaAnclajeMedicion_\(\)[\s\S]*?\n}\n/),
-    texto.match(/function registrarMedicionAnclaje_\(resultado, ventana\)[\s\S]*?\n}\n/)
+    porPosicion('function obtenerHojaAnclajeMedicion_()', '\n}'),
+    porPosicion('function registrarMedicionAnclaje_(resultado, ventana)', '\n}')
   ];
   if (trozos.some(t => !t)) return null;
   vm.runInContext(trozos.map(t => t[0]).join('\n'), ctx, { filename: 'Union.gs (extracto)' });

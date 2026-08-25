@@ -83,15 +83,25 @@ const ESPERADAS = [
 /** Los tres tokens que quedaron sin fuente y sin prioridad. Ninguno puede tener fila. */
 /** Los tres sin columna. ⚠ Y los DOS campos retirados el 25/08, que es otro motivo. */
 const PARQUEADOS = ['post_camp', 'post_periodo', 'post_formato'];
-/* ⛔⛔ `2026-08-25` — **`vis_totales` y `vis_vtr_pct` NO se mapean, y la afirmación es NEGATIVA.**
- * Estaban acá como positivas hasta hoy. Se retiraron porque `Visualizaciones` y `% VTR` aparecen
- * CUATRO veces cada uno en el encabezado de la solapa y `leerFuente` indexa **por título**: gana
- * la columna de Programmatic, que en las filas de encuentro vale `-` y `0`. `L-036` lo publicó
- * así el 25/08.
+/* ⭐⭐ `2026-08-25` (tarde) — **`vis_totales` y `vis_vtr_pct` VUELVEN, y con `por_posicion`.**
  *
- * ⭐ **El control no se afloja: gana una afirmación en el otro sentido.** Si alguien las vuelve a
- * mapear, esto se pone rojo. */
-const RETIRADOS = ['vis_totales', 'vis_vtr_pct'];
+ * ⛔ **Estuvieron RETIRADOS unas horas del mismo día**, y la afirmación negativa que los vigilaba
+ * **se puso roja hoy y tenía razón**: el estado cambió. Se habían sacado porque `Visualizaciones` y
+ * `% VTR` aparecen CUATRO veces en el encabezado y `leerFuente` indexa **por título**, así que
+ * ganaba Programmatic —`21.229` donde el total es `41.204`—.
+ *
+ * ⭐ **Lo que cambió es el LECTOR, no el mapeo:** con `MAPEO.por_posicion` la celda se lee por
+ * índice (M = 12, N = 13). La letra siempre fue correcta.
+ *
+ * ⭐⭐ **Y el control no se afloja: la afirmación cambia de sentido y gana EXIGENCIA.** Antes pedía
+ * *«que no estén»*; ahora pide que estén **Y que declaren `por_posicion`**. Mapearlas sin esa
+ * columna volvería a publicar Programmatic, y eso tiene que ponerse rojo. */
+const POR_POSICION = ['vis_totales', 'vis_vtr_pct'];
+
+/** El mismo criterio que `esVerdadero_` de `Config.gs`: `sí` con o sin tilde, `true`, `x`, `1`. */
+function esVerdadero(v) {
+  return ['sí', 'si', 'true', 'x', '1'].indexOf(String(v == null ? '' : v).trim().toLowerCase()) !== -1;
+}
 
 function correr(fuente, silencioso) {
   const filas = new Function('return ' + extraer(fuente, 'SEED_MAPEO_REUNIONES_', '[', ']'))();
@@ -141,9 +151,15 @@ function correr(fuente, silencioso) {
 
   di('');
   di('4 · ⛔ NEGATIVA — lo que NO se mapea, y son DOS motivos distintos');
-  RETIRADOS.forEach((campo) => {
-    af('`' + campo + '` NO está mapeado en esta solapa (retirado el 25/08)', !post[campo],
-      'su título se repite 4 veces y el lector indexa por título: la letra de MAPEO es decorativa');
+  /* ⭐⭐ La afirmación cambió de sentido el 25/08 y GANÓ exigencia: ahora son DOS condiciones y
+   * hay que cumplir las dos. Mapearlas **sin** `por_posicion` volvería a publicar Programmatic
+   * —`21.229` donde el total es `41.204`— **sin fallar**, que es justo lo que hay que impedir. */
+  POR_POSICION.forEach((campo) => {
+    af('`' + campo + '` está mapeado', !!post[campo],
+      'volvieron el 25/08 con MAPEO.por_posicion: la celda se lee por índice, no por título');
+    af('  …y declara `por_posicion` — sin eso leería Programmatic',
+      !!post[campo] && esVerdadero(post[campo].por_posicion),
+      'su título se repite 4 veces: sin `por_posicion` el lector indexa por título y gana el último');
   });
   PARQUEADOS.forEach((t) => {
     const hay = new RegExp('campo_logico:\\s*.' + t + '.').test(fuente);
@@ -189,11 +205,10 @@ if (process.argv.indexOf('--autoprueba') !== -1) {
       /* ⛔⛔ El caso que guarda lo del 25/08: si alguien vuelve a mapear `vis_totales`, la
        * afirmación NEGATIVA tiene que caer. Sin este caso, esa afirmación podría estar pasando
        * porque el campo no existe en ningún lado, y no porque el control lo vigile. */
-      nombre: 'vuelvo a mapear `vis_totales` (M)',
-      mutar: (s) => s.replace("{ base_id: 'reuniones', campo_logico: 'poblacion'",
-        "{ base_id: 'reuniones', campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M' }, " +
-        "{ base_id: 'reuniones', campo_logico: 'poblacion'"),
-      esperaQueCaiga: '`vis_totales` NO está mapeado en esta solapa (retirado el 25/08)'
+      nombre: 'le saco `por_posicion` a `vis_totales`',
+      mutar: (s) => s.replace("campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M', encabezado: 'Visualizaciones', por_posicion: 'sí'",
+        "campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M', encabezado: 'Visualizaciones'"),
+      esperaQueCaiga: '  …y declara `por_posicion` — sin eso leería Programmatic'
     },
     {
       nombre: 'le cambio el encabezado testigo a `poblacion`',

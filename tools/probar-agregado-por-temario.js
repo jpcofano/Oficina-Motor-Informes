@@ -173,6 +173,7 @@ console.log('\n═══ E · ⛔ la rama SINGULAR gana sobre la plural ══�
   const ctx = contexto('Generador.gs');
   ctx.buscarMapeo = () => ({ ok: true, columna: 'Inscriptos' });
   ctx.encabezadoEnColumna_ = () => 'Inscriptos';
+  ctx.claveDeLecturaEnColumna_ = () => 'Inscriptos';
   const fila = { base_id: 'rdv', campo_logico: 'inscriptos', marcador: 'ecv_inscriptos' };
 
   const conLasDos = ctx.datosDeMarcador_(fila, 'RVD JM-CM - ES', null, null, {
@@ -197,6 +198,7 @@ console.log('\n═══ F · ⚠ la rama plural exige la MISMA solapa ═══
   const ctx = contexto('Generador.gs');
   ctx.buscarMapeo = () => ({ ok: true, columna: 'Inscriptos' });
   ctx.encabezadoEnColumna_ = () => 'Inscriptos';
+  ctx.claveDeLecturaEnColumna_ = () => 'Inscriptos';
   // Vive en `Solapas.gs`, que este banco no carga: con otra solapa el flujo pasa por acá camino a
   // la rama general, y lo que se mide es que NO se haya quedado en la plural.
   ctx.campoIdCuentaDeSolapa_ = () => '';
@@ -331,6 +333,7 @@ console.log('\n═══ K · `filasDeSolapaDelTemario_` — la pieza de L-036, 
   ctx.campoIdCuentaDeSolapa_ = () => 'id_cuenta';
   ctx.buscarMapeo = () => ({ ok: true, columna: 'A' });
   ctx.encabezadoEnColumna_ = () => 'ID';
+  ctx.claveDeLecturaEnColumna_ = () => 'ID';
   ctx.normalizarIdCuenta_ = (s) => String(s || '').trim();
   ctx.filtrarFilasPorCuenta_ = (filas, enc, id) => filas.filter((f) => f[enc] === id);
   ctx.leerFuente = () => ({ ok: true, filas: [
@@ -358,6 +361,7 @@ console.log('\n═══ L · ⛔ la rama nueva de `datosDeMarcador_` y su guard
   const ctx = ctxGenerador(itemsJulio());
   ctx.buscarMapeo = () => ({ ok: true, columna: 'M' });
   ctx.encabezadoEnColumna_ = () => 'Visualizaciones';
+  ctx.claveDeLecturaEnColumna_ = () => 'Visualizaciones';
   ctx.campoIdCuentaDeSolapa_ = () => '';
   ctx.leerFuente = () => ({ ok: false, motivo: '(cortado por el banco: cayó a la rama general)' });
   const fila = { base_id: 'reuniones', campo_logico: 'vis_totales', marcador: 'post_vistas1' };
@@ -401,6 +405,7 @@ console.log('\n═══ N · ⭐⭐ la regla del 25/08: «métrica de resultado
   ] });
   ctx.campoIdCuentaDeSolapa_ = () => 'id_cuenta';
   ctx.encabezadoEnColumna_ = (b, s, col) => ({ A: 'ID', G: 'Alcance', J: 'Impresiones totales', M: 'Visualizaciones' }[col] || col);
+  ctx.claveDeLecturaEnColumna_ = (b, s, col) => ({ A: 'ID', G: 'Alcance', J: 'Impresiones totales', M: 'Visualizaciones' }[col] || col);
   ctx.buscarMapeo = (b, s, campo) => ({ ok: true, columna:
     ({ id_cuenta: 'A', alc_real: 'G', imp_totales: 'J', vis_totales: 'M' }[campo] || '?') });
   ctx.normalizarIdCuenta_ = (x) => String(x || '').trim();

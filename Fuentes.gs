@@ -1106,10 +1106,37 @@ function leerFuente(baseId, ventana, nombreHojaOverride, opcionesLectura) {
     return { ok: false, base_id: baseId, solapa: hoja.getName(), motivo: guarda.motivo };
   }
 
+  /* ⚠ **La colisión del prefijo posicional se MIDE, no se supone.** Si una solapa tuviera una
+   * columna titulada `__pos__12`, su celda pisaría a la de la posición 12 y el marcador que lee por
+   * posición devolvería el valor equivocado **sin fallar**. Es improbable y por eso mismo hay que
+   * avisarlo: un supuesto que nadie verifica es el que muerde. */
+  headers.forEach(function (h) {
+    if (h && String(h).indexOf(PREFIJO_COLUMNA_POSICIONAL_) === 0) {
+      Logger.log('⚠ D-31 · ' + baseId + '/' + hoja.getName() + ' tiene una columna titulada "' + h +
+        '", que colisiona con el prefijo de lectura por posición. Los marcadores con ' +
+        '`MAPEO.por_posicion` sobre esta solapa pueden leer la celda equivocada.');
+    }
+  });
+
+  /* ⭐⭐ `2026-08-25` (`D-31` addendum) — **cada celda viaja TAMBIÉN por posición.**
+   *
+   * ⛔ **El problema que resuelve, medido:** este objeto se indexa **por título**, y en
+   * `reuniones/Agenda JM | Post` el título `Visualizaciones` aparece **cuatro veces** (M, R, W, AB)
+   * y `% VTR` otras cuatro. `obj[h] = fila[i]` hace que **gane el último** —Programmatic— y el
+   * motor publicaba `21.229` donde el total es `41.204`. **La letra de `MAPEO` era correcta y el
+   * lector nunca la usaba**: `valorPorColumna_` traduce la letra a título y ahí se pierde otra vez.
+   *
+   * ⭐ **Se agrega, no se reemplaza.** Las claves por título siguen exactamente igual, así que
+   * ningún consumidor cambia de comportamiento. Lo único nuevo es que **existe una vía por
+   * posición** para el marcador que la declare en `MAPEO` (`por_posicion`).
+   *
+   * ⚠ **El prefijo tiene que ser imposible como título de Sheets**, o una columna llamada
+   * `__pos__12` pisaría la celda 12. Se verifica y se avisa abajo en vez de suponerlo. */
   function filaAObjeto(fila) {
     var obj = {};
     headers.forEach(function (h, i) {
       if (h) obj[h] = fila[i];
+      obj[PREFIJO_COLUMNA_POSICIONAL_ + i] = fila[i];
     });
     return obj;
   }

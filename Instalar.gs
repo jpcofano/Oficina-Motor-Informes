@@ -114,7 +114,13 @@ var HOJAS_CONFIG_ = {
     // atestigua sobre ella. Es el título que hay hoy en esa letra — **testigo, nunca fallback**:
     // la letra sigue siendo la única forma de encontrar la columna, y buscar por título elegiría
     // siempre el primero de los repetidos (`Agenda JM | Post` tiene cuatro `% CTR`).
-    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'encabezado', 'tipo_esperado', 'valores_incluidos', 'notas']
+    // ⭐⭐ `2026-08-25` — **`por_posicion` es el ADDENDUM a `D-31`, y cambia su frase más citada.**
+    // *«El encabezado es testigo, nunca fallback»* **se sostiene**; lo que no se sostiene es
+    // *«la letra es la referencia»* en un lector que indexa por título. **Cuando el título se
+    // repite en la solapa, la letra manda Y el encabezado deja de ser testigo** — no puede
+    // distinguir cuál de las repetidas es. Con `por_posicion = sí`, `leerFuente` entrega la
+    // celda por índice. Ver el bloque de `claveDeLecturaEnColumna_` en `Union.gs`.
+    headers: ['base_id', 'solapa', 'campo_logico', 'hoja', 'columna', 'encabezado', 'tipo_esperado', 'valores_incluidos', 'notas', 'por_posicion']
   },
   // SOLAPAS (Paso 2.6): declara el uso de CADA solapa de cada base — el motor solo
   // sabía de las que aparecían en MAPEO, y el resto (backups, pivots, vistas con
@@ -458,7 +464,17 @@ var COLUMNAS_DELTA_ = {
     // `tipo_esperado` y `valores_incluidos` ya aplicadas, `columna` está en la 5, así que la 6
     // es *inmediatamente después de `columna`*. Empuja `tipo_esperado` a 7, `valores_incluidos`
     // a 8 y `notas` a 9 — el mismo orden que declara `HOJAS_CONFIG_.MAPEO.headers`.
-    { nombre: 'encabezado', indice: 6 }
+    { nombre: 'encabezado', indice: 6 },
+    /* ⭐⭐ `2026-08-25` (`D-31` addendum) — **`por_posicion`: leer esta columna por ÍNDICE y no por
+     * título.** Vacío = por título, que es el comportamiento de siempre.
+     *
+     * **Existe porque hay títulos que se repiten**: en `reuniones/Agenda JM | Post`,
+     * `Visualizaciones` aparece en M, R, W y AB, y `leerFuente` indexa por título y **gana el
+     * último**. El motor publicaba `21.229` —Programmatic— donde el total es `41.204`.
+     *
+     * ⭐ **Al FINAL del array**, por lo mismo que las cuatro anteriores: las entradas se evalúan en
+     * orden y una nueva adelante correría los índices de las que ya están. */
+    { nombre: 'por_posicion', indice: 10 }
   ],
   // Paso 2.7 Parte A: `origen` se inserta después de `uso` (columna 3) para una
   // hoja SOLAPAS instalada con el esquema del Paso 2.6, que todavía no la tenía.
@@ -1567,6 +1583,27 @@ var SEED_MAPEO_REUNIONES_ = [
   { base_id: 'reuniones', campo_logico: 'fecha_periodo', hoja: 'Agenda JM | Post', columna: 'E', notas: '"Fecha" — la del encuentro. ⚠ NO recorta: reuniones es modo_periodo=snapshot y leerFuente ignora la ventana. Se declara para que FILA la use en `separador` (X-35). 3 de 102 filas traen el texto "-" en vez de fecha' },
   { base_id: 'reuniones', campo_logico: 'poblacion', hoja: 'Agenda JM | Post', columna: 'F', notas: '"Habitantes" — mismo campo lógico que rdv/RVD JM-CM - ES!AB, que es donde nació. ⚠ 13 de 102 filas traen el texto "-": ahí una operación numérica devuelve sin_datos, que es correcto. Es el denominador de % Cobertura (I) = G/F, exacta en 89 de 89' },
   { base_id: 'reuniones', campo_logico: 'imp_totales', hoja: 'Agenda JM | Post', columna: 'J', notas: '"Impresiones totales" — el mismo campo lógico que AA de la PRE. Denominador de las dos identidades: % VTR (N) = M/J y % CTR (L) = K/J, exactas en 98 de 98' },
+  /* ⭐⭐ `2026-08-25` — **las dos vuelven al `MAPEO`, ahora con `por_posicion`.**
+   *
+   * ⛔ **Se habían retirado el 25/08 (`ae06a3b`) y con razón:** sus títulos —`Visualizaciones` y
+   * `% VTR`— se repiten **cuatro veces** en esta solapa (M/R/W/AB y N/S/X/AC), `leerFuente` indexa
+   * por título y **gana el último**, que es Programmatic. El motor habría publicado **21.229 y
+   * 69,0 %** donde el total es **41.204 y 30,1 %**. **La letra siempre fue correcta; el lector
+   * nunca la usaba.**
+   *
+   * ⭐ **Lo que cambia hoy es el lector, no el mapeo:** con `por_posicion = sí`, `leerFuente`
+   * entrega la celda **por índice** (M = 12, N = 13) y el título deja de participar.
+   *
+   * ⭐⭐ **Y el ORDEN de los cuatro bloques está confirmado** (decisión del usuario, 25/08):
+   * **el primero es el ACUMULADO**, después Meta, Google y Programmatic. Medido sobre el fixture
+   * del 20/08: `col12 = col17 + col22 + col27` cierra en **66 de 66** filas evaluables; las otras
+   * 36 traen `-` en **las tres** plataformas y no se pueden evaluar.
+   *
+   * ⚠ **El testigo de `D-31` para estas dos ya NO es el encabezado** —con títulos repetidos no
+   * puede distinguir— **sino esa identidad**, que verifica posición y semántica a la vez. La corre
+   * `verificarBloquesPostReuniones()`. */
+  { base_id: 'reuniones', campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M', encabezado: 'Visualizaciones', por_posicion: 'sí', notas: '⚠ TÍTULO REPETIDO (M/R/W/AB): se lee POR POSICIÓN. M es el ACUMULADO; R/W/AB son Meta/Google/Programmatic y NO se mapean (digital manda). Numerador de % VTR = M/J. Testigo: M = R+W+AB, 66 de 66 evaluables' },
+  { base_id: 'reuniones', campo_logico: 'vis_vtr_pct', hoja: 'Agenda JM | Post', columna: 'N', encabezado: '% VTR', por_posicion: 'sí', notas: '⚠ TÍTULO REPETIDO (N/S/X/AC): se lee POR POSICIÓN. Viene como FRACCIÓN (0,30082), formato `fraccion` como los cc_*_pct. Identidad interna: N = M/J, exacta en 98 de 98 (fixture 20/08)' },
 ];
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_REUNIONES_);
 
@@ -1803,11 +1840,10 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   alc_cobertura_pct: 'numero',
   // `2026-08-14_1` B — el alcance medido, contra `alc_potencial` que es el objetivo.
   alc_real: 'numero',
-  /* ⛔ `2026-08-25` — `vis_totales` y `vis_vtr_pct` SE RETIRARON. Ver el comentario de
-   * `COLUMNAS_POST_L036_`: sus títulos —`Visualizaciones` y `% VTR`— se repiten CUATRO veces en
-   * `Agenda JM | Post` y el lector indexa por título, así que la letra de `MAPEO` era decorativa
-   * y ganaba la columna de Programmatic. No se dejan declarados «por las dudas»: un tipo sin
-   * campo es una invitación a volver a mapearlos. */
+  /* ⭐ `2026-08-25` (tarde) — **vuelven**, con `MAPEO.por_posicion`. Se habían retirado esa misma
+   * mañana porque sus títulos se repiten cuatro veces y el lector indexaba por título; lo que
+   * cambió es **el lector**, no el mapeo. `vis_vtr_pct` viene como FRACCIÓN. */
+  vis_totales: 'numero', vis_vtr_pct: 'numero',
 };
 SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAMPO_[fila.campo_logico] || ''; });
 
@@ -2010,6 +2046,12 @@ var ENCABEZADO_POR_MAPEO_ = {
   'reuniones|Agenda JM | Post|fecha_periodo': 'Fecha',
   'reuniones|Agenda JM | Post|poblacion': 'Habitantes',
   'reuniones|Agenda JM | Post|imp_totales': 'Impresiones totales',
+  /* ⚠ **Estas dos llevan encabezado pero NO es su testigo**, y por eso van con la advertencia al
+   * lado: su título se repite cuatro veces, así que **no puede distinguir cuál de las repetidas
+   * es**. Se declaran igual porque documentan qué hay en esa letra; **el testigo de integridad de
+   * las dos es la identidad de bloques** (`M = R+W+AB`), que corre `verificarBloquesPostReuniones()`. */
+  'reuniones|Agenda JM | Post|vis_totales': 'Visualizaciones',
+  'reuniones|Agenda JM | Post|vis_vtr_pct': '% VTR',
 };
 
 // Va DESPUÉS de que `fila.solapa` exista (se asigna desde `hoja` más arriba): la clave la usa.
@@ -3933,7 +3975,22 @@ var COLUMNAS_POST_L036_ = [
   { tok: 'alcance',     campo: 'alc_real',     formato: 'miles',
     nota: 'col G "Alcance". Con poblacion forma % Cobertura = G/F, exacta en 89 de 89' },
   { tok: 'impresiones', campo: 'imp_totales',  formato: 'miles',
-    nota: 'col J "Impresiones totales". Denominador de las dos identidades de la solapa' }
+    nota: 'col J "Impresiones totales". Denominador de las dos identidades de la solapa' },
+  /* ⭐⭐ `2026-08-25` (tarde) — **las dos vuelven, y con ellas `L-036` recupera su identidad
+   * interna.** Se habían retirado esa misma mañana (`ae06a3b`) porque el lector indexaba por
+   * título y sus títulos se repiten cuatro veces; **lo que cambió es el lector**:
+   * `MAPEO.por_posicion` hace que se lean por índice (M = 12, N = 13).
+   *
+   * ⭐ **`%VTR = Visualizaciones / Impresiones`, exacta en 98 de 98** (fixture del 20/08). Eso pone
+   * a `L-036` **al nivel de `V-111` y `V-113`**: las tres láminas con un control que **no depende
+   * del deck del equipo ni de una foto de la base**, así que se puede exigir en cada corrida.
+   *
+   * ⚠ `vis_vtr_pct` viene como **FRACCIÓN** (0,30082), igual que los `cc_*_pct` — de ahí el
+   * formato, que no es `porcentaje_sin_signo`. */
+  { tok: 'vistas',      campo: 'vis_totales',  formato: 'miles',
+    nota: 'col M "Visualizaciones" — el ACUMULADO. ⚠ TÍTULO REPETIDO (M/R/W/AB): se lee POR POSICIÓN vía MAPEO.por_posicion. Testigo: M = R+W+AB, 66 de 66 evaluables' },
+  { tok: 'vtr',         campo: 'vis_vtr_pct',  formato: 'fraccion',
+    nota: 'col N "% VTR" — el ACUMULADO. ⚠ TÍTULO REPETIDO (N/S/X/AC): POR POSICIÓN. Identidad interna N = M/J, exacta en 98 de 98' }
 ];
 
 function cablearTablaPostReuniones_() {
