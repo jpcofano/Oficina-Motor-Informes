@@ -1477,6 +1477,30 @@ function bloqueMedicionAnclaje(){
       'distingue «no corrió» de «corrió y nadie quedó dudoso».</strong></p></div>';
   }
 
+  /* ⭐⭐ `2026-08-24_2` Parte D — **la fila de un FALLO no dice «0 de 0 anclaron».**
+   *
+   * `registrarFalloAnclaje_` (25/08) deja los contadores **vacíos a propósito**: un `0` afirmaría
+   * *«se intentó anclar cero y salió bien»*, que es falso. El motivo viaja en `sin_link_detalle`,
+   * que en un fallo no tiene otro uso. ⚠ Y hasta hoy el backend convertía ese vacío en `0` — o sea
+   * que **`num()` ya sabía pintar el `—` y nunca le llegaba**. */
+  if (m.es_fallo){
+    return '<div class="falt-grupo is-frena">' +
+      '<div class="falt-head" style="cursor:default">' +
+      '<div><div class="run-name">⛔ El anclaje FALLÓ — no llegó a intentar</div>' +
+      '<div class="run-when">' + esc(m.cuando) +
+        (m.periodo_id ? ' · ' + esc(m.periodo_id) : ' · sin filtrar por período') + '</div></div>' +
+      '<span class="run-count">sin medición</span>' +
+      '</div>' +
+      (m.sin_link_detalle.length
+        ? '<ul class="list-reset falt-lista">' + m.sin_link_detalle.map(function(t){
+            return '<li class="falt-token"><div class="falt-motivo">' + esc(t) + '</div></li>';
+          }).join('') + '</ul>'
+        : '<ul class="list-reset falt-lista"><li class="falt-token"><div class="falt-motivo">' +
+          'sin motivo registrado</div></li></ul>') +
+      bloqueDesfaseAnclaje(m) +
+      '</div>';
+  }
+
   var noAnclo = m.sin_link + m.baja_confianza;
   var detalle = m.sin_link_detalle.length
     /* ⭐ Tal cual llegan, con su motivo. Un conteo de `sin_link` sin los nombres dice que hubo un
@@ -1505,7 +1529,43 @@ function bloqueMedicionAnclaje(){
         '<div class="run-when">no se emiten, para no publicar la fila de <span class="mono">rdv</span> equivocada — son los de abajo</div></li>' +
         '</ul>'
       : '') +
+    bloqueDesfaseAnclaje(m) +
     '</div>';
+}
+
+/* ⭐⭐ `2026-08-24_2` Parte D — **la hora de esta fila contra la de la última corrida.**
+ *
+ * ⛔ **El caso que lo pide, y costó una vuelta el 25/08:** hasta `9c48769` un anclaje que fallaba
+ * **no escribía fila**, así que la última se leía como *«lo último que pasó»* cuando era *«lo
+ * último que salió bien»* — y una fila de las 17:12 comparada contra un fallo de las 20:07 hizo
+ * parecer que dos instrumentos de la misma corrida se contradecían. **Nadie mentía: al fallo le
+ * faltaba fila.**
+ *
+ * ⚠ **Muestra el desfase; no dice qué significa.** Puede ser un fallo sin fila —el caso viejo, ya
+ * corregido— o una corrida que sencillamente no ancló. Las dos mandan a trabajos distintos y la
+ * pantalla no tiene con qué elegir. Lo que sí hace es que **se vea, en vez de descubrirse
+ * comparando dos hojas a mano**.
+ */
+function bloqueDesfaseAnclaje(m){
+  var d = m.desfase;
+  if (!d) return '';
+  if (!d.ok){
+    // «No se pudo comparar» no es «no hay desfase»: se dice, en gris, y no se calla.
+    return '<div class="run-when" style="padding:6px 12px">Sin comparar contra la última corrida: ' +
+      esc(d.motivo || '') + '</div>';
+  }
+  var pie = 'última corrida: ' + esc(d.corrida_cuando) +
+    (d.corrida_id ? ' · <span class="mono">' + esc(d.corrida_id) + '</span>' : '');
+  if (d.hay_desfase !== true){
+    return '<div class="run-when" style="padding:6px 12px">' + pie + '</div>';
+  }
+  return '<div class="alert alert-warning" style="margin:8px 12px 12px">' +
+    '<div class="alert-title">⚠ Esta medición es anterior a la última corrida</div>' +
+    'La fila es de <strong>' + esc(m.cuando) + '</strong> y la última corrida es de <strong>' +
+    esc(d.corrida_cuando) + '</strong> — <strong>' + num(d.minutos) + ' minuto(s)</strong> después. ' +
+    'O esa corrida no ancló nada, o su anclaje falló sin dejar fila. ' +
+    '<strong>Lo de arriba no es de la corrida que estás mirando.</strong>' +
+    '<div class="run-when" style="margin-top:6px">' + pie + '</div></div>';
 }
 
 function cargarMedicionAnclaje(){

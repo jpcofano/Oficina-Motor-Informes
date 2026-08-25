@@ -1669,6 +1669,28 @@ function panel_faltantes(cual) {
  *
  * ⛔ **Leer no escribe.** Si la hoja no existe se devuelve `existe_hoja: false` y **no se la crea**:
  * abrir una pestaña no debe dejar una hoja nueva en la planilla del usuario.
+ *
+ * ─────────────────────────────────────────────────────────────────────────────────────────
+ * ⛔⛔ **`2026-08-24_2` Parte D — dos correcciones, y la primera desarmaba lo que `9c48769`
+ * acababa de construir.**
+ *
+ * **1 · `Number(x) || 0` convertía el VACÍO en CERO.** `registrarFalloAnclaje_` deja los
+ * contadores **vacíos a propósito**, y su comentario lo dice con todas las letras: *«un 0 se lee
+ * como "se intentó anclar cero y salió bien", que es una afirmación y es falsa. Vacío es "no se
+ * midió"»*. Este lector es del 23/08 y el escritor de anoche: **nunca se cruzaron**, así que el
+ * cuidado del escritor moría en la lectura y **una fila de FALLO se veía como una corrida perfecta
+ * de cero encuentros**. Es la familia del `String(celda)` sobre booleanos (`CLAUDE.md` §4):
+ * convertir antes de mirar destruye la distinción que el otro lado se tomó el trabajo de guardar.
+ *
+ * **2 · La fila puede ser vieja y la vista no lo decía.** Hasta `9c48769` un anclaje que fallaba
+ * **no escribía fila**, así que la última se lee como *«lo último que pasó»* cuando es *«lo último
+ * que salió bien»* — y el 25/08 eso hizo parecer que dos instrumentos de la misma corrida se
+ * contradecían: una fila de las 17:12 contra un fallo de las 20:07. **Ahora la vista trae también
+ * la hora de la última corrida**, para que el desfase se **vea** en vez de descubrirse comparando.
+ *
+ * ⚠ **El desfase se reporta, no se interpreta.** Una medición anterior a la última corrida puede
+ * ser un fallo sin fila (el caso viejo) o una corrida que no ancló nada (legítimo). La vista dice
+ * *«hay desfase»* y **cuánto**; qué significa lo decide quien mira.
  */
 function panel_ultimaMedicionAnclaje() {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('ANCLAJE_MEDICION');
@@ -1698,6 +1720,8 @@ function panel_ultimaMedicionAnclaje() {
     return String(v || '').split(' | ').filter(function (t) { return t !== ''; });
   };
 
+  var desfase = desfaseContraUltimaCorrida_(m.cuando);
+
   return {
     ok: true, existe_hoja: true, hay: true,
     mediciones: filas.length,
@@ -1706,13 +1730,89 @@ function panel_ultimaMedicionAnclaje() {
       ? fechaLegible_(m.ventana_desde) + ' al ' + fechaLegible_(m.ventana_hasta)
       : '',
     periodo_id: String(m.periodo_id || ''),
-    intentados: Number(m.intentados) || 0,
-    anclados: Number(m.anclados) || 0,
-    baja_confianza: Number(m.baja_confianza) || 0,
-    sin_link: Number(m.sin_link) || 0,
+    /* ⛔ `numeroOVacio_` y NO `Number(x) || 0`: el vacío viaja como `null` y significa **«no se
+     * midió»**. Ver el bloque del encabezado — convertirlo a `0` afirmaba «se intentó anclar cero y
+     * salió bien», que es lo contrario de lo que una fila de fallo dice. */
+    intentados: numeroOVacio_(m.intentados),
+    anclados: numeroOVacio_(m.anclados),
+    baja_confianza: numeroOVacio_(m.baja_confianza),
+    sin_link: numeroOVacio_(m.sin_link),
+    /* ⭐ Y la consecuencia legible: una fila **sin contadores** es un FALLO registrado, no una
+     * corrida vacía. `registrarFalloAnclaje_` pone el motivo en `sin_link_detalle`, que en un fallo
+     * no tiene otro uso — así que la vista puede decir *qué* falló sin una columna nueva. */
+    es_fallo: numeroOVacio_(m.intentados) === null,
     umbral: m.umbral,
     // Sin limpiar: si un nombre llega sucio, hay que verlo.
     sin_link_detalle: lista(m.sin_link_detalle),
-    excluidas_por_periodo: lista(m.excluidas_por_periodo)
+    excluidas_por_periodo: lista(m.excluidas_por_periodo),
+    /* ⚠ La otra mitad de la Parte D: **la hora de la última corrida al lado de la de esta fila.**
+     * Sin las dos, «lo último que pasó» y «lo último que salió bien» son la misma pantalla. */
+    desfase: desfase
   };
+}
+
+/**
+ * Un contador de `ANCLAJE_MEDICION` → número, o `null` si la celda está vacía.
+ *
+ * ⛔ **`null` y `0` son afirmaciones distintas y no se pueden colapsar**: `0` dice *«se midió y dio
+ * cero»*, `null` dice *«no se midió»*. `registrarFalloAnclaje_` deja los contadores vacíos
+ * justamente para poder decir la segunda, y un lector que devuelve `0` borra esa distinción sin
+ * que nada falle.
+ */
+function numeroOVacio_(v) {
+  if (v === '' || v === null || v === undefined) return null;
+  var n = Number(v);
+  return isNaN(n) ? null : n;
+}
+
+/**
+ * ⭐ **La hora de esta medición contra la de la última corrida.** Es lo que vuelve visible el modo
+ * de falla del 25/08: una fila de las 17:12 leída como «lo último que pasó» cuando la corrida que
+ * importaba era la de las 20:07, que había fallado **sin dejar fila**.
+ *
+ * ⚠ **Reporta, no interpreta.** Un desfase puede ser un fallo sin fila (el caso viejo, ya
+ * corregido) o una corrida que sencillamente no ancló nada. La vista dice cuánto; el significado lo
+ * pone quien mira.
+ *
+ * ⛔ **No puede voltear la pantalla.** Si `CORRIDAS` no está o no se puede leer, se devuelve
+ * `ok: false` con el motivo — un instrumento que rompe lo que mide es peor que no tenerlo, y acá lo
+ * que mide es la única vista del anclaje.
+ */
+function desfaseContraUltimaCorrida_(cuandoMedicion) {
+  try {
+    var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
+    if (!hoja || hoja.getLastRow() < 2) {
+      return { ok: false, motivo: 'no hay ninguna corrida registrada con qué comparar' };
+    }
+    var datos = hoja.getDataRange().getValues();
+    var headers = datos.shift().map(function (h) { return String(h == null ? '' : h).trim(); });
+    var iFecha = headers.indexOf('fecha_generacion');
+    var iId = headers.indexOf('corrida_id');
+    if (iFecha === -1) return { ok: false, motivo: 'CORRIDAS no tiene columna `fecha_generacion`' };
+
+    var ultima = null;
+    datos.forEach(function (f) {
+      if (f[iFecha] instanceof Date) ultima = { fecha: f[iFecha], corrida_id: iId === -1 ? '' : String(f[iId] || '') };
+    });
+    if (!ultima) return { ok: false, motivo: 'ninguna fila de CORRIDAS tiene fecha utilizable' };
+
+    var salida = {
+      ok: true,
+      corrida_id: ultima.corrida_id,
+      corrida_cuando: formatearFechaHora_(ultima.fecha)
+    };
+    if (!(cuandoMedicion instanceof Date)) {
+      salida.hay_desfase = null;
+      salida.nota = 'la medición no tiene fecha utilizable: no se puede comparar';
+      return salida;
+    }
+    var minutos = Math.round((ultima.fecha.getTime() - cuandoMedicion.getTime()) / 60000);
+    salida.minutos = minutos;
+    /* Un minuto de tolerancia: la medición se escribe **dentro** de la corrida, unos segundos antes
+     * de que la fila de `CORRIDAS` se cierre. Sin margen, toda corrida sana informaría desfase. */
+    salida.hay_desfase = minutos > 1;
+    return salida;
+  } catch (e) {
+    return { ok: false, motivo: 'no se pudo leer CORRIDAS: ' + ((e && e.message) ? e.message : e) };
+  }
 }
