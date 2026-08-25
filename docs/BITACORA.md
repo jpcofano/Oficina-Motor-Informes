@@ -14086,3 +14086,123 @@ declarado como *escrito y sin ejecutar*, que es distinto de *probado*.
 
 - ⏸ **Lo único que queda de la etapa A: la pieza de `L-036`.**
 - ⚠ **`reserva_cierre_seg` a 60 la cambia el usuario a mano** — `CONFIG` sólo siembra lo ausente.
+
+---
+
+## 2026-08-25 — `L-036`: el fallback que publicó el Recap de CABA, y tres instrumentos que se lavaban la cara
+
+**Commits:** `6271e9c` (la tabla) · `85ac788` (el parser y la etapa) · `aa9c91a` (`diagPostYAnclaje`) ·
+`ae06a3b` (se cierra el fallback) · `6fa6da9` (addendum a `D-31`) · `c287763` (el parser recorta
+`con`) · `051565e` (el reversor ciego) · `48f521e` (el diagnóstico al `FALTANTE`) · `9c48769` (el
+anclaje que falla deja fila) · `d85d89c` (el aviso cuenta el filtro que corre antes) · `b1f5439`
+(la regla).
+
+### ⛔⛔ El hallazgo caro: un fallback silencioso con fecha de vencimiento
+
+`filasDeSolapaDelTemario_` devolvía cero filas y el llamador **seguía de largo** leyendo la solapa
+entera. El comentario explicaba por qué no importaba: *«los `post_*` caen entonces por donde caían:
+sin fila en `MARCADORES`, `/////`»*. **Era cierto el día que se escribió** —no había cableado— y se
+volvió falso **el día que se cablearon los 20**: `L-036` publicó el **Recap de CABA**, con
+**2.463.980 habitantes**, como si fuera un encuentro del temario. Plausible y de otro universo.
+
+⭐ **Lo que lo distingue de una premisa vencida cualquiera:** la premisa no era sobre el mundo, era
+**sobre el propio repo** —*«esto todavía no está cableado»*— y **el mismo proyecto la invalida como
+parte de su plan**. El trabajo previsto **es** la fecha de vencimiento. Quedó como regla en
+`CLAUDE.md` §4.
+
+**El arreglo:** `base_temario`/`hoja_temario` se declaran **siempre**, y sin filas el marcador
+devuelve `«FALTA:@post_sin_temario»`. El argumento es el de `planDeLecturaPorCuenta_` palabra por
+palabra: **leer sin cuenta no es una lectura más amplia, es otra pregunta.**
+
+### `vis_totales` y `vis_vtr_pct` salen del `MAPEO` — y `D-31` gana un addendum
+
+`leerFuente` indexa cada fila **por título** (`obj[h] = fila[i]`), y en `Agenda JM | Post`
+*Visualizaciones* aparece **cuatro veces** (M, R, W, AB) y *% VTR* otras cuatro. **Gana el último,
+que es Programmatic**, y en las filas de encuentro vale `-` y `0`. `SOLAPAS` lo avisaba desde el
+14/08 y se mapearon igual **confiando en la letra**.
+
+⚠ **`D-31` no se deroga, pero su frase más citada no se sostiene en el camino de LECTURA:** la letra
+decide qué columna se **declara**; el lector va a buscar **por nombre**. Y el propio `D-31` lo había
+escrito como argumento *a favor* de la letra — el diagnóstico era correcto y **la conclusión no
+llegó hasta el lector**.
+
+**Medido, y decide que no urge:** de 12 solapas fuente, **una** tiene títulos repetidos y **cero**
+filas de `MAPEO` apuntan hoy a una letra que no sea la primera de su título. Es un caso, no un
+agujero. Regla operativa mientras tanto: **antes de mapear una columna, mirar si su título se
+repite.**
+
+⚠ **Se pierde la identidad interna `% VTR = M/J`**, que era el control primario de la lámina. Queda
+escrito en el banco: lo exigible ahora es la **coherencia de fila**.
+
+### ⭐ El reversor se quedó ciego en el mismo commit que lo dejó ciego
+
+`revertirTablaPostReuniones()` derivaba sus nombres de `COLUMNAS_POST_L036_`. Cuando esa constante
+pasó de 5 columnas a 3, **el reversor dejó de ver los 8 que había que sacar**: quitó 12, informó 12,
+y **no falló**. Quitar 12 e informar 12 es una corrida perfectamente exitosa.
+
+⭐ Es `CLAUDE.md` §4 literal: **un instrumento que mide un cambio no puede depender de lo que el
+cambio modifica.** Y explica el deck exactamente, invertido: las **tres** con fuente salen `/////`
+—sin fila— y las **dos** retiradas salen `---` —con fila, fallando contra un `MAPEO` que ya no las
+tiene—.
+
+**El arreglo:** `MARCADORES_POST_L036_TODOS_`, **literal y con los 20**, porque una lista de
+reversión tiene que cubrir lo que el wrapper **llegó a escribir alguna vez**, no lo que escribe hoy
+— si se acorta con cada cambio, cada cambio deja huérfanos. Más
+`repararTablaPostReuniones()`: un solo botón, **en el orden que corresponde**.
+
+### Los tres instrumentos que se lavaban la cara
+
+| instrumento | qué hacía | qué hace ahora |
+|---|---|---|
+| `ANCLAJE_MEDICION` | registraba **sólo los éxitos** — el registro está al final y los `return ok:false` 160 líneas antes | el fallo **deja fila**, con el motivo en `sin_link_detalle` y los contadores **vacíos, nunca en cero** |
+| `diagPostYAnclaje()` | agrupaba `periodo_id` con `.trim()`, **lavando la candidata principal** | valor **crudo** con delimitadores, largo y tipo, más el otro lado de la comparación |
+| el aviso del anclaje | *«descartadas por período: 6»* contaba el filtro de **período** y callaba el de `mostrar`, **que corre antes** | nombra las filas ocultas, dice que **no** están en el conteo, y **habla también cuando no hay ninguna** |
+
+⛔ **El caso del aviso costó una vuelta entera.** Las cuatro filas de `julio_24_30` tenían `mostrar`
+vacío, así que `leerReuniones_` **las descartó antes de que el anclaje las viera**; las 6 contadas
+eran de junio y agosto. **El aviso decía la verdad y mandaba a mirar el período, que estaba bien.**
+Quedó como regla en `CLAUDE.md` §4: *un filtro que descarta antes y no cuenta es invisible, y el que
+sí cuenta se lleva la culpa*.
+
+⭐ **Y la otra mitad, que es la que lo convierte en discriminador:** *«ninguna quedó afuera por
+`mostrar`, así que el problema es el período»* **descarta una causa**; una lista vacía no descarta
+nada, sólo se calla. Misma forma que el control positivo.
+
+**Y el motivo de `@post_sin_temario` viaja al `FALTANTE`** en vez de quedarse en un `Logger.log` que
+desaparece: `sin_cuenta` · `sin_fila` · `sin_metrica`, que mandan a **tres trabajos distintos**.
+
+### El parser del temario
+
+- **`(pre + post)` y sus variantes se reconocen para poder DESCARTARLAS** — antes caían a `notas`. Y
+  **`etapa` deja de escribirse desde el temario**: el temario dice qué encuentros entran, las bases
+  dicen qué etapas tuvo cada uno.
+- **`Encuentro Temático: Salud` daba `": Salud"`**, y `Primera persona con Pareto` daba
+  `"con Pareto"`. Se arregla **en el parser**, no en los consumidores: el nombre viaja a **tres**
+  lugares y limpiarlo en cada uno sería el quinto normalizador que `CLAUDE.md` §2 pide no escribir.
+- ⚠ **La lista de preposiciones es explícita, no un patrón**: hay barrios que empiezan con palabra
+  corta —*La Boca*, *El Talar*— y un patrón se los come. El `\s+` exige palabra entera, así que
+  `con` **no** se come *Constitución*.
+
+### ⭐ Las fechas: descartadas como eslabón, con evidencia
+
+Se veía `23/07/2026` donde las filas viejas mostraban `2026-07-23`, y de ahí salió *«quedaron como
+texto»*. **Medido corriendo el parser real: escribe un `Date`.** Lo que cambiaba era **el formato de
+la celda, no el tipo** — y aunque fuera texto, los dos consumidores hacen
+`instanceof Date ? x : parsearFechaCelda_(x)`.
+
+⭐ **La lección quedó en `CLAUDE.md` §4 con el orden correcto: primero el consumidor, después el
+tipo.** Un tipo distinto sólo es un problema si alguien lo trata distinto; empezar por el tipo cuesta
+medio diagnóstico antes de descubrir que nadie mira.
+
+### Controles
+
+`probar-tabla-post` 34 → **57** afirmaciones, con la que impide repetir el bug del reversor: **no
+puede derivar de `COLUMNAS_POST_L036_`**. `probar-mapeo-post` **22 + 4 negativos**.
+`probar-parseo-temario` 29 → **37**. Los dos bancos de `L-036` se pusieron en rojo solos y se
+actualizaron con afirmaciones **negativas** en vez de aflojarse. **Las 41 de `tools/` en verde.**
+
+### Pendientes
+
+- ⏸ **`L-036` quedó en `-`** con **una sola candidata viva**: el `id_cuenta` del anclaje contra el
+  ID de `Agenda JM | Post`. **Se retoma con el usuario.**
+- ⚠ **`reserva_cierre_seg` a 60 la cambia el usuario a mano** — `CONFIG` sólo siembra lo ausente.
