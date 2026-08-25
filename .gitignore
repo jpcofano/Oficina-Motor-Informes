@@ -24,3 +24,7 @@ docs/samples/
 # exceptua el README, que es la tabla de huellas `sha256` y SI tiene que estar versionada.
 docs/_fixtures/*
 !docs/_fixtures/README.md
+
+# Cache de Python — los dos instrumentos de `tools/` son .py y un import genera .pyc
+__pycache__/
+*.pyc
