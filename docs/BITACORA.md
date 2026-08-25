@@ -14364,3 +14364,152 @@ informaba *«la columna no existe»* en las seis — **un cero fabricado por el 
 - ⛔ **`declararAlcanceDeLaminas()`**, después de `instalar()`.
 - ⏸ `camp_bench_remitente` y el array posicional del sellador — los dos en `PENDIENTES`.
 - ⏸ **`L-036`**: el `id_cuenta`, con el usuario.
+
+---
+
+## 2026-08-25 (tarde) — Las tres decisiones sobre `etapa` y `L-036`
+
+**Commits:** `5a1513e` (decisión 1, sola) · `dcfa366` (decisiones 2 y 3).
+
+⚠ **Nota sobre `dcfa366`:** su mensaje perdió la palabra `agregado` en la línea 5 —los backticks
+se expandieron como sustitución de comando en el `-m`—. La frase correcta es *«`comunicaciones_post`
+iba a pasar a **`agregado`** porque…»*. No se rehízo el commit: un force-push por una palabra cuesta
+más de lo que arregla.
+
+---
+
+### ⛔⛔ El error de método que costó cuatro días, y va primero
+
+**La fuente de `L-036` se eligió por el NOMBRE DE LA SOLAPA —`Agenda JM | Post`— y nunca se
+verificó contra el dato.** La solapa correcta **no tiene «post» en el título: lo tiene en una
+COLUMNA**.
+
+⚠ **Es la trampa de `reuniones`/`REUNIONES` entre una solapa y un VALOR, y es peor**: allá dos cosas
+se llaman igual y hay confusión; acá **la cosa correcta no se llama como lo que se busca**, así que
+buscar por nombre **no da un falso positivo — da un cero**, y el cero se lee como *«no existe»*.
+
+⭐ **Lo que lo hizo durar es que el nombre acertaba lo suficiente.** `Agenda JM | Post` **sí** tiene
+datos del post, **sí** tiene las columnas, y el `MAPEO` resolvía. La medición del 25/08 lo confirmó
+todo — **y confirmó la solapa equivocada**, porque preguntó *«¿esta solapa tiene el dato?»* y nunca
+*«¿de dónde sale este dato?»*. **Son dos preguntas y sólo la segunda elige una fuente.**
+
+⭐⭐ **Y la pieza ya estaba implementada:** `DIMENSIONES_.etapa` sobre
+`digital|CAMPAÑAS_DESGLOCE_DIGITAL`, que usan los 24 `u1_*` del «1 a 1» desde antes — y que **yo
+mismo medí el 25/08** al corregir una premisa del usuario sobre esa misma lámina.
+
+---
+
+## Decisión 1 · `etapa.post` se amplía a `~=Post` — **sola, y con testigo**
+
+**El equipo escribe «Post» en cualquier posición**, y las dos formas son **disjuntas**:
+`~=Agenda Post` daba **166** filas, `~=Post` da **318**, **intersección cero**.
+
+```
+Agenda Post con 1 - 1 A 1 - Retiro - 24/7      ← la vieja tomaba ésta
+Post Agenda RDV Con 1 - Salud Eje Norte 10/6   ← y NO ésta
+Agenda con 1 Post - 1 A 1 - Comuna 1 - 17/4    ← ni ésta
+RDV Post Agenda con 1 - Primera Persona 1/6    ← ni ésta
+```
+
+### ⛔⛔ El alcance no era una semana: son SEIS MESES
+
+**22 cuentas del «1 a 1» y 71 filas**, repartidas **marzo 1 · abril 11 · mayo 16 · junio 32 ·
+julio 8 · agosto 3**. ⇒ **Hay decks publicados con el POST incompleto.** Queda dicho acá y en
+`PENDIENTES` en vez de descubrirse comparando.
+
+### ⭐ Cero falsos positivos, y el cero se midió
+
+«Post» aparece **318 veces y siempre como palabra entera** — ningún `Poste`, `Postulación`,
+`Posta`. Es la pregunta que `camp_env` → `camp_enviados` obliga a hacer **antes** de un patrón por
+subcadena. **Sin esa medición, ampliar el patrón habría sido exactamente ese error.**
+
+⚠ **Límite declarado: `~=` es SENSIBLE AL CASE** (`R-10` preserva mayúsculas). Matchea `Post` y
+**no** `post` ni `POST`. Medido: hoy existe **una sola grafía** en las 318. El día que alguien
+escriba minúscula, **no se ve y no falla**. No se pliega el case porque `valorPasaFiltro_` es el
+comparador de **todos** los filtros del motor.
+
+### ⭐⭐ El testigo lleva su canario adentro
+
+`testigoDeEtapaPost()` — 21 marcadores, y entre ellos **`u1_total_impresiones`**, que tiene
+`dimensiones` **vacío** —las dos etapas— sobre la **misma solapa** y con la **misma operación**.
+**El cambio no lo puede tocar:** mover una fila de `pre` a `post` no cambia la suma de las dos.
+
+⇒ **Si se movió, no fue el cambio: fue la fuente**, y nada de lo demás se lee. Vale **dentro de la
+misma corrida**, así que `R-31` no lo puede arruinar.
+
+⭐ **Y el criterio de aceptación es el del usuario (`V-110`):** `pre` es el **complemento literal**
+(`!~=`), así que ampliar el post **tiene que sacarle filas al pre y a nadie más**. Un `u1_post_*`
+que sube con su `u1_pre_*` hermano quieto **es un hallazgo**.
+
+---
+
+## Decisiones 2 y 3 · `L-036` por PLATAFORMA — lo estructural hecho, el cableado FRENADO
+
+### ⭐⭐ Un faltante de diseño que se resolvió solo con la decisión 2
+
+`comunicaciones_post` iba a pasar de `repetible` a **`agregado`**, porque *«las cuatro filas son los
+cuatro encuentros del temario»*. **Con el grano por plataforma eso se invierte:** la lámina es de
+**UN** encuentro, así que la sección **se queda `repetible`** sobre `REUNIONES` con
+`filtro = etapa=post` — que es lo que recorta por encuentro, **igual que `L-053` con el «1 a 1»**.
+`itemsPorLamina` pasa de **4 a 1**.
+
+⛔ **Y `declararModoDelAgregadoPost()` quedó invalidado: ahora FRENA** con el motivo, en vez de
+correr. **No se borra** —quien lo buscaba merece saber por qué, y `volverComunicacionesPostARepetible()`
+sigue por si alguien ya lo apretó— pero **un botón cuya premisa venció y sigue siendo apretable es
+una trampa con fecha**. El `return` de freno va **antes** de `curarSecciones_`, no es un comentario.
+
+### `MAPEO` — alta de `des_nomenclatura`, y lo que ya estaba
+
+⭐ **El `MAPEO` del desglose ya estaba casi entero**: `des_id_cuenta`, `des_plataforma`,
+`des_campana`, `des_impresiones`, `des_visualizaciones`, `des_fecha_inicio`, `des_fecha_fin`. Se
+suma **`des_nomenclatura`** (col. L) para el `Formato`. ⚠ Sus campos son **variables y la posición
+cambia por plataforma** —Meta trae `| Meta | 15 | Alcance |` y Google `| YouTube | Video | Vistas`—,
+así que **se declara la columna y el extractor no existe**. Mismo bloqueo que `camp_formato1-3`.
+
+⭐ **`DIMENSIONES_.plataforma` y `.etapa` ya declaran esta solapa: cero código nuevo** para los
+cortes. Y `programmatic` **por resta** hace que `DV360` y `TikTok` entren solos (`R-24`).
+
+### ⛔⛔ Por qué el cableado NO se escribió — `S-06`
+
+**El grano está decidido; el ORDEN DE LAS CUATRO RANURAS no está medido.** El orden de las
+**columnas** de la derivada es TOTAL·Meta·Google·Prog, y **eso no prueba el orden de las filas de la
+tabla** — además el deck del equipo publica el POST **sin fila de TOTAL** (Meta·Google·Programmatic
+a secas).
+
+⇒ Cablearlo sobre eso **publica un número correcto en la fila equivocada**: el modo de falla más
+caro del repo y el único que no avisa. `post_impresiones1` con el valor de Meta en vez del total es
+**plausible en las dos lecturas**.
+
+⭐ **Y aparece un tercer faltante encadenado al mirarlo de cerca:** `Habitantes` y `Alcance` son
+**del encuentro**, no de la plataforma. Con filas por plataforma, o se repiten cuatro veces o sólo
+van en la fila del total — y eso **también depende de cuál sea esa fila**.
+
+**El banco lo fija con afirmaciones NEGATIVAS**: si alguien cablea sin resolver el orden, se ponen
+rojas y dicen la verdad.
+
+### ⭐ El addendum corregido — y el motivo importa más que la corrección
+
+*«`Agenda JM | Post` es la fuente equivocada»* **a secas es peligroso**: haría que alguien la saque
+del `MAPEO` y **se perderían las dos columnas que sí aporta**.
+
+⇒ **Lo que realmente es:** fuente **CORRECTA** para `Habitantes` y `Alcance` —que **no existen en el
+desglose, en ningún nombre**— y **DERIVADA** para las otras cinco. **No se saca del `MAPEO`: se le
+recorta el alcance.** El banco lo fija afirmando que `des_alcance` y `des_habitantes` **no existen**.
+
+⚠ **Límite declarado y NO resuelto** (decisión del usuario): una lámina que cruza **dos fuentes**
+puede publicar **filas de dos momentos distintos**. Misma familia que el deck en tandas (`D-41`) y
+que `C-80`.
+
+### Controles
+
+**47 suites, 0 en rojo.** Dos bancos nuevos: `probar-etapa-post.js` (30 afirmaciones, **ejecutando
+`parsearFiltro_` y `valorPasaFiltro_` reales** sobre nombres **copiados** de la solapa, no deducidos
+del patrón) y `probar-rediseno-l036.js` (34). Más `tools/medir-impacto-etapa-post.py`, re-corrible.
+
+### Pendientes
+
+- ⛔ **`clasp push`** — nada de esto está en Apps Script.
+- ⛔ **`testigoDeEtapaPost()` antes y después**, en la misma sesión, y **`L-036` no va en ese deck**.
+- ⛔ **`curarSecciones_` para `itemsPorLamina: 1`** — `sembrarSecciones_` sólo agrega filas ausentes.
+- ⏸ **`S-06`**: el orden de las cuatro ranuras, mirando la lámina pintada.
+- ⏸ El extractor del `Formato` desde `Nomenclatura`.

@@ -8085,3 +8085,98 @@ con el que nombran los commits, que es el único cruce que existe entre prompt y
 
 **No se corrige.** Queda anotado junto a las tres colisiones de numeración del 21-22/08, por el mismo
 motivo que aquéllas: **se convive con ellas**.
+
+---
+
+## 2026-08-25 (tarde) · ⛔⛔ P0 — Hay decks publicados con el POST INCOMPLETO
+
+**`DIMENSIONES_.etapa.post` filtraba `des_campana~=Agenda Post` y el equipo escribe «Post» en
+cualquier posición.** Las dos formas son **disjuntas** —166 filas contra 137, intersección cero—,
+así que **todo lo que no llevara la secuencia exacta `Agenda Post` era invisible para el motor**.
+
+**El alcance, medido sobre el fixture del 20/08 (sha `f8ef3227…`): 22 cuentas del «1 a 1» y 71
+filas**, repartidas:
+
+| mes de la fila | filas |
+|---|---:|
+| marzo | 1 |
+| abril | 11 |
+| mayo | 16 |
+| **junio** | **32** |
+| julio | 8 |
+| agosto | 3 |
+
+⇒ **Seis meses, no una semana.** Cualquier deck que haya publicado una lámina del «1 a 1» de un
+encuentro de esas cuentas **mostró el POST incompleto**: los nueve `u1_post_*` sumaban menos filas
+de las que correspondía, y los nueve `u1_pre_*` **de más**.
+
+⚠ **El síntoma nunca fue un error.** Los `u1_post_*` publicaban un número plausible —a veces
+`sin_datos` cuando *todas* las filas POST del encuentro usaban la otra convención— y nada lo
+contradecía. Es el número plausible sin testigo, otra vez.
+
+⭐ **Corregido el 25/08** (`5a1513e`): el criterio pasa a `~=Post`. **Lo que NO se corrige es lo ya
+publicado** — un deck emitido no se re-emite solo.
+
+**Qué lo cierra:** decidir si algún deck publicado hay que rehacer. Es del usuario. La lista de las
+22 cuentas afectadas sale de `python tools/medir-impacto-etapa-post.py`, sección 4.
+
+---
+
+### ⏸ `S-06` — el orden de las cuatro ranuras de `L-036`
+
+El **grano** de `L-036` está decidido (por plataforma, 25/08). **El orden de las filas no está
+medido**, y por eso el cableado **no se escribió**:
+
+- El orden de las **columnas** de `Agenda JM | Post` es TOTAL·Meta·Google·Programmatic — pero eso
+  **no prueba** el orden de las **filas** de la tabla.
+- El deck del equipo publica el POST **sin fila de TOTAL**: Meta·Google·Programmatic a secas.
+- ⭐ **Y hay un tercer faltante encadenado:** `Habitantes` y `Alcance` son **del encuentro**, no de
+  la plataforma. Con filas por plataforma, o se repiten cuatro veces o van sólo en la del total —
+  y eso depende de cuál sea esa fila.
+
+⛔ **Cablearlo sin resolverlo publica un número correcto en la fila equivocada**, que es el modo de
+falla más caro del repo y el único que no avisa: `post_impresiones1` con el valor de Meta en vez del
+total **es plausible en las dos lecturas**.
+
+**Qué lo destraba:** mirar la lámina **pintada** del equipo con las cuatro filas. `tools/probar-rediseno-l036.js`
+lo fija con afirmaciones **negativas**: si alguien cablea antes, se pone rojo.
+
+---
+
+### ⏸ El `Formato` de `L-036` sale de `Nomenclatura`, y no hay extractor
+
+`des_nomenclatura` (col. L) ya está en `MAPEO`. ⚠ **Sus campos son variables y la posición cambia
+por plataforma:**
+
+```
+Meta:       2026 | Julio | Meta | 15 | Alcance | Vinculo Ciudadano | … | Geo CABA | Geo Retiro
+Google ads: 2026 | Vinculo Ciudadano | … | Geo Retiro | YouTube | Video | Vistas
+DV360:      2026 | Julio | iProspect | DV360 | GCBA | … | Video | Open | … | Alcance
+```
+
+**Es el mismo bloqueo que `CIERRE_POR_LAMINA.md` ya declaró para `camp_formato1-3` de `L-043`**, y
+conviene resolverlos juntos o declarar los dos como texto del equipo.
+
+---
+
+### ⚠ El límite de cruzar dos fuentes en una lámina — declarado, no resuelto
+
+`L-036` va a leer **`digital/CAMPAÑAS_DESGLOCE_DIGITAL`** para cinco columnas y
+**`reuniones/Agenda JM | Post`** para `Habitantes` y `Alcance`. **Dos fuentes en una lámina pueden
+publicar filas de dos momentos distintos.**
+
+Es la misma familia que el deck en tandas (`D-41`) y que `C-80`: cajas una al lado de la otra, con
+el mismo formato, que se leen como si respondieran la misma pregunta. **Decisión del usuario
+(25/08): se anota, no se resuelve.**
+
+---
+
+### ⚠ `~=` es sensible al case, y hoy eso alcanza — pero no está garantizado
+
+`des_campana~=Post` matchea `Post` y **no** `post` ni `POST`. Medido: de las **318** apariciones,
+**todas** son `Post`. El día que alguien escriba otra grafía, **no se ve y no falla**.
+
+⛔ **No se plegó el case** porque `valorPasaFiltro_` es el comparador de **todos** los filtros del
+motor y cambiarlo movería mucho más que esto. El límite queda fijado por una afirmación de
+`tools/probar-etapa-post.js`: si algún día se vuelve insensible, se pone roja y hay que venir a leer
+por qué estaba así.
