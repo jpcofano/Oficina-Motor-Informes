@@ -2,6 +2,10 @@
 
 > **Estado:** congelado · **fecha de la medición:** 2026-08-25 · **pedido por el usuario**
 >
+> ⛔⛔ **SU CONCLUSIÓN PRINCIPAL ES FALSA — ver el ADDENDUM 1 al final, del mismo día.** La fuente
+> de `L-036` es `digital/CAMPAÑAS_DESGLOCE_DIGITAL`, no `reuniones/Agenda JM | Post`. El cuerpo se
+> conserva sin editar porque **cómo se llegó a la conclusión equivocada es la mitad de su valor**.
+>
 > ⚠ **Es una foto fechada.** Todo lo de acá sale de dos fixtures en disco y responde por **sus**
 > días: la base por el **20/08/2026**, el deck del equipo por el **31/07/2026**. No dice qué hay hoy.
 >
@@ -208,3 +212,173 @@ trampa con fecha»*—. Reabrirlo es del usuario.
 - **Si el motor la lee así.** Se midió **qué trae la solapa**, no qué hace `leerFuente` con ella.
   Son dos afirmaciones distintas y ésta es la primera.
 - **Nada sobre el `id_cuenta`**, que sigue siendo la candidata viva y se retoma con el usuario.
+
+---
+---
+
+# ⛔⛔ ADDENDUM 1 — 25/08/2026, mismo día · **la conclusión de arriba está MAL**
+
+> **No se edita una línea del texto original.** Lo de arriba queda como está, porque **cómo se llegó
+> a una conclusión equivocada es la mitad del valor de este documento**. Esto lo corrige.
+
+**Lo trajo el usuario:** `L-036` sale de **`digital/CAMPAÑAS_DESGLOCE_DIGITAL`**, filtrando por
+`Id cuentas` + `Nombre Campaña` que trae «Post». **No de `reuniones/Agenda JM | Post`.**
+
+⭐⭐ **Y la pieza ya estaba implementada:** `DIMENSIONES_.etapa` (`Fuentes.gs`) traduce
+`post` → `des_campana~=Agenda Post` sobre `digital|CAMPAÑAS_DESGLOCE_DIGITAL`. **Es lo que usan los
+24 `u1_*` del «1 a 1» desde antes** — y lo medí yo mismo el 25/08 al corregir una premisa del propio
+usuario sobre el 1 a 1. **La tenía delante y la busqué en otra base.**
+
+---
+
+## ⛔⛔ El error de método, y es el que hay que anotar
+
+**La fuente se eligió por el NOMBRE DE LA SOLAPA —`Agenda JM | Post`— y nunca se verificó contra el
+dato.** La solapa correcta **no tiene «post» en el título: lo tiene en una COLUMNA**.
+
+⚠ **Es la misma trampa que `reuniones`/`REUNIONES`, pero entre una solapa y un VALOR.** Allá dos
+cosas se llaman igual; acá **la cosa correcta no se llama como lo que busca**, así que buscar por
+nombre **no da un falso positivo: da un cero**, y el cero se lee como *«no existe»*.
+
+⭐ **Y lo que lo hizo durar cuatro días es que el nombre acertaba lo suficiente.**
+`Agenda JM | Post` **sí tiene** datos del post, **sí** tiene las columnas, y el `MAPEO` resolvía. La
+medición de arriba lo confirmó todo — y **confirmó la solapa equivocada**, porque preguntó *«¿esta
+solapa tiene el dato?»* y nunca *«¿de dónde sale este dato?»*. Son dos preguntas y sólo la segunda
+elige una fuente.
+
+---
+
+## ⭐⭐⭐ Y hay algo mejor que una corrección: `Agenda JM | Post` es un AGREGADO DERIVADO
+
+**Medido sobre el mismo fixture del 20/08, y cierra AL DÍGITO en las cuatro columnas.** Las filas
+POST de `3346-JULJDGAG` (Retiro) en `CAMPAÑAS_DESGLOCE_DIGITAL`, sumadas por plataforma:
+
+| plataforma | impresiones | visualizaciones | ⇒ dónde aparece en `Agenda JM \| Post` |
+|---|---:|---:|---|
+| Meta | 76.620 | **7.892** | `Visualizaciones` col **17** ✅ |
+| Google ads | 29.604 | **12.083** | `Visualizaciones` col **22** ✅ |
+| DV360 | 30.747 | **21.229** | `Visualizaciones` col **27** ✅ |
+| **TOTAL** | **136.971** | **41.204** | `Impresiones totales` col 9 · `Visualizaciones` col **12** ✅ |
+
+⇒ ⭐⭐ **Los cuatro bloques repetidos de `Agenda JM | Post` son TOTAL · Meta · Google · Programmatic,
+y son exactamente la suma de las filas POST del desglose.** El cuerpo de arriba había inferido que
+*«los cuatro bloques son las plataformas»* mirando el deck del equipo — **la inferencia era correcta
+y la fuente era la derivada.**
+
+⚠ **Y eso cambia el estatus de `Agenda JM | Post`:** no es *«otra fuente candidata»*, es **la misma
+fuente pre-sumada por el equipo**. Leerla no está mal por el dato — está mal porque **es un agregado
+de alguien más**, sin trazabilidad de qué filas entraron, y con los títulos repetidos que ya
+obligaron a retirar dos columnas del `MAPEO` (`ae06a3b`).
+
+---
+
+## ⛔⛔ El hallazgo grave, y NO es de `L-036`: hay DOS convenciones de nombre y el motor ve una sola
+
+Medido sobre las 5.161 filas de datos de `CAMPAÑAS_DESGLOCE_DIGITAL`:
+
+| regla | filas | |
+|---|---:|---|
+| **contiene «Agenda Post»** — lo que hace `DIMENSIONES_.etapa` | **166** | 2025: 9 · 2026: 151 |
+| **empieza con «Post»** — como lo describió el pedido | **137** | 2026: 136 |
+| ⛔ **intersección** | **0** | **son DISJUNTAS** |
+
+**Dos convenciones para lo mismo, y conviven en 2026:**
+
+- `Agenda Post con 1 - 1 A 1 - Retiro - 24/7` → el motor **la ve**
+- `Post Agenda RDV Con 1 - Salud Eje Norte 10/6` → el motor **NO la ve**
+
+⛔⛔ **El ejemplo que pasó el usuario es del segundo grupo.** `3143-JUNJDGAG` reproduce exacto —Meta
+902.299/87.872, Google ads 325.764/278.982, DV360 1.296.072/716.921— y **sus tres filas POST son
+invisibles para `des_campana~=Agenda Post`**.
+
+⚠ **Esto no es un problema de `L-036`: es de los 24 `u1_*` que ya están en producción.** Para las
+cuentas de **julio** la convención es `Agenda Post …` y el filtro funciona; para **junio** es
+`Post Agenda …` y **no**. Un `etapa=post` sobre un encuentro de junio devuelve **cero filas**, y eso
+no falla — publica `sin_datos`.
+
+⭐ **Va como hallazgo aparte y con su propia medición.** Arreglarlo es cambiar el patrón de
+`DIMENSIONES_.etapa`, que **mueve números publicados de los `u1_*`** — no entra en una corrida sin
+usuario.
+
+---
+
+## Las tres preguntas que el usuario pidió medir
+
+### 1 · Los encuentros de `julio_24_30` en el desglose
+
+⛔ **El temario real de esa semana tiene TRES encuentros, no cuatro**
+(`docs/TEMARIOS_reales_2026-08-25.md`): San Cristóbal 23/07, Retiro 24/07, Orden Público 28/07.
+
+| encuentro | `Id cuentas` | filas POST | plataformas |
+|---|---|---:|---|
+| San Cristóbal (23/07) | `3354-JULJDGAG` | **0** | — |
+| Retiro (24/07) | `3346-JULJDGAG` | 5 | Meta ×2 · Google ads ×2 · DV360 |
+| Orden Público (28/07) | `3387-JULJDGGC` | 3 | Meta · Google ads · DV360 ×2 |
+
+⚠ **`3387` es `…JDGGC`, no `…JDGAG`** — el sufijo de la cuenta cambia y **no se puede derivar**.
+
+⭐ Y dentro de la ventana 24-30/07 hay **otros dos** con POST que el temario no nombra: `3389`
+(Nueva Pompeya 29/7) y `3420` (Caballito 29/7). **Qué encuentros entran lo decide `R-21`, no el
+desglose** — se anota para que nadie lo tome como que son cuatro.
+
+### 2 · Qué columnas cubren las ocho de la lámina
+
+Las 26 columnas de `CAMPAÑAS_DESGLOCE_DIGITAL`, contra las 8 de `L-036`:
+
+| columna de la lámina | en el desglose | |
+|---|---|---|
+| **Campañas** | `Nombre Campaña` (4) | ✅ |
+| **Período** | `Fecha inicio` (8) · `Fecha fin` (9) | ✅ y ⚠ ver abajo |
+| **Formato** | `Nomenclatura` (11) | ⚠ **campos variables**, ver abajo |
+| **Impresiones** | `Impresiones` (14) | ✅ |
+| **Visualizaciones** | `Visualizaciones` (15) | ✅ |
+| **VTR%** | — | ⭐ **derivable**: `Visualizaciones / Impresiones` |
+| **Alcance** | ⛔ **NO existe** | |
+| **Habitantes** | ⛔ **NO existe** | |
+
+⭐ **Habitantes y Alcance son lo que `Agenda JM | Post` sí aportaba**, como el usuario sospechaba.
+Habitantes vive en tres solapas de `reuniones` (`Agenda JM | Post` col 5, `Métricas EDVs` col 13,
+`Agenda JM` col 30) y **es del barrio, no de la campaña** — así que no puede salir de una solapa por
+plataforma. **`Alcance` no está en el desglose en ningún nombre.**
+
+⚠ **`Nomenclatura` es de campos variables y su posición cambia por plataforma** — para Retiro, Meta
+trae `… | Meta | 15 | Alcance | …` y Google `… | YouTube | Video | Vistas`. Es el mismo bloqueo que
+`CIERRE_POR_LAMINA.md` ya declaró para `camp_formato1-3` de `L-043`.
+
+⚠ **Y el período cruza meses:** las dos filas de Google ads de Retiro son `mes = JULIO` y
+`mes = AGOSTO`, con el mismo `Fecha inicio`. Un recorte por `Mes` partiría el encuentro.
+
+### 3 · ⭐⭐ Si la lámina es por PLATAFORMA — **sí, y hay tres evidencias que apuntan igual**
+
+**La tabla, extraída del testigo `2026-08-22` (sha `cd6f0050…`), es 4 filas × 8 columnas**, con la
+primera columna rotulada `Campañas` y un `DIGITAL` con `gridSpan=7` encima de las otras siete.
+
+| evidencia | qué dice |
+|---|---|
+| ⭐⭐ **`Formato` es por plataforma** | `Nomenclatura` da `Video` en Google y `Banners` en DV360 **para la misma campaña**. Una fila por encuentro **no puede** tener un solo formato |
+| ⭐⭐ **El deck del equipo publica así** | su lámina *«Uno a uno en X»* trae el POST desglosado **Meta · Google · Programmatic**, con `IMPRESIONES` y `VISUALIZACIONES (VTR)` por plataforma |
+| ⭐⭐ **`Agenda JM \| Post` tiene 4 bloques** | TOTAL + las mismas tres plataformas, y **cierra al dígito** con la suma del desglose |
+| ⚠ **el temario da 3, no 4** | por encuentro la tabla tendría **tres** filas y una vacía; por plataforma tiene **3 + total**, o 4 ranuras para hasta 4 plataformas (`TikTok` aparece en otras cuentas) |
+
+⇒ ⛔ **El diseño entero cambia, y por eso esto para acá:** `FILA` sobre las filas POST de **UNA**
+cuenta agregadas por plataforma, **no** sobre los encuentros del temario. Eso invalida:
+
+- **Los 12 marcadores vigentes** (`post_{habitantes,alcance,impresiones}{1..4}`), que hacen `FILA`
+  con `valor_fijo = n` sobre `reuniones/Agenda JM | Post` ordenado por `fecha_periodo`.
+- **`filasDeSolapaDelTemario_`**, que elige las filas **por el `id_cuenta` del anclaje de cada
+  encuentro del temario** — la unidad equivocada.
+- **Las 7 filas de `MAPEO`** de esa solapa.
+- ⭐ **Y la regla de «métrica > 0»**, que existía para descartar encuentros sin post: con el desglose,
+  **un encuentro sin post simplemente no tiene filas** — la regla deja de hacer falta.
+
+⚠ **Lo que NO cambia:** `Habitantes` y `Alcance` siguen sin fuente en el desglose. **Son la pregunta
+abierta del rediseño**, y `Alcance` no está en ninguna solapa medida hasta ahora.
+
+---
+
+## ⛔ Lo que sigue sin poder medirse
+
+- **Cuál de las 4 ranuras es el TOTAL, o si son 4 plataformas.** Necesita ver la lámina **pintada**
+  del equipo para esta semana, y el deck del 31/07 **no tiene esta lámina**.
+- **De dónde sale `Alcance`.** No está en el desglose ni se midió en otra solapa con ese grano.
+- **Si el `Formato` se puede extraer de `Nomenclatura`** sin un parser por plataforma.
