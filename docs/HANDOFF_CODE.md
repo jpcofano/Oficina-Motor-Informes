@@ -260,23 +260,20 @@ fallara. ⚠ **El camino desatendido del editor no pasa por el panel**, así que
 
 ---
 
-## Las suites — se corren con SUITES · 49 bancos · veredicto por CÓDIGO DE SALIDA
+## Las suites — se corren con `node tools/suites.js`
 
-✅ los 49 bancos pasaron  ·  ~489 afirmaciones
+**49 bancos, 0 en rojo, ~489 afirmaciones.**
 
-⚠ Lo que este runner NO contesta:
-   · Si los bancos verifican lo CORRECTO. Dice que ninguno falló, no que cubran algo.
-   · El conteo de afirmaciones sale de leer el texto y es informativo: un banco que
-     cambie su formato deja de sumar, y eso no afecta al veredicto.
-   · Nada sobre `tools/listas.js` ni los `medir-*`: corren aparte.
+⛔⛔ **Y el runner es nuevo desde el 25/08, por un caso que hay que conocer:** el detector viejo era
+un `for` que filtraba la salida por el glifo `❌`, y **hay bancos que reportan con `⛔`** — así que
+**contaba uno donde había cuatro**. ⚠ Los cuatro estaban verdes en HEAD, así que los reportes
+anteriores eran correctos *para su momento*; **pero eso es suerte, no método.**
 
-⛔⛔ **Y eso es nuevo desde el 25/08, por un caso que hay que conocer:** el detector viejo filtraba
-la salida por el glifo  y **hay bancos que reportan con **, así que **conta uno donde había
-cuatro**. ⭐ **El exit code es un contrato; un glifo en un log es una convención** — la regla entera
-está en  §4.
+⭐ **El exit code es un contrato; un glifo en un log es una convención.** La regla entera está en
+`CLAUDE.md` §4, y el runner **decide por `status`** sin mirar la salida.
 
-**49 bancos, 0 en rojo, ~489 afirmaciones.** El runner corrió su propio control negativo: un banco
-temporal que falla **sin imprimir ningún glifo**, y lo detectó.
+⭐ **Corrió su propio control negativo:** un banco temporal que falla **sin imprimir ningún glifo**,
+y lo detectó. **Un runner que nunca vio un rojo no está probado.**
 
 ---
 
