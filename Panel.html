@@ -215,6 +215,26 @@ select:focus,input[type=text]:focus{outline:2px solid var(--color-primary);outli
   overflow-wrap:anywhere;
 }
 
+/* ── El número del cierre de fase · `2026-08-24_2` Parte E ────────────────────────────
+ * ⭐ **Un solo número grande, y los otros dos en la fila de `stats` de abajo, en gris.** La
+ * jerarquía es por CONSECUENCIA: `real` es el único que decide si la fase cierra (`D-38`), y
+ * ponerlo del mismo tamaño que «fuera de alcance» haría que los tres se lean como equivalentes —
+ * que es exactamente el problema que la Parte B vino a arreglar, movido a la tipografía.
+ *
+ * ⚠ **Sin color de alerta a propósito.** Un deck con faltantes reales es **normal y publicable**;
+ * lo que frena la publicación son las dos causas de `CAUSAS_QUE_FRENAN`, y ésas ya tienen su alerta
+ * roja arriba de todo. Pintar este número de rojo competiría con la que sí importa. */
+.falt-cierre{
+  display:flex;align-items:center;gap:var(--space-3);
+  padding:var(--space-3);border-radius:var(--radius-md);
+  background:var(--surface-sunken);border-left:3px solid var(--color-primary);
+}
+.falt-cierre-num{
+  flex:none;font-size:var(--text-2xl,28px);font-weight:600;line-height:1;
+  font-variant-numeric:tabular-nums;color:var(--text-primary);
+}
+.falt-cierre-tit{font-weight:600;font-size:var(--text-sm)}
+
 /* ── Veredicto de publicación y leyenda · `2026-08-23_1` Parte E ───────────────────── */
 /* Tres estados y no dos: «no está completo», «se puede con reparos» y «terminó entera».
  * El color va en el borde izquierdo y en el título, no en un fondo saturado: esto se lee de
@@ -325,7 +345,10 @@ var S = {
    * `'cargando'` = pedido en vuelo. `faltCual` elige entre la última corrida y la anterior;
    * `faltAbierto` guarda qué grupos de causa están desplegados, por causa. **Nada se deriva
    * acá**: el front pinta lo que llega, incluidos los conteos. */
-  falt: null, faltCual: 'actual', faltAbierto: {},
+  /* ⭐ `2026-08-24_2` Parte C — `faltCorte` elige entre el corte por causa y el corte por lámina.
+   * **En memoria y nada más**: sin `localStorage` ni `sessionStorage`, que es regla de esta pantalla
+   * — corre en Apps Script y una preferencia guardada sobrevive a un cambio de significado. */
+  falt: null, faltCual: 'actual', faltCorte: 'causa', faltAbierto: {},
   /* `2026-08-23_1` Parte D — la última medición del anclaje. Es lo que separa «no corrió» de
    * «corrió y nadie cayó bajo el umbral», que hasta hoy eran la misma pantalla vacía. */
   medAnclaje: null
@@ -1719,6 +1742,37 @@ function grupoFaltante(g){
     '<ul class="list-reset falt-lista">' + cuerpo + '</ul></div>';
 }
 
+/* ⭐⭐ `2026-08-24_2` Parte C — **un grupo por lámina**, plegado salvo el que frena.
+ *
+ * ⚠ **La jerarquía sigue siendo por CONSECUENCIA y no por cantidad**, igual que en el corte por
+ * causa: una lámina con un dato mal es más urgente que una con veinte sin cablear. Por eso lo que
+ * abre el grupo es que tenga una causa de las que frenan, no su tamaño.
+ *
+ * ⚠ **Y el conteo de acá puede sumar más que el total**, a propósito: un token que aparece en
+ * varias láminas falta **en todas**, y hacer que cierre sería mentir sobre el deck para que cierre
+ * una suma. El total real está arriba, y las dos unidades van nombradas.
+ */
+function grupoLamina(g){
+  var frena = g.causas.some(function(c){ return CAUSAS_QUE_FRENAN[c.causa] === true; });
+  var clave = 'lam:' + g.lamina_id;
+  var abierto = (S.faltAbierto[clave] === undefined) ? frena : S.faltAbierto[clave] === true;
+
+  var cabecera = '<div class="falt-head" data-causa="' + esc(clave) + '">' +
+    '<div><div class="run-name">' + (frena ? '⚠ ' : '') + '<span class="mono">' + esc(g.lamina_id) + '</span></div>' +
+    '<div class="run-when">' + g.causas.map(function(c){
+      return (CAUSAS_QUE_FRENAN[c.causa] ? '⚠ ' : '') + num(c.cuantos) + ' ' + esc(c.texto);
+    }).join(' · ') + '</div></div>' +
+    '<span class="run-count">' + num(g.cuenta_tokens) + ' token(s)' +
+    (g.filas !== g.cuenta_tokens ? ' · ' + num(g.filas) + ' fila(s)' : '') + '</span></div>';
+
+  if (!abierto) return '<div class="falt-grupo' + (frena ? ' is-frena' : '') + '">' + cabecera + '</div>';
+
+  return '<div class="falt-grupo' + (frena ? ' is-frena' : '') + '">' + cabecera +
+    '<ul class="list-reset falt-lista">' + g.tokens.map(function(t){
+      return '<li class="falt-token"><div class="run-name mono">' + esc(t) + '</div></li>';
+    }).join('') + '</ul></div>';
+}
+
 function vistaFaltantes(){
   if (S.falt === null){ cargarFaltantes(); return '<p class="muted">Leyendo lo que dejó la corrida…</p>'; }
   if (S.falt === 'cargando') return '<p class="muted">Leyendo lo que dejó la corrida…</p>';
@@ -1764,37 +1818,82 @@ function vistaFaltantes(){
       '</div>';
   }
 
+  /* ⭐⭐ `2026-08-24_2` Parte B — **los tres números, y el que decide el cierre de fase va SOLO y
+   * arriba.** Hasta hoy el conteo era uno y sumaba los tres: el número con el que se iba a declarar
+   * `D-38` incluía 57 tokens de láminas que nadie va a cablear y el texto que escribe una persona.
+   *
+   * ⚠ **Los otros dos van al lado y en gris, no escondidos.** Que se descuenten no los vuelve
+   * invisibles: quien mira tiene que poder ver **cuánto** se descontó, o el número de arriba pasa a
+   * ser una afirmación sin testigo. */
+  h += '<div class="falt-cierre">' +
+    '<div class="falt-cierre-num">' + num(d.conteo.real) + '</div>' +
+    '<div><div class="falt-cierre-tit">faltantes reales</div>' +
+    '<div class="run-when">es el número que decide el cierre de fase. Los otros dos son trabajo ' +
+    'que nadie va a hacer: están declarados así en <span class="mono">LAMINAS</span></div></div>' +
+    '</div>';
+
   h += '<div class="stats">' +
-    '<div class="stat"><div><div class="stat-label">Tokens distintos</div>' +
-    '<span class="stat-unit">un nombre, aunque falte en varias láminas</span></div>' +
-    '<div class="stat-value">' + num(d.tokens) + '</div></div>' +
-    '<div class="stat"><div><div class="stat-label">Filas</div>' +
-    '<span class="stat-unit">una por token y por ítem emitido</span></div>' +
-    '<div class="stat-value">' + num(d.filas) + '</div></div>' +
+    '<div class="stat"><div><div class="stat-label">Fuera de alcance</div>' +
+    '<span class="stat-unit">la lámina entera no se cablea</span></div>' +
+    '<div class="stat-value muted">' + num(d.conteo.fuera_de_alcance) + '</div></div>' +
+    '<div class="stat"><div><div class="stat-label">Texto del equipo</div>' +
+    '<span class="stat-unit">lo escribe una persona</span></div>' +
+    '<div class="stat-value muted">' + num(d.conteo.texto_equipo) + '</div></div>' +
+    '<div class="stat"><div><div class="stat-label">Filas en total</div>' +
+    '<span class="stat-unit">' + num(d.tokens) + ' token(s) distintos</span></div>' +
+    '<div class="stat-value muted">' + num(d.filas) + '</div></div>' +
     (d.corridas.length === 1
       ? '<div class="stat"><div><div class="stat-label">Corrida</div></div>' +
         '<div class="stat-value mono">' + esc(d.corridas[0].corrida_id) + '</div></div>'
       : '') +
     '</div>';
 
-  h += d.grupos.length
-    ? d.grupos.map(grupoFaltante).join('')
-    : '<div class="box">Esta corrida no dejó ningún faltante.</div>';
+  /* ⭐ Parte C — **el mismo conteo, cortado por lámina**, que es como se mira un deck y como está
+   * organizado `CIERRE_POR_LAMINA.md`. **Los dos cortes conviven a propósito**: por causa se
+   * contesta *«qué oficio cierra esto»* y por lámina *«puedo publicar ésta»*. */
+  h += '<div class="falt-switch">' +
+    '<button class="btn btn-secondary' + (S.faltCorte!=='lamina'?' is-on':'') + '" data-corte="causa">Por causa</button>' +
+    '<button class="btn btn-secondary' + (S.faltCorte==='lamina'?' is-on':'') + '" data-corte="lamina">Por lámina</button>' +
+    '</div>';
+
+  if (S.faltCorte === 'lamina'){
+    h += d.laminas.length
+      ? d.laminas.map(grupoLamina).join('')
+      : '<div class="box">Ninguna fila dice de qué lámina viene. ' +
+        'Se guarda desde el 25/08: hace falta una corrida nueva.</div>';
+  } else {
+    h += d.grupos.length
+      ? d.grupos.map(grupoFaltante).join('')
+      : '<div class="box">Esta corrida no dejó ningún faltante.</div>';
+  }
 
   // La misma leyenda que la pantalla de listo: los símbolos se explican donde se los mira.
   h += leyendaSimbolos();
 
-  /* ⚠ **Un instrumento declara qué NO contesta**, y acá son dos cosas concretas. Va al final,
-   * después del conteo, porque es lo que cambia cómo se lee el número de arriba. */
-  h += '<div class="box"><div class="section-title">Lo que este conteo no descuenta</div>' +
-    '<p class="muted"><strong>Fuera de alcance</strong> y <strong>texto del equipo</strong> no están en ' +
-    'ninguna hoja de registro — <span class="mono">LAMINAS</span> no tiene columna de alcance —, ' +
-    'así que el motor no los puede distinguir y el número de arriba los incluye. ' +
-    'Quién está fuera de alcance vive hoy sólo en <span class="mono">docs/CIERRE_POR_LAMINA.md</span>.</p>' +
-    '<p class="muted">Tampoco dice <strong>en qué lámina</strong> falta cada token: ' +
-    '<span class="mono">FALTANTES</span> no guarda la lámina, y el mapa de la corrida guarda el ' +
-    'índice de slide del deck ya expandido, que no es un <span class="mono">lamina_id</span>. ' +
-    'Lo que sí hay es el ítem emitido, y va tal cual lo escribió el motor.</p></div>';
+  /* ⚠ **Un instrumento declara qué NO contesta**, y va al final porque es lo que cambia cómo se lee
+   * el número de arriba.
+   *
+   * ⛔ **`2026-08-24_2` — este bloque decía dos cosas que dejaron de ser ciertas hoy**, y dejarlo
+   * habría sido el `var TECHO_S = 350` otra vez: el front declarando un límite que el backend ya no
+   * tiene, **justo en el lugar donde la persona mira**. Ahora dice lo que queda abierto de verdad. */
+  h += '<div class="box"><div class="section-title">Lo que este conteo no contesta</div>' +
+    (d.declaracion && d.declaracion.columnas === false
+      ? '<p class="muted">⛔ <strong>' + esc(d.declaracion.motivo || '') + '</strong></p>'
+      : '') +
+    (d.conteo.sin_declarar
+      ? '<p class="muted"><strong>' + num(d.conteo.sin_declarar) + ' fila(s) están en láminas cuyo ' +
+        'alcance nadie declaró</strong> — todo <span class="mono">secco</span> está así. No se suman ' +
+        'a los faltantes reales: «nadie lo declaró» no es «está en alcance», y contarlas juntas ' +
+        'metería en el número del cierre láminas que nadie miró.</p>'
+      : '') +
+    (d.sin_lamina
+      ? '<p class="muted"><strong>' + num(d.sin_lamina) + ' fila(s) no dicen de qué lámina vienen.</strong> ' +
+        'Son las que quedaron de una corrida anterior al 25/08 —cuando <span class="mono">FALTANTES</span> ' +
+        'todavía no guardaba la lámina— o las que barrió un corte: ahí el <span class="mono">lamina_id</span> ' +
+        'se deja vacío a propósito, para no gastar llamadas a la API dentro de la reserva de cierre.</p>'
+      : '') +
+    '<p class="muted">Y no dice si un número <strong>es correcto</strong>: dice si se pintó. ' +
+    'Un token que publicó un valor de otro universo sale de acá como un acierto.</p></div>';
 
   return h;
 }
@@ -1807,6 +1906,17 @@ function conectarFaltantes(){
       S.faltCual = cual;
       // Se relee: la vista no filtra una foto en memoria, pide la hoja que corresponde.
       cargarFaltantes();
+      pintar();
+    };
+  });
+  /* ⚠ El corte SÍ se resuelve en memoria y no relee, y la diferencia con el de arriba es real: allá
+   * cambia **qué hoja** se lee, acá cambia **cómo se agrupa lo mismo**. Pedir la hoja de nuevo
+   * daría otra foto y dos cortes de dos momentos, que es `C-80` en la pantalla. */
+  Array.prototype.forEach.call(document.querySelectorAll('.falt-switch button[data-corte]'), function(b){
+    b.onclick = function(){
+      var corte = b.getAttribute('data-corte');
+      if (corte === S.faltCorte) return;
+      S.faltCorte = corte;
       pintar();
     };
   });
