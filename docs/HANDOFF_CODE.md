@@ -260,16 +260,23 @@ fallara. ⚠ **El camino desatendido del editor no pasa por el panel**, así que
 
 ---
 
-## Las suites
+## Las suites — se corren con SUITES · 49 bancos · veredicto por CÓDIGO DE SALIDA
 
-**45 bancos, 0 en rojo.** Cuatro nuevos anoche: `probar-faltantes-por-lamina.js` (35),
-`probar-alcance-de-laminas.js` (38), `probar-medicion-anclaje-en-el-panel.js` (27),
-`probar-vista-faltantes.js` (30). Las tres listas coinciden en 11.
+✅ los 49 bancos pasaron  ·  ~489 afirmaciones
 
-⛔⛔ **Y uno que ya estaba en rojo y nadie lo sabía:** `probar-faltantes-causas.js` extraía una
-función con una regex que **no matchea en CRLF**, así que **cinco afirmaciones no se ejecutaron un
-solo día** desde `af45941` — y el banco informaba *«no se encontró la función»*, que se lee como un
-cambio del código. Corregido: **53 → 58**. **El barrido del mismo patrón en `tools/` dio cero.**
+⚠ Lo que este runner NO contesta:
+   · Si los bancos verifican lo CORRECTO. Dice que ninguno falló, no que cubran algo.
+   · El conteo de afirmaciones sale de leer el texto y es informativo: un banco que
+     cambie su formato deja de sumar, y eso no afecta al veredicto.
+   · Nada sobre `tools/listas.js` ni los `medir-*`: corren aparte.
+
+⛔⛔ **Y eso es nuevo desde el 25/08, por un caso que hay que conocer:** el detector viejo filtraba
+la salida por el glifo  y **hay bancos que reportan con **, así que **conta uno donde había
+cuatro**. ⭐ **El exit code es un contrato; un glifo en un log es una convención** — la regla entera
+está en  §4.
+
+**49 bancos, 0 en rojo, ~489 afirmaciones.** El runner corrió su propio control negativo: un banco
+temporal que falla **sin imprimir ningún glifo**, y lo detectó.
 
 ---
 

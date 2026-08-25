@@ -14772,3 +14772,70 @@ queda en `Generador.gs`*). `probar-tabla-post` pasa de 67 a **77**; `probar-mape
 - ⛔ **`verificarBloquesPostReuniones()`** contra la planilla viva, antes de la corrida.
 - ⏸ El `/* */` de `Instalar.gs`: causa no entendida.
 - ⏸ **`L-036`: el `id_cuenta` del anclaje** — lo único vivo.
+
+---
+
+## 2026-08-25 (cierre 3) — El detector de suites era una convención, no un contrato
+
+**Decisión del usuario: numerarlo como caso propio**, no como nota del paso. **Es el hallazgo más
+grave de la vuelta, más que `L-036`.**
+
+### El caso
+
+Las suites se corrían con un `for` improvisado que filtraba la salida por el glifo `❌`. **Hay
+bancos que escriben su veredicto con `⛔`**, así que el detector **no los veía**: informó **uno** en
+rojo donde había **cuatro**.
+
+⚠ **Verificado contra HEAD: los cuatro estaban verdes**, así que los reportes anteriores eran
+correctos *para su momento*. **Pero eso es suerte, no método** — el detector podía informar verde
+sobre rojo y nadie se habría enterado. ⛔ **Y es peor que un control común, porque es el instrumento
+con el que se valida todo lo demás:** su falla no se ve en un resultado, se ve en **la confianza
+sobre todos los resultados**.
+
+### ⭐ La forma general, que es lo que queda
+
+> **Un detector que busca un SÍMBOLO depende de que todos los emisores usen el mismo, y nadie lo
+> garantiza. El exit code es un CONTRATO; un glifo en un log es una CONVENCIÓN.**
+
+**La pregunta concreta, al escribir el detector:** *¿lo que estoy leyendo es algo que el emisor **se
+compromete** a producir, o algo que hoy produce?* Un `process.exit(1)`, un `ok: false`, un código
+HTTP **son contratos**. Un emoji, un `FAIL`, un texto formateado **son convenciones** — y una
+convención la rompe el próximo que escriba un emisor sin haberla leído.
+
+### ⭐ Lo accionable: el método va en un ARCHIVO
+
+**Mientras el criterio vivió en un `for` que se reescribía cada vez, nada lo fijaba.** Nace
+`tools/suites.js`: corre los 49 bancos y **decide por `status`**, sin mirar la salida. El próximo
+**no se tiene que acordar** — el mismo argumento que pone la guarda en el escritor y no en el
+llamador.
+
+⭐ **Y se corrió su control negativo**, que es barato y obligatorio: un banco temporal que falla
+**sin imprimir ningún glifo**. **El runner lo detectó** — o sea que está leyendo el contrato y no el
+texto. **Un runner que nunca vio un rojo no está probado.**
+
+⚠ Con la guarda de siempre: **cero bancos FALLA**. Si el patrón `probar-*.js` dejara de matchear,
+*«✅ los 0 bancos pasaron»* sería el mismo modo de falla que esto vino a cerrar.
+
+### ⭐⭐ Y su contracara: los cuatro rojos eran controles diciendo la verdad
+
+Dos tenían afirmaciones **negativas** —*«`vis_totales` NO está mapeado»*— y se pusieron rojas
+**porque el estado cambió**, que es exactamente para lo que se escribieron.
+
+> **Un banco que se pone rojo cuando el estado cambia está haciendo su trabajo, aunque el cambio sea
+> el correcto.**
+
+**Lo que corresponde entonces no es aflojarlo: es darlo vuelta con el motivo escrito, y si se puede
+subirle la exigencia.** Acá pasaron de pedir *«que no estén»* a pedir que estén **y** que declaren
+`por_posicion` — porque cablearlas sin eso volvería a publicar `21.229` en vez de `41.204`, **sin
+fallar**. **Es el mejor argumento para no aflojar un control nunca.**
+
+### El `/* */` de `Instalar.gs`: anotado, sin perseguir
+
+**Decisión del usuario: reproducido en aislamiento y resuelto es suficiente.** Queda en `PENDIENTES`
+con su reproductor y la regla operativa —usar `//` en esa zona—. ⭐ Y lo que sí está cubierto: **los
+`.gs` se parsean en cada verificación**, así que un archivo roto no llega a un commit en silencio.
+
+### Controles
+
+**49 bancos, 0 en rojo, ~489 afirmaciones** — ahora por `node tools/suites.js`, con veredicto por
+código de salida.

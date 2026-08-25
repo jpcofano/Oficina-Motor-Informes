@@ -8362,3 +8362,33 @@ que tenga el nombre más parecido» es otra decisión.
 ⚠ **Y lo que NO se midió, dicho para que no se lea como que no hay nada:** los tres `sd_pauta_*`
 salen del `MAPEO` y no de un título fijo, así que el instrumento **no los comparó**. **Ese cero es
 «no medí», no «no difieren»** — y son conteos de contenidos pauteados, así que si difieren, importan.
+
+---
+
+### ⏸ Un `/* */` en cierta zona de `Instalar.gs` rompe el parseo — **anotado, sin perseguir**
+
+**Decisión del usuario, 25/08: reproducido en aislamiento y resuelto es suficiente.**
+
+**El hecho:** insertar un comentario de bloque `/* … */` inmediatamente antes de `headers:` dentro de
+`HOJAS_CONFIG_.MAPEO` deja el archivo **sintácticamente inválido** — `Unexpected token ':'` señalando
+a `SOLAPAS: {`, unas líneas más abajo.
+
+⭐ **Reproducido en aislamiento sobre HEAD**, que es lo que lo vuelve un hecho y no una sospecha: se
+tomó el archivo limpio, se insertó el comentario y falló. ⚠ **Y un `/* prueba */` también lo rompe**,
+así que **no es el contenido: es la posición**.
+
+**Cómo se resolvió:** el comentario se escribió con `//`. Cuesta nada y no arrastra el problema.
+
+⛔ **La causa NO está entendida.** Lo más probable es que haya un `/*` o un `*/` dentro de un string
+o de un `//` más arriba que desbalancea al parser en esa zona; una búsqueda lineal de aperturas y
+cierres se desalineó justo ahí. **No se persiguió** — el archivo tiene más de 7.000 líneas y el costo
+de encontrarlo no se justifica contra el de escribir `//`.
+
+⚠ **Lo accionable, si vuelve a aparecer:** en `Instalar.gs`, **usar `//` para comentarios nuevos
+dentro de `HOJAS_CONFIG_`**. Y si algún día alguien lo persigue, el reproductor es: tomar HEAD,
+insertar `/* x */` antes de `headers:` en el bloque `MAPEO`, y parsear con `node -e "new
+(require('vm').Script)(require('fs').readFileSync('Instalar.gs','utf8'))"`.
+
+⭐ **Y lo que sí está cubierto:** los `.gs` se parsean en cada verificación desde el 25/08, así que
+un archivo roto **no llega a un commit en silencio** — que es lo único que este pendiente necesitaba
+garantizar.

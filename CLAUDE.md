@@ -1027,6 +1027,40 @@ código intacto, da verde, y eso se lee como *«el negativo pasó»*.
   por otro motivo —falta exigir el motivo—; **(3)** ⭐ **no llegó a mirar nada** —falta exigir que
   la mutación ocurra—. **Son tres afirmaciones separadas y ninguna implica a las otras dos.**
 
+⛔⛔ **Un detector que busca un SÍMBOLO depende de que todos los emisores usen el mismo, y nadie lo
+garantiza. El exit code es un CONTRATO; un glifo en un log es una CONVENCIÓN.** (25/08/2026.) Y es
+peor que un control común cuando el detector **es el instrumento con el que se valida todo lo
+demás**: su falla no se ve en un resultado, se ve en **la confianza sobre todos los resultados**.
+
+- **El caso, medido:** las suites se corrían con un `for` improvisado que filtraba la salida por
+  `❌`. **Hay bancos que escriben su veredicto con `⛔`**, así que el detector **no los veía**:
+  informó **uno** en rojo donde había **cuatro**. ⚠ **Verificado contra HEAD, los cuatro estaban
+  verdes**, así que los reportes anteriores eran correctos *para su momento* — pero eso es suerte,
+  no método: **el detector podía informar verde sobre rojo y nadie se habría enterado.**
+- ⭐ **La pregunta concreta, y se hace al escribir el detector, no después del primer verde falso:**
+  *¿lo que estoy leyendo es algo que el emisor SE COMPROMETE a producir, o algo que hoy produce?*
+  Un `process.exit(1)`, un `ok: false`, un código HTTP **son contratos**. Un emoji, un `FAIL` en
+  mayúsculas, un texto formateado **son convenciones** — y una convención la rompe el próximo que
+  escriba un emisor sin haberla leído.
+- ⚠ **Y el corolario que lo hace accionable: el método va en un ARCHIVO, no en la cabeza de quien
+  corre.** Mientras el criterio vivió en un `for` que se reescribía cada vez, **nada lo fijaba**.
+  `tools/suites.js` lo pone en un solo lugar y el próximo **no se tiene que acordar** — el mismo
+  argumento que pone la guarda en el escritor y no en el llamador.
+- ⭐ **Su propio control negativo es barato y hay que correrlo:** un banco temporal que falla **sin
+  imprimir ningún glifo**. Si el runner lo detecta, está leyendo el contrato; si no, está leyendo el
+  texto. **Un runner que nunca vio un rojo no está probado.**
+- ⚠ **Y cero unidades es un problema, no un silencio**, también acá: si el patrón `probar-*.js`
+  dejara de matchear, *«✅ los 0 bancos pasaron»* sería el mismo modo de falla que esto vino a cerrar.
+
+⭐⭐ **Y su contracara, que es el mejor argumento para no aflojar un control nunca: los cuatro rojos
+eran controles DICIENDO LA VERDAD.** Dos tenían afirmaciones **negativas** —*«`vis_totales` NO está
+mapeado»*— y se pusieron rojas **porque el estado cambió**, que es exactamente para lo que se
+escribieron. **Un banco que se pone rojo cuando el estado cambia está haciendo su trabajo, aunque el
+cambio sea el correcto.** Lo que corresponde entonces no es aflojarlo: es **darlo vuelta con el
+motivo escrito**, y si se puede **subirle la exigencia** — acá pasaron de pedir *«que no estén»* a
+pedir que estén **y que declaren `por_posicion`**, porque cablearlas sin eso volvería a publicar el
+número equivocado **sin fallar**.
+
 **Un control no se afloja para que entre algo nuevo: lo nuevo va aparte, y con un control de otra
 clase.** (23/08/2026, decisión del usuario.) Cuando un control cruza contra **evidencia fechada**
 —un censo, un snapshot, un fixture— y algo legítimo **no pasa**, la tentación es ensanchar el
