@@ -1583,6 +1583,25 @@ var SEED_MAPEO_REUNIONES_ = [
   { base_id: 'reuniones', campo_logico: 'fecha_periodo', hoja: 'Agenda JM | Post', columna: 'E', notas: '"Fecha" — la del encuentro. ⚠ NO recorta: reuniones es modo_periodo=snapshot y leerFuente ignora la ventana. Se declara para que FILA la use en `separador` (X-35). 3 de 102 filas traen el texto "-" en vez de fecha' },
   { base_id: 'reuniones', campo_logico: 'poblacion', hoja: 'Agenda JM | Post', columna: 'F', notas: '"Habitantes" — mismo campo lógico que rdv/RVD JM-CM - ES!AB, que es donde nació. ⚠ 13 de 102 filas traen el texto "-": ahí una operación numérica devuelve sin_datos, que es correcto. Es el denominador de % Cobertura (I) = G/F, exacta en 89 de 89' },
   { base_id: 'reuniones', campo_logico: 'imp_totales', hoja: 'Agenda JM | Post', columna: 'J', notas: '"Impresiones totales" — el mismo campo lógico que AA de la PRE. Denominador de las dos identidades: % VTR (N) = M/J y % CTR (L) = K/J, exactas en 98 de 98' },
+  /* ⭐⭐ `2026-08-25_1` — **las tres columnas que componen el NOMBRE del encuentro** (B, C, D), y
+   * `fecha_periodo` (E) que ya estaba. **Medido sobre el fixture del 20/08** (sha `f8ef3227…`):
+   * eran las tres únicas de la solapa que el repo no tenía mapeadas ni documentadas.
+   *
+   * ⛔ **Ninguna columna de las 29 trae un «nombre de campaña»** — se barrió la solapa entera
+   * buscando `nombre`, `campaña`, `formato`, `evento` y `encuentro`: **cero**. El nombre **se
+   * compone**, y por eso hace falta `FILA_TEXTO`.
+   *
+   * ⭐ **`figura` y `barrio` se REUSAN de `rdv/RVD JM-CM - ES`**, no se inventan nombres nuevos: es
+   * el mismo concepto en otra base, que es exactamente para lo que sirve un campo lógico. Sólo
+   * `tipo_encuentro` es nuevo — `tipo` a secas habría sido demasiado genérico para un vocabulario
+   * global.
+   *
+   * ⭐ **Título ÚNICO las tres**, medido: los repetidos de esta solapa son `Clics` ×4, `% CTR` ×4,
+   * `Visualizaciones` ×4, `% VTR` ×4 e `Impresiones` ×3. **No llevan `por_posicion`** — el
+   * encabezado sigue siendo su testigo, que es el caso normal de `D-31`. */
+  { base_id: 'reuniones', campo_logico: 'figura', hoja: 'Agenda JM | Post', columna: 'B', encabezado: 'Funcionario', notas: '"Funcionario" — mismo campo lógico que rdv/RVD JM-CM - ES!A. ⚠ En `jm` vale "Jorge Macri" en TODAS las filas, así que NO distingue una de otra: entra al nombre por decisión del usuario (25/08), no porque aporte a la clave' },
+  { base_id: 'reuniones', campo_logico: 'barrio', hoja: 'Agenda JM | Post', columna: 'C', encabezado: 'Barrio / Comuna', notas: '"Barrio / Comuna" — mismo campo lógico que rdv/RVD JM-CM - ES!B. Es lo que de verdad distingue una fila de otra en la tabla' },
+  { base_id: 'reuniones', campo_logico: 'tipo_encuentro', hoja: 'Agenda JM | Post', columna: 'D', encabezado: 'Tipo', notas: '"Tipo" — "Uno a uno", "Encuentro Temático"… El deck del equipo lo publica adelante: «Uno a uno en Retiro (24/07)»' },
   /* ⭐⭐ `2026-08-25` — **las dos vuelven al `MAPEO`, ahora con `por_posicion`.**
    *
    * ⛔ **Se habían retirado el 25/08 (`ae06a3b`) y con razón:** sus títulos —`Visualizaciones` y
@@ -2052,6 +2071,12 @@ var ENCABEZADO_POR_MAPEO_ = {
    * las dos es la identidad de bloques** (`M = R+W+AB`), que corre `verificarBloquesPostReuniones()`. */
   'reuniones|Agenda JM | Post|vis_totales': 'Visualizaciones',
   'reuniones|Agenda JM | Post|vis_vtr_pct': '% VTR',
+  /* ⭐ `2026-08-25_1` — las tres del nombre. **Acá el encabezado SÍ es testigo de verdad**, a
+   * diferencia de las dos de arriba: sus títulos son únicos en la solapa, así que si alguien
+   * inserta una columna el aviso de `D-31` salta. */
+  'reuniones|Agenda JM | Post|figura': 'Funcionario',
+  'reuniones|Agenda JM | Post|barrio': 'Barrio / Comuna',
+  'reuniones|Agenda JM | Post|tipo_encuentro': 'Tipo',
 };
 
 // Va DESPUÉS de que `fila.solapa` exista (se asigna desde `hoja` más arriba): la clave la usa.
@@ -3990,7 +4015,28 @@ var COLUMNAS_POST_L036_ = [
   { tok: 'vistas',      campo: 'vis_totales',  formato: 'miles',
     nota: 'col M "Visualizaciones" — el ACUMULADO. ⚠ TÍTULO REPETIDO (M/R/W/AB): se lee POR POSICIÓN vía MAPEO.por_posicion. Testigo: M = R+W+AB, 66 de 66 evaluables' },
   { tok: 'vtr',         campo: 'vis_vtr_pct',  formato: 'fraccion',
-    nota: 'col N "% VTR" — el ACUMULADO. ⚠ TÍTULO REPETIDO (N/S/X/AC): POR POSICIÓN. Identidad interna N = M/J, exacta en 98 de 98' }
+    nota: 'col N "% VTR" — el ACUMULADO. ⚠ TÍTULO REPETIDO (N/S/X/AC): POR POSICIÓN. Identidad interna N = M/J, exacta en 98 de 98' },
+  /* ⭐⭐ `2026-08-25_1` — **la columna `Campañas`: el NOMBRE del encuentro, compuesto.**
+   *
+   * ⛔ **Medido sobre el fixture del 20/08: ninguna de las 29 columnas de la solapa trae un nombre
+   * de campaña.** Se barrió entera buscando `nombre`, `campaña`, `formato`, `evento` y `encuentro`:
+   * cero. **El nombre se compone** de cuatro columnas —B, C, D y E— y ésa es la decisión del
+   * usuario del 25/08.
+   *
+   * ⭐ **La forma la eligió el usuario contra el deck del equipo:** el fragmento
+   * *«Uno a uno en Retiro (24/07)»* es **literalmente** lo que el deck del 31/07 rotula en su lámina
+   * de encuentro, y `Funcionario` va adelante. ⇒ `Jorge Macri — Uno a uno en Retiro (24/07)`.
+   *
+   * ⚠ **`figura` entra por decisión, no porque aporte a distinguir:** medido, vale «Jorge Macri» en
+   * **todas** las filas de `jm`. Queda dicho para que nadie lo lea como parte de la clave.
+   *
+   * ⭐⭐ **Y `FILA_TEXTO` elige la fila con el MISMO `opFILA` que las otras cinco columnas** — es lo
+   * único que garantiza que el nombre y los números de esa fila del deck sean del mismo encuentro.
+   * Si se resolviera por otro camino, la fila 2 mostraría el nombre de uno y los números de otro
+   * **sin fallar**. */
+  { tok: 'camp', campo: '{figura} — {tipo_encuentro} en {barrio} ({fecha_periodo:dd/MM})',
+    operacion: 'FILA_TEXTO', formato: 'texto',
+    nota: 'la columna `Campañas`. Se COMPONE de B/C/D/E: ninguna de las 29 columnas trae un nombre. La forma sale del deck del equipo del 31/07. ⚠ `figura` vale "Jorge Macri" en todas las filas de jm' }
 ];
 
 function cablearTablaPostReuniones_() {
@@ -4002,7 +4048,10 @@ function cablearTablaPostReuniones_() {
         base_id: 'reuniones', solapa: 'Agenda JM | Post', campo_logico: c.campo,
         /* ⛔ ENTERO PELADO. `C-83`: Sheets convierte `1/4` en FECHA y `01` pierde el cero, y eso
          * ya rompió `ecv_barrio1-3` el 22/08. El campo de orden va en `separador`. */
-        operacion: 'FILA', valor_fijo: n, separador: 'fecha_periodo',
+        /* ⭐ La operación sale de la columna, con `FILA` por defecto: cinco de las seis son `FILA`
+         * y la del nombre es `FILA_TEXTO`. ⚠ **Las dos comparten `valor_fijo` y `separador`**, que
+         * es lo que las hace elegir la misma fila. */
+        operacion: c.operacion || 'FILA', valor_fijo: n, separador: 'fecha_periodo',
         filtro: '', dimensiones: '', formato: c.formato,
         notas: 'fila ' + n + ' de 4 de L-036 (D-41). ' + c.nota +
           '. FILA ordena por fecha_periodo; las filas ya vienen elegidas por el temario ' +
@@ -4066,10 +4115,15 @@ var MARCADORES_POST_L036_TODOS_ = [
   'post_habitantes1', 'post_habitantes2', 'post_habitantes3', 'post_habitantes4',
   'post_alcance1', 'post_alcance2', 'post_alcance3', 'post_alcance4',
   'post_impresiones1', 'post_impresiones2', 'post_impresiones3', 'post_impresiones4',
-  /* ⛔ RETIRADOS el 25/08: su título se repite cuatro veces en la solapa y el lector indexa por
-   * título. Siguen acá **porque estuvieron cableados** y hay que poder sacarlos. */
+  /* ⭐ `vistas` y `vtr`: retiradas la mañana del 25/08 y **repuestas esa tarde** con
+   * `MAPEO.por_posicion`. Estuvieron en los dos estados, así que tienen que estar acá en los dos. */
   'post_vistas1', 'post_vistas2', 'post_vistas3', 'post_vistas4',
-  'post_vtr1', 'post_vtr2', 'post_vtr3', 'post_vtr4'
+  'post_vtr1', 'post_vtr2', 'post_vtr3', 'post_vtr4',
+  /* ⭐ `2026-08-25_1` — la columna `Campañas`, el nombre compuesto (`FILA_TEXTO`).
+   * ⛔ **Esta lista CRECE y NO SE PODA**, y es la lección que la hizo literal: derivarla de
+   * `COLUMNAS_POST_L036_` dejó **ocho huérfanos** el 25/08 cuando esa constante se achicó, y el
+   * reversor **informó éxito** — quitó 12, dijo 12, y no falló. */
+  'post_camp1', 'post_camp2', 'post_camp3', 'post_camp4'
 ];
 
 /** Revierte TODO lo que `L-036` llegó a tener. ⚠ **ESCRIBE en `MARCADORES`.** */

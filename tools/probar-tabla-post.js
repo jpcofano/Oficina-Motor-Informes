@@ -92,7 +92,7 @@ const RETIRO = { ID: '3346-JULJDGAG', Habitantes: 41475, Alcance: 47753,
 const SAN_CRISTOBAL = { ID: '3354-JULJDGAG', Habitantes: 41240, Alcance: 0,
   'Impresiones totales': 0, Visualizaciones: 0, '% VTR': 0, Fecha: 46226 };
 
-console.log('== probar-tabla-post — los 20 de `L-036` y los tres bordes de julio_24_30 ==');
+console.log('== probar-tabla-post — los 24 de `L-036` y los tres bordes de julio_24_30 ==');
 
 console.log('\n1 · control positivo — el censo se leyó (32 tokens en L-036)');
 const censo = tokensDelCenso();
@@ -101,20 +101,30 @@ af(censo.indexOf('post_camp1') !== -1, 'y trae `post_camp1`, que es de los que N
 
 console.log('\n2 · cruce UNO POR UNO contra el censo — 3 columnas × 4 filas');
 const filas = filasDelWrapper(FUENTE);
-af(filas.length === 20, 'el wrapper escribe 20 y nada más (' + filas.length + ')');
+af(filas.length === 24, 'el wrapper escribe 24 y nada más (' + filas.length + ')');
 const porNombre = {};
 filas.forEach((f) => { porNombre[f.marcador] = f; });
-['habitantes', 'alcance', 'impresiones', 'vistas', 'vtr'].forEach((col) => {
+['habitantes', 'alcance', 'impresiones', 'vistas', 'vtr', 'camp'].forEach((col) => {
   for (let n = 1; n <= 4; n++) {
     const t = 'post_' + col + n;
     af(censo.indexOf(t) !== -1 && !!porNombre[t], t + ' está en el censo y tiene fila');
   }
 });
 
-console.log('\n3 · ⛔ NEGATIVA — las CINCO que NO se cablean, por dos motivos distintos');
-['camp', 'periodo', 'formato'].forEach((col) => {
+console.log('\n3 · ⛔ NEGATIVA — las DOS que NO se cablean, por dos motivos distintos');
+/* ⭐⭐ `2026-08-25_1` — **`camp` sale de esta lista y su afirmación GANA exigencia.**
+ *
+ * ⛔ La negativa decía *«NO HAY COLUMNA en ninguna solapa fuente»*, y **era cierta**: se barrieron
+ * las 29 columnas de `Agenda JM | Post` buscando `nombre`, `campaña`, `evento` y `encuentro`, y
+ * dieron **cero**. **Se puso roja hoy porque el estado cambió** — que es para lo que se escribió.
+ *
+ * ⭐ **Y lo que cambió no es que apareciera una columna: es que el nombre se COMPONE** de cuatro
+ * (B/C/D/E) con `FILA_TEXTO`. Por eso la afirmación nueva no es *«existe»* sino **las cuatro
+ * condiciones del bloque 4 bis**: sin ellas el marcador compila, corre, y publica un nombre corrido
+ * de fila **sin fallar**. */
+['periodo', 'formato'].forEach((col) => {
   const cableadas = [1, 2, 3, 4].filter((n) => !!porNombre['post_' + col + n]).length;
-  af(cableadas === 0, 'post_' + col + '1-4 NO tienen fila — NO HAY COLUMNA en ninguna solapa fuente',
+  af(cableadas === 0, 'post_' + col + '1-4 NO tienen fila',
     'si aparecen, se eligió una columna a ojo y eso publica texto distinto del que el equipo publica');
 });
 /* ⭐⭐ `2026-08-25` (tarde) — **`vistas` y `vtr` VUELVEN, y su afirmación gana EXIGENCIA.**
@@ -143,13 +153,41 @@ console.log('\n3 · ⛔ NEGATIVA — las CINCO que NO se cablean, por dos motivo
     'la letra M/N siempre fue correcta; lo que faltaba era que el lector la usara');
 });
 
-console.log('\n4 · la forma: FILA, orden declarado, índice entero');
+console.log('\n4 · la forma: FILA/FILA_TEXTO, MISMO orden, índice entero');
+/* ⭐⭐ **Las seis columnas tienen que elegir LA MISMA FILA**, y eso son dos condiciones: el mismo
+ * `separador` —el campo de orden— y el mismo `valor_fijo` —el índice—. Si el nombre se ordenara
+ * distinto, la fila 2 del deck mostraría el nombre de un encuentro y los números de otro **sin
+ * fallar**. Es el modo de falla que este banco existe para impedir. */
 filas.forEach((f) => {
   const n = Number(f.marcador.slice(-1));
   if (f.marcador !== 'post_habitantes1' && n !== 1) return;   // una muestra por columna basta
-  af(f.operacion === 'FILA' && f.separador === 'fecha_periodo',
-    f.marcador + ' es FILA ordenada por `fecha_periodo` (no hay default: FILA falla sin orden)');
+  af(['FILA', 'FILA_TEXTO'].indexOf(f.operacion) !== -1 && f.separador === 'fecha_periodo',
+    f.marcador + ' es FILA/FILA_TEXTO ordenada por `fecha_periodo` (no hay default: falla sin orden)');
 });
+
+console.log('\n4 bis · ⭐ el nombre compuesto: sus condiciones, y son varias');
+{
+  const c1 = porNombre['post_camp1'];
+  af(!!c1, '`post_camp1` tiene fila');
+  if (c1) {
+    af(c1.operacion === 'FILA_TEXTO',
+      '⭐ es `FILA_TEXTO` — con `FILA` a secas buscaría la plantilla entera como campo lógico',
+      c1.operacion);
+    af(c1.separador === 'fecha_periodo',
+      '⭐⭐ ordena por el MISMO `fecha_periodo` que las otras cinco — es lo que alinea el nombre con sus números',
+      c1.separador);
+    af(String(c1.valor_fijo) === '1' && String(Number(c1.valor_fijo)) === String(c1.valor_fijo),
+      'índice entero pelado (`C-83`: Sheets convierte `1/4` en fecha)', String(c1.valor_fijo));
+    af(c1.formato === 'texto',
+      '⭐ formato `texto` — con `miles` el nombre saldría vacío o coercionado', c1.formato);
+    /* ⚠ Y que la plantilla mencione las cuatro columnas que el usuario decidió. Sin esto, alguien
+     * podría dejar `{barrio}` solo y seguiría pasando todo lo de arriba. */
+    ['figura', 'tipo_encuentro', 'barrio', 'fecha_periodo'].forEach((campo) => {
+      af(String(c1.campo_logico).indexOf('{' + campo) !== -1,
+        '  …y su plantilla menciona `' + campo + '`', c1.campo_logico);
+    });
+  }
+}
 af(filas.every((f) => typeof f.valor_fijo === 'number' && f.valor_fijo >= 1 && f.valor_fijo <= 4),
   '⛔ los 12 índices son ENTEROS PELADOS 1-4 — `1/4` lo convierte Sheets en fecha (C-83)');
 af(filas.every((f) => f.base_id === 'reuniones' && f.solapa === 'Agenda JM | Post'),
@@ -222,7 +260,13 @@ console.log('\n8 · ⛔⛔ la lista de REVERSIÓN cubre lo que se llegó a escri
   const m = FUENTE.match(/var MARCADORES_POST_L036_TODOS_ = \[([\s\S]*?)\n\];/);
   af(!!m, 'existe `MARCADORES_POST_L036_TODOS_` — la lista literal de reversión');
   const todos = m ? (m[1].match(/'post_[a-z0-9_]+'/g) || []).map((s) => s.replace(/'/g, '')) : [];
-  af(todos.length === 20, 'cubre los 20 que L-036 llegó a tener (' + todos.length + ')');
+  /* ⭐ Este número **sólo crece**: la lista cubre lo que `L-036` llegó a tener **alguna vez**, no lo
+   * que tiene hoy. Si alguna vez baja, alguien la podó — y eso deja huérfanos que el reversor no
+   * puede sacar, informando éxito. Es exactamente lo que pasó el 25/08 con los ocho de `vistas`
+   * y `vtr`. */
+  af(todos.length === 24, 'cubre los 24 que L-036 llegó a tener (' + todos.length + ')');
+  af(todos.indexOf('post_camp1') !== -1 && todos.indexOf('post_camp4') !== -1,
+    '⭐ y los cuatro `post_camp*` del nombre compuesto entraron a la lista de reversión');
 
   /* ⭐ Los 12 vigentes tienen que estar, y también los 8 RETIRADOS. Sin los retirados, el reversor
    * vuelve a quedar ciego exactamente como el 25/08. */

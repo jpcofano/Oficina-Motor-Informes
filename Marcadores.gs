@@ -878,10 +878,99 @@ function opFILA(ctx) {
 
   return {
     valor: valor,
+    /* ⭐ `2026-08-25_1` — **la fila elegida viaja en el resultado.** Es aditivo: ningún consumidor
+     * de `FILA` la mira. La necesita `FILA_TEXTO`, que compone su texto desde varios campos de
+     * **esta misma fila** — y pedírsela a `opFILA` es lo que garantiza que el nombre y los números
+     * de esa fila del deck sean del mismo encuentro. La alternativa era repetir acá la lógica de
+     * orden, que es exactamente el instrumento que reproduce lo que ya existe y lo reproduce peor. */
+    filaElegida: elegida,
     traza: 'FILA ' + n + ' de ' + total + ', ordenadas por `' + campoOrden + '`, campo "' +
       ctx.campo_logico + '" (col ' + ctx.columna + ') de ' + ctx.base_id +
       (ctx.solapa ? '/' + ctx.solapa : '') + avisoEmpate + trazaDeVentana_(ctx),
     filas: total
+  };
+}
+
+/**
+ * ⭐⭐ `2026-08-25_1` — **`FILA_TEXTO`: el texto de la N-ésima fila, compuesto desde VARIOS campos.**
+ *
+ * **Por qué existe, medido:** `L-036` rotula su primera columna `Campañas`, y **ninguna de las 29
+ * columnas de `reuniones/Agenda JM | Post` trae un nombre de campaña** — se barrió la solapa entera
+ * buscando `nombre`, `campaña`, `evento` y `encuentro`: cero. **El nombre se compone** de
+ * `Funcionario` (B), `Tipo` (D), `Barrio / Comuna` (C) y `Fecha` (E), y el deck del equipo lo
+ * publica así: *«Uno a uno en Retiro (24/07)»*.
+ *
+ * ⛔⛔ **Elige la fila con EXACTAMENTE el mismo mecanismo que `FILA`, y eso no es comodidad: es el
+ * requisito.** Las otras cinco columnas de la tabla son `FILA` ordenadas por `fecha_periodo`. Si el
+ * nombre se resolviera por otro camino —otra fuente, otro orden, otro índice— **la fila 2 del deck
+ * mostraría el nombre de un encuentro y los números de otro, y nada fallaría.** Por eso reusa
+ * `opFILA` en vez de repetir su lógica: **no hay forma de que se desalineen si es el mismo código.**
+ *
+ * ⭐ **La plantilla vive en `campo_logico`, que es configuración pura** (`D-01`): cambiar el texto
+ * publicado **no exige `clasp push`**. Es la misma idea que `RATIO` con `numerador/denominador`,
+ * generalizada — ahí el `campo_logico` ya declara varios campos.
+ *
+ *     campo_logico = '{figura} — {tipo_encuentro} en {barrio} ({fecha_periodo:dd/MM})'
+ *
+ * **Dos formas y nada más:** `{campo}` publica el valor crudo; `{campo:dd/MM}` lo formatea como
+ * fecha. ⚠ **El formato es explícito y no se infiere del tipo**: adivinar que una celda «parece
+ * fecha» es cómo `valor_fijo = '1/3'` terminó siendo una fecha (`C-83`).
+ *
+ * ⚠ **Un campo que no resuelve deja su hueco VISIBLE**, no vacío: `{barrio}` sin mapeo publica
+ * `«?barrio»`. Un nombre al que le falta una parte **tiene que verse**, porque «Uno a uno en (24/07)»
+ * se lee como un dato y es un token roto.
+ */
+function opFILA_TEXTO(ctx) {
+  var plantilla = String(ctx.campo_logico || '');
+  var campos = (ctx.plantilla && ctx.plantilla.campos) || null;
+  if (!campos) {
+    return {
+      valor: '',
+      ambiguo: true,
+      traza: '«FALTA:@plantilla_sin_resolver» — `FILA_TEXTO` necesita que el despachador resuelva ' +
+        'los campos de la plantilla "' + plantilla + '". Llegó sin `ctx.plantilla`.',
+      filas: (ctx.filas || []).length
+    };
+  }
+
+  /* ⭐ La fila la elige `opFILA`, con el MISMO índice y el MISMO orden que las otras cinco columnas
+   * de la tabla. Se le pasa el `ctx` tal cual: lo único que se usa de su resultado es **cuál** fila
+   * salió, y para eso alcanza con que su `clave` sea la del primer campo. */
+  var elegida = opFILA(ctx);
+  if (elegida.ambiguo) return elegida;   // el motivo ya viene armado por `opFILA`
+
+  var fila = elegida.filaElegida;
+  if (!fila) {
+    return {
+      valor: '', ambiguo: true,
+      traza: '«FALTA:@fila_texto_sin_fila» — `opFILA` no devolvió `filaElegida`. ' + elegida.traza,
+      filas: (ctx.filas || []).length
+    };
+  }
+
+  var faltantes = [];
+  var texto = plantilla.replace(/\{([^}:]+)(?::([^}]*))?\}/g, function (todo, nombre, fmt) {
+    var campo = campos[String(nombre).trim()];
+    if (!campo || !campo.clave) { faltantes.push(String(nombre).trim()); return '«?' + nombre + '»'; }
+    var crudo = (campo.clave in fila) ? fila[campo.clave] : '';
+    if (crudo === '' || crudo === null || crudo === undefined) {
+      faltantes.push(String(nombre).trim() + ' (celda vacía)');
+      return '«?' + nombre + '»';
+    }
+    if (!fmt) return String(crudo);
+    /* El único formato soportado es la fecha, y se declara. `parsearFechaCelda_` ya entiende el
+     * serial de Sheets y el texto `dd/mm/aaaa` — es el mismo lector que usan los dos consumidores
+     * que comparan fechas, así que no hay un parser nuevo (`CLAUDE.md` §2: cuatro ya son señal). */
+    var f = (crudo instanceof Date) ? crudo : parsearFechaCelda_(crudo);
+    if (!f) { faltantes.push(String(nombre).trim() + ' (no es fecha)'); return '«?' + nombre + '»'; }
+    return Utilities.formatDate(f, Session.getScriptTimeZone(), String(fmt).trim());
+  });
+
+  return {
+    valor: texto,
+    traza: 'FILA_TEXTO sobre ' + elegida.traza +
+      (faltantes.length ? ' ⚠ campos sin resolver: ' + faltantes.join(', ') : ''),
+    filas: elegida.filas
   };
 }
 
@@ -901,7 +990,11 @@ var OPERACIONES_ = {
    * orden declarado en `separador`. `ELEMENTO` no sirve para una tabla por filas: colapsa
    * repetidos y ordena alfabéticamente **por columna**, así que cada celda de la fila 1 puede
    * venir de un envío distinto. Ver su comentario, que explica por qué NO ordena por posición. */
-  FILA: opFILA
+  FILA: opFILA,
+  /* `2026-08-25_1` — la undécima. El TEXTO de la N-ésima fila, compuesto desde varios campos con
+   * una plantilla en `campo_logico`. **Reusa `opFILA` para elegir la fila**, que es lo que
+   * garantiza que el nombre y los números de esa fila del deck sean del mismo encuentro. */
+  FILA_TEXTO: opFILA_TEXTO
 };
 
 /**

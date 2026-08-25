@@ -961,6 +961,64 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
  * Devuelve `{ ok, valoresNumerador, valoresDenominador, numeradorNombre, denominadorNombre }`
  * o `{ ok:false, motivo }` con motivo propio — nunca una excepción.
  */
+/* ═══════════ `2026-08-25_1` — la plantilla de `FILA_TEXTO` ════════════════════════════════
+ *
+ * ⭐ **Es la misma idea que `partirCampoRatio_`, generalizada:** el `campo_logico` declara **varios**
+ * campos en vez de uno. Allá la sintaxis es `numerador/denominador`; acá,
+ * `'{figura} — {tipo_encuentro} en {barrio} ({fecha_periodo:dd/MM})'`.
+ *
+ * ⚠ **Vive acá y no en `Marcadores.gs` por la regla de oro:** esto lee `MAPEO` y resuelve claves de
+ * columna, que es acceso a configuración. La operación sólo compone el texto.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Los nombres de campo que una plantilla menciona, en orden y sin repetir. */
+function camposDePlantilla_(plantilla) {
+  var out = [];
+  String(plantilla || '').replace(/\{([^}:]+)(?::[^}]*)?\}/g, function (todo, nombre) {
+    var n = String(nombre).trim();
+    if (n && out.indexOf(n) === -1) out.push(n);
+    return todo;
+  });
+  return out;
+}
+
+/**
+ * El primer campo de la plantilla, que es con el que se resuelve la solapa y las filas.
+ *
+ * ⚠ **Devuelve `null` si la plantilla no menciona ninguno**, y el llamador lo trata como error con
+ * motivo propio: una plantilla sin campos es un marcador mal escrito, no un caso a manejar.
+ */
+function primerCampoDePlantilla_(plantilla) {
+  var campos = camposDePlantilla_(plantilla);
+  return campos.length ? campos[0] : null;
+}
+
+/**
+ * Los campos de la plantilla, resueltos a su **clave de lectura**.
+ *
+ * ⭐ **Usa `claveDeLecturaEnColumna_` y no el encabezado**, así hereda `MAPEO.por_posicion` sin
+ * saber que existe — si mañana uno de estos campos cayera en una columna de título repetido, se
+ * declara y funciona.
+ *
+ * ⚠ **Un campo sin mapeo NO frena el marcador: queda sin clave y la operación publica su hueco
+ * visible** (`«?campo»`). Frenar entero haría que un nombre al que le falta una parte se vea igual
+ * que uno que no se resolvió, y son cosas distintas — la primera se arregla mapeando una columna,
+ * la segunda mirando la fuente.
+ */
+function resolverPlantillaTexto_(fila, solapa, filas) {
+  var campos = {};
+  var sinMapeo = [];
+  camposDePlantilla_(fila.campo_logico).forEach(function (nombre) {
+    var mapa = buscarMapeo(fila.base_id, solapa, nombre);
+    if (!mapa.ok) { campos[nombre] = { clave: null, motivo: mapa.motivo }; sinMapeo.push(nombre); return; }
+    campos[nombre] = {
+      clave: claveDeFila_(filas, nombre, claveDeLecturaEnColumna_(fila.base_id, solapa, mapa.columna)),
+      columna: mapa.columna
+    };
+  });
+  return { campos: campos, sin_mapeo: sinMapeo };
+}
+
 function partirCampoRatio_(fila, solapa, filas) {
   var partes = String(fila.campo_logico || '').split('/');
   if (partes.length !== 2 || !partes[0].trim() || !partes[1].trim()) {
@@ -1103,8 +1161,21 @@ function resolverMarcadores(informeId, opciones) {
       }
     }
 
-    var datos = datosDeMarcador_(fila, solapa.solapa, ventana, cache, opciones,
-      esRatio ? String(fila.campo_logico).split('/')[0].trim() : null);
+    /* ⭐ `2026-08-25_1` — **`FILA_TEXTO` resuelve la solapa y las filas con el PRIMER campo de su
+     * plantilla**, igual que `RATIO` lo hace con su numerador. Sin el override, `buscarMapeo`
+     * recibiría la plantilla entera —`'{figura} — {tipo_encuentro}…'`— como si fuera un campo
+     * lógico, y fallaría con un motivo que no dice nada sobre lo que pasó. */
+    var esPlantilla = String(fila.operacion || '').trim() === 'FILA_TEXTO';
+    var campoOverride = esRatio ? String(fila.campo_logico).split('/')[0].trim()
+      : (esPlantilla ? primerCampoDePlantilla_(fila.campo_logico) : null);
+    if (esPlantilla && !campoOverride) {
+      base.estado = 'error';
+      base.traza = '«FALTA:' + fila.marcador + '@plantilla_sin_campos» — `FILA_TEXTO` espera una ' +
+        'plantilla con al menos un `{campo}` y recibió "' + fila.campo_logico + '" · ' + trazaVentana;
+      return base;
+    }
+
+    var datos = datosDeMarcador_(fila, solapa.solapa, ventana, cache, opciones, campoOverride);
     if (!datos.ok) {
       base.estado = 'error';
       base.traza = datos.motivo + ' · ' + trazaVentana;
@@ -1310,7 +1381,11 @@ function resolverMarcadores(informeId, opciones) {
      * ⛔ **Si no resuelve, NO se pasa nada y `opFILA` falla con motivo propio.** No cae a la
      * posición de la hoja: eso es lo que el `_39` sacó de `ULTIMO` el 12/08, y `FILA` no lo
      * reinstala. */
-    if (String(fila.operacion || '').trim() === 'FILA') {
+    /* ⭐⭐ `FILA_TEXTO` entra por la MISMA rama que `FILA`, y eso es el requisito de la lámina: las
+     * seis columnas de la tabla tienen que elegir **la misma fila**. Si el orden se resolviera
+     * distinto para el nombre, la fila 2 del deck mostraría el nombre de un encuentro y los números
+     * de otro, **sin fallar**. */
+    if (['FILA', 'FILA_TEXTO'].indexOf(String(fila.operacion || '').trim()) !== -1) {
       ctx.separador = fila.separador;
       var campoOrden = String(fila.separador || '').trim();
       if (campoOrden) {
@@ -1328,6 +1403,14 @@ function resolverMarcadores(informeId, opciones) {
             })
           };
         }
+      }
+
+      /* ⭐ Y para `FILA_TEXTO`, los campos de la plantilla ya resueltos a su **clave de lectura** —
+       * la misma que usa el resto del motor, así que hereda `por_posicion` sin saber que existe.
+       * Se resuelve acá y no adentro de la operación por la regla de oro: `Marcadores.gs` no lee
+       * config ni `MAPEO`, sólo calcula. */
+      if (esPlantilla) {
+        ctx.plantilla = resolverPlantillaTexto_(fila, solapa.solapa, datos.filas);
       }
     }
 
