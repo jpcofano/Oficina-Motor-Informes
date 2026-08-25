@@ -1,12 +1,15 @@
 /**
- * `2026-08-25` — el rediseño de `L-036` por PLATAFORMA: la parte estructural.
+ * `2026-08-25` — `L-036` POR REUNIÓN: la parte estructural, y el anclaje del sufijo `GC`.
  *
- * ⛔ **Este banco NO cubre el cableado**, y eso es a propósito: los 32 marcadores **no se
- * escribieron**. `S-06` declara por qué — el **grano** está decidido (por plataforma) pero el
- * **orden de las cuatro ranuras** no está medido, y cablearlo publicaría *un número correcto en la
- * fila equivocada*, que es el modo de falla más caro del repo y el único que no avisa.
+ * ⛔ **Este banco se dio vuelta el mismo día que se escribió**, y el vaivén queda porque el motivo
+ * sirve: por unas horas `L-036` se diseñó **por plataforma** —el `Formato` difiere por plataforma,
+ * el deck del equipo publica el POST desglosado, y los cuatro bloques de `Agenda JM | Post` son
+ * TOTAL·Meta·Google·Programmatic—. **Decisión del usuario: no.** Ese desglose es del «1 a 1»
+ * (`L-053`); `L-036` es **una fila por reunión, con el TOTAL de esa reunión**.
  *
- * Lo que sí se afirma acá es lo que quedó hecho y es verificable sin la planilla.
+ * ⭐ **Y lo medido en el medio no se descartó: encaja.** `col12` **es el TOTAL** —41.204 para
+ * Retiro, al dígito contra la suma de sus filas POST— y los otros tres bloques son las plataformas,
+ * que esta lámina no usa.
  *
  * Corre con: `node tools/probar-rediseno-l036.js`
  */
@@ -14,6 +17,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const vm = require('vm');
 
 const RAIZ = path.join(__dirname, '..');
 
@@ -26,150 +30,157 @@ function af(cond, texto, detalle) {
 }
 
 const instalar = fs.readFileSync(path.join(RAIZ, 'Instalar.gs'), 'utf8');
-const fuentes = fs.readFileSync(path.join(RAIZ, 'Fuentes.gs'), 'utf8');
+const union = fs.readFileSync(path.join(RAIZ, 'Union.gs'), 'utf8');
 
-console.log('L-036 por plataforma — la parte estructural del rediseño\n');
-
-/* ════════════════════════════════════════════════════════════════════════════════════════
- * 1 · El botón que quedó invalidado FRENA, y no se borró
- * ════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('1 · `declararModoDelAgregadoPost()` frena en vez de correr');
-{
-  const desde = instalar.indexOf('function declararModoDelAgregadoPost()');
-  af(desde !== -1, 'la función sigue existiendo — no se borró');
-  const cuerpo = instalar.slice(desde, instalar.indexOf('\n}', desde));
-
-  /* ⭐⭐ La afirmación que importa: el `return` de freno tiene que estar ANTES de la llamada a
-   * `curarSecciones_`. Un comentario que diga «invalidado» con el código vivo debajo es
-   * exactamente un botón-trampa: sigue siendo apretable y rompe el rediseño en silencio. */
-  const iFreno = cuerpo.indexOf('return {');
-  const iCurar = cuerpo.indexOf('curarSecciones_');
-  af(iFreno !== -1 && iCurar !== -1 && iFreno < iCurar,
-    '⭐ el `return` de freno va ANTES de `curarSecciones_` — no es sólo un comentario');
-  af(cuerpo.indexOf('frenado: true') !== -1, 'y el resultado lo declara `frenado`');
-  af(cuerpo.indexOf('ok: false') !== -1, 'con `ok: false`, así que ningún llamador lo lee como éxito');
-  af(cuerpo.indexOf('repetible') !== -1,
-    'y el motivo dice qué tiene que pasar en su lugar: la sección se queda `repetible`');
-
-  /* Su reverso sigue existiendo, por si alguien ya lo corrió antes del 25/08. */
-  af(instalar.indexOf('function volverComunicacionesPostARepetible') !== -1,
-    'y `volverComunicacionesPostARepetible()` sigue ahí — alguien pudo haberlo corrido antes');
-}
+console.log('L-036 por reunión — estructura, y el anclaje de la cuenta con sufijo GC\n');
 
 /* ════════════════════════════════════════════════════════════════════════════════════════
- * 2 · La sección: una lámina, un ítem
+ * 1 · La sección vuelve a `agregado` con cuatro ranuras
  * ════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n2 · `comunicaciones_post` queda `repetible` con UN ítem por lámina');
+console.log('1 · `comunicaciones_post`: cuatro ranuras, una por encuentro');
 {
   const desde = instalar.indexOf("filaSeccion_({ id: 'comunicaciones_post'");
   af(desde !== -1, 'la fila del seed existe');
   const fila = instalar.slice(desde, instalar.indexOf('\n', desde));
 
-  /* ⭐ El grano de la lámina: las cuatro filas son PLATAFORMAS de UN encuentro, así que una
-   * lámina lleva un ítem. El `4` de antes decía «cuatro encuentros en una lámina». */
-  af(fila.indexOf("itemsPorLamina: '1'") !== -1,
-    '⭐ `itemsPorLamina` es 1 — las cuatro filas son plataformas, no encuentros',
-    fila.match(/itemsPorLamina: '\d+'/) ? fila.match(/itemsPorLamina: '\d+'/)[0] : '(no está)');
-  af(fila.indexOf("modo: 'repetible'") !== -1,
-    'y `modo` sigue en `repetible` — es lo que recorta por encuentro');
-  af(fila.indexOf("itera: 'REUNIONES'") !== -1 && fila.indexOf("filtro: 'etapa=post'") !== -1,
-    'con `itera: REUNIONES` y `filtro: etapa=post`, igual que `L-053` con el «1 a 1»');
+  af(fila.indexOf("itemsPorLamina: '4'") !== -1,
+    '⭐ `itemsPorLamina` es 4 — cuatro ranuras para cuatro encuentros',
+    (fila.match(/itemsPorLamina: '\d+'/) || ['(no está)'])[0]);
+  af(fila.indexOf("filtro: 'etapa=post'") !== -1 && fila.indexOf("itera: 'REUNIONES'") !== -1,
+    'itera `REUNIONES` con `filtro: etapa=post`');
+}
+
+console.log('\n1b · y `declararModoDelAgregadoPost()` volvió a estar operativo');
+{
+  const desde = instalar.indexOf('function declararModoDelAgregadoPost()');
+  af(desde !== -1, 'la función existe');
+  const cuerpo = instalar.slice(desde, instalar.indexOf('\n}', desde));
+
+  /* ⭐ Estuvo frenado unas horas del mismo día. La afirmación fija que el freno se sacó **de
+   * verdad** y no sólo del comentario: `curarSecciones_` tiene que ser lo primero que corre. */
+  af(cuerpo.indexOf('frenado: true') === -1, 'ya no devuelve `frenado`');
+  const iCurar = cuerpo.indexOf('curarSecciones_');
+  const iReturnTemprano = cuerpo.indexOf('return {');
+  af(iCurar !== -1 && (iReturnTemprano === -1 || iCurar < iReturnTemprano),
+    '⭐ y `curarSecciones_` corre ANTES de cualquier `return` — el freno se sacó, no se comentó');
+  af(cuerpo.indexOf("modo: 'agregado'") !== -1, 'y pone la sección en `agregado`');
+
+  /* ⚠ El aviso de las tres ranuras que sí se llenan tiene que estar: `julio_24_30` tiene TRES
+   * encuentros con métricas POST, no cuatro. Sin decirlo, la cuarta en `sin_datos` se lee como bug. */
+  const bloque = instalar.slice(Math.max(0, desde - 2200), desde);
+  af(bloque.indexOf('TRES') !== -1 && bloque.toLowerCase().indexOf('sin_datos') !== -1,
+    '⚠ y su comentario avisa que la cuarta ranura puede salir `sin_datos`, que es correcto');
 }
 
 /* ════════════════════════════════════════════════════════════════════════════════════════
- * 3 · El `MAPEO` que el rediseño necesita
+ * 2 · ⭐ El anclaje NO discrimina por el sufijo de la cuenta
  * ════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n3 · las columnas del desglose que `L-036` va a leer');
+console.log('\n2 · el sufijo `GC` no participa de ninguna comparación del anclaje');
 {
-  /* Cada campo se busca UNO POR UNO contra el seed — pertenencia, no un filtro por prefijo
-   * `des_`, que es lo que `CLAUDE.md` §4 prohíbe: filtrar GENERA en vez de CRUZAR. */
-  const necesarios = {
-    des_id_cuenta: 'la clave del encuentro',
-    des_plataforma: 'el corte de las cuatro filas',
-    des_campana: 'de acá sale el pre/post',
-    des_impresiones: 'columna Impresiones de la lámina',
-    des_visualizaciones: 'columna Visualizaciones',
-    des_fecha_inicio: 'columna Período',
-    des_fecha_fin: 'columna Período',
-    des_nomenclatura: 'columna Formato — ⭐ el alta de hoy'
-  };
-  Object.keys(necesarios).forEach((campo) => {
-    af(instalar.indexOf("campo_logico: '" + campo + "'") !== -1,
-      campo + ' — ' + necesarios[campo]);
-  });
+  /* ⭐⭐ La pregunta del usuario, y hay que separarla del `X-28` porque **se parecen y no son lo
+   * mismo**: allá el problema NO era el anclaje sino un filtro **por nombre de campaña** (`~=JM`)
+   * para decidir qué cuentas entran al Call Center, y `3488-AGOJDGAG` no dice «JM» en su nombre.
+   * Acá el anclaje matchea por **nombre parseado** —tipo, barrio/comuna/eje, fecha— y el id sólo se
+   * usa como clave. */
+  const desde = union.indexOf('function normalizarIdCuenta_');
+  const cuerpo = union.slice(desde, union.indexOf('\n}', desde));
+  af(cuerpo.indexOf('trim()') !== -1, '`normalizarIdCuenta_` sólo hace `trim()`');
+  af(!/JDGAG|JDGGC|slice|substring|replace\(/.test(cuerpo),
+    '⭐ y NO corta, reemplaza ni compara sufijos — el id viaja entero');
 
-  const desde = instalar.indexOf("campo_logico: 'des_nomenclatura'");
-  const fila = desde === -1 ? '' : instalar.slice(desde, instalar.indexOf('\n', desde));
-  af(fila.indexOf("columna: 'L'") !== -1, '`des_nomenclatura` apunta a la columna L');
-  af(fila.indexOf("encabezado: 'Nomenclatura'") !== -1,
-    'y declara su encabezado — `D-31`: la letra manda, el título es testigo');
-  /* ⚠ El bloqueo va escrito en la propia fila: campos variables cuya posición cambia por
-   * plataforma. Sin esto, alguien la lee como lista para usar. */
-  // Sin case: la nota grita `POSICIÓN` en mayúscula y el aviso vale igual escrito de las dos formas.
-  af(fila.indexOf('REVISAR') !== -1 && fila.toLowerCase().indexOf('posición') !== -1,
-    '⚠ y avisa que sus campos son variables y la POSICIÓN cambia por plataforma');
+  /* Los candidatos salen de TODOS los ids de la solapa maestra, sin filtrar por nombre. */
+  const iCand = union.indexOf('var candidatosTodos = Object.keys(digitalUnido.porCuenta)');
+  af(iCand !== -1,
+    '⭐ los candidatos son TODOS los ids de la solapa maestra — no hay filtro previo por nombre');
+  const bloqueCand = union.slice(iCand, iCand + 420);
+  af(!/JDG|filter\(/.test(bloqueCand),
+    'y ese armado no filtra: `Object.keys(...).map(...)`, sin `filter`');
 }
 
-console.log('\n3b · lo que el desglose NO tiene, y por eso `Agenda JM | Post` no se saca');
+console.log('\n2b · y el parser REAL reconoce las cinco cuentas de julio, GC incluida');
 {
-  /* ⭐⭐ Medido sobre el fixture del 20/08: las 26 columnas de `CAMPAÑAS_DESGLOCE_DIGITAL` NO
-   * incluyen Alcance ni Habitantes, en ningún nombre. Ésta es la afirmación que impide que
-   * alguien lea «fuente equivocada» y borre las siete filas de `MAPEO` de la solapa derivada. */
-  af(instalar.indexOf("campo_logico: 'des_alcance'") === -1,
-    '⭐ no existe `des_alcance` — el desglose no tiene Alcance en ningún nombre');
-  af(instalar.indexOf("campo_logico: 'des_habitantes'") === -1,
-    'ni `des_habitantes`');
+  /* ⭐ Se ejecuta `parsearNombreCampana_` de `Parseo.gs`, no se razona sobre él. Los nombres están
+   * COPIADOS de la solapa `Seguimiento digital` del fixture del 20/08 (sha `f8ef3227…`). */
+  const ctx = { console, Math, JSON, String, Number, Object, Array, Boolean, isNaN, RegExp, Error,
+    Date, parseInt, parseFloat, Logger: { log: () => {} } };
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(RAIZ, 'Parseo.gs'), 'utf8'), ctx, { filename: 'Parseo.gs' });
+  ctx.__op = {
+    catalogoBarrios: ['Retiro', 'San Cristóbal', 'Nueva Pompeya', 'Caballito'],
+    anioDefecto: 2026
+  };
+  const parse = (n) => { ctx.__n = n; return vm.runInContext('parsearNombreCampana_(__n, __op)', ctx); };
+
+  const casos = [
+    ['3346-JULJDGAG', 'Agenda Post con 1 - 1 A 1 - Retiro - 24/7', 'Retiro'],
+    ['3354-JULJDGAG', 'Agenda Post con 1 - 1 A 1 - San Cristobal - 23/7', 'San Cristóbal'],
+    ['3389-JULJDGAG', 'Agenda Post 1 A 1 - Nueva Pompeya - 29/7', 'Nueva Pompeya'],
+    ['3420-JULJDGGC', 'Agenda Post con 1 - 1 A 1 - Caballito 29/7', 'Caballito']
+  ];
+  casos.forEach(([id, nombre, barrio]) => {
+    const r = parse(nombre);
+    af(r.reconocido === true && r.barrio === barrio && r.es_post === true,
+      id + ' → reconocido, barrio ' + barrio + ', post',
+      JSON.stringify({ rec: r.reconocido, barrio: r.barrio, post: r.es_post }));
+  });
+
+  /* ⭐⭐ LA afirmación que contesta la pregunta: la cuenta con sufijo `GC` y SIN barrio en el
+   * nombre igual se reconoce, porque `reconocido` acepta barrio **o comuna o EJE**. */
+  const orden = parse('Agenda Post RDV Con 1 - Orden Publico Eje Norte 28/7');
+  af(orden.reconocido === true,
+    '⭐ `3387-JULJDGGC` (Orden Público) se reconoce IGUAL, con sufijo GC');
+  af(orden.barrio === '' || orden.barrio === null || orden.barrio === undefined,
+    '   …y NO por barrio: su nombre no trae ninguno', JSON.stringify(orden.barrio));
+  af(!!orden.eje, '   sino por el EJE — «' + orden.eje + '»');
+  af(orden.tipo === 'Temático',
+    '   y su tipo coincide con el temario: «Encuentro Temático Orden Público 28/07»', orden.tipo);
+  af(orden.fecha instanceof Date && orden.fecha.toISOString().slice(0, 10) === '2026-07-28',
+    '   con la fecha correcta, 28/07');
+
+  /* ⚠ El control negativo del reconocimiento: un nombre sin fecha NO se reconoce, pase lo que pase
+   * con el resto. Sin esto, «reconocido siempre true» pasaría todas las afirmaciones de arriba. */
+  af(parse('Agenda Post RDV Con 1 - Orden Publico Eje Norte').reconocido === false,
+    '⭐ control negativo: sin fecha NO se reconoce — el `true` de arriba significa algo');
+}
+
+/* ════════════════════════════════════════════════════════════════════════════════════════
+ * 3 · Las dos fuentes de `L-036`, y por qué `Agenda JM | Post` no se saca
+ * ════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n3 · dos fuentes: el desglose para las métricas, la derivada para dos columnas');
+{
+  /* Cada campo se busca UNO POR UNO — pertenencia, no un filtro por prefijo `des_`, que GENERA en
+   * vez de CRUZAR (`CLAUDE.md` §4). */
+  ['des_id_cuenta', 'des_campana', 'des_impresiones', 'des_visualizaciones',
+    'des_fecha_inicio', 'des_fecha_fin', 'des_nomenclatura'].forEach((campo) => {
+    af(instalar.indexOf("campo_logico: '" + campo + "'") !== -1, campo + ' está en `MAPEO`');
+  });
+
+  /* ⭐⭐ Lo que impide que alguien lea «fuente equivocada» y borre las filas de la derivada:
+   * medido sobre el fixture, el desglose NO tiene Alcance ni Habitantes en ningún nombre. */
+  af(instalar.indexOf("campo_logico: 'des_alcance'") === -1 &&
+    instalar.indexOf("campo_logico: 'des_habitantes'") === -1,
+    '⭐ el desglose NO tiene `Alcance` ni `Habitantes` — por eso la derivada no se saca');
   af(instalar.indexOf("campo_logico: 'poblacion'") !== -1 &&
     instalar.indexOf("campo_logico: 'alc_real'") !== -1,
-    '⭐ y `poblacion` y `alc_real` siguen mapeados sobre `Agenda JM | Post` — es la fuente CORRECTA para esas dos');
+    '⭐ y `poblacion` / `alc_real` siguen mapeados sobre `Agenda JM | Post`');
 }
 
 /* ════════════════════════════════════════════════════════════════════════════════════════
- * 4 · Las dimensiones que el cableado va a usar ya existen
+ * 4 · ⛔ Lo que NO se hizo — afirmado para que no se lea como olvido
  * ════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n4 · `plataforma` y `etapa` ya declaran esta solapa — cero código nuevo');
+console.log('\n4 · el cableado de los marcadores sigue sin escribirse');
 {
-  const dim = fuentes.slice(fuentes.indexOf('var DIMENSIONES_ = {'), fuentes.indexOf('\n};', fuentes.indexOf('var DIMENSIONES_ = {')));
-  ['meta', 'google', 'programmatic'].forEach((p) => {
-    const i = dim.indexOf(p + ': {');
-    const bloque = i === -1 ? '' : dim.slice(i, dim.indexOf('}', i));
-    af(bloque.indexOf('digital|CAMPAÑAS_DESGLOCE_DIGITAL') !== -1,
-      '`plataforma=' + p + '` declara `digital|CAMPAÑAS_DESGLOCE_DIGITAL`');
-  });
-
-  /* ⭐ `programmatic` por RESTA y no por lista (`R-24`): en esta solapa la tercera plataforma se
-   * llama `DV360` y el deck la rotula `Programmatic`. Enumerarla habría exigido saber ese nombre. */
-  const iProg = dim.indexOf('programmatic: {');
-  af(dim.slice(iProg, dim.indexOf('}', iProg)).indexOf('!=') !== -1,
-    '⭐ y `programmatic` se define por RESTA — así `DV360` y `TikTok` entran solas (`R-24`)');
-
-  af(dim.indexOf("post: { 'digital|CAMPAÑAS_DESGLOCE_DIGITAL'") !== -1,
-    '`etapa=post` también, con el criterio ampliado de hoy');
-}
-
-/* ════════════════════════════════════════════════════════════════════════════════════════
- * 5 · ⛔ Lo que NO se hizo, afirmado para que no se lea como olvido
- * ════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n5 · el cableado NO está escrito, y `S-06` dice por qué');
-{
-  /* ⭐⭐ Afirmaciones NEGATIVAS a propósito. Si mañana alguien cablea sin resolver el orden de las
-   * ranuras, estas dos se ponen ROJAS — y estarían diciendo la verdad: que se cableó sobre un
-   * supuesto sin confirmar. Es la forma que `CLAUDE.md` §4 fija: *el control viejo gana
-   * afirmaciones negativas en vez de perder exigencia*. */
-  af(instalar.indexOf('cablearTablaPostPorPlataforma_') === -1,
-    '⛔ `cablearTablaPostPorPlataforma_` NO existe todavía — el orden de las ranuras no está medido');
-  af(instalar.indexOf("dimensiones: 'etapa=post && plataforma=") === -1,
-    'y ningún marcador `post_*` declara todavía el corte por plataforma');
-
-  const sup = fs.readFileSync(path.join(RAIZ, 'docs/SUPUESTOS.md'), 'utf8');
-  af(sup.indexOf('**S-06**') !== -1, '⭐ y `S-06` está registrado con su reversión');
-  af(sup.indexOf('TOTAL · Meta · Google · Programmatic') !== -1,
-    'nombrando el orden que se asumiría y no está medido');
-
-  /* El cableado viejo sigue en pie hasta que el nuevo lo reemplace: retirarlo antes dejaría la
-   * lámina sin nada y sin nada mejor. */
+  /* ⚠ El grano ya no está en duda —`S-06` se cerró— pero los marcadores **todavía no se
+   * reescribieron** contra el desglose: los 12 vigentes siguen apuntando a la derivada. Esta
+   * afirmación se pone roja cuando alguien lo haga, y ahí hay que venir a actualizarla. */
   af(instalar.indexOf('MARCADORES_POST_L036_TODOS_') !== -1,
     'el cableado viejo y su reversión siguen en pie — no se retira lo que hay sin reemplazo');
+  af(instalar.indexOf('cablearTablaPostPorPlataforma_') === -1,
+    '⛔ y NO existe ningún cableado por plataforma — ese diseño se descartó');
+
+  const sup = fs.readFileSync(path.join(RAIZ, 'docs/SUPUESTOS.md'), 'utf8');
+  af(sup.indexOf('**S-06**') !== -1 && sup.indexOf('derogado') !== -1,
+    '⭐ `S-06` está registrado y marcado derogado — no se borra la fila');
 }
 
 /* ════════════════════════════════════════════════════════════════════════════════════════ */
@@ -178,10 +189,10 @@ console.log(mal ? '❌ ' + mal + ' afirmación(es) fallaron.' : '✅ Todas las a
 console.log('   ' + ok + ' de ' + (ok + mal) + ' verificadas.');
 
 console.log('\n⚠ Lo que este control NO contesta:');
-console.log('   · Nada sobre los 32 marcadores: NO se escribieron (`S-06`).');
-console.log('   · Que la hoja viva refleje el `itemsPorLamina: 1`. `sembrarSecciones_` sólo agrega');
-console.log('     filas AUSENTES y nunca pisa una existente — hace falta `curarSecciones_`.');
-console.log('   · Cómo extraer el `Formato` de `Nomenclatura`: la columna está mapeada, el');
-console.log('     extractor no existe y sus campos son variables por plataforma.');
+console.log('   · Que el anclaje REALMENTE ancle `3387-JULJDGGC`. Se afirma que el sufijo no lo');
+console.log('     excluye y que su nombre se reconoce; el SCORE contra el umbral lo dice la corrida.');
+console.log('   · Que la hoja viva refleje `itemsPorLamina: 4` — `sembrarSecciones_` sólo agrega');
+console.log('     filas ausentes. Hace falta `curarSecciones_`.');
+console.log('   · Los marcadores contra el desglose: no se escribieron todavía.');
 
 process.exit(mal ? 1 : 0);

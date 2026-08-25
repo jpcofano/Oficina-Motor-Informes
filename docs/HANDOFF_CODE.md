@@ -3,10 +3,13 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-25 (tarde) — **las tres decisiones sobre `etapa` y `L-036`**.
-`etapa.post` se amplió a `~=Post` y hay que correr su testigo; `L-036` se rediseña por plataforma,
-con lo estructural hecho y **el cableado frenado en `S-06`**. Antes: la corrida nocturna
-`2026-08-24_2`, las cinco partes hechas.
+**Última actualización:** 2026-08-25 (noche). `etapa.post` se amplió a `~=Post` —**hay que correr su
+testigo**— y `L-036` queda **POR REUNIÓN**, que es el diseño original: el desglose por plataforma es
+del «1 a 1», no de esta lámina. Antes: la corrida nocturna `2026-08-24_2`, las cinco partes hechas.
+
+⚠ **Este archivo tuvo tres versiones el 25/08** y las secciones tachadas de abajo son las anteriores,
+conservadas a propósito — **cómo se llegó a una conclusión equivocada es la mitad de su valor**. Lo
+vigente es lo de arriba.
 
 ⛔ **Nada de esto está en Apps Script todavía.** Ver *«Lo que te espera»*, abajo.
 
@@ -22,46 +25,72 @@ con lo estructural hecho y **el cableado frenado en `S-06`**. Antes: la corrida 
 | 4 | **`testigoDeEtapaPost()` otra vez**, y leer el canario primero | el criterio de aceptación es tuyo (`V-110`): si un `u1_pre_*` **subió**, se revierte |
 | 5 | **`instalar()`** | crea `LAMINAS.alcance` y `LAMINAS.tokens_equipo` por `COLUMNAS_DELTA_` |
 | 6 | **`declararAlcanceDeLaminas()`** | puebla las dos columnas. **Después de 5**, o falla nombrando la que falta |
-| 7 | **`curarSecciones_` para `itemsPorLamina: 1`** | `sembrarSecciones_` **sólo agrega filas ausentes** y nunca pisa una existente |
+| 7 | ⭐ **`declararModoDelAgregadoPost()`** | pone `comunicaciones_post` en `agregado`. **Desfrenado el 25/08** — su premisa nunca estuvo vencida. ⚠ `sembrarSecciones_` sólo agrega filas ausentes, así que el botón es el único camino |
 | 8 | ⚠ **`reserva_cierre_seg` a 60, A MANO** | `CONFIG` **sólo siembra lo ausente**. Pendiente de antes |
 
 ---
 
-## ⛔⛔ P0 nuevo: hay decks publicados con el POST INCOMPLETO
+## ✅ Los decks publicados con el POST incompleto: DESESTIMADOS
 
-`etapa.post` filtraba `~=Agenda Post` y el equipo escribe «Post» **en cualquier posición**. Las dos
-formas son **disjuntas** —166 filas contra 137, **intersección cero**—.
+`etapa.post` filtraba `~=Agenda Post` y el equipo escribe «Post» **en cualquier posición** — dos
+formas **disjuntas**, 166 filas contra 137, **intersección cero**. El alcance eran **seis meses**:
+22 cuentas del «1 a 1» y 71 filas.
 
-**El alcance no era una semana: son SEIS MESES.** 22 cuentas del «1 a 1» y 71 filas —
-marzo 1 · abril 11 · mayo 16 · **junio 32** · julio 8 · agosto 3.
+⭐ **Decisión tuya (25/08): no hay que rehacer nada.** Corregido para adelante; la medición queda en
+`PENDIENTES` **como evidencia, no como pendiente** — si alguien compara un deck viejo contra uno
+nuevo y ve los `u1_post_*` más altos, ahí está la explicación.
 
-⇒ Cualquier deck que haya publicado la lámina del «1 a 1» de esas cuentas **mostró el POST
-incompleto**: los `u1_post_*` de menos y los `u1_pre_*` de más. ⚠ **Nunca falló** — publicaba un
-número plausible, o `sin_datos` cuando *todas* las filas del encuentro usaban la otra convención.
-
-**Corregido para adelante. Lo ya publicado no se re-emite solo, y decidir si hay que rehacer algo es
-tuyo.** La lista sale de `python tools/medir-impacto-etapa-post.py`, sección 4.
+⭐⭐ **Y ése fue el hallazgo grande del día, que no era de `L-036`:** los **24 `u1_*` estaban ciegos
+a 71 filas en seis meses**.
 
 ---
 
-## ⏸ `L-036` — lo estructural hecho, el cableado FRENADO en `S-06`
+## ⏸ `L-036` — POR REUNIÓN, el diseño original. Lo estructural listo
 
-⭐ **La fuente es `digital/CAMPAÑAS_DESGLOCE_DIGITAL`**, y `Agenda JM | Post` resultó ser un
-**agregado derivado**: sus cuatro bloques repetidos son TOTAL·Meta·Google·Programmatic y **cierran
-al dígito** con la suma de las filas POST del desglose (Retiro: 7.892 · 12.083 · 21.229 · 41.204).
+⭐ **`L-036` es una fila por encuentro con el TOTAL de esa reunión**, cuatro ranuras para cuatro
+encuentros. **El desglose por plataforma es del «1 a 1» (`L-053`), no de esta lámina.**
 
-⚠ **`Agenda JM | Post` NO se saca del `MAPEO`:** es la fuente **correcta** para `Habitantes` y
-`Alcance` —que **no existen en el desglose, en ningún nombre**— y derivada para las otras cinco.
+**Las dos fuentes:**
 
-**Lo que quedó hecho:** `des_nomenclatura` en `MAPEO`, `itemsPorLamina: 1`, la sección se queda
-`repetible`, y `declararModoDelAgregadoPost()` **frena** (su premisa venció).
+| columnas | de dónde |
+|---|---|
+| Impresiones · Visualizaciones · VTR% | **`digital/CAMPAÑAS_DESGLOCE_DIGITAL`**, el TOTAL de la reunión |
+| **Alcance · Habitantes** | **`reuniones/Agenda JM \| Post`**, que es donde están |
 
-⛔ **Lo que NO se hizo, y no es un olvido:** los 32 marcadores. **El grano está decidido; el ORDEN de
-las cuatro ranuras no está medido** — el deck del equipo publica el POST **sin fila de TOTAL**, y
-`Habitantes`/`Alcance` son **del encuentro**, no de la plataforma. Cablearlo publica *un número
-correcto en la fila equivocada*, que es el único modo de falla que no avisa.
+⚠ **`Agenda JM | Post` NO se saca del `MAPEO`:** es la fuente **correcta** para esas dos —**no
+existen en el desglose, en ningún nombre**— y derivada para las otras. Y **lo medido encaja**:
+`col12` **es el TOTAL** (Retiro **41.204**, al dígito contra la suma de sus filas POST); los otros
+tres bloques son las plataformas, que esta lámina no usa.
 
-**Qué lo destraba:** mirar la lámina **pintada** del equipo con sus cuatro filas.
+**Lo que quedó hecho:** `des_nomenclatura` en `MAPEO`, `itemsPorLamina` de vuelta en **4**, y
+`declararModoDelAgregadoPost()` **desfrenado** — su premisa nunca estuvo vencida.
+
+⛔ **Lo que NO se hizo:** los marcadores contra el desglose. El grano está cerrado (`S-06`
+**derogado**), el cableado no se escribió.
+
+### ⭐ El sufijo `GC` del anclaje: medido, y NO es el `X-28`
+
+`3387-JULJDGGC` (Orden Público) **se resuelve igual**, por tres mediciones que se suman:
+`normalizarIdCuenta_` es **sólo `trim()`**; los candidatos son **todos** los ids de la solapa maestra
+(sin `filter`); y el **parser real** lo reconoce —`tipo = Temático`, `eje = Eje Norte`,
+`fecha = 28/07`—.
+
+⭐⭐ **Lo reconoce SIN barrio**, y ésa es la parte que valía medir: su nombre no trae ninguno —es un
+Temático— pero `reconocido` acepta barrio **o comuna o EJE**. **La rama del eje es la que lo salva**,
+y nadie la había ejercitado.
+
+⚠ **No es el `X-28`:** allá el problema no era el anclaje sino un filtro **por nombre** (`~=JM`) para
+decidir qué cuentas entran al Call Center. **Dos mecanismos que se parecen.**
+
+⛔ **Lo que no cierra:** que el **score** supere el umbral. Eso lo dice la corrida.
+
+### ⭐ Dos hallazgos laterales
+
+- **San Cristóbal SÍ tiene campaña POST** (fila 778 de `Seguimiento digital`); lo que no tiene son
+  **filas en el desglose**. ⚠ Corrige lo que decía este handoff a la tarde: no es *«sin fila POST»*.
+  La cuarta ranura sale `sin_datos` por eso, y **es correcto**.
+- ⚠ **`unirDigitalPorCuenta` PISA**: un id con dos filas —pre y post, el caso normal— conserva **la
+  última**. Para `L-036` da el post, que es lo que se quiere; para otros consumidores puede no serlo.
 
 ---
 

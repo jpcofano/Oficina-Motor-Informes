@@ -3534,15 +3534,22 @@ var SEED_SECCIONES_ = [
   // sección que agrupa: su lámina es una tabla con cuatro filas, no una lámina por ítem.
   // `jm` ya tiene las cuatro; `secco` tiene tres y la cuarta **no se puede agregar todavía**
   // (`D-22`: el motor no sabe insertar filas en una tabla de Slides).
-  /* ⭐⭐ `2026-08-25` — **`itemsPorLamina` pasa de 4 a 1**, y es la consecuencia directa de que
-   * `L-036` sea por PLATAFORMA y no por encuentro. Las cuatro filas de la tabla son
-   * TOTAL + Meta + Google + Programmatic **de UN encuentro**, así que una lámina lleva **un** ítem.
-   * El `4` de antes decía *«cuatro encuentros en una lámina»*, que es el diseño que se descartó.
+  /* ⭐ `2026-08-25` (tarde) — **vuelve a `itemsPorLamina: 4`, que era el planteo original.**
    *
-   * ⚠ **Y `modo` se queda en `repetible`** — `declararModoDelAgregadoPost()` quedó invalidado y
-   * frena. Es `itera: REUNIONES` + `filtro: etapa=post` lo que recorta por encuentro, igual que
-   * `L-053` hace con el «1 a 1». */
-  filaSeccion_({ id: 'comunicaciones_post', orden: 9, nombre: 'Comunicaciones post', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', filtro: 'etapa=post', familia: 'post_', itemsPorLamina: '1' }),
+   * ⛔ **Esto revierte un cambio de la mañana del mismo día**, y el vaivén queda escrito porque el
+   * motivo es lo que sirve: se llegó a pensar que `L-036` era **por plataforma** —el `Formato`
+   * difiere por plataforma, el deck del equipo publica el POST desglosado, y los cuatro bloques de
+   * `Agenda JM | Post` son TOTAL·Meta·Google·Programmatic—. **Decisión del usuario: no.** El
+   * desglose por plataforma es del **«1 a 1»** (`L-053`), no de esta lámina.
+   *
+   * ⭐ **`L-036` es POR REUNIÓN, con UNA fila por encuentro y el TOTAL de esa reunión** — cuatro
+   * ranuras para cuatro encuentros. Es el diseño de `D-41` y nunca estuvo mal.
+   *
+   * ⭐⭐ **Y lo medido encaja sin forzar nada:** `col12` de `Agenda JM | Post` **es el TOTAL**
+   * —41.204 para Retiro, al dígito contra la suma del desglose— y los otros tres bloques son las
+   * plataformas, **que acá no se usan**. `S-06` se cierra: `Habitantes` y `Alcance` son del
+   * encuentro **y la fila también**, así que no hay número correcto en fila equivocada. */
+  filaSeccion_({ id: 'comunicaciones_post', orden: 9, nombre: 'Comunicaciones post', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', filtro: 'etapa=post', familia: 'post_', itemsPorLamina: '4' }),
   filaSeccion_({ id: 'impacto_comunicacional', orden: 10, nombre: 'Semana JM — Impacto comunicacional', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'sin marcar en la plantilla' }),
   filaSeccion_({ id: 'ministros', orden: 11, nombre: 'Encuentros de ministros', informes: 'SECCO', modo: 'agregado', familia: 'emin_' }),
   filaSeccion_({ id: 'm2', orden: 12, nombre: 'M2', informes: 'JM,SECCO', modo: 'agregado', familia: 'm2_' }),
@@ -4077,32 +4084,27 @@ function repararTablaPostReuniones() {
  *
  * **Sin `_` y sin parámetros** — las dos condiciones de `CLAUDE.md` §2.
  */
-/* ⛔⛔ **`2026-08-25` — ESTE BOTÓN QUEDÓ INVALIDADO y por eso FRENA en vez de correr.**
+/* ⭐ **`2026-08-25` (tarde) — DESFRENADO. La premisa de este botón nunca estuvo vencida.**
  *
- * Su premisa era *«la lámina es UNA con CUATRO filas, y las cuatro filas son los cuatro encuentros
- * del temario»*. **Medido el 25/08, es falsa**: `L-036` es por **PLATAFORMA** —TOTAL + Meta +
- * Google + Programmatic— y por lo tanto **de UN encuentro**. La sección tiene que seguir siendo
- * `repetible` sobre `REUNIONES` con `filtro = etapa=post`, que es lo que recorta por encuentro.
+ * ⛔ **Estuvo frenado unas horas del mismo día**, y el ida y vuelta queda escrito porque el motivo
+ * es lo que sirve. Se llegó a medir que `L-036` podía ser **por plataforma** —el `Formato` difiere
+ * por plataforma, el deck del equipo publica el POST desglosado, y los cuatro bloques de
+ * `Agenda JM | Post` son TOTAL·Meta·Google·Programmatic—, y con ese grano la lámina habría sido de
+ * **un** encuentro y la sección tendría que quedarse `repetible`.
  *
- * ⚠ **No se borra, y el motivo importa:** un botón que desaparece deja a quien lo buscaba sin saber
- * por qué, y `volverComunicacionesPostARepetible()` sigue existiendo por si alguien ya lo corrió.
- * **Frena con el motivo escrito**, que es lo que un botón cuya premisa venció tiene que hacer —
- * seguir siendo apretable sería una trampa con fecha.
+ * **Decisión del usuario: no.** El desglose por plataforma es del **«1 a 1»** (`L-053`). `L-036` es
+ * **POR REUNIÓN, una fila con el TOTAL de esa reunión**, que es exactamente lo que este botón
+ * habilita y lo que decía el planteo original.
  *
- * Si algún día la lámina volviera a ser por encuentro, se saca esta guarda y se cita por qué. */
+ * ⭐ **Y lo medido en el medio no se descarta: encaja.** `col12` de `Agenda JM | Post` **es el
+ * TOTAL** —41.204 para Retiro, al dígito contra la suma de sus filas POST del desglose— y los otros
+ * tres bloques son las plataformas, **que esta lámina no usa**.
+ *
+ * ⚠ **Lo que sí cambió y hay que saber antes de apretarlo:** el temario real de `julio_24_30` tiene
+ * **TRES** encuentros con POST, no cuatro —San Cristóbal no tiene fila en el desglose—, así que la
+ * cuarta ranura sale `sin_datos`. **Eso es correcto**: `FILA` trata *más índice que filas* como
+ * «no hay tanto», no como error. */
 function declararModoDelAgregadoPost() {
-  Logger.log('⛔ FRENADO — este botón quedó INVALIDADO el 25/08/2026.');
-  Logger.log('   Su premisa era «las cuatro filas son los cuatro encuentros del temario».');
-  Logger.log('   Medido: `L-036` es por PLATAFORMA (TOTAL + Meta + Google + Programmatic) y');
-  Logger.log('   por lo tanto de UN encuentro. `comunicaciones_post` tiene que quedar `repetible`.');
-  Logger.log('   Ver docs/FUENTE_post_reuniones_2026-08-25.md, ADDENDUM 1.');
-  return {
-    ok: false, frenado: true,
-    motivo: 'botón invalidado el 25/08: L-036 es por plataforma, no por encuentro. La sección se ' +
-      'queda en `repetible`.'
-  };
-
-  /* eslint-disable no-unreachable */
   var r = curarSecciones_([{ seccion_id: 'comunicaciones_post', modo: 'agregado' }]);
 
   if (!r.ok) { Logger.log('⛔ NO se pudo: ' + r.motivo); return r; }

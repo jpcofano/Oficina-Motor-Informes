@@ -14513,3 +14513,96 @@ del patrón) y `probar-rediseno-l036.js` (34). Más `tools/medir-impacto-etapa-p
 - ⛔ **`curarSecciones_` para `itemsPorLamina: 1`** — `sembrarSecciones_` sólo agrega filas ausentes.
 - ⏸ **`S-06`**: el orden de las cuatro ranuras, mirando la lámina pintada.
 - ⏸ El extractor del `Formato` desde `Nomenclatura`.
+
+---
+
+## 2026-08-25 (noche) — Se da vuelta el grano de `L-036`, y el sufijo `GC` queda medido
+
+**Tres decisiones del usuario.** Dos revierten trabajo de horas antes del mismo día, y **el vaivén
+se conserva escrito** porque el motivo es lo que sirve.
+
+### 1 · ✅ Los decks publicados con el POST incompleto se DESESTIMAN
+
+**No hay que rehacer nada.** El `P0` de la tarde pasa a **decidido**, no a pendiente.
+
+⭐ **La medición se conserva entera** —22 cuentas, 71 filas, seis meses— y no se borra: si mañana
+alguien compara un deck viejo contra uno nuevo y ve los `u1_post_*` más altos, **ahí está la
+explicación** en vez de un hallazgo falso.
+
+### 2 · ⛔ `L-036` vuelve a ser POR REUNIÓN — el diseño original nunca estuvo mal
+
+**El desglose por plataforma es del «1 a 1» (`L-053`), no de esta lámina.** `L-036` es **una fila
+por encuentro con el TOTAL de esa reunión**, cuatro ranuras para cuatro encuentros.
+
+⭐⭐ **Y todo lo medido en el rodeo encaja sin forzar nada:** `col12` de `Agenda JM | Post` **es el
+TOTAL** —41.204 para Retiro, al dígito contra la suma de sus filas POST del desglose— y los otros
+tres bloques son las plataformas, **que esta lámina no usa**. La medición era correcta; **lo que
+estaba mal era qué se concluía de ella.**
+
+**Lo revertido:** `itemsPorLamina` 1 → **4**, y `declararModoDelAgregadoPost()` **desfrenado** — su
+premisa nunca estuvo vencida.
+
+⭐⭐ **`S-06` se cierra dando vuelta el grano, no midiendo el orden.** Su riesgo era *«un número
+correcto en la fila equivocada»*, y **con la fila = el encuentro deja de existir**: `Habitantes` y
+`Alcance` son del encuentro **y la fila también**. Los **tres** faltantes encadenados —orden de
+ranuras, qué columna va en qué fila, y el grano de Habitantes/Alcance— **se disuelven juntos**.
+Queda **derogado con fecha**, no borrado.
+
+⚠ **Lo único que sobrevive del rodeo como pendiente:** el `Formato` desde `Nomenclatura`, que era un
+bloqueo **independiente del grano**.
+
+### 3 · ⭐ El sufijo `GC` del anclaje — medido, y NO es el `X-28`
+
+**La pregunta:** `3387-JULJDGGC` (Orden Público) tiene sufijo `GC` y no `AG`. ¿El anclaje lo
+resuelve igual?
+
+**Sí, y por tres mediciones que se suman:**
+
+1. **`normalizarIdCuenta_` es sólo `String(valor).trim()`** — no corta, no reemplaza, no compara
+   sufijos. El id viaja entero y se usa **como clave**, no como criterio.
+2. **Los candidatos son TODOS los ids de la solapa maestra** —`Object.keys(digitalUnido.porCuenta).map(…)`,
+   sin `filter`—, así que no hay recorte previo por nombre ni por sufijo.
+3. ⭐ **`3387-JULJDGGC` está en `digital/Seguimiento digital`**, con dos filas: la pre (753) y la
+   post (804). Y **el parser real lo reconoce**: `reconocido = true`, `tipo = Temático`,
+   `eje = Eje Norte`, `fecha = 2026-07-28`, `es_post = true`.
+
+⭐⭐ **Lo reconoce SIN barrio**, y ahí está la parte que valía la pena medir: `reconocido` exige
+fecha **y** (barrio **o** comuna **o** eje), y su nombre no trae barrio —es un Encuentro Temático—
+pero sí **`Eje Norte`**. **La rama del eje es la que lo salva**, y nadie la había ejercitado.
+
+⚠ **Y por qué esto NO es el `X-28`, que es lo que había que separar:** allá el problema **no era el
+anclaje** sino un filtro **por nombre de campaña** (`~=JM`) para decidir **qué cuentas entran** al
+Call Center, y `3488-AGOJDGAG` **no dice «JM» en su nombre**. **Dos mecanismos distintos que se
+parecen** — el anclaje matchea por nombre **parseado**, no por una subcadena del nombre crudo.
+
+⛔ **Lo que esto NO cierra:** que el **score** supere el umbral. Se midió que el sufijo no lo excluye
+y que su nombre se reconoce; **el score contra `CONFIG.umbral_anclaje_reunion` lo dice la corrida.**
+
+### ⭐ Dos hallazgos laterales que salieron de mirar la solapa maestra
+
+1. **San Cristóbal SÍ tiene campaña POST**, en la fila 778 de `Seguimiento digital`
+   (`Agenda Post con 1 - 1 A 1 - San Cristóbal…`) — **lo que no tiene son filas en el desglose**.
+   ⚠ **Corrige lo que escribí a la tarde**: no es *«sin fila POST»*, es *«con campaña post y sin
+   métricas cargadas»*. La ranura sale `sin_datos` por eso, y **es correcto**.
+2. ⚠ **`unirDigitalPorCuenta` hace `porCuenta[idCuenta] = registro` y PISA.** Un id con dos filas
+   —la pre y la post, que es el caso normal de un encuentro— **conserva la última**. Para `L-036`
+   eso da el post, que es lo que se quiere; **para otros consumidores puede no serlo**. Anotado, no
+   perseguido.
+
+### ⭐ Lo que sigue valiendo del rodeo, y no fue en vano
+
+**Los dos criterios de POST quedaron cableados con testigo**, y eso arregla los **24 `u1_*` que
+estaban ciegos a 71 filas en seis meses**. **Ése era el hallazgo grande, y no era de `L-036`.**
+
+### Controles
+
+**47 suites, 0 en rojo.** `probar-rediseno-l036.js` se dio vuelta —34 afirmaciones— y ahora
+**ejecuta `parsearNombreCampana_` real** sobre nombres copiados de la solapa maestra, con su control
+negativo: *sin fecha no se reconoce*, que es lo que hace que el `true` de los otros signifique algo.
+
+### Pendientes
+
+- ⛔ **`clasp push`**, y el testigo de `etapa` antes de nada más.
+- ⛔ **`declararModoDelAgregadoPost()`** — ahora sí, desfrenado.
+- ⏸ **Los marcadores contra el desglose**: el grano está cerrado, el cableado no se escribió.
+- ⏸ El `Formato` desde `Nomenclatura`.

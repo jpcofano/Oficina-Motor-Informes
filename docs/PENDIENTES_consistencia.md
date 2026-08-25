@@ -8088,7 +8088,19 @@ motivo que aquéllas: **se convive con ellas**.
 
 ---
 
-## 2026-08-25 (tarde) · ⛔⛔ P0 — Hay decks publicados con el POST INCOMPLETO
+## 2026-08-25 (tarde) · ✅ ~~P0 — Hay decks publicados con el POST INCOMPLETO~~ — **DESESTIMADO**
+
+> ⭐ **Decisión del usuario, 25/08: los decks publicados con el POST incompleto se desestiman. No
+> hay que rehacer nada.** Queda como **decidido**, no como pendiente.
+>
+> **La medición se conserva entera abajo** —no se borra— porque es la evidencia de qué estuvo
+> incompleto y hasta cuándo: si mañana alguien compara un deck viejo contra uno nuevo y ve los
+> `u1_post_*` más altos, **acá está la explicación** en vez de un hallazgo falso.
+>
+> ⚠ **Lo corregido es para adelante** (`5a1513e`). Un deck emitido no se re-emite solo, y ahora eso
+> es una decisión tomada y no un cabo suelto.
+
+### La medición, conservada
 
 **`DIMENSIONES_.etapa.post` filtraba `des_campana~=Agenda Post` y el equipo escribe «Post» en
 cualquier posición.** Las dos formas son **disjuntas** —166 filas contra 137, intersección cero—,
@@ -8122,24 +8134,18 @@ publicado** — un deck emitido no se re-emite solo.
 
 ---
 
-### ⏸ `S-06` — el orden de las cuatro ranuras de `L-036`
+### ✅ ~~`S-06` — el orden de las cuatro ranuras de `L-036`~~ — **CERRADO el 25/08**
 
-El **grano** de `L-036` está decidido (por plataforma, 25/08). **El orden de las filas no está
-medido**, y por eso el cableado **no se escribió**:
-
-- El orden de las **columnas** de `Agenda JM | Post` es TOTAL·Meta·Google·Programmatic — pero eso
-  **no prueba** el orden de las **filas** de la tabla.
-- El deck del equipo publica el POST **sin fila de TOTAL**: Meta·Google·Programmatic a secas.
-- ⭐ **Y hay un tercer faltante encadenado:** `Habitantes` y `Alcance` son **del encuentro**, no de
-  la plataforma. Con filas por plataforma, o se repiten cuatro veces o van sólo en la del total —
-  y eso depende de cuál sea esa fila.
-
-⛔ **Cablearlo sin resolverlo publica un número correcto en la fila equivocada**, que es el modo de
-falla más caro del repo y el único que no avisa: `post_impresiones1` con el valor de Meta en vez del
-total **es plausible en las dos lecturas**.
-
-**Qué lo destraba:** mirar la lámina **pintada** del equipo con las cuatro filas. `tools/probar-rediseno-l036.js`
-lo fija con afirmaciones **negativas**: si alguien cablea antes, se pone rojo.
+> ⭐ **Se cerró dando vuelta el grano, no midiendo el orden.** Decisión del usuario: **el desglose
+> por plataforma es del «1 a 1» (`L-053`), no de esta lámina.** `L-036` es **por REUNIÓN, una fila
+> con el TOTAL de esa reunión**.
+>
+> ⭐⭐ **Y los tres faltantes encadenados se disuelven juntos:** el riesgo era *«un número correcto
+> en la fila equivocada»*, y con la fila = el encuentro **deja de existir** — `Habitantes` y
+> `Alcance` son del encuentro y la fila también. No hay dos granos que confundir.
+>
+> ⚠ **Lo que SOBREVIVE del rodeo, y sigue abierto:** el `Formato` desde `Nomenclatura`, que era un
+> bloqueo independiente del grano. Ver abajo.
 
 ---
 
