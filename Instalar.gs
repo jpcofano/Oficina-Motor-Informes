@@ -2825,6 +2825,19 @@ var SEED_CONFIG_DEFAULTS_ = {
   // PRE y vive en su propia solapa, así que la clave del par es `(ID, solapa)`.
   base_agregado_post: 'reuniones',
   solapa_agregado_post: 'Agenda JM | Post',
+  /* ⭐⭐ `2026-08-25_3` — **el temario declara VARIAS solapas**, porque `L-036` cruza dos fuentes:
+   * `Agenda JM | Post` para seis columnas y el desglose para el `Período`.
+   *
+   * **Formato:** entradas separadas por `;`, cada una `base|solapa` **partida en el PRIMER `|`**.
+   * ⚠ Eso no es un detalle: la solapa se llama `Agenda JM | Post` y **tiene un `|` adentro**.
+   * Partir por el último, o por todos, la rompería.
+   *
+   * ⭐ **La PRIMERA es la que CALIFICA**: de ella sale la lista de encuentros con POST, porque es la
+   * única con una fila por encuentro aunque esté en ceros. Las demás se **joinean por `id_cuenta`**.
+   *
+   * ⚠ **Vacío = se usa el par singular de arriba**, que es lo que había hasta hoy. `CONFIG` sólo
+   * siembra lo ausente, así que una instalación viva no cambia de comportamiento sola. */
+  solapas_agregado_post: 'reuniones|Agenda JM | Post; digital|CAMPAÑAS_DESGLOCE_DIGITAL',
   // ⭐⭐ 25/08/2026 — que campos cuentan como METRICA DE RESULTADO para decidir si un encuentro
   // tuvo comunicacion post. Decision del usuario: si ninguno es > 0, la fila NO va.
   //

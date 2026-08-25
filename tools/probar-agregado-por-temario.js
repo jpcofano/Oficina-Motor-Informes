@@ -356,6 +356,42 @@ console.log('\n═══ K · `filasDeSolapaDelTemario_` — la pieza de L-036, 
     'y las dos filas reproducen % VTR = Visualizaciones / Impresiones al dígito');
 }
 
+console.log('\n═══ L pre · `solapasDelTemario_` — la lista de `CONFIG`, y el `|` que está DENTRO del nombre ═══');
+{
+  const ctx = ctxGenerador(itemsJulio());
+
+  /* ⛔ **La trampa concreta:** la solapa se llama `Agenda JM | Post` y **tiene un `|` adentro**.
+   * Partir por todos los `|` la rompe, y el síntoma no es un error: es una solapa que «no existe»
+   * — un cero, con el marcador cayendo a donde no debe. */
+  const r = ctx.solapasDelTemario_({
+    solapas_agregado_post: 'reuniones|Agenda JM | Post; digital|CAMPAÑAS_DESGLOCE_DIGITAL'
+  });
+  afirmar(r.length === 2, 'dos pares declarados (' + r.length + ')');
+  afirmar(r[0].base_id === 'reuniones' && r[0].solapa === 'Agenda JM | Post',
+    '⛔ parte por el PRIMER `|`: la solapa conserva el suyo — «' + r[0].solapa + '»');
+  afirmar(r[1].base_id === 'digital' && r[1].solapa === 'CAMPAÑAS_DESGLOCE_DIGITAL',
+    'y la segunda entrada sale entera');
+  afirmar(r[0].clave === 'reuniones|Agenda JM | Post',
+    '⭐ la clave es `base|solapa` tal cual — la misma que arma la guarda por marcador');
+
+  /* ⭐ El orden IMPORTA y es parte del contrato: **la primera CALIFICA**. */
+  afirmar(r[0].clave.indexOf('Agenda JM') !== -1,
+    '⭐ y la que califica es la primera declarada — `Agenda JM | Post`, la única con fila por encuentro');
+
+  const vacia = ctx.solapasDelTemario_({
+    solapas_agregado_post: '', base_agregado_post: 'reuniones', solapa_agregado_post: 'Agenda JM | Post'
+  });
+  afirmar(vacia.length === 1 && vacia[0].clave === 'reuniones|Agenda JM | Post',
+    '⚠ lista vacía → cae al par singular: una instalación viva no cambia de comportamiento sola');
+
+  const sucia = ctx.solapasDelTemario_({ solapas_agregado_post: '  ; reuniones|X ;; sin_barra ; ' });
+  afirmar(sucia.length === 1 && sucia[0].solapa === 'X',
+    '⚠ entradas vacías y sin `|` se descartan sin romper (' + sucia.length + ')');
+
+  const nada = ctx.solapasDelTemario_({});
+  afirmar(nada.length === 0, '⭐ sin nada declarado devuelve CERO — no inventa un par por defecto');
+}
+
 console.log('\n═══ L · ⛔ la rama nueva de `datosDeMarcador_` y su guarda de solapa ═══');
 {
   const ctx = ctxGenerador(itemsJulio());
@@ -365,28 +401,95 @@ console.log('\n═══ L · ⛔ la rama nueva de `datosDeMarcador_` y su guard
   ctx.campoIdCuentaDeSolapa_ = () => '';
   ctx.leerFuente = () => ({ ok: false, motivo: '(cortado por el banco: cayó a la rama general)' });
   const fila = { base_id: 'reuniones', campo_logico: 'vis_totales', marcador: 'post_vistas1' };
-  const temario = {
-    filas: [{ Visualizaciones: 45806 }], seccion_id: 'comunicaciones_post',
+  /* `2026-08-25_3` — `filas_temario` es un **mapa por `base|solapa`** y la guarda dispara sobre
+   * `claves_temario`, la lista **declarada en `CONFIG`**. */
+  const CLAVE = 'reuniones|Agenda JM | Post';
+  const temario = {};
+  temario[CLAVE] = {
+    filas: [{ Visualizaciones: 45806 }], seccion_id: 'comunicaciones_post', califica: true,
     sin_cuenta: 1, sin_fila: 1, con_varias: 0, base_id: 'reuniones', hoja: 'Agenda JM | Post'
   };
+  const CLAVES = {}; CLAVES[CLAVE] = true;
 
   const buena = ctx.datosDeMarcador_(fila, 'Agenda JM | Post', null, {}, {
-    filas_temario: temario, base_temario: 'reuniones', hoja_temario: 'Agenda JM | Post'
+    filas_temario: temario, claves_temario: CLAVES
   });
   afirmar(buena.ok === true && buena.filas.length === 1, 'con la solapa correcta, devuelve la fila del temario');
   afirmar(/TEMARIO/.test(buena.origen) && /seccion_id. expl/.test(buena.origen),
     '⭐ y el origen declara que la sección se resolvió por `seccion_id` explícito');
   afirmar(/SIN CUENTA ANCLADA/.test(buena.origen) && /SIN FILA/.test(buena.origen),
     '⚠ y nombra los dos casos que NO son lo mismo: sin cuenta y sin fila');
+  afirmar(/CALIFICA/.test(buena.origen),
+    '⭐ y dice que ésta es la solapa que CALIFICA — la que define la lista única y su orden');
 
   /* ⚠ Acá sí hace falta una ventana: el punto de la afirmación es que **cae a la rama general**,
    * y ésa arma su clave de caché con las fechas. Que necesite ventana es la prueba de que cayó. */
   const otraSolapa = ctx.datosDeMarcador_(fila, 'Agenda JM',
     { desde: new Date('2026-08-14T12:00:00Z'), hasta: new Date('2026-08-20T12:00:00Z') }, {}, {
-      filas_temario: temario, base_temario: 'reuniones', hoja_temario: 'Agenda JM | Post'
+      filas_temario: temario, claves_temario: CLAVES
     });
   afirmar(!(otraSolapa.ok && /TEMARIO/.test(otraSolapa.origen || '')),
     '⛔ con OTRA solapa NO usa esas filas — la letra de columna vale para una solapa sola');
+}
+
+console.log('\n═══ L bis · ⛔⛔ `2026-08-25_3` — la guarda dispara sobre lo DECLARADO, no sobre lo que hay ═══');
+{
+  /* ⛔⛔ **El caso negativo es el que prueba esta pieza.** Una solapa **declarada en `CONFIG`** que
+   * la corrida no pudo poblar **no puede** caer a la cadena general: leería la solapa entera y
+   * publicaría un número grande, plausible y de otro universo — que es exactamente lo que hizo
+   * `L-036` el 25/08 con el Recap de CABA.
+   *
+   * ⭐ Un banco que sólo prueba el camino feliz **no prueba esto**: el camino feliz da igual con la
+   * guarda vieja y con la nueva. */
+  const ctx = ctxGenerador(itemsJulio());
+  ctx.buscarMapeo = () => ({ ok: true, columna: 'O' });
+  ctx.claveDeLecturaEnColumna_ = () => 'Impresiones';
+  ctx.encabezadoEnColumna_ = () => 'Impresiones';
+  ctx.campoIdCuentaDeSolapa_ = () => '';
+  /* Si la rama general corriera, esto devolvería filas — y ésa es la trampa: **el fallback no
+   * falla, publica**. La afirmación pide que NO se llegue acá. */
+  ctx.leerFuente = () => ({ ok: true, filas: [{ Impresiones: 2463980 }, { Impresiones: 999 }] });
+
+  const fila = { base_id: 'digital', campo_logico: 'des_impresiones', marcador: 'post_periodo1' };
+  const CLAVE2 = 'digital|CAMPAÑAS_DESGLOCE_DIGITAL';
+  const CLAVES2 = {}; CLAVES2[CLAVE2] = true;
+
+  /* (a) declarada y con la entrada VACÍA — la solapa se leyó y ningún encuentro tenía fila. */
+  const vacia = {};
+  vacia[CLAVE2] = { filas: [], base_id: 'digital', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL',
+    motivo: 'ninguno de los 3 encuentros tiene fila POST acá' };
+  const rv = ctx.datosDeMarcador_(fila, 'CAMPAÑAS_DESGLOCE_DIGITAL',
+    { desde: new Date('2026-07-24T12:00:00Z'), hasta: new Date('2026-07-30T12:00:00Z') }, {}, {
+      filas_temario: vacia, claves_temario: CLAVES2, temario_post_diag: 'lista única de 3 encuentro(s)'
+    });
+  afirmar(rv.ok === false && /post_sin_temario/.test(rv.motivo),
+    '⛔⛔ declarada y SIN FILAS → falla con `@post_sin_temario`, NO cae a la solapa entera');
+  afirmar(!/2463980/.test(JSON.stringify(rv)),
+    '⛔ y el número de la solapa entera no aparece por ningún lado del resultado');
+  afirmar(/ninguno de los 3 encuentros/.test(rv.motivo),
+    '⭐ y el motivo de ESA entrada viaja al FALTANTE — no el diagnóstico genérico de la corrida');
+
+  /* (b) declarada y SIN ENTRADA en el mapa — la lista única no resolvió, así que `porSolapa` quedó
+   *     vacío. ⭐ Éste es el que la guarda vieja dejaba pasar: sin entrada, sin comparación que dé,
+   *     y el marcador se iba a leer la solapa entera. */
+  const rs = ctx.datosDeMarcador_(fila, 'CAMPAÑAS_DESGLOCE_DIGITAL',
+    { desde: new Date('2026-07-24T12:00:00Z'), hasta: new Date('2026-07-30T12:00:00Z') }, {}, {
+      filas_temario: {}, claves_temario: CLAVES2,
+      temario_post_diag: 'la solapa que califica no resolvió'
+    });
+  afirmar(rs.ok === false && /post_sin_temario/.test(rs.motivo),
+    '⛔⛔ declarada y SIN ENTRADA en el mapa → también falla — la guarda mira la LISTA, no el mapa');
+  afirmar(/la solapa que califica no resolvi/.test(rs.motivo),
+    '⭐ y ahí sí cae el diagnóstico de la corrida, que es lo único que hay');
+
+  /* (c) ⭐ el control positivo del caso negativo: una solapa **no declarada** SÍ tiene que caer a la
+   *     cadena general. Sin esto, «no publica» y «la guarda atrapa todo» se ven igual. */
+  const rn = ctx.datosDeMarcador_(fila, 'Digital',
+    { desde: new Date('2026-07-24T12:00:00Z'), hasta: new Date('2026-07-30T12:00:00Z') }, {}, {
+      filas_temario: vacia, claves_temario: CLAVES2
+    });
+  afirmar(rn.ok === true && !/post_sin_temario/.test(rn.motivo || ''),
+    '⭐ control positivo: una solapa NO declarada sí cae a la cadena general — la guarda no atrapa todo');
 }
 
 console.log('\n═══ N · ⭐⭐ la regla del 25/08: «métrica de resultado > 0», o la fila NO va ═══');

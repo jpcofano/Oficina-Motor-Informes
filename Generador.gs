@@ -317,7 +317,15 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
    * se lee como AGREGADO GLOBAL»*—, y ése es el invariante: sin esto, un `post_*` emitido fuera de
    * un ítem caería al agregado de las 102 filas de la solapa y publicaría **un número grande y
    * plausible de todos los encuentros de la historia**. */
-  if (opciones && opciones.base_temario === fila.base_id && opciones.hoja_temario === solapa) {
+  /* ⛔⛔ `2026-08-25_3` — **lo que dispara esta rama es que la solapa esté DECLARADA, no que tenga
+   * filas.** Con **dos** solapas del temario, comparar contra un par singular dejaba a la segunda
+   * cayendo a la cadena general — el universo ancho, otra vez, y multiplicado por dos.
+   *
+   * ⭐ `claves_temario` se llena con la lista **declarada en `CONFIG`** y se setea **siempre**,
+   * incluso cuando la lista única salió vacía. Declarada y sin filas → `«FALTA:…@post_sin_temario»`
+   * con su diagnóstico. **Nunca** caída a la cadena general. */
+  var claveTemario = fila.base_id + '|' + solapa;
+  if (opciones && opciones.claves_temario && opciones.claves_temario[claveTemario]) {
     /* ⛔⛔ `2026-08-25` — **el fallback se cierra: sin filas del temario NO se lee la solapa
      * entera.**
      *
@@ -332,7 +340,9 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
      * ⚠ **Y es la misma familia que `X-41` y que los `cc_*`:** una sección que debería recortar
      * por las cuentas del temario y termina publicando el universo ancho. **Es el modo de falla
      * más caro de este proyecto y el único que no avisa.** */
-    var t = opciones.filas_temario;
+    /* `filas_temario` es un **mapa por `base|solapa`**: cada solapa declarada tiene su entrada, y la
+     * rama busca la suya por la misma clave que disparó la guarda. */
+    var t = opciones.filas_temario && opciones.filas_temario[claveTemario];
     if (!t || !t.filas || !t.filas.length) {
       return {
         ok: false,
@@ -340,7 +350,8 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
           ' la manda el TEMARIO y esta corrida no obtuvo ni una fila. **NO se cae a leer la solapa ' +
           'entera**: eso publicaría filas de otros encuentros con forma de acierto (el 25/08 salió ' +
           'el Recap de CABA con 2.463.980 habitantes). ⭐ POR QUÉ no hubo filas: ' +
-          (opciones.temario_post_diag || '(sin diagnóstico — la sección de post no está declarada ' +
+          ((t && t.motivo) || opciones.temario_post_diag ||
+            '(sin diagnóstico — la sección de post no está declarada ' +
             'en CONFIG, así que esta rama no debería haber disparado)') +
           ' · sin_cuenta = el ítem no ancló · sin_fila = ancló y su cuenta no está en la solapa ' +
           '(¿el id del anclaje es el mismo que el ID de la solapa?) · sin_metrica = está y no midió.'
@@ -352,8 +363,13 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
       encabezado: claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna),
       columna: campo.columna,
       origen: 'las ' + t.filas.length + ' fila(s) de ' + fila.base_id + '/' + solapa + ' de los ' +
-        'encuentros del TEMARIO (sección `' + t.seccion_id + '`, resuelta por `seccion_id` ' +
-        'explícito) — por `id_cuenta` del anclaje, sin recorte por ventana ni por `dimensiones`: ' +
+        'encuentros del TEMARIO' +
+        (t.califica
+          ? ' (sección `' + t.seccion_id + '`, resuelta por `seccion_id` explícito) — ésta es la ' +
+            'solapa que CALIFICA: define la lista única y su orden'
+          : ' — joineada por `id_cuenta` contra la lista única (no por posición ni por el orden ' +
+            'propio de esta solapa)') +
+        ', sin recorte por ventana ni por `dimensiones`: ' +
         'el temario ya seleccionó' +
         (t.sin_cuenta ? ' · ⚠ ' + t.sin_cuenta + ' ítem(s) SIN CUENTA ANCLADA — no es lo mismo que no existir' : '') +
         (t.sin_fila ? ' · ⚠ ' + t.sin_fila + ' ítem(s) con cuenta pero SIN FILA en esta solapa (encuentro sin comunicación post: caso normal)' : '') +
@@ -2324,6 +2340,165 @@ function seccionAgregadoPost_() {
  * ⚠ **Y un ítem cuya cuenta no tiene fila en ESTA solapa tampoco es un error**: es un encuentro
  * sin comunicación post, que es el caso normal. Sale en `sin_fila`.
  */
+/* ═══════════ `2026-08-25_3` — EL TEMARIO CON VARIAS SOLAPAS ══════════════════════════════
+ *
+ * ⛔⛔ **El riesgo que ordena todo esto:** `L-036` indexa **dos listas construidas por separado** con
+ * el mismo `valor_fijo: n`. Si no tienen los mismos elementos **en el mismo orden**, la ranura 2
+ * muestra el período de un encuentro y los números de otro — **y nada falla**.
+ *
+ * ⭐⭐ **La solución es que la lista sea UNA.** Se construye una vez por corrida desde la solapa que
+ * CALIFICA, y **cada solapa se joinea a ella por `id_cuenta`** — nunca por posición y nunca por su
+ * propio orden. Una solapa sin fila para ese id da `sin_datos` **en sus columnas** y no corre las
+ * demás.
+ *
+ * ⚠ **La limitación, escrita como limitación y no como supuesto:** **quién califica lo decide
+ * `Agenda JM | Post`**, la primera declarada, porque es la única con una fila por encuentro aunque
+ * esté en ceros. Si algún día un encuentro tuviera filas en el desglose y ceros ahí, **queda afuera
+ * de la lista** — y eso lo detecta la identidad de bloques del banco, que dejaría de cerrar.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * `CONFIG.solapas_agregado_post` → lista de `{base_id, solapa, clave}`.
+ *
+ * ⚠ **Se parte por el PRIMER `|`, no por todos**: la solapa se llama `Agenda JM | Post` y **tiene un
+ * `|` adentro**. Partir por el último o por todos la rompería, y el síntoma sería una solapa que
+ * «no existe» — un cero, no un error.
+ *
+ * ⭐ **Con la lista vacía cae al par singular**, que es el comportamiento de siempre: `CONFIG` sólo
+ * siembra lo ausente, así que una instalación viva no cambia sola.
+ */
+function solapasDelTemario_(config) {
+  var texto = String((config && config.solapas_agregado_post) || '').trim();
+  var out = [];
+  if (texto) {
+    texto.split(';').forEach(function (entrada) {
+      var t = String(entrada || '').trim();
+      if (!t) return;
+      var corte = t.indexOf('|');
+      if (corte === -1) return;
+      var b = t.slice(0, corte).trim();
+      var s = t.slice(corte + 1).trim();
+      if (b && s) out.push({ base_id: b, solapa: s, clave: b + '|' + s });
+    });
+  }
+  if (!out.length) {
+    var b1 = String((config && config.base_agregado_post) || '').trim();
+    var s1 = String((config && config.solapa_agregado_post) || '').trim();
+    if (b1 && s1) out.push({ base_id: b1, solapa: s1, clave: b1 + '|' + s1 });
+  }
+  return out;
+}
+
+/**
+ * ⭐⭐ **La lista única de encuentros con POST, y el join de cada solapa contra ella.**
+ *
+ * Devuelve `{ ok, lista, porSolapa, diag }`:
+ *
+ *   - **`lista`** — los encuentros calificados, **en orden**, cada uno con su `id_cuenta` y su
+ *     `fecha_periodo`. Es la que define **qué es el n-ésimo** para toda la lámina.
+ *   - **`porSolapa[clave].filas`** — las filas de esa solapa **en el orden de `lista`**, con el
+ *     `fecha_periodo` del encuentro **copiado adentro**.
+ *
+ * ⭐ **Por qué se copia el `fecha_periodo`:** las dos solapas se ordenan después por el **mismo campo
+ * con los mismos valores**, así que `filasOrdenadas_` produce la misma secuencia en las dos y
+ * `opFILA` no se entera de nada. **`FILA` la usan otros 41 marcadores y su semántica no se toca.**
+ *
+ * ⚠ **Del lado del desglose son VARIAS filas por encuentro**, y las N llevan el mismo
+ * `fecha_periodo` — verificado, no supuesto: `filasOrdenadas_` desempata por índice de origen
+ * (`a.i - b.i`), así que quedan **contiguas y en orden de origen**.
+ */
+function temarioPorSolapas_(informeId, ventanaInforme, seccionId, solapas, camposMetrica) {
+  var vacio = { ok: false, lista: [], porSolapa: {}, diag: '' };
+  if (!solapas || !solapas.length) { vacio.diag = 'no hay solapas declaradas'; return vacio; }
+
+  /* La PRIMERA califica. Se reusa `filasDeSolapaDelTemario_` entera —incluida su guarda de métrica
+   * y su diagnóstico— en vez de repetir su lógica: es el mismo argumento por el que `FILA_TEXTO`
+   * reusa `opFILA`. */
+  var califica = solapas[0];
+  var base = filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId,
+    califica.base_id, califica.solapa, camposMetrica);
+  if (!base.ok) { vacio.diag = base.motivo; return vacio; }
+
+  /* `fecha_periodo` de la solapa que califica — la fecha del encuentro. Es lo que después ordena a
+   * las dos solapas **con los mismos valores**, y por eso se copia a las filas del resto. */
+  var mapaFecha = buscarMapeo(califica.base_id, califica.solapa, 'fecha_periodo');
+  var encFecha = mapaFecha.ok
+    ? claveDeLecturaEnColumna_(califica.base_id, califica.solapa, mapaFecha.columna) : null;
+
+  var lista = base.filas.map(function (f, i) {
+    return {
+      id_cuenta: base.ids[i],
+      fecha_periodo: (encFecha && (encFecha in f)) ? f[encFecha] : null,
+      fila: f
+    };
+  });
+
+  var porSolapa = {};
+  porSolapa[califica.clave] = {
+    filas: base.filas, base_id: califica.base_id, hoja: califica.solapa,
+    items: base.items, sin_cuenta: base.sin_cuenta, sin_fila: base.sin_fila,
+    sin_metrica: base.sin_metrica, califica: true
+  };
+
+  var avisos = [];
+  solapas.slice(1).forEach(function (s) {
+    var campoCuenta = campoIdCuentaDeSolapa_(s.base_id, s.solapa);
+    if (!campoCuenta) {
+      porSolapa[s.clave] = { filas: [], base_id: s.base_id, hoja: s.solapa,
+        motivo: s.clave + ' no declara `SOLAPAS.campo_id_cuenta` (`D-30`)' };
+      avisos.push(porSolapa[s.clave].motivo);
+      return;
+    }
+    var m = buscarMapeo(s.base_id, s.solapa, campoCuenta);
+    if (!m.ok) {
+      porSolapa[s.clave] = { filas: [], base_id: s.base_id, hoja: s.solapa, motivo: m.motivo };
+      avisos.push(m.motivo);
+      return;
+    }
+    var lectura = leerFuente(s.base_id, ventanaInforme, s.solapa, { sin_recorte_por_ventana: true });
+    if (!lectura.ok) {
+      porSolapa[s.clave] = { filas: [], base_id: s.base_id, hoja: s.solapa, motivo: lectura.motivo };
+      avisos.push(lectura.motivo);
+      return;
+    }
+    var enc = claveDeLecturaEnColumna_(s.base_id, s.solapa, m.columna);
+
+    /* ⭐ **El join, y es por `id_cuenta`: la IDENTIDAD.** Nunca por posición ni por el orden propio
+     * de la solapa. Un encuentro sin fila acá simplemente no aporta filas — y su columna sale
+     * `sin_datos` sin correr las demás, porque el orden lo fija `lista`. */
+    var salida = [];
+    var sinFila = 0;
+    lista.forEach(function (enc0) {
+      var suyas = filtrarFilasPorCuenta_(lectura.filas, enc, enc0.id_cuenta);
+      if (!suyas.length) { sinFila++; return; }
+      suyas.forEach(function (f) {
+        /* ⚠ Copia superficial: se le agrega el `fecha_periodo` del encuentro **sin tocar la fila
+         * original**, que puede estar cacheada y compartida con otro marcador. */
+        var copia = {};
+        Object.keys(f).forEach(function (k) { copia[k] = f[k]; });
+        copia[CLAVE_FECHA_TEMARIO_] = enc0.fecha_periodo;
+        copia[CLAVE_ID_TEMARIO_] = enc0.id_cuenta;
+        salida.push(copia);
+      });
+    });
+    porSolapa[s.clave] = {
+      filas: salida, base_id: s.base_id, hoja: s.solapa, sin_fila: sinFila, califica: false
+    };
+  });
+
+  return {
+    ok: true, lista: lista, porSolapa: porSolapa,
+    diag: 'lista única de ' + lista.length + ' encuentro(s) desde ' + califica.clave +
+      ' · items=' + base.items + ' sin_cuenta=' + base.sin_cuenta + ' sin_fila=' + base.sin_fila +
+      ' sin_metrica=' + base.sin_metrica + (avisos.length ? ' ⚠ ' + avisos.join(' · ') : '')
+  };
+}
+
+/* Las dos claves que el join agrega a la fila. ⚠ **Con un prefijo que no puede ser un título de
+ * Sheets**, por lo mismo que el prefijo posicional de `leerFuente`. */
+var CLAVE_FECHA_TEMARIO_ = '__temario_fecha__';
+var CLAVE_ID_TEMARIO_ = '__temario_id__';
+
 function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, solapa, camposMetrica) {
   var vacio = { ok: false, filas: [], items: 0, sin_cuenta: 0, sin_fila: 0, motivo: '' };
   var secciones;
@@ -2383,6 +2558,10 @@ function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, 
 
   var vistos = {};
   var filas = [];
+  /* `2026-08-25_3` — **paralelo a `filas`, el `id_cuenta` de cada una.** Aditivo: ningún consumidor
+   * vivo lo lee, y evita que quien arma la lista única tenga que **re-resolver el mapeo de la clave
+   * por su cuenta** — que es reimplementar lo que esta función ya hizo, y hacerlo peor. */
+  var ids = [];
   var sinCuenta = 0, sinFila = 0, conVarias = 0, sinMetrica = 0, items = 0;
   (r.items || []).forEach(function (item) {
     var id = normalizarIdCuenta_(item.id_cuenta || '');
@@ -2412,11 +2591,13 @@ function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, 
     }
 
     filas.push(suyas[0]);
+    ids.push(id);
   });
 
   return {
     ok: true,
     filas: filas,
+    ids: ids,
     items: items,
     sin_cuenta: sinCuenta,
     sin_fila: sinFila,
@@ -4523,22 +4704,24 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   var postTemario = null;
   var seccionPost = seccionAgregadoPost_();
   if (seccionPost) {
-    var basePost = String(leerConfig().base_agregado_post || '').trim();
-    var hojaPost = String(leerConfig().solapa_agregado_post || '').trim();
-    if (basePost && hojaPost) {
+    var solapasPost = solapasDelTemario_(leerConfig());
+    if (solapasPost.length) {
       var camposMetrica = String(leerConfig().campos_metrica_post || '')
         .split(',').map(function (c) { return c.trim(); }).filter(function (c) { return c !== ''; });
-      postTemario = filasDeSolapaDelTemario_(informeId, ventana, seccionPost, basePost, hojaPost,
-        camposMetrica);
-      /* ⛔⛔ `2026-08-25` — **`base_temario`/`hoja_temario` se declaran SIEMPRE, aunque no haya
-       * filas.** Esa es la corrección: son lo que le dice a `datosDeMarcador_` *«esta solapa la
-       * manda el temario»*, y sin ellas el marcador **caía a leer la solapa entera**.
+      postTemario = temarioPorSolapas_(informeId, ventana, seccionPost, solapasPost, camposMetrica);
+      /* ⛔⛔ `2026-08-25` — **las claves se declaran SIEMPRE, aunque no haya filas.** Esa es la
+       * corrección: son lo que le dice a `datosDeMarcador_` *«esta solapa la manda el temario»*, y
+       * sin ellas el marcador **caía a leer la solapa entera**.
        *
        * **Lo que publicó el 25/08 por no hacerlo:** las cuatro filas de `L-036` salieron de las
        * primeras filas de la solapa —Liniers y el **Recap de CABA**, con 2.463.980 habitantes—
-       * como si fueran encuentros del temario. Plausible, sin fallar, y de otro universo. */
-      opcionesEtapa4.base_temario = basePost;
-      opcionesEtapa4.hoja_temario = hojaPost;
+       * como si fueran encuentros del temario. Plausible, sin fallar, y de otro universo.
+       *
+       * ⭐ `2026-08-25_3` — **y ahora son N, sembradas desde la LISTA declarada**, no desde lo que
+       * la corrida haya logrado leer. Una solapa declarada que no trajo nada **falla con su
+       * diagnóstico**; nunca cae a la cadena general. */
+      opcionesEtapa4.claves_temario = {};
+      solapasPost.forEach(function (s) { opcionesEtapa4.claves_temario[s.clave] = true; });
       /* ⭐⭐ `2026-08-25` — **el diagnóstico viaja al FALTANTE, no se queda en el log.**
        *
        * ⛔ **Lo que estaba mal y costó un viaje entero:** el motivo del `@post_sin_temario` decía
@@ -4551,14 +4734,10 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
        * `sin_cuenta` = el ítem no ancló · `sin_fila` = ancló y su cuenta no está en la solapa ·
        * `sin_metrica` = está y no midió. **Mandan a tres trabajos distintos** y sin los tres el
        * `@post_sin_temario` vuelve a ser un aviso que no dice qué hacer. */
-      opcionesEtapa4.temario_post_diag = postTemario.ok
-        ? ('items=' + postTemario.items + ' · sin_cuenta=' + postTemario.sin_cuenta +
-           ' · sin_fila=' + postTemario.sin_fila + ' · sin_metrica=' + (postTemario.sin_metrica || 0))
-        : ('la sección no resolvió — ' + postTemario.motivo);
-      if (postTemario.ok && postTemario.filas.length) {
-        opcionesEtapa4.filas_temario = postTemario;
-      } else {
-        Logger.log('ⓘ agregado post: sin filas — ' + opcionesEtapa4.temario_post_diag);
+      opcionesEtapa4.temario_post_diag = postTemario.diag;
+      opcionesEtapa4.filas_temario = postTemario.porSolapa;
+      if (!postTemario.ok) {
+        Logger.log('ⓘ agregado post: sin lista única — ' + postTemario.diag);
       }
     }
   }
