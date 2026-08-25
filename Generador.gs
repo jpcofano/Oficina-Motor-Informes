@@ -2433,11 +2433,54 @@ function temarioPorSolapas_(informeId, ventanaInforme, seccionId, solapas, campo
     };
   });
 
+  /* ⭐⭐ **La RANURA, y es la pieza que hace imposible el desalineamiento — no improbable.**
+   *
+   * ⛔ **El modo de falla que cierra:** si cada solapa numerara sus propias filas, un encuentro
+   * ausente en una y presente en la otra **correría todas las ranuras siguientes**. La ranura 3
+   * mostraría el período de un encuentro y los números del que sigue, **y nada fallaría**. Ya se
+   * sabe que pueden diferir: San Cristóbal tiene 0 filas POST en el desglose y cae por métrica en
+   * `Agenda JM | Post` — **coinciden hoy por dos caminos que nadie coordinó.**
+   *
+   * ⭐ **La ranura se calcula UNA vez, sobre la lista única, y viaja en la fila.** Cada solapa
+   * publica la ranura que le tocó al encuentro, no la posición que ocupa en su propio recorte. Un
+   * encuentro ausente deja **un hueco en su ranura** y no mueve ninguna otra.
+   *
+   * ⭐⭐ **Y el orden NO se reimplementa: se llama a `filasOrdenadas_`, el comparador real.** Es la
+   * regla de `CLAUDE.md` §4 —*cuando la lógica existe en un `.gs`, se extrae la función real*— y acá
+   * además es el requisito: las seis columnas numéricas resuelven con `opFILA`, que ordena con ese
+   * mismo comparador. Reescribirlo *"igual"* sería exactamente el desalineamiento que esto viene a
+   * cerrar, disfrazado de prolijidad.
+   *
+   * ⚠ **EL DESEMPATE, declarado porque el prompt lo exige y porque el caso es real:** dos encuentros
+   * con la **misma `fecha_periodo`** —dentro de `julio_24_30` hay dos, `3389` Nueva Pompeya y `3420`
+   * Caballito, los dos el 29/07— se desempatan **por el orden de origen en la lista única, que es el
+   * orden del TEMARIO**. No es una elección nueva: es `a.i - b.i` de `filasOrdenadas_`, el mismo que
+   * ya usan las seis columnas numéricas. **Por construcción coinciden, en vez de coincidir de
+   * casualidad** — que es la diferencia entera de esta pieza.
+   *
+   * ⚠ **Y `R-32` sigue valiendo:** con empate, un token indexado publica una POSICIÓN y no una cosa.
+   * Lo que esto garantiza es que **las ocho columnas de la ranura hablen del mismo encuentro**, no
+   * que la ranura 3 sea siempre Caballito. */
+  var slim = lista.map(function (e, i) {
+    return { i: i, id_cuenta: e.id_cuenta, fecha: e.fecha_periodo };
+  });
+  var ordenada = filasOrdenadas_({
+    filas: slim,
+    separador: 'fecha_periodo',
+    ordenPor: { valores: slim.map(function (s) { return s.fecha; }) }
+  });
+  ordenada.filas.forEach(function (s, pos) { lista[s.i].slot = pos + 1; });
+  /* La solapa que califica se entrega **ya en orden de ranura**, así que el `filasOrdenadas_` que
+   * `opFILA` corre después es la identidad. No es redundancia: es lo que permite afirmar que el
+   * orden de las seis columnas y el de la ranura son el mismo objeto y no dos que se parecen. */
+  var listaOrdenada = ordenada.filas.map(function (s) { return lista[s.i]; });
+
   var porSolapa = {};
   porSolapa[califica.clave] = {
-    filas: base.filas, base_id: califica.base_id, hoja: califica.solapa,
+    filas: listaOrdenada.map(function (e) { return sellarRanura_(e.fila, e); }),
+    base_id: califica.base_id, hoja: califica.solapa,
     items: base.items, sin_cuenta: base.sin_cuenta, sin_fila: base.sin_fila,
-    sin_metrica: base.sin_metrica, califica: true
+    sin_metrica: base.sin_metrica, empates_orden: ordenada.empates, califica: true
   };
 
   var avisos = [];
@@ -2468,18 +2511,10 @@ function temarioPorSolapas_(informeId, ventanaInforme, seccionId, solapas, campo
      * `sin_datos` sin correr las demás, porque el orden lo fija `lista`. */
     var salida = [];
     var sinFila = 0;
-    lista.forEach(function (enc0) {
+    listaOrdenada.forEach(function (enc0) {
       var suyas = filtrarFilasPorCuenta_(lectura.filas, enc, enc0.id_cuenta);
       if (!suyas.length) { sinFila++; return; }
-      suyas.forEach(function (f) {
-        /* ⚠ Copia superficial: se le agrega el `fecha_periodo` del encuentro **sin tocar la fila
-         * original**, que puede estar cacheada y compartida con otro marcador. */
-        var copia = {};
-        Object.keys(f).forEach(function (k) { copia[k] = f[k]; });
-        copia[CLAVE_FECHA_TEMARIO_] = enc0.fecha_periodo;
-        copia[CLAVE_ID_TEMARIO_] = enc0.id_cuenta;
-        salida.push(copia);
-      });
+      suyas.forEach(function (f) { salida.push(sellarRanura_(f, enc0)); });
     });
     porSolapa[s.clave] = {
       filas: salida, base_id: s.base_id, hoja: s.solapa, sin_fila: sinFila, califica: false
@@ -2487,15 +2522,35 @@ function temarioPorSolapas_(informeId, ventanaInforme, seccionId, solapas, campo
   });
 
   return {
-    ok: true, lista: lista, porSolapa: porSolapa,
-    diag: 'lista única de ' + lista.length + ' encuentro(s) desde ' + califica.clave +
+    ok: true, lista: listaOrdenada, porSolapa: porSolapa,
+    diag: 'lista única de ' + listaOrdenada.length + ' encuentro(s) desde ' + califica.clave +
       ' · items=' + base.items + ' sin_cuenta=' + base.sin_cuenta + ' sin_fila=' + base.sin_fila +
-      ' sin_metrica=' + base.sin_metrica + (avisos.length ? ' ⚠ ' + avisos.join(' · ') : '')
+      ' sin_metrica=' + base.sin_metrica +
+      (ordenada.empates ? ' · ⚠ ' + ordenada.empates + ' empate(s) de fecha desempatados por orden ' +
+        'del temario — las ocho columnas de esa ranura son del mismo encuentro, pero `R-32` vale: la ' +
+        'ranura publica una POSICIÓN' : '') +
+      (avisos.length ? ' ⚠ ' + avisos.join(' · ') : '')
   };
 }
 
-/* Las dos claves que el join agrega a la fila. ⚠ **Con un prefijo que no puede ser un título de
+/**
+ * Copia superficial de la fila **con la ranura, la fecha y el id del encuentro sellados adentro**.
+ *
+ * ⚠ **Copia y no mutación**: la fila original puede estar cacheada y compartida con otro marcador
+ * (`cacheDatosHoja_`), y sellarla in situ contaminaría lecturas que no tienen nada que ver.
+ */
+function sellarRanura_(f, enc) {
+  var copia = {};
+  Object.keys(f).forEach(function (k) { copia[k] = f[k]; });
+  copia[CLAVE_SLOT_TEMARIO_] = enc.slot;
+  copia[CLAVE_FECHA_TEMARIO_] = enc.fecha_periodo;
+  copia[CLAVE_ID_TEMARIO_] = enc.id_cuenta;
+  return copia;
+}
+
+/* Las tres claves que el sellado agrega a la fila. ⚠ **Con un prefijo que no puede ser un título de
  * Sheets**, por lo mismo que el prefijo posicional de `leerFuente`. */
+var CLAVE_SLOT_TEMARIO_ = '__temario_slot__';
 var CLAVE_FECHA_TEMARIO_ = '__temario_fecha__';
 var CLAVE_ID_TEMARIO_ = '__temario_id__';
 

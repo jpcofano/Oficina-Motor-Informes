@@ -36,7 +36,9 @@ const vm = require('vm');
 const RAIZ = path.join(__dirname, '..');
 
 let fallas = 0;
+let corridas = 0;
 function afirmar(condicion, mensaje) {
+  corridas++;
   if (condicion) console.log('  ✅ ' + mensaje);
   else { fallas++; console.log('  ❌ ' + mensaje); }
 }
@@ -89,8 +91,15 @@ function itemsJulio() {
   ];
 }
 
-function ctxGenerador(items) {
-  const ctx = contexto('Generador.gs');
+function ctxGenerador(items, parchear) {
+  const ctx = contexto('Generador.gs', parchear);
+  /* ⭐⭐ `2026-08-25_3` — **`filasOrdenadas_` es el comparador REAL, cargado desde `Marcadores.gs`.**
+   * `temarioPorSolapas_` lo llama para calcular la ranura, y el banco tiene que ejercitar **ese**
+   * código y no una copia: si acá se stubeara un orden "equivalente", el banco quedaría verde
+   * mientras producción se desalinea — que es exactamente el fixture deducido en vez de copiado.
+   * En Apps Script los dos `.gs` comparten scope global, así que esto reproduce producción. */
+  vm.runInContext(fs.readFileSync(path.join(RAIZ, 'Marcadores.gs'), 'utf8'), ctx,
+    { filename: 'Marcadores.gs' });
   /* ⭐ `2026-08-24` — **`CONFIG` es de dónde salen los `seccion_id` ahora**, y se stubea acá en vez
    * de pasarlos por parámetro **a propósito**: así el banco recorre el mismo camino que producción.
    * Pasarlos a mano probaría que la función acepta un argumento, que no es lo que hay que verificar. */
@@ -492,6 +501,231 @@ console.log('\n═══ L bis · ⛔⛔ `2026-08-25_3` — la guarda dispara so
     '⭐ control positivo: una solapa NO declarada sí cae a la cadena general — la guarda no atrapa todo');
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-25_3` Parte 2 — **la lista es UNA y la ranura viaja en la fila.**
+ *
+ * ⛔⛔ El modo de falla que estos bloques cierran **no produce ningún error**: la ranura 3 muestra
+ * el período de un encuentro y los números del siguiente, con formato perfecto. Hoy las dos solapas
+ * coinciden **por dos caminos que nadie coordinó** —San Cristóbal cae por métrica en una y por no
+ * tener filas en la otra—, y coincidir por casualidad no es un contrato.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Armador de contexto para `temarioPorSolapas_`. Dos solapas: la que califica —una fila por
+ * encuentro— y el desglose —varias por encuentro—. */
+function ctxDosSolapas(items, filasCalifica, filasDesglose, parchear) {
+  const ctx = ctxGenerador(itemsJulio(), parchear);
+  ctx.leerSeccionesPlano_ = () => ({
+    comunicaciones_post: { modo: 'agregado', itera_sobre: 'REUNIONES', estado: 'activa', informes: 'JM,SECCO' }
+  });
+  ctx.itemsDeSeccion_ = () => ({ ok: true, items: items });
+  ctx.campoIdCuentaDeSolapa_ = (b) => (b === 'reuniones' ? 'id_cuenta' : 'des_id_cuenta');
+  ctx.buscarMapeo = (b, s, campo) => ({ ok: true, columna: ({ id_cuenta: 'A', des_id_cuenta: 'B', fecha_periodo: 'E' }[campo] || 'Z') });
+  ctx.claveDeLecturaEnColumna_ = (b, s, col) => ({ A: 'ID', B: 'ID', E: 'Fecha' }[col] || col);
+  ctx.encabezadoEnColumna_ = ctx.claveDeLecturaEnColumna_;
+  ctx.normalizarIdCuenta_ = (x) => String(x || '').trim();
+  ctx.filtrarFilasPorCuenta_ = (fs, enc, id) => fs.filter((f) => f[enc] === id);
+  ctx.leerFuente = (b) => ({ ok: true, filas: b === 'reuniones' ? filasCalifica : filasDesglose });
+  return ctx;
+}
+
+const SOLAPAS_2 = [
+  { base_id: 'reuniones', solapa: 'Agenda JM | Post', clave: 'reuniones|Agenda JM | Post' },
+  { base_id: 'digital', solapa: 'CAMPAÑAS_DESGLOCE_DIGITAL', clave: 'digital|CAMPAÑAS_DESGLOCE_DIGITAL' }
+];
+const F = (d) => new Date(d + 'T12:00:00Z');
+
+console.log('\n═══ O · ⭐⭐ la lista única: las dos solapas recorren los MISMOS encuentros, en el mismo orden ═══');
+{
+  /* Tres encuentros del temario, con las fechas desordenadas respecto del orden del temario: así el
+   * banco distingue «ordenó por fecha» de «dejó el orden de la hoja». */
+  const items = [
+    { id_cuenta: 'A-URQ', clave: 'Villa Urquiza' },
+    { id_cuenta: 'A-RET', clave: 'Retiro' },
+    { id_cuenta: 'A-ORD', clave: 'Orden Público' }
+  ];
+  const califica = [
+    { ID: 'A-URQ', Fecha: F('2026-07-27'), Impresiones: 300 },
+    { ID: 'A-RET', Fecha: F('2026-07-24'), Impresiones: 100 },
+    { ID: 'A-ORD', Fecha: F('2026-07-28'), Impresiones: 400 }
+  ];
+  /* Del lado del desglose son VARIAS por encuentro, y llegan en otro orden todavía. */
+  const desglose = [
+    { ID: 'A-ORD', Plataforma: 'Meta', I: F('2026-07-24') },
+    { ID: 'A-RET', Plataforma: 'Meta', I: F('2026-07-22') },
+    { ID: 'A-URQ', Plataforma: 'Google ads', I: F('2026-07-25') },
+    { ID: 'A-RET', Plataforma: 'Google ads', I: F('2026-07-23') },
+    { ID: 'A-ORD', Plataforma: 'DV360', I: F('2026-07-26') }
+  ];
+  const ctx = ctxDosSolapas(items, califica, desglose);
+  const r = ctx.temarioPorSolapas_('jm', null, 'comunicaciones_post', SOLAPAS_2, []);
+
+  afirmar(r.ok === true, 'resuelve');
+  afirmar(r.lista.map((e) => e.id_cuenta).join(',') === 'A-RET,A-URQ,A-ORD',
+    '⭐ la lista única va ordenada por FECHA, no por el orden del temario (' + r.lista.map((e) => e.id_cuenta).join(',') + ')');
+  afirmar(r.lista.map((e) => e.slot).join(',') === '1,2,3', 'y las ranuras son 1,2,3 corridas');
+
+  const cal = r.porSolapa['reuniones|Agenda JM | Post'].filas;
+  afirmar(cal.map((f) => f.ID).join(',') === 'A-RET,A-URQ,A-ORD',
+    '⭐ la solapa que califica se ENTREGA ya en orden de ranura — el `filasOrdenadas_` de `opFILA` es la identidad');
+  afirmar(cal.map((f) => f.__temario_slot__).join(',') === '1,2,3', 'y cada fila lleva su ranura sellada adentro');
+
+  const des = r.porSolapa['digital|CAMPAÑAS_DESGLOCE_DIGITAL'].filas;
+  afirmar(des.length === 5, 'el desglose trae sus 5 filas (' + des.length + ')');
+  afirmar(des.map((f) => f.__temario_slot__).join(',') === '1,1,2,3,3',
+    '⛔⛔ y cada una lleva la ranura de SU encuentro — las de un mismo encuentro quedan contiguas (' +
+    des.map((f) => f.__temario_slot__).join(',') + ')');
+  afirmar(des.every((f) => f.__temario_id__ === f.ID),
+    '⭐ el join fue por `id_cuenta` — la IDENTIDAD (`D-30`), nunca por posición');
+  /* ⭐ El control que ata las dos: para cada ranura, el id del lado que califica y el del desglose
+   * son el mismo. **Es la afirmación entera de esta pieza.** */
+  const porRanura = {};
+  cal.forEach((f) => { porRanura[f.__temario_slot__] = f.ID; });
+  afirmar(des.every((f) => porRanura[f.__temario_slot__] === f.__temario_id__),
+    '⛔⛔ para CADA ranura, las dos solapas hablan del mismo encuentro');
+  /* Y la fecha del encuentro viaja copiada, para que el orden de las dos sea el MISMO valor. */
+  afirmar(des[0].__temario_fecha__.getTime() === F('2026-07-24').getTime(),
+    '⭐ y el `fecha_periodo` del encuentro viaja copiado en la fila del desglose');
+}
+
+console.log('\n═══ P · ⛔⛔ un encuentro descartado por UNA SOLA de las dos NO corre las ranuras ═══');
+{
+  /* ⛔ **Este caso hay que CONSTRUIRLO**: hoy las dos descartan a San Cristóbal, así que producción
+   * no lo ejercita. Es el que rompe, y es el motivo entero de la ranura. */
+  const items = [
+    { id_cuenta: 'A-RET', clave: 'Retiro' },
+    { id_cuenta: 'A-SCR', clave: 'San Cristóbal' },
+    { id_cuenta: 'A-URQ', clave: 'Villa Urquiza' },
+    { id_cuenta: 'A-ORD', clave: 'Orden Público' }
+  ];
+  const califica = [
+    { ID: 'A-RET', Fecha: F('2026-07-24'), Impresiones: 100 },
+    { ID: 'A-SCR', Fecha: F('2026-07-25'), Impresiones: 200 },
+    { ID: 'A-URQ', Fecha: F('2026-07-27'), Impresiones: 300 },
+    { ID: 'A-ORD', Fecha: F('2026-07-28'), Impresiones: 400 }
+  ];
+  /* ⛔ **San Cristóbal — ranura 2 — NO tiene filas en el desglose.** Con numeración propia, el
+   * desglose tendría 3 grupos y su grupo 2 sería Villa Urquiza: la ranura 2 publicaría el período
+   * de Villa Urquiza al lado de las 200 impresiones de San Cristóbal. **Plausible, y falso.** */
+  const desglose = [
+    { ID: 'A-RET', Plataforma: 'Meta' },
+    { ID: 'A-URQ', Plataforma: 'Meta' },
+    { ID: 'A-ORD', Plataforma: 'Meta' }
+  ];
+  const ctx = ctxDosSolapas(items, califica, desglose);
+  const r = ctx.temarioPorSolapas_('jm', null, 'comunicaciones_post', SOLAPAS_2, []);
+
+  const cal = r.porSolapa['reuniones|Agenda JM | Post'].filas;
+  const des = r.porSolapa['digital|CAMPAÑAS_DESGLOCE_DIGITAL'].filas;
+
+  afirmar(cal.length === 4 && des.length === 3,
+    'la solapa que califica trae 4 y el desglose 3 — descartan distinto (' + cal.length + '/' + des.length + ')');
+  afirmar(r.porSolapa['digital|CAMPAÑAS_DESGLOCE_DIGITAL'].sin_fila === 1,
+    '⚠ y el que falta se CUENTA, no se pierde en silencio');
+  afirmar(des.map((f) => f.__temario_slot__).join(',') === '1,3,4',
+    '⛔⛔ el desglose salta la ranura 2 y NO la corre: 1,3,4 — no 1,2,3 (' + des.map((f) => f.__temario_slot__).join(',') + ')');
+  afirmar(!des.some((f) => f.__temario_slot__ === 2),
+    '⭐ la ranura 2 queda VACÍA del lado del desglose: un hueco en su lugar, no un valor de otro');
+  const porRanura = {};
+  cal.forEach((f) => { porRanura[f.__temario_slot__] = f.ID; });
+  afirmar(des.every((f) => porRanura[f.__temario_slot__] === f.ID),
+    '⛔⛔ y las tres que sí están siguen apareadas con el encuentro correcto');
+  /* ⭐ El control positivo del caso: sin la ranura, la ranura 3 del desglose sería Villa Urquiza y
+   * la 3 del otro lado sigue siendo Villa Urquiza… pero la 2 y la 4 se cruzarían. Lo que hace
+   * visible el error es comparar **la n-ésima presente** contra **la ranura n**. */
+  const nEsimaPresente = des.map((f) => f.ID);
+  afirmar(nEsimaPresente[1] === 'A-URQ' && porRanura[2] === 'A-SCR',
+    '⭐ y se ve el error que se evitó: la 2.ª fila PRESENTE del desglose es Villa Urquiza, y la ranura 2 es San Cristóbal');
+}
+
+console.log('\n═══ P bis · ⚠ romper a propósito: volver a numerar «la n-ésima PRESENTE» ═══');
+{
+  /* ⭐ El control negativo del bloque P, con las tres mitades que `CLAUDE.md` §4 exige:
+   *  **(1)** que la mutación OCURRA — `contexto()` tira si el patrón no matchea;
+   *  **(2)** que caiga por el MOTIVO correcto — se afirma la secuencia `1,2,3`, que es el bug
+   *          histórico exacto, no un rojo cualquiera;
+   *  **(3)** y que el bloque P mida esto — si la mutación diera lo mismo, P estaría verde de gratis.
+   *
+   * ⚠ El parche va por **fragmento de UNA línea**: el archivo está en CRLF y un patrón con `\n` no
+   * matchearía nada (24/08). */
+  const items = [
+    { id_cuenta: 'A-RET', clave: 'Retiro' },
+    { id_cuenta: 'A-SCR', clave: 'San Cristóbal' },
+    { id_cuenta: 'A-URQ', clave: 'Villa Urquiza' },
+    { id_cuenta: 'A-ORD', clave: 'Orden Público' }
+  ];
+  const califica = [
+    { ID: 'A-RET', Fecha: F('2026-07-24') }, { ID: 'A-SCR', Fecha: F('2026-07-25') },
+    { ID: 'A-URQ', Fecha: F('2026-07-27') }, { ID: 'A-ORD', Fecha: F('2026-07-28') }
+  ];
+  const desglose = [{ ID: 'A-RET' }, { ID: 'A-URQ' }, { ID: 'A-ORD' }];
+
+  const ctx = ctxDosSolapas(items, califica, desglose, (t) => t.replace(
+    'suyas.forEach(function (f) { salida.push(sellarRanura_(f, enc0)); });',
+    'suyas.forEach(function (f) { salida.push(sellarRanura_(f, { slot: enc0.slot - sinFila, fecha_periodo: enc0.fecha_periodo, id_cuenta: enc0.id_cuenta })); });'
+  ));
+  const r = ctx.temarioPorSolapas_('jm', null, 'comunicaciones_post', SOLAPAS_2, []);
+  const des = r.porSolapa['digital|CAMPAÑAS_DESGLOCE_DIGITAL'].filas;
+
+  afirmar(des.map((f) => f.__temario_slot__).join(',') === '1,2,3',
+    '⛔ con la numeración rota vuelve el bug: 1,2,3 — el desglose CORRIÓ las ranuras (' +
+    des.map((f) => f.__temario_slot__).join(',') + ')');
+  const cal = r.porSolapa['reuniones|Agenda JM | Post'].filas;
+  const porRanura = {};
+  cal.forEach((f) => { porRanura[f.__temario_slot__] = f.ID; });
+  const cruzadas = des.filter((f) => porRanura[f.__temario_slot__] !== f.__temario_id__);
+  afirmar(cruzadas.length === 2,
+    '⛔⛔ y DOS ranuras quedan cruzadas — período de un encuentro, números de otro, sin fallar (' +
+    cruzadas.map((f) => 'r' + f.__temario_slot__ + ':' + f.__temario_id__ + '≠' + porRanura[f.__temario_slot__]).join(' ') + ')');
+  afirmar(porRanura[2] === 'A-SCR' && des[1].__temario_id__ === 'A-URQ',
+    '⭐ o sea que el bloque P mide de verdad la corrección, y no está pasando por casualidad');
+}
+
+console.log('\n═══ Q · ⚠ el desempate entre dos encuentros del MISMO día, declarado y compartido ═══');
+{
+  /* El caso es real y está en `julio_24_30`: `3389` Nueva Pompeya y `3420` Caballito, **los dos el
+   * 29/07**. El desempate declarado es **el orden de origen en la lista única, que es el orden del
+   * temario** — el mismo `a.i - b.i` de `filasOrdenadas_` que ya usan las seis columnas numéricas. */
+  const items = [
+    { id_cuenta: '3389', clave: 'Nueva Pompeya' },
+    { id_cuenta: '3420', clave: 'Caballito' }
+  ];
+  const califica = [
+    { ID: '3389', Fecha: F('2026-07-29'), Impresiones: 111 },
+    { ID: '3420', Fecha: F('2026-07-29'), Impresiones: 222 }
+  ];
+  const desglose = [
+    { ID: '3420', Plataforma: 'Meta' },
+    { ID: '3389', Plataforma: 'Meta' },
+    { ID: '3420', Plataforma: 'Google ads' }
+  ];
+  const ctx = ctxDosSolapas(items, califica, desglose);
+  const r = ctx.temarioPorSolapas_('jm', null, 'comunicaciones_post', SOLAPAS_2, []);
+
+  afirmar(r.lista.map((e) => e.id_cuenta).join(',') === '3389,3420',
+    '⭐ con la misma fecha, gana el ORDEN DEL TEMARIO: 3389 antes que 3420 (' + r.lista.map((e) => e.id_cuenta).join(',') + ')');
+  afirmar(/empate/.test(r.diag) && /R-32/.test(r.diag),
+    '⚠ y el diagnóstico DECLARA el empate y cita `R-32` — la ranura publica una POSICIÓN, no una cosa');
+
+  const des = r.porSolapa['digital|CAMPAÑAS_DESGLOCE_DIGITAL'].filas;
+  afirmar(des.map((f) => f.ID).join(',') === '3389,3420,3420',
+    '⛔ y el desglose se reagrupa por la lista única, no por su propio orden (' + des.map((f) => f.ID).join(',') + ')');
+
+  /* ⭐⭐ El control que importa más que los otros dos: **el desempate lo hace el MISMO comparador
+   * que las seis columnas numéricas.** Se corre `opFILA` de verdad sobre las filas entregadas y se
+   * verifica que su fila 1 es el mismo encuentro que la ranura 1. Si `temarioPorSolapas_`
+   * reimplementara el orden "igual", esto es lo que se pondría rojo. */
+  const cal = r.porSolapa['reuniones|Agenda JM | Post'].filas;
+  const fila1 = ctx.opFILA({
+    filas: cal, separador: 'fecha_periodo', valor_fijo: 1, campo_logico: 'imp_totales',
+    encabezado: 'Impresiones', columna: 'J', base_id: 'reuniones', solapa: 'Agenda JM | Post',
+    ordenPor: { valores: cal.map((f) => f.Fecha) }
+  });
+  afirmar(fila1.valor === 111,
+    '⛔⛔ `opFILA` con n=1 sobre las filas entregadas da 111 — el encuentro de la ranura 1 (' + fila1.valor + ')');
+  afirmar(/empate/.test(fila1.traza),
+    '⚠ y su propia traza también declara el empate: los dos lados lo ven y lo desempatan igual');
+}
+
 console.log('\n═══ N · ⭐⭐ la regla del 25/08: «métrica de resultado > 0», o la fila NO va ═══');
 {
   const ctx = ctxGenerador(itemsJulio());
@@ -574,7 +808,13 @@ console.log('\n═══ M · ⚠ romper a propósito: volver a «la primera que
 }
 
 console.log('');
-console.log(fallas === 0 ? '✅ Todas las afirmaciones pasaron.' : '❌ ' + fallas + ' afirmación(es) fallaron.');
+/* ⭐ **Declara CUÁNTO midió, no sólo que no falló.** *«Ningún problema»* y *«no se probó nada»* se
+ * ven idénticos en un log sin conteo (`CLAUDE.md` §4). ⚠ Y el formato no es libre: `tools/suites.js`
+ * suma leyendo *«Las N afirmaciones pasaron»* — sin ese texto este banco aportaba **cero** al total
+ * del runner, y nadie se enteraba. */
+console.log(fallas === 0
+  ? '✅ Las ' + corridas + ' afirmaciones pasaron.'
+  : '❌ ' + fallas + ' de ' + corridas + ' afirmación(es) fallaron.');
 
 console.log('');
 console.log('⚠ Lo que este control NO contesta — son las dos corridas de la Parte C:');
