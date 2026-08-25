@@ -1614,6 +1614,12 @@ var SEED_MAPEO_DESGLOCE_ = [
   { base_id: 'digital', campo_logico: 'des_id_accion', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'A', encabezado: 'Id accion', notas: '⚠ lo único que distingue dos filas por lo demás idénticas. 61 grupos duplicados / 135 filas de más sobre 5.161 (fixture 20/08)' },
   { base_id: 'digital', campo_logico: 'des_campana', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'E', encabezado: 'Nombre Campaña', notas: '⚠ acá vive el pre/post: "Agenda con 1 - 1 A 1 - X" contra "Agenda Post con 1 - 1 A 1 - X", misma cuenta y misma plataforma' },
   // Fechas y estado — declarados, sin consumidor todavía.
+  /* ⭐ `2026-08-25` — **`Nomenclatura` es de donde sale el `Formato` de `L-036`** (decisión 3 del
+   * usuario). ⚠ **Campos VARIABLES y su posición cambia por plataforma**: para Retiro, Meta trae
+   * `… | Meta | 15 | Alcance | …` y Google `… | YouTube | Video | Vistas`. **Se declara la columna;
+   * cómo extraer el formato de adentro es pregunta abierta** — es el mismo bloqueo que
+   * `CIERRE_POR_LAMINA.md` ya declaró para `camp_formato1-3` de `L-043`. */
+  { base_id: 'digital', campo_logico: 'des_nomenclatura', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'L', encabezado: 'Nomenclatura', tipo_esperado: 'texto', notas: 'REVISAR — de acá sale el Formato de L-036 (Banners/Video). ⚠ campos variables separados por " | " y la POSICIÓN cambia por plataforma: Meta trae "…| Meta | 15 | Alcance |…" y Google "…| YouTube | Video | Vistas". Sin extractor todavía' },
   { base_id: 'digital', campo_logico: 'des_fecha_inicio', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'I', encabezado: 'Fecha inicio', notas: '' },
   { base_id: 'digital', campo_logico: 'des_fecha_fin', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'J', encabezado: 'Fecha fin', notas: 'el candidato de u1_fecha_fin' },
   { base_id: 'digital', campo_logico: 'des_estado', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'K', encabezado: 'Estado', notas: '⚠ los valores van en MAYÚSCULA — FINALIZADA 4338, PAUSADA 433, ACTIVA 229. Un filtro `estado=Activa` copiado de imp_* NO matchea acá (R-10 preserva mayúsculas)' }
@@ -3528,7 +3534,15 @@ var SEED_SECCIONES_ = [
   // sección que agrupa: su lámina es una tabla con cuatro filas, no una lámina por ítem.
   // `jm` ya tiene las cuatro; `secco` tiene tres y la cuarta **no se puede agregar todavía**
   // (`D-22`: el motor no sabe insertar filas en una tabla de Slides).
-  filaSeccion_({ id: 'comunicaciones_post', orden: 9, nombre: 'Comunicaciones post', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', filtro: 'etapa=post', familia: 'post_', itemsPorLamina: '4' }),
+  /* ⭐⭐ `2026-08-25` — **`itemsPorLamina` pasa de 4 a 1**, y es la consecuencia directa de que
+   * `L-036` sea por PLATAFORMA y no por encuentro. Las cuatro filas de la tabla son
+   * TOTAL + Meta + Google + Programmatic **de UN encuentro**, así que una lámina lleva **un** ítem.
+   * El `4` de antes decía *«cuatro encuentros en una lámina»*, que es el diseño que se descartó.
+   *
+   * ⚠ **Y `modo` se queda en `repetible`** — `declararModoDelAgregadoPost()` quedó invalidado y
+   * frena. Es `itera: REUNIONES` + `filtro: etapa=post` lo que recorta por encuentro, igual que
+   * `L-053` hace con el «1 a 1». */
+  filaSeccion_({ id: 'comunicaciones_post', orden: 9, nombre: 'Comunicaciones post', informes: 'JM,SECCO', modo: 'repetible', itera: 'REUNIONES', filtro: 'etapa=post', familia: 'post_', itemsPorLamina: '1' }),
   filaSeccion_({ id: 'impacto_comunicacional', orden: 10, nombre: 'Semana JM — Impacto comunicacional', informes: 'SECCO', modo: 'unica', estado: 'manual', falta: 'sin marcar en la plantilla' }),
   filaSeccion_({ id: 'ministros', orden: 11, nombre: 'Encuentros de ministros', informes: 'SECCO', modo: 'agregado', familia: 'emin_' }),
   filaSeccion_({ id: 'm2', orden: 12, nombre: 'M2', informes: 'JM,SECCO', modo: 'agregado', familia: 'm2_' }),
@@ -4063,7 +4077,32 @@ function repararTablaPostReuniones() {
  *
  * **Sin `_` y sin parámetros** — las dos condiciones de `CLAUDE.md` §2.
  */
+/* ⛔⛔ **`2026-08-25` — ESTE BOTÓN QUEDÓ INVALIDADO y por eso FRENA en vez de correr.**
+ *
+ * Su premisa era *«la lámina es UNA con CUATRO filas, y las cuatro filas son los cuatro encuentros
+ * del temario»*. **Medido el 25/08, es falsa**: `L-036` es por **PLATAFORMA** —TOTAL + Meta +
+ * Google + Programmatic— y por lo tanto **de UN encuentro**. La sección tiene que seguir siendo
+ * `repetible` sobre `REUNIONES` con `filtro = etapa=post`, que es lo que recorta por encuentro.
+ *
+ * ⚠ **No se borra, y el motivo importa:** un botón que desaparece deja a quien lo buscaba sin saber
+ * por qué, y `volverComunicacionesPostARepetible()` sigue existiendo por si alguien ya lo corrió.
+ * **Frena con el motivo escrito**, que es lo que un botón cuya premisa venció tiene que hacer —
+ * seguir siendo apretable sería una trampa con fecha.
+ *
+ * Si algún día la lámina volviera a ser por encuentro, se saca esta guarda y se cita por qué. */
 function declararModoDelAgregadoPost() {
+  Logger.log('⛔ FRENADO — este botón quedó INVALIDADO el 25/08/2026.');
+  Logger.log('   Su premisa era «las cuatro filas son los cuatro encuentros del temario».');
+  Logger.log('   Medido: `L-036` es por PLATAFORMA (TOTAL + Meta + Google + Programmatic) y');
+  Logger.log('   por lo tanto de UN encuentro. `comunicaciones_post` tiene que quedar `repetible`.');
+  Logger.log('   Ver docs/FUENTE_post_reuniones_2026-08-25.md, ADDENDUM 1.');
+  return {
+    ok: false, frenado: true,
+    motivo: 'botón invalidado el 25/08: L-036 es por plataforma, no por encuentro. La sección se ' +
+      'queda en `repetible`.'
+  };
+
+  /* eslint-disable no-unreachable */
   var r = curarSecciones_([{ seccion_id: 'comunicaciones_post', modo: 'agregado' }]);
 
   if (!r.ok) { Logger.log('⛔ NO se pudo: ' + r.motivo); return r; }

@@ -3,8 +3,12 @@
 > **Estado:** congelado · **fecha de la medición:** 2026-08-25 · **pedido por el usuario**
 >
 > ⛔⛔ **SU CONCLUSIÓN PRINCIPAL ES FALSA — ver el ADDENDUM 1 al final, del mismo día.** La fuente
-> de `L-036` es `digital/CAMPAÑAS_DESGLOCE_DIGITAL`, no `reuniones/Agenda JM | Post`. El cuerpo se
-> conserva sin editar porque **cómo se llegó a la conclusión equivocada es la mitad de su valor**.
+> de `L-036` es `digital/CAMPAÑAS_DESGLOCE_DIGITAL`. El cuerpo se conserva sin editar porque **cómo
+> se llegó a la conclusión equivocada es la mitad de su valor**.
+>
+> ⚠ **Pero `reuniones/Agenda JM | Post` NO se saca del `MAPEO`:** es la fuente **correcta** para
+> `Habitantes` y `Alcance` —que no existen en el desglose— y **derivada** para las otras cinco.
+> *«Fuente equivocada»* a secas costaría las dos columnas que sí aporta.
 >
 > ⚠ **Es una foto fechada.** Todo lo de acá sale de dos fixtures en disco y responde por **sus**
 > días: la base por el **20/08/2026**, el deck del equipo por el **31/07/2026**. No dice qué hay hoy.
@@ -217,6 +221,21 @@ trampa con fecha»*—. Reabrirlo es del usuario.
 ---
 
 # ⛔⛔ ADDENDUM 1 — 25/08/2026, mismo día · **la conclusión de arriba está MAL**
+
+> ⚠ **Corrección del propio addendum, pedida por el usuario el 25/08 y puesta arriba de todo
+> porque el resto se lee distinto sin ella:** decir *«`Agenda JM | Post` es la fuente
+> equivocada»* **a secas es peligroso** — haría que alguien la saque del `MAPEO` y **se perderían
+> las dos columnas que sí aporta**.
+>
+> ⭐ **Lo que realmente es:** `Agenda JM | Post` es la fuente **CORRECTA para `Habitantes` y
+> `Alcance`** —que no existen en el desglose, en ningún nombre— y **DERIVADA para las otras
+> cinco**, donde `CAMPAÑAS_DESGLOCE_DIGITAL` es el original. **No se saca del `MAPEO`: se le
+> recorta el alcance a lo que sí aporta.**
+>
+> ⚠ **Y el límite que eso deja abierto, declarado y NO resuelto** (decisión del usuario): una
+> lámina que cruza **dos fuentes** puede publicar **filas de dos momentos distintos**. Es la misma
+> familia que el deck en tandas (`D-41`) y que `C-80`: cajas una al lado de la otra, con el mismo
+> formato, que se leen como si respondieran la misma pregunta. **Queda anotado, no resuelto.**
 
 > **No se edita una línea del texto original.** Lo de arriba queda como está, porque **cómo se llegó
 > a una conclusión equivocada es la mitad del valor de este documento**. Esto lo corrige.
