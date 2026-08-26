@@ -8863,3 +8863,78 @@ Las tres consecuencias —origen caído = solapa vacía indistinguible de «no h
 agravado con refresco a mitad de corrida, y el `sha256` que deja de anclar el fixture— van a
 **`docs/GRANO_TEMPORAL.md` §4**, que es el dueño de por qué y cómo se recorta cada fuente. Acá sólo
 el puntero.
+
+---
+
+## `2026-08-26` — el MECANISMO de impresiones está bien; lo que no da es PROGRAMMATIC
+
+**Decisión del usuario, 26/08:** *«el mecanismo está bien, Programmatic sigue acumulando, ya no
+da»*. Queda asentado con lo que lo respalda, medido sobre los dos fixtures con `sha256` verificado
+y contra los decks del equipo que viajan en los mismos `.zip`.
+
+### ✅ El mecanismo está bien, y esto es lo que lo prueba
+
+Hasta hoy *«los `imp_*` no reproducen»* era un hallazgo sin localizar: podía ser la ventana, la
+pertenencia, el corte por ámbito, la partición por plataforma o el dato. **Ahora está acotado.**
+
+- ⭐ **Por EVENTO cierra al dígito donde la campaña terminó.** Parque Avellaneda (`3487`), PRE Meta:
+  el fixture del 20/08 dice **65.554** y el deck del equipo dice **65.554**. El encuentro fue el
+  12/08, así que la campaña PRE ya estaba cerrada y no acumulaba más.
+- ⭐⭐ **Y donde la campaña sigue viva, la diferencia es el TIEMPO, medido en tres momentos:** POST
+  Meta de `3487` va **74.639** (fixture 20/08) → **86.572** (deck ~21/08) → **126.323** (hoja viva
+  26/08). Monotónica. **Eso descarta un error de columna y deja sólo el desfasaje.**
+- ⭐ **Las identidades internas cierran en las dos etapas:** Meta + Google + Programmatic = total,
+  exacto — PRE `65.554 + 0 + 86.572 = 152.126`, POST `74.639 + 132.310 + 35.605 = 242.554`.
+- ⭐ **Y el agregado reproduce los casos validados AL DÍGITO** una vez aplicado
+  `MARCADORES.filtro = estado=Activa`: `679.647 · 614.140 · 5.992.841`, que son `A-01`, `A-06` y
+  `A-07`. La pertenencia, el tope de `R-30`, el corte `ambito=jm` y la partición por plataforma
+  **hacen lo que dicen**.
+
+⚠ **Una trampa que hubo que descartar y conviene que quede escrita:** `86.572` es **también**
+exactamente `Impresiones Programmatic` de la fila PRE en el fixture. Dos números de cinco dígitos
+iguales invitaban a concluir *«el deck tomó la columna equivocada»*. **Lo descarta la progresión de
+tres puntos**, que sólo funciona si `86.572` es POST Meta en un momento intermedio. Con dos
+mediciones las dos explicaciones eran indistinguibles; hizo falta la tercera.
+
+### ⛔⛔ Lo que no da: PROGRAMMATIC, y es UN problema, no dos
+
+**Programmatic sigue trayendo el ACUMULADO de campaña en vez de la semana**, y ahora está medido en
+**los dos granos**, que es lo que lo vuelve accionable:
+
+- **Por evento:** el deck publica `377.997` impresiones Programmatic PRE+POST para `3487`; el
+  fixture da `86.572 + 35.605 = 122.177`. **Factor 3.**
+- **En el agregado:** `imp_prog` se va **+15,4 %** en julio y **+178,9 %** en agosto.
+
+⭐ **Que falle igual en un solo encuentro que en el agregado de 70 cuentas es el dato bueno:** el
+problema **no es del agregado ni de la ventana** —los dos están validados arriba—, es de **la
+columna de Programmatic**. Un encuentro, dos números, una diferencia: es el caso más chico posible
+para diagnosticarlo.
+
+### Los ocho `imp_*` contra el deck, medidos en las dos semanas
+
+| marcador | julio_24_30 | agosto_14_20 | peor |
+|---|---|---|---|
+| `imp_meta` | −5,2 % | +8,7 % | **8,7 %** |
+| `imp_google` | +15,6 % | +7,3 % | 15,6 % |
+| `gcba_imp_meta` | +58,5 % | +2,3 % | 58,5 % |
+| `gcba_imp_prog` | +92,4 % | +84,9 % | 92,4 % |
+| `gcba_imp_total` | +95,0 % | +59,2 % | 95,0 % |
+| `imp_total` | +13,1 % | +98,1 % | 98,1 % |
+| `imp_prog` | +15,4 % | +178,9 % | 178,9 % |
+| `gcba_imp_google` | +208,5 % | +81,6 % | 208,5 % |
+
+⛔ **NINGUNO se sacó de `_revisar`, y el motivo es que la medición no habilita a ninguno.** El
+único bajo 10 % en las dos semanas es `imp_meta`, y **en agosto está +8,7 % POR ENCIMA del deck**
+— el deck es **posterior** al fixture, así que el desfasaje de acumulación sólo puede hacerlo
+**mayor**, nunca menor. Es exactamente el razonamiento con el que `A-06` mandó `imp_google` a
+`contradice`.
+
+⚠ **Los cuatro `gcba_imp_*` además no tienen caso validado por plataforma**: sus números de acá son
+**nuevos y sin validar**, no *validados*. Son dos estados distintos y sólo uno se puede citar.
+
+**Queda como decisión abierta del usuario:** con qué tolerancia un `imp_*` deja de estar en
+`_revisar`. Es una celda de `MARCADORES.formato` por marcador y **ningún `clasp push`** (`D-01`).
+
+**El instrumento que reproduce todo esto es `tools/medir-impresiones-resumen.py`**, y su control
+positivo es reproducir `A-01`/`A-06`/`A-07`: si algún día deja de hacerlo, el instrumento está mal
+y no el motor.
