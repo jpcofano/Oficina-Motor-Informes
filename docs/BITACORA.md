@@ -15577,3 +15577,56 @@ Twitch ni Uber — enumerarlas daría hoy el mismo número y dejaría afuera en 
 - **No se midió el encabezado físico de la col K**, así que no se afirma que la nota de
   `camp_alcance` esté mal: se afirma que `meta_alcance` no resuelve como `campo_logico` (`C-88`).
 - **`L-046` queda en 🟡.** El ✅ lo pone el usuario.
+
+---
+
+## `2026-08-26` (cierre de los tres cabos) — dos etiquetas corregidas y una medición que dice «no hay por dónde»
+
+**Uno escribía, dos sólo medían.** Los tres cerraron con veredicto; el tercero con el veredicto
+negativo que el prompt preveía.
+
+### 1 · Las dos `notas`, corregidas en el código **y** en la hoja
+
+`camp_frecuencia` decía *«X-19 ABIERTA»* y `X-19` cerró el 26/08. `camp_alcance` decía *«Mapea a la
+columna `meta_alcance`»*, que resultó **cierto y ambiguo**.
+
+⭐⭐ **El arreglo no fue editar dos textos: fue dejar uno.** Las dos notas pasaron a constantes de
+módulo —`NOTA_CAMP_FRECUENCIA_`, `NOTA_CAMP_ALCANCE_`— que usan **el seed y el botón nuevo**
+(`actualizarNotasDeCampana()`). *«Los dos lados a la vez»* deja de depender de que alguien se
+acuerde: **no hay dos cadenas que puedan divergir.** El botón hace falta porque `MARCADORES` no
+tiene sembrador — editar el `.gs` no mueve una celda y `CLAUDE.md` §7 dice que gana la hoja.
+
+**2 celdas escritas y releídas**, idénticas al código, con el botón afirmando que la celda ya **no
+dice** «X-19 ABIERTA» en vez de conformarse con que cambió.
+
+⭐ **Y el barrido de otras menciones tuvo un hallazgo por NO tocar:** las 3 de `Auditoria.gs` dicen
+que **el deck** publica 8,4 donde la cuenta da 8,89, y **eso sigue siendo cierto**. `X-19` siempre
+fue *«error en el deck, no en el motor»*; lo que cerró es que la definición del motor reproduce.
+**Corregirlas habría borrado una afirmación verdadera por parecerse a la que había que cambiar.**
+
+### 2 · La col K se llama `meta_alcance`
+
+Las dos afirmaciones eran ciertas en capas distintas: **campo lógico** `alcance`, **encabezado
+físico** `meta_alcance`. `A-12` queda **verificada** en su premisa, y con la causa de la ambigüedad
+anotada: el testigo `encabezado` de `MAPEO` está vacío (`D-31`). El mapeo no se tocó.
+
+### ⛔ 3 · El recorte del panel: los tres criterios dieron CERO, y no por poco
+
+`looker/DIGITAL` **no tiene ninguna columna de fecha** — confirmado por los encabezados de
+`leerFuente`, por `SOLAPAS.firma_encabezado` y por `MAPEO`, que no resuelve ninguna de las tres.
+**Los recortes no fallan: no son aplicables.**
+
+⭐ **Control positivo:** sin filtro de fecha el mismo corte ve **545 filas JM** y **3.302 GCBA**, o
+sea que el instrumento lee bien y los ceros son del dato. Sin eso, «no hay» y «no miré» se veían
+igual.
+
+⛔⛔ **Y ya estaba escrito: es `R-29`** — `looker/DIGITAL` es una **fila de estado**, y sobre una
+fila de estado ningún recorte por ventana arregla el número. **Se paró acá**, como pedía el prompt:
+`contenidos_total` sigue declarado no cableable y **no se inventó un cuarto criterio para que
+cerrara**.
+
+⚠ Queda anotada la pista del usuario —*las cuentas de `digital` salen de `Cuentas`, el join es por
+ID*— como lo próximo a probar, **sin medir**: la consigna era cerrar tres cabos, no abrir el cuarto.
+
+**Suites: 53 bancos, exit 0.** ⚠ Ningún banco cubre estas dos notas: son texto, y lo que las
+verifica es el releído del propio botón.

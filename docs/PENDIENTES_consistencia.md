@@ -4791,6 +4791,10 @@ tiene que producir **las dos direcciones**.
 
 ### 3 · `A-12` — la columna dice **Meta** y el deck dice *"Usuarios alcanzados"*
 
+> ⭐ **VERIFICADO el 26/08/2026, y era lo único de `A-12` que no estaba medido:** el encabezado físico de la col K de `looker/resumen_metricas_dinamico` dice, literal, **`meta_alcance`**. La premisa de este caso **se sostiene**. ⚠ Lo que se agrega es la distinción de capas que faltaba: el **campo lógico** es `alcance` y `meta_alcance` **no existe como campo lógico** de esa solapa, así que buscarlo como tal da cero — y eso hizo creer un rato que la nota de `camp_alcance` estaba mal. Las dos cosas son ciertas.
+>
+> ⚠ **Y la causa de la ambigüedad, que es barata de cerrar y NO se cerró acá:** la fila de `MAPEO` tiene la columna testigo `encabezado` **vacía** (`D-31`). Con el testigo cargado, las dos capas se leen de la fila sin tener que medir nada. Tocar `MAPEO` estaba fuera del alcance de esta vuelta.
+
 `alcance` mapea a la columna cuyo encabezado es **`meta_alcance`**, y el deck lo publica **sin
 plataforma**. Si la columna es sólo de Meta, **el alcance publicado no es el total** — y eso
 explicaría un desvío estable, aunque no el movimiento.
@@ -9212,3 +9216,88 @@ cuyo trabajo *parece* ejecutable es el que se ejecuta. La primera habría produc
 reescribe cuatro filas con exactamente lo que ya tenían —cero celdas escritas, «idempotente», verde—
 y la segunda habría documentado como decisión un mapeo que nadie verificó. **Ninguna de las dos
 falla; las dos publican.**
+
+---
+
+## `2026-08-26` (cierre de cabos) — los tres que quedaron abiertos al cerrar `L-046`
+
+**Dos eran de etiqueta y cerraron. El tercero midió y NO cerró, que era un resultado previsto.**
+
+### 1 · Las `notas` de `camp_frecuencia` — corregidas **en los dos lados**
+
+Decían *«X-19 ABIERTA … NO hay que reproducirlo»*. `X-19` cerró el 26/08 por reproducción
+(`C-87`). Ahora dicen qué reproduce —Autódromo, 1,87 = 1,87 y 7,19 ≈ 7,17—, qué no —Mugica, 2,84
+contra 1,64— y **por qué**: los operandos son de otra foto de la base, no falla la fórmula.
+
+⭐⭐ **Y el arreglo no fue editar dos textos: fue dejar UNO.** Las dos notas viven ahora en
+`NOTA_CAMP_FRECUENCIA_` y `NOTA_CAMP_ALCANCE_`, constantes de módulo que usan **el seed y el
+botón**. *«Los dos lados a la vez»* deja de ser disciplina de quien edita y pasa a ser estructura:
+**no hay dos cadenas que puedan divergir.** El botón es `actualizarNotasDeCampana()`, y hace falta
+porque `MARCADORES` **no tiene sembrador** — corregir el `.gs` no mueve una celda, y `CLAUDE.md`
+§7 dice que **gana la hoja**.
+
+**Escritas y releídas: 2 celdas**, idénticas al código, y el propio botón afirma que ya no dicen
+«X-19 ABIERTA» en vez de conformarse con «la celda cambió».
+
+#### ⚠ El barrido de otras menciones, con su cero declarado
+
+| dónde | cuántas | veredicto |
+|---|---|---|
+| `MARCADORES` (la hoja) | **1** | era `camp_frecuencia`. Corregida |
+| `Instalar.gs` | 8 | todas son el texto nuevo o lo citan **dentro de la corrección**. Ninguna vencida |
+| ⭐ `Auditoria.gs` | **3** | **NO se tocan, y el motivo importa** |
+
+⭐ **Las tres de `Auditoria.gs` afirman que EL DECK publica 8,4 donde la cuenta da 8,89** —*«el
+equipo también se equivoca»*, *«truncar para parecerse hereda el error del equipo»*— y **eso sigue
+siendo cierto después del cierre.** `X-19` siempre dijo *«ERROR EN EL DECK, NO EN EL MOTOR»*; lo
+que cerró es que **la definición del motor reproduce**, no que el deck haya dejado de estar mal.
+**Corregirlas habría borrado una afirmación verdadera** por parecerse a la que había que cambiar.
+
+---
+
+### 2 · El encabezado de la col K — **las dos afirmaciones eran ciertas**
+
+Medido: **`meta_alcance`**. La confirmación quedó dentro de `A-12`, arriba, junto con la causa de
+la ambigüedad —el testigo `encabezado` de `MAPEO` vacío— y por qué no se cerró acá. **El mapeo no
+se tocó**: `camp_alcance` reproduce (919.500 en Autódromo); esto era la etiqueta, no el dato.
+
+---
+
+### ⛔ 3 · `C-89` · Por qué fecha recorta el panel — **NO cierra, y no por poco: `looker/DIGITAL` no tiene columna de fecha**
+
+**Los tres recortes dieron CERO. Los tres.**
+
+| recorte | JM | GCBA |
+|---|---|---|
+| (a) solape `inicio ≤ 20/08 && fin ≥ 14/08` | 0 filas | 0 filas |
+| (b) inicio dentro de la ventana | 0 filas | 0 filas |
+| (c) fin dentro de la ventana | 0 filas | 0 filas |
+
+⭐ **No es que no reproduzcan: no son aplicables.** `looker/DIGITAL` tiene **nueve** columnas y
+**ninguna es de fecha** — `Id cuentas · Plataforma · Impresiones · Visualizaciones · Clics ·
+nombre_campaña · eje · area · estado`. Confirmado por tres vías independientes: los encabezados que
+devuelve `leerFuente`, `SOLAPAS.firma_encabezado`, y `MAPEO`, que **no resuelve** `fecha_inicio`,
+`fecha_fin` ni `fecha_periodo` para esa solapa.
+
+⭐ **Control positivo, y era necesario:** sin filtro de fecha el mismo corte por ámbito ve **545
+filas JM (203.188.381)** y **3.302 GCBA (2.225.854.078)**. O sea que **el instrumento lee bien** y
+los ceros son del dato, no del código. Sin esta medición, «no hay» y «no miré» se veían igual.
+
+⛔⛔ **Y esto ya estaba escrito: es `R-29`.** *«`looker/DIGITAL` — una fila por campaña × plataforma,
+**sin columna de fecha propia**»* = **fila de ESTADO**, y sobre una fila de estado **ningún recorte
+por ventana arregla el número**. La pista de `PENDIENTES` —*«filas de `looker/DIGITAL` con un
+recorte que no es la ventana»*— **no puede ser un recorte por fecha sobre esta solapa**, porque no
+hay por dónde.
+
+⭐ **Se para acá, como estaba previsto.** `contenidos_total` sigue **declarado no cableable**
+(`CONFIG_INFORMES` §1.14) y **no se inventó un cuarto criterio para que cerrara** — eso es
+exactamente el número plausible que este repo persigue.
+
+#### ⚠ La pista que queda, dicha por el usuario y NO investigada
+
+> *«Si necesitás cuentas en `digital` las traés de `Cuentas`; el join es con el ID.»*
+
+Queda anotada como **lo próximo a probar** si alguien retoma de dónde sale el recorte del panel: la
+fecha podría vivir en `Cuentas` y llegar a `DIGITAL` por el `id_cuenta`, que es justamente la clave
+que `SOLAPAS.campo_id_cuenta` ya declara para esa solapa (`ldig_id_cuenta`). **No se midió en esta
+vuelta** — la consigna era cerrar tres cabos, no abrir el cuarto.
