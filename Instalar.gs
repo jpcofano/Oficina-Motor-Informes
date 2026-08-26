@@ -6799,6 +6799,136 @@ function confirmarNumerosDeUnoAUno() {
   return { ok: true, escritura: r, verificadas: medidas };
 }
 
+/**
+ * ⭐⭐ **Los SEIS tokens de `CLICS (CTR)` del POST de `L-053`.** El usuario agregó el bloque a las
+ * tres cajas de POST el 26/08/2026, con el mismo formato que las de PRE.
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`** — seis filas nuevas, por `curarMarcadores_`.
+ *
+ * ⭐⭐ **POR QUÉ EXISTEN, que es lo que hay que leer antes de mirar los valores:** `R-33` cambió
+ * `u1_total_clics` de **1.472** a **2.464** sumando PRE y POST. **Sin estas tres cajas, la lámina
+ * no muestra de dónde salen los 992 extra** — un número correcto que **no se puede verificar
+ * mirando la lámina que lo contiene**. Con ellas, el total pasa a ser la suma de seis celdas que
+ * están a la vista.
+ *
+ * **El molde es el de los `u1_pre_*`, cambiando `pre` por `post` en `dimensiones`** — y se copió
+ * de la hoja, campo por campo, en vez de deducirse:
+ *
+ * | | `*_clics` | `*_ctr` |
+ * |---|---|---|
+ * | `campo_logico` | `des_clics` | `des_clics/des_impresiones` |
+ * | `operacion` | `SUMA` | `PCT` |
+ * | `formato` | `miles` | `porcentaje_sin_signo` |
+ *
+ * ⛔ **Nacen SIN `_revisar`, y es deliberado.** Los 24 de esta lámina perdieron la marca el 26/08
+ * al validarse; que los seis nuevos nazcan marcados los volvería a poner en un estado que la
+ * lámina **ya dejó atrás**, y una marca que aparece en seis casilleros de treinta no dice
+ * *"desconfíen de éstos"*: se lee como un error de formato.
+ *
+ * ⛔ **Y `filtro` vacío.** Ningún token de `L-053` lleva nada ahí — **todo el corte vive en
+ * `dimensiones`** (`CLAUDE.md` §2). `filtro` queda sólo para restricciones técnicas, y acá no hay
+ * ninguna.
+ *
+ * **Valores esperados, medidos el 26/08 sobre `3487-AGOJDGAG` / `agosto_14_20`:**
+ * meta **369** (0,3 %) · google **199** (0,1 %) · programmatic **424** (0,5 %).
+ *
+ * ⭐ **Y la identidad que cierra el caso, que vale más que los seis marcadores:**
+ * `369 + 199 + 424` (POST) `+ 1.324 + 148` (PRE) `= 2.464 =` `u1_total_clics`. La afirma
+ * `tools/probar-totales-u1.js`.
+ */
+var NOTA_CLICS_POST_UNO_A_UNO_ =
+  'Alta 26/08/2026. Molde: los u1_pre_*_clics/_ctr, con etapa=post. Existe porque R-33 sumo PRE y ' +
+  'POST en u1_total_clics (1.472 -> 2.464) y sin estas tres cajas la lamina no muestra de donde ' +
+  'salen los 992 del POST. Nace SIN _revisar: los 24 de L-053 perdieron la marca el 26/08 al ' +
+  'validarse. Fuente digital/CAMPANAS_DESGLOCE_DIGITAL (D-32); clave Id cuentas via ' +
+  'SOLAPAS.campo_id_cuenta (D-30).';
+
+/* ⚠ Las tres plataformas se declaran acá y las filas se generan del mapa, no a mano: seis objetos
+ * copiados y pegados son seis lugares donde el `dimensiones` puede quedar desalineado, que es
+ * exactamente el modo de falla que `R-33` vino a cerrar un escalón más arriba. */
+var CLICS_POST_UNO_A_UNO_ = ['meta', 'google', 'programmatic'];
+
+function filasDeClicsPostUnoAUno_() {
+  var filas = [];
+  CLICS_POST_UNO_A_UNO_.forEach(function (plataforma) {
+    var corto = plataforma === 'programmatic' ? 'prog' : plataforma;
+    var dimension = 'etapa=post && plataforma=' + plataforma;
+    var comun = {
+      familia: 'u1', informe_id: 'jm', base_id: 'digital',
+      solapa: 'CAMPAÑAS_DESGLOCE_DIGITAL', periodo_ref: '', valor_fijo: '',
+      filtro: '', catalogo: '', separador: '',
+      dimensiones: dimension, notas: NOTA_CLICS_POST_UNO_A_UNO_
+    };
+    var clics = { marcador: 'u1_post_' + corto + '_clics', campo_logico: 'des_clics',
+      operacion: 'SUMA', formato: 'miles' };
+    var ctr = { marcador: 'u1_post_' + corto + '_ctr', campo_logico: 'des_clics/des_impresiones',
+      operacion: 'PCT', formato: 'porcentaje_sin_signo' };
+    [clics, ctr].forEach(function (o) {
+      Object.keys(comun).forEach(function (k) { if (!(k in o)) o[k] = comun[k]; });
+      filas.push(o);
+    });
+  });
+  return filas;
+}
+
+function cablearClicsDePostDeUnoAUno() {
+  var filas = filasDeClicsPostUnoAUno_();
+  var r = curarMarcadores_([], filas);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== CLICS del POST de `L-053`: ' + r.agregadas.length + ' de ' + r.pedidas + ' ==');
+  r.agregadas.forEach(function (a) { Logger.log('  + ' + a); });
+  if (r.quitadas.length) {
+    Logger.log('  (reemplazadas ' + r.quitadas.length + ': el alta es idempotente)');
+  }
+
+  /* ⭐ **Se compara el RELEÍDO contra lo pedido, campo por campo.** Un escritor que informa lo que
+   * pidió escribir y no lo que quedó es la mitad del bug: Sheets interpreta todo lo que entra a
+   * una celda, y el alta de `ecv_barrio1-3` reportó «3 filas agregadas» con tres fechas adentro. */
+  var diferencias = [];
+  var verificadas = 0;
+  filas.forEach(function (o) {
+    var fila = r.releido[o.marcador + '||' + o.informe_id];
+    if (!fila) { diferencias.push(o.marcador + ' → NO SE PUDO RELEER'); return; }
+    verificadas++;
+    ['campo_logico', 'operacion', 'formato', 'dimensiones', 'filtro', 'base_id', 'solapa']
+      .forEach(function (campo) {
+        if (String(fila[campo]) !== String(o[campo])) {
+          diferencias.push(o.marcador + '.' + campo + ': pedido "' + o[campo] +
+            '" · quedó "' + fila[campo] + '"');
+        }
+      });
+  });
+
+  Logger.log('');
+  Logger.log('== releído: ' + verificadas + ' de ' + r.pedidas + ' fila(s) ==');
+  if (verificadas !== r.pedidas || diferencias.length) {
+    diferencias.forEach(function (d) { Logger.log('  ⛔ ' + d); });
+    Logger.log('⛔ LA HOJA NO QUEDÓ COMO SE PIDIÓ.');
+    return { ok: false, motivo: diferencias.join(' | ') || 'releídas ' + verificadas, escritura: r };
+  }
+
+  /* ⛔ **La guarda que importa: NINGUNA nace con `_revisar`.** Es una afirmación negativa y va
+   * acá y no en el banco, porque el banco lee el código y esto lee la hoja. */
+  var marcadas = filas.filter(function (o) {
+    var fila = r.releido[o.marcador + '||' + o.informe_id];
+    return String(fila.formato || '').slice(-8) === '_revisar';
+  });
+  if (marcadas.length) {
+    Logger.log('⛔ ' + marcadas.length + ' nacieron con `_revisar` — no era lo pedido.');
+    return { ok: false, motivo: 'nacieron marcadas', escritura: r };
+  }
+
+  Logger.log('✅ Las 6 quedaron como se pidieron, sin `_revisar` y con `filtro` vacío.');
+  Logger.log('');
+  Logger.log('Esperado sobre 3487-AGOJDGAG / agosto_14_20:');
+  Logger.log('  meta 369 (0,3 %) · google 199 (0,1 %) · programmatic 424 (0,5 %)');
+  Logger.log('  y la identidad: 369+199+424 + 1.324+148 = 2.464 = u1_total_clics');
+  return { ok: true, escritura: r, verificadas: verificadas };
+}
+
+
+
 
 /**
  * `2026-08-20_7` Parte A — **las 49 `*`: SECCO deja de estar vacío.**

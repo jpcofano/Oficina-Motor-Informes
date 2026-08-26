@@ -338,6 +338,125 @@ console.log('\n9 · control negativo — si el corte vuelve a `etapa=pre`, el ca
   }
 }
 
+/* ── 10 · las seis filas de CLICS del POST, generadas del mapa ───────────────────────────────
+ * ⛔ Se afirma sobre `filasDeClicsPostUnoAUno_()` **ejecutada**, no sobre el texto: lo que se
+ * quiere probar es qué filas produce, y seis objetos escritos a mano se ven igual que seis
+ * generados hasta que uno queda desalineado. */
+console.log('\n10 · las seis filas de `CLICS (CTR)` del POST');
+const SEIS = (() => {
+  const M = new Function(  // eslint-disable-line no-new-func
+    'var NOTA_CLICS_POST_UNO_A_UNO_ = "(no se mira acá)";\n' +
+    'var CLICS_POST_UNO_A_UNO_ = ' +
+      extraerLiteral(INSTALAR, 'CLICS_POST_UNO_A_UNO_', 'Instalar.gs') + ';\n' +
+    extraerFuncion(INSTALAR, 'filasDeClicsPostUnoAUno_', 'Instalar.gs') + '\n' +
+    'return filasDeClicsPostUnoAUno_();')();
+  return M;
+})();
+{
+  afirmar(SEIS.length === 6, 'produce 6 filas — vinieron ' + SEIS.length);
+
+  const esperados = ['u1_post_meta_clics', 'u1_post_meta_ctr',
+    'u1_post_google_clics', 'u1_post_google_ctr',
+    'u1_post_prog_clics', 'u1_post_prog_ctr'];
+  const nombres = SEIS.map((f) => f.marcador);
+  for (const m of esperados) {
+    afirmar(nombres.indexOf(m) !== -1, '`' + m + '` está entre las filas');
+  }
+  /* ⛔ Afirmación negativa: ningún nombre de más. Un marcador cuyo token no existe en ninguna
+   * lámina **no falla** — resuelve, no encuentra dónde pintarse, y queda como una fila que nadie
+   * va a poder explicar. */
+  afirmar(nombres.every((m) => esperados.indexOf(m) !== -1),
+    '⛔ y ninguna fila de más — vinieron ' + JSON.stringify(nombres.filter(
+      (m) => esperados.indexOf(m) === -1)));
+
+  for (const f of SEIS) {
+    const esCtr = f.marcador.slice(-4) === '_ctr';
+    afirmar(f.campo_logico === (esCtr ? 'des_clics/des_impresiones' : 'des_clics'),
+      f.marcador + ' · campo_logico correcto — vino ' + JSON.stringify(f.campo_logico));
+    afirmar(f.operacion === (esCtr ? 'PCT' : 'SUMA'),
+      f.marcador + ' · operación ' + (esCtr ? 'PCT' : 'SUMA'));
+    afirmar(f.formato === (esCtr ? 'porcentaje_sin_signo' : 'miles'),
+      f.marcador + ' · formato ' + f.formato);
+    afirmar(f.filtro === '',
+      '⛔ ' + f.marcador + ' · `filtro` VACÍO — todo el corte vive en `dimensiones`');
+    afirmar(String(f.formato).slice(-8) !== '_revisar',
+      '⛔ ' + f.marcador + ' · nace SIN `_revisar`');
+    afirmar(/^etapa=post && plataforma=(meta|google|programmatic)$/.test(f.dimensiones),
+      f.marcador + ' · corte `' + f.dimensiones + '`');
+  }
+
+  /* ⭐ El corte es el de PRE con `post` en vez de `pre`. Se afirma la forma, que es lo único que
+   * se puede leer del código: los valores de PRE viven en la hoja. */
+  const cortes = SEIS.map((f) => f.dimensiones.replace('etapa=post', 'etapa=pre'));
+  afirmar(new Set(cortes).size === 3,
+    '⭐ los seis cubren las TRES plataformas, dos tokens cada una — vinieron ' +
+    new Set(cortes).size);
+}
+
+/* ── 11 · ⭐⭐ LA IDENTIDAD QUE CIERRA EL CASO ───────────────────────────────────────────────
+ * `u1_total_clics` == la suma de las celdas de clics por plataforma que la lámina MUESTRA.
+ *
+ * ⭐ **Por qué vale más que los seis marcadores:** antes del alta, el total se podía verificar
+ * **sólo contra la base**. `R-33` lo subió de 1.472 a 2.464 y la lámina no mostraba de dónde
+ * salían los 992; ahora el número se explica con celdas que están a la vista.
+ *
+ * ⚠ **Sobre la evidencia de `R-28` (fixture del 20/08) el total es 1.879**, no 2.464 — la base se
+ * movió. La identidad es la misma; lo que cambia son los sumandos. Contra la base viva del 26/08
+ * da `1.324 + 0 + 148 + 369 + 199 + 424 = 2.464`, medido.
+ *
+ * ⛔ **Y una combinación que no existe NO es un cero:** no hay filas `PRE × Google ads` para esta
+ * cuenta, así que esa celda publica `-` (sin dato). Acá **no se la cuenta como 0**: se afirma que
+ * las combinaciones presentes son 5 de 6 y que la suma es sobre ésas. Contar un `sin_datos` como
+ * cero es el `String(celda)` de `CLAUDE.md` §4 con otra ropa. */
+console.log('\n11 · ⭐⭐ el total de clics es la suma de las celdas que la lámina muestra');
+{
+  const PLATAFORMAS = [
+    ['Meta', 'meta'],
+    ['Google ads', 'google'],
+    [null, 'programmatic']  // por resta: todo lo que no es Meta ni Google ads (R-24)
+  ];
+  const celda = (etapa, fisica) => FILAS.filter(
+    (f) => f.etapa === etapa &&
+      (fisica === null
+        ? (f.plataforma !== 'Meta' && f.plataforma !== 'Google ads')
+        : f.plataforma === fisica));
+
+  const celdas = [];
+  for (const etapa of ['PRE', 'POST']) {
+    for (const [fisica, nombre] of PLATAFORMAS) {
+      const filas = celda(etapa, fisica);
+      celdas.push({
+        token: 'u1_' + etapa.toLowerCase() + '_' + (nombre === 'programmatic' ? 'prog' : nombre) + '_clics',
+        presente: filas.length > 0,
+        valor: filas.reduce((a, f) => a + f.clic, 0)
+      });
+    }
+  }
+
+  afirmar(celdas.length === 6, 'la lámina muestra 6 celdas de clics (3 plataformas × 2 etapas)');
+  const presentes = celdas.filter((c) => c.presente);
+  afirmar(presentes.length === 5,
+    '⛔ 5 de 6 tienen filas; `u1_pre_google_clics` no tiene ninguna y publica `-`, NO 0 — ' +
+    'presentes: ' + presentes.length);
+
+  const sumaCeldas = presentes.reduce((a, c) => a + c.valor, 0);
+  const total = FILAS.reduce((a, f) => a + f.clic, 0);
+  afirmar(sumaCeldas === total,
+    '⭐⭐ la suma de las celdas (' + sumaCeldas + ') es `u1_total_clics` (' + total + ')');
+  afirmar(total === 1879,
+    'y sobre el fixture del 20/08 ese total es 1.879 — vino ' + total);
+
+  /* ⭐ Control negativo del bloque: si faltara una caja, la identidad NO tiene que cerrar. Sin
+   * esto, un `sumaCeldas === total` pasaría también con las tres cajas del POST sin cablear —
+   * que es exactamente el estado que este alta vino a corregir. */
+  const sinPost = celdas
+    .filter((c) => c.presente && c.token.indexOf('u1_pre_') === 0)
+    .reduce((a, c) => a + c.valor, 0);
+  afirmar(sinPost !== total,
+    '⭐ y SIN las tres cajas del POST no cerraría: ' + sinPost + ' ≠ ' + total +
+    ' (los ' + (total - sinPost) + ' que la lámina no mostraba)');
+}
+
 console.log('\n' + (fallas === 0
   ? '✅ TODO OK — ' + FILAS.length + ' fila(s) de evidencia, ' + TOTALES.length +
     ' total(es) y 24 marcadores verificados.'
