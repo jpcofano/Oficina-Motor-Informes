@@ -36,6 +36,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const seedMapeo = require('./seed-mapeo.js');
 const RAIZ = path.join(__dirname, '..');
 const FUENTE = fs.readFileSync(path.join(RAIZ, 'Instalar.gs'), 'utf8');
 
@@ -209,10 +210,17 @@ af('ldig_id_cuenta no pisa a dig_id_cuenta, que es de digital/Digital',
 
 // ── 5 · D-31: letra y encabezado, y el tipo declarado ───────────────────────────────────
 console.log('\n5 · D-31 — toda fila nueva lleva letra y encabezado, y su tipo');
+/* ⛔ `2026-08-26` — **se pregunta por el testigo EFECTIVO, no por `ENCABEZADO_POR_MAPEO_`.** El
+ * mapa pasó a ser el DEFAULT: una fila que declara su encabezado inline gana, así que mirar sólo
+ * el mapa se pondría rojo el día que alguien mueva el testigo al lado de la letra —que es la forma
+ * que `CLAUDE.md` §2 prescribe para toda fila nueva—. Es la figura del artefacto equivocado: la
+ * afirmación puede fallar, pero está mirando otra cosa que la que nombra. */
+const SEED_EFECTIVO = seedMapeo.leer(FUENTE);
 ['Visualizaciones', 'Clics', 'ldig_id_cuenta'].forEach((campo) => {
-  af('`' + campo + '` tiene testigo de encabezado en el seed',
-    !!ENCABEZADOS[clave('looker', 'DIGITAL', campo)],
-    'sin entrada en ENCABEZADO_POR_MAPEO_: upsertPorClave_ la borra al primer cambio de otra columna');
+  af('`' + campo + '` tiene testigo de encabezado EFECTIVO en el seed',
+    !!seedMapeo.testigo(SEED_EFECTIVO, 'looker', 'DIGITAL', campo),
+    'sin testigo la fila llega con la celda vacía y `D-31` queda declarado y no ejercido — ' +
+    'es lo que le pasó a 23 filas hasta el 26/08');
   af('`' + campo + '` tiene tipo_esperado declarado', !!TIPOS[campo], 'sin tipo en el mapa');
 });
 af('Visualizaciones y Clics se declaran numero', TIPOS.Visualizaciones === 'numero' && TIPOS.Clics === 'numero');

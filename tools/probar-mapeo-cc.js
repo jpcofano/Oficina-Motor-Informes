@@ -21,33 +21,31 @@
  * `buscarMapeo` scopea por base + solapa así que reusarlos *funcionaría*, y lo que no sobrevive es
  * la lectura humana.
  *
+ * ⛔⛔ **Sobre QUÉ artefacto afirma, que es lo que estuvo mal hasta el 26/08/2026.** Este banco
+ * decía en verde *«las cuatro traen `encabezado`»* leyendo `SEED_MAPEO_CC_` — la lista **cruda**.
+ * Era cierto sobre la lista y **falso sobre la hoja**: el post-proceso de `Instalar.gs` pisaba el
+ * testigo con `|| ''` y las cuatro celdas de `MAPEO` estaban **vacías**. El banco podía fallar,
+ * y estaba midiendo otra cosa.
+ *
+ * ⭐ **Hoy afirma sobre el seed EFECTIVO** —`tools/seed-mapeo.js`, que ejecuta el post-proceso real
+ * en vez de copiarlo—, que es el único artefacto del que se puede decir *«esto llega a la hoja»*.
+ *
  * Uso:
  *   node tools/probar-mapeo-cc.js
  */
 
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
-const RAIZ = path.join(__dirname, '..');
-const FUENTE = fs.readFileSync(path.join(RAIZ, 'Instalar.gs'), 'utf8');
+const seedMapeo = require('./seed-mapeo.js');
+const FUENTE = seedMapeo.fuente();
 
-/** Extrae una `var NOMBRE_ = [ … ];` contando corchetes. Falla fuerte si no está. */
-function extraerLista(texto, nombre) {
-  const inicio = texto.indexOf('var ' + nombre + ' = [');
-  if (inicio === -1) {
-    throw new Error('No encontré `var ' + nombre + ' = [` en Instalar.gs — si se renombró, ' +
-      'esta prueba tiene que enterarse en vez de dar verde sobre otra cosa.');
-  }
-  let i = texto.indexOf('[', inicio), nivel = 0;
-  for (let j = i; j < texto.length; j++) {
-    if (texto[j] === '[') nivel++;
-    else if (texto[j] === ']') { nivel--; if (nivel === 0) return texto.slice(i, j + 1); }
-  }
-  throw new Error('Lista ' + nombre + ' sin cerrar.');
-}
+/* Las cuatro filas de `looker/CC`, tomadas del seed EFECTIVO y no de la lista cruda: es la
+ * diferencia entre *«el seed lo declara»* y *«esto llega a la hoja»*, y hasta el 26/08 el banco
+ * afirmaba lo primero diciendo lo segundo. */
+const filasDeCC = (fuente) => seedMapeo.leer(fuente).filas
+  .filter((f) => f.base_id === 'looker' && f.solapa === 'CC');
 
-const FILAS = new Function('return ' + extraerLista(FUENTE, 'SEED_MAPEO_CC_'))();
+const FILAS = filasDeCC(FUENTE);
 const porCampo = {};
 FILAS.forEach((f) => { porCampo[f.campo_logico] = f; });
 
@@ -136,7 +134,7 @@ console.log('7 · control negativo — que esto sepa ponerse rojo');
     af('el parche exige su marca', false, 'no encontré la fila de `Base barrida`');
   } else {
     const roto = FUENTE.replace(marca, "columna: 'B', encabezado: 'Base enviada'");
-    const filasRotas = new Function('return ' + extraerLista(roto, 'SEED_MAPEO_CC_'))();
+    const filasRotas = filasDeCC(roto);
     const detecta = filasRotas.some((f) => /base\s*enviada/i.test(f.encabezado || ''));
     af('cambiando la fila a `Base enviada`, la afirmación 3 se pone roja', detecta,
       'el control no distingue el seed bueno del roto: no prueba nada');
@@ -145,6 +143,7 @@ console.log('7 · control negativo — que esto sepa ponerse rojo');
 
 console.log('');
 console.log('══════════════════════════════════════════');
-console.log('  ' + ok + ' afirmación(es) en verde · ' + mal + ' en rojo · sobre ' + FILAS.length + ' fila(s) de seed');
+console.log('  ' + ok + ' afirmación(es) en verde · ' + mal + ' en rojo · sobre ' + FILAS.length +
+  ' fila(s) del seed EFECTIVO de looker/CC — el que llega a la hoja');
 if (mal) { console.log('  ⛔ HAY ROJAS'); process.exit(1); }
 console.log('  ✅ TODO VERDE');

@@ -43,6 +43,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const seedMapeo = require('./seed-mapeo.js');
 const RAIZ = path.join(__dirname, '..');
 const FUENTE = fs.readFileSync(path.join(RAIZ, 'Instalar.gs'), 'utf8');
 
@@ -98,6 +99,10 @@ const PARQUEADOS = ['post_camp', 'post_periodo', 'post_formato'];
  * columna volvería a publicar Programmatic, y eso tiene que ponerse rojo. */
 const POR_POSICION = ['vis_totales', 'vis_vtr_pct'];
 
+/* Los títulos ÚNICOS que la solapa tiene desde el 26/08, MEDIDOS sobre la hoja viva y declarados
+ * inline en `SEED_MAPEO_REUNIONES_`. Son el testigo real de estas dos columnas. */
+const ENCABEZADO_UNICO = { vis_totales: 'Visualizaciones totales', vis_vtr_pct: '% VTR total' };
+
 /** El mismo criterio que `esVerdadero_` de `Config.gs`: `sí` con o sin tilde, `true`, `x`, `1`. */
 function esVerdadero(v) {
   return ['sí', 'si', 'true', 'x', '1'].indexOf(String(v == null ? '' : v).trim().toLowerCase()) !== -1;
@@ -106,7 +111,12 @@ function esVerdadero(v) {
 function correr(fuente, silencioso) {
   const filas = new Function('return ' + extraer(fuente, 'SEED_MAPEO_REUNIONES_', '[', ']'))();
   const tipos = new Function('return ' + extraer(fuente, 'TIPO_ESPERADO_POR_CAMPO_', '{', '}'))();
-  const testigos = new Function('return ' + extraer(fuente, 'ENCABEZADO_POR_MAPEO_', '{', '}'))();
+  /* ⛔ `2026-08-26` — **el testigo se lee del seed EFECTIVO, no de `ENCABEZADO_POR_MAPEO_`.**
+   * Desde hoy el mapa es el DEFAULT y una fila que declara su encabezado inline gana. Leer el
+   * mapa era afirmar sobre el artefacto de ANTES del post-proceso — la misma figura que el mismo
+   * día apareció en `probar-mapeo-cc.js`, donde el verde tapaba cuatro celdas vacías. */
+  const seed = seedMapeo.leer(fuente);
+  const testigoDe = (campo) => seedMapeo.testigo(seed, 'reuniones', SOLAPA, campo);
 
   const post = {};
   filas.forEach((f) => { if (f.hoja === SOLAPA) post[f.campo_logico] = f; });
@@ -133,8 +143,8 @@ function correr(fuente, silencioso) {
     if (!f) return;
     af('  ' + e.campo + ' → columna ' + e.columna, f.columna === e.columna, 'dice ' + f.columna);
     af('  ' + e.campo + ' lleva encabezado testigo (D-31) "' + e.encabezado + '"',
-      testigos['reuniones|' + SOLAPA + '|' + e.campo] === e.encabezado,
-      'dice ' + JSON.stringify(testigos['reuniones|' + SOLAPA + '|' + e.campo]));
+      testigoDe(e.campo) === e.encabezado,
+      'dice ' + JSON.stringify(testigoDe(e.campo)));
     af('  ' + e.campo + ' resuelve tipo_esperado = ' + e.tipo, tipos[e.campo] === e.tipo,
       'dice ' + JSON.stringify(tipos[e.campo]));
   });
@@ -163,6 +173,14 @@ function correr(fuente, silencioso) {
     af('  …y NO declara `por_posicion` — títulos únicos desde el 26/08',
       !!post[campo] && !esVerdadero(post[campo].por_posicion),
       'declararlo sobre un mecanismo inerte es lo que hizo leer el bug como resuelto');
+    /* ⛔⛔ `2026-08-26` — **esta afirmación FALTABA y el control negativo lo estaba diciendo.**
+     * El caso `le devuelvo a vis_totales el encabezado viejo` nombraba una afirmación que **no
+     * existía**, así que la autoprueba informaba *«no cayó ninguna»* — un negativo que no mide
+     * nada. Y no se veía porque `tools/suites.js` corre los bancos **sin** `--autoprueba`. */
+    af('  …lleva el encabezado ÚNICO medido el 26/08',
+      testigoDe(campo) === ENCABEZADO_UNICO[campo],
+      'dice ' + JSON.stringify(testigoDe(campo)) + ' — con el título repetido `leerFuente` indexa ' +
+      'por título con «gana el último» y estos dos publicaban PROGRAMMATIC');
   });
   PARQUEADOS.forEach((t) => {
     const hay = new RegExp('campo_logico:\\s*.' + t + '.').test(fuente);

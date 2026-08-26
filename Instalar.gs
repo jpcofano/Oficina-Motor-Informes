@@ -2092,36 +2092,49 @@ var ENCABEZADO_POR_MAPEO_ = {
   'reuniones|Agenda JM | Post|fecha_periodo': 'Fecha',
   'reuniones|Agenda JM | Post|poblacion': 'Habitantes',
   'reuniones|Agenda JM | Post|imp_totales': 'Impresiones totales',
-  /* ⭐⭐ `2026-08-26` — **estas dos VUELVEN a ser testigo de verdad, y el motivo hay que leerlo.**
+  /* ⭐ `2026-08-26` — **las cinco de `reuniones|Agenda JM | Post` que vivían acá se fueron: su
+   * testigo se declara INLINE, en `SEED_MAPEO_REUNIONES_`, al lado de la letra.** Son `figura`,
+   * `barrio`, `tipo_encuentro` y los dos `vis_*`; el motivo de cada una está en sus `notas`, que
+   * es donde se lee — incluido el caro: mientras el título se repetía, el lector indexaba por
+   * título con «gana el último» y los dos `vis_*` publicaban PROGRAMMATIC.
    *
-   * Hasta ayer decían `'Visualizaciones'` y `'% VTR'` con una advertencia al lado —*«llevan
-   * encabezado pero NO es su testigo, porque el título se repite cuatro veces»*—. Con títulos
-   * únicos esa advertencia se cae y el encabezado distingue.
+   * ⛔ **No se movieron por prolijidad: estaban en los DOS lados con el mismo valor**, y dos
+   * fuentes para el mismo testigo es exactamente lo que produjo el borrado de las otras 23 (ver
+   * el `forEach` de más abajo). Desde hoy el mapa es el **default** y la fila manda; una clave
+   * que esté en los dos lados se pone roja en `tools/probar-testigos-mapeo.js`.
    *
-   * ⛔ **Y lo que la advertencia vieja escondía es lo caro: mientras el título se repetía, el
-   * lector indexaba por título con «gana el último» y estos dos marcadores publicaban
-   * PROGRAMMATIC.** La salida declarada era `MAPEO.por_posicion`, que **nunca corrió** —
-   * `leerMapeoSinCache_` no la indexa y la hoja no tiene la columna—. Un testigo desactivado por
-   * comentario, cubierto por un mecanismo muerto, y nadie lo vio hasta el 26/08.
-   *
-   * ⚠ **La identidad de bloques (`M = R+W+AB`) sigue haciendo falta y no la reemplaza esto**:
-   * el encabezado prueba que la LETRA apunta a la columna que se cree; la identidad prueba que
-   * el ACUMULADO es el acumulado. Son dos afirmaciones y ninguna implica la otra. */
-  'reuniones|Agenda JM | Post|vis_totales': 'Visualizaciones totales',
-  'reuniones|Agenda JM | Post|vis_vtr_pct': '% VTR total',
-  /* ⭐ `2026-08-25_1` — las tres del nombre. **Acá el encabezado SÍ es testigo de verdad**, a
-   * diferencia de las dos de arriba: sus títulos son únicos en la solapa, así que si alguien
-   * inserta una columna el aviso de `D-31` salta. */
-  'reuniones|Agenda JM | Post|figura': 'Funcionario',
-  'reuniones|Agenda JM | Post|barrio': 'Barrio / Comuna',
-  'reuniones|Agenda JM | Post|tipo_encuentro': 'Tipo',
+   * ⚠ **La identidad de bloques (`M = R+W+AB`) sigue haciendo falta y no la reemplaza el
+   * encabezado**: el testigo prueba que la LETRA apunta a la columna que se cree; la identidad
+   * prueba que el ACUMULADO es el acumulado. Son dos afirmaciones y ninguna implica la otra. */
 };
 
-// Va DESPUÉS de que `fila.solapa` exista (se asigna desde `hoja` más arriba): la clave la usa.
-// Una fila sin entrada queda con `encabezado` vacío, que es lo correcto — vacío significa "sin
-// testigo declarado", no "la columna no tiene título".
+/* Va DESPUÉS de que `fila.solapa` exista (se asigna desde `hoja` más arriba): la clave la usa.
+ *
+ * ⭐⭐ **DECORA, no sobreescribe** (26/08/2026). Si la fila **ya trae** su `encabezado` declarado al
+ * lado de la letra, **gana el suyo** y el mapa no la toca: el mapa es el default, no la autoridad.
+ *
+ * ⛔⛔ **Hasta hoy esto era `= ENCABEZADO_POR_MAPEO_[…] || ''`, y ese `|| ''` borraba testigos ya
+ * medidos.** Las 23 filas de `SEED_MAPEO_DESGLOCE_`, `SEED_MAPEO_DESGLOCE_REVISAR_` y
+ * `SEED_MAPEO_CC_` declaran su encabezado inline —`Id cuentas`, `Plataforma`, `Base barrida`…— y
+ * **llegaban vacías a la hoja**: son 23 de las 30 celdas de `MAPEO` sin testigo medidas el 26/08.
+ * **El testigo de `D-31` estaba declarado y no ejercido en el 15 % de la hoja**, y en las dos
+ * solapas más nuevas —`CAMPAÑAS_DESGLOCE_DIGITAL` y `looker/CC`— al 100 %.
+ *
+ * ⚠ **El comentario que estaba acá no mentía: describía el caso que sí contemplaba** —*una fila
+ * sin entrada queda vacía*— **y no el que producía esto**: una fila que **trajo** su testigo y se
+ * lo sacaban. Un comentario correcto sobre el caso equivocado no lo delata nadie.
+ *
+ * ⚠ **Una fila sin ninguno de los dos sigue quedando vacía, y eso es lo correcto:** vacío significa
+ * *"sin testigo declarado"*, no *"la columna no tiene título"*.
+ *
+ * ⭐ **Y un testigo tiene UNA sola fuente.** Ninguna clave está en los dos lados: las cinco que sí
+ * lo estaban —`figura`, `barrio`, `tipo_encuentro` y los dos `vis_*`, con el mismo valor en los
+ * dos— se sacaron del mapa el 26/08 y quedaron inline. **Dos fuentes para el mismo testigo es
+ * exactamente lo que produjo el bug de arriba.** Lo controla `tools/probar-testigos-mapeo.js`.
+ */
 SEED_MAPEO_.forEach(function (fila) {
-  fila.encabezado = ENCABEZADO_POR_MAPEO_[fila.base_id + '|' + fila.solapa + '|' + fila.campo_logico] || '';
+  fila.encabezado = fila.encabezado ||
+    ENCABEZADO_POR_MAPEO_[fila.base_id + '|' + fila.solapa + '|' + fila.campo_logico] || '';
 });
 
 

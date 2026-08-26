@@ -17,6 +17,7 @@
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
+const seedMapeo = require('./seed-mapeo.js');
 
 const RAIZ = path.join(__dirname, '..');
 
@@ -174,11 +175,24 @@ console.log('\n3 · `por_posicion` está en `MAPEO`, y las dos filas volvieron')
   });
 
   /* ⭐ La letra no cambió —siempre fue correcta—; lo que cambió es el TÍTULO de esa letra. Las
-   * cadenas salen de MEDIR la hoja viva el 26/08, no de dictarlas. */
-  af(instalar.indexOf("columna: 'M', encabezado: 'Visualizaciones totales'") !== -1,
-    '⭐ `vis_totales` apunta a M con el título ÚNICO medido «Visualizaciones totales»');
-  af(instalar.indexOf("columna: 'N', encabezado: '% VTR total'") !== -1,
-    'y `vis_vtr_pct` a N con «% VTR total»');
+   * cadenas salen de MEDIR la hoja viva el 26/08, no de dictarlas.
+   *
+   * ⛔ `2026-08-26` — **antes esto buscaba el texto `encabezado: '…'` en `Instalar.gs`**, y eso
+   * prueba que la línea está escrita, **no que el valor llegue a la hoja**: hasta hoy el
+   * post-proceso lo pisaba con vacío y esta afirmación seguía en verde. Se lee del seed EFECTIVO,
+   * que es el artefacto del que se habla después. */
+  const seedPos = seedMapeo.leer(instalar);
+  const testigoPost = (campo) => seedMapeo.testigo(seedPos, 'reuniones', 'Agenda JM | Post', campo);
+  af(seedPos.porClave['reuniones|Agenda JM | Post|vis_totales'] &&
+     seedPos.porClave['reuniones|Agenda JM | Post|vis_totales'].columna === 'M' &&
+     testigoPost('vis_totales') === 'Visualizaciones totales',
+    '⭐ `vis_totales` apunta a M con el título ÚNICO medido «Visualizaciones totales»',
+    'testigo efectivo: ' + JSON.stringify(testigoPost('vis_totales')));
+  af(seedPos.porClave['reuniones|Agenda JM | Post|vis_vtr_pct'] &&
+     seedPos.porClave['reuniones|Agenda JM | Post|vis_vtr_pct'].columna === 'N' &&
+     testigoPost('vis_vtr_pct') === '% VTR total',
+    'y `vis_vtr_pct` a N con «% VTR total»',
+    'testigo efectivo: ' + JSON.stringify(testigoPost('vis_vtr_pct')));
 
   /* ⛔⛔ **El testigo que faltaba, y sin él nada de lo de arriba prueba que el mecanismo ande.**
    * `leerMapeoSinCache_` arma el objeto de `MAPEO` campo por campo y **no incluye
