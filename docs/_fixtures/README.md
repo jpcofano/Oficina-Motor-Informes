@@ -88,6 +88,49 @@ otra fila.
 | `Seguimiento Digital2026-08-06.zip` | 98.332.566 | `9a1ee89d0e0b0aa6619c5efa3cd9ee9409269ce44ff856523b9ed4bcbf76b2e9` |
 | `Seguimiento Digital  2026-08-20.zip` | 78.942.640 | `f8ef3227fc6cc73ef5879948451093f8e7a278c0baf1f4341d187958f0f8cc87` |
 | `Testigo 2026-08-22 1402 Informe semanal JM — vie 14_08 — jue 20_08.zip` | 11.935.542 | `cd6f0050f3f0cf5effdf54204c10f91f6fdb773a6e0c8a239d8d969efcd353b3` |
+| ⭐ `Seguimiento Digital  2026-08-20.zip` **(editado a mano, 26/08)** | 91.643.439 | `15b564919ae4fa97dc7b17f6d6962749359ddbeef99d786d40457a090cc5650e` |
+
+### ⭐⭐ Quinta fila — el `.zip` del 20/08 EDITADO A MANO, 26/08/2026
+
+⚠ **Es la primera fila de esta tabla que NO es una foto de Drive**, y por eso lleva la marca en el
+nombre. La fila vieja **no se editó** —un export que cambia es otro archivo y otra fila, como dice el
+encabezado de la tabla—, así que las dos conviven y el `sha` dice cuál es cuál.
+
+| | antes | después |
+|---|---|---|
+| bytes | 78.942.640 | **91.643.439** |
+| `sha256` | `f8ef3227…f0f8cc87` | **`15b56491…0cc5650e`** |
+| archivos adentro | 7 | **8** |
+
+**Quién y qué:** lo reemplazó **el usuario** el 26/08/2026. Declaró haber cambiado **únicamente los
+encabezados de `Agenda JM | Post`** (base `reuniones`), para que cada bloque tenga títulos únicos
+—`Impresiones Meta`, `Impresiones Google`, `Impresiones Programmatic`… en vez de tres `Impresiones`
+repetidas—. **Los datos no se tocaron.**
+
+⭐ **Verificado el 26/08:** los **29** encabezados de `Agenda JM | Post` en el fixture coinciden
+**uno a uno** con los que devuelve `leerFuente` sobre la base viva. La edición está completa de los
+dos lados.
+
+⚠ **Y una diferencia que el usuario no declaró y hay que anotar igual: el `.zip` se REPAQUETÓ.**
+Ahora trae **8** archivos en vez de 7 — absorbió el `Testigo 2026-08-22 1402 Informe semanal JM — vie
+14_08 — jue 20_08.pptx`, que hasta hoy vivía como `.zip` suelto (la cuarta fila de la tabla, que
+sigue existiendo). Eso explica los **+12,7 MB**, no la edición de encabezados. **No es sólo una
+edición de encabezados: es un repaquetado con una edición adentro**, y las dos cosas cambian el
+`sha` por motivos distintos.
+
+⭐ **Lo que esto le hace a la lectura de un resultado, y es el motivo de escribirlo:** *«el fixture
+no reproduce»* dejaba de significar una sola cosa. Contra una foto de Drive apunta a la fuente o al
+motor; contra un archivo editado a mano, **la edición es una tercera causa candidata**, y el reporte
+que lo cite tiene que poder distinguirlas. Por eso la fila lleva la marca y no sólo el `sha` nuevo.
+
+✅ **Lo que NO cambia:** como sólo se tocaron encabezados, **la comparación fixture-contra-viva
+sigue valiendo para los valores**. Es lo que habilitó la validación 1 a 1 de `L-053` del 26/08.
+
+⚠ **La identificación por SOLAPAS se rehizo sobre el archivo nuevo** y sigue dando 100 %, con
+margen: `DGPLES _ Seguimiento ECVs (1)` → `reuniones` **24 de 24** (segundo candidato: 1),
+`Seguimiento Digital  (4)` → `digital` **22 de 22** (segundo: 5), `Base Looker (3)` → `looker`
+**14 de 14** (segundo: 1), `M2 Reporte para Fede 2026 (4)` → `m2` **12 de 12** (segundo: 5),
+`RDV JM CM ES + funcionarios (5)` → `rdv` **34 de 36** (segundo: 1).
 
 ⭐ **La cuarta es de otra clase y conviene decirlo: NO es un export de una base, es un DECK DEL MOTOR.**
 Es la salida de la corrida de `jm` de las 14:02 del 22/08 sobre `agosto_14_20`, con `R-21` nivel 1 ya
