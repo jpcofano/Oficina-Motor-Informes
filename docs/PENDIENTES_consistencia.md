@@ -2042,6 +2042,36 @@ de agosto por pertenencia**, y cualquier regla que dependa sólo de fechas la va
 
 **1 · ¿De dónde salen los «Total de contenidos implementados» — 28 en JM y 270 en GCBA?**
 
+> ## ⭐⭐ CONTESTADA el 26/08/2026 — el HECHO está definido; el CABLEADO no.
+>
+> **Medición del usuario sobre el panel de Looker, ventana 14–20/08.** El hecho es
+> **«contenidos implementados»**:
+>
+> | | total | Meta | Google | DV360 |
+> |---|---|---|---|---|
+> | **JM** | **28** | 10 | 8 | 10 |
+> | **GCBA** | **269** | 95 | 63 | 111 |
+>
+> ⚠ **Corrección al enunciado de abajo, que NO se edita: son 269 en GCBA, no 270.**
+> La línea vieja queda como estaba —es lo que se preguntó— y la cifra buena es ésta, del
+> 26/08. El desglose por plataforma cierra contra los dos totales: 10+8+10 = 28 y
+> 95+63+111 = 269.
+>
+> ⛔⛔ **Y lo que se midió el mismo día CIERRA UNA PUERTA: el desglose NO es la fuente.**
+> Sobre `digital/CAMPAÑAS_DESGLOCE_DIGITAL` con el criterio de solape de `R-16`
+> (`Fecha inicio ≤ 20/08 && Fecha fin ≥ 14/08`) la ventana trae **327 filas y 291.799.818**
+> impresiones, contra las **297 filas y 98.979.778** del panel: **2,95× las impresiones sobre
+> 1,10× las filas.** Así que el dato semanal viene de una fuente que el motor no lee.
+>
+> ⭐ **Eso convierte «pendiente de cableado» en una LIMITACIÓN MEDIDA en vez de un pendiente
+> sin causa**, que son dos estados distintos: uno espera trabajo, el otro espera una fuente.
+> El número es **citable**; el marcador **no es cableable** desde ahí. La definición vive en
+> `docs/CONFIG_INFORMES.md` §1.14.
+>
+> ⚠ **Lo que sigue abierto, y es sólo eso:** por qué fecha recorta el panel. La pista de más
+> abajo —*«filas de `looker/DIGITAL` con un recorte que no es la ventana»*— **no la tocó esta
+> medición**, que fue sobre el desglose. Sigue siendo el camino a probar.
+
 **No es `digital/Seguimiento digital`, y está medido.** Las tres columnas que `MAPEO` declara como
 `sd_pauta_google` (T), `sd_pauta_prog` (U) y `sd_pauta_meta` (V) **son flags 0/1**, no cantidades:
 
@@ -9089,3 +9119,96 @@ advertencia escrita. **Un escritor idempotente por clave lo absorbe; uno que hic
 ⚠ **La regla operativa, para que no dependa de acordarse:** en una llamada que escribe, **no** se
 pasa `--reintentar`; si la respuesta se pierde en el transporte, se **relee la hoja** para saber si
 la escritura ocurrió, en vez de repetirla a ciegas.
+
+---
+
+## `2026-08-26` (cierre) — `L-046`: `X-19` cerrada, y dos formas de error que costaron cuatro premisas
+
+### ⭐⭐ `C-86` · Un registro que declara PUBLICACIONES es una lista, no un catálogo de entidades
+
+**Estado: cerrado como forma. La confusión concreta, corregida.**
+
+`CAMPANAS` declara `3481-AGOINFAN` (Autódromo) y `3509-AGOSEGGJ` (Mugica) con **`informe_id: jm`**,
+y de ahí se las tomó como campañas **de ámbito JM**. **No lo son:** medido el 26/08 sobre la base
+viva, las dos son **`GCBA`** en las **nueve** columnas candidatas del desglose —`JM | GCBA |
+POLICIA`, `Eje`, `eje`, `Cuenta`, `area`, `proyecto`, `Objetivo`, `Tipo Campaña`, `Prioridad`—.
+**No hay corte bajo el cual sean JM.**
+
+⭐ **El error no fue leer mal una columna: fue leer un registro como si fuera un catálogo.**
+`CAMPANAS.informe_id` contesta *«¿en qué informe se publica esto?»* y se lo leyó como *«¿de qué
+ámbito es este dato?»*. **Son dos preguntas distintas y la respuesta coincide casi siempre**, que es
+lo que la vuelve difícil de ver: un informe de JM publica sobre todo campañas de JM.
+
+⚠ **Es la familia de *dos cosas que se llaman igual no son la misma cosa*** (`CLAUDE.md` §4), un
+escalón más arriba: acá no se confunden dos referentes homónimos, se confunde **la pregunta que un
+registro contesta** con otra que nadie le hizo.
+
+⭐ **Lo accionable, y se hace antes de usar una columna de un registro como corte:** *¿esta columna
+describe la ENTIDAD, o describe qué hacemos con ella?* `informe_id`, `mostrar`, `orden`, `activo`,
+`tipo` describen lo segundo. Un corte de universo se toma de lo primero.
+
+⛔ **Y el síntoma fue un control positivo que falló bien:** el filtro de fecha leía perfecto —las
+dos cuentas aparecían, con sus fechas— y lo que falló fue la premisa de a qué ámbito pertenecían.
+**Sin ese control, la tabla JM/GCBA se habría publicado con 4 filas en JM como si fuera un
+resultado.**
+
+---
+
+### `C-87` · `X-19` — **CERRADA por reproducción, con una campaña, y la otra nombrada**
+
+**Estado: cerrada el 26/08/2026.** Decisión del usuario.
+
+`X-19` (`casos_validacion_2026-08-19.csv`, `contradice`) decía que la frecuencia del deck **no
+reproduce ni por ratio ni por `looker/ALCANCE`**, y su nota cerraba con *«NO hay que reproducirlo»*.
+
+⭐ **La definición del motor era CORRECTA todo el tiempo.** `camp_frecuencia` es `RATIO` de
+`dig_impresiones / alcance`, y eso reproduce:
+
+| | motor, 26/08 | referencia del usuario | |
+|---|---|---|---|
+| Autódromo `camp_meta_frecuencia` | **1,87** | 1,87 | ✅ |
+| Autódromo `camp_frecuencia` | **7,19** | 7,17 | ✅ (la base respiró) |
+
+**Lo que fallaba era el caso contra el que se la probó**, no la fórmula.
+
+⛔ **Y Mugica NO reproduce — va escrito, no omitido.** `camp_meta_frecuencia` da **2,84** contra
+1,64, y `camp_frecuencia` **12,16** contra 7,20. **No falla por la fórmula:** el motor lee 1.805.573
+impresiones Meta donde la referencia trae 1.026.469, y 7.734.064 totales contra 4.509.115. **Los
+operandos son de otra foto de la base.**
+
+⭐⭐ **Cerrar por reproducción real de UNA y nombrar la que no dio es más fuerte que cerrar con dos
+donde una no se sostiene** (decisión del usuario). Una tabla con dos ✅ de los cuales uno es falso
+no se distingue de una con dos ✅ verdaderos — y el que se cae después se lleva puesta la
+conclusión entera.
+
+⚠ **Queda un cabo, y es de higiene:** la `notas` de `camp_frecuencia` —en `Instalar.gs` **y en la
+hoja**— sigue diciendo *«X-19 ABIERTA … NO hay que reproducirlo»*. **No se tocó en esta vuelta**
+(no estaba en el alcance) y hay que actualizarla, en los dos lados a la vez: cambiarla sólo en el
+seed deja el código diciendo una cosa y `MARCADORES` otra.
+
+---
+
+### ⛔ `C-88` · Dos premisas falsas, y el trabajo igual parecía posible
+
+**Estado: anotado como forma.** No es la corrección lo que hay que registrar —eso ya está hecho—:
+es que **las dos afirmaciones eran falsas y ninguna de las dos hacía que el paso se viera
+imposible.**
+
+| premisa del prompt | qué hay |
+|---|---|
+| *«el `%VTR` pasa a CALCULADO»* | **ya lo era**: los cuatro son `PCT` sobre `Visualizaciones/Impresiones` desde que se cablearon |
+| *«`camp_alcance` ya mapea a `meta_alcance`»* | mapea al **`campo_logico` `alcance` → col K**; `meta_alcance` **no existe como `campo_logico`** de esa solapa |
+
+⭐ **La segunda es la interesante, porque es medio cierta y ahí está la trampa.** La `notas` de
+`camp_alcance` en `Instalar.gs` dice, textual: *«Mapea a la columna `meta_alcance` — ver A-12»*.
+**Puede ser cierto del ENCABEZADO FÍSICO de la col K y falso del `campo_logico`**, que son dos capas
+distintas. ⛔ **No se midió el encabezado**, así que acá no se afirma que la nota esté mal: se
+afirma que **`meta_alcance` no resuelve como campo lógico** y que la nota, tal como está escrita,
+**no permite distinguir las dos cosas**. Es *un comentario que afirma un contrato es una premisa sin
+testigo* (`CLAUDE.md` §4), y el testigo que falta es de una línea: mirar el encabezado de la col K.
+
+⚠ **Por qué esto importa más que las dos correcciones:** un prompt cuyas premisas son falsas pero
+cuyo trabajo *parece* ejecutable es el que se ejecuta. La primera habría producido un `cablear*` que
+reescribe cuatro filas con exactamente lo que ya tenían —cero celdas escritas, «idempotente», verde—
+y la segunda habría documentado como decisión un mapeo que nadie verificó. **Ninguna de las dos
+falla; las dos publican.**

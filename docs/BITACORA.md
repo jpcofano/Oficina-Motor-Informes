@@ -15499,3 +15499,81 @@ escriben. Va a `PENDIENTES`.
   investigarla** (`C-85`), incluido cómo se falsa en una línea.
 - `u1_total_alcance` y `u1_total_frecuencia` siguen sin cablear: **el dato no existe**.
 - **`L-053` queda en 🟡.** El ✅ lo pone el usuario.
+
+---
+
+## `2026-08-26` (noche) — `L-046`: `X-19` cerrada con UNA campaña, y cuatro premisas que se cayeron antes de la primera edición
+
+**Cómo empezó.** El prompt pedía una medición y después el cableado. La medición **frenó el
+cableado**: cuatro premisas no cerraban, y tres cambiaban qué era el trabajo. **No se editó nada
+hasta tenerlas confirmadas por el usuario.**
+
+| premisa | qué había |
+|---|---|
+| Autódromo y Mugica son ámbito **JM** | ⛔ son **GCBA** en las nueve columnas candidatas |
+| el `%VTR` **pasa a** calculado | ⛔ **ya lo era**: los cuatro son `PCT` vistas/impresiones |
+| `camp_alcance` mapea a `meta_alcance` | ⛔ mapea a `alcance` → col K; `meta_alcance` no resuelve |
+| `X-19` cierra **por dos campañas** | ⛔ reproduce **una**; la otra tiene operandos de otra foto |
+
+---
+
+### ⭐⭐ `C-86` — el error no fue leer mal una columna, fue leer un registro como catálogo
+
+`CAMPANAS` declara las dos campañas con `informe_id: jm`, y eso se leyó como *«son de ámbito JM»*.
+**`informe_id` contesta «¿dónde se publica esto?», no «¿de qué ámbito es el dato?»** — dos preguntas
+distintas cuya respuesta **coincide casi siempre**, que es lo que las hace difíciles de separar.
+
+⛔ **Lo cazó un control positivo que falló bien:** el filtro de fecha leía perfecto —las dos cuentas
+aparecían con sus fechas— y lo que falló fue la pertenencia. Sin él, la tabla JM/GCBA se habría
+publicado con **4 filas en JM** como si fuera un resultado.
+
+### `X-19` — cerrada por reproducción de una, con la otra nombrada
+
+Autódromo reproduce: `camp_meta_frecuencia` **1,87 = 1,87**, `camp_frecuencia` **7,19 ≈ 7,17**. La
+definición del motor era correcta desde siempre; **lo que fallaba era el caso contra el que se la
+probó**. Mugica no reproduce —2,84 vs 1,64, 12,16 vs 7,20— y **eso va escrito**: no falla la
+fórmula, el motor lee 1.805.573 donde la referencia trae 1.026.469.
+
+⭐ **Cerrar con una que reproduce de verdad y nombrar la que no dio es más fuerte que cerrar con dos
+donde una no se sostiene** (decisión del usuario). Dos ✅ de los cuales uno es falso no se
+distinguen de dos verdaderos, y el que se cae después se lleva la conclusión entera.
+
+### ⛔ `contenidos_total`: de «pendiente de cableado» a **limitación medida**
+
+Definido —**28 JM / 269 GCBA**, con desglose 10/8/10 y 95/63/111, y la corrección del 270— y
+**medidamente no cableable desde el desglose**: la ventana de solape trae **327 filas y
+291.799.818** impresiones contra las **297 y 98.979.778** del panel. **2,95× sobre 1,10×.**
+
+⭐ Eso cambia el estado, no sólo el texto: *«pendiente de cableado»* espera trabajo, *«no cableable
+desde esta fuente»* espera **una fuente**. Y arrastra a los `imp_*`: su `_revisar` se queda **por
+diseño**, con la condición de salida escrita en `CONFIG_INFORMES` §1.16 — **ninguna decisión
+editorial lo saca.**
+
+### Banco
+
+`tools/probar-identidades-l046.js`, **4 bloques, 39 afirmaciones, y NI UNA constante esperada** —
+decisión del usuario, y la regla es la del 26/08: *un control contra constantes de una lectura
+anterior caduca cada vez que la fuente respira*.
+
+⭐ **La afirmación que le da valor no es que cada marcador tenga los operandos correctos: es que el
+numerador de `camp_frecuencia` sea el MISMO `campo_logico` que publica `camp_impresiones`, y su
+denominador el mismo que publica `camp_alcance`.** Eso vuelve la lámina verificable contra sí misma
+—los tres números están a la vista y el tercero es el cociente de los otros dos—, que es la misma
+forma con la que cerró `u1_total_clics` en `L-053`.
+
+Más: los tres VTR de plataforma **comparten forma exacta y difieren sólo en el corte** (la lección
+de `R-33`, aplicada antes de que duela), el total **no lleva corte**, y `programmatic` se afirma
+**por resta**, con cinco afirmaciones negativas de que **no enumera** DV360, Mercado Libre, TikTok,
+Twitch ni Uber — enumerarlas daría hoy el mismo número y dejaría afuera en silencio a la próxima.
+
+**Suites: 53 bancos, exit 0.**
+
+### ⚠ Lo que NO se hizo
+
+- **No se cableó nada.** El `%VTR` ya estaba; `contenidos_total` no es cableable; los `imp_*` se
+  quedan como están. **Esta vuelta no movió un solo número publicado.**
+- **La `notas` de `camp_frecuencia` sigue diciendo «X-19 ABIERTA»**, en `Instalar.gs` y en la hoja.
+  Fuera de alcance, y hay que cambiarla **en los dos lados a la vez** (`C-87`).
+- **No se midió el encabezado físico de la col K**, así que no se afirma que la nota de
+  `camp_alcance` esté mal: se afirma que `meta_alcance` no resuelve como `campo_logico` (`C-88`).
+- **`L-046` queda en 🟡.** El ✅ lo pone el usuario.

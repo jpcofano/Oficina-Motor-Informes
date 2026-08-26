@@ -799,6 +799,98 @@ número que había adentro era sólo del PRE.
 
 ---
 
+### 1.14 `contenidos_total` — definido, y **medidamente no cableable desde el desglose** — 26/08/2026
+
+**Decisión del usuario, con medición sobre el panel de Looker, ventana 14–20/08.** El hecho es
+**«contenidos implementados»**.
+
+| | total | Meta | Google | DV360 |
+|---|---|---|---|---|
+| **JM** | **28** | 10 | 8 | 10 |
+| **GCBA** | **269** | 95 | 63 | 111 |
+
+Los desgloses cierran contra su total: 10+8+10 = 28 · 95+63+111 = 269.
+
+⚠ **Corrección: el repo decía «270 en GCBA»** —en la pregunta al equipo de
+`PENDIENTES_consistencia.md`, 22/08—. **Son 269**, medido el 26/08. La línea vieja no se editó: es
+lo que se preguntó entonces, y la cifra buena es ésta.
+
+⛔ **NO se cablea, y ahora se sabe POR QUÉ — que es lo que cambia el estado.** Medido el 26/08
+sobre `digital/CAMPAÑAS_DESGLOCE_DIGITAL` con el criterio de solape de `R-16`:
+
+| | filas | impresiones |
+|---|---|---|
+| la ventana del desglose | **327** | **291.799.818** |
+| lo que publica el panel | 297 | 98.979.778 |
+
+**2,95× las impresiones sobre 1,10× las filas.** ⇒ **el dato semanal viene de una fuente que el
+motor no lee.**
+
+⭐ **«Definido pero no cableable» y «pendiente de cableado» son dos estados distintos**, y hasta hoy
+esto figuraba como el segundo. Uno espera trabajo; el otro espera una fuente. **El número es
+citable; el marcador no.** Lo que falta para moverlo: saber **por qué fecha recorta el panel**.
+
+---
+
+### 1.15 El `%VTR` es **calculado**, y el motor no reproduce el `89,48 %` — 26/08/2026
+
+**Los cuatro VTR de `L-046` son `PCT` sobre `Visualizaciones / Impresiones`** —los tres de
+plataforma sobre `looker/DIGITAL`, el total sobre `resumen_metricas_dinamico`—. **Ya lo eran desde
+que se cablearon**; acá se declara la decisión, que es otra cosa.
+
+⛔ **Derogación, y es deliberada:** el deck del equipo publica **89,48 %** en Mugica Google, y ese
+número **no sale de las dos celdas que tiene al lado**. Con el VTR calculado, el motor publica el
+cociente de sus propios operandos y **deja de depender de un número cuyo origen nadie puede
+reproducir**.
+
+⚠ **Que el motor no reproduzca el 89,48 % es el resultado correcto, no un error a corregir.** Es
+una excepción acotada a `C-01`, del mismo tipo que `R-33` en `L-053`: la plantilla —la caja, el
+rótulo— se respeta entera; lo que cambia es de dónde sale el número que va adentro.
+
+⚠ **Y los valores concretos envejecen**: el 26/08 el motor da Autódromo Google **74,5** y Mugica
+Google **65,1**. Se citan **fechados y como referencia** — el control que se exige en cada corrida
+es la identidad, no la constante (`tools/probar-identidades-l046.js`).
+
+---
+
+### 1.16 Los `imp_*` conservan `_revisar` **por diseño**, no por falta de trabajo — 26/08/2026
+
+Un `_revisar` puede significar dos cosas muy distintas y hasta hoy no se distinguían:
+
+| motivo | qué lo saca |
+|---|---|
+| *«falta una decisión o una validación»* | el trabajo que la destraba — es lo que pasó con los 24 de `L-053` |
+| ⛔ *«el dato semanal no es cableable desde la fuente que el motor lee»* | **una fuente nueva, no una decisión** |
+
+**Los `imp_*` son del segundo tipo**, y §1.14 lo mide: el desglose trae **2,95×** lo que publica el
+panel. Mientras el dato venga de una fuente que el motor no lee, el número que el motor publica es
+**de otro universo**, y los guiones son exactamente la señal correcta.
+
+⭐ **La condición de salida, escrita para que no haya que adivinarla:** el `_revisar` de los `imp_*`
+sale cuando **(a)** se identifique la fuente que el panel usa —o el recorte que aplica sobre
+`looker/DIGITAL`—, **(b)** el motor la lea, y **(c)** una corrida reproduzca los totales del panel.
+⛔ **Ninguna decisión editorial lo saca**, y por eso no va a *«Preguntas al equipo»*: no hay nada
+que preguntar, hay algo que encontrar.
+
+---
+
+### 1.17 `plataforma = programmatic` agrega **DV360 y Mercado Libre** — medido 26/08/2026
+
+`R-24` define `programmatic` **por resta** —todo lo que no es Meta ni Google ads— y no por lista.
+**Funcionaba y no estaba escrito en ningún lado.** Medido:
+
+- **Autódromo `3481-AGOINFAN`**: DV360 **4.077.181** + Mercado Libre **119.936** = **4.197.117**,
+  que es exactamente lo que publicó `camp_prog_impresiones`. Ídem vistas (2.531.283 + 60.412 =
+  2.591.695) y clics (2.947 + 5.501 = 8.448).
+- **Mugica `3509-AGOSEGGJ`**: sólo DV360.
+
+⭐ **Lo que hay que no romper**, y por eso tiene banco propio: la condición física es
+`Plataforma!=Meta && Plataforma!=Google ads`. **Enumerar las etiquetas** —aunque hoy diera el mismo
+número— dejaría afuera **en silencio** a la próxima que aparezca. En esta solapa conviven al menos
+`TikTok`, `Twitter`, `Twitch`, `Mercado Libre` y `Uber` bajo el mismo rótulo del deck.
+
+---
+
 ## 2. Informe semanal SECCO-SSCDI
 
 Cada sección tiene su propia configuración. Es el informe más configurable.
