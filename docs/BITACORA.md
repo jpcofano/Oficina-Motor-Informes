@@ -15433,3 +15433,69 @@ escribe la prueba.**
 - `ecv_barrio` y `ecv_fecha` siguen abiertos: resuelven `ok` y el deck del 22/08 los publicó
   `/////`. La validación los anotó y **no investigó la causa**; este paso tampoco.
 - **`L-053` queda en 🟡, no en ✅.** El ✅ lo pone el usuario.
+
+---
+
+## `2026-08-26` (cierre) — `L-053`: los seis CLICS del POST, y la lámina pasa a explicarse a sí misma
+
+**Qué se hizo.** El usuario agregó el bloque `CLICS (CTR)` a las tres cajas de POST; se cablearon
+los seis tokens nuevos.
+
+| token | publicado, medido en vivo |
+|---|---|
+| `u1_post_meta_clics` · `u1_post_meta_ctr` | **369** · **0,3** |
+| `u1_post_google_clics` · `u1_post_google_ctr` | **199** · **0,1** |
+| `u1_post_prog_clics` · `u1_post_prog_ctr` | **424** · **0,5** |
+
+Los tres coinciden **al dígito** con lo que traía el prompt.
+
+**Cómo.** `cablearClicsDePostDeUnoAUno()` (`Instalar.gs`), por `curarMarcadores_`. **El molde se
+copió de la hoja, campo por campo, no se dedujo**: los `u1_pre_*_clics`/`_ctr` con `etapa=post` en
+`dimensiones`. Las seis filas se **generan de un mapa de tres plataformas** en vez de escribirse a
+mano — seis objetos copiados son seis lugares donde el corte puede quedar desalineado, que es
+exactamente lo que `R-33` cerró un escalón más arriba. `filtro` vacío y **sin `_revisar`** en las
+seis, verificado releyendo la hoja.
+
+---
+
+### ⭐⭐ El punto no son los seis marcadores: es que el total dejó de ser un número que hay que creer
+
+`R-33` había subido `u1_total_clics` de **1.472** a **2.464**, y **la lámina no mostraba de dónde
+salían los 992 extra**. Un número correcto que no se puede verificar mirando la lámina que lo
+contiene. Con las tres cajas nuevas:
+
+```
+1.324 + (sin dato) + 148   (PRE)
+  369 +   199      + 424   (POST)
+= 2.464 = u1_total_clics          ← medido en vivo, no deducido
+```
+
+⛔ **Y `u1_pre_google_clics` publica `-`, no `0`:** no hay filas `PRE × Google ads` para esta
+cuenta. El banco lo afirma como *5 de 6 combinaciones presentes* en vez de sumar un cero — contar
+un `sin_datos` como cero es el `String(celda)` de `CLAUDE.md` §4 con otra ropa.
+
+### Banco
+
+`tools/probar-totales-u1.js` gana dos bloques (**11 en total**): las seis filas afirmadas sobre
+`filasDeClicsPostUnoAUno_()` **ejecutada** —no sobre su texto—, y la identidad. ⭐ **Con su control
+negativo, que es el que le da sentido:** sin las tres cajas del POST la identidad **no cierra**
+(1.472 ≠ 1.879 sobre el fixture). Sin esa afirmación, la identidad habría dado verde también en el
+estado que este alta vino a corregir.
+
+**Suites: 52 bancos, exit 0.**
+
+### ⚠ Un incidente propio, anotado
+
+La llamada al alta se hizo con `--reintentar`, la primera respuesta volvió como HTML 404 con la
+ejecución ya corrida, y **el alta se ejecutó dos veces**. No pasó nada porque `curarMarcadores_`
+borra por clave antes de agregar —`MARCADORES` quedó en 216 filas y **0 duplicados**, verificado—,
+pero `tools/api.js` **advierte en su encabezado** que esa bandera es sólo para llamadas que no
+escriben. Va a `PENDIENTES`.
+
+### ⚠ Lo que NO se hizo
+
+- `ecv_barrio` y `ecv_fecha` siguen abiertos. Hay **hipótesis nueva sin confirmar** —el título
+  partido en tres runs en el `.pptx`, que `replaceAllText` no puede matchear— y **se anotó sin
+  investigarla** (`C-85`), incluido cómo se falsa en una línea.
+- `u1_total_alcance` y `u1_total_frecuencia` siguen sin cablear: **el dato no existe**.
+- **`L-053` queda en 🟡.** El ✅ lo pone el usuario.

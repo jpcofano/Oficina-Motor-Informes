@@ -9028,3 +9028,64 @@ en `docs/CONFIG_INFORMES.md` §1.13. **Es una decisión, no un pendiente** — n
 `ecv_barrio` y `ecv_fecha` **resuelven `ok`** contra la base viva y el deck del 22/08 los publicó
 `/////`. La validación del 26/08 los anotó y **no investigó la causa** —la consigna era completar
 la tabla, no resolver el primero que fallara— y el cierre de hoy **no los tocó**. Siguen abiertos.
+
+---
+
+## `2026-08-26` — `C-85` · `ecv_barrio` y `ecv_fecha` resuelven bien y el deck los publicó `/////` · **hipótesis nueva, sin confirmar**
+
+**Estado: abierto. Anotado, NO investigado** — decisión explícita, las dos veces que apareció.
+
+**El hecho, medido:** los dos marcadores resuelven `estado = ok` contra la base viva —`ecv_barrio`
+devuelve `Parque Avellaneda`, `ecv_fecha` devuelve `12/08`— y el deck del **22/08 14:02** publicó
+**`/////`** en las dos cajas. `/////` significa que `resolverMarcadores` **no devolvió resultado**
+para ese token, que es justo lo contrario de lo que se mide hoy.
+
+### ⚠ La hipótesis nueva, y va marcada como hipótesis
+
+En el `.pptx` exportado, el título de la lámina está **partido en tres runs de texto**:
+
+```
+'Uno a uno en {{ecv'   ·   '_barrio}} ({{ec'   ·   'v_fecha}})'
+```
+
+`replaceAllText` busca **una cadena continua**, y ahí no existe: ningún run contiene
+`{{ecv_barrio}}` entero. Si la plantilla viva estuviera igual, los dos tokens no se podrían
+reemplazar nunca — y el síntoma sería exactamente `/////`.
+
+⛔ **Puede ser un artefacto de la exportación a `.pptx` y no el estado de la plantilla.** Google
+Slides parte runs por razones de formato al exportar, así que **lo que se ve en el `.zip` no prueba
+lo que hay en Drive**. Es la familia de *¿estoy mirando lo que creo que estoy mirando?*
+(`CLAUDE.md` §4).
+
+### ⭐ Cómo se verifica, en una línea, el día que se decida hacerlo
+
+Mirar si el título de `L-053` **en la plantilla viva** está en un solo run —`piezasDeTextoDeSlide_`
+ya recorre eso— y comparar contra los tres runs del export. **Si en la viva está entero, la
+hipótesis se cae y el hallazgo es otro.**
+
+⚠ **No se hizo hoy**, y no por falta de tiempo: la consigna de las dos corridas fue completar la
+tabla y cablear, no diagnosticar. Se anota para que la próxima vez que aparezca el `/////` no se
+vuelva a descubrir desde cero.
+
+---
+
+## `2026-08-26` — ⚠ `--reintentar` de `tools/api.js` sobre una llamada que ESCRIBE
+
+**Estado: sin consecuencia esta vez. Anotado porque la próxima puede tenerla.**
+
+`cablearClicsDePostDeUnoAUno()` se invocó con `--reintentar`. La primera respuesta volvió como
+**HTML 404** —la ejecución del lado de Apps Script **sí había corrido**— y el cliente reintentó,
+así que **el alta se ejecutó dos veces**.
+
+⭐ **No pasó nada, y el motivo es del escritor, no de quien lo llamó:** `curarMarcadores_` **borra
+por clave antes de agregar**, así que la segunda corrida reemplazó las seis filas en vez de
+duplicarlas. Verificado: `MARCADORES` quedó en **216 filas** (210 + 6) y el conteo de duplicados por
+`marcador||informe_id` dio **0**.
+
+⛔ **Y el propio `tools/api.js` lo dice en su encabezado:** *«`--reintentar` … **No es el default.**
+Sólo lo pide quien sabe que la llamada NO escribe»*. La bandera se usó por costumbre, contra una
+advertencia escrita. **Un escritor idempotente por clave lo absorbe; uno que hiciera `append` no.**
+
+⚠ **La regla operativa, para que no dependa de acordarse:** en una llamada que escribe, **no** se
+pasa `--reintentar`; si la respuesta se pierde en el transporte, se **relee la hoja** para saber si
+la escritura ocurrió, en vez de repetirla a ciegas.
