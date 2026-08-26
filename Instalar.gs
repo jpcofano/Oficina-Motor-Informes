@@ -5971,6 +5971,33 @@ function revertirTanda4DeFrecuencia() {
  * y una fila con cero **es un cero real**. ⚠ **Agregar la guarda por simetría convertiría un cero
  * verdadero en `«FALTA»`** — el error simétrico de `D-33` addendum 2.
  */
+/**
+ * ⭐⭐ **Las dos notas que se corrigieron el 26/08 viven ACÁ ARRIBA, fuera del alta, y ése es el
+ * punto: son la MISMA cadena que escribe el seed y que escribe `actualizarNotasDeCampana()`.**
+ *
+ * ⛔ **El problema que esto cierra:** una nota corregida sólo en el seed deja el código diciendo
+ * una cosa y `MARCADORES` otra — y `CLAUDE.md` §7 es explícito en que **gana la hoja**. Con la
+ * cadena en un solo lugar, «los dos lados a la vez» deja de ser disciplina de quien edita y pasa a
+ * ser estructura: no hay dos textos que puedan divergir.
+ */
+var NOTA_CAMP_ALCANCE_ = '2026-08-19_1 — rama por cuenta (`D-30`/`R-17`), 1 fila por id medida ' +
+  'el 19/08. El alcance de esta base se movió +56,7% en dos días sobre una ventana cerrada ' +
+  '(19/08): dos corridas del mismo período pueden dar distinto y NO es un bug del motor. ' +
+  'CAPAS (medido 26/08): el campo lógico es `alcance`, resuelve a la col K, y el ENCABEZADO ' +
+  'FÍSICO de esa columna es `meta_alcance`. Las dos cosas son ciertas y son capas distintas — ' +
+  '`meta_alcance` NO existe como campo lógico de esta solapa, así que buscarlo como tal da cero. ' +
+  'La consecuencia de dominio sigue abierta en A-12: si la columna es sólo de Meta, el alcance ' +
+  'publicado no es el total. SIN VALIDAR';
+
+var NOTA_CAMP_FRECUENCIA_ = '2026-08-19_1 — rama por cuenta (`D-30`/`R-17`), 1 fila por id ' +
+  'medida el 19/08. RATIO y no la columna `frecuencia_total` (col M): el hecho «frecuencia» ya ' +
+  'tiene una sola definición en el motor (D-33). X-19 CERRADA el 26/08 (C-87) POR REPRODUCCIÓN: ' +
+  'Autódromo 3481-AGOINFAN da `camp_meta_frecuencia` 1,87 contra 1,87 y `camp_frecuencia` 7,19 ' +
+  'contra 7,17. La definición del motor era correcta; lo que fallaba era el caso contra el que ' +
+  'se la había probado. Mugica 3509-AGOSEGGJ NO reproduce (2,84 contra 1,64) y NO es la fórmula: ' +
+  'sus operandos son de otra foto de la base. El 8,4 del deck de 3305 sigue sin reproducir y ' +
+  'sigue siendo error del deck, no del motor. SIN VALIDAR';
+
 function altaMarcadoresDeCampana_() {
   var N = function (via) {
     return '2026-08-19_1 — ' + via + '. SIN VALIDAR';
@@ -5994,9 +6021,7 @@ function altaMarcadoresDeCampana_() {
     { marcador: 'camp_alcance', familia: 'camp', informe_id: 'jm', base_id: 'looker',
       solapa: 'resumen_metricas_dinamico', campo_logico: 'alcance', operacion: 'ULTIMO',
       filtro: '', dimensiones: '', formato: 'miles',
-      notas: N(RAMA_CUENTA + '. El alcance de esta base se movió +56,7% en dos días sobre una ' +
-        'ventana cerrada (19/08): dos corridas del mismo período pueden dar distinto y NO es un ' +
-        'bug del motor. Mapea a la columna `meta_alcance` — ver A-12') },
+      notas: NOTA_CAMP_ALCANCE_ },
     { marcador: 'camp_entregados', familia: 'camp', informe_id: 'jm', base_id: 'looker',
       solapa: 'resumen_metricas_dinamico', campo_logico: 'mail_entregados', operacion: 'ULTIMO',
       filtro: '', dimensiones: '', formato: 'miles', notas: N(RAMA_CUENTA) },
@@ -6007,17 +6032,26 @@ function altaMarcadoresDeCampana_() {
       solapa: 'resumen_metricas_dinamico', campo_logico: 'mail_clics/mail_aperturas',
       operacion: 'PCT', filtro: '', dimensiones: '', formato: 'porcentaje_sin_signo',
       notas: N(RAMA_CUENTA + '. PCT sobre los agregados de la fila, no promedio de una tasa') },
-    /* ⚠ `numero_revisar` porque `X-19` sigue abierta: el deck publica **8,4** para `3305` y eso
-     * **no es** el ratio (28.253.288 / 3.178.282 = 8,89) **ni** `looker/ALCANCE` (2,27). **El número
-     * que salga es del motor, y no hay que reproducir el 8,4.** El hallazgo del 19/08 lo refuerza:
-     * con el denominador moviéndose 56,7% en dos días, el valor **va a cambiar entre corridas**, y
-     * los guiones son exactamente la señal de que ese número no está cerrado. */
+    /* ⭐ **`numero_revisar` SE QUEDA, y desde el 26/08 por un motivo distinto del que lo puso.**
+     *
+     * Lo puso *«`X-19` sigue abierta»*. **`X-19` cerró el 26/08 por reproducción** (`C-87`): la
+     * definición del motor era correcta y lo que fallaba era el caso contra el que se la probó.
+     *
+     * ⛔ **Pero la marca no sale, y el motivo que la sostiene ya estaba escrito en la misma línea
+     * de antes:** el denominador —el alcance de `looker`— se movió **+56,7 % en dos días sobre una
+     * ventana cerrada**, así que el valor **cambia entre corridas** y los guiones son exactamente
+     * la señal de que ese número no está cerrado.
+     *
+     * ⚠ **Los dos motivos se ven igual en el deck y mandan a trabajos opuestos**, que es por lo
+     * que conviene decirlo acá: *«falta validar»* lo destraba una medición; *«la fuente se mueve»*
+     * lo destraba una fuente estable. La condición de salida está en `CONFIG_INFORMES` §1.16.
+     *
+     * ⚠ **Y el 8,4 del deck de `3305` sigue sin reproducir**: eso es error del deck, no del motor,
+     * y no cambió con el cierre de `X-19`. */
     { marcador: 'camp_frecuencia', familia: 'camp', informe_id: 'jm', base_id: 'looker',
       solapa: 'resumen_metricas_dinamico', campo_logico: 'dig_impresiones/alcance',
       operacion: 'RATIO', filtro: '', dimensiones: '', formato: 'numero_revisar',
-      notas: N(RAMA_CUENTA + '. RATIO y no la columna `frecuencia_total` (col M): el hecho ' +
-        '«frecuencia» ya tiene una sola definición en el motor (D-33). X-19 ABIERTA: el 8,4 ' +
-        'publicado no reproduce ni por ratio ni por looker/ALCANCE — NO hay que reproducirlo') },
+      notas: NOTA_CAMP_FRECUENCIA_ },
     { marcador: 'camp_titulo', familia: 'camp', informe_id: 'jm', base_id: 'digital',
       solapa: 'Seguimiento digital', campo_logico: 'sd_campana_cuentas', operacion: 'ULTIMO',
       filtro: '', dimensiones: '', formato: 'texto',
@@ -6027,6 +6061,88 @@ function altaMarcadoresDeCampana_() {
 
   return curarMarcadores_([], agregar);
 }
+
+/**
+ * ⭐⭐ **Empuja a `MARCADORES` las dos `notas` que se corrigieron el 26/08.** Sin `_` y sin
+ * parámetros, para que aparezca en el desplegable (`CLAUDE.md` §2).
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`** — sólo la columna `notas`, sólo estas dos filas.
+ *
+ * ⛔⛔ **Por qué hace falta un botón y no alcanza con corregir el seed:** `MARCADORES` **no tiene
+ * sembrador** (`docs/ESCRITORES.md`), así que editar el `alta*` no mueve una sola celda — el alta
+ * ya corrió. Una nota corregida sólo en el código deja el repo diciendo una cosa y la hoja otra,
+ * **y `CLAUDE.md` §7 dice que gana la hoja**: el resultado sería que la corrección no existe para
+ * el motor y sí para quien lee el `.gs`.
+ *
+ * ⭐ **Y por eso el texto NO se repite acá: se toma de las mismas dos constantes que usa el
+ * seed.** Son un solo texto; no hay dos que puedan divergir.
+ *
+ * **Qué cambió, y es lo único que cambió:**
+ *   - `camp_frecuencia` — decía *«X-19 ABIERTA … NO hay que reproducirlo»*. `X-19` cerró el 26/08
+ *     por reproducción (`C-87`). Ahora dice qué reproduce (Autódromo), qué no (Mugica) y por qué.
+ *   - `camp_alcance` — decía *«Mapea a la columna `meta_alcance`»*, cierto y **ambiguo**. Medido
+ *     el 26/08: el campo lógico es `alcance` → col K, y el **encabezado físico** de esa columna
+ *     es `meta_alcance`. Ahora la nota distingue las dos capas.
+ *
+ * ⛔ **NO toca el mapeo ni el formato de ninguna de las dos.** `camp_alcance` reproduce (919.500
+ * en Autódromo) y `camp_frecuencia` conserva su `numero_revisar` — esto es la etiqueta, no el dato.
+ */
+function actualizarNotasDeCampana() {
+  var cambios = [
+    { marcador: 'camp_frecuencia', informe_id: 'jm', notas: NOTA_CAMP_FRECUENCIA_ },
+    { marcador: 'camp_alcance', informe_id: 'jm', notas: NOTA_CAMP_ALCANCE_ }
+  ];
+
+  var r = curarCamposMarcadores_(cambios);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  if (r.idempotente) {
+    Logger.log('ⓘ Las dos notas YA estaban actualizadas. Nada que hacer.');
+  } else {
+    Logger.log('== notas actualizadas: ' + r.cambios_escritos + ' celda(s) ==');
+    r.aplicados.forEach(function (a) {
+      Logger.log('  ' + a.marcador + ' · "' + String(a.anterior).slice(0, 70) + '…"');
+      Logger.log('     -> "' + String(a.nuevo).slice(0, 70) + '…"');
+    });
+  }
+
+  /* ⭐ **Se relee LA CELDA, no lo que se pidió escribir.** Una nota es texto largo con acentos,
+   * comillas angulares y guiones: cualquier cosa que Sheets decida hacerle pasa acá y no en el
+   * pedido. Y se afirma lo que importa —que ya no diga «X-19 ABIERTA»—, no que la celda cambió. */
+  var releido = {};
+  leerMarcadores_().forEach(function (f) {
+    if (String(f.informe_id) !== 'jm') return;
+    if (f.marcador === 'camp_frecuencia' || f.marcador === 'camp_alcance') {
+      releido[f.marcador] = String(f.notas || '');
+    }
+  });
+
+  var problemas = [];
+  cambios.forEach(function (c) {
+    var hoja = releido[c.marcador];
+    if (hoja === undefined) { problemas.push(c.marcador + ' → NO SE PUDO RELEER'); return; }
+    if (hoja !== c.notas) {
+      problemas.push(c.marcador + ' → la celda NO quedó igual a lo pedido (' +
+        hoja.length + ' caracteres contra ' + c.notas.length + ')');
+    }
+  });
+  if (releido.camp_frecuencia && releido.camp_frecuencia.indexOf('X-19 ABIERTA') !== -1) {
+    problemas.push('camp_frecuencia → la celda SIGUE diciendo «X-19 ABIERTA»');
+  }
+
+  Logger.log('');
+  Logger.log('== releído de la hoja: ' + Object.keys(releido).length + ' de ' + cambios.length + ' ==');
+  if (problemas.length) {
+    problemas.forEach(function (p) { Logger.log('  ⛔ ' + p); });
+    return { ok: false, motivo: problemas.join(' | '), escritura: r };
+  }
+
+  Logger.log('✅ Las dos notas quedaron en la hoja idénticas al código.');
+  Logger.log('   `camp_frecuencia` ya no dice «X-19 ABIERTA».');
+  return { ok: true, escritura: r, releido: releido };
+}
+
+
 
 /** Wrapper público del alta de los nueve `camp_*`. ⚠ **ESCRIBE en `MARCADORES`.** */
 function darDeAltaMarcadoresDeCampana() {
