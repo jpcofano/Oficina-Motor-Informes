@@ -5609,3 +5609,696 @@ function diagPostL036() {
   Logger.log('    buscá `post_habitantes1 @…`, no `post_habitantes1`.');
   return { ok: true, sin_fila: sinFila, con_fila: conFila };
 }
+
+/* ============ `2026-08-25` — ¿un token puede publicar VARIAS LÍNEAS CON BULLET? ============
+ *
+ * Pregunta previa a cualquier cableado de `m2_campanias` (`L-038`): hoy es `CUENTA_DISTINTOS`
+ * —un número— y la caja de la plantilla es un bullet donde van los NOMBRES, uno debajo del otro.
+ * Antes de tocarle la operación hay que saber si el **único** camino de escritura que tiene el
+ * motor —`replaceAllText`, `Generador.gs`— sabe producir eso.
+ *
+ * **Se mide sobre una COPIA.** La plantilla es del equipo (`C-01`) y el usuario le está tocando
+ * los tokens: escribir sobre la viva mezclaría las dos cosas y además no es reversible.
+ *
+ * ⭐ **Control positivo, y sin él no hay hallazgo.** Se pinta también `m2_envios`, que hoy sale
+ * bien por este mismo camino y en esta misma lámina. Si el control tampoco aparece, lo que falló
+ * es el instrumento —no escribió en la copia— y el resultado del otro token no dice nada.
+ *
+ * ⚠ **No inventa una segunda vía de escritura.** Se mide `replaceAllText` y nada más, que es lo
+ * que el motor ya hace. Si no alcanza, eso es el hallazgo y la decisión es de otro prompt.
+ */
+
+/** Los saltos no se ven en un log, y son justo lo que se mide. */
+function escaparSaltos_(texto) {
+  return String(texto === undefined || texto === null ? '' : texto)
+    .replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/\v/g, '\\v');
+}
+
+/**
+ * Radiografía de un contenedor de texto, **párrafo por párrafo**: qué dice y si está en lista.
+ *
+ * El párrafo es la unidad correcta y no el shape: la pregunta no es *"¿entró el texto?"* sino
+ * *"¿cuántos párrafos hay y cada uno tiene bullet?"*, y eso sólo se ve a este nivel.
+ */
+function radiografiaDeRango_(rango) {
+  var parrafos = [];
+  rango.getParagraphs().forEach(function (p, i) {
+    var r = p.getRange();
+    var fila = { i: i + 1, texto: escaparSaltos_(r.asString()) };
+    try {
+      var ls = r.getListStyle();
+      fila.en_lista = ls.isInList();
+      if (fila.en_lista) {
+        fila.glifo = String(ls.getGlyph());
+        fila.nivel = ls.getNestingLevel();
+        var lista = ls.getList();
+        fila.list_id = lista ? String(lista.getListId()) : '(sin id)';
+      }
+    } catch (e) {
+      fila.en_lista = 'ERROR al leer el estilo de lista: ' + e.message;
+    }
+    try {
+      var ps = r.getParagraphStyle();
+      fila.indent_start = ps.getIndentStart();
+      fila.indent_first = ps.getIndentFirstLine();
+    } catch (e) {
+      fila.indent_start = '(no legible)';
+    }
+    parrafos.push(fila);
+  });
+  return parrafos;
+}
+
+/**
+ * Dónde vive un token dentro de una lámina: `{ tipo, objectId, fila, col }`.
+ *
+ * Baja a tablas y a grupos por el mismo motivo que `piezasDeTextoDeSlide_`: `getShapes()` no los
+ * ve, y la lámina de M2 **es una grilla con celdas combinadas** — si el token está en una celda,
+ * un localizador que sólo mire shapes devuelve "no está" y eso se lee como un hallazgo.
+ */
+function ubicarContenedorDeToken_(slide, token) {
+  var aguja = '{{' + token + '}}';
+  var hallado = null;
+
+  function mirar_(elemento, ruta) {
+    if (hallado) return;
+    var tipo;
+    try { tipo = String(elemento.getPageElementType()); } catch (e) { return; }
+
+    if (tipo === 'GROUP') {
+      elemento.asGroup().getChildren().forEach(function (h) { mirar_(h, ruta + '>grupo'); });
+      return;
+    }
+
+    if (tipo === 'TABLE') {
+      var t = elemento.asTable();
+      for (var f = 0; f < t.getNumRows(); f++) {
+        for (var c = 0; c < t.getNumColumns(); c++) {
+          try {
+            if (t.getCell(f, c).getText().asString().indexOf(aguja) === -1) continue;
+          } catch (e) { continue; } // celda combinada que no es la principal
+          hallado = { tipo: 'celda', objectId: elemento.getObjectId(), fila: f, col: c, ruta: ruta };
+          return;
+        }
+      }
+      return;
+    }
+
+    if (tipo === 'SHAPE' || tipo === 'TEXT_BOX') {
+      try {
+        if (elemento.asShape().getText().asString().indexOf(aguja) === -1) return;
+      } catch (e) { return; }
+      hallado = { tipo: 'shape', objectId: elemento.getObjectId(), ruta: ruta };
+    }
+  }
+
+  slide.getPageElements().forEach(function (e) { mirar_(e, 'suelta'); });
+  return hallado;
+}
+
+/**
+ * El `TextRange` del contenedor que describe `desc`, **por `objectId`**.
+ *
+ * Hace falta porque después de pintar el token ya no está: buscar de nuevo por la aguja
+ * devolvería `null` y eso se leería como "la caja desapareció".
+ */
+function rangoDeContenedor_(slide, desc) {
+  var hallado = null;
+
+  function mirar_(elemento) {
+    if (hallado) return;
+    var tipo;
+    try { tipo = String(elemento.getPageElementType()); } catch (e) { return; }
+    if (tipo === 'GROUP') { elemento.asGroup().getChildren().forEach(mirar_); return; }
+    var id;
+    try { id = elemento.getObjectId(); } catch (e) { return; }
+    if (id !== desc.objectId) return;
+    try {
+      hallado = (desc.tipo === 'celda')
+        ? elemento.asTable().getCell(desc.fila, desc.col).getText()
+        : elemento.asShape().getText();
+    } catch (e) { hallado = null; }
+  }
+
+  slide.getPageElements().forEach(mirar_);
+  return hallado;
+}
+
+/**
+ * Un caso: copia la plantilla, radiografía la caja, pinta con `replaceAllText` y vuelve a
+ * radiografiar **reabriendo el archivo** — lo que importa es lo que quedó, no lo que se pidió.
+ */
+function diagBulletsSobreCopia_(informeId, token, tokenControl, valor, etiqueta) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) {
+    return { ok: false, motivo: 'informe sin plantilla_id: ' + informeId };
+  }
+
+  var carpeta = asegurarCarpetaBackups_();
+  if (!carpeta.ok) return { ok: false, motivo: 'no se pudo preparar la carpeta de copias: ' + carpeta.motivo };
+
+  var sello = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  var copiaId;
+  try {
+    copiaId = DriveApp.getFileById(informe.plantilla_id)
+      .makeCopy('[DIAG bullets ' + etiqueta + '] ' + informeId + ' ' + sello, carpeta.carpeta).getId();
+  } catch (e) {
+    return { ok: false, motivo: 'no se pudo copiar la plantilla: ' + e.message };
+  }
+
+  var pres = SlidesApp.openById(copiaId);
+  var slides = pres.getSlides();
+  var ubic = null, orden = 0, laminaId = '';
+  for (var i = 0; i < slides.length && !ubic; i++) {
+    var u = ubicarContenedorDeToken_(slides[i], token);
+    if (u) { ubic = u; orden = i + 1; laminaId = anclaDeLamina_(slides[i]) || '(sin ancla)'; }
+  }
+  if (!ubic) {
+    return { ok: false, motivo: 'el token {{' + token + '}} no está en la plantilla de ' + informeId, copia_id: copiaId };
+  }
+
+  var rangoAntes = rangoDeContenedor_(slides[orden - 1], ubic);
+  var antes = rangoAntes ? radiografiaDeRango_(rangoAntes) : null;
+
+  // PINTAR — el mismo camino que usa el motor. Ninguna vía nueva.
+  var CONTROL = '9.999';
+  var ocurrencias = pres.replaceAllText('{{' + token + '}}', valor, true);
+  var ocurrenciasControl = pres.replaceAllText('{{' + tokenControl + '}}', CONTROL, true);
+  pres.saveAndClose();
+
+  // DESPUÉS — se REABRE el archivo a propósito.
+  var slide2 = SlidesApp.openById(copiaId).getSlides()[orden - 1];
+  var rangoDespues = rangoDeContenedor_(slide2, ubic);
+  var despues = rangoDespues ? radiografiaDeRango_(rangoDespues) : null;
+
+  var textoLamina = piezasDeTextoDeSlide_(slide2).map(function (p) { return p.texto; }).join(' | ');
+
+  return {
+    ok: true,
+    etiqueta: etiqueta,
+    copia_id: copiaId,
+    copia_url: 'https://docs.google.com/presentation/d/' + copiaId + '/edit',
+    lamina_id: laminaId,
+    orden: orden,
+    contenedor: ubic,
+    valor_pedido: escaparSaltos_(valor),
+    ocurrencias_reemplazadas: ocurrencias,
+    control: {
+      token: tokenControl,
+      valor: CONTROL,
+      ocurrencias_reemplazadas: ocurrenciasControl,
+      pintado: textoLamina.indexOf(CONTROL) !== -1,
+      quedo_crudo: textoLamina.indexOf('{{' + tokenControl + '}}') !== -1
+    },
+    parrafos_antes: antes,
+    parrafos_despues: despues
+  };
+}
+
+/**
+ * El wrapper que corre una persona: **sin `_` y sin parámetros**, las dos condiciones de §2.
+ *
+ * Corre los dos casos en orden y **para si el control positivo del primero falla**: sobre una
+ * copia en la que no se escribió, lo que diga el segundo no significa nada.
+ *
+ * `\n` y `\v` no son dos formas de lo mismo y por eso van los dos: en Slides el primero abre
+ * PÁRRAFO y el segundo es un salto BLANDO dentro del párrafo. La diferencia decide si el bullet
+ * se repite por línea o si las líneas cuelgan de un solo bullet — que es exactamente la pregunta.
+ */
+function medirBulletsDeM2Campanias() {
+  var casos = [
+    { etiqueta: 'salto-n', valor: 'Alfa uno\nBeta dos\nGamma tres' },
+    { etiqueta: 'salto-v', valor: 'Alfa uno\vBeta dos\vGamma tres' }
+  ];
+
+  var salida = [];
+  for (var i = 0; i < casos.length; i++) {
+    var r = diagBulletsSobreCopia_('jm', 'm2_campanias', 'm2_envios', casos[i].valor, casos[i].etiqueta);
+    salida.push(r);
+    Logger.log('=== CASO ' + casos[i].etiqueta + ' ===');
+    Logger.log(JSON.stringify(r, null, 2));
+    if (!r.ok) { Logger.log('⛔ el caso falló — no se corre el siguiente'); break; }
+    if (!r.control.pintado) {
+      Logger.log('⛔ CONTROL POSITIVO EN ROJO: `m2_envios` no quedó pintado en la copia.');
+      Logger.log('   El instrumento no escribió — NO hay hallazgo sobre los bullets. Se para acá.');
+      break;
+    }
+  }
+  return salida;
+}
+
+/**
+ * `2026-08-25` — cuántas campañas M2 DISTINTAS hay por ventana.
+ *
+ * Tercera pata de la medición de bullets: si son tres, la caja de `L-038` las aguanta; si son
+ * doce, el problema deja de ser el formato y pasa a ser el desborde.
+ *
+ * ⭐ **Enciende las DOS cachés y con el `try/finally` de `generarInforme`, copiado verbatim**
+ * (`CLAUDE.md` §4). Sin `abrirCacheRegistros_`, `buscarMapeo` relee `SOLAPAS` y `MAPEO` enteras
+ * en cada llamada: medido, un factor 54 — y las tres ventanas de acá se comen el reloj sin eso.
+ * Un instrumento que corre en otras condiciones mide otra cosa.
+ */
+function medirCampaniasM2PorVentana() {
+  var VENTANAS = [
+    { etiqueta: 'julio_24_30 (PERIODOS)',        desde: '2026-07-24', hasta: '2026-07-30' },
+    { etiqueta: '24-31/07 (la del deck, X-18)',  desde: '2026-07-24', hasta: '2026-07-31' },
+    { etiqueta: 'agosto_14_20 (PERIODOS)',       desde: '2026-08-14', hasta: '2026-08-20' }
+  ];
+
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+    var salida = [];
+    VENTANAS.forEach(function (v) {
+      var r = diagDistintos_('digital', 'Directa Mail', 'mail_campana', v.desde, v.hasta, 'mail_tipo', 'M2');
+      r.ventana = v.etiqueta;
+      salida.push(r);
+      Logger.log('=== ' + v.etiqueta + ' ===');
+      Logger.log(JSON.stringify(r, null, 2));
+    });
+    return salida;
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+}
+
+/**
+ * `2026-08-25` — la geometría de la caja de `{{m2_campanias}}` y su autoajuste.
+ *
+ * Va con la medición de bullets y no aparte: *"el bullet se hereda"* y *"las líneas entran"* son
+ * dos preguntas, y contestar sólo la primera manda a cablear algo que se va a desbordar. La
+ * altura declarada en `PENDIENTES` (`h=24`) es del 03/08 y es evidencia fechada — se re-mide.
+ *
+ * Sólo lectura, y **sobre la plantilla viva no escribe nada**: `getHeight` no muta.
+ */
+function medirCajaDeM2Campanias() {
+  var informe = leerInformes()['jm'];
+  if (!informe || !informe.plantilla_id) return { ok: false, motivo: 'jm sin plantilla_id' };
+
+  var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+  var salida = null;
+  for (var i = 0; i < slides.length && !salida; i++) {
+    var u = ubicarContenedorDeToken_(slides[i], 'm2_campanias');
+    if (!u || u.tipo !== 'shape') continue;
+    slides[i].getPageElements().forEach(function (el) {
+      var id;
+      try { id = el.getObjectId(); } catch (e) { return; }
+      if (id !== u.objectId) return;
+      var sh = el.asShape();
+      var rango = sh.getText();
+      var estilo = rango.getTextStyle();
+      salida = {
+        ok: true,
+        lamina_id: anclaDeLamina_(slides[i]) || '(sin ancla)',
+        orden: i + 1,
+        objectId: id,
+        x: Math.round(sh.getLeft()), y: Math.round(sh.getTop()),
+        w: Math.round(sh.getWidth()), h: Math.round(sh.getHeight()),
+        autofit: (function () {
+          try { return String(sh.getAutofit().getAutofitType()); } catch (e) { return 'no legible: ' + e.message; }
+        })(),
+        tamanio_fuente_pt: (function () {
+          try { return estilo.getFontSize(); } catch (e) { return 'no legible (mixto)'; }
+        })(),
+        texto_actual: escaparSaltos_(rango.asString())
+      };
+    });
+  }
+  if (!salida) return { ok: false, motivo: 'no se encontró la caja de {{m2_campanias}} como shape' };
+
+  // Cuántas líneas entran, con la altura de línea aproximada del tamaño de fuente. Es una
+  // ESTIMACIÓN y se rotula como tal: la medida exacta la da mirar el deck.
+  var pt = Number(salida.tamanio_fuente_pt);
+  if (pt > 0) {
+    salida.lineas_que_entran_estimadas = Math.floor(salida.h / (pt * 1.2));
+    salida.nota_estimacion = 'h / (fuente * 1.2). ESTIMACIÓN, no medición: el alto real de línea ' +
+      'lo decide Slides. Sirve para el orden de magnitud, no para un número citable.';
+  }
+  Logger.log(JSON.stringify(salida, null, 2));
+  return salida;
+}
+
+/* ================= `2026-08-25_6` Parte 0 — medir antes de tocar la ventana =================
+ *
+ * Sólo lectura. No escribe ninguna hoja de registro, no genera y no toca la plantilla.
+ *
+ * ⭐ **Enciende las DOS cachés con el `try/finally` de `generarInforme`, copiado verbatim.**
+ * Sin `abrirCacheRegistros_`, `buscarMapeo` relee `SOLAPAS` y `MAPEO` enteras por llamada.
+ */
+
+/** `0.1` — todos los marcadores que leen una solapa, con su lámina. */
+function medirLectoresDeDirectaMail() {
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+    var filas = leerMarcadores_().filter(function (f) {
+      return String(f.base_id).trim() === 'digital' &&
+             String(f.solapa).trim() === 'Directa Mail';
+    });
+
+    // `token -> [lamina_id]`, leído de la PLANTILLA VIVA de cada informe. No se deduce del
+    // nombre del marcador: `L-047` y `L-038` comparten prefijo `camp_`/`m2_` y un filtro por
+    // prefijo generaría una lista en vez de cruzar contra lo que hay (`CLAUDE.md` §4).
+    var porToken = {};
+    var informes = leerInformes();
+    Object.keys(informes).forEach(function (id) {
+      if (!informes[id].plantilla_id) return;
+      SlidesApp.openById(informes[id].plantilla_id).getSlides().forEach(function (slide) {
+        var lamina = anclaDeLamina_(slide) || '(sin ancla)';
+        piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+          var m, re = /\{\{([a-zA-Z0-9_]+)\}\}/g;
+          while ((m = re.exec(String(pieza.texto))) !== null) {
+            var k = id + '|' + m[1];
+            if (!porToken[k]) porToken[k] = [];
+            if (porToken[k].indexOf(lamina) === -1) porToken[k].push(lamina);
+          }
+        });
+      });
+    });
+
+    var salida = filas.map(function (f) {
+      var k = f.informe_id + '|' + f.marcador;
+      return {
+        marcador: f.marcador, informe_id: f.informe_id,
+        laminas: porToken[k] || [],
+        operacion: f.operacion, campo_logico: f.campo_logico,
+        filtro: f.filtro || '', dimensiones: f.dimensiones || '',
+        separador: f.separador === undefined ? '' : String(f.separador),
+        periodo_ref: f.periodo_ref || ''
+      };
+    });
+
+    var porOperacion = {};
+    salida.forEach(function (s) { porOperacion[s.operacion] = (porOperacion[s.operacion] || 0) + 1; });
+    var sinLamina = salida.filter(function (s) { return s.laminas.length === 0; })
+                          .map(function (s) { return s.marcador; });
+
+    Logger.log(JSON.stringify({ total: salida.length, por_operacion: porOperacion,
+                                sin_lamina: sinLamina, filas: salida }, null, 2));
+    return { ok: true, total: salida.length, por_operacion: porOperacion,
+             sin_lamina: sinLamina, filas: salida };
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+}
+
+/**
+ * `0.2` + `0.3` — la columna de fecha, la columna `Asunto` y el conteo de la ventana.
+ *
+ * ⚠ **La ventana se aplica A MANO y eso va rotulado**: `digital` es `snapshot`, así que
+ * `leerFuente` devuelve todas las filas y **no existe hoy un camino del motor que recorte esta
+ * solapa**. Lo único que se reusa del motor es `parsearFechaCelda_` —el parseo es la parte
+ * riesgosa y reimplementarlo es el error que este repo ya cometió cuatro veces—; la comparación
+ * de la ventana es del instrumento y por eso se declara.
+ */
+function medirAsuntoYVentanaDirectaMail() {
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+    var ventanaAncha = { ok: true, desde: new Date(2000, 0, 1), hasta: new Date(2040, 0, 1),
+                         origen: 'parte 0 · sin recorte (digital es snapshot)' };
+    var lectura = leerFuente('digital', ventanaAncha, 'Directa Mail');
+    if (!lectura.ok) return { ok: false, motivo: lectura.motivo };
+
+    // La solapa, tal como la declara el registro.
+    var solapas = leerSolapas();
+    var claveSolapa = null;
+    Object.keys(solapas).forEach(function (k) {
+      if (k.indexOf('digital') === 0 && k.indexOf('Directa Mail') !== -1) claveSolapa = k;
+    });
+    var decl = claveSolapa ? solapas[claveSolapa] : null;
+
+    // `Asunto`: se busca por ENCABEZADO en la fila real, no por una letra supuesta.
+    var encabezados = lectura.encabezados || [];
+    var asunto = [];
+    encabezados.forEach(function (h, i) {
+      if (String(h).toLowerCase().indexOf('asunto') !== -1) {
+        asunto.push({ letra: indiceAColumnaLetra_(i), encabezado: String(h), indice: i });
+      }
+    });
+
+    var COL_FECHA = 'F', COL_TIPO = 'I', COL_CAMPANA = 'H';
+    var desde = new Date(2026, 6, 24), hasta = new Date(2026, 6, 31); // 24-31/07, la del deck
+
+    var totalFilas = lectura.filas.length;
+    var sinFecha = 0, fechaInvalida = 0, conFecha = 0;
+    var enVentanaM2 = [];
+
+    lectura.filas.forEach(function (fila) {
+      var crudo = valorPorColumna_(fila, 'digital', lectura.hoja, COL_FECHA);
+      var vacio = (crudo === undefined || crudo === null || String(crudo).trim() === '');
+      if (vacio) { sinFecha++; return; }
+      var f = (crudo instanceof Date) ? crudo : parsearFechaCelda_(crudo);
+      if (!f || isNaN(f.getTime())) { fechaInvalida++; return; }
+      conFecha++;
+      if (f < desde || f > hasta) return;
+      var tipo = String(valorPorColumna_(fila, 'digital', lectura.hoja, COL_TIPO) || '');
+      if (tipo.toUpperCase().indexOf('M2') === -1) return;
+      enVentanaM2.push({
+        fecha: Utilities.formatDate(f, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+        campana: String(valorPorColumna_(fila, 'digital', lectura.hoja, COL_CAMPANA) || ''),
+        asunto: asunto.length ? String(valorPorColumna_(fila, 'digital', lectura.hoja, asunto[0].letra) || '') : '(sin columna asunto)'
+      });
+    });
+
+    function distintos_(lista) {
+      var vistos = {}, orden = [];
+      lista.forEach(function (v) { if (!(v in vistos)) { vistos[v] = 0; orden.push(v); } vistos[v]++; });
+      return { cuantos: orden.length, conteo: vistos, lista: orden };
+    }
+    var dAsunto = distintos_(enVentanaM2.map(function (r) { return r.asunto; }));
+    var dCampana = distintos_(enVentanaM2.map(function (r) { return r.campana; }));
+
+    var conToken = dAsunto.lista.filter(function (a) { return /\[[a-zA-Z0-9_]+\]/.test(a); });
+    var conTest = dAsunto.lista.filter(function (a) { return /test/i.test(a); });
+    // ⚠ El token sin resolver corta en dirección contraria: un asunto plantilla puede cubrir
+    // varios envíos. Se mide cuántas FILAS caen bajo cada asunto con token, que es lo que dice
+    // si el 26 se sostiene o si es coincidencia.
+    var filasPorAsuntoConToken = conToken.map(function (a) {
+      return { asunto: a, filas: dAsunto.conteo[a] };
+    });
+
+    var salida = {
+      ok: true,
+      solapa_declarada: decl ? { uso: decl.uso, ventana_ref: decl.ventana_ref || '(vacío)',
+                                campo_id_cuenta: decl.campo_id_cuenta || '(vacío)' } : '(no está en SOLAPAS)',
+      modo_lectura: lectura.modo,
+      columna_asunto: asunto.length ? asunto : '(ningún encabezado contiene "asunto")',
+      total_filas_solapa: totalFilas,
+      col_F_sin_fecha: sinFecha,
+      col_F_no_es_fecha: fechaInvalida,
+      col_F_con_fecha_valida: conFecha,
+      ventana_medida: '2026-07-24 a 2026-07-31 (aplicada A MANO por el instrumento)',
+      filas_en_ventana_M2: enVentanaM2.length,
+      asuntos_distintos: dAsunto.cuantos,
+      campanas_distintas: dCampana.cuantos,
+      asuntos_con_token_sin_resolver: filasPorAsuntoConToken,
+      asuntos_con_TEST: conTest,
+      lista_asuntos: dAsunto.lista,
+      lista_campanas: dCampana.lista
+    };
+    Logger.log(JSON.stringify(salida, null, 2));
+    return salida;
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+}
+
+/**
+ * `2026-08-25_6` Parte 0.4 — ¿sobrevive un SALTO DE LÍNEA el viaje por Sheets?
+ *
+ * Hace falta para poder usar `separador: '\n'` en `opLISTA`. **Se verifica releyendo lo que
+ * quedó, no escribiendo a ciegas** — es la familia del `valor_fijo = '1/3'` que Sheets guardó
+ * como fecha y el alta reportó «3 filas agregadas» diciendo la verdad sobre lo que pidió y
+ * mintiendo sobre lo que quedó.
+ *
+ * ⛔ **No toca `MARCADORES` ni ninguna hoja de registro.** Crea una planilla temporal en la
+ * carpeta de copias, escribe, relee y la manda a la papelera.
+ *
+ * ⭐ **El camino de lectura es el mismo que el del motor**: `getDataRange().getValues()`, que es
+ * lo que hace `leerMarcadoresSinCache_`. Leer con `getValue()` mediría otra cosa.
+ *
+ * ⭐ **Control positivo, y sin él no hay hallazgo:** en el mismo viaje va un valor que NO puede
+ * fallar —`' · '`, el separador que ya usa `ecv_barrios`—. Si ése tampoco vuelve, lo que falló es
+ * el instrumento y el resultado del salto de línea no dice nada.
+ */
+function medirSaltoDeLineaPorSheets() {
+  var carpeta = asegurarCarpetaBackups_();
+  if (!carpeta.ok) return { ok: false, motivo: 'sin carpeta de copias: ' + carpeta.motivo };
+
+  var CASOS = [
+    { etiqueta: 'CONTROL · separador de ecv_barrios', escrito: ' · ' },
+    { etiqueta: 'salto de línea real (Alt+Enter)',    escrito: '\n' },
+    { etiqueta: 'salto entre dos textos',             escrito: 'Alfa\nBeta' },
+    { etiqueta: 'la BARRA-ENE tipeada, no un salto',  escrito: '\\n' }
+  ];
+
+  var sello = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
+  var libro = SpreadsheetApp.create('[DIAG salto de linea] ' + sello);
+  var idLibro = libro.getId();
+  var salida = [];
+  try {
+    DriveApp.getFileById(idLibro).moveTo(carpeta.carpeta);
+    var hoja = libro.getSheets()[0];
+    hoja.getRange(1, 1).setValue('separador');           // encabezado, como en la hoja real
+    CASOS.forEach(function (c, i) { hoja.getRange(i + 2, 1).setValue(c.escrito); });
+    SpreadsheetApp.flush();
+
+    // Se REABRE el libro: releer el mismo objeto podría devolver lo que se pidió escribir.
+    var valores = SpreadsheetApp.openById(idLibro).getSheets()[0].getDataRange().getValues();
+    CASOS.forEach(function (c, i) {
+      var leido = valores[i + 1][0];
+      salida.push({
+        caso: c.etiqueta,
+        escrito: escaparSaltos_(c.escrito),
+        leido: escaparSaltos_(leido),
+        tipo_leido: typeof leido,
+        identico: String(leido) === String(c.escrito),
+        // Lo que de verdad decide: ¿el valor que vuelve ABRE PÁRRAFO en Slides?
+        tiene_salto_real: String(leido).indexOf('\n') !== -1
+      });
+    });
+  } finally {
+    try { DriveApp.getFileById(idLibro).setTrashed(true); } catch (e) {}
+  }
+
+  var control = salida[0];
+  Logger.log(JSON.stringify({ ok: true, libro_borrado: true, casos: salida }, null, 2));
+  if (!control || !control.identico) {
+    Logger.log('⛔ CONTROL POSITIVO EN ROJO: ni el separador conocido volvió igual.');
+    Logger.log('   El instrumento no está midiendo el viaje — NO hay hallazgo.');
+    return { ok: false, motivo: 'control positivo en rojo', casos: salida };
+  }
+  return { ok: true, casos: salida };
+}
+
+/**
+ * `2026-08-25_6` Parte 0.4, control positivo del OTRO eje — que la cadena de ventana existe y
+ * funciona **para una solapa que no es `snapshot`**.
+ *
+ * ⭐ Sin esto, *«`Directa Mail` no recorta»* es indistinguible de *«el instrumento no sabe pedir
+ * una ventana»*. Se lee `rdv` —`modo_periodo = filtrar`— por el mismo `leerFuente`, con dos
+ * ventanas distintas: si los conteos difieren, la cadena está viva y el `snapshot` de `digital`
+ * es una decisión declarada y no una falla de medición.
+ */
+function medirControlDeVentana() {
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+    function leer_(baseId, solapa, d, h, etiqueta) {
+      var v = { ok: true, desde: d, hasta: h, origen: 'control de ventana 0.4' };
+      var r = leerFuente(baseId, v, solapa);
+      return {
+        etiqueta: etiqueta, base: baseId, solapa: r.ok ? r.hoja : solapa,
+        ok: r.ok, motivo: r.motivo || '',
+        modo: r.modo || '', filas_totales: r.filas_totales, filas_en_ventana: r.filas_en_ventana
+      };
+    }
+    var bases = leerBases();
+    var solapaRdv = bases.rdv ? bases.rdv.hoja_default : 'RVD JM-CM - ES';
+
+    var salida = {
+      control_filtrar: [
+        leer_('rdv', solapaRdv, new Date(2026, 6, 24), new Date(2026, 6, 30), 'rdv · 24-30/07'),
+        leer_('rdv', solapaRdv, new Date(2026, 7, 14), new Date(2026, 7, 20), 'rdv · 14-20/08')
+      ],
+      caso_medido: [
+        leer_('digital', 'Directa Mail', new Date(2026, 6, 24), new Date(2026, 6, 30), 'Directa Mail · 24-30/07'),
+        leer_('digital', 'Directa Mail', new Date(2026, 7, 14), new Date(2026, 7, 20), 'Directa Mail · 14-20/08')
+      ]
+    };
+    var a = salida.control_filtrar[0], b = salida.control_filtrar[1];
+    salida.control_positivo_verde = !!(a.ok && b.ok && a.filas_en_ventana !== b.filas_en_ventana);
+    var c = salida.caso_medido[0], d2 = salida.caso_medido[1];
+    salida.directa_mail_no_recorta = !!(c.ok && d2.ok && c.filas_en_ventana === d2.filas_en_ventana);
+
+    Logger.log(JSON.stringify(salida, null, 2));
+    if (!salida.control_positivo_verde) {
+      Logger.log('⛔ CONTROL POSITIVO EN ROJO: `rdv` da lo mismo con dos ventanas distintas.');
+      Logger.log('   El instrumento no sabe pedir una ventana — NO hay hallazgo sobre Directa Mail.');
+    }
+    return salida;
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+}
+
+/**
+ * `2026-08-25_6` ADDENDUM — ¿qué marcadores de `digital/Directa Mail` recortan HOY?
+ *
+ * ⛔⛔ **Corrige un hallazgo propio de la Parte 0.** Allá se midió `leerFuente` en aislamiento y
+ * se concluyó *«ningún marcador de esta solapa recorta»*. **Es falso, y el error es de método:**
+ * el recorte del agregado de `digital` **no vive en `leerFuente`** —que devuelve todo por ser
+ * `snapshot`— sino un nivel más arriba, en `resolverMarcadores` (`Generador.gs`, el bloque
+ * `recortar_por_ventana` del 15/08). Es exactamente *«la función que estás leyendo no es el
+ * camino completo»* (`CLAUDE.md` §4), cometido midiendo.
+ *
+ * Por eso este instrumento **no vuelve a leer la fuente**: resuelve los marcadores por el camino
+ * real y lee lo que la **traza** dice de cada uno. La traza es el único lugar donde se ve por qué
+ * rama salió y cuántas filas quedaron.
+ *
+ * Sólo lectura: no escribe ninguna hoja, no genera deck, no toca plantillas.
+ */
+function medirRecorteRealDeDirectaMail() {
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+    var objetivo = {};
+    leerMarcadores_().forEach(function (f) {
+      if (String(f.base_id).trim() === 'digital' && String(f.solapa).trim() === 'Directa Mail') {
+        objetivo[f.marcador] = { operacion: f.operacion, campo_logico: f.campo_logico,
+                                 dimensiones: f.dimensiones || '', separador: f.separador === undefined ? '' : String(f.separador) };
+      }
+    });
+
+    var res = resolverMarcadores('jm');
+    if (!res || !res.ok) return { ok: false, motivo: 'resolverMarcadores no devolvió ok: ' + JSON.stringify(res && res.resumen) };
+
+    var filas = [], sinResolver = [];
+    var vistos = {};
+    res.resultados.forEach(function (r) {
+      if (!(r.marcador in objetivo)) return;
+      vistos[r.marcador] = true;
+      var t = String(r.traza || '').replace(/\s+/g, ' ');
+      // Las dos marcas que distinguen la rama, tomadas de la traza y no deducidas del nombre.
+      var recorte = t.match(/recorte por ventana sobre [^·]*·[^:]*: (\d+) de (\d+) fila\(s\)/);
+      var porCuenta = t.indexOf('sin recorte por ventana') !== -1 ||
+                      t.indexOf('rama por cuenta') !== -1 ||
+                      t.indexOf('union digital por cuenta') !== -1;
+      filas.push({
+        marcador: r.marcador,
+        operacion: objetivo[r.marcador].operacion,
+        dimensiones: objetivo[r.marcador].dimensiones,
+        valor: r.valor,
+        estado: r.estado || '',
+        rama: recorte ? 'AGREGADO — recorta por ventana' : (porCuenta ? 'POR CUENTA — sin recorte, la cuenta es el recorte' : '(no se pudo leer de la traza)'),
+        filas_despues: recorte ? Number(recorte[1]) : null,
+        filas_antes: recorte ? Number(recorte[2]) : null,
+        traza: t
+      });
+    });
+    Object.keys(objetivo).forEach(function (m) { if (!vistos[m]) sinResolver.push(m); });
+
+    var porRama = {};
+    filas.forEach(function (f) { porRama[f.rama] = (porRama[f.rama] || 0) + 1; });
+
+    var salida = {
+      ok: true,
+      declarados_en_MARCADORES: Object.keys(objetivo).length,
+      resueltos: filas.length,
+      no_devueltos_por_resolverMarcadores: sinResolver,
+      por_rama: porRama,
+      resumen_corrida: res.resumen,
+      filas: filas
+    };
+    Logger.log(JSON.stringify(salida, null, 2));
+    return salida;
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+}
