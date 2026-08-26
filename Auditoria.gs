@@ -6302,3 +6302,248 @@ function medirRecorteRealDeDirectaMail() {
     cerrarCacheRegistros_();
   }
 }
+
+/* ═══════════ `2026-08-26` — LA IDENTIDAD DE `L-036`, EXIGIDA SOBRE EL DECK ═══════════
+ *
+ * ⛔⛔ **Por qué existe, y es el hallazgo que lo paga:** la identidad
+ * `%VTR = Visualizaciones / Impresiones` estaba declarada *«exacta en 98 de 98»* y se había medido
+ * **sobre el FIXTURE**. Ahí no puede fallar: en la fuente la terna del ACUMULADO cierra (`M/J = N`)
+ * y la de Programmatic cierra consigo misma (`AB/Y = AC`), así que **las dos dan verde** — y la
+ * MEZCLA que el motor publicaba, `J` con `AB` y `AC`, **sólo aparece en el deck**.
+ *
+ * Del 25 al 26/08 `L-036` publicó `Visualizaciones` y `% VTR` de **Programmatic** con la identidad
+ * en verde, porque nadie la exigía sobre lo publicado. Con los números de Parque Avellaneda:
+ * `55.946 / 450.295 = 12,4 %` contra el `63,5 %` que salía al lado. **Eso es lo que este control
+ * caza y el del fixture no.**
+ *
+ * ⭐ **No hardcodea la geometría de la tabla: la aprende de la PLANTILLA.** Busca cada
+ * `{{post_*}}` en `L-036` de la plantilla, se guarda su `fila`/`col`, y lee **esas mismas celdas**
+ * en el deck. Si alguien mueve una columna, el control la sigue.
+ *
+ * ⭐ **Control positivo:** si en la plantilla no encuentra las 12 posiciones, **aborta**. Un
+ * instrumento que no ve lo conocido no vio nada, y «no falla» se leería como «cierra».
+ *
+ * ⚠ **Y declara QUÉ DECK leyó**, con nombre y fecha: dos corridas seguidas producen nombres casi
+ * idénticos y ya costó medio día mirar el deck de la corrida anterior (`C-84`).
+ */
+var TOKENS_IDENTIDAD_L036_ = { imp: 'post_impresiones', vis: 'post_vistas', vtr: 'post_vtr' };
+
+/** Número publicado a `Number`. `miles` viene `1.234.567`; `fraccion`, `62.7`. */
+function numeroPublicado_(texto) {
+  var t = String(texto || '').trim();
+  if (t === '') return null;
+  // Los símbolos de hueco no son números y no se cuentan como cero.
+  if (t.indexOf('/////') !== -1 || t === '---' || t === '-' || t.indexOf('FALTA') !== -1) return null;
+  var soloGuiones = t.replace(/[-\s]/g, '');
+  if (soloGuiones === '') return null;
+  // `_revisar` publica entre guiones: se le sacan para leer el número.
+  t = t.replace(/^-+/, '').replace(/-+$/, '').trim();
+  // Miles con punto y decimal con coma o punto: se normaliza a punto decimal.
+  if (/^\d{1,3}(\.\d{3})+([,.]\d+)?$/.test(t)) t = t.replace(/\./g, '').replace(',', '.');
+  else t = t.replace(',', '.');
+  var n = Number(t.replace(/[^\d.\-]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+/** `{ 'post_vistas1': { fila: 3, col: 5 }, … }` leído de la PLANTILLA. */
+function posicionesDeTokensL036_(informeId) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) return { ok: false, motivo: 'informe sin plantilla_id' };
+
+  var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+  var pos = {}, orden = null;
+  for (var i = 0; i < slides.length; i++) {
+    if (anclaDeLamina_(slides[i]) !== 'L-036') continue;
+    orden = i + 1;
+    piezasDeTextoDeSlide_(slides[i]).forEach(function (pieza) {
+      var m = /^tabla fila (\d+) col (\d+)$/.exec(String(pieza.contenedor || ''));
+      if (!m) return;
+      var t;
+      RE_TOKEN_.lastIndex = 0;
+      while ((t = RE_TOKEN_.exec(pieza.texto)) !== null) {
+        pos[t[1]] = { fila: Number(m[1]), col: Number(m[2]) };
+      }
+    });
+    break;
+  }
+  if (orden === null) return { ok: false, motivo: 'L-036 no está en la plantilla de ' + informeId };
+  return { ok: true, orden_plantilla: orden, posiciones: pos };
+}
+
+/** El Slides más reciente de la carpeta de salida cuyo nombre nombre a este informe. */
+function ultimoDeckDe_(informeId) {
+  var carpetaId = leerConfig().carpeta_salida;
+  if (!carpetaId) return { ok: false, motivo: 'CONFIG.carpeta_salida no está cargado' };
+  var archivos;
+  try {
+    archivos = DriveApp.getFolderById(carpetaId).getFilesByType(MimeType.GOOGLE_SLIDES);
+  } catch (e) {
+    return { ok: false, motivo: 'no pude abrir la carpeta de salida: ' + e.message };
+  }
+  var mejor = null;
+  while (archivos.hasNext()) {
+    var f = archivos.next();
+    if (String(f.getName()).indexOf(informeId) === -1) continue;
+    if (!mejor || f.getDateCreated() > mejor.getDateCreated()) mejor = f;
+  }
+  if (!mejor) return { ok: false, motivo: 'ningún deck de `' + informeId + '` en la carpeta de salida' };
+  return { ok: true, id: mejor.getId(), nombre: mejor.getName(), fecha: mejor.getDateCreated() };
+}
+
+/**
+ * ⭐ **El botón.** Sin `_` y sin parámetros — las dos condiciones de `CLAUDE.md` §2.
+ * Se corre **después** de generar `jm`, y contesta una sola cosa: *¿el `% VTR` que publicó el deck
+ * es el cociente de las otras dos celdas de SU MISMA FILA?*
+ */
+function verificarIdentidadPublicadaL036() {
+  var INFORME = 'jm';
+  var FILAS = 4;
+
+  var plant = posicionesDeTokensL036_(INFORME);
+  if (!plant.ok) { Logger.log('⛔ FALLÓ: ' + plant.motivo); return plant; }
+
+  /* ── Control positivo: las 12 posiciones tienen que estar ─────────────────────────── */
+  var faltan = [];
+  for (var n = 1; n <= FILAS; n++) {
+    ['imp', 'vis', 'vtr'].forEach(function (k) {
+      var tok = TOKENS_IDENTIDAD_L036_[k] + n;
+      if (!plant.posiciones[tok]) faltan.push(tok);
+    });
+  }
+  Logger.log('CONTROL POSITIVO · posiciones halladas en la plantilla: ' +
+    (12 - faltan.length) + ' de 12');
+  if (faltan.length) {
+    Logger.log('⛔ ABORTA: no encontré ' + faltan.length + ' token(s) en la tabla de L-036: ' +
+      faltan.join(', '));
+    Logger.log('   Un instrumento que no ve lo conocido no vio nada. NO se lee el deck.');
+    return { ok: false, motivo: 'control positivo en rojo', faltan: faltan };
+  }
+
+  var deck = ultimoDeckDe_(INFORME);
+  if (!deck.ok) { Logger.log('⛔ FALLÓ: ' + deck.motivo); return deck; }
+  Logger.log('');
+  Logger.log('⭐ DECK LEÍDO: "' + deck.nombre + '"  ·  creado ' + deck.fecha.toISOString());
+  Logger.log('   (dos corridas seguidas producen nombres casi idénticos: por eso se declara)');
+
+  /* ── Las celdas del deck, en las MISMAS posiciones que la plantilla ────────────────── */
+  var slides = SlidesApp.openById(deck.id).getSlides();
+  var celdas = {};
+  var laminas = 0;
+  slides.forEach(function (slide) {
+    if (anclaDeLamina_(slide) !== 'L-036') return;
+    laminas++;
+    piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+      var m = /^tabla fila (\d+) col (\d+)$/.exec(String(pieza.contenedor || ''));
+      if (m) celdas[m[1] + ',' + m[2]] = String(pieza.texto || '').trim();
+    });
+  });
+  if (!laminas) {
+    Logger.log('⛔ FALLÓ: el deck no tiene ninguna lámina con ancla `L-036`.');
+    return { ok: false, motivo: 'L-036 no está en el deck' };
+  }
+  if (laminas > 1) Logger.log('⚠ el deck tiene ' + laminas + ' láminas `L-036`: se leyó la última.');
+
+  /* ── La identidad, fila por fila ───────────────────────────────────────────────────── */
+  Logger.log('');
+  Logger.log('IDENTIDAD  %VTR = Visualizaciones / Impresiones  (sobre lo PUBLICADO)');
+  var evaluadas = 0, cierran = 0, fallan = [];
+  var detalle = [];
+  for (var f = 1; f <= FILAS; f++) {
+    var leer = function (k) {
+      var pp = plant.posiciones[TOKENS_IDENTIDAD_L036_[k] + f];
+      return celdas[pp.fila + ',' + pp.col];
+    };
+    var tImp = leer('imp'), tVis = leer('vis'), tVtr = leer('vtr');
+    var imp = numeroPublicado_(tImp), vis = numeroPublicado_(tVis), vtr = numeroPublicado_(tVtr);
+    var fila = { fila: f, impresiones: tImp, visualizaciones: tVis, vtr: tVtr };
+
+    if (imp === null || vis === null || vtr === null) {
+      Logger.log('  fila ' + f + ' · sin datos en alguna celda — NO se evalúa  ' +
+        '(imp="' + tImp + '" vis="' + tVis + '" vtr="' + tVtr + '")');
+      fila.veredicto = 'sin_datos';
+      detalle.push(fila);
+      continue;
+    }
+    if (imp === 0) {
+      Logger.log('  fila ' + f + ' · impresiones = 0 — NO se evalúa, no se divide por cero');
+      fila.veredicto = 'denominador_cero';
+      detalle.push(fila);
+      continue;
+    }
+    evaluadas++;
+    /* El `%VTR` se publica con UN decimal (`fraccion` = `Math.round(v*1000)/10`), así que la
+     * comparación es a un decimal. Exigir más sería exigirle al formato, no al dato. */
+    var esperado = Math.round((vis / imp) * 1000) / 10;
+    var ok = Math.abs(esperado - vtr) <= 0.1;
+    if (ok) cierran++; else fallan.push(f);
+    fila.esperado = esperado;
+    fila.veredicto = ok ? 'cierra' : 'NO CIERRA';
+    detalle.push(fila);
+    Logger.log('  fila ' + f + ' · ' + (ok ? '✅' : '⛔') + '  ' + tVis + ' / ' + tImp +
+      ' = ' + esperado + '  ·  publicado ' + tVtr);
+  }
+
+  Logger.log('');
+  Logger.log(fallan.length
+    ? '⛔ NO CIERRA en ' + fallan.length + ' de ' + evaluadas + ' fila(s) con datos: ' + fallan.join(', ')
+    : '✅ cierra en ' + cierran + ' de ' + evaluadas + ' fila(s) con datos');
+  Logger.log('   evaluadas ' + evaluadas + ' de ' + FILAS + ' filas ' +
+    '(un control tiene que declarar CUÁNTO midió: cero es un problema, no un silencio)');
+
+  if (!evaluadas) {
+    Logger.log('');
+    Logger.log('⛔ CERO filas evaluadas. Esto NO es «cierra»: es que el deck no publicó números.');
+    return { ok: false, motivo: 'cero filas evaluadas', deck: deck.nombre, detalle: detalle };
+  }
+
+  /* Los avisos van ÚLTIMOS, después del veredicto (`CLAUDE.md` §4). */
+  Logger.log('');
+  Logger.log('⚠ Lo que este control NO contesta:');
+  Logger.log('   · Si los valores son los de la SEMANA. Cierra sobre lo que el motor leyó —');
+  Logger.log('     consistente no es correcto, y una fila entera de Programmatic cerraría igual');
+  Logger.log('     si las TRES celdas salieran de ese bloque.');
+  Logger.log('   · Nada sobre las otras cuatro columnas de la tabla.');
+
+  return {
+    ok: fallan.length === 0, deck: deck.nombre, deck_id: deck.id,
+    evaluadas: evaluadas, cierran: cierran, fallan: fallan, detalle: detalle
+  };
+}
+
+/**
+ * El acompañante de lectura: las mismas celdas **como las trae la FUENTE**, con el ANTES —lo que
+ * el título repetido entregaba, el bloque Programmatic— al lado del DESPUÉS.
+ *
+ * ⚠ **No reemplaza al control de arriba.** Esto lee la fuente; aquél lee el deck, y la diferencia
+ * entre los dos es justamente lo que dejó vivir el bug.
+ */
+function compararAntesYDespuesPostL036() {
+  var COLS = {
+    'Impresiones totales': 'J', 'Visualizaciones totales': 'M', '% VTR total': 'N',
+    'Visualizaciones Programmatic': 'AB', '% VTR Programmatic': 'AC'
+  };
+  var lectura = leerFuente('reuniones',
+    { ok: true, desde: new Date(2020, 0, 1), hasta: new Date(2030, 11, 31), origen: 'diag 26/08' },
+    'Agenda JM | Post');
+  if (!lectura.ok) { Logger.log('⛔ FALLÓ: ' + lectura.motivo); return lectura; }
+
+  Logger.log('ANTES/DESPUÉS de las celdas de `L-036`, leídas de la FUENTE — ' + new Date().toISOString());
+  Logger.log('  ANTES  = lo que entregaba el título repetido: el bloque Programmatic (AB/AC)');
+  Logger.log('  DESPUÉS= lo que entrega el título único: el acumulado (M/N)');
+  Logger.log('');
+  var filas = 0;
+  lectura.filas.forEach(function (o) {
+    var vistas = o['Visualizaciones totales'], vtr = o['% VTR total'];
+    var antesV = o['Visualizaciones Programmatic'], antesP = o['% VTR Programmatic'];
+    if (vistas === '' || vistas === undefined) return;
+    filas++;
+    if (filas > 12) return;
+    Logger.log('  ' + o['ID'] + ' · ' + o['Barrio / Comuna'] +
+      '  ·  Visualizaciones ' + antesV + ' → ' + vistas +
+      '  ·  %VTR ' + (Math.round(Number(antesP) * 1000) / 10) + ' → ' + (Math.round(Number(vtr) * 1000) / 10));
+  });
+  Logger.log('');
+  Logger.log('  ' + filas + ' fila(s) con visualizaciones (se listan hasta 12)');
+  Logger.log('⚠ Qué filas entran a `L-036` lo decide el TEMARIO, no esta lista.');
+  return { ok: true, filas: filas };
+}
