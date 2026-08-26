@@ -15347,3 +15347,89 @@ encima** de un deck **posterior** al fixture, lo que el desfasaje no puede expli
 queda abierto** en `PENDIENTES`. Se decidió que no amerita guiones, no que no exista.
 
 **Suites:** 51 bancos, **exit 0**.
+
+---
+
+## `2026-08-26` (noche) — `L-053` cierra: los tres totales comparten corte, y uno de ellos acertaba por accidente
+
+**Qué se hizo.** Cuatro cambios sobre la lámina del "1 a 1", después de que el usuario la declarara
+validada marcador por marcador sobre `3487-AGOJDGAG` / `agosto_14_20`.
+
+| # | qué | resultado, verificado en vivo |
+|---|---|---|
+| 1 | `u1_total_clics`: `dimensiones` `etapa=pre` → **vacío** | publica **2.464** (era 1.472) |
+| 2 | `u1_total_vistas`: `dimensiones` `etapa=post` → **vacío** | publica **282.497**, el mismo número |
+| 3 | la fecha sale **sin año** | `ecv_fecha` = `12/08`, `u1_fecha_fin` = `24/08` |
+| 4 | sale el `_revisar` de **24** marcadores | el deck deja de pintarlos entre guiones |
+
+**Cómo.** Dos wrappers nuevos en `Instalar.gs` —`alinearTotalesDeUnoAUno()` y
+`confirmarNumerosDeUnoAUno()`—, los dos por `curarCamposMarcadores_` y los dos **releyendo la hoja**
+antes de dar el veredicto. **5 celdas** el primero, **24** el segundo, `sin_fila` vacío en los dos.
+El punto 3 es una línea de `formatearValorMarcador_` (`Generador.gs`): `dd/MM/yyyy` → `dd/MM`.
+
+---
+
+### ⛔⛔ Lo primero que pasó fue un freno: el prompt derogaba `R-28` sin decirlo
+
+`R-28` (21/08) decía *«los totales del "1 a 1" suman UNA etapa, no las dos»*, se midió **contra el
+deck del equipo**, y trae el contraejemplo con este número exacto: *«sumar las dos etapas publicaría
+1.879 contra 1.472, un 28 % de más, plausible y equivocado»*. **Los 1.879 son PRE + POST sobre el
+fixture del 20/08 — la misma operación que el prompt pedía.**
+
+Se paró antes de la primera edición y se preguntó. **Decisión del usuario: derogar `R-28`**, porque
+la caja rotula `PRE + POST`. Sale `R-33`, y `R-28` queda con su banner de derogación **y su tabla de
+evidencia intacta** — que es la que hoy usa el banco.
+
+⚠ **Queda una divergencia elegida:** el motor publica **2.464** donde el deck del equipo publicó
+**1.472**. Está escrita en `R-33`, en `CONFIG_INFORMES.md` §1.13 y en `C-84`. **No es un pendiente.**
+
+### ⭐⭐ El hallazgo real no es el número que estaba mal: es el que estaba bien
+
+`u1_total_vistas` **daba bien** con `etapa=post`, y da **el mismo número** con el corte vacío —
+porque las dos filas PRE de esa cuenta traen `0` visualizaciones. **El corte equivocado no producía
+ningún síntoma.** El día que una PRE lleve video, empieza a publicar de menos sin fallar.
+
+⭐ **Y lo que nada detectaba era la asimetría:** tres marcadores de **la misma fila de la misma
+lámina** contestando la misma pregunta con **tres universos distintos**. Todos los controles de
+`MARCADORES` son por fila, y las tres filas estaban bien formadas cada una por su cuenta. Va como
+`C-84`, con la pregunta que generaliza abierta: *¿cuántas otras filas del deck tienen lo mismo?*
+
+### El «26 de digital» del prompt eran 24, y la aritmética quedó escrita
+
+`L-053` tiene **36** tokens: **8 sin fila** + **28 cableados**. Llevan `_revisar` **24** — los **22**
+de `digital/CAMPAÑAS_DESGLOCE_DIGITAL` **más los dos `alcance` que leen `reuniones`**. Ni 22 ni 24
+es 26. **Decisión del usuario: los 24**, porque dejar los dos afuera publicaría `-43.639-` entre
+guiones al lado de `65.554` limpio, en la misma fila.
+
+### La fecha sin año viaja a 8 marcadores, y está bien que viaje
+
+Se cambió el formato compartido `fecha`, no se creó un `fecha_corta`. Alcanza a `ecv_fecha`,
+`u1_fecha_fin`, `camp_desde`, `camp_hasta` y los cuatro `camp_envN_fecha`. **De los ocho, dos se
+verificaron en vivo; los otros seis son deducción** y así está dicho en `CONFIG_INFORMES.md` §1.12.
+
+### Bancos
+
+`tools/probar-totales-u1.js` — **29 afirmaciones**, 9 bloques. Lo que lo hace distinto de un banco
+de forma: afirma **que los tres totales lleven EL MISMO corte** (no que cada uno diga vacío), y trae
+el contraejemplo de la fila PRE con video, que es lo único que separa *«acierta»* de *«acierta por
+accidente»*. Los números salen de la tabla de evidencia de `R-28`, que **está en git** — el fixture
+del que se midieron no (`C-21`), así que un banco que lo abriera fallaría en otra máquina.
+
+⭐⭐ **Y su control positivo se ganó el sueldo el mismo día.** Al agregar `R-33`, un script mío
+reescribió `REGLAS_NEGOCIO.md` en CRLF y el parser de la tabla pasó a leer **0 filas**. Sin la
+afirmación *«se leyeron las 5 filas»*, las cuatro sumas de abajo habrían dado `0 === 0` **en verde**.
+Es literalmente el caso que `CLAUDE.md` §4 describe —*un control que no declara cuánto midió*— y lo
+cazó el propio control. El parser ahora hace `trim()`: **el fin de línea es del archivo, no de quien
+escribe la prueba.**
+
+**Suites:** **52 bancos, exit 0**, ~664 afirmaciones.
+
+### ⚠ Lo que NO se hizo, declarado
+
+- `u1_total_alcance` y `u1_total_frecuencia` **quedan sin cablear: el dato no existe todavía**
+  (decisión del usuario). Van declarados en `CIERRE_POR_LAMINA.md` para **no contar como faltante**
+  en `D-38`.
+- Los seis `u1_bench_*` ya estaban en `TOKENS_EQUIPO_JM_`. No se tocaron.
+- `ecv_barrio` y `ecv_fecha` siguen abiertos: resuelven `ok` y el deck del 22/08 los publicó
+  `/////`. La validación los anotó y **no investigó la causa**; este paso tampoco.
+- **`L-053` queda en 🟡, no en ✅.** El ✅ lo pone el usuario.

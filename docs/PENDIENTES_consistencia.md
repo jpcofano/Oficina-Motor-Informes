@@ -8967,3 +8967,64 @@ es el de **por evento**, que sí cierra, y **los resúmenes se miran aparte y de
 son del **Resumen Ejecutivo** (`L-031`). Los marcadores por evento —`enc_impresiones`,
 `post_impresiones1-4`— **nunca estuvieron en `_revisar`**, así que el cierre por evento no dice nada
 sobre estos dos.
+
+---
+
+## `2026-08-26` — ⭐⭐ `C-84` · Tres totales de la misma fila, tres universos distintos: uno bien, uno mal y uno que acertaba por accidente
+
+**Estado: cerrado el mismo día que se encontró** (`R-33` deroga `R-28`). Se escribe igual, y no
+como historia: **es una forma de falla, no un incidente**, y la parte cara no es la que se veía.
+
+### Lo que había
+
+Los tres totales de la fila de arriba de `L-053` —la que la lámina rotula **`PRE + POST`**— tenían
+**tres cortes distintos** en `dimensiones`, puestos por `R-28` el 21/08:
+
+| token | corte | qué era | ¿se veía? |
+|---|---|---|---|
+| `u1_total_impresiones` | *(vacío)* | ✅ correcto | — |
+| `u1_total_clics` | `etapa=pre` | ⛔ **mal**: publicaba **1.472** cuando PRE+POST son **2.464** | **sí**, mirando el rótulo |
+| `u1_total_vistas` | `etapa=post` | ⚠ **acertaba por accidente** | ⛔ **no, por ningún lado** |
+
+### ⭐⭐ El del medio es el hallazgo; el de la derecha es el que hay que saber buscar
+
+`u1_total_vistas` con `etapa=post` da **exactamente el mismo número** que con el corte vacío
+—148.514 sobre el fixture del 20/08, 282.497 sobre la base viva— porque **las dos filas PRE de esa
+cuenta traen `0` visualizaciones**. O sea: **el corte equivocado no produce ningún síntoma.** No
+hay número raro, no hay `FALTA`, no hay traza distinta. El día que una campaña PRE lleve video,
+empieza a publicar de menos **sin fallar**.
+
+⭐ **Es *un número correcto salido de las filas equivocadas* (`CLAUDE.md` §4) en su forma más
+barata de cometer y más cara de encontrar:** el universo equivocado y el correcto **coinciden hoy**,
+y sólo divergen cuando los datos cambian de forma.
+
+### ⛔ Y lo que NADA detectaba: que los tres cortes fueran distintos
+
+Las tres filas viven en la misma tabla, se pintan en la misma fila de la misma lámina y contestan
+la misma pregunta con tres universos. **Ningún control del repo miraba eso**, porque todos los
+controles de `MARCADORES` son **por fila**: cada una de las tres estaba internamente bien formada.
+
+⭐ **La afirmación que faltaba no es «cada uno lleva el corte X»: es «los tres llevan EL MISMO».**
+Está en `tools/probar-totales-u1.js`, y el wrapper `alinearTotalesDeUnoAUno()` la hace estructural
+—declara el corte **una sola vez** y lo aplica recorriendo `TOTALES_UNO_A_UNO_`—, así que separar
+uno de los tres exige editar la línea que los une en vez de una celda suelta.
+
+### ⚠ La pregunta que queda abierta, y es la que generaliza
+
+**¿Cuántas otras filas del deck tienen varios marcadores que contestan la misma pregunta con
+cortes distintos?** Nadie lo midió. Los candidatos naturales son las filas de totales de las otras
+láminas con desglose por plataforma —`L-046` la primera—, pero **eso es una sospecha, no una
+medición**, y va escrita como tal.
+
+⛔ **No se convierte en trabajo acá**: `L-046` tiene su propio prompt en la cola.
+
+### ⚠ Lo que este cierre deja divergiendo a propósito
+
+El motor publica **2.464** donde el deck del equipo del 21/08 publicó **1.472**. Está en `R-33` y
+en `docs/CONFIG_INFORMES.md` §1.13. **Es una decisión, no un pendiente** — no se abre como caso.
+
+### ⚠ Y dos ⛔ de `L-053` que quedaron sin explicar, a propósito
+
+`ecv_barrio` y `ecv_fecha` **resuelven `ok`** contra la base viva y el deck del 22/08 los publicó
+`/////`. La validación del 26/08 los anotó y **no investigó la causa** —la consigna era completar
+la tabla, no resolver el primero que fallara— y el cierre de hoy **no los tocó**. Siguen abiertos.

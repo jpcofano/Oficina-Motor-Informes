@@ -1921,6 +1921,22 @@ deroga**, y por eso la regla se escribió así y no como *"los demás canales so
 
 ## R-28 — Los totales del "1 a 1" suman **una** etapa, no las dos
 
+> ## ⛔⛔ DEROGADA el 26/08/2026 por `R-33`. Decisión del usuario.
+>
+> **El enunciado de abajo ya no rige.** Los tres totales de `L-053` pasan a llevar `dimensiones`
+> vacío: `PRE + POST` significa **la suma de lo que muestra la lámina**. Ver `R-33`.
+>
+> ⭐ **La EVIDENCIA de esta regla no se deroga y por eso el texto queda entero.** Las cinco filas
+> de `3487-AGOJDGAG` medidas el 21/08 siguen siendo ciertas, se siguen citando, y son las que usa
+> `tools/probar-totales-u1.js` — que **lee esta tabla de este archivo**. Lo que cambió no es el
+> dato: es qué se hace con él.
+>
+> ⚠ **Y el contraejemplo de más abajo se da vuelta, que es lo más importante de leer acá.**
+> Decía que sumar las dos etapas publicaría *"1.879 contra 1.472, un 28 % de más, plausible y
+> equivocado"*. **`R-33` decide que el 1.879 es el número correcto** y que el 1.472 era el que
+> estaba mal. El razonamiento de aquel párrafo sigue siendo válido *si* el rótulo dijera sólo
+> `CLICS`; lo que se midió el 26/08 es que el rótulo de la fila dice `PRE + POST`.
+
 **Decisión editorial del equipo, medida el 21/08/2026.** No se tomó acá: se leyó del deck publicado
 y se verificó contra la base del mismo día.
 
@@ -2345,3 +2361,74 @@ testigo, **sigue siendo una permutación**.
 
 ⭐ **La contención es la traza:** `FILA` **declara el empate cuando lo hay** y nombra esta regla. Un
 empate silencioso sería el mismo modo de falla que la regla previene.
+
+---
+
+## R-33 — `PRE + POST` significa la suma de lo que muestra la lámina
+
+**Decisión del usuario, 26/08/2026**, tomada con la validación marcador por marcador de `L-053`
+delante. **Deroga `R-28`**, que se lee arriba con su banner.
+
+**Enunciado.** En la lámina del "1 a 1", los **tres** totales de la fila de arriba —impresiones,
+clics y visualizaciones— suman **todas** las filas de la campaña. En `MARCADORES` eso se declara
+con `dimensiones` **vacío**, y ausente significa *«todas»* (decisión del usuario, 15/08), así que
+no se inventa un valor `todas`.
+
+| token | `dimensiones` | qué suma |
+|---|---|---|
+| `u1_total_impresiones` | *(vacío)* | las 5 filas — **ya estaba así** |
+| `u1_total_clics` | *(vacío)* | las 5 filas — antes `etapa=pre` |
+| `u1_total_vistas` | *(vacío)* | las 5 filas — antes `etapa=post` |
+
+### Los tres estados que había, que es el motivo de escribir esto como regla
+
+⭐⭐ **La misma fila de la misma lámina tenía tres cortes distintos, y las tres cosas se ven igual
+en un deck:**
+
+| token | corte viejo | qué era |
+|---|---|---|
+| `u1_total_impresiones` | *(vacío)* | ✅ **correcto** |
+| `u1_total_clics` | `etapa=pre` | ⛔ **mal** — publicaba 1.472 bajo un rótulo que dice `PRE + POST` |
+| `u1_total_vistas` | `etapa=post` | ⚠ **acertaba por accidente** |
+
+⭐ **El del medio es el único que se ve.** `u1_total_clics` sobre `3487-AGOJDGAG` publicaba
+**1.472** cuando PRE + POST son **2.464**: faltaban los **992** del POST. Era el único número mal
+de la lámina.
+
+⭐⭐ **El de la derecha es el que justifica la regla, y no se ve por ningún lado.**
+`u1_total_vistas` con `etapa=post` da **exactamente el mismo número** que con el corte vacío,
+porque las dos filas PRE de esa cuenta traen `0` visualizaciones. **El corte equivocado no produce
+ningún síntoma.** El día que una campaña PRE lleve video, deja de acertar **sin fallar** — que es
+el modo de falla que este proyecto persigue: *un número correcto salido de las filas equivocadas*
+(`CLAUDE.md` §4).
+
+⚠ **Por eso el arreglo incluye al que hoy da bien.** Esperar a que se rompa es esperar a que
+publique mal sin avisar.
+
+### ⛔ Lo que esta regla decide contra el deck del equipo, y va declarado
+
+El deck del equipo del 21/08 publicó **1.472** en esa celda. Con `R-33`, el motor publica
+**2.464**. **Es una divergencia elegida, no un hallazgo pendiente**, y no se abre como caso.
+
+⚠ **Es una excepción acotada a `C-01`** (*«la plantilla es del equipo, el motor se adapta»*), y
+conviene decir por qué no la deroga: `C-01` habla de la **plantilla** —la forma, las cajas, los
+rótulos—, que el motor sigue respetando entero. Lo que cambia es **qué número va adentro de una
+caja cuyo propio rótulo dice `PRE + POST`**. El motor se está adaptando al rótulo del equipo, no
+apartándose de él.
+
+### El control
+
+`tools/probar-totales-u1.js`. Afirma **que los tres lleven el mismo corte**, no que cada uno diga
+vacío por su cuenta: hasta el 26/08 tenían tres cortes distintos y **nada lo detectaba**. Incluye
+el contraejemplo de la fila PRE con video, que es lo único que distingue *«acierta»* de *«acierta
+por accidente»*.
+
+### Lo que esta regla NO dice
+
+⚠ **No dice nada de `u1_total_alcance` ni de `u1_total_frecuencia`.** Los dos siguen **sin
+cablear**, y desde el 26/08 eso está **declarado** en `docs/CIERRE_POR_LAMINA.md`: el dato no
+existe todavía (decisión del usuario). `R-28` dejaba abierto el alcance como pregunta; sigue
+abierta, con dueño distinto.
+
+⚠ **No se extiende a `L-046` ni a ninguna otra lámina.** Es sobre los tres totales del "1 a 1".
+Un total de otra lámina se decide mirando su propio rótulo.

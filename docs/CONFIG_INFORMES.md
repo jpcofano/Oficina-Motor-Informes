@@ -757,6 +757,48 @@ ahí escribe una persona).
 
 ---
 
+### 1.12 La fecha se publica SIN el año — decisión del usuario, 26/08/2026
+
+**Toda fecha que el motor pinta en una lámina sale como `dd/MM`.** El deck publicaba
+`Parque Avellaneda (12/08/2026)` y tiene que decir `(12/08)`.
+
+⭐ **Es una regla DEL INFORME, no de una lámina, y de ahí sale la forma de implementarla.** Se
+cambió el formato compartido `fecha` en `formatearValorMarcador_` (`Generador.gs`) en vez de
+crearle uno propio a `L-053`. **El cambio viaja, y está bien que viaje** — un `fecha_corta`
+paralelo dejaría dos formatos de fecha conviviendo y la próxima lámina elegiría mal.
+
+**Los ocho marcadores afectados, medidos el 26/08 sobre `MARCADORES` vivo** — se listan porque el
+cambio los toca a todos, no para decidir nada:
+
+| formato | marcadores |
+|---|---|
+| `fecha` (7) | `ecv_fecha` · `camp_desde` · `camp_hasta` · `camp_env1_fecha` · `camp_env2_fecha` · `camp_env3_fecha` · `camp_env5_fecha` |
+| `fecha_revisar` (1) | `u1_fecha_fin` — ⚠ **desde el 26/08 es `fecha` a secas**: perdió el `_revisar` con las otras 23 de `L-053` |
+
+⚠ **Verificado en vivo el mismo día:** `ecv_fecha` publica `12/08` y `u1_fecha_fin` publica
+`24/08`. Los seis `camp_*` **no se re-corrieron** — el cambio es del formateador y los alcanza
+igual, pero eso es una deducción, no una medición.
+
+⚠ **Lo que esta decisión pierde, declarado en vez de descubierto:** un informe que cruce dos años
+se queda sin desempate visual entre un `31/12` y otro. **Hoy ninguno lo hace** —las ventanas son
+semanales— y el año sigue viajando en el **valor crudo**, que es lo que se audita.
+
+---
+
+### 1.13 Los totales del "1 a 1" suman las dos etapas — decisión del usuario, 26/08/2026
+
+**`PRE + POST` significa la suma de lo que muestra la lámina.** Los tres totales de `L-053`
+—impresiones, clics y visualizaciones— llevan `dimensiones` **vacío**.
+
+La regla vive en `R-33` (`docs/REGLAS_NEGOCIO.md`), que **deroga `R-28`**. Acá va sólo la parte
+editorial, que es la que cambia lo que el equipo ve:
+
+⛔ **El motor publica `2.464` donde el deck del equipo del 21/08 publicó `1.472`.** Es una
+divergencia **elegida**, no un hallazgo abierto. El motivo es que la caja rotula `PRE + POST` y el
+número que había adentro era sólo del PRE.
+
+---
+
 ## 2. Informe semanal SECCO-SSCDI
 
 Cada sección tiene su propia configuración. Es el informe más configurable.
