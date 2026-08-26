@@ -9324,6 +9324,28 @@ vuelta** — la consigna era cerrar tres cabos, no abrir el cuarto.
 
 ## `2026-08-26` — ⛔⛔ `C-90` · El recorte del panel, **bien medido**: los tres criterios se aplican y ninguno reproduce
 
+> ## ⚠ ADDENDUM del 26/08/2026 — el reparto por ÁMBITO de la tabla de abajo era **por resta**
+>
+> ⭐ **Lo que NO se movió, y va primero para no obligar a remedir todo:** el control positivo
+> cubría el **recorte por FECHA** —las **377 filas**, reproducidas exacto contra `leerFuente`—
+> y **eso sigue firme**. También siguen firmes las 1.027 cuentas con fecha y las cero
+> huérfanas. **Lo que se cae es sólo el reparto JM/GCBA.**
+>
+> La tabla de abajo repartió con `nombre_campaña~=JM` y **GCBA por resta** —todo lo que no
+> dice JM—, que es como lo define `DIMENSIONES_` (`D-33`). Con el corte **positivo** de la
+> columna `JM | GCBA | POLICIA`, traído por id desde el desglose, sobre las mismas 377 filas:
+>
+> | corte de ámbito | JM | GCBA |
+> |---|---|---|
+> | por resta (`nombre_campaña~=JM`) — *la tabla de abajo* | 31 · 16.426.952 | 346 · 296.551.180 |
+> | ⭐ **positivo (columna `JM \| GCBA \| POLICIA`)** | **4 · 2.808.426** | **373 · 310.169.706** |
+> | el panel | 28 · 6.493.272 | 269 · 92.486.506 |
+>
+> **El veredicto no cambia: ninguno reproduce.** Lo que cambia es que ahora hay *dos* cortes
+> y **se contradicen** — ver `C-91`, que es el hallazgo de verdad.
+>
+> ⚠ **La tabla de abajo no se edita**: es lo que se midió, con el criterio que se usó.
+
 **Corrige a `C-89`, escrito horas antes y equivocado en su conclusión.** La pista la dio el usuario:
 *«looker digital hace join con cuentas, que tiene fecha inicio y fin»*.
 
@@ -9379,3 +9401,46 @@ está probado**, y probarlo es otro trabajo.
 
 ⚠ **`contenidos_total` sigue declarado no cableable** (`CONFIG_INFORMES` §1.14) — pero ahora por un
 motivo mejor medido: **no es que no se pueda recortar; es que ningún recorte reproduce.**
+
+---
+
+## `2026-08-26` — ⛔⛔ `C-91` · `looker/DIGITAL` tiene **dos** candidatos a corte de ámbito y son **DISJUNTOS**
+
+**Estado: abierto. Es un hecho sobre la base, no una medición fallida.**
+
+Los dos candidatos **no se solapan en una sola fila** de las 377 de la ventana 14–20/08:
+
+| | filas | de ésas, con «JM» en `nombre_campaña` |
+|---|---|---|
+| marcadas **`GCBA`** en la columna `JM \| GCBA \| POLICIA` | 373 | ⛔ **31** |
+| marcadas **`JM`** en esa columna | 4 | ⛔ **0** |
+
+⭐ **Las 31 filas que dicen «JM» en el nombre están marcadas `GCBA` en la columna, y las 4 marcadas
+`JM` no dicen JM en el nombre.** Intersección: **cero**.
+
+⛔ **Y ninguno de los dos reproduce el JM del panel** —28 filas / 6.493.272—: por resta da 31, por
+la columna da 4.
+
+**No hay una tercera columna que mirar.** En la ventana, `looker/DIGITAL` ofrece `eje` (7 valores:
+M2, Cuidado, Reforma del Estado, Cercanía, Ciudad Atractiva, Movilidad, Otros), `area` (17) y
+`estado` (4: Activa 216 · Finalizada 144 · Pendiente 16 · Pausada 1). **Ninguna es ámbito.**
+
+⚠ **Y un dato chico que es la forma de un problema, no un suelto:** de los 769 ids con ámbito en el
+desglose, **1 está en conflicto** — el mismo `id_cuenta` aparece con dos ámbitos distintos. Hoy es
+uno; la clave que lo permite es la misma que permitiría veinte.
+
+### ⭐⭐ Es la otra cara de `C-86`, y por eso van juntos
+
+En `C-86` un registro —`CAMPANAS.informe_id`— **no contestaba** «¿de qué ámbito es este dato?»,
+aunque lo pareciera. Acá hay **dos columnas del dato** que sí parecen contestarlo **y se
+contradicen entre sí**.
+
+⇒ **La base no tiene el corte de ámbito que el Resumen Ejecutivo necesita.** Eso deja de ser una
+medición que falló y pasa a ser **una propiedad de la fuente** — que es otra clase de hecho, y
+manda a otro trabajo: no a medir mejor, sino a preguntar cuál es el criterio.
+
+### ⛔ Lo que NO se hace acá
+
+**No se elige cuál de los dos es el bueno, ni se propone un tercero.** Cuál usa el panel —o si usa
+otro— es la pregunta, y va **sin candidatas**: inventar un criterio para que 28 y 269 cierren es
+exactamente el número plausible que este repo persigue.

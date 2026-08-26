@@ -15676,3 +15676,32 @@ de estado con el acumulado adentro. **Consistente, no probado.**
 ⚠ **El veredicto final no cambió** —`contenidos_total` sigue no cableable— **pero el motivo sí, y
 mandaba a lugares opuestos:** *«no se puede recortar»* cierra la puerta; *«se recorta y no da»* la
 deja abierta con un número al lado.
+
+---
+
+## `2026-08-26` (addendum) — el ámbito de `looker/DIGITAL`: dos criterios, disjuntos, y ninguno es el del panel
+
+**Sólo documentación.** Salió de una pregunta del usuario sobre qué criterio había aplicado.
+
+**El hallazgo no es que mi reparto estuviera mal: es la disjunción, y es un hecho sobre la base.**
+Los dos candidatos a corte de ámbito —la columna `JM | GCBA | POLICIA` y `nombre_campaña~=JM`—
+**no se solapan en una sola fila** de las 377: las 31 que dicen «JM» en el nombre están marcadas
+`GCBA`, y las 4 marcadas `JM` no dicen JM en el nombre. **Intersección cero.** Y ninguno reproduce
+el JM del panel: 4 y 31 contra 28.
+
+⭐ **Es la otra cara de `C-86`.** Allá un registro no contestaba «de qué ámbito es el dato» aunque
+lo pareciera; acá hay dos columnas del dato que sí lo parecen **y se contradicen**. ⇒ **La base no
+tiene el corte que el Resumen necesita** — deja de ser una medición fallida y pasa a ser una
+propiedad de la fuente, que manda a preguntar en vez de a medir mejor.
+
+⭐ **Lo que NO se movió, dicho antes que lo que se cae:** el control positivo cubría el recorte por
+**fecha** —las 377 filas— y sigue firme, igual que las 1.027 cuentas con fecha y las cero
+huérfanas. **Se cae sólo el reparto JM/GCBA**, que era por resta. Un hallazgo parcial que no
+declara qué parte sigue en pie obliga a remedir todo.
+
+⚠ Anotado además: **1 id en conflicto** de 769 — mismo `id_cuenta` con dos ámbitos en el desglose.
+Chico hoy, y es la forma de un problema.
+
+⛔ **No se eligió cuál de los dos es el bueno ni se propuso un tercero.** `contenidos_total` sigue
+no cableable, ahora con una causa más y anterior: no es sólo que las sumas no den, es que **no está
+definido de qué filas habría que sumarlas** (`CONFIG_INFORMES` §1.14).

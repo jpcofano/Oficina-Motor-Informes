@@ -826,6 +826,15 @@ sobre `digital/CAMPAÑAS_DESGLOCE_DIGITAL` con el criterio de solape de `R-16`:
 **2,95× las impresiones sobre 1,10× las filas.** ⇒ **el dato semanal viene de una fuente que el
 motor no lee.**
 
+⛔⛔ **Y una segunda causa, medida el 26/08 y peor que la primera: sobre `looker/DIGITAL` no
+hay UN corte de ámbito acordado — hay DOS y se contradicen.** La columna
+`JM | GCBA | POLICIA` y `nombre_campaña~=JM` **no se solapan en una sola fila** de las 377 de
+la ventana, y **ninguno de los dos reproduce el JM del panel** (4 y 31 contra 28). No hay una
+tercera columna: `eje`, `area` y `estado` no son ámbito. Ver `C-91`.
+
+⚠ Así que no es sólo que las sumas no den: **es que no está definido de qué filas habría que
+sumarlas.** Son dos faltas distintas y la segunda es anterior.
+
 ⭐ **«Definido pero no cableable» y «pendiente de cableado» son dos estados distintos**, y hasta hoy
 esto figuraba como el segundo. Uno espera trabajo; el otro espera una fuente. **El número es
 citable; el marcador no.** Lo que falta para moverlo: saber **por qué fecha recorta el panel**.
