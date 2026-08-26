@@ -15281,3 +15281,69 @@ quiere versionados, así que quedan — pero **el `MAPEO_2026-08-26.tsv` es de A
 leerlo como el estado de después es exactamente el error que este día vino a corregir.
 
 **Suites:** 51 bancos, **exit 0**, ~670 afirmaciones.
+
+---
+
+## `2026-08-26` (tarde) — el mecanismo de impresiones está bien, y el `_revisar` deja de ser parejo
+
+**Salió de una pregunta del usuario** —*«¿por evento cierra? debería cerrar»*— y la respuesta fue
+que sí, con una forma que resultó ser el hallazgo.
+
+### ⭐⭐ Por evento cierra donde la campaña TERMINÓ, y difiere donde sigue viva
+
+Parque Avellaneda (`3487-AGOJDGAG`), contra el deck del equipo de la misma semana:
+
+| | fixture 20/08 | deck ~21/08 | |
+|---|---|---|---|
+| PRE Meta · impresiones | **65.554** | **65.554** | ✅ exacto |
+| POST Meta · impresiones | 74.639 | 86.572 | +16 % |
+
+El encuentro fue el **12/08**: la campaña PRE ya estaba cerrada y no acumulaba más → cierra al
+dígito. La POST seguía corriendo → el deck, armado un día después, tiene más.
+
+⭐ **Y la progresión de tres puntos lo cierra sin lugar a interpretación:** POST Meta va
+**74.639** (20/08) → **86.572** (deck ~21/08) → **126.323** (hoja viva, 26/08). Monotónica.
+
+⚠ **La trampa que hubo que descartar, y es de las buenas:** `86.572` es **también** exactamente
+`Impresiones Programmatic` de la fila **PRE**. Dos números de cinco dígitos iguales invitaban a
+concluir *«el deck tomó la columna equivocada»*. **Lo descarta la tercera medición** — con dos
+puntos las dos explicaciones eran indistinguibles.
+
+### ⛔⛔ Y el error del instrumento, que se cazó cruzando contra los casos validados
+
+La primera versión de `medir-impresiones-resumen.py` daba **46.416.590** de impresiones JM en julio.
+Le faltaba **`MARCADORES.filtro = estado=Activa`** —la columna I de `DIGITAL`, donde sólo **932 de
+4.547** filas están activas—. El valor correcto es **7.286.628**: un factor **6**.
+
+⭐ **Lo destapó `CLAUDE.md` §1 al pie: buscar los casos validados ANTES de publicar el número.**
+`A-01`/`A-06`/`A-07` medían `679.647 · 614.140 · 5.992.841` y yo daba 3 a 8 veces eso, así que el
+sospechoso era mi instrumento y no el motor. Corregido, **reproduce los tres al dígito**, y esa
+reproducción quedó como su control positivo.
+
+### El mecanismo queda PROBADO, y Programmatic localizado
+
+Con el agregado reproduciendo los casos validados, la pertenencia, el tope de `R-30`, el corte
+`ambito=jm` y la partición por plataforma **hacen lo que dicen**. Lo que no da es **Programmatic**,
+y falla **en los dos granos con el mismo signo**: factor 3 en un solo encuentro y **+178,9 %** en
+el agregado de 70 cuentas. ⭐ **Que falle igual en un encuentro que en el agregado es lo que lo
+saca de la ventana y lo pone en la columna.**
+
+### La decisión del usuario, con la tabla delante
+
+| marcador | julio | agosto | |
+|---|---|---|---|
+| `imp_meta` | −5,2 % | +8,7 % | ✅ **sale de `_revisar`** |
+| `imp_google` | +15,6 % | +7,3 % | ✅ **sale de `_revisar`** |
+| `imp_prog` · `imp_total` · los 4 `gcba_imp_*` | 13 % a 208 % | 2 % a 179 % | ⛔ se quedan |
+
+`quitarRevisarDeMetaYGoogle()`, **2 celdas escritas y releídas de la hoja** (`C-83`).
+
+⭐ **SUPERSEDE el argumento del 22/08** —*«un marcado parcial sobre una causa común es peor que
+ninguno»*—, que era correcto **con lo que se sabía entonces: que la causa era una**. La medición
+muestra que no lo es.
+
+⚠ **Y lo que la decisión NO afirma queda escrito en los dos lados:** `imp_meta` sigue **+8,7 % por
+encima** de un deck **posterior** al fixture, lo que el desfasaje no puede explicar. **Ese residuo
+queda abierto** en `PENDIENTES`. Se decidió que no amerita guiones, no que no exista.
+
+**Suites:** 51 bancos, **exit 0**.

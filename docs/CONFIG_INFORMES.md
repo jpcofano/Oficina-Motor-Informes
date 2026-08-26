@@ -1191,6 +1191,43 @@ tres caminos posibles están en `docs/PENDIENTES_consistencia.md`.
 
 ---
 
+### 4.8 Los `imp_*` — quién publica entre guiones y quién no, desde el 26/08/2026
+
+**Decisión editorial del usuario, 26/08/2026.** **[OK]**
+
+Los ocho `imp_*` estaban en `_revisar` desde el 22/08 por una causa que entonces se creía **una
+sola**: `looker/DIGITAL` guarda el **acumulado de campaña**, no lo de la semana. El 26/08 se midió
+contra los **dos** fixtures y los **dos** decks del equipo, y la causa **no es una**:
+
+| marcador | julio_24_30 | agosto_14_20 | hoy |
+|---|---|---|---|
+| `imp_meta` | −5,2 % | +8,7 % | ✅ **sin sufijo** |
+| `imp_google` | +15,6 % | +7,3 % | ✅ **sin sufijo** |
+| `imp_prog` | +15,4 % | **+178,9 %** | ⛔ `_revisar` |
+| `imp_total` | +13,1 % | **+98,1 %** | ⛔ `_revisar` — **incluye** a Programmatic |
+| los cuatro `gcba_imp_*` | 58 % a 208 % | 2 % a 85 % | ⛔ `_revisar` |
+
+⭐ **Lo que separa a los dos primeros del resto no es el tamaño del desvío: es su
+COMPORTAMIENTO.** Meta y Google se mueven en el orden del desfasaje de acumulación; Programmatic se
+va por **factor 3 en un solo encuentro** y por **+179 % en el agregado de 70 cuentas**. Que falle
+igual en los dos granos es lo que lo localiza en la columna y no en la ventana.
+
+⚠ **Y lo que esto NO dice: que `imp_meta` e `imp_google` sean exactos.** `imp_meta` está **+8,7 %
+por encima** del deck de agosto, y el deck es **posterior** al fixture — el desfasaje sólo podría
+hacerlo mayor. **Ese residuo sigue abierto** en `PENDIENTES`. Lo decidido es que no amerita
+guiones, no que no exista.
+
+⚠ **Los cuatro `gcba_imp_*` no tienen caso validado por plataforma.** Sus desvíos son números
+**nuevos y sin validar**, que es otro estado que *validado*, y por eso ninguno sale del sufijo
+aunque `gcba_imp_meta` dé +2,3 % en agosto.
+
+**Condición de salida de los seis que quedan:** se saca el sufijo cuando **Programmatic deje de
+traer el acumulado** —o cuando se decida el rótulo—, y para los `gcba_*` además cuando existan
+casos validados por plataforma. Se revierte con `marcarProgrammaticARevisar()`, que vuelve a poner
+los ocho; el parcial lo aplica `quitarRevisarDeMetaYGoogle()`.
+
+---
+
 ## 5. Cómo se completa este documento
 
 A medida que el motor genere decks reales, cada **[?]** se resuelve y pasa a **[OK]**

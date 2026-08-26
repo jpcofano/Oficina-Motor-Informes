@@ -8923,11 +8923,22 @@ para diagnosticarlo.
 | `imp_prog` | +15,4 % | +178,9 % | 178,9 % |
 | `gcba_imp_google` | +208,5 % | +81,6 % | 208,5 % |
 
-⛔ **NINGUNO se sacó de `_revisar`, y el motivo es que la medición no habilita a ninguno.** El
-único bajo 10 % en las dos semanas es `imp_meta`, y **en agosto está +8,7 % POR ENCIMA del deck**
-— el deck es **posterior** al fixture, así que el desfasaje de acumulación sólo puede hacerlo
-**mayor**, nunca menor. Es exactamente el razonamiento con el que `A-06` mandó `imp_google` a
-`contradice`.
+⭐⭐ **DECISIÓN DEL USUARIO, 26/08, con esta tabla delante: sale el `_revisar` de `imp_meta` y
+`imp_google`; los otros seis se quedan.** Aplicado por `quitarRevisarDeMetaYGoogle()` y
+verificado releyendo la hoja: los dos en `miles`, los seis restantes en `miles_revisar`.
+
+⚠ **Lo que esa decisión NO afirma, y hay que dejarlo escrito porque el sufijo se lee como un
+veredicto: que los dos sean exactos.** `imp_meta` está **+8,7 % POR ENCIMA** del deck de agosto,
+y el deck es **posterior** al fixture, así que el desfasaje de acumulación sólo podría hacerlo
+**mayor**, nunca menor. **Ese residuo sigue sin explicación** — es el mismo razonamiento con el
+que `A-06` mandó `imp_google` a `contradice`. Lo que se decidió es que **no amerita publicar
+entre guiones**, no que no exista. ⛔ **Queda abierto acá.**
+
+⭐ **Y esto SUPERSEDE el argumento del 22/08** que está escrito arriba de
+`marcarProgrammaticARevisar()` —*«un marcado parcial sobre una causa común es peor que
+ninguno»*—. Ese argumento era correcto **con lo que se sabía entonces: que la causa era UNA**.
+La medición del 26/08 muestra que **no lo es**: Meta y Google se mueven en el orden del
+desfasaje y Programmatic se va por factor 3 en un solo encuentro y +179 % en el agregado.
 
 ⚠ **Los cuatro `gcba_imp_*` además no tienen caso validado por plataforma**: sus números de acá son
 **nuevos y sin validar**, no *validados*. Son dos estados distintos y sólo uno se puede citar.

@@ -6451,6 +6451,76 @@ function revertirMarcaDeProgrammatic() {
   return r;
 }
 
+/**
+ * ⭐⭐ **Saca el `_revisar` a `imp_meta` e `imp_google`, y SÓLO a esos dos** (decisión del usuario,
+ * 26/08/2026, con la medición delante).
+ *
+ * ⛔⛔ **Esto SUPERSEDE el argumento escrito arriba de `marcarProgrammaticARevisar()`**, que decía:
+ * *«marcar sólo Programmatic habría dicho que los otros tres están bien… es el mismo acumulado
+ * repartido en tres columnas. Un marcado parcial sobre una causa común es peor que ninguno»*.
+ *
+ * **Ese argumento era correcto con lo que se sabía el 22/08: que la causa era UNA.** El 26/08 se
+ * midió, contra los dos fixtures y contra los dos decks del equipo, y **la causa NO es una**:
+ *
+ * | marcador | julio_24_30 | agosto_14_20 |
+ * |---|---|---|
+ * | `imp_meta`   | −5,2 % | +8,7 % |
+ * | `imp_google` | +15,6 % | +7,3 % |
+ * | ⛔ `imp_prog` | +15,4 % | **+178,9 %** |
+ * | ⛔ `imp_total` | +13,1 % | **+98,1 %** |
+ *
+ * ⭐ **Y por evento la diferencia es todavía más clara:** para `3487-AGOJDGAG`, `PRE Meta` cierra
+ * **al dígito** contra el deck —65.554 = 65.554— mientras el bloque Programmatic del mismo
+ * encuentro se va por **factor 3**. Meta y Google se mueven en el orden del desfasaje de
+ * acumulación; Programmatic no.
+ *
+ * ⚠ **Lo que este botón NO afirma, y hay que decirlo porque el sufijo se lee como un veredicto:**
+ * que `imp_meta` e `imp_google` sean exactos. **No lo son** — `imp_meta` está **+8,7 % POR ENCIMA**
+ * del deck de agosto, y como el deck es **posterior** al fixture, el desfasaje sólo podría hacerlo
+ * **mayor**, nunca menor. Ese residuo **sigue sin explicación** y está escrito en `PENDIENTES`. Lo
+ * que el usuario decidió es que ese residuo **no amerita publicar entre guiones**, no que no exista.
+ *
+ * ⛔ **Los otros seis se quedan marcados**, y los cuatro `gcba_imp_*` además **no tienen caso
+ * validado por plataforma**: sus desvíos de acá son números **nuevos y sin validar**, que es otro
+ * estado que *validado*.
+ *
+ * **Se revierte con `marcarProgrammaticARevisar()`**, que vuelve a poner los ocho.
+ *
+ * **Sin `_` y sin parámetros** — las dos condiciones de `CLAUDE.md` §2.
+ */
+function quitarRevisarDeMetaYGoogle() {
+  var r = curarCamposMarcadores_([
+    { marcador: 'imp_meta',   informe_id: 'jm', formato: 'miles' },
+    { marcador: 'imp_google', informe_id: 'jm', formato: 'miles' }
+  ]);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+  if (!r.cambios_escritos) {
+    Logger.log('ⓘ Cero celdas escritas: los dos ya estaban en `miles`. No se tocó nada.');
+    return r;
+  }
+  Logger.log('== `_revisar` retirado de 2 marcador(es) ==');
+  r.aplicados.forEach(function (a) {
+    Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + a.anterior + '" → "' + a.nuevo + '"');
+  });
+
+  /* ⭐ `C-83` — se relee lo que quedó en la hoja, no lo que se pidió escribir. */
+  var reg = leerRegistro_('MARCADORES', 'marcador');
+  Logger.log('');
+  Logger.log('RELEÍDO de la hoja:');
+  ['imp_meta', 'imp_google', 'imp_prog', 'imp_total'].forEach(function (m) {
+    Logger.log('  ' + m + '.formato = "' + ((reg[m] && reg[m].formato) || '(sin fila)') + '"');
+  });
+
+  /* Los avisos van ÚLTIMOS, después del veredicto (`CLAUDE.md` §4). */
+  Logger.log('');
+  Logger.log('⚠ Esto NO afirma que los dos sean exactos: `imp_meta` sigue +8,7 % por encima del');
+  Logger.log('  deck de agosto, y el deck es POSTERIOR al fixture, así que el desfasaje no lo');
+  Logger.log('  explica. El residuo está abierto en docs/PENDIENTES_consistencia.md.');
+  Logger.log('⚠ Los otros seis siguen marcados. `imp_total` INCLUYE a Programmatic, así que');
+  Logger.log('  arrastra el error entero: +98,1 % en agosto.');
+  return r;
+}
+
 /* ══════════ `2026-08-20_7` — cerrar para generar (20/08/2026) ══════════
  *
  * Dos migraciones que se corren **en este orden y no en el otro**, y el motivo es del escritor:
