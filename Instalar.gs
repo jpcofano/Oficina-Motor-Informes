@@ -6615,6 +6615,192 @@ function aplicarRevisarASinValidar() {
 }
 
 /**
+ * ⭐⭐ **Los TRES totales del "1 a 1" comparten corte: `dimensiones` VACÍO.** Decisión del
+ * usuario, 26/08/2026, con la validación marcador por marcador de `L-053` delante.
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`** — `dimensiones` y `notas` de las tres filas.
+ *
+ * ⛔⛔ **DEROGA `R-28`, y la derogación es el punto, no un efecto colateral.** `R-28` (21/08)
+ * decía *"los totales del 1 a 1 suman UNA etapa, no las dos"* y repartía tres cortes distintos en
+ * la misma fila de la lámina: `u1_total_clics` sólo PRE, `u1_total_vistas` sólo POST,
+ * `u1_total_impresiones` las dos. La regla nueva es `R-33`:
+ *
+ *   **`PRE + POST` significa la SUMA DE LO QUE MUESTRA LA LÁMINA.** Los tres totales llevan
+ *   `dimensiones` vacío — y ausente significa *«todas»*, que ya es la convención del repo.
+ *
+ * ⭐ **Qué arregla, medido sobre `3487-AGOJDGAG` / `agosto_14_20`:** `u1_total_clics` publicaba
+ * **1.472** bajo un rótulo que dice `PRE + POST`, y PRE+POST son **2.464**. Faltaban los **992**
+ * del POST. **Era el único número mal de la lámina.**
+ *
+ * ⭐⭐ **Y por qué se toca `u1_total_vistas`, que HOY DA BIEN — que es la mitad menos obvia:**
+ * acierta **sólo porque las campañas PRE de esta cuenta no tienen visualizaciones** (las dos filas
+ * PRE traen `0`). El día que una PRE lleve video deja de acertar **sin fallar**. Un número correcto
+ * por el camino equivocado es el modo de falla que este proyecto persigue (`CLAUDE.md` §4), y no
+ * se arregla el día que se rompe: se arregla cuando se ve.
+ *
+ * ⚠ **`u1_total_impresiones` ya estaba en vacío y su `dimensiones` NO se mueve** — entra al lote
+ * igual porque es **el testigo de que el vacío es la forma correcta**, y porque su `notas` tiene
+ * que decir lo mismo que las otras dos. Si algún día difiere, el banco lo caza.
+ *
+ * ⛔ **Lo que esta decisión NO resuelve, y va declarado para que no vuelva como hueco:** el motor
+ * pasa a publicar **2.464** donde el deck del equipo del 21/08 publicó **1.472**. Eso es una
+ * divergencia **conocida y elegida**, no un hallazgo pendiente. Está en `R-33` y en
+ * `docs/PENDIENTES_consistencia.md`.
+ */
+var TOTALES_UNO_A_UNO_ = ['u1_total_impresiones', 'u1_total_clics', 'u1_total_vistas'];
+
+/* La nota va **idéntica en las tres filas**, y eso es deliberado: el día que alguien mire una sola
+ * fila tiene que leer la regla entera, no una esquina de ella. Arranca con letra a propósito — una
+ * celda que empieza con `26/08/2026` la puede comer la interpretación de tipos de Sheets. */
+var NOTA_TOTALES_UNO_A_UNO_ =
+  'Validada 26/08/2026 marcador por marcador sobre 3487-AGOJDGAG / agosto_14_20. ' +
+  'R-33: «PRE + POST» significa la SUMA DE LO QUE MUESTRA LA LÁMINA — los tres totales ' +
+  '(impresiones, clics, visualizaciones) llevan `dimensiones` VACÍO. DEROGA R-28, que repartía ' +
+  'tres cortes distintos en la misma fila. Fuente digital/CAMPAÑAS_DESGLOCE_DIGITAL (D-32); ' +
+  'clave Id cuentas vía SOLAPAS.campo_id_cuenta (D-30).';
+
+function alinearTotalesDeUnoAUno() {
+  var cambios = TOTALES_UNO_A_UNO_.map(function (m) {
+    return { marcador: m, informe_id: 'jm', dimensiones: '', notas: NOTA_TOTALES_UNO_A_UNO_ };
+  });
+
+  var r = curarCamposMarcadores_(cambios);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  if (r.idempotente) {
+    Logger.log('ⓘ Los tres totales YA estaban alineados. Nada que hacer.');
+  } else {
+    Logger.log('== totales del "1 a 1" alineados: ' + r.cambios_escritos + ' celda(s) ==');
+    r.aplicados.forEach(function (a) {
+      Logger.log('  ' + a.marcador + ' · ' + a.campo + ': "' + String(a.anterior).slice(0, 60) +
+        '" -> "' + String(a.nuevo).slice(0, 60) + '"');
+    });
+  }
+
+  /* ⭐ **Se RELEE la hoja y se afirma el corte común.** Un escritor que informa lo que pidió
+   * escribir y no lo que quedó es la mitad del bug (`CLAUDE.md` §4, el caso de `ecv_barrio1-3`).
+   * Y la afirmación es **que los tres coincidan**, no que cada uno diga vacío: hasta hoy tenían
+   * tres cortes distintos y **nada lo detectaba**. */
+  var vistos = {};
+  leerMarcadores_().forEach(function (f) {
+    if (TOTALES_UNO_A_UNO_.indexOf(f.marcador) !== -1 && String(f.informe_id) === 'jm') {
+      vistos[f.marcador] = String(f.dimensiones || '');
+    }
+  });
+
+  var faltan = TOTALES_UNO_A_UNO_.filter(function (m) { return !(m in vistos); });
+  var todosVacios = TOTALES_UNO_A_UNO_.every(function (m) { return vistos[m] === ''; });
+
+  Logger.log('');
+  Logger.log('== releído de la hoja ==');
+  TOTALES_UNO_A_UNO_.forEach(function (m) {
+    Logger.log('  ' + m + ' · dimensiones = ' + JSON.stringify(vistos[m]));
+  });
+
+  if (faltan.length) {
+    Logger.log('⛔ NO se pudo releer: ' + faltan.join(', '));
+    return { ok: false, motivo: 'sin fila al releer: ' + faltan.join(', '), escritura: r };
+  }
+  if (!todosVacios) {
+    Logger.log('⛔ LA HOJA NO QUEDÓ COMO SE PIDIÓ: hay al menos un corte no vacío.');
+    return { ok: false, motivo: 'los tres totales no quedaron con `dimensiones` vacío', escritura: r };
+  }
+
+  Logger.log('✅ Los tres totales comparten corte y es el vacío (R-33, deroga R-28).');
+  return { ok: true, escritura: r, dimensiones: vistos };
+}
+
+/**
+ * ⭐⭐ **Sale el `_revisar` de los 24 marcadores de `L-053`.** Decisión del usuario, 26/08/2026,
+ * después de validar la lámina marcador por marcador sobre `3487-AGOJDGAG` / `agosto_14_20`.
+ *
+ * ⚠ **ESCRIBE en `MARCADORES`** — sólo la columna `formato`, sólo estas 24 filas.
+ *
+ * **Por qué:** el `_revisar` significa **desconfianza declarada por una persona** sobre un número
+ * que se publica igual, entre guiones (`-65.554-`). Con la lámina validada ya no corresponde:
+ * sostenerlo dice que no se confía en números que el usuario acaba de dar por buenos.
+ *
+ * ⛔⛔ **Son 24, no 26, y la aritmética va escrita porque el prompt decía otra cosa.** `L-053`
+ * tiene **36** tokens: **8 sin fila** + **28 cableados**. De los 28, llevan `_revisar` **24** — los
+ * **22** de `digital/CAMPAÑAS_DESGLOCE_DIGITAL` **más los dos `alcance` que leen `reuniones`**
+ * (`u1_pre_meta_alcance` sobre `Agenda JM`, `u1_post_meta_alcance` sobre `Agenda JM | Post`). Los
+ * cuatro `ecv_*` nunca la tuvieron.
+ *
+ * ⭐ **Los dos de `reuniones` entran, y es decisión del usuario (26/08):** dejarlos afuera
+ * publicaría `-43.639-` entre guiones **al lado de** `65.554` limpio, en la misma lámina y en la
+ * misma fila. Una marca que aparece en dos casilleros de veinticuatro no dice *"desconfíen de
+ * éstos"*: se lee como un error de formato.
+ *
+ * ⛔ **NO toca el `_revisar` de ningún marcador fuera de `L-053`.** Los ocho `imp_*` del Resumen
+ * Ejecutivo siguen marcados y su motivo sigue vivo — son otra lámina, otra fuente y otra decisión.
+ *
+ * ⚠ **No lleva botón inverso, y es a propósito.** `revertirMarcaDeProgrammatic()` existe porque
+ * `CLAUDE.md` §4 dice que *"una marca que hay que sacar a mano es deuda"* — pone una marca, y
+ * alguien la tiene que sacar. Esto **saca** una: volver a ponerla no es cerrar una deuda, es una
+ * decisión nueva, y una decisión nueva se toma con la medición delante.
+ */
+var FORMATOS_SIN_REVISAR_L053_ = {
+  miles: ['u1_post_google_impresiones', 'u1_post_google_vistas', 'u1_post_meta_alcance',
+    'u1_post_meta_impresiones', 'u1_post_meta_vistas', 'u1_post_prog_impresiones',
+    'u1_post_prog_vistas', 'u1_pre_google_clics', 'u1_pre_google_impresiones',
+    'u1_pre_meta_alcance', 'u1_pre_meta_clics', 'u1_pre_meta_impresiones',
+    'u1_pre_prog_clics', 'u1_pre_prog_impresiones',
+    'u1_total_clics', 'u1_total_impresiones', 'u1_total_vistas'],
+  porcentaje_sin_signo: ['u1_post_google_vtr', 'u1_post_meta_vtr', 'u1_post_prog_vtr',
+    'u1_pre_google_ctr', 'u1_pre_meta_ctr', 'u1_pre_prog_ctr'],
+  fecha: ['u1_fecha_fin']
+};
+
+function confirmarNumerosDeUnoAUno() {
+  var cambios = [];
+  Object.keys(FORMATOS_SIN_REVISAR_L053_).forEach(function (formato) {
+    FORMATOS_SIN_REVISAR_L053_[formato].forEach(function (m) {
+      cambios.push({ marcador: m, informe_id: 'jm', formato: formato });
+    });
+  });
+
+  var r = curarCamposMarcadores_(cambios);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  if (r.idempotente) {
+    Logger.log('ⓘ Los ' + cambios.length + ' ya estaban sin `_revisar`. Nada que hacer.');
+  } else {
+    Logger.log('== marca retirada de L-053: ' + r.cambios_escritos + ' de ' + cambios.length + ' ==');
+    r.aplicados.forEach(function (a) {
+      Logger.log('  ' + a.marcador + ' · "' + a.anterior + '" -> "' + a.nuevo + '"');
+    });
+  }
+
+  /* ⭐ **El releído afirma lo que importa: que NINGUNA de las 24 siga con la marca.** Contar
+   * celdas escritas no alcanza — una fila que no se pudo escribir sale por `sin_fila` y el conteo
+   * de arriba sigue siendo verdad sobre las otras. */
+  var conMarca = [];
+  var medidas = 0;
+  leerMarcadores_().forEach(function (f) {
+    if (String(f.informe_id) !== 'jm') return;
+    var pedido = cambios.some(function (c) { return c.marcador === f.marcador; });
+    if (!pedido) return;
+    medidas++;
+    if (String(f.formato || '').slice(-8) === '_revisar') conMarca.push(f.marcador + '=' + f.formato);
+  });
+
+  Logger.log('');
+  Logger.log('== releído de la hoja: ' + medidas + ' de ' + cambios.length + ' fila(s) encontradas ==');
+  if (medidas !== cambios.length) {
+    Logger.log('⛔ FALTAN FILAS al releer — no se puede afirmar nada sobre las que no están.');
+    return { ok: false, motivo: 'releídas ' + medidas + ' de ' + cambios.length, escritura: r };
+  }
+  if (conMarca.length) {
+    Logger.log('⛔ SIGUEN CON MARCA: ' + conMarca.join(', '));
+    return { ok: false, motivo: conMarca.length + ' fila(s) siguen con `_revisar`', escritura: r };
+  }
+
+  Logger.log('✅ Las 24 de `L-053` publican sin guiones. Fuera de `L-053` no se tocó nada.');
+  return { ok: true, escritura: r, verificadas: medidas };
+}
+
+
+/**
  * `2026-08-20_7` Parte A — **las 49 `*`: SECCO deja de estar vacío.**
  *
  * `MARCADORES` tiene 87 filas y **las 87 dicen `jm`**, así que el deck de `secco` sale entero en

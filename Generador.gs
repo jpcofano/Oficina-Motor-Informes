@@ -161,9 +161,22 @@ function formatearValorMarcador_(valor, formato) {
   }
 
   if (f === 'texto' || f === '') return String(valor);
+  /* ⭐ **`dd/MM`, SIN EL AÑO.** Decisión del usuario, 26/08/2026, al cerrar `L-053`: el deck
+   * publicaba `Parque Avellaneda (12/08/2026)` y tiene que decir `(12/08)`.
+   *
+   * ⭐ **Es una regla del INFORME, no de una lámina, y por eso se cambia el formato compartido en
+   * vez de crear uno propio.** El cambio **viaja a los 8 marcadores** que declaran `fecha` o
+   * `fecha_revisar` —`ecv_fecha`, `u1_fecha_fin`, `camp_desde`, `camp_hasta` y los cuatro
+   * `camp_envN_fecha`— y **está bien que viaje**: un `fecha_corta` paralelo dejaría dos formatos
+   * de fecha conviviendo y la próxima lámina elegiría mal. La decisión editorial vive en
+   * `docs/CONFIG_INFORMES.md`.
+   *
+   * ⚠ **Un informe que cruce dos años pierde el desempate visual**, y se declara acá en vez de
+   * descubrirse: hoy ninguno lo hace —las ventanas son semanales— y el año sigue viajando en el
+   * valor crudo, que es lo que se audita. */
   if (f === 'fecha') {
     var fecha = (valor instanceof Date) ? valor : parsearFechaCelda_(valor);
-    return fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy') : String(valor);
+    return fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM') : String(valor);
   }
 
   var numero = Number(valor);
