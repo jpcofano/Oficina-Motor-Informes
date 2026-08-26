@@ -15705,3 +15705,85 @@ Chico hoy, y es la forma de un problema.
 ⛔ **No se eligió cuál de los dos es el bueno ni se propuso un tercero.** `contenidos_total` sigue
 no cableable, ahora con una causa más y anterior: no es sólo que las sumas no den, es que **no está
 definido de qué filas habría que sumarlas** (`CONFIG_INFORMES` §1.14).
+
+---
+
+## `2026-08-26` (addendum 2) — el testigo de `D-31` estaba declarado y no ejercido en el 15 % de `MAPEO`
+
+**Dos causas, dos commits, y las dos cerradas contra la hoja viva.** Salió de un pedido para
+escribir el `encabezado` de `camp_alcance` — que **ya estaba escrito desde el 15/08**. La premisa
+era falsa y la medición previa la frenó; lo que la medición encontró en cambio fue el hueco real.
+
+**El número, releído de la hoja por la API antes y después:** `MAPEO` tenía **30 de 197 celdas
+`encabezado` vacías** (15 %), y el **100 %** de `digital/CAMPAÑAS_DESGLOCE_DIGITAL` (19) y de
+`looker/CC` (4). Después de *Aplicar configuración*: **7**. `verificarEncabezadosDeMapeo()` pasó de
+`filas_sin_testigo: 25` a **2**, con `filas_comparadas` de **137 a 160** y `desalineadas: []` en las
+dos corridas — o sea que los 22 testigos nuevos **coinciden con lo que las bases tienen hoy en esas
+letras**, que es lo que `D-31` quería poder afirmar.
+
+### Causa A — el mapa central **borraba** testigos ya medidos
+
+`Instalar.gs` aplica `ENCABEZADO_POR_MAPEO_` con un `SEED_MAPEO_.forEach` que terminaba en `|| ''`.
+Las **23** filas de `SEED_MAPEO_DESGLOCE_`, `SEED_MAPEO_DESGLOCE_REVISAR_` y `SEED_MAPEO_CC_`
+declaran su encabezado **inline, al lado de la letra** —`Id cuentas`, `Plataforma`, `Base barrida`—
+y lo perdían ahí. ⇒ **El mapa pasa a DECORAR: si la fila trae su testigo, gana el suyo.**
+
+⚠ **El comentario que estaba arriba del `forEach` no mentía**: describía el caso que sí contemplaba
+—*una fila sin entrada queda vacía*— y **no** el que producía esto, una fila que **trajo** su
+testigo y se lo sacaban. Un comentario correcto sobre el caso equivocado no lo señala nadie.
+
+⭐ **Y un testigo, UNA fuente:** las 5 claves que estaban en los dos lados (`figura`, `barrio`,
+`tipo_encuentro` y los dos `vis_*`, con el mismo valor) se sacaron del mapa. Dos fuentes para el
+mismo valor es exactamente lo que produjo el bug.
+
+### Causa B — el escritor tiraba el testigo que ya tenía medido
+
+Las 7 restantes son las filas que **ningún `SEED_MAPEO_` conoce**: las escribe
+`promoverFechasElegidas()` (`Fechas.gs`), que `ESCRITORES.md` §2.1 ya nombraba. Su objeto no llevaba
+`encabezado` y `upsertPorClave_` reescribe la fila entera con `(h in obj) ? obj[h] : ''`. **El dato
+estaba en la mano**: `DIAG_FECHAS` mide el rótulo y el propio cuerpo lo usa dos veces para redactar
+sus errores. Se agrega normalizado con `normalizarValorDeclarado_` (`R-10`).
+
+⛔ **Y las 7 claves que el mapa tenía para esas filas se borraron.** El único camino del mapa a la
+hoja es el `forEach` sobre `SEED_MAPEO_`, así que una clave sin fila de seed **no se aplica nunca**:
+hacía que el mapa pareciera completo mientras las celdas estaban vacías. El mapa: **174 → 169 → 162**.
+
+⚠ **`rdv|RVD JM-CM - ES|fecha` queda sin testigo a propósito**: no tiene escritor de ninguna clase
+—es la fila que `DOC-2` Parte C derogó y sigue en la hoja— y `Auditoria.gs` la lee. Su celda vacía
+**ahora dice la verdad**. Anotada en `ESCRITORES.md` §2.1.
+
+⚠ Y las **6** de `fecha_periodo` **no** se llenan con *Aplicar configuración*: se llenan cuando
+corra `promoverFechasElegidas()`. Es *la corrida equivocada* del 15/08 otra vez.
+
+### El banco, que es lo que más importa de los tres
+
+`tools/probar-mapeo-cc.js` afirmaba **en verde** que las cuatro filas de `looker/CC` traen
+`encabezado`: cierto sobre `SEED_MAPEO_CC_`, la lista **cruda**, y falso sobre la hoja. **Medía el
+artefacto de ANTES del post-proceso.** Corregido para afirmar sobre el seed **efectivo**, vía
+`tools/seed-mapeo.js`, que **ejecuta** el bloque real de `Instalar.gs` en vez de copiarlo. Con el
+banco corregido y el arreglo sin poner: **6 afirmaciones en rojo, exit 1**; con el arreglo, 24 en
+verde.
+
+**Barrido, con el cero declarado:** de los **53** bancos, **6** extraen alguna lista `SEED_MAPEO*` y
+**4** afirmaban sobre el artefacto anterior. Los tres restantes, corregidos:
+`probar-mapeo-post.js` (leía el mapa en vez del testigo efectivo), `probar-lectura-por-posicion.js`
+(buscaba el **texto** de la declaración: probaba que la línea está escrita, no que el valor llegue) y
+`probar-id-cuenta-declarada.js` (preguntaba por la entrada del mapa; se habría puesto rojo el día que
+alguien mueva ese testigo inline). Los otros dos **no** tenían el problema: usan `f.hoja`, que existe
+antes del post-proceso.
+
+⛔ **Y el barrido destapó una quinta forma, gratis: un control que NO SE CORRE.**
+`probar-mapeo-post.js --autoprueba` estaba **en rojo** y nadie lo veía, porque `tools/suites.js`
+corre los bancos **sin ese flag**; su caso negativo nombraba una afirmación que **ya no existía**.
+Se agregó la afirmación que faltaba y los 4 negativos caen ahora por el motivo correcto. **Cinco
+bancos tienen `--autoprueba`, dos estaban rojos**, y el otro —`probar-tabla-post.js`— **sigue rojo**:
+sus dos mutaciones no matchean nada. Queda anotado, no es de este paso.
+
+**Banco nuevo:** `tools/probar-testigos-mapeo.js`, tres afirmaciones que no se implican —lo inline
+**llega**, ninguna clave en **los dos** lados, ninguna clave **huérfana**— con control positivo (una
+fila que resuelve **sólo** desde el mapa, que prueba que el post-proceso corrió) y tres negativos que
+exigen la mutación y el motivo.
+
+**Suites: 54 bancos en verde, exit 0.** `listas.js` OK, 11 hojas. `clasp push` verificado con un
+`clasp pull` a un temporal: lo desplegado era **idéntico** al commit previo antes de pushear, y
+**idéntico al disco** después.

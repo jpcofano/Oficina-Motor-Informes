@@ -4299,6 +4299,28 @@ título"* — las siete tienen título y está medido. Se llenarían el día que
 declare, o si `promoverFechasElegidas()` pasara a escribir también el encabezado. Es el `P1`
 abierto de `C.2-7`, no de este paso.
 
+> ## ⭐⭐ CERRADO en su parte accionable el 26/08/2026 — **se tomó la segunda salida, la que este
+> párrafo ya nombraba.** `promoverFechasElegidas()` escribe ahora también el `encabezado`, medido
+> por `DIAG_FECHAS` y normalizado con `R-10`. **El `P1` sigue abierto** —el seed sigue sin conocer
+> esas filas— pero deja de tener consecuencia visible.
+>
+> ⛔ **Y el conteo de arriba envejeció mal en las dos direcciones, así que conviene decirlo con
+> todas las letras.** Ese día `MAPEO` tenía **197 filas y 30 celdas vacías**, no 161 y 7:
+> **23 más**, y la causa era otra —el `forEach` de `ENCABEZADO_POR_MAPEO_` terminaba en `|| ''` y
+> **borraba** el testigo de toda fila que lo declarara inline—. La fila *«con testigo declarado:
+> 161 de 161»* era cierta **sobre el mapa** y falsa **sobre lo que se sembraba**: es la figura del
+> artefacto equivocado, ahora en `CLAUDE.md` §4.
+>
+> **Los dos números, releídos de la hoja viva antes y después de «Aplicar configuración»:**
+> 30 → **7** celdas vacías sobre 197; `verificarEncabezadosDeMapeo()` pasó de
+> `filas_sin_testigo: 25` a **2**, con `filas_comparadas` de 137 a **160** y
+> `desalineadas: []` en las dos.
+>
+> ⚠ **Las 7 que quedan son exactamente estas siete filas**, y **no** se llenan con «Aplicar
+> configuración»: se llenan la próxima vez que corra `promoverFechasElegidas()`. La séptima,
+> `rdv|RVD JM-CM - ES|fecha`, **no tiene escritor de ninguna clase** y queda sin testigo — está
+> anotada en `docs/ESCRITORES.md` §2.1, que es donde vive la pregunta de escritores.
+
 ---
 
 ## `C-61` cambia de riesgo con el testigo puesto — 14/08/2026
@@ -9260,6 +9282,27 @@ que cerró es que **la definición del motor reproduce**, no que el deck haya de
 Medido: **`meta_alcance`**. La confirmación quedó dentro de `A-12`, arriba, junto con la causa de
 la ambigüedad —el testigo `encabezado` de `MAPEO` vacío— y por qué no se cerró acá. **El mapeo no
 se tocó**: `camp_alcance` reproduce (919.500 en Autódromo); esto era la etiqueta, no el dato.
+
+> ## ⛔ CORREGIDO el 26/08/2026 (más tarde el mismo día). **La causa que este párrafo declara es
+> FALSA: el testigo de esa fila NO estaba vacío.**
+>
+> `MAPEO` declara `looker | resumen_metricas_dinamico | alcance | col K | meta_alcance`, y lo
+> declara **desde el 15/08**: se rastreó en los 17 snapshots de `MAPEO` y aparece en la primera
+> foto posterior a `D-31`. En el código está en `Instalar.gs`,
+> `'looker|resumen_metricas_dinamico|alcance': 'meta_alcance'`.
+>
+> ⭐ **Lo que sí estaba vacío eran otras 30 celdas de `MAPEO`** —19 de
+> `digital/CAMPAÑAS_DESGLOCE_DIGITAL`, 4 de `looker/CC` y 7 de `fecha_periodo`—, ninguna de ellas
+> ésta. La frase *«el testigo `encabezado` de `MAPEO` está vacío»* era cierta **de la hoja en
+> general** y se aplicó **a esta fila en particular**, que es la única de la que hablaba el caso.
+>
+> ⚠ **Y de ahí salió un pedido de escribir un testigo que ya estaba escrito.** El costo real fue
+> bajo porque la medición previa a escribir lo detectó; lo que hay que retener es la forma: **una
+> causa plausible, verdadera en otro ámbito, citada sin verificar en éste.** Es la familia de *un
+> «no está» sin ámbito* (`CLAUDE.md` §4) y de *un dato medido una vez y citado tres veces*.
+>
+> **Lo que sigue en pie:** el encabezado físico de la col K dice `meta_alcance`, `alcance` es el
+> campo lógico, y `camp_alcance` reproduce. Nada de eso cambia.
 
 ---
 

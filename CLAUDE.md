@@ -752,6 +752,38 @@ ropa, y en las tres el verde era real:
   ve exactamente igual que uno que mide y pasa**. Por eso la pregunta va al escribirlo, no al
   primer resultado raro.
 
+⛔⛔ **Y la CUARTA, que es la más difícil de ver porque el artefacto equivocado y el bueno son el
+MISMO OBJETO en dos momentos: lo que un archivo DECLARA no es lo que ese archivo TERMINA teniendo.**
+(26/08/2026.) Las tres de arriba miran dos artefactos que se distinguen a simple vista —el fixture y
+el deck, el fuente y el parcheado—. Acá el banco extrae la lista correcta, del archivo correcto, y
+aun así mide otra cosa: **el mismo archivo, más abajo, la transforma.**
+
+- **El caso, con los dos números al lado.** `tools/probar-mapeo-cc.js` afirmaba en verde *«las
+  cuatro filas de `looker/CC` traen `encabezado`»* leyendo `SEED_MAPEO_CC_`. Cierto sobre la lista.
+  **Y las cuatro celdas de `MAPEO` estaban vacías**, porque `Instalar.gs` corre después un
+  `SEED_MAPEO_.forEach` que pisaba el testigo con `|| ''`. **El banco podía fallar** —no es un
+  control inerte— y estaba mirando el objeto **antes** del paso que lo rompía.
+- ⭐⭐ **La pregunta concreta, y se hace al escribir el banco:** *entre la declaración que estoy
+  leyendo y lo que se publica, ¿el propio archivo hace algo más?* En `Instalar.gs` eran **cuatro**
+  sentencias en el top level —dos concats, `solapa = hoja`, `tipo_esperado`, `encabezado`— y ninguna
+  está cerca de la lista que uno abre.
+- ⭐ **Y la salida NO es copiar las cuatro líneas al banco**, que sería el instrumento que reproduce
+  lógica del motor y la reproduce peor, más **dos lugares que tienen que decir lo mismo**. Es
+  **ejecutar el post-proceso real**: `tools/seed-mapeo.js` recorta ese bloque de `Instalar.gs` y lo
+  evalúa verbatim, así que una quinta transformación se incorpora sola. Mismo criterio que
+  `probar-encabezado.js`, que extrae las funciones en vez de copiarlas.
+- ⚠ **El barrido va con el arreglo, y el cero medido también se escribe:** de los **53** bancos,
+  **6** extraen alguna lista `SEED_MAPEO*` y **4** afirmaban sobre el artefacto anterior. Los otros
+  dos **no** tenían el problema —usan `f.hoja`, que existe antes del post-proceso—. Un barrido que
+  sólo informa hallazgos no distingue *«no hay»* de *«no miré»*.
+- ⛔ **Y lo que destapó el barrido es una quinta forma, gratis: un control que NO SE CORRE.**
+  `probar-mapeo-post.js --autoprueba` estaba en **rojo** y nadie lo veía, porque `tools/suites.js`
+  corre los bancos **sin ese flag**. Su caso negativo nombraba una afirmación que **ya no existía**,
+  así que informaba *«no cayó ninguna»* — el negativo no medía nada. **Cinco bancos tienen
+  `--autoprueba` y dos estaban rojos**; el otro, `probar-tabla-post.js`, sigue rojo por mutaciones
+  cuyo ancla dejó de matchear. **Un modo de control que el runner no ejecuta es un modo de control
+  que no existe**, y es la misma familia que el `⚠` en medio de un reporte que termina en `✅`.
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue

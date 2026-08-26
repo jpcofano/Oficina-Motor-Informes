@@ -3,12 +3,32 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-26 — **`L-036` estuvo publicando dos columnas de Programmatic y ningún control lo veía.** Lo destapó una pregunta del usuario, no una suite. Arreglado del lado de la planilla (títulos únicos por `IMPORTRANGE`) y de los testigos; **falta la corrida que lo confirme sobre el deck**.
+**Última actualización:** 2026-08-26 (noche) — **el testigo de `D-31` estaba declarado y no ejercido en el 15 % de `MAPEO`.** Dos causas medidas y cerradas, `clasp push` y *Aplicar configuración* corridos, y los dos números releídos de la hoja viva. **Nada de esto pide una corrida de `jm`**: la cola de abajo sigue siendo la cola.
 
-⭐⭐ **Las dos frases que hay que llevarse de este día:**
+⭐⭐ **Las tres frases que hay que llevarse de este día:**
 
 1. **El arreglo que el repo creía tener nunca corrió.** `MAPEO.por_posicion` está escrito entero y está **inerte**: `leerMapeoSinCache_` no indexa la columna **y** la hoja no la tiene. Tres bancos daban verde afirmando que estaba declarada — y lo estaba. Lo que no corría era el mecanismo.
 2. **Un control contra constantes caduca cada vez que la fuente respira; uno contra identidades internas no caduca nunca.** Es la regla nueva de `CLAUDE.md` §4, y la tercera vez en tres días que un control mide algo distinto de lo que dice medir.
+3. ⛔⛔ **Y la cuarta, esa misma noche: lo que un archivo DECLARA no es lo que ese archivo TERMINA teniendo.** `probar-mapeo-cc.js` afirmaba en verde que `looker/CC` traía sus cuatro encabezados — cierto sobre la lista cruda, **falso sobre la hoja**, porque `Instalar.gs` los pisaba 300 líneas más abajo. **El banco podía fallar y estaba mirando otro momento del mismo objeto.**
+
+---
+
+## ⭐ Lo de esta noche, en cuatro líneas
+
+| | antes | después |
+|---|---|---|
+| celdas `encabezado` vacías en `MAPEO` (releídas de la hoja) | **30 de 197** | **7** |
+| `verificarEncabezadosDeMapeo()` · `filas_sin_testigo` | **25** | **2** |
+| `verificarEncabezadosDeMapeo()` · `filas_comparadas` | 137 | **160** |
+| `verificarEncabezadosDeMapeo()` · `desalineadas` | `[]` | `[]` |
+
+⭐ **`desalineadas: []` en las dos** es el resultado que importa: los 22 testigos nuevos **coinciden con lo que las bases tienen hoy en esas letras**. No es sólo que las celdas se llenaron.
+
+- **Causa A** — `ENCABEZADO_POR_MAPEO_` se aplicaba con `|| ''` y **borraba** el testigo de las 23 filas que lo declaran inline (`des_*`, `lcc_*`). Ahora **decora**: si la fila lo trae, gana el suyo. Y las 5 claves que estaban en los dos lados salieron del mapa — *un testigo, una fuente*.
+- **Causa B** — `promoverFechasElegidas()` **tiraba** el `encabezado` que `DIAG_FECHAS` ya medía. Ahora lo escribe, normalizado con `R-10`. Las 7 claves huérfanas del mapa se borraron: no se aplicaban nunca.
+- ⚠ **Las 7 celdas que siguen vacías NO se llenan con «Aplicar configuración»** — esas filas no están en ningún `SEED_MAPEO_`. Se llenan con **`promoverFechasElegidas()`**, y conviene mirar `DIAG_FECHAS` antes: escribe también `columna`, así que con un `DIAG_FECHAS` viejo movería una letra.
+- ⛔ **`rdv|RVD JM-CM - ES|fecha` queda sin testigo a propósito**: no tiene escritor de ninguna clase. Ver `ESCRITORES.md` §2.1.
+- ⛔ **Anotado y NO arreglado:** `probar-tabla-post.js --autoprueba` está **en rojo** —sus dos mutaciones no matchean nada— y `tools/suites.js` **no corre `--autoprueba`**, así que no lo ve. Cinco bancos tienen ese modo.
 
 ⚠ **Este archivo tuvo cuatro versiones el 25/08** y las secciones tachadas de abajo son las anteriores, conservadas a propósito — **cómo se llegó a una conclusión equivocada es la mitad de su valor**. Lo vigente es lo de arriba.
 
@@ -24,7 +44,7 @@
 |---|---|---|---|
 | 1 | **`clasp push`** | ✅ **hecho y verificado** | los 24 `.gs` idénticos al repo |
 | 2 | **`instalar()`** | ✅ **hecho** — `LAMINAS` ya tiene `alcance` y `tokens_equipo` | ⚠ pero **NO creó `MAPEO.por_posicion`**: la hoja sigue en nueve columnas. Da igual hoy — el mecanismo está inerte de todos modos (ver `PENDIENTES`) |
-| 3 | **«Aplicar configuración»** | ✅ **hecho el 26/08** — 5 celdas cambiadas | propagó los encabezados nuevos a `MAPEO` y las notas a `SOLAPAS`. ⛔ **Antes de correrlo hubo que corregir `SEED_SOLAPAS_`, que declaraba `fila_encabezado: 2` y habría pisado el `1` del usuario** |
+| 3 | **«Aplicar configuración»** | ✅ **corrido DOS veces el 26/08** — 5 celdas a la tarde, **23 a la noche** | la tarde propagó los encabezados nuevos a `MAPEO` y las notas a `SOLAPAS`; la noche, los 23 testigos que el `forEach` venía borrando. ⛔ **Antes de la primera hubo que corregir `SEED_SOLAPAS_`, que declaraba `fila_encabezado: 2` y habría pisado el `1` del usuario** |
 | 4 | ⛔ **Verificar `CONFIG.solapas_agregado_post` y `campos_metrica_post`** | ⏸ **volver a medir** | faltaban el 25/08 (27 claves). *Aplicar configuración* corrió después, así que **es probable que ya estén** — pero eso se lee de la hoja, no se supone |
 | 5 | **`declararAlcanceDeLaminas()`** | ⛔ **FALTA** — 0 de 53 filas con `alcance` | puebla `LAMINAS.alcance` y `LAMINAS.tokens_equipo` |
 | 6 | ⭐ **`declararModoDelAgregadoPost()`** y **`declararIteraDelAgregado()`** | ✅ **hechos** | las dos celdas ya dicen lo que tienen que decir. Si se corren, informan «ya estaba» |

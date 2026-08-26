@@ -138,6 +138,38 @@ tienen vencimiento; no son escritores de contenido.
 `MAPEO` es correcto, pero ningún `SEED_MAPEO_` conoce las siete filas que escribe — es
 el P1 abierto de `C.2-7`, y **no es de este paso**.
 
+#### Addendum 26/08/2026 — esas siete filas ya no salen con el testigo vacío, y una sigue sin dueño
+
+El `P1` de arriba **sigue abierto** —el seed sigue sin conocerlas— pero su consecuencia visible se
+cerró. Medido ese día: `MAPEO` tenía **30 de 197 celdas `encabezado` vacías**, y **7 eran
+exactamente estas filas**. La causa no era el `P1`: **el objeto que `promoverFechasElegidas()`
+upsertea no llevaba `encabezado`**, y `upsertPorClave_` reescribe la fila entera con
+`(h in obj) ? obj[h] : ''`, así que la celda salía vacía **en cada corrida**.
+
+⭐ **El dato estaba en la mano y se tiraba:** `DIAG_FECHAS` ya mide el rótulo de la columna elegida
+—`f.encabezado`, que ese mismo cuerpo usa dos veces para redactar sus errores—. Desde el 26/08 la
+fila lo lleva, normalizado con `normalizarValorDeclarado_` (`R-10`). **No hubo nada que medir ni
+que inventar.**
+
+⛔ **Y las siete claves que `ENCABEZADO_POR_MAPEO_` tenía para estas filas se BORRARON.** Ese mapa
+se aplica **sólo** en el `forEach` sobre `SEED_MAPEO_`, así que una clave cuya fila no está en el
+seed **no se aplica nunca**: hacía que el mapa pareciera completo *(«testigo para las 161»)*
+mientras las celdas estaban vacías. Dejarlas con el escritor ya arreglado habría creado **dos
+fuentes para el mismo testigo**, que es lo que había borrado las otras 23 el mismo día. Lo controla
+`tools/probar-testigos-mapeo.js`, que se pone rojo ante una clave huérfana.
+
+⚠ **La séptima no tiene escritor de ninguna clase, y queda sin testigo a propósito:**
+`rdv|RVD JM-CM - ES|fecha` es la fila que `DOC-2` Parte C derogó — salió del `SEED_MAPEO_` y
+**sigue en la hoja** —, y `Auditoria.gs` todavía la lee por `buscarMapeo('rdv', hoja, 'fecha')`.
+**Su celda vacía ahora dice la verdad** —nadie declara su testigo— en vez de esconderse detrás de un
+literal que no se aplicaba. Es el único caso conocido de una fila de `MAPEO` **con lector y sin
+escritor**, y por eso se anota acá y no en `PENDIENTES`: es una pregunta de escritores.
+
+⚠ **Y el corolario operativo, que es lo que hay que saber antes de esperar el cambio:** las seis
+celdas **NO se llenan con «Aplicar configuración»** —ese camino siembra los `SEED_*` y estas filas
+no están en ninguno—. Se llenan la próxima vez que corra `promoverFechasElegidas()`. Es el mismo
+error que costó el 15/08: *era la corrida equivocada*.
+
 ### 2.2 · Las diez protegidas de `SOLAPAS` — el conflicto seed ↔ manual, medido
 
 La corrida del 01/08 emitió diez líneas `protegida (habría cambiado)` y `SOLAPAS` tiene
