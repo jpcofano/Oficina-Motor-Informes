@@ -25,7 +25,7 @@
 | ⏳ | hay un paso corriendo sobre ella |
 | 🚫 | **fuera de alcance** — el usuario decidió que no se cablea. **No cuenta como faltante** |
 
-🌐 **no es un estado, es una marca**: la lámina publica **el universo de la ventana** y no las cuentas del temario (`X-41`). Va **al lado** del estado porque no lo reemplaza — una lámina puede estar ⛔ y además 🌐, y son dos trabajos distintos. Ver la sección propia, más abajo.
+🌐 **no es un estado, es una marca**: la lámina publica **el universo de la ventana** y no las cuentas del temario (`X-41`). Va **al lado** del estado porque no lo reemplaza — una lámina puede estar ⛔ y además 🌐, y son dos trabajos distintos. ⚠ **Y se saca cuando el régimen cambia, no cuando el riesgo desaparece:** `L-034` la llevó 25 horas de más porque nadie la revisó contra el arreglo que la había vuelto falsa (25/08). Ver la sección propia, más abajo.
 
 ⭐⭐ **El 🚫 nace el 22/08/2026 y no es un ⛔ postergado ni un ✅ anticipado.** Un ⛔ dice *«falta
 trabajo»* y vuelve a levantarse en cada revisión; un ✅ dice *«lo miré y lo que falta no importa»*.
@@ -108,9 +108,9 @@ iceberg es la **6** acá y la **7** en el deck del equipo.
 |---|---|---|---|---|
 | **1** · Portada | `L-030` | ⛔ 🕳 | **sin medir** — un solo token, `periodo`, y ninguna verificación lo mira | — |
 | **2** · Resumen Ejecutivo JM | `L-031` | ⛔ **inestable por CAMBIO** 🕳 🌐 | 21 tokens. **Los cuatro `cc_*`: `MAPEO` escrito, cableado FRENADO por `X-28`** — la columna y la operación están validadas, **qué cuentas entran no** · `contenidos_total` publica `1` → **pregunta al equipo** · `frecuencia` no publica → sin medir · los 8 `imp_*` y los 3 «N envíos» están 🟡, abajo | 22/08 |
-| **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ **inestable por CAMBIO** 🕳 🌐 | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) · `gcba_sms_*` 🟡 | 22/08 |
+| **3** · Resumen Ejecutivo GCBA | `L-032` | ⛔ **inestable por CAMBIO** 🕳 🌐 | 19 tokens, los mismos de la 2 con prefijo `gcba_` **sin medir uno por uno** · `gcba_cc_*` sin cablear (equipo: 8 campañas · 19.788 · 7.308) — ⚠ **y su 🌐 está en reserva desde el 25/08: GCBA significa TODO, así que el universo de la ventana puede ser el correcto acá** (ver la sección 🌐) · `gcba_sms_*` 🟡 | 25/08 |
 | **4** · «Encuentros con vecinos» | `L-033` | 🟡 | **Cero tokens y `rol = equipo`: no hay nada que cablear.** Es un separador. Falta sólo que el usuario lo mire | — |
-| **5** · ECV: alcance semanal | `L-034` | ⛔ **inestable por ALTA** 🕳 🌐 | ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUJERON** contra `V-71`. ⚠ **Pero `rdv` es inestable por ALTA (`R-31`), así que eso no se puede EXIGIR en cada corrida** — el control posible es **de dirección: sube o queda, nunca baja; si baja es bug**. Falta: `ecv_asistentes` = 485 sin validar · los 3 `cc_*` **pintados sin control** · `ecv_fecha` y `ecv_barrio1-3` **sin fila en `MARCADORES`** | 22/08 |
+| **5** · ECV: alcance semanal | `L-034` | ⛔ **inestable por ALTA** 🕳 | ⭐⭐ **El 🌐 SE SACÓ el 25/08**: los 16 `ecv_*` con fila leen `rdv/RVD JM-CM - ES` y toman el universo del **temario** desde el `_25` (22/08) — medido uno por uno contra el snapshot de `MARCADORES`. ⚠ **Queda como CONDICIÓN, no como estado:** si el temario no trae filas, caen al universo ancho **en silencio** (ver la sección 🌐). ⭐ **`ecv_inscriptos` = 2.333 y `ecv_encuentros` = 4 REPRODUJERON** contra `V-71`. ⚠ **Pero `rdv` es inestable por ALTA (`R-31`), así que eso no se puede EXIGIR en cada corrida** — el control posible es **de dirección: sube o queda, nunca baja; si baja es bug**. Falta: `ecv_asistentes` = 485 sin validar · los 3 `cc_*` **pintados sin control** · `ecv_fecha` y `ecv_barrio1-3` **sin fila en `MARCADORES`** | 22/08 |
 | **6** · Benchmarks / Iceberg | `L-035` `L-052` | ✅ | ⭐⭐⭐ **CERRADA — el usuario la declaró el 22/08.** Publicó los cuatro de IVR exactos: Audiencia **107.194** · Atendidos **96.549** · Escucharon +75 % **33.139** · Marque 1 **304**, más las seis cifras del alcance al dígito. **`X-30` se cerró solo: el ítem llegó con `3488-AGOJDGAG`.** ⭐ **Y es la única lámina con control por igualdad exacta garantizado**: sus cinco campos de `digital/Directa IVR` son **estables** (`R-31`) | 22/08 |
 | **7** · Digital \| ECVs: post reuniones | `L-036` | 🟡 | ⭐⭐ **28 de 32 tokens CABLEADOS** (25/08, tarde) — la tabla es de **ocho columnas × 4 filas** y se cablean **siete**: `Campañas`, `Período`, `Habitantes`, `Alcance`, `Impresiones`, `Visualizaciones` y `VTR%`. ⭐ **`Campañas` se COMPONE** de Funcionario+Tipo+Barrio+Fecha con `FILA_TEXTO`, porque **ninguna de las 29 columnas de la solapa trae un nombre** — barrido completo contra el fixture del 20/08. ⭐⭐ **Y `Período` sale de OTRA base** —`digital/CAMPAÑAS_DESGLOCE_DIGITAL`, con la operación nueva `GRUPO_TEXTO`—, porque esas mismas 29 columnas tampoco traen fecha de inicio ni de fin. **Es la única lámina que cruza dos fuentes**, y eso es `D-42`: la lista de encuentros es **una** y la **ranura viaja sellada en la fila**, así que un encuentro ausente en una sola de las dos deja un hueco **en su lugar** en vez de correr las demás. ⭐ **La identidad interna sigue en pie**: `%VTR = Visualizaciones / Impresiones`, **exacta en 98 de 98**, al nivel de `V-111` y `V-113` — control que **no depende del deck del equipo**. ⛔ **Los 4 que faltan son UNA decisión, no un hueco**: `post_formato1-4` **fuera de alcance** (`CONFIG_INFORMES` §2.3 bis — el formato cambia por plataforma y una fila por encuentro no puede tener uno solo). ⚠ **Falta una corrida** para ver los 28 publicar, y el `id_cuenta` del anclaje sigue siendo lo único vivo. ⚠ **Y no admite control por igualdad exacta contra un testigo de otro día**: `Período` lee `digital`, que `R-31` mide inestable — ver la nota abajo | 25/08 |
 | **8** · «Comunicaciones M2» | `L-037` | 🟡 | Separador, `rol = equipo`, cero tokens. **Nada que cablear** | — |
@@ -140,17 +140,57 @@ existiendo en la plantilla**, con sus tokens adentro.
 
 ---
 
-## 🌐 Universo ancho, mecanismo pendiente — `L-031`, `L-032` y `L-034` (`X-41`, 23/08/2026)
+## 🌐 Universo ancho, mecanismo pendiente — `L-031` y `L-032` (`X-41`, 23/08/2026 · revisado 25/08)
 
-**Se marca y no se toca. Decisión del usuario.** Las tres publican **el universo de la ventana**,
-no las cuentas del temario, y eso ya está escrito — no es un hallazgo nuevo cada vez que alguien
-mire un número.
+**Se marca y no se toca. Decisión del usuario.** Publican **el universo de la ventana**, no las
+cuentas del temario, y eso ya está escrito — no es un hallazgo nuevo cada vez que alguien mire un
+número.
 
-**El hueco es uno solo y está en tres lugares:** los `cc_*` de Call Center (`L-031`/`L-032`), los
-cuatro `ivr_*` del Resumen (`L-031`) y los cuatro del agregado semanal (`L-034`). **Las tres son
-láminas FIJAS**, así que no tienen ítem del que sacar una cuenta, y **el motor no tiene forma de
-decir «sumá sólo las cuentas del temario»**. Hasta que ese mecanismo exista, cablear cualquiera de
-los tres publica de más.
+**El hueco está en dos lugares:** los `cc_*` de Call Center (`L-031`/`L-032`) y los cuatro `ivr_*`
+del Resumen (`L-031`). **Las dos son láminas FIJAS**, así que no tienen ítem del que sacar una
+cuenta, y **el motor no tiene forma de decir «sumá sólo las cuentas del temario»**. Hasta que ese
+mecanismo exista, cablear cualquiera de los dos publica de más.
+
+### ⛔ `L-034` sale de esta lista — el 🌐 estaba vencido por 25 horas (25/08/2026)
+
+**Los cuatro que la marca nombraba son `ecv_encuentros`, `ecv_inscriptos`, `ecv_asistentes` y
+`ecv_barrios`**, y los cuatro toman su universo del **temario** desde el `2026-08-22_25` Parte A
+—commit `fd226d1`, **22/08 13:21**—. El 🌐 se escribió el **23/08 14:18**: veinticinco horas
+**después** del arreglo, y la marcó igual.
+
+**Medido el 25/08 contra el snapshot de `MARCADORES`, uno por uno y no por prefijo: los 16
+marcadores `ecv_*` con fila leen `rdv / RVD JM-CM - ES`**, así que **todos** entran por la rama del
+agregado por temario. Ninguno cae a la ventana en régimen normal. Los otros seis tokens de la
+lámina —los tres `cc_*`, `alcance`, `clics` y `periodo`— **no tienen fila** y salen `/////`.
+
+⭐ **Pero el 🌐 acertó el RIESGO y erró el RÉGIMEN, y eso se conserva como CONDICIÓN, no como
+estado:**
+
+> **Mientras el temario traiga filas, `L-034` publica el universo del temario. El día que no las
+> traiga, publica el universo ancho — y no avisa.**
+
+El mecanismo es un `if (temario.filas.length)` en la etapa 4 del generador: si da cero, el contexto
+del temario no se setea, y como `rdv/RVD JM-CM - ES` **no declara `campo_id_cuenta`**, los 16
+`ecv_*` caen a `leerFuente` — `rdv` entera recortada por `figura=Jorge Macri` y la ventana. ⚠ **Y
+el temario da cero por cinco causas distintas que no se distinguen entre sí ni de «esta semana no
+hay encuentros».** Está abierto en `docs/PENDIENTES_consistencia.md` (25/08) junto con la
+asimetría contra la rama de `post_*`, que ante la misma condición **falla** en vez de caerse.
+
+### El nivel de universo que le corresponde a cada frente
+
+| frente | qué publica hoy | nivel que le corresponde |
+|---|---|---|
+| **`L-031`** · los 4 `ivr_*` (`digital/Directa IVR`, sin ítem) | el agregado de la ventana | **temario** — son las campañas IVR de los encuentros de la semana |
+| **`L-031`** · los 4 `cc_*` | nada: **sin fila**, `/////` | **temario** |
+| **`L-032`** · los 4 `gcba_cc_*` | nada: **sin fila**, `/////` | ⚠ **el 🌐 puede estar mal puesto acá** — ver abajo |
+| **`L-034`** · los `ecv_*` | el universo del **temario** | ya está — sale de la lista |
+
+⚠ **Lo de `gcba_cc_*` no es un detalle: GCBA significa TODO, no el temario.** Para el bloque de JM
+el universo ancho es un error; para el de GCBA, *«todas las campañas de Call Center de la ventana»*
+podría ser **exactamente lo que corresponde**, y entonces el 🌐 estaría señalando un problema que
+ahí no existe. ⛔ **No se resolvió y no se supone:** lo decide la misma respuesta del equipo que
+destraba `X-28` — *«por qué el bloque Call Center mira otro universo»*—, y hasta entonces la marca
+se deja puesta **con esta reserva escrita al lado**, que es distinto de dejarla puesta a secas.
 
 ⚠ **Y lo que hay que saber para no confundirlos: los dos se ven distinto.** El de Call Center da
 **el gabinete entero** —factor 14 contra lo esperado, `X-37`—, así que grita. El de IVR recorta por

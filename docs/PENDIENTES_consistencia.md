@@ -8495,3 +8495,116 @@ prompt.
 `laminas-declaradas`, `lectura-por-posicion`, `matcher-rdv`, `medicion-anclaje-en-el-panel`,
 `modo-faltantes`, `particion-etapa`, `rediseno-l036`, `reloj-etapas`, `ruteo-solapa-digital`,
 `solo-marcadores`, `tipo-en-item`, `vista-faltantes`.
+
+---
+
+## 2026-08-25 · **P0 · Dos premisas vencidas sobre el recorte por período, y las dos siguen escritas**
+
+Salen del relevamiento de la cascada de universo (25/08). ⚠ **Las dos describen el estado anterior
+al `2026-08-22_25` Parte B** —commit `fd226d1`, 22/08 13:21— que extendió el recorte del temario a
+la ventana calculada.
+
+### 1 · «`anclarEncuentros` recorta sólo si la ventana vino por `periodo_ref`»
+
+**Era cierta hasta el 22/08 13:21.** Desde el `_25` Parte B, `anclarEncuentrosSinCache_` usa
+`periodosQueDescribenLaVentana_(ventana)` cuando el origen **no** empieza con `periodo_ref:`: le
+pregunta a `PERIODOS` qué filas tienen exactamente esas dos fechas y recorta con el **conjunto**.
+
+⚠ **La frase sigue viva en al menos un comentario del front** (`Panel.html`, arriba de
+`panel_generar`) y se venía citando como premisa. **El deck `jm-20260821-230048` con 12 encuentros
+en vez de 2 es del 21/08 — anterior al arreglo**, así que no es evidencia del estado de hoy.
+
+⭐ **Lo que sí sigue siendo cierto, y es lo que hay que citar en su lugar:** si **ninguna** fila de
+`PERIODOS` describe la ventana, no se filtra y entran todas las reuniones con `mostrar = sí`. O sea
+que ese camino tiene **dos comportamientos** según un dato de `PERIODOS`, y **ninguno de los dos se
+anuncia**.
+
+### 2 · El aviso de `avisosDeVentanaPropuesta_` — tercera generación diciendo algo que no es
+
+`PanelBackend.gs` decide por `origen.indexOf('periodo_ref:') === 0` y publica *«las secciones
+repetibles NO se recortan por período: entran las N reunión(es) con mostrar=sí»*. Desde el `_25` eso
+es **falso cuando alguna fila de `PERIODOS` coincide con la ventana**.
+
+⛔ **Y el dato correcto ya está calculado treinta líneas más abajo, en la misma función:** el bloque
+`coincidentes` recorre `PERIODOS` y empareja por `desde`/`hasta` —**el mismo cálculo** que hace
+`periodosQueDescribenLaVentana_`— pero sólo lo usa para redactar el consejo (*«elegí
+`agosto_14_20`»*), **nunca para decidir si el aviso corresponde**.
+
+⚠ **Es la tercera vez que este mismo aviso afirma algo que no se cumple.** El propio comentario de
+la función registra la segunda (`2026-08-22_22` §5) y cita a `CLAUDE.md` §4 sobre por qué duele:
+*«mostrar una advertencia equivocada es tan caro como no mostrar ninguna, porque la próxima se lee
+con la misma desconfianza»*. Ésta se leyó con desconfianza dos días después de escribirla, y ahora
+vuelve a estar mal por otro motivo.
+
+**Lo accionable:** el aviso tiene que decidirse por `coincidentes.length`, no por el prefijo del
+origen — y cuando hay coincidencia, el texto correcto es otro: *el recorte SÍ se aplica, con estas
+filas*.
+
+---
+
+## 2026-08-25 · **P0 · Misma condición, dos comportamientos: la rama 2 se cae en silencio y la rama 3 falla**
+
+**Pregunta abierta, sin resolver.** No la decide Code.
+
+Las dos ramas de `datosDeMarcador_` que leen «las filas del TEMARIO» se comportan **al revés** ante
+el mismo hecho —*el temario no trajo ni una fila*—:
+
+| rama | qué hace con temario vacío | desde |
+|---|---|---|
+| **3** · `filas_temario` (`post_*`, `D-42`) | ⛔ **falla** con `«FALTA:…@post_sin_temario»` y su diagnóstico | `2026-08-25_3` Parte 1 |
+| **2** · `filas_rdv` (`ecv_*`, agregado semanal) | ⚠ **se cae a la cadena general** — `rdv` entera recortada por `figura=Jorge Macri` y la ventana | siempre |
+
+El mecanismo de la rama 2 es literal (`Generador.gs`, etapa 4):
+
+```
+var temario = filasRdvDelTemario_(informeId, ventana);
+if (temario.filas.length) {          // ← si da cero, `filas_rdv` no se setea
+  opcionesEtapa4.filas_rdv = temario.filas;
+```
+
+Sin `filas_rdv`, la rama 2 no dispara; y como `rdv/RVD JM-CM - ES` **no declara `campo_id_cuenta`**
+—medido en `SOLAPAS`—, tampoco la atrapa la rama por cuenta declarativa: cae a `leerFuente`.
+
+⛔ **`filasRdvDelTemario_` devuelve vacío por cinco causas distintas y ninguna se distingue de
+«esta semana no hay encuentros»:** `SECCIONES` ilegible, la sección no resuelta, `itera_sobre` que no
+apunta a `REUNIONES`, `itemsDeSeccion_` que tira excepción, o `!ok`.
+
+⭐ **Por qué va como pregunta y no como bug:** cuál de los dos comportamientos es el correcto depende
+de la cascada de universo que el usuario definió el 25/08 (`temario → período configurado → semana`),
+y eso todavía no está decidido. **Lo que no puede seguir es que dos ramas hermanas resuelvan la misma
+condición al revés**, sea cual sea la regla que gane.
+
+---
+
+## 2026-08-25 · **P1 · `ecv_alcance_semanal.itera_sobre` es un interruptor sin alarma**
+
+El agregado por temario de `L-034` (`_25` Parte A) depende de que `SECCIONES.ecv_alcance_semanal`
+tenga **`itera_sobre = REUNIONES`**. Sin eso, `seccionAgregadaDeReuniones_` no resuelve,
+`filasRdvDelTemario_` devuelve vacío, y **los 16 marcadores `ecv_*` se van al universo ancho por el
+camino de la rama 2 de arriba — en silencio**.
+
+⚠ **En el snapshot `docs/_snapshots/SECCIONES_2026-08-21_2225.tsv` esa celda está VACÍA.** El
+snapshot es **anterior** al `_25` (22/08) y la corrida de ese día registra que el agregado
+reprodujo —`ecv_inscriptos` 2.333 y `ecv_encuentros` 4 contra `V-71`—, así que se aplicó. **Pero no
+hay ningún snapshot posterior que lo confirme**, y ésa es toda la evidencia que existe.
+
+⭐ **El botón que la escribe** es `declararIteraDelAgregado()` (`Instalar.gs`, wrapper público sin
+argumentos), que por dentro llama a
+`curarSecciones_([{ seccion_id: 'ecv_alcance_semanal', itera_sobre: 'REUNIONES' }])`.
+
+⛔⛔ **Y ese botón existe por el motivo que hace grave a este punto: `SEED_SECCIONES_` SÍ declara
+`itera: 'REUNIONES'` —desde el commit `01e4060`, 22/08 13:43— pero el seed de `SECCIONES` NO
+ACTUALIZA FILAS EXISTENTES.** Es una de las dos hojas que **sólo siembran lo ausente**
+(`CLAUDE.md` §4, junto con `CONFIG`; la tabla de qué se propaga vive en `docs/ESCRITORES.md`).
+
+⚠ **La consecuencia, que es lo accionable:** si esa celda queda vacía, **ni `instalar()` ni
+*Aplicar configuración* la arreglan**. El seed dice lo correcto, el diff no acusa nada, y la única
+forma de repararla es apretar el botón — que nadie va a apretar, porque nada avisa. **El valor
+correcto está escrito en el repo y no llega a la hoja**, que es exactamente el caso del 16/08
+(`CLAUDE.md` §4, *«un cambio de seed no existe hasta que se empuja»*) con la variante más cara: acá
+el push corrió y **igual no llega**.
+
+**Lo accionable, en orden:** (a) tomar un snapshot de `SECCIONES` y verificar el valor de hoy — es
+la única evidencia que falta; (b) que la rama 2 falle en vez de caerse, que es la pregunta abierta
+de arriba, porque es lo único que convierte esta celda en un error visible en vez de un número
+plausible.
