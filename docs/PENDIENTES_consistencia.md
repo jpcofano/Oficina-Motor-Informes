@@ -9265,6 +9265,24 @@ se tocó**: `camp_alcance` reproduce (919.500 en Autódromo); esto era la etique
 
 ### ⛔ 3 · `C-89` · Por qué fecha recorta el panel — **NO cierra, y no por poco: `looker/DIGITAL` no tiene columna de fecha**
 
+> ## ⛔⛔ CORREGIDO el 26/08/2026 por `C-90`. **La conclusión de abajo está MAL.**
+>
+> **Lo que sigue siendo cierto:** `looker/DIGITAL` no tiene columna de fecha **propia**. Las
+> nueve columnas y las tres vías de confirmación están bien medidas.
+>
+> ⛔ **Lo que está mal es lo que se concluyó de eso:** *«los recortes no son aplicables»* y
+> *«no hay por dónde»*. **Sí hay por dónde** — la fecha vive en `looker/Cuentas` y llega por
+> el `id_cuenta`. **El motor ya lo hace**: `SOLAPAS.ventana_ref = "Cuentas"` y `Fuentes.gs`
+> tiene el mecanismo entero. Con la ventana real, `leerFuente` devuelve **377 filas**.
+>
+> ⭐⭐ **Y el dato que desmentía la conclusión estaba en la salida del propio instrumento:** el
+> volcado de `SOLAPAS` que esa medición imprimió **dice `ventana_ref: "Cuentas"`**. Se leyó la
+> firma de encabezados de esa misma línea y no el campo de al lado.
+>
+> **El veredicto final no cambia —ninguno de los tres recortes reproduce— pero el motivo sí,
+> y mandaba a lugares opuestos:** *«no se puede recortar»* cierra la puerta; *«se recorta y no
+> da»* la deja abierta con un número al lado. Ver `C-90`.
+
 **Los tres recortes dieron CERO. Los tres.**
 
 | recorte | JM | GCBA |
@@ -9301,3 +9319,63 @@ Queda anotada como **lo próximo a probar** si alguien retoma de dónde sale el 
 fecha podría vivir en `Cuentas` y llegar a `DIGITAL` por el `id_cuenta`, que es justamente la clave
 que `SOLAPAS.campo_id_cuenta` ya declara para esa solapa (`ldig_id_cuenta`). **No se midió en esta
 vuelta** — la consigna era cerrar tres cabos, no abrir el cuarto.
+
+---
+
+## `2026-08-26` — ⛔⛔ `C-90` · El recorte del panel, **bien medido**: los tres criterios se aplican y ninguno reproduce
+
+**Corrige a `C-89`, escrito horas antes y equivocado en su conclusión.** La pista la dio el usuario:
+*«looker digital hace join con cuentas, que tiene fecha inicio y fin»*.
+
+### Cómo se midió mal la primera vez, que es la parte que hay que no repetir
+
+⛔ **Se leyó `looker/DIGITAL` con una ventana 2020–2030 y después se aplicó un filtro propio sobre
+`fecha_inicio`/`fecha_fin`.** Esas columnas no existen en esa solapa, así que el filtro descartó
+todo y devolvió cero — **y el cero se leyó como «no se puede recortar»**.
+
+⭐ **Los dos errores son uno solo:** la ventana ancha **desactivó el recorte del motor**, y el
+filtro propio **reimplementó ese recorte y lo reimplementó peor**. Es exactamente lo que
+`CLAUDE.md` §4 nombra: *un instrumento que reproduce lógica del motor y la reproduce peor*, con el
+agravante de que acá el motor ya tenía el mecanismo escrito y probado.
+
+⭐⭐ **Y el corolario más caro: el dato que desmentía la conclusión estaba impreso en la salida de
+la propia medición.** El volcado de `SOLAPAS` de `C-89` incluye, textual,
+`"ventana_ref":"Cuentas"`. Se leyó `firma_encabezado` —el campo de al lado— para confirmar la
+hipótesis, y no el campo que la refutaba. **Un instrumento que imprime la respuesta no sirve de
+nada si quien lo lee ya sabe qué va a encontrar.**
+
+### La medición buena
+
+El motor recorta solo: `leerFuente("looker", ventana real, "DIGITAL")` devuelve **377 filas** y
+declara el criterio en su propia traza:
+
+> *«referencia — la ventana sale de `looker/Cuentas`, cruzada por `clave_ventana` (`Id cuentas` acá,
+> `id_cuentas` allá); esa solapa se recortó con criterio: **solape (R-16)**»*
+
+⭐ **Control positivo de la reimplementación**, sin el cual (b) y (c) no valdrían nada: el criterio
+(a) rehecho a mano **reproduce exactamente** lo del motor —31 JM y 346 GCBA— sobre **1.027 cuentas,
+todas con fecha legible, y CERO filas huérfanas**.
+
+| criterio | JM filas | JM impresiones | GCBA filas | GCBA impresiones |
+|---|---|---|---|---|
+| **el panel** | **28** | **6.493.272** | **269** | **92.486.506** |
+| (a) solape — *el que usa el motor* | 31 | 16.426.952 · **×2,53** | 346 | 296.551.180 · **×3,21** |
+| (b) inicio en la ventana | **0** | 0 | 59 | 20.850.483 · ×0,23 |
+| (c) fin en la ventana | 22 | 9.671.770 · ×1,49 | 91 | 122.710.385 · ×1,33 |
+
+### ⛔ Veredicto: ninguno reproduce, y se para acá
+
+**Ninguno da 28 y 269.** El más cercano en filas para JM es (a) —31 contra 28—; el más cercano en
+impresiones es (c) —×1,49 y ×1,33—, y sus filas no dan. **No hay un criterio que acierte las dos
+cosas**, y **no se inventa un cuarto para que cierre**: eso es el número plausible que este repo
+persigue.
+
+⭐ **Lo que sí se puede decir, y es una lectura de una regla que ya existe, no un hallazgo nuevo:**
+el patrón —**filas del orden correcto, impresiones ~3×**— es el que `R-29` predice para una **fila
+de estado**. `looker/DIGITAL` es una fila por campaña × plataforma con el **acumulado desde que
+arrancó**, y *«sobre una fila de estado ningún recorte por ventana arregla el número: el recorte
+elige qué filas entran, no puede recortar lo que hay adentro de una fila»*. **Es consistente, no
+está probado**, y probarlo es otro trabajo.
+
+⚠ **`contenidos_total` sigue declarado no cableable** (`CONFIG_INFORMES` §1.14) — pero ahora por un
+motivo mejor medido: **no es que no se pueda recortar; es que ningún recorte reproduce.**

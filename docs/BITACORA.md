@@ -15630,3 +15630,49 @@ ID*— como lo próximo a probar, **sin medir**: la consigna era cerrar tres cab
 
 **Suites: 53 bancos, exit 0.** ⚠ Ningún banco cubre estas dos notas: son texto, y lo que las
 verifica es el releído del propio botón.
+
+---
+
+## `2026-08-26` (corrección) — el recorte del panel se puede medir, y yo lo había medido mal
+
+**El usuario corrigió una conclusión mía de hace horas:** *«looker digital hace join con cuentas,
+que tiene fecha inicio y fin»*. Tenía razón, y `C-89` quedaba mal.
+
+### Qué había hecho mal
+
+Leí `looker/DIGITAL` con una ventana **2020–2030** y después apliqué **un filtro propio** sobre
+`fecha_inicio`/`fecha_fin`. Esas columnas no existen ahí, así que el filtro descartó todo y **el
+cero se leyó como «no se puede recortar»**.
+
+⭐ **Los dos errores son uno:** la ventana ancha **desactivó el recorte del motor** y el filtro
+propio **lo reimplementó peor** — `CLAUDE.md` §4 con todas las letras, y con el agravante de que el
+mecanismo ya existía escrito y probado (`SOLAPAS.ventana_ref`, `Fuentes.gs`).
+
+⭐⭐ **Y lo más caro: el dato que me desmentía estaba impreso en la salida de mi propia medición.**
+El volcado de `SOLAPAS` que imprimí dice `"ventana_ref":"Cuentas"`. Leí `firma_encabezado` —el campo
+de al lado, el que confirmaba mi hipótesis— y no el que la refutaba.
+
+### La medición buena
+
+Con la ventana real, `leerFuente` recorta solo y devuelve **377 filas**, declarando el criterio en
+su traza: la ventana sale de `looker/Cuentas`, cruzada por id, con **solape (`R-16`)**.
+
+⭐ **Control positivo:** el criterio (a) rehecho a mano reproduce **exactamente** lo del motor
+—31 JM, 346 GCBA— sobre 1.027 cuentas con fecha y **cero huérfanas**. Sin eso, (b) y (c) no
+valdrían nada.
+
+| criterio | JM | GCBA |
+|---|---|---|
+| **panel** | **28 · 6.493.272** | **269 · 92.486.506** |
+| (a) solape | 31 · ×2,53 | 346 · ×3,21 |
+| (b) inicio en ventana | 0 | 59 · ×0,23 |
+| (c) fin en ventana | 22 · ×1,49 | 91 · ×1,33 |
+
+⛔ **Ninguno reproduce, y se paró ahí.** No se inventó un cuarto criterio.
+
+⭐ El patrón —filas del orden correcto, impresiones ~3×— es el que **`R-29` predice** para una fila
+de estado con el acumulado adentro. **Consistente, no probado.**
+
+⚠ **El veredicto final no cambió** —`contenidos_total` sigue no cableable— **pero el motivo sí, y
+mandaba a lugares opuestos:** *«no se puede recortar»* cierra la puerta; *«se recorta y no da»* la
+deja abierta con un número al lado.
