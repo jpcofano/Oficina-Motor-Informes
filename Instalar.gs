@@ -1904,20 +1904,36 @@ SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAM
  * Medido con `censarEncabezadosDeMapeo()` el 14/08/2026 a las 00:07 sobre las 161 filas vivas:
  * cero letras sin encabezado y cero títulos repetidos dentro de una misma solapa.
  *
- * **El caso que marca el límite de todo esto:** `rdv|RDV_otros_ministros|fecha_periodo` apunta a
- * `E`, donde el rótulo dice `hora_cita_evento`. **La letra está bien y no se toca** — los
- * encabezados de esa solapa están **corridos una columna en origen** (`C-09`), así que `E`
- * contiene la fecha con el nombre de la hora. Está medido y funciona: 514 filas, 10 en ventana,
- * 0 sin fecha. Su testigo es `hora_cita_evento` porque **el testigo documenta el rótulo, no el
- * contenido** — ver `D-31`.
+ * ⭐⭐ **`2026-08-26` — este mapa decora SÓLO filas del seed, y por eso perdió siete claves.** Su
+ * único camino a la hoja es el `forEach` sobre `SEED_MAPEO_` de más abajo, así que una clave cuya
+ * fila **no está en el seed** no se aplica **nunca**. Había siete —las `fecha_periodo` de
+ * `digital` y `rdv`, más `rdv|RVD JM-CM - ES|fecha`— y hacían que el mapa **pareciera** completo
+ * (*«testigo para las 161»*) mientras esas siete celdas de `MAPEO` estaban **vacías**. Se sacaron:
+ * **un literal que ningún camino puede aplicar no es un testigo.** Lo controla
+ * `tools/probar-testigos-mapeo.js`.
+ *
+ * ⭐ **Quién las escribe ahora, que es lo que las cierra:** seis las escribe
+ * `promoverFechasElegidas()` (`Fechas.gs`), y desde hoy **escribe también el `encabezado`** — y no
+ * uno inventado: **el que `DIAG_FECHAS` ya midió sobre la base viva**, que lo tenía en la mano y lo
+ * tiraba. Un testigo medido por su propio escritor vale más que un literal congelado acá, y además
+ * **evita la segunda fuente**, que es lo que borró las otras 23.
+ *
+ * **El caso que marca el límite de todo esto** sigue siendo el mismo, y ahora se resuelve solo:
+ * `rdv|RDV_otros_ministros|fecha_periodo` apunta a `E`, donde el rótulo dice `hora_cita_evento`.
+ * **La letra está bien y no se toca** — los encabezados de esa solapa están **corridos una columna
+ * en origen** (`C-09`), así que `E` contiene la fecha con el nombre de la hora. Está medido y
+ * funciona: 514 filas, 10 en ventana, 0 sin fecha. Su testigo dice `hora_cita_evento` porque **el
+ * testigo documenta el rótulo, no el contenido** (`D-31`) — y como el escritor lo **mide**, escribe
+ * exactamente eso sin que nadie tenga que acordarse.
+ *
+ * ⚠ **La séptima, `rdv|RVD JM-CM - ES|fecha`, no tiene escritor de ninguna clase** y queda sin
+ * testigo: es la fila vieja que `DOC-2` Parte C derogó, que salió del seed y **sigue en la hoja**,
+ * y que `Auditoria.gs` todavía lee por `buscarMapeo('rdv', hoja, 'fecha')`. **Su celda vacía ahora
+ * dice la verdad** —nadie declara su testigo— en vez de esconderse detrás de un literal que no se
+ * aplicaba. Anotada en `docs/ESCRITORES.md`.
  */
 var ENCABEZADO_POR_MAPEO_ = {
-  // `C-09`: rótulo corrido en origen. La `E` trae la fecha bajo el nombre de la hora, así que el
-  // testigo coincide y **no delata nada**; si algún día deja de coincidir, será porque alguien
-  // arregló los rótulos y entonces hay que revisar la letra, no restaurar el testigo.
-  'rdv|RDV_otros_ministros|fecha_periodo': 'hora_cita_evento',
   'rdv|RVD JM-CM - ES|inscriptos': 'Inscriptos',
-  'rdv|RVD JM-CM - ES|fecha': 'FECHA',
   'rdv|RVD JM-CM - ES|figura': 'Figura',
   'rdv|RVD JM-CM - ES|barrio': 'Barrio',
   'rdv|RVD JM-CM - ES|evento': 'EVENTO',
@@ -2005,7 +2021,6 @@ var ENCABEZADO_POR_MAPEO_ = {
   'digital|Digital|dig_clics': 'Clics en el enlace totales',
   'digital|Digital|dig_ctr': 'CTR',
   'digital|Digital|dig_impresiones_social': 'Impresiones Social',
-  'digital|Digital|fecha_periodo': 'Fecha de inicio',
   'digital|Digital|fecha_fin_periodo': 'Fecha de fin',
   'digital|Directa Mail|mail_id_cuenta': 'ID Cuentas',
   'digital|Directa Mail|mail_campana': 'Nombre campaña | Directa',
@@ -2017,7 +2032,6 @@ var ENCABEZADO_POR_MAPEO_ = {
   'digital|Directa Mail|mail_ctor': '% CTOR',
   'digital|Directa Mail|mail_area': 'Área',
   'digital|Directa Mail|mail_segmentacion': 'Segmentacion',
-  'digital|Directa Mail|fecha_periodo': 'Fecha envio',
   'digital|Directa Mail|mail_estado': 'Estado',
   'digital|Directa Mail|mail_tipo': 'Tipo de mail',
   'digital|Directa Mail|mail_remitente': 'Mail remitente',
@@ -2028,7 +2042,6 @@ var ENCABEZADO_POR_MAPEO_ = {
   'digital|Directa SMS|sms_entregados': 'Entregados',
   'digital|Directa SMS|sms_ent_pct': '% Entregados',
   'digital|Directa SMS|sms_clics': 'Clics',
-  'digital|Directa SMS|fecha_periodo': 'Fecha de envio',
   'digital|Directa IVR|ivr_id_cuenta': 'ID cuentas',
   'digital|Directa IVR|ivr_campana': 'Nombre campaña | Directa',
   'digital|Directa IVR|ivr_inicio': 'Inicio',
@@ -2041,7 +2054,6 @@ var ENCABEZADO_POR_MAPEO_ = {
   'digital|Directa IVR|ivr_e75_pct': '% +75%',
   'digital|Directa IVR|ivr_marque1': 'Marque 1',
   'digital|Directa IVR|ivr_marque1_pct': '% Marque 1',
-  'digital|Directa IVR|fecha_periodo': 'Inicio',
   'digital|Directa IVR|fecha_fin_periodo': 'Fin',
   'digital|Alcance|alc_id_cuenta': 'ID Cuentas',
   'digital|Alcance|alc_alcance': 'Alcance',
@@ -2053,7 +2065,6 @@ var ENCABEZADO_POR_MAPEO_ = {
   'digital|Seguimiento digital|sd_pauta_google': 'Google',
   'digital|Seguimiento digital|sd_pauta_prog': 'Programmatic',
   'digital|Seguimiento digital|sd_pauta_meta': 'Meta',
-  'digital|Seguimiento digital|fecha_periodo': 'Fecha de inicio',
   'digital|Seguimiento digital|sd_fecha_fin': 'Fecha de fin',
   'digital|Seguimiento digital|sd_estado': 'Estado',
   'digital|Seguimiento digital|fecha_fin_periodo': 'Fecha de fin',

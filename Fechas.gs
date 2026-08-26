@@ -371,6 +371,23 @@ function promoverFechasElegidas() {
 
   var seleccion = Object.keys(porSolapa).map(function (clave) { return porSolapa[clave][0]; });
 
+  /* ⛔⛔ **`2026-08-26` — acá se escribe también el `encabezado`, y hasta hoy se TIRABA.**
+   *
+   * `DIAG_FECHAS` ya trae el rótulo medido de la columna elegida —`f.encabezado`, que este mismo
+   * cuerpo usa dos veces más arriba para redactar sus errores— y el objeto que se upsertea no lo
+   * llevaba. `upsertPorClave_` reescribe la fila entera con `(h in obj) ? obj[h] : ''`, así que la
+   * celda salía **vacía**: son las 7 filas sin testigo que quedaban en `MAPEO` después de arreglar
+   * las otras 23 (26/08). **El dato estaba y se descartaba** — no había nada que medir.
+   *
+   * ⭐ **Y es mejor testigo que un literal en `ENCABEZADO_POR_MAPEO_`**, que es donde vivían hasta
+   * hoy sin llegar nunca a la hoja: ese mapa **sólo decora filas del seed**, y estas siete no están
+   * en ningún `SEED_MAPEO_*`. Las siete claves se sacaron del mapa el mismo día, porque **dos
+   * fuentes para el mismo testigo** es exactamente lo que produjo el bug de las 23.
+   *
+   * ⚠ **Se normaliza con `normalizarValorDeclarado_` (`Fuentes.gs`), la forma de `R-10`** —colapsar
+   * espacios y `trim`, preservando mayúsculas y acentos—: es uno de los cuatro normalizadores que
+   * ya existen y no se escribe un quinto. Un rótulo con un salto de línea pegado compararía distinto
+   * contra la hoja y el aviso de `D-31` saltaría todos los días sin que nada haya cambiado. */
   var filasParaEscribir = seleccion.map(function (f) {
     return {
       base_id: f.base_id,
@@ -378,7 +395,8 @@ function promoverFechasElegidas() {
       campo_logico: 'fecha_periodo',
       hoja: f.solapa,
       columna: f.col_letra,
-      notas: 'fecha_periodo elegida en DIAG_FECHAS (Paso 2.3.1/2.3.2)'
+      encabezado: normalizarValorDeclarado_(f.encabezado),
+      notas: 'fecha_periodo elegida en DIAG_FECHAS (Paso 2.3.1/2.3.2). Testigo D-31 desde el 26/08: el encabezado sale MEDIDO de DIAG_FECHAS, no de ENCABEZADO_POR_MAPEO_ — ese mapa sólo decora filas del seed y ésta no está en ninguno'
     };
   });
 
