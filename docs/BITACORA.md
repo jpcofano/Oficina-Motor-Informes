@@ -15191,3 +15191,93 @@ lectura por paso y es lo único que distingue *«no corrió»* de *«corrió con
 
 **Suites:** `node tools/suites.js` — **51 bancos, exit 0**, ~667 afirmaciones. Veredicto por código
 de salida, no por glifo.
+
+---
+
+## `2026-08-26` — `L-036` publicaba Programmatic, y el control que debía verlo miraba el archivo equivocado
+
+**Lo destapó una pregunta del usuario**, no un control: *«si fuera un corrimiento de uno entre letra
+e índice, `% VTR` fallaría también, y acierta»*. Medido: **`% VTR` tampoco acertaba.**
+
+### Lo que pasaba, con los dígitos
+
+En `reuniones/Agenda JM | Post` el título `Visualizaciones` aparecía **cuatro veces** (M/R/W/AB) y
+`% VTR` otras cuatro (N/S/X/AC). `filaAObjeto` hace `obj[h] = fila[i]`, así que **gana el último** —
+Programmatic. Medido sobre `3487-AGOJDGAG` (Parque Avellaneda):
+
+| celda | publicaba | tenía que publicar |
+|---|---|---|
+| `Visualizaciones` | **55.902** (AB) | **282.480** (M) |
+| `% VTR` | **63,5** (AC) | **62,7** (N) |
+
+⛔ **Las CINCO columnas repetidas caían al último bloque**, no dos: `Impresiones`→Y, `Clics`→Z
+(422 en vez de 990), `% CTR`→AA. Lo que salvó a `Impresiones` de `L-036` es que su marcador usa
+`imp_totales`, cuyo título —`Impresiones totales`— **es único**.
+
+### ⛔⛔ El arreglo que el repo creía tener nunca corrió
+
+`MAPEO.por_posicion` está **escrito entero** —esquema, `COLUMNAS_DELTA_`, `leePorPosicion_`,
+`claveDeLecturaEnColumna_`, las claves `__pos__N`— y **no se ejecutó nunca**, por dos roturas
+independientes y **cada una suficiente sola**: `leerMapeoSinCache_` **no indexa la columna**, y la
+hoja **no la tiene**. Arreglar sólo la segunda no arregla nada **y el diff de `instalar()` diría que
+la columna se creó**.
+
+⭐ **El precedente es la misma función y la columna de al lado:** `encabezado` (`D-31`) tuvo este
+mismo bug el 16/08, y su comentario —*«la columna existía desde el 14/08 y esta función no la
+indexaba»*— **está tres líneas arriba de donde falta `por_posicion`**.
+
+### Parte 0 — el control positivo que se tomó como válido, y por qué
+
+Reproducía **2 de 4** números. **No falló el instrumento: se movió la fuente.** La caracterización
+es lo que lo decide: Meta y Google **idénticos al dígito**, Programmatic `+52/+2/+44`, los totales
+**el mismo delta exacto**, y un alta de 103 a 104 filas. Un error de esquema no mueve un bloque
+dejando los otros dos exactos.
+
+⭐ **Y de ahí salió el reemplazo del testigo, que es el trabajo real:** cuatro identidades internas
+que **no caducan** — `M/J = N`, `AB/Y = AC`, `R+W+AB = M` y `O+T+Y = J`. **La cuarta es nueva** y es
+justo la que le faltaba a `Impresiones`.
+
+### Parte 1 — cuatro sedes de testigos, no las dos que el prompt nombraba
+
+`SEED_MAPEO_` (cuyo `encabezado` inline es además **código muerto**: `ENCABEZADO_POR_MAPEO_` lo
+pisa), `ENCABEZADO_POR_MAPEO_`, `SEED_SOLAPAS_` y `COLUMNAS_POST_L036_`.
+
+⛔ **Y una quinta cosa que nadie nombró y habría roto la lectura:** `SEED_SOLAPAS_` declaraba
+`fila_encabezado: 2`, y el sembrador **escribe esa columna**. Correr *Aplicar configuración* habría
+pisado el `1` del usuario y devuelto la lectura al encabezado viejo — **terminando bien**. Se
+corrigió antes de sembrar. Lo encontró leer qué columnas escribe el sembrador, no un control.
+
+**Tres bancos se pusieron rojos** afirmando `por_posicion`. No se aflojaron: se dieron vuelta con el
+motivo escrito y con **más** exigencia, y `probar-lectura-por-posicion.js` suma la afirmación que
+faltaba —*el mecanismo está INERTE*—, que **se pondrá roja el día que alguien lo arregle**.
+
+⚠ Y una afirmación mía salió demasiado cruda: prohibía la frase «POR POSICIÓN» en la nota, cuando lo
+que se pidió es que la nota **cite la frase para marcarla falsa**. Se cambió por exigir que la
+marque falsa, que es lo que corresponde.
+
+### Parte 2 — el control, sobre lo publicado
+
+`verificarIdentidadPublicadaL036()` lee el **deck** y exige `%VTR = Vis / Imp` fila por fila.
+**Aprende de la plantilla** en qué fila/columna vive cada `{{post_*}}` y lee esas mismas celdas del
+deck, así que sigue a la tabla si alguien mueve una columna. Control positivo verificado: **ubica
+las 12 celdas** (filas 4-7, columnas 6/7/8) y **aborta** si no las encuentra.
+
+⚠ **No se pudo cerrar:** no hay ningún deck de `jm` en la carpeta de salida. Lo cierra la corrida
+del usuario.
+
+### Lo que quedó anotado y no se tocó
+
+- **La fila 2 de la solapa es el encabezado VIEJO y entra como dato.** Hoy inofensiva —su `ID` no
+  matchea nada y sus celdas son texto— **pero un `CONTEO` cuenta filas** y daría uno de más.
+  Se arregla en la planilla, y eso es del usuario.
+- **`K` y `L` cambiaron de título y no están mapeadas.** Se cruzaron las **diez** filas de `MAPEO`
+  de la solapa contra el encabezado vivo: sólo dos estaban desalineadas.
+- **`IMPORTRANGE` no es un archivo, es una fórmula** → `GRANO_TEMPORAL.md` §4, con las tres
+  consecuencias.
+
+⚠ **Un error mío:** en el commit de la Parte 1 usé `git add -A` y arrastré **11 snapshots de las
+00:22** que no generé ni inspeccioné. Son salida legítima de `tools/snapshot.js` y el repo los
+quiere versionados, así que quedan — pero **el `MAPEO_2026-08-26.tsv` es de ANTES del rename**, y
+leerlo como el estado de después es exactamente el error que este día vino a corregir.
+
+**Suites:** 51 bancos, **exit 0**, ~670 afirmaciones.

@@ -8783,3 +8783,83 @@ incompletas.** Es el bloque entero de campaña destacada.
 ⚠ **Y contesta la pregunta de por qué `L-044` no figura en el censo del 22/08:** **sí tiene tokens**
 —uno, `camp_titulo`— y **ese token tiene fila**. El censo lista sólo los **sin fila**, así que
 leerlo como *«la lámina no tiene tokens»* es confundir *«no está en la lista»* con *«no existe»*.
+
+---
+
+## `2026-08-26` — la solapa POST pasa a `IMPORTRANGE`, y lo que quedó abierto
+
+### ⛔ P0 · `MAPEO.por_posicion` está ESCRITO ENTERO y **no corre**, por dos roturas independientes
+
+El mecanismo del `ADDENDUM 2` de `D-31` existe completo —`COLUMNAS_DELTA_`, `leePorPosicion_`,
+`claveDeLecturaEnColumna_`, las claves `__pos__N` que `filaAObjeto` agrega a cada fila— y **nunca se
+ejecutó una sola vez**. Cada una de estas dos alcanza sola:
+
+1. **`leerMapeoSinCache_` (`Config.gs`) no indexa la columna.** Arma el objeto de `MAPEO` con seis
+   campos —`hoja`, `columna`, `encabezado`, `tipo_esperado`, `valores_incluidos`, `notas`— y
+   `por_posicion` no está. `leePorPosicion_` evalúa `esVerdadero_(undefined)` → **`false` siempre,
+   para toda columna de toda solapa**.
+2. **La hoja `MAPEO` no tiene la columna.** Medido el 26/08: **nueve** columnas, y sigue en nueve
+   después de correr *Aplicar configuración*.
+
+⛔⛔ **Y por eso arreglar sólo la 2 no arregla nada — y el diff de `instalar()` diría que la columna
+se creó.** Se leería como éxito. Es `CLAUDE.md` §2 al pie: *agregar una columna a una hoja de
+registro es tocar N lectores, no uno*.
+
+⭐ **El precedente es la MISMA función y la columna de al lado.** `encabezado` (`D-31`) tuvo
+exactamente este bug el 16/08, y el comentario que lo arregló —*«la columna existía desde el 14/08 y
+esta función no la indexaba»*— **está tres líneas arriba de donde falta `por_posicion`**.
+
+⚠ **Qué costó, medido:** del 25 al 26/08 `vis_totales` y `vis_vtr_pct` de `L-036` leyeron
+**Programmatic** —`55.902` donde el acumulado era `282.480`, y `63,5 %` donde era `62,7 %`— con
+tres bancos en verde afirmando que `por_posicion` estaba declarado. **Lo declarado era cierto; lo
+que no corría era el mecanismo.**
+
+⭐ **Hoy no urge y por eso queda acá y no en `Próximo`:** la solapa que lo necesitaba pasó a títulos
+únicos, así que **no hay ningún consumidor vivo**. `por_posicion` se **retiró** de las dos filas del
+seed —una declaración sin efecto es indistinguible de una que funciona— y el mecanismo espera.
+⛔ **La próxima solapa con títulos repetidos vuelve a caer al último bloque**, en silencio.
+
+**El control ya está escrito y es lo que hay que dar vuelta al arreglarlo:**
+`probar-lectura-por-posicion.js` afirma hoy *«HUECO CONOCIDO: `leerMapeoSinCache_` NO indexa
+`por_posicion` → mecanismo INERTE»*. **Cuando alguien lo arregle esa afirmación se pone roja: hay
+que darla vuelta, no borrarla.**
+
+### ⚠ La fila 2 de `Agenda JM | Post` es el encabezado VIEJO y entra como DATO
+
+Medido el 26/08: con `fila_encabezado = 1`, la primera fila que devuelve `leerFuente` trae
+`ID = "ID"`, `Fecha = "Fecha"`, `Visualizaciones totales = "Visualizaciones"`… — es el **encabezado
+anterior**, el de los títulos repetidos, que quedó como segunda fila de la copia.
+
+**Hoy es inofensiva y conviene decir por qué**: su `ID` no matchea ningún `id_cuenta`, así que el
+anclaje la ignora, y sus celdas numéricas son **texto**, así que una `SUMA` no la ve.
+
+⛔ **Pero un `CONTEO` cuenta FILAS**, y ésa es la operación cuyo universo son las filas: cualquier
+`CONTEO` sobre esta solapa da **uno de más**. Y `SOLAPAS.filas_datos` quedó en **105** contra 104
+reales.
+
+⭐ **Lo accionable es del usuario, porque es la planilla:** borrar la fila 2 de la copia, o que el
+`IMPORTRANGE` arranque una fila más abajo. **No lo toca Code.**
+
+### ⚠ `K` y `L` cambiaron de título y **no están mapeadas**
+
+`Clics` → `Clics totales` y `% CTR` → `% CTR total`. Hoy no arrastra nada —ninguna fila de `MAPEO`
+apunta a esas letras; se cruzaron **las diez** filas de la solapa contra el encabezado vivo y sólo
+dos estaban desalineadas—. **Se anota porque el día que alguien mapee `Clics` va a buscar un título
+que ya no existe**, y el síntoma va a ser un `«FALTA:»` que apunta al lugar equivocado.
+
+### ✅ CERRADO en el momento · `SEED_SOLAPAS_` declaraba `fila_encabezado: 2`
+
+Y `aplicarClasificacionSolapas_` **escribe esa columna** (es una de las cinco que siembra). O sea
+que correr *Aplicar configuración* **habría pisado el `1` que puso el usuario** y devuelto la
+lectura al encabezado viejo — con el agravante de que la corrida habría terminado bien.
+
+Se corrigió a `1` **antes** de sembrar, y se verificó releyendo la hoja después (`C-83`).
+⭐ **Lo que lo encontró no fue un control: fue leer qué columnas escribe el sembrador antes de
+correrlo.** No había nada que lo hubiera avisado.
+
+### Y `IMPORTRANGE` como forma de traer el dato
+
+Las tres consecuencias —origen caído = solapa vacía indistinguible de «no hubo POST», `R-31`
+agravado con refresco a mitad de corrida, y el `sha256` que deja de anclar el fixture— van a
+**`docs/GRANO_TEMPORAL.md` §4**, que es el dueño de por qué y cómo se recorta cada fuente. Acá sólo
+el puntero.

@@ -3,38 +3,45 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-26 (corrida nocturna del `2026-08-25_7`) — siete frentes, tres hechos, dos bloqueados en una decisión del usuario y dos con la premisa vencida. ⭐ **Lo que cambia la lista de mañana:** el estado real de cada paso está **medido contra la hoja viva**, no supuesto.
+**Última actualización:** 2026-08-26 — **`L-036` estuvo publicando dos columnas de Programmatic y ningún control lo veía.** Lo destapó una pregunta del usuario, no una suite. Arreglado del lado de la planilla (títulos únicos por `IMPORTRANGE`) y de los testigos; **falta la corrida que lo confirme sobre el deck**.
 
-⭐⭐ **Y los dos bloqueos son de la misma forma, que es el hallazgo de la noche: la decisión está tomada y el motor NO LA PUEDE ESCRIBIR.** `m2_camp_lista` quiere publicar crudo y `opLISTA` publica contra un catálogo; `X-28` quiere `duración ≤ 30 d` y un filtro de `MARCADORES` compara el valor de una celda, no una resta entre dos fechas. **No son huecos de cableado: son preguntas al usuario**, y están en `docs/PENDIENTES_consistencia.md` con su texto exacto.
+⭐⭐ **Las dos frases que hay que llevarse de este día:**
+
+1. **El arreglo que el repo creía tener nunca corrió.** `MAPEO.por_posicion` está escrito entero y está **inerte**: `leerMapeoSinCache_` no indexa la columna **y** la hoja no la tiene. Tres bancos daban verde afirmando que estaba declarada — y lo estaba. Lo que no corría era el mecanismo.
+2. **Un control contra constantes caduca cada vez que la fuente respira; uno contra identidades internas no caduca nunca.** Es la regla nueva de `CLAUDE.md` §4, y la tercera vez en tres días que un control mide algo distinto de lo que dice medir.
 
 ⚠ **Este archivo tuvo cuatro versiones el 25/08** y las secciones tachadas de abajo son las anteriores, conservadas a propósito — **cómo se llegó a una conclusión equivocada es la mitad de su valor**. Lo vigente es lo de arriba.
 
-✅ **`clasp push` YA CORRIÓ, y está verificado, no supuesto:** se bajó el proyecto con `clasp pull` a un temporal y se comparó archivo por archivo — **los 24 `.gs` idénticos al repo**. Es el chequeo que `CLAUDE.md` §4 manda hacer antes de acusar al sembrador.
+✅ **`clasp push` corrió y está verificado** (`clasp pull` a un temporal, los 24 `.gs` idénticos), y *Aplicar configuración* también: `MAPEO` y `SOLAPAS` quedaron con los testigos nuevos, **releídos de la hoja viva** (`C-83`).
 
 ---
 
 ## ⛔ Lo que te espera, en orden
 
-⭐⭐ **Cada fila dice si ya corrió, y eso está MEDIDO contra la hoja viva la noche del 25/08 — no es lo que la lista anterior suponía.** Tres pasos ya estaban hechos y **la lista los pedía igual**; uno que la lista daba por hecho **no lo está**.
+⭐⭐ **Cada fila dice si ya corrió, MEDIDO contra la hoja viva.** Una lista que no dice el estado de cada paso hace repetir lo hecho y saltear lo que falta.
 
 | # | qué | estado medido | por qué |
 |---|---|---|---|
-| 1 | **`clasp push`** | ✅ **hecho** — `clasp pull` a un temporal: los 24 `.gs` idénticos al repo | ya no hace falta. Un push que corrió antes del cambio es indistinguible de uno que no corrió, y por eso se verificó en vez de suponerse |
-| 2 | ⛔ **`instalar()`** | ✅ **hecho** — `LAMINAS` ya tiene las columnas `alcance` y `tokens_equipo` | las crea `COLUMNAS_DELTA_`. Están, así que este paso se salta |
-| 3 | ⛔⛔ **«Aplicar configuración»** — **el paso NUEVO y el más importante de la lista** | ⛔ **FALTA** — medido: `CONFIG` tiene **27 claves** y **no está ninguna de las dos** | siembra las claves **ausentes** de `CONFIG`, y faltan `solapas_agregado_post` y `campos_metrica_post`. ⚠ **Sin ellas el motor no falla: cae al par singular** (`base_agregado_post` + `solapa_agregado_post`), así que la lista del temario queda con **una** solapa y **sin** `digital|CAMPAÑAS_DESGLOCE_DIGITAL` — y los cuatro `post_periodo*` **no tienen de dónde salir**. **Después de correrlo, releer `CONFIG` y ver las dos claves.** ⛔ Esto reemplaza al «paso 9 bis» de la lista anterior, que decía verificar a mano: ya está verificado y **falta** |
-| 4 | **`declararAlcanceDeLaminas()`** | ⛔ **FALTA** — medido: **0 de 53** filas de `LAMINAS` tienen `alcance` o `tokens_equipo` | puebla las dos columnas. **Después del 2**, que ya está |
-| 5 | ⭐ **`declararModoDelAgregadoPost()`** | ✅ **hecho** — `comunicaciones_post.modo` ya dice `agregado` y su `filtro` ya está vacío | `sembrarSecciones_` sólo agrega filas ausentes, así que el botón era el único camino. Ya se apretó |
-| 6 | ⭐ **`declararIteraDelAgregado()`** | ✅ **hecho** — `ecv_alcance_semanal.itera_sobre` ya dice `REUNIONES` | era la evidencia que faltaba en `PENDIENTES`. **Si se corre igual, informa «ya estaba»: es idempotencia, no rotura** |
-| 7 | ⭐⭐ **`verificarBloquesPostReuniones()`** | ⏸ sin medir | el testigo de `D-31` contra la planilla viva. **Antes de la corrida**: si no cierra, los bloques no están en M/R/W/AB y `L-036` publicaría la columna equivocada |
-| 8 | ⛔⛔ **`cablearTablaPostReuniones()`** | ⛔ **FALTA, y la lista anterior no podía saberlo** — medido: hay **20** filas `post_*` y **todas son `FILA`**; faltan los 8 de `post_camp*` y `post_periodo*` | el wrapper declara **7 columnas × 4 filas = 28**. La hoja tiene las 20 de la versión vieja. ⚠ **Ningún sembrador lo llama**: ni `instalar()` ni *Aplicar configuración* |
-| 9 | ⭐ **`testigoDeEtapaPost()`, ANTES de generar** | ⏸ sin medir | ampliar `etapa.post` **mueve números publicados**. Se corre antes y después **en la misma sesión**, y su canario es lo único que separa *«lo movió el cambio»* de *«se movió la fuente»* |
-| 10 | **Generar `jm` sobre `julio_24_30`** | — | esperado: **tres reuniones con datos**, la cuarta en `sin_datos`, **Retiro con 41.204** de visualizaciones, la columna `Campañas` con `Jorge Macri — Uno a uno en Retiro (24/07)` y el `Período` con **`30/07 — 09/08`** en esa misma fila (medido contra el fixture del 20/08) |
-| 11 | **`testigoDeEtapaPost()` otra vez**, y leer el canario primero | — | el criterio de aceptación es tuyo (`V-110`): si un `u1_pre_*` **subió**, se revierte |
-| 12 | ⚠ **`reserva_cierre_seg` a 60** | ✅ **hecho** — medido: `CONFIG.reserva_cierre_seg = 60` | era un pendiente de antes. `presupuesto_corrida_seg` está en **350** |
+| 1 | **`clasp push`** | ✅ **hecho y verificado** | los 24 `.gs` idénticos al repo |
+| 2 | **`instalar()`** | ✅ **hecho** — `LAMINAS` ya tiene `alcance` y `tokens_equipo` | ⚠ pero **NO creó `MAPEO.por_posicion`**: la hoja sigue en nueve columnas. Da igual hoy — el mecanismo está inerte de todos modos (ver `PENDIENTES`) |
+| 3 | **«Aplicar configuración»** | ✅ **hecho el 26/08** — 5 celdas cambiadas | propagó los encabezados nuevos a `MAPEO` y las notas a `SOLAPAS`. ⛔ **Antes de correrlo hubo que corregir `SEED_SOLAPAS_`, que declaraba `fila_encabezado: 2` y habría pisado el `1` del usuario** |
+| 4 | ⛔ **Verificar `CONFIG.solapas_agregado_post` y `campos_metrica_post`** | ⏸ **volver a medir** | faltaban el 25/08 (27 claves). *Aplicar configuración* corrió después, así que **es probable que ya estén** — pero eso se lee de la hoja, no se supone |
+| 5 | **`declararAlcanceDeLaminas()`** | ⛔ **FALTA** — 0 de 53 filas con `alcance` | puebla `LAMINAS.alcance` y `LAMINAS.tokens_equipo` |
+| 6 | ⭐ **`declararModoDelAgregadoPost()`** y **`declararIteraDelAgregado()`** | ✅ **hechos** | las dos celdas ya dicen lo que tienen que decir. Si se corren, informan «ya estaba» |
+| 7 | ⭐⭐ **`verificarBloquesPostReuniones()`** | ⏸ sin correr | ⚠ **revisarlo antes**: su sentido cambió. Con títulos únicos el **encabezado** volvió a ser el testigo de `D-31`; la identidad de bloques **no se retira** —prueba que el acumulado es el acumulado, que es otra afirmación— pero ya no es el único testigo |
+| 8 | ⛔⛔ **`cablearTablaPostReuniones()`** | ⛔ **FALTA** — hay **20** filas `post_*` y el wrapper declara **28** | faltan `post_camp*` y `post_periodo*`. ⚠ **Y ahora además reescribe las notas** de `post_vistas*` y `post_vtr*`, que decían «TÍTULO REPETIDO / POR POSICIÓN» y era falso |
+| 9 | ⭐ **`testigoDeEtapaPost()`, ANTES de generar** | ⏸ sin correr | ampliar `etapa.post` mueve números publicados; su canario separa *«lo movió el cambio»* de *«se movió la fuente»* |
+| 10 | **Generar `jm`** | — | ⚠ **este deck mueve `Visualizaciones` y `% VTR` de `L-036`**: no es llenar un hueco, es mover dos números publicados. *Un cambio por deck* aplica |
+| 11 | ⭐⭐ **`verificarIdentidadPublicadaL036()`** — **el paso nuevo, y el que cierra el día** | ⏸ **escrito, control positivo verde, sin poder correr** | exige `%VTR = Vis / Imp` **sobre lo publicado**. No pudo correr porque **no hay ningún deck de `jm` en la carpeta de salida**. Es lo primero después de la corrida |
+| 12 | **`testigoDeEtapaPost()` otra vez**, canario primero | — | criterio de aceptación tuyo (`V-110`) |
 
-⛔⛔ **La lección del paso 8, y va acá porque es de método:** una lista que termina en *«correr `jm`»* **tiene que incluir el wrapper de cableado de cada lámina que se haya tocado**. Sembrar `MAPEO` y `SECCIONES` deja la lámina lista **salvo los marcadores**, y el deck sale en `/////` sin que nada avise. **No es un bug** —el alta de marcadores es una decisión y por eso tiene botón propio— **pero sí una trampa para quien sigue la lista.**
+### ⭐ Qué tiene que verse en `L-036`, y es lo que prueba el arreglo
 
-⭐ **Y la lección de esta pasada, que es nueva: una lista de pasos que no dice el ESTADO de cada paso hace repetir lo hecho y saltear lo que falta.** Tres de los doce ya estaban hechos y la lista los pedía; el paso 8 estaba **a medias** —20 de 28 filas— y la lista lo daba por entero. **Medir el estado cuesta una lectura por paso y es lo único que distingue «no corrió» de «corrió con la versión vieja».**
+**Parque Avellaneda (`3487-AGOJDGAG`) pasa de `55.902 · 63,5` a `282.524 · 62,7`.**
+
+⚠ **Los dos pares son correctos en su momento y confundirlos es lo que `R-31` mide:** `282.480` fue la lectura de la madrugada del 26/08 y `282.524` la de la mañana — la fuente se movió sola (`IMPORTRANGE` refrescó) **+52 impresiones, +2 clics, +44 visualizaciones, todo dentro de Programmatic**, con Meta y Google idénticos al dígito.
+
+⛔ **Y Parque Avellaneda es de `agosto_14_20`, que tiene DOS encuentros — las cuatro ranuras son de `julio_24_30`.** Las 8 celdas de la tabla sólo se pueden llenar con la corrida: qué filas entran lo decide el anclaje, no la ventana (`reuniones` es `snapshot`).
 
 ### ⭐⭐ Qué mirar en el deck de `L-036`, y en qué orden
 

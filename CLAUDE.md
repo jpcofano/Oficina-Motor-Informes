@@ -707,6 +707,51 @@ poder nombrar, no suponer. Costó **tres corridas y un prompt anulado** el 22/08
   reescribir código que funciona. El `2026-08-22_28` llegó a estar escrito y commiteado antes de
   que la Parte A lo tumbara.
 
+⭐⭐ **Un control contra CONSTANTES de una lectura anterior caduca cada vez que la fuente respira.
+Un control contra IDENTIDADES INTERNAS no caduca nunca.** (26/08/2026, decisión del usuario.) Y la
+elección entre los dos no es de gusto: **es la diferencia entre un control que hay que reescribir
+cada semana y uno que se puede exigir en cada corrida.**
+
+- **El caso:** el control positivo de un paso pedía reproducir cuatro números leídos horas antes —
+  `41.504 · 43.639 · 450.243 · 282.480`— y **dos fallaron**. No falló el instrumento: falló porque
+  la fuente **se movió** (`IMPORTRANGE` refrescó). Los cuatro números eran correctos a las 02:00 y
+  dos eran falsos a las 09:00, **sin que nadie tocara nada**.
+- ⭐ **Lo que lo salvó fue la CARACTERIZACIÓN, no el número:** Meta y Google **idénticos al dígito**,
+  Programmatic `+52/+2/+44` y los totales **el mismo delta exacto**, más un alta de 103 a 104 filas.
+  **Un error de esquema no puede mover un bloque y dejar los otros dos exactos** — es el
+  discriminador *«dos que comparten camino y difieren sólo en el corte»* de más arriba, usado para
+  absolver al instrumento en vez de para acusar al código.
+- ⭐⭐ **Lo accionable, y reemplaza al control viejo en vez de parchearlo:** donde exista una
+  identidad interna, **el control primario es ésa y las constantes pasan a ilustración**. Las cuatro
+  de esta solapa —`M/J = N`, `AB/Y = AC`, `R+W+AB = M`, `O+T+Y = J`— se exigen en **cada** corrida y
+  **ninguna caduca**: si la fuente se mueve, se mueven los dos lados y la igualdad sigue cerrando.
+- ⭐ **Y la cuarta es NUEVA, que es lo que prueba que esto rinde:** `O+T+Y = J` no existía —el
+  testigo viejo sólo cubría `Visualizaciones`— y es **justo la columna por la que `Impresiones` no
+  tenía testigo de bloque**. Con títulos únicos recién ahora se puede escribir.
+- ⚠ **Lo que una constante SÍ contesta y una identidad no:** el **valor absoluto**. Una identidad
+  cierra igual sobre el universo equivocado —`AB/Y = AC` cierra perfecto sobre Programmatic— así que
+  *consistente no es correcto* y las dos preguntas siguen siendo dos.
+
+⛔⛔ **Y la tercera vez en tres días de la MISMA forma, que es lo que la vuelve regla y no anécdota:
+un control que mide algo distinto de lo que dice medir.** Las tres son la misma figura con distinta
+ropa, y en las tres el verde era real:
+
+| día | el control decía | lo que medía |
+|---|---|---|
+| 24/08 | *«los N casos negativos caen por el motivo correcto»* | **nada**: el parche no aplicaba (CRLF), corría sobre el código intacto |
+| 25/08 | *«las suites pasaron»* | los bancos que escriben `❌`; **los que escriben `⛔` no los veía** |
+| ⭐ 26/08 | *«`%VTR = Vis / Imp`, exacta en 98 de 98»* | la identidad **en el FIXTURE**, donde las dos ternas sanas dan verde por separado — **la MEZCLA que el motor publicaba sólo existe en el deck** |
+
+- ⭐⭐ **La pregunta única que las cubre a las tres, y se hace ANTES de correr el control:** *¿sobre
+  qué artefacto corre esta afirmación, y es el mismo artefacto del que se va a hablar después?* El
+  fixture no es el deck; el código fuente no es el código parcheado; el texto del log no es el
+  veredicto. **Cada vez que el control mira uno y la conclusión habla del otro, el verde no dice
+  nada** — y no hay forma de notarlo mirando el verde.
+- ⚠ **Y el corolario que hace falta al lado:** las tres se descubrieron **por accidente**, mirando
+  otra cosa. Ninguna de las tres tenía nada que la delatara, porque **un control que no mide nada se
+  ve exactamente igual que uno que mide y pasa**. Por eso la pregunta va al escribirlo, no al
+  primer resultado raro.
+
 **Quien toca una función con control positivo corre los controles antes de cerrar.** No
 alcanza con que pase el protocolo: `Pruebas.gs` existe justamente porque **el protocolo de
 siete pasos del 2.11 pasa igual aunque los cinco controles estén mal** —cero cambios sigue
