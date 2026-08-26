@@ -1207,10 +1207,29 @@ contra los **dos** fixtures y los **dos** decks del equipo, y la causa **no es u
 | `imp_total` | +13,1 % | **+98,1 %** | ⛔ `_revisar` — **incluye** a Programmatic |
 | los cuatro `gcba_imp_*` | 58 % a 208 % | 2 % a 85 % | ⛔ `_revisar` |
 
-⭐ **Lo que separa a los dos primeros del resto no es el tamaño del desvío: es su
-COMPORTAMIENTO.** Meta y Google se mueven en el orden del desfasaje de acumulación; Programmatic se
-va por **factor 3 en un solo encuentro** y por **+179 % en el agregado de 70 cuentas**. Que falle
-igual en los dos granos es lo que lo localiza en la columna y no en la ventana.
+⛔⛔ **CORRECCIÓN DEL MISMO DÍA — la decisión SE MANTIENE, su justificación NO.** Acá decía
+que *«Meta y Google se mueven en el orden del desfasaje de acumulación»*, y **eso quedó
+desmentido esa misma tarde** por `docs/VALIDACION_impresiones_2026-08-26.md`:
+
+- El agregado de `agosto_14_20` entra con **tres** cuentas y **dos no son de esa semana**
+  —Pareto (27/07) y Almagro (6/8)—, que aportan el **98,4 %** de Meta, el **99,5 %** de
+  Google y el **100 %** de Programmatic.
+- Y **los dos encuentros del temario quedan afuera**, porque `ambito=jm` se resuelve por
+  `nombre_campaña ~= JM` y ninguno de los dos lo dice.
+
+⇒ **`imp_meta` e `imp_google` no «dan»: dan un número parecido por casualidad**, calculado
+sobre el mismo universo equivocado que `imp_prog`. Es *el número correcto que sale de las
+filas equivocadas* (`CLAUDE.md` §4).
+
+⭐ **Aun así los dos siguen SIN el sufijo, por decisión del usuario del 26/08 tomada con esta
+corrección delante:** el frente que estaba cerrando es el de **por evento**, que sí cierra, y
+**los resúmenes se revisan aparte y después**. ⚠ **No es que el número esté validado: es que
+la revisión está diferida.** Se repone con `marcarProgrammaticARevisar()`, que vuelve a poner
+los ocho.
+
+⚠ **Y conviene tenerlo presente al mirarlos:** `imp_meta` e `imp_google` viven en el **Resumen
+Ejecutivo** (`L-031`), no en el bloque por evento. Los de por evento son `enc_impresiones` y
+`post_impresiones1-4`, que **nunca estuvieron marcados**.
 
 ⚠ **Y lo que esto NO dice: que `imp_meta` e `imp_google` sean exactos.** `imp_meta` está **+8,7 %
 por encima** del deck de agosto, y el deck es **posterior** al fixture — el desfasaje sólo podría

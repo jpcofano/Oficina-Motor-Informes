@@ -8949,3 +8949,21 @@ desfasaje y Programmatic se va por factor 3 en un solo encuentro y +179 % en el 
 **El instrumento que reproduce todo esto es `tools/medir-impresiones-resumen.py`**, y su control
 positivo es reproducir `A-01`/`A-06`/`A-07`: si algún día deja de hacerlo, el instrumento está mal
 y no el motor.
+
+### ⛔ `26/08` (cierre) — la marca NO se repuso, y queda dicho por qué
+
+`docs/VALIDACION_impresiones_2026-08-26.md` mostró que `imp_meta` e `imp_google` **dan por
+casualidad**: su universo es el mismo que el de `imp_prog` —dos campañas viejas que aportan el
+98–100 %— y los dos encuentros de la semana **no entran**. Con eso, el criterio *«son los que dan»*
+con el que se les sacó el `_revisar` esa mañana **quedó sin base**.
+
+**Se recomendó reponer los ocho. El usuario decidió que no** (26/08): el frente que estaba cerrando
+es el de **por evento**, que sí cierra, y **los resúmenes se miran aparte y después**.
+
+⚠ **Lo accionable el día que se miren, en una línea:** el estado de esos dos marcadores es
+**revisión diferida**, no *validado*. Se reponen con `marcarProgrammaticARevisar()`.
+
+⚠ **Y el dato que hay que tener a mano para no confundir los frentes:** `imp_meta` e `imp_google`
+son del **Resumen Ejecutivo** (`L-031`). Los marcadores por evento —`enc_impresiones`,
+`post_impresiones1-4`— **nunca estuvieron en `_revisar`**, así que el cierre por evento no dice nada
+sobre estos dos.
