@@ -15062,3 +15062,132 @@ entero pelado—. Es el tercer caso de esta familia en el mismo archivo.
 - ⏸ `post_formato*` — **fuera de alcance** (`CONFIG_INFORMES.md` §2.3 bis).
 - ⏸ **`L-036`: el `id_cuenta` del anclaje**, lo único vivo. Lo cierra una corrida, no el fixture.
 - ⏸ Los 21 bancos sin conteo.
+
+---
+
+## `2026-08-25_7` — corrida nocturna: siete frentes, tres hechos y dos bloqueos con nombre
+
+**Regla de la noche que se cumplió al pie:** *si una parte necesita una decisión que no está
+escrita, se frena esa parte y se anota la pregunta exacta.* **Dos se frenaron**, y ninguna de las
+dos se resolvió por plausibilidad.
+
+⭐⭐ **El titular, porque los dos bloqueos son la MISMA forma: la decisión está tomada y el motor no
+la puede escribir.** No es que falte decidir ni que falte cablear — falta **poder expresar** lo
+decidido:
+
+- **`m2_camp_lista`** quiere publicar los nombres **crudos** y `opLISTA` publica **contra un
+  catálogo**, por diseño (`R-18` punto 2). No hay catálogo posible: el catálogo se lee de la
+  **columna A** de una `base/solapa` y la columna A de `digital/Directa Mail` es `ID Cuentas`. **El
+  repo ya lo decía desde el 20/08**, en el comentario de `opCUENTA_DISTINTOS` — *«el caso que motiva
+  esta operación no tiene ninguno»*.
+- **`X-28`** quiere `duración ≤ 30 d` y `parsearCondicionFiltro_` compara **el valor de una celda**,
+  no una resta entre dos fechas. El único tope por duración que existe (`R-30`) es **global**, y su
+  propio comentario ya avisaba: *«⛔ Y esto NO resuelve `X-28`»*.
+
+### Parte A — commitear lo pendiente ✅
+
+Dos tandas, dos commits. `tools/medir-desempates-cc.py` + el prompt `_4`; y las **693** líneas de
+`Auditoria.gs` (el prompt decía 617) + `tools/medir-asunto-directa-mail.py` + el prompt `_6`.
+⚠ **El `Auditoria.gs` no se escribió en esta sesión**: se revisó antes de commitear —las trece
+funciones greppeadas contra los `.gs`, **cero colisiones**; lo único que escribe es una **copia** de
+la plantilla y un libro temporal que se manda a la papelera— y eso quedó dicho en el mensaje.
+
+### Parte B — `declararIteraDelAgregado()` ✅ **no hizo falta**
+
+`ecv_alcance_semanal.itera_sobre` **ya dice `REUNIONES`**, medido contra la hoja viva. Era la
+evidencia que `PENDIENTES` declaraba faltante. **No se apretó ningún botón.**
+
+⭐ **Y el control positivo avisó primero, que es por lo que el resultado se puede citar:** la primera
+lectura pidió `informe_id = jm` y devolvió **cero nodos**. `SECCIONES.informes` dice `JM,SECCO` en
+mayúsculas y `leerSecciones_` compara **sin plegar case**. Un cero que se habría leído como *«la
+hoja está vacía»* — y con él se habría concluido que la celda tampoco estaba.
+
+### Parte C — `L-038` ⚠ una parte hecha, una frenada
+
+- **`m2_campanias`** — la nota escrita y **releída de la hoja** (`C-83`): la fila se conserva, su
+  número no se usa, el banner lo escribe el equipo. Botón nuevo `anotarQueM2CampaniasNoSePinta()`,
+  idempotente por sello de texto.
+- **`m2_camp_lista`** — ⛔ frenado, ver el titular. ⭐ **Lo medido que sirve igual:** el token
+  `{{m2_camp_lista}}` **sí existe** en `L-038` y es **el único de la lámina sin fila** — 9 tokens, 8
+  con fila. Lo que falta es la operación, no el token.
+- **La caja, medida, y contradice lo que el prompt suponía:** `autofit = NONE`, alto **24**,
+  tamaño de fuente no legible (mixto) — **no es `SHAPE_AUTOFIT`, así que no crece**. Y el token
+  comparte caja con el literal *«Campañas»*.
+
+### Parte D — `X-28` ⛔ frenada, con los números medidos
+
+Los tres desempates dan **lo mismo** en los dos períodos: en julio eligen `3289-JUNJDGAG` y
+reproducen `2 · 6.011 · 1.878 · 31`; en agosto eligen `3488-AGOJDGAG` y publican
+`3 · 7.096 · 1.710 · 24` contra los `3 · 6.851 · 1.616 · 24` del deck. **Los dos controles
+positivos del instrumento reprodujeron**, así que el número es citable.
+
+⚠ **En agosto la cuenta es la correcta y los valores no**, y el barrido exhaustivo dice que
+**ninguna terna que sume `6.851 / 1.616` incluye una fila de `3488`**. **No se afirma que agosto
+reproduzca.**
+
+### Parte E — el barrido de los `exacto` ⚠ premisa vencida, **por dos lados**
+
+1. **La regla que cita —*«un deck del equipo no es una foto»*, `CLAUDE.md` §4— no existe.** `grep`
+   sobre `CLAUDE.md` y sobre `docs/*.md`: cero.
+2. **No hay 32 `exacto`: hay 112.**
+
+⛔⛔ **Y el problema estructural, que es el hallazgo:** el grupo **(c)** —*«se midió, NO
+reprodujo»*— **no puede existir entre los `exacto`**, porque `exacto` significa *«reprodujo»*. El
+barrido corrido tal cual devolvería **(c) = 0 por construcción**, y ese cero se leería como *«no hay
+candidatos»*. **Es exactamente lo que la última línea del propio prompt previene** — *un barrido que
+sólo informa lo que encontró no distingue «no hay» de «no miré»* — disparándose contra el prompt que
+la escribió.
+
+Contados igual, con el criterio declarado: **(a) 10 · (b) 102 · (c) 0 · (d) 0**, suma 112 sin
+residuo. ⭐ **Y la firma que el prompt pide, aplicada donde los candidatos sí viven:** de los 21
+`contradice`, **13 tienen un `exacto` en el mismo bloque** y **8 no**.
+
+### Parte F — el censo de `L-042` y `L-044` ✅
+
+Contra la **plantilla viva**, no contra `TOKENS.md` ni contra el censo del 22/08:
+
+| lámina | tokens | con fila | en `TOKENS_EQUIPO_JM_` |
+|---|---|---|---|
+| `L-042` | **3** — `camp_desde`, `camp_hasta`, `camp_titulo` | **3 de 3** (`ULTIMO` las tres) | **ninguno** |
+| `L-044` | **1** — `camp_titulo` | **1 de 1** (`ULTIMO`) | **ninguno** |
+
+⚠ **Contesta la pregunta de por qué `L-044` no figura en el censo del 22/08:** **sí tiene tokens** y
+**su token tiene fila**. El censo lista sólo los **sin fila**.
+
+⭐ **Y `camp_titulo` vive en OCHO láminas, no en una:** `L-041` a `L-048`, medido con
+`diagCajaDeToken_`. El usuario lo ubicaba en `L-044` y el repo en `L-048` — **las dos son ciertas y
+las dos son incompletas**. Es el bloque entero de campaña destacada.
+
+⛔ **No se declaró nada en `TOKENS_EQUIPO_JM_`**, como pedía el prompt: esto es el insumo para que
+el usuario decida token por token.
+
+### Parte G — documentación ✅
+
+`CLAUDE.md` §4 (la regla del instrumento que saltea un tramo), `PENDIENTES_consistencia.md` (un
+bloque con los cinco puntos nuevos y el cerrado), `CONFIG_INFORMES.md` §4.6 y §4.7,
+`CIERRE_POR_LAMINA.md` (filas 2 y 9 más el historial) y este archivo.
+
+### ⛔⛔ Y lo que la noche encontró sin buscarlo, que es lo que hay que apretar primero mañana
+
+**`CONFIG` no tiene `solapas_agregado_post` ni `campos_metrica_post`.** Medido: **27 claves y
+ninguna de las dos**. Lo que sí está es el par **singular** de siempre.
+
+⚠ **Y hay que corregir cómo lo decía el handoff anterior:** *no* fallan con `@post_sin_temario` —
+**`solapasDelTemario_` cae al par singular**, así que la lista queda con **una** solapa, sin el
+desglose, y los cuatro `post_periodo*` **no tienen de dónde salir**. Es una degradación silenciosa,
+no un error, que es la forma cara.
+
+⭐ **Lo accionable pasó de «verificar a mano» a «falta correrlo»:** el ítem de menú **«Aplicar
+configuración»** —no `instalar()`— es el único que siembra las claves **ausentes** de `CONFIG`.
+
+### ⭐ La lección de método de la noche, y va al handoff porque cambia cómo se usa la lista
+
+**Una lista de pasos que no dice el ESTADO de cada paso hace repetir lo hecho y saltear lo que
+falta.** Medidos los doce: **tres ya estaban hechos** y la lista los pedía igual (`clasp push`,
+`instalar()`, `declararModoDelAgregadoPost()`, más `reserva_cierre_seg` que ya está en 60), y el
+paso de cablear `L-036` estaba **a medias** —**20 de 28** filas `post_*`, todas `FILA`, sin
+`post_camp*` ni `post_periodo*`— mientras la lista lo daba por entero. **Medir el estado cuesta una
+lectura por paso y es lo único que distingue *«no corrió»* de *«corrió con la versión vieja»*.**
+
+**Suites:** `node tools/suites.js` — **51 bancos, exit 0**, ~667 afirmaciones. Veredicto por código
+de salida, no por glifo.

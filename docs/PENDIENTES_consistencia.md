@@ -8608,3 +8608,178 @@ el push corrió y **igual no llega**.
 la única evidencia que falta; (b) que la rama 2 falle en vez de caerse, que es la pregunta abierta
 de arriba, porque es lo único que convierte esta celda en un error visible en vez de un número
 plausible.
+
+---
+
+## Corrida nocturna del 25/08/2026 (`2026-08-25_7`) — cinco puntos nuevos y uno cerrado
+
+Todo lo de abajo está **medido contra la hoja viva o contra un fixture con `sha256` verificado**, no
+citado. Cada punto dice con qué se midió.
+
+### ✅ CERRADO · `ecv_alcance_semanal.itera_sobre` **ya dice `REUNIONES`**
+
+Era la mitad **(a)** del punto anterior de este documento —*«tomar un snapshot de `SECCIONES` y
+verificar el valor de hoy, es la única evidencia que falta»*—. Medido el 25/08 leyendo `SECCIONES`
+por `leerSecciones_` contra la hoja viva: la celda está poblada, y `comunicaciones_post` además está
+en `modo = agregado` con `filtro` vacío.
+
+⛔ **No se apretó ningún botón: no hacía falta.** `declararIteraDelAgregado()` habría informado
+*«ya estaba»*. **La mitad (b) sigue abierta** — que la rama 2 falle en vez de caerse, que es lo
+único que convierte esa celda en un error visible en vez de un número plausible.
+
+⚠ **Y el control positivo del instrumento avisó primero, que es por lo que se puede citar el
+resultado:** la primera lectura pidió `informe_id = jm` y devolvió **cero nodos**.
+`SECCIONES.informes` dice `JM,SECCO` en mayúsculas y `leerSecciones_` compara **sin plegar case**.
+Un cero que se habría leído como *«la hoja está vacía»*.
+
+### ⛔ P0 · `CONFIG` **no tiene** `solapas_agregado_post` ni `campos_metrica_post`
+
+Medido el 25/08: la hoja viva tiene **27 claves** y **ninguna de las dos está**. Lo que sí está es el
+par **singular** de siempre — `base_agregado_post = reuniones` y
+`solapa_agregado_post = Agenda JM | Post` —. El seed las declara
+(`Instalar.gs`, `SEED_CONFIG_DEFAULTS_`).
+
+⚠ **No es que el motor falle: es que cae al par singular**, que es el fallback que
+`solapasDelTemario_` documenta. La consecuencia concreta es que la lista de solapas del temario
+queda con **una** —la del temario— y **sin `digital|CAMPAÑAS_DESGLOCE_DIGITAL`**, así que los cuatro
+`post_periodo*` de `L-036` **no tienen de dónde salir**. Y `campos_metrica_post` vacío deja
+`camposMetrica = []`, que **cambia qué encuentros califican**.
+
+⭐ **Lo accionable, y es el «paso 9 bis» de la corrida de mañana:** correr el ítem de menú
+**«Aplicar configuración»** —no `instalar()`—, que es el único que siembra las claves ausentes de
+`CONFIG`, y **verificar las dos leyendo la hoja después**. Es la misma familia que el punto de
+`SECCIONES` de arriba con el signo cambiado: allá el seed no repara lo existente, acá **sí** agrega
+lo ausente y nadie lo corrió todavía.
+
+### ⛔ P0 · `m2_camp_lista` **no es cableable hoy**: `opLISTA` exige catálogo y la decisión es publicar crudo
+
+La decisión del usuario para `L-038` es *«los nombres distintos de la semana, **crudos**, sin agrupar
+ni normalizar»*. `opLISTA` hace lo contrario **por diseño** (`R-18` punto 2): resuelve cada valor
+contra un catálogo y **lo que no matchea no se publica** — va a `rechazados` y de ahí a `FALTANTES`.
+Sin `catalogo` declarado, `calcularConjuntoDeLista_` **tira una excepción**.
+
+**Y no hay catálogo posible**, medido: el catálogo se lee de la **columna A** de una `base/solapa`
+(`catalogoBarriosDesdeBase_`), y la columna A de `digital/Directa Mail` es **`ID Cuentas`**. El
+propio repo ya lo decía desde el 20/08, en el comentario de `opCUENTA_DISTINTOS`: *«el caso que
+motiva esta operación —`m2_campanias`— no tiene ninguno»*.
+
+⭐ **Lo que sí está medido y sirve:** el token **`{{m2_camp_lista}}` existe en la plantilla**, en
+`L-038`, y es **el único de esa lámina sin fila** (9 tokens, 8 con fila). O sea que lo que falta es
+la operación, no el token.
+
+⛔ **Pregunta al usuario, y la parte se frenó ahí:** ¿`m2_camp_lista` sale con una **operación
+nueva** —una `LISTA_CRUDA`, la decimotercera, sin catálogo— o con un **catálogo declarado**, y en ese
+caso de qué solapa y qué columna? **No se resolvió por plausibilidad.**
+
+### ⛔ P0 · `X-28`: la regla decidida **no es expresable** en `MARCADORES`
+
+La regla del usuario es **`JDGAG` + pertenencia + `duración ≤ 30 d`**. Las dos primeras se escriben
+—`~=JDGAG` sobre `lcc_id_cuenta`, y la pertenencia ya la da `SOLAPAS.ventana_ref: 'Cuentas'`—. **La
+tercera no.** `parsearCondicionFiltro_` entiende `=`, `!=`, `~=` y `!~=` sobre **el valor de una
+celda**, unidos por `&&`: no hay comparación numérica, y `duración` es una **resta entre
+`fecha_inicio` y `fecha_fin`** de la hoja `Cuentas`.
+
+⚠ **El único tope por duración que existe es `CONFIG.tope_dias_ventana_cuenta` (`R-30`), y es
+global**: está en `90`, y bajarlo a `30` movería **los ocho `imp_*`** y todo lo que lee por cuenta.
+El comentario de `R-30` en `Fuentes.gs` ya lo dice con todas las letras: *«⛔ **Y esto NO resuelve
+`X-28`**»*.
+
+⭐ **Lo medido, que queda como insumo** (`tools/medir-desempates-cc.py`, sobre los fixtures del 31/07
+y del 20/08, **con sus dos controles positivos reproduciendo**):
+
+| período | regla | cuenta que elige | publica | deck del equipo |
+|---|---|---|---|---|
+| `julio_24_30` | `JDGAG` solo | `3289-JUNJDGAG` | **2 · 6.011 · 1.878 · 31** | 2 · 6.011 · 1.878 · 31 ✅ |
+| `agosto_14_20` | `JDGAG` solo | `3289` **y** `3488` | 5 · 13.107 · 3.588 · 27 | 3 · 6.851 · 1.616 · 24 ❌ |
+| `agosto_14_20` | los **tres** desempates | `3488-AGOJDGAG` | 3 · 7.096 · 1.710 · 24 | 3 · 6.851 · 1.616 · 24 ⚠ |
+
+⚠ **En agosto la cuenta es la correcta y los valores no**, con los tres desempates por igual. El
+barrido exhaustivo del instrumento dice que **ninguna terna de filas que sume `6.851 / 1.616`
+incluye una fila de `3488`**, así que el deck de agosto no sale de esa cuenta tal como está en el
+export del 20/08. **`X-28` sigue abierto y esto no lo cierra.**
+
+⛔ **Pregunta al usuario, y la parte se frenó ahí:** ¿cómo se declara el `≤ 30 d`? Un tope **por
+solapa** (`SOLAPAS.tope_dias`, que hoy no existe), una **dimensión `cc`** en `DIMENSIONES_` cuya
+condición física se calcule, o `CONFIG.tope_dias_ventana_cuenta = 30` **asumiendo el movimiento de
+todo lo demás**. Las tres son decisiones y ninguna está escrita.
+
+### ⭐ `X-18` — reformulado y **podado**: el deck no sólo agrupa, **saca**
+
+Medido sobre el fixture del 31/07 (`sha256` verificado) con `tools/medir-asunto-directa-mail.py`.
+Ventana 24–31/07, `Tipo de mail ~ M2`: **32 filas · 30 nombres distintos · 27 asuntos distintos**.
+
+**El `30 → 12` del deck NO se explica por colapso.** El equipo **poda** y **reescribe a mano**:
+
+- **Ausentes del deck**: `Vacunación antirrábica (semana del 31/7 al 3/8)` y
+  `Repavimentación (semana del 3 al 16/08)`.
+- **De las ocho de `Vacaciones de Invierno 2026`** el deck publica *«en plazas (Comuna 5 y 7)»* y
+  pierde `Plaza Comuna 11`, `Parque de Invierno`, `Estación de vacaciones` y `Parque de la Ciudad`.
+- **Reescritas**: `Luminarias peatonales` → `Luminarias`; `Poda pre` + `Poda post` →
+  `Poda (pre y post)`.
+
+⛔ **Ninguna transformación automática produce esa lista, y una que se acercara INVENTARÍA las
+campañas que el equipo decidió no publicar.** Por eso la decisión es publicar crudo.
+
+### ⛔ El `Asunto` **descartado** como fuente del conteo de envíos, con las dos razones medidas
+
+1. **Son 27, no 26.** El `26` sale de excluir `TEST Festival para toda la familia`.
+2. **El asunto fusiona campañas**: *«Espacio Público e Higiene Urbana»* cubre **6 filas y 5 nombres
+   distintos**. Un conteo por asunto no cuenta envíos ni campañas: cuenta plantillas de asunto.
+
+⭐ **Y la observación de método, que es lo que hay que llevarse:** **el `26` satisfacía dos reglas a
+la vez** —`27 − TEST` y `32 − 6`— así que **nunca podría haber elegido entre ellas**. Es
+`Pruebas.gs:456` otra vez —*un dato que satisface más de una afirmación no distingue entre ellas*—,
+esta vez sobre un número del dominio y no sobre un fixture.
+
+⚠ Tres asuntos traen **tokens sin resolver** —`[barriolum]`, `[barriopluviales]`,
+`[barrioantirrab]`— y cortan en dirección contraria: un asunto plantilla puede cubrir varios envíos.
+
+### ⛔ `SOLAPAS.modo_periodo` — **evaluada y descartada**
+
+La Parte 1 del `2026-08-25_6` proponía que **la solapa declarara su propio `modo_periodo`**. Se
+descarta: **el recorte no es propiedad de la solapa sino de cómo se la lee.** `Directa Mail` se lee
+**de las dos formas** —16 marcadores como agregado, 47 por cuenta—, que es exactamente el caso de
+`looker/resumen_metricas_dinamico` que `D-30` ya resolvió. Una propiedad de la solapa no puede
+decidir algo que depende del llamador.
+
+### ⚠ La Parte E del `2026-08-25_7` no pudo correr como está escrita
+
+Dos premisas medidas contra el repo, las dos falsas:
+
+1. **La regla que cita —*«un deck del equipo no es una foto»*, `CLAUDE.md` §4— no existe.** `grep`
+   sobre `CLAUDE.md` y sobre `docs/*.md`: **cero**.
+2. **No hay 32 casos `exacto`: hay 112**, en `docs/casos_validacion_2026-08-19.csv`, que es el único
+   CSV de casos vivo (260 filas).
+
+⛔⛔ **Y el problema estructural, que es lo que hay que decidir antes de re-correrla: el grupo (c)
+—*«se midió, NO reprodujo»*— no puede existir entre los `exacto`.** `exacto` significa, por
+definición del documento dueño, *«el valor que publica el deck se reprodujo al dígito desde la
+base»*. Un caso que no reprodujo es `contradice` (21), `abierto` (22), `aproximado` (5) o
+`sin_fuente` (5). **El barrido corrido tal cual devolvería (c) = 0 por construcción**, y ese cero se
+leería como *«no hay candidatos»* cuando lo que pasa es que se está mirando el cajón equivocado.
+
+**Lo que sí se contó, con el criterio declarado** —`base ∈ {deriva, -}` significa que el valor
+esperado es una **identidad interna** del propio deck y no se contrastó contra una fuente externa—:
+
+| grupo | cuántos |
+|---|---|
+| **(a)** identidad interna / sin fuente externa | **10** |
+| **(b)** se midió contra el deck y **reprodujo** desde la base | **102** |
+| **(c)** | **0**, por construcción — ver arriba |
+| **(d)** no clasificable | **0** — el criterio parte los 112 sin residuo |
+
+⭐ **Y la firma que el prompt pide, aplicada donde los candidatos sí viven:** de los **21
+`contradice`**, **13 tienen al menos un caso `exacto` en el mismo bloque** —`agregado_semana_jm`
+(9 exactos), `resumen_ejecutivo_jm` (16), `ministros_semana_0608` (4), `campania_destacada` (2),
+`m2_semana_0608` (1), `enc_almagro_0608` (1)— y **8 no**: `C-04`, `C-13`, `C-14`, `C-24`, `C-53`,
+`C-63`, `X-18`, `X-27`.
+
+### ⭐ `camp_titulo` vive en **ocho** láminas, no en una
+
+Medido con `diagCajaDeToken_` contra la plantilla viva: **`L-041` a `L-048`**, todas visibles menos
+`L-048`. El usuario lo ubicaba en `L-044` y el repo en `L-048`: **las dos son ciertas y las dos son
+incompletas.** Es el bloque entero de campaña destacada.
+
+⚠ **Y contesta la pregunta de por qué `L-044` no figura en el censo del 22/08:** **sí tiene tokens**
+—uno, `camp_titulo`— y **ese token tiene fila**. El censo lista sólo los **sin fila**, así que
+leerlo como *«la lámina no tiene tokens»* es confundir *«no está en la lista»* con *«no existe»*.

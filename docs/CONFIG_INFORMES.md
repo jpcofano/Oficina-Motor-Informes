@@ -1128,6 +1128,69 @@ confirmación. **Los dos publican igual de seguros si nadie los marca.**
 
 ---
 
+### 4.6 `L-038` — los nombres de campaña de M2 se publican **CRUDOS**, y la edición es del equipo
+
+**Decisión editorial del usuario, 25/08/2026.** **[OK]**
+
+La lista de campañas de M2 de `L-038` publica **los nombres distintos de la semana, tal como están
+en la base**, sin agrupar, sin normalizar y sin reescribir. **El equipo edita en su deck.**
+
+⛔ **Por qué, y es lo que hace que esto sea una decisión y no una limitación:** medido sobre el
+fixture del 31/07, el deck del equipo no sólo **agrupa** los 30 nombres en 12 — **poda** y
+**reescribe a mano**. `Vacunación antirrábica` y `Repavimentación` no están en el deck; de las ocho
+de `Vacaciones de Invierno 2026` publica una línea y pierde cuatro; `Luminarias peatonales` sale
+como `Luminarias`, y `Poda pre` + `Poda post` como `Poda (pre y post)`.
+
+> **Ninguna transformación automática produce esa lista, y una que se acercara INVENTARÍA las
+> campañas que el equipo decidió no publicar.** Publicar crudo es la única salida que no miente.
+
+⭐ **Y la lista sale del NOMBRE, no del asunto**, decidido por comparación contra el deck: donde las
+dos columnas difieren, el deck sigue al nombre —*«Inauguración Centro de Diagnóstico Porteño en
+Palermo»* y no *«Nuevo centro de diagnóstico en Palermo»*—.
+
+⚠ **`m2_campanias` se conserva y su número NO se usa.** El banner de *Campañas* lo escribe el
+equipo. La fila no se retira porque su definición está medida y sirve de control; **eso está escrito
+en su `notas`, con fecha**, porque una fila que no se usa no entra a `FALTANTES` y no falla — es
+invisible desde la hoja, y sin la nota no se distingue de un olvido.
+
+⏸ **`m2_camp_lista` está FRENADO y no es un pendiente de cableado**, es una decisión abierta:
+`opLISTA` publica **contra un catálogo** por diseño y no hay catálogo de nombres de campaña de M2.
+La pregunta exacta está en `docs/PENDIENTES_consistencia.md`.
+
+### 4.7 Call Center — la regla provisoria de `X-28`, con condición de salida
+
+**Decisión editorial del usuario, 25/08/2026.** **[?]** — decidida, **no cableada**.
+
+El Call Center deja de esperar la respuesta del equipo: se publica el número **de la regla más
+plausible**, marcado con el sufijo `_revisar` de §4.5. **La regla es
+`JDGAG` + pertenencia a la ventana + `duración ≤ 30 d`.**
+
+⭐ **El desempate no se eligió por acierto —los tres aciertan igual— sino por MODO DE FALLA**, que
+es el único argumento de negocio disponible:
+
+- ⛔ `estado = Finalizada` **falla por un día**: `3289` quedó excluido en agosto porque su
+  `fecha_fin` derivó a exactamente el día del export. Corrido un día después, entra y publica 5
+  filas en vez de 3.
+- ⭐ `duración` **se aleja del corte cuanto más deriva**: `3289` ya está en 34 d contra un tope de 30.
+
+⚠ **La condición de salida, escrita para que el `_revisar` no sea un pendiente disfrazado de
+estado:** el sufijo se quita **el día que el equipo conteste `X-28`**, editando el `formato` de las
+cuatro filas de `MARCADORES` — cuatro celdas y **ningún `clasp push`** (`D-01`).
+
+⚠ **Y lo que el `_revisar` declara acá NO es que el número sea dudoso: es que la REGLA que elige la
+cuenta es provisoria.** Los tres desempates son **parches para deshacer un artefacto de la fuente**
+—la `fecha_fin` que se extiende sola—, no criterios de negocio. Ninguno lo sería si la columna no
+derivara.
+
+⛔ **Está frenado, y el motivo es del motor, no de la decisión:** `duración ≤ 30 d` **no es
+expresable** en `MARCADORES` —los filtros comparan el valor de una celda, no una resta entre dos
+fechas— y el único tope por duración que existe (`R-30`) es **global**. La pregunta exacta y los
+tres caminos posibles están en `docs/PENDIENTES_consistencia.md`.
+
+⛔ **`X-28` sigue abierto.** Esto no lo cierra: sigue haciendo falta un tercer deck publicado.
+
+---
+
 ## 5. Cómo se completa este documento
 
 A medida que el motor genere decks reales, cada **[?]** se resuelve y pasa a **[OK]**

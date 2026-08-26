@@ -984,6 +984,26 @@ completo de la mitad equivocada del camino.
   forma que el control positivo**: sin la afirmación en el caso negativo, *«no hay»* y *«no miré»*
   se ven igual.
 
+⛔⛔ **Y el mismo error UN ESCALÓN MÁS ARRIBA, que es donde más caro sale: cuando quien saltea el
+tramo es el INSTRUMENTO.** (25/08/2026.) La regla de arriba —*la función que estás leyendo no es el
+camino completo*— **ya estaba escrita**, y aun así se repitió el mismo día, desde el instrumento que
+tenía que medir el camino.
+
+- **El caso, con los dos números al lado:** se midió `leerFuente` **en aislamiento** sobre
+  `digital/Directa Mail` para saber cuántas campañas distintas trae la ventana, y dio **672**. El
+  camino real da **19**. El recorte no vive en `leerFuente` —que en esta base retorna por la rama
+  `snapshot` antes del mecanismo de ventana— sino **en su llamador**.
+- ⭐ **Y lo que lo hace peor que el caso del conteo de descarte: un instrumento que saltea un tramo
+  no da un número MÁS CHICO, da OTRO NÚMERO.** No hay dirección conocida en la que corregirlo
+  mentalmente, así que no se puede leer *«bueno, será algo menos»*: 672 y 19 no se parecen y **los
+  dos son publicables**.
+- ⭐⭐ **La pregunta concreta, y se hace antes de correr el instrumento, no después del número raro:**
+  *¿quién llama a lo que estoy midiendo, y hace algo entre su retorno y el valor que se publica?* Si
+  la respuesta es sí, medir la función sola **no mide el marcador**; mide una función.
+- ⚠ **Y el corolario para el reporte: un instrumento que mide una función tiene que decir que midió
+  una función**, no el token. Escribir *«`m2_camp_lista` traería 672»* convierte una medición
+  correcta de otra cosa en una afirmación falsa sobre el marcador — y ésa es la que sobrevive.
+
 **Un diagnóstico sin control positivo no es un diagnóstico: todo instrumento nuevo lleva algo que
 TIENE que aparecer.** (23/08/2026.) Un instrumento que sólo busca lo que sospecha **no puede
 distinguir «no está» de «no miré»**, y las dos salidas se ven idénticas en el log.
