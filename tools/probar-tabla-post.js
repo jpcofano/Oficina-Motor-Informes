@@ -181,8 +181,10 @@ console.log('\n3 bis · ⭐⭐ `2026-08-25_3` — `periodo` SE CABLEA, y su afir
 ['vis_totales', 'vis_vtr_pct'].forEach((campo) => {
   const i = FUENTE.indexOf("campo_logico: '" + campo + "'");
   const fila = i === -1 ? '' : FUENTE.slice(i, FUENTE.indexOf('\n', i));
-  af(i !== -1 && fila.indexOf("por_posicion: 'sí'") !== -1,
-    '⭐ `' + campo + '` declara `por_posicion` en MAPEO — sin eso leería Programmatic',
+  /* ⭐⭐ `2026-08-26` — dada vuelta: lo que hace legible esta columna es el TÍTULO ÚNICO de la
+   * solapa nueva, no `por_posicion`, que nunca corrió. */
+  af(i !== -1 && fila.indexOf("por_posicion: 'sí'") === -1,
+    '⭐ `' + campo + '` NO declara `por_posicion` — lo que la hace legible es el título único',
     'la letra M/N siempre fue correcta; lo que faltaba era que el lector la usara');
 });
 

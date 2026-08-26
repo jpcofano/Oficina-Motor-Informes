@@ -1602,7 +1602,8 @@ var SEED_MAPEO_REUNIONES_ = [
   { base_id: 'reuniones', campo_logico: 'figura', hoja: 'Agenda JM | Post', columna: 'B', encabezado: 'Funcionario', notas: '"Funcionario" — mismo campo lógico que rdv/RVD JM-CM - ES!A. ⚠ En `jm` vale "Jorge Macri" en TODAS las filas, así que NO distingue una de otra: entra al nombre por decisión del usuario (25/08), no porque aporte a la clave' },
   { base_id: 'reuniones', campo_logico: 'barrio', hoja: 'Agenda JM | Post', columna: 'C', encabezado: 'Barrio / Comuna', notas: '"Barrio / Comuna" — mismo campo lógico que rdv/RVD JM-CM - ES!B. Es lo que de verdad distingue una fila de otra en la tabla' },
   { base_id: 'reuniones', campo_logico: 'tipo_encuentro', hoja: 'Agenda JM | Post', columna: 'D', encabezado: 'Tipo', notas: '"Tipo" — "Uno a uno", "Encuentro Temático"… El deck del equipo lo publica adelante: «Uno a uno en Retiro (24/07)»' },
-  /* ⭐⭐ `2026-08-25` — **las dos vuelven al `MAPEO`, ahora con `por_posicion`.**
+  /* ⭐⭐ `2026-08-25` — **las dos vuelven al `MAPEO`**, y `2026-08-26` — **por qué el arreglo
+   * que este comentario anunciaba nunca funcionó.**
    *
    * ⛔ **Se habían retirado el 25/08 (`ae06a3b`) y con razón:** sus títulos —`Visualizaciones` y
    * `% VTR`— se repiten **cuatro veces** en esta solapa (M/R/W/AB y N/S/X/AC), `leerFuente` indexa
@@ -1610,19 +1611,39 @@ var SEED_MAPEO_REUNIONES_ = [
    * 69,0 %** donde el total es **41.204 y 30,1 %**. **La letra siempre fue correcta; el lector
    * nunca la usaba.**
    *
-   * ⭐ **Lo que cambia hoy es el lector, no el mapeo:** con `por_posicion = sí`, `leerFuente`
-   * entrega la celda **por índice** (M = 12, N = 13) y el título deja de participar.
+   * ⛔⛔ `2026-08-26` — **acá decía *«lo que cambia hoy es el lector: con `por_posicion = sí`,
+   * `leerFuente` entrega la celda por índice»*. ERA FALSO, y costó un día.** El mecanismo está
+   * escrito entero —`COLUMNAS_DELTA_`, `leePorPosicion_`, `claveDeLecturaEnColumna_`,
+   * `__pos__N` en `filaAObjeto`— y **no corre por dos roturas independientes, cada una
+   * suficiente sola**: `leerMapeoSinCache_` **no indexa la columna** (arma el objeto con seis
+   * campos y `por_posicion` no está, así que `esVerdadero_(undefined)` es `false` **siempre**),
+   * y la hoja `MAPEO` **no tiene la columna** (nueve columnas medidas el 26/08).
+   *
+   * ⚠ **Y por eso arreglar sólo la hoja no arregla nada, y el diff de `instalar()` diría que la
+   * columna se creó** — se leería como éxito. Es `CLAUDE.md` §2 al pie: *agregar una columna a
+   * una hoja de registro es tocar N lectores, no uno*. El precedente es **la misma función y la
+   * misma columna vecina**: `encabezado` (`D-31`, 16/08), cuyo comentario —*«la columna existía
+   * desde el 14/08 y esta función no la indexaba»*— está tres líneas arriba de donde falta ésta.
+   *
+   * ⭐ **Lo que SÍ las arregló, el 26/08:** el usuario reemplazó la solapa por una copia con
+   * `IMPORTRANGE` y **títulos únicos por bloque**, así que el encabezado vuelve a distinguir y
+   * `por_posicion` deja de hacer falta **para esta solapa**. Se retiró de estas dos filas: una
+   * declaración sin efecto es indistinguible de una que funciona, y eso es lo que produjo esto.
+   * ⚠ **El mecanismo sigue roto y sigue en la cola**: la próxima solapa con títulos repetidos
+   * vuelve a caer al último bloque.
    *
    * ⭐⭐ **Y el ORDEN de los cuatro bloques está confirmado** (decisión del usuario, 25/08):
    * **el primero es el ACUMULADO**, después Meta, Google y Programmatic. Medido sobre el fixture
    * del 20/08: `col12 = col17 + col22 + col27` cierra en **66 de 66** filas evaluables; las otras
    * 36 traen `-` en **las tres** plataformas y no se pueden evaluar.
    *
-   * ⚠ **El testigo de `D-31` para estas dos ya NO es el encabezado** —con títulos repetidos no
-   * puede distinguir— **sino esa identidad**, que verifica posición y semántica a la vez. La corre
+   * ⭐ **`2026-08-26`: el encabezado VUELVE a ser el testigo de `D-31` para estas dos**, porque
+   * los títulos ya son únicos. ⚠ **Pero la identidad de bloques no se retira y no es redundante:**
+   * el encabezado prueba que la LETRA apunta a la columna que se cree; la identidad prueba que el
+   * ACUMULADO es el acumulado. Son dos afirmaciones y ninguna implica la otra. La corre
    * `verificarBloquesPostReuniones()`. */
-  { base_id: 'reuniones', campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M', encabezado: 'Visualizaciones', por_posicion: 'sí', notas: '⚠ TÍTULO REPETIDO (M/R/W/AB): se lee POR POSICIÓN. M es el ACUMULADO; R/W/AB son Meta/Google/Programmatic y NO se mapean (digital manda). Numerador de % VTR = M/J. Testigo: M = R+W+AB, 66 de 66 evaluables' },
-  { base_id: 'reuniones', campo_logico: 'vis_vtr_pct', hoja: 'Agenda JM | Post', columna: 'N', encabezado: '% VTR', por_posicion: 'sí', notas: '⚠ TÍTULO REPETIDO (N/S/X/AC): se lee POR POSICIÓN. Viene como FRACCIÓN (0,30082), formato `fraccion` como los cc_*_pct. Identidad interna: N = M/J, exacta en 98 de 98 (fixture 20/08)' },
+  { base_id: 'reuniones', campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M', encabezado: 'Visualizaciones totales', notas: 'col M «Visualizaciones totales» — el ACUMULADO. ⭐ 26/08: la solapa pasó a una copia con IMPORTRANGE y TÍTULOS ÚNICOS por bloque, así que el encabezado VUELVE A SER TESTIGO de verdad. ⛔ Hasta el 26/08 el título se repetía (M/R/W/AB) y el lector indexa por título con «gana el último»: este marcador publicaba PROGRAMMATIC —55.902 donde el acumulado era 282.480—. ⛔ Y la nota anterior decía «se lee POR POSICIÓN», que era FALSO: `MAPEO.por_posicion` nunca corrió —`leerMapeoSinCache_` no la indexa y la hoja no tiene la columna—. R/W/AB son Meta/Google/Programmatic y NO se mapean (digital manda). Testigo de bloque: M = R+W+AB' },
+  { base_id: 'reuniones', campo_logico: 'vis_vtr_pct', hoja: 'Agenda JM | Post', columna: 'N', encabezado: '% VTR total', notas: 'col N «% VTR total» — el ACUMULADO. Viene como FRACCIÓN (0,62742 en Parque Avellaneda), formato `fraccion` como los cc_*_pct. ⭐ 26/08: título único, el encabezado vuelve a ser testigo. ⛔ Hasta el 26/08 publicaba el % VTR de PROGRAMMATIC —63,5 donde el acumulado era 62,7—, misma causa que `vis_totales`, y «se lee POR POSICIÓN» era igual de falso. Identidad interna: N = M/J, y se exige SOBRE EL DECK, no sobre el fixture: en la fuente las dos ternas cierran por separado y la mezcla sólo aparece en lo publicado' },
 ];
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_REUNIONES_);
 
@@ -1859,9 +1880,11 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   alc_cobertura_pct: 'numero',
   // `2026-08-14_1` B — el alcance medido, contra `alc_potencial` que es el objetivo.
   alc_real: 'numero',
-  /* ⭐ `2026-08-25` (tarde) — **vuelven**, con `MAPEO.por_posicion`. Se habían retirado esa misma
-   * mañana porque sus títulos se repiten cuatro veces y el lector indexaba por título; lo que
-   * cambió es **el lector**, no el mapeo. `vis_vtr_pct` viene como FRACCIÓN. */
+  /* ⭐ `2026-08-25` (tarde) — **vuelven** al `MAPEO`. ⛔ `2026-08-26`: acá decía que lo que había
+   * cambiado era **el lector**, vía `MAPEO.por_posicion`. Era falso —ese mecanismo nunca corrió—
+   * y lo que las arregló fue que la solapa pasara a `IMPORTRANGE` con títulos únicos. ⚠ Este mapa
+   * es por `campo_logico`, así que el rename de títulos NO lo toca: se verificó, no se supuso.
+   * `vis_vtr_pct` viene como FRACCIÓN. */
   vis_totales: 'numero', vis_vtr_pct: 'numero',
 };
 SEED_MAPEO_.forEach(function (fila) { fila.tipo_esperado = TIPO_ESPERADO_POR_CAMPO_[fila.campo_logico] || ''; });
@@ -2060,17 +2083,32 @@ var ENCABEZADO_POR_MAPEO_ = {
   'reuniones|Agenda JM|alc_real': 'Alcance manual',
   'reuniones|Agenda JM | Post|id_cuenta': 'ID',
   'reuniones|Agenda JM | Post|alc_real': 'Alcance',
-  // `2026-08-24` — los cinco de la POST. ⚠ El encabezado de esta solapa está en la FILA 2
-  // (`SOLAPAS.fila_encabezado = 2`): la fila 1 son las bandas `Comunicación Digital | …`.
+  /* `2026-08-24` — los cinco de la POST.
+   *
+   * ⭐⭐ `2026-08-26` — **el encabezado pasó a la FILA 1** (`SOLAPAS.fila_encabezado = 1`). El
+   * usuario reemplazó la solapa por una copia con `IMPORTRANGE` y **títulos únicos por bloque**;
+   * ya no hay bandas en la fila 1 ni títulos repetidos en la 2. Las cadenas de acá salen de
+   * **medir la hoja viva**, no de dictarlas. */
   'reuniones|Agenda JM | Post|fecha_periodo': 'Fecha',
   'reuniones|Agenda JM | Post|poblacion': 'Habitantes',
   'reuniones|Agenda JM | Post|imp_totales': 'Impresiones totales',
-  /* ⚠ **Estas dos llevan encabezado pero NO es su testigo**, y por eso van con la advertencia al
-   * lado: su título se repite cuatro veces, así que **no puede distinguir cuál de las repetidas
-   * es**. Se declaran igual porque documentan qué hay en esa letra; **el testigo de integridad de
-   * las dos es la identidad de bloques** (`M = R+W+AB`), que corre `verificarBloquesPostReuniones()`. */
-  'reuniones|Agenda JM | Post|vis_totales': 'Visualizaciones',
-  'reuniones|Agenda JM | Post|vis_vtr_pct': '% VTR',
+  /* ⭐⭐ `2026-08-26` — **estas dos VUELVEN a ser testigo de verdad, y el motivo hay que leerlo.**
+   *
+   * Hasta ayer decían `'Visualizaciones'` y `'% VTR'` con una advertencia al lado —*«llevan
+   * encabezado pero NO es su testigo, porque el título se repite cuatro veces»*—. Con títulos
+   * únicos esa advertencia se cae y el encabezado distingue.
+   *
+   * ⛔ **Y lo que la advertencia vieja escondía es lo caro: mientras el título se repetía, el
+   * lector indexaba por título con «gana el último» y estos dos marcadores publicaban
+   * PROGRAMMATIC.** La salida declarada era `MAPEO.por_posicion`, que **nunca corrió** —
+   * `leerMapeoSinCache_` no la indexa y la hoja no tiene la columna—. Un testigo desactivado por
+   * comentario, cubierto por un mecanismo muerto, y nadie lo vio hasta el 26/08.
+   *
+   * ⚠ **La identidad de bloques (`M = R+W+AB`) sigue haciendo falta y no la reemplaza esto**:
+   * el encabezado prueba que la LETRA apunta a la columna que se cree; la identidad prueba que
+   * el ACUMULADO es el acumulado. Son dos afirmaciones y ninguna implica la otra. */
+  'reuniones|Agenda JM | Post|vis_totales': 'Visualizaciones totales',
+  'reuniones|Agenda JM | Post|vis_vtr_pct': '% VTR total',
   /* ⭐ `2026-08-25_1` — las tres del nombre. **Acá el encabezado SÍ es testigo de verdad**, a
    * diferencia de las dos de arriba: sus títulos son únicos en la solapa, así que si alguien
    * inserta una columna el aviso de `D-31` salta. */
@@ -2452,7 +2490,7 @@ var SEED_SOLAPAS_ = [].concat(
    * es la tabla de habitantes por barrio y comuna, no una fuente de métricas. */
   [
     filaSolapa_('reuniones', 'Agenda JM', 'fuente', 'PRE — una fila por encuentro, 154 filas × 44 columnas al 14/08, ID único. Embudo de Call Center, Mail, IVR e impresiones por plataforma en la misma fila. De acá se mapea SÓLO el alcance (AF): las columnas de plataforma AJ-AR existen y NO se usan porque empatan exacto con digital/CAMPAÑAS_DESGLOCE_DIGITAL y digital manda (2026-08-14_1). Toda la solapa es carga a mano: 0 fórmulas en 44 columnas × 154 filas', { fila_encabezado: 2, filas_datos: 154, campo_id_cuenta: 'id_cuenta' }),
-    filaSolapa_('reuniones', 'Agenda JM | Post', 'fuente', 'POST — 104 filas al 14/08, mismo ID que la PRE (C-50). Impresiones, clics y visualizaciones por plataforma en bandas Meta/Google/Programmatic (fila 1); los títulos de la fila 2 se repiten y NO alcanzan para nombrar una columna. El Alcance (G) NO es por plataforma y su banda "Acumulado" está mal rotulada: es el de Meta. Las columnas de plataforma no se mapean — digital manda. ⚠ sus % CTR y % VTR vuelven string en las filas en cero y number en las cargadas', { fila_encabezado: 2, filas_datos: 104, campo_id_cuenta: 'id_cuenta' }),
+    filaSolapa_('reuniones', 'Agenda JM | Post', 'fuente', 'POST — 105 filas al 26/08, mismo ID que la PRE (C-50). ⭐⭐ 26/08: el usuario la reemplazó por una copia con IMPORTRANGE y TÍTULOS ÚNICOS, encabezado en la FILA 1 — Impresiones/Clics/% CTR/Visualizaciones/% VTR con sufijo " totales", " Meta", " Google", " Programmatic". Antes el encabezado estaba en la fila 2, los títulos se repetían cuatro veces y eso hacía que vis_totales y vis_vtr_pct publicaran PROGRAMMATIC. Las columnas de plataforma no se mapean — digital manda. ⛔ IMPORTRANGE es una FÓRMULA, no un archivo: si el origen cae o revocan el permiso la solapa queda VACÍA y el motor no lo distingue de "esta semana no hubo POST". ⚠ K y L cambiaron de título (Clics totales, % CTR total) y NO están mapeadas: el día que alguien mapee Clics va a buscar un título que ya no existe. ⚠ lo de que sus % CTR y % VTR vuelven string en las filas en cero se midió sobre la hoja VIEJA y no se re-midió', { fila_encabezado: 1, filas_datos: 105, campo_id_cuenta: 'id_cuenta' }),
     filaSolapa_('reuniones', 'Agenda funcionarios', 'ignorar', 'encuentros de otros funcionarios — mismo caso que rdv/RDV_otros_ministros, nadie los pide hoy', { fila_encabezado: 2, filas_datos: 545 }),
     filaSolapa_('reuniones', 'Barrios', 'referencia', 'habitantes por barrio y comuna — tabla de referencia, no fuente de métricas', { fila_encabezado: 1, filas_datos: 70 }),
 
@@ -4030,19 +4068,27 @@ var COLUMNAS_POST_L036_ = [
     nota: 'col J "Impresiones totales". Denominador de las dos identidades de la solapa' },
   /* ⭐⭐ `2026-08-25` (tarde) — **las dos vuelven, y con ellas `L-036` recupera su identidad
    * interna.** Se habían retirado esa misma mañana (`ae06a3b`) porque el lector indexaba por
-   * título y sus títulos se repiten cuatro veces; **lo que cambió es el lector**:
-   * `MAPEO.por_posicion` hace que se lean por índice (M = 12, N = 13).
+   * título y sus títulos se repetían cuatro veces.
    *
-   * ⭐ **`%VTR = Visualizaciones / Impresiones`, exacta en 98 de 98** (fixture del 20/08). Eso pone
+   * ⛔⛔ `2026-08-26` — **la explicación que estaba acá era falsa y hay que dejarla escrita.**
+   * Decía *«lo que cambió es el lector: `MAPEO.por_posicion` hace que se lean por índice»*.
+   * **`por_posicion` nunca corrió** —`leerMapeoSinCache_` no la indexa y la hoja no tiene la
+   * columna—, así que del 25 al 26/08 estas dos leyeron **Programmatic**. Lo que las arregló fue
+   * otra cosa: el usuario pasó la solapa a `IMPORTRANGE` con **títulos únicos**.
+   *
+   * ⭐ **`%VTR = Visualizaciones / Impresiones`. ⚠ El «exacta en 98 de 98» se midió sobre el
+   * FIXTURE, y ahí está el error: en la fuente la terna del acumulado cierra y la de Programmatic
+   * cierra consigo misma, así que las dos dan verde y la MEZCLA sólo aparece en el deck. El
+   * control se exige SOBRE LO PUBLICADO.** Eso pone
    * a `L-036` **al nivel de `V-111` y `V-113`**: las tres láminas con un control que **no depende
    * del deck del equipo ni de una foto de la base**, así que se puede exigir en cada corrida.
    *
    * ⚠ `vis_vtr_pct` viene como **FRACCIÓN** (0,30082), igual que los `cc_*_pct` — de ahí el
    * formato, que no es `porcentaje_sin_signo`. */
   { tok: 'vistas',      campo: 'vis_totales',  formato: 'miles',
-    nota: 'col M "Visualizaciones" — el ACUMULADO. ⚠ TÍTULO REPETIDO (M/R/W/AB): se lee POR POSICIÓN vía MAPEO.por_posicion. Testigo: M = R+W+AB, 66 de 66 evaluables' },
+    nota: 'col M "Visualizaciones totales" — el ACUMULADO. ⭐ 26/08: título ÚNICO (la solapa pasó a IMPORTRANGE), así que el encabezado es testigo y se lee por letra. ⛔ Del 25 al 26/08 el título se repetía (M/R/W/AB) y esto publicaba PROGRAMMATIC: 55.902 donde el acumulado era 282.480. MAPEO.por_posicion NO lo arreglaba — nunca corrió. Testigo de bloque: M = R+W+AB' },
   { tok: 'vtr',         campo: 'vis_vtr_pct',  formato: 'fraccion',
-    nota: 'col N "% VTR" — el ACUMULADO. ⚠ TÍTULO REPETIDO (N/S/X/AC): POR POSICIÓN. Identidad interna N = M/J, exacta en 98 de 98' },
+    nota: 'col N "% VTR total" — el ACUMULADO, FRACCIÓN. ⭐ 26/08: título ÚNICO. ⛔ Del 25 al 26/08 publicaba el % VTR de PROGRAMMATIC: 63,5 donde el acumulado era 62,7. Identidad interna N = M/J, y se exige SOBRE EL DECK: sobre el fixture las dos ternas cierran por separado y la mezcla no aparece' },
   /* ⭐⭐ `2026-08-25_1` — **la columna `Campañas`: el NOMBRE del encuentro, compuesto.**
    *
    * ⛔ **Medido sobre el fixture del 20/08: ninguna de las 29 columnas de la solapa trae un nombre

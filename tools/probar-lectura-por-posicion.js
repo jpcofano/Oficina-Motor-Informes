@@ -153,14 +153,45 @@ console.log('\n3 · `por_posicion` está en `MAPEO`, y las dos filas volvieron')
     af(i !== -1, campo + ' volvió al `SEED_MAPEO_`');
     if (i === -1) return;
     const fila = instalar.slice(i, instalar.indexOf('\n', i));
-    af(fila.indexOf("por_posicion: 'sí'") !== -1, '  …y declara `por_posicion`');
-    af(fila.indexOf('TÍTULO REPETIDO') !== -1,
-      '  …y su nota dice POR QUÉ, para que nadie lo saque «por prolijidad»');
+    /* ⭐⭐ `2026-08-26` — **DADAS VUELTA, y el motivo es el hallazgo.** Estas dos afirmaciones
+     * pedían `por_posicion: 'sí'` y una nota que dijera `TÍTULO REPETIDO`. Las dos pasaban, y
+     * **las dos daban verde sobre la creencia que produjo el bug**: que declarar `por_posicion`
+     * bastaba. No bastaba —el mecanismo nunca corrió— y del 25 al 26/08 estos dos marcadores
+     * leyeron Programmatic con este banco en verde.
+     *
+     * Hoy la solapa tiene **títulos únicos** y la declaración se retiró. Se exige lo contrario,
+     * y más fuerte: que NO esté, y que la nota **no** siga afirmando lo viejo. */
+    af(fila.indexOf("por_posicion: 'sí'") === -1,
+      '  …y NO declara `por_posicion` — la solapa tiene títulos únicos desde el 26/08',
+      'declararlo sobre un mecanismo que no corre es lo que produjo el bug');
+    /* ⚠ NO se exige que la nota OMITA «POR POSICIÓN»: se exige que la MARQUE FALSA. Omitirla
+     * borraría el registro de por qué el bug vivió, que es la mitad del valor de la nota. */
+    af(fila.toLowerCase().indexOf('falso') !== -1,
+      '  …y su nota marca como FALSA la afirmación vieja de que se leía por posición',
+      'esa afirmación es la que hacía leer el bug como resuelto');
+    af(fila.indexOf('PROGRAMMATIC') !== -1,
+      '  …y su nota REGISTRA que estuvo publicando Programmatic hasta el 26/08');
   });
 
-  af(instalar.indexOf("columna: 'M', encabezado: 'Visualizaciones'") !== -1,
-    '⭐ `vis_totales` apunta a M — la letra siempre fue correcta');
-  af(instalar.indexOf("columna: 'N', encabezado: '% VTR'") !== -1, 'y `vis_vtr_pct` a N');
+  /* ⭐ La letra no cambió —siempre fue correcta—; lo que cambió es el TÍTULO de esa letra. Las
+   * cadenas salen de MEDIR la hoja viva el 26/08, no de dictarlas. */
+  af(instalar.indexOf("columna: 'M', encabezado: 'Visualizaciones totales'") !== -1,
+    '⭐ `vis_totales` apunta a M con el título ÚNICO medido «Visualizaciones totales»');
+  af(instalar.indexOf("columna: 'N', encabezado: '% VTR total'") !== -1,
+    'y `vis_vtr_pct` a N con «% VTR total»');
+
+  /* ⛔⛔ **El testigo que faltaba, y sin él nada de lo de arriba prueba que el mecanismo ande.**
+   * `leerMapeoSinCache_` arma el objeto de `MAPEO` campo por campo y **no incluye
+   * `por_posicion`**, así que `leePorPosicion_` evalúa `esVerdadero_(undefined)` y devuelve
+   * `false` SIEMPRE, para toda columna de toda solapa. El mecanismo está **inerte**.
+   *
+   * ⭐ **Cuando alguien lo arregle, esta afirmación se pone ROJA. Dala vuelta, no la borres** —
+   * y ahí sí las de arriba empiezan a significar algo. */
+  const lector = extraer(fs.readFileSync(path.join(RAIZ, 'Config.gs'), 'utf8'),
+    'function leerMapeoSinCache_');
+  af(lector !== null && lector.indexOf('por_posicion') === -1,
+    '⛔ HUECO CONOCIDO: `leerMapeoSinCache_` NO indexa `por_posicion` → mecanismo INERTE',
+    'si esto se puso rojo, el lector se arregló: dar vuelta la afirmación');
 }
 
 /* ════════════════════════════════════════════════════════════════════════════════════════

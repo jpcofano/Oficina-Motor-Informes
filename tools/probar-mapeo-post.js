@@ -157,9 +157,12 @@ function correr(fuente, silencioso) {
   POR_POSICION.forEach((campo) => {
     af('`' + campo + '` está mapeado', !!post[campo],
       'volvieron el 25/08 con MAPEO.por_posicion: la celda se lee por índice, no por título');
-    af('  …y declara `por_posicion` — sin eso leería Programmatic',
-      !!post[campo] && esVerdadero(post[campo].por_posicion),
-      'su título se repite 4 veces: sin `por_posicion` el lector indexa por título y gana el último');
+    /* ⭐⭐ `2026-08-26` — **dada vuelta.** Pedía `por_posicion` y pasaba; el mecanismo nunca
+     * corrió y estos dos leyeron Programmatic igual. Con títulos únicos la declaración se
+     * retiró, y lo que se exige ahora es el ENCABEZADO MEDIDO, que sí es el testigo real. */
+    af('  …y NO declara `por_posicion` — títulos únicos desde el 26/08',
+      !!post[campo] && !esVerdadero(post[campo].por_posicion),
+      'declararlo sobre un mecanismo inerte es lo que hizo leer el bug como resuelto');
   });
   PARQUEADOS.forEach((t) => {
     const hay = new RegExp('campo_logico:\\s*.' + t + '.').test(fuente);
@@ -205,10 +208,12 @@ if (process.argv.indexOf('--autoprueba') !== -1) {
       /* ⛔⛔ El caso que guarda lo del 25/08: si alguien vuelve a mapear `vis_totales`, la
        * afirmación NEGATIVA tiene que caer. Sin este caso, esa afirmación podría estar pasando
        * porque el campo no existe en ningún lado, y no porque el control lo vigile. */
-      nombre: 'le saco `por_posicion` a `vis_totales`',
-      mutar: (s) => s.replace("campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M', encabezado: 'Visualizaciones', por_posicion: 'sí'",
-        "campo_logico: 'vis_totales', hoja: 'Agenda JM | Post', columna: 'M', encabezado: 'Visualizaciones'"),
-      esperaQueCaiga: '  …y declara `por_posicion` — sin eso leería Programmatic'
+      /* ⭐ El negativo también se da vuelta: ahora rompe el ENCABEZADO, que es el testigo que
+       * de verdad decide qué columna se lee en esta solapa. */
+      nombre: 'le devuelvo a `vis_totales` el encabezado viejo, el que se repetía',
+      mutar: (s) => s.replace("columna: 'M', encabezado: 'Visualizaciones totales'",
+        "columna: 'M', encabezado: 'Visualizaciones'"),
+      esperaQueCaiga: '  …lleva el encabezado ÚNICO medido el 26/08'
     },
     {
       nombre: 'le cambio el encabezado testigo a `poblacion`',

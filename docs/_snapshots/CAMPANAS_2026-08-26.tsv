@@ -1,0 +1,9 @@
+periodo_id	campana_id	nombre	informe_id	base_id	tipo	desde	hasta	mostrar	id_cuenta	orden
+	serv_esenciales	Servicios esenciales	secco	looker	destacada	2026-06-02	2026-06-15	no		1
+	encuentros_min	Encuentros de ministros	secco	rdv	encuentro_ministros	2026-06-01	2026-06-30	no		2
+	prov_uber	Uber	secco	digital	proveedor	2026-06-01	2026-06-30	no		3
+julio_24_30	3258-JUNJDGGJ	Decreto: Declaración de servicios esenciales	jm	digital	destacada	2026-06-24	2026-07-08	no	3258-JUNJDGGJ	1
+julio_24_30	3139-JUNDHHGC	Programas y Actividades para personas mayores	jm	digital	destacada	19/06/2026	17/07/2026	no	3139-JUNDHHGC	2
+julio_24_30	3305-JULSEGGJ	Egreso más de 1000 Cadetes	jm	digital	destacada	14/07/2026	15/08/2026	no	3305-JULSEGGJ	3
+agosto_14_20	3481-AGOINFAN	Autódromo: avance de obra	jm	digital	destacada	6/08/2026	3/09/2026	sí	3481-AGOINFAN	1
+agosto_14_20	3509-AGOSEGGJ	Desarticulación de banda narco en el Barrio Mugica	jm	digital	destacada	10/08/2026	24/08/2026	sí	3509-AGOSEGGJ	2
