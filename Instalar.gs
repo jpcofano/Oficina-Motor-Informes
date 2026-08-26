@@ -4402,6 +4402,70 @@ function declararIteraDelAgregado() {
 }
 
 /**
+ * ⭐⭐ **`m2_campanias` se conserva y su número NO se usa** (decisión del usuario, 25/08/2026).
+ *
+ * El banner de *Campañas* de `L-038` **lo escribe el equipo en su deck**. La fila de `MARCADORES`
+ * **no se retira**: su definición está medida —campañas distintas de M2 de la ventana— y sirve de
+ * control contra lo que el equipo publica.
+ *
+ * ⚠ **Por qué esto es una nota y no un comentario acá:** una fila que no se usa **no entra a
+ * `FALTANTES` y no falla**. Es invisible desde la hoja, y sin la nota, en seis semanas no se
+ * distingue de un olvido — que es cómo se retira una decisión sin que nadie se entere.
+ *
+ * ⭐ **Es idempotente y relee** (`C-83`): agrega el párrafo sólo si no está, y compara contra lo
+ * que la celda devuelve DESPUÉS de escribir, no contra lo que se pidió escribir.
+ *
+ * **Sin `_` y sin parámetros** — las dos condiciones de `CLAUDE.md` §2.
+ */
+var SELLO_NOTA_M2_CAMPANIAS_ = '2026-08-25 (usuario): la fila SE CONSERVA y su numero NO se usa';
+
+function anotarQueM2CampaniasNoSePinta() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ FALLÓ: la hoja MARCADORES no existe.'); return { ok: false }; }
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var iM = headers.indexOf('marcador'), iI = headers.indexOf('informe_id'), iN = headers.indexOf('notas');
+  if (iN === -1) { Logger.log('⛔ FALLÓ: MARCADORES no tiene columna `notas`.'); return { ok: false }; }
+
+  var fila = -1;
+  for (var f = 1; f < datos.length; f++) {
+    if (datos[f][iM] === 'm2_campanias' && String(datos[f][iI]) === 'jm') { fila = f; break; }
+  }
+  if (fila === -1) {
+    Logger.log('⛔ NO se aplicó: no hay fila `m2_campanias` + `jm` en MARCADORES.');
+    return { ok: false, motivo: 'sin fila' };
+  }
+
+  var antes = String(datos[fila][iN] || '');
+  Logger.log('ANTES · notas = "' + antes + '"');
+
+  if (antes.indexOf(SELLO_NOTA_M2_CAMPANIAS_) !== -1) {
+    Logger.log('ⓘ Ya estaba: la nota ya lleva el párrafo del 25/08. No se escribió nada.');
+    return { ok: true, cambios_escritos: 0, idempotente: true, notas: antes };
+  }
+
+  var parrafo = SELLO_NOTA_M2_CAMPANIAS_ + ' — el banner de Campanias de L-038 lo escribe el ' +
+    'equipo en su deck. NO se retira la fila: la definicion esta medida (campanias distintas de M2 ' +
+    'de la ventana) y sirve de control contra lo que el equipo publica. Una fila que no se usa no ' +
+    'entra a FALTANTES y no falla, asi que sin esta nota no se distingue de un olvido.';
+
+  var r = curarCamposMarcadores_([
+    { marcador: 'm2_campanias', informe_id: 'jm', notas: (antes ? antes + ' | ' : '') + parrafo }
+  ]);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  /* ⭐ `C-83` — se relee lo que quedó en la celda, no lo que se pidió escribir. */
+  var releido = String(hoja.getDataRange().getValues()[fila][iN] || '');
+  Logger.log('DESPUÉS · notas = "' + releido + '"');
+  Logger.log(releido.indexOf(SELLO_NOTA_M2_CAMPANIAS_) !== -1
+    ? '✅ el párrafo del 25/08 está en la celda, releído de la hoja.'
+    : '⛔ la celda NO quedó con el párrafo: Sheets se comió algo. Mirar el DESPUÉS de arriba.');
+
+  return { ok: true, cambios_escritos: r.cambios_escritos, antes: antes, releido: releido };
+}
+
+/**
  * `B.1` de las once respuestas (07/08) — la puerta para **corregir un campo** de un marcador
  * que ya existe. Es a `MARCADORES` lo que `curarSecciones_` es a `SECCIONES`, y nace por la
  * misma falta: `curarMarcadores_` **agrega y quita filas enteras**, y cambiar el `formato` de
