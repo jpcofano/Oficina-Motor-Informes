@@ -3,6 +3,77 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
+**Última actualización:** 2026-08-27 — **`2026-08-27_1`: el asistente lineal de cuatro pasos
+(`D-44`), en cuatro commits.** Todo el trabajo es del **front y el proceso**; **no se generó ningún
+deck**, **no se tocó ninguna plantilla** y **ninguna hoja viva cambió**. **Suites: 59 → 63 bancos,
+~795 → ~961 afirmaciones**, veredicto por exit code.
+
+### ⭐ Lo último, en cinco líneas
+
+- ⭐⭐ **Los cuatro pasos ya estaban construidos; lo que faltaba era la máquina de estados.** Ahora
+  existe, y **la guarda es de HECHOS leídos de las hojas vivas, en cascada** —existe la fila de
+  `PERIODOS`, hay filas de temario, ninguna reunión con `mostrar` vacío—. **Sin cascada, saltear
+  DOS pasos pasaría:** sobre un temario vacío *«nadie sin confirmar»* es cierto **por vacuidad**.
+- ⛔⛔ **Premisa del prompt CORREGIDA con medición: el anclaje no puede correr al ENTRAR al paso 3.**
+  `leerReuniones_` filtra por `mostrar` **antes** de que el anclaje vea nada, y el temario recién
+  cargado tiene `mostrar` vacío en todo. Anclar al entrar devuelve tres listas vacías, **que se
+  leen como «ningún encuentro tiene problema»**. ⇒ El paso 3 es **una pantalla con dos momentos**.
+- ⛔⛔ **Y el hueco del paso 2 estaba en el PARTIDOR, no en el cargador.**
+  `partirTemarioEnBloques_` **se come** la línea que no parsea —la toma como título de bloque— así
+  que nunca llegaba a recibir su `notas = 'no se pudo parsear'`. **Un temario que carga 4 de 5 y no
+  lo dice publica un informe al que le falta un encuentro.**
+- ⚠ **`D-43` se supersedió PARCIALMENTE, no entera.** El prompt pedía marcarla derogada; con el
+  código delante, **su escritor `crearPeriodos_` y la opción «semana en curso» son lo que el paso 1
+  usa**. Sólo cae generar N semanas por adelantado — `generarProximasSemanas()` y
+  `generarPeriodosSemanales_` se retiraron.
+- ⭐ **Un control negativo se escribió al revés y el rojo lo corrigió:** anular la guarda del
+  **panel** no duplica la fila de `PERIODOS`, porque la protección vive en `crearPeriodos_`, que es
+  el **escritor**. Lo que la guarda del panel compra es el **reporte**.
+
+### ⛔ Lo que hay que correr, y es del usuario
+
+1. **`clasp push`** — se tocaron `PanelBackend.gs`, `Instalar.gs`, `Panel.html`, `Reuniones.gs`,
+   `Campanas.gs` y `Union.gs`. **Nada de esto está en el proyecto de Apps Script todavía.**
+2. **Abrir el panel y hacer una semana entera por la pestaña «Asistente»**, de punta a punta. Es lo
+   único que contesta las tres preguntas que ningún banco puede: que la celda quede escrita, que el
+   anclaje entre en la espera de una pantalla, y que el deck salga.
+3. ⚠ **Cronometrar el paso 3.** El anclaje corre con las dos cachés abiertas —copiadas del
+   preámbulo de `generarInforme`, no armadas de nuevo— y **se asume que no tarda**. Los ~500 s que
+   circularon eran el costo **sin caché**; con el preámbulo la misma resolución dio **11,3 s**.
+   **Si resulta que sí tarda, el número es el hallazgo:** la espera es un problema de UI y la
+   decisión es tuya.
+
+### ⚠ Tres cosas que quedaron declaradas, no resueltas — y son tuyas
+
+- ⛔ **Elegir la cuenta de un `sin link` no se puede desde el panel.** El motor sólo deja fila en
+  `ANCLAJE_PENDIENTE` cuando el score queda **bajo el umbral**, así que `panel_confirmarAnclaje` no
+  tiene dónde escribir — y no inventa filas. **La pantalla lo dice en vez de ofrecer un botón que
+  falla.** Habilitarlo pide que el motor registre fila también para los `sin link`, y eso **cambia
+  qué significa esa hoja** — el prompt pedía explícitamente que no cambie.
+- ⚠ **Un temario de SÓLO campañas abre el paso 4 sin pasar por el 3.** `AJ-1` las escribe con
+  `mostrar = 'sí'` de entrada, así que **nacen confirmadas** y no hay hecho que pruebe que alguien
+  las miró. No se inventó una columna para taparlo: está **afirmado en el banco**.
+- ⚠ **Un encabezado legítimo sin `>`** —`DGAYD`— vuelve a la lista de reuniones y produce una fila
+  `no se pudo parsear`. **Elegido a sabiendas:** una fila de más se ve en el paso 3 y se destilda;
+  una línea perdida en silencio no se ve nunca.
+
+### ⭐ Lo que cambió de escritores, y está declarado
+
+| hoja | qué se agregó |
+|---|---|
+| `CAMPANAS` | **`curarCamposCampanas_`** — nuevo. Misma forma que el de `REUNIONES`: angosto, no crea ni borra filas, devuelve el antes y el después, reporta la clave que no matchea |
+| `REUNIONES` | `curarCamposReuniones_` **ya existía**; el paso 3 lo usa. No es un camino nuevo |
+| `PERIODOS` | `crearPeriodos_` sin cambios, ahora con **tres** llamadores |
+
+⛔ **Las tres fichas se escribieron A MANO**, porque `tools/escritores.js` sigue en **rojo** (`P0`
+preexistente, `docs/PENDIENTES_consistencia.md`).
+
+⚠ **Lo que esta corrida NO tocó:** ningún número publicado, ninguna fila de `MARCADORES`, ninguna
+plantilla, ninguna hoja viva. **Toda la cola de abajo sigue exactamente donde estaba** — incluido
+`D-33` a medias, los cinco tokens que publican el universo de la otra lámina, y `X-28`.
+
+---
+
 **Última actualización:** 2026-08-27 — **corrida nocturna `2026-08-26_2`: siete de ocho partes, y dos bugs que ninguna suite podía ver.** Todo el trabajo es del **front y el proceso**; **no se generó ningún deck** y **no se tocó ninguna plantilla**. **Suites: 55 → 59 bancos, ~666 → ~795 afirmaciones**, veredicto por exit code.
 
 ### ⭐ Lo último, en cinco líneas
