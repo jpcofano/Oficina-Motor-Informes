@@ -393,3 +393,97 @@ Las filas marcadas *«ninguna reunión vigente la reclama»* ahora tienen botón
 - ⚠ **El desatendido nunca corrió de punta a punta con más de una continuación.** Los controles
   fijan las decisiones —qué opciones viajan, qué se muestra— y **eso no es lo mismo que haberlo
   visto terminar**.
+
+---
+
+## Addendum · 2026-08-27 · El asistente lineal de cuatro pasos — **[hoy]**
+
+> ⭐ **Esto reemplaza a los pasos 2 y 3 de arriba como camino recomendado.** Aquéllos siguen
+> descritos porque el camino libre —la pestaña **Generar**— no se retiró y sirve para regenerar un
+> deck de un período ya armado. Lo que cambia es que **hay un camino que no se puede hacer mal.**
+
+### F.1 · Qué es, y por qué es lineal
+
+Los cuatro pasos se hacen **en orden**, en la pestaña **Asistente**, y **cambiar el período es
+empezar de nuevo**.
+
+⭐⭐ **Eso no es una limitación: es lo que previene el problema.** Si el período se pudiera cambiar
+después de cargar el temario, las reuniones quedarían atadas al `periodo_id` viejo. **El diseño lo
+hace imposible en vez de tener que detectarlo.**
+
+⛔ **Y no se puede saltear un paso.** La guarda vive en el backend y mira **hechos de las hojas
+vivas** —existe la fila de `PERIODOS`, hay filas de temario, ninguna reunión sin decidir—, en
+cascada. Que la pantalla no muestre el botón es la comodidad; que el backend no deje pasar es el
+control.
+
+### F.2 · Paso 1 · El período — tres opciones, no una lista que crece
+
+| opción | qué es |
+|---|---|
+| **La semana anterior** | la última **cerrada**. Es lo que el motor propone por defecto (`R-11` Add. 2) |
+| **La semana en curso** | la que contiene a hoy. ⚠ **Avisa que los datos van a estar PARCIALES** |
+| **Un período a medida** | desde / hasta a mano |
+
+⭐ **El nombre se arma solo**, con la convención `AAAA_mes_ddInicio_ddFin`. Nadie escribe la clave.
+
+⭐⭐ **Si el período ya existe, se REUSA — no se crea de nuevo ni se pisa**, y el panel lo dice
+(*«se reusó»* contra *«se creó»*). Está medido que pisar una fila de `PERIODOS` cambia el universo
+de todo lo que la cita **sin que nada falle**.
+
+⚠ **El aviso de la semana en curso sale al ELEGIRLA, no al terminar**: un número parcial no se
+distingue de uno completo mirándolo, así que decirlo cuando el deck ya salió no sirve de nada.
+
+⛔ **`generarProximasSemanas()` ya no existe.** Con este flujo no hace falta ninguna semana por
+adelantado.
+
+### F.3 · Paso 2 · El temario — **un solo pegado**
+
+Se pega **todo junto**: las reuniones, el título `> Campañas destacadas`, y las campañas debajo. El
+motor lo reparte solo hacia las dos hojas.
+
+⭐ **Proponer** llena la caja con las dos listas, ya en el formato correcto. **Sólo lee**: no
+escribe ninguna fila hasta que apretás *Cargar*.
+
+⛔⛔ **Una línea que el motor no puede interpretar entra igual, MARCADA, y la vas a ver en el paso
+3.** Hasta hoy desaparecía en silencio, y **un temario que carga 4 de 5 y no lo dice publica un
+informe al que le falta un encuentro.** Ninguna se descarta sola.
+
+### F.4 · Paso 3 · Confirmar — **una pantalla, dos preguntas**
+
+Una fila por reunión y por campaña, con el **check** —si entra al informe— y, después de confirmar,
+**contra qué cuenta ancló** cada encuentro.
+
+⭐ **Las dos preguntas viven juntas porque las dos deciden el número**, y la segunda ya costó caro:
+el deck del 04/08 publicó **once números de la cuenta equivocada**. Ningún número estaba mal
+formateado ni mal ubicado — **estaba mal la cuenta**.
+
+⚠ **El orden es: tildar → *Confirmar y anclar* → mirar el anclaje.** No al revés, y hay un motivo
+medido: el anclaje sólo mira las filas que ya están marcadas para entrar, así que **antes de
+confirmar no hay nada que anclar**.
+
+| lo que ves | qué significa | qué hacés |
+|---|---|---|
+| ✅ **ancló contra `<cuenta>`** | por encima del umbral | nada |
+| ⚠ **ancló por debajo del umbral** | el motor no está seguro | **elegís** en la pestaña **Anclajes** |
+| ⛔ **sin cuenta** | no hay fila de `rdv`, o hay homónimos que no se pueden separar | sale sin cuenta, con el hueco a la vista |
+
+⛔ **Los `sin cuenta` no se pueden elegir desde el panel, y la pantalla lo dice.** El motor sólo
+deja fila en `ANCLAJE_PENDIENTE` cuando el anclaje queda **por debajo del umbral**; los que no
+llegan a ese punto no tienen dónde guardar la elección. **Se declara en vez de ofrecer un botón que
+falla.**
+
+### F.5 · Paso 4 · Generar
+
+Los mismos dos botones de siempre —de una vez, o que siga sola— **sobre el período elegido**.
+
+⭐⭐ **El período va SIEMPRE explícito**, y eso arregla un caso real: sin período elegido el motor
+da **la misma ventana de fechas y otro temario** — el deck `jm-20260821-230048` salió con **12
+encuentros en vez de 2** y nada falló.
+
+### F.6 · **[falta]** — lo que el asistente todavía no hace
+
+- **Elegir la cuenta de un `sin link`** — necesita que el motor deje fila para ellos, y eso cambia
+  qué significa `ANCLAJE_PENDIENTE`. Decisión pendiente.
+- **Publicar** (paso 6 de arriba) — sigue fuera del panel.
+- **Cuánto tarda el paso 3.** El anclaje corre con las dos cachés abiertas y se asume que entra en
+  la espera de una pantalla; **eso lo dice una corrida**, no un banco.

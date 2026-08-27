@@ -2318,6 +2318,89 @@ pie de página cuando el deck ya salió no sirve de nada.
 
 ---
 
+
+**`D-44` — El proceso del usuario es un ASISTENTE LINEAL de cuatro pasos, y supersede
+PARCIALMENTE a `D-43`.** (27/08/2026, `2026-08-27_1`. Decisión del usuario.)
+
+⭐ **Lo que se decide, en una línea:** los cuatro pasos —período, temario, confirmar, generar— se
+hacen **en orden**, y **cambiar el período es empezar de nuevo**.
+
+⭐⭐ **Y eso no es una limitación de la UI: es lo que previene el problema.** Si el período se
+pudiera cambiar después de cargar el temario, las reuniones quedarían atadas al `periodo_id` viejo.
+**El diseño lineal lo hace imposible en vez de tener que detectarlo** — que es la misma forma que
+`D-37` eligió para la identidad de una lámina: declarar en vez de deducir.
+
+### ⛔⛔ Qué de `D-43` cae y qué sobrevive — la supersesión es PARCIAL
+
+⚠ **El prompt pedía anotar `D-43` como «derogada por el flujo», y eso se corrigió con el código
+delante:** `D-43` tiene dos mitades y **el asistente necesita una de ellas**.
+
+| mitad de `D-43` | estado |
+|---|---|
+| **El escritor `crearPeriodos_`** — insert-only, relee lo que quedó, un solo camino de escritura | ✅ **vigente, y ahora con tres llamadores.** El paso 1 delega en él |
+| **«Semana en curso» deroga parcialmente `R-11` Add. 2**, con el aviso de datos parciales al elegirla | ✅ **vigente.** Es la opción «en curso» del paso 1 |
+| **Generar N semanas por adelantado** (`generarPeriodosSemanales_`, `generarProximasSemanas()`) | ⛔ **cae.** Con este flujo no hace falta ninguna semana por adelantado: el paso 1 crea **la** que la persona elige |
+
+⭐ **Marcar `D-43` entera como derogada habría borrado el escritor que este flujo usa**, y habría
+contradicho al propio prompt, que pedía **no** borrar su ficha de `ESCRITORES.md`. Una decisión no
+se edita: se supersede con otra que la cita (§7), y la cita tiene que decir **qué** parte.
+
+### ⭐⭐ La guarda es de HECHOS, nunca de una bandera del front
+
+`guardaDelAsistente_` es **pura** y mira tres cosas leídas de las hojas vivas, **en cascada**:
+
+1. **existe la fila de `PERIODOS`** — sin eso no hay sobre qué cargar (`D-19`);
+2. **hay filas de temario para ese período** — sin eso el paso 3 no tiene qué confirmar;
+3. **ninguna reunión con `mostrar` vacío** — sin eso `leerReuniones_` la descarta y el deck sale
+   sin ese encuentro, **sin que nada falle**.
+
+⛔ **La cascada es la mitad del control.** Si el paso 4 sólo mirara *«¿confirmaron?»*, saltear
+**dos** pasos pasaría: sobre un temario vacío *«nadie sin confirmar»* es cierto **por vacuidad**.
+
+⛔ **Un `paso: 3` que viaja en el estado del HTML es una afirmación del front sobre sí mismo**, y el
+front puede mentir — es el `TECHO_S = 350` del `2026-08-21_1` y el `|| S.faltantesComoRaya` del
+20/08, otra vez.
+
+### ⛔⛔ La premisa del paso 3 que se corrigió con medición
+
+**El anclaje NO puede correr al ENTRAR al paso 3.** `anclarEncuentrosSinCache_` ancla sobre
+`leerReuniones_()`, que filtra `esVerdadero_(mostrar)` **antes de que el anclaje vea nada**, y
+`cargarTemarioReuniones_` deja `mostrar` vacío a propósito. Un temario recién cargado tiene **cero**
+filas anclables: anclar al entrar devuelve tres listas vacías, **que se leen como «ningún encuentro
+tiene problema»**.
+
+⭐ **Es el caso del 25/08 que ya está en `CLAUDE.md` §4** — *«REUNIONES no tiene filas para anclar en
+`julio_24_30`»*, con las cuatro filas de julio en `mostrar` vacío. *El filtro que faltaba estaba un
+nivel arriba, en quien le pasa los datos.*
+
+⇒ **El paso 3 es una pantalla con dos momentos:** se marcan los checks, se aprieta *Confirmar y
+anclar*, y **en la misma respuesta** vuelven las tres listas. Las dos preguntas quedan juntas, que
+es lo que el paso pide.
+
+⛔ **No se cambió el criterio de `mostrar` de `cargarTemarioReuniones_` para esquivarlo.** El propio
+cargador declara que unificarlo con el de `CAMPANAS` **es decisión del usuario, no del código**.
+
+### Lo que `D-44` NO hace, declarado en vez de descubierto
+
+- ⛔ **No permite elegir cuenta para un `sin link` sin fila en `ANCLAJE_PENDIENTE`.** El motor sólo
+  deja fila cuando el score queda **bajo el umbral**, así que `panel_confirmarAnclaje` no tiene
+  dónde escribir — y **no inventa filas**. La pantalla lo **dice** en vez de ofrecer un botón que
+  falla. Registrar filas para los `sin link` cambiaría qué significa esa hoja, y el prompt pedía
+  explícitamente que eso **no** cambie.
+- ⚠ **La guarda no cubre un temario de SÓLO campañas.** `cargarTemarioCampanas_` las escribe con
+  `mostrar = 'sí'` de entrada (`AJ-1`, *ante la duda entra*), así que **nacen confirmadas** y no hay
+  hecho que pruebe que alguien las miró. No se inventó una columna para taparlo: está afirmado en
+  el banco.
+- ⚠ **Un encabezado legítimo sin `>`** —`DGAYD`— vuelve a la lista de reuniones y produce una fila
+  `no se pudo parsear`. **Elegido a sabiendas:** una fila de más se ve en el paso 3 y se destilda;
+  una línea perdida en silencio publica un informe al que le falta un encuentro.
+- ⛔ **No toca las dos filas rotas de `PERIODOS`** —`julio_24_30` duplicada y
+  `'vie 14/08 -- jue 20/08 (por defecto)'`—. Se **reportan** en cada corrida del paso 1.
+- ⚠ **La pestaña «Generar» no se retira.** Es el camino libre, y sigue haciendo falta para
+  regenerar un deck de un período ya armado sin volver a pasar por los cuatro pasos.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### El encuadre: todo lo de abajo es la fase `informe semanal` — `D-38`

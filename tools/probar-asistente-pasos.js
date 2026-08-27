@@ -217,6 +217,93 @@ console.log('\n6 · ⚠ el control negativo: sin cascada, saltear dos pasos deja
   afirmar(true, '⚠ y la mutación OCURRIÓ: sin el parche aplicado, `contexto()` tira antes de medir');
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 7 · ⛔⛔ El paso 4 corre la guarda, y manda el período EXPLÍCITO
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n7 · ⛔⛔ el paso 4: guarda de verdad, y período explícito');
+{
+  const con = C.contexto({
+    PERIODOS: [['2026_agosto_21_27', '2026-08-21', '2026-08-27', '']],
+    REUNIONES: [
+      ['2026_agosto_21_27', 1, 'JM', 'Uno a uno', 'Retiro', '2026-08-24', '', 'sí', 'a', ''],
+      ['2026_agosto_21_27', 2, 'JM', 'Uno a uno', 'Boedo', '2026-08-25', '', '', 'b', '']
+    ],
+    CAMPANAS: []
+  });
+  /* Se falsean los dos adaptadores para poder ver **qué les llega** sin generar un deck. */
+  con.__llamadas = [];
+  con.panel_generar = function (i, p, s, sec) {
+    con.__llamadas.push({ cual: 'directa', informe: i, periodo: p, simbolos: s, secciones: sec });
+    return { ok: true, deck: { url: 'x' } };
+  };
+  con.panel_generarDesatendida = function (i, p) {
+    con.__llamadas.push({ cual: 'desatendida', informe: i, periodo: p });
+    return { ok: true };
+  };
+
+  /* ⛔ Con Boedo sin decidir, el paso 4 NO corre — y lo que prueba que la guarda es de verdad es
+   * que **no llamó a nadie**. Una guarda que deja pasar y después informa error ya generó. */
+  const bloqueado = C.vm.runInContext(
+    'panel_asistenteGenerar("jm", "2026_agosto_21_27", true, [], false)', con);
+  afirmar(bloqueado.ok === false && bloqueado.falta === 'confirmar',
+    '⛔⛔ con una reunión sin decidir, el paso 4 no abre');
+  afirmar(con.__llamadas.length === 0,
+    '⭐⭐ y NO llamó al generador: una guarda que deja pasar y después informa error ya generó');
+
+  /* Ahora sí: se decide la que faltaba. */
+  con.__hojas.REUNIONES.__filas[2][7] = 'no';
+  const r = C.vm.runInContext(
+    'panel_asistenteGenerar("jm", "2026_agosto_21_27", true, ["encuentro"], false)', con);
+  afirmar(r.ok === true, 'con todo decidido, genera' + (r.ok ? '' : ' — ' + r.motivo));
+  afirmar(con.__llamadas.length === 1 && con.__llamadas[0].cual === 'directa',
+    '⭐ y va por `panel_generar`, el adaptador de siempre — no hay un segundo camino');
+  afirmar(con.__llamadas[0].periodo === '2026_agosto_21_27',
+    '⭐⭐ con el período EXPLÍCITO: sin él `anclarEncuentros` no recorta y entran 12 encuentros en vez de 2');
+  afirmar(con.__llamadas[0].secciones.join(',') === 'encuentro' && con.__llamadas[0].simbolos === true,
+    '   y las opciones de pantalla llegan tal cual: secciones y símbolos');
+  afirmar(r.via === 'asistente' && r.periodo_explicito === true,
+    '⚠ el resultado dice que vino del asistente: es lo que explica un temario distinto con la misma ventana');
+
+  /* El otro botón manda exactamente lo mismo por el otro adaptador. */
+  const des = C.vm.runInContext(
+    'panel_asistenteGenerar("jm", "2026_agosto_21_27", true, [], true)', con);
+  afirmar(des.ok === true && con.__llamadas[1].cual === 'desatendida' &&
+          con.__llamadas[1].periodo === '2026_agosto_21_27',
+    '⭐ y el botón desatendido manda lo mismo, por `panel_generarDesatendida`');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 8 · El panel cableado, y el orden en la pantalla
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n8 · el asistente cableado al panel');
+{
+  const html = C.fs.readFileSync(C.path.join(C.RAIZ, 'Panel.html'), 'utf8');
+
+  afirmar(BACKEND.indexOf('function panel_asistenteGenerar(') !== -1 &&
+          html.indexOf('.panel_asistenteGenerar(') !== -1,
+    '`panel_asistenteGenerar` existe en el backend Y el front la llama');
+
+  /* ⭐ El front NUNCA llama a `panel_generar` desde el asistente: si lo hiciera, se saltearía la
+   * guarda del paso 4 y podría mandar el período vacío. */
+  const bloqueAsis = html.slice(html.indexOf('function generarDesdeAsistente'),
+                                html.indexOf('function conectarAsistente'));
+  afirmar(bloqueAsis.indexOf('.panel_generar(') === -1 &&
+          bloqueAsis.indexOf('.panel_generarDesatendida(') === -1,
+    '⛔⛔ y el asistente NO llama a los adaptadores directos: se saltearía la guarda del paso 4');
+  afirmar(/panel_asistenteGenerar\(S\.informeId, a\.periodoId/.test(bloqueAsis),
+    '⭐ manda `a.periodoId`, el del asistente — nunca vacío ni «por defecto»');
+
+  /* ⛔ El botón del paso 4 cuelga de lo que dice el backend, no de una bandera del front. */
+  afirmar(/a\.anclaje && a\.puedeGenerar/.test(html),
+    '⛔ el botón «seguir al paso 4» aparece sólo si el backend dijo `puede_generar`');
+  afirmar(/puedeGenerar = r\.puede_generar === true/.test(html),
+    '   y `puedeGenerar` sale de la respuesta del backend, no se deriva en el front');
+
+  /* Los cuatro pasos, en orden, en la barra. */
+  afirmar(/\['Período', 'Temario', 'Confirmar', 'Generar'\]/.test(html),
+    '⭐ la barra de pasos nombra los cuatro, en orden');
+}
+
 console.log('');
 console.log(fallas === 0 ? '✅ Las ' + hechas + ' afirmaciones pasaron.'
                          : '❌ ' + fallas + ' de ' + hechas + ' afirmación(es) fallaron.');

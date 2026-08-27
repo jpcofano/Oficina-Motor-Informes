@@ -1029,6 +1029,16 @@ function pasoConfirmar(){
 
   if (a.anclaje) h += bloqueDeAnclaje(a.anclaje, a.sinFila);
 
+  /* ⛔ **El botón del paso 4 aparece sólo cuando el BACKEND dice que puede.** `puedeGenerar` sale
+   * de `guardaDelAsistente_` para el paso 4, con hechos releídos de la hoja después de escribir —
+   * no de que este objeto crea que la confirmación salió bien. */
+  if (a.anclaje && a.puedeGenerar){
+    h += '<div class="cuadro-btns"><button class="btn btn-primary" id="asis-al-4">' +
+         'Seguir al paso 4 — generar</button></div>';
+  } else if (a.anclaje){
+    h += '<p class="hint-error">Todavía no se puede generar: quedó alguna reunión sin decidir.</p>';
+  }
+
   h += '<hr class="sep"><button class="btn btn-secondary" id="asis-reiniciar">Empezar de nuevo</button>';
   return h;
 }
@@ -1114,12 +1124,95 @@ function bloqueDeAnclaje(an, sinFila){
   return h;
 }
 
+/* ── Paso 4 · generar ─────────────────────────────────────────────────────────────────────
+ *
+ * ⭐ **El período va SIEMPRE explícito**, y eso arregla un caso medido: `anclarEncuentros` recorta
+ * `REUNIONES` **sólo si la ventana vino por `periodo_ref`**, así que una corrida sin período
+ * elegido da **la misma ventana de fechas y otro temario** — 12 encuentros en vez de 2. */
 function pasoGenerar(){
-  return cabezalDelPeriodo() +
-         '<div class="alert alert-warning"><div class="alert-title">Paso 4 — todavía no cableado</div>' +
-         'Generar el deck sobre lo confirmado. Mientras tanto se hace desde la pestaña «Generar», ' +
-         'que es el camino libre de siempre.</div>' +
-         '<button class="btn btn-secondary" id="asis-reiniciar">Empezar de nuevo</button>';
+  var a = asis();
+  var inf = informeActual();
+  var h = cabezalDelPeriodo();
+
+  h += '<p class="hint">Todo lo de arriba está confirmado. Esto genera el deck ' +
+       '<b>sobre este período</b> — nunca «por defecto».</p>';
+
+  h += '<div class="field"><label for="asis-informe">Informe</label>' +
+       '<select id="asis-informe">' +
+       S.informes.map(function(i){
+         return '<option value="' + esc(i.id) + '"' + (i.id===S.informeId?' selected':'') + '>' +
+           esc(i.nombre) + '</option>';
+       }).join('') + '</select>';
+  if (inf && inf.marcadores_cableados === 0){
+    h += '<p class="hint">Este informe todavía no tiene datos configurados: el deck va a salir ' +
+         'con huecos en casi todos los lugares.</p>';
+  }
+  h += '</div>';
+
+  if (inf && (inf.secciones||[]).length){
+    h += '<div class="field"><span class="section-title">Secciones repetibles</span>';
+    h += (inf.secciones||[]).map(function(s){
+      return '<label class="check"><input type="checkbox" data-seccion="' + esc(s.id) + '"' +
+        (S.secciones[s.id]?' checked':'') + '>' +
+        '<span class="check-text"><span class="check-label">' + esc(s.id) + '</span>' +
+        (s.itera_sobre ? '<span class="check-sub">itera sobre ' + esc(s.itera_sobre) + '</span>' : '') +
+        '</span></label>';
+    }).join('');
+    h += '<p class="hint">Sacar una acorta la corrida — el techo es de ' + TECHO_S + ' s.</p></div>';
+  }
+
+  h += '<label class="check"><input type="checkbox" id="asis-raya"' + (S.conSimbolos?' checked':'') + '>' +
+       '<span class="check-text"><span class="check-label">Los huecos se ven como símbolos</span>' +
+       '<span class="check-sub">/////&nbsp;falta cablearlo · »»»&nbsp;no se llegó · ---&nbsp;falló · -&nbsp;sin dato.</span></span></label>';
+
+  h += '<div class="field">' +
+       '<button class="btn btn-primary" id="asis-generar">Generar informe</button>' +
+       '<button class="btn btn-secondary" id="asis-generar-des">Generar y que siga sola</button>' +
+       '<p class="hint"><b>Generar informe</b> corre de una vez y devuelve el deck: es lo más ' +
+       'rápido cuando entra en el techo de ' + TECHO_S + ' s. <b>Generar y que siga sola</b> deja ' +
+       'la corrida reanudándose por su cuenta, y el avance se mira en la pestaña «Corrida».</p>' +
+       '</div>';
+
+  h += '<hr class="sep"><button class="btn btn-secondary" id="asis-reiniciar">Empezar de nuevo</button>';
+  return h;
+}
+
+/**
+ * Arranca la generación desde el asistente.
+ *
+ * ⭐ **Reusa el estado y las vistas del camino libre** —`S.estado`, `vistaEsperando`, `vistaListo`,
+ * `vistaFallo`— en vez de duplicar la pantalla de resultado, que es la más larga del panel. Lo
+ * único propio es **por dónde entra**: `panel_asistenteGenerar`, que corre la guarda del paso 4 y
+ * manda el período **siempre explícito**.
+ */
+function generarDesdeAsistente(desatendida){
+  var a = asis();
+  S.periodoId = a.periodoId;   // el selector del camino libre queda coherente con lo elegido acá
+  S.estado = 'generando';
+  S.elapsed = 0;
+  S.resultado = null;
+  S.motivo = null;
+  S.tab = 'generar';           // la espera y el resultado se pintan con las vistas de siempre
+  pintar();
+  S.tick = setInterval(function(){ S.elapsed++; pintarTimer(); }, 1000);
+
+  var elegidas = [];
+  Object.keys(S.secciones).forEach(function(k){ if (S.secciones[k]) elegidas.push(k); });
+
+  google.script.run
+    .withSuccessHandler(function(r){
+      clearInterval(S.tick); S.tick = null;
+      if (!r || !r.ok){ S.estado = 'fallo'; S.motivo = (r && r.motivo) || 'Sin motivo.'; pintar(); return; }
+      if (desatendida){
+        S.estado = 'form'; S.desArranque = r; S.des = null; S.tab = 'desatendida'; pintar(); return;
+      }
+      S.estado = 'listo'; S.resultado = r; pintar(); cargarCorridas();
+    })
+    .withFailureHandler(function(e){
+      clearInterval(S.tick); S.tick = null;
+      S.estado = 'fallo'; S.motivo = (e && e.message) || String(e); pintar();
+    })
+    .panel_asistenteGenerar(S.informeId, a.periodoId, S.conSimbolos, elegidas, desatendida === true);
 }
 
 function cargarPaso3(){
@@ -1313,6 +1406,21 @@ function conectarAsistente(){
   if (bt) bt.onclick = cargarTemarioDelAsistente;
   var bcf = el('asis-confirmar');
   if (bcf) bcf.onclick = confirmarYAnclar;
+  var b4 = el('asis-al-4');
+  if (b4) b4.onclick = function(){ asis().paso = 4; pintar(); };
+  var ai = el('asis-informe');
+  if (ai) ai.onchange = function(){ S.informeId = ai.value; resetSecciones(); pintar(); };
+  var ar = el('asis-raya');
+  if (ar) ar.onchange = function(){ S.conSimbolos = ar.checked; };
+  /* Las secciones usan el mismo atributo que el camino libre, así que se conectan igual: el
+   * estado es uno solo y no hay dos definiciones de qué está tildado. */
+  Array.prototype.forEach.call(document.querySelectorAll('[data-seccion]'), function(cb){
+    cb.onchange = function(){ S.secciones[cb.getAttribute('data-seccion')] = cb.checked; };
+  });
+  var bg = el('asis-generar');
+  if (bg) bg.onclick = function(){ generarDesdeAsistente(false); };
+  var bgd = el('asis-generar-des');
+  if (bgd) bgd.onclick = function(){ generarDesdeAsistente(true); };
   var br = el('asis-reiniciar');
   if (br) br.onclick = reiniciarAsistente;
 }

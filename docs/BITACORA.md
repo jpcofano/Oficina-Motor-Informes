@@ -16206,3 +16206,39 @@ tiene dónde escribir — y **no inventa filas**. La pantalla lo **dice** en vez
 que falla.
 
 **Banco:** `probar-asistente-anclaje.js`, 48 afirmaciones. Suites: **63 bancos, ~947 afirmaciones.**
+
+### Paso 4 — generar, y lo que el asistente agrega es la guarda
+
+⛔⛔ **No hay un segundo camino de generación.** `panel_asistenteGenerar` delega en `panel_generar` y
+`panel_generarDesatendida`, que comparten `panel_opcionesDeGeneracion_`. Lo que agrega son dos
+cosas:
+
+1. **La guarda del paso 4**, y lo que prueba que es de verdad es que **no llama al generador** —
+   una guarda que deja pasar y después informa error ya generó.
+2. ⭐⭐ **El período SIEMPRE explícito.** `panel_generar` acepta `periodoId` vacío y ahí la cadena de
+   `D-20` resuelve sola; desde el asistente nunca se manda vacío. `anclarEncuentros` recorta
+   `REUNIONES` **sólo si la ventana vino por `periodo_ref`**, así que sin período entran **12
+   encuentros en vez de 2** — el deck `jm-20260821-230048` es exactamente eso, y salió sin fallar.
+
+⭐ **El front reusa `vistaEsperando` / `vistaListo` / `vistaFallo`** en vez de duplicar la pantalla
+de resultado, que es la más larga del panel. Lo único propio es **por dónde entra**.
+
+⛔ **Y el botón «seguir al paso 4» cuelga de `puede_generar`, que lo dice el BACKEND** — no de que
+el front crea que la confirmación salió bien.
+
+### Documentación y cierre
+
+- **`docs/PLAN.md`** — `D-44`, con la supersesión **PARCIAL** de `D-43` en una tabla de tres filas.
+  ⚠ **El prompt pedía anotar `D-43` como derogada entera y eso se corrigió con el código delante:**
+  su escritor `crearPeriodos_` y la opción «semana en curso» **son lo que el paso 1 usa**. Lo único
+  que cae es generar N semanas por adelantado. Marcarla entera habría borrado el escritor que este
+  flujo necesita, y habría contradicho al propio prompt, que pedía **no** borrar su ficha.
+- **`docs/ESCRITORES.md`** — fichas de `curarCamposCampanas_` y `curarCamposReuniones_`, **a mano**,
+  porque `tools/escritores.js` sigue en rojo (`P0` preexistente).
+- **`docs/PROCESO_SEMANAL.md`** — el addendum F, que es cómo se usa.
+
+**Suites: 59 → 63 bancos, ~795 → ~961 afirmaciones**, todas en verde. `tools/listas.js` OK.
+
+⛔ **Nada de esto corrió contra la planilla viva.** Las hojas están falseadas en los cuatro bancos:
+lo que fijan es la **decisión** de cada paso. Que la celda quede escrita, que el anclaje entre en la
+espera de una pantalla y que el deck salga **lo dice una corrida**, y es del usuario.

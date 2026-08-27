@@ -2620,6 +2620,41 @@ function panel_asistenteConfirmar(periodoId, informeId, decisiones) {
 }
 
 /**
+ * Paso 4 · **generar, sobre ese período y con lo confirmado en el 3.**
+ *
+ * ⛔⛔ **No hay un segundo camino de generación.** Delega en `panel_generar` y
+ * `panel_generarDesatendida`, que son los adaptadores de siempre y comparten
+ * `panel_opcionesDeGeneracion_`. Dos constructores de opciones es la figura que ese constructor
+ * vino a cerrar: el día que se agregue una opción entra en uno y no en el otro, **y ninguno de los
+ * dos falla** — el segundo botón simplemente empieza a hacer otra cosa.
+ *
+ * ⭐⭐ **Lo que este paso agrega es la guarda, y el período EXPLÍCITO.** `panel_generar` acepta
+ * `periodoId` vacío y ahí la cadena de `D-20` resuelve sola; desde el asistente **nunca** se manda
+ * vacío, y eso arregla un caso medido: `anclarEncuentros` recorta `REUNIONES` **sólo si la ventana
+ * vino por `periodo_ref`**, así que sin período entran **12 encuentros en vez de 2** — el deck
+ * `jm-20260821-230048` es exactamente eso, y salió sin que nada fallara.
+ */
+function panel_asistenteGenerar(informeId, periodoId, conSimbolos, secciones, desatendida) {
+  var ref = String(periodoId || '').trim();
+  var hechos = hechosDelAsistente_(ref, informeId);
+  var permiso = guardaDelAsistente_(4, hechos);
+  if (!permiso.ok) return { ok: false, motivo: permiso.motivo, falta: permiso.falta };
+
+  var r = (desatendida === true)
+    ? panel_generarDesatendida(informeId, ref, conSimbolos, secciones)
+    : panel_generar(informeId, ref, conSimbolos, secciones);
+
+  /* ⚠ Se marca de dónde vino, y no es cosmético: una corrida del asistente **siempre** tiene
+   * período explícito, y una del camino libre puede no tenerlo. Cuando alguien compare dos decks
+   * del mismo informe, eso es lo que explica un temario distinto con la misma ventana. */
+  if (r && r.ok) {
+    r.via = 'asistente';
+    r.periodo_explicito = true;
+  }
+  return r;
+}
+
+/**
  * Paso 1 · **elegir el período: lo crea si no está, lo REUSA si está.**
  *
  * ⛔ **Reusar es no escribir nada.** Está medido que `upsertPorClave_` **pisa sin preguntar**
