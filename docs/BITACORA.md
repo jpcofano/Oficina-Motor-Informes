@@ -16157,3 +16157,52 @@ escritores, y el banco lo fija —cero `setValues` y cero `appendRow` en el bloq
 
 **Banco:** `probar-asistente-temario.js`, 31 afirmaciones, con el control negativo que el prompt
 pedía: **con el temario limpio no queda nada marcado**. Suites: **62 bancos, ~899 afirmaciones.**
+
+### Paso 3 — confirmar, y dos premisas del prompt corregidas con medición
+
+⭐ **Dos preguntas al mismo tiempo, y viven juntas porque las dos deciden el número:** si la fila
+entra al informe, y **contra qué cuenta ancló**. La segunda ya costó caro — el deck del 04/08
+publicó **once números de `3347-JULJDGAG` cuando el encuentro era `3387-JULJDGGC`**.
+
+⛔⛔ **Premisa 1, confirmada: `panel_getAnclajes` lee `ANCLAJE_PENDIENTE`, que sólo registra los de
+baja confianza.** Medido en la fuente: `registrarAnclajePendiente_` se llama en **una sola rama**,
+la de `!pasaUmbral`. ⇒ La pantalla lee el **resultado** de `anclarEncuentros` —las tres listas—, y
+la hoja sigue guardando las decisiones. **El control que importa es el positivo:** un encuentro de
+alta confianza tiene que aparecer, y con la hoja como fuente no aparecería.
+
+⛔⛔ **Premisa 2, CORREGIDA: el anclaje NO puede correr al entrar al paso 3.**
+`anclarEncuentrosSinCache_` ancla sobre `leerReuniones_()`, que filtra `esVerdadero_(mostrar)`
+**antes de que el anclaje vea nada**, y `cargarTemarioReuniones_` deja `mostrar` vacío a propósito.
+Un temario recién cargado tiene **cero** filas anclables: anclar al entrar devuelve tres listas
+vacías, **que se leen como «ningún encuentro tiene problema»**.
+
+- ⭐ **Es el caso del 25/08 que ya está en `CLAUDE.md` §4** — *«REUNIONES no tiene filas para anclar
+  en `julio_24_30`»* con las cuatro filas de julio en `mostrar` vacío. *El filtro que faltaba estaba
+  un nivel arriba, en quien le pasa los datos.*
+- ⇒ **El paso 3 es una pantalla con dos momentos:** se marcan los checks, se aprieta *Confirmar y
+  anclar*, y **en la misma respuesta** vuelven las tres listas.
+- ⛔ **No se cambió el criterio de `mostrar` del cargador** para esquivarlo: el propio cargador
+  declara que unificarlo con el de `CAMPANAS` **es decisión del usuario**.
+
+⭐ **`mostrar` se escribe `sí` / `no`, nunca vacío.** Vacío es *«nadie decidió»*, y la guarda del
+paso 4 lo usa para saber si este paso ocurrió.
+
+⭐ **Escribe por los curadores declarados**, no por un camino nuevo: `curarCamposReuniones_` ya
+existía, y se agregó **`curarCamposCampanas_`** con la misma forma —angosto, no crea ni borra filas,
+devuelve el antes y el después, y reporta la clave que no matchea en vez de escribir en la fila de
+al lado—. Los dos quedaron declarados en `docs/ESCRITORES.md`, **a mano**, porque
+`tools/escritores.js` sigue en rojo.
+
+⭐⭐ **Y el anclaje corre con las DOS cachés abiertas**, copiando el preámbulo de `generarInforme`
+en vez de armar uno: sin ellas `unirDigitalPorCuenta` pasa de **6 s a 325** — factor **54**.
+
+⭐ **`nombreBuscadoDeReunion_` sale a `Union.gs` y deja de estar copiada en tres lugares** — el
+motor, `panel_getAnclajes` y `panel_archivarAnclaje`; el paso 3 habría sido la cuarta. Y el ítem del
+anclaje ahora la lleva: se calculaba y se descartaba.
+
+⛔ **Lo que este paso NO hace, declarado:** elegir una cuenta para un `sin link` **sin fila** en
+`ANCLAJE_PENDIENTE`. El motor sólo deja fila bajo el umbral, así que `panel_confirmarAnclaje` no
+tiene dónde escribir — y **no inventa filas**. La pantalla lo **dice** en vez de ofrecer un botón
+que falla.
+
+**Banco:** `probar-asistente-anclaje.js`, 48 afirmaciones. Suites: **63 bancos, ~947 afirmaciones.**

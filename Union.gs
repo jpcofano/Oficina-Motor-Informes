@@ -1220,6 +1220,29 @@ function registrarFalloAnclaje_(resultado, ventana) {
   }
 }
 
+/**
+ * ⭐⭐ **La clave con la que una reunión se busca en `ANCLAJE_PENDIENTE`, escrita UNA vez.**
+ *
+ * `normalizar_(nombre) | yyyy-MM-dd | etapa`. Es lo que `anclarEncuentrosSinCache_` guarda como
+ * `nombre_buscado` y lo que `anclajeYaConfirmado_` consulta antes de anclar.
+ *
+ * ⛔ **Estaba copiada en TRES lugares** —acá, `panel_getAnclajes` y `panel_archivarAnclaje`— y el
+ * paso 3 del asistente habría sido el cuarto. Tres copias de una clave es la figura del techo
+ * declarado en dos lugares: **el día que una gane un matiz, las otras dejan de matchear y no
+ * falla** — la pantalla simplemente deja de encontrar la fila, que es indistinguible de que no
+ * exista. Pura y sin planilla, así que se puede fijar con un banco.
+ *
+ * ⚠ **La fecha se normaliza a `yyyy-MM-dd` porque los dos lados llegan distintos:** de la hoja
+ * viene un `Date` de Sheets y del parser uno construido. `'sin_fecha'` es un valor, no un hueco:
+ * una reunión sin fecha legible sigue teniendo clave, y sigue siendo la misma entre corridas.
+ */
+function nombreBuscadoDeReunion_(reunion) {
+  var fecha = (reunion.fecha instanceof Date) ? reunion.fecha : parsearFechaCelda_(reunion.fecha);
+  return normalizar_(reunion.nombre) + '|' +
+    (fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd') : 'sin_fecha') +
+    '|' + (reunion.etapa || '');
+}
+
 function anclarEncuentros(ventana) {
   // `_31.1` B.4 — el `origen` entra en la clave. Dos períodos pueden tener el mismo rango de
   // fechas y seleccionar temarios distintos: sin esto, el segundo leería el anclaje del primero.
@@ -1452,9 +1475,9 @@ function anclarEncuentrosSinCache_(ventana) {
 
   reuniones.forEach(function (reunion, i) {
     var fecha = (reunion.fecha instanceof Date) ? reunion.fecha : parsearFechaCelda_(reunion.fecha);
-    var nombreBuscado = normalizar_(reunion.nombre) + '|' +
-      (fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd') : 'sin_fecha') +
-      '|' + (reunion.etapa || '');
+    /* ⭐ La clave sale de `nombreBuscadoDeReunion_`, que es el único lugar donde vive la fórmula.
+     * Ver su encabezado: estaba copiada en tres sitios y el paso 3 habría sido el cuarto. */
+    var nombreBuscado = nombreBuscadoDeReunion_(reunion);
 
     /* ⭐ `2026-08-21_8` — **`tipo` viaja con el ítem, y sin eso ningún filtro por tipo funciona.**
      *
@@ -1473,7 +1496,15 @@ function anclarEncuentrosSinCache_(ventana) {
      * peor: `asignaciones` viaja a `PropertiesService` en la corrida desatendida
      * (`2026-08-20_10`), y engordar el ítem con diez columnas que nadie pidió agranda un estado
      * que tiene tope de tamaño. Lo que se necesita se declara. */
-    var item = { reunion: reunion.nombre, tipo: reunion.tipo, fecha: reunion.fecha, etapa: reunion.etapa, idCuenta: '', score: 0, registroDigital: null, candidatoNombre: '' };
+    /* ⭐ `2026-08-27_1` — **`nombreBuscado` viaja con el ítem, y sin eso el paso 3 no puede
+     * escribir la decisión.** Es la clave con la que `panel_confirmarAnclaje` encuentra la fila de
+     * `ANCLAJE_PENDIENTE`; ya se calculaba acá y **se descartaba**, así que la pantalla habría
+     * tenido que recalcularla — la cuarta copia de la fórmula.
+     *
+     * ⚠ Es **una cadena corta por ítem**. El comentario de abajo pide no engordar este objeto
+     * porque viaja a `PropertiesService` en la corrida desatendida, y el criterio es el mismo que
+     * él declara: *lo que se necesita se declara*. */
+    var item = { reunion: reunion.nombre, tipo: reunion.tipo, fecha: reunion.fecha, etapa: reunion.etapa, idCuenta: '', score: 0, registroDigital: null, candidatoNombre: '', nombreBuscado: nombreBuscado };
     var confirmado = anclajeYaConfirmado_(indicePendiente, 'reunion', nombreBuscado);
     var filaRdv = encontrarFilaRdvDeReunion_(reunion);
 

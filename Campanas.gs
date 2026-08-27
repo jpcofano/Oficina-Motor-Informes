@@ -423,3 +423,70 @@ function menuCargarTemarioCampanas_() {
 
   return cargarTemarioDeCampanas(rt.getResponseText(), rp.getResponseText(), ri.getResponseText());
 }
+
+/**
+ * `2026-08-27_1` — **la puerta para corregir un campo de una fila de `CAMPANAS` que ya existe.**
+ *
+ * Es a `CAMPANAS` lo que `curarCamposReuniones_` es a `REUNIONES`, y nace por la misma falta: el
+ * único escritor de esta hoja (`cargarTemarioCampanas_`) **sólo agrega filas**. El paso 3 del
+ * asistente tiene que poder escribir `mostrar` sobre una fila cargada, y hacerlo a mano en la
+ * planilla lo dejaba fuera de todo registro.
+ *
+ * ⭐ **Se copia la forma que ya existe en vez de inventar una nueva** (`CLAUDE.md` §2, el grep
+ * previo): misma firma, mismo retorno, misma angostura — **no crea filas, no borra filas, no toca
+ * la clave** y devuelve el **antes y el después** de cada celda que cambió. Una fila que no existe
+ * se reporta y no se crea: una corrida que no hizo nada tiene que fallar, no informar cero.
+ *
+ * ⚠ **La clave es `campana_id` + `periodo_id`, y no `nombre`.** Es exactamente la que
+ * `cargarTemarioCampanas_` ya usa para saltear lo que existe, así que las dos miran lo mismo. El
+ * nombre no sirve: el temario lo escribe en castellano, la base lo tiene con otra grafía, y está
+ * medido que **cero de cuatro nombres matchean por texto**.
+ *
+ * `cambios` es `[{ campana_id: '…', periodo_id: '…', mostrar: 'sí' }]`.
+ */
+function curarCamposCampanas_(cambios) {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CAMPANAS');
+  if (!hoja) return { ok: false, motivo: 'La hoja CAMPANAS no existe.' };
+
+  cambios = cambios || [];
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var idxId = headers.indexOf('campana_id');
+  var idxPer = headers.indexOf('periodo_id');
+  if (idxId === -1 || idxPer === -1) {
+    return { ok: false, motivo: 'CAMPANAS no tiene columna `campana_id` y/o `periodo_id`.' };
+  }
+
+  var claveDe = function (id, per) {
+    return String(id === null || id === undefined ? '' : id).trim() + '||' +
+      String(per === null || per === undefined ? '' : per).trim();
+  };
+
+  var filaDe = {};
+  for (var f = 1; f < datos.length; f++) {
+    var clave = claveDe(datos[f][idxId], datos[f][idxPer]);
+    if (clave === '||') continue;
+    // Igual que en `REUNIONES`: si dos filas comparten la clave gana la primera, y la segunda
+    // queda sin tocar. Pisar dos filas con un solo cambio es lo que esto viene a evitar.
+    if (!(clave in filaDe)) filaDe[clave] = f;
+  }
+
+  var aplicados = [];
+  var sinFila = [];
+  cambios.forEach(function (c) {
+    var clave = claveDe(c.campana_id, c.periodo_id);
+    if (!(clave in filaDe)) { sinFila.push(clave); return; }
+    var fila = filaDe[clave];
+    Object.keys(c).forEach(function (campo) {
+      if (campo === 'campana_id' || campo === 'periodo_id') return;
+      var col = headers.indexOf(campo);
+      if (col === -1) { sinFila.push(clave + '.' + campo + ' (columna inexistente)'); return; }
+      var anterior = datos[fila][col];
+      if (String(anterior) === String(c[campo])) return; // ya estaba: no se escribe
+      hoja.getRange(fila + 1, col + 1).setValue(c[campo]);
+      aplicados.push({ clave: clave, campo: campo, anterior: anterior, nuevo: c[campo] });
+    });
+  });
+
+  return { ok: true, aplicados: aplicados, sin_fila: sinFila, cambios_escritos: aplicados.length };
+}

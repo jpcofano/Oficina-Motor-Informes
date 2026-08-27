@@ -377,6 +377,11 @@ function asistenteVacio(){
     modo: '',                // en_curso | anterior | personalizado
     periodoId: '', desde: '', hasta: '', sinCerrar: false,
     cargado: null,          // lo que devolvió el paso 2; null = todavía no se cargó
+    confirmar: null,        // lo que devolvió `panel_asistentePaso3`; null = sin pedir
+    checks: null,           // clave -> bool, para que el repintado no pierda lo tildado
+    anclaje: null,          // las tres listas, tal como volvieron de confirmar
+    sinFila: [],            // decisiones que no matchearon ninguna fila
+    puedeGenerar: false,
     msg: null,
     trabajando: false
   };
@@ -982,17 +987,187 @@ function resumenDeCarga(r){
   return h;
 }
 
-/* Los pasos que siguen se encienden en su propio commit. ⭐ Se pintan diciendo que faltan, en vez
- * de ofrecer un botón que falla: un botón sin backend es la columna declarada sin lector. */
-function pasoPendiente(n, que){
+/* ── Paso 3 · confirmar, en UNA sola pantalla ─────────────────────────────────────────────
+ *
+ * ⭐ **Dos preguntas al mismo tiempo, y viven juntas porque las dos deciden el número:** si la
+ * fila entra al informe, y **contra qué cuenta ancló**. La segunda ya costó caro — el deck del
+ * 04/08 publicó once números de `3347-JULJDGAG` cuando el encuentro era `3387-JULJDGGC`.
+ *
+ * ⛔⛔ **El anclaje corre al CONFIRMAR, no al entrar, y es una premisa corregida con medición:**
+ * `leerReuniones_` filtra por `mostrar` **antes** de que el anclaje vea nada, y un temario recién
+ * cargado tiene `mostrar` vacío en todas sus filas. Anclar al entrar devolvería tres listas
+ * vacías, que se leen como *«ningún encuentro tiene problema»*. */
+function pasoConfirmar(){
+  var a = asis();
+  if (a.confirmar === null || a.confirmar === undefined){ cargarPaso3(); return cabezalDelPeriodo() + '<p class="muted">Leyendo lo cargado…</p>'; }
+  if (a.confirmar === 'cargando') return cabezalDelPeriodo() + '<p class="muted">Leyendo lo cargado…</p>';
+  if (!a.confirmar.ok){
+    return cabezalDelPeriodo() + '<p class="hint-error">' + esc(a.confirmar.motivo || '') + '</p>' +
+      '<button class="btn btn-secondary" id="asis-reiniciar">Empezar de nuevo</button>';
+  }
+
+  var d = a.confirmar;
+  var h = cabezalDelPeriodo();
+
+  /* ⭐ Lo que cambia cómo se lee TODO lo de abajo va arriba, no en un pie de página. */
+  if (d.sin_parsear){
+    h += '<div class="alert alert-warning"><div class="alert-title">' + d.sin_parsear +
+         ' línea(s) que el motor no pudo interpretar</div>Están en la lista, marcadas. ' +
+         '<b>Ninguna se descartó en silencio</b> — destildá las que no vayan.</div>';
+  }
+
+  h += '<p class="hint">Tildá lo que entra al informe. Al confirmar corre el anclaje y vas a ver ' +
+       '<b>contra qué cuenta ancló cada encuentro</b>.</p>';
+
+  h += filaDeConfirmacion(d.reuniones, 'Encuentros', a);
+  h += filaDeConfirmacion(d.campanas, 'Campañas destacadas', a);
+
+  h += '<div class="cuadro-btns">' +
+       '<button class="btn btn-primary" id="asis-confirmar">' +
+       (a.anclaje ? 'Confirmar y anclar de nuevo' : 'Confirmar y anclar') + '</button>' +
+       '</div>';
+
+  if (a.anclaje) h += bloqueDeAnclaje(a.anclaje, a.sinFila);
+
+  h += '<hr class="sep"><button class="btn btn-secondary" id="asis-reiniciar">Empezar de nuevo</button>';
+  return h;
+}
+
+/** Una lista de checks. `sin_decidir` y `sin_parsear` se pintan distinto: son cosas distintas. */
+function filaDeConfirmacion(filas, titulo, a){
+  if (!filas || !filas.length) return '';
+  var h = '<div class="cuadro"><div class="cuadro-tit">' + esc(titulo) + ' (' + filas.length + ')</div>';
+  filas.forEach(function(f){
+    /* El estado inicial del check sale de la hoja, no de un default del front: una fila ya
+     * decidida tiene que verse como está, y `mostrar` vacío arranca tildado porque el temario es
+     * lo que entra (`R-02`) y destildar es la excepción. */
+    var tildado = a.checks && (f.clave in a.checks) ? a.checks[f.clave]
+                : (f.sin_decidir ? !f.sin_parsear : f.mostrar);
+    h += '<label class="check"><input type="checkbox" data-asis-check="' + esc(f.clave) +
+         '" data-asis-fuente="' + esc(f.fuente) + '"' + (tildado ? ' checked' : '') + '>' +
+         '<span class="check-text"><span class="check-label">' + esc(f.etiqueta) +
+         (f.fecha ? ' <span class="mono">' + esc(f.fecha) + '</span>' : '') + '</span>';
+    var sub = [];
+    if (f.detalle) sub.push(f.detalle);
+    if (f.etapa) sub.push(f.etapa);
+    if (f.sin_parsear) sub.push('⚠ ' + (f.notas || 'no se pudo interpretar'));
+    else if (f.notas) sub.push(f.notas);
+    if (sub.length) h += '<span class="check-sub">' + esc(sub.join(' · ')) + '</span>';
+    h += '</span></label>';
+  });
+  return h + '</div>';
+}
+
+/**
+ * ⭐⭐ **Los tres estados del anclaje, y los tres se ven.**
+ *
+ * ⛔ Esta pantalla lee el **resultado** de `anclarEncuentros`, no `ANCLAJE_PENDIENTE`: esa hoja
+ * sólo registra los de baja confianza, así que un encuentro que ancló perfecto y uno que no ancló
+ * contra nada **se ven idénticos desde ahí — no están**.
+ */
+function bloqueDeAnclaje(an, sinFila){
+  if (!an || !an.ok){
+    return '<div class="alert alert-warning"><div class="alert-title">El anclaje no pudo correr</div>' +
+      esc((an && an.motivo) || '') + '</div>';
+  }
+  var h = '<hr class="sep"><div class="section-title">Contra qué cuenta ancló cada encuentro</div>';
+  h += '<p class="hint">' + an.conteos.alta + ' con anclaje firme · ' + an.conteos.baja +
+       ' de baja confianza · ' + an.conteos.sin_link + ' sin cuenta. Umbral: ' +
+       esc(String(an.umbral)) + '.</p>';
+
+  if ((sinFila || []).length){
+    h += '<p class="hint-error">⛔ ' + (sinFila.length + ' decisión(es) no se pudieron escribir: ') +
+         esc(sinFila.join(' · ')) + '. La lista que tenías en pantalla estaba vieja — volvé a entrar.</p>';
+  }
+
+  var glifo = { alta: '✅', baja: '⚠', sin_link: '⛔' };
+  an.filas.forEach(function(f){
+    h += '<div class="cuadro">';
+    h += '<div class="cuadro-tit">' + esc(glifo[f.estado] || '·') + ' ' + esc(f.reunion) +
+         (f.fecha ? ' <span class="mono">' + esc(f.fecha) + '</span>' : '') + '</div>';
+    if (f.estado === 'alta'){
+      h += '<div class="cuadro-est">Ancló contra <span class="mono">' + esc(f.id_cuenta) + '</span>' +
+           (f.candidato ? ' — ' + esc(f.candidato) : '') +
+           (f.score !== null ? ' · puntaje ' + esc(String(f.score)) : '') +
+           (f.confirmado_a_mano ? ' · <b>confirmado a mano</b>' : '') + '</div>';
+    } else if (f.estado === 'baja'){
+      h += '<div class="cuadro-est"><span class="alerta">Ancló por debajo del umbral</span> contra ' +
+           '<span class="mono">' + esc(f.id_cuenta) + '</span>' +
+           (f.score !== null ? ' · puntaje ' + esc(String(f.score)) + ' contra ' + esc(String(an.umbral)) : '') +
+           '</div>';
+      h += '<div class="cuadro-est">Elegí la cuenta en la pestaña <b>Anclajes</b>: ahí están los tres ' +
+           'candidatos con su puntaje, y lo que elijas queda guardado para que no se vuelva a ' +
+           'preguntar.</div>';
+    } else {
+      h += '<div class="cuadro-est"><span class="alerta">Sin cuenta</span> — ' +
+           esc(f.motivo || 'no se pudo anclar') + '</div>';
+      if (f.traza_desempate) h += '<div class="cuadro-est mono">' + esc(f.traza_desempate) + '</div>';
+      /* ⛔ **Se DICE por qué no hay botón, en vez de ofrecer uno que falla.** El motor sólo escribe
+       * fila en `ANCLAJE_PENDIENTE` cuando el score queda bajo el umbral, así que un `sin link` no
+       * tiene fila donde guardar la elección — y `panel_confirmarAnclaje` no inventa filas. */
+      h += '<div class="cuadro-est">⛔ Este no se puede elegir desde el panel: el motor sólo deja ' +
+           'fila en <span class="mono">ANCLAJE_PENDIENTE</span> cuando el anclaje queda por debajo ' +
+           'del umbral, y éste no llegó a ese punto. Sale sin cuenta, con el hueco a la vista.</div>';
+    }
+    h += '</div>';
+  });
+  return h;
+}
+
+function pasoGenerar(){
   return cabezalDelPeriodo() +
-         '<div class="alert alert-warning"><div class="alert-title">Paso ' + n + ' — todavía no cableado</div>' +
-         esc(que) + ' Mientras tanto se hace desde la pestaña «Generar», que es el camino libre de ' +
-         'siempre.</div>' +
+         '<div class="alert alert-warning"><div class="alert-title">Paso 4 — todavía no cableado</div>' +
+         'Generar el deck sobre lo confirmado. Mientras tanto se hace desde la pestaña «Generar», ' +
+         'que es el camino libre de siempre.</div>' +
          '<button class="btn btn-secondary" id="asis-reiniciar">Empezar de nuevo</button>';
 }
-function pasoConfirmar(){ return pasoPendiente(3, 'Confirmar qué entra y contra qué cuenta ancló cada encuentro.'); }
-function pasoGenerar(){ return pasoPendiente(4, 'Generar el deck sobre lo confirmado.'); }
+
+function cargarPaso3(){
+  var a = asis();
+  a.confirmar = 'cargando';
+  google.script.run
+    .withSuccessHandler(function(r){ asis().confirmar = r || {ok:false, motivo:'sin respuesta'}; pintar(); })
+    .withFailureHandler(function(e){ asis().confirmar = {ok:false, motivo:String(e && e.message || e)}; pintar(); })
+    .panel_asistentePaso3(a.periodoId, S.informeId);
+}
+
+function confirmarYAnclar(){
+  var a = asis();
+  var decisiones = [];
+  Array.prototype.forEach.call(document.querySelectorAll('[data-asis-check]'), function(cb){
+    decisiones.push({
+      fuente: cb.getAttribute('data-asis-fuente'),
+      clave: cb.getAttribute('data-asis-check'),
+      mostrar: cb.checked
+    });
+  });
+  /* Los checks se guardan en el estado para que el repintado no los pierda mientras se ancla. */
+  a.checks = {};
+  decisiones.forEach(function(d){ a.checks[d.clave] = d.mostrar; });
+
+  a.msg = { ok:true, texto:'Escribiendo la confirmación y anclando… puede tardar.' };
+  pintar();
+  google.script.run
+    .withSuccessHandler(function(r){
+      var a2 = asis();
+      if (!r || !r.ok){
+        a2.msg = { ok:false, texto:(r && r.motivo) || 'No se pudo confirmar.' };
+        pintar(); return;
+      }
+      a2.msg = null;
+      a2.anclaje = r.anclaje;
+      a2.sinFila = r.sin_fila || [];
+      a2.puedeGenerar = r.puede_generar === true;
+      /* ⛔ **No se salta solo al paso 4.** El anclaje es lo que la persona vino a mirar acá: pasar
+       * de largo dejaría la segunda pregunta del paso 3 sin contestar. */
+      pintar();
+    })
+    .withFailureHandler(function(e){
+      asis().msg = { ok:false, texto:String(e && e.message || e) };
+      pintar();
+    })
+    .panel_asistenteConfirmar(a.periodoId, S.informeId, decisiones);
+}
 
 /**
  * **Proponer** reusa `panel_proponerTemario`, que ya existe y **sólo lee**.
@@ -1136,6 +1311,8 @@ function conectarAsistente(){
   if (bp) bp.onclick = proponerTemarioDelAsistente;
   var bt = el('asis-cargar');
   if (bt) bt.onclick = cargarTemarioDelAsistente;
+  var bcf = el('asis-confirmar');
+  if (bcf) bcf.onclick = confirmarYAnclar;
   var br = el('asis-reiniciar');
   if (br) br.onclick = reiniciarAsistente;
 }

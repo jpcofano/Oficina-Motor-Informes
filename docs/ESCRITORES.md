@@ -493,7 +493,47 @@ hoja de registro: ahí está `COLUMNAS_DELTA_`, que además siembra.
 > de cada celda. Misma forma y mismo motivo que `curarMarcadores_` sobre `MARCADORES`.
 > Las líneas de esta tabla se regeneran con `node tools/escritores.js`.
 
-### CAMPANAS — sin escritores en el código
+### CAMPANAS
+
+> ⛔ **Esta sección decía «sin escritores en el código» y dejó de ser cierto el 27/08/2026.**
+> `cargarTemarioCampanas_` siempre escribió acá —la matriz de abajo no lo listaba porque
+> `tools/escritores.js` está en **rojo** (`P0` preexistente, anotado en `PENDIENTES`)— y el
+> `2026-08-27_1` agregó `curarCamposCampanas_`. **Esta ficha se escribió a mano por eso**, con el
+> mismo criterio que la de `crearPeriodos_`.
+
+| función | método | camino | ¿pisa? |
+|---|---|---|---|
+| `cargarTemarioCampanas_` | `setValues` sobre `getLastRow() + 1` | botón «Cargar» del panel · paso 2 del asistente · menú | ⛔ **no** — una fila que ya existe se reporta y se saltea |
+| `curarCamposCampanas_` | `setValue`, celda por celda | paso 3 del asistente (`panel_asistenteConfirmar`) | ⚠ **sí, pero sólo el campo declarado** |
+
+⭐ **`curarCamposCampanas_` es a `CAMPANAS` lo que `curarCamposReuniones_` es a `REUNIONES`**, y
+nace por la misma falta: el único escritor de esta hoja **sólo agregaba filas**, así que el paso 3
+del asistente no tenía por dónde escribir `mostrar` sobre una fila cargada. **Se copió la forma que
+ya existía en vez de inventar una nueva** (`CLAUDE.md` §2, el grep previo).
+
+⛔ **Deliberadamente angosta:** no crea filas, no borra filas, **no toca la clave**, y devuelve el
+**antes y el después** de cada celda que cambió. Una fila que no existe se **reporta** en `sin_fila`
+y no se crea — una corrida que no hizo nada tiene que fallar, no informar cero.
+
+⚠ **La clave es `campana_id` + `periodo_id`, no `nombre`.** Es exactamente la que
+`cargarTemarioCampanas_` ya usa para saltear lo que existe, así que las dos miran lo mismo. El
+nombre no sirve como clave: el temario lo escribe en castellano, la base lo tiene con otra grafía,
+y está medido que **cero de cuatro nombres matchean por texto**.
+
+### REUNIONES — addendum del 27/08/2026
+
+> ⚠ La matriz de abajo lista sólo `cargarTemarioReuniones_`, y está **incompleta por la misma
+> causa**: `curarCamposReuniones_` existe desde el `_31.1` y `tools/escritores.js` no lo pudo
+> regenerar. El paso 3 del asistente lo usa para escribir `mostrar`; **no es un camino nuevo**.
+
+| función | método | camino | ¿pisa? |
+|---|---|---|---|
+| `curarCamposReuniones_` | `setValue`, celda por celda | paso 3 del asistente (`panel_asistenteConfirmar`) · backfills | ⚠ **sí, pero sólo el campo declarado** |
+
+⭐ **`mostrar` se escribe como `sí` / `no`, nunca vacío.** Vacío significa *«todavía nadie
+decidió»*, y la guarda del paso 4 lo usa para saber si el paso 3 ocurrió: confundir *«decidieron
+que no»* con *«nadie miró»* dejaría entrar al paso 4 sobre un temario sin confirmar.
+
 
 
 ### REUNIONES

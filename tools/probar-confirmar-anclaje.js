@@ -47,6 +47,21 @@ function contexto(parchear) {
     if (texto === antes) throw new Error('El parche de «romper a propósito» no matcheó nada.');
   }
   vm.runInContext(texto, ctx, { filename: 'PanelBackend.gs' });
+
+  /* ⭐ `2026-08-27_1` — **`nombreBuscadoDeReunion_` se EXTRAE de `Union.gs`, no se copia.**
+   *
+   * La fórmula de la clave de anclaje estaba escrita inline en tres lugares —el motor,
+   * `panel_getAnclajes` y `panel_archivarAnclaje`— y ahora vive en uno solo. Este banco la
+   * necesita porque los dos lectores del panel la llaman, y **copiarla acá reinstalaría el
+   * problema en el instrumento**: el día que la clave gane un matiz, el banco seguiría verde
+   * midiendo la fórmula vieja. */
+  const union = fs.readFileSync(path.join(RAIZ, 'Union.gs'), 'utf8');
+  const m = union.match(/function nombreBuscadoDeReunion_\([\s\S]*?\r?\n\}/);
+  if (!m) {
+    throw new Error('No se pudo extraer `nombreBuscadoDeReunion_` de Union.gs — sin ella este ' +
+      'banco mediría una clave propia, que es justo lo que el panel no tiene que tener.');
+  }
+  vm.runInContext(m[0], ctx, { filename: 'Union.gs#nombreBuscadoDeReunion_' });
   return ctx;
 }
 

@@ -955,10 +955,10 @@ function panel_getAnclajes() {
   // Las claves de las reuniones que HOY se muestran, para el cruce del límite 2.
   var vigentes = {};
   leerReuniones_().forEach(function (r) {
-    var fecha = (r.fecha instanceof Date) ? r.fecha : parsearFechaCelda_(r.fecha);
-    vigentes[claveAnclaje_('reunion', normalizar_(r.nombre) + '|' +
-      (fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd') : 'sin_fecha') +
-      '|' + (r.etapa || ''))] = true;
+    /* ⭐ `2026-08-27_1` — la fórmula de la clave sale de `nombreBuscadoDeReunion_` (`Union.gs`),
+     * que es donde el motor la escribe. Estaba copiada acá y en `panel_archivarAnclaje`: tres
+     * copias, y el día que una gane un matiz las otras dejan de matchear **sin fallar**. */
+    vigentes[claveAnclaje_('reunion', nombreBuscadoDeReunion_(r))] = true;
   });
 
   var pendientes = [];
@@ -1055,11 +1055,7 @@ function panel_archivarAnclaje(tipo, nombreBuscado, archivar) {
       // al motor y lo reimplementa peor.
       var vigente = false;
       leerReuniones_().forEach(function (r) {
-        var fecha = (r.fecha instanceof Date) ? r.fecha : parsearFechaCelda_(r.fecha);
-        var clave = claveAnclaje_('reunion', normalizar_(r.nombre) + '|' +
-          (fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd') : 'sin_fecha') +
-          '|' + (r.etapa || ''));
-        if (clave === buscada) vigente = true;
+        if (claveAnclaje_('reunion', nombreBuscadoDeReunion_(r)) === buscada) vigente = true;
       });
       if (vigente) {
         return {
@@ -2327,6 +2323,300 @@ function panel_asistenteCargarTemario(periodoId, texto, informeId) {
   salida.hechos = hechosDelAsistente_(ref, informeId);
   salida.puede_confirmar = guardaDelAsistente_(3, salida.hechos).ok;
   return salida;
+}
+
+/* ── Paso 3 · confirmar, en UNA sola pantalla ─────────────────────────────────────────────
+ *
+ * ⭐ **Dos preguntas al mismo tiempo, y viven juntas porque las dos deciden el número:** si la
+ * fila **entra** al informe, y **contra qué cuenta ancló**. La segunda ya costó caro — el deck del
+ * 04/08 publicó **once números de `3347-JULJDGAG` cuando el encuentro era `3387-JULJDGGC`**, dos
+ * cuentas con el mismo nombre de campaña. **Ningún número estaba mal formateado ni mal ubicado:
+ * estaba mal la cuenta.**
+ *
+ * ⛔⛔ **La premisa que este paso corrige, y estaba en el prompt: `panel_getAnclajes` lee
+ * `ANCLAJE_PENDIENTE`, que SÓLO registra los de baja confianza.** Un encuentro que ancló perfecto
+ * y uno que no ancló contra nada **se ven idénticos desde esa hoja: no están.** Ese hueco ya
+ * bloqueó una medición el 22/08.
+ *
+ * ⇒ **Esta pantalla lee el RESULTADO de `anclarEncuentros`** —que devuelve `encuentros`,
+ * `bajaConfianza` y `sinLink`—, no la hoja. `ANCLAJE_PENDIENTE` sigue guardando las decisiones
+ * para que no se vuelva a preguntar, y **eso no cambia**.
+ *
+ * ⛔⛔ **Y la corrección de premisa que salió al medir: el anclaje NO puede correr antes de que se
+ * confirmen los checks.** `anclarEncuentrosSinCache_` ancla sobre `leerReuniones_()`, que filtra
+ * `esVerdadero_(mostrar)` **antes de que el anclaje vea nada** — y `cargarTemarioReuniones_` deja
+ * `mostrar` vacío a propósito. Un temario recién cargado tiene **cero** filas anclables, así que
+ * *«el anclaje corre al entrar al paso 3»* ancla **nada**.
+ *
+ *   ⭐ **Es un caso ya medido, y está en `CLAUDE.md` §4:** el 25/08 el aviso dijo *«REUNIONES no
+ *   tiene filas para anclar en `julio_24_30` — descartadas por período: 6»* y las cuatro filas de
+ *   julio tenían `mostrar` vacío. **El filtro que faltaba estaba un nivel arriba, en quien le pasa
+ *   los datos.**
+ *
+ *   ⇒ **El paso 3 es una pantalla con dos momentos:** se marcan los checks, se aprieta
+ *   *Confirmar y anclar*, y **en la misma respuesta** vuelven las tres listas del anclaje. Los dos
+ *   datos quedan a la vista juntos, que es lo que el paso pide.
+ *
+ *   ⛔ **No se cambió el criterio de `mostrar` de `cargarTemarioReuniones_`** para esquivar esto.
+ *   El propio cargador declara que unificarlo con el de `CAMPANAS` **es decisión del usuario, no
+ *   del código**, y cambiarlo acá habría sido tomarla de costado.
+ */
+
+/**
+ * ⭐⭐ **Las tres listas del anclaje, aplanadas — y es PURA, así que se puede fijar con un banco.**
+ *
+ * Recibe el retorno de `anclarEncuentros` y devuelve una fila por encuentro con su `estado`:
+ *
+ *   · `alta`      — ancló por encima del umbral. Sale ✅, la persona no hace nada
+ *   · `baja`      — ancló por debajo. **Elige** entre los candidatos
+ *   · `sin_link`  — ninguna cuenta, u homónimos que el desempate no separa
+ *
+ * ⛔ **`alta` NO existe en `ANCLAJE_PENDIENTE`, y ése es el punto.** El motor sólo registra fila
+ * cuando el score queda bajo el umbral, así que leyendo la hoja los de alta confianza **no
+ * aparecen** — y el control positivo del banco es justamente que aparezcan acá.
+ */
+function estadosDeAnclaje_(anclaje) {
+  if (!anclaje || anclaje.ok !== true) {
+    return { ok: false, motivo: (anclaje && anclaje.motivo) || 'el anclaje no devolvió resultado' };
+  }
+
+  var comoFila = function (item, estado) {
+    return {
+      estado: estado,
+      reunion: item.reunion,
+      tipo: item.tipo || '',
+      fecha: item.fecha instanceof Date ? formatearFecha_(item.fecha) : String(item.fecha || ''),
+      etapa: item.etapa || '',
+      id_cuenta: item.idCuenta || '',
+      candidato: item.candidatoNombre || '',
+      /* ⚠ El score viaja **crudo**, sin redondear ni convertir a porcentaje: el umbral con el que
+       * se compara está en `CONFIG` y viene al lado. Que el front decida cómo mostrarlo. */
+      score: typeof item.score === 'number' ? item.score : null,
+      confirmado_a_mano: item.confirmadoAMano === true,
+      /* La clave con la que `panel_confirmarAnclaje` encuentra la fila. Sin ella, elegir un
+       * candidato desde esta pantalla no tendría dónde escribir. */
+      nombre_buscado: item.nombreBuscado || '',
+      /* ⛔ Los dos motivos son distintos y no se colapsan: «no hay fila de `rdv`» manda a mirar el
+       * temario, y «homónimos sin desempate» manda a elegir la cuenta. */
+      motivo: item.motivoAmbiguo || item.motivo || '',
+      traza_desempate: item.traza_desempate || '',
+      paso_anclaje: item.paso_anclaje || null
+    };
+  };
+
+  var filas = []
+    .concat((anclaje.encuentros || []).map(function (i) { return comoFila(i, 'alta'); }))
+    .concat((anclaje.bajaConfianza || []).map(function (i) { return comoFila(i, 'baja'); }))
+    .concat((anclaje.sinLink || []).map(function (i) { return comoFila(i, 'sin_link'); }));
+
+  return {
+    ok: true,
+    umbral: anclaje.umbral,
+    periodo_id: anclaje.periodo_id || '',
+    excluidas_por_periodo: anclaje.excluidas_por_periodo || [],
+    filas: filas,
+    /* ⭐ Los tres conteos van declarados: «cero de baja confianza» y «no se midió» se ven igual en
+     * una lista vacía, y sólo uno de los dos es un resultado. */
+    conteos: {
+      alta: (anclaje.encuentros || []).length,
+      baja: (anclaje.bajaConfianza || []).length,
+      sin_link: (anclaje.sinLink || []).length
+    }
+  };
+}
+
+/**
+ * Las filas del temario **tal como están**, para el check del paso 3.
+ *
+ * ⚠ **Lee TODAS las filas del período, no las que `leerReuniones_` deja pasar.** Ése filtra por
+ * `mostrar`, y acá `mostrar` es justamente lo que se está por decidir: preguntarle a él sería
+ * preguntarle al filtro cuáles pasan el filtro.
+ *
+ * ⭐ **La fila se direcciona por su clave de curación, no por su posición.** Para `REUNIONES` es
+ * `texto_original` —lo que `curarCamposReuniones_` ya usa, y es estable porque es exactamente la
+ * línea que originó la fila—; para `CAMPANAS`, `campana_id` + `periodo_id`. El panel puede estar
+ * mostrando una lista vieja, y escribir por índice pondría la decisión en la fila equivocada
+ * **sin que nada falle**.
+ */
+function filasParaConfirmar_(periodoId) {
+  var ref = String(periodoId || '').trim();
+  var mismas = function (f) { return String(f.periodo_id || '').trim() === ref; };
+
+  var reuniones = filasDeHojaRegistro_('REUNIONES').filter(mismas).map(function (f) {
+    var notas = String(f.notas || '');
+    return {
+      fuente: 'REUNIONES',
+      clave: String(f.texto_original || ''),
+      etiqueta: String(f.nombre || '').trim() || String(f.texto_original || '(sin texto)'),
+      detalle: [String(f.tipo || ''), String(f.eje || '')].filter(function (x) { return x; }).join(' · '),
+      fecha: f.fecha instanceof Date ? formatearFecha_(f.fecha) : String(f.fecha || ''),
+      etapa: String(f.etapa || ''),
+      /* ⭐ `mostrar` vacío es «todavía nadie decidió», y es distinto de «decidieron que no». Los
+       * tres estados viajan separados: el front no tiene que deducir cuál es cuál. */
+      mostrar: esVerdadero_(f.mostrar),
+      sin_decidir: String(f.mostrar || '').trim() === '',
+      notas: notas,
+      /* ⛔⛔ La línea que no se pudo interpretar, marcada. `cargarTemarioReuniones_` ya escribía
+       * esta nota y **no la leía nadie**: un temario que carga 4 de 5 y no lo dice publica un
+       * informe al que le falta un encuentro. */
+      sin_parsear: notas === 'no se pudo parsear' || notas.indexOf('no se encontró fecha') !== -1,
+      nombre_buscado: nombreBuscadoDeReunion_(f)
+    };
+  });
+
+  var campanas = filasDeHojaRegistro_('CAMPANAS').filter(mismas).map(function (f) {
+    var notas = String(f.notas || '');
+    return {
+      fuente: 'CAMPANAS',
+      clave: String(f.campana_id || ''),
+      etiqueta: String(f.nombre || '').trim() || String(f.campana_id || '(sin nombre)'),
+      detalle: String(f.id_cuenta || '') ? 'id_cuenta ' + f.id_cuenta : '',
+      fecha: '',
+      etapa: '',
+      mostrar: esVerdadero_(f.mostrar),
+      /* ⚠ Para campañas `mostrar` nace en `'sí'` (`AJ-1`, *ante la duda entra*), así que
+       * `sin_decidir` es casi siempre `false`. Se emite igual, con la misma forma que reuniones:
+       * el front no tiene que saber que las dos fuentes se comportan distinto. */
+      sin_decidir: String(f.mostrar || '').trim() === '',
+      notas: notas,
+      /* Para campañas «lo que hay que mirar» no es el parseo sino el **id**: `SIN CONFIRMAR` es un
+       * id resuelto por similitud y `SIN ID` es uno que no resolvió. Son dos criterios distintos
+       * para el mismo gesto, y el panel los pone al lado en vez de unificarlos. */
+      sin_parsear: notas.indexOf('SIN CONFIRMAR') !== -1 || notas.indexOf('SIN ID') !== -1
+    };
+  });
+
+  return { reuniones: reuniones, campanas: campanas };
+}
+
+/**
+ * ⭐ **El anclaje del paso 3, con las DOS cachés abiertas.**
+ *
+ * ⛔⛔ **Un instrumento que mide lo que cuesta una corrida no ARMA su preámbulo: lo COPIA**
+ * (`CLAUDE.md` §4). `generarInforme` enciende `abrirCacheRegistros_()` y `abrirCacheDatosHoja_()`
+ * con `try/finally`, y las dos están **apagadas por defecto a propósito**. Correr el anclaje sin
+ * ellas mide otra cosa: `unirDigitalPorCuenta` pasó de **6 s a 325** — un factor **54** — porque
+ * `buscarMapeo` no cachea por su cuenta y relee `SOLAPAS` y `MAPEO` enteras en cada llamada.
+ *
+ * ⚠ **La que domina es la de REGISTROS.** Con `cacheDatosHoja_` sola no cambió nada. Encender «la
+ * que parece» es peor que no encender ninguna, porque produce un número que parece corregido.
+ */
+function anclarParaElAsistente_(ventana) {
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+    return anclarEncuentros(ventana);
+  } finally {
+    cerrarCacheRegistros_();
+    cerrarCacheDatosHoja_();
+  }
+}
+
+/**
+ * Paso 3 · **lo que hay cargado, para el check.** Sólo lectura: no escribe ni ancla.
+ *
+ * ⚠ **No corre el anclaje**, y no es por costo: con el temario recién cargado **no hay ninguna
+ * fila con `mostrar = sí`**, así que anclaría sobre cero y devolvería tres listas vacías — que se
+ * leen como *«ningún encuentro tiene problema»*. Ver el encabezado del bloque.
+ */
+function panel_asistentePaso3(periodoId, informeId) {
+  var hechos = hechosDelAsistente_(periodoId, informeId);
+  var permiso = guardaDelAsistente_(3, hechos);
+  if (!permiso.ok) return { ok: false, motivo: permiso.motivo, falta: permiso.falta };
+
+  var filas = filasParaConfirmar_(periodoId);
+  return {
+    ok: true,
+    periodo_id: String(periodoId || '').trim(),
+    reuniones: filas.reuniones,
+    campanas: filas.campanas,
+    hechos: hechos,
+    umbral: umbralAnclajeReunion_(),
+    /* ⭐ Cuántas líneas no se pudieron interpretar, dicho arriba y no al pie: cambia cómo se lee
+     * toda la lista de abajo. */
+    sin_parsear: filas.reuniones.filter(function (f) { return f.sin_parsear; }).length
+  };
+}
+
+/**
+ * Paso 3 · **confirma los checks y ancla, en una sola llamada.**
+ *
+ * `decisiones` es `[{ fuente: 'REUNIONES'|'CAMPANAS', clave: '…', mostrar: true|false }]`.
+ *
+ * ⛔ **Escribe por los curadores declarados**, no por un camino nuevo: `curarCamposReuniones_` y
+ * `curarCamposCampanas_`. Los dos son angostos —no crean filas, no borran filas, no tocan la
+ * clave— y devuelven el **antes y el después** de cada celda.
+ *
+ * ⛔ **Una decisión sobre una fila que no existe se reporta y no se inventa.** Si el panel estaba
+ * mostrando una lista vieja, la clave no matchea y sale en `sin_fila`: es preferible a escribir en
+ * la fila de al lado, que no falla.
+ *
+ * ⭐ **Y devuelve el anclaje en la misma respuesta**, porque las dos preguntas del paso 3 son una
+ * pantalla: si volviera sólo el resultado de la escritura, la persona tendría que apretar otra vez
+ * para ver contra qué cuenta ancló cada encuentro.
+ */
+function panel_asistenteConfirmar(periodoId, informeId, decisiones) {
+  var ref = String(periodoId || '').trim();
+  var permiso = guardaDelAsistente_(3, hechosDelAsistente_(ref, informeId));
+  if (!permiso.ok) return { ok: false, motivo: permiso.motivo, falta: permiso.falta };
+
+  var lista = decisiones || [];
+  var deReuniones = [];
+  var deCampanas = [];
+  lista.forEach(function (d) {
+    /* ⚠ `mostrar` se escribe como `'sí'` / `'no'`, **nunca vacío**: vacío es «todavía nadie
+     * decidió», y confundir «decidieron que no» con «nadie miró» es lo que la guarda del paso 4
+     * usa para saber si este paso ocurrió. */
+    var valor = d.mostrar === true ? 'sí' : 'no';
+    if (String(d.fuente) === 'CAMPANAS') {
+      deCampanas.push({ campana_id: String(d.clave || ''), periodo_id: ref, mostrar: valor });
+    } else {
+      deReuniones.push({ texto_original: String(d.clave || ''), mostrar: valor });
+    }
+  });
+
+  var escrituras = { reuniones: null, campanas: null };
+  if (deReuniones.length) {
+    escrituras.reuniones = curarCamposReuniones_(deReuniones);
+    if (!escrituras.reuniones.ok) return { ok: false, motivo: 'reuniones: ' + escrituras.reuniones.motivo };
+  }
+  if (deCampanas.length) {
+    escrituras.campanas = curarCamposCampanas_(deCampanas);
+    if (!escrituras.campanas.ok) return { ok: false, motivo: 'campañas: ' + escrituras.campanas.motivo };
+  }
+  SpreadsheetApp.flush();
+
+  /* ⭐ **La ventana sale de `resolverVentana({ periodo_ref })`, con el período explícito.** Sin él
+   * `anclarEncuentros` **no recorta por período** —está medido: entran 12 encuentros en vez de 2—
+   * y el paso 3 mostraría el anclaje de medio semestre. */
+  var ventana = resolverVentana({ periodo_ref: ref });
+  if (!ventana.ok) {
+    return { ok: false, motivo: 'no se pudo resolver la ventana de "' + ref + '": ' + ventana.motivo };
+  }
+
+  var anclaje = anclarParaElAsistente_(ventana);
+  var estados = estadosDeAnclaje_(anclaje);
+
+  var hechos = hechosDelAsistente_(ref, informeId);
+  return {
+    ok: true,
+    periodo_id: ref,
+    escrituras: escrituras,
+    /* ⚠ Las claves que no matchearon viajan **siempre**: una decisión que no se escribió y de la
+     * que nadie se entera es peor que un error. */
+    sin_fila: []
+      .concat((escrituras.reuniones && escrituras.reuniones.sin_fila) || [])
+      .concat((escrituras.campanas && escrituras.campanas.sin_fila) || []),
+    anclaje: estados,
+    ventana: {
+      etiqueta: formatearPeriodoLamina_(ventana),
+      desde: formatearFecha_(ventana.desde),
+      hasta: formatearFecha_(ventana.hasta),
+      origen: ventana.origen
+    },
+    hechos: hechos,
+    puede_generar: guardaDelAsistente_(4, hechos).ok
+  };
 }
 
 /**

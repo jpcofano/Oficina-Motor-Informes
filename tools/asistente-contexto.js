@@ -161,6 +161,10 @@ function contexto(hojas, parchear) {
   /* ⭐ El parser de fechas del temario, REAL: `parsearLineaReunion_` lo usa para decidir si una
    * línea se pudo interpretar, y un parser propio acá mediría otra cosa. */
   cargar('Parseo.gs', [/function parsearFecha_\([\s\S]*?\r?\n\}/]);
+  /* ⭐ La clave de anclaje, REAL. Vive en un solo lugar desde el 27/08 y el paso 3 la usa para
+   * poder escribir la decisión: copiarla acá reinstalaría en el instrumento el problema que se
+   * acaba de sacar del motor. */
+  cargar('Union.gs', [/function nombreBuscadoDeReunion_\([\s\S]*?\r?\n\}/]);
   cargar('Instalar.gs');
   /* ⚠ Los dos cargadores de temario van enteros: lo que el paso 2 hace es **rutear** hacia ellos,
    * así que copiarlos sería el instrumento que reproduce lógica del motor y la reproduce peor. */
