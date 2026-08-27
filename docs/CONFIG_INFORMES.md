@@ -1296,9 +1296,52 @@ equipo. La fila no se retira porque su definición está medida y sirve de contr
 en su `notas`, con fecha**, porque una fila que no se usa no entra a `FALTANTES` y no falla — es
 invisible desde la hoja, y sin la nota no se distingue de un olvido.
 
-⏸ **`m2_camp_lista` está FRENADO y no es un pendiente de cableado**, es una decisión abierta:
-`opLISTA` publica **contra un catálogo** por diseño y no hay catálogo de nombres de campaña de M2.
-La pregunta exacta está en `docs/PENDIENTES_consistencia.md`.
+~~⏸ **`m2_camp_lista` está FRENADO y no es un pendiente de cableado**, es una decisión abierta:
+`opLISTA` publica **contra un catálogo** por diseño y no hay catálogo de nombres de campaña de M2.~~
+**Destrabado el 26/08/2026** — ver el addendum de abajo.
+
+#### Addendum 26/08/2026 — **CRUDOS y COMPLETOS: no hay tope, y la poda es trabajo del equipo**
+
+**Decisión editorial del usuario, 26/08/2026.** **[OK]**
+
+Lo de arriba fijó *qué* se publica —los nombres tal como están—; **esto fija cuántos: todos.** No
+hay corte, no hay «y N más», **no hay límite configurable**, y eso no es un detalle de
+implementación que se pueda ajustar después.
+
+> **La lista existe para que el equipo EDITE, y una lista recortada le esconde justo lo que tiene
+> que decidir.** Un deck que muestra 10 de 30 bajo un banner que dice 30 **miente sin fallar** — que
+> es el modo de falla que este proyecto persigue.
+
+⚠ **La consecuencia está declarada y no se descubre: la caja crece.** Medido el 26/08 sobre la
+plantilla viva: la caja del bullet (`p9_i767`) es `SHAPE_AUTOFIT`, 8 pt, alto **24** — a esa altura
+entran ~2 líneas, así que **con 19 nombres se estira unas ocho veces y puede empujar lo que tiene
+debajo**. Es el precio de la decisión, no un bug que reportar. ⛔ **Si algún día hace falta un tope,
+es del usuario** — el motor no lo inventa.
+
+⛔⛔ **Y la caja del bullet NO es la del banner, que es donde se venía mirando.** Son dos shapes
+distintos de `L-038`: el banner es `p9_i768`, comparte texto con el literal «Campañas», `autofit:
+NONE` y alto 24. La medición del 25/08 —*«autofit NONE, así que no crece»*— era **de esa otra caja**
+y se citó como si fuera la de la lista. Medir una y hablar de la otra es la figura del artefacto
+equivocado (`CLAUDE.md` §4).
+
+⭐⭐ **Cómo se publica, y la identidad que cierra la lámina.** El motor gana una operación,
+`LISTA_CRUDA` —los valores distintos **sin catálogo**—, y `m2_camp_lista` la usa con `separador` =
+**salto de línea real**, que en Slides abre párrafo y hace que cada nombre herede el bullet.
+
+| | |
+|---|---|
+| `m2_campanias` | `CUENTA_DISTINTOS` · `digital/Directa Mail` · `mail_campana` · `tipo_envio=m2` |
+| `m2_camp_lista` | `LISTA_CRUDA` · **la misma base, solapa, campo y dimensiones** |
+
+Los dos comparten `distintosDeCampo_` (`R-10`), así que **el banner tiene que decir exactamente
+cuántas líneas trae la lista, por construcción**. Medido de punta a punta el 26/08 sobre la base
+viva, ventana `2026-08-14–2026-08-20`: **21 filas → 19 campañas distintas → 19 líneas.** Es una
+identidad **interna**: no necesita el deck del equipo ni una foto de la base, se exige en cada
+corrida y **no caduca**.
+
+⚠ **`m2_campanias` sigue sin pintarse** —el banner lo escribe el equipo— y su nota lo dice con
+fecha. Desde el 26/08 la nota agrega la segunda mitad: **ya tiene un hermano que sí se pinta**, y si
+los dos números difieren no es un redondeo, son dos universos.
 
 ### 4.7 Call Center — la regla provisoria de `X-28`, con condición de salida
 

@@ -15787,3 +15787,85 @@ exigen la mutación y el motivo.
 **Suites: 54 bancos en verde, exit 0.** `listas.js` OK, 11 hojas. `clasp push` verificado con un
 `clasp pull` a un temporal: lo desplegado era **idéntico** al commit previo antes de pushear, y
 **idéntico al disco** después.
+
+---
+
+## `2026-08-26` (addendum 3) — `LISTA_CRUDA`, y `L-038` cierra contra sí misma: 19 = 19
+
+**Tres commits: la operación, el cableado y la doc.** `m2_camp_lista` era **el único de los 9 tokens
+de `L-038` sin fila**, y no por trabajo pendiente: `opLISTA` publica **contra un catálogo por
+diseño** y no hay catálogo posible de nombres de campaña de M2.
+
+### La operación, y por qué no fue relajar `opLISTA`
+
+**Lo que decidió el caso no fue el costo, fue la semántica.** `LISTA` manda lo que no matchea a
+`rechazados` y **nunca llega al deck** — correcto para `ecv_barrios`, donde un barrio que no existe
+es un error. Acá **cualquier nombre nuevo es legítimo**, así que un catálogo no marcaría un error:
+**borraría campañas reales, en silencio**. Y relajar la guarda habría sido peor —*catálogo vacío es
+error, no «nada matcheó»*—: si `rdv/Comunas` no abre, hoy sale un `FALTA` ruidoso y con la guarda
+floja saldría la lista de barrios **crudos**, que se lee perfecta.
+
+⭐⭐ **El hallazgo que le dio forma: el núcleo se comparte con `CUENTA_DISTINTOS`, no con `LISTA`.**
+Los dos normalizadores son distintos —`normalizar_` pliega case y acentos; `R-10` los preserva—, y
+`m2_campanias` cuenta con `R-10` **el mismo universo** que la lista publica. Con el núcleo de
+`LISTA`, el banner y la lista habrían discrepado sin que nada fallara.
+
+⛔ **Y una corrección medida el mismo día, que cambia cómo se razona el riesgo: los dos
+normalizadores NO están ordenados por severidad — cada uno junta lo que el otro separa.**
+`normalizar_` pliega case y acentos **y no toca los espacios internos**; `R-10` colapsa espacios **y
+preserva case y acentos**. Sobre el fixture del banco: junta `Poda pre` con `PODA PRE` y las dos
+grafías de `Vacunación antirrábica` (−2) **y parte** ` Poda  pre ` por el espacio doble (+1) — 4
+contra 5. **No es «publicaría de menos»: publicaría OTRO conjunto**, sin dirección conocida.
+
+### La grieta del despachador, encontrada por segunda vez
+
+`ctx.separador` vivía **dentro** del `if` del catálogo, así que sólo llegaba a las operaciones que
+además usan catálogo. `LISTA_CRUDA` **no usa catálogo y sí usa `separador`**, y sin la línea afuera
+habría publicado con el default `', '` **sin fallar**: una lista correcta, en una sola línea, donde
+la plantilla espera un bullet por nombre. ⭐ El comentario de al lado ya avisaba de esta grieta para
+`ELEMENTO` — **era más ancha de lo que decía**. Pasa a ser incondicional: una lista
+`OPERACIONES_CON_SEPARADOR_` sería la misma grieta con otro nombre.
+
+### El separador es un salto REAL, y se releyó
+
+⛔ Un salto real y los dos caracteres `\`+`n` **vuelven idénticos de Sheets** y hacen lo opuesto. El
+wrapper imprime **largo y charCodes** de lo que quedó y exige `1` y `10`; si no, devuelve `ok:false`
+y **no anota** la nota del hermano, que sería falsa. Medido tras correrlo: **largo 1, charCode 10**.
+La segunda corrida informó `quitadas: ["reemplazada"]` — idempotente por reemplazo, y el log lo dice
+en vez de imprimir un «cero altas» que nunca puede pasar.
+
+### ⭐⭐ La identidad, medida de punta a punta
+
+`resolverMarcadores('jm', {solo_marcadores: [...]})` sobre la base viva, ventana `14–20/08`:
+
+| | |
+|---|---|
+| `m2_envios` | **21** filas |
+| `m2_campanias` | **19** distintas |
+| `m2_camp_lista` | **19** líneas |
+
+Es identidad **interna**: no necesita el deck del equipo ni una foto de la base, se exige en cada
+corrida y **no caduca**.
+
+### ⛔ Y el instrumento que dio 675 donde el camino real da 19
+
+`medirCampaniasM2PorVentana()` informó **675 nombres distintos**. **No es el número del marcador**:
+mide `leerFuente` en aislamiento, y en esta base el recorte vive **en el llamador**. Es exactamente
+el caso que `CLAUDE.md` §4 ya tiene escrito —*«dio 672; el camino real da 19»*— reproducido hoy con
+otro instrumento. **La regla existía y predijo el número.** Por eso el que se cita es el de
+`resolverMarcadores`, que es el camino que publica.
+
+### La caja: el prompt tenía razón, y el repo estaba mirando la otra
+
+⛔ **Son dos shapes de `L-038` y sus números no se parecen.** `p9_i768` es el **banner** —comparte
+texto con el literal «Campañas», `autofit: NONE`, `h 24`— y `p9_i767` es el **bullet**:
+**`SHAPE_AUTOFIT`, 8 pt, `h 24`**, `y 107`, `w 378`. La medición del 25/08 que `CIERRE_POR_LAMINA`
+citaba como *«no crece»* era **la del banner**. Corregido allá.
+
+⚠ **Qué pasa al pintarla, estimado y rotulado como estimación:** a `h 24` entran ~2 líneas, así que
+con 19 nombres la caja **se estira unas ocho veces**. ⛔ **Contra qué choca al crecer NO se midió** —
+hace falta la corrida. **El tope no existe por decisión del usuario** (26/08): se publican todos y
+el equipo poda.
+
+**Suites: 55 bancos en verde, exit 0** (el nuevo `probar-lista-cruda.js` aporta 35 afirmaciones).
+`listas.js` OK. `clasp push` verificado con `clasp pull` a un temporal, antes y después.

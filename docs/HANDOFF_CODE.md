@@ -3,6 +3,18 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
+**Última actualización:** 2026-08-26 (cierre) — **`L-038` cierra contra sí misma: 19 = 19.** `m2_camp_lista` era el único de sus 9 tokens sin fila y quedó cableado con una operación nueva, `LISTA_CRUDA`. Antes, esa misma noche, se cerró el testigo de `D-31` en `MAPEO`. **Nada de esto pide una corrida de `jm`; la cola de abajo sigue siendo la cola.**
+
+### ⭐ Lo último, en cinco líneas
+
+- **`LISTA_CRUDA`, la decimotercera operación**: los valores distintos **sin catálogo**. No es `LISTA` con la guarda floja — `LISTA` descarta lo que no matchea y acá cualquier nombre de campaña nuevo es legítimo. **Comparte núcleo con `CUENTA_DISTINTOS`, no con `LISTA`**: los normalizadores difieren y el banner y la lista habrían discrepado sin fallar.
+- ⭐⭐ **La identidad, medida de punta a punta sobre la base viva** (ventana 14–20/08): 21 filas → **19 distintas → 19 líneas**. Interna, se exige en cada corrida y no caduca.
+- ⛔ **`ctx.separador` salió de la rama del catálogo**: vivía adentro, así que una operación sin catálogo no lo recibía y habría publicado en **una sola línea sin bullets**, sin fallar. Es la grieta que el comentario de al lado ya avisaba para `ELEMENTO`, más ancha.
+- ⚠ **La caja del bullet SÍ crece** (`p9_i767`, `SHAPE_AUTOFIT`, 8 pt, `h 24`) — la que el repo venía citando como `autofit: NONE` era **la del banner** (`p9_i768`). Con 19 nombres se estira ~8×. **Contra qué choca no se midió**: hace falta la corrida. **No hay tope, por decisión del usuario.**
+- ⛔ **Un instrumento dio 675 donde el camino real da 19** — `medirCampaniasM2PorVentana()` mide `leerFuente` en aislamiento y el recorte de esta base vive en el llamador. La regla de `CLAUDE.md` §4 ya lo tenía escrito y predijo el número.
+
+---
+
 **Última actualización:** 2026-08-26 (noche) — **el testigo de `D-31` estaba declarado y no ejercido en el 15 % de `MAPEO`.** Dos causas medidas y cerradas, `clasp push` y *Aplicar configuración* corridos, y los dos números releídos de la hoja viva. **Nada de esto pide una corrida de `jm`**: la cola de abajo sigue siendo la cola.
 
 ⭐⭐ **Las tres frases que hay que llevarse de este día:**
