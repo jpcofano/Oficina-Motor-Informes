@@ -16124,3 +16124,36 @@ cuatro terminaban en `indexOf('function generarProximasSemanas')`, que ahora dar
 `probar-generador-periodos.js` de 46 a 48. **Suites: 59 → 61 bancos, ~795 → ~868 afirmaciones.**
 ⭐ Y una afirmación nueva que valía dos líneas: **el `<script>` de `Panel.html` compila** — un
 paréntesis de más deja el panel en blanco y ninguna suite se enteraba.
+
+### Paso 2 — el temario en un solo pegado, y el hueco estaba en el PARTIDOR
+
+⭐ **Vuelve el formato único:** reuniones + `> Campañas destacadas` + campañas, todo junto.
+`partirTemarioEnBloques_` **ya hacía la partición** — era recuperar una pieza, no construirla.
+
+⛔⛔ **Lo que le faltaba, MEDIDO antes de tocarla: se come la línea que no parsea.** Su heurística
+dice que una línea sin `>`, sin `N)` y sin `|`, de menos de 60 caracteres, **es un encabezado**.
+Una línea mal tipeada cumple las tres, así que se vuelve el `titulo` de un bloque vacío **y
+desaparece de todos los `lineas`** — nunca llega al cargador, nunca recibe su
+`notas = 'no se pudo parsear'`, y el paso 3 no la puede mostrar.
+
+⭐ **El cargador hacía lo correcto: el hueco estaba un escalón antes.** Es `CLAUDE.md` §4 literal —
+*la función que estás leyendo no es el camino completo; el filtro que te falta suele estar en quien
+le pasa los datos*.
+
+⭐ **La salida es devolver el título comido a la lista, sin tocar `partirTemarioEnBloques_`**: su
+heurística es correcta para su único uso —encontrar el bloque de campañas— y cambiarla movería el
+cargador de campañas, que hoy anda.
+
+⚠ **Efecto lateral, elegido a sabiendas y declarado:** un encabezado legítimo **sin `>`** —`DGAYD`—
+también vuelve y produce una fila `no se pudo parsear`. **Una fila de más se ve en el paso 3 y se
+destilda; una línea perdida en silencio publica un informe al que le falta un encuentro.**
+
+⭐⭐ **Y las líneas rotas viajan CON NOMBRE, no con un conteo.** `cargarTemarioReuniones_` gana
+`sinParsearDetalle` —puro agregado al retorno, ningún llamador cambia—: *«1 sin parsear»* no deja
+saber cuál.
+
+⛔ **El paso 2 no escribe: rutea.** Los dos cargadores declarados siguen siendo los únicos
+escritores, y el banco lo fija —cero `setValues` y cero `appendRow` en el bloque—.
+
+**Banco:** `probar-asistente-temario.js`, 31 afirmaciones, con el control negativo que el prompt
+pedía: **con el temario limpio no queda nada marcado**. Suites: **62 bancos, ~899 afirmaciones.**

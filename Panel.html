@@ -376,6 +376,7 @@ function asistenteVacio(){
     opciones: null,          // null = sin pedir; lo trae `panel_asistenteOpcionesDePeriodo`
     modo: '',                // en_curso | anterior | personalizado
     periodoId: '', desde: '', hasta: '', sinCerrar: false,
+    cargado: null,          // lo que devolvió el paso 2; null = todavía no se cargó
     msg: null,
     trabajando: false
   };
@@ -914,20 +915,152 @@ function pasoPeriodo(){
   return h;
 }
 
-/* Los tres pasos que siguen se encienden en su propio commit. ⭐ Se pintan diciendo que faltan,
- * en vez de ofrecer un botón que falla: un botón sin backend es la columna declarada sin lector. */
-function pasoPendiente(n, que){
+/** El período elegido, arriba de cada paso. ⭐ Con «empezar de nuevo» al lado: es la única salida,
+ * y tiene que estar a la vista para que la linealidad no se lea como estar atrapado. */
+function cabezalDelPeriodo(){
   var a = asis();
-  return '<p class="hint">Período elegido: <span class="mono">' + esc(a.periodoId) + '</span> · ' +
-         esc(a.desde) + ' → ' + esc(a.hasta) + '</p>' +
+  return '<p class="hint">Período: <span class="mono">' + esc(a.periodoId) + '</span> · ' +
+         esc(a.desde) + ' → ' + esc(a.hasta) +
+         (a.sinCerrar ? ' · <span class="alerta">⚠ semana sin cerrar, datos parciales</span>' : '') +
+         '</p>';
+}
+
+/* ── Paso 2 · el temario, en UN SOLO pegado ───────────────────────────────────────────────
+ *
+ * ⭐ **Vuelve el formato único**, como estaba antes: la lista de reuniones + el título «Campañas
+ * destacadas» + las campañas, todo en un pegado. El ruteo lo hace el backend
+ * (`partirTemarioDelAsistente_`); acá no se parte nada — si el HTML lo derivara habría dos
+ * definiciones de dónde termina un bloque, y **la del HTML no tiene prueba**. */
+function pasoTemario(){
+  var a = asis();
+  var h = cabezalDelPeriodo();
+  h += '<p class="hint">Pegá el temario <b>completo</b>: las reuniones, el título ' +
+       '<span class="mono">&gt; Campañas destacadas</span> y las campañas debajo. Se reparte solo.</p>';
+  h += '<textarea class="temario" id="asis-temario" rows="10" ' +
+       'placeholder="1) JM | Uno a uno en Retiro 24/07&#10;2) JM | Encuentro Temático: Salud 25/07&#10;' +
+       '&gt; Campañas destacadas&#10;1) Egreso de cadetes"></textarea>';
+  h += '<div class="cuadro-btns">' +
+       '<button class="btn btn-secondary" id="asis-proponer">Proponer</button>' +
+       '<button class="btn btn-primary" id="asis-cargar">Cargar y seguir</button>' +
+       '</div>';
+
+  if (a.cargado) h += resumenDeCarga(a.cargado);
+  h += '<hr class="sep"><button class="btn btn-secondary" id="asis-reiniciar">Empezar de nuevo</button>';
+  return h;
+}
+
+/**
+ * ⭐⭐ **El resumen de la carga dice CUÁLES no se pudieron interpretar, no cuántas.**
+ *
+ * «3 sin parsear» no deja saber cuáles, y **un temario que carga 4 de 5 y no lo dice publica un
+ * informe al que le falta un encuentro**. Las líneas marcadas se ven acá y otra vez en el paso 3,
+ * que es donde se decide si entran.
+ */
+function resumenDeCarga(r){
+  var h = '<div class="alert alert-info"><div class="alert-title">Cargado</div>';
+  var partes = [];
+  if (r.reuniones) partes.push(r.reuniones.agregadas + ' reunión(es)');
+  if (r.campanas) partes.push((r.campanas.escritas || []).length + ' campaña(s)');
+  if (r.reuniones && (r.reuniones.salteadas || []).length){
+    partes.push(r.reuniones.salteadas.length + ' ya estaba(n)');
+  }
+  h += esc(partes.join(' · ') || 'nada');
+  (r.avisos || []).forEach(function(t){ h += '<br>' + esc(t); });
+  h += '</div>';
+
+  var rotas = (r.reuniones && r.reuniones.sinParsearDetalle) || [];
+  if (rotas.length){
+    h += '<div class="alert alert-warning"><div class="alert-title">' + rotas.length +
+         ' línea(s) que no se pudieron interpretar</div>' +
+         'Entraron igual, marcadas, y las vas a ver en el paso 3 para decidir si van o no. ' +
+         '<b>Ninguna se descartó en silencio.</b>';
+    rotas.forEach(function(x){
+      h += '<br><span class="mono">' + esc(x.texto) + '</span> — ' + esc(x.motivo);
+    });
+    h += '</div>';
+  }
+  return h;
+}
+
+/* Los pasos que siguen se encienden en su propio commit. ⭐ Se pintan diciendo que faltan, en vez
+ * de ofrecer un botón que falla: un botón sin backend es la columna declarada sin lector. */
+function pasoPendiente(n, que){
+  return cabezalDelPeriodo() +
          '<div class="alert alert-warning"><div class="alert-title">Paso ' + n + ' — todavía no cableado</div>' +
          esc(que) + ' Mientras tanto se hace desde la pestaña «Generar», que es el camino libre de ' +
          'siempre.</div>' +
          '<button class="btn btn-secondary" id="asis-reiniciar">Empezar de nuevo</button>';
 }
-function pasoTemario(){ return pasoPendiente(2, 'Pegar el temario completo en un solo cuadro.'); }
 function pasoConfirmar(){ return pasoPendiente(3, 'Confirmar qué entra y contra qué cuenta ancló cada encuentro.'); }
 function pasoGenerar(){ return pasoPendiente(4, 'Generar el deck sobre lo confirmado.'); }
+
+/**
+ * **Proponer** reusa `panel_proponerTemario`, que ya existe y **sólo lee**.
+ *
+ * ⚠ Se piden las DOS fuentes y se pegan en un solo texto, porque el paso 2 es un pegado único.
+ * ⭐ El de campañas ya viene con su título `> Campañas destacadas`: sin ese encabezado el cargador
+ * no encuentra el bloque, así que el orden —reuniones primero, campañas después— no es estético.
+ */
+function proponerTemarioDelAsistente(){
+  var a = asis();
+  a.msg = { ok:true, texto:'Proponiendo…' };
+  pintar();
+  google.script.run
+    .withSuccessHandler(function(reu){
+      google.script.run
+        .withSuccessHandler(function(cam){
+          var partes = [];
+          if (reu && reu.ok && reu.texto) partes.push(reu.texto);
+          if (cam && cam.ok && cam.texto) partes.push(cam.texto);
+          var ta = el('asis-temario');
+          var texto = partes.join('\n');
+          if (ta) ta.value = texto;
+          var dichos = [];
+          if (reu && reu.ok) dichos.push(reu.propuestas + ' línea(s) de reuniones');
+          else if (reu) dichos.push('reuniones: ' + (reu.motivo || reu.motivo_vacio || 'nada'));
+          if (cam && cam.ok) dichos.push(cam.propuestas + ' campaña(s)');
+          else if (cam) dichos.push('campañas: ' + (cam.motivo || cam.motivo_vacio || 'nada'));
+          asis().msg = { ok:true, texto: dichos.join(' · ') + ' — revisalas y apretá Cargar.' };
+          pintar();
+          var ta2 = el('asis-temario');
+          if (ta2) ta2.value = texto;
+        })
+        .withFailureHandler(function(e){ asis().msg = {ok:false, texto:String(e && e.message || e)}; pintar(); })
+        .panel_proponerTemario('CAMPANAS', a.periodoId);
+    })
+    .withFailureHandler(function(e){ asis().msg = {ok:false, texto:String(e && e.message || e)}; pintar(); })
+    .panel_proponerTemario('REUNIONES', a.periodoId);
+}
+
+function cargarTemarioDelAsistente(){
+  var a = asis();
+  var ta = el('asis-temario');
+  var texto = ta ? ta.value : '';
+  a.msg = { ok:true, texto:'Cargando…' };
+  pintar();
+  google.script.run
+    .withSuccessHandler(function(r){
+      var a2 = asis();
+      if (!r || !r.ok){
+        a2.msg = { ok:false, texto: (r && r.motivo) || 'No se pudo cargar.' };
+        pintar(); return;
+      }
+      a2.cargado = r;
+      a2.msg = null;
+      /* ⛔ **El paso lo habilita el BACKEND, no el front.** `puede_confirmar` lo decide
+       * `guardaDelAsistente_` para el paso 3, con hechos leídos de la hoja **después** de
+       * escribir — no con lo que este objeto crea que pasó. */
+      if (r.puede_confirmar) a2.paso = 3;
+      else a2.msg = { ok:false, texto:'Se cargó, pero no quedó ninguna fila de temario para este ' +
+        'período: sin filas el paso 3 no tiene qué confirmar.' };
+      pintar();
+    })
+    .withFailureHandler(function(e){
+      asis().msg = { ok:false, texto:String(e && e.message || e) };
+      pintar();
+    })
+    .panel_asistenteCargarTemario(a.periodoId, texto, S.informeId);
+}
 
 function cargarOpcionesDePeriodo(){
   asis().opciones = 'cargando';
@@ -999,6 +1132,10 @@ function conectarAsistente(){
     }
     elegirPeriodoDelAsistente('personalizado', d.value, ha.value);
   };
+  var bp = el('asis-proponer');
+  if (bp) bp.onclick = proponerTemarioDelAsistente;
+  var bt = el('asis-cargar');
+  if (bt) bt.onclick = cargarTemarioDelAsistente;
   var br = el('asis-reiniciar');
   if (br) br.onclick = reiniciarAsistente;
 }

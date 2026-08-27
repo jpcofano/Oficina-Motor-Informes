@@ -287,12 +287,22 @@ function cargarTemarioReuniones_(textoPegado, periodoId) {
 
   var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
   var sinParsear = 0;
+  /* ⭐⭐ `2026-08-27_1` — **las líneas que no se pudieron interpretar viajan CON NOMBRE.**
+   *
+   * El conteo ya estaba y el panel lo pintaba —*«3 sin parsear»*—, pero **no deja saber cuáles**,
+   * así que nadie podía señalarlas. La nota que las marca ya se escribía en la fila desde siempre
+   * (`notas = 'no se pudo parsear'`) **y no la leía nadie**. Es puro agregado al retorno: ningún
+   * llamador existente cambia de comportamiento. */
+  var sinParsearDetalle = [];
   var propuestas = lineas.map(function (linea) {
     var propuesta = parsearLineaReunion_(linea);
     // Paso 2.15 Parte B: el período lo pone el llamador, que ya lo validó contra
     // PERIODOS. Acá no se valida de nuevo ni se completa con un default.
     propuesta.periodo_id = periodoId;
-    if (propuesta.notas === 'no se pudo parsear' || propuesta.notas.indexOf('no se encontró fecha') !== -1) sinParsear++;
+    if (propuesta.notas === 'no se pudo parsear' || propuesta.notas.indexOf('no se encontró fecha') !== -1) {
+      sinParsear++;
+      sinParsearDetalle.push({ texto: propuesta.texto_original, motivo: propuesta.notas });
+    }
     return propuesta;
   });
 
@@ -319,6 +329,8 @@ function cargarTemarioReuniones_(textoPegado, periodoId) {
     ok: true,
     agregadas: reparto.nuevas.length,
     sinParsear: sinParsear,
+    // ⭐ Cuáles, no cuántas. Ver el comentario de arriba.
+    sinParsearDetalle: sinParsearDetalle,
     // Se reportan con nombre, no con un conteo: "3 salteadas" no deja saber si salteó las que
     // correspondía. `cargarTemarioCampanas_` ya devuelve su lista igual.
     salteadas: reparto.salteadas.map(function (p) {

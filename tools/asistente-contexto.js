@@ -158,7 +158,14 @@ function contexto(hojas, parchear) {
     /function semanaR11_\([\s\S]*?\r?\n\}/,
     /function ultimaSemanaCerradaR11_\([\s\S]*?\r?\n\}/
   ]);
+  /* ⭐ El parser de fechas del temario, REAL: `parsearLineaReunion_` lo usa para decidir si una
+   * línea se pudo interpretar, y un parser propio acá mediría otra cosa. */
+  cargar('Parseo.gs', [/function parsearFecha_\([\s\S]*?\r?\n\}/]);
   cargar('Instalar.gs');
+  /* ⚠ Los dos cargadores de temario van enteros: lo que el paso 2 hace es **rutear** hacia ellos,
+   * así que copiarlos sería el instrumento que reproduce lógica del motor y la reproduce peor. */
+  cargar('Reuniones.gs');
+  cargar('Campanas.gs');
   cargar('PanelBackend.gs');
 
   ctx.__hojas = creadas;

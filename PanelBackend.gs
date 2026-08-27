@@ -2191,6 +2191,144 @@ function panel_asistenteOpcionesDePeriodo() {
   };
 }
 
+/* ── Paso 2 · el temario, en UN SOLO pegado ───────────────────────────────────────────────
+ *
+ * ⭐ **Vuelve el formato único:** la lista de reuniones + el título «Campañas destacadas» + las
+ * campañas, todo junto. `partirTemarioEnBloques_` **ya hacía la partición** — esto es recuperar
+ * una pieza, no construirla — pero **le faltaba una cosa, y se midió antes de tocarla.**
+ *
+ * ⛔⛔ **Lo que le falta, medido el 27/08/2026: se COME la línea que no parsea.** Su heurística
+ * dice que una línea sin `>`, sin numeración `N)` y sin `|`, de menos de 60 caracteres, **es un
+ * encabezado de bloque**. Una línea de temario mal tipeada cumple las tres, así que se convierte
+ * en el `titulo` de un bloque vacío **y desaparece de todos los `lineas`**.
+ *
+ *     texto:  "1) JM | Uno a uno en Retiro 24/07"   →  bloque 1, línea
+ *             "esto no parsea"                      →  ⛔ bloque 2, TÍTULO — se perdió
+ *             "> Campañas destacadas"               →  bloque 3, título
+ *
+ * ⇒ **Nunca llega a `cargarTemarioReuniones_`, así que nunca recibe su fila con
+ * `notas = 'no se pudo parsear'`, así que el paso 3 no la puede mostrar.** El hueco no estaba en
+ * el cargador —que hace lo correcto— sino un escalón antes, en el partidor. Es la regla de
+ * `CLAUDE.md` §4 en su forma literal: *la función que estás leyendo no es el camino completo; el
+ * filtro que te falta suele estar en quien le pasa los datos*.
+ *
+ * ⭐ **La salida es devolver el título comido a la lista de líneas**, y no tocar
+ * `partirTemarioEnBloques_`: su heurística es correcta para lo que hace —encontrar el bloque de
+ * campañas, que es su único uso— y cambiarla movería el cargador de campañas, que hoy anda.
+ *
+ * ⚠ **Y el efecto lateral, declarado en vez de descubierto:** un encabezado legítimo **sin `>`**
+ * —`DGAYD`, el caso que la heurística existe para tolerar— también vuelve a la lista y produce una
+ * fila `no se pudo parsear`. **Se eligió a sabiendas:** una fila de más se ve en el paso 3 y se
+ * destilda; una línea perdida en silencio publica un informe al que le falta un encuentro. Un
+ * encabezado **con `>`** no tiene el problema: se reconoce y se descarta.
+ */
+
+/** ¿Este bloque es el de campañas destacadas? Con el comparador del cargador, no otro. */
+function esBloqueDeCampanas_(bloque) {
+  return normalizar_(bloque.titulo) === normalizar_(BLOQUE_CAMPANAS_);
+}
+
+/**
+ * Parte el pegado único en **lo que va a cada cargador**. Pura: no escribe una sola fila.
+ *
+ * Devuelve `{ reuniones_texto, campanas_texto, hay_campanas, lineas_reuniones, bloques }`.
+ *
+ * ⚠ **`campanas_texto` es el texto ENTERO, sin recortar**, y eso es deliberado:
+ * `cargarTemarioCampanas_` busca su propio bloque con `partirTemarioEnBloques_` y **falla con
+ * motivo si no lo encuentra**. Pasarle un recorte armado acá sería una segunda forma de decidir
+ * cuál es el bloque de campañas, y el día que las dos difieran no falla — carga otra cosa.
+ */
+function partirTemarioDelAsistente_(texto) {
+  var bloques = partirTemarioEnBloques_(texto);
+  var lineas = [];
+  var hayCampanas = false;
+  var resumen = [];
+
+  bloques.forEach(function (b) {
+    resumen.push({
+      titulo: b.titulo,
+      con_marca: b.con_marca,
+      lineas: b.lineas.length,
+      es_campanas: esBloqueDeCampanas_(b)
+    });
+    if (esBloqueDeCampanas_(b)) { hayCampanas = true; return; }
+
+    /* ⛔ **El título comido vuelve a la lista.** Un bloque **sin marca** cuyo `titulo` no es el
+     * centinela `(sin encabezado)` es una línea de contenido que la heurística confundió: si no
+     * se devuelve acá, desaparece sin dejar rastro. Va **antes** de sus líneas, que es donde
+     * estaba en el texto original. */
+    if (!b.con_marca && b.titulo !== '(sin encabezado)') lineas.push(b.titulo);
+    b.lineas.forEach(function (l) { lineas.push(l); });
+  });
+
+  return {
+    reuniones_texto: lineas.join('\n'),
+    campanas_texto: String(texto || ''),
+    hay_campanas: hayCampanas,
+    lineas_reuniones: lineas.length,
+    bloques: resumen
+  };
+}
+
+/**
+ * Paso 2 · **carga el pegado único: reuniones y campañas, por los cargadores de siempre.**
+ *
+ * ⛔ **No hay un segundo camino de escritura.** `cargarTemarioReuniones_` y
+ * `cargarTemarioCampanas_` son los escritores declarados de sus hojas (`docs/ESCRITORES.md`), y
+ * esto es un **ruteador**: decide qué texto va a cada uno y junta los dos reportes.
+ *
+ * ⚠ **El `periodo_id` lo pone el llamador y ya está validado** — por `guardaDelAsistente_`, contra
+ * las filas crudas de `PERIODOS`. No se valida de nuevo ni se completa con un default (`D-19`).
+ *
+ * ⭐⭐ **Y las líneas que NO se pudieron interpretar viajan con nombre, no con un conteo.** «3 sin
+ * parsear» no deja saber cuáles, y el paso 3 tiene que poder señalarlas: un temario que carga 4 de
+ * 5 y no lo dice publica un informe al que le falta un encuentro.
+ */
+function panel_asistenteCargarTemario(periodoId, texto, informeId) {
+  var hechos = hechosDelAsistente_(periodoId, informeId);
+  var permiso = guardaDelAsistente_(2, hechos);
+  if (!permiso.ok) return { ok: false, motivo: permiso.motivo, falta: permiso.falta };
+
+  if (!texto || !String(texto).trim()) return { ok: false, motivo: 'La caja está vacía.' };
+
+  var ref = String(periodoId || '').trim();
+  var partido = partirTemarioDelAsistente_(texto);
+  var salida = {
+    ok: true,
+    periodo_id: ref,
+    bloques: partido.bloques,
+    hay_campanas: partido.hay_campanas,
+    reuniones: null,
+    campanas: null,
+    avisos: []
+  };
+
+  if (partido.lineas_reuniones) {
+    var rr = cargarTemarioReuniones_(partido.reuniones_texto, ref);
+    if (!rr.ok) return { ok: false, motivo: 'reuniones: ' + rr.motivo };
+    salida.reuniones = rr;
+  } else {
+    salida.avisos.push('ⓘ No había ninguna línea de reuniones fuera del bloque de campañas.');
+  }
+
+  if (partido.hay_campanas) {
+    var rc = cargarTemarioCampanas_(partido.campanas_texto, ref, String(informeId || '').trim());
+    if (!rc.ok) return { ok: false, motivo: 'campañas: ' + rc.motivo };
+    salida.campanas = rc;
+  } else {
+    /* ⚠ **No es un error**: un temario puede no traer campañas. Pero se dice, porque el título
+     * mal escrito produce exactamente el mismo silencio que la ausencia. */
+    salida.avisos.push('ⓘ No apareció el bloque «' + BLOQUE_CAMPANAS_ + '». Si el temario traía ' +
+      'campañas, revisá el título: bloques leídos — ' +
+      (partido.bloques.map(function (b) { return b.titulo; }).join(' · ') || '(ninguno)') + '.');
+  }
+
+  /* ⭐ Los hechos DESPUÉS de cargar: es lo que decide si el paso 3 abre, y sale de la hoja. */
+  salida.hechos = hechosDelAsistente_(ref, informeId);
+  salida.puede_confirmar = guardaDelAsistente_(3, salida.hechos).ok;
+  return salida;
+}
+
 /**
  * Paso 1 · **elegir el período: lo crea si no está, lo REUSA si está.**
  *
