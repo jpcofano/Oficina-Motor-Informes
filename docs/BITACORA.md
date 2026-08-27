@@ -16081,3 +16081,46 @@ supone.** Los cinco autotests quedan en verde.
 
 **Decisión del usuario, con el costo medido:** ¿`suites.js` corre los `--autoprueba`? **+475 ms sobre
 8.957 = +5,3 %** contra el costo conocido de no correrlos. No se eligió.
+
+---
+
+## 2026-08-27 — `2026-08-27_1`: el asistente lineal de cuatro pasos (`D-44`)
+
+### Paso 1 — el período, y las dos funciones que se retiran
+
+⭐ **El asistente es LINEAL, no navegable:** los pasos se hacen en orden y **cambiar el período es
+empezar de nuevo**. Eso no es una limitación — si el período se pudiera cambiar después de cargar
+el temario, las reuniones quedarían atadas al `periodo_id` viejo. **El diseño lo hace imposible en
+vez de tener que detectarlo.**
+
+⭐⭐ **La guarda es de HECHOS, nunca de una bandera del front.** `guardaDelAsistente_` es pura y
+mira tres cosas leídas de las hojas vivas —existe la fila de `PERIODOS`, hay filas de temario para
+ese período, ninguna reunión con `mostrar` vacío—, **en cascada**: sin cascada, saltear **dos**
+pasos pasaría, porque «nadie sin confirmar» es cierto **por vacuidad** sobre un temario vacío.
+
+⛔ **`generarProximasSemanas()` y `generarPeriodosSemanales_` se RETIRARON** (decisión del usuario):
+con este flujo no hace falta ninguna semana por adelantado. **Lo que NO se retira es
+`crearPeriodos_`**, el escritor declarado de `PERIODOS` (`D-43`), que ahora tiene **tres**
+llamadores. El paso 1 **delega** — sigue habiendo un solo camino de escritura, y el banco lo fija.
+
+⭐ **Elegir un período que ya existe se REUSA y no escribe nada**, y lo declara: `reusado` contra
+`creado`. Está medido que `upsertPorClave_` **pisa sin preguntar** y que un `periodo_id` es una
+clave referenciada en **119 líneas**.
+
+⭐⭐ **El control negativo se escribió al revés y el rojo lo corrigió.** Anular la guarda del
+**panel** no duplica la fila: la protección de verdad está en `crearPeriodos_`, que es el
+**escritor** — *la guarda va en el escritor y no en el llamador*. Lo que la guarda del panel compra
+es el **reporte**: sin ella, el paso 1 informa `creado: true` sobre una fila que no tocó. El
+control quedó dado vuelta midiendo eso.
+
+⚠ **Y el banco del generador no se aflojó: se le cambió el sujeto.** Todo lo que medía
+—insert-only, relectura, claves repetidas, idempotencia— es de `crearPeriodos_`, y ahora se lo mide
+a él. Ganó **dos afirmaciones negativas** que se ponen en rojo el día que alguna de las dos
+funciones retiradas vuelva sin decisión, y **una guarda en el terminador de las rebanadas**: las
+cuatro terminaban en `indexOf('function generarProximasSemanas')`, que ahora daría `-1` y
+**recortaría hasta el final del archivo sin fallar**.
+
+**Bancos:** `probar-asistente-periodo.js` (46) y `probar-asistente-pasos.js` (25), más
+`probar-generador-periodos.js` de 46 a 48. **Suites: 59 → 61 bancos, ~795 → ~868 afirmaciones.**
+⭐ Y una afirmación nueva que valía dos líneas: **el `<script>` de `Panel.html` compila** — un
+paréntesis de más deja el panel en blanco y ninguna suite se enteraba.

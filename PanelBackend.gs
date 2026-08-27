@@ -1915,11 +1915,10 @@ function panel_generarSemanaEnCurso() {
   r.sin_cerrar = sinCerrar;
   /* ⭐ El aviso viaja **siempre**, aunque el front decida no pintarlo: el panel elige si lo
    * muestra, pero nunca tiene que adivinar si existe. Mismo criterio que los tres de la corrida. */
-  r.aviso_parcial = sinCerrar
-    ? 'Esta semana TODAVÍA NO CERRÓ (cierra el jueves). Los datos de las bases van a estar ' +
-      'parciales, y un número parcial no se distingue de uno completo mirándolo: medido, ' +
-      '3488-AGOJDGAG tenía 11.000 de 54.107 llamados en el export del 20/08.'
-    : '';
+  /* ⚠ El texto sale de `AVISO_SEMANA_SIN_CERRAR_` y ya no está escrito acá: el asistente lo usa
+   * también, y dos redacciones del mismo aviso es el modo de falla que el aviso de ventana vino a
+   * cerrar en la Parte C del `2026-08-26_2` —dos fuentes que se corrigen por separado—. */
+  r.aviso_parcial = sinCerrar ? AVISO_SEMANA_SIN_CERRAR_ : '';
   return r;
 }
 
@@ -1956,5 +1955,310 @@ function panel_previaSemanaEnCurso() {
     ya_existe: !!(crudas.ok && crudas.porClave[id]),
     sin_cerrar: formatearFecha_(enCurso.desde) !== formatearFecha_(cerrada.desde),
     ultima_cerrada: formatearFecha_(cerrada.desde) + ' → ' + formatearFecha_(cerrada.hasta)
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-27_1` — **el asistente lineal de cuatro pasos** (`D-44`, decisión del usuario)
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⭐ **Es un asistente lineal, no un formulario navegable:** los pasos se hacen en orden y
+ * **cambiar el período es empezar de nuevo**. Eso no es una limitación de la UI, es lo que
+ * previene el problema: si el período se pudiera cambiar después de cargar el temario, las
+ * reuniones quedarían atadas al `periodo_id` viejo. **El diseño lineal lo hace imposible en vez
+ * de tener que detectarlo.**
+ *
+ * ⭐⭐ **Los cuatro pasos ya estaban construidos por separado.** Lo que faltaba —y es todo lo que
+ * este bloque agrega— es **la máquina de estados que los encadena y que impide saltearlos**:
+ *
+ *   1 · período   → `semanaR11_` / `ultimaSemanaCerradaR11_` + `crearPeriodos_` (`D-43`)
+ *   2 · temario   → `partirTemarioEnBloques_` + los dos cargadores de siempre
+ *   3 · confirmar → `anclarEncuentros`, sus TRES listas, y el `mostrar` de cada fila
+ *   4 · generar   → `generarInforme`, por el adaptador de siempre
+ *
+ * ⛔⛔ **La guarda es de HECHOS, nunca de una bandera del front.** Un `paso: 3` que viaja en el
+ * `S` del HTML es una afirmación del front sobre sí mismo, y el front puede mentir —es el mismo
+ * `TECHO_S = 350` escrito a mano que el `2026-08-21_1` sacó de acá—. Las tres condiciones que
+ * `guardaDelAsistente_` mira se leen de las hojas vivas: **existe la fila de `PERIODOS`**, **hay
+ * filas de temario para ese período**, **ninguna reunión quedó con `mostrar` vacío**.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Los cuatro pasos, en orden. El índice es el número de paso menos uno. */
+var PASOS_ASISTENTE_ = ['periodo', 'temario', 'confirmar', 'generar'];
+
+/**
+ * ⭐⭐ **El aviso de la semana en curso, escrito UNA vez.**
+ *
+ * Estaba redactado dentro de `panel_generarSemanaEnCurso` y el HTML tiene su propia copia. Tres
+ * textos para un aviso es la figura de *«un techo declarado en dos lugares es un techo que puede
+ * mentir en uno de los dos»*: el front conserva el suyo —es el que se lee **al elegir**, antes de
+ * llamar a nadie— y el backend deja de tener dos.
+ */
+var AVISO_SEMANA_SIN_CERRAR_ =
+  'Esta semana TODAVÍA NO CERRÓ (cierra el jueves). Los datos de las bases van a estar ' +
+  'parciales, y un número parcial no se distingue de uno completo mirándolo: medido, ' +
+  '3488-AGOJDGAG tenía 11.000 de 54.107 llamados en el export del 20/08.';
+
+/**
+ * ⭐⭐ **La guarda, y es PURA — por eso se puede fijar con un banco.**
+ *
+ * Recibe el paso al que se quiere entrar y los **hechos** medidos sobre las hojas vivas, y
+ * decide. **Cascada:** el paso 4 exige lo del 3, que exige lo del 2. Sin eso, «no se puede
+ * saltear» sería *«no se puede saltear uno»*, y saltear dos pasaría.
+ *
+ * ⚠ **El límite, declarado en vez de descubierto.** El hecho que prueba que el paso 3 ocurrió es
+ * `reuniones_sin_confirmar === 0`: `cargarTemarioReuniones_` escribe `mostrar` **vacío** y sólo el
+ * paso 3 lo llena. **Para las campañas no hay hecho equivalente**, porque `cargarTemarioCampanas_`
+ * las escribe con `mostrar = 'sí'` de entrada (`AJ-1`, *ante la duda entra*) — o sea que **nacen
+ * confirmadas**. Un temario que trae **sólo** campañas satisface esta guarda sin haber pasado por
+ * la pantalla. No se inventa una columna para taparlo: se dice.
+ */
+function guardaDelAsistente_(paso, hechos) {
+  var n = Number(paso) || 0;
+  var h = hechos || {};
+
+  if (n <= 1) return { ok: true };
+
+  if (!h.periodo_id) {
+    return {
+      ok: false, falta: 'periodo',
+      motivo: 'Todavía no hay período elegido. El paso 1 es elegirlo o crearlo: una fila sin ' +
+        'período no entra a ningún informe (`D-19`).'
+    };
+  }
+  if (h.periodo_existe !== true) {
+    return {
+      ok: false, falta: 'periodo',
+      motivo: 'El período "' + h.periodo_id + '" no está en `PERIODOS`. El motor no crea períodos ' +
+        'al pasar: el paso 1 lo crea, y hasta que exista no hay sobre qué cargar.'
+    };
+  }
+  if (n === 2) return { ok: true };
+
+  if (!(Number(h.filas_temario) > 0)) {
+    return {
+      ok: false, falta: 'temario',
+      motivo: 'No hay ninguna fila de temario cargada para "' + h.periodo_id + '". El paso 2 es ' +
+        'pegar el temario: sin filas, el paso 3 no tiene qué confirmar y el anclaje no tiene qué ' +
+        'anclar.'
+    };
+  }
+  if (n === 3) return { ok: true };
+
+  if (Number(h.reuniones_sin_confirmar) > 0) {
+    return {
+      ok: false, falta: 'confirmar',
+      motivo: 'Quedan ' + h.reuniones_sin_confirmar + ' reunión(es) con `mostrar` vacío en "' +
+        h.periodo_id + '". El paso 3 es decidir cuáles entran: `leerReuniones_` filtra por ' +
+        '`mostrar` **antes** de que el anclaje vea nada, así que una fila sin confirmar es ' +
+        'indistinguible de una que no existe y el deck saldría sin ese encuentro.'
+    };
+  }
+  if (!String(h.informe_id || '').trim()) {
+    return { ok: false, falta: 'informe', motivo: 'No se eligió informe.' };
+  }
+  return { ok: true };
+}
+
+/**
+ * Los **hechos** que la guarda mira, leídos de las hojas vivas. Impura a propósito: es la mitad
+ * que va a la planilla, y por eso la decisión está en la otra.
+ *
+ * ⚠ **La existencia del período se pregunta contra las filas CRUDAS**, no contra `leerPeriodos()`:
+ * ése es `leerRegistro_` y **colapsa las claves repetidas** —hoy ve 8 donde la hoja tiene 9—. Es
+ * el mismo motivo por el que `crearPeriodos_` lee crudo.
+ */
+function hechosDelAsistente_(periodoId, informeId) {
+  var ref = String(periodoId || '').trim();
+  var crudas = filasCrudasDePeriodos_();
+  var reuniones = estadoDeTemario_('REUNIONES', ref);
+  var campanas = estadoDeTemario_('CAMPANAS', ref);
+
+  return {
+    periodo_id: ref,
+    periodo_existe: !!(ref && crudas.ok && crudas.porClave[ref]),
+    filas_temario: reuniones.filas_cargadas + campanas.filas_cargadas,
+    filas_reuniones: reuniones.filas_cargadas,
+    filas_campanas: campanas.filas_cargadas,
+    reuniones_sin_confirmar: reuniones.sin_confirmar,
+    campanas_sin_id: campanas.sin_confirmar,
+    informe_id: String(informeId || '').trim()
+  };
+}
+
+/**
+ * ⭐ **La ventana del paso 1 — tres opciones, y NO una lista que crece.**
+ *
+ * ⚠ **Ninguna de las tres reimplementa el corte viernes–jueves.** `semanaR11_` es el único lugar
+ * donde vive, y acá sólo se elige **qué fecha preguntarle** — que es exactamente la forma que
+ * `ultimaSemanaCerradaR11_` ya usa. Un segundo cálculo del corte es el error que este repo ya
+ * cometió cuatro veces (`CLAUDE.md` §4).
+ *
+ * ⚠ **Valida y NO corrige** en el personalizado, por lo mismo que `crearPeriodoPersonalizado_`:
+ * un rango invertido **no falla en ningún lado**, publica una ventana vacía.
+ *
+ * Devuelve `{ ok, modo, desde, hasta, sin_cerrar, avisos }` con `Date` en `desde`/`hasta`.
+ */
+function ventanaDelAsistente_(modo, desdeTexto, hastaTexto, hoy) {
+  var cuando = hoy || new Date();
+  var m = String(modo || '').trim();
+
+  if (m === 'en_curso' || m === 'anterior') {
+    var enCurso = semanaR11_(cuando);
+    var cerrada = ultimaSemanaCerradaR11_(cuando);
+    var elegida = (m === 'en_curso') ? enCurso : cerrada;
+    /* ⚠ `sin_cerrar` se calcula comparando las DOS lecturas, no con una cuenta de días propia:
+     * sólo difieren el viernes, y el viernes es justo el día en que se genera `jm`. */
+    var sinCerrar = m === 'en_curso' &&
+      formatearFecha_(enCurso.desde) !== formatearFecha_(cerrada.desde);
+    return {
+      ok: true, modo: m, desde: elegida.desde, hasta: elegida.hasta,
+      sin_cerrar: sinCerrar,
+      avisos: sinCerrar ? [AVISO_SEMANA_SIN_CERRAR_] : []
+    };
+  }
+
+  if (m !== 'personalizado') {
+    return {
+      ok: false, modo: m,
+      motivo: 'modo desconocido: "' + modo + '". Los tres son `en_curso`, `anterior` y ' +
+        '`personalizado` — y son tres a propósito, no una lista que crece.'
+    };
+  }
+
+  /* Las mismas tres validaciones que `crearPeriodoPersonalizado_`, y por el mismo lector: un
+   * tercer parser de fechas acá sería el quinto normalizador de este repo. */
+  var desde = parsearFechaCelda_(desdeTexto);
+  var hasta = parsearFechaCelda_(hastaTexto);
+  if (!desde || !hasta) {
+    return {
+      ok: false, modo: m,
+      motivo: 'no pude leer las fechas: desde="' + desdeTexto + '" hasta="' + hastaTexto +
+        '". Se leen con el mismo parser que usa el motor (`parsearFechaCelda_`).'
+    };
+  }
+  if (desde.getTime() > hasta.getTime()) {
+    return {
+      ok: false, modo: m,
+      motivo: 'el `desde` (' + formatearFecha_(desde) + ') es posterior al `hasta` (' +
+        formatearFecha_(hasta) + '). Un rango invertido no falla: publica una ventana vacía.'
+    };
+  }
+  var anio = desde.getFullYear();
+  if (anio < 2015 || anio > 2100) {
+    return { ok: false, modo: m, motivo: 'el año ' + anio + ' está fuera del rango plausible (2015-2100).' };
+  }
+  return { ok: true, modo: m, desde: desde, hasta: hasta, sin_cerrar: false, avisos: [] };
+}
+
+/**
+ * Paso 1 · **lo que el panel necesita para dibujar las tres opciones ANTES de elegir.**
+ *
+ * ⭐ Las tres traen su ventana, su `periodo_id` derivado y **si ya existe** — porque elegir un
+ * período que ya está **no crea nada**: se reusa. Y la de «en curso» trae su aviso de datos
+ * parciales **acá**, al elegirla, no cuando el deck ya salió.
+ */
+function panel_asistenteOpcionesDePeriodo() {
+  var hoy = new Date();
+  var crudas = filasCrudasDePeriodos_();
+  var opciones = ['anterior', 'en_curso'].map(function (m) {
+    var v = ventanaDelAsistente_(m, '', '', hoy);
+    var id = periodoIdDeVentana_(v.desde, v.hasta);
+    return {
+      modo: m,
+      periodo_id: id,
+      desde: formatearFecha_(v.desde),
+      hasta: formatearFecha_(v.hasta),
+      sin_cerrar: v.sin_cerrar === true,
+      /* ⚠ Contra las filas CRUDAS: `leerPeriodos()` colapsa las repetidas. */
+      ya_existe: !!(crudas.ok && crudas.porClave[id]),
+      avisos: v.avisos || []
+    };
+  });
+
+  return {
+    ok: true,
+    opciones: opciones,
+    /* La lista de los que ya están, para que «reusar» sea una elección visible y no un efecto. */
+    periodos: (crudas.ok ? crudas.filas : []).map(function (f) {
+      var iD = crudas.headers.indexOf('desde');
+      var iH = crudas.headers.indexOf('hasta');
+      return { id: f.id, desde: fechaLegible_(f.valores[iD]), hasta: fechaLegible_(f.valores[iH]) };
+    }),
+    claves_repetidas: crudas.ok
+      ? Object.keys(crudas.porClave).filter(function (k) { return crudas.porClave[k] > 1; })
+      : []
+  };
+}
+
+/**
+ * Paso 1 · **elegir el período: lo crea si no está, lo REUSA si está.**
+ *
+ * ⛔ **Reusar es no escribir nada.** Está medido que `upsertPorClave_` **pisa sin preguntar**
+ * —`agosto_14_20` con otras fechas dio `{escritas: 0, actualizadas: 1}`, reescrita en silencio— y
+ * un `periodo_id` es una **clave referenciada en 119 líneas**: moverle las fechas cambia el
+ * universo de todo lo que lo cita **sin que nada falle**. Por eso el alta pasa por
+ * `crearPeriodos_`, que es insert-only, y por eso este camino **no tiene ninguna rama que
+ * escriba sobre una fila existente**.
+ *
+ * ⚠ **Y el `periodo_id` se DERIVA, nunca se pide.** Dejar que alguien lo escriba reabre la puerta
+ * a `'vie 14/08 -- jue 20/08 (por defecto)'`, que es una etiqueta de origen usada como clave
+ * primaria y sigue en la hoja.
+ */
+function panel_asistenteCrearPeriodo(modo, desdeTexto, hastaTexto) {
+  var hoy = new Date();
+  var v = ventanaDelAsistente_(modo, desdeTexto, hastaTexto, hoy);
+  if (!v.ok) return { ok: false, motivo: v.motivo };
+
+  var id = periodoIdDeVentana_(v.desde, v.hasta);
+  var crudas = filasCrudasDePeriodos_();
+  if (!crudas.ok) return { ok: false, motivo: crudas.motivo };
+
+  var dias = Math.round((v.hasta.getTime() - v.desde.getTime()) / 86400000) + 1;
+  var avisos = (v.avisos || []).slice();
+
+  /* ⭐ El tope de `R-30` **avisa y no bloquea**: una ventana larga mete cuentas por pertenencia
+   * que no corresponden —la de 14–20/08 pasó de 14 a 32 cuentas—, pero cuánto dura un período es
+   * una decisión editorial y la toma la persona. */
+  var tope = Number(leerConfig().tope_dias_ventana_cuenta || 0);
+  if (tope > 0 && dias > tope) {
+    avisos.push('⚠ El período dura ' + dias + ' días y `CONFIG.tope_dias_ventana_cuenta` es ' +
+      tope + '. `R-30` existe porque una ventana larga mete cuentas por pertenencia que no ' +
+      'corresponden. Se crea igual, pero el universo va a ser más ancho.');
+  }
+  if (dias !== 7) {
+    avisos.push('ⓘ No es una semana de 7 días (son ' + dias + '). Es válido: `R-11` Addendum 1 ' +
+      'punto 3 dice que dos períodos pueden solaparse o dejar hueco.');
+  }
+
+  /* ⭐⭐ **Si ya existe, se REUSA y no se toca.** Y se dice: «creado» y «ya estaba» mandan a
+   * lecturas distintas, y colapsarlos es lo que hace que una corrida que no hizo nada se lea como
+   * éxito (`CLAUDE.md` §4). */
+  if (crudas.porClave[id]) {
+    return {
+      ok: true, periodo_id: id, modo: v.modo,
+      desde: formatearFecha_(v.desde), hasta: formatearFecha_(v.hasta),
+      creado: false, reusado: true,
+      filas_antes: crudas.filas.length, filas_despues: crudas.filas.length,
+      sin_cerrar: v.sin_cerrar === true,
+      avisos: avisos,
+      claves_repetidas: Object.keys(crudas.porClave).filter(function (k) { return crudas.porClave[k] > 1; })
+    };
+  }
+
+  var r = crearPeriodos_([{ desde: v.desde, hasta: v.hasta }],
+    'Asistente · paso 1 (' + v.modo + ') el ' +
+    Utilities.formatDate(hoy, Session.getScriptTimeZone(), 'yyyy-MM-dd') +
+    (v.sin_cerrar ? ' — ⚠ la semana NO había cerrado al crearla' : ''));
+  if (!r.ok) return { ok: false, motivo: r.motivo, avisos: avisos };
+
+  return {
+    ok: true, periodo_id: id, modo: v.modo,
+    desde: formatearFecha_(v.desde), hasta: formatearFecha_(v.hasta),
+    creado: true, reusado: false,
+    filas_antes: r.filas_antes, filas_despues: r.filas_despues,
+    sin_cerrar: v.sin_cerrar === true,
+    avisos: avisos,
+    claves_repetidas: r.claves_repetidas
   };
 }

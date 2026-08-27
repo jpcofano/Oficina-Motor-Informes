@@ -8556,37 +8556,22 @@ function filasCrudasDePeriodos_() {
   return { ok: true, hoja: hoja, headers: headers, filas: filas, porClave: porClave };
 }
 
-/**
- * ⭐ **El generador: dado un punto de partida, crea las N semanas viernes-jueves siguientes.**
+/* ⛔⛔ **`generarPeriodosSemanales_` y `generarProximasSemanas()` se RETIRARON el 27/08/2026**
+ * (`2026-08-27_1`, decisión del usuario, `D-44`). Generaban **N semanas por adelantado**, y con el
+ * asistente lineal **no hace falta ninguna**: el paso 1 crea **la** semana que la persona elige,
+ * de a una, cuando la elige.
  *
- * `desdeFecha` es una fecha cualquiera; la primera semana generada es **la que la contiene**
- * (`semanaR11_`), y de ahí en adelante de siete en siete.
+ * ⚠ **Lo que NO se retiró, y es la mitad que importa:** `crearPeriodos_`, el escritor declarado de
+ * `PERIODOS` (`D-43`, `docs/ESCRITORES.md`). Sigue siendo el único camino de escritura de esta
+ * hoja, insert-only, y ahora tiene **tres** llamadores en vez de dos: los dos botones del panel
+ * viejo y `panel_asistenteCrearPeriodo`.
  *
- * ⭐⭐ **Reusa `semanaR11_` y NO reimplementa el corte viernes–jueves.** Un segundo cálculo del
- * corte es el error que este repo ya cometió cuatro veces (`CLAUDE.md` §4): el corte vive en un
- * solo lugar y esto sólo elige **qué fecha preguntarle**.
- *
- * ⛔ **Insert-only.** Una clave que ya está en la hoja **no se toca ni se compara**: se informa en
- * `ya_estaban` y se sigue. No hay ninguna rama que escriba sobre una fila existente.
- *
- * ⭐ **Y RELEE lo que quedó, no lo que pidió escribir (`C-83`).** El retorno trae `filas_antes`,
- * `filas_despues` y, por cada creada, lo que la hoja **tiene ahora** en esa fila. Un escritor que
- * no relee es la mitad del bug: el alta de `ecv_barrio1-3` informó «3 filas agregadas» diciendo la
- * verdad sobre lo que pidió y mintiendo sobre lo que quedó.
+ * ⭐ **Por qué se borra en vez de dejarse «por las dudas»:** era el único llamador de
+ * `generarPeriodosSemanales_`, así que dejarlo dejaba un calculador sin nadie que lo llame **y un
+ * banco verde encima**. Un control que mide código que nadie ejecuta es la peor clase de verde.
+ * `tools/probar-generador-periodos.js` pasó a medir `crearPeriodos_` directamente y ganó las dos
+ * afirmaciones negativas que fijan que estas dos no vuelvan sin decisión.
  */
-function generarPeriodosSemanales_(desdeFecha, cuantas) {
-  var n = Math.max(1, Math.round(Number(cuantas) || 1));
-
-  /* Las N ventanas, calculadas antes de escribir nada: si algo falla, no queda media tanda. */
-  var pedidas = [];
-  var base = semanaR11_(desdeFecha);
-  for (var i = 0; i < n; i++) {
-    var desde = new Date(base.desde.getFullYear(), base.desde.getMonth(), base.desde.getDate() + 7 * i);
-    var hasta = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate() + 6);
-    pedidas.push({ desde: desde, hasta: hasta });
-  }
-  return crearPeriodos_(pedidas, 'Semana vie-jue generada por el panel (2026-08-26_2 Parte F)');
-}
 
 /**
  * ⭐⭐ **El escritor, y es UNO SOLO para los dos botones.**
@@ -8762,33 +8747,6 @@ function crearPeriodoPersonalizado_(desdeTexto, hastaTexto) {
   return r;
 }
 
-/**
- * Ítem de menú / botón del editor: **las próximas semanas, desde la que está en curso.**
- *
- * ⚠ **Sin `_` final y SIN PARÁMETROS**, que son las dos condiciones para que Apps Script la liste
- * en el desplegable (`CLAUDE.md` §2). Y devuelve por `Logger.log`, no sólo por `return`: desde el
- * editor, una función que sólo retorna es una que no dice nada.
- */
-function generarProximasSemanas() {
-  var r = generarPeriodosSemanales_(new Date(), 6);
-  Logger.log('== Generador de PERÍODOS ==');
-  if (!r.ok) {
-    Logger.log('⛔ ' + r.motivo);
-    return r;
-  }
-  Logger.log('Filas en la hoja: ' + r.filas_antes + ' → ' + r.filas_despues +
-    ' · pedidas ' + r.pedidas + ' · creadas ' + r.creadas.length + ' · ya estaban ' + r.ya_estaban.length);
-  r.creadas.forEach(function (c) {
-    Logger.log('  ✅ ' + c.id + '  ' + c.desde + ' → ' + c.hasta + '  (fila ' + c.fila + ', releída)');
-  });
-  r.ya_estaban.forEach(function (y) {
-    Logger.log('  ⓘ ' + y.id + ' YA ESTABA — no se tocó' +
-      (y.filas_en_hoja > 1 ? ' · ⛔ y está en ' + y.filas_en_hoja + ' filas' : ''));
-  });
-  if (r.idempotente) Logger.log('ⓘ No se creó ninguna: ya estaban todas. Es idempotencia, no un fallo.');
-  if (r.claves_repetidas.length) {
-    Logger.log('⛔ PERIODOS tiene claves REPETIDAS: ' + r.claves_repetidas.join(', ') +
-      ' — `leerPeriodos()` las colapsa y ve menos filas de las que hay. Anotado en PENDIENTES.');
-  }
-  return r;
-}
+/* ⛔ Acá vivía `generarProximasSemanas()`. Ver el bloque de arriba: se retiró con
+ * `generarPeriodosSemanales_` el 27/08/2026. El botón que la reemplaza es el paso 1 del
+ * asistente, que crea **una** semana — la que la persona elige. */

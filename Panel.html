@@ -355,8 +355,37 @@ var S = {
   /* `2026-08-26_2` Parte F — la previa de la semana en curso y el resultado de crear un
    * período. `previaSemana` es null = sin pedir. */
   previaSemana: null,
-  periodoMsg: null
+  periodoMsg: null,
+  /* ⭐⭐ `2026-08-27_1` — **el asistente lineal de cuatro pasos** (`D-44`).
+   *
+   * `paso` es en qué pantalla está la persona. **No es la guarda**: la guarda vive en
+   * `guardaDelAsistente_`, en el backend, y mira hechos de las hojas vivas. Esto es sólo qué se
+   * pinta — un front que se guarda a sí mismo es el `TECHO_S = 350` otra vez.
+   *
+   * ⭐ **`reiniciarAsistente()` es la mitad del diseño lineal:** cambiar el período tira todo lo
+   * de abajo. Si el período se pudiera cambiar después de cargar el temario, las reuniones
+   * quedarían atadas al `periodo_id` viejo — **el diseño lo hace imposible en vez de tener que
+   * detectarlo.** */
+  asis: null
 };
+
+/** El estado inicial del asistente. Volver acá **es** empezar de nuevo. */
+function asistenteVacio(){
+  return {
+    paso: 1,
+    opciones: null,          // null = sin pedir; lo trae `panel_asistenteOpcionesDePeriodo`
+    modo: '',                // en_curso | anterior | personalizado
+    periodoId: '', desde: '', hasta: '', sinCerrar: false,
+    msg: null,
+    trabajando: false
+  };
+}
+function asis(){
+  if (!S.asis) S.asis = asistenteVacio();
+  return S.asis;
+}
+/* ⭐ Cambiar el período es empezar de nuevo, y por eso esto no conserva nada. */
+function reiniciarAsistente(){ S.asis = asistenteVacio(); pintar(); }
 
 /* ── utilidades ──────────────────────────────────────────────────────────────────── */
 function esc(v){
@@ -752,6 +781,7 @@ function pintar(){
       esc(S.error) + '</div>';
     return;
   }
+  if (S.tab === 'asistente'){ c.innerHTML = vistaAsistente(); conectarAsistente(); return; }
   if (S.tab === 'corridas') { c.innerHTML = vistaCorridas(); return; }
   if (S.tab === 'anclajes') { c.innerHTML = vistaAnclajes(); return; }
   if (S.tab === 'faltantes'){ c.innerHTML = vistaFaltantes(); conectarFaltantes(); return; }
@@ -769,6 +799,10 @@ function pintar(){
 
 function pintarTabs(){
   var tabs = [
+    /* ⭐ El asistente va PRIMERO porque es el proceso. «Generar» queda al lado, y eso es
+     * deliberado: es el camino libre, y sigue haciendo falta para regenerar un deck de un período
+     * ya armado sin volver a pasar por los cuatro pasos. */
+    { id:'asistente', txt:'Asistente' },
     { id:'generar', txt:'Generar' },
     { id:'desatendida', txt:'Corrida' },
     { id:'anclajes', txt:'Anclajes' },
@@ -783,6 +817,190 @@ function pintarTabs(){
   Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){
     b.onclick = function(){ S.tab = b.getAttribute('data-tab'); pintar(); };
   });
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-27_1` — **el asistente lineal de cuatro pasos** (`D-44`)
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⭐ **Lineal, no navegable.** Los pasos se hacen en orden y **cambiar el período es empezar de
+ * nuevo**. Eso no es una limitación de la UI: es lo que previene el problema. Si el período se
+ * pudiera cambiar después de cargar el temario, las reuniones quedarían atadas al `periodo_id`
+ * viejo — **el diseño lo hace imposible en vez de tener que detectarlo.**
+ *
+ * ⛔ **Y el front NO se guarda a sí mismo.** El botón de cada paso llama a su `panel_asistente*`,
+ * que consulta a `guardaDelAsistente_` con hechos leídos de las hojas vivas. Un `paso: 3` en este
+ * objeto es qué se pinta, nunca un permiso. */
+function barraDePasos(){
+  var a = asis();
+  var nombres = ['Período', 'Temario', 'Confirmar', 'Generar'];
+  var h = '<div class="cuadro-secs" style="margin-bottom:10px">';
+  h += nombres.map(function(n, i){
+    var n1 = i + 1;
+    var estado = (n1 < a.paso) ? '✅' : (n1 === a.paso ? '▶' : '·');
+    return '<span class="' + (n1 === a.paso ? '' : 'muted') + '">' + estado + ' ' + n1 + ' ' + esc(n) + '</span>';
+  }).join(' &nbsp;→&nbsp; ');
+  return h + '</div>';
+}
+
+function vistaAsistente(){
+  var a = asis();
+  var h = '<div class="bloque"><span class="section-title">El informe de la semana, en cuatro pasos</span>';
+  h += barraDePasos();
+
+  if (a.paso === 1) h += pasoPeriodo();
+  else if (a.paso === 2) h += pasoTemario();
+  else if (a.paso === 3) h += pasoConfirmar();
+  else h += pasoGenerar();
+
+  if (a.msg){
+    h += '<div class="alert ' + (a.msg.ok ? 'alert-info' : 'alert-warning') + '">' +
+         '<div class="alert-title">' + (a.msg.ok ? 'Listo' : 'No se pudo') + '</div>' +
+         esc(a.msg.texto) + '</div>';
+  }
+  return h + '</div>';
+}
+
+/* ── Paso 1 · el período ─────────────────────────────────────────────────────────────────
+ *
+ * ⭐ **Tres opciones, y son tres — no una lista que crece.** «Anterior» es lo que `R-11`
+ * Addendum 2 propone por defecto; «en curso» lo deroga parcialmente **sólo cuando la persona lo
+ * pide** (`D-43`); «personalizado» toma un rango a mano.
+ *
+ * ⭐⭐ **El aviso de datos parciales sale al ELEGIRLA, no al terminar.** Un número parcial no se
+ * distingue de uno completo mirándolo, así que decirlo en un pie de página cuando el deck ya
+ * salió no sirve de nada. Por eso las opciones se piden ANTES de dibujar los botones. */
+function pasoPeriodo(){
+  var a = asis();
+  if (a.opciones === null){ cargarOpcionesDePeriodo(); return '<p class="muted">Mirando qué semana corresponde…</p>'; }
+  if (a.opciones === 'cargando') return '<p class="muted">Mirando qué semana corresponde…</p>';
+  if (!a.opciones.ok) return '<p class="hint-error">No se pudieron calcular las semanas: ' + esc(a.opciones.motivo || '') + '</p>';
+
+  var h = '<p class="hint">Elegí sobre qué semana se arma el informe. <b>Es lo primero y no se ' +
+          'cambia después</b>: cambiarlo es empezar de nuevo, porque el temario se carga atado a ' +
+          'este período.</p>';
+
+  a.opciones.opciones.forEach(function(o){
+    var titulo = o.modo === 'anterior' ? 'La semana anterior (la última cerrada)' : 'La semana en curso';
+    h += '<div class="cuadro">';
+    h += '<div class="cuadro-tit">' + esc(titulo) + '</div>';
+    h += '<div class="cuadro-est mono">' + esc(o.desde) + ' → ' + esc(o.hasta) + ' · ' + esc(o.periodo_id) + '</div>';
+    /* ⭐⭐ El aviso ANTES del botón. */
+    (o.avisos || []).forEach(function(t){ h += '<p class="hint-error">⚠ ' + esc(t) + '</p>'; });
+    if (o.ya_existe){
+      h += '<p class="hint">Ya existe en <span class="mono">PERIODOS</span>: se reusa, no se crea ' +
+           'de nuevo ni se pisa.</p>';
+    }
+    h += '<div class="cuadro-btns"><button class="btn btn-primary" data-asis-per="' + esc(o.modo) + '">' +
+         (o.ya_existe ? 'Usar ' : 'Crear y usar ') + esc(o.periodo_id) + '</button></div>';
+    h += '</div>';
+  });
+
+  h += '<div class="cuadro"><div class="cuadro-tit">Un período a medida</div>' +
+       '<div class="field">' +
+       '<input id="asis-desde" type="date">' +
+       '<input id="asis-hasta" type="date">' +
+       '<button class="btn btn-secondary" id="asis-per-custom">Crear y usar</button>' +
+       /* ⚠ El id se DERIVA. Dejar que alguien lo escriba reabre la puerta a
+        * `'vie 14/08 -- jue 20/08 (por defecto)'`, que es una etiqueta usada como clave. */
+       '<p class="hint">El nombre se arma solo, con la convención ' +
+       '<span class="mono">AAAA_mes_ddInicio_ddFin</span>.</p></div></div>';
+
+  if ((a.opciones.claves_repetidas || []).length){
+    h += '<p class="hint-error">⛔ <span class="mono">PERIODOS</span> tiene claves repetidas: ' +
+         esc(a.opciones.claves_repetidas.join(', ')) + '. <span class="mono">leerPeriodos()</span> ' +
+         'las colapsa y ve menos filas de las que hay. Se reporta y no se toca, por decisión tuya.</p>';
+  }
+  return h;
+}
+
+/* Los tres pasos que siguen se encienden en su propio commit. ⭐ Se pintan diciendo que faltan,
+ * en vez de ofrecer un botón que falla: un botón sin backend es la columna declarada sin lector. */
+function pasoPendiente(n, que){
+  var a = asis();
+  return '<p class="hint">Período elegido: <span class="mono">' + esc(a.periodoId) + '</span> · ' +
+         esc(a.desde) + ' → ' + esc(a.hasta) + '</p>' +
+         '<div class="alert alert-warning"><div class="alert-title">Paso ' + n + ' — todavía no cableado</div>' +
+         esc(que) + ' Mientras tanto se hace desde la pestaña «Generar», que es el camino libre de ' +
+         'siempre.</div>' +
+         '<button class="btn btn-secondary" id="asis-reiniciar">Empezar de nuevo</button>';
+}
+function pasoTemario(){ return pasoPendiente(2, 'Pegar el temario completo en un solo cuadro.'); }
+function pasoConfirmar(){ return pasoPendiente(3, 'Confirmar qué entra y contra qué cuenta ancló cada encuentro.'); }
+function pasoGenerar(){ return pasoPendiente(4, 'Generar el deck sobre lo confirmado.'); }
+
+function cargarOpcionesDePeriodo(){
+  asis().opciones = 'cargando';
+  google.script.run
+    .withSuccessHandler(function(r){ asis().opciones = r || {ok:false, motivo:'sin respuesta'}; pintar(); })
+    .withFailureHandler(function(e){ asis().opciones = {ok:false, motivo:String(e && e.message || e)}; pintar(); })
+    .panel_asistenteOpcionesDePeriodo();
+}
+
+/**
+ * ⭐ El resultado del paso 1 en una frase, y **dice si CREÓ o si REUSÓ**.
+ *
+ * No es prolijidad: «creé» y «ya estaba» mandan a lecturas distintas, y colapsarlos es
+ * exactamente cómo una corrida que no hizo nada se lee como éxito (`CLAUDE.md` §4).
+ */
+function mensajeDelPaso1(r){
+  if (!r || !r.ok) return { ok:false, texto: (r && r.motivo) || 'sin motivo' };
+  var partes = [];
+  partes.push(r.reusado ? 'Se reusó ' + r.periodo_id + ' — ya estaba y no se tocó'
+                        : 'Se creó ' + r.periodo_id);
+  partes.push('Filas en PERIODOS: ' + r.filas_antes + ' → ' + r.filas_despues);
+  (r.avisos || []).forEach(function(t){ partes.push(t); });
+  if ((r.claves_repetidas || []).length){
+    partes.push('⛔ PERIODOS tiene claves repetidas: ' + r.claves_repetidas.join(', '));
+  }
+  return { ok:true, texto: partes.join(' · ') };
+}
+
+function elegirPeriodoDelAsistente(modo, desde, hasta){
+  var a = asis();
+  a.trabajando = true;
+  a.msg = { ok:true, texto:'Resolviendo el período…' };
+  pintar();
+  google.script.run
+    .withSuccessHandler(function(r){
+      var a2 = asis();
+      a2.trabajando = false;
+      a2.msg = mensajeDelPaso1(r);
+      if (r && r.ok){
+        a2.modo = r.modo; a2.periodoId = r.periodo_id;
+        a2.desde = r.desde; a2.hasta = r.hasta; a2.sinCerrar = r.sin_cerrar === true;
+        a2.paso = 2;
+        /* El selector de la pestaña «Generar» tiene que ver la fila nueva sin recargar el panel. */
+        recargarPeriodos();
+        return;
+      }
+      pintar();
+    })
+    .withFailureHandler(function(e){
+      var a2 = asis();
+      a2.trabajando = false;
+      a2.msg = { ok:false, texto:String(e && e.message || e) };
+      pintar();
+    })
+    .panel_asistenteCrearPeriodo(modo, desde || '', hasta || '');
+}
+
+function conectarAsistente(){
+  Array.prototype.forEach.call(document.querySelectorAll('[data-asis-per]'), function(b){
+    b.onclick = function(){ elegirPeriodoDelAsistente(b.getAttribute('data-asis-per'), '', ''); };
+  });
+  var bc = el('asis-per-custom');
+  if (bc) bc.onclick = function(){
+    var d = el('asis-desde'), ha = el('asis-hasta');
+    if (!d || !ha || !d.value || !ha.value){
+      asis().msg = { ok:false, texto:'Faltan las dos fechas.' };
+      pintar();
+      return;
+    }
+    elegirPeriodoDelAsistente('personalizado', d.value, ha.value);
+  };
+  var br = el('asis-reiniciar');
+  if (br) br.onclick = reiniciarAsistente;
 }
 
 function vistaGenerar(){

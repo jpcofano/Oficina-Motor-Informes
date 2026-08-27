@@ -125,10 +125,51 @@ function contexto(filasIniciales, parchear) {
   return ctx;
 }
 
-function generar(ctx, fecha, cuantas) {
+/**
+ * ⛔⛔ **Esto llamaba a `generarPeriodosSemanales_`, que se RETIRÓ el 27/08/2026** (`D-44`): con el
+ * asistente lineal no hace falta ninguna semana por adelantado, así que un calculador de N semanas
+ * no tiene llamador. **El banco no se aflojó — se le cambió el sujeto**: todo lo que medía
+ * (insert-only, relectura, claves repetidas, idempotencia) es de `crearPeriodos_`, que **sigue
+ * siendo el escritor declarado**, y ahora se lo mide a él directamente.
+ *
+ * ⭐ **Las N ventanas se arman ACÁ con `semanaR11_` real**, extraída de `Fuentes.gs`. No es
+ * reimplementar el corte: es preguntárselo N veces, que es exactamente lo que hacía el generador
+ * retirado. Si `semanaR11_` cambiara, esto se entera igual que antes.
+ */
+function ventanasDesde(ctx, fecha, cuantas) {
   ctx.__f = fecha;
-  ctx.__n = cuantas;
-  return vm.runInContext('generarPeriodosSemanales_(__f, __n)', ctx);
+  const base = vm.runInContext('semanaR11_(__f)', ctx);
+  const out = [];
+  for (let i = 0; i < cuantas; i++) {
+    const desde = new Date(base.desde.getFullYear(), base.desde.getMonth(), base.desde.getDate() + 7 * i);
+    out.push({ desde, hasta: new Date(desde.getFullYear(), desde.getMonth(), desde.getDate() + 6) });
+  }
+  return out;
+}
+
+function generar(ctx, fecha, cuantas) {
+  ctx.__v = ventanasDesde(ctx, fecha, cuantas);
+  return vm.runInContext('crearPeriodos_(__v, "banco")', ctx);
+}
+
+/**
+ * ⭐ **El final del bloque de `PERIODOS` en `Instalar.gs`, y falla si no está.**
+ *
+ * Las cuatro rebanadas de abajo terminaban en `indexOf('function generarProximasSemanas')`, y esa
+ * función **ya no existe**: `indexOf` devolvería `-1` y `slice(x, -1)` recortaría el bloque hasta
+ * un carácter antes del final del archivo **sin fallar**, midiendo otra cosa. Es literalmente el
+ * caso de `CLAUDE.md` §4 —*un control que mide algo distinto de lo que dice medir*—, así que el
+ * terminador se busca **con guarda**.
+ */
+const FIN_BLOQUE_PERIODOS = 'Acá vivía `generarProximasSemanas()`';
+function finDelBloque(texto) {
+  const i = texto.indexOf(FIN_BLOQUE_PERIODOS);
+  if (i === -1) {
+    throw new Error('No se encontró el terminador del bloque de PERIODOS ("' + FIN_BLOQUE_PERIODOS +
+      '") en Instalar.gs. Sin él las rebanadas de abajo medirían el archivo entero y darían verde ' +
+      'diciendo otra cosa.');
+  }
+  return i;
 }
 
 console.log('El generador de PERÍODOS — Instalar.gs y semanaR11_ cargados de verdad\n');
@@ -269,14 +310,23 @@ console.log('\n5 · ⚠ los controles negativos');
 {
   /* 5.2 · ⭐ Y el que fija que la comprobación NO se haga contra un mapa por clave. */
   const instalar = fs.readFileSync(path.join(RAIZ, 'Instalar.gs'), 'utf8');
-  const bloque = instalar.slice(instalar.indexOf('function generarPeriodosSemanales_'),
-    instalar.indexOf('function generarProximasSemanas'));
+  const bloque = instalar.slice(instalar.indexOf('function crearPeriodos_'), finDelBloque(instalar));
   afirmar(bloque.indexOf('leerPeriodos()') === -1,
-    '⛔ el generador NO usa `leerPeriodos()` — colapsa las repetidas y ve 8 donde hay 9 filas');
+    '⛔ el escritor NO usa `leerPeriodos()` — colapsa las repetidas y ve 8 donde hay 9 filas');
   afirmar(bloque.indexOf('upsertPorClave_') === -1,
     '⛔ ni `upsertPorClave_` — está medido que pisa sin preguntar');
-  afirmar(bloque.indexOf('semanaR11_') !== -1,
-    '⭐ y SÍ usa `semanaR11_`: el corte viernes-jueves vive en un solo lugar');
+
+  /* ⭐⭐ **Las dos afirmaciones NEGATIVAS del 27/08, y son la forma correcta de retirar algo.**
+   * `generarPeriodosSemanales_` y `generarProximasSemanas()` se sacaron por decisión del usuario
+   * (`D-44`): con el asistente lineal no hace falta ninguna semana por adelantado. El banco no
+   * pierde exigencia por eso — **gana** dos afirmaciones que se ponen en rojo el día que alguna
+   * de las dos vuelva sin que nadie lo decida. */
+  afirmar(instalar.indexOf('function generarPeriodosSemanales_') === -1,
+    '⛔ `generarPeriodosSemanales_` NO está: se retiró el 27/08 — el paso 1 crea UNA semana');
+  afirmar(instalar.indexOf('function generarProximasSemanas') === -1,
+    '⛔ ni `generarProximasSemanas()` — el botón que la reemplaza es el paso 1 del asistente');
+  afirmar(/semanaR11_/.test(fs.readFileSync(path.join(RAIZ, 'PanelBackend.gs'), 'utf8')),
+    '⭐ y el corte viernes-jueves sigue viniendo de `semanaR11_`, ahora desde el asistente');
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════
@@ -336,15 +386,14 @@ console.log('\n7 · ⭐⭐ un solo escritor, y el panel cableado');
   /* ⭐⭐ **Dos caminos de escritura sobre la misma hoja es la figura que la Parte C de esta misma
    * corrida vino a cerrar.** Mientras haya dos, el día que uno gane una guarda el otro se queda
    * sin ella — y no falla, publica. Los dos botones tienen que pasar por `crearPeriodos_`. */
-  const bloqueF = instalar.slice(instalar.indexOf('function crearPeriodos_'),
-    instalar.indexOf('function generarProximasSemanas'));
+  const bloqueF = instalar.slice(instalar.indexOf('function crearPeriodos_'), finDelBloque(instalar));
   const escrituras = (bloqueF.match(/setValues/g) || []).length;
   afirmar(escrituras === 1,
     '⭐⭐ hay UNA sola escritura en todo el bloque del generador (' + escrituras + ') — ' +
-    'los dos botones pasan por `crearPeriodos_`');
+    'los TRES botones pasan por `crearPeriodos_`');
 
   const bloqueCustom = instalar.slice(instalar.indexOf('function crearPeriodoPersonalizado_'),
-    instalar.indexOf('function generarProximasSemanas'));
+    finDelBloque(instalar));
   afirmar(bloqueCustom.indexOf('crearPeriodos_(') !== -1 && bloqueCustom.indexOf('setValues') === -1,
     '⚠ el personalizado DELEGA y no escribe por su cuenta');
 
@@ -378,10 +427,10 @@ console.log(fallas === 0 ? '✅ Las ' + hechas + ' afirmaciones pasaron.'
 console.log('');
 console.log('⚠ Lo que este control NO contesta:');
 console.log('   · Que la hoja VIVA quede bien. La hoja está falseada: esto fija la DECISIÓN del');
-console.log('     escritor. Que la celda quede escrita se ve corriendo `generarProximasSemanas()`.');
+console.log('     escritor. Que la celda quede escrita se ve apretando el paso 1 del asistente.');
 console.log('   · La coerción de tipos de Sheets (`C-83`). El fixture guarda lo que se le da; la');
-console.log('     hoja real puede interpretarlo — por eso el generador RELEE, y eso sí se ve acá.');
-console.log('   · Las cuatro semanas que faltan NO están cargadas: eso pide una corrida del');
-console.log('     usuario desde el editor de Apps Script.');
+console.log('     hoja real puede interpretarlo — por eso el escritor RELEE, y eso sí se ve acá.');
+console.log('   · ⛔ Nada sobre el asistente: el paso 1 se mide en `probar-asistente-pasos.js`.');
+console.log('     Acá sólo se fija que las dos funciones retiradas NO volvieron.');
 
 process.exit(fallas === 0 ? 0 : 1);
