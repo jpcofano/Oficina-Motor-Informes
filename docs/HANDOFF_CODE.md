@@ -3,6 +3,18 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
+**Última actualización:** 2026-08-26 (addendum 4) — **`D-33` quedó a medias, y ahora está medido y escrito.** Sólo documentación: no se tocó `MARCADORES`, ni `LAMINAS`, ni ningún `.gs`. El diagnóstico entero vive en `docs/PLAN.md`, al lado de `D-33` y **como su estado, no como una `D-NN` nueva** — no hay decisión todavía. **La decisión es del usuario y está pendiente.**
+
+### ⭐ Lo último, en cinco líneas
+
+- ⛔⛔ **El problema no es prospectivo: cinco tokens YA publican el universo equivocado.** `imp_total` (**28.988.260**), `mail_entregados` (**538.276**), `mail_aperturas` (**210.707 · 39.1 %**), `mail_or` e `ivr_atendidos` salen **idénticos** en `L-031` —semana entera de JM— y en `L-034`, cuyo universo declarado es el **agregado del temario** (`ENCUENTROS: 2`). Medido en el deck del 22/08, sha verificado. Los tres `cc_*` siguen **sin fila**, así que ésos todavía no publican nada.
+- ⭐⭐ **El eje por lámina YA EXISTE y es correcto — no alcanza a estas láminas.** La etapa 3 resuelve con `solo_marcadores` y pinta con `slide.replaceAllText`; la etapa 4 resuelve por informe y pinta con `presentacion.replaceAllText`, **el deck entero**. Verificado con identidad interna: `ecv_inscriptos` **855 + 128 = 983**, `ecv_asistentes` **186 + 10 = 196**.
+- ⚠ **Dos premisas del prompt frenaron y se reportaron:** el «censo del 26/08 con 27 tokens» **no existe en el repo**, y la única plantilla en disco (`JM_marcada.pptx`, 22 láminas / 191 tokens contra 24 / 343) **está declarada vieja por el propio repo**. Se rehizo la medición contra fuentes vivas.
+- ⚠ **Tres correcciones al camino que parecía obvio:** el punto de inyección es `resolverMarcadores:1223-1250`, **no** `datosDeMarcador_`; `LAMINAS.filtro` se evalúa **por ítem** y `resumen_ejecutivo` es `modo = unica`, así que ahí nunca corre; y **el pintado es el trabajo real** — `agruparTokensPorLamina_` (`D-41`) hoy *evita* el problema, y esa guarda es la que habría que dar vuelta.
+- ⛔ **`L-034` no se puede cerrar sin resolver esto**, aunque los resúmenes queden para después: comparte **ocho** tokens con `L-031`. Las dos alternativas están medidas y **sin recomendación**: renombrar los 8 en la plantilla (barato, cuarta vez que se aplica el mismo parche) o que `LAMINAS` declare dimensiones (motor).
+
+---
+
 **Última actualización:** 2026-08-26 (cierre) — **`L-038` cierra contra sí misma: 19 = 19.** `m2_camp_lista` era el único de sus 9 tokens sin fila y quedó cableado con una operación nueva, `LISTA_CRUDA`. Antes, esa misma noche, se cerró el testigo de `D-31` en `MAPEO`. **Nada de esto pide una corrida de `jm`; la cola de abajo sigue siendo la cola.**
 
 ### ⭐ Lo último, en cinco líneas

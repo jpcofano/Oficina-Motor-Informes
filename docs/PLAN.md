@@ -1655,6 +1655,131 @@ se puede forzar **a mano**, pasando `periodoId` a `generarInforme` —el panel y
 **no se resuelve sola**. La propiedad de arriba describe cómo tiene que comportarse el motor, y
 el eslabón que falta es prompt propio.
 
+### Estado de `D-33` al 26/08/2026 — **quedó a medias, y lo que falta tiene nombre**
+
+> **Esto NO es una `D-NN` nueva: no hay decisión todavía, hay un diagnóstico.** Va acá, al lado de
+> `D-33`, porque es su estado. El cuerpo de `D-33` y sus dos addenda **no se editan**.
+>
+> ⛔ **Existe porque este análisis se hizo dos veces** —el 14/08 al fundamentar `D-33` y el 26/08— y
+> las dos veces hubo que reconstruir desde cero por qué `imp_*` funciona y `cc_*` no. Medido por
+> `docs/Prompts/2026-08-26_1_D33_a_medias_medir_corte_por_lamina.md`.
+
+**Qué resolvió `D-33`, y el argumento sigue siendo el correcto.** La dimensión «ámbito JM/GCBA»
+estaba escrita de **cuatro formas físicas** según la base —`figura=Jorge Macri`,
+`mail_remitente=…`, `dig_jm_gcba=JM`, `campana~=JM`— en un `filtro` de texto libre, y el corte
+además vivía **metido en el nombre del token**. El motor ya sabía que una medida se llama distinto
+en cada base —para eso está `MAPEO`—; del lado de los cortes no había nada equivalente. **`D-33` les
+dio a las dimensiones lo que `MAPEO` ya le daba a las medidas.**
+
+⛔ **Qué NO resolvió: la unidad de cableado sigue siendo *un token = una fila = un número*.**
+
+| | un semantic layer (dbt · LookML · Cube) | el motor hoy |
+|---|---|---|
+| la **medida** | se define una vez | ✅ `campo_logico` + `MAPEO` |
+| la **dimensión** | se define una vez, con sus valores | ✅ `DIMENSIONES_` |
+| **la combinación** | **la produce la CONSULTA al pedirla** | ⛔ **una fila y un nombre por cada una** |
+
+⭐ **Por qué `imp_*` funciona y `cc_*` no — es la misma arquitectura, y el caso que la rompe es que
+la CONSULTA no puede aportar el corte.** `imp_meta` · `imp_google` · `imp_prog` son tres celdas del
+cubo con **tres filas y tres nombres**, y eso funciona **mientras cada combinación tenga nombre
+propio**. Se rompe cuando **dos láminas quieren la misma medida con universos distintos**, porque el
+nombre es uno solo y la plantilla —que es la consulta— **no puede llevar contexto**: `{{cc_base}}`
+es el mismo texto en las dos.
+
+**La evidencia, medida el 26/08 y no citada:**
+
+- **`MARCADORES` no tiene `lamina_id`.** Sus 15 columnas son `marcador · familia · informe_id ·
+  base_id · solapa · campo_logico · periodo_ref · operacion · valor_fijo · filtro · dimensiones ·
+  formato · catalogo · separador · notas` (snapshot `MARCADORES_2026-08-26.tsv`).
+- **`resolverMarcadores` filtra sólo por informe** — `suyo === informeId || suyo === '*'`
+  (`Generador.gs:1105`). **Una fila pinta las dos láminas con el mismo número.**
+- ⚠ **La migración `2026-08-20_7` no resuelve esto:** `aplicarAsteriscoCompartidos()` pone
+  `informe_id = '*'` para compartir entre **informes** (`jm` y `secco`). **Es el eje opuesto.**
+
+---
+
+#### ⭐⭐ Lo que la medición del 26/08 agrega, y cambia el tamaño del problema
+
+**1 · El eje por lámina YA EXISTE y está en producción — pero sólo dentro de secciones con ítems.**
+La etapa 3 resuelve **por lámina** (`opciones.solo_marcadores = tokensDeSlide_(slide)`) y pinta
+**por lámina** (`slide.replaceAllText`, `Generador.gs:4697`), con contexto propio del ítem. La
+etapa 4, en cambio, resuelve **por informe** y pinta con **`ctx.presentacion.replaceAllText`** —
+**la presentación entera** (`Generador.gs:4007`). ⛔ **No es que falte el mecanismo: es que las
+láminas que no cuelgan de una sección con ítems no lo alcanzan.**
+
+**2 · Y eso está verificado con una identidad interna, en el deck del 22/08** (corrida de las 14:02
+sobre `agosto_14_20`, sha `cd6f0050…fcd353b3`): `ecv_inscriptos` publica **983** en `L-034` y
+**855** + **128** en las dos láminas de encuentro — **855 + 128 = 983**; `ecv_asistentes`,
+**186 + 10 = 196**. **Las partes suman el total: el corte por ítem no sólo existe, es correcto.**
+
+**3 · ⛔⛔ El problema NO es prospectivo: cinco tokens YA publican el universo equivocado.** El
+análisis previo nombraba tres `cc_*`; medido contra la plantilla, `L-031` y `L-034` comparten
+**ocho** tokens, y **cinco tienen fila y ya se publican**:
+
+| token | `L-031` (Resumen Ejecutivo, semana entera de JM) | `L-034` (universo declarado: agregado del temario, `ENCUENTROS: 2`) |
+|---|---|---|
+| `imp_total` | 28.988.260 | ⛔ **28.988.260** |
+| `mail_entregados` | 538.276 | ⛔ **538.276** |
+| `mail_aperturas` | 210.707 (39.1 %) | ⛔ **210.707 (39.1 %)** |
+| `mail_or` | 39.1 % | ⛔ **39.1 %** |
+| `ivr_atendidos` | `-` | `-` |
+| `cc_base` · `cc_contactados` · `cc_contact_pct` | `/////` | `/////` — **sin fila al 26/08** |
+
+⚠ **Y el contraste que lo vuelve visible está DENTRO de `L-034`:** publica «INSCRIPTOS 983 ·
+ASISTENTES 196 · ENCUENTROS 2» —universo del temario— **al lado de** «Mails entregados 538.276» —
+universo de la semana entera—. **Dos cajas contiguas, mismo formato, que se leen como si
+respondieran la misma pregunta.** Es `C-80`, y es el modo de falla más caro de este repo: *un
+universo más ancho nunca es una degradación aceptable de un universo recortado*.
+
+⭐ **El contrapunto que lo prueba:** la lámina de encuentro publica **17.472** mails entregados —
+no 538.276— porque usa **`enc_mails_entregados`**, un token **con otro nombre**. **El proyecto ya
+resolvió este mismo problema por renombre tres veces** (`enc_*` frente a `mail_*`, el prefijo
+`gcba_` de `L-032`, los `u1_*`). La pregunta abierta es si la cuarta vez se hace igual o con motor.
+
+**4 · El reparto de los tokens compartidos.** ⚠ **El «27» que circulaba no se pudo reproducir:
+ningún censo de tokens-por-lámina del 26/08 existe en el repo, y la única plantilla en disco
+—`Plan Inicial/_archivo/Plantillas/JM_marcada.pptx`, 22 láminas y 191 tokens contra 24 y 343 vivos—
+está declarada vieja por `docs/CENSO_tokens_sin_fila_2026-08-22.md`.** Lo medido contra fuentes
+vivas:
+
+| montón | cuántos | cuáles |
+|---|---|---|
+| **A · mismo hecho** | ≥ 9 | `camp_titulo` (8 láminas, mismo texto en las 7 de cada campaña — **control positivo**), `camp_remitente`, `periodo` |
+| **B · corte distinto, YA RESUELTO por sección** | 6 | los `ecv_*` de `L-034`/`L-035` — verificados por la identidad de arriba |
+| **B · corte distinto, ABIERTO** | **8** | los cinco publicados + los tres `cc_*` sin fila |
+| **C · no clasificable** | 0 | — |
+
+**5 · Qué costaría que `LAMINAS` declare dimensiones.** ✅ La hoja ya está en las tres listas
+duplicadas (`tools/listas.js` verde, 11 de 11), así que **una columna nueva no las toca**: entra por
+`COLUMNAS_DELTA_.LAMINAS` sin recrear la hoja —recrearla borraría el sellado, irreproducible sin
+volver a tocar las notas de las plantillas—. ⚠ **Dos correcciones al camino que parecía obvio:**
+
+- **El punto de inyección NO es `datosDeMarcador_`.** `opciones` viaja hasta ahí, pero el corte se
+  compone **después**, en `resolverMarcadores` (`Generador.gs:1223-1250`), donde `filtro_seccion` y
+  `condicionesDeDimensiones_` se suman. Ése es el lugar.
+- **`LAMINAS.filtro` no es «la mitad que ya existe» para este caso.** Se evalúa **por ítem**
+  (`laminaEntraParaItem_`, `Generador.gs:5623`), dentro de una sección repetible. `L-031` cuelga de
+  `resumen_ejecutivo`, que es `modo = unica` y **no tiene ítems**: ahí ese filtro nunca corre.
+- ⛔ **Y el pintado es el trabajo real, no un detalle:** mientras la etapa 4 use
+  `presentacion.replaceAllText`, resolver por lámina no alcanza — **la segunda lámina pisaría a la
+  primera en todo el deck**. `agruparTokensPorLamina_` (`D-41`) hoy **evita** el problema asignando
+  cada token compartido a **su primera lámina**, con el motivo escrito: *«podría resolverlo en otra
+  tanda y publicar dos valores distintos del mismo token en el mismo deck»*. **Esa guarda es
+  justamente lo que habría que dar vuelta.**
+
+**6 · La alternativa barata, para poder compararlas.** Renombrar en la plantilla los **8** tokens
+del montón B abierto, en **`L-034`** (`L-031` conserva los suyos). Es lo que el proyecto ya hace
+—`L-032` publica *«los mismos de la 2 con prefijo `gcba_`»*— y no necesita motor: 8 tokens en 1
+lámina, 8 filas nuevas en `MARCADORES`. ⚠ **Su costo no es hoy sino la próxima vez**: es la cuarta
+aplicación del mismo parche, y cada una vuelve a poner el corte en el nombre, que es exactamente lo
+que `D-33` sacó de ahí.
+
+⚠ **Y `L-034` no se puede cerrar sin resolver esto** —aunque los resúmenes queden para después—:
+**comparte ocho tokens con `L-031` y cinco ya publican el universo de la otra.** La lámina parece
+independiente y no lo es. Lo relacionado que ya estaba escrito, disperso: los siete `ecv_*`
+ambiguos «entre la lámina 5 y la 6» y los pares `enc_*`/`ivr_*` «que las láminas 2 y 5 usan», los
+dos en Backlog — **son este mismo problema, visto de a una familia por vez.**
+
 **`D-34` — Un número que existe y no está validado se publica ENTRE GUIONES. No se retiene.**
 Decisión del usuario, 20/08/2026, ejecutada por `docs/Prompts/2026-08-20_7_cerrar_para_generar.md`.
 

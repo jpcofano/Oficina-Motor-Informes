@@ -15869,3 +15869,64 @@ el equipo poda.
 
 **Suites: 55 bancos en verde, exit 0** (el nuevo `probar-lista-cruda.js` aporta 35 afirmaciones).
 `listas.js` OK. `clasp push` verificado con `clasp pull` a un temporal, antes y después.
+
+## `2026-08-26` (addendum 4) — `D-33` a medias: el corte por lámina, medido — y cinco tokens ya publican el universo de la otra
+
+`docs/Prompts/2026-08-26_1_D33_a_medias_medir_corte_por_lamina.md`. **Sólo documentación**: no se
+tocó `MARCADORES`, ni `LAMINAS`, ni ningún `.gs`. Sin subagente (el prompt no declara ninguno).
+
+⛔ **Dos premisas del prompt frenaron antes de la primera edición, y las dos se reportaron:**
+
+- **«los 27 tokens que viven en más de una lámina — ya los mediste en el censo del 26/08»** — **ese
+  censo no existe en el repo.** Ningún archivo de `docs/` lo contiene y ningún documento menciona
+  «27 tokens». Se rehizo la medición contra fuentes vivas en vez de citarla.
+- **La única plantilla en disco está declarada vieja por el propio repo.**
+  `Plan Inicial/_archivo/Plantillas/JM_marcada.pptx` tiene **22 láminas y 191 tokens** contra
+  **24 y 343** del censo vivo, y `docs/CENSO_tokens_sin_fila_2026-08-22.md` la nombra entre las
+  tres fuentes que estaban viejas. **Se usó como piso rotulado, nunca como autoridad.**
+
+**Lo medido, con su fuente al lado:**
+
+| medición | fuente | resultado |
+|---|---|---|
+| `MARCADORES` sin `lamina_id` | snapshot `MARCADORES_2026-08-26.tsv` | ✅ 15 columnas, ninguna es `lamina_id` |
+| `resolverMarcadores` filtra sólo por informe | `Generador.gs:1105` | ✅ `suyo === informeId \|\| suyo === '*'` |
+| tokens **sin fila** en más de una lámina | censo vivo del 22/08 | **5**: los tres `cc_*`, `camp_remitente`, `periodo` |
+| tokens compartidos `L-031` ∩ `L-034` | plantilla espejo (piso) | **8**, no 3 |
+| ⛔ **cuántos ya publican** | **deck del 22/08**, sha `cd6f0050…fcd353b3` ✅ | **5** |
+| `cc_*` cableados al 26/08 | snapshot `MARCADORES_2026-08-26.tsv` | **0** — siguen sin fila |
+| las tres listas de hojas | `node tools/listas.js` | ✅ 11 de 11, `LAMINAS` en las tres |
+
+⛔⛔ **El hallazgo que corrige al prompt en lo que más importa: el problema no es prospectivo.**
+`imp_total` (**28.988.260**), `mail_entregados` (**538.276**), `mail_aperturas` (**210.707 · 39.1 %**),
+`mail_or` e `ivr_atendidos` publican **el mismo valor** en `L-031` —Resumen Ejecutivo, semana entera
+de JM— y en `L-034`, cuyo universo declarado es **el agregado del temario** (`ENCUENTROS: 2`). Y el
+contraste está **dentro** de `L-034`: «INSCRIPTOS 983 · ASISTENTES 196» al lado de «Mails entregados
+538.276». Es `C-80`.
+
+⭐⭐ **Y el eje por lámina YA EXISTE y funciona — sólo que no alcanza a estas láminas.** La etapa 3
+resuelve con `solo_marcadores = tokensDeSlide_(slide)` y pinta con `slide.replaceAllText`; la etapa 4
+resuelve por informe y pinta con `presentacion.replaceAllText` — **el deck entero**. Verificado con
+una **identidad interna** en el deck del 22/08: `ecv_inscriptos` da **855 + 128 = 983** y
+`ecv_asistentes` **186 + 10 = 196**. Las partes suman el total: el corte por ítem es correcto.
+`L-031` no lo alcanza porque `resumen_ejecutivo` es `modo = unica` y **no tiene ítems**, así que
+`LAMINAS.filtro` —que se evalúa **por ítem** en `laminaEntraParaItem_`— ahí nunca corre.
+
+⚠ **Tres correcciones al camino que el prompt daba por obvio**, todas medidas: el punto de inyección
+**no** es `datosDeMarcador_` sino `resolverMarcadores:1223-1250`, donde se componen `filtro_seccion`
+y `condicionesDeDimensiones_`; `LAMINAS.filtro` **no** es «la mitad que ya existe» para este caso; y
+el pintado es **el trabajo real**, porque `agruparTokensPorLamina_` (`D-41`) hoy **evita** el
+problema asignando cada token compartido a su primera lámina — **esa guarda es justo la que habría
+que dar vuelta**.
+
+⭐ **Control positivo, y dio:** `camp_titulo` vive en 8 láminas y el deck lo muestra publicando **el
+mismo texto en las 7 de cada campaña** — montón A. Si el método lo hubiera puesto en B, estaría
+midiendo mal. No lo hace, y el motivo es el mismo mecanismo: su corte lo aporta la **sección**
+`campana`, que es repetible.
+
+⛔ **No se propone cuál elegir.** El diagnóstico entero quedó en `docs/PLAN.md`, **al lado de
+`D-33` y como su estado, no como una `D-NN` nueva** — no hay decisión todavía. Incluye lo que el
+prompt pedía dejar escrito para que no se reconstruya una tercera vez: qué resolvió `D-33`, qué no,
+por qué `imp_*` funciona y `cc_*` no, y que **`L-034` no se puede cerrar sin resolver esto**.
+
+**Suites: 55 bancos en verde, exit 0.** `listas.js` OK. Sin `clasp push`: no se tocó código.
