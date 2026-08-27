@@ -506,19 +506,68 @@ function opLISTA(ctx) {
  * **contra un catálogo**, ésta cuenta. Unificarlas ataría el conteo a que exista catálogo, y el
  * caso que motiva esta operación —`m2_campanias`— no tiene ninguno.
  */
-function opCUENTA_DISTINTOS(ctx) {
+/* ⭐⭐ `2026-08-26` — **el núcleo compartido de `CUENTA_DISTINTOS` y `LISTA_CRUDA`.**
+ *
+ * Una cuenta los valores distintos y la otra los publica. **Tienen que ser los mismos**, y la única
+ * forma de garantizarlo es que salgan del mismo código — el mismo argumento que hizo que `ELEMENTO`
+ * llamara a `conjuntoDeLista_` en vez de copiarlo.
+ *
+ * ⛔⛔ **Y por eso NO se reusó el núcleo de `LISTA`, que era el candidato obvio: los dos
+ * normalizadores son distintos y dan resultados distintos.**
+ *
+ * | | normalizador | qué hace |
+ * |---|---|---|
+ * | `calcularConjuntoDeLista_` | `normalizar_` (`Parseo.gs`) | **pliega case y saca acentos** |
+ * | esto | `normalizarValorDeclarado_` (`R-10`) | los **preserva** |
+ *
+ * Medido sobre el fixture del 06/08: `R-10` lleva **1.400 grafías crudas a 1.375**, y plegar además
+ * el case **colapsaría 4 más** — campañas que el equipo escribe distinto **a propósito**. Con el
+ * núcleo de `LISTA`, `m2_camp_lista` publicaría un largo distinto del que `m2_campanias` cuenta en
+ * el banner de la misma lámina, y no fallaría nada: un número y una lista de otro largo, uno al lado
+ * del otro. `tools/probar-lista-cruda.js` exige la identidad, y su control negativo **la pone en
+ * rojo** si alguien cambia este normalizador por el otro.
+ *
+ * ⛔⛔ **Y una corrección medida el mismo día, porque cambia cómo se razona el riesgo: los dos
+ * normalizadores NO están ordenados por severidad. Cada uno junta lo que el otro separa.**
+ * `normalizar_` pliega case y acentos **y no toca los espacios internos**; `R-10` colapsa los
+ * espacios **y preserva case y acentos**. Sobre el fixture del banco: `normalizar_` junta
+ * `Poda pre` con `PODA PRE` y las dos grafías de `Vacunación antirrábica` (−2), **y parte**
+ * ` Poda  pre ` en un nombre aparte por el espacio doble (+1) — 4 contra 5. ⇒ **No es «publicaría
+ * de menos»: publicaría OTRO conjunto**, y la divergencia contra el banner no tendría una dirección
+ * conocida. Es la misma forma que el instrumento que saltea un tramo (`CLAUDE.md` §4): no da un
+ * número más chico, da otro número, y por eso no se puede corregir mentalmente.
+ *
+ * ⭐ **Publica la forma NORMALIZADA, no la primera grafía cruda**, y eso es deliberado: `R-10` sólo
+ * colapsa espacios internos y recorta bordes, así que lo publicado es el nombre **tal como lo
+ * escribe el equipo**, sin espacios de más. Publicar la primera variante cruda daría el mismo
+ * conteo y arrastraría los dobles espacios al deck. Y como la lista **es** el conjunto de claves,
+ * *cantidad de líneas === CUENTA_DISTINTOS* queda cierto **por construcción**, no por coincidencia.
+ *
+ * ⚠ **No canoniza nada**: no hay catálogo y no puede haberlo (`X-18`). Dos grafías que difieren en
+ * una tilde son **dos nombres**, y acá eso es correcto: el equipo poda y reescribe en su deck.
+ */
+function distintosDeCampo_(ctx) {
   var valores = valoresDeCtx_(ctx);
   var vacias = 0;
-  var distintos = {};
+  var vistos = {};
+  var distintos = [];
 
   valores.forEach(function (v) {
     var crudo = (v === undefined || v === null) ? '' : String(v);
     var clave = normalizarValorDeclarado_(crudo);
     if (clave === '') { vacias++; return; }
-    distintos[clave] = true;
+    if (clave in vistos) return;
+    vistos[clave] = true;
+    distintos.push(clave);
   });
 
-  var cuantos = Object.keys(distintos).length;
+  return { valores: valores, vacias: vacias, distintos: distintos };
+}
+
+function opCUENTA_DISTINTOS(ctx) {
+  var d = distintosDeCampo_(ctx);
+  var valores = d.valores, vacias = d.vacias;
+  var cuantos = d.distintos.length;
 
   // Cero FILAS es `sin_datos` (valor vacío); cero distintos habiendo filas es un `0` legítimo.
   // La diferencia la decide `valores.length`, no `cuantos`.
@@ -532,6 +581,74 @@ function opCUENTA_DISTINTOS(ctx) {
     trazaDeVentana_(ctx);
 
   return { valor: valor, traza: traza, filas: valores.length, vacias: vacias, distintos: cuantos };
+}
+
+/**
+ * `2026-08-26` — **`LISTA_CRUDA`, la decimotercera: los valores distintos, SIN catálogo.**
+ * Decisión del usuario para `m2_camp_lista` (`L-038`).
+ *
+ * ⛔⛔ **Por qué es una operación nueva y no `LISTA` con el catálogo relajado.** `LISTA` publica
+ * **contra un catálogo por diseño**: un valor que no matchea **queda fuera y viaja en `rechazados`**
+ * — nunca llega al deck. Eso es correcto para `ecv_barrios`, donde un barrio que no existe es un
+ * error. Acá **cualquier nombre nuevo de campaña es legítimo**, así que un catálogo no marcaría un
+ * error: **borraría campañas reales del informe, en silencio**.
+ *
+ * Y no hay catálogo posible, medido: la única otra columna de nombres de campaña del repo es la B de
+ * `m2/M2 periodo DIRECTA`, y `C-68` midió que **la misma campaña aparece con cuatro grafías
+ * distintas en cuatro solapas** — un catálogo cruzado rechazaría por ortografía. Un catálogo de la
+ * **misma** columna que se publica no rechaza nada nunca: es decorativo.
+ *
+ * ⚠ **Relajar la guarda de `LISTA` habría sido peor que agregar esto, y no por costo:** *catálogo
+ * vacío es error, no «nada matcheó»*. Si `rdv/Comunas` no abre, hoy sale un `FALTA` ruidoso; con la
+ * guarda relajada saldría la lista de barrios **crudos**, que se lee perfecta. Es convertir una falla
+ * ruidosa en un valor plausible. Y `opCUENTA_DISTINTOS` ya había tomado esta decisión el 20/08, para
+ * este mismo marcador: *«no se toca opLISTA… unificarlas ataría el conteo a que exista catálogo»*.
+ *
+ * ⛔⛔ **SIN TOPE, y es una decisión editorial, no un olvido** (usuario, 26/08). Se publican **todos**
+ * los nombres: no hay corte, no hay «y N más», no hay límite configurable. La lista existe **para que
+ * el equipo edite**, y una lista recortada le esconde justo lo que tiene que decidir — un deck que
+ * muestra 10 de 30 bajo un banner que dice 30 **miente sin fallar**. ⚠ **La consecuencia va escrita y
+ * no descubierta: con ~30 nombres la caja crece y puede empujar lo que tiene debajo.** Es el precio de
+ * la decisión, no un bug a reportar.
+ *
+ * **El orden es alfabético con `localeCompare('es')`, igual que `LISTA`**, y por el mismo motivo: el
+ * orden de aparición depende de en qué fila quedó cada dato y **cambia entre corridas sin que cambie
+ * el dato**.
+ *
+ * **`separador` es la cadena que une**, igual que en `LISTA`. ⚠ La columna está **sobrecargada** y
+ * conviene saberlo: en `ELEMENTO` es el número de cajas y en la familia `FILA` es el campo de orden.
+ * Para `m2_camp_lista` es un **salto de línea real**, que en Slides abre párrafo y hereda el bullet.
+ *
+ * ⚠ **Lo que esta operación NO distingue, dicho para que no se descubra en un deck:** *cero filas* y
+ * *filas con todas las celdas vacías* publican **lo mismo** —vacío—, mientras que `CUENTA_DISTINTOS`
+ * las separa en `-` y `0`. Una lista no tiene cómo escribir «cero elementos». **El discriminador
+ * existe y es su hermano**: `m2_campanias` lee el mismo universo, y su `0` contra `-` dice cuál de
+ * las dos pasó. La traza de acá también lo dice, con los tres números.
+ */
+function opLISTA_CRUDA(ctx) {
+  var d = distintosDeCampo_(ctx);
+  var valores = d.valores, vacias = d.vacias;
+
+  var publicados = d.distintos.slice().sort(function (a, b) { return a.localeCompare(b, 'es'); });
+
+  var separador = (ctx.separador === undefined || ctx.separador === null || ctx.separador === '')
+    ? ', ' : String(ctx.separador);
+
+  // Mismo criterio que `CUENTA_DISTINTOS`: cero FILAS es `sin_datos`, y el despachador lo baja.
+  var valor = valores.length ? publicados.join(separador) : '';
+
+  var traza = 'LISTA_CRUDA de "' + ctx.campo_logico + '" sobre ' + valores.length +
+    ' fila(s) de ' + ctx.base_id + (ctx.solapa ? '/' + ctx.solapa : '') +
+    ' · ' + publicados.length + ' publicado(s), SIN catálogo: no hay rechazo posible' +
+    (vacias ? ' · ' + vacias + ' celda(s) vacía(s), no son rechazo' : '') +
+    ' · normalizado por R-10 (espacios y bordes; NO se pliega case ni acentos)' +
+    ' · separador ' + JSON.stringify(separador) +
+    trazaDeVentana_(ctx);
+
+  return {
+    valor: valor, traza: traza, filas: valores.length,
+    vacias: vacias, publicados: publicados.length
+  };
 }
 
 
@@ -1185,7 +1302,13 @@ var OPERACIONES_ = {
    * `FILA_TEXTO` con otra cara:** `opFILA` indexa FILAS y acá la unidad es el grupo —un encuentro
    * con cinco filas de plataforma—. La identidad del grupo es `id_cuenta` (`D-30`) y el índice es
    * la RANURA sellada por el temario, no la posición entre los grupos presentes. Ver su comentario. */
-  GRUPO_TEXTO: opGRUPO_TEXTO
+  GRUPO_TEXTO: opGRUPO_TEXTO,
+  /* `2026-08-26` — la decimotercera. Los valores DISTINTOS de un campo, **sin catálogo**. No es
+   * `LISTA` con la guarda floja: `LISTA` publica contra un catálogo y **descarta lo que no matchea**,
+   * que acá borraría campañas legítimas. Comparte núcleo con `CUENTA_DISTINTOS` —`distintosDeCampo_`,
+   * con `R-10`— y **no con `LISTA`**, cuyo normalizador produce OTRO conjunto de nombres y haría que
+   * la lista y el banner de la misma lámina no coincidan. Ver su comentario. */
+  LISTA_CRUDA: opLISTA_CRUDA
 };
 
 /**

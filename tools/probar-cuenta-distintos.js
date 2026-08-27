@@ -42,6 +42,10 @@ function extraerFuncion(archivo, nombre) {
 
 const cuerpo =
   extraerFuncion('Marcadores.gs', 'opCUENTA_DISTINTOS') + '\n' +
+  /* `2026-08-26` — el conteo pasó a salir de `distintosDeCampo_`, el núcleo que ahora comparte con
+   * `LISTA_CRUDA`. Se extrae también, y **esta prueba se rompió fuerte** el día del cambio en vez de
+   * dar verde sobre una copia vieja, que es lo que se le pide a un extractor. */
+  extraerFuncion('Marcadores.gs', 'distintosDeCampo_') + '\n' +
   extraerFuncion('Marcadores.gs', 'valoresDeCtx_') + '\n' +
   extraerFuncion('Marcadores.gs', 'trazaDeVentana_') + '\n' +
   // `R-10` de verdad, extraída de `Fuentes.gs`: si alguien la cambia ahí, esta prueba se entera.

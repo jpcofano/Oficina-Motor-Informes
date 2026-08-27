@@ -1402,8 +1402,27 @@ function resolverMarcadores(informeId, opciones) {
         return base;
       }
       ctx.catalogo = cat.catalogo;
-      ctx.separador = fila.separador;
     }
+
+    /* ⛔⛔ `2026-08-26` — **`ctx.separador` sale de la rama del catálogo y pasa a ser incondicional,
+     * y es la MISMA grieta que el bloque de arriba describe, encontrada una vez más.**
+     *
+     * La asignación vivía **adentro** del `if` del catálogo, así que `separador` sólo llegaba a las
+     * operaciones que además usan catálogo. `LISTA_CRUDA` **no usa catálogo y sí usa `separador`** —
+     * es la cadena que une la lista—, y sin esta línea habría publicado con el default `', '` **sin
+     * fallar**: una lista correcta, en una sola línea, donde la plantilla espera un bullet por
+     * nombre. El comentario de arriba avisa que *«la décima operación que use catálogo se va a
+     * olvidar de tocar esta línea»*; la grieta era más ancha que eso — **también la agarra una
+     * operación que NO usa catálogo**.
+     *
+     * ⭐ **Por eso va incondicional y no detrás de otra lista de nombres**: una lista
+     * `OPERACIONES_CON_SEPARADOR_` sería la misma grieta con otro nombre. Cada operación recibe lo
+     * que su fila declara y decide sola si lo mira; las que no lo miran no cambian de comportamiento.
+     *
+     * ⚠ **La familia `FILA` necesita algo MÁS que esto** —resolver el campo de orden contra `MAPEO`,
+     * abajo— y eso se queda donde está: `separador` ahí es el **nombre de un campo lógico**, no una
+     * cadena de salida. La columna está sobrecargada y esta línea sólo la transporta. */
+    ctx.separador = fila.separador;
     /* ⭐ `X-35` (23/08/2026) — **el orden de `FILA`, resuelto acá y no adentro de la operación.**
      *
      * Mismo reparto que `ctx.fechas`: **resolver qué columna es un campo lógico es acceso a datos**
