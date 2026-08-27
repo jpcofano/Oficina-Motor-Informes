@@ -1305,9 +1305,15 @@ function periodosQueDescribenLaVentana_(ventana) {
  * en cada corrida para un mensaje que casi nunca sale sería el gasto que `CLAUDE.md` §4 llama *un
  * costo por ítem que parece trabajo real*.
  *
- * ⚠ **Y el criterio es EL MISMO que el de `leerReuniones_`** —`fila[eje] && esVerdadero_(mostrar)`—
- * a propósito: un diagnóstico que filtre distinto del filtro que explica **nombra filas que el otro
- * sí dejó pasar**, y manda a arreglar algo que no está roto. Si allá cambia, acá también.
+ * ⚠ **Y el criterio es EL MISMO que el de `leerReuniones_`** a proposito: un diagnostico que
+ * filtre distinto del filtro que explica **nombra filas que el otro si dejo pasar**, y manda a
+ * arreglar algo que no esta roto. Si alla cambia, aca tambien.
+ *
+ * ⛔⛔ **Y alla cambio el 27/08** (`D-46`): de `fila[eje]` a `fila[texto_original]`. Este
+ * comentario decia *«si alla cambia, aca tambien»* y **esta vez se cumplio** -no es una promesa
+ * retorica-. El `if (!fila[idx.eje]) return;` de abajo **descartaba sin contar exactamente la fila
+ * que causo el fallo del 27/08**: una linea sin interpretar, con `eje` vacio y `mostrar = 'si'`,
+ * era invisible para el unico diagnostico que existia para explicarla.
  */
 function reunionesOcultasPorMostrar_() {
   try {
@@ -1317,10 +1323,10 @@ function reunionesOcultasPorMostrar_() {
     var headers = datos.shift();
     var idx = {};
     headers.forEach(function (h, i) { idx[h] = i; });
-    if (idx.eje === undefined || idx.mostrar === undefined) return [];
+    if (idx.texto_original === undefined || idx.mostrar === undefined) return [];
     var out = [];
     datos.forEach(function (fila) {
-      if (!fila[idx.eje]) return;                       // sin eje no es una fila de temario
+      if (!fila[idx.texto_original]) return;            // sin texto_original no es una fila de temario
       if (esVerdadero_(fila[idx.mostrar])) return;      // confirmada: no es de las ocultas
       if (idx.tipo !== undefined && String(fila[idx.tipo]).trim() === 'Agregado') return;
       out.push({
@@ -1336,6 +1342,53 @@ function reunionesOcultasPorMostrar_() {
   } catch (e) {
     /* Un instrumento no puede voltear lo que mide: sin la hoja, el mensaje sale sin este dato en
      * vez de reemplazar un fallo de anclaje por una excepción. */
+    return [];
+  }
+}
+
+/**
+ * ⛔⛔ `2026-08-27_2` Parte D.3 - **el filtro NUEVO tambien se cuenta.**
+ *
+ * `D-46` cambio el criterio de `leerReuniones_` de `eje` a `texto_original`, y un filtro que
+ * descarta y **no cuenta** es invisible: el que si cuenta se lleva la culpa. Es **la tercera vez
+ * en dos semanas** que la misma figura cuesta una vuelta -el 25/08 el aviso decia *«descartadas
+ * por periodo: 6»* cuando las cuatro de julio se habian ido antes por `mostrar`-. **Un filtro
+ * nuevo nace contandose.**
+ *
+ * ⚠ **Y habla tambien cuando NO encuentra nada.** *«Ninguna quedo afuera sin `texto_original`»*
+ * descarta una causa; una lista vacia no descarta nada, solo se calla. Es la misma forma que el
+ * control positivo.
+ *
+ * ⚠ **No se cachea y no corre en el camino feliz**, igual que `reunionesOcultasPorMostrar_`: es
+ * una lectura entera de la hoja para un mensaje que casi nunca sale.
+ */
+function reunionesSinTextoOriginal_() {
+  try {
+    var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('REUNIONES');
+    if (!hoja) return [];
+    var datos = hoja.getDataRange().getValues();
+    var headers = datos.shift();
+    var idx = {};
+    headers.forEach(function (h, i) { idx[h] = i; });
+    if (idx.texto_original === undefined) return [];
+    var out = [];
+    datos.forEach(function (fila, i) {
+      /* ⚠ Una fila **enteramente** vacia no es un descarte: es el final de la hoja. Contarla
+       * inflaria el numero con filas que nadie escribio. */
+      var vacia = headers.every(function (h, k) {
+        return String(fila[k] == null ? '' : fila[k]).trim() === '';
+      });
+      if (vacia) return;
+      if (String(fila[idx.texto_original] || '').trim()) return;
+      out.push({
+        fila: i + 2,
+        nombre: String(idx.nombre !== undefined ? fila[idx.nombre] : '') || '(sin nombre)',
+        periodo_id: String(idx.periodo_id !== undefined ? fila[idx.periodo_id] : '') || '(sin periodo)',
+        mostrar_crudo: JSON.stringify(idx.mostrar !== undefined ? fila[idx.mostrar] : '')
+      });
+    });
+    return out;
+  } catch (e) {
     return [];
   }
 }
@@ -1425,6 +1478,8 @@ function anclarEncuentrosSinCache_(ventana) {
      * todo anda: es una segunda lectura de la hoja que sólo ocurre cuando ya no hay nada que
      * anclar. */
     var ocultas = reunionesOcultasPorMostrar_();
+    /* ⛔ `D-46` - el filtro nuevo nace contandose. Ver `reunionesSinTextoOriginal_`. */
+    var sinTexto = reunionesSinTextoOriginal_();
     return {
       ok: false,
       motivo: 'REUNIONES no tiene filas para anclar' +
@@ -1441,7 +1496,20 @@ function anclarEncuentrosSinCache_(ventana) {
             }).join(' · ') + (ocultas.length > 6 ? ' …' : '') +
             '. ⚠ Si alguna es del período que buscás, ÉSA es la causa y el período no tiene nada ' +
             'que ver. `R-02`: el temario propone y la persona confirma poniendo `sí`.'
-          : ' · ⭐ y NINGUNA quedó afuera por `mostrar`, así que el problema es el período.')
+          : ' · ⭐ y NINGUNA quedó afuera por `mostrar`.') +
+        /* ⛔ `D-46` - el otro filtro, con la misma forma: conteo, nombres hasta seis, y una
+         * frase para el caso en que NO haya ninguna. Sin la segunda mitad, *«no hay»* y *«no
+         * mire»* se ven igual. */
+        (sinTexto.length
+          ? ' · ⛔ Y ' + sinTexto.length + ' fila(s) quedaron afuera por no tener ' +
+            '`texto_original` — se filtran en `leerReuniones_` (`D-46`) y tampoco llegan al ' +
+            'filtro de período: ' +
+            sinTexto.slice(0, 6).map(function (o) {
+              return 'fila ' + o.fila + ' "' + o.nombre + '" [' + o.periodo_id + ']';
+            }).join(' · ') + (sinTexto.length > 6 ? ' …' : '') +
+            '. ⚠ Una fila de temario SIEMPRE tiene `texto_original`: si aparece alguna acá, la ' +
+            'escribió algo que no es el cargador.'
+          : ' · ⭐ y NINGUNA por falta de `texto_original`, así que el problema es el período.')
     };
   }
 

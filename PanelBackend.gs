@@ -2219,52 +2219,16 @@ function panel_asistenteOpcionesDePeriodo() {
  * encabezado **con `>`** no tiene el problema: se reconoce y se descarta.
  */
 
-/** ¿Este bloque es el de campañas destacadas? Con el comparador del cargador, no otro. */
-function esBloqueDeCampanas_(bloque) {
-  return normalizar_(bloque.titulo) === normalizar_(BLOQUE_CAMPANAS_);
-}
-
-/**
- * Parte el pegado único en **lo que va a cada cargador**. Pura: no escribe una sola fila.
+/* ⛔⛔ `2026-08-27_2` Parte B.1 - **`esBloqueDeCampanas_` y `partirTemarioDelAsistente_` se
+ * RETIRARON.** Eran la segunda forma de decidir cual es el bloque de campanias, y la primera -la
+ * de `cargarTemarioCampanas_`- **ya fallaba**: comparaba por igualdad y el temario real del 27/08
+ * dice `Campania Destacada` en **singular** (A.2). *Dos formas de decidir lo mismo no fallan el
+ * dia que difieren: cargan otra cosa.*
  *
- * Devuelve `{ reuniones_texto, campanas_texto, hay_campanas, lineas_reuniones, bloques }`.
- *
- * ⚠ **`campanas_texto` es el texto ENTERO, sin recortar**, y eso es deliberado:
- * `cargarTemarioCampanas_` busca su propio bloque con `partirTemarioEnBloques_` y **falla con
- * motivo si no lo encuentra**. Pasarle un recorte armado acá sería una segunda forma de decidir
- * cuál es el bloque de campañas, y el día que las dos difieran no falla — carga otra cosa.
- */
-function partirTemarioDelAsistente_(texto) {
-  var bloques = partirTemarioEnBloques_(texto);
-  var lineas = [];
-  var hayCampanas = false;
-  var resumen = [];
-
-  bloques.forEach(function (b) {
-    resumen.push({
-      titulo: b.titulo,
-      con_marca: b.con_marca,
-      lineas: b.lineas.length,
-      es_campanas: esBloqueDeCampanas_(b)
-    });
-    if (esBloqueDeCampanas_(b)) { hayCampanas = true; return; }
-
-    /* ⛔ **El título comido vuelve a la lista.** Un bloque **sin marca** cuyo `titulo` no es el
-     * centinela `(sin encabezado)` es una línea de contenido que la heurística confundió: si no
-     * se devuelve acá, desaparece sin dejar rastro. Va **antes** de sus líneas, que es donde
-     * estaba en el texto original. */
-    if (!b.con_marca && b.titulo !== '(sin encabezado)') lineas.push(b.titulo);
-    b.lineas.forEach(function (l) { lineas.push(l); });
-  });
-
-  return {
-    reuniones_texto: lineas.join('\n'),
-    campanas_texto: String(texto || ''),
-    hay_campanas: hayCampanas,
-    lineas_reuniones: lineas.length,
-    bloques: resumen
-  };
-}
+ * ⭐ Hoy hay **una**: `partirTemario_` (`Campanas.gs`), posicional, y la usan los tres
+ * llamadores. El asistente ya no recorta nada: **le pasa el texto entero a los dos cargadores**,
+ * que parten cada uno con esa funcion y toman su balde. Lo unico que hace aca es pedirle la lista
+ * de `ignoradas` para mostrarla. */
 
 /**
  * Paso 2 · **carga el pegado único: reuniones y campañas, por los cargadores de siempre.**
@@ -2288,35 +2252,55 @@ function panel_asistenteCargarTemario(periodoId, texto, informeId) {
   if (!texto || !String(texto).trim()) return { ok: false, motivo: 'La caja está vacía.' };
 
   var ref = String(periodoId || '').trim();
-  var partido = partirTemarioDelAsistente_(texto);
+  /* ⭐ El partidor UNICO, y **se lo llama para mirar, no para recortar**: a los dos cargadores se
+   * les pasa el texto entero y cada uno parte con esta misma funcion. Una sola definicion de donde
+   * corta el temario, tres llamadores. */
+  var partido = partirTemario_(texto);
   var salida = {
     ok: true,
     periodo_id: ref,
-    bloques: partido.bloques,
-    hay_campanas: partido.hay_campanas,
+    hay_campanas: partido.campanas.length > 0,
+    lineas_reuniones: partido.reuniones.length,
     reuniones: null,
     campanas: null,
+    /* ⭐⭐ Parte F - lo que no fue a ninguna hoja viaja SIEMPRE, aunque este vacio: el panel
+     * elige si lo pinta, pero nunca tiene que adivinar si existe. */
+    ignoradas: partido.ignoradas.slice(),
     avisos: []
   };
 
-  if (partido.lineas_reuniones) {
-    var rr = cargarTemarioReuniones_(partido.reuniones_texto, ref);
+  if (partido.reuniones.length) {
+    var rr = cargarTemarioReuniones_(texto, ref);
     if (!rr.ok) return { ok: false, motivo: 'reuniones: ' + rr.motivo };
     salida.reuniones = rr;
+    /* Las que el cargador descarto por su cuenta -los ejes agregados de B.2- se suman a la lista,
+     * sin repetir las que ya trae el partidor. */
+    (rr.ignoradas || []).forEach(function (x) {
+      if (x.motivo === 'eje agregado') salida.ignoradas.push(x);
+    });
   } else {
-    salida.avisos.push('ⓘ No había ninguna línea de reuniones fuera del bloque de campañas.');
+    salida.avisos.push('ⓘ No quedó ninguna línea del lado de las reuniones.');
   }
 
-  if (partido.hay_campanas) {
-    var rc = cargarTemarioCampanas_(partido.campanas_texto, ref, String(informeId || '').trim());
+  if (partido.campanas.length) {
+    var rc = cargarTemarioCampanas_(texto, ref, String(informeId || '').trim());
     if (!rc.ok) return { ok: false, motivo: 'campañas: ' + rc.motivo };
     salida.campanas = rc;
   } else {
-    /* ⚠ **No es un error**: un temario puede no traer campañas. Pero se dice, porque el título
-     * mal escrito produce exactamente el mismo silencio que la ausencia. */
-    salida.avisos.push('ⓘ No apareció el bloque «' + BLOQUE_CAMPANAS_ + '». Si el temario traía ' +
-      'campañas, revisá el título: bloques leídos — ' +
-      (partido.bloques.map(function (b) { return b.titulo; }).join(' · ') || '(ninguno)') + '.');
+    /* ⚠ **No es un error**: un temario puede no traer campañas. Pero se dice, porque una línea
+     * mal escrita produce exactamente el mismo silencio que la ausencia. */
+    salida.avisos.push('ⓘ No apareció ninguna línea que anuncie las campañas. Si el temario traía ' +
+      'campañas, la línea tiene que empezar con «Campaña» o «Campañas» —singular y plural sirven, ' +
+      'con `>` o sin él— y no puede tener `|`.');
+  }
+
+  /* ⛔⛔ Parte F - **si no quedo ninguna linea de reuniones Y hay ignoradas, se dice.** No se
+   * inventa un modo degradado que cargue igual: una carga que no escribio nada tiene que decirlo,
+   * y decir POR QUE. */
+  if (!partido.reuniones.length && salida.ignoradas.length) {
+    salida.avisos.push('⛔ No entró ninguna reunión, y ' + salida.ignoradas.length +
+      ' línea(s) quedaron afuera. Revisá la lista de abajo: si alguna era un encuentro, el corte ' +
+      'de campañas se disparó antes de tiempo.');
   }
 
   /* ⭐ Los hechos DESPUÉS de cargar: es lo que decide si el paso 3 abre, y sale de la hoja. */

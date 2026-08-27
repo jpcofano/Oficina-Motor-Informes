@@ -1,20 +1,26 @@
 #!/usr/bin/env node
 /**
- * tools/probar-asistente-temario.js — **paso 2: un temario con una línea imparseable llega al
- * paso 3 con esa línea marcada** (`2026-08-27_1`, `D-44`).
+ * tools/probar-asistente-temario.js — **el temario se parte en UN CORTE POSICIONAL**
+ * (`2026-08-27_2`, `D-45` / `D-46`).
  *
- * ⛔⛔ **El hueco estaba en el PARTIDOR, no en el cargador — y se midió antes de tocar nada.**
- * `partirTemarioEnBloques_` decide que una línea sin `>`, sin numeración `N)` y sin `|`, de menos
- * de 60 caracteres, **es un encabezado de bloque**. Una línea de temario mal tipeada cumple las
- * tres, así que se convierte en el `titulo` de un bloque vacío **y desaparece de todos los
- * `lineas`**: nunca llega a `cargarTemarioReuniones_`, nunca recibe su fila con
- * `notas = 'no se pudo parsear'`, y el paso 3 no la puede mostrar.
+ * ⭐⭐ **Los tres temarios REALES son el banco, y ninguno tiene la misma forma.** Ése es el hecho
+ * de método: llegó el tercero y no se parece a los dos anteriores.
  *
- * ⭐ **Es `CLAUDE.md` §4 literal:** *la función que estás leyendo no es el camino completo; el
- * filtro que te falta suele estar en quien le pasa los datos.* El cargador hacía lo correcto.
+ *     25/08 · dos semanas    1) JM | Uno a uno en Parque Avellaneda 12/08 (pre + post)
+ *     27/08 · ejemplo        > Status Cercanía y M2 · 1) JM | … · > Campañas destacadas
+ *     27/08 · REAL           Uno a uno en Coghlan (21/08) · Campaña Destacada · Operativo …
  *
- * ⭐⭐ **Y el control negativo es el que importa: si TODAS las líneas parsean, el banco no probó
- * nada.** Un temario limpio satisface *«se cargó todo»* y *«el marcado no funciona»* por igual.
+ * ⇒ **Ni `>`, ni `N)`, ni `|`, ni el plural son obligatorios.** Cualquier regla que exija uno de
+ * los cuatro falla el lunes siguiente, y falla **escribiendo filas**, que es el modo caro.
+ *
+ * ⛔⛔ **Lo que reemplaza, y por qué.** `partirTemarioEnBloques_` decidía que una línea sin `>`,
+ * sin `N)` y sin `|`, de menos de 60 caracteres, **es un encabezado**. Contra el temario real del
+ * 27/08 devolvía **3 bloques con `lineas: []`**: las tres líneas eran títulos y **ninguna era
+ * contenido**. Y `cargarTemarioCampanas_` comparaba el título **por igualdad**, así que
+ * `Campaña Destacada` —singular— **no matcheaba**.
+ *
+ * ⭐ **El control que no caduca es la IDENTIDAD**, no una constante:
+ * `líneas no vacías = reuniones + campañas + ignoradas`. Ninguna línea puede desaparecer.
  *
  * Uso:  node tools/probar-asistente-temario.js
  */
@@ -32,215 +38,359 @@ function afirmar(condicion, mensaje) {
 
 const PERIODO = '2026_agosto_21_27';
 
-/** Un contexto con el período ya creado y el catálogo de campañas falseado. */
-function armar(parchear) {
-  const ctx = C.contexto({
+/* ── Los tres temarios reales, COPIADOS y no deducidos ──────────────────────────────────── */
+
+/** 27/08 · el que llegó de verdad. Ni `>`, ni `N)`, ni `|`, y el título en SINGULAR. */
+const REAL_2708 = [
+  'Uno a uno en Coghlan (21/08)',
+  'Campaña Destacada ',
+  'Operativo Movilidad Más Segura'
+].join('\n');
+
+/** 27/08 · el ejemplo que pasó el usuario. Con marcas, con numeración y con «Otros temas». */
+const EJEMPLO_2708 = [
+  '> Status Cercanía y M2',
+  '1) JM | Uno a uno en Coghlan 21/08',
+  '2) JM | Encuentro Temático: Salud 25/08',
+  '4) M2 | Campañas y enviados de la semana',
+  '> Campañas destacadas',
+  '1) Operativo Movilidad Más Segura',
+  '> Otros temas',
+  'Reunión de gabinete',
+  'Varios'
+].join('\n');
+
+/** 25/08 · el de agosto, tal como está en `docs/TEMARIOS_reales_2026-08-25.md`. */
+const REAL_2508 = [
+  '1) JM | Uno a uno en Parque Avellaneda 12/08 (pre + post)',
+  '2) JM | Encuentro Temático: Salud 14/08'
+].join('\n');
+
+const ctx = C.contexto({ PERIODOS: [] });
+function partir(texto) {
+  ctx.__t = texto;
+  return C.vm.runInContext('partirTemario_(__t)', ctx);
+}
+function parsear(linea) {
+  ctx.__l = linea;
+  return C.vm.runInContext('parsearLineaReunion_(__l)', ctx);
+}
+function iso(f) { return f instanceof Date ? f.toISOString().slice(0, 10) : String(f || ''); }
+
+console.log('El partidor único y el parser — Campanas.gs y Reuniones.gs cargados de verdad\n');
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 1 · ⭐⭐ LA IDENTIDAD, sobre los tres — y no caduca cuando cambie el temario
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('1 · ⭐⭐ la identidad: ninguna línea desaparece del retorno');
+{
+  /* ⭐ Es un control **por identidad y no por constante**: si mañana llega un cuarto temario con
+   * otra forma, esto sigue siendo cierto o el partidor está perdiendo líneas. Una constante
+   * («da 3 reuniones») caduca el lunes; esto no. */
+  [['27/08 real', REAL_2708], ['27/08 ejemplo', EJEMPLO_2708], ['25/08', REAL_2508]]
+    .forEach(function (par) {
+      const nombre = par[0];
+      const texto = par[1];
+      const r = partir(texto);
+      const entraron = texto.split('\n').filter(function (l) { return l.trim().length; }).length;
+      const salieron = r.reuniones.length + r.campanas.length + r.ignoradas.length;
+      afirmar(entraron === salieron,
+        nombre + ': ' + entraron + ' línea(s) entran y ' + salieron + ' salen — ninguna se pierde');
+    });
+
+  /* ⚠ Y el caso degenerado, que es donde una identidad suele romperse. */
+  const vacio = partir('   \n\n  \n');
+  afirmar(vacio.reuniones.length === 0 && vacio.campanas.length === 0 && vacio.ignoradas.length === 0,
+    '⚠ un pegado de puras líneas vacías da los tres baldes vacíos, sin inventar nada');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 2 · ⭐⭐ EL 27/08 REAL — el caso que hoy escribía una fila rota y perdía dos líneas
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n2 · ⭐⭐ el temario REAL del 27/08 — ni `>`, ni `N)`, ni `|`, y en SINGULAR');
+{
+  const r = partir(REAL_2708);
+
+  afirmar(r.reuniones.length === 1 && r.reuniones[0] === 'Uno a uno en Coghlan (21/08)',
+    '⭐ 1 reunión, y es la de Coghlan');
+  afirmar(r.campanas.length === 1 && r.campanas[0] === 'Operativo Movilidad Más Segura',
+    '⭐ 1 campaña, la que estaba debajo del corte');
+  afirmar(r.ignoradas.length === 1 && r.ignoradas[0].motivo === 'separador',
+    '⭐ y 1 ignorada: la línea que corta, con motivo `separador`');
+  afirmar(r.ignoradas[0].texto === 'Campaña Destacada',
+    '⛔⛔ el corte lo hace «Campaña Destacada» en SINGULAR — el comparador viejo pedía igualdad ' +
+    'contra el plural y no matcheaba');
+
+  /* ⭐⭐ Y la línea que era el fallo entero: sin `|`, y ahora parsea completa. */
+  const p = parsear(r.reuniones[0]);
+  afirmar(p.tipo === 'Uno a uno', '⭐ `tipo` reconocido sin `|`: ' + JSON.stringify(p.tipo));
+  afirmar(p.nombre === 'Coghlan', '⭐ `nombre` limpio: ' + JSON.stringify(p.nombre));
+  afirmar(iso(p.fecha) === '2026-08-21',
+    '⭐⭐ y la fecha SALE DEL PARÉNTESIS: ' + iso(p.fecha) + ' — antes quedaba vacía');
+  afirmar(p.eje === '',
+    '⛔⛔ `eje` queda VACÍO y NO se completa con un default: el universo lo declara el temario (`R-02`)');
+  afirmar(p.notas === '', 'y `notas` sale limpia — ya no dice «no se pudo parsear»');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 3 · ⛔⛔ EL SEPARADOR NO SE DISPARA SOBRE UNA REUNIÓN — la guarda del `|`
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n3 · ⛔⛔ `4) M2 | Campañas y enviados de la semana` NO corta');
+{
+  const r = partir(EJEMPLO_2708);
+
+  /* La linea contiene «Campanias» y **es una reunion**: `Campanias y enviados de la semana` esta
+   * en `TIPOS_REUNION_CONOCIDOS_`.
+   *
+   * ⚠⚠ **La separan DOS cerrojos, y el caso 7.1 midio cual aguanta hoy:** el `eje |` sigue
+   * en el cuerpo, asi que ni siquiera empieza con `campan` -ese es el primero-; la guarda del `|`
+   * es el segundo, e independiente. La afirmacion de abajo mide el primero. */
+  const m2 = '4) M2 | Campañas y enviados de la semana';
+  afirmar(r.reuniones.indexOf(m2) !== -1,
+    '⛔⛔ queda del lado de las REUNIONES — un separador ingenuo cortaría acá');
+  afirmar(C.vm.runInContext('cuerpoDeLineaDeTemario_("' + m2.replace(/"/g, '\\"') + '")', ctx)
+    .indexOf('campan') !== 0,
+    '⚠ y su cuerpo sin `N)` sigue teniendo el `M2 |` adelante, así que ni siquiera empieza con `campan`');
+
+  /* Lo que sí corta, y lo que no. */
+  afirmar(r.campanas.length === 1 && r.campanas[0] === '1) Operativo Movilidad Más Segura',
+    '⭐ corta `> Campañas destacadas` y queda 1 campaña');
+  const descartadas = r.ignoradas.filter(function (x) { return x.motivo === 'bloque descartado'; });
+  afirmar(descartadas.length === 2,
+    '⭐ y las 2 líneas debajo de «Otros temas» quedan ignoradas: ' + descartadas.length);
+  afirmar(descartadas.map(function (x) { return x.texto; }).join('|') === 'Reunión de gabinete|Varios',
+    '   con su texto, no con un conteo: ' + descartadas.map(function (x) { return x.texto; }).join(' · '));
+
+  /* ⭐ El encabezado marcado con `>` que no es ninguno de los dos separadores. */
+  const enc = r.ignoradas.filter(function (x) { return x.motivo === 'encabezado'; });
+  afirmar(enc.length === 1 && enc[0].texto === '> Status Cercanía y M2',
+    '⭐ `> Status Cercanía y M2` va a `ignoradas` como `encabezado` — no escribe una fila rota');
+  afirmar(r.reuniones.length === 3,
+    '   y quedan 3 reuniones: las dos de JM y la de M2');
+}
+{
+  /* ⭐⭐ **El MISMO texto sin la línea `> Otros temas`, para documentar qué pasa** — sin fingir que
+   * da lo mismo. Sin el corte, esas dos líneas caen en el balde de CAMPAÑAS, y
+   * `cargarTemarioCampanas_` las escribe con `mostrar = 'sí'` (`AJ-1`): **nacen confirmadas**. */
+  const sinOtros = EJEMPLO_2708.split('\n').filter(function (l) { return l !== '> Otros temas'; }).join('\n');
+  const r = partir(sinOtros);
+  afirmar(r.campanas.length === 3,
+    '⛔ sin la línea «Otros temas», las 2 de abajo caen en CAMPAÑAS: ' + r.campanas.length);
+  afirmar(r.campanas.indexOf('Reunión de gabinete') !== -1,
+    '⚠ y «Reunión de gabinete» quedaría como campaña, con `mostrar = sí` por `AJ-1`');
+  afirmar(r.ignoradas.filter(function (x) { return x.motivo === 'bloque descartado'; }).length === 0,
+    '   No se inventa una heurística de contenido para adivinar dónde termina el bloque: se acepta y se ve');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 4 · El 25/08 sigue dando lo que daba — control de NO REGRESIÓN
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n4 · el 25/08 no cambia');
+{
+  const r = partir(REAL_2508);
+  afirmar(r.reuniones.length === 2 && r.campanas.length === 0 && r.ignoradas.length === 0,
+    '⭐ las 2 líneas siguen siendo reuniones, sin campañas ni ignoradas');
+
+  const a = parsear(r.reuniones[0]);
+  afirmar(a.eje === 'JM' && a.tipo === 'Uno a uno' && a.nombre === 'Parque Avellaneda' &&
+          iso(a.fecha) === '2026-08-12',
+    '⭐ Parque Avellaneda: eje JM, 12/08, nombre limpio');
+  afirmar(a.notas === '',
+    '⚠ y `(pre + post)` sigue reconociéndose como anotación de etapa y se descarta — no ensucia `notas`');
+
+  const b = parsear(r.reuniones[1]);
+  afirmar(b.nombre === 'Salud' && iso(b.fecha) === '2026-08-14',
+    '⭐ y `Encuentro Temático: Salud` sigue dando `Salud`, sin los dos puntos');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 5 · Las líneas de A.4 — el paréntesis, la fecha y el nombre
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n5 · ⭐ el paréntesis final que ES una fecha');
+{
+  const casos = [
+    ['JM | Uno a uno en Coghlan (21/08)', 'Coghlan', '2026-08-21', ''],
+    ['JM | Uno a uno en Coghlan 21/08', 'Coghlan', '2026-08-21', ''],
+    ['JM | Uno a uno en Coghlan (21/08) (pre + post)', 'Coghlan', '2026-08-21', '']
+  ];
+  casos.forEach(function (c) {
+    const p = parsear(c[0]);
+    afirmar(p.nombre === c[1] && iso(p.fecha) === c[2] && p.notas === c[3],
+      JSON.stringify(c[0]) + ' → nombre=' + JSON.stringify(p.nombre) + ' fecha=' + iso(p.fecha));
+  });
+
+  /* ⚠⚠ **«ES una fecha», no «CONTIENE una fecha»**, y la diferencia es una regresión medida: el
+   * paréntesis del agregado de Ministros contiene `24/07` y **tiene que seguir siendo una nota**. */
+  const min = parsear('Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)');
+  afirmar(iso(min.fecha) === '' && /24\/07 al 30\/07/.test(min.notas),
+    '⚠⚠ un paréntesis que CONTIENE una fecha pero no ES una fecha sigue yendo a `notas`');
+
+  /* ⭐ C.2 · el recorte del nombre corre haya fecha o no. */
+  const sinFecha = parsear('JM | Uno a uno en Coghlan');
+  afirmar(sinFecha.nombre === 'Coghlan',
+    '⭐ sin fecha, el nombre igual sale limpio: ' + JSON.stringify(sinFecha.nombre) +
+    ' — antes quedaba "en Coghlan"');
+  afirmar(/no se encontró fecha/.test(sinFecha.notas),
+    '   y la falta de fecha se sigue diciendo en `notas`');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 6 · ⭐⭐ `claveReunion_` sin `eje` — la misma reunión con y sin `|` es UNA
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n6 · ⭐⭐ la clave sin `eje`');
+{
+  const con = parsear('JM | Uno a uno en Coghlan 21/08');
+  const sin = parsear('Uno a uno en Coghlan 21/08');
+  con.periodo_id = PERIODO;
+  sin.periodo_id = PERIODO;
+  ctx.__a = con;
+  ctx.__b = sin;
+  const ka = C.vm.runInContext('claveReunion_(__a)', ctx);
+  const kb = C.vm.runInContext('claveReunion_(__b)', ctx);
+
+  afirmar(con.eje === 'JM' && sin.eje === '', 'las dos filas difieren SÓLO en `eje`');
+  afirmar(ka === kb,
+    '⭐⭐ y dan la MISMA clave — la misma reunión pegada con y sin `|` no se duplica: ' + ka);
+  afirmar(ka.indexOf('JM') === -1, '⛔ `eje` ya no está en la clave');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 7 · ⚠ Los controles negativos — romper a propósito
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n7 · ⚠ los controles negativos');
+{
+  /* ⛔⛔ **7.1 · Este control se escribio al reves y el rojo lo corrigio - queda dado vuelta
+   * con el motivo, que es lo que vale.**
+   *
+   * La primera version anulaba la guarda del `|` sobre el temario de ejemplo esperando ver la
+   * reunion de M2 cambiar de balde. **MEDIDO: no cambia NADA** - las dos corridas dan
+   * `reuniones=3 · campanias=1 · ignoradas=5`, identicas. O sea que el control **no medía nada**,
+   * que es exactamente el modo de falla de `CLAUDE.md` seccion 4.
+   *
+   * ⭐⭐ **Y el motivo es un hallazgo de diseno que hay que dejar escrito: hay DOS cerrojos, y
+   * el que hoy aguanta no es el del `|`.**
+   *
+   *   1. `cuerpoDeLineaDeTemario_` saca `>` y `N)` **y NO saca el `eje |`**. Por eso
+   *      `4) M2 | Campanias y enviados de la semana` da `m2 | campanias...`, que **no empieza con
+   *      `campan`**. Ese es el cerrojo que sostiene el caso real de A.3.
+   *   2. La guarda `no tiene |` es el **segundo**, e independiente: sostiene cualquier linea de
+   *      reunion **diga lo que diga su texto**.
+   *
+   * ⚠⚠ **El segundo se vuelve el unico el dia que alguien "mejore" el primero** sacando el
+   * eje del cuerpo -que es lo que A.3 sugeria hacer-. Por eso el control de abajo lo aisla con un
+   * fixture que lo ejercita de verdad: una linea que **empieza con `campan` Y tiene `|`**. */
+  const conPipe = [
+    '1) JM | Uno a uno en Coghlan 21/08',
+    'Campañas y enviados de la semana | M2',
+    '2) JM | Encuentro Temático: Salud 25/08'
+  ].join(String.fromCharCode(10));
+
+  const intacto = partir(conPipe);
+  afirmar(intacto.reuniones.length === 3 && intacto.campanas.length === 0,
+    '⭐⭐ con la guarda, una linea que EMPIEZA con «Campanias» pero tiene `|` es una reunion: 3 reuniones');
+
+  const romper = function (x) {
+    return x.archivo === 'Campanas.gs'
+      ? x.texto.replace("    if (linea.indexOf('|') === -1) {", '    if (true) {   // ROTO A PROPOSITO')
+      : x.texto;
+  };
+  romper.__archivo = 'Campanas.gs';
+
+  const roto = C.contexto({ PERIODOS: [] }, romper);
+  roto.__t = conPipe;
+  const r = C.vm.runInContext('partirTemario_(__t)', roto);
+
+  afirmar(r.reuniones.length === 1,
+    '⭐ sin la guarda, esa linea CORTA y el temario cambia de balde: ' + r.reuniones.length + ' reunion(es)');
+  afirmar(r.campanas.length === 1 && r.campanas[0] === '2) JM | Encuentro Temático: Salud 25/08',
+    '⛔⛔ y un ENCUENTRO termina cargado como CAMPANIA: ' + JSON.stringify(r.campanas[0]));
+  afirmar(true, '⚠ y la mutacion OCURRIO: sin el parche aplicado, `contexto()` tira antes de medir');
+
+  /* ⭐ Y el primer cerrojo, afirmado para que nadie lo saque sin enterarse. */
+  ctx.__x = '4) M2 | Campañas y enviados de la semana';
+  afirmar(C.vm.runInContext('cuerpoDeLineaDeTemario_(__x)', ctx) === 'm2 | campanas y enviados de la semana',
+    '⭐⭐ y `cuerpoDeLineaDeTemario_` NO saca el `eje |` - ese es el cerrojo que aguanta el caso de A.3');
+}
+{
+  /* 7.2 · ⭐⭐ El control negativo del DEFAULT de `eje`, que es la decisión que más cuesta si se
+   * revierte: con un default, la misma reunión con y sin `|` contaría como dos. */
+  const conDefault = function (x) {
+    return x.archivo === 'Reuniones.gs'
+      ? x.texto.replace('  var partes = texto.split(\'|\');\n  var resto = texto.trim();',
+                        '  var partes = texto.split(\'|\');\n  var resto = texto.trim();\n  propuesta.eje = \'JM\';   // ROTO A PROPOSITO')
+      : x.texto;
+  };
+  conDefault.__archivo = 'Reuniones.gs';
+
+  const roto = C.contexto({ PERIODOS: [] }, conDefault);
+  roto.__l = 'Uno a uno en Coghlan 21/08';
+  const p = C.vm.runInContext('parsearLineaReunion_(__l)', roto);
+  afirmar(p.eje === 'JM',
+    '⭐ con un default, la línea sin `|` sale con `eje = "JM"` inventado — el aserto 2.7 cae');
+  afirmar(true, '⚠ y la mutación OCURRIÓ');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 8 · Un partidor, tres llamadores — y los dos retirados no vuelven
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n8 · ⛔ un solo partidor, y los dos viejos retirados');
+{
+  const campanas = C.fs.readFileSync(C.path.join(C.RAIZ, 'Campanas.gs'), 'utf8');
+  const reuniones = C.fs.readFileSync(C.path.join(C.RAIZ, 'Reuniones.gs'), 'utf8');
+  const backend = C.fs.readFileSync(C.path.join(C.RAIZ, 'PanelBackend.gs'), 'utf8');
+
+  /* ⭐⭐ Afirmaciones NEGATIVAS: se ponen en rojo el día que alguno de los dos vuelva sin decisión. */
+  afirmar(campanas.indexOf('function partirTemarioEnBloques_') === -1,
+    '⛔ `partirTemarioEnBloques_` NO está: se comía el contenido cuando no había marcas');
+  afirmar(backend.indexOf('function partirTemarioDelAsistente_') === -1 &&
+          backend.indexOf('function esBloqueDeCampanas_') === -1,
+    '⛔ ni `partirTemarioDelAsistente_` ni `esBloqueDeCampanas_` — eran la segunda forma de decidir');
+
+  /* ⭐ Y los tres llamadores usan la única que queda. */
+  afirmar(campanas.indexOf('partirTemario_(textoPegado)') !== -1,
+    '⭐ `cargarTemarioCampanas_` parte con `partirTemario_`');
+  afirmar(reuniones.indexOf('partirTemario_(textoPegado)') !== -1,
+    '⭐ `cargarTemarioReuniones_` también');
+  afirmar(backend.indexOf('partirTemario_(texto)') !== -1,
+    '⭐ y el asistente también — una definición, tres llamadores');
+
+  /* ⛔ Y los dos cargadores siguen recibiendo el TEXTO ENTERO, sin recortes del llamador. */
+  const iCarga = backend.indexOf('function panel_asistenteCargarTemario');
+  const bloque = backend.slice(iCarga, iCarga + 3000);
+  afirmar(/cargarTemarioReuniones_\(texto, ref\)/.test(bloque) &&
+          /cargarTemarioCampanas_\(texto, ref/.test(bloque),
+    '⛔⛔ el asistente les pasa el TEXTO ENTERO a los dos — contrato intacto, sin recortes armados');
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * 9 · Punta a punta — el 27/08 real, con los cargadores y las hojas falseadas
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+console.log('\n9 · ⭐ punta a punta sobre el 27/08 real');
+{
+  const con = C.contexto({
     PERIODOS: [[PERIODO, '2026-08-21', '2026-08-27', '']],
     REUNIONES: [],
     CAMPANAS: []
-  }, parchear);
-  /* ⚠ `catalogoDeCampanas_` lee la base `digital` por `openById`. Se falsea porque lo que este
-   * banco mide es el RUTEO del pegado único, no la resolución nombre → `ID Cuentas`, que tiene su
-   * propio banco (`probar-campanas.js`). */
-  ctx.catalogoDeCampanas_ = () => ({
-    ok: true,
-    lista: [{ id: '3488-AGOJDGAG', nombre: 'Egreso más de 1000 Cadetes', alterno: '',
-      desde: '2026-08-01', hasta: '2026-08-30' }]
   });
-  return ctx;
-}
+  con.catalogoDeCampanas_ = () => ({ ok: true, lista: [] });
+  con.__t = REAL_2708;
+  const r = C.vm.runInContext('panel_asistenteCargarTemario("' + PERIODO + '", __t, "jm")', con);
 
-function cargar(ctx, texto) {
-  ctx.__t = texto;
-  return C.vm.runInContext('panel_asistenteCargarTemario("' + PERIODO + '", __t, "jm")', ctx);
-}
+  afirmar(r.ok === true, 'carga' + (r.ok ? '' : ' — ' + r.motivo));
+  afirmar(r.reuniones.agregadas === 1 && r.reuniones.sinParsear === 0,
+    '⭐⭐ 1 reunión agregada y CERO sin parsear — hoy daba 1 fila rota y perdía 2 líneas');
+  afirmar((r.campanas.escritas || []).length === 1,
+    '⭐ y 1 campaña escrita: el singular ya no rompe el cargador');
 
-/* El temario real: reuniones, una línea rota en el medio, el título y las campañas. */
-const CON_ROTA = [
-  '1) JM | Uno a uno en Retiro 24/07',
-  '2) JM | Encuentro Temático: Salud 25/07',
-  'esto no parsea',
-  '> Campañas destacadas',
-  '1) Egreso de cadetes'
-].join('\n');
+  const filas = con.__hojas.REUNIONES.__filas;
+  const fila = filas[1];
+  afirmar(String(fila[2]) === '' && String(fila[4]) === 'Coghlan',
+    '⭐ la fila queda con `eje` vacío y `nombre = "Coghlan"`');
+  afirmar(String(fila[8]) === 'Uno a uno en Coghlan (21/08)',
+    '⭐⭐ y con `texto_original`, que es lo que `leerReuniones_` ahora mira para dejarla entrar');
 
-/* El mismo, sin la línea rota. ⭐ Es el par que distingue las dos afirmaciones. */
-const LIMPIO = [
-  '1) JM | Uno a uno en Retiro 24/07',
-  '2) JM | Encuentro Temático: Salud 25/07',
-  '> Campañas destacadas',
-  '1) Egreso de cadetes'
-].join('\n');
-
-console.log('Paso 2 del asistente — el pegado único, con los dos cargadores reales\n');
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════
- * 1 · ⛔⛔ Lo que le faltaba al partidor, MEDIDO — la línea rota se perdía
- * ══════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('1 · ⛔⛔ el partidor se comía la línea rota, y ahora la devuelve');
-{
-  const ctx = armar();
-  ctx.__t = CON_ROTA;
-
-  /* La medición que fundó el paso: el partidor de siempre la convierte en TÍTULO de un bloque
-   * vacío. Va afirmado para que se vea por qué hizo falta el ruteador, y no como reproche. */
-  const bloques = C.vm.runInContext('partirTemarioEnBloques_(__t)', ctx);
-  const comida = bloques.filter((b) => b.titulo === 'esto no parsea')[0];
-  afirmar(!!comida && comida.lineas.length === 0,
-    '⛔⛔ `partirTemarioEnBloques_` la toma como TÍTULO de un bloque vacío — así se perdía');
-  afirmar(bloques.every((b) => b.lineas.indexOf('esto no parsea') === -1),
-    '   y no aparece en las `lineas` de ningún bloque: desaparecía del todo');
-
-  /* ⭐ Y el ruteador la devuelve a la lista, en su lugar. */
-  const partido = C.vm.runInContext('partirTemarioDelAsistente_(__t)', ctx);
-  const lineas = partido.reuniones_texto.split('\n');
-  afirmar(lineas.indexOf('esto no parsea') === 2,
-    '⭐ `partirTemarioDelAsistente_` la devuelve, y EN SU LUGAR — tercera línea, como en el pegado');
-  afirmar(lineas.length === 3 && lineas.indexOf('1) Egreso de cadetes') === -1,
-    '⭐ y las campañas NO entran al texto de reuniones: 3 líneas, sin la del bloque de campañas');
-  afirmar(partido.campanas_texto === CON_ROTA,
-    '⚠ a campañas se le pasa el texto ENTERO: su cargador busca su propio bloque, y un recorte ' +
-    'armado acá sería una segunda forma de decidir cuál es');
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════
- * 2 · ⭐⭐ EL QUE IMPORTA — la línea rota llega al paso 3 marcada
- * ══════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n2 · ⭐⭐ la línea rota llega al paso 3, con nombre y con motivo');
-{
-  const ctx = armar();
-  const r = cargar(ctx, CON_ROTA);
-
-  afirmar(r.ok === true, 'el paso 2 carga' + (r.ok ? '' : ' — ' + r.motivo));
-  afirmar(r.reuniones.agregadas === 3, '⭐ las 3 líneas de reuniones entran, la rota INCLUIDA');
-  afirmar(r.reuniones.sinParsear === 1, 'y una queda contada como sin parsear');
-
-  /* ⭐⭐ **Con NOMBRE, no con un conteo.** «1 sin parsear» no deja saber cuál, y el paso 3 tiene
-   * que poder señalarla: un temario que carga 4 de 5 y no lo dice publica un informe al que le
-   * falta un encuentro. */
-  const detalle = r.reuniones.sinParsearDetalle || [];
-  afirmar(detalle.length === 1 && detalle[0].texto === 'esto no parsea',
-    '⭐⭐ y viaja CON NOMBRE: "' + (detalle[0] || {}).texto + '" — no sólo el conteo');
-  afirmar(/no se pudo parsear/.test((detalle[0] || {}).motivo || ''),
-    '   con el motivo dicho: "' + (detalle[0] || {}).motivo + '"');
-
-  /* Y la fila quedó en la hoja con su nota — que es lo que el paso 3 va a leer. */
-  const filas = ctx.__hojas.REUNIONES.__filas;
-  const fila = filas.filter((f) => f[8] === 'esto no parsea')[0];
-  afirmar(!!fila && fila[9] === 'no se pudo parsear',
-    '⭐ y la fila está en `REUNIONES` con `notas = "no se pudo parsear"`');
-  afirmar(!!fila && String(fila[7]) === '',
-    '⚠ con `mostrar` VACÍO, como todas: la persona confirma cuáles entran (paso 3)');
-
-  /* Las campañas fueron por su cargador, no por el de reuniones. */
-  afirmar(r.hay_campanas === true && (r.campanas.escritas || []).length === 1,
-    '⭐ la campaña entró por `cargarTemarioCampanas_`: 1 escrita');
-  afirmar(ctx.__hojas.CAMPANAS.__filas.length === 2,
-    '   y en `CAMPANAS`, no en `REUNIONES`');
-  afirmar(filas.filter((f) => String(f[8]).indexOf('Egreso') !== -1).length === 0,
-    '⛔ ninguna línea de campañas se coló a `REUNIONES` — sin el ruteo, el pegado único las duplicaba');
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════
- * 3 · ⭐⭐ EL CONTROL NEGATIVO — si todas parsean, el banco no probó nada
- * ══════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n3 · ⭐⭐ el control negativo: con el temario LIMPIO no hay nada marcado');
-{
-  /* ⭐ Sin este par, «se cargó todo» y «el marcado no funciona» se ven idénticos: el dato limpio
-   * satisface las dos afirmaciones por igual. Es `Pruebas.gs:456` otra vez. */
-  const ctx = armar();
-  const r = cargar(ctx, LIMPIO);
-
-  afirmar(r.ok === true && r.reuniones.agregadas === 2,
-    'el temario limpio carga sus 2 reuniones' + (r.ok ? '' : ' — ' + r.motivo));
-  afirmar(r.reuniones.sinParsear === 0 && (r.reuniones.sinParsearDetalle || []).length === 0,
-    '⭐⭐ y NADA queda marcado — el caso 2 mide el marcado, no el conteo de filas');
-  afirmar(ctx.__hojas.REUNIONES.__filas.filter((f) => f[9] === 'no se pudo parsear').length === 0,
-    '   ninguna fila con la nota: la marca aparece sólo cuando hay algo que marcar');
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════
- * 4 · Sin el bloque de campañas — no es un error, y se DICE
- * ══════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n4 · un temario sin campañas carga igual, y lo dice');
-{
-  const ctx = armar();
-  const r = cargar(ctx, '1) JM | Uno a uno en Retiro 24/07');
-
-  afirmar(r.ok === true && r.reuniones.agregadas === 1, 'carga la reunión sola');
-  afirmar(r.hay_campanas === false && r.campanas === null, 'y no inventa ninguna campaña');
-  /* ⚠ Sin distinguir mayúsculas: `BLOQUE_CAMPANAS_` es `'campañas destacadas'` en minúscula —el
-   * comparador normaliza los dos lados—, así que exigir la capital mediría la grafía de una
-   * constante y no que el aviso salga. */
-  afirmar((r.avisos || []).some((a) => /campañas destacadas/i.test(a)),
-    '⭐ pero lo DICE, con los bloques leídos: un título mal escrito produce el mismo silencio que ' +
-    'la ausencia');
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════
- * 5 · La guarda del paso 2 — no se carga sobre un período que no existe
- * ══════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n5 · ⛔ la guarda del paso 2');
-{
-  const ctx = armar();
-  ctx.__t = CON_ROTA;
-  const fantasma = C.vm.runInContext('panel_asistenteCargarTemario("no_existe", __t, "jm")', ctx);
-  afirmar(fantasma.ok === false && fantasma.falta === 'periodo',
-    '⛔ un `periodo_id` que no está en `PERIODOS` se rechaza — el motor no crea períodos al pasar');
-  afirmar(ctx.__hojas.REUNIONES.__filas.length === 1,
-    '⚠ y NO escribió nada: la hoja sigue con el encabezado solo');
-
-  const vacio = C.vm.runInContext('panel_asistenteCargarTemario("' + PERIODO + '", "  ", "jm")', ctx);
-  afirmar(vacio.ok === false && /caja está vacía/.test(vacio.motivo || ''),
-    'una caja vacía se rechaza con el motivo');
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════
- * 6 · ⚠ El control negativo del ruteo — sin devolver el título comido, la línea se pierde
- * ══════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n6 · ⚠ el control negativo del ruteo');
-{
-  const romper = function (x) {
-    return x.archivo === 'PanelBackend.gs'
-      ? x.texto.replace(
-        "    if (!b.con_marca && b.titulo !== '(sin encabezado)') lineas.push(b.titulo);",
-        '    if (false) { }   // ROTO A PROPOSITO')
-      : x.texto;
-  };
-  romper.__archivo = 'PanelBackend.gs';
-
-  const ctx = armar(romper);
-  const r = cargar(ctx, CON_ROTA);
-
-  afirmar(r.reuniones.agregadas === 2 && r.reuniones.sinParsear === 0,
-    '⭐ sin devolver el título comido, la línea rota DESAPARECE: 2 agregadas y cero marcadas');
-  afirmar(ctx.__hojas.REUNIONES.__filas.filter((f) => f[8] === 'esto no parsea').length === 0,
-    '⛔⛔ y no queda ninguna fila con ella — los asertos 2.4 y 2.6 caen, y por el motivo correcto');
-  /* ⚠ Si el parche no hubiera matcheado, `contexto()` habría tirado antes de medir. */
-  afirmar(true, '⚠ y la mutación OCURRIÓ: sin el parche aplicado, `contexto()` tira antes de medir');
-}
-
-/* ══════════════════════════════════════════════════════════════════════════════════════════
- * 7 · El panel cableado, y un solo camino de escritura
- * ══════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n7 · el paso 2 cableado, y sin un segundo escritor');
-{
-  const backend = C.fs.readFileSync(C.path.join(C.RAIZ, 'PanelBackend.gs'), 'utf8');
-  const html = C.fs.readFileSync(C.path.join(C.RAIZ, 'Panel.html'), 'utf8');
-
-  afirmar(backend.indexOf('function panel_asistenteCargarTemario(') !== -1 &&
-          html.indexOf('.panel_asistenteCargarTemario(') !== -1,
-    '`panel_asistenteCargarTemario` existe en el backend Y el front la llama');
-
-  const i = backend.indexOf('function partirTemarioDelAsistente_');
-  const bloque = backend.slice(i, backend.indexOf('function panel_asistenteCrearPeriodo'));
-  afirmar(bloque.indexOf('setValues') === -1 && bloque.indexOf('appendRow') === -1,
-    '⛔⛔ el paso 2 NO escribe por su cuenta: rutea hacia los dos cargadores declarados');
-  afirmar(bloque.indexOf('cargarTemarioReuniones_(') !== -1 &&
-          bloque.indexOf('cargarTemarioCampanas_(') !== -1,
-    '⭐ y llama a los dos por nombre — no hay un segundo camino de escritura');
-  afirmar(bloque.indexOf('BLOQUE_CAMPANAS_') !== -1,
-    '⭐ el título del bloque sale de `BLOQUE_CAMPANAS_`, no de un literal nuevo');
+  afirmar((r.ignoradas || []).length === 1 && r.ignoradas[0].motivo === 'separador',
+    '⭐ y la línea del corte viaja en `ignoradas`, para que el paso 3 la muestre');
 }
 
 console.log('');
@@ -250,11 +400,11 @@ console.log(fallas === 0 ? '✅ Las ' + hechas + ' afirmaciones pasaron.'
 /* ⚠ Los avisos van ÚLTIMOS, después del veredicto. */
 console.log('');
 console.log('⚠ Lo que este control NO contesta:');
-console.log('   · La resolución nombre → `ID Cuentas` de una campaña: `catalogoDeCampanas_` está');
-console.log('     falseado acá y tiene su banco propio (`probar-campanas.js`).');
-console.log('   · ⚠ Un encabezado LEGÍTIMO sin `>` —`DGAYD`— también vuelve a la lista y produce');
-console.log('     una fila «no se pudo parsear». Se eligió a sabiendas: una fila de más se ve en');
-console.log('     el paso 3 y se destilda; una línea perdida en silencio no se ve nunca.');
+console.log('   · El COSTO del corte, que está declarado y no resuelto: si un día llega');
+console.log('     `M2 | Campañas y enviados de la semana` SIN el `|`, corta. Se acepta y se ve —');
+console.log('     la línea queda en `ignoradas` y el paso 3 la muestra.');
+console.log('   · Un temario sin la línea «Otros temas»: el caso 3 bis lo documenta, no lo arregla.');
+console.log('     No se inventa una heurística de contenido para adivinar dónde termina el bloque.');
 console.log('   · Que la hoja VIVA quede bien: está falseada. Eso lo dice una corrida.');
 
 process.exit(fallas === 0 ? 0 : 1);

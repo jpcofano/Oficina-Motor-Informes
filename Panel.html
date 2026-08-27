@@ -973,6 +973,8 @@ function resumenDeCarga(r){
   (r.avisos || []).forEach(function(t){ h += '<br>' + esc(t); });
   h += '</div>';
 
+  h += bloqueDeIgnoradas(r.ignoradas);
+
   var rotas = (r.reuniones && r.reuniones.sinParsearDetalle) || [];
   if (rotas.length){
     h += '<div class="alert alert-warning"><div class="alert-title">' + rotas.length +
@@ -985,6 +987,35 @@ function resumenDeCarga(r){
     h += '</div>';
   }
   return h;
+}
+
+/**
+ * ⭐⭐ `2026-08-27_2` Parte F - **las lineas que no fueron a ninguna hoja se VEN.**
+ *
+ * El corte de campanias, el bloque descartado, los encabezados y los ejes agregados. **Sin
+ * checkbox**: no son filas, no hay nada que confirmar - mostrarlas con un tilde diria que se
+ * pueden hacer entrar, y no se puede.
+ *
+ * ⭐ **Y se pintan ARRIBA**, con el criterio que este panel ya usa: lo que cambia como se lee la
+ * lista de abajo va arriba, no al pie. Una linea que desaparece en silencio es exactamente lo que
+ * este paso vino a cerrar.
+ */
+function bloqueDeIgnoradas(ignoradas){
+  if (!ignoradas || !ignoradas.length) return '';
+  var comoDice = {
+    separador: 'es la línea que corta el temario',
+    encabezado: 'es un encabezado, no un ítem',
+    'bloque descartado': 'está debajo de «Otros temas»',
+    'eje agregado': 'es un bloque agregado de período, no un encuentro'
+  };
+  var h = '<div class="alert alert-info"><div class="alert-title">' + ignoradas.length +
+          ' línea(s) que no fueron a ninguna hoja</div>' +
+          'No son filas y no hay nada que confirmar. <b>Ninguna se descartó en silencio.</b>';
+  ignoradas.forEach(function(x){
+    h += '<br><span class="mono">' + esc(x.texto) + '</span> — ' +
+         esc(comoDice[x.motivo] || x.motivo);
+  });
+  return h + '</div>';
 }
 
 /* ── Paso 3 · confirmar, en UNA sola pantalla ─────────────────────────────────────────────
@@ -1010,6 +1041,7 @@ function pasoConfirmar(){
   var h = cabezalDelPeriodo();
 
   /* ⭐ Lo que cambia cómo se lee TODO lo de abajo va arriba, no en un pie de página. */
+  h += bloqueDeIgnoradas(a.cargado && a.cargado.ignoradas);
   if (d.sin_parsear){
     h += '<div class="alert alert-warning"><div class="alert-title">' + d.sin_parsear +
          ' línea(s) que el motor no pudo interpretar</div>Están en la lista, marcadas. ' +

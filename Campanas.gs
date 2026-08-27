@@ -25,44 +25,126 @@
  * equivalencias, y por eso el match por similitud **propone y no decide**.
  */
 
-/** El bloque del temario que alimenta este cargador. Los otros van a `REUNIONES` o a nada. */
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-27_2` Parte B — **UN partidor, y el corte es POSICIONAL** (`D-45`)
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⭐⭐ **Una línea, un ítem.** Las de arriba son reuniones; la línea que anuncia las campañas
+ * **corta**; las de abajo son campañas. No hay bloques, no hay títulos que agrupen, no hay
+ * heurística de contenido: hay un **estado** que arranca en `reuniones` y dos líneas que lo mueven.
+ *
+ * ⛔⛔ **Reemplaza a `partirTemarioEnBloques_`, que se comía el contenido.** Su heurística decía
+ * que una línea sin `>`, sin `N)` y sin `|`, de menos de 60 caracteres, **es un encabezado**.
+ * Medido el 27/08 contra el temario REAL —tres líneas, ninguna con marcas— devolvía **3 bloques
+ * con `lineas: []`**: las tres líneas eran títulos y **ninguna era contenido**. El asistente
+ * escribió **una** fila rota y perdió dos.
+ *
+ * ⛔ **Y el tercer temario real no se parece a ninguno de los dos anteriores:**
+ *
+ *     25/08 · dos semanas    1) JM | Uno a uno en Parque Avellaneda 12/08 (pre + post)
+ *     27/08 · ejemplo        > Status Cercanía y M2 · 1) JM | … · > Campañas destacadas
+ *     27/08 · REAL           Uno a uno en Coghlan (21/08)
+ *                            Campaña Destacada
+ *                            Operativo Movilidad Más Segura
+ *
+ * ⇒ **Ni `>`, ni `N)`, ni `|`, ni el plural son obligatorios.** Cualquier regla que exija uno de
+ * los cuatro falla el lunes siguiente, y falla **escribiendo filas**, que es el modo caro.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** El bloque del temario que alimenta el cargador de campañas. Los otros van a `REUNIONES` o a nada. */
 var BLOQUE_CAMPANAS_ = 'campañas destacadas';
 
 /**
- * Parte el temario en bloques. **Tolera el formato viejo y aprovecha el nuevo** (`0.2 ter`): la
- * marca acordada es `>` al inicio, pero un bloque sin marca **no se descarta** — se reconoce
- * por no tener numeración ni `|` y se reporta.
+ * El cuerpo de una línea para decidir si es separador: **sin la marca `>` y sin la numeración
+ * `N)`**, normalizado.
  *
- * Un temario que llega un lunes a las ocho sin las marcas **tiene que cargarse igual**.
+ * ⚠ **Los dos prefijos se sacan porque son decoración de formato, no contenido**, y el temario los
+ * trae o no los trae según el día. `normalizar_('> Campañas destacadas')` conserva el `>` —medido
+ * en A.2— así que sin este recorte el separador marcado no matchearía.
  */
-function partirTemarioEnBloques_(texto) {
-  var lineas = String(texto || '').split('\n');
-  var bloques = [];
-  var actual = null;
+function cuerpoDeLineaDeTemario_(linea) {
+  return normalizar_(String(linea == null ? '' : linea)
+    .replace(/^\s*>+\s*/, '')
+    .replace(/^\s*\d+\s*[\)\.\-]\s*/, ''));
+}
+
+/**
+ * ⭐⭐ **El partidor. Puro: no toca ninguna hoja.**
+ *
+ * Devuelve `{ reuniones: [linea], campanas: [linea], ignoradas: [{texto, motivo}] }`.
+ *
+ * **Los separadores, y son tres.** Una línea es separador sólo si **NO tiene `|`**:
+ *
+ *   | separador     | condición                                   | efecto                  |
+ *   |---------------|---------------------------------------------|-------------------------|
+ *   | campañas      | el cuerpo empieza con `campan`              | el estado pasa a campañas |
+ *   | otros temas   | el cuerpo empieza con `otros tema`          | el estado pasa a descartar |
+ *   | ⭐ encabezado | la línea arranca con `>` y no es de las dos | **no mueve el estado**  |
+ *
+ * ⛔⛔ **La condición «no tiene `|`» no es un detalle de forma: es lo único que separa el separador
+ * de una reunión.** Medido en A.3: `4) M2 | Campañas y enviados de la semana` **es una reunión**
+ * —`Campañas y enviados de la semana` está en `TIPOS_REUNION_CONOCIDOS_`— y su cuerpo **empieza con
+ * `campan`**. Un separador ingenuo cortaría ahí y mandaría el resto del temario a `CAMPANAS`.
+ *
+ * ⚠ **El costo, declarado: si un día llega esa reunión SIN `|`, corta.** Se acepta y **se ve** —
+ * la línea queda en `ignoradas` con motivo `separador`, y el paso 3 la muestra.
+ *
+ * ⭐ **La tercera fila es un agregado a la tabla del prompt, y va con su motivo.** El prompt define
+ * dos separadores; con sólo esos, `> Status Cercanía y M2` —una línea que el usuario **marcó
+ * explícitamente como encabezado**— caería como ítem de reuniones y escribiría una fila
+ * `no se pudo parsear`. Reconocer el `>` **no es adivinar**: es leer una marca que la persona
+ * escribió, y es la convención que este repo ya tenía declarada. **No mueve el estado** —eso lo
+ * hacen sólo las dos de arriba— así que no inventa dónde termina un bloque.
+ *
+ * ⚠ **`Otros temas` se agrega aunque el usuario no lo pidió**, y por qué: sin el corte esas líneas
+ * caen en el balde de campañas, y `cargarTemarioCampanas_` las escribe con `mostrar = 'sí'`
+ * (`AJ-1`, *ante la duda entra*) — o sea que **nacen confirmadas y entran al deck si nadie las
+ * destilda**. Es el mismo mecanismo, dos líneas de código.
+ *
+ * ⇒ **Y cuando ese encabezado NO viene, pasa igual: se acepta y se dice.** No se inventa una
+ * heurística de contenido para adivinar dónde termina el bloque.
+ *
+ * ⭐ **La identidad que el banco fija:** `líneas no vacías = reuniones + campañas + ignoradas`.
+ * Ninguna línea puede desaparecer del retorno. Es un control **por identidad y no por constante**:
+ * no caduca cuando cambie el temario.
+ */
+function partirTemario_(texto) {
+  var lineas = String(texto == null ? '' : texto).split('\n');
+  var reuniones = [];
+  var campanas = [];
+  var ignoradas = [];
+  var estado = 'reuniones';
 
   lineas.forEach(function (cruda) {
     var linea = String(cruda).trim();
     if (!linea) return;
 
-    var conMarca = linea.charAt(0) === '>';
-    var titulo = conMarca ? linea.slice(1).trim() : linea;
-    // Sin marca, es encabezado si no arranca con numeración y no trae `|`: así entra `DGAYD`,
-    // que hoy no lleva `>` y que **no se puede descartar** por eso.
-    var pareceEncabezado = conMarca || (!/^\d+\s*\)/.test(linea) && linea.indexOf('|') === -1 && linea.length < 60);
+    /* ⛔ La guarda que funda todo: con `|` es una reunión, nunca un separador. */
+    if (linea.indexOf('|') === -1) {
+      var cuerpo = cuerpoDeLineaDeTemario_(linea);
+      if (cuerpo.indexOf('campan') === 0) {
+        estado = 'campanas';
+        ignoradas.push({ texto: linea, motivo: 'separador' });
+        return;
+      }
+      if (cuerpo.indexOf('otros tema') === 0) {
+        estado = 'descartar';
+        ignoradas.push({ texto: linea, motivo: 'separador' });
+        return;
+      }
+      /* ⭐ Un `>` explícito que no es ninguno de los dos: encabezado, no ítem. No mueve el estado. */
+      if (/^\s*>/.test(linea)) {
+        ignoradas.push({ texto: linea, motivo: 'encabezado' });
+        return;
+      }
+    }
 
-    if (pareceEncabezado) {
-      actual = { titulo: titulo, con_marca: conMarca, lineas: [] };
-      bloques.push(actual);
-      return;
-    }
-    if (!actual) {
-      actual = { titulo: '(sin encabezado)', con_marca: false, lineas: [] };
-      bloques.push(actual);
-    }
-    actual.lineas.push(linea);
+    if (estado === 'descartar') { ignoradas.push({ texto: linea, motivo: 'bloque descartado' }); return; }
+    if (estado === 'campanas') { campanas.push(linea); return; }
+    reuniones.push(linea);
   });
 
-  return bloques;
+  return { reuniones: reuniones, campanas: campanas, ignoradas: ignoradas };
 }
 
 /**
@@ -236,20 +318,31 @@ function cargarTemarioCampanas_(textoPegado, periodoId, informeId) {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CAMPANAS');
   if (!hoja) return { ok: false, motivo: 'La hoja CAMPANAS no existe. Corré "Instalar / reparar hojas" primero.' };
 
-  var bloques = partirTemarioEnBloques_(textoPegado);
-  var elBloque = null;
-  var otros = [];
-  bloques.forEach(function (b) {
-    if (normalizar_(b.titulo) === normalizar_(BLOQUE_CAMPANAS_)) elBloque = b;
-    else otros.push(b.titulo + (b.con_marca ? '' : ' (sin `>`)'));
-  });
+  /* ⭐⭐ `2026-08-27_2` Parte B.1 — **parte con `partirTemario_`, el partidor único.**
+   *
+   * ⛔⛔ Hasta hoy había **dos formas de decidir cuál es el bloque de campañas** —ésta y la del
+   * asistente— y **la de acá ya fallaba**: comparaba el título **por igualdad** contra
+   * `'campañas destacadas'`, así que el temario real del 27/08, que dice **`Campaña Destacada`**
+   * en singular, **no matcheaba** (medido en A.2). *Dos formas de decidir lo mismo no fallan el
+   * día que difieren: cargan otra cosa.*
+   *
+   * ⚠ **El contrato no cambia: sigue recibiendo el texto ENTERO**, sin recortes armados por el
+   * llamador. Lo que cambia es cómo lo parte. */
+  var partido = partirTemario_(textoPegado);
+  var lineasDelBloque = partido.campanas;
 
-  if (!elBloque) {
+  if (!lineasDelBloque.length) {
+    /* ⛔ **Un cero se dice con su motivo, y los dos motivos son distintos**: «no hay separador» y
+     * «hay separador y no quedó nada debajo» mandan a trabajos opuestos — revisar el título contra
+     * revisar el pegado. */
+    var huboSeparador = partido.ignoradas.some(function (x) { return x.motivo === 'separador'; });
     return {
       ok: false,
-      motivo: 'No encontré el bloque "' + BLOQUE_CAMPANAS_ + '" en el temario. Bloques leídos: ' +
-        (otros.join(' · ') || '(ninguno)') + '. El bloque puede venir con `>` o sin él, pero su ' +
-        'título tiene que decir "Campañas destacadas".'
+      motivo: huboSeparador
+        ? 'Encontré la línea que anuncia las campañas, pero no quedó ninguna línea debajo de ella.'
+        : 'No encontré ninguna línea que anuncie las campañas. Tiene que empezar con "Campaña" o ' +
+          '"Campañas" —el singular y el plural sirven, con `>` o sin él— y **no puede tener `|`**. ' +
+          'Líneas leídas como reuniones: ' + (partido.reuniones.length || 0) + '.'
     };
   }
 
@@ -268,7 +361,7 @@ function cargarTemarioCampanas_(textoPegado, periodoId, informeId) {
   var escritas = [], salteadas = [], sinId = [], sinParsear = [];
   var filas = [];
 
-  elBloque.lineas.forEach(function (linea) {
+  lineasDelBloque.forEach(function (linea) {
     var p = parsearLineaCampana_(linea);
     if (!p.nombre) { sinParsear.push(linea); return; }
 
@@ -340,12 +433,14 @@ function cargarTemarioCampanas_(textoPegado, periodoId, informeId) {
 
   return {
     ok: true,
-    bloque: elBloque.titulo,
-    otros_bloques: otros,
     escritas: escritas,
     sin_id: sinId,
     salteadas: salteadas,
-    sin_parsear: sinParsear
+    sin_parsear: sinParsear,
+    /* ⭐ Lo que el partidor dejó afuera viaja con el reporte: el paso 3 lo muestra, y así una
+     * línea que no llegó a ninguna hoja **no desaparece en silencio**. */
+    ignoradas: partido.ignoradas,
+    lineas_reuniones: partido.reuniones.length
   };
 }
 
@@ -381,16 +476,23 @@ function cargarTemarioDeCampanas(texto, periodoId, informeId) {
   }
 
   // `A.6` — el reporte dice **qué pasó**, no que salió bien.
+  /* ⭐ `2026-08-27_2` Parte B.1 — ya no hay «bloque leído»: el corte es POSICIONAL, así que lo que
+   * hay para decir es **qué quedó de cada lado**, y qué línea no fue a ninguna hoja. */
   var lineas = [
-    'Bloque leído: "' + r.bloque + '"',
+    'Líneas tomadas como campañas: ' + (r.escritas.length + r.salteadas.length + r.sin_parsear.length),
     'Escritas: ' + r.escritas.length,
     'Sin id (hay que completar a mano): ' + r.sin_id.length,
     'Salteadas por existir: ' + r.salteadas.length,
-    'Sin parsear: ' + r.sin_parsear.length
+    'Sin parsear: ' + r.sin_parsear.length,
+    'Líneas que quedaron ARRIBA del corte (reuniones): ' + (r.lineas_reuniones || 0)
   ];
   if (r.escritas.length) lineas.push('', 'Filas: ' + r.escritas.join(' | '));
   if (r.sin_id.length) lineas.push('', '⚠ Sin id: ' + r.sin_id.join(' | '));
-  if (r.otros_bloques.length) lineas.push('', 'Otros bloques del temario (no se tocaron): ' + r.otros_bloques.join(' · '));
+  if ((r.ignoradas || []).length) {
+    lineas.push('', 'Líneas que no fueron a ninguna hoja: ' + r.ignoradas.map(function (x) {
+      return '"' + x.texto + '" (' + x.motivo + ')';
+    }).join(' · '));
+  }
 
   ui.alert('Temario de campañas cargado', lineas.join('\n'), ui.ButtonSet.OK);
   return ui.texto();

@@ -47,10 +47,29 @@ function leerReuniones_() {
   var headers = datos.shift();
   var idx = {};
   headers.forEach(function (h, i) { idx[h] = i; });
-  if (idx.eje === undefined || idx.mostrar === undefined) return [];
+  /* ⛔⛔ `2026-08-27_2` Parte D.1 (`D-46`) - **el criterio pasa de `eje` a `texto_original`.**
+   *
+   * **Lo que estaba mal, y costo la primera corrida real del asistente:** el filtro era
+   * `fila[eje] && esVerdadero_(mostrar)` -las DOS condiciones-. Una linea de temario que el parser
+   * no interpretaba quedaba con `eje` vacio, se podia tildar, se le escribia `mostrar = 'si'`
+   * y **nunca llegaba al anclaje**. El mensaje de fallo culpaba al periodo, que era inocente.
+   *
+   * ⭐⭐ **Por que `texto_original` y no otra cosa:** es lo unico que **toda** fila de temario
+   * tiene por construccion -el parser lo conserva siempre, incluso cuando no interpreta nada- y es
+   * exactamente lo que hace de clave de curacion en el paso 3 del asistente. No es un campo nuevo
+   * ni una columna inventada: es el registro de la linea que origino la fila.
+   *
+   * ⭐ **Y el universo lo declara el TEMARIO, no el eje** (`R-02`): ahi puede ir cualquier
+   * reunion. Verificado contra la hoja VIVA antes de tocarlo -gate A.8 del `2026-08-27_2`-:
+   * **0 filas con `texto_original` vacio sobre 11**, asi que ninguna fila viva cambia de lado.
+   *
+   * ⚠ **La columna `eje` NO se borra**: sigue existiendo, se escribe cuando el temario la trae,
+   * la muestra el panel y la lee `TIPO_AGREGADO_POR_EJE_` para **descartar** los agregados. Lo que
+   * cambia es que **no decide**. */
+  if (idx.texto_original === undefined || idx.mostrar === undefined) return [];
 
   return datos
-    .filter(function (fila) { return fila[idx.eje] && esVerdadero_(fila[idx.mostrar]); })
+    .filter(function (fila) { return fila[idx.texto_original] && esVerdadero_(fila[idx.mostrar]); })
     .sort(function (a, b) { return (Number(a[idx.orden]) || 0) - (Number(b[idx.orden]) || 0); })
     .map(function (fila) {
       var obj = {};
@@ -81,19 +100,38 @@ function parsearLineaReunion_(lineaCruda) {
     texto = texto.slice(numero[0].length);
   }
 
+  /* ⭐⭐ `2026-08-27_2` Parte C.3 - **sin `|` la linea es un encuentro IGUAL, y `eje` queda
+   * VACIO.** Es el temario real del 27/08: `Uno a uno en Coghlan (21/08)` trae tipo conocido y
+   * fecha, y el eje simplemente no viene. Antes esto devolvia `no se pudo parsear` con todo en
+   * blanco, y esa fila **no llegaba nunca al anclaje** porque `leerReuniones_` filtraba por `eje`.
+   *
+   * ⛔ **NO se completa con un default**, y esa es la decision del usuario (`D-46`): el universo
+   * del informe lo declara **el temario** (`R-02`), no el eje. Un default -`JM`, el `informe_id`,
+   * lo que sea- seria un dato inventado que ademas **entra en la clave de dedupe** y haria que la
+   * misma reunion pegada con y sin `|` cuente como dos.
+   *
+   * ⚠ **`no se pudo parsear` deja de dispararse por falta de eje.** Se dispara mas abajo, cuando
+   * no hay **ni tipo conocido ni fecha**, que es la condicion que ya existia y sigue siendo la
+   * correcta: ahi si no hay con que proponer nada. */
   var partes = texto.split('|');
-  if (partes.length < 2) {
-    propuesta.notas = 'no se pudo parsear';
-    return propuesta;
+  var resto = texto.trim();
+  if (partes.length >= 2) {
+    propuesta.eje = partes[0].trim();
+    resto = partes.slice(1).join('|').trim();
   }
-  propuesta.eje = partes[0].trim();
-  var resto = partes.slice(1).join('|').trim();
 
-  var parenFinal = resto.match(/\(([^)]*)\)\s*$/);
-  var dentroParen = '';
-  if (parenFinal) {
-    dentroParen = parenFinal[1].trim();
-    resto = resto.slice(0, parenFinal.index).trim();
+  /* ⭐⭐ `2026-08-27_2` Parte C.1 - **se reconocen TODOS los parentesis finales, no el ultimo.**
+   *
+   * Antes se miraba **uno solo**, y por eso `JM | Uno a uno en Coghlan (21/08) (pre + post)`
+   * producia `nombre = "Coghlan ("` -medido en A.4-: el `(pre + post)` se sacaba, el `(21/08)`
+   * quedaba, y el recorte por posicion de la fecha cortaba en medio del parentesis. */
+  var parentesis = [];
+  var masParentesis = true;
+  while (masParentesis) {
+    var m = resto.match(/\(([^)]*)\)\s*$/);
+    if (!m) { masParentesis = false; break; }
+    parentesis.unshift(m[1].trim());
+    resto = resto.slice(0, m.index).trim();
   }
   /* ⛔⛔ `2026-08-25` — **el temario ya NO escribe `etapa`, y la anotación se reconoce para poder
    * DESCARTARLA.** Decisión del usuario, con la regla que la funda:
@@ -118,10 +156,28 @@ function parsearLineaReunion_(lineaCruda) {
    *
    * ⚠ **Y una línea SIN paréntesis es un encuentro igual**, que es el caso más frecuente. Eso ya
    * funcionaba y no cambia; lo que cambia es que ahora **es el caso normal y no el degradado**. */
-  var esAnotacionDeEtapa = /^(pre|post)(\s*\+\s*(pre|post))?$/i.test(dentroParen);
-  if (dentroParen && !esAnotacionDeEtapa) {
-    propuesta.notas = dentroParen; // ej. "24/07 al 30/07 inclusive - Acumulado"
-  }
+  /* ⭐⭐ `2026-08-27_2` Parte C.1 - **un parentesis que ES una fecha es LA FECHA.**
+   *
+   * Antes todo lo que no fuera `pre`/`post` caia a `notas`, asi que
+   * `Uno a uno en Coghlan (21/08)` salia **sin fecha** y con `notas = "21/08 | no se encontro
+   * fecha"` (A.4). El dato estaba en la linea y el parser lo tiraba.
+   *
+   * ⚠⚠ **«ES una fecha», no «CONTIENE una fecha», y la diferencia es una regresion medida:**
+   * `Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)` **contiene** una
+   * fecha, y tomarla convertiria en fecha lo que hoy es -correctamente- una **nota**. El patron
+   * exige que el parentesis sea la fecha **y nada mas**. */
+  var fechaDeParentesis = '';
+  parentesis.forEach(function (dentro) {
+    if (!dentro) return;
+    if (/^(pre|post)(\s*\+\s*(pre|post))?$/i.test(dentro)) return;  // anotacion de etapa: se descarta
+    if (!fechaDeParentesis && /^\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?$/.test(dentro)) {
+      fechaDeParentesis = dentro;
+      return;
+    }
+    propuesta.notas = propuesta.notas
+      ? propuesta.notas + ' | ' + dentro
+      : dentro; // ej. "24/07 al 30/07 inclusive - Acumulado"
+  });
 
   var tipoEncontrado = TIPOS_REUNION_CONOCIDOS_
     .filter(function (t) { return resto.toLowerCase().indexOf(t.toLowerCase()) !== -1; })
@@ -138,10 +194,20 @@ function parsearLineaReunion_(lineaCruda) {
 
   var anioDefecto = new Date().getFullYear();
   var fecha = parsearFecha_(nombreYFecha, anioDefecto);
+  /* ⭐ `2026-08-27_2` Parte C.1 - si el texto no traia fecha, la del parentesis vale. Se parsea
+   * con `parsearFecha_`, el mismo lector: un segundo parser de fechas seria el quinto de este
+   * repo. */
+  if (!fecha && fechaDeParentesis) fecha = parsearFecha_(fechaDeParentesis, anioDefecto);
   var matchFecha = nombreYFecha.match(/\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?/);
 
-  if (fecha) {
-    propuesta.fecha = fecha;
+  /* ⭐⭐ `2026-08-27_2` Parte C.2 - **el recorte del nombre sale de la rama `if (fecha)`.**
+   *
+   * La preposicion inicial y el separador se recortan **siempre**, haya fecha o no. Antes vivian
+   * adentro del `if`, asi que una linea sin fecha dejaba `nombre = "en Coghlan"` -medido en A.4- y
+   * **ese nombre viaja a tres lugares**: la clave de confirmacion del anclaje, la etiqueta del
+   * item y `FALTANTES`. */
+  if (fecha) propuesta.fecha = fecha;
+  {
     var nombre = matchFecha ? nombreYFecha.slice(0, matchFecha.index) : nombreYFecha;
     /* ⭐ `2026-08-25` — **`con` entra a la lista, y el caso es `Primera persona con Pareto`**, que
      * quedó cargado como **`"con Pareto"`**. Misma familia que el `: Salud` de abajo: el tipo
@@ -181,8 +247,8 @@ function parsearLineaReunion_(lineaCruda) {
      * mismo separador que difieran es peor que uno solo. */
     nombre = nombre.replace(/^[\s:;,.\/|\-–—]+|[\s:;,.\/|\-–—]+$/g, '').trim();
     propuesta.nombre = nombre || nombreYFecha.trim();
-  } else {
-    propuesta.nombre = nombreYFecha.trim();
+  }
+  if (!fecha) {
     propuesta.notas = (propuesta.notas ? propuesta.notas + ' | ' : '') + 'no se encontró fecha';
   }
 
@@ -225,9 +291,19 @@ function claveReunion_(fila) {
   if (fecha instanceof Date && !isNaN(fecha.getTime())) fecha = formatearFecha_(fecha);
   else fecha = texto(fecha).slice(0, 10);
 
+  /* ⛔⛔ `2026-08-27_2` Parte D.4 (`D-46`) - **`eje` sale de la clave.**
+   *
+   * El parrafo de arriba explica por que `etapa` esta adentro; esto explica por que `eje` ya no.
+   * **Decision del usuario del 27/08:** el universo lo declara el temario, no el eje, y una misma
+   * reunion puede llegar **con `|` y sin `|`** segun como se pego esa semana -el temario real del
+   * 27/08 no lo trae-. Con `eje` en la clave, esas dos formas de la misma reunion contarian como
+   * dos filas distintas y el dedupe no las juntaria.
+   *
+   * ⭐ **Gate corrido contra la hoja VIVA antes de sacarlo** (A.7 del `2026-08-27_2`):
+   * **11 claves distintas sobre 11 filas, con y sin `eje`, cero colisiones.** Es el mismo gate que
+   * se corrio el 20/08 cuando se **agrego** `etapa`. */
   return [
     texto(fila.periodo_id),
-    texto(fila.eje),
     texto(fila.nombre),
     fecha,
     texto(fila.etapa)
@@ -282,8 +358,18 @@ function cargarTemarioReuniones_(textoPegado, periodoId) {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('REUNIONES');
   if (!hoja) return { ok: false, motivo: 'La hoja REUNIONES no existe. Corré "Instalar / reparar hojas" primero.' };
 
-  var lineas = String(textoPegado || '').split('\n').map(function (l) { return l.trim(); }).filter(function (l) { return l.length > 0; });
-  if (!lineas.length) return { ok: true, agregadas: 0, sinParsear: 0 };
+  /* ⭐ `2026-08-27_2` Parte B.1 - **parte con `partirTemario_`, el partidor unico.**
+   *
+   * ⚠ **El contrato no cambia: sigue recibiendo el texto ENTERO**, sin recortes armados por el
+   * llamador. Antes tomaba **todas** las lineas del pegado, asi que con el formato unico las de
+   * campanias entraban tambien a `REUNIONES`; ahora toma **las que quedaron arriba del corte**. */
+  var partido = partirTemario_(textoPegado);
+  var lineas = partido.reuniones;
+  var ignoradas = partido.ignoradas.slice();
+  if (!lineas.length) {
+    return { ok: true, agregadas: 0, sinParsear: 0, sinParsearDetalle: [], salteadas: [],
+      ignoradas: ignoradas };
+  }
 
   var headers = hoja.getRange(1, 1, 1, hoja.getLastColumn()).getValues()[0];
   var sinParsear = 0;
@@ -294,16 +380,32 @@ function cargarTemarioReuniones_(textoPegado, periodoId) {
    * (`notas = 'no se pudo parsear'`) **y no la leía nadie**. Es puro agregado al retorno: ningún
    * llamador existente cambia de comportamiento. */
   var sinParsearDetalle = [];
-  var propuestas = lineas.map(function (linea) {
+  var propuestas = [];
+  lineas.forEach(function (linea) {
     var propuesta = parsearLineaReunion_(linea);
     // Paso 2.15 Parte B: el período lo pone el llamador, que ya lo validó contra
     // PERIODOS. Acá no se valida de nuevo ni se completa con un default.
     propuesta.periodo_id = periodoId;
+
+    /* ⭐ `2026-08-27_2` Parte B.2 - **los ejes AGREGADOS no son reuniones y se descartan.**
+     *
+     * `Ministros | ...` y `M2 | ...` son bloques agregados de periodo, no encuentros individuales
+     * (`R-21`: no iteran `REUNIONES`). Vienen **con `|`**, asi que el partidor los deja del lado
+     * de reuniones a proposito - el que sabe que no son encuentros es este cargador, que ya tiene
+     * el `eje` parseado.
+     *
+     * ⚠ **Y es el UNICO uso de `eje` que sobrevive a `D-46`**, porque es de **descarte** y no
+     * de seleccion: `eje` decide que **no** entra, nunca que entra. */
+    if (TIPO_AGREGADO_POR_EJE_[propuesta.eje]) {
+      ignoradas.push({ texto: propuesta.texto_original, motivo: 'eje agregado' });
+      return;
+    }
+
     if (propuesta.notas === 'no se pudo parsear' || propuesta.notas.indexOf('no se encontró fecha') !== -1) {
       sinParsear++;
       sinParsearDetalle.push({ texto: propuesta.texto_original, motivo: propuesta.notas });
     }
-    return propuesta;
+    propuestas.push(propuesta);
   });
 
   // Las claves de lo que ya está. Se arman con los mismos nombres de columna que usa la
@@ -335,7 +437,11 @@ function cargarTemarioReuniones_(textoPegado, periodoId) {
     // correspondía. `cargarTemarioCampanas_` ya devuelve su lista igual.
     salteadas: reparto.salteadas.map(function (p) {
       return (p.nombre || p.texto_original || '(sin nombre)') + (p.etapa ? ' (' + p.etapa + ')' : '');
-    })
+    }),
+    /* ⭐ Lo que no llego a ninguna hoja viaja con el reporte -el corte, el bloque descartado, los
+     * encabezados y los ejes agregados-, para que el paso 3 lo muestre. Una linea que desaparece
+     * en silencio es lo que este prompt vino a cerrar. */
+    ignoradas: ignoradas
   };
 }
 
