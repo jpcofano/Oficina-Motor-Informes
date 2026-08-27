@@ -2401,6 +2401,154 @@ cargador declara que unificarlo con el de `CAMPANAS` **es decisión del usuario,
 
 ---
 
+
+**`D-45` — El temario se parte en UN CORTE POSICIONAL. Una línea, un ítem.** (27/08/2026,
+`2026-08-27_2`. Decisión del usuario.)
+
+⭐ **Lo que se decide, en una línea:** las líneas de arriba son reuniones; **la línea que anuncia
+las campañas corta**; las de abajo son campañas. No hay bloques, no hay títulos que agrupen, no hay
+heurística de contenido: hay un **estado** y dos líneas que lo mueven.
+
+### ⭐⭐ El hecho que la funda: llegó el tercer temario real y no se parece a ninguno
+
+| | forma |
+|---|---|
+| **25/08** | `1) JM \| Uno a uno en Parque Avellaneda 12/08 (pre + post)` |
+| **27/08 ejemplo** | `> Status Cercanía y M2` · `> Campañas destacadas` · `> Otros temas` |
+| **27/08 REAL** | `Uno a uno en Coghlan (21/08)` · `Campaña Destacada` · `Operativo Movilidad …` |
+
+⇒ **Ni `>`, ni `N)`, ni `|`, ni el plural son obligatorios.** Cualquier regla que exija uno de los
+cuatro **falla el lunes siguiente**, y falla **escribiendo filas**. Evidencia congelada en
+`docs/TEMARIOS_reales_2026-08-27.md`.
+
+### ⛔⛔ Qué reemplaza, y por qué había DOS
+
+`partirTemarioEnBloques_` decidía que una línea sin `>`, sin `N)` y sin `|`, de menos de 60
+caracteres, **es un encabezado**. Contra el temario real devolvía **3 bloques con `lineas: []`** —
+las tres líneas eran títulos y **ninguna era contenido**.
+
+Y había **dos formas de decidir cuál es el bloque de campañas** —la de `cargarTemarioCampanas_` y
+la del asistente—, **y la primera ya fallaba**: comparaba por igualdad contra `campañas destacadas`
+y el temario real dice **`Campaña Destacada`**, en singular. *Dos formas de decidir lo mismo no
+fallan el día que difieren: **cargan otra cosa**.*
+
+⇒ Hoy hay **una**: `partirTemario_` (`Campanas.gs`), y la usan los **tres** llamadores — los dos
+cargadores y el asistente. **Los dos cargadores siguen recibiendo el texto entero**, sin recortes
+armados por el llamador.
+
+### Los tres separadores, y el tercero es un agregado con motivo
+
+Una línea es separador **sólo si NO tiene `|`**:
+
+| separador | condición | efecto |
+|---|---|---|
+| campañas | el cuerpo —sin `>` y sin `N)`— empieza con `campan` | el estado pasa a `campanas` |
+| otros temas | el cuerpo empieza con `otros tema` | el estado pasa a `descartar` |
+| ⭐ encabezado | arranca con `>` y no es ninguno de los dos | **no mueve el estado** |
+
+⭐ **La tercera fila no estaba en el prompt y va con su motivo:** sin ella, `> Status Cercanía y M2`
+—una línea que el usuario **marcó explícitamente como encabezado**— caería como ítem y escribiría
+una fila `no se pudo parsear`. **Reconocer el `>` no es adivinar: es leer una marca que la persona
+escribió**, y es la convención que este repo ya tenía declarada. No mueve el estado, así que no
+inventa dónde termina un bloque.
+
+### Los costos, declarados en vez de descubiertos
+
+- ⚠ **Si un día llega `Campañas y enviados de la semana` SIN el `|`, corta.** Se acepta y **se ve**:
+  la línea queda en `ignoradas` y el paso 3 la muestra.
+- ⚠ **Sin la línea «Otros temas», las de abajo caen en campañas** — y `cargarTemarioCampanas_` las
+  escribe con `mostrar = 'sí'` (`AJ-1`), o sea que **nacen confirmadas**. Se acepta y se dice:
+  **no se inventa una heurística de contenido** para adivinar dónde termina el bloque.
+- ⛔⛔ **Y hay DOS cerrojos contra el separador ingenuo, medidos:** `cuerpoDeLineaDeTemario_` **no
+  saca el `eje |`**, así que `4) M2 | Campañas…` da `m2 | campanas…` y ni siquiera empieza con
+  `campan` — **ése es el que aguanta hoy**. La guarda del `|` es el segundo, e independiente. Se
+  midió sacando la guarda: **el resultado no cambia**. El banco lo aísla con un fixture propio.
+
+### ⭐ El control es una IDENTIDAD, no una constante
+
+**`líneas no vacías del pegado = reuniones + campañas + ignoradas`.** Ninguna línea puede
+desaparecer del retorno. No caduca cuando cambie el temario, que es exactamente lo que le pasaría a
+un *«da 3 reuniones»*.
+
+---
+
+
+**`D-46` — `eje` no decide qué entra al informe. El universo lo declara el TEMARIO.** (27/08/2026,
+`2026-08-27_2`. Decisión del usuario.)
+
+⭐ **Lo que se decide, en una línea:** `eje` deja de ser obligatorio y **sale de la clave**. Ahí
+puede ir cualquier reunión — es **`R-04`** aplicado al filtro: *el temario define el universo, no
+la fecha*.
+
+⚠ **Es `R-04` y NO `R-02`**, aunque medio repo la cite mal: `R-02` es *«criterio de fuente cruda»*.
+La colisión está explicada en la nota de numeración del propio `R-04` — se documentó primero como
+`R-02` en su prompt de origen y el ID ya estaba tomado. **Censo del 27/08: 17 citas equivocadas en
+`.gs`/`.html` contra 7 correctas.** Anotado en `docs/PENDIENTES_consistencia.md`; **no se corrigen
+acá** porque no es el objetivo de este prompt.
+
+### ⛔⛔ El costo que ya se pagó
+
+`leerReuniones_` filtraba `fila[eje] && esVerdadero_(mostrar)` — **las dos condiciones**. Una línea
+de temario que el parser no interpretaba quedaba con `eje` vacío, **se podía tildar**, se le
+escribía `mostrar = 'sí'` y **nunca llegaba al anclaje**. El mensaje de fallo culpaba al **período**,
+que era inocente.
+
+⛔ Y el único diagnóstico que existía para explicarlo —`reunionesOcultasPorMostrar_`— abría con
+`if (!fila[idx.eje]) return;`: **descartaba sin contar exactamente la fila que causó el fallo.**
+
+### Qué cambia, y qué NO
+
+| | |
+|---|---|
+| `leerReuniones_` | `fila[eje]` → **`fila[texto_original]`** |
+| `reunionesOcultasPorMostrar_` | ídem — su comentario ya declaraba *«si allá cambia, acá también»*, **y esta vez se cumplió** |
+| `claveReunion_` | `periodo_id + eje + nombre + fecha + etapa` → **sin `eje`** |
+| ⚠ la columna `eje` | **NO se borra.** Sigue en la hoja, en los `headers` y en los seeds; se escribe cuando el temario la trae, la muestra el panel y la lee `TIPO_AGREGADO_POR_EJE_` |
+
+⭐ **Por qué `texto_original` y no otra cosa:** es lo único que **toda** fila de temario tiene por
+construcción —el parser lo conserva siempre, incluso cuando no interpreta nada— y es exactamente lo
+que hace de clave de curación en el paso 3 del asistente. No es un campo nuevo ni una columna
+inventada: es **el registro de la línea que originó la fila**.
+
+⛔ **`eje` conserva UN uso, y es de descarte, no de selección:** `TIPO_AGREGADO_POR_EJE_` saca
+`Ministros | …` y `M2 | …`, que son bloques agregados de período y no encuentros (`R-21`). **`eje`
+decide qué NO entra, nunca qué entra.**
+
+### ⭐⭐ Los dos gates, corridos contra la hoja VIVA antes de tocar nada
+
+| gate | resultado (27/08 16:55) |
+|---|---|
+| **A.7** · sacar `eje` de la clave no puede colisionar | ✅ **11 claves con `eje` · 11 sin `eje` · sobre 11 filas** |
+| **A.8** · `texto_original` sirve de reemplazo | ✅ **0 filas con `texto_original` vacío** |
+
+⚠ **El snapshot más reciente en disco era del 26/08** —anterior a las filas que causaron el fallo—
+así que se escribió `verificarGatesDelTemario()` (`Auditoria.gs`, sólo lectura) y **lo corrió el
+usuario**. Un gate contra una foto vieja no es el gate: es la medición del día de la foto.
+
+⚠ **Y la colisión que YA existía**, con `eje` adentro: tres líneas sin parsear dan la misma clave,
+así que el dedupe colapsaba **tres líneas en una fila**. **No la causa este cambio** — con `D-45` y
+las tres correcciones del parser, esas tres líneas dejan de existir como filas rotas.
+
+### ⭐ Y el filtro nuevo NACE CONTÁNDOSE
+
+`reunionesSinTextoOriginal_` junta y **nombra** las filas que el criterio nuevo descarta, con la
+misma forma que ya usaba el de `mostrar`: conteo, nombres hasta seis, **y una frase para el caso en
+que no haya ninguna** — sin esa segunda mitad, *«no hay»* y *«no miré»* se ven igual.
+
+⛔ **Es la tercera vez en dos semanas que la misma figura cuesta una vuelta:** un filtro que
+descarta antes y no cuenta es invisible, y el que sí cuenta **se lleva la culpa**.
+
+### Lo que `D-46` NO hace
+
+- ⛔ **No limpia `REUNIONES`.** Al 27/08 la hoja viva tiene **0 filas con `eje` vacío**, así que hoy
+  no hay nada que borrar. ⚠ **Pero la consecuencia queda declarada:** una fila con `eje` vacío que
+  alguien haya tildado **pasa de inerte a poder ENTRAR** al informe.
+- ⛔ **No supersede a `D-44`.** El asistente lineal no cambia; lo que cambia es qué escribe su paso 2
+  y qué filas deja pasar el filtro del paso 4.
+- ⛔ **No cambia el criterio de `mostrar`** de ninguno de los dos cargadores.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### El encuadre: todo lo de abajo es la fase `informe semanal` — `D-38`

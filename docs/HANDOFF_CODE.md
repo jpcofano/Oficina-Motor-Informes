@@ -3,6 +3,68 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
+**Última actualización:** 2026-08-27 (2) — **`2026-08-27_2`: el temario se parte en un corte
+posicional (`D-45`) y `eje` deja de decidir qué entra (`D-46`).** Es el arreglo del fallo de la
+primera corrida real del asistente. **Ninguna hoja viva cambió** salvo lo que leyeron los dos gates,
+que son sólo lectura. **Suites: 63 bancos, ~985 afirmaciones.**
+
+### ⭐ Lo último, en cinco líneas
+
+- ⛔⛔ **La causa del fallo no estaba en el anclaje.** `leerReuniones_` filtraba
+  `fila[eje] && esVerdadero_(mostrar)` — **las dos condiciones**. Una línea que el parser no
+  interpretaba quedaba con `eje` vacío, **se podía tildar**, y **nunca llegaba al anclaje**: el
+  mensaje culpaba al **período**, que era inocente. Y el único diagnóstico que existía para
+  explicarlo abría con `if (!fila[idx.eje]) return;` — **descartaba sin contar justo esa fila**.
+- ⭐⭐ **Llegó el tercer temario real y no se parece a ninguno de los dos anteriores.** Ni `>`, ni
+  `N)`, ni `|`, ni el plural son obligatorios: `Uno a uno en Coghlan (21/08)` · `Campaña Destacada`
+  · `Operativo Movilidad Más Segura`. Congelado en `docs/TEMARIOS_reales_2026-08-27.md`.
+- ⛔ **Había DOS formas de decidir cuál es el bloque de campañas, y la vieja ya fallaba** con el
+  singular. Hoy hay **una** —`partirTemario_`, posicional— y la usan los tres llamadores.
+- ⛔⛔ **Un control negativo se escribió al revés y el rojo lo corrigió:** sacar la guarda del `|`
+  **no cambia nada**. Hay **dos cerrojos** y el que aguanta hoy es otro —`cuerpoDeLineaDeTemario_`
+  no saca el `eje |`—. El control quedó dado vuelta, aislando la guarda con su propio fixture.
+- ⚠ **Y un hallazgo que el prompt no tenía:** las tres líneas del temario real daban **la misma
+  `claveReunion_`**, así que el dedupe colapsaba **tres líneas en una fila**. Ya pasaba con `eje`
+  adentro de la clave — **no lo causa este cambio**.
+
+### ⛔ Lo que hay que correr, y es del usuario
+
+1. **`clasp push`** — se tocaron `Campanas.gs`, `Reuniones.gs`, `Union.gs`, `PanelBackend.gs`,
+   `Panel.html` y `Auditoria.gs`. **Nada de esto está en el proyecto de Apps Script todavía.**
+2. ⭐⭐ **Pegar el temario REAL del 27/08 en el asistente, de punta a punta.** Es el caso que falló,
+   y es lo único que contesta si el arreglo sirve. **Lo que tiene que verse:**
+   - **1 reunión** (Coghlan, `21/08`, `eje` vacío, `nombre = "Coghlan"`), **1 campaña**
+     (`Operativo Movilidad Más Segura`), y **cero** líneas «sin parsear»;
+   - la línea `Campaña Destacada` **listada arriba del paso 3** como *«no fue a ninguna hoja»*;
+   - y el anclaje corriendo sobre la reunión de Coghlan.
+3. ⚠ **Si el anclaje falla, mirar el mensaje nuevo**: ahora dice por separado cuántas quedaron
+   afuera por `mostrar` y cuántas por `texto_original`, **y también cuando no quedó ninguna**.
+
+### ⚠ Tres cosas declaradas, no resueltas — y son tuyas
+
+- ⚠ **Si un día llega `Campañas y enviados de la semana` SIN el `|`, el temario corta ahí.** Se
+  acepta y **se ve**: la línea queda en `ignoradas` y el paso 3 la muestra. No se inventó una
+  heurística de contenido.
+- ⚠ **Sin la línea «Otros temas», las de abajo caen en campañas** — y `AJ-1` las escribe con
+  `mostrar = 'sí'`, o sea que **nacen confirmadas**. El banco lo documenta con el mismo texto sin
+  esa línea, **sin fingir que da lo mismo**.
+- ⚠ **Una fila con `eje` vacío que alguien haya tildado pasa de inerte a poder ENTRAR** al informe.
+  Al 27/08 la hoja viva tiene **0 filas así**, así que hoy no hay nada que borrar — pero conviene
+  saberlo antes de la próxima corrida.
+
+### ⚠ Y un pendiente medido que NO se corrigió, a propósito
+
+**`R-02` está citado con dos sentidos distintos y uno es el equivocado.** La regla del temario es
+**`R-04`**; `R-02` es *«criterio de fuente cruda»*. **Censo: 17 citas equivocadas en `.gs`/`.html`
+contra 7 correctas.** Se corrigieron **sólo las escritas hoy**; el resto está en
+`docs/PENDIENTES_consistencia.md`. Una pasada sobre 6 archivos para cambiar un número no era el
+objetivo de este prompt.
+
+⚠ **Lo que esta corrida NO tocó:** ningún número publicado, ninguna fila de `MARCADORES`, ninguna
+plantilla, ninguna hoja viva. **La cola de abajo sigue exactamente donde estaba.**
+
+---
+
 **Última actualización:** 2026-08-27 — **`2026-08-27_1`: el asistente lineal de cuatro pasos
 (`D-44`), en cuatro commits.** Todo el trabajo es del **front y el proceso**; **no se generó ningún
 deck**, **no se tocó ninguna plantilla** y **ninguna hoja viva cambió**. **Suites: 59 → 63 bancos,

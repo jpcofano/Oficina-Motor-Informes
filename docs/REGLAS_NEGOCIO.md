@@ -296,6 +296,29 @@ Paso 2.4 vuelve a abrirse — las seis elecciones de fecha de `digital`/`looker`
 ser solo diagnóstico y pasan a necesitar `fecha_desde`/`fecha_hasta` + condición de
 solapamiento.
 
+### ⭐ Addendum 1 · 27/08/2026 — el universo lo declara el temario, y por eso `eje` NO filtra
+
+**Decisión del usuario, `D-46`.** `leerReuniones_` filtraba `fila[eje] && esVerdadero_(mostrar)` —
+las **dos** condiciones—, así que una línea de temario que el parser no interpretaba quedaba con
+`eje` vacío y **nunca llegaba al anclaje**, aunque estuviera tildada. El criterio pasó a
+`fila[texto_original] && esVerdadero_(mostrar)`.
+
+⭐ **Es esta regla aplicada al filtro, no una regla nueva:** si el temario define el universo, el
+**eje** no puede vetar una fila que el temario trae. Ahí puede ir cualquier reunión.
+
+⛔ **`eje` conserva UN uso, y es de DESCARTE, no de selección:** `TIPO_AGREGADO_POR_EJE_` saca
+`Ministros | …` y `M2 | …`, que son bloques agregados de período y no encuentros (`R-21`). **Decide
+qué NO entra, nunca qué entra.**
+
+⚠ **Gate corrido contra la hoja viva antes de tocarlo** (27/08 16:55): **0 filas con
+`texto_original` vacío sobre 11**, y **11 claves distintas con y sin `eje`**. Ninguna fila viva
+cambió de lado.
+
+⚠ **Y la nota de numeración de arriba tiene consecuencias medidas:** el código cita esta regla como
+`R-02` en **17 lugares** de `.gs`/`.html`, contra 7 citas de `R-02` que sí son de *«criterio de
+fuente cruda»*. Censo del 27/08, anotado en `docs/PENDIENTES_consistencia.md`. **Las citas nuevas
+dicen `R-04`.**
+
 ## R-05 — El agregado GLOBAL suma universos de JM y aperturas de JM+GCBA
 
 **Enunciado:** en el agregado GLOBAL de una campaña, "enviados" suma **solo el universo

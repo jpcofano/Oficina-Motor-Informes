@@ -59,7 +59,7 @@ function leerReuniones_() {
    * exactamente lo que hace de clave de curacion en el paso 3 del asistente. No es un campo nuevo
    * ni una columna inventada: es el registro de la linea que origino la fila.
    *
-   * ⭐ **Y el universo lo declara el TEMARIO, no el eje** (`R-02`): ahi puede ir cualquier
+   * ⭐ **Y el universo lo declara el TEMARIO, no el eje** (`R-04`): ahi puede ir cualquier
    * reunion. Verificado contra la hoja VIVA antes de tocarlo -gate A.8 del `2026-08-27_2`-:
    * **0 filas con `texto_original` vacio sobre 11**, asi que ninguna fila viva cambia de lado.
    *
@@ -106,7 +106,7 @@ function parsearLineaReunion_(lineaCruda) {
    * blanco, y esa fila **no llegaba nunca al anclaje** porque `leerReuniones_` filtraba por `eje`.
    *
    * ⛔ **NO se completa con un default**, y esa es la decision del usuario (`D-46`): el universo
-   * del informe lo declara **el temario** (`R-02`), no el eje. Un default -`JM`, el `informe_id`,
+   * del informe lo declara **el temario** (`R-04`), no el eje. Un default -`JM`, el `informe_id`,
    * lo que sea- seria un dato inventado que ademas **entra en la clave de dedupe** y haria que la
    * misma reunion pegada con y sin `|` cuente como dos.
    *

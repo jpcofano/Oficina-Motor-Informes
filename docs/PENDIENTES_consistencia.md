@@ -9586,3 +9586,55 @@ manda a otro trabajo: no a medir mejor, sino a preguntar cuál es el criterio.
 **No se elige cuál de los dos es el bueno, ni se propone un tercero.** Cuál usa el panel —o si usa
 otro— es la pregunta, y va **sin candidatas**: inventar un criterio para que 28 y 269 cierren es
 exactamente el número plausible que este repo persigue.
+
+
+---
+
+## ⛔⛔ 27/08/2026 · Un filtro que descartaba sin contar — **la tercera vez en dos semanas**
+
+**Abierto → CERRADO el mismo día** (`D-46`). Se anota igual porque **la figura ya va por la
+tercera vuelta** y eso es lo que vale, no el arreglo.
+
+`leerReuniones_` filtraba `fila[eje] && esVerdadero_(mostrar)`. Una línea de temario que el parser
+no interpretaba quedaba con `eje` vacío, **se podía tildar**, y **nunca llegaba al anclaje**. El
+mensaje de fallo culpaba al **período**, que era inocente.
+
+⛔ Y el único diagnóstico que existía para explicarlo —`reunionesOcultasPorMostrar_`— abría con
+`if (!fila[idx.eje]) return;`: **descartaba sin contar exactamente la fila que causó el fallo.**
+
+**Las tres vueltas, y las tres son la misma forma:**
+
+| fecha | el conteo decía | lo que había pasado |
+|---|---|---|
+| 25/08 | *«descartadas por período: 6»* | las 4 de julio se fueron antes, por `mostrar` |
+| 25/08 | *«`leerFuente` trae 672 campañas»* | el recorte vive en el **llamador**; el camino real da 19 |
+| ⭐ **27/08** | *«no hay filas para anclar»* | la fila se fue antes, por **`eje`**, y ese filtro **no contaba** |
+
+⭐ **Lo accionable, que ya está escrito en `CLAUDE.md` §4 y hay que seguir aplicando: un filtro
+nuevo NACE CONTÁNDOSE**, y **habla también cuando no encuentra nada** —sin esa segunda mitad,
+*«no hay»* y *«no miré»* se ven igual—. `reunionesSinTextoOriginal_` lo hace desde el día uno.
+
+---
+
+## ⚠ 27/08/2026 · `R-02` está citado con dos sentidos distintos, y uno es el equivocado
+
+**Abierto.** Medido, **no corregido** — no era el objetivo del `2026-08-27_2`.
+
+La regla *«el temario define el universo, no la fecha»* es **`R-04`**. `R-02` es *«criterio de
+fuente cruda (exclusión de solapas)»*. La colisión **ya está explicada** en la nota de numeración
+del propio `R-04`: se documentó primero como `R-02` en su prompt de origen y el ID ya estaba tomado.
+
+**Censo del 27/08 sobre `.gs` y `.html`:**
+
+| sentido | citas |
+|---|---|
+| ⛔ temario, citado como `R-02` — **equivocado** | **17** — `Generador.gs` 1 · `Instalar.gs` 4 · `Panel.html` 3 · `PanelBackend.gs` 2 · `Reuniones.gs` 1 · `Union.gs` 4 · (2 más) |
+| ✅ fuente cruda, citado como `R-02` — **correcto** | **7** — `Auditoria.gs` 1 · `Fechas.gs` 1 · `Instalar.gs` 5 |
+
+⚠ **Por qué no es cosmético:** las dos reglas existen y **dicen cosas distintas**. Alguien que siga
+la cita desde `Union.gs` llega a un criterio sobre solapas con banner de período y **no encuentra
+nada sobre el temario** — y la conclusión razonable es que la regla no existe.
+
+⭐ **Las citas nuevas dicen `R-04`.** Las 17 viejas se corrigen cuando alguien toque esos archivos
+por otro motivo: una pasada de mantenimiento sobre 6 archivos para cambiar un número es trabajo que
+no rinde, y el `DOC-7` ya fijó ese criterio para los prompts.

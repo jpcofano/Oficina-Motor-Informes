@@ -16242,3 +16242,116 @@ el front crea que la confirmación salió bien.
 ⛔ **Nada de esto corrió contra la planilla viva.** Las hojas están falseadas en los cuatro bancos:
 lo que fijan es la **decisión** de cada paso. Que la celda quede escrita, que el anclaje entre en la
 espera de una pantalla y que el deck salga **lo dice una corrida**, y es del usuario.
+
+---
+
+## 2026-08-27 (2) — `2026-08-27_2`: el temario se parte en un corte, y `eje` deja de decidir
+
+**El asistente falló en su primera corrida real**, y la causa medida **no estaba en el anclaje**.
+
+### ⭐⭐ El hecho de método: llegó el tercer temario real y no se parece a ninguno
+
+| | forma |
+|---|---|
+| **25/08** | `1) JM \| Uno a uno en Parque Avellaneda 12/08 (pre + post)` |
+| **27/08 ejemplo** | `> Status Cercanía y M2` · `> Campañas destacadas` · `> Otros temas` |
+| **27/08 REAL** | `Uno a uno en Coghlan (21/08)` · `Campaña Destacada` · `Operativo Movilidad …` |
+
+⇒ **Ni `>`, ni `N)`, ni `|`, ni el plural son obligatorios.** Cualquier regla que exija uno de los
+cuatro **falla el lunes siguiente**, y falla **escribiendo filas**. Evidencia congelada en
+`docs/TEMARIOS_reales_2026-08-27.md`.
+
+### Parte A — las seis premisas de repo confirmadas, textuales
+
+`partirTemarioEnBloques_` daba **3 bloques con `lineas: []`** sobre el temario real —las tres líneas
+eran títulos y **ninguna era contenido**—; `esBloqueDeCampanas_` daba `false` con el singular;
+`4) M2 | Campañas y enviados de la semana` **es una reunión** cuyo cuerpo empieza con `campan`; y
+las tres líneas de A.4 dieron **exactamente** lo predicho.
+
+⭐ **A.5 salió limpia:** ningún consumidor de `REUNIONES.eje` fuera de los cinco esperados.
+`Union.gs:850` usa `parsearEje_(evento)`, que sale de `rdv` — verificado, no cuenta.
+
+### ⛔⛔ Y un hallazgo que el prompt no tenía: tres líneas colapsaban en UNA
+
+Las tres del temario real dan **la misma `claveReunion_`** —todos los campos vacíos—, así que el
+dedupe informaba `agregadas: 1` y `sinParsear: 3`. **Dos líneas se perdían como «ya estaba».** El
+prompt decía *«3 filas rotas»*; medido da **1 fila y 2 líneas perdidas**.
+
+⚠ **La colisión existía con `eje` adentro de la clave**, así que no la causa habérselo sacado.
+
+### ⛔ A.7/A.8/A.9 no se podían contestar desde el repo, y por eso hay instrumento
+
+El snapshot más reciente en disco era del **26/08** — anterior a las filas que causaron el fallo.
+Se escribió **`verificarGatesDelTemario()`** (`Auditoria.gs`, sin parámetros, **sólo lectura**), que
+arma la clave con `claveReunion_` **real** sobre una copia con `eje` en blanco en vez de escribir
+una segunda fórmula. **Corrido por el usuario a las 16:55:**
+
+| gate | resultado |
+|---|---|
+| **A.7** | ✅ **11 claves con `eje` · 11 sin `eje` · sobre 11 filas.** Cero colisiones |
+| **A.8** | ✅ **0 filas con `texto_original` vacío** |
+| **A.9** | **0 filas con `eje` vacío** — la hoja viva es exactamente la del snapshot del 26/08 |
+
+### Parte B — UN partidor, posicional (`D-45`)
+
+Una línea, un ítem; el estado arranca en `reuniones` y **la línea que anuncia las campañas corta**.
+`partirTemarioEnBloques_`, `partirTemarioDelAsistente_` y `esBloqueDeCampanas_` **se retiran**:
+había **dos formas de decidir cuál es el bloque** y la de `cargarTemarioCampanas_` **ya fallaba**.
+*Dos formas de decidir lo mismo no fallan el día que difieren: **cargan otra cosa**.*
+
+⭐ **Un tercer separador que el prompt no pedía, con su motivo:** una línea que arranca con `>` y no
+es ninguno de los dos va a `ignoradas` como `encabezado` **y no mueve el estado**. Sin eso,
+`> Status Cercanía y M2` —marcada explícitamente como encabezado— escribía una fila rota. **Leer un
+`>` no es adivinar: es leer una marca que la persona escribió.**
+
+⛔ **Y los tres llamadores siguen recibiendo el TEXTO ENTERO**, sin recortes armados por el llamador.
+
+### Parte C — el parser recupera lo que la línea trae
+
+Un paréntesis que **ES** una fecha es la fecha; se reconocen **todos** los paréntesis finales y no
+el último; el recorte del nombre sale de la rama `if (fecha)`; y **sin `|` la línea es un encuentro
+igual, con `eje` vacío**.
+
+⚠⚠ **«ES una fecha», no «CONTIENE una fecha», y la diferencia es una regresión medida:**
+`Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)` **contiene** `24/07`, y
+tomarla convertiría en fecha lo que hoy es —correctamente— una **nota**.
+
+### Parte D — `eje` deja de decidir (`D-46`)
+
+`leerReuniones_` y `reunionesOcultasPorMostrar_` pasan de `fila[eje]` a `fila[texto_original]`, y
+`claveReunion_` pierde `eje`. **Los dos gates habilitaron el cambio contra la hoja viva.**
+
+⭐ **`texto_original` es lo único que TODA fila de temario tiene por construcción**, y es la misma
+clave de curación del paso 3. No es un campo nuevo: es el registro de la línea que originó la fila.
+
+⛔ **El filtro nuevo NACE CONTÁNDOSE** —`reunionesSinTextoOriginal_`— y **habla también cuando no
+encuentra nada**. **Es la tercera vez en dos semanas** que la misma figura cuesta una vuelta.
+
+### ⛔⛔ El control negativo que se escribió al revés — y el rojo lo corrigió
+
+Anular la guarda del `|` sobre el temario de ejemplo **no cambia NADA**: las dos corridas dan
+`reuniones=3 · campañas=1 · ignoradas=5`, idénticas. **El control no medía nada.**
+
+⭐⭐ **Y el motivo es un hallazgo de diseño: hay DOS cerrojos, y el que aguanta hoy no es el del
+`|`.** `cuerpoDeLineaDeTemario_` **no saca el `eje |`**, así que `4) M2 | Campañas…` da
+`m2 | campanas…` y **ni siquiera empieza con `campan`**. La guarda del `|` es el **segundo**, e
+independiente — y se vuelve el único el día que alguien "mejore" el primero.
+
+⇒ El control quedó dado vuelta, **aislando la guarda** con una línea que empieza con `campan` **y**
+tiene `|`: sin ella, **un ENCUENTRO termina cargado como campaña**.
+
+### ⚠ Y `R-02` está citado con dos sentidos, uno equivocado
+
+La regla del temario es **`R-04`**; `R-02` es *«criterio de fuente cruda»*. **Censo del 27/08: 17
+citas equivocadas en `.gs`/`.html` contra 7 correctas.** Se corrigieron **sólo las escritas hoy** —
+una pasada sobre 6 archivos para cambiar un número no era el objetivo— y el resto quedó anotado en
+`PENDIENTES`.
+
+### Cierre
+
+**Suites: 63 bancos, ~961 → ~985 afirmaciones**, todas en verde. `tools/listas.js` OK.
+`probar-asistente-temario.js` pasó de 31 a **55** afirmaciones y cambió de sujeto: mide
+`partirTemario_` con **los tres temarios reales**, y su control **no caduca** porque es una
+identidad —`líneas = reuniones + campañas + ignoradas`— y no una constante.
+
+⛔ **Nada de esto corrió contra la planilla viva salvo los dos gates**, que son sólo lectura.

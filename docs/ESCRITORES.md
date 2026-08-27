@@ -520,6 +520,35 @@ y no se crea — una corrida que no hizo nada tiene que fallar, no informar cero
 nombre no sirve como clave: el temario lo escribe en castellano, la base lo tiene con otra grafía,
 y está medido que **cero de cuatro nombres matchean por texto**.
 
+### REUNIONES — addendum 2 del 27/08/2026 · qué filas LEE el motor
+
+> ⚠ **Esta sección no es de escritores: es del LECTOR**, y va acá porque quien mira esta ficha para
+> saber *«quién puede poner una fila»* necesita saber también **cuál de esas filas el motor va a
+> leer**. Escribir una fila que el lector descarta es indistinguible de no escribirla.
+
+**`leerReuniones_` cambió su criterio el 27/08** (`D-46`, `docs/PLAN.md`):
+
+| | criterio |
+|---|---|
+| antes | `fila[eje] && esVerdadero_(mostrar)` |
+| ⭐ ahora | **`fila[texto_original] && esVerdadero_(mostrar)`** |
+
+⛔⛔ **Por qué cambió, y costó la primera corrida real del asistente:** una línea de temario que el
+parser no interpretaba quedaba con `eje` vacío, **se podía tildar en el paso 3**, se le escribía
+`mostrar = 'sí'`… y **nunca llegaba al anclaje**. El mensaje de fallo culpaba al período.
+
+⭐ **`texto_original` es lo único que TODA fila de temario tiene por construcción** —el parser lo
+conserva siempre, incluso cuando no interpreta nada— y es la misma clave con la que
+`curarCamposReuniones_` la encuentra. **Una fila escrita por cualquiera de los dos escritores de
+esta hoja lo tiene**; una fila escrita a mano en la planilla puede no tenerlo, y entonces el motor
+**no la lee**.
+
+⚠ **`reunionesOcultasPorMostrar_` cambió con él**, y su propio comentario ya lo exigía: *un
+diagnóstico que filtre distinto del filtro que explica nombra filas que el otro sí dejó pasar*.
+
+⭐ **Y el filtro nuevo cuenta**: `reunionesSinTextoOriginal_` nombra las filas que descarta —hasta
+seis, con su número de fila— **y habla también cuando no encuentra ninguna**.
+
 ### REUNIONES — addendum del 27/08/2026
 
 > ⚠ La matriz de abajo lista sólo `cargarTemarioReuniones_`, y está **incompleta por la misma
