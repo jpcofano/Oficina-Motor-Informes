@@ -1884,6 +1884,105 @@ del deck cambia con cada corrida según cuántos ítems se emitan.
 > el problema nunca fue cuál usar sino no decir cuál.
 
 
+## Corrida nocturna del 26/08 (`2026-08-26_2`) — cinco cosas que quedan anotadas
+
+### ⛔⛔ P0 · `tools/escritores.js` e `inventario.js` están en ROJO, y §7 los declara fuente de verdad
+
+`node tools/escritores.js` muere con *«Llaves desbalanceadas tras limpiar `Generador.gs` (-2)»*, en
+su dependencia `tools/inventario.js`. **Medido: da `exit=1` en los últimos 20 commits que tocaron
+`Generador.gs`**, así que es viejo y no de esta corrida.
+
+⭐ **Por qué es P0 y no higiene:** `CLAUDE.md` §7 declara, para *«¿cómo está construido el código y
+qué alcanza a qué?»*, que la fuente son **«los scripts de `tools/`, re-corridos (`inventario.js`,
+`escritores.js`) — nunca el `.md`»**. O sea: **el índice del repo señala como autoridad a un script
+que no corre**, y el `.md` que sí se puede leer es una foto del 10/08 que el propio encabezado
+declara envejecida. La pregunta se quedó sin dueño vivo y nadie se enteró.
+
+⚠ **Es la misma familia que los autotests de la Parte G:** `tools/suites.js` corre `probar-*.js`, así
+que ninguno de estos dos entra — **un instrumento que el runner no ejecuta es un instrumento que no
+existe**. La diferencia es que éste **ya está roto**, no en riesgo de romperse.
+
+**Consecuencia inmediata, y por eso se anota acá:** la ficha del escritor nuevo de `PERIODOS` en
+`docs/ESCRITORES.md` §PERIODOS **se escribió a mano**, porque la matriz no se puede regenerar. Está
+declarado dentro de la propia ficha.
+
+**No se arregló en esta corrida**: es otro objetivo y `CLAUDE.md` §4 dice que mejorar no es ampliar.
+
+---
+
+### ⛔ P0 · `continuacion.laminas_etapa4_hechas` se emite y NADIE lo lee
+
+`grep -rn "laminas_etapa4_hechas" *.gs` devuelve **una sola línea: donde se escribe.** El comentario
+que la acompaña dice que existe *«para que la reanudación no repinte»*, y eso **no ocurre**: medido
+en `tools/probar-reanudacion-identica.js` §4, **la tanda 2 re-resuelve todas las láminas**, incluidas
+las que la tanda 1 ya pintó.
+
+⚠ **El deck no se corrompe** —`replaceAllText` no encuentra `{{token}}` donde ya hay valor—, así que
+**funciona por accidente y se paga dos veces**. El banco **fija el comportamiento de hoy** con una
+afirmación explícita: el día que se implemente el salteo, se pone rojo, y eso es lo que tiene que
+pasar.
+
+**La decisión es del usuario:** implementarlo (la reanudación salta las láminas hechas) o retirar el
+campo y el comentario que promete algo que no hace. Las dos son legítimas; lo que no puede quedar es
+un campo que declara un contrato que no existe.
+
+---
+
+### ⚠ P1 · Las dos filas rotas de `PERIODOS` — no se tocan, por decisión del usuario
+
+1. **`julio_24_30` está DUPLICADA.** La clave está referenciada en **119 líneas** del repo.
+   ⛔ Y tiene una consecuencia que conviene tener escrita: **`leerPeriodos()` las colapsa** —es
+   `leerRegistro_`, que hace `registro[clave] = obj` recorriendo—, así que **el motor ve 8 períodos
+   donde la hoja tiene 9 filas**. Ninguna verificación lo señala.
+2. **`'vie 14/08 -- jue 20/08 (por defecto)'`** es una **etiqueta de origen usada como clave
+   primaria**. Tiene la misma ventana que `agosto_14_20`.
+
+⭐ **El generador nuevo (`D-43`) las reporta en `claves_repetidas` en cada corrida y no las toca.**
+Eso las vuelve visibles sin decidir por nadie.
+
+---
+
+### ⚠ P1 · ¿`tools/suites.js` tiene que correr los `--autoprueba`? — decisión del usuario, con el costo medido
+
+De los **5** bancos con `--autoprueba`, **2 estuvieron rojos sin que nadie se enterara**, porque
+`suites.js` los corre **sin** esa bandera. El segundo (`probar-tabla-post.js`) se arregló el 26/08 y
+los cinco están en verde hoy.
+
+El flag **agrega** un bloque, no reemplaza nada, y los bancos que no lo miran lo ignoran — así que
+alcanzaría con pasárselo a todos.
+
+| opción | costo medido |
+|---|---|
+| **correrlos** | **+475 ms sobre 8.957 ms de suite = +5,3 %**. Los cinco sin flag suman 1.327 ms; con flag, 1.802 ms |
+| **no correrlos** | 0 ms, y el costo ya conocido: dos de cinco en rojo sin que nadie lo viera, y el segundo llevaba así desde una fecha que no se puede determinar |
+
+**No se eligió**: es del usuario.
+
+---
+
+### ⭐ P1 · El aviso de ventana se corrigió por TERCERA vez — y el hallazgo es que no tenía un bug
+
+`avisosDeVentanaPropuesta_` publicó algo falso en sus tres generaciones:
+
+| # | fecha | decía | por qué era falso |
+|---|---|---|---|
+| 1 | `2026-08-20_2` | *«no se puede correr»* | la corrida es válida |
+| 2 | `2026-08-22_22` §5 | *«no tiene fila en PERIODOS»* | `agosto_14_20` **era** esa fila |
+| 3 | ⭐ **26/08** | *«las secciones repetibles NO se recortan por período»* | **falso desde el `_25`** (`fd226d1`, 22/08 13:21), cuando el motor pasó a recortar sobre ventana calculada |
+
+⭐⭐ **Un aviso que se corrige tres veces no tiene un bug, tiene la fuente equivocada.** Las tres veces
+decidía con **su propio criterio** —el prefijo del `origen`— mientras el motor decidía con otro. Y el
+dato correcto **ya estaba calculado treinta líneas más abajo**, sólo que se usaba para redactar el
+consejo y no para decidir si el aviso corresponde.
+
+**Cerrado el 26/08:** el aviso llama a `periodosQueDescribenLaVentana_`, que es con la que el motor
+decide, y `tools/probar-aviso-ventana.js` afirma que el panel **no tiene un cálculo propio** sobre
+`leerPeriodos()`. Eso es lo que impide la cuarta generación. Se anota igual porque **la figura vale
+más que el caso**: cada vez que un aviso y el motor tienen dos cálculos, el próximo arreglo ya está
+escrito.
+
+---
+
 ## Preguntas al equipo — abiertas, esperando respuesta humana
 
 > Dueña de la pregunta "¿qué se le preguntó al equipo y sigue sin respuesta?"

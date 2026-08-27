@@ -3,6 +3,32 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
+**Última actualización:** 2026-08-27 — **corrida nocturna `2026-08-26_2`: siete de ocho partes, y dos bugs que ninguna suite podía ver.** Todo el trabajo es del **front y el proceso**; **no se generó ningún deck** y **no se tocó ninguna plantilla**. **Suites: 55 → 59 bancos, ~666 → ~795 afirmaciones**, veredicto por exit code.
+
+### ⭐ Lo último, en cinco líneas
+
+- ⛔⛔ **P0 arreglado, y lo encontró la Parte D al probar la reanudación en frío: una corrida que corta ANTES de la etapa 4 no podía terminar.** Las cuatro variables de `D-41` vivían dentro de `if (!corte)` y el retorno hace `laminasDeEtapa4.length` **fuera del `try/catch`** → `TypeError`, fila de `CORRIDAS` sin cerrar, sin plan para continuar. **Es el caso normal del desatendido**, que corta en la etapa 3. Mismo error que `copia.getName()` del 21/08, en la misma función: aquel barrido dijo *«dio una sola»* **con razón**, porque estas cuatro nacieron tres días después. **Un cero medido vale para su fecha.**
+- ⛔⛔ **P0 anotado y NO arreglado: `tools/escritores.js` e `inventario.js` están en ROJO** —*«Llaves desbalanceadas tras limpiar `Generador.gs`»*— y medido que es **preexistente** (`exit=1` en los últimos 20 commits que tocaron ese archivo). **`CLAUDE.md` §7 los declara fuente de verdad** para *«cómo está construido el código»*, así que esa pregunta se quedó sin dueño vivo y nadie se enteró: `suites.js` corre `probar-*.js` y no los ve. Por eso la ficha nueva de `ESCRITORES.md` se escribió **a mano**, declarándolo.
+- ⭐⭐ **El universo del marcador ahora viaja pegado al número** (Parte A). Las ocho ramas de `datosDeMarcador_` construían un `origen` preciso **y nadie lo leía**. Cuando `L-036` publicó el Recap de CABA con 2.463.980 habitantes, la traza decía `leerFuente(digital/…)` — correcto, disponible — **y el número salió igual**.
+- ⛔ **El aviso de ventana iba por su TERCERA generación diciendo algo falso** (Parte C). *«Las secciones repetibles NO se recortan por período»* es **falso desde el `_25`** (22/08 13:21). **Un aviso que se corrige tres veces no tiene un bug, tiene la fuente equivocada**: decidía con su propio criterio mientras el motor decidía con otro. Ahora llama a la misma función, y el banco afirma que el panel **no tiene cálculo propio**.
+- ⭐ **`D-43`: el panel crea períodos** (Parte F), insert-only, con «semana en curso» derogando parcialmente `R-11` Addendum 2 y el aviso de datos parciales **al elegirla, no al terminar**.
+
+### ⛔ Lo que hay que correr, y es del usuario
+
+1. **`clasp push`** — se tocaron `Generador.gs`, `PanelBackend.gs`, `Instalar.gs` y `Panel.html`. **Nada de esto está en el proyecto de Apps Script todavía.**
+2. **`generarProximasSemanas()`** desde el editor, o el botón nuevo del panel: **las cuatro semanas que faltan NO están cargadas**. El generador está probado con 46 afirmaciones sobre una hoja falseada; que la celda quede escrita en la hoja viva **sólo se ve corriendo**.
+3. **Abrir el panel** y mirar las cuatro cosas nuevas: el nivel de ventana en «listo», la ventana en el cuadro de temario, el aviso de ventana en su forma nueva (`info` en gris cuando el recorte sí se aplica) y los dos botones de período.
+
+### ⚠ Tres decisiones que quedaron esperando, y son tuyas
+
+- **`continuacion.laminas_etapa4_hechas` se emite y nadie lo lee.** La tanda 2 re-resuelve todas las láminas. **No corrompe el deck** —`replaceAllText` no encuentra `{{token}}` donde ya hay valor— así que funciona por accidente y se paga dos veces. O se implementa el salteo, o se retira el campo y el comentario que promete lo que no hace.
+- **¿`suites.js` corre los `--autoprueba`?** Costo medido: **+475 ms sobre 8.957 (+5,3 %)** contra el costo conocido de no correrlos — **dos de cinco estuvieron en rojo sin que nadie se enterara**.
+- **Las dos filas rotas de `PERIODOS`** (`julio_24_30` duplicada, `'vie 14/08 -- jue 20/08 (por defecto)'` como clave) siguen **sin tocarse por decisión tuya**. El generador nuevo las **reporta** en cada corrida.
+
+⚠ **Lo que esta noche NO tocó:** ningún número publicado, ninguna fila de `MARCADORES`, ninguna plantilla, ninguna hoja viva. Los tres frentes de la cola de abajo siguen exactamente donde estaban — incluido **`D-33` a medias** y los cinco tokens que publican el universo de la otra lámina.
+
+---
+
 **Última actualización:** 2026-08-26 (addendum 4) — **`D-33` quedó a medias, y ahora está medido y escrito.** Sólo documentación: no se tocó `MARCADORES`, ni `LAMINAS`, ni ningún `.gs`. El diagnóstico entero vive en `docs/PLAN.md`, al lado de `D-33` y **como su estado, no como una `D-NN` nueva** — no hay decisión todavía. **La decisión es del usuario y está pendiente.**
 
 ### ⭐ Lo último, en cinco líneas

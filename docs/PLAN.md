@@ -2261,6 +2261,63 @@ citaría como precedente.
 ---
 
 
+**`D-43` — El panel puede CREAR el período, y «semana en curso» deroga parcialmente el Addendum 2
+de `R-11`.** (26/08/2026, `2026-08-26_2` Parte F. Decisión del usuario.)
+
+⭐ **Lo que se decide, en una línea:** dar de alta un período deja de ser *editar `SEED_PERIODOS_` y
+hacer `clasp push`* y pasa a ser **apretar un botón**. El escritor nuevo es `crearPeriodos_`
+(`Instalar.gs`), con su fila en `docs/ESCRITORES.md`.
+
+**Por qué es una decisión de arquitectura y no un botón más:** `PERIODOS` tenía **un solo escritor
+declarado**, el seed, y agregarle otro es exactamente lo que `docs/ESCRITORES.md` exige declarar. El
+comentario de `agosto_14_20` en el propio seed ya lo había anticipado con todas las letras — *«una
+fila de seed por semana significa `clasp push` cada viernes, que es exactamente la línea de `.gs`
+que `D-01` mide. Lo que corresponde es que el panel cree el período — y eso es un escritor nuevo de
+hoja de registro»*. Esto es ese escritor, y baja el número que `D-01` mide.
+
+### ⛔⛔ La derogación, con su alcance exacto
+
+**`R-11` Addendum 2 (20/08) decidió que el motor propone la última semana CERRADA.** El botón
+«semana en curso» crea la semana que **contiene a hoy**, que el viernes es otra.
+
+**Lo que se deroga es sólo esto:** *«el motor nunca ofrece la semana sin cerrar»*.
+
+**Lo que NO se deroga, y sigue gobernando:** la **propuesta por defecto**. El eslabón 5 de la cadena
+de `D-20`, el selector del panel y `resolverVentana` siguen proponiendo la última cerrada, sin
+cambios. `ultimaSemanaCerradaR11_` no se toca.
+
+⭐ **La diferencia es quién decide.** El Addendum 2 resuelve *«¿qué propone el motor cuando nadie
+eligió nada?»* y su respuesta sigue siendo la buena: el motor no adivina hacia adelante. Lo que se
+agrega es un camino donde **una persona pide explícitamente** la semana en curso — que es un pedido
+distinto, no el motor adivinando.
+
+### ⭐⭐ Y el aviso va al ELEGIRLA, no al terminar
+
+Una semana sin cerrar trae datos **parciales**, y el caso está medido: `3488-AGOJDGAG`, en el export
+del 20/08, tenía **11.000 de 54.107 llamados** por fila, y el deck del equipo se armó después.
+
+⛔ **Un número parcial no se distingue de uno completo mirándolo.** Es la familia del número
+plausible: no falla, no avisa, y se publica. Por eso el panel pide una previa
+(`panel_previaSemanaEnCurso`) **antes** de dibujar el botón y pinta la advertencia ahí. Decirlo en un
+pie de página cuando el deck ya salió no sirve de nada.
+
+### Lo que `D-43` NO hace, declarado en vez de descubierto
+
+- ⛔ **No deduplica ni renombra nada.** Las dos filas rotas de `PERIODOS` —`julio_24_30` duplicada,
+  clave referenciada en 119 líneas, y `'vie 14/08 -- jue 20/08 (por defecto)'`, que es una **etiqueta
+  de origen usada como clave primaria**— **no se tocan, por decisión del usuario**. El generador las
+  **reporta** en `claves_repetidas` en cada corrida. Anotadas en `docs/PENDIENTES_consistencia.md`.
+- ⛔ **No pisa jamás.** Es insert-only, y no por precaución genérica: está medido que
+  `upsertPorClave_` reescribió `agosto_14_20` en silencio (`{escritas: 0, actualizadas: 1}`).
+- ⛔ **La convención `<AAAA>_<mes_del_INICIO>_<dd_inicio>_<dd_fin>` rige SÓLO hacia adelante.**
+  `julio_24_30`, `agosto_14_20` y las tres de junio son claves con 68 líneas en `.gs`/`.js`/`.html`
+  y 43 en `docs/` apuntándoles.
+- ⚠ **Y no arregla que `leerPeriodos()` colapse las repetidas** — hoy ve 8 donde la hoja tiene 9.
+  El generador lo esquiva leyendo las **filas crudas**; el lector sigue como estaba y eso es un
+  pendiente, no parte de esta decisión.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### El encuadre: todo lo de abajo es la fase `informe semanal` — `D-38`

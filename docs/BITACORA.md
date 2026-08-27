@@ -15930,3 +15930,154 @@ prompt pedía dejar escrito para que no se reconstruya una tercera vez: qué res
 por qué `imp_*` funciona y `cc_*` no, y que **`L-034` no se puede cerrar sin resolver esto**.
 
 **Suites: 55 bancos en verde, exit 0.** `listas.js` OK. Sin `clasp push`: no se tocó código.
+
+---
+
+## 2026-08-27 — Corrida nocturna `2026-08-26_2`: el front, y dos bugs que nadie estaba mirando
+
+**Commits:** `367e4f7` (A) · `450255f` (B) · `2bcaedf` (C) · `5668279` (D) · `cefe430` (G) ·
+`3ca6f43` (F) · este (H).
+
+**Siete de las ocho partes se hicieron.** La E no produjo código y el motivo es el hallazgo: lo que
+pedía **ya estaba hecho**.
+
+**Suites: 55 → 59 bancos, ~666 → ~795 afirmaciones**, todo por exit code.
+
+### ⭐⭐ Las dos cosas que hay que llevarse de la noche
+
+1. ⛔⛔ **La Parte D encontró un P0 que ninguna suite podía ver: una corrida que corta ANTES de la
+   etapa 4 no podía terminar.** Las cuatro variables de `D-41` se declaraban dentro de
+   `if (!corte)` y el retorno hace `laminasDeEtapa4.length` **fuera del `try/catch`** →
+   `TypeError`, fila de `CORRIDAS` sin cerrar y sin plan para continuar. **Y es el caso normal del
+   desatendido**, que corta en la etapa 3.
+2. ⛔⛔ **`tools/escritores.js` e `inventario.js` están en ROJO desde hace ≥20 commits, y
+   `CLAUDE.md` §7 los declara fuente de verdad.** Nadie lo veía porque `suites.js` corre
+   `probar-*.js`. La pregunta *«¿cómo está construido el código?»* se quedó sin dueño vivo.
+
+---
+
+### Parte A — `datos.origen` llega a la traza
+
+Las **ocho** ramas de `datosDeMarcador_` ya construían un `origen` largo y preciso **y nadie lo
+leía**: grepeado, `datos.origen` sólo aparecía en `diagMarcadorSimulado_`. La **ventana** viajaba en
+la traza y el **universo** no.
+
+⚠ **El caso que lo justifica:** cuando `L-036` publicó el Recap de CABA con 2.463.980 habitantes, la
+traza decía `leerFuente(digital/…)` — el texto correcto, disponible — **y el número salió igual**.
+Visibilidad no impide publicar; es lo único que permite diagnosticar después.
+
+Va en campo propio (`base.origen_datos`) **y** en el texto de `base.traza`, que es lo que llega a
+`FALTANTES`. **Banco:** `probar-origen-en-traza.js`, 17 afirmaciones, con el **conteo 8 de 8 ramas**
+— un banco que prueba tres no distingue «las ocho andan» de «tres andan».
+
+### Parte B — el adaptador del panel deja de tirar la ventana
+
+**El propio código escribía el arreglo.** El comentario de `panel_generar` decía *«el día que el
+panel quiera marcar una ventana calculada, el campo vuelve como uno propio — no reabriendo el objeto
+entero»*. Era una **instrucción, no una descripción**, y se cumplió al pie: `periodo_desde`,
+`periodo_hasta`, `periodo_nivel`, `periodo_calculado` y `periodo_traza` viajan planos.
+
+⭐⭐ **El NIVEL importa más que las fechas.** `resolverVentana` es una cadena de cinco eslabones y
+*«el usuario eligió `julio_24_30`»* y *«`R-11` calculó la última semana cerrada»* dan **la misma
+etiqueta**. El 21/08 esa confusión puso seis encuentros de junio y julio en un deck sin que nada
+fallara.
+
+`nivelDeVentana()` traduce los cinco y **muestra crudo el que no reconoce** — el precedente del
+`|| S.faltantesComoRaya` retirado el 20/08. ⭐ Y el **cuadro de temario** también muestra la ventana:
+el dato **ya viajaba** en `panel_getEstado` y sólo se pintaba en la rama de abajo. No hizo falta
+tocar el backend.
+
+### ⛔⛔ Parte C — el aviso de ventana: TERCERA generación diciendo algo falso
+
+| # | decía | por qué era falso |
+|---|---|---|
+| 1 | *«no se puede correr»* | la corrida es válida |
+| 2 | *«no tiene fila en PERIODOS»* | `agosto_14_20` **era** esa fila |
+| 3 | *«las secciones repetibles NO se recortan por período»* | **falso desde el `_25`** (`fd226d1`, 22/08 13:21) |
+
+⭐⭐ **Un aviso que se corrige tres veces no tiene un bug, tiene la fuente equivocada.** Las tres
+veces decidía con **su propio criterio** —el prefijo del `origen`— mientras el motor decidía con
+otro. Y el bucle que tenía adentro era **byte por byte** el mismo de `Union.gs`: reproducía bien y
+decidía distinto.
+
+**El arreglo no es al texto:** ahora llama a `periodosQueDescribenLaVentana_`, la función con la que
+el motor decide. Y son **tres casos**, no dos: elegida → nada; calculada **con** fila → `info`, con
+qué período recorta; calculada **sin** fila → el aviso de siempre, que ahí sí es cierto. El front
+respeta el `nivel`.
+
+⭐ **El banco se DIO VUELTA, no se aflojó.** `probar-aviso-ventana.js` se puso rojo **porque el
+estado cambió**, que es para lo que se escribió. Sube la exigencia: corre la función **real** del
+motor extraída de `Union.gs` y afirma que el panel **no tiene un cálculo propio**. 15 → 19
+afirmaciones. ⭐ Bonus medido: `REUNIONES` ya no se lee en el caso del medio.
+
+### ⛔⛔ Parte D — la reanudación, probada en frío: apareció un P0
+
+El particionado por lámina (`D-41`) estaba escrito desde el 24/08 y **nunca se había corrido
+cortando de verdad**. `probar-continuacion-deck.js` prueba que la rama de continuación **vuelve**,
+que es otra pregunta.
+
+**El bug:** las cuatro variables de `D-41` dentro de `if (!corte)`, leídas en el retorno **fuera del
+`try/catch`**. ⭐⭐ **Es el mismo error que `copia.getName()` del 21/08, en la misma función** — y el
+barrido de aquel día dijo *«dio una sola: `copia`»* **con razón**: estas cuatro nacieron el 24/08.
+**Un cero medido vale para su fecha.** Barrido rehecho: de las **11** variables del bloque, **4** se
+leen después del `if`.
+
+⭐ Y el reporte gana `corrio`: sin él, `total: 0` no distingue *«la etapa no se ejecutó»* de *«se
+ejecutó y no había láminas»*.
+
+**Banco:** `probar-reanudacion-identica.js`, 26 afirmaciones. El control que decide **no es «no
+falla»** —un reanudador que saltea una lámina no falla, publica un deck incompleto— sino la
+**identidad**: tanda 1 ∪ tanda 2 = la corrida entera. Verificado que muere sin el arreglo.
+
+**Dos cosas que salieron de rojos y quedan escritas:**
+
+- ⛔ **El espía de `resolverMarcadores` hay que instalarlo DESPUÉS de cargar `Generador.gs`**: la
+  declaración del archivo **pisa el stub en silencio**. El banco daba `hechas: [1..6]` y `0` llamadas
+  **a la vez**, y esos dos números no se contradicen a simple vista.
+- ⛔ **El presupuesto del corte se BUSCA, no se elige** (y en dos dimensiones). Con un número a ojo
+  el corte caía **antes** de la etapa 4 y las secciones 3-5 habrían quedado verdes midiendo otro
+  corte. Lo cazó la afirmación de «corte PARCIAL», que está justamente para eso.
+
+⛔ **Hallazgo NO arreglado:** `continuacion.laminas_etapa4_hechas` se emite y **nadie lo lee**. La
+tanda 2 re-resuelve todo. Funciona por accidente y se paga dos veces. Anotado en `PENDIENTES` como
+P0, con las dos salidas posibles.
+
+### Parte E — sólo lectura, y lo que pedía YA ESTABA
+
+⭐ **El `sinLink` en el panel ya está hecho**, por la Parte D de la corrida del 24/08 (`6c37341`):
+`bloqueMedicionAnclaje()` muestra el conteo **y la lista con nombre y motivo**, arriba de los
+pendientes, sin abrir la planilla. **La premisa venció** y se reporta en vez de escribir código de
+más.
+
+**Cruce de las cinco partes del 24/08:** las cinco tienen banco y **las cinco están verdes** — 35 +
+38 + 27 + 30 + 58 = **188 afirmaciones**. Lo que esos bancos fijan es la **lógica**; lo que sigue sin
+verificarse contra el panel real está en el reporte de la mañana, nombrado.
+
+### Parte F — el generador de `PERIODOS` (`D-43`)
+
+Dar de alta un período deja de ser *editar el seed y pushear*. **Insert-only**, porque está medido
+que `upsertPorClave_` **pisa sin preguntar**, y un `periodo_id` es una clave referenciada en **119
+líneas**. La comprobación de existencia va contra las **filas crudas** — `leerPeriodos()` colapsa las
+repetidas y ve **8 donde hay 9**. Relee lo que quedó (`C-83`).
+
+⭐⭐ **UN solo escritor para los dos botones.** «Semana en curso» **deroga parcialmente** `R-11`
+Addendum 2 —escrito como `D-43` con su alcance exacto— y **el aviso sale al ELEGIRLA**: una semana
+sin cerrar trae datos parciales y **un número parcial no se distingue de uno completo mirándolo**
+(medido: 11.000 de 54.107 llamados). **Banco:** 46 afirmaciones, y el que importa es el de la hoja a
+**medio llenar**.
+
+⛔ **Las cuatro semanas que faltan NO están cargadas**: eso pide una corrida del usuario.
+
+### Parte G — el autotest en rojo, y no era CRLF
+
+`probar-tabla-post.js --autoprueba` estaba rojo porque **sus dos anclas arrastraban contexto que no
+estaban mutando**: incluían `operacion: 'FILA', `, y el día que la operación pasó a salir de la
+columna dejaron de matchear.
+
+⭐ **El ancla es el fragmento MÍNIMO que expresa la mutación, y se verifica que sea ÚNICO.**
+`valor_fijo: n, separador:` aparece **1** vez y no menciona la operación. ⚠ Y el ancla larga no era
+más segura: `separador: 'fecha_periodo',` aparece **41** veces. **La unicidad se cuenta, no se
+supone.** Los cinco autotests quedan en verde.
+
+**Decisión del usuario, con el costo medido:** ¿`suites.js` corre los `--autoprueba`? **+475 ms sobre
+8.957 = +5,3 %** contra el costo conocido de no correrlos. No se eligió.
