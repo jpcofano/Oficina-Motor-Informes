@@ -56,7 +56,7 @@ agujero del patrón.
 | `MAPEO` | `SEED_MAPEO_` vía upsert | upsert · `promoverFechasElegidas` + `migrarPrefijosFechaPeriodo_` (`Fechas.gs`) · migraciones `eliminarMapeoAlcanceDigitalObsoleto_`, `alinearMapeoLookerADinamico_`, `backfillSolapaMapeo_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ⚠ **dos escritores de contenido vivos**: el upsert y `promoverFechasElegidas`. El segundo sigue sin declarar — ver §2.1 |
 | `CONFIG` | `SEED_CONFIG_DEFAULTS_` vía `seedConfigConfig_` (solo completa vacíos) | `seedConfigConfig_` únicamente | ✅ un camino; el humano edita valores y el seed no los pisa |
 | `INFORMES` | `SEED_INFORMES_` vía upsert, **`plantilla_id` incluido** (cambió el 03/08/2026 — ver abajo) | upsert · `clasificarArchivoPlantilla_` (registro de plantillas, escribe `plantilla_id`) · ~~`repuntarPlantillaCanonicaJM_`~~ (retirada del código el 03/08/2026) | ✅ dos caminos, los dos declarados, con el seed como dueño de la columna |
-| `PERIODOS` | `SEED_PERIODOS_` vía upsert | upsert únicamente | ✅ un escritor **declarado**. ⚠ Pero eso **no** significa que una fila a mano no sobreviva — ver §PERIODOS abajo (20/08/2026) |
+| `PERIODOS` | `SEED_PERIODOS_` vía upsert **+ `crearPeriodos_` (26/08/2026)** | upsert **e insert-only**, por dos caminos declarados | ⚠ **dos escritores, y es deliberado.** El seed **actualiza**; `crearPeriodos_` **sólo inserta y nunca pisa**. Ver §PERIODOS abajo — un `periodo_id` es una clave referenciada en 119 líneas y moverle las fechas cambia el universo de todo lo que lo cita |
 | `SOLAPAS` | `SEED_SOLAPAS_` vía `aplicarClasificacionSolapas_` (clasificación) + `inventariarSolapas` (medición) | upsert de clasificación · `inventariarSolapas` (`Solapas.gs:119-147`: `filas_datos`, `filas_crudas`, `firma_encabezado`) · migraciones `alinearSolapasLookerADinamico_`, `reclasificarSolapasM2Invertidas_` · ~~`consolidarMapeoLooker_`~~ (retirada) | ✅ tres caminos, los tres declarados. El reparto seed/inventario viene de C.2-7; la migración de looker dejó de escribir `notas` en la Parte E |
 | `SECCIONES` | `SEED_SECCIONES_` vía `sembrarSecciones_` | `sembrarSecciones_` únicamente | ✅ |
 | `CAMPANAS` | curada a mano (sin sembrador, a propósito) | **cero escritores en el código** | ✅ consistente con `ALCANCE_REGISTROS_` |
@@ -315,6 +315,59 @@ hoja, porque no está en ningún seed. Y sigue sin haber un escritor **programá
 día que el panel cree períodos, eso es un escritor nuevo y necesita su fila acá. **No se retira la
 declaración del seed**: sigue siendo el escritor declarado; lo que se agrega es qué pasa con lo que
 él no declara.
+
+### ⭐ El escritor nuevo — `crearPeriodos_` (26/08/2026, `2026-08-26_2` Parte F)
+
+**Esta ficha se escribió A MANO, y hay que decir por qué:** `tools/escritores.js` **está en rojo** —
+muere con *«Llaves desbalanceadas tras limpiar `Generador.gs` (-2)»*, en su dependencia
+`inventario.js`—. **Verificado que es preexistente y no de esta corrida**: da `exit=1` en los
+últimos **20** commits que tocaron `Generador.gs`. Está anotado en `docs/PENDIENTES_consistencia.md`.
+
+| función | método | camino | ¿pisa? |
+|---|---|---|---|
+| `crearPeriodos_` | `setValues` sobre `getLastRow() + 1` | `generarPeriodosSemanales_` → botón «semana en curso» y `generarProximasSemanas()` | ⛔ **no, insert-only** |
+| `crearPeriodos_` | ídem | `crearPeriodoPersonalizado_` → botón «período personalizado» | ⛔ **no, insert-only** |
+
+⭐⭐ **Es UNA sola escritura para los dos botones, y eso es la mitad del diseño.** Dos caminos de
+escritura sobre la misma hoja es la figura que la Parte C de esta misma corrida vino a cerrar en el
+aviso de ventana: mientras haya dos, el día que uno gane una guarda el otro se queda sin ella — y
+**no falla, publica**. El banco lo fija: `tools/probar-generador-periodos.js` afirma que hay
+**exactamente un** `setValues` en todo el bloque.
+
+⛔⛔ **Por qué INSERT-ONLY y no `upsertPorClave_`, que era el camino obvio.** Está **medido** que
+`upsertPorClave_` **pisa sin preguntar**: `agosto_14_20` con otras fechas devolvió
+`{escritas: 0, actualizadas: 1}` — la fila reescrita en silencio. Y un `periodo_id` no es un valor
+cualquiera: es una **clave referenciada**. `julio_24_30` aparece en **119 líneas** del repo, así que
+moverle las fechas **cambia el universo de todo lo que lo cita sin que nada falle**. Una clave que ya
+está se informa en `ya_estaban` y no se toca.
+
+⚠ **Y la comprobación de existencia va contra las FILAS CRUDAS, nunca contra `leerPeriodos()`.**
+`leerPeriodos` es `leerRegistro_('PERIODOS', 'periodo_id')`, que hace `registro[clave] = obj`
+recorriendo: **colapsa las repetidas**. Hoy ve **8 donde la hoja tiene 9 filas**, porque
+`julio_24_30` está duplicada. Preguntarle *«¿existe?»* a un mapa por clave es preguntarle a quien ya
+perdió el dato que hace falta — es el mismo error que costó filas en `CAMPANAS` el 18/08.
+
+⭐ **RELEE lo que quedó, no lo que pidió escribir** (`C-83`). El retorno trae `filas_antes`,
+`filas_despues` y, por cada fila creada, **lo que la hoja tiene ahora** — comparado con
+`parsearFechaCelda_`, o sea *como el motor la va a leer*, no como texto. Entre lo que se escribe y
+lo que queda está la interpretación automática de tipos de Sheets, que es la que muerde: el alta de
+`ecv_barrio1-3` informó «3 filas agregadas» diciendo la verdad sobre lo que **pidió** y mintiendo
+sobre lo que **quedó**.
+
+⛔ **«Ya estaban todas» se declara con `idempotente: true`, no se colapsa con el éxito.** Una corrida
+que no hizo nada y una que hizo todo no pueden verse igual en el reporte.
+
+**Lo que este escritor NO hace, dicho para que nadie lo espere:**
+
+- **No deduplica** `julio_24_30`. Las dos filas rotas de `PERIODOS` —esa duplicada y
+  `'vie 14/08 -- jue 20/08 (por defecto)'`, que es una **etiqueta de origen usada como clave
+  primaria**— **no se tocan, por decisión del usuario**. Se **reportan** en `claves_repetidas` en
+  cada corrida.
+- **No renombra nada.** La convención `<AAAA>_<mes_del_INICIO>_<dd_inicio>_<dd_fin>` rige **sólo
+  hacia adelante**: `julio_24_30`, `agosto_14_20` y las tres de junio son claves con 68 líneas en
+  `.gs`/`.js`/`.html` y 43 en `docs/` apuntándoles.
+- **No borra ni corrige una fila existente**, ni siquiera si sus fechas están mal. Eso es una
+  decisión editorial y no la toma un generador.
 
 ### PLAN_CORRIDA — hoja nueva, 20/08/2026
 

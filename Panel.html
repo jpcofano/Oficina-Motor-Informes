@@ -351,7 +351,11 @@ var S = {
   falt: null, faltCual: 'actual', faltCorte: 'causa', faltAbierto: {},
   /* `2026-08-23_1` Parte D — la última medición del anclaje. Es lo que separa «no corrió» de
    * «corrió y nadie cayó bajo el umbral», que hasta hoy eran la misma pantalla vacía. */
-  medAnclaje: null
+  medAnclaje: null,
+  /* `2026-08-26_2` Parte F — la previa de la semana en curso y el resultado de crear un
+   * período. `previaSemana` es null = sin pedir. */
+  previaSemana: null,
+  periodoMsg: null
 };
 
 /* ── utilidades ──────────────────────────────────────────────────────────────────── */
@@ -830,6 +834,11 @@ function vistaGenerar(){
   avisosVentana.forEach(function(a){
     h += '<p class="' + (a.nivel === 'info' ? 'hint' : 'hint-error') + '">' + esc(a.texto) + '</p>';
   });
+  /* ⭐ `2026-08-26_2` Parte F — los dos botones para crear el período que falta.
+   * Va **después** del selector: primero se mira si ya está, y recién si no está se crea. */
+  if (S.previaSemana === null) cargarPreviaSemana();
+  h += bloqueCrearPeriodo();
+
   var roto = S.periodos.filter(function(p){
     return String(p.desde).indexOf('ilegible') !== -1 || String(p.hasta).indexOf('ilegible') !== -1;
   });
@@ -933,6 +942,8 @@ function conectarGenerar(){
   var bg = el('b-generar'); if (bg) bg.onclick = generar;
   var bgd = el('b-generar-des'); if (bgd) bgd.onclick = generarDesatendida;
   var bd = el('b-denuevo'); if (bd) bd.onclick = function(){ S.forzarForm = true; pintar(); };
+  var bps = el('b-per-semana'); if (bps) bps.onclick = crearPeriodoSemana;
+  var bpc = el('b-per-custom'); if (bpc) bpc.onclick = crearPeriodoCustom;
   var bo = el('b-otro'); if (bo) bo.onclick = function(){
     S.estado = 'form'; S.forzarForm = true; S.resultado = null; pintar();
   };
@@ -1126,6 +1137,161 @@ function leyendaSimbolos(){
     'nuevo, el otro escribiendo una fila. ⚠ Un token <strong>sin fila</strong> sale ' +
     '<span class="mono">/////</span> aunque la corrida se haya cortado — si no, el símbolo del ' +
     'corte taparía el cableado que falta.</p></div>';
+}
+
+/* ═════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-26_2` Parte F — **los dos botones para CREAR un período**
+ * ═════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⭐ Existen porque hasta hoy la única forma de tener la semana era **una fila en `SEED_PERIODOS_`
+ * y un `clasp push`** — que es exactamente la línea de `.gs` que `D-01` mide. El comentario de
+ * `agosto_14_20` en el seed lo decía: *«lo que corresponde es que el panel cree el período»*.
+ *
+ * ⛔⛔ **«Semana en curso» DEROGA `R-11` Addendum 2**, que decidió que el motor propone la última
+ * semana **cerrada**. Lo que se deroga es *«el motor nunca ofrece la semana sin cerrar»*; la
+ * **propuesta por defecto** sigue siendo la cerrada. La diferencia es quién decide.
+ *
+ * ⭐⭐ **Y el aviso sale al ELEGIRLA, no al terminar.** Por eso hay una previa —
+ * `panel_previaSemanaEnCurso`— antes del botón: una semana sin cerrar trae datos **parciales**, y
+ * un número parcial **no se distingue de uno completo mirándolo**. Decirlo después de generar el
+ * deck no sirve de nada. */
+function bloqueCrearPeriodo(){
+  var h = '<hr class="sep">';
+  h += '<div class="section-title">¿No está la semana en la lista?</div>';
+
+  var p = S.previaSemana;
+  if (p === null || p === 'cargando'){
+    h += '<p class="muted">Mirando qué semana está en curso…</p>';
+    return h;
+  }
+  if (!p.ok){
+    h += '<p class="hint-error">No se pudo calcular la semana en curso: ' + esc(p.motivo || '') + '</p>';
+    return h;
+  }
+
+  h += '<p class="hint">Semana en curso: <span class="mono">' + esc(p.periodo_id) + '</span> · ' +
+       esc(p.desde) + ' → ' + esc(p.hasta) + '</p>';
+
+  /* ⭐⭐ El aviso ANTES del botón, no después de la corrida. */
+  if (p.sin_cerrar){
+    h += '<p class="hint-error">⚠ <strong>Esta semana todavía no cerró</strong> (cierra el jueves). ' +
+         'Las bases van a estar <strong>parciales</strong>, y un número parcial no se distingue de ' +
+         'uno completo mirándolo — medido: una cuenta tenía 11.000 de 54.107 llamados en un export ' +
+         'del mismo día. La última semana cerrada es ' + esc(p.ultima_cerrada) + '.</p>';
+  }
+
+  if (p.ya_existe){
+    h += '<p class="hint">Ya existe en <span class="mono">PERIODOS</span>: elegila en la lista de ' +
+         'arriba. No se vuelve a crear ni se pisa.</p>';
+  } else {
+    h += '<button class="btn btn-secondary" id="b-per-semana">Crear ' + esc(p.periodo_id) + '</button>';
+  }
+
+  h += '<div class="field" style="margin-top:12px">' +
+       '<label for="f-per-desde">O un período a medida — desde / hasta</label>' +
+       '<input id="f-per-desde" type="date">' +
+       '<input id="f-per-hasta" type="date">' +
+       '<button class="btn btn-secondary" id="b-per-custom">Crear período</button>' +
+       /* ⚠ El id se DERIVA. Dejar que alguien lo escriba reabre la puerta a
+        * `'vie 14/08 -- jue 20/08 (por defecto)'`, que es una etiqueta usada como clave. */
+       '<p class="hint">El nombre se arma solo, con la convención ' +
+       '<span class="mono">AAAA_mes_ddInicio_ddFin</span>.</p></div>';
+
+  if (S.periodoMsg){
+    h += '<div class="alert ' + (S.periodoMsg.ok ? 'alert-info' : 'alert-warning') + '">' +
+         '<div class="alert-title">' + (S.periodoMsg.ok ? 'Listo' : 'No se creó') + '</div>' +
+         esc(S.periodoMsg.texto) + '</div>';
+  }
+  return h;
+}
+
+/** Lee la previa de la semana en curso. Una sola vez por sesión de pantalla. */
+function cargarPreviaSemana(){
+  S.previaSemana = 'cargando';
+  google.script.run
+    .withSuccessHandler(function(r){ S.previaSemana = r || {ok:false, motivo:'sin respuesta'}; pintar(); })
+    .withFailureHandler(function(e){ S.previaSemana = {ok:false, motivo:String(e && e.message || e)}; pintar(); })
+    .panel_previaSemanaEnCurso();
+}
+
+/**
+ * El resultado de crear un período, en una frase.
+ *
+ * ⭐ **Dice las filas ANTES y DESPUÉS**, no sólo «listo»: es lo único que distingue *«creó»* de
+ * *«ya estaba»* de *«informó cero y no pasó nada»*. Y los avisos del backend se pintan enteros.
+ */
+function mensajeDePeriodo(r){
+  if (!r || !r.ok){
+    return { ok:false, texto: (r && r.motivo) || 'sin motivo' };
+  }
+  var partes = [];
+  if (r.creadas && r.creadas.length){
+    partes.push('Creado ' + r.creadas.map(function(c){
+      return c.id + ' (' + c.desde + ' → ' + c.hasta + ')';
+    }).join(', '));
+  }
+  if (r.ya_estaban && r.ya_estaban.length){
+    partes.push('Ya estaba' + (r.ya_estaban.length > 1 ? 'n' : '') + ': ' +
+      r.ya_estaban.map(function(y){ return y.id; }).join(', ') + ' — no se tocó');
+  }
+  partes.push('Filas en PERIODOS: ' + r.filas_antes + ' → ' + r.filas_despues);
+  if (r.aviso_parcial) partes.push(r.aviso_parcial);
+  (r.avisos || []).forEach(function(a){ partes.push(a); });
+  if (r.claves_repetidas && r.claves_repetidas.length){
+    partes.push('⛔ PERIODOS tiene claves repetidas: ' + r.claves_repetidas.join(', '));
+  }
+  return { ok:true, texto: partes.join(' · ') };
+}
+
+function crearPeriodoSemana(){
+  S.periodoMsg = { ok:true, texto:'Creando…' };
+  pintar();
+  google.script.run
+    .withSuccessHandler(function(r){
+      S.periodoMsg = mensajeDePeriodo(r);
+      /* Se relee: el selector tiene que mostrar la fila nueva sin recargar el panel. */
+      recargarPeriodos();
+    })
+    .withFailureHandler(function(e){ S.periodoMsg = {ok:false, texto:String(e && e.message || e)}; pintar(); })
+    .panel_generarSemanaEnCurso();
+}
+
+function crearPeriodoCustom(){
+  var d = el('f-per-desde'), ha = el('f-per-hasta');
+  if (!d || !ha || !d.value || !ha.value){
+    S.periodoMsg = { ok:false, texto:'Faltan las dos fechas.' };
+    pintar();
+    return;
+  }
+  S.periodoMsg = { ok:true, texto:'Creando…' };
+  pintar();
+  google.script.run
+    .withSuccessHandler(function(r){
+      S.periodoMsg = mensajeDePeriodo(r);
+      recargarPeriodos();
+    })
+    .withFailureHandler(function(e){ S.periodoMsg = {ok:false, texto:String(e && e.message || e)}; pintar(); })
+    .panel_generarPeriodoPersonalizado(d.value, ha.value);
+}
+
+/**
+ * Recarga la lista de períodos y la previa, **sin re-arrancar el panel**.
+ *
+ * ⚠ No se llama a `arrancar()`: ésa resetea `S.informeId` al informe activo y las secciones
+ * elegidas. Crear un período no tiene por qué deshacer lo que la persona ya eligió.
+ */
+function recargarPeriodos(){
+  S.previaSemana = null;
+  google.script.run
+    .withSuccessHandler(function(r){
+      if (r && r.ok){
+        S.periodos = r.periodos || [];
+        S.porDefecto = r.por_defecto || null;
+      }
+      pintar();
+    })
+    .withFailureHandler(function(){ pintar(); })
+    .panel_getEstado(S.periodoId);
 }
 
 /* ⭐ `2026-08-26_2` Parte B — **por cuál de los cinco eslabones salió la ventana.**

@@ -8478,3 +8478,317 @@ function anotarQueM2CampaniasTieneHermano_() {
     idempotente: false, antes: antes, releido: releido
   };
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-26_2` Parte F — **el generador de PERÍODOS: el escritor que `SEED_PERIODOS_` no puede ser**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⭐ **Por qué existe, y lo dice el comentario de `agosto_14_20` en el propio seed:** *«una fila de
+ * seed por semana significa `clasp push` cada viernes, que es exactamente la línea de `.gs` que
+ * `D-01` mide. Lo que corresponde es que el panel cree el período — y eso es un escritor nuevo de
+ * hoja de registro, con su fila en `docs/ESCRITORES.md`»*. Esto es ese escritor.
+ *
+ * ⛔⛔ **INSERT-ONLY, y NO es una precaución genérica: está medido que `upsertPorClave_` PISA SIN
+ * PREGUNTAR.** Con `agosto_14_20` y otras fechas devolvió `{escritas: 0, actualizadas: 1}` — la
+ * fila reescrita en silencio. Un período es una **clave referenciada**: `julio_24_30` aparece en
+ * 119 líneas del repo, y moverle las fechas cambia el universo de todo lo que lo cita **sin que
+ * nada falle**. Por eso este escritor **nunca** toca una fila existente: la informa y sigue.
+ *
+ * ⚠ **Y la comprobación de existencia va contra las FILAS CRUDAS, nunca contra `leerPeriodos()`.**
+ * `leerPeriodos` es `leerRegistro_('PERIODOS', 'periodo_id')`, que hace `registro[clave] = obj`
+ * recorriendo: **colapsa las repetidas**. Hoy ve **8 donde la hoja tiene 9 filas** —`julio_24_30`
+ * está duplicada—. Preguntarle *«¿existe?»* a un mapa por clave es preguntarle a quien ya perdió
+ * la información que hace falta. Es el mismo error que costó filas en `CAMPANAS` el 18/08.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Los meses en español para el `periodo_id`. Índice = `getMonth()`.
+ *
+ * ⚠ Escrito acá y no derivado de `Utilities.formatDate`: el nombre del mes es parte de una
+ * **clave**, y una clave que dependa de la configuración regional del script cambiaría de valor
+ * al cambiar de zona. `julio_24_30` tiene que poder reproducirse siempre igual.
+ */
+var MESES_PERIODO_ = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+/**
+ * `<AAAA>_<mes_del_INICIO>_<dd_inicio>_<dd_fin>` — la convención decidida el 26/08/2026.
+ *
+ * ⭐ **El mes es el del INICIO y el `dd_fin` puede ser MENOR cuando la semana cruza mes**:
+ * `2026_agosto_28_03` es del 28/08 al 03/09, y eso es correcto, no un error de orden. Sin el año
+ * adelante dos semanas homónimas de años distintos colisionarían.
+ *
+ * ⛔ **Sólo hacia adelante.** `julio_24_30`, `agosto_14_20` y las tres de junio **no se renombran**:
+ * son claves con 68 líneas en `.gs`/`.js`/`.html` y 43 en `docs/` apuntándoles.
+ *
+ * ⚠ **`C-83`:** los días van con cero a la izquierda —`03`, no `3`— y la clave entera arranca con
+ * el año, así que Sheets la guarda como texto. Un `28/03` pelado sería una FECHA.
+ */
+function periodoIdDeVentana_(desde, hasta) {
+  var dd = function (n) { return (n < 10 ? '0' : '') + n; };
+  return desde.getFullYear() + '_' + MESES_PERIODO_[desde.getMonth()] + '_' +
+    dd(desde.getDate()) + '_' + dd(hasta.getDate());
+}
+
+/**
+ * Las filas de `PERIODOS` **tal como están en la hoja**, sin colapsar por clave.
+ *
+ * ⭐ Devuelve `{ headers, filas, porClave }`, donde `porClave` cuenta **cuántas** filas tiene cada
+ * `periodo_id` — que es justo lo que `leerPeriodos()` no puede decir. Un `2` ahí es una fila
+ * duplicada, y el repo tiene una (`julio_24_30`).
+ */
+function filasCrudasDePeriodos_() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('PERIODOS');
+  if (!hoja) return { ok: false, motivo: 'no existe la hoja PERIODOS' };
+  var datos = hoja.getDataRange().getValues();
+  var headers = (datos.shift() || []).map(function (h) { return String(h || '').trim(); });
+  var iId = headers.indexOf('periodo_id');
+  if (iId === -1) return { ok: false, motivo: 'PERIODOS no tiene columna `periodo_id`' };
+
+  var filas = [];
+  var porClave = {};
+  datos.forEach(function (f, i) {
+    var id = String(f[iId] || '').trim();
+    if (!id) return;
+    filas.push({ fila: i + 2, id: id, valores: f });
+    porClave[id] = (porClave[id] || 0) + 1;
+  });
+  return { ok: true, hoja: hoja, headers: headers, filas: filas, porClave: porClave };
+}
+
+/**
+ * ⭐ **El generador: dado un punto de partida, crea las N semanas viernes-jueves siguientes.**
+ *
+ * `desdeFecha` es una fecha cualquiera; la primera semana generada es **la que la contiene**
+ * (`semanaR11_`), y de ahí en adelante de siete en siete.
+ *
+ * ⭐⭐ **Reusa `semanaR11_` y NO reimplementa el corte viernes–jueves.** Un segundo cálculo del
+ * corte es el error que este repo ya cometió cuatro veces (`CLAUDE.md` §4): el corte vive en un
+ * solo lugar y esto sólo elige **qué fecha preguntarle**.
+ *
+ * ⛔ **Insert-only.** Una clave que ya está en la hoja **no se toca ni se compara**: se informa en
+ * `ya_estaban` y se sigue. No hay ninguna rama que escriba sobre una fila existente.
+ *
+ * ⭐ **Y RELEE lo que quedó, no lo que pidió escribir (`C-83`).** El retorno trae `filas_antes`,
+ * `filas_despues` y, por cada creada, lo que la hoja **tiene ahora** en esa fila. Un escritor que
+ * no relee es la mitad del bug: el alta de `ecv_barrio1-3` informó «3 filas agregadas» diciendo la
+ * verdad sobre lo que pidió y mintiendo sobre lo que quedó.
+ */
+function generarPeriodosSemanales_(desdeFecha, cuantas) {
+  var n = Math.max(1, Math.round(Number(cuantas) || 1));
+
+  /* Las N ventanas, calculadas antes de escribir nada: si algo falla, no queda media tanda. */
+  var pedidas = [];
+  var base = semanaR11_(desdeFecha);
+  for (var i = 0; i < n; i++) {
+    var desde = new Date(base.desde.getFullYear(), base.desde.getMonth(), base.desde.getDate() + 7 * i);
+    var hasta = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate() + 6);
+    pedidas.push({ desde: desde, hasta: hasta });
+  }
+  return crearPeriodos_(pedidas, 'Semana vie-jue generada por el panel (2026-08-26_2 Parte F)');
+}
+
+/**
+ * ⭐⭐ **El escritor, y es UNO SOLO para los dos botones.**
+ *
+ * `generarPeriodosSemanales_` calcula semanas y `crearPeriodoPersonalizado_` toma un rango a mano,
+ * pero **los dos escriben por acá**. Dos caminos de escritura sobre la misma hoja es exactamente
+ * la figura que la Parte C de esta misma corrida vino a cerrar en el aviso de ventana: mientras
+ * haya dos, el día que uno gane una guarda el otro se queda sin ella — y no falla, publica.
+ *
+ * Recibe `[{desde, hasta}]` con `Date`, deriva el `periodo_id` con la convención, y devuelve el
+ * reporte completo: qué creó, qué ya estaba, filas antes y después, y la **relectura**.
+ */
+function crearPeriodos_(ventanas, notaOrigen) {
+  var crudas = filasCrudasDePeriodos_();
+  if (!crudas.ok) return { ok: false, motivo: crudas.motivo };
+
+  var filasAntes = crudas.filas.length;
+  var headers = crudas.headers;
+  var hoja = crudas.hoja;
+
+  var pedidas = (ventanas || []).map(function (v) {
+    return { id: periodoIdDeVentana_(v.desde, v.hasta), desde: v.desde, hasta: v.hasta };
+  });
+
+  var yaEstaban = [];
+  var aCrear = [];
+  pedidas.forEach(function (p) {
+    /* ⛔ Contra las filas CRUDAS. Y si la clave está **repetida** en la hoja, se dice: es una
+     * inconsistencia abierta y este escritor no la arregla ni la esconde. */
+    if (crudas.porClave[p.id]) {
+      yaEstaban.push({ id: p.id, filas_en_hoja: crudas.porClave[p.id] });
+      return;
+    }
+    aCrear.push(p);
+  });
+
+  var creadas = [];
+  if (aCrear.length) {
+    var matriz = aCrear.map(function (p) {
+      var obj = {
+        periodo_id: p.id,
+        /* ⚠ `Utilities.formatDate` y NO un formateador propio: sería el **quinto** de este repo,
+         * y `CLAUDE.md` §2 pide mirar los que existen antes de escribir otro. `yyyy-MM-dd` es la
+         * forma en la que `SEED_PERIODOS_` ya escribe estas dos columnas. */
+        desde: Utilities.formatDate(p.desde, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+        hasta: Utilities.formatDate(p.hasta, Session.getScriptTimeZone(), 'yyyy-MM-dd'),
+        notas: String(notaOrigen || 'creado por crearPeriodos_ (2026-08-26_2 Parte F)')
+      };
+      /* Las columnas que el objeto no conoce quedan vacías **en una fila nueva**, que es distinto
+       * de blanquearlas en una existente: acá no había nada que perder. */
+      return headers.map(function (h) { return (h in obj) ? obj[h] : ''; });
+    });
+    hoja.getRange(hoja.getLastRow() + 1, 1, matriz.length, headers.length).setValues(matriz);
+    SpreadsheetApp.flush();
+  }
+
+  /* ⭐ **La relectura, contra la hoja y no contra lo que se pidió.** */
+  var despues = filasCrudasDePeriodos_();
+  if (!despues.ok) return { ok: false, motivo: 'no se pudo releer PERIODOS: ' + despues.motivo };
+  var iId = despues.headers.indexOf('periodo_id');
+  var iDesde = despues.headers.indexOf('desde');
+  var iHasta = despues.headers.indexOf('hasta');
+
+  var desalineadas = [];
+  aCrear.forEach(function (p) {
+    var enHoja = despues.filas.filter(function (f) { return f.id === p.id; });
+    if (enHoja.length !== 1) {
+      desalineadas.push(p.id + ': quedó en ' + enHoja.length + ' fila(s), se esperaba 1');
+      return;
+    }
+    var v = enHoja[0].valores;
+    var leidoDesde = parsearFechaCelda_(v[iDesde]);
+    var leidoHasta = parsearFechaCelda_(v[iHasta]);
+    /* ⚠ Se compara la fecha **como el motor la va a leer**, no el texto que se escribió: entre las
+     * dos cosas está la interpretación automática de tipos de Sheets, que es la que muerde. */
+    if (!leidoDesde || !leidoHasta ||
+        formatearFecha_(leidoDesde) !== formatearFecha_(p.desde) ||
+        formatearFecha_(leidoHasta) !== formatearFecha_(p.hasta)) {
+      desalineadas.push(p.id + ': la hoja quedó con "' + v[iDesde] + '" → "' + v[iHasta] +
+        '", se pidió ' + formatearFecha_(p.desde) + ' → ' + formatearFecha_(p.hasta));
+      return;
+    }
+    creadas.push({
+      id: String(v[iId] || ''),
+      desde: formatearFecha_(leidoDesde),
+      hasta: formatearFecha_(leidoHasta),
+      fila: enHoja[0].fila
+    });
+  });
+
+  /* ⛔ **Una corrida que no hizo nada NO informa cero como si fuera éxito.** Pero «ya estaban
+   * todas» SÍ es éxito y es idempotencia, no rotura — la diferencia se dice, no se colapsa. */
+  var ok = desalineadas.length === 0;
+  return {
+    ok: ok,
+    motivo: ok ? '' : 'la hoja no quedó como se pidió: ' + desalineadas.join(' · '),
+    creadas: creadas,
+    ya_estaban: yaEstaban,
+    pedidas: pedidas.length,
+    filas_antes: filasAntes,
+    filas_despues: despues.filas.length,
+    idempotente: aCrear.length === 0,
+    /* ⚠ Las claves repetidas de la hoja viajan **siempre**, hayan entrado en esta tanda o no:
+     * son una inconsistencia abierta y quien corra esto tiene que verla. */
+    claves_repetidas: Object.keys(despues.porClave).filter(function (k) { return despues.porClave[k] > 1; }),
+    desalineadas: desalineadas
+  };
+}
+
+/**
+ * ⭐ **El período PERSONALIZADO: desde/hasta a mano, con el `periodo_id` derivado.**
+ *
+ * ⚠ **Valida y NO corrige.** Un rango que no cierra o que dura de más se rechaza con el motivo;
+ * ajustarlo en silencio produciría una fila cuyo nombre dice una cosa y cuyas fechas dicen otra —
+ * y el nombre es lo que después se cita en 119 líneas.
+ *
+ * **Las tres validaciones, y cada una responde a algo medido:**
+ *
+ *  1. **Las fechas se parsean con `parsearFechaCelda_`**, el mismo lector del motor. Un tercer
+ *     parser acá sería el error que este repo ya cometió cuatro veces.
+ *  2. **Plausibilidad**: `desde <= hasta` y el año dentro del rango que el propio motor considera
+ *     plausible. Un rango invertido no falla en ningún lado: publica una ventana vacía.
+ *  3. ⭐ **El tope de `R-30`.** `CONFIG.tope_dias_ventana_cuenta` existe porque una ventana larga
+ *     mete cuentas por pertenencia que no corresponden —medido: la ventana 14–20/08 pasa de 14 a
+ *     32 cuentas con las fechas nuevas—. Un período **más largo que ese tope** no es ilegal, pero
+ *     quien lo cree tiene que saber que va a arrastrar cuentas por deriva. **Avisa, no bloquea**:
+ *     es una decisión editorial y la toma la persona.
+ */
+function crearPeriodoPersonalizado_(desdeTexto, hastaTexto) {
+  var desde = parsearFechaCelda_(desdeTexto);
+  var hasta = parsearFechaCelda_(hastaTexto);
+  if (!desde || !hasta) {
+    return {
+      ok: false,
+      motivo: 'no pude leer las fechas: desde="' + desdeTexto + '" hasta="' + hastaTexto +
+        '". Se leen con el mismo parser que usa el motor (`parsearFechaCelda_`).'
+    };
+  }
+  if (desde.getTime() > hasta.getTime()) {
+    /* ⚠ Un rango invertido **no falla en ningún lado**: publica una ventana vacía, que se lee como
+     * «no hubo datos esa semana». Es el número plausible, otra vez. */
+    return {
+      ok: false,
+      motivo: 'el `desde` (' + formatearFecha_(desde) + ') es posterior al `hasta` (' +
+        formatearFecha_(hasta) + '). Un rango invertido no falla: publica una ventana vacía.'
+    };
+  }
+  var anio = desde.getFullYear();
+  if (anio < 2015 || anio > 2100) {
+    return { ok: false, motivo: 'el año ' + anio + ' está fuera del rango plausible (2015-2100).' };
+  }
+
+  var dias = Math.round((hasta.getTime() - desde.getTime()) / 86400000) + 1;
+  var avisos = [];
+  var tope = Number(leerConfig().tope_dias_ventana_cuenta || 0);
+  /* `0` desactiva el tope, igual que en `R-30`. */
+  if (tope > 0 && dias > tope) {
+    avisos.push('⚠ El período dura ' + dias + ' días y `CONFIG.tope_dias_ventana_cuenta` es ' +
+      tope + '. `R-30` existe porque una ventana larga mete cuentas por pertenencia que no ' +
+      'corresponden: la ventana 14–20/08 pasó de 14 a 32 cuentas al extenderse las fechas. ' +
+      'Se crea igual — es una decisión editorial —, pero el universo va a ser más ancho.');
+  }
+  if (dias !== 7) {
+    avisos.push('ⓘ No es una semana de 7 días (son ' + dias + '). Es válido: `R-11` Addendum 1 ' +
+      'punto 3 dice que dos períodos pueden solaparse o dejar hueco.');
+  }
+
+  var r = crearPeriodos_([{ desde: desde, hasta: hasta }],
+    'Período personalizado creado desde el panel el ' +
+    Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd'));
+  r.avisos = (r.avisos || []).concat(avisos);
+  r.dias = dias;
+  return r;
+}
+
+/**
+ * Ítem de menú / botón del editor: **las próximas semanas, desde la que está en curso.**
+ *
+ * ⚠ **Sin `_` final y SIN PARÁMETROS**, que son las dos condiciones para que Apps Script la liste
+ * en el desplegable (`CLAUDE.md` §2). Y devuelve por `Logger.log`, no sólo por `return`: desde el
+ * editor, una función que sólo retorna es una que no dice nada.
+ */
+function generarProximasSemanas() {
+  var r = generarPeriodosSemanales_(new Date(), 6);
+  Logger.log('== Generador de PERÍODOS ==');
+  if (!r.ok) {
+    Logger.log('⛔ ' + r.motivo);
+    return r;
+  }
+  Logger.log('Filas en la hoja: ' + r.filas_antes + ' → ' + r.filas_despues +
+    ' · pedidas ' + r.pedidas + ' · creadas ' + r.creadas.length + ' · ya estaban ' + r.ya_estaban.length);
+  r.creadas.forEach(function (c) {
+    Logger.log('  ✅ ' + c.id + '  ' + c.desde + ' → ' + c.hasta + '  (fila ' + c.fila + ', releída)');
+  });
+  r.ya_estaban.forEach(function (y) {
+    Logger.log('  ⓘ ' + y.id + ' YA ESTABA — no se tocó' +
+      (y.filas_en_hoja > 1 ? ' · ⛔ y está en ' + y.filas_en_hoja + ' filas' : ''));
+  });
+  if (r.idempotente) Logger.log('ⓘ No se creó ninguna: ya estaban todas. Es idempotencia, no un fallo.');
+  if (r.claves_repetidas.length) {
+    Logger.log('⛔ PERIODOS tiene claves REPETIDAS: ' + r.claves_repetidas.join(', ') +
+      ' — `leerPeriodos()` las colapsa y ve menos filas de las que hay. Anotado en PENDIENTES.');
+  }
+  return r;
+}

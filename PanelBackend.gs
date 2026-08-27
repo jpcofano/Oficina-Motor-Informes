@@ -1867,3 +1867,94 @@ function desfaseContraUltimaCorrida_(cuandoMedicion) {
     return { ok: false, motivo: 'no se pudo leer CORRIDAS: ' + ((e && e.message) ? e.message : e) };
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-26_2` Parte F — **los dos botones de período del panel**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⛔⛔ **«Semana en curso» DEROGA `R-11` Addendum 2**, y va dicho acá porque el que lo lea tiene
+ * que enterarse antes de tocarlo. El Addendum 2 (20/08) decidió que **el motor propone la última
+ * semana CERRADA**: corriendo el viernes 21/08 sigue proponiendo 14/08–20/08, porque la semana que
+ * arranca ese viernes todavía no cerró.
+ *
+ * ⭐ **Qué cambia y qué NO.** La **propuesta por defecto** del panel sigue siendo la cerrada — el
+ * Addendum 2 sigue gobernando `resolverVentana` y el selector. Lo que se agrega es un camino donde
+ * **la persona pide explícitamente la semana en curso**, que es un pedido distinto: no es el motor
+ * adivinando, es alguien decidiendo. La derogación es de *«el motor nunca ofrece la semana sin
+ * cerrar»*, no de *«el motor propone la cerrada»*.
+ *
+ * ⭐⭐ **Y el aviso va al ELEGIRLA, no al terminar.** Una semana sin cerrar trae datos
+ * **parciales**, y el caso está medido: `3488-AGOJDGAG` en el export del 20/08 tenía **11.000 de
+ * 54.107 llamados** por fila, y el deck del equipo se armó después. **Un número parcial no se
+ * distingue de uno completo mirándolo** — así que el único momento útil para decirlo es antes,
+ * no en un pie de página cuando el deck ya salió.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * Botón «generar la semana en curso». Crea (insert-only) el período de la semana que **contiene a
+ * hoy**, y devuelve si esa semana **todavía no cerró**.
+ *
+ * ⚠ `sin_cerrar` se calcula comparando contra `ultimaSemanaCerradaR11_`, que es la función del
+ * Addendum 2 — no con una cuenta de días propia. Las dos lecturas **sólo difieren el viernes**, y
+ * el viernes es justo el día en que se genera `jm`.
+ */
+function panel_generarSemanaEnCurso() {
+  var hoy = new Date();
+  var enCurso = semanaR11_(hoy);
+  var cerrada = ultimaSemanaCerradaR11_(hoy);
+  var sinCerrar = formatearFecha_(enCurso.desde) !== formatearFecha_(cerrada.desde);
+
+  var r = crearPeriodos_([{ desde: enCurso.desde, hasta: enCurso.hasta }],
+    'Semana en curso, creada desde el panel el ' +
+    Utilities.formatDate(hoy, Session.getScriptTimeZone(), 'yyyy-MM-dd') +
+    (sinCerrar ? ' — ⚠ la semana NO había cerrado al crearla' : ''));
+
+  r.periodo_id = periodoIdDeVentana_(enCurso.desde, enCurso.hasta);
+  r.desde = formatearFecha_(enCurso.desde);
+  r.hasta = formatearFecha_(enCurso.hasta);
+  r.sin_cerrar = sinCerrar;
+  /* ⭐ El aviso viaja **siempre**, aunque el front decida no pintarlo: el panel elige si lo
+   * muestra, pero nunca tiene que adivinar si existe. Mismo criterio que los tres de la corrida. */
+  r.aviso_parcial = sinCerrar
+    ? 'Esta semana TODAVÍA NO CERRÓ (cierra el jueves). Los datos de las bases van a estar ' +
+      'parciales, y un número parcial no se distingue de uno completo mirándolo: medido, ' +
+      '3488-AGOJDGAG tenía 11.000 de 54.107 llamados en el export del 20/08.'
+    : '';
+  return r;
+}
+
+/**
+ * Botón «período personalizado». Valida y delega en `crearPeriodoPersonalizado_`.
+ *
+ * ⚠ El `periodo_id` **se deriva, no se pide**: dejar que alguien lo escriba a mano reabre la
+ * puerta a `'vie 14/08 -- jue 20/08 (por defecto)'`, que es una **etiqueta de origen usada como
+ * clave primaria** y sigue en la hoja.
+ */
+function panel_generarPeriodoPersonalizado(desdeTexto, hastaTexto) {
+  return crearPeriodoPersonalizado_(desdeTexto, hastaTexto);
+}
+
+/**
+ * Lo que el panel necesita para **mostrar la semana en curso ANTES de crearla**: qué ventana es,
+ * qué `periodo_id` va a tener, si ya existe y si todavía no cerró.
+ *
+ * ⭐ Existe para que el aviso salga **al elegirla**. Sin esta llamada el panel tendría que crear
+ * primero y avisar después, que es el orden que este bloque vino a evitar.
+ */
+function panel_previaSemanaEnCurso() {
+  var hoy = new Date();
+  var enCurso = semanaR11_(hoy);
+  var cerrada = ultimaSemanaCerradaR11_(hoy);
+  var id = periodoIdDeVentana_(enCurso.desde, enCurso.hasta);
+  var crudas = filasCrudasDePeriodos_();
+  return {
+    ok: true,
+    periodo_id: id,
+    desde: formatearFecha_(enCurso.desde),
+    hasta: formatearFecha_(enCurso.hasta),
+    /* ⚠ Contra las filas CRUDAS: `leerPeriodos()` colapsa las repetidas. */
+    ya_existe: !!(crudas.ok && crudas.porClave[id]),
+    sin_cerrar: formatearFecha_(enCurso.desde) !== formatearFecha_(cerrada.desde),
+    ultima_cerrada: formatearFecha_(cerrada.desde) + ' → ' + formatearFecha_(cerrada.hasta)
+  };
+}
