@@ -5884,22 +5884,28 @@ function medirCampaniasM2PorVentana() {
 }
 
 /**
- * `2026-08-25` — la geometría de la caja de `{{m2_campanias}}` y su autoajuste.
+ * `2026-08-25` — la geometría de la caja de un token y su autoajuste.
  *
  * Va con la medición de bullets y no aparte: *"el bullet se hereda"* y *"las líneas entran"* son
  * dos preguntas, y contestar sólo la primera manda a cablear algo que se va a desbordar. La
  * altura declarada en `PENDIENTES` (`h=24`) es del 03/08 y es evidencia fechada — se re-mide.
  *
+ * ⭐ **`2026-08-26` — toma el TOKEN por parámetro.** Estaba cableada a `m2_campanias` y eso alcanzó
+ * hasta que hubo dos cajas en la misma lámina: la del **banner** —que comparte shape con el literal
+ * «Campañas», `autofit: NONE`, `h: 24`— y la del **bullet**, donde vive `{{m2_camp_lista}}`. **Son
+ * dos cajas distintas y sus números no se parecen**, así que medir una y hablar de la otra es la
+ * figura del artefacto equivocado (`CLAUDE.md` §4).
+ *
  * Sólo lectura, y **sobre la plantilla viva no escribe nada**: `getHeight` no muta.
  */
-function medirCajaDeM2Campanias() {
+function medirCajaDeToken_(token) {
   var informe = leerInformes()['jm'];
   if (!informe || !informe.plantilla_id) return { ok: false, motivo: 'jm sin plantilla_id' };
 
   var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
   var salida = null;
   for (var i = 0; i < slides.length && !salida; i++) {
-    var u = ubicarContenedorDeToken_(slides[i], 'm2_campanias');
+    var u = ubicarContenedorDeToken_(slides[i], token);
     if (!u || u.tipo !== 'shape') continue;
     slides[i].getPageElements().forEach(function (el) {
       var id;
@@ -5910,6 +5916,7 @@ function medirCajaDeM2Campanias() {
       var estilo = rango.getTextStyle();
       salida = {
         ok: true,
+        token: token,
         lamina_id: anclaDeLamina_(slides[i]) || '(sin ancla)',
         orden: i + 1,
         objectId: id,
@@ -5925,7 +5932,7 @@ function medirCajaDeM2Campanias() {
       };
     });
   }
-  if (!salida) return { ok: false, motivo: 'no se encontró la caja de {{m2_campanias}} como shape' };
+  if (!salida) return { ok: false, motivo: 'no se encontró la caja de {{' + token + '}} como shape' };
 
   // Cuántas líneas entran, con la altura de línea aproximada del tamaño de fuente. Es una
   // ESTIMACIÓN y se rotula como tal: la medida exacta la da mirar el deck.
@@ -5937,6 +5944,23 @@ function medirCajaDeM2Campanias() {
   }
   Logger.log(JSON.stringify(salida, null, 2));
   return salida;
+}
+
+/** La caja del BANNER — comparte shape con el literal «Campañas». Sin `_` y sin parámetros. */
+function medirCajaDeM2Campanias() {
+  return medirCajaDeToken_('m2_campanias');
+}
+
+/**
+ * La caja del BULLET, donde se pinta la lista cruda de campañas. Sin `_` y sin parámetros.
+ *
+ * ⚠ **Es OTRA caja que la del banner** y por eso hay dos wrappers: el 25/08 se midió la del banner
+ * —`autofit: NONE`, `h: 24`— y esa medición se citó como si fuera la de la lista. **No hay tope**
+ * (decisión del usuario, 26/08): con ~30 nombres la caja crece y puede empujar lo de abajo, y eso
+ * es esperado. Esto **mide y reporta**; no decide nada.
+ */
+function medirCajaDeM2CampLista() {
+  return medirCajaDeToken_('m2_camp_lista');
 }
 
 /* ================= `2026-08-25_6` Parte 0 — medir antes de tocar la ventana =================

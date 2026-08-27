@@ -246,6 +246,80 @@ console.log('5 · ⛔ el despachador le pasa `separador` — la grieta que se ll
 }
 
 console.log('');
+console.log('6 · ⭐⭐ LA FILA — mismo universo que su hermano, y el separador es un salto REAL');
+/* ⚠ Se **evalúa** el objeto del seed, no se greppea el texto: en el fuente el separador se escribe
+ * con dos caracteres —barra y ene— que JavaScript convierte en **uno**. Buscar la cadena por texto
+ * mediría el fuente y no el valor, que es la figura del artefacto equivocado (`CLAUDE.md` §4). */
+{
+  const INSTALAR = fs.readFileSync(path.join(RAIZ, 'Instalar.gs'), 'utf8');
+  /* ⚠ **El nombre aparece más de una vez y sólo una es la DEFINICIÓN.** `m2_campanias` sale también
+   * en el anotador de notas, con un objeto de tres campos que ni siquiera evalúa fuera de su
+   * función. Se recorren todas las apariciones y se toma **la que declara `operacion:`** — buscar
+   * la primera daba la equivocada, y el síntoma fue un `ReferenceError`, que es lo que corresponde:
+   * un extractor que agarra otra cosa tiene que romperse, no devolver algo plausible. */
+  const bloqueDesde = (i) => {
+    let ini = INSTALAR.lastIndexOf('{', i);
+    let nivel = 0;
+    for (let j = ini; j < INSTALAR.length; j++) {
+      if (INSTALAR[j] === '{') nivel++;
+      else if (INSTALAR[j] === '}') {
+        nivel--;
+        if (nivel === 0) return INSTALAR.slice(ini, j + 1);
+      }
+    }
+    return null;
+  };
+  const filaDe = (nombre) => {
+    const aguja = "marcador: '" + nombre + "'";
+    for (let i = INSTALAR.indexOf(aguja); i !== -1; i = INSTALAR.indexOf(aguja, i + 1)) {
+      const txt = bloqueDesde(i);
+      if (!txt || txt.indexOf('operacion:') === -1) continue;
+      // eslint-disable-next-line no-new-func
+      return new Function('return ' + txt)();
+    }
+    throw new Error('No encontré la fila de definición de `' + nombre + '` en Instalar.gs — ' +
+      'ninguna aparición declara `operacion:`.');
+  };
+
+  const lista = filaDe('m2_camp_lista');
+  const banner = filaDe('m2_campanias');
+
+  af('`m2_camp_lista` declara `operacion: LISTA_CRUDA`', lista.operacion === 'LISTA_CRUDA',
+    'dice ' + JSON.stringify(lista.operacion));
+  af('  y `formato: texto`', lista.formato === 'texto', 'dice ' + JSON.stringify(lista.formato));
+  af('  y NO declara `catalogo`', !lista.catalogo,
+    'un catálogo acá rechazaría campañas legítimas y no llegarían al deck');
+
+  /* ⭐⭐ La identidad de la afirmación 2 sólo vale si los dos leen LO MISMO. Acá se verifica sobre
+   * la configuración, que es donde puede romperse sin que ninguna cuenta falle. */
+  ['base_id', 'solapa', 'campo_logico', 'dimensiones'].forEach((campo) => {
+    af('  · `' + campo + '` idéntico al de `m2_campanias` (' + JSON.stringify(banner[campo]) + ')',
+      lista[campo] === banner[campo],
+      'lista dice ' + JSON.stringify(lista[campo]) + ' — si difieren, el banner cuenta OTRO ' +
+      'universo y la identidad de la lámina deja de significar algo');
+  });
+  af('  · y su hermano sigue siendo `CUENTA_DISTINTOS`', banner.operacion === 'CUENTA_DISTINTOS',
+    'dice ' + JSON.stringify(banner.operacion));
+
+  af('⭐ `separador` es UN salto de línea real (charCode 10)',
+    typeof lista.separador === 'string' && lista.separador.length === 1 &&
+    lista.separador.charCodeAt(0) === 10,
+    'vino ' + JSON.stringify(lista.separador) + ' · largo ' +
+    (lista.separador || '').length + ' · charCodes [' +
+    String(lista.separador || '').split('').map((c) => c.charCodeAt(0)).join(', ') + ']');
+  af('  ⛔ y NO son los dos caracteres barra+ene', lista.separador !== '\\n',
+    'con esos dos la lista sale en UNA línea y sin bullets, y en un log se ve igual');
+
+  /* ⛔ El alta reescribe la fila entera, así que el wrapper tiene que releer lo que quedó en la
+   * celda — un carácter invisible es justo donde `C-83` muerde. */
+  af('el wrapper RELEE el separador de la hoja y exige charCode 10',
+    /charCodeAt\(0\) === 10/.test(INSTALAR) && /r\.releido/.test(INSTALAR),
+    'sin la relectura, «se pidió escribir un salto» y «quedó un salto» son dos cosas distintas');
+  af('  y si no quedó bien, NO anota la nota del hermano (sería falsa)',
+    /NO se anota la nota del hermano/.test(INSTALAR));
+}
+
+console.log('');
 console.log('══════════════════════════════════════════');
 console.log('  ' + ok + ' afirmación(es) en verde · ' + mal + ' en rojo · sobre ' + CAMPANAS.length +
   ' fila(s) de fixture, con el código extraído de Marcadores.gs, Fuentes.gs y Parseo.gs');

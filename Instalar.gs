@@ -8328,3 +8328,153 @@ function cablearLosChicos() {
   Logger.log('   camp_dir_impl         → mismo bloqueo en digital/Directa Mail.');
   return r;
 }
+
+/**
+ * ⭐⭐ **`m2_camp_lista` — la lista CRUDA de nombres de campaña de M2 (`L-038`), 26/08/2026.**
+ *
+ * **Publica los nombres distintos de la semana, tal como vienen.** El equipo agrupa a mano en su
+ * deck y **ese criterio no es derivable**: `X-18` lo midió — el `30 → 12` no se explica por
+ * colapso, porque el equipo además **poda** (`Vacunación antirrábica` y `Repavimentación` no están)
+ * y **reescribe** (`Poda pre` + `Poda post` → `Poda (pre y post)`). Cualquier transformación
+ * automática que se acercara **inventaría** las campañas que el equipo decidió no publicar.
+ *
+ * ⛔⛔ **SIN TOPE, y es una decisión editorial del usuario (26/08), no un olvido.** No hay corte, no
+ * hay «y N más», no hay límite configurable: **se publican todos y el equipo poda**. La lista existe
+ * para que el equipo **edite**, y una recortada le esconde justo lo que tiene que decidir — un deck
+ * que muestra 10 de 30 bajo un banner que dice 30 **miente sin fallar**.
+ *   ⚠ **La consecuencia va escrita y no descubierta: con ~30 nombres la caja crece y puede empujar
+ *   lo que tiene debajo.** Es el precio de la decisión, no un bug que reportar.
+ *
+ * ⭐ **`separador` es un SALTO DE LÍNEA REAL**, y por eso este wrapper **relee la celda** (`C-83`):
+ * un salto real y los dos caracteres `\`+`n` **vuelven idénticos de Sheets** y hacen lo opuesto —
+ * uno abre párrafo en Slides, y cada párrafo hereda bullet, nivel y sangría; el otro imprime dos
+ * caracteres y deja la lista en **una sola línea, sin bullets**. En un log se ven iguales, así que
+ * la única forma de saberlo es mirar el **largo y el charCode** de lo que quedó.
+ *
+ * ⭐⭐ **La identidad que cierra la lámina:** `m2_campanias` cuenta lo que esto publica. Los dos leen
+ * `digital/Directa Mail`, campo `mail_campana`, `dimensiones = tipo_envio=m2` — **el mismo universo**
+ * — y comparten `distintosDeCampo_`, así que *el banner == la cantidad de líneas* es cierto **por
+ * construcción**. Lo exige `tools/probar-lista-cruda.js`, con el negativo que lo pone en rojo si
+ * alguien le cambia el normalizador.
+ *
+ * **Sin `_` y sin parámetros** — las dos condiciones de `CLAUDE.md` §2.
+ */
+var SELLO_NOTA_M2_HERMANO_ = '2026-08-26: ya tiene un hermano que SI se pinta';
+
+function cablearM2CampLista() {
+  var r = curarMarcadores_([], [
+    {
+      marcador: 'm2_camp_lista', familia: 'm2', informe_id: 'jm',
+      base_id: 'digital', solapa: 'Directa Mail', campo_logico: 'mail_campana',
+      operacion: 'LISTA_CRUDA', dimensiones: 'tipo_envio=m2', formato: 'texto',
+      separador: '\n',
+      notas: 'lista CRUDA de nombres de campania de M2 de la ventana, uno por linea. ' +
+        'Decision del usuario 26/08: se publican TODOS y el equipo poda en su deck. SIN TOPE a ' +
+        'proposito -- la lista existe para que el equipo EDITE, y una recortada le esconde lo que ' +
+        'tiene que decidir. CONSECUENCIA ESPERADA: con ~30 nombres la caja crece y puede empujar ' +
+        'lo de abajo. | operacion LISTA_CRUDA y NO LISTA: LISTA publica contra un catalogo y ' +
+        'descarta lo que no matchea, y aca cualquier nombre nuevo es legitimo (X-18). | separador ' +
+        '= SALTO DE LINEA REAL, no los caracteres barra+n: vuelven identicos de Sheets y hacen lo ' +
+        'opuesto. | IDENTIDAD: m2_campanias cuenta lo que esto publica -- mismo universo, mismo ' +
+        'nucleo (distintosDeCampo_, R-10), asi que banner == cantidad de lineas por construccion'
+    }
+  ]);
+
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  /* ⚠ `curarMarcadores_` **reemplaza**: si la fila ya estaba, la borra y la reescribe. Así que
+   * `agregadas` es 1 siempre y no distingue alta de reemplazo — el que lo dice es `quitadas`. */
+  var reemplazo = (r.quitadas || []).filter(function (q) { return q.marcador === 'm2_camp_lista'; });
+  Logger.log('== m2_camp_lista: ' + (reemplazo.length ? 'REEMPLAZADA (ya existía)' : 'ALTA nueva') +
+    ' · ' + r.filas_finales + ' filas en MARCADORES ==');
+
+  /* ⛔⛔ `C-83` — **se relee lo que quedó en la celda, no lo que se pidió escribir.** Toda celda de
+   * Sheets interpreta lo que se le mete, y acá lo que se mete es un carácter invisible. */
+  var fila = (r.releido || {})['m2_camp_lista||jm'];
+  var sep = fila ? String(fila.separador === null || fila.separador === undefined ? '' : fila.separador) : '';
+  var codigos = [];
+  for (var i = 0; i < sep.length; i++) codigos.push(sep.charCodeAt(i));
+
+  Logger.log('');
+  Logger.log('⭐ SEPARADOR RELEÍDO DE LA HOJA: ' + JSON.stringify(sep) +
+    ' · largo ' + sep.length + ' · charCode(s) [' + codigos.join(', ') + ']');
+
+  var okSep = (sep.length === 1 && sep.charCodeAt(0) === 10);
+  if (!okSep) {
+    Logger.log('⛔ NO quedó un salto de línea real, así que la lista saldría en UNA sola línea y');
+    Logger.log('   sin bullets. Si los charCodes dicen [92, 110] son la barra y la ene: dos');
+    Logger.log('   caracteres que en un log se ven igual que un salto y hacen lo contrario.');
+    Logger.log('   ⛔ NO se anota la nota del hermano: sería falsa.');
+    return { ok: false, motivo: 'el separador no quedó como salto de línea real', releido: sep, codigos: codigos };
+  }
+  Logger.log('✅ es UN salto de línea real (charCode 10). En Slides abre párrafo y hereda el bullet.');
+
+  /* ⭐ La línea del hermano va **después** y no antes, y el orden es la mitad de su valor: *«ya
+   * tiene un hermano que sí se pinta»* sólo es cierto una vez que la fila existe **y** su separador
+   * quedó bien. Anotarla arriba dejaría escrita una afirmación falsa si el alta fallaba. */
+  var anot = anotarQueM2CampaniasTieneHermano_();
+  Logger.log('');
+  Logger.log(anot.idempotente
+    ? 'ⓘ m2_campanias ya tenía la línea del hermano. No se escribió nada.'
+    : (anot.ok ? '✅ m2_campanias quedó con la línea del hermano, releída de la hoja.'
+               : '⛔ no se pudo anotar la línea del hermano: ' + anot.motivo));
+
+  Logger.log('');
+  Logger.log('⛔ AHORA CORRÉ censarTokensSinMarcador() DE NUEVO.');
+  Logger.log('   m2_camp_lista NO tiene que aparecer más en L-038 — era el único de sus 9 sin fila.');
+  Logger.log('');
+  Logger.log('⭐ Y AL GENERAR, la identidad que cierra la lámina:');
+  Logger.log('   el banner m2_campanias tiene que decir EXACTAMENTE cuántas líneas trae la lista.');
+  Logger.log('   Si difieren, no es un error de redondeo: son dos universos distintos.');
+  Logger.log('');
+  Logger.log('⚠ ESPERADO Y NO ES UN BUG: la caja del bullet CRECE. No hay tope por decisión');
+  Logger.log('   del usuario (26/08) — se publican todos los nombres y el equipo poda.');
+  return r;
+}
+
+/**
+ * La segunda línea de la nota de `m2_campanias`: **ya tiene un hermano que sí se pinta.**
+ *
+ * ⚠ **Privada y con `_` a propósito:** no es un botón, es el segundo paso de `cablearM2CampLista()`
+ * y **sólo tiene sentido después** de que la fila del hermano exista. Correrla sola dejaría escrita
+ * una afirmación que todavía no es cierta.
+ *
+ * Idempotente por sello y relee la celda (`C-83`), igual que `anotarQueM2CampaniasNoSePinta()`.
+ */
+function anotarQueM2CampaniasTieneHermano_() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) return { ok: false, motivo: 'la hoja MARCADORES no existe' };
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0];
+  var iM = headers.indexOf('marcador'), iI = headers.indexOf('informe_id'), iN = headers.indexOf('notas');
+  if (iN === -1) return { ok: false, motivo: 'MARCADORES no tiene columna `notas`' };
+
+  var fila = -1;
+  for (var f = 1; f < datos.length; f++) {
+    if (datos[f][iM] === 'm2_campanias' && String(datos[f][iI]) === 'jm') { fila = f; break; }
+  }
+  if (fila === -1) return { ok: false, motivo: 'no hay fila `m2_campanias` + `jm` en MARCADORES' };
+
+  var antes = String(datos[fila][iN] || '');
+  if (antes.indexOf(SELLO_NOTA_M2_HERMANO_) !== -1) {
+    return { ok: true, idempotente: true, notas: antes };
+  }
+
+  var parrafo = SELLO_NOTA_M2_HERMANO_ + ' -- m2_camp_lista publica la lista de esos mismos ' +
+    'nombres, con LISTA_CRUDA sobre el mismo campo y las mismas dimensiones. Los dos comparten ' +
+    'distintosDeCampo_ (R-10), asi que este numero tiene que ser EXACTAMENTE la cantidad de lineas ' +
+    'de la lista: es la identidad interna que cierra L-038, y si difieren son dos universos.';
+
+  var r = curarCamposMarcadores_([
+    { marcador: 'm2_campanias', informe_id: 'jm', notas: (antes ? antes + ' | ' : '') + parrafo }
+  ]);
+  if (!r.ok) return r;
+
+  var releido = String(hoja.getDataRange().getValues()[fila][iN] || '');
+  return {
+    ok: releido.indexOf(SELLO_NOTA_M2_HERMANO_) !== -1,
+    motivo: releido.indexOf(SELLO_NOTA_M2_HERMANO_) !== -1 ? '' : 'la celda no quedó con el párrafo',
+    idempotente: false, antes: antes, releido: releido
+  };
+}
