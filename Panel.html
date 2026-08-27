@@ -619,6 +619,17 @@ function pintarCuadrados(){
              (t.puede_proponer ? '' : ' disabled') + '>Proponer</button>' +
            '<button class="btn btn-primary" data-cargar="' + esc(c.clave) + '">Cargar</button>' +
            '</div>';
+      /* ⭐ `2026-08-26_2` Parte B — **la ventana también en el cuadro de TEMARIO.** Acá se
+       * mostraban *filas cargadas* y nada de la ventana, así que la pregunta *«¿sobre qué
+       * período estoy cargando esto?»* sólo se contestaba mirando el desplegable de arriba.
+       *
+       * ⚠ **El dato ya viajaba**: `panel_getEstado` manda `c.ventana` con etiqueta, fechas y
+       * origen para **todos** los cuadros, y el front lo pintaba sólo en la rama de abajo —la
+       * de los que no son temario ni manuales—. No hizo falta tocar el backend. */
+      if (c.ventana){
+        h += '<div class="cuadro-est mono">Ventana: ' + esc(c.ventana.etiqueta) +
+             (c.ventana.origen ? ' · ' + esc(nivelDeVentana(c.ventana.origen)) : '') + '</div>';
+      }
       h += '<div class="cuadro-est" id="est-' + esc(c.clave) + '">' +
            (S.periodoId
              ? (t.filas_cargadas || 0) + ' fila(s) cargada(s) para <span class="mono">' + esc(S.periodoId) + '</span>' +
@@ -633,7 +644,7 @@ function pintarCuadrados(){
       h += '<div class="cuadro-est">Se carga a mano' + (c.motivo ? ' — ' + esc(c.motivo) : '') + '</div>';
     } else {
       h += '<div class="cuadro-est">' +
-           (c.ventana ? 'Ventana: ' + esc(c.ventana.etiqueta) + ' <span class="mono">(' + esc(c.ventana.origen) + ')</span>'
+           (c.ventana ? 'Ventana: ' + esc(c.ventana.etiqueta) + ' <span class="mono">(' + esc(nivelDeVentana(c.ventana.origen)) + ')</span>'
                       : 'Sin ventana resuelta') +
            (c.motivo ? '<br><span class="alerta">' + esc(c.motivo) + '</span>' : '') +
            '</div>';
@@ -1112,6 +1123,26 @@ function leyendaSimbolos(){
     'corte taparía el cableado que falta.</p></div>';
 }
 
+/* ⭐ `2026-08-26_2` Parte B — **por cuál de los cinco eslabones salió la ventana.**
+ *
+ * `resolverVentana` es la cadena de `D-20` y hasta hoy el panel mostraba **la etiqueta y nada
+ * más**: *«el usuario eligió `julio_24_30`»* y *«nadie eligió nada y `R-11` calculó la última
+ * semana cerrada»* se ven **idénticos**, y mandan a trabajos distintos.
+ *
+ * ⚠ **Si el nivel no se reconoce se muestra CRUDO, nunca se inventa la frase.** Es el
+ * precedente del `|| S.faltantesComoRaya` que se retiró el 20/08: un front que contesta por su
+ * cuenta una pregunta del backend miente justo donde la persona mira. */
+function nivelDeVentana(nivel){
+  var n = String(nivel || '');
+  if (!n) return '';
+  if (n.indexOf('periodo_ref:') === 0) return 'período elegido: ' + n.slice(12);
+  if (n.indexOf('campana:') === 0)     return 'ventana de la campaña ' + n.slice(8);
+  if (n.indexOf('seccion:') === 0)     return 'ventana de la sección ' + n.slice(8);
+  if (n === 'config')                  return 'la ventana de CONFIG';
+  if (n === 'R-11 (calculado)')        return 'calculada: la última semana cerrada (R-11)';
+  return n;
+}
+
 function vistaListo(){
   var r = S.resultado;
   var inf = informeActual();
@@ -1119,7 +1150,11 @@ function vistaListo(){
    * saber en diez segundos es si se puede publicar; el link está justo abajo y no se pierde. */
   var h = veredictoDePublicacion(r);
   h += deckCard(r.deck, (inf && inf.nombre) || S.informeId,
-    esc(r.periodo || '') + ' · corrida ' + esc(r.corrida_id || ''));
+    esc(r.periodo || '') +
+    /* ⭐ El NIVEL, al lado de la etiqueta. Sin esto el deck no dice de dónde salió su ventana. */
+    (r.periodo_nivel ? ' · ' + esc(nivelDeVentana(r.periodo_nivel)) : '') +
+    (r.periodo_desde && r.periodo_hasta ? ' · ' + esc(r.periodo_desde) + '–' + esc(r.periodo_hasta) : '') +
+    ' · corrida ' + esc(r.corrida_id || ''));
 
   /* Los avisos van ANTES que los números: cambian cómo se lee todo lo de abajo. */
   /* ⭐ `2026-08-21_1` — **`presupuesto` salió de esta lista.** Viaja siempre, así que caía

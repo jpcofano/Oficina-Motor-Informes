@@ -347,10 +347,29 @@ function panel_generar(informeId, periodoId, conSimbolos, secciones) {
      * sí lo desarma, y usa su `url`, que es la que emitió el motor y no una reconstruida—, pero
      * eso se arregló en `Panel.html`, que es donde estaba el bug.
      *
-     * ⚠ Se pierden `desde`, `hasta`, `calculado` y `traza`, y hoy **no los lee nadie** (grepeado:
-     * `r.periodo` aparece una sola vez en `Panel.html`). El día que el panel quiera marcar una
-     * ventana calculada, el campo vuelve como uno propio — no reabriendo el objeto entero. */
+     * ⭐ `2026-08-26_2` Parte B — **ese día llegó, y el campo volvió como uno propio.** Lo que
+     * decía acá —*«se pierden `desde`, `hasta`, `calculado` y `traza`, y hoy no los lee nadie…
+     * el día que el panel quiera marcar una ventana calculada, el campo vuelve como uno propio
+     * — no reabriendo el objeto entero»*— **era una instrucción, no una descripción**, y se
+     * cumple al pie: `periodo` sigue siendo la etiqueta de la lámina y los campos que hacen
+     * falta viajan al lado, **planos**. El objeto no se reabre.
+     *
+     * ⭐⭐ **Por qué el NIVEL y no sólo las fechas, que es lo que de verdad faltaba.**
+     * `resolverVentana` es una cadena de **cinco eslabones** (`D-20`) y el deck no dice por cuál
+     * salió: *«el usuario eligió `julio_24_30`»* y *«nadie eligió nada y `R-11` calculó la última
+     * semana cerrada»* producen **la misma etiqueta** y mandan a trabajos distintos. Es la misma
+     * familia que el glifo que miente sobre la causa: no miente sobre el valor, miente sobre
+     * **de dónde salió**.
+     *
+     * ⚠ **Viajan SIEMPRE, aunque el front decida no pintarlos** — el mismo criterio que los tres
+     * avisos de más abajo: el panel elige si los muestra, pero nunca tiene que adivinar si
+     * existen. */
     periodo: (r.periodo && r.periodo.lamina) || '',
+    periodo_desde: (r.periodo && r.periodo.desde) || '',
+    periodo_hasta: (r.periodo && r.periodo.hasta) || '',
+    periodo_nivel: (r.periodo && r.periodo.origen) || '',
+    periodo_calculado: !!(r.periodo && r.periodo.calculado),
+    periodo_traza: (r.periodo && r.periodo.traza) || '',
     corrida_id: r.corrida_id,
     presentacion_faltantes: r.presentacion_faltantes,
     // Cada conteo con su unidad dicha. `marcadores` es el resumen de la pasada de tokens
