@@ -822,8 +822,13 @@ function vistaGenerar(){
    * persona espere cinco minutos. Sólo se pinta cuando el selector está en "por defecto": si
    * eligió un período de la lista, el recorte se aplica y no hay nada que avisar. */
   var avisosVentana = (!S.periodoId && S.porDefecto && S.porDefecto.ok && S.porDefecto.avisos) || [];
+  /* ⭐ `2026-08-26_2` Parte C — **el `nivel` se respeta.** Acá todo se pintaba `hint-error`,
+   * así que el caso normal —ventana calculada **con** fila en `PERIODOS`, que ahora informa que
+   * el recorte SÍ se aplica— saldría en rojo. **Un aviso que aparece siempre deja de leerse**,
+   * y eso ya está escrito en el propio `PanelBackend.gs` desde que se redactó este aviso por
+   * primera vez. */
   avisosVentana.forEach(function(a){
-    h += '<p class="hint-error">' + esc(a.texto) + '</p>';
+    h += '<p class="' + (a.nivel === 'info' ? 'hint' : 'hint-error') + '">' + esc(a.texto) + '</p>';
   });
   var roto = S.periodos.filter(function(p){
     return String(p.desde).indexOf('ilegible') !== -1 || String(p.hasta).indexOf('ilegible') !== -1;

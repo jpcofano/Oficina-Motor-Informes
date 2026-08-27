@@ -31,6 +31,14 @@ function fechaLegible_(valor) {
 }
 
 /**
+ * ⛔⛔ **LEER PRIMERO: este bloque es el de 2026-08-20 y DOS de sus afirmaciones vencieron.** Se
+ * conserva porque cómo se llegó a una conclusión equivocada es la mitad de su valor, pero **lo
+ * vigente es el bloque de más abajo** (`2026-08-26_2` Parte C). Lo que venció, con la fecha:
+ * **el 22/08** (`_25`, commit `fd226d1`) el recorte de `D-19` **pasó a aplicarse** también sobre
+ * una ventana calculada, cuando alguna fila de `PERIODOS` la describe. Las dos frases de abajo
+ * marcadas ⛔ quedaron falsas **ese día**, sin que nadie las tocara — que es exactamente *el
+ * comentario que afirma un contrato y sobrevive porque nada lo contradice* (`CLAUDE.md` §4).
+ *
  * `2026-08-20_2` Parte B (20/08/2026) — **qué le falta a la ventana propuesta para ser
  * confiable.** Devuelve una lista de `{ nivel, texto }`; vacía significa que no falta nada.
  *
@@ -46,6 +54,7 @@ function fechaLegible_(valor) {
  *     `anclarEncuentrosSinCache_` saca el período **del `origen` de la ventana**, mirando si
  *     empieza con `periodo_ref:`. Una ventana calculada trae `origen = 'R-11 (calculado)'`, así
  *     que **el recorte de `D-19` no se aplica** y entran todas las filas con `mostrar=sí`.
+ *     ⛔ **VENCIDA el 22/08**: hoy sí se aplica si alguna fila de `PERIODOS` describe la ventana.
  *
  * **El número que lo vuelve concreto, medido el 20/08 en la hoja viva:** `REUNIONES` tiene 12
  * filas con `mostrar=sí` y son de **dos períodos distintos** —8 de `julio_24_30` y 4 de
@@ -59,25 +68,99 @@ function fechaLegible_(valor) {
  * próxima se lee con la misma desconfianza.
  *
  * El aviso **no bloquea el botón**: la corrida es válida y la ventana es la correcta. Lo que hace
+ * ⛔ **VENCIDA el 22/08**, la frase que sigue: hoy el aviso dice las TRES cosas según el caso.
  * es que la persona sepa, antes de esperar cinco minutos, que las secciones repetibles no están
  * recortadas por período.
+ */
+/* ⛔⛔ `2026-08-26_2` Parte C — **TERCERA generación del mismo aviso diciendo algo que no es, y
+ * por eso el arreglo no es al texto: es a la FUENTE.**
+ *
+ * **Las tres, para que se vea que es una figura y no tres descuidos:**
+ *
+ *  1. `2026-08-20_2` — nace diciendo *«no se puede correr»*. Falso: la corrida es válida.
+ *  2. `2026-08-22_22` §5 — decía *«la semana propuesta **no tiene fila en PERIODOS**»* mirando
+ *     sólo el prefijo del `origen`. Medido: `agosto_14_20` **era exactamente esa fila**. La
+ *     consecuencia era cierta, la causa no.
+ *  3. ⭐ **Ésta.** Desde el `_25` (commit `fd226d1`, 22/08 13:21) `anclarEncuentrosSinCache_`
+ *     **sí recorta** sobre una ventana calculada cuando alguna fila de `PERIODOS` la describe —
+ *     usa `periodosQueDescribenLaVentana_` y filtra por el conjunto—. El aviso siguió publicando
+ *     *«las secciones repetibles NO se recortan por período»*, que pasó a ser **falso** ese día.
+ *
+ * ⭐⭐ **Que sea la tercera vez ES el hallazgo: un aviso que se corrige tres veces no tiene un
+ * bug, tiene la fuente equivocada.** Las tres veces el aviso decidía con **su propio** criterio
+ * —el prefijo del `origen`— mientras el motor decidía con otro. Mientras haya dos cálculos, el
+ * cuarto arreglo ya está escrito.
+ *
+ * ⭐ **El arreglo, en una línea: el aviso llama a `periodosQueDescribenLaVentana_`, que es LA
+ * función con la que el motor decide.** No es sólo dejar de duplicar: el bucle que estaba acá era
+ * **byte por byte** el mismo que el de `Union.gs`, así que ya era la reimplementación que
+ * `CLAUDE.md` §4 nombra —*el instrumento que reproduce lógica del motor y la reproduce peor*—,
+ * sólo que con la peor variante: **reproducía bien y decidía distinto**.
+ *
+ * ⚠ **Y el dato correcto ya estaba calculado treinta líneas más abajo**, en el bloque
+ * `coincidentes`. Se usaba para **redactar el consejo** y no para **decidir si el aviso
+ * corresponde**. Un cálculo que informa el texto pero no la decisión es la forma exacta de este
+ * modo de falla.
+ *
+ * **Los tres casos, que ahora son tres y no dos:**
+ *
+ *   | ventana | ¿recorta el motor? | qué dice el panel |
+ *   |---|---|---|
+ *   | `periodo_ref:` (la eligieron) | sí, por ese id | nada |
+ *   | calculada, y ≥1 fila la describe | ⭐ **sí, por el conjunto** | informativo: con cuál(es) |
+ *   | calculada, y ninguna la describe | no | ⛔ el aviso de siempre, que sigue siendo cierto |
+ *
+ * ⚠ **El caso del medio pasó de alarma a información, y el `nivel` importa:** pintarlo en rojo
+ * sería un aviso que aparece casi siempre, y *un aviso que aparece siempre deja de leerse* — que
+ * es lo que este mismo archivo ya tenía escrito cuando se lo redactó por primera vez.
+ *
+ * ⭐ **Bonus medido, no buscado:** `REUNIONES` ya no se lee en el caso del medio. Antes se leía
+ * **siempre**, para un número que ahora sólo hace falta cuando no hay recorte.
+ *
+ * El aviso **no bloquea el botón** en ningún caso: la corrida es válida y la ventana es la
+ * correcta. Lo que hace es que la persona sepa, antes de esperar cinco minutos, qué universo va
+ * a salir.
  */
 function avisosDeVentanaPropuesta_(ventana) {
   var avisos = [];
   if (!ventana || !ventana.ok) return avisos;
 
   var origen = String(ventana.origen || '');
-  var traeperiodo = origen.indexOf('periodo_ref:') === 0;
-  if (traeperiodo) return avisos;
+  if (origen.indexOf('periodo_ref:') === 0) return avisos;
 
-  // Sin `periodo_ref:` en el origen no hay recorte de `D-19`. Se dice con el número adelante,
-  // porque "hay reuniones de otros períodos" y "hay 4 reuniones de junio" no se leen igual.
-  //
-  // ⚠ El conteo sale de `leerReuniones_()` **tal cual**, sin volver a filtrar por `mostrar`:
-  // esa función ya aplica el filtro con `esVerdadero_` y exige `eje`. Reproducir acá ese criterio
-  // sería el error que `CLAUDE.md` §4 documenta —*el instrumento que reproduce lógica del motor y
-  // la reproduce peor*—, y encima el aviso quedaría diciendo un número distinto del que el motor
-  // va a usar, que es justo lo que este aviso existe para evitar.
+  /* ⭐ **La misma función con la que el motor decide, no una copia de su cuerpo.** Si algún día
+   * `anclarEncuentrosSinCache_` cambia de criterio —una tolerancia de un día, un match por
+   * nombre—, este aviso cambia con él y no se entera nadie. Ése es el punto. */
+  var periodosDeLaVentana = periodosQueDescribenLaVentana_(ventana);
+
+  if (periodosDeLaVentana.length) {
+    /* ⭐ Informativo, no alarma: el recorte **sí** se aplica. Lo único que hay para decir es que
+     * la ventana se calculó y con qué período(s) va a recortar — porque un `periodo_id` que
+     * ninguna reunión tenga cargado no aporta filas, y verlo antes de esperar es barato.
+     *
+     * ⚠ **Se nombran TODOS los que coinciden.** Hay dos filas con la ventana
+     * `2026-08-14 → 2026-08-20` —`agosto_14_20` y `'vie 14/08 -- jue 20/08 (por defecto)'`— y
+     * desde el `_25` el motor usa el **conjunto**, así que no hay ninguna elección que hacer.
+     * Mostrar sólo el primero volvería a sugerir que hay que elegir. */
+    avisos.push({
+      nivel: 'info',
+      texto: 'El selector quedó en «por defecto», así que la ventana se calculó y no se eligió. ' +
+        'El recorte por período **sí** se aplica: entran las reuniones cuyo `periodo_id` sea ' +
+        (periodosDeLaVentana.length === 1
+          ? '"' + periodosDeLaVentana[0] + '"'
+          : 'alguno de ' + periodosDeLaVentana.map(function (id) { return '"' + id + '"'; }).join(' o ')) +
+        '.'
+    });
+    return avisos;
+  }
+
+  /* ── Ninguna fila de `PERIODOS` describe esta ventana ────────────────────────────────────
+   * Acá sí no hay período que leer y el motor **no filtra**, así que el aviso de siempre sigue
+   * siendo cierto — y es el caso en que hace falta el número.
+   *
+   * ⚠ El conteo sale de `leerReuniones_()` **tal cual**, sin volver a filtrar por `mostrar`: esa
+   * función ya aplica el filtro con `esVerdadero_` y exige `eje`. Reproducir acá ese criterio
+   * sería el mismo error que este arreglo viene a cerrar, un escalón más abajo. */
   var deOtros = 0;
   var visibles = 0;
   try {
@@ -90,72 +173,21 @@ function avisosDeVentanaPropuesta_(ventana) {
     // a genérico en vez de tumbar la pantalla.
     avisos.push({
       nivel: 'aviso',
-      texto: 'La ventana propuesta no tiene período con nombre, así que las secciones repetibles ' +
-        'no se recortan por período (D-19). No pude leer REUNIONES para decir cuántas entrarían.'
+      texto: 'Ninguna fila de PERIODOS describe la ventana propuesta, así que las secciones ' +
+        'repetibles no se recortan por período (D-19). No pude leer REUNIONES para decir cuántas ' +
+        'entrarían.'
     });
     return avisos;
   }
 
-  /* ⛔ `2026-08-22_22` §5 — **la premisa de este aviso era FALSA, y el aviso es el único de la
-   * pantalla.**
-   *
-   * Decía *"La semana propuesta **no tiene fila en PERIODOS**"* mirando **sólo** si el `origen`
-   * empieza con `periodo_ref:`. Medido el 22/08 en la hoja viva: la ventana propuesta es
-   * `2026-08-14 → 2026-08-20` y **`agosto_14_20` es exactamente esa fila**. La consecuencia que
-   * el aviso describe —que el recorte de `D-19` no se aplica— **es cierta**; la causa que le
-   * atribuye, no.
-   *
-   * ⚠ **Y eso es tan caro como no avisar nada.** `CLAUDE.md` §4 lo tiene escrito para este mismo
-   * aviso, cuando se lo redactó: *"mostrar una advertencia equivocada es tan caro como no mostrar
-   * ninguna, porque la próxima se lee con la misma desconfianza"*. Ésta se leyó con desconfianza
-   * dos días después de escribirla.
-   *
-   * ⭐ **El arreglo es buscar la fila que coincide, que es lo que el front ya sabe hacer** —
-   * `periodoBuscado()` empareja por `desde`/`hasta` para la vía rápida—. Con eso el aviso deja de
-   * ser una alarma y pasa a decir **qué apretar**: *"elegí `agosto_14_20`"*.
-   *
-   * ⚠ **Se compara por ventana y NO por nombre, y eso importa acá más que en el front:** hay dos
-   * filas con la misma ventana —`agosto_14_20` y `'vie 14/08 -- jue 20/08 (por defecto)'`, la
-   * fila 9 anotada como P1— y **elegir la equivocada produce un deck con cero encuentros**. Por
-   * eso se ofrecen **todas** las que coinciden, no la primera: la pantalla no puede elegir por la
-   * persona cuando una de las opciones vacía el informe. */
-  var coincidentes = [];
-  try {
-    var periodos = leerPeriodos();
-    Object.keys(periodos).forEach(function (id) {
-      var p = periodos[id];
-      var d = parsearFechaCelda_(p.desde), h = parsearFechaCelda_(p.hasta);
-      if (!d || !h) return;
-      if (formatearFecha_(d) === formatearFecha_(ventana.desde) &&
-          formatearFecha_(h) === formatearFecha_(ventana.hasta)) coincidentes.push(id);
-    });
-  } catch (e) {
-    // Un panel que no puede leer `PERIODOS` sigue sirviendo: el aviso se degrada, no se cae.
-    coincidentes = [];
-  }
-
   if (visibles) {
-    var causa = coincidentes.length
-      ? 'La semana propuesta **sí** tiene fila en PERIODOS —' +
-        coincidentes.map(function (id) { return '"' + id + '"'; }).join(' y ') +
-        '—, pero el selector quedó en «por defecto», así que la ventana se calculó y no se eligió.'
-      : 'La semana propuesta no tiene fila en PERIODOS.';
-
-    var salida = coincidentes.length === 1
-      ? ' Para que el recorte se aplique, elegí "' + coincidentes[0] + '" en el selector.'
-      : coincidentes.length > 1
-        ? ' Para que el recorte se aplique hay que elegir una de esas filas en el selector. ' +
-          '⚠ Son varias con la misma ventana: el recorte usa el `periodo_id`, así que la que ' +
-          'ninguna reunión tenga cargada va a dejar el informe SIN encuentros.'
-        : ' Para que el recorte se aplique hay que elegir un período de la lista, o crear la fila.';
-
     avisos.push({
       nivel: 'aviso',
-      texto: causa + ' El informe se genera igual y sobre estas fechas, pero las secciones ' +
-        'repetibles NO se recortan por período: entran las ' + visibles + ' reunión(es) con ' +
-        'mostrar=sí' +
+      texto: 'Ninguna fila de PERIODOS describe la ventana propuesta. El informe se genera igual ' +
+        'y sobre estas fechas, pero las secciones repetibles NO se recortan por período: entran ' +
+        'las ' + visibles + ' reunión(es) con mostrar=sí' +
         (deOtros ? ', incluidas ' + deOtros + ' que ya tienen otro período asignado' : '') +
-        '.' + salida
+        '. Para que el recorte se aplique hay que elegir un período de la lista, o crear la fila.'
     });
   }
 
