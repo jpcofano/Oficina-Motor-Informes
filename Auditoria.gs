@@ -6571,3 +6571,166 @@ function compararAntesYDespuesPostL036() {
   Logger.log('⚠ Qué filas entran a `L-036` lo decide el TEMARIO, no esta lista.');
   return { ok: true, filas: filas };
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-27_2` Parte A — **los dos GATES, contra la hoja VIVA**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⛔⛔ **Esto no se puede contestar desde el repo, y por eso existe.** `A.7` y `A.8` preguntan por
+ * **todas las filas vivas de `REUNIONES`**, y el snapshot más reciente en disco es del **26/08** —
+ * anterior a las filas que el asistente escribió el 27 y que causaron el fallo. Un gate contra una
+ * foto vieja **no es el gate**: es otra medición, la del día que se sacó la foto.
+ *
+ * ⚠ **Sin `_` final y SIN PARÁMETROS**, que son las dos condiciones para que Apps Script la liste
+ * en el desplegable (`CLAUDE.md` §2). Y devuelve por `Logger.log`: desde el editor, una función
+ * que sólo retorna es una que no dice nada.
+ *
+ * ⛔ **SÓLO LECTURA.** No escribe una celda, no crea hojas, no borra nada.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+function verificarGatesDelTemario() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('REUNIONES');
+  if (!hoja) {
+    Logger.log('⛔ La hoja REUNIONES no existe.');
+    return { ok: false, motivo: 'no existe REUNIONES' };
+  }
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = (datos.shift() || []).map(function (h) { return String(h || '').trim(); });
+  var idx = {};
+  headers.forEach(function (h, i) { idx[h] = i; });
+
+  var faltan = ['periodo_id', 'eje', 'nombre', 'fecha', 'etapa', 'mostrar', 'texto_original']
+    .filter(function (c) { return idx[c] === undefined; });
+  if (faltan.length) {
+    Logger.log('⛔ A REUNIONES le faltan columnas: ' + faltan.join(', '));
+    return { ok: false, motivo: 'faltan columnas: ' + faltan.join(', ') };
+  }
+
+  var filas = [];
+  datos.forEach(function (f, i) {
+    /* ⚠ **Se cuentan TODAS las filas con algo escrito, no las que pasan un filtro.** Filtrar acá
+     * por `eje` sería preguntarle al filtro que se está por cambiar cuáles filas existen — que es
+     * exactamente el error que `reunionesOcultasPorMostrar_` comete hoy. */
+    var vacia = headers.every(function (h, k) { return String(f[k] == null ? '' : f[k]).trim() === ''; });
+    if (vacia) return;
+    var o = { fila: i + 2 };
+    headers.forEach(function (h, k) { o[h] = f[k]; });
+    filas.push(o);
+  });
+
+  Logger.log('== GATES del temario · REUNIONES viva ==');
+  Logger.log('Filas con contenido: ' + filas.length);
+
+  /* ── A.7 · la clave SIN `eje` no puede colisionar ─────────────────────────────────────── */
+  var claveSinEje = function (o) {
+    /* ⭐ Se arma con `claveReunion_` REAL sobre una copia con `eje` en blanco, en vez de escribir
+     * una segunda fórmula: si la clave cambia, este gate se entera. */
+    var copia = {};
+    Object.keys(o).forEach(function (k) { copia[k] = o[k]; });
+    copia.eje = '';
+    return claveReunion_(copia);
+  };
+
+  var conEje = {};
+  var sinEje = {};
+  filas.forEach(function (o) {
+    var kc = claveReunion_(o);
+    conEje[kc] = (conEje[kc] || 0) + 1;
+    var k = claveSinEje(o);
+    if (!sinEje[k]) sinEje[k] = [];
+    sinEje[k].push(o);
+  });
+
+  var colisiones = Object.keys(sinEje).filter(function (k) { return sinEje[k].length > 1; });
+  Logger.log('');
+  Logger.log('A.7 · claves CON eje: ' + Object.keys(conEje).length +
+    ' · claves SIN eje: ' + Object.keys(sinEje).length + ' · sobre ' + filas.length + ' fila(s)');
+  if (colisiones.length) {
+    Logger.log('⛔ GATE A.7 FALLA — sacar `eje` de la clave declararía duplicado lo que no lo es:');
+    colisiones.forEach(function (k) {
+      Logger.log('   clave "' + k + '" la comparten ' + sinEje[k].length + ' filas:');
+      sinEje[k].forEach(function (o) {
+        Logger.log('      fila ' + o.fila + ' · eje=' + JSON.stringify(String(o.eje || '')) +
+          ' · texto=' + JSON.stringify(String(o.texto_original || '').slice(0, 60)));
+      });
+    });
+  } else {
+    Logger.log('✅ GATE A.7 pasa — ninguna colisión al sacar `eje`.');
+  }
+
+  /* ⚠ **Y la colisión que YA existe hoy, con `eje` adentro.** Medido el 27/08 sobre el temario
+   * real: tres líneas que no parsean dan la misma clave las tres, así que el dedupe colapsa
+   * **tres líneas en una fila**. No la causa sacar `eje` — ya está — pero quien lea A.7 tiene que
+   * verla, o va a atribuir al cambio una colisión que es anterior. */
+  var colisionHoy = Object.keys(conEje).filter(function (k) { return conEje[k] > 1; });
+  Logger.log('⚠ Colisiones que YA existen hoy, con `eje` en la clave: ' +
+    (colisionHoy.length ? colisionHoy.join(' | ') : 'ninguna'));
+
+  /* ── A.8 · `texto_original` sirve como reemplazo del filtro ───────────────────────────── */
+  var sinTexto = filas.filter(function (o) { return String(o.texto_original || '').trim() === ''; });
+  var sinTextoYMostrar = sinTexto.filter(function (o) { return esVerdadero_(o.mostrar); });
+  Logger.log('');
+  Logger.log('A.8 · filas con `texto_original` VACÍO: ' + sinTexto.length +
+    ' · de ésas con `mostrar` verdadero: ' + sinTextoYMostrar.length);
+  sinTexto.forEach(function (o) {
+    Logger.log('   fila ' + o.fila + ' · periodo=' + JSON.stringify(String(o.periodo_id || '')) +
+      ' · eje=' + JSON.stringify(String(o.eje || '')) +
+      ' · nombre=' + JSON.stringify(String(o.nombre || '')) +
+      ' · mostrar=' + JSON.stringify(String(o.mostrar || '')));
+  });
+  if (sinTextoYMostrar.length) {
+    Logger.log('⛔ GATE A.8 FALLA — con el criterio nuevo esas filas NO entrarían, y hoy sí entran.');
+  } else {
+    Logger.log('✅ GATE A.8 pasa — ninguna fila viva depende de `eje` para entrar.');
+  }
+
+  /* ── A.9 · estado de la hoja hoy ──────────────────────────────────────────────────────── */
+  var conEjeVacio = filas.filter(function (o) { return String(o.eje || '').trim() === ''; });
+  Logger.log('');
+  Logger.log('A.9 · filas con `eje` VACÍO: ' + conEjeVacio.length);
+  conEjeVacio.forEach(function (o) {
+    Logger.log('   fila ' + o.fila + ' · periodo=' + JSON.stringify(String(o.periodo_id || '')) +
+      ' · mostrar=' + JSON.stringify(String(o.mostrar || '')) +
+      ' · texto=' + JSON.stringify(String(o.texto_original || '').slice(0, 70)) +
+      ' · notas=' + JSON.stringify(String(o.notas || '').slice(0, 40)));
+  });
+
+  var porPeriodo = {};
+  filas.forEach(function (o) {
+    var p = String(o.periodo_id || '(sin periodo)').trim();
+    if (!porPeriodo[p]) porPeriodo[p] = { total: 0, sin_eje: 0, mostrando: 0 };
+    porPeriodo[p].total++;
+    if (String(o.eje || '').trim() === '') porPeriodo[p].sin_eje++;
+    if (esVerdadero_(o.mostrar)) porPeriodo[p].mostrando++;
+  });
+  Logger.log('');
+  Logger.log('A.9 · por período — total · sin eje · con mostrar verdadero:');
+  Object.keys(porPeriodo).forEach(function (p) {
+    var x = porPeriodo[p];
+    Logger.log('   ' + p + ': ' + x.total + ' · ' + x.sin_eje + ' · ' + x.mostrando);
+  });
+
+  var ok = colisiones.length === 0 && sinTextoYMostrar.length === 0;
+  Logger.log('');
+  Logger.log(ok ? '✅ LOS DOS GATES PASAN — la Parte D se puede ejecutar.'
+                : '⛔ ALGÚN GATE FALLA — la Parte D NO se ejecuta. Ver arriba.');
+  Logger.log('');
+  Logger.log('⚠ Lo que esto NO contesta:');
+  Logger.log('   · Si las filas con `eje` vacío hay que borrarlas. Eso lo decidís vos: con el');
+  Logger.log('     cambio de la Parte D pasan de inertes a poder ENTRAR al informe si están');
+  Logger.log('     tildadas.');
+  Logger.log('   · Nada sobre CAMPANAS: esa hoja es otra pregunta.');
+
+  return {
+    ok: ok,
+    filas: filas.length,
+    a7: {
+      claves_con_eje: Object.keys(conEje).length,
+      claves_sin_eje: Object.keys(sinEje).length,
+      colisiones: colisiones,
+      colisiones_hoy: colisionHoy
+    },
+    a8: { sin_texto_original: sinTexto.length, y_con_mostrar: sinTextoYMostrar.length },
+    a9: { sin_eje: conEjeVacio.length, por_periodo: porPeriodo }
+  };
+}
