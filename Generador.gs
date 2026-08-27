@@ -1217,6 +1217,29 @@ function resolverMarcadores(informeId, opciones) {
       return base;
     }
 
+    /* ⭐ `2026-08-26_2` Parte A — **el universo viaja pegado al número.**
+     *
+     * Las **ocho** ramas de `datosDeMarcador_` ya construían un `origen` largo y preciso
+     * —*«las 4 fila(s) de rdv/RVD JM-CM - ES de los encuentros del TEMARIO… sin recorte por
+     * ventana»*, *«agregado global de digital/Directa IVR (sin id_cuenta; 59 fila(s) antes del
+     * recorte)»*— **y nadie lo leía**: grepeado el 25/08, `datos.origen` sólo aparecía en
+     * `diagMarcadorSimulado_` (`Auditoria.gs`), que es un diagnóstico y no el camino real.
+     *
+     * ⚠ **Por qué importa más de lo que parece:** la **ventana** ya viajaba en la traza y el
+     * **universo** no. Cuando `L-036` publicó el Recap de CABA con 2.463.980 habitantes, la traza
+     * decía `leerFuente(digital/…)` — el texto correcto, disponible— **y el número salió igual**.
+     * Visibilidad no impide publicar, pero es lo único que permite diagnosticar después.
+     *
+     * ⭐ **Va en un campo propio Y en el texto, y las dos mitades hacen falta.** El campo lo lee
+     * un consumidor sin parsear la traza —el criterio que el propio repo ya escribió en
+     * `PanelBackend.gs`: *«el campo vuelve como uno propio — no reabriendo el objeto entero»*— y
+     * el texto es lo que llega a `FALTANTES`, que es donde alguien lo va a leer.
+     *
+     * ⚠ **Lo que esto NO cubre, dicho acá y no en un reporte:** los `return` de error que vienen
+     * **después** de esta línea —dimensión no resuelta, filtro, ratio, catálogo— no suman el
+     * universo **al texto**. El campo `origen_datos` sí viaja en todos, porque se setea acá. */
+    base.origen_datos = String(datos.origen || '');
+    var trazaOrigen = base.origen_datos ? ' · universo: ' + base.origen_datos : '';
     // 4 bis · El filtro declarativo. Va acá —después de leer, antes de partir el ratio y
     //         antes de la operación— porque filtrar dentro de `leerFuente` es exactamente
     //         lo que impide que dos marcadores de la misma solapa pidan mitades distintas.
@@ -1505,6 +1528,7 @@ function resolverMarcadores(informeId, opciones) {
     var huboRechazos = !!(salida.rechazados && salida.rechazados.length);
     base.estado = vacio ? (huboRechazos ? 'REVISAR' : 'sin_datos') : 'ok';
     base.traza = salida.traza +
+      trazaOrigen +
       (base.recorte_ventana ? ' · ' + base.recorte_ventana : '') +
       (base.filtro_aplicado ? ' · ' + base.filtro_aplicado : '') +
       ' · solapa "' + solapa.solapa + '"' + (solapa.inferida ? ' (inferida: es la única fuente de la base)' : '') +
