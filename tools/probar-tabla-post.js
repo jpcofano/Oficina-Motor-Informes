@@ -351,17 +351,35 @@ console.log('\n8 · ⛔⛔ la lista de REVERSIÓN cubre lo que se llegó a escri
 if (process.argv.indexOf('--autoprueba') !== -1) {
   console.log('\n== autoprueba: control negativo CON MOTIVO ==');
   let malas = 0;
+  /* ⛔⛔ `2026-08-26_2` Parte G — **los dos patrones envejecieron, y la lección es el TAMAÑO del
+   * ancla.** Los dos incluían `operacion: 'FILA', ` adelante; el día que la operación pasó a salir
+   * de la columna —`c.operacion || 'FILA'`, para que la del nombre pudiera ser `FILA_TEXTO`—
+   * **dejaron de matchear**, y este autotest quedó en rojo sin que nadie lo viera, porque
+   * `tools/suites.js` corre los bancos **sin** `--autoprueba`.
+   *
+   * ⭐ **Lo accionable: el ancla es el fragmento MÍNIMO que expresa la mutación, y se verifica que
+   * sea ÚNICO.** `valor_fijo: n, separador:` aparece **1** sola vez en `Instalar.gs` y no menciona
+   * la operación, así que sobrevive a este cambio y a los que vengan. El patrón viejo arrastraba
+   * contexto que no se estaba mutando — **cada palabra de más es una forma más de envejecer**.
+   *
+   * ⚠ **Y el ancla larga NO era más segura por ser más específica:** `separador: 'fecha_periodo',`
+   * solo aparece **41** veces en el archivo, así que ahí sí hacía falta acompañarlo con algo. La
+   * unicidad se **cuenta**, no se supone.
+   *
+   * ⭐ Lo que salvó al banco de mentir fue la guarda del 24/08 —*si el texto mutado es idéntico al
+   * original, el caso FALLA*—: sin ella habría informado «los 2 casos negativos caen por el motivo
+   * correcto» sin haber tocado una línea. */
   const casos = [
     {
       nombre: 'le saco el `separador` a las 12 filas',
-      mutar: (s) => s.replace("operacion: 'FILA', valor_fijo: n, separador: 'fecha_periodo',",
-        "operacion: 'FILA', valor_fijo: n, separador: '',"),
+      mutar: (s) => s.replace("valor_fijo: n, separador: 'fecha_periodo',",
+        "valor_fijo: n, separador: '',"),
       probar: (f) => f.every((x) => x.separador === 'fecha_periodo')
     },
     {
       nombre: 'le pongo el índice como texto `1/4`',
-      mutar: (s) => s.replace('operacion: \'FILA\', valor_fijo: n, separador:',
-        'operacion: \'FILA\', valor_fijo: n + \'/4\', separador:'),
+      mutar: (s) => s.replace('valor_fijo: n, separador:',
+        'valor_fijo: n + \'/4\', separador:'),
       probar: (f) => f.every((x) => typeof x.valor_fijo === 'number')
     }
   ];
