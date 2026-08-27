@@ -4792,6 +4792,29 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
    * El techo de esta etapa ahora vive **por lámina**, abajo. Un corte de la etapa 3 sigue siendo
    * un corte: el bucle de abajo no abre lámina nueva. */
 
+  /* ⛔⛔ `2026-08-26_2` Parte D — **las cuatro variables de `D-41` se declaran ARRIBA del `if`, y
+   * no es prolijidad: sin esto una corrida que corta ANTES de la etapa 4 no puede terminar.**
+   *
+   * **El caso, reproducido en `tools/probar-reanudacion-identica.js`:** el bloque de la etapa 4
+   * vive dentro de `if (!corte)`, así que con un corte en la etapa 2 o 3 —que es **el caso normal**
+   * de la corrida desatendida— las cuatro quedan `undefined` por hoisting, y el retorno hace
+   * `laminasDeEtapa4.length` **fuera del `try/catch`**. `TypeError`, la fila de `CORRIDAS` sin
+   * cerrar y sin plan para continuar.
+   *
+   * ⭐⭐ **Es el MISMO error que `copia.getName()` del 21/08, en la misma función.** Y aquel día el
+   * barrido dijo *«dio una sola: `copia`»* — lo que es cierto **para el 21/08**: estas cuatro
+   * nacieron el **24/08**, tres días después. **Un cero medido vale para su fecha**, y por eso el
+   * barrido se rehizo: de las **11** variables declaradas en este bloque, **4** se leen después del
+   * `if` — justo estas cuatro. Las otras siete no salen de acá.
+   *
+   * ⭐ **Y `corrio` no es un extra: sin él `total: 0` MIENTE.** *«La etapa no se ejecutó»* y
+   * *«se ejecutó y no había láminas»* mandan a trabajos opuestos y el cero solo no los distingue —
+   * la misma familia que el `/////` que no separaba *«nadie lo cableó»* de *«no se llegó»*. */
+  var laminasDeEtapa4 = [];
+  var laminasEtapa4Hechas = [];
+  var laminasEtapa4Pendientes = [];
+  var costoUltimaLaminaSeg = 0;
+  var etapa4Corrio = false;
   if (!corte) {
   /* ⭐ `2026-08-22_25` Parte A — **el contexto del agregado por temario entra acá**, en la única
    * pasada que resuelve marcadores **sin ítem**. Las láminas de `ecv_alcance_semanal` no se
@@ -4899,14 +4922,15 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   /* Se guarda para el diagnóstico del cierre: es la diferencia entre *«nadie lo miró»* y *«está
    * en una lámina escondida»*, y el cierre corre mucho después de acá. */
   tokensSoloEnEscondidas = visiblesEtapa4.detalle || {};
-  var laminasDeEtapa4 = agruparTokensPorLamina_(tokensFijos);
+  laminasDeEtapa4 = agruparTokensPorLamina_(tokensFijos);
+  etapa4Corrio = true;
   /* ⭐ Perezoso a propósito: en un deck sin faltantes no hace **ninguna** llamada a la API. Ver el
    * comentario de `resolvedorDeLaminaId_` — el instrumento corre dentro de la etapa que el
    * presupuesto ya aprieta, y un barrido completo lo pagaría toda corrida. */
   var resolverLaminaId = resolvedorDeLaminaId_(presentacion);
-  var costoUltimaLaminaSeg = costoLaminaEtapa4Seg_();
-  var laminasEtapa4Hechas = [];
-  var laminasEtapa4Pendientes = [];
+  costoUltimaLaminaSeg = costoLaminaEtapa4Seg_();
+  laminasEtapa4Hechas = [];
+  laminasEtapa4Pendientes = [];
 
   for (var iLam = 0; iLam < laminasDeEtapa4.length; iLam++) {
     var grupo = laminasDeEtapa4[iLam];
@@ -5267,6 +5291,8 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
       // NO vacío con `corte` es el caso normal; vacío con corte querría decir que el corte no
       // fue de esta etapa.
       etapa4_por_lamina: {
+        // ⭐ «no se ejecutó» y «se ejecutó y no había láminas» dan los dos `total: 0`.
+        corrio: etapa4Corrio,
         hechas: laminasEtapa4Hechas,
         pendientes: laminasEtapa4Pendientes,
         total: laminasDeEtapa4.length,
