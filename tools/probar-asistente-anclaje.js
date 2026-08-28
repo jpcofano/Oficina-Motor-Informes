@@ -100,9 +100,9 @@ function armar(parchear) {
   ctx.formatearPeriodoLamina_ = () => '21/08 — 27/08';
   ctx.umbralAnclajeReunion_ = () => 0.6;
   ctx.abrirCacheRegistros_ = () => { ctx.__abrio = (ctx.__abrio || 0) + 1; };
-  ctx.cerrarCacheRegistros_ = () => {};
+  ctx.cerrarCacheRegistros_ = () => { ctx.__cerro = (ctx.__cerro || 0) + 1; };
   ctx.abrirCacheDatosHoja_ = () => { ctx.__abrioDatos = (ctx.__abrioDatos || 0) + 1; };
-  ctx.cerrarCacheDatosHoja_ = () => {};
+  ctx.cerrarCacheDatosHoja_ = () => { ctx.__cerroDatos = (ctx.__cerroDatos || 0) + 1; };
   ctx.anclarEncuentros = () => {
     /* ⭐ El anclaje falseado **registra a quién vio**, para poder afirmar que corrió DESPUÉS de
      * escribir `mostrar` y no antes. */
@@ -260,8 +260,20 @@ console.log('\n5 · ⭐⭐ confirmar escribe y después ancla, en una sola respu
     '⭐⭐ y el paso 4 queda habilitado — por `guardaDelAsistente_`, con hechos releídos de la hoja');
 
   /* ⭐ Las dos cachés, copiadas del preámbulo de `generarInforme` y no armadas de nuevo. */
-  afirmar(ctx.__abrio === 1 && ctx.__abrioDatos === 1,
-    '⭐⭐ y el anclaje corrió con las DOS cachés abiertas: `unirDigitalPorCuenta` pasa de 6 s a 325 sin ellas');
+  /* ⭐⭐ `2026-08-28` — **la afirmación pasó de un número a un INVARIANTE, y con motivo.** Pedía
+   * `=== 1` y se puso roja cuando el paso 3 ganó un segundo consumidor de cachés
+   * (`contrapartesPorCuenta_`, que lee los canales de cada cuenta). El número era correcto el día
+   * que se escribió y **caducaba con el próximo consumidor**; lo que de verdad importa es que
+   * **cada apertura tenga su cierre** y que **alguien las haya abierto**.
+   *
+   * ⚠ Un `abrir` sin `cerrar` deja las cachés vivas más allá de la llamada, y ahí un diagnóstico
+   * posterior leería datos viejos creyendo que relee — que es justo lo que las cachés apagadas por
+   * defecto existen para evitar. */
+  afirmar(ctx.__abrio >= 1 && ctx.__abrio === ctx.__cerro,
+    '⭐⭐ la caché de registros se abrió (' + ctx.__abrio + ') y se cerró las mismas veces: ' +
+    '`unirDigitalPorCuenta` pasa de 6 s a 325 sin ella, y una que queda abierta miente después');
+  afirmar(ctx.__abrioDatos >= 1 && ctx.__abrioDatos === ctx.__cerroDatos,
+    '⭐ y la de datos igual (' + ctx.__abrioDatos + ') — balanceada, que es el invariante que no caduca');
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════

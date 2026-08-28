@@ -2599,6 +2599,27 @@ function panel_asistenteConfirmar(periodoId, informeId, decisiones) {
   var anclaje = anclarParaElAsistente_(ventana);
   var estados = estadosDeAnclaje_(anclaje);
 
+  /* ⭐⭐ `2026-08-28` — **primero el id, después los canales.** Con la cuenta ya resuelta, la
+   * pregunta siguiente es si esa cuenta **existe en los otros canales**: sin contraparte en
+   * `Directa Mail` no va a haber mails, sin contraparte en el desglose no va a haber impresiones,
+   * y hoy eso se descubre mirando el deck vacío.
+   *
+   * ⚠ Se piden **las cuentas de las reuniones Y las de las campañas** en una sola llamada, porque
+   * el costo es por SOLAPA y no por cuenta: pedirlas por separado duplicaría las lecturas. */
+  var idsParaCanales = [];
+  if (estados.ok) {
+    (estados.filas || []).forEach(function (f) { if (f.id_cuenta) idsParaCanales.push(f.id_cuenta); });
+  }
+  filasDeHojaRegistro_('CAMPANAS').forEach(function (c) {
+    if (String(c.periodo_id || '').trim() === ref && c.id_cuenta) idsParaCanales.push(c.id_cuenta);
+  });
+  var canales = contrapartesPorCuenta_(idsParaCanales, ventana);
+  if (estados.ok) {
+    (estados.filas || []).forEach(function (f) {
+      f.canales = (f.id_cuenta && canales.por_id[f.id_cuenta]) || [];
+    });
+  }
+
   var hechos = hechosDelAsistente_(ref, informeId);
   return {
     ok: true,
@@ -2610,6 +2631,12 @@ function panel_asistenteConfirmar(periodoId, informeId, decisiones) {
       .concat((escrituras.reuniones && escrituras.reuniones.sin_fila) || [])
       .concat((escrituras.campanas && escrituras.campanas.sin_fila) || []),
     anclaje: estados,
+    /* ⭐ `2026-08-28` — qué canales se pudieron consultar y cuáles fallaron. Va al lado de los
+     * conteos porque **sin esta lista el panel no puede decir si un canal vacío es «no hay» o «no
+     * se miró»**, que es la distinción que este repo persigue en todos lados. */
+    canales_consultados: canales.solapas,
+    canales_fallidos: canales.fallidas,
+    canales_por_cuenta: canales.por_id,
     ventana: {
       etiqueta: formatearPeriodoLamina_(ventana),
       desde: formatearFecha_(ventana.desde),
@@ -2726,4 +2753,79 @@ function panel_asistenteCrearPeriodo(modo, desdeTexto, hastaTexto) {
     avisos: avisos,
     claves_repetidas: r.claves_repetidas
   };
+}
+
+/**
+ * ⭐⭐ `2026-08-28` — **para cada cuenta anclada: en qué CANALES existe.** Pedido del usuario:
+ * *«primer check el id, después las plataformas»*.
+ *
+ * **Los canales NO se escriben a mano: son las solapas que declaran `SOLAPAS.campo_id_cuenta`.**
+ * Ésa es la única vía para encontrar la fila de una cuenta fuera de `rdv` (`D-30`), así que la
+ * lista es exactamente la de lo que se puede chequear. Una lista literal acá se desincronizaría
+ * con el registro en el primer alta — `CLAUDE.md` §2.
+ *
+ * ⚠ **Una lectura por SOLAPA, no una por (solapa × cuenta).** Se lee cada solapa una vez y se
+ * cuentan todas las cuentas contra esas filas. Con la caché de datos abierta son 7 lecturas para
+ * todo el temario; una por par serían decenas.
+ *
+ * ⚠ **`uso = 'ignorar'` no se toca nunca** (`CLAUDE.md` §2): son pivots, backups y duplicados, y
+ * `digital/RDV` duplica la base `rdv` — contarla sería doble conteo con forma de contraparte.
+ *
+ * ⚠ **Se lee SIN recorte por ventana, y eso es parte del resultado.** La pregunta es *«¿esta cuenta
+ * existe en este canal?»*, no *«¿entra en la semana?»*. Son distintas: una fila fuera de la ventana
+ * existe y **no publica**. El panel lo dice con esas palabras para que nadie lea de más.
+ */
+function contrapartesPorCuenta_(ids, ventana) {
+  var salida = { por_id: {}, solapas: [], fallidas: [], ok: true, motivo: '' };
+
+  var unicos = {};
+  (ids || []).forEach(function (x) {
+    var s = String(x === null || x === undefined ? '' : x).trim();
+    if (s) unicos[s] = true;
+  });
+  var lista = Object.keys(unicos);
+  lista.forEach(function (id) { salida.por_id[id] = []; });
+  if (!lista.length) return salida;
+
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+    var solapas = leerSolapas();
+    Object.keys(solapas).forEach(function (baseId) {
+      Object.keys(solapas[baseId] || {}).forEach(function (nombre) {
+        var s = solapas[baseId][nombre] || {};
+        if (String(s.uso || '').trim() !== 'fuente') return;
+        var campo = String(s.campo_id_cuenta || '').trim();
+        if (!campo) return;   // no se puede buscar por cuenta acá; no es un error, es que no aplica
+
+        var mapa = buscarMapeo(baseId, nombre, campo);
+        if (!mapa.ok) {
+          /* ⛔ Declarada y sin `MAPEO` **sí** es un error, y hay que verlo: es el estado en que
+           * `planDeLecturaPorCuenta_` falla con `@campo_id_cuenta_no_mapeado`. */
+          salida.fallidas.push(baseId + '/' + nombre + ' — `' + campo + '` sin fila en MAPEO');
+          return;
+        }
+        var lectura = leerFuente(baseId, ventana, nombre, { sin_recorte_por_ventana: true });
+        if (!lectura.ok) {
+          salida.fallidas.push(baseId + '/' + nombre + ' — ' + lectura.motivo);
+          return;
+        }
+        var clave = claveDeLecturaEnColumna_(baseId, nombre, mapa.columna);
+        salida.solapas.push(baseId + '/' + nombre);
+        lista.forEach(function (id) {
+          salida.por_id[id].push({
+            base_id: baseId, solapa: nombre,
+            filas: filtrarFilasPorCuenta_(lectura.filas, clave, id).length
+          });
+        });
+      });
+    });
+  } catch (e) {
+    salida.ok = false;
+    salida.motivo = String((e && e.message) ? e.message : e);
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+  return salida;
 }

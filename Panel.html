@@ -381,6 +381,7 @@ function asistenteVacio(){
     checks: null,           // clave -> bool, para que el repintado no pierda lo tildado
     anclaje: null,          // las tres listas, tal como volvieron de confirmar
     sinFila: [],            // decisiones que no matchearon ninguna fila
+    canales: null,          // qué canales se consultaron y cuáles fallaron (2026-08-28)
     puedeGenerar: false,
     msg: null,
     trabajando: false
@@ -1059,7 +1060,7 @@ function pasoConfirmar(){
        (a.anclaje ? 'Confirmar y anclar de nuevo' : 'Confirmar y anclar') + '</button>' +
        '</div>';
 
-  if (a.anclaje) h += bloqueDeAnclaje(a.anclaje, a.sinFila);
+  if (a.anclaje) h += bloqueDeAnclaje(a.anclaje, a.sinFila, a.canales);
 
   /* ⛔ **El botón del paso 4 aparece sólo cuando el BACKEND dice que puede.** `puedeGenerar` sale
    * de `guardaDelAsistente_` para el paso 4, con hechos releídos de la hoja después de escribir —
@@ -1107,7 +1108,7 @@ function filaDeConfirmacion(filas, titulo, a){
  * sólo registra los de baja confianza, así que un encuentro que ancló perfecto y uno que no ancló
  * contra nada **se ven idénticos desde ahí — no están**.
  */
-function bloqueDeAnclaje(an, sinFila){
+function bloqueDeAnclaje(an, sinFila, meta){
   if (!an || !an.ok){
     return '<div class="alert alert-warning"><div class="alert-title">El anclaje no pudo correr</div>' +
       esc((an && an.motivo) || '') + '</div>';
@@ -1151,9 +1152,43 @@ function bloqueDeAnclaje(an, sinFila){
            'fila en <span class="mono">ANCLAJE_PENDIENTE</span> cuando el anclaje queda por debajo ' +
            'del umbral, y éste no llegó a ese punto. Sale sin cuenta, con el hueco a la vista.</div>';
     }
+    /* ⭐⭐ `2026-08-28` — **primero el id, después los canales.** Con la cuenta ya resuelta, lo que
+     * hace falta saber es si esa cuenta EXISTE en cada canal: sin contraparte en `Directa Mail` no
+     * va a haber mails, sin contraparte en el desglose no va a haber impresiones. Hoy eso se
+     * descubre mirando el deck vacío, que es dos pasos tarde. */
+    h += canalesHTML(f.canales);
     h += '</div>';
   });
+
+  /* ⚠ **Qué se consultó, dicho siempre.** Sin esta línea, un canal que no aparece se lee como
+   * «no hay filas» cuando puede ser «no se pudo mirar» — la distinción de siempre. Los canales
+   * son las solapas que declaran `campo_id_cuenta`: si falta uno que esperabas, lo que falta es
+   * esa celda en `SOLAPAS`, no el dato. */
+  if ((an.filas || []).length && ((meta||{}).consultados || []).length){
+    h += '<p class="hint">Canales consultados (' + meta.consultados.length + '): ' +
+         esc(meta.consultados.join(' · ')) + '. Se mira si la cuenta <b>existe</b> en cada uno, ' +
+         'sin recortar por la ventana — una fila fuera de la semana existe y no publica.</p>';
+  }
+  if (((meta||{}).fallidos || []).length){
+    h += '<p class="hint-error">⛔ ' + meta.fallidos.length + ' canal(es) no se pudieron ' +
+         'consultar: ' + esc(meta.fallidos.join(' · ')) + '</p>';
+  }
   return h;
+}
+
+/**
+ * ⭐ Los canales de una cuenta: ✅ con filas, ⛔ sin ninguna.
+ *
+ * ⚠ **Cero filas NO es un error y no se pinta como tal**: quiere decir que esa cuenta no tiene
+ * nada en ese canal, que para un encuentro sin mail es lo correcto y esperable. Lo que el glifo
+ * dice es *«acá no va a salir nada»*, y eso es útil ANTES de generar.
+ */
+function canalesHTML(cs){
+  if (!cs || !cs.length) return '';
+  return '<div class="cuadro-est">' + cs.map(function(c){
+    return (c.filas > 0 ? '✅ ' : '⛔ ') + esc(c.solapa) +
+           (c.filas > 0 ? ' <span class="mono">' + c.filas + '</span>' : '');
+  }).join(' · ') + '</div>';
 }
 
 /* ── Paso 4 · generar ─────────────────────────────────────────────────────────────────────
@@ -1282,6 +1317,7 @@ function confirmarYAnclar(){
       a2.msg = null;
       a2.anclaje = r.anclaje;
       a2.sinFila = r.sin_fila || [];
+      a2.canales = { consultados: r.canales_consultados || [], fallidos: r.canales_fallidos || [] };
       a2.puedeGenerar = r.puede_generar === true;
       /* ⛔ **No se salta solo al paso 4.** El anclaje es lo que la persona vino a mirar acá: pasar
        * de largo dejaría la segunda pregunta del paso 3 sin contestar. */
