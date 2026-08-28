@@ -314,6 +314,65 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     };
   }
 
+  /* ⭐⭐ `2026-08-27` Parte 3 — **el fallback de `rdv` se cierra, y con TRES salidas, no dos.**
+   *
+   * Cierra el P0 abierto en `PENDIENTES` desde el 25/08: las dos ramas hermanas resolvían la misma
+   * condición —*el temario no trajo filas*— **al revés**, la de `post_*` fallando y ésta cayéndose
+   * a la cadena general. **Decisión del usuario del 27/08:** gana la que falla.
+   *
+   * ⛔⛔ **Pero fallar siempre es tan malo como caerse, y eso lo destapó un dato del dominio:** el
+   * encuentro del temario del 27/08 **no tuvo mail**. Con la regla de la rama 3 aplicada al pie
+   * —*declarada y sin filas → `FALTA`*— una caja sin mail publicaría `«FALTA»` sobre un hecho
+   * perfectamente normal: la marca que grita cuando no hay nada que arreglar. **Cero filas y cero
+   * encuentros son dos cosas distintas y mandan a trabajos opuestos.**
+   *
+   * ⭐ **El discriminador ya existía y ya viajaba: `items`.**
+   *
+   * | caso | qué es | qué sale |
+   * |---|---|---|
+   * | `items === 0` | el temario no trajo ni un encuentro | ⛔ **falla** — hay que mirar el temario |
+   * | `items > 0`, `filas` vacío | hubo encuentros y ninguno tiene fila en `rdv` | **sin dato** — es un dato |
+   * | `filas` con algo | el universo del temario | el número (rama de arriba) |
+   *
+   * ⚠ **Va DESPUÉS de las dos ramas de arriba**, y ése es el invariante: la singular sirve al
+   * bloque de encuentro —donde el ítem trae su `fila_rdv`— y la plural al agregado con filas. Ésta
+   * sólo mira el caso en que no hubo ninguna.
+   *
+   * ⚠ **Y no dispara en la etapa 3**: `temario_rdv` vive en `opcionesEtapa4`, y las opciones del
+   * ítem no lo llevan. Un marcador emitido dentro de su encuentro sigue por donde iba. */
+  if (fila.base_id === 'rdv' && opciones && opciones.temario_rdv && opciones.temario_rdv.aplica &&
+      opciones.temario_rdv.hoja === solapa &&
+      !(opciones.filas_rdv && opciones.filas_rdv.length)) {
+    var tr = opciones.temario_rdv;
+    if (tr.items > 0) {
+      /* **Sin dato, no falla.** El temario resolvió y ninguno de sus encuentros tiene fila en esta
+       * solapa. `SUMA` sobre cero filas devuelve vacío —*«sin dato, no cero»*, la guarda que evitó
+       * los 16 ceros falsos— y `CONTEO` devuelve `0`, que ahí sí es un dato. */
+      return {
+        ok: true,
+        filas: [],
+        encabezado: claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna),
+        columna: campo.columna,
+        origen: 'el TEMARIO resolvió ' + tr.items + ' encuentro(s) y NINGUNO tiene fila en ' +
+          fila.base_id + '/' + solapa + ' — sin dato, y no se cae a leer la solapa entera: eso ' +
+          'publicaría el universo de la ventana con forma de acierto' +
+          (tr.sin_fila ? ' · ⚠ ' + tr.sin_fila + ' ítem(s) sin fila' : '')
+      };
+    }
+    return {
+      ok: false,
+      motivo: '«FALTA:' + fila.marcador + '@sin_temario» — ' + fila.base_id + '/' + solapa +
+        ' la manda el TEMARIO (sección `' + (tr.seccion_id || '?') + '`, declarada en ' +
+        '`CONFIG.seccion_agregado_semanal`) y esta corrida no resolvió NI UN encuentro. **NO se ' +
+        'cae a leer la solapa entera**: eso publicaría `rdv` recortada por `figura=Jorge Macri` y ' +
+        'la ventana, o sea el universo de la semana con forma de acierto — el modo de falla más ' +
+        'caro de este repo y el único que no avisa. ⭐ POR QUÉ no hubo encuentros: ' +
+        (tr.motivo || '(sin motivo declarado — el temario resolvió y vino vacío, así que la ' +
+          'pregunta es del lado de REUNIONES: ¿hay filas del período, con `mostrar` tildado?)') +
+        ' · ⚠ Esto NO es «el encuentro no tuvo datos»: eso sale como sin dato, no como FALTA.'
+    };
+  }
+
   /* ⭐⭐ `2026-08-24` — **las filas del TEMARIO en una solapa que NO es `rdv`**, que es lo que
    * `L-036` necesita: su tabla es *una fila por reunión del temario que tuvo comunicación post*.
    *
@@ -356,6 +415,30 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
     /* `filas_temario` es un **mapa por `base|solapa`**: cada solapa declarada tiene su entrada, y la
      * rama busca la suya por la misma clave que disparó la guarda. */
     var t = opciones.filas_temario && opciones.filas_temario[claveTemario];
+    /* ⭐⭐ `2026-08-27` Parte 3 — **la misma partición en tres que la rama de `rdv`.**
+     *
+     * ⛔ **Lo que estaba mal acá:** fallaba con `filas.length === 0` **sin mirar `items`**, así que
+     * confundía *«el temario no trajo ni un encuentro»* —un problema— con *«hubo encuentros y
+     * ninguno tuvo comunicación post»*, que el comentario de `filasDeSolapaDelTemario_` **ya
+     * llamaba caso normal** con todas las letras. Publicar `«FALTA»` sobre un hecho normal es la
+     * marca que grita cuando no hay nada que arreglar, y así es como una marca deja de significar
+     * algo.
+     *
+     * ⚠ **No se descubrió acá:** salió de un dato del dominio sobre `L-034` —un encuentro sin
+     * mail— y al mirarlo se vio que esta rama tenía la misma falla. */
+    if (t && t.items > 0 && (!t.filas || !t.filas.length)) {
+      return {
+        ok: true,
+        filas: [],
+        encabezado: claveDeLecturaEnColumna_(fila.base_id, solapa, campo.columna),
+        columna: campo.columna,
+        origen: 'el TEMARIO resolvió ' + t.items + ' encuentro(s) y NINGUNO tiene fila en ' +
+          fila.base_id + '/' + solapa + ' — sin dato, y no se cae a leer la solapa entera' +
+          (t.sin_cuenta ? ' · ⚠ ' + t.sin_cuenta + ' sin cuenta anclada' : '') +
+          (t.sin_fila ? ' · ⚠ ' + t.sin_fila + ' con cuenta y sin fila (caso normal)' : '') +
+          (t.sin_metrica ? ' · ⚠ ' + t.sin_metrica + ' con fila y sin métrica > 0' : '')
+      };
+    }
     if (!t || !t.filas || !t.filas.length) {
       return {
         ok: false,
@@ -2733,18 +2816,48 @@ function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, 
 }
 
 function filasRdvDelTemario_(informeId, ventanaInforme, seccionId) {
-  var vacio = { filas: [], hoja: '', items: 0, sin_fila: 0 };
-  var secciones;
-  try { secciones = leerSeccionesPlano_(); } catch (e) { return vacio; }
+  /* ⭐⭐ `2026-08-27` Parte 3 — **el vacío deja de ser mudo.**
+   *
+   * ⛔ **Lo que estaba mal:** esta función devolvía el mismo `{ filas: [], … }` por **cinco causas
+   * distintas** —`SECCIONES` ilegible, la sección sin resolver, `itera_sobre` que no apunta a
+   * `REUNIONES`, `itemsDeSeccion_` que tira excepción, o `!ok`— y **ninguna se distinguía de
+   * «esta semana no hay encuentros»**. El llamador hacía `if (temario.filas.length)` y, sin filas,
+   * los 21 marcadores de `rdv` se iban al universo ancho **en silencio**. Está abierto en
+   * `PENDIENTES` desde el 25/08 como P0.
+   *
+   * ⭐ **`aplica` es la declaración, y sale de `CONFIG`, no del resultado.** Es el mismo criterio
+   * que la rama 3 usa con `claves_temario`: *declarada y sin filas* **no** es lo mismo que *no
+   * declarada*, y sólo la segunda puede caer a la cadena general. Si `CONFIG.seccion_agregado_semanal`
+   * nombra una sección, el temario manda sobre `rdv` — resuelva o no.
+   *
+   * ⭐ **Y `motivo` viaja con el vacío**, porque el diagnóstico tiene que llegar a `FALTANTES` y no
+   * morir en el log: *«el rastro estaba, en un lugar que nadie conserva»* ya costó un viaje entero.
+   *
+   * ⚠ **`hoja` se resuelve aunque no haya ítems.** Sin ella, la guarda del consumidor —que compara
+   * contra la solapa del marcador— no matchearía nunca y el vacío volvería a caer a la cadena
+   * general, que es exactamente lo que esto viene a cerrar. Medido el 27/08: los **21** marcadores
+   * de `rdv` usan **una sola** solapa, `RVD JM-CM - ES`, que es la `hoja_default` de la base. */
+  var idSeccion = (seccionId === undefined ? seccionAgregadoSemanal_() : seccionId);
+  var hojaPorDefecto = '';
+  try { hojaPorDefecto = String((leerBases()['rdv'] || {}).hoja_default || ''); } catch (e) { hojaPorDefecto = ''; }
+  var vacio = { filas: [], hoja: hojaPorDefecto, items: 0, sin_fila: 0,
+    aplica: !!String(idSeccion || '').trim(), seccion_id: idSeccion, motivo: '' };
 
-  var resuelta = seccionAgregadaDeReuniones_(secciones, informeId,
-    seccionId === undefined ? seccionAgregadoSemanal_() : seccionId);
-  if (!resuelta.ok) return vacio;
+  var secciones;
+  try { secciones = leerSeccionesPlano_(); }
+  catch (e) { vacio.motivo = 'no pude leer SECCIONES: ' + e; return vacio; }
+
+  var resuelta = seccionAgregadaDeReuniones_(secciones, informeId, idSeccion);
+  if (!resuelta.ok) { vacio.motivo = resuelta.motivo; return vacio; }
   var elegida = resuelta.seccion;
 
   var r;
-  try { r = itemsDeSeccion_(elegida, informeId, ventanaInforme); } catch (e) { return vacio; }
-  if (!r || !r.ok) return vacio;
+  try { r = itemsDeSeccion_(elegida, informeId, ventanaInforme); }
+  catch (e) { vacio.motivo = 'itemsDeSeccion_ falló: ' + e; return vacio; }
+  if (!r || !r.ok) {
+    vacio.motivo = (r && r.motivo) || 'itemsDeSeccion_ no devolvió ítems';
+    return vacio;
+  }
 
   var vistos = {};
   var filas = [];
@@ -2765,7 +2878,11 @@ function filasRdvDelTemario_(informeId, ventanaInforme, seccionId) {
     filas.push(filaRdv);
   });
 
-  return { filas: filas, hoja: hoja, items: Object.keys(vistos).length, sin_fila: sinFila };
+  /* ⚠ `hoja` sale de los ítems cuando los hay; si ninguno trajo `hoja_rdv` se cae a la
+   * `hoja_default` de la base, por lo mismo que el vacío: la guarda del consumidor compara contra
+   * la solapa del marcador y una cadena vacía no matchea nunca. */
+  return { filas: filas, hoja: hoja || hojaPorDefecto, items: Object.keys(vistos).length,
+    sin_fila: sinFila, aplica: vacio.aplica, seccion_id: elegida.seccion_id || idSeccion, motivo: '' };
 }
 
 function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
@@ -4861,6 +4978,15 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
    * encuentro ya corrió, esto no lee una fila más. */
   var opcionesEtapa4 = periodoId ? { ventana: ventana } : {};
   var temario = filasRdvDelTemario_(informeId, ventana);
+  /* ⭐⭐ `2026-08-27` Parte 3 — **la declaración se setea SIEMPRE, tenga filas o no.** Es la
+   * corrección que la rama 3 hizo el 25/08 —*«las claves se declaran siempre, aunque no haya
+   * filas»*— traída a la rama de `rdv`, que era la mitad que faltaba del P0 de la asimetría.
+   *
+   * **Sin esto:** `filas_rdv` no se setea, la rama plural no dispara, `rdv/RVD JM-CM - ES` no
+   * declara `campo_id_cuenta` así que tampoco la atrapa la rama por cuenta, y los 21 marcadores
+   * caen a `leerFuente` — `rdv` entera recortada por `figura=Jorge Macri` y la ventana. **Universo
+   * ancho, sin fallar y sin avisar.** */
+  opcionesEtapa4.temario_rdv = temario;
   if (temario.filas.length) {
     opcionesEtapa4.filas_rdv = temario.filas;
     opcionesEtapa4.hoja_rdv = temario.hoja;
