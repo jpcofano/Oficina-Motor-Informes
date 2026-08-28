@@ -78,8 +78,8 @@ function contexto(parchear) {
   ctx.leerMarcadores_ = () => MARCADORES;
   ctx.campoIdCuentaDeSolapa_ = (b, s) => CAMPO_ID[b + '|' + s] || '';
   ctx.llamadas = [];
-  ctx.filasDeSolapaDelTemario_ = (inf, ven, sec, base, sol, met) => {
-    ctx.llamadas.push({ seccion: sec, clave: base + '|' + sol, metricas: met });
+  ctx.filasDeSolapaDelTemario_ = (inf, ven, sec, base, sol, met, todas) => {
+    ctx.llamadas.push({ seccion: sec, clave: base + '|' + sol, metricas: met, todas: todas });
     return { ok: true, filas: [], items: 2, sin_fila: 2, base_id: base, hoja: sol, seccion_id: sec };
   };
   return ctx;
@@ -139,6 +139,10 @@ console.log('\n═══ E · cómo se pide cada solapa ═══');
   afirmar(ctx.llamadas.length === 4, 'una llamada por solapa gobernada (' + ctx.llamadas.length + ')');
   afirmar(ctx.llamadas.every((l) => l.seccion === 'ecv_alcance_semanal'),
     'todas con la sección que gobierna ESTA lámina, no con la del post');
+  /* ⭐⭐ `2026-08-28` — pide TODAS las filas de cada cuenta. Con `false` publicaba una sola de las
+   * seis de Coghlan: 29.349 en vez de 66.855. Un agregado suma; una tabla toma una por encuentro. */
+  afirmar(ctx.llamadas.every((l) => l.todas === true),
+    '⭐⭐ y con `todasLasFilas = true`: es un AGREGADO, no una tabla de una fila por encuentro');
   afirmar(ctx.llamadas.every((l) => Array.isArray(l.metricas) && l.metricas.length === 0),
     '⭐ y con `camposMetrica` vacío: la regla de «métrica de resultado > 0» es de la sección post ' +
     'y aplicarla acá dejaría encuentros afuera por una razón que no es de esta lámina');

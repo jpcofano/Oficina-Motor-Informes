@@ -470,7 +470,18 @@ function datosDeMarcador_(fila, solapa, ventana, cache, opciones, campoOverride)
         (t.sin_cuenta ? ' · ⚠ ' + t.sin_cuenta + ' ítem(s) SIN CUENTA ANCLADA — no es lo mismo que no existir' : '') +
         (t.sin_fila ? ' · ⚠ ' + t.sin_fila + ' ítem(s) con cuenta pero SIN FILA en esta solapa (encuentro sin comunicación post: caso normal)' : '') +
         (t.sin_metrica ? ' · ⚠ ' + t.sin_metrica + ' ítem(s) CON fila y SIN métrica de resultado > 0 — fila creada y nunca cargada, alguien tiene que cargar la base (25/08)' : '') +
-        (t.con_varias ? ' · ⛔ ' + t.con_varias + ' cuenta(s) con MÁS DE UNA fila — esta solapa está medida con una por encuentro; se tomó la primera y eso es elegir por orden de hoja' : '')
+        /* ⭐ `2026-08-28` — **el aviso dice lo que PASÓ, y eso depende de `todas`.** Antes decía
+         * siempre *«se tomó la primera»*; con el agregado eso es falso y sería un comentario que
+         * afirma un contrato que el código de al lado desmiente. Ahora son dos mensajes:
+         * en la tabla varias filas son una **anomalía** —la solapa está medida con una por
+         * encuentro—, y en el agregado son **lo normal** y entran todas. */
+        (t.con_varias
+          ? (t.todas
+            ? ' · ⭐ ' + t.con_varias + ' cuenta(s) con varias filas — entran TODAS, que es lo que un ' +
+              'agregado tiene que sumar (una por campaña × plataforma × objetivo)'
+            : ' · ⛔ ' + t.con_varias + ' cuenta(s) con MÁS DE UNA fila — esta solapa está medida con ' +
+              'una por encuentro; se tomó la primera y eso es elegir por orden de hoja')
+          : '')
     };
   }
 
@@ -2704,7 +2715,24 @@ var CLAVE_SLOT_TEMARIO_ = '__temario_slot__';
 var CLAVE_FECHA_TEMARIO_ = '__temario_fecha__';
 var CLAVE_ID_TEMARIO_ = '__temario_id__';
 
-function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, solapa, camposMetrica) {
+/**
+ * ⭐⭐ `2026-08-28` — **`todasLasFilas` decide si de cada cuenta entra UNA fila o TODAS**, y es la
+ * diferencia entre una tabla y un agregado.
+ *
+ * ⛔ **El bug que cierra, publicado el 27/08.** Esta función hacía `filas.push(suyas[0])` siempre.
+ * Para `L-036` eso es correcto —su tabla es *una fila por reunión*— y yo la reusé para el agregado
+ * de `L-034` en la Parte 2b. Resultado: `looker/DIGITAL` tiene **seis filas** para la cuenta de
+ * Coghlan —una por campaña × plataforma × objetivo— y el deck publicó las impresiones de **una**:
+ * **29.349** en vez de **66.855**. Quedarse con la primera es **elegir por el orden de la hoja**,
+ * que es justo lo que el `_39` le sacó a `ULTIMO`.
+ *
+ * ⚠ **El motor lo avisó y nadie lo vio:** la traza decía `⛔ 1 cuenta(s) con MÁS DE UNA fila — se
+ * tomó la primera`. Vive en el `origen` del marcador, que no llega ni al deck ni a `FALTANTES`.
+ *
+ * ⭐ **El default sigue siendo `false`**, así que `L-036` y la solapa que califica no cambian: lo
+ * nuevo se pide explícitamente desde el camino del agregado.
+ */
+function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, solapa, camposMetrica, todasLasFilas) {
   var vacio = { ok: false, filas: [], items: 0, sin_cuenta: 0, sin_fila: 0, motivo: '' };
   var secciones;
   try { secciones = leerSeccionesPlano_(); } catch (e) { vacio.motivo = 'no pude leer SECCIONES: ' + e; return vacio; }
@@ -2788,14 +2816,21 @@ function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, 
      * el primero no es nada, el segundo es alguien que tiene que cargar la base. Un contador que
      * los junte convierte un pendiente de carga en un silencio. */
     if (metricas.length) {
-      var hayResultado = metricas.some(function (h) {
-        var v = suyas[0][h];
-        return (typeof v === 'number') && v > 0;
+      /* ⚠ Con todas las filas, «midió» es que **alguna** de ellas midió: exigirlo de la primera
+       * dejaría afuera una cuenta cuya única fila con resultado no es la de arriba. */
+      var candidatas = todasLasFilas ? suyas : [suyas[0]];
+      var hayResultado = candidatas.some(function (f) {
+        return metricas.some(function (h) {
+          var v = f[h];
+          return (typeof v === 'number') && v > 0;
+        });
       });
       if (!hayResultado) { sinMetrica++; return; }
     }
 
-    filas.push(suyas[0]);
+    /* ⭐⭐ `2026-08-28` — **el agregado se lleva TODAS las filas de la cuenta; la tabla, una.** */
+    if (todasLasFilas) suyas.forEach(function (f) { filas.push(f); });
+    else filas.push(suyas[0]);
     ids.push(id);
   });
 
@@ -2808,6 +2843,7 @@ function filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId, baseId, 
     sin_fila: sinFila,
     sin_metrica: sinMetrica,
     con_varias: conVarias,
+    todas: !!todasLasFilas,
     seccion_id: elegida.seccion.seccion_id,
     base_id: baseId,
     hoja: solapa,
@@ -4154,8 +4190,11 @@ function clavesTemarioDeLamina_(informeId, ventanaInforme, seccionId, tokens) {
 
   out.solapas.forEach(function (s) {
     out.claves[s.clave] = true;
+    /* ⭐ `todasLasFilas = true`: esto es un AGREGADO -`SUMA`, `CONTEO`- sobre los encuentros del
+     * temario, no una tabla de una fila por encuentro. Con `false` publicaba una sola de las seis
+     * filas de la cuenta: 29.349 en vez de 66.855, el 27/08. */
     out.filas[s.clave] = filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId,
-      s.base_id, s.solapa, []);
+      s.base_id, s.solapa, [], true);
   });
   return out;
 }
