@@ -16536,3 +16536,32 @@ Falta `clasp push`, *Aplicar configuración* —que siembra `SOLAPAS.ventana_ref
 es el dashboard de Looker del 28/08: `Meta 1.921.695 · Google 1.023.101 · DV360 5.330.034`. Lo que
 está medido es que el **criterio de solape** reproduce las **8** campañas de JM, y 4 o 5 con
 cualquier otro.
+
+### ⛔⛔ Addendum del mismo día — `D-51` y `D-52` no mueven ningún número de este deck
+
+**Lo destapó una pregunta del usuario** —*«de dónde salen los datos?»*— antes de correr, y se midió
+contra el registro en vez de contestarla de memoria. **La entrada de arriba y el handoff decían que
+la corrida iba a mostrar los números del dashboard en el Resumen Ejecutivo. Era falso.**
+
+- ⛔ **Ningún marcador de `L-031` lee el desglose.** Los ocho `imp_*` están en `looker/DIGITAL`
+  —la mudanza se revirtió por el 11× de Meta— y esa solapa **no declara `propia`**.
+- ⛔ **Los 26 que sí lo leen** —snapshot `MARCADORES_2026-08-26` y los dos seeds de `Instalar.gs`—
+  **son los `u1_*` del 1 a 1 y los `post_periodo*`**, con dimensiones `etapa` y `plataforma`.
+  **Ninguna usa `ambito`**, así que el `||` de `D-51` tampoco los toca.
+- ⭐ **Y los leen POR CUENTA**, con `sin_recorte_por_ventana` (`Generador.gs:660`), que es
+  exactamente lo que el banco afirma que sigue ganando. **Los seis casos exactos `V-114`…`V-119`
+  quedan intactos, y eso es lo correcto.**
+
+⭐⭐ **Lo que sí son las dos decisiones: el prerequisito que faltaba para mudar los ocho `imp_*`.**
+Esa mudanza tenía **dos** bloqueos —el universo sin recortar y el 11× de Meta—; hoy se cerró el
+primero y **el segundo sigue abierto**.
+
+⚠ **Por qué el error se sostuvo hasta acá, que es lo que hay que llevarse:** las tres afirmaciones
+de la cadena eran ciertas por separado —*el desglose no recorta*, *el equipo sí recorta*, *el
+dashboard da 8 campañas para JM*— y **ninguna decía quién lee esa solapa**. Es la familia de *«un
+instrumento que mide una función tiene que decir que midió una función»* (`CLAUDE.md` §4): se midió
+**qué daría el desglose** y se escribió **qué publicaría el Resumen Ejecutivo**, que son dos cosas y
+sólo una estaba medida.
+
+⭐ **Y el testigo del dashboard no se descarta: cambia de momento.** Cuando los `imp_*` se muden se
+cruza contra `Meta 1.921.695 · Google 1.023.101 · DV360 5.330.034`. Hoy no hay nada que cruzar.

@@ -3,8 +3,9 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-28 — **el Resumen Ejecutivo cierra su universo: `D-51` (`||` en
-los filtros) y `D-52` (`ventana_ref = 'propia'`).** **Suites: 76 bancos, ~1191 afirmaciones.**
+**Última actualización:** 2026-08-28 (2) — **`D-51` (`||` en los filtros) y `D-52`
+(`ventana_ref = 'propia'`): el prerequisito para mudar los ocho `imp_*`, medido — ⛔ **no mueven
+ningún número de este deck**.** **Suites: 76 bancos, ~1191 afirmaciones.**
 
 ### ⭐ Lo último, en cuatro líneas
 
@@ -38,22 +39,30 @@ los filtros) y `D-52` (`ventana_ref = 'propia'`).** **Suites: 76 bancos, ~1191 a
 `imp_*` están **revertidos a `looker/DIGITAL`** en el seed, y dejarlos mudados publicaría el 11× de
 Meta que está medido.
 
-### ⭐⭐ Qué mirar en esa corrida — dos preguntas, y son distintas
+### ⛔⛔ Qué mirar en esa corrida — y qué NO va a cambiar
 
-**1 · El Resumen Ejecutivo (`L-031`), que es lo nuevo.** El testigo es el dashboard de Looker del
-28/08:
+⛔⛔ **Corrección del 28/08, medida contra el registro: `D-51` y `D-52` NO mueven ningún número
+de este deck.** La versión anterior de este handoff decía que la corrida iba a mostrar los números
+del dashboard en el Resumen Ejecutivo. **Es falso.**
 
-| plataforma | esperado |
-|---|---|
-| Meta | **1.921.695** |
-| Google | **1.023.101** |
-| DV360 | **5.330.034** |
+- ⛔ **Ningún marcador de `L-031` lee el desglose.** Los ocho `imp_*` están en `looker/DIGITAL`
+  —la mudanza se revirtió por el 11× de Meta— y esa solapa **no declara `propia`**.
+- ⛔ **Los 26 que SÍ leen el desglose son los `u1_*` del 1 a 1 y los `post_periodo*`**, y sus
+  dimensiones son `etapa` y `plataforma` — **ninguna usa `ambito`**, así que el `||` de `D-51`
+  tampoco los toca.
+- ⭐ **Y los que leen esa solapa la leen POR CUENTA**, con `sin_recorte_por_ventana`, que es
+  exactamente lo que el banco afirma que sigue ganando. **Los seis casos exactos `V-114`…`V-119`
+  quedan intactos, y eso es lo correcto**, no un efecto que faltó.
 
-⚠ **Lo que está medido es el CRITERIO, no el valor:** el solape reproduce **8** campañas para JM
-—y 4 o 5 con cualquier otro criterio—, y DV360 dio **5.184.122** contra 5.330.034, **−2,7 %**.
-Ese desfase es deriva de la fuente, **no criterio de aceptación**. El valor pide el deck.
+⭐⭐ **Entonces qué son las dos decisiones de hoy: el prerequisito que faltaba para mudar los ocho
+`imp_*` al desglose.** Esa mudanza tenía **dos** bloqueos —el universo sin recortar y el 11× de
+Meta— y hoy se cerró el primero. **El segundo sigue abierto y sin diagnosticar.**
 
-**2 · `L-034`, que sigue pendiente de la corrida del 27.** Las cajas del temario:
+⚠ **El testigo del dashboard sigue siendo válido, pero para OTRO momento:** cuando los `imp_*`
+se muden, se cruza contra `Meta 1.921.695 · Google 1.023.101 · DV360 5.330.034`. Hoy no hay nada
+que cruzar.
+
+### ⭐⭐ Lo que la corrida SÍ verifica — `L-034`, pendiente del 27/08
 
 | caja | antes | esperado |
 |---|---|---|
