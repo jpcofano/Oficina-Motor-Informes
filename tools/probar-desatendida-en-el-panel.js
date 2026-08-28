@@ -101,11 +101,29 @@ function contexto(parchear) {
  * sería reimplementar lo que se está midiendo — el error que `CLAUDE.md` §4 nombra como *el
  * instrumento que reproduce lógica del motor y la reproduce peor*.
  */
-function espiarGenerarInforme(ctx) {
-  const espia = { llamadas: [] };
+function espiarGenerarInforme(ctx, opc) {
+  opc = opc || {};
+  const espia = { llamadas: [], orden: [] };
   ctx.leerEstadoCorrida_ = function () { return null; };
   ctx.limpiarTriggersDeContinuacion_ = function () { return 0; };
+
+  /* ⭐ `2026-08-28_2` C — el par del cerrojo vive en `Generador.gs`, que este banco **no carga**.
+   * Se stubea acá, y de paso pasa a ser lo que el banco MIDE: el 28/08 este control se puso rojo
+   * al agregarse el lock, y **estaba diciendo la verdad** —el camino dependía de algo que no
+   * tenía—. Aflojarlo habría sido tapar el hallazgo; en vez de eso gana las afirmaciones de abajo. */
+  ctx.tomarLockDeCorrida_ = function () {
+    espia.orden.push('tomar');
+    return opc.lockOcupado
+      ? { ok: false, reentrante: false, motivo: 'ya hay una corrida en curso' }
+      : { ok: true, reentrante: false };
+  };
+  ctx.soltarLockDeCorrida_ = function (tomado) {
+    espia.orden.push('soltar');
+    return !!(tomado && tomado.ok && !tomado.reentrante);
+  };
+
   ctx.generarInforme = function (informeId, periodoId, opciones) {
+    espia.orden.push('generar');
     espia.llamadas.push({ informeId: informeId, periodoId: periodoId, opciones: opciones });
     return { ok: false, motivo: '(cortado por el banco)' };
   };
@@ -151,6 +169,30 @@ console.log('\n═══ B · el botón desatendido manda lo que el usuario elig
     'el modo de faltantes viaja');
   afirmar(ll.opciones.continuable === true,
     'la ejecución 1 sale continuable: es lo que escribe PLAN_CORRIDA y crea el trigger');
+  /* ⭐ `2026-08-28_2` C — el cerrojo ENVUELVE al arranque, no sólo a `generarInforme`. El orden
+   * importa: `limpiarTriggersDeContinuacion_` y `escribirPlan_` escriben fuera de la llamada al
+   * motor, así que un lock tomado sólo adentro las dejaría sin cubrir. */
+  afirmar(JSON.stringify(espia.orden) === JSON.stringify(['tomar', 'generar', 'soltar']),
+    'toma el lock ANTES de generar y lo suelta DESPUÉS — vino ' + JSON.stringify(espia.orden));
+}
+
+console.log('\n═══ B bis · con el cerrojo ocupado no arranca nada ═══');
+{
+  const ctx = contexto();
+  const espia = espiarGenerarInforme(ctx, { lockOcupado: true });
+
+  const r = ctx.panel_generarDesatendida('jm', 'agosto_14_20', true, ['encuentro']);
+
+  /* ⛔ Ésta es LA afirmación del requisito: «una corrida por vez». Sin ella el lock podría estar
+   * escrito y no cortar nada, y ninguna otra afirmación del repo lo notaría. */
+  afirmar(espia.llamadas.length === 0,
+    'con el lock ocupado NO se llama a generarInforme — cero corridas encimadas');
+  afirmar(espia.orden.indexOf('soltar') === -1,
+    'y no suelta un lock que no tomó: soltar de más abre la puerta en el medio de la otra corrida');
+  afirmar(r && r.ok === false && /corrida en curso/i.test(String(r.motivo || '')),
+    'y vuelve un motivo legible para la pantalla — vino ' + JSON.stringify(r));
+  afirmar(!/@/.test(String((r && r.motivo) || '')),
+    '⛔ sin mail ni identidad de quien está corriendo (`C.2`)');
 }
 
 console.log('\n═══ C · continuable lo pone el mecanismo, NO el llamador ═══');

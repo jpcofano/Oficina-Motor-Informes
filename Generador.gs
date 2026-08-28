@@ -4686,12 +4686,112 @@ function diagnosticoDeCrudo_(token, resultado, conFila, escondidas) {
  * renombrarla rompería a un llamador que no vive en este repo. Lo que declara el modo hacia
  * afuera es `presentacion_faltantes`, y ése **sí** cambió de valor: `'simbolos'`.
  */
+/* ── `2026-08-28_2` Parte C · una corrida por vez ──────────────────────────────────────────────
+ *
+ * ⭐ **El lock vive acá y no en los llamadores, y ése es todo el punto.** La Parte A midió
+ * **cinco** caminos que llegan a generar un deck y **ninguno** lo tomaba: el panel
+ * (`panel_generar`), la desatendida disparada desde el panel y desde el menú
+ * (`iniciarCorridaDesatendida_`), el ítem de menú (`menuGenerarInformeCompleto_`) y la API por
+ * nombre (`accion=llamar`, que sólo prohíbe `doGet`/`doPost`/`manejarPedido_`). Ponerlo en cada
+ * entrada sería cinco lugares que hay que acordarse de tocar; **la guarda va en el escritor, no
+ * en el llamador** (`CLAUDE.md` §4), así que un sexto camino nace protegido.
+ *
+ * ⚠ **Es RE-ENTRANTE a propósito, y no es un lujo.** `correrUnaEjecucion_` ya toma el script lock
+ * y **después** llama a `generarInforme`; si acá se pidiera un lock nuevo, la continuación de la
+ * desatendida se bloquearía a sí misma. Que las dos puntas pasen por este par es lo que hace que
+ * el mecanismo sea **uno solo** en vez de dos que se estorban.
+ *
+ * ⛔ **Sólo suelta el que lo tomó.** Un `releaseLock()` desde la llamada anidada abriría la puerta
+ * en el medio de la corrida de afuera — el peor desenlace posible, y silencioso.
+ *
+ * **El alcance sale de la Parte A, no de una estimación:** una corrida escribe `CORRIDAS`,
+ * `ANCLAJE_PENDIENTE` y `ANCLAJE_MEDICION` (durante el anclaje), y `FALTANTES_PREVIO` +
+ * `FALTANTES` (en el cierre). Tomarlo acá cubre **desde antes del anclaje hasta después de la
+ * rotación de `FALTANTES`**, que es el borde que pide el addendum.
+ *
+ * ⚠ **Lo que el lock NO cubre, dicho para que no se lea de más:** `PropertiesService` y los
+ * triggers de `Desatendida.gs`. El comentario de `iniciarCorridaDesatendida_` ya lo declara —*«el
+ * lock evita que dos ejecuciones escriban a la vez, no que dos corridas se confundan de deck»*—
+ * y por eso la guarda de estado de allá **se conserva**: protege otra cosa. */
+var LOCK_CORRIDA_ = null;
+
+/**
+ * Cuánto se ESPERA por el lock, no cuánto se lo retiene.
+ *
+ * **Por qué 5 s y no más, con el dato al lado:** una corrida dura entre ~35 s y el muro duro de
+ * 360 s de Apps Script (`docs/AUDITORIA_tiempos_2026-08-21.md`), así que **ninguna espera
+ * razonable alcanza para que la otra termine** — esperar más sólo cuelga al que llegó segundo y
+ * le come su propio presupuesto contra el mismo muro. Cinco segundos absorben la coincidencia de
+ * dos clics y nada más; pasado eso la respuesta honesta es *«hay una corrida en curso»*.
+ *
+ * **Y por qué 5 s exactamente:** es el valor que `correrUnaEjecucion_` ya usaba desde que existe
+ * el mecanismo desatendido. Al pasar los dos por este par, el número queda **en un solo lugar**
+ * en vez de en dos que pueden separarse.
+ *
+ * ⚠ No va a `CONFIG`: no es un parámetro de negocio —nadie del equipo lo pediría por nombre—
+ * sino una constante técnica de la plataforma, y leerla de la hoja costaría una lectura **antes**
+ * de tener el lock.
+ */
+var ESPERA_LOCK_CORRIDA_MS_ = 5000;
+
+/** Toma el lock de corrida, o informa que ya hay una. Re-entrante: ver el bloque de arriba. */
+function tomarLockDeCorrida_() {
+  if (LOCK_CORRIDA_) return { ok: true, reentrante: true };
+
+  var lock;
+  try {
+    lock = LockService.getScriptLock();
+  } catch (e) {
+    // ⛔ Falla cerrada, igual que la Barrera 1: no poder verificar que estamos solos no puede
+    // convertirse en permiso para correr.
+    //
+    // ⚠ En UNA línea a propósito: `tools/probar-lock-corrida.js --autoprueba` la muta para probar
+    // que esta rama falla cerrada, y **los patrones de un caso negativo van por fragmento de una
+    // sola línea** — el final de línea es del archivo, que acá es CRLF (`CLAUDE.md` §4).
+    return { ok: false, reentrante: false, motivo: 'no se pudo pedir el lock de corrida: ' + ((e && e.message) || e) };
+  }
+
+  if (!lock.tryLock(ESPERA_LOCK_CORRIDA_MS_)) {
+    return { ok: false, reentrante: false,
+      motivo: 'ya hay una corrida en curso — probá de nuevo en unos minutos' };
+  }
+
+  LOCK_CORRIDA_ = lock;
+  return { ok: true, reentrante: false };
+}
+
+/** Suelta el lock **sólo si esta llamada fue la que lo tomó**. */
+function soltarLockDeCorrida_(tomado) {
+  if (!tomado || !tomado.ok || tomado.reentrante) return false;
+  try {
+    LOCK_CORRIDA_.releaseLock();
+  } catch (e) {
+    Logger.log('⚠ No se pudo soltar el lock de corrida: ' + ((e && e.message) || e) +
+      ' — se libera solo al terminar la ejecución.');
+  }
+  LOCK_CORRIDA_ = null;
+  return true;
+}
+
 function generarInforme(informeId, periodoId, opciones) {
   /* `2026-08-21_1` A.3 — **el cronómetro arranca en la primera línea de la ejecución.** Antes
    * arrancaba adentro de `generarInformeConCache_`, después de abrir los dos cachés. Medido, la
    * diferencia es de milésimas y **no es la causa de nada**; se mueve igual porque un reloj que
-   * arranca después del gasto real es una premisa que hay que volver a verificar cada vez. */
+   * arranca después del gasto real es una premisa que hay que volver a verificar cada vez.
+   *
+   * ⭐ **Y por eso arranca ANTES del lock** (`2026-08-28_2` C): la espera por el lock es tiempo de
+   * pared contra el muro de 360 s igual que cualquier otro. Arrancarlo después regalaría hasta
+   * 5 s de presupuesto que la corrida ya gastó. */
   var t0Corrida = new Date().getTime();
+
+  var lock = tomarLockDeCorrida_();
+  if (!lock.ok) {
+    // ⛔ Sin nombres ni mails: el motivo dice QUÉ pasa, nunca QUIÉN está corriendo. Mismo criterio
+    // que `apiPantallaDeRechazo_`, que muestra la categoría y jamás la identidad.
+    Logger.log('generarInforme — no arranca · ' + lock.motivo);
+    return { ok: false, motivo: lock.motivo };
+  }
+
   abrirCacheRegistros_();
   // `2026-08-20_11` — y el de los datos crudos de las solapas de las bases, que es el que se lleva
   // los 200 s de la pasada por ítem: `leerFuente` se llama una vez por MARCADOR y hasta hoy cada
@@ -4702,6 +4802,9 @@ function generarInforme(informeId, periodoId, opciones) {
   } finally {
     cerrarCacheDatosHoja_();
     cerrarCacheRegistros_();
+    // El lock va ÚLTIMO del `finally`: los dos cachés mueren con la ejecución igual, pero soltar
+    // la puerta antes de cerrarlos dejaría entrar a otra corrida con este caché todavía vivo.
+    soltarLockDeCorrida_(lock);
   }
 }
 

@@ -380,12 +380,16 @@ function borrarEstadoCorrida_() {
  *  3. **Cada ejecución borra el trigger que la disparó** antes de crear el próximo.
  *  4. ⚠ **El lock.** `LockService`, y **si no lo consigue sale sin hacer nada** — dos ejecuciones
  *     escribiendo el mismo deck es el peor resultado posible de todo el mecanismo.
+ *     ⭐ **Desde el `2026-08-28_2` C pasa por `tomarLockDeCorrida_`** (`Generador.gs`) en vez de
+ *     pedirle el lock a `LockService` acá. No es cosmética: `generarInforme` ahora **también** lo
+ *     toma, así que sin el par re-entrante esta ejecución se bloquearía a sí misma al llamarlo.
+ *     Y el timeout deja de estar escrito en dos lugares que pueden separarse.
  */
 function correrUnaEjecucion_() {
-  var lock = LockService.getScriptLock();
-  if (!lock.tryLock(5000)) {
+  var lock = tomarLockDeCorrida_();
+  if (!lock.ok) {
     Logger.log('Otra ejecución tiene el lock. Salgo sin escribir nada — dos ejecuciones sobre el ' +
-      'mismo deck es el peor resultado posible.');
+      'mismo deck es el peor resultado posible. · ' + lock.motivo);
     return { ok: false, motivo: 'lock ocupado' };
   }
 
@@ -525,7 +529,7 @@ function correrUnaEjecucion_() {
     return { ok: true, terminada: true, ejecuciones: ejecucion };
 
   } finally {
-    lock.releaseLock();
+    soltarLockDeCorrida_(lock);
   }
 }
 
@@ -580,6 +584,36 @@ function continuarCorridaDesatendida() {
  * sólo iba al `Logger`, que en el camino del usuario es no decir nada.
  */
 function iniciarCorridaDesatendida_(informeId, periodoId, opciones) {
+  /* ── `2026-08-28_2` Parte C · el lock decide la concurrencia, esta guarda NO ────────────────
+   *
+   * ⭐ **El lock se toma acá y no sólo adentro de `generarInforme`**, porque el arranque escribe
+   * antes y después de él: `limpiarTriggersDeContinuacion_()` toca los triggers, y `escribirPlan_`
+   * y `marcarSeccionPlan_` corren cuando la ejecución 1 ya volvió. Con el par re-entrante, la
+   * llamada anidada lo reconoce y no se bloquea sola.
+   *
+   * ⛔ **Y la guarda de estado de abajo se CONSERVA, con el rol cambiado.** El addendum la trataba
+   * como *«una bandera leída antes de escribir»* que el lock viene a reemplazar. **La medición
+   * dice otra cosa, y el propio comentario de esta función ya lo declaraba:** el lock excluye a
+   * dos EJECUCIONES simultáneas; esta guarda excluye a dos CORRIDAS, que es otra cosa — una
+   * desatendida pausada entre continuaciones no tiene ninguna ejecución viva, así que **no hay
+   * lock que la vea** y arrancar otra encima pisaría el estado y los triggers.
+   *
+   * ⭐ **Son dos mecanismos porque son dos problemas, y ahora está escrito cuál hace qué:** el
+   * lock manda sobre la simultaneidad, la guarda sobre «ya hay una corrida abierta». */
+  var lock = tomarLockDeCorrida_();
+  if (!lock.ok) {
+    Logger.log('No arranco: ' + lock.motivo);
+    return { ok: false, motivo: lock.motivo };
+  }
+  try {
+    return iniciarCorridaDesatendidaConLock_(informeId, periodoId, opciones);
+  } finally {
+    soltarLockDeCorrida_(lock);
+  }
+}
+
+/** El cuerpo del arranque, ya con el lock tomado por `iniciarCorridaDesatendida_`. */
+function iniciarCorridaDesatendidaConLock_(informeId, periodoId, opciones) {
   if (leerEstadoCorrida_()) {
     var e = leerEstadoCorrida_();
     Logger.log('Ya hay una corrida desatendida en curso: ' + e.corrida_id + ' (ejecución ' +
