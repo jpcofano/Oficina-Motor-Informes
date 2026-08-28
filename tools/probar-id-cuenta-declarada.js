@@ -184,15 +184,47 @@ af('filaSolapa_ EMITE campo_id_cuenta siempre (aunque no se declare): una revers
       !!f && f.columna === col, f ? 'columna ' + f.columna : 'sin fila');
   });
 
-// ── 3 · ⛔ La negativa: las hermanas de Directa Mail NO lo declaran ──────────────────────
-console.log('\n3 · ⛔ La trampa del _44 — las hermanas de Directa Mail siguen sin declarar');
-['Directa IVR', 'Directa SMS'].forEach((s) => {
-  const x = solapa('digital', s);
-  af('digital/' + s + ' NO declara campo_id_cuenta', !!x && !x.campo_id_cuenta,
-    x ? 'declara `' + x.campo_id_cuenta + '`, y MAPEO no lo tiene para esta solapa: ' +
-        'si volvieron a agruparse con Directa Mail, los ivr_*/sms_* dejan de leer'
-      : 'la solapa desapareció del seed');
-});
+// ── 3 · ⛔ La trampa del _44: cada solapa declara SU campo, nunca el de la hermana ───────
+/* ⭐⭐ `2026-08-27` — **esta afirmación se dio vuelta para `Directa IVR`, y con MÁS exigencia, no
+ * con menos.** Hasta hoy pedía que IVR y SMS **no** declararan nada. El 27/08 `Directa IVR` pasó a
+ * declarar `ivr_id_cuenta`, y eso puso este banco en rojo **diciendo la verdad**: el estado cambió.
+ *
+ * ⛔ **Lo que NO se hizo, y es el punto:** aflojar el control. `CLAUDE.md` §4 — *un control que se
+ * pone rojo cuando el estado cambia está haciendo su trabajo; lo que corresponde es darlo vuelta
+ * con el motivo escrito y, si se puede, subirle la exigencia*. Antes pedía «que no esté»; ahora
+ * pide **que esté, que sea el SUYO, y que resuelva en `MAPEO` para SU solapa** — tres condiciones
+ * donde había una.
+ *
+ * ⛔ **Y de paso corrige una frase que engañaba.** El comentario del seed decía *«las otras dos no
+ * tienen ese campo lógico en `MAPEO`»*, que se lee como *«no tienen id de cuenta»* — **y es
+ * falso**: lo tienen, con su propio nombre (`ivr_id_cuenta`, `sms_id_cuenta`). Lo que aquello
+ * prohibía era declararle **`mail_id_cuenta`** al grupo entero. Lo detectó el usuario leyendo
+ * este banco.
+ *
+ * ⚠ **`Directa SMS` conserva la negativa**, y no por simetría: ningún marcador lee esa solapa hoy,
+ * así que declararla sería una decisión sin consumidor. El día que alguien vuelva a agrupar las
+ * tres, esto se pone rojo. */
+console.log('\n3 · ⛔ La trampa del _44 — cada solapa declara SU campo, nunca el de la hermana');
+{
+  const ivr = solapa('digital', 'Directa IVR');
+  af('digital/Directa IVR declara campo_id_cuenta', !!ivr && !!ivr.campo_id_cuenta,
+    ivr ? 'no declara nada' : 'la solapa desapareció del seed');
+  af('⭐⭐ y declara el SUYO (`ivr_id_cuenta`), no el de Directa Mail',
+    !!ivr && ivr.campo_id_cuenta === 'ivr_id_cuenta',
+    ivr ? 'declara `' + ivr.campo_id_cuenta + '` — si dice `mail_id_cuenta`, volvieron a ' +
+          'agruparse las tres y los ivr_* dejan de leer (el modo de falla del _44)'
+        : 'sin fila');
+  const filaIvr = ivr && MAPA[clave('digital', 'Directa IVR', ivr.campo_id_cuenta)];
+  af('⭐ y ese campo RESUELVE en MAPEO para su solapa', !!filaIvr,
+    'sin fila en MAPEO: planDeLecturaPorCuenta_ fallaría con @campo_id_cuenta_no_mapeado');
+}
+{
+  const sms = solapa('digital', 'Directa SMS');
+  af('digital/Directa SMS sigue SIN declarar campo_id_cuenta', !!sms && !sms.campo_id_cuenta,
+    sms ? 'declara `' + sms.campo_id_cuenta + '` y ningún marcador lee esa solapa: es una ' +
+          'decisión sin consumidor, o volvieron a agruparse las tres'
+        : 'la solapa desapareció del seed');
+}
 
 // ── 4 · La decisión de tener dos nombres para la misma columna ──────────────────────────
 console.log('\n4 · Dos roles, misma letra — la decisión que no hay que "unificar"');

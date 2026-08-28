@@ -4054,17 +4054,162 @@ function avisoDeReserva_(cierreSeg, reservaSeg) {
  * una lámina salteada del medio. Un corte que deja huecos alternados es más difícil de leer que
  * uno que deja una cola.
  */
-function agruparTokensPorLamina_(tokensFijos) {
-  var porLamina = {};
-  Object.keys(tokensFijos).sort().forEach(function (token) {
-    var slides = tokensFijos[token] || [];
-    if (!slides.length) return;
-    var primera = slides.slice().sort(function (a, b) { return a - b; })[0];
-    if (!porLamina[primera]) porLamina[primera] = [];
-    porLamina[primera].push(token);
+/* ⭐⭐ `2026-08-27` Parte 1 — **las claves que hacen que el TEMARIO gobierne una lámina.**
+ *
+ * Hasta hoy la etapa 4 las copiaba **a todas** las láminas por igual, así que el universo del
+ * temario era del INFORME y no de la lámina. Funcionaba de casualidad: los `ecv_*` viven sólo en
+ * `L-034` y los `post_*` sólo en `L-036`, así que nadie más las miraba. **Deja de funcionar en
+ * cuanto un token vive en dos láminas con universos distintos**, que es `C-80`. */
+var CLAVES_DEL_TEMARIO_ = ['filas_rdv', 'hoja_rdv', 'temario_sin_fila', 'temario_rdv',
+  'claves_temario', 'filas_temario', 'temario_post_diag'];
+
+/**
+ * ⭐⭐ `2026-08-27` Parte 1 — **qué láminas gobierna el temario, LEÍDO DE `LAMINAS.seccion_id`.**
+ *
+ * ⭐ **No hace falta una columna nueva, y ése es el hallazgo:** la identidad de la lámina **ya está
+ * declarada** desde `D-37` —`LAMINAS.seccion_id`— y `CONFIG` ya nombra las dos secciones que el
+ * temario gobierna. Medido el 27/08: `L-034` cuelga de `ecv_alcance_semanal`, `L-036` de
+ * `comunicaciones_post`, y `L-031`/`L-032` de `resumen_ejecutivo`. **La pregunta ya tiene dueño en
+ * el registro; lo que faltaba era que alguien la leyera.**
+ *
+ * ⚠ **Esto NO es inferir la identidad por el contenido**, que es lo que `D-37` prohíbe y lo que
+ * costó la N² de las copias: se lee una **declaración**, no los tokens que la lámina lleva adentro.
+ */
+function laminasGobernadasPorElTemario_(informeId) {
+  var secciones = {};
+  var s1 = seccionAgregadoSemanal_(); if (s1) secciones[s1] = true;
+  var s2 = seccionAgregadoPost_(); if (s2) secciones[s2] = true;
+
+  var out = { por_lamina: {}, secciones: Object.keys(secciones), ok: false, motivo: '' };
+  if (!out.secciones.length) {
+    out.motivo = 'CONFIG no nombra ninguna sección de agregado (seccion_agregado_semanal / _post)';
+    return out;
+  }
+  var reg;
+  try { reg = leerLaminas_(); } catch (e) { out.motivo = 'no pude leer LAMINAS: ' + e; return out; }
+  if (!reg || !reg.ok) { out.motivo = (reg && reg.motivo) || 'leerLaminas_ no devolvió ok'; return out; }
+
+  (reg.filas || []).forEach(function (f) {
+    if (String(f.informe_id || '').trim().toLowerCase() !== String(informeId).toLowerCase()) return;
+    var sid = String(f.seccion_id || '').trim();
+    var id = String(f.lamina_id || '').trim();
+    if (id && secciones[sid]) out.por_lamina[id] = sid;
   });
+  out.ok = true;
+  return out;
+}
+
+/**
+ * ⭐⭐ `2026-08-27` Parte 2b — **una lámina gobernada por el temario arma sus propias
+ * `claves_temario` desde las solapas de SUS marcadores.**
+ *
+ * ⛔ **El hueco que cierra, y es lo único que faltaba para que el número se mueva.** El universo
+ * del temario se activaba por `opciones.claves_temario[base|solapa]`, y esa lista salía de
+ * `CONFIG.solapas_agregado_post` — **escrita para la sección post y atada a ella**. `L-034`
+ * quedaba con el token desdoblado y las dos mitades resolviendo igual: `digital|Directa Mail` no
+ * estaba en la lista, así que `mail_entregados` caía a la rama `digital` y publicaba **872.669**,
+ * el agregado de la ventana, al lado de «ENCUENTROS: 1».
+ *
+ * ⭐ **Se autoconfigura en vez de agregar una lista más que mantener:** las solapas salen de los
+ * marcadores que esta lámina realmente lleva, y entra la que **declara `SOLAPAS.campo_id_cuenta`**
+ * — que es la única vía para encontrar la fila de un encuentro en una solapa que no es `rdv`
+ * (`D-30`). Una lista escrita a mano se desincronizaría con la plantilla en el primer cableado.
+ *
+ * ⚠ **`rdv` se saltea a propósito:** tiene su propia rama, que resuelve por `(nombre, fecha)` del
+ * anclaje y no por cuenta, y su solapa **no declara** `campo_id_cuenta`.
+ *
+ * ⚠ **Una solapa sin `campo_id_cuenta` NO se recorta y NO frena la corrida — pero se dice.** Es el
+ * caso de un marcador que la lámina lleva y que no se puede atar al temario; sigue por su cadena
+ * normal, o sea el universo de la ventana. **Callarlo sería `X-41` otra vez**, así que va al log
+ * con nombre. Lo que no hace es fallar: en una lámina gobernada conviven marcadores que sí se
+ * recortan y otros que legítimamente no —un `periodo`, un título— y hacerlos fallar a todos
+ * cambiaría un problema por otro.
+ *
+ * ⚠ **`camposMetrica` va vacío**, y no es un olvido: la regla *«si no hay métrica de resultado > 0
+ * la fila no va»* es de la sección **post** —`L-036` publica comunicaciones que ocurrieron— y
+ * aplicarla acá dejaría afuera encuentros por una razón que no es la de esta lámina.
+ */
+function clavesTemarioDeLamina_(informeId, ventanaInforme, seccionId, tokens) {
+  var out = { claves: {}, filas: {}, solapas: [], omitidas: [], diag: '' };
+  var enLamina = {};
+  (tokens || []).forEach(function (t) { enLamina[t] = true; });
+
+  var marcadores;
+  try { marcadores = leerMarcadores_(); }
+  catch (e) { out.diag = 'no pude leer MARCADORES: ' + e; return out; }
+
+  var vistas = {};
+  (marcadores || []).forEach(function (m) {
+    if (!enLamina[m.marcador]) return;
+    if (String(m.informe_id || '').trim().toLowerCase() !== String(informeId).toLowerCase()) return;
+    var baseId = String(m.base_id || '').trim();
+    var solapa = String(m.solapa || '').trim();
+    if (!baseId || !solapa || baseId === 'rdv') return;
+    var clave = baseId + '|' + solapa;
+    if (vistas[clave]) return;
+    vistas[clave] = true;
+    if (!campoIdCuentaDeSolapa_(baseId, solapa)) { out.omitidas.push(clave); return; }
+    out.solapas.push({ base_id: baseId, solapa: solapa, clave: clave });
+  });
+
+  out.solapas.forEach(function (s) {
+    out.claves[s.clave] = true;
+    out.filas[s.clave] = filasDeSolapaDelTemario_(informeId, ventanaInforme, seccionId,
+      s.base_id, s.solapa, []);
+  });
+  return out;
+}
+
+function agruparTokensPorLamina_(tokensFijos, universoDeSlide) {
+  var porLamina = {};
+  var exclusivoPorLamina = {};
+
+  Object.keys(tokensFijos).sort().forEach(function (token) {
+    var slides = (tokensFijos[token] || []).slice().sort(function (a, b) { return a - b; });
+    if (!slides.length) return;
+
+    /* ⭐⭐ `2026-08-27` Parte 2 — **un token cuyas láminas declaran universos DISTINTOS se resuelve
+     * una vez POR LÁMINA, y se pinta sólo en la suya.**
+     *
+     * ⛔ **El caso, medido en el deck del 27/08:** `mail_entregados` vive en `L-031` —Resumen
+     * Ejecutivo, universo la semana entera de JM— y en `L-034` —agregado del temario—. Con la
+     * asignación a la primera, se resolvía en `L-031` y `replaceAllText` lo pintaba en las dos:
+     * `L-034` publicaba **872.669** mails al lado de «ENCUENTROS: 1». Y el encuentro **no tuvo
+     * mail**, así que lo correcto ahí no es otro número: es sin dato.
+     *
+     * ⭐ **Esto da vuelta la guarda de `D-41` a propósito, y el motivo es el mismo que la
+     * sostenía.** Aquélla evitaba *«publicar dos valores distintos del mismo token en el mismo
+     * deck»* porque serían **dos respuestas a la misma pregunta**. Acá son **dos preguntas
+     * distintas** —cuánto mail hubo esta semana, y cuánto hubo en los encuentros del temario— y
+     * son justamente las dos cajas que `C-80` describe leyéndose como si fueran una.
+     *
+     * ⚠ **El desdoble se paga sólo donde puede haber diferencia:** un token que vive en UNA lámina
+     * no consulta nada, y uno que vive en varias del mismo universo sigue resolviéndose una vez y
+     * pintándose de una pasada. `camp_titulo` está en 8 láminas y es el mismo hecho en las 8.
+     *
+     * ⚠ **Y `exclusivos` viaja EN EL GRUPO, no al lado.** `probar-reanudacion-identica.js` recorta
+     * la lista de grupos con `.slice()` para simular un corte, y una propiedad colgada del arreglo
+     * se perdería ahí — el token volvería a pintarse en todo el deck **sin fallar**. En el grupo
+     * viaja con él. */
+    var destinos = [slides[0]];
+    var exclusivo = false;
+    if (slides.length > 1 && typeof universoDeSlide === 'function') {
+      var universos = {};
+      slides.forEach(function (n) { universos[universoDeSlide(n)] = true; });
+      if (Object.keys(universos).length > 1) { destinos = slides; exclusivo = true; }
+    }
+
+    destinos.forEach(function (n) {
+      if (!porLamina[n]) { porLamina[n] = []; exclusivoPorLamina[n] = []; }
+      porLamina[n].push(token);
+      if (exclusivo) exclusivoPorLamina[n].push(token);
+    });
+  });
+
   return Object.keys(porLamina)
-    .map(function (n) { return { slide: Number(n), tokens: porLamina[n] }; })
+    .map(function (n) {
+      return { slide: Number(n), tokens: porLamina[n], exclusivos: exclusivoPorLamina[n] || [] };
+    })
     .sort(function (a, b) { return a.slide - b.slide; });
 }
 
@@ -4165,17 +4310,25 @@ function pintarTokensFijosDeLamina_(tokens, ctx) {
   tokens.forEach(function (token) {
     var resultado = ctx.porMarcador[token];
 
+    /* ⭐⭐ `2026-08-27` Parte 2 — **dónde se pinta ESTE token.** Un token exclusivo de esta lámina
+     * se pinta con `slide.replaceAllText`, no con el de la presentación: es lo que permite que el
+     * mismo token publique dos valores distintos en dos láminas que hacen dos preguntas distintas.
+     * ⚠ Si por lo que sea no llegó el `slide`, se pinta en la presentación — el comportamiento de
+     * siempre. Un exclusivo sin destino propio publicaría de más, no de menos. */
+    var donde = (ctx.slide && ctx.exclusivos && ctx.exclusivos.indexOf(token) !== -1)
+      ? ctx.slide : ctx.presentacion;
+
     // `{{periodo}}` lo produce la generación, no un marcador: es el encabezado de la lámina
     // y sale del período que **efectivamente se usó** (`B.5`). Si alguien le carga una fila
     // en `MARCADORES`, esa fila gana — la hoja de registro manda sobre el default.
     if (!resultado && token === 'periodo') {
-      ctx.presentacion.replaceAllText('{{' + token + '}}', ctx.periodoLamina, true);
+      donde.replaceAllText('{{' + token + '}}', ctx.periodoLamina, true);
       ctx.contadores.sumarReemplazado(token);
       return;
     }
 
     if (resultado && resultado.estado === 'ok') {
-      ctx.presentacion.replaceAllText('{{' + token + '}}', String(resultado.valor_formateado), true);
+      donde.replaceAllText('{{' + token + '}}', String(resultado.valor_formateado), true);
       ctx.contadores.sumarReemplazado(token);
       // `R-18` punto 3 — un valor que el catálogo rechazó **no llega al deck**, pero tampoco
       // puede desaparecer: va a `FALTANTES` con su fila **aunque el token haya publicado bien
@@ -4203,7 +4356,7 @@ function pintarTokensFijosDeLamina_(tokens, ctx) {
     // `fila` se resuelve ANTES de pintar: el símbolo sale de su `estado`, y el motivo de
     // `FALTANTES` sale de la misma variable. Un solo lector para las dos cosas.
     var fila = ctx.porMarcador[token];
-    ctx.presentacion.replaceAllText('{{' + token + '}}', textoFaltante_(token, fila, ctx.conSimbolos), true);
+    donde.replaceAllText('{{' + token + '}}', textoFaltante_(token, fila, ctx.conSimbolos), true);
     ctx.faltantes.push({
       corrida_id: ctx.corridaId,
       informe_id: ctx.informeId,
@@ -5078,12 +5231,47 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
   /* Se guarda para el diagnóstico del cierre: es la diferencia entre *«nadie lo miró»* y *«está
    * en una lámina escondida»*, y el cierre corre mucho después de acá. */
   tokensSoloEnEscondidas = visiblesEtapa4.detalle || {};
-  laminasDeEtapa4 = agruparTokensPorLamina_(tokensFijos);
-  etapa4Corrio = true;
   /* ⭐ Perezoso a propósito: en un deck sin faltantes no hace **ninguna** llamada a la API. Ver el
    * comentario de `resolvedorDeLaminaId_` — el instrumento corre dentro de la etapa que el
    * presupuesto ya aprieta, y un barrido completo lo pagaría toda corrida. */
   var resolverLaminaId = resolvedorDeLaminaId_(presentacion);
+  /* ⭐ `2026-08-27` Parte 1 — se lee **una vez por corrida**, del registro, sin tocar la API de
+   * Slides. Si no se puede leer, `ok:false` y **no se recorta nada**: un registro ilegible no
+   * puede convertirse en «ninguna lámina está gobernada». */
+  var gobernadas = laminasGobernadasPorElTemario_(informeId);
+  Logger.log('etapa 4: láminas gobernadas por el temario — ' +
+    (gobernadas.ok ? Object.keys(gobernadas.por_lamina).join(', ') || '(ninguna)'
+                   : '⚠ no se pudo leer LAMINAS: ' + gobernadas.motivo + ' — no se recorta nada'));
+
+  /* ⭐⭐ `2026-08-27` Parte 2 — **el universo de una lámina, como clave comparable.**
+   *
+   * ⚠ **«Desconocido» NO es «ventana», y la diferencia decide un desdoble.** Una lámina sin ancla
+   * recibe las claves del temario (Parte 1, para no romper `L-034`), así que agruparla con las de
+   * la ventana la haría publicar el valor de la otra. Con clave propia, un token compartido entre
+   * una desconocida y una de ventana **se desdobla** — que es el lado conservador: cada una
+   * resuelve la suya en vez de heredar la de la vecina. */
+  var universoDeSlide = function (n) {
+    var id = resolverLaminaId(n);
+    if (!id) return 'desconocido';
+    return gobernadas.por_lamina[id] ? ('temario:' + gobernadas.por_lamina[id]) : 'ventana';
+  };
+
+  laminasDeEtapa4 = agruparTokensPorLamina_(tokensFijos, universoDeSlide);
+  etapa4Corrio = true;
+  var desdoblados = {};
+  laminasDeEtapa4.forEach(function (g) { (g.exclusivos || []).forEach(function (t) { desdoblados[t] = true; }); });
+  if (Object.keys(desdoblados).length) {
+    Logger.log('etapa 4: ⭐ ' + Object.keys(desdoblados).length + ' token(s) se resuelven POR LÁMINA ' +
+      'porque sus láminas declaran universos distintos — ' + Object.keys(desdoblados).sort().join(', ') +
+      '. Cada uno se pinta SÓLO en su lámina.');
+  }
+  /* Los slides del deck, para pintar un exclusivo en el suyo. Perezoso: si no hay ninguno, no se
+   * pide la lista. `resolvedorDeLaminaId_` ya la pidió si hubo que resolver anclas. */
+  var slidesDelDeck = null;
+  var slideDe = function (n) {
+    if (!slidesDelDeck) slidesDelDeck = presentacion.getSlides();
+    return slidesDelDeck[n - 1] || null;
+  };
   costoUltimaLaminaSeg = costoLaminaEtapa4Seg_();
   laminasEtapa4Hechas = [];
   laminasEtapa4Pendientes = [];
@@ -5109,9 +5297,69 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
      * etapa 3 y que a la 4 nunca se le aplicó — y es lo que vuelve al lote barato **además** de
      * partible. Las `opcionesEtapa4` se copian enteras: llevan la ventana, las filas del temario
      * y las de la POST, y perder una cambiaría de qué filas sale el número. */
+    /* ⭐⭐ `2026-08-27` Parte 1 — **el universo del temario pasa a ser DE LA LÁMINA.**
+     *
+     * Las claves del temario ya no se copian a todas: sólo a las láminas que `LAMINAS.seccion_id`
+     * declara colgadas de una sección de agregado. `L-031` y `L-032` cuelgan de
+     * `resumen_ejecutivo` —cuyo universo es legítimamente **toda la comunicación de JM de la
+     * semana** (`C-78`)— y dejan de recibirlas.
+     *
+     * ⚠ **Una lámina SIN SELLAR conserva el comportamiento de hoy, y eso es deliberado.** Si
+     * `resolverLaminaId` no puede leer el ancla, *«no sé»* no puede convertirse en *«no gobernada»*:
+     * eso le sacaría las claves a `L-034` y sus `ecv_*` se irían al universo ancho — justo lo que
+     * la Parte 3 acaba de cerrar. **Un default que rompe en silencio es peor que no gatear.** Se
+     * conserva y se avisa. */
+    var idLamina = resolverLaminaId(grupo.slide);
+    var gobernada = !idLamina || !!gobernadas.por_lamina[idLamina];
+    if (idLamina && !gobernadas.ok) gobernada = true;   // sin registro legible, no se recorta nada
+    if (!idLamina) {
+      Logger.log('⚠ etapa 4: la lámina en la posición ' + grupo.slide + ' no tiene ancla, así que ' +
+        'no sé de qué sección cuelga. Conserva las claves del temario (comportamiento anterior).');
+    }
+
     var opcionesLamina = {};
-    Object.keys(opcionesEtapa4).forEach(function (k) { opcionesLamina[k] = opcionesEtapa4[k]; });
+    Object.keys(opcionesEtapa4).forEach(function (k) {
+      if (!gobernada && CLAVES_DEL_TEMARIO_.indexOf(k) !== -1) return;
+      opcionesLamina[k] = opcionesEtapa4[k];
+    });
     opcionesLamina.solo_marcadores = grupo.tokens;
+
+    /* ⭐⭐ `2026-08-27` Parte 2b — **las solapas que el temario gobierna EN ESTA lámina.**
+     *
+     * ⚠ **Se clona antes de mezclar.** `opcionesLamina` es una copia superficial, así que los dos
+     * mapas apuntan a los mismos objetos que `opcionesEtapa4`: mutarlos filtraría las solapas de
+     * una lámina a todas las siguientes — el universo ancho por la puerta de atrás.
+     *
+     * ⚠ **Y lo que ya estaba GANA.** La lista de `CONFIG` define, para `L-036`, cuál solapa
+     * califica y en qué orden sale la tabla; si lo autoconfigurado la pisara, la tabla se ordenaría
+     * por otra cosa sin que nada falle. */
+    var seccionDeLamina = idLamina ? gobernadas.por_lamina[idLamina] : '';
+    if (seccionDeLamina) {
+      var propio = clavesTemarioDeLamina_(informeId, ventana, seccionDeLamina, grupo.tokens);
+      var claves = {};
+      Object.keys(opcionesLamina.claves_temario || {}).forEach(function (k) { claves[k] = true; });
+      var filasT = {};
+      Object.keys(opcionesLamina.filas_temario || {}).forEach(function (k) {
+        filasT[k] = opcionesLamina.filas_temario[k];
+      });
+      Object.keys(propio.claves).forEach(function (k) { claves[k] = true; });
+      Object.keys(propio.filas).forEach(function (k) { if (!filasT[k]) filasT[k] = propio.filas[k]; });
+      opcionesLamina.claves_temario = claves;
+      opcionesLamina.filas_temario = filasT;
+
+      if (propio.solapas.length) {
+        Logger.log('etapa 4 · ' + idLamina + ' (' + seccionDeLamina + '): el temario gobierna ' +
+          propio.solapas.map(function (s) { return s.clave; }).join(', '));
+      }
+      /* ⚠ Lo que NO se pudo atar al temario, con nombre. Callarlo es `X-41`. */
+      if (propio.omitidas.length) {
+        Logger.log('⚠ etapa 4 · ' + idLamina + ': ' + propio.omitidas.length + ' solapa(s) de esta ' +
+          'lámina NO declaran `SOLAPAS.campo_id_cuenta`, así que sus marcadores NO se recortan por ' +
+          'el temario y publican el universo de la ventana — ' + propio.omitidas.join(', ') +
+          '. Se declara la celda o se acepta el universo ancho, pero no se decide en silencio.');
+      }
+      if (propio.diag) Logger.log('⚠ etapa 4 · ' + idLamina + ': ' + propio.diag);
+    }
 
     var resolucionLamina = resolverMarcadores(informeId, opcionesLamina);
     resolucionLamina.resultados.forEach(function (r) { porMarcador[r.marcador] = r; });
@@ -5120,6 +5368,10 @@ function generarInformeConCache_(informeId, periodoId, opciones, t0Corrida) {
     resolucion = acumularResolucion_(resolucion, resolucionLamina);
 
     pintarTokensFijosDeLamina_(grupo.tokens, {
+      /* ⭐ El `slide` sólo se pide si esta lámina tiene algún exclusivo: sin desdoble, ni se toca
+       * la lista de slides. */
+      slide: (grupo.exclusivos && grupo.exclusivos.length) ? slideDe(grupo.slide) : null,
+      exclusivos: grupo.exclusivos || [],
       presentacion: presentacion, porMarcador: porMarcador, periodoLamina: periodoLamina,
       conSimbolos: conSimbolos, corridaId: corridaId, informeId: informeId,
       contadores: { sumarReemplazado: function (t) { reemplazados++; conValor.push(t); } },

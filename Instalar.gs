@@ -2391,7 +2391,27 @@ var SEED_SOLAPAS_ = [].concat(
    * mínimo `−27`—. Que reprodujera dos veces se explica por **el intervalo corto entre tomas**,
    * no por la clase del campo. La próxima vez puede no reproducir **sin que nada esté roto**. */
   [filaSolapa_('digital', 'Directa Mail', 'fuente', 'canales de directa', { campo_id_cuenta: 'mail_id_cuenta' })],
-  filasSolapa_('digital', ['Directa IVR', 'Directa SMS'], 'fuente', 'canales de directa'),
+  /* ⭐⭐ `2026-08-27` — **`Directa IVR` declara su PROPIO campo, y por eso se separa de `SMS`.**
+   *
+   * ⭐ **La condición que el comentario de arriba exigía está cumplida y medida:** `MAPEO` tiene
+   * `digital|Directa IVR|ivr_id_cuenta` desde antes (snapshot del 26/08), así que
+   * `planDeLecturaPorCuenta_` resuelve y **no** cae en `@campo_id_cuenta_no_mapeado`. Lo que aquel
+   * comentario prohibía era declararle **`mail_id_cuenta`** al grupo entero — el modo de falla del
+   * `_44`—, no que IVR declarara el suyo.
+   *
+   * ⛔ **Y hay que decirlo así porque la frase vieja engañaba:** *«las otras dos no tienen ese
+   * campo lógico en `MAPEO`»* se lee como *«no tienen id de cuenta»*, y es falso — lo tienen, con
+   * su propio nombre. Lo detectó el usuario el 27/08 leyendo el banco.
+   *
+   * **Para qué:** sin esto, `ivr_atendidos` en una lámina gobernada por el temario no tiene forma
+   * de recortarse por las cuentas de los encuentros y publica el agregado de la ventana — un
+   * número plausible de otro universo (`X-41`).
+   *
+   * ⚠ **`Directa SMS` se queda SIN declarar, y no es simetría olvidada:** ningún marcador lee esa
+   * solapa hoy, así que declararla sería una decisión sin consumidor. El banco lo afirma en
+   * negativo para que el día que alguien vuelva a agrupar las tres, se ponga rojo. */
+  [filaSolapa_('digital', 'Directa IVR', 'fuente', 'canales de directa', { campo_id_cuenta: 'ivr_id_cuenta' })],
+  [filaSolapa_('digital', 'Directa SMS', 'fuente', 'canales de directa')],
   [filaSolapa_('digital', 'Seguimiento digital', 'fuente', 'maestra de la unión del Paso 2.4')],
   [filaSolapa_('digital', 'Alcance', 'fuente', 'usada por Union.gs')],
   [filaSolapa_('digital', 'RDV', 'ignorar', '⚠ duplica la base rdv — si se lee, hay doble conteo')],
