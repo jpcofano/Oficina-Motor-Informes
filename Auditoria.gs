@@ -6734,3 +6734,290 @@ function verificarGatesDelTemario() {
     a9: { sin_eje: conEjeVacio.length, por_periodo: porPeriodo }
   };
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-28_2` A.5 — ¿la plantilla trae elementos VINCULADOS a una fuente externa?
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+
+
+/**
+ * Censo de elementos vinculados de las plantillas vivas — **sólo lectura**.
+ *
+ * ⭐ **Por qué existe, y por qué no lo contesta un `grep`.** La nocturna del 28/08 midió que el
+ * motor **sólo hace `replaceAllText`** —25 apariciones, cero de `insertSheetsChart`,
+ * `setLinkUrl`, `insertImage`— y de ahí se quiso concluir *«el deck es texto sellado, compartirlo
+ * no filtra nada»*. **Esa conclusión no se sigue:** la plantilla es del equipo (`C-01`), el motor
+ * la **copia entera**, y un gráfico vinculado que ya viene de fábrica **sobrevive a la copia**.
+ * Lo que el motor no inserta y lo que el deck no lleva son dos afirmaciones distintas.
+ *
+ * ⛔ **Es el gate de la Parte B del `2026-08-28_2`.** Un `SHEETS_CHART` exige que quien abre el
+ * deck tenga acceso a **la planilla de origen** para poder renderizarlo, así que compartir el
+ * deck con la lista de `mails_autorizados` sería, por la ventana del gráfico, compartir la base.
+ * Si esto devuelve cero, la propiedad queda **afirmada con su comando** en vez de supuesta.
+ *
+ * ⭐ **El control positivo es el histograma completo, y no es adorno.** Un censo que sólo informa
+ * lo que sospecha **no distingue «no hay» de «no miré»**: las dos salidas se ven idénticas en el
+ * log. Acá el contraste lo dan los `SHAPE` —los `{{token}}` viven ahí, así que **tienen que
+ * aparecer**— y los conteos `n de m` de plantillas, láminas y elementos. ⛔ **Si una plantilla
+ * devuelve cero elementos, esto FALLA en vez de informar «sin vínculos»**, porque un cero de
+ * lectura y un cero de hallazgo mandan a trabajos opuestos.
+ *
+ * ⚠ **Los errores de lectura se cuentan aparte y NO se tragan.** Un `try/catch` que devuelve
+ * «nada» sobre un elemento ilegible convierte una falla en un verde — es la figura que este repo
+ * ya pagó. Cada fallo va al reporte con el tipo y la lámina.
+ *
+ * ⭐ **Las plantillas salen de `INFORMES`, no de una lista en el código** (`D-01`): una tercera
+ * plantilla entra sola.
+ *
+ * ⛔ **No escribe nada.** Abre por id, recorre y reporta.
+ */
+function censarElementosVinculadosDePlantillas() {
+  var informes = leerInformes();
+  var ids = Object.keys(informes);
+
+  var res = {
+    plantillas_declaradas: ids.length,
+    plantillas_leidas: 0,
+    laminas: 0,
+    elementos: 0,
+    por_tipo: {},
+    vinculados: [],
+    links: [],
+    imagenes_con_origen: [],
+    notas_con_url: [],
+    errores: [],
+    plantillas: []
+  };
+
+  ids.forEach(function (informeId) {
+    var informe = informes[informeId];
+    var plantillaId = String((informe && informe.plantilla_id) || '').trim();
+    if (!plantillaId) {
+      res.errores.push({ informe_id: informeId, donde: 'INFORMES', que: 'plantilla_id vacío' });
+      return;
+    }
+
+    var pres;
+    try {
+      pres = SlidesApp.openById(plantillaId);
+    } catch (e) {
+      res.errores.push({ informe_id: informeId, donde: 'openById', que: String(e && e.message ? e.message : e) });
+      return;
+    }
+
+    var slides = pres.getSlides();
+    var antesElementos = res.elementos;
+
+    slides.forEach(function (slide, i) {
+      res.laminas++;
+      var nro = i + 1;
+      censarElementosA5_(slide.getPageElements(), informeId, nro, '', res);
+
+      // Las notas del orador viajan con `slide.duplicate()` —medido, `2026-08-21`— y el sellado
+      // escribe ahí. Una URL pegada en una nota se copia al deck igual que una en una forma.
+      try {
+        var notas = slide.getNotesPage().getSpeakerNotesShape();
+        if (notas) {
+          var txt = notas.getText().asString();
+          if (/https?:\/\//.test(txt)) {
+            res.notas_con_url.push({ informe_id: informeId, lamina: nro, muestra: txt.slice(0, 120) });
+          }
+        }
+      } catch (e) {
+        res.errores.push({ informe_id: informeId, lamina: nro, donde: 'notas', que: String(e && e.message ? e.message : e) });
+      }
+    });
+
+    res.plantillas_leidas++;
+    res.plantillas.push({
+      informe_id: informeId,
+      plantilla_id: plantillaId,
+      nombre: pres.getName(),
+      laminas: slides.length,
+      elementos: res.elementos - antesElementos
+    });
+  });
+
+  // ── El control positivo, y falla en vez de informar cero ───────────────────────────────────
+  var fallas = [];
+  if (!res.plantillas_leidas) fallas.push('no se pudo leer NINGUNA plantilla');
+  res.plantillas.forEach(function (p) {
+    if (!p.laminas) fallas.push(p.informe_id + ': la plantilla no devolvió ninguna lámina');
+    if (!p.elementos) fallas.push(p.informe_id + ': la plantilla no devolvió ningún elemento');
+  });
+  if (!res.por_tipo.SHAPE) {
+    fallas.push('ninguna plantilla devolvió un SHAPE — los `{{token}}` viven ahí, así que ' +
+      'un cero es un fallo de lectura y no un hallazgo');
+  }
+  res.control_positivo = fallas.length ? { ok: false, fallas: fallas } : { ok: true };
+
+  // ── El reporte, y el veredicto ANTES de los avisos ─────────────────────────────────────────
+  Logger.log('CENSO de elementos vinculados — plantillas ' + res.plantillas_leidas + ' de ' +
+    res.plantillas_declaradas + ' · láminas ' + res.laminas + ' · elementos ' + res.elementos);
+  res.plantillas.forEach(function (p) {
+    Logger.log('   ' + p.informe_id + ' · «' + p.nombre + '» · ' + p.laminas + ' láminas · ' +
+      p.elementos + ' elementos');
+  });
+
+  Logger.log('— histograma (control positivo: SHAPE tiene que estar) —');
+  Object.keys(res.por_tipo).sort().forEach(function (t) {
+    Logger.log('   ' + t + ': ' + res.por_tipo[t]);
+  });
+
+  if (!res.control_positivo.ok) {
+    Logger.log('⛔ CONTROL POSITIVO EN ROJO — el censo NO midió lo que dice medir:');
+    res.control_positivo.fallas.forEach(function (f) { Logger.log('   · ' + f); });
+    Logger.log('⛔ El resto de este reporte no se puede leer como «no hay vínculos».');
+    return res;
+  }
+
+  var total = res.vinculados.length + res.links.length + res.imagenes_con_origen.length +
+    res.notas_con_url.length;
+  Logger.log(total === 0
+    ? '✅ CERO elementos vinculados, cero links, cero imágenes con origen externo y cero notas ' +
+      'con URL. El deck es texto sellado: compartirlo no expone ninguna fuente.'
+    : '⛔ HAY ' + total + ' elemento(s) que atan el deck a una fuente externa — la Parte B del ' +
+      '`2026-08-28_2` NO se ejecuta: es una decisión del usuario.');
+
+  [['vinculados', res.vinculados], ['links', res.links],
+   ['imágenes con origen', res.imagenes_con_origen], ['notas con URL', res.notas_con_url]
+  ].forEach(function (par) {
+    if (!par[1].length) return;
+    Logger.log('— ' + par[0] + ' (' + par[1].length + ') —');
+    par[1].forEach(function (x) { Logger.log('   ' + JSON.stringify(x)); });
+  });
+
+  // Los avisos van ÚLTIMOS, después del veredicto: un `⚠` en el medio de un reporte que termina
+  // en `✅` se lee como verde (`CLAUDE.md` §4).
+  if (res.errores.length) {
+    Logger.log('⚠ ' + res.errores.length + ' elemento(s)/lámina(s) NO se pudieron leer. El ' +
+      'veredicto de arriba no cubre a éstos:');
+    res.errores.forEach(function (e) { Logger.log('   ' + JSON.stringify(e)); });
+  }
+  Logger.log('⚠ Lo que este censo NO contesta: qué trae un deck YA generado. Mide la plantilla, ' +
+    'que es de donde el deck sale — no los archivos de la carpeta de salida.');
+
+  return res;
+}
+
+/**
+ * El recorrido, recursivo un nivel por cada `GROUP` — la misma forma que
+ * `eliminarElementosFueraDeCanvas_` (`Armonizar.gs`), que ya la tenía escrita.
+ *
+ * ⚠ Cada lectura va en su propio `try`: un elemento ilegible **suma a `errores`** y no
+ * desaparece del conteo.
+ */
+function censarElementosA5_(elementos, informeId, lamina, prefijo, res) {
+  elementos.forEach(function (el) {
+    res.elementos++;
+
+    var tipo;
+    try {
+      tipo = String(el.getPageElementType());
+    } catch (e) {
+      res.errores.push({ informe_id: informeId, lamina: lamina, donde: 'getPageElementType', que: String(e && e.message ? e.message : e) });
+      return;
+    }
+    res.por_tipo[tipo] = (res.por_tipo[tipo] || 0) + 1;
+    var donde = { informe_id: informeId, lamina: lamina, ruta: prefijo + tipo };
+
+    if (tipo === 'GROUP') {
+      try {
+        censarElementosA5_(el.asGroup().getChildren(), informeId, lamina, prefijo + 'GROUP/', res);
+      } catch (e) {
+        res.errores.push({ informe_id: informeId, lamina: lamina, donde: 'GROUP', que: String(e && e.message ? e.message : e) });
+      }
+      return;
+    }
+
+    if (tipo === 'SHEETS_CHART') {
+      try {
+        var ch = el.asSheetsChart();
+        res.vinculados.push({
+          informe_id: informeId, lamina: lamina, tipo: tipo,
+          spreadsheet_id: ch.getSpreadsheetId(), chart_id: ch.getChartId()
+        });
+      } catch (e) {
+        // Un gráfico que no se deja leer **igual es un gráfico vinculado**: se registra como
+        // hallazgo Y como error, porque no saber de qué planilla cuelga es peor, no mejor.
+        res.vinculados.push({ informe_id: informeId, lamina: lamina, tipo: tipo, spreadsheet_id: '(no legible)' });
+        res.errores.push({ informe_id: informeId, lamina: lamina, donde: 'SHEETS_CHART', que: String(e && e.message ? e.message : e) });
+      }
+      return;
+    }
+
+    if (tipo === 'VIDEO') {
+      try {
+        res.vinculados.push({ informe_id: informeId, lamina: lamina, tipo: tipo, url: el.asVideo().getUrl() });
+      } catch (e) {
+        res.vinculados.push({ informe_id: informeId, lamina: lamina, tipo: tipo, url: '(no legible)' });
+        res.errores.push({ informe_id: informeId, lamina: lamina, donde: 'VIDEO', que: String(e && e.message ? e.message : e) });
+      }
+      return;
+    }
+
+    if (tipo === 'IMAGE') {
+      try {
+        var src = el.asImage().getSourceUrl();
+        // `null` es lo normal en una imagen pegada: sólo se anota la que declara origen.
+        if (src) res.imagenes_con_origen.push({ informe_id: informeId, lamina: lamina, source_url: src });
+      } catch (e) {
+        res.errores.push({ informe_id: informeId, lamina: lamina, donde: 'IMAGE', que: String(e && e.message ? e.message : e) });
+      }
+      return;
+    }
+
+    if (tipo === 'SHAPE') {
+      censarLinksDeTextoA5_(function () { return el.asShape().getText(); }, donde, res);
+      return;
+    }
+
+    if (tipo === 'TABLE') {
+      try {
+        var tabla = el.asTable();
+        for (var f = 0; f < tabla.getNumRows(); f++) {
+          for (var c = 0; c < tabla.getNumColumns(); c++) {
+            (function (fi, ci) {
+              censarLinksDeTextoA5_(function () { return tabla.getCell(fi, ci).getText(); },
+                { informe_id: informeId, lamina: lamina, ruta: prefijo + 'TABLE[' + fi + ',' + ci + ']' }, res);
+            })(f, c);
+          }
+        }
+      } catch (e) {
+        res.errores.push({ informe_id: informeId, lamina: lamina, donde: 'TABLE', que: String(e && e.message ? e.message : e) });
+      }
+    }
+  });
+}
+
+/** Links de un `TextRange`, más el barrido por texto para lo que `getLinks()` no ve. */
+function censarLinksDeTextoA5_(obtenerTexto, donde, res) {
+  var texto;
+  try {
+    texto = obtenerTexto();
+  } catch (e) {
+    res.errores.push({ informe_id: donde.informe_id, lamina: donde.lamina, donde: donde.ruta + '/getText', que: String(e && e.message ? e.message : e) });
+    return;
+  }
+  if (!texto) return;
+
+  try {
+    (texto.getLinks() || []).forEach(function (l) {
+      var url = '';
+      try { url = l.getLink().getUrl(); } catch (e2) { url = '(no legible)'; }
+      res.links.push({ informe_id: donde.informe_id, lamina: donde.lamina, ruta: donde.ruta, url: url });
+    });
+  } catch (e) {
+    res.errores.push({ informe_id: donde.informe_id, lamina: donde.lamina, donde: donde.ruta + '/getLinks', que: String(e && e.message ? e.message : e) });
+  }
+
+  // ⚠ Una URL **tipeada** no es un `Link` y `getLinks()` no la ve, pero expone la fuente igual
+  // que una: quien la lee la copia y la pega. Se cuenta como link, con el motivo.
+  try {
+    var s = texto.asString();
+    if (/https?:\/\//.test(s)) {
+      res.links.push({ informe_id: donde.informe_id, lamina: donde.lamina, ruta: donde.ruta,
+        url: '(texto plano) ' + s.slice(0, 120) });
+    }
+  } catch (e) { /* asString sobre un texto ilegible ya se anotó arriba */ }
+}
