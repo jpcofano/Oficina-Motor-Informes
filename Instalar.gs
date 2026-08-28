@@ -167,7 +167,12 @@ var HOJAS_CONFIG_ = {
   // Paso 2.9D — R-02: el temario define el universo del informe, no la fecha.
   // Curado a mano, mismo patrón que CAMPANAS.
   REUNIONES: {
-    headers: ['periodo_id', 'orden', 'eje', 'tipo', 'nombre', 'fecha', 'etapa', 'mostrar', 'texto_original', 'notas']
+    /* ⭐⭐ `2026-08-27` Parte 0-bis — `id_cuenta` **antes de `notas`**, y esta lista se toca
+     * **DESPUÉS** de que exista `COLUMNAS_DELTA_.REUNIONES`, por el mismo motivo que explica el
+     * comentario de `SECCIONES`: con la entrada de delta puesta, la hoja ya no pasa por la rama
+     * que reescribe la fila 1, así que agregar la columna acá no puede correr los encabezados
+     * sobre las 11 filas curadas. Al revés —headers primero, delta después— sí las corría. */
+    headers: ['periodo_id', 'orden', 'eje', 'tipo', 'nombre', 'fecha', 'etapa', 'mostrar', 'texto_original', 'id_cuenta', 'notas']
   },
   // Paso 2.9G v2 — registro jerárquico de secciones (docs/SECCIONES.md, v2,
   // verificada contra tres informes publicados). Se siembra con `SEED_SECCIONES_` +
@@ -443,8 +448,31 @@ var COLUMNAS_DELTA_ = {
   // la fila 1 con los encabezados nuevos y NO mueve los datos: encabezados corridos
   // sobre siete filas curadas a mano, en silencio. Efecto buscado y verificado en la
   // Parte 0: deja de recibir la reescritura de encabezados en cada corrida.
+  /* ⭐⭐ `2026-08-27` Parte 0-bis — **`REUNIONES.id_cuenta`: la cuenta digital del encuentro deja
+   * de re-deducirse en cada corrida y pasa a estar DECLARADA en la fila.**
+   *
+   * ⛔ **El hueco que cierra, medido el 27/08 sobre las cuatro hojas operativas y las once de
+   * registro:** un encuentro que ancló bien **no dejaba rastro en ninguna hoja**. La cuenta vivía
+   * en el `Logger.log` de la corrida y en el `porItem` en memoria, y las dos cosas mueren con la
+   * ejecución. La asimetría era exactamente al revés de lo útil: un `sinLink` queda con nombre y
+   * motivo en `ANCLAJE_MEDICION.sin_link_detalle`, uno de baja confianza queda con sus tres
+   * candidatos en `ANCLAJE_PENDIENTE`, **y el que acierta no queda en ningún lado**.
+   *
+   * ⭐ **El precedente es `CAMPANAS.id_cuenta`, y por eso la columna se llama igual:** ahí la
+   * cuenta **se declara en la fila** y la rama `CAMPANAS` de `itemsDeSeccion_` la lee de la hoja
+   * —no hay anclaje que correr—. `REUNIONES` era la única de las dos que la deducía.
+   *
+   * ⭐ **Y el mecanismo de «declarado gana» YA existía para reuniones**, sólo que llaveado contra
+   * `ANCLAJE_PENDIENTE` (`anclajeYaConfirmado_`, `Union.gs`): o sea que a una reunión **dudosa**
+   * se le podía declarar la cuenta y a una que **ancló bien** no. Esto lo empareja.
+   *
+   * ⚠ **Nace vacía en las 11 filas, y vacío significa «que la deduzca el anclaje»** — el
+   * comportamiento de hoy, exactamente. Nada cambia hasta que una celda tenga valor.
+   *
+   * `indice: 10` = **antes de `notas`**, que es la convención de toda la hoja. */
   REUNIONES: [
-    { nombre: 'periodo_id', indice: 1 }
+    { nombre: 'periodo_id', indice: 1 },
+    { nombre: 'id_cuenta', indice: 10 }
   ],
   BASES: [
     { nombre: 'fila_encabezado', indice: 5 },
@@ -2224,13 +2252,13 @@ var SEED_CAMPANAS_EJEMPLO_ = [
 // existe del formato en que el equipo piensa el informe. Ver nota de
 // SEED_CAMPANAS_EJEMPLO_ arriba: sin sembrador automático, mismo motivo.
 var SEED_REUNIONES_EJEMPLO_ = [
-  { periodo_id: '', orden: 1, eje: 'JM', tipo: 'Uno a uno', nombre: 'San Cristóbal', fecha: '2026-07-23', etapa: 'pre', mostrar: 'sí', texto_original: 'JM | Uno a uno en San Cristóbal 23/07 (pre)', notas: '' },
-  { periodo_id: '', orden: 2, eje: 'JM', tipo: 'Uno a uno', nombre: 'Retiro', fecha: '2026-07-24', etapa: 'pre', mostrar: 'sí', texto_original: '2) JM | Uno a uno en Retiro 24/07 (pre)', notas: '' },
-  { periodo_id: '', orden: 3, eje: 'JM', tipo: 'Encuentro Temático', nombre: 'Orden Público', fecha: '2026-07-28', etapa: '', mostrar: 'sí', texto_original: 'JM | Encuentro Temático Orden Público 28/07', notas: '' },
-  { periodo_id: '', orden: 4, eje: 'JM', tipo: 'Uno a uno', nombre: 'San Cristóbal', fecha: '2026-07-23', etapa: 'post', mostrar: 'sí', texto_original: 'JM | Uno a uno en San Cristóbal 23/07 (POST)', notas: '' },
-  { periodo_id: '', orden: 5, eje: 'JM', tipo: 'Uno a uno', nombre: 'Retiro', fecha: '2026-07-24', etapa: 'post', mostrar: 'sí', texto_original: 'JM | Uno a uno en Retiro 24/07 (post)', notas: '' },
-  { periodo_id: '', orden: 6, eje: 'Ministros', tipo: 'Agregado', nombre: 'Reuniones de la semana', fecha: '2026-07-24', etapa: '', mostrar: 'sí', texto_original: 'Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)', notas: '24/07 al 30/07 inclusive' },
-  { periodo_id: '', orden: 7, eje: 'M2', tipo: 'Agregado', nombre: 'Campañas y enviados de la semana', fecha: '2026-07-24', etapa: '', mostrar: 'sí', texto_original: '6) M2 | Campañas y enviados de la semana del 24/07 al 30/07', notas: '' }
+  { periodo_id: '', orden: 1, eje: 'JM', tipo: 'Uno a uno', nombre: 'San Cristóbal', fecha: '2026-07-23', etapa: 'pre', mostrar: 'sí', texto_original: 'JM | Uno a uno en San Cristóbal 23/07 (pre)', id_cuenta: '', notas: '' },
+  { periodo_id: '', orden: 2, eje: 'JM', tipo: 'Uno a uno', nombre: 'Retiro', fecha: '2026-07-24', etapa: 'pre', mostrar: 'sí', texto_original: '2) JM | Uno a uno en Retiro 24/07 (pre)', id_cuenta: '', notas: '' },
+  { periodo_id: '', orden: 3, eje: 'JM', tipo: 'Encuentro Temático', nombre: 'Orden Público', fecha: '2026-07-28', etapa: '', mostrar: 'sí', texto_original: 'JM | Encuentro Temático Orden Público 28/07', id_cuenta: '', notas: '' },
+  { periodo_id: '', orden: 4, eje: 'JM', tipo: 'Uno a uno', nombre: 'San Cristóbal', fecha: '2026-07-23', etapa: 'post', mostrar: 'sí', texto_original: 'JM | Uno a uno en San Cristóbal 23/07 (POST)', id_cuenta: '', notas: '' },
+  { periodo_id: '', orden: 5, eje: 'JM', tipo: 'Uno a uno', nombre: 'Retiro', fecha: '2026-07-24', etapa: 'post', mostrar: 'sí', texto_original: 'JM | Uno a uno en Retiro 24/07 (post)', id_cuenta: '', notas: '' },
+  { periodo_id: '', orden: 6, eje: 'Ministros', tipo: 'Agregado', nombre: 'Reuniones de la semana', fecha: '2026-07-24', etapa: '', mostrar: 'sí', texto_original: 'Ministros | Reuniones de la semana (24/07 al 30/07 inclusive - Acumulado)', id_cuenta: '', notas: '24/07 al 30/07 inclusive' },
+  { periodo_id: '', orden: 7, eje: 'M2', tipo: 'Agregado', nombre: 'Campañas y enviados de la semana', fecha: '2026-07-24', etapa: '', mostrar: 'sí', texto_original: '6) M2 | Campañas y enviados de la semana del 24/07 al 30/07', id_cuenta: '', notas: '' }
 ];
 
 /**

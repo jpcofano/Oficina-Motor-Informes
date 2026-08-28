@@ -2784,23 +2784,51 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
      * desaparecían del deck sin una línea en `excluidos`. Medido el 11/08: `junio_sem2` emitió 3
      * de 4 y Almagro no figuraba ni entre los emitidos ni entre los excluidos.
      *
-     * **No entran como ítem, y esa parte es correcta.** Un ancla por debajo del umbral es un ancla
-     * flojo, y el ancla decide **qué fila de `rdv` se lee**: emitir la lámina publicaría barrio,
-     * inscriptos y población de una fila que el motor no está seguro de haber acertado. Es el
-     * número plausible que el umbral existe para evitar. `sinLink` sí entra porque ahí el ancla de
-     * `rdv` está bien y lo que falta es el enlace digital — son dos faltas distintas.
-     *
-     * Lo que cambia es que ahora se ven, con el puntaje y el umbral adentro del motivo.
+     * Lo que aquel paso cambió es que dejaron de desaparecer sin una línea en `excluidos`.
      */
-    var crudos = anclaje.encuentros.concat(anclaje.sinLink);
-    var excluidosBajaConfianza = (anclaje.bajaConfianza || []).map(function (e) {
-      return {
-        item: e.reunion + (e.etapa ? ' (' + e.etapa + ')' : ''),
-        motivo: 'anclaje por debajo del umbral: puntaje ' + (e.score || 0).toFixed(2) +
-          ' < ' + anclaje.umbral + ' (CONFIG.umbral_anclaje_reunion) — registrado en ANCLAJE_PENDIENTE, ' +
-          'no se emite para no publicar la fila de rdv equivocada'
-      };
+    /* ⭐⭐ `2026-08-27` Parte 4 — **los de baja confianza ENTRAN como ítem, con la cuenta digital
+     * vaciada.** Deroga el párrafo que este mismo comentario tenía arriba —*«no entran, y esa
+     * parte es correcta»*—, que era **una premisa sin testigo** de las que `CLAUDE.md` §4 nombra:
+     * afirmaba un contrato que el código de al lado desmiente y **nada lo contradecía**.
+     *
+     * ⛔ **Por qué era falso.** Decía *«el ancla decide qué fila de `rdv` se lee»*. No la decide:
+     * la fila de `rdv` la resuelve `encontrarFilaRdvDeReunion_` por **nombre y fecha** de la
+     * reunión, y se sella en el ítem **antes** del reparto en las tres listas (`Union.gs`, y su
+     * propio comentario lo dice: *«se guarda antes del reparto para que la tenga cualquier ítem
+     * que llegue a emitirse»*). El score que manda a `bajaConfianza` es `scoreMatchDigitalRdv_`,
+     * o sea la calidad del match **digital**. Un `bajaConfianza` y un `sinLink` traen la misma
+     * fila de `rdv`, con la misma procedencia — y `sinLink` entra desde siempre. **La asimetría
+     * lo prueba: score 0 entraba y score 0,4 no.**
+     *
+     * ⛔ **Lo que costaba, medido sobre `L-034`:** sus `ecv_*` leen **sólo** `rdv`, así que cada
+     * encuentro excluido acá se perdía del agregado del temario — y la traza del marcador **no lo
+     * decía**: `origen` sólo reporta `temario_sin_fila`. `ecv_encuentros` podía publicar 3 sobre
+     * un temario de 4 sin que nada fallara. Es el número plausible, otra vez.
+     *
+     * ⭐ **Por qué se vacía `idCuenta` en vez de dejarlo:** el riesgo real de un ancla floja es el
+     * **digital** —publicar los números de la cuenta equivocada, que es la familia de `3347`—. Con
+     * la cuenta en blanco, los `enc_*` salen `«FALTA»` y los `ecv_*` salen bien. **El precedente
+     * está en el mismo `if` de `Union.gs`:** el caso `ambiguo` ya entra a `sinLink` con
+     * `mejor = null`, o sea sin cuenta, por este mismo motivo.
+     *
+     * ⚠ **Copia, nunca mutación.** `anclarEncuentros` está **cacheado por corrida**: vaciarle la
+     * cuenta al objeto crudo contaminaría a todo otro consumidor, empezando por el reporte de
+     * `Union.gs`, que tiene que seguir diciendo *«el mejor candidato fue X con puntaje 0,41»*.
+     * Mismo motivo que `sellarRanura_`.
+     */
+    var deBajaConfianza = (anclaje.bajaConfianza || []).map(function (e) {
+      var copia = {};
+      Object.keys(e).forEach(function (k) { copia[k] = e[k]; });
+      copia.idCuenta = '';
+      copia.motivo = 'anclaje DIGITAL por debajo del umbral: puntaje ' + (e.score || 0).toFixed(2) +
+        ' < ' + anclaje.umbral + ' (CONFIG.umbral_anclaje_reunion), registrado en ANCLAJE_PENDIENTE' +
+        (e.candidatoNombre ? ' — el mejor candidato era "' + e.candidatoNombre + '"' : '') +
+        '. El encuentro ENTRA igual: su fila de rdv se resolvió por nombre y fecha, no por el ancla. ' +
+        'Lo que queda sin resolver es la cuenta digital, así que sus marcadores de digital salen ' +
+        '«FALTA» en vez de un número de la cuenta equivocada.';
+      return copia;
     });
+    var crudos = anclaje.encuentros.concat(anclaje.sinLink).concat(deBajaConfianza);
     var filtroR = filtrarItemsPorSeccion_(seccion, crudos, function (e, campo) {
       return campo === '__clave__' ? (e.reunion + (e.etapa ? ' (' + e.etapa + ')' : '')) : e[campo];
     });
@@ -2854,8 +2882,10 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
     // Van en la misma lista a propósito: para quien lee el reporte son lo mismo —un ítem que no
     // salió y por qué— y separarlas en dos listas obligaría a mirar dos lugares para responder
     // "¿por qué no está este encuentro?".
+    /* ⚠ `2026-08-27` Parte 4 — **`excluidosBajaConfianza` ya no existe**: esos encuentros dejaron
+     * de excluirse y ahora son ítems con su `motivo` puesto. Siguen contados aparte en el reporte
+     * de `Union.gs` (`baja_confianza`), que es donde se mira cuántos hay. */
     var excluidos = (anclaje.excluidas_por_periodo || [])
-      .concat(excluidosBajaConfianza)
       .concat(filtroR.excluidos || []);
     return {
       ok: true, items: items, excluidos: excluidos, filtro: filtroR.traza,

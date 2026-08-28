@@ -183,6 +183,54 @@ console.log('\n═══ B · control negativo — con el comentario roto, A tie
   }
 }
 
+console.log('\n═══ B bis · ninguna clave repetida en COLUMNAS_DELTA_ ═══');
+{
+  /* ⛔⛔ `2026-08-27` — **una clave repetida en un objeto literal no se ve evaluándolo: la
+   * segunda pisa a la primera y `Object.keys` devuelve UNA.** Pasó el mismo día: se agregó un
+   * `REUNIONES: [{ id_cuenta }]` sin grepear, y `COLUMNAS_DELTA_.REUNIONES` **ya existía** con
+   * `periodo_id`. El delta viejo desaparecía en silencio y nada fallaba — es `CLAUDE.md` §1
+   * literal, el namespace global, aplicado a una clave de objeto.
+   *
+   * ⭐ **Por eso se cuenta sobre el TEXTO y no sobre el objeto.** Un control que evalúe mide el
+   * resultado del pisado, o sea justo lo que hay que detectar. */
+  const limpio = sinComentarios(FUENTE);
+  const ini = limpio.indexOf('var COLUMNAS_DELTA_');
+  const abre = limpio.indexOf('{', ini);
+  let nivel = 0, fin = -1;
+  for (let i = abre; i < limpio.length; i++) {
+    if (limpio[i] === '{') nivel++;
+    else if (limpio[i] === '}') { nivel--; if (nivel === 0) { fin = i; break; } }
+  }
+  const bloque = limpio.slice(abre, fin);
+  const claves = [...bloque.matchAll(/\n {2}([A-Z_]+):\s*\[/g)].map((m) => m[1]);
+  const repetidas = claves.filter((c, i) => claves.indexOf(c) !== i);
+  afirmar(claves.length > 0, 'se pudo leer COLUMNAS_DELTA_ (' + claves.length + ' clave(s))');
+  afirmar(repetidas.length === 0,
+    '⭐⭐ ninguna clave repetida en las ' + claves.length +
+    (repetidas.length ? ' — REPETIDAS: ' + [...new Set(repetidas)].join(', ') : ''));
+
+  /* El negativo: se duplica una clave a propósito y el conteo tiene que acusarla. Sin esto, un
+   * `matchAll` con el patrón mal escrito devolvería siempre cero repetidas y daría verde. */
+  const mutado = FUENTE.replace('\r\n  BASES: [', '\r\n  BASES: [\r\n  ],\r\n  BASES: [');
+  if (mutado === FUENTE) {
+    fallas++;
+    console.log('  ❌ ⛔ la mutación de clave duplicada NO se aplicó — el negativo habría ' +
+      'corrido sobre el texto intacto');
+  } else {
+    const lim2 = sinComentarios(mutado);
+    const i2 = lim2.indexOf('var COLUMNAS_DELTA_');
+    const a2 = lim2.indexOf('{', i2);
+    let n2 = 0, f2 = -1;
+    for (let i = a2; i < lim2.length; i++) {
+      if (lim2[i] === '{') n2++;
+      else if (lim2[i] === '}') { n2--; if (n2 === 0) { f2 = i; break; } }
+    }
+    const c2 = [...lim2.slice(a2, f2).matchAll(/\n {2}([A-Z_]+):\s*\[/g)].map((m) => m[1]);
+    afirmar(c2.filter((c, i) => c2.indexOf(c) !== i).length > 0,
+      '⛔ con una clave duplicada a propósito, el control la acusa');
+  }
+}
+
 console.log('\n═══ C · todos los .gs parsean ═══');
 {
   /* ⚠ Cubre OTRA clase de fallo: un `*` + `/` de más, un paréntesis sin cerrar. **No habría

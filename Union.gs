@@ -1009,6 +1009,48 @@ var HEADERS_ANCLAJE_PENDIENTE_ = ['tipo', 'nombre_buscado', 'candidato_1', 'punt
  * corrida no crece como 190. El tope lo pone `TOPE_MEDICIONES_ANCLAJE_`, que poda las viejas.
  * ═══════════════════════════════════════════════════════════════════════════════════════════ */
 
+/**
+ * ⭐⭐ `2026-08-27` Parte 0-bis — **escribe en `REUNIONES.id_cuenta` las cuentas que el anclaje
+ * resolvió por encima del umbral.**
+ *
+ * ⭐ **Reusa `curarCamposReuniones_` y no escribe por su cuenta**, y eso no es comodidad: esa
+ * función escribe **sólo los campos nombrados**, por clave `texto_original`, y **no pasa por
+ * `upsertPorClave_`** — o sea que **no blanquea las demás columnas**, que es el modo de falla que
+ * `CLAUDE.md` §2 documenta con tres casos en una semana. Un escritor propio acá habría sido el
+ * cuarto.
+ *
+ * ⚠ **No puede voltear el anclaje.** Mismo criterio que `registrarMedicionAnclaje_` y que
+ * `marcarEtapa_`: un fallo al dejar rastro no puede costar el trabajo que se estaba haciendo. Lo
+ * que sí hace es **dejar rastro de su propio fallo** — un `catch` vacío haría que la hoja mienta
+ * por omisión.
+ *
+ * ⚠ **`sin_fila` no es un detalle:** significa que el `texto_original` del encuentro no está en la
+ * hoja, o sea que la fila se editó o vino de otro lado. Se informa; no se inventa la fila.
+ */
+function escribirCuentasAncladas_(pendientes) {
+  var salida = { intentadas: (pendientes || []).length, escritas: 0, sin_fila: [], motivo: '' };
+  if (!salida.intentadas) return salida;
+
+  try {
+    var r = curarCamposReuniones_(pendientes);
+    if (!r || !r.ok) {
+      salida.motivo = (r && r.motivo) || 'curarCamposReuniones_ no devolvió ok';
+      Logger.log('⚠ anclarEncuentros: no se pudo escribir REUNIONES.id_cuenta — ' + salida.motivo);
+      return salida;
+    }
+    salida.escritas = r.cambios_escritos;
+    salida.sin_fila = r.sin_fila || [];
+    Logger.log('anclarEncuentros: REUNIONES.id_cuenta — ' + salida.escritas + ' de ' +
+      salida.intentadas + ' cuenta(s) quedaron declaradas' +
+      (salida.sin_fila.length ? ' · ⚠ sin fila en la hoja: ' + salida.sin_fila.join(' | ') : ''));
+  } catch (e) {
+    salida.motivo = String((e && e.message) ? e.message : e);
+    Logger.log('⚠ anclarEncuentros: excepción al escribir REUNIONES.id_cuenta — ' + salida.motivo +
+      '. El anclaje sigue: esto es rastro, no resultado.');
+  }
+  return salida;
+}
+
 var HEADERS_ANCLAJE_MEDICION_ = ['cuando', 'ventana_desde', 'ventana_hasta', 'periodo_id',
   'intentados', 'anclados', 'baja_confianza', 'sin_link', 'umbral', 'sin_link_detalle', 'excluidas_por_periodo'];
 
@@ -1537,6 +1579,11 @@ function anclarEncuentrosSinCache_(ventana) {
   var encuentros = [];
   var sinLink = [];
   var bajaConfianza = [];
+  /* ⭐⭐ `2026-08-27` Parte 0-bis — las cuentas que este anclaje resolvió y **hay que dejar
+   * escritas** en `REUNIONES.id_cuenta`. Se juntan acá y se escriben **una sola vez** después del
+   * bucle: una llamada por reunión sería una lectura y una escritura de la hoja por vuelta, dentro
+   * de la etapa que el presupuesto ya aprieta. */
+  var aDeclarar = [];
 
   Logger.log('anclarEncuentros: arranca — ' + reuniones.length + ' reunión(es), ' + candidatosTodos.length +
     ' cuenta(s) digital · umbral=' + umbral + ' · ' + new Date());
@@ -1574,6 +1621,32 @@ function anclarEncuentrosSinCache_(ventana) {
      * él declara: *lo que se necesita se declara*. */
     var item = { reunion: reunion.nombre, tipo: reunion.tipo, fecha: reunion.fecha, etapa: reunion.etapa, idCuenta: '', score: 0, registroDigital: null, candidatoNombre: '', nombreBuscado: nombreBuscado };
     var confirmado = anclajeYaConfirmado_(indicePendiente, 'reunion', nombreBuscado);
+
+    /* ⭐⭐ `2026-08-27` Parte 0-bis — **la cuenta DECLARADA en la fila del encuentro gana sobre
+     * cualquier deducción.** Es el régimen que `CAMPANAS` ya tiene: ahí la cuenta se lee de la
+     * hoja y no hay anclaje que correr.
+     *
+     * ⭐ **Y lo que esto arregla no es sólo trazabilidad:** hasta hoy la cuenta se **volvía a
+     * deducir en cada corrida**, así que dos corridas de la misma semana podían anclar distinto
+     * porque `digital` se movió en el medio (`R-31`) **y nada lo mostraría**. Con la cuenta
+     * declarada, la corrida es reproducible.
+     *
+     * ⚠ **Vacío significa «deducila», que es el comportamiento de siempre.** La columna nace vacía
+     * en las 11 filas vivas, así que esto no cambia ni un número hasta que una celda tenga valor.
+     *
+     * ⚠ **Y el riesgo, escrito porque es real y ya ocurrió:** una cuenta mal anclada que se
+     * escribe queda **congelada** — es el caso `3347` del 04/08, once números plausibles de la
+     * cuenta equivocada. Lo que cambia es que ahora está **en una celda que se ve y se corrige**,
+     * en vez de estar mal y ser invisible. */
+    var declarada = normalizarIdCuenta_(reunion.id_cuenta || '');
+    if (declarada && confirmado && normalizarIdCuenta_(confirmado) !== declarada) {
+      /* Dos declaraciones que no coinciden **no se resuelven en silencio**. Gana la de
+       * `REUNIONES` —es la fila del encuentro—, la otra queda intacta y el conflicto se dice. */
+      Logger.log('⚠ anclarEncuentros: "' + nombreBuscado + '" tiene cuenta declarada en REUNIONES (' +
+        declarada + ') y otra distinta confirmada en ANCLAJE_PENDIENTE (' + confirmado + '). Gana la ' +
+        'de REUNIONES; la de ANCLAJE_PENDIENTE queda sin tocar y hay que resolverla a mano.');
+    }
+
     var filaRdv = encontrarFilaRdvDeReunion_(reunion);
 
     /* `_28` (11/08/2026) — **la fila de `rdv` de ESTE encuentro viaja con el ítem.**
@@ -1601,6 +1674,26 @@ function anclarEncuentrosSinCache_(ventana) {
     if (!filaRdv.ok) {
       item.motivo = filaRdv.motivo;
       sinLink.push(item);
+    } else if (declarada) {
+      /* Va **antes** que `confirmado` a propósito: las dos son declaraciones de una persona, y la
+       * de la fila del encuentro es la que manda. Se resuelve el candidato para poder nombrarlo en
+       * el reporte, pero **la cuenta es la declarada aunque no aparezca entre los candidatos**. */
+      var candidatoDeclarado = candidatosTodos.filter(function (c) { return c.idCuenta === declarada; })[0];
+      item.idCuenta = declarada;
+      item.registroDigital = candidatoDeclarado ? candidatoDeclarado.registro : null;
+      item.candidatoNombre = candidatoDeclarado ? candidatoDeclarado.nombreCampana : '';
+      item.score = 1;
+      item.declaradaEnHoja = true;
+      /* ⚠ **Una cuenta declarada que no existe en la ventana no se corrige ni se ignora: se
+       * dice.** Sin este aviso, el encuentro entra, sus marcadores de digital salen «FALTA» y el
+       * motivo —*«la cuenta que alguien escribió no está»*— no aparece en ningún lado. */
+      if (!candidatoDeclarado) {
+        Logger.log('⚠ anclarEncuentros: "' + nombreBuscado + '" declara la cuenta ' + declarada +
+          ' en REUNIONES.id_cuenta y esa cuenta NO está entre las ' + candidatosTodos.length +
+          ' de digital en esta ventana. El encuentro entra igual; sus marcadores de digital van a ' +
+          'salir «FALTA». Revisá la celda o la ventana.');
+      }
+      encuentros.push(item);
     } else if (confirmado) {
       var candidatoConfirmado = candidatosTodos.filter(function (c) { return c.idCuenta === confirmado || c.nombreCampana === confirmado; })[0];
       item.idCuenta = candidatoConfirmado ? candidatoConfirmado.idCuenta : confirmado;
@@ -1645,6 +1738,20 @@ function anclarEncuentrosSinCache_(ventana) {
         bajaConfianza.push(item);
         registrarAnclajePendiente_(hojaPendiente, indicePendiente, 'reunion', nombreBuscado, resultado.top3);
       } else {
+        /* ⭐⭐ `2026-08-27` Parte 0-bis — **el anclaje que acierta deja rastro.** Hasta hoy éste era
+         * el único de los tres repartos que no escribía nada en ninguna hoja.
+         *
+         * ⛔ **Sólo se escribe acá, y la frontera importa:** los de `bajaConfianza` **no** se
+         * escriben. Declarar una cuenta que el propio motor considera dudosa convertiría una duda
+         * en un hecho, y sería la peor versión de esto — un número plausible congelado. Ésos
+         * siguen yendo a `ANCLAJE_PENDIENTE`, que es donde una persona los resuelve.
+         *
+         * ⚠ La clave es `texto_original` porque es la que usa `curarCamposReuniones_`, y es la
+         * única que **toda** fila de temario tiene por construcción (`D-46`). Sin ella no hay
+         * dónde escribir, y eso no es un error: es una fila que no vino del asistente. */
+        if (!declarada && reunion.texto_original) {
+          aDeclarar.push({ texto_original: String(reunion.texto_original), id_cuenta: item.idCuenta });
+        }
         encuentros.push(item);
       }
     }
@@ -1654,8 +1761,14 @@ function anclarEncuentrosSinCache_(ventana) {
     SpreadsheetApp.flush();
   });
 
+  /* ⭐ La escritura va **fuera del bucle y una sola vez**: `curarCamposReuniones_` lee la hoja
+   * entera para armar su índice, así que llamarla por reunión sería esa lectura por vuelta. */
+  var declaradas = escribirCuentasAncladas_(aDeclarar);
+
   var salida = {
     ok: true, encuentros: encuentros, sinLink: sinLink, bajaConfianza: bajaConfianza, umbral: umbral,
+    // `2026-08-27` Parte 0-bis — cuántas cuentas quedaron escritas en `REUNIONES.id_cuenta`.
+    declaradas: declaradas,
     // `_31.1` B.4 — quién quedó afuera por período, y con qué período se filtró. `''` significa
     // **no se filtró**, y el consumidor tiene que poder decirlo en el reporte.
     periodo_id: periodoDeLaVentana,
