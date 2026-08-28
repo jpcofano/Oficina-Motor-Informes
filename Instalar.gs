@@ -1784,7 +1784,14 @@ var SEED_MAPEO_DESGLOCE_REVISAR_ = [
    * que hay adentro es un nombre de campaña en un tercio de las filas. Ponerle el nombre del
    * título sería documentar el rótulo en vez del contenido. */
   { base_id: 'digital', campo_logico: 'des_campana_2', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'V', encabezado: 'nombre_campaña', tipo_esperado: 'texto', notas: 'MEDIDA el 28/08: poblada en 3.493 de 5.161 filas. Las otras 1.631 traen el nombre en la U. E es "Nombre Campaña" y de ahí sale el pre/post verificado; ésta es la que lleva el "JM" del ámbito' },
-  { base_id: 'digital', campo_logico: 'des_campana_3', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'U', encabezado: 'Prioridad', tipo_esperado: 'texto', notas: 'TERCERA columna de nombre, y el encabezado miente: dice "Prioridad" y en 1.631 de 5.161 filas trae el nombre de campaña, disjunta de la V. La usa `ambito` con `||` — sin ella el ámbito clasifica mal un tercio de las filas y Coghlan cae en GCBA' }
+  { base_id: 'digital', campo_logico: 'des_campana_3', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'U', encabezado: 'Prioridad', tipo_esperado: 'texto', notas: 'TERCERA columna de nombre, y el encabezado miente: dice "Prioridad" y en 1.631 de 5.161 filas trae el nombre de campaña, disjunta de la V. La usa `ambito` con `||` — sin ella el ámbito clasifica mal un tercio de las filas y Coghlan cae en GCBA' },
+  /* ⭐⭐ 2026-08-28 - los nombres GENERICOS de la ventana, sobre las mismas letras que
+   * des_fecha_inicio y des_fecha_fin. El mecanismo de solape de R-16 los busca por estos nombres,
+   * no por los des_*, igual que clave_ventana y ldig_id_cuenta comparten la A en looker/DIGITAL.
+   * Con los dos declarados el criterio pasa de PUNTO a SOLAPE: inicio <= hasta && fin >= desde,
+   * que es lo que reprodujo las 8 campanias de JM contra el dashboard el 28/08. */
+  { base_id: 'digital', campo_logico: 'fecha_periodo', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'I', encabezado: 'Fecha inicio', tipo_esperado: 'fecha', notas: 'el extremo IZQUIERDO del solape (R-16). Misma letra que des_fecha_inicio: dos roles, una columna' },
+  { base_id: 'digital', campo_logico: 'fecha_fin_periodo', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'J', encabezado: 'Fecha fin', tipo_esperado: 'fecha', notas: 'el extremo DERECHO. Sin esta fila el criterio seria de punto y entrarian 4 campanias en vez de 8' },
 ];
 
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_DESGLOCE_REVISAR_);
@@ -2468,7 +2475,7 @@ var SEED_SOLAPAS_ = [].concat(
    * encuentro (`D-30`); sin declararlo, un marcador con `id_cuenta` falla con
    * `@campo_id_cuenta_no_mapeado` en vez de recortar. Apunta a la fila de `MAPEO`
    * `des_id_cuenta` — columna B, `Id cuentas`, la misma clave de `V-21`…`V-26`. */
-  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'fuente de los u1_* del "1 a 1" — impresiones, clics y visualizaciones por plataforma, con filtro Id cuentas + Plataforma (V-21 a V-26, consolidado 14/08). Repuesta a fuente el 14/08: el seed la tenía en ignorar por una medición de R-22 del 09/08 que venció. Mapeada el 21/08 (SEED_MAPEO_DESGLOCE_)', { campo_id_cuenta: 'des_id_cuenta' }),
+  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'fuente de los u1_* del "1 a 1" — impresiones, clics y visualizaciones por plataforma, con filtro Id cuentas + Plataforma (V-21 a V-26, consolidado 14/08). Repuesta a fuente el 14/08: el seed la tenía en ignorar por una medición de R-22 del 09/08 que venció. Mapeada el 21/08 (SEED_MAPEO_DESGLOCE_)', { campo_id_cuenta: 'des_id_cuenta', ventana_ref: 'propia' }),
   // Las cinco de abajo estaban en `referencia` y bajan a `ignorar` por `R-22`: `referencia`
   // sugiere que sirven para consultar, y éstas no sirven para nada. Las tres de período
   // manual las veta `R-02`; las dos de `#REF!` están rotas.

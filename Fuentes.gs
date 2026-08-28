@@ -741,6 +741,10 @@ function campoIdCuentaDeSolapa_(baseId, solapa) {
   return String(crudo === null || crudo === undefined ? '' : crudo).trim();
 }
 
+/* ⭐ 2026-08-28 - el valor reservado de `SOLAPAS.ventana_ref`: no es el nombre de una solapa,
+ * es la declaracion de que ESTA solapa manda sobre el `modo_periodo` de su base. */
+var VENTANA_PROPIA_ = 'propia';
+
 /** `SOLAPAS.ventana_ref` normalizado. `''` = esta solapa tiene su propia `fecha_periodo`. */
 function referenciaDeVentana_(baseId, solapa) {
   var solapas = leerSolapas();
@@ -1054,6 +1058,36 @@ function leerFuente(baseId, ventana, nombreHojaOverride, opcionesLectura) {
   var filaEncabezado = resolverFilaEncabezado_(baseId, hoja.getName(), base.fila_encabezado);
   var modo = base.modo_periodo || 'filtrar';
 
+  /* ⭐⭐ `2026-08-28` — **`SOLAPAS.ventana_ref = 'propia'`: esta solapa se recorta por SUS fechas,
+   * aunque la base sea `snapshot`.**
+   *
+   * ⛔ **El problema que resuelve, medido.** `BASES.digital.modo_periodo = 'snapshot'` corta acá
+   * abajo y devuelve **todas** las filas, así que `digital/CAMPAÑAS_DESGLOCE_DIGITAL` no llega
+   * nunca a la lógica de fechas. Y el Resumen Ejecutivo del equipo **sí** recorta por solape de
+   * campaña: medido contra el dashboard de Looker el 28/08, `JM` da **8 campañas** con
+   * `inicio ≤ hasta && fin ≥ desde` y **4 o 5** con cualquier otro criterio.
+   *
+   * ⚠ **Por qué NO se infiere de que la solapa mapee las dos fechas**, que era la salida obvia:
+   * **cuatro solapas de `digital` ya declaran `fecha_fin_periodo`** —`Digital`, `Directa IVR`,
+   * `Seguimiento digital` y `Digital 2026 acumulado`—, así que inferirlo les cambiaría el universo
+   * a tres solapas vivas sin que nadie lo pidiera. La declaración es explícita **por eso**.
+   *
+   * ⚠ **Y por qué NO se cambia `BASES.digital.modo_periodo` a `filtrar`:** eso toca **todas** sus
+   * solapas, incluida `Directa Mail`, de donde salen los `mail_*` con casos validados. El alcance
+   * de esto es **una celda, una solapa**.
+   *
+   * ⭐ **Reusa `ventana_ref` en vez de una columna nueva** porque es la misma pregunta —*¿de dónde
+   * sale la ventana de esta solapa?*— con una tercera respuesta: un nombre de solapa es
+   * pertenencia, vacío es «lo que diga la base», y `propia` es «mis propias fechas, y mando yo».
+   *
+   * ⚠ **El parámetro sigue ganando**: `sin_recorte_por_ventana` se aplica DESPUÉS, así que la
+   * lectura por cuenta —los `u1_*`, el temario— sigue trayendo todo. El recorte no es propiedad de
+   * la solapa sino de cómo se la lee, y esto no cambia esa doctrina: sólo agrega qué hace la
+   * solapa cuando **nadie** pidió lo contrario. */
+  var refCruda = referenciaDeVentana_(baseId, hoja.getName());
+  var ventanaPropiaDeclarada = (String(refCruda || '').trim().toLowerCase() === VENTANA_PROPIA_);
+  if (ventanaPropiaDeclarada) modo = 'filtrar';
+
   /* `_44` / `D-30` — **el llamador puede pedir la solapa sin recortar**, y sólo el llamador.
    *
    * Lo usa la rama por cuenta de `datosDeMarcador_`: cuando el ítem trae `id_cuenta`, **la
@@ -1244,7 +1278,9 @@ function leerFuente(baseId, ventana, nombreHojaOverride, opcionesLectura) {
    * una declaración humana explícita y una columna de fecha en la misma solapa sería, en el
    * mejor caso, redundante. La traza dice cuál de las tres se usó, así que no hay forma de
    * que la elección quede muda. */
-  var solapaRef = referenciaDeVentana_(baseId, hoja.getName());
+  /* ⚠ Con `propia` NO hay solapa de referencia: la declaracion ya se consumio arriba y aca
+   * seguiria el camino de pertenencia, que buscaria una solapa llamada "propia". */
+  var solapaRef = ventanaPropiaDeclarada ? '' : referenciaDeVentana_(baseId, hoja.getName());
   if (solapaRef) {
     var validacion = validarReferenciaVentana_(leerSolapas(), baseId, hoja.getName());
     if (!validacion.ok) {

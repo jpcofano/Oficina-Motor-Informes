@@ -4483,7 +4483,14 @@ function diagTopeDeVentana() {
     Object.keys(registradas[baseId]).forEach(function (solapa) {
       var s = registradas[baseId][solapa];
       if (String(s.uso || '').trim() === 'ignorar') return; // `CLAUDE.md` §2: no se tocan
-      if (referenciaDeVentana_(baseId, solapa)) conRef.push({ base_id: baseId, solapa: solapa });
+      /* ⚠ `2026-08-28` — `ventana_ref = 'propia'` **no es un nombre de solapa**: declara que la
+       * solapa se recorta por sus propias fechas aunque la base sea `snapshot`. Sin esta guarda,
+       * este diagnóstico buscaría una solapa llamada «propia» y reportaría un cruce roto que no
+       * existe. */
+      var ref = referenciaDeVentana_(baseId, solapa);
+      if (ref && String(ref).trim().toLowerCase() !== VENTANA_PROPIA_) {
+        conRef.push({ base_id: baseId, solapa: solapa });
+      }
     });
   });
   Logger.log('   solapas con `ventana_ref`: ' + conRef.length);
