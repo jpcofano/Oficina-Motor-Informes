@@ -2549,6 +2549,164 @@ descarta antes y no cuenta es invisible, y el que sí cuenta **se lleva la culpa
 
 ---
 
+**`D-47` — El universo de un marcador SIN ÍTEM es de la LÁMINA, no del informe. Se lee de
+`LAMINAS.seccion_id`, y un token compartido entre láminas de universos distintos se resuelve una
+vez por lámina.** (27/08/2026, decisión del usuario. **Cita y modifica a `D-41`**, no lo supersede.)
+
+**El problema, medido y publicado.** `L-031` (Resumen Ejecutivo, universo = toda la comunicación de
+JM de la semana) y `L-034` (agregado del temario) **comparten ocho tokens**, y **cinco ya
+publicaban**: en el deck del 27/08, `L-034` decía **«Mails entregados 872.669»** al lado de
+**«ENCUENTROS: 1»**. Dos cajas contiguas, mismo formato, dos universos — `C-80`.
+
+**Por qué la etapa 4 no podía separarlos.** Resolvía **por informe** y `agruparTokensPorLamina_`
+asignaba cada token a **su primera lámina**; el pintado era `presentacion.replaceAllText`, o sea el
+deck entero. Un token, un valor, todas las cajas.
+
+⭐⭐ **Y el hallazgo que ahorró una columna: la identidad ya estaba declarada.** Se iba a agregar
+`LAMINAS.universo` con su delta, su seed y un botón. **No hizo falta.** `LAMINAS.seccion_id` la puso
+`D-37`, y `CONFIG` ya nombra las dos secciones de agregado. Medido el 27/08: `L-034` →
+`ecv_alcance_semanal`, `L-036` → `comunicaciones_post`, `L-031`/`L-032` → `resumen_ejecutivo`.
+**La pregunta ya tenía dueño en el registro; faltaba que alguien la leyera.**
+
+⚠ **No es inferir identidad por contenido** —lo que `D-37` prohíbe y lo que costó la N² de las
+copias—: se lee una **declaración**, no los tokens que la lámina lleva adentro.
+
+**Las tres piezas, y ninguna sirve sola:**
+
+| pieza | qué hace |
+|---|---|
+| **el gateo** | las claves del temario se pasan **sólo** a las láminas que cuelgan de una sección de agregado |
+| **el desdoble** | un token cuyas láminas declaran universos distintos se resuelve **una vez por lámina** y se pinta con `slide.replaceAllText` |
+| **las solapas** | una lámina gobernada arma sus `claves_temario` desde las solapas de **sus** marcadores que declaran `SOLAPAS.campo_id_cuenta` |
+
+⛔ **La tercera es la que mueve el número, y su ausencia era invisible.** El universo del temario se
+activa por `claves_temario[base|solapa]`, y esa lista salía de `CONFIG.solapas_agregado_post` —
+**escrita para la sección post y atada a ella**. Con el token ya desdoblado, las dos mitades
+resolvían igual porque `digital|Directa Mail` no estaba en la lista. **Un mecanismo correcto y sin
+efecto es indistinguible de uno que anda**, hasta que alguien mira el número.
+
+⭐ **Se autoconfigura en vez de agregar otra lista a mantener.** Una lista escrita a mano se
+desincroniza con la plantilla en el primer cableado; las solapas salen de los marcadores que la
+lámina realmente lleva.
+
+**Qué modifica de `D-41`, con precisión.** `D-41` fijó que **la unidad de partición es la lámina** y
+eso **no cambia**. Lo que se da vuelta es su guarda de agrupamiento —*«un token que aparece en varias
+láminas se asigna a la PRIMERA … podría resolverlo en otra tanda y publicar dos valores distintos
+del mismo token en el mismo deck»*—, y **con su mismo argumento**: aquélla evitaba **dos respuestas
+a la misma pregunta**; acá son **dos preguntas distintas** —cuánto mail hubo esta semana, y cuánto
+en los encuentros del temario— y son exactamente las dos cajas que `C-80` describe leyéndose como
+una. **El desdoble se paga sólo donde puede haber diferencia:** `camp_titulo` está en 8 láminas y
+es el mismo hecho en las 8, así que se sigue resolviendo una vez.
+
+⚠ **Los dos defaults que NO se eligieron, y el motivo es el mismo:**
+
+- **Una lámina sin ancla conserva el comportamiento anterior y lo avisa.** *«No sé»* no puede
+  convertirse en *«no gobernada»*: eso le sacaría las claves a `L-034` y sus `ecv_*` se irían al
+  universo ancho, deshaciendo `D-48`. **Un default que rompe en silencio es peor que no gatear.**
+- **Y «desconocido» no se agrupa con «ventana»**, así que un token compartido entre una lámina sin
+  ancla y una de ventana **se desdobla** — cada una resuelve la suya en vez de heredar la de la
+  vecina.
+
+⚠ **Lo que queda declarado y NO resuelto:** una solapa de una lámina gobernada que **no** declara
+`campo_id_cuenta` no se recorta y **publica el universo de la ventana**. No frena la corrida —en una
+lámina gobernada conviven marcadores que sí se recortan y otros que legítimamente no— pero **va al
+log con nombre**. Callarlo sería `X-41` otra vez.
+
+---
+
+**`D-48` — Cuando el temario no trae filas hay TRES salidas, no dos.** (27/08/2026, decisión del
+usuario. Cierra el P0 que `docs/PENDIENTES_consistencia.md` abrió el 25/08 y que declaraba
+explícitamente *«no la decide Code»*.)
+
+Las dos ramas de `datosDeMarcador_` que leen «las filas del TEMARIO» resolvían la **misma
+condición al revés**: la de `post_*` fallaba con `«FALTA»` y la de `rdv` **se caía a la cadena
+general** — `rdv` entera recortada por `figura=Jorge Macri` y la ventana, o sea el universo de la
+semana con forma de acierto, sin fallar y sin avisar.
+
+**Gana la que falla.** Pero fallar **siempre** es tan malo como caerse, y eso lo impuso un dato del
+dominio: **el encuentro del temario del 27/08 no tuvo mail**. Con la regla de `post_*` aplicada al
+pie, una caja sin mail publicaría `«FALTA»` sobre un hecho perfectamente normal — la marca que
+grita cuando no hay nada que arreglar.
+
+| caso | qué es | qué sale |
+|---|---|---|
+| `items === 0` | el temario no resolvió ni un encuentro | ⛔ `«FALTA:…@sin_temario»`, con el motivo adentro |
+| `items > 0`, sin filas | hubo encuentros y **ninguno** tiene fila en esa solapa | **sin dato** — es un dato |
+| con filas | el universo del temario | el número |
+
+⭐ **El discriminador ya existía y ya viajaba: `items`.** Las dos ramas lo tenían en el resultado y
+ninguna lo miraba.
+
+**Y `filasRdvDelTemario_` deja de ser mudo.** Devolvía el mismo vacío por **cinco causas distintas**
+—`SECCIONES` ilegible, la sección sin resolver, `itera_sobre` que no apunta a `REUNIONES`,
+`itemsDeSeccion_` que tira excepción, o `!ok`— y **ninguna se distinguía de «esta semana no hay
+encuentros»**. Ahora trae `aplica` y `motivo`, y **el motivo viaja al `FALTANTES`**, no al log.
+
+⚠ **`aplica` sale de `CONFIG`, no del resultado**, y es lo que sostiene todo: *declarada y sin
+filas* **no** es lo mismo que *no declarada*, y **sólo la segunda** puede caer a la cadena general.
+
+⭐ **De paso cierra el P1 de al lado:** si `ecv_alcance_semanal.itera_sobre` queda vacío, los 21
+marcadores de `rdv` se iban al universo ancho en silencio. Ahora falla con el motivo literal — que
+es *«lo único que convierte esa celda en un error visible en vez de un número plausible»*.
+
+---
+
+**`D-49` — La cuenta digital de un encuentro se DECLARA en `REUNIONES.id_cuenta`. Vacío significa
+«que la deduzca el anclaje».** (27/08/2026, decisión del usuario.)
+
+**El hueco, medido sobre las cuatro hojas operativas y las once de registro:** un encuentro que
+**anclaba bien no dejaba rastro en ninguna hoja**. La cuenta vivía en el `Logger.log` de la corrida
+y en el `porItem` en memoria, y las dos cosas mueren con la ejecución. **La asimetría estaba al
+revés de lo útil:** un `sinLink` queda con nombre y motivo en `ANCLAJE_MEDICION.sin_link_detalle`,
+uno de baja confianza queda con sus tres candidatos en `ANCLAJE_PENDIENTE`, **y el que acierta no
+quedaba en ningún lado**.
+
+⭐ **El precedente es `CAMPANAS.id_cuenta`** —ahí la cuenta se declara en la fila y no hay anclaje
+que correr—, y el mecanismo de «declarado gana» **ya existía** para reuniones
+(`anclajeYaConfirmado_`), sólo que llaveado contra `ANCLAJE_PENDIENTE`: **alcanzaba a las dudosas y
+no a las que anclaban bien.**
+
+**Lo que gana además de la trazabilidad:** la corrida deja de ser no-determinista. Hoy dos corridas
+de la misma semana podían anclar distinto porque `digital` se movió en el medio (`R-31`) **y nada lo
+mostraría**.
+
+⚠ **Los tres límites, escritos porque son reales:**
+
+- **Los de baja confianza NO se escriben.** Declarar una cuenta que el propio motor considera
+  dudosa convertiría una duda en un hecho. Siguen yendo a `ANCLAJE_PENDIENTE`.
+- **Una cuenta mal anclada que se escribe queda congelada** — es el caso `3347` del 04/08, once
+  números plausibles de la cuenta equivocada. Lo que cambia es que ahora está **en una celda que se
+  ve y se corrige**, en vez de estar mal y ser invisible.
+- **El anclaje escribe sólo si la celda está vacía.** Si tiene valor, lo reporta y no lo toca.
+
+---
+
+**`D-50` — Un encuentro con ancla DIGITAL floja entra igual al temario, sin su cuenta.**
+(27/08/2026.)
+
+`itemsDeSeccion_` armaba los ítems con `encuentros.concat(sinLink)`: los de `bajaConfianza`
+**quedaban afuera**. El comentario que lo justificaba decía *«el ancla decide qué fila de `rdv` se
+lee»* — **y era falso, una premisa sin testigo de las que `CLAUDE.md` §4 nombra**. La fila de `rdv`
+la resuelve `encontrarFilaRdvDeReunion_` por **nombre y fecha** y se sella **antes** del reparto en
+las tres listas; el score que manda a `bajaConfianza` mide el match **digital**.
+
+⭐ **La asimetría lo prueba:** un `sinLink` con score **0** entraba y uno con score **0,4** no, con
+la misma fila de `rdv` y la misma procedencia.
+
+**Lo que costaba:** los `ecv_*` leen **sólo** `rdv`, así que cada encuentro excluido se perdía del
+agregado del temario **sin avisar** — `ecv_encuentros` podía publicar 3 sobre un temario de 4, y la
+traza del marcador no lo decía.
+
+**Entran con `idCuenta` vaciado**, sobre una copia —`anclarEncuentros` está cacheado por corrida—,
+así que los `ecv_*` salen bien y los `enc_*` salen `«FALTA»` en vez de un número de la cuenta
+equivocada. **El precedente es del mismo `if`:** el caso `ambiguo` ya entra a `sinLink` con
+`mejor = null`.
+
+⚠ **Cambia el deck, no sólo el agregado:** ese encuentro ahora **emite su lámina**. Es exactamente
+lo que ya hacía un `sinLink`, así que no es un régimen nuevo — pero es visible.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### El encuadre: todo lo de abajo es la fase `informe semanal` — `D-38`

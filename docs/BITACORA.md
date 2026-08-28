@@ -16355,3 +16355,111 @@ una pasada sobre 6 archivos para cambiar un número no era el objetivo— y el r
 identidad —`líneas = reuniones + campañas + ignoradas`— y no una constante.
 
 ⛔ **Nada de esto corrió contra la planilla viva salvo los dos gates**, que son sólo lectura.
+
+---
+
+## 2026-08-27 (3) — `L-034` cierra al temario: cuatro commits, `D-47` a `D-50`, y un P0 ajeno en el medio
+
+**Objetivo:** que `L-034` publique el universo del temario y no el de la ventana. Salió de mirar el
+deck del 27/08, donde la lámina decía **«Mails entregados 872.669»** al lado de **«ENCUENTROS: 1»**.
+
+**Cuatro commits, en este orden:** `3e4d9c9` (esquema de instalación) · `5b0188a` (Partes 4 y 0-bis)
+· `eac37fe` (Parte 3) · `2100c0f` (Partes 1, 2 y 2b).
+
+### ⛔⛔ El P0 que no era del objetivo — `Instalar.gs:82` abría un `/*` que nunca cerraba
+
+Apareció **chocándome con él**: un comentario nuevo mío terminaba en `*/` y cerró el ajeno antes de
+tiempo, así que el archivo dejó de parsear. Lo introdujo `456a2b6` el **22/08** (`C-83`), y el
+siguiente cierre del archivo estaba en la **línea 245**.
+
+**Diez de las dieciséis claves de `HOJAS_CONFIG_` estaban adentro del comentario** — `MARCADORES`,
+`MAPEO`, `SOLAPAS`, `CAMPANAS`, `PERIODOS`, `REUNIONES`, `SECCIONES`, `VALORES`,
+`VALORES_DIVERGENTES`, `CORRIDAS`. `aplicarInstalacion_` recorre `Object.keys(HOJAS_CONFIG_)`, así
+que **`instalar()` no creaba ni reparaba esas diez hojas**, y como `COLUMNAS_DELTA_` se aplica
+**dentro de ese mismo bucle**, sus deltas tampoco corrían. No falló nunca porque las diez ya existen
+en la planilla viva.
+
+⭐⭐ **Y un chequeo de sintaxis NO lo habría cazado: el archivo roto parseaba perfecto.** Un
+comentario que se come código es JavaScript válido. El control que sí sirve es de **contenido** —
+*las 11 hojas de registro tienen que estar declaradas*—, misma doctrina que `tools/listas.js` sobre
+una cuarta lista que nadie comparaba. En el estado roto daba **4 de 11**.
+
+⛔ **El bug latente que el arreglo iba a detonar.** `COLUMNAS_DELTA_.CORRIDAS` declaraba `ejecucion`
+con `indice: 1`. `asegurarColumna_` hace `insertColumnBefore(indice)` y el `setValue` **en esa misma
+posición**, así que `indice` es **la columna que la nueva OCUPA**: con `1`, `ejecucion` entraba
+**antes** de `corrida_id`. Nunca se disparó porque `CORRIDAS` estaba en el comentario muerto.
+Corregido a `2`. **Verificado por el usuario contra la hoja viva: `CORRIDAS` tiene 8 columnas y no
+tiene `ejecucion`** — la predicción falsable del diagnóstico.
+
+**Las tres hojas revividas sin entrada de delta** caen en la rama que reescribe la fila 1. Las tres
+verificadas antes de commitear —`PERIODOS` contra el snapshot del 26/08, `VALORES` y
+`VALORES_DIVERGENTES` contra los encabezados vivos que pasó el usuario—: coinciden exacto, la rama
+es un no-op.
+
+### `D-50` — el encuentro de ancla floja entra
+
+El comentario que justificaba excluirlo afirmaba un contrato falso. Detalle en `PLAN.md`. **La
+asimetría es lo que lo prueba: score 0 entraba y score 0,4 no**, con la misma fila de `rdv`.
+
+### `D-49` — `REUNIONES.id_cuenta`
+
+Medido sobre las cuatro hojas operativas y las once de registro: **un encuentro que anclaba bien no
+dejaba rastro en ninguna hoja**. Las dos formas de fallar sí lo dejaban. Lo señaló el usuario con el
+precedente correcto: *«para campaña queda el anclaje en la solapa campaña, que acá quede en
+reuniones»* — `CAMPANAS.id_cuenta` ya existía.
+
+⚠ **Y en el camino, un error mío que dejó control:** agregué `COLUMNAS_DELTA_.REUNIONES` **sin
+grepear**, y esa clave **ya existía** con `periodo_id`. En un objeto literal la segunda pisa a la
+primera **en silencio**. Fusionadas; `probar-hojas-config.js` gana el control de claves repetidas,
+que **cuenta sobre el TEXTO y no sobre el objeto** — evaluarlo mide el resultado del pisado.
+
+⚠ **Segundo error mío del día:** escribí `tools/probar-id-cuenta-declarada.js` sin grepear el
+nombre y **pisé el banco de `X-39`**. Restaurado con `git checkout`, el mío renombrado a
+`probar-reunion-id-cuenta.js`. **La señal estaba y no la leí: el runner siguió diciendo 65 bancos.**
+Un banco nuevo que no mueve el conteo es un banco que reemplazó a otro.
+
+### `D-48` — las tres salidas del temario sin filas
+
+Cierra el P0 que `PENDIENTES` declaraba *«no la decide Code»*. **La partición en tres la impuso un
+dato del dominio**: el usuario avisó que **ese encuentro no tuvo mail**, y con la regla de `post_*`
+aplicada al pie una caja sin mail publicaría `«FALTA»` sobre un hecho normal. Se arregló la misma
+falla **en las dos ramas**, incluida la de `post_*` sobre `L-036`.
+
+### `D-47` — el universo es de la lámina
+
+Tres piezas, y **la tercera es la que mueve el número**: la lista de solapas gobernadas salía de
+`CONFIG.solapas_agregado_post`, escrita para la sección post. **Un mecanismo correcto y sin efecto
+es indistinguible de uno que anda** — lo detecté rastreando el token antes de commitear, no
+mirándolo funcionar.
+
+⭐ **No hizo falta la columna `LAMINAS.universo` que había propuesto:** `LAMINAS.seccion_id` ya
+declara la identidad desde `D-37` y `CONFIG` ya nombra las dos secciones.
+
+### `digital/Directa IVR` declara `campo_id_cuenta`
+
+Pedido por el usuario, que **corrigió una frase del repo**: el comentario del seed decía *«las otras
+dos no tienen ese campo lógico en `MAPEO`»* y se lee como *«no tienen id de cuenta»* — **es falso**,
+`ivr_id_cuenta` y `sms_id_cuenta` existen. Lo que aquello prohibía era declararle `mail_id_cuenta`
+al grupo entero.
+
+⭐⭐ **`probar-id-cuenta-declarada.js` se puso ROJO diciendo la verdad, y se dio vuelta con MÁS
+exigencia, no con menos:** antes pedía *«que no esté»*, ahora pide **que esté, que sea el SUYO y que
+resuelva en `MAPEO` para SU solapa**. `Directa SMS` conserva la negativa: ningún marcador lee esa
+solapa, declararla sería una decisión sin consumidor.
+
+### Cierre
+
+**Suites: 63 → 70 bancos, ~985 → ~1090 afirmaciones**, todas en verde. `tools/listas.js` 11 de 11.
+Los 24 `.gs` parsean. **Seis bancos nuevos**, cada uno con su control negativo y su guarda de que la
+mutación ocurrió.
+
+**Y una medición que quedó como instrumento:** `tools/medir-mail-entregados-jm.py` reproduce el caso
+validado `X-31` contra el fixture del 20/08 con `sha256` verificado —seis filas, **538.291**, las
+seis cuentas que el caso nombra— y confirma la definición de `C-78`. ⚠ **Los 872.669 en sí no se
+pueden reproducir desde disco**: el fixture es del 20/08 y la ventana arranca el 21. Ese cero medido
+es el límite del fixture, no una falla del instrumento.
+
+⛔ **Lo que esta corrida NO verificó, y hay que decirlo:** **ninguno de los cuatro commits corrió en
+Apps Script.** Falta `clasp push`, *Aplicar configuración* —la que siembra
+`SOLAPAS.campo_id_cuenta`—, `instalar()` y una corrida. **`D-47` es el primer cambio del proyecto
+que mueve números publicados**, y su verificación es un deck, no una suite.

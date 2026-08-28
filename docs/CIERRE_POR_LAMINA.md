@@ -176,6 +176,23 @@ el temario da cero por cinco causas distintas que no se distinguen entre sí ni 
 hay encuentros».** Está abierto en `docs/PENDIENTES_consistencia.md` (25/08) junto con la
 asimetría contra la rama de `post_*`, que ante la misma condición **falla** en vez de caerse.
 
+### ⏸ 27/08/2026 — el mecanismo existe y está commiteado, **sin verificar contra un deck**
+
+`D-47` hace que el universo del temario sea **de la lámina** y que un token compartido entre láminas
+de universos distintos se resuelva una vez por lámina. Con eso, los cinco tokens de `L-034` que
+publicaban el universo de `L-031` **deberían** pasar al del temario.
+
+⛔ **«Deberían» es literal y no se puede escribir de otra forma todavía:** ninguno de los cuatro
+commits del 27/08 corrió en Apps Script. **La verificación de esto es un deck, no una suite.**
+
+⭐ **La identidad que lo cierra cuando la corrida exista, y no depende de ninguna foto:**
+`mail_entregados` de `L-031` tiene que seguir en **872.669** y el de `L-034` **no**. Si los dos
+siguen iguales, el desdoble no ocurrió; si `L-031` también cambió, se rompió algo que estaba bien.
+
+⚠ **Y lo esperable en `L-034` no es otro número: es SIN DATO.** El encuentro de esa semana **no tuvo
+mail** (dato del usuario, 27/08), así que la caja correcta está vacía — que es justo lo que `D-48`
+hizo posible distinguir de un fallo.
+
 ### El nivel de universo que le corresponde a cada frente
 
 | frente | qué publica hoy | nivel que le corresponde |

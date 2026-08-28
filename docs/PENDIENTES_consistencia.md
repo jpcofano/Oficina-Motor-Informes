@@ -9638,3 +9638,65 @@ nada sobre el temario** — y la conclusión razonable es que la regla no existe
 ⭐ **Las citas nuevas dicen `R-04`.** Las 17 viejas se corrigen cuando alguien toque esos archivos
 por otro motivo: una pasada de mantenimiento sobre 6 archivos para cambiar un número es trabajo que
 no rinde, y el `DOC-7` ya fijó ese criterio para los prompts.
+
+---
+
+## 2026-08-27 (3) — dos cerrados, y tres nuevos que salieron de cerrarlos
+
+### ✅ CERRADO · **P0 · «Misma condición, dos comportamientos»** (abierto el 25/08)
+
+Era la pregunta que este documento declaraba explícitamente *«no la decide Code»*. **La decidió el
+usuario el 27/08: gana la que falla** — y quedó como `D-48`.
+
+⭐ **Pero no quedó en dos salidas sino en TRES, y eso no salió de un razonamiento: lo impuso un dato
+del dominio.** El usuario avisó que el encuentro del temario del 27/08 **no tuvo mail**. Con la
+regla de la rama de `post_*` aplicada al pie —*declarada y sin filas → `FALTA`*— una caja sin mail
+publicaría `«FALTA»` sobre un hecho perfectamente normal. **El discriminador ya existía y ya
+viajaba: `items`.**
+
+⛔ **Y la misma falla estaba en la rama de `post_*`**, que fallaba con `filas.length === 0` **sin
+mirar `items`** — o sea que confundía *«el temario no trajo nada»* con *«ningún encuentro tuvo
+comunicación post»*, **que su propio comentario ya llamaba caso normal con todas las letras**.
+Arreglada también; es un cambio de comportamiento sobre `L-036`.
+
+### ✅ CERRADO · la mitad **(b)** de `ecv_alcance_semanal.itera_sobre` (abierto el 25/08)
+
+Decía: *«que la rama 2 falle en vez de caerse, que es lo único que convierte esa celda en un error
+visible en vez de un número plausible»*. Hecho: si la sección no califica, los 21 marcadores de
+`rdv` fallan con `«FALTA:…@sin_temario»` **y el motivo literal de `seccionAgregadaDeReuniones_`
+viaja adentro** —*«itera_sobre = "" y tiene que ser `REUNIONES`»*—, no a un log que se pierde.
+
+### ⛔ NUEVO · una solapa sin `campo_id_cuenta` en una lámina gobernada publica el universo ancho
+
+`D-47` hace que una lámina gobernada por el temario arme sus `claves_temario` desde las solapas de
+sus marcadores **que declaran `SOLAPAS.campo_id_cuenta`**. Las que **no** lo declaran no se recortan
+y **siguen publicando el universo de la ventana**.
+
+**No frena la corrida a propósito:** en una lámina gobernada conviven marcadores que sí se recortan
+y otros que legítimamente no —un `periodo`, un título—, y hacerlos fallar a todos cambiaría un
+problema por otro. **Pero va al log con nombre**, porque callarlo es `X-41`.
+
+⚠ **Lo que falta y es del usuario:** mirar esa línea después de la primera corrida y decidir, por
+solapa, si se declara la celda o se acepta el universo ancho. **Hoy no se sabe cuántas son** — se
+sabrá cuando la corrida lo imprima.
+
+### ⛔ NUEVO · `CLAVES_DEL_TEMARIO_` es una lista a mano que sólo se puede verificar en una dirección
+
+Los siete nombres que `D-47` recorta por lámina se asignan **en otro lado**
+(`opcionesEtapa4.X = …`). `probar-universo-por-lamina.js` verifica que **los siete se asignen de
+verdad**, así que un renombre allá se caza. ⚠ **La dirección inversa no se puede decidir sola:** si
+alguien agrega una clave del temario y no la pone en la lista, **ningún patrón sabe que era “del
+temario”** y esa clave se filtra a todas las láminas **sin fallar**. Queda declarada, no cubierta.
+
+### ⚠ NUEVO · dos colisiones de nombre en un día, las dos por no grepear antes de escribir
+
+Las dos son `CLAUDE.md` §1 al pie de la letra y las dos las cometí yo:
+
+1. **`COLUMNAS_DELTA_.REUNIONES` ya existía** con `periodo_id`, y agregué una segunda clave con el
+   mismo nombre. En un objeto literal **la segunda pisa a la primera en silencio**. Fusionadas, y
+   `probar-hojas-config.js` gana el control — que **cuenta sobre el TEXTO**, porque evaluar el
+   objeto mide el resultado del pisado.
+2. **`tools/probar-id-cuenta-declarada.js` ya existía** —el control de `X-39`— y lo pisé escribiendo
+   uno nuevo con ese nombre. Restaurado; el mío es `probar-reunion-id-cuenta.js`.
+   ⭐ **La señal estaba y no la leí: el runner siguió diciendo 65 bancos.** *Un banco nuevo que no
+   mueve el conteo es un banco que reemplazó a otro* — vale como chequeo barato.
