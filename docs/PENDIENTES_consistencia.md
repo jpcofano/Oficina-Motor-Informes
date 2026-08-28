@@ -9819,3 +9819,48 @@ impresiones. No era el dato: era `num()` haciendo `str(v).replace('.', '')` **si
 convierte `55898176.0` —un float que llega como texto— en `558981760`. Es `CLAUDE.md` §4 literal:
 *convertir antes de mirar el tipo destruye el tipo*. Arreglado en los dos medidores, y **verificado
 que los seis casos validados no cambiaron** —esos venían como número, no como texto—.
+
+---
+
+## 2026-08-28 (3) — ⛔⛔ `C-78` afirma que `Directa Mail` recorta por FECHA PROPIA, y el `snapshot` de `digital` dice que nunca llega ahí
+
+**Estado: abierto.** Lo destapó `D-52`, y no se resolvió porque **resolverlo mueve un número
+validado**.
+
+### La contradicción, con las dos mitades al lado
+
+`C-78` (22/08) midió cómo recorta cada marcador del Resumen Ejecutivo y concluyó, sobre
+`mail_entregados`:
+
+> *«`digital/Directa Mail` tiene `ventana_ref` VACÍO, o sea FECHA PROPIA, y recorta por ventana
+> temporal directa más dimensiones `ambito=jm`. Recorte sólido, sin pertenencia y sin temario.»*
+
+**Y `BASES.digital.modo_periodo` es `snapshot`.** Ese valor **corta en `leerFuente` antes de toda
+la lógica de fechas** —es exactamente lo que `D-52` tuvo que sortear para el desglose—, así que
+`ventana_ref` vacío **no significa «fecha propia»**: significa que la solapa devuelve **todas** sus
+filas y el único recorte que queda es `ambito=jm`.
+
+⚠ **Las dos afirmaciones no pueden ser ciertas a la vez, y una está en un caso `cerrado`.**
+
+### Por qué NO se tocó, que es la parte que importa
+
+`mail_entregados` tiene caso validado: `X-31`, **538.291** sobre seis filas, `sha256` verificado
+contra el fixture. **Si hoy publica sin recorte temporal, ese número salió de un universo que no es
+el que el caso declara** — o el caso mide otra cosa que lo que su nota dice, que es la familia de
+`V-38` (`CLAUDE.md` §1: *la clave manda sobre la nota*).
+
+⛔ **Aplicarle `ventana_ref = 'propia'` a `Directa Mail` es de una celda y es tentador. No se hizo:**
+movería `mail_entregados` y `mail_aperturas` **en el mismo deck** donde `D-51` y `D-52` ya mueven el
+desglose, y ahí ninguna diferencia sería atribuible (`CLAUDE.md` §4, *un cambio por deck*).
+
+### Lo que hace falta para cerrarlo, en orden
+
+1. **Una corrida** que muestre qué universo trae hoy `Directa Mail` — la traza dice cuántas filas
+   entraron y con qué modo.
+2. **Cruzar contra `X-31`**: si el número publicado es el del caso, `C-78` describía el efecto y no
+   el mecanismo; si difiere, el caso está midiendo un universo que el motor no usa.
+3. **Recién ahí**, y en un deck propio, decidir si `Directa Mail` toma `propia`.
+
+⭐ **Lo que ya está medido y no hace falta volver a medir:** el mecanismo de `D-52` funciona y es de
+una celda. **Lo que falta es saber cuál es el universo correcto para el mail**, y eso no lo contesta
+ningún fixture — el más nuevo de `digital` es del 20/08 y la ventana arranca el 21.

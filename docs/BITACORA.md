@@ -16463,3 +16463,76 @@ es el límite del fixture, no una falla del instrumento.
 Apps Script.** Falta `clasp push`, *Aplicar configuración* —la que siembra
 `SOLAPAS.campo_id_cuenta`—, `instalar()` y una corrida. **`D-47` es el primer cambio del proyecto
 que mueve números publicados**, y su verificación es un deck, no una suite.
+
+---
+
+## 2026-08-28 — El Resumen Ejecutivo cierra su universo: `||` en los filtros y `ventana_ref = 'propia'` (`D-51`, `D-52`)
+
+**Objetivo:** que `digital/CAMPAÑAS_DESGLOCE_DIGITAL` publique el universo del equipo. Dos cosas
+distintas lo impedían, y ninguna de las dos fallaba — las dos publicaban un número plausible del
+universo equivocado.
+
+### 1 · El corte de ámbito estaba partido en dos columnas (`D-51`)
+
+`parsearFiltro_` sólo conocía `&&`, y el desglose **no tiene una columna que declare el ámbito**:
+`des_campana_2` (col V) trae **372** filas con `JM` y `des_campana_3` (col U, rotulada
+`Prioridad`) trae **248**, **disjuntas**. La unión da **620**, que es exactamente lo que
+`looker/DIGITAL` ve con su columna única.
+
+**Con una sola columna, un tercio de las filas caía en `gcba`** — entre ellas las de Coghlan.
+
+El lenguaje gana `||`: `&&` separa grupos, `||` separa alternativas dentro de un grupo, y un grupo
+pasa si **alguna** alternativa pasa. ⚠ **Lo que rompía y no se ve leyendo el parser:**
+`leerDeFila_` resuelve la columna por `cond.campo`, así que `aplicarFiltroDeMarcador_` tiene que
+resolver una `resuelta` **por cada alternativa**. Una alternativa sin resolver no filtra: falla.
+
+⚠ **Y se corrigió una corrección propia:** el banco `probar-desglose-como-fuente.js` exigía *«la
+misma regla que looker salvo la columna»*, que era correcto mientras se creyó que una columna
+alcanzaba. **Se dio vuelta con el motivo escrito y subiendo la exigencia** —pide las dos columnas
+con `||` y el AND de las negaciones para `gcba`—, nunca aflojando. `probar-etapa-post.js` se puso
+rojo por el cambio y se arregló **usando el evaluador real** en vez de rehacer el bucle AND.
+
+Commit: `6c3bc06`.
+
+### 2 · La solapa nunca llegaba a la lógica de fechas (`D-52`)
+
+`BASES.digital.modo_periodo = 'snapshot'` **corta en `leerFuente` antes de toda la lógica de
+fechas**. Por eso el desglose no llegaba nunca al solape de `R-16` y publicaba el universo entero.
+
+⭐ **El mecanismo de solape no se escribió: ya existía desde el 07/08** —`entraPorSolape_` con
+`MAPEO.fecha_fin_periodo`—. Lo único que faltaba era que la solapa **llegara** hasta ahí.
+
+Se agrega el valor reservado `SOLAPAS.ventana_ref = 'propia'`: pone `modo = 'filtrar'` **para esa
+solapa sola**. Las dos alternativas se descartaron con motivo: cambiar el `modo_periodo` de la base
+toca `Directa Mail` y sus `mail_*` validados; inferirlo de que la solapa mapee las dos fechas le
+cambiaría el universo a **cuatro solapas vivas** que ya declaran `fecha_fin_periodo`.
+
+⚠ **El orden de aplicación es parte de la decisión:** `propia` se aplica **antes** que
+`sin_recorte_por_ventana`, así que **el parámetro sigue ganando** y la lectura por cuenta —los
+`u1_*`, el temario— no cambia. Y `propia` **no es un nombre de solapa**: el camino de pertenencia
+se saltea, y `Auditoria.gs` lleva la misma guarda o reportaría un cruce roto inexistente.
+
+`MAPEO` gana `fecha_periodo` (col I) y `fecha_fin_periodo` (col J) del desglose. **Sin la segunda
+el criterio sería de PUNTO** y entrarían 4 campañas en vez de 8.
+
+Commit: `12e3099`.
+
+### Los controles
+
+`tools/probar-ventana-propia.js` — **14 afirmaciones**, con control positivo sobre
+`entraPorSolape_` **real** (si alguien cambia la regla de solape, se entera) y control negativo con
+**guarda de mutación**. `tools/probar-filtro-alternativas.js` — 22.
+
+⚠ **Y una afirmación propia se corrigió al primer rojo:** contaba el literal `'propia'` sobre el
+texto crudo de `Fuentes.gs` y daba **2** — el segundo estaba **dentro de un comentario**. Un
+control que cuenta comentarios mide otra cosa que la que dice medir; se cuenta sobre el código con
+los comentarios afuera.
+
+**Suites: 76 bancos, ~1191 afirmaciones. `listas.js` 11/11.**
+
+⛔ **Lo que esta corrida NO verificó, y es lo que falta:** **ningún cambio corrió en Apps Script.**
+Falta `clasp push`, *Aplicar configuración* —que siembra `SOLAPAS.ventana_ref` y las dos filas de
+`MAPEO`—, `instalar()` y una corrida. **El valor del Resumen Ejecutivo pide un deck**, y su testigo
+es el dashboard de Looker del 28/08: `Meta 1.921.695 · Google 1.023.101 · DV360 5.330.034`. Lo que
+está medido es que el **criterio de solape** reproduce las **8** campañas de JM, y 4 o 5 con
+cualquier otro.

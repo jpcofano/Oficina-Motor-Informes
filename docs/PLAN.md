@@ -2707,6 +2707,73 @@ lo que ya hacía un `sinLink`, así que no es un régimen nuevo — pero es visi
 
 ---
 
+**`D-51` — El lenguaje de filtros gana `||`. Un corte puede vivir en más de una columna.**
+(28/08/2026.)
+
+`parsearFiltro_` sólo conocía `&&`. Alcanzaba mientras cada corte tuviera **una** columna que lo
+declarara — y `digital/CAMPAÑAS_DESGLOCE_DIGITAL` no la tiene: el nombre de campaña está **partido
+en dos columnas** que no se solapan. `des_campana_2` (col V) trae **372** filas con `JM`,
+`des_campana_3` (col U, rotulada `Prioridad`) trae **248**, **disjuntas**, y la unión da **620** —
+exactamente lo que `looker/DIGITAL` ve con su columna única.
+
+⛔ **Lo que costaba, y es el modo de falla caro de este repo: no fallaba.** Con una sola columna,
+**un tercio de las filas quedaba clasificado como `gcba`** — entre ellas las de Coghlan. El corte
+publicaba un número plausible del universo equivocado.
+
+**La forma:** `&&` separa **grupos** y `||` separa **alternativas dentro de un grupo**. Un grupo
+pasa si **alguna** alternativa pasa. `ambito=jm` sobre el desglose es
+`des_campana_2~=JM || des_campana_3~=JM`, y `gcba` es el AND de las negaciones —De Morgan, *«ni en
+una ni en la otra»*, sin `||`.
+
+⚠ **El detalle que rompía y no se ve leyendo el parser:** `leerDeFila_` resuelve la columna por
+`cond.campo`, así que `aplicarFiltroDeMarcador_` tiene que resolver una `resuelta` **por cada
+alternativa**, no sólo por el principal. Una alternativa sin resolver no filtra: falla.
+
+⭐ **Y el operador se conserva a propósito.** Sigue siendo `~=`, igual que looker. Lo que cambia es
+**sobre cuántas columnas se busca**, y eso es una propiedad del dato, no del criterio — así que el
+cambio de fuente sigue siendo atribuible.
+
+---
+
+**`D-52` — `SOLAPAS.ventana_ref = 'propia'`: una solapa puede recortar por SUS fechas aunque su
+base sea `snapshot`.** (28/08/2026.)
+
+`BASES.digital.modo_periodo = 'snapshot'` **corta en `leerFuente` antes de toda la lógica de
+fechas** y devuelve todas las filas. Por eso `digital/CAMPAÑAS_DESGLOCE_DIGITAL` no llegaba nunca
+al solape de `R-16`, y el Resumen Ejecutivo publicaba el universo entero.
+
+⭐ **El mecanismo de solape no se escribió: ya existía.** `R-16` (07/08) lo decide con
+`MAPEO.fecha_fin_periodo` y `entraPorSolape_`. Lo único que faltaba era que la solapa **llegara**
+hasta ahí. Lo que se agrega es un valor reservado en una celda: con `propia`, el modo pasa a
+`filtrar` **para esa solapa sola**.
+
+**Las dos salidas que se descartaron, con el motivo:**
+
+- **Cambiar `BASES.digital.modo_periodo` a `filtrar`** toca **todas** sus solapas, incluida
+  `Directa Mail`, de donde salen los `mail_*` con casos validados.
+- **Inferirlo de que la solapa mapee las dos fechas** le cambiaría el universo a **tres solapas
+  vivas** sin que nadie lo pidiera: `Digital`, `Directa IVR`, `Seguimiento digital` y
+  `Digital 2026 acumulado` **ya declaran `fecha_fin_periodo`**.
+
+⚠ **El orden de aplicación es parte de la decisión, no un detalle:** `propia` se aplica **antes**
+que `sin_recorte_por_ventana`, así que **el parámetro sigue ganando**. La lectura por cuenta —los
+`u1_*`, el temario— pide explícitamente no recortar y lo sigue teniendo. Al revés, `propia` le
+sacaría el «sin recorte» a quien lo pidió por nombre.
+
+⭐ **Amplía `D-24` sin superseder** — `ventana_ref` sigue contestando *«de dónde saca la fecha
+ésta»*: lo que se agrega es una respuesta más, *«de sí misma»*. Y por eso el valor es **reservado**:
+una solapa que se llamara `propia` colisionaría, y no existe ninguna.
+
+⚠ **Y `propia` no es un nombre de solapa**, así que el camino de **pertenencia** se saltea —si no,
+buscaría una solapa llamada así— y el barrido de `ventana_ref` de `Auditoria.gs` lleva la misma
+guarda, o reportaría un cruce roto inexistente.
+
+**Lo que esto NO cierra**, y va declarado: qué número publica el Resumen Ejecutivo. La medición
+contra el dashboard de Looker del 28/08 dice que el criterio de solape reproduce **8 campañas**
+para JM —y 4 o 5 con cualquier otro—, pero **el valor pide una corrida**. El testigo es
+`Meta 1.921.695 · Google 1.023.101 · DV360 5.330.034`.
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### El encuadre: todo lo de abajo es la fase `informe semanal` — `D-38`
