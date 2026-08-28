@@ -305,6 +305,48 @@ independencia.
 
 ---
 
+## Parte I — Experimento de identidad (cinco minutos, lo corre el usuario)
+
+⭐ **Es el paso que decide la capa de acceso.** Contesta una sola pregunta:
+`Session.getActiveUser().getEmail()` bajo `executeAs: USER_DEPLOYING`, ¿devuelve el mail de una
+cuenta Gmail externa, o vuelve vacío? De la respuesta dependen las tres opciones de
+`docs/SEGURIDAD.md` §4, y **ninguna se puede elegir antes**.
+
+⛔ **Code no puede correrlo.** Necesita un navegador logueado con una cuenta que no es la del
+dueño — ver `docs/SEGURIDAD.md` §3 para por qué la respuesta no se puede razonar hasta la certeza.
+
+**Antes de empezar — el control positivo.** ⚠ **Agregar el mail de la cuenta de prueba a
+`CONFIG.mails_autorizados`**, separado por coma. Sin eso el experimento mide **la lista** y no **la
+identidad**: la cuenta sería rechazada por `fuera de lista` aunque Google haya dado el mail
+perfectamente, y las dos ramas se verían iguales. La cuenta de prueba externa y la URL de `/exec`
+están en `docs/ENTORNO.local.md` (fuera de git) — este documento no las repite.
+
+1. Abrir la URL de `/exec` **con la cuenta de prueba externa**, no con una del equipo. En una
+   ventana de incógnito, o en un perfil de navegador separado: si la sesión de Chrome tiene al
+   dueño logueado, el experimento mide al dueño.
+2. **Anotar textual qué aparece.** Las dos salidas posibles son el panel, o la pantalla de rechazo
+   con su código de motivo. El motivo importa y hay que copiarlo tal cual: `sin identidad` y
+   `fuera de lista` mandan a trabajos opuestos.
+3. Con la cuenta del dueño, abrir el proyecto en el editor de Apps Script → **Ejecuciones**, y
+   copiar la línea del log:
+
+   ```
+   panel — acceso denegado · motivo=… · activo=«…» · efectivo=«…»
+   ```
+
+⭐ **`activo` es el dato entero**, y por eso `servirPanel_` lo loguea junto al `efectivo`:
+
+| lo que devuelve | qué significa | qué se desbloquea |
+|---|---|---|
+| `activo` **vacío**, `efectivo` = el dueño | el mail **nunca llegó a la barrera** y la lista de `CONFIG` es inocente. La Barrera 1 **no puede funcionar** con cuentas de fuera del dominio | la opción 1 o la 2 de `SEGURIDAD.md` §4 dejan de ser alternativas: **son el trabajo** |
+| `activo` **poblado** e igual al mail de prueba | `D-15` estaba bien fundada en su premisa: la lista blanca **sí** filtra bajo `USER_DEPLOYING` | queda **sólo** el tercer problema: que el tercero pueda **abrir la salida** (`SEGURIDAD.md` §2.5) |
+| `activo` y `efectivo` **iguales y poblados** | el problema es otro y hay que volver a mirar | — |
+
+**Al terminar: sacar el mail de prueba de `mails_autorizados`** si no se lo quiere dejar
+autorizado. El resultado se anota en `docs/SEGURIDAD.md` §5 con la fecha de la corrida.
+
+---
+
 ## Los dos subagentes
 
 Viven en `.claude/agents/` y **se invocan por nombre**, nunca solos: sus `description` están
