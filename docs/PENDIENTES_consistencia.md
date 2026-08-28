@@ -9700,3 +9700,67 @@ Las dos son `CLAUDE.md` §1 al pie de la letra y las dos las cometí yo:
    uno nuevo con ese nombre. Restaurado; el mío es `probar-reunion-id-cuenta.js`.
    ⭐ **La señal estaba y no la leí: el runner siguió diciendo 65 bancos.** *Un banco nuevo que no
    mueve el conteo es un banco que reemplazó a otro* — vale como chequeo barato.
+
+---
+
+## `2026-08-28` — ⛔⛔ `C-92` · La capa de acceso: tres testigos que no coinciden y un mecanismo que no existe
+
+Salen de la Parte A del `2026-08-28_1`. El diseño completo, con las opciones y las preguntas, vive
+en **`docs/SEGURIDAD.md`** — que desde hoy es el dueño de la pregunta en `CLAUDE.md` §7. Acá van
+sólo las dos inconsistencias, **abiertas y sin resolver**: derogar una decisión es del usuario.
+
+### `C-92` · **P0** · `D-15` ↔ el manifiesto ↔ la fila del 23/08 — tres testigos de lo mismo
+
+| testigo | qué dice | dónde |
+|---|---|---|
+| `D-15` | *«El panel se despliega como **ejecuta el usuario que accede**»* | `docs/PLAN.md:181-194` |
+| el manifiesto | `executeAs: "USER_DEPLOYING"` — **lo contrario** | `appsscript.json` |
+| la decisión del 23/08 | *«El motor ejecuta con SU identidad … ⛔ **Deroga `D-15`** … ⚠ El `D-NN` que las supersede **NO se escribe hoy**»* | `docs/PLAN.md:3326` |
+
+```
+sed -n '181,195p' docs/PLAN.md ; sed -n '3326p' docs/PLAN.md ; cat appsscript.json
+```
+
+⛔ **No se resuelve acá**, y no es prudencia de más: `D-15` declara en su propio texto que está
+**acoplada a `D-02`** —*«no son decisiones independientes»*—, así que el `D-NN` que la supersede
+arrastra a la otra. **Eso es del usuario.**
+
+⚠ **Y una corrección de referencia:** el prompt pedía la tercera cita en *«`PLAN.md` §3015»*. **Esa
+sección no existe con ese contenido**; las líneas reales son **3321** (fila de `D-16`) y **3326**
+(la que deroga). Es la razón por la que `CLAUDE.md` §4 manda resolver las citas por nombre y no por
+número.
+
+⭐ **Lo que sí está claro y conviene dejar escrito:** `executeAs: USER_DEPLOYING` **es forzoso**
+mientras el script esté *bound* a la planilla de control, porque con la otra opción toda escritura
+de `CORRIDAS` y toda lectura de `CONFIG` irían con la identidad del visitante — y compartirle la
+planilla es exactamente lo que `D-18` prohíbe. **El código llegó primero a la conclusión correcta;
+lo que falta es que la decisión escrita lo alcance.**
+
+### `C-93` · **P0** · `D-16` pieza 3 y `D-18` afirman un compartido de salidas que no existe
+
+```
+grep -rn "addViewer\|addEditor\|setSharing\|addViewers\|Drive.Permissions" --include=*.gs --include=*.html --include=*.js .   # cero
+grep -rn "ACCESOS" --include=*.gs --include=*.html --include=*.js .                                                          # cero
+```
+
+`D-18` dice *«el motor crea el deck en la carpeta de reportes y **lo comparte con quien
+corresponda según la hoja de accesos** (`D-16`)»*, y `D-16` pieza 1 dice que la lista *«va a una
+hoja (mail × `informe_id` × rol)»*. **Ninguna de las dos cosas ocurrió:** la lista fue a **una
+celda de `CONFIG`** —`mails_autorizados`, un solo eje, sin `informe_id` ni rol— y el compartido
+**no se escribió nunca**.
+
+⛔ **La consecuencia medible, y es la pregunta que hizo el usuario:** un tercero que esté en la
+lista **entra al panel, dispara la corrida, la ve terminar bien — y no puede abrir el deck**. Nadie
+le dio permiso sobre el archivo.
+
+⚠ Es una **afirmación de doc sin testigo**, la familia que este proyecto ya conoce: nada la
+contradecía porque **nada compara un `D-NN` contra el código que debería implementarlo**. Sobrevivió
+un mes en dos decisiones distintas, y las dos se citaban entre sí.
+
+### Y el hueco que queda del lado del control (no es inconsistencia, es cobertura)
+
+`probarBarreraDeMails_` (`Pruebas.gs:1281`) cubre **cuatro de los cinco motivos** de rechazo de la
+Barrera 1. Falta **`sin identidad`**, que es justo el que se predice para **todos** los visitantes
+bajo `USER_DEPLOYING` sin dominio. La causa: `apiBarrera1_` lee `Session.getActiveUser()` directo,
+sin la inyección que `apiListaAutorizados_` sí tiene. Darle banco exige cambiarle la firma a la
+función que decide el acceso — **pregunta 5 de `docs/SEGURIDAD.md` §7**, no se hace sin que se pida.
