@@ -147,6 +147,13 @@ def main():
     for n, v in sorted(nombres_gcba.items(), key=lambda x: -x[1])[:12]:
         print('   %16s  %s' % (f'{v:,.0f}', n[:80]))
 
+    print('')
+    print('⛔⛔ El límite MEDIDO, y hay que leerlo antes de citar cualquier valor de arriba:')
+    print('   El deck del 28/08 publica GCBA meta 24.330.320, y la solapa ENTERA con estado=Activa')
+    print('   tiene 8.562.079. Una ventana sólo puede REDUCIR, así que el fixture NO reproduce ese')
+    print('   deck: su `Base Looker` es de otro momento. ⭐ Lo citable de esta corrida es lo')
+    print('   ESTRUCTURAL —qué nombres caen de cada lado—, que no depende de los valores.')
+    print('')
     print('\n⚠ Lo que esto NO contesta:')
     print('   · La ventana. No se reproduce el recorte por pertenencia ni el tope de 90 días de')
     print('     R-30: son del motor y reimplementarlos sería reproducir su lógica peor.')
