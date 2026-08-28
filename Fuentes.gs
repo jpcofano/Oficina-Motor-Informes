@@ -1730,7 +1730,7 @@ var DIMENSIONES_ = {
        * `des_campana_2` dice `1 A 1 JM | 21/8 COGHLAN`. **Los dos criterios se contradicen sobre la
        * misma fila**, y eso ya estaba registrado el 26/08 como *«dos criterios, disjuntos»*.
        * Elegirlo acá habría cambiado el corte además de la fuente — dos variables a la vez. */
-      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2~=JM',
+      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2~=JM || des_campana_3~=JM',
       'looker|resumen_metricas_dinamico': 'campana~=JM'
     },
     // `gcba` es **todo lo que no es `jm`** (`D-33`), no un valor propio: se implementa negando
@@ -1742,7 +1742,9 @@ var DIMENSIONES_ = {
       'looker|DIGITAL': 'nombre_campaña!~=JM',
       // `2026-08-28` — la negación de la de arriba, por lo mismo que dice `D-33`: `gcba` es
       // **todo lo que no es `jm`**, no un valor propio.
-      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2!~=JM',
+      /* ⚠ La negacion de un OR es un AND de negaciones -De Morgan-: 'ni en una ni en la otra'.
+       * Por eso este lado NO lleva '||' y sigue funcionando con el separador de siempre. */
+      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2!~=JM && des_campana_3!~=JM',
       'looker|resumen_metricas_dinamico': 'campana!~=JM'
     }
   },

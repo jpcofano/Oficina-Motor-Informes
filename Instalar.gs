@@ -1773,7 +1773,18 @@ var SEED_MAPEO_DESGLOCE_REVISAR_ = [
   { base_id: 'digital', campo_logico: 'des_presupuesto', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'M', encabezado: 'Presupuesto', tipo_esperado: 'numero', notas: 'REVISAR — ídem des_consumo' },
   // ⚠ Los dos encabezados repetidos. Se mapean con nombre distinto y la marca dice por qué.
   { base_id: 'digital', campo_logico: 'des_estado_2', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'Y', encabezado: 'estado', tipo_esperado: 'texto', notas: 'REVISAR — ⚠ SEGUNDA columna llamada estado: K es "Estado" (FINALIZADA/PAUSADA/ACTIVA) y ésta es "estado", minúscula. No se sabe cuál manda ni si dicen lo mismo. D-31: la letra es la referencia, el título sólo testigo' },
-  { base_id: 'digital', campo_logico: 'des_campana_2', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'V', encabezado: 'nombre_campaña', tipo_esperado: 'texto', notas: 'REVISAR — ⚠ SEGUNDA columna de nombre: E es "Nombre Campaña" y de ahí sale el pre/post verificado. Ésta no se midió' }
+  /* ⭐⭐ `2026-08-28` — **MEDIDA, y la nota vieja decía «ésta no se midió».** Sobre el fixture del
+   * 28/08: `des_campana_2` (V) está poblada en **3.493 de 5.161** filas. Las otras **1.631** traen
+   * el nombre de campaña en la **U**, la columna rotulada `Prioridad` —que en las filas buenas dice
+   * `Alto`/`Bajo`—. Son **disjuntas**: JM por V **372**, JM por U **248**, en las dos a la vez
+   * **0**, unión **620**, que es exactamente lo que `looker/DIGITAL` ve. **El mismo universo,
+   * partido en dos columnas.** Las seis filas de Coghlan son de las que tienen la V vacía.
+   *
+   * ⚠ **El encabezado de la U MIENTE y por eso el campo lógico no se llama `des_prioridad`:** lo
+   * que hay adentro es un nombre de campaña en un tercio de las filas. Ponerle el nombre del
+   * título sería documentar el rótulo en vez del contenido. */
+  { base_id: 'digital', campo_logico: 'des_campana_2', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'V', encabezado: 'nombre_campaña', tipo_esperado: 'texto', notas: 'MEDIDA el 28/08: poblada en 3.493 de 5.161 filas. Las otras 1.631 traen el nombre en la U. E es "Nombre Campaña" y de ahí sale el pre/post verificado; ésta es la que lleva el "JM" del ámbito' },
+  { base_id: 'digital', campo_logico: 'des_campana_3', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'U', encabezado: 'Prioridad', tipo_esperado: 'texto', notas: 'TERCERA columna de nombre, y el encabezado miente: dice "Prioridad" y en 1.631 de 5.161 filas trae el nombre de campaña, disjunta de la V. La usa `ambito` con `||` — sin ella el ámbito clasifica mal un tercio de las filas y Coghlan cae en GCBA' }
 ];
 
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_DESGLOCE_REVISAR_);

@@ -843,6 +843,9 @@ var OPERADORES_FILTRO_ = [
  * no mueve ningún número.
  * ─────────────────────────────────────────────────────────────────────────────────────── */
 var SEPARADOR_CONDICIONES_FILTRO_ = '&&';
+/* ⭐ 2026-08-28 - las alternativas de un mismo campo, o de dos columnas que traen el mismo dato
+ * partido. Ver el comentario de parsearFiltro_. */
+var SEPARADOR_ALTERNATIVAS_FILTRO_ = '||';
 
 /**
  * Devuelve **una lista de condiciones**, no un objeto: una condición sola es una lista de uno.
@@ -861,26 +864,61 @@ function parsearFiltro_(texto) {
   var piezas = t.split(SEPARADOR_CONDICIONES_FILTRO_);
   var condiciones = [];
   for (var p = 0; p < piezas.length; p++) {
-    var parseada = parsearCondicionFiltro_(piezas[p]);
-    if (!parseada.ok) {
-      // El motivo dice **cuál** de las condiciones está mal: un `filtro_mal_escrito` sobre un
-      // texto de tres es inútil si no dice dónde. Con una sola condición el mensaje queda
-      // idéntico al de antes de este cambio, que es lo que ven los 33 filtros vivos.
-      var donde = piezas.length > 1 ? ', condición ' + (p + 1) + ' de ' + piezas.length : '';
-      return { ok: false, motivo: 'filtro mal escrito' + donde + ': ' + parseada.motivo };
+    /* ⭐⭐ `2026-08-28` — **cada pieza del `&&` puede traer alternativas con `||`**, y el `&&` se
+     * parte PRIMERO: eso le da al `||` la precedencia más fuerte, que es la convención de
+     * cualquier lenguaje. `A || B && C` es `(A || B) && C`.
+     *
+     * ⛔ **Por qué hizo falta, medido el 28/08:** el universo `JM` de
+     * `digital/CAMPAÑAS_DESGLOCE_DIGITAL` está **partido en dos columnas** — 3.493 filas traen el
+     * nombre de campaña en `nombre_campaña` y 1.631 lo traen en la columna rotulada `Prioridad`,
+     * disjuntas, 372 + 248 = **620**, que es exactamente lo que `looker/DIGITAL` ve. Sin `||`
+     * ninguna columna sola alcanza y el ámbito clasifica mal un tercio de las filas: las seis de
+     * Coghlan caían en `GCBA`.
+     *
+     * ⭐ **Es retrocompatible por construcción:** una pieza sin `||` produce exactamente la
+     * condición de antes, con `alternativas` vacío, y `primeraCondicionQueFalla_` la evalúa igual.
+     * Los 33 filtros vivos no cambian de comportamiento.
+     *
+     * ⚠ **Y la negación de un `||` NO se escribe con `||`**: `gcba` es *«ni en una ni en la otra»*,
+     * o sea `campo1!~=JM && campo2!~=JM`. De Morgan, y por eso el ámbito `gcba` sigue sin
+     * necesitar nada nuevo. */
+    var alternativas = String(piezas[p]).split(SEPARADOR_ALTERNATIVAS_FILTRO_);
+    var grupo = [];
+    for (var a = 0; a < alternativas.length; a++) {
+      var parseada = parsearCondicionFiltro_(alternativas[a]);
+      if (!parseada.ok) {
+        // El motivo dice **cuál** de las condiciones está mal: un `filtro_mal_escrito` sobre un
+        // texto de tres es inútil si no dice dónde. Con una sola condición el mensaje queda
+        // idéntico al de antes de este cambio, que es lo que ven los 33 filtros vivos.
+        var donde = piezas.length > 1 ? ', condición ' + (p + 1) + ' de ' + piezas.length : '';
+        var cual = alternativas.length > 1 ? ' (alternativa ' + (a + 1) + ' de ' + alternativas.length + ')' : '';
+        return { ok: false, motivo: 'filtro mal escrito' + donde + cual + ': ' + parseada.motivo };
+      }
+      grupo.push(parseada.condicion);
     }
-    condiciones.push(parseada.condicion);
+    var principal = grupo[0];
+    principal.alternativas = grupo.slice(1);
+    condiciones.push(principal);
   }
 
   return { ok: true, vacio: false, condiciones: condiciones };
+}
+
+/** Todas las condiciones de un grupo `||`, empezando por la principal. */
+function alternativasDeCondicion_(cond) {
+  return [cond].concat((cond && cond.alternativas) || []);
 }
 
 /** Una condición suelta, con la lógica de siempre y el mismo orden de operadores. */
 function parsearCondicionFiltro_(texto) {
   var t = String(texto || '').trim();
   if (t === '') {
-    return { ok: false, motivo: 'está vacía — hay dos `' + SEPARADOR_CONDICIONES_FILTRO_ +
-      '` seguidos, o uno al principio o al final' };
+    /* ⚠ Nombra los DOS separadores: hasta el 28/08 decía sólo `&&`, y con el `||` nuevo eso
+     * mandaba a mirar el separador equivocado. Un mensaje que apunta al lugar que no es cuesta lo
+     * mismo que no tenerlo. */
+    return { ok: false, motivo: 'está vacía — hay dos separadores seguidos (`' +
+      SEPARADOR_CONDICIONES_FILTRO_ + '` o `' + SEPARADOR_ALTERNATIVAS_FILTRO_ +
+      '`), o uno al principio o al final' };
   }
 
   for (var i = 0; i < OPERADORES_FILTRO_.length; i++) {
@@ -941,7 +979,14 @@ function valorPasaFiltro_(valorCelda, cond) {
  */
 function primeraCondicionQueFalla_(condiciones, leerValor) {
   for (var i = 0; i < condiciones.length; i++) {
-    if (!valorPasaFiltro_(leerValor(condiciones[i].campo), condiciones[i])) return condiciones[i];
+    /* Un grupo pasa si pasa CUALQUIERA de sus alternativas. Sin  el grupo tiene un solo
+     * elemento y esto es exactamente lo de antes. */
+    var grupo = alternativasDeCondicion_(condiciones[i]);
+    var pasa = false;
+    for (var j = 0; j < grupo.length; j++) {
+      if (valorPasaFiltro_(leerValor(grupo[j].campo), grupo[j])) { pasa = true; break; }
+    }
+    if (!pasa) return condiciones[i];
   }
   return null;
 }
@@ -982,8 +1027,19 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
    * propio; no hay razón para que la herencia tenga una regla más laxa sobre el universo. */
   var resueltas = [];
   var n = f.condiciones.length;
-  for (var i = 0; i < n; i++) {
-    var cond = f.condiciones[i];
+  /* ⭐⭐ `2026-08-28` — **se resuelve la columna de CADA alternativa, no sólo la principal.**
+   * `leerDeFila_` busca por `cond.campo`, así que una alternativa sin su `resuelta` leería
+   * `undefined` y el `||` no serviría de nada: pasaría siempre por la primera o nunca.
+   *
+   * ⚠ Y si una alternativa no mapea, **falla igual que si fuera la única**. Media condición no es
+   * una versión suave del criterio, es otro — el mismo argumento que el bloque de acá arriba usa
+   * para no aplicar «las que sí mapean». */
+  var planas = [];
+  f.condiciones.forEach(function (c) {
+    alternativasDeCondicion_(c).forEach(function (x) { planas.push(x); });
+  });
+  for (var i = 0; i < planas.length; i++) {
+    var cond = planas[i];
     var campo = buscarMapeo(fila.base_id, solapa, cond.campo);
     if (!campo.ok) {
       // Un filtro **heredado** de la sección cuyo campo no está mapeado para esta solapa

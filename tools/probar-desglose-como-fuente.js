@@ -63,14 +63,22 @@ console.log('\n═══ A · `ambito` traducido para el desglose, con la MISMA 
 
   /* ⭐ La regla tiene que ser LA MISMA salvo el nombre de la columna: si difiere, el cambio movió
    * el corte además de la fuente — dos variables a la vez, y ningún número sería atribuible. */
-  /* Se recorta hasta el primer operador y no por clase de caracteres: `nombre_campaña` tiene una
-   * `ñ` que ningún `[a-z_]` matchea, y el primer intento falló justo por eso. */
-  const mismaForma = (x, y) => x.replace(/^[^~!=]+/, '') === y.replace(/^[^~!=]+/, '');
-  afirmar(mismaForma(D.ambito.jm[DESGLOSE], D.ambito.jm[LOOKER]),
-    '⭐⭐ misma regla que looker salvo la columna: `' + D.ambito.jm[DESGLOSE] + '` contra `' +
-    D.ambito.jm[LOOKER] + '`');
-  afirmar(mismaForma(D.ambito.gcba[DESGLOSE], D.ambito.gcba[LOOKER]),
-    'y la negación también — `gcba` es todo lo que no es `jm` (`D-33`)');
+  /* ⛔⛔ `2026-08-28` — **esta afirmación se dio vuelta con una medición.** Pedía *«la misma regla
+   * que looker salvo la columna»*, que era lo correcto mientras se creyó que una columna alcanzaba.
+   * **No alcanza:** el universo JM del desglose está partido — `des_campana_2` (V) tiene 372 filas
+   * JM, `des_campana_3` (U, rotulada `Prioridad`) tiene 248, **disjuntas**, y la unión da **620**,
+   * que es exactamente lo que `looker/DIGITAL` ve con su columna única.
+   *
+   * ⭐ **Lo que sí se conserva de la regla vieja, y es lo que importa: el OPERADOR.** Sigue siendo
+   * `~=JM`, igual que looker. Lo que cambia es sobre cuántas columnas se busca, y eso es una
+   * propiedad del dato, no del criterio. */
+  const operadores = (s) => (s.match(/!?~?=/g) || []).join(' ');
+  afirmar(/des_campana_2~=JM \|\| des_campana_3~=JM/.test(D.ambito.jm[DESGLOSE]),
+    '⭐⭐ `jm` busca en las DOS columnas con `||` — con una sola, un tercio de las filas cae mal');
+  afirmar(operadores(D.ambito.jm[LOOKER]) === '~=',
+    '⭐ y looker sigue con UNA columna: su `nombre_campaña` está poblado en las 620');
+  afirmar(/des_campana_2!~=JM && des_campana_3!~=JM/.test(D.ambito.gcba[DESGLOSE]),
+    '⭐⭐ y `gcba` es el AND de las negaciones — De Morgan: «ni en una ni en la otra», sin `||`');
 
   /* ⛔ La otra columna existe y NO se usó. Va como afirmación para que el día que alguien la
    * cambie a `des_ambito` se ponga rojo: en las filas de Coghlan dice GCBA mientras el nombre de
@@ -131,8 +139,8 @@ console.log('\n═══ D · control negativo — sin la entrada, A cae ══�
    * prueba. El primer intento llevaba un salto adentro del patrón y **la guarda de mutación lo
    * cazó** — es `CLAUDE.md` §4 funcionando, no una anécdota. */
   const D = dimensiones((t) => t.replace(
-    "'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2~=JM',",
-    "'zzz_solapa_inexistente': 'des_campana_2~=JM',"));
+    "'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2~=JM ||",
+    "'zzz_solapa_inexistente': 'des_campana_2~=JM ||"));
   if (!D) {
     fallas++;
     console.log('  ❌ ⛔ la mutación NO matcheó — el negativo habría corrido sobre el código intacto');

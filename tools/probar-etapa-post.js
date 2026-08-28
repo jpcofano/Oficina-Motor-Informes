@@ -72,15 +72,21 @@ function contexto(textoFuentes) {
   /* ⚠ Las constantes se cargan **del archivo**, no como literales acá: un banco que declara `'&&'`
    * o la tabla de operadores de su lado seguiría verde si el motor los cambiara — mediría su propia
    * copia en vez del motor. */
-  [['var SEPARADOR_CONDICIONES_FILTRO_', ';'], ['var OPERADORES_FILTRO_ = [', '\n];']]
+  [['var SEPARADOR_CONDICIONES_FILTRO_', ';'], ['var SEPARADOR_ALTERNATIVAS_FILTRO_', ';'],
+   ['var OPERADORES_FILTRO_ = [', '\n];']]
     .forEach(([firma, cierre]) => {
       const c = extraer(gen, firma, cierre);
       if (!c) avisos.push('⚠ no se encontró `' + firma + '` en Generador.gs.');
       else vm.runInContext(c, ctx, { filename: 'Generador.gs (extracto)' });
     });
 
+  /* ⭐ `2026-08-28` — se agregan `alternativasDeCondicion_` y `primeraCondicionQueFalla_`: el banco
+   * pasa a usar **el evaluador real** en vez de rehacer el bucle `AND` de su lado, y así entiende
+   * el separador `||` que el motor ganó hoy. Rehacerlo acá lo dejaba verde sobre un motor cambiado
+   * — el mismo argumento que el comentario de arriba da para las constantes. */
   ['function normalizarValorDeclarado_', 'function parsearCondicionFiltro_',
-    'function parsearFiltro_', 'function valorPasaFiltro_'].forEach((firma) => {
+    'function alternativasDeCondicion_', 'function parsearFiltro_', 'function valorPasaFiltro_',
+    'function primeraCondicionQueFalla_'].forEach((firma) => {
     const fuente = firma === 'function normalizarValorDeclarado_' ? fue : gen;
     const fn = extraer(fuente, firma);
     if (!fn) {
@@ -105,7 +111,7 @@ function pasa(ctx, etapa, nombre) {
   ctx.__t = ctx.DIMENSIONES_.etapa[etapa]['digital|CAMPAÑAS_DESGLOCE_DIGITAL'];
   ctx.__n = nombre;
   return vm.runInContext(
-    'parsearFiltro_(__t).condiciones.every(function (c) { return valorPasaFiltro_(__n, c); })', ctx);
+    'primeraCondicionQueFalla_(parsearFiltro_(__t).condiciones, function () { return __n; }) === null', ctx);
 }
 
 console.log('DIMENSIONES_.etapa — el criterio de POST, con el comparador real del motor\n');
