@@ -85,8 +85,8 @@ var HOJAS_CONFIG_ = {
    * **Las formas que se come: `1/3`, `3-1`, `1-2` → fecha; `01` → pierde el cero; `=algo` →
    * fórmula.** Lo que se escriba acá va como **entero pelado** o con un prefijo que no parezca
    * nada. Y el escritor **relee**: `curarMarcadores_` devuelve `releido`. Ver `CLAUDE.md` §4.
-   *
-   * solapa/operacion/valor_fijo (DOC-2 Parte A): operacion reemplaza a calculo
+   */
+  // solapa/operacion/valor_fijo (DOC-2 Parte A): operacion reemplaza a calculo
   // (migración idempotente en migrarCalculoAOperacion_); valor_fijo es para
   // operacion=TEXTO; solapa entra en la clave de MAPEO y, si viene vacía, la
   // regla de resolución (docs/TOKENS.md, PROYECTO.md §3) decide si se infiere
@@ -541,11 +541,27 @@ var COLUMNAS_DELTA_ = {
     { nombre: 'periodo_ref', indice: 14 },
     { nombre: 'items_por_lamina', indice: 15 }
   ],
+  /* ⛔⛔ `2026-08-27` — **era `indice: 1` y estaba corrido en uno.** `asegurarColumna_` hace
+   * `insertColumnBefore(indice)` y después `setValue` **en esa misma posición**, así que `indice`
+   * es **la columna que la nueva OCUPA**, no la que queda a su izquierda. Con `1`, `ejecucion`
+   * entraba **antes** de `corrida_id` — al revés de lo que dice el comentario de acá abajo y de lo
+   * que declara `HOJAS_CONFIG_.CORRIDAS.headers` (`corrida_id · ejecucion · …`).
+   *
+   * ⭐ **Nunca se disparó, y por eso hay que arreglarlo AHORA:** `CORRIDAS` estaba adentro del
+   * comentario sin cerrar de `Instalar.gs:82` desde el 22/08, así que esta entrada **jamás corrió**
+   * — la hoja viva tiene 8 columnas y no tiene `ejecucion`, verificado por el usuario el 27/08. Al
+   * cerrar el comentario, la próxima corrida de `instalar()` la habría insertado en el lugar
+   * equivocado. **El bug latente y su detonante se arreglan en el mismo commit.**
+   *
+   * ⚠ **Los datos no se habrían perdido** —`abrirCorrida_` escribe por nombre de encabezado,
+   * `headers.map(h => (h in fila) ? fila[h] : '')`— pero la hoja habría quedado con un orden que
+   * ninguna declaración describe, y `corrida_id` dejaría de ser la primera columna, que es donde
+   * la lee una persona. */
   // `D-41` — `ejecucion` entra por delta y no recreando la hoja: `CORRIDAS` es el historial de
-  // corridas y recrearla lo borraría. `indice: 1` = inmediatamente después de `corrida_id`,
+  // corridas y recrearla lo borraría. `indice: 2` = inmediatamente después de `corrida_id`,
   // porque las dos juntas son la clave con la que se lee la tabla: qué corrida, qué tanda.
   CORRIDAS: [
-    { nombre: 'ejecucion', indice: 1 }
+    { nombre: 'ejecucion', indice: 2 }
   ],
   /* ⭐⭐ `2026-08-24_2` Parte B — **las dos declaraciones que le faltan al conteo de faltantes**, y
    * son DOS y no una: el alcance es de la lámina, el texto del equipo es del token.
