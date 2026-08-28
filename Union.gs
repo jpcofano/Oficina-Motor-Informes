@@ -1749,8 +1749,16 @@ function anclarEncuentrosSinCache_(ventana) {
          * ⚠ La clave es `texto_original` porque es la que usa `curarCamposReuniones_`, y es la
          * única que **toda** fila de temario tiene por construcción (`D-46`). Sin ella no hay
          * dónde escribir, y eso no es un error: es una fila que no vino del asistente. */
+        /* ⛔ `2026-08-28` — **el `periodo_id` va con la escritura.** Sin él, dos filas con el mismo
+         * `texto_original` —el mismo temario pegado para dos períodos— hacían que la cuenta se
+         * escribiera en la del período viejo. Es el mismo bug que el 28/08 dejó a Coghlan con
+         * `mostrar` vacío, y estaba latente acá desde que se escribió esto ayer. */
         if (!declarada && reunion.texto_original) {
-          aDeclarar.push({ texto_original: String(reunion.texto_original), id_cuenta: item.idCuenta });
+          aDeclarar.push({
+            texto_original: String(reunion.texto_original),
+            periodo_id: String(reunion.periodo_id || ''),
+            id_cuenta: item.idCuenta
+          });
         }
         encuentros.push(item);
       }

@@ -554,31 +554,82 @@ function curarCamposReuniones_(cambios) {
   var idxTexto = headers.indexOf('texto_original');
   if (idxTexto === -1) return { ok: false, motivo: 'REUNIONES no tiene columna `texto_original`.' };
 
-  var filaDe = {};
+  /* ⛔⛔ `2026-08-28` — **la clave de ESCRITURA tenía que llavear igual que la de IDENTIDAD, y no
+   * lo hacía.** `claveReunion_` incluye `periodo_id`, así que pegar el mismo temario para un
+   * período nuevo crea —bien— una **fila nueva**. Pero acá se indexaba sólo por `texto_original` y
+   * el comentario viejo decía *«si dos filas comparten el texto, gana la primera»*.
+   *
+   * **Lo que publicó, medido el 28/08:** con dos filas de `Uno a uno en Coghlan (21/08)` —una del
+   * período viejo y una de `2026_agosto_21_28`— el paso 3 del asistente escribió `mostrar = sí` en
+   * **la del período viejo**, la nueva quedó vacía, y el anclaje falló con *«REUNIONES no tiene
+   * filas para anclar»*. Con un solo período no se nota nunca.
+   *
+   * ⭐ **«Gana la primera» era elegir por el orden de la hoja**, que es lo mismo que el `_39` le
+   * sacó a `ULTIMO` y lo que el agregado del temario acaba de dejar de hacer con las filas de una
+   * cuenta. Acá se reemplaza por: **con `periodo_id` se acierta la fila; sin él y con varias
+   * candidatas, es AMBIGUO y no se escribe nada.**
+   *
+   * ⚠ **Ambiguo no es lo mismo que no encontrada**, y por eso se cuentan aparte: *«no existe esa
+   * línea»* manda a mirar el temario, *«hay dos y no sé cuál»* manda a pasar el período. */
+  var idxPeriodo = headers.indexOf('periodo_id');
+  var filasDe = {};
   for (var f = 1; f < datos.length; f++) {
     var clave = String(datos[f][idxTexto] || '').trim();
     if (!clave) continue;
-    // Si dos filas comparten el texto, gana la primera y la segunda queda sin tocar: pisar dos
-    // filas con un solo cambio sería exactamente lo que esta función viene a evitar.
-    if (!(clave in filaDe)) filaDe[clave] = f;
+    if (!filasDe[clave]) filasDe[clave] = [];
+    filasDe[clave].push(f);
   }
 
   var aplicados = [];
   var sinFila = [];
+  var ambiguas = [];
   cambios.forEach(function (c) {
     var clave = String(c.texto_original || '').trim();
-    if (!(clave in filaDe)) { sinFila.push(clave); return; }
-    var fila = filaDe[clave];
+    var candidatas = filasDe[clave] || [];
+
+    /* Con `periodo_id` la fila se acierta; sin él sólo sirve si hay una sola candidata. */
+    var periodo = String(c.periodo_id === undefined || c.periodo_id === null ? '' : c.periodo_id).trim();
+    if (periodo && idxPeriodo !== -1) {
+      candidatas = candidatas.filter(function (n) {
+        return String(datos[n][idxPeriodo] || '').trim() === periodo;
+      });
+    }
+
+    if (!candidatas.length) { sinFila.push(clave + (periodo ? ' [' + periodo + ']' : '')); return; }
+    if (candidatas.length > 1) {
+      ambiguas.push(clave + ' — ' + candidatas.length + ' filas' +
+        (periodo ? ' en [' + periodo + ']' : ' y el cambio no trae `periodo_id`'));
+      return;
+    }
+
+    var fila = candidatas[0];
     Object.keys(c).forEach(function (campo) {
-      if (campo === 'texto_original') return;
+      if (campo === 'texto_original' || campo === 'periodo_id') return;
       var col = headers.indexOf(campo);
       if (col === -1) { sinFila.push(clave + '.' + campo + ' (columna inexistente)'); return; }
       var anterior = datos[fila][col];
       if (String(anterior) === String(c[campo])) return; // ya estaba: no se escribe
       hoja.getRange(fila + 1, col + 1).setValue(c[campo]);
-      aplicados.push({ texto_original: clave, campo: campo, anterior: anterior, nuevo: c[campo] });
+      aplicados.push({ texto_original: clave, periodo_id: periodo, campo: campo, anterior: anterior, nuevo: c[campo] });
     });
   });
 
-  return { ok: true, aplicados: aplicados, sin_fila: sinFila, cambios_escritos: aplicados.length };
+  /* ⛔⛔ **Una escritura que no llegó a NINGUNA fila falla, no informa cero.** Es la regla que
+   * `curarCamposMarcadores_` tiene desde el 17/08 y que a ésta le faltaba: devolvía `ok: true` con
+   * todo en `sin_fila`, el llamador miraba sólo `.ok`, y el asistente decía *«confirmado»* sin
+   * haber confirmado nada. **«Ya estaba» NO falla** —eso es idempotencia y es legítimo—: lo que
+   * falla es no haber podido ubicar la fila. */
+  if (cambios.length && (sinFila.length || ambiguas.length) && !aplicados.length) {
+    return {
+      ok: false,
+      motivo: 'ninguno de los ' + cambios.length + ' cambio(s) llegó a una fila de REUNIONES' +
+        (sinFila.length ? ' · SIN FILA: ' + sinFila.join(' | ') : '') +
+        (ambiguas.length ? ' · AMBIGUAS (varias filas con el mismo `texto_original`, hace falta ' +
+          '`periodo_id` para acertar): ' + ambiguas.join(' | ') : ''),
+      aplicados: [], sin_fila: sinFila, ambiguas: ambiguas, cambios_escritos: 0
+    };
+  }
+
+  return { ok: true, aplicados: aplicados, sin_fila: sinFila, ambiguas: ambiguas,
+    cambios_escritos: aplicados.length };
 }

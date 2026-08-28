@@ -267,17 +267,33 @@ console.log('\n5 · ⭐⭐ confirmar escribe y después ancla, en una sola respu
 /* ══════════════════════════════════════════════════════════════════════════════════════════
  * 6 · Una decisión sobre una fila que no existe se REPORTA, no se inventa
  * ══════════════════════════════════════════════════════════════════════════════════════════ */
-console.log('\n6 · ⛔ una clave que no matchea se reporta y no escribe en la fila de al lado');
+/* ⭐⭐ `2026-08-28` — **este caso se dio vuelta, y con MÁS exigencia.** Hasta hoy pedía
+ * `r.ok === true` con la clave en `sin_fila`: o sea que una confirmación que **no llegó a ninguna
+ * fila** se reportaba como éxito y el flujo **seguía al anclaje**.
+ *
+ * ⛔ **Eso es exactamente lo que se publicó el 28/08.** Con dos filas del mismo `texto_original`
+ * —el mismo temario pegado para dos períodos— el tilde fue a la fila del período viejo, la nueva
+ * quedó con `mostrar` vacío, y el anclaje falló con *«REUNIONES no tiene filas para anclar»*
+ * **culpando al período, que era inocente**. La causa estaba dos pasos antes y nadie la vio.
+ *
+ * ⭐ **La garantía nueva, que es la que faltaba: sobre una confirmación a medias NO se corre el
+ * anclaje.** Su resultado ahí no significa nada y su mensaje manda al lugar equivocado. */
+console.log('\n6 · ⛔ una clave que no matchea FALLA, y no se sigue al anclaje');
 {
   const ctx = armar();
   ctx.__d = [{ fuente: 'REUNIONES', clave: 'una linea que ya no esta', mostrar: true }];
   const r = C.vm.runInContext('panel_asistenteConfirmar("' + PERIODO + '", "jm", __d)', ctx);
 
-  afirmar(r.ok === true, 'la llamada no se cae');
-  afirmar((r.sin_fila || []).indexOf('una linea que ya no esta') !== -1,
-    '⛔ la clave que no matchea sale en `sin_fila` — el panel puede estar mostrando una lista vieja');
+  afirmar(r.ok === false, '⭐⭐ la confirmación FALLA: no llegó a ninguna fila, y eso no es un cero');
+  afirmar(/una linea que ya no esta/.test(r.motivo || ''),
+    '⛔ y el motivo NOMBRA la clave — el panel puede estar mostrando una lista vieja');
   afirmar(ctx.__hojas.REUNIONES.__filas.filter((f) => String(f[7]).trim() !== '' && f[0] === PERIODO).length === 0,
     '⛔⛔ y NO escribió en ninguna otra fila: escribir por índice pondría la decisión en la equivocada');
+  /* ⚠ Se mira `__anclo` y no `__abrio`: las cachés las abre también la guarda del paso 3, así que
+   * ese contador no distingue «corrió el anclaje» de «se leyeron los hechos». `__anclo` lo escribe
+   * el anclaje falseado y sólo él. */
+  afirmar(ctx.__anclo === undefined,
+    '⭐⭐ y el anclaje NO corrió: sobre una confirmación a medias su mensaje culparía al período');
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════

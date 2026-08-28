@@ -2555,7 +2555,12 @@ function panel_asistenteConfirmar(periodoId, informeId, decisiones) {
     if (String(d.fuente) === 'CAMPANAS') {
       deCampanas.push({ campana_id: String(d.clave || ''), periodo_id: ref, mostrar: valor });
     } else {
-      deReuniones.push({ texto_original: String(d.clave || ''), mostrar: valor });
+      /* ⛔ `2026-08-28` — **el `periodo_id` viaja con el cambio, y sin él el tilde va a la fila
+       * equivocada.** `claveReunion_` incluye el período, así que pegar el mismo temario para un
+       * período nuevo crea otra fila con el MISMO `texto_original`; sin este campo, la escritura
+       * acertaba «la primera», o sea la del período viejo, y la nueva quedaba con `mostrar` vacío.
+       * Medido el 28/08 con dos filas de Coghlan. */
+      deReuniones.push({ texto_original: String(d.clave || ''), periodo_id: ref, mostrar: valor });
     }
   });
 
@@ -2563,6 +2568,19 @@ function panel_asistenteConfirmar(periodoId, informeId, decisiones) {
   if (deReuniones.length) {
     escrituras.reuniones = curarCamposReuniones_(deReuniones);
     if (!escrituras.reuniones.ok) return { ok: false, motivo: 'reuniones: ' + escrituras.reuniones.motivo };
+    /* ⚠ `ok` con `sin_fila` o `ambiguas` es una confirmación PARCIAL: algunas decisiones se
+     * escribieron y otras no llegaron a su fila. El anclaje de abajo va a fallar por eso y su
+     * mensaje va a culpar al período, así que la causa real tiene que decirse acá. */
+    var perdidas = (escrituras.reuniones.sin_fila || []).concat(escrituras.reuniones.ambiguas || []);
+    if (perdidas.length) {
+      return {
+        ok: false,
+        motivo: 'se confirmaron ' + escrituras.reuniones.cambios_escritos + ' de ' +
+          deReuniones.length + ' reunión(es), y ' + perdidas.length + ' NO llegó a su fila: ' +
+          perdidas.join(' | ') + '. ⚠ No se corrió el anclaje: sobre una confirmación a medias su ' +
+          'resultado no significa nada, y su mensaje culparía al período.'
+      };
+    }
   }
   if (deCampanas.length) {
     escrituras.campanas = curarCamposCampanas_(deCampanas);
