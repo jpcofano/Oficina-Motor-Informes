@@ -1727,6 +1727,14 @@ var SEED_MAPEO_DESGLOCE_ = [
   // Las dos claves: sin éstas la solapa no se puede recortar ni por encuentro ni por plataforma.
   { base_id: 'digital', campo_logico: 'des_id_cuenta', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'B', encabezado: 'Id cuentas', notas: 'clave del encuentro — la nombra SOLAPAS.campo_id_cuenta (D-30). Es la misma clave que V-21…V-26' },
   { base_id: 'digital', campo_logico: 'des_plataforma', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'F', encabezado: 'Plataforma', notas: 'el corte. Valores medidos 20/08: Meta 1840 · DV360 1678 · Google ads 1417 · TikTok 55 · Mercado Libre 27 · Twitter 12 · Twitch 5 · Uber 5 · 122 vacíos. OJO: se escriben así, con mayúscula y espacio — "Google ads", no "google"' },
+  /* ⭐⭐ `2026-08-28` — **la clave del cruce de ventana, y es la MISMA columna que `des_id_cuenta`.**
+   * La solapa pasa a `ventana_ref = Cuentas` para que los ocho `imp_*` conserven **exactamente** el
+   * recorte que tenían en `looker/DIGITAL` —pertenencia de la cuenta a la ventana (`D-24`)— cuando
+   * cambian de fuente. Sin esta fila, `leerFuente` falla con `«FALTA:clave_ventana@…»`.
+   * ⚠ Dos campos lógicos sobre la misma letra **es deliberado y ya tiene precedente**: en
+   * `looker/DIGITAL` conviven `clave_ventana` y `ldig_id_cuenta`, los dos en `A`. Son dos roles
+   * —el cruce de ventana y la clave del encuentro— y unificarlos borraría cuál se está usando. */
+  { base_id: 'digital', campo_logico: 'clave_ventana', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'B', encabezado: 'Id cuentas', notas: 'el cruce de ventana contra looker/Cuentas (D-24). Misma letra que des_id_cuenta y mismo caso que looker/DIGITAL, donde clave_ventana y ldig_id_cuenta comparten la A' },
   // Las tres métricas que los casos de validación nombran.
   { base_id: 'digital', campo_logico: 'des_impresiones', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'O', encabezado: 'Impresiones', notas: 'V-21 (17.401) y V-23 (25.099) reproducidos exactos sobre el fixture del 20/08' },
   { base_id: 'digital', campo_logico: 'des_visualizaciones', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'P', encabezado: 'Visualizaciones', notas: 'el numerador de vtr. V-26 apunta acá' },
@@ -2457,7 +2465,7 @@ var SEED_SOLAPAS_ = [].concat(
    * encuentro (`D-30`); sin declararlo, un marcador con `id_cuenta` falla con
    * `@campo_id_cuenta_no_mapeado` en vez de recortar. Apunta a la fila de `MAPEO`
    * `des_id_cuenta` — columna B, `Id cuentas`, la misma clave de `V-21`…`V-26`. */
-  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'fuente de los u1_* del "1 a 1" — impresiones, clics y visualizaciones por plataforma, con filtro Id cuentas + Plataforma (V-21 a V-26, consolidado 14/08). Repuesta a fuente el 14/08: el seed la tenía en ignorar por una medición de R-22 del 09/08 que venció. Mapeada el 21/08 (SEED_MAPEO_DESGLOCE_)', { campo_id_cuenta: 'des_id_cuenta' }),
+  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'fuente de los u1_* del "1 a 1" — impresiones, clics y visualizaciones por plataforma, con filtro Id cuentas + Plataforma (V-21 a V-26, consolidado 14/08). Repuesta a fuente el 14/08: el seed la tenía en ignorar por una medición de R-22 del 09/08 que venció. Mapeada el 21/08 (SEED_MAPEO_DESGLOCE_)', { campo_id_cuenta: 'des_id_cuenta', ventana_ref: 'Cuentas' }),
   // Las cinco de abajo estaban en `referencia` y bajan a `ignorar` por `R-22`: `referencia`
   // sugiere que sirven para consultar, y éstas no sirven para nada. Las tres de período
   // manual las veta `R-02`; las dos de `#REF!` están rotas.
@@ -8814,3 +8822,121 @@ function crearPeriodoPersonalizado_(desdeTexto, hastaTexto) {
 /* ⛔ Acá vivía `generarProximasSemanas()`. Ver el bloque de arriba: se retiró con
  * `generarPeriodosSemanales_` el 27/08/2026. El botón que la reemplaza es el paso 1 del
  * asistente, que crea **una** semana — la que la persona elige. */
+
+/**
+ * ⭐⭐ `2026-08-28` — **los ocho `imp_*` pasan de `looker/DIGITAL` al DESGLOSE, con el criterio
+ * IDENTICO.** Decision del usuario: *«que usen la misma fuente, y que el criterio sea el mismo»*.
+ *
+ * **Por que las dos solapas son intercambiables, medido antes de tocar:** las dos tienen **4.904
+ * filas** y el desglose expone las mismas columnas con mas al lado. Las equivalencias:
+ * `Impresiones` C -> `des_impresiones` O · `nombre_campana` F -> `des_campana_2` V ·
+ * `estado` I -> `des_estado_2` Y · `Plataforma` B -> `des_plataforma` F.
+ *
+ * ⚠ **`des_estado` (col K) NO es la equivalente**, y confundirlas cuesta el numero: esa columna
+ * usa `ACTIVA/FINALIZADA/PAUSADA/PENDIENTE` y sobre las seis filas de Coghlan deja 23.713 en vez
+ * de 66.855. La que comparte vocabulario con `looker` es `des_estado_2` (`Activa`).
+ *
+ * ⭐ **Copiar el criterio en vez de elegir uno nuevo es lo que hace ATRIBUIBLE el cambio:** la
+ * unica variable pasa a ser la solapa. Si las dos traen la misma informacion, los ocho valores
+ * tienen que dar **lo mismo**; si no dan, ESE es el hallazgo y no ruido.
+ *
+ * ⭐⭐ **Mide ANTES y DESPUES en la misma corrida**, que es lo unico que vuelve al cambio
+ * verificable sin un segundo deck: entre las dos tomas pasan segundos, asi que la inestabilidad de
+ * `R-31` no alcanza a explicar una diferencia. Y comprueba la identidad interna
+ * `meta + google + prog = total` de los dos lados: si cierra antes y despues, el cambio no rompio
+ * la composicion aunque los valores se muevan.
+ *
+ * ⚠ **Enciende las DOS caches, como `generarInforme`**, y no es prolijidad: medido el 22/08, un
+ * instrumento que corre sin `abrirCacheRegistros_()` mide otra cosa por un factor 54.
+ *
+ * Corre desde el editor: no lleva argumentos y reporta por `Logger.log`.
+ */
+function moverImpresionesAlDesglose() {
+  var OCHO = ['imp_total', 'imp_meta', 'imp_google', 'imp_prog',
+    'gcba_imp_total', 'gcba_imp_meta', 'gcba_imp_google', 'gcba_imp_prog'];
+
+  function tomar(etiqueta) {
+    var out = {};
+    abrirCacheRegistros_();
+    abrirCacheDatosHoja_();
+    try {
+      var r = resolverMarcadores('jm', { solo_marcadores: OCHO });
+      (r.resultados || []).forEach(function (x) {
+        out[x.marcador] = { estado: x.estado, valor: x.valor, texto: x.valor_formateado };
+      });
+    } catch (e) {
+      Logger.log('⛔ la toma "' + etiqueta + '" fallo: ' + e);
+    } finally {
+      cerrarCacheDatosHoja_();
+      cerrarCacheRegistros_();
+    }
+    return out;
+  }
+
+  function identidad(t, pref) {
+    var n = function (k) { var v = t[pref + k]; return (v && typeof v.valor === 'number') ? v.valor : null; };
+    var partes = [n('meta'), n('google'), n('prog')];
+    var total = n('total');
+    if (total === null || partes.some(function (p) { return p === null; })) return 'no medible';
+    var suma = partes[0] + partes[1] + partes[2];
+    return suma === total ? ('CIERRA (' + suma + ')') : ('⛔ NO CIERRA: ' + suma + ' vs ' + total);
+  }
+
+  Logger.log('== 1 · testigo ANTES (looker/DIGITAL) ==');
+  var antes = tomar('antes');
+  OCHO.forEach(function (m) {
+    var a = antes[m] || {};
+    Logger.log('   ' + m + ' = ' + a.texto + '   [' + a.estado + ']');
+  });
+  Logger.log('   identidad jm:   ' + identidad(antes, 'imp_'));
+  Logger.log('   identidad gcba: ' + identidad(antes, 'gcba_imp_'));
+
+  Logger.log('');
+  Logger.log('== 2 · mover los ocho al desglose ==');
+  var cambios = OCHO.map(function (m) {
+    return {
+      marcador: m, informe_id: 'jm',
+      base_id: 'digital', solapa: 'CAMPAÑAS_DESGLOCE_DIGITAL',
+      campo_logico: 'des_impresiones',
+      filtro: 'des_estado_2=Activa'
+    };
+  });
+  var r = curarCamposMarcadores_(cambios);
+  if (!r.ok) {
+    Logger.log('⛔ NO se movio nada: ' + r.motivo);
+    Logger.log('   El testigo de arriba sigue siendo el estado actual. No se sigue al paso 3.');
+    return r;
+  }
+  Logger.log('   ' + r.aplicados.length + ' celda(s) escritas' +
+    (r.sin_fila && r.sin_fila.length ? ' · ⚠ sin fila: ' + r.sin_fila.join(', ') : ''));
+
+  Logger.log('');
+  Logger.log('== 3 · testigo DESPUES (digital/CAMPAÑAS_DESGLOCE_DIGITAL) ==');
+  var despues = tomar('despues');
+  var iguales = 0, movidos = [];
+  OCHO.forEach(function (m) {
+    var a = (antes[m] || {}), d = (despues[m] || {});
+    var igual = String(a.valor) === String(d.valor);
+    if (igual) iguales++; else movidos.push(m + ': ' + a.texto + ' -> ' + d.texto);
+    Logger.log('   ' + m + ' = ' + d.texto + '   [' + d.estado + ']' + (igual ? '   = igual' : '   ⚠ MOVIDO'));
+  });
+  Logger.log('   identidad jm:   ' + identidad(despues, 'imp_'));
+  Logger.log('   identidad gcba: ' + identidad(despues, 'gcba_imp_'));
+
+  Logger.log('');
+  Logger.log('== VEREDICTO ==');
+  Logger.log('   ' + iguales + ' de ' + OCHO.length + ' dieron IGUAL desde las dos solapas.');
+  if (movidos.length) {
+    Logger.log('   ⚠ Se movieron ' + movidos.length + ':');
+    movidos.forEach(function (x) { Logger.log('      ' + x); });
+    Logger.log('   ⛔ Eso NO es ruido: el criterio es el mismo y la unica variable fue la solapa,');
+    Logger.log('      asi que las dos NO traen la misma informacion. Mirar antes de generar.');
+  } else {
+    Logger.log('   ⭐ Las dos solapas coinciden en los ocho. El cambio de fuente no movio ningun');
+    Logger.log('      numero publicado, y L-034 pasa a leer el desglose como pediste.');
+  }
+  Logger.log('');
+  Logger.log('⚠ Lo que esto NO contesta: que numero publica L-034. Ahi el temario recorta por');
+  Logger.log('   cuenta y NO se aplican dimensiones, asi que es otra lectura — pide una corrida.');
+  return { ok: true, antes: antes, despues: despues, iguales: iguales, movidos: movidos };
+}

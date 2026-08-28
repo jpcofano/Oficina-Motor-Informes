@@ -1715,6 +1715,22 @@ var DIMENSIONES_ = {
       'rdv|RVD JM-CM - ES': 'figura=Jorge Macri',
       'digital|Directa Mail': 'mail_remitente=jorge.macri@buenosaires.gob.ar',
       'looker|DIGITAL': 'nombre_campaña~=JM',
+      /* ⭐⭐ `2026-08-28` — **el desglose, con la MISMA regla que `looker/DIGITAL`.** Los ocho
+       * `imp_*` cambian de fuente por decisión del usuario —*«que usen la misma fuente, y que el
+       * criterio sea el mismo»*—, y `des_campana_2` (col V) **es la misma columna** que
+       * `nombre_campaña` (col F) allá: mismo nombre de encabezado y mismo contenido.
+       *
+       * ⭐ **Copiar la regla en vez de elegir una nueva es lo que hace ATRIBUIBLE el cambio:** la
+       * única variable pasa a ser la solapa, así que si las dos traen la misma información —las dos
+       * miden **4.904 filas**— `L-031` tiene que publicar el mismo número. Si no lo publica, **ése
+       * es el hallazgo** y no ruido.
+       *
+       * ⛔ **Y por eso NO se usó `des_ambito` (col T), que parecía la salida limpia.** Medido el
+       * 27/08 sobre las seis filas de `3527-AGOJDGAG`: esa columna dice **`GCBA`** mientras
+       * `des_campana_2` dice `1 A 1 JM | 21/8 COGHLAN`. **Los dos criterios se contradicen sobre la
+       * misma fila**, y eso ya estaba registrado el 26/08 como *«dos criterios, disjuntos»*.
+       * Elegirlo acá habría cambiado el corte además de la fuente — dos variables a la vez. */
+      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2~=JM',
       'looker|resumen_metricas_dinamico': 'campana~=JM'
     },
     // `gcba` es **todo lo que no es `jm`** (`D-33`), no un valor propio: se implementa negando
@@ -1724,6 +1740,9 @@ var DIMENSIONES_ = {
       'rdv|RVD JM-CM - ES': 'figura!=Jorge Macri',
       'digital|Directa Mail': 'mail_remitente!=jorge.macri@buenosaires.gob.ar',
       'looker|DIGITAL': 'nombre_campaña!~=JM',
+      // `2026-08-28` — la negación de la de arriba, por lo mismo que dice `D-33`: `gcba` es
+      // **todo lo que no es `jm`**, no un valor propio.
+      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2!~=JM',
       'looker|resumen_metricas_dinamico': 'campana!~=JM'
     }
   },
