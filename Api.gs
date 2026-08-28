@@ -105,14 +105,21 @@ function doGet(e) {
 /**
  * El panel como web app (`doGet` sin `accion`).
  *
- * **Con la misma barrera de mail que la API**, y no es simetría: `appsscript.json` declara hoy
- * `access: ANYONE_ANONYMOUS`, así que sin esto **cualquiera con la URL de `/exec` podría disparar
- * una generación** que corre con la cuenta del que desplegó. La barrera de token de la API no
- * aplica acá —un navegador no la lleva— así que la de mail es la única que queda.
+ * **Con la misma barrera de mail que la API**, y no es simetría: el `access` de la web app
+ * **vive en `appsscript.json`** y deja la URL de `/exec` al alcance de cualquiera, así que sin
+ * esto **cualquiera con el link podría disparar una generación** que corre con la cuenta del que
+ * desplegó. La barrera de token de la API no aplica acá —un navegador no la lleva— así que la de
+ * mail es la única que queda.
  *
- * Sobre un usuario anónimo `Session.getActiveUser().getEmail()` devuelve `''` y la barrera lo
- * rechaza, que es el comportamiento correcto. **Lo que hay que arreglar al desplegar es el
- * `access`**, no esto: ver el reporte del `_45`.
+ * ⚠ **El valor concreto no se copia acá a propósito** (28/08/2026): este comentario decía
+ * `access: ANYONE_ANONYMOUS` y el manifiesto ya decía `ANYONE` — un comentario que copia una
+ * constante de otro archivo nace venciendo. Para saber qué hay hoy: `cat appsscript.json`.
+ *
+ * Si el visitante no trae identidad, `Session.getActiveUser().getEmail()` devuelve `''` y la
+ * barrera lo rechaza con `sin identidad`, que es el comportamiento correcto. ⛔ **Y con
+ * `executeAs: USER_DEPLOYING` eso es lo esperable para TODA cuenta fuera del dominio del dueño**,
+ * que es una cuenta Gmail sin dominio — el nudo está escrito en `docs/SEGURIDAD.md` §3 y lo mide
+ * el experimento del `RUNBOOK` Parte I. Ver también el reporte del `_45`.
  */
 function servirPanel_() {
   // La traza no viaja al navegador —el panel no es un cliente JSON— pero **sí tiene que
