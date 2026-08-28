@@ -89,6 +89,40 @@ otra fila.
 | `Seguimiento Digital  2026-08-20.zip` | 78.942.640 | `f8ef3227fc6cc73ef5879948451093f8e7a278c0baf1f4341d187958f0f8cc87` |
 | `Testigo 2026-08-22 1402 Informe semanal JM — vie 14_08 — jue 20_08.zip` | 11.935.542 | `cd6f0050f3f0cf5effdf54204c10f91f6fdb773a6e0c8a239d8d969efcd353b3` |
 | ⭐ `Seguimiento Digital  2026-08-20.zip` **(editado a mano, 26/08)** | 91.643.439 | `15b564919ae4fa97dc7b17f6d6962749359ddbeef99d786d40457a090cc5650e` |
+| ⭐⭐ `Seguimiento Digital 2026-08-28.zip` | 33.015.823 | `0ce0086d192bbb121c86dfe72434c40254c95c5153e8c43af9a39badfa81ac79` |
+
+### ⭐⭐ Sexta fila — el primer fixture con las CINCO bases y el deck de la MISMA ventana (28/08/2026)
+
+**Qué trae adentro**, seis archivos:
+
+| archivo | qué es |
+|---|---|
+| `Base Looker (4).xlsx` | base `looker` |
+| `Seguimiento Digital  (5).xlsx` | base `digital` |
+| `M2 Reporte para Fede 2026 (5).xlsx` | base `m2` |
+| `RDV JM CM ES + funcionarios (6).xlsx` | base `rdv` |
+| `Base reuniones - Digital - Call Center (2).xlsx` | base `reuniones` |
+| ⭐⭐ `Informe semanal JM - (21_08 al 28_08) Equipo parcial.pptx` | **el deck del EQUIPO de la ventana `21/08–28/08`** |
+
+⭐⭐ **Por qué éste vale más que los anteriores: es la ventana que el motor acaba de generar.** Hasta
+hoy el cruce *«definición → número publicado»* se hacía contra decks de julio o del 20/08, o sea
+contra semanas que ya no son las que se está tocando. Acá **las cinco bases y el deck del equipo son
+del mismo día y de la misma ventana que la corrida del 27/08**, así que los números de `L-034` —los
+`ecv_*`, los `imp_*` mudados al desglose, el mail que salió `sin dato`— se pueden cruzar contra lo
+que el equipo publica **sin conectarse a nada**.
+
+⭐ **Y trae `reuniones` con su nombre reconocible**, que es la base que estuvo tres días en disco
+tratada como inexistente por buscarla por nombre. La regla no cambia —**la firma de un fixture es su
+lista de solapas, nunca el nombre del archivo**— pero acá los dos coinciden.
+
+⚠ **`Equipo parcial` está en el nombre y hay que leerlo:** el deck **no está terminado**. Una caja
+vacía ahí es *«el equipo todavía no la llenó»* y **no** *«el equipo publica vacío»* — son dos cosas
+distintas y sólo una sirve como testigo. Antes de citar una celda de este `.pptx` hay que mirar si
+está poblada, no deducirlo de que exista la caja.
+
+⚠ **Y es una foto del 28/08**, con todo lo que eso implica: `looker/DIGITAL` y el desglose son
+**inestables por CAMBIO** (`R-31`), así que un número medido acá responde por el 28/08 y por ningún
+otro día.
 
 ### ⭐⭐ Quinta fila — el `.zip` del 20/08 EDITADO A MANO, 26/08/2026
 
