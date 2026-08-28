@@ -145,9 +145,30 @@ def main():
         return 1
 
     def num(v):
+        """Un número de celda, **mirando el tipo antes de convertir**.
+
+        ⛔ El primer intento hacía `str(v).replace('.', '')` siempre, y eso convierte `55898176.0`
+        —un float que llega como texto— en `558981760`: **diez veces más grande**. Es
+        `CLAUDE.md` §4 literal: *convertir antes de mirar el tipo destruye el tipo*. Se probó
+        `float()` derecho primero, y sólo si eso falla se asume el formato con puntos de miles.
+        """
+        if v is None:
+            return 0.0
+        if not isinstance(v, str):
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return 0.0
+        s = v.strip()
+        if not s:
+            return 0.0
         try:
-            return float(str(v).replace('.', '').replace(',', '.')) if isinstance(v, str) else float(v)
-        except (TypeError, ValueError):
+            return float(s)
+        except ValueError:
+            pass
+        try:
+            return float(s.replace('.', '').replace(',', '.'))
+        except ValueError:
             return 0.0
 
     for f in suyas:

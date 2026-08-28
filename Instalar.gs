@@ -1727,14 +1727,6 @@ var SEED_MAPEO_DESGLOCE_ = [
   // Las dos claves: sin éstas la solapa no se puede recortar ni por encuentro ni por plataforma.
   { base_id: 'digital', campo_logico: 'des_id_cuenta', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'B', encabezado: 'Id cuentas', notas: 'clave del encuentro — la nombra SOLAPAS.campo_id_cuenta (D-30). Es la misma clave que V-21…V-26' },
   { base_id: 'digital', campo_logico: 'des_plataforma', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'F', encabezado: 'Plataforma', notas: 'el corte. Valores medidos 20/08: Meta 1840 · DV360 1678 · Google ads 1417 · TikTok 55 · Mercado Libre 27 · Twitter 12 · Twitch 5 · Uber 5 · 122 vacíos. OJO: se escriben así, con mayúscula y espacio — "Google ads", no "google"' },
-  /* ⭐⭐ `2026-08-28` — **la clave del cruce de ventana, y es la MISMA columna que `des_id_cuenta`.**
-   * La solapa pasa a `ventana_ref = Cuentas` para que los ocho `imp_*` conserven **exactamente** el
-   * recorte que tenían en `looker/DIGITAL` —pertenencia de la cuenta a la ventana (`D-24`)— cuando
-   * cambian de fuente. Sin esta fila, `leerFuente` falla con `«FALTA:clave_ventana@…»`.
-   * ⚠ Dos campos lógicos sobre la misma letra **es deliberado y ya tiene precedente**: en
-   * `looker/DIGITAL` conviven `clave_ventana` y `ldig_id_cuenta`, los dos en `A`. Son dos roles
-   * —el cruce de ventana y la clave del encuentro— y unificarlos borraría cuál se está usando. */
-  { base_id: 'digital', campo_logico: 'clave_ventana', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'B', encabezado: 'Id cuentas', notas: 'el cruce de ventana contra looker/Cuentas (D-24). Misma letra que des_id_cuenta y mismo caso que looker/DIGITAL, donde clave_ventana y ldig_id_cuenta comparten la A' },
   // Las tres métricas que los casos de validación nombran.
   { base_id: 'digital', campo_logico: 'des_impresiones', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'O', encabezado: 'Impresiones', notas: 'V-21 (17.401) y V-23 (25.099) reproducidos exactos sobre el fixture del 20/08' },
   { base_id: 'digital', campo_logico: 'des_visualizaciones', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'P', encabezado: 'Visualizaciones', notas: 'el numerador de vtr. V-26 apunta acá' },
@@ -2465,7 +2457,7 @@ var SEED_SOLAPAS_ = [].concat(
    * encuentro (`D-30`); sin declararlo, un marcador con `id_cuenta` falla con
    * `@campo_id_cuenta_no_mapeado` en vez de recortar. Apunta a la fila de `MAPEO`
    * `des_id_cuenta` — columna B, `Id cuentas`, la misma clave de `V-21`…`V-26`. */
-  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'fuente de los u1_* del "1 a 1" — impresiones, clics y visualizaciones por plataforma, con filtro Id cuentas + Plataforma (V-21 a V-26, consolidado 14/08). Repuesta a fuente el 14/08: el seed la tenía en ignorar por una medición de R-22 del 09/08 que venció. Mapeada el 21/08 (SEED_MAPEO_DESGLOCE_)', { campo_id_cuenta: 'des_id_cuenta', ventana_ref: 'Cuentas' }),
+  filasSolapa_('digital', ['CAMPAÑAS_DESGLOCE_DIGITAL'], 'fuente', 'fuente de los u1_* del "1 a 1" — impresiones, clics y visualizaciones por plataforma, con filtro Id cuentas + Plataforma (V-21 a V-26, consolidado 14/08). Repuesta a fuente el 14/08: el seed la tenía en ignorar por una medición de R-22 del 09/08 que venció. Mapeada el 21/08 (SEED_MAPEO_DESGLOCE_)', { campo_id_cuenta: 'des_id_cuenta' }),
   // Las cinco de abajo estaban en `referencia` y bajan a `ignorar` por `R-22`: `referencia`
   // sugiere que sirven para consultar, y éstas no sirven para nada. Las tres de período
   // manual las veta `R-02`; las dos de `#REF!` están rotas.
@@ -8939,4 +8931,72 @@ function moverImpresionesAlDesglose() {
   Logger.log('⚠ Lo que esto NO contesta: que numero publica L-034. Ahi el temario recorta por');
   Logger.log('   cuenta y NO se aplican dimensiones, asi que es otra lectura — pide una corrida.');
   return { ok: true, antes: antes, despues: despues, iguales: iguales, movidos: movidos };
+}
+
+/**
+ * ⛔⛔ `2026-08-28` — **DEVUELVE los ocho `imp_*` a `looker/DIGITAL`. Revierte
+ * `moverImpresionesAlDesglose()`.**
+ *
+ * **Por que se revierte, medido y no supuesto.** La mudanza se apoyaba en una premisa del usuario
+ * —*«son solapas con la misma informacion, el desglose es mas completa»*— y esa premisa **es falsa
+ * para Meta**. Cruzadas fila por fila sobre el fixture del 28/08 con
+ * `tools/medir-looker-vs-desglose.py`, agrupando por `(cuenta, plataforma)`:
+ *
+ * | plataforma | grupos | difieren | looker | desglose |
+ * |---|---|---|---|---|
+ * | **Meta** | 766 | **759** | 80.373.882 | **913.951.689** |
+ * | Google ads | 335 | 40 | 645.151.957 | 646.279.305 |
+ * | DV360 | 337 | **1** | 1.792.609.654 | 1.802.861.006 |
+ *
+ * ⭐ **El desglose tiene ONCE VECES las impresiones de Meta, y DV360 difiere en 1 de 337.** Un
+ * desfase temporal moveria todas las plataformas por igual; que una este 11x arriba y las otras
+ * clavadas dice que **las dos solapas cuentan Meta de forma distinta** — probablemente una
+ * desagrega por adset o anuncio y la otra no. Es el discriminador de *dos que comparten camino y
+ * difieren solo en un corte*, usado al reves: comparten todo salvo Meta.
+ *
+ * ⚠ **Y el sintoma que lo destapo fue otro:** con la mudanza aplicada, los ocho salieron `---`
+ * —sin dato— en el Resumen Ejecutivo. La causa exacta de ESO no esta diagnosticada y no hace falta
+ * para revertir: la mudanza esta mal en el fondo, no solo en la ejecucion.
+ *
+ * ⭐ **Lo que NO se rompio y conviene saber:** los `u1_*` de `L-053` y el `imp_total` de `L-034`
+ * publicaron **correcto** en la misma corrida —78.962 impresiones, verificado contra el fixture—
+ * porque esos leen el desglose **por cuenta**, no por ventana. El problema es de la lamina FIJA.
+ *
+ * Corre desde el editor: sin argumentos, y reporta por `Logger.log`.
+ */
+function volverImpresionesALooker() {
+  var OCHO = ['imp_total', 'imp_meta', 'imp_google', 'imp_prog',
+    'gcba_imp_total', 'gcba_imp_meta', 'gcba_imp_google', 'gcba_imp_prog'];
+
+  Logger.log('== devolviendo los ocho imp_* a looker/DIGITAL ==');
+  var cambios = OCHO.map(function (m) {
+    return {
+      marcador: m, informe_id: 'jm',
+      base_id: 'looker', solapa: 'DIGITAL',
+      campo_logico: 'Impresiones',
+      filtro: 'estado=Activa'
+    };
+  });
+
+  var r = curarCamposMarcadores_(cambios);
+  if (!r.ok) {
+    Logger.log('⛔ NO se revirtio nada: ' + r.motivo);
+    Logger.log('   ⚠ Si dice que ya estaban asi, es que la mudanza nunca se aplico y no hay que');
+    Logger.log('     hacer nada. Si dice otra cosa, mirar MARCADORES a mano antes de generar.');
+    return r;
+  }
+
+  Logger.log('   ' + r.aplicados.length + ' celda(s) escritas' +
+    (r.sin_fila && r.sin_fila.length ? ' · ⚠ sin fila: ' + r.sin_fila.join(', ') : ''));
+  r.aplicados.forEach(function (a) {
+    Logger.log('   ' + a.marcador + '.' + a.campo + ': "' + a.anterior + '" -> "' + a.nuevo + '"');
+  });
+
+  Logger.log('');
+  Logger.log('⭐ Los ocho vuelven a la fuente que estaba VALIDADA: V-73 (imp_total 10.217.782),');
+  Logger.log('   V-59 y V-74 (gcba_imp_total), A-01 a A-03. Esa es la razon de revertir y no');
+  Logger.log('   de seguir probando: habia numeros validados del otro lado.');
+  Logger.log('⚠ La proxima corrida tiene que volver a publicar impresiones en el Resumen Ejecutivo.');
+  Logger.log('   Si siguen en `---`, entonces la causa NO era la mudanza y hay que mirar la traza.');
+  return { ok: true, aplicados: r.aplicados };
 }

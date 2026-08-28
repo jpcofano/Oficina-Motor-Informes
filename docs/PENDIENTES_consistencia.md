@@ -9764,3 +9764,58 @@ Barrera 1. Falta **`sin identidad`**, que es justo el que se predice para **todo
 bajo `USER_DEPLOYING` sin dominio. La causa: `apiBarrera1_` lee `Session.getActiveUser()` directo,
 sin la inyección que `apiListaAutorizados_` sí tiene. Darle banco exige cambiarle la firma a la
 función que decide el acceso — **pregunta 5 de `docs/SEGURIDAD.md` §7**, no se hace sin que se pida.
+
+---
+
+## 2026-08-28 (2) — ⛔⛔ `looker/DIGITAL` y el desglose NO cuentan Meta igual: 11×
+
+**Medido**, no supuesto: `tools/medir-looker-vs-desglose.py` cruzó las dos solapas **fila por fila**
+sobre el fixture del 28/08 (`sha` verificado), agrupando por `(cuenta, plataforma)`.
+
+| plataforma | grupos | difieren | looker | desglose |
+|---|---|---|---|---|
+| **Meta** | 766 | **759** | 80.373.882 | **913.951.689** |
+| Google ads | 335 | 40 | 645.151.957 | 646.279.305 |
+| DV360 | 337 | **1** | 1.792.609.654 | 1.802.861.006 |
+| TikTok · Mercado Libre · Twitch · Uber · Twitter | 60 | 7 | ≈ igual | ≈ igual |
+
+⭐⭐ **El desglose tiene ONCE VECES las impresiones de Meta, y DV360 difiere en 1 de 337.** Un
+desfase temporal movería todas las plataformas por igual. Que una esté 11× arriba y las otras
+clavadas dice que **las dos solapas cuentan Meta de forma distinta** — probablemente una desagrega
+por adset o anuncio y la otra no. Es el discriminador de *dos que comparten camino y difieren sólo
+en un corte*, usado al revés: **comparten todo salvo Meta**.
+
+**Qué se hizo con eso.** Se revirtió la mudanza de los ocho `imp_*` al desglose (`f334217`): vuelven
+a `looker/DIGITAL`, que es la fuente **validada** por `V-73`, `V-59`, `V-74` y `A-01`…`A-03`. El
+botón es `volverImpresionesALooker()`.
+
+⚠ **Y se revirtió también `ventana_ref = Cuentas` + `clave_ventana` en el desglose**, que era la
+parte que hacía falta para la mudanza. **No es prolijidad: los `u1_*` leen esa solapa POR CUENTA y
+publicaron exacto** en la corrida del 28/08 (`V-114`…`V-119`). Meterle un recorte por pertenencia
+habría cambiado lo que ellos leen sin que nadie lo pidiera.
+
+### ⛔ La pregunta que queda, y es para el equipo
+
+**¿Por qué Meta tiene 11× más impresiones en `CAMPAÑAS_DESGLOCE_DIGITAL` que en `Base Looker`?**
+Una de las dos está contando de más, y hasta saber cuál **no se puede elegir fuente para las
+impresiones de Meta**. Mientras tanto manda `looker/DIGITAL`, que tiene los casos validados.
+
+### ⚠ Y un síntoma que quedó SIN diagnosticar, dicho para que no se lea como cerrado
+
+Con la mudanza aplicada, los ocho `imp_*` salieron **`---` (sin dato)** en el Resumen Ejecutivo de
+la corrida del 28/08 — no un número inflado, que es lo que el 11× haría esperar. **La causa exacta
+de ese `---` no se investigó**: revertir no la necesita, porque la mudanza estaba mal en el fondo.
+⛔ **Si después de revertir los ocho siguen en `---`, entonces la causa no era la mudanza** y hay
+que mirar la traza — quedaría un segundo problema, tapado por el primero.
+
+⭐ **Lo que NO se rompió, y acota el problema:** en esa misma corrida `L-053` publicó los diez
+valores del 1 a 1 **exactos** y `L-034` publicó `-78.962-`, verificado contra el fixture. Los dos
+leen el desglose **por cuenta**. El problema es de la **lámina FIJA**, que lo lee por ventana.
+
+### ⚠ Un bug del instrumento, anotado porque casi cuesta el diagnóstico
+
+La primera corrida de `medir-looker-vs-desglose.py` dio totales de **537 mil millones** de
+impresiones. No era el dato: era `num()` haciendo `str(v).replace('.', '')` **siempre**, lo que
+convierte `55898176.0` —un float que llega como texto— en `558981760`. Es `CLAUDE.md` §4 literal:
+*convertir antes de mirar el tipo destruye el tipo*. Arreglado en los dos medidores, y **verificado
+que los seis casos validados no cambiaron** —esos venían como número, no como texto—.

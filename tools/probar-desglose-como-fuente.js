@@ -83,28 +83,46 @@ console.log('\n═══ A · `ambito` traducido para el desglose, con la MISMA 
     'viera, esta afirmación caería primero');
 }
 
-console.log('\n═══ B · el seed declara con qué recortar la ventana ═══');
+/* ⛔⛔ `2026-08-28` — **estas dos secciones se dieron vuelta el mismo día que se escribieron.**
+ * Pedían que el desglose declarara `ventana_ref = Cuentas` y `clave_ventana` para que los ocho
+ * `imp_*` conservaran su recorte al mudarse. **La mudanza se revirtió**, así que ahora se afirma lo
+ * contrario — y con MÁS motivo, no con menos.
+ *
+ * ⭐ **La premisa era falsa y está medida.** `tools/medir-looker-vs-desglose.py` cruzó las dos
+ * solapas fila por fila sobre el fixture del 28/08, agrupando por (cuenta, plataforma): de **766**
+ * grupos de **Meta**, **759 difieren**, con **80.373.882** impresiones en looker contra
+ * **913.951.689** en el desglose — **once veces**. DV360 difiere en **1 de 337**. Un desfase
+ * temporal movería todas las plataformas por igual; que una esté 11× arriba y las otras clavadas
+ * dice que **las dos solapas cuentan Meta de forma distinta**.
+ *
+ * ⭐⭐ **Y revertir la ventana protege algo que HOY funciona:** los `u1_*` leen esta solapa **por
+ * cuenta** y publicaron exacto en la corrida del 28/08 (`V-114`…`V-119`). Meterle un recorte por
+ * pertenencia habría cambiado lo que ellos leen, sin que nadie lo pidiera. */
+console.log('\n═══ B · ⛔ el desglose NO declara ventana — revertido, con el 11× de Meta medido ═══');
 {
-  afirmar(/campo_logico: 'clave_ventana', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL', columna: 'B'/.test(INSTALAR),
-    '⭐⭐ `clave_ventana` → col B: sin esta fila `leerFuente` falla con «FALTA:clave_ventana@…»');
-  afirmar(/campo_id_cuenta: 'des_id_cuenta', ventana_ref: 'Cuentas'/.test(INSTALAR),
-    '⭐⭐ y la solapa toma `ventana_ref = Cuentas` — la MISMA pertenencia que looker/DIGITAL, así ' +
-    'que el recorte temporal no cambia');
+  afirmar(!/campo_logico: 'clave_ventana', hoja: 'CAMPAÑAS_DESGLOCE_DIGITAL'/.test(INSTALAR),
+    '⛔ el seed NO declara `clave_ventana` para el desglose');
+  afirmar(!/campo_id_cuenta: 'des_id_cuenta', ventana_ref: 'Cuentas'/.test(INSTALAR),
+    '⭐⭐ y la solapa NO toma `ventana_ref`: los `u1_*` la leen POR CUENTA y hoy publican exacto');
+  afirmar(/campo_id_cuenta: 'des_id_cuenta'/.test(INSTALAR),
+    '⭐ pero `campo_id_cuenta` SIGUE declarado — es lo que deja que el temario la recorte');
 }
 
-console.log('\n═══ C · el wrapper mueve los ocho, y con el filtro equivalente ═══');
+console.log('\n═══ C · los ocho vuelven a looker/DIGITAL ═══');
 {
-  afirmar(/function moverImpresionesAlDesglose\(\)/.test(INSTALAR),
-    'existe el botón, público y sin argumentos');
-  afirmar(/filtro: 'des_estado_2=Activa'/.test(INSTALAR),
-    '⭐⭐ el filtro usa `des_estado_2` — la columna que comparte vocabulario con `estado` de looker');
-  afirmar(!/filtro: 'des_estado=/.test(INSTALAR),
-    '⛔ y NO `des_estado` (col K): con ACTIVA/FINALIZADA/PAUSADA quedan 23.713 en vez de 66.855');
-  afirmar(/campo_logico: 'des_impresiones'/.test(INSTALAR), 'y el campo es `des_impresiones`');
-  const ocho = INSTALAR.match(/var OCHO = \[([\s\S]*?)\];/);
-  const n = ocho ? (ocho[1].match(/'/g) || []).length / 2 : 0;
-  afirmar(n === 8, '⭐ mueve los OCHO y no sólo `imp_total` (' + n + ') — con uno solo se rompería ' +
-    'la identidad `meta + google + prog = total`');
+  /* ⚠ El botón de la mudanza **se conserva a propósito**: el día que se sepa por qué Meta cuenta
+   * distinto, la pregunta vuelve a estar viva y su testigo antes/después sigue siendo el correcto.
+   * Lo que manda hoy es el de reversión. */
+  afirmar(/function volverImpresionesALooker\(\)/.test(INSTALAR),
+    '⭐⭐ existe el botón de reversión, público y sin argumentos');
+  afirmar(/base_id: 'looker', solapa: 'DIGITAL',[\s\S]{0,140}filtro: 'estado=Activa'/.test(INSTALAR),
+    '⭐ y devuelve base, solapa y filtro a lo que estaba VALIDADO (V-73 · V-59 · V-74 · A-01..A-03)');
+  const ochos = INSTALAR.match(/var OCHO = \[([\s\S]*?)\];/g) || [];
+  afirmar(ochos.length >= 2,
+    'los dos botones nombran su lista de ocho — mover y volver mueven el MISMO conjunto (' +
+    ochos.length + ')');
+  afirmar(ochos.every((b) => (b.match(/'/g) || []).length / 2 === 8),
+    '⭐ y las dos listas tienen los OCHO: revertir de a uno rompería `meta + google + prog = total`');
 }
 
 console.log('\n═══ D · control negativo — sin la entrada, A cae ═══');
