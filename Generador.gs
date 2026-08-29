@@ -1296,8 +1296,35 @@ function resolverMarcadores(informeId, opciones) {
 
     // 1 · La ventana. La cadena de cinco eslabones; el `periodo_ref` del marcador es el
     //     segundo, y la sección y la campaña vienen del contexto del ítem.
+    /* ⛔⛔ `2026-08-28_5` B1 — **`periodo_id` es la CUARTA clave, y su ausencia rompió la
+     * sección de campañas entera en `jm-20260828-193948`.**
+     *
+     * `itemsDeSeccion_` lo pone en las opciones del ítem, `opcionesItem` copia **todas** las
+     * claves —y por eso llegaba hasta acá—, y esta línea armaba un literal de **tres** que lo
+     * descartaba justo antes de usarlo. `resolverVentana` recibía `undefined`, `filasDeCampana_`
+     * hacía `per === ''` —que **no filtra**—, y la campaña con dos filas fallaba por ambigua.
+     * ~130 tokens `camp_*` salieron en `---`.
+     *
+     * ⭐⭐ **Es una migración a medias, no un olvido:** este literal es del 03/08 (`Paso 3 v3`
+     * Parte C), cuando `periodo_id` no existía acá. El 18/08, `cd5bc99` hizo `CAMPANAS` una
+     * lista y **en el mismo commit** tocó el productor (`itemsDeSeccion_`) y la hoja final
+     * (`filasDeCampana_(campanaId, periodoId)`) — **y no el intermediario**. El literal dejó de
+     * estar completo el día que la clave cambió.
+     *
+     * ⚠ **Con UNA fila por campaña el defecto no tenía síntoma**, porque `per === ''` y el
+     * filtro correcto dan el mismo resultado. La segunda fila no lo causó: lo destapó.
+     *
+     * ⭐ **Se agrega la clave y NO se copia `opciones` entero, a propósito.** Un `spread` metido
+     * acá le pasaría a `resolverVentana` un `periodo_ref` que viene de las opciones del ítem y
+     * **pisaría el de la fila del marcador**, que es el segundo eslabón de `D-20` y tiene que
+     * ganar. El literal explícito es lo que mantiene el orden de la cadena a la vista.
+     *
+     * ⚠ **Y esto NO toca la rama `REUNIONES`**, contra lo que decía el reporte de la Parte 0:
+     * sus ítems no llevan `periodo_id` en `opciones` —el de `itemsDeSeccion_` es del **reporte de
+     * sección**— y además traen `opciones.ventana`, que cortocircuita esta línea entera. */
     var ventana = opciones.ventana || resolverVentana({
       campana: opciones.campana,
+      periodo_id: opciones.periodo_id,
       periodo_ref: String(fila.periodo_ref || '').trim() || undefined,
       seccion_id: opciones.seccion_id
     });
