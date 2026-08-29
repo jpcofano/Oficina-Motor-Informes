@@ -16565,3 +16565,149 @@ sólo una estaba medida.
 
 ⭐ **Y el testigo del dashboard no se descarta: cambia de momento.** Cuando los `imp_*` se muden se
 cruza contra `Meta 1.921.695 · Google 1.023.101 · DV360 5.330.034`. Hoy no hay nada que cruzar.
+
+
+---
+
+## 2026-08-29 — El bloque de IVR de GCBA, y el `periodo_id` que no llegaba: tres commits
+
+**Origen:** dos pedidos del usuario en la misma sesión. El primero, una pregunta —*«agregué un par
+de marcadores nuevos al resumen ejecutivo, faltaba IVR, ¿con qué proceso los incorporo?»*—; el
+segundo, el `2026-08-28_5` con su `ADDENDUM 1`.
+
+### 1 · `67c8f72` — el ámbito de IVR se lee de una columna, no del nombre
+
+**El censo vivo primero, y encontró otra cosa que la esperada.** `censarTokensSinMarcador()` del
+28/08 18:13: **`L-031` no cambió** —21 tokens, los mismos 5 sin fila del censo del 22/08—, así que
+los `ivr_*` de JM **siguen sin caja**, como midió `diagDondeVivenLosIvr()` el 23/08. Los tokens
+nuevos están en **`L-032`, el Resumen Ejecutivo de GCBA**: de 19 a 23 tokens, con
+`gcba_ivr_llamados`, `gcba_ivr_atendidos` y `gcba_ivr_at_pct` sin fila. `docs/TOKENS.md` §178
+registraba esa lámina como *«sin `gcba_ivr_*`»*, y ahora los tiene.
+
+⛔ **El bloqueo que convirtió un alta de tres filas en un paso de código:** `DIMENSIONES_.ambito`
+declara **cinco** pares `base|solapa` y `digital|Directa IVR` **no era ninguno**. Una fila con
+`dimensiones = ambito=gcba` sobre esa solapa devuelve `ok:false` —*«`ambito=gcba` no está definida
+para digital|Directa IVR»*—: **falla ruidoso, que es lo correcto, y no publica.**
+
+⭐ **La condición física se midió, no se calcó.** Fixture `Seguimiento Digital 2026-08-28.zip`,
+`sha256` `0ce0086d…ac79` **verificado** contra la tabla de huellas. Solapa `Directa IVR`, **63 filas
+con `ID cuentas`**:
+
+| candidato | qué da |
+|---|---|
+| ⭐ **col G · `Vocero`** | **`JM` 55 · `GCBA` 8** — dos valores, ninguno vacío |
+| col I · `Nombre campaña` con `~=JM` | **53** — pierde 2 filas |
+
+Las dos que pierde son `2961-ABRSEGGJ · ORDEN Y SEGURIDAD 2026`, con `Vocero = JM` y ningún «JM» en
+el nombre. ⚠ **Calcar `nombre_campaña~=JM` de `looker|DIGITAL` las habría puesto en GCBA sin
+fallar.** Es la disyuntiva del desglose del 27/08 **al revés**: allá la columna de ámbito
+contradecía al nombre y ganó el nombre; acá la columna explícita es la que acierta. **El molde
+estaba en la solapa de al lado:** `mail_remitente` es la columna G de `Directa Mail` y existe para
+exactamente esto.
+
+**Lo que se escribió:** `MAPEO.ivr_vocero` (col G, encabezado `Vocero`, tipo `texto`, en el seed y
+en los dos mapas de post-proceso); `DIMENSIONES_.ambito` con `jm → ivr_vocero=JM` y
+`gcba → ivr_vocero!=JM`; y `cablearGcbaIvr()`, público y sin parámetros, que relee lo que quedó en
+la hoja y compara campo por campo.
+
+⭐ **`gcba` va por NEGACIÓN y no por igualdad, y acá importa más que en otras bases:** la columna
+tiene un `GCBA` literal que invita a escribir `ivr_vocero=GCBA`, y con la igualdad una fila de
+vocero vacío quedaría **afuera de los dos ámbitos y en silencio** (`D-33`).
+
+⭐ **Ninguna nace con `_revisar`, con motivo medido:** `R-31` lista `digital/Directa IVR` entre las
+**ESTABLES** —cero movimientos sobre 44 filas comparables, `ivr_llamados` e `ivr_atendidos`
+incluidos—, así que admite igualdad exacta.
+
+⚠ **No hay `gcba_ivr_campanias`, y el hueco es deliberado:** el bloque de JM tiene `ivr_campanias`
+y el de GCBA **no trae esa caja**. Los tres nombres salen del censo **uno por uno**, no de un
+`grep` por prefijo.
+
+`tools/probar-ambito-ivr.js` — **32 afirmaciones**, con control positivo que comparte camino (las
+cuatro solapas que ya declaraban `ambito`, más `Directa SMS` que **tiene que seguir fallando**) y
+control negativo con **mutación verificada**.
+
+⚠ **Lo que este paso NO hizo, y es decisión del usuario:** los cuatro `ivr_*` de JM tienen
+`dimensiones` **vacío** —ausente significa «todas»—, así que agregan las 63 filas, **GCBA incluido**:
+el bloque de JM **contiene** al de GCBA. Ponerles `ambito=jm` mueve un número publicado y va en otro
+paso. **Esto llenó huecos**: los tres tokens no tenían número ayer.
+
+⚠ **Y un hueco declarado:** `L-032` sumó **cuatro** tokens y sólo tres están en la lista. **Hay un
+cuarto token nuevo que ya tiene fila y no está identificado.**
+
+### 2 · `b1dc43f` — el `periodo_id` llega a `resolverVentana` (`2026-08-28_5` B1)
+
+**La premisa del prompt se verificó primero y se sostiene, literal.** `FALTANTES` de
+`jm-20260828-193948` trae ~130 tokens `camp_*` con *«tiene 2 filas en CAMPANAS — ambigua»* **sin la
+coletilla `para el período "…"`**, que `resolverVentana` sólo emite si `opciones.periodo_id` tiene
+valor. ⚠ **La cadena está partida en dos líneas en el fuente** (`'filas en ' + 'CAMPANAS'`), así que
+un `grep` de la frase entera **da cero y eso no es evidencia de nada** — es el `grep`.
+
+**El rastreo, salto por salto:**
+
+| # | salto | `periodo_id` |
+|---|---|---|
+| 1 | `itemsDeSeccion_` rama `CAMPANAS` | **se pone** |
+| 2-3 | el ítem · la asignación | viajan enteros |
+| 4 | `opcionesItem` | ✅ **sobrevive** — copia **todas** las claves |
+| 5 | **`resolverMarcadores`** | ⛔⛔ **se pierde**: literal nuevo de **tres** claves |
+| 6-8 | `resolverVentana` → `filasDeCampana_` | `per === ''` → no filtra → 2 filas → ambigua |
+
+⛔ **La sospecha declarada del prompt queda desmentida:** suponía que `opcionesItem` copiaba un
+subconjunto, como en el `2026-08-22_20`. **Copia todo** —el `_20` lo arregló ahí— y la pérdida está
+**una capa más abajo**.
+
+⭐⭐ **Es una migración a medias, no un olvido.** El literal es del **03/08** (`6991e4c`, Paso 3 v3
+Parte C), cuando `periodo_id` no existía ahí. El **18/08**, `cd5bc99` hizo `CAMPANAS` una lista y
+**en el mismo commit** tocó el productor y la hoja final —`filasDeCampana_(campanaId, periodoId)`—
+**y no el intermediario**. ⚠ **Con una sola fila por campaña el defecto no tenía síntoma**, porque
+`per === ''` y el filtro correcto dan el mismo resultado: **la segunda fila no lo causó, lo
+destapó.**
+
+**Un solo camino:** `Generador.gs:1300` es el **único** sitio del motor que le pasa `campana` a
+`resolverVentana`, y `datosDeMarcador_` **no resuelve ventana: la recibe**. La rama por cuenta y la
+declarativa de `D-30` cuelgan de esa misma resolución.
+
+⛔ **Corrección de un error propio, registrada porque cambió el alcance del arreglo.** El reporte de
+la Parte 0 dijo que la rama `REUNIONES` *«también pone `periodo_id` y también se pierde en el mismo
+salto»*, y el `ADDENDUM 1` lo tomó de ahí y pidió arreglar las dos. **Es falso:** el `periodo_id` de
+`itemsDeSeccion_` en esa rama es el del **reporte de sección**, no el de las opciones del ítem —sus
+ítems llevan `{ ventana, seccion_id, filtro_seccion }` (+ `id_cuenta`, `fila_rdv`)— y además traen
+`opciones.ventana`, que **cortocircuita la línea entera**. La mitad `REUNIONES` de B1 no se
+implementó: no había nada que arreglar.
+
+⭐ **Se agregó la clave y NO se copió `opciones` entero, a propósito:** un spread le pasaría a
+`resolverVentana` un `periodo_ref` de las opciones del ítem que **pisaría el de la fila del
+marcador**, que es el segundo eslabón de `D-20` y tiene que ganar.
+
+`tools/probar-periodo-id-campana.js` — **20 afirmaciones** sobre el **salto real extraído de
+`Generador.gs`**. ⛔ **Ningún caso pasa `opciones.ventana`** salvo el que afirma que cortocircuita:
+con la ventana ya resuelta **no se llega a la línea del defecto** y el banco daría verde con el bug
+puesto. El caso que discrimina es **dos filas con `periodo_id` distinto**, y el negativo, con
+mutación verificada, **reproduce el síntoma exacto de la corrida** — ambigua **y sin la coletilla**.
+⚠ Y afirma que **con una fila sigue verde aun con el bug puesto**, que es por qué el control
+positivo no puede ser el único.
+
+### 3 · `f8c310a` — dos afirmaciones vencidas sobre `informe_id` (`2026-08-28_5` B2)
+
+`R-17` describía la rama como *«filtra `CAMPANAS` por `informe_id`, `mostrar` y `periodo_id` no
+vacío»* y `PENDIENTES` §2 repetía *«`CAMPANAS` sí tiene `informe_id` y `D-19` filtra por él»`. **El
+filtro por `informe_id` se sacó el 18/08** por decisión del usuario. Corregidas con **addendum
+fechado**, sin editar el texto original: `R-17` Addendum 2 y una nota en `PENDIENTES` §2.
+
+⭐ **Los filtros vivos, verificados el 29/08 contra `Generador.gs`, son tres:** `mostrar = sí`,
+`periodo_id` no vacío (`D-19`) y `SECCIONES.filtro`. **Ninguno mira el período de la corrida**, así
+que `R-17` no se debilita: es lo que `R-17` quiere.
+
+⚠ **La corrección de `PENDIENTES` es a medias a propósito:** la columna `informe_id` **sí** existe
+—esa mitad sigue siendo cierta— y `D-19` **nunca** fue el filtro por `informe_id`: `D-19` es la
+regla de `periodo_id` no vacío. **El pendiente no se cierra: cambia de motivo.**
+
+### ⚠ Lo que quedó sin verificar, y lo que se anotó sin tocar
+
+- **Ninguno de los tres commits corrió en Apps Script.** `clasp push` sí (27 archivos, verificado
+  con un `clasp pull` a un temporal), pero **la verificación del arreglo del `periodo_id` es una
+  corrida**: los ~130 `camp_*` de `jm-20260828-193948` tienen que dejar de salir en `---`.
+- **Una tercera afirmación vencida, encontrada de paso y NO tocada:** el comentario de
+  `Generador.gs:2318` dice lo mismo que `R-17` y `PENDIENTES` —*«`CAMPANAS` → filtradas por
+  `informe_id` + `mostrar=sí` + `periodo_id` no vacío»*—. B2 declara *«no toca código»*, así que se
+  reporta en vez de arreglarse de paso.
