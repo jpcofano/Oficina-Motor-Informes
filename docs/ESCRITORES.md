@@ -244,6 +244,39 @@ el siguiente "Aplicar".
 que pasan por `upsertPorClave_`— y está anotado en `docs/PENDIENTES_consistencia.md`. Acá
 sólo se registra que fue el motivo del cambio de dueño.
 
+### 2.5 · `VALORES` y `VALORES_DIVERGENTES` están declaradas y **sin ningún escritor vivo** (29/08/2026)
+
+La matriz lista escritores para las dos: `escribirFilaValores_` *«vía `registrarValorCalculado_`»*
+para `VALORES`, y `registrarOActualizarDivergencia_` por el mismo camino para
+`VALORES_DIVERGENTES`. **El camino que declara es cierto, y aun así ninguna de las dos se escribe
+nunca.**
+
+**Medido el 29/08 con `grep -rn "registrarValorCalculado_" *.gs tools/`: dos apariciones, y
+ninguna es una llamada** — su definición (`Valores.gs:121`) y su propio comentario de cabecera
+(`Valores.gs:15`). **`registrarValorCalculado_` no tiene llamadores.** Como es el **único** punto
+de entrada hacia `escribirFilaValores_` y hacia `registrarOActualizarDivergencia_`, las dos hojas
+quedan vacías por construcción: el motor las crea en cada "Aplicar configuración" y no les escribe
+una fila.
+
+⭐ **Lo que esto le corrige al censo, y es el motivo de que la nota viva acá y no en la matriz:**
+el censo mide **quién escribe una hoja**, y para eso remonta la cadena de llamadas *hacia arriba*
+hasta donde puede. **No mide si esa cadena arranca en algún lado.** Un escritor con su camino
+completo declarado —`función · método · sitio · vía X`— **se lee como un escritor vivo**, y acá el
+`vía X` es exactamente la función que nadie llama. Las dos preguntas —*¿por dónde se escribiría?*
+y *¿alguien lo hace?*— son distintas, y la matriz sólo contesta la primera.
+
+⚠ **El caso que lo destapó, porque el costo es concreto:** el 28/08 se citó `VALORES` como
+*«el testigo que responde sin correr de nuevo»* para reconstruir qué secciones habían emitido en
+una corrida cuyo reporte ya se había cerrado. **No responde nada** — la hoja está vacía. La cita
+salió de esta matriz, leída de buena fe. Queda registrado en
+`docs/Prompts/2026-08-28_3_ADDENDUM_1.md` §2.
+
+⛔ **Esto no dice que las dos hojas sobren, y no se propone borrarlas.** `VALORES` es la "foto" por
+corrida del `Paso 2.9H` —pensada para reproducir un informe pasado— y `VALORES_DIVERGENTES` es su
+mecanismo de no-decidir-sola. **Lo que falta es el llamador**, y esa decisión no es de este
+documento. Acá se registra el estado: **declaradas, con esquema, con escritor escrito y sin
+escritor vivo.**
+
 ---
 # Matriz — `node tools/escritores.js` (03/08/2026)
 

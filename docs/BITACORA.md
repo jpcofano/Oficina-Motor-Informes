@@ -16711,3 +16711,60 @@ regla de `periodo_id` no vacío. **El pendiente no se cierra: cambia de motivo.*
   `Generador.gs:2318` dice lo mismo que `R-17` y `PENDIENTES` —*«`CAMPANAS` → filtradas por
   `informe_id` + `mostrar=sí` + `periodo_id` no vacío»*—. B2 declara *«no toca código»*, así que se
   reporta en vez de arreglarse de paso.
+
+---
+
+## 2026-08-29 · `2026-08-28_3` archivado con su ADDENDUM — tres conclusiones de su Parte 0 desmentidas
+
+Documentación. El prompt `2026-08-28_3` había quedado sin commitear: su Parte 0 y su Parte A
+corrieron el 28/08 y fueron el insumo del `_5`, pero el archivo nunca entró al repo y el commit de
+documentación del 29/08 nombraba "los tres prompts de la sesión" contando al `_4`, al `_5` y a su
+addendum. Entra ahora, con un ADDENDUM 1 que registra qué de su Parte 0 lo medido después
+desmintió. El cuerpo no se edita.
+
+**⛔ Punto 4 — «dos filas emiten dos veces, no cero». Emitieron cero.** La salvedad correcta
+estaba escrita en el mismo párrafo —*«si el `periodo_id` no viajara, `filasDeCampana_` devolvería 2
+y `resolverVentana` falla por ambigua»*— y se descartó por suposición. Es exactamente lo que pasó
+en `jm-20260828-193948`: ~130 `camp_*` en `---`, ambigua y **sin la coletilla del período**.
+⭐ La lección ya está en `CLAUDE.md` §4 y va con nombre: **medir la función no es medir el camino**.
+Se leyeron `filasDeCampana_` y `resolverVentana` —las dos correctas— y no al intermediario que las
+conecta. ⚠ Y la agravante propia: **la salvedad no faltaba, estaba escrita y se la trató como
+hipotética.**
+
+**⛔ Punto 6 — `VALORES` como testigo. La hoja no se escribe nunca.** `registrarValorCalculado_`
+tiene **cero llamadores** fuera de `Valores.gs` —dos apariciones, su definición y su comentario—, y
+es el único camino hacia `escribirFilaValores_`. `VALORES` y `VALORES_DIVERGENTES` están
+declaradas y vacías por construcción. ⚠ **La matriz de `ESCRITORES.md` no lo delataba y el motivo
+es estructural:** el censo mide **por dónde se escribiría** y no **si alguien lo hace**, así que un
+escritor con su `vía X` completo se lee como vivo cuando la `X` es justo la función que nadie
+llama. Anotado en `docs/ESCRITORES.md` §2.5 — prosa a mano, no la matriz. ⛔ **No se propone
+borrar las hojas: lo que falta es el llamador**, y esa decisión no es del documento.
+
+**⛔ La premisa de columnas — el encabezado vivo es `… mostrar · id_cuenta · orden`.** Se verificó
+contra `SEED_ESTRUCTURA_`, que pone `id_cuenta` última. ⭐ **Y los dos declaradores de
+`Instalar.gs` producen órdenes distintos por construcción:** planilla nueva escribe `def.headers`
+—`… mostrar · orden · id_cuenta`—; planilla existente pasa por
+`COLUMNAS_DELTA_.CAMPANAS { id_cuenta, indice: 10 }` → `insertColumnBefore(10)`, que mete
+`id_cuenta` décima y **empuja `orden` a la 11**. La única planilla que existe es la vieja, así que
+**manda el delta y el seed describe una hoja hipotética**. ⚠ Se cae la tabla de dos estados de la
+fila de diez valores, y con ella la causa 1 de la Parte A: con el encabezado vivo el décimo valor
+cae en `id_cuenta`, que es la columna correcta, y `orden` vacío da `0`, no `NaN`. **Verificar un
+encabezado contra el seed no es verificarlo** (`CLAUDE.md` §7: la hoja viva manda).
+
+**⚠ Punto 2 — bien medido, mal leído**, y el error se repitió en la primera versión del
+`2026-08-28_5_ADDENDUM_1`. La corrección vive allá y el addendum del `_3` la **referencia en vez de
+repetirla**: en `REUNIONES` el `periodo_id` identifica de qué temario es cada fila —nivel 1 de
+`R-21`—, no recorta una selección hecha; en `CAMPANAS` no selecciona, y eso es `R-17`.
+
+**Lo que sigue en pie de la Parte 0:** ⭐ la conclusión central —**el período no recorta
+campañas**—, los filtros vivos de la rama, la causa D muda de `seccionesRepetiblesDe_` y que el
+detalle por sección no sobrevive en `CORRIDAS`. Sólo se cae el sustituto que se proponía.
+
+**⚠ Sin dueño, para prompt propio:** la causa D muda —una sección que no pasa el filtro de
+elegibilidad de `seccionesRepetiblesDe_` desaparece del reporte entero, sin una línea— y el
+comparador de `mostrar` divergente entre `REUNIONES` (`esVerdadero_`, acepta `si`) y `CAMPANAS`
+(`=== 'sí'`).
+
+**⚠ Encontrado de paso y NO tocado:** `node tools/escritores.js` **está roto hoy** —
+`inventario.js` tira *«Llaves desbalanceadas tras limpiar Auditoria.gs (-2)»*—, así que la matriz
+no se puede regenerar. No se arregla acá: es un objetivo distinto y va con su propio prompt.
