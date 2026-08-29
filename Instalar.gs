@@ -1476,6 +1476,16 @@ var SEED_MAPEO_ = [
   // hoja 'Directa IVR' — sin fecha única (tiene Inicio D y Fin E)
   { base_id: 'digital', campo_logico: 'ivr_id_cuenta', hoja: 'Directa IVR', columna: 'A', notas: 'join entre solapas' },
   { base_id: 'digital', campo_logico: 'ivr_campana', hoja: 'Directa IVR', columna: 'I', notas: '' },
+  /* `2026-08-28_4` — el corte JM/GCBA de IVR. **Molde: `mail_remitente`, que es la columna G de
+   * `Directa Mail` y existe para exactamente esto.** Medido sobre el fixture del 28/08
+   * (`sha256` 0ce0086d...ac79): 63 filas con `ID cuentas`, `Vocero` con dos valores y ninguno
+   * vacio — `JM` 55 y `GCBA` 8.
+   *
+   * (-) **No se calco `nombre_campaña~=JM` de `looker/DIGITAL`, y el motivo esta medido:** ese
+   * criterio da 53 y pierde las dos filas de `2961-ABRSEGGJ / ORDEN Y SEGURIDAD 2026`, que
+   * tienen `Vocero = JM` y ningun «JM» en el nombre. Las habria clasificado como GCBA **sin
+   * fallar**. */
+  { base_id: 'digital', campo_logico: 'ivr_vocero', hoja: 'Directa IVR', columna: 'G', notas: 'corte JM/GCBA de IVR — Vocero=JM es JM, el resto GCBA (2026-08-28_4). Molde: mail_remitente, la columna G de Directa Mail' },
   { base_id: 'digital', campo_logico: 'ivr_inicio', hoja: 'Directa IVR', columna: 'D', notas: '' },
   { base_id: 'digital', campo_logico: 'ivr_fin', hoja: 'Directa IVR', columna: 'E', notas: '' },
   { base_id: 'digital', campo_logico: 'ivr_audiencia', hoja: 'Directa IVR', columna: 'J', notas: '' },
@@ -1926,6 +1936,8 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   ivr_audiencia: 'numero', ivr_atendidos: 'numero', ivr_escucha75: 'numero',
   ivr_marque1: 'numero', ivr_llamados: 'numero', ivr_at_pct: 'numero', ivr_e75: 'numero',
   ivr_e75_pct: 'numero', ivr_marque1_pct: 'numero',
+  // `2026-08-28_4` — el vocero es el corte de ambito de IVR, y es texto: `JM` / `GCBA`.
+  ivr_vocero: 'texto',
   sms_enviados: 'numero', sms_entregados: 'numero', sms_ent_pct: 'numero', sms_clics: 'numero',
   envios: 'numero', entregados: 'numero', aperturas: 'numero', or: 'numero', clics: 'numero',
   ctor: 'numero', impresiones: 'numero', alcance_dig: 'numero', views: 'numero', clics_dig: 'numero',
@@ -2106,6 +2118,7 @@ var ENCABEZADO_POR_MAPEO_ = {
   'digital|Directa SMS|sms_clics': 'Clics',
   'digital|Directa IVR|ivr_id_cuenta': 'ID cuentas',
   'digital|Directa IVR|ivr_campana': 'Nombre campaña | Directa',
+  'digital|Directa IVR|ivr_vocero': 'Vocero',
   'digital|Directa IVR|ivr_inicio': 'Inicio',
   'digital|Directa IVR|ivr_fin': 'Fin',
   'digital|Directa IVR|ivr_audiencia': 'Audiencia',
@@ -9017,4 +9030,148 @@ function volverImpresionesALooker() {
   Logger.log('⚠ La proxima corrida tiene que volver a publicar impresiones en el Resumen Ejecutivo.');
   Logger.log('   Si siguen en `---`, entonces la causa NO era la mudanza y hay que mirar la traza.');
   return { ok: true, aplicados: r.aplicados };
+}
+
+
+/**
+ * `2026-08-28_4` — **las tres filas del bloque de IVR del Resumen Ejecutivo de GCBA (`L-032`).**
+ *
+ * Las emite una función aparte, y no es prolijidad: `tools/probar-ambito-ivr.js` **extrae esta
+ * función del archivo y afirma sobre las filas reales**. Una lista copiada al banco probaría la
+ * copia.
+ *
+ * ⭐ **De dónde salen los tres nombres: del CENSO, uno por uno.** `censarTokensSinMarcador()` del
+ * 28/08 los lista sin fila en `L-032`. **No se generó la lista por prefijo** — un `grep gcba_ivr`
+ * sobre la plantilla es una lista generada y no un cruce, y es como entró `camp_enviados` a una
+ * tabla de la que no era.
+ *
+ * ⚠ **No hay `gcba_ivr_campanias`, y el hueco es deliberado:** el bloque de JM tiene
+ * `ivr_campanias` (CONTEO) y el de GCBA **no trae esa caja**. Inventarla sería el `N × M` que la
+ * regla del censo previene: un marcador cuyo token no existe en ninguna lámina **no falla** —
+ * resuelve, no encuentra dónde pintarse, no entra a `FALTANTES` y queda como una fila que nadie
+ * va a poder explicar.
+ */
+function filasDeGcbaIvr_() {
+  /* ⭐ **`ambito=gcba` va en `dimensiones` y no en `filtro`** (`D-33`): es un corte que alguien del
+   * equipo pediría por nombre —«esto pero de GCBA»—, no una regla de validez de la fila. El
+   * `filtro` queda vacío: esta solapa no tiene guarda que poner. */
+  var COMUN = {
+    familia: 'gcba', informe_id: 'jm',
+    base_id: 'digital', solapa: 'Directa IVR',
+    dimensiones: 'ambito=gcba', filtro: ''
+  };
+
+  /* ⭐ **Los formatos se copian de los gemelos de JM** —`ivr_llamados`, `ivr_atendidos`,
+   * `ivr_at_pct`— porque miden el mismo hecho del otro lado del corte. Elegirlos de nuevo sería
+   * inventar una segunda definición de la misma medida.
+   *
+   * ⭐ **Y NINGUNA nace con `_revisar`, con motivo medido:** `R-31` lista `digital/Directa IVR`
+   * entre las **ESTABLES** —cero movimientos entre los exports del 31/07 y el 20/08 sobre 44 filas
+   * comparables, `ivr_llamados` e `ivr_atendidos` incluidos—, así que admite igualdad exacta.
+   * Marcarlas «por las dudas» es lo que hace que `_revisar` deje de significar algo. */
+  var FILAS = [
+    { marcador: 'gcba_ivr_llamados', campo_logico: 'ivr_llamados', operacion: 'SUMA', formato: 'miles' },
+    { marcador: 'gcba_ivr_atendidos', campo_logico: 'ivr_atendidos', operacion: 'SUMA', formato: 'miles' },
+    /* El PCT es sobre los AGREGADOS y no el promedio de la columna «% Atendidos» (M), por lo mismo
+     * que `ivr_at_pct` de JM: promediar porcentajes de campañas de tamaños distintos da otro
+     * número. */
+    { marcador: 'gcba_ivr_at_pct', campo_logico: 'ivr_atendidos/ivr_llamados', operacion: 'PCT', formato: 'porcentaje_sin_signo' }
+  ];
+
+  return FILAS.map(function (o) {
+    Object.keys(COMUN).forEach(function (k) { if (!(k in o)) o[k] = COMUN[k]; });
+    o.notas = 'Resumen Ejecutivo GCBA, bloque IVR (2026-08-28_4). El corte de ambito de esta ' +
+      'solapa es Vocero (col G), medido: JM 55 / GCBA 8 sobre 63 filas. Sin _revisar porque ' +
+      'R-31 lista digital/Directa IVR entre las ESTABLES';
+    return o;
+  });
+}
+
+/**
+ * ⭐ **`cablearGcbaIvr()` — el alta.** Público y **sin parámetros**, para que aparezca en el
+ * desplegable del editor.
+ *
+ * ⚠ **ANTES de correr esto tiene que estar pusheado `DIMENSIONES_` con `digital|Directa IVR`.**
+ * Sin esa declaración los tres marcadores resuelven `ok:false` con «`ambito=gcba` no está definida
+ * para digital|Directa IVR». Falla ruidoso, que es lo correcto, pero no publica.
+ *
+ * El orden completo, y el primero y el último no son opcionales:
+ *   1. `censarTokensSinMarcador()` **ANTES** → los tres tienen que aparecer en `L-032`.
+ *      **Eso es lo que prueba que los `{{token}}` quedaron bien escritos en la plantilla**, y no
+ *      hay otra forma de saberlo: un token mal tipeado no falla, simplemente no existe para nadie.
+ *   2. `clasp push` + **Aplicar configuración** — siembra `MAPEO.ivr_vocero` (col G). Sin esa fila
+ *      el filtro que genera la dimensión falla con `@filtro_campo_no_mapeado`.
+ *   3. Esta función.
+ *   4. `censarTokensSinMarcador()` **DESPUÉS** → los tres no tienen que aparecer más.
+ *
+ * ⚠ **Lo que este paso NO hace, y es una decisión del usuario:** los cuatro `ivr_*` de JM tienen
+ * `dimensiones` **vacío**, y ausente significa «todas» — agregan las 63 filas, **GCBA incluido**.
+ * Mientras siga así, el bloque de JM **contiene** al de GCBA y las partes no suman el total.
+ * Ponerles `ambito=jm` **mueve un número publicado**, así que va en otro paso y en otro deck;
+ * `diagDondeVivenLosIvr()` dice si hoy publican algo. **Esto llena huecos**: los tres tokens
+ * nuevos no tenían número ayer, así que no hay nada que atribuir.
+ */
+function cablearGcbaIvr() {
+  var filas = filasDeGcbaIvr_();
+  var r = curarMarcadores_([], filas);
+  if (!r.ok) { Logger.log('⛔ FALLÓ: ' + r.motivo); return r; }
+
+  Logger.log('== bloque IVR de `L-032`: ' + r.agregadas.length + ' de ' + r.pedidas + ' ==');
+  r.agregadas.forEach(function (a) { Logger.log('  + ' + a); });
+  if (r.quitadas.length) {
+    Logger.log('  (reemplazadas ' + r.quitadas.length + ': el alta es idempotente)');
+  }
+
+  /* ⭐ **Se compara el RELEÍDO contra lo pedido, campo por campo.** Un escritor que informa lo que
+   * pidió escribir y no lo que quedó es la mitad del bug: Sheets interpreta todo lo que entra a
+   * una celda. Acá el candidato es `ivr_atendidos/ivr_llamados`, que tiene una barra en el medio y
+   * es exactamente la forma que se comió como fecha en el alta de `ecv_barrio1-3`. */
+  var diferencias = [];
+  var verificadas = 0;
+  filas.forEach(function (o) {
+    var fila = r.releido[o.marcador + '||' + o.informe_id];
+    if (!fila) { diferencias.push(o.marcador + ' → NO SE PUDO RELEER'); return; }
+    verificadas++;
+    ['campo_logico', 'operacion', 'formato', 'dimensiones', 'filtro', 'base_id', 'solapa']
+      .forEach(function (campo) {
+        if (String(fila[campo]) !== String(o[campo])) {
+          diferencias.push(o.marcador + '.' + campo + ': pedido "' + o[campo] +
+            '" · quedó "' + fila[campo] + '"');
+        }
+      });
+  });
+
+  Logger.log('');
+  Logger.log('== releído: ' + verificadas + ' de ' + r.pedidas + ' fila(s) ==');
+  if (verificadas !== r.pedidas || diferencias.length) {
+    diferencias.forEach(function (d) { Logger.log('  ⛔ ' + d); });
+    Logger.log('⛔ LA HOJA NO QUEDÓ COMO SE PIDIÓ.');
+    return { ok: false, motivo: diferencias.join(' | ') || 'releídas ' + verificadas, escritura: r };
+  }
+
+  /* ⛔ **La guarda que importa: NINGUNA nace con `_revisar`.** Es una afirmación negativa y va acá
+   * y no en el banco, porque el banco lee el código y esto lee la hoja. */
+  var marcadas = filas.filter(function (o) {
+    var fila = r.releido[o.marcador + '||' + o.informe_id];
+    return String(fila.formato || '').slice(-8) === '_revisar';
+  });
+  if (marcadas.length) {
+    Logger.log('⛔ ' + marcadas.length + ' nacieron con `_revisar` — no era lo pedido.');
+    return { ok: false, motivo: 'nacieron marcadas', escritura: r };
+  }
+
+  Logger.log('✅ Las 3 quedaron como se pidieron, con `ambito=gcba` y sin `_revisar`.');
+  Logger.log('');
+  Logger.log('⛔ AHORA CORRÉ censarTokensSinMarcador() DE NUEVO.');
+  Logger.log('   Los tres NO tienen que aparecer más en L-032.');
+  Logger.log('   Si siguen apareciendo: la fila se escribió pero el token de la plantilla no se');
+  Logger.log('   llama así. Si no aparecían ANTES tampoco, el token nunca se leyó.');
+  Logger.log('');
+  Logger.log('⭐ ESPERADO en la corrida, contra el fixture del 28/08 (sha 0ce0086d…ac79):');
+  Logger.log('   la solapa tiene 8 filas GCBA, 6 con datos y 2 vacías (Hospital Udaondo).');
+  Logger.log('   ⚠ El bloque IVR del resumen es CONDICIONAL (C-31, C-38): el equipo lo publica');
+  Logger.log('     cuando hay datos en la ventana. Vacío no es lo mismo que roto.');
+  Logger.log('   ⚠ Y publica el agregado de la VENTANA, no el temario (X-41) — para GCBA esa');
+  Logger.log('     marca está EN RESERVA desde el 25/08: «GCBA significa TODO».');
+  return { ok: true, escritura: r, verificadas: verificadas };
 }

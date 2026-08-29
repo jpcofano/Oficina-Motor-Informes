@@ -1767,6 +1767,18 @@ var DIMENSIONES_ = {
        * misma fila**, y eso ya estaba registrado el 26/08 como *«dos criterios, disjuntos»*.
        * Elegirlo acá habría cambiado el corte además de la fuente — dos variables a la vez. */
       'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2~=JM || des_campana_3~=JM',
+      /* (*) `2026-08-28_4` — **la solapa de IVR, y es la unica base que trae el ambito escrito
+       * en una columna propia.** Medido sobre el fixture del 28/08 (`sha256` 0ce0086d...ac79):
+       * 63 filas con `ID cuentas`, `Vocero` (col G) con **dos** valores y ninguno vacio —
+       * `JM` 55 y `GCBA` 8.
+       *
+       * (-) **NO se calco `nombre_campaña~=JM` de `looker|DIGITAL`**, que era la salida obvia:
+       * da 53 y pierde las dos filas de `2961-ABRSEGGJ / ORDEN Y SEGURIDAD 2026`, con
+       * `Vocero = JM` y ningun «JM» en el nombre. **Las habria puesto en GCBA sin fallar.**
+       * Es la disyuntiva del desglose del 27/08 al reves: alla la columna de ambito
+       * contradecia al nombre y gano el nombre; aca la columna explicita es la que acierta.
+       * Por eso se mide una por una y no se hereda la regla de la solapa de al lado. */
+      'digital|Directa IVR': 'ivr_vocero=JM',
       'looker|resumen_metricas_dinamico': 'campana~=JM'
     },
     // `gcba` es **todo lo que no es `jm`** (`D-33`), no un valor propio: se implementa negando
@@ -1781,6 +1793,12 @@ var DIMENSIONES_ = {
       /* ⚠ La negacion de un OR es un AND de negaciones -De Morgan-: 'ni en una ni en la otra'.
        * Por eso este lado NO lleva '||' y sigue funcionando con el separador de siempre. */
       'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2!~=JM && des_campana_3!~=JM',
+      /* `2026-08-28_4` — la negacion de la de arriba, por lo que dice `D-33`: `gcba` es **todo
+       * lo que no es `jm`**. Aca eso importa mas que en otras bases porque la columna tiene un
+       * valor `GCBA` literal que invita a escribir `ivr_vocero=GCBA`: con la igualdad, una fila
+       * con el vocero vacio o mal tipeado **quedaria afuera de los dos ambitos y en silencio**.
+       * Con la negacion cae en GCBA y se ve. */
+      'digital|Directa IVR': 'ivr_vocero!=JM',
       'looker|resumen_metricas_dinamico': 'campana!~=JM'
     }
   },
