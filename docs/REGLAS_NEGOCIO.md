@@ -1078,6 +1078,44 @@ cuatro** — el deck incluye San Cristóbal 23/07 y excluye Caballito 29/07, el 
 mandaba.** Lo que faltaba era la regla de selección, que es `R-21`. La corrección la levantó el
 `verificador` y la confirmó el `10.1` §5.
 
+### Addendum 2 — 29/08/2026: el filtro por `informe_id` ya no existe
+
+**El texto de arriba no se altera.** Esto corrige **una** de sus frases, la de *«Estado del código,
+verificado el 07/08/2026»*.
+
+`R-17` describe la rama de campañas así:
+
+> `itemsDeSeccion_` (`Generador.gs`) filtra `CAMPANAS` por `informe_id`, `mostrar` y `periodo_id`
+> no vacío (`D-19`), más `SECCIONES.filtro`
+
+⛔ **El filtro por `informe_id` se sacó el 18/08/2026**, por decisión del usuario: *«no importa de
+qué informe sean las campañas — la campaña no pertenece a un informe»*. Puede presentarse en
+cualquiera, y los decks lo muestran: «Programas y actividades para personas mayores» sale en `jm` y
+en `secco` la misma semana. El motivo está escrito en el código, en la rama misma.
+
+⭐ **Los filtros vivos de la rama `CAMPANAS`, verificados el 29/08/2026 contra `Generador.gs`, son
+tres:** `mostrar = sí`, `periodo_id` **no vacío** (`D-19`) y `SECCIONES.filtro`.
+
+⭐⭐ **Y esto no debilita a `R-17`: es exactamente lo que `R-17` quiere.** Ninguno de los tres mira
+el **período de la corrida**, así que la ventana sigue sin participar de la selección. La regla no
+cambia; lo que cambió es una de las cuatro cosas que su párrafo de estado enumeraba.
+
+⚠ **Lo que este addendum deja abierto y NO resuelve** —está declarado en el código desde el 18/08—:
+con el `informe_id` afuera, lo único que decide en qué corrida sale una campaña es que su
+`periodo_id` **no esté vacío**, y **no que coincida con el de la corrida**. Con campañas cargadas,
+todas salen en **todos** los informes. **La selección semanal no está implementada**, y
+`itemsDeSeccion_` ni siquiera recibe el período de la corrida. Es una decisión de diseño pendiente,
+no un efecto de este addendum.
+
+⭐ **Y la decisión del usuario del 28/08 dice hacia dónde no va:** *«el período sólo se debería usar
+para armar la ventana y quizá darle nombre al informe; las reuniones y las campañas tienen que salir
+siempre»* (`docs/Prompts/2026-08-28_5_ADDENDUM_1.md`). O sea que el `periodo_id` de `CAMPANAS`
+**no** va a pasar a seleccionar: va a seguir sirviendo para que cada ítem resuelva **su** ventana.
+La unicidad es responsabilidad de la carga del temario.
+
+**Origen:** `2026-08-28_5` Parte B2. La frase envejeció el 18/08 y siguió escrita once días; la
+destapó el rastreo del `periodo_id` que hizo la Parte 0 del mismo prompt.
+
 ## R-18 — Una lista `DISTINCT` publica el canon del catálogo, nunca el texto de la celda
 
 **Enunciado:** una operación que devuelve una lista de valores distintos —barrios, y cualquier

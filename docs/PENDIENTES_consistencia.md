@@ -6291,6 +6291,19 @@ plantilla —es del equipo—, o declarar las tres en la misma sección. **No se
 
 ### 2 · ⏸ `campana` en `secco` emitiría **cero ítems**, y sus ocho láminas saldrían crudas
 
+> ⛔ **Corrección fechada — 29/08/2026 (`2026-08-28_5` B2). La primera oración de abajo está
+> vencida, y sólo a medias.** ✅ `CAMPANAS` **sí** tiene la columna `informe_id`, eso sigue siendo
+> cierto. ⛔ **Lo que ya no es cierto es que se filtre por ella:** ese filtro **se sacó el
+> 18/08/2026** por decisión del usuario —*«la campaña no pertenece a un informe»*—, y `D-19` nunca
+> fue el que filtraba por `informe_id`: `D-19` es la regla de **`periodo_id` no vacío**. Los filtros
+> vivos de la rama son **`mostrar = sí`**, **`periodo_id` no vacío** y **`SECCIONES.filtro`**.
+>
+> ⚠ **Y el pendiente NO se cierra con esto: cambia de motivo.** Las ocho láminas de `campana` en
+> `secco` seguirían saliendo crudas, pero por **`periodo_id` vacío** y **`mostrar = no`** —las dos
+> condiciones que la tabla de acá abajo mide—, no por el ámbito. **El texto original no se edita**;
+> ver `R-17` Addendum 2.
+
+
 `CAMPANAS` **sí** tiene `informe_id` y `D-19` filtra por él. Las tres filas de `secco`, medidas el
 21/08:
 
