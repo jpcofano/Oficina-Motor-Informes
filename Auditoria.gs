@@ -5331,6 +5331,119 @@ function testigoDeEtapaPost() {
   return r;
 }
 
+/* ═══════════ `2026-08-30_2` — EL TESTIGO DE `DIMENSIONES_.ambito` ═════════════════════════
+ *
+ * **Parte A del `2026-08-30_2`.** Mismo patrón que `testigoDeEtapaPost`: se corre **dos veces,
+ * antes y después de tocar `DIMENSIONES_.ambito`, en la misma sesión**. El intervalo corto es lo
+ * que hace que la comparación signifique algo con dos solapas que `R-31` mide inestables.
+ *
+ * ⭐⭐ **El radio del cambio está MEDIDO, no supuesto** (30/08, sobre `Motor_de_Informes` vivo):
+ * de los **42** marcadores que usan `ambito`, **sólo 10** caen sobre las tres solapas que el
+ * prompt cambia — los ocho `imp_*` y `frecuencia`/`gcba_frecuencia`. Los otros 32 viven en
+ * `digital|Directa IVR`, `digital|Directa Mail` y `rdv|RVD JM-CM - ES`, que **no se tocan**.
+ *
+ * ⚠⚠ **Y el dato que hay que leer antes de la corrida: sobre `digital|CAMPAÑAS_DESGLOCE_DIGITAL`
+ * NO hay hoy ningún marcador con `ambito`.** Esa tercera entrada de la tabla del §1 **no mueve un
+ * solo número** — es preparatoria, y se activa el día que los ocho `imp_*` terminen la mudanza que
+ * `DIMENSIONES_` ya declara y `MARCADORES` todavía no. **Si algo del desglose se moviera con este
+ * cambio, es un efecto no previsto y hay que parar.**
+ */
+var MARCADORES_AMBITO_TESTIGO_ = [
+  // ── LOS QUE TIENEN QUE MOVERSE ─────────────────────────────────────────────────────────
+  // Ocho `imp_*` sobre `looker|DIGITAL`. El corte pasa de «JM en el nombre» a `Id cuentas~=JDGAG`,
+  // que sobre la ventana medida agarra 5 implementaciones más de JM — así que los `imp_*` de JM
+  // suben y los `gcba_imp_*` bajan en la misma cantidad.
+  'imp_total', 'imp_meta', 'imp_google', 'imp_prog',
+  'gcba_imp_total', 'gcba_imp_meta', 'gcba_imp_google', 'gcba_imp_prog',
+  // Dos sobre `looker|resumen_metricas_dinamico`, que también cambia de criterio.
+  'frecuencia', 'gcba_frecuencia',
+
+  // ── CANARIOS: misma solapa, mismo camino de lectura, SIN `ambito` ──────────────────────
+  // Si alguno se mueve, NO fue el cambio: fue la fuente, y nada de lo demás se puede leer.
+  'camp_dig_impl',        // CONTEO de TODAS las filas de `looker|DIGITAL`
+  'camp_frecuencia',      // RATIO sobre `resumen_metricas_dinamico`, sin corte
+  'u1_total_impresiones', // SUMA sobre el DESGLOSE, sin corte — prueba que la 3ª entrada es inerte
+
+  /* ── TRES CANARIOS MÁS, y va escrito por qué NO son una identidad ──────────────────────
+   * ⛔ La tentación era exigir `imp_meta + gcba_imp_meta = camp_meta_impresiones`. **No cierra, y
+   * no por un bug: es OTRO UNIVERSO.** Los `imp_*` llevan `filtro = estado=Activa` y los `camp_*`
+   * **no llevan filtro**. Medido el 30/08 sobre `Base_Looker_2026-08-30.xlsx`: la solapa tiene
+   * **5.149** filas y sólo **720** con `estado=Activa` — un factor 13. Escribir esa identidad
+   * habría producido un ⛔ en las dos tomas y **habría parecido que el cambio rompió algo**.
+   * Sirven igual como canarios: no llevan `ambito`, así que no se pueden mover. */
+  'camp_meta_impresiones', 'camp_google_impresiones', 'camp_prog_impresiones'
+];
+
+/**
+ * ⭐ **El testigo. Sin `_` y SIN PARÁMETROS**, las dos condiciones para que Apps Script lo liste en
+ * el desplegable (`CLAUDE.md` §2). Devuelve por `Logger.log` además de por `return`.
+ */
+function testigoDeAmbito() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('TESTIGO DE `DIMENSIONES_.ambito` — ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ⛔ El criterio se imprime DESDE `DIMENSIONES_`, nunca como texto fijo: un testigo que declara
+   * de memoria bajo qué criterio corrió es indistinguible de uno que corrió bajo el otro, y las
+   * dos tomas se llaman igual. */
+  ['looker|DIGITAL', 'digital|CAMPAÑAS_DESGLOCE_DIGITAL', 'looker|resumen_metricas_dinamico',
+   'digital|Directa IVR', 'digital|Directa Mail', 'rdv|RVD JM-CM - ES'].forEach(function (k) {
+    Logger.log('  ' + k);
+    Logger.log('      jm   : ' + JSON.stringify(DIMENSIONES_.ambito.jm[k]));
+    Logger.log('      gcba : ' + JSON.stringify(DIMENSIONES_.ambito.gcba[k]));
+  });
+  Logger.log('');
+
+  var r = testigoDeMarcadores_(MARCADORES_AMBITO_TESTIGO_, 'ámbito JM/GCBA — corte por Id cuentas');
+  if (!r.ok) {
+    Logger.log('⛔ FALLÓ: ' + r.motivo);
+    return r;
+  }
+
+  /* ── La identidad interna, evaluada acá y no dejada al lector ──────────────────────────
+   * ⭐⭐ `meta + google + prog = total` DENTRO de cada ámbito. Los cuatro comparten solapa, campo,
+   * operación y `filtro = estado=Activa`, y sólo difieren en `plataforma` — que este cambio **no
+   * toca**. Verificado sobre el fixture del 30/08: cierra al dígito en los dos ámbitos.
+   * ⭐ **No depende de que la fuente esté quieta**: si se mueve, se mueven los dos lados. */
+  var v = {};
+  r.filas.forEach(function (f) { v[f.marcador] = Number(f.valor); });
+  Logger.log('');
+  Logger.log('── IDENTIDAD INTERNA: meta + google + prog = total, en cada ámbito ───');
+  [['jm', 'imp_meta', 'imp_google', 'imp_prog', 'imp_total'],
+   ['gcba', 'gcba_imp_meta', 'gcba_imp_google', 'gcba_imp_prog', 'gcba_imp_total']].forEach(function (t) {
+    var suma = v[t[1]] + v[t[2]] + v[t[3]];
+    var total = v[t[4]];
+    var cierra = isFinite(suma) && isFinite(total) && Math.abs(suma - total) < 0.5;
+    Logger.log('  ' + (cierra ? '✅' : '⛔') + ' ' + t[0] + ': ' + v[t[1]] + ' + ' + v[t[2]] +
+      ' + ' + v[t[3]] + ' = ' + suma + (cierra ? ' = ' : ' ≠ ') + total);
+  });
+  Logger.log('  ⭐ Tiene que cerrar en las DOS tomas. Si cierra antes y no después, el corte');
+  Logger.log('     nuevo perdió filas o las contó dos veces.');
+  Logger.log('  ⚠ Lo que NO prueba: que el universo sea el correcto. Cierra igual sobre el');
+  Logger.log('     universo equivocado — consistente no es correcto, y son dos preguntas.');
+
+  Logger.log('');
+  Logger.log('── CÓMO LEER LA SEGUNDA TOMA ─────────────────────────────────────────');
+  Logger.log('1 ⭐ CANARIOS PRIMERO: `camp_dig_impl`, `camp_frecuencia` y `u1_total_impresiones`');
+  Logger.log('     no llevan `ambito`. Si alguno se movió, NO fue el cambio — fue la fuente, y');
+  Logger.log('     nada de lo demás se puede leer.');
+  Logger.log('2 ⚠ `u1_total_impresiones` además prueba que la entrada del DESGLOSE es inerte:');
+  Logger.log('     hoy ningún marcador usa `ambito` ahí. Si algo del desglose se mueve, PARAR.');
+  Logger.log('3  Los cuatro `imp_*` de JM tienen que SUBIR o quedar. Si alguno baja, es un bug.');
+  Logger.log('4  Los cuatro `gcba_imp_*` tienen que BAJAR o quedar. Si alguno sube, es un bug.');
+  Logger.log('5 ⭐ Y el par se mueve JUNTO: `gcba` es la NEGACIÓN de `jm`, así que una fila que');
+  Logger.log('     entra a JM SALE de GCBA. Un `imp_*` que sube con su `gcba_imp_*` hermano');
+  Logger.log('     quieto significa que la fila entró sin salir de ningún lado.');
+  Logger.log('6  `frecuencia` y `gcba_frecuencia` son RATIO: pueden moverse en cualquier');
+  Logger.log('     dirección, porque cambian numerador y denominador a la vez.');
+  Logger.log('');
+  Logger.log('⚠ Lo que este testigo NO contesta: si los valores nuevos son los CORRECTOS.');
+  Logger.log('  Dice qué se movió y hacia dónde. Que el corte agarre las campañas que');
+  Logger.log('  corresponde lo dice el CONTEO contra el tablero (Parte C), y las SUMAS no son');
+  Logger.log('  criterio: la lámina publica ACUMULADO por decisión del usuario del 30/08.');
+  return r;
+}
+
 /* ═══════════ `2026-08-25` — EL TESTIGO QUE REEMPLAZA AL ENCABEZADO ════════════════════════
  *
  * ⛔⛔ **Por qué hace falta uno nuevo:** el testigo de integridad de `D-31` **era el encabezado** —
