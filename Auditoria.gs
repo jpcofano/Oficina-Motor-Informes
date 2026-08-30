@@ -5331,6 +5331,68 @@ function testigoDeEtapaPost() {
   return r;
 }
 
+/**
+ * ⭐ **`2026-08-30` — quién es el `error=1`.** El testigo de ámbito informó
+ * `resolverMarcadores(jm) → 220 · ok=188 · sin_datos=31 · error=1` y **el que falla no tiene
+ * nombre en ningún lado**. Un marcador que falla hoy y que nadie identificó puede ser justo uno de
+ * los que un cambio toca.
+ *
+ * ⛔ **Se escribió esto en vez de deducirlo de la configuración**, y el motivo es la regla del
+ * control positivo: un detector que cruza `MARCADORES` contra `MAPEO` sobre disco **no distingue
+ * un problema real de una limitación del propio detector**. El primer intento devolvió **42**
+ * marcadores «con problema» — casi todos falsos: plantillas `{token}` en `campo_logico` que el
+ * splitter parte mal, y dimensiones cuyo mapa el regex no llegó a cargar. **42 hallazgos
+ * plausibles y ninguno verificado es peor que ninguno.** El motor sabe cuál falla; se le pregunta.
+ *
+ * Sin `_` y sin parámetros. Sólo lectura.
+ */
+function diagMarcadoresQueFallan() {
+  Logger.log('MARCADORES QUE NO RESUELVEN — ' + new Date().toISOString());
+
+  // El preámbulo, copiado de `generarInforme` — mismo motivo que en `testigoDeAmbito`.
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+
+  var res = resolverMarcadores('jm');
+  if (!res || !res.ok) {
+    Logger.log('⛔ resolverMarcadores no devolvió resultados: ' + JSON.stringify(res));
+    return { ok: false };
+  }
+  Logger.log('resumen → total=' + res.resumen.total + ' · ok=' + res.resumen.ok +
+    ' · sin_datos=' + res.resumen.sin_datos + ' · error=' + res.resumen.error);
+
+  var errores = [], sinDatos = [];
+  res.resultados.forEach(function (r) {
+    if (r.estado === 'error') errores.push(r);
+    else if (r.estado === 'sin_datos') sinDatos.push(r);
+  });
+
+  /* ⭐ El conteo va SIEMPRE, aunque dé cero: «ninguno» y «no miré» se ven igual en un log sin
+   * conteo (`CLAUDE.md` §4). */
+  Logger.log('');
+  Logger.log('── ERROR (' + errores.length + ') ─────────────────────────────────────');
+  errores.forEach(function (r) {
+    Logger.log('  ⛔ ' + r.marcador + '  valor=' + r.valor);
+    Logger.log('     traza: ' + String(r.traza || '').replace(/\s+/g, ' '));
+  });
+  if (!errores.length) Logger.log('  (ninguno)');
+
+  Logger.log('');
+  Logger.log('── SIN_DATOS (' + sinDatos.length + ') ──────────────────────────────');
+  sinDatos.forEach(function (r) {
+    Logger.log('  · ' + r.marcador + '\t' + String(r.traza || '').replace(/\s+/g, ' ').slice(0, 150));
+  });
+  if (!sinDatos.length) Logger.log('  (ninguno)');
+
+  return { ok: true, errores: errores.length, sin_datos: sinDatos.length };
+
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+}
+
 /* ═══════════ `2026-08-30_2` — EL TESTIGO DE `DIMENSIONES_.ambito` ═════════════════════════
  *
  * **Parte A del `2026-08-30_2`.** Mismo patrón que `testigoDeEtapaPost`: se corre **dos veces,
