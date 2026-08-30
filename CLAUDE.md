@@ -1124,6 +1124,14 @@ código intacto, da verde, y eso se lee como *«el negativo pasó»*.
   por otro motivo —falta exigir el motivo—; **(3)** ⭐ **no llegó a mirar nada** —falta exigir que
   la mutación ocurra—. **Son tres afirmaciones separadas y ninguna implica a las otras dos.**
 
+⛔⛔ **Y la forma más general del tramo salteado, que costó una conclusión publicada: el tramo no siempre es un LLAMADOR — a veces es QUÉ SIGNIFICA UNA CELDA VACÍA.** (30/08/2026.) La regla de arriba manda preguntar *«¿quién llama a lo que estoy midiendo?»*, y eso deja afuera el caso en que el instrumento no saltea ningún código: **saltea una convención**.
+
+- **El caso, medido:** los ocho `imp_*` tienen `periodo_ref` **vacío**, y de ahí salió la premisa *«no tienen período, así que leen la solapa entera»*. **Falso.** `periodo_ref` vacío significa *«usá el período de la corrida»*, y el motor recorta igual: la traza real dice `2026-08-21–2026-08-27 (R-11 (calculado))` y el universo son **304** filas, no las 720 que predije. `imp_total` predicho **16.176.264** contra **486.982** real.
+- ⚠ **Y otra vez no da un número más chico: da OTRO número.** 16 M y 487 K no se parecen y **los dos son publicables**, así que no hay dirección en la que corregirlo mentalmente.
+- ⛔⛔ **Lo caro fue lo que contaminó.** Sobre esa premisa se construyó una tabla de **veinte** combinaciones de ventana × estado y la conclusión *«ningún filtro reproduce el deck»*. **Ninguna de las veinte era la ventana que el motor usa**, así que la conclusión no estaba demostrada — y con los números vivos la brecha resultó ser **chica**. Una premisa inventada no produce un error visible: produce **veinte mediciones prolijas de la pregunta equivocada**.
+- ⭐⭐ **La pregunta concreta, y se hace antes de escribir la predicción:** *¿qué significa esta celda cuando está VACÍA — «no aplica» o «usá el valor por defecto»?* Son dos cosas opuestas y **la hoja no las distingue**. Se contesta leyendo al consumidor, nunca deduciéndolo del nombre de la columna.
+- ⚠ **El corolario para cualquier predicción sobre disco: se declara como predicción y se contrasta contra una corrida antes de citarla.** Acá estaba escrita como *«predicción»* y separada de la toma real, y eso fue lo único que impidió que se publicara como medición.
+
 ⛔⛔ **Un detector que busca un SÍMBOLO depende de que todos los emisores usen el mismo, y nadie lo
 garantiza. El exit code es un CONTRATO; un glifo en un log es una CONVENCIÓN.** (25/08/2026.) Y es
 peor que un control común cuando el detector **es el instrumento con el que se valida todo lo

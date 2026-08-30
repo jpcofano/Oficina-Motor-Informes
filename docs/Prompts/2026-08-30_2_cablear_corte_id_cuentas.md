@@ -257,3 +257,41 @@ corrida leyó DV360 lejos de su valor final.**
 ⛔ **Y correr contra la lectura CONSOLIDADA del tablero, no contra la del día del cierre** —
 `Tablero_carga_21-28ago_lectura_2026-08-30_1800.png`. Comparar contra una referencia que todavía se
 está asentando mide el asentamiento, no el cableado.
+
+---
+
+## Agregado a la Parte C (30/08/2026, tras la toma ANTES) — la ventana, y dos criterios de aceptación
+
+### ⭐⭐ La Parte C corre con `2026_agosto_21_27`, no con `21_28`
+
+**Verificado por calendario:** `2026-08-21` es **viernes** y `2026-08-27` es **jueves** — 7 días,
+la semana vie-jue que `PERIODOS` describe y que **`R-11` ya calcula solo**. `2026_agosto_21_28` son
+**8 días y contiene dos viernes**: no es una semana.
+
+⭐ **Y el testigo no necesita ningún cambio:** `R-11` resuelve a 21–27 en las dos tomas, así que
+testigo, corrida y tablero quedan sobre la **misma ventana** sin tocar nada.
+
+### ⚠ Hipótesis a CONFIRMAR, no a asumir: el límite superior del tablero es exclusivo
+
+El tablero rotula «21 ago 2026 - 28 ago 2026». Con una semana vie-jue de 7 días, lo más probable es
+que **el límite superior sea exclusivo** — la convención de un selector de rango. Si lo es, tablero
+y motor miran los mismos 7 días.
+
+**La prueba:** los conteos con 21–27 tienen que acercarse a `10/10/9` y `100/60/120` **más** que con
+21–28. Sobre el fixture daban **JM 10/9/9** y **GCBA 92/62/119** — mejor que 21–28, sin cerrar.
+
+⛔ **Reportar el resultado vivo y NO declarar confirmada la hipótesis si no cierra.** Quedaría como
+pregunta para el equipo.
+
+### ⭐ Dos criterios de aceptación que salen de la toma ANTES
+
+1. ⭐⭐ **`gcba_frecuencia` tiene que SEPARARSE de `camp_frecuencia`.** En la toma ANTES valen
+   **exactamente lo mismo** —`6,265164242375123`— porque `gcba` se lleva **26 de 26** filas.
+   `camp_frecuencia` no lleva `ambito` y **no se puede mover**. Así que **si el criterio nuevo mueve
+   una sola fila a JM, los dos tienen que separarse.** Si siguen idénticos al dígito, el cambio **no
+   tocó `resumen_metricas_dinamico`** — y eso es un resultado, no un detalle.
+2. **`frecuencia` sale de `sin_datos`, o se explica por qué no.** Hoy publica `sin_datos` con
+   `0 de 26` filas. La lectura es que **el cero es de la ventana y no del criterio** —sobre el
+   fixture los dos criterios se solapan casi enteros: 75 con «JM» en el nombre, 67 con `JDGAG`,
+   **65 en ambos**—. ⚠ **Verificarlo en la segunda toma antes de darlo por independiente**: con
+   21–27 puede cambiar.

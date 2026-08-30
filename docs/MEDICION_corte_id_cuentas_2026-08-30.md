@@ -257,7 +257,7 @@ salieron de ahí. **Es causa suficiente de discrepancia, aparte del corte y del 
 
 ---
 
-## 7 quater · ⭐⭐ Tres causas independientes de discrepancia, y sólo una la arregla este trabajo
+## 7 quater · ⭐⭐ CUATRO causas independientes de discrepancia, y sólo una la arregla este trabajo
 
 Una tercera lectura del tablero —**30/08 18:00**— cierra el movimiento que las dos anteriores
 insinuaban, y al hacerlo **destapa una causa que estaba fuera del diagnóstico**:
@@ -278,6 +278,7 @@ distintos:**
 | 1 | **el corte por nombre** — pierde 5 de las 29 implementaciones JM | **el cableado del `2026-08-30_2`** |
 | 2 | **el atraso de `looker/DIGITAL`** — 24 % por debajo de su fuente el 28/08 (§7 bis) | abierto |
 | 3 | ⭐ **la corrida el mismo día del cierre** | **esperando** — es la única barata |
+| 4 | ⭐⭐ **la ventana de 8 días** — `jm-20260828-193948` corrió con `2026_agosto_21_28` contra los **7 días** del tablero | **usando `2026_agosto_21_27`** |
 
 **La tercera, con el dato:** `jm-20260828-193948` se generó el **28/08 a las 19:41**, el mismo día
 en que cerró su ventana. **Si DV360 seguía moviéndose más de un millón dos días después, esa corrida
@@ -285,6 +286,51 @@ leyó DV360 lejos de su valor final.**
 
 ⛔ **Y el grano temporal no es una cuarta causa: es un límite de la fuente.** No produce un error
 que se pueda corregir — impide validar.
+
+---
+
+### ⭐⭐ La cuarta causa — `2026_agosto_21_28` **no es una semana**
+
+**Verificado por calendario:** `2026-08-21` es **viernes**, `2026-08-27` es **jueves**,
+`2026-08-28` es **viernes**. `PERIODOS` describe sus semanas como *«vie-jue»*.
+
+| período | días | |
+|---|---|---|
+| `2026_agosto_21_27` | **7** | ✅ la semana vie-jue — **es lo que `R-11` calcula solo** |
+| `2026_agosto_21_28` | **8** | ⛔ contiene **dos viernes**. No es una semana |
+
+⛔ **La corrida `jm-20260828-193948` usó los 8 días** contra los 7 del tablero. Es independiente de
+las otras tres causas.
+
+⭐ **Y explica retroactivamente algo que estaba anotado como «pista, no actuar»:** la ventana 21–27
+puntuaba mejor que 21–28 contra los conteos del tablero —**12 de error contra 20**— y se había
+tratado como posible sobreajuste. **Era la ventana correcta.**
+
+⚠ **Esto NO reabre «los dos períodos son válidos».** El motor tiene que poder correr la ventana que
+el usuario elija, y eso sigue en pie. **Lo que se cae es que `21_28` represente ESTA semana.**
+
+---
+
+### ⛔⛔ Retractación — `MEDICION_looker_DIGITAL_2026-08-30.md` §3
+
+**Ese documento no está en el repo** —nunca llegó, aunque el prompt `2026-08-30_1` lo cita como
+motivación—, así que la retractación se registra acá, que es donde vive hoy la pregunta.
+
+Su §3 concluye ***«ningún filtro reproduce el deck»*** apoyado en una tabla de **veinte**
+combinaciones de ventana × estado. ⛔ **Ninguna de las veinte es la ventana que el motor usa**,
+porque las veinte se construyeron sobre la premisa falsa de que `periodo_ref` vacío significa «sin
+ventana». **La conclusión no está demostrada y se retira.**
+
+**Lo que dicen los números vivos en su lugar:**
+
+| | motor (toma ANTES, 21–27) | deck |
+|---|---|---|
+| `gcba_imp_total` | **147.753.414** (191 filas) | 132.908.538 |
+| `imp_total` | **486.982** (6 filas) | 86.009 |
+
+⭐ **Mismo orden de magnitud en los dos**, contra los 259 M que daba la mejor aproximación de aquel
+documento. **La brecha que queda es chica y sus candidatos ya tienen nombre**: el atraso de
+`looker/DIGITAL`, DV360 sin consolidar, y la ventana de 8 días.
 
 ---
 
