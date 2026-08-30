@@ -9954,3 +9954,39 @@ valores»*). El diagnóstico de `L-031`/`L-032` del 28/08 **se sostiene**.
 `<c\b([^>]*?)(?:/>|>(.*?)</c>)` y **re-correr en el orden de la tabla de exposición**, no en el
 orden del listado. ⚠ **Cada re-corrida puede mover un número ya documentado**, así que va de a una y
 con el diff declarado — por eso no se hizo en el mismo prompt que lo encontró.
+
+---
+
+## ⚠ P1 · Los cuatro testigos restantes corren SIN las dos cachés y pueden morir en el muro (30/08/2026)
+
+**Medido, no supuesto:** `testigoDeAmbito()` murió por **tiempo máximo de ejecución** el 30/08 a las
+18:28 — imprimió los criterios y se colgó en `resolverMarcadores`. La causa es la que este repo ya
+tiene escrita en `CLAUDE.md` §4 y en el comentario de `medirAnclajePorEtapas`: **`resolverMarcadores`
+no abre las cachés**, y `buscarMapeo` no cachea por su cuenta —cada llamada relee `SOLAPAS` y
+`MAPEO` enteras—.
+
+**El helper compartido `testigoDeMarcadores_` no las abre**, así que el hueco es de todos sus
+llamadores:
+
+| testigo | estado |
+|---|---|
+| `testigoDeAmbito` | ✅ **arreglado** el 30/08 — preámbulo copiado, `try/finally` |
+| `testigoDeRdv` | ⚠ abierto |
+| `testigoDeTanda2` (`tipo_envio`) | ⚠ abierto |
+| `testigoDeFrecuencia` (tanda 4) | ⚠ abierto |
+| `testigoDeEtapaPost` | ⚠ abierto |
+
+⛔ **Por qué NO se arregló en el helper, que sería el lugar de una guarda compartida:**
+`abrirCacheDatosHoja_()` **resetea a `{}`** y `cerrarCacheDatosHoja_()` lo pone en **`null`**, así
+que **anidarlas pisaría la caché de un llamador externo** — y el `finally` la dejaría en `null` al
+salir. Hoy los cinco testigos son wrappers de nivel superior y no habría colisión, pero **la guarda
+sería correcta por casualidad**, no por diseño.
+
+**Cómo se cierra, y son dos caminos:** o los cuatro copian el preámbulo como hizo `testigoDeAmbito`
+—duplicación explícita, segura—, o `abrirCache*_` se vuelve **reentrante** (contador de aperturas, y
+cerrar sólo al llegar a cero) y ahí sí la guarda va en el helper y los cinco la heredan. ⭐ **La
+segunda es la buena** y arregla de paso los otros 15 sitios de `Auditoria.gs` que abren las cachés a
+mano, pero toca `Fuentes.gs` y pide su propio prompt.
+
+⚠ **El síntoma no avisa de la causa:** «Exceeded maximum execution time» no dice *«te faltan las
+cachés»*, y el testigo alcanza a imprimir su encabezado, así que **parece que corrió**.

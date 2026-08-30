@@ -5394,6 +5394,29 @@ function testigoDeAmbito() {
   });
   Logger.log('');
 
+  /* ⛔⛔ **EL PREÁMBULO, COPIADO — no armado.** La primera versión de este testigo no lo tenía y
+   * **murió en el muro de los 6 minutos** el 30/08 a las 18:28, después de imprimir los criterios
+   * y colgarse en `resolverMarcadores`. Es exactamente la lección que este archivo ya tiene
+   * escrita en `medirAnclajePorEtapas` y que `CLAUDE.md` §4 registra: *«un instrumento que quiere
+   * medir lo que cuesta una corrida no ARMA su preámbulo, lo COPIA»*.
+   *
+   * ⭐ **Y son DOS cachés, no una.** `resolverMarcadores` **no las abre**, y `buscarMapeo` no
+   * cachea por su cuenta: cada llamada relee `SOLAPAS` y `MAPEO` enteras. Con una sola encendida
+   * el ahorro queda tapado; medido en su momento, `unirDigitalPorCuenta` pasó de 325 s a 6 s con
+   * las dos — factor 54.
+   *
+   * Las dos líneas son las mismas de `generarInforme` (`Generador.gs`), en el mismo orden, y el
+   * cierre va en `finally` porque abajo hay un `return` temprano.
+   *
+   * ⚠ **Y por eso NO van dentro de `testigoDeMarcadores_`, que sería el lugar «correcto» para una
+   * guarda compartida:** `abrirCacheDatosHoja_()` **resetea a `{}`** y el cierre lo pone en
+   * `null`, así que anidarlas **pisaría la caché de un llamador externo**. Acá es seguro porque
+   * esto es un wrapper de nivel superior. Los otros cuatro testigos que usan el helper tienen el
+   * mismo hueco y quedan anotados como pendiente, no arreglados de paso. */
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+
   var r = testigoDeMarcadores_(MARCADORES_AMBITO_TESTIGO_, 'ámbito JM/GCBA — corte por Id cuentas');
   if (!r.ok) {
     Logger.log('⛔ FALLÓ: ' + r.motivo);
@@ -5442,6 +5465,12 @@ function testigoDeAmbito() {
   Logger.log('  corresponde lo dice el CONTEO contra el tablero (Parte C), y las SUMAS no son');
   Logger.log('  criterio: la lámina publica ACUMULADO por decisión del usuario del 30/08.');
   return r;
+
+  } finally {
+    // Orden inverso al de apertura, igual que en `generarInforme`.
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
 }
 
 /* ═══════════ `2026-08-25` — EL TESTIGO QUE REEMPLAZA AL ENCABEZADO ════════════════════════
