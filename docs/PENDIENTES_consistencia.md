@@ -10042,3 +10042,31 @@ se lee como un camino vivo**, y nada en el código lo distingue de uno que corre
 
 **Cómo se cierra:** o vuelve a tener un usuario —y entonces esta entrada se tacha—, o se le escribe
 un control que lo ejercite, que es lo único que convierte «existe» en «anda».
+
+---
+
+## ⛔ P1 · Dos solapas de `looker` no coinciden sobre quién es JM en la misma ventana (30/08/2026)
+
+**Medido en la corrida del testigo de ámbito**, ventana `2026-08-21 → 2026-08-27`:
+
+| solapa (misma base `looker`) | filas de JM |
+|---|---|
+| `DIGITAL` | **14** |
+| `resumen_metricas_dinamico` | **0** de 26 |
+
+⭐ **Y no es un problema del criterio de corte, que es lo que lo vuelve interesante.** Se probaron
+**dos criterios independientes** sobre `resumen_metricas_dinamico` y los dos dan cero sobre las
+mismas 26 filas: `campana~=JM` (el viejo) y `id_cuenta~=JDGAG` (el nuevo). **El cero es del dato.**
+
+⇒ **O las dos solapas no cubren el mismo universo, o una de las dos no se está actualizando.**
+
+**Consecuencia concreta:** `frecuencia` publica `sin_datos` y **va a seguir vacía hasta que esto se
+conteste**. `gcba_frecuencia` se lleva las 26 de 26, y por eso vale exactamente lo mismo que
+`camp_frecuencia` —que no lleva corte— en las dos tomas.
+
+⚠ **No bloquea el cableado del corte** (`2026-08-30_2`): el cambio pasó sus seis reglas y la
+conservación es exacta. Esto es una pregunta sobre **la fuente**, no sobre el corte.
+
+**Por dónde se empieza:** comparar los `Id cuentas` de las 26 filas de `resumen_metricas_dinamico`
+en la ventana contra los de las 197 de `DIGITAL`. Si son conjuntos distintos, es universo; si son
+los mismos y sólo difiere el contenido, es actualización.
