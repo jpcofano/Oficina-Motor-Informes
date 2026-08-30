@@ -9877,3 +9877,80 @@ desglose, y ahí ninguna diferencia sería atribuible (`CLAUDE.md` §4, *un camb
 ⭐ **Lo que ya está medido y no hace falta volver a medir:** el mecanismo de `D-52` funciona y es de
 una celda. **Lo que falta es saber cuál es el universo correcto para el mail**, y eso no lo contesta
 ningún fixture — el más nuevo de `digital` es del 20/08 y la ventana arranca el 21.
+
+---
+
+## ⛔ P0 · El lector de `.xlsx` de `tools/` corre los valores una columna — 13 herramientas contaminadas, 3 migradas (30/08/2026)
+
+**El defecto.** Google Sheets exporta las celdas vacías **autocerradas** —`<c r="S2" s="2"/>`— y el
+patrón `<c\b([^>]*)>(.*?)</c>` de `tools/medir-post-en-desglose.py` **no las reconoce**: arranca en
+la autocerrada, consume la celda siguiente entera buscando el primer `</c>`, y le adjudica a la
+primera el valor de la segunda. **Los valores sangran una columna hacia atrás, sin fallar.** La
+lección de método está en `CLAUDE.md` §4; acá va **quién está contaminado y en qué orden se revisa**.
+
+⭐⭐ **El criterio de exposición, que es lo reutilizable — y que INVIERTE la prioridad intuitiva.**
+Contar celdas autocerradas **no mide el daño**: lo que sangra es una autocerrada seguida, **en la
+misma fila**, por una celda con valor. Si están al final de la fila —relleno del rango declarado— no
+rompen nada. La exposición de una solapa es:
+
+```
+la proporción de filas donde una celda autocerrada PRECEDE a una celda con valor
+```
+
+**Medido el 30/08 sobre los artefactos de `docs/_fixtures/`** (`Motor_de_Informes_2026-08-30.xlsx`,
+`Seguimiento_Digital_2026-08-30.xlsx`, `Base_Looker_2026-08-30.xlsx`):
+
+| solapa | filas | expuestas | **%** | autocerradas |
+|---|---|---|---|---|
+| ⛔ `motor/CORRIDAS` | 113 | 112 | **99,1 %** | 112 |
+| ⛔ `digital/Cuentas` | 4.399 | 4.398 | **100 %** | 58.139 |
+| ⛔ `motor/SOLAPAS` | 109 | 84 | **77,1 %** | 244 |
+| `digital/Digital` | 1.711 | 1.079 | 63,1 % | 13.612 |
+| `digital/Directa Mail` | 2.875 | 1.712 | 59,5 % | 16.729 |
+| `digital/CAMPAÑAS_DESGLOCE_DIGITAL` | 5.162 | 2.030 | 39,3 % | 4.645 |
+| ⛔ `motor/MARCADORES` | 221 | 74 | **33,5 %** | 157 |
+| `looker/resumen_metricas_dinamico` | 1.503 | 333 | 22,2 % | 14.574 |
+| `motor/MAPEO` | 202 | 29 | 14,4 % | 43 |
+| `motor/BASES` | 7 | 1 | 14,3 % | 1 |
+| `looker/Cuentas` | 2.595 | 52 | 2,0 % | 25.046 |
+| `digital/Directa IVR` | 161 | 2 | 1,2 % | 2.146 |
+| ✅ `looker/DIGITAL` | 5.150 | **27** | **0,5 %** | **33.531** |
+| ✅ `looker/CC` · `MAIL` · `IVR` · `motor/CONFIG` · `INFORMES` · `CAMPANAS` · `PERIODOS` | — | 0–1 | **≈0 %** | hasta 72.856 |
+
+⭐ **`looker/DIGITAL` es el ejemplo que prueba por qué no se cuenta el total:** tiene **33.531**
+celdas autocerradas —de las más altas de la tabla— y **0,5 %** de exposición, porque son las
+columnas J–S del rango declarado, **todas posteriores a `estado`**.
+
+⚠ **Las críticas son las que leen CONFIGURACIÓN, no datos.** `CORRIDAS`, `SOLAPAS` y `MARCADORES`
+están arriba de la tabla, y un valor corrido ahí no produce un número raro: produce **una premisa
+falsa sobre qué va a hacer el motor**.
+
+**Estado de las 13 herramientas** que comparten la clase `Libro`:
+
+| herramienta | estado |
+|---|---|
+| `medir-corte-id-cuentas.py` · `medir-corte-parte-b.py` · `medir-looker-atraso-y-config.py` | ✅ **migradas** a `tools/leer_xlsx_por_referencia.py` (30/08) |
+| `medir-post-en-desglose.py` (la clase `Libro` misma) | ⛔ **abierta** — es la raíz |
+| `medir-desglose-por-cuenta` · `medir-post-en-desglose` · `volcar-nombres-desglose` | ⛔ leen el desglose (39 %) |
+| `medir-asunto-directa-mail` · `medir-mail-entregados-jm` · `medir-pisada-union-digital` | ⛔ leen `digital` (59-63 %) |
+| `medir-fila-de-cuenta` · `medir-impacto-etapa-post` · `medir-resumen-ejecutivo` · `medir-looker-vs-desglose` | ⚠ mixtas |
+| `medir-ambito-looker` | ✅ **verificada intacta**, ver abajo |
+
+✅ **`medir-ambito-looker.py` NO era la primera a revisar, y se confirmó corriéndola con los dos
+lectores** sobre el fixture del 28/08 (misma densidad que el 30/08: 27 filas expuestas, 0,5 %):
+
+| | lector roto | lector corregido |
+|---|---|---|
+| filas `estado=Activa` | 713 | **713** |
+| `jm` — filas · meta · google · prog | 17 · 0 · 426.360 · 14.989.761 | **idénticos** |
+| `gcba` — meta · google | 8.562.079 · 191.639.326 | **idénticos** |
+| `gcba` — programmatic | 276.926.639 | 276.922.898 — **Δ 3.741 · 0,0014 %** |
+
+⭐ **Lo estructural —qué nombres caen de cada lado— está intacto, que es exactamente lo que el
+commit `782bf3e` declaraba citable de esa corrida** (*«es citable lo ESTRUCTURAL … y no los
+valores»*). El diagnóstico de `L-031`/`L-032` del 28/08 **se sostiene**.
+
+**Cómo se cierra:** migrar `Libro` en `medir-post-en-desglose.py` al patrón
+`<c\b([^>]*?)(?:/>|>(.*?)</c>)` y **re-correr en el orden de la tabla de exposición**, no en el
+orden del listado. ⚠ **Cada re-corrida puede mover un número ya documentado**, así que va de a una y
+con el diff declarado — por eso no se hizo en el mismo prompt que lo encontró.

@@ -90,6 +90,55 @@ otra fila.
 | `Testigo 2026-08-22 1402 Informe semanal JM — vie 14_08 — jue 20_08.zip` | 11.935.542 | `cd6f0050f3f0cf5effdf54204c10f91f6fdb773a6e0c8a239d8d969efcd353b3` |
 | ⭐ `Seguimiento Digital  2026-08-20.zip` **(editado a mano, 26/08)** | 91.643.439 | `15b564919ae4fa97dc7b17f6d6962749359ddbeef99d786d40457a090cc5650e` |
 | ⭐⭐ `Seguimiento Digital 2026-08-28.zip` | 33.015.823 | `0ce0086d192bbb121c86dfe72434c40254c95c5153e8c43af9a39badfa81ac79` |
+| `Seguimiento_Digital_2026-08-30.xlsx` | 4.301.423 | `d7b917f5711dcdd70b20b82ce8d6ccaa336fc3c1bcf5a0114296ca33edf70d6a` |
+| ⭐ `Tablero_carga_21-28ago_lectura_2026-08-29.png` | 97.792 | `f841ba3931a9b3de3ad0cd7eb5ea5b23f4760f3c308a118ba6d442b28fc7b083` |
+| ⭐ `Tablero_carga_21-28ago_lectura_2026-08-30.png` | 98.449 | `d01da8066d95de5f0e26619e4314fb81eb80f0c7bf9942673879d4393baf54e6` |
+
+### ⭐⭐ Séptima fila y siguientes — el 30/08, y las DOS primeras filas que no son planillas
+
+**Entraron el 30/08/2026**, con el `SHA256SUMS.txt` que las acompañaba. Las tres verifican.
+
+⭐⭐ **`Seguimiento_Digital_2026-08-30.xlsx` llegó con OTRO NOMBRE — `Seguimiento Digital  (6).xlsx`
+en la carpeta de descargas — y la huella fue lo único que lo identificó.** Es el argumento de esta
+tabla otra vez, y esta vez con el archivo del día: sin el `sha`, un export de ayer y uno de hoy son
+indistinguibles, y acá había además un `(5)` y un `(6)` a un carácter de distancia.
+
+**Los otros tres del `ADDENDUM 1` §1 llegaron en una segunda tanda, el mismo día**, después de que
+la primera corrida los reportara ausentes. Los tres verifican contra el `SHA256SUMS.txt`:
+
+| archivo | bytes | sha256 |
+|---|---|---|
+| `Base_Looker_2026-08-30.xlsx` | 1.886.288 | `7272b383ebca44916250383a65c3155cee04ea172dde78fd7554ee20040ae5b2` |
+| `Base_Looker_fija_2026-08-22.xlsx` | 1.393.414 | `db0b5ca9c2fd736cb6efef142bee8684780edbd8bf1f538111ce3b79c0d44649` |
+| `Motor_de_Informes_2026-08-30.xlsx` | 431.545 | `404cb9431b78e5a1de9345ded0a7b61b4b12df6abcbd07480df54862bdaddbc4` |
+
+⚠ **Llegaron con el nombre sin guiones** (`Base_Looker_20260830.xlsx`, y el tercero con un ` (1)`
+pegado). Se renombraron a la convención de la carpeta **después** de verificar la huella, que es el
+único orden que no puede equivocarse de archivo.
+
+⭐⭐ **Lo que desbloquearon, y es la mitad del valor de esta carpeta:** con `Base_Looker` de las dos
+fechas se pudo **medir** la hipótesis del `ADDENDUM` §2 en vez de creerla — entre el 28 y el 30
+`looker/DIGITAL` movió **767** cuentas y el desglose **67**, así que se movió una sola y era la que
+estaba atrás. Y con `Motor_de_Informes` quedaron verificadas P5 y P6 contra la configuración viva,
+que hasta entonces se apoyaban en el snapshot del 26/08.
+
+⛔⛔ **Y una condición para leer cualquiera de estos archivos, que costó cinco números falsos:** el
+`.xlsx` que exporta Google Sheets trae las celdas vacías **autocerradas** (`<c r="S2" s="2"/>`) —
+**4.645** en una sola solapa— y un lector que no las contemple **corre los valores una columna hacia
+atrás sin fallar**. Se lee con `tools/leer_xlsx_por_referencia.py`, y **se cruza contra `openpyxl`
+antes de citar un número**. La clase `Libro` de `tools/medir-post-en-desglose.py`, que otras 12
+herramientas importan, **todavía tiene el patrón viejo**.
+
+⛔ **`Motor_de_Informes_2026-08-30.xlsx` es la primera planilla de CONFIGURACIÓN de esta carpeta**,
+no una base. Vale anotarlo porque cambia qué preguntas puede contestar un fixture: hasta hoy
+respondían *«qué decía el dato»* y éste responde *«qué iba a hacer el motor»* — que es la pregunta
+que `CLAUDE.md` §7 le da a las hojas de registro vivas, y que **ningún artefacto en disco podía
+contestar con fecha**.
+
+⭐ **Las dos capturas del tablero son la primera evidencia de acá que no sale de una planilla**, y
+entran por lo que el `ADDENDUM` §0 bis midió: **el tablero cambia un período ya cerrado**. Una cifra
+suya sin fecha de lectura no identifica un número, así que se archiva la imagen igual que un export.
+Sus nombres llevan la fecha de **lectura**, no la de la ventana, que es la que las distingue.
 
 ### ⭐⭐ Sexta fila — el primer fixture con las CINCO bases y el deck de la MISMA ventana (28/08/2026)
 
