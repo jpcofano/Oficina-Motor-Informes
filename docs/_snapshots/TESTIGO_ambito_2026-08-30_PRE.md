@@ -124,9 +124,29 @@ si el criterio nuevo mueve aunque sea una fila a JM, `gcba_frecuencia` **tiene q
 sabe leer conteos de una traza de `CONTEO` ni de `RATIO` sin filtro. **No invalida sus valores**,
 que están, pero el aviso aparece en el log y conviene no leerlo como un problema del cambio.
 
-⚠ Y `resolverMarcadores` informa **`error=1`** sobre 220 marcadores. No es de los 16 del testigo
-—los 16 resolvieron— pero **queda anotado**: es un marcador del informe que hoy falla y nadie lo
-nombra.
+### ⭐ El `error=1`, nombrado — y los 31 `sin_datos` son TRES familias, no 31 síntomas
+
+**El error tiene nombre:** `enc_alcance` · `«FALTA:enc_alcance@sin_fecha_para_recortar»` — el
+agregado global de `digital/Alcance` necesita recortar por la ventana del informe y esa solapa no
+tiene `fecha_periodo` en `MAPEO`. ✅ **No bloquea el cableado:** no toca las tres solapas que
+cambian, no usa `ambito`, y no es ninguno de los diez marcadores del cambio. **P4 satisfecha.** Va a
+`PENDIENTES` con la forma escrita, no sólo el síntoma.
+
+**Y los 31 `sin_datos` se cuentan como tres causas, porque tres se atacan y treinta y uno no:**
+
+| familia | cuántos | qué pasa |
+|---|---|---|
+| **A · `@ultimo_sin_fecha_ambiguo`** | 11 | `cc_*`, `alc_*`, `imp_totales`, `u1_pre_meta_alcance` sobre `reuniones`. `ÚLTIMO` **sin fecha utilizable** sobre 117–150 filas con valores distintos: la operación pide un desempate que la solapa no puede dar |
+| **B · `@ultimo_ambiguo`** | 9 | `camp_*`. `ÚLTIMO` **por fecha**, pero 3 o 4 filas **comparten la fecha más alta** (27/08) con valores distintos |
+| **C · `@grupo_sin_ranura`** | 4 | los cuatro `post_periodo*`. Ninguna de las 14 filas trae `__temario_slot__` — es dependencia del **sellado por TEMARIO**, no de los datos |
+| legítimos | resto | `ecv_barrio2`/`ecv_barrio3` sin dato es el caso normal con **un solo barrio** (Coghlan); los `ecv_insc_*` son columnas vacías en la fila |
+
+⭐⭐ **La familia B merece leerse con su historia, porque es el RESIDUO de un arreglo que
+funcionó.** Antes de `b1dc43f` eran **~130** `camp_*` en `---` por *«2 filas en `CAMPANAS` —
+ambigua»*; ahora son **9**, y por otra cosa: un **empate de fechas**. El arreglo hizo su trabajo y
+**dejó a la vista una segunda ambigüedad distinta** — aquélla era de *selección*, ésta es de
+*desempate*. ⚠ `camp_titulo` es la más visible: **4 filas empatadas**, «Festival FIBA» contra
+«1 A 1 JM | 21/8 CO…». **Hoy el informe no puede elegir qué campaña destaca.**
 
 ---
 

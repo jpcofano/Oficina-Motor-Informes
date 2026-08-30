@@ -9990,3 +9990,28 @@ mano, pero toca `Fuentes.gs` y pide su propio prompt.
 
 ⚠ **El síntoma no avisa de la causa:** «Exceeded maximum execution time» no dice *«te faltan las
 cachés»*, y el testigo alcanza a imprimir su encabezado, así que **parece que corrió**.
+
+---
+
+## ⚠ P1 · `enc_alcance` falla porque `digital/Alcance` no tiene cómo recortarse por ventana (30/08/2026)
+
+**El síntoma, con nombre:** `enc_alcance` publica `«FALTA:enc_alcance@sin_fecha_para_recortar»`. Es
+el **`error=1`** que `resolverMarcadores('jm')` venía informando sobre 220 marcadores sin que nadie
+lo identificara.
+
+**La causa:** el agregado global de `digital/Alcance` necesita recortar por la ventana del informe,
+y esa solapa **no tiene `fecha_periodo` en `MAPEO`**.
+
+⭐⭐ **Y esto no es un defecto nuevo: es una FORMA que el repo ya resolvió una vez.**
+`looker/DIGITAL` tampoco tiene columna temporal propia, y se recorta con
+`SOLAPAS.ventana_ref = Cuentas` más `campo_id_cuenta` — o sea, **por qué cuentas entran, no por
+cuánto de cada cuenta**. `digital/Alcance` tiene el mismo problema y **no tiene la misma salida
+declarada**.
+
+⭐ **El arreglo probable es una FILA DE CONFIGURACIÓN, no código:** un `ventana_ref` sobre una
+solapa que sí tenga fecha. Vale escribirlo así —la forma, no sólo el síntoma— porque quien lo tome
+va a llegar antes por ahí que releyendo el error.
+
+⚠ **Verificado que NO bloquea el cableado del corte** (`2026-08-30_2`): no toca ninguna de las tres
+solapas que cambian, no usa la dimensión `ambito`, y no es ninguno de los diez marcadores del
+cambio.

@@ -1750,8 +1750,57 @@ var DIMENSIONES_ = {
     jm: {
       'rdv|RVD JM-CM - ES': 'figura=Jorge Macri',
       'digital|Directa Mail': 'mail_remitente=jorge.macri@buenosaires.gob.ar',
-      'looker|DIGITAL': 'nombre_campaña~=JM',
-      /* ⭐⭐ `2026-08-28` — **el desglose, con la MISMA regla que `looker/DIGITAL`.** Los ocho
+      /* ⭐⭐ `2026-08-30_2` — **EL CORTE PASA DEL NOMBRE AL `Id cuentas`.** Reemplaza a
+       * `nombre_campaña~=JM` (15/08) acá, a `des_campana_2~=JM || des_campana_3~=JM` (28/08) en el
+       * desglose y a `campana~=JM` en `resumen_metricas_dinamico`. Las tres inferían el ámbito del
+       * TEXTO del nombre; ahora sale de una columna.
+       *
+       * ⭐ **Qué reemplaza y por qué, con los conteos del tablero (lectura 30/08, ventana 21–27):**
+       * el corte por nombre **pierde 5 de las 29 implementaciones JM**; el corte por `Id cuentas`
+       * **pierde 1**. Sobre la lámina JM da `10/9/9` contra `10/10/9` del tablero, mientras el
+       * criterio viejo da `8/7/7`.
+       *
+       * ⭐⭐ **Pero la evidencia que DECIDIÓ no son los totales: es el DIFERENCIAL.** De las 343
+       * filas de la ventana, **sólo 6 discrepan** entre los dos criterios — las seis de
+       * `3487-AGOJDGAG` y `3488-AGOJDGAG`, las seis campañas **POST del «1 a 1» y de RDV**, o sea
+       * **JM** — y el corte por id **acierta las seis**. El sufijo **corrige** el error; no lo
+       * mueve de lugar. (`3487-AGOJDGAG` es la cuenta de Coghlan, con seis casos `exacto`
+       * validados el 28/08, `V-114`…`V-121`.)
+       *
+       * ⭐ **Por qué `JDGAG` y NO la terminación `AG`.** En la ventana los dos son
+       * indistinguibles —el único sufijo terminado en `AG` es `JDGAG`—, pero en la solapa entera se
+       * separan por **9 filas**: `2475-ENESEGAG`, *«Recorrida por Servicio Penitenciario de Marcos
+       * Paz»*. Ahí el prefijo de área es **`SEG`, no `JDG`**, ninguna de las nueve dice «JM» en sus
+       * tres columnas de nombre, y la columna `JM | GCBA | POLICIA` dice **`GCBA`** en las nueve.
+       * Tres criterios en contra. ⚠ *«Marcos Paz»* es **el lugar** —el complejo penitenciario—, no
+       * una persona: la inferencia «agenda de otro funcionario» que circuló se retiró.
+       *
+       * ⛔ **Por qué NO se usó la columna T, que se llama literalmente `JM | GCBA | POLICIA`:**
+       * **contradice al nombre en 530 de las 620 filas** cuyo nombre dice JM —el 85 %— y sus marcas
+       * `JM` **se cortan en abril de 2026**. Decidido el 27/08 sobre `3527-AGOJDGAG` y confirmado
+       * con esta medición.
+       *
+       * ⭐ **`~=` alcanza y no hace falta un operador «termina en».** Medido sobre los artefactos
+       * del 30/08 y verificado con dos lectores: `JDGAG` aparece **531** veces en `looker|DIGITAL`,
+       * **531** en el desglose y **67** en `resumen_metricas_dinamico`, **siempre como sufijo** y
+       * **en ninguna otra columna**.
+       *
+       * ⚠ **La entrada del DESGLOSE no mueve ningún número hoy**, y va igual: medido sobre
+       * `MARCADORES` del 30/08, de los 42 marcadores que usan `ambito` **ninguno** está sobre esa
+       * solapa. Es **preparatoria** — se activa el día que los ocho `imp_*` terminen la mudanza que
+       * este mismo archivo declara y `MARCADORES` todavía no.
+       *
+       * ⛔ **Y lo que este cambio NO arregla, para que nadie lo lea como que sí:** la fuente no
+       * tiene grano semanal. `L-031` y `L-032` publican **ACUMULADO** —total de vida de las
+       * campañas activas en la ventana— por decisión del usuario del 30/08, rotulado como tal. Los
+       * **conteos** son el criterio; las sumas dan 134 % y 251 % y **no son un error**. */
+      'looker|DIGITAL': 'ldig_id_cuenta~=JDGAG',
+      /* ⛔ **SUPERSEDIDO el 30/08 por el bloque de arriba** — este comentario describe la regla
+       * `des_campana_2~=JM || des_campana_3~=JM`, que ya NO es la que está en la línea de abajo.
+       * Se conserva porque su último párrafo sigue vigente y es la razón por la que la columna
+       * `des_ambito` tampoco se usa ahora.
+       *
+       * ⭐⭐ `2026-08-28` — **el desglose, con la MISMA regla que `looker/DIGITAL`.** Los ocho
        * `imp_*` cambian de fuente por decisión del usuario —*«que usen la misma fuente, y que el
        * criterio sea el mismo»*—, y `des_campana_2` (col V) **es la misma columna** que
        * `nombre_campaña` (col F) allá: mismo nombre de encabezado y mismo contenido.
@@ -1766,7 +1815,7 @@ var DIMENSIONES_ = {
        * `des_campana_2` dice `1 A 1 JM | 21/8 COGHLAN`. **Los dos criterios se contradicen sobre la
        * misma fila**, y eso ya estaba registrado el 26/08 como *«dos criterios, disjuntos»*.
        * Elegirlo acá habría cambiado el corte además de la fuente — dos variables a la vez. */
-      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2~=JM || des_campana_3~=JM',
+      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_id_cuenta~=JDGAG',
       /* (*) `2026-08-28_4` — **la solapa de IVR, y es la unica base que trae el ambito escrito
        * en una columna propia.** Medido sobre el fixture del 28/08 (`sha256` 0ce0086d...ac79):
        * 63 filas con `ID cuentas`, `Vocero` (col G) con **dos** valores y ninguno vacio —
@@ -1779,7 +1828,7 @@ var DIMENSIONES_ = {
        * contradecia al nombre y gano el nombre; aca la columna explicita es la que acierta.
        * Por eso se mide una por una y no se hereda la regla de la solapa de al lado. */
       'digital|Directa IVR': 'ivr_vocero=JM',
-      'looker|resumen_metricas_dinamico': 'campana~=JM'
+      'looker|resumen_metricas_dinamico': 'id_cuenta~=JDGAG'
     },
     // `gcba` es **todo lo que no es `jm`** (`D-33`), no un valor propio: se implementa negando
     // la misma condición. La consecuencia está escrita en `D-33` y es que una fila sin el campo
@@ -1787,19 +1836,21 @@ var DIMENSIONES_ = {
     gcba: {
       'rdv|RVD JM-CM - ES': 'figura!=Jorge Macri',
       'digital|Directa Mail': 'mail_remitente!=jorge.macri@buenosaires.gob.ar',
-      'looker|DIGITAL': 'nombre_campaña!~=JM',
+      // `2026-08-30_2` — la negación de la de arriba. `gcba` sigue siendo **todo lo que no es
+      // `jm`** (`D-33`), no un valor propio: una fila sin `Id cuentas` cargado cae acá **y se ve**.
+      'looker|DIGITAL': 'ldig_id_cuenta!~=JDGAG',
       // `2026-08-28` — la negación de la de arriba, por lo mismo que dice `D-33`: `gcba` es
       // **todo lo que no es `jm`**, no un valor propio.
-      /* ⚠ La negacion de un OR es un AND de negaciones -De Morgan-: 'ni en una ni en la otra'.
-       * Por eso este lado NO lleva '||' y sigue funcionando con el separador de siempre. */
-      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2!~=JM && des_campana_3!~=JM',
+      /* ⛔ **SUPERSEDIDO el 30/08.** La nota de De Morgan valía para el `||` del criterio por
+       * nombre; el corte por `Id cuentas` es una sola condición y su negación también. */
+      'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_id_cuenta!~=JDGAG',
       /* `2026-08-28_4` — la negacion de la de arriba, por lo que dice `D-33`: `gcba` es **todo
        * lo que no es `jm`**. Aca eso importa mas que en otras bases porque la columna tiene un
        * valor `GCBA` literal que invita a escribir `ivr_vocero=GCBA`: con la igualdad, una fila
        * con el vocero vacio o mal tipeado **quedaria afuera de los dos ambitos y en silencio**.
        * Con la negacion cae en GCBA y se ve. */
       'digital|Directa IVR': 'ivr_vocero!=JM',
-      'looker|resumen_metricas_dinamico': 'campana!~=JM'
+      'looker|resumen_metricas_dinamico': 'id_cuenta!~=JDGAG'
     }
   },
   plataforma: {
