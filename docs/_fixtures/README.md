@@ -160,8 +160,14 @@ carpeta se apoya en huellas declaradas:**
 2. ⚠ **La HORA es INFERIDA, no declarada.** Sale de las capturas de pantalla de origen —21:05,
    15:47 y 18:00—, cuyos **tamaños coinciden exactamente** con los tres archivos. Pero **no son
    idénticas byte a byte**: difieren en un chunk de metadatos del PNG conservando el tamaño. Es
-   evidencia fuerte de procedencia y **no es una identidad probada**. Si la hora importa para una
-   conclusión, hay que pedirla declarada.
+   evidencia fuerte de procedencia y **no es una identidad probada**.
+   - ⭐ **Y qué NO depende de esa salvedad, que es lo que la vuelve inofensiva:** la conclusión del
+     asentamiento de DV360 **se apoya en el ORDEN de las tres lecturas, no en sus horas** — y el
+     orden lo fijan **los propios valores**: la que trae `281 · 106.498.422` es anterior a las dos
+     que traen `280 · 105.404.25x`, y entre esas dos la de `…257` es posterior porque DV360 ya no
+     se mueve. **La hora es una etiqueta cómoda para nombrar los archivos, no un dato del que
+     cuelgue ninguna conclusión.** Si algún día una conclusión sí dependiera de la hora, hay que
+     pedirla declarada.
 
 ⭐ **Las dos capturas del tablero son la primera evidencia de acá que no sale de una planilla**, y
 entran por lo que el `ADDENDUM` §0 bis midió: **el tablero cambia un período ya cerrado**. Una cifra

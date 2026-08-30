@@ -36,6 +36,38 @@ contra `Tablero_carga_21-28ago_lectura_2026-08-30_1800.png`.
 
 ---
 
+## 0 bis · ⭐⭐ Decisión del usuario posterior al prompt (30/08/2026) — `L-031` y `L-032` publican ACUMULADO
+
+**Sin fuente con grano semanal, la lámina publica lo que la fuente tiene** —el total de vida de las
+campañas activas en la ventana— **y lo dice en el rótulo**: «impresiones acumuladas de las campañas
+del período», o la redacción que el usuario apruebe.
+
+⛔ **Esto REEMPLAZA el criterio de éxito del §0 en lo que se refiere a las sumas.** Los conteos
+siguen igual. **El tablero deja de ser el criterio de las SUMAS y pasa a ser el control del CORTE:**
+
+| | qué mide | cómo se lee |
+|---|---|---|
+| **CONTEOS** | si el corte agarra las campañas correctas | ⛔ **tienen que cerrar** — JM 10/10/9, GCBA 100/60/120, **por filas** |
+| **SUMAS** | acumulado de campaña contra entrega del período | ✅ **no tienen que cerrar y no son un error** — 134 % y 251 % es la diferencia esperada entre **dos magnitudes distintas**. Se reportan, no se persiguen |
+
+⭐⭐ **Y se invierte el signo del hallazgo, que es lo que hay que tener presente al escribir la Parte
+C: una suma que no cierra ya NO es un hallazgo, y una que cerrara SÍ lo sería** — significaría que
+la solapa tiene un grano que la medición no encontró.
+
+⚠ **Lo que la decisión arrastra va en un prompt aparte, DESPUÉS de B y C**, para redactar el rótulo
+sabiendo qué publica realmente la lámina con el corte nuevo. Queda escrito acá para que no se
+pierda:
+
+1. **Un `D-NN` en `PLAN.md`** con la decisión y su motivo, para que nadie «arregle» la lámina más
+   adelante sumando mal.
+2. **El rótulo en la lámina**, con una pregunta de propiedad abierta: la plantilla es del equipo
+   (`C-01`), así que **o el rótulo viaja en un token que el motor completa, o lo edita el equipo**.
+   ⭐ Preferible lo primero — así no se pierde con una plantilla nueva.
+3. **Un aviso en el reporte de corrida cuando la ventana cerró hace menos de dos días**, por el
+   asentamiento de DV360.
+
+---
+
 ## 1 · La decisión que se aplica
 
 **Tres solapas cambian**, las tres que hoy infieren el ámbito del texto del nombre:
