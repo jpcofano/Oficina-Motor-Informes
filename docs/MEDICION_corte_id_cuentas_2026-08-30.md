@@ -311,26 +311,21 @@ el usuario elija, y eso sigue en pie. **Lo que se cae es que `21_28` represente 
 
 ---
 
-### ⛔⛔ Retractación — `MEDICION_looker_DIGITAL_2026-08-30.md` §3
+### ⛔⛔ Puntero — la retractación de «ningún filtro reproduce el deck»
 
-**Ese documento no está en el repo** —nunca llegó, aunque el prompt `2026-08-30_1` lo cita como
-motivación—, así que la retractación se registra acá, que es donde vive hoy la pregunta.
+**Esa conclusión se retiró, y la retractación vive donde vive el error:**
+[`MEDICION_looker_DIGITAL_2026-08-30.md` §3](MEDICION_looker_DIGITAL_2026-08-30.md). Acá va el
+puntero y no una copia — **la retractación pertenece al documento retractado, y donde vive la
+pregunta va la referencia**. Duplicarla garantizaría que las dos versiones se separen, que es lo
+que `CLAUDE.md` §7 existe para impedir.
 
-Su §3 concluye ***«ningún filtro reproduce el deck»*** apoyado en una tabla de **veinte**
-combinaciones de ventana × estado. ⛔ **Ninguna de las veinte es la ventana que el motor usa**,
-porque las veinte se construyeron sobre la premisa falsa de que `periodo_ref` vacío significa «sin
-ventana». **La conclusión no está demostrada y se retira.**
-
-**Lo que dicen los números vivos en su lugar:**
-
-| | motor (toma ANTES, 21–27) | deck |
-|---|---|---|
-| `gcba_imp_total` | **147.753.414** (191 filas) | 132.908.538 |
-| `imp_total` | **486.982** (6 filas) | 86.009 |
-
-⭐ **Mismo orden de magnitud en los dos**, contra los 259 M que daba la mejor aproximación de aquel
-documento. **La brecha que queda es chica y sus candidatos ya tienen nombre**: el atraso de
-`looker/DIGITAL`, DV360 sin consolidar, y la ventana de 8 días.
+⭐ **Lo único que hace falta saber desde acá**, porque alimenta las cuatro causas de arriba: aquel
+§3 se apoyaba en veinte combinaciones de ventana × estado construidas sobre la premisa falsa de
+que `periodo_ref` vacío significa «sin ventana». **Ninguna de las veinte era la ventana que el
+motor usa.** Medido en vivo, `gcba_imp_total` da **147.753.414** contra los **132.908.538** del
+deck, e `imp_total` **486.982** contra **86.009** — mismo orden de magnitud en los dos, contra los
+259 M de aquella mejor aproximación. **`L-031` sí leyó esta solapa**, y la brecha que queda es la
+que las cuatro causas explican.
 
 ---
 

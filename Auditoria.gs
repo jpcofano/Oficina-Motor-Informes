@@ -5372,11 +5372,19 @@ function diagMarcadoresQueFallan() {
    * conteo (`CLAUDE.md` §4). */
   Logger.log('');
   Logger.log('── ERROR (' + errores.length + ') ─────────────────────────────────────');
+  /* ⚠ **Un cero acá NO cierra la pregunta.** La Parte A del `2026-08-30_2` informó `error=1` sobre
+   * los mismos 220 marcadores. Si esta corrida devuelve cero, **el error depende del ESTADO
+   * —cachés, período, hoja— y no del marcador**, y eso es una discrepancia entre dos mediciones
+   * del mismo motor: se reporta, no se da por resuelta. */
+  if (!errores.length) {
+    Logger.log('  ⚠ CERO errores acá, pero la Parte A informó error=1 sobre los mismos 220.');
+    Logger.log('    Eso NO es «ya no está»: es que el error depende del estado y no del marcador.');
+    Logger.log('    Discrepancia entre dos mediciones del mismo motor — hay que explicarla.');
+  }
   errores.forEach(function (r) {
     Logger.log('  ⛔ ' + r.marcador + '  valor=' + r.valor);
     Logger.log('     traza: ' + String(r.traza || '').replace(/\s+/g, ' '));
   });
-  if (!errores.length) Logger.log('  (ninguno)');
 
   Logger.log('');
   Logger.log('── SIN_DATOS (' + sinDatos.length + ') ──────────────────────────────');
