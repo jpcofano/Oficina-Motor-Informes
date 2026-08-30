@@ -44,39 +44,89 @@ Sobre `Motor_de_Informes_2026-08-30.xlsx` (`404cb943…2bdaddbc4`), hoja `MARCAD
 cambio, es un efecto no previsto y hay que parar** — para eso está `u1_total_impresiones` entre los
 canarios.
 
-### Predicción sobre disco — `Base_Looker_2026-08-30.xlsx` (`7272b383…40ae5b2`)
+### ⛔⛔ La predicción sobre disco falló, y el motivo es una premisa mía sobre el motor
 
-Universo de los ocho `imp_*`: `looker/DIGITAL`, **`filtro = estado=Activa`**, `periodo_ref` vacío
-—o sea **sin ventana**—. De **5.149** filas, **720** tienen `estado=Activa`.
+**Escribí que, con `periodo_ref` vacío, los ocho `imp_*` leen la solapa entera con
+`estado=Activa` — 720 filas de 5.149— y predije `jm 16.176.264` y `gcba 547.767.099`.**
 
-| | filas | meta | google | prog | **total** |
-|---|---|---|---|---|---|
-| **jm** (criterio actual, «JM» en el nombre) | 17 | 650.707 | 433.074 | 15.092.483 | **16.176.264** |
-| **gcba** | 703 | 70.648.778 | 193.921.963 | 283.196.358 | **547.767.099** |
+⛔ **Falso. `periodo_ref` vacío NO significa «sin ventana».** La traza de la corrida real lo dice
+en cada uno de los ocho: `2026-08-21–2026-08-27 (R-11 (calculado))`. **El motor calcula la ventana
+igual** y recorta antes de filtrar: el universo son **304 filas**, no 720 ni 5.149.
 
-✅ **La identidad `meta + google + prog = total` cierra al dígito en los dos ámbitos.**
+| | predicho (disco) | real (corrida) | |
+|---|---|---|---|
+| universo | 720 filas | **304 filas** | `camp_dig_impl` = 304 |
+| `imp_total` | 16.176.264 · 17 filas | **486.982 · 6 filas** | |
+| `gcba_imp_total` | 547.767.099 · 703 filas | **147.753.414 · 191 filas** | |
 
-⛔ **Y una identidad que NO se puede exigir, con el motivo medido:**
-`imp_meta + gcba_imp_meta = camp_meta_impresiones` **es falsa por diseño** — los `imp_*` llevan
-`filtro = estado=Activa` y los `camp_*` **no llevan filtro**: 720 filas contra 5.149, un factor 13.
-Escribirla habría dado ⛔ en las dos tomas y **habría parecido que el cambio rompió algo**. Los tres
-`camp_*_impresiones` quedan como **canarios**, no como identidad.
+⭐ **Es la forma exacta del error que `CLAUDE.md` §4 ya nombra —*«quién llama a lo que estoy
+midiendo, y hace algo entre su retorno y el valor que se publica»*—** y esta vez el tramo salteado
+no fue un llamador: fue **una premisa sobre el significado de una celda vacía**. Un `periodo_ref`
+vacío se lee como *«este marcador no tiene período»* y significa *«usá el período de la corrida»*.
+
+⚠ **Y no da un número más chico: da otro número.** 16 M y 487 K no se parecen, y los dos son
+publicables. Por eso la §3 es la toma que vale y esta predicción **no la reemplazaba**.
 
 ---
 
-## 3 · La toma real — **la llena el usuario**
+## 3 · La toma real — `testigoDeAmbito()`, 2026-08-30T22:44:23Z
 
-Correr **`testigoDeAmbito()`** desde el editor de Apps Script y pegar el log acá **antes** de
-aplicar la Parte B. Después de la Parte B se corre de nuevo, **en la misma sesión**, y va a
-`TESTIGO_ambito_2026-08-30_POST.md`.
+**Corrida completa en ~110 s** (18:22 murió en el muro; con el preámbulo de cachés copiado, entra).
+`resolverMarcadores(jm) → 220 · ok=188 · sin_datos=31 · error=1`.
 
-```
-(pegar acá la salida de testigoDeAmbito() — toma ANTES)
-```
+⚠ **Ventana efectiva: `2026-08-21 – 2026-08-27`**, calculada por `R-11` — **no** es
+`2026_agosto_21_28`. Ver §5.
 
-⚠ **El intervalo corto es lo que hace que la comparación signifique algo:** `looker/DIGITAL` y el
-desglose son **inestables por CAMBIO** (`R-31`), así que dos tomas separadas por horas no se pueden
-restar. Por eso las dos van en la misma sesión.
+| marcador | valor | filas | nota |
+|---|---|---|---|
+| `imp_total` | **486.982** | 6/304 | |
+| `imp_meta` | 125.176 | 3/304 | |
+| `imp_google` | 19.483 | 2/304 | |
+| `imp_prog` | 342.323 | 1/304 | |
+| `gcba_imp_total` | **147.753.414** | 191/304 | |
+| `gcba_imp_meta` | 26.411.030 | 55/304 | |
+| `gcba_imp_google` | 28.694.520 | 47/304 | |
+| `gcba_imp_prog` | 92.647.864 | 89/304 | |
+| ⛔ `frecuencia` | **`sin_datos`** | **0/26** | el filtro `campana~=JM` no matchea ninguna fila |
+| `gcba_frecuencia` | 6,265164242375123 | 26/26 | RATIO 13.682.724 / 2.183.937 |
+| 🐤 `camp_dig_impl` | **304** | — | CONTEO de todas las filas de la ventana |
+| 🐤 `camp_frecuencia` | 6,265164242375123 | — | RATIO 13.682.724 / 2.183.937 |
+| 🐤 `u1_total_impresiones` | 302.528.441 | 317/317 | desglose |
+| 🐤 `camp_meta_impresiones` | 43.904.278 | 96/304 | |
+| 🐤 `camp_google_impresiones` | 38.873.525 | 77/304 | |
+| 🐤 `camp_prog_impresiones` | 147.375.635 | 131/304 | |
+
+✅ **La identidad interna cierra en los dos ámbitos**, al dígito:
+`125.176 + 19.483 + 342.323 = 486.982` y `26.411.030 + 28.694.520 + 92.647.864 = 147.753.414`.
+
+✅ **Y la decisión de NO exigir `jm + gcba = camp_*` queda confirmada con los números vivos:**
+`125.176 + 26.411.030 = 26.536.206` contra `camp_meta_impresiones` **43.904.278** — porque son
+**58 filas contra 96**: los `imp_*` llevan `estado=Activa` y los `camp_*` no. Escrita como
+identidad, habría dado ⛔ en las dos tomas.
+
+---
+
+## 3 bis · ⛔⛔ Tres hallazgos de la toma que no estaban previstos
+
+**1 · `frecuencia` publica `sin_datos` hoy, y no es culpa del criterio.** El filtro `campana~=JM`
+sobre `nombre_campaña` (col B) da **0 de 26 filas** en la ventana. ⚠ **El cambio probablemente NO
+lo arregle:** medido sobre `Base_Looker_2026-08-30.xlsx`, en la solapa entera los dos criterios se
+solapan casi enteros —**75** filas con «JM» en el nombre, **67** con `JDGAG` en el id, **65** en
+ambos—, así que **el cero es de la VENTANA, no del criterio**. Es una pregunta abierta propia:
+*¿por qué no hay ninguna campaña de JM en la ventana de `resumen_metricas_dinamico`?*
+
+**2 · `gcba_frecuencia` y `camp_frecuencia` valen exactamente lo mismo** —6,265164242375123— porque
+`gcba` se lleva **26 de 26** filas. ⭐ **Eso los vuelve un discriminador fino para la segunda toma:**
+si el criterio nuevo mueve aunque sea una fila a JM, `gcba_frecuencia` **tiene que separarse** de
+`camp_frecuencia`, que no puede moverse. Si siguen idénticos, el cambio no tocó esa solapa.
+
+**3 · `camp_dig_impl` y `camp_frecuencia` salen con «sin cuenta de filas legible»** — el helper no
+sabe leer conteos de una traza de `CONTEO` ni de `RATIO` sin filtro. **No invalida sus valores**,
+que están, pero el aviso aparece en el log y conviene no leerlo como un problema del cambio.
+
+⚠ Y `resolverMarcadores` informa **`error=1`** sobre 220 marcadores. No es de los 16 del testigo
+—los 16 resolvieron— pero **queda anotado**: es un marcador del informe que hoy falla y nadie lo
+nombra.
 
 ---
 
@@ -99,3 +149,16 @@ restar. Por eso las dos van en la misma sesión.
 movió y hacia dónde. Que el corte agarre las campañas que corresponde lo dice el **conteo** contra
 el tablero (Parte C) — y **las sumas no son criterio**: la lámina publica **acumulado** por decisión
 del usuario del 30/08.
+
+---
+
+## 5 · ⚠⚠ La ventana de la toma NO es la de la Parte C
+
+La corrida resolvió **`2026-08-21 – 2026-08-27`** por cálculo de `R-11`, mientras que la Parte C
+manda correr con **`periodo_id = 2026_agosto_21_28`**, que es la ventana de la captura del tablero.
+
+- ✅ **Para el par ANTES/DESPUÉS no es un problema:** la segunda toma va a resolver la misma ventana
+  por el mismo camino, el mismo día, así que **las dos son comparables entre sí**.
+- ⛔ **Pero los valores de esta toma NO son los que va a publicar la corrida de la Parte C**, que
+  usa un día más. **No se pueden cruzar contra el tablero desde acá**, y ningún número de esta
+  página es citable como «lo que publica la lámina».
