@@ -10015,3 +10015,30 @@ va a llegar antes por ahí que releyendo el error.
 ⚠ **Verificado que NO bloquea el cableado del corte** (`2026-08-30_2`): no toca ninguna de las tres
 solapas que cambian, no usa la dimensión `ambito`, y no es ninguno de los diez marcadores del
 cambio.
+
+---
+
+## ⚠ P2 · El separador `||` de filtros quedó sin usuarios vivos (30/08/2026)
+
+**Hallazgo colateral del cableado del corte** (`2026-08-30_2`), verificado por dos caminos:
+
+- `SEPARADOR_ALTERNATIVAS_FILTRO_` (`Generador.gs:848`) tenía **un solo uso vivo**: la entrada
+  `digital|CAMPAÑAS_DESGLOCE_DIGITAL` de `DIMENSIONES_.ambito`, `des_campana_2~=JM ||
+  des_campana_3~=JM`. El cambio del 30/08 la reemplazó por una condición sola sobre el `Id cuentas`.
+- Medido sobre `Motor_de_Informes_2026-08-30.xlsx`: `||` aparece **cero** veces en `MARCADORES`
+  (220 filas) y **cero** en `SECCIONES` (38). Y en `DIMENSIONES_` sólo queda dentro de comentarios.
+
+⇒ **La rama de `parsearFiltro_` que parte por `||` no la recorre ninguna configuración.**
+
+⛔ **No se borra.** Se agregó el 28/08 por un motivo y el motivo puede volver — dos columnas que
+traen el mismo dato partido es una forma que esta base ya produjo una vez.
+
+⚠ **Lo que hay que evitar es que se lea como código probado.** Quien lo vuelva a usar **estrena**
+la rama, no la reutiliza. Queda dicho en el comentario de la constante, con la fecha.
+
+⭐ **Es la misma figura que `registrarValorCalculado_` y las hojas `VALORES`** —declaradas y vacías
+por construcción, `docs/ESCRITORES.md` §2.5—. **La forma general: un camino completo y sin llamador
+se lee como un camino vivo**, y nada en el código lo distingue de uno que corre todos los días.
+
+**Cómo se cierra:** o vuelve a tener un usuario —y entonces esta entrada se tacha—, o se le escribe
+un control que lo ejercite, que es lo único que convierte «existe» en «anda».

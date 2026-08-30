@@ -844,7 +844,21 @@ var OPERADORES_FILTRO_ = [
  * ─────────────────────────────────────────────────────────────────────────────────────── */
 var SEPARADOR_CONDICIONES_FILTRO_ = '&&';
 /* ⭐ 2026-08-28 - las alternativas de un mismo campo, o de dos columnas que traen el mismo dato
- * partido. Ver el comentario de parsearFiltro_. */
+ * partido. Ver el comentario de parsearFiltro_.
+ *
+ * ⛔⛔ **SIN NINGÚN USUARIO VIVO DESDE EL 30/08/2026, y hay que saberlo antes de confiar en esta
+ * rama.** Su único uso era `DIMENSIONES_.ambito['digital|CAMPAÑAS_DESGLOCE_DIGITAL']`
+ * —`des_campana_2~=JM || des_campana_3~=JM`—, y el `2026-08-30_2` lo reemplazó por una condición
+ * sola sobre el `Id cuentas`. Medido sobre la configuración viva del 30/08: `||` aparece **cero**
+ * veces en `MARCADORES` (220 filas) y **cero** en `SECCIONES` (38).
+ *
+ * ⚠ **No se borra: se agregó por un motivo y el motivo puede volver.** Lo que hay que evitar es
+ * leerlo como código probado — **hoy ninguna configuración lo recorre**, así que quien lo vuelva a
+ * usar **estrena** la rama de `parsearFiltro_` que lo maneja, no la reutiliza.
+ *
+ * ⭐ Es la misma figura que `registrarValorCalculado_` y las hojas `VALORES`, declaradas y vacías
+ * por construcción (`docs/ESCRITORES.md` §2.5): **un camino completo y sin llamador se lee como un
+ * camino vivo.** */
 var SEPARADOR_ALTERNATIVAS_FILTRO_ = '||';
 
 /**
