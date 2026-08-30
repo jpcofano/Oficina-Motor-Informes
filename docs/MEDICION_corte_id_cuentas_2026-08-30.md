@@ -25,7 +25,8 @@ universo produce un criterio de corte»* ya tiene dueño en `CLAUDE.md` §7, y e
 | `looker/DIGITAL`, 30/08 | `docs/_fixtures/Base_Looker_2026-08-30.xlsx` | `7272b383…40ae5b2` | ✅ |
 | configuración viva, 30/08 | `docs/_fixtures/Motor_de_Informes_2026-08-30.xlsx` | `404cb943…2bdaddbc4` | ✅ |
 | desglose + looker, 28/08 | `docs/_fixtures/Seguimiento Digital 2026-08-28.zip` | `0ce0086d…adfa81ac79` | ✅ |
-| referencia externa | tablero de carga, ventana 21–28 ago 2026, **lectura del 30/08** | `d01da806…93baf54e6` | ✅ |
+| referencia externa | tablero, ventana 21–28 ago 2026, lectura **30/08 15:47** | `d01da806…93baf54e6` | ✅ |
+| ⭐ referencia **consolidada** | tablero, misma ventana, lectura **30/08 18:00** | `f022d115…5a79611b4` | ⚠ sin huella declarada |
 
 ⭐ **El desglose llegó con otro nombre** —`Seguimiento Digital  (6).xlsx`— y **la huella fue lo único
 que lo identificó**: había un `(5)` y un `(6)` a un carácter de distancia.
@@ -72,7 +73,8 @@ Las dos filas son `Agenda Entrega de Espadines a Comisarios Grales` (Google ads 
 **`Id cuentas` vacío** y `T = Sin Tipo`.
 
 ⛔ **Ese 4,5 % es el error irreducible de cualquier corte automático**, y es **más del doble del
-ruido de la referencia** (±2 %, `ADDENDUM` §0 bis): **no se puede absorber**. No lo introduce el
+ruido de la referencia** —y ese ruido resultó ser un **asentamiento de DV360 que ya terminó**, no
+una deriva permanente (corrección fechada al `ADDENDUM` §0 bis)—: **no se puede absorber**. No lo introduce el
 sufijo — **el criterio vivo del motor las pierde exactamente igual**.
 
 ---
@@ -252,6 +254,37 @@ salieron de ahí. **Es causa suficiente de discrepancia, aparte del corte y del 
 - ⚠ **Corrección al `ADDENDUM` §5:** el snapshot `MARCADORES_2026-08-26.tsv` leído **desde disco**
   tiene **209 filas**, no 164. La truncación es del conector en modo markdown, **no del archivo del
   repo** — cosa que la revisión 3 de aquel documento ya incorporó.
+
+---
+
+## 7 quater · ⭐⭐ Tres causas independientes de discrepancia, y sólo una la arregla este trabajo
+
+Una tercera lectura del tablero —**30/08 18:00**— cierra el movimiento que las dos anteriores
+insinuaban, y al hacerlo **destapa una causa que estaba fuera del diagnóstico**:
+
+| lectura | JM | GCBA | movimiento |
+|---|---|---|---|
+| 29/08 21:05 | 29 · 10.470.312 | 281 · 106.498.422 | — |
+| 30/08 15:47 | 29 · 10.381.289 | 280 · 105.404.251 | **−1,01 %** · DV360 explica el **99,9 %** y pierde la implementación (121 → 120) |
+| ⭐ 30/08 18:00 | 29 · 10.381.289 | 280 · **105.404.257** | **+0,00001 %** · DV360 **quieto** |
+
+⭐⭐ **El movimiento no era ruido: era DV360 consolidando su atribución, y terminó.**
+
+⛔ **Las tres causas son independientes y conviene no confundirlas, porque mandan a trabajos
+distintos:**
+
+| # | causa | cómo se arregla |
+|---|---|---|
+| 1 | **el corte por nombre** — pierde 5 de las 29 implementaciones JM | **el cableado del `2026-08-30_2`** |
+| 2 | **el atraso de `looker/DIGITAL`** — 24 % por debajo de su fuente el 28/08 (§7 bis) | abierto |
+| 3 | ⭐ **la corrida el mismo día del cierre** | **esperando** — es la única barata |
+
+**La tercera, con el dato:** `jm-20260828-193948` se generó el **28/08 a las 19:41**, el mismo día
+en que cerró su ventana. **Si DV360 seguía moviéndose más de un millón dos días después, esa corrida
+leyó DV360 lejos de su valor final.**
+
+⛔ **Y el grano temporal no es una cuarta causa: es un límite de la fuente.** No produce un error
+que se pueda corregir — impide validar.
 
 ---
 

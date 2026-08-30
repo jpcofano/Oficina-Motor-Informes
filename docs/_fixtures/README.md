@@ -91,8 +91,9 @@ otra fila.
 | ⭐ `Seguimiento Digital  2026-08-20.zip` **(editado a mano, 26/08)** | 91.643.439 | `15b564919ae4fa97dc7b17f6d6962749359ddbeef99d786d40457a090cc5650e` |
 | ⭐⭐ `Seguimiento Digital 2026-08-28.zip` | 33.015.823 | `0ce0086d192bbb121c86dfe72434c40254c95c5153e8c43af9a39badfa81ac79` |
 | `Seguimiento_Digital_2026-08-30.xlsx` | 4.301.423 | `d7b917f5711dcdd70b20b82ce8d6ccaa336fc3c1bcf5a0114296ca33edf70d6a` |
-| ⭐ `Tablero_carga_21-28ago_lectura_2026-08-29.png` | 97.792 | `f841ba3931a9b3de3ad0cd7eb5ea5b23f4760f3c308a118ba6d442b28fc7b083` |
-| ⭐ `Tablero_carga_21-28ago_lectura_2026-08-30.png` | 98.449 | `d01da8066d95de5f0e26619e4314fb81eb80f0c7bf9942673879d4393baf54e6` |
+| ⭐ `Tablero_carga_21-28ago_lectura_2026-08-29_2105.png` | 97.792 | `f841ba3931a9b3de3ad0cd7eb5ea5b23f4760f3c308a118ba6d442b28fc7b083` |
+| ⭐ `Tablero_carga_21-28ago_lectura_2026-08-30_1547.png` | 98.449 | `d01da8066d95de5f0e26619e4314fb81eb80f0c7bf9942673879d4393baf54e6` |
+| ⭐⭐ `Tablero_carga_21-28ago_lectura_2026-08-30_1800.png` | 98.224 | `f022d11526250aa4f1f06732429000c767741a55779ece3d8dc8e845a79611b4` |
 
 ### ⭐⭐ Séptima fila y siguientes — el 30/08, y las DOS primeras filas que no son planillas
 
@@ -134,6 +135,33 @@ no una base. Vale anotarlo porque cambia qué preguntas puede contestar un fixtu
 respondían *«qué decía el dato»* y éste responde *«qué iba a hacer el motor»* — que es la pregunta
 que `CLAUDE.md` §7 le da a las hojas de registro vivas, y que **ningún artefacto en disco podía
 contestar con fecha**.
+
+### ⭐⭐ Las capturas del tablero llevan HORA, no sólo fecha — y por qué (30/08/2026)
+
+**Hay tres lecturas de la MISMA ventana cerrada (21–28/08), y dos son del mismo día**, así que la
+fecha sola no las distingue. Se renombraron las tres a `…_AAAA-MM-DD_HHMM.png`.
+
+| lectura | JM | GCBA | movimiento |
+|---|---|---|---|
+| `2026-08-29_2105` | 29 · 10.470.312 | 281 · 106.498.422 | — |
+| `2026-08-30_1547` | 29 · 10.381.289 | 280 · 105.404.251 | **−1.183.194 · −1,01 %**, DV360 explica el 99,9 % y pierde una implementación (121 → 120) |
+| `2026-08-30_1800` | 29 · 10.381.289 | 280 · **105.404.257** | **+6 · +0,00001 %**, DV360 sin movimiento |
+
+⭐⭐ **El movimiento no era ruido: era DV360 consolidando su atribución, y terminó.** Eso cambia
+cómo se usa esta referencia — ver la corrección del criterio de aceptación en
+`docs/Prompts/2026-08-30_1_ADDENDUM_1.md` §0 bis.
+
+⚠ **Dos salvedades sobre la identidad de estos tres archivos, y van dichas porque el resto de esta
+carpeta se apoya en huellas declaradas:**
+
+1. **La tercera llegó SIN huella declarada.** El `SHA256SUMS.txt` del 30/08 sólo cubre las dos
+   primeras. El `sha` de la tabla es el que se calculó al recibirla, **no uno verificado contra un
+   original**.
+2. ⚠ **La HORA es INFERIDA, no declarada.** Sale de las capturas de pantalla de origen —21:05,
+   15:47 y 18:00—, cuyos **tamaños coinciden exactamente** con los tres archivos. Pero **no son
+   idénticas byte a byte**: difieren en un chunk de metadatos del PNG conservando el tamaño. Es
+   evidencia fuerte de procedencia y **no es una identidad probada**. Si la hora importa para una
+   conclusión, hay que pedirla declarada.
 
 ⭐ **Las dos capturas del tablero son la primera evidencia de acá que no sale de una planilla**, y
 entran por lo que el `ADDENDUM` §0 bis midió: **el tablero cambia un período ya cerrado**. Una cifra
