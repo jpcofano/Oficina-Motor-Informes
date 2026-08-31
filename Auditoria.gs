@@ -7611,20 +7611,28 @@ function volcarInventarioDeTokens() {
   catch (e) { Logger.log('  ⚠ no pude leer SECCIONES (' + e.message + '): `lamina_itera` sale vacío.'); }
 
   var porLamina = {};
-  var laminasItera = 0;
+  var declaradasPorInforme = {};   // informe → { lamina_id: true }
+  var totalFilasLaminas = 0;
+  var crudoNoVacio = [];
   try {
     var regL = leerLaminas_();
     (regL.ok ? regL.filas : []).forEach(function (f) {
       var id = String(f.lamina_id || '').trim();
       if (!id) return;
+      totalFilasLaminas++;
+      var inf = String(f.informe_id || '').trim();
       var sec = secciones[String(f.seccion_id || '').trim()] || {};
-      if (String(sec.itera_sobre || '').trim()) laminasItera++;
+      var crudo = String(f.itera_sobre || '').trim();
+      if (crudo) crudoNoVacio.push(id + '=' + crudo);
+      if (!declaradasPorInforme[inf]) declaradasPorInforme[inf] = {};
+      declaradasPorInforme[inf][id] = true;
       porLamina[id] = {
         orden: f.orden_plantilla,
+        informe_de_la_fila: inf,
         seccion_id: String(f.seccion_id || '').trim(),
         itera: String(sec.itera_sobre || '').trim(),
         modo: String(sec.modo || '').trim(),
-        crudo: String(f.itera_sobre || '').trim()
+        crudo: crudo
       };
     });
   } catch (e) {
@@ -7651,9 +7659,16 @@ function volcarInventarioDeTokens() {
     }
     var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
     var r = { slides: slides.length, conTokens: 0, sinTokens: 0, todosCableados: 0,
-              apariciones: 0, distintos: {}, sinAncla: [], candidatos: {} };
+              apariciones: 0, distintos: {}, sinAncla: [], candidatos: {},
+              anclasVistas: {}, ordenDeAncla: [] };
 
     slides.forEach(function (slide, i) {
+      /* ⛔⛔ **El ancla se lee ANTES de cortar por tokens, y el corte al revés era un bug del
+       * instrumento.** La versión del 31/08 hacía `if (!tokens.length) return` **antes** de mirar
+       * el ancla, así que las **8** láminas de `secco` sin ningún token **no se evaluaban** — y su
+       * «cero sin ancla» no cubría ese subconjunto. **Un cero que no midió el subconjunto donde
+       * puede estar la respuesta no es un cero**, es la familia de *«no hay» y «no miré» se ven
+       * igual*. Y justamente ahí puede estar la slide 30 de `secco` que no cierra contra `LAMINAS`. */
       var idLamina = anclaDeLamina_(slide);
       var escondida = esLaminaEscondida_(slide);
       var vistos = {};
@@ -7662,9 +7677,16 @@ function volcarInventarioDeTokens() {
         while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) vistos[m[1]] = true;
       });
       var tokens = Object.keys(vistos).sort();
+
+      if (idLamina) {
+        if (!r.anclasVistas[idLamina]) r.ordenDeAncla.push(idLamina);
+        r.anclasVistas[idLamina] = { pos: i + 1, tokens: tokens.length, escondida: escondida };
+      } else {
+        r.sinAncla.push({ pos: i + 1, tokens: tokens.length });
+      }
+
       if (!tokens.length) { r.sinTokens++; return; }
       r.conTokens++;
-      if (!idLamina) r.sinAncla.push(i + 1);
 
       /* ⭐ **El conteo que el censo no puede dar**: láminas donde NINGÚN token está sin fila. Son
        * las que `censarTokensSinMarcador_` omite enteras, y por eso todo censo anterior las
@@ -7720,12 +7742,98 @@ function volcarInventarioDeTokens() {
     Logger.log('     tokens distintos              : ' + Object.keys(r.distintos).length +
       '   · apariciones: ' + r.apariciones);
     Logger.log('     ⭐ candidatos a `*` (D-54)     : ' + Object.keys(r.candidatos).length);
+
+    /* ⭐⭐ **El cruce ancla ↔ `LAMINAS`, y NUNCA por posición.** `orden_plantilla` es reportado y
+     * jamás autoritativo, así que *«la slide 30 es la que falta»* no es una respuesta: la
+     * identidad la da el ancla de las notas, que es para lo que se selló.
+     *
+     * ⭐ **Y hay TRES estados, no dos.** El tercero es el que importa acá: una slide **copiada de
+     * otra plantilla** trae la nota del orador —y con ella el ancla— **adentro de la copia**
+     * (medido: `slide.duplicate()` copia las notas). Entonces su `lamina_id` **existe en `LAMINAS`
+     * pero declarado para el OTRO informe**, y eso no es *«falta un alta»* genérico: es un alta
+     * concreta y sabida. */
+    var declaradas = declaradasPorInforme[informeId] || {};
+    var sobran = [], deOtroInforme = [], faltan = [];
+    r.ordenDeAncla.forEach(function (id) {
+      var v = r.anclasVistas[id];
+      if (declaradas[id]) return;
+      var meta = porLamina[id];
+      if (meta && meta.informe_de_la_fila) {
+        deOtroInforme.push(id + ' (slide ' + v.pos + ', ' + v.tokens + ' token(s)) — declarada para `' +
+          meta.informe_de_la_fila + '`');
+      } else {
+        sobran.push(id + ' (slide ' + v.pos + ', ' + v.tokens + ' token(s)) — sin fila en LAMINAS');
+      }
+    });
+    Object.keys(declaradas).forEach(function (id) {
+      if (!r.anclasVistas[id]) faltan.push(id);
+    });
+
+    Logger.log('     ── cruce ancla ↔ LAMINAS (por ancla, NUNCA por posición) ──');
+    Logger.log('     slides ancladas: ' + r.ordenDeAncla.length + ' · sin ancla: ' + r.sinAncla.length +
+      ' · filas en LAMINAS: ' + Object.keys(declaradas).length);
     if (r.sinAncla.length) {
-      Logger.log('     ⚠ ' + r.sinAncla.length + ' lámina(s) SIN ANCLA: ' + r.sinAncla.join(', ') +
-        ' — van con su marca, NO resueltas por posición.');
+      Logger.log('     ⚠ SIN ANCLA: ' + r.sinAncla.map(function (s) {
+        return 'slide ' + s.pos + ' (' + s.tokens + ' token(s))';
+      }).join(' · '));
+      Logger.log('        ⭐ Se miran TENGAN O NO tokens — el corte anterior las salteaba.');
     }
+    if (deOtroInforme.length) {
+      Logger.log('     ⛔ ANCLADA A UNA LÁMINA DE OTRO INFORME — ' + deOtroInforme.length + ':');
+      deOtroInforme.forEach(function (x) { Logger.log('        ' + x); });
+      Logger.log('        ⇒ Es el alta que falta: la misma lámina existe en las dos plantillas y');
+      Logger.log('          `LAMINAS` sólo la declara para una. Con `D-37`, acá NO pertenece a');
+      Logger.log('          ninguna sección: no se expande, no se resuelve y nadie la nombra.');
+    }
+    if (sobran.length) {
+      Logger.log('     ⚠ ANCLADA Y SIN NINGUNA FILA — ' + sobran.length + ':');
+      sobran.forEach(function (x) { Logger.log('        ' + x); });
+    }
+    if (faltan.length) {
+      Logger.log('     ⚠ DECLARADA EN LAMINAS Y SIN SLIDE — ' + faltan.length + ': ' + faltan.join(', '));
+    }
+    if (!deOtroInforme.length && !sobran.length && !faltan.length && !r.sinAncla.length) {
+      Logger.log('     ✅ cierra: cada slide tiene ancla, y cada ancla su fila de este informe.');
+    }
+
     Object.keys(r.candidatos).forEach(function (t) { candidatosGlobal[t] = true; });
   });
+
+  /* ⭐ **El cruce de tokens entre las dos plantillas** — la pregunta 1 de «lo que viene después»,
+   * que la primera versión no resumía: daba los candidatos (que **exigen tener fila**) y no la
+   * intersección. Son dos conjuntos distintos y el segundo es más grande. */
+  var dj = (resumen.jm && resumen.jm.distintos) || {};
+  var ds = (resumen.secco && resumen.secco.distintos) || {};
+  var compartidos = [], soloJm = [], soloSecco = [];
+  Object.keys(dj).forEach(function (t) { (ds[t] ? compartidos : soloJm).push(t); });
+  Object.keys(ds).forEach(function (t) { if (!dj[t]) soloSecco.push(t); });
+
+  Logger.log('');
+  Logger.log('  ── CRUCE DE TOKENS ENTRE LAS DOS PLANTILLAS ──────────────────────');
+  Logger.log('     compartidos : ' + compartidos.length);
+  Logger.log('     sólo `jm`   : ' + soloJm.length);
+  Logger.log('     sólo `secco`: ' + soloSecco.length);
+  Logger.log('     ⭐ De los ' + compartidos.length + ' compartidos, los que YA tienen fila son los');
+  Logger.log('        candidatos a `*`; los que no, son trabajo de cableado.');
+  var sinFilaCompartidos = compartidos.filter(function (t) { return !(t in conFila); });
+  Logger.log('     compartidos SIN fila: ' + sinFilaCompartidos.length +
+    (sinFilaCompartidos.length ? ' → ' + sinFilaCompartidos.slice(0, 40).join(', ') +
+      (sinFilaCompartidos.length > 40 ? ' …' : '') : ''));
+  Logger.log('     sólo `secco` (nunca los vio ningún cableado de `jm`): ' +
+    soloSecco.slice(0, 40).join(', ') + (soloSecco.length > 40 ? ' …' : ''));
+
+  /* ⭐ El chequeo que la primera corrida dejó sin verificar: la columna cruda de `LAMINAS`. Se
+   * **espera vacía** en todas las filas, y ése es el testigo de que el bloque «N láminas ITERAN»
+   * del censo nunca se disparó. Si sale llena, el censo cambió de comportamiento. */
+  Logger.log('');
+  Logger.log('  ── TESTIGO · `LAMINAS.itera_sobre` (columna cruda) ───────────────');
+  Logger.log('     filas leídas: ' + totalFilasLaminas + ' · con valor: ' + crudoNoVacio.length +
+    (crudoNoVacio.length ? ' ⛔ ' + crudoNoVacio.join(' · ') : ' ✅ vacía, como se esperaba'));
+  if (!crudoNoVacio.length) {
+    Logger.log('     ⇒ Confirma que el bloque «N lámina(s) ITERAN» de `censarTokensSinMarcador_`');
+    Logger.log('       NUNCA se disparó: su `if` exige esta columna, y está vacía en las ' +
+      totalFilasLaminas + '.');
+  }
 
   /* ⭐⭐ **El alcance de la migración de `D-54`, que es el número que hoy nadie tiene.** El cruce
    * del 20/08 decía **49** y es de otra plantilla: el usuario actualizó las láminas desde
@@ -7759,8 +7867,9 @@ function volcarInventarioDeTokens() {
   Logger.log('  · La GRANULARIDAD. Si `secco` tiene 3 ranuras donde `jm` tiene 4, son tokens');
   Logger.log('    distintos y `*` no lo resuelve (D-54, el límite).');
   Logger.log('  · Qué publica `FALTA` de verdad: eso pide una corrida.');
-  Logger.log('  · `laminas_itera_sobre_crudo` sale de la columna cruda de LAMINAS y se espera');
-  Logger.log('    VACÍA en las 53 filas. Si sale llena, cambió algo y hay que mirarlo.');
+  Logger.log('  · Si una lámina que existe en las dos plantillas es la MISMA lámina o dos que se');
+  Logger.log('    parecen. El ancla dice que comparten identidad; la GRANULARIDAD sigue abierta');
+  Logger.log('    (`D-54`, el límite): 3 ranuras contra 4 son tokens distintos, no un token igual.');
 
   return { ok: true, hoja: nombreHoja, filas: filas.length, resumen: resumen, candidatos: lista };
 }
