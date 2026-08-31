@@ -10070,3 +10070,36 @@ conservación es exacta. Esto es una pregunta sobre **la fuente**, no sobre el c
 **Por dónde se empieza:** comparar los `Id cuentas` de las 26 filas de `resumen_metricas_dinamico`
 en la ventana contra los de las 197 de `DIGITAL`. Si son conjuntos distintos, es universo; si son
 los mismos y sólo difiere el contenido, es actualización.
+
+---
+
+## ⚠ P1 · El testigo no acepta período: testigo y corrida pueden medir ventanas distintas sin avisar (30/08/2026)
+
+**`testigoDeAmbito()` —y los otros cuatro que usan `testigoDeMarcadores_`— llaman a
+`resolverMarcadores('jm')` sin opciones, así que miden siempre el DEFAULT de `R-11`.** Hoy eso es
+`2026-08-21 → 2026-08-27` (vie–jue). **La corrida del informe puede estar en otra ventana** —el
+usuario elige, y el 28/08 eligió `2026_agosto_21_28`, que es lo que el equipo publica.
+
+⛔ **El síntoma no se parece a un problema de ventana: se parece a una contradicción.**
+`gcba_frecuencia` dio **6,265** en el testigo y **10,08** en el deck. Se leyó un rato como dos
+valores del mismo número; **eran dos ventanas.**
+
+⚠ **Y nada lo avisa.** El testigo imprime su ventana en la traza de cada marcador, pero **no la
+compara contra la de ninguna corrida**, porque no sabe cuál va a ser. Los dos números son correctos
+por separado y **restarlos no significa nada**.
+
+**Cómo se cierra, y hay dos caminos:**
+
+1. ⭐ **Que el testigo acepte el período** — `resolverMarcadores` ya recibe `opciones`, así que es
+   un parámetro que se pasa. ⚠ Choca con `CLAUDE.md` §2: *toda función que corre una persona va sin
+   `_` **y sin parámetros***. La salida es la de siempre: un **wrapper sin argumentos** por período
+   —`testigoDeAmbitoDelPeriodoPublicado()`— y no cambiarle la firma al que ya sirve.
+2. **Que el testigo IMPRIMA su ventana arriba, en el encabezado**, no sólo dentro de cada traza.
+   No evita el desajuste pero lo vuelve visible en la primera línea, que es donde se lee.
+
+⭐ **El segundo es barato y va igual**, haga falta el primero o no: **un instrumento que no declara
+en qué ventana corrió obliga a leer las trazas para saber qué midió.**
+
+⚠ Relacionado y distinto: **el default de `R-11` calcula vie–jue y el equipo publica vie–vie**.
+Cuando el usuario elige explícitamente el motor lo honra bien, así que **lo que hay que revisar es
+el default, no la elección**. Va aparte porque se arregla en otro lado.

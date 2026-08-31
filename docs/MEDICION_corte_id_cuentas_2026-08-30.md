@@ -278,7 +278,7 @@ distintos:**
 | 1 | **el corte por nombre** — pierde 5 de las 29 implementaciones JM | **el cableado del `2026-08-30_2`** |
 | 2 | **el atraso de `looker/DIGITAL`** — 24 % por debajo de su fuente el 28/08 (§7 bis) | abierto |
 | 3 | ⭐ **la corrida el mismo día del cierre** | **esperando** — es la única barata |
-| 4 | ⭐⭐ **la ventana de 8 días** — `jm-20260828-193948` corrió con `2026_agosto_21_28` contra los **7 días** del tablero | **usando `2026_agosto_21_27`** |
+| 4 | ⚠ **el DEFAULT de `R-11`** — calcula vie–jue (21–27) y el equipo publica vie–vie (21–28) | **revisando el default**, no la elección |
 
 **La tercera, con el dato:** `jm-20260828-193948` se generó el **28/08 a las 19:41**, el mismo día
 en que cerró su ventana. **Si DV360 seguía moviéndose más de un millón dos días después, esa corrida
@@ -289,25 +289,37 @@ que se pueda corregir — impide validar.
 
 ---
 
-### ⭐⭐ La cuarta causa — `2026_agosto_21_28` **no es una semana**
+### ⚠ La cuarta causa — **corregida el 30/08, estaba escrita al revés**
 
-**Verificado por calendario:** `2026-08-21` es **viernes**, `2026-08-27` es **jueves**,
-`2026-08-28` es **viernes**. `PERIODOS` describe sus semanas como *«vie-jue»*.
+⛔ **Lo que decía esta sección era falso y se retira:** *«`2026_agosto_21_28` son 8 días con dos
+viernes, o sea no es una semana; la corrida usó los 8 contra los 7 del tablero»*.
 
-| período | días | |
-|---|---|---|
-| `2026_agosto_21_27` | **7** | ✅ la semana vie-jue — **es lo que `R-11` calcula solo** |
-| `2026_agosto_21_28` | **8** | ⛔ contiene **dos viernes**. No es una semana |
+**Decisión del usuario, 30/08:** **`21–28` es lo que hizo el equipo el viernes pasado y lo que
+muestra el tablero** —su límite superior es **inclusivo**—. La corrida `jm-20260828-193948` usó esa
+ventana y **está bien**. ⇒ **La ventana de la corrida y la del tablero COINCIDÍAN**, así que los 8
+días **no explican nada de la brecha**.
 
-⛔ **La corrida `jm-20260828-193948` usó los 8 días** contra los 7 del tablero. Es independiente de
-las otras tres causas.
+⭐ **Lo que sí no coincide es el DEFAULT de `R-11`**, que calcula **vie–jue** y da `21–27`. Cuando
+el usuario elige explícitamente, el motor honra la elección **correctamente**. **Si algo hay que
+revisar es el default, no la elección.**
 
-⭐ **Y explica retroactivamente algo que estaba anotado como «pista, no actuar»:** la ventana 21–27
-puntuaba mejor que 21–28 contra los conteos del tablero —**12 de error contra 20**— y se había
-tratado como posible sobreajuste. **Era la ventana correcta.**
+⭐⭐ **Y eso disuelve una contradicción que parecía real:** `gcba_frecuencia` dio **6,265** en el
+testigo —que corre siempre sobre el default de `R-11`, 21–27— y **10,08** en el deck, que corrió
+21–28. **No eran dos valores del mismo número: eran dos ventanas.**
 
-⚠ **Esto NO reabre «los dos períodos son válidos».** El motor tiene que poder correr la ventana que
-el usuario elija, y eso sigue en pie. **Lo que se cae es que `21_28` represente ESTA semana.**
+⛔ **También se cae la explicación retroactiva** que esta sección daba: *«que 21–27 puntuara mejor
+contra el tablero —12 de error contra 20— se explica porque era la ventana correcta»*. **No era la
+ventana correcta.** Vuelve a ser **un ajuste mejor sin causa conocida**, y probablemente
+sobreajuste — que es como estaba anotado antes de darlo por resuelto.
+
+⚠ **Lo que queda como defecto, y es otra cosa:** el testigo **no acepta período** y mide siempre el
+default de `R-11`, así que **testigo y corrida pueden quedar en ventanas distintas sin que nada
+avise**. Va a `PENDIENTES`.
+
+⭐ **Y la causa que este trabajo terminó midiendo en su lugar** está en
+[`MEDICION_cableado_JDGAG_2026-08-30.md`](MEDICION_cableado_JDGAG_2026-08-30.md): la brecha no es
+del corte ni de la ventana ni del estado — **es la solapa**. El mismo corte sobre el desglose da
+**86 %** del tablero contra el **44,8 %** que publica `L-031` desde `looker/DIGITAL`.
 
 ---
 

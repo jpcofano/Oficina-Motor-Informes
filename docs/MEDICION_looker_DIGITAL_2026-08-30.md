@@ -93,7 +93,15 @@ seguiría siendo acumulada contra una plataforma que publica el período.
 >
 > La brecha que queda es chica y tiene candidatos ya nombrados en la §7 quater de
 > `MEDICION_corte_id_cuentas_2026-08-30.md`: el atraso de `looker/DIGITAL`, DV360 sin consolidar,
-> y la ventana de 8 días de `2026_agosto_21_28`.
+> y el default de `R-11`. ⛔ **Corregido el 30/08: acá decía «la ventana de 8 días», y esa causa
+> estaba al revés** — `21–28` es la ventana correcta.
+>
+> ⭐⭐ **Y el candidato que resultó ser el grande está medido en
+> [`MEDICION_cableado_JDGAG_2026-08-30.md`](MEDICION_cableado_JDGAG_2026-08-30.md): es ESTA
+> SOLAPA.** El mismo corte y la misma ventana, sobre `digital|CAMPAÑAS_DESGLOCE_DIGITAL` en vez de
+> acá, dan **86 %** del tablero contra el **44,8 %** que publica `L-031`. Lo que este documento
+> concluye en su §2 —que la solapa no sirve para el Resumen Ejecutivo— **se confirma por otro
+> camino**, y el reemplazo ya está declarado en `DIMENSIONES_` desde el 28/08.
 >
 > ⚠ **La lección, en `CLAUDE.md` §4:** una premisa inventada no produce un error visible — produce
 > mediciones prolijas de otra pregunta. El tramo salteado acá no era un llamador: era **qué
@@ -207,11 +215,13 @@ tokens       94 reemplazados · 278 faltantes
 ⭐ La ventana del motor **coincide con la de la plataforma** (21–28/08). La ventana no es la
 discrepancia.
 
-⚠ **Corrección posterior (30/08, tras el testigo ANTES):** eso último **se cae**.
-`2026_agosto_21_28` son **8 días y contiene dos viernes**, mientras la semana vie-jue es
-`2026_agosto_21_27` — 7 días, y es lo que `R-11` calcula solo. **La ventana sí es una de las
-discrepancias**, y entra como cuarta causa en la §7 quater de
-`MEDICION_corte_id_cuentas_2026-08-30.md`.
+⚠ **Dos correcciones posteriores encadenadas, y la segunda restituye lo de arriba.**
+Primero se anotó que esto «se caía» porque `21_28` son 8 días con dos viernes y la semana vie-jue
+es `21_27`. ⛔ **Eso también era falso y se retira:** decisión del usuario del 30/08, **`21–28` es
+lo que el equipo publica y lo que muestra el tablero** —límite superior inclusivo—. **La frase
+original queda en pie: la ventana del motor coincidía con la de la plataforma.** Lo que no coincide
+es el **default de `R-11`** (vie–jue, 21–27), y eso es lo que entra como cuarta causa en la §7
+quater de `MEDICION_corte_id_cuentas_2026-08-30.md`.
 
 ⭐ **Confirmado el ADDENDUM 1 del `2026-08-28_3` §3:** el encabezado vivo de `CAMPANAS` es
 `… mostrar · id_cuenta · orden`. El seed describe una hoja que no existe.
