@@ -154,3 +154,35 @@ semana que el equipo publica · el testigo sin período · las dos columnas de e
 la Parte 0 no las cerró · la ventana 21–27 que ajusta mejor sin causa conocida —vuelve a estar
 abierta, la explicación que la cerró se cayó— · el `P0` del `Libro` · el `P2` del `||` ·
 `enc_alcance` · las tres familias de `sin_datos`.
+
+---
+
+## ⭐⭐ Decisión de la Parte 0 (31/08/2026) — **opción C: SIN filtro de estado**
+
+**Lo medido**, solape 21–28 sobre el artefacto del 30/08, corte `JDGAG`, contra las **29**
+implementaciones JM del tablero:
+
+| filtro | filas JM | impresiones JM | GCBA |
+|---|---|---|---|
+| ⭐ **sin filtro** | **28 de 29** | 13.953.803 · **134,4 %** | 256,8 % |
+| `des_estado=ACTIVA` (col K) | 15 de 29 | 8.930.007 · 86,0 % | 215,6 % |
+| `des_estado_2=Activa` (col Y) | 7 de 29 | 2.875.868 · 27,7 % | 108,5 % |
+
+**El motivo, en tres líneas:**
+
+1. **El CONTEO es el criterio del corte** — se decidió el 30/08 al aceptar que la lámina publica
+   acumulado: **el tablero controla el corte, no las sumas**.
+2. **Las sumas TIENEN que dar de más.** 134 % es lo que esa decisión **predice**. El 86 % de
+   `ACTIVA` era **el número plausible**: media población y sobreconteo, **dos errores de signo
+   opuesto cancelándose**.
+3. ⭐⭐ **La razón de fondo: la ventana está CERRADA.** Una campaña que corrió del 21 al 25 y
+   terminó es `FINALIZADA` **y es parte de la semana**. `estado=Activa` tenía sentido leyendo el
+   presente; sobre una semana retrospectiva **descarta justo las que empezaron y terminaron
+   adentro**. Eso explica los dos efectos sin mirar las 119 filas.
+
+⛔ **Criterio de aceptación, corregido:** JM **cerca de 28 filas** y **sumas por encima del
+tablero**. ⚠ **Si las sumas se acercan al 100 %, eso es un HALLAZGO y hay que pararse** —
+significaría que la fuente tiene un grano que no encontramos.
+
+⚠ **Las ocho filas van con la columna `filtro` VACÍA.** No `des_estado=ACTIVA`, no
+`des_estado_2=Activa`. Nada.

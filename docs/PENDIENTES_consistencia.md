@@ -10103,3 +10103,37 @@ en qué ventana corrió obliga a leer las trazas para saber qué midió.**
 ⚠ Relacionado y distinto: **el default de `R-11` calcula vie–jue y el equipo publica vie–vie**.
 Cuando el usuario elige explícitamente el motor lo honra bien, así que **lo que hay que revisar es
 el default, no la elección**. Va aparte porque se arregla en otro lado.
+
+---
+
+## ⚠ P2 · El desglose tiene DOS columnas de estado y discrepan en 160 de 343 filas (31/08/2026)
+
+`MAPEO` declara las dos sobre `digital|CAMPAÑAS_DESGLOCE_DIGITAL`, y **son dos verdades sobre lo
+mismo** en una hoja de terceros:
+
+| campo | col | encabezado | valores en el solape 21–28 |
+|---|---|---|---|
+| `des_estado` | **K** | `Estado` | `ACTIVA` 247 · `FINALIZADA` 69 · `PAUSADA` 23 · `PENDIENTE` 4 |
+| `des_estado_2` | **Y** | `estado` | `Activa` 169 · `Finalizada` 103 · `Pendiente` 62 · `Cancelada` 3 · vacío 6 |
+
+**Discrepancia medida:** 128 filas activas en las dos · **119 sólo en K** · **41 sólo en Y** ⇒
+**160 de 343 filas** en las que una dice activa y la otra no.
+
+✅ **Dejó de ser bloqueante el 31/08**, cuando los ocho `imp_*` se mudaron al desglose **con el
+`filtro` vacío**: hoy ningún marcador consulta ninguna de las dos columnas. **Pero sigue siendo una
+hoja de terceros con dos verdades**, y el día que alguien necesite filtrar por estado va a tener que
+elegir sin criterio escrito.
+
+⛔ **La trampa que hay que conocer antes de intentarlo: el comparador DISTINGUE mayúsculas.**
+`valorPasaFiltro_` hace `v === esperado` sobre `normalizarValorDeclarado_`, que sólo colapsa
+espacios y hace `trim` —`R-10` preserva el case a propósito—. La col K trae `ACTIVA` y la col Y
+`Activa`, así que **`des_estado=Activa` da cero filas sin fallar**. Medido: los dos filtros cruzados
+dan exactamente 0.
+
+⚠ **Y un refinamiento posible que queda SIN MEDIR:** las **4 filas `PENDIENTE`** de la ventana.
+Con el filtro vacío entran; si alguna vez el filtro vuelve, son el primer caso a mirar.
+
+⭐ **Por qué el filtro quedó vacío, que es lo que evita que alguien lo reponga:** la ventana está
+**cerrada**. Una campaña que corrió del 21 al 25 y terminó es `FINALIZADA` **y es parte de la
+semana**. `estado=Activa` tenía sentido leyendo el presente; sobre una semana retrospectiva
+descarta justo las que empezaron y terminaron adentro.

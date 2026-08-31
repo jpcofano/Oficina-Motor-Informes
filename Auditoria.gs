@@ -5451,6 +5451,22 @@ var MARCADORES_AMBITO_TESTIGO_ = [
 function testigoDeAmbito() {
   Logger.log('══════════════════════════════════════════════════════════════════════');
   Logger.log('TESTIGO DE `DIMENSIONES_.ambito` — ' + new Date().toISOString());
+
+  /* ⭐⭐ `2026-08-31_1` — **LA VENTANA VA EN EL ENCABEZADO, no sólo dentro de cada traza.**
+   * Este testigo **no acepta período**: toma el default de `R-11`. El 30/08 eso hizo que testigo y
+   * corrida midieran ventanas distintas —21-27 contra 21-28— y produjo una **contradicción
+   * aparente entre dos números correctos**: `gcba_frecuencia` dio 6,265 acá y 10,08 en el deck.
+   * Se leyó un rato como dos valores del mismo número, y eran dos ventanas.
+   *
+   * ⚠ **Esto no arregla el desajuste, lo vuelve VISIBLE en la primera línea**, que es donde se
+   * lee. Un instrumento que no declara en qué ventana corrió obliga a abrir las trazas para saber
+   * qué midió. El arreglo de fondo —un wrapper por período— sigue en `PENDIENTES`. */
+  var vTest = resolverVentana({});
+  Logger.log('VENTANA DE ESTA TOMA: ' +
+    (vTest && vTest.desde
+      ? formatearFecha_(vTest.desde) + ' → ' + formatearFecha_(vTest.hasta) + ' (' + vTest.origen + ')'
+      : JSON.stringify(vTest)) +
+    '   ⚠ DEFAULT de `R-11` — NO es el período que elija la corrida.');
   Logger.log('══════════════════════════════════════════════════════════════════════');
 
   /* ⛔ El criterio se imprime DESDE `DIMENSIONES_`, nunca como texto fijo: un testigo que declara

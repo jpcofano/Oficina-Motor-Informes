@@ -4647,6 +4647,120 @@ function anotarQueM2CampaniasNoSePinta() {
  *
  * `cambios` es `[{ marcador: 'x', informe_id: 'jm', formato: 'porcentaje_sin_signo' }]`.
  */
+/* ═══════════ `2026-08-31_1` — LA MUDANZA DE LOS OCHO `imp_*` AL DESGLOSE ═══════════════════
+ *
+ * ⭐⭐ **Cierra la mudanza a medias que quedó abierta el 28/08.** Ese día `DIMENSIONES_` empezó a
+ * declarar `digital|CAMPAÑAS_DESGLOCE_DIGITAL` para `ambito` y `plataforma`, y **`MARCADORES`
+ * nunca se movió**: el código declaraba un camino que la configuración no usaba. Acá se completa.
+ *
+ * **Por qué vale, medido el 30/08 con el corte `JDGAG` ya cableado, ventana 21–28:** desde
+ * `looker/DIGITAL` la lámina JM publica el **44,8 %** del tablero; desde el desglose, el **86 %**
+ * con `estado` activo — y `looker/DIGITAL` es una **copia rezagada** del desglose, medida en 24 %
+ * de atraso el 28/08.
+ *
+ * ⛔⛔ **EL `filtro` VA VACÍO, Y NO ES UN OLVIDO. Decisión del usuario, 31/08.** Las tres opciones,
+ * medidas sobre el solape 21–28 contra las **29** implementaciones JM del tablero:
+ *
+ * | filtro | filas JM | impresiones JM |
+ * |---|---|---|
+ * | ⭐ **sin filtro** | **28 de 29** | 134 % |
+ * | `des_estado=ACTIVA` (col K) | 15 de 29 | 86 % |
+ * | `des_estado_2=Activa` (col Y) | 7 de 29 | 28 % |
+ *
+ * ⭐ **El CONTEO es el criterio del corte** —se decidió el 30/08 al aceptar que la lámina publica
+ * acumulado: el tablero controla el **corte**, no las sumas—. Y **las sumas TIENEN que dar de
+ * más**: 134 % es lo que esa decisión predice.
+ *
+ * ⭐⭐ **El 86 % de `ACTIVA` era un número plausible**, de los caros: media población y sobreconteo,
+ * **dos errores de signo opuesto cancelándose**. Se veía mejor y medía peor.
+ *
+ * ⭐⭐ **La razón de fondo, que cierra la discusión: la ventana está CERRADA.** Una campaña que
+ * corrió del 21 al 25 y terminó es `FINALIZADA` **y es parte de la semana**. `estado=Activa` tenía
+ * sentido leyendo el presente; sobre una semana **retrospectiva** descarta justo las que empezaron
+ * y terminaron adentro. **Eso explica los dos efectos —menos filas y suma que igual sobra— sin
+ * necesidad de mirar fila por fila.**
+ *
+ * ⚠ **Que nadie reponga el filtro creyendo que se olvidó.** Si aparece un `des_estado` acá, es una
+ * regresión, no una mejora.
+ *
+ * ⚠ **Y una trampa que quedó medida por si alguien lo intenta igual: el comparador DISTINGUE
+ * mayúsculas** (`valorPasaFiltro_` hace `v === esperado` sobre `normalizarValorDeclarado_`, que
+ * preserva el case por `R-10`). La col K trae `ACTIVA` y la col Y `Activa`, así que
+ * `des_estado=Activa` da **cero sin fallar**. Las dos columnas además **discrepan en 160 de 343
+ * filas** — va como pendiente propio.
+ *
+ * ⚠ **Lo que esto NO arregla:** GCBA queda en ~257 % sobre el desglose. Es el **grano temporal**,
+ * que no es un error corregible: la lámina publica **acumulado rotulado** (decisión del usuario,
+ * 30/08).
+ *
+ * ⭐ **Sin `_` y sin parámetros**, para que Apps Script lo liste (`CLAUDE.md` §2).
+ */
+function mudarImpresionesAlDesglose() {
+  var OCHO = ['imp_total', 'imp_meta', 'imp_google', 'imp_prog',
+    'gcba_imp_total', 'gcba_imp_meta', 'gcba_imp_google', 'gcba_imp_prog'];
+
+  var cambios = OCHO.map(function (m) {
+    return {
+      marcador: m,
+      informe_id: 'jm',
+      base_id: 'digital',
+      solapa: 'CAMPAÑAS_DESGLOCE_DIGITAL',
+      campo_logico: 'des_impresiones',
+      filtro: ''   // ⛔ vacío A PROPÓSITO — ver el comentario de arriba.
+    };
+  });
+
+  Logger.log('MUDANZA DE LOS OCHO `imp_*` AL DESGLOSE — ' + new Date().toISOString());
+  Logger.log('  looker|DIGITAL · Impresiones · filtro `estado=Activa`');
+  Logger.log('       ↓');
+  Logger.log('  digital|CAMPAÑAS_DESGLOCE_DIGITAL · des_impresiones · filtro VACÍO');
+  Logger.log('  ⚠ `operacion`, `periodo_ref` y `dimensiones` NO se tocan.');
+
+  var r = curarCamposMarcadores_(cambios);
+  if (!r.ok) {
+    Logger.log('⛔ FALLÓ: ' + r.motivo);
+    if (r.diagnostico) Logger.log(r.diagnostico);
+    return r;
+  }
+  Logger.log('celdas escritas: ' + (r.cambios_escritos || (r.aplicados || []).length));
+  (r.aplicados || []).forEach(function (a) {
+    Logger.log('  ' + a.marcador + '.' + a.campo + ': "' + a.anterior + '" → "' + a.nuevo + '"');
+  });
+  if (r.sin_fila && r.sin_fila.length) Logger.log('⚠ SIN FILA: ' + r.sin_fila.join(', '));
+
+  /* ⭐ **Relectura, porque el escritor verifica lo que QUEDÓ y no lo que pidió escribir.** Acá el
+   * riesgo de coerción es bajo —son textos y un vacío, no un `1/3` que Sheets convierte en fecha—
+   * pero el vacío sí vale confirmarlo: una celda que quedó con el filtro viejo publica el número
+   * anterior **sin fallar**, y ése es justamente el modo de falla que este cambio viene a cerrar. */
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0];
+  var iM = h.indexOf('marcador'), iB = h.indexOf('base_id'), iS = h.indexOf('solapa');
+  var iC = h.indexOf('campo_logico'), iF = h.indexOf('filtro');
+  var mal = [];
+  Logger.log('');
+  Logger.log('── RELEÍDO DE LA HOJA ────────────────────────────────────────────────');
+  for (var f = 1; f < datos.length; f++) {
+    if (OCHO.indexOf(String(datos[f][iM])) === -1) continue;
+    var base = String(datos[f][iB]), sol = String(datos[f][iS]);
+    var campo = String(datos[f][iC]), filt = String(datos[f][iF]);
+    var ok = base === 'digital' && sol === 'CAMPAÑAS_DESGLOCE_DIGITAL' &&
+      campo === 'des_impresiones' && filt === '';
+    if (!ok) mal.push(datos[f][iM]);
+    Logger.log('  ' + (ok ? '✅' : '⛔') + ' ' + datos[f][iM] + '\t' + base + '|' + sol +
+      '\t' + campo + '\tfiltro="' + filt + '"');
+  }
+  if (mal.length) {
+    Logger.log('⛔ ' + mal.length + ' fila(s) NO quedaron como se pidió: ' + mal.join(', '));
+    return { ok: false, motivo: 'la hoja no quedó como se pidió', mal: mal };
+  }
+  Logger.log('✅ las 8 filas quedaron en el desglose, con `filtro` vacío.');
+  Logger.log('');
+  Logger.log('SIGUIENTE: correr `testigoDeAmbito()` (toma DESPUÉS, MISMA sesión) y después el');
+  Logger.log('informe `jm` con `periodo_id = 2026_agosto_21_28` — NO el default de `R-11`.');
+  return r;
+}
+
 function curarCamposMarcadores_(cambios) {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
   if (!hoja) return { ok: false, motivo: 'La hoja MARCADORES no existe.' };

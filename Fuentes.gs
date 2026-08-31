@@ -1795,6 +1795,21 @@ var DIMENSIONES_ = {
        * campañas activas en la ventana— por decisión del usuario del 30/08, rotulado como tal. Los
        * **conteos** son el criterio; las sumas dan 134 % y 251 % y **no son un error**. */
       'looker|DIGITAL': 'ldig_id_cuenta~=JDGAG',
+      /* ⭐⭐ `2026-08-31_1` — **LA MUDANZA QUE ESTE BLOQUE ANUNCIABA YA TIENE SU EJECUTOR.**
+       * El comentario de abajo, del 28/08, decía que *«los ocho `imp_*` cambian de fuente»* y esta
+       * entrada de `DIMENSIONES_` **existe desde entonces esperándolos**, mientras `MARCADORES`
+       * seguía apuntando a `looker|DIGITAL`. Eso es la «mudanza a medias» que se citó como
+       * pendiente durante tres días: **el código declaraba un camino que la configuración no
+       * usaba.**
+       *
+       * **La cierra `mudarImpresionesAlDesglose()` (`Instalar.gs`)**, que mueve las ocho filas de
+       * `MARCADORES` y **deja el `filtro` vacío a propósito** —el motivo largo está allá—.
+       * ⚠ **Se completa cuando esa función CORRE**, no cuando se escribe: es una hoja de registro
+       * y no viaja con el `clasp push`.
+       *
+       * ⚠ Y desde entonces esta entrada **deja de ser preparatoria**: pasa a ser la que decide el
+       * ámbito de los dos números publicados en `L-031` y `L-032`.
+       */
       /* ⛔ **SUPERSEDIDO el 30/08 por el bloque de arriba** — este comentario describe la regla
        * `des_campana_2~=JM || des_campana_3~=JM`, que ya NO es la que está en la línea de abajo.
        * Se conserva porque su último párrafo sigue vigente y es la razón por la que la columna
