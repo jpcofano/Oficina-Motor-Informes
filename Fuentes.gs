@@ -1804,8 +1804,11 @@ var DIMENSIONES_ = {
        *
        * **La cierra `mudarImpresionesAlDesglose()` (`Instalar.gs`)**, que mueve las ocho filas de
        * `MARCADORES` y **deja el `filtro` vacío a propósito** —el motivo largo está allá—.
-       * ⚠ **Se completa cuando esa función CORRE**, no cuando se escribe: es una hoja de registro
-       * y no viaja con el `clasp push`.
+       * ✅ **CORRIÓ el 31/08/2026 y la mudanza quedó cerrada**, verificado releyendo la hoja: las
+       * ocho filas en `digital|CAMPAÑAS_DESGLOCE_DIGITAL` sobre `des_impresiones`, con `filtro`
+       * vacío. La toma DESPUÉS del testigo lo confirma del otro lado — `imp_total` pasó de
+       * **486.982** a **16.264.425** y el conteo de JM de 6 a **28 filas**, contra las **29**
+       * implementaciones que declara el tablero.
        *
        * ⚠ Y desde entonces esta entrada **deja de ser preparatoria**: pasa a ser la que decide el
        * ámbito de los dos números publicados en `L-031` y `L-032`.

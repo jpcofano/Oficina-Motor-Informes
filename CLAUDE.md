@@ -1124,6 +1124,13 @@ código intacto, da verde, y eso se lee como *«el negativo pasó»*.
   por otro motivo —falta exigir el motivo—; **(3)** ⭐ **no llegó a mirar nada** —falta exigir que
   la mutación ocurra—. **Son tres afirmaciones separadas y ninguna implica a las otras dos.**
 
+⭐⭐ **Un escritor que informa lo que ESCRIBIÓ no verifica nada: hay que RELEER, y por otro camino.** (31/08/2026.) Es el **segundo lector de más arriba aplicado a una escritura**, y la simetría es exacta — allá dos lectores tienen que **fallar distinto**; acá **escribir y verificar tienen que ser dos caminos**, o el control mide su propia intención.
+
+- **El caso:** un wrapper mueve ocho filas de `MARCADORES` y el escritor devuelve *«32 celdas escritas»*. **Eso no dice que la hoja quedó bien**: dice qué se pidió. *«32 escritas»* y *«las 8 quedaron»* serían **la misma afirmación hecha dos veces por el mismo camino**.
+- ⭐ **La relectura sale de la hoja, no del retorno del escritor**, y compara contra lo pedido. Cuesta quince líneas y es lo único que separa *«pedí que quedara así»* de *«quedó así»*.
+- ⚠ **Y en Sheets la relectura no es paranoia: es obligatoria**, porque la celda pasa por la interpretación automática de tipos —`1/3` se guarda como **fecha**, `007` pierde el cero—. El escritor **verifica lo que quedó, no lo que pidió escribir**; eso ya está escrito más arriba y esta regla es su generalización: **vale también cuando no hay coerción posible**, porque el riesgo no es sólo el tipo, es que la celda no se haya escrito.
+- ⛔ **El caso que lo vuelve urgente en este repo es el VACIADO.** Una celda que tenía que quedar vacía y conservó su valor viejo **publica el número anterior sin fallar** — el modo de falla más caro de acá, y el único que el escritor no puede detectar solo, porque desde su lado la escritura «no hacía falta».
+
 ⛔⛔ **Y la forma más general del tramo salteado, que costó una conclusión publicada: el tramo no siempre es un LLAMADOR — a veces es QUÉ SIGNIFICA UNA CELDA VACÍA.** (30/08/2026.) La regla de arriba manda preguntar *«¿quién llama a lo que estoy midiendo?»*, y eso deja afuera el caso en que el instrumento no saltea ningún código: **saltea una convención**.
 
 - **El caso, medido:** los ocho `imp_*` tienen `periodo_ref` **vacío**, y de ahí salió la premisa *«no tienen período, así que leen la solapa entera»*. **Falso.** `periodo_ref` vacío significa *«usá el período de la corrida»*, y el motor recorta igual: la traza real dice `2026-08-21–2026-08-27 (R-11 (calculado))` y el universo son **304** filas, no las 720 que predije. `imp_total` predicho **16.176.264** contra **486.982** real.
