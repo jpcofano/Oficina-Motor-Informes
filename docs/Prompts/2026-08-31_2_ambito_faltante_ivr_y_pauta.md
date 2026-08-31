@@ -312,3 +312,70 @@ por qué la de GCBA estaba mal**. **La Parte B sigue sin habilitarse.**
 **extendida a los tres `gcba_ivr_*`**. `testigoDeMarcadores_` ya imprime `filtro N/M` por marcador,
 así que la traza va a decir **`8/63`** —el filtro se aplica— o **`— /63`** —no se aplica—, y eso
 distingue (2) de (3) de una.
+
+---
+
+## ⛔⛔ P1 · CERRADA (31/08/2026) — el filtro anda, y el defecto es otro y peor
+
+**La corrida del testigo con los seis de IVR y el `dimensiones` vivo lo cierra entero.**
+
+### Hipótesis (4) — ⛔ descartada
+
+La hoja **viva** dice `gcba_ivr_llamados → dimensiones="ambito=gcba"`. La celda está.
+(Y `ivr_llamados → dimensiones=""`, como se esperaba.)
+
+### ⭐⭐ El filtro SÍ se aplica — y el par junto lo demuestra
+
+```
+gcba_ivr_llamados   10032   filtro 8/63  · ventana 1/8
+ivr_llamados        10032   filtro —     · ventana 1/63
+```
+
+**`ivr_vocero!=JM` da 8 de 63: el filtro funciona perfecto.** ⇒ **hipótesis (2) y (3) también
+descartadas.** ⛔ **No hay ningún «modo de falla sin nombre».**
+
+⭐⭐ **Los dos publican 10.032 porque terminan sumando LA MISMA ÚNICA FILA.** La ventana recorta a
+**1** fila de IVR, y esa fila **es de GCBA** — así que `ivr_llamados` la toma por ser la única, y
+`gcba_ivr_llamados` la toma porque además pasa su filtro. **La aritmética del propio log lo dice:
+`1/8` y `1/63` son la misma fila.**
+
+### ⛔⛔ Y eso INVIERTE el diagnóstico del §0
+
+**Medido sobre `Seguimiento_Digital_2026-08-30.xlsx`, `digital/Directa IVR`, solape:**
+
+| ventana | filas | **JM** | GCBA |
+|---|---|---|---|
+| **21–27** (`R-11`) | 1 | **0** | 1 — `3513-AGOINFGJ`, 10.032 llamados |
+| **21–28** (equipo) | 3 | **0** | 3 |
+
+⛔ **No hay NINGUNA campaña de IVR de JM en la ventana. Ni en la del motor ni en la del equipo.**
+
+⇒ **El defecto no es «las dos láminas publican lo mismo por falta de corte». Es que `L-031` —la
+lámina de JM— publica una campaña de GCBA como si fuera de JM.** Es el modo de falla más caro de
+este repo: **el número plausible**. `10.032` llamados y `89,19 %` de atendidos se ven perfectos.
+
+### ⛔ Lo que esto le hace a la Parte B — **no arranca como está escrita**
+
+Ponerle `ambito=jm` a `ivr_llamados`, `ivr_atendidos`, `ivr_at_pct` y `ivr_campanias` **es
+correcto** —dejan de publicar dato ajeno— **y deja a `L-031` con `sin_datos` en esas cuatro cajas**,
+porque el universo correcto tiene **cero filas**.
+
+⚠ **Eso es una decisión de producto, no un arreglo técnico**, y hay que tomarla con el dato a la
+vista: la lámina de JM pasa de publicar **tres cifras equivocadas** a publicar **tres huecos
+correctos**. **No se descubre después de la corrida.**
+
+⭐ **Y el resto del prompt no depende de esto:** los seis `pauta_*` siguen siendo un caso distinto
+—ahí sí hay dato de los dos lados— y pueden ir por separado.
+
+### ⚠ Dos cosas más que la corrida deja anotadas
+
+1. **`3508-AGOSALGC` aparece DOS VECES** en la ventana 21–28, las dos con `Llamados Realizados`
+   **vacío**. Filas duplicadas en una planilla de terceros.
+2. **Los canarios se movieron fuerte** —`u1_total_impresiones` 303.000.546 → **316.441.195**,
+   `camp_meta_impresiones` 43.904.278 → **44.091.433**, `camp_frecuencia` 6,287895 → **7,5721502**—.
+   **Ninguno lleva `ambito`**, así que es **deriva de la fuente** entre tomas, no efecto de nada de
+   esto. ✅ Y `gcba_frecuencia` sigue **idéntico** a `camp_frecuencia`, como corresponde.
+3. ✅ **La mudanza de los `imp_*` quedó confirmada del otro lado:** ahora leen
+   `des_impresiones` del desglose, la conservación cierra —**28 + 289 = 317**— y la identidad
+   `meta+google+prog = total` cierra en los dos ámbitos. Y la traza muestra **«2 con la celda
+   vacía»**: las dos filas sin `Id cuentas` cayendo en GCBA por negación, **visibles**.

@@ -10225,3 +10225,32 @@ dos días —por el asentamiento de DV360, medido el 30/08—.
 
 ⭐ Si algún día se retoma: el rótulo conviene que **viaje en un token que el motor completa**, no
 editado a mano, para que no se pierda con una plantilla nueva.
+
+---
+
+## ⛔ P0 · `L-031` publica una campaña de IVR de GCBA como si fuera de JM (31/08/2026)
+
+**Medido sobre `digital/Directa IVR` (63 filas) y confirmado por la traza de la corrida:**
+
+| ventana | filas de IVR en solape | **JM** | GCBA |
+|---|---|---|---|
+| 21–27 (`R-11`) | 1 | **0** | 1 — `3513-AGOINFGJ` |
+| 21–28 (equipo) | 3 | **0** | 3 |
+
+**`ivr_llamados`, `ivr_atendidos` e `ivr_at_pct` no llevan `dimensiones`**, así que leen la solapa
+entera. Como la ventana deja **una sola fila y es de GCBA**, las tres cajas de la lámina de JM
+publican **el dato de una campaña de GCBA**: `10.032` llamados, `8.948` atendidos, `89,19 %`.
+
+⛔ **Es el modo de falla más caro del repo: el número plausible.** Nada se ve mal.
+
+⭐ **Y NO es un problema de cableado ni de filtro.** El testigo del 31/08 lo descartó entero:
+`gcba_ivr_llamados` da `filtro 8/63` —el filtro de ámbito **funciona**— y la hoja viva confirma su
+`dimensiones = ambito=gcba`. **El único defecto es el `dimensiones` vacío en los de JM.**
+
+⚠ **Y arreglarlo tiene una consecuencia que hay que decidir, no descubrir:** con `ambito=jm` esas
+cuatro cajas —las tres más `ivr_campanias`— pasan a **`sin_datos`**, porque el universo correcto
+tiene **cero filas**. **La lámina de JM cambia tres cifras equivocadas por tres huecos correctos.**
+Es una decisión de producto.
+
+⚠ **Colateral, en la misma medición:** `3508-AGOSALGC` aparece **dos veces** en la ventana 21–28,
+las dos con `Llamados Realizados` vacío — filas duplicadas en una planilla de terceros.
