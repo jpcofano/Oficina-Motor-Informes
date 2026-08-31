@@ -7300,3 +7300,228 @@ function censarLinksDeTextoA5_(obtenerTexto, donde, res) {
     }
   } catch (e) { /* asString sobre un texto ilegible ya se anotó arriba */ }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-31_3` Parte A — TESTIGO DE ESTRUCTURA
+ *
+ * ⭐⭐ **Es el instrumento que faltaba, y su razón de ser es lo que NO mide.** Todos los testigos
+ * de este archivo miden **números**. El defecto que este prompt arregla —la sección de campaña
+ * destacada expandida dos veces, nueve láminas repetidas— **no se ve en ningún valor**: las
+ * dieciocho láminas publican cifras correctas. **Un testigo de valores lo habría dado por bueno.**
+ *
+ * Lo que mide: por cada sección repetible del informe, **cuántos ítems produce y con qué clave**.
+ * Ésa es la unidad de la que sale una lámina, así que un ítem de más es una tanda de láminas de
+ * más — y el diff antes/después lo dice sin abrir el deck.
+ *
+ * ⚠ **Cuenta LÁMINAS DECLARADAS en `LAMINAS`, no slides de la plantilla.** Son dos preguntas
+ * distintas (`D-37`: la pertenencia la declara el registro) y sólo la segunda necesita abrir el
+ * deck. Lo que este testigo predice es **cuántas láminas debería producir la expansión**; que la
+ * plantilla las tenga es de la corrida.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* El caso que se está midiendo. ⚠ **No es configuración del motor**: es el período del incidente
+ * del 31/08, y vive acá porque un instrumento declara qué midió. Si mañana se mide otro, se cambia
+ * acá y el encabezado del log lo dice solo. */
+var PERIODO_TESTIGO_ESTRUCTURA_ = '2026_agosto_21_28';
+
+/* ⭐ **El control positivo, y comparte camino con lo que se mide** (`CLAUDE.md` §4). `encuentro`
+ * TIENE que dar al menos un ítem: `REUNIONES` viva trae «Coghlan» con este mismo `periodo_id`.
+ *
+ * ⛔ **Sin esto, un instrumento roto es indistinguible de uno que mide bien.** Si el anclaje
+ * falla, o `leerSeccionesPlano_` devuelve un mapa vacío en silencio —ya pasó, con `leerRegistro_`
+ * sin clave primaria—, **todas las secciones darían cero ítems** y el log diría «campana: 0», que
+ * se lee como «el arreglo ya está». El control lo convierte en un aborto con motivo. */
+var SECCION_CONTROL_ESTRUCTURA_ = 'encuentro';
+
+/**
+ * Testigo de estructura de `jm` y de `secco`, en ese orden. **Sin parámetros y sin `_`**, para que
+ * aparezca en el desplegable del editor (`CLAUDE.md` §2: son las dos condiciones, y hay que
+ * cumplir las dos).
+ *
+ * ⭐ **Corre los DOS informes**, y no es de más: `secco` también declara la sección `campana` —ocho
+ * láminas, `L-016`–`L-023`— y es el que la justificación vencida del 18/08 decía proteger. Un
+ * arreglo que arregle `jm` y deje a `secco` sin campaña destacada **es un deck más corto que se
+ * lee como éxito**.
+ */
+function testigoDeEstructura() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('TESTIGO DE ESTRUCTURA (ítems por sección repetible) — ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ⛔⛔ **EL PREÁMBULO, COPIADO — no armado.** Las dos líneas son las de `generarInforme`, en el
+   * mismo orden. `itemsDeSeccion_('encuentro')` paga `anclarEncuentros` y `unirDigitalPorCuenta`,
+   * y sin las dos cachés eso midió **325 s** contra 6 s — factor 54 (`CLAUDE.md` §4). Un
+   * instrumento que corre afuera de las cachés mide otra cosa, y el reporte lo declara abajo. */
+  abrirCacheRegistros_();
+  abrirCacheDatosHoja_();
+  try {
+    ['jm', 'secco'].forEach(function (informeId) {
+      testigoDeEstructuraDeInforme_(informeId, PERIODO_TESTIGO_ESTRUCTURA_);
+    });
+  } finally {
+    cerrarCacheDatosHoja_();
+    cerrarCacheRegistros_();
+  }
+
+  Logger.log('');
+  Logger.log('── CONDICIONES DE ESTA TOMA ──────────────────────────────────────────');
+  Logger.log('  cachés: abrirCacheRegistros_ + abrirCacheDatosHoja_ (las dos de `generarInforme`)');
+  Logger.log('  láminas: contadas con `laminaEntraParaItem_`, la función real — por ÍTEM, no N×M.');
+  Logger.log('  ⚠ Lo que este testigo NO contesta: si los VALORES de las láminas son correctos, y');
+  Logger.log('    si la plantilla tiene las slides que LAMINAS declara. Las dos piden una corrida.');
+}
+
+/** Una pasada por informe. Privada: la pública de arriba es la que se corre. */
+function testigoDeEstructuraDeInforme_(informeId, periodoId) {
+  Logger.log('');
+  Logger.log('╔═════════════════════════════════════════════════════════════════════');
+  Logger.log('║ INFORME `' + informeId + '`  ·  período pedido `' + periodoId + '`');
+
+  var ventana = resolverVentana({ periodo_ref: periodoId });
+  if (!ventana.ok) {
+    Logger.log('║ ⛔ ABORTA: no se pudo resolver el período — ' + ventana.motivo);
+    Logger.log('╚═════════════════════════════════════════════════════════════════════');
+    return;
+  }
+  Logger.log('║ ventana: ' + formatearFecha_(ventana.desde) + ' → ' + formatearFecha_(ventana.hasta) +
+    '  ·  origen `' + ventana.origen + '`');
+
+  /* ⭐ **El conjunto de versiones que describen esta ventana** (`D-53`, consecuencia 2). No es un
+   * empate a desempatar: `PERIODOS` puede traer varias filas con la misma ventana porque son
+   * **varias versiones del mismo informe**, y lo que corresponde es **decir cuál se tomó**, no
+   * elegir una. Con override explícito manda el id de `origen`; esto se imprime igual, para que el
+   * día que aparezca una segunda versión se vea acá y no en un número raro. */
+  var versiones = periodosQueDescribenLaVentana_(ventana);
+  Logger.log('║ versiones de PERIODOS con esta misma ventana: ' +
+    (versiones.length ? versiones.length + ' → [' + versiones.join(' · ') + ']' : '0'));
+  Logger.log('╚═════════════════════════════════════════════════════════════════════');
+
+  var regL = leerLaminas_();
+  var filasLaminas = regL.ok ? regL.filas : [];
+  if (!regL.ok) Logger.log('  ⚠ no se pudo leer LAMINAS (' + regL.motivo + ') — las cuentas van en cero');
+
+  var secciones = seccionesRepetiblesDe_(informeId, filasLaminas);
+  Logger.log('  secciones repetibles activas con láminas declaradas: ' + secciones.length);
+
+  if (!secciones.length) {
+    /* ⛔ **Cero unidades es un problema, no un silencio** (`CLAUDE.md` §4): «ningún ítem de más» y
+     * «no se midió nada» se ven idénticos en un log sin conteo. */
+    Logger.log('  ⛔ ABORTA: CERO secciones para medir. No es «no hay ítems de más»: es que este');
+    Logger.log('     testigo no midió nada. Revisar SECCIONES.estado y LAMINAS.seccion_id.');
+    return;
+  }
+
+  var totalLaminas = 0;
+  var vioElControl = false;
+  var itemsDelControl = 0;
+
+  secciones.forEach(function (s) {
+    var filasDeLaSeccion = filasLaminas.filter(function (f) {
+      return String(f.informe_id || '').trim() === informeId &&
+             String(f.seccion_id || '').trim() === s.seccion_id;
+    });
+    var laminas = filasDeLaSeccion.map(function (f) { return String(f.lamina_id || '').trim(); });
+
+    Logger.log('');
+    Logger.log('  ── `' + s.seccion_id + '`  (itera_sobre = ' + (s.itera_sobre || '—') +
+      ', modo = ' + s.modo + ')');
+    Logger.log('     láminas declaradas: ' + laminas.length + ' [' + laminas.join(' ') + ']');
+
+    var r;
+    try { r = itemsDeSeccion_(s, informeId, ventana); }
+    catch (e) { Logger.log('     ⛔ EXCEPCIÓN: ' + e); return; }
+
+    if (!r || !r.ok) {
+      Logger.log('     ⛔ sin ítems: ' + ((r && r.motivo) || 'itemsDeSeccion_ no devolvió nada'));
+      return;
+    }
+
+    var claves = (r.items || []).map(function (i) { return String(i.clave || '(sin clave)'); });
+    Logger.log('     ⭐ ÍTEMS: ' + claves.length);
+    claves.forEach(function (c, i) { Logger.log('        [' + (i + 1) + '] ' + c); });
+
+    /* ⚠ **Las claves repetidas se nombran, y es el defecto que este prompt arregla.** Dos ítems
+     * con la misma clave son la misma cosa emitida dos veces — que en el deck son dos tandas de
+     * láminas idénticas, con cifras correctas y ningún síntoma. */
+    var vistas = {}, repetidas = [], distintas = 0;
+    claves.forEach(function (c) {
+      if (vistas[c]) { if (repetidas.indexOf(c) === -1) repetidas.push(c); }
+      else { vistas[c] = true; distintas++; }
+    });
+    if (repetidas.length) {
+      Logger.log('     ⛔⛔ CLAVE REPETIDA: [' + repetidas.join(' · ') + '] — la sección se expande');
+      Logger.log('        más de una vez sobre el MISMO ítem. Son ' + (claves.length - distintas) +
+        ' tanda(s) de láminas de más.');
+    }
+
+    /* El `periodo_id` que la sección declara haber usado. Vacío significa **no se filtró por
+     * período** — y hoy la rama `CAMPANAS` ni siquiera devuelve el campo, que es exactamente el
+     * hueco. Se imprime la diferencia entre «no filtró» y «no lo dice». */
+    Logger.log('     periodo_id declarado por la sección: ' +
+      (r.periodo_id === undefined ? '(no devuelve el campo — NO filtra por período)'
+        : (r.periodo_id === '' ? '(vacío — no se filtró por período)' : '`' + r.periodo_id + '`')));
+
+    (r.excluidos || []).forEach(function (x) {
+      Logger.log('     · excluido ' + (x.item || x.campana || '?') + ' — ' + (x.motivo || '?'));
+    });
+    if (!(r.excluidos || []).length) Logger.log('     · excluidos: 0');
+
+    /* ⛔⛔ **`ítems × láminas` ESTÁ MAL, y la primera corrida de este testigo lo publicó.**
+     *
+     * `LAMINAS.filtro` se evalúa **POR ÍTEM** (`laminaEntraParaItem_`), así que una sección puede
+     * declarar N láminas y emitir menos. Medido el 31/08 sobre la toma de las 11:02: `encuentro`
+     * de `jm` declara **3** —`L-035 tipo!=Uno a uno`, `L-052` sin filtro, `L-053 tipo=Uno a uno`—
+     * y Coghlan es «Uno a uno», así que **entran 2 y no 3**. En `secco` es peor: declara **5** y
+     * entran **2**. El producto sobreestimaba las dos.
+     *
+     * ⭐ **Se usa la función REAL del motor, no una copia de su lógica.** Reimplementar el filtro
+     * acá sería el instrumento que reproduce lógica del motor y la reproduce peor (`CLAUDE.md`
+     * §4), y además dejaría dos lugares que tienen que decir lo mismo.
+     *
+     * ⚠ **Esto NO afecta a `campana`**, cuyas 17 filas —9 en `jm`, 8 en `secco`— tienen el
+     * `filtro` vacío, verificado en `LAMINAS_2026-08-31.tsv`. El defecto no movía el número que
+     * este prompt mide; movía el TOTAL, que es lo que hay que cruzar contra el deck. */
+    var laminasEmitidas = 0;
+    var detalleFiltradas = [];
+    (r.items || []).forEach(function (item) {
+      filasDeLaSeccion.forEach(function (f) {
+        var v = laminaEntraParaItem_(f, item);
+        if (v.entra) laminasEmitidas++;
+        else detalleFiltradas.push(String(f.lamina_id || '').trim() + ' ✕ ' +
+          String(item.clave || '?') + ' (' + v.motivo + ')');
+      });
+    });
+    Logger.log('     ⇒ láminas que produciría: ' + laminasEmitidas +
+      '   (NO es ' + claves.length + ' × ' + laminas.length + ': `LAMINAS.filtro` corre por ítem)');
+    detalleFiltradas.forEach(function (d) { Logger.log('        · no entra ' + d); });
+    totalLaminas += laminasEmitidas;
+
+    if (s.seccion_id === SECCION_CONTROL_ESTRUCTURA_) {
+      vioElControl = true;
+      itemsDelControl = claves.length;
+    }
+  });
+
+  Logger.log('');
+  Logger.log('  ═══ TOTAL de láminas de secciones repetibles: ' + totalLaminas + ' ═══');
+
+  /* ⭐ **El control positivo, y va ÚLTIMO a propósito.** Un aviso en el medio de un reporte que
+   * termina bien se lee como verde (`CLAUDE.md` §4): los avisos se acumulan y se imprimen después
+   * del veredicto, no antes. */
+  Logger.log('');
+  Logger.log('  ── CONTROL POSITIVO ────────────────────────────────────────────────');
+  if (!vioElControl) {
+    Logger.log('  ⚠ la sección de control `' + SECCION_CONTROL_ESTRUCTURA_ + '` no está entre las');
+    Logger.log('    repetibles de `' + informeId + '` — no hay control, y los conteos de arriba no');
+    Logger.log('    distinguen «cero ítems de más» de «el instrumento no vio nada».');
+  } else if (itemsDelControl === 0) {
+    Logger.log('  ⛔⛔ EL CONTROL FALLÓ: `' + SECCION_CONTROL_ESTRUCTURA_ + '` devolvió CERO ítems.');
+    Logger.log('     REUNIONES trae al menos un encuentro con periodo_id = ' + periodoId + ', así');
+    Logger.log('     que esto NO es «no hay ítems»: es que algo del camino no está midiendo.');
+    Logger.log('     ⇒ NADA de lo de arriba se puede citar.');
+  } else {
+    Logger.log('  ✅ `' + SECCION_CONTROL_ESTRUCTURA_ + '` devolvió ' + itemsDelControl +
+      ' ítem(s) — el camino de lectura funciona, así que un CERO de otra sección es un cero real.');
+  }
+}
