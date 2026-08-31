@@ -10137,3 +10137,36 @@ Con el filtro vacío entran; si alguna vez el filtro vuelve, son el primer caso 
 **cerrada**. Una campaña que corrió del 21 al 25 y terminó es `FINALIZADA` **y es parte de la
 semana**. `estado=Activa` tenía sentido leyendo el presente; sobre una semana retrospectiva
 descarta justo las que empezaron y terminaron adentro.
+
+---
+
+## ⛔ P0 · La sección de campaña destacada sale DOS VECES — nueve láminas repetidas (31/08/2026)
+
+**El deck de `jm` sobre `2026_agosto_21_28` trae los slides 13–21 repetidos idénticos en 22–30:**
+`Campaña destacada` · `Objetivo` · `Herramientas` · `Formatos` · `Resultados agregados` ·
+`Desagregados Digital` · `Desagregados Mail` · `Desagregados respuestas` · `Análisis`.
+
+**Causa confirmada, y no es una regresión: es un hueco declarado que venció.**
+
+`CAMPANAS` viva (30/08) tiene **dos filas de la misma campaña** —`3512-AGOSEGGJ`, «Operativo
+Movilidad Más Segura»— con `periodo_id` `2026_agosto_21_27` y `2026_agosto_21_28`, las dos con
+`mostrar = sí`. **Dos filas, dos ítems, dos veces nueve láminas.**
+
+Y la rama `CAMPANAS` de `itemsDeSeccion_` (`Generador.gs`) **sólo exige que `periodo_id` no esté
+vacío, no que coincida con el período de la corrida**. ✅ Verificado en la firma:
+`itemsDeSeccion_(seccion, informeId, ventanaInforme)` — **el `periodo_id` no le llega**.
+
+⭐⭐ **No lo dejó afuera el arreglo `b1dc43f`**, que corrigió `filasDeCampana_` —el camino de los
+**tokens** y la **ventana**— y funcionó. **La selección semanal de la SECCIÓN nunca se implementó**,
+y está declarada como decisión de diseño pendiente **desde el 18/08, en el propio comentario del
+código**.
+
+⛔⛔ **Lo que cambió es que la justificación venció.** Ese comentario dice *«hoy es observablemente
+un no-op: las tres filas cargadas son de `secco` y las tres tienen `periodo_id` vacío»* — cierto el
+18/08, **falso hoy**. Es la forma que `CLAUDE.md` §4 ya nombra: **un hueco justificado por el estado
+actual del cableado, con fecha de vencimiento que nadie mira**, y donde **el trabajo previsto es la
+fecha**. Cargar `CAMPANAS` era el trabajo previsto.
+
+**Cómo se cierra:** que `itemsDeSeccion_` reciba el `periodo_id` de la corrida y filtre por él, como
+ya hace `filasDeCampana_`. ⚠ **Es código y mueve la ESTRUCTURA del deck, no un número** — prompt
+propio, con el conteo de láminas como criterio de aceptación.
