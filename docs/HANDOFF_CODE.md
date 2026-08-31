@@ -3,101 +3,95 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-08-29 — **tres commits: el ámbito de IVR (`gcba_ivr_*` de `L-032`),
-el `periodo_id` que no llegaba a `resolverVentana`, y dos afirmaciones vencidas sobre `informe_id`.**
-**Suites: 78 bancos, ~1243 afirmaciones.** ⭐ **`clasp push` HECHO y verificado** con un `clasp pull`
-a un temporal — el proyecto vivo tiene todo, incluidos los ocho commits que venían pendientes desde
-el `2026-08-27_2`.
+**Última actualización:** 2026-08-31 — **`2026-08-31_3` cerrado en tres commits: la sección de
+campaña destacada ya no sale dos veces, y salió `D-53`.** ✅ **El usuario confirmó el deck de `jm`
+con 23 láminas** (eran 32, con nueve duplicadas). **`clasp push` hecho.**
 
 ### ⭐ Lo último, en cuatro líneas
 
-- ⭐⭐ **El `periodo_id` no llegaba a `resolverVentana`, y por eso `jm-20260828-193948` sacó ~130
-  tokens `camp_*` en `---`.** `resolverMarcadores` armaba un literal de **tres** claves que lo
-  descartaba justo antes de usarlo. **Migración a medias:** el literal es del 03/08, y el commit del
-  18/08 que hizo `CAMPANAS` una lista tocó el productor y la hoja final **y no el intermediario**.
-- ⚠ **Con UNA fila por campaña el defecto no tenía síntoma** —`per === ''` y el filtro correcto dan
-  lo mismo—. **La segunda fila no lo causó: lo destapó.**
-- ⭐⭐ **`digital/Directa IVR` ya sabe decir `ambito`**, con la columna **G `Vocero`** medida sobre el
-  fixture del 28/08: **`JM` 55 / `GCBA` 8** sobre 63 filas. Calcar `nombre_campaña~=JM` habría
-  perdido dos filas **sin fallar**.
-- ⚠ **`L-031` no cambió**: los `ivr_*` de JM **siguen sin caja** en la plantilla. Lo que el usuario
-  agregó está en **`L-032`**, el resumen de GCBA.
+- ⭐⭐ **La rama `CAMPANAS` de `itemsDeSeccion_` selecciona por VERSIÓN del informe.** Exigía que
+  `periodo_id` no estuviera vacío y nada más, así que las **dos filas** de `3512-AGOSEGGJ` —una por
+  versión— daban dos ítems y **dieciocho láminas donde van nueve**.
+- ⭐⭐ **`D-53`: `periodo_id` identifica una versión del informe, no una semana.** Decisión del
+  usuario. Dos filas con la misma ventana **son dos versiones**, no un duplicado. `D-19` se
+  **confirmó** en el mismo acto.
+- ⭐ **Un solo lugar decide el período:** `periodosDeLaCorrida_` (`Union.gs`), y **`leerReuniones_`
+  pasó a usarlo**. El `periodo_id` **no viaja en la firma**: ya llega en `ventanaInforme.origen`.
+- ⛔ **Y salió un `P0` nuevo que es peor que el que se arregló:** `cargarTemarioCampanas_` **sabe
+  agregar y no sabe quitar**, así que una campaña que el usuario **sacó** del temario se sigue
+  publicando.
 
-### ⛔ Lo que hay que correr, y es tuyo — EN ESTE ORDEN
+⚠ **Y una afirmación que este paso DESMINTIÓ, dicha acá porque la versión anterior de este handoff
+la publicaba como decisión:** *«una campaña que aparezca dos veces en el deck no es un bug — la
+unicidad es responsabilidad de la carga del temario, no del motor»*. **Con `D-53` es falsa**: era un
+bug del motor y está arreglado. Se verificó que **no vive en ningún documento con dueño** —sólo
+estaba acá—, así que muere con esta reescritura.
 
-1. ⭐ **Aplicar configuración** — siembra `MAPEO.ivr_vocero` (col G). **Sin esa fila el filtro que
-   genera la dimensión falla con `@filtro_campo_no_mapeado`.** Arrastra además lo que ya venía
-   pendiente: `SOLAPAS.ventana_ref = 'propia'` en el desglose, `campo_id_cuenta = ivr_id_cuenta` en
-   `digital/Directa IVR`, y las dos filas de `MAPEO` de fechas. **`instalar()` no siembra**; ésta sí.
-2. **`instalar()`** — `CORRIDAS` gana `ejecucion` como segunda columna; `REUNIONES` gana `id_cuenta`
-   antes de `notas`, vacía.
-3. **`cablearGcbaIvr()`** — las tres filas de `L-032`. Relee lo que quedó en la hoja y **para en rojo
-   si no quedó como se pidió**.
-4. **`censarTokensSinMarcador()`** — los tres **no** tienen que aparecer más en `L-032`.
-5. **`diagDondeVivenLosIvr()`** — decide si existe el paso siguiente (ver abajo).
-6. **Una corrida de `jm`.**
+### ⛔ Lo que hay que correr, y es tuyo
 
-⚠ **Y si ya corriste `moverImpresionesAlDesglose()`, corré `volverImpresionesALooker()`**: los ocho
-`imp_*` están **revertidos a `looker/DIGITAL`** en el seed, y dejarlos mudados publicaría el 11× de
-Meta que está medido.
+1. ⭐ **Una corrida de `secco`** con `2026_agosto_21_28`. **Es lo único del `_31_3` que quedó sin
+   verificar.** El testigo de estructura dice que produciría **10** láminas repetibles contra 18,
+   pero eso es la predicción de la expansión, **no un deck**. `secco` declara 8 láminas de campaña
+   destacada (`L-016`–`L-023`) y es el que la justificación vencida decía proteger.
+2. **Mirar los valores del deck de `jm` que ya sacaste.** No se tocó ningún marcador, así que
+   **deberían ser los mismos que antes**; nadie los comparó. Si un número cambió, es un hallazgo.
 
-### ⭐⭐ Qué mirar en esa corrida
+⚠ **Lo que venía pendiente de antes y sigue en pie:** el punto 1 del handoff anterior —**Aplicar
+configuración**, que siembra `MAPEO.ivr_vocero` y arrastra `SOLAPAS.ventana_ref = 'propia'`,
+`campo_id_cuenta = ivr_id_cuenta` y las dos filas de fechas—, `instalar()`, `cablearGcbaIvr()`,
+`censarTokensSinMarcador()` y `diagDondeVivenLosIvr()`. **Nada de eso lo tocó el `_31_3`.**
 
-| qué | antes | esperado |
-|---|---|---|
-| los ~130 `camp_*` | `---` con *«2 filas en CAMPANAS — ambigua»* | **valor**, cada bloque con **su** ventana |
-| el bloque IVR de `L-032` | no existía | valor **o vacío** — ver abajo |
-| `L-034`: Mails entregados · Aperturas | 872.669 · 249.439 | **sin dato** — ese encuentro no tuvo mail |
-| `L-034`: ENCUENTROS · INSCRIPTOS · barrios | 1 · 83 · Coghlan | **idénticos** — es el control positivo |
+### ⚠ Las suites: 79 bancos, **4 en rojo, y ninguno es de este cambio**
 
-⭐ **La identidad que cierra `L-034` sin depender de ninguna foto:** `mail_entregados` de `L-031`
-tiene que seguir en **872.669** y el de `L-034` **no**. Si los dos siguen iguales, el desdoble no
-ocurrió.
+| banco | causa |
+|---|---|
+| `probar-ambito-ivr.js` · `probar-desglose-como-fuente.js` | **defectos preexistentes** — ya estaban rojos en `HEAD` |
+| `probar-hojas-config.js` · `probar-periodo-id-campana.js` | ⛔ **hardcodean `\r\n`** y el working tree está en **LF** |
 
-⚠ **El bloque IVR del resumen es CONDICIONAL** (`C-31`, `C-38`): el equipo lo publica cuando hay
-datos en la ventana. El fixture del 28/08 tiene **8 filas GCBA, 6 con datos y 2 vacías**. **Vacío no
-es lo mismo que roto.**
+⭐ **Verificado, no supuesto:** se extrajo `HEAD` a un temporal, se convirtió a LF y se corrieron las
+suites — **los mismos cuatro rojos**. Los `.gs` de la copia de trabajo están en **LF** e
+`Instalar.gs` también, sin que nadie lo haya editado. **Un checkout limpio y la copia de trabajo dan
+veredictos distintos sobre el mismo código** → `P1` nuevo en `PENDIENTES`.
 
-⚠ **Y una campaña que aparezca DOS VECES en el deck no es un bug**: es la opción A que elegiste el
-28/08 —*«las reuniones y las campañas tienen que salir siempre»*—. **La unicidad es responsabilidad
-de la carga del temario, no del motor.**
+### Los tres commits
 
-### ⛔ Lo que NO se verificó
+| commit | qué |
+|---|---|
+| `b4a8dce` | `D-53` en `PLAN.md`, el `P0` del escritor en `PENDIENTES`, y los snapshots del 31/08 de las 11 hojas |
+| `2271b34` | **Parte A** — `testigoDeEstructura()` y la toma ANTES |
+| `a04f3d5` | **Parte B** — el filtro, el helper único, los dos bancos y la toma DESPUÉS |
 
-**Ningún commit corrió en Apps Script.** Las 78 suites miden de qué filas sale un número, con qué
-criterio y dónde se pinta; **no miden un deck**. La verificación del arreglo del `periodo_id` **es
-una corrida**, no una suite.
+### ⭐ El instrumento nuevo, porque sirve para más que esto
 
-### ⚠ Cuatro cosas declaradas, no resueltas
+**`testigoDeEstructura()`** (`Auditoria.gs`, sin parámetros, desde el editor). Mide **ítems por
+sección repetible con su clave**, para `jm` y `secco`: nombra las claves repetidas, distingue *«no
+filtró»* de *«no lo dice»*, imprime las versiones de `PERIODOS` con la misma ventana y lleva control
+positivo al final.
 
-- ⚠ **El bloque de JM de IVR CONTIENE al de GCBA.** Los cuatro `ivr_*` de `L-031` tienen
-  `dimensiones` **vacío**, y ausente significa «todas»: agregan las 63 filas. Ponerles `ambito=jm`
-  **mueve un número publicado** → otro paso, otro deck. **`diagDondeVivenLosIvr()` dice si hoy
-  publican algo**, y de eso depende que ese paso exista.
-- ⚠ **`L-032` sumó CUATRO tokens y sólo tres son `gcba_ivr_*`.** Hay un cuarto token nuevo que **ya
-  tiene fila** y no está identificado.
-- ⚠ **Una tercera afirmación vencida, encontrada y NO tocada:** el comentario de `Generador.gs:2318`
-  repite lo que `R-17` y `PENDIENTES` acaban de corregir. B2 declara *«no toca código»*.
-- ⛔ **`looker/DIGITAL` tiene el 93 % de las filas de Meta en cero**, y por eso el desglose da **11×**
-  en esa plataforma. **Sin diagnosticar**, y es lo que frena mudar los ocho `imp_*`.
-
-### ⚠ Un archivo sin trackear que no es mío
-
-`docs/Prompts/2026-08-28_3_campana_no_emite_en_periodo_personalizado.md` está **sin commitear**. El
-`_5` lo cita como *«continúa `2026-08-28_3`, ya ejecutado»*, así que **claude.ai no puede ver la
-mitad de esa cadena**. No lo bundleé con mis commits porque es de otro paso — decime si lo subo.
+⭐⭐ **Existe porque todos los demás testigos miden números, y este defecto no se veía en ninguno**
+— las dieciocho láminas duplicadas publicaban cifras correctas.
 
 ---
 
-## La cola, después de la corrida
+## La cola
 
-1. **Los `ivr_*` de JM**: decidir si llevan `ambito=jm`. Depende de `diagDondeVivenLosIvr()`.
-2. **Los tres `cc_*` de `L-034`** — bloqueados por `X-28`, que espera una frase del equipo (`C-80`).
-3. **`ecv_asistentes` = 485 sigue sin validar.**
-4. **El 93 % de Meta en cero en `looker/DIGITAL`** — destraba la mudanza de los ocho `imp_*`.
-5. **La selección semanal de campañas** — con el `informe_id` afuera desde el 18/08, lo único que
-   decide es que `periodo_id` **no esté vacío**, no que coincida con la corrida. `itemsDeSeccion_`
-   ni siquiera recibe el período. Declarado en `R-17` Addendum 2.
-6. **`R-02` citado con dos sentidos**: la regla del temario es `R-04`. Censo del 27/08: **17 citas
+1. ⛔⛔ **`P0` · El escritor del temario no sabe QUITAR.** `cargarTemarioCampanas_` dedupea por
+   `campana_id || periodo_id` y saltea lo que ya existe, así que **una campaña que el usuario sacó
+   se sigue publicando** — y lo mismo aplica a `REUNIONES`. **Prompt propio: toca el ESCRITOR, no
+   el lector.** Cuelga de `D-53`. ⚠ Lleva una decisión adentro que es del usuario: **quitar es
+   borrar la fila o ponerle `mostrar = no`**.
+2. **Los `ivr_*` de JM**: decidir si llevan `ambito=jm`. Depende de `diagDondeVivenLosIvr()`.
+3. **Los tres `cc_*` de `L-034`** — bloqueados por `X-28`, que espera una frase del equipo (`C-80`).
+4. **`ecv_asistentes` = 485 sigue sin validar.**
+5. **El 93 % de Meta en cero en `looker/DIGITAL`** — destraba la mudanza de los ocho `imp_*`.
+6. **`P1` · Los `\r\n` de los tres bancos**, y la pregunta de fondo que es tuya: **si el repo
+   normaliza los `.gs` a un solo line ending** o convivimos con los dos.
+7. **`P2` · `leerReuniones_` cita `D-19` para un caso que `D-19` no cubre** — le corresponde `D-53`.
+   Es un cambio de **mensaje**, no de comportamiento. ⛔ No se hizo en el `_31_3` porque **movería
+   los 11 excluidos de `encuentro`, que son la evidencia de que el cambio no rompió esa rama**.
+   Conviene que vaya con el prompt del punto 1, que ya abre ese archivo.
+8. **`R-02` citado con dos sentidos**: la regla del temario es `R-04`. Censo del 27/08: **17 citas
    equivocadas** contra 7 correctas.
-7. **`D-33` quedó a medias** — ver su estado al 26/08 en `PLAN.md`.
+9. **`D-33` quedó a medias** — ver su estado al 26/08 en `PLAN.md`.
+10. ⚠ **`node tools/escritores.js` está roto** — `inventario.js` tira *«Llaves desbalanceadas tras
+    limpiar Auditoria.gs»*, así que la matriz no se puede regenerar. Prompt propio.

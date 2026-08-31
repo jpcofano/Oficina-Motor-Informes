@@ -16768,3 +16768,160 @@ comparador de `mostrar` divergente entre `REUNIONES` (`esVerdadero_`, acepta `si
 **⚠ Encontrado de paso y NO tocado:** `node tools/escritores.js` **está roto hoy** —
 `inventario.js` tira *«Llaves desbalanceadas tras limpiar Auditoria.gs (-2)»*—, así que la matriz
 no se puede regenerar. No se arregla acá: es un objetivo distinto y va con su propio prompt.
+
+---
+
+## 2026-08-31 — `2026-08-31_3`: la sección de campaña destacada salía DOS VECES · `D-53` · tres commits
+
+**El defecto:** el deck de `jm` sobre `2026_agosto_21_28` tenía **32 láminas y nueve duplicadas**
+—los slides 13–21 repetidos idénticos en 22–30—. ✅ **Cerrado: el deck sale con 23**, confirmado
+por el usuario.
+
+### La causa, y lo que NO era
+
+`CAMPANAS` tenía **dos filas** de `3512-AGOSEGGJ`, con `periodo_id` `2026_agosto_21_27` y
+`2026_agosto_21_28`. La rama `CAMPANAS` de `itemsDeSeccion_` **sólo exigía que `periodo_id` no
+estuviera vacío**, no que coincidiera con la corrida. Dos filas → dos ítems → dos veces nueve
+láminas.
+
+⭐ **No fue una regresión de `b1dc43f`**, que corrigió `filasDeCampana_` —tokens y ventana— y
+funcionó. **La selección semanal de la sección nunca se implementó**, y estaba declarada como
+pendiente desde el 18/08 en el propio comentario del código.
+
+⛔⛔ **Lo que cambió fue que su justificación VENCIÓ.** Decía *«hoy es observablemente un no-op:
+las tres filas cargadas son de `secco` y las tres tienen `periodo_id` vacío»* — cierto el 18/08 y
+falso el 31/08. **Cargar `CAMPANAS`, que era el trabajo previsto, fue exactamente lo que la
+invalidó.**
+
+### `D-53` — la decisión que salió del diagnóstico (decisión del usuario, en conversación)
+
+**`periodo_id` identifica una VERSIÓN DEL INFORME, no una semana del calendario.** Textual:
+*«cada informe es particular y va con su temario. Yo podría hacer el de un período y después
+rehacerlo con otro temario, por ejemplo si agregan una campaña»*. Dos filas con la misma ventana
+**son dos versiones**, no un duplicado.
+
+Y su segunda mitad: **recargar un temario sobre un período existente tiene que poder SACAR**
+campañas y reuniones, no sólo agregarlas. De ahí salió un **`P0` nuevo** (abajo).
+
+✅ **En el mismo acto se CONFIRMA `D-19`**, con su argumento: fija el vocabulario y **no depende de
+que haya filas que lo ejerciten** — que justamente no las hay.
+
+### Cómo se llegó, y las dos premisas del prompt que se cayeron
+
+La Parte 0 corrigió **dos premisas, las dos del prompt**:
+
+1. **«Hay que decidir qué significa `periodo_id` vacío».** No: lo decidió `D-19` el 02/08.
+2. **«Un filtro estricto rompería `secco`».** Falso — **las filas de `secco` ya estaban afuera**,
+   por la propia `D-19`, cuya guarda corre **antes** de cualquier filtro nuevo.
+
+⚠ **Y esa segunda corrección envejeció sola en cinco días**, lo que vale más que la corrección: se
+apoyaba en el snapshot del 26/08 y para el 31/08 **`CAMPANAS` se había vaciado y recargado**; hoy
+no hay ninguna fila con `periodo_id` vacío, así que la protección es **vacuamente cierta**. La
+decisión se sostiene igual; **lo que se cayó fue la evidencia que se citaba**.
+
+⭐⭐ **Las dos formas juntas son el aprendizaje, y quedaron escritas en `D-53`:** el 18/08 **el
+texto envejeció más rápido que el mecanismo**; el 31/08 **el dato envejeció más rápido que el
+texto**. *Un argumento se cae cuando envejece cualquiera de sus dos mitades, y hay que mirar las
+dos.*
+
+⭐ **La pista que parecía sostener otro diseño, medida y descartada.** Se sospechó que el defecto
+fuera *«la sección expande `CAMPANAS` en vez de seguir al temario»*, porque los `post_periodo*`
+fallan con *«ninguna fila trae `__temario_slot__`»*. **No aplica:** ese sellado es **asignación de
+ranuras en láminas agregadas**, y su puerta —`seccionAgregadaDeReuniones_`— exige
+`modo = 'agregado'` **y** `itera_sobre = 'REUNIONES'`; `campana` **falla las dos**.
+
+⭐⭐ **Lo que sí cerró la pregunta: `CAMPANAS` ES el temario materializado.**
+`cargarTemarioCampanas_` la escribe con el `periodo_id` del temario que se pegó y **dedupea por
+`campana_id || periodo_id`** — o sea que **el motor ya considera legítimas las dos filas**.
+Filtrar por período **es seguir al temario**, no reemplazarlo.
+
+### Los tres commits
+
+| commit | qué |
+|---|---|
+| `b4a8dce` | **documentación**: `D-53` en `PLAN.md`, el `P0` del escritor en `PENDIENTES` colgado de él, y los snapshots del 31/08 de las 11 hojas |
+| `2271b34` | **Parte A**: `testigoDeEstructura()` y la toma ANTES |
+| `a04f3d5` | **Parte B**: el filtro, el helper único, los bancos y la toma DESPUÉS |
+
+### Parte A — el testigo que faltaba
+
+⭐⭐ **Todos los testigos del repo miden números, y este defecto no se ve en ningún valor**: las
+dieciocho láminas duplicadas publicaban cifras correctas. **Un testigo de valores lo habría dado
+por bueno.** `testigoDeEstructura()` mide **ítems por sección repetible, con su clave**, para `jm`
+y `secco`; nombra las claves repetidas, distingue *«no filtró»* de *«no lo dice»*, imprime las
+versiones de `PERIODOS` con la misma ventana y lleva control positivo al final.
+
+⛔ **Y encontró un defecto propio en su primera toma:** calculaba `ítems × láminas declaradas`, y
+**`LAMINAS.filtro` corre POR ÍTEM**. Sobreestimaba `encuentro` en las dos plantillas —3 contra 2 en
+`jm`, 5 contra 2 en `secco`—. **Corregido antes del POST y con la función real
+(`laminaEntraParaItem_`), no con una copia de su lógica.**
+
+### Parte B — un solo lugar donde se decide el período
+
+`periodosDeLaCorrida_` (`Union.gs`), y **`leerReuniones_` pasó a usarlo**: un helper y dos
+llamadores, en vez de una copia nueva. El precedente es `esBloqueDeCampanas_` (`2026-08-27_2`):
+*«dos formas de decidir lo mismo no fallan el día que difieren: cargan otra cosa»*.
+
+⭐ **El `periodo_id` NO viaja en la firma**: ya llega en `ventanaInforme.origen`. Es el argumento
+que `leerReuniones_` dejó escrito el `_31.1` — *«agregar un parámetro para transportar un dato que
+ya está sería duplicarlo»*.
+
+`D-19` sigue **primera y como guarda propia**, porque *«no está asignada a ninguna versión»* y
+*«está asignada a otra»* son dos cosas y el reporte las nombra distinto. Y el retorno **ahora
+declara `periodo_id`**, que esta rama no devolvía.
+
+**La justificación del 18/08 queda tachada, no borrada**, con el punto de fondo: ⭐ **el defecto no
+era la justificación sino su FORMA** — describía **un estado**, que hay que ir a mirar; una
+**condición** la puede vigilar un censo.
+
+### Los controles
+
+**Banco nuevo `tools/probar-seleccion-por-version.js` — 19 afirmaciones**, con control positivo
+(*de tres filas de dos campañas sale la de la versión de la corrida*), control **negativo con la
+mutación verificada**, y el caso **B** que separa *«filtra»* de *«se queda con la primera»* — sin
+él, un `slice(0,1)` habría pasado todo lo demás.
+
+⛔ **`probar-cuenta-de-campana.js` se puso ROJO al correrlo**, que es para lo que se corren:
+cargaba **sólo `Generador.gs`** y la rama pasó a depender de `Union.gs`. Arreglado cargando los
+dos — que además es más fiel, porque Apps Script concatena todo en un scope global. Y se le agregó
+la afirmación que convierte su `null` **de accidente silencioso en decisión**.
+
+### El testigo antes/después
+
+| | ANTES | DESPUÉS |
+|---|---|---|
+| `jm` · `campana` | ⛔ 2 ítems, clave repetida | ✅ **1** |
+| `jm` · TOTAL repetibles | 20 | ✅ **11** |
+| `secco` · TOTAL repetibles | 18 | ✅ **10** |
+| `campana` · `periodo_id` | *(no devolvía el campo)* | ✅ `2026_agosto_21_28` |
+
+⭐⭐ **Y lo que había que mirar primero: los 11 excluidos de `encuentro` salieron IDÉNTICOS** en las
+dos tomas y en los dos informes. Es lo que prueba que tocar `leerReuniones_` **no rompió la rama
+que ya funcionaba** — y sin ese control, un total más bajo se habría leído como éxito.
+
+✅ **Verificado por el usuario: el deck de `jm` sale con 23 láminas.**
+
+### Lo encontrado y NO tocado, con su motivo
+
+- ⚠ **`leerReuniones_` cita `D-19` para un caso que `D-19` no cubre.** Coghlan bajo `_27` sale con
+  `(D-19)` cuando su `periodo_id` **no está vacío**: está cargado y es de otra versión. ⛔ **No se
+  toca acá porque cambiar ese texto mueve los 11 excluidos**, que son la evidencia de que la rama
+  no se movió — **arreglarlo destruiría el control que prueba que el cambio fue seguro.**
+- ⚠ **Dos bancos hardcodean `\r\n` y el veredicto de las suites depende del line ending del
+  checkout.** Los cuatro `.gs` del working tree están en **LF** y el repo en **CRLF**.
+  **Verificado, no supuesto:** `HEAD` extraído y convertido a LF da **los mismos cuatro rojos**, así
+  que **ninguno es de este cambio** — dos son preexistentes (`ambito-ivr`, `desglose-como-fuente`)
+  y dos son el artefacto. ⭐ Es la regla del 24/08 cometida al revés: aquélla decía *«no uses `\n`»*,
+  y la lección completa es **no uses ningún line ending** — el final de línea es del archivo.
+- ⛔ **El `P0` del escritor**: `cargarTemarioCampanas_` dedupea por `campana_id || periodo_id` y
+  **saltea lo que ya existe**, así que **sabe agregar y no sabe quitar**. Una campaña que el usuario
+  sacó del temario **se sigue publicando**. Va en prompt propio: toca el **ESCRITOR** y no el
+  lector, y mezclarlos haría que un solo push mueva la estructura del deck y el contenido de dos
+  hojas de registro.
+
+### Lo que este paso NO verificó
+
+- **`secco` no se corrió.** El testigo de estructura dice que produciría 10 láminas repetibles
+  contra 18, pero **eso es la predicción de la expansión, no un deck**.
+- **Los valores** de las láminas que quedan. No se tocó ningún marcador, así que deberían ser los
+  mismos, pero **nadie los comparó**.

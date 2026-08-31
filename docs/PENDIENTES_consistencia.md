@@ -10140,7 +10140,19 @@ descarta justo las que empezaron y terminaron adentro.
 
 ---
 
-## ⛔ P0 · La sección de campaña destacada sale DOS VECES — nueve láminas repetidas (31/08/2026)
+## ✅ CERRADO · ⛔ P0 · La sección de campaña destacada sale DOS VECES — nueve láminas repetidas (31/08/2026)
+
+> ✅ **CERRADO el 31/08/2026** por el `2026-08-31_3` (commit `a04f3d5`). La rama `CAMPANAS` de
+> `itemsDeSeccion_` **selecciona por versión del informe** (`D-53`), leyendo el período de
+> `ventanaInforme.origen` con el mismo helper que `REUNIONES` — `periodosDeLaCorrida_`.
+>
+> **Verificado en tres niveles:** el testigo de estructura pasó de **2 ítems a 1** en los dos
+> informes (`docs/_snapshots/TESTIGO_estructura_2026-08-31_PRE.md` y `_POST.md`), el banco
+> `tools/probar-seleccion-por-version.js` lo fija con 19 afirmaciones, y **el usuario confirmó que
+> el deck de `jm` sale con 23 láminas**.
+>
+> ⚠ **Lo que el cierre NO cubre:** `secco` no se corrió, y los valores de las láminas que quedan no
+> se compararon —no se tocó ningún marcador, pero nadie los miró—.
 
 **El deck de `jm` sobre `2026_agosto_21_28` trae los slides 13–21 repetidos idénticos en 22–30:**
 `Campaña destacada` · `Objetivo` · `Herramientas` · `Formatos` · `Resultados agregados` ·
@@ -10303,3 +10315,74 @@ el contenido de dos hojas de registro.
 ⚠ **Y el arreglo tiene una decisión adentro que no se puede tomar sola:** quitar una fila puede ser
 **borrarla** o **ponerle `mostrar = no`**. Son dos cosas distintas —una pierde la decisión previa,
 la otra la conserva y la deja auditable— y la elige el usuario.
+
+---
+
+## ⛔ P1 · El veredicto de las SUITES depende del line ending del checkout — dos bancos hardcodean `\r\n` (31/08/2026)
+
+**Dos bancos escriben el final de línea dentro del patrón de mutación:**
+
+| banco | patrón |
+|---|---|
+| `probar-hojas-config.js` | `FUENTE.replace('\r\n  BASES: [', …)` |
+| `probar-periodo-id-campana.js` | `const CLAVE = '      periodo_id: opciones.periodo_id,\r\n'` |
+
+**Los dos fallan en un árbol LF y pasan en uno CRLF.** Y `probar-asistente-temario.js` es el caso
+**simétrico**: rojo en CRLF, verde en LF.
+
+⚠ **Y hoy los dos mundos coexisten:** los `.gs` del working tree están en **LF** —`Instalar.gs`
+incluido, sin que nadie lo haya editado— y el repo guarda **CRLF**, así que **un checkout limpio y
+la copia de trabajo dan veredictos distintos sobre el mismo código**.
+
+### Lo que NO es, medido antes de escribir esto
+
+⭐ **No lo causó ningún cambio de código.** Se extrajo `HEAD` a un temporal, se convirtió a LF y se
+corrieron las suites: **los mismos cuatro rojos**. De ellos, dos son defectos reales preexistentes
+—`probar-ambito-ivr.js` y `probar-desglose-como-fuente.js`— y **dos son este artefacto**.
+
+⭐⭐ **La guarda de mutación hizo su trabajo:** los dos fallaron con *«la mutación NO se aplicó»* en
+vez de dar verde sobre código intacto. **Sin ella, este problema sería invisible** — que es
+exactamente para lo que se escribió el 24/08.
+
+### Es la regla del 24/08 cometida al revés
+
+`CLAUDE.md` §4 dice *«los patrones van por fragmento de UNA línea, nunca por bloques con `\n`»*, y
+la escribió un caso en que el patrón asumía **LF** sobre un archivo **CRLF**. Estos dos asumen
+**CRLF**. ⇒ **La lección completa no es «no uses `\n`»: es NO USES NINGÚN LINE ENDING en el
+patrón** — el final de línea es del archivo, nunca del que escribe la prueba.
+
+**Cómo se cierra:** sacar el `\r\n` de los tres patrones y anclar por fragmento de una línea. ⚠ Y
+la pregunta de fondo, que es del usuario y no de la implementación: **si el repo debería normalizar
+los `.gs` a un solo line ending** (`.gitattributes`), o si convivir con los dos es aceptable
+mientras ningún patrón dependa de eso.
+
+---
+
+## ⚠ P2 · `leerReuniones_` cita `D-19` para un caso que `D-19` no cubre (31/08/2026)
+
+**`D-19` define el `periodo_id` VACÍO** — *«una fila sin `periodo_id` no entra a ningún informe»*.
+Pero `leerReuniones_` arma **un solo mensaje para dos casos distintos**:
+
+```js
+motivo: 'periodo_id ' + (suyo ? '"' + suyo + '"' : 'vacío') + ' no está en [' +
+  periodosDeLaVentana.join(', ') + '] (D-19)'
+```
+
+⇒ Una fila **con** `periodo_id` cargado, de otra versión del informe, sale citando `D-19`, que no
+habla de ese caso. **Lo que le corresponde es `D-53`.**
+
+⭐ **Se ve desde el 31/08 porque ahora hay con qué contrastarlo.** La rama `CAMPANAS` reporta el
+mismo caso bien, y las dos líneas salen una al lado de la otra en el mismo log:
+
+```
+· excluido Coghlan        — periodo_id "2026_agosto_21_27" … (D-19)   ⛔
+· excluido 3512-AGOSEGGJ  — periodo_id "2026_agosto_21_27" … (D-53: es otra versión del informe)  ✅
+```
+
+⛔ **Por qué NO se arregló en el mismo paso, y el motivo es concreto:** cambiar ese texto **mueve
+los 11 excluidos de `encuentro`**, que son la evidencia con la que se verificó que unificar el
+helper **no rompió la rama `REUNIONES`**. Arreglarlo en la misma corrida **habría destruido el
+control que probaba que el cambio era seguro**.
+
+**Es un cambio de mensaje, no de comportamiento** — ninguna fila entra ni sale distinto. Va con el
+prompt que toque esa rama, y conviene que sea el del `P0` del escritor, que ya la va a abrir.
