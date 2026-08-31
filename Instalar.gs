@@ -4761,6 +4761,119 @@ function mudarImpresionesAlDesglose() {
   return r;
 }
 
+/* ═══════════ `2026-08-31_2` — EL ÁMBITO DE LOS SIETE `ivr_*` DE JM ════════════════════════
+ *
+ * ⛔⛔ **El defecto que cierra, y NO es el que el prompt describía.** Los siete no tienen
+ * `dimensiones`, así que leen la solapa entera. Medido el 31/08 sobre `digital/Directa IVR`:
+ * **en la ventana del equipo (21–28) hay 3 filas de IVR y las TRES son de GCBA; en la del motor
+ * (21–27) hay 1 y también es de GCBA. JM tiene CERO en las dos.**
+ *
+ * ⇒ **Hoy `L-031` —la lámina de JM— publica una campaña de GCBA como si fuera de JM**: 10.032
+ * llamados, 8.948 atendidos, 89,19 %. **Es el número plausible**, el modo de falla más caro de
+ * este repo: nada se ve mal.
+ *
+ * ⭐ **No es un problema de filtro ni de cableado, y eso está descartado con evidencia:** el
+ * testigo del 31/08 muestra `gcba_ivr_llamados` con `filtro 8/63` —`ivr_vocero!=JM` **funciona**—
+ * y la hoja viva confirma su `dimensiones = ambito=gcba`. **El único defecto es el `dimensiones`
+ * vacío de los de JM.**
+ *
+ * ⚠⚠ **DOS COSAS SE APLICAN JUNTAS Y HACEN COSAS DISTINTAS. No confundirlas:**
+ *
+ * | qué | qué arregla |
+ * |---|---|
+ * | `dimensiones = ambito=jm` | **el UNIVERSO** — deja de leer filas de GCBA |
+ * | `formato` → variante `_revisar` | **avisa** que la cifra está en observación |
+ *
+ * ⛔ **El `_revisar` NO corrige de dónde sale el número.** Marca para revisión y nada más. Es el
+ * mecanismo que ya usan **25 marcadores** y produce los valores entre guiones del deck: no se
+ * inventa nada acá.
+ *
+ * ⚠⚠ **Y ESTA SEMANA LAS CAJAS QUEDAN VACÍAS IGUAL, que es lo que hay que saber antes de correr la
+ * Parte C.** Con `ambito=jm` el universo tiene **cero filas**, así que **no hay número que
+ * envolver**: el `_revisar` no se va a ver. **Un hueco en la Parte C NO significa que el formato no
+ * se aplicó.** Se va a ver en las semanas que sí haya IVR de JM, que son la mayoría — **55 de las
+ * 63 filas de la solapa son de JM**.
+ *
+ * ⭐ **Los cuatro sin gemelo `gcba_`, decididos UNO POR UNO y con el mapa de tokens del
+ * `jm-20260828-193948` como evidencia** —porque un hueco deliberado y uno olvidado se ven igual en
+ * la hoja—:
+ *
+ * | marcador | vive en | veredicto |
+ * |---|---|---|
+ * | `ivr_campanias` | slides **2 y 3** | **deliberado** — `BITACORA:16621` lo dice |
+ * | `ivr_75` · `ivr_75_pct` · `ivr_marque1` | **sólo slide 5** | **estructural, no olvido**: la lámina 5 es *«Encuentros con vecinos»*, **de JM, y no tiene gemela de GCBA** |
+ *
+ * ⚠ **`ivr_atendidos` vive en los slides 2 y 5**, así que este cambio le mueve el valor **a las dos
+ * láminas** — y en las dos corresponde, porque las dos son de JM.
+ *
+ * ⭐ **Sin `_` y sin parámetros** (`CLAUDE.md` §2).
+ */
+function aplicarAmbitoARevisarIvr() {
+  /* `formato` nuevo por marcador — la variante `_revisar` de **el que tiene hoy**, no una elegida
+   * de memoria: `miles` → `miles_revisar`, `numero` → `numero_revisar`,
+   * `porcentaje_sin_signo` → `porcentaje_sin_signo_revisar`. Los tres ya están en uso. */
+  var CAMBIOS = [
+    { marcador: 'ivr_campanias', formato: 'numero_revisar' },
+    { marcador: 'ivr_llamados', formato: 'miles_revisar' },
+    { marcador: 'ivr_atendidos', formato: 'miles_revisar' },
+    { marcador: 'ivr_75', formato: 'miles_revisar' },
+    { marcador: 'ivr_marque1', formato: 'miles_revisar' },
+    { marcador: 'ivr_at_pct', formato: 'porcentaje_sin_signo_revisar' },
+    { marcador: 'ivr_75_pct', formato: 'porcentaje_sin_signo_revisar' }
+  ].map(function (c) {
+    c.informe_id = 'jm';
+    c.dimensiones = 'ambito=jm';
+    return c;
+  });
+
+  Logger.log('ÁMBITO + `_revisar` PARA LOS SIETE `ivr_*` DE JM — ' + new Date().toISOString());
+  Logger.log('  dimensiones: (vacío) → `ambito=jm`   ·   formato: → su variante `_revisar`');
+  Logger.log('  ⚠ Esta semana las cajas quedan VACÍAS: con `ambito=jm` hay CERO filas de IVR de JM');
+  Logger.log('     en la ventana. El `_revisar` no se va a ver, y eso NO es que no se aplicó.');
+
+  var r = curarCamposMarcadores_(CAMBIOS);
+  if (!r.ok) {
+    Logger.log('⛔ FALLÓ: ' + r.motivo);
+    if (r.diagnostico) Logger.log(r.diagnostico);
+    return r;
+  }
+  (r.aplicados || []).forEach(function (a) {
+    Logger.log('  ' + a.marcador + '.' + a.campo + ': "' + a.anterior + '" → "' + a.nuevo + '"');
+  });
+  if (r.sin_fila && r.sin_fila.length) Logger.log('⚠ SIN FILA: ' + r.sin_fila.join(', '));
+
+  /* ⭐ **Relectura de la hoja** — un escritor que informa lo que escribió no verifica nada
+   * (`CLAUDE.md` §4). Acá además hace falta porque son DOS columnas por fila: que una haya entrado
+   * no dice nada de la otra. */
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0];
+  var iM = h.indexOf('marcador'), iD = h.indexOf('dimensiones'), iF = h.indexOf('formato');
+  var esperado = {};
+  CAMBIOS.forEach(function (c) { esperado[c.marcador] = c.formato; });
+  var mal = [];
+  Logger.log('');
+  Logger.log('── RELEÍDO DE LA HOJA ────────────────────────────────────────────────');
+  for (var f = 1; f < datos.length; f++) {
+    var nom = String(datos[f][iM]);
+    if (!(nom in esperado)) continue;
+    var dim = String(datos[f][iD]), fmt = String(datos[f][iF]);
+    var ok = dim === 'ambito=jm' && fmt === esperado[nom];
+    if (!ok) mal.push(nom);
+    Logger.log('  ' + (ok ? '✅' : '⛔') + ' ' + nom + '\tdimensiones="' + dim + '"\tformato="' + fmt + '"');
+  }
+  if (mal.length) {
+    Logger.log('⛔ ' + mal.length + ' fila(s) NO quedaron como se pidió: ' + mal.join(', '));
+    return { ok: false, motivo: 'la hoja no quedó como se pidió', mal: mal };
+  }
+  Logger.log('✅ las 7 filas con `ambito=jm` y su formato `_revisar`.');
+  Logger.log('');
+  Logger.log('SIGUIENTE: `testigoDeAmbito()` (toma DESPUÉS, MISMA sesión) y después el informe `jm`');
+  Logger.log('con `periodo_id = 2026_agosto_21_28`. Las cuatro cajas de IVR de `L-031` van a quedar');
+  Logger.log('vacías, y eso es el resultado correcto: no hubo IVR de JM esa semana.');
+  return r;
+}
+
 function curarCamposMarcadores_(cambios) {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
   if (!hoja) return { ok: false, motivo: 'La hoja MARCADORES no existe.' };

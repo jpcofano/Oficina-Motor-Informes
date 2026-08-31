@@ -379,3 +379,64 @@ correctos**. **No se descubre después de la corrida.**
    `des_impresiones` del desglose, la conservación cierra —**28 + 289 = 317**— y la identidad
    `meta+google+prog = total` cierra en los dos ámbitos. Y la traza muestra **«2 con la celda
    vacía»**: las dos filas sin `Id cuentas` cayendo en GCBA por negación, **visibles**.
+
+---
+
+## Parte B — ⭐ IVR listo · ⛔ **`pauta_*` BLOQUEADO, y no por lo que el prompt suponía**
+
+### IVR — `aplicarAmbitoARevisarIvr()` (`Instalar.gs`)
+
+`dimensiones = ambito=jm` **y** el `formato` a su variante `_revisar`, en los siete, **por
+`curarCamposMarcadores_`** y con **relectura de la hoja** —hacen falta las dos columnas por fila, y
+que una entre no dice nada de la otra—.
+
+| marcador | formato hoy | → |
+|---|---|---|
+| `ivr_campanias` | `numero` | `numero_revisar` |
+| `ivr_llamados` · `ivr_atendidos` · `ivr_75` · `ivr_marque1` | `miles` | `miles_revisar` |
+| `ivr_at_pct` · `ivr_75_pct` | `porcentaje_sin_signo` | `porcentaje_sin_signo_revisar` |
+
+✅ Las tres variantes **ya existen y las usan 25 marcadores** (`miles_revisar` 15 ·
+`porcentaje_sin_signo_revisar` 6 · `numero_revisar` 4). **No se inventa nada.**
+
+⚠⚠ **Las dos cosas se aplican juntas y hacen cosas distintas:** `ambito=jm` arregla **el universo**;
+`_revisar` **avisa** que la cifra está en observación. ⛔ **El `_revisar` NO corrige de dónde sale el
+número.**
+
+⚠⚠ **Y esta semana las cajas quedan vacías igual**, porque con `ambito=jm` el universo tiene **cero
+filas**: no hay número que envolver. **Un hueco en la Parte C no significa que el formato no se
+aplicó.** Se va a ver en las semanas que sí haya IVR de JM — **55 de las 63 filas de la solapa son
+de JM**.
+
+### ⭐ Los cuatro huecos de gemelo, decididos uno por uno
+
+**Evidencia: el `mapa_tokens` de `jm-20260828-193948`** — porque un hueco deliberado y uno olvidado
+se ven igual en la hoja.
+
+| marcador | vive en | veredicto |
+|---|---|---|
+| `ivr_campanias` | slides **2 y 3** | ✅ **deliberado** — `BITACORA:16621` |
+| `ivr_75` · `ivr_75_pct` · `ivr_marque1` | **sólo slide 5** | ✅ **estructural, no olvido** — la lámina 5 es «Encuentros con vecinos», **de JM y sin gemela de GCBA** |
+
+⚠ `ivr_atendidos` vive en los slides **2 y 5**: el cambio le mueve el valor en **las dos láminas**,
+y en las dos corresponde porque las dos son de JM.
+
+### ⛔⛔ `pauta_*` — bloqueado, y el motivo es de otra clase
+
+**`DIMENSIONES_.ambito` NO tiene entrada para `digital|Seguimiento digital`.** Verificado.
+⇒ Con `dimensiones = ambito=jm`, `condicionesDeDimensiones_` devuelve `ok:false`
+—*«`ambito=jm` no está definida para `digital|Seguimiento digital`»*— y **los seis publicarían
+`«FALTA:…»` en vez de un número**.
+
+⛔ **Eso contradice el §Parte B de este prompt: no es «filas de `MARCADORES`, no código».** Agregar
+la entrada **es `Fuentes.gs` y pide `clasp push`**.
+
+⚠ **Y antes hay que MEDIR qué columna dice el ámbito en esa solapa, no suponerla.** La candidata
+obvia es **col E `JM | GCBA | POLICIA`** —`GCBA` 883 · vacío 64 · `JM` 29 · `LINDA` 2 sobre 978
+filas—, **pero es la misma columna que se descartó el 27/08 en el desglose** por contradecir al
+nombre en 530 de 620 filas. **Usarla acá sin medirla sería reabrir una decisión cerrada por la
+puerta de atrás.**
+
+⇒ **`pauta_*` va a prompt propio**, con su Parte 0 de medición. ⚠ Y su **magnitud** sigue siendo
+otro problema, ya declarado: `SUMA` sobre un flag cuenta campañas con pauta, no contenidos
+implementados.
