@@ -3149,6 +3149,14 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
     var campanas = leerCampanas();
     var items2 = [];
     var excluidos = [];
+
+    /* ⭐⭐ `2026-08-31_3` Parte B — **la selección por versión del informe, que faltaba.**
+     *
+     * Mismo helper que la rama `REUNIONES` (`periodosDeLaCorrida_`, `Union.gs`) y por eso el
+     * `periodo_id` **no viaja en la firma**: ya llega adentro de `ventanaInforme.origen`. Agregar
+     * un parámetro para transportar un dato que ya está sería duplicarlo — es el mismo argumento
+     * que `leerReuniones_` dejó escrito el `_31.1`. */
+    var periodosCorrida = periodosDeLaCorrida_(ventanaInforme);
     campanas.forEach(function (c) {
       var id = String(c.campana_id || '').trim();
       /* ⚠ **El filtro por `informe_id` SE SACÓ** (decisión del usuario, 18/08): *"no importa de
@@ -3156,25 +3164,62 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
        * en cualquiera, y los decks lo muestran: «Programas y actividades para personas mayores»
        * sale en `jm` y en `secco` la misma semana.
        *
-       * **Hoy es observablemente un no-op**: las tres filas cargadas son de `secco` y las tres
-       * tienen `periodo_id` vacío, así que `D-19` ya las excluía a todas. Se anota para que el
-       * día que cambie el conteo nadie lo lea como una regresión.
+       * ⛔⛔ **JUSTIFICACIÓN VENCIDA el 31/08/2026 — se conserva tachada, no se borra.** Decía:
        *
-       * ⚠ **Y lo que esto DEJA ABIERTO, dicho acá porque es donde se va a notar:** con el
-       * `informe_id` afuera, lo único que decide en qué corrida sale una campaña es `periodo_id`
-       * — y esta rama sólo exige que **no esté vacío**, no que **coincida con el período de la
-       * corrida**. Con campañas cargadas, las tres saldrían en **todos** los informes. **La
-       * selección semanal todavía no está implementada**, y `itemsDeSeccion_` ni siquiera recibe
-       * el `periodo_id` de la corrida (recibe `ventanaInforme`). Es una decisión de diseño
-       * pendiente, no un olvido de este cambio. */
+       *   > *«Hoy es observablemente un no-op: las tres filas cargadas son de `secco` y las tres
+       *   > tienen `periodo_id` vacío, así que `D-19` ya las excluía a todas. Se anota para que el
+       *   > día que cambie el conteo nadie lo lea como una regresión.»*
+       *
+       * **Era cierto el 18/08 y falso el 31/08**, y lo que la invalidó fue **el trabajo previsto**:
+       * cargar `CAMPANAS`. El deck del 31/08 salió con **nueve láminas duplicadas** —los slides
+       * 13–21 repetidos en 22–30— porque `3512-AGOSEGGJ` tenía dos filas, una por versión del
+       * informe. Queda escrita porque es la instancia que `CLAUDE.md` §4 cita: **un hueco
+       * justificado por el estado actual del cableado tiene fecha de vencimiento y nadie la mira**.
+       *
+       * ⭐ **Y lo que fallaba no era la justificación sino su FORMA:** describía **un estado**
+       * —*«hoy las filas son así»*—, que hay que ir a mirar y acordarse de que existe. Una
+       * **condición** —*«deja de ser no-op cuando `CAMPANAS` tenga filas con `periodo_id`
+       * cargado»*— **la puede vigilar un censo**.
+       *
+       * ✅ **Lo que dejaba abierto ya está cerrado, abajo:** con el `informe_id` afuera, lo único
+       * que decide en qué corrida sale una campaña es `periodo_id` — y esta rama **ya no** se
+       * conforma con que no esté vacío: **compara contra las versiones de la corrida**. */
       if (String(c.mostrar || '').trim().toLowerCase() !== 'sí') {
         excluidos.push({ campana: id, motivo: 'mostrar ≠ sí' });
         return;
       }
       // `D-19`: sin `periodo_id` la fila no entra a ningún informe. Se reporta, nunca se
       // emite en silencio ni se asume el período vigente.
-      if (!String(c.periodo_id || '').trim()) {
+      //
+      // ⭐ **Va PRIMERO y sigue siendo una guarda propia**, no un caso del filtro de abajo:
+      // «esta fila no está asignada a ninguna versión» y «está asignada a otra» son dos cosas
+      // distintas y el reporte tiene que poder nombrarlas distinto. `D-19` se **confirmó** el
+      // 31/08 junto con `D-53`, y su motivo es que fija el vocabulario — no que hoy haya filas
+      // que la ejerciten, que justamente no las hay.
+      var suyo = String(c.periodo_id || '').trim();
+      if (!suyo) {
         excluidos.push({ campana: id, motivo: 'periodo_id vacío (D-19)' });
+        return;
+      }
+
+      /* ⭐⭐ **La selección por versión del informe** (`D-53`, 31/08/2026). `periodo_id` no nombra
+       * una semana del calendario: nombra **una versión del informe, con su temario**. Dos filas
+       * de la misma campaña con distinto `periodo_id` **no son un duplicado**: son dos versiones,
+       * y a esta corrida le toca una.
+       *
+       * ⭐ **Filtrar acá ES seguir al temario, no reemplazarlo.** `CAMPANAS` es el temario de
+       * campañas materializado —lo escribe `cargarTemarioCampanas_` con el `periodo_id` del
+       * temario que se pegó, y **dedupea por `campana_id || periodo_id`**, o sea que el motor ya
+       * considera legítimas las dos filas—. La fila lleva impresa la marca de su temario.
+       *
+       * ⚠ **Conjunto vacío = no se filtra**, igual que `REUNIONES`, y el retorno lo declara para
+       * que no haya que suponerlo. */
+      if (periodosCorrida.length && periodosCorrida.indexOf(suyo) === -1) {
+        excluidos.push({
+          campana: id,
+          motivo: 'periodo_id "' + suyo + '" no está en [' + periodosCorrida.join(', ') +
+            '] (D-53: es otra versión del informe)'
+        });
         return;
       }
       // `SECCIONES.filtro` sobre los atributos de la campaña, misma sintaxis.
@@ -3252,7 +3297,14 @@ function itemsDeSeccion_(seccion, informeId, ventanaInforme) {
     });
     // El orden viaja en el ítem: con la lista ya no hay `campanas[clave]` al que volver.
     items2.sort(function (a, b) { return a.orden - b.orden; });
-    return { ok: true, items: items2, excluidos: excluidos };
+    /* ⭐ **El `periodo_id` del reporte, que hasta hoy esta rama NO devolvía.** Mismo contrato que
+     * `REUNIONES`: `''` = **no se filtró por período**. Que faltara el campo no era un detalle de
+     * formato — hacía que *«no filtró»* y *«no lo dice»* fueran indistinguibles para cualquiera
+     * que leyera el reporte, y el testigo de estructura lo imprimía como el hueco que era. */
+    return {
+      ok: true, items: items2, excluidos: excluidos,
+      periodo_id: periodosCorrida.join(', ')
+    };
   }
 
   return {

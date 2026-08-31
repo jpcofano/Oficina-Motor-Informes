@@ -1336,6 +1336,43 @@ function periodosQueDescribenLaVentana_(ventana) {
 }
 
 /**
+ * ⭐⭐ **Las VERSIONES del informe que aplican a esta corrida** (`D-53`, 31/08/2026). Devuelve una
+ * lista de `periodo_id`; **vacía significa «no se filtra»**.
+ *
+ * ⛔⛔ **Por qué existe, y es una regla de este repo, no prolijidad:** hasta el 31/08 esto vivía
+ * **suelto adentro de `leerReuniones_`** y la rama `CAMPANAS` de `itemsDeSeccion_` **no lo tenía**
+ * — por eso la sección de campaña destacada salía dos veces mientras la de encuentros, con la
+ * **misma** duplicación en su fuente, salía una. Escribir el filtro de nuevo allá habría dejado
+ * **dos formas de decidir lo mismo**, que es el caso que este proyecto ya pagó con
+ * `esBloqueDeCampanas_` (`Campanas.gs`, `2026-08-27_2`): *«dos formas de decidir lo mismo no
+ * fallan el día que difieren: cargan otra cosa»*.
+ *
+ * **Las dos fuentes, y el orden importa:**
+ *
+ *   1. **Override explícito** — `ventana.origen` empieza con `periodo_ref:`. Ahí la versión la
+ *      nombró quien corre y no hay nada que deducir.
+ *   2. **Sin override** — se le pregunta a `PERIODOS` cuáles de sus filas describen esta ventana.
+ *      **Eso no es adivinar, es leer**, y por eso se hace: la alternativa —deducir el período del
+ *      rango de fechas— es la «semana adivinada» que `R-21` prohíbe.
+ *
+ * ⭐ **Devuelve un CONJUNTO y no un id, y con `D-53` el motivo cambió:** no es un empate a
+ * desempatar. `PERIODOS` puede traer varias filas con la misma ventana —hoy `agosto_14_20` y
+ * `'vie 14/08 -- jue 20/08 (por defecto)'`— porque son **varias versiones del mismo informe**.
+ * **No hay un id correcto que elegir**: lo que corresponde es tomarlas todas y **decir cuáles se
+ * tomaron**, que es lo que hace el `periodo_id` del retorno de cada sección.
+ *
+ * ⚠ **Vacío = no se filtra, y es deliberado.** La cadena de `D-20` puede terminar en `CONFIG`, que
+ * no tiene `periodo_id`. **Emitir de más y avisar es recuperable; emitir cero en silencio, no.**
+ */
+function periodosDeLaCorrida_(ventana) {
+  var PREFIJO = 'periodo_ref:';
+  var origen = String((ventana && ventana.origen) || '');
+  return origen.indexOf(PREFIJO) === 0
+    ? [origen.slice(PREFIJO.length)]
+    : periodosQueDescribenLaVentana_(ventana);
+}
+
+/**
  * ⭐ Las filas de `REUNIONES` que **`leerReuniones_` descarta por `mostrar`**, con su período.
  *
  * **Existe para un solo uso: el mensaje de «no hay filas para anclar».** `leerReuniones_` filtra
@@ -1455,8 +1492,10 @@ function anclarEncuentrosSinCache_(ventana) {
    * adivinado a partir del rango sería exactamente la "semana adivinada" que `R-21` prohíbe.
    * Emitir de más y avisar es recuperable; emitir cero en silencio, no.
    */
-  var PREFIJO_PERIODO_REF_ = 'periodo_ref:';
-  var origen = String((ventana && ventana.origen) || '');
+  /* ⭐ `2026-08-31_3` Parte B — **las dos ramas que decidían el período se unificaron en
+   * `periodosDeLaCorrida_`**, que vive arriba con el porqué. Acá no cambia nada de lo que este
+   * comentario describe: cambia **quién** lo calcula, para que la rama `CAMPANAS` de
+   * `itemsDeSeccion_` use exactamente lo mismo en vez de una segunda copia. */
 
   /* ⭐ `2026-08-22_25` Parte B — **el recorte se EXTIENDE a la ventana calculada. No se agrega un
    * segundo filtro: se le ensancha el disparador al que ya estaba.**
@@ -1480,9 +1519,7 @@ function anclarEncuentrosSinCache_(ventana) {
    * sigue siendo el correcto: ahí sí no hay período que leer, y `avisosDeVentanaPropuesta_` ya lo
    * dice en el panel antes de generar. **Emitir de más y avisar es recuperable; emitir cero en
    * silencio, no.** */
-  var periodosDeLaVentana = origen.indexOf(PREFIJO_PERIODO_REF_) === 0
-    ? [origen.slice(PREFIJO_PERIODO_REF_.length)]
-    : periodosQueDescribenLaVentana_(ventana);
+  var periodosDeLaVentana = periodosDeLaCorrida_(ventana);
 
   var excluidasPorPeriodo = [];
   if (periodosDeLaVentana.length) {

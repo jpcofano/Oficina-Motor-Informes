@@ -65,6 +65,16 @@ function contexto(parchear) {
     if (texto === antes) throw new Error('El parche de «romper a propósito» no matcheó nada.');
   }
   vm.runInContext(texto, ctx, { filename: 'Generador.gs' });
+
+  /* ⛔ `2026-08-31_3` Parte B — **hay que cargar `Union.gs` también, y este banco lo descubrió
+   * poniéndose ROJO.** La rama `CAMPANAS` pasó a llamar `periodosDeLaCorrida_`, que vive allá, y
+   * con un solo archivo cargado tiraba `ReferenceError` en la sección A.
+   *
+   * ⭐ **Cargar los dos es además más fiel:** Apps Script concatena todos los `.gs` en un único
+   * scope global, así que un banco que carga uno solo está midiendo un mundo que no existe. El
+   * parche de «romper a propósito» sigue aplicándose **sólo a `Generador.gs`**, que es donde vive
+   * la línea que muta. */
+  vm.runInContext(fs.readFileSync(path.join(RAIZ, 'Union.gs'), 'utf8'), ctx, { filename: 'Union.gs' });
   return ctx;
 }
 
@@ -175,6 +185,28 @@ console.log('\n═══ D · ⚠ romper a propósito: volver a dejarla como her
    * afirmación no se pusiera roja, la sección B no estaría midiendo nada. */
   afirmar(dentro === undefined,
     'sin la línea, la cuenta NO sobrevive al copiado — es exactamente el bug del 22/08');
+}
+
+/* ⭐⭐ `2026-08-31_3` Parte B — **el `null` de este banco pasa de accidente a DECISIÓN.**
+ *
+ * ⛔ Desde hoy la rama `CAMPANAS` **filtra por versión del informe** (`D-53`). Este banco llama
+ * `itemsDeSeccion_(__s, "jm", null)` y sus tres campañas **siguen saliendo las tres** — porque con
+ * una ventana sin `origen` el filtro no corre. **Eso es correcto y deliberado**, pero mientras no
+ * estuviera afirmado era indistinguible de un banco que dejó de medir sin que nadie se enterara:
+ * la familia del testigo insensible, un control que no distingue el antes del después.
+ *
+ * ⚠ **Este banco NO se migra a una ventana con `origen`, y es a propósito:** mide **dónde va la
+ * cuenta**, no el período, y sus tres fixtures son de `agosto_14_20`. Ponerle una ventana lo
+ * obligaría a mantener dos cosas a la vez. **El control del período vive en su banco propio**,
+ * `tools/probar-seleccion-por-version.js` — lo nuevo va aparte, no aflojando lo viejo. */
+{
+  console.log('\n═══ E · el `null` de arriba significa «sin filtro por período», y se afirma ═══');
+  const ctx = contexto();
+  const r = itemsDeCampana(ctx);
+  afirmar(r.items.length === 3,
+    '⭐ con ventana `null` NO se filtra por período — las tres salen (D-53 no aplica sin `origen`)');
+  afirmar(r.periodo_id === '',
+    '   y el retorno lo declara: `periodo_id` vacío = no se filtró. Antes ni devolvía el campo.');
 }
 
 console.log('');
