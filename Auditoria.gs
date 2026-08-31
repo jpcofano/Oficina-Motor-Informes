@@ -7525,3 +7525,242 @@ function testigoDeEstructuraDeInforme_(informeId, periodoId) {
       ' ítem(s) — el camino de lectura funciona, así que un CERO de otra sección es un cero real.');
   }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-31_4` Parte A — EL INVENTARIO COMPLETO DE LAS DOS PLANTILLAS
+ *
+ * ⭐⭐ **Existe porque el censo cuenta lo que no puede nombrar.** `censarTokensSinMarcador_`
+ * imprime `N de M sin fila` y lista **sólo los N**: los tokens que **sí** tienen fila se cuentan en
+ * el `M` y **no aparecen nunca**, ni en el log ni en el retorno. Para cruzar dos plantillas hace
+ * falta exactamente lo contrario — **qué token está en qué lámina de cada una**.
+ *
+ * ⛔ **Y hay un segundo agujero, medido el 31/08 y peor que el anterior:** el censo hace
+ * `if (!sin.length) return`, así que **una lámina con TODOS sus tokens cableados no se imprime en
+ * absoluto** — ni siquiera como `0 de M`. **Desaparece del reporte.** A medida que el cableado
+ * avanza, el censo ve **menos** láminas, y su conteo de láminas baja sin que nada falle.
+ *
+ * ══ QUÉ ES ESTA HOJA, Y QUÉ NO ══════════════════════════════════════════════════════════════
+ *
+ * ⚠ **`_INVENTARIO_TOKENS_<fecha>` es una hoja EFÍMERA DE SALIDA, no un registro.** Se recrea
+ * entera en cada corrida y **nadie más la lee**: no está en `ALCANCE_REGISTROS_`, no tiene
+ * `SEED_*`, no entra a `instalar()` ni a «Aplicar configuración», y ningún camino del motor la
+ * consulta. **Borrarla no rompe nada.**
+ *
+ * ⭐ **Por qué eso no contradice el «sólo lectura» del prompt:** ese requisito apunta a **las hojas
+ * de registro y a las plantillas**, que son las que deciden qué hace el motor y de quién es el
+ * dato. Una hoja de salida que el motor ignora no es eso. **Dicho acá y con todas las letras para
+ * que dentro de tres meses nadie la confunda con un registro** — que es exactamente cómo nacieron
+ * los documentos sueltos que `CLAUDE.md` §3 previene.
+ *
+ * ⛔ **Lo que esta función NO toca:** `MARCADORES`, `LAMINAS`, `SECCIONES` y las dos plantillas se
+ * **leen** y nada más.
+ *
+ * ⛔ **Y lo que NO hace, porque es la tentación obvia:** no propone armonizar, **no migra ningún
+ * marcador a `*`** y no decide si `secco` sube a la granularidad de `jm`. Produce la foto contra la
+ * que esa decisión se toma.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+var PREFIJO_HOJA_INVENTARIO_ = '_INVENTARIO_TOKENS_';
+
+var COLUMNAS_INVENTARIO_ = [
+  'informe', 'lamina_id', 'orden_plantilla', 'slide_pos', 'token',
+  'tiene_fila', 'informe_id_de_la_fila', 'candidato_asterisco',
+  'lamina_itera', 'lamina_modo', 'laminas_itera_sobre_crudo',
+  'seccion_id', 'escondida'
+];
+
+/**
+ * El botón. **Sin `_` y sin parámetros**, las dos condiciones del desplegable (`CLAUDE.md` §2).
+ */
+function volcarInventarioDeTokens() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoy = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  var nombreHoja = PREFIJO_HOJA_INVENTARIO_ + hoy;
+
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('INVENTARIO DE TOKENS — las dos plantillas · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* El registro, indexado **por nombre de marcador**, igual que el censo — y guardando el
+   * `informe_id`, que allá se guarda y **nunca se lee**. Ése es justamente el dato que el cruce
+   * necesita, y por eso acá sale a una columna. */
+  var conFila = {};
+  var porInformeDeLaFila = {};
+  leerMarcadores_().forEach(function (m) {
+    var nombre = String(m.marcador || '').trim();
+    if (!nombre) return;
+    conFila[nombre] = true;
+    porInformeDeLaFila[nombre] = String(m.informe_id || '').trim();
+  });
+  Logger.log('  filas en MARCADORES: ' + Object.keys(conFila).length);
+
+  /* ⭐ **`lamina_itera` sale de `LAMINAS.seccion_id` → `SECCIONES`, que es donde `D-37` lo puso** —
+   * y NO de `LAMINAS.itera_sobre`.
+   *
+   * ⛔ **Medido el 31/08: `LAMINAS.itera_sobre` está VACÍO en las 53 filas**, así que el bloque
+   * «N lámina(s) ITERAN» de `censarTokensSinMarcador_` **nunca se disparó**. Su propio comentario
+   * ya lo decía para «las 52 filas» y sigue igual con 53.
+   *
+   * ⭐⭐ **Y por eso la columna cruda va AL LADO, aunque salga vacía:** que el volcado **muestre**
+   * el vacío es el testigo de que ese bloque está mudo. **Una columna vacía visible vale más que un
+   * dato correcto que tapa el hueco** — sin ella, alguien lee `lamina_itera` lleno y concluye que
+   * el censo funcionaba. */
+  var secciones = {};
+  try { secciones = leerSeccionesPlano_(); }
+  catch (e) { Logger.log('  ⚠ no pude leer SECCIONES (' + e.message + '): `lamina_itera` sale vacío.'); }
+
+  var porLamina = {};
+  var laminasItera = 0;
+  try {
+    var regL = leerLaminas_();
+    (regL.ok ? regL.filas : []).forEach(function (f) {
+      var id = String(f.lamina_id || '').trim();
+      if (!id) return;
+      var sec = secciones[String(f.seccion_id || '').trim()] || {};
+      if (String(sec.itera_sobre || '').trim()) laminasItera++;
+      porLamina[id] = {
+        orden: f.orden_plantilla,
+        seccion_id: String(f.seccion_id || '').trim(),
+        itera: String(sec.itera_sobre || '').trim(),
+        modo: String(sec.modo || '').trim(),
+        crudo: String(f.itera_sobre || '').trim()
+      };
+    });
+  } catch (e) {
+    Logger.log('  ⚠ no pude leer LAMINAS (' + e.message + '): las columnas de lámina salen vacías.');
+  }
+
+  /* Los tokens de la plantilla de `secco`, **con la misma función que usa el migrador**
+   * (`tokensDePlantilla_`, `Instalar.gs`) — no con un criterio propio. Dos formas de decidir lo
+   * mismo terminan cargando otra cosa. */
+  var enSecco = {};
+  var deSecco = tokensDePlantilla_('secco');
+  if (deSecco) deSecco.forEach(function (t) { enSecco[t] = true; });
+  else Logger.log('  ⚠ `secco` sin `plantilla_id`: la columna `candidato_asterisco` sale vacía.');
+
+  var filas = [];
+  var resumen = {};
+  var informes = leerInformes();
+
+  ['jm', 'secco'].forEach(function (informeId) {
+    var informe = informes[informeId];
+    if (!informe || !informe.plantilla_id) {
+      Logger.log('  ⛔ `' + informeId + '` no tiene `plantilla_id` — se saltea.');
+      return;
+    }
+    var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+    var r = { slides: slides.length, conTokens: 0, sinTokens: 0, todosCableados: 0,
+              apariciones: 0, distintos: {}, sinAncla: [], candidatos: {} };
+
+    slides.forEach(function (slide, i) {
+      var idLamina = anclaDeLamina_(slide);
+      var escondida = esLaminaEscondida_(slide);
+      var vistos = {};
+      piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+        var m; RE_TOKEN_.lastIndex = 0;
+        while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) vistos[m[1]] = true;
+      });
+      var tokens = Object.keys(vistos).sort();
+      if (!tokens.length) { r.sinTokens++; return; }
+      r.conTokens++;
+      if (!idLamina) r.sinAncla.push(i + 1);
+
+      /* ⭐ **El conteo que el censo no puede dar**: láminas donde NINGÚN token está sin fila. Son
+       * las que `censarTokensSinMarcador_` omite enteras, y por eso todo censo anterior las
+       * subestima. */
+      var algunoSinFila = tokens.some(function (t) { return !(t in conFila); });
+      if (!algunoSinFila) r.todosCableados++;
+
+      var meta = (idLamina && porLamina[idLamina]) || {};
+      tokens.forEach(function (t) {
+        r.apariciones++;
+        r.distintos[t] = true;
+        var tiene = (t in conFila);
+        var infFila = tiene ? (porInformeDeLaFila[t] || '') : '';
+        /* ⭐ **`D-54`: candidato a `*`** = el token está en la plantilla de `secco`, tiene fila, y
+         * esa fila **no es ya `*`**. Mismo criterio que `aplicarAsteriscoCompartidos()`. */
+        var candidato = tiene && enSecco[t] && infFila !== '*';
+        if (candidato) r.candidatos[t] = true;
+
+        filas.push([
+          informeId, idLamina || '(sin ancla)', meta.orden === undefined ? '' : meta.orden, i + 1, t,
+          tiene ? 'sí' : 'no', infFila, candidato ? 'sí' : '',
+          meta.itera || '', meta.modo || '', meta.crudo || '',
+          meta.seccion_id || '', escondida ? 'sí' : ''
+        ]);
+      });
+    });
+    resumen[informeId] = r;
+  });
+
+  // ── La hoja, recreada entera ───────────────────────────────────────────────────────────
+  var vieja = ss.getSheetByName(nombreHoja);
+  if (vieja) ss.deleteSheet(vieja);
+  var hoja = ss.insertSheet(nombreHoja);
+  hoja.getRange(1, 1, 1, COLUMNAS_INVENTARIO_.length).setValues([COLUMNAS_INVENTARIO_]);
+  if (filas.length) hoja.getRange(2, 1, filas.length, COLUMNAS_INVENTARIO_.length).setValues(filas);
+  hoja.setFrozenRows(1);
+
+  // ── El reporte ────────────────────────────────────────────────────────────────────────
+  Logger.log('');
+  Logger.log('  ✅ hoja `' + nombreHoja + '` — ' + filas.length + ' fila(s) de (token, lámina).');
+  Logger.log('     ⚠ Es una hoja EFÍMERA de salida: nadie más la lee, no está en ningún seed.');
+  Logger.log('');
+
+  var candidatosGlobal = {};
+  ['jm', 'secco'].forEach(function (id) {
+    var r = resumen[id];
+    if (!r) return;
+    Logger.log('  ── `' + id + '` ─────────────────────────────────────────────────');
+    Logger.log('     slides en la plantilla        : ' + r.slides);
+    Logger.log('     con al menos un token         : ' + r.conTokens + '   (sin ningún token: ' + r.sinTokens + ')');
+    Logger.log('     ⛔ TODOS sus tokens cableados : ' + r.todosCableados +
+      '   ← el censo NO las imprime');
+    Logger.log('     tokens distintos              : ' + Object.keys(r.distintos).length +
+      '   · apariciones: ' + r.apariciones);
+    Logger.log('     ⭐ candidatos a `*` (D-54)     : ' + Object.keys(r.candidatos).length);
+    if (r.sinAncla.length) {
+      Logger.log('     ⚠ ' + r.sinAncla.length + ' lámina(s) SIN ANCLA: ' + r.sinAncla.join(', ') +
+        ' — van con su marca, NO resueltas por posición.');
+    }
+    Object.keys(r.candidatos).forEach(function (t) { candidatosGlobal[t] = true; });
+  });
+
+  /* ⭐⭐ **El alcance de la migración de `D-54`, que es el número que hoy nadie tiene.** El cruce
+   * del 20/08 decía **49** y es de otra plantilla: el usuario actualizó las láminas desde
+   * entonces, y ese mismo cruce ya venía con su propia advertencia —las láminas 19 y 20 de `jm`
+   * pasaron de 9 y 14 tokens a 31 y 50 **mientras se las medía**—.
+   *
+   * ⛔ **No se migra acá.** `aplicarAsteriscoCompartidos()` (`Instalar.gs`) es quien lo hace, y
+   * **escribe directo: no tiene modo seco**, así que correrlo para «ver cuántos son» los migraría.
+   * Esta lista es el mismo conjunto, calculado **sin escribir una celda**. */
+  var lista = Object.keys(candidatosGlobal).sort();
+  Logger.log('');
+  Logger.log('  ═══ CANDIDATOS A `informe_id = "*"` (D-54): ' + lista.length + ' ═══');
+  Logger.log('  ⚠ Es el ALCANCE de la migración, no la migración. Nada se escribió en MARCADORES.');
+  Logger.log('  ⚠ El cruce del 20/08 decía 49 — de otra plantilla, y ese número NO es comparable.');
+  var porFamilia = {};
+  lista.forEach(function (t) {
+    var fam = t.indexOf('_') > 0 ? t.slice(0, t.indexOf('_') + 1) : '(sin prefijo)';
+    porFamilia[fam] = (porFamilia[fam] || 0) + 1;
+  });
+  Logger.log('  por familia: ' + Object.keys(porFamilia).sort().map(function (f) {
+    return f + ' ' + porFamilia[f];
+  }).join(' · '));
+  for (var i = 0; i < lista.length; i += 8) {
+    Logger.log('     ' + lista.slice(i, i + 8).join(', '));
+  }
+
+  Logger.log('');
+  Logger.log('── LO QUE ESTE VOLCADO NO CONTESTA ───────────────────────────────────');
+  Logger.log('  · Si un token compartido publica el número CORRECTO en `secco`. `D-54` dice que es');
+  Logger.log('    el mismo número; la validación que existe es de `jm` — otra ventana, otro corte.');
+  Logger.log('  · La GRANULARIDAD. Si `secco` tiene 3 ranuras donde `jm` tiene 4, son tokens');
+  Logger.log('    distintos y `*` no lo resuelve (D-54, el límite).');
+  Logger.log('  · Qué publica `FALTA` de verdad: eso pide una corrida.');
+  Logger.log('  · `laminas_itera_sobre_crudo` sale de la columna cruda de LAMINAS y se espera');
+  Logger.log('    VACÍA en las 53 filas. Si sale llena, cambió algo y hay que mirarlo.');
+
+  return { ok: true, hoja: nombreHoja, filas: filas.length, resumen: resumen, candidatos: lista };
+}

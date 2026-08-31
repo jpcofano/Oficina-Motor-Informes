@@ -16925,3 +16925,24 @@ que ya funcionaba** — y sin ese control, un total más bajo se habría leído 
   contra 18, pero **eso es la predicción de la expansión, no un deck**.
 - **Los valores** de las láminas que quedan. No se tocó ningún marcador, así que deberían ser los
   mismos, pero **nadie los comparó**.
+
+---
+
+## 2026-08-31 (2) — `2026-08-31_4` Parte A: el inventario completo de las dos plantillas, y `D-54`
+
+**`volcarInventarioDeTokens()`** (`Auditoria.gs`) vuelca una fila por **(token, lámina)** de las dos
+plantillas a una hoja efímera `_INVENTARIO_TOKENS_<fecha>`, con `tiene_fila`,
+`informe_id_de_la_fila` y `candidato_asterisco`. **Existe porque el censo cuenta lo que no puede
+nombrar** — `censarTokensSinMarcador_` lista sólo los tokens **sin** fila— y porque, medido hoy,
+**una lámina con todos sus tokens cableados no se imprime en absoluto**: el censo hace
+`if (!sin.length) return`, así que **a medida que el cableado avanza el censo ve menos láminas**.
+
+**`D-54`** (decisión del usuario): un token que está en las dos plantillas **publica el mismo
+número**; no hay versión propia de `secco`. ⇒ los compartidos con una sola fila `jm` son candidatos
+a `informe_id = '*'`. ⭐ El comodín **ya está implementado en cinco puntos del camino**: la
+migración es cambiar celdas, no programar. ⛔ Con su límite adentro: dice que el **número** es el
+mismo, **no la granularidad**.
+
+⚠ Y `LAMINAS.itera_sobre` está **vacío en las 53 filas**, así que el bloque «N láminas ITERAN» del
+censo **nunca se disparó**: `lamina_itera` sale de `SECCIONES` vía `seccion_id` (`D-37`) y la
+columna cruda va **al lado, vacía, como testigo del hueco**.

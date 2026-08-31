@@ -2828,6 +2828,46 @@ aprendizaje: allá **el texto envejeció más rápido que el mecanismo** (el com
 un no-op» y el mecanismo seguía sin implementarse); acá **el dato envejeció más rápido que el
 texto**. **Un argumento se cae cuando envejece cualquiera de sus dos mitades, y hay que mirar las
 dos.**
+
+**`D-54` — Un token que está en las DOS plantillas publica el MISMO número. No hay versión propia
+de `secco`.** (31/08/2026, **decisión del usuario dada en conversación**, textual: *«no hay otro
+recorte, son los mismos»*.)
+
+Si `{{enc_inscriptos}}` aparece en la plantilla de `jm` y en la de `secco`, **las dos cajas
+publican el mismo valor**: misma fuente, mismo corte, misma operación. No existe una definición de
+`secco` que compita con la de `jm`.
+
+⇒ **Consecuencia directa, y es lo que vuelve accionable a la decisión:** todo token compartido que
+hoy tenga **una sola fila `jm`** es **candidato a `informe_id = '*'`**. No es una migración de
+conveniencia: es la única forma de **expresar** la decisión, porque una fila `jm` **no la puede
+leer `secco`**.
+
+⭐ **El mecanismo ya existe y no hace falta código.** `resolverMarcadores` filtra con
+`suyo === informeId || suyo === '*'`, y ese comodín está implementado en **cinco** puntos del
+camino (`Generador.gs` ×3, `Auditoria.gs` ×2). **La migración es cambiar celdas, no programar.**
+
+⚠ **Y el estado de hoy, medido:** `MARCADORES` tiene **220 filas y las 220 dicen `jm`** — cero
+`*`, cero `secco` (`MARCADORES_2026-08-31.tsv`). **Hoy no hay ni una fila compartida**, así que
+`secco` sale entero en hueco.
+
+### ⛔ El límite, y va adentro de la decisión para que no se la use de más
+
+**Esto dice que el NÚMERO es el mismo. No dice que la GRANULARIDAD lo sea.** Son dos cosas
+distintas y sólo una la resuelve compartir marcadores:
+
+- Si las dos plantillas tienen una caja para *«inscriptos del encuentro»*, `*` la resuelve.
+- Si `secco` tiene **3 ranuras** donde `jm` tiene **4**, o **2 campos** donde `jm` tiene **8**
+  —medido el 20/08 en la lámina de comunicaciones post: `jm` 4 campañas × 8 campos contra `secco`
+  3 × 2—, **eso sigue abierto y `*` no lo toca**. Son tokens **distintos**, no el mismo token con
+  dos definiciones.
+
+**La pregunta de granularidad queda sin decidir**, y decidirla toca las plantillas, que son del
+equipo (`C-01`).
+
+⚠ **Segundo límite, heredado y no resuelto:** las validaciones que existen son **de `jm`**. Un
+marcador que pase a `*` publica en `secco` un número **validado para otra ventana y otro corte** —
+el `SELLO_VALIDACION_` de `Instalar.gs` ya lo dice fila por fila. **Compartir la definición no
+comparte la validación.**
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
