@@ -7731,10 +7731,13 @@ function volcarInventarioDeTokens() {
   Logger.log('');
 
   var candidatosGlobal = {};
-  ['jm', 'secco'].forEach(function (id) {
-    var r = resumen[id];
+  /* ⚠ El parámetro se llama `informeId` y NO `id`: adentro hay un `forEach` sobre láminas que usa
+   * `id` para el `lamina_id`, y con el mismo nombre en los dos niveles el interno **sombrea** al
+   * externo. Dos scopes anidados con la misma variable no fallan al leerlos — fallan al correr. */
+  ['jm', 'secco'].forEach(function (informeId) {
+    var r = resumen[informeId];
     if (!r) return;
-    Logger.log('  ── `' + id + '` ─────────────────────────────────────────────────');
+    Logger.log('  ── `' + informeId + '` ─────────────────────────────────────────────────');
     Logger.log('     slides en la plantilla        : ' + r.slides);
     Logger.log('     con al menos un token         : ' + r.conTokens + '   (sin ningún token: ' + r.sinTokens + ')');
     Logger.log('     ⛔ TODOS sus tokens cableados : ' + r.todosCableados +
