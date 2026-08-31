@@ -266,9 +266,47 @@ la dimensión no está definida para `base|solapa` —devuelve `ok:false` con mo
 `«FALTA:…@filtro_campo_no_mapeado»`, no 63. ⇒ **Ninguno de los dos caminos conocidos produce «63 en
 silencio»**, así que el modo de falla todavía no tiene nombre.
 
-⚠ **Y el `mapa_tokens` que se leyó es el del 28/08, porque el artefacto de configuración en disco es
-del 30/08: la corrida del 31 no está.** El mapa contesta **qué caja es de qué token** —que es
-estructural y no cambió—, **no qué valor publicó el 31**.
+### ⚠ Qué contesta el `mapa_tokens` y qué NO — dicho en los dos sentidos, para que nadie lo cite mal
+
+El que se leyó es el de **`jm-20260828-193948`**, porque el artefacto de configuración en disco es
+del 30/08 y **la corrida del 31 no está**.
+
+| ✅ **SÍ contesta** | ⛔ **NO contesta** |
+|---|---|
+| **qué token pinta qué caja** — token → slide → `objectId` | **qué VALOR publicó** esa caja |
+| que el slide 3 usa `gcba_ivr_llamados` | si el filtro se aplicó en la corrida del 31 |
+| que `ivr_campanias` está en el 2 **y** en el 3 | cuántas filas entraron |
+| que `ivr_llamados` está en el slide 2 | qué decía `MARCADORES` el 31 |
+
+⭐ **Es estructural, y por eso vale aunque sea de otra corrida:** la asignación token → caja **la
+fija la plantilla**, no la ventana ni el dato. ⛔ **Pero de ahí no se sigue ningún número**, y
+citarlo como si hubiera contestado el valor sería exactamente el error que este prompt viene
+corrigiendo dos veces.
+
+### ⛔⛔ La hipótesis (4), que ninguno de los dos había nombrado
+
+> **(4) La fila VIVA de `MARCADORES` ya no dice `ambito=gcba`.**
+
+⭐ **Es la más barata de descartar y la única que explica «63 en silencio» sin inventar un modo de
+falla nuevo:** con la celda vacía el marcador **lee todo y no falla**, que es exactamente lo que se
+observa. Y es plausible — **`MARCADORES` se edita a mano**.
+
+⚠ **Toda la evidencia de que ese marcador lleva `ambito=gcba` sale de un `.xlsx` del 30/08.** Es la
+misma clase de cita fechada que ya falló dos veces en este prompt.
+
+⛔ **Se descarta PRIMERO.** Por eso el testigo ahora imprime el `dimensiones` que lee de la **hoja
+viva** para cada marcador de su lista, antes de la traza.
+
+### ⛔ Y si la corrida no NOMBRA la causa, la Parte B no arranca
+
+**Un defecto con causa desconocida no se arregla: se tapa.** Los dos caminos conocidos —
+`condicionesDeDimensiones_` falla fuerte si la dimensión no está definida, y un campo sin `MAPEO`
+da `«FALTA:…»`— **no producen «63 en silencio»**. Si la hipótesis (4) queda descartada y la traza
+tampoco lo explica, **estamos ante un modo de falla sin nombre**.
+
+⚠ **Eso es peor que tenerlo identificado**, y vale aunque los números se separen: poner
+`ambito=jm` a los siete podría hacer que las láminas muestren cifras distintas **sin que nadie sepa
+por qué la de GCBA estaba mal**. **La Parte B sigue sin habilitarse.**
 
 ⭐ **El paso barato que lo cierra, y no necesita instrumento nuevo:** correr el testigo con la lista
 **extendida a los tres `gcba_ivr_*`**. `testigoDeMarcadores_` ya imprime `filtro N/M` por marcador,

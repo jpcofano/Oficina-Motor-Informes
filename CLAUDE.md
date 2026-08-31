@@ -1466,6 +1466,13 @@ el gabinete entero y nadie había declarado la señal de corte (`R-15` addendum 
 - **Se pregunta antes de cablear, no después.** Un token nuevo sobre una fuente cuyo universo
   no está declarado nace mal, y en lote el error se multiplica en vez de corregirse.
 
+⛔⛔ **Un documento es evidencia de lo que era cierto CUANDO SE ESCRIBIÓ, nunca de lo que es cierto ahora — y el PROPIO no es una excepción: es el caso donde más cuesta acordarse.** (31/08/2026.)
+
+- **El caso, y es de manual porque las dos mitades pasaron con una hora de diferencia:** se señaló —con razón— que una cita a `TOKENS.md` §178 estaba vencida, y **al turno siguiente se citó `HANDOFF_CODE` como evidencia de que una lámina no tenía una caja**. También era falso, y lo desmintió `CORRIDAS.mapa_tokens`, que es **dato registrado de la corrida**.
+- ⭐⭐ **Por qué el handoff propio es MÁS peligroso que un documento ajeno:** uno **confía en lo que escribió sin releerlo**, porque **recuerda haberlo verificado entonces**. El recuerdo de la verificación sobrevive a la verificación — y con un documento ajeno, al menos, la desconfianza es el estado por defecto.
+- ⭐ **Lo accionable, y es lo mismo que ya se pide para las hojas de registro:** antes de usar una afirmación de un `.md` **para decidir**, buscar el dato en la fuente que lo produce. Acá la fuente existía y era mejor: **el `mapa_tokens` registra token → slide → `objectId` por corrida**, así que la pregunta *«¿esta lámina usa este token?»* **no se contesta leyendo un handoff.**
+- ⚠ **Y el corolario que cierra el círculo:** `HANDOFF_CODE.md` es, por `CLAUDE.md` §5, *«un puntero al presente»*. **Eso lo vuelve más citable y no menos envejecible** — se reescribe entero cada vez, así que **lo que quedó de una versión anterior no está marcado como viejo por ningún lado**.
+
 **Un dato medido una vez y citado tres veces envejece igual que cualquier otro.** Una medición
 no se vuelve permanente porque haya viajado: cada vez que se **usa para decidir**, se vuelve a
 medir. El caso, 07–08/08: *"`CAMPAÑAS_DESGLOCE_DIGITAL` está registrada como `revisar`"* se

@@ -5434,6 +5434,24 @@ var MARCADORES_AMBITO_TESTIGO_ = [
   'camp_frecuencia',      // RATIO sobre `resumen_metricas_dinamico`, sin corte
   'u1_total_impresiones', // SUMA sobre el DESGLOSE, sin corte — prueba que la 3ª entrada es inerte
 
+  /* ── ⭐⭐ `2026-08-31_2` — LOS SEIS DE IVR, Y VAN EN LA MISMA TOMA A PROPÓSITO ──────────
+   * **El par junto es lo que hace legible el resultado.** `gcba_ivr_llamados` lleva
+   * `ambito=gcba` (`ivr_vocero!=JM`) y debería dar **8 de 63**; el deck del 31/08 publica el
+   * total en las dos láminas. Medir el de JM y el de GCBA en tomas distintas **vuelve a mezclar
+   * causas**, que es el error que costó la vuelta del `gcba_frecuencia` a 6,265 contra 10,08.
+   *
+   * ⭐ **Cómo se lee, y es un discriminador de una sola corrida:**
+   *
+   * | `gcba_ivr_llamados` | `ivr_llamados` | qué significa |
+   * |---|---|---|
+   * | `63/63` | `63/63` | **el filtro NO se aplica** — publican lo mismo por el mismo motivo |
+   * | `8/63` | `63/63` | **el filtro SÍ anda** y el problema está en otro lado |
+   *
+   * ⚠ Los `ivr_*` de JM tienen `dimensiones` **vacío**, así que su `63/63` es lo esperado y **no
+   * es el hallazgo**: es la línea de base contra la que se lee el otro. */
+  'gcba_ivr_llamados', 'gcba_ivr_atendidos', 'gcba_ivr_at_pct',
+  'ivr_llamados', 'ivr_atendidos', 'ivr_at_pct',
+
   /* ── TRES CANARIOS MÁS, y va escrito por qué NO son una identidad ──────────────────────
    * ⛔ La tentación era exigir `imp_meta + gcba_imp_meta = camp_meta_impresiones`. **No cierra, y
    * no por un bug: es OTRO UNIVERSO.** Los `imp_*` llevan `filtro = estado=Activa` y los `camp_*`
@@ -5502,6 +5520,32 @@ function testigoDeAmbito() {
   abrirCacheRegistros_();
   abrirCacheDatosHoja_();
   try {
+
+  /* ⭐⭐ `2026-08-31_2` — **EL `dimensiones` QUE LEE LA HOJA VIVA, no el que dice un export.**
+   * La evidencia de que `gcba_ivr_llamados` lleva `ambito=gcba` salía de un `.xlsx` del 30/08, y
+   * eso deja abierta una **cuarta hipótesis que ninguna traza descarta**:
+   *
+   *   ⭐ **(4) la fila VIVA de `MARCADORES` ya no dice `ambito=gcba`.**
+   *
+   * **Es la más barata de descartar y la única que explica «63 en silencio» sin inventar un modo
+   * de falla nuevo**: con la celda vacía el marcador lee todo **y no falla**, que es exactamente
+   * lo que se observa. Y es plausible — `MARCADORES` **se edita a mano**.
+   *
+   * ⚠ **Se descarta PRIMERO.** Si la celda viva dice `ambito=gcba`, recién ahí estamos ante un
+   * modo de falla sin nombre y vale la pena buscarlo. */
+  Logger.log('');
+  Logger.log('── `dimensiones` LEÍDO DE LA HOJA VIVA (hipótesis 4) ─────────────────');
+  var porMarcador = {};
+  leerMarcadores_().forEach(function (m) { porMarcador[String(m.marcador || '').trim()] = m; });
+  MARCADORES_AMBITO_TESTIGO_.forEach(function (n) {
+    var m = porMarcador[n];
+    if (!m) { Logger.log('  ⚠ ' + n + '	SIN FILA en MARCADORES'); return; }
+    var d = String(m.dimensiones === undefined || m.dimensiones === null ? '' : m.dimensiones).trim();
+    Logger.log('  ' + (d ? '   ' : '(∅)') + ' ' + n + '	dimensiones="' + d + '"' +
+      '	filtro="' + String(m.filtro || '').trim() + '"');
+  });
+  Logger.log('  ⭐ Un `dimensiones` vacío donde se esperaba `ambito=gcba` CIERRA el caso acá:');
+  Logger.log('     el marcador lee todo y no falla. Si dice `ambito=gcba`, seguir con la traza.');
 
   var r = testigoDeMarcadores_(MARCADORES_AMBITO_TESTIGO_, 'ámbito JM/GCBA — corte por Id cuentas');
   if (!r.ok) {
