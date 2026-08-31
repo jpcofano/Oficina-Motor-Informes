@@ -1,0 +1,14 @@
+periodo_id	orden	eje	tipo	nombre	fecha	etapa	mostrar	texto_original	id_cuenta	notas
+junio_sem2		JM		Boedo	12/06/2026		sí	JM | Boedo 12/06		
+junio_sem2		JM	Encuentro Temático	Almagro	16/06/2026		no	JM | Encuentro Temático en Almagro 16/06		
+junio_sem2		JM	Uno a uno	Boedo	17/06/2026		sí	JM | Uno a uno en Boedo 17/06		
+junio_sem2		JM		Mataderos	18/06/2026		sí	JM | Mataderos 18/06		
+junio_sem2		JM	Encuentro Temático	Educación	16/06/2026		sí	JM | Encuentro Temático Educación 16/06		
+agosto_14_20	1	JM	Uno a uno	Parque Avellaneda	12/08/2026		si	1) JM | Uno a uno en Parque Avellaneda 12/08 (pre + post)		pre + post
+agosto_14_20	2	JM	Encuentro Temático	: Salud	14/08/2026		si	2) JM | Encuentro Temático: Salud 14/08		
+julio_24_30	1	JM	Uno a uno	San Cristóbal	23/07/2026		si	1) JM | Uno a uno en San Cristóbal 23/07 (pre + post)		
+julio_24_30	2	JM	Uno a uno	Retiro	24/07/2026		si	2) JM | Uno a uno en Retiro 24/07 (pre + post)		
+julio_24_30	3	JM	Primera persona	con Pareto	27/07/2026		si	3) JM | Primera Persona con Pareto 27/07		
+julio_24_30	4	JM	Encuentro Temático	Orden Público	28/07/2026		si	4) JM | Encuentro Temático Orden Público 28/07		
+2026_agosto_21_27			Uno a uno	Coghlan	21/08/2026		sí	Uno a uno en Coghlan (21/08)	3527-AGOJDGAG	
+2026_agosto_21_28			Uno a uno	Coghlan	21/08/2026		sí	Uno a uno en Coghlan (21/08)	3527-AGOJDGAG	

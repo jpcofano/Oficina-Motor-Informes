@@ -2772,6 +2772,62 @@ guarda, o reportaría un cruce roto inexistente.
 contra el dashboard de Looker del 28/08 dice que el criterio de solape reproduce **8 campañas**
 para JM —y 4 o 5 con cualquier otro—, pero **el valor pide una corrida**. El testigo es
 `Meta 1.921.695 · Google 1.023.101 · DV360 5.330.034`.
+
+**`D-53` — `periodo_id` identifica una VERSIÓN DEL INFORME, no una semana del calendario. Y de
+ahí se sigue que el escritor del temario tiene que poder SACAR, no sólo agregar.** (31/08/2026,
+**decisión del usuario dada en conversación** — no está deducida del código, y sin este apunte
+dentro de seis meses lo parecería.)
+
+Son **dos mitades de una sola regla** y por eso van juntas.
+
+**1 · El vocabulario.** `periodo_id` no nombra una ventana del calendario: nombra **una versión del
+informe, con su temario**. Textual del usuario: *«cada informe es particular y va con su temario.
+Yo podría hacer el de un período y después rehacerlo con otro temario, por ejemplo si agregan una
+campaña»*.
+
+⇒ **Dos filas con la misma ventana son dos versiones, no un duplicado ni un error de carga.**
+
+**2 · La obligación del escritor, que se sigue de la 1.** Recargar un temario sobre un `periodo_id`
+**que ya existe** tiene que poder **quitar** campañas y reuniones, no sólo agregarlas. El flujo que
+el usuario declara:
+
+- **`periodo_id` nuevo** → temario nuevo, con lo que el usuario cargue.
+- **`periodo_id` ya usado** → el front **precarga** el temario existente; el usuario lo acepta o lo
+  **modifica**, y entonces *«el motor tiene que modificar el temario sacando o poniendo campañas y
+  reuniones»*.
+
+### Las tres consecuencias, todas medidas el 31/08 — para que esto no quede como enunciado suelto
+
+1. **Dos ids de `PERIODOS` con la misma ventana son NORMALES.** `agosto_14_20` y
+   `'vie 14/08 -- jue 20/08 (por defecto)'` cubren las dos `2026-08-14 → 2026-08-20`, y **eso no es
+   una ambigüedad a resolver**: son dos versiones de la misma semana.
+2. ⭐ **Por eso `periodosQueDescribenLaVentana_` tiene que DECLARAR el conjunto, y cambia el
+   motivo por el que ya lo hacía.** No es *«hay un empate que no sé desempatar»* —lo que haría
+   buscar el id correcto— sino *«puede haber varias versiones del mismo informe y hay que decir
+   cuál se tomó»*. **No hay un id correcto que elegir.** Con override explícito manda el id de
+   `ventana.origen`, que ya es la versión nombrada por quien corre.
+3. ⛔ **El `P0` del escritor —«una campaña que el usuario sacó del temario se sigue publicando»— es
+   el INCUMPLIMIENTO del punto 2, no un defecto independiente.** `cargarTemarioCampanas_` dedupea
+   por `campana_id || periodo_id` y **saltea lo que ya existe**: sabe agregar y no sabe quitar.
+   Vive en `PENDIENTES_consistencia.md` (31/08) y **cuelga de esta decisión**.
+
+### ✅ Y en el mismo acto se CONFIRMA `D-19`, con su argumento
+
+`D-19` —*una fila sin `periodo_id` no entra a ningún informe*— **se confirma y no se supersede**.
+El motivo importa porque es lo que la sostiene: **fija el vocabulario, y no depende de que hoy
+haya filas que la ejerciten** — que justamente **no las hay**: `CAMPANAS` viva al 31/08 tiene dos
+filas y las dos traen `periodo_id` cargado.
+
+⚠ **La justificación que se había escrito para confirmarla envejeció entre el 26 y el 31/08.** Era
+*«las filas de `secco` con `periodo_id` vacío ya están excluidas por la propia `D-19`»* — cierto
+contra el snapshot del 26/08, y **hoy vacuamente cierto**, porque esas filas ya no existen. **La
+decisión se sostiene igual; lo que se cayó fue la evidencia que se citaba, no la regla.**
+
+⭐ **Es la forma inversa de la justificación vencida del 18/08**, y las dos juntas son el
+aprendizaje: allá **el texto envejeció más rápido que el mecanismo** (el comentario decía «hoy es
+un no-op» y el mecanismo seguía sin implementarse); acá **el dato envejeció más rápido que el
+texto**. **Un argumento se cae cuando envejece cualquiera de sus dos mitades, y hay que mirar las
+dos.**
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)

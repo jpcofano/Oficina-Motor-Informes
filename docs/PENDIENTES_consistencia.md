@@ -10254,3 +10254,52 @@ Es una decisión de producto.
 
 ⚠ **Colateral, en la misma medición:** `3508-AGOSALGC` aparece **dos veces** en la ventana 21–28,
 las dos con `Llamados Realizados` vacío — filas duplicadas en una planilla de terceros.
+
+---
+
+## ⛔⛔ P0 · Una campaña que el usuario SACÓ del temario se queda en `CAMPANAS` y sigue publicándose (31/08/2026)
+
+> ⭐ **Cuelga de `D-53`** (`PLAN.md`, 31/08/2026). **No es un defecto independiente: es el
+> incumplimiento del punto 2 de esa decisión** —*recargar un temario sobre un período existente
+> tiene que poder sacar campañas y reuniones*—. Lo que sigue es la medición; la regla vive allá.
+
+**El escritor del temario sabe AGREGAR y no sabe QUITAR.** `cargarTemarioCampanas_`
+(`Campanas.gs`) dedupea con la clave `campana_id || periodo_id` y **saltea lo que ya existe**:
+
+```js
+existentes[String(datos[i][iId]).trim() + '||' + String(datos[i][iPer]).trim()] = true;
+…
+if (existentes[campanaId + '||' + periodoId]) { salteadas.push(p.nombre); return; }
+```
+
+⇒ **Recargar un temario con una campaña MENOS no la saca de la hoja.** La fila vieja sobrevive con
+`mostrar = sí` y la sección la sigue expandiendo. **El usuario la borró de la pantalla y el motor la
+sigue publicando.**
+
+### Por qué es un caso real y no un borde
+
+**La recarga con modificación es el flujo previsto, no una excepción**, y `periodo_id` identifica
+**una versión del informe** y no una semana. ⚠ **Las dos cosas las decide `D-53` y no se copian
+acá**: duplicarlas garantiza que las dos versiones se separen. Lo que este pendiente aporta es la
+**medición** de que el escritor no lo cumple.
+
+### ⛔ Es peor que el duplicado de nueve láminas, y conviene decir por qué
+
+**El duplicado repite algo correcto. Esto publica algo que el usuario decidió que no vaya.** Un
+lector que mira el deck ve una campaña de más y **no tiene forma de saber que fue retirada** — no
+hay símbolo, no hay aviso, y la fila de `CAMPANAS` se ve idéntica a una vigente.
+
+⚠ **Y aplica a las dos mitades del temario.** La regla dice *«campañas y reuniones»*, y
+`REUNIONES` tiene el mismo escritor gemelo. **El barrido va con el arreglo**: no alcanza con
+`cargarTemarioCampanas_`.
+
+### Cómo se cierra, y por qué NO va con el P0 del duplicado
+
+**Prompt propio.** Toca el **ESCRITOR** —`cargarTemarioCampanas_` y su gemelo de `REUNIONES`—,
+mientras que el duplicado de nueve láminas toca el **LECTOR** (`itemsDeSeccion_`). Otro código,
+otro riesgo, y **mezclarlos haría que un solo push mueva las dos cosas**: la estructura del deck y
+el contenido de dos hojas de registro.
+
+⚠ **Y el arreglo tiene una decisión adentro que no se puede tomar sola:** quitar una fila puede ser
+**borrarla** o **ponerle `mostrar = no`**. Son dos cosas distintas —una pierde la decisión previa,
+la otra la conserva y la deja auditable— y la elige el usuario.

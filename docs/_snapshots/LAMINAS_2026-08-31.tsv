@@ -1,0 +1,54 @@
+lamina_id	informe_id	seccion_id	orden_plantilla	escondida	origen	modo	itera_sobre	filtro	rol	cobertura	falta	alcance	tokens_equipo	notas
+L-001	secco	portada	1		sellador				motor					
+L-002	secco	indice	2		sellador				equipo					
+L-003	secco	portada_digital_directa	3		sellador				equipo					
+L-004	secco	encuentro	4		sellador			tipo=Uno a uno	motor					
+L-005	secco	encuentro	5		sellador			tipo=Uno a uno	motor					
+L-006	secco	encuentro	6		sellador			tipo=Encuentro Temático	motor					
+L-007	secco	encuentro	7		sellador			tipo=Encuentro Temático	motor					
+L-008	secco	encuentro	8		sellador			tipo!=Uno a uno	motor					
+L-009	secco	comunicaciones_post	9		sellador				equipo					
+L-010	secco	comunicaciones_post	10		sellador				motor					
+L-011	secco	ministros	11		sellador				equipo					
+L-012	secco	ministros	12		sellador				motor					
+L-013	secco	m2	13		sellador				equipo					
+L-014	secco	m2_status	14		sellador				motor					
+L-015	secco	m2_caudal	15		sellador				equipo					
+L-016	secco	campana	16		sellador				motor					
+L-017	secco	campana	17		sellador				motor					
+L-018	secco	campana	18		sellador				motor					
+L-019	secco	campana	19		sellador				motor					
+L-020	secco	campana	20		sellador				motor					
+L-021	secco	campana	21		sellador				motor					
+L-022	secco	campana	22		sellador				motor					
+L-023	secco	campana	23	sí	sellador				motor					
+L-024	secco	analisis_datos	24		sellador				motor					
+L-025	secco	semana_jm_conversacion	25	sí	sellador				motor					
+L-026	secco	otros_temas	26	sí	sellador				equipo					
+L-027	secco	impacto_comunicacional	27	sí	sellador				motor					
+L-028	secco	impacto_comunicacional	28	sí	sellador				motor					
+L-029	secco	cierre	29		sellador				equipo					
+L-030	jm	portada	1		sellador				motor			en_alcance		
+L-031	jm	resumen_ejecutivo	2		sellador				motor			en_alcance		
+L-032	jm	resumen_ejecutivo	3		sellador				motor			en_alcance		
+L-033	jm	ecv_alcance_semanal	4		sellador				equipo			en_alcance		
+L-034	jm	ecv_alcance_semanal	5		sellador				motor			en_alcance		
+L-035	jm	encuentro	6		sellador			tipo!=Uno a uno	motor			en_alcance		
+L-036	jm	comunicaciones_post	7		sellador				motor			en_alcance		
+L-037	jm	m2	8		sellador				equipo			en_alcance		
+L-038	jm	m2_status	9		sellador				motor			en_alcance		
+L-039	jm	m2	10	sí	sellador				motor			fuera_de_alcance		
+L-040	jm	campana	11		sellador				equipo			en_alcance		
+L-041	jm	campana	12		sellador				motor			en_alcance		
+L-042	jm	campana	13		sellador				motor			en_alcance		
+L-043	jm	campana	14		sellador				motor			en_alcance	camp_audiencia1, camp_audiencia2, camp_audiencia3, camp_formato1, camp_formato2, camp_formato3	
+L-044	jm	campana	15		sellador				motor			en_alcance		
+L-045	jm	campana	16		sellador				motor			en_alcance		
+L-046	jm	campana	17		sellador				motor			en_alcance	camp_bench_google_ctr, camp_bench_google_vtr, camp_bench_meta_ctr, camp_bench_meta_vtr, camp_bench_prog_ctr, camp_bench_prog_vtr, camp_dig_insight	
+L-047	jm	campana	18		sellador				motor			en_alcance	camp_mail_insight	
+L-048	jm	campana	19	sí	sellador				motor			fuera_de_alcance		
+L-049	jm	analisis_datos	20		sellador				equipo			en_alcance		
+L-050	jm	resumen_ejecutivo	21		sellador				motor			fuera_de_alcance		
+L-051	jm	cierre	22		sellador				equipo			en_alcance		
+L-052	jm	encuentro	6		sellador				motor			en_alcance		
+L-053	jm	encuentro	8		sellador			tipo=Uno a uno	motor			en_alcance	u1_bench_google_ctr, u1_bench_google_vtr, u1_bench_meta_ctr, u1_bench_meta_vtr, u1_bench_prog_ctr, u1_bench_prog_vtr	
