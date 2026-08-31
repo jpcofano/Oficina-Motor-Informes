@@ -42,16 +42,18 @@ MAPEO        : ivr_vocero → col G ✅
 DIMENSIONES_ : jm = ivr_vocero=JM   ·   gcba = ivr_vocero!=JM ✅
 ```
 
-`ivr_vocero!=JM` debería dar **9** filas. El deck del 31/08 publica el total, 10.032 llamados, en
-**las dos** láminas.
+`ivr_vocero!=JM` debería dar **8** filas —⛔ **corregido: eran 9 y son 8**, el comparador recorta
+espacios (`R-10`), así que `'JM '` queda en JM: **55 / 8**—. El deck del 31/08 publica el total,
+10.032 llamados, en **las dos** láminas.
 
 **Correr la traza de `gcba_ivr_llamados`** y reportar qué dice el filtro: cuántas filas de
 cuántas, sobre qué columna. Tres hipótesis en orden:
 
-1. **La plantilla de `L-032` no usa el token.** El marcador existe y nadie lo llama — misma figura
-   que el `||` sin usuarios y que `VALORES` declarada y vacía. ⚠ `TOKENS.md` §178 registraba esa
-   lámina como «sin `gcba_ivr_*`» medido contra la plantilla viva el 16/08, y `HANDOFF_CODE` dice
-   que sumó cuatro tokens el 29/08. **Verificar contra la plantilla, no contra el documento.**
+1. ⛔ **DESCARTADA el 31/08** — *«la plantilla de `L-032` no usa el token»*. **El
+   `CORRIDAS.mapa_tokens` la cierra: el slide 3 pinta `gcba_ivr_llamados`.**
+   ⚠ La justificación original de esta hipótesis citaba `TOKENS.md` §178, **y esa cita estaba
+   vencida**: `BITACORA:16584-85` la deja vieja y el propio §178 se declara *«sin medir uno por
+   uno»*. **Se retira del prompt.**
 2. Una guarda de `leerFuente` no aplica el filtro sobre esa solapa.
 3. `ivr_vocero` resuelve a otra columna en tiempo de corrida.
 
@@ -96,6 +98,12 @@ gemelos que no lo tengan. **Filas de `MARCADORES`, no código.**
 ⭐ **Con relectura de la hoja**, como en la mudanza: un escritor que informa lo que escribió no
 verifica nada.
 
+⛔⛔ **ANTES de la Parte B: los huecos se justifican UNO POR UNO y por escrito.** El §P2 nombra
+**un** hueco deliberado y **son cuatro** —`ivr_campanias`, `ivr_75`, `ivr_75_pct`, `ivr_marque1`—;
+sólo el primero tiene justificación en `BITACORA:16621`. **Un hueco sin justificación escrita no se
+distingue de un olvido**, y el próximo que lo lea va a tener que adivinar de nuevo. Decidir y
+escribir los tres restantes es parte de esta Parte B.
+
 ⚠ `ivr_campanias` no tiene gemelo y el hueco es deliberado. **Ponerle `ambito=jm` igual** —pasa a
 contar sólo las campañas de JM, que es lo que la caja dice— pero **declararlo**, porque cambia el
 «3 campañas de IVR» de `L-031` y la lámina de GCBA se queda sin ese dato. Si el usuario prefiere
@@ -110,8 +118,9 @@ la ventana del equipo, **no** el default de `R-11`.
 
 **Responder:**
 
-- ¿`ivr_llamados` y `gcba_ivr_llamados` se separaron? ¿Suman 63 filas entre los dos, o 9 + 54?
-  ⚠ Con `'JM '` de por medio pueden dar 54 + 9, y **esa fila de más en GCBA es el hallazgo de P4**.
+- ¿`ivr_llamados` y `gcba_ivr_llamados` se separaron? **Tienen que dar 55 + 8 = 63.**
+  ⛔ **Corregido: no «9 + 54».** El comparador recorta espacios, así que `'JM '` queda en JM
+  (P4). **No hay fila de más en GCBA y P4 no deja pendiente.**
 - ¿`pauta_*` y `gcba_pauta_*` se separaron?
 - ¿Se movió algún marcador que no esté en la lista? Si sí, **parar**.
 - ¿Las láminas publican ahora números distintos donde antes publicaban el mismo?
@@ -213,3 +222,55 @@ no una traza nueva.**
 ⛔ **PARADO. No se tocó nada.** Y la conclusión operativa del §P1 se mantiene aunque por otro
 motivo: **agregarle `ambito=jm` a los siete todavía no está habilitado** — pero no porque falte el
 token en `L-032`, sino porque **no se sabe qué caja está publicando qué en la plantilla de hoy**.
+
+---
+
+## ⭐⭐ P1 · Cerrada la mitad estructural con `CORRIDAS.mapa_tokens` (31/08/2026)
+
+**El chequeo es dato registrado de la corrida, no una reconstrucción.** `mapa_tokens` de
+`jm-20260828-193948` — **239 tokens**, cada uno con su slide y su `objectId`:
+
+| token | slides |
+|---|---|
+| **`gcba_ivr_llamados`** | **3** |
+| `gcba_ivr_atendidos` · `gcba_ivr_at_pct` | 3 |
+| `ivr_llamados` · `ivr_at_pct` | **2** |
+| `ivr_atendidos` | 2 · 5 |
+| ⭐ `ivr_campanias` | **2 Y 3** |
+| `ivr_75` · `ivr_75_pct` · `ivr_marque1` | 5 |
+
+**Slide 2 = 21 tokens · slide 3 = 23 tokens**, y los 23 incluyen los tres `gcba_ivr_*`.
+
+⇒ ⛔ **La hipótesis (1) queda descartada: el slide 3 SÍ usa `gcba_ivr_llamados`.** Ese token lleva
+`ambito=gcba` → `ivr_vocero!=JM` → **debería dar 8 filas y da 63**. **La causa es (2) o (3): el
+filtro de dimensión no se está aplicando.**
+
+⭐ Y el mapa **confirma dos cosas más de una sola vez:** `ivr_campanias` está en **el slide 2 y en
+el 3**, que es exactamente el «3 campañas de IVR» repetido que se observó; y `diagDondeVivenLosIvr()`
+acierta en lo que midió — su límite era la **lista**, que no incluía los `gcba_ivr_*`.
+
+### ⛔ Dos citas documentales que el mapa desmiente — y la segunda la traje yo
+
+1. `TOKENS.md` §178 —*«sin `gcba_ivr_*`»*— **ya se sabía vieja**.
+2. ⛔⛔ **`HANDOFF_CODE` (29/08): *«`L-031` no cambió: los `ivr_*` de JM siguen sin caja en la
+   plantilla»*. FALSO** — el mapa pone `ivr_llamados`, `ivr_at_pct`, `ivr_atendidos` y
+   `ivr_campanias` en el **slide 2**. **Cité el handoff como evidencia y era otra referencia
+   envejecida**, un paso después de señalar el mismo error en `TOKENS.md`. **La cita no es la
+   fuente, tampoco cuando la cita es un handoff propio.**
+
+### ⚠ Lo que esto NO cierra, y qué falta
+
+**Por qué da 63.** El traductor `condicionesDeDimensiones_` (`Fuentes.gs:1976`) **falla fuerte** si
+la dimensión no está definida para `base|solapa` —devuelve `ok:false` con motivo—, y
+`digital|Directa IVR` **sí está definida**. Y un `ivr_vocero` sin `MAPEO` daría
+`«FALTA:…@filtro_campo_no_mapeado»`, no 63. ⇒ **Ninguno de los dos caminos conocidos produce «63 en
+silencio»**, así que el modo de falla todavía no tiene nombre.
+
+⚠ **Y el `mapa_tokens` que se leyó es el del 28/08, porque el artefacto de configuración en disco es
+del 30/08: la corrida del 31 no está.** El mapa contesta **qué caja es de qué token** —que es
+estructural y no cambió—, **no qué valor publicó el 31**.
+
+⭐ **El paso barato que lo cierra, y no necesita instrumento nuevo:** correr el testigo con la lista
+**extendida a los tres `gcba_ivr_*`**. `testigoDeMarcadores_` ya imprime `filtro N/M` por marcador,
+así que la traza va a decir **`8/63`** —el filtro se aplica— o **`— /63`** —no se aplica—, y eso
+distingue (2) de (3) de una.
