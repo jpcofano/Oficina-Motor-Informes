@@ -1225,6 +1225,22 @@ comentario se vuelve falso y el fallback empieza a publicar.**
   recortado** — es el modo de falla más caro de este repo (`X-41`, los `cc_*`, `R-15` addendum 1) y
   el único que no avisa.
 
+- ⭐⭐ **Y el MECANISMO, que es lo accionable y no la moraleja (31/08/2026): un hueco justificado
+  por el estado actual tiene que nombrar EL EVENTO que lo invalida, no la fecha.** *«Hoy es
+  observablemente un no-op: las tres filas cargadas son de `secco` y tienen `periodo_id` vacío»*
+  **no es vigilable por nada**. *«Deja de ser no-op cuando `CAMPANAS` tenga filas con `periodo_id`
+  cargado»* **sí lo es: un censo puede mirarlo**.
+  - **El caso, y costó nueve láminas duplicadas en un deck publicado:** ese comentario era cierto
+    el 18/08 y falso el 31/08, **porque cargar `CAMPANAS` —el trabajo previsto— era exactamente lo
+    que lo invalidaba**. Nadie lo vio venir porque la justificación describía **un estado**, no
+    **una condición**.
+  - ⭐ **La diferencia es de forma, no de prolijidad:** un estado hay que ir a mirarlo y acordarse
+    de que existe; **una condición se puede escribir como control**. Y mientras el control no
+    exista, al menos el que lee sabe **qué buscar**.
+  - ⚠ **Vale para todo lo que se escriba «por ahora»:** un fallback, una guarda ausente, un `TODO`.
+    Si no se puede nombrar el evento que lo invalida, **probablemente no se entendió por qué hoy no
+    molesta** — y eso es lo que hay que resolver antes de dejarlo pasar.
+
 **Un comentario que afirma un contrato es una premisa sin testigo.** `Reuniones.gs` declaraba
 *"`leerReuniones_()` … mismo contrato que `leerCampanas()`"*. **Era falso**: `leerReuniones_`
 devolvía una **lista** y `leerCampanas` un **mapa indexado** que **perdía filas repetidas en

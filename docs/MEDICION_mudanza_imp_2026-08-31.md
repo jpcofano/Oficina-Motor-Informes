@@ -127,9 +127,33 @@ separa del otro candidato:
 
 ⇒ **Si la caja muestra `1`, es `pauta_*`.**
 
-⭐⭐ **Y la causa ya está registrada en `CLAUDE.md` §4: las columnas `sd_pauta_*` son BOOLEANAS.**
-`SUMA` sobre un booleano da **1**, porque `Number(true) === 1`. No es un token sin cablear ni un
-ítem mal resuelto: **está sumando un checkbox**, o sea *si hubo pauta*, no *cuánta*.
+### ⛔ Corrección a la primera versión de este apartado, medida el 31/08
+
+**Escribí que las columnas son booleanas y que `SUMA` da 1 porque `Number(true) === 1`. Medido, eso
+es insuficiente y la mitad es falso.** En la solapa viva `digital|Seguimiento digital` (978 filas)
+las tres columnas son **flags `0`/`1`**, y los unos son **22 · 43 · 36**:
+
+| campo | col | valores |
+|---|---|---|
+| `sd_pauta_google` | T | `0` 927 · `1` **22** · vacío 29 |
+| `sd_pauta_meta` | V | `0` 912 · `1` **43** · vacío 23 |
+| `sd_pauta_prog` | U | `0` 918 · `1` **36** · vacío 24 |
+
+⇒ **`SUMA` sobre la solapa entera daría 22/43/36, no 1.** El `1/1/1` sale del **recorte por
+ventana**: dentro de 21–28 queda ~una campaña con la marca en cada plataforma.
+
+⭐⭐ **La causa real, entonces, no es el tipo: es que la columna es un FLAG.** `SUMA` sobre un flag
+**no falla — devuelve el conteo de verdaderos**, o sea *cuántas campañas tuvieron pauta*. Y la caja
+promete *«Total de contenidos implementados»*, que es **otra magnitud**. La columna no puede darla.
+
+⚠ **Generalización, con el barrido hecho y el cero declarado:** de los 220 marcadores, **exactamente
+6 hacen `SUMA` sobre un campo `sd_*`** — y son estos seis. **No hay otros**, así que el defecto está
+acotado.
+
+⛔⛔ **Y el barrido destapó un segundo defecto que no estaba buscado: los seis tienen `dimensiones`
+VACÍO.** `pauta_meta` y `gcba_pauta_meta` leen **la misma columna, sin filtro y sin corte** ⇒
+**publican el mismo número**. Son **seis tokens con tres valores**, y las láminas de JM y GCBA
+muestran lo mismo.
 
 ⚠ **Y ese mismo token ya tiene su propia historia de medición mal hecha**, que conviene no repetir:
 el hallazgo *«los seis `pauta_*` publican un cero falso»* **era falso** —publican `1`, con estado
@@ -160,12 +184,24 @@ publica como **acumulado rotulado**. No es un error corregible con un corte ni c
 
 ---
 
-## 6 · Lo que sigue
+## 6 · Lo que sigue — ⛔ el prompt del rótulo SE CANCELA
 
-**Un solo prompt chico, y no es de medición:** el `D-NN` de la decisión del 30/08, el rótulo
-«impresiones acumuladas de las campañas del período» en la lámina, y el aviso cuando la ventana
-cerró hace menos de dos días —por el asentamiento de DV360—.
+**Decisión del usuario, 31/08:** **no se hace** el `D-NN`, ni el rótulo en la lámina, ni el aviso de
+los dos días de DV360. La decisión del 30/08 —las dos láminas publican **acumulado**— **sigue en pie
+y está registrada acá y en `MEDICION_cableado_JDGAG_2026-08-30.md`**; lo que no se hace es **tocar la
+plantilla**, que es del equipo (`C-01`).
 
-⚠ El rótulo tiene una pregunta de propiedad abierta: la plantilla es del equipo (`C-01`), así que
-**o viaja en un token que el motor completa, o lo edita el equipo**. ⭐ Preferible lo primero, para
-que no se pierda con una plantilla nueva.
+⚠ **Consecuencia que hay que dejar dicha:** `L-031` y `L-032` publican acumulado **y no lo rotulan**.
+Quien lea el deck dentro de seis meses ve ~157 % y ~286 % contra el tablero **sin nada en la lámina
+que lo explique**. ⭐ **Es una OMISIÓN DECIDIDA, no un olvido**, y esa diferencia está anotada en
+`PENDIENTES` para que se pueda distinguir.
+
+**Dos prompts propios quedan, cuando el usuario los pida:**
+
+1. **IVR** — los siete `ivr_*` sin `ambito`, y el hallazgo 2 sin cerrar: por qué `gcba_ivr_llamados`
+   publica el global **teniendo `ambito=gcba`**. ⚠ **Parte 0 de sólo lectura primero**: si la causa
+   está en la plantilla, **agregar `ambito=jm` no alcanza**.
+2. **El duplicado de la campaña destacada** — `P0`, §3, con el conteo de láminas como criterio de
+   aceptación.
+
+**Y la lista parqueada (§5) queda tal como está, sin trabajarla.**

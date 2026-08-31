@@ -10170,3 +10170,58 @@ fecha**. Cargar `CAMPANAS` era el trabajo previsto.
 **Cómo se cierra:** que `itemsDeSeccion_` reciba el `periodo_id` de la corrida y filtre por él, como
 ya hace `filasDeCampana_`. ⚠ **Es código y mueve la ESTRUCTURA del deck, no un número** — prompt
 propio, con el conteo de láminas como criterio de aceptación.
+
+---
+
+## ⚠ P1 · Los seis `pauta_*` suman un FLAG, y JM y GCBA publican el mismo número (31/08/2026)
+
+**El síntoma:** las dos láminas de Resumen Ejecutivo publican *«Total de contenidos implementados ·
+Meta 1 · Google 1 · Programmatic 1»*, con **10/9/9** implementaciones medidas.
+
+⭐ **Se identificó sin abrir la plantilla, por la FORMA del síntoma:** `contenidos_total` y
+`gcba_contenidos_total` **no tienen fila en `MARCADORES`** —censo del 22/08, igual el 30/08—, así
+que publicarían el glifo de *no cableado*, **no un `1`**. ⇒ **un `1` sólo puede venir de
+`pauta_*`.** Descartar por la forma del síntoma es más barato y más seguro que inspeccionar.
+
+**Medido sobre `digital|Seguimiento digital` viva, 978 filas:**
+
+| campo | col | valores |
+|---|---|---|
+| `sd_pauta_google` | T | `0` 927 · `1` **22** · vacío 29 |
+| `sd_pauta_meta` | V | `0` 912 · `1` **43** · vacío 23 |
+| `sd_pauta_prog` | U | `0` 918 · `1` **36** · vacío 24 |
+
+⭐⭐ **La causa: la columna es un FLAG, y `SUMA` sobre un flag no falla — devuelve el CONTEO DE
+VERDADEROS.** O sea *cuántas campañas tuvieron pauta*, mientras la caja promete *«contenidos
+implementados»*: **otra magnitud, que la columna no puede dar**. El `1/1/1` sale del recorte por
+ventana, que deja ~una campaña marcada por plataforma.
+
+✅ **Barrido hecho, con el cero declarado:** de los 220 marcadores, **exactamente 6 hacen `SUMA`
+sobre un campo `sd_*`** — los tres `pauta_*` y los tres `gcba_pauta_*`. **No hay otros.**
+
+⛔⛔ **Y un segundo defecto que el barrido destapó sin buscarlo: los seis tienen `dimensiones`
+VACÍO.** `pauta_meta` y `gcba_pauta_meta` leen **la misma columna, sin filtro y sin corte**, así que
+**publican el mismo número**: son **seis tokens con tres valores**, y `L-031` y `L-032` muestran lo
+mismo. ⭐ Es la misma clase de hueco que el ámbito de los `imp_*` antes del 30/08, y se arregla igual
+—`dimensiones = ambito=jm` / `ambito=gcba`— **si la solapa admite el corte**, que hay que medir.
+
+---
+
+## ⚠ P2 · `L-031` y `L-032` publican acumulado y NO lo rotulan — es una OMISIÓN, no un olvido (31/08/2026)
+
+**Decisión del usuario, 31/08:** **no se hace** el prompt del rótulo. La decisión del 30/08 —las dos
+láminas publican **acumulado**, o sea el total de vida de las campañas activas en la ventana— **sigue
+en pie y está registrada** en `MEDICION_cableado_JDGAG_2026-08-30.md` y
+`MEDICION_mudanza_imp_2026-08-31.md`. **Lo que no se hace es tocar la plantilla**, que es del equipo
+(`C-01`).
+
+⛔ **Por eso esta línea existe:** quien lea el deck dentro de seis meses ve un número que da ~157 %
+(JM) y ~286 % (GCBA) contra el tablero **sin nada en la lámina que lo explique**. Necesita poder
+distinguir **una omisión decidida de un olvido**, y ésta es una omisión decidida.
+
+⚠ **Lo que quedó sin hacer, junto:** el `D-NN` en `PLAN.md`, el rótulo «impresiones acumuladas de
+las campañas del período», y el aviso en el reporte de corrida cuando la ventana cerró hace menos de
+dos días —por el asentamiento de DV360, medido el 30/08—.
+
+⭐ Si algún día se retoma: el rótulo conviene que **viaje en un token que el motor completa**, no
+editado a mano, para que no se pierda con una plantilla nueva.
