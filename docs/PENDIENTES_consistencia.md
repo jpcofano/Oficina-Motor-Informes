@@ -10441,7 +10441,7 @@ de *«no miré»*.
 
 ---
 
-## ⚠ P2 · `LAMINAS.escondida` es una foto del momento del SELLADO y nadie la refresca (31/08/2026)
+## ⚠ P2 · `LAMINAS.escondida` Y `orden_plantilla` son fotos del SELLADO y nadie las refresca (31/08/2026)
 
 **La columna se puebla al sellar** —`Sellador.gs:1038`, `esLaminaEscondida_(x.slide) ? 'sí' : ''`—
 **y ningún camino la vuelve a mirar.** Si alguien esconde o muestra una lámina en la plantilla
@@ -10462,3 +10462,49 @@ la misma familia que `orden_plantilla`: un dato reportado que se lee como si fue
 **Cómo se cierra:** o el sellador la refresca en cada pasada, o la columna se marca explícitamente
 como *«al momento del sellado»* en el seed y en `ESCRITORES.md`. **La primera cuesta más y la
 segunda no arregla nada** — es una decisión del usuario.
+
+### ⭐ Addendum 31/08 — `orden_plantilla` es el mismo caso, y se nota más
+
+**La misma columna-foto, con el mismo origen:** se puebla al sellar
+—`Sellador.gs`, `nuevas.push([id, informeId, '', x.orden, …])`— y **ningún camino la vuelve a
+mirar**. Cuando el equipo **reordena, inserta o borra** una slide, todas las de abajo se corren.
+
+**Medido por el usuario sobre el `.pptx` exportado de `secco`: 22 de 29 filas desfasadas** —`L-008`
+dice 8 y está en 9, y de `L-009` en adelante corren dos—. ⚠ *Medición sobre un archivo exportado;
+la verificación contra la plantilla viva la hace `diagOrdenPlantillaSecco()`.*
+
+⭐ **Se nota más que `escondida` por una razón estructural: una sola inserción desajusta TODAS las
+de abajo de una vez.** Esconder una lámina desajusta una fila; insertar una desajusta veintidós.
+
+### ⚠ Una precisión sobre el consumidor, porque la premisa circulaba mal
+
+Se dijo que *«`diagTokensDeLamina_` direcciona por `orden_plantilla`, así que hoy apunta mal en 22
+de 29 casos»*. **Medido: es impreciso en las dos mitades.**
+
+- `diagTokensDeLamina_(informeId, ordenPlantilla)` **recibe** la posición como argumento y hace
+  `slides[n-1]`. **No lee la hoja.** Apunta mal sólo si **quien la llama** saca el número de
+  `LAMINAS`.
+- Y **no tiene ningún llamador** — grepeado el 31/08: sólo su definición. Así que hoy **nadie
+  apunta mal automáticamente**; el riesgo es de una persona que lea la hoja y la llame a mano.
+
+⭐ **El único consumidor real de la columna la usa BIEN:** `verificarLaminas()`
+(`Sellador.gs`) la compara contra la posición real y la reporta como desajuste. **El detector ya
+existía** — lo que faltaba era el escritor que la corrigiera, y ése es
+`refrescarOrdenPlantillaSecco()`.
+
+### ⭐⭐ La forma barata de refrescar las dos juntas — dicha, no implementada
+
+**Salen de la misma pasada.** `verificarLaminas()` ya recorre las slides de las dos plantillas y
+**ya calcula `i + 1`**; leer `esLaminaEscondida_(slide)` en ese mismo `forEach` **no cuesta un
+recorrido más**. Concretamente:
+
+1. `enPlantilla[ancla]` gana un campo — `{ informe_id, orden, escondida }`;
+2. el bloque de `desajustes` gana una comparación más, del mismo formato que las dos que ya tiene;
+3. y `refrescarOrdenPlantilla_` pasa a escribir **dos** celdas en vez de una, con la misma
+   relectura.
+
+⛔ **No se implementó a pedido del usuario**, y queda como pendiente propio. ⚠ **Con una decisión
+adentro que no es de implementación:** si `escondida` se refresca sola, **una lámina que el equipo
+esconda deja de aparecer en la hoja como visible sin que nadie se entere** — que es justo lo que se
+quiere para `orden_plantilla` y **puede no serlo para `escondida`**, porque esconder una lámina es
+una decisión editorial y el registro es donde se ve. Eso lo decide el usuario.

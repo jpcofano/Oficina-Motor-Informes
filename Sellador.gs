@@ -1539,3 +1539,170 @@ function reasignarAnclasDeSecco() {
     return { de: p.viejo, a: p.nuevo, slide: p.pos, filtro: p.filtro };
   }), bajas: LAMINAS_ESCONDIDAS_A_BAJA_ };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-31_5` addendum — REFRESCAR `LAMINAS.orden_plantilla` CONTRA LA PLANTILLA VIVA
+ *
+ * ⭐⭐ **La medición NO se reimplementa: se le pide a `verificarLaminas()`**, que ya recorre las
+ * plantillas, resuelve cada slide **por su ancla** y compara contra la hoja
+ * (`Sellador.gs`, el bloque de `desajustes`). Escribir un segundo medidor sería el instrumento que
+ * reproduce lógica del motor y la reproduce peor — y, peor todavía, **dos criterios de «está
+ * desajustada» que el día que difieran corrigen cosas distintas.**
+ *
+ * ══ DÓNDE NACE EL DESFASAJE ═════════════════════════════════════════════════════════════════
+ *
+ * `orden_plantilla` **se puebla al sellar** —`Sellador.gs`, `nuevas.push([id, informeId, '',
+ * x.orden, …])`— y **ningún camino la vuelve a mirar**. Cuando el equipo **reordena, inserta o
+ * borra** una slide, todas las de abajo se corren y la hoja sigue diciendo lo de aquel día.
+ *
+ * ⭐ **Es exactamente la misma familia que `escondida`** (`PENDIENTES`, `P2`): las dos son
+ * **fotos del momento del sellado** de un objeto que el equipo mueve sin avisar. La diferencia es
+ * que ésta se nota más, porque una inserción corre **todas** las de abajo de una vez.
+ *
+ * ⚠ **Y las dos se refrescarían JUNTAS y barato**, porque salen de la **misma pasada**: recorrer
+ * las slides ya da `i + 1` y `esLaminaEscondida_(slide)` en el mismo `forEach`. `verificarLaminas()`
+ * hace ese recorrido **y ya calcula la posición**; le falta sólo leer el escondido. **No se
+ * implementa acá** —lo pidió el usuario así— pero queda dicho dónde entra: un solo campo más en
+ * `enPlantilla[ancla]` y un `desajuste` más, sin recorrer nada nuevo.
+ *
+ * ══ QUÉ SE TOCA, Y QUÉ NO ═══════════════════════════════════════════════════════════════════
+ *
+ * ⛔ **Se escribe SÓLO la celda de `orden_plantilla`**, nunca la fila. `upsertPorClave_` reescribe
+ * la fila entera con `(h in obj) ? obj[h] : ''` y **borraría toda columna que el objeto no traiga**
+ * — `filtro`, `notas`, `rol`, `alcance`. Acá se toca una celda por fila desajustada y nada más.
+ *
+ * ⛔ **Los desajustes de `informe_id` se REPORTAN y no se tocan.** Son otra cosa: significan que
+ * una lámina está anclada en la plantilla del informe equivocado, y eso no se arregla escribiendo
+ * un número.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Mide y **NO escribe**. Correr ésta primero: verificar contra la plantilla viva es su trabajo. */
+function diagOrdenPlantillaSecco() {
+  return refrescarOrdenPlantilla_('secco', false);
+}
+
+/** Mide y **ESCRIBE** las celdas desajustadas. Relee y falla en rojo si no quedó como se pidió. */
+function refrescarOrdenPlantillaSecco() {
+  return refrescarOrdenPlantilla_('secco', true);
+}
+
+function refrescarOrdenPlantilla_(informeId, aplicar) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('`LAMINAS.orden_plantilla` de `' + informeId + '` — ' +
+    (aplicar ? 'REFRESCO' : 'DIAGNÓSTICO (no escribe)') + ' · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* La medición sale de `verificarLaminas()`, que resuelve cada slide **por su ancla** contra las
+   * plantillas vivas. Es la función real del motor, no una copia de su criterio. */
+  var v = verificarLaminas();
+  if (!v || v.ok === false) {
+    Logger.log('⛔ ABORTA: `verificarLaminas()` no pudo correr — ' + ((v && v.motivo) || '(sin motivo)'));
+    return { ok: false, motivo: 'verificarLaminas' };
+  }
+
+  var reg = leerLaminas_();
+  if (!reg.ok) { Logger.log('⛔ ABORTA: ' + reg.motivo); return { ok: false, motivo: reg.motivo }; }
+
+  var deEsteInforme = {};
+  reg.filas.forEach(function (f) {
+    if (String(f.informe_id || '').trim() === informeId) {
+      deEsteInforme[String(f.lamina_id || '').trim()] = f;
+    }
+  });
+  var totalFilas = Object.keys(deEsteInforme).length;
+
+  var todos = v.desajustes || [];
+  var deOrden = todos.filter(function (d) {
+    return d.campo === 'orden_plantilla' && deEsteInforme[d.lamina_id];
+  });
+  var deInforme = todos.filter(function (d) { return d.campo === 'informe_id'; });
+
+  Logger.log('  filas de `' + informeId + '` en LAMINAS : ' + totalFilas);
+  Logger.log('  desajustadas en `orden_plantilla`  : ' + deOrden.length);
+  Logger.log('');
+
+  if (!deOrden.length) {
+    /* ⭐ **Cero es un resultado y se dice**, no un silencio: «ninguna desajustada» y «no se midió»
+     * se ven igual en un log sin conteo (`CLAUDE.md` §4). */
+    Logger.log('  ✅ ninguna fila desajustada — las ' + totalFilas + ' coinciden con la plantilla.');
+  } else {
+    Logger.log('  lamina_id   en la hoja → real en la plantilla');
+    deOrden.sort(function (a, b) { return Number(a.en_plantilla) - Number(b.en_plantilla); })
+      .forEach(function (d) {
+        Logger.log('     ' + d.lamina_id + '        ' + d.en_hoja + ' → ' + d.en_plantilla);
+      });
+  }
+
+  /* ⚠ Se nombran aunque no se toquen: un desajuste de `informe_id` significa que la lámina está
+   * anclada en la plantilla del otro informe, y eso no se arregla con un número. */
+  if (deInforme.length) {
+    Logger.log('');
+    Logger.log('  ⚠ ' + deInforme.length + ' desajuste(s) de `informe_id` — SE REPORTAN Y NO SE TOCAN:');
+    deInforme.forEach(function (d) {
+      Logger.log('     ' + d.lamina_id + ': la hoja dice `' + d.en_hoja + '`, la plantilla `' + d.en_plantilla + '`');
+    });
+  }
+
+  /* ⚠ Lo esperado después del alta del `_5`: las cuatro slides escondidas siguen ancladas y sin
+   * fila. **Es información verdadera y no hay que darles el alta de vuelta.** */
+  if ((v.anclas_sin_fila || []).length) {
+    var af = v.anclas_sin_fila;
+    Logger.log('');
+    Logger.log('  ⚠ ' + af.length + ' ancla(s) SIN FILA: ' + af.join(', '));
+    Logger.log('    Si son las escondidas que el `_5` dio de baja, es ESPERADO y correcto.');
+  }
+
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  ⓘ Diagnóstico: NO se escribió nada. Para aplicar: `refrescarOrdenPlantillaSecco()`.');
+    return { ok: true, aplicado: false, desajustes: deOrden, de_informe_id: deInforme };
+  }
+
+  if (!deOrden.length) return { ok: true, aplicado: false, desajustes: [] };
+
+  // ── La escritura: SÓLO la celda de `orden_plantilla` ────────────────────────────────────
+  var headers = reg.headers.map(function (h) { return String(h == null ? '' : h).trim(); });
+  var col = headers.indexOf('orden_plantilla') + 1;
+  if (!col) {
+    Logger.log('⛔ ABORTA: LAMINAS no tiene columna `orden_plantilla`.');
+    return { ok: false, motivo: 'sin columna' };
+  }
+  deOrden.forEach(function (d) {
+    reg.hoja.getRange(deEsteInforme[d.lamina_id]._fila, col).setValue(Number(d.en_plantilla));
+  });
+  SpreadsheetApp.flush();
+  Logger.log('');
+  Logger.log('  ✅ ' + deOrden.length + ' celda(s) escritas.');
+
+  /* ⭐⭐ **La relectura sale de la HOJA, no del retorno del escritor** (`CLAUDE.md` §4): *«pedí que
+   * quedara así»* y *«quedó así»* son dos afirmaciones, y sólo la segunda vale. En Sheets no es
+   * paranoia — la celda pasa por la interpretación automática de tipos. */
+  var reg2 = leerLaminas_();
+  var mal = [];
+  deOrden.forEach(function (d) {
+    var f = null;
+    reg2.filas.forEach(function (x) {
+      if (String(x.informe_id || '').trim() === informeId &&
+          String(x.lamina_id || '').trim() === d.lamina_id) f = x;
+    });
+    if (!f) { mal.push(d.lamina_id + ': la fila desapareció'); return; }
+    if (Number(f.orden_plantilla) !== Number(d.en_plantilla)) {
+      mal.push(d.lamina_id + ': pedí ' + d.en_plantilla + ' y la hoja dice `' + f.orden_plantilla + '`');
+    }
+  });
+
+  Logger.log('');
+  if (mal.length) {
+    Logger.log('  ⛔ RELECTURA FALLIDA en ' + mal.length + ':');
+    mal.forEach(function (m) { Logger.log('     ' + m); });
+    return { ok: false, motivo: 'relectura', mal: mal };
+  }
+  Logger.log('  ✅ RELEÍDO de la hoja: las ' + deOrden.length + ' quedaron como se pidió.');
+
+  Logger.log('');
+  Logger.log('  ⚠ Esto NO evita que vuelva a desfasarse: la columna se puebla al sellar y nadie la');
+  Logger.log('    refresca cuando el equipo reordena. Es una foto, igual que `escondida`.');
+
+  return { ok: true, aplicado: true, corregidas: deOrden.length, de_informe_id: deInforme };
+}
