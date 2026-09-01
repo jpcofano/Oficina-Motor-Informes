@@ -1920,10 +1920,32 @@ function textoFaltante_(token, resultado, conSimbolos) {
 /**
  * Los tokens distintos de una slide, ordenados. Mismo recorrido que el mapa.
  *
- * **Una slide escondida devuelve la lista vacía** (06/08). Hoy no puede pasar —ninguna slide
- * modelo de `jm` está escondida, medido— pero `duplicate()` copia el estado de la modelo, así
- * que el día que alguien esconda una modelo sus copias nacen escondidas y esto las saltea sin
- * que haya que acordarse. La guarda es barata; descubrirlo en un deck, no.
+ * **Una slide escondida devuelve la lista vacía** (06/08). La guarda es barata; descubrirlo en un
+ * deck, no.
+ *
+ * ⛔⛔ **JUSTIFICACIÓN VENCIDA el 31/08/2026 — se conserva tachada, no se borra.** Decía:
+ *
+ *   > *«Hoy no puede pasar —**ninguna slide modelo de `jm` está escondida**, medido— pero
+ *   > `duplicate()` copia el estado de la modelo, así que el día que alguien esconda una modelo
+ *   > sus copias nacen escondidas y esto las saltea sin que haya que acordarse.»*
+ *
+ * **Sigue siendo cierto de `jm` y ya no describe al motor.** Medido el 31/08: `secco` tenía
+ * **cuatro** modelos escondidas en `encuentro` (`L-004`…`L-007`), y para un «Uno a uno» entraban
+ * dos — o sea que **ese bloque copiaba dos láminas ocultas y no pintaba ninguna**. El `_5` las dio
+ * de baja, pero el motor sigue igual.
+ *
+ * ⭐ **Lo que fallaba no era la afirmación sino su FORMA:** describía **un estado de una
+ * plantilla** —hay que ir a mirarlo, y sólo de `jm`—. La **condición** se puede vigilar:
+ *
+ *   ⇒ **Esto deja de ser inofensivo en cuanto exista una lámina modelo escondida en CUALQUIER
+ *     informe**, no sólo en `jm`. Con `LAMINAS.escondida` poblado por el sellador, un censo puede
+ *     mirarlo; hoy esa columna es una foto del sellado y nadie la refresca (`PENDIENTES`, `P2`).
+ *
+ * ⚠ **Y la guarda de acá NO evita el costo, sólo el síntoma visible:** la expansión **no filtra
+ * por escondida** —`laminaEntraParaItem_` sólo evalúa `LAMINAS.filtro`—, así que una modelo
+ * escondida **se duplica igual** y paga su llamada a la API; lo único que esto ahorra es pintarla.
+ * Que la expansión las saltee es otro cambio, va en prompt propio y **mueve el comportamiento de
+ * `jm` también**.
  */
 function tokensDeSlide_(slide) {
   if (esLaminaEscondida_(slide)) return [];

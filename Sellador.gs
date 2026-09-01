@@ -1319,3 +1319,223 @@ function medirSiLaCopiaHeredaElAncla() {
   }
   return r;
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-31_5` Parte B — LAS DOS SLIDES DE `secco` CON IDS DE `jm` TOMAN IDS PROPIOS
+ *
+ * ⭐⭐ **Esto CONFIRMA `CLAUDE.md` §2, no la deroga.** La regla dice que `lamina_id` es **global y
+ * corrido**, que **la clave de unicidad es `lamina_id` sola** y que *«una tercera plantilla toma
+ * `L-052` en adelante»*. El caso de hoy es exactamente el que la regla previó: dos slides copiadas
+ * de `jm` a `secco` **con su ancla adentro** —`slide.duplicate()` copia las notas del orador—, así
+ * que llegaron con `L-052` y `L-053` puestos. **Toman los dos siguientes ids libres.**
+ *
+ * ⛔ **La alternativa era compartir el id entre los dos informes, y se descartó con motivo**
+ * (decisión del usuario, 31/08): **ocho lectores de `LAMINAS` indexan por `lamina_id` solo** —dos
+ * de ellos escriben y uno borra— y `siguienteIdLamina_` se quedaría sin invariante. Están
+ * censados en `PENDIENTES` con su reproductor, **dormidos y no arreglados**.
+ *
+ * ══ QUÉ HACE, EN ORDEN, Y POR QUÉ ESE ORDEN ═════════════════════════════════════════════════
+ *
+ *   1. **Backup de la plantilla de `secco`** — `C-01`: toda migración que escriba sobre una
+ *      plantilla crea backup antes. Si el backup falla, **no se toca nada**.
+ *   2. **Reescribe el ancla** de las dos slides. ⚠ **Reemplaza, no anexa** — y es la diferencia
+ *      con `sellarPlantilla`: allá la slide **no tiene** ancla y `appendText` es correcto; acá ya
+ *      tiene una, y anexar dejaría **dos anclas en la misma slide**, que es peor que ninguna.
+ *   3. **Alta de las dos filas** en `LAMINAS`, con el `filtro` **copiado de `jm`**.
+ *   4. **Baja de las cuatro filas escondidas** (`L-004`…`L-007`).
+ *
+ * **El ancla va ANTES que las filas** porque el ancla es la identidad: si fallara al revés,
+ * quedarían filas apuntando a slides que todavía dicen `L-052`.
+ *
+ * ⚠ **Lo que esta operación DEJA a propósito, y no es un error:** las cuatro slides escondidas
+ * siguen en la plantilla, ancladas, y quedan **sin fila en `LAMINAS`**. `verificarLaminas()` las
+ * va a nombrar como *«anclada sin fila»*. **Es información verdadera —cuatro slides que no se
+ * usan— y NO hay que «arreglarla» dándoles el alta de vuelta.**
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Los dos ids heredados de `jm` que hay que reasignar en `secco`, y el `filtro` que cada uno lleva
+ * **copiado de la fila de `jm` de la que salió la slide**. Verificado contra `LAMINAS` el 31/08:
+ * `jm|L-052` filtro vacío · `jm|L-053` filtro `tipo=Uno a uno` · `jm|L-035` = `secco|L-008`, que
+ * ya lo tiene igual.
+ *
+ * ⭐ **El filtro NO va vacío**, y eso es lo que hace que `encuentro` de `secco` quede con la misma
+ * estructura que `jm`: para un «Uno a uno» entran la portadilla y la del 1 a 1; para el resto, la
+ * portadilla y `L-008`. */
+var ANCLAS_HEREDADAS_SECCO_ = [
+  { viejo: 'L-052', filtro: '', nota: 'portadilla de encuentro — copiada de jm|L-052, filtro vacío: entra siempre' },
+  { viejo: 'L-053', filtro: 'tipo=Uno a uno', nota: 'bloque 1 a 1 — copiada de jm|L-053' }
+];
+
+/** Las cuatro filas escondidas que salen. Sus datos completos quedan en el commit del alta. */
+var LAMINAS_ESCONDIDAS_A_BAJA_ = ['L-004', 'L-005', 'L-006', 'L-007'];
+
+/**
+ * El botón. **Sin `_` y sin parámetros** (`CLAUDE.md` §2). ⚠ **ESCRIBE en la plantilla de `secco`
+ * y en `LAMINAS`.** Relee las dos y **falla en rojo si no quedó como se pidió**.
+ */
+function reasignarAnclasDeSecco() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('ALTA `encuentro` de `secco` — ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  var informe = leerInformes()['secco'];
+  if (!informe || !informe.plantilla_id) {
+    Logger.log('⛔ ABORTA: `secco` no tiene `plantilla_id`.');
+    return { ok: false, motivo: 'sin plantilla_id' };
+  }
+
+  var reg = leerLaminas_();
+  if (!reg.ok) { Logger.log('⛔ ABORTA: ' + reg.motivo); return { ok: false, motivo: reg.motivo }; }
+
+  /* ⭐ **El id lo calcula `siguienteIdLamina_`, nunca se elige a mano** — es el contador de
+   * `CLAUDE.md` §2, `max(lamina_id) + 1` **sobre la hoja entera**. Escribirlo a ojo es cómo se
+   * rompe la unicidad global que esta operación viene justamente a preservar. */
+  var siguiente = siguienteIdLamina_(reg.filas);
+  Logger.log('  siguiente id libre (siguienteIdLamina_): ' + formatearIdLamina_(siguiente));
+
+  var presentacion = SlidesApp.openById(informe.plantilla_id);
+  var slides = presentacion.getSlides();
+
+  // ── Localizar las dos slides POR SU ANCLA, nunca por posición ────────────────────────────
+  var plan = [];
+  ANCLAS_HEREDADAS_SECCO_.forEach(function (x) {
+    var encontradas = [];
+    slides.forEach(function (slide, i) {
+      if (anclaDeLamina_(slide) === x.viejo) encontradas.push({ slide: slide, pos: i + 1 });
+    });
+    if (encontradas.length !== 1) {
+      plan.push({ viejo: x.viejo, error: encontradas.length + ' slide(s) con ese ancla (se esperaba 1)' });
+      return;
+    }
+    plan.push({
+      viejo: x.viejo, filtro: x.filtro, nota: x.nota,
+      slide: encontradas[0].slide, pos: encontradas[0].pos,
+      nuevo: formatearIdLamina_(siguiente++)
+    });
+  });
+
+  var errores = plan.filter(function (p) { return p.error; });
+  if (errores.length) {
+    Logger.log('⛔ ABORTA — no se tocó nada:');
+    errores.forEach(function (e) { Logger.log('   ' + e.viejo + ': ' + e.error); });
+    return { ok: false, motivo: 'anclas no localizadas', errores: errores };
+  }
+
+  plan.forEach(function (p) {
+    Logger.log('  ' + p.viejo + ' (slide ' + p.pos + ') → ' + p.nuevo +
+      '  · filtro `' + (p.filtro || '(vacío)') + '`');
+  });
+
+  /* ⛔ **Backup ANTES de escribir una letra** (`C-01`). Si falla, la plantilla queda intacta. */
+  var carpeta = asegurarCarpetaBackups_();
+  if (!carpeta.ok) {
+    Logger.log('⛔ ABORTA (no se tocó la plantilla): backup — ' + carpeta.motivo);
+    return { ok: false, motivo: 'backup: ' + carpeta.motivo };
+  }
+  var backup = backupPlantilla_(informe.plantilla_id, presentacion.getName(), carpeta.carpeta);
+  if (!backup.ok) {
+    Logger.log('⛔ ABORTA (no se tocó la plantilla): backup — ' + backup.motivo);
+    return { ok: false, motivo: 'backup: ' + backup.motivo };
+  }
+  Logger.log('  ✅ backup: ' + (backup.nombre || backup.id || '(sin nombre)'));
+
+  // ── 1 · el ancla: REEMPLAZAR el id dentro de la línea, no anexar otra ────────────────────
+  var reAncla = new RegExp(ANCLA_LAMINA_PREFIJO_ + '\\s*L-\\d+', 'i');
+  plan.forEach(function (p) {
+    var shape = p.slide.getNotesPage().getSpeakerNotesShape();
+    if (!shape) { p.fallo = 'la slide no tiene placeholder de notas'; return; }
+    var antes = String(shape.getText().asString() || '');
+    var despues = antes.replace(reAncla, ANCLA_LAMINA_PREFIJO_ + ' ' + p.nuevo);
+    if (despues === antes) { p.fallo = 'el reemplazo no matcheó nada'; return; }
+    shape.getText().setText(despues);
+  });
+
+  var fallosAncla = plan.filter(function (p) { return p.fallo; });
+  if (fallosAncla.length) {
+    Logger.log('⛔ El ancla falló en ' + fallosAncla.length + ' slide(s). NO se toca LAMINAS.');
+    fallosAncla.forEach(function (p) { Logger.log('   ' + p.viejo + ': ' + p.fallo); });
+    Logger.log('   ⚠ La plantilla puede haber quedado A MEDIAS. El backup es ' + (backup.nombre || backup.id));
+    return { ok: false, motivo: 'ancla', backup: backup };
+  }
+
+  /* ⭐⭐ **La relectura sale de la plantilla, no del retorno del escritor** (`CLAUDE.md` §4). Un
+   * escritor que informa lo que escribió no verifica nada: *«se pidió reemplazar»* y *«quedó
+   * reemplazado»* serían la misma afirmación hecha dos veces por el mismo camino. */
+  SlidesApp.openById(informe.plantilla_id);   // fuerza el flush del lado de Slides
+  var releidas = SlidesApp.openById(informe.plantilla_id).getSlides();
+  var malRelectura = [];
+  plan.forEach(function (p) {
+    var real = anclaDeLamina_(releidas[p.pos - 1]);
+    if (real !== p.nuevo) malRelectura.push(p.viejo + ' → esperaba ' + p.nuevo + ', la slide dice `' + real + '`');
+  });
+  if (malRelectura.length) {
+    Logger.log('⛔ RELECTURA FALLIDA — NO se toca LAMINAS:');
+    malRelectura.forEach(function (m) { Logger.log('   ' + m); });
+    return { ok: false, motivo: 'relectura del ancla', backup: backup };
+  }
+  Logger.log('  ✅ ancla reescrita y RELEÍDA en las ' + plan.length + ' slides.');
+
+  // ── 2 · alta de las dos filas ───────────────────────────────────────────────────────────
+  var headers = reg.headers.map(function (h) { return String(h == null ? '' : h).trim(); });
+  var nuevas = plan.map(function (p) {
+    var obj = {
+      lamina_id: p.nuevo, informe_id: 'secco', seccion_id: 'encuentro',
+      orden_plantilla: p.pos, escondida: '', origen: '2026-08-31_5',
+      modo: '', itera_sobre: '', filtro: p.filtro, rol: 'motor',
+      cobertura: '', falta: '', alcance: '', tokens_equipo: '',
+      notas: p.nota + '. Reasignada desde `' + p.viejo + '` (heredado de jm al copiar la slide).'
+    };
+    return headers.map(function (h) { return (h in obj) ? obj[h] : ''; });
+  });
+  reg.hoja.getRange(reg.hoja.getLastRow() + 1, 1, nuevas.length, headers.length).setValues(nuevas);
+  SpreadsheetApp.flush();
+  Logger.log('  ✅ ' + nuevas.length + ' fila(s) agregadas a LAMINAS.');
+
+  // ── 3 · baja de las cuatro escondidas ───────────────────────────────────────────────────
+  /* ⚠ **De atrás para adelante**: `deleteRow` corre los índices de todo lo que está debajo. */
+  var reg2 = leerLaminas_();
+  var aBorrar = reg2.filas.filter(function (f) {
+    return String(f.informe_id || '').trim() === 'secco' &&
+           LAMINAS_ESCONDIDAS_A_BAJA_.indexOf(String(f.lamina_id || '').trim()) !== -1;
+  });
+  if (aBorrar.length !== LAMINAS_ESCONDIDAS_A_BAJA_.length) {
+    Logger.log('  ⚠ se esperaban ' + LAMINAS_ESCONDIDAS_A_BAJA_.length + ' filas para dar de baja y hay ' +
+      aBorrar.length + '. NO se borra ninguna — el alta SÍ quedó hecha.');
+    return { ok: false, motivo: 'baja: conteo inesperado', alta_hecha: true, backup: backup };
+  }
+  aBorrar.sort(function (a, b) { return b._fila - a._fila; })
+    .forEach(function (f) { reg2.hoja.deleteRow(f._fila); });
+  SpreadsheetApp.flush();
+  Logger.log('  ✅ ' + aBorrar.length + ' fila(s) dadas de baja: ' + LAMINAS_ESCONDIDAS_A_BAJA_.join(', '));
+
+  // ── 4 · relectura final de la hoja ──────────────────────────────────────────────────────
+  var reg3 = leerLaminas_();
+  var deSecco = reg3.filas.filter(function (f) {
+    return String(f.informe_id || '').trim() === 'secco' &&
+           String(f.seccion_id || '').trim() === 'encuentro';
+  });
+  Logger.log('');
+  Logger.log('  ── `encuentro` de `secco`, RELEÍDO de la hoja ──');
+  deSecco.forEach(function (f) {
+    Logger.log('     ' + f.lamina_id + '  orden ' + f.orden_plantilla +
+      '  filtro `' + (String(f.filtro || '') || '(vacío)') + '`');
+  });
+
+  var esperado = plan.map(function (p) { return p.nuevo; }).concat(['L-008']).sort();
+  var real = deSecco.map(function (f) { return String(f.lamina_id || '').trim(); }).sort();
+  var cierra = esperado.join(',') === real.join(',');
+  Logger.log('');
+  Logger.log(cierra
+    ? '  ✅ CIERRA: la sección queda con ' + real.join(', ') + ' — ninguna oculta, ninguna muerta.'
+    : '  ⛔ NO CIERRA: esperaba [' + esperado.join(', ') + '] y la hoja dice [' + real.join(', ') + ']');
+
+  Logger.log('');
+  Logger.log('  ⚠ ESPERADO Y CORRECTO: las cuatro slides escondidas siguen en la plantilla, ancladas');
+  Logger.log('    y ahora SIN fila. `verificarLaminas()` las va a nombrar «anclada sin fila».');
+  Logger.log('    Es información verdadera —cuatro slides que no se usan—. NO darles el alta de vuelta.');
+
+  return { ok: cierra, backup: backup, nuevas: plan.map(function (p) {
+    return { de: p.viejo, a: p.nuevo, slide: p.pos, filtro: p.filtro };
+  }), bajas: LAMINAS_ESCONDIDAS_A_BAJA_ };
+}
