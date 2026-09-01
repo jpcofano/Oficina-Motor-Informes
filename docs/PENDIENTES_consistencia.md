@@ -10567,3 +10567,81 @@ adentro que no es de implementación:** si `escondida` se refresca sola, **una l
 esconda deja de aparecer en la hoja como visible sin que nadie se entere** — que es justo lo que se
 quiere para `orden_plantilla` y **puede no serlo para `escondida`**, porque esconder una lámina es
 una decisión editorial y el registro es donde se ve. Eso lo decide el usuario.
+
+---
+
+## ⚠ P2 · La expansión DUPLICA las láminas escondidas — **medido: 2 copias muertas por corrida, y se pospone** (01/09/2026)
+
+**La expansión no filtra por escondida.** El único filtro del camino de duplicación es
+`laminaEntraParaItem_`, que evalúa **`LAMINAS.filtro`** y nada más; `esLaminaEscondida_` **no
+aparece en ninguna parte de la expansión**. Del otro lado, `tokensDeSlide_` corta seco
+—`if (esLaminaEscondida_(slide)) return [];`—.
+
+⇒ **Una lámina modelo escondida se duplica igual, paga su llamada a la API de Slides y no se
+pinta.** El síntoma no es un deck feo: **es tiempo**, en la etapa que se lleva el 62-88 % de la
+corrida.
+
+### La medición: de doce escondidas, **sólo dos cuestan**
+
+**Sólo las de sección `repetible` se duplican.** Las de `unica` y `agregado` emiten una lámina y
+punto.
+
+| lámina | informe | sección | modo | ¿se duplica? |
+|---|---|---|---|---|
+| `L-004`…`L-007` | secco | `encuentro` | repetible | ⛔ **ya no — dadas de baja el 31/08** |
+| **`L-023`** | secco | **`campana`** | **repetible** | ✅ **sí** |
+| `L-025` | secco | `semana_jm_conversacion` | unica | no |
+| `L-026` | secco | `otros_temas` | unica | no |
+| `L-027`, `L-028` | secco | `impacto_comunicacional` | unica | no |
+| `L-039` | jm | `m2` | agregado | no |
+| **`L-048`** | jm | **`campana`** | **repetible** | ✅ **sí** |
+| `L-050` | jm | `resumen_ejecutivo` | unica | no |
+
+```
+jm    · campana: 9 láminas × 1 campaña = 9 copias, 1 muerta (L-048)
+secco · campana: 8 láminas × 1 campaña = 8 copias, 1 muerta (L-023)
+⇒ DOS copias muertas por corrida, una por informe.
+```
+
+### ⭐⭐ Lo más útil que salió, y nadie lo buscó: el problema **se achicó solo**
+
+**El costo pasó de 6 copias muertas por corrida a 2 sin que nadie tocara la expansión.** Lo
+hicieron **dos arreglos vecinos**, cada uno por su propio motivo:
+
+1. **La baja de `L-004`…`L-007`** (`2026-08-31_5`): eran **cuatro modelos escondidas de una sección
+   repetible** —el caso peor— y dejaron de duplicarse **porque dejaron de ser modelos de nada**.
+2. **`D-53`**, el `periodo_id` de la sección de campaña: dejó `campana` en **un ítem** en vez de
+   dos, y las muertas de esa sección se redujeron a la mitad en los dos informes.
+
+⭐ **Ninguno de los dos se hizo pensando en esto.** Vale anotarlo porque invierte la lectura
+habitual: **un pendiente puede encogerse por trabajo que no lo nombra**, y medirlo antes de
+atacarlo es lo que evita escribir un arreglo para un problema que ya no está.
+
+### Por qué se POSPONE — decisión del usuario, 01/09/2026
+
+**Va después de las corridas de verificación**, por dos motivos y ninguno es el costo solo:
+
+- **Una lámina por informe no justifica un cambio que mueve el comportamiento de `jm`.** La
+  expansión copia 9 y 8 láminas, no cientos.
+- ⚠ **Y `L-048` está escondida por decisión del usuario** (`D-39`: *«una lámina puede quedar fuera
+  de alcance y eso no es ni un error ni una deuda»*). Que la expansión la saltee es lo correcto,
+  **pero es un cambio de comportamiento sobre una lámina que alguien decidió dejar afuera**, y
+  conviene decidirlo cuando no esté mezclado con corridas de verificación.
+
+⛔ **No es deuda olvidada: es deuda medida, chica y con fecha de revisión.** El trabajo que la
+cerraría es *«que la expansión saltee las escondidas»*, y va en **prompt propio** porque toca `jm`.
+
+### ⚠ Los dos límites de esta medición — son parte del registro, no una nota al pie
+
+1. **La lista de láminas escondidas es del usuario, medida sobre un `.pptx` exportado**, no contra
+   la plantilla viva. Lo que se verificó desde el repo es el **cruce** —sección y `modo` de cada
+   una—, no su estado escondido.
+2. **El snapshot de `LAMINAS` es del 31/08 por la mañana**, anterior al alta de `L-054`/`L-055`, a
+   la baja de las cuatro y al refresco de `orden_plantilla`.
+
+⇒ **El número es bueno para decidir posponer; NO lo es para citarlo dentro de una semana.**
+
+⭐ **Y por eso el cruce se movió al motor el 01/09:** `volcarInventarioDeTokens()` ahora lista las
+escondidas por informe **separadas por `modo` de sección**, leyendo el estado **de la slide**. La
+próxima vez que la pregunta aparezca, la contesta el motor contra la plantilla viva y estos dos
+límites no aplican.
