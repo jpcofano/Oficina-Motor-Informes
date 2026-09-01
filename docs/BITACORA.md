@@ -17050,3 +17050,5 @@ nada al respecto**.
   no configuración.
 
 - `D-56` — el CSV de casos es la fuente de verdad de la validación, no `MARCADORES.notas`. **18 marcadores** perdieron el `_revisar` el 01/09 (backup `_1130_levantar`). Dos hallazgos de criterio: los prefijos de `caso_id` son familias —un `cerrado` en un `C-` no valida— y `contradice` no dice **a quién** contradice. Y la regla que faltaba: **cruzar todos los registros que hablan del mismo hecho antes de aplicar** — con el cruce hecho antes, la mitad 1 habrían sido 58 filas y no 76.
+
+- `2026-09-01_1` Ministros — `ambito=ministros` propio y `emin_encuentros` cableada, **1 de las 10**. `V-49` reproducido sobre el fixture del 28/08 (**8 filas, 8 pares figura+fecha, 7 figuras**), lo que además resolvió la contradicción de la «cascada»: `RDV_otros_ministros` aporta **cero**. Addendum a `R-01`: la unicidad figura+fecha **ya es precondición dura del anclaje**. Y dos pendientes: `figura` no llega al ítem —trampa dormida hasta que alguien cargue un ministro al temario— y `Agenda funcionarios` declarada `fuente` sin serlo.

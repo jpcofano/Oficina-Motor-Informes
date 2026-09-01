@@ -25,6 +25,27 @@ falta deduplicar por día.
 cálculo en silencio: se reporta el conteo de violaciones y se decide con el equipo.
 Un doble registro no detectado infla los totales sin fallar.
 
+### ⭐⭐ Addendum 01/09/2026 — la regla NO hay que diseñarla ni verificarla aparte: **el motor ya la exige como PRECONDICIÓN DURA**
+
+`anclarEncuentros` (`Union.gs`) agrupa `rdv/RVD JM-CM - ES` por `figura + '||' + fecha` **antes de
+anclar nada**, y si encuentra un grupo con más de una fila **devuelve `ok: false` y no corre**,
+citando `R-01` por su nombre y diciendo cuántos grupos la violan.
+
+⇒ **La «verificación» que esta regla describe más arriba ya está implementada, y no como un
+chequeo opcional sino como una puerta**: sin `R-01` cumplida, **ninguna sección que itere el
+temario se expande**.
+
+⭐ **Por qué vale escribirlo:** al cablear `emin_encuentros` (01/09) se llegó a plantear cómo
+garantizar la unicidad `figura + fecha` que el caso `V-49` asume. **No hacía falta garantizarla —
+el motor no arranca si no se cumple.** Es la forma inversa del error habitual: no una regla sin
+mecanismo, sino **un mecanismo cuya regla no decía que existía**.
+
+⚠ **Y la consecuencia práctica que eso habilita, también medida:** como el par es único,
+**`CONTEO` de filas ES contar encuentros** — que es lo que el enunciado ya decía y ahora tiene su
+caso: la ventana de `V-49` (31/07-06/08, sin Jorge Macri) trae **8 filas y 8 pares distintos**
+sobre **7 figuras**, porque Sánchez Zinny tiene dos encuentros esa semana. **Un `CUENTA_DISTINTOS`
+sobre `figura` habría publicado 7 sin fallar.**
+
 ## R-02 — Criterio de fuente cruda (exclusión de solapas)
 
 **Enunciado:** una solapa es fuente cruda si el encabezado está en la fila 1 y no hay

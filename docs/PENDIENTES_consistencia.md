@@ -10645,3 +10645,103 @@ cerraría es *«que la expansión saltee las escondidas»*, y va en **prompt pro
 escondidas por informe **separadas por `modo` de sección**, leyendo el estado **de la slide**. La
 próxima vez que la pregunta aparezca, la contesta el motor contra la plantilla viva y estos dos
 límites no aplican.
+
+---
+
+## ⛔ P1 · `figura` NO llega al ítem de encuentro — trampa dormida que se despierta al cargar un ministro al temario (01/09/2026)
+
+**El ítem que arma `itemsDeSeccion_` para la sección `encuentro` lleva ocho campos** —`clave`,
+`etiqueta`, `opciones`, `id_cuenta`, `tipo`, `etapa`, `fecha`, `motivo`— **y `figura` no está**.
+Tampoco la trae el ítem del anclaje (`Union.gs`, `{ reunion, tipo, fecha, etapa, idCuenta, score… }`).
+
+⇒ **Un `SECCIONES.filtro = figura=Jorge Macri` leería `undefined` y no matchearía NINGUNA lámina,
+sin fallar.**
+
+### ⚠ Por qué es una trampa DORMIDA y no un bug de hoy
+
+Hoy no molesta, y el motivo es que **`REUNIONES` no tiene ningún ministro**: las 13 filas vivas son
+todas de JM. El anclaje parte del temario, así que los ministros **nunca llegan a la sección
+`encuentro`** y no hace falta filtrarlos.
+
+⛔ **El evento que la despierta está nombrado y es previsible: el día que alguien cargue un
+encuentro de ministro al temario.** Ese día la sección `encuentro` lo expande junto con los de JM
+—su `filtro` está vacío— y **`jm` sale con una lámina por ministro**. Quien intente atajarlo con un
+filtro por figura **va a escribir un filtro que no matchea nada y no falla**.
+
+⭐ Se escribe como **condición y no como estado**, que es lo que `D-55` y `CLAUDE.md` §4 piden:
+*«deja de ser inofensivo en cuanto `REUNIONES` tenga una fila cuya figura no sea Jorge Macri»*. Eso
+**un censo lo puede mirar**; «hoy no hay ministros en el temario» hay que ir a acordarse.
+
+### El precedente, que hace el arreglo casi mecánico
+
+**Es la tercera vez que el mismo hueco aparece**, y las dos anteriores están cerradas:
+
+- **`2026-08-21_11`** agregó `tipo` al ítem — un `filtro = tipo=Uno a uno` leía `undefined` y **no
+  matcheaba ninguna lámina, sin fallar**. Palabra por palabra el mismo modo de falla.
+- **`2026-08-22_25`** agregó `fecha`, porque `filasRdvDelTemario_` la necesitaba para separar dos
+  encuentros del mismo barrio.
+
+⇒ El arreglo son **dos líneas** con la forma ya escrita —`figura: e.figura || ''` en el ítem del
+generador, y propagarla desde el anclaje— más el `buscarMapeo` que ya existe
+(`Union.gs`: `buscarMapeo('rdv', SOLAPA_ANCLA_RDV_, 'figura')`, con la columna resuelta).
+
+⚠ **Y el comentario de los dos precedentes dice por qué NO se agregan campos «por las dudas»:**
+`asignaciones` viaja a `PropertiesService` en la corrida desatendida. **Se agrega éste y nada más.**
+
+### ⛔ No se hace acá, y el motivo
+
+El `2026-09-01_1` cableó `emin_encuentros`, que **no pasa por el temario ni por el anclaje** —la
+sección `ministros` es `modo = agregado` y no itera `REUNIONES`—. Tocar el ítem de `encuentro`
+**mueve el camino de `jm`**, que es otro riesgo y otro objetivo.
+
+Va con el paso que cargue ministros al temario, que es el mismo que necesitan los **ocho `emin_*`
+de métricas**: ésos salen de `digital` por `id_cuenta`, y sin anclaje no tienen cuenta.
+
+---
+
+## ⚠ P2 · `reuniones/Agenda funcionarios` está declarada `uso = fuente` y NO se puede usar (01/09/2026)
+
+**`SOLAPAS` la declara `uso = fuente`**, y eso fue lo que llevó a proponerla como fuente de los diez
+`emin_*` el 01/09. ⛔ **Decisión del usuario: no sirve — la figura se carga mal ahí y el match no se
+puede hacer.**
+
+⇒ El registro dice `fuente` sobre una solapa que **no es usable como tal**. Mientras siga así, el
+próximo que busque una fuente de funcionarios va a llegar a la misma propuesta.
+
+### ⭐ La medición queda anotada, y es deliberado: es más barato que volver a medirla
+
+Verificado el 01/09 contra `Seguimiento Digital 2026-08-28.zip` (`sha256` ✅ contra la tabla del
+README), en el libro **`Base reuniones - Digital - Call Center (2).xlsx`**, leído con `openpyxl`:
+
+- **encabezado en fila 2** —la fila 1 es una banda de grupos: *Información del encuentro · Mail ·
+  Comunicación Digital · Comunicación Directa*—;
+- **`D`** Fecha · **`G`** Entregados · **`H`** Aperturas · **`J`** Clics · **`Q`** Impresiones Meta ·
+  **`R`** Clics Meta;
+- ⚠ cuatro encabezados traen **salto de línea adentro** (`Alcance⏎Meta`, `Frecuencia⏎Meta`,
+  `Clics⏎Meta`, `CTR⏎Meta`) — el testigo se escribe con el salto colapsado (`R-10`);
+- **557 filas con datos**, 18 funcionarios, `Fecha` de **2025-07-19 a 2026-08-26**.
+
+⚠ **Y un dato que sigue valiendo aunque la solapa se descarte:** `BASES.reuniones.modo_periodo` es
+**`snapshot`**, así que **corta antes de toda la lógica de fechas**. Cualquier marcador sobre una
+solapa de esa base necesita **`ventana_ref = 'propia'`** (`D-52`) o publica los trece meses. Con
+557 filas contra las 29 de agosto 2026, el error sería de **19×**.
+
+### ⚠ Dos errores propios del barrido, anotados para que no se citen
+
+1. **Un primer barrido con un regex sobre `workbook.xml` perdió archivos** — el mismo lector que ya
+   había fallado en los `.xlsx` sueltos. Con `openpyxl`: **cuatro** zips tienen libros relevantes.
+2. **Después se contaron «7 libros con `Agenda funcionarios`» y son DOS.** La detección era **por
+   subcadena**, y matcheó la solapa `Funcionarios  Ministros` de la base `rdv` —**otra solapa**— como
+   si fuera la misma. Es *«dos cosas que se llaman parecido no son la misma cosa»* cometido por el
+   propio instrumento.
+
+### ⛔ Y un hallazgo colateral: `rdv` tiene una solapa que `SOLAPAS` no declara
+
+**`Funcionarios  Ministros`** (con dos espacios), en `RDV JM CM ES + funcionarios`. **No está en
+`SOLAPAS`.** Medido: 10 columnas —Figura, Barrio, EVENTO, día, FECHA, hora, dirección, One Page,
+STATUS, Observaciones—, **90 filas**, y sus fechas van de **2025-07-18 a 2025-08-13**: está muerta
+desde hace más de un año y **no tiene ninguna métrica**.
+
+⚠ **No sirve para ningún `emin_*`**, pero hay que registrarla: **una solapa sin declarar es
+invisible para todo censo**, y ésta se llama casi como el bloque que se estaba cableando — es
+exactamente la que alguien va a encontrar dentro de seis meses y va a suponer que era la fuente.
