@@ -17048,3 +17048,5 @@ nada al respecto**.
 - **Los 45 compartidos sin fila siguen sin cablear** — eso es otro objetivo.
 - **Los 13 tokens propios de `secco`** (10 de ellos `emin_*`) tampoco se tocaron: `R-20` es código,
   no configuración.
+
+- `D-56` — el CSV de casos es la fuente de verdad de la validación, no `MARCADORES.notas`. **18 marcadores** perdieron el `_revisar` el 01/09 (backup `_1130_levantar`). Dos hallazgos de criterio: los prefijos de `caso_id` son familias —un `cerrado` en un `C-` no valida— y `contradice` no dice **a quién** contradice. Y la regla que faltaba: **cruzar todos los registros que hablan del mismo hecho antes de aplicar** — con el cruce hecho antes, la mitad 1 habrían sido 58 filas y no 76.

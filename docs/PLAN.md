@@ -2900,6 +2900,89 @@ foto del sellado. **Lo que cambia es que la foto vieja se vería** — hoy no la
 ⭐ **Se escribe como decisión y no como nota porque el criterio vale para la próxima columna**, no
 sólo para estas dos: ante una columna-foto nueva, la pregunta es *«¿esto describe algo que alguien
 decidió?»*, y la respuesta elige el tratamiento.
+
+**`D-56` — `docs/casos_validacion_*.csv` es la fuente de verdad de si un marcador está validado.
+`MARCADORES.notas` no lo es.** (01/09/2026, **decisión del usuario dada en conversación**.)
+
+**Cuando los dos difieren, manda el CSV.**
+
+⭐ **El motivo, con las palabras del usuario:** *validar contra la base viva da un resultado
+distinto cada vez, porque **acumula y crece**. El CSV es un **registro fechado de una comparación
+que ya se hizo**; la base no.*
+
+⇒ Se levanta el `_revisar` de **todo marcador con un caso registrado como validado en el CSV**. No
+hay revisión token por token: **la lista sale del cruce**, no del criterio de quien la aplica.
+
+### Lo que se hizo, y el número al que se llegó
+
+**18 marcadores** perdieron el `_revisar` el 01/09/2026 (backup
+`_BACKUP_MARCADORES_2026-09-01_1130_levantar`), sobre los **82** que llevaban `SIN VALIDAR`.
+
+⚠ **El cruce NO es por igualdad de nombre.** `token_propuesto` es una **expresión**: trae listas
+con `/` y ` vs `, rangos `camp_env1-5`, llaves `{a,b}` y familias `pref_*`. **Por nombre exacto
+daban 11; el cruce completo dio 64 con algún caso**, y 18 con caso válido.
+
+### ⭐ Los dos hallazgos que cambiaron el número — son criterio, no anécdota
+
+**1 · Los prefijos de `caso_id` son FAMILIAS distintas, y el campo `estado` no las distingue.**
+
+| prefijo | qué es |
+|---|---|
+| **`V-`** | **validaciones** — 117 `exacto` |
+| `C-` | contradicciones / hallazgos — 60 `cerrado` |
+| `D-` | derivaciones · `A-`, `X-`, `S-` mixtos |
+
+⇒ **Un `cerrado` en un `C-` significa «el hallazgo se cerró», NO «el marcador está validado».**
+Distinguirlo bajó el cruce de 19 a 18 y sacó `enc_alcance` y cuatro `enc_*`, que tenían **cinco
+`cerrado` y ninguna validación**.
+
+**2 · `contradice` no dice A QUIÉN contradice.**
+
+`frecuencia` tiene **cuatro `V-` `exacto`** y dos `contradice`:
+
+- **`X-19`** → *«**error en el deck, no en el motor**»* — contradice al **equipo**.
+- **`X-32`** → *«`V-72` **NO ESTÁ IMPLEMENTADO**: el motor REDONDEA y el equipo TRUNCA»* —
+  contradice al **motor**.
+
+⇒ **Sólo el segundo bloquea**, y por eso `frecuencia` **no se levantó**. ⚠ Con los dos tratados
+igual, el resultado habría sido el mismo **por el motivo equivocado** — y en el caso simétrico
+(sólo un `X-19`) habría bloqueado un levantamiento correcto.
+
+### Las TRES clases de evidencia — y dos de ellas no son reproducir una cifra
+
+| clase | n | qué significa |
+|---|---|---|
+| **deck del equipo** | 10 | se reprodujo la cifra que el equipo publica |
+| ⚠ **identidad interna** | 5 | las partes suman el total. **Medido sobre el deck GENERADO, no sobre el del equipo** — lo dicen `V-111` y `V-113` en su propia nota |
+| ⚠ **ausencia acordada** | 3 | `V-120`: *«CERO FILAS, y el equipo TAMPOCO publica… coinciden en la AUSENCIA»*. **El motor no publica nada y el equipo tampoco: no hay cifra que reproducir** |
+
+⛔ **La clase va escrita en `notas` de cada fila**, y no es prolijidad: dentro de tres meses
+`validado` se lee como la primera de las tres.
+
+### ⛔⛔ La regla que faltaba, y es el motivo por el que hubo que revertir 18 filas 12 horas después
+
+**Antes de aplicar algo que cambia lo que se publica, hay que cruzar TODOS los registros que
+hablan del mismo hecho.**
+
+**El caso, y es de este mismo trabajo:** la mitad 1 —los `_revisar`— se decidió **mirando
+`MARCADORES.notas` sola**, y marcó **76 filas**. El CSV decía lo contrario para **18** de ellas.
+**Con el cruce hecho antes, habrían sido 58**, y no habría hecho falta escribir 18 filas para
+revertirlas medio día después.
+
+⭐ **Lo accionable, y se pregunta antes de escribir la primera celda:** *¿qué OTRO registro habla
+de este mismo hecho?* Acá eran dos —`notas` y el CSV— y **cada uno era suficiente para decidir por
+sí mismo**, que es justo lo que hace fácil no mirar el otro.
+
+⚠ **Y el corolario que lo vuelve barato:** el cruce **no cuesta una corrida**. Los dos registros
+estaban en disco; lo que faltó fue preguntarse si había un segundo. **Un trabajo que se puede
+deshacer con un backup igual costó dos escrituras y dos verificaciones.**
+
+### ⚠ Lo que `D-56` NO dice
+
+**No dice que los números sean correctos hoy.** Un caso del CSV es una comparación **fechada** y la
+base **acumula**: `D-56` afirma que **la validación ocurrió**, no que su resultado siga valiendo.
+Es exactamente por eso que el CSV manda —un registro fechado no cambia solo— y **no es un
+sustituto de volver a medir cuando el número importa**.
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
