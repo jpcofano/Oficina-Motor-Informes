@@ -9566,3 +9566,183 @@ function cablearGcbaIvr() {
   Logger.log('     marca está EN RESERVA desde el 25/08: «GCBA significa TODO».');
   return { ok: true, escritura: r, verificadas: verificadas };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-08-31_7` — LEVANTAR EL `_revisar` DE LOS MARCADORES QUE EL CSV DECLARA VALIDADOS
+ *
+ * ⭐⭐ **`docs/casos_validacion_*.csv` es la fuente de verdad de si un marcador está validado, y
+ * `MARCADORES.notas` no lo es** (`D-56`, decisión del usuario del 01/09/2026). Cuando difieren,
+ * **manda el CSV**: validar contra la base viva da un resultado distinto cada vez porque la base
+ * **acumula y crece**; el CSV es un **registro fechado de una comparación que ya se hizo**.
+ *
+ * ══ POR QUÉ LA LISTA ESTÁ ESCRITA ACÁ, QUE ES DEUDA Y SE DECLARA ═══════════════════════════
+ *
+ * Los CSV viven en **git** y el motor corre en **Apps Script**: no hay forma de que esta función
+ * los lea. La lista es el **resultado del cruce**, no un criterio propio, y por eso **cada fila
+ * lleva su `caso`** — que es lo que la vuelve verificable contra el CSV en cualquier momento y lo
+ * que impide que los dos registros vuelvan a divergir en silencio.
+ *
+ * ⚠ **El cruce que la produjo no fue por igualdad de nombre.** `token_propuesto` es una
+ * **expresión**: trae listas con `/` y ` vs `, rangos `camp_env1-5`, llaves `{a,b}` y familias
+ * `pref_*`. Un match exacto daba **11**; el cruce completo dio **64 con algún caso**, de los que
+ * éstos son los que tienen un caso `V-` en `exacto` y ningún `contradice` vigente.
+ *
+ * ⛔ **Y `contradice` no dice A QUIÉN contradice**, que es lo que dejó afuera a `frecuencia`:
+ * `X-19` contradice **al deck** —*«error en el deck, no en el motor»*— y `X-32` contradice **al
+ * motor** —*«el motor REDONDEA y el equipo TRUNCA»*—. Sólo el segundo bloquea.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Los 18, con el caso que los valida y **con qué clase de evidencia**. La tercera clase no
+ * estaba prevista y va escrita porque dentro de tres meses `validado` se lee como la primera:
+ *
+ *   · `deck del equipo`   — se reprodujo la cifra que el equipo publica.
+ *   · `identidad interna` — las partes suman el total. ⚠ Medido **sobre el deck generado, no
+ *     sobre el del equipo** (lo dicen `V-111` y `V-113` en su propia nota).
+ *   · `ausencia acordada` — ⚠ **el motor no publica nada y el equipo tampoco.** `V-120`:
+ *     *«CERO FILAS… coinciden en la AUSENCIA, que es un acuerdo y no un hueco»*. Es real, pero
+ *     **no es reproducir una cifra**: no hay cifra.
+ */
+var LEVANTAN_POR_CASO_ = [
+  { marcador: 'camp_aperturas',            caso: 'V-113', evidencia: 'identidad interna' },
+  { marcador: 'camp_clics',                caso: 'V-111', evidencia: 'identidad interna' },
+  { marcador: 'camp_entregados',           caso: 'V-113', evidencia: 'identidad interna' },
+  { marcador: 'camp_impresiones',          caso: 'V-111', evidencia: 'identidad interna' },
+  { marcador: 'camp_visualizaciones',      caso: 'V-111', evidencia: 'identidad interna' },
+  { marcador: 'enc_impresiones',           caso: 'V-80',  evidencia: 'deck del equipo' },
+  { marcador: 'ivr_75',                    caso: 'V-87',  evidencia: 'deck del equipo' },
+  { marcador: 'ivr_75_pct',                caso: 'V-87',  evidencia: 'deck del equipo' },
+  { marcador: 'ivr_marque1',               caso: 'V-87',  evidencia: 'deck del equipo' },
+  { marcador: 'u1_pre_google_clics',       caso: 'V-118', evidencia: 'deck del equipo' },
+  { marcador: 'u1_pre_google_ctr',         caso: 'V-119', evidencia: 'deck del equipo' },
+  { marcador: 'u1_pre_google_impresiones', caso: 'V-117', evidencia: 'deck del equipo' },
+  { marcador: 'u1_pre_meta_clics',         caso: 'V-115', evidencia: 'deck del equipo' },
+  { marcador: 'u1_pre_meta_ctr',           caso: 'V-116', evidencia: 'deck del equipo' },
+  { marcador: 'u1_pre_meta_impresiones',   caso: 'V-114', evidencia: 'deck del equipo' },
+  { marcador: 'u1_pre_prog_clics',         caso: 'V-120', evidencia: 'ausencia acordada' },
+  { marcador: 'u1_pre_prog_ctr',           caso: 'V-120', evidencia: 'ausencia acordada' },
+  { marcador: 'u1_pre_prog_impresiones',   caso: 'V-120', evidencia: 'ausencia acordada' }
+];
+
+/** Modo seco. ⛔ No escribe. */
+function diagLevantarRevisar() { return levantarRevisar_(false); }
+
+/** Aplica, con backup antes y relectura después. */
+function aplicarLevantarRevisar() { return levantarRevisar_(true); }
+
+function levantarRevisar_(aplicar) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('LEVANTAR `_revisar` por caso del CSV (`D-56`) — ' +
+    (aplicar ? 'APLICA' : 'MODO SECO') + ' · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe la hoja MARCADORES.'); return { ok: false }; }
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0];
+  var iM = h.indexOf('marcador'), iI = h.indexOf('informe_id'),
+      iF = h.indexOf('formato'), iN = h.indexOf('notas');
+  if (iM === -1 || iF === -1 || iN === -1) {
+    Logger.log('⛔ ABORTA: MARCADORES no tiene marcador/formato/notas.');
+    return { ok: false };
+  }
+
+  var porNombre = {};
+  for (var f = 1; f < datos.length; f++) {
+    var n = String(datos[f][iM] || '').trim();
+    if (n) porNombre[n] = { fila: f, informe_id: String(datos[f][iI] || '').trim(),
+                            formato: String(datos[f][iF] || '').trim(),
+                            notas: String(datos[f][iN] || '') };
+  }
+
+  var cambios = [], yaEstaban = [], sinFila = [];
+  LEVANTAN_POR_CASO_.forEach(function (x) {
+    var fila = porNombre[x.marcador];
+    if (!fila) { sinFila.push(x.marcador); return; }
+    if (fila.formato.slice(-8) !== '_revisar') { yaEstaban.push(x.marcador); return; }
+
+    /* ⛔⛔ **`SIN VALIDAR` se NEUTRALIZA, y sin esto el trabajo se revierte solo.**
+     * `aplicarRevisarASinValidar()` busca esa frase en `notas` y le vuelve a poner el sufijo:
+     * dejarla intacta significa que **la próxima corrida de la mitad 1 deshace esto**, sin fallar
+     * y sin que nadie lo note. Se reemplaza en vez de borrarse, para que la historia quede. */
+    var notas = fila.notas.replace(/SIN VALIDAR/g, 'VALIDADO');
+    var sello = 'Validado por ' + x.caso + ' (' + x.evidencia + ') — `_revisar` levantado el ' +
+      '01/09/2026 por `D-56`: el CSV de casos es la fuente de verdad.';
+    if (notas.indexOf(x.caso + ' (' + x.evidencia + ')') === -1) {
+      notas = (notas.trim() ? notas.trim() + ' · ' : '') + sello;
+    }
+
+    cambios.push({
+      marcador: x.marcador,
+      informe_id: fila.informe_id,   // ⚠ el ACTUAL, que para 168 filas ya es `*`
+      formato: fila.formato.slice(0, -8),
+      notas: notas,
+      _caso: x.caso, _ev: x.evidencia, _antes: fila.formato
+    });
+  });
+
+  Logger.log('  declarados en la lista : ' + LEVANTAN_POR_CASO_.length);
+  Logger.log('  a levantar             : ' + cambios.length);
+  Logger.log('  ya estaban sin sufijo  : ' + yaEstaban.length +
+    (yaEstaban.length ? ' → ' + yaEstaban.join(', ') : ''));
+  if (sinFila.length) Logger.log('  ⛔ SIN FILA en MARCADORES: ' + sinFila.join(', '));
+  Logger.log('');
+  cambios.forEach(function (c) {
+    Logger.log('     ' + c.marcador + '   `' + c._antes + '` → `' + c.formato +
+      '`   [' + c.informe_id + ']   ' + c._caso + ' · ' + c._ev);
+  });
+
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  ⓘ MODO SECO — no se escribió nada. Para aplicar: `aplicarLevantarRevisar()`.');
+    return { ok: true, aplicado: false, cambios: cambios };
+  }
+  if (!cambios.length) {
+    Logger.log('  ⓘ nada que levantar: los ' + yaEstaban.length + ' ya estaban. Idempotencia.');
+    return { ok: true, aplicado: false, cambios: [] };
+  }
+
+  var bk = backupMarcadores_('levantar');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se tocó ninguna fila): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
+
+  /* Va por `curarCamposMarcadores_`, que es la puerta declarada en `ESCRITORES.md` y **falla
+   * explícito** si una fila no está — en vez de escribir en la equivocada. */
+  var r = curarCamposMarcadores_(cambios.map(function (c) {
+    return { marcador: c.marcador, informe_id: c.informe_id, formato: c.formato, notas: c.notas };
+  }));
+  if (!r.ok) { Logger.log('  ⛔ ' + r.motivo); return r; }
+  SpreadsheetApp.flush();
+  Logger.log('  ✅ ' + r.cambios_escritos + ' celda(s) escritas.');
+
+  /* ⭐⭐ Relectura **de la hoja**, no del retorno del escritor (`CLAUDE.md` §4). */
+  var d2 = hoja.getDataRange().getValues();
+  var mal = [];
+  cambios.forEach(function (c) {
+    var fila = null;
+    for (var k = 1; k < d2.length; k++) {
+      if (String(d2[k][iM] || '').trim() === c.marcador) { fila = d2[k]; break; }
+    }
+    if (!fila) { mal.push(c.marcador + ': la fila desapareció'); return; }
+    var fmt = String(fila[iF] || '').trim();
+    if (fmt !== c.formato) mal.push(c.marcador + ': pedí `' + c.formato + '` y quedó `' + fmt + '`');
+    if (String(fila[iN] || '').indexOf('SIN VALIDAR') !== -1) {
+      mal.push(c.marcador + ': ⛔ `notas` TODAVÍA dice `SIN VALIDAR` — la mitad 1 lo revertiría');
+    }
+  });
+  if (mal.length) {
+    Logger.log('  ⛔ RELECTURA FALLIDA — el backup es `' + bk.nombre + '`:');
+    mal.forEach(function (m) { Logger.log('     ' + m); });
+    return { ok: false, motivo: 'relectura', backup: bk.nombre };
+  }
+  Logger.log('  ✅ RELEÍDO de la hoja: los ' + cambios.length + ' quedaron sin sufijo y sin');
+  Logger.log('     `SIN VALIDAR` en notas, así que la mitad 1 ya no los vuelve a marcar.');
+
+  Logger.log('');
+  Logger.log('  ⚠ Lo que esto NO dice: que los números sean correctos HOY. Un caso del CSV es una');
+  Logger.log('    comparación FECHADA; la base acumula y crece. Eso es `D-56` y es a propósito.');
+  return { ok: true, aplicado: true, levantados: cambios.length, backup: bk.nombre };
+}
