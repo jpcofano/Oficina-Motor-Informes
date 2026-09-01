@@ -10318,7 +10318,32 @@ la otra la conserva y la deja auditable— y la elige el usuario.
 
 ---
 
-## ⛔ P1 · El veredicto de las SUITES depende del line ending del checkout — dos bancos hardcodean `\r\n` (31/08/2026)
+## ✅ CERRADO · ⛔ P1 · El veredicto de las SUITES dependía del line ending del checkout (31/08/2026)
+
+> ✅ **CERRADO el 01/09/2026.** `.gitattributes` con `*.gs text eol=crlf`, árbol renormalizado
+> —**19 archivos convertidos**— y el patrón de dos líneas de `probar-asistente-temario.js`
+> reescrito para que **tome el salto del propio archivo**.
+>
+> **El antes y el después, con los dos motivos separados como se pidió:**
+>
+> | banco | antes (mezclado) | después (todo CRLF) | causa |
+> |---|---|---|---|
+> | `probar-periodo-id-campana.js` | ⛔ rojo | ✅ verde | **normalización** — pide `
+` y `Generador.gs` estaba en LF |
+> | `probar-asistente-temario.js` | ✅ verde | ⛔ rojo → ✅ verde | **normalización**, y después el arreglo del patrón |
+> | `probar-hojas-config.js` | ✅ verde *(desde el 31/08)* | ✅ verde | **normalización**, un día antes y por accidente |
+> | `probar-ambito-ivr.js` · `probar-desglose-como-fuente.js` | ⛔ rojo | ⛔ rojo | **defectos reales**, sin relación |
+>
+> ⭐ **SÍ se pudieron separar, y el criterio fue medir la causa en cada caso y no deducirla del
+> cambio de color:** los tres que se movieron parchean un `.gs` con un patrón que lleva el final de
+> línea adentro; los dos que no se movieron no parchean nada. **Ninguno cambió de estado por una
+> razón real.**
+>
+> ⚠ **Lo que el cierre NO cubre:** los otros dos patrones con `
+` literal siguen ahí. Hoy
+> funcionan **porque el árbol está normalizado**, o sea que **dependen del `.gitattributes` en vez
+> de ser robustos**. Se arreglan cuando se toquen; el `.gitattributes` los protege mientras tanto.
+
 
 **Dos bancos escriben el final de línea dentro del patrón de mutación:**
 

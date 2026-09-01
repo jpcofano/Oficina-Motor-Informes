@@ -314,11 +314,19 @@ console.log('\n7 · ⚠ los controles negativos');
 {
   /* 7.2 · ⭐⭐ El control negativo del DEFAULT de `eje`, que es la decisión que más cuesta si se
    * revierte: con un default, la misma reunión con y sin `|` contaría como dos. */
+  /* ⛔⛔ `2026-09-01` — **el patrón va por fragmento de UNA línea, y el salto se toma del propio
+   * archivo.** Antes era un bloque de dos líneas unido con `\n` literal, así que **no matcheaba
+   * sobre un archivo en CRLF** y este banco quedaba en rojo con el mensaje de «la mutación no
+   * ocurrió». Es la regla de `CLAUDE.md` §4 —*nunca por bloques con `\n`*— y su forma completa:
+   * **el final de línea es del archivo, nunca del que escribe la prueba.**
+   *
+   * ⭐ Lo destapó normalizar el árbol a CRLF: este banco pasó de verde a rojo **sin que cambiara
+   * una afirmación**, que es justo lo que el `.gitattributes` vino a hacer visible. */
   const conDefault = function (x) {
-    return x.archivo === 'Reuniones.gs'
-      ? x.texto.replace('  var partes = texto.split(\'|\');\n  var resto = texto.trim();',
-                        '  var partes = texto.split(\'|\');\n  var resto = texto.trim();\n  propuesta.eje = \'JM\';   // ROTO A PROPOSITO')
-      : x.texto;
+    if (x.archivo !== 'Reuniones.gs') return x.texto;
+    const ANCLA = '  var resto = texto.trim();';
+    const salto = x.texto.indexOf('\r\n') !== -1 ? '\r\n' : '\n';
+    return x.texto.replace(ANCLA, ANCLA + salto + '  propuesta.eje = \'JM\';   // ROTO A PROPOSITO');
   };
   conDefault.__archivo = 'Reuniones.gs';
 

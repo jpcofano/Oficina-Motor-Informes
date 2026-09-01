@@ -1,0 +1,22 @@
+# Finales de línea — normalización de los `.gs`
+#
+# ⛔⛔ Por qué existe, y está medido (31/08/2026, `PENDIENTES` P1):
+#
+# Tres bancos de `tools/` **hardcodean `\r\n` dentro del patrón** con el que parchean un `.gs`
+# para su caso negativo. El árbol estaba **mezclado** —7 archivos en CRLF, 3 con los dos, el
+# resto en LF— así que el veredicto de las suites **dependía del final de línea del archivo que
+# a cada banco le tocara**, no de su código.
+#
+# El caso que lo probó: al editar `Instalar.gs` con un script que tradujo el salto, el archivo
+# pasó de LF a CRLF y **`probar-hojas-config.js` se puso VERDE sin que cambiara una afirmación
+# ni una línea de lógica**. Las suites bajaron de 4 rojos a 3 solas.
+#
+# ⇒ `eol=crlf` y no `eol=lf`: es el final que el repo ya guardaba y el que esos patrones
+# asumen. Normalizar al otro los pondría a todos en rojo de una vez.
+#
+# ⚠ Esto ARREGLA la irreproducibilidad, no los patrones. Un patrón que lleva el final de línea
+# adentro sigue siendo frágil —la lección completa es *no uses ningún line ending en el
+# patrón*— y eso queda como pendiente propio. Lo que se cierra acá es que dos copias del mismo
+# commit den veredictos distintos.
+*.gs   text eol=crlf
+*.html text eol=crlf
