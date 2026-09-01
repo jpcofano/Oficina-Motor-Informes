@@ -171,10 +171,26 @@ console.log('\n═══ C bis · ⭐ los «sólo secco» se parten por VISIBILI
     'el reporte nombra el trabajo real, no el total');
   afirmar(/token_sin_fila/.test(texto) && !/^\s+token_oculto/m.test(texto),
     '`token_sin_fila` está en la lista de trabajo y `token_oculto` no');
-  afirmar(/secco: 1 → L-098/.test(texto),
+  afirmar(/secco: 1 escondida/.test(texto),
     '⭐ las láminas escondidas se listan por informe, leídas de la SLIDE y no de LAMINAS');
-  afirmar(/jm: 0/.test(texto),
+  afirmar(/jm: 0 escondida/.test(texto),
     'y el cero de `jm` se dice — «ninguna escondida» y «no se midió» se ven igual sin conteo');
+}
+
+console.log('\n═══ C quater · ⭐ las escondidas se cruzan por MODO de sección ═══');
+{
+  /* ⛔ **Sólo las de sección `repetible` se duplican.** Sin este cruce, «doce escondidas» se lee
+   * como doce problemas y son dos. El fixture tiene `L-098` **sin fila en `LAMINAS`**, que es el
+   * tercer caso: no se sabe su modo y hay que decirlo en vez de asumir que no cuesta. */
+  const texto = log.join('\n');
+  afirmar(/de sección REPETIBLE \(se duplican, copias muertas\)/.test(texto),
+    '⭐ el reporte separa las que se duplican de las que no');
+  afirmar(/L-098 \(sin fila en LAMINAS\)/.test(texto),
+    '⭐⭐ una escondida SIN fila se nombra como tal — no se la cuenta como inofensiva por defecto');
+  afirmar(/copias muertas por corrida/.test(texto),
+    'y da la fórmula: escondidas repetibles × ítems de su sección');
+  afirmar(/es la «opción 4» — prompt propio/.test(texto),
+    '⭐ y nombra el trabajo que lo cerraría, para que no se lea como deuda sin dueño');
 }
 
 console.log('\n═══ C ter · el contraste con la medición externa se declara ═══');

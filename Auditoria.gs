@@ -7862,14 +7862,40 @@ function volcarInventarioDeTokens() {
     return f + ' ' + famOc[f];
   }).join(' · '));
 
+  /* ⭐⭐ **Las escondidas, cruzadas por el `modo` de su sección — y ése es el dato que importa.**
+   *
+   * ⛔ **Sólo las de sección `repetible` se DUPLICAN.** La expansión no filtra por escondida
+   * (`laminaEntraParaItem_` sólo evalúa `LAMINAS.filtro`), así que una modelo escondida **se copia
+   * igual y paga su llamada a la API sin pintarse** — `tokensDeSlide_` le devuelve cero tokens.
+   * Las de `unica` y `agregado` emiten una lámina y punto: **están escondidas y no cuestan nada.**
+   *
+   * ⚠ Sin este cruce, «doce láminas escondidas» se lee como doce problemas, y son **dos**. */
   Logger.log('');
   Logger.log('     láminas ESCONDIDAS (leído de la slide, no de LAMINAS):');
+  var muertasPorCorrida = 0;
   ['jm', 'secco'].forEach(function (id) {
     var rr = resumen[id];
     if (!rr) return;
-    Logger.log('        ' + id + ': ' + rr.laminasEscondidas.length +
-      (rr.laminasEscondidas.length ? ' → ' + rr.laminasEscondidas.join(', ') : ''));
+    var repetibles = [], otras = [];
+    rr.laminasEscondidas.forEach(function (lid) {
+      var meta = porLamina[lid];
+      var modo = (meta && meta.modo) || '';
+      var etiqueta = lid + ' (' + (meta ? (meta.seccion_id || '?') + ', ' + (modo || 'sin modo')
+                                        : 'sin fila en LAMINAS') + ')';
+      if (modo === 'repetible') repetibles.push(etiqueta);
+      else otras.push(etiqueta);
+    });
+    Logger.log('        ' + id + ': ' + rr.laminasEscondidas.length + ' escondida(s)');
+    Logger.log('           ⛔ de sección REPETIBLE (se duplican, copias muertas): ' +
+      repetibles.length + (repetibles.length ? ' → ' + repetibles.join(' · ') : ''));
+    Logger.log('           ✅ de `unica`/`agregado` (no cuestan nada): ' +
+      otras.length + (otras.length ? ' → ' + otras.join(' · ') : ''));
+    muertasPorCorrida += repetibles.length;
   });
+  Logger.log('        ⇒ copias muertas por corrida = (escondidas repetibles) × (ítems de su');
+  Logger.log('          sección). Con un ítem por sección, hoy son ' + muertasPorCorrida + '.');
+  Logger.log('        ⚠ Que la expansión las saltee es la «opción 4» — prompt propio, y mueve');
+  Logger.log('          el comportamiento de `jm` también.');
 
   /* ⚠ **Testigo contra una medición externa, y por eso va FECHADO y con su fuente.** Son los
    * números que el usuario midió sobre el `.pptx` exportado el 31/08. **No son la verdad: son la
