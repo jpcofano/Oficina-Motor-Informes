@@ -1869,6 +1869,28 @@ var DIMENSIONES_ = {
        * Con la negacion cae en GCBA y se ve. */
       'digital|Directa IVR': 'ivr_vocero!=JM',
       'looker|resumen_metricas_dinamico': 'id_cuenta!~=JDGAG'
+    },
+    /* ⭐⭐ `2026-09-01_1` — **`ministros` tiene nombre propio aunque hoy sea el MISMO CONJUNTO que
+     * `gcba` sobre esta solapa**, y ésa es la decisión (usuario, 01/09/2026).
+     *
+     * ⛔ **Significan cosas distintas:** `gcba` es *«todo lo que no es JM»* —una negación, `D-33`—
+     * y `ministros` es *«los ministros»*. **Que hoy coincidan es un hecho de los datos, no una
+     * definición**, y por eso no se reusa el otro nombre: el día que dejen de coincidir, un
+     * `ambito=gcba` en la lámina de ministros seguiría resolviendo **sin fallar**.
+     *
+     * ⭐ **Y el hecho está medido**, sobre el fixture del 28/08 (`sha256` verificado):
+     * `rdv|RVD JM-CM - ES` trae **764 filas y 18 figuras, CERO vacías** — `Jorge Macri` más 17
+     * funcionarios. Así que hoy la negación no arrastra nada que no sea un ministro.
+     *
+     * ⚠ **Lo que la negación SÍ deja entrar, y por eso conviene el nombre propio:** el comentario
+     * de `gcba` de arriba lo dice — *«una fila sin el campo cargado cae acá»*. Hoy no hay ninguna;
+     * el día que la haya, sería un ministro para el motor.
+     *
+     * ⚠ **Se mantiene como negación y no como lista de 17 nombres**: una lista se desactualiza con
+     * cada cambio de gabinete y falla en silencio —el ministro nuevo no entra y nadie se entera—,
+     * mientras que la negación lo incluye solo. Es el mismo criterio que `D-33`. */
+    ministros: {
+      'rdv|RVD JM-CM - ES': 'figura!=Jorge Macri'
     }
   },
   plataforma: {

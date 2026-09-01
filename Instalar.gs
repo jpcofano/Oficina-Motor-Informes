@@ -9746,3 +9746,155 @@ function levantarRevisar_(aplicar) {
   Logger.log('    comparación FECHADA; la base acumula y crece. Eso es `D-56` y es a propósito.');
   return { ok: true, aplicado: true, levantados: cambios.length, backup: bk.nombre };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-09-01_1` — `emin_encuentros`: la PRIMERA fila de ministros
+ *
+ * ⭐⭐ **Es UNA sola de las diez, y eso es el resultado de medir, no un recorte de alcance.** Los
+ * diez `emin_*` de `L-012` se parten en dos mitades con costos muy distintos:
+ *
+ *   · **`emin_encuentros`** sale de `rdv/RVD JM-CM - ES` con su `dimensiones` y la ventana del
+ *     informe. `ministros` es `modo = agregado` y **NO itera `REUNIONES`** (`CLAUDE.md` §2), así
+ *     que **no necesita ni temario ni anclaje**. Es configuración pura y va acá.
+ *   · **Los OCHO de métricas** salen de `digital` **por `id_cuenta`**, que sale del anclaje, que
+ *     parte del temario. Con los ministros fuera de `REUNIONES` no hay cuenta y saldrían «FALTA».
+ *   · **`emin_lista`** ⛔ **no se puede hacer con la configuración de hoy**: `LISTA_CRUDA` toma
+ *     **un** `campo_logico` —`distintosDeCampo_`, sin plantilla— y además **deduplica**. Con
+ *     `figura` sola publicaría **7** donde hay **8 encuentros**, porque Sánchez Zinny tiene dos en
+ *     la misma semana. **La lámina muestra el encuentro, y una figura sin fecha no lo identifica.**
+ *
+ * ══ EL CONTROL, Y ES LO QUE HACE QUE ESTA FILA SEA DISTINTA DE UN CABLEADO NUEVO ═══════════
+ *
+ * ⭐ **`V-49` ya la validó y el número se REPRODUJO antes de escribirla.** Medido el 01/09 sobre
+ * `Seguimiento Digital 2026-08-28.zip` (`sha256` verificado contra la tabla del README), leyendo
+ * con `openpyxl`:
+ *
+ *     ventana 31/07-06/08, excluye Jorge Macri → **8 filas**, 8 pares (figura, fecha) distintos
+ *
+ * y `V-49` espera **8**. ⭐ **Sobre la ancla SOLA**: `RDV_otros_ministros` aporta **cero** en esa
+ * ventana, así que la *«cascada entre las dos solapas»* que la nota del caso llama necesaria **no
+ * lo es** — y la propia nota lo insinuaba: *«Sabor (03/08) está sólo en la ancla»*, y la ancla es
+ * `RVD JM-CM - ES` (`SOLAPA_ANCLA_RDV_`).
+ *
+ * ⚠ **Por eso NACE SIN `_revisar`**, que es la excepción y no la regla: `D-56` pide un caso del
+ * CSV para levantar la marca, y acá el caso **existe, es `exacto` y se reprodujo**. Si el conteo
+ * de la corrida no diera 8 para esa ventana, **el paso falló** — no se ajusta el número esperado.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Modo seco. ⛔ No escribe. */
+function diagCablearEminEncuentros() { return cablearEminEncuentros_(false); }
+
+/** Aplica, con backup antes y relectura después. */
+function cablearEminEncuentros() { return cablearEminEncuentros_(true); }
+
+function cablearEminEncuentros_(aplicar) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('`emin_encuentros` — ' + (aplicar ? 'ALTA' : 'MODO SECO') + ' · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* `CONTEO` de filas y **no `CUENTA_DISTINTOS`**, y está medido: la ventana de `V-49` trae **8
+   * filas** y **7 figuras**. El valor esperado es 8 ⇒ **la unidad es el encuentro, no la persona**.
+   * Un `CUENTA_DISTINTOS` sobre `figura` publicaría 7 sin fallar. */
+  var fila = {
+    marcador: 'emin_encuentros',
+    familia: 'emin',
+    informe_id: 'secco',
+    base_id: 'rdv',
+    solapa: 'RVD JM-CM - ES',
+    campo_logico: 'figura',
+    periodo_ref: '',
+    operacion: 'CONTEO',
+    valor_fijo: '',
+    filtro: '',
+    dimensiones: 'ambito=ministros',
+    formato: 'entero',
+    catalogo: '',
+    separador: '',
+    notas: 'Validado por V-49 (deck del equipo, ventana 31/07-06/08, valor 8) — reproducido el ' +
+      '01/09/2026 sobre el fixture del 28/08 con sha256 verificado: 8 filas, 8 pares ' +
+      '(figura, fecha) distintos, sobre la ancla SOLA. RDV_otros_ministros aporta cero, asi que ' +
+      'la cascada que la nota de V-49 llama necesaria no lo es. CONTEO y no CUENTA_DISTINTOS: la ' +
+      'unidad es el ENCUENTRO (8), no la persona (7) — Sanchez Zinny tiene dos en la semana.'
+  };
+
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe la hoja MARCADORES.'); return { ok: false }; }
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0].map(function (h) { return String(h == null ? '' : h).trim(); });
+  var iM = headers.indexOf('marcador');
+  if (iM === -1) { Logger.log('⛔ ABORTA: MARCADORES no tiene columna `marcador`.'); return { ok: false }; }
+
+  /* ⚠ **La checklist de `CLAUDE.md` §2 antes de dar un alta por terminada**: ninguna columna del
+   * objeto puede faltar en la hoja, o el valor se pierde sin fallar. */
+  var faltan = Object.keys(fila).filter(function (k) { return headers.indexOf(k) === -1; });
+  if (faltan.length) {
+    Logger.log('⛔ ABORTA: MARCADORES no tiene la(s) columna(s): ' + faltan.join(', '));
+    return { ok: false, motivo: 'columnas faltantes' };
+  }
+
+  for (var f = 1; f < datos.length; f++) {
+    if (String(datos[f][iM] || '').trim() === fila.marcador) {
+      /* ⭐ Idempotencia, y **no se pisa lo que ya está**: si la fila existe, alguien la escribió y
+       * esa decisión no vive en ningún otro lado (`CLAUDE.md` §4). */
+      Logger.log('  ⓘ `emin_encuentros` YA TIENE FILA (fila ' + (f + 1) + '). No se toca nada.');
+      Logger.log('     Para cambiarla hay que decidir qué se pisa, y eso no es un alta.');
+      return { ok: true, aplicado: false, motivo: 'ya existe' };
+    }
+  }
+
+  Logger.log('  fila propuesta:');
+  headers.forEach(function (h) {
+    if (h in fila && String(fila[h]) !== '') {
+      Logger.log('     %-14s'.replace('%-14s', (h + '              ').slice(0, 14)) + ' ' +
+        String(fila[h]).slice(0, 96));
+    }
+  });
+  Logger.log('');
+  Logger.log('  ⭐ control: `V-49` espera 8 para la ventana 31/07-06/08. Reproducido en fixture.');
+
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  ⓘ MODO SECO — no se escribió nada. Para aplicar: `cablearEminEncuentros()`.');
+    return { ok: true, aplicado: false, fila: fila };
+  }
+
+  var bk = backupMarcadores_('emin');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se escribió nada): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
+
+  hoja.appendRow(headers.map(function (h) { return (h in fila) ? fila[h] : ''; }));
+  SpreadsheetApp.flush();
+
+  /* ⭐⭐ Relectura **de la hoja**, campo por campo. En Sheets no es paranoia: la celda pasa por la
+   * interpretación automática de tipos (`CLAUDE.md` §4). */
+  var d2 = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES').getDataRange().getValues();
+  var puesta = null;
+  for (var k = 1; k < d2.length; k++) {
+    if (String(d2[k][iM] || '').trim() === fila.marcador) { puesta = d2[k]; break; }
+  }
+  if (!puesta) {
+    Logger.log('  ⛔ RELECTURA FALLIDA: la fila no aparece. Backup: `' + bk.nombre + '`');
+    return { ok: false, motivo: 'relectura: no aparece', backup: bk.nombre };
+  }
+  var mal = [];
+  Object.keys(fila).forEach(function (h) {
+    var real = String(puesta[headers.indexOf(h)] == null ? '' : puesta[headers.indexOf(h)]).trim();
+    if (real !== String(fila[h]).trim()) mal.push(h + ': pedí `' + fila[h] + '` y quedó `' + real + '`');
+  });
+  if (mal.length) {
+    Logger.log('  ⛔ RELECTURA FALLIDA — backup `' + bk.nombre + '`:');
+    mal.forEach(function (m) { Logger.log('     ' + m); });
+    return { ok: false, motivo: 'relectura', backup: bk.nombre };
+  }
+
+  Logger.log('  ✅ fila escrita y RELEÍDA campo por campo.');
+  Logger.log('');
+  Logger.log('  ⚠ Lo que falta de la lámina, y NO es esto: `emin_lista` y los OCHO de métricas.');
+  Logger.log('    Los ocho necesitan que los ministros entren al TEMARIO —hoy no están— y');
+  Logger.log('    `emin_lista` necesita que `LISTA_CRUDA` componga figura+fecha. Los dos son código.');
+  return { ok: true, aplicado: true, backup: bk.nombre };
+}
