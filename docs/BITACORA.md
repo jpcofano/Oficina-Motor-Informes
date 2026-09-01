@@ -16946,3 +16946,4 @@ mismo, **no la granularidad**.
 ⚠ Y `LAMINAS.itera_sobre` está **vacío en las 53 filas**, así que el bloque «N láminas ITERAN» del
 censo **nunca se disparó**: `lamina_itera` sale de `SECCIONES` vía `seccion_id` (`D-37`) y la
 columna cruda va **al lado, vacía, como testigo del hueco**.
+- `2026-08-31_6` Parte A — modo seco de las dos mitades del cierre, con backup de `MARCADORES` y la regla de que un backup fallido aborta sin escribir. No aplica nada.

@@ -10351,6 +10351,24 @@ la escribió un caso en que el patrón asumía **LF** sobre un archivo **CRLF**.
 **CRLF**. ⇒ **La lección completa no es «no uses `\n`»: es NO USES NINGÚN LINE ENDING en el
 patrón** — el final de línea es del archivo, nunca del que escribe la prueba.
 
+### ⭐⭐ Addendum 31/08 · el caso que lo prueba: un banco pasó de ROJO a VERDE sin tocar una afirmación
+
+Al editar `Instalar.gs` con un script de Python, el archivo **pasó de LF a CRLF** —efecto
+colateral del `io.open(...,'w')`, que en Windows traduce el salto—. Consecuencia inmediata:
+**`probar-hojas-config.js` se puso VERDE**, y las suites bajaron de 4 rojos a 3.
+
+⛔ **No cambió ninguna afirmación, ninguna lógica y ningún dato.** Cambió el final de línea del
+archivo que el banco parchea, y con él su veredicto. **Es la demostración de que el veredicto de
+las suites hoy no depende sólo del código.**
+
+⚠ Y el árbol quedó **mezclado**, lo que empeora el diagnóstico: `Instalar.gs` en CRLF,
+`Generador.gs` y `Auditoria.gs` en LF, y `Sellador.gs` **con los dos**. Un banco que parchee
+cualquiera de ellos da un veredicto distinto según a cuál le toque.
+
+⭐ **Esto sube la prioridad de la decisión de fondo** —normalizar los `.gs` con `.gitattributes`
+o no—: mientras conviva la mezcla, **cualquier medición de «cuántos bancos están en rojo» es
+irreproducible entre dos copias del mismo commit.**
+
 **Cómo se cierra:** sacar el `\r\n` de los tres patrones y anclar por fragmento de una línea. ⚠ Y
 la pregunta de fondo, que es del usuario y no de la implementación: **si el repo debería normalizar
 los `.gs` a un solo line ending** (`.gitattributes`), o si convivir con los dos es aceptable

@@ -7029,7 +7029,13 @@ function quitarRevisarDeMetaYGoogle() {
  * el sufijo se retira **cuando un caso `V-` valide la fila**, y no antes. Sacarlo es editar una
  * celda de `MARCADORES` — sin `clasp push` (`D-01`).
  */
-function aplicarRevisarASinValidar() {
+/** Modo seco: lista qué filas tocaría y **para**. ⛔ No escribe. Sin `_` y sin parámetros. */
+function diagRevisarASinValidar() { return revisarASinValidar_(false); }
+
+/** Aplica. Hace **backup de `MARCADORES` antes**, y si el backup falla no toca nada. */
+function aplicarRevisarASinValidar() { return revisarASinValidar_(true); }
+
+function revisarASinValidar_(aplicar) {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
   if (!hoja) { Logger.log('FALLÓ: no existe la hoja MARCADORES.'); return { ok: false }; }
 
@@ -7070,9 +7076,39 @@ function aplicarRevisarASinValidar() {
     Logger.log('  ⚠ con `formato` vacío, se les puso `texto_revisar`: ' + vacios.join(', '));
   }
 
+  /* ⛔⛔ **EL CORTE DEL MODO SECO — y esta mitad es la delicada de las dos.**
+   *
+   * Estas 76 filas **cambian lo que publica `jm` HOY**: marcan como sospechosos números que hoy
+   * salen limpios, en un informe **que está en producción**. La otra mitad —las `*`— no mueve
+   * ningún número de `jm`: agrega `secco`. **Son dos objetivos y van en commits separados**, para
+   * que si al aplicar ésta aparece algo raro se pueda revertir sin tocar la otra. */
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  ⓘ MODO SECO — no se escribió nada. Las ' + cambios.length + ' filas de arriba son');
+    Logger.log('    las que tocaría. Para aplicar: `aplicarRevisarASinValidar()`.');
+    return { ok: true, aplicado: false, cambios: cambios };
+  }
+
+  if (!cambios.length) {
+    /* ⭐ Una corrida que no hizo nada **falla**, no informa cero (`CLAUDE.md` §4): «ya estaba
+     * aplicado» es idempotencia legítima, pero presentarla como éxito es cómo una tanda se lee
+     * como ejecutada sin haberlo sido. */
+    Logger.log('  ⓘ nada que aplicar: las ' + yaEstaban.length + ' que llevan `SIN VALIDAR` ya');
+    Logger.log('    tienen el sufijo. Es idempotencia, no un cambio.');
+    return { ok: true, aplicado: false, cambios: [] };
+  }
+
+  var bk = backupMarcadores_('revisar');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se tocó ninguna fila): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
+
   var r = curarCamposMarcadores_(cambios);
   if (!r.ok) { Logger.log('  ❌ ' + r.motivo); return r; }
   Logger.log('  ✅ ' + r.cambios_escritos + ' celda(s) escritas.');
+  r.backup = bk.nombre;
   return r;
 }
 
@@ -7446,7 +7482,88 @@ function tokensDePlantilla_(informeId) {
   return Object.keys(mapa);
 }
 
-function aplicarAsteriscoCompartidos() {
+/* ⚠ El matiz de `m2_campanias` al pasar a `*`, medido el 31/08/2026. Va en `notas` de su fila
+ * porque es donde lo va a leer quien mire ese número, no en un documento aparte. */
+var NOTA_M2_CAMPANIAS_SECCO_ =
+  '2026-08-31: al pasar a `*` resuelve también en secco. En jm su número NO se usa —el banner de ' +
+  'Campañas de L-038 lo escribe el equipo a mano (25/08)— y en secco NADIE declaró nada al ' +
+  'respecto. La fila está sana (fuente, operación y dimensiones verificadas; m2_camp_lista es su ' +
+  'identidad interna); lo que no está declarado es qué hace ese número del lado de secco.';
+
+/**
+ * Copia de `MARCADORES` dentro de la misma planilla, con fecha y hora en el nombre.
+ *
+ * ⛔⛔ **Existe porque `MARCADORES` no tiene `SEED_*` y no lo va a tener** (`D-17`): **la hoja es
+ * la única copia que existe**. Un backup de plantilla va a Drive porque la plantilla es un
+ * archivo; una hoja de registro se respalda **al lado**, que es donde alguien la va a buscar.
+ *
+ * ⚠ **La copia se esconde**: son hojas de respaldo, no de trabajo, y una pestaña más a la vista
+ * por cada corrida vuelve ilegible la planilla que el equipo usa.
+ */
+function backupMarcadores_(motivo) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var hoja = ss.getSheetByName('MARCADORES');
+    if (!hoja) return { ok: false, motivo: 'no existe la hoja MARCADORES' };
+    var sello = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HHmm');
+    var nombre = '_BACKUP_MARCADORES_' + sello + (motivo ? '_' + motivo : '');
+    var previa = ss.getSheetByName(nombre);
+    if (previa) ss.deleteSheet(previa);
+    var copia = hoja.copyTo(ss).setName(nombre);
+    copia.hideSheet();
+    SpreadsheetApp.flush();
+
+    /* ⭐ **Se relee: un backup que no se puede leer no es un backup.** Y se compara la cuenta de
+     * filas contra el original — «se creó la hoja» y «tiene los datos» son dos afirmaciones. */
+    var verif = ss.getSheetByName(nombre);
+    if (!verif) return { ok: false, motivo: 'la copia no aparece en la planilla' };
+    if (verif.getLastRow() !== hoja.getLastRow()) {
+      return { ok: false, motivo: 'la copia tiene ' + verif.getLastRow() + ' fila(s) y el original ' +
+        hoja.getLastRow() };
+    }
+    return { ok: true, nombre: nombre, filas: verif.getLastRow() };
+  } catch (e) {
+    return { ok: false, motivo: String(e && e.message ? e.message : e) };
+  }
+}
+
+/**
+ * ⭐ Los DOS diagnósticos, en el mismo orden que el wrapper que aplica. **No escribe nada.**
+ *
+ * ⛔ **Y el orden no es de procedimiento, es de contenido:** migrar a `*` antes de poner los
+ * `_revisar` **duplica la superficie de números sin validar y sin marca** — los mismos números
+ * pasarían a publicarse también en `secco`, y seguirían sin el sufijo que los declara sospechosos.
+ */
+function diagCierreParaGenerar() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('MODO SECO de las DOS mitades — ' + new Date().toISOString());
+  Logger.log('⛔ No se escribe NADA. Son dos objetivos y van en commits separados.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('');
+  Logger.log('── MITAD 1 · los `_revisar` (cambia lo que publica `jm` HOY) ──────────');
+  var a = revisarASinValidar_(false);
+  Logger.log('');
+  Logger.log('── MITAD 2 · las `*` (no mueve ningún número de `jm`: agrega `secco`) ─');
+  var b = asteriscoCompartidos_(false);
+
+  Logger.log('');
+  Logger.log('══ LAS DOS CIFRAS, JUNTAS ════════════════════════════════════════════');
+  Logger.log('  `_revisar` por poner : ' + ((a && a.cambios && a.cambios.length) || 0));
+  Logger.log('  filas que pasan a `*`: ' + ((b && b.cambios && b.cambios.length) || 0));
+  Logger.log('');
+  Logger.log('  ⚠ La mitad 1 marca como sospechosos números que hoy salen limpios en un informe');
+  Logger.log('    EN PRODUCCIÓN. La mitad 2 no mueve ningún número de `jm`.');
+  Logger.log('  ⛔ Se aprueba y se aplica la 1 ANTES de escribir una sola fila de la 2.');
+  return { ok: true, revisar: a, asterisco: b };
+}
+
+/** Modo seco: lista qué filas tocaría y **para**. ⛔ No escribe. Sin `_` y sin parámetros. */
+function diagAsteriscoCompartidos() { return asteriscoCompartidos_(false); }
+
+/** Aplica. Hace **backup de `MARCADORES` antes**, y si el backup falla no toca nada. */
+function aplicarAsteriscoCompartidos() { return asteriscoCompartidos_(true); }
+
+function asteriscoCompartidos_(aplicar) {
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
   if (!hoja) { Logger.log('FALLÓ: no existe la hoja MARCADORES.'); return { ok: false }; }
 
@@ -7476,11 +7593,22 @@ function aplicarAsteriscoCompartidos() {
     if (!enSecco[nombre]) { soloJm.push(nombre); continue; }
 
     var notas = iN === -1 ? '' : String(datos[f][iN] || '');
+    var conSello = notas.indexOf(SELLO_VALIDACION_) !== -1 ? notas
+      : (notas ? notas + ' · ' : '') + SELLO_VALIDACION_;
+
+    /* ⚠ `m2_campanias` lleva una nota propia además del sello, y es un matiz medido el 31/08 que
+     * conviene que viaje con la fila. **NO se excluye de la migración: está sano** —fuente,
+     * operación y dimensiones verificadas, y `m2_camp_lista` es su identidad interna—. Lo que se
+     * anota es que su situación **no es la misma en los dos informes**. */
+    if (nombre === 'm2_campanias' && conSello.indexOf(NOTA_M2_CAMPANIAS_SECCO_) === -1) {
+      conSello += ' · ' + NOTA_M2_CAMPANIAS_SECCO_;
+    }
+
     cambios.push({
       fila: f,
       marcador: nombre,
-      notas: notas.indexOf(SELLO_VALIDACION_) !== -1 ? notas
-        : (notas ? notas + ' · ' : '') + SELLO_VALIDACION_
+      informe_actual: suyo,
+      notas: conSello
     });
   }
 
@@ -7489,20 +7617,56 @@ function aplicarAsteriscoCompartidos() {
   Logger.log('  ya estaban en `*`     : ' + yaEstaban.length);
   Logger.log('  se quedan en `jm`     : ' + soloJm.length + ' (no están en la plantilla de secco)');
 
+  /* ⛔ **EL CORTE DEL MODO SECO.** Lista con qué `informe_id` está cada fila hoy y qué `notas`
+   * quedarían, y para. Es el primer entregable: el usuario lo corre y decide. */
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  ⓘ MODO SECO — no se escribió nada. Detalle de las ' + cambios.length + ' filas:');
+    cambios.slice(0, 200).forEach(function (c) {
+      Logger.log('     ' + c.marcador + '   `' + (c.informe_actual || 'jm') + '` → `*`');
+    });
+    Logger.log('    Para aplicar: `aplicarAsteriscoCompartidos()`.');
+    return { ok: true, aplicado: false, cambios: cambios, se_quedan: soloJm.length };
+  }
+
   if (!cambios.length) {
-    Logger.log('  ❌ NADA QUE APLICAR. O ya se corrió, o `TOKENS_DE_SECCO_` no coincide con la hoja.');
+    Logger.log('  ❌ NADA QUE APLICAR. O ya se corrió, o ningún marcador de la hoja está en `secco`.');
     return { ok: false, motivo: 'cero cambios' };
   }
+
+  /* ⛔⛔ **Backup ANTES de escribir, y si falla no se toca una celda.** Son 168 filas que pasan a
+   * publicar en dos informes; `MARCADORES` **no tiene seed** (`D-17`), así que **la hoja es la
+   * única copia que existe**. Sin backup, deshacer sería reescribir a mano. */
+  var bk = backupMarcadores_('asterisco');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se tocó ninguna fila): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
 
   // Todo o nada, igual que `curarCamposMarcadores_`: se validan las filas antes de escribir.
   cambios.forEach(function (c) {
     hoja.getRange(c.fila + 1, iI + 1).setValue('*');
     if (iN !== -1) hoja.getRange(c.fila + 1, iN + 1).setValue(c.notas);
   });
+  SpreadsheetApp.flush();
 
-  Logger.log('  ✅ ' + cambios.length + ' marcador(es) pasaron a `*`.');
+  /* ⭐⭐ **Relectura de la HOJA, no del retorno del escritor** (`CLAUDE.md` §4). */
+  var datos2 = hoja.getDataRange().getValues();
+  var mal = [];
+  cambios.forEach(function (c) {
+    var v = String(datos2[c.fila][iI] || '').trim();
+    if (v !== '*') mal.push(c.marcador + ': pedí `*` y la hoja dice `' + v + '`');
+  });
+  if (mal.length) {
+    Logger.log('  ⛔ RELECTURA FALLIDA en ' + mal.length + ' — el backup es `' + bk.nombre + '`:');
+    mal.slice(0, 20).forEach(function (m) { Logger.log('     ' + m); });
+    return { ok: false, motivo: 'relectura', backup: bk.nombre };
+  }
+
+  Logger.log('  ✅ ' + cambios.length + ' marcador(es) pasaron a `*`, RELEÍDOS de la hoja.');
   Logger.log('  ⚠ Su validación es de `jm`. Para `secco` es otra ventana y otro corte.');
-  return { ok: true, aplicados: cambios.length, se_quedan: soloJm.length };
+  return { ok: true, aplicados: cambios.length, se_quedan: soloJm.length, backup: bk.nombre };
 }
 
 /**
