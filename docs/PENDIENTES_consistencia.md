@@ -10386,3 +10386,79 @@ control que probaba que el cambio era seguro**.
 
 **Es un cambio de mensaje, no de comportamiento** — ninguna fila entra ni sale distinto. Va con el
 prompt que toque esa rama, y conviene que sea el del `P0` del escritor, que ya la va a abrir.
+
+---
+
+## ⛔ P1 · Ocho lectores de `LAMINAS` indexan por `lamina_id` SOLO — dormidos, no arreglados (31/08/2026)
+
+**`CLAUDE.md` §2 declara que `lamina_id` es único globalmente**, y ocho lugares del código
+**dependen de eso sin decirlo**: indexan o matchean por el id sin mirar `informe_id`. El día que dos
+informes compartan un id, **una fila pisa a la otra en silencio**.
+
+⭐ **Hoy están DORMIDOS, y eso NO quiere decir que estén bien.** La decisión del 31/08 fue la
+opción **(B)** —las dos slides de `secco` copiadas de `jm` toman ids nuevos en vez de compartir los
+de `jm`—, así que **el caso no se despierta**. Si alguna vez se elige compartir, estos ocho son el
+trabajo previo obligatorio.
+
+### El censo, con la gravedad
+
+| # | dónde | qué hace | por qué importa |
+|---|---|---|---|
+| 1 | `Auditoria.gs:3592` | `leerRegistro_('LAMINAS','lamina_id')` | el censo de tokens sin marcador |
+| 2 | `Auditoria.gs:5813` | `leerRegistro_(…)[LAMINA]` | diagnóstico de una lámina |
+| 3 | `PanelBackend.gs:1492` `declaracionesDeLaminas_` | `alcance[id]`, `tokens_equipo[id]` | **el panel descontaría mal** |
+| 4 | ⛔⛔ `Sellador.gs:109` | `enPlantilla[ancla] = {informe_id, orden}` recorriendo **los dos informes** | **es el verificador de integridad de `LAMINAS`** — el primero que uno correría, y el primero que mentiría |
+| 5 | `Sellador.gs:727` | `porId[lamina_id] = f` | lectura |
+| 6 | ⛔ `Sellador.gs:792` | borra las filas cuyo `lamina_id` está en una lista | **destructivo: borraría las de los dos informes** |
+| 7 | ⛔ `Instalar.gs:5077` `curarLaminas_` | matchea por `lamina_id` solo | **es el escritor de `LAMINAS`** |
+| 8 | ⚠ `Sellador.gs:633` | `siguienteIdLamina_` = `max + 1` **sobre la hoja entera** | con ids repetidos el contador deja de describir nada |
+
+⭐ **El #4 es el más irónico y el más grave:** su propio comentario dice
+`// lamina_id -> { informe_id, orden }` — **sabe** que el informe es parte del dato, y aun así
+indexa por el id.
+
+**Y los #6 y #7 no son lectores: escriben y borran.** Un bug de lectura da un reporte equivocado;
+éstos tocan la hoja.
+
+### El reproductor, para que no haya que redescubrirlo
+
+**Dos filas en `LAMINAS` con el mismo `lamina_id` y distinto `informe_id`** —por ejemplo
+`jm|L-053` y `secco|L-053`— y después:
+
+- correr `verificarLaminas()` (#4): va a reportar **falsos «ancla sin fila» o «fila sin ancla»**,
+  porque `enPlantilla` conserva **una sola** de las dos;
+- correr el censo de tokens (#1): la lámina de un informe **hereda el `itera_sobre` y el
+  `seccion_id` del otro**;
+- cualquier `curarLaminas_` sobre ese id (#7) escribe en **la fila equivocada o en las dos**.
+
+### Los que SÍ están bien, y por qué — el cero se escribe también
+
+`laminasDeSeccion_` y `seccionesRepetiblesDe_` **comparan los dos campos**; `Generador.gs:4274`
+filtra por `informe_id` antes de indexar; `indiceDeLaminasPorAncla_` es seguro **por
+construcción** —opera sobre **una** presentación, y una presentación es de un solo informe—.
+**De 19 accesos, 8 pisan y 11 no**: un barrido que sólo informa hallazgos no distingue *«no hay»*
+de *«no miré»*.
+
+---
+
+## ⚠ P2 · `LAMINAS.escondida` es una foto del momento del SELLADO y nadie la refresca (31/08/2026)
+
+**La columna se puebla al sellar** —`Sellador.gs:1038`, `esLaminaEscondida_(x.slide) ? 'sí' : ''`—
+**y ningún camino la vuelve a mirar.** Si alguien esconde o muestra una lámina en la plantilla
+después de sellarla, **el registro sigue diciendo lo de aquel día**.
+
+**El caso medido:** al 31/08 `LAMINAS` dice `escondida = ''` para las cinco láminas de `encuentro`
+de `secco` (`L-004`…`L-008`), y el usuario reporta que **cuatro de ellas están escondidas en la
+plantilla**. ⚠ *Lo segundo es dato del usuario, no medición propia: confirmarlo pide leer la
+plantilla viva.*
+
+⭐ **No rompe ningún número, y por eso es `P2`:** el motor **no lee esta columna** para decidir nada
+— usa `esLaminaEscondida_(slide)` contra la plantilla viva, que es la fuente correcta. La columna
+es **reportada, nunca autoritativa**, igual que `orden_plantilla`.
+
+⚠ **Lo que sí hace es mentirle a quien lea el registro**, y eso incluye a los censos y al panel. Es
+la misma familia que `orden_plantilla`: un dato reportado que se lee como si fuera el estado.
+
+**Cómo se cierra:** o el sellador la refresca en cada pasada, o la columna se marca explícitamente
+como *«al momento del sellado»* en el seed y en `ESCRITORES.md`. **La primera cuesta más y la
+segunda no arregla nada** — es una decisión del usuario.
