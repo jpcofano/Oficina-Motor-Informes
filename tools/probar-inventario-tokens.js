@@ -42,20 +42,25 @@ function afirmar(condicion, mensaje) {
 }
 
 /** Una slide de mentira: sus notas dan el ancla y su texto los tokens. */
-function slide(ancla, tokens) {
-  return { __ancla: ancla, __tokens: tokens || [] };
+function slide(ancla, tokens, escondida) {
+  return { __ancla: ancla, __tokens: tokens || [], __escondida: !!escondida };
 }
 
 /* ⭐ El fixture recorre las CUATRO ramas del cruce a propósito:
  *   `secco` tiene L-016 (propia), L-053 (declarada para `jm` — el caso del duplicado),
  *   L-099 (anclada sin ninguna fila), una slide SIN ancla y sin tokens, y `LAMINAS` declara
  *   L-017 que ninguna slide trae. */
+/* ⭐ `2026-08-31` — **una lámina ESCONDIDA en el fixture, y no es decorativa.** Sin ella el bloque
+ * que parte los «sólo secco» por visibilidad **no se ejecuta**, y el banco pasaría sin medirlo: es
+ * el control que no llega a mirar. `secco` trae un token que vive **sólo** en una escondida
+ * (`token_oculto`) y otro que vive en una visible (`token_sin_fila`). */
 const PLANTILLAS = {
   jm: [slide('L-040', ['camp_titulo', 'camp_clics']), slide('L-053', ['u1_total_clics'])],
   secco: [
     slide('L-016', ['camp_titulo']),
     slide('L-053', ['u1_total_clics']),
     slide('L-099', ['token_sin_fila']),
+    slide('L-098', ['token_oculto'], true),
     slide(null, [])
   ]
 };
@@ -95,7 +100,7 @@ function contexto() {
   ctx.leerInformes = () => ({ jm: { plantilla_id: 'P_JM' }, secco: { plantilla_id: 'P_SECCO' } });
   ctx.tokensDePlantilla_ = () => ['camp_titulo', 'u1_total_clics', 'token_sin_fila'];
   ctx.anclaDeLamina_ = (s) => s.__ancla;
-  ctx.esLaminaEscondida_ = () => false;
+  ctx.esLaminaEscondida_ = (s) => !!s.__escondida;
   ctx.piezasDeTextoDeSlide_ = (s) => s.__tokens.map((t) => ({ texto: '{{' + t + '}}' }));
   ctx.SlidesApp = {
     openById: (pid) => ({ getSlides: () => PLANTILLAS[pid === 'P_JM' ? 'jm' : 'secco'] })
@@ -128,7 +133,7 @@ let r;
     r = null;
   }
   afirmar(!!r && r.ok === true, 'devuelve `ok: true`');
-  afirmar(!!r && r.filas === 6, 'una fila por (token, lámina): 6 (' + (r && r.filas) + ')');
+  afirmar(!!r && r.filas === 7, 'una fila por (token, lámina): 7 (' + (r && r.filas) + ')');
 }
 
 console.log('\n═══ B · el cruce ancla ↔ LAMINAS distingue los TRES estados ═══');
@@ -140,7 +145,7 @@ console.log('\n═══ B · el cruce ancla ↔ LAMINAS distingue los TRES esta
     '`L-099` sale como anclada y SIN NINGUNA FILA — es otro estado y otro arreglo');
   afirmar(/DECLARADA EN LAMINAS Y SIN SLIDE.*L-017/.test(texto),
     '`L-017` sale como declarada sin slide — el estado inverso');
-  afirmar(/SIN ANCLA: slide 4 \(0 token\(s\)\)/.test(texto),
+  afirmar(/SIN ANCLA: slide 5 \(0 token\(s\)\)/.test(texto),
     '⭐⭐ la slide SIN TOKENS y sin ancla SE MIDE — es el límite que el corte viejo salteaba');
 }
 
@@ -149,9 +154,36 @@ console.log('\n═══ C · el cruce de tokens y el testigo de la columna crud
   const texto = log.join('\n');
   afirmar(/compartidos : 2/.test(texto), 'compartidos = 2 (`camp_titulo`, `u1_total_clics`)');
   afirmar(/sólo `jm`   : 1/.test(texto), 'sólo jm = 1 (`camp_clics`)');
-  afirmar(/sólo `secco`: 1/.test(texto), 'sólo secco = 1 (`token_sin_fila`)');
+  afirmar(/sólo `secco`: 2/.test(texto), 'sólo secco = 2 (`token_sin_fila` + `token_oculto`)');
   afirmar(/con valor: 0 ✅ vacía, como se esperaba/.test(texto),
     '⭐ el testigo de `LAMINAS.itera_sobre` reporta el vacío en vez de callarlo');
+}
+
+console.log('\n═══ C bis · ⭐ los «sólo secco» se parten por VISIBILIDAD ═══');
+{
+  /* ⛔ **La afirmación que cambia el tamaño del trabajo.** Sumar los «sólo secco» sobreestima: un
+   * token que vive únicamente en láminas escondidas **no es deuda de cableado**, es una lámina que
+   * no se usa. Las dos cosas se veían igual y mandan a trabajos opuestos. */
+  const texto = log.join('\n');
+  afirmar(/sólo `secco`: 2   → ⭐ 1 en visibles · 1 sólo en escondidas/.test(texto),
+    '⭐⭐ 2 «sólo secco» → 1 visible + 1 oculto, y NO se suman como si fueran lo mismo');
+  afirmar(/EL TRABAJO REAL de `secco` son los 1 visibles, no los 2/.test(texto),
+    'el reporte nombra el trabajo real, no el total');
+  afirmar(/token_sin_fila/.test(texto) && !/^\s+token_oculto/m.test(texto),
+    '`token_sin_fila` está en la lista de trabajo y `token_oculto` no');
+  afirmar(/secco: 1 → L-098/.test(texto),
+    '⭐ las láminas escondidas se listan por informe, leídas de la SLIDE y no de LAMINAS');
+  afirmar(/jm: 0/.test(texto),
+    'y el cero de `jm` se dice — «ninguna escondida» y «no se midió» se ven igual sin conteo');
+}
+
+console.log('\n═══ C ter · el contraste con la medición externa se declara ═══');
+{
+  const texto = log.join('\n');
+  afirmar(/contraste con la medición del usuario/.test(texto),
+    'el reporte contrasta contra la medición del `.pptx`, en vez de publicar sin testigo');
+  afirmar(/⛔ NO COINCIDE — ESO es el hallazgo/.test(texto),
+    '⭐ y con el fixture (2/1/1 contra 55/13/42) marca el desajuste — el contraste PUEDE fallar');
 }
 
 console.log('\n═══ D · control NEGATIVO — con el nombre sombreado, el cruce miente ═══');

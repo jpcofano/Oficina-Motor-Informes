@@ -7660,7 +7660,13 @@ function volcarInventarioDeTokens() {
     var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
     var r = { slides: slides.length, conTokens: 0, sinTokens: 0, todosCableados: 0,
               apariciones: 0, distintos: {}, sinAncla: [], candidatos: {},
-              anclasVistas: {}, ordenDeAncla: [] };
+              anclasVistas: {}, ordenDeAncla: [],
+              /* ⭐ `2026-08-31` — **en qué tokens aparece al menos una vez en una lámina VISIBLE.**
+               * El estado sale de `esLaminaEscondida_(slide)`, o sea **de la slide**, nunca de
+               * `LAMINAS.escondida`, que es una foto del sellado y hoy está vacía (`P2`, `D-55`).
+               * Es la pasada compartida de `D-55` aplicada acá: el mismo `forEach` que resuelve el
+               * ancla lee el estado. */
+              visibles: {}, laminasEscondidas: [] };
 
     slides.forEach(function (slide, i) {
       /* ⛔⛔ **El ancla se lee ANTES de cortar por tokens, y el corte al revés era un bug del
@@ -7685,6 +7691,8 @@ function volcarInventarioDeTokens() {
         r.sinAncla.push({ pos: i + 1, tokens: tokens.length });
       }
 
+      if (escondida) r.laminasEscondidas.push(idLamina || '(sin ancla, slide ' + (i + 1) + ')');
+
       if (!tokens.length) { r.sinTokens++; return; }
       r.conTokens++;
 
@@ -7698,6 +7706,7 @@ function volcarInventarioDeTokens() {
       tokens.forEach(function (t) {
         r.apariciones++;
         r.distintos[t] = true;
+        if (!escondida) r.visibles[t] = true;
         var tiene = (t in conFila);
         var infFila = tiene ? (porInformeDeLaFila[t] || '') : '';
         /* ⭐ **`D-54`: candidato a `*`** = el token está en la plantilla de `secco`, tiene fila, y
@@ -7807,23 +7816,92 @@ function volcarInventarioDeTokens() {
    * intersección. Son dos conjuntos distintos y el segundo es más grande. */
   var dj = (resumen.jm && resumen.jm.distintos) || {};
   var ds = (resumen.secco && resumen.secco.distintos) || {};
+  var vj = (resumen.jm && resumen.jm.visibles) || {};
+  var vs = (resumen.secco && resumen.secco.visibles) || {};
   var compartidos = [], soloJm = [], soloSecco = [];
   Object.keys(dj).forEach(function (t) { (ds[t] ? compartidos : soloJm).push(t); });
   Object.keys(ds).forEach(function (t) { if (!dj[t]) soloSecco.push(t); });
 
+  /* ⭐⭐ **La partición que cambia el tamaño del trabajo.** Sumar los «sólo secco» **sobreestima**:
+   * un token que sólo vive en láminas **escondidas** no es deuda de cableado — es una lámina que no
+   * se usa. Las dos cosas se veían igual y mandan a trabajos opuestos: cablear contra no hacer nada. */
+  var soloSeccoVisible = soloSecco.filter(function (t) { return vs[t]; });
+  var soloSeccoOculto = soloSecco.filter(function (t) { return !vs[t]; });
+  var soloJmVisible = soloJm.filter(function (t) { return vj[t]; });
+  var soloJmOculto = soloJm.filter(function (t) { return !vj[t]; });
+
   Logger.log('');
   Logger.log('  ── CRUCE DE TOKENS ENTRE LAS DOS PLANTILLAS ──────────────────────');
   Logger.log('     compartidos : ' + compartidos.length);
-  Logger.log('     sólo `jm`   : ' + soloJm.length);
-  Logger.log('     sólo `secco`: ' + soloSecco.length);
+  Logger.log('     sólo `jm`   : ' + soloJm.length +
+    '   → ' + soloJmVisible.length + ' en visibles · ' + soloJmOculto.length + ' sólo en escondidas');
+  Logger.log('     sólo `secco`: ' + soloSecco.length +
+    '   → ⭐ ' + soloSeccoVisible.length + ' en visibles · ' + soloSeccoOculto.length +
+    ' sólo en escondidas');
+  Logger.log('');
+  Logger.log('     ⭐ EL TRABAJO REAL de `secco` son los ' + soloSeccoVisible.length +
+    ' visibles, no los ' + soloSecco.length + ':');
+  for (var iv = 0; iv < soloSeccoVisible.length; iv += 8) {
+    Logger.log('        ' + soloSeccoVisible.slice(iv, iv + 8).join(', '));
+  }
+  var famVis = {};
+  soloSeccoVisible.forEach(function (t) {
+    var f = t.indexOf('_') > 0 ? t.slice(0, t.indexOf('_') + 1) : '(sin prefijo)';
+    famVis[f] = (famVis[f] || 0) + 1;
+  });
+  Logger.log('        por familia: ' + Object.keys(famVis).sort().map(function (f) {
+    return f + ' ' + famVis[f];
+  }).join(' · '));
+  Logger.log('     ⚠ Los ' + soloSeccoOculto.length + ' que quedan sólo en escondidas NO son deuda:');
+  var famOc = {};
+  soloSeccoOculto.forEach(function (t) {
+    var f = t.indexOf('_') > 0 ? t.slice(0, t.indexOf('_') + 1) : '(sin prefijo)';
+    famOc[f] = (famOc[f] || 0) + 1;
+  });
+  Logger.log('        por familia: ' + Object.keys(famOc).sort().map(function (f) {
+    return f + ' ' + famOc[f];
+  }).join(' · '));
+
+  Logger.log('');
+  Logger.log('     láminas ESCONDIDAS (leído de la slide, no de LAMINAS):');
+  ['jm', 'secco'].forEach(function (id) {
+    var rr = resumen[id];
+    if (!rr) return;
+    Logger.log('        ' + id + ': ' + rr.laminasEscondidas.length +
+      (rr.laminasEscondidas.length ? ' → ' + rr.laminasEscondidas.join(', ') : ''));
+  });
+
+  /* ⚠ **Testigo contra una medición externa, y por eso va FECHADO y con su fuente.** Son los
+   * números que el usuario midió sobre el `.pptx` exportado el 31/08. **No son la verdad: son la
+   * otra lectura.** Si esta corrida difiere, **el desajuste ES el hallazgo** —la plantilla se
+   * movió, o uno de los dos lectores se equivoca— y hay que resolverlo antes de usar el número.
+   *
+   * ⛔ Esto **caduca**: es una constante de una lectura anterior, no una identidad interna
+   * (`CLAUDE.md` §4). Se conserva mientras sirva de contraste y se borra cuando estorbe. */
+  var ESPERADO_31_08 = { solo_secco: 55, visibles: 13, ocultas: 42 };
+  Logger.log('');
+  Logger.log('     ── contraste con la medición del usuario sobre el `.pptx` del 31/08 ──');
+  Logger.log('        esperado: sólo secco ' + ESPERADO_31_08.solo_secco + ' → ' +
+    ESPERADO_31_08.visibles + ' visibles · ' + ESPERADO_31_08.ocultas + ' ocultas');
+  Logger.log('        medido  : sólo secco ' + soloSecco.length + ' → ' +
+    soloSeccoVisible.length + ' visibles · ' + soloSeccoOculto.length + ' ocultas');
+  var coincide = soloSecco.length === ESPERADO_31_08.solo_secco &&
+                 soloSeccoVisible.length === ESPERADO_31_08.visibles &&
+                 soloSeccoOculto.length === ESPERADO_31_08.ocultas;
+  Logger.log(coincide
+    ? '        ✅ COINCIDE — dos lecturas independientes del mismo hecho'
+    : '        ⛔ NO COINCIDE — ESO es el hallazgo. La plantilla se movió, o uno de los dos ' +
+      'lectores se equivoca. Resolverlo ANTES de usar el número.');
   Logger.log('     ⭐ De los ' + compartidos.length + ' compartidos, los que YA tienen fila son los');
   Logger.log('        candidatos a `*`; los que no, son trabajo de cableado.');
   var sinFilaCompartidos = compartidos.filter(function (t) { return !(t in conFila); });
   Logger.log('     compartidos SIN fila: ' + sinFilaCompartidos.length +
     (sinFilaCompartidos.length ? ' → ' + sinFilaCompartidos.slice(0, 40).join(', ') +
       (sinFilaCompartidos.length > 40 ? ' …' : '') : ''));
-  Logger.log('     sólo `secco` (nunca los vio ningún cableado de `jm`): ' +
-    soloSecco.slice(0, 40).join(', ') + (soloSecco.length > 40 ? ' …' : ''));
+  /* La lista completa de «sólo secco» sale abajo **partida por visibilidad**, que es la forma
+   * accionable. Acá se conserva sólo el `⚠` de que son los que ningún cableado de `jm` miró. */
+  Logger.log('     ⚠ los «sólo secco» son los que NINGÚN cableado de `jm` miró — se listan abajo,');
+  Logger.log('       partidos por visibilidad, porque sumarlos sobreestima el trabajo.');
 
   /* ⭐ El chequeo que la primera corrida dejó sin verificar: la columna cruda de `LAMINAS`. Se
    * **espera vacía** en todas las filas, y ése es el testigo de que el bloque «N láminas ITERAN»
