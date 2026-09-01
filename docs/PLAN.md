@@ -2868,6 +2868,38 @@ equipo (`C-01`).
 marcador que pase a `*` publica en `secco` un número **validado para otra ventana y otro corte** —
 el `SELLO_VALIDACION_` de `Instalar.gs` ya lo dice fila por fila. **Compartir la definición no
 comparte la validación.**
+
+**`D-55` — Una columna que describe un HECHO MECÁNICO se autocorrige; una que describe una
+DECISIÓN EDITORIAL se reporta y se corrige a mano.** (31/08/2026, **decisión del usuario dada en
+conversación**.)
+
+Las hojas de registro tienen columnas que son **fotos** de la plantilla, pobladas al sellar y que
+nadie refresca. Ante un desajuste, **no todas se tratan igual**, y el criterio no es cuánto
+molesta sino **qué describe la columna**:
+
+| clase | ejemplo | qué se hace |
+|---|---|---|
+| **hecho mecánico** — nadie decidió nada | `orden_plantilla`: dónde quedó la slide después de reordenar | ✅ **se alinea solo**, y es gratis |
+| **decisión editorial** — alguien eligió | `escondida`: el equipo decidió no publicar esa lámina | ⛔ **se REPORTA como desajuste y se corrige a mano** |
+
+⛔ **El motivo, y es lo que hace que la asimetría sea correcta en vez de una inconsistencia:**
+alinear `escondida` sola **le saca el testigo a una decisión**. El equipo esconde una lámina, el
+motor deja de publicarla, **y el registro se actualiza diciendo que todo está bien** — la decisión
+ocurrió y no quedó rastro de que ocurriera. Con `orden_plantilla` no hay nada que atestiguar:
+reordenar slides no es una decisión sobre el informe.
+
+⭐ **La consecuencia de implementación, ya medida:** las dos salen de **la misma pasada** —
+`verificarLaminas()` recorre las slides y ya calcula `i + 1`; leer `esLaminaEscondida_(slide)` en
+ese mismo `forEach` no cuesta un recorrido más. **La pasada se comparte y las salidas se separan:**
+`orden_plantilla` va a `desajustes` y se corrige; `escondida` va a **una lista aparte que se
+reporta y no se toca**.
+
+⚠ **Y esto NO cierra el pendiente de las columnas-foto, es su mitad:** `escondida` sigue siendo una
+foto del sellado. **Lo que cambia es que la foto vieja se vería** — hoy no la mira nadie.
+
+⭐ **Se escribe como decisión y no como nota porque el criterio vale para la próxima columna**, no
+sólo para estas dos: ante una columna-foto nueva, la pregunta es *«¿esto describe algo que alguien
+decidió?»*, y la respuesta elige el tratamiento.
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)

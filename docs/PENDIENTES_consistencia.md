@@ -10459,9 +10459,25 @@ es **reportada, nunca autoritativa**, igual que `orden_plantilla`.
 ⚠ **Lo que sí hace es mentirle a quien lea el registro**, y eso incluye a los censos y al panel. Es
 la misma familia que `orden_plantilla`: un dato reportado que se lee como si fuera el estado.
 
-**Cómo se cierra:** o el sellador la refresca en cada pasada, o la columna se marca explícitamente
-como *«al momento del sellado»* en el seed y en `ESCRITORES.md`. **La primera cuesta más y la
-segunda no arregla nada** — es una decisión del usuario.
+### ✅ La decisión, tomada el 31/08 — y es ASIMÉTRICA a propósito (`D-55`)
+
+**`escondida` NO se refresca sola: se reporta como desajuste y se corrige a mano.**
+**`orden_plantilla` SÍ se alinea sola** — y ya se hizo, 22 celdas el 31/08.
+
+⛔ **El motivo, que es lo que vuelve correcta la asimetría:** `orden_plantilla` describe un
+**hecho mecánico** —dónde quedó la slide— y **nadie decide nada al reordenar**, así que alinearlo
+es gratis. `escondida` describe una **decisión editorial del equipo**, y si el registro se alinea
+solo, **esconder una lámina deja de tener testigo**: el motor deja de publicarla y el registro dice
+que todo está bien.
+
+⭐ **La pasada se comparte, las salidas se separan.** Las dos salen del mismo `forEach` de
+`verificarLaminas()`: `orden_plantilla` va a `desajustes` y se corrige; `escondida` va a **una
+lista aparte que se reporta y no se toca**. La regla completa vive en `D-55` (`PLAN.md`) y **no se
+copia acá**.
+
+⚠ **Esto es la MITAD del pendiente, no su cierre:** `escondida` sigue siendo una foto del sellado.
+**Lo que cambia es que la foto vieja se vería** — hoy no la mira nadie. Queda abierto hasta que la
+pasada compartida exista.
 
 ### ⭐ Addendum 31/08 — `orden_plantilla` es el mismo caso, y se nota más
 
