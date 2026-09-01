@@ -16946,4 +16946,50 @@ mismo, **no la granularidad**.
 ⚠ Y `LAMINAS.itera_sobre` está **vacío en las 53 filas**, así que el bloque «N láminas ITERAN» del
 censo **nunca se disparó**: `lamina_itera` sale de `SECCIONES` vía `seccion_id` (`D-37`) y la
 columna cruda va **al lado, vacía, como testigo del hueco**.
-- `2026-08-31_6` Parte A — modo seco de las dos mitades del cierre, con backup de `MARCADORES` y la regla de que un backup fallido aborta sin escribir. No aplica nada.
+
+---
+
+## 2026-08-31 (3) — `2026-08-31_6` mitad 1: **76 marcadores pasan a `_revisar`** · backup `_2347_revisar`
+
+**Aplicado y verificado.** `aplicarRevisarASinValidar()` puso el sufijo `_revisar` en el `formato`
+de **76 filas** que llevaban `SIN VALIDAR` en `notas` y no lo tenían.
+
+⛔ **Es la mitad delicada de las dos, y por eso va en su propio commit:** estas filas **cambian lo
+que publica `jm` HOY** — marcan como sospechosos números que hasta ayer salían limpios, en un
+informe **en producción**. La otra mitad no mueve ningún número de `jm`. **Si algo sale mal, esta
+se revierte sin tocar la otra.**
+
+**Backup:** `_BACKUP_MARCADORES_2026-08-31_2347_revisar`, dentro de la misma planilla. Existe
+porque `MARCADORES` **no tiene `SEED_*` y no lo va a tener** (`D-17`): la hoja es la única copia.
+
+### El reparto de las 76
+
+`post_` 28 · `u1_` 19 · `camp_` 11 · `enc_` 11 · `m2_` 7
+
+### ✅ La aritmética cierra, y era lo que había que verificar antes de cerrar
+
+El modo seco posterior informa **82 «ya lo llevaban»**, y eso levantó la pregunta correcta: son
+más que las 76 que se acababan de escribir.
+
+```
+82 con SIN VALIDAR en notas  =  76 a las que les faltaba  +  6 que ya lo llevaban
+```
+
+**Los 6 previos, medidos sobre el snapshot del 31/08 (anterior a la corrida):**
+`camp_frecuencia` · `frecuencia` · `gcba_frecuencia` · `ivr_75` · `ivr_75_pct` · `ivr_marque1`.
+
+⭐ **Y `post_vtr1`…`post_vtr4` — que era la duda concreta — estaban entre las 76, no entre los 6.**
+El snapshot previo los muestra con `formato = 'fraccion'` **sin** sufijo y **con** `SIN VALIDAR`:
+**los tocó esta corrida**, y ahora llevan `fraccion_revisar`. Por eso aparecen en «ya lo llevaban»
+del modo seco **posterior**: ese conteo se lee después de aplicar.
+
+⚠ **Que no estén entre los 168 es correcto y no es una contradicción: son dos conjuntos que no
+tienen por qué solaparse.** Los 168 son *«token compartido con `secco` y con fila»*; las 76 son
+*«`SIN VALIDAR` sin marca»*. `post_vtr*` tiene fila pero **no está en la plantilla de `secco`**, así
+que es de los 52 que se quedan en `jm` — mientras que otros 24 `post_*` sí migraron.
+
+### ⚠ Lo que esto NO hace
+
+**No valida nada.** El sufijo **declara desconfianza**, no la resuelve: los 76 números siguen sin
+un caso `V-` que los respalde. La condición de salida ya está escrita en la función — *el sufijo se
+retira cuando un caso `V-` valide la fila, y no antes*.
