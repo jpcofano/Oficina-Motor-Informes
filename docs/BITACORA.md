@@ -16993,3 +16993,58 @@ que es de los 52 que se quedan en `jm` — mientras que otros 24 `post_*` sí mi
 **No valida nada.** El sufijo **declara desconfianza**, no la resuelve: los 76 números siguen sin
 un caso `V-` que los respalde. La condición de salida ya está escrita en la función — *el sufijo se
 retira cuando un caso `V-` valide la fila, y no antes*.
+
+---
+
+## 2026-08-31 (4) — `2026-08-31_6` mitad 2: **168 marcadores pasan a `informe_id = '*'`** (`D-54`) · backup `_2348_asterisco`
+
+**Aplicado y verificado.** `aplicarAsteriscoCompartidos()` migró **168 filas** a `*`; **52 se
+quedan en `jm`** porque su token no está en la plantilla de `secco`.
+
+```
+168 a `*`  +  52 que se quedan  =  220 filas de MARCADORES   ✅
+```
+
+**Backup:** `_BACKUP_MARCADORES_2026-08-31_2348_asterisco`.
+
+⭐ **Esto es lo que hacía falta para que `D-54` exista en el motor y no sólo en `PLAN.md`.** La
+decisión dice que un token presente en las dos plantillas publica **el mismo número**; hasta hoy
+**no había forma de expresarla**, porque las 220 filas decían `jm` y **una fila `jm` no la puede
+leer `secco`**. `secco` salía entero en hueco.
+
+⚠ **No mueve ningún número de `jm`.** Agrega `secco`. Por eso fue a un commit separado del de los
+`_revisar`, que sí cambia lo que `jm` publica hoy.
+
+### El reparto de los 168
+
+`camp_` 74 · `u1_` 30 · `post_` 24 · `enc_` 22 · `ecv_` 10 · `m2_` 8
+
+### Lo que la migración NO resuelve, y va escrito en cada fila
+
+**El sello `SELLO_VALIDACION_` viaja en `notas` de las 168:** *«Validación es de `jm`; para `secco`
+sin validar»*. ⛔ **`D-54` dice que el número es el mismo, no que esté validado para `secco`** —
+otra ventana y otro corte. **Un sello heredado que parezca validación es peor que ninguno**, y por
+eso se escribe fila por fila en vez de en un documento.
+
+⚠ **Y la granularidad sigue abierta**, que es el otro límite de `D-54`: si `secco` tiene tres
+ranuras donde `jm` tiene cuatro, **son tokens distintos y `*` no los toca**.
+
+### ⚠ `m2_campanias` migró, con una nota propia
+
+**No se excluyó: está sano.** La premisa que lo daba por roto —*«un token cuya fuente no existe»*—
+salía del `2026-08-20_7`, y sus propias notas del 25 y 26/08 la desmienten: fuente, operación y
+dimensiones verificadas, y `m2_camp_lista` es su identidad interna.
+
+Lo que sí viaja en su fila: **al pasar a `*` resuelve también en `secco`**, y mientras en `jm` su
+número no se usa —el banner de `L-038` lo escribe el equipo a mano— **en `secco` nadie declaró
+nada al respecto**.
+
+### El estado que queda
+
+- **Cero filas duplicadas** (220 marcadores distintos en 220 filas), así que la migración **no
+  creó** el caso de *«dos filas del mismo nombre y gana la última en silencio»*.
+- ⛔ **Y con `*` puesto no existe forma de excepcionar uno para `secco`**: la precedencia entre `*`
+  y un informe concreto **se cae** (`PLAN.md`). El camino de vuelta es otra migración.
+- **Los 45 compartidos sin fila siguen sin cablear** — eso es otro objetivo.
+- **Los 13 tokens propios de `secco`** (10 de ellos `emin_*`) tampoco se tocaron: `R-20` es código,
+  no configuración.
