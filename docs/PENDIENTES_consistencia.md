@@ -10745,3 +10745,43 @@ desde hace más de un año y **no tiene ninguna métrica**.
 ⚠ **No sirve para ningún `emin_*`**, pero hay que registrarla: **una solapa sin declarar es
 invisible para todo censo**, y ésta se llama casi como el bloque que se estaba cableando — es
 exactamente la que alguien va a encontrar dentro de seis meses y va a suponer que era la fuente.
+
+---
+
+## ⚠ P2 · `DIGITAL` recorta por CUENTA y `resumen_metricas_dinamico` por FECHA — trampa dormida (02/09/2026)
+
+**En una línea:** `looker/DIGITAL` **no tiene ninguna columna de fecha** —sólo `Id cuentas`,
+`Plataforma`, `Impresiones`, `Visualizaciones`, `Clics`, `nombre_campaña`, `eje`, `area`,
+`estado`— así que recorta **por pertenencia de la cuenta**; `looker/resumen_metricas_dinamico`
+tiene `fecha_inicio` y `fecha_fin` y recorta **por fecha**. ⇒ **Sobre una campaña fuera de la
+ventana, el desagregado publica y el agregado da `sin_datos`.**
+
+⭐ **Escrito como CONDICIÓN y no como estado:** hoy es inofensivo **porque el temario elige
+campañas vivas en la ventana**; **deja de serlo el día que una corrida use una ventana que no
+contenga a una campaña del temario.**
+
+⛔ **No se toca nada.** Ni `MAPEO`, ni el criterio de universo de `resumen_metricas_dinamico`.
+Medido el 01/09 sobre `Base_Looker_2026-08-30.xlsx` (`sha256` ✅): `3512-AGOSEGGJ` tiene **1 fila**
+en `resumen_metricas_dinamico` —`fecha_inicio 2026-08-14`, `fecha_fin 2026-08-31`— y **16 en
+`DIGITAL`**, sin fecha.
+
+⚠ **El caso que lo destapó NO era una corrida válida** —un informe armado a mano con una ventana
+anterior al inicio de la campaña—, y por eso **los cinco `_revisar` de `V-111`/`V-113` NO se
+repusieron: los números están bien.** ⭐ Y el motivo correcto es ése y no *«el caso vale sólo para
+su ventana»*: **la corrida que lo puso en duda no era válida**, así que nunca hubo nada que
+reponer.
+
+---
+
+## ⚠ P3 · Texto literal `camp_env4_fecha` en una caja de `L-022` (02/09/2026)
+
+En las tablas de `L-022` aparece **`camp_env4_fecha` sin llaves**, en la columna de fecha. **No es
+un token sin resolver ni un hueco: es texto plano en la caja**, así que ningún censo lo ve —no
+matchea `{{…}}`— y ningún marcador lo explica.
+
+⭐ **Y encaja con algo ya medido, lo que lo vuelve casi seguro:** el censo de `L-047` del 22/08
+estableció que **`camp_env4_fecha` NO EXISTE como token**, porque la fecha de ese envío está en una
+**celda combinada** —`10/08` cubre dos filas y `12/08` las otras dos—. ⇒ **Es el nombre que quedó
+escrito cuando alguien le sacó las llaves al token que no iba.**
+
+⛔ **La plantilla es del equipo (`C-01`)**: se reporta, no se edita.
