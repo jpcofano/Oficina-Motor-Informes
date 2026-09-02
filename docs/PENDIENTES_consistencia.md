@@ -10815,3 +10815,31 @@ columna que se escribe y nadie lee es la que alguien va a empezar a leer.**
 el selector de informe al primer paso del asistente, lo que **cierra el hueco de origen**. Se anota
 **antes** de ese diseño y no después, porque si el diseño cambia o no llega, el hallazgo tiene que
 sobrevivir por su cuenta.
+
+---
+
+## ⚠ P2 · `CORRIDAS.faltantes` trae el rastro de etapas, no un conteo (02/09/2026)
+
+**Observado, no diagnosticado.** En el panel, la columna derecha de cada fila de «Corridas» —que
+pinta `esc(c.faltantes) + ' sin dato'`— muestra `117 · gasto: 1 · expandir secciones repetibles
++0s › 2 · mapa token→objectId +20s › …`. **No se atribuye causa**: puede ser un escritor, dos
+escritores compartiendo columna, o el rastro de etapas que `docs/AUDITORIA_tiempos_*` ya describe
+como *«vive en una celda que el cierre pisa»*. **Es previo a `2026-09-01_3` B.1** — esa línea no
+entró en el diff.
+
+⭐ **Por qué vale la pena aunque parezca cosmético, que es la mitad que hay que dejar escrita.** Si
+`faltantes` trae el rastro en vez del conteo, entonces **el número de faltantes de una corrida no
+está en ningún lado que se pueda leer después**: `VALORES` **no tiene escritor** y el detalle por
+sección **muere en el retorno del panel**. `CORRIDAS.faltantes` era **el único testigo
+persistente que quedaba**. ⇒ Cuando alguien pregunte *«¿cuántos faltantes tuvo la corrida del
+viernes?»*, esto explica por qué no se puede contestar.
+
+⚠ **Y el límite que va al lado, porque acota a las dos mediciones de ese día:** `CORRIDAS` **no
+está en la lista `HOJAS` de `tools/snapshot.js`** y no tiene ningún snapshot, así que **ni esto ni
+el `0 sin deck_id` se pueden medir sobre la hoja entera** — el cero de `deck_id` es **medido sobre
+las 10 filas** que pide `panel_ultimasCorridas(10)` y **no medido sobre el resto**. **Un cero
+medido sobre 10 filas y un cero no medido sobre el resto no son el mismo cero.**
+
+⭐ **Candidato a prompt propio: agregar `CORRIDAS` a `tools/snapshot.js`**, y ahí las dos se miden
+de una vez. ⚠ Es una de las **tres listas duplicadas a propósito** (`CLAUDE.md` §2), así que el
+alta pasa por `tools/listas.js`.
