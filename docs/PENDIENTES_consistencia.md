@@ -10785,3 +10785,33 @@ estableció que **`camp_env4_fecha` NO EXISTE como token**, porque la fecha de e
 escrito cuando alguien le sacó las llaves al token que no iba.**
 
 ⛔ **La plantilla es del equipo (`C-01`)**: se reporta, no se edita.
+
+---
+
+## ⛔ P1 · `CAMPANAS.informe_id` se escribe y nadie lo lee — la columna write-only (02/09/2026)
+
+**Medido en la Parte 0 del `2026-09-01_3`.** El paso 2 del asistente estampa `informe_id` en cada
+fila nueva de `CAMPANAS` —`cargarTemarioCampanas_`, `Campanas.gs:395`— con **el informe que estaba
+seleccionado en ese momento**. El selector de informe vive en el **paso 4**, así que **si el
+informe cambia ahí, las filas escritas en el paso 2 conservan el `informe_id` viejo y nada las
+re-escribe.**
+
+⭐ **Hoy no mueve ningún número, y ése es exactamente el problema.** El filtro por
+`CAMPANAS.informe_id` **se sacó el 18/08** (decisión del usuario: *«la campaña no pertenece a un
+informe»*) y la selección la hace `periodosDeLaCorrida_` contra `periodo_id` (`D-53`,
+`Generador.gs:3209-3245`). Grepeado el camino del deck entero: **ningún lector**. ⇒ **La columna es
+write-only.**
+
+⛔ **Esto es la fecha de vencimiento diferida de `CLAUDE.md` §4**, y el propio `Generador.gs:3195`
+**ya tiene una justificación tachada por haber caído exactamente ahí** —*«hoy es observablemente un
+no-op»*, cierta el 18/08 y falsa el 31/08, que costó nueve láminas duplicadas en un deck publicado.
+
+⭐ **Escrito como CONDICIÓN y no como estado, que es lo que lo vuelve vigilable:** deja de ser
+inofensivo **el día que alguien vuelva a leer `CAMPANAS.informe_id`** —para filtrar, para reportar
+o para diagnosticar—, porque va a leer el informe **del paso 2**, no el que generó el deck. **Una
+columna que se escribe y nadie lee es la que alguien va a empezar a leer.**
+
+⚠ **No es P0 porque hoy no puede meter un número mal**, y se anota igual: el `2026-09-01_3` mueve
+el selector de informe al primer paso del asistente, lo que **cierra el hueco de origen**. Se anota
+**antes** de ese diseño y no después, porque si el diseño cambia o no llega, el hallazgo tiene que
+sobrevivir por su cuenta.
