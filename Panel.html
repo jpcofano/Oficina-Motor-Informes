@@ -170,6 +170,13 @@ select:focus,input[type=text]:focus{outline:2px solid var(--color-primary);outli
 .run-when{font-size:var(--text-xs);color:var(--text-tertiary)}
 .run-when.is-dead{color:var(--color-error)}
 .run-count{font-size:var(--text-xs);color:var(--text-tertiary);white-space:nowrap}
+/* `2026-09-01_3` B.1 - la fila de una corrida cerrada CON deck es un enlace.
+ * Hereda el aspecto de `.run` y sólo agrega la señal de que se puede apretar: sin el color de
+ * enlace en el nombre, el link existe y nadie lo ve. Mismo criterio que `.deck`, que también es
+ * un `<a>` de bloque. */
+a.run-link{text-decoration:none;color:inherit}
+a.run-link .run-name{color:var(--text-link)}
+a.run-link:hover{background:var(--surface-hover)}
 
 .sep{border:0;border-top:1px solid var(--border-subtle);margin:0}
 .box{background:var(--surface-sunken);border-radius:var(--radius-md);padding:var(--space-3);font-size:var(--text-sm)}
@@ -2253,20 +2260,68 @@ function conectarDesatendida(){
   var bf = el('b-des-frenar');    if (bf) bf.onclick = cancelarDesatendida;
 }
 
+/**
+ * ⭐⭐ `2026-09-01_3` B.1 — **el historial abre el deck.** Hasta hoy `deck_id` viajaba en el
+ * objeto (`PanelBackend.gs`, `panel_ultimasCorridas`) y esta vista **no lo usaba**: se llegaba a un
+ * deck de otro momento **sólo** por la vía rápida de «Generar» (`corridaPrevia`). Era la premisa
+ * falsa sobre la que se apoyaba subir esta pestaña al primer nivel.
+ *
+ * ⛔ **Tres estados, no dos**, y el del medio es el que no existía:
+ *
+ *   1. cerrada **con** `deck_id` → la fila entera es un enlace;
+ *   2. ⚠ cerrada **sin** `deck_id` → **no lleva enlace y lo dice**. Sin esta rama sería
+ *      indistinguible de una fila común, que es *«no hay»* leído como *«no miré»*;
+ *   3. no cerrada → lo de siempre: murió y nunca escribió su fecha.
+ *
+ * ⚠ **Un enlace roto y uno ausente no son lo mismo, y el que miente es el roto.** La regla ya
+ * estaba medida en `deckCard` (el `[object Object]` del 21/08) y acá se reusa la regla, no la
+ * función: `deckCard` dibuja una tarjeta y cambiaría el aspecto de la lista.
+ */
 function vistaCorridas(){
   if (S.corridasCargando || S.corridas === null) return '<p class="muted">Cargando corridas…</p>';
   if (!S.corridas.length) return '<p class="muted">Todavía no hay corridas registradas.</p>';
   var nombres = {};
   S.informes.forEach(function(i){ nombres[i.id] = i.nombre; });
-  return S.corridas.map(function(c){
+
+  var cerradas = 0, conDeck = 0;
+  S.corridas.forEach(function(c){
+    if (!c.cerrada) return;
+    cerradas++;
+    if (String(c.deck_id || '').trim()) conDeck++;
+  });
+  var sinDeck = cerradas - conDeck;
+
+  /* ⭐ **El conteo se declara aunque dé cero**, y **declara sobre qué corrió**: son las que este
+   * panel pidió —`panel_ultimasCorridas(10)`—, **no el total de `CORRIDAS`**. Un conteo de un
+   * subconjunto presentado como el total es el modo de falla de siempre. */
+  var h = '<p class="hint">' + S.corridas.length + ' corrida(s) cargadas (las últimas que pide el ' +
+          'panel, no el total de <span class="mono">CORRIDAS</span>) · ' + cerradas + ' cerrada(s) · ' +
+          conDeck + ' con deck' +
+          (sinDeck > 0 ? ' · <b>⚠ ' + sinDeck + ' cerró sin registrar el deck_id</b>' : ' · 0 sin deck_id') +
+          '.</p>';
+
+  return h + S.corridas.map(function(c){
+    var deckId = String(c.deck_id || '').trim();
     var izq = '<div><div class="run-name">' + esc(nombres[c.informe_id] || c.informe_id) + '</div>';
-    /* `cerrada: false` es una corrida que murió: nunca escribió su fecha. No es un deck que
-     * se pueda abrir, así que no lleva link ni conteo. */
-    izq += c.cerrada
-      ? '<div class="run-when">' + esc(c.fecha_generacion) + '</div>'
-      : '<div class="run-when is-dead">no cerró — sin fecha de generación</div>';
+    if (!c.cerrada){
+      /* `cerrada: false` es una corrida que murió: nunca escribió su fecha. No es un deck que
+       * se pueda abrir, así que no lleva link ni conteo. */
+      izq += '<div class="run-when is-dead">no cerró — sin fecha de generación</div>';
+    } else if (deckId){
+      izq += '<div class="run-when">' + esc(c.fecha_generacion) + '</div>';
+    } else {
+      izq += '<div class="run-when">' + esc(c.fecha_generacion) + '</div>' +
+             '<div class="run-when is-dead">⚠ cerró sin registrar el deck_id — no hay a dónde ir</div>';
+    }
     izq += '</div>';
     var der = c.cerrada ? '<span class="run-count">' + esc(c.faltantes || '0') + ' sin dato</span>' : '';
+
+    /* ⚠ La URL se arma igual que en `deckCard` cuando sólo hay id. `panel_ultimasCorridas` no
+     * devuelve `url`, así que no hay una emitida por el motor que preferir. */
+    if (c.cerrada && deckId){
+      return '<a class="run run-link" target="_blank" rel="noopener" ' +
+        'href="https://docs.google.com/presentation/d/' + esc(deckId) + '/edit">' + izq + der + '</a>';
+    }
     return '<div class="run">' + izq + der + '</div>';
   }).join('');
 }
