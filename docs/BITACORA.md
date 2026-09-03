@@ -17068,3 +17068,34 @@ nada al respecto**.
 - **03/09 · ítem 10 RETIRADO tras cruzar el CSV.** El diagnóstico se había escrito **sin mirar `docs/casos_validacion_*.csv`**, que ya hablaba del mismo hecho con seis casos — **la regla de `D-56`, aplicada al escribirla y no al usarla**. `C-52` mide que **la base calcula impresiones totales / alcance** y publica 30,099 como correcto; `V-68` y `V-69` validan la operación con valores exactos. ⇒ *«32,76 no es creíble»* era **un juicio, no una medición**, y las tres salidas se caen: `C-22` ya probó y descartó la 1, `C-86` deroga la 2. Lo único accionable es **un caso `V-` para esa campaña**. ⚠ Y un hallazgo del cruce: **`C-85` está usado dos veces** para dos hechos distintos.
 
 - **03/09 · dos registros antes de seguir la cola.** ⭐ **El barrido de puntos de inyección huérfanos da CERO más**: `ctx.__hoy` era el único, sobre 99 archivos de `tools/` — y hubo que **rehacer el detector dos veces**, con control positivo contra la versión anterior del banco, porque las dos primeras versiones daban 47 y 6 falsos. ⛔ **Y `caso_id` está REPETIDO en dos casos** —`C-84` y `C-85`—: el CSV del 28/08 **reinició la serie `C-`** donde el del 19/08 ya la tenía. La clave sobre la que se apoya el cruce de `D-56` **no es única**, y ya costó una lectura equivocada.
+
+## 2026-09-03 · Ítem 9 Parte 0, ministros Parte B, y tres registraciones
+
+**Ítem 9 — `camp_titulo` publica la campaña equivocada. Sólo lectura, no se arregló nada.**
+Mecanismo **explicado**, causa raíz **no cerrada**. `pintarTokensFijosDeLamina_` elige dónde pinta
+con una sola condición: si el token está en `ctx.exclusivos` usa `slide.replaceAllText`, si no usa
+`presentacion.replaceAllText`. `camp_titulo` **no es exclusivo** —`Instalar.gs` ya dice que aparece
+en 14 láminas y publica un solo valor en todas— así que se pinta **sobre el deck entero, las
+escondidas incluidas**. La visibilidad se consulta en `tokensDeSlide_` (etapa 3) y en
+`tokensVisiblesDe_` (etapa 4), y los dos deciden **qué** se resuelve; **ninguno decide dónde se
+pinta**. Eso explica que `L-023` quedara con sus `camp_resp_*` crudos y `camp_titulo` igual pintado,
+y que sus dos copias digan lo mismo. El precedente `L-040`/`rol = equipo` **no aplica**: `L-016` es
+`rol = motor`. **No se pudo medir** si `L-016` se expandió ni cuántas campañas tenía el temario —
+el snapshot de `CAMPANAS` del 31/08 tiene 2 filas y las dos son de `jm`.
+
+**Ministros Parte B — las nueve filas contra `reuniones / Agenda funcionarios`.**
+`cablearMinistros()` con backup previo, reemplazo de `emin_encuentros` (deroga el `_1`, que
+publicaba 1 donde el equipo lista 7) y relectura que exige **una sola fila por marcador**. Nace
+**propuesta**: el fixture no llega a la semana del informe. Banco `probar-ministros.js`, 44
+afirmaciones, con `opRATIO`/`opPCT` **extraídos** de `Marcadores.gs`; el caso de los `PCT` usa **dos
+filas de valores distintos** —5,5 % contra 25,28 %— porque con una sola las dos definiciones
+coinciden. Queda **declarada** una falta: el pedido dice 11 filas de `MAPEO` y de los nueve
+marcadores sólo se derivan 8.
+
+**Tres registraciones.** (1) `CLAUDE.md` §4: un detector nuevo no reporta hasta que se le exige
+encontrar un caso que ya se sabe que está — con los tres intentos (47 / 6 / 1-y-falso) y el control
+positivo por `git show <commit>~1:<archivo>`. (2) La numeración de `caso_id` es continua **entre**
+archivos. (3) Los tres barridos que faltan, como clases distintas.
+
+**Hallazgo aparte:** dos bancos en rojo **diciendo la verdad** — el `2026-08-30_2` movió el corte de
+ámbito del nombre al `Id cuentas` y nadie los dio vuelta. Vivieron cuatro días.
