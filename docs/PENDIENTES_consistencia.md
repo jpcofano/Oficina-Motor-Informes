@@ -10843,3 +10843,70 @@ medido sobre 10 filas y un cero no medido sobre el resto no son el mismo cero.**
 ⭐ **Candidato a prompt propio: agregar `CORRIDAS` a `tools/snapshot.js`**, y ahí las dos se miden
 de una vez. ⚠ Es una de las **tres listas duplicadas a propósito** (`CLAUDE.md` §2), así que el
 alta pasa por `tools/listas.js`.
+
+---
+
+## ⛔⛔ P0 · `frecuencia` divide IMPRESIONES DE TODAS LAS PLATAFORMAS por el ALCANCE DE META (03/09/2026)
+
+**Ítem 10 de la cola.** *«Alcance de Meta: frecuencia 32,76 no es creíble.»* **Diagnosticado — y el
+número no es un error de cálculo: es un cociente entre dos universos distintos.**
+
+### Los tres marcadores afectados
+
+`frecuencia` (`ambito=jm`), `gcba_frecuencia` (`ambito=gcba`) y `camp_frecuencia` (sin corte), los
+tres con la misma definición sobre `looker/resumen_metricas_dinamico`:
+
+```
+RATIO  dig_impresiones / alcance
+       ↓                  ↓
+       col H              col K
+       digital_impresiones      meta_alcance
+```
+
+⛔ **El numerador suma TODAS las plataformas y el denominador cuenta SÓLO a los alcanzados por
+Meta.** Una «frecuencia» así no significa nada: dice *«cuántas impresiones de Meta + Google +
+Programmatic hubo por cada persona alcanzada por Meta»*.
+
+### La medición
+
+Sobre `Base_Looker_2026-08-30.xlsx` (`sha256` ✅ contra el README), **1.043 filas**:
+
+| cuenta | `digital_impresiones` | `meta_alcance` | cociente |
+|---|---|---|---|
+| `2478-ENEINNGC` | 43.617.440 | 1.349.700 | **32,32** |
+| `2515-ENEINFGJ` | 10.369.425 | 316.958 | **32,72** |
+
+⇒ El `32,76` del deck es de esta familia. ⚠ Ninguna da el valor exacto porque el export es del
+30/08 y el deck de otra fecha, pero **el mecanismo queda demostrado**: no hace falta el dígito para
+saber de dónde sale.
+
+### ⭐ Y lo que confirma que el motor NO se equivoca al calcular
+
+**La propia base trae `frecuencia_total` (col M) y coincide con el cociente al decimal**:
+`32,31639…` y `32,71545…`. ⇒ **El motor reproduce exactamente lo que la base calcula.** El defecto
+**no está en la operación**: está en que **`alcance` se mapeó a `meta_alcance`**.
+
+⚠ **Y no hay columna de alcance total en la solapa.** Las 31 columnas incluyen
+`digital_impresiones`, `meta_alcance`, `meta_frecuencia` y `frecuencia_total`, **y ninguna de
+alcance de las otras plataformas**. ⇒ **El numerador correcto para `meta_alcance` no existe como
+columna**: habría que usar impresiones de Meta, que tampoco está desglosada acá.
+
+### Las tres salidas, sin elegir — ⛔ **es decisión del usuario**
+
+1. ⭐ **Leer `frecuencia_total` (col M) directamente**, con `ULTIMO` en vez de `RATIO`. Es lo que la
+   base ya calcula y lo que el cociente reproduce. **La más barata: cambia `campo_logico` y
+   `operacion`, sin tocar código.** ⚠ Pero deja de ser una identidad verificable y pasa a confiar
+   en el cálculo de la base.
+2. **Usar `meta_frecuencia` (col L)** si lo que la lámina quiere es la frecuencia **de Meta** —
+   `2,36` para `3512-AGOSEGGJ`, un número creíble—. ⚠ Cambia **qué mide** el token.
+3. **Dejarlo y rotularlo** como *impresiones totales por alcanzado de Meta*. ⛔ No lo recomiendo:
+   el rótulo no lo hace más útil y el número sigue sin ser una frecuencia.
+
+⚠ **Lo que NO se hizo, a propósito:** no se tocó `MAPEO` ni ninguna fila de `MARCADORES`. Las tres
+salidas **mueven un número publicado en las dos plantillas** —`frecuencia`, `gcba_frecuencia` y
+`camp_frecuencia`— y eso pide un deck de control, no un cambio a ciegas.
+
+⭐ **Y hay un dato del repo que conviene mirar antes de elegir:** `gcba_frecuencia` se usa como
+**canario** en varias verificaciones —*«mientras dé 0, la base está en tránsito»*—. Cambiarle la
+definición **cambia el canario**, así que la corrida que valide esto no puede usarlo como testigo
+de sí misma.

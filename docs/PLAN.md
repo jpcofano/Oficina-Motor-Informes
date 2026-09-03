@@ -3025,7 +3025,7 @@ sustituto de volver a medir cuando el número importa**.
 | | | |
 |---|---|---|
 | `[ ]` **9** | ⛔ `camp_titulo` en `L-016`/`L-023`: título de **otra** campaña | prompt escrito, sin pasar |
-| `[ ]` **10** | ⛔ Alcance de Meta: **frecuencia 32,76 no es creíble** | ⚠ **sin entrada** — nace acá |
+| `[~]` **10** | ⛔ Alcance de Meta: **frecuencia 32,76** | ⭐ **DIAGNOSTICADO 03/09** — divide impresiones de TODAS las plataformas por el alcance de META. `PENDIENTES` `P0` con las tres salidas · ⛔ **elige el usuario**: mueve 3 números publicados |
 | `[ ]` **11** | IVR: `ambito=gcba` da **63** donde deberían ser **8** | `PENDIENTES` · `P0` del 31/08 (`L-031`) |
 | `[ ]` **12** | Implementaciones cruzadas Directa/Digital (`A1`) | **usuario**, plantilla |
 | `[ ]` **13** | Encabezado vencido en layout/master (`A2`) | barrer `slideLayout*`/`slideMaster*` |
@@ -3047,7 +3047,7 @@ sustituto de volver a medir cuando el número importa**.
 |---|---|---|
 | `[x]` **20** | ~~`escritores.js` / `inventario.js` roto~~ **CERRADO 03/09** | el limpiador no reconocía regex literales · `BITACORA` |
 | `[ ]` **21** | Los **3 bancos en rojo**, defectos reales | `probar-ambito-ivr` · `probar-desglose-como-fuente` · ⚠ **`probar-asistente-periodo`** (nuevo, 03/09: el `periodo_id` derivado no reusa el que ya está — **es de la rama del asistente, no se tocó**) |
-| `[ ]` **22** | `CORRIDAS` al `snapshot.js` | `PENDIENTES` `P2` (02/09) — hoy esa hoja **no se mide** |
+| `[ ]` **22** | `CORRIDAS` al `snapshot.js` | ⛔ **tiene una decisión adentro (03/09)**: las tres listas están duplicadas **a propósito** y `listas.js` exige que coincidan. Agregarlo sólo a `snapshot.js` lo rompe; a las tres **cambia `instalar()`**. `PENDIENTES` `P2` (02/09) |
 | `[ ]` **23** | Control de tokens **SIN llaves** impresos (`A4`) | ⭐ **ningún grep los ve** — ver `P3` de `L-022` |
 | `[ ]` **24** | Invariante **agregado = suma del desagregado** | ver `V-111`/`V-113` |
 
