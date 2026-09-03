@@ -9916,3 +9916,267 @@ function cablearEminEncuentros_(aplicar) {
   Logger.log('    `emin_lista` necesita que `LISTA_CRUDA` componga figura+fecha. Los dos son código.');
   return { ok: true, aplicado: true, backup: bk.nombre };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-09-01_4` Parte B — **ministros cambia de fuente: las nueve filas contra
+ * `reuniones / Agenda funcionarios`**
+ *
+ * ⛔⛔ **ADDENDUM AL `2026-09-01_1`, que NO se edita.** Aquel prompt cableó `emin_encuentros`
+ * contra `rdv / RVD JM-CM - ES` con `dimensiones = ambito=ministros`, y **eso queda derogado acá**:
+ * publica **1** donde el equipo lista **7**. ⭐ **Por eso esta fila se REEMPLAZA y no se agrega** —
+ * un alta al lado dejaría dos filas para el mismo marcador y `MARCADORES` no las desempata.
+ *
+ * ⚠ **Y arrastra a `V-49`**, que validaba `emin_encuentros = 8` sobre la unión de dos solapas de
+ * `rdv`. **Ese caso deja de aplicar a este marcador**: mide otra fuente. No se edita el CSV
+ * (`§7`, congelado) — se declara acá, y el control nuevo es otro.
+ *
+ * ══ LO QUE ESTE CABLEADO ES, DICHO ANTES QUE NADA ═══════════════════════════════════════════
+ *
+ * ⛔ **Nace PROPUESTA, no verificada.** El fixture `Seguimiento Digital 2026-08-28.zip` **no llega
+ * a la semana del informe**, así que **no hay forma de reproducir estos nueve números en disco**.
+ * El control es **una corrida**, y hasta que exista los nueve valen lo que vale una propuesta.
+ * ⭐ **El único control declarado es `emin_encuentros` = 7**, que es lo que el equipo lista.
+ *
+ * ⛔ **Las nueve nacen con `_revisar`**, y acá **no hay excepción** como la hubo en el `_1`:
+ * `D-56` pide un caso del CSV para levantar la marca y **no existe ninguno para esta fuente**.
+ *
+ * ══ LOS TRES AVISOS QUE NO SE SUAVIZAN ══════════════════════════════════════════════════════
+ *
+ * 1. ⚠ **Las 10 filas con `Fecha de envío` vacía caen AFUERA EN SILENCIO.** `ventana_ref = propia`
+ *    hace que la ventana se corte por el `fecha_periodo` de la solapa, y ése es la **columna E**.
+ *    Una fila sin envío no entra en ninguna ventana: **no falla, no avisa, no aparece.** Está
+ *    medido y se escribe acá para que el primer número raro no cueste un diagnóstico.
+ * 2. ⛔ **Los tres `PCT` NO son la suma de la columna de porcentaje: son el RATIO DE LAS SUMAS.**
+ *    `campo_logico` viaja como `numerador/denominador` (`opRATIO`), así que `emin_or` es
+ *    `SUM(H)/SUM(G)` y **no** `SUM(I)`. Las dos dan lo mismo con **una** fila y **distinto con
+ *    dos**, que es exactamente por qué el banco lo afirma con dos filas de valores distintos.
+ *    ⭐ Por eso las columnas de `%` —I, K, S— **no se mapean**: mapearlas invita a sumarlas.
+ * 3. ⚠ **Las columnas se declaran POR LETRA y el `encabezado` es testigo, nunca fallback**
+ *    (`CLAUDE.md` §2). ⛔ **`R` es `Clics`+salto+`Meta`, con un salto de línea ADENTRO** — la
+ *    `firma_encabezado` de `SOLAPAS` lo muestra como `Clics Meta` porque `R-10` colapsa los
+ *    espacios. **El testigo va byte a byte, con el salto**, o el diff futuro va a acusar un
+ *    cambio que no existe.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Las nueve filas de ministros. Fuera de la función para que el banco las lea sin correr nada. */
+var FILAS_MINISTROS_ = [
+  /* ⭐ El control: el equipo lista **7**. `CONTEO` de filas y no `CUENTA_DISTINTOS` — la unidad es
+   * el encuentro, no la persona, igual que en el `_1`. */
+  { marcador: 'emin_encuentros',      campo_logico: 'figura',                      operacion: 'CONTEO', formato: 'entero_revisar' },
+  { marcador: 'emin_alcance',         campo_logico: 'impresiones_meta',            operacion: 'SUMA',   formato: 'entero_revisar' },
+  { marcador: 'emin_alcance_semanal', campo_logico: 'entregados',                  operacion: 'SUMA',   formato: 'entero_revisar' },
+  { marcador: 'emin_aperturas',       campo_logico: 'aperturas',                   operacion: 'SUMA',   formato: 'entero_revisar' },
+  { marcador: 'emin_clics_ctor',      campo_logico: 'clics',                       operacion: 'SUMA',   formato: 'entero_revisar' },
+  { marcador: 'emin_clics_ctr',       campo_logico: 'clics_meta',                  operacion: 'SUMA',   formato: 'entero_revisar' },
+  /* ⛔ Ratio de las sumas, no suma de los ratios. Ver el aviso 2 de arriba. */
+  { marcador: 'emin_or',              campo_logico: 'aperturas/entregados',        operacion: 'PCT',    formato: 'porcentaje_revisar' },
+  { marcador: 'emin_ctor',            campo_logico: 'clics/aperturas',             operacion: 'PCT',    formato: 'porcentaje_revisar' },
+  { marcador: 'emin_ctr',             campo_logico: 'clics_meta/impresiones_meta', operacion: 'PCT',    formato: 'porcentaje_revisar' }
+];
+
+/** Las filas de `MAPEO`. ⚠ `encabezado` byte a byte: `clics_meta` lleva un salto de línea adentro. */
+var MAPEO_MINISTROS_ = [
+  /* ⭐⭐ El corte de la ventana. `ventana_ref = propia` lo manda acá, y es la **columna E**:
+   * las campañas de ministros se eligen por su ENVÍO, ~3 días antes de la reunión. */
+  { campo_logico: 'fecha_periodo',    columna: 'E', encabezado: 'Fecha de envío', tipo_esperado: 'fecha' },
+  /* La fecha del encuentro, que es otra cosa y por eso lleva su propia fila. */
+  { campo_logico: 'fecha',            columna: 'D', encabezado: 'Fecha',             tipo_esperado: 'fecha' },
+  { campo_logico: 'figura',           columna: 'B', encabezado: 'Funcionario',       tipo_esperado: 'texto' },
+  { campo_logico: 'entregados',       columna: 'G', encabezado: 'Entregados',        tipo_esperado: 'numero' },
+  { campo_logico: 'aperturas',        columna: 'H', encabezado: 'Aperturas',         tipo_esperado: 'numero' },
+  { campo_logico: 'clics',            columna: 'J', encabezado: 'Clics',             tipo_esperado: 'numero' },
+  { campo_logico: 'impresiones_meta', columna: 'Q', encabezado: 'Impresiones Meta',  tipo_esperado: 'numero' },
+  /* ⛔ El salto de línea es REAL y va en el testigo. `SOLAPAS.firma_encabezado` lo muestra
+   * colapsado (`R-10`), y eso NO es lo que la celda tiene. */
+  { campo_logico: 'clics_meta',       columna: 'R', encabezado: 'Clics\nMeta',       tipo_esperado: 'numero' }
+];
+
+var BASE_MINISTROS_ = 'reuniones';
+var SOLAPA_MINISTROS_ = 'Agenda funcionarios';
+
+/** Modo seco. No escribe nada. */
+function diagCablearMinistros() { return cablearMinistros_(false); }
+
+/** Aplica: backup, reemplazo de `emin_encuentros`, alta de las ocho, `MAPEO`, relectura. */
+function cablearMinistros() { return cablearMinistros_(true); }
+
+function cablearMinistros_(aplicar) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('ministros Parte B — ' + (aplicar ? 'ALTA' : 'MODO SECO') + ' · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  fuente: `' + BASE_MINISTROS_ + ' / ' + SOLAPA_MINISTROS_ + '`');
+  Logger.log('  ⛔ NACE PROPUESTA, no verificada: el fixture no llega a la semana del informe.');
+  Logger.log('     El control es una corrida. Único esperado declarado: `emin_encuentros` = 7.');
+  Logger.log('');
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe la hoja MARCADORES.'); return { ok: false }; }
+  var hojaMap = ss.getSheetByName('MAPEO');
+  if (!hojaMap) { Logger.log('⛔ ABORTA: no existe la hoja MAPEO.'); return { ok: false }; }
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0].map(function (h) { return String(h == null ? '' : h).trim(); });
+  var iM = headers.indexOf('marcador');
+  if (iM === -1) { Logger.log('⛔ ABORTA: MARCADORES no tiene columna `marcador`.'); return { ok: false }; }
+
+  /* La fila completa que se va a escribir, con lo que es igual para las nueve. */
+  function filaCompleta(f) {
+    return {
+      marcador: f.marcador, familia: 'emin', informe_id: 'secco',
+      base_id: BASE_MINISTROS_, solapa: SOLAPA_MINISTROS_,
+      campo_logico: f.campo_logico, periodo_ref: '', operacion: f.operacion,
+      valor_fijo: '', filtro: '', dimensiones: '', formato: f.formato,
+      catalogo: '', separador: '',
+      notas: '2026-09-01_4 Parte B — PROPUESTA, no verificada: el fixture del 28/08 no llega a ' +
+        'la semana del informe, asi que el control es una corrida. Deroga el cableado del _1 ' +
+        '(rdv/RVD JM-CM - ES, ambito=ministros) que publicaba 1 donde el equipo lista 7; V-49 ' +
+        'medía esa otra fuente y no aplica a esta fila. Ventana por SOLAPAS.ventana_ref=propia, ' +
+        'que corta por fecha_periodo = columna E (Fecha de envio): las campanias se eligen por ' +
+        'su ENVIO, ~3 dias antes de la reunion. AVISO: las 10 filas con envio vacio caen afuera ' +
+        'EN SILENCIO. SIN VALIDAR'
+    };
+  }
+
+  /* ⚠ La checklist de `CLAUDE.md` §2: ninguna columna del objeto puede faltar en la hoja, o el
+   * valor se pierde sin fallar. Se mira ANTES de escribir nada. */
+  var muestra = filaCompleta(FILAS_MINISTROS_[0]);
+  var faltan = Object.keys(muestra).filter(function (k) { return headers.indexOf(k) === -1; });
+  if (faltan.length) {
+    Logger.log('⛔ ABORTA: MARCADORES no tiene la(s) columna(s): ' + faltan.join(', '));
+    return { ok: false, motivo: 'columnas faltantes' };
+  }
+
+  var existentes = {};
+  for (var f = 1; f < datos.length; f++) {
+    var nm = String(datos[f][iM] || '').trim();
+    if (nm) existentes[nm] = f + 1;
+  }
+
+  var aReemplazar = [], aAgregar = [];
+  FILAS_MINISTROS_.forEach(function (x) {
+    if (existentes[x.marcador]) aReemplazar.push(x); else aAgregar.push(x);
+  });
+
+  Logger.log('  ' + FILAS_MINISTROS_.length + ' fila(s) de MARCADORES: ' + aAgregar.length +
+    ' alta(s), ' + aReemplazar.length + ' reemplazo(s)');
+  aReemplazar.forEach(function (x) {
+    Logger.log('     ⛔ REEMPLAZA `' + x.marcador + '` (fila ' + existentes[x.marcador] + ') — ' +
+      'no se agrega al lado: dos filas del mismo marcador no se desempatan');
+  });
+  FILAS_MINISTROS_.forEach(function (x) {
+    Logger.log('     ' + (x.marcador + '                    ').slice(0, 21) +
+      (x.operacion + '      ').slice(0, 7) + ' ' + x.campo_logico + '  → ' + x.formato);
+  });
+
+  Logger.log('');
+  Logger.log('  ' + MAPEO_MINISTROS_.length + ' fila(s) de MAPEO, POR LETRA:');
+  MAPEO_MINISTROS_.forEach(function (m) {
+    Logger.log('     ' + m.columna + '  ' + (m.campo_logico + '                 ').slice(0, 18) +
+      JSON.stringify(m.encabezado) + '  ' + m.tipo_esperado);
+  });
+  Logger.log('     ⚠ `clics_meta` lleva un salto de línea REAL adentro del encabezado.');
+
+  /* ⛔ El hueco declarado, y no se completa con un supuesto (`CLAUDE.md` §4). */
+  Logger.log('');
+  Logger.log('  ⛔ FALTA DECLARADA: el pedido dice ONCE filas de MAPEO y de los nueve marcadores');
+  Logger.log('     sólo se derivan OCHO. Las tres columnas de `%` —I, K, S— NO son: los PCT son');
+  Logger.log('     ratio de sumas y mapearlas invitaría a sumarlas. Candidatas sin confirmar:');
+  Logger.log('     A `ID`, C `Barrio / Comuna`, F `Enviados`. NO se inventan: van cuando alguien');
+  Logger.log('     diga cuáles y para qué token.');
+
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  ⓘ MODO SECO — no se escribió nada. Para aplicar: `cablearMinistros()`.');
+    return { ok: true, aplicado: false, marcadores: FILAS_MINISTROS_.length, mapeo: MAPEO_MINISTROS_.length };
+  }
+
+  /* ⛔ Backup PRIMERO, y un backup fallido aborta sin escribir una celda. */
+  var bk = backupMarcadores_('ministros');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se escribió nada): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('');
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
+
+  FILAS_MINISTROS_.forEach(function (x) {
+    var obj = filaCompleta(x);
+    var valores = headers.map(function (h) { return (h in obj) ? obj[h] : ''; });
+    if (existentes[x.marcador]) {
+      hoja.getRange(existentes[x.marcador], 1, 1, headers.length).setValues([valores]);
+    } else {
+      hoja.appendRow(valores);
+    }
+  });
+
+  var hdrMap = hojaMap.getDataRange().getValues()[0]
+    .map(function (h) { return String(h == null ? '' : h).trim(); });
+  var faltanMap = ['base_id', 'solapa', 'campo_logico', 'columna', 'encabezado', 'tipo_esperado']
+    .filter(function (k) { return hdrMap.indexOf(k) === -1; });
+  if (faltanMap.length) {
+    Logger.log('  ⛔ MAPEO no tiene la(s) columna(s): ' + faltanMap.join(', ') +
+      ' — las filas de MARCADORES quedaron escritas. Backup: `' + bk.nombre + '`');
+    return { ok: false, motivo: 'MAPEO sin columnas: ' + faltanMap.join(', '), backup: bk.nombre };
+  }
+  var dMap = hojaMap.getDataRange().getValues();
+  var iB = hdrMap.indexOf('base_id'), iS = hdrMap.indexOf('solapa'), iC = hdrMap.indexOf('campo_logico');
+  var yaMap = {};
+  for (var q = 1; q < dMap.length; q++) {
+    if (String(dMap[q][iB] || '').trim() === BASE_MINISTROS_ &&
+        String(dMap[q][iS] || '').trim() === SOLAPA_MINISTROS_) {
+      yaMap[String(dMap[q][iC] || '').trim()] = q + 1;
+    }
+  }
+  var altasMap = 0;
+  MAPEO_MINISTROS_.forEach(function (m) {
+    /* ⭐ No se pisa lo que ya está: si la fila existe, alguien la escribió (`CLAUDE.md` §4). */
+    if (yaMap[m.campo_logico]) {
+      Logger.log('     ⓘ MAPEO ya tiene `' + m.campo_logico + '` (fila ' + yaMap[m.campo_logico] + ') — no se toca');
+      return;
+    }
+    var obj = { base_id: BASE_MINISTROS_, solapa: SOLAPA_MINISTROS_, campo_logico: m.campo_logico,
+      hoja: SOLAPA_MINISTROS_, columna: m.columna, encabezado: m.encabezado,
+      tipo_esperado: m.tipo_esperado, valores_incluidos: '', por_posicion: '',
+      notas: '2026-09-01_4 Parte B — declarada por letra; encabezado es testigo, nunca fallback' };
+    hojaMap.appendRow(hdrMap.map(function (h) { return (h in obj) ? obj[h] : ''; }));
+    altasMap++;
+  });
+  SpreadsheetApp.flush();
+
+  /* ⭐⭐ RELECTURA de la hoja, por otro camino que la escritura. En Sheets no es paranoia: la
+   * celda pasa por la interpretación automática de tipos, y `1/3` se guarda como fecha. */
+  var d2 = ss.getSheetByName('MARCADORES').getDataRange().getValues();
+  var iC2 = headers.indexOf('campo_logico'), iO = headers.indexOf('operacion');
+  var iF2 = headers.indexOf('formato'), iSo = headers.indexOf('solapa');
+  var mal = [];
+  FILAS_MINISTROS_.forEach(function (x) {
+    var fila = null, cuantas = 0;
+    for (var k = 1; k < d2.length; k++) {
+      if (String(d2[k][iM] || '').trim() === x.marcador) { if (!fila) fila = d2[k]; cuantas++; }
+    }
+    if (!fila) { mal.push(x.marcador + ': la fila no aparece'); return; }
+    /* ⛔ El reemplazo tiene que dejar UNA. Dos filas del mismo marcador es el modo de falla que
+     * este wrapper vino a evitar, y sólo la relectura lo puede ver. */
+    if (cuantas !== 1) { mal.push(x.marcador + ': quedaron ' + cuantas + ' filas, tiene que quedar 1'); return; }
+    if (String(fila[iC2] || '').trim() !== x.campo_logico) mal.push(x.marcador + ': campo_logico quedó `' + fila[iC2] + '`');
+    if (String(fila[iO] || '').trim() !== x.operacion) mal.push(x.marcador + ': operacion quedó `' + fila[iO] + '`');
+    if (String(fila[iF2] || '').trim() !== x.formato) mal.push(x.marcador + ': formato quedó `' + fila[iF2] + '`');
+    if (String(fila[iSo] || '').trim() !== SOLAPA_MINISTROS_) mal.push(x.marcador + ': solapa quedó `' + fila[iSo] + '`');
+  });
+  if (mal.length) {
+    Logger.log('  ⛔ RELECTURA FALLIDA — el backup es `' + bk.nombre + '`:');
+    mal.forEach(function (m) { Logger.log('     ' + m); });
+    return { ok: false, motivo: 'relectura', backup: bk.nombre };
+  }
+
+  Logger.log('  ✅ RELEÍDO de la hoja: las ' + FILAS_MINISTROS_.length + ' filas quedaron, una cada una,');
+  Logger.log('     con su campo_logico, operacion, formato y solapa. MAPEO: ' + altasMap + ' alta(s).');
+  Logger.log('');
+  Logger.log('  ⛔ LO QUE FALTA Y NO LO HACE ESTE WRAPPER:');
+  Logger.log('     · `SOLAPAS.ventana_ref = propia` para `' + BASE_MINISTROS_ + '/' + SOLAPA_MINISTROS_ + '`');
+  Logger.log('       — es otra hoja y otro escritor; sin eso la ventana NO se corta por el envío.');
+  Logger.log('     · La corrida que verifique. `emin_encuentros` tiene que dar **7**.');
+  return { ok: true, aplicado: true, marcadores: FILAS_MINISTROS_.length, mapeo: altasMap, backup: bk.nombre };
+}

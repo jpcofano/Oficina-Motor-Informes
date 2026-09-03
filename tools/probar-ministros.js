@@ -1,0 +1,196 @@
+#!/usr/bin/env node
+/**
+ * tools/probar-ministros.js — las nueve filas de ministros (`2026-09-01_4` Parte B).
+ *
+ * ⭐⭐ **Lo que este banco existe para afirmar, y es lo único que no se ve leyendo la tabla:**
+ * los tres `PCT` son el **RATIO DE LAS SUMAS**, no la **suma de los ratios**. Las dos definiciones
+ * dan **el mismo número con una sola fila** — por eso el caso se arma con **dos filas de valores
+ * distintos**, que es lo único que las separa. Un fixture cuyo dato satisface las dos afirmaciones
+ * no distingue entre ellas (`Pruebas.gs:456`, `CLAUDE.md` §4).
+ *
+ * ⚠ **Se extrae `opRATIO`/`opPCT` REALES de `Marcadores.gs`, no se reimplementan.** Reproducir la
+ * lógica del motor en node es el error que este repo ya cometió cuatro veces.
+ *
+ * ⛔ **Lo que este banco NO afirma, dicho para que el verde no se lea de más:** que los nueve
+ * números sean correctos. Nacen **PROPUESTA** — el fixture del 28/08 no llega a la semana del
+ * informe— y **el control es una corrida**. Acá se prueba la **definición**, no el valor.
+ *
+ * Uso:  node tools/probar-ministros.js
+ */
+
+'use strict';
+
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const RAIZ = path.join(__dirname, '..');
+
+let fallas = 0;
+function afirmar(condicion, mensaje) {
+  if (condicion) console.log('  ✅ ' + mensaje);
+  else { fallas++; console.log('  ⛔ ' + mensaje); }
+}
+
+/* ── Las dos tablas REALES, extraídas de `Instalar.gs` ─────────────────────────────────── */
+function tablasReales() {
+  const src = fs.readFileSync(path.join(RAIZ, 'Instalar.gs'), 'utf8');
+  const trozos = [];
+  for (const nombre of ['FILAS_MINISTROS_', 'MAPEO_MINISTROS_']) {
+    const i = src.indexOf('var ' + nombre + ' = [');
+    if (i === -1) throw new Error('no encontré `' + nombre + '` en Instalar.gs');
+    const fin = src.indexOf('\n];', i);
+    if (fin === -1) throw new Error('no encontré el cierre de `' + nombre + '`');
+    trozos.push(src.slice(i, fin + 3));
+  }
+  const ctx = { };
+  vm.createContext(ctx);
+  vm.runInContext(trozos.join('\n'), ctx);
+  return { filas: ctx.FILAS_MINISTROS_, mapeo: ctx.MAPEO_MINISTROS_ };
+}
+
+/* ── `opRATIO` / `opPCT` REALES, extraídos de `Marcadores.gs` ──────────────────────────── */
+function opsReales() {
+  const src = fs.readFileSync(path.join(RAIZ, 'Marcadores.gs'), 'utf8');
+  const i = src.indexOf('function opRATIO(ctx) {');
+  const j = src.indexOf('\n}', src.indexOf('function opPCT(ctx) {'));
+  if (i === -1 || j === -1) throw new Error('no encontré `opRATIO`/`opPCT` en Marcadores.gs');
+  const ctx = { trazaDeVentana_: () => '' };   // única dependencia, y no participa del número
+  vm.createContext(ctx);
+  vm.runInContext(src.slice(i, j + 2), ctx);
+  return ctx;
+}
+
+const T = tablasReales();
+const OPS = opsReales();
+
+console.log('═══ A · las nueve filas, y son nueve ═══');
+{
+  const esperados = ['emin_encuentros', 'emin_alcance', 'emin_alcance_semanal', 'emin_aperturas',
+    'emin_clics_ctor', 'emin_clics_ctr', 'emin_or', 'emin_ctor', 'emin_ctr'];
+  afirmar(T.filas.length === 9, 'son 9 filas (hay ' + T.filas.length + ')');
+  esperados.forEach(m => afirmar(T.filas.some(f => f.marcador === m), '  está `' + m + '`'));
+  /* ⛔ `emin_lista` queda FUERA a propósito: espera la operación con plantilla (ítem 2). */
+  afirmar(!T.filas.some(f => f.marcador === 'emin_lista'),
+    '⛔ `emin_lista` NO está — espera la operación con plantilla, es otro trabajo');
+}
+
+console.log('\n═══ B · ⛔ las nueve nacen con `_revisar`, sin excepción ═══');
+{
+  /* ⭐ En el `_1` hubo excepción porque `V-49` existía y se reprodujo. Acá **no hay caso para
+   * esta fuente**, así que `D-56` no permite levantar nada. */
+  const sinMarca = T.filas.filter(f => !/_revisar$/.test(f.formato));
+  afirmar(sinMarca.length === 0,
+    '⭐⭐ las 9 llevan `_revisar` (sin marca: ' + (sinMarca.map(f => f.marcador).join(', ') || 'ninguna') + ')');
+  afirmar(T.filas.filter(f => f.formato === 'entero_revisar').length === 6, 'seis `entero_revisar`');
+  afirmar(T.filas.filter(f => f.formato === 'porcentaje_revisar').length === 3, 'tres `porcentaje_revisar`');
+}
+
+console.log('\n═══ C · ⭐⭐ los PCT son RATIO DE LAS SUMAS — con DOS filas, que es lo que separa ═══');
+{
+  const pct = T.filas.filter(f => f.operacion === 'PCT');
+  afirmar(pct.length === 3, 'son tres PCT');
+  pct.forEach(f => afirmar(f.campo_logico.indexOf('/') !== -1,
+    '  `' + f.marcador + '` declara `numerador/denominador`: ' + f.campo_logico));
+
+  /* ⛔⛔ EL CASO QUE DISTINGUE. Dos filas con ratios MUY distintos:
+   *      fila 1 → 50/100 = 50 %      fila 2 → 5/900 = 0,56 %
+   *   ratio de las sumas  = 55/1000 = 5,5 %      ← lo que el motor hace
+   *   suma de los ratios / 2 = (50 + 0,56)/2 = 25,3 %   ← lo que haría SUM(I)
+   * Con UNA sola fila los dos dan lo mismo, y el caso no probaría nada. */
+  const r = OPS.opPCT({ valoresNumerador: [50, 5], valoresDenominador: [100, 900], campo_logico: 'ap/ent' });
+  const promedioDeRatios = (50 / 100 + 5 / 900) / 2 * 100;
+  afirmar(Math.abs(r.valor - 5.5) < 1e-9,
+    '⭐⭐ `opPCT` REAL da 5,5 % = SUMA(50,5)/SUMA(100,900) — el ratio de las SUMAS');
+  afirmar(Math.abs(promedioDeRatios - 25.28) < 0.01, '   la suma/promedio de los ratios daría 25,28 %');
+  afirmar(Math.abs(r.valor - promedioDeRatios) > 19,
+    '⭐⭐ y DIFIEREN por más de 19 puntos ⇒ el fixture SÍ distingue las dos definiciones');
+
+  /* Control del control: con UNA fila coinciden, que es por qué hacen falta dos. */
+  const una = OPS.opPCT({ valoresNumerador: [50], valoresDenominador: [100], campo_logico: 'ap/ent' });
+  afirmar(Math.abs(una.valor - 50) < 1e-9,
+    '⚠ con UNA sola fila las dos definiciones dan 50 % — por eso el caso lleva dos');
+}
+
+console.log('\n═══ D · ⛔ las columnas de `%` NO se mapean — mapearlas invita a sumarlas ═══');
+{
+  ['I', 'K', 'S'].forEach(c => afirmar(!T.mapeo.some(m => m.columna === c),
+    '  la columna `' + c + '` (un `%`) NO está en MAPEO'));
+  const nums = T.mapeo.filter(m => m.tipo_esperado === 'numero').map(m => m.columna).sort();
+  afirmar(nums.join(',') === 'G,H,J,Q,R', 'las numéricas son exactamente G,H,J,Q,R (dio ' + nums.join(',') + ')');
+}
+
+console.log('\n═══ E · ⚠ por LETRA, y el encabezado byte a byte ═══');
+{
+  /* ⛔ El caso que motiva el banco: `R` lleva un SALTO DE LÍNEA adentro del título. */
+  const r = T.mapeo.find(m => m.columna === 'R');
+  afirmar(!!r && r.campo_logico === 'clics_meta', '`R` es `clics_meta`');
+  afirmar(!!r && r.encabezado === 'Clics\nMeta',
+    '⭐⭐ su `encabezado` es exactamente "Clics\\nMeta" — CON el salto, byte a byte');
+  afirmar(!!r && r.encabezado !== 'Clics Meta',
+    '⛔ y NO es "Clics Meta": así lo muestra `SOLAPAS.firma_encabezado`, que colapsa por `R-10`');
+
+  /* Toda fila declara letra Y encabezado — `D-31`, y escribir una sin la otra deja el hueco. */
+  T.mapeo.forEach(m => afirmar(/^[A-Z]$/.test(m.columna) && String(m.encabezado).trim() !== '',
+    '  `' + m.campo_logico + '` lleva letra (' + m.columna + ') Y encabezado'));
+
+  /* ⭐⭐ El corte de la ventana: `ventana_ref = propia` lo manda al `fecha_periodo` de la solapa,
+   * y ése tiene que ser el ENVÍO —columna E—, no la fecha del encuentro. */
+  const fp = T.mapeo.find(m => m.campo_logico === 'fecha_periodo');
+  afirmar(!!fp && fp.columna === 'E',
+    '⭐⭐ `fecha_periodo` es la columna E (Fecha de envío) — el corte es por ENVÍO');
+  afirmar(T.mapeo.some(m => m.campo_logico === 'fecha' && m.columna === 'D'),
+    '   y `fecha` (D) es la del encuentro: son dos columnas y dos filas');
+}
+
+console.log('\n═══ F · ⭐ cruce contra la firma REAL de la solapa (snapshot de `SOLAPAS`) ═══');
+{
+  /* ⚠ Evidencia FECHADA: la firma sale del snapshot y vale para su día. Lo que se cruza es la
+   * correspondencia letra→título, que es lo que un `encabezado` inventado rompería. */
+  const snaps = fs.readdirSync(path.join(RAIZ, 'docs', '_snapshots'))
+    .filter(f => /^SOLAPAS_.*\.tsv$/.test(f)).sort();
+  afirmar(snaps.length > 0, 'hay al menos un snapshot de SOLAPAS');
+  if (snaps.length) {
+    const ultimo = snaps[snaps.length - 1];
+    const txt = fs.readFileSync(path.join(RAIZ, 'docs', '_snapshots', ultimo), 'utf8');
+    const cab = txt.split(/\r?\n/)[0].split('\t');
+    const iFirma = cab.indexOf('firma_encabezado'), iSol = cab.indexOf('solapa');
+    const fila = txt.split(/\r?\n/).slice(1)
+      .map(l => l.split('\t')).find(c => c[iSol] === 'Agenda funcionarios');
+    afirmar(!!fila, 'la solapa `Agenda funcionarios` está en ' + ultimo);
+    if (fila) {
+      const titulos = fila[iFirma].split(' · ').map(s => s.trim());
+      console.log('     (firma de ' + ultimo + ': ' + titulos.length + ' columnas)');
+      T.mapeo.forEach(m => {
+        const pos = m.columna.charCodeAt(0) - 65;          // A→0
+        /* ⭐ Se compara NORMALIZADO, y ésa es la corrección: la firma ya viene colapsada por
+         * `R-10`, así que exigirle el `\n` de `R` la haría fallar por una diferencia que es
+         * del snapshot y no del mapeo. El byte a byte se afirma arriba, contra la constante. */
+        const esperado = String(m.encabezado).replace(/\s+/g, ' ').trim();
+        afirmar(titulos[pos] === esperado,
+          '  ' + m.columna + ' → "' + esperado + '"' +
+          (titulos[pos] === esperado ? '' : ' ⛔ la firma dice "' + titulos[pos] + '"'));
+      });
+    }
+  }
+}
+
+console.log('\n═══ G · control NEGATIVO — el banco PUEDE fallar ═══');
+{
+  /* ⛔ Sin esto, «todas pasaron» y «el banco no mide nada» se ven igual (`CLAUDE.md` §4). */
+  const antes = fallas;
+  const mutada = T.filas.map(f => Object.assign({}, f, { formato: f.formato.replace('_revisar', '') }));
+  const sinMarca = mutada.filter(f => !/_revisar$/.test(f.formato));
+  afirmar(sinMarca.length === 9,
+    '⭐ quitándoles `_revisar` a las nueve, el criterio de la sección B las detecta a las 9');
+  afirmar(fallas === antes, '   y la mutación no ensució el conteo real');
+
+  /* ⭐⭐ Y la mutación OCURRIÓ: sin esta guarda el negativo correría sobre el dato intacto. */
+  afirmar(mutada[0].formato !== T.filas[0].formato,
+    '⭐⭐ la mutación se aplicó de verdad (el formato cambió), no corrió sobre el original');
+}
+
+console.log('');
+if (fallas) { console.log('⛔ ' + fallas + ' afirmación(es) FALLARON'); process.exit(1); }
+console.log('✅ todas las afirmaciones pasaron');
+console.log('⚠ Lo que este verde NO dice: que los nueve números sean correctos. Nacen PROPUESTA');
+console.log('  y el control es una corrida — `emin_encuentros` tiene que dar 7.');
