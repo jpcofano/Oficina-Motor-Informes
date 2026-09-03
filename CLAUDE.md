@@ -831,6 +831,22 @@ costado el día.
 - **Y la regla de higiene que lo evita:** `clasp push` **después** de tocar un `.gs`, no antes de
   la próxima tanda de ediciones. Un push que corrió antes del cambio es indistinguible de uno que
   no corrió.
+- ⛔⛔ **Y su gemela, que es de cómo se CORREN los comandos y por eso se escribe acá, antes de
+  encadenar: `A && B` NO condiciona `B` al veredicto de `A` — lo condiciona al `exit` del ÚLTIMO
+  comando de la tubería.** (03/09/2026.) `node tools/suites.js | grep -E "ROJO"` sale **0** porque
+  el `grep` **encontró** los rojos, así que un `&& clasp push` **despliega precisamente cuando hay
+  rojo**. Se lee como una guarda y hace lo contrario.
+  - **El caso, propio:** se corrieron las suites y el `clasp push` en el mismo comando; las suites
+    salieron con **dos rojos nuevos causados por ese mismo cambio**, y el proyecto de Apps Script
+    quedó unos minutos con la regresión. **El repo local ya sabía que existía.**
+  - ⭐ **Lo accionable, y cuesta un renglón:** lo que despliega va **en su propio comando, después
+    de leer el verde**. Nunca encadenado a la verificación.
+  - ⚠ **Y la trampa de segundo orden:** poner `set -o pipefail` tampoco alcanza si el filtro es un
+    `grep`, porque el que decide sigue siendo el filtro. **Lo único que condiciona de verdad es
+    mirar el resultado**, o encadenar contra el runner **sin tubería** — `node tools/suites.js &&
+    clasp push`, que sí propaga el `process.exit(1)`.
+  - ⭐ **Es la misma familia que el detector que lee un glifo en vez del contrato:** acá el
+    «contrato» es el `exit` del runner y la «convención» es lo que quedó al final del pipe.
 - ⚠ **El corolario que hace falta saber igual: que el seed llegue no garantiza que la hoja
   cambie.** Hay dos hojas donde una corrección **nunca** llega —`CONFIG` y `SECCIONES`, que sólo
   siembran lo ausente—. La tabla de qué se propaga y qué no vive en `docs/ESCRITORES.md`, y es lo

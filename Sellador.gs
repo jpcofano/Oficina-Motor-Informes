@@ -1706,3 +1706,70 @@ function refrescarOrdenPlantilla_(informeId, aplicar) {
 
   return { ok: true, aplicado: true, corregidas: deOrden.length, de_informe_id: deInforme };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⛔⛔ `2026-09-03` — **`verificarLaminas()` corre y NO IMPRIME NADA.** Medido: tiene **cero**
+ * `Logger.log`. Sólo `return`, y **el editor de Apps Script no muestra el valor de retorno**.
+ *
+ * ⚠ **Es el peor caso de la regla de `CLAUDE.md` §2, no un caso más**: la función cumple las dos
+ * condiciones del desplegable —sin `_`, sin parámetros—, así que **aparece, se puede correr, corre
+ * bien y devuelve un log vacío**. ⭐ *«No la encuentro»* manda a buscar; *«corrió y no dijo nada»*
+ * se lee como **«no encontró nada»**, que es una respuesta — y falsa.
+ *
+ * ⇒ Este wrapper **no reimplementa nada**: llama a la de siempre y la imprime.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Sin `_` y sin parámetros. ⛔ Sólo lectura: `verificarLaminas()` no escribe. */
+function verLaminas() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('`verificarLaminas()` — CON LOG · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  var r = verificarLaminas();
+  if (!r || r.ok === false) {
+    Logger.log('⛔ ABORTA: ' + ((r && r.motivo) || 'sin motivo'));
+    return r;
+  }
+
+  /* ⭐ El conteo primero: **«cero problemas» y «no miró nada» se ven igual sin él** (`CLAUDE.md` §4,
+   * un control tiene que declarar CUÁNTO midió). */
+  Logger.log('  laminas en plantillas : ' + r.laminas_en_plantillas);
+  Logger.log('  filas en la hoja      : ' + r.filas_en_hoja);
+  Logger.log('  anclas en plantillas  : ' + r.anclas_en_plantillas);
+  Logger.log('  VEREDICTO             : ' + r.veredicto);
+  Logger.log('');
+
+  /* ⭐⭐ **`filas_sin_ancla` es la pregunta de `L-016`**, y va primero por eso: una fila de `LAMINAS`
+   * cuyo `lamina_id` no aparece en la plantilla **queda fuera del bloque modelo** —
+   * `laminasDeSeccion_` la manda a `sinSlide`— y **la sección se expande sin ella, sin fallar**. */
+  var bloques = [
+    { k: 'filas_sin_ancla',    t: '⭐⭐ filas de LAMINAS cuyo `lamina_id` NO está en la plantilla',
+      nota: 'quedan FUERA del bloque modelo y la sección expande sin ellas, sin fallar' },
+    { k: 'anclas_sin_fila',    t: 'anclas en la plantilla sin fila en LAMINAS', nota: '' },
+    { k: 'laminas_sin_ancla',  t: 'slides de la plantilla sin ancla', nota: '' },
+    { k: 'ids_repetidos',      t: '`lamina_id` repetidos', nota: '' },
+    { k: 'huecos',             t: 'huecos en la numeración', nota: '' },
+    { k: 'desajustes',         t: 'desajustes hoja ↔ plantilla', nota: '' }
+  ];
+
+  bloques.forEach(function (b) {
+    var v = r[b.k];
+    var n = (v && v.length != null) ? v.length : 0;
+    Logger.log('── ' + b.t + ': ' + n + (b.nota && n ? '  ← ' + b.nota : ''));
+    if (!n) {
+      /* ⭐ El cero se DICE. Un bloque que se calla no distingue «no hay» de «no miré». */
+      Logger.log('     (ninguna)');
+      return;
+    }
+    v.forEach(function (x) {
+      Logger.log('     ' + (typeof x === 'string' ? x : JSON.stringify(x)));
+    });
+  });
+
+  Logger.log('');
+  Logger.log('  ⚠ Lo que esto NO dice: si una lámina que SÍ tiene ancla entra al bloque. Eso');
+  Logger.log('    depende además de `seccion_id` y de que el bloque sea CONTIGUO.');
+  return r;
+}

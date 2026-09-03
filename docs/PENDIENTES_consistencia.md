@@ -426,3 +426,84 @@ salida del `grep`, no el veredicto de las suites.
 
 ⚠ **Y el corolario: se dice.** El push malo duró minutos y se corrigió con otro push, pero **un
 reporte que no lo menciona deja creer que el proyecto nunca tuvo la regresión**.
+
+---
+
+## ⛔⛔ P0 · Ítem 9 — **por qué el arreglo es el DESDOBLE POR ÍTEM y no un parche a `camp_titulo`** (03/09/2026)
+
+### ⭐⭐ La consecuencia general, que es lo que convierte esto en repetible
+
+**Mientras `camp_titulo` se resuelva SIN ítem, CUALQUIER lámina que quede fuera del bloque modelo
+va a publicar la última campaña de la ventana en vez de un hueco.**
+
+El mecanismo, completo y verificado en el código:
+
+1. `camp_titulo` es `ULTIMO` sobre `digital/Seguimiento digital · sd_campana_cuentas`, **sin
+   `filtro` y sin `dimensiones`** ⇒ depende **enteramente** de `opciones.id_cuenta`.
+2. En la etapa 4 **no hay ítem**, así que **no hay `id_cuenta`** ⇒ `ULTIMO` corre sobre la
+   **solapa entera recortada por la ventana** y devuelve **la última campaña de esa ventana**.
+3. `agruparTokensPorLamina_` no lo desdobla —todas sus láminas declaran el mismo universo,
+   `ventana`— ⇒ `presentacion.replaceAllText` lo pinta **en todo el deck**.
+
+⛔ **Y ésa es la razón por la que no alcanza un parche.** El dato del 03/09 lo muestra:
+`L-016` publica **«Jornada de adopción de perros y gatos»**, que **no es ninguna de las tres
+campañas destacadas del equipo**. No es «la primera del temario mal elegida»: es **una campaña que
+no está en el deck**.
+
+⭐⭐ **Un hueco se ve; una campaña equivocada se lee como un dato.** Ésa es toda la diferencia: si
+el token cayera en `/////`, alguien iría a cablearlo. Como cae en un nombre plausible, **nadie
+pregunta**. Es el modo de falla más caro de este repo, y acá está garantizado por construcción —
+no depende de qué lámina falle, sino de que **alguna** quede fuera del bloque.
+
+⇒ **El arreglo es que `camp_titulo` se resuelva POR ÍTEM.** Un parche que corrija `L-016` deja el
+mecanismo intacto para la próxima lámina que quede afuera.
+
+### ⚠ Lo que el desdoble NO cubre, nombrado y NO arreglado de paso
+
+**`L-023` está escondida y aun así recibe el pintado por presentación.** Con el desdoble va a
+recibir **el valor correcto de su ítem** — pero sigue siendo **un token pintado en una lámina que
+el motor declara que no mira**.
+
+⛔ **Es otro objetivo.** Las dos funciones que consultan visibilidad —`tokensDeSlide_` en la
+etapa 3 y `tokensVisiblesDe_` en la etapa 4— deciden **qué se resuelve**; **ninguna decide dónde se
+pinta**, y `replaceAllText` no consulta visibilidad en absoluto. ⚠ **Va nombrado acá para que no se
+cierre creyendo que el desdoble lo tapa**, y no se arregla en el mismo movimiento.
+
+### ⚠ CORRECCIÓN sobre `L-016`: la reasignación de anclas NO es la explicación
+
+⛔ **`L-016` no estuvo en el movimiento de anclas de esta sesión** (usuario, 03/09). Las que
+cambiaron son **`L-054` y `L-055`** —las dos que tomaron ids nuevos— y **`L-004`…`L-007`**, las
+cuatro que quedaron sin fila.
+
+⇒ **Las dos salidas de `verLaminas()` son resultado, y ninguna se da por descontada:**
+
+- Si reporta `L-016` en **`filas_sin_ancla`** ⇒ la hipótesis se sostiene **pero la causa NO es la
+  reasignación**, y hay que buscarla en otro lado.
+- Si **NO** la reporta ⇒ **la hipótesis se cae** y hay una **tercera causa** — candidatas:
+  `seccion_id` distinto en la hoja viva, o la guarda de **contigüidad** del bloque.
+
+⭐ **No se da la reasignación por explicación antes de ver cuál sale.** Es la misma disciplina que
+el 6 contra 7: dos causas que producen el mismo síntoma y **sólo el detalle las separa**.
+
+---
+
+## ⛔⛔ P1 · `verificarLaminas()` corre y NO IMPRIME NADA (03/09/2026)
+
+**Medido: tiene CERO `Logger.log`.** Sólo `return`, y **el editor de Apps Script no muestra el valor
+de retorno**. El usuario la corrió el 03/09 y el log salió vacío.
+
+⚠ **Es el peor caso de la regla de `CLAUDE.md` §2, no un caso más.** La función cumple las dos
+condiciones del desplegable —sin `_`, sin parámetros— así que **aparece en la lista, se puede
+correr, corre bien y no dice nada**.
+
+⭐⭐ **Y la diferencia con los tres casos que fundaron la regla es lo que la hace peor:** aquéllos
+eran *«no la encuentro»*, que **manda a buscar**. Éste es *«corrió y no dijo nada»*, que **se lee
+como “no encontró nada”** — o sea **como una respuesta**, y falsa.
+
+⇒ **Arreglado con `verLaminas()`** (`Sellador.gs`): llama a la de siempre —**no reimplementa
+nada**— y la imprime, con `filas_sin_ancla` **primero** porque es la pregunta de `L-016`, el
+veredicto arriba, y **el cero dicho en cada bloque** en vez de callado.
+
+⚠ **Falta el barrido:** `verificarLaminas()` no tiene por qué ser la única función pública sin
+`Logger.log`. **Un cero medido y un cero no buscado no se distinguen** — el barrido no se corrió, y
+eso se dice en vez de omitirse.
