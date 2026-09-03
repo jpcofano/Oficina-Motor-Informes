@@ -11014,6 +11014,13 @@ La confusión vino de que **el id no distingue de qué caso se habla**.
 
 ### Cómo se cierra
 
+⭐⭐ **DECISIÓN DEL USUARIO (03/09): la numeración es continua ENTRE archivos, no por archivo.**
+El id de un caso nuevo sale del **máximo global de los tres CSV**, nunca del máximo del archivo que se
+está escribiendo. ⚠ **Y el motivo es que esto NO es un tipeo:** los dos repetidos tienen **la misma
+forma** —el CSV del 28/08 reinició la serie `C-` donde el del 19/08 ya la tenía—, así que **es
+sistemático y el próximo CSV lo repite** salvo que la convención quede escrita. `V-124` cumplió la
+regla **por casualidad**, al tomar el siguiente `V-` libre de los tres.
+
 ⛔ **Los CSV son congelados (`§7`): no se edita una fila para renumerarla.** La salida es **declarar
 la convención** —que el `caso_id` es único **por archivo** y que el cruce tiene que ser por
 `archivo + caso_id`— o **numerar los archivos nuevos desde el máximo global**, que es lo que
@@ -11042,6 +11049,20 @@ contexto que un banco **setea** y que **ni un `.gs` ni ningún otro banco leen**
 
 ⇒ **Resultado: 1 hit, y es un falso positivo** — la mención de `ctx.__hoy` **dentro del comentario**
 que documenta el bug en `asistente-contexto.js`.
+
+⭐⭐ **LOS TRES BARRIDOS QUE FALTAN, nombrados como CLASES distintas** (usuario, 03/09) — no se
+hacen ahora, quedan anotados. **Cada uno necesita su propio instrumento**, y ninguno lo cubre otro:
+
+| # | clase | qué busca | caso testigo | por qué no lo ve el barrido hecho |
+|---|---|---|---|---|
+| **A** | ✅ **variable de contexto huérfana** en un banco | la setea un banco, no la lee nadie | `ctx.__hoy` | — **éste es el que ya corrió: cero más** |
+| **B** | ⛔ **columna write-only** de una hoja de registro | el motor la escribe y **ningún lector la consulta** | `CAMPANAS.informe_id` | vive en una **hoja**, no en `tools/`: hay que cruzar `SEED_*`/escritores contra los lectores `.gs` |
+| **C** | ⛔ **escritor sin llamador** | una función que escribe una hoja y **nadie invoca** | `VALORES` | el nombre existe y compila; sólo un grep de invocaciones lo delata |
+
+⚠ **Y el modo de falla es el mismo en los tres, que es lo que los hace una familia: ninguno FALLA.**
+Una variable huérfana **pasa**, una columna write-only **se llena**, un escritor sin llamador
+**compila**. ⭐ **Ninguno de los tres se descubre corriendo el sistema** — sólo barriéndolo, y sólo
+si el barrido lleva su control positivo.
 
 ⚠ **Lo que este barrido NO cubre**, y por eso no cierra la familia entera: mide **variables de
 contexto en bancos**. Los otros dos casos de la misma figura son de otra clase —

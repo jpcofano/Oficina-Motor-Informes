@@ -3046,7 +3046,7 @@ sustituto de volver a medir cuando el número importa**.
 | | | |
 |---|---|---|
 | `[x]` **20** | ~~`escritores.js` / `inventario.js` roto~~ **CERRADO 03/09** | el limpiador no reconocía regex literales · `BITACORA` |
-| `[ ]` **29** | ⛔ **`caso_id` repetido entre CSV** — `C-84` y `C-85`: la clave del cruce de `D-56` **no es única** | `PENDIENTES` `P1` (03/09) · ⚠ **ya costó una lectura equivocada**, y el instrumento le da verde igual |
+| `[ ]` **29** | ⛔ **`caso_id` repetido entre CSV** — `C-84` y `C-85`: la clave del cruce de `D-56` **no es única** | `PENDIENTES` `P1` (03/09) · ⚠ **ya costó una lectura equivocada**, y el instrumento le da verde igual · ⭐⭐ **La numeración tiene que ser continua ENTRE archivos, no por archivo** (usuario, 03/09): los dos repetidos tienen **la misma forma** —el CSV del 28/08 reinició la serie `C-`—, así que **no es un tipeo: es sistemático, y el próximo CSV lo repite**. El id nuevo sale del **máximo global de los tres**, que es lo que `V-124` hizo por casualidad |
 | `[~]` **21** | Los **2 bancos en rojo**, defectos reales | `probar-ambito-ivr` · `probar-desglose-como-fuente` · ✅ ~~`probar-asistente-periodo`~~ **CERRADO 03/09**: no era el reuso — el banco medía con la fecha del día. **46 afirmaciones en verde** |
 | `[~]` **23** | Control de tokens **SIN llaves** impresos (`A4`) | ⭐ **INSTRUMENTO ESCRITO 03/09** — `censarTokensSinLlaves()`, sólo lectura, las dos plantillas. **Falta correrlo** (usuario) |
 | `[ ]` **24** | Invariante **agregado = suma del desagregado** | ver `V-111`/`V-113` |

@@ -79,6 +79,10 @@ h1{font-size:var(--text-lg);font-weight:500;margin:0;line-height:1.2}
 .tab:hover:not(.is-active){background:var(--surface-hover)}
 .tab.is-active{background:var(--color-white);box-shadow:var(--shadow-sm);color:var(--text-primary);font-weight:500}
 .tab-count{font-size:var(--text-2xs);color:var(--color-primary);font-weight:500}
+/* `2026-09-01_3` B.2 - los dos niveles. El envoltorio apila las dos pastillas; cada fila sigue
+ * siendo un `.tabs` igual al de siempre, asi que el aspecto de una pestana no cambia. */
+.tabs-wrap{display:flex;flex-direction:column;gap:var(--space-2)}
+.tab-grupo.is-abierto{color:var(--text-primary)}
 
 /* ── Formularios ──────────────────────────────────────────────────────────────────── */
 .field{display:flex;flex-direction:column;gap:var(--space-2)}
@@ -284,7 +288,7 @@ a.run-link:hover{background:var(--surface-hover)}
       </div>
     </div>
 
-    <div class="tabs" id="tabs"></div>
+    <div class="tabs-wrap" id="tabs"></div>
     <div id="cuerpo"></div>
   </div>
   <img class="banner" alt="" src="data:image/png;base64,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">
@@ -342,7 +346,17 @@ var S = {
   forzarForm: false,        // "generar de nuevo, a sabiendas"
   resultado: null, motivo: null,
   elapsed: 0, tick: null,
-  tab: 'generar',
+  /* ⭐ `2026-09-01_3` B.2 - **arranca en el asistente**, que es el proceso. Decia `'generar'`,
+   * o sea que el panel abria en una pestana que ahora vive un nivel abajo: abrir dentro de un
+   * grupo colapsado es justo el estado raro que los dos niveles tienen que hacer imposible. */
+  tab: 'asistente',
+  /* ⭐⭐ **El unico estado nuevo de los dos niveles, y cubre UN solo caso:** abrir «Detalles»
+   * para mirar, con una pestana de nivel 1 activa. **El nivel NO se guarda** - se deriva de
+   * `S.tab` (`detallesVisible_`), porque con un segundo campo los tres saltos automaticos
+   * -`S.tab = 'desatendida'` x2 y `S.tab = 'generar'`- tendrian que acordarse de abrirlo, y el
+   * que se olvide deja la pestana activa dentro de un grupo cerrado: un estado que compila y no
+   * se ve hasta que alguien genera. */
+  detallesAbierto: false,
   corridas: null, corridasCargando: false,
   /* `2026-08-21_19` — la corrida desatendida. `des` es lo que devolvió `panel_estadoDesatendida`
    * (`null` = todavía no se pidió); `desArranque` es el resultado del botón, que se muestra una
@@ -787,6 +801,9 @@ function refrescarEstado(){
 }
 
 function pintar(){
+  /* ⛔ `2026-09-01_3` B.2 - un `S.tab` desconocido se normaliza **antes** de pintarTabs(), para
+   * que lo que se pinta y lo que se resalta no puedan discrepar ni por un repintado. */
+  if (!tabDe_(S.tab)) S.tab = 'asistente';
   pintarTabs();
   var c = el('cuerpo');
   if (S.cargando){ c.innerHTML = '<p class="muted">Cargando el estado del motor…</p>'; return; }
@@ -807,30 +824,91 @@ function pintar(){
     if (S.des === null && !S.desCargando){ cargarDesatendida(); return; }
     c.innerHTML = vistaDesatendida(); conectarDesatendida(); return;
   }
-  c.innerHTML = vistaGenerar();
-  conectarGenerar();
+  if (S.tab === 'generar'){ c.innerHTML = vistaGenerar(); conectarGenerar(); return; }
+  /* ⚠ Defensivo y nada mas: `pintar()` ya normalizo `S.tab` arriba. Hasta el `2026-09-01_3`
+   * aca caia **todo** lo desconocido y pintaba «Generar» sin guarda - inofensivo mientras
+   * «Generar» era la pestana por defecto, y con la pestana un nivel abajo abriria «Detalles»
+   * sola. */
+  c.innerHTML = vistaAsistente(); conectarAsistente();
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-09-01_3` B.2 — **la navegacion de dos niveles**
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⭐ **Arriba lo que se usa cada semana; en «Detalles» lo que se consulta.** `Corridas` sube
+ * porque **desde B.1 abre el deck** — hasta ese cambio no llevaba a ninguna parte y subirla se
+ * apoyaba en una premisa falsa.
+ *
+ * ⭐⭐ **El nivel se DERIVA de la pestana. No se guarda.** Hay tres saltos automaticos que
+ * escriben `S.tab` directo —los dos a `'desatendida'` y el de la corrida sincronica del
+ * asistente, que salta a `'generar'`—. Con un segundo campo, **cada uno tendria que acordarse de
+ * abrir el nivel**, y el que se olvide deja la pestana activa dentro de un grupo cerrado: un
+ * estado que compila y no se ve hasta que alguien genera. Derivando, `S.tab = 'generar'` abre
+ * «Detalles» solo, sin tocar una linea de `generarDesdeAsistente`.
+ *
+ * ⛔ **«Generar» baja a «Detalles» y NO se retira**, y el motivo se midio en la Parte 0 en vez de
+ * suponerse: **el asistente no puede regenerar sobre un periodo ya armado**. Su paso 1 manda
+ * siempre al paso 2, el paso 2 corta con «La caja esta vacia» y la guarda del backend exige
+ * `reuniones_sin_confirmar === 0`. El rodeo por Proponer/Cargar obliga a re-anclar, que cuesta
+ * ~50 s. Ademas es lo unico que ofrece el selector libre de periodo, los cuadrados, la creacion
+ * de periodo y `FLAGS.personalizado`. **Retirarla por «parece redundante» seria derogar una
+ * decision con una impresion.** */
+var TABS_ = [
+  { id:'asistente',   txt:'Asistente', nivel:'principal' },
+  { id:'desatendida', txt:'Corrida',   nivel:'principal' },
+  { id:'corridas',    txt:'Corridas',  nivel:'principal' },
+  { id:'generar',     txt:'Generar',   nivel:'detalles' },
+  { id:'anclajes',    txt:'Anclajes',  nivel:'detalles' },
+  { id:'faltantes',   txt:'Faltantes', nivel:'detalles' },
+  { id:'proximo',     txt:'Próximo',   nivel:'detalles' }
+];
+
+/** La entrada de una pestana, o `null` si el id no existe. **Devuelve null a proposito**: es lo
+ *  que deja a `pintar()` distinguir un id desconocido de uno valido. */
+function tabDe_(id){
+  for (var i=0;i<TABS_.length;i++){ if (TABS_[i].id === id) return TABS_[i]; }
+  return null;
+}
+function nivelDe_(id){ var x = tabDe_(id); return x ? x.nivel : 'principal'; }
+
+/* ⭐ **El invariante, en una disyuncion:** si la pestana activa es de «Detalles», el grupo esta
+ * abierto **por construccion** y ningun salto automatico lo puede desincronizar. `detallesAbierto`
+ * cubre solamente el otro caso: abrirlo para mirar desde una pestana de nivel 1. */
+function detallesVisible_(){ return nivelDe_(S.tab) === 'detalles' || S.detallesAbierto === true; }
+
 function pintarTabs(){
-  var tabs = [
-    /* ⭐ El asistente va PRIMERO porque es el proceso. «Generar» queda al lado, y eso es
-     * deliberado: es el camino libre, y sigue haciendo falta para regenerar un deck de un período
-     * ya armado sin volver a pasar por los cuatro pasos. */
-    { id:'asistente', txt:'Asistente' },
-    { id:'generar', txt:'Generar' },
-    { id:'desatendida', txt:'Corrida' },
-    { id:'anclajes', txt:'Anclajes' },
-    { id:'faltantes', txt:'Faltantes' },
-    { id:'corridas', txt:'Corridas' },
-    { id:'proximo', txt:'Próximo' }
-  ];
-  el('tabs').innerHTML = tabs.map(function(t){
+  function boton(t){
     return '<button class="tab' + (S.tab===t.id?' is-active':'') + '" data-tab="' + t.id + '">' +
       esc(t.txt) + '</button>';
-  }).join('');
-  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(b){
+  }
+  var principales = TABS_.filter(function(t){ return t.nivel === 'principal'; });
+  var detalles    = TABS_.filter(function(t){ return t.nivel === 'detalles'; });
+
+  /* ⚠ **Dentro de «Detalles» el grupo NO es un boton: es una miga.** Un boton que no puede
+   * cerrar el grupo donde estas parado seria un control muerto — el invariante de arriba lo
+   * obliga a quedar abierto. Se pinta con el aspecto de pestana activa y sin galon, y la salida
+   * es la fila de abajo. */
+  var grupo;
+  if (nivelDe_(S.tab) === 'detalles'){
+    grupo = '<span class="tab is-active tab-grupo is-abierto">Detalles · ' +
+            esc((tabDe_(S.tab)||{}).txt || '') + '</span>';
+  } else {
+    grupo = '<button class="tab tab-grupo' + (S.detallesAbierto?' is-abierto':'') +
+            '" id="tab-detalles">Detalles ' + (S.detallesAbierto?'▾':'▸') + '</button>';
+  }
+
+  var html = '<div class="tabs">' + principales.map(boton).join('') + grupo + '</div>';
+  if (detallesVisible_()) html += '<div class="tabs">' + detalles.map(boton).join('') + '</div>';
+  el('tabs').innerHTML = html;
+
+  /* ⛔ **`[data-tab]` en el selector, no `.tab` a secas.** El grupo comparte la clase para heredar
+   * el aspecto; si entrara al bind haria `S.tab = null` y caeria en el fallback del router. */
+  Array.prototype.forEach.call(document.querySelectorAll('.tab[data-tab]'), function(b){
     b.onclick = function(){ S.tab = b.getAttribute('data-tab'); pintar(); };
   });
+  var g = el('tab-detalles');
+  if (g) g.onclick = function(){ S.detallesAbierto = !S.detallesAbierto; pintar(); };
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════

@@ -1124,6 +1124,36 @@ código intacto, da verde, y eso se lee como *«el negativo pasó»*.
   por otro motivo —falta exigir el motivo—; **(3)** ⭐ **no llegó a mirar nada** —falta exigir que
   la mutación ocurra—. **Son tres afirmaciones separadas y ninguna implica a las otras dos.**
 
+⭐⭐ **Y la CUARTA, que no es sobre un banco sino sobre un DETECTOR — y es la que más barata sale
+y más veces se saltea: un detector nuevo no reporta hasta que se le exige encontrar un caso que YA
+SE SABE que está.** (03/09/2026.) Un banco prueba una función y falla solo; **un detector produce
+un número, y un número no falla nunca**. Su único modo de error visible es el falso positivo — los
+falsos **negativos** salen como un cero prolijo.
+
+- **El caso, y el detector se rehizo DOS veces antes de servir.** Buscaba variables de contexto
+  huérfanas en `tools/` — las que un banco **setea** y que **nadie lee**, que es el bug de
+  `ctx.__hoy`: un punto de inyección que no existe **no falla, PASA**.
+
+  | intento | dio | por qué estaba mal |
+  |---|---|---|
+  | 1º | **47 de 50** | buscaba sólo en los `.gs` — esas variables se leen desde `vm.runInContext`, **en el propio banco** |
+  | 2º | **6** | analizaba **archivo por archivo**: una seteada en un helper y leída en un banco daba falso |
+  | ⭐ 3º | **1, y era falso** | mira `tools/` **como un todo**, y **verifica primero que detecte `__hoy`** en la versión anterior al arreglo |
+
+- ⭐⭐ **Lo que lo cambia todo es el control positivo, y acá es literalmente gratis: `git show
+  <commit>~1:<archivo>`.** El caso conocido **ya existe en el historial** — es el bug que motivó el
+  detector. Correrlo contra la versión de antes del arreglo cuesta una línea y **aborta si no lo
+  encuentra**, en vez de imprimir un cero.
+- ⚠ **Sin él, los tres intentos se ven IGUAL de publicables.** El primero habría publicado 47
+  falsos —y alguien los habría trabajado uno por uno, que es lo que ya costó el 30/08—; el segundo,
+  6; y un cuarto que no mirara nada habría dado **cero, que es la respuesta que uno quiere leer**.
+  **El cero es el resultado más peligroso de un detector, porque es indistinguible del éxito.**
+- ⚠ **Y el alcance del cero se declara con la misma frase que el cero.** Éste mide **variables de
+  contexto en bancos** y nada más: `CAMPANAS.informe_id` —una **columna** write-only— y `VALORES`
+  —un **escritor sin llamador**— son la misma figura de **otra clase**, y **cada clase necesita su
+  propio instrumento**. Un barrido que no dice qué clase barrió se lee como si hubiera barrido
+  todas.
+
 ⭐⭐ **Un escritor que informa lo que ESCRIBIÓ no verifica nada: hay que RELEER, y por otro camino.** (31/08/2026.) Es el **segundo lector de más arriba aplicado a una escritura**, y la simetría es exacta — allá dos lectores tienen que **fallar distinto**; acá **escribir y verificar tienen que ser dos caminos**, o el control mide su propia intención.
 
 - **El caso:** un wrapper mueve ocho filas de `MARCADORES` y el escritor devuelve *«32 celdas escritas»*. **Eso no dice que la hoja quedó bien**: dice qué se pidió. *«32 escritas»* y *«las 8 quedaron»* serían **la misma afirmación hecha dos veces por el mismo camino**.
