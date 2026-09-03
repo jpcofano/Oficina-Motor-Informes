@@ -7980,3 +7980,158 @@ function volcarInventarioDeTokens() {
 
   return { ok: true, hoja: nombreHoja, filas: filas.length, resumen: resumen, candidatos: lista };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-09-01_4` Parte 0 — `Agenda funcionarios` CONTRA LA PLANILLA VIVA
+ *
+ * ⛔⛔ **Existe porque el fixture NO ALCANZA, y eso está medido:** el export del 28/08 tiene
+ * envíos **hasta el 24/08**, y el control del usuario —los siete encuentros de la semana
+ * `28/08–03/09`— necesita la ventana de envío `25/08–31/08`, más el envío del **01/09** de Mraida.
+ * **Ningún fixture en disco los tiene.**
+ *
+ * ⇒ **El control de los siete SÓLO se puede verificar acá.** Sin esta corrida, las nueve filas de
+ * ministros nacen **propuestas y no verificadas** — y eso va escrito así, sin suavizar.
+ *
+ * ⛔ **SÓLO LECTURA.** No toca `MAPEO`, ni `SOLAPAS`, ni `MARCADORES`, ni la base.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* La ventana del control, dada por el usuario: semana `28/08–03/09` **desplazada −3 en las dos
+ * puntas**, filtrando por `Fecha de envío`. ⚠ No es configuración del motor: es el caso que se
+ * está midiendo, y por eso vive acá y no en `CONFIG`. */
+var VENTANA_ENVIO_CONTROL_ = { desde: '2026-08-25', hasta: '2026-08-31', semana: '28/08–03/09' };
+
+/** Sin `_` y sin parámetros: las dos condiciones del desplegable (`CLAUDE.md` §2). */
+function diagAgendaFuncionarios() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('`reuniones / Agenda funcionarios` CONTRA LA PLANILLA VIVA — ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA. No se escribe nada.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  var b = abrirBase('reuniones');
+  if (!b.ok) { Logger.log('⛔ ABORTA: ' + b.motivo); return { ok: false, motivo: b.motivo }; }
+  var hoja = b.libro.getSheetByName('Agenda funcionarios');
+  if (!hoja) {
+    /* ⚠ Si el nombre cambió, **todo lo medido encima sale corrido sin fallar** — por eso aborta
+     * en vez de buscar una solapa parecida. */
+    Logger.log('⛔ ABORTA: no existe la solapa `Agenda funcionarios`. Solapas del libro:');
+    b.libro.getSheets().forEach(function (s) { Logger.log('     ' + s.getName()); });
+    return { ok: false, motivo: 'sin solapa' };
+  }
+
+  var filaEnc = resolverFilaEncabezado_('reuniones', 'Agenda funcionarios', 1);
+  var datos = hoja.getDataRange().getValues();
+  Logger.log('  filas totales en la hoja : ' + datos.length);
+  Logger.log('  fila de encabezado (SOLAPAS): ' + filaEnc);
+
+  var h = (datos[filaEnc - 1] || []).map(function (c) { return String(c == null ? '' : c).trim(); });
+  Logger.log('');
+  Logger.log('── ENCABEZADO REAL, POR LETRA ────────────────────────────────────────');
+  /* ⭐ **Por letra Y por encabezado**, que es lo que `CLAUDE.md` §2 exige para toda fila de `MAPEO`:
+   * la letra es la referencia operativa y el encabezado el testigo. ⚠ Y el salto de línea se
+   * muestra como `⏎` en vez de romper el log: cuatro encabezados de esta solapa lo traen adentro,
+   * y un testigo escrito sin colapsarlo no matchea (`R-10`). */
+  /* ⚠ La conversión va inline: **`columnaIndiceALetra_` NO existe** —grepeado— y sólo está su
+   * inversa, `columnaLetraAIndice_`. Una guarda `x ? x() : y` sobre un nombre no declarado
+   * **tira `ReferenceError`**, no cae al `else`. Es el mismo bug de scope que ya costó una corrida. */
+  function letraDe(n) {
+    var s = '';
+    while (n > 0) { var r = (n - 1) % 26; s = String.fromCharCode(65 + r) + s; n = (n - 1 - r) / 26; }
+    return s;
+  }
+  for (var c = 0; c < Math.min(h.length, 30); c++) {
+    if (h[c] !== '') {
+      Logger.log('  ' + letraDe(c + 1) + '\t' + JSON.stringify(h[c]).replace(/\\n/g, '⏎'));
+    }
+  }
+
+  var iFec = h.indexOf('Fecha');
+  var iEnv = -1;
+  for (var k = 0; k < h.length; k++) {
+    if (h[k].replace(/\s+/g, ' ') === 'Fecha de envío') { iEnv = k; break; }
+  }
+  var iFun = h.indexOf('Funcionario');
+  var iBar = h.indexOf('Barrio / Comuna');
+  Logger.log('');
+  Logger.log('  índices: Fecha=' + iFec + ' · Fecha de envío=' + iEnv +
+    ' · Funcionario=' + iFun + ' · Barrio / Comuna=' + iBar);
+  if (iFec === -1 || iEnv === -1 || iFun === -1) {
+    Logger.log('  ⛔ ABORTA: falta alguna de las tres columnas con ese nombre EXACTO.');
+    Logger.log('     Un nombre que difiera en un espacio o un acento deja el MAPEO apuntando a la');
+    Logger.log('     columna equivocada SIN FALLAR — por eso se aborta en vez de adivinar.');
+    return { ok: false, motivo: 'columnas' };
+  }
+
+  // ── El control de los siete ─────────────────────────────────────────────────────────────
+  var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  function dia(v) {
+    if (v instanceof Date) return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
+    var p = parsearFechaCelda_(v);
+    return p ? Utilities.formatDate(p, tz, 'yyyy-MM-dd') : '';
+  }
+  var dentro = [], sinEnvio = 0, sinFecha = 0, conDatos = 0, maxEnv = '';
+  for (var f = filaEnc; f < datos.length; f++) {
+    var fila = datos[f];
+    var fun = String(fila[iFun] == null ? '' : fila[iFun]).trim();
+    if (!fun) continue;
+    conDatos++;
+    var de = dia(fila[iEnv]), df = dia(fila[iFec]);
+    if (de > maxEnv) maxEnv = de;
+    /* ⚠ **Las que tienen una de las dos vacías se CUENTAN**, y no es un detalle: con el filtro por
+     * envío **caen afuera en silencio**, que es la clase de hueco que no se nota hasta que falta un
+     * ministro en el deck. Un filtro que descarta y no cuenta es invisible (`CLAUDE.md` §4). */
+    if (!de) { sinEnvio++; continue; }
+    if (!df) sinFecha++;
+    if (de >= VENTANA_ENVIO_CONTROL_.desde && de <= VENTANA_ENVIO_CONTROL_.hasta) {
+      dentro.push({ fun: fun, envio: de, fecha: df,
+                    barrio: iBar === -1 ? '' : String(fila[iBar] == null ? '' : fila[iBar]).trim() });
+    }
+  }
+
+  Logger.log('');
+  Logger.log('── EL CONTROL: semana ' + VENTANA_ENVIO_CONTROL_.semana + ' → envíos ' +
+    VENTANA_ENVIO_CONTROL_.desde + ' a ' + VENTANA_ENVIO_CONTROL_.hasta + ' ──');
+  Logger.log('  filas con Funcionario cargado : ' + conDatos);
+  Logger.log('  ⚠ sin `Fecha de envío`        : ' + sinEnvio + '  ← caen AFUERA del filtro, en silencio');
+  Logger.log('  ⚠ sin `Fecha`                 : ' + sinFecha + '  ← entran, pero no se pueden mostrar');
+  Logger.log('  máxima `Fecha de envío`       : ' + (maxEnv || '(ninguna)'));
+  Logger.log('');
+  Logger.log('  ⭐ ENTRAN: ' + dentro.length + '   (el control del usuario dice 7)');
+  dentro.sort(function (a, b) { return a.envio < b.envio ? -1 : (a.envio > b.envio ? 1 : 0); })
+    .forEach(function (x) {
+      Logger.log('     envío ' + x.envio + ' · Fecha ' + (x.fecha || '(vacía)') +
+        ' · ' + x.fun + (x.barrio ? '  [' + x.barrio + ']' : ''));
+    });
+
+  Logger.log('');
+  if (dentro.length === 7) {
+    Logger.log('  ✅ SON SIETE. El desplazamiento −3 sobre `Fecha de envío` reproduce el control.');
+  } else {
+    /* ⛔ **No se ajusta el desplazamiento para que cuadre.** La regla está definida por el usuario
+     * y un número distinto es un HALLAZGO, no un parámetro a calibrar. */
+    Logger.log('  ⛔ NO SON SIETE, son ' + dentro.length + '. **Es un hallazgo, no un parámetro a');
+    Logger.log('     calibrar**: la regla está definida y el desplazamiento NO se ajusta para que');
+    Logger.log('     cuadre. Mirar cuál sobra o cuál falta contra la lista del usuario.');
+  }
+
+  // ── La regla condicional del barrio ─────────────────────────────────────────────────────
+  var seg = dentro.filter(function (x) {
+    return x.fun.toLowerCase().indexOf('seguridad en tu barrio') !== -1;
+  });
+  Logger.log('');
+  Logger.log('── LA REGLA CONDICIONAL: «Seguridad en tu barrio» en `Funcionario` ──');
+  Logger.log('  filas en la ventana que la cumplen: ' + seg.length + '   (el control dice 3)');
+  seg.forEach(function (x) { Logger.log('     ' + JSON.stringify(x.fun) + '  →  barrio ' + JSON.stringify(x.barrio)); });
+  if (!seg.length) {
+    Logger.log('  ⚠ NINGUNA. O el texto está escrito distinto, o esas filas no están cargadas.');
+    Logger.log('    ⛔ Sin ellas la regla condicional no se puede especificar: el literal que va en');
+    Logger.log('    la fila de `MARCADORES` tiene que ser EL QUE LA HOJA TRAE, no el que se supone.');
+  }
+
+  Logger.log('');
+  Logger.log('── LO QUE ESTE DIAGNÓSTICO NO CONTESTA ───────────────────────────────');
+  Logger.log('  · Si los nueve tokens publican el número correcto: eso es una corrida del deck.');
+  Logger.log('  · Nada sobre `emin_lista`: su operación no existe todavía.');
+  return { ok: true, entran: dentro.length, filas: conDatos, sin_envio: sinEnvio,
+           sin_fecha: sinFecha, seguridad: seg.length, detalle: dentro };
+}
