@@ -9621,7 +9621,25 @@ var LEVANTAN_POR_CASO_ = [
   { marcador: 'u1_pre_meta_impresiones',   caso: 'V-114', evidencia: 'deck del equipo' },
   { marcador: 'u1_pre_prog_clics',         caso: 'V-120', evidencia: 'ausencia acordada' },
   { marcador: 'u1_pre_prog_ctr',           caso: 'V-120', evidencia: 'ausencia acordada' },
-  { marcador: 'u1_pre_prog_impresiones',   caso: 'V-120', evidencia: 'ausencia acordada' }
+  { marcador: 'u1_pre_prog_impresiones',   caso: 'V-120', evidencia: 'ausencia acordada' },
+
+  /* ⭐ `2026-09-01_4` Bloque 2 — **los SEIS de M2**, con su caso recién escrito.
+   *
+   * ⚠ **La ventana del caso es la semana del 21/08, NO la del 28/08.** El usuario verificó contra
+   * el deck del equipo **en el momento en que se generó ese informe**, y el motor daba exactamente
+   * esos seis valores. **Las bases se mueven** (`R-31`), así que hoy publica otra cosa y **eso no
+   * invalida el caso**: `D-56` dice que un caso es una comparación **fechada**. Una medición
+   * contra otra corrida **no es evidencia en contra** — es otra ventana.
+   *
+   * ⛔ **Y son SEIS, no ocho.** `m2_envios` (16) y `m2_campanias`/«proyectos» (11) **se quedan con
+   * su `_revisar`** por decisión del usuario: sus valores viajan en la nota de `V-124` como
+   * **referencia sin validar**, y no levantan nada. */
+  { marcador: 'm2_mails_enviados',         caso: 'V-124', evidencia: 'deck del equipo' },
+  { marcador: 'm2_mails_entregados',       caso: 'V-124', evidencia: 'deck del equipo' },
+  { marcador: 'm2_aperturas',              caso: 'V-124', evidencia: 'deck del equipo' },
+  { marcador: 'm2_or',                     caso: 'V-124', evidencia: 'deck del equipo' },
+  { marcador: 'm2_clics',                  caso: 'V-124', evidencia: 'deck del equipo' },
+  { marcador: 'm2_ctor',                   caso: 'V-124', evidencia: 'deck del equipo' }
 ];
 
 /** Modo seco. ⛔ No escribe. */

@@ -180,8 +180,13 @@ console.log('\n═══ G · la lista y el CSV no pueden divergir sin que se no
    * existir en algún CSV con ese `caso_id`**. */
   const ctx = contexto();
   const lista = vm.runInContext('LEVANTAN_POR_CASO_', ctx);
-  const csv = ['docs/casos_validacion_2026-08-19.csv', 'docs/casos_validacion_2026-08-28.csv']
-    .map((f) => fs.readFileSync(path.join(RAIZ, f), 'utf8')).join('\n');
+  /* ⭐ **Los CSV se descubren con glob, no con una lista escrita a mano.** La lista fija dejó
+   * huérfano a `V-124` el día que nació su archivo — el banco lo detectó, que es exactamente lo
+   * que tenía que hacer, pero el arreglo correcto es que **un CSV nuevo entre solo**: una lista de
+   * archivos que hay que actualizar a mano es justo la clase de lista que nadie actualiza. */
+  const csv = fs.readdirSync(path.join(RAIZ, 'docs'))
+    .filter((f) => f.indexOf('casos_validacion_') === 0 && f.slice(-4) === '.csv')
+    .map((f) => fs.readFileSync(path.join(RAIZ, 'docs', f), 'utf8')).join('\n');
   const huerfanos = lista.filter((x) => csv.indexOf(x.caso + ',') === -1);
   afirmar(huerfanos.length === 0,
     '⭐⭐ los ' + lista.length + ' casos de la lista existen en los CSV' +
