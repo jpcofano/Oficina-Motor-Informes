@@ -10846,7 +10846,9 @@ alta pasa por `tools/listas.js`.
 
 ---
 
-## ⛔⛔ P0 · `frecuencia` divide IMPRESIONES DE TODAS LAS PLATAFORMAS por el ALCANCE DE META (03/09/2026)
+## ⚠ P3 · ~~`frecuencia` divide impresiones de todas las plataformas por el alcance de Meta~~ — **DIAGNÓSTICO RETIRADO** (03/09/2026)
+
+> ⛔ **Ba jó de `P0` a `P3` el mismo día, al cruzar el CSV.** La premisa —*«el cociente mezcla dos universos»*— **es la definición del negocio**, medida en `C-52` y validada por `V-68` y `V-69`. Se conserva el texto original porque **la medición del mecanismo sigue siendo correcta**; lo que se cae es la conclusión. El reescrito va al final.
 
 **Ítem 10 de la cola.** *«Alcance de Meta: frecuencia 32,76 no es creíble.»* **Diagnosticado — y el
 número no es un error de cálculo: es un cociente entre dos universos distintos.**
@@ -10910,3 +10912,67 @@ salidas **mueven un número publicado en las dos plantillas** —`frecuencia`, `
 **canario** en varias verificaciones —*«mientras dé 0, la base está en tránsito»*—. Cambiarle la
 definición **cambia el canario**, así que la corrida que valide esto no puede usarlo como testigo
 de sí misma.
+
+### ⛔⛔ REESCRITO el 03/09 tras cruzar el CSV — **el diagnóstico de arriba estaba mal, y las tres salidas no sobreviven**
+
+⚠ **El error de método, dicho primero porque es el que importa:** el diagnóstico se escribió
+**mirando `MARCADORES` y el fixture, sin cruzar `docs/casos_validacion_*.csv`** — que **ya hablaba
+del mismo hecho, con seis casos**. Es exactamente lo que `D-56` manda hacer *«antes de aplicar algo
+que cambia lo que se publica»*, y lo que su propia sección **«la regla que faltaba»** describe. **Se
+aplicó la regla al escribirla y no al usarla.**
+
+#### Lo que dicen los seis casos
+
+| caso | estado | qué dice |
+|---|---|---|
+| `V-68` | **exacto** | *«OPERACIÓN CONFIRMADA: `frecuencia` es RATIO impresiones/alcance, redondeado»* · 190.805/47.232 = 4,04 → **4** publicado |
+| `V-69` | **exacto** | segundo caso independiente · 378.880/36.694 = 10,33 → **10** |
+| `C-52` | cerrado | ⭐⭐ *«**LA BASE CALCULA LA FRECUENCIA Y ES Impresiones totales / Alcance**»* · San Cristóbal 42.500/1.412 = **30,099**, exacto contra la celda |
+| `C-22` | abierto | *«NINGUNA de L ni M reproduce 11,9»* |
+| `C-86` | abierto | *«FRECUENCIA SE CALCULA — decisión del usuario 28/08»* |
+
+#### ⛔ 1 · «32,76 no es creíble» era un JUICIO, no una medición
+
+**`C-52` mide que la base hace exactamente eso** —impresiones totales sobre alcance— **y que el
+equipo publica 30,099 como valor correcto**. ⇒ **Un 32,76 está en el mismo orden de magnitud que un
+número ya validado.**
+
+⇒ **La premisa del ítem se cae.** Lo que yo llamé *«cociente entre dos universos distintos»* **es la
+definición del negocio**, confirmada por dos casos `exacto` (`V-68`, `V-69`) y medida en la fuente
+(`C-52`). **El motor no está publicando mal: está publicando lo que el equipo define.**
+
+#### ⛔ 2 · La salida 1 —leer `frecuencia_total` con `ULTIMO`— ya se probó y falló
+
+`C-22` la midió: *«L suma 28,30 promedia 6,08; M suma 489,47 promedia 24,70; ratio sobre agregados
+130,4 (con campaña genérica) o 56,6 (sin)»*. **Ninguna reproduce el publicado.** ⇒ **Sale de la
+lista: no era «la más barata», era una ya descartada.**
+
+⚠ **Con un matiz que hay que dejar escrito, porque `C-22` no cubre los tres marcadores por igual:**
+ese caso mide **agregados sobre muchas filas** —suma y promedio—, y eso aplica a `frecuencia` y
+`gcba_frecuencia`, que agregan por ámbito. **`camp_frecuencia` opera sobre UNA fila** (recortada por
+`opciones.id_cuenta`), donde `ULTIMO` de `frecuencia_total` daría el valor de esa fila —el que
+`C-52` valida—. **No está medido para ese caso**, y no se lo da por descartado ni por bueno.
+
+#### ⛔ 3 · La salida 2 —usar `meta_frecuencia`— derogaría una decisión del usuario
+
+`C-86`: *«**FRECUENCIA SE CALCULA** — decisión del usuario 28/08»*. Leer una frecuencia ya calculada
+por la base en vez de calcularla **va contra esa decisión**, y una decisión no se deroga de costado.
+
+#### ⇒ Conclusión: **ninguna salida, y probablemente ningún ítem**
+
+**El ítem 10 no describe un defecto medido.** La operación está validada por dos casos `exacto`, el
+mapeo coincide con lo que la base calcula, y el valor «no creíble» no tiene un esperado contra el
+cual serlo.
+
+⭐ **Lo que sí queda, y es lo único accionable:** *«¿32,76 es correcto para esa campaña?»* **es una
+pregunta de validación, no un bug** — se contesta con un caso `V-` contra el deck del equipo para
+esa campaña y esa ventana, exactamente como `V-68` y `V-69` lo contestaron para las suyas.
+
+⚠ **Y lo que NO se sostiene es la relación con `C-85`.** Hay **dos filas con ese id** —una `cerrado`
+sobre `ecv_barrios` (19/08) y otra `abierto` sobre `u1_total_alcance` (28/08)—, y **ninguna de las
+dos habla del `alcance` de `frecuencia`**: la segunda es el alcance **deduplicado PRE+POST del "1 a
+1"**, otra lámina y otra fuente. `C-86` depende de `C-85` **para `u1_total_frecuencia`**, no para
+`frecuencia`.
+
+⇒ ⛔ **`C-85` está usado dos veces para dos hechos distintos.** Va como hallazgo aparte: un `caso_id`
+repetido rompe el cruce por id, que es como se citan los casos.

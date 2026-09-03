@@ -3025,7 +3025,7 @@ sustituto de volver a medir cuando el número importa**.
 | | | |
 |---|---|---|
 | `[ ]` **9** | ⛔ `camp_titulo` en `L-016`/`L-023`: título de **otra** campaña | prompt escrito, sin pasar |
-| `[~]` **10** | ⛔ Alcance de Meta: **frecuencia 32,76** | ⭐ **DIAGNOSTICADO 03/09** — divide impresiones de TODAS las plataformas por el alcance de META. `PENDIENTES` `P0` con las tres salidas · ⛔ **elige el usuario**: mueve 3 números publicados |
+| `[x]` **10** | ~~Alcance de Meta: frecuencia 32,76~~ **RETIRADO 03/09** | ⛔ **no es un defecto**: al cruzar el CSV, `C-52` mide que la base calcula así y `V-68`/`V-69` validan la operación. **Las tres salidas se caen** — `C-22` ya probó la 1, `C-86` deroga la 2. Lo único accionable es **un caso `V-` para esa campaña** · `PENDIENTES` `P3` |
 | `[ ]` **11** | IVR: `ambito=gcba` da **63** donde deberían ser **8** | `PENDIENTES` · `P0` del 31/08 (`L-031`) |
 | `[ ]` **12** | Implementaciones cruzadas Directa/Digital (`A1`) | **usuario**, plantilla |
 | `[ ]` **13** | Encabezado vencido en layout/master (`A2`) | barrer `slideLayout*`/`slideMaster*` |
@@ -3046,8 +3046,7 @@ sustituto de volver a medir cuando el número importa**.
 | | | |
 |---|---|---|
 | `[x]` **20** | ~~`escritores.js` / `inventario.js` roto~~ **CERRADO 03/09** | el limpiador no reconocía regex literales · `BITACORA` |
-| `[ ]` **21** | Los **3 bancos en rojo**, defectos reales | `probar-ambito-ivr` · `probar-desglose-como-fuente` · ⚠ **`probar-asistente-periodo`** (nuevo, 03/09: el `periodo_id` derivado no reusa el que ya está — **es de la rama del asistente, no se tocó**) |
-| `[ ]` **22** | `CORRIDAS` al `snapshot.js` | ⛔ **tiene una decisión adentro (03/09)**: las tres listas están duplicadas **a propósito** y `listas.js` exige que coincidan. Agregarlo sólo a `snapshot.js` lo rompe; a las tres **cambia `instalar()`**. `PENDIENTES` `P2` (02/09) |
+| `[~]` **21** | Los **2 bancos en rojo**, defectos reales | `probar-ambito-ivr` · `probar-desglose-como-fuente` · ✅ ~~`probar-asistente-periodo`~~ **CERRADO 03/09**: no era el reuso — el banco medía con la fecha del día. **46 afirmaciones en verde** |
 | `[~]` **23** | Control de tokens **SIN llaves** impresos (`A4`) | ⭐ **INSTRUMENTO ESCRITO 03/09** — `censarTokensSinLlaves()`, sólo lectura, las dos plantillas. **Falta correrlo** (usuario) |
 | `[ ]` **24** | Invariante **agregado = suma del desagregado** | ver `V-111`/`V-113` |
 
@@ -3058,6 +3057,7 @@ sustituto de volver a medir cuando el número importa**.
 
 | | | condición que lo despierta |
 |---|---|---|
+| `[ ]` **22** | `CORRIDAS` al `snapshot.js` — **BAJADO A DORMIDO 03/09** | ⛔ **el costo supera al beneficio**: agregarlo a las tres listas **cambia `instalar()`**, y a una sola rompe `listas.js`. ⚠ **Consecuencia ya medida mientras siga así:** *«cuántas corridas cerraron sin `deck_id`»* sólo se puede contestar **sobre las últimas 10** · `PENDIENTES` `P2` (02/09) |
 | `[ ]` **25** | `figura` no llega al ítem | **cargar un ministro al temario** · `PENDIENTES` `P1` (01/09) |
 | `[ ]` **26** | `CAMPANAS.informe_id` write-only | `PENDIENTES` `P1` (02/09) |
 | `[ ]` **27** | Opción 4 — la expansión saltea escondidas | pospuesto **con número**: 2 copias muertas · `PENDIENTES` `P2` (01/09) |
