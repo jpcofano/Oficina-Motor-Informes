@@ -10976,3 +10976,78 @@ dos habla del `alcance` de `frecuencia`**: la segunda es el alcance **deduplicad
 
 ⇒ ⛔ **`C-85` está usado dos veces para dos hechos distintos.** Va como hallazgo aparte: un `caso_id`
 repetido rompe el cruce por id, que es como se citan los casos.
+
+---
+
+## ⛔ P1 · `caso_id` REPETIDO entre dos CSV — la clave del cruce de `D-56` no es única (03/09/2026)
+
+**`D-56` dice que el CSV manda, y el mecanismo con el que se cita un caso es su `caso_id`.**
+⛔ **Ese id no es único.**
+
+**Medido sobre los tres CSV: 276 filas, 274 ids distintos, DOS repetidos.**
+
+| `caso_id` | 19/08 | 28/08 |
+|---|---|---|
+| **`C-84`** | `cerrado` · *(sin token)* | `abierto` · *«`digital/Alcance` tiene DOS filas por cuenta»* |
+| **`C-85`** | `cerrado` · `ecv_barrios` | `abierto` · `u1_total_alcance` |
+
+⇒ **La misma forma en los dos: el CSV del 28/08 reinició la numeración `C-` donde el del 19/08 ya
+la tenía.** No es un error de tipeo aislado — es **el arranque de una serie que ya estaba usada**.
+
+### El reproductor
+
+Citar `C-85` y preguntar *«¿está abierto o cerrado?»*: **las dos respuestas son correctas y se
+contradicen**. Lo mismo con `C-84`. ⚠ Y el cruce automático —el que
+`tools/probar-levantar-revisar.js` hace contra `csv.indexOf(caso + ',')`— **encuentra la primera y
+no sabe que hay otra**.
+
+⭐ **Por eso importa más de lo que parece:** `D-56` levanta `_revisar` **citando un `caso_id`**. Si
+un id apunta a dos casos con estados distintos, **el criterio «tiene un caso `exacto`» puede dar
+verdadero por el caso equivocado**. Hoy no pasó —los cuatro son `cerrado`/`abierto`, ninguno
+`exacto`— pero **es suerte, no diseño**.
+
+### ⚠ Y ya costó una lectura equivocada
+
+El 03/09 se supuso que el ítem 10 —la frecuencia— *«era un síntoma de `C-85`»*. **No lo era**: el
+`C-85` `abierto` habla del alcance **deduplicado PRE+POST del "1 a 1"**, otra lámina y otra fuente.
+La confusión vino de que **el id no distingue de qué caso se habla**.
+
+### Cómo se cierra
+
+⛔ **Los CSV son congelados (`§7`): no se edita una fila para renumerarla.** La salida es **declarar
+la convención** —que el `caso_id` es único **por archivo** y que el cruce tiene que ser por
+`archivo + caso_id`— o **numerar los archivos nuevos desde el máximo global**, que es lo que
+`V-124` hizo por casualidad al tomar el siguiente `V-` libre de los tres.
+
+⚠ **Y el instrumento tiene que decirlo:** hoy `probar-levantar-revisar.js` cruza por `indexOf` sobre
+los tres archivos concatenados, así que **un id repetido le da verde igual**. Eso es lo primero que
+hay que arreglar si se elige la segunda salida.
+
+---
+
+## ✅ Barrido de puntos de inyección huérfanos: **CERO más** (03/09/2026)
+
+**`ctx.__hoy` era el único.** Barridos los **99** archivos de `tools/`, buscando variables de
+contexto que un banco **setea** y que **ni un `.gs` ni ningún otro banco leen**.
+
+⭐ **Con control positivo, y hubo que rehacer el detector dos veces por eso:**
+
+1. La **primera versión** buscaba sólo en los `.gs` y dio **47 de 50** — casi todas falsas: las
+   variables se leen desde `vm.runInContext('f(__x)')`, **en el propio banco**.
+2. La **segunda** analizaba archivo por archivo, así que una seteada en `asistente-contexto.js` y
+   leída en un banco daba falso positivo.
+3. La **tercera** —la que vale— mira `tools/` **como un todo** y **verifica primero que detecte
+   `__hoy` en la versión del banco anterior al arreglo**. Sin ese control, un «cero» habría sido
+   indistinguible de un detector que no mira nada.
+
+⇒ **Resultado: 1 hit, y es un falso positivo** — la mención de `ctx.__hoy` **dentro del comentario**
+que documenta el bug en `asistente-contexto.js`.
+
+⚠ **Lo que este barrido NO cubre**, y por eso no cierra la familia entera: mide **variables de
+contexto en bancos**. Los otros dos casos de la misma figura son de otra clase —
+`CAMPANAS.informe_id` es **una columna** que se escribe y nadie lee, y `VALORES` es **un escritor
+sin llamador**— y **cada clase necesita su propio barrido**.
+
+⭐ **El modo de falla, con su nombre, porque es lo que hace cara a esta familia:** un banco con un
+punto de inyección que no existe **no falla: PASA** — hasta que el calendario lo empuja fuera de la
+ventana. **No es un test roto: es un test que no probaba lo que decía, y nadie tenía cómo saberlo.**

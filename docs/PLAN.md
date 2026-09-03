@@ -3025,7 +3025,7 @@ sustituto de volver a medir cuando el número importa**.
 | | | |
 |---|---|---|
 | `[ ]` **9** | ⛔ `camp_titulo` en `L-016`/`L-023`: título de **otra** campaña | prompt escrito, sin pasar |
-| `[x]` **10** | ~~Alcance de Meta: frecuencia 32,76~~ **RETIRADO 03/09** | ⛔ **no es un defecto**: al cruzar el CSV, `C-52` mide que la base calcula así y `V-68`/`V-69` validan la operación. **Las tres salidas se caen** — `C-22` ya probó la 1, `C-86` deroga la 2. Lo único accionable es **un caso `V-` para esa campaña** · `PENDIENTES` `P3` |
+| `[ ]` **10** | ⭐ **Un caso `V-` para `frecuencia` de esa campaña** | lo único que quedó del 10 retirado: se contesta *«¿32,76 es correcto?»* con un caso contra el deck, como `V-68` y `V-69` para las suyas · ⚠ y el **matiz de `camp_frecuencia`** queda **NO MEDIDO** —`C-22` mide agregados y ése opera sobre una fila—: ni bueno ni descartado |
 | `[ ]` **11** | IVR: `ambito=gcba` da **63** donde deberían ser **8** | `PENDIENTES` · `P0` del 31/08 (`L-031`) |
 | `[ ]` **12** | Implementaciones cruzadas Directa/Digital (`A1`) | **usuario**, plantilla |
 | `[ ]` **13** | Encabezado vencido en layout/master (`A2`) | barrer `slideLayout*`/`slideMaster*` |
