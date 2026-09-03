@@ -2238,9 +2238,23 @@ function vistaDesatendida(){
           '. Frenala con el botón de abajo antes de arrancar otra.' : '') +
         '</div>';
     } else if (a.terminada){
+      /* ⛔⛔ `D-57` (03/09/2026, decisión del usuario) — **TACHADA, no borrada.**
+       *
+       * Decía: *«Para una semana así, el botón **Generar informe** es más barato: no paga el
+       * arranque dos veces»*. ⭐ **Sigue siendo CIERTA y deja de gobernar.** El arranque doble
+       * existe y cuesta; lo que cambió es quién decide si vale la pena, y la respuesta es que
+       * **no se decide**: la desatendida es el default y el único camino.
+       *
+       * ⚠ **El motivo no es de rendimiento, y por eso la medición no lo destraba:** *«prefiero
+       * que tarde más y que nunca se corte para que el usuario no se maree»*. Un corte a mitad
+       * de camino cuesta más que unos segundos, **y elegir entre dos botones ya es parte del
+       * problema**. Recomendar el otro botón acá era, literalmente, empujar hacia el camino que
+       * puede cortar.
+       *
+       * ⛔ Se saca la recomendación **ahora** aunque el botón único sea el ítem 31: mientras el
+       * texto siga acá, la pantalla sigue mandando al camino derogado. */
       h += '<div class="alert alert-warning"><div class="alert-title">Entró en una sola ejecución.</div>' +
-        'No hizo falta reanudar nada — la corrida terminó completa. Para una semana así, el botón ' +
-        '<b>Generar informe</b> es más barato: no paga el arranque dos veces.</div>';
+        'No hizo falta reanudar nada — la corrida terminó completa.</div>';
     } else if (a.continua){
       h += '<div class="alert alert-warning"><div class="alert-title">La corrida cortó y sigue sola.</div>' +
         'Quedó plan y hay un trigger andando: la próxima ejecución arranca en un minuto. ' +

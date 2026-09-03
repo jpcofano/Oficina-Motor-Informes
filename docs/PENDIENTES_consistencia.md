@@ -204,3 +204,81 @@ la misma familia que el `⚠` en medio de un reporte que termina en `✅`.
 ⭐ **Lo concreto:** un rojo se **da vuelta con el motivo escrito** en la misma tanda que lo produjo,
 o se anota como pendiente **con fecha** el mismo día. Lo que no se puede es dejarlo rojo y seguir
 citando el verde.
+
+---
+
+## 🟡 Ítem 31 · FRONT — el botón único de `D-57` necesita progreso sin cambiar de pestaña (03/09/2026)
+
+⛔ **Diseño, sin implementar.** Se coordina con `B.2` y `B.3`: **es el mismo archivo** (`Panel.html`),
+y `B.3` ya está en curso.
+
+### ⭐⭐ La recomendación: **(b) el asistente muestra el avance, sin cambiar de pestaña**
+
+Y **no está peleada**: (b) es más barata **en las dos dimensiones a la vez**, que es lo que la hace
+la respuesta y no una preferencia.
+
+#### 1 · Por qué (b) es más barata — la mitad del trabajo YA EXISTE
+
+⭐ **Medido en `Panel.html`: los dos caminos ya comparten `generarDesdeAsistente(desatendida)`.**
+Los dos setean `S.estado = 'generando'`, `S.tab = 'generar'`, arrancan `S.tick` y pintan
+`vistaEsperando()`. **La divergencia es UNA línea del `withSuccessHandler`:**
+
+```js
+if (desatendida){ S.estado='form'; S.desArranque=r; S.des=null; S.tab='desatendida'; pintar(); return; }
+S.estado = 'listo'; S.resultado = r; pintar(); cargarCorridas();
+```
+
+⇒ Y eso parte el caso en dos, con costos **muy** distintos:
+
+| caso | qué hace falta | costo |
+|---|---|---|
+| `r.terminada` — entró de una | ⭐ **caer en la rama que ya existe**: `S.estado='listo'` | ⭐⭐ **cero UI nueva** — es la línea de al lado |
+| `r.continua` — cortó y sigue | mantener `generando`, seguir el timer, y **poll** | una función de sondeo |
+
+⭐ **El backend no se toca: `panel_estadoDesatendida()` ya devuelve exactamente lo que un
+progreso necesita** — `hechas`, `pendientes`, `plan`, `deck`, `en_curso`, `leido`. **Cero backend
+nuevo.**
+
+#### 2 · Por qué (a) es más cara **y además no resuelve el problema**
+
+⛔ **Ésta es la razón de fondo, y es más fuerte que el costo.** El usuario no se queja de que el
+dato esté viejo: se queja de *«generé y tengo que mirar otra pantalla»*. ⭐ **Refrescar la pestaña
+«Corrida» arregla el dato viejo y deja intacta la desorientación** — sigue siendo otra pantalla, y
+encima una **de diagnóstico**: tiene el freno, el plano del plan, el invariante roto, `ejecucion`.
+**Es la pantalla del que investiga, no la del que acaba de apretar Generar.**
+
+⚠ Y cuesta más: un `setInterval` sobre una pestaña que el usuario puede abandonar necesita
+**arrancar y frenar con el cambio de pestaña** — un sondeo huérfano contra `CORRIDAS` cada N
+segundos es la clase de fuga que nadie mira.
+
+#### 3 · El diseño de (b), concreto
+
+1. **`terminada` → `S.estado = 'listo'`.** Mismo `vistaListo()` de siempre. ⭐ *«Generé y ya
+   está»* **se conserva exactamente** en el caso que hoy ya funciona así.
+2. **`continua` → `S.estado` se queda en `'generando'`**, el timer sigue, y `vistaEsperando()`
+   gana **un bloque de avance** alimentado por `panel_estadoDesatendida()`:
+   - `hechas / (hechas + pendientes)` secciones, y **la sección en curso por nombre**;
+   - una línea que diga *«cortó por presupuesto y sigue sola; la próxima arranca en un minuto»*,
+     que es información **tranquilizadora** y hoy sólo está en la otra pestaña.
+3. **El sondeo va cada ~15 s**, no cada segundo: el reloj de `S.tick` ya da la sensación de
+   movimiento **sin costar una llamada**, así que el poll sólo tiene que traer el conteo.
+   ⚠ Se frena en `terminada`, en `fallo` y si el usuario aprieta **Empezar de nuevo**.
+4. ⭐ **La pestaña «Corrida» NO se toca y sigue siendo el lugar del diagnóstico.** Se le agrega un
+   enlace desde el avance —*«ver el plan completo»*— para el que quiera entrar. **Nadie es obligado
+   a entrar.**
+
+#### 4 · ⚠ Los dos bordes que hay que resolver al implementar, no después
+
+- ⛔ **`vistaEsperando` dibuja la regla contra `TECHO_S`, que es el techo de UNA ejecución.** Con
+  varias ejecuciones el reloj pasa el techo **sin que eso signifique nada malo** — y hoy la regla
+  se pondría en rojo (`is-danger`) mintiendo. ⭐ Es **la misma familia** que el `var TECHO_S = 350`
+  del HTML contra el `150` de la hoja: **un techo que miente justo en el lugar que la persona
+  mira**. En la desatendida la escala tiene que ser **el plan**, no el reloj.
+- ⚠ **Si se cierra el panel, la corrida sigue** — eso ya lo dice `vistaEsperando` y **sigue siendo
+  cierto y más importante ahora**. Al reabrir, el avance tiene que **poder retomarse** desde
+  `panel_estadoDesatendida()` en vez de mostrar una pantalla en blanco.
+
+#### 5 · Lo que este ítem **no** decide
+
+⛔ No toca el mecanismo desatendido, ni el presupuesto, ni el trigger. **Es front.** Y `D-57` queda
+decidido igual: lo que está gated es **el botón único**, no la decisión.

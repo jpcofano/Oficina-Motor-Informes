@@ -2983,6 +2983,42 @@ deshacer con un backup igual costó dos escrituras y dos verificaciones.**
 base **acumula**: `D-56` afirma que **la validación ocurrió**, no que su resultado siga valiendo.
 Es exactamente por eso que el CSV manda —un registro fechado no cambia solo— y **no es un
 sustituto de volver a medir cuando el número importa**.
+
+### `D-57` · La corrida DESATENDIDA es el default y el único camino — 03/09/2026
+
+**Decisión del usuario, con sus palabras:** *«prefiero que tarde más y que nunca se corte para que
+el usuario no se maree»*.
+
+⇒ **Un solo botón**, que siempre va por la desatendida. **Sin elección.**
+
+#### ⛔ Lo que esto cierra, y por qué NO hay que medir nada
+
+⭐ **No hay que medir el costo del arranque doble.** La decisión **no es de rendimiento**: es que
+un corte a mitad de camino le cuesta al usuario más que unos segundos, **y elegir entre dos botones
+ya es parte del problema**. Una medición del arranque contestaría una pregunta que dejó de estar
+abierta.
+
+#### ⛔ Qué deroga
+
+La frase del panel: *«Para una semana así, el botón **Generar informe** es más barato: no paga el
+arranque dos veces»*. ⭐ **Sigue siendo cierta y deja de gobernar** — describe un costo real que el
+usuario decidió pagar. Queda **tachada con su motivo** en `Panel.html`, no borrada. ⚠ La
+recomendación se sacó **el mismo día**, antes que el botón único: mientras el texto estuviera, la
+pantalla seguía empujando al camino derogado.
+
+#### ⚠ Lo que NO se puede hacer sin resolver antes el ítem 31
+
+**El cambio, solo, empeora la experiencia que viene a mejorar.** Medido sobre el código:
+
+1. Hoy la corrida de una vez muestra `vistaEsperando` → `vistaListo`. La desatendida hace
+   `S.tab = 'desatendida'` ⇒ *«generé y ya está»* pasa a ser *«generé y tengo que mirar otra
+   pantalla»*.
+2. ⛔ **Y esa pantalla no se actualiza sola — lo dice ella misma**, dos veces: *«Esta pantalla no
+   se actualiza sola»* y *«Esta pantalla no se refresca sola»*. El usuario quedaría mirando un plan
+   viejo apretando **Actualizar** a mano. **Eso es exactamente marearlo.**
+
+⇒ `D-57` **queda decidido y su implementación gated por el ítem 31.**
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)
@@ -3008,6 +3044,7 @@ sustituto de volver a medir cuando el número importa**.
 |---|---|---|
 | `[x]` **1** | ministros: 9 filas + `MAPEO` + `ventana_ref` | ✅ **Completo el 03/09** — `cablearMinistros()` escribe las 9 de `MARCADORES`, las **11** de `MAPEO` (con `A ID`, `C Barrio / Comuna`, `F Enviados`) **y** `SOLAPAS.ventana_ref = propia`, todo en el **mismo wrapper**: separarlo crearía el estado intermedio que rompe —filas cableadas sin su ventana, universo más ancho, sin fallar—. ⭐ Las tres `%` (I, K, S) **no se mapean** y el motivo está **en la fila** de cada `PCT`, no sólo en el reporte. Banco `probar-ministros.js` en verde, con las 11 letras cruzadas contra la firma real. ⛔ **Falta correrlo**; control: `emin_encuentros` = **7** |
 | `[ ]` **30** | ⛔ **Dos bancos en rojo diciendo la verdad** — `probar-ambito-ivr` y `probar-desglose-como-fuente` | El `2026-08-30_2` movió el corte de ámbito **del nombre al `Id cuentas`** y **nadie los dio vuelta**. `PENDIENTES` `P1` (03/09) · ⛔ **No se afloja: se da vuelta con el motivo**, y la exigencia mayor está disponible — que `jm` y `gcba` sean **complementarios** sobre `des_id_cuenta`, que es una identidad y **no caduca** · ⚠ Vivieron **cuatro días** y en el medio se citó el verde de las suites |
+| `[ ]` **31** | ⭐ **FRONT — `D-57`: el botón único necesita progreso SIN cambiar de pestaña** | ⛔ **Gatea a `D-57`**: el cambio solo **empeora** la experiencia que viene a mejorar — hoy la desatendida salta a la pestaña «Corrida», **que no se actualiza sola y lo dice ella misma**. ⭐ **Recomendado (b): el asistente muestra el avance**, y es más barato **en las dos dimensiones** — la mitad ya existe (los dos caminos comparten `generarDesdeAsistente`, divergen en **una línea**), `panel_estadoDesatendida()` ya devuelve `hechas`/`pendientes` ⇒ **cero backend nuevo**, y el caso `terminada` cae en la rama `listo` **que ya existe**. ⛔ (a) refrescar la pestaña arregla el dato viejo y **deja intacta la desorientación**. Diseño completo en `PENDIENTES` (03/09) · ⚠ **Mismo archivo que `B.2` y `B.3`** — se coordina |
 | `[ ]` **2** | `emin_lista` — operación con **plantilla sobre todas las filas**. `LISTA_CRUDA` toma un campo, deduplica y no acepta plantilla | ⛔ `R-20`: prompt propio |
 | `[ ]` **3** | El condicional del barrio **DECLARATIVO**, no un `if` con literal — la propuesta usa `valor_fijo` (condición) + una plantilla alternativa | va con **2** |
 | `[ ]` **4** | Corrida de `secco`: el control **son 7** y la lista literal | **usuario** · `diagAgendaFuncionarios()` |
