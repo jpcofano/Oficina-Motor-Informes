@@ -9969,10 +9969,18 @@ var FILAS_MINISTROS_ = [
   { marcador: 'emin_aperturas',       campo_logico: 'aperturas',                   operacion: 'SUMA',   formato: 'entero_revisar' },
   { marcador: 'emin_clics_ctor',      campo_logico: 'clics',                       operacion: 'SUMA',   formato: 'entero_revisar' },
   { marcador: 'emin_clics_ctr',       campo_logico: 'clics_meta',                  operacion: 'SUMA',   formato: 'entero_revisar' },
-  /* ⛔ Ratio de las sumas, no suma de los ratios. Ver el aviso 2 de arriba. */
-  { marcador: 'emin_or',              campo_logico: 'aperturas/entregados',        operacion: 'PCT',    formato: 'porcentaje_revisar' },
-  { marcador: 'emin_ctor',            campo_logico: 'clics/aperturas',             operacion: 'PCT',    formato: 'porcentaje_revisar' },
-  { marcador: 'emin_ctr',             campo_logico: 'clics_meta/impresiones_meta', operacion: 'PCT',    formato: 'porcentaje_revisar' }
+  /* ⛔ Ratio de las sumas, no suma de los ratios. Ver el aviso 2 de arriba.
+   *
+   * ⭐ **Cada uno lleva su motivo en `notas`, nombrando SU columna de `%`** — decisión del usuario
+   * (03/09). El reporte se lee una vez; la fila la lee quien mire el número o quien esté por
+   * mapear esa columna, que son los dos momentos en que hace falta. */
+  { marcador: 'emin_or',              campo_logico: 'aperturas/entregados',        operacion: 'PCT',    formato: 'porcentaje_revisar',
+    nota: 'La columna I (% OR) NO se mapea a proposito: mapearla invita a sumarla, y la suma de ' +
+      'porcentajes de filas distintas no es el porcentaje del conjunto. Esto es SUM(H)/SUM(G).' },
+  { marcador: 'emin_ctor',            campo_logico: 'clics/aperturas',             operacion: 'PCT',    formato: 'porcentaje_revisar',
+    nota: 'La columna K (% CTOR) NO se mapea a proposito: mismo motivo. Esto es SUM(J)/SUM(H).' },
+  { marcador: 'emin_ctr',             campo_logico: 'clics_meta/impresiones_meta', operacion: 'PCT',    formato: 'porcentaje_revisar',
+    nota: 'La columna S (CTR Meta) NO se mapea a proposito: mismo motivo. Esto es SUM(R)/SUM(Q).' }
 ];
 
 /** Las filas de `MAPEO`. ⚠ `encabezado` byte a byte: `clics_meta` lleva un salto de línea adentro. */
@@ -9989,7 +9997,30 @@ var MAPEO_MINISTROS_ = [
   { campo_logico: 'impresiones_meta', columna: 'Q', encabezado: 'Impresiones Meta',  tipo_esperado: 'numero' },
   /* ⛔ El salto de línea es REAL y va en el testigo. `SOLAPAS.firma_encabezado` lo muestra
    * colapsado (`R-10`), y eso NO es lo que la celda tiene. */
-  { campo_logico: 'clics_meta',       columna: 'R', encabezado: 'Clics\nMeta',       tipo_esperado: 'numero' }
+  { campo_logico: 'clics_meta',       columna: 'R', encabezado: 'Clics\nMeta',       tipo_esperado: 'numero' },
+  /* ⭐ `2026-09-03` — las tres que faltaban, confirmadas por el usuario. Ninguna alimenta un
+   * marcador de hoy: se declaran porque son las columnas de **identidad** de la fila —quién, dónde
+   * y cuánto se mandó—, y sin ellas `emin_lista` (ítem 2) no tiene con qué armar la lista. */
+  { campo_logico: 'id',               columna: 'A', encabezado: 'ID',                tipo_esperado: 'texto' },
+  { campo_logico: 'barrio',           columna: 'C', encabezado: 'Barrio / Comuna',   tipo_esperado: 'texto' },
+  { campo_logico: 'enviados',         columna: 'F', encabezado: 'Enviados',          tipo_esperado: 'numero' }
+];
+
+/* ⛔⛔ **Las TRES columnas de `%` que NO se mapean, y el motivo va acá porque acá es donde alguien
+ * va a estar por agregarlas.** Un reporte se lee una vez; esta lista se lee cada vez que alguien
+ * abra el archivo a completar el mapeo.
+ *
+ * ⭐ **Mapearlas invita a sumarlas, y sumar porcentajes de filas distintas no da el porcentaje del
+ * conjunto.** Los tres `PCT` son el **ratio de las sumas** —`SUM(H)/SUM(G)`—, no la suma ni el
+ * promedio de la columna de `%`. Con **una** fila las dos definiciones coinciden; con dos, `50/100`
+ * y `5/900` dan **5,5 %** por el camino correcto y **25,28 %** promediando. Un factor 4,6.
+ *
+ * ⚠ **Y el modo de falla es el peor de este repo: no falla, publica un número plausible.** Un
+ * `SUMA` sobre `% OR` devolvería algo con forma de porcentaje. */
+var PORCENTAJES_NO_MAPEADOS_MINISTROS_ = [
+  { columna: 'I', encabezado: '% OR',    lo_calcula: 'emin_or   = PCT aperturas/entregados  (H/G)' },
+  { columna: 'K', encabezado: '% CTOR',  lo_calcula: 'emin_ctor = PCT clics/aperturas       (J/H)' },
+  { columna: 'S', encabezado: 'CTR Meta', lo_calcula: 'emin_ctr = PCT clics_meta/impresiones_meta (R/Q)' }
 ];
 
 var BASE_MINISTROS_ = 'reuniones';
@@ -10035,7 +10066,7 @@ function cablearMinistros_(aplicar) {
         'medía esa otra fuente y no aplica a esta fila. Ventana por SOLAPAS.ventana_ref=propia, ' +
         'que corta por fecha_periodo = columna E (Fecha de envio): las campanias se eligen por ' +
         'su ENVIO, ~3 dias antes de la reunion. AVISO: las 10 filas con envio vacio caen afuera ' +
-        'EN SILENCIO. SIN VALIDAR'
+        'EN SILENCIO. SIN VALIDAR' + (f.nota ? ' || ' + f.nota : '')
     };
   }
 
@@ -10078,13 +10109,17 @@ function cablearMinistros_(aplicar) {
   });
   Logger.log('     ⚠ `clics_meta` lleva un salto de línea REAL adentro del encabezado.');
 
-  /* ⛔ El hueco declarado, y no se completa con un supuesto (`CLAUDE.md` §4). */
+  /* ⭐ `2026-09-03` — el hueco de las tres se cerró: el usuario confirmó A, C y F. Lo que queda
+   * escrito es el motivo de las que NO van, que es la parte que se puede volver a discutir. */
   Logger.log('');
-  Logger.log('  ⛔ FALTA DECLARADA: el pedido dice ONCE filas de MAPEO y de los nueve marcadores');
-  Logger.log('     sólo se derivan OCHO. Las tres columnas de `%` —I, K, S— NO son: los PCT son');
-  Logger.log('     ratio de sumas y mapearlas invitaría a sumarlas. Candidatas sin confirmar:');
-  Logger.log('     A `ID`, C `Barrio / Comuna`, F `Enviados`. NO se inventan: van cuando alguien');
-  Logger.log('     diga cuáles y para qué token.');
+  Logger.log('  ⛔ Las TRES columnas de `%` que NO se mapean, y el motivo está EN LA FILA:');
+  PORCENTAJES_NO_MAPEADOS_MINISTROS_.forEach(function (x) {
+    Logger.log('     ' + x.columna + '  ' + (x.encabezado + '          ').slice(0, 10) +
+      ' → lo calcula  ' + x.lo_calcula);
+  });
+  Logger.log('     ⭐ Mapearlas invita a SUMARLAS, y sumar porcentajes de filas distintas no da el');
+  Logger.log('     porcentaje del conjunto. Con dos filas —50/100 y 5/900— el camino correcto da');
+  Logger.log('     5,5 % y promediar da 25,28 %. ⚠ Y no falla: publica un número plausible.');
 
   if (!aplicar) {
     Logger.log('');
@@ -10173,10 +10208,72 @@ function cablearMinistros_(aplicar) {
 
   Logger.log('  ✅ RELEÍDO de la hoja: las ' + FILAS_MINISTROS_.length + ' filas quedaron, una cada una,');
   Logger.log('     con su campo_logico, operacion, formato y solapa. MAPEO: ' + altasMap + ' alta(s).');
+
+  /* ⭐⭐ `2026-09-03` — **`SOLAPAS.ventana_ref = 'propia'`, que hasta hoy quedaba afuera.**
+   *
+   * ⛔ **Sin esto los nueve marcadores NO se recortan por el envío**, y eso no falla: publican
+   * sobre un universo más ancho. **Un universo más ancho nunca es una degradación aceptable de uno
+   * recortado** — es el modo de falla más caro de este repo y el único que no avisa.
+   *
+   * ⚠ Va acá y no en un wrapper aparte **a propósito**: separarlos crearía exactamente el estado
+   * intermedio que rompe —filas cableadas sin su ventana—, y nadie se enteraría. */
+  var ventana = escribirVentanaPropiaMinistros_();
+  Logger.log('');
+  if (!ventana.ok) {
+    Logger.log('  ⛔ `SOLAPAS.ventana_ref` NO quedó: ' + ventana.motivo);
+    Logger.log('     ⚠ Los nueve marcadores están escritos y SIN recorte por envío: leen un');
+    Logger.log('     universo más ancho. Backup de MARCADORES: `' + bk.nombre + '`');
+    return { ok: false, motivo: 'ventana_ref: ' + ventana.motivo, backup: bk.nombre,
+      marcadores: FILAS_MINISTROS_.length, mapeo: altasMap };
+  }
+  Logger.log('  ✅ `SOLAPAS.ventana_ref` = `' + VENTANA_PROPIA_ + '` para `' + BASE_MINISTROS_ +
+    '/' + SOLAPA_MINISTROS_ + '` — ' + ventana.motivo);
+
   Logger.log('');
   Logger.log('  ⛔ LO QUE FALTA Y NO LO HACE ESTE WRAPPER:');
-  Logger.log('     · `SOLAPAS.ventana_ref = propia` para `' + BASE_MINISTROS_ + '/' + SOLAPA_MINISTROS_ + '`');
-  Logger.log('       — es otra hoja y otro escritor; sin eso la ventana NO se corta por el envío.');
   Logger.log('     · La corrida que verifique. `emin_encuentros` tiene que dar **7**.');
-  return { ok: true, aplicado: true, marcadores: FILAS_MINISTROS_.length, mapeo: altasMap, backup: bk.nombre };
+  Logger.log('     · ⚠ Y los nueve siguen con `_revisar`: nacen PROPUESTA, no verificados.');
+  return { ok: true, aplicado: true, marcadores: FILAS_MINISTROS_.length, mapeo: altasMap,
+    ventana_ref: ventana.motivo, backup: bk.nombre };
+}
+
+/**
+ * Escribe `SOLAPAS.ventana_ref = 'propia'` para `reuniones / Agenda funcionarios`, y **relee**.
+ *
+ * ⭐ **`VENTANA_PROPIA_` sale de `Fuentes.gs`, no se escribe el literal.** Es el valor reservado
+ * que el lector compara; duplicarlo acá sería la constante que un día cambia de un lado solo.
+ *
+ * ⚠ **No pisa otro valor.** Si la celda trae algo distinto de vacío o de `propia`, se reporta y no
+ * se toca: pisarlo borraría una decisión que no vive en ningún otro lado (`CLAUDE.md` §4).
+ */
+function escribirVentanaPropiaMinistros_() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('SOLAPAS');
+  if (!hoja) return { ok: false, motivo: 'no existe la hoja SOLAPAS' };
+  var datos = hoja.getDataRange().getValues();
+  var hdr = datos[0].map(function (h) { return String(h == null ? '' : h).trim(); });
+  var iB = hdr.indexOf('base_id'), iS = hdr.indexOf('solapa'), iV = hdr.indexOf('ventana_ref');
+  if (iB === -1 || iS === -1 || iV === -1) {
+    return { ok: false, motivo: 'SOLAPAS no tiene base_id/solapa/ventana_ref' };
+  }
+  var fila = -1;
+  for (var k = 1; k < datos.length; k++) {
+    if (String(datos[k][iB] || '').trim() === BASE_MINISTROS_ &&
+        String(datos[k][iS] || '').trim() === SOLAPA_MINISTROS_) { fila = k + 1; break; }
+  }
+  if (fila === -1) {
+    return { ok: false, motivo: 'no hay fila para `' + BASE_MINISTROS_ + '/' + SOLAPA_MINISTROS_ + '`' };
+  }
+  var previo = String(datos[fila - 1][iV] || '').trim();
+  if (previo === VENTANA_PROPIA_) return { ok: true, motivo: 'ya estaba (idempotente)' };
+  if (previo !== '') {
+    return { ok: false, motivo: 'la celda ya dice `' + previo + '` y no se pisa — decidir a mano' };
+  }
+  hoja.getRange(fila, iV + 1).setValue(VENTANA_PROPIA_);
+  SpreadsheetApp.flush();
+  /* ⭐⭐ Relectura DE LA HOJA, no del retorno del escritor: son dos afirmaciones distintas. */
+  var quedo = String(hoja.getRange(fila, iV + 1).getValue() || '').trim();
+  if (quedo !== VENTANA_PROPIA_) {
+    return { ok: false, motivo: 'pedí `' + VENTANA_PROPIA_ + '` y la hoja quedó con `' + quedo + '`' };
+  }
+  return { ok: true, motivo: 'escrita y releída en la fila ' + fila };
 }

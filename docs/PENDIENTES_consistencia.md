@@ -140,3 +140,67 @@ días**, y en el medio se citó el verde de las suites como evidencia.
 ⚠ **Verificado por aislamiento el 03/09**: siguen rojos con `Instalar.gs` del último commit, así
 que **no los causó el cableado de ministros**. Se dice porque un rojo sin esa verificación se
 atribuye al último que tocó algo.
+
+---
+
+## ⛔⛔ P0 · La premisa vencida del ítem 9, con su nombre: *«`camp_titulo` está en 8 láminas y es el mismo hecho en las 8»* (03/09/2026)
+
+**Dónde vive:** el comentario de `agruparTokensPorLamina_`, `Generador.gs`. Dice hoy:
+
+> *«El desdoble se paga sólo donde puede haber diferencia: un token que vive en UNA lámina no
+> consulta nada, y uno que vive en varias **del mismo universo** sigue resolviéndose una vez y
+> pintándose de una pasada. **`camp_titulo` está en 8 láminas y es el mismo hecho en las 8.**»*
+
+⭐ **Era cierto el 27/08** —cuando se escribió, `campana` no expandía— **y es falso desde que
+`campana` es repetible**: las 8 láminas pasaron a ser 8 × N, y **cada bloque es una campaña
+distinta**. Ya no es «el mismo hecho».
+
+### ⚠ Es la fecha de vencimiento diferida, otra vez — y la tercera con la misma forma
+
+| fecha | la justificación decía | qué la invalidó |
+|---|---|---|
+| 18/08 | *«las tres filas de `CAMPANAS` son de `secco` y tienen `periodo_id` vacío»* | **cargar `CAMPANAS`** — el trabajo previsto |
+| 25/08 | *«los `post_*` caen entonces por donde caían: `/////`»* | **cablear los 20** — el trabajo previsto |
+| ⭐ **27/08** | *«`camp_titulo` es el mismo hecho en las 8»* | **que `campana` expandiera** — el trabajo previsto |
+
+⛔ **Las tres describen un ESTADO y no una CONDICIÓN**, que es exactamente lo que `CLAUDE.md` §4 ya
+manda evitar: *«un hueco justificado por el estado actual tiene que nombrar EL EVENTO que lo
+invalida, no la fecha»*. ⭐ Escrito como condición sería *«deja de ser el mismo hecho cuando
+`campana` pase a `repetible`»*, y **eso un censo lo puede mirar**.
+
+### ⭐⭐ Y la causa técnica exacta, que es más ancha que `camp_titulo`
+
+`agruparTokensPorLamina_` desdobla comparando el **universo** de cada lámina, y `universoDeSlide`
+devuelve **sólo tres cosas**: `desconocido`, `temario:<X>` o `ventana`.
+
+⇒ ⛔ **Dos bloques de la misma sección repetible devuelven los DOS `ventana`.** La clave **no tiene
+ninguna noción de ítem**, así que **ningún token de una sección repetible puede resultar exclusivo
+por este criterio**. Todos los que lleguen a la etapa 4 publican **un solo valor** en todos los
+bloques y en las escondidas.
+
+⚠ **Por eso `camp_titulo` no puede ser el único, y por eso el arreglo es más grande de lo que
+parecía.** El censo que lo mide es `censarNoExclusivosEnRepetibles()` (`Auditoria.gs`, sólo
+lectura), con **control positivo**: si no encuentra `camp_titulo` **aborta**, porque un cero es
+indistinguible de un detector que no mira nada.
+
+---
+
+## ⚠ P1 · Un banco rojo conocido deja de ser información al día siguiente (03/09/2026)
+
+**El caso:** los dos rojos del ítem 30 —`probar-ambito-ivr` y `probar-desglose-como-fuente`—
+vivieron **cuatro días**, del 30/08 al 03/09. ⛔ **Y en el medio se citó el verde de las suites como
+evidencia.**
+
+⭐ **La regla, que es lo accionable:** un rojo **conocido y no atendido** es peor que uno nuevo. El
+primer día es un hallazgo; a partir del segundo es **ruido de fondo que enseña a saltear la
+sección de rojos**, y entonces el runner deja de informar — no porque falle, sino porque nadie lo
+lee entero. **Un rojo que sobrevive un día se convierte en parte del paisaje.**
+
+⚠ **Y hace daño hacia atrás:** mientras el rojo está, **ninguna corrida de las suites es citable
+como verde**, ni siquiera para los otros 88 bancos — porque *«las suites pasan»* y *«las suites
+pasan salvo dos que ya sabemos»* son dos afirmaciones distintas y **sólo la primera se dice**. Es
+la misma familia que el `⚠` en medio de un reporte que termina en `✅`.
+
+⭐ **Lo concreto:** un rojo se **da vuelta con el motivo escrito** en la misma tanda que lo produjo,
+o se anota como pendiente **con fecha** el mismo día. Lo que no se puede es dejarlo rojo y seguir
+citando el verde.

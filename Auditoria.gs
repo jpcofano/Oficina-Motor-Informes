@@ -8253,3 +8253,173 @@ function censarTokensSinLlaves() {
   Logger.log('     · nada sobre decks ya generados: mide la PLANTILLA, que es de donde salen.');
   return { ok: true, total: total };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `2026-09-03` — **el censo que el ítem 9 pide ANTES del arreglo: qué otros tokens NO
+ * EXCLUSIVOS viven en láminas de una sección repetible.**
+ *
+ * ⛔⛔ **Por qué no puede ser sólo `camp_titulo`, y por qué eso cambia el tamaño del arreglo.**
+ * `agruparTokensPorLamina_` decide el desdoble comparando el **universo** de cada lámina, y
+ * `universoDeSlide` sólo devuelve tres cosas: `desconocido`, `temario:<X>` o `ventana`. ⭐ **Dos
+ * bloques de la misma sección repetible devuelven los DOS `ventana`** — la clave **no tiene
+ * ninguna noción de ítem**. ⇒ **Ningún token de una sección repetible puede resultar exclusivo por
+ * este criterio**, así que todos los que lleguen a la etapa 4 publican **un solo valor** en todos
+ * los bloques y en las escondidas.
+ *
+ * ⚠ **La premisa vencida, con su nombre y su lugar.** El comentario de `agruparTokensPorLamina_`
+ * dice hoy: *«un token que vive en varias del mismo universo sigue resolviéndose una vez y
+ * pintándose de una pasada. **`camp_titulo` está en 8 láminas y es el mismo hecho en las 8**»*.
+ * ⭐ **Era cierto el 27/08 y es falso desde que `campana` expande**: las 8 láminas pasaron a ser
+ * 8 × N y **cada bloque es una campaña distinta**, así que ya no es «el mismo hecho». Es la figura
+ * de la **fecha de vencimiento diferida** (`CLAUDE.md` §4): la justificación describía un **estado**
+ * —*«hoy son el mismo hecho»*— y no una **condición**, y el trabajo previsto la invalidó.
+ *
+ * ══ QUÉ MIDE, Y QUÉ NO ═══════════════════════════════════════════════════════════════════════
+ *
+ * ✅ Mide, contra la **plantilla viva** y con las funciones **reales** del motor:
+ *    token → láminas → sección → ¿es repetible? → ¿lo desdobla `agruparTokensPorLamina_`?
+ * ⛔ **NO** mide si el valor publicado es correcto, ni cuántos bloques hubo en una corrida dada.
+ *
+ * ⭐⭐ **Control positivo, y es la regla que se escribió hoy mismo:** un detector no reporta hasta
+ * que encuentra un caso que YA SE SABE que está. Acá el caso es **`camp_titulo`**. Si no aparece,
+ * **aborta** en vez de imprimir un cero — un cero es indistinguible del éxito.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Sólo lectura. No escribe ni una celda. */
+function censarNoExclusivosEnRepetibles() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('CENSO — tokens NO exclusivos en láminas de sección REPETIBLE · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  ⛔ SÓLO LECTURA. No arregla nada y no escribe nada.');
+  Logger.log('');
+
+  /* ── Qué secciones son repetibles ──────────────────────────────────────────────────────── */
+  var secciones = {};
+  try { secciones = leerSeccionesPlano_(); }
+  catch (e) {
+    Logger.log('⛔ ABORTA: no pude leer SECCIONES — ' + e.message);
+    return { ok: false, motivo: 'SECCIONES: ' + e.message };
+  }
+  var repetibles = {};
+  Object.keys(secciones).forEach(function (id) {
+    if (String(secciones[id].modo || '').trim() === 'repetible') repetibles[id] = true;
+  });
+  Logger.log('  secciones repetibles: ' + (Object.keys(repetibles).sort().join(', ') || '(ninguna)'));
+
+  /* ── Qué lámina pertenece a qué sección ────────────────────────────────────────────────── */
+  var regL = leerLaminas_();
+  if (!regL.ok) {
+    Logger.log('⛔ ABORTA: no pude leer LAMINAS — ' + regL.motivo);
+    return { ok: false, motivo: 'LAMINAS: ' + regL.motivo };
+  }
+  var seccionDeLamina = {}, informeDeLamina = {}, escondidaEnRegistro = {};
+  regL.filas.forEach(function (f) {
+    var id = String(f.lamina_id || '').trim();
+    if (!id) return;
+    seccionDeLamina[id] = String(f.seccion_id || '').trim();
+    informeDeLamina[id] = String(f.informe_id || '').trim();
+    escondidaEnRegistro[id] = String(f.escondida || '').trim() !== '';
+  });
+
+  var informes = leerInformes();
+  var total = { informes: 0, tokens: 0, hallazgos: 0 };
+  var hallazgosGlobales = [];
+
+  Object.keys(informes).sort().forEach(function (informeId) {
+    var inf = informes[informeId];
+    if (!inf || !inf.plantilla_id) {
+      Logger.log('  ⚠ `' + informeId + '` sin `plantilla_id` — se saltea, y se dice.');
+      return;
+    }
+    total.informes++;
+    var pres = SlidesApp.openById(inf.plantilla_id);
+    var slides = pres.getSlides();
+    /* ⭐ Las funciones REALES del motor: `tokensPorSlide_` incluye las escondidas —que es
+     * justamente el caso de `L-023`— y `laminasEscondidas_` dice cuáles lo están **leyendo la
+     * slide**, no el registro. Los dos datos se reportan porque pueden discrepar. */
+    var porSlide = tokensPorSlide_(pres);
+    var escondidas = laminasEscondidas_(slides);
+    var indice = indiceDeLaminasPorAncla_(pres);
+
+    /* slide (1-based) → lamina_id, invirtiendo el índice por ancla. */
+    var laminaDeSlide = {};
+    Object.keys(indice.porId || {}).forEach(function (id) {
+      laminaDeSlide[indice.porId[id] + 1] = id;
+    });
+
+    /* ⭐⭐ El MISMO agrupador del motor, con un `universoDeSlide` de la misma forma que el de la
+     * etapa 4. No se reimplementa el criterio: se lo llama. */
+    var universoDeSlide = function (n) {
+      var id = laminaDeSlide[n];
+      return id ? 'ventana' : 'desconocido';
+    };
+    var grupos = agruparTokensPorLamina_(porSlide, universoDeSlide);
+    var esExclusivo = {};
+    grupos.forEach(function (g) {
+      (g.exclusivos || []).forEach(function (t) { esExclusivo[t] = true; });
+    });
+
+    var hallazgos = [];
+    Object.keys(porSlide).sort().forEach(function (token) {
+      total.tokens++;
+      var nums = porSlide[token] || [];
+      /* ¿Alguna de sus láminas pertenece a una sección repetible? */
+      var enRepetible = [], fuera = [], ocultas = 0;
+      nums.forEach(function (n) {
+        var id = laminaDeSlide[n];
+        var sec = id ? seccionDeLamina[id] : '';
+        if (sec && repetibles[sec]) enRepetible.push((id || '?') + '/' + sec);
+        else fuera.push(id || ('slide ' + n));
+        if (escondidas[n] === true) ocultas++;
+      });
+      if (!enRepetible.length) return;
+      if (esExclusivo[token]) return;          // el motor ya lo desdobla: no es del censo
+      hallazgos.push({
+        token: token, slides: nums.length, en_repetible: enRepetible.length,
+        fuera: fuera.length, escondidas: ocultas,
+        laminas: enRepetible.concat(fuera.map(function (x) { return x + '/(no repetible)'; }))
+      });
+    });
+
+    Logger.log('');
+    Logger.log('  ── `' + informeId + '` · ' + slides.length + ' slides · ' +
+      Object.keys(porSlide).length + ' tokens ──');
+    Logger.log('     ⛔ ' + hallazgos.length + ' token(s) NO exclusivos con al menos una lámina repetible:');
+    hallazgos.forEach(function (h) {
+      Logger.log('        ' + (h.token + '                        ').slice(0, 25) +
+        h.slides + ' lámina(s), ' + h.en_repetible + ' repetible(s)' +
+        (h.fuera ? ', ' + h.fuera + ' fuera' : '') +
+        (h.escondidas ? ', ' + h.escondidas + ' ESCONDIDA(s)' : ''));
+      Logger.log('           ' + h.laminas.join(' · '));
+    });
+    total.hallazgos += hallazgos.length;
+    hallazgos.forEach(function (h) { hallazgosGlobales.push(informeId + ':' + h.token); });
+  });
+
+  /* ⭐⭐ EL CONTROL POSITIVO, y va al final para que se lea junto al veredicto. */
+  Logger.log('');
+  Logger.log('  ══ control positivo ══');
+  var tieneElCasoConocido = hallazgosGlobales.some(function (x) {
+    return x.indexOf(':camp_titulo') !== -1;
+  });
+  if (!tieneElCasoConocido) {
+    Logger.log('  ⛔⛔ ABORTA: el censo NO encontró `camp_titulo`, que es el caso MEDIDO en el deck');
+    Logger.log('     de `secco` 28/08-03/09. Un cero acá es indistinguible de un detector que no');
+    Logger.log('     mira nada, así que NO se cita ningún número de arriba.');
+    return { ok: false, motivo: 'control positivo: no apareció camp_titulo', hallazgos: hallazgosGlobales };
+  }
+  Logger.log('  ✅ `camp_titulo` aparece — el censo ve el caso conocido, así que su cero es un cero.');
+
+  Logger.log('');
+  Logger.log('  ══ VEREDICTO ══');
+  Logger.log('  ' + total.hallazgos + ' token(s) en ' + total.informes + ' plantilla(s), sobre ' +
+    total.tokens + ' (token, plantilla) mirados.');
+  Logger.log('  ⛔ Cada uno publica UN SOLO VALOR en todos sus bloques y en sus escondidas.');
+  Logger.log('');
+  Logger.log('  ⚠ Lo que este censo NO dice:');
+  Logger.log('     · Si el valor publicado es el correcto. Dice que hay UNO, no cuál.');
+  Logger.log('     · Cuántos bloques hubo: eso depende de los ítems de cada corrida.');
+  Logger.log('     · Nada sobre los tokens que la etapa 3 SÍ pinta por ítem — ésos están bien.');
+  return { ok: true, total: total.hallazgos, tokens: hallazgosGlobales.sort(), mirados: total.tokens };
+}

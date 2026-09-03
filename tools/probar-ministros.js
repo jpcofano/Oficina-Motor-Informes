@@ -42,10 +42,14 @@ function tablasReales() {
     if (fin === -1) throw new Error('no encontré el cierre de `' + nombre + '`');
     trozos.push(src.slice(i, fin + 3));
   }
+  const i = src.indexOf('var PORCENTAJES_NO_MAPEADOS_MINISTROS_ = [');
+  if (i === -1) throw new Error('no encontré `PORCENTAJES_NO_MAPEADOS_MINISTROS_` en Instalar.gs');
+  trozos.push(src.slice(i, src.indexOf('\n];', i) + 3));
   const ctx = { };
   vm.createContext(ctx);
   vm.runInContext(trozos.join('\n'), ctx);
-  return { filas: ctx.FILAS_MINISTROS_, mapeo: ctx.MAPEO_MINISTROS_ };
+  return { filas: ctx.FILAS_MINISTROS_, mapeo: ctx.MAPEO_MINISTROS_,
+    pct: ctx.PORCENTAJES_NO_MAPEADOS_MINISTROS_ };
 }
 
 /* ── `opRATIO` / `opPCT` REALES, extraídos de `Marcadores.gs` ──────────────────────────── */
@@ -116,7 +120,25 @@ console.log('\n═══ D · ⛔ las columnas de `%` NO se mapean — mapearlas
   ['I', 'K', 'S'].forEach(c => afirmar(!T.mapeo.some(m => m.columna === c),
     '  la columna `' + c + '` (un `%`) NO está en MAPEO'));
   const nums = T.mapeo.filter(m => m.tipo_esperado === 'numero').map(m => m.columna).sort();
-  afirmar(nums.join(',') === 'G,H,J,Q,R', 'las numéricas son exactamente G,H,J,Q,R (dio ' + nums.join(',') + ')');
+  afirmar(nums.join(',') === 'F,G,H,J,Q,R', 'las numéricas son exactamente F,G,H,J,Q,R (dio ' + nums.join(',') + ')');
+
+  /* ⭐⭐ El motivo tiene que estar EN LA FILA, no sólo en el reporte (usuario, 03/09). Un reporte
+   * se lee una vez; la fila la lee quien esté por mapear esa columna. */
+  afirmar(T.pct.length === 3, 'las tres `%` están declaradas con su motivo (' + T.pct.length + ')');
+  T.pct.forEach(x => afirmar(!T.mapeo.some(m => m.columna === x.columna),
+    '  `' + x.columna + '` (' + x.encabezado + ') declarada como NO mapeada, y no está en MAPEO'));
+
+  /* ⛔ Cada PCT nombra SU columna en `notas` — y se cruza contra la tabla, uno por uno. */
+  const notaDe = m => String(T.filas.find(f => f.marcador === m).nota || '');
+  [['emin_or', 'I'], ['emin_ctor', 'K'], ['emin_ctr', 'S']].forEach(([mk, col]) => {
+    const n = notaDe(mk);
+    afirmar(n.indexOf('columna ' + col) !== -1,
+      '⭐ `' + mk + '` lleva el motivo en su fila, nombrando la columna ' + col);
+    afirmar(/NO se mapea a proposito/.test(n), '   y dice que NO se mapea a propósito');
+  });
+  /* ⚠ Los seis que no son PCT no llevan nota: la nota es del caso, no decoración. */
+  afirmar(T.filas.filter(f => f.nota).length === 3,
+    '⚠ sólo los tres PCT llevan nota propia — no se decoró a los otros seis');
 }
 
 console.log('\n═══ E · ⚠ por LETRA, y el encabezado byte a byte ═══');
@@ -140,6 +162,41 @@ console.log('\n═══ E · ⚠ por LETRA, y el encabezado byte a byte ══�
     '⭐⭐ `fecha_periodo` es la columna E (Fecha de envío) — el corte es por ENVÍO');
   afirmar(T.mapeo.some(m => m.campo_logico === 'fecha' && m.columna === 'D'),
     '   y `fecha` (D) es la del encuentro: son dos columnas y dos filas');
+
+  /* ⭐ `2026-09-03` — las once, ya completas. */
+  afirmar(T.mapeo.length === 11, 'son ONCE filas de MAPEO (hay ' + T.mapeo.length + ')');
+  [['id', 'A'], ['barrio', 'C'], ['enviados', 'F']].forEach(([c, col]) =>
+    afirmar(T.mapeo.some(m => m.campo_logico === c && m.columna === col),
+      '  `' + c + '` en la columna ' + col));
+  const letras = T.mapeo.map(m => m.columna);
+  afirmar(new Set(letras).size === letras.length, '⚠ ninguna letra se repite');
+  const campos = T.mapeo.map(m => m.campo_logico);
+  afirmar(new Set(campos).size === campos.length, '⚠ ningún `campo_logico` se repite');
+}
+
+console.log('\n═══ E bis · ⭐⭐ `SOLAPAS.ventana_ref` se escribe, y con la constante REAL ═══');
+{
+  const src = fs.readFileSync(path.join(RAIZ, 'Instalar.gs'), 'utf8');
+  const i = src.indexOf('function escribirVentanaPropiaMinistros_');
+  const cuerpo = src.slice(i, i + 3000);
+  afirmar(i !== -1, 'existe `escribirVentanaPropiaMinistros_`');
+  /* ⛔ La constante sale de `Fuentes.gs`: escribir el literal `'propia'` acá sería el valor que un
+   * día cambia de un lado solo. */
+  afirmar(/setValue\(VENTANA_PROPIA_\)/.test(cuerpo),
+    '⭐⭐ escribe `VENTANA_PROPIA_`, la constante de `Fuentes.gs` — no el literal');
+  afirmar(/var VENTANA_PROPIA_ = 'propia';/.test(fs.readFileSync(path.join(RAIZ, 'Fuentes.gs'), 'utf8')),
+    '   y esa constante existe y vale `propia`');
+  afirmar(/no se pisa/.test(cuerpo), '⚠ no pisa otro valor: lo reporta y para');
+  afirmar(/getRange\(fila, iV \+ 1\)\.getValue\(\)/.test(cuerpo),
+    '⭐⭐ RELEE de la hoja, no del retorno del escritor — son dos afirmaciones distintas');
+  afirmar(/ya estaba \(idempotente\)/.test(cuerpo), '   y ya-estaba es éxito, no error');
+
+  /* ⛔⛔ Y va DENTRO del mismo wrapper: separarlo crearía el estado intermedio que rompe. */
+  const w = src.slice(src.indexOf('function cablearMinistros_'), src.indexOf('function escribirVentanaPropiaMinistros_'));
+  afirmar(/escribirVentanaPropiaMinistros_\(\)/.test(w),
+    '⭐⭐ `cablearMinistros_` la llama: filas cableadas SIN su ventana es el estado que rompe');
+  afirmar(/universo más ancho/.test(w),
+    '   y el fallo dice que sin ventana los nueve leen un universo más ancho');
 }
 
 console.log('\n═══ F · ⭐ cruce contra la firma REAL de la solapa (snapshot de `SOLAPAS`) ═══');
