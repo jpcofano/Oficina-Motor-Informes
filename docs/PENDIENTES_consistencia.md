@@ -92,3 +92,51 @@ del 03/09**, y `LAMINAS` se escribió en el medio.
 14**, escondidas incluidas. **`L-023` no puede publicar bien por ningún arreglo que no toque eso.**
 
 ⛔ **No se arregla acá.** Es un título publicado en una lámina visible.
+
+---
+
+## ⛔ P1 · Dos bancos en rojo **diciendo la verdad** — el corte de ámbito cambió y nadie los dio vuelta (03/09/2026)
+
+**`tools/suites.js`: 90 bancos, ~1226 afirmaciones, ⛔ 2 en rojo.**
+
+| banco | afirmación que cae | qué exige |
+|---|---|---|
+| `probar-ambito-ivr.js` | `looker\|DIGITAL · ambito=gcba → ldig_id_cuenta!~=JDGAG` | 1 |
+| `probar-desglose-como-fuente.js` | *«`jm` busca en las DOS columnas con `\|\|`»* · *«`gcba` es el AND de las negaciones»* | 2 |
+
+### ⭐ No son un bug: son controles haciendo su trabajo
+
+⛔ **La causa está documentada y es deliberada.** El `2026-08-30_2` movió el corte de ámbito **del
+NOMBRE de la campaña al `Id cuentas`**, y su propio comentario lo dice con los conteos al lado:
+
+> *«**EL CORTE PASA DEL NOMBRE AL `Id cuentas`.** Reemplaza a `nombre_campaña~=JM` (15/08), a
+> `des_campana_2~=JM \|\| des_campana_3~=JM` (28/08) en el desglose y a `campana~=JM` en
+> `resumen_metricas_dinamico`. […] el corte por nombre **pierde 5 de las 29 implementaciones JM**;
+> el corte por `Id cuentas` **pierde 1**.»*
+
+⇒ Hoy `DIMENSIONES_.ambito.jm` dice `'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_id_cuenta~=JDGAG'`.
+**Los dos bancos siguen exigiendo la forma anterior.** ⭐ **Están señalando correctamente que el
+estado cambió** — es exactamente la figura que `CLAUDE.md` §4 ya nombra: *«un banco que se pone
+rojo cuando el estado cambia está haciendo su trabajo, aunque el cambio sea el correcto»*.
+
+### ⚠ Lo que hay que hacer, y lo que NO
+
+⛔ **No se aflojan.** La salida escrita es **darlos vuelta con el motivo**, y **si se puede,
+subirles la exigencia** — que es lo que se hizo con los dos casos análogos del 25/08 (pasaron de
+pedir *«que no estén»* a pedir que estén **y que declaren `por_posicion`**).
+
+⭐ **Acá la exigencia mayor está disponible y es concreta:** en vez de *«`jm` usa `||` sobre dos
+columnas»*, pedir que **`jm` y `gcba` sean complementarios sobre `des_id_cuenta`** —una identidad
+interna, que **no caduca**— en lugar de una constante de la lectura anterior, que es justo lo que
+acaba de caducar.
+
+### ⛔ Y lo que este hallazgo dice del método, que es lo caro
+
+⚠ **El cambio del 30/08 se hizo, se documentó bien y NO se corrieron las suites** — o se corrieron
+y el rojo no se atendió. `CLAUDE.md` §4 ya lo pide con todas las letras: *«quien toca una función
+con control positivo corre los controles antes de cerrar»*. ⭐ **Los dos rojos vivieron cuatro
+días**, y en el medio se citó el verde de las suites como evidencia.
+
+⚠ **Verificado por aislamiento el 03/09**: siguen rojos con `Instalar.gs` del último commit, así
+que **no los causó el cableado de ministros**. Se dice porque un rojo sin esa verificación se
+atribuye al último que tocó algo.

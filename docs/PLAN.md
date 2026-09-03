@@ -3006,7 +3006,8 @@ sustituto de volver a medir cuando el número importa**.
 
 | | | dónde vive el detalle |
 |---|---|---|
-| `[ ]` **1** | Las **9 filas** de `MARCADORES` + **11** de `MAPEO` + `ventana_ref = 'propia'` · *en curso* | `docs/Prompts/2026-09-01_4` |
+| `[x]` **1** | ministros: 9 filas + `MAPEO` + `ventana_ref` | ✅ **Código listo el 03/09** — `cablearMinistros()` / `diagCablearMinistros()`, banco `probar-ministros.js` en verde. ⛔ **Falta correrlo** (escribe en `MARCADORES` y `MAPEO`) y **falta `SOLAPAS.ventana_ref = propia`**, que es otra hoja y otro escritor. ⛔ **Y falta declarar 3 filas de `MAPEO`**: el pedido dice 11 y de los nueve marcadores sólo se derivan 8 — candidatas `A ID`, `C Barrio / Comuna`, `F Enviados`, **no inventadas**. ⭐ Control: `emin_encuentros` = **7** |
+| `[ ]` **30** | ⛔ **Dos bancos en rojo diciendo la verdad** — `probar-ambito-ivr` y `probar-desglose-como-fuente` | El `2026-08-30_2` movió el corte de ámbito **del nombre al `Id cuentas`** y **nadie los dio vuelta**. `PENDIENTES` `P1` (03/09) · ⛔ **No se afloja: se da vuelta con el motivo**, y la exigencia mayor está disponible — que `jm` y `gcba` sean **complementarios** sobre `des_id_cuenta`, que es una identidad y **no caduca** · ⚠ Vivieron **cuatro días** y en el medio se citó el verde de las suites |
 | `[ ]` **2** | `emin_lista` — operación con **plantilla sobre todas las filas**. `LISTA_CRUDA` toma un campo, deduplica y no acepta plantilla | ⛔ `R-20`: prompt propio |
 | `[ ]` **3** | El condicional del barrio **DECLARATIVO**, no un `if` con literal — la propuesta usa `valor_fijo` (condición) + una plantilla alternativa | va con **2** |
 | `[ ]` **4** | Corrida de `secco`: el control **son 7** y la lista literal | **usuario** · `diagAgendaFuncionarios()` |
