@@ -2987,6 +2987,88 @@ sustituto de volver a medir cuando el número importa**.
 
 ## 2 · Próximo (ordenado, con dependencias)
 
+### ⭐⭐ LA COLA — 28 ítems, con casilla de resuelto (03/09/2026)
+
+> **Acá vive «qué falta hacer y en qué orden», y por eso está en `PLAN.md`:** §7 declara a este
+> documento dueño de *«¿Qué sigue y en qué orden?»* — distinto de `HANDOFF_CODE.md`, que dice
+> **dónde estamos**, de `PENDIENTES_consistencia.md`, que registra **inconsistencias abiertas**, y
+> de `CIERRE_POR_LAMINA.md`, que se organiza **por lámina**. **No se creó un documento nuevo.**
+>
+> ⭐ **Cada fila que ya tiene entrada en otro lado APUNTA, no repite.** Lo que se busca es **una**
+> cola; el detalle vive donde su dueño lo declara y acá está el orden.
+>
+> **Se tacha a medida que se cierra.** `[x]` con la fecha; el detalle del cierre va a `BITACORA`.
+
+**⛔ Lo que traba más: `9` y `10` — publican mal HOY.
+⭐ Lo más barato con más efecto: `7`.**
+
+#### MINISTROS
+
+| | | dónde vive el detalle |
+|---|---|---|
+| `[ ]` **1** | Las **9 filas** de `MARCADORES` + **11** de `MAPEO` + `ventana_ref = 'propia'` · *en curso* | `docs/Prompts/2026-09-01_4` |
+| `[ ]` **2** | `emin_lista` — operación con **plantilla sobre todas las filas**. `LISTA_CRUDA` toma un campo, deduplica y no acepta plantilla | ⛔ `R-20`: prompt propio |
+| `[ ]` **3** | El condicional del barrio **DECLARATIVO**, no un `if` con literal — la propuesta usa `valor_fijo` (condición) + una plantilla alternativa | va con **2** |
+| `[ ]` **4** | Corrida de `secco`: el control **son 7** y la lista literal | **usuario** · `diagAgendaFuncionarios()` |
+
+#### SECCO
+
+| | | |
+|---|---|---|
+| `[ ]` **5** | `fecha_dia`, `fecha_mes`, `m2_implementaciones` | prompt `_2`, **escrito y sin pasar** |
+| `[ ]` **6** | `m2_camp_lista` → re-correr `aplicarAsteriscoCompartidos()` | **usuario** · idempotente |
+| `[ ]` **7** | ⭐ **Los 45 compartidos sin fila** — sirven a los **dos** informes | *el lote más rentable* |
+| `[ ]` **8** | `m2_envios` (16) y «proyectos» (11): falta la corrida que los reproduzca | nota de `V-124` — ⚠ **el marcador de «proyectos» no está determinado**: dos candidatos |
+
+#### PUBLICA MAL HOY
+
+| | | |
+|---|---|---|
+| `[ ]` **9** | ⛔ `camp_titulo` en `L-016`/`L-023`: título de **otra** campaña | prompt escrito, sin pasar |
+| `[ ]` **10** | ⛔ Alcance de Meta: **frecuencia 32,76 no es creíble** | ⚠ **sin entrada** — nace acá |
+| `[ ]` **11** | IVR: `ambito=gcba` da **63** donde deberían ser **8** | `PENDIENTES` · `P0` del 31/08 (`L-031`) |
+| `[ ]` **12** | Implementaciones cruzadas Directa/Digital (`A1`) | **usuario**, plantilla |
+| `[ ]` **13** | Encabezado vencido en layout/master (`A2`) | barrer `slideLayout*`/`slideMaster*` |
+| `[ ]` **14** | Filas fantasma y desborde en `L-047` (`A3`/`D5`) | `PENDIENTES` |
+| `[ ]` **15** | Remitente sin normalizar (`A5`) | ⚠ **SIN DECISIÓN del usuario** |
+| `[ ]` **16** | Pie de `L-034`: dice que el alcance se unifica y no (`D9`) | **usuario**, una línea |
+
+#### FRONT
+
+| | | |
+|---|---|---|
+| `[ ]` **17** | `B.2` — dos niveles | *en curso* |
+| `[ ]` **18** | `B.3` — informe primero, período sin trámite, `a.informeId` | |
+| `[ ]` **19** | `_4` — cortes libres y secciones configurables | ⚠ **deroga** *«los modos son tres»* |
+
+#### INSTRUMENTOS
+
+| | | |
+|---|---|---|
+| `[ ]` **20** | `escritores.js` / `inventario.js` roto | `PENDIENTES` — **ya bloqueó trabajo** |
+| `[ ]` **21** | Los **2 bancos en rojo**, defectos reales | `probar-ambito-ivr` · `probar-desglose-como-fuente` |
+| `[ ]` **22** | `CORRIDAS` al `snapshot.js` | `PENDIENTES` `P2` (02/09) — hoy esa hoja **no se mide** |
+| `[ ]` **23** | Control de tokens **SIN llaves** impresos (`A4`) | ⭐ **ningún grep los ve** — ver `P3` de `L-022` |
+| `[ ]` **24** | Invariante **agregado = suma del desagregado** | ver `V-111`/`V-113` |
+
+#### DORMIDOS — no se tocan, se vigilan
+
+> ⭐ **Están acá y no en el backlog porque tienen su condición de despertar escrita.** Un dormido
+> sin evento nombrado es deuda olvidada; con él, es algo que un censo puede mirar (`D-55`).
+
+| | | condición que lo despierta |
+|---|---|---|
+| `[ ]` **25** | `figura` no llega al ítem | **cargar un ministro al temario** · `PENDIENTES` `P1` (01/09) |
+| `[ ]` **26** | `CAMPANAS.informe_id` write-only | `PENDIENTES` `P1` (02/09) |
+| `[ ]` **27** | Opción 4 — la expansión saltea escondidas | pospuesto **con número**: 2 copias muertas · `PENDIENTES` `P2` (01/09) |
+| `[ ]` **28** | `V-49` describe una fuente que ya no se usa | ⚠ decide el usuario: ¿caso nuevo que lo supersede? |
+
+⚠ **Dos que NO estaban en la lista y quedan acá para que no se pierdan**, los dos con entrada
+propia en `PENDIENTES`: **el `P0` del escritor del temario** —una campaña que el usuario sacó **se
+sigue publicando**— y **los 8 lectores de `LAMINAS`** que indexan por `lamina_id` solo.
+
+---
+
 ### El encuadre: todo lo de abajo es la fase `informe semanal` — `D-38`
 
 > **Puntero, no copia.** La decisión —las dos fases, el motivo del orden y el criterio de cierre
