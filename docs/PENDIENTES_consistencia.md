@@ -507,3 +507,116 @@ veredicto arriba, y **el cero dicho en cada bloque** en vez de callado.
 ⚠ **Falta el barrido:** `verificarLaminas()` no tiene por qué ser la única función pública sin
 `Logger.log`. **Un cero medido y un cero no buscado no se distinguen** — el barrido no se corrió, y
 eso se dice en vez de omitirse.
+
+---
+
+## ⛔⛔ P0 · El `−3 en las dos puntas` da **5**, no 7 — medido, y frena el paso (03/09/2026)
+
+**Parte 0, sólo lectura. No se implementó el desplazamiento.**
+
+### 1 · La premisa, contra la corrida real (576 filas, solapa viva)
+
+| ventana de envío | n | ¿son las siete del usuario? |
+|---|---|---|
+| `28/08–03/09` — **lo configurado, sin desplazar** | **7** | ⛔ **NO** — sobra **Fernán Quirós** (encuentro `08/09`), falta **Ezequiel Sabor** |
+| `25/08–31/08` — **el −3 en las dos puntas** | ⛔ **5** | ⛔ **NO** — faltan **Tapia** y **Mraida**, los dos con envío `01/09` |
+| `28/08–03/09` por `Fecha` | 6 | ⛔ NO — falta Mraida |
+| ⭐ `25/08–01/09` — **inicio −3, fin −2** | **7** | ✅ **SÍ, exactamente las siete** |
+
+⛔⛔ **El caso más peligroso está arriba de todo: lo configurado YA DA 7 y son otras siete.** Dos
+diferencias que **se cancelan en el total**. ⭐ Un control que compara `length` **da verde sobre
+eso** — que es exactamente lo que el usuario anticipó: *«si da 7 con otras filas, no cerró»*.
+
+### 2 · ⭐⭐ Por qué el −3 simétrico no puede funcionar: el lead time NO es constante
+
+Medido sobre las siete filas: **2, 3, 3, 3, 3, 4 y 5 días** entre envío y encuentro. ⇒ **Ningún
+desplazamiento simétrico reproduce «los encuentros de la semana»**, porque la relación entre las
+dos fechas **no es un número**.
+
+⭐ **Y el barrido de todas las combinaciones (0..−4 × 0..−4) lo acota:** las que traen exactamente
+las siete son **inicio −1…−3 con fin −1…−2**. **El fin −3 nunca funciona.** ⇒ **El mínimo cambio
+sobre la regla dictada es UNA punta: el fin pasa de −3 a −2.**
+
+⚠ **No se ajustó nada.** El desplazamiento lo decide el usuario; acá está medido cuál reproduce su
+lista y cuál no.
+
+### 3 · ⭐ El control ya no es un juez de conteo
+
+`diagAgendaFuncionarios()` compara ahora **por identidad** contra `ROSTER_CONTROL_` —las siete
+filas, con funcionario, fecha y barrio— y dice **qué sobra y qué falta** en cada ventana. Cuando el
+conteo coincide y las filas no, lo marca: *«⛔⛔ EL CONTEO COINCIDE Y LAS FILAS NO — el número
+miente»*. ⚠ `ROSTER_CONTROL_` es **evidencia fechada** y no se edita para que cuadre.
+
+---
+
+## ⭐ Parte 0 · Cómo se declara hoy una ventana por solapa, y qué falta (03/09/2026)
+
+### `ventana_ref` YA admite más que `'propia'` — y hay precedente
+
+**Medido en `SOLAPAS` viva y en el seed.** La columna tiene **dos formas**, no una:
+
+| valor | significa | quién lo usa hoy |
+|---|---|---|
+| `propia` | la solapa corta por **su propio** `fecha_periodo` | `digital / CAMPAÑAS_DESGLOCE_DIGITAL` · ⭐ `reuniones / Agenda funcionarios` |
+| **un nombre de solapa** | toma la ventana **prestada** de esa otra solapa | `looker / CC` → `Cuentas` · `looker / DIGITAL` → `Cuentas` |
+
+⚠ La referencia es **de un solo nivel** —`referenciaDeVentana_` lo verifica y falla con
+`«FALTA:ventana_ref@…»` si hay cadena— y el ciclo de largo uno también está atajado.
+
+⛔⛔ **Pero NO hay ningún precedente de una ventana DESPLAZADA.** Las dos formas contestan *«¿de
+dónde sale la ventana?»*; **ninguna contesta *«¿corrida cuántos días?»***. El único `−3` del repo
+vive en `VENTANA_ENVIO_CONTROL_`, **dentro de un diagnóstico**, y su propio comentario dice *«no es
+configuración del motor»*.
+
+### ⇒ El mínimo que falta, y dónde vive
+
+⭐ **Una columna nueva en `SOLAPAS`, no un valor compuesto en `ventana_ref`.** Dos motivos, y el
+segundo es el que decide:
+
+1. `ventana_ref` responde **de dónde** sale la ventana; el desplazamiento es **cuánto se corre**.
+   **Son dos preguntas** y meterlas en una celda obliga a parsear `propia-3/-2`, que es la clase de
+   valor compuesto que después nadie sabe leer.
+2. ⛔⛔ **El desplazamiento tiene DOS puntas y la medición demuestra que son distintas** (−3 / −2).
+   Un solo número no alcanza ⇒ un valor compuesto necesitaría **dos** campos igual.
+
+⇒ **`ventana_desde_dias` y `ventana_hasta_dias`**, enteros con signo, vacío = 0. Y el lector es
+**uno solo**: donde hoy se arma la ventana efectiva de la solapa.
+
+⚠ **Es CÓDIGO**, no configuración: hoy no existe quien lea esas columnas. ⇒ **`R-20`, prompt
+propio**, como el usuario ya declaró.
+
+### ⚠ A quién más le pega — medido, y hoy el radio es 1
+
+⭐ **Si el desplazamiento se declara POR SOLAPA, afecta a TODO lo que lea `Agenda funcionarios`.**
+Medido contra `MARCADORES`: hoy son **los nueve `emin_*` y nada más** — la solapa no tenía ninguna
+fila antes del 03/09.
+
+⛔ **Pero eso es un estado, no una condición**, y es exactamente la figura de la fecha de
+vencimiento diferida: **el día que alguien cablee un décimo marcador sobre esta solapa, hereda el
+desplazamiento sin pedirlo y sin enterarse.**
+
+⭐ **La condición que lo invalida, escrita para que un censo la pueda mirar:** *«deja de ser
+inofensivo cuando `MARCADORES` tenga una fila sobre `reuniones / Agenda funcionarios` que no sea
+`emin_*`»*. ⚠ Y la alternativa —declarar el desplazamiento **por marcador**— **no se descarta acá**:
+es más granular y más caro, y la decisión es del prompt de `R-20`.
+
+---
+
+## ⛔ Ítem 9 · La hipótesis de `L-016` está MUERTA — medida (03/09/2026)
+
+`verLaminas()`: **`filas_sin_ancla` = 0**. ⇒ ⛔ **`L-016` SÍ tiene su ancla en la plantilla**, así
+que **no** cae a `sinSlide` y mi hipótesis se cae entera. ⭐ Y el usuario ya lo había anticipado:
+*«si NO la reporta, tu hipótesis se cae y hay una tercera causa»*.
+
+**Lo que el mismo log deja en pie como candidatas:**
+
+1. **`seccion_id` en la hoja viva** ≠ `campana` para `L-016`. El snapshot del 31/08 dice `campana`,
+   pero **es un snapshot** y `LAMINAS` se escribió después.
+2. **La guarda de CONTIGÜIDAD.** `duplicarBloquesRepetibles_` exige que las láminas modelo sean
+   **consecutivas**; si no lo son, **no expande y lo reporta**. ⚠ Habría que ver el reporte de la
+   corrida, no la plantilla.
+
+⚠ **Y un dato nuevo del log que no es de `secco` pero conviene no perder:** **17 desajustes de
+`orden_plantilla`**, todos de `L-035`…`L-051` (`jm`), con la hoja **1 o 2 posiciones atrás**. ⇒ Se
+insertaron slides en `jm` y el registro no se refrescó. **No afecta a la expansión** —el bloque se
+resuelve por ancla, no por `orden_plantilla`— pero **sí a todo reporte que ordene por esa columna**.
