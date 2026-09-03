@@ -349,3 +349,80 @@ tocó nada**: el motor publica hoy por envío y eso está registrado, no descubi
 ⚠ **Y afecta a los nueve `emin_*`, no sólo al conteo**: los ocho de métricas suman sobre el mismo
 universo. Un cambio de columna los mueve a los nueve **a la vez**, lo que es bueno —se atribuye a
 un solo cambio— y hay que decirlo antes.
+
+---
+
+## ⭐⭐ El `−3` NO está implementado — no estamos eligiendo entre dos criterios (03/09/2026)
+
+**Medido, grepeando el repo entero.** El desplazamiento `−3` existe en **un solo lugar**:
+`VENTANA_ENVIO_CONTROL_` en `Auditoria.gs`, dentro de un **diagnóstico** — y su propio comentario
+ya lo decía: *«No es configuración del motor: es el caso que se está midiendo»*.
+
+⛔ **El motor corta con `SOLAPAS.ventana_ref = 'propia'`, que usa la ventana del informe SIN
+desplazar.** ⇒ ⭐⭐ **Las dos cosas que se estaban comparando —«por envío» y «por fecha»— son dos
+versiones incompletas del MISMO criterio**, no dos criterios. Por eso lo configurado da 6.
+
+### ⭐ El patrón de los desvíos confirma la hipótesis por un camino independiente del conteo
+
+Contra el deck del equipo del 04/09: los tres de mail (**G, H, J**) el motor da **de menos** y los
+dos de Meta (**Q, R**) **de más**. ⇒ **falta Sabor con sus mails, sobra Mraida con sus
+impresiones** — exactamente lo que predice el corte por envío. ⭐ **Es un discriminador que no
+depende del conteo**, y por eso vale: dos criterios que dan el mismo 6 **no** dan el mismo patrón
+de signos.
+
+### ⛔⛔ Y la pregunta que queda abierta, que NO se resuelve calibrando
+
+**El 7 del equipo tiene a Sabor (encuentro 31/08, envío 27/08) Y a Mraida (encuentro 04/09, envío
+01/09) a la vez.** Medido: **ningún corte simple sobre una sola columna los tiene juntos** —
+
+| ventana | resultado |
+|---|---|
+| envío `28/08–03/09` (lo configurado) | **6** — cae Sabor |
+| envío `25/08–31/08` (el −3 dictado) | ⛔ **a medir en la solapa viva** |
+| fecha `28/08–03/09` | **6** — cae Mraida |
+
+⇒ ⛔ **Si ninguna da siete, no se ajusta el desplazamiento hasta que cuadre.** El equipo incluye
+**un encuentro que todavía no pasó** junto con **uno cuyo envío es de la semana anterior**: eso es
+una **definición de negocio** y la decide el usuario.
+
+⭐ **El instrumento ya está**: `diagAgendaFuncionarios()` compara **las tres ventanas sobre el mismo
+parseo** —para que una diferencia de lectura no se confunda con una de criterio— y lista **las
+filas que entran y las que caen**, con el motivo y marcando las **vecinas del borde**, que son las
+que deciden. ⚠ **`MAPEO.fecha_periodo` NO se tocó**: sigue en `E`.
+
+---
+
+## ⭐ Una afirmación que depende de una coma no está afirmando lo que dice (03/09/2026)
+
+**El caso:** `probar-lista-cruda.js` exigía `/^\s*LISTA_CRUDA:\s*opLISTA_CRUDA\s*$/m` — sin coma
+final. ⇒ **En los hechos exigía que `LISTA_CRUDA` fuera la ÚLTIMA entrada de `OPERACIONES_`**, algo
+que **nunca quiso afirmar**. Se puso roja al nacer `LISTA_TEXTO`, la decimocuarta.
+
+⭐ **Lo accionable, y es la forma correcta de arreglarlo: subirle la exigencia, no permitirle
+menos.** Se aceptó la coma **y** se agregó que la entrada esté **dentro del bloque `OPERACIONES_`**
+— porque la versión vieja la satisfacía un `LISTA_CRUDA:` suelto **en cualquier parte del archivo**.
+
+⚠ **Es de la familia del control que mide algo distinto de lo que dice medir**, con la variante más
+barata de cometer: el criterio se escribió mirando el estado de hoy —*«hoy es la última»*— y
+**nadie escribió esa dependencia porque nadie la eligió**. ⛔ **Un ancla de fin de línea en una
+lista que crece es una fecha de vencimiento diferida**, igual que un fallback justificado por el
+cableado actual.
+
+---
+
+## ⚠ Un `clasp push` que corrió antes de terminar es indistinguible de uno que no corrió (03/09/2026)
+
+**El caso, propio:** el 03/09 se corrió `clasp push` **en el mismo comando** que las suites, y las
+suites salieron con **dos rojos nuevos** causados por ese mismo cambio. ⇒ **El proyecto de Apps
+Script quedó, por unos minutos, con una regresión que el repo local ya sabía que existía.**
+
+⭐ **Es la lección del 16/08 con el orden invertido**, y por eso vale escribirla: aquella vez el
+push corrió **antes de la edición**; ésta corrió **antes de la verificación**. ⛔ **Las dos
+producen el mismo estado —el proyecto no tiene lo que uno cree— y ninguna falla.**
+
+⭐ **Lo accionable, y cuesta nada:** `clasp push` va **después** del verde, **en su propio
+comando**. Encadenarlo con la verificación en un `&&` no protege: `&&` sólo mira el código de
+salida del `grep`, no el veredicto de las suites.
+
+⚠ **Y el corolario: se dice.** El push malo duró minutos y se corrigió con otro push, pero **un
+reporte que no lo menciona deja creer que el proyecto nunca tuvo la regresión**.

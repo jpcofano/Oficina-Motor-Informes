@@ -8070,6 +8070,10 @@ function diagAgendaFuncionarios() {
     return p ? Utilities.formatDate(p, tz, 'yyyy-MM-dd') : '';
   }
   var dentro = [], sinEnvio = 0, sinFecha = 0, conDatos = 0, maxEnv = '';
+  /* ⭐ `2026-09-03` — **todas las filas legibles, para comparar las TRES ventanas sobre el mismo
+   * parseo.** Sin esto, cada ventana necesitaría su propia pasada y una diferencia de lectura se
+   * confundiría con una diferencia de criterio. */
+  var todas = [];
   for (var f = filaEnc; f < datos.length; f++) {
     var fila = datos[f];
     var fun = String(fila[iFun] == null ? '' : fila[iFun]).trim();
@@ -8082,9 +8086,11 @@ function diagAgendaFuncionarios() {
      * ministro en el deck. Un filtro que descarta y no cuenta es invisible (`CLAUDE.md` §4). */
     if (!de) { sinEnvio++; continue; }
     if (!df) sinFecha++;
+    var reg = { fun: fun, envio: de, fecha: df,
+                barrio: iBar === -1 ? '' : String(fila[iBar] == null ? '' : fila[iBar]).trim() };
+    todas.push(reg);
     if (de >= VENTANA_ENVIO_CONTROL_.desde && de <= VENTANA_ENVIO_CONTROL_.hasta) {
-      dentro.push({ fun: fun, envio: de, fecha: df,
-                    barrio: iBar === -1 ? '' : String(fila[iBar] == null ? '' : fila[iBar]).trim() });
+      dentro.push(reg);
     }
   }
 
@@ -8112,6 +8118,94 @@ function diagAgendaFuncionarios() {
     Logger.log('  ⛔ NO SON SIETE, son ' + dentro.length + '. **Es un hallazgo, no un parámetro a');
     Logger.log('     calibrar**: la regla está definida y el desplazamiento NO se ajusta para que');
     Logger.log('     cuadre. Mirar cuál sobra o cuál falta contra la lista del usuario.');
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════════════════════════
+   * ⭐⭐ `2026-09-03` — **LAS TRES VENTANAS, LADO A LADO, CON LAS FILAS QUE ENTRAN Y LAS QUE CAEN.**
+   *
+   * ⛔⛔ **Existe porque el conteo NO distingue las hipótesis.** Medido el 03/09: la corrida dio
+   * **6**, y **dos criterios opuestos dan 6** descartando filas **distintas** — por envío cae
+   * Sabor (envío 27/08), por fecha cae Mraida (encuentro 04/09). **Sólo la fila que falta lo dice.**
+   *
+   * ⭐⭐ **Y la pregunta que esto contesta primero: ¿el −3 está implementado? NO.**
+   * `VENTANA_ENVIO_CONTROL_` vive **acá, en un diagnóstico**, y su propio comentario ya lo decía:
+   * *«no es configuración del motor»*. El motor corta con `SOLAPAS.ventana_ref = 'propia'`, que usa
+   * **la ventana del informe SIN desplazar**. ⇒ **No estamos eligiendo entre dos criterios: estamos
+   * comparando dos versiones incompletas del mismo.**
+   *
+   * ⛔ **Y si ninguna da siete, NO se ajusta el desplazamiento hasta que cuadre.** Se reporta con
+   * las filas al lado. El equipo incluye un encuentro que **todavía no pasó** —Mraida, 04/09— junto
+   * con uno cuyo envío es de la semana anterior —Sabor, 27/08—, y **ningún corte simple los tiene a
+   * los dos**. Eso es una **definición de negocio**, no un parámetro.
+   * ═══════════════════════════════════════════════════════════════════════════════════════ */
+  var VENTANAS_ = [
+    { nom: 'envío  28/08–03/09  (LO CONFIGURADO: ventana del informe, sin desplazar)',
+      campo: 'envio', desde: '2026-08-28', hasta: '2026-09-03' },
+    { nom: 'envío  25/08–31/08  (el −3 dictado — ⛔ NO implementado en el motor)',
+      campo: 'envio', desde: VENTANA_ENVIO_CONTROL_.desde, hasta: VENTANA_ENVIO_CONTROL_.hasta },
+    { nom: 'fecha  28/08–03/09  (el encuentro, sin desplazar)',
+      campo: 'fecha', desde: '2026-08-28', hasta: '2026-09-03' }
+  ];
+
+  Logger.log('');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('LAS TRES VENTANAS SOBRE EL MISMO PARSEO — con las filas al lado');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  ⛔ El −3 NO está implementado: `ventana_ref = propia` usa la ventana del informe');
+  Logger.log('     sin desplazar. Las filas 1 y 2 son dos versiones del MISMO criterio.');
+  Logger.log('  ⚠ Universo: ' + todas.length + ' fila(s) con `Funcionario` y `Fecha de envío` legibles.');
+
+  var resultados = [];
+  VENTANAS_.forEach(function (v) {
+    var adentro = [], afuera = [];
+    todas.forEach(function (x) {
+      var d = x[v.campo];
+      /* ⚠ Una fila sin el campo del corte **no entra**, y se cuenta como descarte con su motivo:
+       * un filtro que descarta y no cuenta es invisible (`CLAUDE.md` §4). */
+      if (d && d >= v.desde && d <= v.hasta) adentro.push(x);
+      else afuera.push({ x: x, motivo: d ? (d < v.desde ? 'antes' : 'después') : 'sin ' + v.campo });
+    });
+    resultados.push({ v: v, adentro: adentro, afuera: afuera });
+
+    Logger.log('');
+    Logger.log('── ' + v.nom);
+    Logger.log('   ENTRAN: ' + adentro.length + (adentro.length === 7 ? '   ⭐ SON SIETE' : '   (el control dice 7)'));
+    adentro.sort(function (a, b) { return a.fecha < b.fecha ? -1 : (a.fecha > b.fecha ? 1 : 0); })
+      .forEach(function (x) {
+        Logger.log('      · ' + (x.fun + '                        ').slice(0, 24) +
+          ' fecha ' + (x.fecha || '(vacía)') + '  envío ' + (x.envio || '(vacío)') +
+          (x.barrio ? '  [' + x.barrio + ']' : ''));
+      });
+    /* ⭐ Los descartes CERCANOS son el dato: una fila que cae por un día es el discriminador. */
+    var cerca = afuera.filter(function (a) {
+      var d = a.x[v.campo];
+      return d && d >= '2026-08-20' && d <= '2026-09-10';
+    });
+    Logger.log('   CAEN (sólo las de fechas vecinas, ' + cerca.length + ' de ' + afuera.length + '):');
+    if (!cerca.length) Logger.log('      (ninguna cerca del borde — el corte no está decidiendo por un día)');
+    cerca.sort(function (a, b) { return a.x[v.campo] < b.x[v.campo] ? -1 : 1; })
+      .forEach(function (a) {
+        Logger.log('      ⛔ ' + (a.x.fun + '                        ').slice(0, 24) +
+          ' fecha ' + (a.x.fecha || '(vacía)') + '  envío ' + (a.x.envio || '(vacío)') +
+          '   ← ' + a.motivo);
+      });
+  });
+
+  Logger.log('');
+  Logger.log('── VEREDICTO ──');
+  var dieronSiete = resultados.filter(function (r) { return r.adentro.length === 7; });
+  if (dieronSiete.length === 1) {
+    Logger.log('  ⭐ UNA sola ventana da 7: ' + dieronSiete[0].v.nom);
+    Logger.log('     ⚠ Eso NO la hace correcta por sí solo: reproduce el conteo. Que además');
+    Logger.log('     traiga las MISMAS siete filas del equipo se verifica mirando la lista.');
+  } else if (dieronSiete.length > 1) {
+    Logger.log('  ⚠ ' + dieronSiete.length + ' ventanas dan 7 — el conteo NO las distingue.');
+    Logger.log('     Comparar las listas fila por fila: pueden ser siete filas distintas.');
+  } else {
+    Logger.log('  ⛔⛔ NINGUNA da 7, y eso NO se resuelve ajustando el desplazamiento.');
+    Logger.log('     El equipo incluye a la vez un encuentro FUTURO y uno cuyo envío es de la');
+    Logger.log('     semana anterior. Ningún corte simple sobre una sola columna los tiene a los');
+    Logger.log('     dos ⇒ es una DEFINICIÓN DE NEGOCIO y la decide el usuario, no el motor.');
   }
 
   // ── La regla condicional del barrio ─────────────────────────────────────────────────────
