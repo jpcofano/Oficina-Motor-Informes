@@ -10136,6 +10136,33 @@ function cablearMinistros_(aplicar) {
   Logger.log('');
   Logger.log('  ✅ backup: `' + bk.nombre + '`');
 
+  /* ⭐⭐ `2026-09-03` — **`ventana_ref` va PRIMERO, y el orden no es de estilo: es lo único que
+   * hace que la guarda sirva.**
+   *
+   * ⛔ **Estaba al final y ahí la guarda llegaba tarde.** Si fallaba, las nueve filas y las once de
+   * `MAPEO` **ya estaban escritas** y el wrapper devolvía `ok:false` con el sistema **exactamente en
+   * el estado que dice evitar**: marcadores cableados **sin** su recorte, leyendo un universo más
+   * ancho. **Un `ok:false` que deja el daño hecho no es una guarda, es un aviso.**
+   *
+   * ⭐ **La asimetría es la que decide el orden, y es total:**
+   *   · **ventana sin marcadores** → **inerte**. `ventana_ref` sólo la mira quien lee esa solapa, y
+   *     si no hay ninguna fila que la lea, no cambia nada de nada.
+   *   · **marcadores sin ventana** → ⛔ **publica**, con un universo más ancho, **sin fallar**.
+   *
+   * ⇒ De los dos estados intermedios posibles, uno no existe para nadie y el otro es el modo de
+   * falla más caro de este repo. **Se elige quedar del lado inerte.** */
+  var ventana = escribirVentanaPropiaMinistros_();
+  if (!ventana.ok) {
+    Logger.log('  ⛔ ABORTA — `SOLAPAS.ventana_ref` no quedó: ' + ventana.motivo);
+    Logger.log('     ⭐ Y NO se escribió ni una fila de MARCADORES ni de MAPEO: sin el recorte por');
+    Logger.log('     envío los nueve leerían un universo más ancho, y eso no falla, publica.');
+    Logger.log('     El backup `' + bk.nombre + '` quedó hecho y no hace falta restaurarlo.');
+    return { ok: false, motivo: 'ventana_ref: ' + ventana.motivo, backup: bk.nombre,
+      marcadores: 0, mapeo: 0 };
+  }
+  Logger.log('  ✅ `SOLAPAS.ventana_ref` = `' + VENTANA_PROPIA_ + '` para `' + BASE_MINISTROS_ +
+    '/' + SOLAPA_MINISTROS_ + '` — ' + ventana.motivo);
+
   FILAS_MINISTROS_.forEach(function (x) {
     var obj = filaCompleta(x);
     var valores = headers.map(function (h) { return (h in obj) ? obj[h] : ''; });
@@ -10209,32 +10236,45 @@ function cablearMinistros_(aplicar) {
   Logger.log('  ✅ RELEÍDO de la hoja: las ' + FILAS_MINISTROS_.length + ' filas quedaron, una cada una,');
   Logger.log('     con su campo_logico, operacion, formato y solapa. MAPEO: ' + altasMap + ' alta(s).');
 
-  /* ⭐⭐ `2026-09-03` — **`SOLAPAS.ventana_ref = 'propia'`, que hasta hoy quedaba afuera.**
-   *
-   * ⛔ **Sin esto los nueve marcadores NO se recortan por el envío**, y eso no falla: publican
-   * sobre un universo más ancho. **Un universo más ancho nunca es una degradación aceptable de uno
-   * recortado** — es el modo de falla más caro de este repo y el único que no avisa.
-   *
-   * ⚠ Va acá y no en un wrapper aparte **a propósito**: separarlos crearía exactamente el estado
-   * intermedio que rompe —filas cableadas sin su ventana—, y nadie se enteraría. */
-  var ventana = escribirVentanaPropiaMinistros_();
-  Logger.log('');
-  if (!ventana.ok) {
-    Logger.log('  ⛔ `SOLAPAS.ventana_ref` NO quedó: ' + ventana.motivo);
-    Logger.log('     ⚠ Los nueve marcadores están escritos y SIN recorte por envío: leen un');
-    Logger.log('     universo más ancho. Backup de MARCADORES: `' + bk.nombre + '`');
-    return { ok: false, motivo: 'ventana_ref: ' + ventana.motivo, backup: bk.nombre,
-      marcadores: FILAS_MINISTROS_.length, mapeo: altasMap };
-  }
-  Logger.log('  ✅ `SOLAPAS.ventana_ref` = `' + VENTANA_PROPIA_ + '` para `' + BASE_MINISTROS_ +
-    '/' + SOLAPA_MINISTROS_ + '` — ' + ventana.motivo);
-
   Logger.log('');
   Logger.log('  ⛔ LO QUE FALTA Y NO LO HACE ESTE WRAPPER:');
   Logger.log('     · La corrida que verifique. `emin_encuentros` tiene que dar **7**.');
   Logger.log('     · ⚠ Y los nueve siguen con `_revisar`: nacen PROPUESTA, no verificados.');
   return { ok: true, aplicado: true, marcadores: FILAS_MINISTROS_.length, mapeo: altasMap,
     ventana_ref: ventana.motivo, backup: bk.nombre };
+}
+
+/**
+ * ⭐ **Sólo `SOLAPAS.ventana_ref = 'propia'`, para correrlo suelto y verificarlo antes del resto.**
+ *
+ * ⭐ **Se puede correr solo sin riesgo, y ése es el punto**: una ventana declarada sobre una solapa
+ * que ningún marcador lee todavía es **inerte** — nadie la consulta. El orden inverso es el que
+ * rompe, y por eso `cablearMinistros()` la escribe **antes** de la primera fila.
+ *
+ * ⚠ **Idempotente**: si ya está, lo dice y no toca nada. Correrlo dos veces no hace daño.
+ */
+function ventanaPropiaDeMinistros() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('`SOLAPAS.ventana_ref` de ministros · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  `' + BASE_MINISTROS_ + ' / ' + SOLAPA_MINISTROS_ + '`  →  `' + VENTANA_PROPIA_ + '`');
+  Logger.log('  ⭐ Qué significa: esta solapa manda sobre el `modo_periodo` de su base, y la');
+  Logger.log('     ventana se corta por SU `fecha_periodo` — que es la columna **E**, `Fecha de');
+  Logger.log('     envío`. Las campañas de ministros se eligen por su ENVÍO, ~3 días antes.');
+  Logger.log('  ⚠ AVISO: las 10 filas con `Fecha de envío` vacía caen afuera EN SILENCIO.');
+  Logger.log('');
+  var r = escribirVentanaPropiaMinistros_();
+  if (!r.ok) {
+    Logger.log('  ⛔ NO quedó: ' + r.motivo);
+    Logger.log('     ⚠ No corras `cablearMinistros()` hasta resolver esto: aborta igual, pero');
+    Logger.log('     este mensaje dice por qué sin gastar un backup.');
+    return r;
+  }
+  Logger.log('  ✅ ' + r.motivo);
+  Logger.log('');
+  Logger.log('  ⓘ Esto solo NO publica nada: sin filas que lean la solapa, la ventana es inerte.');
+  Logger.log('     El paso siguiente es `cablearMinistros()`.');
+  return r;
 }
 
 /**

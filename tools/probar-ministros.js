@@ -197,6 +197,30 @@ console.log('\n═══ E bis · ⭐⭐ `SOLAPAS.ventana_ref` se escribe, y con
     '⭐⭐ `cablearMinistros_` la llama: filas cableadas SIN su ventana es el estado que rompe');
   afirmar(/universo más ancho/.test(w),
     '   y el fallo dice que sin ventana los nueve leen un universo más ancho');
+
+  /* ⭐⭐ EL ORDEN, que es lo único que hace que la guarda sirva (03/09). Con `ventana_ref` al
+   * final, un fallo dejaba las 9 filas y las 11 de MAPEO YA escritas y sin recorte — el estado
+   * exacto que el wrapper dice evitar. Un `ok:false` que deja el daño hecho es un aviso, no una
+   * guarda. Se afirma por POSICIÓN porque es lo único que lo distingue. */
+  const pos = t => w.indexOf(t);
+  afirmar(pos('var bk = backupMarcadores_') !== -1 && pos('var ventana = escribirVentanaPropiaMinistros_') !== -1,
+    'están el backup y la ventana');
+  afirmar(pos('var bk = backupMarcadores_') < pos('var ventana = escribirVentanaPropiaMinistros_'),
+    '  el backup va ANTES que la ventana');
+  afirmar(pos('var ventana = escribirVentanaPropiaMinistros_') < pos('hoja.getRange(existentes[x.marcador]'),
+    '⭐⭐ la VENTANA va antes de escribir la primera fila de MARCADORES');
+  afirmar(pos('var ventana = escribirVentanaPropiaMinistros_') < pos('hojaMap.appendRow'),
+    '⭐⭐ y antes de la primera de MAPEO');
+  /* ⛔ Y el aborto devuelve CERO escritas, no el total: decir 9 ahí sería mentir. */
+  afirmar(/motivo: 'ventana_ref: ' \+ ventana\.motivo, backup: bk\.nombre,\s*\r?\n?\s*marcadores: 0, mapeo: 0/.test(w),
+    '⭐ y si falla devuelve `marcadores: 0, mapeo: 0` — no el total, que sería mentira');
+
+  /* ⭐ El wrapper suelto, para correrlo y verificarlo antes del resto. Sin `_` y SIN parámetros,
+   * que son las dos condiciones para que aparezca en el desplegable del editor. */
+  afirmar(/function ventanaPropiaDeMinistros\(\) \{/.test(src),
+    '⭐ existe `ventanaPropiaDeMinistros()` — público y SIN parámetros');
+  afirmar(/inerte/.test(src.slice(src.indexOf('function ventanaPropiaDeMinistros'))),
+    '   y dice que correrlo solo es inerte: nadie lee esa ventana todavía');
 }
 
 console.log('\n═══ F · ⭐ cruce contra la firma REAL de la solapa (snapshot de `SOLAPAS`) ═══');
