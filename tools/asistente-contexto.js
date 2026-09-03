@@ -82,12 +82,40 @@ function hoja(nombre, filasIniciales) {
  * `parchear` recibe `{archivo, texto}` y devuelve el texto mutado, para los controles negativos.
  * ⛔ **Si el parche no cambia nada, tira** — la guarda del 24/08: sin «después» no hay control.
  */
-function contexto(hojas, parchear) {
+/* ⛔⛔ `2026-09-03` — **`hoy` se puede FIJAR, y sin esto los bancos del asistente medían con la
+ * fecha del día que se corrían.**
+ *
+ * `panel_asistenteCrearPeriodo` hace `var hoy = new Date()` (`PanelBackend.gs:2701`), así que **no
+ * hay parámetro por donde inyectar la fecha**. `probar-asistente-periodo.js` escribía
+ * `ctx.__hoy = JUEVES` **y nadie lo leía**: el punto de inyección que el banco creía tener nunca
+ * existió. El banco pasaba mientras la fecha real cayera en la ventana que esperaba, y **se puso
+ * rojo solo el 03/09** — sin que nadie tocara una línea.
+ *
+ * ⭐ **El reemplazo va en el CONTEXTO y no en `PanelBackend.gs`**, a propósito: el código del
+ * asistente está en trabajo por otra sesión y agregarle un parámetro sería tocarlo desde afuera.
+ * Un banco que necesita fijar el reloj **lo fija en su propio contexto**, que es para lo que existe.
+ *
+ * ⚠ **`new Date(...)` con argumentos sigue funcionando igual** — sólo se fija la forma sin
+ * argumentos, que es la que pregunta *«qué día es hoy»*. */
+function relojFijo(fecha) {
+  function D(...args) {
+    if (!(this instanceof D)) return new D(...args).toString();
+    return args.length ? new Date(...args) : new Date(fecha.getTime());
+  }
+  D.prototype = Date.prototype;
+  D.now = () => fecha.getTime();
+  D.parse = Date.parse;
+  D.UTC = Date.UTC;
+  return D;
+}
+
+function contexto(hojas, parchear, hoy) {
   const creadas = {};
   Object.keys(hojas || {}).forEach((n) => { creadas[n] = hoja(n, hojas[n]); });
 
   const ctx = {
-    console, Math, JSON, Date, String, Number, Object, Array, RegExp, isNaN, Error,
+    console, Math, JSON, Date: hoy ? relojFijo(hoy) : Date,
+    String, Number, Object, Array, RegExp, isNaN, Error,
     parseInt, parseFloat, encodeURIComponent, decodeURIComponent,
     Logger: { log: () => {} },
     SpreadsheetApp: {
@@ -182,4 +210,5 @@ function llamar(ctx, expresion, args) {
   return vm.runInContext(expresion, ctx);
 }
 
-module.exports = { RAIZ, HEADERS, hoja, contexto, llamar, fs, path, vm };
+module.exports = {
+  relojFijo, RAIZ, HEADERS, hoja, contexto, llamar, fs, path, vm };

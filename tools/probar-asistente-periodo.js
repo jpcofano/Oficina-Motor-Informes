@@ -91,8 +91,7 @@ console.log('\n2 · ⭐⭐ un período que ya existe se REUSA — no se crea ni 
    * se vería. Es la forma exacta del caso medido con `agosto_14_20`. */
   const ctx = C.contexto({
     PERIODOS: [['2026_agosto_21_27', '1999-01-01', '1999-01-07', 'NO ME TOQUES']]
-  });
-  ctx.__hoy = JUEVES;
+  }, null, JUEVES);
   const r = C.vm.runInContext('panel_asistenteCrearPeriodo("anterior", "", "")', ctx);
 
   afirmar(r.ok === true, 'devuelve `ok`' + (r.ok ? '' : ' — ' + r.motivo));
@@ -195,9 +194,12 @@ console.log('\n5 · ⚠ los controles negativos');
     : texto);
   romper.__archivo = 'PanelBackend.gs';
 
+  /* ⚠ El reloj fijo también acá: sin él, `"anterior"` deriva un `periodo_id` que **no es** el que
+   * la hoja trae sembrado, y entonces el caso negativo no mide la guarda — mide que el id no
+   * coincide. Un negativo que cae por el motivo equivocado no prueba lo que dice. */
   const ctx = C.contexto({
     PERIODOS: [['2026_agosto_21_27', '1999-01-01', '1999-01-07', 'NO ME TOQUES']]
-  }, romper);
+  }, romper, JUEVES);
   const r = C.vm.runInContext('panel_asistenteCrearPeriodo("anterior", "", "")', ctx);
   const filas = ctx.__hojas.PERIODOS.__filas.filter((f) => f[0] === '2026_agosto_21_27');
 
