@@ -3045,8 +3045,8 @@ sustituto de volver a medir cuando el número importa**.
 
 | | | |
 |---|---|---|
-| `[ ]` **20** | `escritores.js` / `inventario.js` roto | `PENDIENTES` — **ya bloqueó trabajo** |
-| `[ ]` **21** | Los **2 bancos en rojo**, defectos reales | `probar-ambito-ivr` · `probar-desglose-como-fuente` |
+| `[x]` **20** | ~~`escritores.js` / `inventario.js` roto~~ **CERRADO 03/09** | el limpiador no reconocía regex literales · `BITACORA` |
+| `[ ]` **21** | Los **3 bancos en rojo**, defectos reales | `probar-ambito-ivr` · `probar-desglose-como-fuente` · ⚠ **`probar-asistente-periodo`** (nuevo, 03/09: el `periodo_id` derivado no reusa el que ya está — **es de la rama del asistente, no se tocó**) |
 | `[ ]` **22** | `CORRIDAS` al `snapshot.js` | `PENDIENTES` `P2` (02/09) — hoy esa hoja **no se mide** |
 | `[ ]` **23** | Control de tokens **SIN llaves** impresos (`A4`) | ⭐ **ningún grep los ve** — ver `P3` de `L-022` |
 | `[ ]` **24** | Invariante **agregado = suma del desagregado** | ver `V-111`/`V-113` |

@@ -39,18 +39,70 @@ const RAIZ = path.join(__dirname, '..');
 // (mismo offset en crudo y en limpio: los literales se releen del crudo).
 // ============================================================================
 
+/* ⛔⛔ `2026-09-03` — **el limpiador reconoce REGEX LITERALES, y sin eso se comía el archivo.**
+ *
+ * **El caso, medido:** `Auditoria.gs:2917` tiene
+ * `/filtro\s+`[^`]*`[^→]*→\s*(\d+)\s+de\s+(\d+)\s+fila/` — una regex **con backticks adentro**.
+ * El limpiador no distinguía una regex de una división, así que veía el primer `` ` `` y **entraba
+ * en modo template string**: el segundo lo cerraba, el tercero volvía a abrir, y **desde ahí se
+ * comía el resto del archivo — 487 líneas de código**, con sus llaves. De ahí el
+ * `Llaves desbalanceadas tras limpiar Auditoria.gs (-2)` que dejó a `inventario.js` y a
+ * `escritores.js` **rotos desde el 28/08** (commit `6d6fa01`; el anterior daba balance 0).
+ *
+ * ⭐ **Distinguir regex de división no es ambiguo si se mira el token ANTERIOR:** después de un
+ * valor —identificador, número, `)`, `]`— una `/` es división; después de un operador, una coma,
+ * un `(`, un `=` o un `return`, es el comienzo de una regex. Es la regla que usa cualquier lexer
+ * de JS y acá alcanza de sobra: el archivo es código propio, no entrada arbitraria.
+ *
+ * ⚠ **Y NO se resuelve reescribiendo la regex de `Auditoria.gs` para sacarle los backticks**: eso
+ * arregla este archivo y deja el limpiador roto para la próxima regex que los tenga. El defecto
+ * está acá.
+ */
+function esInicioDeRegex_(texto, i) {
+  for (let k = i - 1; k >= 0; k--) {
+    const ch = texto[k];
+    if (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r') continue;
+    if (/[A-Za-z0-9_$)\]]/.test(ch)) {
+      // Puede ser división… salvo que el identificador sea una palabra clave que espera valor.
+      let fin = k + 1, ini = k;
+      while (ini >= 0 && /[A-Za-z0-9_$]/.test(texto[ini])) ini--;
+      const palabra = texto.slice(ini + 1, fin);
+      return ['return', 'typeof', 'case', 'in', 'of', 'new', 'delete', 'void', 'do', 'else']
+        .indexOf(palabra) !== -1;
+    }
+    return true;   // operador, coma, paréntesis de apertura, `=`, `{`, `;`…
+  }
+  return true;     // principio del archivo
+}
+
 function limpiar(texto) {
   const salida = texto.split('');
-  let estado = 'codigo'; // codigo | lineaCom | bloqueCom | sq | dq | tpl
+  let estado = 'codigo'; // codigo | lineaCom | bloqueCom | sq | dq | tpl | rx
   for (let i = 0; i < texto.length; i++) {
     const c = texto[i];
     const sig = texto[i + 1];
     if (estado === 'codigo') {
       if (c === '/' && sig === '/') { estado = 'lineaCom'; salida[i] = ' '; }
       else if (c === '/' && sig === '*') { estado = 'bloqueCom'; salida[i] = ' '; }
+      else if (c === '/' && esInicioDeRegex_(texto, i)) { estado = 'rx'; }
       else if (c === "'") estado = 'sq';
       else if (c === '"') estado = 'dq';
       else if (c === '`') estado = 'tpl';
+      continue;
+    }
+    /* Una regex se cierra con la `/` sin escapar. Las clases `[...]` pueden contener `/` sin
+     * cerrarla, así que se lleva la cuenta de si estamos dentro de una. */
+    if (estado === 'rx') {
+      if (c === '\\') { salida[i] = ' '; if (sig !== '\n') { salida[i + 1] = ' '; i++; } continue; }
+      if (c === '[') { estado = 'rxClase'; salida[i] = ' '; continue; }
+      if (c === '/') { estado = 'codigo'; continue; }
+      if (c !== '\n') salida[i] = ' ';
+      continue;
+    }
+    if (estado === 'rxClase') {
+      if (c === '\\') { salida[i] = ' '; if (sig !== '\n') { salida[i + 1] = ' '; i++; } continue; }
+      if (c === ']') { estado = 'rx'; salida[i] = ' '; continue; }
+      if (c !== '\n') salida[i] = ' ';
       continue;
     }
     if (estado === 'lineaCom') {
