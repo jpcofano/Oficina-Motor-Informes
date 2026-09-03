@@ -1308,7 +1308,12 @@ var OPERACIONES_ = {
    * que acá borraría campañas legítimas. Comparte núcleo con `CUENTA_DISTINTOS` —`distintosDeCampo_`,
    * con `R-10`— y **no con `LISTA`**, cuyo normalizador produce OTRO conjunto de nombres y haría que
    * la lista y el banner de la misma lámina no coincidan. Ver su comentario. */
-  LISTA_CRUDA: opLISTA_CRUDA
+  LISTA_CRUDA: opLISTA_CRUDA,
+  /* `2026-09-03` — la decimocuarta. El TEXTO de TODAS las filas, una por fila, unidas por
+   * `separador`. **No es `FILA_TEXTO` sin índice ni `LISTA_CRUDA` con plantilla**: aquélla publica
+   * UNA fila y ésta las publica todas, y `LISTA_CRUDA` **deduplica**, que acá borraría encuentros.
+   * Ver su comentario. */
+  LISTA_TEXTO: opLISTA_TEXTO
 };
 
 /**
@@ -1500,4 +1505,146 @@ function menuCorteVerticalRetiro2407_() {
         : '⚠ La suma de canales NO cierra contra ecv_inscriptos — ver el detalle en VISTA_PREVIA, no se ajustó el total.'),
     ui.ButtonSet.OK
   );
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-03` — **`LISTA_TEXTO`, la decimocuarta: el texto de TODAS las filas.**
+ *
+ * `emin_lista` la necesita, y **ninguna de las trece anteriores sirve**. Medido antes de
+ * escribirla, que es lo que la justifica:
+ *
+ *   · **`LISTA_CRUDA`** toma **un** `campo_logico` y **DEDUPLICA**. Con `figura` sola sobre la
+ *     semana del 03/09 publicaría **5** donde hay **7 encuentros**: *«Seguridad en tu barrio»*
+ *     aparece **tres veces** —Comuna 1 Sur, Comuna 2 y Comuna 3, el mismo día— y colapsaría a una.
+ *     ⛔ **Y el número no fallaría**: publicaría una lista corta y plausible.
+ *   · **`FILA_TEXTO`** compone con plantilla pero publica **UNA** fila, la N-ésima. Sirve para una
+ *     tabla de N casilleros, **no para una lista en una caja**, y acá la cantidad de encuentros
+ *     **cambia cada semana** — 6, 7, 8. Una tabla de N fijo publicaría huecos o cortaría.
+ *   · **`ELEMENTO`** es lo mismo un escalón más abajo y además colapsa repetidos.
+ *
+ * ⇒ **Todas las filas, en el orden de la solapa, sin deduplicar, unidas por `separador`.**
+ *
+ * ══ POR QUÉ NO DEDUPLICA, QUE ES LA DECISIÓN QUE LA DEFINE ═════════════════════════════════
+ *
+ * ⛔ **Dos encuentros distintos pueden producir el mismo texto, y siguen siendo dos.** Es el caso
+ * de arriba: tres filas de *«Seguridad en tu barrio»* el mismo día. Deduplicar convertiría **el
+ * problema del texto** —que no distingue— en **una pérdida de filas**, que es peor y silenciosa.
+ * ⭐ **La plantilla es la que tiene que distinguirlos**, y para eso está el condicional.
+ *
+ * ══ EL CONDICIONAL, Y DÓNDE VIVE SU LITERAL ════════════════════════════════════════════════
+ *
+ * ⭐⭐ `{campo=VALOR?alterno}` — **si `campo` vale `VALOR`, se publica `alterno`.**
+ *
+ *     campo_logico = '{figura=Seguridad en tu barrio?barrio} {fecha:dd/MM}'
+ *
+ * ⛔ **El literal vive en la fila de `MARCADORES`, NO en el `.gs`** (decisión del usuario). El caso
+ * es real y está medido: `Agenda funcionarios` carga *«Seguridad en tu barrio»* **en la columna
+ * `Funcionario`** —no es una persona, es el nombre del ciclo—, así que la lámina tiene que mostrar
+ * **el barrio**. Con el literal en el código, un segundo ciclo exigiría `clasp push`, que es
+ * exactamente lo que `D-01` mide.
+ *
+ * ⚠ **La comparación se normaliza de los dos lados** con `normalizarValorDeclarado_` (`R-10`):
+ * una celda tipeada a mano trae espacios de más, y comparar crudo contra el literal fallaría **en
+ * silencio** — la lista saldría con el nombre del ciclo repetido y nadie sabría por qué.
+ *
+ * ══ EL ORDEN ═══════════════════════════════════════════════════════════════════════════════
+ *
+ * ⚠ **Es el orden de la solapa, y se DECLARA en la traza en vez de suponerse.** No se ordena
+ * alfabéticamente como `LISTA`/`LISTA_CRUDA`: una lista de encuentros que arranca por *«Gabino»*
+ * no dice nada, y la solapa se carga a mano en orden cronológico. ⛔ **Si algún día dejara de
+ * estarlo, la traza es lo que lo delata** — por eso dice de dónde salió el orden y no se calla.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function opLISTA_TEXTO(ctx) {
+  var plantilla = String(ctx.campo_logico || '');
+  var campos = (ctx.plantilla && ctx.plantilla.campos) || null;
+  var filas = (ctx.filas || []);
+
+  if (!campos) {
+    return {
+      valor: '', ambiguo: true,
+      traza: '«FALTA:@plantilla_sin_resolver» — `LISTA_TEXTO` necesita que el despachador resuelva ' +
+        'los campos de la plantilla "' + plantilla + '". Llegó sin `ctx.plantilla`.',
+      filas: filas.length
+    };
+  }
+
+  /* ⛔ Cero filas NO es una lista vacía: es un universo vacío, y eso se dice. Publicar `''` haría
+   * que «no hubo encuentros» y «el recorte los dejó a todos afuera» se vean igual. */
+  if (!filas.length) {
+    return {
+      valor: '', ambiguo: true,
+      traza: '«FALTA:@lista_sin_filas» — `LISTA_TEXTO` no recibió ninguna fila. No es una lista ' +
+        'vacía: es un universo vacío, y las dos cosas mandan a trabajos distintos.',
+      filas: 0
+    };
+  }
+
+  var faltantes = {};
+  var condicionales = 0;
+
+  function pintarFila(fila) {
+    return plantilla.replace(/\{([^}:]+)(?::([^}]*))?\}/g, function (todo, cuerpo, fmt) {
+      var p = partirTokenDePlantilla_(cuerpo);
+      var nombre = p.campo;
+
+      /* ⭐ El condicional. Se evalúa ANTES de leer el valor a publicar, porque puede cambiar
+       * **cuál campo** se lee, no sólo cómo se lo muestra. */
+      if (p.igual !== null && p.alterno) {
+        var cmpCampo = campos[nombre];
+        var cmpCrudo = (cmpCampo && cmpCampo.clave && (cmpCampo.clave in fila)) ? fila[cmpCampo.clave] : '';
+        /* ⚠ Los DOS lados normalizados (`R-10`): la celda viene tipeada a mano. */
+        if (normalizarValorDeclarado_(cmpCrudo) === normalizarValorDeclarado_(p.igual)) {
+          nombre = p.alterno;
+          condicionales++;
+        }
+      }
+
+      var campo = campos[nombre];
+      if (!campo || !campo.clave) { faltantes[nombre] = 'sin mapeo'; return '«?' + nombre + '»'; }
+      var crudo = (campo.clave in fila) ? fila[campo.clave] : '';
+      if (crudo === '' || crudo === null || crudo === undefined) {
+        faltantes[nombre] = 'celda vacía';
+        return '«?' + nombre + '»';
+      }
+      if (!fmt) return String(crudo);
+      /* Mismo lector de fechas que el resto del motor — no hay un parser nuevo (`CLAUDE.md` §2). */
+      var f = (crudo instanceof Date) ? crudo : parsearFechaCelda_(crudo);
+      if (!f) { faltantes[nombre] = 'no es fecha'; return '«?' + nombre + '»'; }
+      return Utilities.formatDate(f, Session.getScriptTimeZone(), String(fmt).trim());
+    });
+  }
+
+  var textos = filas.map(pintarFila);
+  /* ⚠ `separador` es la cadena que une, igual que en `LISTA` y `LISTA_CRUDA`. Sin declararlo, el
+   * default es un salto de línea: una lista de encuentros se lee en renglones, no en una fila. */
+  var sep = (ctx.separador === '' || ctx.separador === null || ctx.separador === undefined)
+    ? '\n' : String(ctx.separador);
+
+  var avisos = Object.keys(faltantes).sort()
+    .map(function (n) { return n + ' (' + faltantes[n] + ')'; });
+
+  return {
+    valor: textos.join(sep),
+    traza: 'LISTA_TEXTO sobre ' + filas.length + ' fila(s) de ' + ctx.base_id + '/' + ctx.solapa +
+      ', en el ORDEN DE LA SOLAPA (no alfabético)' +
+      (condicionales ? ' · ' + condicionales + ' condicional(es) aplicado(s)' : '') +
+      /* ⭐ El cero se dice, igual que el hallazgo: «ninguno aplicó» descarta una causa y una lista
+       * vacía de avisos no descarta nada. */
+      (plantillaSinCondicional_(plantilla) ? '' : (condicionales ? '' : ' · ⚠ ningún condicional aplicó')) +
+      trazaDeVentana_(ctx) +
+      (avisos.length ? ' ⚠ campos sin resolver: ' + avisos.join(', ') : ''),
+    filas: filas.length
+  };
+}
+
+/** ¿La plantilla NO tiene ningún condicional? Sirve para no avisar de algo que no se pidió. */
+function plantillaSinCondicional_(plantilla) {
+  var hay = false;
+  String(plantilla || '').replace(/\{([^}:]+)(?::[^}]*)?\}/g, function (todo, cuerpo) {
+    var p = partirTokenDePlantilla_(cuerpo);
+    if (p.igual !== null && p.alterno) hay = true;
+    return todo;
+  });
+  return !hay;
 }

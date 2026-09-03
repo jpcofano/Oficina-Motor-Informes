@@ -114,9 +114,22 @@ console.log('== probar-lista-cruda ==');
 
 console.log('');
 console.log('0 · control positivo — la operación existe, corre, y NO pide catálogo');
+/* ⭐ `2026-09-03` — **la coma opcional, y por qué esto NO es aflojar el control.**
+ *
+ * La afirmación exigía `opLISTA_CRUDA` **a fin de línea sin coma**, así que en los hechos exigía
+ * que fuera **la última entrada del mapa** — algo que nunca quiso afirmar. Se puso roja al nacer
+ * `LISTA_TEXTO`, la decimocuarta, **diciendo la verdad sobre un cambio de estado**.
+ *
+ * ⭐⭐ **Y en vez de sólo permitir la coma, se SUBE la exigencia**: ahora también se afirma que la
+ * entrada está **dentro del bloque `OPERACIONES_`**. Antes, un `LISTA_CRUDA: opLISTA_CRUDA` suelto
+ * en cualquier parte del archivo la habría satisfecho. */
+var BLOQUE_OPERACIONES_ = (MARCADORES.match(/var OPERACIONES_ = \{[\s\S]*?\n\};/) || [''])[0];
 af('`LISTA_CRUDA` está registrada en `OPERACIONES_`',
-  /^\s*LISTA_CRUDA:\s*opLISTA_CRUDA\s*$/m.test(MARCADORES),
+  /^\s*LISTA_CRUDA:\s*opLISTA_CRUDA\s*,?\s*$/m.test(BLOQUE_OPERACIONES_),
   'sin la entrada en el mapa, el despachador no la encuentra y el token sale «FALTA»');
+af('⭐ y la afirmación mira DENTRO del bloque, no el archivo entero',
+  BLOQUE_OPERACIONES_.length > 0 && BLOQUE_OPERACIONES_.indexOf('LISTA_CRUDA') !== -1,
+  'un `LISTA_CRUDA:` suelto en cualquier parte del archivo satisfacía la versión vieja');
 /* ⛔ Si entrara acá, `resolverCatalogoDeMarcador_` le exigiría `MARCADORES.catalogo` y el token
  * saldría «FALTA:m2_camp_lista@sin_catalogo» — que es exactamente el bloqueo que esta operación
  * vino a levantar. La afirmación es NEGATIVA a propósito. */

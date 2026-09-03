@@ -1164,12 +1164,45 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
  * columna, que es acceso a configuración. La operación sólo compone el texto.
  * ═══════════════════════════════════════════════════════════════════════════════════════════ */
 
-/** Los nombres de campo que una plantilla menciona, en orden y sin repetir. */
+/**
+ * ⭐⭐ `2026-09-03` — **el cuerpo de un `{…}` de plantilla, partido en un solo lugar.**
+ *
+ * Tres formas, y la tercera es nueva:
+ *
+ *   - `{campo}`                        → el valor crudo
+ *   - `{campo:fmt}`                    → formateado (fecha) — lo parte el llamador, no esto
+ *   - ⭐ `{campo=VALOR?alterno}`        → **si `campo` vale `VALOR`, se publica `alterno`**
+ *
+ * ⛔⛔ **El literal vive ACÁ, en la configuración de la fila, y NO en el `.gs`** (decisión del
+ * usuario). El caso que lo pide: `Agenda funcionarios` carga *«Seguridad en tu barrio»* **en la
+ * columna `Funcionario`** —no es una persona, es el nombre del ciclo— y la lámina tiene que
+ * mostrar el barrio. Con el literal en el código, agregar un segundo ciclo exigiría `clasp push`.
+ *
+ * ⚠ **Una plantilla vieja se parte exactamente igual que antes:** sin `=` ni `?` el `match` no
+ * engancha y devuelve `{campo, igual:null, alterno:null}`. Es lo que permite tocar esto sin mirar
+ * a `FILA_TEXTO` y `GRUPO_TEXTO`, que ya andan.
+ */
+function partirTokenDePlantilla_(cuerpo) {
+  var s = String(cuerpo || '');
+  var m = s.match(/^([^=?]+)=([^?]*)\?(.+)$/);
+  if (m) return { campo: m[1].trim(), igual: m[2].trim(), alterno: m[3].trim() };
+  return { campo: s.trim(), igual: null, alterno: null };
+}
+
+/**
+ * Los nombres de campo que una plantilla menciona, en orden y sin repetir.
+ *
+ * ⚠ **El `alterno` de un condicional cuenta como campo y por eso entra acá.** Si no entrara,
+ * `resolverPlantillaTexto_` no lo mapearía y la operación publicaría su hueco visible `«?barrio»`
+ * **sin que nada dijera por qué** — el campo estaría bien escrito y sin mapear.
+ */
 function camposDePlantilla_(plantilla) {
   var out = [];
-  String(plantilla || '').replace(/\{([^}:]+)(?::[^}]*)?\}/g, function (todo, nombre) {
-    var n = String(nombre).trim();
-    if (n && out.indexOf(n) === -1) out.push(n);
+  String(plantilla || '').replace(/\{([^}:]+)(?::[^}]*)?\}/g, function (todo, cuerpo) {
+    var p = partirTokenDePlantilla_(cuerpo);
+    [p.campo, p.alterno].forEach(function (n) {
+      if (n && out.indexOf(n) === -1) out.push(n);
+    });
     return todo;
   });
   return out;
@@ -1391,7 +1424,8 @@ function resolverMarcadores(informeId, opciones) {
      * formato** (`{des_fecha_inicio:min:dd/MM}`), que el regex de `camposDePlantilla_` ya ignora.
      * Un agregador nuevo no exige tocar el despachador. */
     var nombreOp = String(fila.operacion || '').trim();
-    var esPlantilla = (nombreOp === 'FILA_TEXTO' || nombreOp === 'GRUPO_TEXTO');
+    var esPlantilla = (nombreOp === 'FILA_TEXTO' || nombreOp === 'GRUPO_TEXTO' ||
+                       nombreOp === 'LISTA_TEXTO');
     var campoOverride = esRatio ? String(fila.campo_logico).split('/')[0].trim()
       : (esPlantilla ? primerCampoDePlantilla_(fila.campo_logico) : null);
     if (esPlantilla && !campoOverride) {

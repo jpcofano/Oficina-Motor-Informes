@@ -267,7 +267,13 @@ console.log('\n6 · `camposDePlantilla_` y `primerCampoDePlantilla_`');
 {
   const c2 = { console, String, Object, Array, RegExp };
   vm.createContext(c2);
-  ['function camposDePlantilla_', 'function primerCampoDePlantilla_'].forEach((f) => {
+  /* ⭐ `2026-09-03` — **`partirTokenDePlantilla_` entra a la lista, y por eso este banco se puso
+   * rojo: `camposDePlantilla_` pasó a depender de él** al nacer `LISTA_TEXTO` con su condicional
+   * `{campo=VALOR?alterno}`. **El rojo era correcto** — la función extraída ya no era autónoma.
+   * ⚠ Se agrega la dependencia, NO se afloja la afirmación: las cuatro de abajo siguen exigiendo
+   * exactamente lo mismo, y son las que prueban que la sintaxis vieja no cambió. */
+  ['function partirTokenDePlantilla_', 'function camposDePlantilla_',
+   'function primerCampoDePlantilla_'].forEach((f) => {
     const t = extraer(GENERADOR_GS, f);
     if (!t) { avisos.push('⚠ no se encontró `' + f + '` en Generador.gs'); return; }
     vm.runInContext(t, c2, { filename: 'Generador.gs (extracto)' });

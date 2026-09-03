@@ -282,3 +282,70 @@ segundos es la clase de fuga que nadie mira.
 
 ⛔ No toca el mecanismo desatendido, ni el presupuesto, ni el trigger. **Es front.** Y `D-57` queda
 decidido igual: lo que está gated es **el botón único**, no la decisión.
+
+---
+
+## ⛔⛔ P0 · `emin_encuentros` dio **6** y se esperaban **7** — y hay DOS causas que dan el mismo 6 (03/09/2026)
+
+**Corrida real del usuario.** Las siete filas de `reuniones / Agenda funcionarios` al 03/09:
+
+| ID | Funcionario | Barrio / Comuna | Fecha (D) | Fecha de envío (E) |
+|---|---|---|---|---|
+| `3593-AGOVINVC` | Ezequiel Sabor | Comuna 2 | 31/08 | **27/08** |
+| `3594-AGOJDGVC` | Gabriel Sánchez Zinny | Comuna 11 | 31/08 | 28/08 |
+| `3597-AGOSEGVC` | Gabino Tapia | Comuna 1 Norte | 03/09 | 01/09 |
+| `3598-AGOSEGVC` | Seguridad en tu barrio | Comuna 1 Sur | 03/09 | 31/08 |
+| `3599-AGOSEGVC` | Seguridad en tu barrio | Comuna 2 | 03/09 | 31/08 |
+| `3600-AGOSEGVC` | Seguridad en tu barrio | Comuna 3 | 03/09 | 31/08 |
+| `3608-AGODHHVC` | Gabriel Mraida | Comuna 9 | **04/09** | 01/09 |
+
+### ⛔⛔ Las dos causas dan 6 y descartan filas DISTINTAS
+
+Medido sobre la ventana del deck, **28/08–03/09**:
+
+| criterio | resultado | qué fila cae |
+|---|---|---|
+| **`Fecha de envío` (E)** — lo que está configurado | **6** | ⛔ **Sabor** — envío 27/08, un día antes de la ventana |
+| **`Fecha` (D)** — el encuentro | **6** | ⛔ **Mraida** — encuentro 04/09, un día después |
+
+⇒ ⭐⭐ **El número no distingue las dos hipótesis: sólo la fila que falta lo hace.** Es el número
+plausible en su forma más pura — dos causas opuestas, el mismo 6, y ninguna falla.
+
+### ⭐⭐ El argumento que decide, y sale del dato
+
+⛔ **Cortar por envío mete en el deck de esta semana un encuentro que TODAVÍA NO PASÓ.** Mraida
+tiene envío 01/09 (dentro) y **encuentro el 04/09** — después del cierre de la ventana. Y a la vez
+**saca a Sabor, cuyo encuentro (31/08) sí cae adentro**.
+
+⭐ **La causa es estructural, no de estos datos:** el envío va **~3 días antes** del encuentro
+(regla del usuario), así que cortar por envío **corre el universo ~3 días hacia atrás** — pierde
+sistemáticamente los encuentros del **arranque** de la semana y suma los del arranque de la
+**siguiente**. **No es un error de borde: es un desplazamiento sistemático.**
+
+⚠ Y `emin_encuentros` cuenta **encuentros**. Un encuentro pertenece a la semana **en que ocurre**.
+
+### ⚠ Y el «7» no lo reproduce NINGUNA ventana semanal sobre la ventana del deck
+
+Medido: para que entren las siete hace falta
+
+- por **envío**: `27/08 – 02/09` → 7
+- por **fecha**: `31/08 – 06/09` → 7
+
+⇒ ⛔ **Con la ventana 28/08–03/09 no hay columna que dé 7.** Así que **el 7 y la ventana del deck
+son incompatibles**, y eso es una decisión, no un bug a parchear. ⛔ **No se ajusta el número
+esperado** (`CLAUDE.md` §1): si el caso vale, el paso falló.
+
+### ⇒ La decisión que hace falta, y es del usuario
+
+1. ⭐ **Cortar por `Fecha` (D)** — el encuentro. Es lo que hace que la lámina cuente *«los
+   encuentros de esta semana»*, y lo que evita publicar uno futuro. **Recomendado.**
+2. Cortar por `Fecha de envío` (E) y **correr la ventana** ~3 días. ⚠ Ata el universo a un plazo
+   operativo que el propio usuario describió como *«en general»* — **variable**, así que el
+   universo deja de ser reproducible.
+
+⚠ **Cambiarlo es una celda**: `MAPEO.fecha_periodo` pasaría de la columna `E` a la `D`. **No se
+tocó nada**: el motor publica hoy por envío y eso está registrado, no descubierto.
+
+⚠ **Y afecta a los nueve `emin_*`, no sólo al conteo**: los ocho de métricas suman sobre el mismo
+universo. Un cambio de columna los mueve a los nueve **a la vez**, lo que es bueno —se atribuye a
+un solo cambio— y hay que decirlo antes.
