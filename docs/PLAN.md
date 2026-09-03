@@ -3048,7 +3048,7 @@ sustituto de volver a medir cuando el número importa**.
 | `[x]` **20** | ~~`escritores.js` / `inventario.js` roto~~ **CERRADO 03/09** | el limpiador no reconocía regex literales · `BITACORA` |
 | `[ ]` **21** | Los **3 bancos en rojo**, defectos reales | `probar-ambito-ivr` · `probar-desglose-como-fuente` · ⚠ **`probar-asistente-periodo`** (nuevo, 03/09: el `periodo_id` derivado no reusa el que ya está — **es de la rama del asistente, no se tocó**) |
 | `[ ]` **22** | `CORRIDAS` al `snapshot.js` | ⛔ **tiene una decisión adentro (03/09)**: las tres listas están duplicadas **a propósito** y `listas.js` exige que coincidan. Agregarlo sólo a `snapshot.js` lo rompe; a las tres **cambia `instalar()`**. `PENDIENTES` `P2` (02/09) |
-| `[ ]` **23** | Control de tokens **SIN llaves** impresos (`A4`) | ⭐ **ningún grep los ve** — ver `P3` de `L-022` |
+| `[~]` **23** | Control de tokens **SIN llaves** impresos (`A4`) | ⭐ **INSTRUMENTO ESCRITO 03/09** — `censarTokensSinLlaves()`, sólo lectura, las dos plantillas. **Falta correrlo** (usuario) |
 | `[ ]` **24** | Invariante **agregado = suma del desagregado** | ver `V-111`/`V-113` |
 
 #### DORMIDOS — no se tocan, se vigilan

@@ -8135,3 +8135,121 @@ function diagAgendaFuncionarios() {
   return { ok: true, entran: dentro.length, filas: conDatos, sin_envio: sinEnvio,
            sin_fecha: sinFecha, seguridad: seg.length, detalle: dentro };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * `A4` / ítem 23 de la cola — TOKENS IMPRESOS **SIN LLAVES** EN LA PLANTILLA
+ *
+ * ⛔⛔ **Existe porque ningún instrumento del repo los ve, y no por descuido: por construcción.**
+ * Todo lo que busca tokens usa `RE_TOKEN_ = /\{\{([a-zA-Z0-9_]+)\}\}/g`, o sea que **exige las
+ * llaves**. Un nombre de token escrito sin ellas —`camp_env4_fecha` en vez de
+ * `{{camp_env4_fecha}}`— **es texto plano para el motor**:
+ *
+ *   · el censo de tokens sin fila **no lo lista**, porque no es un token;
+ *   · la resolución **no lo toca**, así que no sale `«FALTA»` ni `/////`;
+ *   · `FALTANTES` **no lo registra**;
+ *   · y un `grep` de `{{…}}` sobre la plantilla **tampoco lo encuentra**.
+ *
+ * ⇒ **Queda impreso en el deck como si fuera contenido**, y el único que lo detecta es una
+ * persona leyendo la lámina. El caso conocido es `camp_env4_fecha` en `L-022` (`PENDIENTES`, `P3`
+ * del 02/09), y encaja con lo medido el 22/08: **ese token no existe** porque la fecha está en una
+ * celda combinada. **Es el nombre que quedó cuando alguien le sacó las llaves.**
+ *
+ * ⚠ **Y por eso el detector NO puede buscar «tokens»: tiene que buscar NOMBRES QUE PARECEN
+ * tokens.** El criterio es deliberadamente distinto del de `RE_TOKEN_`.
+ *
+ * ⛔ **SÓLO LECTURA.** No toca la plantilla —es del equipo (`C-01`)— ni ninguna hoja.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Un candidato es una palabra suelta con forma de token: minúsculas, dígitos y `_`, **con al menos
+ * un `_`** y **sin llaves alrededor**. ⚠ El `_` es lo que separa la señal del ruido: sin él,
+ * cualquier palabra en minúscula del deck sería candidata. */
+var RE_CANDIDATO_SIN_LLAVES_ = /(^|[^{\w])([a-z][a-z0-9]*(?:_[a-z0-9]+)+)(?![\w}])/g;
+
+/**
+ * Sin `_` y sin parámetros: las dos condiciones del desplegable (`CLAUDE.md` §2).
+ * Recorre **las dos plantillas**.
+ */
+function censarTokensSinLlaves() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('TOKENS IMPRESOS SIN LLAVES — ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA. Ningún otro instrumento los ve: todos exigen `{{…}}`.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ⭐ **El universo de nombres reales sale del REGISTRO, no de una lista.** Un candidato sólo se
+   * reporta si **existe como marcador o como token de la otra plantilla** — si no, cualquier
+   * `id_cuenta` escrito en una nota daría positivo. Es cruzar, no filtrar por forma. */
+  var conocidos = {};
+  try {
+    leerMarcadores_().forEach(function (m) {
+      var n = String(m.marcador || '').trim();
+      if (n) conocidos[n] = 'MARCADORES';
+    });
+  } catch (e) { Logger.log('⚠ no pude leer MARCADORES: ' + e.message); }
+
+  var informes = leerInformes();
+  var plantillas = {};
+  ['jm', 'secco'].forEach(function (id) {
+    var inf = informes[id];
+    if (!inf || !inf.plantilla_id) return;
+    try { plantillas[id] = SlidesApp.openById(inf.plantilla_id); }
+    catch (e) { Logger.log('⚠ no pude abrir la plantilla de `' + id + '`: ' + e.message); }
+  });
+
+  /* Los tokens BIEN escritos de las dos plantillas también cuentan como nombres conocidos: un
+   * `camp_env4_fecha` sin llaves es sospechoso justamente porque sus hermanos SÍ las tienen. */
+  Object.keys(plantillas).forEach(function (id) {
+    plantillas[id].getSlides().forEach(function (slide) {
+      piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+        var m; RE_TOKEN_.lastIndex = 0;
+        while ((m = RE_TOKEN_.exec(pieza.texto)) !== null) {
+          if (!conocidos[m[1]]) conocidos[m[1]] = 'plantilla';
+        }
+      });
+    });
+  });
+  Logger.log('  nombres conocidos (marcadores + tokens bien escritos): ' + Object.keys(conocidos).length);
+  Logger.log('');
+
+  var total = 0;
+  Object.keys(plantillas).forEach(function (informeId) {
+    var slides = plantillas[informeId].getSlides();
+    Logger.log('── `' + informeId + '` · ' + slides.length + ' láminas ──────────────────────────');
+    var hallados = 0;
+    slides.forEach(function (slide, i) {
+      var ancla = anclaDeLamina_(slide);
+      piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+        var texto = String(pieza.texto || '');
+        var m; RE_CANDIDATO_SIN_LLAVES_.lastIndex = 0;
+        while ((m = RE_CANDIDATO_SIN_LLAVES_.exec(texto)) !== null) {
+          var nombre = m[2];
+          if (!conocidos[nombre]) continue;      // parece token pero no lo es: no se reporta
+          hallados++; total++;
+          Logger.log('  ⛔ lámina ' + (i + 1) + ' · ' + (ancla || '(sin ancla)') +
+            '  →  `' + nombre + '`   (' + conocidos[nombre] + ')');
+          var ctx = texto.slice(Math.max(0, m.index - 30), m.index + nombre.length + 30)
+            .replace(/\s+/g, ' ');
+          Logger.log('        contexto: …' + ctx + '…');
+        }
+      });
+    });
+    /* ⭐ **Cero se dice**, no se calla: «ninguno» y «no se midió» se ven igual en un log sin
+     * conteo (`CLAUDE.md` §4). */
+    if (!hallados) Logger.log('  ✅ ninguno.');
+    Logger.log('');
+  });
+
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  TOTAL: ' + total + ' nombre(s) de token impresos SIN llaves.');
+  if (total) {
+    Logger.log('  ⛔ Cada uno se está IMPRIMIENDO en el deck como texto. La plantilla es del');
+    Logger.log('     equipo (`C-01`): esto se REPORTA, no se edita.');
+  }
+  Logger.log('');
+  Logger.log('  ⚠ Lo que este censo NO contesta:');
+  Logger.log('     · un nombre que NO esté en MARCADORES ni en la otra plantilla no se reporta —');
+  Logger.log('       se cruza contra el registro para no llenar el log de falsos positivos, y eso');
+  Logger.log('       significa que un token inventado y sin llaves TAMPOCO se ve.');
+  Logger.log('     · nada sobre decks ya generados: mide la PLANTILLA, que es de donde salen.');
+  return { ok: true, total: total };
+}
