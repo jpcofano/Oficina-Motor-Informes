@@ -1123,3 +1123,100 @@ doble, tomar la última daría sólo el último tramo, **y ninguno rompe**.
 `periodo_desde` / `periodo_hasta` / `periodo_nivel` / `periodo_calculado` / `periodo_traza`.
 ⇒ **La vista final los nombra y dice por qué no están** — *hoy no se persisten*. ⛔ Sin esa línea,
 **un resumen más corto se lee como un deck más limpio**, que es la lectura opuesta a la verdadera.
+
+---
+
+## ⛔⛔ P0 · El `_revisar` se puso DESPUÉS de que el caso validara — el cruce va en una sola dirección (04/09/2026)
+
+**El hallazgo de proceso del `2026-09-04_5 Addendum 1`, y es el más importante de la tanda.**
+
+| lectura | qué dice |
+|---|---|
+| `MARCADORES_2026-08-31.tsv` | los **siete `m2_*`** tienen `miles` y `porcentaje_sin_signo` — ⭐ **limpios** |
+| deck del motor del 04/09, `L-038` | los publica **entre guiones**: `-23-`, `-1.348.720-`, `-32.4-`… |
+| `V-124` | los **validó el 02/09** |
+
+⇒ ⭐⭐ **A seis marcadores se les puso la marca de «no validado» DESPUÉS de que un caso del CSV los
+validara**, y **nada avisó**. Lo detectó el usuario **leyendo el deck**.
+
+⭐ **La causa es estructural, no un descuido:** el cruce marcador ↔ caso **es manual y va en una
+sola dirección** — se revisa **al levantar** el `_revisar`, nunca **al ponerlo**. ⇒ Un marcador
+validado puede volver a marcarse como dudoso y **el sistema no tiene cómo notarlo**.
+
+⇒ ⛔ **Lo accionable: el cruce tiene que correr también al revés** — *caso `exacto` cuyo marcador
+sigue con `_revisar`*. Va como **ítem 36**.
+
+⚠ **Y el costo no es cosmético:** un dato validado que sigue entre guiones **le enseña al lector
+que los guiones no significan nada**. Es la misma familia que *«una marca que está en todos lados
+no distingue nada»*.
+
+---
+
+## ⭐ Un censo sobre un snapshot mide el snapshot — segunda instancia (04/09/2026)
+
+El censo de `_revisar` de la Parte 0 salió del snapshot del 31/08 **con su límite declarado**
+—*«puede quedarse corto, nunca largo»*—. ⛔ **Se quedó corto, y el resultado se iba a usar como si
+fuera la hoja.**
+
+⭐ **Lo que hace cara a esta figura: declarar el límite NO evita el error.** El número queda escrito,
+la advertencia queda dos líneas abajo, y **lo que sobrevive es el número**. ⇒ **Cuando la pregunta
+es sobre el estado de HOY, el instrumento tiene que leer la hoja viva** — el snapshot contesta otra
+pregunta, la de su fecha.
+
+⇒ Escrito `censarRevisarVivos()` (`Instalar.gs`, sólo lectura), con el mismo control positivo que
+cazó el error del cruce: la columna del CSV se llama **`token_propuesto`**, no `token`. ⛔ **Mi
+primer censo dio `0/0/32` por leer la columna equivocada** — un cero que era artefacto del lector,
+no del dato.
+
+---
+
+## ⭐⭐ P2 · `porcentaje_sin_signo` y NO `fraccion` — la diferencia es 100× (04/09/2026)
+
+**Medido corriendo `opPCT` y `formatearValorMarcador_` reales** sobre los tres pares del deck
+`secco-20260903-234123`, en vez de deducirlo del deck:
+
+| marcador | crudo `opPCT` | `porcentaje` | ⭐ `porcentaje_sin_signo` | ⛔ `fraccion` |
+|---|---|---|---|---|
+| `emin_or` | 18.3218 | `-18.3%-` | **`-18.3-`** | ⛔ **`-1832.2-`** |
+| `emin_ctor` | 1.8873 | `-1.9%-` | **`-1.9-`** | ⛔ `-188.7-` |
+| `emin_ctr` | 0.2953 | `-0.3%-` | **`-0.3-`** | ⛔ `-29.5-` |
+
+⭐ **`porcentaje` reproduce el deck byte a byte** ⇒ el crudo **ya viene en unidades de porcentaje**
+y **los tres números son correctos**. Lo único mal era el signo repetido.
+
+⛔⛔ **`fraccion` era la trampa**, y suena a la respuesta: *«la caja pone el `%`, entonces
+fracción»*. Publicaría **1832 donde va 18,3** — un error de **orden de magnitud**, el modo de falla
+más caro de este repo. ⭐ Y el motor **ya usa `porcentaje_sin_signo`** en `ivr_at_pct`, `ivr_75_pct`
+y `camp_meta_ctr`: **es el mismo caso, resuelto antes.**
+
+---
+
+## ⭐ `L-038` CERRADA por decisión del usuario, con su condición de invalidación (04/09/2026)
+
+**`C-87`.** El equipo **adapta** las campañas al armar la lámina —agrupa, unifica y renombra—, así
+que su conteo y el del motor **cuentan cosas distintas por construcción**: envíos 23 contra 22,
+campañas 21 contra los 15 «Proyectos». ⇒ ⛔ **No hay número final automático y no se vuelve sobre
+esto.** Se publica el conteo del motor, que es el de su fuente, **sin `_revisar`**.
+
+⭐ **Y cierra además la pregunta que `V-124` había dejado abierta** sobre qué marcador mide
+«proyectos»: ya no hay que elegir entre `m2_campanias` y la columna literal `Proyecto`, **porque
+ninguna puede reproducir un número que se arma a mano**.
+
+⭐⭐ **La condición de invalidación, que es un EVENTO y no una fecha: que el equipo deje de adaptar
+las campañas.** Escrita así a propósito — un estado hay que ir a mirarlo, **una condición se puede
+vigilar**.
+
+⚠ **`imp_total` y `gcba_imp_total` se levantan por caso exacto Y son dos de los números que el deck
+del equipo desmiente. No es contradicción:** el caso `V-` certifica que **el motor lee bien su
+fuente**; que la fuente no tenga el grano semanal **es otra cosa y sigue abierta**.
+
+---
+
+## ⚠ Dos cosas que la comparación de decks destapa y este prompt NO toca (04/09/2026)
+
+- ⛔ **`pauta_*` publica `1` en Meta, Google y Programmatic, en las DOS láminas**, contra 7/8/8 y
+  95/73/125 del equipo. Defecto de magnitud **ya diagnosticado**, y **sigue sin ámbito**: el prompt
+  `2026-08-31_2` **nunca se ejecutó**.
+- ⭐ **`ivr_llamados` y `gcba_ivr_llamados` ya publican distinto** (JM `-`, GCBA `170.473`): **el
+  cableado del 03/09 llegó**. ✅ **Control positivo del ítem 11, cumplido** — el token existe en la
+  plantilla y el ámbito discrimina.

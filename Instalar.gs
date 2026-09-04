@@ -10356,3 +10356,269 @@ function escribirVentanaPropiaMinistros_() {
   }
   return { ok: true, motivo: 'escrita y releída en la fila ' + fila };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04_5` Partes B.1, B.2 y B.3 — **tres cambios, todos CELDAS de `MARCADORES`.**
+ * ⛔ No es código y **no lleva `clasp push`** para surtir efecto: son valores de configuración.
+ *
+ * ══ B.1 · LA LISTA PIERDE EL CONDICIONAL ═══════════════════════════════════════════════════
+ *
+ * **Decisión del usuario, 04/09/2026: la lista es `funcionario + barrio + fecha sin año`.**
+ *
+ * ⛔⛔ **La justificación del condicional queda VENCIDA, no borrada.** El comentario del 03/09
+ * argumentaba: *«sin él, las tres filas de "Seguridad en tu barrio" salen idénticas y no falla»*.
+ * ⭐ **Ese argumento SIGUE SIENDO CIERTO y deja de gobernar**: con el barrio **siempre** presente,
+ * las tres filas se distinguen por otra vía —Comuna 1 Sur / Comuna 2 / Comuna 3— y el condicional
+ * pasa a ser maquinaria que no hace falta. **Mismo trato que la frase tachada de `D-57`.**
+ *
+ * ⚠ **El nombre lógico es `figura`, no `funcionario`** — medido en `MAPEO`: columna **B**, cuyo
+ * encabezado **sí** dice `Funcionario`. **La plantilla usa el nombre que EXISTE**, no el que suena
+ * bien. (Es el mismo caso ya declarado de `fecha_periodo` y `fecha` sobre la columna D.)
+ *
+ * ══ B.2 · EL `%` DUPLICADO ═════════════════════════════════════════════════════════════════
+ *
+ * El deck publicaba `-18.3%-%`: **la caja trae su propio `%` y el formato le agregaba otro.**
+ *
+ * ⭐⭐ **Medido corriendo `opPCT` y `formatearValorMarcador_` REALES** sobre los tres pares del
+ * deck `secco-20260903-234123`, en vez de deducirlo:
+ *
+ *   marcador     crudo opPCT   `porcentaje`   `porcentaje_sin_signo`   ⛔ `fraccion`
+ *   emin_or      18.3218       -18.3%-        -18.3-                   -1832.2-
+ *   emin_ctor     1.8873        -1.9%-         -1.9-                    -188.7-
+ *   emin_ctr      0.2953        -0.3%-         -0.3-                     -29.5-
+ *
+ * ⇒ `porcentaje` **reproduce el deck byte a byte**, así que **el crudo ya viene en unidades de
+ * porcentaje y los tres números son CORRECTOS**. Lo único mal es el signo.
+ *
+ * ⛔⛔ **Y `fraccion` era la trampa: publicaría 1832 donde va 18,3.** Suena a la respuesta —*«la
+ * caja pone el %, entonces fracción»*— y es un error de **orden de magnitud**, el modo de falla
+ * más caro de este repo. ⭐ El propio motor ya usa `porcentaje_sin_signo` en `ivr_at_pct`,
+ * `ivr_75_pct` y `camp_meta_ctr`: **es el mismo caso, ya resuelto antes.**
+ *
+ * ══ B.3 · LOS DIEZ QUE PIERDEN `_revisar` ══════════════════════════════════════════════════
+ *
+ * ⭐ **No se elige formato: se vuelve al que estaba.** El destino sale del snapshot del 31/08, que
+ * es la autoridad de *«el que tenían»* — y ahí los siete `m2_*` están **limpios**.
+ *
+ * ⛔⛔ **Ése es el hallazgo de proceso:** a los `m2_*` se les puso `_revisar` **entre el 31/08 y el
+ * 04/09**, y **`V-124` los había validado el 02/09**. **La marca de «no validado» se agregó DESPUÉS
+ * de la validación**, y nadie avisó.
+ *
+ * ⚠ **`imp_total` y `gcba_imp_total` se levantan por caso exacto Y son dos de los números que el
+ * deck del equipo desmiente. No es contradicción:** el caso `V-` certifica que **el motor lee bien
+ * su fuente**; que la fuente no tenga el grano semanal **es otra cosa y sigue abierta**.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** ⭐ La plantilla nueva de `emin_lista`. Sin condicional: el barrio va siempre. */
+var PLANTILLA_EMIN_LISTA_ = '{figura} {barrio} {fecha:dd/MM}';
+
+/** Los tres cambios, declarados afuera para que un banco los lea sin correr nada. */
+var CAMBIOS_0409_ = [
+  /* B.1 — la lista. ⚠ Es el único que toca `campo_logico`; los demás son `formato`. */
+  { marcador: 'emin_lista', campo: 'campo_logico', a: PLANTILLA_EMIN_LISTA_,
+    motivo: 'B.1 · decisión del usuario 04/09: funcionario + barrio + fecha sin año, SIN condicional' },
+  /* B.2 — el `%` duplicado. El número no cambia; sólo deja de agregarse el signo. */
+  { marcador: 'emin_or',   campo: 'formato', a: 'porcentaje_sin_signo_revisar', motivo: 'B.2 · la caja ya trae su `%`' },
+  { marcador: 'emin_ctor', campo: 'formato', a: 'porcentaje_sin_signo_revisar', motivo: 'B.2 · ídem' },
+  { marcador: 'emin_ctr',  campo: 'formato', a: 'porcentaje_sin_signo_revisar', motivo: 'B.2 · ídem' },
+  /* B.3 — los diez que vuelven a su formato del 31/08. */
+  { marcador: 'imp_total',           campo: 'formato', a: 'miles',                motivo: 'B.3 · V-73 · V-79 · X-10 exactos' },
+  { marcador: 'frecuencia',          campo: 'formato', a: 'numero',               motivo: 'B.3 · V-68 · V-69 · V-72 exactos' },
+  { marcador: 'gcba_imp_total',      campo: 'formato', a: 'miles',                motivo: 'B.3 · V-59 · V-74 exactos' },
+  { marcador: 'm2_mails_enviados',   campo: 'formato', a: 'miles',                motivo: 'B.3 · V-125, exacto en DOS ventanas' },
+  { marcador: 'm2_mails_entregados', campo: 'formato', a: 'miles',                motivo: 'B.3 · V-125' },
+  { marcador: 'm2_aperturas',        campo: 'formato', a: 'miles',                motivo: 'B.3 · V-125' },
+  { marcador: 'm2_clics',            campo: 'formato', a: 'miles',                motivo: 'B.3 · V-125' },
+  { marcador: 'm2_or',               campo: 'formato', a: 'porcentaje_sin_signo', motivo: 'B.3 · V-125, con el redondeo del equipo' },
+  { marcador: 'm2_ctor',             campo: 'formato', a: 'porcentaje_sin_signo', motivo: 'B.3 · V-125, ídem' },
+  { marcador: 'm2_envios',           campo: 'formato', a: 'miles',                motivo: 'B.3 · C-87: L-038 cerrada, la diferencia de conteo NO es un defecto' }
+];
+
+/** Modo seco. ⛔ No escribe. */
+function diagCambios0409() { return aplicarCambios0409_(false); }
+
+/** Aplica, con backup antes y **relectura de la hoja** después. */
+function aplicarCambios0409() { return aplicarCambios0409_(true); }
+
+function aplicarCambios0409_(aplicar) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('`2026-09-04_5` B.1+B.2+B.3 — ' + (aplicar ? 'APLICA' : 'MODO SECO') + ' · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  ⭐ Los tres números de `%` NO cambian: 18.3 / 1.9 / 0.3 se publican igual.');
+  Logger.log('     Lo único que cambia es que deja de agregarse el segundo signo.');
+  Logger.log('');
+
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe la hoja MARCADORES.'); return { ok: false }; }
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0].map(function (x) { return String(x == null ? '' : x).trim(); });
+  var iM = h.indexOf('marcador');
+  if (iM === -1) { Logger.log('⛔ ABORTA: MARCADORES no tiene columna `marcador`.'); return { ok: false }; }
+
+  var faltanCol = [];
+  ['campo_logico', 'formato'].forEach(function (c) { if (h.indexOf(c) === -1) faltanCol.push(c); });
+  if (faltanCol.length) {
+    Logger.log('⛔ ABORTA: faltan columna(s): ' + faltanCol.join(', '));
+    return { ok: false, motivo: 'columnas' };
+  }
+
+  /* Dónde está cada uno, y qué tiene HOY. ⚠ El valor previo se muestra siempre: un cambio que no
+   * dice de qué venía no se puede revisar después. */
+  var plan = [], noEstan = [], yaEstaban = [];
+  CAMBIOS_0409_.forEach(function (c) {
+    var fila = -1;
+    for (var k = 1; k < datos.length; k++) {
+      if (String(datos[k][iM] || '').trim() === c.marcador) { fila = k + 1; break; }
+    }
+    if (fila === -1) { noEstan.push(c.marcador); return; }
+    var iC = h.indexOf(c.campo);
+    var de = String(datos[fila - 1][iC] || '').trim();
+    if (de === c.a) { yaEstaban.push(c.marcador + '.' + c.campo); return; }
+    plan.push({ c: c, fila: fila, iC: iC, de: de });
+  });
+
+  plan.forEach(function (p) {
+    Logger.log('  ' + (p.c.marcador + '                      ').slice(0, 22) +
+      p.c.campo + ':  ' + (p.de || '(vacío)') + '  →  ' + p.c.a);
+    Logger.log('        ' + p.c.motivo);
+  });
+  if (yaEstaban.length) Logger.log('  ⓘ ya estaban: ' + yaEstaban.join(', '));
+  /* ⛔ Un marcador que no existe NO se saltea en silencio: es un hallazgo. */
+  if (noEstan.length) {
+    Logger.log('');
+    Logger.log('  ⛔ NO TIENEN FILA en MARCADORES: ' + noEstan.join(', '));
+    Logger.log('     Se reporta y NO se inventa la fila: un alta es otra decisión.');
+  }
+  Logger.log('');
+  Logger.log('  a cambiar: ' + plan.length + ' · ya estaban: ' + yaEstaban.length +
+    ' · sin fila: ' + noEstan.length);
+
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  ⓘ MODO SECO — no se escribió nada. Para aplicar: `aplicarCambios0409()`.');
+    return { ok: true, aplicado: false, a_cambiar: plan.length, sin_fila: noEstan };
+  }
+  if (!plan.length) {
+    Logger.log('  ⓘ Nada que hacer: todos ya están en su valor destino. Idempotente.');
+    return { ok: true, aplicado: false, a_cambiar: 0, sin_fila: noEstan };
+  }
+
+  var bk = backupMarcadores_('cambios0409');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se escribió nada): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
+
+  plan.forEach(function (p) { hoja.getRange(p.fila, p.iC + 1).setValue(p.c.a); });
+  SpreadsheetApp.flush();
+
+  /* ⭐⭐ RELECTURA de la hoja. Un escritor que informa lo que escribió **no verifica nada**: dice
+   * qué se pidió, no qué quedó. Y en Sheets la coerción de tipos hace la diferencia real. */
+  var d2 = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES').getDataRange().getValues();
+  var mal = [];
+  plan.forEach(function (p) {
+    var quedo = String(d2[p.fila - 1][p.iC] || '').trim();
+    if (quedo !== p.c.a) {
+      mal.push(p.c.marcador + '.' + p.c.campo + ': pedí `' + p.c.a + '` y quedó `' + quedo + '`');
+    }
+  });
+  if (mal.length) {
+    Logger.log('  ⛔ RELECTURA FALLIDA — el backup es `' + bk.nombre + '`:');
+    mal.forEach(function (m) { Logger.log('     ' + m); });
+    return { ok: false, motivo: 'relectura', backup: bk.nombre };
+  }
+
+  Logger.log('  ✅ RELEÍDO de la hoja: los ' + plan.length + ' quedaron como se pidió.');
+  Logger.log('');
+  Logger.log('  ⭐ Control de la próxima corrida, en este orden:');
+  Logger.log('     1. `emin_lista` tiene que publicar **7 renglones** — el MISMO 7 de');
+  Logger.log('        `emin_encuentros`: salen del mismo universo. Si difieren, parar.');
+  Logger.log('     2. Los tres `%` con UN solo signo y el MISMO número: 18.3 / 1.9 / 0.3.');
+  Logger.log('        ⛔ Si cambió el orden de magnitud, es el error de `fraccion` — parar.');
+  Logger.log('     3. Los diez sin guiones y **con el mismo valor**. Si alguno cambió de valor,');
+  Logger.log('        el formato tocó algo más — parar.');
+  return { ok: true, aplicado: true, cambiados: plan.length, sin_fila: noEstan, backup: bk.nombre };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04_5 Addendum 1` — **el censo de `_revisar` sobre la HOJA VIVA.**
+ *
+ * ⛔⛔ **Existe porque el censo sobre el snapshot se quedó corto, y estaba probado que podía.** El
+ * límite se declaró —*«fuente: snapshot del 31/08 … puede quedarse corto»*— **y aun así el
+ * resultado se iba a usar como si fuera la hoja.** ⭐ **Un censo sobre un snapshot mide el
+ * snapshot**, y ésta es la segunda instancia de la misma lección.
+ *
+ * **Lo que el snapshot no vio:** a los siete `m2_*` se les puso `_revisar` **después** del 31/08,
+ * así que aparecían limpios. El deck del 04/09 los publica entre guiones.
+ *
+ * ⭐ **Con el MISMO control positivo que cazó el error del cruce**: la columna del CSV se llama
+ * `token_propuesto`, no `token`. Si el cruce no encuentra **ningún** marcador con caso, **aborta**:
+ * un cero ahí no es un dato, es un lector roto.
+ *
+ * ⛔ SÓLO LECTURA.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function censarRevisarVivos() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('CENSO de `_revisar` sobre la HOJA VIVA · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  var rev = [];
+  leerMarcadores_().forEach(function (m) {
+    var f = String(m.formato || '').trim();
+    if (f.length > 8 && f.slice(-8) === '_revisar') {
+      rev.push({ marcador: String(m.marcador || '').trim(), formato: f });
+    }
+  });
+  Logger.log('  marcadores con `_revisar` en la hoja VIVA: ' + rev.length);
+  Logger.log('  ⚠ el censo del 04/09 sobre el snapshot del 31/08 dio 32.');
+
+  /* ⭐ Los casos, de los CSV del repo. ⚠ No se pueden leer desde Apps Script: se declaran acá los
+   * `token_propuesto` con estado `exacto` medidos el 04/09 sobre los CUATRO archivos. Es evidencia
+   * fechada y se dice, en vez de fingir que se leyó la fuente. */
+  var CON_EXACTO_ = ['imp_total', 'frecuencia', 'gcba_imp_total',
+    'm2_mails_enviados', 'm2_mails_entregados', 'm2_aperturas', 'm2_clics', 'm2_or', 'm2_ctor'];
+  var CON_CASO_NO_EXACTO_ = ['ivr_campanias', 'imp_prog'];
+
+  /* ⭐⭐ CONTROL POSITIVO: `imp_total` tiene `V-73`/`V-79`/`X-10` exactos. Si el censo no lo
+   * encuentra entre los `_revisar` **y tampoco entre los ya levantados**, algo no cierra. */
+  var nombres = rev.map(function (x) { return x.marcador; });
+  Logger.log('');
+  Logger.log('  ══ control positivo ══');
+  Logger.log('  `imp_total` con `_revisar`: ' + (nombres.indexOf('imp_total') !== -1 ? 'SÍ' : 'no (ya levantado)'));
+
+  var l1 = [], l2 = [], l3 = [];
+  rev.forEach(function (x) {
+    if (CON_EXACTO_.indexOf(x.marcador) !== -1) l1.push(x);
+    else if (CON_CASO_NO_EXACTO_.indexOf(x.marcador) !== -1) l2.push(x);
+    else l3.push(x);
+  });
+
+  function volcar(t, l) {
+    Logger.log('');
+    Logger.log('── ' + t + ': ' + l.length);
+    if (!l.length) { Logger.log('     (ninguno)'); return; }
+    l.forEach(function (x) { Logger.log('     ' + (x.marcador + '                      ').slice(0, 24) + x.formato); });
+  }
+  volcar('1) con caso EXACTO — levantables', l1);
+  volcar('2) con caso NO exacto — se quedan', l2);
+  volcar('3) SIN caso — los nombra el USUARIO', l3);
+
+  /* ⭐⭐ Lo que el snapshot no tenía: la razón de ser de este censo. */
+  var DEL_SNAPSHOT_ = ['ivr_campanias', 'ivr_llamados', 'ivr_atendidos', 'ivr_at_pct', 'imp_total',
+    'frecuencia', 'gcba_imp_total', 'gcba_frecuencia', 'imp_prog', 'gcba_imp_meta', 'gcba_imp_google',
+    'gcba_imp_prog', 'ivr_75', 'ivr_75_pct', 'ivr_marque1', 'camp_frecuencia'];
+  var nuevos = nombres.filter(function (n) {
+    return DEL_SNAPSHOT_.indexOf(n) === -1 && n.indexOf('camp_') !== 0;
+  });
+  Logger.log('');
+  Logger.log('── ⭐ APARECIERON que el snapshot del 31/08 no tenía (aprox): ' + nuevos.length);
+  Logger.log('     ' + (nuevos.join(', ') || '(ninguno)'));
+  Logger.log('');
+  Logger.log('  ⛔ Cualquier `_revisar` que aparezca acá y que el addendum NO nombre: se REPORTA y');
+  Logger.log('     se queda como está. Uno que aparece sin que nadie lo pidiera es un dato, no');
+  Logger.log('     una tarea.');
+  return { ok: true, total: rev.length, lista1: l1, lista2: l2, lista3: l3, nuevos: nuevos };
+}

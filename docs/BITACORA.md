@@ -17155,3 +17155,35 @@ sobrevive en la traza y muere en el deck.** Reportado, no arreglado.
 sobrevivientes de la etapa 3**, con las tres formas de sobrevivir y con `camp_titulo` como el caso
 que la lectura predice. Era un efecto y ahora es una declaración. Comentario, sin cambio de
 comportamiento.
+
+## 2026-09-04 · `2026-09-04_5` + Addendum 1 — la lista, el `%` duplicado y los `_revisar` que sobraban
+
+**Parte 0 medida, Parte B escrita, sin correr.** Los tres cambios son **celdas de `MARCADORES`**:
+`aplicarCambios0409()`, con backup y **relectura de la hoja**.
+
+⭐ **B.1** — `emin_lista` pasa a `{figura} {barrio} {fecha:dd/MM}`, **sin condicional**. El nombre
+lógico es **`figura`**: `funcionario` es el **encabezado** de la columna B, no un campo. La
+justificación del condicional queda **vencida, no borrada** — *«sin él las tres filas salen
+idénticas»* **sigue siendo cierto y deja de gobernar**, porque con el barrio siempre presente se
+distinguen por otra vía.
+
+⭐⭐ **B.2** — los tres `%` pasan a `porcentaje_sin_signo_revisar`. **Medido con `opPCT` y
+`formatearValorMarcador_` reales**: `porcentaje` reproduce el deck byte a byte ⇒ el crudo ya venía
+en unidades de porcentaje y **los números eran correctos**; sobraba el signo. ⛔ **`fraccion` era la
+trampa: 1832 donde va 18,3.**
+
+⭐ **B.3** — diez pierden `_revisar` y **vuelven al formato que tenían el 31/08**, que es la
+autoridad de «el que estaba». No se elige formato.
+
+⛔⛔ **El hallazgo de proceso:** a los siete `m2_*` se les puso `_revisar` **entre el 31/08 y el
+04/09**, y `V-124` los había validado **el 02/09**. **La marca de «no validado» se agregó después
+de la validación** y nada avisó. El cruce va en **una sola dirección** — ítem 36.
+
+⚠ **Y mi censo de la Parte 0 se quedó corto, con el límite declarado y todo.** Escrito
+`censarRevisarVivos()` sobre la hoja viva. ⛔ Mi primer cruce dio `0/0/32` **por leer la columna
+`token` cuando el CSV la llama `token_propuesto`** — un cero que era artefacto del lector.
+
+**Entró `docs/casos_validacion_2026-09-04.csv`** (`V-125`, `C-87`), acumulativo. **`L-038` cerrada**
+con su condición de invalidación escrita como **evento**: que el equipo deje de adaptar las campañas.
+
+Banco `probar-cambios-0409.js`. **92 bancos en verde.**
