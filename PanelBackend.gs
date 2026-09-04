@@ -1309,7 +1309,91 @@ function panel_estadoDesatendida() {
       'que no se resolvió.';
   }
 
+  /* ══════════════════════════════════════════════════════════════════════════════════════
+   * ⭐⭐ `2026-09-04_4 Addendum 1` — **el RESUMEN de la corrida, leído de `CORRIDAS`.**
+   *
+   * ⛔⛔ **Existe porque la rama `listo` NO se puede reusar** (P3): se pinta con ocho campos y el
+   * estado desatendido tenía dos. El que decidía era `conteos`, que sale de `r.tokens.*` — el
+   * retorno de `generarInforme`, que **sólo existe en la corrida síncrona**.
+   *
+   * ⭐ **Y NO se persiste nada nuevo: `CORRIDAS` ya tiene las columnas.** Lo que faltaba era
+   * leerlas desde acá.
+   *
+   * ══ LO QUE P5 MIDIÓ, Y SIN ESTO EL NÚMERO SALE MAL DE DOS FORMAS ═══════════════════════
+   *
+   * ⛔ **Una corrida desatendida deja N FILAS, una por `ejecucion`.** `abrirCorrida_` corre una vez
+   * por invocación de `generarInforme`, y `escribirCorrida_` **completa esa misma fila** —por
+   * `numeroFila`— en vez de acumular. ⇒ **`tokens_reemplazados` es el PARCIAL de su ejecución.**
+   *
+   * ⭐ **Por eso se SUMA, y es correcto sumar:** los reemplazos son **disjuntos por construcción**
+   * — un token reemplazado deja de ser `{{token}}`, así que la ejecución siguiente no lo vuelve a
+   * contar. ⚠ **Los dos modos de equivocarse dan un número plausible:** sumar acumulados daría el
+   * doble, tomar la última daría sólo el último tramo, **y ninguno rompe**.
+   *
+   * ⛔⛔ **`faltantes` NO es un número: es un campo de estado que EMPIEZA con el número.**
+   * `avisosDeLaFila_` devuelve el conteo pelado, o `conteo + ' · ' + avisos`, y el cierre le pega
+   * `' · gasto: …'`. Una fila abierta trae `'(corrida en curso — …)'`. ⇒ Se lee **el primer
+   * segmento** y **`null` significa «esa ejecución no cerró»**, que es un dato y no un cero.
+   * ══════════════════════════════════════════════════════════════════════════════════════ */
+  /* ⛔⛔ `try/catch`, y **NO es prolijidad: lo encontró `probar-desatendida-en-el-panel.js`.**
+   *
+   * El resumen es **secundario**; el estado —el plan, el avance, el corte— es **la pantalla**. Una
+   * lectura de `CORRIDAS` que tire **mataría toda la pantalla de avance** por no poder mostrar dos
+   * conteos. ⭐ **El orden de importancia tiene que estar en el código, no sólo en la cabeza:** si
+   * el resumen falla, se dice que falló y el avance sigue. */
+  try {
+    base.resumen = resumenDeCorrida_(corridaId);
+  } catch (e) {
+    base.resumen = { ok: false, motivo: 'no se pudo leer `CORRIDAS`: ' + e.message };
+  }
+
   return base;
+}
+
+/**
+ * Los dos conteos de una corrida, sumando sus ejecuciones. ⛔ `ok:false` si no hay ninguna fila:
+ * **la vista tiene que poder decir «no pude leer el resumen» en vez de pintar ceros.**
+ */
+function resumenDeCorrida_(corridaId) {
+  if (!corridaId) return { ok: false, motivo: 'sin `corrida_id`' };
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
+  if (!hoja) return { ok: false, motivo: 'no existe la hoja CORRIDAS' };
+  var datos = hoja.getDataRange().getValues();
+  if (datos.length < 2) return { ok: false, motivo: 'CORRIDAS está vacía' };
+  var h = datos[0].map(function (c) { return String(c == null ? '' : c).trim(); });
+  var iId = h.indexOf('corrida_id'), iEj = h.indexOf('ejecucion');
+  var iTok = h.indexOf('tokens_reemplazados'), iFal = h.indexOf('faltantes');
+  var iGen = h.indexOf('fecha_generacion');
+  if (iId === -1 || iTok === -1 || iFal === -1) {
+    return { ok: false, motivo: 'CORRIDAS no tiene las columnas esperadas' };
+  }
+
+  var filas = [], reemplazados = 0, faltantes = 0, sinCerrar = 0, algunConteo = false;
+  for (var k = 1; k < datos.length; k++) {
+    if (String(datos[k][iId] || '').trim() !== corridaId) continue;
+    var gen = iGen === -1 ? '' : datos[k][iGen];
+    var cerrada = gen instanceof Date;
+    var tok = Number(datos[k][iTok]);
+    /* ⚠ El primer segmento, porque la columna es mixta. `null` ≠ 0: no cerró. */
+    var crudoFal = String(datos[k][iFal] || '').split(' · ')[0].trim();
+    var fal = /^\d+$/.test(crudoFal) ? Number(crudoFal) : null;
+    if (!isNaN(tok) && String(datos[k][iTok]) !== '') { reemplazados += tok; algunConteo = true; }
+    if (fal !== null) faltantes += fal; else sinCerrar++;
+    filas.push({ ejecucion: iEj === -1 ? '' : datos[k][iEj], cerrada: cerrada,
+      tokens_reemplazados: datos[k][iTok], faltantes_crudo: String(datos[k][iFal] || '') });
+  }
+  if (!filas.length) return { ok: false, motivo: 'ninguna fila de `CORRIDAS` con ese `corrida_id`' };
+
+  return {
+    ok: true,
+    ejecuciones: filas.length,
+    /* ⭐ Sumados, con su unidad dicha — y `null` cuando NINGUNA fila trajo conteo, que no es 0. */
+    tokens_reemplazados: algunConteo ? reemplazados : null,
+    faltantes: (sinCerrar === filas.length) ? null : faltantes,
+    /* ⚠ Cuántas ejecuciones no cerraron: sin esto, una suma parcial se lee como total. */
+    ejecuciones_sin_cerrar: sinCerrar,
+    filas: filas
+  };
 }
 
 /**

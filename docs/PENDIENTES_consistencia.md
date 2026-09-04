@@ -1081,3 +1081,45 @@ resumen.
   seguido que ~15 s no aporta nada.
 - `panel_generarSemanaEnCurso` y `panel_generarPeriodoPersonalizado` **crean períodos**, no
   corridas — declarado para que el próximo censo no los cuente.
+
+---
+
+## ⭐⭐ Un `|| {}` sobre un objeto que la vista despliega campo por campo NO es una guarda: es un generador de ceros (04/09/2026)
+
+**El caso, y por eso `vistaListo` no se reusó:** `var c = r.conteos || {}`. Con el estado
+desatendido —que no tiene `conteos`— **no rompe: renderiza CEROS**. La pantalla diría *«0
+impresiones con valor»* sobre un deck completo, **justo donde se mira para saber si salió bien**.
+
+⭐ **La forma general:** `|| {}` protege contra el `TypeError` y **no** contra la lectura falsa.
+Un objeto ausente y un objeto vacío **son cosas distintas** y el operador los junta. ⇒ **Cuando la
+vista despliega campo por campo, la guarda tiene que distinguir «no vino» de «vino en cero»** — y
+decir la primera, no pintar la segunda.
+
+⚠ **Y su gemelo, que apareció el mismo día y lo encontró un banco:** `resumenDeCorrida_` leía
+`CORRIDAS` **sin `try/catch` dentro de `panel_estadoDesatendida`**, así que una lectura fallida
+**mataba toda la pantalla de avance** por no poder mostrar dos conteos. ⭐ **El orden de importancia
+tiene que estar en el código:** el resumen es secundario, el avance **es** la pantalla.
+
+---
+
+## ⭐ P5 · Cómo se lee el resumen de una corrida desatendida en `CORRIDAS` (04/09/2026)
+
+**Medido leyendo quién escribe las columnas**, que es más fuerte que mirar una fila.
+
+| | |
+|---|---|
+| **cuántas filas** | **N, una por `ejecucion`** — `abrirCorrida_` corre una vez por invocación de `generarInforme` |
+| **`tokens_reemplazados`** | ⭐ **PARCIAL de esa ejecución** — `escribirCorrida_` **completa esa misma fila** (por `numeroFila`), no acumula |
+| **cómo se llega al total** | ⭐ **SUMANDO**, y es correcto: los reemplazos son **disjuntos por construcción** — un token reemplazado deja de ser `{{token}}`, así que la ejecución siguiente no lo vuelve a contar |
+| ⛔ **`faltantes`** | ⛔⛔ **NO es un número: es un campo de ESTADO que empieza con el número.** `avisosDeLaFila_` devuelve el conteo pelado **o** `conteo + ' · ' + avisos`, y el cierre le pega `' · gasto: …'`. Una fila abierta trae `'(corrida en curso — …)'` |
+
+⭐ **Por eso se lee el primer segmento y `null` significa «esa ejecución no cerró»**, que es un dato
+y no un cero. ⚠ **Los dos modos de equivocarse dan un número plausible:** sumar acumulados daría el
+doble, tomar la última daría sólo el último tramo, **y ninguno rompe**.
+
+### P6 · Lo que NO está en `CORRIDAS` ni en `PLAN_CORRIDA`
+
+`escondidas`, `cableados_sin_caja`, `secciones`, `tiempos_por_seccion`, los **tres avisos**, y
+`periodo_desde` / `periodo_hasta` / `periodo_nivel` / `periodo_calculado` / `periodo_traza`.
+⇒ **La vista final los nombra y dice por qué no están** — *hoy no se persisten*. ⛔ Sin esa línea,
+**un resumen más corto se lee como un deck más limpio**, que es la lectura opuesta a la verdadera.

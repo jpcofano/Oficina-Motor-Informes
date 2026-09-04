@@ -580,11 +580,12 @@ function generarDesatendida(){
   google.script.run
     .withSuccessHandler(function(r){
       clearInterval(S.tick); S.tick = null;
-      S.estado = 'form';
       S.desArranque = r || { ok:false, motivo:'El backend no devolvió nada.' };
-      // Se salta a la pestaña que muestra el avance: es donde está lo que sigue pasando.
-      S.tab = 'desatendida';
-      cargarDesatendida();
+      /* ⭐⭐ `D-57` — **ya NO se salta de pestaña.** Decía *«es donde está lo que sigue
+       * pasando»*, y era cierto: la pestaña «Corrida» tenía el avance. ⛔ Pero **no se refresca
+       * sola —lo dice ella misma—**, así que mandaba al usuario a apretar «Actualizar» a mano.
+       * Eso es exactamente marearlo. El avance ahora se pinta acá. */
+      seguirDesatendida(r);
       cargarCorridas();
     })
     .withFailureHandler(function(e){
@@ -1318,11 +1319,10 @@ function pasoGenerar(){
        '<span class="check-sub">/////&nbsp;falta cablearlo · »»»&nbsp;no se llegó · ---&nbsp;falló · -&nbsp;sin dato.</span></span></label>';
 
   h += '<div class="field">' +
-       '<button class="btn btn-primary" id="asis-generar">Generar informe</button>' +
-       '<button class="btn btn-secondary" id="asis-generar-des">Generar y que siga sola</button>' +
-       '<p class="hint"><b>Generar informe</b> corre de una vez y devuelve el deck: es lo más ' +
-       'rápido cuando entra en el techo de ' + TECHO_S + ' s. <b>Generar y que siga sola</b> deja ' +
-       'la corrida reanudándose por su cuenta, y el avance se mira en la pestaña «Corrida».</p>' +
+       /* ⭐⭐ `D-57` — el mismo cambio que en «Detalles»: un solo botón, siempre desatendida. */
+       '<button class="btn btn-primary" id="asis-generar-des">Generar informe</button>' +
+       '<p class="hint">La corrida <b>se reanuda sola</b> hasta terminar, y el avance se ve acá ' +
+       'mismo. Puede tardar más que una corrida de un tiro, y a cambio <b>no se corta</b>.</p>' +
        '</div>';
 
   h += '<hr class="sep"><button class="btn btn-secondary" id="asis-reiniciar">Empezar de nuevo</button>';
@@ -1356,7 +1356,8 @@ function generarDesdeAsistente(desatendida){
       clearInterval(S.tick); S.tick = null;
       if (!r || !r.ok){ S.estado = 'fallo'; S.motivo = (r && r.motivo) || 'Sin motivo.'; pintar(); return; }
       if (desatendida){
-        S.estado = 'form'; S.desArranque = r; S.des = null; S.tab = 'desatendida'; pintar(); return;
+        /* ⭐⭐ `D-57` — el mismo cambio que en «Detalles»: el avance se ve acá. */
+        S.des = null; S.desArranque = r; seguirDesatendida(r); cargarCorridas(); return;
       }
       S.estado = 'listo'; S.resultado = r; pintar(); cargarCorridas();
     })
@@ -1570,8 +1571,9 @@ function conectarAsistente(){
   Array.prototype.forEach.call(document.querySelectorAll('[data-seccion]'), function(cb){
     cb.onchange = function(){ S.secciones[cb.getAttribute('data-seccion')] = cb.checked; };
   });
-  var bg = el('asis-generar');
-  if (bg) bg.onclick = function(){ generarDesdeAsistente(false); };
+  /* ⭐ `D-57` — sólo el desatendido. `generarDesdeAsistente(false)` deja de tener llamador.
+   * ⚠ El parámetro NO se saca: la función sigue sirviendo a los dos y sacarlo sería otro
+   * cambio, con su propio riesgo, en el mismo archivo que `B.2` y `B.3`. */
   var bgd = el('asis-generar-des');
   if (bgd) bgd.onclick = function(){ generarDesdeAsistente(true); };
   var br = el('asis-reiniciar');
@@ -1581,6 +1583,12 @@ function conectarAsistente(){
 function vistaGenerar(){
   if (S.estado === 'generando') return vistaEsperando();
   if (S.estado === 'listo')     return vistaListo();
+  /* ⭐⭐ `D-57` — **vista propia para el final desatendido, y NO la rama `listo`.**
+   * `vistaListo` se pinta con ocho campos del retorno de `generarInforme` y el estado
+   * desatendido tiene dos. ⛔ Caer ahí con `conteos` vacío **no rompería: pintaría CEROS**
+   * sobre un deck completo, que es un número plausible y falso justo donde se mira para
+   * saber si salió bien. */
+  if (S.estado === 'listo_des') return vistaListoDesatendida();
   if (S.estado === 'fallo')     return vistaFallo();
 
   var inf = informeActual();
@@ -1700,15 +1708,23 @@ function vistaGenerar(){
    *
    * **El rótulo dice qué pasa, no cómo se llama el mecanismo.** «Se reanuda sola» es lo que le
    * importa a quien aprieta; «desatendida» es vocabulario nuestro. */
+  /* ⭐⭐ `D-57` (04/09/2026) — **UN SOLO BOTÓN, y siempre por la desatendida.** El síncrono
+   * `b-generar` sale de la pantalla; su función de backend `panel_generar` **no se borra**, queda
+   * **no alcanzable desde la UI**.
+   *
+   * ⚠ **El motivo no es de rendimiento, y por eso una medición de tiempos no lo revierte:**
+   * *«prefiero que tarde más y que nunca se corte para que el usuario no se maree»*. El arranque
+   * doble existe y cuesta — **la frase tachada del panel que lo decía sigue siendo cierta** —, y
+   * es un costo que el usuario decidió pagar.
+   *
+   * ⛔ **Y el 03/09 pasó exactamente lo que esto evita:** la corrida `secco-20260903-225938` se
+   * cortó por presupuesto **desde este botón** y dejó láminas sin llenar. */
   if (!sinDefecto){
     h += '<div class="field">';
-    h += '<button class="btn btn-primary" id="b-generar">Generar informe</button>';
-    h += '<button class="btn btn-secondary" id="b-generar-des">Generar y que siga sola</button>';
-    h += '<p class="hint"><b>Generar informe</b> corre de una vez y devuelve el deck acá: es lo ' +
-         'más rápido cuando entra en el techo de ' + TECHO_S + ' s. ' +
-         '<b>Generar y que siga sola</b> deja la corrida reanudándose por su cuenta hasta ' +
-         'terminar, y el avance se mira en la pestaña «Corrida». Conviene cuando la semana trae ' +
-         'muchos encuentros y la corrida de una sola vez viene cortando.</p>';
+    h += '<button class="btn btn-primary" id="b-generar-des">Generar informe</button>';
+    h += '<p class="hint">La corrida <b>se reanuda sola</b> hasta terminar, y el avance se ve ' +
+         'acá mismo — no hay que cambiar de pestaña ni apretar nada. Puede tardar más que una ' +
+         'corrida de un tiro, y a cambio <b>no se corta</b>.</p>';
     h += '</div>';
   }
   return h;
@@ -1732,7 +1748,8 @@ function conectarGenerar(){
     cb.onchange = function(){ S.secciones[cb.getAttribute('data-seccion')] = cb.checked; };
   });
   conectarCuadrados();
-  var bg = el('b-generar'); if (bg) bg.onclick = generar;
+  /* ⭐ `D-57` — el botón síncrono ya no se dibuja, así que tampoco se cablea. `generar()`
+   * queda en el archivo **sin llamador desde la UI**, con su motivo escrito arriba. */
   var bgd = el('b-generar-des'); if (bgd) bgd.onclick = generarDesatendida;
   var bd = el('b-denuevo'); if (bd) bd.onclick = function(){ S.forzarForm = true; pintar(); };
   var bps = el('b-per-semana'); if (bps) bps.onclick = crearPeriodoSemana;
@@ -1747,6 +1764,11 @@ function vistaEsperando(){
   return '<div id="timer">' + timerHtml() + '</div>' +
     '<p class="hint">Una corrida completa tarda entre 120 y 320 s: copia la plantilla, expande las ' +
     'secciones y resuelve cada marcador.</p>' +
+    /* ⭐⭐ `D-57` — el avance de la desatendida, en esta misma pantalla. Va **antes** del
+     * separador: es lo que la persona vino a mirar. Con `S.sondeo` apagado no aporta nada y
+     * no se dibuja, así que el camino síncrono —si alguien lo invoca desde el editor— queda
+     * exactamente como estaba. */
+    (S.sondeo ? avanceDesatendidaHtml() : '') +
     '<hr class="sep">' +
     '<p class="hint">Si se cierra esta ventana la corrida sigue en el servidor. Al volver a abrir el ' +
     'panel, va a aparecer en «Corridas» cuando termine.</p>';
@@ -2347,9 +2369,170 @@ function vistaDesatendida(){
   return h;
 }
 
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `D-57` + ítem 31 (04/09/2026) — **el avance de la corrida desatendida, en la MISMA pantalla.**
+ *
+ * ⛔ **Los dos se hicieron en el mismo cambio y no es una comodidad:** el ítem 31 era el gate de
+ * `D-57`. Aplicar sólo el botón único mandaba al usuario a la pestaña «Corrida», que **no se
+ * refresca sola y lo dice ella misma** — o sea, cambiaba un problema por otro.
+ *
+ * ══ EL RITMO, MEDIDO Y NO ELEGIDO ══════════════════════════════════════════════════════════
+ *
+ * **15 s.** El mecanismo admite **6** continuaciones (`CONFIG.tope_continuaciones`) y agenda la
+ * siguiente **60 s** después (`crearTriggerDeContinuacion_(60)`). ⭐ **Preguntar más seguido que
+ * cada ~15 s no aporta nada**: el plan cambia como mucho una vez por minuto. ⚠ Una pantalla que
+ * pregunta cada segundo por algo que cambia cada minuto **sólo agrega ruido y llamadas**.
+ *
+ * ⚠ **El cronómetro de 1 s sigue corriendo y es otra cosa:** da la sensación de movimiento **sin
+ * costar una llamada**. Son dos relojes con dos trabajos.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+var SEG_SONDEO_DESATENDIDA_ = 15;
+
+function seguirDesatendida(arranque){
+  /* ⛔ Un arranque que falló no se sigue: se muestra el fallo, que es lo que hay que leer. */
+  if (!arranque || !arranque.ok){
+    if (S.tick){ clearInterval(S.tick); S.tick = null; }
+    S.estado = 'fallo';
+    S.motivo = (arranque && arranque.motivo) || 'El backend no devolvió nada.';
+    pintar();
+    return;
+  }
+  /* ⭐ Si entró de una, no hay nada que seguir: se va derecho al final. */
+  if (arranque.terminada){ finDesatendida(); return; }
+
+  S.estado = 'generando';
+  S.tab = 'generar';
+  pintar();
+  if (S.tick){ clearInterval(S.tick); S.tick = null; }
+  S.tick = setInterval(function(){ S.elapsed++; pintarTimer(); }, 1000);
+  if (S.sondeo){ clearInterval(S.sondeo); S.sondeo = null; }
+  S.sondeo = setInterval(sondearDesatendida, SEG_SONDEO_DESATENDIDA_ * 1000);
+  sondearDesatendida();
+}
+
+function sondearDesatendida(){
+  google.script.run
+    .withSuccessHandler(function(d){
+      S.des = d || null;
+      /* ⭐ Terminó cuando no queda nada pendiente y ya no hay ejecución en curso. Los dos, y no
+       * uno: `pendientes = 0` con `en_curso` todavía verdadero es la ventana entre el último
+       * ítem y el cierre de la fila. */
+      if (d && d.ok && !d.en_curso && d.pendientes === 0){ finDesatendida(); return; }
+      if (S.estado === 'generando') pintar();
+    })
+    .withFailureHandler(function(){
+      /* ⚠ Un sondeo que falla NO frena el seguimiento ni miente: se sigue mostrando lo último
+       * leído, con su hora, y el siguiente intento vuelve en 15 s. */
+    })
+    .panel_estadoDesatendida();
+}
+
+function finDesatendida(){
+  if (S.tick){ clearInterval(S.tick); S.tick = null; }
+  if (S.sondeo){ clearInterval(S.sondeo); S.sondeo = null; }
+  google.script.run
+    .withSuccessHandler(function(d){ S.des = d || null; S.estado = 'listo_des'; pintar(); cargarCorridas(); })
+    .withFailureHandler(function(){ S.estado = 'listo_des'; pintar(); })
+    .panel_estadoDesatendida();
+}
+
+/** El bloque de avance que `vistaEsperando` agrega cuando la corrida es desatendida. */
+function avanceDesatendidaHtml(){
+  var d = S.des;
+  if (!d || !d.ok){
+    return '<p class="hint">Arrancó. Leyendo el avance… (se actualiza sola cada ' +
+      SEG_SONDEO_DESATENDIDA_ + ' s)</p>';
+  }
+  var total = (d.hechas || 0) + (d.pendientes || 0);
+  var h = '<hr class="sep">';
+  h += '<p class="hint"><b>Se reanuda sola.</b> No hace falta apretar nada ni cambiar de ' +
+       'pestaña — esta pantalla se actualiza cada ' + SEG_SONDEO_DESATENDIDA_ + ' s.</p>';
+  h += '<p><b>' + (d.hechas || 0) + ' de ' + total + '</b> sección(es) hechas' +
+       (d.ejecucion ? ' · ejecución ' + esc(String(d.ejecucion)) + ' de ' + esc(String(d.tope || '?')) : '') +
+       '</p>';
+  /* ⭐ Qué falta, por nombre. Un contador dice cuánto; la lista dice qué. */
+  var pend = (d.plan || []).filter(function(f){ return f.estado === 'pendiente'; });
+  if (pend.length){
+    h += '<p class="muted">Falta: ' + pend.map(function(f){ return esc(f.seccion || f.item || '?'); })
+      .join(' · ') + '</p>';
+  }
+  /* ⚠ Que se haya cortado NO es un error acá: es el mecanismo funcionando. Se dice así. */
+  if (d.se_corto){
+    h += '<p class="muted">La ejecución anterior cortó por presupuesto y la siguiente arranca ' +
+         'sola en menos de un minuto. <b>Es lo esperado</b>, no un fallo.</p>';
+  }
+  h += '<p class="muted">Leído a las ' + esc(d.leido || '') + '.</p>';
+  return h;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ **La vista final propia — NO `vistaListo`.**
+ *
+ * ⛔⛔ **Por qué no se reusa la que existe, que era el plan original y estaba mal:** `vistaListo`
+ * se pinta con **ocho** campos del retorno de `generarInforme` —`conteos`, `periodo_nivel`,
+ * `periodo_desde/hasta`, `escondidas`, `cableados_sin_caja`, `secciones`, `tiempos_por_seccion`
+ * y los tres avisos— y **el estado desatendido tiene dos**. Con `var c = r.conteos || {}` **no
+ * rompería: pintaría CEROS** sobre un deck completo.
+ *
+ * ⭐ **La regla general que vale más que el caso:** un `|| {}` sobre un objeto que la vista
+ * despliega campo por campo **no es una guarda, es un generador de ceros**.
+ *
+ * ⭐ **De dónde salen los dos conteos: de `CORRIDAS`, sumando sus ejecuciones** (`resumenDeCorrida_`).
+ * No se persiste nada nuevo y no se inventa ningún dato.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function vistaListoDesatendida(){
+  var d = S.des;
+  var inf = (S.informes || []).filter(function(x){ return x.informe_id === S.informeId; })[0];
+  var h = '<div class="alert alert-ok"><div class="alert-title">Listo.</div>' +
+    'La corrida terminó' + (d && d.ejecucion ? ' en ' + esc(String(d.ejecucion)) +
+    ' ejecución(es) de ' + esc(String(d.tope || '?')) : '') + '.</div>';
+
+  if (!d || !d.ok){
+    return h + '<div class="alert alert-error">No se pudo leer el estado de la corrida. ' +
+      'El deck puede estar generado igual: mirá la pestaña «Corridas».</div>';
+  }
+
+  h += deckCard(d.deck, (inf && inf.nombre) || S.informeId,
+    esc(d.periodo_id || '') + ' · corrida ' + esc(d.corrida_id || ''));
+
+  /* ⭐ Los dos conteos, de `CORRIDAS`. ⛔ Si no se pudo leer, **se dice** — no se pintan ceros. */
+  var r = d.resumen;
+  if (!r || !r.ok){
+    h += '<div class="alert alert-warning"><div class="alert-title">Sin resumen.</div>' +
+      'No se pudo leer la fila de <code>CORRIDAS</code>' + (r && r.motivo ? ': ' + esc(r.motivo) : '') +
+      '. <b>El deck está generado igual</b> — lo que falta es el conteo, no el informe.</div>';
+  } else {
+    h += '<div class="bloque"><span class="section-title">Qué hizo</span><p>' +
+      (r.tokens_reemplazados === null
+        ? '<span class="muted">ninguna ejecución dejó su conteo</span>'
+        : '<b>' + r.tokens_reemplazados + '</b> impresión(es) de token con valor') +
+      (r.faltantes === null ? '' : ' · <b>' + r.faltantes + '</b> fila(s) en faltantes') +
+      ' · sumado sobre <b>' + r.ejecuciones + '</b> ejecución(es)</p>';
+    /* ⚠ Sin esto, una suma parcial se lee como total. */
+    if (r.ejecuciones_sin_cerrar){
+      h += '<p class="muted">⚠ ' + r.ejecuciones_sin_cerrar + ' ejecución(es) no cerraron su ' +
+        'fila, así que el conteo de faltantes es parcial.</p>';
+    }
+    h += '</div>';
+  }
+
+  /* ⛔⛔ Lo que esta vista NO muestra, con el motivo. Sin esta línea un resumen más corto se lee
+   * como un deck más limpio, que es la lectura opuesta a la verdadera. */
+  h += '<p class="muted">Esta pantalla no muestra las láminas escondidas, los cableados sin caja, ' +
+       'el detalle por sección, los tiempos ni los avisos de la corrida: <b>hoy no se persisten</b>, ' +
+       'sólo existen en el retorno de una corrida de un tiro. No es que no haya — es que no se ' +
+       'guardan.</p>';
+  h += '<hr class="sep"><button class="btn btn-secondary" id="b-volver-form">Generar otro</button>';
+  return h;
+}
+
 function conectarDesatendida(){
   var br = el('b-des-refrescar'); if (br) br.onclick = cargarDesatendida;
   var bf = el('b-des-frenar');    if (bf) bf.onclick = cancelarDesatendida;
+  /* ⭐ `D-57` — el botón de la vista final desatendida. Vuelve al formulario **sin recargar**
+   * y sin tocar lo elegido: `S.estado` es lo único que cambia. */
+  var bv = el('b-volver-form');   if (bv) bv.onclick = function(){ S.estado = 'form'; pintar(); };
 }
 
 /**
