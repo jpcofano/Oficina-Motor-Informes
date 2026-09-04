@@ -17212,3 +17212,27 @@ es 100×.**
 `_revisar`. Agregado `imp_prog`, que el cambio no tocó, y ahora aborta si no aparece. ⛔ Y declarado
 en el log que sus listas 1 y 2 son una **transcripción fechada** —Apps Script no lee los CSV—, así
 que **su lista 3 significa «no está en la transcripción», no «no tiene caso»**.
+
+## 2026-09-04 · `2026-09-04_6` Addendum 3 — la Parte 0.2 cerrada, y una decisión deshecha
+
+⭐⭐ **Las dos mitades de la 0.2, medidas.** Los guiones **vienen del `_revisar`** —el log de
+`aplicarCambios0409()` leyó la hoja viva a las 14:05 y el deck es de las 11:42—, y `censarM2Vivo()`
+dio **nueve filas, todas `informe_id = *`**. ⇒ **Una sola fila no puede producir dos salidas a la
+vez**, así que la diferencia `jm`/`secco` es **temporal, no mecánica**. ⭐ **La rama (3) —«hay un
+segundo mecanismo que envuelve en guiones»— queda descartada con evidencia**, que era la hipótesis
+cara.
+
+⛔⛔ **Y la sección 2 cerró `L-053`: DIEZ marcadores que `confirmarNumerosDeUnoAUno()` limpió el
+26/08 fueron re-marcados por la aplicación masiva del 01/09.** Los diez son los `u1_post_*` más
+`u1_fecha_fin` —el testigo que el addendum citó—; los `u1_pre_*` y `u1_total_*` siguen limpios.
+⭐ **El deck lo mostró ocho días** y lo encontró el usuario, no un control.
+
+⇒ Regla escrita en `CLAUDE.md` §4: **una celda de `MARCADORES` no tiene dueño único.** Una
+aplicación masiva **declara qué filas toca y las compara contra las decisiones puntuales ya
+aplicadas antes de escribir** — y el registro de esas decisiones ya existe.
+
+⚠ **La aritmética 61 vs 58 no cuadra y se deja abierta** en vez de forzar una explicación.
+
+⚠ **Y una corrección a lo que escribí el 03/09:** `L-023` no publica el título **porque la lámina no
+declara el token** —runs vacíos en el XML—, no por el pintado por presentación. ⭐ El mecanismo del
+pintado existe y está medido; lo que se cae es **que explicara este caso**.

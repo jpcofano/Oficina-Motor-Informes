@@ -1555,3 +1555,94 @@ y atribuir la diferencia a un mecanismo en vez de al tiempo.
 ⚠ **Y un dato del addendum del `_5` que empuja en contra de la rama 1:** el deck de `secco` **sí
 trae guiones** en `L-034`, `L-052`, `L-053`, `L-036` y `L-045`. ⇒ **El `_revisar` funciona en
 `secco`**, así que si `L-014` sale limpio no es porque el mecanismo no llegue a ese informe.
+
+---
+
+## ✅ Parte 0.2 del `2026-09-04_6` — CERRADA: los guiones vienen del `_revisar`, y una decisión del usuario fue deshecha (04/09/2026)
+
+### Las dos mitades, medidas
+
+**1 · ¿De dónde salen los guiones?** ⭐ Del `_revisar`. El log de `aplicarCambios0409()` (14:05) leyó
+la hoja viva e imprimió `miles_revisar → miles` en los cinco absolutos de M2 y
+`porcentaje_sin_signo_revisar → porcentaje_sin_signo` en los dos `%`. **El deck es de las 11:42,
+anterior.** ⇒ **Rama 2**, y con lectura de hoja, no por descarte.
+
+**2 · ¿Cuántas filas?** ⭐⭐ `censarM2Vivo()` dio **nueve filas, TODAS `informe_id = *`** y **cero con
+`_revisar` hoy**. ⇒ **Rama 1 del addendum 1: una sola fila gobierna a los dos informes.**
+
+### ⇒ Y las dos juntas dejan una sola explicación para el `secco` limpio
+
+⛔ **Una sola fila con un solo `formato` no puede producir dos salidas a la vez** ⇒ ⭐ **la
+diferencia `jm`/`secco` es TEMPORAL, no mecánica**: los decks se corrieron en momentos distintos
+respecto del marcado del 01/09 y de la limpieza del 04/09 a las 14:05.
+
+⇒ ⭐⭐ **No hay ningún mecanismo oculto que envuelva en guiones.** La rama (3) de la Parte A queda
+**descartada con evidencia**, que es lo que el addendum pedía. ⚠ Y era la hipótesis cara: habría
+significado un segundo camino sin documentar.
+
+---
+
+## ⛔⛔ P0 · Una decisión del usuario del 26/08 fue DESHECHA por la aplicación masiva del 01/09, y vivió ocho días (04/09/2026)
+
+**Medido cruzando `FORMATOS_SIN_REVISAR_L053_` contra el snapshot del 31/08 y el censo vivo:**
+
+| marcador | formato 31/08 | ¿`_revisar` hoy? |
+|---|---|---|
+| `u1_post_meta_impresiones` · `_vistas` · `_vtr` | `miles` / `porcentaje_sin_signo` | ⛔ **SÍ** |
+| `u1_post_google_impresiones` · `_vistas` · `_vtr` | ídem | ⛔ **SÍ** |
+| `u1_post_prog_impresiones` · `_vistas` · `_vtr` | ídem | ⛔ **SÍ** |
+| `u1_fecha_fin` | `fecha` | ⛔ **SÍ** |
+| los `u1_pre_*` y `u1_total_*` | `miles` / `porcentaje_sin_signo` | ✅ no |
+
+⇒ ⭐⭐ **DIEZ repuestas.** `confirmarNumerosDeUnoAUno()` las limpió el **26/08**; la aplicación
+masiva del **01/09** —76 marcados mirando `MARCADORES.notas` sola— **se las llevó puestas**.
+
+⭐ **Y `u1_fecha_fin` es el testigo que el addendum citó** (`-11/09-` en el deck): **está en la
+lista de la función Y está re-marcado.** El caso cierra exactamente donde el addendum lo predijo.
+
+⚠ **Sólo se repusieron los `u1_post_*`, no los `u1_pre_*` ni los `u1_total_*`.** ⭐ Coherente con un
+cruce que decidió **por lo que decía `notas`**, no por familia ni por lámina.
+
+### ⛔ El deck lo mostró ocho días y se leyó como lo esperado
+
+**Del 26/08 al 04/09.** ⭐ **Lo encontró el usuario comparando contra el deck del equipo** — no lo
+detectó ningún control, porque **no había ninguno mirando esa dirección**.
+
+⇒ La regla quedó escrita en `CLAUDE.md` §4: **una celda de `MARCADORES` no tiene dueño único**, y
+una aplicación masiva **declara qué filas toca y las compara contra las decisiones puntuales ya
+aplicadas ANTES de escribir**. ⭐ El registro de esas decisiones **ya existe** —las `confirmar*()` y
+los CSV fechados—, así que no hay que inventar dónde mirar.
+
+### ⚠ El corolario que aplica HOY
+
+**Las catorce celdas que se escribieron el 04/09 a las 14:05 corren el mismo riesgo.** ⇒
+**Verificar que sigan limpias después de la próxima aplicación masiva** es el único control que
+distingue **una limpieza que duró de una que se deshizo**.
+
+### ⚠ Y la aritmética que NO cuadra, dicha en vez de forzada
+
+| | |
+|---|---|
+| `BITACORA` del 01/09 | **76** puestos − **18** revertidos = **58** netos |
+| censo del 04/09 | **54** marcados hoy que estaban limpios el 31/08 |
+| ⭐ + los **7** `m2_*` que limpié a las 14:05 (estaban en ese conjunto) | ⇒ **61** |
+
+⇒ ⛔ **61 contra 58: no cuadra por 3.** Candidatos —**ninguno verificado**—: marcadores creados
+entre el 31/08 y el 01/09 que entraron al cruce, o que las cifras 76/18 sean aproximadas.
+**Se deja abierto en vez de elegir una explicación.**
+
+---
+
+## ⚠ CORRECCIÓN · `L-023` no publica el título **porque la lámina no declara el token** (04/09/2026)
+
+**Dato del usuario**, del control del ítem 33 sobre el deck de dos campañas: en el XML de `L-023`
+**hay runs vacíos donde iría el token** — y pasa igual en `jm` (`L-048`) **y en los dos bloques por
+igual**.
+
+⇒ ⛔ **NO es el pintado por presentación**, que es lo que quedó escrito acá el 03/09. ⭐ **Es más
+barato de lo que se anotó**: la lámina simplemente **no tiene el `{{camp_titulo}}`**.
+
+⚠ **Lo que esto NO deroga:** el mecanismo del pintado por presentación **existe y está medido** —
+`camp_titulo` no es exclusivo y `presentacion.replaceAllText` pinta el deck entero. Lo que se cae es
+**que ése fuera el motivo de lo que se veía en `L-023`**. ⭐ Es la diferencia entre *«el mecanismo
+existe»* y *«el mecanismo explica este caso»*, y se confundieron.

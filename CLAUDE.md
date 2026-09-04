@@ -838,6 +838,30 @@ el criterio menciona la cosa que se migra —la columna, el nombre, el prefijo�
 mide una sola de las dos fotos. **El síntoma nunca es un error: es un conjunto que se achica sin
 que nadie lo pida.**
 
+⭐⭐ **Una celda de `MARCADORES` no tiene DUEÑO ÚNICO, y dos escritores legítimos se pisan sin que
+el segundo sepa del primero.** (04/09/2026.) Una **decisión puntual** —un `confirmar*()` que limpia
+20 filas por decisión del usuario— y un **cruce masivo** —que marca 76 mirando otra columna— son
+los dos correctos por separado. ⛔ **El segundo deshace al primero y nada lo detecta.**
+
+- **El caso, medido:** `confirmarNumerosDeUnoAUno()` sacó el `_revisar` de las filas de `L-053` el
+  **26/08**, por decisión del usuario. La aplicación masiva del **01/09** —76 marcados mirando
+  `MARCADORES.notas` sola— **repuso 10 de ellas**. ⭐ **El deck lo mostró durante ocho días** y se
+  leyó como lo esperado; lo encontró el usuario comparando contra el deck del equipo.
+- ⭐ **Lo accionable, y es una precondición de escritura, no un aviso:** **una aplicación masiva
+  sobre `MARCADORES.formato` declara qué filas toca y las compara contra las decisiones puntuales
+  ya aplicadas ANTES de escribir.** El registro de esas decisiones **ya existe**: son las funciones
+  `confirmar*()` de `Instalar.gs` y los CSV fechados. **No hay que inventar dónde mirar.**
+- ⚠ **Y se escribe como CONDICIÓN, no como estado**, que es lo que la hace vigilable:
+  *«el `_revisar` de `L-053` está levantado»* **vence sola — y venció**. *«ninguna aplicación masiva
+  posterior al 26/08 tocó las filas de `FORMATOS_SIN_REVISAR_L053_`»* **es algo que un censo puede
+  mirar**.
+- ⛔ **Y el corolario que hay que aplicar HOY, no cuando vuelva a pasar:** toda limpieza reciente
+  corre el mismo riesgo. **Verificar que siga limpia después de la próxima aplicación masiva es el
+  único control que distingue una limpieza que DURÓ de una que se deshizo.**
+- ⭐ **Es la forma general de lo que `§7` ya dice de los documentos** —*una pregunta, un dueño
+  único*— **aplicada a una CELDA**: cuando dos mecanismos pueden escribir la misma, hace falta
+  decir cuál manda **antes** de que se contradigan, no después.
+
 **Un cambio de seed no existe hasta que se empuja, y el sembrador no tiene forma de decirlo.**
 Van **dos casos en una semana**, con el **mismo síntoma** —*la corrida termina bien y la hoja no
 se mueve*— y **causas distintas**:
