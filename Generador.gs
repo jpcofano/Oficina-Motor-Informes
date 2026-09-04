@@ -3405,6 +3405,26 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
    * —medido—, así que una copia hereda el ancla de su modelo; resolver por `lamina_id` sobre un
    * deck ya expandido devolvería copias. Calculado acá, no hay copias todavía. */
   var indiceLaminas = indiceDeLaminasPorAncla_(presentacion);
+  /* ⛔⛔ `2026-09-04` — **el `objectId` de cada modelo, tomado ANTES de la primera duplicación.**
+   *
+   * **El defecto que esto cierra, medido en `secco-20260904-*`:** el índice de arriba es
+   * **POSICIONAL** y se calcula una sola vez —con razón, es lo que mata la N²—, pero
+   * `presentacion.getSlides()` se vuelve a leer **dentro del bucle de secciones**, o sea
+   * **después de que las anteriores duplicaron y removieron**. ⇒ Con un neto distinto de cero,
+   * **las secciones que expanden después de la primera indexan el deck nuevo con posiciones
+   * viejas y toman las láminas EQUIVOCADAS.**
+   *
+   * ⭐⭐ **La evidencia:** `LAMINAS` declara `secco/campana` = `L-016`…`L-023` y el deck duplicó
+   * **`L-017`…`L-024`** — corrido **un lugar**, dejando afuera `L-016` (que SÍ es de la sección)
+   * y metiendo `L-024`, que es **`analisis_datos`**. Y no falló: duplicó lo que no era.
+   *
+   * ⭐ **La distinción que faltaba:** el índice sirve para saber **QUÉ láminas son modelo**
+   * (identidad), no **DÓNDE están** (posición). La identidad no caduca; la posición sí.
+   * ⇒ Se guarda el `objectId` —que **no cambia** y que **las copias no heredan**, a diferencia
+   * del ancla en las notas— y la posición se resuelve por él en cada sección. **Es el mismo
+   * patrón que la etapa 3 ya usa con `asignacion.objectIdSlide`.** */
+  var objectIdDeIndice = {};
+  presentacion.getSlides().forEach(function (sl, i) { objectIdDeIndice[i] = sl.getObjectId(); });
   var regLaminas = leerLaminas_();
   var filasLaminas = regLaminas.ok ? regLaminas.filas : [];
   if (!regLaminas.ok) {
@@ -3642,8 +3662,28 @@ function duplicarBloquesRepetibles_(presentacion, informeId, ventanaInforme, sec
       return;
     }
 
+    /* ⭐ La posición se resuelve por `objectId`, no por el índice viejo. ⛔ Y una lámina que ya
+     * no está **se reporta y frena la sección**: duplicar la de al lado es peor que no duplicar. */
     var slidesAhora = presentacion.getSlides();
-    var modelosSlides = ordenados.map(function (i) { return slidesAhora[i]; });
+    var porObjectId = {};
+    slidesAhora.forEach(function (sl) { porObjectId[sl.getObjectId()] = sl; });
+    var perdidas = [];
+    var modelosSlides = ordenados.map(function (i) {
+      var sl = porObjectId[objectIdDeIndice[i]];
+      if (!sl) perdidas.push(i + 1);
+      return sl;
+    });
+    if (perdidas.length) {
+      reporte.push({
+        seccion: seccion.seccion_id, ok: false,
+        motivo: '⛔ ' + perdidas.length + ' lámina(s) modelo ya no están en el deck (posición ' +
+          'original ' + perdidas.join(', ') + '). Otra sección las movió o las quitó. **No se ' +
+          'expande**: duplicar la lámina de al lado publica contenido de otra sección sin fallar.',
+        items: resultado.items.map(function (i) { return i.clave; }),
+        excluidos: resultado.excluidos
+      });
+      return;
+    }
 
     // Dos pasadas, y la separación es lo que la hace correcta: `duplicate()` inserta la copia
     // **pegada a su original**, así que mover mientras se duplica corre los índices de lo que

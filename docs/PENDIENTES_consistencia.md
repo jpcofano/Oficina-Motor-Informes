@@ -1429,3 +1429,71 @@ más el invariante simétrico que al diagnóstico también le faltaba.
 
 ⛔ **Lo que sigue sin saberse: QUÉ sección quedó pendiente y por qué `marcarSeccionPlan_` no la
 encontró.** El diagnóstico corregido lo dice en la próxima corrida.
+
+---
+
+## ⛔⛔ P0 · ÍTEM 33 — CAUSA RAÍZ: el bloque modelo se tomaba por POSICIÓN sobre un deck que ya se había movido (04/09/2026)
+
+**La tercera causa, y es la que explica todo.** Las dos anteriores estaban descartadas —`L-016`
+declara `campana` en la hoja viva, y `filas_sin_ancla = 0`—.
+
+### La evidencia, cruzada
+
+| fuente | qué dice |
+|---|---|
+| `LAMINAS` | `secco/campana` = **`L-016`…`L-023`** |
+| deck del 03/09 | duplicó **`L-017`…`L-024`**, tres veces |
+| ⭐ `LAMINAS`, otra vez | **`L-024` es `analisis_datos`**, no `campana` |
+
+⇒ ⛔⛔ **El bloque está corrido exactamente un lugar: dejó afuera `L-016`, que SÍ es de la sección, y
+metió `L-024`, que es de otra.** Y **no falló** — duplicó lo que no era, tres veces.
+
+### La causa, en dos líneas de `Generador.gs`
+
+```
+3407   var indiceLaminas = indiceDeLaminasPorAncla_(presentacion);   ← UNA vez, antes de duplicar
+…
+3645     var slidesAhora = presentacion.getSlides();                 ← POR SECCIÓN, ya movido
+3646     var modelosSlides = ordenados.map(i => slidesAhora[i]);     ← índice viejo, deck nuevo
+```
+
+⭐ **Calcular el índice una sola vez es CORRECTO** — es lo que mata la N², y su comentario lo
+explica bien. ⛔ **Lo que estaba mal es usarlo como POSICIÓN en un deck que las secciones anteriores
+ya cambiaron**: cada una duplica y remueve, con neto `M × (N−1)`.
+
+⇒ **La sección que expande primero corre a todas las que siguen.**
+
+### ⭐⭐ La distinción que faltaba
+
+**El índice sirve para saber QUÉ láminas son modelo (identidad), no DÓNDE están (posición).** La
+identidad no caduca; **la posición caduca en cuanto alguien inserta una slide**.
+
+⇒ **Se resuelve por `objectId`**, tomado antes de la primera duplicación. ⭐ **Y el `objectId` es lo
+único que sirve:** el ancla **NO**, porque `slide.duplicate()` copia las notas del orador —medido el
+21/08— así que **una copia hereda el ancla de su modelo**. El `objectId`, no. **Es el mismo patrón
+que la etapa 3 ya usa con `asignacion.objectIdSlide`.**
+
+### ⚠ Por qué sobrevivió tanto, y es lo que lo hace instructivo
+
+⭐ **Con una sola sección repetible, posición y `objectId` dan lo MISMO.** El defecto **sólo aparece
+a partir de la segunda**, y sólo si la primera cambia el largo del deck. ⇒ **La mayoría de las
+corridas nunca lo tocaron.**
+
+⚠ **Y el error ESCALA con el neto**: con +1 corre un lugar, con +2 corre dos. **No es un ±1 que uno
+pueda compensar mentalmente al leer un deck.**
+
+### La guarda que va con el arreglo
+
+⛔ **Una lámina modelo que ya no está en el deck FRENA la sección**, con su motivo. **Duplicar la de
+al lado es peor que no duplicar**: publica contenido de otra sección **sin fallar**, que es
+exactamente lo que venía pasando.
+
+### ⚠ Lo que este arreglo NO cierra
+
+⭐ **`camp_titulo` sigue necesitando el desdoble por ítem.** Con el bloque corregido, `L-016` **sí**
+se va a expandir ⇒ su `camp_titulo` lo va a pintar la etapa 3, por ítem. **Pero `L-023` está
+escondida** y sigue recibiendo el pintado por presentación. ⚠ **El arreglo cambia el síntoma, no la
+causa de aquél.**
+
+⛔ **Y el control real es una corrida**: el banco prueba la resolución de posición sobre un deck de
+juguete. Lo que hay que ver es que `campana` duplique **`L-016`…`L-023`** y no `L-017`…`L-024`.
