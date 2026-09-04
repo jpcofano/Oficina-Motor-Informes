@@ -8774,3 +8774,74 @@ function diagBloqueCampana() {
   Logger.log('     campaña plausible en vez de un hueco. Ése es el motivo del desdoble por ítem.');
   return { ok: true, l016: l016, de_campana: deCampana, contiguo: contiguo };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04_1` P5 — **¿existen los tres `{{gcba_ivr_*}}` en la plantilla de `jm`?**
+ *
+ * ⛔⛔ **Es la hipótesis (1) del `2026-08-31_2`, que quedó sin resolver:** *«la plantilla de
+ * `L-032` no usa el token»*. Si los tres no están, **escribirles filas no publica nada**: el `✅`
+ * del log de `cablearGcbaIvr()` estaría midiendo **la escritura, no la publicación**, y el ítem 11
+ * **cambia de objeto** — hay que hablar con el equipo (`C-01`), no cablear más filas.
+ *
+ * ⭐ **El control positivo va en la MISMA corrida, porque sin él un cero no dice nada:**
+ * `gcba_cc_base` es un token que el censo de `sin fila` **sí** listó en `L-032`, así que **tiene**
+ * que aparecer. Si no aparece, el lector falla y **no se cita nada del resto**.
+ *
+ * ⚠ **Y por qué hace falta un wrapper y no alcanza la función que ya existe:** Apps Script no
+ * lista en el desplegable ni las que terminan en `_` **ni las que reciben argumentos**
+ * (`CLAUDE.md` §2), y `censarTokensEnPlantilla(informeId, tokensCsv)` recibe dos. **Es la tercera
+ * vez que este mismo caso aparece en el repo.**
+ *
+ * ⛔ SÓLO LECTURA.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function censarIvrEnPlantillaJm() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('P5 · ¿están los `gcba_ivr_*` en la plantilla de `jm`? · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  ⭐ `gcba_cc_base` va como CONTROL POSITIVO: el censo de `sin fila` lo listó en');
+  Logger.log('     `L-032`, así que TIENE que aparecer. Si no aparece, no se cita nada del resto.');
+  Logger.log('');
+
+  var r = censarTokensEnPlantilla('jm',
+    'gcba_ivr_llamados,gcba_ivr_atendidos,gcba_ivr_at_pct,gcba_cc_base');
+
+  /* ⚠ El veredicto se arma acá y no se deduce leyendo el volcado de arriba: el control positivo
+   * tiene que ser una AFIRMACIÓN, no algo que el lector cruce a ojo. */
+  Logger.log('');
+  Logger.log('── VEREDICTO ──');
+  var enc = (r && r.encontrados) || (r && r.por_token) || null;
+  if (!enc) {
+    Logger.log('  ⚠ no pude leer el detalle por token del retorno — mirar el volcado de arriba.');
+    Logger.log('    ⭐ Igual vale la regla: si `gcba_cc_base` NO aparece ahí, el lector falla y');
+    Logger.log('    los tres ceros de `gcba_ivr_*` NO son evidencia de nada.');
+    return r;
+  }
+  var tiene = function (t) {
+    var v = enc[t];
+    return !!(v && (v.length ? v.length : (v.slides ? v.slides.length : 0)));
+  };
+  if (!tiene('gcba_cc_base')) {
+    Logger.log('  ⛔⛔ ABORTA: el CONTROL POSITIVO `gcba_cc_base` no apareció. El lector está');
+    Logger.log('     mirando la plantilla equivocada o falla — **no se cita ningún cero de arriba**.');
+    return { ok: false, motivo: 'control positivo' };
+  }
+  Logger.log('  ✅ control positivo: `gcba_cc_base` aparece.');
+  var faltan = ['gcba_ivr_llamados', 'gcba_ivr_atendidos', 'gcba_ivr_at_pct']
+    .filter(function (t) { return !tiene(t); });
+  if (!faltan.length) {
+    Logger.log('  ✅ los TRES `gcba_ivr_*` están en la plantilla ⇒ la hipótesis (1) del');
+    Logger.log('     `2026-08-31_2` queda DESCARTADA y el ítem 11 sigue siendo un cableado.');
+  } else {
+    Logger.log('  ⛔⛔ FALTAN ' + faltan.length + ': ' + faltan.join(', '));
+    Logger.log('     ⇒ escribirles filas NO publica nada. El `✅` de `cablearGcbaIvr()` midió la');
+    Logger.log('     ESCRITURA, no la publicación. El ítem 11 cambia de objeto: es `C-01` —hablar');
+    Logger.log('     con el equipo para que la plantilla lleve el token— y no cablear más filas.');
+  }
+  Logger.log('');
+  Logger.log('  ⚠ Y sobre los documentos: `TOKENS.md` §178 decía «sin `gcba_ivr_*`» medido contra');
+  Logger.log('    la plantilla el 16/08, y `HANDOFF_CODE` decía que sumó cuatro tokens el 29/08.');
+  Logger.log('    **Este log manda sobre los dos**: es la plantilla, no un documento.');
+  return r;
+}

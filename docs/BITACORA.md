@@ -17099,3 +17099,29 @@ archivos. (3) Los tres barridos que faltan, como clases distintas.
 
 **Hallazgo aparte:** dos bancos en rojo **diciendo la verdad** — el `2026-08-30_2` movió el corte de
 ámbito del nombre al `Id cuentas` y nadie los dio vuelta. Vivieron cuatro días.
+
+## 2026-09-04 · `2026-09-04_1` — el cruce token ↔ fila, en los dos sentidos
+
+**Parte 0, sólo lectura. Se frenó en P1 y no se ejecutó P3.**
+
+⛔⛔ **P1 refutada.** La mitad del orden es cierta —la guarda de vacío corre en `Generador.gs:148`,
+once líneas antes del envoltorio `_revisar` de la 159, así que un vacío devuelve `''` y no `--`—
+**pero la conclusión que el prompt quería escribir es falsa**: `textoFaltante_:1935` devuelve **`'-'`
+para `sin_datos`**. ⇒ **Un guión solo no es imposible: es del motor.** La refutación estaba fuera
+del alcance de P1 porque `formatearValorMarcador_` **sólo se usa con `estado === 'ok'`** — la regla
+de §4, *la función que estás leyendo no es el camino completo*.
+
+⇒ **No se ejecutó P3**: su hipótesis —`{{emin_lista}}` en la caja de «Alcance»— se había inventado
+para explicar un guión que el motor no podía producir, **y sí puede**. Medirla ahora mediría una
+pregunta que dejó de existir. La explicación queda en una sola causa: el token **existe** (slide 14,
+medido), **se resolvió y volvió vacío**.
+
+**Parte B resuelta contra el código.** El caveat del censo gana y el veredicto es falso para los
+expandidos: `Generador.gs:5417` ya lo decía — *«los de las slides emitidas ya no están: la pasada
+anterior los reemplazó»*. La etapa 3 gana **por agotamiento**, no por precedencia. Un token cae en
+la etapa 4 **sólo si sobrevivió a la 3**: lámina escondida, lámina no expandida, o lámina no
+repetible. ⇒ **349 es la exposición de un camino, no su ejercicio**, y el censo necesita
+**clasificar** por esas tres condiciones en vez de contar.
+
+**Escrito:** `censarIvrEnPlantillaJm()` (P5, con control positivo `gcba_cc_base`). **Registro:**
+ítems 11, 23, 33 y 34 en `PLAN.md`; los siete `ivr_*` cerrados; el censo de 102 sin fila.

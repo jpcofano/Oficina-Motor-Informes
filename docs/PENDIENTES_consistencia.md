@@ -732,3 +732,163 @@ tokens sin fila, que es donde aparecería uno mal tipeado—. ⚠ **Con control 
 — o sea que su token tampoco es de los diez. Es coherente con lo que el usuario ya había dicho:
 `emin_alcance` **es** Impresiones (`-893351-`) y `emin_alcance_semanal` **es** Mails entregados
 (`-491344-`). **La caja «Alcance» espera un token que nadie cableó.**
+
+---
+
+## ⛔⛔ P0 · P1 REFUTADA — un guión solo **SÍ** es del motor, y eso cambia el diagnóstico entero (04/09/2026)
+
+**El prompt `2026-09-04_1` P1 pedía verificar el orden de dos guardas y, si la de vacío iba
+primero, escribir como afirmación citable:**
+
+> *«un marcador con formato `texto_revisar` publica `-valor-` o nada. **Un guión solo es imposible
+> por construcción.**»*
+
+### ✅ La mitad del orden: CIERTA
+
+`formatearValorMarcador_` (`Generador.gs`):
+
+```
+148    if (valor === '' || valor === null || valor === undefined) return '';   ← la guarda de vacío
+149    var f = String(formato || '').trim().toLowerCase();
+159    if (f.length > 8 && f.slice(-8) === '_revisar') {                        ← el envoltorio
+160      return '-' + formatearValorMarcador_(valor, f.slice(0, -8)) + '-';
+```
+
+⇒ La guarda corre **once líneas antes**. ⭐ **Un valor vacío devuelve `''`, no `--`.** Esa mitad
+queda demostrada por código y ya no depende de los tres ejemplos observados.
+
+### ⛔⛔ La conclusión: FALSA — y la refuta OTRA función
+
+`textoFaltante_` (`Generador.gs`), que es **el otro camino de pintado**:
+
+```
+1931   if (!resultado) return '/////';
+1934   if (estado === 'error' || estado === 'REVISAR') return '---';
+1935   if (estado === 'sin_datos') return '-';        ← ⛔⛔ UN GUIÓN SOLO
+```
+
+⇒ ⭐⭐ **Un guión solo no es imposible: es exactamente el símbolo de `sin_datos`.**
+
+⚠ **Por qué la refutación estaba fuera del alcance de P1, y es la lección:** P1 miraba
+`formatearValorMarcador_`, que **sólo se usa cuando `estado === 'ok'`**. Todo lo demás lo pinta
+`textoFaltante_`, **otra función, otro archivo del mismo módulo, y ningún comentario las conecta**.
+⭐ **Es la regla de §4 en su forma más literal: la función que estás leyendo no es el camino
+completo.**
+
+### ⇒ Lo que esto CAMBIA, y es todo
+
+**La explicación más simple ya no necesita ninguna hipótesis sobre cajas:**
+
+| observación del deck | explicación |
+|---|---|
+| «Encuentros contempladas: **`-`**» | ⭐ **el motor**, pintando `emin_lista` con `estado = sin_datos` |
+| «Alcance» **vacía, sin guiones** | esa caja **no tiene token** — ninguno de los diez |
+
+⭐⭐ **Una sola causa, y es del motor, no de la plantilla.** `diagTokensEmin()` ya midió que
+`{{emin_lista}}` **está en slide 14 con los otros nueve** ⇒ **el token existe, se resolvió, y volvió
+vacío.**
+
+⛔ **Y por eso NO se ejecutó P3.** Su hipótesis —*«`{{emin_lista}}` vive en la caja que el usuario
+lee como Alcance»*— **estaba construida sobre la conclusión falsa**: se la inventó para explicar un
+guión que el motor no podía producir. **Ese guión sí lo produce.** Medir la caja ahora mediría una
+pregunta que dejó de existir.
+
+⚠ **Y la dicotomía de P4 también se corrige:** no es *«resolvió vacío»* contra *«resolvió bien y se
+pintó en otra caja»*. **El deck ya dice que resolvió vacío.** La pregunta que queda es **por qué**,
+y ésa sí necesita la traza — `LISTA_TEXTO` devuelve `valor: ''` si le falta `ctx.plantilla` o si no
+recibe filas, y `Generador.gs:1391` baja un texto vacío a `sin_datos`.
+
+⇒ ⛔ **Arreglo del lado de la operación o del cableado, NO de la plantilla del equipo.**
+
+### ⚠ Qué queda vivo del ítem 34
+
+- ✅ **El hecho del deck** —`-` con un solo guión— **sigue en pie**, y ahora **está explicado**.
+- ⛔ **La hipótesis muere dos veces:** primero por `diagTokensEmin()` (el token existe), y ahora
+  también la de la caja. **El defecto sigue abierto**; lo que se cayó es la explicación.
+
+---
+
+## ⭐⭐ Parte B · El 349 y la contradicción del log — resuelta contra el código (04/09/2026)
+
+**Las dos líneas del log de `censarNoExclusivosEnRepetibles()`:**
+
+| línea | afirma |
+|---|---|
+| veredicto | *«Cada uno publica **UN SOLO VALOR** en todos sus bloques y en sus escondidas»* |
+| caveat | *«Nada sobre los tokens que la etapa 3 **SÍ pinta por ítem** — ésos están bien»* |
+
+### ⇒ Gana el CAVEAT. El veredicto es falso para los expandidos.
+
+**La prueba está en el código, y en un comentario que ya estaba escrito** (`Generador.gs:5417`):
+
+> *«4 · Los tokens fijos, sobre todo lo que quedó. **Los de las slides emitidas ya no están: la
+> pasada anterior los reemplazó por valor o por `«FALTA»`**.»*
+
+⭐⭐ **La etapa 3 gana siempre que la lámina se haya expandido**, y no por precedencia declarada
+sino **por agotamiento**: cuando la etapa 4 corre, esos `{{token}}` **ya no existen en el deck**,
+así que `presentacion.replaceAllText` **no encuentra nada que pintar**.
+
+### ⭐ La condición exacta: un token cae en la etapa 4 sólo si SOBREVIVIÓ a la 3
+
+Y sobrevive en **tres** casos, que son los que hay que mirar:
+
+1. ⛔ **Su lámina está ESCONDIDA** — `tokensDeSlide_` devuelve `[]`, así que la etapa 3 no la toca.
+   Es el caso de `L-023`.
+2. ⛔ **Su lámina NO se expandió** — la sección no tuvo ítems, no se la eligió en el panel, se cortó
+   por presupuesto, o **la lámina no entró al bloque modelo**. Es el caso de `L-016`.
+3. **También vive en una lámina no repetible**, que nunca pasa por la etapa 3.
+
+⭐ **`camp_titulo` cae del lado que la lectura predice, y por eso sirve de control:** `L-016` no se
+expandió (aparece una sola vez en el deck) ⇒ su `camp_titulo` sobrevive a la etapa 3 ⇒ lo pinta la
+etapa 4 **sobre todo el deck**, con el `ULTIMO` de la ventana entera. ✅ **La lectura elegida lo
+predice.**
+
+### ⚠ 349 NO son 349 defectos
+
+**Es la EXPOSICIÓN de un camino, no su ejercicio.** La cifra que importa —cuántos publican
+efectivamente un solo valor— **depende de los ítems de cada corrida**, y el censo lo dice él mismo.
+⛔ **Un 349 suelto se cita como defectos en la primera relectura**, y eso ya pasó en este repo con
+otros números.
+
+### ⭐⭐ El criterio que le faltaba al censo para servir la próxima vez
+
+**Un token no exclusivo de una sección repetible está BIEN si TODAS sus láminas se expanden y se
+pintan por ítem. Publica MAL si al menos una de sus láminas sobrevive a la etapa 3** — por
+escondida, por no ser modelo, o porque su sección no expandió.
+
+⇒ **El censo tiene que clasificar, no contar.** Tres columnas por token, y son las tres condiciones
+de arriba:
+
+| ¿alguna lámina suya está escondida? | ¿alguna no es modelo de su sección? | ¿alguna es de sección no repetible? |
+|---|---|---|
+
+⭐ **Con eso, el que tiene las tres en «no» está bien y sale de la lista**; el que tiene alguna en
+«sí» **es candidato real**, y el número accionable es ése. ⚠ **Sin esa clasificación el instrumento
+devuelve 349 números todos iguales y ninguno accionable**, que es exactamente lo que devolvió.
+
+---
+
+## ✅ Los siete `ivr_*` — la sospecha está CERRADA, no reabrir (03/09/2026)
+
+`diagDondeVivenLosIvr()`, **con control positivo**: **0 huérfanos · 0 escondidas · 0 sin ancla**.
+Están en láminas **visibles que no iteran**. ⇒ ⭐ **El `/////` de los siete es un hueco normal de
+cableado**, no un síntoma de nada. **Queda escrito para que no se vuelva a abrir.**
+
+---
+
+## ⚠ Censo de tokens SIN fila en `jm` — registro, sin arreglar nada (03/09/2026)
+
+**102 tokens distintos · 107 apariciones sobre 359 · 12 láminas.**
+
+⭐ **Dos láminas ESCONDIDAS concentran 44 y están enteras** — `L-039` 23/23 y `L-050` 21/21, que es
+el frente `rrss_*`. El resto se reparte en bloques con forma propia: `camp_bench_*`,
+`camp_env*_rem`, `post_formato*`, `cc_*` y sus gemelos `gcba_cc_*`.
+
+⛔ **«Sin fila» NO es «publica `FALTA`»**, y el propio log lo dice: para saber qué publica `FALTA`
+**hace falta una corrida**. Son dos preguntas y sólo una está contestada.
+
+⛔⛔ **Y el censo NO contestó lo que el log de `cablearGcbaIvr()` le pidió.** Los tres `gcba_ivr_*`
+no aparecen en `L-032`, pero **el censo calla por dos motivos distintos y no los distingue**: *«el
+token tiene fila»* y *«el token no está en la plantilla»* **se ven igual**. ⭐ Es exactamente la
+ambigüedad del ítem 34, **del otro lado del cruce** — y por eso hace falta `censarIvrEnPlantillaJm()`,
+que pregunta por la plantilla y no por el registro.
