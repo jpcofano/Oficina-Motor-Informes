@@ -1587,6 +1587,32 @@ function refrescarOrdenPlantillaSecco() {
   return refrescarOrdenPlantilla_('secco', true);
 }
 
+/* ⭐⭐ `2026-09-03` — **`jm` NO necesitaba generalizar nada: `refrescarOrdenPlantilla_` ya toma el
+ * informe por parámetro.** Lo único que faltaba eran los dos wrappers, porque Apps Script no lista
+ * en el desplegable ni las que terminan en `_` ni las que reciben argumentos (`CLAUDE.md` §2) —
+ * o sea que la función servía y **nadie la podía correr para `jm`**.
+ *
+ * **El caso, medido por `verLaminas()` el 03/09:** **17 desajustes de `orden_plantilla`** en
+ * `L-035`…`L-051`, con la hoja **1 o 2 posiciones atrás**. Se insertaron slides en `jm` y el
+ * registro no se refrescó — **el mismo caso que `secco` el 31/08**.
+ *
+ * ⚠ **Lo que esto NO rompe, y por eso no era urgente:** la expansión resuelve el bloque **por
+ * ancla**, no por `orden_plantilla`, así que un desajuste acá **no mueve ningún número**. Lo que sí
+ * ensucia es **todo reporte que ordene por esa columna** — y ahí el error no falla, **desordena**.
+ *
+ * ⛔ **Y `escondida` no se refresca sola** (decisión del usuario, 31/08): se reporta como desajuste
+ * y se corrige a mano. */
+
+/** Mide `jm` y **NO escribe**. Correr ésta primero. */
+function diagOrdenPlantillaJm() {
+  return refrescarOrdenPlantilla_('jm', false);
+}
+
+/** Mide `jm` y **ESCRIBE** las celdas desajustadas. Relee y falla en rojo si no quedó. */
+function refrescarOrdenPlantillaJm() {
+  return refrescarOrdenPlantilla_('jm', true);
+}
+
 function refrescarOrdenPlantilla_(informeId, aplicar) {
   Logger.log('══════════════════════════════════════════════════════════════════════');
   Logger.log('`LAMINAS.orden_plantilla` de `' + informeId + '` — ' +

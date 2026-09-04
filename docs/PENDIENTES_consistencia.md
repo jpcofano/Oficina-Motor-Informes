@@ -620,3 +620,56 @@ que **no** cae a `sinSlide` y mi hipótesis se cae entera. ⭐ Y el usuario ya l
 `orden_plantilla`**, todos de `L-035`…`L-051` (`jm`), con la hoja **1 o 2 posiciones atrás**. ⇒ Se
 insertaron slides en `jm` y el registro no se refrescó. **No afecta a la expansión** —el bloque se
 resuelve por ancla, no por `orden_plantilla`— pero **sí a todo reporte que ordene por esa columna**.
+
+---
+
+## ⭐⭐ Un desplazamiento que compensa una ventana mal cortada es un RODEO, no un mecanismo (03/09/2026)
+
+**Decisión del usuario.** El corte de `reuniones / Agenda funcionarios` pasa de `E` (`Fecha de
+envío`) a **`D` (`Fecha`, el encuentro)**, con la ventana **viernes a viernes, `28/08–04/09`**.
+
+### ⛔ Lo que se CAE — no se pospone
+
+| se cae | por qué |
+|---|---|
+| el desplazamiento `−3` **y** el `−3/−2` medido | no hay nada que desplazar |
+| las columnas `ventana_desde_dias` / `ventana_hasta_dias` en `SOLAPAS` | no hacen falta |
+| **`R-20` y su prompt propio** | queda **sin objeto** |
+| la decisión abierta *«el fin pasa de −3 a −2»* | **sin objeto** |
+
+### ⭐ La lección, y es lo que hay que llevarse
+
+**El `−3` era un rodeo para compensar que la ventana estaba cortada un día antes de tiempo.
+Corregida la ventana, el rodeo desaparece.**
+
+⭐⭐ **La forma general, que es lo citable:** cuando un mecanismo nuevo aparece para **compensar**
+el resultado de otro, la primera pregunta no es *«cuánto hay que compensar»* sino **«¿qué está mal
+en lo que estoy compensando?»**. Un desplazamiento calibrado es **más caro y más frágil** que el
+corte correcto: hay que elegir dos números, mantenerlos, y **cada uno puede quedar viejo solo**.
+
+⚠ **Y el trabajo de medirlo NO se perdió, que es la otra mitad.** El barrido de las **25
+combinaciones** (0…−4 × 0…−4) es **lo que demostró que ninguna simetría podía funcionar** —el lead
+time real es **2, 3, 3, 3, 3, 4 y 5 días**, no un número— y **por eso se buscó en otro lado**.
+⭐ **Una medición que cierra una rama entera vale aunque la rama se abandone.**
+
+### ✅ Verificado ANTES de escribir, y por identidad
+
+Sobre las **576 filas de la corrida viva del 03/09**: `Fecha` en `28/08–04/09` trae **exactamente
+las siete de `ROSTER_CONTROL_`**, ni una más ni una menos.
+
+⛔⛔ **Y el conteo solo no habría alcanzado:** la ventana anterior **también daba 7**, con **otras**
+siete — sobraba `Fernán Quirós` (encuentro `08/09`) y faltaba `Ezequiel Sabor`. **Dos diferencias
+que se cancelan en el total.** ⭐ **`ROSTER_CONTROL_` se queda como control permanente**: es lo
+mejor que salió de esta vuelta, y sin él esto habría pasado por bueno.
+
+⭐ **Y el cambio de columna cierra un hueco de paso:** cortando por envío, **12 filas sin `Fecha de
+envío`** caían afuera **en silencio**; cortando por `Fecha` las que caen son **0** (medido).
+
+### ✅ La dependencia con el ítem 19 del front: **NO bloquea**
+
+**Medido en `PERIODOS`:** ya existe `2026_agosto_21_28` = `2026-08-21` a `2026-08-28` — **ocho
+días, viernes a viernes**, creado por *«Asistente · paso 1 (personalizado)»*. ⇒ ⭐ **El corte
+vie→vie ya se puede expresar hoy con un período personalizado. Ministros NO espera al `_4`.**
+
+⚠ Lo que **sí** queda para el ítem 19 es el **botón**: hoy hay que armar el período a mano en el
+paso 1. Eso es comodidad, no bloqueo.

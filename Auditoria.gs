@@ -8170,7 +8170,15 @@ function diagAgendaFuncionarios() {
      * —2, 3, 3, 3, 3, 4 y 5 días en estas siete filas—, así que ningún desplazamiento simétrico
      * reproduce «los encuentros de la semana». */
     { nom: '⭐ envío  25/08–01/09  (inicio −3, fin −2 — sale de MEDIR, no de elegir)',
-      campo: 'envio', desde: '2026-08-25', hasta: '2026-09-01' }
+      campo: 'envio', desde: '2026-08-25', hasta: '2026-09-01' },
+    /* ⭐⭐ `2026-09-03` — **LA ELEGIDA, y la única que además NO necesita desplazamiento.**
+     * Decisión del usuario: corte por `Fecha` (el encuentro) con la ventana **viernes a viernes**.
+     * ⇒ Con la ventana corregida el `−3` **desaparece**: era un rodeo para compensar que la
+     * ventana estaba cortada **un día antes de tiempo**. **No hay nada que desplazar.**
+     * ⚠ Y cierra un hueco de paso: cortando por envío, **12 filas sin `Fecha de envío`** caían
+     * afuera en silencio; por `Fecha` las que caen son **0** (medido el 03/09). */
+    { nom: '⭐⭐ fecha  28/08–04/09  (LA ELEGIDA — viernes a viernes, sin desplazamiento)',
+      campo: 'fecha', desde: '2026-08-28', hasta: '2026-09-04' }
   ];
 
   Logger.log('');

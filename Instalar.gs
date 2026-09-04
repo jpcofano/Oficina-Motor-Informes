@@ -9980,16 +9980,50 @@ var FILAS_MINISTROS_ = [
   { marcador: 'emin_ctor',            campo_logico: 'clics/aperturas',             operacion: 'PCT',    formato: 'porcentaje_revisar',
     nota: 'La columna K (% CTOR) NO se mapea a proposito: mismo motivo. Esto es SUM(J)/SUM(H).' },
   { marcador: 'emin_ctr',             campo_logico: 'clics_meta/impresiones_meta', operacion: 'PCT',    formato: 'porcentaje_revisar',
-    nota: 'La columna S (CTR Meta) NO se mapea a proposito: mismo motivo. Esto es SUM(R)/SUM(Q).' }
+    nota: 'La columna S (CTR Meta) NO se mapea a proposito: mismo motivo. Esto es SUM(R)/SUM(Q).' },
+  /* ⭐⭐ `2026-09-03` — **`emin_lista`, la décima, que estaba esperando la decisión de la ventana.**
+   * Mismo universo que las otras nueve, así que va en la misma tanda y se atribuye igual.
+   *
+   * ⭐ **La plantilla y su condicional son configuración pura** (`D-01`): el literal *«Seguridad en
+   * tu barrio»* vive **en esta celda**, no en el `.gs`. Es el nombre de un ciclo cargado en la
+   * columna `Funcionario` —no es una persona—, y la lámina tiene que mostrar **el barrio**.
+   *
+   * ⛔ **Sin el condicional, tres de las siete filas salen IDÉNTICAS** —*«Seguridad en tu barrio
+   * 03/09»* × 3— y **no fallaría**: publicaría una lista corta y plausible.
+   *
+   * ⚠ **`separador` va VACÍO a propósito.** `LISTA_TEXTO` usa salto de línea cuando está vacío, y
+   * escribir un `\n` literal en una celda de Sheets es pedirle a la interpretación automática de
+   * tipos que lo respete. El default hace lo mismo sin el riesgo. */
+  { marcador: 'emin_lista',
+    campo_logico: '{figura=Seguridad en tu barrio?barrio} {fecha:dd/MM}',
+    operacion: 'LISTA_TEXTO', formato: 'texto_revisar',
+    nota: 'Plantilla con condicional declarativo: el literal vive en esta celda y NO en el .gs ' +
+      '(D-01). Sin el condicional, las tres filas del ciclo Seguridad en tu barrio salen ' +
+      'identicas y no falla. separador VACIO = salto de linea, el default de LISTA_TEXTO.' }
 ];
 
 /** Las filas de `MAPEO`. ⚠ `encabezado` byte a byte: `clics_meta` lleva un salto de línea adentro. */
 var MAPEO_MINISTROS_ = [
-  /* ⭐⭐ El corte de la ventana. `ventana_ref = propia` lo manda acá, y es la **columna E**:
-   * las campañas de ministros se eligen por su ENVÍO, ~3 días antes de la reunión. */
-  { campo_logico: 'fecha_periodo',    columna: 'E', encabezado: 'Fecha de envío', tipo_esperado: 'fecha' },
-  /* La fecha del encuentro, que es otra cosa y por eso lleva su propia fila. */
+  /* ⭐⭐ `2026-09-03` — **EL CORTE PASA DE `E` (envío) A `D` (el encuentro).** Decisión del usuario,
+   * y con ella se cae el desplazamiento `−3` entero: **era un rodeo para compensar una ventana
+   * cortada un día antes de tiempo.** Corregida la ventana a **viernes a viernes, `28/08–04/09`**,
+   * el rodeo desaparece — no hay nada que desplazar.
+   *
+   * ⭐ **Verificado por identidad contra `ROSTER_CONTROL_` antes de escribir esta línea**, sobre las
+   * 576 filas de la corrida viva del 03/09: `Fecha` en `28/08–04/09` trae **exactamente las siete**,
+   * ni una más ni una menos. ⛔ **Y no alcanzaba con el conteo:** la ventana anterior también daba
+   * **7**, con **otras** siete —sobraba `Fernán Quirós` (encuentro `08/09`) y faltaba `Sabor`—.
+   *
+   * ⚠ **Mueve los nueve `emin_*` a la vez**, y eso es bueno: un solo cambio, una sola atribución. */
+  { campo_logico: 'fecha_periodo',    columna: 'D', encabezado: 'Fecha',             tipo_esperado: 'fecha' },
+  /* ⭐ **La misma columna con otro nombre lógico, y las dos filas hacen falta.** `fecha_periodo` es
+   * el nombre **reservado** que el motor busca para recortar; `fecha` es el que usa la plantilla de
+   * `emin_lista`. Separarlos deja que la plantilla no dependa del nombre reservado. */
   { campo_logico: 'fecha',            columna: 'D', encabezado: 'Fecha',             tipo_esperado: 'fecha' },
+  /* ⛔ **`E` NO se desmapea** (decisión del usuario): sigue siendo una columna real y el catálogo la
+   * declara. **Cambia cuál se usa para cortar, no qué existe.** Sin esta fila, `E` quedaría sin
+   * nombre lógico y una lectura futura tendría que redescubrirla. */
+  { campo_logico: 'fecha_envio',      columna: 'E', encabezado: 'Fecha de envío', tipo_esperado: 'fecha' },
   { campo_logico: 'figura',           columna: 'B', encabezado: 'Funcionario',       tipo_esperado: 'texto' },
   { campo_logico: 'entregados',       columna: 'G', encabezado: 'Entregados',        tipo_esperado: 'numero' },
   { campo_logico: 'aperturas',        columna: 'H', encabezado: 'Aperturas',         tipo_esperado: 'numero' },
@@ -10064,9 +10098,11 @@ function cablearMinistros_(aplicar) {
         'la semana del informe, asi que el control es una corrida. Deroga el cableado del _1 ' +
         '(rdv/RVD JM-CM - ES, ambito=ministros) que publicaba 1 donde el equipo lista 7; V-49 ' +
         'medía esa otra fuente y no aplica a esta fila. Ventana por SOLAPAS.ventana_ref=propia, ' +
-        'que corta por fecha_periodo = columna E (Fecha de envio): las campanias se eligen por ' +
-        'su ENVIO, ~3 dias antes de la reunion. AVISO: las 10 filas con envio vacio caen afuera ' +
-        'EN SILENCIO. SIN VALIDAR' + (f.nota ? ' || ' + f.nota : '')
+        'que corta por fecha_periodo = columna D (Fecha del ENCUENTRO), con la ventana viernes a ' +
+        'viernes 28/08-04/09. El corte por envio (col E) se dejo el 03/09: daba 7 pero OTRAS ' +
+        'siete -sobraba Quiros, encuentro 08/09, y faltaba Sabor-, y el desplazamiento -3 que lo ' +
+        'compensaba era un rodeo por una ventana cortada un dia antes de tiempo. Verificado por ' +
+        'identidad contra las siete del roster. SIN VALIDAR' + (f.nota ? ' || ' + f.nota : '')
     };
   }
 
@@ -10259,9 +10295,12 @@ function ventanaPropiaDeMinistros() {
   Logger.log('══════════════════════════════════════════════════════════════════════');
   Logger.log('  `' + BASE_MINISTROS_ + ' / ' + SOLAPA_MINISTROS_ + '`  →  `' + VENTANA_PROPIA_ + '`');
   Logger.log('  ⭐ Qué significa: esta solapa manda sobre el `modo_periodo` de su base, y la');
-  Logger.log('     ventana se corta por SU `fecha_periodo` — que es la columna **E**, `Fecha de');
-  Logger.log('     envío`. Las campañas de ministros se eligen por su ENVÍO, ~3 días antes.');
-  Logger.log('  ⚠ AVISO: las 10 filas con `Fecha de envío` vacía caen afuera EN SILENCIO.');
+  Logger.log('     ventana se corta por SU `fecha_periodo` — que desde el 03/09 es la columna');
+  Logger.log('     **D**, `Fecha` (el ENCUENTRO), con la ventana viernes a viernes 28/08–04/09.');
+  Logger.log('  ⭐ El corte por envío (col E) se dejó: daba 7 pero OTRAS siete. Y con él se cae el');
+  Logger.log('     desplazamiento −3, que era un rodeo por una ventana cortada un día antes.');
+  Logger.log('  ⚠ AVISO: una fila sin `Fecha` cae afuera EN SILENCIO. Medido el 03/09: son 0');
+  Logger.log('     (cortando por envío eran 12 — el cambio de columna además cierra ese hueco).');
   Logger.log('');
   var r = escribirVentanaPropiaMinistros_();
   if (!r.ok) {

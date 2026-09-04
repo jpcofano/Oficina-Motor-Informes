@@ -71,11 +71,20 @@ console.log('═══ A · las nueve filas, y son nueve ═══');
 {
   const esperados = ['emin_encuentros', 'emin_alcance', 'emin_alcance_semanal', 'emin_aperturas',
     'emin_clics_ctor', 'emin_clics_ctr', 'emin_or', 'emin_ctor', 'emin_ctr'];
-  afirmar(T.filas.length === 9, 'son 9 filas (hay ' + T.filas.length + ')');
+  afirmar(T.filas.length === 10, 'son 10 filas (hay ' + T.filas.length + ')');
   esperados.forEach(m => afirmar(T.filas.some(f => f.marcador === m), '  está `' + m + '`'));
-  /* ⛔ `emin_lista` queda FUERA a propósito: espera la operación con plantilla (ítem 2). */
-  afirmar(!T.filas.some(f => f.marcador === 'emin_lista'),
-    '⛔ `emin_lista` NO está — espera la operación con plantilla, es otro trabajo');
+  /* ⭐⭐ `2026-09-03` — **la afirmación se DA VUELTA con su motivo, no se afloja.** Decía
+   * «`emin_lista` NO está — espera la operación con plantilla». **Era cierta y dejó de serlo**: la
+   * operación `LISTA_TEXTO` existe desde hoy y la ventana quedó decidida, así que la fila entra.
+   * ⭐ Y se le SUBE la exigencia: no alcanza con que exista, tiene que usar la operación correcta
+   * y llevar el condicional — cablearla con `LISTA_CRUDA` publicaría 5 donde hay 7, sin fallar. */
+  const lista = T.filas.find(f => f.marcador === 'emin_lista');
+  afirmar(!!lista, '⭐⭐ `emin_lista` SÍ está — la operación existe y la ventana quedó decidida');
+  afirmar(!!lista && lista.operacion === 'LISTA_TEXTO',
+    '⭐ y usa `LISTA_TEXTO`, no `LISTA_CRUDA` — aquélla deduplica y publicaría 5 donde hay 7');
+  afirmar(!!lista && /\{figura=Seguridad en tu barrio\?barrio\}/.test(lista.campo_logico),
+    '⭐⭐ y lleva el condicional CON el literal en la celda: ' + (lista ? lista.campo_logico : ''));
+  afirmar(!!lista && /_revisar$/.test(lista.formato), '   y nace con `_revisar` como las otras nueve');
 }
 
 console.log('\n═══ B · ⛔ las nueve nacen con `_revisar`, sin excepción ═══');
@@ -84,9 +93,10 @@ console.log('\n═══ B · ⛔ las nueve nacen con `_revisar`, sin excepción
    * esta fuente**, así que `D-56` no permite levantar nada. */
   const sinMarca = T.filas.filter(f => !/_revisar$/.test(f.formato));
   afirmar(sinMarca.length === 0,
-    '⭐⭐ las 9 llevan `_revisar` (sin marca: ' + (sinMarca.map(f => f.marcador).join(', ') || 'ninguna') + ')');
+    '⭐⭐ las ' + T.filas.length + ' llevan `_revisar` (sin marca: ' + (sinMarca.map(f => f.marcador).join(', ') || 'ninguna') + ')');
   afirmar(T.filas.filter(f => f.formato === 'entero_revisar').length === 6, 'seis `entero_revisar`');
   afirmar(T.filas.filter(f => f.formato === 'porcentaje_revisar').length === 3, 'tres `porcentaje_revisar`');
+  afirmar(T.filas.filter(f => f.formato === 'texto_revisar').length === 1, 'y un `texto_revisar` — `emin_lista`');
 }
 
 console.log('\n═══ C · ⭐⭐ los PCT son RATIO DE LAS SUMAS — con DOS filas, que es lo que separa ═══');
@@ -137,8 +147,9 @@ console.log('\n═══ D · ⛔ las columnas de `%` NO se mapean — mapearlas
     afirmar(/NO se mapea a proposito/.test(n), '   y dice que NO se mapea a propósito');
   });
   /* ⚠ Los seis que no son PCT no llevan nota: la nota es del caso, no decoración. */
-  afirmar(T.filas.filter(f => f.nota).length === 3,
-    '⚠ sólo los tres PCT llevan nota propia — no se decoró a los otros seis');
+  /* ⭐ Cuatro desde el 03/09: los tres PCT más `emin_lista`, que declara dónde vive su literal. */
+  afirmar(T.filas.filter(f => f.nota).length === 4,
+    '⚠ llevan nota propia sólo los tres PCT y `emin_lista` — no se decoró a los otros seis');
 }
 
 console.log('\n═══ E · ⚠ por LETRA, y el encabezado byte a byte ═══');
@@ -157,19 +168,33 @@ console.log('\n═══ E · ⚠ por LETRA, y el encabezado byte a byte ══�
 
   /* ⭐⭐ El corte de la ventana: `ventana_ref = propia` lo manda al `fecha_periodo` de la solapa,
    * y ése tiene que ser el ENVÍO —columna E—, no la fecha del encuentro. */
+  /* ⭐⭐ `2026-09-03` — **dada vuelta con su motivo.** Decía «`fecha_periodo` es la columna E — el
+   * corte es por ENVÍO», y era cierta hasta hoy. El corte pasó a `D` (el encuentro) con la ventana
+   * viernes a viernes, y con eso **el desplazamiento −3 se cae entero**: era un rodeo para
+   * compensar una ventana cortada un día antes de tiempo.
+   * ⛔ **Y la afirmación negativa que hace falta al lado:** que ya NO corte por `E`. Sin ella,
+   * volver a apuntar `fecha_periodo` a `E` no rompería nada. */
   const fp = T.mapeo.find(m => m.campo_logico === 'fecha_periodo');
-  afirmar(!!fp && fp.columna === 'E',
-    '⭐⭐ `fecha_periodo` es la columna E (Fecha de envío) — el corte es por ENVÍO');
+  afirmar(!!fp && fp.columna === 'D',
+    '⭐⭐ `fecha_periodo` es la columna D (Fecha, el ENCUENTRO) — el corte ya no es por envío');
+  afirmar(!!fp && fp.columna !== 'E',
+    '⛔ y NO es la E: si volviera, publicaría 7 con OTRAS siete y el conteo no lo diría');
   afirmar(T.mapeo.some(m => m.campo_logico === 'fecha' && m.columna === 'D'),
-    '   y `fecha` (D) es la del encuentro: son dos columnas y dos filas');
+    '   `fecha` (D) es la que usa la plantilla de `emin_lista`');
+  /* ⛔ `E` no se desmapea: cambia cuál se usa para cortar, no qué existe (decisión del usuario). */
+  afirmar(T.mapeo.some(m => m.campo_logico === 'fecha_envio' && m.columna === 'E'),
+    '⭐ `E` sigue mapeada, como `fecha_envio` — cambia cuál corta, no qué existe');
 
   /* ⭐ `2026-09-03` — las once, ya completas. */
-  afirmar(T.mapeo.length === 11, 'son ONCE filas de MAPEO (hay ' + T.mapeo.length + ')');
+  afirmar(T.mapeo.length === 12, 'son DOCE filas de MAPEO (hay ' + T.mapeo.length + ')');
   [['id', 'A'], ['barrio', 'C'], ['enviados', 'F']].forEach(([c, col]) =>
     afirmar(T.mapeo.some(m => m.campo_logico === c && m.columna === col),
       '  `' + c + '` en la columna ' + col));
+  /* ⚠ `D` aparece DOS veces a propósito —`fecha_periodo` y `fecha`—: dos nombres lógicos con
+   * consumidores distintos sobre la misma columna. Lo que no puede repetirse es el `campo_logico`. */
   const letras = T.mapeo.map(m => m.columna);
-  afirmar(new Set(letras).size === letras.length, '⚠ ninguna letra se repite');
+  afirmar(letras.filter(x => x === 'D').length === 2,
+    '⚠ `D` se declara dos veces a propósito: `fecha_periodo` (corta) y `fecha` (la plantilla)');
   const campos = T.mapeo.map(m => m.campo_logico);
   afirmar(new Set(campos).size === campos.length, '⚠ ningún `campo_logico` se repite');
 }
@@ -261,8 +286,8 @@ console.log('\n═══ G · control NEGATIVO — el banco PUEDE fallar ══�
   const antes = fallas;
   const mutada = T.filas.map(f => Object.assign({}, f, { formato: f.formato.replace('_revisar', '') }));
   const sinMarca = mutada.filter(f => !/_revisar$/.test(f.formato));
-  afirmar(sinMarca.length === 9,
-    '⭐ quitándoles `_revisar` a las nueve, el criterio de la sección B las detecta a las 9');
+  afirmar(sinMarca.length === T.filas.length,
+    '⭐ quitándoles `_revisar` a las ' + T.filas.length + ', el criterio de la sección B las detecta a todas');
   afirmar(fallas === antes, '   y la mutación no ensució el conteo real');
 
   /* ⭐⭐ Y la mutación OCURRIÓ: sin esta guarda el negativo correría sobre el dato intacto. */
