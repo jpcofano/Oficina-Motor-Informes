@@ -10645,3 +10645,102 @@ function censarRevisarVivos() {
   Logger.log('     una tarea.');
   return { ok: true, total: rev.length, lista1: l1, lista2: l2, lista3: l3, nuevos: nuevos };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04_6 Addendum 1` punto 1 — **las filas `m2_*` sobre la HOJA VIVA.**
+ *
+ * ⛔⛔ **El snapshot del 31/08 NO sirve para esta pregunta, y no por viejo en general sino por
+ * viejo EN LA DIMENSIÓN QUE DECIDE:** tiene **220 filas y las 220 dicen `informe_id = jm`**.
+ * ⇒ Es **anterior a la migración de 168 marcadores a `*`** del `2026-08-31_6`. **Preguntarle
+ * cuántos informes lee una fila es preguntarle por algo que todavía no existía.**
+ *
+ * ⭐ **Y ésa es exactamente la bifurcación del addendum**, así que el snapshot no puede decidirla:
+ *   · **una sola fila** (`*`, o `jm` leída por los dos) ⇒ un mismo `formato` produciendo **dos
+ *     salidas distintas** ⇒ hay un segundo mecanismo que envuelve en guiones;
+ *   · **dos filas** ⇒ no hay mecanismo oculto, y lo que hubo es un marcado posterior al 31/08.
+ *
+ * ⛔ SÓLO LECTURA.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function censarM2Vivo() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('LAS FILAS `m2_*` SOBRE LA HOJA VIVA · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  var filas = [];
+  leerMarcadores_().forEach(function (m) {
+    var n = String(m.marcador || '').trim();
+    if (n.indexOf('m2_') === 0) {
+      filas.push({ marcador: n, informe_id: String(m.informe_id || '').trim(),
+        formato: String(m.formato || '').trim(), base_id: String(m.base_id || '').trim(),
+        solapa: String(m.solapa || '').trim() });
+    }
+  });
+
+  /* ⭐⭐ CONTROL POSITIVO: el snapshot del 31/08 tenía NUEVE `m2_*`. Cero acá es un lector roto,
+   * no un dato. ⚠ Y más de nueve también dice algo: alguien agregó filas. */
+  Logger.log('  filas `m2_*` en la hoja viva: ' + filas.length + '   (el snapshot del 31/08: 9)');
+  if (!filas.length) {
+    Logger.log('  ⛔⛔ ABORTA: cero. El lector falla — no se cita nada de abajo.');
+    return { ok: false, motivo: 'control positivo' };
+  }
+
+  Logger.log('');
+  Logger.log('  marcador                 informe    formato                        base/solapa');
+  var porNombre = {}, porInforme = {};
+  filas.sort(function (a, b) { return a.marcador < b.marcador ? -1 : 1; }).forEach(function (f) {
+    porNombre[f.marcador] = (porNombre[f.marcador] || 0) + 1;
+    porInforme[f.informe_id] = (porInforme[f.informe_id] || 0) + 1;
+    Logger.log('  ' + (f.marcador + '                        ').slice(0, 25) +
+      ((f.informe_id || '(vacío)') + '          ').slice(0, 11) +
+      (f.formato + '                              ').slice(0, 31) +
+      f.base_id + '/' + f.solapa);
+  });
+
+  var duplicados = Object.keys(porNombre).filter(function (n) { return porNombre[n] > 1; });
+  var conRevisar = filas.filter(function (f) { return /_revisar$/.test(f.formato); });
+
+  Logger.log('');
+  Logger.log('── reparto por `informe_id` ──');
+  Object.keys(porInforme).sort().forEach(function (i) {
+    Logger.log('     ' + (i || '(vacío)') + ': ' + porInforme[i]);
+  });
+  Logger.log('  con `_revisar` HOY: ' + conRevisar.length +
+    (conRevisar.length ? ' — ' + conRevisar.map(function (f) { return f.marcador; }).join(', ') : ''));
+
+  Logger.log('');
+  Logger.log('── VEREDICTO — la bifurcación del addendum ──');
+  if (duplicados.length) {
+    Logger.log('  ⭐ HAY DOS FILAS para: ' + duplicados.join(', '));
+    Logger.log('     ⇒ **RAMA 2**: no hace falta ningún mecanismo oculto. `jm` y `secco` leen filas');
+    Logger.log('     distintas, y una puede tener `_revisar` y la otra no.');
+  } else if (porInforme['*']) {
+    Logger.log('  ⛔⛔ UNA SOLA FILA por marcador, y ' + porInforme['*'] + ' con `informe_id = *`');
+    Logger.log('     ⇒ **RAMA 1**: la MISMA fila con el MISMO `formato` gobierna a los dos informes.');
+    Logger.log('     Si los dos decks salen distinto, el formato NO puede ser la causa.');
+    Logger.log('     ⚠ ANTES de buscar un mecanismo oculto: verificar que los dos decks comparados');
+    Logger.log('     sean POSTERIORES al marcado del 01/09. **Un deck viejo explica la diferencia');
+    Logger.log('     sin ningún mecanismo nuevo**, y es la hipótesis barata.');
+  } else {
+    Logger.log('  ⚠ Una sola fila por marcador y ninguna con `*`: ' +
+      Object.keys(porInforme).join(', ') + '.');
+    Logger.log('     ⇒ Si un informe que NO figura acá publica M2, sus tokens salen de OTROS');
+    Logger.log('     marcadores con otro nombre ⇒ **el par `jm`/`secco` no compara la misma fila y');
+    Logger.log('     el control del addendum no aplica.**');
+  }
+
+  Logger.log('');
+  Logger.log('  ⭐ Y lo que YA está medido y no hace falta volver a preguntar: el log de');
+  Logger.log('    `aplicarCambios0409()` del 04/09 a las 14:05 leyó la hoja VIVA e imprimió el');
+  Logger.log('    valor de origen de cada celda — `miles_revisar → miles` en los cinco absolutos y');
+  Logger.log('    `porcentaje_sin_signo_revisar → porcentaje_sin_signo` en los dos `%`.');
+  Logger.log('    ⇒ **A las 14:05 los siete TENÍAN `_revisar`**, así que a las 11:42 también.');
+  Logger.log('    ⛔ La conclusión del addendum —«los guiones de M2 en `jm` NO vienen del');
+  Logger.log('    `_revisar`»— está REFUTADA por una lectura de hoja, no por un argumento.');
+  Logger.log('');
+  Logger.log('  ⚠ Lo que esto NO dice: qué publicó cada deck. Eso es el `.pptx`, que no está en el');
+  Logger.log('    repo. Lo que sí queda fijado es **de cuántas filas sale el número**.');
+  return { ok: true, filas: filas, duplicados: duplicados, por_informe: porInforme,
+    con_revisar: conRevisar.length };
+}

@@ -1497,3 +1497,61 @@ causa de aquél.**
 
 ⛔ **Y el control real es una corrida**: el banco prueba la resolución de posición sobre un deck de
 juguete. Lo que hay que ver es que `campana` duplique **`L-016`…`L-023`** y no `L-017`…`L-024`.
+
+---
+
+## ⛔⛔ P0 · La conclusión del `2026-09-04_6 Addendum 1` está REFUTADA por una lectura de hoja (04/09/2026)
+
+**El addendum concluye:** *«los guiones de M2 en `jm` NO vienen del `_revisar`. Al 31/08 no había
+`_revisar` que sacar y los guiones salieron igual.»*
+
+⭐ **Su premisa es correcta y su conclusión no se sigue** — y el propio addendum lo anticipa:
+*«el snapshot está vencido … esa es la hipótesis simple y hay que medirla primero, no descartarla»*.
+
+### La medición que la decide, y ya existía
+
+**El log de `aplicarCambios0409()` del 04/09 a las 14:05** leyó la **hoja viva** e imprimió el valor
+**de origen** de cada celda:
+
+```
+m2_mails_enviados     miles_revisar                 → miles
+m2_mails_entregados   miles_revisar                 → miles
+m2_aperturas          miles_revisar                 → miles
+m2_clics              miles_revisar                 → miles
+m2_envios             miles_revisar                 → miles
+m2_or                 porcentaje_sin_signo_revisar  → porcentaje_sin_signo
+m2_ctor               porcentaje_sin_signo_revisar  → porcentaje_sin_signo
+```
+
+⇒ ⭐⭐ **A las 14:05 los siete TENÍAN `_revisar`.** El deck de `jm` es de las **11:42**, *anterior*
+al cambio. ⇒ **A las 11:42 también lo tenían, y los guiones SÍ vienen del `_revisar`.**
+
+⇒ **Gana la RAMA 2 del addendum** —se marcaron después del 31/08— y **con evidencia de lectura, no
+por descarte**. ⭐ El marcado es la **aplicación masiva del 01/09** (76 puestos, 18 levantados), que
+es la misma que ya está registrada como el ítem 36.
+
+### ⚠ Pero el control del par `jm`/`secco` sigue abierto, y es bueno
+
+⭐ **Que la conclusión se caiga no invalida el control**: sigue siendo la pregunta correcta. Lo que
+cambia es que **su respuesta depende de un dato que el snapshot no puede dar.**
+
+⛔⛔ **El snapshot del 31/08 tiene 220 filas y las 220 dicen `informe_id = jm`.** ⇒ **Es anterior a
+la migración de 168 marcadores a `*`** del `2026-08-31_6`. ⭐ **Preguntarle cuántos informes lee una
+fila es preguntarle por algo que todavía no existía.**
+
+⇒ Y ésa es **exactamente** la bifurcación del addendum, así que el snapshot **no puede decidirla**.
+Escrito `censarM2Vivo()` (`Instalar.gs`, sólo lectura, con control positivo: nueve filas o aborta).
+
+### ⭐ Y la hipótesis barata que hay que descartar antes de buscar un mecanismo oculto
+
+Si el censo da **rama 1** —una sola fila `*` para los dos informes— la conclusión *«hay un segundo
+mecanismo que envuelve en guiones»* **todavía no se sigue**: ⚠ **falta verificar que los dos decks
+comparados sean posteriores al marcado del 01/09.** Un deck de `secco` **anterior** explica la
+diferencia **sin ningún mecanismo nuevo**.
+
+⛔ **Es la misma figura que este prompt acaba de cometer:** comparar una foto vieja contra una nueva
+y atribuir la diferencia a un mecanismo en vez de al tiempo.
+
+⚠ **Y un dato del addendum del `_5` que empuja en contra de la rama 1:** el deck de `secco` **sí
+trae guiones** en `L-034`, `L-052`, `L-053`, `L-036` y `L-045`. ⇒ **El `_revisar` funciona en
+`secco`**, así que si `L-014` sale limpio no es porque el mecanismo no llegue a ese informe.
