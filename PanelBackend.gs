@@ -1256,7 +1256,13 @@ function panel_estadoDesatendida() {
     tope: topeContinuaciones_(),
     plan: [],
     deck: null,
-    informe_id: '', periodo_id: '', ejecucion: 0, se_corto: false
+    informe_id: '', periodo_id: '', ejecucion: 0, se_corto: false,
+    /* ⛔⛔ `2026-09-04` — **se declaran SIEMPRE, y no es prolijidad.** El retorno temprano de
+     * `!corridaId` no los seteaba, así que salían `undefined` — y el sondeo del panel decide
+     * que la corrida terminó con `pendientes === 0`. **Con `undefined` esa comparación es
+     * `false` para siempre y el contador no para nunca.** Es la misma regla que ya está
+     * escrita para las claves del temario: **se declaran aunque no haya filas**. */
+    pendientes: 0, hechas: 0
   };
 
   if (!corridaId) {

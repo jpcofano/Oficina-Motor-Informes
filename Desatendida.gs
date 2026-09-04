@@ -864,3 +864,122 @@ function verificarAlcanceDesatendido() {
   }
   return { ok: problemas.length === 0, problemas: problemas, bases_verificadas: verificadas, bases_candidatas: candidatas.length };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04` — **`diagCorridaEnCurso()`: por qué el contador no para.**
+ *
+ * ⛔⛔ **Existe porque el panel no puede distinguir las tres causas, y mandan a trabajos opuestos:**
+ *
+ *   1. **La corrida sigue viva y se está reanudando** ⇒ ⭐ **el contador tiene razón**. No hay nada
+ *      que hacer: esperar. Con tope 6 y 60 s entre ejecuciones, 20 minutos **entran de sobra**.
+ *   2. ⛔ **Cortó y el trigger NO se creó** ⇒ **no se reanuda nunca**. Es exactamente lo que `D-57`
+ *      viene a eliminar, y el contador correría para siempre sin que nada avise.
+ *   3. ⛔ **Terminó y el panel no se enteró** ⇒ defecto del sondeo, no de la corrida.
+ *
+ * ⭐ **Las tres se ven IGUAL desde la pantalla: un cronómetro que sube.** Y el cronómetro además
+ * está dibujado contra `TECHO_S`, que es el techo de **UNA** ejecución — así que a los 20 minutos
+ * **está en rojo sin que eso signifique nada malo**. Es el borde que quedó declarado al implementar
+ * `D-57` y que este diagnóstico compensa mientras tanto.
+ *
+ * ⛔ SÓLO LECTURA. No frena nada, no borra triggers, no toca el deck.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function diagCorridaEnCurso() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('¿POR QUÉ NO PARA EL CONTADOR? · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA — no frena nada.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* 1 · El estado entre ejecuciones. Su existencia ES `en_curso`. */
+  var estado = null;
+  try { estado = leerEstadoCorrida_(); } catch (e) { Logger.log('  ⚠ no pude leer el estado: ' + e.message); }
+  Logger.log('── 1 · estado entre ejecuciones (`PropertiesService`)');
+  if (!estado) {
+    Logger.log('     ⭐ NO HAY. La corrida **terminó o se canceló** ⇒ `en_curso` es false.');
+  } else {
+    Logger.log('     corrida_id : ' + (estado.corrida_id || '(vacío)'));
+    Logger.log('     informe    : ' + (estado.informe_id || '') + ' · período ' + (estado.periodo_id || ''));
+    Logger.log('     ejecución  : ' + (estado.ejecucion || '?') + ' de ' + topeContinuaciones_());
+    Logger.log('     ⭐ se_corto : ' + (estado.se_corto === true ? 'SÍ — esperando la continuación' : 'no'));
+    Logger.log('     deck_id    : ' + (estado.deck_id || '(vacío)'));
+  }
+
+  /* 2 · ⛔⛔ EL TRIGGER. Sin él, «cortó» y «cortó y se quedó ahí» son la misma pantalla. */
+  Logger.log('');
+  Logger.log('── 2 · ⭐⭐ ¿hay trigger de continuación agendado?');
+  var triggers = [];
+  try {
+    ScriptApp.getProjectTriggers().forEach(function (t) {
+      if (t.getHandlerFunction() === FN_CONTINUACION_) triggers.push(t.getUniqueId());
+    });
+  } catch (e) { Logger.log('     ⚠ no pude leer los triggers: ' + e.message); }
+  Logger.log('     triggers de `' + FN_CONTINUACION_ + '`: ' + triggers.length);
+  if (estado && !triggers.length) {
+    Logger.log('     ⛔⛔ HAY ESTADO Y NO HAY TRIGGER: la corrida cortó y **no se va a reanudar sola**.');
+    Logger.log('        Es la causa 2 y es la mala. El contador correría para siempre.');
+  } else if (estado && triggers.length) {
+    Logger.log('     ✅ hay estado Y hay trigger ⇒ **se está reanudando**. Es la causa 1: esperar.');
+  } else if (!estado && triggers.length) {
+    Logger.log('     ⚠ trigger sin estado: quedó un trigger huérfano de una corrida ya cerrada.');
+  } else {
+    Logger.log('     ⭐ ni estado ni trigger ⇒ **la corrida TERMINÓ**. Si el contador sigue, es la');
+    Logger.log('        causa 3: el sondeo del panel no se enteró.');
+  }
+
+  /* 3 · El plan: qué falta de verdad. */
+  Logger.log('');
+  Logger.log('── 3 · el plan');
+  var cid = estado ? String(estado.corrida_id || '') : ultimaCorridaDelPlan_();
+  if (!cid) {
+    Logger.log('     ⚠ no hay `corrida_id` ni en el estado ni en `PLAN_CORRIDA`.');
+  } else {
+    var filas = [];
+    try { filas = leerPlan_(cid) || []; } catch (e) { Logger.log('     ⚠ ' + e.message); }
+    var pend = filas.filter(function (f) { return String(f.estado || '').trim() === 'pendiente'; });
+    var hech = filas.filter(function (f) { return String(f.estado || '').trim() === 'hecha'; });
+    Logger.log('     corrida ' + cid + ' · ' + filas.length + ' fila(s): ' +
+      hech.length + ' hecha(s), ' + pend.length + ' pendiente(s)');
+    pend.forEach(function (f) { Logger.log('        pendiente: ' + (f.seccion || f.item || '?')); });
+    /* ⛔ El invariante que el mecanismo chequea entre ejecuciones, dicho también acá. */
+    if (estado && estado.se_corto === true && !pend.length) {
+      Logger.log('     ⛔⛔ INVARIANTE ROTO: cortó y NO queda nada pendiente. Las dos no pueden ser');
+      Logger.log('        ciertas a la vez — algo marcó `hecha` una sección que no se resolvió.');
+    }
+  }
+
+  /* 4 · El sello del deck: es lo que el usuario ve en Drive. */
+  Logger.log('');
+  Logger.log('── 4 · el sello «en proceso» del deck');
+  var deckId = estado ? String(estado.deck_id || '') : '';
+  if (!deckId) {
+    Logger.log('     (sin `deck_id` en el estado — si la corrida cerró, el deck ya no lo tiene acá)');
+  } else {
+    try {
+      var nombre = DriveApp.getFileById(deckId).getName();
+      var sellado = nombre.indexOf(SELLO_EN_PROCESO_) === 0;
+      Logger.log('     ' + nombre);
+      Logger.log('     ⭐ sello puesto: ' + (sellado ? 'SÍ' : 'no'));
+      if (sellado) {
+        Logger.log('        ⚠ El sello lo quita **el cierre, y sólo si la corrida terminó**. Cortada');
+        Logger.log('        o muerta, el deck se queda sellado **a propósito**: declara lo que es.');
+      }
+    } catch (e) { Logger.log('     ⚠ no pude abrir el deck: ' + e.message); }
+  }
+
+  /* 5 · Qué hacer, según lo de arriba. Un diagnóstico que no manda a un trabajo no sirve. */
+  Logger.log('');
+  Logger.log('── VEREDICTO ──');
+  if (estado && triggers.length) {
+    Logger.log('  ⭐ CAUSA 1 — se está reanudando. **Esperar.** Con tope ' + topeContinuaciones_() +
+      ' y 60 s entre ejecuciones, 20 minutos entran de sobra.');
+  } else if (estado && !triggers.length) {
+    Logger.log('  ⛔⛔ CAUSA 2 — cortó y NO hay trigger: **no se reanuda sola.**');
+    Logger.log('     ⚠ Antes de tocar nada: mirar si el tope se agotó (ejecución ' +
+      (estado.ejecucion || '?') + ' de ' + topeContinuaciones_() + '). Si se agotó, el mecanismo');
+    Logger.log('     hizo lo correcto y el trabajo es otro. Si no, es un defecto del agendado.');
+  } else if (!estado) {
+    Logger.log('  ⭐ La corrida NO está en curso. Si el panel sigue contando, el defecto es del');
+    Logger.log('     sondeo y **el deck está donde el paso 4 diga** — no hay nada corriendo.');
+  }
+  return { ok: true, en_curso: !!estado, triggers: triggers.length, corrida_id: cid };
+}
