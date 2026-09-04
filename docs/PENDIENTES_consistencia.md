@@ -1220,3 +1220,83 @@ fuente**; que la fuente no tenga el grano semanal **es otra cosa y sigue abierta
 - ⭐ **`ivr_llamados` y `gcba_ivr_llamados` ya publican distinto** (JM `-`, GCBA `170.473`): **el
   cableado del 03/09 llegó**. ✅ **Control positivo del ítem 11, cumplido** — el token existe en la
   plantilla y el ámbito discrimina.
+
+---
+
+## ⛔⛔ P0 · Los `_revisar` puestos después no son 7: son **54** — pero **ninguno pisa un caso `exacto`** (04/09/2026)
+
+**El censo sobre la hoja viva dio 90** contra los **32** del snapshot del 31/08. ⭐ **El snapshot no
+vio 58**, y el corte que importa no es ése:
+
+| grupo | n | qué significa |
+|---|---|---|
+| **A** · no existían el 31/08 | **10** | los `emin_*` — **nacieron con la marca, es normal** |
+| **B** · ya la tenían el 31/08 | **26** | sin novedad |
+| ⛔ **C** · **existían y estaban LIMPIOS** | **54** | ⛔⛔ **la marca se puso DESPUÉS** |
+
+⇒ **Los siete `m2_*` del addendum eran la punta.** El grupo C son **familias enteras**: los 10
+`enc_*`, los 10 `u1_post_*`, los 28 `post_*`, más `camp_alcance`, `camp_ctor`, `camp_titulo`,
+`camp_enviados`, `camp_or`, `camp_mail_clics`.
+
+### ⭐⭐ El reencuadre: no fue un descuido, fue una operación
+
+**54 marcadores no se marcan de a uno por error.** Es la aplicación masiva de `_revisar` del 01/09
+—**76 aplicados, 18 levantados**—. ⇒ **Lo que falló no es que alguien marcara de más: es que esa
+aplicación NO cruzó contra el CSV**, y por eso pisó marcadores ya validados.
+
+### ✅ Y la buena noticia, medida y no supuesta
+
+**De los 54 que siguen marcados, NINGUNO tiene caso `exacto`.** Cruzado en disco contra los cuatro
+CSV por `token_propuesto`, con control positivo (169 tokens encontrados):
+
+- **45 sin ningún caso**;
+- **9 con caso de otro estado** — `enc_alcance` (`C-23`/`C-27`/`C-40`/`A-09` cerrados), los cuatro
+  `enc_*` de `D-01`…`D-04` (`deriva`), y los cuatro `u1_post_*` de **`X-42` `contradice`**.
+
+⭐ En los `u1_post_*` **el `_revisar` está bien puesto**: hay un caso que **contradice**.
+
+⇒ ⭐⭐ **Los siete `m2_*` eran los ÚNICOS que pisaban una validación `exacto`, y ya se corrigieron.**
+El ítem 36 pasa de *«hay N sin detectar»* a *«hubo 7, se corrigieron, y ahora se sabe detectarlos»*.
+
+---
+
+## ⭐⭐ `porcentaje_sin_signo` contra `fraccion`: la regla es de dónde VIENE el número (04/09/2026)
+
+**Medido sobre los siete que hoy usan `fraccion_revisar`** — `enc_ll_contactados_pct`,
+`enc_ll_efectivos_pct`, `enc_alcance_pct` y los cuatro `post_vtr*`:
+
+| origen del valor | operación | formato correcto |
+|---|---|---|
+| ⭐ **el MOTOR lo calcula** | `PCT` — `opPCT` devuelve `ratio × 100` | **`porcentaje_sin_signo`** |
+| ⭐ **la FUENTE lo trae calculado** | `ULTIMO` / `FILA` sobre una columna `*_pct` | **`fraccion`** |
+
+⇒ ✅ **Los siete están BIEN**: son `ULTIMO` y `FILA` sobre `cc_contactados_pct`,
+`cc_efectivos_pct`, `alc_cobertura_pct` y `vis_vtr_pct` — **valores que la base ya calculó**, que
+llegan como fracción 0–1. **`fraccion` es su formato correcto.**
+
+⚠ **Es el caso OPUESTO al de los `emin_*`**, y por eso conviene tenerlos escritos juntos: elegir mal
+en cualquiera de las dos direcciones es **exactamente 100×**, y **no falla — publica un número
+plausible**. ⭐ **La pregunta que decide no es «¿la caja tiene `%`?» sino «¿quién calculó el
+número?»**.
+
+⭐ **Un cero medido que también se escribe:** se buscó un defecto en esos siete y **no lo hay**.
+
+---
+
+## ⚠ El testigo del censo se gastó con el propio cambio (04/09/2026)
+
+`censarRevisarVivos()` usaba `imp_total` como control positivo — y **el mismo cambio que el censo
+vino a verificar le sacó el `_revisar`**. ⇒ El control respondió *«no (ya levantado)»* y **siguió
+sin discriminar nada**.
+
+⭐ **Es `CLAUDE.md` §4 en su forma más literal:** *un instrumento que mide un cambio no puede
+depender de lo que el cambio modifica*. ⚠ Y acá el instrumento **se escribió el mismo día que el
+cambio**, así que el testigo nació ya condenado.
+
+⇒ Agregado un segundo testigo —**`imp_prog`, que el cambio NO tocó**— y ahora **aborta** si no
+aparece.
+
+⛔ **Y el otro límite del instrumento, declarado en su propio log:** Apps Script **no puede leer los
+CSV**, así que sus listas 1 y 2 son una **transcripción fechada** del cruce en disco. ⇒ **su lista 3
+significa «no está en la transcripción», NO «no tiene caso»** — y sin esa línea el `0` de la lista 1
+se lee como un hallazgo.

@@ -10582,12 +10582,35 @@ function censarRevisarVivos() {
     'm2_mails_enviados', 'm2_mails_entregados', 'm2_aperturas', 'm2_clics', 'm2_or', 'm2_ctor'];
   var CON_CASO_NO_EXACTO_ = ['ivr_campanias', 'imp_prog'];
 
-  /* ⭐⭐ CONTROL POSITIVO: `imp_total` tiene `V-73`/`V-79`/`X-10` exactos. Si el censo no lo
-   * encuentra entre los `_revisar` **y tampoco entre los ya levantados**, algo no cierra. */
+  /* ⛔⛔ **EL LÍMITE DE ESTE INSTRUMENTO, y va ARRIBA de sus tres listas porque sin él la lista 1
+   * se lee como «ninguno tiene caso» y eso NO es lo que mide.**
+   *
+   * Apps Script **no puede leer los CSV del repo**, así que las dos listas de arriba son una
+   * **transcripción fechada** del cruce hecho en disco el 04/09 — **no una lectura de la fuente**.
+   * ⇒ **Un marcador con caso `exacto` que no esté en esa transcripción cae en la lista 3**, y la
+   * lista 3 dice *«sin caso»* cuando lo correcto sería *«no lo sé»*.
+   *
+   * ⭐ **El cruce completo se hace en disco** —contra los cuatro `docs/casos_validacion_*.csv`,
+   * por la columna `token_propuesto`— y **ése manda sobre este log**. */
   var nombres = rev.map(function (x) { return x.marcador; });
   Logger.log('');
+  Logger.log('  ⛔ LÍMITE: las listas 1 y 2 salen de una transcripción FECHADA del 04/09, no de');
+  Logger.log('     los CSV — Apps Script no los puede leer. **La lista 3 significa «no está en');
+  Logger.log('     esa transcripción», no «no tiene caso».** El cruce que manda se hace en disco.');
+  Logger.log('');
   Logger.log('  ══ control positivo ══');
-  Logger.log('  `imp_total` con `_revisar`: ' + (nombres.indexOf('imp_total') !== -1 ? 'SÍ' : 'no (ya levantado)'));
+  /* ⚠ **Este control se volvió inerte el 04/09 y hay que decirlo:** `imp_total` era el testigo, y
+   * el mismo cambio que este censo vino a verificar **le sacó el `_revisar`**. ⇒ Ahora responde
+   * «no» y no discrimina nada. **Es el instrumento que depende de lo que el cambio modifica**
+   * (`CLAUDE.md` §4), y por eso se agrega un segundo testigo que el cambio NO tocó. */
+  Logger.log('  `imp_total` con `_revisar`: ' + (nombres.indexOf('imp_total') !== -1 ? 'SÍ' : 'no (ya levantado)') +
+    '  ⚠ testigo GASTADO: el cambio del 04/09 se lo quitó, así que ya no discrimina');
+  Logger.log('  `imp_prog` con `_revisar` (testigo NUEVO, que el cambio no tocó): ' +
+    (nombres.indexOf('imp_prog') !== -1 ? 'SÍ ✅' : '⛔ NO — el lector falla, no se cita nada de abajo'));
+  if (nombres.indexOf('imp_prog') === -1) {
+    Logger.log('  ⛔⛔ ABORTA: el testigo no aparece.');
+    return { ok: false, motivo: 'control positivo' };
+  }
 
   var l1 = [], l2 = [], l3 = [];
   rev.forEach(function (x) {

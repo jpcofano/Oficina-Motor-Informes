@@ -17187,3 +17187,28 @@ de la validación** y nada avisó. El cruce va en **una sola dirección** — í
 con su condición de invalidación escrita como **evento**: que el equipo deje de adaptar las campañas.
 
 Banco `probar-cambios-0409.js`. **92 bancos en verde.**
+
+## 2026-09-04 · Los 14 cambios aplicados, y el censo sobre la hoja viva
+
+✅ **`aplicarCambios0409()` corrió: 14 celdas, backup `_BACKUP_MARCADORES_2026-09-04_1405_cambios0409`,
+y las 14 releídas de la hoja.**
+
+⭐⭐ **El censo vivo dio 90 contra los 32 del snapshot**, y el corte que importa no es ése: **10
+nacieron con la marca** (los `emin_*`), **26 ya la tenían**, y ⛔ **54 estaban LIMPIOS el 31/08**.
+⇒ Los siete `m2_*` del addendum eran **la punta**. **No fue un descuido: fue la aplicación masiva
+del 01/09 —76 puestos, 18 levantados— que no cruzó contra el CSV.**
+
+✅ **Y de esos 54, ninguno tiene caso `exacto`** — cruzado en disco con control positivo (169
+tokens). Nueve tienen casos de otro estado, y en los cuatro `u1_post_*` **el `_revisar` está bien
+puesto: `X-42` contradice.** ⇒ Los siete `m2_*` eran los únicos que pisaban una validación.
+
+⭐⭐ **Y una regla que sale del censo:** `porcentaje_sin_signo` contra `fraccion` **no se decide por
+si la caja trae `%`, sino por quién calculó el número.** Los siete `fraccion_revisar` —`enc_*_pct`
+y los `post_vtr*`— son `ULTIMO`/`FILA` sobre columnas que **la base ya calculó**, así que
+`fraccion` es correcto. **Es el caso opuesto a los `emin_*`, y equivocarse en cualquier dirección
+es 100×.**
+
+⚠ **El testigo del censo se gastó con el propio cambio:** usaba `imp_total`, y el cambio le sacó el
+`_revisar`. Agregado `imp_prog`, que el cambio no tocó, y ahora aborta si no aparece. ⛔ Y declarado
+en el log que sus listas 1 y 2 son una **transcripción fechada** —Apps Script no lee los CSV—, así
+que **su lista 3 significa «no está en la transcripción», no «no tiene caso»**.
