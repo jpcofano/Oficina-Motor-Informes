@@ -8811,7 +8811,11 @@ function censarIvrEnPlantillaJm() {
    * tiene que ser una AFIRMACIÓN, no algo que el lector cruce a ojo. */
   Logger.log('');
   Logger.log('── VEREDICTO ──');
-  var enc = (r && r.encontrados) || (r && r.por_token) || null;
+  /* ⚠ **El campo es `donde`, no `encontrados`.** El 04/09 este veredicto salió mudo —*«no pude
+   * leer el detalle»*— porque adiviné el nombre del campo en vez de mirar el retorno. ⭐ **Avisó
+   * bien, que es lo que se le había pedido**, pero un veredicto que no puede opinar deja el
+   * cruce a ojo del que lee — que es justo lo que el control positivo viene a evitar. */
+  var enc = (r && r.donde) || null;
   if (!enc) {
     Logger.log('  ⚠ no pude leer el detalle por token del retorno — mirar el volcado de arriba.');
     Logger.log('    ⭐ Igual vale la regla: si `gcba_cc_base` NO aparece ahí, el lector falla y');
@@ -8844,4 +8848,124 @@ function censarIvrEnPlantillaJm() {
   Logger.log('    la plantilla el 16/08, y `HANDOFF_CODE` decía que sumó cuatro tokens el 29/08.');
   Logger.log('    **Este log manda sobre los dos**: es la plantilla, no un documento.');
   return r;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04` — **`listarCompartidosSinFila()`: QUIÉNES son los compartidos sin fila, y
+ * cuáles se CONGELAN por la regla del usuario.**
+ *
+ * ⛔ **Existe porque el número circulaba sin la lista.** `PLAN.md` dice **56** (44 de ellos
+ * `camp_`) y la fila de la cola dice **45** — ⚠ **dos números para lo mismo**, y ninguno de los
+ * dos venía con los nombres. **Un lote que no se puede enumerar no se puede repartir en trabajos.**
+ *
+ * ══ LA REGLA DEL USUARIO, 04/09/2026 ═══════════════════════════════════════════════════════
+ *
+ * ⭐ *«Todos los bench y todo lo que está en láminas escondidas se congela.»*
+ *
+ * ⛔ **Congelar NO es descartar**: el token sigue existiendo y la lámina también. Lo que se
+ * declara es que **no entran a la cola de cableado**, y por qué:
+ *   · **`*_bench_*`** — son **valores de referencia del equipo**, no medidas de la fuente. Cablear
+ *     un benchmark contra una base es inventarle un origen que no tiene.
+ *   · **láminas escondidas** — `tokensDeSlide_` devuelve `[]` para ellas, así que **el motor no
+ *     las pinta**. Cablear un token que nadie va a resolver es trabajo que no publica nada.
+ *
+ * ⚠ **Y la que NO se congela aunque lo parezca:** una lámina escondida en UNA plantilla y visible
+ * en la otra **sigue viva**, porque el token es compartido. Se reporta aparte.
+ *
+ * ⛔ SÓLO LECTURA.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function listarCompartidosSinFila() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('COMPARTIDOS SIN FILA — quiénes son y cuáles se congelan · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  var informes = leerInformes();
+  var porInforme = {};
+  ['jm', 'secco'].forEach(function (id) {
+    var inf = informes[id];
+    if (!inf || !inf.plantilla_id) { Logger.log('⛔ ABORTA: `' + id + '` sin `plantilla_id`.'); return; }
+    var pres = SlidesApp.openById(inf.plantilla_id);
+    porInforme[id] = { tokens: tokensPorSlide_(pres), escondidas: laminasEscondidas_(pres.getSlides()) };
+  });
+  if (!porInforme.jm || !porInforme.secco) return { ok: false, motivo: 'falta una plantilla' };
+
+  var conFila = {};
+  leerMarcadores_().forEach(function (m) {
+    var n = String(m.marcador || '').trim();
+    if (n) conFila[n] = true;
+  });
+
+  /* Compartido = está en las DOS plantillas. Sin fila = no tiene `MARCADORES`. */
+  var compartidos = Object.keys(porInforme.jm.tokens).filter(function (t) {
+    return porInforme.secco.tokens[t] && !conFila[t];
+  }).sort();
+
+  Logger.log('  tokens en `jm`: ' + Object.keys(porInforme.jm.tokens).length +
+    ' · en `secco`: ' + Object.keys(porInforme.secco.tokens).length +
+    ' · con fila: ' + Object.keys(conFila).length);
+  Logger.log('  ⭐ COMPARTIDOS SIN FILA: ' + compartidos.length);
+  Logger.log('  ⚠ `PLAN.md` decía **56** y la fila de la cola **45**. Este número manda: sale de');
+  Logger.log('     las dos plantillas vivas y del registro vivo, hoy.');
+  Logger.log('');
+
+  /* ⭐ Escondida EN LAS DOS: es la única forma de que ningún informe lo pinte. */
+  function soloEnEscondidas(t, id) {
+    var slides = porInforme[id].tokens[t] || [];
+    if (!slides.length) return false;
+    return slides.every(function (n) { return porInforme[id].escondidas[n] === true; });
+  }
+
+  var bench = [], ocultos = [], mixtos = [], vivos = [];
+  compartidos.forEach(function (t) {
+    var eJm = soloEnEscondidas(t, 'jm'), eSe = soloEnEscondidas(t, 'secco');
+    if (/_bench_|^bench_/.test(t)) bench.push(t);
+    else if (eJm && eSe) ocultos.push(t);
+    else if (eJm || eSe) mixtos.push(t + (eJm ? ' (escondido sólo en jm)' : ' (escondido sólo en secco)'));
+    else vivos.push(t);
+  });
+
+  function volcar(titulo, lista, nota) {
+    Logger.log('── ' + titulo + ': ' + lista.length);
+    if (!lista.length) { Logger.log('     (ninguno)'); return; }
+    if (nota) Logger.log('     ' + nota);
+    /* Agrupados por familia: un lote de 40 nombres sueltos no se puede repartir. */
+    var fam = {};
+    lista.forEach(function (t) {
+      var f = String(t).split('_').slice(0, 2).join('_');
+      if (!fam[f]) fam[f] = [];
+      fam[f].push(t);
+    });
+    Object.keys(fam).sort().forEach(function (f) {
+      Logger.log('     ' + (f + '                ').slice(0, 18) + fam[f].length + ' · ' + fam[f].join(', '));
+    });
+  }
+
+  Logger.log('══ SE CONGELAN (regla del usuario, 04/09) ══');
+  volcar('⛔ BENCH — valores de referencia del EQUIPO, no medidas de la fuente', bench,
+    'Cablear un benchmark contra una base es inventarle un origen que no tiene.');
+  Logger.log('');
+  volcar('⛔ SÓLO EN LÁMINAS ESCONDIDAS en las DOS plantillas', ocultos,
+    '`tokensDeSlide_` devuelve [] para ellas: el motor NO las pinta. Cablear no publicaría nada.');
+
+  Logger.log('');
+  Logger.log('══ NO se congelan ══');
+  volcar('⚠ MIXTOS — escondido en una plantilla y visible en la otra', mixtos,
+    'El token es COMPARTIDO: sigue vivo por el lado que lo pinta. Decisión aparte.');
+  Logger.log('');
+  volcar('⭐⭐ VIVOS — el lote real de cableado', vivos,
+    'Visibles en las dos. Cablear uno sirve a los DOS informes a la vez.');
+
+  Logger.log('');
+  Logger.log('── VEREDICTO ──');
+  Logger.log('  ' + compartidos.length + ' compartidos sin fila = ' + bench.length + ' bench + ' +
+    ocultos.length + ' escondidos + ' + mixtos.length + ' mixtos + ' + vivos.length + ' VIVOS');
+  Logger.log('  ⭐ El lote real es ' + vivos.length + ', no ' + compartidos.length + '.');
+  Logger.log('');
+  Logger.log('  ⚠ Lo que esto NO dice: de dónde sale cada uno. **«Sin fila» es una ausencia en el');
+  Logger.log('    registro, no una fuente identificada** — cablear cada uno sigue exigiendo decir');
+  Logger.log('    su base, su solapa y su universo (`R-15` addendum 1).');
+  return { ok: true, total: compartidos.length, bench: bench, ocultos: ocultos,
+    mixtos: mixtos, vivos: vivos };
 }

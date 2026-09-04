@@ -1300,3 +1300,68 @@ aparece.
 CSV**, así que sus listas 1 y 2 son una **transcripción fechada** del cruce en disco. ⇒ **su lista 3
 significa «no está en la transcripción», NO «no tiene caso»** — y sin esa línea el `0` de la lista 1
 se lee como un hallazgo.
+
+---
+
+## ✅ Ítem 11 · Los tres `gcba_ivr_*` **SÍ están** en la plantilla de `jm` — la hipótesis se cae (04/09/2026)
+
+**Corrido `censarIvrEnPlantillaJm()`, con control positivo en la misma corrida.**
+
+```
+gcba_ivr_llamados : lámina 3     gcba_ivr_atendidos: lámina 3
+gcba_ivr_at_pct   : lámina 3     gcba_cc_base      : lámina 3   ← control positivo ✅
+```
+
+⇒ ⛔ **La hipótesis (1) del `2026-08-31_2` —*«la plantilla de `L-032` no usa el token»*— queda
+DESCARTADA.** Los cuatro están en la misma lámina.
+
+⇒ ⭐ **El ítem 11 sigue siendo un CABLEADO, no `C-01`.** No hay que hablar con el equipo: el token
+existe y el `✅` de `cablearGcbaIvr()` **sí medía algo que se va a publicar**.
+
+⭐ **Y confirmado por el deck del 04/09**, que es evidencia independiente: `ivr_llamados` y
+`gcba_ivr_llamados` **ya publican distinto** (JM `-`, GCBA `170.473`).
+
+### ⚠ Cuál de los dos documentos quedó viejo
+
+`TOKENS.md` §178 registraba esa lámina como *«sin `gcba_ivr_*`»*, medido contra la plantilla el
+**16/08**. `HANDOFF_CODE` decía que **sumó cuatro tokens el 29/08**.
+
+⇒ ⛔ **`TOKENS.md` §178 está VIEJO; el handoff tenía razón.** ⭐ Y no es que estuviera mal: **era
+cierto el 16/08 y la plantilla cambió después** — evidencia fechada haciendo lo que hace la
+evidencia fechada.
+
+### ⚠ Y un defecto propio, del mismo log
+
+Mi veredicto salió **mudo**: *«no pude leer el detalle por token del retorno»*. **Adiviné el nombre
+del campo** —`encontrados`/`por_token`— cuando `censarTokensEnPlantilla` devuelve **`donde`**.
+⭐ **Avisó bien, que es lo que se le había pedido**, pero un veredicto que no puede opinar **deja el
+cruce a ojo del que lee**, que es justo lo que el control positivo viene a evitar. Corregido.
+
+---
+
+## ⛔ CONGELADO por decisión del usuario, 04/09/2026
+
+### 1 · Los Resúmenes Ejecutivos
+
+**Se congelan hasta validar con los equipos de dónde sale la información.** ⭐ **No es una pausa de
+prioridad: es que el dato no tiene origen declarado.** Cablear contra una fuente sin confirmar es
+exactamente cómo nace un número plausible — y un Resumen Ejecutivo es la lámina donde más caro sale.
+
+⚠ **El evento que lo destraba** —no una fecha—: **que los equipos confirmen el origen de cada
+número del Resumen.**
+
+### 2 · Los `*_bench_*` y todo lo que vive sólo en láminas escondidas
+
+**Salen de la cola de cableado.** Los dos motivos son distintos y conviene no mezclarlos:
+
+| qué | por qué |
+|---|---|
+| **`*_bench_*`** | son **valores de referencia del EQUIPO**, no medidas de la fuente. ⛔ **Cablear un benchmark contra una base es inventarle un origen que no tiene** |
+| **sólo en láminas escondidas** | `tokensDeSlide_` devuelve `[]` para ellas ⇒ **el motor no las pinta**. Cablear un token que nadie resuelve **no publica nada** |
+
+⛔ **Congelar NO es descartar:** el token sigue existiendo y la lámina también. Lo que se declara es
+que **no entran a la cola**.
+
+⚠ **Y el borde que hay que mirar, porque parece congelable y no lo es:** un token escondido en
+**una** plantilla y visible en **la otra** **sigue vivo** — es compartido, y el lado que lo pinta lo
+necesita. `listarCompartidosSinFila()` los reporta **aparte**, como `mixtos`.
