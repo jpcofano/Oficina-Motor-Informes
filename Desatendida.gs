@@ -654,10 +654,33 @@ function iniciarCorridaDesatendidaConLock_(informeId, periodoId, opciones) {
   var hechas = 0;
   if (!r.corte) {
     // Sin corte, la ejecución 1 hizo todo. `generarInforme` ya barrió y ya quitó el sello.
+    /* ⛔⛔ `2026-09-04` — **el retorno de `marcarSeccionPlan_` SE MIRA, igual que en la rama de
+     * abajo.** Acá se ignoraba y `hechas++` corría igual, así que una sección que **no se pudo
+     * marcar** se contaba como hecha y la corrida devolvía `terminada: true` **sin guardar
+     * estado y sin crear trigger**. ⇒ El plan se quedaba con una fila `pendiente` **para
+     * siempre**, y nadie se enteraba.
+     *
+     * ⭐ **Medido el 04/09 en `secco-20260904-153514`: 2 filas, 1 hecha, 1 pendiente, sin
+     * estado y sin trigger.** Exactamente esta forma.
+     *
+     * ⚠ **La rama del corte YA lo miraba** —`if (marcarSeccionPlan_(...)) hechas++;`— así que
+     * esto no inventa un comportamiento: **restaura la simetría que ya estaba del otro lado.** */
+    var noMarcadas = [];
     filas.forEach(function (f) {
-      marcarSeccionPlan_(cont.corrida_id, f.seccion_id, 'hecha', 1, f.asignaciones);
-      hechas++;
+      if (marcarSeccionPlan_(cont.corrida_id, f.seccion_id, 'hecha', 1, f.asignaciones)) hechas++;
+      else noMarcadas.push(f.seccion_id);
     });
+    /* ⛔ El invariante SIMÉTRICO del que ya existe abajo: **sin corte, todo tiene que quedar
+     * marcado.** Si algo no se marcó, la corrida NO se declara terminada — declararlo es lo que
+     * deja el trabajo huérfano. */
+    if (noMarcadas.length) {
+      Logger.log('⛔⛔ INVARIANTE ROTO: la corrida NO se cortó y ' + noMarcadas.length + ' sección(es)');
+      Logger.log('   no se pudieron marcar `hecha` en el plan: ' + noMarcadas.join(', '));
+      Logger.log('   NO se declara terminada. El deck conserva el sello y dice lo que es.');
+      Logger.log('   deck: ' + r.deck.url);
+      return { ok: false, motivo: 'invariante roto: sin corte y ' + noMarcadas.length +
+        ' sección(es) sin marcar — ' + noMarcadas.join(', '), deck: r.deck };
+    }
     Logger.log('La corrida entró en una sola ejecución. No hace falta reanudar nada.');
     return { ok: true, terminada: true, ejecuciones: 1, deck: r.deck };
   }
@@ -939,7 +962,20 @@ function diagCorridaEnCurso() {
     var hech = filas.filter(function (f) { return String(f.estado || '').trim() === 'hecha'; });
     Logger.log('     corrida ' + cid + ' · ' + filas.length + ' fila(s): ' +
       hech.length + ' hecha(s), ' + pend.length + ' pendiente(s)');
-    pend.forEach(function (f) { Logger.log('        pendiente: ' + (f.seccion || f.item || '?')); });
+    /* ⚠ **El campo es `seccion_id`.** El 04/09 este log imprimió `pendiente: ?` porque adiviné
+     * `seccion`/`item` — justo cuando saber CUÁL era el dato que faltaba. */
+    pend.forEach(function (f) {
+      Logger.log('        pendiente: ' + (f.seccion_id || f.seccion || f.item || '(sin nombre)'));
+    });
+    /* ⛔⛔ El invariante SIMÉTRICO, que este diagnóstico no tenía y era el caso real: **la
+     * corrida terminó —sin estado, sin trigger— y quedó trabajo pendiente.** */
+    if (!estado && !triggers.length && pend.length) {
+      Logger.log('     ⛔⛔ TERMINÓ INCOMPLETA: no hay estado ni trigger, y quedan ' + pend.length +
+        ' pendiente(s).');
+      Logger.log('        La corrida se declaró terminada dejando trabajo sin hacer y SIN forma');
+      Logger.log('        de retomarlo. Es el defecto de la rama sin corte que ignoraba el');
+      Logger.log('        retorno de `marcarSeccionPlan_` — arreglado el 04/09.');
+    }
     /* ⛔ El invariante que el mecanismo chequea entre ejecuciones, dicho también acá. */
     if (estado && estado.se_corto === true && !pend.length) {
       Logger.log('     ⛔⛔ INVARIANTE ROTO: cortó y NO queda nada pendiente. Las dos no pueden ser');

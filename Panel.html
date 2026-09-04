@@ -2418,7 +2418,15 @@ function sondearDesatendida(){
       /* ⭐ Terminó cuando no queda nada pendiente y ya no hay ejecución en curso. Los dos, y no
        * uno: `pendientes = 0` con `en_curso` todavía verdadero es la ventana entre el último
        * ítem y el cierre de la fila. */
-      if (d && d.ok && !d.en_curso && d.pendientes === 0){ finDesatendida(); return; }
+      /* ⛔⛔ `2026-09-04` — **el sondeo termina cuando NO HAY CORRIDA VIVA, tenga o no
+       * pendientes.** Pedía además `pendientes === 0`, y el 04/09 la corrida
+       * `secco-20260904-153514` terminó —sin estado y sin trigger— **con una sección
+       * pendiente**: la condición no se cumplía nunca y **el contador corrió 20 minutos**.
+       *
+       * ⭐ **El defecto de fondo no era mío** —la rama sin corte se declaraba terminada sin
+       * marcar— **pero mi sondeo lo convirtió en un cuelgue en vez de en un aviso.** ⚠ Un
+       * contador que sube para siempre no dice *«terminó incompleta»*: no dice nada. */
+      if (d && d.ok && !d.en_curso){ finDesatendida(); return; }
       if (S.estado === 'generando') pintar();
     })
     .withFailureHandler(function(){
@@ -2484,9 +2492,19 @@ function avanceDesatendidaHtml(){
 function vistaListoDesatendida(){
   var d = S.des;
   var inf = (S.informes || []).filter(function(x){ return x.informe_id === S.informeId; })[0];
-  var h = '<div class="alert alert-ok"><div class="alert-title">Listo.</div>' +
-    'La corrida terminó' + (d && d.ejecucion ? ' en ' + esc(String(d.ejecucion)) +
-    ' ejecución(es) de ' + esc(String(d.tope || '?')) : '') + '.</div>';
+  /* ⛔⛔ `2026-09-04` — **«terminó» y «terminó COMPLETA» son dos cosas, y la pantalla las
+   * distingue.** El 04/09 una corrida se declaró terminada dejando una sección pendiente; con un
+   * «Listo» verde encima, eso se lee como un deck completo. ⭐ **Un aviso que no distingue el
+   * final bueno del malo no es un aviso: es un adorno.** */
+  var incompleta = d && d.ok && d.pendientes > 0;
+  var h = incompleta
+    ? '<div class="alert alert-error"><div class="alert-title">Terminó INCOMPLETA.</div>' +
+      'La corrida ya no está en curso y <b>quedan ' + d.pendientes + ' sección(es) pendientes</b>. ' +
+      'El deck está generado pero <b>le falta contenido</b>, y conserva el sello «en proceso», que ' +
+      'es lo que corresponde. ⛔ No la des por buena: mirá la pestaña «Corrida» para ver cuáles.</div>'
+    : '<div class="alert alert-ok"><div class="alert-title">Listo.</div>' +
+      'La corrida terminó' + (d && d.ejecucion ? ' en ' + esc(String(d.ejecucion)) +
+      ' ejecución(es) de ' + esc(String(d.tope || '?')) : '') + '.</div>';
 
   if (!d || !d.ok){
     return h + '<div class="alert alert-error">No se pudo leer el estado de la corrida. ' +

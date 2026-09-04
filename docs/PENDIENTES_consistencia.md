@@ -1365,3 +1365,67 @@ que **no entran a la cola**.
 ⚠ **Y el borde que hay que mirar, porque parece congelable y no lo es:** un token escondido en
 **una** plantilla y visible en **la otra** **sigue vivo** — es compartido, y el lado que lo pinta lo
 necesita. `listarCompartidosSinFila()` los reporta **aparte**, como `mixtos`.
+
+---
+
+## ⛔⛔ P0 · Una corrida se declaró TERMINADA dejando trabajo sin hacer — y sin forma de retomarlo (04/09/2026)
+
+**Medido con `diagCorridaEnCurso()` sobre `secco-20260904-153514`:**
+
+```
+estado entre ejecuciones : NO HAY
+triggers de continuación : 0
+el plan                  : 2 filas — 1 hecha, 1 PENDIENTE
+```
+
+⇒ ⛔⛔ **Terminó, no hay nada corriendo, y queda una sección sin hacer.** Es el invariante
+`corte ⇒ pendientes ≥ 1` **en su forma simétrica**, que nadie estaba mirando: **«sin corte»
+⇒ pendientes = 0**.
+
+### La causa, y es una asimetría entre dos ramas de la misma función
+
+`arrancarCorridaDesatendida_` marca las secciones de dos maneras:
+
+| rama | qué hacía |
+|---|---|
+| **cortó** | ⭐ `if (marcarSeccionPlan_(...)) hechas++;` — **mira el retorno** |
+| ⛔ **NO cortó** | `marcarSeccionPlan_(...); hechas++;` — **lo ignora** |
+
+`marcarSeccionPlan_` devuelve **`false`** cuando no encuentra la fila. ⇒ En la rama sin corte, una
+sección que **no se pudo marcar** se contaba como hecha, la corrida devolvía **`terminada: true`**,
+**no guardaba estado y no creaba trigger** — y el plan se quedaba con su fila `pendiente` **para
+siempre**.
+
+⭐ **El arreglo no inventa comportamiento: restaura la simetría que ya estaba del otro lado**, más
+el invariante que faltaba. **Sin corte, todo tiene que quedar marcado**; si no, **no se declara
+terminada** y el deck conserva el sello, que es lo que corresponde.
+
+### ⚠ Lo que fue mío, y hay que separarlo
+
+⭐ **El defecto de fondo es PREEXISTENTE** — la desatendida ya venía así, y sólo se nota cuando
+`marcarSeccionPlan_` falla. **Mi cambio del 04/09 no lo causó.**
+
+⛔ **Pero mi sondeo lo convirtió en un CUELGUE en vez de en un aviso.** Pedía
+`!en_curso && pendientes === 0`, y acá `pendientes` era **1** ⇒ la condición **no se cumplía nunca**
+y el contador corrió **20 minutos**. ⚠ **Un contador que sube para siempre no dice «terminó
+incompleta»: no dice nada.**
+
+⇒ **Tres arreglos, y conviene tenerlos separados:**
+
+1. ⭐ **El bug real** — la rama sin corte mira el retorno y **no se declara terminada** si algo no
+   se marcó.
+2. **El sondeo** — termina cuando **no hay corrida viva**, tenga o no pendientes.
+3. ⭐⭐ **La vista final DISTINGUE los dos finales.** «Terminó» y «terminó **completa**» son dos
+   cosas: con pendientes ahora sale en rojo —*«Terminó INCOMPLETA … no la des por buena»*— en vez
+   de un «Listo» verde sobre un deck al que le falta contenido. **Un aviso que no distingue el
+   final bueno del malo no es un aviso: es un adorno.**
+
+### ⚠ Y un defecto de mi propio diagnóstico, del mismo log
+
+Imprimió **`pendiente: ?`** — **adiviné el nombre del campo** (`seccion`/`item`) cuando es
+**`seccion_id`**, justo cuando saber **cuál** era el dato que faltaba. ⭐ Es la segunda vez en el día
+que adivino un nombre de campo en vez de mirarlo (la otra fue `encontrados` por `donde`). Corregido,
+más el invariante simétrico que al diagnóstico también le faltaba.
+
+⛔ **Lo que sigue sin saberse: QUÉ sección quedó pendiente y por qué `marcarSeccionPlan_` no la
+encontró.** El diagnóstico corregido lo dice en la próxima corrida.
