@@ -8528,15 +8528,35 @@ function censarNoExclusivosEnRepetibles() {
       nums.forEach(function (n) {
         var id = laminaDeSlide[n];
         var sec = id ? seccionDeLamina[id] : '';
+        /* ⛔⛔ `2026-09-04`, decisión del usuario — **LA ESCONDIDA SE IGNORA.** Un token en dos
+         * láminas, una escondida, cuenta **sólo por la visible**. ⭐ Es coherente con congelar
+         * las escondidas: el motor **no las pinta**, así que lo que publiquen ahí no es un
+         * defecto — no hay nadie mirando esa caja. **Y achica el lote de golpe.** */
+        if (escondidas[n] === true) { ocultas++; return; }
         if (sec && repetibles[sec]) enRepetible.push((id || '?') + '/' + sec);
         else fuera.push(id || ('slide ' + n));
-        if (escondidas[n] === true) ocultas++;
       });
       if (!enRepetible.length) return;
       if (esExclusivo[token]) return;          // el motor ya lo desdobla: no es del censo
+      /* ⭐⭐ **CLASIFICAR, no contar** (ítem 35). Un token no exclusivo de una sección repetible
+       * **está BIEN** si TODAS sus láminas visibles se expanden y se pintan por ítem; **publica
+       * MAL** si alguna sobrevive a la etapa 3. Con la escondida ignorada quedan **DOS** formas
+       * de sobrevivir, y son las dos columnas: */
+      /* ⚠ **Lo que SÍ es medible desde la plantilla: la lámina sin ancla.** Sin `lamina_id`
+       * resuelto, `laminasDeSección_` la manda a `sinSlide` y **nunca entra al bloque modelo**.
+       *
+       * ⛔⛔ **Lo que NO es medible acá, y va declarado en vez de inventado:** una lámina puede
+       * tener su ancla, declarar la sección, **y aun así no expandirse** — por la guarda de
+       * **contigüidad**, por un corte de presupuesto, o porque no se la eligió en el panel.
+       * **Eso sólo lo dice el reporte de la corrida.** El caso testigo es `L-016`: tiene ancla,
+       * declara `campana`, y el deck del 03/09 duplicó `L-017`…`L-024` — **corrido un lugar**.
+       * ⇒ **`sano` acá significa «nada en la plantilla lo condena», no «publica bien».** */
+      var sinAncla = enRepetible.filter(function (x) { return x.split('/')[0] === '?'; });
+      var sano = !sinAncla.length && !fuera.length;
       hallazgos.push({
         token: token, slides: nums.length, en_repetible: enRepetible.length,
         fuera: fuera.length, escondidas: ocultas,
+        sin_ancla: sinAncla.length, sano: sano,
         laminas: enRepetible.concat(fuera.map(function (x) { return x + '/(no repetible)'; }))
       });
     });
@@ -8544,7 +8564,16 @@ function censarNoExclusivosEnRepetibles() {
     Logger.log('');
     Logger.log('  ── `' + informeId + '` · ' + slides.length + ' slides · ' +
       Object.keys(porSlide).length + ' tokens ──');
-    Logger.log('     ⛔ ' + hallazgos.length + ' token(s) NO exclusivos con al menos una lámina repetible:');
+    /* ⭐⭐ Ítem 35 — **CLASIFICAR, no contar.** El censo anterior devolvía 349 números todos
+     * iguales y **su veredicto se contradecía con su propio caveat**. Ahora reparte. */
+    var sanos = hallazgos.filter(function (h) { return h.sano; });
+    var sospechosos = hallazgos.filter(function (h) { return !h.sano; });
+    Logger.log('     ' + hallazgos.length + ' token(s) NO exclusivos con al menos una lámina repetible');
+    Logger.log('     ✅ SANOS (nada en la plantilla los condena): ' + sanos.length +
+      '   ⇒ salen de la lista');
+    Logger.log('     ⛔ SOSPECHOSOS (alguna lámina sin ancla o de sección no repetible): ' +
+      sospechosos.length + '   ⇒ el número accionable');
+    hallazgos = sospechosos;
     hallazgos.forEach(function (h) {
       Logger.log('        ' + (h.token + '                        ').slice(0, 25) +
         h.slides + ' lámina(s), ' + h.en_repetible + ' repetible(s)' +
@@ -8574,7 +8603,8 @@ function censarNoExclusivosEnRepetibles() {
   Logger.log('  ══ VEREDICTO ══');
   Logger.log('  ' + total.hallazgos + ' token(s) en ' + total.informes + ' plantilla(s), sobre ' +
     total.tokens + ' (token, plantilla) mirados.');
-  Logger.log('  ⛔ Cada uno publica UN SOLO VALOR en todos sus bloques y en sus escondidas.');
+  Logger.log('  ⛔ Cada uno **puede** publicar un solo valor — y sólo si alguna de sus láminas');
+  Logger.log('     SOBREVIVE a la etapa 3. ⭐ 349 era la EXPOSICIÓN de un camino, no su ejercicio.');
   Logger.log('');
   Logger.log('  ⚠ Lo que este censo NO dice:');
   Logger.log('     · Si el valor publicado es el correcto. Dice que hay UNO, no cuál.');
