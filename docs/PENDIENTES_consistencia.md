@@ -1014,3 +1014,70 @@ medir la plantilla del equipo **para un bug del motor**.
 y ninguno cae ahí. ⇒ **Queda como lo que es: una caja que espera un token que nadie cableó**, y
 **no tiene nada que ver con `emin_lista`**. Su vacío sin guiones es coherente: sin token, el motor
 no escribe nada.
+
+---
+
+## ⛔⛔ P0 · `2026-09-04_4` PARA en P3 — la rama `listo` NO se puede reusar, y la premisa que lo decía es mía (04/09/2026)
+
+**Parte 0 completa. ⛔ No se ejecutaron las Partes B ni C.**
+
+### La condición de parada se cumplió
+
+P3 pedía: *«qué campos usa la rama `listo`, cuáles puede darle `panel_estadoDesatendida()`, y
+cuáles faltarían. ⛔ Si falta alguno que la pantalla necesita, reportar y parar: el diseño cambia y
+no es una línea.»*
+
+| campo que usa `vistaListo()` | ¿lo tiene `panel_estadoDesatendida()`? |
+|---|---|
+| `deck` | ✅ **sí** — vía `panel_deckDeId_` |
+| `corrida_id` | ✅ sí |
+| `periodo` · `periodo_nivel` · `periodo_desde` · `periodo_hasta` | ⛔ **no** — sólo hay `periodo_id` |
+| ⛔⛔ **`conteos`** | ⛔ **NO, y no hay de dónde leerlo** |
+| `escondidas` · `cableados_sin_caja` · `secciones` · `tiempos_por_seccion` · los tres avisos | ⛔ no |
+
+⛔⛔ **`conteos` es el que decide.** Sale de `r.tokens.*` — **el objeto de retorno de
+`generarInforme`**, que sólo existe en la corrida **síncrona**. **No está en `CORRIDAS` ni en
+`PLAN_CORRIDA`**, así que no hay de dónde reconstruirlo sin inventar un campo.
+
+⚠ **Y el modo de falla es el peor de este repo, no un hueco visible:** `vistaListo` hace
+`var c = r.conteos || {}`. Con el estado desatendido eso **no rompe: renderiza CEROS**. La pantalla
+diría *«0 impresiones con valor, 0 filas en faltantes»* sobre un deck completo. ⭐ **Un número
+plausible y falso, exactamente donde el usuario mira para saber si la corrida salió bien.**
+
+### ⭐⭐ Y la premisa que se cae es MÍA
+
+El ítem 31 lo escribí yo, el 03/09, y decía:
+
+> *«el caso `terminada` cae en la rama `listo` **que ya existe** ⇒ ⭐⭐ **cero UI nueva** — es la
+> línea de al lado»* · *«`panel_estadoDesatendida()` ya devuelve lo que un progreso necesita ⇒
+> **cero backend nuevo**»*
+
+⛔ **La segunda mitad sigue siendo cierta para el AVANCE** —`hechas`, `pendientes`, `plan`,
+`ejecucion`, `tope` alcanzan de sobra—. ⛔⛔ **La primera es falsa para el FINAL**: la rama `listo`
+no muestra sólo el deck, muestra **el resumen de la corrida**, y ocho de sus campos no existen del
+lado desatendido.
+
+⭐ **Por qué me equivoqué, y es la lección:** miré `deckCard(r.deck, …)` —la primera línea de
+`vistaListo`— y **concluí sobre la función entera**. Es la misma figura que acabo de registrar
+ayer: *una afirmación sobre un camino exige el camino completo, no la primera función que se lee*.
+⚠ **Dos veces en dos días, y la segunda sobre mi propio diseño.**
+
+### Las dos salidas, sin elegir — es del usuario
+
+1. ⭐ **El final desatendido tiene su propia vista**, más chica: deck + qué se hizo, **sin los
+   conteos que no existen**. No inventa nada y **no publica ceros**.
+2. **`panel_estadoDesatendida()` gana los conteos**, lo que exige que la corrida los **persista**
+   al cerrar — eso es tocar el mecanismo desatendido, que el prompt declara fuera de alcance.
+
+⛔ **Lo que NO es una salida: caer en `listo` con `conteos` vacío.** Es publicar ceros donde va un
+resumen.
+
+### ⚠ Lo que sí quedó medido y no depende de esto
+
+- **Son CUATRO caminos, no tres** — el testigo los lista. El que faltaba es el botón desatendido de
+  «Detalles».
+- ⛔ **El que cortó el 03/09 es el camino 1**, `panel_generar`, **síncrono**.
+- **El ritmo:** tope **6** continuaciones, **60 s** entre ejecuciones ⇒ consultar el estado más
+  seguido que ~15 s no aporta nada.
+- `panel_generarSemanaEnCurso` y `panel_generarPeriodoPersonalizado` **crean períodos**, no
+  corridas — declarado para que el próximo censo no los cuente.
