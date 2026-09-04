@@ -17125,3 +17125,33 @@ repetible. ⇒ **349 es la exposición de un camino, no su ejercicio**, y el cen
 
 **Escrito:** `censarIvrEnPlantillaJm()` (P5, con control positivo `gcba_cc_base`). **Registro:**
 ítems 11, 23, 33 y 34 en `PLAN.md`; los siete `ivr_*` cerrados; el censo de 102 sin fila.
+
+## 2026-09-04 · `2026-09-04_2` — la traza de `emin_lista`: causa encontrada en el código
+
+**Parte 0, sólo lectura. No hizo falta el reporte de la corrida.**
+
+⛔⛔ **La causa es un bug propio, del 03/09.** `ctx.plantilla` se asigna dentro de
+`if (['FILA','FILA_TEXTO','GRUPO_TEXTO'].indexOf(nombreOp) !== -1)` (`Generador.gs:1695`) y
+**`LISTA_TEXTO` no está en esa lista**. La guarda interna `if (esPlantilla)` sí lo incluye —se la
+actualizó al crear la operación— pero **está anidada dentro del `if` que ya lo dejó afuera**. ⇒
+`opLISTA_TEXTO` devuelve `''` con `«FALTA:@plantilla_sin_resolver»`, el despachador lo baja a
+`sin_datos` y `textoFaltante_` pinta `-`. **Cierra con el deck exactamente.**
+
+⭐ **Es `CLAUDE.md` §2 aplicado a una operación en vez de a una columna:** entró a **dos** de los
+**tres** sitios que enumeran operaciones por nombre, y el tercero quedó atrás **sin fallar**.
+
+⭐ **P3 confirma por comparación:** `emin_encuentros` y `emin_lista` piden los datos con el **mismo
+`campoOverride` (`figura`)** —medido corriendo `primerCampoDePlantilla_`—, misma solapa y misma
+ventana, así que la única diferencia posible es `ctx.plantilla`. **P4** descarta el mapeo: los tres
+campos están mapeados, y un campo sin mapear produce `«?campo»`, no vacío.
+
+⚠ **P2:** el despachador **no lee `ambiguo`**; el estado sale sólo del valor vacío. Las dos salidas
+vacías de la operación bajan al mismo `sin_datos` y publican el mismo `-`. **La distinción
+sobrevive en la traza y muere en el deck.** Reportado, no arreglado.
+
+⛔ **No se arregló nada.** El arreglo es un nombre en una lista y lo decide el usuario.
+
+**Parte B:** escrito en el comentario de `pintarTokensFijosDeLamina_` que **sólo recibe
+sobrevivientes de la etapa 3**, con las tres formas de sobrevivir y con `camp_titulo` como el caso
+que la lectura predice. Era un efecto y ahora es una declaración. Comentario, sin cambio de
+comportamiento.

@@ -4549,6 +4549,39 @@ function acumularResolucion_(previa, nueva) {
  *
  * ⚠ Los contadores entran por `ctx` en vez de cerrarse sobre las variables de `generarInforme`:
  * así la función es llamable desde un banco sin montar media corrida.
+ *
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04` — **ESTA FUNCIÓN SÓLO RECIBE SOBREVIVIENTES DE LA ETAPA 3, y hasta hoy eso
+ * era un EFECTO y no una declaración.**
+ *
+ * **La etapa 3 gana por AGOTAMIENTO, no por precedencia declarada en ningún lado:** pinta por
+ * ítem con `slide.replaceAllText`, así que cuando la etapa 4 corre esos `{{token}}` **ya no
+ * existen en el deck** y `replaceAllText` no encuentra nada que reemplazar. No hay una regla que
+ * diga quién manda — **manda el que llegó primero**, y el comentario de la etapa 4 ya lo decía de
+ * costado: *«los de las slides emitidas ya no están: la pasada anterior los reemplazó»*.
+ *
+ * ⇒ ⭐ **Un token llega acá sólo si SOBREVIVIÓ a la etapa 3, y hay exactamente TRES formas:**
+ *
+ *   1. **Su lámina está ESCONDIDA** — `tokensDeSlide_` devuelve `[]`, así que la etapa 3 ni la
+ *      mira. Es el caso de `L-023`.
+ *   2. **Su lámina NO se expandió** — la sección no tuvo ítems, no se la eligió en el panel, se
+ *      cortó por presupuesto, o **la lámina no entró al bloque modelo**. Es el caso de `L-016`.
+ *   3. **Vive además en una lámina no repetible**, que nunca pasa por la etapa 3.
+ *
+ * ⛔⛔ **Por qué hace falta decirlo acá y no en otro lado:** quien lea esta función **no tiene cómo
+ * saber que sólo recibe sobrevivientes**, y sin esa lectura el censo de tokens no exclusivos se
+ * cita mal. **Ya pasó:** el censo devolvió **349** y su propio veredicto decía *«cada uno publica
+ * un solo valor»* — falso para todos los que la etapa 3 sí pinta. ⭐ **349 es la EXPOSICIÓN de
+ * este camino, no su ejercicio.**
+ *
+ * ⭐ **El caso que la lectura predice y acierta, y por eso sirve de control:** `camp_titulo` en
+ * `L-016`. Esa lámina no se expande ⇒ su token sobrevive a la etapa 3 ⇒ llega acá ⇒ como **no es
+ * exclusivo** (vive en 14 láminas del mismo universo), `donde = ctx.presentacion` y se pinta en
+ * **todo el deck** con el `ULTIMO` de la ventana entera. Eso es lo que publica una campaña
+ * plausible que no está en el deck del equipo.
+ *
+ * ⚠ **Esto es un comentario, no un cambio de comportamiento**: describe lo que la función ya hace.
+ * ══════════════════════════════════════════════════════════════════════════════════════════
  */
 function pintarTokensFijosDeLamina_(tokens, ctx) {
   tokens.forEach(function (token) {

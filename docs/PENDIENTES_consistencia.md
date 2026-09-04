@@ -892,3 +892,125 @@ no aparecen en `L-032`, pero **el censo calla por dos motivos distintos y no los
 token tiene fila»* y *«el token no está en la plantilla»* **se ven igual**. ⭐ Es exactamente la
 ambigüedad del ítem 34, **del otro lado del cruce** — y por eso hace falta `censarIvrEnPlantillaJm()`,
 que pregunta por la plantilla y no por el registro.
+
+---
+
+## ⛔⛔ P0 · `emin_lista` — **la causa está en el código y es mía**: `ctx.plantilla` nunca llega (04/09/2026)
+
+**No hizo falta el reporte de la corrida.** La respuesta a P1 —*«cuál de las dos guardas actuó»*—
+sale del despachador, y es **`«FALTA:@plantilla_sin_resolver»`**.
+
+### El bug, con su línea
+
+`Generador.gs` — el bloque que arma `ctx.plantilla`:
+
+```
+1695   if (['FILA', 'FILA_TEXTO', 'GRUPO_TEXTO'].indexOf(nombreOp) !== -1) {
+1696     ctx.separador = fila.separador;
+         …
+1719     if (esPlantilla) {
+1720       ctx.plantilla = resolverPlantillaTexto_(fila, solapa.solapa, datos.filas);
+1721     }
+1722   }
+```
+
+⛔⛔ **`LISTA_TEXTO` no está en esa lista.** La guarda interna `if (esPlantilla)` **sí** lo incluye
+—se la actualizó al crear la operación— pero **está anidada dentro de un `if` que ya lo dejó
+afuera**. ⇒ `emin_lista` llega a `opLISTA_TEXTO` **sin `ctx.plantilla`**, la operación devuelve
+`valor: ''` con `«FALTA:@plantilla_sin_resolver»`, el despachador lo baja a `sin_datos` y
+`textoFaltante_` pinta **`-`**. ✅ **Cierra con el deck, exactamente.**
+
+### ⛔ Es el error que este repo ya tiene escrito, aplicado a una OPERACIÓN
+
+`CLAUDE.md` §2 lo dice para una **columna**: *«entra al `SEED_*` y a UN consumidor, y los demás
+lectores quedan atrás SIN FALLAR»*. ⭐ **Acá fue igual con una operación nueva:** se agregó
+`LISTA_TEXTO` a `esPlantilla` **y no a la lista de arriba**, que es **el otro lector del mismo
+hecho**. ⚠ **Y el síntoma fue el descrito: no falló, publicó un `-`.**
+
+⭐ **La checklist que faltó, y es la misma:** al agregar una operación, greparla y mirar **todos**
+los sitios que enumeran operaciones por nombre. Hoy son **tres** —`OPERACIONES_`, `esPlantilla`, y
+esta lista literal— y **sólo dos se actualizaron**.
+
+⚠ **Y un detalle que salvó la mitad por casualidad, que conviene no leer como diseño:** `ctx.separador`
+se asigna **en ese mismo `if`**, así que `LISTA_TEXTO` tampoco lo recibe. **No rompió nada** porque
+`opLISTA_TEXTO` usa salto de línea cuando el separador viene vacío o `undefined`. ⛔ **Fue suerte,
+no previsión.**
+
+⛔ **NO se arregló** — el prompt es sólo lectura. El arreglo es **un nombre en una lista**, y lo
+decide el usuario.
+
+### ⭐ P3 · El desempate por comparación, que confirma el diagnóstico
+
+| campo | `emin_encuentros` | `emin_lista` |
+|---|---|---|
+| `base_id` / `solapa` | `reuniones` / `Agenda funcionarios` | **idénticos** |
+| `campo_logico` | `figura` | `{figura=Seguridad en tu barrio?barrio} {fecha:dd/MM}` |
+| `operacion` | `CONTEO` | **`LISTA_TEXTO`** |
+| `dimensiones` / `filtro` / `periodo_ref` | vacíos | **idénticos** |
+| ⭐ **`campoOverride`** | `figura` | ⭐ **`figura`** — medido corriendo `primerCampoDePlantilla_` |
+
+⇒ ⭐⭐ **Los dos piden los datos con el MISMO campo, sobre la misma solapa y la misma ventana.** El
+`campoOverride` era el candidato natural y **queda descartado por medición**: `camposDePlantilla_`
+sobre esa plantilla devuelve `["figura","barrio","fecha"]` y el primero es `figura`.
+
+⇒ **La única diferencia que puede producir 7 contra 0 es `ctx.plantilla`**, y es justamente la que
+no llega. **La comparación y el código dicen lo mismo.**
+
+### ✅ P4 · Los tres campos están mapeados — no es eso
+
+`figura` → **B**, `barrio` → **C**, `fecha` → **D**, los tres sobre `reuniones / Agenda funcionarios`.
+⭐ Y aunque faltara alguno **no sería la causa**: un campo sin mapeo produce el hueco visible
+`«?campo»`, **no vacío**. Queda descartado y separado.
+
+### ⚠ P2 · La distinción sobrevive en la traza y muere en el deck
+
+**El despachador NO lee `ambiguo`.** El estado sale **sólo del valor vacío** (`Generador.gs`):
+
+```
+var vacio = (salida.valor === '' || salida.valor === null || salida.valor === undefined);
+base.estado = vacio ? (huboRechazos ? 'REVISAR' : 'sin_datos') : 'ok';
+```
+
+⇒ Las **dos** salidas vacías de `opLISTA_TEXTO` —`plantilla_sin_resolver` y `lista_sin_filas`—
+bajan al **mismo** `sin_datos` y publican el **mismo** `-`. ⭐ **La lámina dice «no hubo
+encuentros» para un universo vacío y también para una plantilla sin resolver**, que son dos
+trabajos opuestos.
+
+⚠ **`ambiguo` se lee entre operaciones** —`opFILA_TEXTO` mira el de `opFILA`— y en `Union.gs`, pero
+**el despachador no lo mira nunca**. ⛔ **Reportado, no arreglado:** qué se publica lo decide el
+usuario.
+
+---
+
+## ⭐⭐ Una afirmación de IMPOSIBILIDAD exige el camino completo (04/09/2026)
+
+**La refutación de P1, entera y con sus dos mitades:**
+
+| | |
+|---|---|
+| ✅ **demostrado** | la guarda de vacío corre en `Generador.gs:148`, **once líneas antes** del envoltorio `_revisar` (159) ⇒ un valor vacío devuelve `''`, **nunca `--`** |
+| ⛔ **falso** | *«un guión solo es imposible por construcción»*. `textoFaltante_:1935` devuelve **`-` para `sin_datos`** y `---` para `error`/`REVISAR` |
+
+⭐⭐ **El motivo, y es la forma general:** `formatearValorMarcador_` **sólo corre cuando
+`estado === 'ok'`**. Todo lo demás lo pinta `textoFaltante_` — **otra función, y ningún comentario
+las conecta**. Una afirmación *«X es imposible»* mirando sólo la función donde X **se formatea**
+deja afuera todos los caminos donde X **se escribe por otro motivo**.
+
+⇒ **Antes de escribir «imposible por construcción», enumerar los caminos que llegan al mismo
+lugar.** Si no se pueden enumerar, la afirmación correcta es *«esta función no lo produce»*, que es
+más débil y verdadera. ⚠ Es `CLAUDE.md` §4 —*la función que estás leyendo no es el camino
+completo*— **aplicada a una afirmación negativa**, que es donde más engaña: una negación se cita
+como cierre, y cierra la búsqueda.
+
+⭐ **Y el costo real fue bajo por una sola razón:** la afirmación se estaba **escribiendo**, no
+usando. Si hubiera entrado a `PENDIENTES` como hecho, la hipótesis de la caja habría mandado a
+medir la plantilla del equipo **para un bug del motor**.
+
+---
+
+## ✅ La caja «Alcance» sale de la lista de sospechas del ítem 34 (04/09/2026)
+
+**No tiene token.** Ninguno de los diez `emin_*` — `diagTokensEmin()` los ubicó a todos en slide 14
+y ninguno cae ahí. ⇒ **Queda como lo que es: una caja que espera un token que nadie cableó**, y
+**no tiene nada que ver con `emin_lista`**. Su vacío sin guiones es coherente: sin token, el motor
+no escribe nada.
