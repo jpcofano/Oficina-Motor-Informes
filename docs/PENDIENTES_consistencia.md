@@ -673,3 +673,62 @@ vie→vie ya se puede expresar hoy con un período personalizado. Ministros NO e
 
 ⚠ Lo que **sí** queda para el ítem 19 es el **botón**: hoy hay que armar el período a mano en el
 paso 1. Eso es comodidad, no bloqueo.
+
+---
+
+## ✅ Ítem 30 CERRADO — los dos bancos dados vuelta con la exigencia MAYOR (03/09/2026)
+
+**⭐⭐ Los 91 bancos en verde, por primera vez en cuatro días.**
+
+Los dos rojos **decían la verdad**: el `2026-08-30_2` movió el corte de ámbito **del NOMBRE de la
+campaña al `Id cuentas`** y nadie los dio vuelta. ⛔ **No se aflojaron: se les subió la exigencia.**
+
+| antes (constante de una lectura anterior) | ahora (identidad, no caduca) |
+|---|---|
+| `gcba` sobre `looker\|DIGITAL` **es** `nombre_campaña!~=JM` | ⭐ **`jm` y `gcba` son COMPLEMENTARIOS** sobre el mismo campo |
+| `jm` sobre el desglose usa **dos columnas con `\|\|`** | ⭐ **`gcba` es el complemento exacto de `jm`** |
+| `gcba` es **el AND de las negaciones** (De Morgan) | ⚠ y ya **no necesita** De Morgan: con una columna la negación es directa |
+
+⭐⭐ **Por qué la nueva es más fuerte, y no sólo distinta:** la constante **sólo miraba `gcba`**. Un
+cambio que tocara `jm` y se olvidara de `gcba` —**que es exactamente cómo se rompe una
+partición**— **pasaba en verde**. La identidad los mira a los dos.
+
+⭐ **Y ganaron una identidad CRUZADA que ninguno tenía:** `looker` y el desglose usan **el mismo
+operador y el mismo valor** (`JDGAG`), así que **la única variable es la solapa**. Eso es lo que
+hace **atribuible** el cambio de fuente del 28/08: si las dos traen la misma información, `L-031`
+tiene que publicar el mismo número.
+
+⛔ **Más las negativas, sin las cuales volver atrás no rompería nada:** que no quede resto del corte
+por nombre (`des_campana_2/3`, `nombre_campaña`) en ninguno de los dos ámbitos.
+
+### ⚠ Y la guarda de mutación se pagó sola por tercera vez
+
+Al cambiar las afirmaciones, el control negativo del desglose informó **«la mutación NO matcheó»**
+—su patrón apuntaba al texto viejo—. ⭐ **Sin esa guarda habría corrido sobre el código intacto y
+dado verde sin probar nada.** Es `CLAUDE.md` §4 funcionando, no una anécdota.
+
+---
+
+## ⭐⭐ `emin_lista` no salió — y el deck dice que el token NO ES DEL MOTOR (03/09/2026)
+
+**La corrida del 03/09 cerró el control: `emin_encuentros` publicó `-7-`.** ✅
+
+⛔ **Pero la caja «Encuentros contempladas» trae `-`, con UN solo guión.** Y el sufijo `_revisar`
+envuelve el valor en **DOS** —`-7-`, `-893351-`, `-491344-`—.
+
+⇒ ⭐⭐ **Ese guión no lo puso el motor.** Es `C-75` en su forma pura: el `-` que tipea el equipo y
+lo que publica el motor **se ven parecido y no son lo mismo**.
+
+**La hipótesis, que es el modo de falla mudo:** `{{emin_lista}}` **no existe en la plantilla**. Un
+marcador cuyo token no está en ninguna lámina **no falla** — resuelve, no encuentra dónde pintarse,
+**no entra a `FALTANTES`**, y la caja queda con lo que el equipo haya tipeado.
+
+⭐ **Se mide con `diagTokensEmin()`** (`Auditoria.gs`, sólo lectura): cruza las diez filas de
+`MARCADORES` contra los tokens de la plantilla viva, **en los dos sentidos** —filas sin token y
+tokens sin fila, que es donde aparecería uno mal tipeado—. ⚠ **Con control positivo:**
+`emin_encuentros` **tiene** que aparecer, porque se lo vio publicado; si no, **aborta**.
+
+⚠ **Y un dato del mismo deck que conviene no perder:** la caja **«Alcance» está VACÍA, sin guiones**
+— o sea que su token tampoco es de los diez. Es coherente con lo que el usuario ya había dicho:
+`emin_alcance` **es** Impresiones (`-893351-`) y `emin_alcance_semanal` **es** Mails entregados
+(`-491344-`). **La caja «Alcance» espera un token que nadie cableó.**

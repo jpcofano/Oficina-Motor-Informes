@@ -792,6 +792,33 @@ La Parte E del 2.11 cambió `alinearSolapasLookerADinamico_`, se verificó contr
 (el número dio bien) y **no se re-corrieron los controles**; el de `C.2-3` quedó fallando un
 día entero, invisible, hasta que lo encontró el Paso 2.14 al correrlos por API.
 
+⭐⭐ **Cuando aparece un mecanismo para COMPENSAR el resultado de otro, la primera pregunta no es
+«cuánto compensar» sino «qué está mal en lo que estoy compensando».** (03/09/2026.) Un ajuste
+calibrado sobre una salida equivocada **es un rodeo**: parece un mecanismo, se puede medir, se puede
+verificar — y desaparece entero en cuanto se arregla la causa.
+
+- **El caso:** el corte de `reuniones / Agenda funcionarios` iba por `Fecha de envío`, y para que
+  trajera los encuentros de la semana hacía falta **desplazar la ventana −3 días**. Se midió el
+  desplazamiento, se diseñó dónde declararlo —dos columnas nuevas en `SOLAPAS`— y se lo mandó a
+  `R-20` con prompt propio. ⭐ **Nada de eso hacía falta: la ventana estaba cortada un día antes de
+  tiempo.** Corregida a **viernes a viernes** y cortando por `Fecha` (el encuentro), **el
+  desplazamiento entero desaparece.**
+- ⭐ **Por qué el rodeo es más caro que el arreglo, y no sólo más largo:** un desplazamiento son
+  **dos números que hay que elegir, mantener, y que pueden quedar viejos por separado**. El corte
+  correcto no tiene parámetros. **Un mecanismo con perillas siempre pierde contra uno sin perillas.**
+- ⛔ **Y la señal que lo delata, que es la parte accionable:** si para que el criterio funcione hay
+  que **calibrar** algo contra el resultado esperado, el criterio probablemente está mal. Acá la
+  señal fue medible: **el lead time NO era constante** —2, 3, 3, 3, 3, 4 y 5 días—, así que
+  **ningún** desplazamiento simétrico podía reproducir «los encuentros de la semana».
+- ⭐⭐ **Y el trabajo de medirlo NO se pierde, que es la otra mitad y hay que decirla:** el barrido
+  de las **25 combinaciones** es **lo que demostró que ninguna simetría podía funcionar**, y por eso
+  se buscó en otro lado. **Una medición que cierra una rama entera vale aunque la rama se abandone**
+  — lo que no vale es seguir calibrando después de que la medición dijo que no hay número bueno.
+- ⚠ **El corolario sobre el criterio viejo, y sale gratis al cambiarlo:** cortar por `Fecha de
+  envío` dejaba **12 filas sin esa fecha afuera EN SILENCIO**; por `Fecha` caen **0**. ⭐ **Un hueco
+  mudo en el criterio es una segunda razón para cambiarlo, independiente de si reproduce el
+  número esperado** — y no se descubre mirando el total, porque las 12 nunca estuvieron.
+
 **Un instrumento que mide un cambio no puede depender de lo que el cambio modifica.** Van
 **tres casos en dos días** y los tres se ven igual: el criterio se escribe mirando el estado de
 **hoy**, y el instrumento existe para medir el paso a **mañana**.

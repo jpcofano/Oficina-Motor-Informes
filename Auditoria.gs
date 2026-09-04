@@ -8582,3 +8582,195 @@ function censarNoExclusivosEnRepetibles() {
   Logger.log('     · Nada sobre los tokens que la etapa 3 SÍ pinta por ítem — ésos están bien.');
   return { ok: true, total: total.hallazgos, tokens: hallazgosGlobales.sort(), mirados: total.tokens };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-03` — **`diagTokensEmin()`: ¿dónde vive cada token de ministros?**
+ *
+ * ⛔⛔ **Nace de un dato del deck del 03/09 que hay que leer bien.** El sufijo `_revisar` envuelve
+ * el valor en **DOS guiones** —`-7-`, `-893351-`— y la caja «Encuentros contempladas» trae **UN
+ * solo `-`**. ⇒ **Ese guión NO lo puso el motor.** Es `C-75` en su forma pura: el `-` que tipea el
+ * equipo y lo que publica el motor **se ven parecido y no son lo mismo**.
+ *
+ * ⭐ **La hipótesis que esto mide, y es la del modo de falla mudo:** `{{emin_lista}}` **no existe en
+ * la plantilla**. Un marcador cuyo token no está en ninguna lámina **no falla** — resuelve, no
+ * encuentra dónde pintarse, **no entra a `FALTANTES`** y queda como una fila que nadie puede
+ * explicar (`CLAUDE.md` §4).
+ *
+ * ⚠ **Y el control positivo va incluido, porque sin él un cero no dice nada:** `emin_encuentros`
+ * **tiene** que aparecer — se lo vio publicado como `-7-` en el deck. Si el censo no lo encuentra,
+ * **aborta** en vez de informar que faltan todos.
+ *
+ * ⛔ SÓLO LECTURA.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function diagTokensEmin() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('TOKENS `emin_*` EN LA PLANTILLA DE `secco` · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  var inf = leerInformes()['secco'];
+  if (!inf || !inf.plantilla_id) { Logger.log('⛔ ABORTA: `secco` sin `plantilla_id`.'); return { ok: false }; }
+  var pres = SlidesApp.openById(inf.plantilla_id);
+  var porSlide = tokensPorSlide_(pres);
+  var escondidas = laminasEscondidas_(pres.getSlides());
+  var indice = indiceDeLaminasPorAncla_(pres);
+  var laminaDeSlide = {};
+  Object.keys(indice.porId || {}).forEach(function (id) { laminaDeSlide[indice.porId[id] + 1] = id; });
+
+  /* Las diez filas REALES, del registro — no una lista escrita a mano acá. */
+  var deRegistro = [];
+  leerMarcadores_().forEach(function (m) {
+    var n = String(m.marcador || '').trim();
+    if (n.indexOf('emin_') === 0) deRegistro.push(n);
+  });
+  Logger.log('  filas `emin_*` en MARCADORES: ' + deRegistro.length + ' — ' + deRegistro.sort().join(', '));
+  Logger.log('');
+
+  /* ⭐⭐ El control positivo primero: `emin_encuentros` se vio publicado en el deck. */
+  if (!porSlide['emin_encuentros']) {
+    Logger.log('⛔⛔ ABORTA: el censo NO encuentra `{{emin_encuentros}}`, que el deck del 03/09');
+    Logger.log('   publicó como `-7-`. El instrumento está mirando la plantilla equivocada o el');
+    Logger.log('   lector falla — NO se cita ningún resultado de abajo.');
+    return { ok: false, motivo: 'control positivo' };
+  }
+  Logger.log('  ✅ control positivo: `{{emin_encuentros}}` está en la plantilla.');
+  Logger.log('');
+
+  var sinToken = [];
+  deRegistro.forEach(function (t) {
+    var slides = porSlide[t] || [];
+    if (!slides.length) {
+      sinToken.push(t);
+      Logger.log('  ⛔ ' + (t + '                    ').slice(0, 21) + ' NO tiene `{{token}}` en NINGUNA lámina');
+      return;
+    }
+    Logger.log('  ✅ ' + (t + '                    ').slice(0, 21) + slides.map(function (n) {
+      return 'slide ' + n + ' (' + (laminaDeSlide[n] || 'sin ancla') + ')' +
+        (escondidas[n] === true ? ' ESCONDIDA' : '');
+    }).join(' · '));
+  });
+
+  /* ⭐ Al revés también: tokens `emin_*` en la plantilla SIN fila. Sin esta mitad, «no hay» y «no
+   * miré» se ven igual, y además es donde aparecería un token mal tipeado. */
+  var sinFila = Object.keys(porSlide).filter(function (t) {
+    return t.indexOf('emin_') === 0 && deRegistro.indexOf(t) === -1;
+  });
+  Logger.log('');
+  Logger.log('── tokens `emin_*` en la plantilla SIN fila en MARCADORES: ' + sinFila.length);
+  if (!sinFila.length) Logger.log('     (ninguno)');
+  sinFila.forEach(function (t) {
+    Logger.log('     ⛔ ' + t + ' → slide(s) ' + (porSlide[t] || []).join(', '));
+  });
+
+  Logger.log('');
+  Logger.log('── VEREDICTO ──');
+  if (!sinToken.length) {
+    Logger.log('  ✅ las ' + deRegistro.length + ' filas tienen su token en la plantilla.');
+  } else {
+    Logger.log('  ⛔⛔ ' + sinToken.length + ' fila(s) SIN token: ' + sinToken.join(', '));
+    Logger.log('     Ese es el modo de falla MUDO: resuelven, no encuentran dónde pintarse, y NO');
+    Logger.log('     entran a FALTANTES. La caja del deck queda con lo que el equipo haya tipeado.');
+    Logger.log('     ⭐ Se arregla escribiendo el `{{token}}` en la plantilla, no tocando MARCADORES.');
+  }
+  return { ok: true, sin_token: sinToken, sin_fila: sinFila };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-03` — **`diagBloqueCampana()`: las dos candidatas vivas del ítem 9.**
+ *
+ * La hipótesis del ancla **murió**: `verLaminas()` dio `filas_sin_ancla = 0`, así que `L-016` SÍ
+ * está en la plantilla. Quedan **dos**, y esta función mide **la primera**:
+ *
+ *   1. ⭐ **`seccion_id` en la hoja VIVA** — el snapshot del 31/08 dice `campana`, pero es un
+ *      snapshot y `LAMINAS` se escribió después. **Se mide acá.**
+ *   2. ⚠ **La guarda de CONTIGÜIDAD** — `duplicarBloquesRepetibles_` exige que las láminas modelo
+ *      sean **consecutivas**; si no, **no expande y lo reporta**. Esta función calcula la
+ *      contigüidad sobre la plantilla, pero **el veredicto real sale del reporte de la corrida**.
+ *
+ * ⛔ **Y lo que NO cambia según cuál gane, porque ya está cerrado:** `camp_titulo` sin ítem cae en
+ * `ULTIMO` sobre la ventana entera, así que **cualquier** lámina fuera del bloque modelo publica
+ * una campaña **plausible** en vez de un hueco. **Ése es el motivo del desdoble por ítem.**
+ *
+ * ⛔ SÓLO LECTURA.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function diagBloqueCampana() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('ÍTEM 9 — el bloque `secco / campana` · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  var reg = leerLaminas_();
+  if (!reg.ok) { Logger.log('⛔ ABORTA: ' + reg.motivo); return { ok: false }; }
+  var inf = leerInformes()['secco'];
+  if (!inf || !inf.plantilla_id) { Logger.log('⛔ ABORTA: `secco` sin `plantilla_id`.'); return { ok: false }; }
+  var pres = SlidesApp.openById(inf.plantilla_id);
+  var indice = indiceDeLaminasPorAncla_(pres);
+  var escondidas = laminasEscondidas_(pres.getSlides());
+
+  /* ⭐ CANDIDATA 1 — `seccion_id` tal como está HOY en la hoja, no en el snapshot. */
+  Logger.log('── CANDIDATA 1 · `seccion_id` en la hoja VIVA ──');
+  var deCampana = [], l016 = null;
+  reg.filas.forEach(function (f) {
+    var id = String(f.lamina_id || '').trim();
+    if (String(f.informe_id || '').trim() !== 'secco') return;
+    var sec = String(f.seccion_id || '').trim();
+    if (id === 'L-016') l016 = { seccion: sec, filtro: String(f.filtro || '').trim(), rol: String(f.rol || '').trim() };
+    if (sec !== 'campana') return;
+    deCampana.push({ id: id, idx: (id in indice.porId) ? indice.porId[id] : -1,
+      filtro: String(f.filtro || '').trim() });
+  });
+
+  if (!l016) {
+    Logger.log('  ⛔⛔ `L-016` NO tiene fila para `secco` en LAMINAS. Eso explicaría todo, y es');
+    Logger.log('     otra causa distinta de las dos que quedaban.');
+  } else {
+    Logger.log('  `L-016` → seccion_id=`' + l016.seccion + '` · filtro=`' + l016.filtro +
+      '` · rol=`' + l016.rol + '`');
+    if (l016.seccion !== 'campana') {
+      Logger.log('  ⛔⛔ CANDIDATA 1 GANA: `L-016` NO declara `campana` en la hoja viva, así que');
+      Logger.log('     `laminasDeSeccion_` no la toma como modelo y la sección expande sin ella.');
+      Logger.log('     ⚠ El snapshot del 31/08 decía `campana` — el registro se escribió después.');
+    } else {
+      Logger.log('  ✅ declara `campana`, igual que el snapshot ⇒ CANDIDATA 1 DESCARTADA.');
+    }
+  }
+
+  /* ⭐ CANDIDATA 2 — contigüidad del bloque sobre la plantilla. */
+  Logger.log('');
+  Logger.log('── CANDIDATA 2 · ¿el bloque modelo es CONTIGUO? ──');
+  deCampana.sort(function (a, b) { return a.idx - b.idx; });
+  Logger.log('  ' + deCampana.length + ' lámina(s) declaran `secco/campana`:');
+  deCampana.forEach(function (x) {
+    Logger.log('     ' + x.id + '  slide ' + (x.idx === -1 ? '(SIN ANCLA)' : x.idx + 1) +
+      (escondidas[x.idx + 1] === true ? '  ESCONDIDA' : '') +
+      (x.filtro ? '  filtro=`' + x.filtro + '`' : ''));
+  });
+  var conSlide = deCampana.filter(function (x) { return x.idx !== -1; });
+  var ordenados = conSlide.map(function (x) { return x.idx; });
+  var contiguo = ordenados.every(function (v, k) { return k === 0 || v === ordenados[k - 1] + 1; });
+  Logger.log('');
+  if (!conSlide.length) {
+    Logger.log('  ⛔ ninguna tiene ancla en la plantilla — la sección no tiene bloque.');
+  } else if (contiguo) {
+    Logger.log('  ✅ CONTIGUO (slides ' + (ordenados[0] + 1) + '…' + (ordenados[ordenados.length - 1] + 1) +
+      ') ⇒ CANDIDATA 2 DESCARTADA sobre la plantilla.');
+    Logger.log('  ⚠ Pero el veredicto REAL sale del reporte de la corrida: la contigüidad se');
+    Logger.log('    evalúa ahí, y un corte por presupuesto también deja la sección sin expandir.');
+  } else {
+    Logger.log('  ⛔⛔ NO ES CONTIGUO ⇒ CANDIDATA 2 GANA: `duplicarBloquesRepetibles_` no expande');
+    Logger.log('     un bloque con láminas salteadas — lo reporta y deja los modelos como están.');
+  }
+
+  Logger.log('');
+  Logger.log('── QUÉ MIRAR EN EL REPORTE DE LA PRÓXIMA CORRIDA ──');
+  Logger.log('  En el reporte de la sección `campana`, tres campos y en este orden:');
+  Logger.log('   1. `slides_modelo` / `laminas_modelo` — ¿está `L-016` en la lista?');
+  Logger.log('   2. `motivo` — si dice «no son consecutivas», gana la candidata 2.');
+  Logger.log('   3. `excluidos` — si `L-016` sale por `LAMINAS.filtro`, es una TERCERA causa.');
+  Logger.log('');
+  Logger.log('  ⛔ Y lo que NO cambia según cuál gane: `camp_titulo` sin ítem cae en ULTIMO sobre');
+  Logger.log('     la ventana entera, así que CUALQUIER lámina fuera del bloque publica una');
+  Logger.log('     campaña plausible en vez de un hueco. Ése es el motivo del desdoble por ítem.');
+  return { ok: true, l016: l016, de_campana: deCampana, contiguo: contiguo };
+}

@@ -104,9 +104,34 @@ console.log('1 · control positivo: las que YA estaban siguen traduciendo');
   af(gcbaMail.ok && /mail_remitente!=/.test(gcbaMail.condiciones),
     'digital|Directa Mail · ambito=gcba → ' + (gcbaMail.condiciones || gcbaMail.motivo));
 
+  /* ⭐⭐ `2026-09-03` — **DADA VUELTA con el motivo, y con la exigencia MÁS ALTA.**
+   *
+   * Decía `gcbaLooker.condiciones === 'nombre_campaña!~=JM'` y **se puso roja diciendo la verdad**:
+   * el `2026-08-30_2` movió el corte **del NOMBRE de la campaña al `Id cuentas`** —el corte por
+   * nombre perdía **5 de las 29** implementaciones JM; el nuevo pierde **1**—. La afirmación vieja
+   * era **una constante de una lectura anterior**, y ésas caducan cada vez que la fuente respira.
+   *
+   * ⭐⭐ **Lo que la reemplaza es una IDENTIDAD, que no caduca:** `jm` y `gcba` sobre la misma
+   * solapa tienen que ser **complementarios** — el mismo campo, la misma cadena, y uno la negación
+   * del otro. **Si mañana el corte pasa a una tercera columna, esta afirmación sigue valiendo**;
+   * lo que NO puede pasar es que los dos ámbitos dejen de partir el universo en dos.
+   *
+   * ⛔ **Y por eso es más fuerte que la que reemplaza:** la constante sólo miraba `gcba`. Un cambio
+   * que tocara `jm` y se olvidara de `gcba` —que es exactamente cómo se rompe una partición—
+   * **pasaba en verde**. */
+  const jmLooker = traducir(ctx, 'looker', 'DIGITAL', 'ambito=jm');
   const gcbaLooker = traducir(ctx, 'looker', 'DIGITAL', 'ambito=gcba');
-  af(gcbaLooker.ok && gcbaLooker.condiciones === 'nombre_campaña!~=JM',
-    'looker|DIGITAL · ambito=gcba → ' + (gcbaLooker.condiciones || gcbaLooker.motivo));
+  af(jmLooker.ok && gcbaLooker.ok, 'looker|DIGITAL resuelve los dos ámbitos',
+    (jmLooker.motivo || '') + (gcbaLooker.motivo || ''));
+  af(gcbaLooker.ok && gcbaLooker.condiciones === String(jmLooker.condiciones).replace('~=', '!~='),
+    '⭐⭐ jm y gcba son COMPLEMENTARIOS sobre el mismo campo — identidad, no constante: ' +
+      jmLooker.condiciones + '  ↔  ' + gcbaLooker.condiciones);
+  /* ⚠ La mitad que la identidad NO cubre: cierra igual sobre el campo equivocado. Se ancla al
+   * campo por su nombre, que es el dato que el `2026-08-30_2` eligió y documentó con conteos. */
+  af(/^ldig_id_cuenta/.test(String(jmLooker.condiciones)),
+    '⭐ y el campo es `ldig_id_cuenta` (Id cuentas), no el nombre de la campaña — `2026-08-30_2`');
+  af(!/nombre_campaña/.test(String(jmLooker.condiciones) + String(gcbaLooker.condiciones)),
+    '⛔ y NO queda ningún resto del corte por NOMBRE, que perdía 5 de 29 implementaciones JM');
 
   /* ⚠ Y una solapa que NO declara `ambito` tiene que seguir fallando. Es la mitad negativa del
    * control positivo: si todo resolviera, el traductor no estaría discriminando nada. */

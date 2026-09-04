@@ -73,12 +73,37 @@ console.log('\n═══ A · `ambito` traducido para el desglose, con la MISMA 
    * `~=JM`, igual que looker. Lo que cambia es sobre cuántas columnas se busca, y eso es una
    * propiedad del dato, no del criterio. */
   const operadores = (s) => (s.match(/!?~?=/g) || []).join(' ');
-  afirmar(/des_campana_2~=JM \|\| des_campana_3~=JM/.test(D.ambito.jm[DESGLOSE]),
-    '⭐⭐ `jm` busca en las DOS columnas con `||` — con una sola, un tercio de las filas cae mal');
-  afirmar(operadores(D.ambito.jm[LOOKER]) === '~=',
-    '⭐ y looker sigue con UNA columna: su `nombre_campaña` está poblado en las 620');
-  afirmar(/des_campana_2!~=JM && des_campana_3!~=JM/.test(D.ambito.gcba[DESGLOSE]),
-    '⭐⭐ y `gcba` es el AND de las negaciones — De Morgan: «ni en una ni en la otra», sin `||`');
+
+  /* ⭐⭐ `2026-09-03` — **LAS DOS AFIRMACIONES SE DAN VUELTA, con el motivo y subiendo la exigencia.**
+   *
+   * Decían que `jm` buscaba en **dos columnas de NOMBRE** con `||` y que `gcba` era el AND de las
+   * negaciones (De Morgan). **Las dos se pusieron rojas diciendo la verdad:** el `2026-08-30_2`
+   * movió el corte **del nombre al `Id cuentas`**, y con una sola columna De Morgan sobra.
+   *
+   * ⚠ **El párrafo de arriba queda como está a propósito**: describe por qué, *mientras el corte
+   * fue por nombre*, hacían falta dos columnas —`des_campana_2` tenía 372 filas con JM y
+   * `des_campana_3` otras 248, disjuntas—. **Sigue siendo cierto sobre aquel criterio**, y es lo
+   * que explica por qué el corte por nombre era frágil.
+   *
+   * ⭐⭐ **Lo que las reemplaza es la misma IDENTIDAD que en `looker`: complementariedad.** No
+   * caduca — si mañana el corte se muda a una cuarta columna, la afirmación sigue valiendo. Lo que
+   * no puede pasar es que los dos ámbitos dejen de partir el universo en dos. */
+  afirmar(/^des_id_cuenta~=/.test(D.ambito.jm[DESGLOSE]),
+    '⭐ `jm` corta por `des_id_cuenta`, no por el nombre: ' + D.ambito.jm[DESGLOSE]);
+  afirmar(D.ambito.gcba[DESGLOSE] === D.ambito.jm[DESGLOSE].replace('~=', '!~='),
+    '⭐⭐ y `gcba` es su COMPLEMENTO exacto — identidad, no constante: ' + D.ambito.gcba[DESGLOSE]);
+  /* ⛔ La negativa que hace falta al lado: sin ella, volver al corte por nombre no rompería nada. */
+  afirmar(!/des_campana_[23]/.test(D.ambito.jm[DESGLOSE] + D.ambito.gcba[DESGLOSE]),
+    '⛔ y NO queda resto del corte por NOMBRE — aquél perdía 5 de las 29 implementaciones JM');
+  afirmar(!/\|\|/.test(D.ambito.gcba[DESGLOSE]),
+    '⚠ `gcba` ya no necesita De Morgan: con UNA columna la negación es directa');
+  /* ⭐⭐ Y la identidad CRUZADA, que es la que ninguna de las dos tenía: el desglose y looker
+   * cortan por el MISMO valor. Eso es lo que hace atribuible el cambio de fuente del 28/08 —
+   * si las dos solapas traen la misma información, `L-031` tiene que publicar el mismo número. */
+  afirmar(operadores(D.ambito.jm[LOOKER]) === operadores(D.ambito.jm[DESGLOSE]),
+    '⭐⭐ looker y el desglose usan el MISMO operador ⇒ la única variable es la solapa');
+  afirmar(String(D.ambito.jm[LOOKER]).split('~=')[1] === String(D.ambito.jm[DESGLOSE]).split('~=')[1],
+    '⭐⭐ y el MISMO valor buscado (' + String(D.ambito.jm[LOOKER]).split('~=')[1] + ') — sólo cambia la columna');
 
   /* ⛔ La otra columna existe y NO se usó. Va como afirmación para que el día que alguien la
    * cambie a `des_ambito` se ponga rojo: en las filas de Coghlan dice GCBA mientras el nombre de
@@ -138,9 +163,15 @@ console.log('\n═══ D · control negativo — sin la entrada, A cae ══�
   /* ⚠ Fragmento de UNA línea: el final de línea es del archivo (CRLF) y no de quien escribe la
    * prueba. El primer intento llevaba un salto adentro del patrón y **la guarda de mutación lo
    * cazó** — es `CLAUDE.md` §4 funcionando, no una anécdota. */
+  /* ⭐⭐ `2026-09-03` — **el patrón se actualiza porque la guarda de mutación lo cazó, otra vez.**
+   * Apuntaba a `des_campana_2~=JM ||`, que era el corte por NOMBRE; el `2026-08-30_2` lo movió a
+   * `des_id_cuenta`. **La guarda hizo exactamente su trabajo**: informó *«la mutación NO matcheó»*
+   * en vez de correr sobre el código intacto y **dar verde sin probar nada**.
+   * ⚠ Es la tercera vez que este mecanismo se paga solo, y la lección es la de siempre: **un
+   * control negativo tiene que verificar que la mutación ocurrió.** */
   const D = dimensiones((t) => t.replace(
-    "'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_campana_2~=JM ||",
-    "'zzz_solapa_inexistente': 'des_campana_2~=JM ||"));
+    "'digital|CAMPAÑAS_DESGLOCE_DIGITAL': 'des_id_cuenta~=JDGAG'",
+    "'zzz_solapa_inexistente': 'des_id_cuenta~=JDGAG'"));
   if (!D) {
     fallas++;
     console.log('  ❌ ⛔ la mutación NO matcheó — el negativo habría corrido sobre el código intacto');
