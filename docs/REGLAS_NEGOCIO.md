@@ -2553,9 +2553,30 @@ el deck.
 ⇒ ⚠ **Es correcto dada esta regla, y se ve raro sin ella.** Ése es exactamente el motivo de
 escribirla.
 
-### ⛔ Lo que esta regla NO explica, y sigue abierto
+### ⭐⭐ La diferencia con el equipo está EXPLICADA — y una sola explicación cierra los tres números
 
-**La diferencia con el equipo: motor 872.827, equipo 1.271.754.** ⭐ Es **la misma métrica, de la
-misma plataforma, en la misma semana** ⇒ sin el mapeo como explicación, lo que queda es que
-**`meta_alcance` no dice lo que el equipo publica para Meta**, y **eso es de la fuente, no del
-motor**. Ver `C-93`.
+**Decisión del usuario, 05/09/2026:**
+
+> **Se deja el `872.827`. El equipo no actualiza la base**: su alcance sale de la plataforma.
+
+⇒ ⭐ **El motor lee bien, y la diferencia es esperada.** No es un defecto ni una contradicción: **las
+dos partes miran fuentes distintas**, y todo lo derivado hereda la que le tocó.
+
+| | alcance | `camp_frecuencia` | `camp_meta_frecuencia` |
+|---|---|---|---|
+| **motor** (la base) | **872.827** | 28.540.835 / 872.827 = **32,7** | 2.080.014 / 872.827 = **2,38** |
+| **equipo** (la plataforma) | **1.271.754** | 28.540.942 / 1.271.754 = **22,4** | 2.080.014 / 1.271.754 = **1,64** |
+
+⭐⭐ **No hay tres discrepancias: hay una sola fuente distinta.** La base es internamente consistente
+y el deck del equipo también — **cada uno con su alcance**. ⇒ Ni `camp_frecuencia` ni
+`camp_meta_frecuencia` tienen defecto propio: **un derivado no tiene vida propia respecto de sus
+insumos.** Ver `C-94`, `C-95` y `C-96`.
+
+⚠ **Lo único que queda por confirmar** es que la columna `meta_frecuencia` de la base efectivamente
+dice `2,38`. La aritmética ya cierra, así que es una **confirmación de lectura y no un desempate**
+— pero **dar por buena una aritmética que cierra sin verificar la columna es exactamente cómo se
+llegó dos veces a una conclusión falsa sobre este mismo marcador**.
+
+⛔ **Esta entrada supersede** a la versión de `R-34` del mismo día que declaraba la diferencia *«sin
+causa»*, y a `C-93`, que la registró como `contradice`. **La regla no cambió; cambió lo que se sabe
+de la diferencia.**

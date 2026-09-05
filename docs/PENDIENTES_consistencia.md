@@ -2322,3 +2322,51 @@ hay algo más. **Las dos posibilidades exigen medición y ninguna se puede asumi
 las 1031 filas»*— y sobre eso **no afirmo nada**: no vi la medición ni el veredicto que invalida.
 ⭐ Lo que sí queda: **la Parte 0 original y la 0.3 del `_9` caen**, y eso lo aplico porque el
 Addendum 2 lo declara, **no porque lo haya verificado**.
+
+---
+
+## 05/09/2026 · ⛔⛔ Un prompt tuvo DOS versiones con el mismo nombre, y ejecuté la primera
+
+**`docs/Prompts/2026-09-04_9_ADDENDUM_2_la_decision_no_estaba_escrita.md` llegó dos veces el mismo
+día, con el mismo título y la misma fecha, y con §3 y Parte B distintas.**
+
+| | versión ejecutada (commit `7bc5336`) | versión vigente |
+|---|---|---|
+| §3 | *«la diferencia sigue **abierta**, y ahora está sola»* | *«la diferencia está **explicada** — decisión del usuario»* |
+| `camp_alcance` | `contradice` | ⭐ **no `contradice`** — el motor lee bien |
+| `camp_meta_frecuencia` | caso propio, **falta medir** | derivado, **sin defecto propio** |
+| lo que queda por medir | *«qué dice `meta_frecuencia`»* | *«**confirmar** que dice `2,38`»* |
+
+⇒ **Lo producido por la primera no se borra: se supersede.** `R-34` ganó su sección de explicación y
+`C-93` quedó superseded por `C-94`. **Los dos siguen en el repo como evidencia fechada de la lectura
+anterior**, que es la forma que `D-58` prescribe.
+
+⭐⭐ **Lo accionable, y es nuevo: un archivo de prompt no es una versión.** El nombre no cambió, la
+fecha no cambió y el contenido sí. **Nada en el repo lo habría señalado** — si no hubiera tenido la
+versión anterior abierta, habría reescrito el archivo encima y la divergencia desaparecía sin dejar
+rastro. ⇒ **Antes de sobrescribir un prompt que ya se ejecutó, diffear contra el que está en disco**,
+y si difiere, **declararlo en el propio archivo** en vez de reemplazarlo en silencio. Es la misma
+familia que *«un documento es evidencia de lo que era cierto cuando se escribió»*, con el agravante
+de que acá **las dos versiones se llaman igual**.
+
+⚠ **Y el corolario sobre mi reporte anterior:** cerré el `_9` diciendo *«lo único que queda por medir
+es qué dice `meta_frecuencia`, y son dos trabajos distintos»*. **Con la versión vigente eso ya no es
+un desempate**: la aritmética cierra y lo que queda es una **confirmación de lectura**. Dije la
+verdad sobre el documento que tenía; **no sobre el que el usuario había escrito.**
+
+---
+
+## 05/09/2026 · ⚠ `deriva` está sobrecargado en los CSV de validación
+
+**Aparece en dos columnas distintas con dos significados distintos**, y ninguno lo declara:
+
+- como valor de la columna **`base`** —`V-59`, `V-60`, `V-73`, `V-79`, `X-10`, `X-11`— significa
+  **«derivado de otros marcadores, no necesita fuente propia»**, y esos casos van con estado `exacto`;
+- como **`estado`** —`X-13`, `X-14`, `X-15`— significa **«el número derivó, hay residuo pendiente»**.
+
+⇒ **Por eso `C-95` y `C-96` NO usan `deriva` aunque sean derivados**: en la columna `estado` se
+leería como *«tienen residuo»*, que es lo contrario de lo que dicen. Van como `cerrado`.
+
+⭐ **No se corrige acá y es a propósito:** los casos viejos son evidencia fechada y renombrar un
+estado en cuatro CSV movería el significado de filas que nadie está mirando. **Se registra para que
+el próximo que elija un estado sepa que esa palabra ya está tomada dos veces.**
