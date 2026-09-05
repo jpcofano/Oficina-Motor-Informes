@@ -2465,3 +2465,51 @@ conteos mal, y **los dos correctores del prompt también estaban mal**. Un núme
 una instrucción **se lee como verificado por el solo hecho de venir con una tarea al lado** — es la
 misma familia que *«un dato medido una vez y citado tres veces envejece igual»*, aplicada a un
 número que **nunca se midió**.
+
+---
+
+## 05/09/2026 · Parte D del `2026-09-05_1` — **dos de los cuatro ya estaban, y el cero se registra**
+
+⭐ El prompt pedía grepear cada uno primero. **Dos dieron cero ediciones**, y eso va escrito: *«no
+hay»* y *«no miré»* se ven igual cuando nadie declara el cero.
+
+### 1 · `camp_env4_fecha}}` sin llaves de apertura — ⭐ **ya registrado, cero ediciones**
+
+Está en `PENDIENTES` **dos veces** como el caso de referencia de esa familia —*«un detector que
+busca `{{` no ve un token al que le faltan las llaves de apertura»*— y tiene **instrumento propio**:
+`censarTokensSinLlaves()` (ítem 23, 03/09), sólo lectura, sobre las dos plantillas, **que declara su
+propio límite** —un token inventado sin llaves tampoco se ve—. ⚠ **Sigue sin correrse.**
+
+⇒ Lo único que el `_6` agrega es que apareció en **las dos** corridas del 04/09, lo que **confirma
+que es de la plantilla** y no de una corrida. Eso ya estaba dicho; no se duplica.
+
+### 2 · `L-039`, `L-048` y `L-050` con tokens crudos — ⛔ **cero, y está MÁS cerrado de lo que el prompt supone**
+
+El prompt lo trae como hallazgo. **`CIERRE_POR_LAMINA.md` lo tiene desde el 22/08 como decisión del
+usuario:** las tres salieron **fuera de alcance**, y el censo las mide **enteras** —`L-039` 23 de 23,
+`L-050` 21 de 21—, no «del orden de 25 y 15».
+
+⚠ **Y el dato del equipo en `L-048` —396 respuestas moderadas, tasa 0,26 %— no reabre nada**: que la
+fuente exista no contradice una decisión de alcance. ⛔ Lo que sí está escrito y hay que respetar es
+que **`L-050` no se puede mostrar sin cablear sus 21 tokens** — *«el problema vuelve ENTERO, no a
+medias»*.
+
+### 3 · El remitente sin normalizar — ⭐ **NO estaba en `PENDIENTES`, se registra**
+
+Visto de nuevo el **04/09**: el motor publica `jorge.macri@buenosaires.gob.ar` en la primera fila y
+`/////` en las otras tres; **el equipo publica `JM` en la primera y deja vacías las demás.**
+
+⛔ **Sigue abierto y la decisión es del usuario** — no se toca. ⚠ Son **dos** diferencias y conviene
+no mezclarlas: **el formato** del remitente (la dirección entera contra la sigla) y **la ausencia**
+en las otras tres, donde el motor pone `/////` —*sin cablear*— y el equipo deja vacío. **La segunda
+no es de formato**, y arreglar la primera no la toca.
+
+### 4 · La campaña destacada cambia según la hora — ⭐ **a la nota del ítem 9, no acá**
+
+Va a `PLAN.md` §2 porque **agrega una variable que ese diagnóstico no tenía**. Registrado allá.
+
+### ⭐ Y la buena noticia, que también se registra
+
+**El encabezado del deck del 04/09 publicó `vie 28/08 – vie 04/09`.** ⇒ **La ventana viernes a
+viernes está aplicada y se ve en el producto**, no sólo en la configuración. Es la confirmación
+end-to-end del cambio del 03/09 que se caía del `−3`.
