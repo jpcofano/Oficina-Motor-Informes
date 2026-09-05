@@ -10968,9 +10968,10 @@ function limpiarGrupoB_(aplicar) {
  * `entero_revisar` → `miles_revisar`, y sigue entre guiones. **Son dos cosas distintas y mezclarlas
  * haría creer que el formato validó algo.**
  *
- * ⛔ **`emin_lista` NO entra.** Sigue publicando `-` y **su causa ya está medida aparte**
- * (`ctx.plantilla` no llega porque `LISTA_TEXTO` no está en la lista del despachador). Meterlo acá
- * haría creer que un cambio de formato lo arregló.
+ * ⛔ **`emin_lista` NO entra**, y **sigue sin entrar aunque su causa ya esté arreglada**
+ * (`2026-09-05`: `ctx.plantilla` salió del `if` de la familia `FILA`, `Generador.gs`). Meterlo acá
+ * haría creer que un cambio de formato lo arregló, **que es justo lo que esta lista separa**.
+ * ⚠ Su `texto_revisar` se levanta —o no— con un caso de validación, no con este wrapper.
  *
  * ⛔ **Los tres `PCT` tampoco**: ya pasaron a `porcentaje_sin_signo_revisar` hoy a las 14:05.
  *
@@ -10986,7 +10987,11 @@ var FUERA_DE_ALCANCE_EMIN_ = {
   'emin_or': 'ya es porcentaje_sin_signo_revisar (14:05)',
   'emin_ctor': 'ya es porcentaje_sin_signo_revisar (14:05)',
   'emin_ctr': 'ya es porcentaje_sin_signo_revisar (14:05)',
-  'emin_lista': '⛔ publica `-` por `ctx.plantilla` que no llega — OTRO problema, no de formato'
+  /* ⚠ `2026-09-05` — el texto decía «publica `-` por `ctx.plantilla` que no llega». Eso se
+   * arregló en `Generador.gs` ese día, y **este log habría seguido diciéndolo**: era un estado
+   * escrito como si fuera permanente (`CLAUDE.md` §4). Sigue fuera de alcance, por otro motivo. */
+  'emin_lista': 'su causa era `ctx.plantilla` y se arregló el 05/09 — queda fuera porque es ' +
+    '`texto_revisar` y esta lista sólo mueve formatos numéricos'
 };
 
 /** Modo seco. ⛔ No escribe. */

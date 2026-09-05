@@ -1740,13 +1740,35 @@ function resolverMarcadores(informeId, opciones) {
         }
       }
 
-      /* ⭐ Y para `FILA_TEXTO`, los campos de la plantilla ya resueltos a su **clave de lectura** —
-       * la misma que usa el resto del motor, así que hereda `por_posicion` sin saber que existe.
-       * Se resuelve acá y no adentro de la operación por la regla de oro: `Marcadores.gs` no lee
-       * config ni `MAPEO`, sólo calcula. */
-      if (esPlantilla) {
-        ctx.plantilla = resolverPlantillaTexto_(fila, solapa.solapa, datos.filas);
-      }
+    }
+
+    /* ⭐ Los campos de la plantilla ya resueltos a su **clave de lectura** — la misma que usa el
+     * resto del motor, así que hereda `por_posicion` sin saber que existe. Se resuelve acá y no
+     * adentro de la operación por la regla de oro: `Marcadores.gs` no lee config ni `MAPEO`, sólo
+     * calcula.
+     *
+     * ⛔⛔ `2026-09-05` — **SALE DEL `if` DE LA FAMILIA `FILA`, y es la TERCERA vez que esta misma
+     * grieta se cobra una operación.** Vivía anidada adentro de
+     * `['FILA', 'FILA_TEXTO', 'GRUPO_TEXTO']`, así que `LISTA_TEXTO` —que **sí** es `esPlantilla`—
+     * nunca recibía `ctx.plantilla`: `opLISTA_TEXTO` devolvía `«FALTA:@plantilla_sin_resolver»`,
+     * el marcador caía en `sin_datos` y **`emin_lista` publicaba `-` en el deck**. Ítem 34.
+     *
+     * ⭐⭐ **La guarda correcta ya existía dos líneas más arriba y no se estaba usando.**
+     * `esPlantilla` nombra las tres operaciones que necesitan esto; la lista del `if` de arriba
+     * nombra otra cosa —las que resuelven **campo de orden** contra `MAPEO`—. **Eran dos preguntas
+     * distintas contestadas por la misma condición**, y por eso agregar un nombre a esa lista
+     * habría andado por casualidad: `LISTA_TEXTO` usa `separador` como **cadena que une**, no como
+     * nombre de campo, así que se habría ido a `buscarMapeo` a preguntar por un campo llamado
+     * «salto de línea». Hoy no rompe **sólo porque `emin_lista` declara `separador` vacío** — y esa
+     * celda está diseñada para llenarse.
+     *
+     * ⭐ **El precedente manda y es del 26/08, quince líneas más arriba:** `ctx.separador` salió de
+     * su `if` por esta misma razón, y el comentario que quedó lo dice con todas las letras —*«va
+     * incondicional y no detrás de otra lista de nombres: una lista `OPERACIONES_CON_SEPARADOR_`
+     * sería la misma grieta con otro nombre»*. **Acá la lista de nombres ya existía; lo que
+     * faltaba era usarla.** */
+    if (esPlantilla) {
+      ctx.plantilla = resolverPlantillaTexto_(fila, solapa.solapa, datos.filas);
     }
 
     var salida = despacharOperacion_(fila.operacion, ctx);

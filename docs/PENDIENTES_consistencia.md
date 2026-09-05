@@ -2409,3 +2409,32 @@ quedaría en la carpeta con la autoridad de un original.
 ⚠ **Y el `_9` Addendum 1 nunca llegó a esta sesión** — sobre su veredicto de las 1031 filas **no se
 afirma nada** en ningún documento que yo haya escrito. Está declarado también en el propio
 `_9 Addendum 2`.
+
+---
+
+## 05/09/2026 · ⛔ Corrección fechada al diagnóstico de `emin_lista` del 04/09 — **el «segundo hueco» no existía**
+
+**El párrafo de arriba** —*«`ctx.separador` se asigna en ese mismo `if`, así que `LISTA_TEXTO`
+tampoco lo recibe… fue suerte, no previsión»*— **es falso, y lo era ya cuando se escribió.**
+
+⇒ **`Generador.gs` asigna `ctx.separador` de forma INCONDICIONAL desde el 26/08**, quince líneas
+antes del `if`. `LISTA_TEXTO` **sí** venía recibiendo su separador. **El único hueco era
+`ctx.plantilla`.**
+
+⭐⭐ **Cómo se coló, y es la parte que vale:** el transcripto que ese diagnóstico pegó **omitía la
+línea incondicional** y mostraba **sólo la de adentro del `if`** — que es una **asignación
+redundante**, idéntica, sin transformación en el medio. ⇒ **Se leyó un fragmento y se concluyó sobre
+la función.** Es *«la función que estás leyendo no es el camino completo»* (`CLAUDE.md` §4) aplicada
+a **un recorte de la misma función**.
+
+⚠ **Y la redundancia sigue ahí** —`Generador.gs`, dos asignaciones idénticas de `ctx.separador`, una
+incondicional y otra dentro del `if`—. **No se toca acá**: es preexistente, es un no-op, y arreglarla
+sería ampliar el alcance de la Parte A. **Queda registrada, que es lo que faltaba.**
+
+⭐ **Lo que NO cambia:** el diagnóstico de fondo era correcto y el arreglo también. Lo que se corrige
+es una afirmación de más que hacía ver **dos** grietas donde había **una**. Lo encontró el
+`verificador` mirando el archivo vivo, no releyendo el documento.
+
+⛔ **Y el cierre del propio párrafo —*«el arreglo es un nombre en una lista»*— también se cae:**
+agregar el nombre habría mandado el `separador` a `buscarMapeo` como nombre de campo. **El arreglo
+fue sacar la guarda del `if`.** Ver ítem 34 en `PLAN.md` §2.
