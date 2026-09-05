@@ -858,6 +858,27 @@ los dos correctos por separado. ⛔ **El segundo deshace al primero y nada lo de
 - ⛔ **Y el corolario que hay que aplicar HOY, no cuando vuelva a pasar:** toda limpieza reciente
   corre el mismo riesgo. **Verificar que siga limpia después de la próxima aplicación masiva es el
   único control que distingue una limpieza que DURÓ de una que se deshizo.**
+- ⭐⭐ **Y LA MITAD QUE FALTABA, que este mismo caso mostró al día siguiente: UNA DECISIÓN PUNTUAL
+  TAMBIÉN VENCE.** (04/09/2026.) La regla de arriba protege a la decisión del cruce masivo. ⛔ **No
+  la protege de sí misma:** un caso posterior que **contradiga** a un marcador invalida la parte de
+  la decisión que lo cubría, **y la función que la aplicó no tiene forma de enterarse** — es una
+  lista de nombres **congelada** en su fecha.
+  - **El caso, y da vuelta el veredicto:** `confirmarNumerosDeUnoAUno()` limpió su lista el
+    **26/08**, y `X-42` y `X-43` —**`contradice`**— aparecieron el **28/08**, dos días después.
+    ⭐⭐ ⇒ Para esos marcadores **la marca que repuso el cruce masivo del 01/09 es la CORRECTA**:
+    fue **lo único que notó que la decisión había vencido**, sin saber que lo hacía.
+  - ⛔ **Por eso una función `confirmar*()` no se vuelve a correr sin cruzar su lista contra los
+    CSV posteriores a su fecha.** Re-aplicarla limpiaría marcadores que **un caso fechado declara
+    contradictorios**, y publicaría sin marca números que **se sabe** que difieren del deck — el
+    número plausible y equivocado, esta vez **con el aviso ya escrito en el repo**.
+  - ⭐ **Como condición verificable:** *«ninguna lista de una función `confirmar*()` contiene un
+    marcador con un caso `contradice` posterior a la fecha de esa función»*. **Eso un censo lo
+    puede mirar**; *«el `_revisar` de `L-053` está levantado»* no — y venció sola.
+  - ⛔⛔ **Y las dos direcciones fallan, medido el mismo día:** `u1_post_meta_alcance` tiene el caso
+    `X-43` **`contradice`** del 28/08 y **NO tiene marca** — el cruce masivo no lo agarró. ⇒ **Un
+    marcador que un caso desmiente está publicando sin aviso.** No alcanza con vigilar que no
+    marquen de más: hay que vigilar que **no falte marcar**.
+
 - ⭐ **Es la forma general de lo que `§7` ya dice de los documentos** —*una pregunta, un dueño
   único*— **aplicada a una CELDA**: cuando dos mecanismos pueden escribir la misma, hace falta
   decir cuál manda **antes** de que se contradigan, no después.

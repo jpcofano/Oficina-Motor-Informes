@@ -1646,3 +1646,67 @@ barato de lo que se anotó**: la lámina simplemente **no tiene el `{{camp_titul
 `camp_titulo` no es exclusivo y `presentacion.replaceAllText` pinta el deck entero. Lo que se cae es
 **que ése fuera el motivo de lo que se veía en `L-023`**. ⭐ Es la diferencia entre *«el mecanismo
 existe»* y *«el mecanismo explica este caso»*, y se confundieron.
+
+---
+
+## ⭐⭐ P0 · Parte 0 del `2026-09-04_7` — la tabla de las diez, y un hallazgo que da vuelta el marco (04/09/2026)
+
+**Cruce sobre los CUATRO CSV (278 casos), por tokenización de `token_propuesto` — no por igualdad
+de nombre.** ✅ **Control del lector:** los cuatro de `X-42` caen, así que el cruce ve lo que cree.
+
+| marcador | grupo | caso que lo decide |
+|---|---|---|
+| `u1_post_meta_impresiones` | ⭐ **A** | `X-42` `contradice` @28/08 |
+| `u1_post_meta_vistas` | ⭐ **A** | `X-42` |
+| `u1_post_google_impresiones` | ⭐ **A** | `X-42` |
+| `u1_post_google_vistas` | ⭐ **A** | `X-42` |
+| `u1_post_meta_vtr` | **B** | *(ninguno)* |
+| `u1_post_google_vtr` | **B** | *(ninguno)* |
+| `u1_post_prog_impresiones` | **B** | *(ninguno)* |
+| `u1_post_prog_vistas` | **B** | *(ninguno)* |
+| `u1_post_prog_vtr` | **B** | *(ninguno)* |
+| ⚠ `u1_fecha_fin` | **B** | *(ninguno)* — pero **es una fecha**, ver abajo |
+
+⇒ **4 en A · 6 en B · 0 en C.**
+
+### ⛔⛔ El control positivo encontró lo que venía a buscar, y no era lo esperado
+
+El prompt pide que **los CINCO** de `X-42`/`X-43` caigan en A. ⭐ **Caen los cuatro de `X-42`. El
+quinto —`u1_post_meta_alcance`, de `X-43`— NO ESTÁ ENTRE LAS DIEZ: nunca se re-marcó.**
+
+**Verificado:** formato `miles` el 31/08 y **sin `_revisar` hoy**.
+
+⇒ ⭐⭐ **Eso no es un fallo del cruce: es el hallazgo.** `u1_post_meta_alcance` **tiene un caso
+`contradice` del 28/08 y está publicando SIN marca de revisión.** Y es **el peor de los dos** según
+el propio prompt: la celda está en cero, el equipo publica **26.033**, y un `ULTIMO` sobre un cero
+**escrito** devuelve cero — ⛔ **el deck publica un cero que se lee como «no alcanzamos a nadie»**.
+
+⭐ **El cruce masivo del 01/09 marcó a cuatro de los cinco contradichos y se salteó al quinto.**
+
+### ⚠ Y eso corrige el marco del prompt, no sólo un dato
+
+El prompt dice *«para esos cinco, la marca que repuso el 01/09 es la correcta»*. ⇒ **Es cierto para
+cuatro.** El quinto muestra **la falla en la dirección opuesta**: no que se marque de más, sino que
+**falte marcar**. ⭐ **Las dos direcciones fallan, y hasta hoy sólo se estaba mirando una.**
+
+### ⚠ `u1_fecha_fin` — la pregunta que el prompt manda hacer antes de clasificarla
+
+Cae en **B** por ausencia de caso, **pero es una FECHA, no una métrica**. ⛔ Y `_revisar` significa
+*«hay un número que alguien puso en duda»*. Sobre una fecha, **la duda no es del mismo tipo**: una
+fecha no difiere del deck por drift de la fuente, difiere por estar mal leída o mal declarada.
+⇒ **No se limpia con el resto sin decidir eso.**
+
+---
+
+## ⛔ Parte C · Los tres que faltan — NO se pueden cuadrar desde disco (04/09/2026)
+
+`BITACORA` da 76 − 18 = **58** netos; el censo da 54 + los 7 `m2_*` limpiados = **61**. Diferencia
+de **3**.
+
+⛔ **La medición que el prompt pide —comparar el backup `_BACKUP_MARCADORES_2026-09-01_1130_levantar`
+contra el snapshot— exige leer una hoja del libro vivo, y eso no se puede desde disco.**
+
+⚠ **Y la hipótesis que el propio prompt ofrece —«son marcadores creados después del 31/08»— NO
+explica estos tres:** los únicos creados después son los **10 `emin_*`** (03/09) y los **3
+`gcba_ivr_*`**, y **ninguno entra en el conteo de «limpios el 31/08»** porque no existían.
+⇒ **Queda abierto, y con la explicación barata ya descartada.**
