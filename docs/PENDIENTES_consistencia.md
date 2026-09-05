@@ -2102,3 +2102,58 @@ exactamente el momento en que uno querría que ya estuviera probada.
 **El banco cubre las cuatro mitades:** que el desconocido falle · que **los ocho válidos sigan
 idénticos** —sin eso, una guarda que fallara siempre pasaría igual— · que el vacío y el no-numérico
 **no** se confundan con él · y un **control negativo con mutación verificada** sobre la función real.
+
+---
+
+## ⭐ Parte B · Censo de tokens crudos en `secco` — las siete familias son CABLEADO PENDIENTE (05/09/2026)
+
+**Deck:** `Seguimiento SECCO-SSCDI — vie 28/08 – jue 03/09`, **corrida de dos campañas**.
+⚠ **El `.pptx` no está en el repo** — lo tiene el usuario. Los conteos por familia salen de su
+extracción con `markitdown`; **el cruce contra `MARCADORES` lo hice yo** contra el snapshot.
+
+### La clasificación que el prompt pide no mezclar
+
+| familia | únicos | filas en `MARCADORES_2026-08-31` | qué es |
+|---|---|---|---|
+| `camp_resp_*` + `camp_tasa_resp` | 13 | **0** | ⭐ cableado pendiente |
+| `conv_*` | 13 | **0** | ⭐ cableado pendiente |
+| `rep_*` | 11 | **0** | ⭐ cableado pendiente |
+| `et_*` | 11 | **0** | ⭐ cableado pendiente |
+| `rrss_*` | 9 | **0** | ⭐ cableado pendiente ⚠ (`L-050`, **escondida** — congelada el 04/09) |
+| `u1_bench_*` | 3 | **0** | ⛔ **congelada**: es un `*_bench_*` |
+| `ecv_comuna` · `ecv_minutos` | 2 | **0** | ⭐ cableado pendiente |
+
+⇒ ⭐⭐ **Las siete son «sin fila»: TRABAJO DE CABLEADO, no bugs de resolución.** ⛔ **Cero son «con
+fila que no resuelve».**
+
+### ⚠ Dos aritméticas del prompt que NO cierran, dichas en vez de reproducidas
+
+1. **La suma de las siete familias da 62**, y el prompt declara **60 únicos**. Difieren en **2**.
+2. **76 apariciones − 60 únicos = 16 de exceso**, que el prompt atribuye a *«los 13 `camp_resp_*`
+   que se cuentan por duplicado»*. ⛔ **13 contra 16: no cierra por 3.**
+
+⇒ **Ninguna de las dos la puedo resolver: el `.pptx` no está en el repo.** ⭐ Se anotan porque **un
+censo con la aritmética abierta se cita igual y el hueco se pierde.**
+
+### ⛔ El límite de este censo, que acá pesa doble
+
+**El cruce es contra el snapshot del 31/08**, que tiene **220 filas y todas `jm`**, y es **anterior
+a la migración a `*`**. ⇒ **Puede quedarse corto y nunca largo:** si alguna familia ganó filas
+después, este cero es viejo.
+
+⚠ **Y hay un indicio de que el snapshot no es una foto limpia del «antes»:** la hoja viva tiene
+**230** filas y el snapshot **220**, pero **se crearon al menos 13 después** (10 `emin_*` + 3
+`gcba_ivr_*`). ⛔ **220 + 13 = 233 ≠ 230.** ⇒ **O el snapshot no es exactamente el estado previo, o
+se quitaron filas.** No se puede resolver desde disco.
+
+### ⭐⭐ Y el que ningún censo de crudos puede ver, porque no es crudo
+
+**`camp_titulo` en `L-023` / `L-048`.** ⛔ **No aparece en ninguna lista de `{{…}}`** — publica
+`/////` o `-`, que son **salidas del motor**, no tokens sin reemplazar.
+
+⚠ **Es el mismo hueco que `camp_env4_fecha}}`, por segunda vez:** aquél tampoco lo veía el detector
+**porque le faltaban las llaves de apertura**. ⇒ ⭐ **Un detector encuentra lo que se parece a lo
+que ya conoce**, y las dos cosas que más costaron esta semana **cayeron justo afuera de esa forma**.
+
+⇒ **Cualquier censo de crudos que se cite como «lo que falta en el deck» está dejando afuera esta
+clase entera.** Va escrito acá para que el próximo no lo redescubra.
