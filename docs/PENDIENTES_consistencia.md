@@ -1960,3 +1960,47 @@ Hacer fallar la función ante un formato desconocido **convierte esas filas en `
 ⚠ **Y lo que el censo NO dice:** si el valor publicado es correcto. Un `entero` sobre un entero **se
 ve bien** — le falta el separador y nada más. ⭐ **El riesgo real es un formato inventado sobre un
 valor que SÍ necesitaba transformarse**, y eso el conteo no lo distingue.
+
+---
+
+## ✅ Parte D corrida — `entero_revisar` es el ÚNICO formato desconocido, y eso DESBLOQUEA la Parte E (05/09/2026)
+
+**`censarFormatosDesconocidos()` sobre la hoja viva:**
+
+| | |
+|---|---|
+| filas en `MARCADORES` | **230** ⭐ (el snapshot del 31/08 tenía 220 — crecieron 10, los `emin_*`) |
+| `formato` vacío | **5** — ⚠ no son desconocidos: `f === ''` cae a `texto` |
+| ⛔ **desconocidos** | **6** |
+| ✅ control positivo | `entero_revisar` apareció |
+
+⇒ ⭐⭐ **Los seis son EXACTAMENTE los `emin_*` numéricos.** `entero_revisar` es **el único formato
+desconocido de toda la hoja**.
+
+### ⭐⭐ Y eso contesta lo que la Parte E necesitaba saber antes de tocar nada
+
+El motivo de poner el censo antes era: *«hacer fallar la función convierte esas filas en `«FALTA»`
+de golpe, y eso hay que verlo venir»*. ⇒ **Medido: las que se convertirían son las MISMAS SEIS que
+`formatoEmin()` está por arreglar.**
+
+⇒ ⭐ **El orden correcto queda determinado por la medición, no por prudencia genérica:**
+
+1. **`formatoEmin()`** — los seis pasan a `miles_revisar`;
+2. **el censo vuelve a dar CERO**;
+3. ⭐⭐ **la Parte E se puede aplicar y es INERTE**: no convierte ninguna fila en `«FALTA»`, porque
+   ya no queda ninguna con formato desconocido.
+
+⇒ ⛔ **La Parte E deja de ser riesgosa** — y **sólo después de correr `formatoEmin()`**. Antes,
+convertiría en `«FALTA»` seis números que hoy se publican correctos.
+
+### ⚠ Lo bueno y lo que igual queda
+
+⭐ **El problema es acotado y es mío**: lo introdujo el cableado de ministros del 03/09 y **no hay
+ningún otro formato inventado en 230 filas**. ⛔ **Pero que sea uno solo no lo hace menos grave como
+mecanismo**: entró sin que nada lo notara, y **la única razón por la que no hay más es que nadie
+escribió más nombres inventados** — no que algo lo impidiera.
+
+⚠ **Y el testigo se gasta con el arreglo**, como estaba declarado: después de `formatoEmin()`,
+`censarFormatosDesconocidos()` **va a abortar** por control positivo. ⭐ **Eso es correcto y está
+previsto en su log** — pero significa que **el censo necesita un testigo nuevo antes de volver a
+servir**, y hoy no lo tiene.
