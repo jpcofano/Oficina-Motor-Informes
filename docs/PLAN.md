@@ -3019,6 +3019,51 @@ pantalla seguía empujando al camino derogado.
 
 ⇒ `D-57` **queda decidido y su implementación gated por el ítem 31.**
 
+
+### `D-58` · Cuando dos casos se contradicen sobre el mismo marcador, **manda el más nuevo** — 04/09/2026
+
+**Decisión del usuario.** ⛔ Hoy no estaba escrita en ninguna parte, y por eso **cada contradicción
+entre casos se resolvía a mano** — que es como se llegó a las 18 reversiones del 01/09.
+
+> **Cuando dos casos fechados dicen cosas distintas del mismo marcador, manda el más nuevo.**
+
+⭐ **El motivo es el mismo que sostiene `D-56`:** un caso es *«un registro fechado de una comparación
+que ya se hizo»*, y **la base acumula y crece**. Entre dos comparaciones de la misma cosa, la que
+describe el estado actual es **la última** — ⚠ **la anterior no está mal, está vencida.**
+
+#### ⛔⛔ La asimetría, que se decide JUNTO con la regla y no después
+
+**El costo de equivocarse no es el mismo en las dos direcciones:**
+
+| dirección | qué hace | si la regla se equivoca |
+|---|---|---|
+| viejo `exacto` → nuevo `contradice` | **pone** `_revisar` | ⭐ una marca de más: se revisa algo que estaba bien |
+| viejo `contradice` → nuevo `exacto` | **saca** `_revisar` | ⛔⛔ **un número publicado sin marca sobre un dato que difiere** |
+
+⇒ ⛔ **PREGUNTA ABIERTA AL USUARIO, y no se resuelve en el código:** ¿la regla es **simétrica**, o el
+más nuevo gana siempre para **poner** la marca y **sólo un `V-` con `exacto` la saca**?
+
+⭐⭐ **Mientras no esté contestada, se aplica SÓLO LA MITAD SEGURA:** el más nuevo gana **cuando
+agrega** la marca. **Los casos donde el más nuevo la sacaría se listan y se paran.**
+⚠ **La mitad segura ya resuelve la mayoría y no compra nada irreversible** — que es exactamente el
+criterio con el que conviene adoptar una regla nueva.
+
+#### La condición verificable
+
+⭐ Escrita como condición y no como estado, igual que la regla de `CLAUDE.md` §4:
+
+> *«Ningún marcador tiene su `formato` decidido por un caso más viejo que otro caso que lo
+> contradice.»*
+
+**Eso un censo lo puede mirar.** *«Las contradicciones están resueltas»* no — y ésa es la forma que
+vence sola.
+
+#### ⚠ Alcance medido el 04/09: **cero**
+
+Sobre las diez `u1_*` repuestas, el **grupo C está vacío** — ningún marcador tiene a la vez un caso
+que lo valida y uno que lo contradice. ⇒ ⭐ **La regla no cambia nada hoy, y se escribe igual:** su
+valor es que la próxima contradicción **ya tenga dueño** en vez de resolverse a mano.
+
 ---
 
 ## 2 · Próximo (ordenado, con dependencias)

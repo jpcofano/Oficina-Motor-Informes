@@ -1710,3 +1710,50 @@ contra el snapshot— exige leer una hoja del libro vivo, y eso no se puede desd
 explica estos tres:** los únicos creados después son los **10 `emin_*`** (03/09) y los **3
 `gcba_ivr_*`**, y **ninguno entra en el conteo de «limpios el 31/08»** porque no existían.
 ⇒ **Queda abierto, y con la explicación barata ya descartada.**
+
+---
+
+## ⭐ Parte A del `2026-09-04_7` — el grupo A llegó a un resultado correcto por un camino equivocado (04/09/2026)
+
+**Grupo A (4) — NO se tocan:** `u1_post_meta_impresiones`, `u1_post_meta_vistas`,
+`u1_post_google_impresiones`, `u1_post_google_vistas`. Los cuatro tienen `X-42` `contradice` @28/08.
+
+⭐⭐ **La marca que puso el cruce masivo del 01/09 es la CORRECTA** — y **llegó por un camino
+equivocado a un resultado correcto**. ⛔ **Eso hay que escribirlo, no sólo el resultado**: el cruce
+miró `MARCADORES.notas`, **no** el CSV, así que **acertó sin saber que acertaba**. Si sólo se
+registra *«la marca está bien»*, la próxima vez se confía en un mecanismo que **no mira lo que
+debería**.
+
+**Grupo B (6) — se limpian**, con `limpiarGrupoB()`: una función **nueva**, no la del 26/08.
+
+⛔ **`confirmarNumerosDeUnoAUno()` NO se re-aplica**, y ése es el punto del prompt: su lista está
+**congelada el 26/08** y re-correrla limpiaría **los cuatro contradichos**.
+
+⭐ **Y el wrapper tiene un control de alcance que la vieja no podía tener:** verifica **antes de
+escribir** que los cuatro del grupo A **sigan marcados**, y **relee los dos grupos** al final. ⚠ La
+garantía no es *«no los toqué»* sino ***«siguen como estaban»*** — que es lo único verificable
+desde afuera.
+
+### ⭐ `u1_fecha_fin` — limpiado por FORMA, no por comparación
+
+**Decisión del usuario 04/09**: sale **directo de la fila POST, campo fecha fin**. Sin agregación,
+sin ventana, sin criterio de corte — **no hay dónde equivocarse.**
+
+⚠ **Y va escrito como decisión, no como validación.** `D-56` dice que la fuente de verdad es el
+CSV, y **`u1_fecha_fin` no tiene caso**. Lo que sostiene su limpieza es un argumento sobre **la
+forma del marcador**, que es **una razón distinta y buena, pero distinta**. ⛔ **Si alguna vez se
+audita por qué está limpio, la respuesta tiene que ser la verdadera.**
+
+---
+
+## ⭐⭐ La pregunta que `u1_fecha_fin` deja abierta, y vale más que él (04/09/2026)
+
+> **¿Un marcador de LECTURA DIRECTA necesita `_revisar` alguna vez?**
+
+`_revisar` significa *«hay un número que alguien puso en duda»*. ⚠ Pero un marcador que **lee un
+campo sin operar** —sin agregar, sin recortar por ventana, sin criterio de corte— **no tiene dónde
+equivocarse por su cuenta**: si difiere, difiere **la fuente**, y eso es otra cosa.
+
+⛔ **No se resuelve acá.** ⭐ **Pero si la respuesta fuera «no», una parte de las 90 marcas de hoy se
+cae sola** — y ése es el motivo de anotarla: no es una curiosidad, **es un criterio que podría
+achicar el problema entero.**

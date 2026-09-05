@@ -10744,3 +10744,177 @@ function censarM2Vivo() {
   return { ok: true, filas: filas, duplicados: duplicados, por_informe: porInforme,
     con_revisar: conRevisar.length };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04_7` Parte A — **el GRUPO B: las seis `u1_*` repuestas SIN caso que las
+ * justifique.**
+ *
+ * ⛔⛔ **NO se re-aplica `confirmarNumerosDeUnoAUno()`, y el motivo es el hallazgo de este prompt:**
+ * su lista de nombres está **congelada el 26/08**, y `X-42` / `X-43` —**`contradice`**— aparecieron
+ * el **28/08**. Re-correrla limpiaría **cuatro marcadores que un caso fechado declara
+ * contradictorios**, y publicaría sin marca números que **se sabe** que difieren del deck.
+ * ⭐ **El número plausible y equivocado, esta vez con el aviso ya escrito en el repo.**
+ *
+ * ══ CÓMO SE ARMÓ ESTA LISTA, QUE ES LO QUE LA HACE DISTINTA ═══════════════════════════════
+ *
+ * Las **diez** repuestas se cruzaron contra los **cuatro** `casos_validacion_*.csv` (278 casos)
+ * **por tokenización de `token_propuesto`**, no por igualdad de nombre —esa columna es una
+ * expresión, con listas separadas por `/` y familias—. Resultado: **4 en A · 6 en B · 0 en C**.
+ *
+ * ⛔ **Grupo A — NO se toca:** `u1_post_meta_impresiones`, `u1_post_meta_vistas`,
+ * `u1_post_google_impresiones`, `u1_post_google_vistas`. Los cuatro tienen `X-42` `contradice`.
+ * ⭐⭐ **Para ellos la marca que puso el cruce masivo del 01/09 es la CORRECTA** — llegó **por un
+ * camino equivocado a un resultado correcto**, y eso hay que decirlo porque es lo que hace falta
+ * para entender la regla, no sólo el resultado.
+ *
+ * ══ `u1_fecha_fin` — DECISIÓN DEL USUARIO, y se limpia por otro motivo ════════════════════
+ *
+ * ⭐ **Va acá, y NO por validación:** sale **directo de la fila POST, campo fecha fin**. No hay
+ * agregación, ni ventana, ni criterio de corte — **no hay dónde equivocarse.**
+ *
+ * ⚠ **Y se escribe como decisión del usuario, no como validación.** `D-56` dice que la fuente de
+ * verdad de si un marcador está validado es **el CSV**, y `u1_fecha_fin` **no tiene caso**. Lo que
+ * sostiene su limpieza es un argumento sobre **la FORMA del marcador** —lectura directa de un
+ * campo, sin operación—, que es una razón **distinta y buena, pero distinta**.
+ * ⇒ **En el CSV va con esa nota: limpiado por FORMA, no por comparación.** ⛔ Si alguna vez se
+ * audita por qué está limpio, **la respuesta tiene que ser la verdadera.**
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** El grupo B, con el motivo de cada uno. Afuera de la función para que un banco lo lea. */
+var GRUPO_B_U1_ = [
+  { marcador: 'u1_post_meta_vtr',          a: 'porcentaje_sin_signo', motivo: 'sin caso que la justifique' },
+  { marcador: 'u1_post_google_vtr',        a: 'porcentaje_sin_signo', motivo: 'sin caso que la justifique' },
+  { marcador: 'u1_post_prog_impresiones',  a: 'miles',                motivo: 'sin caso que la justifique' },
+  { marcador: 'u1_post_prog_vistas',       a: 'miles',                motivo: 'sin caso que la justifique' },
+  { marcador: 'u1_post_prog_vtr',          a: 'porcentaje_sin_signo', motivo: 'sin caso que la justifique' },
+  /* ⭐ Decisión del usuario 04/09: lectura directa de un campo, sin operación. NO es validación. */
+  { marcador: 'u1_fecha_fin',              a: 'fecha',                motivo: 'DECISIÓN DEL USUARIO 04/09 — limpiado por FORMA (lectura directa de la fila POST), no por comparación: no tiene caso' }
+];
+
+/** ⛔ El grupo A, declarado para que el código diga qué NO toca y por qué. */
+var GRUPO_A_U1_ = ['u1_post_meta_impresiones', 'u1_post_meta_vistas',
+  'u1_post_google_impresiones', 'u1_post_google_vistas'];
+
+/** Modo seco. ⛔ No escribe. */
+function diagLimpiarGrupoB() { return limpiarGrupoB_(false); }
+
+/** Aplica, con backup antes y relectura de la hoja después. */
+function limpiarGrupoB() { return limpiarGrupoB_(true); }
+
+function limpiarGrupoB_(aplicar) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('GRUPO B — ' + (aplicar ? 'APLICA' : 'MODO SECO') + ' · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  ⛔ NO se re-aplica `confirmarNumerosDeUnoAUno()`: su lista es del 26/08 y `X-42`/');
+  Logger.log('     `X-43` aparecieron el 28/08. Re-correrla limpiaría CUATRO contradichos.');
+  Logger.log('  ⛔ NO se tocan los del grupo A: ' + GRUPO_A_U1_.join(', '));
+  Logger.log('');
+
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe la hoja MARCADORES.'); return { ok: false }; }
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0].map(function (x) { return String(x == null ? '' : x).trim(); });
+  var iM = h.indexOf('marcador'), iF = h.indexOf('formato');
+  if (iM === -1 || iF === -1) { Logger.log('⛔ ABORTA: faltan `marcador` o `formato`.'); return { ok: false }; }
+
+  /* ⭐⭐ CONTROL DE ALCANCE, antes de escribir: los del grupo A tienen que seguir CON `_revisar`.
+   * Si alguno ya está limpio, algo lo limpió y **este wrapper no es el único escritor** — se
+   * reporta y se para, que es la regla de `CLAUDE.md` §4 sobre la celda sin dueño único. */
+  var aFuera = [];
+  GRUPO_A_U1_.forEach(function (n) {
+    for (var k = 1; k < datos.length; k++) {
+      if (String(datos[k][iM] || '').trim() === n) {
+        if (!/_revisar$/.test(String(datos[k][iF] || '').trim())) aFuera.push(n + ' (' + datos[k][iF] + ')');
+        return;
+      }
+    }
+    aFuera.push(n + ' (sin fila)');
+  });
+  if (aFuera.length) {
+    Logger.log('  ⛔⛔ ABORTA: el grupo A tenía que estar CON `_revisar` y no lo está:');
+    aFuera.forEach(function (x) { Logger.log('     ' + x); });
+    Logger.log('     Alguien más escribió esas celdas. NO se limpia nada hasta saber quién.');
+    return { ok: false, motivo: 'control de alcance: grupo A alterado' };
+  }
+  Logger.log('  ✅ control de alcance: los ' + GRUPO_A_U1_.length + ' del grupo A siguen marcados.');
+
+  var plan = [], noEstan = [], yaLimpios = [];
+  GRUPO_B_U1_.forEach(function (c) {
+    var fila = -1, de = '';
+    for (var k = 1; k < datos.length; k++) {
+      if (String(datos[k][iM] || '').trim() === c.marcador) { fila = k + 1; de = String(datos[k][iF] || '').trim(); break; }
+    }
+    if (fila === -1) { noEstan.push(c.marcador); return; }
+    if (de === c.a) { yaLimpios.push(c.marcador); return; }
+    /* ⚠ Sólo se limpia lo que EFECTIVAMENTE tiene `_revisar`. Un formato inesperado se reporta y
+     * no se pisa: pisarlo borraría una decisión que no está en ningún otro lado. */
+    if (de !== c.a + '_revisar') { noEstan.push(c.marcador + ' (formato inesperado: `' + de + '`)'); return; }
+    plan.push({ c: c, fila: fila, de: de });
+  });
+
+  Logger.log('');
+  plan.forEach(function (p) {
+    Logger.log('  ' + (p.c.marcador + '                      ').slice(0, 24) + p.de + '  →  ' + p.c.a);
+    Logger.log('        ' + p.c.motivo);
+  });
+  if (yaLimpios.length) Logger.log('  ⓘ ya limpios: ' + yaLimpios.join(', '));
+  if (noEstan.length) {
+    Logger.log('  ⛔ NO se tocan (sin fila o formato inesperado): ' + noEstan.join(', '));
+  }
+  Logger.log('');
+  Logger.log('  a limpiar: ' + plan.length + ' · ya limpios: ' + yaLimpios.length +
+    ' · sin tocar: ' + noEstan.length);
+
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  ⓘ MODO SECO — no se escribió nada. Para aplicar: `limpiarGrupoB()`.');
+    return { ok: true, aplicado: false, a_limpiar: plan.length };
+  }
+  if (!plan.length) {
+    Logger.log('  ⓘ Nada que hacer. Idempotente.');
+    return { ok: true, aplicado: false, a_limpiar: 0 };
+  }
+
+  var bk = backupMarcadores_('grupoB');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se escribió nada): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
+
+  plan.forEach(function (p) { hoja.getRange(p.fila, iF + 1).setValue(p.c.a); });
+  SpreadsheetApp.flush();
+
+  /* ⭐⭐ Relectura DE LA HOJA: un escritor que informa lo que escribió no verifica nada. */
+  var d2 = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES').getDataRange().getValues();
+  var mal = [];
+  plan.forEach(function (p) {
+    var quedo = String(d2[p.fila - 1][iF] || '').trim();
+    if (quedo !== p.c.a) mal.push(p.c.marcador + ': pedí `' + p.c.a + '` y quedó `' + quedo + '`');
+  });
+  /* ⛔ Y se RELEE el grupo A también: la garantía no es «no lo toqué», es «sigue como estaba». */
+  GRUPO_A_U1_.forEach(function (n) {
+    for (var k = 1; k < d2.length; k++) {
+      if (String(d2[k][iM] || '').trim() === n) {
+        if (!/_revisar$/.test(String(d2[k][iF] || '').trim())) {
+          mal.push('⛔ ' + n + ' (grupo A) PERDIÓ su `_revisar` — no tenía que tocarse');
+        }
+        return;
+      }
+    }
+  });
+  if (mal.length) {
+    Logger.log('  ⛔ RELECTURA FALLIDA — el backup es `' + bk.nombre + '`:');
+    mal.forEach(function (m) { Logger.log('     ' + m); });
+    return { ok: false, motivo: 'relectura', backup: bk.nombre };
+  }
+
+  Logger.log('  ✅ RELEÍDO: los ' + plan.length + ' quedaron limpios Y los ' + GRUPO_A_U1_.length +
+    ' del grupo A siguen marcados.');
+  Logger.log('');
+  Logger.log('  ⚠ Y lo que esto NO significa: que estén validados. `u1_fecha_fin` se limpió por');
+  Logger.log('     FORMA —lectura directa, sin operación— y los otros cinco por AUSENCIA de caso.');
+  Logger.log('     Ninguno de los seis tiene un `V-` `exacto` detrás.');
+  return { ok: true, aplicado: true, limpiados: plan.length, backup: bk.nombre };
+}
