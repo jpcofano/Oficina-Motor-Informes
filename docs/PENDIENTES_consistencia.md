@@ -2255,3 +2255,70 @@ aritméticamente consistente con sus operandos publicados **dice de dónde viene
 error fue SUPONER LA OPERACIÓN EN VEZ DE LEERLA.**
 
 ⇒ ⭐⭐ **Y la forma general: dos números que se mueven juntos NO comparten causa por eso solo.**
+
+---
+
+## ⛔ CAE mi lectura del mapeo del alcance — no había defecto (05/09/2026)
+
+**Decisión del usuario, ahora escrita como `R-34`:** `camp_alcance` lee `meta_alcance` **porque es
+la única columna que hay** — `resumen_metricas_dinamico` **no tiene alcance total**.
+
+⇒ ⛔ **No es un error de una celda: es una decisión tomada.** Y cae con ella lo que escribí:
+
+| dije | qué era |
+|---|---|
+| *«un total que lee la columna de una plataforma no es un total»* | ⛔ **no hay nada que arreglar en `MAPEO`** |
+| que el mapeo explicaba «de una» lo observado | ⛔⛔ **no explica nada** — el motor publica lo que la fuente tiene para Meta, y **la diferencia sigue entera y sin causa** |
+
+⭐ **La segunda es la peor de las dos**, y es la misma figura de esta semana: **una explicación que
+cierra el caso sin resolverlo.** La primera era un diagnóstico equivocado; la segunda **daba por
+cerrada una pregunta que sigue abierta.**
+
+### ⭐⭐ El costo real, medido y no hipotético
+
+**Dos vueltas de análisis, un diagnóstico mal apuntado y dos addenda** — todo por **una
+justificación que vivía en la cabeza del usuario y no en el repo.**
+
+⇒ Escrita en **`REGLAS_NEGOCIO.md` como `R-34`** (ruteo de `§7`: *«¿qué dice una regla del dominio?»*),
+**con su condición de invalidación como evento**: *«vence si esa solapa incorpora una columna de
+alcance total o multiplataforma»*. ⚠ *«`meta_alcance` es el único que hay»* **es un estado, y un
+estado vence solo.**
+
+### ⭐ `C-93` supersede la lectura de `C-88` — y no se edita el CSV
+
+**Los casos son evidencia fechada** (`§7`), así que `C-88`…`C-92` **quedan como están** — y sus
+notas ya decían qué faltaba medir. ⭐ **`C-93` cierra la pregunta de mapeo citando `R-34`**, que es
+la forma que `D-58` prescribe: **cuando dos casos dicen cosas distintas del mismo marcador, manda el
+más nuevo.**
+
+⚠ **Y las dos mediciones que `C-88` dejaba pendientes quedan SIN OBJETO**, no pendientes: **no hay
+desempate que resolver porque no hay dos filas compitiendo, hay una sola columna.** ⇒ **`C-84` no
+aplica**, y `diagAlcanceDeCampana()` **ya no decide nada** — se guarda sin correr.
+
+---
+
+## ⭐⭐ Lo único que queda por MEDIR en todo el `_9`: qué dice la columna `meta_frecuencia`
+
+`camp_meta_frecuencia` es **`ULTIMO` sobre `meta_frecuencia`** ⇒ **el motor NO la calcula**. Motor
+**2,38**, equipo **1,64**.
+
+| si la columna dice | entonces | trabajo |
+|---|---|---|
+| **2,38** | el motor **lee bien** | ⇒ la diferencia es **de la fuente** |
+| **1,64** | el motor **no la está leyendo** | ⇒ es **del motor** |
+
+⛔ **Son dos trabajos distintos y hoy no se sabe cuál es.**
+
+⚠ **Y ojo con la coincidencia, que es un dato y no una casualidad:** `2.080.014 / 872.827 = 2,38`,
+**exactamente lo publicado**. ⭐ **Que un valor LEÍDO coincida al decimal con un cálculo que el motor
+NO hace** no se puede pasar por alto: o la fuente calcula igual —y el problema está río arriba— o
+hay algo más. **Las dos posibilidades exigen medición y ninguna se puede asumir.**
+
+---
+
+## ⚠ Declaración de límite propia
+
+**No recibí el Addendum 1 del `2026-09-04_9`.** El Addendum 2 lo cita —*«ya invalidó el veredicto de
+las 1031 filas»*— y sobre eso **no afirmo nada**: no vi la medición ni el veredicto que invalida.
+⭐ Lo que sí queda: **la Parte 0 original y la 0.3 del `_9` caen**, y eso lo aplico porque el
+Addendum 2 lo declara, **no porque lo haya verificado**.

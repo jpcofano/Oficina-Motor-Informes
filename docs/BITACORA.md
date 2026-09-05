@@ -17263,3 +17263,31 @@ mismo cableado motivó**. Eso es el sistema funcionando, y se anota así en vez 
 **Escrito:** `formatoEmin()` (Parte C) y `censarFormatosDesconocidos()` (Parte D, sólo lectura, con
 la lista extraída del motor y control positivo que aborta). ⛔ **La Parte E no se ejecutó**: hacer
 fallar la función convierte esas filas en `«FALTA»` de golpe, y el censo va antes.
+
+## 2026-09-05 · `2026-09-04_9` Addendum 2 — la decisión no estaba escrita, y eso costó dos vueltas
+
+⛔ **`camp_alcance` lee `meta_alcance` porque es la única columna que hay** — decisión del usuario,
+ahora **`R-34`** en `REGLAS_NEGOCIO.md` (ruteo de §7, con el `R-NN` grepeado antes de asignar).
+⇒ **No es un error de mapeo y no hay nada que arreglar.**
+
+⭐⭐ **Cae mi lectura entera**, y la peor de las dos mitades no es el diagnóstico equivocado sino
+**haber dado la pregunta por cerrada**: escribí que el mapeo explicaba «de una» lo observado, y **no
+explica nada** — la diferencia con el equipo sigue entera y sin causa.
+
+⚠ **El costo está medido:** dos vueltas de análisis, un diagnóstico mal apuntado y dos addenda,
+**por una justificación que vivía en la cabeza del usuario y no en el repo.** ⇒ `R-34` va **con su
+condición de invalidación como evento** —*«vence si esa solapa incorpora una columna de alcance
+total»*—, porque *«es el único que hay»* **es un estado, y un estado vence solo.**
+
+⭐ **`C-93` supersede la lectura de `C-88` sin editar el CSV**: los casos son evidencia fechada, así
+que `C-88`…`C-92` quedan y el nuevo cierra la pregunta de mapeo citando `R-34`. **Es la forma que
+`D-58` prescribe.** ⚠ Y las dos mediciones que `C-88` dejaba pendientes quedan **sin objeto**, no
+pendientes: **no hay desempate porque no hay dos filas compitiendo, hay una sola columna.**
+`diagAlcanceDeCampana()` se guarda **sin correr**.
+
+⭐ **Lo único que queda por medir en todo el `_9` es qué dice la columna `meta_frecuencia`** — si
+`2,38` la diferencia es de la fuente, si `1,64` es del motor. **Dos trabajos distintos.**
+
+⚠ **Límite propio declarado:** no recibí el Addendum 1 del `_9`, así que sobre su medición de las
+1031 filas **no afirmo nada**; aplico la caída de la Parte 0 **porque el Addendum 2 lo declara, no
+porque lo haya verificado.**

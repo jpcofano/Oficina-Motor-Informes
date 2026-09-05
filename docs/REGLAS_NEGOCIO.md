@@ -2514,3 +2514,48 @@ abierta, con dueño distinto.
 
 ⚠ **No se extiende a `L-046` ni a ninguna otra lámina.** Es sobre los tres totales del "1 a 1".
 Un total de otra lámina se decide mirando su propio rótulo.
+
+---
+
+## `R-34` · El alcance total de campaña publica el alcance de **Meta** — 05/09/2026
+
+**Decisión del usuario.** `camp_alcance` lee la columna **`meta_alcance`** de
+`digital / resumen_metricas_dinamico`, **porque esa solapa NO tiene columna de alcance total**.
+
+> **El alcance de las campañas destacadas sale del mismo lugar que los demás datos de campaña. Se
+> usa `meta_alcance` porque es el único que hay.**
+
+⇒ ⭐ **No es un error de mapeo: es una decisión tomada.** Se publica la única columna disponible.
+
+### ⛔ Y NO se resuelve sumando por plataforma
+
+**La suma no es un alcance.** Una persona alcanzada por Meta y por Google **contaría dos veces**.
+⇒ La ausencia de columna total **no se arregla con `SUMA`**, y por eso no hay marcador de alcance
+por plataforma que se pueda agregar.
+
+⭐ `C-85` ya lo midió del lado del equipo: su alcance **tampoco es la suma** —46.316 contra 42.571—
+**porque es un DEDUPLICADO**, y **no hay fuente para el deduplicado**.
+
+### ⚠ La condición que la invalida — no una fecha, un evento
+
+> **Vence si `resumen_metricas_dinamico` incorpora una columna de alcance total o multiplataforma.**
+
+⭐ Escrita así a propósito: *«`meta_alcance` es el único que hay»* **es un estado**, y un estado
+**vence solo y sin que nadie se entere**. Una condición **un censo la puede mirar**.
+
+### ⭐ La consecuencia ya publicada, para que no se redescubra
+
+**La caja de «alcance de Meta» de `L-046` y la de «alcance total» de `L-045` muestran el MISMO
+número** — porque **es el mismo token pintado dos veces**: no existe marcador de alcance por
+plataforma, y `camp_alcance` no es exclusivo, así que `presentacion.replaceAllText` lo pinta en todo
+el deck.
+
+⇒ ⚠ **Es correcto dada esta regla, y se ve raro sin ella.** Ése es exactamente el motivo de
+escribirla.
+
+### ⛔ Lo que esta regla NO explica, y sigue abierto
+
+**La diferencia con el equipo: motor 872.827, equipo 1.271.754.** ⭐ Es **la misma métrica, de la
+misma plataforma, en la misma semana** ⇒ sin el mapeo como explicación, lo que queda es que
+**`meta_alcance` no dice lo que el equipo publica para Meta**, y **eso es de la fuente, no del
+motor**. Ver `C-93`.
