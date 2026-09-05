@@ -9234,3 +9234,182 @@ function diagAlcanceDeCampana() {
   Logger.log('    caja sea `-` y no un número, y eso lo decide el usuario.');
   return { ok: true, filas_con_valor: conValor.length, otros_alcance: otrosAlcance };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-05_1` Parte C — **el bloque GLOBAL de `L-047`, con `formato` e `informe_id`.**
+ *
+ * ⛔⛔ **LA PREMISA DEL PROMPT ERA FALSA Y SE DEJA ESCRITO, porque cambia qué hace esta función.**
+ * El prompt afirmaba —dos veces, y `C-97` lo copió— que *«los nombres exactos de los cuatro
+ * marcadores del global no están en el repo»*. **Están, en cinco lugares**: el alta del 24/08
+ * (`Instalar.gs`, *«los TRES agregados del GLOBAL»*: `camp_enviados`, `camp_or`,
+ * `camp_mail_clics`), `docs/CIERRE_POR_LAMINA.md`, el censo del 22/08, y sobre todo **`V-113`**,
+ * un caso `exacto` del 23/08 que nombra `camp_entregados` y `camp_aperturas`.
+ *
+ * ⇒ ⭐ **Esto NO es un descubridor de nombres: es un LECTOR DE ESTADO.** La pregunta que sí queda
+ * abierta —y que ningún documento contesta— es **qué `formato` tienen hoy esas filas**, porque hay
+ * dos afirmaciones incompatibles en el repo: el alta del 24/08 dice *«ninguno lleva `_revisar`, y
+ * no es descuido»*, y `C-97` (04/09) supone que hay una marca que levantar.
+ *
+ * ══ ⛔ POR QUÉ NO SE ESCRIBIÓ UN INSTRUMENTO NUEVO ════════════════════════════════════════
+ *
+ * **La primera versión de esta función derivaba la lámina desde `CORRIDAS.mapa_tokens`** —buscando
+ * en qué `slide` cayeron los `camp_env<N>_*`—. ⛔ **Se descartó medido, no por gusto:** con `D-57`
+ * la corrida es **siempre desatendida y en tandas**, `abrirCorrida_` deja **una fila por
+ * ejecución**, y el mapa de cada tanda contiene **sólo los tokens que seguían crudos al empezarla**.
+ * ⇒ Si `L-047` se pintó en la tanda 1 de 3, sus tokens **no están** en la última fila, y el
+ * instrumento aborta por su propio control positivo. **Correcto, e inútil.**
+ *
+ * ⭐⭐ **`diagTokensDeLamina_` ya contesta esto por un camino que no depende de la corrida:** lee la
+ * **plantilla viva** y cruza contra `MARCADORES`. Su único problema era de acceso —es privada y
+ * toma dos parámetros, así que **nadie la puede correr desde el editor** (`CLAUDE.md` §2)—. La
+ * salida que esa regla prescribe es exactamente ésta: **un wrapper público y sin argumentos**,
+ * no cambiarle la firma a la que ya sirve para otros usos.
+ *
+ * ⭐ **Y agrega lo que aquélla no devuelve:** `formato` e `informe_id`, que son los dos campos que
+ * la Parte C pide y que su retorno no trae.
+ *
+ * ⭐ **CONTROL POSITIVO, y sale de un caso conocido y no de una lista inventada:** los cinco
+ * nombres que `V-113` y el alta del 24/08 documentan **tienen que aparecer**. Si no aparece
+ * ninguno, **aborta** — no informa cero. Un cero sin control positivo es indistinguible de un
+ * detector ciego (`CLAUDE.md` §4).
+ *
+ * ⚠ **`L-047` es la posición 20 de la plantilla `jm`** — dato del propio `Auditoria.gs`, no del
+ * `lamina_id`, que es orden de asignación y no de deck.
+ *
+ * ⛔ **SÓLO LECTURA.** No escribe `_revisar`, ni `formato`, ni una nota.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+var GLOBAL_L047_CONOCIDOS_ = ['camp_enviados', 'camp_entregados', 'camp_aperturas',
+  'camp_or', 'camp_ctor', 'camp_mail_clics'];
+
+function verGlobalL047() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('`L-047` — el bloque GLOBAL · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA. No escribe nada.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ⭐ El instrumento REAL, no una reimplementación: lee la plantilla viva y cruza MARCADORES. */
+  var r = diagTokensDeLamina_('jm', 20);
+  if (!r.ok) {
+    Logger.log('⛔ ABORTA: ' + r.motivo);
+    return { ok: false, motivo: r.motivo };
+  }
+
+  Logger.log('');
+  Logger.log('1 · UNIVERSO — la lámina, leída de la PLANTILLA VIVA');
+  Logger.log('   informe `jm`, posición 20 de la plantilla' + (r.escondida ? '  ⚠ ESCONDIDA' : ''));
+  Logger.log('   tokens en la lámina .... ' + r.total +
+    '   (con fila: ' + r.con_fila + ' · sin fila: ' + r.sin_fila + ')');
+
+  /* ── El corte: los `camp_env<N>_*` son de la TABLA de envíos, no del global ──────────────
+   * ⚠ `/^camp_env\d+_/` exige el dígito **a propósito**: `camp_enviados` empieza igual y **es**
+   * la fila global. Es la trampa que `CLAUDE.md` §4 documenta dos veces —un prefijo es una
+   * convención de nombre, no una clave— y por eso abajo se imprimen los NOMBRES y no un conteo. */
+  var deEnvio = [], global = [], otros = [];
+  r.tokens.forEach(function (t) {
+    if (/^camp_env\d+_/.test(t.token)) deEnvio.push(t);
+    else if (t.token.indexOf('camp_') === 0) global.push(t);
+    else otros.push(t);
+  });
+
+  Logger.log('   de ellos, `camp_env<N>_*` (la tabla) ... ' + deEnvio.length);
+  Logger.log('   candidatos del GLOBAL `camp_*` ......... ' + global.length);
+  Logger.log('   otros tokens de la lámina ............. ' + otros.length);
+
+  /* ── ⭐ Control positivo: los nombres que un caso ya documenta ─────────────────────────── */
+  var hallados = global.filter(function (t) { return GLOBAL_L047_CONOCIDOS_.indexOf(t.token) !== -1; });
+  Logger.log('');
+  Logger.log('2 · CONTROL POSITIVO — de los ' + GLOBAL_L047_CONOCIDOS_.length +
+    ' que `V-113` y el alta del 24/08 documentan, aparecen: ' + hallados.length);
+  if (!hallados.length) {
+    Logger.log('   ⛔⛔ ABORTA: no apareció NINGUNO de los conocidos. **El instrumento no ve**, y');
+    Logger.log('      eso no se distingue de «la lámina no tiene bloque global». Causas posibles:');
+    Logger.log('      cambió la posición 20, cambió la plantilla, o los tokens se renombraron.');
+    return { ok: false, motivo: 'control positivo' };
+  }
+  var faltan = GLOBAL_L047_CONOCIDOS_.filter(function (n) {
+    return !global.some(function (t) { return t.token === n; });
+  });
+  if (faltan.length) {
+    Logger.log('   ⚠ NO aparecen en la lámina: ' + faltan.join(', '));
+    Logger.log('     ⇒ o el token se escribió mal en la plantilla, o el nombre cambió. **Un token');
+    Logger.log('       mal tipeado no falla: simplemente no existe para nadie.**');
+  }
+
+  /* ── El estado de cada uno, que es lo que la Parte C pide ────────────────────────────── */
+  var porMarcador = {};
+  leerMarcadores_().forEach(function (m) { porMarcador[String(m.marcador || '').trim()] = m; });
+
+  Logger.log('');
+  Logger.log('3 · ⭐⭐ EL BLOQUE GLOBAL — ' + global.length + ' marcador(es)');
+  var conRevisar = 0;
+  global.forEach(function (t) {
+    var m = porMarcador[t.token] || {};
+    var fmt = String(m.formato || '').trim();
+    if (fmt.length > 8 && fmt.slice(-8) === '_revisar') conRevisar++;
+    Logger.log('   · ' + t.token + (t.cableado ? '' : '   ⛔ SIN FILA EN MARCADORES'));
+    Logger.log('       formato: ' + (fmt || '(vacío)') +
+      '   operacion: ' + (String(m.operacion || t.operacion || '').trim() || '(vacío)'));
+    Logger.log('       campo_logico: ' + (String(m.campo_logico || '').trim() || '(vacío)') +
+      '   informe_id: ' + (String(m.informe_id || '').trim() || '(vacío)'));
+  });
+
+  /* ⭐ Lo descartado va con su motivo. Un diagnóstico que devuelve seis nombres sin decir de
+   * cuántos salieron ni por qué cayeron los otros no se puede auditar. */
+  Logger.log('');
+  Logger.log('4 · LO DESCARTADO, con su motivo');
+  Logger.log('   `camp_env<N>_*` — son de la tabla de envíos ... ' + deEnvio.length);
+  Logger.log('   sin prefijo `camp_` — no son de campaña ....... ' + otros.length);
+  if (otros.length) Logger.log('       ' + otros.map(function (t) { return t.token; }).join(', '));
+
+  Logger.log('');
+  Logger.log('── ⭐⭐ LA PREGUNTA QUE ESTO VIENE A CONTESTAR ──');
+  Logger.log('  con `_revisar`: ' + conRevisar + ' de ' + global.length);
+  Logger.log('  ⛔ El repo tiene DOS afirmaciones incompatibles y ésta las dirime:');
+  Logger.log('     · el alta del 24/08 dice «ninguno lleva `_revisar`, y no es descuido»;');
+  Logger.log('     · `C-97` (04/09) supone que hay una marca que levantar.');
+  Logger.log('  ⇒ Si el conteo de arriba es 0, **`C-97` no tiene nada que levantar** y la Parte C');
+  Logger.log('    del `_6` queda sin objeto. Si es > 0, los marcó una aplicación masiva posterior.');
+  Logger.log('');
+  Logger.log('  ⚠⚠ Y ANTES DE LEVANTAR NINGUNA MARCA, leer lo que sigue: `revisarASinValidar_`');
+  Logger.log('     pone `_revisar` a TODA fila cuyo `notas` contenga «SIN VALIDAR», y las notas de');
+  Logger.log('     este bloque la tienen desde el alta del 24/08. ⇒ Sacarla sin tocar `notas` la');
+  Logger.log('     **repone en la corrida siguiente** — es el caso del 26/08→01/09 otra vez.');
+
+  return { ok: true, escondida: r.escondida, total: r.total,
+    globales: global.map(function (t) {
+      var m = porMarcador[t.token] || {};
+      return { marcador: t.token, formato: String(m.formato || '').trim(),
+        operacion: String(m.operacion || '').trim(),
+        campo_logico: String(m.campo_logico || '').trim(),
+        informe_id: String(m.informe_id || '').trim(), con_fila: !!t.cableado };
+    }),
+    con_revisar: conRevisar, control_positivo: hallados.length, conocidos_ausentes: faltan,
+    descartados: { de_envio: deEnvio.length, sin_prefijo_camp: otros.length } };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⛔⛔ `confirmarGlobalL047()` — **NO SE ESCRIBIÓ, y esto es la declaración de por qué.**
+ *
+ * Le sacaría el `_revisar` a los marcadores del global de `L-047` que `C-97` confirma contra el
+ * deck del equipo. ⛔ **No se escribe hasta que `verGlobalL047()` corra**, por dos razones que no
+ * son la misma:
+ *
+ * **1 · No se sabe si hay algo que levantar.** El alta del 24/08 declara que ninguno lleva
+ * `_revisar`; `C-97` supone que sí. Una función que limpia una marca que no existe **no falla**:
+ * informa cero y se lee como ejecutada — el modo *«una corrida que no hizo nada tiene que fallar,
+ * no informar cero»*.
+ *
+ * **2 · ⛔⛔ Y aunque la haya, sacarla sola NO ALCANZA.** `revisarASinValidar_` marca **toda fila
+ * cuyo `notas` contenga la cadena `SIN VALIDAR`**, y las notas de este bloque la tienen **desde el
+ * alta del 24/08, escrita a propósito**. ⇒ Una limpieza que no toque `notas` **se deshace en la
+ * corrida siguiente**, sin que nada lo señale. Es exactamente el caso que `CLAUDE.md` §4 ya tiene
+ * escrito: `confirmarNumerosDeUnoAUno()` limpió el 26/08 y el cruce masivo del 01/09 repuso 10
+ * filas, **y el deck lo mostró ocho días**.
+ *
+ * ⭐ **Cuando se escriba, va con el precedente de forma de `confirmarNumerosDeUnoAUno()`** —bloque
+ * de documentación con el motivo · constante con la lista agrupada por formato destino · escritura
+ * **sólo** de `formato` y **sólo** de esas filas · **relectura de la hoja** para verificar lo que
+ * quedó, no lo que se pidió · backup antes— **más el gate de `D-58`**: cruzar su lista contra los
+ * CSV **posteriores a su fecha**, porque **una decisión puntual también vence**.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
