@@ -2157,3 +2157,67 @@ que ya conoce**, y las dos cosas que más costaron esta semana **cayeron justo a
 
 ⇒ **Cualquier censo de crudos que se cite como «lo que falta en el deck» está dejando afuera esta
 clase entera.** Va escrito acá para que el próximo no lo redescubra.
+
+---
+
+## ⭐⭐ `2026-09-04_9` Parte 0 · El alcance de campaña — **NO EXISTE un alcance por plataforma** (05/09/2026)
+
+**Medido sobre `MARCADORES`, catorce filas `camp_*` de alcance/frecuencia/impresiones/vistas/vtr:**
+
+| | cuántos | dónde |
+|---|---|---|
+| **alcance** | ⛔ **UNO** — `camp_alcance`, `ULTIMO`, **sin `dimensiones`** | `resumen_metricas_dinamico` |
+| impresiones | **tres** — meta/google/prog, `SUMA` con `plataforma=…` | `DIGITAL` |
+| vistas | **tres** — ídem | `DIGITAL` |
+| vtr | **tres** — `PCT`, ídem | `DIGITAL` |
+
+⇒ ⭐⭐ **La caja de «alcance de Meta» de `L-046` NO PUEDE tener marcador propio: no existe.** Si
+publica el mismo número que el total, **es el mismo token pintado dos veces** — `camp_alcance` no es
+exclusivo y `presentacion.replaceAllText` lo pinta en todo el deck.
+
+⇒ **La discrepancia es UN número, no dos** — y eso el **registro** lo contesta, sin correr nada.
+⭐ Era lo que la 0.2 pedía verificar *«y no dos marcadores que hoy coinciden»*.
+
+### ⚠ Y el total y el desagregado salen de SOLAPAS DISTINTAS
+
+`camp_alcance` e `camp_impresiones` de **`resumen_metricas_dinamico`**; los nueve por plataforma de
+**`DIGITAL`**. ⇒ ⭐ **No son la misma medición vista de dos maneras: son dos mediciones**, y
+compararlas exige saber cuál manda. **Está escrito acá porque es lo que hace que un «total ≠ suma»
+no sea automáticamente un bug.**
+
+### 0.3 · Lo que falta, y su instrumento
+
+`camp_alcance` es **`ULTIMO`** ⇒ **elige UNA fila**. ⚠ Si `resumen_metricas_dinamico` trae **una fila
+por plataforma**, el «alcance total» del motor **es el de una plataforma** — lo que explicaría que
+coincida con el de Meta **sin ningún bug de suma**.
+
+⇒ **`diagAlcanceDeCampana()`** (`Auditoria.gs`, sólo lectura) cuenta las filas con valor y dice cuál
+elige. ⛔ **Y no fuerza el parecido con `C-84`:** aquél midió **otra solapa**. Si acá hay una sola
+fila, **`C-84` no aplica** y el veredicto lo dice.
+
+---
+
+## ⭐ Casos `C-88` a `C-92` agregados al CSV del 04/09 (05/09/2026)
+
+⚠ **Agregados, no creado**: el archivo ya existía con `V-125` y `C-87`. **Los cinco ids son nuevos
+en los cuatro CSV** — verificado; los únicos repetidos siguen siendo `C-84` y `C-85`, que son el
+ítem 29.
+
+| caso | qué fija |
+|---|---|
+| **`C-88`** | el alcance — **un número, no dos**, con la medición del registro |
+| **`C-89`** | ⭐ `camp_frecuencia` **no tiene defecto propio**: es `RATIO` y **cuelga del alcance**. Si aquél se arregla, ésta sola |
+| **`C-90`** | ⛔ `camp_meta_frecuencia` **SÍ tiene caso propio**: es `ULTIMO` sobre una columna, **el motor no la calcula** |
+| **`C-91`** | las diferencias chicas de `L-046` — **drift, no evidencia**: 17 minutos entre capturas |
+| **`C-92`** | los tres `*_ctr` — **el formato tapa el dígito que decidiría** |
+
+### ⭐⭐ Y la corrección que `C-90` deja escrita, porque es la lección
+
+Se había concluido que **las dos frecuencias eran el mismo defecto** y colgaban del alcance.
+⛔ **Falso para `camp_meta_frecuencia`**: es `ULTIMO` sobre `meta_frecuencia`, **una columna propia**.
+
+⭐ **Lo que se salva del análisis es el método, no la conclusión** — que un derivado sea
+aritméticamente consistente con sus operandos publicados **dice de dónde viene el número**. ⛔ **El
+error fue SUPONER LA OPERACIÓN EN VEZ DE LEERLA.**
+
+⇒ ⭐⭐ **Y la forma general: dos números que se mueven juntos NO comparten causa por eso solo.**

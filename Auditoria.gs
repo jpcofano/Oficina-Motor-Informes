@@ -9114,3 +9114,123 @@ function censarFormatosDesconocidos() {
   Logger.log('     es un formato inventado sobre un valor que SÍ necesitaba transformarse.');
   return { ok: true, total: total, vacios: vacios, desconocidos: filasRaras };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04_9` Parte 0.3 — **¿cuántas filas ve `camp_alcance`, y cuál devuelve `ULTIMO`?**
+ *
+ * ⛔⛔ **Lo que la Parte 0.1 ya dejó fijado, y cambia la pregunta:** en el registro **NO EXISTE
+ * ningún marcador de alcance por plataforma**. Hay **uno solo** —`camp_alcance`, `ULTIMO` sobre
+ * `alcance` en `resumen_metricas_dinamico`, **sin `dimensiones`**— contra **tres** de impresiones,
+ * tres de vistas y tres de VTR, todos con `plataforma=…` sobre `DIGITAL`.
+ *
+ * ⇒ ⭐⭐ **La caja de «alcance de Meta» de `L-046` no puede tener un marcador propio: no existe.**
+ * Si publica el mismo número que el total, es **el mismo token pintado dos veces** — `camp_alcance`
+ * no es exclusivo y `presentacion.replaceAllText` lo pinta en todo el deck.
+ * ⇒ **La discrepancia es UN número, no dos.** Eso el registro ya lo contesta y no hace falta correr.
+ *
+ * ══ LO QUE ESTO SÍ VIENE A MEDIR ═══════════════════════════════════════════════════════════
+ *
+ * `ULTIMO` **elige UNA fila**. ⚠ Si `resumen_metricas_dinamico` trae **una fila por plataforma**,
+ * entonces el «alcance total» del motor **es el de UNA plataforma** — lo que explicaría solo que
+ * coincida con el de Meta, y sin ningún bug de suma.
+ *
+ * ⭐ **El cruce con `C-84`, que el prompt pide NO forzar:** aquél midió `digital/Alcance` con **dos
+ * filas por cuenta** (17.013 y 0) y concluyó que elegir por orden *«hoy acierta; el día que el
+ * orden cambie publica el cero»*. ⛔ **Es OTRA solapa.** Si acá hay una sola fila, `C-84` **no
+ * aplica** y hay que buscar en otro lado — **el parecido no es evidencia.**
+ *
+ * ⛔ SÓLO LECTURA.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function diagAlcanceDeCampana() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('`camp_alcance` — qué filas ve y cuál elige · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ⭐ La fila REAL del registro, no la del snapshot: el prompt lo pide explícitamente. */
+  var fila = null, otrosAlcance = [];
+  leerMarcadores_().forEach(function (m) {
+    var n = String(m.marcador || '').trim();
+    if (n === 'camp_alcance') fila = m;
+    else if (n.indexOf('camp_') === 0 && n.indexOf('alcance') !== -1) otrosAlcance.push(n);
+  });
+  if (!fila) { Logger.log('⛔ ABORTA: no hay fila `camp_alcance` en MARCADORES.'); return { ok: false }; }
+
+  Logger.log('  camp_alcance · ' + fila.base_id + '/' + fila.solapa);
+  Logger.log('     campo_logico : ' + fila.campo_logico + '   operacion: ' + fila.operacion);
+  Logger.log('     dimensiones  : ' + (String(fila.dimensiones || '').trim() || '(vacío)') +
+    '   filtro: ' + (String(fila.filtro || '').trim() || '(vacío)'));
+  Logger.log('     informe_id   : ' + fila.informe_id + '   formato: ' + fila.formato);
+  Logger.log('');
+  /* ⭐⭐ La afirmación central de la Parte 0.1, verificada contra la hoja viva y no el snapshot. */
+  Logger.log('  ⭐⭐ otros marcadores `camp_*` con «alcance» en el nombre: ' + otrosAlcance.length +
+    (otrosAlcance.length ? ' — ' + otrosAlcance.join(', ') : '  ⇒ **NO existe un alcance por plataforma**'));
+  if (!otrosAlcance.length) {
+    Logger.log('     ⇒ La caja de «alcance de Meta» de `L-046` **no tiene marcador propio**.');
+    Logger.log('     Si publica el mismo número que el total, es el MISMO token pintado dos veces.');
+  }
+
+  /* ── Las filas que la solapa trae, sin recortar por nada ─────────────────────────────── */
+  var b = abrirBase(fila.base_id);
+  if (!b.ok) { Logger.log('⛔ ABORTA: ' + b.motivo); return { ok: false, motivo: b.motivo }; }
+  var hoja = b.libro.getSheetByName(fila.solapa);
+  if (!hoja) {
+    /* ⚠ Un nombre de solapa que cambió deja todo lo medido encima corrido sin fallar. */
+    Logger.log('⛔ ABORTA: no existe la solapa `' + fila.solapa + '`. Las del libro:');
+    b.libro.getSheets().forEach(function (s) { Logger.log('     ' + s.getName()); });
+    return { ok: false, motivo: 'sin solapa' };
+  }
+
+  var mapa = buscarMapeo(fila.base_id, fila.solapa, fila.campo_logico);
+  Logger.log('');
+  Logger.log('── `' + fila.campo_logico + '` en MAPEO: ' +
+    (mapa.ok ? 'columna ' + mapa.columna : '⛔ ' + mapa.motivo));
+  if (!mapa.ok) return { ok: false, motivo: 'sin mapeo' };
+
+  var filaEnc = resolverFilaEncabezado_(fila.base_id, fila.solapa, 1);
+  var datos = hoja.getDataRange().getValues();
+  var iCol = columnaLetraAIndice_(mapa.columna);
+  var h = (datos[filaEnc - 1] || []).map(function (c) { return String(c == null ? '' : c).trim(); });
+  Logger.log('  filas totales: ' + datos.length + ' · encabezado en la ' + filaEnc);
+  Logger.log('  columna ' + mapa.columna + ' = ' + JSON.stringify(h[iCol] || '(vacío)'));
+
+  /* ⭐⭐ Lo que decide: cuántas filas con valor hay. `ULTIMO` elige UNA. */
+  var conValor = [];
+  for (var k = filaEnc; k < datos.length; k++) {
+    var v = datos[k][iCol];
+    if (v === '' || v === null || v === undefined) continue;
+    conValor.push({ fila: k + 1, valor: v, contexto: datos[k].slice(0, 4).join(' | ').slice(0, 70) });
+  }
+  Logger.log('');
+  Logger.log('── ⭐⭐ filas con valor en `' + fila.campo_logico + '`: ' + conValor.length);
+  conValor.slice(0, 25).forEach(function (x) {
+    Logger.log('     fila ' + x.fila + ':  ' + x.valor + '   [' + x.contexto + ']');
+  });
+  if (conValor.length > 25) Logger.log('     … y ' + (conValor.length - 25) + ' más');
+
+  Logger.log('');
+  Logger.log('── VEREDICTO ──');
+  if (conValor.length === 1) {
+    Logger.log('  ⭐ UNA sola fila con valor ⇒ `ULTIMO` no elige nada: no hay ambigüedad.');
+    Logger.log('     ⛔ **`C-84` NO aplica** — aquél mide dos filas por cuenta en OTRA solapa.');
+    Logger.log('     La diferencia contra el equipo está en el VALOR de esa fila, no en cuál se');
+    Logger.log('     eligió. ⇒ Hay que mirar la fuente, no el criterio de desempate.');
+  } else if (conValor.length > 1) {
+    Logger.log('  ⛔⛔ ' + conValor.length + ' filas con valor ⇒ **`ULTIMO` está ELIGIENDO una**.');
+    Logger.log('     ⭐ Es la misma forma que `C-84`, en otra solapa. Y la salida que aquél dejó');
+    Logger.log('     escrita NO es cambiar de fila: es **dejar de elegir por orden**.');
+    Logger.log('     ⚠ Antes de escribir un criterio de desempate, buscar una fuente con UNA sola');
+    Logger.log('     fila: **un criterio de desempate es deuda; una fuente sin ambigüedad no.**');
+  } else {
+    Logger.log('  ⚠ NINGUNA fila con valor. Entonces el 872.827 del deck no sale de acá, y lo');
+    Logger.log('     primero a revisar es si la ventana de la corrida recorta esta solapa.');
+  }
+
+  Logger.log('');
+  Logger.log('  ⚠ Lo que esto NO contesta: si el número es el correcto. `C-85` ya midió que el');
+  Logger.log('    alcance del equipo **no es la suma de las plataformas** —es un DEDUPLICADO— y que');
+  Logger.log('    **no hay fuente para el deduplicado**. ⭐ Puede que la respuesta correcta para esa');
+  Logger.log('    caja sea `-` y no un número, y eso lo decide el usuario.');
+  return { ok: true, filas_con_valor: conValor.length, otros_alcance: otrosAlcance };
+}
