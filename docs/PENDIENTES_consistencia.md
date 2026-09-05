@@ -1881,3 +1881,82 @@ publicó `''`— y **ningún censo de crudos lo puede ver, porque no es crudo**.
 ⛔⛔ **Es el mismo hueco que `camp_env4_fecha}}`, dos veces:** un detector que busca `{{` no ve un
 token al que le faltan las llaves de apertura, ni ve una caja que quedó vacía. ⭐ **El detector
 encuentra lo que se parece a lo que ya conoce.**
+
+---
+
+## ⛔⛔ CORRECCIÓN · `L-023` — **`L-022` y `L-023` no tienen la misma caja**, y eso tira tres explicaciones (05/09/2026)
+
+**Medido por el usuario sobre el XML, comparando POSICIÓN y TAMAÑO:**
+
+| lámina · deck | x | y | **w** | contenido |
+|---|---|---|---|---|
+| `L-022` · secco 2 campañas | 0.83 | 0.58 | **5.95** | `-Operativo Muro \| 25/8-` ✅ |
+| `L-023` · secco 2 campañas | 0.83 | 0.58 | ⛔ **2.16** | `/////` |
+| `L-023` · secco 1 campaña | 0.83 | 0.58 | ⛔ **2.16** | `-` |
+| `L-048` · `jm` 11:42 | 0.83 | 0.58 | ⛔ **2.16** | `/////` |
+
+⇒ ⭐⭐ **Misma esquina, ancho distinto: NO son la misma caja con distinto contenido — son dos cajas
+distintas.**
+
+### ⛔ Las tres explicaciones que se caen, y dos eran mías
+
+| dijimos | qué era |
+|---|---|
+| «publica el título de otra campaña por el pintado por presentación» (03/09, **mío**) | ⛔ falso para este caso |
+| «la lámina no declara el token» (04/09) | ⛔ falso — la imagen lo desmintió |
+| «tiene fila, resolvió y publicó `''`» (05/09, **mío**) | ⛔⛔ **falso: no hay ninguna caja vacía** |
+
+⇒ ⭐ **`/////` y `-` son valores LEGÍTIMOS del vocabulario** —sin cablear y sin dato—. **El motor no
+está publicando un agujero: está publicando lo que corresponde a lo que encontró.**
+
+⇒ ⛔ **No hay default silencioso que arreglar en `L-023`.** La Parte A del `2026-09-04_8` **queda en
+suspenso**: está escrita sobre esa premisa.
+
+### ⭐⭐ La lección de método, que es lo que vale
+
+**Tres explicaciones sucesivas para la misma caja, y ninguna se cayó por argumento: la tiró medir el
+ANCHO.** ⚠ **Se comparó el CONTENIDO sin comparar el CONTENEDOR** — y el orden de los runs en el XML
+**no distingue una caja vacía de una caja ausente**, así que cada lectura confirmaba la hipótesis
+que traía.
+
+⇒ ⭐ **Antes de explicar por qué dos cajas publican distinto, verificar que sean la misma caja.**
+Cuesta una medición de `<a:off>` y `<a:ext>`, y **habría ahorrado los tres intentos**.
+
+### ⚠ Y el dato que da el hilo, que ninguna hipótesis vieja explica
+
+**La misma caja pasó de `-` a `/////` entre las dos corridas de `secco`.** *Sin dato* → *sin
+cablear*. ⭐ **El motor cambió de veredicto sobre ese token entre una corrida y la otra**, y eso
+**no lo explica que la lámina esté escondida** — eso sería constante.
+
+⇒ ⛔ **Lo que falta saber, y no está en el repo:** ¿qué token hay en la caja angosta
+(`x=0.83 y=0.58 w=2.16`) de la plantilla de `secco`? **Si es otro token, NO hay bug**: un token sin
+fila publica `/////`, que es lo correcto, y `L-023` simplemente **no tiene el título cableado**.
+**Lo mira el usuario — Code no tiene acceso a Drive.**
+
+---
+
+## ⭐⭐ Parte D · Censo de formatos desconocidos — sobre el snapshot da CERO, y por eso hace falta el vivo (05/09/2026)
+
+**Los formatos que `formatearValorMarcador_` conoce, extraídos de la función (no copiados): 7** —
+`fecha`, `fraccion`, `miles`, `numero`, `porcentaje`, `porcentaje_sin_signo`, `texto`.
+
+**Sobre `MARCADORES_2026-08-31.tsv` (220 filas): CERO desconocidos.** ⇒ ⭐ Coherente: `entero_revisar`
+**entró después**, con el cableado de ministros del 03/09. ⚠ Y **6 filas con `formato` vacío**, que
+**no** son desconocidos —`f === ''` está contemplado y cae a `texto`—.
+
+⇒ **Escrito `censarFormatosDesconocidos()`** (`Auditoria.gs`, sólo lectura), con la lista **extraída
+del motor** y **control positivo que aborta**: `entero_revisar` tiene que aparecer, porque está
+medido que los seis `emin_*` lo llevan.
+
+⚠ **Y el control tiene fecha de vencimiento declarada en su propio log:** si `formatoEmin()` ya
+corrió, **el testigo se gastó** y hace falta uno nuevo. ⭐ Es el mismo caso del testigo de
+`censarRevisarVivos()`, que se gastó ayer — **y esta vez está dicho antes de que pase.**
+
+### ⛔ Por qué la Parte E va DESPUÉS del censo, y no antes
+
+Hacer fallar la función ante un formato desconocido **convierte esas filas en `«FALTA»` de golpe**.
+⇒ **Hay que saber cuántas son antes de apretar**, que es exactamente lo que el censo contesta.
+
+⚠ **Y lo que el censo NO dice:** si el valor publicado es correcto. Un `entero` sobre un entero **se
+ve bien** — le falta el separador y nada más. ⭐ **El riesgo real es un formato inventado sobre un
+valor que SÍ necesitaba transformarse**, y eso el conteo no lo distingue.

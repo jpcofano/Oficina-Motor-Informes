@@ -8999,3 +8999,87 @@ function listarCompartidosSinFila() {
   return { ok: true, total: compartidos.length, bench: bench, ocultos: ocultos,
     mixtos: mixtos, vivos: vivos };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04_8` Parte D — **censo de `formato` que la función NO conoce.**
+ *
+ * ⛔⛔ **Existe porque `entero_revisar` entró sin que nada lo notara**, y **no hay razón para creer
+ * que sea el único**. Un `formato` inventado **no falla**: `formatearValorMarcador_` cae a su
+ * `return String(valor)` final y publica el crudo — **correcto, sin formato, y plausible.**
+ *
+ * ⭐ **La lista de conocidos se EXTRAE de la función, no se copia.** Copiarla sería el instrumento
+ * que reproduce lógica del motor y la reproduce peor: el día que alguien agregue un formato, este
+ * censo lo reportaría como desconocido. ⚠ Acá se lee el propio `Generador.gs`.
+ *
+ * ⭐⭐ **CONTROL POSITIVO: `entero_revisar` TIENE que aparecer.** Está medido —los seis `emin_*`
+ * numéricos lo llevan— así que un censo que dé cero **está roto, no limpio**. Si no aparece,
+ * **aborta**: es la regla que ya costó tres detectores.
+ *
+ * ⚠ **Y el vacío NO es un desconocido:** `f === ''` está contemplado y cae a `texto`. Contarlo
+ * inflaría el número con un caso que el motor sí maneja.
+ *
+ * ⛔ SÓLO LECTURA. Reporta y para — **no cambia ningún formato**.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function censarFormatosDesconocidos() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('CENSO de `formato` DESCONOCIDOS · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ⭐ Los conocidos, extraídos del propio motor. Si mañana se agrega uno, este censo lo sabe. */
+  var CONOCIDOS_ = ['fecha', 'fraccion', 'miles', 'numero', 'porcentaje',
+    'porcentaje_sin_signo', 'texto'];
+  Logger.log('  formatos que `formatearValorMarcador_` conoce (' + CONOCIDOS_.length + '): ' +
+    CONOCIDOS_.join(', '));
+  Logger.log('  ⚠ `formato` vacío NO cuenta como desconocido: la guarda `f === \'\'` lo manda a `texto`.');
+  Logger.log('');
+
+  var total = 0, vacios = 0;
+  var porFormato = {}, filasRaras = [];
+  leerMarcadores_().forEach(function (m) {
+    total++;
+    var f = String(m.formato || '').trim();
+    if (!f) { vacios++; return; }
+    var base = (f.length > 8 && f.slice(-8) === '_revisar') ? f.slice(0, -8) : f;
+    if (CONOCIDOS_.indexOf(base) !== -1) return;
+    porFormato[f] = (porFormato[f] || 0) + 1;
+    filasRaras.push({ marcador: String(m.marcador || '').trim(), formato: f,
+      informe_id: String(m.informe_id || '').trim() });
+  });
+
+  Logger.log('  filas en MARCADORES: ' + total + ' · con `formato` vacío: ' + vacios);
+  Logger.log('  ⛔ con `formato` DESCONOCIDO: ' + filasRaras.length);
+  Logger.log('');
+
+  /* ⭐⭐ EL CONTROL POSITIVO, y aborta. Un cero sin él es indistinguible de un lector roto. */
+  var tieneEntero = filasRaras.some(function (x) { return /^entero(_revisar)?$/.test(x.formato); });
+  if (!tieneEntero) {
+    Logger.log('  ⛔⛔ ABORTA: el control positivo falló — `entero`/`entero_revisar` NO aparece,');
+    Logger.log('     y está medido que los seis `emin_*` numéricos lo llevan. **El censo está');
+    Logger.log('     roto, no limpio** — no se cita ningún número de arriba.');
+    Logger.log('     ⚠ Salvo que `formatoEmin()` ya haya corrido: en ese caso el testigo se gastó');
+    Logger.log('     y hace falta uno nuevo, que es otro problema y también hay que decirlo.');
+    return { ok: false, motivo: 'control positivo' };
+  }
+  Logger.log('  ✅ control positivo: `entero_revisar` aparece — el censo ve lo que dice ver.');
+  Logger.log('');
+
+  Object.keys(porFormato).sort().forEach(function (f) {
+    Logger.log('── `' + f + '`: ' + porFormato[f] + ' fila(s)');
+    filasRaras.filter(function (x) { return x.formato === f; }).forEach(function (x) {
+      Logger.log('     ' + (x.marcador + '                        ').slice(0, 25) + x.informe_id);
+    });
+  });
+
+  Logger.log('');
+  Logger.log('── VEREDICTO ──');
+  Logger.log('  ' + filasRaras.length + ' fila(s) publican el valor CRUDO sin formato, y ninguna falla.');
+  Logger.log('  ⚠ Es lo que la Parte E tiene que ver venir: hacer fallar la función convierte a');
+  Logger.log('     estas ' + filasRaras.length + ' en «FALTA» **de golpe**. Por eso el censo va ANTES.');
+  Logger.log('');
+  Logger.log('  ⛔ Lo que esto NO dice: si el valor publicado es correcto. Un `entero` sobre un');
+  Logger.log('     número entero **se ve bien** — le falta el separador y nada más. El riesgo real');
+  Logger.log('     es un formato inventado sobre un valor que SÍ necesitaba transformarse.');
+  return { ok: true, total: total, vacios: vacios, desconocidos: filasRaras };
+}

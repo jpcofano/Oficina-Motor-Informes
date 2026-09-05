@@ -17236,3 +17236,30 @@ aplicadas antes de escribir** — y el registro de esas decisiones ya existe.
 ⚠ **Y una corrección a lo que escribí el 03/09:** `L-023` no publica el título **porque la lámina no
 declara el token** —runs vacíos en el XML—, no por el pintado por presentación. ⭐ El mecanismo del
 pintado existe y está medido; lo que se cae es **que explicara este caso**.
+
+## 2026-09-05 · `2026-09-04_8` Addendum 1 — la caja no era la misma, y un formato que no existía
+
+⛔⛔ **Tres explicaciones sucesivas para `L-023` y ninguna se cayó por argumento: la tiró medir el
+ANCHO de la caja.** `L-022` mide **5.95"** y `L-023` **2.16"**, misma esquina ⇒ **no son la misma
+caja con distinto contenido, son dos cajas distintas.** ⭐ Dos de las tres explicaciones eran mías
+—«el pintado por presentación» (03/09) y «resolvió a `''`» (05/09)— y la segunda es la peor: **no
+hay ninguna caja vacía**. `/////` y `-` son **valores legítimos del vocabulario**.
+
+⇒ ⭐ **La lección: antes de explicar por qué dos cajas publican distinto, verificar que sean la
+misma caja.** Se comparó el contenido sin comparar el contenedor, y el orden de los runs en el XML
+**no distingue una caja vacía de una ausente**, así que cada lectura confirmaba la hipótesis que
+traía. La Parte A del `_8` queda **en suspenso**: está escrita sobre esa premisa.
+
+⭐⭐ **Y la Parte 0.3 encontró algo mejor que lo que buscaba:** `entero` **no existe** en
+`formatearValorMarcador_` —conoce siete formatos y ése no está—, así que `entero_revisar` cae al
+`String(valor)` final y **publica el crudo sin fallar**. ⛔ **Tercera vez en dos días de la misma
+figura:** algo que no existe o no se puede resolver **se convierte en una salida plausible en vez
+de en un error** — `camp_env4_fecha}}` sin llaves, el `-` que no distinguía causas, y ahora un
+formato inventado.
+
+⚠ **Y lo introdujo el cableado de ministros, que es mío** — y **lo encontró la medición que ese
+mismo cableado motivó**. Eso es el sistema funcionando, y se anota así en vez de omitirlo.
+
+**Escrito:** `formatoEmin()` (Parte C) y `censarFormatosDesconocidos()` (Parte D, sólo lectura, con
+la lista extraída del motor y control positivo que aborta). ⛔ **La Parte E no se ejecutó**: hacer
+fallar la función convierte esas filas en `«FALTA»` de golpe, y el censo va antes.
