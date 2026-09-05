@@ -2370,3 +2370,42 @@ leería como *«tienen residuo»*, que es lo contrario de lo que dicen. Van como
 ⭐ **No se corrige acá y es a propósito:** los casos viejos son evidencia fechada y renombrar un
 estado en cuatro CSV movería el significado de filas que nadie está mirando. **Se registra para que
 el próximo que elija un estado sepa que esa palabra ya está tomada dos veces.**
+
+---
+
+## 05/09/2026 · ⛔⛔ El handoff estuvo 62 commits atrasado, y lo encontró el usuario preguntando
+
+**`docs/HANDOFF_CODE.md` quedó en el 02/09 mientras se commiteaban 62 cambios encima.** Decía
+*«ministros 1 de 10»* —están los 10—, *«85 bancos»* —son 94— y una lista de *«lo que hay que
+correr»* que ya había corrido entera.
+
+⭐⭐ **Lo grave no es el atraso: es que `§7` lo declara «puntero al presente».** ⇒ Un documento
+que **se reescribe entero** no tiene ninguna marca de viejo — **lo que quedó de la versión anterior
+se lee como actual**, que es exactamente lo que ya está escrito en `CLAUDE.md` §4 sobre citar el
+handoff propio como evidencia. **La regla estaba escrita y el documento igual envejeció.**
+
+⚠ **Y nada lo señaló.** La bitácora se actualizó en cada commit —es append-only y barata—; el
+handoff pide reescritura y **por eso se saltea**. ⇒ **Lo encontró el usuario preguntando *«¿tu
+handoff está actualizado?»***, no un control.
+
+⭐ **Como condición verificable, que es lo que falta y no se implementa acá:** *«ningún commit que
+toque `.gs` o una hoja de registro puede quedar a más de N commits del último que tocó
+`HANDOFF_CODE.md`»*. **Eso un censo lo puede mirar**; *«acordate de reescribir el handoff»* no.
+
+---
+
+## 05/09/2026 · ⛔ Trece prompts del 04/09 se ejecutaron sin copiarse a `docs/Prompts/`
+
+**Violación de `§3`, ya reportada el 04/09 pero registrada SÓLO en un mensaje de commit**
+(`c3dd90b`). ⚠ **Un mensaje de commit no es un documento consultable**: el `grep` sobre este
+archivo daba **cero** hasta hoy.
+
+**En la carpeta hay 5.** Faltan: `_1`, `_2`, `_4` y su addendum, `_5` principal, `_6` addendum 1,
+`_7` y su addendum 1, `_8` y sus addenda 1–3, `_9` principal y su addendum 1.
+
+⛔ **No se reconstruyen de memoria.** Un prompt reconstruido es indistinguible de uno inventado, y
+quedaría en la carpeta con la autoridad de un original.
+
+⚠ **Y el `_9` Addendum 1 nunca llegó a esta sesión** — sobre su veredicto de las 1031 filas **no se
+afirma nada** en ningún documento que yo haya escrito. Está declarado también en el propio
+`_9 Addendum 2`.

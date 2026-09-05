@@ -3,84 +3,95 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-09-02 — **`secco` dejó de salir en hueco.** Los 168 marcadores
-compartidos están en `informe_id = '*'` (`D-54`), los `_revisar` se pusieron y después se
-levantaron los 18 que el CSV validaba (`D-56`), y **ministros arrancó: 1 de 10**.
-**Suites: 85 bancos, 2 en rojo** —los dos preexistentes y reales—. **`clasp push` hecho.**
+**Última actualización:** 2026-09-05 — **el `_9` cerró sin tocar el motor.** `R-34` registra que
+`camp_alcance` publica el alcance de **Meta** porque es la única columna que hay, y la diferencia
+con el equipo **está explicada**: el equipo no actualiza la base. **Suites: 94 bancos, exit 0.**
+**Cola: 12 de 37 cerrados.**
 
-### ⭐ Lo último, en cinco líneas
-
-- ⭐⭐ **`D-54` aplicado: 168 filas en `*`**, 52 se quedan en `jm`. Es lo que hacía falta para que la
-  decisión exista en el motor y no sólo en `PLAN.md` — una fila `jm` **no la puede leer `secco`**.
-- ⭐ **`D-56`: el CSV de casos es la fuente de verdad de la validación**, no `MARCADORES.notas`. Se
-  pusieron 76 `_revisar` y se levantaron **18** con caso `V-` `exacto`.
-- ⭐ **`D-55`**: una columna que describe un **hecho mecánico** se autocorrige; una que describe una
-  **decisión editorial** se reporta y se corrige a mano.
-- **Ministros: `ambito=ministros` propio y `emin_encuentros` cableada** — con `V-49` reproducido
-  **dos veces**, en fixture y en corrida real, las dos dando **8**.
-- ⚠ **El `.gitattributes` cerró el `P1` de los line endings**: el veredicto de las suites ya no
-  depende de qué copia del repo se mire.
-
-### ⛔ Lo que hay que correr, y es tuyo
-
-1. ⭐ **`aplicarAsteriscoCompartidos()` otra vez.** `m2_camp_lista` quedó en `informe_id = jm` —su
-   token no estaba en la plantilla de `secco` cuando se midió el inventario— y por eso sale
-   `/////` en `L-014`. **Es idempotente**: sólo toca lo que falta.
-2. **`diagCablearEminEncuentros()`** y, si está bien, **`cablearEminEncuentros()`**.
-3. ⚠ **Lo que venía pendiente de antes y sigue en pie:** **Aplicar configuración** —que siembra
-   `MAPEO.ivr_vocero` y arrastra `SOLAPAS.ventana_ref = 'propia'` del desglose,
-   `campo_id_cuenta = ivr_id_cuenta` y las dos filas de fechas—, `instalar()`, `cablearGcbaIvr()`,
-   `censarTokensSinMarcador()` y `diagDondeVivenLosIvr()`.
+> ⛔ **Este documento estuvo 62 commits atrasado** (del 02/09 al 05/09) y decía *«ministros 1 de
+> 10»*, *«85 bancos»* y una lista de cosas a correr que ya habían corrido. **Lo encontró el usuario
+> preguntando, no un control.** Registrado en `PENDIENTES_consistencia.md`.
 
 ---
 
-## Ministros — **1 de 10**, y las otras nueve tienen dueño
+## ⛔ Lo que hay que correr, y es tuyo
 
-| | estado |
+1. ⭐ **Confirmar qué dice la columna `meta_frecuencia`** para la campaña del deck. **Es lo único
+   que queda de todo el `_9`.** ⚠ Ya **no es un desempate** —la aritmética cierra, `2.080.014 /
+   872.827 = 2,38`— sino una **confirmación de lectura**: si dijera otra cosa, el `2,38` sería
+   coincidencia y la pregunta volvería a abrirse.
+2. **`diagLimpiarGrupoB()` y, si está bien, `limpiarGrupoB()`** — los cuatro del grupo B del `_7`.
+3. ⚠ **Verificar que el proyecto de Apps Script tenga el código de hoy.** El último `clasp push` de
+   esta sesión **no está registrado en ningún lado que yo pueda leer**, y un push que corrió antes
+   del último cambio es indistinguible de uno que no corrió (`CLAUDE.md` §4). `clasp pull` a un
+   temporal lo contesta sin pisar nada.
+
+---
+
+## ⭐ Lo último, en cinco líneas
+
+- ⭐⭐ **`R-34` + `C-94`/`C-95`/`C-96`: no hay tres discrepancias, hay una sola fuente distinta.**
+  El motor lee la base, el equipo lee la plataforma, y **todo lo derivado hereda el alcance que le
+  tocó**. `C-93` quedó superseded (`D-58`) y **no se editó**.
+- ⭐ **Ministros: los 10 cableados**, con `emin_encuentros = 7` reproducido en corrida real. El
+  corte pasó a la columna `D` con ventana **viernes a viernes** y **el `−3` se cayó medido**.
+- ⭐ **`D-57` implementado**: un solo botón, siempre desatendida, con el progreso en la misma
+  pantalla. Con el ítem 31 cerrado en el mismo cambio.
+- ⭐ **Ítem 33, causa raíz**: el bloque modelo se tomaba **por posición** sobre un deck ya movido.
+  Ahora se resuelve por `objectId`, **calculado antes de la primera duplicación**.
+- ⚠ **Parte E: un `formato` desconocido ahora FALLA visiblemente.** Es **inerte hoy** —el censo da
+  0 después de `formatoEmin()`— y por eso tiene banco propio: un cambio inerte no tiene testigo.
+
+---
+
+## ⛔ Lo congelado por el usuario — no se toca
+
+| qué | hasta cuándo |
 |---|---|
-| ✅ **`emin_encuentros`** | cableada. `CONTEO` sobre `rdv/RVD JM-CM - ES` con `ambito=ministros`. **Nace sin `_revisar`** porque `V-49` la valida y el número se reprodujo |
-| ⏳ **`emin_lista`** | ⛔ **no se puede con la configuración de hoy**: `LISTA_CRUDA` toma **un** `campo_logico`, sin plantilla, **y además deduplica** — con `figura` sola publicaría **7** donde hay **8 encuentros**. Necesita que acepte una plantilla `figura + fecha` |
-| ⏳ **los 8 de métricas** | salen de `digital` **por `id_cuenta`**, que sale del anclaje, que parte del **temario** — y **hoy no hay ningún ministro en `REUNIONES`** |
-
-⭐ **La medición que ordenó todo:** `ministros` es `modo = agregado` y **no itera `REUNIONES`**, así
-que `emin_encuentros` no necesita ni temario ni anclaje. Los ocho sí.
-
-⛔ **Y hay una trampa dormida antes de cargar ministros al temario** (`PENDIENTES`, `P1`): **`figura`
-no llega al ítem de encuentro**, así que un `SECCIONES.filtro` sobre ella leería `undefined` y **no
-matchearía ninguna lámina, sin fallar**. El día que se cargue un ministro, la sección `encuentro`
-lo expande junto con los de `jm`. Son dos líneas, con el precedente del `_11` (`tipo`) y el `_25`
-(`fecha`).
+| **Los Resúmenes Ejecutivos** | hasta **validar con los equipos de dónde sale la información** |
+| **Todos los `*_bench_*`** | sin fecha — decisión del 04/09 |
+| **Todo lo que vive SÓLO en láminas escondidas** | ⚠ **en las dos plantillas**. Los **mixtos** —escondido en una, visible en la otra— **NO se congelan**: el lado que lo pinta lo necesita |
 
 ---
 
-## Lo que quedó medido y NO se tocó, con su motivo
+## ⚠ Lo que quedó frenado a propósito, con el arreglo ya localizado
 
-- ⛔ **`reuniones/Agenda funcionarios` está declarada `uso = fuente` y no se puede usar** — la figura
-  se carga mal ahí. La medición contra el fixture queda anotada en `PENDIENTES` **porque es más
-  barato que volver a medirla**.
-- ⚠ **`rdv` tiene una solapa que `SOLAPAS` no declara**: `Funcionarios  Ministros`, 90 filas muertas
-  desde agosto **2025**, sin métricas. No sirve para nada de esto, pero **una solapa sin declarar es
-  invisible para todo censo**.
-- ⚠ **`DIGITAL` recorta por cuenta y `resumen_metricas_dinamico` por fecha.** Sobre una campaña
-  fuera de ventana, el desagregado publica y el agregado no. **Hoy es inofensivo porque el temario
-  elige campañas vivas**; se anotó como condición.
-- ⚠ **`camp_env4_fecha` aparece como texto literal** en `L-022` — sin llaves, así que ningún censo
-  lo ve. Encaja con lo medido el 22/08: ese token **no existe** porque la fecha está en celda
-  combinada.
+- **`emin_lista` publica `-`.** El arreglo es **un nombre** en la lista de
+  [Generador.gs:1723](Generador.gs#L1723) — `['FILA', 'FILA_TEXTO', 'GRUPO_TEXTO']` no incluye
+  `LISTA_TEXTO`. ⛔ **Reportado y no aplicado**: no había prompt que lo pidiera.
+- **Ítem 9 — `camp_titulo` en `L-023`.** Localizado hasta *«si `L-023` entra o no en la lista de
+  tokens a resolver»*, **parado antes del arreglo por instrucción**. ⚠ Las tres explicaciones
+  anteriores —dos mías— **se cayeron con la medición del usuario**.
 
 ---
 
-## La cola
+## ⛔ La deuda documental abierta, y es mía
 
-1. ⛔⛔ **`P0` · El escritor del temario no sabe QUITAR.** Una campaña que el usuario sacó **se sigue
-   publicando**. Toca el ESCRITOR, no el lector. Cuelga de `D-53`.
-2. **Los 7 `m2_*`**: el usuario confirma que `L-038`/`L-014` salió **exacto** contra el deck del
-   29/08. ⇒ **falta escribir el caso en el CSV** —con los siete valores, que los confirma él— y
-   recién ahí entran a `LEVANTAN_POR_CASO_`. ⛔ **No se levantan citando `V-110`**: ese caso es un
-   testigo previo a un cambio de esquema y **nace vacío a propósito**.
-3. **`emin_lista` + los 8 de métricas** — ver arriba.
-4. **Los 45 tokens compartidos sin fila** — cableado, no migración.
-5. **La opción 4** (que la expansión saltee las escondidas): **medido, 2 copias muertas por
-   corrida**, y se pospuso **después de las corridas**.
-6. **`R-02` citado con dos sentidos**: la regla del temario es `R-04`. Censo: 17 citas equivocadas.
-7. ⚠ **`node tools/escritores.js` está roto** — `inventario.js` tira *«llaves desbalanceadas»*.
+**Trece prompts del 04/09 se ejecutaron sin copiarse a `docs/Prompts/`** — violación de `§3`. En la
+carpeta hay **5**; faltan el `_1`, el `_2`, el `_4` y su addendum, el `_5` principal, el `_6`
+addendum 1, el `_7` y su addendum 1, el `_8` y sus addenda 1–3, y el `_9` principal y su
+addendum 1.
+
+⛔ **No se reconstruyen de memoria** —un prompt reconstruido es indistinguible de uno inventado— y
+⚠ **el `_9` Addendum 1 nunca lo recibí**: sobre su veredicto de las 1031 filas **no afirmo nada**.
+
+---
+
+## La cola — **37 ítems, 12 cerrados**
+
+Vive en **`docs/PLAN.md` §2**, no acá. `[x]` 12 · `[~]` 2 (los ítems **7** y **33**) · `[ ]` 23.
+
+⭐ **Lo último que cerró: el ítem 10**, y **no como se esperaba** — la pregunta *«¿32,7 es
+correcto?»* no se contesta con un caso `V-` contra el deck, porque **no hay defecto que medir**.
+
+---
+
+## Lo que sé del estado del motor, y lo que no
+
+| afirmación | cómo lo sé |
+|---|---|
+| Suites en verde, 94 bancos | **exit code 0**, corrido hoy — no por leer el log |
+| `git` == disco local | `git status` vacío, `HEAD == origin/main`, medido |
+| `emin_encuentros = 7` | **corrida real** del usuario, no fixture |
+| ⚠ el proyecto de Apps Script está al día | **no lo sé** — ver el punto 3 de arriba |
+| ⚠ `L-023` publica bien | **no lo sé** — el ítem 9 está frenado |

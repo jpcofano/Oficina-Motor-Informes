@@ -17321,3 +17321,21 @@ prompt ya ejecutado, diffear contra el de disco y declarar la divergencia en el 
 es un desempate sino una confirmación de lectura**, y se deja escrita porque **dar por buena una
 aritmética que cierra sin verificar la columna es como se llegó dos veces a una conclusión falsa
 sobre este mismo marcador.**
+
+## 2026-09-05 · Doc — el handoff estaba 62 commits atrás, y el ítem 10 cierra sin defecto
+
+⛔⛔ **`HANDOFF_CODE.md` quedó en el 02/09.** Decía *«ministros 1 de 10»*, *«85 bancos»* y una lista
+de cosas a correr **que ya habían corrido**. ⇒ **Reescrito entero.** ⚠ **Lo encontró el usuario
+preguntando, no un control** — y eso va registrado, porque *«acordate de reescribir el handoff»* no
+es vigilable y **una condición sí**.
+
+⭐ **Ítem 10 cerrado, y no como se esperaba.** La cola pedía un caso `V-` que contestara *«¿32,7 es
+correcto?»* contra el deck. ⇒ **No hay defecto que medir:** `C-95` lo cierra como derivado de
+`C-94`, porque `camp_frecuencia` **hereda entero** el alcance que `R-34` explica. **El matiz que
+quedaba «no medido» queda sin objeto**, que no es lo mismo.
+
+⛔ **Registrada la deuda de los trece prompts del 04/09 sin copiar**, que hasta hoy vivía **sólo en
+un mensaje de commit** — el `grep` sobre `PENDIENTES` daba cero. ⛔ **No se reconstruyen de
+memoria.**
+
+**Suites: 94 bancos, exit 0.**
