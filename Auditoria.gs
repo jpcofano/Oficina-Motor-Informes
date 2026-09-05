@@ -9052,17 +9052,48 @@ function censarFormatosDesconocidos() {
   Logger.log('  ⛔ con `formato` DESCONOCIDO: ' + filasRaras.length);
   Logger.log('');
 
-  /* ⭐⭐ EL CONTROL POSITIVO, y aborta. Un cero sin él es indistinguible de un lector roto. */
-  var tieneEntero = filasRaras.some(function (x) { return /^entero(_revisar)?$/.test(x.formato); });
-  if (!tieneEntero) {
-    Logger.log('  ⛔⛔ ABORTA: el control positivo falló — `entero`/`entero_revisar` NO aparece,');
-    Logger.log('     y está medido que los seis `emin_*` numéricos lo llevan. **El censo está');
-    Logger.log('     roto, no limpio** — no se cita ningún número de arriba.');
-    Logger.log('     ⚠ Salvo que `formatoEmin()` ya haya corrido: en ese caso el testigo se gastó');
-    Logger.log('     y hace falta uno nuevo, que es otro problema y también hay que decirlo.');
-    return { ok: false, motivo: 'control positivo' };
+  /* ⭐⭐ EL CONTROL POSITIVO — **SINTÉTICO, y por eso no caduca.**
+   *
+   * ⛔⛔ **El anterior era `«tiene que aparecer entero_revisar»`, y estaba mal por una razón de
+   * fondo: dependía de un DEFECTO REAL de la hoja de producción.** Un detector así **sólo
+   * funciona mientras el defecto exista** ⇒ **se rompe exactamente cuando el sistema se
+   * arregla**, es decir **deja de vigilar justo cuando empieza a hacer falta que vigile**.
+   *
+   * ⚠ Es la vuelta de tuerca del *«un cero sin control positivo es indistinguible de un
+   * detector que no mira nada»*: **un control positivo que depende de la suciedad de los datos
+   * caduca solo** — y `formatoEmin()` lo iba a gastar en la corrida siguiente.
+   *
+   * ⭐ **El sintético funciona con la hoja limpia, sucia o vacía**: se le da al criterio un
+   * formato que no existe y se verifica que lo detecte. ⚠ Y el criterio que se prueba es **el
+   * mismo** que corre sobre las filas — si fueran dos, el control mediría otra cosa. */
+  function esDesconocido_(f) {
+    var t = String(f || '').trim();
+    if (!t) return false;                                   // vacío NO es desconocido
+    var base = (t.length > 8 && t.slice(-8) === '_revisar') ? t.slice(0, -8) : t;
+    return CONOCIDOS_.indexOf(base) === -1;
   }
-  Logger.log('  ✅ control positivo: `entero_revisar` aparece — el censo ve lo que dice ver.');
+  var SINTETICO_ = '__formato_que_no_existe__';
+  Logger.log('  ══ control positivo SINTÉTICO ══');
+  if (!esDesconocido_(SINTETICO_) || !esDesconocido_(SINTETICO_ + '_revisar')) {
+    Logger.log('  ⛔⛔ ABORTA: el criterio NO detecta `' + SINTETICO_ + '`. **El censo está roto,');
+    Logger.log('     no limpio** — no se cita ningún número de arriba.');
+    return { ok: false, motivo: 'control positivo sintético' };
+  }
+  /* ⚠ Y la mitad negativa: un formato **válido** NO puede dar desconocido. Sin esto, un
+   * criterio que devolviera `true` siempre pasaría el control de arriba. */
+  if (esDesconocido_('miles') || esDesconocido_('miles_revisar') || esDesconocido_('')) {
+    Logger.log('  ⛔⛔ ABORTA: el criterio marca como desconocido a `miles`, `miles_revisar` o al');
+    Logger.log('     vacío. Estaría devolviendo `true` de más — no se cita nada.');
+    return { ok: false, motivo: 'control negativo sintético' };
+  }
+  Logger.log('  ✅ detecta `' + SINTETICO_ + '` y NO marca `miles`, `miles_revisar` ni el vacío.');
+  Logger.log('  ⭐ No depende de la hoja: sigue valiendo con `entero_revisar` ya corregido.');
+  /* ⚠ Y esto es el RESULTADO, no el control. Los dos hacen falta y son cosas distintas: el
+   * sintético prueba que el detector mira; el censo dice qué encontró. */
+  Logger.log('  ⓘ sobre la hoja, `entero_revisar` ' +
+    (filasRaras.some(function (x) { return /^entero(_revisar)?$/.test(x.formato); })
+      ? 'TODAVÍA aparece — `formatoEmin()` no corrió'
+      : 'ya NO aparece — `formatoEmin()` corrió, y esto es el resultado esperado'));
   Logger.log('');
 
   Object.keys(porFormato).sort().forEach(function (f) {

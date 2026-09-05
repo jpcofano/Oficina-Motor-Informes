@@ -2004,3 +2004,64 @@ escribió más nombres inventados** — no que algo lo impidiera.
 `censarFormatosDesconocidos()` **va a abortar** por control positivo. ⭐ **Eso es correcto y está
 previsto en su log** — pero significa que **el censo necesita un testigo nuevo antes de volver a
 servir**, y hoy no lo tiene.
+
+---
+
+## ✅ `u1_post_meta_alcance` — CERRADO: no es del motor, es un dato que falta en la base (05/09/2026)
+
+**Decisión del usuario.** El vocabulario ya está fijado: ⭐ **`0` es cero.** La celda `alc_real` de
+la fila POST **dice cero**, y `ULTIMO` sobre un cero **escrito** devuelve cero.
+
+⇒ ⭐ **El motor publica correctamente lo que la base dice.** No hay bug de motor, no hay default
+silencioso, y **`_revisar` no le corresponde**: la marca señala *«el motor puede estar mal»*, y
+**acá no lo está**.
+
+⇒ **Se le da la razón a `X-43`: es un dato que falta en la base.** Lo que falta es que alguien
+**cargue la columna**, o que el marcador **apunte a la fuente de la que el equipo saca sus 26.033**.
+
+⚠ **Sale de la lista de marcadores a decidir** y queda como **pendiente de FUENTE**, con el número
+del equipo escrito para saber contra qué comparar cuando la columna se cargue:
+
+> **`u1_post_meta_alcance` · el equipo publica `26.033` · la celda `alc_real` está en cero.**
+
+⛔ **Y `u1_pre_meta_alcance` tiene la MISMA operación sobre el MISMO campo** (`ULTIMO` sobre
+`alc_real`). ⇒ **Si la fuente cambia, cambian los dos** — anotado para que el arreglo no se haga
+sobre uno solo.
+
+---
+
+## ⭐⭐ A.2 · El arreglo del ítem 33 queda DESCARTADO como causa, por fechas (05/09/2026)
+
+El Addendum 2 pide verificar **antes que buscar más lejos** si el arreglo del ítem 33 explica que
+`L-023` publique distinto entre corridas.
+
+**Medido en `git log`:** el arreglo es **`b2e6282`, 04/09 16:49**. Y los tres decks son
+**anteriores**: `secco` 1 campaña (`20260903-234123`), `secco` 2 campañas (`20260904-153514`, 15:35)
+y `jm` 11:42. ⇒ ⛔ **Ninguno lo tenía. Descartado.**
+
+### ⭐⭐ Y el código dice algo mucho más preciso que «no resolvió»
+
+`textoFaltante_` (`Generador.gs`):
+
+```
+1931   if (!resultado) return '/////';                      ← NO HAY RESULTADO
+1935   if (estado === 'sin_datos') return '-';              ← HUBO resultado, y vino vacío
+```
+
+Y el único lugar que pasa `resultado = null` es **`barrerTokensNoAlcanzados_`** (`:4815`) — **la
+barrida final**.
+
+⇒ ⭐⭐ **Las dos salidas de `L-023` no son dos formas de «no salió»: son dos estados opuestos.**
+
+| deck | publica | qué significa |
+|---|---|---|
+| `secco` 1 campaña | **`-`** | ⭐ **el marcador SE RESOLVIÓ** y volvió vacío |
+| `secco` 2 campañas · `jm` | **`/////`** | ⛔ **NUNCA se lo resolvió** — lo pintó la barrida final |
+
+⇒ ⭐ **Eso acota dónde buscar, y confirma la lectura del addendum:** el problema **no está en cómo
+resuelve `camp_titulo`** —lo prueban las catorce láminas correctas— **sino en si `L-023` entra a la
+lista de tokens a resolver.** En una corrida entró y en las otras no.
+
+⛔ **Reportado y parado antes de escribir el arreglo**, como pide A.3. ⭐ Y `/////` **es la salida
+correcta** para lo que el motor encontró: **no está fallando en publicar, está publicando fielmente
+que no tuvo con qué llenar esa caja.**

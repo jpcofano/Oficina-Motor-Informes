@@ -1212,6 +1212,29 @@ código intacto, da verde, y eso se lee como *«el negativo pasó»*.
   por otro motivo —falta exigir el motivo—; **(3)** ⭐ **no llegó a mirar nada** —falta exigir que
   la mutación ocurra—. **Son tres afirmaciones separadas y ninguna implica a las otras dos.**
 
+⭐⭐ **Y la QUINTA, que es la vuelta de tuerca de la cuarta: EL CONTROL POSITIVO DE UN DETECTOR NO
+PUEDE SER UN DEFECTO PRESENTE EN LOS DATOS REALES.** (05/09/2026, decisión del usuario.) La cuarta
+dice que un detector no reporta hasta encontrar un caso conocido. ⛔ **Si ese caso es la suciedad de
+la hoja, el detector se apaga cuando el sistema se arregla** — **deja de vigilar justo cuando
+empieza a hacer falta que vigile.**
+
+- **El caso:** `censarFormatosDesconocidos()` nació con el control *«tiene que aparecer
+  `entero_revisar`»*, que es **el defecto que el censo vino a encontrar**. ⭐ **Correcto el día que
+  se escribió y condenado desde ese mismo día**: `formatoEmin()` lo iba a borrar en la corrida
+  siguiente, y el censo pasaría a abortar **por estar todo bien**.
+- ⭐ **La salida es un caso SINTÉTICO**, que no depende de la hoja: darle al criterio un
+  `__formato_que_no_existe__` y verificar que lo detecta. **Funciona con la hoja limpia, sucia o
+  vacía.** ⚠ **Y el criterio que se prueba tiene que ser EL MISMO que corre sobre los datos** — si
+  son dos implementaciones, el control mide otra cosa.
+- ⚠ **Con su mitad negativa, sin la cual no prueba nada:** un valor **válido** no puede dar
+  positivo. Un criterio que devolviera `true` siempre **pasaría el control de arriba**.
+- ⭐⭐ **Y la distinción que ordena todo: el cero sobre la hoja es el RESULTADO, no el control.**
+  Los dos hacen falta y son cosas distintas — **el sintético prueba que el detector mira; el censo
+  dice qué encontró.** Confundirlos es lo que hace que un detector sano se lea como roto, o al revés.
+- ⚠ **Y queda una pregunta abierta que este repo no midió:** varios bancos de `tools/` usan **el
+  escenario de un bug** como control positivo. **Cuáles dependen de que el bug siga vivo** no se
+  revisó — y un banco cuyo control caduca al arreglar el bug **tiene esta misma forma**.
+
 ⭐⭐ **Y la CUARTA, que no es sobre un banco sino sobre un DETECTOR — y es la que más barata sale
 y más veces se saltea: un detector nuevo no reporta hasta que se le exige encontrar un caso que YA
 SE SABE que está.** (03/09/2026.) Un banco prueba una función y falla solo; **un detector produce
