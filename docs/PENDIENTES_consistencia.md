@@ -1818,3 +1818,66 @@ motivo para suponer que Programmatic no.**
 
 ⇒ **La limpieza de los tres descansa en ausencia de medición, no en una medición.** Escrito así
 para que el día que alguien mida Programmatic POST **sepa que esto lo estaba esperando.**
+
+---
+
+## ⛔⛔ P0 · `entero` NO EXISTE como formato — y por eso no falla (05/09/2026)
+
+**Parte 0.3 del `2026-09-04_8`, medida corriendo `formatearValorMarcador_` real sobre `541526`:**
+
+| formato | devuelve | |
+|---|---|---|
+| `entero` | `541526` | ⛔ **reproduce el deck** |
+| `entero_revisar` | `-541526-` | ⛔ **byte a byte** |
+| `miles` | `541.526` | ⭐ |
+| `miles_revisar` | `-541.526-` | ⭐ |
+
+`formatearValorMarcador_` conoce **`porcentaje`, `porcentaje_sin_signo`, `fraccion`, `miles`,
+`numero`, `texto` y `fecha`**. ⛔ **`entero` no está**, así que cae al `return String(valor)` final
+(`Generador.gs:217`).
+
+⭐⭐ **Y eso es lo grave, más que el separador: un formato inexistente NO FALLA.** Devuelve el crudo
+y publica **un número correcto sin formato** — plausible, y nada en el camino lo señala. ⚠ **Es la
+misma familia que el `''` de `camp_titulo` y que el `-` que no distinguía sus causas: el default
+silencioso.**
+
+⚠ **Y lo escribí yo:** al cablear ministros puse `entero_revisar` **sin verificar que `entero`
+existiera**. El nombre suena bien y el motor no protesta.
+
+⇒ **Arreglado con `formatoEmin()`** — los seis numéricos a `miles`, **conservando el sufijo que
+tengan**. ⛔ El `_revisar` **no se toca**: esto es presentación, no validación, y la relectura lo
+verifica explícitamente.
+
+### ⚠ Lo que esto deja abierto y NO se arregla acá
+
+**Un `formato` que nadie implementó debería ser visible.** Hoy cualquier nombre inventado publica el
+crudo. ⭐ Un aviso en el log cuando el formato no se reconoce cuesta una línea — **pero es un cambio
+de comportamiento del motor y va por su cuenta**, no colgado de un cambio de configuración.
+
+---
+
+## ⚠ Parte 0.1 · Las siete familias de tokens crudos — CERO filas en el snapshot (05/09/2026)
+
+| familia | únicos en el deck | filas en `MARCADORES_2026-08-31` |
+|---|---|---|
+| `camp_resp_*` + `camp_tasa_resp` | 13 | **0** |
+| `conv_*` | 13 | **0** |
+| `rep_*` | 11 | **0** |
+| `et_*` | 11 | **0** |
+| `rrss_*` | 9 | **0** |
+| `u1_bench_*` | 3 | **0** |
+| `ecv_comuna` · `ecv_minutos` | 2 | **0** |
+
+⇒ ⭐ **Las siete familias son «sin fila» — cableado pendiente, NO un bug de resolución.**
+
+⚠ **Con su límite, que acá importa doble:** el snapshot es del **31/08**, tiene **220 filas y todas
+`jm`**, y es **anterior a la migración a `*`**. ⇒ **Puede quedarse corto y nunca largo**: si alguna
+familia ganó filas después, este cero es viejo. ⛔ **Para el número de hoy hace falta la hoja viva.**
+
+⭐ **Y la distinción que el prompt pide no mezclar sigue en pie:** *sin fila* (13+13+11+11+9+3+2) es
+**trabajo de cableado**; **`camp_titulo` en `L-023`** es **otra cosa** —tiene fila, resolvió, y
+publicó `''`— y **ningún censo de crudos lo puede ver, porque no es crudo**.
+
+⛔⛔ **Es el mismo hueco que `camp_env4_fecha}}`, dos veces:** un detector que busca `{{` no ve un
+token al que le faltan las llaves de apertura, ni ve una caja que quedó vacía. ⭐ **El detector
+encuentra lo que se parece a lo que ya conoce.**

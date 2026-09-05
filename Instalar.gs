@@ -10937,3 +10937,149 @@ function limpiarGrupoB_(aplicar) {
   Logger.log('     Ninguno de los seis tiene un `V-` `exacto` detrás.');
   return { ok: true, aplicado: true, limpiados: plan.length, backup: bk.nombre };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-04_8` Parte C — **los `emin_*` numéricos al formato de miles.**
+ *
+ * ⛔⛔ **La causa NO es «les falta el separador»: es que `entero` NO EXISTE como formato.**
+ *
+ * Medido corriendo `formatearValorMarcador_` real sobre `541526`:
+ *
+ *     entero          → 541526      ⛔ reproduce el deck
+ *     entero_revisar  → -541526-    ⛔ byte a byte
+ *     miles           → 541.526     ⭐
+ *     miles_revisar   → -541.526-   ⭐
+ *
+ * `formatearValorMarcador_` conoce `porcentaje`, `porcentaje_sin_signo`, `fraccion`, `miles`,
+ * `numero`, `texto` y `fecha`. **`entero` no está**, así que cae al `return String(valor)` final.
+ *
+ * ⭐⭐ **Y eso es lo grave, más que el separador: un formato inexistente NO FALLA.** Devuelve el
+ * valor crudo y publica algo **plausible**. Es el default silencioso, la misma familia que el `''`
+ * de `camp_titulo` y que el `-` que no distinguía sus causas.
+ *
+ * ⚠ **Y lo escribí yo**: al cablear ministros puse `entero_revisar` **sin verificar que `entero`
+ * existiera**. El nombre suena bien, el motor no protesta, y el deck sale con un número entero
+ * correcto y sin formato. **Nada en el camino lo señala.**
+ *
+ * ══ QUÉ TOCA Y QUÉ NO ══════════════════════════════════════════════════════════════════════
+ *
+ * ⛔ **El `_revisar` NO se toca**: acá se cambia la **presentación**, no el estado de validación.
+ * `entero_revisar` → `miles_revisar`, y sigue entre guiones. **Son dos cosas distintas y mezclarlas
+ * haría creer que el formato validó algo.**
+ *
+ * ⛔ **`emin_lista` NO entra.** Sigue publicando `-` y **su causa ya está medida aparte**
+ * (`ctx.plantilla` no llega porque `LISTA_TEXTO` no está en la lista del despachador). Meterlo acá
+ * haría creer que un cambio de formato lo arregló.
+ *
+ * ⛔ **Los tres `PCT` tampoco**: ya pasaron a `porcentaje_sin_signo_revisar` hoy a las 14:05.
+ *
+ * ⚠ **`emin_encuentros` entra y hoy el cambio es INERTE** —`miles` sobre `7` da `7`—, y va igual:
+ * el formato correcto no depende de que el número de esta semana sea chico.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+var FORMATO_MILES_EMIN_ = ['emin_encuentros', 'emin_alcance', 'emin_alcance_semanal',
+  'emin_aperturas', 'emin_clics_ctor', 'emin_clics_ctr'];
+
+/** ⛔ Los que NO se tocan, declarados para que el código diga qué deja afuera y por qué. */
+var FUERA_DE_ALCANCE_EMIN_ = {
+  'emin_or': 'ya es porcentaje_sin_signo_revisar (14:05)',
+  'emin_ctor': 'ya es porcentaje_sin_signo_revisar (14:05)',
+  'emin_ctr': 'ya es porcentaje_sin_signo_revisar (14:05)',
+  'emin_lista': '⛔ publica `-` por `ctx.plantilla` que no llega — OTRO problema, no de formato'
+};
+
+/** Modo seco. ⛔ No escribe. */
+function diagFormatoEmin() { return formatoEmin_(false); }
+
+/** Aplica, con backup antes y relectura después. */
+function formatoEmin() { return formatoEmin_(true); }
+
+function formatoEmin_(aplicar) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('`emin_*` → formato de miles — ' + (aplicar ? 'APLICA' : 'MODO SECO') + ' · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  ⛔ La causa: `entero` NO EXISTE en `formatearValorMarcador_` y cae al');
+  Logger.log('     `return String(valor)` final. Un formato inexistente NO FALLA: publica el');
+  Logger.log('     crudo, que es un número correcto sin formato.');
+  Logger.log('  ⛔ El `_revisar` NO se toca: `entero_revisar` → `miles_revisar`.');
+  Logger.log('');
+  Object.keys(FUERA_DE_ALCANCE_EMIN_).forEach(function (n) {
+    Logger.log('  ⛔ fuera de alcance · ' + (n + '            ').slice(0, 14) + FUERA_DE_ALCANCE_EMIN_[n]);
+  });
+  Logger.log('');
+
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe MARCADORES.'); return { ok: false }; }
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0].map(function (x) { return String(x == null ? '' : x).trim(); });
+  var iM = h.indexOf('marcador'), iF = h.indexOf('formato');
+  if (iM === -1 || iF === -1) { Logger.log('⛔ ABORTA: faltan `marcador` o `formato`.'); return { ok: false }; }
+
+  var plan = [], raros = [], yaEstaban = [];
+  FORMATO_MILES_EMIN_.forEach(function (n) {
+    var fila = -1, de = '';
+    for (var k = 1; k < datos.length; k++) {
+      if (String(datos[k][iM] || '').trim() === n) { fila = k + 1; de = String(datos[k][iF] || '').trim(); break; }
+    }
+    if (fila === -1) { raros.push(n + ' (sin fila)'); return; }
+    /* ⭐ El destino CONSERVA el sufijo que la fila tenga: la marca de validación no es asunto
+     * de este cambio, y decidirlo acá sería mezclar dos decisiones. */
+    var conRevisar = /_revisar$/.test(de);
+    var destino = conRevisar ? 'miles_revisar' : 'miles';
+    if (de === destino) { yaEstaban.push(n); return; }
+    /* ⚠ Sólo se pisa lo que es `entero`/`entero_revisar`. Cualquier otro formato se reporta y NO
+     * se toca: pisarlo borraría una decisión que no está en ningún otro lado. */
+    if (de !== 'entero' && de !== 'entero_revisar') { raros.push(n + ' (formato inesperado: `' + de + '`)'); return; }
+    plan.push({ marcador: n, fila: fila, de: de, a: destino });
+  });
+
+  plan.forEach(function (p) {
+    Logger.log('  ' + (p.marcador + '                      ').slice(0, 24) + p.de + '  →  ' + p.a);
+  });
+  if (yaEstaban.length) Logger.log('  ⓘ ya estaban: ' + yaEstaban.join(', '));
+  if (raros.length) Logger.log('  ⛔ NO se tocan: ' + raros.join(' · '));
+  Logger.log('');
+  Logger.log('  a cambiar: ' + plan.length + ' · ya estaban: ' + yaEstaban.length + ' · sin tocar: ' + raros.length);
+
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  ⓘ MODO SECO — no se escribió nada. Para aplicar: `formatoEmin()`.');
+    return { ok: true, aplicado: false, a_cambiar: plan.length };
+  }
+  if (!plan.length) { Logger.log('  ⓘ Nada que hacer. Idempotente.'); return { ok: true, aplicado: false }; }
+
+  var bk = backupMarcadores_('formatoEmin');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se escribió nada): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
+
+  plan.forEach(function (p) { hoja.getRange(p.fila, iF + 1).setValue(p.a); });
+  SpreadsheetApp.flush();
+
+  /* ⭐⭐ Relectura de la hoja, y **con el sufijo verificado**: el control no es «dice miles», es
+   * «dice miles Y conserva el `_revisar` que tenía». Si la marca se perdió, el cambio de
+   * presentación se llevó puesto un estado de validación. */
+  var d2 = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES').getDataRange().getValues();
+  var mal = [];
+  plan.forEach(function (p) {
+    var quedo = String(d2[p.fila - 1][iF] || '').trim();
+    if (quedo !== p.a) mal.push(p.marcador + ': pedí `' + p.a + '` y quedó `' + quedo + '`');
+    if (/_revisar$/.test(p.de) && !/_revisar$/.test(quedo)) {
+      mal.push('⛔ ' + p.marcador + ' PERDIÓ su `_revisar` — este cambio es de presentación, no de validación');
+    }
+  });
+  if (mal.length) {
+    Logger.log('  ⛔ RELECTURA FALLIDA — el backup es `' + bk.nombre + '`:');
+    mal.forEach(function (m) { Logger.log('     ' + m); });
+    return { ok: false, motivo: 'relectura', backup: bk.nombre };
+  }
+
+  Logger.log('  ✅ RELEÍDO: los ' + plan.length + ' quedaron en miles Y conservaron su `_revisar`.');
+  Logger.log('');
+  Logger.log('  ⚠ Control del próximo deck: `-1.049.552-` en vez de `-1049552-`, y el MISMO número.');
+  Logger.log('     ⛔ Si el número cambió, el formato tocó algo más — parar.');
+  return { ok: true, aplicado: true, cambiados: plan.length, backup: bk.nombre };
+}
