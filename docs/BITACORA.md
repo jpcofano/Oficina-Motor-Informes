@@ -17339,3 +17339,53 @@ un mensaje de commit** — el `grep` sobre `PENDIENTES` daba cero. ⛔ **No se r
 memoria.**
 
 **Suites: 94 bancos, exit 0.**
+
+## 2026-09-05 · `2026-09-05_1` — corrida nocturna: ocho partes, y **tres premisas del prompt caídas**
+
+⭐ **Parte 0 · una de siete vencida.** `0.7` decía que el censo de formatos usa `entero_revisar` como
+control positivo y que aborta. ⇒ **Ya es sintético** (`__formato_que_no_existe__`, con su mitad
+negativa), hecho el 04/09. **La Parte E cae entera: cero ediciones, y el cero se registra.**
+
+⭐⭐ **Parte A · `emin_lista` deja de publicar `-`** (ítem 34). `ctx.plantilla` salió del `if` de la
+familia `FILA`. ⛔ **Y NO por el camino que el prompt y el ítem daban por bueno** —agregar el nombre
+a la lista—: medido, con un `separador` cargado eso manda la **cadena que une** a `buscarMapeo`
+**como nombre de campo**. Hoy no rompe **sólo porque `emin_lista` declara `separador` vacío**.
+⭐ **El precedente es del propio repo, quince líneas más arriba:** el 26/08 `ctx.separador` salió de
+ese mismo `if`, con el comentario *«va incondicional y no detrás de otra lista de nombres»*.
+**La lista de nombres ya existía —`esPlantilla`—; lo que faltaba era usarla.**
+
+⭐ **Parte B · `C-97` y `C-98`.** El global de `L-047` cierra `exacto`; el digital del Resumen queda
+**`abierto` y no `contradice`**, porque está **congelado por el usuario** y declarar un defecto sobre
+un frente congelado afirma más de lo que se midió.
+
+⛔⛔ **Parte C · la premisa central del prompt era FALSA, y `C-97` la había copiado.** *«Los nombres
+del global de `L-047` no están en el repo»* — **están en cinco lugares**, incluido **`V-113`**, un
+caso `exacto` del 23/08. ⇒ `C-99` supersede a `C-97` con los marcadores nombrados, y la función
+**cambia de objeto**: no descubre nombres, **lee estado**.
+⭐ **Y no se escribió un instrumento nuevo:** `diagTokensDeLamina_` ya contestaba esto sin depender
+de la corrida; su problema era **de acceso**. `verGlobalL047()` es el wrapper público sin argumentos
+que `§2` prescribe.
+⛔ **Se descartó medido la primera versión**, que derivaba la lámina de `CORRIDAS.mapa_tokens`: con
+`D-57` la corrida va **en tandas**, y el mapa de cada tanda trae **sólo lo que seguía crudo al
+empezarla**.
+
+⭐ **Parte D · dos de cuatro ya estaban.** `L-039`/`L-048`/`L-050` está **más cerrado** de lo que el
+prompt supone —fuera de alcance por decisión del usuario desde el 22/08, y el censo las mide
+**enteras**—. Se registran el remitente y **que la campaña destacada depende de la hora**.
+
+⛔⛔ **Parte F · los dos conteos estaban mal, y los dos correctores del prompt también.** La cola son
+**36** y no 37; la deuda son **catorce** prompts y no trece; y **no existe ningún `_8 Addendum 5`**
+—lo que cerró `u1_post_meta_alcance` fue el `_7` Addendum 1—.
+
+⭐ **Parte G · `probar-caso-id.js`** (ítem 29), con **baseline declarado por nombre** en vez de exit
+rojo permanente: los dos duplicados **no se pueden renumerar** y un banco rojo para siempre deja de
+leerse. **Rojo ante un tercero**, y el baseline **no puede vencer en silencio**.
+
+⭐⭐ **Parte H · el cruce inverso, en `tools/` y no en `.gs`** (ítem 36) — y **corrió**. Un `.gs`
+tendría que llevar **la lista congelada** que el ítem existe para prevenir. Sobre el snapshot del
+31/08: **3** con caso `exacto` y `_revisar` puesto, **7** con caso `contradice` y **sin** marca.
+⭐ **Control positivo del más fuerte:** `CLAUDE.md` §4 nombra `u1_post_meta_alcance`/`X-43` **antes
+de que el instrumento existiera**, y el cruce **lo reencuentra solo**.
+
+**Suites: 96 bancos, exit 0.** ⛔ **Nada corrido contra la planilla viva, y ningún `clasp push`** —
+las dos primeras reglas de la noche.
