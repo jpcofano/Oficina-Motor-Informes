@@ -67,22 +67,39 @@ con el equipo **está explicada**: el equipo no actualiza la base. **Suites: 94 
 
 ## ⛔ La deuda documental abierta, y es mía
 
-**Trece prompts del 04/09 se ejecutaron sin copiarse a `docs/Prompts/`** — violación de `§3`. En la
-carpeta hay **5**; faltan el `_1`, el `_2`, el `_4` y su addendum, el `_5` principal, el `_6`
-addendum 1, el `_7` y su addendum 1, el `_8` y sus addenda 1–3, y el `_9` principal y su
-addendum 1.
+**Catorce prompts del 04/09 se ejecutaron sin copiarse a `docs/Prompts/`** — violación de `§3`.
+⚠ **Eran «trece» hasta el 05/09 y el número estaba mal**: la propia enumeración listaba catorce.
+
+| prompt | falta |
+|---|---|
+| `_1` · `_2` | los dos |
+| `_4` | el principal **y** su addendum 1 |
+| `_5` | el principal (su addendum 1 **sí** está) |
+| `_6` | su addendum 1 (el principal y el addendum 3 **sí** están) |
+| `_7` | el principal (v2) **y** su addendum 1 |
+| `_8` | el principal **y** los addenda 1, 2 y 3 (el 4 **sí** está) |
+| `_9` | el principal **y** su addendum 1 |
 
 ⛔ **No se reconstruyen de memoria** —un prompt reconstruido es indistinguible de uno inventado— y
 ⚠ **el `_9` Addendum 1 nunca lo recibí**: sobre su veredicto de las 1031 filas **no afirmo nada**.
 
+⛔ **Y NO existe ningún `_8 Addendum 5`**, aunque el `2026-09-05_1` lo dé por ejecutado: el git log
+tiene addenda del `_8` **1 a 4**, y lo que cerró `u1_post_meta_alcance` fue el **`_7` Addendum 1**
+(`eee5edc`). **Medido, no recordado.**
+
 ---
 
-## La cola — **37 ítems, 12 cerrados**
+## La cola — **36 ítems, 12 cerrados**
 
-Vive en **`docs/PLAN.md` §2**, no acá. `[x]` 12 · `[~]` 2 (los ítems **7** y **33**) · `[ ]` 23.
+Vive en **`docs/PLAN.md` §2**, no acá. `[x]` 12 · `[~]` 2 (los ítems **7** y **33**) · `[ ]` 22.
+⚠ **Eran «37» y el total estaba mal**: los ids van del **1 al 36 sin huecos**, verificado.
 
-⭐ **Lo último que cerró: el ítem 10**, y **no como se esperaba** — la pregunta *«¿32,7 es
-correcto?»* no se contesta con un caso `V-` contra el deck, porque **no hay defecto que medir**.
+```
+grep -o '^| `\[.\]` \*\*[0-9]*\*\*' docs/PLAN.md | grep -o '\[.\]' | sort | uniq -c
+```
+
+⭐ **Lo último que cerró: el ítem 34** —`emin_lista`, en la corrida nocturna del 05/09— y antes el
+**10**, que cerró **sin defecto que medir**.
 
 ---
 

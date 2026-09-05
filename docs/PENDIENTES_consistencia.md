@@ -2394,7 +2394,7 @@ toque `.gs` o una hoja de registro puede quedar a más de N commits del último 
 
 ---
 
-## 05/09/2026 · ⛔ Trece prompts del 04/09 se ejecutaron sin copiarse a `docs/Prompts/`
+## 05/09/2026 · ⛔ CATORCE prompts del 04/09 se ejecutaron sin copiarse a `docs/Prompts/`
 
 **Violación de `§3`, ya reportada el 04/09 pero registrada SÓLO en un mensaje de commit**
 (`c3dd90b`). ⚠ **Un mensaje de commit no es un documento consultable**: el `grep` sobre este
@@ -2438,3 +2438,30 @@ es una afirmación de más que hacía ver **dos** grietas donde había **una**. 
 ⛔ **Y el cierre del propio párrafo —*«el arreglo es un nombre en una lista»*— también se cae:**
 agregar el nombre habría mandado el `separador` a `buscarMapeo` como nombre de campo. **El arreglo
 fue sacar la guarda del `if`.** Ver ítem 34 en `PLAN.md` §2.
+
+---
+
+## 05/09/2026 · ⚠ Corrección al bloque de arriba — eran **catorce**, y el `_8 Addendum 5` no existe
+
+**Dos números corregidos, los dos medidos con un comando:**
+
+1. ⛔ **«Trece prompts» era wrong y la propia enumeración listaba catorce.** Un conteo que no
+   coincide con su propia lista es la clase de error que sobrevive porque **nadie vuelve a contar
+   una lista que ya está escrita**. Corregido en el título del bloque y en `HANDOFF_CODE.md`.
+2. ⛔⛔ **El `2026-09-05_1` afirma que existe un `_8 Addendum 5` que *«se ejecutó — cerró
+   `u1_post_meta_alcance`»*. NO EXISTE.** El git log tiene addenda del `_8` **1, 2, 3 y 4**, y lo
+   que cerró `u1_post_meta_alcance` fue el **`_7` Addendum 1** (`eee5edc`). ⇒ **La deuda es 14, no
+   15.**
+
+⭐ **Y la cola: eran «37 ítems» y son 36.** Los ids van del **1 al 36 sin huecos** —verificado
+listándolos, no contándolos—, y el reparto de hoy es `[x]` 12 · `[~]` 2 · `[ ]` 22.
+
+⚠ **La estimación del prompt —36 · 11 · 2 · 23— tampoco reproduce**, y por un motivo legítimo: se
+escribió **antes** de que la Parte A cerrara el ítem 34 esa misma noche. ⇒ **Gana el número medido**,
+que es lo que la regla 8 de esa corrida pide.
+
+⭐⭐ **Lo que esto muestra, y es el motivo de registrarlo:** el prompt mandaba a corregir **dos**
+conteos mal, y **los dos correctores del prompt también estaban mal**. Un número que viaja dentro de
+una instrucción **se lee como verificado por el solo hecho de venir con una tarea al lado** — es la
+misma familia que *«un dato medido una vez y citado tres veces envejece igual»*, aplicada a un
+número que **nunca se midió**.
