@@ -1757,3 +1757,64 @@ equivocarse por su cuenta**: si difiere, difiere **la fuente**, y eso es otra co
 ⛔ **No se resuelve acá.** ⭐ **Pero si la respuesta fuera «no», una parte de las 90 marcas de hoy se
 cae sola** — y ése es el motivo de anotarla: no es una curiosidad, **es un criterio que podría
 achicar el problema entero.**
+
+---
+
+## ⛔⛔ P0 · `u1_post_meta_alcance` está LIMPIO y tiene un caso `contradice` — el fracaso caro en su forma exacta (05/09/2026)
+
+**Medido:** `ULTIMO` sobre `alc_real`, formato **`miles`** en el snapshot del 31/08, y **NO aparece
+entre los 90 con `_revisar`** del censo vivo del 04/09. ⇒ ⛔⛔ **Está limpio hoy.**
+
+Y `X-43` (28/08) lo declara **`contradice`**: **la celda está en cero y el equipo publica 26.033.**
+
+⇒ ⭐⭐ **Y la operación medida confirma la mecánica que `X-43` describe:** es **`ULTIMO`**, y un
+`ULTIMO` sobre un cero **escrito** devuelve **cero**, no `sin_dato`. ⛔ **El deck publica un cero
+limpio, sin marca de revisión, que se lee como «no alcanzamos a nadie».**
+
+⇒ ⛔ **PARADO acá**, como el addendum manda. **No se limpia nada más hasta que se decida qué hacer
+con éste** — y la decisión es del usuario, porque poner la marca cambia lo que publica una lámina.
+
+⚠ **Por qué el cruce masivo del 01/09 no lo agarró: nunca había sido limpiado.** No está entre los
+que `confirmarNumerosDeUnoAUno()` tocó, así que **no había nada que reponer** — está limpio **desde
+antes**, y por eso ningún mecanismo lo miró. ⭐ **Es la falla en la dirección opuesta: no que se
+marque de más, sino que FALTE marcar**, y el cruce masivo sólo puede reponer lo que alguien limpió.
+
+---
+
+## ⭐⭐ Un derivado no puede estar más validado que sus insumos (05/09/2026)
+
+**Medido, y no es parecido: es identidad.**
+
+| marcador | operación | `campo_logico` |
+|---|---|---|
+| `u1_post_meta_vtr` | **`PCT`** | `des_visualizaciones/des_impresiones` |
+| `u1_post_meta_vistas` | `SUMA` | **`des_visualizaciones`** ⛔ `X-42` |
+| `u1_post_meta_impresiones` | `SUMA` | **`des_impresiones`** ⛔ `X-42` |
+
+⇒ ⭐ **El motor SÍ calcula el VTR**, y los tres VTR comparten el `campo_logico` **literal** —sólo
+difieren en `dimensiones`—, así que **el VTR de Meta agrega exactamente las mismas filas que sus
+dos operandos marcados.**
+
+⇒ ⛔ **`u1_post_meta_vtr` y `u1_post_google_vtr` se FRENAN.** Limpiarlos publicaría sin marca **un
+número construido enteramente con dos que un caso fechado dice que difieren en las dos
+direcciones**.
+
+⭐ **Es la misma forma que `L-046` con la conclusión INVERSA, y hay que aplicarla igual:** allá **un
+operando malo explicaba tres números** —había un defecto, no tres—; acá **si el operando está
+marcado, el derivado también**. ⚠ **La misma estructura sostiene las dos**: un derivado no tiene
+vida propia respecto de sus insumos, ni para bien ni para mal.
+
+---
+
+## ⚠ `X-42` NO cubrió Programmatic POST — los tres `u1_post_prog_*` se limpian por AUSENCIA de medición (05/09/2026)
+
+Los tres se limpian, y ⭐ **conviene decir por qué eso no es una inconsistencia**: `X-42` midió
+**Meta y Google**, **no midió Programmatic**. ⇒ *«sin caso que la justifique»* es **literal: nadie
+lo comparó.** ⛔ **No es que se haya comparado y dado bien.**
+
+⭐ **Eso es a la vez una razón para limpiarlos** —restaura la decisión del 26/08, que es lo que el
+01/09 pisó— **y un hueco declarado**: ⚠ **si Meta y Google POST se recalculan en el lugar, no hay
+motivo para suponer que Programmatic no.**
+
+⇒ **La limpieza de los tres descansa en ausencia de medición, no en una medición.** Escrito así
+para que el día que alguien mida Programmatic POST **sepa que esto lo estaba esperando.**

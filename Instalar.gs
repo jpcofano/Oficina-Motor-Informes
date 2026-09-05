@@ -10782,9 +10782,25 @@ function censarM2Vivo() {
  * ══════════════════════════════════════════════════════════════════════════════════════════ */
 
 /** El grupo B, con el motivo de cada uno. Afuera de la función para que un banco lo lea. */
+/* ⛔⛔ `Addendum 1` (05/09) — **de SEIS a CUATRO.** Los dos VTR de Meta y Google **se frenan**:
+ * `u1_post_meta_vtr` es **`PCT` sobre `des_visualizaciones/des_impresiones`** — medido —, o sea
+ * que el motor **lo calcula** con **exactamente los mismos campos** que `u1_post_meta_vistas`
+ * (`SUMA` de `des_visualizaciones`) y `u1_post_meta_impresiones` (`SUMA` de `des_impresiones`),
+ * **los dos declarados `contradice` por `X-42`**.
+ *
+ * ⭐⭐ **No es parecido, es identidad:** los tres VTR comparten el `campo_logico` **literal** y
+ * sólo difieren en `dimensiones`. ⇒ El VTR de Meta agrega **las mismas filas** que sus dos
+ * operandos marcados.
+ *
+ * ⛔ **Un derivado no puede estar más validado que sus insumos.** Limpiarlo publicaría sin marca
+ * un número construido **enteramente** con dos que un caso fechado dice que difieren.
+ *
+ * ⭐ **Es la misma forma que `L-046`** —las dos frecuencias colgaban de `camp_meta_alcance`— con
+ * la conclusión **inversa**, y hay que aplicarla igual: allá un operando malo explicaba tres
+ * números; acá **si el operando está marcado, el derivado también**. */
+var FRENADOS_U1_ = ['u1_post_meta_vtr', 'u1_post_google_vtr'];
+
 var GRUPO_B_U1_ = [
-  { marcador: 'u1_post_meta_vtr',          a: 'porcentaje_sin_signo', motivo: 'sin caso que la justifique' },
-  { marcador: 'u1_post_google_vtr',        a: 'porcentaje_sin_signo', motivo: 'sin caso que la justifique' },
   { marcador: 'u1_post_prog_impresiones',  a: 'miles',                motivo: 'sin caso que la justifique' },
   { marcador: 'u1_post_prog_vistas',       a: 'miles',                motivo: 'sin caso que la justifique' },
   { marcador: 'u1_post_prog_vtr',          a: 'porcentaje_sin_signo', motivo: 'sin caso que la justifique' },
@@ -10795,6 +10811,9 @@ var GRUPO_B_U1_ = [
 /** ⛔ El grupo A, declarado para que el código diga qué NO toca y por qué. */
 var GRUPO_A_U1_ = ['u1_post_meta_impresiones', 'u1_post_meta_vistas',
   'u1_post_google_impresiones', 'u1_post_google_vistas'];
+
+/* ⭐ El control de alcance mira los seis: los cuatro del grupo A **y los dos frenados**. */
+function noSeTocanU1_() { return GRUPO_A_U1_.concat(FRENADOS_U1_); }
 
 /** Modo seco. ⛔ No escribe. */
 function diagLimpiarGrupoB() { return limpiarGrupoB_(false); }
@@ -10808,7 +10827,7 @@ function limpiarGrupoB_(aplicar) {
   Logger.log('══════════════════════════════════════════════════════════════════════');
   Logger.log('  ⛔ NO se re-aplica `confirmarNumerosDeUnoAUno()`: su lista es del 26/08 y `X-42`/');
   Logger.log('     `X-43` aparecieron el 28/08. Re-correrla limpiaría CUATRO contradichos.');
-  Logger.log('  ⛔ NO se tocan los del grupo A: ' + GRUPO_A_U1_.join(', '));
+  Logger.log('  ⛔ NO se tocan (grupo A + FRENADOS): ' + noSeTocanU1_().join(', '));
   Logger.log('');
 
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
@@ -10822,7 +10841,7 @@ function limpiarGrupoB_(aplicar) {
    * Si alguno ya está limpio, algo lo limpió y **este wrapper no es el único escritor** — se
    * reporta y se para, que es la regla de `CLAUDE.md` §4 sobre la celda sin dueño único. */
   var aFuera = [];
-  GRUPO_A_U1_.forEach(function (n) {
+  noSeTocanU1_().forEach(function (n) {
     for (var k = 1; k < datos.length; k++) {
       if (String(datos[k][iM] || '').trim() === n) {
         if (!/_revisar$/.test(String(datos[k][iF] || '').trim())) aFuera.push(n + ' (' + datos[k][iF] + ')');
@@ -10837,7 +10856,7 @@ function limpiarGrupoB_(aplicar) {
     Logger.log('     Alguien más escribió esas celdas. NO se limpia nada hasta saber quién.');
     return { ok: false, motivo: 'control de alcance: grupo A alterado' };
   }
-  Logger.log('  ✅ control de alcance: los ' + GRUPO_A_U1_.length + ' del grupo A siguen marcados.');
+  Logger.log('  ✅ control de alcance: los ' + noSeTocanU1_().length + ' que no se tocan siguen marcados.');
 
   var plan = [], noEstan = [], yaLimpios = [];
   GRUPO_B_U1_.forEach(function (c) {
@@ -10894,11 +10913,11 @@ function limpiarGrupoB_(aplicar) {
     if (quedo !== p.c.a) mal.push(p.c.marcador + ': pedí `' + p.c.a + '` y quedó `' + quedo + '`');
   });
   /* ⛔ Y se RELEE el grupo A también: la garantía no es «no lo toqué», es «sigue como estaba». */
-  GRUPO_A_U1_.forEach(function (n) {
+  noSeTocanU1_().forEach(function (n) {
     for (var k = 1; k < d2.length; k++) {
       if (String(d2[k][iM] || '').trim() === n) {
         if (!/_revisar$/.test(String(d2[k][iF] || '').trim())) {
-          mal.push('⛔ ' + n + ' (grupo A) PERDIÓ su `_revisar` — no tenía que tocarse');
+          mal.push('⛔ ' + n + ' PERDIÓ su `_revisar` — no tenía que tocarse');
         }
         return;
       }
@@ -10910,8 +10929,8 @@ function limpiarGrupoB_(aplicar) {
     return { ok: false, motivo: 'relectura', backup: bk.nombre };
   }
 
-  Logger.log('  ✅ RELEÍDO: los ' + plan.length + ' quedaron limpios Y los ' + GRUPO_A_U1_.length +
-    ' del grupo A siguen marcados.');
+  Logger.log('  ✅ RELEÍDO: los ' + plan.length + ' quedaron limpios Y los ' + noSeTocanU1_().length +
+    ' intocables siguen marcados.');
   Logger.log('');
   Logger.log('  ⚠ Y lo que esto NO significa: que estén validados. `u1_fecha_fin` se limpió por');
   Logger.log('     FORMA —lectura directa, sin operación— y los otros cinco por AUSENCIA de caso.');
