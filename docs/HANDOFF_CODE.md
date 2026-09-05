@@ -16,6 +16,21 @@ con el equipo **está explicada**: el equipo no actualiza la base. **Suites: 94 
 
 ## ⛔ Lo que hay que correr, y es tuyo
 
+> ⭐ **Actualizado tras la corrida nocturna del 05/09** (`2026-09-05_1`, ocho partes). Nada se corrió
+> contra la planilla viva y **no hubo `clasp push`** — las dos primeras reglas de esa noche.
+
+0. ⭐⭐ **`clasp push` PRIMERO.** La noche tocó `Generador.gs`, `Instalar.gs` y `Auditoria.gs`, y
+   **nada de eso existe todavía para el motor**. Sin esto, los puntos de abajo corren código viejo.
+1. ⭐ **`verGlobalL047()`** — dice qué `formato` tienen hoy los seis del bloque global de `L-047`.
+   ⚠ **Dirime dos afirmaciones incompatibles del repo**: el alta del 24/08 dice *«ninguno lleva
+   `_revisar`»* y `C-99` supone que hay marca. **Si da 0 con `_revisar`, `C-99` no tiene nada que
+   levantar.** ⛔ Y antes de levantar ninguna: `revisarASinValidar_` la **repone** si `notas` sigue
+   diciendo `SIN VALIDAR`.
+2. ⭐ **Una corrida de `jm`** — para ver `emin_lista` publicando texto en vez de `-`. **Control:**
+   siete renglones, uno por encuentro, y `emin_encuentros` **tiene que seguir dando 7**.
+3. **`censarTokensSinLlaves()`** — escrito el 03/09 y **nunca corrido**; es el único que ve
+   `camp_env4_fecha}}`.
+
 1. ⭐ **Confirmar qué dice la columna `meta_frecuencia`** para la campaña del deck. **Es lo único
    que queda de todo el `_9`.** ⚠ Ya **no es un desempate** —la aritmética cierra, `2.080.014 /
    872.827 = 2,38`— sino una **confirmación de lectura**: si dijera otra cosa, el `2,38` sería
