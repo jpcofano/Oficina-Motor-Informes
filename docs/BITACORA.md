@@ -17291,3 +17291,33 @@ pendientes: **no hay desempate porque no hay dos filas compitiendo, hay una sola
 ⚠ **Límite propio declarado:** no recibí el Addendum 1 del `_9`, así que sobre su medición de las
 1031 filas **no afirmo nada**; aplico la caída de la Parte 0 **porque el Addendum 2 lo declara, no
 porque lo haya verificado.**
+
+## 2026-09-05 · `2026-09-04_9` Addendum 2 **v2** — la diferencia está explicada, y el prompt tenía dos versiones
+
+⛔⛔ **El documento llegó dos veces con el mismo nombre y la misma fecha**, y ejecuté la primera. Su
+§3 decía *«la diferencia sigue abierta»*; la vigente dice *«está explicada — decisión del usuario»*.
+**Verificado por diff contra el archivo en disco antes de tocar nada**, no deducido.
+
+⭐⭐ **Decisión del usuario:** se deja el `872.827`; **el equipo no actualiza la base** y su alcance
+sale de la plataforma. ⇒ **El motor lee bien y la diferencia es esperada.** `R-34` gana su sección de
+explicación con la tabla de los tres números, porque **una sola explicación los cierra a los tres**
+— **no hay tres discrepancias: hay una sola fuente distinta**, y todo lo derivado la hereda.
+
+⭐ **Tres casos, ninguno de defecto.** `C-94` (`cerrado`, supersede `C-93`), `C-95` y `C-96`
+(derivados, superseden el `abierto` de `C-89`/`C-90`). ⇒ **El estado existía y no hubo que forzarlo**:
+`C-87` es el precedente exacto —decisión del usuario que explica una diferencia y declara que no es
+defecto—. ⚠ **Se descartó `deriva`** aunque parezca el natural: en estos CSV está **sobrecargado**
+—valor de la columna `base` con estado `exacto`, y estado con el sentido *«hay residuo»*—, así que
+diría lo contrario. Registrado en `PENDIENTES`.
+
+⭐ **`C-93` no se edita**: queda como evidencia fechada de la lectura anterior. Es la forma de `D-58`.
+
+⭐⭐ **Y lo más caro, registrado como regla: un archivo de prompt no es una versión.** Mismo nombre,
+misma fecha, contenido distinto, **y nada en el repo lo habría señalado** — sin la versión anterior
+abierta, la reescribía encima y la divergencia desaparecía sin rastro. ⇒ **Antes de sobrescribir un
+prompt ya ejecutado, diffear contra el de disco y declarar la divergencia en el propio archivo.**
+
+⇒ **Lo único que queda del `_9`:** confirmar que la columna `meta_frecuencia` dice `2,38`. ⚠ **Ya no
+es un desempate sino una confirmación de lectura**, y se deja escrita porque **dar por buena una
+aritmética que cierra sin verificar la columna es como se llegó dos veces a una conclusión falsa
+sobre este mismo marcador.**
