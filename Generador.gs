@@ -213,7 +213,35 @@ function formatearValorMarcador_(valor, formato) {
   if (f === 'porcentaje_sin_signo') return String(Math.round(numero * 10) / 10);
   if (f === 'miles') return Math.round(numero).toLocaleString('es-AR');
   if (f === 'numero') return String(Math.round(numero * 100) / 100);
-  return String(valor);
+
+  /* ══════════════════════════════════════════════════════════════════════════════════════
+   * ⛔⛔ `2026-09-04_8` Parte E (05/09/2026) — **un `formato` desconocido FALLA, no se ignora.**
+   *
+   * **Acá decía `return String(valor)`**, y eso convertía un **error de configuración** en una
+   * **salida plausible**: `entero_revisar` vivió en seis filas publicando el número crudo, sin
+   * separador y **sin que nada lo señalara**. ⭐ El nombre suena bien, el motor no protesta, y el
+   * deck sale con un número correcto y mal formateado.
+   *
+   * ⭐ **El catálogo de formatos es FINITO y está en esta misma función.** Un valor fuera de él no
+   * es un caso por defecto: **es una celda mal escrita**, y el lugar donde se nota tiene que ser
+   * el deck, no el olvido.
+   *
+   * ⭐⭐ **Hoy este cambio es INERTE, y eso es el argumento para aplicarlo, no contra.** Medido:
+   * `censarFormatosDesconocidos()` dio **6 desconocidos y los seis eran los `emin_*`**, que
+   * `formatoEmin()` ya llevó a `miles_revisar`. ⇒ **Cero filas cambian de salida.**
+   * ⚠ **Un guardarraíl se pone cuando no hay nada apoyado en él**; ponerlo cuando ya hay algo
+   * cayendo es tarde. Y la única razón por la que no había diez `entero_revisar` más es que nadie
+   * escribió diez nombres inventados — **no que algo lo impidiera.**
+   *
+   * ⚠ **Lo que NO se toca, y es deliberado:** el `if (isNaN(numero)) return String(valor)` de
+   * arriba. Ése es un **dato no numérico con un formato numérico** — un problema de la fuente, no
+   * de la configuración, y **son dos cosas distintas**. Meterlas en el mismo símbolo repetiría el
+   * error del `/////` que no distinguía sus causas.
+   *
+   * ⭐ **El símbolo dice CUÁL formato**, porque el trabajo que manda a hacer es corregir esa celda
+   * y sin el nombre hay que ir a buscarlo.
+   * ══════════════════════════════════════════════════════════════════════════════════════ */
+  return '«FALTA:formato_desconocido:' + f + '»';
 }
 
 /**

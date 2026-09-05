@@ -2065,3 +2065,40 @@ lista de tokens a resolver.** En una corrida entró y en las otras no.
 ⛔ **Reportado y parado antes de escribir el arreglo**, como pide A.3. ⭐ Y `/////` **es la salida
 correcta** para lo que el motor encontró: **no está fallando en publicar, está publicando fielmente
 que no tuvo con qué llenar esa caja.**
+
+---
+
+## ✅ Parte E aplicada — un `formato` desconocido ahora FALLA, y hoy es INERTE (05/09/2026)
+
+`formatearValorMarcador_` devolvía `String(valor)` ante un formato que no conoce. ⇒ Convertía un
+**error de configuración** en una **salida plausible**: `entero_revisar` vivió en seis filas
+publicando el número crudo **sin que nada lo señalara**.
+
+⇒ Ahora devuelve **`«FALTA:formato_desconocido:<el formato>»`**. ⭐ **Con el nombre adentro**, porque
+el trabajo que manda a hacer es **corregir esa celda** y sin el nombre hay que ir a buscarla.
+
+### ⭐⭐ Es inerte, y ése es el argumento para aplicarlo — no contra
+
+**Medido:** `censarFormatosDesconocidos()` dio **6**, y los seis eran los `emin_*` que
+`formatoEmin()` ya llevó a `miles_revisar`. ⇒ **Cero filas cambian de salida hoy.**
+
+⭐ **Un guardarraíl se pone cuando no hay nada apoyado en él**; ponerlo cuando ya hay algo cayendo es
+tarde. ⚠ Y **la única razón por la que no había diez `entero_revisar` más es que nadie escribió diez
+nombres inventados — no que algo lo impidiera.**
+
+### ⚠ Lo que deliberadamente NO cambió
+
+⛔ **El `if (isNaN(numero)) return String(valor)` se queda como está.** Un **dato no numérico con
+formato numérico** es un problema **de la fuente**, no de la configuración. ⭐ **Son dos causas y
+mandan a dos trabajos distintos** — meterlas en el mismo símbolo repetiría el error del `/////` que
+no distinguía sus causas. El banco lo afirma explícitamente.
+
+### ⭐ Y por qué hacía falta un banco justamente por ser inerte
+
+**Un cambio inerte no tiene testigo en producción.** ⇒ Sin `probar-formato-desconocido.js`, **nada
+probaría que la guarda funciona hasta que alguien escriba el próximo nombre inventado** — que es
+exactamente el momento en que uno querría que ya estuviera probada.
+
+**El banco cubre las cuatro mitades:** que el desconocido falle · que **los ocho válidos sigan
+idénticos** —sin eso, una guarda que fallara siempre pasaría igual— · que el vacío y el no-numérico
+**no** se confundan con él · y un **control negativo con mutación verificada** sobre la función real.
