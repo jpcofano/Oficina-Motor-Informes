@@ -2118,7 +2118,7 @@ extracción con `markitdown`; **el cruce contra `MARCADORES` lo hice yo** contra
 | `camp_resp_*` + `camp_tasa_resp` | 13 | **0** | ⭐ cableado pendiente |
 | `conv_*` | 13 | **0** | ⭐ cableado pendiente |
 | `rep_*` | 11 | **0** | ⭐ cableado pendiente |
-| `et_*` | 11 | **0** | ⭐ cableado pendiente |
+| `et_*` | ~~11~~ → **9** | **0** | ⭐ cableado pendiente · ⚠ corregido el 05/09 (ver abajo) |
 | `rrss_*` | 9 | **0** | ⭐ cableado pendiente ⚠ (`L-050`, **escondida** — congelada el 04/09) |
 | `u1_bench_*` | 3 | **0** | ⛔ **congelada**: es un `*_bench_*` |
 | `ecv_comuna` · `ecv_minutos` | 2 | **0** | ⭐ cableado pendiente |
@@ -2126,14 +2126,48 @@ extracción con `markitdown`; **el cruce contra `MARCADORES` lo hice yo** contra
 ⇒ ⭐⭐ **Las siete son «sin fila»: TRABAJO DE CABLEADO, no bugs de resolución.** ⛔ **Cero son «con
 fila que no resuelve».**
 
-### ⚠ Dos aritméticas del prompt que NO cierran, dichas en vez de reproducidas
+### ✅ Las dos aritméticas que no cerraban — CERRADAS el 05/09, y eran el mismo error
 
-1. **La suma de las siete familias da 62**, y el prompt declara **60 únicos**. Difieren en **2**.
-2. **76 apariciones − 60 únicos = 16 de exceso**, que el prompt atribuye a *«los 13 `camp_resp_*`
-   que se cuentan por duplicado»*. ⛔ **13 contra 16: no cierra por 3.**
+⭐ **Se dejan escritas con su cierre y no se borran**: *«el prompt mezcló apariciones con únicos»* es
+la clase de error que se repite, y **el registro es lo que hace que se note la segunda vez.**
 
-⇒ **Ninguna de las dos la puedo resolver: el `.pptx` no está en el repo.** ⭐ Se anotan porque **un
-censo con la aritmética abierta se cita igual y el hueco se pierde.**
+| lo que no cerraba | qué era |
+|---|---|
+| la suma daba **62** y el prompt decía **60** | ⭐ **`et_*` son 9, no 11** — se contaron sus **apariciones**. Con 9, cierra en 60 |
+| **16** de exceso atribuidos a **13** `camp_resp_*` | ⭐ **el exceso SÍ es 16**, pero **tres no son del bloque de campaña** |
+
+⇒ **Las dos son el mismo error: contar apariciones donde iban únicos.** ⛔ Y la segunda **no era
+incompleta sino incorrecta**: se atribuyó *todo* el exceso al bloque duplicado, y tres no lo son.
+
+⇒ ⚠ **El lote de cableado baja en 2**: la tabla de arriba queda corregida.
+
+### ⭐⭐ Y los tres que sobraban valen más que la corrección, porque podían haber invalidado el ítem 33
+
+```
+et_fecha    → slide 6 / L-006  ·  slide 7 / L-007
+et_nombre   → slide 6 / L-006  ·  slide 7 / L-007
+ecv_comuna  → slide 4 / L-004  ·  slide 5 / L-005
+```
+
+**Láminas distintas y consecutivas ⇒ es el MISMO token usado en dos láminas FIJAS**, no una segunda
+sección que se expande.
+
+⛔⛔ **Y eso había que comprobarlo, no suponerlo:** una **segunda sección repetible** habría sido
+**exactamente el escenario del ítem 33** —el bloque modelo tomado por posición sobre un deck ya
+movido— y **habría cambiado la lectura del control que ya se dio por pasado**. ⭐ **No lo es: el
+control del ítem 33 sigue en pie.**
+
+⚠ **Es un caso de la figura de siempre**, del lado bueno: *un token repetido* y *una sección
+repetida* **se ven igual en un conteo** y mandan a lecturas opuestas. Lo que las separó fue mirar
+**en qué láminas** cae cada aparición, no cuántas son.
+
+### ⭐ Y la forma de la Parte B se confirma
+
+**Anotar una aritmética que no cierra en vez de reproducirla fue lo correcto**, y es **lo que
+permitió cerrarla al día siguiente en dos comandos**. ⚠ **El único límite real era el acceso al
+`.pptx`, y era del entorno — no del método.**
+
+### ⚠ El límite que SIGUE abierto — y es otro, no el de la aritmética
 
 ### ⛔ El límite de este censo, que acá pesa doble
 
