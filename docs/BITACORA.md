@@ -17433,3 +17433,41 @@ del **título de `R-11`**, que contradice a su propio Addendum, **registrado y n
 incluidos los que nunca toqué** — es el estado normal del repo. **No se normalizó nada.**
 
 **Suites: 97 bancos, exit 0.** ⛔ Nada contra la planilla viva, ningún `clasp push`.
+
+## 2026-09-06 · `2026-09-06_3` — revertir, cerrar la ventana, y separar los guiones en tres
+
+⛔ **Parte A · el desplazamiento de ventana REVERTIDO** (decisión del usuario). ⭐⭐ **El revert es
+exacto:** `git diff` contra el estado previo, sobre los dos `.gs`, **da vacío** — no «equivalente»,
+idéntico. Había un residuo de tres líneas —una en blanco de menos, una coma de más— y se corrigió
+hasta que el diff cerró en cero. ⭐ Con el control en las dos direcciones que el prompt pedía: el
+`grep` de los siete nombres sobre `*.gs`, `*.html` y `tools/` da **cero**, y en `docs/` **sigue
+dando**, que es lo correcto — **lo que se va es el código, no el registro.**
+
+⭐ **Parte B · `D-59`: la ventana la elige el usuario.** Con su **condición de reapertura como
+evento** —*«cuando el equipo defina un criterio fijo»*—, y con **lo que NO cierra dicho aparte**: el
+**corte** de la Agenda es otra pregunta y sigue abierto. ⚠ Más el hueco del **título de `R-11`**,
+señalado y **no corregido** — `REGLAS_NEGOCIO` es append-only.
+
+⭐⭐ **Parte C · los guiones, en TRES grupos — y agregué un cuarto que el prompt no nombraba.**
+`cerrado` y `abierto` **no son (a)**: ninguno afirma que el número coincida, así que van a un grupo
+propio en vez de caer en (c) en silencio. ⛔⛔ **`camp_titulo` es (c) y NO se levanta** —medido: **no
+tiene caso**— porque el ítem 9 sigue abierto: **sacarle la marca sería declarar validado lo que está
+en investigación.**
+⛔ **El problema de fondo:** los CSV **no están en Drive**, así que la lista tiene que viajar como
+**constante congelada** — la misma figura que hundió a `confirmarNumerosDeUnoAUno()`. ⭐ **Lo único
+que la hace auditable es que declare cuándo se congeló:** la fecha viaja adentro, el diagnóstico la
+imprime **siempre**, y el banco **falla** si no coincide con los CSV de hoy.
+⭐ **Y `C.2` lleva la lección más cara adentro: levantar son DOS escrituras** —`formato` **y** el
+`SIN VALIDAR` de `notas`—, con gate de `D-58`, modo seco por default, backup, **relectura de la
+hoja**, y **aborta si no haría nada**.
+
+⭐ **Parte D · `diagCorteAgenda()`, sólo lectura.** Mide **por qué columna corta hoy** y lista los
+dos conjuntos **por nombre**. ⚠ **Y declara una trampa del testigo medida antes de usarlo:**
+`ROSTER_CONTROL_` es de la ventana `vie–vie` e incluye a Mraida el `04/09`; sobre `vie–jue` el
+esperado son **seis**, así que comparar contra los siete **acusaría al corte de un faltante que es
+de la ventana.**
+
+⚠ **Y una colisión de nombre atajada:** el prompt se entregó como `_2` y ese número **ya estaba
+tomado**. Se guardó como `_3`, que es lo que `§3` manda hacer mirando la carpeta primero.
+
+**Suites: 97 bancos, exit 0.** ⛔ Nada contra la planilla viva, ningún `clasp push`.
