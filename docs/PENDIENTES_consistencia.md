@@ -2559,3 +2559,48 @@ que cuando se ponga rojo **nadie salga a buscar qué se rompió**.
 ⭐ **La forma que le correspondería es la que `probar-caso-id.js` acaba de estrenar:** afirmar sobre
 **identidades** —*«el universo cierra: válidos + descartados = registros»*— en vez de sobre el
 **conteo** de archivos.
+
+---
+
+## 06/09/2026 · ⛔⛔ Dos incidentes propios de la misma corrida, y los dos son de método
+
+### 1 · `git add -A` metió ocho archivos ajenos en mi commit
+
+El commit `0650ed7` («Parte A») incluye, además de mis cuatro archivos, **ocho que no escribí**:
+`docs/Prompts/2026-09-06_2_auditoria_documental.md` y los seis de `docs/_config_propuesta/`
+—cinco agentes y un `settings.json`—. **Llegaron desde la otra herramienta** mientras yo trabajaba.
+
+⛔ **`CLAUDE.md` §4 lo tiene escrito literal:** *«si el working tree tiene cambios de más de un paso
+al momento de commitear: **parar y preguntar**, no bundlear»*. Usé `git add -A` **catorce veces
+seguidas** en dos noches y funcionó porque el árbol era todo mío. **La regla existe para la vez que
+no lo es**, y esa fue ésta.
+
+⚠ **Nada se perdió ni se dañó** —el contenido está intacto y pusheado—. **El daño es de
+atribución y de biseccionabilidad:** ese commit ya no se puede revertir sin llevarse trabajo ajeno.
+⛔ **No se arregla con `--force`**: eso pisa historia compartida y requiere autorización explícita.
+
+⭐ **Lo accionable, y cambia de acá en adelante:** `git add` con **rutas explícitas**, o `git status`
+leído **antes** de cada commit. Es la misma familia que *«`A && B` no condiciona al veredicto»*: un
+comando que uno usa por costumbre hace lo que hace, no lo que uno quiere que haga.
+
+### 2 · Una edición con Python convirtió `Instalar.gs` de CRLF a LF
+
+**Medido: 0 CRLF y 11.110 LF** después de editar el seed. `io.open(...)` en modo texto lee con
+*universal newlines* y escribe lo que le den — así que el archivo entero cambió de final de línea.
+
+⭐⭐ **Lo detectó `probar-hojas-config.js`, y por el motivo correcto:** su control **negativo** muta
+con el patrón `'\r\n  BASES: ['`, no matcheó, y **la guarda de mutación lo dijo** —*«la mutación NO
+se aplicó, el negativo habría corrido sobre el texto intacto»*—. **Es exactamente la regla del
+24/08** que puso esa guarda: *«si el texto mutado es idéntico al original, el caso falla»*.
+
+⚠ **Sin esa guarda, el banco habría dado verde** informando que su caso negativo pasó, **sin haber
+tocado una línea**. El `.gitattributes` normaliza para git, así que **`git diff` no lo mostraba**:
+el disco estaba mixto y el índice no.
+
+⛔ **Y el barrido que va con el arreglo destapó un segundo caso:** `Auditoria.gs` estaba **mixto**
+—9.236 CRLF y 179 LF— por los `cat >>` de la noche anterior. Normalizado a CRLF. **Un cero medido
+también se escribe:** `Fuentes.gs` y `Generador.gs` estaban limpios, porque se editaron con la
+herramienta de edición y no por redirección.
+
+⭐ **La regla operativa:** editar un `.gs` con redirección de shell o con un script de Python
+**cambia el final de línea del archivo**. Para eso está la herramienta de edición, que lo preserva.
