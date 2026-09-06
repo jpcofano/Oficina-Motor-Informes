@@ -9427,153 +9427,145 @@ function verGlobalL047() {
  *
  * ⭐ `D-58` aplicado al generar: cuando dos casos hablan del mismo marcador, manda el
  * más nuevo. Y los `token_propuesto` con varios marcadores en una celda vienen
- * DESARMADOS —44 celdas, 283 referencias— porque contar celdas
+ * DESARMADOS —44 celdas, 260 referencias— porque contar celdas
  * en vez de marcadores da un número que no corresponde a nada.
  * ══════════════════════════════════════════════════════════════════════════════ */
 var CASOS_POR_MARCADOR_GENERADA_ = '2026-09-06';
 var CASOS_POR_MARCADOR_ARCHIVOS_ = 5;
-/* 140 marcadores · exacto 71 · contradice 13 · cerrado 15 · abierto 26 */
+/* 132 marcadores · exacto 70 · contradice 12 · cerrado 14 · abierto 21 */
 var CASOS_POR_MARCADOR_ = {
-  'alcance': { estado: 'abierto', caso: 'A-11', csv: '2026-08-19' },
-  'camp_alcance': { estado: 'cerrado', caso: 'C-94', csv: '2026-09-04' },
-  'camp_aperturas': { estado: 'exacto', caso: 'V-113', csv: '2026-08-19' },
-  'camp_ctor': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04' },
-  'camp_eje': { estado: 'exacto', caso: 'V-112', csv: '2026-08-19' },
-  'camp_env4_fecha': { estado: 'contradice', caso: 'C-104', csv: '2026-09-06' },
-  'camp_enviados': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04' },
-  'camp_frecuencia': { estado: 'cerrado', caso: 'C-95', csv: '2026-09-04' },
-  'camp_google_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04' },
-  'camp_google_impresiones': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04' },
-  'camp_google_vistas': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04' },
-  'camp_mail_clics': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04' },
-  'camp_meta_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04' },
-  'camp_meta_frecuencia': { estado: 'cerrado', caso: 'C-96', csv: '2026-09-04' },
-  'camp_or': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04' },
-  'camp_prog_clics': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04' },
-  'camp_prog_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04' },
-  'camp_prog_impresiones': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04' },
-  'cc_base': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19' },
-  'cc_base_discada': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19' },
-  'cc_base_total': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19' },
-  'cc_campanias': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19' },
-  'cc_contact_pct': { estado: 'reformulado', caso: 'X-28', csv: '2026-08-19' },
-  'cc_contactados': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19' },
-  'cc_efectivos': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19' },
-  'clics': { estado: 'abierto', caso: 'A-11', csv: '2026-08-19' },
-  'contenidos_total': { estado: 'exacto', caso: 'X-11', csv: '2026-08-19' },
-  'digital': { estado: 'abierto', caso: 'C-84', csv: '2026-08-28' },
-  'ecv_asistentes': { estado: 'exacto', caso: 'V-47', csv: '2026-08-19' },
-  'ecv_barrios': { estado: 'cerrado', caso: 'C-85', csv: '2026-08-19' },
-  'ecv_encuentros': { estado: 'contradice', caso: 'C-02', csv: '2026-08-19' },
-  'ecv_insc_cc': { estado: 'exacto', caso: 'V-41', csv: '2026-08-19' },
-  'ecv_insc_dif': { estado: 'cerrado', caso: 'C-49', csv: '2026-08-19' },
-  'ecv_insc_digital': { estado: 'exacto', caso: 'V-48', csv: '2026-08-19' },
-  'ecv_insc_ivr': { estado: 'exacto', caso: 'V-42', csv: '2026-08-19' },
-  'ecv_insc_mail': { estado: 'exacto', caso: 'V-39', csv: '2026-08-19' },
-  'ecv_inscriptos': { estado: 'retractado', caso: 'C-28', csv: '2026-08-19' },
-  'emin_asistentes_szinny_0508': { estado: 'exacto', caso: 'V-51', csv: '2026-08-19' },
-  'emin_ctor': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06' },
-  'emin_ctr': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06' },
-  'emin_encuentros': { estado: 'contradice', caso: 'C-101', csv: '2026-09-06' },
-  'emin_entregados': { estado: 'sin_fuente', caso: 'X-01', csv: '2026-08-19' },
-  'emin_inscriptos_szinny_0108': { estado: 'exacto', caso: 'V-52', csv: '2026-08-19' },
-  'emin_inscriptos_szinny_0508': { estado: 'exacto', caso: 'V-50', csv: '2026-08-19' },
-  'emin_lista': { estado: 'contradice', caso: 'C-101', csv: '2026-09-06' },
-  'emin_or': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06' },
-  'enc_alcance': { estado: 'deriva', caso: 'D-06', csv: '2026-08-19' },
-  'enc_asistencia_pct': { estado: 'exacto', caso: 'V-07', csv: '2026-08-19' },
-  'enc_asistentes': { estado: 'exacto', caso: 'V-34', csv: '2026-08-19' },
-  'enc_atendidos': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19' },
-  'enc_audiencia': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19' },
-  'enc_base_llamada': { estado: 'deriva', caso: 'D-02', csv: '2026-08-19' },
-  'enc_base_total': { estado: 'deriva', caso: 'D-01', csv: '2026-08-19' },
-  'enc_clics': { estado: 'exacto', caso: 'V-95', csv: '2026-08-19' },
-  'enc_clics_meta': { estado: 'contradice', caso: 'X-23', csv: '2026-08-19' },
-  'enc_clics_prog': { estado: 'exacto', caso: 'V-96', csv: '2026-08-19' },
-  'enc_ctor': { estado: 'exacto', caso: 'V-15', csv: '2026-08-19' },
-  'enc_e75': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19' },
-  'enc_habitantes_eje': { estado: 'sin_fuente', caso: 'X-04', csv: '2026-08-19' },
-  'enc_imp_meta': { estado: 'cerrado', caso: 'X-25', csv: '2026-08-19' },
-  'enc_imp_prog': { estado: 'exacto', caso: 'V-96', csv: '2026-08-19' },
-  'enc_impresiones': { estado: 'deriva', caso: 'D-05', csv: '2026-08-19' },
-  'enc_impresiones_pre': { estado: 'exacto', caso: 'V-88', csv: '2026-08-19' },
-  'enc_inscriptos': { estado: 'exacto', caso: 'V-33', csv: '2026-08-19' },
-  'enc_ll_contactados': { estado: 'deriva', caso: 'D-03', csv: '2026-08-19' },
-  'enc_ll_efectivos': { estado: 'deriva', caso: 'D-04', csv: '2026-08-19' },
-  'enc_llamados': { estado: 'exacto', caso: 'V-20', csv: '2026-08-19' },
-  'enc_mails_entregados': { estado: 'exacto', caso: 'V-13', csv: '2026-08-19' },
-  'enc_mails_enviados': { estado: 'exacto', caso: 'V-12', csv: '2026-08-19' },
-  'enc_marque1': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19' },
-  'enc_or': { estado: 'exacto', caso: 'V-14', csv: '2026-08-19' },
-  'enc_visualizaciones': { estado: 'exacto', caso: 'V-94', csv: '2026-08-19' },
-  'frecuencia': { estado: 'contradice', caso: 'X-32', csv: '2026-08-19' },
-  'frecuencia_estimada': { estado: 'cerrado', caso: 'C-52', csv: '2026-08-19' },
-  'gcba_contenidos_total': { estado: 'exacto', caso: 'V-60', csv: '2026-08-19' },
-  'gcba_frecuencia': { estado: 'contradice', caso: 'X-32', csv: '2026-08-19' },
-  'gcba_imp_total': { estado: 'exacto', caso: 'V-74', csv: '2026-08-19' },
-  'gcba_mail_aperturas': { estado: 'exacto', caso: 'V-58', csv: '2026-08-19' },
-  'gcba_mail_entregados': { estado: 'exacto', caso: 'V-57', csv: '2026-08-19' },
-  'gcba_mail_envios': { estado: 'exacto', caso: 'V-107', csv: '2026-08-19' },
-  'gcba_sms_clics': { estado: 'exacto', caso: 'V-63', csv: '2026-08-19' },
-  'gcba_sms_entregados': { estado: 'exacto', caso: 'V-62', csv: '2026-08-19' },
-  'gcba_sms_envios': { estado: 'cerrado', caso: 'C-72', csv: '2026-08-19' },
-  'google': { estado: 'abierto', caso: 'X-17', csv: '2026-08-19' },
-  'identidad_canales': { estado: 'exacto', caso: 'V-45', csv: '2026-08-19' },
-  'imp_google': { estado: 'contradice', caso: 'A-06', csv: '2026-08-19' },
-  'imp_meta': { estado: 'exacto', caso: 'V-108', csv: '2026-08-19' },
-  'imp_prog': { estado: 'exacto', caso: 'V-108', csv: '2026-08-19' },
-  'imp_total': { estado: 'exacto', caso: 'X-10', csv: '2026-08-19' },
-  'ivr_75': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
-  'ivr_75_pct': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
-  'ivr_at_pct': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
-  'ivr_atendidos': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
-  'ivr_campanias': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
-  'ivr_llamados': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
-  'ivr_marque1': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
-  'm2_aperturas': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
-  'm2_campanias': { estado: 'cerrado', caso: 'C-87', csv: '2026-09-04' },
-  'm2_clics': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
-  'm2_ctor': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
-  'm2_entregados': { estado: 'deriva', caso: 'X-14', csv: '2026-08-19' },
-  'm2_enviados': { estado: 'deriva', caso: 'X-13', csv: '2026-08-19' },
-  'm2_envios': { estado: 'cerrado', caso: 'C-87', csv: '2026-09-04' },
-  'm2_mails_entregados': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
-  'm2_mails_enviados': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
-  'm2_or': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
-  'mail_aperturas': { estado: 'exacto', caso: 'V-99', csv: '2026-08-19' },
-  'mail_clics': { estado: 'exacto', caso: 'V-99', csv: '2026-08-19' },
-  'mail_entregados': { estado: 'cerrado', caso: 'C-81', csv: '2026-08-19' },
-  'mail_enviados': { estado: 'exacto', caso: 'V-99', csv: '2026-08-19' },
-  'mail_envios': { estado: 'exacto', caso: 'V-75', csv: '2026-08-19' },
-  'pauta_meta': { estado: 'abierto', caso: 'X-17', csv: '2026-08-19' },
-  'periodo': { estado: 'cerrado', caso: 'C-82', csv: '2026-08-19' },
-  'post_camp_mail_ape_1': { estado: 'exacto', caso: 'V-28', csv: '2026-08-19' },
-  'post_camp_mail_env_1': { estado: 'exacto', caso: 'V-30', csv: '2026-08-19' },
-  'post_camp_mail_env_2': { estado: 'exacto', caso: 'V-31', csv: '2026-08-19' },
-  'post_camp_mail_env_3': { estado: 'exacto', caso: 'V-32', csv: '2026-08-19' },
-  'prog': { estado: 'abierto', caso: 'X-17', csv: '2026-08-19' },
-  'rc_enviados': { estado: 'sin_fuente', caso: 'X-03', csv: '2026-08-19' },
-  'u1_google_clics': { estado: 'exacto', caso: 'V-22', csv: '2026-08-19' },
-  'u1_google_impresiones': { estado: 'exacto', caso: 'V-21', csv: '2026-08-19' },
-  'u1_meta_clics': { estado: 'exacto', caso: 'V-24', csv: '2026-08-19' },
-  'u1_meta_impresiones': { estado: 'exacto', caso: 'V-25', csv: '2026-08-19' },
-  'u1_meta_vistas': { estado: 'exacto', caso: 'V-26', csv: '2026-08-19' },
-  'u1_post_google_impresiones': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28' },
-  'u1_post_google_vistas': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28' },
-  'u1_post_meta_alcance': { estado: 'contradice', caso: 'X-43', csv: '2026-08-28' },
-  'u1_post_meta_impresiones': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28' },
-  'u1_post_meta_vistas': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28' },
-  'u1_pre_google_clics': { estado: 'exacto', caso: 'V-118', csv: '2026-08-28' },
-  'u1_pre_google_ctr': { estado: 'exacto', caso: 'V-119', csv: '2026-08-28' },
-  'u1_pre_google_impresiones': { estado: 'exacto', caso: 'V-117', csv: '2026-08-28' },
-  'u1_pre_meta_alcance': { estado: 'aproximado', caso: 'V-123', csv: '2026-08-28' },
-  'u1_pre_meta_clics': { estado: 'exacto', caso: 'V-115', csv: '2026-08-28' },
-  'u1_pre_meta_ctr': { estado: 'exacto', caso: 'V-116', csv: '2026-08-28' },
-  'u1_pre_meta_impresiones': { estado: 'exacto', caso: 'V-114', csv: '2026-08-28' },
-  'u1_prog_impresiones': { estado: 'sin_fuente', caso: 'X-05', csv: '2026-08-19' },
-  'u1_total_alcance': { estado: 'abierto', caso: 'C-85', csv: '2026-08-28' },
-  'u1_total_frecuencia': { estado: 'abierto', caso: 'C-86', csv: '2026-08-28' },
-  'varios': { estado: 'exacto', caso: 'V-86', csv: '2026-08-19' }
+  'camp_alcance': { estado: 'cerrado', caso: 'C-94', csv: '2026-09-04', previos: ['abierto','contradice'] },
+  'camp_aperturas': { estado: 'exacto', caso: 'V-113', csv: '2026-08-19', previos: [] },
+  'camp_ctor': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04', previos: [] },
+  'camp_eje': { estado: 'exacto', caso: 'V-112', csv: '2026-08-19', previos: [] },
+  'camp_env4_fecha': { estado: 'contradice', caso: 'C-104', csv: '2026-09-06', previos: [] },
+  'camp_enviados': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04', previos: [] },
+  'camp_frecuencia': { estado: 'cerrado', caso: 'C-95', csv: '2026-09-04', previos: ['abierto'] },
+  'camp_google_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04', previos: [] },
+  'camp_google_impresiones': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04', previos: [] },
+  'camp_google_vistas': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04', previos: [] },
+  'camp_mail_clics': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04', previos: [] },
+  'camp_meta_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04', previos: [] },
+  'camp_meta_frecuencia': { estado: 'cerrado', caso: 'C-96', csv: '2026-09-04', previos: ['abierto'] },
+  'camp_or': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04', previos: [] },
+  'camp_prog_clics': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04', previos: [] },
+  'camp_prog_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04', previos: [] },
+  'camp_prog_impresiones': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04', previos: [] },
+  'cc_base': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19', previos: ['exacto','exacto','exacto','exacto','cerrado','cerrado','exacto','reformulado'] },
+  'cc_base_discada': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19', previos: ['exacto'] },
+  'cc_base_total': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19', previos: ['exacto'] },
+  'cc_campanias': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19', previos: ['cerrado','exacto','reformulado'] },
+  'cc_contact_pct': { estado: 'reformulado', caso: 'X-28', csv: '2026-08-19', previos: ['exacto','exacto'] },
+  'cc_contactados': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19', previos: ['exacto','exacto','exacto','exacto','exacto','exacto','reformulado'] },
+  'cc_efectivos': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19', previos: ['exacto'] },
+  'contenidos_total': { estado: 'exacto', caso: 'X-11', csv: '2026-08-19', previos: [] },
+  'ecv_asistentes': { estado: 'exacto', caso: 'V-47', csv: '2026-08-19', previos: ['exacto','exacto','exacto'] },
+  'ecv_barrios': { estado: 'cerrado', caso: 'C-85', csv: '2026-08-19', previos: ['contradice'] },
+  'ecv_encuentros': { estado: 'contradice', caso: 'C-02', csv: '2026-08-19', previos: ['exacto'] },
+  'ecv_insc_cc': { estado: 'exacto', caso: 'V-41', csv: '2026-08-19', previos: ['exacto','exacto'] },
+  'ecv_insc_dif': { estado: 'cerrado', caso: 'C-49', csv: '2026-08-19', previos: ['exacto'] },
+  'ecv_insc_digital': { estado: 'exacto', caso: 'V-48', csv: '2026-08-19', previos: ['exacto','exacto','exacto'] },
+  'ecv_insc_ivr': { estado: 'exacto', caso: 'V-42', csv: '2026-08-19', previos: ['exacto'] },
+  'ecv_insc_mail': { estado: 'exacto', caso: 'V-39', csv: '2026-08-19', previos: ['exacto','exacto'] },
+  'ecv_inscriptos': { estado: 'retractado', caso: 'C-28', csv: '2026-08-19', previos: ['exacto','exacto','exacto','exacto','exacto','exacto','exacto','exacto','contradice'] },
+  'emin_asistentes_szinny_0508': { estado: 'exacto', caso: 'V-51', csv: '2026-08-19', previos: [] },
+  'emin_ctor': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
+  'emin_ctr': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
+  'emin_encuentros': { estado: 'contradice', caso: 'C-101', csv: '2026-09-06', previos: ['exacto'] },
+  'emin_entregados': { estado: 'sin_fuente', caso: 'X-01', csv: '2026-08-19', previos: [] },
+  'emin_inscriptos_szinny_0108': { estado: 'exacto', caso: 'V-52', csv: '2026-08-19', previos: [] },
+  'emin_inscriptos_szinny_0508': { estado: 'exacto', caso: 'V-50', csv: '2026-08-19', previos: [] },
+  'emin_lista': { estado: 'contradice', caso: 'C-101', csv: '2026-09-06', previos: ['exacto'] },
+  'emin_or': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
+  'enc_alcance': { estado: 'deriva', caso: 'D-06', csv: '2026-08-19', previos: ['cerrado','cerrado','cerrado','cerrado','abierto','cerrado','abierto','abierto'] },
+  'enc_asistencia_pct': { estado: 'exacto', caso: 'V-07', csv: '2026-08-19', previos: [] },
+  'enc_asistentes': { estado: 'exacto', caso: 'V-34', csv: '2026-08-19', previos: ['exacto'] },
+  'enc_atendidos': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19', previos: ['exacto','cerrado','abierto'] },
+  'enc_audiencia': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19', previos: ['exacto','abierto'] },
+  'enc_base_llamada': { estado: 'deriva', caso: 'D-02', csv: '2026-08-19', previos: [] },
+  'enc_base_total': { estado: 'deriva', caso: 'D-01', csv: '2026-08-19', previos: [] },
+  'enc_clics': { estado: 'exacto', caso: 'V-95', csv: '2026-08-19', previos: ['exacto'] },
+  'enc_clics_meta': { estado: 'contradice', caso: 'X-23', csv: '2026-08-19', previos: ['exacto'] },
+  'enc_clics_prog': { estado: 'exacto', caso: 'V-96', csv: '2026-08-19', previos: [] },
+  'enc_ctor': { estado: 'exacto', caso: 'V-15', csv: '2026-08-19', previos: [] },
+  'enc_e75': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19', previos: ['exacto','cerrado','abierto'] },
+  'enc_habitantes_eje': { estado: 'sin_fuente', caso: 'X-04', csv: '2026-08-19', previos: [] },
+  'enc_imp_meta': { estado: 'cerrado', caso: 'X-25', csv: '2026-08-19', previos: ['exacto','exacto','cerrado','contradice'] },
+  'enc_imp_prog': { estado: 'exacto', caso: 'V-96', csv: '2026-08-19', previos: [] },
+  'enc_impresiones': { estado: 'deriva', caso: 'D-05', csv: '2026-08-19', previos: ['exacto','exacto','exacto','cerrado','cerrado'] },
+  'enc_impresiones_pre': { estado: 'exacto', caso: 'V-88', csv: '2026-08-19', previos: [] },
+  'enc_inscriptos': { estado: 'exacto', caso: 'V-33', csv: '2026-08-19', previos: ['exacto'] },
+  'enc_ll_contactados': { estado: 'deriva', caso: 'D-03', csv: '2026-08-19', previos: [] },
+  'enc_ll_efectivos': { estado: 'deriva', caso: 'D-04', csv: '2026-08-19', previos: [] },
+  'enc_llamados': { estado: 'exacto', caso: 'V-20', csv: '2026-08-19', previos: ['exacto'] },
+  'enc_mails_entregados': { estado: 'exacto', caso: 'V-13', csv: '2026-08-19', previos: [] },
+  'enc_mails_enviados': { estado: 'exacto', caso: 'V-12', csv: '2026-08-19', previos: [] },
+  'enc_marque1': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19', previos: ['exacto','cerrado','abierto'] },
+  'enc_or': { estado: 'exacto', caso: 'V-14', csv: '2026-08-19', previos: [] },
+  'enc_visualizaciones': { estado: 'exacto', caso: 'V-94', csv: '2026-08-19', previos: ['exacto'] },
+  'frecuencia_estimada': { estado: 'cerrado', caso: 'C-52', csv: '2026-08-19', previos: [] },
+  'gcba_contenidos_total': { estado: 'exacto', caso: 'V-60', csv: '2026-08-19', previos: [] },
+  'gcba_frecuencia': { estado: 'contradice', caso: 'X-32', csv: '2026-08-19', previos: [] },
+  'gcba_imp_total': { estado: 'exacto', caso: 'V-74', csv: '2026-08-19', previos: ['exacto'] },
+  'gcba_mail_aperturas': { estado: 'exacto', caso: 'V-58', csv: '2026-08-19', previos: [] },
+  'gcba_mail_entregados': { estado: 'exacto', caso: 'V-57', csv: '2026-08-19', previos: [] },
+  'gcba_mail_envios': { estado: 'exacto', caso: 'V-107', csv: '2026-08-19', previos: ['exacto'] },
+  'gcba_sms_clics': { estado: 'exacto', caso: 'V-63', csv: '2026-08-19', previos: [] },
+  'gcba_sms_entregados': { estado: 'exacto', caso: 'V-62', csv: '2026-08-19', previos: [] },
+  'gcba_sms_envios': { estado: 'cerrado', caso: 'C-72', csv: '2026-08-19', previos: ['exacto'] },
+  'identidad_canales': { estado: 'exacto', caso: 'V-45', csv: '2026-08-19', previos: [] },
+  'imp_google': { estado: 'contradice', caso: 'A-06', csv: '2026-08-19', previos: ['aproximado'] },
+  'imp_meta': { estado: 'exacto', caso: 'V-108', csv: '2026-08-19', previos: ['aproximado','aproximado'] },
+  'imp_prog': { estado: 'exacto', caso: 'V-108', csv: '2026-08-19', previos: ['aproximado','corrige','contradice'] },
+  'imp_total': { estado: 'exacto', caso: 'X-10', csv: '2026-08-19', previos: ['exacto','exacto'] },
+  'ivr_75': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19', previos: [] },
+  'ivr_75_pct': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19', previos: [] },
+  'ivr_at_pct': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19', previos: [] },
+  'ivr_atendidos': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19', previos: ['exacto','cerrado'] },
+  'ivr_campanias': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19', previos: ['abierto'] },
+  'ivr_llamados': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19', previos: ['exacto','cerrado'] },
+  'ivr_marque1': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19', previos: [] },
+  'm2_aperturas': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04', previos: ['deriva','exacto'] },
+  'm2_campanias': { estado: 'cerrado', caso: 'C-87', csv: '2026-09-04', previos: ['cerrado'] },
+  'm2_clics': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04', previos: ['exacto'] },
+  'm2_ctor': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04', previos: ['exacto'] },
+  'm2_entregados': { estado: 'deriva', caso: 'X-14', csv: '2026-08-19', previos: [] },
+  'm2_enviados': { estado: 'deriva', caso: 'X-13', csv: '2026-08-19', previos: ['sin_fuente'] },
+  'm2_envios': { estado: 'cerrado', caso: 'C-87', csv: '2026-09-04', previos: ['exacto'] },
+  'm2_mails_entregados': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04', previos: ['exacto'] },
+  'm2_mails_enviados': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04', previos: ['exacto'] },
+  'm2_or': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04', previos: ['exacto'] },
+  'mail_aperturas': { estado: 'exacto', caso: 'V-99', csv: '2026-08-19', previos: ['exacto'] },
+  'mail_clics': { estado: 'exacto', caso: 'V-99', csv: '2026-08-19', previos: [] },
+  'mail_entregados': { estado: 'cerrado', caso: 'C-81', csv: '2026-08-19', previos: ['exacto','exacto','aproximado','abierto','cerrado','cerrado'] },
+  'mail_enviados': { estado: 'exacto', caso: 'V-99', csv: '2026-08-19', previos: [] },
+  'mail_envios': { estado: 'exacto', caso: 'V-75', csv: '2026-08-19', previos: ['exacto'] },
+  'pauta_meta': { estado: 'abierto', caso: 'X-17', csv: '2026-08-19', previos: ['abierto','abierto'] },
+  'post_camp_mail_ape_1': { estado: 'exacto', caso: 'V-28', csv: '2026-08-19', previos: [] },
+  'post_camp_mail_env_1': { estado: 'exacto', caso: 'V-30', csv: '2026-08-19', previos: ['exacto'] },
+  'post_camp_mail_env_2': { estado: 'exacto', caso: 'V-31', csv: '2026-08-19', previos: ['exacto'] },
+  'post_camp_mail_env_3': { estado: 'exacto', caso: 'V-32', csv: '2026-08-19', previos: [] },
+  'rc_enviados': { estado: 'sin_fuente', caso: 'X-03', csv: '2026-08-19', previos: [] },
+  'u1_google_clics': { estado: 'exacto', caso: 'V-22', csv: '2026-08-19', previos: [] },
+  'u1_google_impresiones': { estado: 'exacto', caso: 'V-21', csv: '2026-08-19', previos: [] },
+  'u1_meta_clics': { estado: 'exacto', caso: 'V-24', csv: '2026-08-19', previos: [] },
+  'u1_meta_impresiones': { estado: 'exacto', caso: 'V-25', csv: '2026-08-19', previos: ['exacto'] },
+  'u1_meta_vistas': { estado: 'exacto', caso: 'V-26', csv: '2026-08-19', previos: [] },
+  'u1_post_google_impresiones': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28', previos: [] },
+  'u1_post_google_vistas': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28', previos: [] },
+  'u1_post_meta_alcance': { estado: 'contradice', caso: 'X-43', csv: '2026-08-28', previos: ['pendiente'] },
+  'u1_post_meta_impresiones': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28', previos: [] },
+  'u1_post_meta_vistas': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28', previos: [] },
+  'u1_pre_google_clics': { estado: 'exacto', caso: 'V-118', csv: '2026-08-28', previos: [] },
+  'u1_pre_google_ctr': { estado: 'exacto', caso: 'V-119', csv: '2026-08-28', previos: [] },
+  'u1_pre_google_impresiones': { estado: 'exacto', caso: 'V-117', csv: '2026-08-28', previos: [] },
+  'u1_pre_meta_alcance': { estado: 'aproximado', caso: 'V-123', csv: '2026-08-28', previos: ['pendiente'] },
+  'u1_pre_meta_clics': { estado: 'exacto', caso: 'V-115', csv: '2026-08-28', previos: [] },
+  'u1_pre_meta_ctr': { estado: 'exacto', caso: 'V-116', csv: '2026-08-28', previos: [] },
+  'u1_pre_meta_impresiones': { estado: 'exacto', caso: 'V-114', csv: '2026-08-28', previos: [] },
+  'u1_prog_impresiones': { estado: 'sin_fuente', caso: 'X-05', csv: '2026-08-19', previos: ['sin_datos'] },
+  'u1_total_alcance': { estado: 'abierto', caso: 'C-85', csv: '2026-08-28', previos: [] },
+  'u1_total_frecuencia': { estado: 'abierto', caso: 'C-86', csv: '2026-08-28', previos: [] }
 };
 
 
@@ -9750,6 +9742,30 @@ function diagGuionesPorLamina() {
  *
  * ⛔ **Modo seco por defecto.** `confirmarGuionesValidados()` **no escribe**: reporta qué haría.
  * Para escribir hay que llamar a `aplicarGuionesValidados()`, que es otro botón.
+ *
+ * ══ ⭐⭐ ANTES DE USAR ESTO, MIRAR `levantarRevisar_` — YA EXISTE Y HACE LO MISMO ═══════════
+ *
+ * `Instalar.gs` tiene `LEVANTAN_POR_CASO_` + `diagLevantarRevisar()` / `aplicarLevantarRevisar()`
+ * desde el **01/09** (`D-56`): **misma celda, mismo diseño, mismo propósito** —lista congelada,
+ * escribe `formato` y neutraliza `SIN VALIDAR` en `notas`, backup antes, relectura después—.
+ * ⛔ **Ni el prompt ni yo la nombramos al escribir esto, y eso es una duplicación.**
+ *
+ * ⚠ **Lo que aquélla hace MEJOR y conviene copiarle:** su sello en `notas` dice **qué caso y qué
+ * evidencia** validaron —`'Validado por V-113 (identidad interna)'`—; ésta escribe
+ * `'VALIDADO <fecha>'`, **sin el caso**. Rastro de auditoría más pobre que el precedente.
+ *
+ * ⭐ **Lo que ésta hace y aquélla no:** los **dos gates de `D-58`**, incluido el de la mitad
+ * insegura. ⇒ **Cuál de las dos sobrevive es una decisión del usuario**, y por eso ninguna se
+ * borró acá.
+ *
+ * ⛔ **Y hay un tercer y cuarto escritor que pueden REPONER la marca por otro criterio**, y el gate
+ * de arriba **no los ve**: `marcarProgrammaticARevisar()` y `aplicarAmbitoARevisarIvr()` usan
+ * **listas fijas**, no `notas`. ⚠ Medido sobre el snapshot del 31/08: **los tres candidatos del
+ * grupo (a) están en la lista de `marcarProgrammaticARevisar()` y NINGUNO tiene `SIN VALIDAR` en
+ * `notas`** ⇒ **la marca que se va a levantar no la puso `revisarASinValidar_`**, y la escritura de
+ * `notas` es un no-op para ellos. **La defensa de `SIN VALIDAR` protege contra el escritor
+ * equivocado.** Es `CLAUDE.md` §4, 04/09: *«una aplicación masiva declara qué filas toca y las
+ * compara contra las decisiones puntuales ya aplicadas ANTES de escribir»*.
  * ══════════════════════════════════════════════════════════════════════════════════════════ */
 var GUIONES_A_LEVANTAR_ = [];          // ⛔ VACÍA a propósito: la llena `diagGuionesPorLamina()`.
 var GUIONES_A_LEVANTAR_FECHA_ = '';    // la fecha de la corrida que la produjo
@@ -9794,6 +9810,45 @@ function guionesValidados_(escribir) {
     return { ok: false, motivo: 'gate D-58' };
   }
   Logger.log('   ✅ los ' + GUIONES_A_LEVANTAR_.length + ' siguen con caso `exacto` vigente');
+
+  /* ── ⛔⛔ EL SEGUNDO GATE, Y ES EL QUE FALTABA: LA MITAD INSEGURA DE `D-58` ──────────────
+   *
+   * `D-58` **no es simétrica, y lo declara**: dice que la pregunta *«¿el más nuevo gana también
+   * para SACAR la marca?»* está **abierta al usuario**, y que mientras tanto
+   *
+   *     «se aplica SÓLO LA MITAD SEGURA: el más nuevo gana cuando AGREGA la marca.
+   *      **Los casos donde el más nuevo la SACARÍA se listan y se paran.**»
+   *
+   * ⇒ **Esta función saca la marca**, así que **es la mitad insegura por definición** cuando el
+   * marcador tuvo antes un caso que lo desmentía. Publicar ahí un número **sin marca sobre un dato
+   * que difiere** es el modo de falla más caro del repo.
+   *
+   * ⭐ **Por eso `CASOS_POR_MARCADOR_` guarda `previos`.** Guardar sólo el ganador —que era lo
+   * natural— **destruye exactamente el dato que decide cuál mitad es**, y este gate quedaría ciego
+   * justo en el caso peligroso. ⚠ Medido el 06/09: **`imp_prog` trae
+   * `previos: ['aproximado','corrige','contradice']`** y cae acá. */
+  var INSEGUROS_ = ['contradice'];
+  var cruzan = GUIONES_A_LEVANTAR_.filter(function (n) {
+    var c = CASOS_POR_MARCADOR_[n];
+    return c && (c.previos || []).some(function (p) { return INSEGUROS_.indexOf(p) !== -1; });
+  });
+  Logger.log('');
+  Logger.log('⛔⛔ GATE 2 — la MITAD INSEGURA de `D-58` (viejo `contradice` → nuevo `exacto`)');
+  if (cruzan.length) {
+    Logger.log('   ⛔⛔ SE PARA. ' + cruzan.length + ' marcador(es) tuvieron antes un caso que los');
+    Logger.log('      desmentía, y `D-58` manda **listarlos y parar**, no sacarles la marca:');
+    cruzan.forEach(function (n) {
+      var c = CASOS_POR_MARCADOR_[n];
+      Logger.log('     · ' + n + '   ' + (c.previos || []).join(' → ') + ' → ' + c.estado +
+        ' (' + c.caso + ')');
+    });
+    Logger.log('   ⇒ **La pregunta que los destraba es del usuario** y está escrita en `D-58`:');
+    Logger.log('     ¿la regla es simétrica, o sólo un `V-` con `exacto` saca la marca?');
+    Logger.log('   ⚠ Sacarlos de `GUIONES_A_LEVANTAR_` deja pasar el resto; **no los agregues');
+    Logger.log('     de nuevo sin esa respuesta.**');
+    return { ok: false, motivo: 'gate D-58 mitad insegura', cruzan: cruzan };
+  }
+  Logger.log('   ✅ ninguno cruzó de `contradice` a `exacto` — todos son la mitad segura');
 
   /* ── Las dos escrituras, calculadas antes de tocar nada ──────────────────────────────── */
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');

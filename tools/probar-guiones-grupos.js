@@ -45,8 +45,9 @@ let CASOS = null, GENERADA = null, ARCHIVOS = null;
   const cuerpo = AUD.slice(i, AUD.indexOf('\n};', i) + 3);
   CASOS = {};
   cuerpo.split(/\r?\n/).forEach(l => {
-    const m = l.match(/'([a-z0-9_]+)': \{ estado: '([a-z_]*)', caso: '([A-Z]+-\d+)'/);
-    if (m) CASOS[m[1]] = { estado: m[2], caso: m[3] };
+    const m = l.match(/'([a-z0-9_]+)': \{ estado: '([a-z_]*)', caso: '([A-Z]+-\d+)'.*previos: \[([^\]]*)\]/);
+    if (m) CASOS[m[1]] = { estado: m[2], caso: m[3],
+      previos: m[4] ? m[4].split(',').map(x => x.replace(/'/g, '').trim()) : [] };
   });
   afirmar(Object.keys(CASOS).length > 100,
     'se parsearon ' + Object.keys(CASOS).length + ' marcadores de la constante');
@@ -67,11 +68,13 @@ console.log('\n═══ B · ⭐⭐ la constante COINCIDE con los CSV de hoy �
     [path.join(__dirname, 'generar-casos-por-marcador.js')], { encoding: 'utf8' });
   const frescos = {};
   salida.split(/\r?\n/).forEach(l => {
-    const m = l.match(/'([a-z0-9_]+)': \{ estado: '([a-z_]*)', caso: '([A-Z]+-\d+)'/);
-    if (m) frescos[m[1]] = { estado: m[2], caso: m[3] };
+    const m = l.match(/'([a-z0-9_]+)': \{ estado: '([a-z_]*)', caso: '([A-Z]+-\d+)'.*previos: \[([^\]]*)\]/);
+    if (m) frescos[m[1]] = { estado: m[2], caso: m[3],
+      previos: m[4] ? m[4].split(',').map(x => x.replace(/'/g, '').trim()) : [] };
   });
   const difieren = Object.keys(frescos).filter(n =>
-    !CASOS[n] || CASOS[n].estado !== frescos[n].estado || CASOS[n].caso !== frescos[n].caso);
+    !CASOS[n] || CASOS[n].estado !== frescos[n].estado || CASOS[n].caso !== frescos[n].caso ||
+    CASOS[n].previos.join('|') !== frescos[n].previos.join('|'));
   const sobran = Object.keys(CASOS).filter(n => !frescos[n]);
   afirmar(difieren.length === 0 && sobran.length === 0,
     '⭐⭐ la constante es IDÉNTICA a lo que sale de los CSV hoy' +
@@ -132,6 +135,32 @@ console.log('\n═══ F · ⛔ la lista nace VACÍA y el modo seco es el defa
     afirmar(AUD.indexOf('function ' + f + '()') !== -1,
       '⭐ `' + f + '()` es pública y sin parámetros — se puede correr desde el editor');
   });
+}
+
+console.log('\n═══ G · ⛔⛔ LA MITAD INSEGURA DE `D-58` — se lista y se PARA ═══');
+{
+  /* ⛔⛔ `D-58` declara una **pregunta abierta** y manda aplicar sólo la mitad segura: el más nuevo
+   * gana **cuando AGREGA** la marca; los casos donde la **sacaría** *«se listan y se paran»*.
+   * ⇒ `guionesValidados_` **saca** la marca, así que sin este gate aplicaría la mitad prohibida. */
+  const cruzan = Object.keys(CASOS).filter(n =>
+    CASOS[n].estado === 'exacto' && CASOS[n].previos.indexOf('contradice') !== -1);
+  console.log('  marcadores que cruzaron `contradice` → `exacto`: ' + cruzan.length +
+    (cruzan.length ? ' — ' + cruzan.join(', ') : ''));
+  afirmar(cruzan.length > 0,
+    '⭐⭐ CONTROL POSITIVO: el historial detecta al menos uno — si diera 0, `previos` no sirve');
+  afirmar(AUD.indexOf("var INSEGUROS_ = ['contradice'];") !== -1,
+    '⭐ el gate existe en `guionesValidados_`');
+  const i = AUD.indexOf('function guionesValidados_');
+  const cuerpo = AUD.slice(i, AUD.indexOf('\n}\n', i));
+  afirmar(/motivo: 'gate D-58 mitad insegura'/.test(cuerpo),
+    '⛔⛔ y PARA con motivo propio — no los saltea en silencio');
+  afirmar(/cruzan\.length[\s\S]{0,900}return \{ ok: false/.test(cuerpo),
+    '⭐ el `return` está DENTRO de la rama que los encontró');
+  /* ⚠ La mitad negativa: un marcador sin `contradice` previo NO puede caer en el gate. */
+  const limpios = Object.keys(CASOS).filter(n =>
+    CASOS[n].estado === 'exacto' && CASOS[n].previos.indexOf('contradice') === -1);
+  afirmar(limpios.length > 0,
+    '⭐ y hay ' + limpios.length + ' `exacto` SIN `contradice` previo — el gate no bloquea todo');
 }
 
 console.log('');

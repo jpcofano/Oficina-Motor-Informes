@@ -45,11 +45,22 @@ archivos.forEach(nombre => {
     const trozos = (f[iTok] || '').split('/').map(s => s.trim()).filter(Boolean);
     if (trozos.length > 1) celdasMulti++;
     trozos.forEach(t => {
-      if (!/^[a-z][a-z0-9_]*$/.test(t)) return;        // descarta prosa
+      /* ⛔ Se exige un `_` **y** un largo mínimo: sin eso entra la prosa de las celdas —`varios`,
+       * `alcance`, `clics`, `digital`— y hereda un estado que no le corresponde. Medido: **8 de
+       * 140** eran palabras sueltas. ⚠ Hoy son inertes porque ningún marcador vivo se llama así,
+       * pero el día que nazca uno llamado `alcance` arrastra el caso de otra cosa. */
+      if (!/^[a-z][a-z0-9]*(_[a-z0-9]+)+$/.test(t) || t.length < 5) return;
       referencias++;
-      /* ⭐ `D-58` aplicado al generar: el último que se ve gana, y el recorrido va por fecha. */
+      /* ⭐ `D-58` aplicado al generar: el último que se ve gana, y el recorrido va por fecha.
+       * ⛔⛔ **Pero el HISTORIAL se conserva, y no es prolijidad: es lo que `D-58` necesita.**
+       * Esa decisión declara una **pregunta abierta** y manda aplicar **sólo la mitad segura** —el
+       * más nuevo gana **cuando AGREGA** la marca; los casos donde la **sacaría** *«se listan y se
+       * paran»*—. ⇒ Guardar sólo el ganador **destruye el dato que decide cuál mitad es**, y el
+       * gate quedaría ciego justo en el caso peligroso. */
+      var previo = porMarcador[t];
       porMarcador[t] = { estado: (f[iEst] || '').trim(), caso: id,
-        archivo: nombre.replace('casos_validacion_', '').replace('.csv', '') };
+        archivo: nombre.replace('casos_validacion_', '').replace('.csv', ''),
+        previos: (previo ? previo.previos.concat([previo.estado]) : []) };
     });
   });
 });
@@ -85,7 +96,8 @@ console.log('var CASOS_POR_MARCADOR_ = {');
 nombres.forEach((n, i) => {
   const c = porMarcador[n];
   console.log("  '" + n + "': { estado: '" + c.estado + "', caso: '" + c.caso + "', csv: '" +
-    c.archivo + "' }" + (i < nombres.length - 1 ? ',' : ''));
+    c.archivo + "', previos: [" + c.previos.map(function (x) { return "'" + x + "'"; }).join(',') +
+    "] }" + (i < nombres.length - 1 ? ',' : ''));
 });
 console.log('};');
 console.error('⇒ ' + nombres.length + ' marcadores desde ' + archivos.length + ' CSV · ' +

@@ -2734,3 +2734,67 @@ casos que el prompt nombra — un prompt nombra los casos que conoce, que es exa
 hay que compensar»*. El prompt citó el `P0` y **no el bloque que lo cancela, 25 líneas más abajo en
 el mismo archivo**. ⇒ **La Parte 0 verificó las seis premisas que el prompt escribió y ninguna de
 las que no escribió.** Verificar lo que un prompt afirma no es verificar el prompt.
+
+---
+
+## 06/09/2026 · ⛔⛔ La Parte C aplicaba **la mitad de `D-58` que `D-58` manda parar**
+
+**Lo encontró el `verificador`, cruzando el bloque entero de `D-58`. Yo cité la decisión y leí la
+mitad.** Es **la misma falla de anteanoche**, dos días seguidos: *citar un bloque y no su límite*.
+
+### 1 · La decisión que rompía
+
+`PLAN.md`, `D-58`, textual:
+
+| dirección | qué hace | si la regla se equivoca |
+|---|---|---|
+| viejo `exacto` → nuevo `contradice` | **pone** `_revisar` | ⭐ una marca de más |
+| **viejo `contradice` → nuevo `exacto`** | **saca** `_revisar` | ⛔⛔ **un número publicado sin marca sobre un dato que difiere** |
+
+> ⭐⭐ *«Mientras no esté contestada, se aplica **SÓLO LA MITAD SEGURA**: el más nuevo gana **cuando
+> agrega** la marca. **Los casos donde el más nuevo la SACARÍA se listan y se paran.»**
+
+⇒ ⛔ **`guionesValidados_` SACA la marca. Es la mitad insegura por definición.**
+
+### 2 · Y el gate no lo podía ver — por cómo yo había diseñado la constante
+
+`CASOS_POR_MARCADOR_` guardaba **sólo el ganador**. ⇒ **Guardar sólo el ganador destruye exactamente
+el dato que decide cuál mitad es.** El gate chequeaba `estado !== 'exacto'` sobre la lista ya
+colapsada: podía ver que la lista **venció**, no que **cruzó**.
+
+⭐ **Arreglado:** el generador conserva `previos`, y hay un **segundo gate** que **lista y para**.
+**Medido:** `imp_prog` trae `previos: ['aproximado','corrige','contradice']` y cae ahí — **1 de 70**.
+
+### 3 · ⭐⭐ Y ya existía una función que hace lo mismo
+
+`levantarRevisar_` + `diagLevantarRevisar()` / `aplicarLevantarRevisar()` (`Instalar.gs`, 01/09,
+`D-56`): **misma celda, mismo diseño, mismo propósito**. ⛔ **Ni el prompt ni yo la nombramos.**
+
+⚠ **Y hace algo mejor:** su sello en `notas` dice **qué caso** validó —`'Validado por V-113
+(identidad interna)'`—; el mío escribe `'VALIDADO <fecha>'`, **sin el caso**.
+⭐ **Lo que la mía hace y aquélla no:** los dos gates de `D-58`. ⇒ **Cuál sobrevive es decisión del
+usuario**; ninguna se borró.
+
+### 4 · ⛔ Y la defensa que construí protege contra el escritor equivocado
+
+Hay **cinco** escritores de `MARCADORES.formato` con `_revisar`, y **sólo uno** usa `notas`.
+⚠ Medido sobre el snapshot del 31/08: **los tres candidatos del grupo (a) están en la lista fija de
+`marcarProgrammaticARevisar()` y ninguno tiene `SIN VALIDAR` en `notas`** ⇒ **la marca no la puso
+`revisarASinValidar_`**, y mi escritura de `notas` es un **no-op** para ellos. Registrado en el
+bloque de la función.
+
+### 5 · ⚠ Dos cosas más, corregidas y medidas
+
+- **`CASOS_POR_MARCADOR_` tenía prosa:** `varios`, `alcance`, `clics`, `digital`… **8 de 140** eran
+  palabras sueltas de las celdas, con estado heredado. Hoy inertes; el día que naciera un marcador
+  llamado `alcance` arrastraba el caso de otra cosa. ⇒ Filtro más estricto: **132**.
+- **La otra mitad del ítem 36 sigue sin cubrirse:** los **7** marcadores con caso `contradice` y
+  **SIN** marca —que publican sin aviso— los mide `medir-casos-exactos-con-revisar.js` y
+  `diagGuionesPorLamina()` **no los reporta**. `CLAUDE.md` §4: *«no alcanza con vigilar que no
+  marquen de más: hay que vigilar que no falte marcar»*.
+
+### ⭐ Y una corroboración que vale
+
+**Dos instrumentos independientes** —`medir-casos-exactos-con-revisar.js` (ítem 36) y el cruce de
+la Parte C— dan **los mismos tres**: `imp_total`, `gcba_imp_total`, `imp_prog`. ⚠ Sobre el snapshot
+del **31/08**: es una **predicción fechada**, no el resultado. El número real lo da la corrida.
