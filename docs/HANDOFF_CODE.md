@@ -3,9 +3,14 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-09-05, tras la **corrida nocturna** (`2026-09-05_1`, ocho partes).
-**`emin_lista` arreglado** (ítem 34), **ítem 29 y 36 con instrumento**, y **tres premisas del prompt
-caídas**. **Suites: 96 bancos, exit 0.** **Cola: 36 ítems, 12 cerrados.**
+**Última actualización:** 2026-09-06, tras la **corrida nocturna** (`2026-09-06_1`, cuatro partes).
+⭐⭐ **`R-20` implementado: el desplazamiento de ventana por solapa**, con las celdas **vacías** hasta
+que el usuario cargue el valor. **Suites: 97 bancos, exit 0.** **Cola: 36 ítems, 12 cerrados.**
+
+> ⛔⛔ **Lo que hay que saber antes de mirar el deck de hoy:** `emin_lista` **publica** los siete
+> renglones —el arreglo del 05/09 funciona (`C-100`)— **y son OTRAS siete** (`C-101`). Sobra Quirós,
+> falta Sabor, y **`emin_encuentros = 7` da verde igual** porque las dos diferencias se cancelan en
+> el total. **El cableado está bien; el universo no.**
 
 > ⛔ **Este documento estuvo 62 commits atrasado** (del 02/09 al 05/09), y **lo encontró el usuario
 > preguntando, no un control.** Registrado en `PENDIENTES_consistencia.md` con la condición
@@ -18,11 +23,17 @@ caídas**. **Suites: 96 bancos, exit 0.** **Cola: 36 ítems, 12 cerrados.**
 > ⚠ **Nada se corrió contra la planilla viva y NO hubo `clasp push`** — las dos primeras reglas de
 > la noche.
 
-0. ⭐⭐ **`clasp push` PRIMERO.** La noche tocó `Generador.gs`, `Instalar.gs` y `Auditoria.gs`, y
-   **nada de eso existe todavía para el motor**. Sin esto, todo lo de abajo corre código viejo.
-1. ⭐ **Una corrida de `jm`** — para ver **`emin_lista` publicando texto en vez de `-`**.
-   **Control:** siete renglones, uno por encuentro, y **`emin_encuentros` tiene que seguir dando 7**.
-2. ⭐ **`verGlobalL047()`** *(nueva)* — qué `formato` tienen hoy los seis del bloque global de
+0. ⭐⭐ **`clasp push` PRIMERO.** Dos noches tocaron `Generador.gs`, `Instalar.gs`, `Auditoria.gs` y
+   `Fuentes.gs`, y **nada de eso existe todavía para el motor**. Sin esto, todo lo de abajo corre
+   código viejo.
+1. ⭐⭐ **Aplicar configuración** — para que aparezcan `ventana_desde_dias` y `ventana_hasta_dias` en
+   `SOLAPAS`. **Control:** las dos columnas existen, **antes de `notas`**, y **vacías en todas las
+   filas**. ⚠ Si no aparecen con eso, hace falta `instalar()`; el reporte de la noche lo dice.
+2. ⭐ **Cargar el desplazamiento de la Agenda** —`reuniones / Agenda funcionarios`—, **y es tuyo
+   porque cambia qué filas publica el deck**. La medición dice que **`-3` y `-2`** reproducen las
+   siete correctas. **Control:** con eso, `emin_lista` deja de traer `04/09` y `08/09`, **entra
+   Sabor y sale Quirós**, y `emin_encuentros` **sigue en 7** — el conteo no distingue, la lista sí.
+3. ⭐ **`verGlobalL047()`** — qué `formato` tienen hoy los seis del bloque global de
    `L-047`. ⚠ **Dirime dos afirmaciones incompatibles del repo:** el alta del 24/08 dice *«ninguno
    lleva `_revisar`»* y `C-99` supone que hay marca. **Si da 0, `C-99` no tiene nada que levantar.**
 3. ⭐ **Confirmar qué dice la columna `meta_frecuencia`** para la campaña del deck. **Es lo único que
@@ -117,7 +128,7 @@ grep -o '^| `\[.\]` \*\*[0-9]*\*\*' docs/PLAN.md | grep -o '\[.\]' | sort | uniq
 
 | afirmación | cómo lo sé |
 |---|---|
-| Suites en verde, **96** bancos | **exit code 0**, corrido hoy — no por leer el log |
+| Suites en verde, **97** bancos | **exit code 0**, corrido hoy — no por leer el log |
 | `git` == disco local | `git status` vacío, `HEAD == origin/main`, medido |
 | `emin_encuentros = 7` | **corrida real** del usuario, no fixture |
 | el cruce inverso del ítem 36 funciona | ⭐ reencuentra `u1_post_meta_alcance`/`X-43`, que **`CLAUDE.md` §4 nombraba antes** de que existiera |
