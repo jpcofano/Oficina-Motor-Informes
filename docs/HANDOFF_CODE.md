@@ -3,10 +3,11 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-09-06, tras la **corrida nocturna** (`2026-09-06_1`, cuatro partes).
-✅ **El desplazamiento de ventana se REVIRTIÓ** (decisión del usuario, 06/09) — el revert es
-**exacto**: `git diff` contra el estado previo da vacío. **Suites: 96 bancos, exit 0.**
-**Cola: 36 ítems, 12 cerrados.**
+**Última actualización:** 2026-09-06, tras el `2026-09-06_3`. ✅ **El desplazamiento de ventana se
+REVIRTIÓ** (decisión del usuario) — el revert es **exacto**: `git diff` contra el estado previo da
+**vacío**. ⭐ **`D-59`: la ventana la elige el usuario y el frente se cierra.** ⭐⭐ **Los guiones
+quedaron separados en tres grupos, y sólo uno se levanta.**
+**Suites: 97 bancos, exit 0.** **Cola: 36 ítems, 12 cerrados.**
 
 > ⛔⛔ **Lo que hay que saber antes de mirar el deck de hoy:** `emin_lista` **publica** los siete
 > renglones —el arreglo del 05/09 funciona (`C-100`)— **y son OTRAS siete** (`C-101`). Sobra Quirós,
@@ -33,14 +34,22 @@
    **la hoja viva todavía corta por `E`**, porque el seed no repara lo ya creado.
    **Control por identidad:** con el corte por `D`, **entra Sabor y sale Quirós** — ⛔ y
    `emin_encuentros` **sigue en 7 en los dos casos**, así que **un control que cuente no sirve**.
-3. ⭐ **`verGlobalL047()`** — qué `formato` tienen hoy los seis del bloque global de
+2. ⭐⭐ **`diagCorteAgenda()`** *(nueva)* — **por qué columna corta hoy** la Agenda. ⛔ Si `MAPEO`
+   dice **`E`** y el seed dice **`D`**, el arreglo es **una celda** y **lo decidís vos**.
+   **Control por identidad:** con `D`, **entra Sabor y sale Quirós** — ⚠ y los conteos pueden
+   coincidir, así que **el número no sirve como control**.
+3. ⭐⭐ **`diagGuionesPorLamina()`** *(nueva)* — los guiones en tres grupos. **Sólo el (a) se
+   levanta.** ⛔ **`camp_titulo` NO está en (a)** —no tiene caso— y levantarlo declararía validado lo
+   que está en investigación. ⇒ Su grupo (a) se copia a `GUIONES_A_LEVANTAR_` y recién ahí
+   **`confirmarGuionesValidados()`** (modo seco; escribir es **otro botón**).
+4. ⭐ **`verGlobalL047()`** — qué `formato` tienen hoy los seis del bloque global de
    `L-047`. ⚠ **Dirime dos afirmaciones incompatibles del repo:** el alta del 24/08 dice *«ninguno
    lleva `_revisar`»* y `C-99` supone que hay marca. **Si da 0, `C-99` no tiene nada que levantar.**
-4. ⭐ **Confirmar qué dice la columna `meta_frecuencia`** para la campaña del deck. **Es lo único que
+5. ⭐ **Confirmar qué dice la columna `meta_frecuencia`** para la campaña del deck. **Es lo único que
    queda del `_9`.** ⚠ No es un desempate —la aritmética cierra, `2.080.014 / 872.827 = 2,38`— sino
    una **confirmación de lectura**.
-5. **`diagLimpiarGrupoB()` y, si está bien, `limpiarGrupoB()`** — los cuatro del grupo B del `_7`.
-6. **`censarTokensSinLlaves()`** — escrito el 03/09 y **nunca corrido**; es el único que puede ver
+6. **`diagLimpiarGrupoB()` y, si está bien, `limpiarGrupoB()`** — los cuatro del grupo B del `_7`.
+7. **`censarTokensSinLlaves()`** — escrito el 03/09 y **nunca corrido**; es el único que puede ver
    `camp_env4_fecha}}`.
 
 ⛔ **Antes de levantar cualquier `_revisar`:** `revisarASinValidar_` **lo repone** si `notas` sigue
