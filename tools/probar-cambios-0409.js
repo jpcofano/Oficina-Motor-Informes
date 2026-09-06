@@ -136,7 +136,35 @@ console.log('\n═══ C · B.3 · vuelven al formato que TENÍAN, no a uno el
 console.log('\n═══ D · el CSV nuevo entró y es acumulativo ═══');
 {
   const dir = fs.readdirSync(path.join(RAIZ, 'docs')).filter(f => /^casos_validacion_.*\.csv$/.test(f));
-  afirmar(dir.length === 4, 'hay CUATRO CSV de casos (dio ' + dir.length + ') — acumulativo, no reemplaza');
+
+  /* ⛔⛔ `2026-09-06` — **esta afirmación decía `dir.length === 4` y era una bomba de tiempo.**
+   * El curso normal del proyecto es **agregar un CSV por corrida de validación** (`§7`: *«nadie
+   * edita; se crea uno nuevo»*), así que el banco se iba a poner **rojo por el motivo equivocado**
+   * el día que entrara el quinto — no porque algo se rompiera, sino **porque la fuente respiró**.
+   * ⚠ Y un rojo que no significa lo que dice **enseña a ignorar los rojos**.
+   *
+   * ⭐ **Lo que la afirmación QUERÍA decir es «los CSV se acumulan, no se reemplazan»**, y eso se
+   * escribe como una **condición** y no como un conteo: los que ya existían **siguen existiendo**,
+   * y el total **no baja**. Es el ⭐⭐ de `CLAUDE.md` §4 —*un control contra constantes caduca cada
+   * vez que la fuente respira; uno contra identidades no caduca nunca*— aplicado a un `readdir`. */
+  const CSV_PREVIOS_ = [
+    'casos_validacion_2026-08-19.csv', 'casos_validacion_2026-08-28.csv',
+    'casos_validacion_2026-09-02.csv', 'casos_validacion_2026-09-04.csv'
+  ];
+  const faltan = CSV_PREVIOS_.filter(f => dir.indexOf(f) === -1);
+  afirmar(faltan.length === 0,
+    '⭐⭐ los ' + CSV_PREVIOS_.length + ' CSV previos SIGUEN estando (hay ' + dir.length + ')' +
+    (faltan.length ? ' — ⛔ DESAPARECIERON: ' + faltan.join(', ') : ' — se acumulan, no se reemplazan'));
+  afirmar(dir.length >= CSV_PREVIOS_.length,
+    '⭐ y el total no BAJA: ' + dir.length + ' ≥ ' + CSV_PREVIOS_.length +
+    ' — un CSV nuevo hace crecer este número y eso NO es una falla');
+  /* ⭐ Control en la otra dirección, que es la mitad que hace que esto valga: si un previo
+   * desapareciera, el chequeo tiene que caer. Se prueba sobre una lista mutada, sin tocar el
+   * disco, y **se verifica que la mutación ocurrió** antes de creerle al resultado. */
+  const mutado = dir.filter(f => f !== CSV_PREVIOS_[0]);
+  afirmar(mutado.length === dir.length - 1, '⭐ la mutación OCURRIÓ — se quitó un CSV de la lista');
+  afirmar(CSV_PREVIOS_.filter(f => mutado.indexOf(f) === -1).length === 1,
+    '⛔ y sin `' + CSV_PREVIOS_[0] + '` el control ACUSA ⇒ mide lo que dice medir');
   const nuevo = fs.readFileSync(path.join(RAIZ, 'docs', 'casos_validacion_2026-09-04.csv'), 'utf8');
   afirmar(/^caso_id,bloque,token_propuesto,/.test(nuevo),
     '⭐ mismas columnas que los otros tres — `token_propuesto`, que es la que el cruce usa');
