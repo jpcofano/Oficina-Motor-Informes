@@ -2798,3 +2798,48 @@ bloque de la función.
 **Dos instrumentos independientes** —`medir-casos-exactos-con-revisar.js` (ítem 36) y el cruce de
 la Parte C— dan **los mismos tres**: `imp_total`, `gcba_imp_total`, `imp_prog`. ⚠ Sobre el snapshot
 del **31/08**: es una **predicción fechada**, no el resultado. El número real lo da la corrida.
+
+---
+
+## 06/09/2026 · ⭐ El corte de la Agenda pasó de `E` a `D` — **cambio a mano, registrado como evidencia**
+
+**Lo hizo el usuario el 06/09**, después de que `diagCorteAgenda()` midiera el estado real.
+
+| | qué decía | qué dice |
+|---|---|---|
+| `MAPEO` · `reuniones` / `Agenda funcionarios` / `fecha_periodo` | **`E`** (`Fecha de envío`) | **`D`** (`Fecha`, el encuentro) |
+| el **seed** (`MAPEO_MINISTROS_`) | `D` **desde el 03/09** | `D` |
+
+⭐⭐ **Y esa brecha ES la lección, no un detalle:** el seed decía `D` **desde el 03/09** y la hoja
+siguió cortando por `E` **tres días**. ⇒ **Un cambio de seed no existe hasta que se empuja**, y el
+seed **no repara lo ya creado**. Es la misma figura del 15/08 y del 16/08, y las dos veces la
+conclusión rápida —*«el sembrador está roto»*— era falsa.
+
+⚠ **Un cambio a mano no deja rastro y nadie lo puede auditar después.** Por eso se registra acá:
+qué celda, qué decía, qué dice, quién y cuándo. **La función de migración ya no se escribe** — no
+hay nada que migrar.
+
+### ⭐ Qué tiene que dar `diagCorteAgenda()` ahora, y es POR IDENTIDAD
+
+| control | qué tiene que dar |
+|---|---|
+| la columna viva | **`D`** — antes daba `E` |
+| **Ezequiel Sabor** | **ENTRA** |
+| **Fernán Quirós** (encuentro `08/09`) | **QUEDA AFUERA** |
+
+⛔⛔ **Un control que cuente NO SIRVE, y está medido: 6 por `D` contra 7 por `E`** — y el deck viejo
+publicaba **7 con las equivocadas**. **Dos diferencias que se cancelan en el total.**
+
+### ⚠ El otro veredicto posible, que NO es un error
+
+**Si `diagCorteAgenda()` reporta `D` y la lista SIGUE trayendo a Quirós**, la hipótesis del corte se
+cae y **el problema es de la ventana, no del corte**. ⇒ El instrumento lo dice con esas palabras en
+vez de dar verde por la coincidencia del `MAPEO` — **son dos trabajos opuestos** y buscarlo en el
+lado equivocado cuesta el día.
+
+### ⇒ Lo que se destraba cuando la corrida confirme
+
+**`C-101` queda superado** y `emin_lista` / `emin_encuentros` dejan de estar bloqueados **por esa
+vía**. ⚠ **Pero siguen frenados por otra:** pasar de `contradice` a `exacto` es **la mitad insegura
+de `D-58`**, y ésa **espera una respuesta del usuario**. ⛔ **Y el caso nuevo lo escribe una corrida
+con deck, no este registro.**
