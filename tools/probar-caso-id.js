@@ -34,9 +34,16 @@ const fs = require('fs');
 const path = require('path');
 const RAIZ = path.join(__dirname, '..');
 const DOCS = path.join(RAIZ, 'docs');
+/* ⭐ El lector estricto COMPARTIDO. `tools/lib-csv.js` existe porque este banco y
+ * `medir-casos-exactos-con-revisar.js` nacieron **la misma noche** con parsers opuestos y motivos
+ * escritos que se contradicen. ⛔ Ganó el estricto: el laxo andaba **por el estado de los datos**
+ * —hoy no hay ningún salto de línea embebido— y no por su diseño. */
+const CSV = require('./lib-csv');
 
 let fallas = 0;
+let afirmaciones = 0;
 function afirmar(condicion, mensaje) {
+  afirmaciones++;
   if (condicion) console.log('  ✅ ' + mensaje);
   else { fallas++; console.log('  ⛔ ' + mensaje); }
 }
@@ -49,29 +56,56 @@ const DUPLICADOS_CONOCIDOS = ['C-84', 'C-85'];
 const archivos = fs.readdirSync(DOCS)
   .filter(n => /^casos_validacion_.*\.csv$/.test(n)).sort();
 
-/* ⚠ Se parte por la PRIMERA coma de cada línea y nada más: el `caso_id` es el primer campo y
- * nunca lleva comas. Un parser de CSV completo sería reimplementar lo que no hace falta —y las
- * notas de estos archivos tienen comas y comillas de sobra. */
-const donde = {};      // caso_id -> [archivos]
-const porPrefijo = {}; // prefijo -> máximo numérico
-let filas = 0;
-archivos.forEach(nombre => {
-  const lineas = fs.readFileSync(path.join(DOCS, nombre), 'utf8').split(/\r?\n/);
-  lineas.slice(1).forEach(l => {
-    const id = l.split(',')[0].trim();
-    if (!/^[A-Z]+-\d+$/.test(id)) return;
-    filas++;
-    (donde[id] = donde[id] || []).push(nombre);
-    const [pre, num] = id.split('-');
-    porPrefijo[pre] = Math.max(porPrefijo[pre] || 0, Number(num));
-  });
-});
+const donde = {};       // caso_id -> [archivos]
+const porPrefijo = {};  // prefijo -> { max, ancho }
+let validos = 0, descartados = 0, registros = 0;
+const conSaltos = [], raros = [];
 
 console.log('═══ 0 · el universo, declarado antes de afirmar nada ═══');
-console.log('  archivos: ' + archivos.length + '  ·  casos con id válido: ' + filas);
+archivos.forEach(nombre => {
+  const texto = fs.readFileSync(path.join(DOCS, nombre), 'utf8');
+  const u = CSV.universo(texto);
+  registros += u.registros - 1;                       // menos la cabecera
+  if (u.saltos_embebidos) conSaltos.push(nombre);
+  CSV.parsear(texto).slice(1).forEach(f => {
+    const id = (f[0] || '').trim();
+    if (!id && f.length <= 1) return;                 // línea en blanco
+    if (!/^[A-Z]+-\d+$/.test(id)) { descartados++; raros.push(JSON.stringify(id) + ' (' + nombre + ')'); return; }
+    validos++;
+    (donde[id] = donde[id] || []).push(nombre);
+    const [pre, num] = id.split('-');
+    const p = porPrefijo[pre] = porPrefijo[pre] || { max: 0, ancho: 0 };
+    /* ⭐ El ANCHO se conserva: el corpus está *zero-padded* a dos dígitos y `Number()` lo pierde.
+     * Sin esto el banco prescribía `D-7` donde la convención del propio corpus pide `D-07`. */
+    p.ancho = Math.max(p.ancho, num.length);
+    p.max = Math.max(p.max, Number(num));
+  });
+});
+function idDe(pre, n) { return pre + '-' + String(n).padStart(porPrefijo[pre].ancho, '0'); }
+
+console.log('  archivos: ' + archivos.length + '  ·  registros de datos: ' + registros +
+  '  ·  con id válido: ' + validos + '  ·  descartados: ' + descartados);
 archivos.forEach(n => console.log('     · ' + n));
+if (raros.length) console.log('  ⚠ descartados: ' + raros.join(' · '));
 afirmar(archivos.length >= 2, 'hay al menos dos archivos que comparar');
-afirmar(filas > 0, 'se leyó al menos un caso  (cero casos sería el cero silencioso)');
+afirmar(validos > 0, 'se leyó al menos un caso  (cero casos sería el cero silencioso)');
+/* ⭐⭐ EL DENOMINADOR, que faltaba y es la mitad de «declarar cuánto se midió»: sin esto,
+ * *«no descarté nada»* y *«descarté cinco y no lo dije»* se ven IDÉNTICOS en la salida. */
+afirmar(validos + descartados === registros,
+  '⭐⭐ los ' + registros + ' registros están todos contados (' + validos + ' válidos + ' +
+  descartados + ' descartados) — el universo CIERRA');
+/* ⛔ La guarda que el lector estricto habilita: un salto de línea dentro de un campo hace que
+ * partir por fin-de-línea invente una **fila fantasma con atribución falsa** — un duplicado que
+ * acusa a un archivo donde ese id no está. Acá se detecta y se dice. */
+afirmar(conSaltos.length === 0,
+  conSaltos.length ? '⛔ saltos de línea DENTRO de un campo en: ' + conSaltos.join(', ')
+    : 'ningún campo tiene saltos de línea embebidos');
+/* ⚠ Un CONSOLIDADO repite por construcción los ids de lo que consolida. El repo tuvo dos. */
+const consolidados = archivos.filter(n => /CONSOLIDADO/i.test(n));
+afirmar(consolidados.length === 0,
+  consolidados.length ? '⚠ hay CONSOLIDADO(s) en el glob: ' + consolidados.join(', ') +
+    ' — repiten ids por construcción, y entonces los duplicados de abajo NO son un hallazgo'
+    : 'ningún CONSOLIDADO en el glob — los duplicados de abajo son reales');
 
 console.log('\n═══ A · ⭐ CONTROL POSITIVO — los duplicados conocidos TIENEN que aparecer ═══');
 {
@@ -84,8 +118,8 @@ console.log('\n═══ A · ⭐ CONTROL POSITIVO — los duplicados conocidos 
     '⭐⭐ el instrumento VE los ' + DUPLICADOS_CONOCIDOS.length + ' conocidos (' +
     vistos.length + ' encontrados)');
   if (vistos.length !== DUPLICADOS_CONOCIDOS.length) {
-    const faltan = DUPLICADOS_CONOCIDOS.filter(id => vistos.indexOf(id) === -1);
-    console.log('     ⛔⛔ NO aparecen: ' + faltan.join(', '));
+    console.log('     ⛔⛔ NO aparecen: ' +
+      DUPLICADOS_CONOCIDOS.filter(id => vistos.indexOf(id) === -1).join(', '));
     console.log('     ⇒ O el parser dejó de ver los CSV, O el usuario resolvió el duplicado.');
     console.log('       **Son dos cosas opuestas y este banco no las distingue**: si fue lo');
     console.log('       segundo, hay que sacarlo del baseline A MANO y escribir por qué.');
@@ -110,16 +144,28 @@ console.log('\n═══ C · ⭐ el máximo global por prefijo — de acá sale
    * máximo GLOBAL de todos los archivos, nunca del máximo del archivo que se está editando —que
    * es exactamente cómo nacieron `C-84` y `C-85`. */
   Object.keys(porPrefijo).sort().forEach(p => {
-    console.log('     ' + p + '-*  →  máximo ' + p + '-' + porPrefijo[p] +
-      '   ⇒ el próximo es ' + p + '-' + (porPrefijo[p] + 1));
+    console.log('     ' + p + '-*  →  máximo ' + idDe(p, porPrefijo[p].max) +
+      '   ⇒ el próximo es ' + idDe(p, porPrefijo[p].max + 1) +
+      (p === 'D' ? '   ⛔ OJO: `D-NN` son TAMBIÉN las decisiones de `PLAN.md`' : ''));
   });
   afirmar(Object.keys(porPrefijo).length > 0, 'se calculó al menos un prefijo');
+  /* ⛔ La colisión de namespaces, dicha donde alguien la va a leer: `D-01`…`D-06` del CSV
+   * —«derivaciones», `D-56`— se pisan al 100 % con `D-01`…`D-58` de `PLAN.md` —decisiones de
+   * arquitectura—. ⚠ Hoy es LATENTE: las 77 citas a `D-0N` del repo apuntan todas a las
+   * decisiones, ninguna a los seis casos. Pero **el lado CSV es ingrepable**. Resolverlo es una
+   * decisión del usuario; este banco sólo se niega a empeorarlo en silencio. */
+  if (porPrefijo['D']) {
+    console.log('     ⚠ `D-` colisiona con las decisiones de `PLAN.md` (`D-01`…`D-58`). Hoy es');
+    console.log('       latente —nadie cita los casos `D-0N`—, pero un `D-07` nuevo sería');
+    console.log('       ingrepable desde el día uno. La decisión de renombrar el prefijo es tuya.');
+  }
 }
 
 console.log('');
 console.log('⛔ Este banco NO renumera, NO escribe ningún CSV y NO elige cuál de los dos `C-84`');
 console.log('   se queda con el número: eso es una decisión del usuario. Muestra el problema.');
-console.log('⚠ Y lo que NO contesta: si dos casos con id distinto hablan del mismo marcador. Eso');
-console.log('   es `D-58` y es otra pregunta.');
+console.log('⚠ Y lo que NO contesta: si dos casos con id distinto hablan del mismo marcador —eso');
+console.log('   es `D-58` y es otra pregunta—, ni si la serie tiene HUECOS: reporta el máximo, no');
+console.log('   la continuidad. (Medido el 05/09: falta `C-10`, y no lo cita nadie.)');
 if (fallas) { console.log('⛔ ' + fallas + ' afirmación(es) FALLARON'); process.exit(1); }
-console.log('✅ todas las afirmaciones pasaron');
+console.log('✅ Las ' + afirmaciones + ' afirmaciones pasaron');

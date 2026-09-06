@@ -2513,3 +2513,49 @@ Va a `PLAN.md` §2 porque **agrega una variable que ese diagnóstico no tenía**
 **El encabezado del deck del 04/09 publicó `vie 28/08 – vie 04/09`.** ⇒ **La ventana viernes a
 viernes está aplicada y se ve en el producto**, no sólo en la configuración. Es la confirmación
 end-to-end del cambio del 03/09 que se caía del `−3`.
+
+---
+
+## 05/09/2026 · ⛔⛔ El prefijo `D-` de los CSV colisiona **al 100 %** con las decisiones `D-NN`
+
+**Los dos están declarados, ninguno es un descuido.** `D-56` (01/09) fija la leyenda de prefijos del
+CSV —`V-` validaciones, `C-` contradicciones, **`D-` derivaciones**—; y `PLAN.md` §1 usa `D-NN` para
+**decisiones de arquitectura**.
+
+| namespace | rango | ejemplo |
+|---|---|---|
+| `PLAN.md` §1 | **`D-01`…`D-58`**, sin huecos | `D-01` = *«La extensibilidad es una métrica, no una puerta»* |
+| CSV | **`D-01`…`D-06`**, todos en `casos_validacion_2026-08-19.csv` | `D-01` = *«`enc_base_total` = 8255»* |
+
+⇒ **El solapamiento es el 100 % del namespace `D-` del CSV.**
+
+⭐ **Hoy es LATENTE, no activo, y eso está medido:** `grep -rnE '\bD-0[1-6]\b'` sobre `docs/`,
+`CLAUDE.md`, `tools/` y los `.gs` da **77 citas en 16 archivos**, y **todas apuntan a las
+decisiones**. **Ninguna a los seis casos.** ⛔ Lo que **sí** es cierto ya es que **el lado CSV es
+ingrepable**: buscar `D-05` devuelve 77 resultados del otro namespace.
+
+⚠ **Y el instrumento lo habría empeorado en silencio:** `probar-caso-id.js` prescribía *«el próximo
+es `D-7`»* —extendiendo el namespace que colisiona, y sin el *padding* del corpus—. Corregido: ahora
+dice `D-07` **y avisa de la colisión en el propio log**. ⛔ **Renombrar el prefijo es decisión del
+usuario**; el banco sólo se niega a agravarlo callado.
+
+⚠ **La ironía, por si sirve para nombrarlo:** la decisión que declara el prefijo `D-` del CSV es,
+ella misma, **`D-56`**.
+
+---
+
+## 05/09/2026 · ⚠ `probar-cambios-0409.js` afirma `dir.length === 4` — una constante con fecha de detonación
+
+El banco exige que haya **exactamente cuatro** `casos_validacion_*.csv`. ⛔ **El curso normal del
+proyecto es agregar uno por corrida de validación** (§7: *«nadie edita; se crea uno nuevo»*).
+
+⇒ **El día que entre el quinto, ese banco se pone rojo por el motivo equivocado:** no porque algo se
+haya roto, sino porque **la fuente respiró**. Es el ⭐⭐ de `CLAUDE.md` §4 —*un control contra
+constantes de una lectura anterior caduca cada vez que la fuente respira*— **armado y esperando**.
+
+⛔ **No se toca acá**: es otro archivo y otro objetivo, y *mejorar no es ampliar*. Se registra para
+que cuando se ponga rojo **nadie salga a buscar qué se rompió**.
+
+⭐ **La forma que le correspondería es la que `probar-caso-id.js` acaba de estrenar:** afirmar sobre
+**identidades** —*«el universo cierra: válidos + descartados = registros»*— en vez de sobre el
+**conteo** de archivos.
