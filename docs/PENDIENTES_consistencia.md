@@ -2660,3 +2660,77 @@ refleja `.gitattributes`, no daño. **No se normalizó nada.**
 
 ⚠ Va escrito porque **un cero medido no se distingue de «no miré»**, y porque la sospecha era
 razonable: el caso de `Instalar.gs` había ocurrido de verdad **dos horas antes**.
+
+---
+
+## 06/09/2026 · ⛔⛔⛔ P0 — **implementé un mecanismo que una decisión del usuario canceló hace tres días, y además no puede funcionar**
+
+**Lo encontró el `verificador`**, cruzando el bloque **entero** del documento que el prompt cita a
+medias. **Yo no lo vi, y la regla que lo prohíbe estaba en `CLAUDE.md` §4 delante de mí.**
+
+### 1 · La decisión del 03/09 nombra estas dos columnas y dice que no hacen falta
+
+`PENDIENTES` — *«Un desplazamiento que compensa una ventana mal cortada es un **RODEO**, no un
+mecanismo»*, **decisión del usuario**, con su tabla *«Lo que se CAE — no se pospone»*:
+
+| se cae | por qué |
+|---|---|
+| el desplazamiento `−3` **y** el `−3/−2` medido | no hay nada que desplazar |
+| **las columnas `ventana_desde_dias` / `ventana_hasta_dias`** | **no hacen falta** |
+| **`R-20` y su prompt propio** | **sin objeto** |
+
+⛔⛔ **Y la misma lección está elevada a regla en `CLAUDE.md` §4, fechada 03/09, usando ESTAS DOS
+COLUMNAS como el ejemplo canónico del rodeo.** La leí al arrancar. **Implementé el ejemplo.**
+
+⭐ **La salida que esa decisión eligió ya está aplicada:** el corte pasó de la columna `E` (envío) a
+la **`D`** (el encuentro), y el seed lo dice con la medición al lado — *«`Fecha` en `28/08–04/09`
+trae exactamente las siete»*. ⇒ ⛔ **La medición que motiva la Parte A —«7 filas y son otras
+siete»— es la del corte VIEJO.** No es un defecto abierto: **es el motivo por el que se cambió el
+corte.**
+
+⚠ **Lo que probablemente falta no es un mecanismo: es que el corte por columna `D` LLEGUE a las
+hojas vivas** — `clasp push` + Aplicar configuración—, que es lo que el handoff ya declaraba
+pendiente. **Candidato, no causa:** no puedo leer la hoja.
+
+### 2 · Y aunque se conservara, **hoy es un no-op permanente**
+
+`leerSolapasSinCache_` (`Config.gs`) arma cada fila con una **lista blanca explícita** y las dos
+nuevas **no están** ⇒ `desplazamientoDeVentana_` lee `undefined` → `0`. **Un `-3` cargado a mano no
+haría nada y no fallaría.**
+
+⛔ Es el caso `campo_id_cuenta` / `_44` de `CLAUDE.md` §2 **otra vez, sobre la misma hoja**: de los
+**ocho** puntos que tocó `ventana_ref`, estas dos tocaron **dos** — y **la que falta es la que
+decide si el motor lee el valor**.
+
+⭐⭐ **Y mi banco no lo podía ver, por construcción:** stubea `leerSolapas` con un objeto **armado a
+mano que sí tiene las dos claves**. Es *«¿sobre qué artefacto corre esta afirmación, y es el mismo
+del que se va a hablar después?»* — 15 afirmaciones verdes sobre un mecanismo que no puede
+activarse. **Ningún banco de `tools/` extrae `leerSolapasSinCache_`** (grepeado: cero).
+
+### 3 · Tres defectos menores del mismo cambio, medidos
+
+- ⛔ **`upsertPorClave_` blanquearía la celda.** `aplicarClasificacionSolapas_` arma su objeto con
+  una lista fija que no incluye las dos nuevas ⇒ el día que se cargue `-3` y alguien corra *Aplicar
+  configuración* por otro motivo, **se borra sola**. Es `encabezado`/`D-31` de nuevo.
+- ⛔ **`correrFechaDias_` saltea en silencio si la fecha no es `Date`** y el resultado igual informa
+  `aplicado: true` — el glifo que miente sobre la causa, en la capa del reporte.
+- ⛔ **`Generador.gs` tiene un SEGUNDO recorte por ventana** (`recortar_por_ventana`) que el
+  desplazamiento **no alcanza** ⇒ la afirmación *«un solo lector»* de mi comentario **es falsa**.
+
+### 4 · Lo que hice y lo que NO
+
+⛔ **No revertí y no completé: las dos son decisiones del usuario.** Revertir tira trabajo;
+completar contradice su decisión del 03/09. ⇒ **El código queda inerte y DECLARADO** — con el
+motivo en `Fuentes.gs` e `Instalar.gs`, para que nadie cargue un valor esperando que haga algo.
+
+⭐ **Sí corregí un error de hecho que está mal en cualquier escenario:** el código citaba **`R-20`**,
+que es *«para fechas pasadas, `en agenda` cuenta como realizada»* y **se declara a sí misma «SIN
+MECANISMO — no citar como vigente»**. La confusión nace en el `P0`; ya no se propaga desde el código.
+
+### ⭐⭐ La lección, que es la más cara de las tres noches
+
+**`CLAUDE.md` §1 lo dice exactamente:** *«el cruce se hace sobre el BLOQUE entero, no sobre los
+casos que el prompt nombra — un prompt nombra los casos que conoce, que es exactamente el sesgo que
+hay que compensar»*. El prompt citó el `P0` y **no el bloque que lo cancela, 25 líneas más abajo en
+el mismo archivo**. ⇒ **La Parte 0 verificó las seis premisas que el prompt escribió y ninguna de
+las que no escribió.** Verificar lo que un prompt afirma no es verificar el prompt.

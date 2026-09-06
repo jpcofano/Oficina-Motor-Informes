@@ -4,8 +4,15 @@
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
 **Última actualización:** 2026-09-06, tras la **corrida nocturna** (`2026-09-06_1`, cuatro partes).
-⭐⭐ **`R-20` implementado: el desplazamiento de ventana por solapa**, con las celdas **vacías** hasta
-que el usuario cargue el valor. **Suites: 97 bancos, exit 0.** **Cola: 36 ítems, 12 cerrados.**
+⛔⛔⛔ **La Parte A NO SE PUEDE USAR y necesita tu decisión** — ver el bloque de abajo.
+**Suites: 97 bancos, exit 0.** **Cola: 36 ítems, 12 cerrados.**
+
+> ⛔⛔⛔ **LO PRIMERO, Y ES UNA PREGUNTA PARA VOS.** Implementé el desplazamiento de ventana por
+> solapa, **y una decisión tuya del 03/09 lo declara innecesario nombrando estas dos columnas**:
+> *«un desplazamiento que compensa una ventana mal cortada es un RODEO»*. La salida que elegiste
+> —el corte por columna **`D`**— **ya está en el seed**. ⇒ **La medición que motivó la Parte A es la
+> del corte VIEJO.** Y aunque quisieras conservarlo, **hoy es un no-op**: `leerSolapas()` no expone
+> las columnas. ⛔ **No revertí ni completé.** Está inerte y declarado en el código.
 
 > ⛔⛔ **Lo que hay que saber antes de mirar el deck de hoy:** `emin_lista` **publica** los siete
 > renglones —el arreglo del 05/09 funciona (`C-100`)— **y son OTRAS siete** (`C-101`). Sobra Quirós,
@@ -26,13 +33,14 @@ que el usuario cargue el valor. **Suites: 97 bancos, exit 0.** **Cola: 36 ítems
 0. ⭐⭐ **`clasp push` PRIMERO.** Dos noches tocaron `Generador.gs`, `Instalar.gs`, `Auditoria.gs` y
    `Fuentes.gs`, y **nada de eso existe todavía para el motor**. Sin esto, todo lo de abajo corre
    código viejo.
-1. ⭐⭐ **Aplicar configuración** — para que aparezcan `ventana_desde_dias` y `ventana_hasta_dias` en
-   `SOLAPAS`. **Control:** las dos columnas existen, **antes de `notas`**, y **vacías en todas las
-   filas**. ⚠ Si no aparecen con eso, hace falta `instalar()`; el reporte de la noche lo dice.
-2. ⭐ **Cargar el desplazamiento de la Agenda** —`reuniones / Agenda funcionarios`—, **y es tuyo
-   porque cambia qué filas publica el deck**. La medición dice que **`-3` y `-2`** reproducen las
-   siete correctas. **Control:** con eso, `emin_lista` deja de traer `04/09` y `08/09`, **entra
-   Sabor y sale Quirós**, y `emin_encuentros` **sigue en 7** — el conteo no distingue, la lista sí.
+1. ⭐⭐ **Aplicar configuración** — y el control acá es **el corte por columna `D`**, no el
+   desplazamiento: verificar que `MAPEO` diga `fecha_periodo → D (Fecha)` para
+   `reuniones / Agenda funcionarios`. ⇒ **Ésa es la salida que tu decisión del 03/09 eligió**, y
+   probablemente sea lo único que falta para que `emin_lista` traiga las siete correctas.
+   **Control:** con el corte por `D`, **entra Sabor y sale Quirós**, y `emin_encuentros` **sigue en
+   7** — el conteo no distingue, la lista sí.
+2. ⛔ **NO cargues nada en `ventana_desde_dias` / `ventana_hasta_dias`.** Hoy no haría nada, y
+   además `upsertPorClave_` te borraría la celda en la próxima *Aplicar configuración*.
 3. ⭐ **`verGlobalL047()`** — qué `formato` tienen hoy los seis del bloque global de
    `L-047`. ⚠ **Dirime dos afirmaciones incompatibles del repo:** el alta del 24/08 dice *«ninguno
    lleva `_revisar`»* y `C-99` supone que hay marca. **Si da 0, `C-99` no tiene nada que levantar.**

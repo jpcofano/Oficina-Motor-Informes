@@ -539,7 +539,12 @@ var COLUMNAS_DELTA_ = {
     // por cuenta»** — el estado de todas hasta hoy, incluidas las de `digital`, que tienen su
     // propia rama en `datosDeMarcador_` y no pasan por ésta.
     { nombre: 'campo_id_cuenta', indice: 11 },
-    /* ⭐⭐ `2026-09-06` (`R-20`, diseño del `P0` del 03/09) — **el desplazamiento de ventana, y son
+    /* ⛔⛔⛔ `2026-09-06` — **EN DISCUSIÓN. Una decisión del usuario del 03/09 dice que estas dos
+     * columnas «no hacen falta», y hoy son un NO-OP porque `leerSolapas()` no las expone.** El
+     * bloque de `Fuentes.gs` tiene los dos motivos con su evidencia. ⚠ **NO es `R-20`**, que es
+     * otra regla y se declara «no citar como vigente».
+     *
+     * (diseño del `P0` del 03/09) — **el desplazamiento de ventana, y son
      * DOS columnas porque las dos puntas son distintas.** Medido: el lead time entre envío y
      * encuentro es 2, 3, 3, 3, 3, 4 y 5 días, así que ningún desplazamiento simétrico reproduce
      * las siete filas correctas. El barrido acota a **inicio −1…−3 con fin −1…−2**.

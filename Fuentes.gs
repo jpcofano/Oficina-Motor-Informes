@@ -1050,8 +1050,31 @@ function datosDeHoja_(baseId, hoja) {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════
- * ⭐⭐ `2026-09-06` — **EL DESPLAZAMIENTO DE VENTANA POR SOLAPA.** `R-20`, diseño del `P0` del
- * 03/09, implementado acá tal como ese bloque lo prescribe.
+ * ⭐⭐ `2026-09-06` — **EL DESPLAZAMIENTO DE VENTANA POR SOLAPA.** Diseño del `P0` del 03/09.
+ *
+ * ⚠ **NO es `R-20`, aunque el `P0` y el prompt lo llamen así.** `R-20` es *«para fechas pasadas,
+ * `en agenda` cuenta como realizada»*, y se declara a sí misma **«SIN MECANISMO — no citar como
+ * vigente»**. La confusión nace en `PENDIENTES` y **no se propaga desde acá**.
+ *
+ * ⛔⛔⛔ **ESTE MECANISMO ESTÁ EN DISCUSIÓN Y HOY ES UN NO-OP. LEER ANTES DE USARLO.**
+ *
+ * **(1) Una decisión del usuario del 03/09 lo declara innecesario, con estas columnas por nombre.**
+ * `docs/PENDIENTES_consistencia.md` — *«Un desplazamiento que compensa una ventana mal cortada es
+ * un RODEO, no un mecanismo»* — y su tabla *«Lo que se CAE»* dice, literal: **«las columnas
+ * `ventana_desde_dias` / `ventana_hasta_dias` en `SOLAPAS` — no hacen falta»**. La salida que esa
+ * decisión eligió **ya está aplicada en el seed**: el corte pasó de la columna `E` (envío) a la
+ * **`D`** (el encuentro), y con eso *«`Fecha` en `28/08–04/09` trae exactamente las siete»*.
+ * ⇒ ⛔ **La medición que motivó esto —«7 filas y son otras siete»— es la del corte VIEJO.**
+ *
+ * **(2) Y aunque se decidiera conservarlo, hoy NO PUEDE ACTIVARSE.** `leerSolapasSinCache_`
+ * (`Config.gs`) arma cada fila con una **lista blanca explícita de columnas** y estas dos **no
+ * están** ⇒ `desplazamientoDeVentana_` lee `undefined`, lo normaliza a `0`, y **un `-3` cargado a
+ * mano no hace nada y no falla**. Es el caso `campo_id_cuenta` / `_44` de `CLAUDE.md` §2 otra vez:
+ * entró al seed y a un consumidor, y **los demás lectores quedaron atrás sin fallar** — de los
+ * **ocho** puntos que tocó `ventana_ref`, estas dos tocaron **dos**.
+ *
+ * ⛔ **NO se revirtió ni se completó, y las dos cosas son decisiones del usuario:** revertir tira
+ * trabajo, completar contradice su decisión del 03/09. **Queda inerte y declarado.**
  *
  * ⛔⛔ **El problema que existe para resolver, y no es un número mal:** sobre
  * `reuniones / Agenda funcionarios` (576 filas), la ventana configurada `28/08–03/09` devuelve
