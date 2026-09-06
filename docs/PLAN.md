@@ -3066,6 +3066,40 @@ valor es que la próxima contradicción **ya tenga dueño** en vez de resolverse
 
 ---
 
+### `D-59` · La ventana del informe **la elige el usuario en cada corrida** — 06/09/2026
+
+**Decisión del usuario.** El asistente ofrece **`vie–jue`**, **`vie–vie`** y **períodos
+personalizados**, y `PERIODOS` tiene filas de las tres formas — `2026_agosto_21_28` declara en su
+propia nota que salió del asistente como personalizado. ⇒ ⭐ **Las tres son válidas, la selección
+manda, y NO hay defecto de ventana.** El frente se cierra.
+
+#### ⭐ La condición que la reabre — no una fecha, un evento
+
+> **Se revisa cuando el equipo defina un criterio fijo de ventana.** Hasta entonces, **la selección
+> del usuario manda** y ninguna forma es «la correcta».
+
+⚠ Escrita así a propósito: *«hoy el usuario elige»* es un **estado**, y un estado **vence solo y sin
+que nadie se entere**. Una condición **un censo la puede mirar**.
+
+#### ⛔ Lo que esta decisión NO cierra, dicho para que nadie la lea de más
+
+**El corte de `reuniones / Agenda funcionarios`** —**qué columna** se usa para recortar esa solapa,
+`D` (el encuentro) o `E` (el envío)— **es otra cosa y sigue abierto.** ⚠ Son dos preguntas que se
+parecen y se confunden fácil: *«¿qué días abarca la semana?»* contra *«¿qué fecha de la fila se
+compara contra esos días?»*.
+
+⭐ **Y por eso este cierre no vuelve verde nada de la Agenda:** el deck del 06/09 publica a **Fernán
+Quirós, encuentro `08/09`**, dentro de un informe que cierra el **`03/09`**. **Con el corte por `D`
+esa fila no puede entrar** — ver `C-101` y el diagnóstico de la Parte D del `2026-09-06_3`.
+
+#### ⚠ Un hueco que queda a la vista y NO se corrige acá
+
+El **título** de `R-11` dice *«La semana del informe va de viernes a viernes»* mientras su
+**Addendum 1** define *«siete días, **viernes a jueves**, extremos inclusive»*. ⛔ **No se reescribe
+la regla:** `REGLAS_NEGOCIO.md` es **append-only** y el enunciado lo cambia el usuario. ⭐ Se deja
+señalado porque **quien lea sólo el título se lleva lo contrario de lo que la regla define**, y el
+título es justo lo que aparece en un índice o en un `grep`.
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### ⭐⭐ LA COLA — 28 ítems, con casilla de resuelto (03/09/2026)
