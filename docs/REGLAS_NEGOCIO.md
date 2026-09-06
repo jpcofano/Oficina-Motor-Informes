@@ -2553,6 +2553,27 @@ el deck.
 ⇒ ⚠ **Es correcto dada esta regla, y se ve raro sin ella.** Ése es exactamente el motivo de
 escribirla.
 
+### ⭐⭐ Addendum 1 — `camp_meta_frecuencia` SE CALCULA, y con eso el `_9` se cierra entero (06/09/2026)
+
+**Decisión del usuario.** `camp_meta_frecuencia` **no se lee de una columna: se calcula**, y queda
+**supeditada al alcance** — ⇒ **cuando el alcance esté bien, la frecuencia lo está.**
+
+⇒ ⭐ **La confirmación de la columna `meta_frecuencia` queda SIN OBJETO.** Era lo único que quedaba
+por medir de todo el `2026-09-04_9`, y **el prompt entero se cierra con esto.**
+
+⚠ **Lo que esto NO cierra, dicho al lado para que nadie lo lea de más:**
+**`camp_meta_frecuencia` sigue con su guion.** Su caso vigente es `C-96`, estado **`cerrado`** —
+⛔ y **`cerrado` es «no se vuelve sobre esto», NO «el número coincide»**. No habilita a levantar la
+marca, y por eso **no está en `GUIONES_A_LEVANTAR_`**.
+
+⭐ **La condición que lo reabre — un evento, no una fecha:**
+
+> **Si el alcance cambia de fuente, la frecuencia derivada cambia con él.**
+
+⚠ Escrita así porque *«hoy la frecuencia cuelga del alcance»* es un **estado**, y un estado **vence
+solo**. Esta condición **un censo la puede mirar**: es la misma que gobierna a `camp_frecuencia`
+(`C-95`), y las dos cuelgan de esta misma regla.
+
 ### ⭐⭐ La diferencia con el equipo está EXPLICADA — y una sola explicación cierra los tres números
 
 **Decisión del usuario, 05/09/2026:**
