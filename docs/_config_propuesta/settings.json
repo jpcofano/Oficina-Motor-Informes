@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(clasp *)", "Bash(npx clasp *)",
+      "PowerShell(clasp *)", "PowerShell(npx clasp *)", "PowerShell(node --check *)",
+      "Bash(node:*)", "Bash(npx:*)", "Bash(command -v node)",
+      "Bash(grep:*)", "Bash(rg:*)", "Bash(find:*)", "Bash(ls:*)",
+      "Bash(cat:*)", "Bash(head:*)", "Bash(tail:*)", "Bash(wc:*)",
+      "Bash(cut:*)", "Bash(sort:*)", "Bash(uniq:*)", "Bash(sed:*)", "Bash(awk:*)",
+      "Bash(diff:*)", "Bash(mkdir:*)", "Bash(cp:*)", "Bash(mv:*)", "Bash(test:*)",
+      "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)",
+      "Bash(git show:*)", "Bash(git rev-parse:*)", "Bash(git ls-files:*)",
+      "Bash(git add:*)", "Bash(git commit:*)", "Bash(git push:*)",
+      "PowerShell(git push:*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)", "Bash(git push -f*)",
+      "PowerShell(git push --force*)", "PowerShell(git push -f*)",
+      "Bash(git reset --hard*)", "Bash(git clean *)", "Bash(git filter-branch*)",
+      "PowerShell(git reset --hard*)", "PowerShell(git clean *)", "PowerShell(git filter-branch*)"
+    ]
+  },
+  "model": "opus",
+  "effortLevel": "high"
+}

@@ -1049,6 +1049,100 @@ function datosDeHoja_(baseId, hoja) {
   return cacheDatosHoja_[clave];
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-06` — **EL DESPLAZAMIENTO DE VENTANA POR SOLAPA.** `R-20`, diseño del `P0` del
+ * 03/09, implementado acá tal como ese bloque lo prescribe.
+ *
+ * ⛔⛔ **El problema que existe para resolver, y no es un número mal:** sobre
+ * `reuniones / Agenda funcionarios` (576 filas), la ventana configurada `28/08–03/09` devuelve
+ * **7 filas y son OTRAS siete** — sobra Fernán Quirós (encuentro 08/09) y falta Ezequiel Sabor.
+ * ⇒ `emin_encuentros = 7` **da verde sobre la lista equivocada**: dos diferencias que **se
+ * cancelan en el total**. Es el modo de falla más caro del repo — el número plausible.
+ *
+ * ⛔ **Y no se arregla con un desplazamiento simétrico:** el lead time entre envío y encuentro es
+ * **2, 3, 3, 3, 3, 4 y 5 días**. No es un número. El barrido acota las combinaciones que
+ * reproducen exactamente las siete a **inicio −1…−3 con fin −1…−2** ⇒ **las dos puntas son
+ * distintas**, y por eso son **dos** columnas y no una.
+ *
+ * ⭐ **Por qué NO va en `ventana_ref`**, que era la alternativa obvia: esa columna contesta *«¿de
+ * dónde sale la ventana?»* —vacío, `propia`, o el nombre de otra solapa— y esto contesta *«¿cuánto
+ * se corre?»*. **Son dos preguntas**, y meterlas en una celda obliga a parsear `propia-3/-2`, que
+ * es la clase de valor compuesto que después nadie sabe leer.
+ *
+ * ⭐⭐ **Default `0` en las dos, y eso es el contrato:** con las columnas vacías —el estado de las
+ * 100 y pico de filas de `SOLAPAS` hoy— **el motor produce exactamente los mismos números**. Lo
+ * único que cambia es que existe **dónde** declarar el corrimiento.
+ *
+ * ⛔ **Ausente es `0`; basura es `«FALTA:…»`.** Un valor no numérico **no cae a `0` en silencio**:
+ * eso convertiría un error de tipeo en un recorte distinto y plausible. La cadena vacía no está
+ * en el vocabulario de salida.
+ *
+ * ⚠ **El radio de alcance está medido y hoy es 1:** declarar el desplazamiento **por solapa**
+ * afecta a **todo** lo que lea esa solapa, y hoy son los **diez `emin_*` y nada más**. ⛔ Eso es
+ * un **estado**, no una condición ⇒ la condición que lo invalida, escrita para que un censo la
+ * pueda mirar: **«deja de ser inofensivo cuando `MARCADORES` tenga una fila sobre
+ * `reuniones / Agenda funcionarios` que no sea `emin_*`»**.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+var COLUMNAS_DESPLAZAMIENTO_ = { desde: 'ventana_desde_dias', hasta: 'ventana_hasta_dias' };
+
+/**
+ * Un entero con signo, o el hueco visible. **Ausente = 0; basura = `«FALTA:…»`.**
+ */
+function diasDeDesplazamiento_(crudo, columna, etiqueta) {
+  var t = String(crudo === null || crudo === undefined ? '' : crudo).trim();
+  if (!t) return { ok: true, dias: 0 };
+  var n = Number(t);
+  if (!isFinite(n) || Math.floor(n) !== n) {
+    return {
+      ok: false,
+      motivo: '«FALTA:' + columna + '@' + etiqueta + '» — el desplazamiento de ventana se ' +
+        'declara en días como entero con signo (`-3`, `0`, `2`) y esta celda dice "' + t +
+        '". ⛔ No se asume `0`: un valor ilegible acá cambia QUÉ FILAS entran, y un recorte ' +
+        'distinto y plausible es peor que un error visible.'
+    };
+  }
+  return { ok: true, dias: n };
+}
+
+/** Lee las dos columnas de una solapa. Devuelve `{ok, desde, hasta}` o el motivo del hueco. */
+function desplazamientoDeVentana_(baseId, solapa) {
+  var solapas = leerSolapas();
+  var fila = (solapas[baseId] && solapas[baseId][solapa]) || null;
+  if (!fila) return { ok: true, desde: 0, hasta: 0 };
+  var etiqueta = baseId + '/' + solapa;
+  var d = diasDeDesplazamiento_(fila[COLUMNAS_DESPLAZAMIENTO_.desde], COLUMNAS_DESPLAZAMIENTO_.desde, etiqueta);
+  if (!d.ok) return d;
+  var h = diasDeDesplazamiento_(fila[COLUMNAS_DESPLAZAMIENTO_.hasta], COLUMNAS_DESPLAZAMIENTO_.hasta, etiqueta);
+  if (!h.ok) return h;
+  return { ok: true, desde: d.dias, hasta: h.dias };
+}
+
+/**
+ * Corre una fecha N días. ⚠ Usa `setDate` y no aritmética de milisegundos **a propósito**:
+ * `+ n*86400000` se corre una hora en los cambios de horario y el resultado cae en el día de al
+ * lado, que acá es exactamente la diferencia entre incluir una fila y no incluirla.
+ */
+function correrFechaDias_(fecha, dias) {
+  if (!dias || !(fecha instanceof Date)) return fecha;
+  var d = new Date(fecha.getTime());
+  d.setDate(d.getDate() + dias);
+  return d;
+}
+
+/**
+ * ⭐ Aplica el corrimiento **después** de que la ventana ya está resuelta, nunca antes: una solapa
+ * que la toma prestada de otra —`ventana_ref` con un nombre— **también puede necesitar correrla**.
+ * Devuelve una ventana nueva; no muta la que recibe.
+ */
+function aplicarDesplazamientoVentana_(ventana, desp) {
+  if (!ventana || !desp || (!desp.desde && !desp.hasta)) return ventana;
+  var copia = {};
+  Object.keys(ventana).forEach(function (k) { copia[k] = ventana[k]; });
+  copia.desde = correrFechaDias_(ventana.desde, desp.desde);
+  copia.hasta = correrFechaDias_(ventana.hasta, desp.hasta);
+  return copia;
+}
+
 function leerFuente(baseId, ventana, nombreHojaOverride, opcionesLectura) {
   var abierto = abrirHoja(baseId, nombreHojaOverride);
   if (!abierto.ok) return { ok: false, base_id: baseId, motivo: abierto.motivo };
@@ -1087,6 +1181,18 @@ function leerFuente(baseId, ventana, nombreHojaOverride, opcionesLectura) {
   var refCruda = referenciaDeVentana_(baseId, hoja.getName());
   var ventanaPropiaDeclarada = (String(refCruda || '').trim().toLowerCase() === VENTANA_PROPIA_);
   if (ventanaPropiaDeclarada) modo = 'filtrar';
+
+  /* ⭐⭐ `2026-09-06` — **el desplazamiento de ventana, y es el ÚNICO lector.** Va acá, después de
+   * saber de dónde sale la ventana y **antes** de que cualquiera de las tres ramas la use, así que
+   * la solapa que la toma prestada también queda corrida. Con las dos celdas vacías esto es un
+   * no-op exacto: `aplicarDesplazamientoVentana_` devuelve **la misma referencia**. */
+  var desplazamiento = desplazamientoDeVentana_(baseId, hoja.getName());
+  if (!desplazamiento.ok) {
+    return { ok: false, base_id: baseId, solapa: hoja.getName(), motivo: desplazamiento.motivo };
+  }
+  var ventanaSinCorrer = ventana;
+  ventana = aplicarDesplazamientoVentana_(ventana, desplazamiento);
+  var hayDesplazamiento = (desplazamiento.desde !== 0 || desplazamiento.hasta !== 0);
 
   /* `_44` / `D-30` — **el llamador puede pedir la solapa sin recortar**, y sólo el llamador.
    *
@@ -1263,6 +1369,17 @@ function leerFuente(baseId, ventana, nombreHojaOverride, opcionesLectura) {
     // propiedad: todas las claves saldrían vacías y el conjunto quedaría en cero **sin
     // fallar**. Devolver el encabezado que de verdad se usó saca esa clase de bug de raíz.
     encabezados: headers,
+    /* ⭐ `2026-09-06` — el desplazamiento viaja en el resultado **siempre**, no sólo cuando hay
+     * uno. ⚠ Un campo que aparece sólo cuando está activo obliga a distinguir «no se corrió» de
+     * «no lo informé», y ésas son las dos cosas que este proyecto no quiere volver a confundir.
+     * Cuando es `0/0`, `ventana_sin_correr` es la MISMA ventana y eso también se puede afirmar. */
+    desplazamiento_ventana: {
+      desde_dias: desplazamiento.desde,
+      hasta_dias: desplazamiento.hasta,
+      aplicado: hayDesplazamiento,
+      ventana_sin_correr: ventanaSinCorrer
+        ? { desde: ventanaSinCorrer.desde, hasta: ventanaSinCorrer.hasta } : null
+    },
     filas: []
   };
 
