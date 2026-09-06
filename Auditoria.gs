@@ -9882,3 +9882,177 @@ function guionesValidados_(escribir) {
   Logger.log('     se levantó en las filas que un caso `exacto` respalda.');
   return { ok: !mal.length, escritas: plan.length, problemas: mal };
 }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-06_3` Parte D — **¿por qué columna corta HOY la Agenda, y qué filas trae?**
+ *
+ * ⛔⛔ **La contradicción que viene a medir, y no la resuelve: la arregla el usuario.** El seed
+ * declara `fecha_periodo → D` (`Fecha`, el encuentro) desde el 03/09, con su medición al lado.
+ * **Pero el deck de `secco` del 06/09 publica a Fernán Quirós, encuentro `08/09`, dentro de un
+ * informe que cierra el `03/09`.** ⇒ **Con el corte por `D` esa fila NO PUEDE entrar.**
+ *
+ * ⭐ **Hipótesis a medir, sin arreglar nada:** la hoja viva **todavía corta por `E`** (`Fecha de
+ * envío`), porque el cambio está **en el seed** y **el seed no repara lo ya creado**. Es la misma
+ * figura del 15/08 y del 16/08 —*«un cambio de seed no existe hasta que se empuja»*—, y en las dos
+ * la conclusión rápida *«el sembrador está roto»* era falsa.
+ *
+ * ══ ⛔⛔ EL CONTROL ES POR IDENTIDAD, NO POR CONTEO ════════════════════════════════════════
+ *
+ * **Con la ventana del informe, `D` y `E` pueden dar el MISMO NÚMERO y conjuntos distintos** — es
+ * exactamente lo que ya pasó: 7 y 7, sobrando Quirós y faltando Sabor. ⇒ **Un control que cuente
+ * siete da verde sobre las siete equivocadas.** Por eso esto lista **nombres**, no cantidades.
+ *
+ * ⚠ **Y una trampa del testigo, medida antes de usarlo:** `ROSTER_CONTROL_` es el roster de la
+ * ventana **`28/08–04/09`** (`vie–vie`) e incluye a **Gabriel Mraida el `04/09`**. El deck del
+ * 06/09 corrió **`28/08–03/09`** (`vie–jue`). ⇒ **Sobre esa ventana el esperado son SEIS, no siete**,
+ * y comparar contra los siete del roster acusaría al corte de un faltante que es de la ventana.
+ * `D-59` fija que **las dos formas son válidas y las elige el usuario**, así que el instrumento
+ * **declara qué ventana usó** en vez de suponer una.
+ *
+ * ⛔ **SÓLO LECTURA.** No toca `MAPEO`, ni el seed, ni escribe nada. Si la hipótesis se confirma,
+ * el arreglo es **una celda** y **lo decide el usuario**.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function diagCorteAgenda() {
+  var BASE = 'reuniones', SOLAPA = 'Agenda funcionarios';
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('`' + BASE + '/' + SOLAPA + '` — por qué columna corta HOY · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA. No cambia MAPEO ni el seed.');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ── 1 · Lo que dice el MAPEO VIVO, que es la pregunta ───────────────────────────────── */
+  var mapa = buscarMapeo(BASE, SOLAPA, 'fecha_periodo');
+  Logger.log('');
+  Logger.log('1 · ⭐⭐ EL MAPEO VIVO');
+  if (!mapa.ok) {
+    Logger.log('   ⛔ `fecha_periodo` NO resuelve: ' + mapa.motivo);
+    Logger.log('   ⇒ Sin eso la solapa no recorta por fecha en absoluto, y eso es otro problema.');
+    return { ok: false, motivo: 'sin mapeo' };
+  }
+  Logger.log('   `fecha_periodo` → columna ' + mapa.columna);
+  Logger.log('   el SEED declara ................. D  (`Fecha`, el encuentro — decisión del 03/09)');
+  var coincide = (String(mapa.columna).trim().toUpperCase() === 'D');
+  Logger.log(coincide
+    ? '   ✅ COINCIDEN ⇒ la hipótesis se cae: la hoja ya corta por `D` y la causa está en otro lado.'
+    : '   ⛔⛔ NO COINCIDEN ⇒ **la hoja viva corta por ' + mapa.columna + ' y el seed dice `D`.**');
+  if (!coincide) {
+    Logger.log('      El seed **no repara lo ya sembrado**: una corrección en `MAPEO_MINISTROS_`');
+    Logger.log('      no baja sola. ⇒ El arreglo es **una celda**, y lo decide el usuario.');
+  }
+
+  /* ── 2 · La ventana del informe, declarada ───────────────────────────────────────────── */
+  var ventana = resolverVentana({});
+  Logger.log('');
+  Logger.log('2 · LA VENTANA DE ESTA CORRIDA');
+  if (!ventana || !ventana.ok) {
+    Logger.log('   ⛔ ABORTA: no se pudo resolver la ventana — ' + (ventana && ventana.motivo));
+    return { ok: false, motivo: 'sin ventana' };
+  }
+  var tz = Session.getScriptTimeZone();
+  var f = function (d) { return Utilities.formatDate(d, tz, 'yyyy-MM-dd'); };
+  Logger.log('   ' + f(ventana.desde) + ' → ' + f(ventana.hasta) + '   (origen: ' + (ventana.origen || '?') + ')');
+  Logger.log('   ⚠ `D-59`: la ventana la elige el usuario. Este instrumento **no la juzga**.');
+
+  /* ── 3 · Las filas, POR NOMBRE, con las dos columnas ─────────────────────────────────── */
+  var b = abrirBase(BASE);
+  if (!b.ok) { Logger.log('⛔ ABORTA: ' + b.motivo); return { ok: false }; }
+  var hoja = b.libro.getSheetByName(SOLAPA);
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe la solapa `' + SOLAPA + '`'); return { ok: false }; }
+  var filaEnc = resolverFilaEncabezado_(BASE, SOLAPA, 1);
+  var datos = hoja.getDataRange().getValues();
+  var head = (datos[filaEnc - 1] || []).map(function (c) { return String(c == null ? '' : c).trim(); });
+
+  var mapaFig = buscarMapeo(BASE, SOLAPA, 'figura');
+  var iFig = mapaFig.ok ? columnaLetraAIndice_(mapaFig.columna) : -1;
+  var iD = columnaLetraAIndice_('D'), iE = columnaLetraAIndice_('E');
+  Logger.log('');
+  Logger.log('3 · LAS DOS COLUMNAS CANDIDATAS, sobre ' + (datos.length - filaEnc) + ' filas de datos');
+  Logger.log('   D = ' + JSON.stringify(head[iD] || '(vacío)') +
+    '   ·   E = ' + JSON.stringify(head[iE] || '(vacío)'));
+  if (iFig === -1) Logger.log('   ⚠ `figura` no está mapeada: las filas se van a listar por su columna A.');
+
+  function entran(idx) {
+    var res = [];
+    for (var k = filaEnc; k < datos.length; k++) {
+      var v = datos[k][idx];
+      var d = (v instanceof Date) ? v : parsearFechaCelda_(v);
+      if (!d) continue;
+      if (d >= ventana.desde && d <= ventana.hasta) {
+        res.push({ quien: String(datos[k][iFig === -1 ? 0 : iFig] || '').trim(), fecha: f(d) });
+      }
+    }
+    return res;
+  }
+  var porD = entran(iD), porE = entran(iE);
+  function listar(t, arr) {
+    Logger.log('   ── por ' + t + ': ' + arr.length + ' fila(s)');
+    arr.forEach(function (x) { Logger.log('        ' + x.fecha + '  ' + x.quien); });
+  }
+  Logger.log('');
+  listar('D (' + (head[iD] || '?') + ')', porD);
+  listar('E (' + (head[iE] || '?') + ')', porE);
+
+  /* ⭐⭐ La comparación que importa: NO los conteos, los CONJUNTOS. */
+  var setD = {}, setE = {};
+  porD.forEach(function (x) { setD[x.quien + '|' + x.fecha] = true; });
+  porE.forEach(function (x) { setE[x.quien + '|' + x.fecha] = true; });
+  var soloD = Object.keys(setD).filter(function (k) { return !setE[k]; });
+  var soloE = Object.keys(setE).filter(function (k) { return !setD[k]; });
+  Logger.log('');
+  Logger.log('4 · ⭐⭐ IDENTIDAD, NO CONTEO');
+  Logger.log('   conteos: D=' + porD.length + '  E=' + porE.length +
+    (porD.length === porE.length ? '   ⚠ IGUALES — **y por eso el conteo no sirve**' : ''));
+  Logger.log('   sólo con D: ' + (soloD.join(' · ') || '(ninguna)'));
+  Logger.log('   sólo con E: ' + (soloE.join(' · ') || '(ninguna)'));
+  if (!soloD.length && !soloE.length) {
+    Logger.log('   ⭐ Los dos conjuntos son IDÉNTICOS ⇒ en esta ventana la columna no cambia nada,');
+    Logger.log('     y el problema del deck está en otro lado.');
+  }
+
+  /* ── 5 · El control por identidad, con su límite declarado ───────────────────────────── */
+  Logger.log('');
+  Logger.log('5 · ⭐ CONTROL POR IDENTIDAD — contra `ROSTER_CONTROL_` (evidencia fechada)');
+  Logger.log('   ⚠ Ese roster es de la ventana **28/08–04/09** (`vie–vie`) y trae ' +
+    ROSTER_CONTROL_.length + ' encuentros,');
+  Logger.log('     incluido **Gabriel Mraida el 04/09**. Si esta corrida usa `vie–jue`, el esperado');
+  Logger.log('     son **seis** y no siete: **la diferencia sería de la VENTANA, no del corte.**');
+  var esperados = ROSTER_CONTROL_.filter(function (x) {
+    var d = parsearFechaCelda_(x.fecha);
+    return d && d >= ventana.desde && d <= ventana.hasta;
+  });
+  Logger.log('   del roster caen en ESTA ventana: ' + esperados.length + ' — ' +
+    esperados.map(function (x) { return x.fun + '/' + x.fecha.slice(5); }).join(' · '));
+
+  var hayQuiros = porD.concat(porE).some(function (x) { return /quir/i.test(x.quien); });
+  var saborEnD = porD.some(function (x) { return /sabor/i.test(x.quien); });
+  var saborEnE = porE.some(function (x) { return /sabor/i.test(x.quien); });
+  Logger.log('');
+  Logger.log('   ⭐⭐ LOS DOS NOMBRES QUE DECIDEN:');
+  Logger.log('      Sabor  — por D: ' + (saborEnD ? 'ENTRA ✅' : 'no entra ⛔') +
+    '   ·   por E: ' + (saborEnE ? 'entra' : 'no entra'));
+  var quirosD = porD.filter(function (x) { return /quir/i.test(x.quien); });
+  var quirosE = porE.filter(function (x) { return /quir/i.test(x.quien); });
+  Logger.log('      Quirós — por D: ' + (quirosD.length ? '⛔ ENTRA (' + quirosD[0].fecha + ')' : 'NO entra ✅') +
+    '   ·   por E: ' + (quirosE.length ? 'entra (' + quirosE[0].fecha + ')' : 'no entra'));
+  if (!hayQuiros) {
+    Logger.log('      ⚠ Quirós no aparece por ninguna de las dos ⇒ **el instrumento no lo ve**, y');
+    Logger.log('        entonces no puede confirmar ni descartar la hipótesis. Mirar el nombre real.');
+  }
+
+  Logger.log('');
+  Logger.log('── VEREDICTO ──');
+  if (!coincide) {
+    Logger.log('  ⛔⛔ La hoja viva corta por ' + mapa.columna + ' y el seed dice `D`.');
+    Logger.log('     ⇒ El arreglo es **una celda de `MAPEO`**, y **lo decide el usuario**.');
+  } else if (quirosD.length) {
+    Logger.log('  ⛔ Corta por `D` y Quirós ENTRA igual ⇒ **la hipótesis se cae** y la causa es otra:');
+    Logger.log('     mirar la ventana de la corrida y la fecha real de esa fila.');
+  } else {
+    Logger.log('  ✅ Corta por `D` y Quirós no entra ⇒ lo que publicó el deck del 06/09 salió de');
+    Logger.log('     **una corrida anterior al cambio**. Volver a correr.');
+  }
+  Logger.log('  ⛔ Esto NO arregla nada y no debe: sólo mide.');
+  return { ok: true, columna_viva: mapa.columna, coincide_con_seed: coincide,
+    ventana: { desde: f(ventana.desde), hasta: f(ventana.hasta) },
+    por_D: porD, por_E: porE, solo_D: soloD, solo_E: soloE, esperados: esperados.length };
+}
