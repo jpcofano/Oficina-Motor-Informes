@@ -36,11 +36,11 @@ que el usuario cargue el valor. **Suites: 97 bancos, exit 0.** **Cola: 36 ítems
 3. ⭐ **`verGlobalL047()`** — qué `formato` tienen hoy los seis del bloque global de
    `L-047`. ⚠ **Dirime dos afirmaciones incompatibles del repo:** el alta del 24/08 dice *«ninguno
    lleva `_revisar`»* y `C-99` supone que hay marca. **Si da 0, `C-99` no tiene nada que levantar.**
-3. ⭐ **Confirmar qué dice la columna `meta_frecuencia`** para la campaña del deck. **Es lo único que
+4. ⭐ **Confirmar qué dice la columna `meta_frecuencia`** para la campaña del deck. **Es lo único que
    queda del `_9`.** ⚠ No es un desempate —la aritmética cierra, `2.080.014 / 872.827 = 2,38`— sino
    una **confirmación de lectura**.
-4. **`diagLimpiarGrupoB()` y, si está bien, `limpiarGrupoB()`** — los cuatro del grupo B del `_7`.
-5. **`censarTokensSinLlaves()`** — escrito el 03/09 y **nunca corrido**; es el único que puede ver
+5. **`diagLimpiarGrupoB()` y, si está bien, `limpiarGrupoB()`** — los cuatro del grupo B del `_7`.
+6. **`censarTokensSinLlaves()`** — escrito el 03/09 y **nunca corrido**; es el único que puede ver
    `camp_env4_fecha}}`.
 
 ⛔ **Antes de levantar cualquier `_revisar`:** `revisarASinValidar_` **lo repone** si `notas` sigue
@@ -59,8 +59,10 @@ diciendo `SIN VALIDAR`. Es el caso del 26/08→01/09, que costó **ocho días en
   `V-113` es un caso `exacto` sobre ese bloque desde el 23/08.
 - ⭐ **Ítem 29** (`probar-caso-id.js`) y **ítem 36** (`medir-casos-exactos-con-revisar.js`) con
   instrumento. El segundo **corrió**: 3 con `exacto` y marca, **7 con `contradice` y sin marca**.
-- ⭐ **Ministros: los 10 cableados**, ventana **viernes a viernes** — y el encabezado del deck del
-  04/09 la publicó, así que **está aplicada en el producto**.
+- ⛔⛔ **Ministros: los 10 cableados, y publican sobre el universo equivocado.** ⚠ **La ventana la
+  elige el usuario** —el asistente ofrece `vie–jue` y `vie–vie` más personalizados— así que **el
+  encabezado de un deck NO prueba que un cambio de código se aplicó**: prueba qué período se eligió.
+  Lo que sí está medido es que **las siete filas que salen no son las siete que corresponden**.
 - ⭐ **`D-57`**: un solo botón, siempre desatendida, con progreso en la misma pantalla.
 
 ---
@@ -133,5 +135,6 @@ grep -o '^| `\[.\]` \*\*[0-9]*\*\*' docs/PLAN.md | grep -o '\[.\]' | sort | uniq
 | `emin_encuentros = 7` | **corrida real** del usuario, no fixture |
 | el cruce inverso del ítem 36 funciona | ⭐ reencuentra `u1_post_meta_alcance`/`X-43`, que **`CLAUDE.md` §4 nombraba antes** de que existiera |
 | ⛔ el proyecto de Apps Script **NO** está al día | **la noche tocó tres `.gs` y no hubo push** — es certeza, no duda |
-| ⚠ qué publica `emin_lista` | **no lo sé** — el banco prueba que el `ctx` se arma, no el valor |
+| ⛔ `emin_lista` publica **las filas equivocadas** | `C-101` — la lista trae `04/09` y `08/09`, fuera del encabezado. **Y `emin_encuentros` da 7 igual** |
+| ⚠ si el desplazamiento arregla el universo | **no lo sé** — el banco prueba el mecanismo; el valor lo carga el usuario y hace falta una corrida |
 | ⚠ `L-023` publica bien | **no lo sé** — el ítem 9 está frenado |
