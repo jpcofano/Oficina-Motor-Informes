@@ -2604,3 +2604,59 @@ herramienta de edición y no por redirección.
 
 ⭐ **La regla operativa:** editar un `.gs` con redirección de shell o con un script de Python
 **cambia el final de línea del archivo**. Para eso está la herramienta de edición, que lo preserva.
+
+---
+
+## 06/09/2026 · Parte D del `2026-09-06_1` — dos correcciones, un cero, y una exculpación medida
+
+### 1 · ⛔⛔ La ventana `vie–vie` NO es un defecto, y mi registro del 05/09 la enmarcaba mal
+
+**Lo que escribí el 05/09**, en la Parte D del `_6`: *«El encabezado del deck del 04/09 publicó
+`vie 28/08 – vie 04/09` ⇒ la ventana viernes a viernes está aplicada»* — como **confirmación de que
+un cambio funcionó**.
+
+⛔ **Eso implica una convención fija que no existe.** El asistente ofrece **dos formas —`vie–jue` y
+`vie–vie`— más períodos personalizados**, y `PERIODOS` tiene filas de las dos: `2026_agosto_21_28`
+declara en su propia nota que salió del asistente como **personalizado**. ⇒ **La ventana la elige el
+usuario y las dos son válidas.**
+
+⚠ **Y el deck del 06/09 lo demuestra:** publica `vie 28/08 – jue 03/09`. Con mi lectura del 05/09,
+eso se leería como una **regresión**. No lo es: **es otra elección.**
+
+⭐ **Lo accionable:** un encabezado de deck **no es evidencia de que un cambio de código se aplicó**
+— es evidencia de qué período eligió quien corrió. Confundirlos convierte una preferencia del
+usuario en un síntoma.
+
+### 2 · ⚠ El hueco que esto deja a la vista: el TÍTULO de `R-11` contradice su propio Addendum
+
+| dónde | qué dice |
+|---|---|
+| **título de `R-11`** | *«La semana del informe va de viernes a viernes»* |
+| **Addendum 1**, más abajo | *«siete días, **viernes a jueves**, extremos inclusive»* |
+
+⛔ **No se reescribe la regla.** `REGLAS_NEGOCIO.md` es **append-only** y el enunciado lo cambia el
+usuario. ⭐ Se registra el hueco: **quien lea sólo el título se lleva lo contrario de lo que la regla
+define**, y el título es justo lo que aparece en un índice o en un grep.
+
+### 3 · ⭐ El cero declarado — `L-023` y el ítem 9 siguen frenados, con un dato nuevo
+
+En la corrida de `secco` del 06/09, **en los dos bloques**: `L-016` publica su título —`-Operativo
+Muro | 25/8-` y `- Fin de las mafias de los celulares robados-`— y **`L-023` publica `/////` dos
+veces**, con sus `camp_resp_*` crudos.
+
+⛔ **No se sabe qué token son esos dos `/////`**, y por eso **no se registra ninguna causa**. Eso
+espera el dato del Drive —qué token hay en la caja `x=0.83 y=0.58 w=2.16` de la plantilla `secco`—,
+que sólo lo puede mirar el usuario. **El ítem 9 sigue frenado y no se movió.**
+
+⭐ **Lo que sí agrega el dato:** que `L-016` resuelva **y** `L-023` no, **en la misma corrida y en
+los dos bloques**, descarta que sea un problema de la duplicación de bloques (ítem 33, cerrado).
+
+### 4 · ⭐ Una exculpación medida, que también se escribe
+
+Sospeché que mis ediciones con Python habían convertido los `.md` a LF, como pasó con `Instalar.gs`.
+**Medido sobre los 40 y pico de `docs/*.md`: TODOS están en LF, incluidos los que nunca toqué.**
+⇒ **Es el estado normal de este working copy** —`.gs` en CRLF, `.md` en LF—, y la advertencia de git
+refleja `.gitattributes`, no daño. **No se normalizó nada.**
+
+⚠ Va escrito porque **un cero medido no se distingue de «no miré»**, y porque la sospecha era
+razonable: el caso de `Instalar.gs` había ocurrido de verdad **dos horas antes**.
