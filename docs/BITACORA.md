@@ -17389,3 +17389,47 @@ de que el instrumento existiera**, y el cruce **lo reencuentra solo**.
 
 **Suites: 96 bancos, exit 0.** ⛔ **Nada corrido contra la planilla viva, y ningún `clasp push`** —
 las dos primeras reglas de la noche.
+
+## 2026-09-06 · `2026-09-06_1` — el desplazamiento de ventana, y dos incidentes propios de método
+
+⭐⭐ **Parte A · `R-20` implementado** — `ventana_desde_dias` / `ventana_hasta_dias` en `SOLAPAS`,
+leídas por **un solo lector** en `leerFuente`, **después** de resolver de dónde sale la ventana.
+⛔ **El defecto que resuelve no es un número mal: es un CONTEO QUE COINCIDE SOBRE LAS FILAS
+EQUIVOCADAS** — la ventana `28/08–03/09` devuelve 7 filas y **son otras siete**, así que
+`emin_encuentros = 7` da verde. **Dos diferencias que se cancelan en el total.**
+⭐ **Dos columnas y no una, y lo decide la medición:** el lead time es **2, 3, 3, 3, 3, 4 y 5 días**
+⇒ ningún desplazamiento simétrico reproduce las siete. ⭐⭐ **Neutralidad como contrato:** con las
+celdas vacías, `aplicarDesplazamientoVentana_` devuelve **la misma referencia**. ⛔ **La celda de la
+Agenda queda vacía** — el valor lo decide el usuario.
+⭐⭐ **El banco compara IDENTIDAD y no `length`**, con un fixture armado para que **el conteo no
+distinga**: uno que comparara cantidades **pasaría repitiendo el error que viene a arreglar**.
+
+⭐ **Parte B · la afirmación de los cuatro CSV pasa a ser condición.** `dir.length === 4` era una
+bomba: el quinto CSV —que agregó la Parte C esta misma noche— la habría puesto roja **por el motivo
+equivocado**, y *un rojo que no significa lo que dice enseña a ignorar los rojos*.
+
+⭐ **Parte C · `C-100`…`C-104`.** ⛔⛔ `C-100` y `C-101` **dicen cosas opuestas del mismo bloque a
+propósito**: el arreglo del `ctx.plantilla` **funciona** y **el universo está mal**. Separarlos
+dejaría al primero leyéndose como cierre.
+
+⭐ **Parte D · corrijo mi propio registro del 05/09:** la ventana `vie–vie` **no es un defecto ni la
+prueba de que un cambio se aplicó** — el usuario elige, y las dos formas son válidas. Con el hueco
+del **título de `R-11`**, que contradice a su propio Addendum, **registrado y no reescrito**.
+
+---
+
+### ⛔⛔ Dos incidentes propios, y los dos son de método
+
+1. **`git add -A` metió ocho archivos ajenos** en el commit de la Parte A — llegaron de la otra
+   herramienta mientras trabajaba. `§4` lo prohíbe con todas las letras. **Nada se perdió; el daño
+   es de atribución**, y no se arregla con `--force`. ⇒ **Rutas explícitas de acá en adelante.**
+2. **Una edición con Python convirtió `Instalar.gs` de CRLF a LF** (0 y 11.110, medido). ⭐⭐ **Lo
+   cazó `probar-hojas-config.js` por el motivo correcto** — su **guarda de mutación** dijo *«el
+   negativo habría corrido sobre el texto intacto»*. ⚠ **`git diff` no lo mostraba**, porque
+   `.gitattributes` normaliza. El barrido destapó `Auditoria.gs` mixto; **`Fuentes.gs` y
+   `Generador.gs` limpios**, y ese cero también se escribe.
+
+⭐ **Y una exculpación medida:** sospeché haber convertido los `.md` también. **Todos están en LF,
+incluidos los que nunca toqué** — es el estado normal del repo. **No se normalizó nada.**
+
+**Suites: 97 bancos, exit 0.** ⛔ Nada contra la planilla viva, ningún `clasp push`.
