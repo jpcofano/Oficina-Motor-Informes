@@ -9427,12 +9427,12 @@ function verGlobalL047() {
  *
  * ⭐ `D-58` aplicado al generar: cuando dos casos hablan del mismo marcador, manda el
  * más nuevo. Y los `token_propuesto` con varios marcadores en una celda vienen
- * DESARMADOS —44 celdas, 260 referencias— porque contar celdas
+ * DESARMADOS —45 celdas, 262 referencias— porque contar celdas
  * en vez de marcadores da un número que no corresponde a nada.
  * ══════════════════════════════════════════════════════════════════════════════ */
 var CASOS_POR_MARCADOR_GENERADA_ = '2026-09-06';
 var CASOS_POR_MARCADOR_ARCHIVOS_ = 5;
-/* 132 marcadores · exacto 70 · contradice 12 · cerrado 14 · abierto 21 */
+/* 132 marcadores · exacto 70 · contradice 10 · cerrado 16 · abierto 21 */
 var CASOS_POR_MARCADOR_ = {
   'camp_alcance': { estado: 'cerrado', caso: 'C-94', csv: '2026-09-04', previos: ['abierto','contradice'] },
   'camp_aperturas': { estado: 'exacto', caso: 'V-113', csv: '2026-08-19', previos: [] },
@@ -9471,11 +9471,11 @@ var CASOS_POR_MARCADOR_ = {
   'emin_asistentes_szinny_0508': { estado: 'exacto', caso: 'V-51', csv: '2026-08-19', previos: [] },
   'emin_ctor': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
   'emin_ctr': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
-  'emin_encuentros': { estado: 'contradice', caso: 'C-101', csv: '2026-09-06', previos: ['exacto'] },
+  'emin_encuentros': { estado: 'cerrado', caso: 'C-105', csv: '2026-09-06', previos: ['exacto','contradice'] },
   'emin_entregados': { estado: 'sin_fuente', caso: 'X-01', csv: '2026-08-19', previos: [] },
   'emin_inscriptos_szinny_0108': { estado: 'exacto', caso: 'V-52', csv: '2026-08-19', previos: [] },
   'emin_inscriptos_szinny_0508': { estado: 'exacto', caso: 'V-50', csv: '2026-08-19', previos: [] },
-  'emin_lista': { estado: 'contradice', caso: 'C-101', csv: '2026-09-06', previos: ['exacto'] },
+  'emin_lista': { estado: 'cerrado', caso: 'C-105', csv: '2026-09-06', previos: ['exacto','contradice'] },
   'emin_or': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
   'enc_alcance': { estado: 'deriva', caso: 'D-06', csv: '2026-08-19', previos: ['cerrado','cerrado','cerrado','cerrado','abierto','cerrado','abierto','abierto'] },
   'enc_asistencia_pct': { estado: 'exacto', caso: 'V-07', csv: '2026-08-19', previos: [] },

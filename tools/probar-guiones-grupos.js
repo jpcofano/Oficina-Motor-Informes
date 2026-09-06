@@ -202,10 +202,17 @@ console.log('\n═══ H · ⭐⭐ LA LISTA REAL — SIETE NOMBRES, NO «siete
   /* ⭐ Y los frenados lo son por lo que el gate mide, no por gusto. */
   afirmar(CASOS['imp_prog'] && CASOS['imp_prog'].previos.indexOf('contradice') !== -1,
     '⭐ `imp_prog` cruza la mitad insegura — el motivo declarado es el medido');
+  /* ⭐⭐ `2026-09-06` Parte E — **esta afirmación se dio vuelta y GANÓ exigencia.** Decía
+   * `estado === 'contradice'`, y se puso roja **diciendo la verdad**: `C-105` los pasó a
+   * `cerrado`. ⛔ Fijar el estado exacto ataba el banco a un valor que el proyecto mueve; lo que
+   * de verdad importa —y no cambia— es **que el gate 1 los rechace**, o sea que **NO sean
+   * `exacto`**. Y ahora además se afirma **por qué siguen frenados**: cruzan la mitad insegura. */
   ['emin_lista', 'emin_encuentros'].forEach(n => {
-    afirmar(CASOS[n] && CASOS[n].estado === 'contradice',
-      '⭐ `' + n + '` tiene caso vigente `contradice` (' + (CASOS[n] || {}).caso +
-      ') ⇒ el gate 1 lo rechazaría');
+    afirmar(CASOS[n] && CASOS[n].estado !== 'exacto',
+      '⭐ `' + n + '` NO es `exacto` (es `' + (CASOS[n] || {}).estado + '`, ' +
+      (CASOS[n] || {}).caso + ') ⇒ el gate 1 lo rechazaría');
+    afirmar(CASOS[n] && CASOS[n].previos.indexOf('contradice') !== -1,
+      '⛔⛔ y además cruzó `contradice` ⇒ **caería en el gate 2 aunque pasara el 1**');
   });
   /* ⚠ La mitad negativa: los siete de la lista NO pueden estar frenados. */
   afirmar(ESPERADOS.every(n => CASOS[n] && CASOS[n].estado === 'exacto' && !CASOS[n].previos.length),
