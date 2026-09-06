@@ -4,15 +4,9 @@
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
 **Última actualización:** 2026-09-06, tras la **corrida nocturna** (`2026-09-06_1`, cuatro partes).
-⛔⛔⛔ **La Parte A NO SE PUEDE USAR y necesita tu decisión** — ver el bloque de abajo.
-**Suites: 97 bancos, exit 0.** **Cola: 36 ítems, 12 cerrados.**
-
-> ⛔⛔⛔ **LO PRIMERO, Y ES UNA PREGUNTA PARA VOS.** Implementé el desplazamiento de ventana por
-> solapa, **y una decisión tuya del 03/09 lo declara innecesario nombrando estas dos columnas**:
-> *«un desplazamiento que compensa una ventana mal cortada es un RODEO»*. La salida que elegiste
-> —el corte por columna **`D`**— **ya está en el seed**. ⇒ **La medición que motivó la Parte A es la
-> del corte VIEJO.** Y aunque quisieras conservarlo, **hoy es un no-op**: `leerSolapas()` no expone
-> las columnas. ⛔ **No revertí ni completé.** Está inerte y declarado en el código.
+✅ **El desplazamiento de ventana se REVIRTIÓ** (decisión del usuario, 06/09) — el revert es
+**exacto**: `git diff` contra el estado previo da vacío. **Suites: 96 bancos, exit 0.**
+**Cola: 36 ítems, 12 cerrados.**
 
 > ⛔⛔ **Lo que hay que saber antes de mirar el deck de hoy:** `emin_lista` **publica** los siete
 > renglones —el arreglo del 05/09 funciona (`C-100`)— **y son OTRAS siete** (`C-101`). Sobra Quirós,
@@ -33,14 +27,12 @@
 0. ⭐⭐ **`clasp push` PRIMERO.** Dos noches tocaron `Generador.gs`, `Instalar.gs`, `Auditoria.gs` y
    `Fuentes.gs`, y **nada de eso existe todavía para el motor**. Sin esto, todo lo de abajo corre
    código viejo.
-1. ⭐⭐ **Aplicar configuración** — y el control acá es **el corte por columna `D`**, no el
-   desplazamiento: verificar que `MAPEO` diga `fecha_periodo → D (Fecha)` para
-   `reuniones / Agenda funcionarios`. ⇒ **Ésa es la salida que tu decisión del 03/09 eligió**, y
-   probablemente sea lo único que falta para que `emin_lista` traiga las siete correctas.
-   **Control:** con el corte por `D`, **entra Sabor y sale Quirós**, y `emin_encuentros` **sigue en
-   7** — el conteo no distingue, la lista sí.
-2. ⛔ **NO cargues nada en `ventana_desde_dias` / `ventana_hasta_dias`.** Hoy no haría nada, y
-   además `upsertPorClave_` te borraría la celda en la próxima *Aplicar configuración*.
+1. ⭐⭐ **Aplicar configuración**, y el control es **el corte por columna `D`**: verificar que
+   `MAPEO` diga `fecha_periodo → D (Fecha)` para `reuniones / Agenda funcionarios`. ⇒ **Ésa es la
+   salida que tu decisión del 03/09 eligió** y **el seed ya la tiene**; la hipótesis medida es que
+   **la hoja viva todavía corta por `E`**, porque el seed no repara lo ya creado.
+   **Control por identidad:** con el corte por `D`, **entra Sabor y sale Quirós** — ⛔ y
+   `emin_encuentros` **sigue en 7 en los dos casos**, así que **un control que cuente no sirve**.
 3. ⭐ **`verGlobalL047()`** — qué `formato` tienen hoy los seis del bloque global de
    `L-047`. ⚠ **Dirime dos afirmaciones incompatibles del repo:** el alta del 24/08 dice *«ninguno
    lleva `_revisar`»* y `C-99` supone que hay marca. **Si da 0, `C-99` no tiene nada que levantar.**

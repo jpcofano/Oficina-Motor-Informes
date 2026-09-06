@@ -149,7 +149,7 @@ var HOJAS_CONFIG_ = {
   // **campo lógico** y no la letra de columna, por lo mismo que `ventana_ref` guarda la solapa y
   // deja la clave en `MAPEO.clave_ventana`: la letra tiene dueño y es `MAPEO`.
   SOLAPAS: {
-    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'filas_minimas', 'ventana_ref', 'campo_id_cuenta', 'ventana_desde_dias', 'ventana_hasta_dias', 'notas']
+    headers: ['base_id', 'solapa', 'uso', 'origen', 'fila_encabezado', 'firma_encabezado', 'filas_datos', 'filas_crudas', 'filas_minimas', 'ventana_ref', 'campo_id_cuenta', 'notas']
   },
   // tipo (Paso 2.2) acepta: campana, uno_a_uno, tematico, primera_persona,
   // ministros, proveedor — ver Plan Inicial/PROYECTO.md §4.
@@ -538,32 +538,7 @@ var COLUMNAS_DELTA_ = {
     // Nace vacía en las 100 y pico de filas, y **vacío significa «esta solapa no se selecciona
     // por cuenta»** — el estado de todas hasta hoy, incluidas las de `digital`, que tienen su
     // propia rama en `datosDeMarcador_` y no pasan por ésta.
-    { nombre: 'campo_id_cuenta', indice: 11 },
-    /* ⛔⛔⛔ `2026-09-06` — **EN DISCUSIÓN. Una decisión del usuario del 03/09 dice que estas dos
-     * columnas «no hacen falta», y hoy son un NO-OP porque `leerSolapas()` no las expone.** El
-     * bloque de `Fuentes.gs` tiene los dos motivos con su evidencia. ⚠ **NO es `R-20`**, que es
-     * otra regla y se declara «no citar como vigente».
-     *
-     * (diseño del `P0` del 03/09) — **el desplazamiento de ventana, y son
-     * DOS columnas porque las dos puntas son distintas.** Medido: el lead time entre envío y
-     * encuentro es 2, 3, 3, 3, 3, 4 y 5 días, así que ningún desplazamiento simétrico reproduce
-     * las siete filas correctas. El barrido acota a **inicio −1…−3 con fin −1…−2**.
-     *
-     * ⚠ **Índices 12 y 13, y al final del array**, por la misma razón que las cuatro anteriores:
-     * cada entrada asume el esquema del momento en que corre. Para cuando corre la primera,
-     * `campo_id_cuenta` ya ocupa la 11 y `notas` corrió a la 12; después de insertarla, `notas`
-     * está en la 13. `insertColumnBefore` las deja **antes de `notas`**, que es la convención de
-     * toda la hoja.
-     *
-     * ⭐⭐ **Nacen VACÍAS en las 100 y pico de filas, y vacío significa `0` — sin corrimiento.**
-     * Eso es el contrato de neutralidad: al aplicarse, **ningún número del motor cambia**. La
-     * única diferencia es que existe dónde declarar el corrimiento.
-     *
-     * ⛔ **Y la de la Agenda queda en vacío también.** `−3 / −2` es lo que la medición reproduce,
-     * pero **el desplazamiento lo decide el usuario**: sembrarlo sería elegir por él un valor que
-     * cambia qué filas publica el deck. */
-    { nombre: 'ventana_desde_dias', indice: 12 },
-    { nombre: 'ventana_hasta_dias', indice: 13 }
+    { nombre: 'campo_id_cuenta', indice: 11 }
   ],
   // Paso 3 (v3) Parte B (D-20) — `SECCIONES` entra al delta **antes** de que su `headers`
   // gane `periodo_ref`, y esto no es una preferencia de estilo: sin entrada acá, la hoja
