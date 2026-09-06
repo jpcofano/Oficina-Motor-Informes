@@ -9413,3 +9413,472 @@ function verGlobalL047() {
  * quedó, no lo que se pidió · backup antes— **más el gate de `D-58`**: cruzar su lista contra los
  * CSV **posteriores a su fecha**, porque **una decisión puntual también vence**.
  * ══════════════════════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `CASOS_POR_MARCADOR_` — GENERADA, NO ESCRITA A MANO.
+ *
+ * Regenerar con:  node tools/generar-casos-por-marcador.js
+ *
+ * ⛔ **Es una lista CONGELADA y lleva su fecha adentro a propósito.** Los
+ * `casos_validacion_*.csv` no están en Drive, así que un diagnóstico de Apps Script no
+ * los puede leer: la única forma es que la lista viaje como constante. ⚠ Es la misma
+ * figura que hundió a `confirmarNumerosDeUnoAUno()` —lista del 26/08 que no pudo
+ * enterarse de `X-42` y `X-43` del 28/08— y lo único que la hace auditable es que
+ * **declare cuándo se congeló**. El consumidor imprime esa fecha, siempre.
+ *
+ * ⭐ `D-58` aplicado al generar: cuando dos casos hablan del mismo marcador, manda el
+ * más nuevo. Y los `token_propuesto` con varios marcadores en una celda vienen
+ * DESARMADOS —44 celdas, 283 referencias— porque contar celdas
+ * en vez de marcadores da un número que no corresponde a nada.
+ * ══════════════════════════════════════════════════════════════════════════════ */
+var CASOS_POR_MARCADOR_GENERADA_ = '2026-09-06';
+var CASOS_POR_MARCADOR_ARCHIVOS_ = 5;
+/* 140 marcadores · exacto 71 · contradice 13 · cerrado 15 · abierto 26 */
+var CASOS_POR_MARCADOR_ = {
+  'alcance': { estado: 'abierto', caso: 'A-11', csv: '2026-08-19' },
+  'camp_alcance': { estado: 'cerrado', caso: 'C-94', csv: '2026-09-04' },
+  'camp_aperturas': { estado: 'exacto', caso: 'V-113', csv: '2026-08-19' },
+  'camp_ctor': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04' },
+  'camp_eje': { estado: 'exacto', caso: 'V-112', csv: '2026-08-19' },
+  'camp_env4_fecha': { estado: 'contradice', caso: 'C-104', csv: '2026-09-06' },
+  'camp_enviados': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04' },
+  'camp_frecuencia': { estado: 'cerrado', caso: 'C-95', csv: '2026-09-04' },
+  'camp_google_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04' },
+  'camp_google_impresiones': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04' },
+  'camp_google_vistas': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04' },
+  'camp_mail_clics': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04' },
+  'camp_meta_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04' },
+  'camp_meta_frecuencia': { estado: 'cerrado', caso: 'C-96', csv: '2026-09-04' },
+  'camp_or': { estado: 'exacto', caso: 'C-99', csv: '2026-09-04' },
+  'camp_prog_clics': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04' },
+  'camp_prog_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04' },
+  'camp_prog_impresiones': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04' },
+  'cc_base': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19' },
+  'cc_base_discada': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19' },
+  'cc_base_total': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19' },
+  'cc_campanias': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19' },
+  'cc_contact_pct': { estado: 'reformulado', caso: 'X-28', csv: '2026-08-19' },
+  'cc_contactados': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19' },
+  'cc_efectivos': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19' },
+  'clics': { estado: 'abierto', caso: 'A-11', csv: '2026-08-19' },
+  'contenidos_total': { estado: 'exacto', caso: 'X-11', csv: '2026-08-19' },
+  'digital': { estado: 'abierto', caso: 'C-84', csv: '2026-08-28' },
+  'ecv_asistentes': { estado: 'exacto', caso: 'V-47', csv: '2026-08-19' },
+  'ecv_barrios': { estado: 'cerrado', caso: 'C-85', csv: '2026-08-19' },
+  'ecv_encuentros': { estado: 'contradice', caso: 'C-02', csv: '2026-08-19' },
+  'ecv_insc_cc': { estado: 'exacto', caso: 'V-41', csv: '2026-08-19' },
+  'ecv_insc_dif': { estado: 'cerrado', caso: 'C-49', csv: '2026-08-19' },
+  'ecv_insc_digital': { estado: 'exacto', caso: 'V-48', csv: '2026-08-19' },
+  'ecv_insc_ivr': { estado: 'exacto', caso: 'V-42', csv: '2026-08-19' },
+  'ecv_insc_mail': { estado: 'exacto', caso: 'V-39', csv: '2026-08-19' },
+  'ecv_inscriptos': { estado: 'retractado', caso: 'C-28', csv: '2026-08-19' },
+  'emin_asistentes_szinny_0508': { estado: 'exacto', caso: 'V-51', csv: '2026-08-19' },
+  'emin_ctor': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06' },
+  'emin_ctr': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06' },
+  'emin_encuentros': { estado: 'contradice', caso: 'C-101', csv: '2026-09-06' },
+  'emin_entregados': { estado: 'sin_fuente', caso: 'X-01', csv: '2026-08-19' },
+  'emin_inscriptos_szinny_0108': { estado: 'exacto', caso: 'V-52', csv: '2026-08-19' },
+  'emin_inscriptos_szinny_0508': { estado: 'exacto', caso: 'V-50', csv: '2026-08-19' },
+  'emin_lista': { estado: 'contradice', caso: 'C-101', csv: '2026-09-06' },
+  'emin_or': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06' },
+  'enc_alcance': { estado: 'deriva', caso: 'D-06', csv: '2026-08-19' },
+  'enc_asistencia_pct': { estado: 'exacto', caso: 'V-07', csv: '2026-08-19' },
+  'enc_asistentes': { estado: 'exacto', caso: 'V-34', csv: '2026-08-19' },
+  'enc_atendidos': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19' },
+  'enc_audiencia': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19' },
+  'enc_base_llamada': { estado: 'deriva', caso: 'D-02', csv: '2026-08-19' },
+  'enc_base_total': { estado: 'deriva', caso: 'D-01', csv: '2026-08-19' },
+  'enc_clics': { estado: 'exacto', caso: 'V-95', csv: '2026-08-19' },
+  'enc_clics_meta': { estado: 'contradice', caso: 'X-23', csv: '2026-08-19' },
+  'enc_clics_prog': { estado: 'exacto', caso: 'V-96', csv: '2026-08-19' },
+  'enc_ctor': { estado: 'exacto', caso: 'V-15', csv: '2026-08-19' },
+  'enc_e75': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19' },
+  'enc_habitantes_eje': { estado: 'sin_fuente', caso: 'X-04', csv: '2026-08-19' },
+  'enc_imp_meta': { estado: 'cerrado', caso: 'X-25', csv: '2026-08-19' },
+  'enc_imp_prog': { estado: 'exacto', caso: 'V-96', csv: '2026-08-19' },
+  'enc_impresiones': { estado: 'deriva', caso: 'D-05', csv: '2026-08-19' },
+  'enc_impresiones_pre': { estado: 'exacto', caso: 'V-88', csv: '2026-08-19' },
+  'enc_inscriptos': { estado: 'exacto', caso: 'V-33', csv: '2026-08-19' },
+  'enc_ll_contactados': { estado: 'deriva', caso: 'D-03', csv: '2026-08-19' },
+  'enc_ll_efectivos': { estado: 'deriva', caso: 'D-04', csv: '2026-08-19' },
+  'enc_llamados': { estado: 'exacto', caso: 'V-20', csv: '2026-08-19' },
+  'enc_mails_entregados': { estado: 'exacto', caso: 'V-13', csv: '2026-08-19' },
+  'enc_mails_enviados': { estado: 'exacto', caso: 'V-12', csv: '2026-08-19' },
+  'enc_marque1': { estado: 'abierto', caso: 'X-40', csv: '2026-08-19' },
+  'enc_or': { estado: 'exacto', caso: 'V-14', csv: '2026-08-19' },
+  'enc_visualizaciones': { estado: 'exacto', caso: 'V-94', csv: '2026-08-19' },
+  'frecuencia': { estado: 'contradice', caso: 'X-32', csv: '2026-08-19' },
+  'frecuencia_estimada': { estado: 'cerrado', caso: 'C-52', csv: '2026-08-19' },
+  'gcba_contenidos_total': { estado: 'exacto', caso: 'V-60', csv: '2026-08-19' },
+  'gcba_frecuencia': { estado: 'contradice', caso: 'X-32', csv: '2026-08-19' },
+  'gcba_imp_total': { estado: 'exacto', caso: 'V-74', csv: '2026-08-19' },
+  'gcba_mail_aperturas': { estado: 'exacto', caso: 'V-58', csv: '2026-08-19' },
+  'gcba_mail_entregados': { estado: 'exacto', caso: 'V-57', csv: '2026-08-19' },
+  'gcba_mail_envios': { estado: 'exacto', caso: 'V-107', csv: '2026-08-19' },
+  'gcba_sms_clics': { estado: 'exacto', caso: 'V-63', csv: '2026-08-19' },
+  'gcba_sms_entregados': { estado: 'exacto', caso: 'V-62', csv: '2026-08-19' },
+  'gcba_sms_envios': { estado: 'cerrado', caso: 'C-72', csv: '2026-08-19' },
+  'google': { estado: 'abierto', caso: 'X-17', csv: '2026-08-19' },
+  'identidad_canales': { estado: 'exacto', caso: 'V-45', csv: '2026-08-19' },
+  'imp_google': { estado: 'contradice', caso: 'A-06', csv: '2026-08-19' },
+  'imp_meta': { estado: 'exacto', caso: 'V-108', csv: '2026-08-19' },
+  'imp_prog': { estado: 'exacto', caso: 'V-108', csv: '2026-08-19' },
+  'imp_total': { estado: 'exacto', caso: 'X-10', csv: '2026-08-19' },
+  'ivr_75': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
+  'ivr_75_pct': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
+  'ivr_at_pct': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
+  'ivr_atendidos': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
+  'ivr_campanias': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
+  'ivr_llamados': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
+  'ivr_marque1': { estado: 'abierto', caso: 'X-41', csv: '2026-08-19' },
+  'm2_aperturas': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
+  'm2_campanias': { estado: 'cerrado', caso: 'C-87', csv: '2026-09-04' },
+  'm2_clics': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
+  'm2_ctor': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
+  'm2_entregados': { estado: 'deriva', caso: 'X-14', csv: '2026-08-19' },
+  'm2_enviados': { estado: 'deriva', caso: 'X-13', csv: '2026-08-19' },
+  'm2_envios': { estado: 'cerrado', caso: 'C-87', csv: '2026-09-04' },
+  'm2_mails_entregados': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
+  'm2_mails_enviados': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
+  'm2_or': { estado: 'exacto', caso: 'V-125', csv: '2026-09-04' },
+  'mail_aperturas': { estado: 'exacto', caso: 'V-99', csv: '2026-08-19' },
+  'mail_clics': { estado: 'exacto', caso: 'V-99', csv: '2026-08-19' },
+  'mail_entregados': { estado: 'cerrado', caso: 'C-81', csv: '2026-08-19' },
+  'mail_enviados': { estado: 'exacto', caso: 'V-99', csv: '2026-08-19' },
+  'mail_envios': { estado: 'exacto', caso: 'V-75', csv: '2026-08-19' },
+  'pauta_meta': { estado: 'abierto', caso: 'X-17', csv: '2026-08-19' },
+  'periodo': { estado: 'cerrado', caso: 'C-82', csv: '2026-08-19' },
+  'post_camp_mail_ape_1': { estado: 'exacto', caso: 'V-28', csv: '2026-08-19' },
+  'post_camp_mail_env_1': { estado: 'exacto', caso: 'V-30', csv: '2026-08-19' },
+  'post_camp_mail_env_2': { estado: 'exacto', caso: 'V-31', csv: '2026-08-19' },
+  'post_camp_mail_env_3': { estado: 'exacto', caso: 'V-32', csv: '2026-08-19' },
+  'prog': { estado: 'abierto', caso: 'X-17', csv: '2026-08-19' },
+  'rc_enviados': { estado: 'sin_fuente', caso: 'X-03', csv: '2026-08-19' },
+  'u1_google_clics': { estado: 'exacto', caso: 'V-22', csv: '2026-08-19' },
+  'u1_google_impresiones': { estado: 'exacto', caso: 'V-21', csv: '2026-08-19' },
+  'u1_meta_clics': { estado: 'exacto', caso: 'V-24', csv: '2026-08-19' },
+  'u1_meta_impresiones': { estado: 'exacto', caso: 'V-25', csv: '2026-08-19' },
+  'u1_meta_vistas': { estado: 'exacto', caso: 'V-26', csv: '2026-08-19' },
+  'u1_post_google_impresiones': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28' },
+  'u1_post_google_vistas': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28' },
+  'u1_post_meta_alcance': { estado: 'contradice', caso: 'X-43', csv: '2026-08-28' },
+  'u1_post_meta_impresiones': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28' },
+  'u1_post_meta_vistas': { estado: 'contradice', caso: 'X-42', csv: '2026-08-28' },
+  'u1_pre_google_clics': { estado: 'exacto', caso: 'V-118', csv: '2026-08-28' },
+  'u1_pre_google_ctr': { estado: 'exacto', caso: 'V-119', csv: '2026-08-28' },
+  'u1_pre_google_impresiones': { estado: 'exacto', caso: 'V-117', csv: '2026-08-28' },
+  'u1_pre_meta_alcance': { estado: 'aproximado', caso: 'V-123', csv: '2026-08-28' },
+  'u1_pre_meta_clics': { estado: 'exacto', caso: 'V-115', csv: '2026-08-28' },
+  'u1_pre_meta_ctr': { estado: 'exacto', caso: 'V-116', csv: '2026-08-28' },
+  'u1_pre_meta_impresiones': { estado: 'exacto', caso: 'V-114', csv: '2026-08-28' },
+  'u1_prog_impresiones': { estado: 'sin_fuente', caso: 'X-05', csv: '2026-08-19' },
+  'u1_total_alcance': { estado: 'abierto', caso: 'C-85', csv: '2026-08-28' },
+  'u1_total_frecuencia': { estado: 'abierto', caso: 'C-86', csv: '2026-08-28' },
+  'varios': { estado: 'exacto', caso: 'V-86', csv: '2026-08-19' }
+};
+
+
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-06_3` Parte C.1 — **los guiones del deck, separados en TRES grupos.**
+ *
+ * ⛔⛔ **El error que previene:** el usuario ve guiones en el deck y quiere que se vayan. **No son
+ * el mismo caso, y tratarlos igual PUBLICA UNA VALIDACIÓN FALSA.**
+ *
+ *   **(a)** marcador con caso **`exacto` vigente** y todavía con `_revisar` ⇒ el guion **sobra**.
+ *   **(b)** marcador con caso **`contradice` vigente** ⇒ el guion **está bien puesto. NO se toca.**
+ *   **(c)** marcador **sin caso** ⇒ el guion **está bien puesto. NO se toca.**
+ *
+ * ⛔⛔ **`camp_titulo` es del grupo (c) y NO se levanta**, aunque sea el que se ve primero: el
+ * **ítem 9 sigue abierto** —publica el título de otra campaña— y sacarle la marca sería **declarar
+ * validado lo que está en investigación**.
+ *
+ * ⚠ **Los estados `cerrado` y `abierto` NO son (a).** `cerrado` es *«decisión del usuario, no se
+ * vuelve sobre esto»* y `abierto` es *«medido y sin resolver»*: ninguno afirma que el número
+ * coincida. **Sólo `exacto` habilita a levantar la marca**, y confundirlos es la forma barata de
+ * publicar sin aviso un número que nadie validó.
+ *
+ * ⛔ **SÓLO LECTURA.** No escribe `formato`, ni `notas`, ni nada.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function diagGuionesPorLamina() {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('Los guiones `_revisar`, en tres grupos · ' + new Date().toISOString());
+  Logger.log('⛔ SÓLO LECTURA.');
+  Logger.log('⚠ Casos congelados el ' + CASOS_POR_MARCADOR_GENERADA_ + ' desde ' +
+    CASOS_POR_MARCADOR_ARCHIVOS_ + ' CSV. **Si hay un CSV más nuevo, este número miente.**');
+  Logger.log('   Regenerar con: node tools/generar-casos-por-marcador.js');
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ── 1 · El universo: qué filas llevan la marca HOY, en la hoja viva ─────────────────── */
+  var todas = leerMarcadores_();
+  var conMarca = todas.filter(function (m) {
+    var f = String(m.formato || '').trim();
+    return f.length > 8 && f.slice(-8) === '_revisar';
+  });
+  Logger.log('');
+  Logger.log('1 · UNIVERSO');
+  Logger.log('   filas en MARCADORES ....... ' + todas.length);
+  Logger.log('   con `_revisar` HOY ........ ' + conMarca.length);
+  Logger.log('   marcadores con caso ....... ' + Object.keys(CASOS_POR_MARCADOR_).length +
+    '  (congelados, ver arriba)');
+
+  /* ── 2 · ⭐ Control positivo, ANTES de reportar nada ──────────────────────────────────
+   * Si el cruce no reencuentra ningún `exacto` conocido, o el nombre de la columna cambió, o la
+   * constante quedó vieja — y en los dos casos un cero se leería como «todo limpio». */
+  var exactosConocidos = Object.keys(CASOS_POR_MARCADOR_).filter(function (n) {
+    return CASOS_POR_MARCADOR_[n].estado === 'exacto';
+  });
+  var enHoja = {};
+  todas.forEach(function (m) { enHoja[String(m.marcador || '').trim()] = m; });
+  var reencontrados = exactosConocidos.filter(function (n) { return enHoja[n]; });
+  Logger.log('');
+  Logger.log('2 · ⭐ CONTROL POSITIVO — casos `exacto` que EXISTEN en MARCADORES: ' +
+    reencontrados.length + ' de ' + exactosConocidos.length);
+  if (!reencontrados.length) {
+    Logger.log('   ⛔⛔ ABORTA: el cruce no reencontró NINGUNO. **El instrumento no ve** — o los');
+    Logger.log('      nombres no matchean, o la constante quedó vieja. Un cero acá sería');
+    Logger.log('      indistinguible de «no hay nada que levantar».');
+    return { ok: false, motivo: 'control positivo' };
+  }
+
+  /* ── 3 · Los tres grupos ─────────────────────────────────────────────────────────────── */
+  var a = [], b = [], c = [], otros = [];
+  conMarca.forEach(function (m) {
+    var n = String(m.marcador || '').trim();
+    var caso = CASOS_POR_MARCADOR_[n];
+    if (!caso) { c.push({ m: m, n: n }); return; }
+    if (caso.estado === 'exacto') a.push({ m: m, n: n, caso: caso });
+    else if (caso.estado === 'contradice') b.push({ m: m, n: n, caso: caso });
+    /* ⚠ `cerrado` y `abierto` NO habilitan: no afirman que el número coincida. */
+    else otros.push({ m: m, n: n, caso: caso });
+  });
+
+  function linea(x) {
+    return '     · ' + x.n + '   formato ' + String(x.m.formato || '').trim() +
+      '   informe ' + (String(x.m.informe_id || '').trim() || '(vacío)') +
+      (x.caso ? '   caso ' + x.caso.caso + ' (' + x.caso.estado + ', ' + x.caso.csv + ')' : '');
+  }
+
+  Logger.log('');
+  Logger.log('3 · ⭐⭐ GRUPO (a) — EL GUION SOBRA: caso `exacto` vigente y marca puesta · ' + a.length);
+  a.forEach(function (x) { Logger.log(linea(x)); });
+  if (!a.length) Logger.log('     (ninguno) — ⇒ **no hay nada que levantar hoy**');
+
+  Logger.log('');
+  Logger.log('4 · ⛔ GRUPO (b) — EL GUION ESTÁ BIEN: caso `contradice` vigente · ' + b.length);
+  b.forEach(function (x) { Logger.log(linea(x)); });
+  Logger.log('   ⇒ **NO se tocan.** Un caso los desmiente; la marca es el aviso.');
+
+  Logger.log('');
+  Logger.log('5 · ⛔ GRUPO (c) — EL GUION ESTÁ BIEN: sin caso · ' + c.length);
+  c.forEach(function (x) { Logger.log(linea(x)); });
+  Logger.log('   ⇒ **NO se tocan.** Nadie los validó todavía.');
+  if (c.some(function (x) { return x.n === 'camp_titulo'; })) {
+    Logger.log('   ⛔⛔ `camp_titulo` está acá, y es el que más se ve en el deck. **NO se levanta:**');
+    Logger.log('      el ítem 9 sigue abierto —publica el título de OTRA campaña— y sacarle la');
+    Logger.log('      marca sería **declarar validado lo que está en investigación**.');
+  }
+
+  Logger.log('');
+  Logger.log('6 · ⚠ NI (a) NI (b) NI (c) — caso `cerrado` o `abierto` · ' + otros.length);
+  otros.forEach(function (x) { Logger.log(linea(x)); });
+  Logger.log('   ⇒ **Tampoco se levantan.** `cerrado` es «no se vuelve sobre esto» y `abierto` es');
+  Logger.log('     «medido y sin resolver»: **ninguno afirma que el número coincida.**');
+
+  /* ── 7 · Por lámina, que es donde el usuario los ve ──────────────────────────────────── */
+  Logger.log('');
+  Logger.log('7 · DÓNDE CAEN — por lámina, leyendo las plantillas VIVAS');
+  var deInteres = {};
+  a.forEach(function (x) { deInteres[x.n] = 'a'; });
+  b.forEach(function (x) { deInteres[x.n] = 'b'; });
+  c.forEach(function (x) { deInteres[x.n] = 'c'; });
+  otros.forEach(function (x) { deInteres[x.n] = '-'; });
+
+  var informes = leerInformes();
+  Object.keys(informes).forEach(function (informeId) {
+    var inf = informes[informeId];
+    if (!inf || !inf.plantilla_id) { Logger.log('   ⚠ `' + informeId + '` sin `plantilla_id`'); return; }
+    var slides;
+    try { slides = SlidesApp.openById(inf.plantilla_id).getSlides(); }
+    catch (e) { Logger.log('   ⛔ no pude abrir la plantilla de `' + informeId + '`: ' + e); return; }
+    Logger.log('   ── `' + informeId + '` · ' + slides.length + ' láminas');
+    slides.forEach(function (slide, i) {
+      var vistos = {};
+      piezasDeTextoDeSlide_(slide).forEach(function (pieza) {
+        var mm;
+        RE_TOKEN_.lastIndex = 0;
+        while ((mm = RE_TOKEN_.exec(pieza.texto)) !== null) vistos[mm[1]] = true;
+      });
+      var acaA = [], acaOtros = [];
+      Object.keys(vistos).forEach(function (t) {
+        if (deInteres[t] === 'a') acaA.push(t);
+        else if (deInteres[t]) acaOtros.push(t + '(' + deInteres[t] + ')');
+      });
+      if (acaA.length || acaOtros.length) {
+        Logger.log('      pos ' + (i + 1) + (esLaminaEscondida_(slide) ? ' [escondida]' : '') +
+          (acaA.length ? '   ⭐ (a): ' + acaA.join(', ') : '') +
+          (acaOtros.length ? '   · resto: ' + acaOtros.join(', ') : ''));
+      }
+    });
+  });
+
+  Logger.log('');
+  Logger.log('── QUÉ HACER ──');
+  Logger.log('  ⭐ Sólo el grupo (a) se levanta, y con `confirmarGuionesValidados()`.');
+  Logger.log('  ⛔ Y levantar NO es sacar el `_revisar` del `formato`: `revisarASinValidar_`');
+  Logger.log('     lo REPONE si `notas` sigue diciendo `SIN VALIDAR`. Son DOS escrituras.');
+  Logger.log('  ⚠ Este log es el insumo de esa función: su lista se copia de acá, con fecha.');
+  return { ok: true, generada: CASOS_POR_MARCADOR_GENERADA_, con_marca: conMarca.length,
+    a: a.map(function (x) { return x.n; }), b: b.map(function (x) { return x.n; }),
+    c: c.map(function (x) { return x.n; }), otros: otros.map(function (x) { return x.n; }) };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-06_3` Parte C.2 — **levantar la marca de los validados. NO SE CORRIÓ.**
+ *
+ * ⛔⛔ **Levantar un marcador son DOS escrituras en la misma operación**, y ésta es la lección más
+ * cara del repo: `revisarASinValidar_` **repone la marca** a toda fila cuyo `notas` contenga
+ * `SIN VALIDAR`. Sacar sólo el `formato` **se deshace en la corrida siguiente** — pasó del 26/08 al
+ * 01/09 y **estuvo ocho días en el deck**.
+ *
+ * ⇒ **`formato` Y `notas` juntos. Si una de las dos falla, no se hace ninguna.**
+ *
+ * ⛔ **La lista es EXPLÍCITA y congelada, no un filtro que se recalcule al correr.** Un filtro
+ * cambia con los datos y nadie se entera; una lista se puede auditar. ⚠ Y por eso lleva **su fecha**
+ * y **el gate de `D-58`**: se cruza contra los casos vigentes **antes** de escribir, porque una
+ * decisión puntual **también vence** — es lo que le pasó a `confirmarNumerosDeUnoAUno()`.
+ *
+ * ⛔ **Modo seco por defecto.** `confirmarGuionesValidados()` **no escribe**: reporta qué haría.
+ * Para escribir hay que llamar a `aplicarGuionesValidados()`, que es otro botón.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+var GUIONES_A_LEVANTAR_ = [];          // ⛔ VACÍA a propósito: la llena `diagGuionesPorLamina()`.
+var GUIONES_A_LEVANTAR_FECHA_ = '';    // la fecha de la corrida que la produjo
+
+function confirmarGuionesValidados() { return guionesValidados_(false); }
+function aplicarGuionesValidados() { return guionesValidados_(true); }
+
+function guionesValidados_(escribir) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('Levantar `_revisar` de los validados · ' + (escribir ? '⚠ ESCRIBE' : '⛔ MODO SECO'));
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  if (!GUIONES_A_LEVANTAR_.length) {
+    /* ⭐ Una corrida que no hizo nada FALLA, no informa cero. */
+    Logger.log('⛔ ABORTA: `GUIONES_A_LEVANTAR_` está vacía.');
+    Logger.log('   ⇒ Correr `diagGuionesPorLamina()` primero y copiar acá su **grupo (a)**, con la');
+    Logger.log('     fecha de esa corrida en `GUIONES_A_LEVANTAR_FECHA_`.');
+    Logger.log('   ⚠ NO se llena con un filtro: una lista congelada se puede auditar.');
+    return { ok: false, motivo: 'lista vacía' };
+  }
+
+  /* ── ⭐ El gate de `D-58`: la lista puede haber vencido ──────────────────────────────── */
+  var vencidos = GUIONES_A_LEVANTAR_.filter(function (n) {
+    var caso = CASOS_POR_MARCADOR_[n];
+    return !caso || caso.estado !== 'exacto';
+  });
+  Logger.log('');
+  Logger.log('⭐ GATE `D-58` — la lista es del ' + (GUIONES_A_LEVANTAR_FECHA_ || '(sin fecha)') +
+    ', los casos del ' + CASOS_POR_MARCADOR_GENERADA_);
+  if (!GUIONES_A_LEVANTAR_FECHA_) {
+    Logger.log('⛔ ABORTA: la lista no declara su fecha. Sin eso no se puede saber si venció.');
+    return { ok: false, motivo: 'lista sin fecha' };
+  }
+  if (vencidos.length) {
+    Logger.log('⛔⛔ ABORTA: ' + vencidos.length + ' de la lista YA NO tienen caso `exacto` vigente:');
+    vencidos.forEach(function (n) {
+      var c = CASOS_POR_MARCADOR_[n];
+      Logger.log('     · ' + n + ' → ' + (c ? c.estado + ' (' + c.caso + ')' : 'sin caso'));
+    });
+    Logger.log('   ⇒ Un caso posterior los desmiente. **Levantarles la marca publicaría sin aviso');
+    Logger.log('     un número que se sabe que difiere.** Regenerar la lista.');
+    return { ok: false, motivo: 'gate D-58' };
+  }
+  Logger.log('   ✅ los ' + GUIONES_A_LEVANTAR_.length + ' siguen con caso `exacto` vigente');
+
+  /* ── Las dos escrituras, calculadas antes de tocar nada ──────────────────────────────── */
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe MARCADORES'); return { ok: false }; }
+  var datos = hoja.getDataRange().getValues();
+  var head = datos[0].map(function (h) { return String(h || '').trim(); });
+  var iMar = head.indexOf('marcador'), iFmt = head.indexOf('formato'), iNot = head.indexOf('notas');
+  if (iMar < 0 || iFmt < 0 || iNot < 0) {
+    Logger.log('⛔ ABORTA: faltan columnas — ' + head.join('|'));
+    return { ok: false, motivo: 'esquema' };
+  }
+
+  var plan = [], sinFila = [], sinMarca = [];
+  GUIONES_A_LEVANTAR_.forEach(function (n) {
+    var fila = -1;
+    for (var k = 1; k < datos.length; k++) {
+      if (String(datos[k][iMar] || '').trim() === n) { fila = k; break; }
+    }
+    if (fila === -1) { sinFila.push(n); return; }
+    var fmt = String(datos[fila][iFmt] || '').trim();
+    var notas = String(datos[fila][iNot] || '');
+    var fmtNuevo = (fmt.length > 8 && fmt.slice(-8) === '_revisar') ? fmt.slice(0, -8) : fmt;
+    /* ⚠ Se saca la cadena `SIN VALIDAR` de `notas`, que es lo que `revisarASinValidar_` mira. */
+    var notasNuevas = notas.replace(/SIN VALIDAR/g, 'VALIDADO ' + (GUIONES_A_LEVANTAR_FECHA_ || ''));
+    if (fmtNuevo === fmt && notasNuevas === notas) { sinMarca.push(n); return; }
+    plan.push({ n: n, fila: fila + 1, fmt: fmt, fmtNuevo: fmtNuevo,
+      tocaNotas: notasNuevas !== notas, notasNuevas: notasNuevas });
+  });
+
+  Logger.log('');
+  Logger.log('── EL PLAN, por identidad y no por conteo ──');
+  plan.forEach(function (p) {
+    Logger.log('   · ' + p.n + '  (fila ' + p.fila + ')   `' + p.fmt + '` → `' + p.fmtNuevo + '`' +
+      (p.tocaNotas ? '   + notas: SIN VALIDAR → VALIDADO' : '   ⚠ notas NO dice SIN VALIDAR'));
+  });
+  if (sinFila.length) Logger.log('   ⛔ SIN FILA en MARCADORES: ' + sinFila.join(', '));
+  if (sinMarca.length) Logger.log('   ⚠ ya estaban limpios: ' + sinMarca.join(', '));
+
+  if (sinFila.length) {
+    /* ⭐ Todo o nada: una lista que nombra algo que no existe está vieja, y aplicar la mitad
+     * dejaría un estado que nadie pidió. */
+    Logger.log('⛔⛔ ABORTA: la lista nombra marcadores que no existen. **No se escribe nada.**');
+    return { ok: false, motivo: 'lista vencida' };
+  }
+  if (!plan.length) {
+    Logger.log('⛔ ABORTA: no hay ninguna celda que cambiar. **Una corrida que no hace nada falla,');
+    Logger.log('   no informa cero** — si ya estaban limpios, la lista está vieja.');
+    return { ok: false, motivo: 'nada que hacer' };
+  }
+
+  if (!escribir) {
+    Logger.log('');
+    Logger.log('⛔ MODO SECO — no se escribió nada. Para aplicar: `aplicarGuionesValidados()`.');
+    return { ok: true, seco: true, plan: plan.length };
+  }
+
+  /* ── Backup, escritura, y RELECTURA ──────────────────────────────────────────────────── */
+  var respaldo = plan.map(function (p) {
+    return { n: p.n, fila: p.fila, formato: p.fmt, notas: datos[p.fila - 1][iNot] };
+  });
+  Logger.log('');
+  Logger.log('── BACKUP (copiar de acá si hay que revertir) ──');
+  Logger.log('   ' + JSON.stringify(respaldo));
+
+  plan.forEach(function (p) {
+    hoja.getRange(p.fila, iFmt + 1).setValue(p.fmtNuevo);
+    if (p.tocaNotas) hoja.getRange(p.fila, iNot + 1).setValue(p.notasNuevas);
+  });
+  SpreadsheetApp.flush();
+
+  /* ⭐⭐ La relectura sale de la HOJA, no del retorno del escritor: «pedí que quedara así» y
+   * «quedó así» son dos afirmaciones distintas, y en Sheets la segunda puede fallar sola. */
+  var releido = hoja.getDataRange().getValues();
+  var mal = [];
+  plan.forEach(function (p) {
+    var fmt = String(releido[p.fila - 1][iFmt] || '').trim();
+    var notas = String(releido[p.fila - 1][iNot] || '');
+    if (fmt !== p.fmtNuevo) mal.push(p.n + ': formato quedó `' + fmt + '`');
+    if (p.tocaNotas && notas.indexOf('SIN VALIDAR') !== -1) mal.push(p.n + ': `notas` sigue diciendo SIN VALIDAR');
+  });
+  Logger.log('');
+  Logger.log('── RELECTURA — ' + (mal.length ? '⛔ ' + mal.length + ' problema(s)' : '✅ las ' +
+    plan.length + ' filas quedaron como se pidió'));
+  mal.forEach(function (x) { Logger.log('   ⛔ ' + x); });
+  Logger.log('   ⚠ Y lo que esto NO dice: que el número publicado sea correcto. Dice que la marca');
+  Logger.log('     se levantó en las filas que un caso `exacto` respalda.');
+  return { ok: !mal.length, escritas: plan.length, problemas: mal };
+}
