@@ -126,8 +126,22 @@ console.log('\n═══ E · ⛔⛔ levantar son DOS escrituras, no una ══�
 
 console.log('\n═══ F · ⛔ la lista nace VACÍA y el modo seco es el default ═══');
 {
-  afirmar(/var GUIONES_A_LEVANTAR_ = \[\];/.test(AUD),
-    '⛔ `GUIONES_A_LEVANTAR_` está vacía ⇒ **no se corrió y no puede escribir por accidente**');
+  /* ⭐⭐ `2026-09-06_4` — **esta afirmación se DIO VUELTA, y con el motivo escrito.**
+   * Decía *«`GUIONES_A_LEVANTAR_` está vacía»*, y se puso roja **diciendo la verdad**: el
+   * `2026-09-06_4` pidió llenarla. ⛔ **Aflojarla habría sido perder el control**; lo que
+   * corresponde es darla vuelta y **subirle la exigencia** —`CLAUDE.md` §4, *«un banco que se pone
+   * rojo cuando el estado cambia está haciendo su trabajo»*—.
+   *
+   * ⇒ La protección que la lista vacía daba —**que nada se escriba por accidente**— ahora la dan
+   * tres cosas distintas, y las tres se afirman: la lista es **literal y congelada** (no calculada
+   * al correr), **declara su fecha**, y el default sigue siendo **modo seco**. */
+  afirmar(!/var GUIONES_A_LEVANTAR_ = \[\];/.test(AUD),
+    '⭐⭐ la lista YA NO está vacía — el `_4` la llenó, y esta afirmación se dio vuelta a propósito');
+  const decl = AUD.match(/var GUIONES_A_LEVANTAR_ = \[([\s\S]*?)\];/);
+  afirmar(decl && !/\bfilter\b|\bmap\b|\bconcat\b|Object\.keys/.test(decl[1]),
+    '⛔⛔ y sigue siendo LITERAL, no un filtro que se recalcule al correr — una lista se audita');
+  afirmar(/var GUIONES_A_LEVANTAR_FECHA_ = '\d{4}-\d{2}-\d{2}';/.test(AUD),
+    '⭐ y declara su FECHA ⇒ el gate de `D-58` puede saber si venció');
   afirmar(/function confirmarGuionesValidados\(\) \{ return guionesValidados_\(false\); \}/.test(AUD),
     '⭐ `confirmar…()` es MODO SECO; escribir es otro botón (`aplicar…()`)');
   /* ⚠ Las dos públicas, sin `_` y SIN PARÁMETROS, o no aparecen en el desplegable del editor. */
@@ -161,6 +175,68 @@ console.log('\n═══ G · ⛔⛔ LA MITAD INSEGURA DE `D-58` — se lista y 
     CASOS[n].estado === 'exacto' && CASOS[n].previos.indexOf('contradice') === -1);
   afirmar(limpios.length > 0,
     '⭐ y hay ' + limpios.length + ' `exacto` SIN `contradice` previo — el gate no bloquea todo');
+}
+
+console.log('\n═══ H · ⭐⭐ LA LISTA REAL — SIETE NOMBRES, NO «siete» ═══');
+{
+  /* ⛔⛔ Se afirma sobre los NOMBRES y no sobre la cantidad. Un banco que dijera `length === 7`
+   * pasaría con siete nombres equivocados — que es el defecto que costó la semana: **un conteo que
+   * coincide sobre las filas equivocadas.** */
+  const m = AUD.match(/var GUIONES_A_LEVANTAR_ = \[([\s\S]*?)\];/);
+  afirmar(!!m, 'existe `GUIONES_A_LEVANTAR_`');
+  const lista = m ? (m[1].match(/'([a-z0-9_]+)'/g) || []).map(x => x.replace(/'/g, '')) : [];
+  const ESPERADOS = ['camp_enviados', 'camp_or', 'camp_mail_clics', 'camp_ctor',
+                     'emin_or', 'emin_ctor', 'emin_ctr'];
+  afirmar(lista.join('|') === ESPERADOS.join('|'),
+    '⭐⭐ la lista es EXACTAMENTE los ' + ESPERADOS.length + ' esperados  (dio: ' + lista.join(', ') + ')');
+
+  /* ⛔⛔ Los tres frenados, por nombre y con motivo: **omitirlos en silencio sería indistinguible
+   * de olvidarlos.** */
+  const frenados = AUD.slice(AUD.indexOf('var GUIONES_FRENADOS_'));
+  ['imp_prog', 'emin_lista', 'emin_encuentros'].forEach(n => {
+    afirmar(lista.indexOf(n) === -1, '⛔ `' + n + '` NO está en la lista');
+    afirmar(new RegExp("'" + n + "':").test(frenados),
+      '⭐ y está DECLARADO en `GUIONES_FRENADOS_` con su motivo');
+  });
+
+  /* ⭐ Y los frenados lo son por lo que el gate mide, no por gusto. */
+  afirmar(CASOS['imp_prog'] && CASOS['imp_prog'].previos.indexOf('contradice') !== -1,
+    '⭐ `imp_prog` cruza la mitad insegura — el motivo declarado es el medido');
+  ['emin_lista', 'emin_encuentros'].forEach(n => {
+    afirmar(CASOS[n] && CASOS[n].estado === 'contradice',
+      '⭐ `' + n + '` tiene caso vigente `contradice` (' + (CASOS[n] || {}).caso +
+      ') ⇒ el gate 1 lo rechazaría');
+  });
+  /* ⚠ La mitad negativa: los siete de la lista NO pueden estar frenados. */
+  afirmar(ESPERADOS.every(n => CASOS[n] && CASOS[n].estado === 'exacto' && !CASOS[n].previos.length),
+    '⭐⭐ los siete son `exacto` con `previos: []` — pasan los dos primeros gates');
+}
+
+console.log('\n═══ I · ⛔⛔ EL GATE 3 — aborta SIN ESCRIBIR NADA ═══');
+{
+  const i = AUD.indexOf('function guionesValidados_');
+  const cuerpo = AUD.slice(i, AUD.indexOf('\n}\n', i));
+  afirmar(/universoAgendaOk_\(\)/.test(cuerpo), 'el gate 3 llama a `universoAgendaOk_()`');
+  afirmar(/motivo: 'gate 3 universo'/.test(cuerpo), '⛔ y ABORTA con motivo propio');
+  /* ⛔⛔ Lo que importa: el `return` del gate 3 tiene que estar ANTES de cualquier `setValue`, o
+   * la operación a medias es posible — y dejaría la hoja en un estado que nadie midió. */
+  const iG3 = cuerpo.indexOf("motivo: 'gate 3 universo'");
+  const iEsc = cuerpo.indexOf('setValue');
+  afirmar(iG3 !== -1 && iEsc !== -1 && iG3 < iEsc,
+    '⭐⭐ el abort está ANTES del primer `setValue` ⇒ no escribe **ni los `camp_*`**');
+  afirmar(/tocaMinistros/.test(cuerpo),
+    '⭐ y sólo corre si la lista toca `emin_*` — no cobra el costo cuando no aplica');
+
+  const j = AUD.indexOf('function universoAgendaOk_');
+  const g = AUD.slice(j, AUD.indexOf('\n}\n', j));
+  afirmar(/diagCorteAgenda\(\)/.test(g), '⭐ reusa `diagCorteAgenda()`, no reimplementa el recorte');
+  afirmar(/sabor/i.test(g) && /quir/i.test(g), '⛔⛔ compara por NOMBRE: Sabor y Quirós');
+  afirmar(/control positivo del gate/.test(g),
+    '⭐⭐ y tiene control positivo propio: si no ve a NINGUNO de los dos, aborta');
+  afirmar(/es la ventana/.test(g),
+    '⭐ distingue los dos veredictos: corte sin aplicar vs. problema de VENTANA');
+  afirmar(!/\.length === 7|\.length === 6/.test(g),
+    '⛔ y NO decide por cantidad — 6 por `D` contra 7 por `E`, el conteo no sirve');
 }
 
 console.log('');

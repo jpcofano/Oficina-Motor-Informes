@@ -9767,8 +9767,45 @@ function diagGuionesPorLamina() {
  * equivocado.** Es `CLAUDE.md` §4, 04/09: *«una aplicación masiva declara qué filas toca y las
  * compara contra las decisiones puntuales ya aplicadas ANTES de escribir»*.
  * ══════════════════════════════════════════════════════════════════════════════════════════ */
-var GUIONES_A_LEVANTAR_ = [];          // ⛔ VACÍA a propósito: la llena `diagGuionesPorLamina()`.
-var GUIONES_A_LEVANTAR_FECHA_ = '';    // la fecha de la corrida que la produjo
+/* ⭐⭐ `2026-09-06_4` Parte A — **la lista, y son SIETE, no nueve.** Explícita y congelada, con el
+ * motivo de cada bloque al lado. ⛔ **No es un filtro que se recalcule al correr:** una lista se
+ * puede auditar, un filtro cambia con los datos y nadie se entera. */
+var GUIONES_A_LEVANTAR_ = [
+  /* ── Bloque 1 · `C-99` (04/09) — comparados número por número contra el deck del equipo ──
+   * `367.638` · `41,9` · `2.457` · `1,6`, los dos absolutos al dígito y los dos porcentajes
+   * contra el redondeo a entero del equipo. Los cuatro con `previos: []`: **mitad segura.** */
+  'camp_enviados', 'camp_or', 'camp_mail_clics', 'camp_ctor',
+  /* ── Bloque 2 · decisión del usuario (06/09) — el criterio de `ministros` es LA VENTANA ──
+   * *«la lista sale de la ventana y listo; no es necesario validar contra el equipo»*. El corte
+   * por `D` —la fecha del encuentro— **es** ese criterio.
+   * ⚠ Los tres tienen `exacto` de `C-102`, que valida **el formato** (el `%` duplicado), **no el
+   * universo**. Lo que cubre el universo es **el gate de identidad de abajo**, que corre sobre la
+   * solapa viva antes de escribir una sola celda. */
+  'emin_or', 'emin_ctor', 'emin_ctr'
+];
+var GUIONES_A_LEVANTAR_FECHA_ = '2026-09-06';
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⛔⛔ **LOS QUE NO ENTRAN, Y POR QUÉ. Declarados, no omitidos.**
+ *
+ * ⭐ **Omitirlos en silencio sería indistinguible de olvidarlos**, y el que venga a preguntar *«¿y
+ * `emin_lista`?»* tiene que encontrar la respuesta acá y no en un log que ya se perdió.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+var GUIONES_FRENADOS_ = {
+  /* ⛔⛔ El prompt los pedía en la lista. **Hoy no pueden entrar, y el gate 1 los rechazaría
+   * abortando la operación entera** — medido: su caso vigente es `C-101`, `contradice`.
+   *
+   * ⇒ **Hacen falta DOS cosas, en este orden, y ninguna es mía:**
+   *   1. un caso nuevo que **supersede a `C-101`** citando la decisión del 06/09 (Parte E);
+   *   2. ⛔⛔ y aun con ése, **caen en el gate 2**: pasarían de `contradice` a `exacto`, que es
+   *      **exactamente la mitad insegura que `D-58` manda listar y parar**. */
+  'emin_lista': 'caso vigente `C-101` (contradice). Necesita el caso que lo supersede Y la ' +
+    'respuesta a la pregunta abierta de `D-58` — pasar de `contradice` a `exacto` SACA la marca.',
+  'emin_encuentros': 'ídem `emin_lista`: mismo caso `C-101` y mismo cruce de la mitad insegura.',
+  /* ⛔ La mitad insegura de `D-58`, medida: `aproximado → corrige → contradice → exacto`. */
+  'imp_prog': 'sus `previos` incluyen `contradice`, así que el `exacto` de `V-108` SACARÍA la ' +
+    'marca. `D-58` manda listarlo y parar hasta que el usuario conteste si la regla es simétrica.'
+};
 
 function confirmarGuionesValidados() { return guionesValidados_(false); }
 function aplicarGuionesValidados() { return guionesValidados_(true); }
@@ -9849,6 +9886,38 @@ function guionesValidados_(escribir) {
     return { ok: false, motivo: 'gate D-58 mitad insegura', cruzan: cruzan };
   }
   Logger.log('   ✅ ninguno cruzó de `contradice` a `exacto` — todos son la mitad segura');
+
+  /* ── ⛔⛔ GATE 3 — EL UNIVERSO DE LOS `emin_*`, MEDIDO SOBRE LA SOLAPA VIVA ───────────────
+   *
+   * ⭐⭐ **Los `emin_*` entran a esta lista por una DECISIÓN, no por una medición** —*«la lista sale
+   * de la ventana y listo»*—, y el corte por `D` que la implementa **se cargó a mano el 06/09**.
+   * ⛔ **Una decisión no es una corrida:** nadie confirmó todavía que ese corte esté haciendo
+   * efecto. ⇒ Se verifica **acá, antes de escribir**, y **por identidad**.
+   *
+   * ⛔⛔ **Un control que cuente NO SIRVE, y está medido:** por `D` entran **6** y por `E` entran
+   * **7**, y el deck viejo publicaba **7 con las equivocadas**. ⇒ **Los dos nombres que deciden son
+   * Ezequiel Sabor —que tiene que ENTRAR— y Fernán Quirós —que tiene que QUEDAR AFUERA.**
+   *
+   * ⭐ **Es un GATE, no un filtro:** decide **si** se escribe, nunca **qué** se escribe. La lista
+   * sigue siendo la de arriba, explícita y con su fecha.
+   *
+   * ⛔ **Y si no pasa, no se escribe NADA — ni los cuatro de `camp_*`, que no dependen de esto.**
+   * Una operación a medias deja la hoja en un estado que nadie midió, y este wrapper es **una sola
+   * operación**. */
+  var tocaMinistros = GUIONES_A_LEVANTAR_.some(function (n) { return n.indexOf('emin_') === 0; });
+  Logger.log('');
+  Logger.log('⛔⛔ GATE 3 — el universo de la Agenda, por IDENTIDAD' +
+    (tocaMinistros ? '' : '   (la lista no toca `emin_*`: no aplica)'));
+  if (tocaMinistros) {
+    var g3 = universoAgendaOk_();
+    if (!g3.ok) {
+      Logger.log('   ⛔⛔ ABORTA — y NO se escribe nada, tampoco los `camp_*`: ' + g3.motivo);
+      g3.detalle.forEach(function (l) { Logger.log('      ' + l); });
+      return { ok: false, motivo: 'gate 3 universo', detalle: g3.detalle };
+    }
+    g3.detalle.forEach(function (l) { Logger.log('   ' + l); });
+    Logger.log('   ✅ Sabor ENTRA y Quirós NO — el corte por `D` está haciendo efecto');
+  }
 
   /* ── Las dos escrituras, calculadas antes de tocar nada ──────────────────────────────── */
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
@@ -10110,4 +10179,78 @@ function diagCorteAgenda() {
   return { ok: true, columna_viva: mapa.columna, coincide_con_seed: coincide,
     ventana: { desde: f(ventana.desde), hasta: f(ventana.hasta) },
     por_D: porD, por_E: porE, solo_D: soloD, solo_E: soloE, esperados: esperados.length };
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-06_4` — **el gate de identidad del universo de la Agenda.**
+ *
+ * Contesta una sola pregunta, sobre la solapa **viva**: *¿el corte por `D` está haciendo efecto?*
+ * ⇒ **Sabor tiene que ENTRAR y Quirós tiene que QUEDAR AFUERA.**
+ *
+ * ⛔⛔ **Por nombre y no por cantidad, y está medido:** por `D` entran **6** y por `E` entran **7**,
+ * y el deck viejo publicaba **7 con las equivocadas**. Un control que contara daría verde sobre el
+ * conjunto equivocado — que es el defecto que costó toda esta semana.
+ *
+ * ⚠ **Reusa `diagCorteAgenda()` en vez de reimplementar el recorte**, que ya mide exactamente esto
+ * y devuelve los dos conjuntos por nombre. **Un instrumento que reprodujera la lógica del motor la
+ * reproduciría peor** (`CLAUDE.md` §4).
+ *
+ * ⛔ **Sólo lectura.** Devuelve `{ok, motivo, detalle}`; no escribe ni decide qué se escribe.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function universoAgendaOk_() {
+  var det = [];
+  var r;
+  try { r = diagCorteAgenda(); }
+  catch (e) { return { ok: false, motivo: 'no se pudo medir el corte: ' + e, detalle: det }; }
+  if (!r || !r.ok) {
+    return { ok: false, motivo: 'el diagnóstico del corte no cerró: ' + ((r && r.motivo) || '?'),
+      detalle: det };
+  }
+
+  det.push('columna viva: ' + r.columna_viva + '   ventana: ' + r.ventana.desde + ' → ' + r.ventana.hasta);
+  det.push('por D: ' + r.por_D.length + ' fila(s)   ·   por E: ' + r.por_E.length + ' fila(s)');
+  /* ⚠ Los conteos van al log **con el aviso de que no deciden**, para que nadie los cite. */
+  if (r.por_D.length === r.por_E.length) {
+    det.push('⚠ los dos conteos COINCIDEN — y por eso el número no puede ser el control');
+  }
+
+  var nombres = r.por_D.map(function (x) { return x.quien; });
+  det.push('por D, por NOMBRE: ' + (nombres.join(' · ') || '(ninguno)'));
+
+  var sabor = nombres.filter(function (q) { return /sabor/i.test(q); });
+  var quiros = nombres.filter(function (q) { return /quir/i.test(q); });
+
+  /* ⛔⛔ Control positivo del propio gate: si **ninguno de los dos** aparece por ninguna columna,
+   * el instrumento **no los ve** y su veredicto no significa nada. Un «Quirós no está» que en
+   * realidad es «no lo encuentro» es el cero silencioso otra vez. */
+  var todos = r.por_D.concat(r.por_E).map(function (x) { return x.quien; });
+  if (!todos.some(function (q) { return /sabor|quir/i.test(q); })) {
+    det.push('⛔⛔ ni Sabor ni Quirós aparecen por NINGUNA de las dos columnas.');
+    det.push('   ⇒ El gate **no los ve**, así que no puede afirmar nada. Revisar cómo vienen');
+    det.push('     escritos los nombres en la solapa antes de creerle a este veredicto.');
+    return { ok: false, motivo: 'control positivo del gate', detalle: det };
+  }
+
+  if (!sabor.length) {
+    det.push('⛔ Sabor NO entra por `D` ⇒ el corte no está haciendo lo que la decisión pide.');
+    return { ok: false, motivo: 'Sabor no entra', detalle: det };
+  }
+  if (quiros.length) {
+    /* ⚠ El otro veredicto posible, y NO es un error del corte: si la columna viva ya es `D` y
+     * Quirós entra igual, el problema es **de la ventana** y no del corte. El gate frena en los
+     * dos casos —no se escribe sobre un universo dudoso— pero **dice cuál es cuál**. */
+    if (String(r.columna_viva).trim().toUpperCase() === 'D') {
+      det.push('⛔⛔ La columna viva ya es `D` y **Quirós ENTRA IGUAL** ⇒ la hipótesis del corte');
+      det.push('   se cae: **el problema es de la VENTANA, no del corte.** No es un error de esta');
+      det.push('   migración, y buscarlo ahí costaría el día.');
+      return { ok: false, motivo: 'Quirós entra con el corte por D — es la ventana', detalle: det };
+    }
+    det.push('⛔ Quirós entra, y la columna viva es ' + r.columna_viva + ' ⇒ el corte por `D`');
+    det.push('   todavía no está aplicado en la hoja.');
+    return { ok: false, motivo: 'Quirós entra y la columna no es D', detalle: det };
+  }
+
+  det.push('Sabor: ' + sabor.join(', ') + '   ·   Quirós: (afuera)');
+  return { ok: true, motivo: '', detalle: det };
 }
