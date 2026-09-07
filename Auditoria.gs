@@ -9796,7 +9796,35 @@ var GUIONES_A_LEVANTAR_ = [
    * historial es `aproximado → corrige → contradice → exacto` (`V-108`) y eso era **la mitad
    * insegura que `D-58` mandaba parar**. ⇒ `D-60` contesta esa pregunta **simétricamente**: el más
    * nuevo manda en las dos direcciones. ⚠ **Es el único de la lista que cruzó `contradice`.** */
-  'imp_prog'
+  'imp_prog',
+  /* ── Bloque 4 · los NUEVE que el desarme recuperó (06/09) ───────────────────────────────
+   * ⭐⭐ **Decisión del usuario:** *«si hay un `exacto`, se valida, ya está. Los nuevos que
+   * contradicen son por movimiento de bases»*.
+   *
+   * ⛔ **Y antes de meterlos se verificó QUÉ AFIRMA cada caso**, que es la lección de `C-102` —ése
+   * valida el `%` duplicado, **el formato**, y estuvo a punto de habilitar tres levantamientos que
+   * no correspondían—. **La pregunta no es «¿hay un `exacto`?» sino «¿sobre qué?».**
+   *
+   * ⭐ **Los nueve salen de `V-111` y `V-113`, y los dos son IDENTIDAD INTERNA — o sea, del
+   * VALOR:**
+   *   · `V-111` — *«las tres plataformas suman la fila TOTALES»*: impresiones
+   *     `1.603.324 + 531.337 + 3.920.781 = 6.055.442`, vistas `= 3.003.515`, clics `= 4.513`.
+   *     **Las tres cierran exacto.**
+   *   · `V-113` — *«la fila GLOBAL suma los cinco envíos»*: entregados
+   *     `108.334 + 100.119 + 55.341 = 263.794`, aperturas `= 68.092`. **Las dos cierran exacto.**
+   *
+   * ⚠ **Y el límite que esos casos declaran de sí mismos, dicho acá para que no se lea de más:**
+   * una identidad interna prueba que **el motor es consistente consigo mismo**, no que el valor sea
+   * el correcto contra la fuente. `V-111` cierra **con Programmatic trayendo el acumulado**.
+   * ⇒ **Consistente no es correcto**, y el usuario decidió que un `exacto` alcanza — pero la
+   * distinción queda escrita.
+   *
+   * ⚠ **Existencia verificada contra el snapshot del 31/08 (1 fila cada uno), NO contra la hoja
+   * viva** —que no está en disco—. ⭐ **La verificación en vivo la hace la propia función**: si un
+   * nombre no tiene fila, cae en `sinFila` y **aborta sin escribir nada**. */
+  'camp_clics', 'camp_entregados', 'camp_impresiones', 'camp_visualizaciones',
+  'camp_google_clics', 'camp_meta_clics', 'camp_meta_impresiones', 'camp_meta_vistas',
+  'camp_prog_vistas'
 ];
 var GUIONES_A_LEVANTAR_FECHA_ = '2026-09-06';
 

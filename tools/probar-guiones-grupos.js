@@ -196,7 +196,11 @@ console.log('\n═══ H · ⭐⭐ LA LISTA REAL — SIETE NOMBRES, NO «siete
    * la lista eran siete y `imp_prog` estaba frenado. Se puso roja **diciendo la verdad** — `D-60`
    * contestó la pregunta que lo frenaba. */
   const ESPERADOS = ['camp_enviados', 'camp_or', 'camp_mail_clics', 'camp_ctor',
-                     'emin_or', 'emin_ctor', 'emin_ctr', 'imp_prog'];
+                     'emin_or', 'emin_ctor', 'emin_ctr', 'imp_prog',
+                     /* ⭐ Los nueve que el desarme recuperó (`2026-09-06_6`). */
+                     'camp_clics', 'camp_entregados', 'camp_impresiones', 'camp_visualizaciones',
+                     'camp_google_clics', 'camp_meta_clics', 'camp_meta_impresiones',
+                     'camp_meta_vistas', 'camp_prog_vistas'];
   afirmar(lista.join('|') === ESPERADOS.join('|'),
     '⭐⭐ la lista es EXACTAMENTE los ' + ESPERADOS.length + ' esperados  (dio: ' + lista.join(', ') + ')');
   afirmar(lista.indexOf('imp_prog') !== -1 &&
