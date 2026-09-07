@@ -3100,6 +3100,58 @@ la regla:** `REGLAS_NEGOCIO.md` es **append-only** y el enunciado lo cambia el u
 señalado porque **quien lea sólo el título se lleva lo contrario de lo que la regla define**, y el
 título es justo lo que aparece en un índice o en un `grep`.
 
+### `D-60` · Un marcador con caso **`exacto` VIGENTE** va **sin `_revisar`** — 06/09/2026
+
+**Decisión del usuario:** *«los números validados tienen que estar sin guiones; con que se hayan
+validado una vez, está»*.
+
+⇒ ⭐ **Un marcador cuyo caso vigente es `exacto` va sin la marca. El historial anterior no lo
+bloquea.**
+
+#### ⭐⭐ Qué resuelve — la pregunta que `D-58` dejó abierta
+
+`D-58` preguntaba: *«¿la regla es simétrica, o el más nuevo gana sólo para PONER la marca?»*, y
+mientras tanto aplicaba **sólo la mitad segura**. ⇒ **`D-60` contesta: es SIMÉTRICA.** El más nuevo
+manda **en las dos direcciones** — poner y sacar dejan de ser asimétricas.
+
+⛔ **`D-58` no se borra ni se reescribe.** `D-60` **la completa**, y su mitad segura deja de ser un
+interino. Lo que `D-58` midió y decidió sigue en pie.
+
+#### ⛔ EL LÍMITE, y es lo único de esta regla que puede hacer daño
+
+**«Validado una vez» NO significa que un `exacto` viejo sobreviva a un `contradice` posterior.**
+
+⇒ **`D-60` habla del caso VIGENTE, no de cualquier caso del historial.** ⚠ Si significara lo otro,
+`X-42` y `X-43` quedarían anulados y **el deck publicaría sin aviso cuatro números que un caso
+desmiente** — el modo de falla más caro del repo.
+
+⭐ **Y esto va escrito en la regla, no dado por entendido**, porque la frase del usuario admite las
+dos lecturas y **la diferencia sólo se ve en los marcadores donde el orden importa**.
+
+#### ⚠ Dónde las dos lecturas dan resultados OPUESTOS — medido, y son DOS
+
+```
+node: cruce de CASOS_POR_MARCADOR_ · estado vigente `contradice` con `exacto` en `previos`
+```
+
+| marcador | historial | vigente |
+|---|---|---|
+| **`ecv_encuentros`** | `exacto` → | **`contradice`** (`C-02`, 19/08) |
+| **`enc_clics_meta`** | `exacto` → | **`contradice`** (`X-23`, 19/08) |
+
+⇒ ⛔ **Con `D-60` los dos CONSERVAN la marca**, porque su caso vigente los desmiente. **Con la
+lectura literal —*«se validó una vez, listo»*— se la perderían**, y publicarían sin aviso.
+⚠ **Son los únicos dos casos donde la frase del usuario es ambigua**, y por eso van nombrados acá.
+
+#### ⭐ La condición que la reabre — un evento, no una fecha
+
+> **Se revisa si aparece un caso que valide un marcador y después se descubra que la validación era
+> del FORMATO y no del VALOR.**
+
+⚠ Escrita así **porque ya pasó**: `C-102` valida el `%` duplicado de tres `emin_*` —**el formato**—
+y **no el universo**, y estuvo a punto de habilitar tres levantamientos que no correspondían. Lo
+que lo evitó no fue esta regla sino un **gate de identidad sobre la hoja viva**.
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### ⭐⭐ LA COLA — 28 ítems, con casilla de resuelto (03/09/2026)
