@@ -1235,6 +1235,34 @@ empieza a hacer falta que vigile.**
   escenario de un bug** como control positivo. **Cuáles dependen de que el bug siga vivo** no se
   revisó — y un banco cuyo control caduca al arreglar el bug **tiene esta misma forma**.
 
+⭐⭐ **Y la SEXTA, que es el límite de la quinta y no su repetición: UN CONTROL SINTÉTICO PRUEBA LO
+QUE SU AUTOR IMAGINÓ. Cruzar el resultado contra un PADRÓN REAL es parte del método, no un extra.**
+(07/09/2026.) La quinta resuelve que el control **no puede depender de la suciedad de los datos**;
+lo sintético lo logra. ⛔ **Pero un caso sintético sólo cubre las formas que a alguien se le
+ocurrieron**, y las que aparecen en los datos **no son las mismas**.
+
+- **El caso, y son dos errores encadenados.** El desarme de `token_propuesto` **subcontaba** —partía
+  sólo por `/`, y las celdas con ` vs ` y con llaves no pasaban: **7 de 24 afuera**—. Se arregló…
+  **y pasó a FABRICAR NOMBRES:** `V-111` escribe `camp_{meta,google,prog}_{impresiones,vistas,clics}`
+  —**dos** grupos de llaves— y la expansión no hacía el **producto cruzado**, así que produjo
+  `camp_google` y `camp_meta`, **que no existen**.
+- ⭐⭐ **Y fabricar es PEOR que subcontar, que es lo que hay que dejar escrito:** subcontar **falla
+  del lado seguro** —un nombre ausente hace que el gate lo rechace—; **un nombre inventado con
+  `exacto` vigente ENTRA a la lista de levantamiento**, o sea que **el error viaja hasta una
+  escritura en la hoja**. Subcontar esconde; fabricar publica.
+- ⛔ **El control sintético NO lo cazó:** probaba tres formas —`/`, ` vs `, **una** llave— y la real
+  tenía una cuarta. **Lo destapó cruzar los nombres contra el snapshot de `MARCADORES`**, no el
+  control.
+- ⭐ **Lo accionable, y son dos reglas:**
+  1. **Todo nombre derivado de un desarme, de un parser o de una expansión se verifica contra el
+     padrón real antes de usarse.** ⛔ **Un nombre que no existe no es un hallazgo: es un defecto del
+     que lo produjo.**
+  2. **Cuando el padrón desmiente al instrumento, el control sintético gana el caso que se le
+     escapó** — acá, el de doble llave. **El control crece con lo que el padrón encuentra**, y por
+     eso los dos hacen falta: el sintético prueba que mira, el padrón dice si mira bien.
+- ⚠ **Y la asimetría que conviene tener presente al elegir el default de un parser:** ante la duda,
+  **que devuelva de menos**. Las dos fallas son reales, pero **sólo una llega a escribir**.
+
 ⭐⭐ **Y la CUARTA, que no es sobre un banco sino sobre un DETECTOR — y es la que más barata sale
 y más veces se saltea: un detector nuevo no reporta hasta que se le exige encontrar un caso que YA
 SE SABE que está.** (03/09/2026.) Un banco prueba una función y falla solo; **un detector produce

@@ -10010,7 +10010,23 @@ function guionesValidados_(escribir) {
     var notas = String(datos[fila][iNot] || '');
     var fmtNuevo = (fmt.length > 8 && fmt.slice(-8) === '_revisar') ? fmt.slice(0, -8) : fmt;
     /* ⚠ Se saca la cadena `SIN VALIDAR` de `notas`, que es lo que `revisarASinValidar_` mira. */
-    var notasNuevas = notas.replace(/SIN VALIDAR/g, 'VALIDADO ' + (GUIONES_A_LEVANTAR_FECHA_ || ''));
+    /* ⭐⭐ `2026-09-07` — **el sello nombra EL CASO, no sólo la fecha.**
+     *
+     * ⛔ Escribía `'VALIDADO <fecha>'`. **La fecha dice CUÁNDO; el caso dice POR QUÉ.** Sin el
+     * caso, dentro de un mes la celda no permite reconstruir en qué se apoyó el levantamiento y
+     * hay que ir a buscarlo a un log que ya no está.
+     *
+     * ⭐ Es el rastro que `levantarRevisar_` **sí** dejaba —*«Validado por `V-113` (identidad
+     * interna)»*— y que se perdió al retirarla. Se recupera acá, con la clase de evidencia incluida
+     * cuando el caso la declara.
+     *
+     * ⚠ **No agrega una tercera escritura:** cambia **el contenido** de `notas`, que ya se escribía.
+     * La defensa de las dos escrituras —`formato` Y `notas`, o ninguna— queda intacta. */
+    var casoDe = CASOS_POR_MARCADOR_[n] || {};
+    var sello = 'VALIDADO por ' + (casoDe.caso || '(sin caso)') +
+      (casoDe.csv ? ' (CSV ' + casoDe.csv + ')' : '') +
+      ' — marca levantada el ' + (GUIONES_A_LEVANTAR_FECHA_ || '');
+    var notasNuevas = notas.replace(/SIN VALIDAR/g, sello);
     if (fmtNuevo === fmt && notasNuevas === notas) { sinMarca.push(n); return; }
     plan.push({ n: n, fila: fila + 1, fmt: fmt, fmtNuevo: fmtNuevo,
       tocaNotas: notasNuevas !== notas, notasNuevas: notasNuevas });

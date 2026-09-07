@@ -122,6 +122,21 @@ console.log('\n═══ E · ⛔⛔ levantar son DOS escrituras, no una ══�
   afirmar(/releido/.test(cuerpo) && /RELECTURA/.test(cuerpo),
     '⭐ relee la HOJA para verificar lo que quedó, no lo que pidió escribir');
   afirmar(/respaldo/.test(cuerpo), 'deja backup antes de escribir');
+
+  /* ⭐⭐ `2026-09-07` — **el sello de `notas` nombra EL CASO, no sólo la fecha.** Es el rastro que
+   * `levantarRevisar_` dejaba y que se perdió al retirarla: *la fecha dice cuándo, el caso dice por
+   * qué*. ⛔ **Control por IDENTIDAD, no por longitud:** se exige que el texto lleve el `caso_id`. */
+  afirmar(/CASOS_POR_MARCADOR_\[n\]/.test(cuerpo),
+    '⭐⭐ el sello sale del caso vigente del marcador, no de una constante suelta');
+  afirmar(/casoDe\.caso/.test(cuerpo) && /VALIDADO por/.test(cuerpo),
+    '⭐ y el texto NOMBRA el caso — «VALIDADO por <caso_id>», no sólo la fecha');
+  afirmar(/casoDe\.csv/.test(cuerpo),
+    '⭐ con el CSV del que salió, que es lo que lo hace rastreable');
+  afirmar(/marca levantada el/.test(cuerpo),
+    '   y conserva la fecha: el caso dice POR QUÉ, la fecha dice CUÁNDO');
+  /* ⚠ La mitad que protege: sigue siendo UNA sola escritura de `notas`, no una tercera operación. */
+  afirmar((cuerpo.match(/getRange\(p\.fila, iNot \+ 1\)/g) || []).length === 1,
+    '⛔ y sigue habiendo UNA sola escritura de `notas` — no se agregó una tercera operación');
 }
 
 console.log('\n═══ F · ⛔ la lista nace VACÍA y el modo seco es el default ═══');
