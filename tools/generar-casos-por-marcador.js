@@ -32,6 +32,82 @@ const CSV = require('./lib-csv');   // el lector estricto compartido
 const archivos = fs.readdirSync(DOCS)
   .filter(n => /^casos_validacion_.*\.csv$/.test(n)).sort();   // orden = orden de fecha
 
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-06_5` Parte D — **el desarme de `token_propuesto`, que SUBCONTABA.**
+ *
+ * ⛔ **Medido el 06/09: 7 de los 24 marcadores de `LEVANTAN_POR_CASO_` quedaban fuera de la
+ * constante aunque sus casos existieran.** La causa: se partía sólo por `/`, y `V-113` escribe su
+ * celda como `camp_env1-5_{entregados,aperturas} vs camp_entregados / camp_aperturas`. ⇒ El trozo
+ * con `vs` y con llaves **no pasaba el filtro**, así que `camp_aperturas` entraba y
+ * **`camp_entregados` no**.
+ *
+ * ⚠ **Fallaba del lado seguro** —un marcador ausente hace que el gate 1 lo rechace— **pero
+ * fallaba**: un marcador invisible para la constante es invisible para **todos** los cruces que la
+ * usan, y un conteo que subcuenta se cita igual que uno correcto.
+ *
+ * ⇒ Se parte por **`/`**, por **` vs `** y por **`,`**, y se expanden las **llaves**
+ * (`pre_{a,b}` → `pre_a`, `pre_b`). ⭐ El control sintético de abajo prueba las tres formas.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function desarmar(celda) {
+  /* ⛔⛔ Se parte PRIMERO por los separadores de alto nivel y se expanden las llaves DESPUÉS,
+   * pieza por pieza. ⚠ Al revés —expandiendo primero— una pieza con DOS grupos de llaves se
+   * rompe: `camp_{meta,google,prog}_{impresiones,vistas,clics}` producía `camp_meta`,
+   * `camp_google` y `camp_prog`, que **no existen como marcadores**. Medido el 06/09 contra el
+   * snapshot: 0 filas cada uno. ⇒ **El desarme pasó de subcontar a INVENTAR NOMBRES**, que es
+   * peor: un nombre falso con `exacto` vigente entraría a la lista de levantamiento. */
+  return String(celda || '')
+    .split(/\s+vs\s+|\//)
+    .map(x => x.trim()).filter(Boolean)
+    .reduce((acc, pieza) => acc.concat(expandirLlaves(pieza)), [])
+    .map(x => x.trim()).filter(Boolean);
+}
+
+/**
+ * Expande TODOS los grupos de llaves de una pieza como **producto cruzado**.
+ * `camp_{a,b}_{x,y}` → `camp_a_x`, `camp_a_y`, `camp_b_x`, `camp_b_y`.
+ * ⚠ Sin llaves, la pieza se parte por coma —así `a, b` sigue dando dos—; con llaves, **no**,
+ * porque ahí la coma es del grupo.
+ */
+function expandirLlaves(pieza) {
+  if (pieza.indexOf('{') === -1) return pieza.split(',').map(x => x.trim()).filter(Boolean);
+  let salida = [''];
+  const partes = pieza.split(/(\{[^}]*\})/);
+  partes.forEach(p => {
+    if (/^\{[^}]*\}$/.test(p)) {
+      const ops = p.slice(1, -1).split(',').map(x => x.trim());
+      salida = salida.reduce((acc, base) => acc.concat(ops.map(o => base + o)), []);
+    } else if (p) {
+      salida = salida.map(base => base + p);
+    }
+  });
+  return salida;
+}
+
+/* ── ⭐ CONTROL POSITIVO SINTÉTICO, y aborta si no pasa ──────────────────────────────────────
+ * ⛔ **Un desarme que devuelve de menos no se distingue de uno que no mira nada**, y su salida es
+ * una lista plausible. Los tres casos cubren las tres formas que aparecen en los CSV. */
+[
+  ['a_uno / a_dos', ['a_uno', 'a_dos']],
+  ['a_uno vs a_dos', ['a_uno', 'a_dos']],
+  ['pre_{uno,dos}', ['pre_uno', 'pre_dos']],
+  /* ⛔⛔ EL CASO QUE FALTABA, y es el que destapó el bug: DOS grupos de llaves ⇒ producto
+   * cruzado. Sin él, el desarme inventaba `camp_meta` y `camp_google`, que no existen. */
+  ['camp_{meta,google}_{impresiones,clics}',
+    ['camp_meta_impresiones', 'camp_meta_clics', 'camp_google_impresiones', 'camp_google_clics']],
+  ['camp_env1-5_{entregados,aperturas} vs camp_entregados / camp_aperturas',
+    ['camp_env1-5_entregados', 'camp_env1-5_aperturas', 'camp_entregados', 'camp_aperturas']]
+].forEach(([entrada, esperado]) => {
+  const dio = desarmar(entrada);
+  if (dio.join('|') !== esperado.join('|')) {
+    console.error('⛔⛔ ABORTA: el control sintético del desarme FALLÓ.');
+    console.error('   entrada : ' + entrada);
+    console.error('   esperado: ' + esperado.join(' · '));
+    console.error('   dio     : ' + dio.join(' · '));
+    console.error('   ⇒ Un desarme que devuelve de menos no se distingue de uno que no mira nada.');
+    process.exit(1);
+  }
+});
+
 const porMarcador = {};
 let referencias = 0, celdasMulti = 0;
 archivos.forEach(nombre => {
@@ -42,7 +118,7 @@ archivos.forEach(nombre => {
   filas.slice(1).forEach(f => {
     const id = (f[iId] || '').trim();
     if (!/^[A-Z]+-\d+$/.test(id)) return;
-    const trozos = (f[iTok] || '').split('/').map(s => s.trim()).filter(Boolean);
+    const trozos = desarmar(f[iTok] || '');
     if (trozos.length > 1) celdasMulti++;
     trozos.forEach(t => {
       /* ⛔ Se exige un `_` **y** un largo mínimo: sin eso entra la prosa de las celdas —`varios`,

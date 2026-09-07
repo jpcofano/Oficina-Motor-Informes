@@ -2912,3 +2912,54 @@ pero **subcuenta**, y un conteo que subcuenta se cita igual. **Registrado, no ar
 ⭐ **Qué prompt lo tomaría:** el que unifique las dos funciones —**porque la decisión de cuál
 sobrevive es la misma decisión**—, con un gate que compare la lista contra **todas** las listas
 rivales antes de escribir, no sólo contra `notas`.
+
+---
+
+## 06/09/2026 · Parte D del `_5` — el desarme subcontaba, **lo arreglé y pasó a INVENTAR NOMBRES**
+
+⭐ **El arreglo tuvo dos pasadas, y la segunda es la que vale contarla.**
+
+### 1 · El defecto original: subcontaba
+
+Se partía **sólo por `/`**, y `V-113` escribe su celda como
+`camp_env1-5_{entregados,aperturas} vs camp_entregados / camp_aperturas` ⇒ el trozo con `vs` y con
+llaves **no pasaba el filtro**. **7 de 24 marcadores de `LEVANTAN_POR_CASO_` quedaban fuera.**
+
+### 2 · ⛔⛔ El arreglo, mal: pasó de subcontar a **fabricar nombres**
+
+Agregué ` vs ` y expansión de llaves. **Medido contra el snapshot del 31/08: `camp_google` y
+`camp_meta` entraron a la constante con `exacto` vigente — y NO EXISTEN, cero filas cada uno.**
+
+⇒ La causa: `V-111` tiene **DOS grupos de llaves** —
+`camp_{meta,google,prog}_{impresiones,vistas,clics}`— y mi expansión los trataba **uno por uno** en
+vez de hacer el **producto cruzado**. El prefijo del segundo grupo se perdía.
+
+⛔⛔ **Y eso es peor que subcontar:** subcontar **falla del lado seguro** —el gate rechaza lo que no
+está—; **fabricar un nombre con `exacto` vigente lo METE en la lista de levantamiento.**
+
+### 3 · ⭐⭐ Mi control sintético no lo cazó, y ése es el hallazgo
+
+Probaba tres formas —`/`, ` vs `, **una** llave— y **la real tiene una cuarta: dos llaves.**
+⇒ **Un control sintético sólo cubre las formas que se le ocurrieron a quien lo escribió**, y las
+que aparecen en los datos no son las mismas. **Lo que lo destapó fue cruzar el resultado contra el
+snapshot**, no el control.
+
+⭐ **Lo accionable:** el control sintético **ganó el caso de doble llave**, y la verificación contra
+un padrón real —*«¿este nombre existe como marcador?»*— **pasa a ser parte del método**, no un extra.
+
+### 4 · El resultado, por identidad
+
+| | |
+|---|---|
+| antes | **132** marcadores |
+| ahora | **141** |
+| **entran** | **9**, y **los nueve EXISTEN** en el snapshot |
+| salen | **0** |
+
+`camp_clics` · `camp_entregados` · `camp_impresiones` · `camp_visualizaciones` ·
+`camp_google_clics` · `camp_meta_clics` · `camp_meta_impresiones` · `camp_meta_vistas` ·
+`camp_prog_vistas`
+
+⛔ **Los nueve tienen `exacto` vigente ⇒ por `D-60` calificarían para levantar la marca.**
+**No los agregué a la lista**: el prompt dice *«decilo, no lo apliques solo»*, y **son nueve
+números del deck que se moverían.** ⇒ Van a la pregunta del usuario.
