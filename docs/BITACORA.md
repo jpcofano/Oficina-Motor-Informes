@@ -17519,3 +17519,46 @@ caso vigente respalda.**
 **del lado seguro**, y va registrado igual.
 
 **Suites: 97 bancos, exit 0 · 53 afirmaciones en el banco de guiones.** ⛔ Nada corrido, ningún push.
+
+## 2026-09-06 · `2026-09-06_5` — `D-60`, y tres bancos dados vuelta
+
+⭐⭐ **Parte A · `D-60`: un caso `exacto` VIGENTE va sin guion.** Contesta la pregunta que `D-58`
+dejó abierta, y la contesta **simétricamente**. ⛔ **`D-58` no se borra: `D-60` la completa.**
+⭐ **Con su límite escrito EN la regla:** *«validado una vez»* **no** significa que un `exacto` viejo
+sobreviva a un `contradice` posterior — si significara eso, **`X-42` y `X-43` quedarían anulados y
+el deck publicaría sin aviso cuatro números que un caso desmiente**.
+⚠ **La medición que el prompt pedía dio DOS, no cero:** `ecv_encuentros` (`C-02`) y `enc_clics_meta`
+(`X-23`) — `exacto` viejo, `contradice` vigente. **Con `D-60` conservan la marca; con la lectura
+literal la perderían.** Van nombrados en la regla.
+
+⭐⭐ **Parte D · el desarme, y el arreglo tuvo DOS pasadas.** Subcontaba (7 de 24 afuera). Lo
+arreglé **y pasó a FABRICAR NOMBRES**: `V-111` tiene **dos** grupos de llaves y mi expansión no
+hacía el producto cruzado ⇒ `camp_google` y `camp_meta` entraron con `exacto` vigente **y no
+existen** (0 filas en el snapshot). ⛔ **Peor que subcontar:** subcontar falla del lado seguro;
+fabricar un nombre con `exacto` vigente **lo mete en la lista de levantamiento**.
+⭐ **Y mi control sintético no lo cazó** — probaba tres formas y la real tiene una cuarta. **Lo
+destapó cruzar contra el snapshot.** ⇒ De **132 a 141**: entran **9** y **los nueve existen**.
+
+⭐ **Parte B · la lista pasa de 7 a 8.** Entra **`imp_prog`** por `D-60` —único que cruzó
+`contradice`—. ⛔⛔ **Y los dos `emin_*` NO pueden entrar: el prompt se contradice.** Dice que
+*«`C-105` los declara `exacto`»* — **medido: los declara `cerrado`**, y el mismo prompt dice que
+`cerrado` no entra. **Se paró y se preguntó.**
+
+⭐ **Parte C · `levantarRevisar_` retirada.** ⛔ **Desactivada, no borrada:** aborta, dice por qué,
+nombra los cuatro vencidos y apunta a la reemplazante. ⭐ **El caso general ya estaba en
+`CLAUDE.md` §4 ⇒ cero ediciones a la regla**, sólo la medición.
+
+---
+
+### ⭐⭐ Tres bancos rojos diciendo la verdad, los tres dados vuelta — ninguno aflojado
+
+| decía | ahora exige |
+|---|---|
+| *«el gate 2 aborta»* | **no aborta**, pero **sigue nombrando** y cita `D-60` |
+| *«la lista son 7 / `imp_prog` frenado»* | **son 8**, y que `imp_prog` sea **el único** que depende de la simetría |
+| *«`levantarRevisar_` escribe bien»* (A–F) | **CERO escrituras y CERO backup**, y que el log **nombre los 4 vencidos** |
+
+⚠ **Y la sección `G` de ese banco se conservó intacta** — cruza los 24 casos contra los CSV, y eso
+sigue valiendo porque la lista queda como evidencia.
+
+**Suites: 97 bancos, exit 0.** ⛔ Nada corrido, ningún `clasp push`, CRLF intacto en los tres `.gs`.
