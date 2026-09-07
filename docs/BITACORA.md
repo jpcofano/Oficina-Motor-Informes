@@ -17562,3 +17562,40 @@ nombra los cuatro vencidos y apunta a la reemplazante. ⭐ **El caso general ya 
 sigue valiendo porque la lista queda como evidencia.
 
 **Suites: 97 bancos, exit 0.** ⛔ Nada corrido, ningún `clasp push`, CRLF intacto en los tres `.gs`.
+
+## 2026-09-07 · `2026-09-06_6` — los nueve, `C-106`, el sello, y la SEXTA
+
+⭐⭐ **Parte A · los nueve entran, y antes se verificó QUÉ AFIRMA cada caso.** Es la lección de
+`C-102` —que valida el `%` duplicado, **el formato**—. ⇒ **Los nueve salen de `V-111` y `V-113`, y
+los dos son IDENTIDAD INTERNA: afirman el VALOR.** Impresiones `1.603.324 + 531.337 + 3.920.781 =
+6.055.442`; entregados `108.334 + 100.119 + 55.341 = 263.794`. **Cierran exacto.**
+⚠ **Y el límite que esos casos declaran de sí mismos queda escrito:** una identidad interna prueba
+que **el motor es consistente consigo mismo**, no que el valor sea correcto contra la fuente —
+`V-111` cierra **con Programmatic trayendo el acumulado**. **Consistente no es correcto.**
+
+⭐⭐ **Parte B · `C-106`: el criterio de ministros pasa a `exacto`, con la corrida que faltaba.**
+El log del **07/09 a las 14:40** sobre **573 filas**: `MAPEO` resuelve a **`D`**, **Sabor ENTRA**,
+**Quirós NO**. ⛔ **El conteo no se cita a propósito** — `7` por `E` fue lo que dio verde sobre las
+siete equivocadas. ⭐ Y **los seis del roster que caen en esta ventana coinciden uno a uno**.
+⚠ **Lo que el caso NO dice, y va escrito:** que el deck del 06/09 esté bien — **salió de una corrida
+anterior al cambio**.
+⇒ `GUIONES_FRENADOS_` **queda VACÍO, declarado y no borrado**: *vacío no significa «ya no hace falta
+vigilar»*.
+
+⭐ **Parte C · el sello nombra EL CASO.** `'VALIDADO por C-99 (CSV 2026-09-04) — marca levantada
+el…'`. **La fecha dice cuándo; el caso dice por qué.** ⛔ Sin agregar una tercera escritura.
+
+⭐⭐ **Parte D · la SEXTA, y el cero registrado.** La lección del control sintético **ya estaba** ⇒
+cero ediciones. **Lo nuevo es su límite:** *un control sintético prueba lo que su autor imaginó;
+cruzar contra un padrón real es parte del método*. ⛔⛔ **Y fabricar es PEOR que subcontar:**
+subcontar **esconde**, fabricar **publica** — un nombre inventado con `exacto` vigente **entra a la
+lista de levantamiento**.
+
+---
+
+⭐⭐ **Diez afirmaciones dadas vuelta en dos días, ninguna aflojada.** La de los dos `emin_*` va por
+su **tercera** vuelta —`contradice` → *no-`exacto`* → `exacto`— y esta vez **se le sacó la
+dependencia del estado**: exige que respondan **al caso más nuevo que los nombra** y que su
+historial **conserve el `contradice`**, que es lo que no cambia.
+
+**Suites: 97 bancos, exit 0 · 58 afirmaciones.** ⛔ Nada corrido, ningún `clasp push`.
