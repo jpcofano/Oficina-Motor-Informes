@@ -2843,3 +2843,72 @@ lado equivocado cuesta el día.
 vía**. ⚠ **Pero siguen frenados por otra:** pasar de `contradice` a `exacto` es **la mitad insegura
 de `D-58`**, y ésa **espera una respuesta del usuario**. ⛔ **Y el caso nuevo lo escribe una corrida
 con deck, no este registro.**
+
+---
+
+## 06/09/2026 · Parte D — **dos funciones escriben la misma celda con el mismo diseño**
+
+⛔ **Registrar, no resolver. Ninguna se borra: cuál sobrevive lo decide el usuario.**
+
+| | `levantarRevisar_` (`Instalar.gs`) | `guionesValidados_` (`Auditoria.gs`) |
+|---|---|---|
+| nace | **01/09**, `D-56` | **06/09** |
+| su par | `diagLevantarRevisar()` / `aplicarLevantarRevisar()` | `confirmarGuionesValidados()` / `aplicarGuionesValidados()` |
+| **fecha de su lista** | ⛔ **no la declara** — la lista no lleva fecha | ⭐ `GUIONES_A_LEVANTAR_FECHA_ = '2026-09-06'` |
+| tamaño | **24** marcadores | **7** |
+| **¿cruza `D-58` antes de escribir?** | ⛔ **NO** — grepeado: cero menciones | ⭐ **sí, dos gates** (vencimiento + mitad insegura) |
+| ¿escribe `notas` además del `formato`? | ✅ sí | ✅ sí |
+| **¿qué deja en `notas`?** | ⭐ `'Validado por V-113 (identidad interna) — …'` — **dice el caso y la evidencia** | ⚠ `'VALIDADO <fecha>'` — **sin el caso** |
+| ¿gate de universo sobre la hoja viva? | ⛔ no | ⭐ sí (`universoAgendaOk_`) |
+
+⇒ **Cada una tiene lo que a la otra le falta.** La vieja escribe **mejor rastro**; la nueva **verifica más antes de escribir**.
+
+### ⛔⛔ El riesgo concreto, y está MEDIDO — no es hipotético
+
+**Su lista es del 01/09 y hay CSV del 04/09 y del 06/09 posteriores.** Cruzada contra los casos
+vigentes de hoy:
+
+| | cuántos |
+|---|---|
+| siguen `exacto` y limpios | **13** |
+| ⛔ **YA NO son `exacto`** | **4** — `enc_impresiones` (`deriva`, `D-05`) · `ivr_75` · `ivr_75_pct` · `ivr_marque1` (`abierto`, `X-41`) |
+| cruzan la mitad insegura | 0 |
+| ⚠ sin caso en la constante | 7 |
+
+⇒ ⛔ **Re-correr `aplicarLevantarRevisar()` hoy le sacaría la marca a cuatro marcadores que un caso
+vigente NO respalda.** Es **exactamente** la figura de `confirmarNumerosDeUnoAUno()` —lista congelada
+del 26/08 que no pudo enterarse de `X-42` y `X-43` del 28/08— **y esta vez está viva y medida.**
+
+⇒ ⛔⛔ **Ninguna `confirmar*()` ni `aplicar*()` se re-corre sin cruzar su lista contra los CSV
+posteriores a su fecha** (`D-58`, `CLAUDE.md` §4). **`levantarRevisar_` no tiene ese gate.**
+
+### ⚠ Un hueco de mi propio generador, que la medición destapó
+
+**7 de los 24 no están en `CASOS_POR_MARCADOR_`** —`camp_clics`, `camp_entregados`,
+`camp_impresiones`, `camp_visualizaciones`, y tres `u1_pre_prog_*`— **aunque sus casos existan**.
+⇒ El desarme parte por `/`, y `V-113` escribe su celda como
+`camp_env1-5_{entregados,aperturas} vs camp_entregados / camp_aperturas`: el trozo con `vs` y llaves
+**no pasa el filtro**, así que `camp_aperturas` entra y **`camp_entregados` no**.
+
+⭐ **Falla del lado seguro** —un marcador ausente de la constante hace que el **gate 1 lo rechace**—
+pero **subcuenta**, y un conteo que subcuenta se cita igual. **Registrado, no arreglado acá.**
+
+### ⛔ Y lo que la verificación trajo y sigue sin cubrirse
+
+**Cinco escritores de `MARCADORES.formato` con `_revisar`, y sólo UNO mira `notas`:**
+
+| escritor | criterio |
+|---|---|
+| `revisarASinValidar_` | `notas` ⊃ `SIN VALIDAR` — **el único que la defensa de dos escrituras cubre** |
+| `marcarProgrammaticARevisar()` | **lista fija** de 8 |
+| `aplicarAmbitoARevisarIvr()` | **lista fija** de 7 |
+| `cablearEminEncuentros_` | `FILAS_MINISTROS_` |
+| `darDeAltaMarcadoresDeCampana()` / `actualizarNotasDeCampana()` | reescriben `notas` ⇒ **reponen el insumo** del primero |
+
+⇒ ⛔ **La defensa de las dos escrituras protege contra un escritor y no contra los otros cuatro.**
+⚠ Y está medido que importa: **los tres candidatos del grupo (a) están en la lista fija de
+`marcarProgrammaticARevisar()` y ninguno tiene `SIN VALIDAR` en `notas`**.
+
+⭐ **Qué prompt lo tomaría:** el que unifique las dos funciones —**porque la decisión de cuál
+sobrevive es la misma decisión**—, con un gate que compare la lista contra **todas** las listas
+rivales antes de escribir, no sólo contra `notas`.
