@@ -3,7 +3,11 @@
 > Lo escribe **solo Claude Code**, y se **reescribe** entero cada vez: es un puntero al
 > presente, no un historial. La historia está en `docs/BITACORA.md`.
 
-**Última actualización:** 2026-09-06, tras el `2026-09-06_3`. ✅ **El desplazamiento de ventana se
+**Última actualización:** 2026-09-06, tras el `2026-09-06_5`. ⭐⭐ **`D-60`: un caso `exacto`
+VIGENTE va sin guion** — contesta la pregunta que `D-58` dejaba abierta, **simétricamente**. La
+lista de levantamiento son **ocho**, y `levantarRevisar_` **se retiró**.
+
+**Antes, del `_3`:** ✅ **El desplazamiento de ventana se
 REVIRTIÓ** (decisión del usuario) — el revert es **exacto**: `git diff` contra el estado previo da
 **vacío**. ⭐ **`D-59`: la ventana la elige el usuario y el frente se cierra.** ⭐⭐ **Los guiones
 quedaron separados en tres grupos, y sólo uno se levanta.**
@@ -38,10 +42,12 @@ quedaron separados en tres grupos, y sólo uno se levanta.**
    dice **`E`** y el seed dice **`D`**, el arreglo es **una celda** y **lo decidís vos**.
    **Control por identidad:** con `D`, **entra Sabor y sale Quirós** — ⚠ y los conteos pueden
    coincidir, así que **el número no sirve como control**.
-3. ⭐⭐ **`diagGuionesPorLamina()`** *(nueva)* — los guiones en tres grupos. **Sólo el (a) se
-   levanta.** ⛔ **`camp_titulo` NO está en (a)** —no tiene caso— y levantarlo declararía validado lo
-   que está en investigación. ⇒ Su grupo (a) se copia a `GUIONES_A_LEVANTAR_` y recién ahí
-   **`confirmarGuionesValidados()`** (modo seco; escribir es **otro botón**).
+3. ⭐⭐ **`diagGuionesPorLamina()`** — los guiones en tres grupos. ⛔ **`camp_titulo` NO está en
+   (a)** —no tiene caso— y levantarlo declararía validado lo que está en investigación.
+4. ⭐⭐ **`confirmarGuionesValidados()`** — **modo seco**, y **escribir es otro botón**
+   (`aplicarGuionesValidados()`). **Control:** los **tres gates** tienen que pasar. ⛔ **Si el gate 3
+   falla —Sabor no entra o Quirós sí—, NO escribe nada**, tampoco los `camp_*`.
+   ⚠ La lista son **ocho**: los 4 de `C-99`, los 3 `emin_*` de formato, y **`imp_prog`** por `D-60`.
 4. ⭐ **`verGlobalL047()`** — qué `formato` tienen hoy los seis del bloque global de
    `L-047`. ⚠ **Dirime dos afirmaciones incompatibles del repo:** el alta del 24/08 dice *«ninguno
    lleva `_revisar`»* y `C-99` supone que hay marca. **Si da 0, `C-99` no tiene nada que levantar.**
