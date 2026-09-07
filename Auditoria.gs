@@ -9790,7 +9790,13 @@ var GUIONES_A_LEVANTAR_ = [
    * ⚠ Los tres tienen `exacto` de `C-102`, que valida **el formato** (el `%` duplicado), **no el
    * universo**. Lo que cubre el universo es **el gate de identidad de abajo**, que corre sobre la
    * solapa viva antes de escribir una sola celda. */
-  'emin_or', 'emin_ctor', 'emin_ctr'
+  'emin_or', 'emin_ctor', 'emin_ctr',
+  /* ── Bloque 3 · `D-60` (06/09) — **el caso VIGENTE es `exacto`, el historial no bloquea** ──
+   * ⭐⭐ `imp_prog` entra **por `D-60` y por nada más**. Hasta hoy lo frenaba el gate 2, porque su
+   * historial es `aproximado → corrige → contradice → exacto` (`V-108`) y eso era **la mitad
+   * insegura que `D-58` mandaba parar**. ⇒ `D-60` contesta esa pregunta **simétricamente**: el más
+   * nuevo manda en las dos direcciones. ⚠ **Es el único de la lista que cruzó `contradice`.** */
+  'imp_prog'
 ];
 var GUIONES_A_LEVANTAR_FECHA_ = '2026-09-06';
 
@@ -9810,10 +9816,16 @@ var GUIONES_FRENADOS_ = {
    *      **exactamente la mitad insegura que `D-58` manda listar y parar**. */
   'emin_lista': 'caso vigente `C-101` (contradice). Necesita el caso que lo supersede Y la ' +
     'respuesta a la pregunta abierta de `D-58` — pasar de `contradice` a `exacto` SACA la marca.',
-  'emin_encuentros': 'ídem `emin_lista`: mismo caso `C-101` y mismo cruce de la mitad insegura.',
-  /* ⛔ La mitad insegura de `D-58`, medida: `aproximado → corrige → contradice → exacto`. */
-  'imp_prog': 'sus `previos` incluyen `contradice`, así que el `exacto` de `V-108` SACARÍA la ' +
-    'marca. `D-58` manda listarlo y parar hasta que el usuario conteste si la regla es simétrica.'
+  'emin_encuentros': 'ídem `emin_lista`: mismo caso `C-105`, mismo estado `cerrado`.'
+  /* ⭐ `2026-09-06` — **`imp_prog` SALIÓ de acá y entró a la lista.** Lo frenaba la mitad insegura
+   * de `D-58`; **`D-60` la contestó simétricamente** y su caso vigente es `exacto` (`V-108`).
+   *
+   * ⛔⛔ **Y `emin_lista` / `emin_encuentros` NO salieron, contra lo que el `2026-09-06_5` supuso.**
+   * Ese prompt dice *«`C-105` los declara `exacto` vigente»*. **Medido: `C-105` los declara
+   * `cerrado`.** ⇒ Y el mismo prompt dice que **`cerrado` no entra** —*«`cerrado` es «no se vuelve
+   * sobre esto», no «el número coincide»; `D-60` habla de `exacto` y de nada más»*—.
+   * ⚠ **Las dos afirmaciones del prompt no pueden ser ciertas a la vez**, y la que el repo puede
+   * verificar es la segunda. **Se paró y se preguntó**, en vez de elegir. */
 };
 
 function confirmarGuionesValidados() { return guionesValidados_(false); }
@@ -9879,22 +9891,36 @@ function guionesValidados_(escribir) {
     return c && (c.previos || []).some(function (p) { return INSEGUROS_.indexOf(p) !== -1; });
   });
   Logger.log('');
-  Logger.log('⛔⛔ GATE 2 — la MITAD INSEGURA de `D-58` (viejo `contradice` → nuevo `exacto`)');
+  Logger.log('⭐ GATE 2 — los que cruzaron `contradice` → `exacto`: ' + cruzan.length);
+  /* ⭐⭐ `2026-09-06` — **ESTE GATE DEJÓ DE FRENAR, y el motivo es `D-60`.**
+   *
+   * Hasta hoy **abortaba**: `D-58` declaraba **abierta** la pregunta *«¿el más nuevo gana también
+   * para SACAR la marca?»* y mandaba aplicar **sólo la mitad segura** — los que la sacarían **se
+   * listan y se paran**.
+   *
+   * ⇒ **`D-60` (06/09) contesta esa pregunta: la regla es SIMÉTRICA.** El más nuevo manda en las
+   * dos direcciones, y **un caso `exacto` VIGENTE va sin marca aunque el historial traiga un
+   * `contradice`**. ⛔ Por eso esto ya no frena.
+   *
+   * ⚠ **Pero NO se borra, y ésa es la parte que importa:** sigue **nombrando** a los que cruzaron,
+   * porque **son los únicos donde `D-58` y `D-60` habrían dado resultados opuestos**. Quien lea
+   * este log tiene que poder ver **cuáles dependen de esa decisión** y no descubrirlo después.
+   *
+   * ⭐ **Lo que protege ahora es el GATE 1** —el caso vigente tiene que ser `exacto`—, que es
+   * exactamente el límite que `D-60` escribe: *«habla del caso VIGENTE, no de cualquier caso del
+   * historial»*. */
   if (cruzan.length) {
-    Logger.log('   ⛔⛔ SE PARA. ' + cruzan.length + ' marcador(es) tuvieron antes un caso que los');
-    Logger.log('      desmentía, y `D-58` manda **listarlos y parar**, no sacarles la marca:');
+    Logger.log('   ⚠ NO frena — `D-60` (06/09) contestó la pregunta abierta de `D-58`: la regla es');
+    Logger.log('     SIMÉTRICA. Van nombrados porque son los únicos donde las dos habrían diferido:');
     cruzan.forEach(function (n) {
       var c = CASOS_POR_MARCADOR_[n];
       Logger.log('     · ' + n + '   ' + (c.previos || []).join(' → ') + ' → ' + c.estado +
         ' (' + c.caso + ')');
     });
-    Logger.log('   ⇒ **La pregunta que los destraba es del usuario** y está escrita en `D-58`:');
-    Logger.log('     ¿la regla es simétrica, o sólo un `V-` con `exacto` saca la marca?');
-    Logger.log('   ⚠ Sacarlos de `GUIONES_A_LEVANTAR_` deja pasar el resto; **no los agregues');
-    Logger.log('     de nuevo sin esa respuesta.**');
-    return { ok: false, motivo: 'gate D-58 mitad insegura', cruzan: cruzan };
+    Logger.log('   ⭐ Lo que los habilita es su caso VIGENTE `exacto`, que el gate 1 ya verificó.');
+  } else {
+    Logger.log('   ✅ ninguno cruzó — la lista no depende de la simetría de `D-60`');
   }
-  Logger.log('   ✅ ninguno cruzó de `contradice` a `exacto` — todos son la mitad segura');
 
   /* ── ⛔⛔ GATE 3 — EL UNIVERSO DE LOS `emin_*`, MEDIDO SOBRE LA SOLAPA VIVA ───────────────
    *

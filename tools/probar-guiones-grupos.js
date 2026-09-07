@@ -166,10 +166,17 @@ console.log('\n═══ G · ⛔⛔ LA MITAD INSEGURA DE `D-58` — se lista y 
     '⭐ el gate existe en `guionesValidados_`');
   const i = AUD.indexOf('function guionesValidados_');
   const cuerpo = AUD.slice(i, AUD.indexOf('\n}\n', i));
-  afirmar(/motivo: 'gate D-58 mitad insegura'/.test(cuerpo),
-    '⛔⛔ y PARA con motivo propio — no los saltea en silencio');
-  afirmar(/cruzan\.length[\s\S]{0,900}return \{ ok: false/.test(cuerpo),
-    '⭐ el `return` está DENTRO de la rama que los encontró');
+  /* ⭐⭐ `2026-09-06` — **estas dos afirmaciones se dieron vuelta, y el motivo es `D-60`.**
+   * Decían que el gate 2 **abortaba**, y se pusieron rojas **diciendo la verdad**: `D-60` contestó
+   * la pregunta abierta de `D-58` —la regla **es simétrica**— así que ese gate **dejó de frenar**.
+   * ⛔ Aflojarlas habría sido borrar la vigilancia; lo que corresponde es exigir lo que **ahora**
+   * tiene que pasar: que **NO frene** pero que **siga nombrando** a los que cruzaron. */
+  afirmar(!/motivo: 'gate D-58 mitad insegura'/.test(cuerpo),
+    '⭐⭐ el gate 2 YA NO aborta — `D-60` contestó la pregunta de `D-58` (regla simétrica)');
+  afirmar(/D-60/.test(cuerpo) && /cruzan\.forEach/.test(cuerpo),
+    '⛔⛔ pero SIGUE NOMBRÁNDOLOS y cita `D-60` — son los únicos donde las dos reglas diferían');
+  afirmar(/Lo que protege ahora es el GATE 1|gate 1 ya verificó/.test(cuerpo),
+    '⭐ y declara que la protección pasó al gate 1 — el caso VIGENTE tiene que ser `exacto`');
   /* ⚠ La mitad negativa: un marcador sin `contradice` previo NO puede caer en el gate. */
   const limpios = Object.keys(CASOS).filter(n =>
     CASOS[n].estado === 'exacto' && CASOS[n].previos.indexOf('contradice') === -1);
@@ -185,23 +192,30 @@ console.log('\n═══ H · ⭐⭐ LA LISTA REAL — SIETE NOMBRES, NO «siete
   const m = AUD.match(/var GUIONES_A_LEVANTAR_ = \[([\s\S]*?)\];/);
   afirmar(!!m, 'existe `GUIONES_A_LEVANTAR_`');
   const lista = m ? (m[1].match(/'([a-z0-9_]+)'/g) || []).map(x => x.replace(/'/g, '')) : [];
+  /* ⭐⭐ `2026-09-06` — **`imp_prog` ENTRÓ, por `D-60`.** Esta afirmación se dio vuelta: decía que
+   * la lista eran siete y `imp_prog` estaba frenado. Se puso roja **diciendo la verdad** — `D-60`
+   * contestó la pregunta que lo frenaba. */
   const ESPERADOS = ['camp_enviados', 'camp_or', 'camp_mail_clics', 'camp_ctor',
-                     'emin_or', 'emin_ctor', 'emin_ctr'];
+                     'emin_or', 'emin_ctor', 'emin_ctr', 'imp_prog'];
   afirmar(lista.join('|') === ESPERADOS.join('|'),
     '⭐⭐ la lista es EXACTAMENTE los ' + ESPERADOS.length + ' esperados  (dio: ' + lista.join(', ') + ')');
+  afirmar(lista.indexOf('imp_prog') !== -1 &&
+    CASOS['imp_prog'] && CASOS['imp_prog'].estado === 'exacto' &&
+    CASOS['imp_prog'].previos.indexOf('contradice') !== -1,
+    '⭐⭐ `imp_prog` entra Y es el caso de `D-60`: vigente `exacto` con `contradice` en el historial');
+  /* ⚠ Y la exigencia nueva: es **el único** de la lista que cruzó. Si mañana entrara otro sin
+   * que nadie lo note, esto cae. */
+  afirmar(lista.filter(n => CASOS[n] && CASOS[n].previos.indexOf('contradice') !== -1).length === 1,
+    '⭐ y es el ÚNICO de la lista que depende de la simetría de `D-60`');
 
-  /* ⛔⛔ Los tres frenados, por nombre y con motivo: **omitirlos en silencio sería indistinguible
+  /* ⛔⛔ Los dos frenados, por nombre y con motivo: **omitirlos en silencio sería indistinguible
    * de olvidarlos.** */
   const frenados = AUD.slice(AUD.indexOf('var GUIONES_FRENADOS_'));
-  ['imp_prog', 'emin_lista', 'emin_encuentros'].forEach(n => {
+  ['emin_lista', 'emin_encuentros'].forEach(n => {
     afirmar(lista.indexOf(n) === -1, '⛔ `' + n + '` NO está en la lista');
     afirmar(new RegExp("'" + n + "':").test(frenados),
       '⭐ y está DECLARADO en `GUIONES_FRENADOS_` con su motivo');
   });
-
-  /* ⭐ Y los frenados lo son por lo que el gate mide, no por gusto. */
-  afirmar(CASOS['imp_prog'] && CASOS['imp_prog'].previos.indexOf('contradice') !== -1,
-    '⭐ `imp_prog` cruza la mitad insegura — el motivo declarado es el medido');
   /* ⭐⭐ `2026-09-06` Parte E — **esta afirmación se dio vuelta y GANÓ exigencia.** Decía
    * `estado === 'contradice'`, y se puso roja **diciendo la verdad**: `C-105` los pasó a
    * `cerrado`. ⛔ Fijar el estado exacto ataba el banco a un valor que el proyecto mueve; lo que
@@ -214,9 +228,14 @@ console.log('\n═══ H · ⭐⭐ LA LISTA REAL — SIETE NOMBRES, NO «siete
     afirmar(CASOS[n] && CASOS[n].previos.indexOf('contradice') !== -1,
       '⛔⛔ y además cruzó `contradice` ⇒ **caería en el gate 2 aunque pasara el 1**');
   });
-  /* ⚠ La mitad negativa: los siete de la lista NO pueden estar frenados. */
-  afirmar(ESPERADOS.every(n => CASOS[n] && CASOS[n].estado === 'exacto' && !CASOS[n].previos.length),
-    '⭐⭐ los siete son `exacto` con `previos: []` — pasan los dos primeros gates');
+  /* ⚠ La mitad negativa. ⭐ `2026-09-06`: **ya no se exige `previos` vacío** —`imp_prog` lo tiene
+   * lleno y entra por `D-60`—; lo que se exige es **lo que `D-60` declara**: que el caso VIGENTE
+   * de cada uno sea `exacto`. Es una exigencia más precisa, no más floja: antes un marcador con
+   * vigente `cerrado` y `previos: []` habría pasado, y ahora no. */
+  afirmar(ESPERADOS.every(n => CASOS[n] && CASOS[n].estado === 'exacto'),
+    '⭐⭐ los ' + ESPERADOS.length + ' tienen caso VIGENTE `exacto` — que es lo que `D-60` exige');
+  afirmar(!ESPERADOS.some(n => CASOS[n].estado === 'cerrado' || CASOS[n].estado === 'abierto'),
+    '⛔ y ninguno es `cerrado` ni `abierto` — no afirman que el número coincida');
 }
 
 console.log('\n═══ I · ⛔⛔ EL GATE 3 — aborta SIN ESCRIBIR NADA ═══');
