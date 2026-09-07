@@ -9427,12 +9427,12 @@ function verGlobalL047() {
  *
  * ⭐ `D-58` aplicado al generar: cuando dos casos hablan del mismo marcador, manda el
  * más nuevo. Y los `token_propuesto` con varios marcadores en una celda vienen
- * DESARMADOS —49 celdas, 275 referencias— porque contar celdas
+ * DESARMADOS —50 celdas, 277 referencias— porque contar celdas
  * en vez de marcadores da un número que no corresponde a nada.
  * ══════════════════════════════════════════════════════════════════════════════ */
 var CASOS_POR_MARCADOR_GENERADA_ = '2026-09-07';
 var CASOS_POR_MARCADOR_ARCHIVOS_ = 5;
-/* 141 marcadores · exacto 79 · contradice 10 · cerrado 16 · abierto 21 */
+/* 141 marcadores · exacto 81 · contradice 10 · cerrado 14 · abierto 21 */
 var CASOS_POR_MARCADOR_ = {
   'camp_alcance': { estado: 'cerrado', caso: 'C-94', csv: '2026-09-04', previos: ['abierto','contradice'] },
   'camp_aperturas': { estado: 'exacto', caso: 'V-113', csv: '2026-08-19', previos: [] },
@@ -9480,11 +9480,11 @@ var CASOS_POR_MARCADOR_ = {
   'emin_asistentes_szinny_0508': { estado: 'exacto', caso: 'V-51', csv: '2026-08-19', previos: [] },
   'emin_ctor': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
   'emin_ctr': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
-  'emin_encuentros': { estado: 'cerrado', caso: 'C-105', csv: '2026-09-06', previos: ['exacto','contradice'] },
+  'emin_encuentros': { estado: 'exacto', caso: 'C-106', csv: '2026-09-06', previos: ['exacto','contradice','cerrado'] },
   'emin_entregados': { estado: 'sin_fuente', caso: 'X-01', csv: '2026-08-19', previos: [] },
   'emin_inscriptos_szinny_0108': { estado: 'exacto', caso: 'V-52', csv: '2026-08-19', previos: [] },
   'emin_inscriptos_szinny_0508': { estado: 'exacto', caso: 'V-50', csv: '2026-08-19', previos: [] },
-  'emin_lista': { estado: 'cerrado', caso: 'C-105', csv: '2026-09-06', previos: ['exacto','contradice'] },
+  'emin_lista': { estado: 'exacto', caso: 'C-106', csv: '2026-09-06', previos: ['exacto','contradice','cerrado'] },
   'emin_or': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
   'enc_alcance': { estado: 'deriva', caso: 'D-06', csv: '2026-08-19', previos: ['cerrado','cerrado','cerrado','cerrado','abierto','cerrado','abierto','abierto'] },
   'enc_asistencia_pct': { estado: 'exacto', caso: 'V-07', csv: '2026-08-19', previos: [] },
@@ -9824,7 +9824,21 @@ var GUIONES_A_LEVANTAR_ = [
    * nombre no tiene fila, cae en `sinFila` y **aborta sin escribir nada**. */
   'camp_clics', 'camp_entregados', 'camp_impresiones', 'camp_visualizaciones',
   'camp_google_clics', 'camp_meta_clics', 'camp_meta_impresiones', 'camp_meta_vistas',
-  'camp_prog_vistas'
+  'camp_prog_vistas',
+  /* ── Bloque 5 · los dos `emin_*` que faltaban, destrabados por `C-106` (07/09) ───────────
+   * ⭐⭐ Estaban frenados porque `C-105` los declaraba **`cerrado`** —la elección conservadora del
+   * 06/09, cuando el corte por `D` estaba cargado a mano y **ninguna corrida lo había
+   * confirmado**—. ⇒ **`C-106` los pasa a `exacto` con la corrida que faltaba**, y por `D-60`
+   * entran.
+   *
+   * ⭐ **La evidencia son DOS IDENTIDADES, no un conteo:** en el log del 07/09 a las 14:40, sobre
+   * 573 filas, **Ezequiel Sabor ENTRA por `D`** (encuentro 31/08) **y Fernán Quirós NO** (envío
+   * 03/09, encuentro 08/09). ⛔ **El conteo no se cita a propósito**: `7` por `E` fue lo que dio
+   * verde sobre las siete equivocadas.
+   *
+   * ⚠ **Y cruzan `contradice` en su historial** —`exacto → contradice → cerrado → exacto`—, así
+   * que **dependen de la simetría de `D-60`** igual que `imp_prog`. El gate 2 los nombra. */
+  'emin_lista', 'emin_encuentros'
 ];
 var GUIONES_A_LEVANTAR_FECHA_ = '2026-09-06';
 
@@ -9835,25 +9849,17 @@ var GUIONES_A_LEVANTAR_FECHA_ = '2026-09-06';
  * `emin_lista`?»* tiene que encontrar la respuesta acá y no en un log que ya se perdió.
  * ══════════════════════════════════════════════════════════════════════════════════════════ */
 var GUIONES_FRENADOS_ = {
-  /* ⛔⛔ El prompt los pedía en la lista. **Hoy no pueden entrar, y el gate 1 los rechazaría
-   * abortando la operación entera** — medido: su caso vigente es `C-101`, `contradice`.
+  /* ⭐ `2026-09-07` — **este bloque quedó VACÍO, y eso se declara en vez de borrarlo.**
    *
-   * ⇒ **Hacen falta DOS cosas, en este orden, y ninguna es mía:**
-   *   1. un caso nuevo que **supersede a `C-101`** citando la decisión del 06/09 (Parte E);
-   *   2. ⛔⛔ y aun con ése, **caen en el gate 2**: pasarían de `contradice` a `exacto`, que es
-   *      **exactamente la mitad insegura que `D-58` manda listar y parar**. */
-  'emin_lista': 'caso vigente `C-101` (contradice). Necesita el caso que lo supersede Y la ' +
-    'respuesta a la pregunta abierta de `D-58` — pasar de `contradice` a `exacto` SACA la marca.',
-  'emin_encuentros': 'ídem `emin_lista`: mismo caso `C-105`, mismo estado `cerrado`.'
-  /* ⭐ `2026-09-06` — **`imp_prog` SALIÓ de acá y entró a la lista.** Lo frenaba la mitad insegura
-   * de `D-58`; **`D-60` la contestó simétricamente** y su caso vigente es `exacto` (`V-108`).
+   * Los tres que estaban acá salieron por decisiones fechadas:
+   *   · **`imp_prog`** (06/09) — lo frenaba la mitad insegura de `D-58`; **`D-60` la contestó
+   *     simétricamente** y su caso vigente es `exacto` (`V-108`).
+   *   · **`emin_lista`** y **`emin_encuentros`** (07/09) — los frenaba `C-105`, que los declaraba
+   *     `cerrado` **porque todavía no había corrida**. **`C-106` la aporta** y los pasa a `exacto`.
    *
-   * ⛔⛔ **Y `emin_lista` / `emin_encuentros` NO salieron, contra lo que el `2026-09-06_5` supuso.**
-   * Ese prompt dice *«`C-105` los declara `exacto` vigente»*. **Medido: `C-105` los declara
-   * `cerrado`.** ⇒ Y el mismo prompt dice que **`cerrado` no entra** —*«`cerrado` es «no se vuelve
-   * sobre esto», no «el número coincide»; `D-60` habla de `exacto` y de nada más»*—.
-   * ⚠ **Las dos afirmaciones del prompt no pueden ser ciertas a la vez**, y la que el repo puede
-   * verificar es la segunda. **Se paró y se preguntó**, en vez de elegir. */
+   * ⛔ **Vacío NO significa «ya no hace falta vigilar»**: significa que **hoy** ningún marcador de
+   * la lista está frenado. ⚠ El que vuelva a frenar uno **lo declara acá con su motivo**, porque
+   * omitirlo en silencio sería indistinguible de olvidarlo — que es para lo que este bloque existe. */
 };
 
 function confirmarGuionesValidados() { return guionesValidados_(false); }

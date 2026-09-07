@@ -200,37 +200,56 @@ console.log('\n═══ H · ⭐⭐ LA LISTA REAL — SIETE NOMBRES, NO «siete
                      /* ⭐ Los nueve que el desarme recuperó (`2026-09-06_6`). */
                      'camp_clics', 'camp_entregados', 'camp_impresiones', 'camp_visualizaciones',
                      'camp_google_clics', 'camp_meta_clics', 'camp_meta_impresiones',
-                     'camp_meta_vistas', 'camp_prog_vistas'];
+                     'camp_meta_vistas', 'camp_prog_vistas',
+                     /* ⭐ Los dos que `C-106` destrabó (`2026-09-06_6` Parte B). */
+                     'emin_lista', 'emin_encuentros'];
   afirmar(lista.join('|') === ESPERADOS.join('|'),
     '⭐⭐ la lista es EXACTAMENTE los ' + ESPERADOS.length + ' esperados  (dio: ' + lista.join(', ') + ')');
   afirmar(lista.indexOf('imp_prog') !== -1 &&
     CASOS['imp_prog'] && CASOS['imp_prog'].estado === 'exacto' &&
     CASOS['imp_prog'].previos.indexOf('contradice') !== -1,
     '⭐⭐ `imp_prog` entra Y es el caso de `D-60`: vigente `exacto` con `contradice` en el historial');
-  /* ⚠ Y la exigencia nueva: es **el único** de la lista que cruzó. Si mañana entrara otro sin
-   * que nadie lo note, esto cae. */
-  afirmar(lista.filter(n => CASOS[n] && CASOS[n].previos.indexOf('contradice') !== -1).length === 1,
-    '⭐ y es el ÚNICO de la lista que depende de la simetría de `D-60`');
+  /* ⚠ `2026-09-07` — **esta afirmación se dio vuelta: ya no es UNO, son TRES.** Decía que
+   * `imp_prog` era el único que cruzó `contradice`, y se puso roja **diciendo la verdad**: `C-106`
+   * destrabó `emin_lista` y `emin_encuentros`, y los dos cruzan también. ⛔ Fijar el número «1»
+   * ataba el banco a un estado que el proyecto mueve; lo que se exige ahora es que **los que
+   * cruzan estén NOMBRADOS**, que es lo que de verdad importa cuando `D-60` se discuta. */
+  const cruzan = lista.filter(n => CASOS[n] && CASOS[n].previos.indexOf('contradice') !== -1);
+  afirmar(cruzan.join('|') === ['imp_prog', 'emin_lista', 'emin_encuentros'].sort().join('|') ||
+    cruzan.sort().join('|') === ['emin_encuentros', 'emin_lista', 'imp_prog'].join('|'),
+    '⭐⭐ los que dependen de la simetría de `D-60` son exactamente: ' + cruzan.sort().join(', '));
 
-  /* ⛔⛔ Los dos frenados, por nombre y con motivo: **omitirlos en silencio sería indistinguible
-   * de olvidarlos.** */
-  const frenados = AUD.slice(AUD.indexOf('var GUIONES_FRENADOS_'));
-  ['emin_lista', 'emin_encuentros'].forEach(n => {
-    afirmar(lista.indexOf(n) === -1, '⛔ `' + n + '` NO está en la lista');
-    afirmar(new RegExp("'" + n + "':").test(frenados),
-      '⭐ y está DECLARADO en `GUIONES_FRENADOS_` con su motivo');
-  });
+  /* ⭐⭐ `2026-09-07` — **`GUIONES_FRENADOS_` quedó VACÍO y esta afirmación se dio vuelta.**
+   * Decía que `emin_lista` y `emin_encuentros` estaban frenados y declarados; `C-106` los destrabó.
+   * ⛔ Lo que se exige ahora es lo que **sigue** protegiendo: que **nadie esté en los dos lados a
+   * la vez**, y que el bloque **siga existiendo con su explicación** — un bloque borrado se vuelve
+   * a olvidar. */
+  const frenados = AUD.slice(AUD.indexOf('var GUIONES_FRENADOS_'),
+    AUD.indexOf('};', AUD.indexOf('var GUIONES_FRENADOS_')));
+  afirmar(AUD.indexOf('var GUIONES_FRENADOS_') !== -1,
+    '⭐ el bloque `GUIONES_FRENADOS_` SIGUE existiendo — vacío, pero declarado');
+  afirmar(/Vacío NO significa|vacío NO significa/.test(frenados),
+    '⭐⭐ y declara que vacío NO significa «ya no hace falta vigilar»');
+  const enFrenados = (frenados.match(/^  '([a-z0-9_]+)':/gm) || []).map(x => x.replace(/[ ':]/g, ''));
+  afirmar(!enFrenados.some(n => lista.indexOf(n) !== -1),
+    '⛔⛔ nadie está en la lista Y en frenados a la vez  (frenados: ' +
+    (enFrenados.join(', ') || 'ninguno') + ')');
   /* ⭐⭐ `2026-09-06` Parte E — **esta afirmación se dio vuelta y GANÓ exigencia.** Decía
    * `estado === 'contradice'`, y se puso roja **diciendo la verdad**: `C-105` los pasó a
    * `cerrado`. ⛔ Fijar el estado exacto ataba el banco a un valor que el proyecto mueve; lo que
    * de verdad importa —y no cambia— es **que el gate 1 los rechace**, o sea que **NO sean
    * `exacto`**. Y ahora además se afirma **por qué siguen frenados**: cruzan la mitad insegura. */
+  /* ⭐⭐ `2026-09-07` — **tercera vuelta de esta afirmación, y la última sube la exigencia.**
+   * Fue *«son `contradice`»* → *«no son `exacto`»* → y ahora **`C-106` los pasó a `exacto`**.
+   * ⛔ Perseguir el estado era atarse a lo que el proyecto mueve. ⇒ Lo que se exige ahora es lo
+   * que **no depende del estado del día**: que su caso vigente **sea el más nuevo que los nombra**
+   * y que **su historial siga registrado** — porque cruzan `contradice` y **dependen de `D-60`**. */
   ['emin_lista', 'emin_encuentros'].forEach(n => {
-    afirmar(CASOS[n] && CASOS[n].estado !== 'exacto',
-      '⭐ `' + n + '` NO es `exacto` (es `' + (CASOS[n] || {}).estado + '`, ' +
-      (CASOS[n] || {}).caso + ') ⇒ el gate 1 lo rechazaría');
+    afirmar(CASOS[n] && CASOS[n].caso === 'C-106',
+      '⭐ `' + n + '` responde al caso más nuevo que lo nombra: ' + (CASOS[n] || {}).caso +
+      ' (' + (CASOS[n] || {}).estado + ')');
     afirmar(CASOS[n] && CASOS[n].previos.indexOf('contradice') !== -1,
-      '⛔⛔ y además cruzó `contradice` ⇒ **caería en el gate 2 aunque pasara el 1**');
+      '⛔⛔ y su historial CONSERVA el `contradice` ⇒ depende de la simetría de `D-60`');
   });
   /* ⚠ La mitad negativa. ⭐ `2026-09-06`: **ya no se exige `previos` vacío** —`imp_prog` lo tiene
    * lleno y entra por `D-60`—; lo que se exige es **lo que `D-60` declara**: que el caso VIGENTE
