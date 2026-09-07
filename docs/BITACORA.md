@@ -17471,3 +17471,51 @@ de la ventana.**
 tomado**. Se guardó como `_3`, que es lo que `§3` manda hacer mirando la carpeta primero.
 
 **Suites: 97 bancos, exit 0.** ⛔ Nada contra la planilla viva, ningún `clasp push`.
+
+## 2026-09-06 · `2026-09-06_4` — la lista son siete, el corte quedó registrado, y el `_9` cerró
+
+⛔⛔ **Parte A · la Parte 0 cambió la lista que el prompt pedía: de nueve a SIETE.**
+`emin_lista` y `emin_encuentros` tenían caso vigente **`contradice`** (`C-101`) ⇒ **el gate 1 los
+rechaza y aborta todo**. Y hay una segunda razón que sobrevive al arreglo de la primera: cuando la
+Parte E los supersede, pasan de `contradice` a `exacto` — **la mitad insegura de `D-58`**.
+⭐ **Los tres frenados van DECLARADOS en `GUIONES_FRENADOS_`, no omitidos:** omitirlos en silencio
+sería indistinguible de olvidarlos.
+⚠ **Y una premisa del prompt corregida:** decía que `emin_or`/`ctor`/`ctr` se destrababan con los
+otros dos. **Medido: ya eran `exacto` por `C-102`** — que valida **el formato**, no el universo. Lo
+que cubre el universo es el **gate 3**.
+⭐⭐ **Gate 3 (`universoAgendaOk_`)**: verifica sobre la solapa **viva** que **Sabor entre y Quirós
+no**, ⛔ **antes del primer `setValue`** y abortando **todo, también los `camp_*`**. Con **control
+positivo propio** —si no ve a ninguno de los dos, aborta— y distinguiendo **corte sin aplicar** de
+**problema de la ventana**, que mandan a trabajos opuestos.
+
+⭐ **Parte B · el corte de `E` a `D`, registrado como evidencia fechada.** La función de migración
+**ya no se escribe** — el usuario migró la celda a mano. ⭐⭐ **Y la brecha es la lección:** el seed
+decía `D` **desde el 03/09** y la hoja cortó por `E` **tres días**.
+
+⭐ **Parte C · el `_9` cerrado**, como **Addendum 1 de `R-34`**: `camp_meta_frecuencia` **se calcula**
+y cuelga del alcance. ⚠ **Sigue con su guion**: `cerrado` es *«no se vuelve sobre esto»*, **no** *«el
+número coincide»*.
+
+⭐ **Parte E · `C-105` supersede a `C-101` por DECISIÓN, no por medición** — y esa distinción **es**
+el caso. Con la corrección del párrafo vencido de `C-101` **al lado y sin editarlo**: citaba el
+desplazamiento por solapa, **revertido esa misma mañana**.
+
+⛔⛔ **Parte D · el riesgo de la lista vieja está MEDIDO.** `LEVANTAN_POR_CASO_` es del 01/09 y hay
+CSV del 04 y del 06. De sus **24**: **13 limpios** y **4 que YA NO son `exacto`** —`enc_impresiones`,
+`ivr_75`, `ivr_75_pct`, `ivr_marque1`—. ⇒ **Re-correrla hoy le sacaría la marca a cuatro que ningún
+caso vigente respalda.**
+
+---
+
+### ⭐⭐ Dos bancos se pusieron rojos diciendo la verdad, y los dos se **dieron vuelta**
+
+1. *«la lista está vacía»* — **el prompt pidió llenarla**. Invertida, y **con exigencia nueva**: que
+   siga siendo **literal** y que **declare su fecha**.
+2. *«`emin_lista` es `contradice`»* — **`C-105` lo pasó a `cerrado`**. Cambiada a lo que **no
+   cambia** —que **no sea `exacto`**— más una afirmación nueva: que **cruzó `contradice`**.
+
+⚠ **Y un hueco propio que la medición destapó:** el desarme del generador **subcuenta** — parte por
+`/` y las celdas con `vs` y llaves no pasan, así que **7 de 24** quedan fuera de la constante. Falla
+**del lado seguro**, y va registrado igual.
+
+**Suites: 97 bancos, exit 0 · 53 afirmaciones en el banco de guiones.** ⛔ Nada corrido, ningún push.
