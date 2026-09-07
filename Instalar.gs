@@ -9654,6 +9654,41 @@ function levantarRevisar_(aplicar) {
     (aplicar ? 'APLICA' : 'MODO SECO') + ' · ' + new Date().toISOString());
   Logger.log('══════════════════════════════════════════════════════════════════════');
 
+  /* ⛔⛔ `2026-09-06` — **RETIRADA. Decisión del usuario: sobrevive `guionesValidados_`.**
+   *
+   * ⭐ **NO se borra, se DESACTIVA**, y la diferencia importa: **una función eliminada vuelve a
+   * escribirse**; una que aborta explicando por qué y a dónde ir, no. Su lista y su registro
+   * quedan — son **evidencia fechada** de lo que se levantó el 01/09.
+   *
+   * ══ EL MOTIVO ESTÁ MEDIDO, no argumentado ═══════════════════════════════════════════════
+   *
+   * `LEVANTAN_POR_CASO_` es del **01/09**, y hay CSV del **04/09** y del **06/09** posteriores.
+   * Cruzados sus **24** marcadores contra los casos vigentes de hoy:
+   *
+   *   · **13** siguen `exacto` y limpios
+   *   · ⛔ **4 YA NO tienen `exacto` vigente** — `enc_impresiones` (`deriva`, `D-05`),
+   *     `ivr_75`, `ivr_75_pct`, `ivr_marque1` (`abierto`, `X-41`)
+   *
+   * ⇒ ⛔⛔ **Re-correrla hoy les sacaría la marca a cuatro marcadores que ningún caso vigente
+   * respalda.** Es `confirmarNumerosDeUnoAUno()` otra vez —lista congelada del 26/08 que no pudo
+   * enterarse de `X-42` y `X-43`— **pero viva, medida, y sin gate.**
+   *
+   * ⭐ **Lo que le falta y la reemplazante tiene:** el cruce de `D-58`/`D-60` antes de escribir, y
+   * una constante que **declara cuándo se congeló**. ⚠ **Lo que ELLA hacía mejor** —su sello en
+   * `notas` dice *qué caso y qué evidencia* validaron— **queda como deuda de la que sobrevive**. */
+  Logger.log('⛔⛔ RETIRADA el 06/09/2026 — decisión del usuario. NO escribe nada.');
+  Logger.log('   Usá `confirmarGuionesValidados()` / `aplicarGuionesValidados()` (`Auditoria.gs`).');
+  Logger.log('');
+  Logger.log('   MOTIVO, medido: su lista es del 01/09 y hay CSV del 04/09 y del 06/09.');
+  Logger.log('   De sus 24 marcadores, **4 ya NO tienen `exacto` vigente**:');
+  Logger.log('     · enc_impresiones → deriva (D-05)');
+  Logger.log('     · ivr_75 · ivr_75_pct · ivr_marque1 → abierto (X-41)');
+  Logger.log('   ⇒ Re-correrla les sacaría la marca **sin ningún caso que las respalde**.');
+  Logger.log('');
+  Logger.log('   ⭐ Su lista y su registro QUEDAN: son evidencia fechada de lo que se levantó');
+  Logger.log('     el 01/09. Lo que se retira es la capacidad de escribir.');
+  return { ok: false, motivo: 'retirada 06/09/2026 — usar guionesValidados_', aplicar: !!aplicar };
+
   var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
   if (!hoja) { Logger.log('⛔ ABORTA: no existe la hoja MARCADORES.'); return { ok: false }; }
   var datos = hoja.getDataRange().getValues();

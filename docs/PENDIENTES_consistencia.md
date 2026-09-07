@@ -2963,3 +2963,29 @@ un padrón real —*«¿este nombre existe como marcador?»*— **pasa a ser par
 ⛔ **Los nueve tienen `exacto` vigente ⇒ por `D-60` calificarían para levantar la marca.**
 **No los agregué a la lista**: el prompt dice *«decilo, no lo apliques solo»*, y **son nueve
 números del deck que se moverían.** ⇒ Van a la pregunta del usuario.
+
+---
+
+## 06/09/2026 · Parte C del `_5` — `levantarRevisar_` se **retira**, y el caso general ya estaba
+
+⭐ **Decisión del usuario: sobrevive `guionesValidados_`.**
+
+⛔ **No se borró: se DESACTIVÓ.** Aborta con `ok: false`, dice **por qué**, **nombra los cuatro que
+vencieron** y **apunta a la reemplazante**. ⇒ **Una función eliminada vuelve a escribirse; una que
+aborta explicando, no.** Su lista y su registro **quedan** — son evidencia fechada del 01/09.
+
+### ⭐ El caso general — **registro el CERO, como el prompt pide**
+
+*«Toda lista congelada que escribe en la hoja se cruza contra los CSV posteriores a su fecha antes
+de re-correrse»* **ya está escrito**, en `CLAUDE.md` §4 —*«una función `confirmar*()` no se vuelve a
+correr sin cruzar su lista contra los CSV posteriores a su fecha»*— y en `D-58`.
+⇒ **Cero ediciones a la regla.** Lo único nuevo es **la medición**, que ya está registrada arriba:
+**4 de 24 vencidos.**
+
+### ⚠ Y la deuda que la retirada deja abierta
+
+`levantarRevisar_` **escribía mejor rastro**: su sello en `notas` decía *«Validado por `V-113`
+(identidad interna)»* — **el caso y la clase de evidencia**. `guionesValidados_` escribe
+`'VALIDADO <fecha>'`, **sin el caso**. ⇒ **Es una deuda de la que sobrevive**, no un detalle: dentro
+de un mes, *«¿por qué este marcador no tiene marca?»* se contesta sola con el sello viejo y **no con
+el nuevo**.

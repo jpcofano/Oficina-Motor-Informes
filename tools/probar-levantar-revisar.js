@@ -100,77 +100,36 @@ function contexto(opciones) {
   return ctx;
 }
 
-console.log('\n═══ A · MODO SECO — no escribe, y dice el caso de cada uno ═══');
+console.log('\n═══ A · ⛔⛔ RETIRADA (06/09/2026) — aborta y NO escribe ═══');
 {
+  /* ⭐⭐ **Este banco se dio vuelta entero, y el motivo es una decision del usuario del 06/09:**
+   * sobrevive `guionesValidados_` y `levantarRevisar_` **se retira**. Sus secciones A a F probaban
+   * el comportamiento de ESCRITURA —modo seco, `informe_id` desde la hoja, `SIN VALIDAR`,
+   * idempotencia, backup— y **se pusieron rojas diciendo la verdad**: la funcion ya no escribe.
+   *
+   * ⛔ **Aflojarlas o borrar el banco habria perdido la vigilancia.** Lo que se exige ahora es lo
+   * contrario y es igual de estricto: **que NO escriba, que diga POR QUE, y que apunte a su
+   * reemplazante.** ⭐ Una funcion eliminada vuelve a escribirse; una que aborta explicando, no.
+   *
+   * ⚠ La seccion `G` **se conserva intacta**: cruza la lista contra los CSV y **eso sigue
+   * valiendo**, porque la lista queda como evidencia fechada de lo que se levanto el 01/09. */
   const ctx = contexto();
   const r = vm.runInContext('diagLevantarRevisar()', ctx);
-  afirmar(r && r.ok === true && r.aplicado === false, 'devuelve `aplicado: false`');
-  afirmar(ctx.__curados.length === 0 && ctx.__hojas.length === 0, '⭐ cero escrituras y cero backup');
-  const texto = ctx.__log.join('\n');
-  afirmar(/camp_clics.*V-111 · identidad interna/.test(texto),
-    '⭐ cada línea trae su caso Y su clase de evidencia');
-  afirmar(/u1_pre_prog_clics.*V-120 · ausencia acordada/.test(texto),
-    '⭐⭐ y la «ausencia acordada» se nombra distinto — no es reproducir una cifra');
-}
+  afirmar(r && r.ok === false, '⛔ `diagLevantarRevisar()` devuelve `ok: false`');
+  afirmar(/retirada/i.test(String((r || {}).motivo || '')),
+    '⭐ y su `motivo` dice que esta retirada: ' + JSON.stringify((r || {}).motivo));
 
-console.log('\n═══ B · el `informe_id` sale de la HOJA, no se asume ═══');
-{
-  const ctx = contexto();
-  vm.runInContext('aplicarLevantarRevisar()', ctx);
-  const cc = ctx.__curados.filter((c) => c.marcador === 'camp_clics')[0];
-  const iv = ctx.__curados.filter((c) => c.marcador === 'ivr_75')[0];
-  afirmar(cc && cc.informe_id === '*',
-    '⭐⭐ `camp_clics` va con `*` — asumir `jm` no encontraría la fila desde la migración de D-54');
-  afirmar(iv && iv.informe_id === 'jm', 'y `ivr_75`, que no migró, va con `jm`');
-  afirmar(!ctx.__curados.some((c) => c.__noEncontrada), 'ninguna fila quedó sin encontrar');
-}
-
-console.log('\n═══ C · ⛔ `SIN VALIDAR` se NEUTRALIZA — sin esto la mitad 1 revierte todo ═══');
-{
-  const ctx = contexto();
-  vm.runInContext('aplicarLevantarRevisar()', ctx);
-  const filas = ctx.__datos();
-  const cc = filas.filter((f) => f[0] === 'camp_clics')[0];
-  afirmar(cc[2] === 'entero', 'el sufijo `_revisar` se fue (' + cc[2] + ')');
-  afirmar(cc[3].indexOf('SIN VALIDAR') === -1,
-    '⭐⭐ y `notas` ya NO dice `SIN VALIDAR` — si no, `aplicarRevisarASinValidar()` lo re-marca');
-  afirmar(/VALIDADO/.test(cc[3]), 'se reemplaza en vez de borrarse: la historia queda');
-  afirmar(/V-111/.test(cc[3]) && /identidad interna/.test(cc[3]),
-    '⭐ y la nota dice de qué caso salió, con su `caso_id` — los dos registros dejan de divergir');
-}
-
-console.log('\n═══ D · control POSITIVO — lo que NO está en la lista no se toca ═══');
-{
-  const ctx = contexto();
-  vm.runInContext('aplicarLevantarRevisar()', ctx);
-  const fr = ctx.__datos().filter((f) => f[0] === 'frecuencia')[0];
-  afirmar(fr[2] === 'entero_revisar',
-    '⭐ `frecuencia` conserva su `_revisar` — `X-32` contradice AL MOTOR y no está en la lista');
-  afirmar(/SIN VALIDAR/.test(fr[3]), 'y su `notas` queda intacta');
-}
-
-console.log('\n═══ E · idempotencia ═══');
-{
-  const ctx = contexto();
-  vm.runInContext('aplicarLevantarRevisar()', ctx);
-  const antes = ctx.__curados.length;
   const ctx2 = contexto();
-  const seco = vm.runInContext('diagLevantarRevisar()', ctx2);
-  afirmar(seco.cambios.every((c) => c.marcador !== 'enc_impresiones'),
-    '⭐ `enc_impresiones`, que ya estaba sin sufijo, no entra a los cambios');
-  afirmar(/ya estaban sin sufijo  : 1/.test(ctx2.__log.join('\n')),
-    'y se cuenta aparte en vez de callarse');
-  afirmar(antes === 3, 'la primera pasada escribió 3 (' + antes + ')');
-}
+  const r2 = vm.runInContext('aplicarLevantarRevisar()', ctx2);
+  afirmar(r2 && r2.ok === false, '⛔⛔ y `aplicarLevantarRevisar()` TAMPOCO escribe');
+  afirmar(ctx2.__curados.length === 0 && ctx2.__hojas.length === 0,
+    '⭐⭐ CERO escrituras y CERO backup — la afirmacion que de verdad protege');
 
-console.log('\n═══ F · control NEGATIVO — backup que falla, no se escribe ═══');
-{
-  const ctx = contexto({ backupTira: true });
-  const r = vm.runInContext('aplicarLevantarRevisar()', ctx);
-  afirmar(r && r.ok === false && /backup/.test(r.motivo), 'aborta con motivo de backup');
-  afirmar(ctx.__curados.length === 0, '⭐⭐ y NO llamó al escritor ni una vez');
-  afirmar(ctx.__datos().filter((f) => f[0] === 'camp_clics')[0][2] === 'entero_revisar',
-    'la hoja quedó intacta');
+  const texto = ctx2.__log.join('\n');
+  afirmar(/guionesValidados|GuionesValidados/.test(texto),
+    '⭐ el log APUNTA a la reemplazante — sin eso, quien la corre queda sin saber a donde ir');
+  afirmar(/enc_impresiones/.test(texto) && /ivr_75/.test(texto),
+    '⭐⭐ y NOMBRA los 4 que vencieron — el motivo va medido, no argumentado');
 }
 
 console.log('\n═══ G · la lista y el CSV no pueden divergir sin que se note ═══');
