@@ -1183,6 +1183,28 @@ var SEED_BASES_ = [
    * banda de grupos (`Comunicación Directa | Mailing`, …) y la 2 son los títulos reales. El
    * default de la base queda en 1 porque `Barrios` sí tiene su encabezado en la 1. */
   { base_id: 'reuniones', nombre: 'Base reuniones - Digital - Call Center', sheet_id: '12b0v67FbxjuIndK7DgVU3MYxx-k0yBIS9gtyV45rFaY', hoja_default: 'Agenda JM', fila_encabezado: 1, modo_periodo: 'snapshot', tipo: 'google_sheets', activo: 'sí', notas: 'Una fila por encuentro, clave ID = id_cuenta del anclaje. PRE en Agenda JM y POST en Agenda JM | Post, con el MISMO id (C-50): la clave del par es (ID, solapa). snapshot porque el recorte lo hace campo_id_cuenta (D-30), no la fecha.' },
+  /* ⭐⭐ `2026-09-08_4` — **la base del Call Center acumulado.** `base_id: 'acumulado'` y el
+   * prefijo `acc_` para sus campos lógicos son decisión del usuario del 08/09.
+   *
+   * ⭐ **Qué la hace distinta de `looker/CC`, que es todo el motivo del alta:** su solapa
+   * `Call Center - Métricas` tiene **columna de fecha propia** (`Fecha`, K) y **columna de
+   * ámbito** (`Remitente`, Q). `looker/CC` no tiene ninguna de las dos, y por eso sólo podía
+   * recortar por PERTENENCIA —que traía el gabinete entero, 18 y 21 cuentas— y no podía
+   * traducir `ambito`. Es el hueco que `X-37` declaró y `C-78` midió: *el mecanismo existe, lo
+   * que falta es una columna donde expresarlo*.
+   *
+   * ⚠ **CONVIVE con `looker/CC`, no la reemplaza** (decisión del usuario, 07/09): lo validado
+   * allá —`V-64`, `V-66`, `V-90`…`V-105`— **queda vigente**.
+   *
+   * ⭐ **`modo_periodo: 'filtrar'` NO decide nada para la única solapa registrada**, y hay que
+   * decirlo: `SOLAPAS.ventana_ref = 'propia'` fuerza `filtrar` gane lo que gane la base
+   * (`D-52`, medido en `Fuentes.gs`). Se elige `filtrar` igual porque es la dirección segura
+   * para una solapa FUTURA que se registre sin `'propia'`: exigiría `fecha_periodo` y fallaría
+   * visible, mientras que `snapshot` devolvería la solapa entera en silencio.
+   *
+   * ⛔ **Se registra UNA sola de sus 38 solapas.** El censo del 08/09 las tiene todas; las otras
+   * 37 no se declaran ni siquiera como `ignorar`, porque nadie las midió. */
+  { base_id: 'acumulado', nombre: 'DGPLES - Directa acumulado', sheet_id: '1f8Jy9S09EjWhXo-RF6llXnk8alQCJxWSZAdnfp3WR60', hoja_default: 'Call Center - Métricas', fila_encabezado: 1, modo_periodo: 'filtrar', tipo: 'google_sheets', activo: 'sí', notas: 'Call Center acumulado. Fecha propia (K) y Remitente (Q): la solapa recorta por sus fechas con ventana_ref=propia y el ambito sale de una columna, no del nombre. Convive con looker/CC. Censo de sus 38 solapas: docs/CENSO_solapas_directa_acumulado_2026-09-08.md' },
   // Paso 2.10 Parte C: hoja_default vacío a propósito — 'M2 periodo DIRECTA' pasó a
   // uso=referencia (banner de período tipeado a mano, no una fuente). Un default que
   // apunta a una solapa no-fuente hacía que los diagnósticos genéricos (probarConexionBases,
@@ -1870,6 +1892,38 @@ var SEED_MAPEO_CC_ = [
 
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_CC_);
 
+/* ⭐⭐ `2026-09-08_4` — **el `MAPEO` de la base nueva de Call Center.**
+ *
+ * ⭐ **El prefijo `acc_` es obligatorio y el motivo está medido, no es estilo:**
+ * `cc_contactados` **ya es `campo_logico` en dos lados** —`looker/resumen_metricas_dinamico`
+ * (col T) y `reuniones/Agenda JM` (col W)—, y lo mismo `cc_base_total` y `cc_efectivos`.
+ * `buscarMapeo` scopea por base + solapa, así que reusarlos *funcionaría*; lo que no sobrevive
+ * es la lectura humana. **Es exactamente el criterio de `lcc_` en `SEED_MAPEO_CC_`**, con su
+ * motivo escrito allá.
+ *
+ * ⛔ **Cuatro filas y no veintidós.** Se mapea sólo lo que los tres tokens necesitan. Mapear
+ * las 22 columnas «por si acaso» invita a sumarlas — el mismo argumento con el que los
+ * ministros dejaron tres columnas de `%` sin mapear.
+ *
+ * ⚠ **`fecha_periodo` va SIN prefijo**: es un nombre de contrato (`S-02`), como `clave_ventana`.
+ * Es lo que `ventana_ref = 'propia'` necesita para recortar por las fechas de esta solapa.
+ *
+ * ⭐ **Los `encabezado` se COPIAN del censo del 08/09, no se tipean** (`D-31`: testigo, nunca
+ * fallback). Las 22 de esta solapa salieron sin saltos de línea ni espacios de borde, así que
+ * el crudo y el normalizado `R-10` coinciden — pero eso **se midió**, no se supuso.
+ *
+ * ⛔ **Va ANTES del `SEED_MAPEO_.forEach` que hace `fila.solapa = fila.hoja`.** Concatenar
+ * después dejaría las cuatro filas **sin `solapa`**, y `buscarMapeo` no las encontraría — sin
+ * fallar. Es la figura de `CLAUDE.md` §4: *lo que un archivo declara no es lo que termina
+ * teniendo*. */
+var SEED_MAPEO_ACUMULADO_ = [
+  { base_id: 'acumulado', campo_logico: 'fecha_periodo', hoja: 'Call Center - Métricas', columna: 'K', encabezado: 'Fecha', notas: 'la ventana propia (D-52). Medido el 08/09: Date en las 1980 filas, cero texto y cero vacías, asi que R-02 no se activa' },
+  { base_id: 'acumulado', campo_logico: 'acc_base_barrida', hoja: 'Call Center - Métricas', columna: 'C', encabezado: 'Base Barrida', notas: 'ES la Base discada del deck. V-126/V-127: 6.011 en 24-31/07 y 6.851 en 14-20/08, exacto. OJO: looker/CC escribe Base barrida con b minuscula y R-10 no distingue el case, asi que el encabezado NO alcanza para saber de que solapa se habla — manda base_id' },
+  { base_id: 'acumulado', campo_logico: 'acc_contactados', hoja: 'Call Center - Métricas', columna: 'D', encabezado: 'Contactados U', notas: 'V-128/V-130: 1.878 y 1.616, exacto. Es tambien el numerador de cc_contact_pct' },
+  { base_id: 'acumulado', campo_logico: 'acc_remitente', hoja: 'Call Center - Métricas', columna: 'Q', encabezado: 'Remitente', notas: 'el corte JM/GCBA de Call Center, POSITIVO POR LOS DOS LADOS (C-108). Censo del 08/09: seis valores distintos — GCBA 1400, JM 476, ANUNCIO 88, vacia 10, #N/A 5, No se activo 1. Las 104 que no son ninguno de los dos quedan FUERA de ambos ambitos y se ven' }
+];
+SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_ACUMULADO_);
+
 
 
 // `hoja_default`) — `solapa` es exactamente ese mismo valor, así que se deriva
@@ -1890,6 +1944,9 @@ SEED_MAPEO_.forEach(function (fila) { if (fila.valores_incluidos === undefined) 
  * como informativo — no hace falta adivinar el resto para que esto sirva.
  */
 var TIPO_ESPERADO_POR_CAMPO_ = {
+  // `2026-09-08_4` — los tres de la base `acumulado`. `lcc_*` no los declara y eso es una
+  // omisión, no una decisión: `tipo_esperado` vacío significa «sin declarar» y no valida nada.
+  acc_base_barrida: 'numero', acc_contactados: 'numero', acc_remitente: 'texto',
   // identificadores y categóricos — texto
   figura: 'texto', barrio: 'texto', evento: 'texto', status: 'texto', estado: 'texto',
   comuna: 'texto', eje: 'texto', area: 'texto', campana: 'texto', campana_dig: 'texto',
@@ -2703,7 +2760,26 @@ var SEED_SOLAPAS_ = [].concat(
   // Paso 2.11 Parte B — fila_encabezado: 1 ('ID Cuentas · ID MailUp · Listado de Mail').
   [filaSolapa_('m2', 'Directa mail', 'derivada', 'espejo de digital/Directa Mail — ver Paso 2.10 Parte C', { fila_encabezado: 1 })],
   // Paso 2.11 Parte B — fila_encabezado: 1 ('Id · Nombre de la campaña…').
-  filasSolapa_('m2', ['Digital acumulado'], 'derivada', 'acumulados', { fila_encabezado: 1 })
+  filasSolapa_('m2', ['Digital acumulado'], 'derivada', 'acumulados', { fila_encabezado: 1 }),
+
+  /* ⭐⭐ `2026-09-08_4` — **acumulado, UNA sola solapa de las 38.**
+   *
+   * ⭐ **`fila_encabezado: 1` va EXPLÍCITO y no por el default de la base**, porque
+   * `FILA_ENCABEZADO_POR_BASE_` es `{ rdv, digital, looker, m2 }` y **no tiene `acumulado`** —
+   * sin declararlo, `filaSolapa_` pondría `undefined`. Es el mismo camino que tomó `reuniones`,
+   * que tampoco está en ese mapa y declara la fila en cada solapa. Agregar `acumulado` al mapa
+   * sería declarar un default para 38 solapas de las que se registra una.
+   *
+   * ⭐ **`ventana_ref: 'propia'` es lo que la separa de `looker/CC`** (`D-52`): esta solapa
+   * recorta por SUS fechas y no toma la ventana prestada. `looker/CC` declara
+   * `ventana_ref: 'Cuentas'` justamente porque no tiene columna temporal.
+   *
+   * ⛔ **`campo_id_cuenta` queda VACÍO a propósito.** El Resumen Ejecutivo es una lámina FIJA,
+   * sin ítem, así que no hay cuenta con la que recortar — y `C-110` midió que no hace falta:
+   * el bloque publica el mismo universo que el resto de su lámina. */
+  [filaSolapa_('acumulado', 'Call Center - Métricas', 'fuente',
+    'Call Center acumulado — 1981 x 22, censo del 08/09. Fecha propia (K) y Remitente (Q): recorta por sus fechas (ventana_ref=propia, D-52) y el ambito sale de columna (C-108). Fuente de cc_base, cc_contactados y cc_contact_pct',
+    { fila_encabezado: 1, ventana_ref: 'propia', filas_datos: 1980 })]
 );
 
 /**
@@ -11122,4 +11198,236 @@ function formatoEmin_(aplicar) {
   Logger.log('  ⚠ Control del próximo deck: `-1.049.552-` en vez de `-1049552-`, y el MISMO número.');
   Logger.log('     ⛔ Si el número cambió, el formato tocó algo más — parar.');
   return { ok: true, aplicado: true, cambiados: plan.length, backup: bk.nombre };
+}
+
+
+/* ==========================================================================
+ * `2026-09-08_4` Parte C — EL CABLEADO DE LOS TRES `cc_*` VALIDADOS
+ *
+ * Tres filas de `MARCADORES` en `jm`, leyendo la base `acumulado`. **Molde:
+ * `cablearMinistros_`**, incluido su orden de guardas.
+ *
+ * ⭐⭐ **EL GATE DE `C-115`, Y ES LA RAZÓN DE QUE ESTA FUNCIÓN VERIFIQUE ANTES DE ESCRIBIR.**
+ * `C-115` midió que el cruce caso→marcador **no scopea por base**: lee `caso_id`,
+ * `token_propuesto` y `estado`, y nada más. Los casos `V-126`…`V-130` y `C-118`…`C-120` dicen
+ * `exacto` sobre `cc_base`, `cc_contactados` y `cc_contact_pct` **medidos sobre la base nueva**.
+ * ⇒ Si estas filas se cablearan contra `looker/CC`, esos casos las declararían validadas
+ * **sobre una fuente que nunca midieron**, y `D-60` les levantaría el `_revisar`.
+ *
+ * ⛔ **Y el parecido es real, no teórico:** `looker/CC` tiene `Base barrida` y ésta
+ * `Base Barrida` — **`R-10` no pliega el case pero sí los blancos**, y a simple vista son la
+ * misma columna. Lo único que las distingue es el `base_id`. Por eso el gate compara
+ * `base_id` + `solapa`, no el encabezado.
+ *
+ * ⭐ **El orden de las guardas es el de `cablearMinistros_`, y por el mismo motivo asimétrico:**
+ *   · `SOLAPAS`/`MAPEO` sin marcadores → **inerte**: nadie los lee.
+ *   · marcadores sin `SOLAPAS`/`MAPEO` → ⛔ **publica** el universo equivocado **sin fallar**.
+ *   ⇒ Se verifica que el alta ya esté aplicada **antes** de escribir una celda.
+ *
+ * ⚠ **`cc_contact_pct` es DERIVADO y comparte filas con sus dos insumos**, así que
+ * `contactados / base_barrida` **se cumple por construcción**. Eso se declara: **no es un
+ * control**. El control de esos tres números es una corrida contra las dos ventanas testigo.
+ *
+ * ⛔ **`cc_campanias` NO se cablea** (`C-112`/`C-121`, abierto: cuatro candidatas empatan).
+ * ⛔ **`gcba_cc_*` NO se cablean**: la entrada de `DIMENSIONES_` queda lista y es otro paso.
+ * ========================================================================== */
+
+var BASE_CC_ACUMULADO_ = 'acumulado';
+var SOLAPA_CC_ACUMULADO_ = 'Call Center - Métricas';
+
+/** Las tres, con su testigo al lado. `formato` SIN `_revisar` por `D-60`: los tres tienen caso
+ *  `exacto` VIGENTE — `C-118`, `C-119` y `C-120`, del CSV `2026-09-08b`. */
+var FILAS_CC_ACUMULADO_ = [
+  { marcador: 'cc_base', campo_logico: 'acc_base_barrida', operacion: 'SUMA', formato: 'miles',
+    testigo: '6.011 en 24-31/07 y 6.851 en 14-20/08 (V-126, V-127)' },
+  { marcador: 'cc_contactados', campo_logico: 'acc_contactados', operacion: 'SUMA', formato: 'miles',
+    testigo: '1.878 y 1.616 (V-128, V-130)' },
+  /* ⚠ El cociente va en `campo_logico` con `/`, que es la forma que el despachador resuelve —
+   * verificado contra los seis `PCT` vivos, p. ej. `insc_mail/inscriptos` y
+   * `ivr_e75/ivr_atendidos`. La aritmética la hace `opPCT` en `Marcadores.gs` y **en ningún otro
+   * lado** (la regla de oro de `CLAUDE.md` §2). */
+  { marcador: 'cc_contact_pct', campo_logico: 'acc_contactados/acc_base_barrida', operacion: 'PCT',
+    formato: 'porcentaje_sin_signo',
+    testigo: '31 en 24-31/07 (V-129). ⛔ agosto da 24 y NO tiene testigo (C-116)' }
+];
+
+function diagCablearCallCenterAcumulado() { return cablearCallCenterAcumulado_(false); }
+function cablearCallCenterAcumulado() { return cablearCallCenterAcumulado_(true); }
+
+function cablearCallCenterAcumulado_(aplicar) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('Call Center acumulado — ' + (aplicar ? 'CABLEADO' : 'MODO SECO') + ' · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  fuente: `' + BASE_CC_ACUMULADO_ + ' / ' + SOLAPA_CC_ACUMULADO_ + '`');
+  Logger.log('  ⛔ cc_campanias NO entra (C-121, abierto) · gcba_cc_* NO entran (otro paso)');
+  Logger.log('');
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe la hoja MARCADORES.'); return { ok: false }; }
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0].map(function (h) { return String(h == null ? '' : h).trim(); });
+  var iM = headers.indexOf('marcador');
+  if (iM === -1) { Logger.log('⛔ ABORTA: MARCADORES no tiene columna `marcador`.'); return { ok: false }; }
+
+  function filaCompleta(f) {
+    return {
+      marcador: f.marcador, familia: 'cc', informe_id: 'jm',
+      base_id: BASE_CC_ACUMULADO_, solapa: SOLAPA_CC_ACUMULADO_,
+      campo_logico: f.campo_logico, periodo_ref: '', operacion: f.operacion,
+      valor_fijo: '', filtro: '', dimensiones: 'ambito=jm', formato: f.formato,
+      catalogo: '', separador: '',
+      notas: '2026-09-08_4 Parte C — base nueva de Call Center, recorte Fecha propia + ' +
+        'Remitente=JM. Testigo: ' + f.testigo + '. VALIDADO por C-118/C-119/C-120 (CSV ' +
+        '2026-09-08b), que reafirman V-126..V-130 tras la adjudicacion por mencion de C-115/C-117.'
+    };
+  }
+
+  /* ⚠ La checklist de `CLAUDE.md` §2: ninguna columna del objeto puede faltar en la hoja, o el
+   * valor se pierde sin fallar. Se mira ANTES de escribir nada. */
+  var faltan = Object.keys(filaCompleta(FILAS_CC_ACUMULADO_[0])).filter(function (k) {
+    return headers.indexOf(k) === -1;
+  });
+  if (faltan.length) {
+    Logger.log('⛔ ABORTA: MARCADORES no tiene la(s) columna(s): ' + faltan.join(', '));
+    return { ok: false, motivo: 'columnas faltantes' };
+  }
+
+  /* ── ⭐⭐ EL GATE DE `C-115` — corre ANTES de todo y aborta ─────────────────────────────── */
+  Logger.log('  ---- gate C-115: ¿el alta está aplicada, y apunta a la base NUEVA? ----');
+  var gate = [];
+  var solapas = leerSolapas();
+  var decl = solapas[BASE_CC_ACUMULADO_] && solapas[BASE_CC_ACUMULADO_][SOLAPA_CC_ACUMULADO_];
+  if (!decl) {
+    gate.push('`SOLAPAS` no tiene la fila `' + BASE_CC_ACUMULADO_ + '/' + SOLAPA_CC_ACUMULADO_ +
+      '` — falta correr **Aplicar configuración**');
+  } else {
+    Logger.log('     uso = ' + JSON.stringify(decl.uso) + '   ventana_ref = ' + JSON.stringify(decl.ventana_ref));
+    if (String(decl.uso).trim() !== 'fuente') gate.push('la solapa está en `uso = ' + decl.uso + '` y no en `fuente`');
+    if (String(decl.ventana_ref || '').trim().toLowerCase() !== VENTANA_PROPIA_) {
+      gate.push('`ventana_ref` es ' + JSON.stringify(decl.ventana_ref) + ' y tiene que ser `' +
+        VENTANA_PROPIA_ + '`: sin eso la solapa NO recorta por su fecha y publica el acumulado entero');
+    }
+  }
+  /* ⭐ Los tres campos, uno por uno y contra ESTA base. `buscarMapeo` scopea por base + solapa,
+   * así que un `acc_*` que resuelva acá NO puede estar leyendo `looker/CC`. */
+  ['fecha_periodo', 'acc_base_barrida', 'acc_contactados', 'acc_remitente'].forEach(function (campo) {
+    var m = buscarMapeo(BASE_CC_ACUMULADO_, SOLAPA_CC_ACUMULADO_, campo);
+    Logger.log('     ' + (campo + '                ').slice(0, 17) +
+      (m.ok ? '✅ col ' + m.columna : '⛔ ' + m.motivo));
+    if (!m.ok) gate.push('`MAPEO` no resuelve `' + campo + '` en esta base: ' + m.motivo);
+  });
+
+  if (gate.length) {
+    Logger.log('');
+    Logger.log('  ⛔⛔ EL GATE NO PASA — no se escribe NADA. Motivos:');
+    gate.forEach(function (g) { Logger.log('     · ' + g); });
+    Logger.log('     ⭐ Lo que falta es correr **Aplicar configuración**: el alta de `BASES`,');
+    Logger.log('     `SOLAPAS` y `MAPEO` la siembra el sembrador solo, sin tocar la planilla.');
+    return { ok: false, motivo: 'gate C-115', detalle: gate };
+  }
+  Logger.log('     ✅ el gate pasa: la solapa es `fuente` con ventana propia y los cuatro campos');
+  Logger.log('     resuelven CONTRA `' + BASE_CC_ACUMULADO_ + '`, no contra `looker/CC`.');
+  Logger.log('');
+
+  var existentes = {};
+  for (var f = 1; f < datos.length; f++) {
+    var nm = String(datos[f][iM] || '').trim();
+    if (nm) existentes[nm] = f + 1;
+  }
+
+  Logger.log('  ' + FILAS_CC_ACUMULADO_.length + ' fila(s) de MARCADORES:');
+  FILAS_CC_ACUMULADO_.forEach(function (x) {
+    Logger.log('     ' + (existentes[x.marcador] ? '⛔ REEMPLAZA (fila ' + existentes[x.marcador] + ')  ' : 'alta  ') +
+      (x.marcador + '                 ').slice(0, 18) + (x.operacion + '     ').slice(0, 6) +
+      ' ' + x.campo_logico + '  → ' + x.formato);
+    Logger.log('        testigo: ' + x.testigo);
+  });
+  Logger.log('');
+  Logger.log('  ⚠ `cc_contact_pct` comparte filas con sus dos insumos, así que el cociente se');
+  Logger.log('    cumple POR CONSTRUCCIÓN. El control son los números de las dos ventanas testigo,');
+  Logger.log('    no la coherencia interna.');
+  Logger.log('');
+  /* ⭐⭐ Qué período usar, porque `D-59` deja la ventana a elección del usuario en cada corrida
+   * y **la semana en curso no tiene testigo**: los números serían nuevos y no verificarían nada.
+   * Hay que elegir uno de los dos períodos que SÍ tienen deck publicado. */
+  Logger.log('  ⭐ Con qué período correr, y CÓMO tiene que salir — declarado ANTES de correr:');
+  Logger.log('     `julio_24_30`   (24-30/07) → 6.011 / 1.878 / 31');
+  Logger.log('     `agosto_14_20`  (14-20/08) → 6.851 / 1.616 / (24, sin testigo — C-116)');
+  Logger.log('     ⛔ NO sirve la semana en curso: sin deck publicado no hay contra qué comparar.');
+  Logger.log('     ⚠ `julio_24_30` es de SIETE días y la medición del 08/09 usó 24-31/07, de ocho.');
+  Logger.log('        Los tres números NO cambian: las 3 filas JM son del 24/07 y del 27/07, y');
+  Logger.log('        ninguna del 31 — verificado fila por fila en la sonda del MEDICION_ del 08/09.');
+  /* ⛔⛔ Lo que NO se puede afirmar, y hay que decirlo acá donde alguien lo va a leer justo antes
+   * de correr: *«si da otra cosa es el cableado y no la base»* **era cierto el 08/09 y no lo es
+   * semanas después**. Valía porque el instrumento había leído la misma base dos veces con cinco
+   * horas de diferencia; con el tiempo, `R-31` vuelve a aplicar y esta base **se mueve** —la cuarta
+   * fila de `3488`, del 13/08, no estaba en la lectura del 22/08—. */
+  Logger.log('');
+  Logger.log('  ⛔ Y CÓMO SE DISTINGUE «lo rompió el cableado» de «se movió la base»:');
+  Logger.log('     correr `medirCampaniasCallCenterBaseNueva()` EL MISMO DÍA que la corrida.');
+  Logger.log('       · instrumento y deck coinciden, y los dos difieren del testigo → se movió la base');
+  Logger.log('       · instrumento da el testigo y el deck no                       → es el cableado');
+  Logger.log('     ⭐ El instrumento ya avisa solo si el recorte deja de dar 3 filas, que es la');
+  Logger.log('     mitad ALTA de R-31. La mitad CAMBIO no mueve filas y sólo la ve esta comparación.');
+
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  MODO SECO — no se escribió nada. Para aplicar: `cablearCallCenterAcumulado()`.');
+    return { ok: true, aplicado: false, marcadores: FILAS_CC_ACUMULADO_.length };
+  }
+
+  /* ⛔ Backup PRIMERO, y un backup fallido aborta sin escribir una celda. */
+  var bk = backupMarcadores_('cc_acumulado');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se escribió nada): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('');
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
+
+  FILAS_CC_ACUMULADO_.forEach(function (x) {
+    var obj = filaCompleta(x);
+    var valores = headers.map(function (h) { return (h in obj) ? obj[h] : ''; });
+    if (existentes[x.marcador]) {
+      hoja.getRange(existentes[x.marcador], 1, 1, headers.length).setValues([valores]);
+    } else {
+      hoja.appendRow(valores);
+    }
+  });
+  SpreadsheetApp.flush();
+
+  /* ⭐⭐ RELEER, y por la hoja — no por lo que se pidió escribir (`CLAUDE.md` §4). En Sheets la
+   * relectura no es paranoia: la celda pasa por la interpretación automática de tipos. */
+  var releido = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES').getDataRange().getValues();
+  var hs = releido[0].map(function (h) { return String(h == null ? '' : h).trim(); });
+  var iMr = hs.indexOf('marcador'), iB = hs.indexOf('base_id'), iS = hs.indexOf('solapa');
+  var iCl = hs.indexOf('campo_logico'), iOp = hs.indexOf('operacion'), iFo = hs.indexOf('formato');
+  var malas = [];
+  Logger.log('');
+  Logger.log('  ---- RELECTURA desde la hoja ----');
+  FILAS_CC_ACUMULADO_.forEach(function (x) {
+    var fila = null;
+    for (var r = 1; r < releido.length; r++) {
+      if (String(releido[r][iMr] || '').trim() === x.marcador) { fila = releido[r]; break; }
+    }
+    if (!fila) { malas.push(x.marcador + ': no quedó en la hoja'); return; }
+    Logger.log('     ' + (x.marcador + '                 ').slice(0, 18) + fila[iB] + '/' + fila[iS] +
+      '  ' + fila[iCl] + '  ' + fila[iOp] + '  ' + fila[iFo]);
+    if (String(fila[iB]).trim() !== BASE_CC_ACUMULADO_) malas.push(x.marcador + ': `base_id` quedó ' + fila[iB]);
+    if (String(fila[iS]).trim() !== SOLAPA_CC_ACUMULADO_) malas.push(x.marcador + ': `solapa` quedó ' + fila[iS]);
+    if (String(fila[iCl]).trim() !== x.campo_logico) malas.push(x.marcador + ': `campo_logico` quedó ' + fila[iCl]);
+    if (String(fila[iFo]).trim() !== x.formato) malas.push(x.marcador + ': `formato` quedó ' + fila[iFo]);
+  });
+
+  if (malas.length) {
+    Logger.log('  ⛔⛔ LA RELECTURA NO COINCIDE — backup `' + bk.nombre + '`:');
+    malas.forEach(function (m) { Logger.log('     · ' + m); });
+    return { ok: false, motivo: 'relectura', detalle: malas, backup: bk.nombre };
+  }
+  Logger.log('     ✅ las tres quedaron como se pidieron, leídas DE LA HOJA.');
+  Logger.log('');
+  Logger.log('  ⛔ Falta la corrida: esto escribió configuración, no publicó ningún número.');
+  return { ok: true, aplicado: true, marcadores: FILAS_CC_ACUMULADO_.length, backup: bk.nombre };
 }

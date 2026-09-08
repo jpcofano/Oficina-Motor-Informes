@@ -9427,12 +9427,12 @@ function verGlobalL047() {
  *
  * ⭐ `D-58` aplicado al generar: cuando dos casos hablan del mismo marcador, manda el
  * más nuevo. Y los `token_propuesto` con varios marcadores en una celda vienen
- * DESARMADOS —50 celdas, 277 referencias— porque contar celdas
+ * DESARMADOS —54 celdas, 304 referencias— porque contar celdas
  * en vez de marcadores da un número que no corresponde a nada.
  * ══════════════════════════════════════════════════════════════════════════════ */
-var CASOS_POR_MARCADOR_GENERADA_ = '2026-09-07';
-var CASOS_POR_MARCADOR_ARCHIVOS_ = 5;
-/* 141 marcadores · exacto 81 · contradice 10 · cerrado 14 · abierto 21 */
+var CASOS_POR_MARCADOR_GENERADA_ = '2026-09-08';
+var CASOS_POR_MARCADOR_ARCHIVOS_ = 7;
+/* 142 marcadores · exacto 84 · contradice 10 · cerrado 12 · abierto 22 */
 var CASOS_POR_MARCADOR_ = {
   'camp_alcance': { estado: 'cerrado', caso: 'C-94', csv: '2026-09-04', previos: ['abierto','contradice'] },
   'camp_aperturas': { estado: 'exacto', caso: 'V-113', csv: '2026-08-19', previos: [] },
@@ -9460,12 +9460,12 @@ var CASOS_POR_MARCADOR_ = {
   'camp_prog_impresiones': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04', previos: ['exacto'] },
   'camp_prog_vistas': { estado: 'exacto', caso: 'V-111', csv: '2026-08-19', previos: [] },
   'camp_visualizaciones': { estado: 'exacto', caso: 'V-111', csv: '2026-08-19', previos: [] },
-  'cc_base': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19', previos: ['exacto','exacto','exacto','exacto','cerrado','cerrado','exacto','reformulado'] },
+  'cc_base': { estado: 'exacto', caso: 'C-118', csv: '2026-09-08b', previos: ['exacto','exacto','exacto','exacto','cerrado','cerrado','exacto','reformulado','cerrado','exacto','exacto','cerrado','cerrado','cerrado','cerrado','abierto'] },
   'cc_base_discada': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19', previos: ['exacto'] },
   'cc_base_total': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19', previos: ['exacto'] },
-  'cc_campanias': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19', previos: ['cerrado','exacto','reformulado'] },
-  'cc_contact_pct': { estado: 'reformulado', caso: 'X-28', csv: '2026-08-19', previos: ['exacto','exacto'] },
-  'cc_contactados': { estado: 'cerrado', caso: 'X-37', csv: '2026-08-19', previos: ['exacto','exacto','exacto','exacto','exacto','exacto','reformulado'] },
+  'cc_campanias': { estado: 'abierto', caso: 'C-121', csv: '2026-09-08b', previos: ['cerrado','exacto','reformulado','cerrado','cerrado','abierto','cerrado','cerrado','cerrado'] },
+  'cc_contact_pct': { estado: 'exacto', caso: 'C-120', csv: '2026-09-08b', previos: ['exacto','exacto','reformulado','cerrado','exacto','cerrado','abierto','abierto'] },
+  'cc_contactados': { estado: 'exacto', caso: 'C-119', csv: '2026-09-08b', previos: ['exacto','exacto','exacto','exacto','exacto','exacto','reformulado','cerrado','cerrado','exacto','exacto','cerrado','abierto'] },
   'cc_efectivos': { estado: 'exacto', caso: 'V-91', csv: '2026-08-19', previos: ['exacto'] },
   'contenidos_total': { estado: 'exacto', caso: 'X-11', csv: '2026-08-19', previos: [] },
   'ecv_asistentes': { estado: 'exacto', caso: 'V-47', csv: '2026-08-19', previos: ['exacto','exacto','exacto'] },
@@ -9513,6 +9513,7 @@ var CASOS_POR_MARCADOR_ = {
   'enc_or': { estado: 'exacto', caso: 'V-14', csv: '2026-08-19', previos: [] },
   'enc_visualizaciones': { estado: 'exacto', caso: 'V-94', csv: '2026-08-19', previos: ['exacto'] },
   'frecuencia_estimada': { estado: 'cerrado', caso: 'C-52', csv: '2026-08-19', previos: [] },
+  'gcba_cc_base': { estado: 'cerrado', caso: 'C-108', csv: '2026-09-08', previos: [] },
   'gcba_contenidos_total': { estado: 'exacto', caso: 'V-60', csv: '2026-08-19', previos: [] },
   'gcba_frecuencia': { estado: 'contradice', caso: 'X-32', csv: '2026-08-19', previos: [] },
   'gcba_imp_total': { estado: 'exacto', caso: 'V-74', csv: '2026-08-19', previos: ['exacto'] },

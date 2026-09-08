@@ -1846,6 +1846,32 @@ var DIMENSIONES_ = {
        * contradecia al nombre y gano el nombre; aca la columna explicita es la que acierta.
        * Por eso se mide una por una y no se hereda la regla de la solapa de al lado. */
       'digital|Directa IVR': 'ivr_vocero=JM',
+      /* ⭐⭐ `2026-09-08_4` — **la base nueva de Call Center, y es la PRIMERA entrada con corte
+       * POSITIVO POR LOS DOS LADOS** (decisión del usuario, 07/09; `C-108`).
+       *
+       * ⛔ **Diverge a propósito de `ivr_vocero`, que está tres líneas arriba y es `!= JM`.**
+       * `DIMENSIONES_` indexa por `base|solapa` justamente para que dos solapas puedan cortar
+       * distinto; no hay nada que unificar.
+       *
+       * ⭐ **El motivo está medido, no es simetría estética.** Censo del 08/09 sobre las 1980
+       * filas: `Remitente` tiene **SEIS** valores —`GCBA` 1400, `JM` 476, `ANUNCIO` 88, vacía 10,
+       * `#N/A` 5, `No se activó` 1—. Con `!= JM`, esas **104** filas que no son ninguno de los dos
+       * caerían en `gcba` y sumarían **en silencio** del lado equivocado. Con `= GCBA` quedan
+       * **fuera de los dos ámbitos y se ven**.
+       *
+       * ⭐ **Verificado que el mecanismo lo admite**, leyendo `valorPasaFiltro_`: con `op` `=` y
+       * celda vacía el resultado es `false` de los dos lados, así que la fila queda afuera de
+       * ambos. Con `!=` daría `true` y entraría a `gcba`.
+       *
+       * ⚠ **`jm` y `gcba` dejan de particionar, y ESO es lo buscado.** El residuo se mide: en las
+       * dos ventanas con deck publicado da **cero** (`C-108`), pero eso es de la VENTANA y no de
+       * la solapa.
+       *
+       * ⚠ **Y el corte no está probado NECESARIO** (`C-117`): `ID cuentas ~= JDGAG` solo también
+       * reproduce los dos números. Se elige `Remitente` porque es la columna de **ámbito** —la
+       * misma que va a servir para `gcba_cc_*`— y porque `JDGAG` no distingue JM de GCBA: `X-28`
+       * midió **124 cuentas `JDGAG`** con filas en CC. */
+      'acumulado|Call Center - Métricas': 'acc_remitente=JM',
       'looker|resumen_metricas_dinamico': 'id_cuenta~=JDGAG'
     },
     // `gcba` es **todo lo que no es `jm`** (`D-33`), no un valor propio: se implementa negando
@@ -1868,6 +1894,11 @@ var DIMENSIONES_ = {
        * con el vocero vacio o mal tipeado **quedaria afuera de los dos ambitos y en silencio**.
        * Con la negacion cae en GCBA y se ve. */
       'digital|Directa IVR': 'ivr_vocero!=JM',
+      // `2026-09-08_4` — ⛔ **NO es la negación de la de arriba, y es la única del mapa que no lo
+      // es.** `D-33` dice que `gcba` es «todo lo que no es `jm`»; acá el usuario decidió lo
+      // contrario **con la medición delante**: hay seis valores en la columna, no dos. El motivo
+      // largo está en el bloque de `jm`.
+      'acumulado|Call Center - Métricas': 'acc_remitente=GCBA',
       'looker|resumen_metricas_dinamico': 'id_cuenta!~=JDGAG'
     },
     /* ⭐⭐ `2026-09-01_1` — **`ministros` tiene nombre propio aunque hoy sea el MISMO CONJUNTO que
