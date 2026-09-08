@@ -10339,3 +10339,973 @@ function universoAgendaOk_() {
   det.push('Sabor: ' + sabor.join(', ') + '   ·   Quirós: (afuera)');
   return { ok: true, motivo: '', detalle: det };
 }
+
+
+/* ==========================================================================
+ * `2026-09-07_1` Parte B — CENSO DE LA PLANILLA NUEVA DE CALL CENTER / IVR / M2
+ *
+ * **Por qué existe, que es lo único que la justifica.** Todo lo que el prompt dice sobre el
+ * CONTENIDO de esta planilla es **declarado por el usuario, no medido**: llega de un pegado de
+ * encabezados, y las letras de columna son un conteo sobre ese pegado que **nadie verificó contra
+ * la planilla**. Este wrapper es la medición que falta, y `CLAUDE.md` §4 dice por qué no se puede
+ * saltear — van cuatro prompts seguidos con una premisa central falsa, y en los cuatro la cazó una
+ * medición previa.
+ *
+ * ⛔ **NO escribe ninguna hoja de registro.** No toca `BASES`, `SOLAPAS`, `MAPEO` ni `MARCADORES`.
+ * El alta es otro prompt y no se escribe sin el reporte de esta corrida.
+ *
+ * ⚠ **El `sheet_id` va escrito acá adentro y eso NO viola §2** (*nada de valores hardcodeados*):
+ * esto es un instrumento de medición de un solo uso, no configuración del motor. El día que ese id
+ * termine en un `SEED_*`, eso ya es el alta y ya no es este prompt.
+ *
+ * ⭐ **El `JSON.stringify` de cada encabezado no es adorno: es lo único que hace VISIBLES los
+ * saltos de línea y los espacios de borde.** El usuario declara que seis encabezados de `IVR` traen
+ * un salto de línea adentro y uno además un espacio antes del `+`. `MAPEO.encabezado` es **testigo
+ * textual** (`D-31`): si el alta lo escribe tipeado en vez de copiado de este censo, el testigo
+ * nace desalineado y **no falla nada**.
+ *
+ * ⭐ **El conteo de filas con dato va POR COLUMNA y no una sola vez**, porque `M2 - Gráficos2` la
+ * alimentan dos fórmulas de **largo distinto** —un bloque `A:G` filtrado a 2026 y cuatro columnas
+ * sin filtrar— y un conteo único mentiría sobre las dos.
+ *
+ * **Público y sin parámetros, las dos condiciones** (`CLAUDE.md` §2): Apps Script no lista en el
+ * desplegable ni las que terminan en `_` ni las que reciben argumentos. Y devuelve por
+ * `Logger.log` además de por `return`, porque el editor no muestra el valor de retorno.
+ *
+ * SÓLO LECTURA. No abre nada para escribir.
+ * ========================================================================== */
+
+/** El id lo declaró el usuario el 07/09/2026 en la conversación. Verificado el mismo día: no
+ *  aparece en `SEED_BASES_` ni en ningún `.gs` ni `.md` del repo — es una planilla que el motor
+ *  todavía no conoce. */
+var CENSO_PLANILLA_NUEVA_CC_ = '1f8Jy9S09EjWhXo-RF6llXnk8alQCJxWSZAdnfp3WR60';
+
+/** Las tres que el prompt declara de interés. `Mail` y `SMS` existen en la planilla y **no** se
+ *  dan de alta ahora, así que entran al inventario de solapas pero no al detalle celda por celda. */
+var CENSO_SOLAPAS_DETALLE_CC_ = ['Call Center - Métricas', 'IVR', 'M2 - Gráficos2'];
+
+function censarBaseNuevaCallCenterIVR() {
+  var out = [];
+  function log(s) { out.push(s); Logger.log(s); }
+
+  log('==== CENSO · planilla nueva Call Center / IVR / M2 ====');
+  log('sheet_id: ' + CENSO_PLANILLA_NUEVA_CC_);
+  log('⛔ SÓLO LECTURA — no escribe BASES, SOLAPAS, MAPEO ni MARCADORES.');
+  log('');
+
+  /* ⭐ No se reimplementa la lectura: `diagPlanillaExterna_` ya existe y es la que hay que usar.
+   * Reescribirla sería el instrumento que reproduce lógica del motor y la reproduce peor. */
+  var censo;
+  try {
+    censo = diagPlanillaExterna_(CENSO_PLANILLA_NUEVA_CC_);
+  } catch (e) {
+    log('⛔ NO SE PUDO ABRIR LA PLANILLA: ' + e.message);
+    log('   Causa probable: la cuenta que corre esto no la tiene compartida.');
+    return { ok: false, motivo: 'no se pudo abrir', log: out.join('\n') };
+  }
+
+  log('nombre del archivo: ' + JSON.stringify(censo.nombre));
+  log('');
+  log('---- TODAS las solapas (' + censo.solapas.length + ') ----');
+  censo.solapas.forEach(function (linea) { log('  ' + linea); });
+  log('');
+
+  var ss = SpreadsheetApp.openById(CENSO_PLANILLA_NUEVA_CC_);
+  var presentes = ss.getSheets().map(function (h) { return h.getName(); });
+
+  /* ⚠ Un censo que sólo informa lo que encontró no distingue «no está» de «no miré». Las tres de
+   * interés se nombran una por una, y la que falte se dice con todas las letras. */
+  log('---- Las tres de interés: ¿están? ----');
+  CENSO_SOLAPAS_DETALLE_CC_.forEach(function (n) {
+    log('  ' + (presentes.indexOf(n) !== -1 ? '✅ existe   ' : '⛔ NO EXISTE') + '  ' + JSON.stringify(n));
+  });
+  log('');
+
+  var detalle = {};
+  CENSO_SOLAPAS_DETALLE_CC_.forEach(function (nombre) {
+    var hoja = ss.getSheetByName(nombre);
+    log('==== DETALLE · ' + JSON.stringify(nombre) + ' ====');
+    if (!hoja) {
+      log('  ⛔ no existe en la planilla — el prompt la declaraba y la planilla la desmiente.');
+      log('');
+      detalle[nombre] = { ok: false, motivo: 'no existe' };
+      return;
+    }
+
+    var filas = hoja.getLastRow();
+    var cols = hoja.getLastColumn();
+    log('  forma: ' + filas + ' fila(s) × ' + cols + ' columna(s)');
+
+    if (filas < 1 || cols < 1) {
+      log('  ⛔ solapa vacía — no hay fila de encabezados que censar.');
+      log('');
+      detalle[nombre] = { ok: false, motivo: 'vacía', filas: filas, columnas: cols };
+      return;
+    }
+
+    /* ⭐ Los encabezados se leen CRUDOS y se imprimen con `JSON.stringify`. Normalizarlos antes de
+     * mirarlos sería el `String(celda)` de §4 —convertir antes de mirar destruye lo que se venía a
+     * ver—: acá lo que se viene a ver son justamente los saltos de línea y los espacios de borde. */
+    var encabezados = hoja.getRange(1, 1, 1, cols).getValues()[0];
+
+    log('  -- encabezados, celda por celda (letra · crudo · normalizado R-10) --');
+    var filasEnc = [];
+    encabezados.forEach(function (v, i) {
+      var letra = indiceAColumnaLetra_(i);
+      var crudo = JSON.stringify(v);
+      var norm = JSON.stringify(normalizarValorDeclarado_(v));
+      /* ⚠ El normalizado va al lado a propósito: es EXACTAMENTE lo que `MAPEO.encabezado` tiene
+       * que llevar como testigo (`R-10` colapsa los blancos y hace `trim()`, preservando
+       * mayúsculas y acentos). Si crudo y normalizado difieren, tipearlo a mano nace desalineado. */
+      log('    ' + letra + (crudo === norm ? '   ' : ' ⚠ ') + crudo +
+          (crudo === norm ? '' : '   →R-10→ ' + norm));
+      filasEnc.push({ letra: letra, json: crudo, normalizado: normalizarValorDeclarado_(v) });
+    });
+
+    /* ⭐ El conteo va POR COLUMNA. `M2 - Gráficos2` tiene dos bloques de largo distinto y un
+     * conteo único de «filas con dato» mentiría sobre los dos a la vez. */
+    var conteos = [];
+    if (filas >= 2) {
+      var datos = hoja.getRange(2, 1, filas - 1, cols).getValues();
+      log('  -- filas con dato POR COLUMNA (sobre ' + (filas - 1) + ' filas debajo del encabezado) --');
+      for (var c = 0; c < cols; c++) {
+        var n = 0;
+        for (var f = 0; f < datos.length; f++) {
+          var v = datos[f][c];
+          if (v !== '' && v !== null && v !== undefined) n++;
+        }
+        conteos.push({ letra: indiceAColumnaLetra_(c), encabezado: String(encabezados[c]), con_dato: n });
+        log('    ' + indiceAColumnaLetra_(c) + '\t' + n + '\t' + JSON.stringify(String(encabezados[c])));
+      }
+      /* ⚠ Si todas las columnas dieran el mismo conteo, los dos bloques de `M2 - Gráficos2`
+       * tendrían el MISMO largo, y eso desmentiría lo declarado. Se dice, no se deduce. */
+      var distintos = {};
+      conteos.forEach(function (x) { distintos[x.con_dato] = 1; });
+      log('  conteos distintos entre columnas: ' + Object.keys(distintos).length +
+          ' (' + Object.keys(distintos).join(', ') + ')');
+    } else {
+      log('  ⚠ sin filas de datos debajo del encabezado — no hay conteo por columna que hacer.');
+    }
+    log('');
+
+    detalle[nombre] = { ok: true, filas: filas, columnas: cols, encabezados: filasEnc, conteos: conteos };
+  });
+
+  log('==== FIN DEL CENSO ====');
+  log('Lo que este censo NO contesta, y hay que decirlo:');
+  log('  · si `IVR` es la misma tabla que `digital/Directa IVR` — el veredicto es del prompt siguiente;');
+  log('  · si `Fecha` de Call Center destraba `X-28` — esa pregunta la contesta el equipo (C-80);');
+  log('  · si `Remitente` reproduce el corte JM/GCBA — está declarado y no medido contra ningún deck.');
+
+  return { ok: true, id: CENSO_PLANILLA_NUEVA_CC_, nombre: censo.nombre,
+           solapas: censo.solapas, detalle: detalle, log: out.join('\n') };
+}
+
+
+/* ==========================================================================
+ * `2026-09-07_2` Parte B — MEDICIÓN DEL UNIVERSO DE CALL CENTER SOBRE LA BASE NUEVA
+ *
+ * **Qué contesta y qué NO.** Contesta *«qué filas selecciona cada criterio candidato»*. ⛔ **No
+ * elige ganador**: quién gana es del usuario, con la matriz delante. Un instrumento que además
+ * decide convierte una medición en una decisión sin que nadie la haya tomado.
+ *
+ * ⭐⭐ **Qué mitad es del motor y qué mitad es definición de negocio** (`CLAUDE.md` §4, reglas 2
+ * y 4), porque el reporte tiene que decirlo y si no se escribe acá nadie lo va a saber después:
+ *   · **Del MOTOR, extraído y no reescrito:** la comparación (`valorPasaFiltro_`, el único
+ *     comparador del motor, con `=` y `~=` de `OPERADORES_FILTRO_`), la normalización
+ *     (`normalizarValorDeclarado_`, el canónico de `R-10`), el parseo de fechas
+ *     (`parsearFechaCelda_`) y la suma (`opSUMA`, con su distinción entre `0` y `sin_datos`).
+ *   · **DEFINICIÓN DE NEGOCIO, escrita acá:** qué columna corta cada criterio, qué ventana, y
+ *     que la ventana se decide por `Fecha` (K) **como punto** y no por solape — esta solapa
+ *     tiene una sola columna temporal, así que `R-16` no tiene dos fechas que solapar.
+ *   ⇒ **Un número de esta matriz prueba que la DEFINICIÓN selecciona esas filas. NO prueba que
+ *     el motor las leería así**, porque la base todavía no está dada de alta. Son dos
+ *     afirmaciones distintas y esta hace la primera.
+ *
+ * ⛔ **NO escribe ninguna hoja de registro.** No toca `BASES`, `SOLAPAS`, `MAPEO` ni
+ * `MARCADORES`. El alta y el cableado son prompts posteriores.
+ *
+ * ⭐⭐ **Las columnas se resuelven POR ENCABEZADO y se reporta la letra que salió, contra la
+ * letra declarada.** El `2026-09-07_1` dejó dicho que las letras del prompt son *«conteo sobre
+ * el orden pegado, que no verificó nadie contra la planilla»*. Confiar en ellas sería medir con
+ * la regla que este mismo repo declaró sin verificar. ⚠ Y el encabezado se compara **por
+ * igualdad exacta tras `R-10`, nunca por prefijo**: `Tipo` es prefijo de `Tipo de llamado` y
+ * ése es exactamente el modo de falla del filtro por prefijo de `CLAUDE.md` §4.
+ *
+ * ⭐ **La identidad que controla la medición, y FALLA en vez de informar:** `2 + 3 + 4` tiene
+ * que dar exactamente el criterio `1`, en filas y en suma, en las dos ventanas. Si no cierra,
+ * eso es el hallazgo y no se imprime la matriz — una matriz cuyos números no se suman entre sí
+ * es una tabla de números plausibles.
+ *
+ * ⭐ **Y un control positivo que comparte camino de lectura:** el criterio 6 —el de los `imp_*`,
+ * por nombre— **tiene que traer `3289-JUNJDGAG` en la ventana de agosto**. Es el modo de falla
+ * que `C-69` ya midió, y si NO aparece el instrumento está leyendo otra cosa. Un detector sin
+ * un caso que TIENE que encontrar no distingue «no está» de «no miré».
+ *
+ * **Público y sin parámetros, las dos condiciones** (`CLAUDE.md` §2), y devuelve por
+ * `Logger.log` además de por `return`.
+ *
+ * SÓLO LECTURA.
+ * ========================================================================== */
+
+/** Las dos ventanas que tienen deck publicado. `R-16` no aplica: con una sola columna temporal
+ *  la pertenencia es por PUNTO —`desde <= Fecha <= hasta`—, no por solape de dos fechas. */
+var MEDICION_CC_VENTANAS_ = [
+  { etiqueta: '24–31/07/2026', desde: new Date(2026, 6, 24), hasta: new Date(2026, 6, 31) },
+  { etiqueta: '14–20/08/2026', desde: new Date(2026, 7, 14), hasta: new Date(2026, 7, 20) }
+];
+
+/** Encabezado buscado → letra que el prompt DECLARA. La letra es sólo para contrastar: la
+ *  columna se resuelve por encabezado. Si difieren, eso es el hallazgo. */
+var MEDICION_CC_COLUMNAS_ = [
+  { campo: 'campana', encabezado: 'Campaña', letra_declarada: 'A' },
+  { campo: 'base_barrida', encabezado: 'Base Barrida', letra_declarada: 'C' },
+  { campo: 'tipo', encabezado: 'Tipo', letra_declarada: 'I' },
+  { campo: 'fecha', encabezado: 'Fecha', letra_declarada: 'K' },
+  { campo: 'estado', encabezado: 'Estado', letra_declarada: 'M' },
+  { campo: 'area', encabezado: 'Área', letra_declarada: 'O' },
+  { campo: 'id_cuenta', encabezado: 'ID cuentas', letra_declarada: 'P' },
+  { campo: 'remitente', encabezado: 'Remitente', letra_declarada: 'Q' },
+  { campo: 'tipo_llamado', encabezado: 'Tipo de llamado', letra_declarada: 'R' },
+  { campo: 'herramienta', encabezado: 'Herramienta', letra_declarada: 'V' }
+];
+
+/** Las dos cuentas que los decks publicaron. No son un criterio: son la sonda que dice qué
+ *  tiene la base HOY para ellas, que es lo único que puede arbitrar entre 6.851 y 7.096. */
+var MEDICION_CC_CUENTAS_PUBLICADAS_ = ['3289-JUNJDGAG', '3488-AGOJDGAG'];
+
+/** Una condición del lenguaje real del motor, para pasársela a `valorPasaFiltro_`. */
+function condMedicionCc_(valor, op) {
+  return { campo: '(medicion)', valor: valor, negado: false, op: op || '=' };
+}
+
+function medirUniversoCallCenterBaseNueva() {
+  var out = [];
+  var avisos = [];
+  function log(s) { out.push(s); Logger.log(s); }
+
+  log('==== MEDICIÓN · universo de Call Center sobre la base nueva ====');
+  log('sheet_id: ' + CENSO_PLANILLA_NUEVA_CC_ + '   ·   solapa: "Call Center - Métricas"');
+  log('fecha de lectura: ' + formatearFecha_(new Date()) + '   ⚠ una medición es una FOTO: este');
+  log('   número responde por hoy y por ningún otro día.');
+  log('⛔ SÓLO LECTURA · no escribe BASES, SOLAPAS, MAPEO ni MARCADORES · NO elige ganador.');
+  log('');
+
+  var hoja;
+  try {
+    hoja = SpreadsheetApp.openById(CENSO_PLANILLA_NUEVA_CC_).getSheetByName('Call Center - Métricas');
+  } catch (e) {
+    log('⛔ NO SE PUDO ABRIR LA PLANILLA: ' + e.message);
+    return { ok: false, motivo: 'no se pudo abrir', log: out.join('\n') };
+  }
+  if (!hoja) {
+    log('⛔ La solapa "Call Center - Métricas" NO EXISTE en la planilla.');
+    return { ok: false, motivo: 'no existe la solapa', log: out.join('\n') };
+  }
+
+  var nFilas = hoja.getLastRow();
+  var nCols = hoja.getLastColumn();
+  log('forma: ' + nFilas + ' fila(s) × ' + nCols + ' columna(s)');
+  if (nFilas < 2) {
+    log('⛔ sin filas de datos.');
+    return { ok: false, motivo: 'sin datos', log: out.join('\n') };
+  }
+
+  /* ── Resolución de columnas por ENCABEZADO ─────────────────────────────────────────────
+   * ⚠ Igualdad exacta tras `R-10`, nunca `indexOf`: `Tipo` es prefijo de `Tipo de llamado`. */
+  var encCrudos = hoja.getRange(1, 1, 1, nCols).getValues()[0];
+  var encNorm = encCrudos.map(normalizarValorDeclarado_);
+  var col = {};
+  var faltantes = [];
+
+  log('');
+  log('---- resolución de columnas (POR ENCABEZADO, la letra es lo que salió) ----');
+  MEDICION_CC_COLUMNAS_.forEach(function (c) {
+    var buscado = normalizarValorDeclarado_(c.encabezado);
+    var idx = -1;
+    var repetido = 0;
+    for (var i = 0; i < encNorm.length; i++) {
+      if (encNorm[i] === buscado) { if (idx === -1) idx = i; repetido++; }
+    }
+    if (idx === -1) {
+      faltantes.push(c.encabezado);
+      log('  ⛔ ' + c.encabezado + '  →  NO ESTÁ (el prompt la declaraba en ' + c.letra_declarada + ')');
+      return;
+    }
+    col[c.campo] = idx;
+    var letra = indiceAColumnaLetra_(idx);
+    var marca = (letra === c.letra_declarada) ? '✅' : '⚠ ';
+    log('  ' + marca + ' ' + c.encabezado + '  →  ' + letra +
+        (letra === c.letra_declarada ? '' : '   ⚠ EL PROMPT DECLARABA ' + c.letra_declarada) +
+        (repetido > 1 ? '   ⚠ ' + repetido + ' columnas con este mismo encabezado, se usa la primera' : ''));
+    if (letra !== c.letra_declarada) {
+      avisos.push('la columna «' + c.encabezado + '» está en ' + letra + ' y el prompt la declaraba en ' +
+                  c.letra_declarada + ' — las letras declaradas eran un conteo sin verificar.');
+    }
+  });
+
+  /* Las cinco que el criterio necesita. Sin ellas no hay medición, y eso se dice: un cero que
+   * sale de una columna que no se encontró es indistinguible de un cero real. */
+  var imprescindibles = ['fecha', 'remitente', 'id_cuenta', 'base_barrida', 'campana'];
+  var sinLasCuales = imprescindibles.filter(function (k) { return !(k in col); });
+  if (sinLasCuales.length) {
+    log('');
+    log('⛔⛔ FALTAN COLUMNAS IMPRESCINDIBLES: ' + sinLasCuales.join(', '));
+    log('   La medición se detiene acá. Medir sin ellas produciría ceros que se leen como datos.');
+    return { ok: false, motivo: 'faltan columnas', faltan: sinLasCuales, log: out.join('\n') };
+  }
+
+  var datos = hoja.getRange(2, 1, nFilas - 1, nCols).getValues();
+  log('');
+  log('filas de datos leídas: ' + datos.length);
+
+  /* ── (a) Censo de `Remitente` sobre TODA la solapa ────────────────────────────────────── */
+  log('');
+  log('---- (a) CENSO de `Remitente` · toda la solapa, no sólo la ventana ----');
+  var censoRem = {};
+  datos.forEach(function (f) {
+    var crudo = f[col.remitente];
+    var clave = (crudo === '' || crudo === null || crudo === undefined) ? '(vacía)' : JSON.stringify(crudo);
+    censoRem[clave] = (censoRem[clave] || 0) + 1;
+  });
+  Object.keys(censoRem).sort(function (a, b) { return censoRem[b] - censoRem[a]; })
+    .forEach(function (k) { log('  ' + censoRem[k] + '\t' + k); });
+  log('  valores distintos: ' + Object.keys(censoRem).length);
+  /* ⚠ El censo cambia qué SIGNIFICA el corte. Con un tercer valor, `= JM` y `= GCBA` dejan de
+   * particionar y el residuo deja de ser sólo las vacías — que es justo lo que el usuario quiso. */
+
+  /* ── (b) Formato de `Fecha` sobre TODA la solapa ──────────────────────────────────────── */
+  log('');
+  log('---- (b) FORMATO de `Fecha` · por tipo, sobre toda la solapa ----');
+  var fmt = { Date: 0, texto_parsea: 0, texto_NO_parsea: 0, numero: 0, vacia: 0, otro: 0 };
+  var muestraNoDate = [];
+  datos.forEach(function (f, i) {
+    var v = f[col.fecha];
+    if (v === '' || v === null || v === undefined) { fmt.vacia++; return; }
+    if (v instanceof Date) { fmt.Date++; return; }
+    if (typeof v === 'number') {
+      fmt.numero++;
+      if (muestraNoDate.length < 8) muestraNoDate.push('fila ' + (i + 2) + ': ' + JSON.stringify(v) + ' [number]');
+      return;
+    }
+    if (typeof v === 'string') {
+      /* ⭐ Se usa `parsearFechaCelda_`, el parser REAL del motor, no una expresión propia:
+       * reimplementarlo sería el instrumento que reproduce lógica del motor y la reproduce peor. */
+      if (parsearFechaCelda_(v)) fmt.texto_parsea++; else fmt.texto_NO_parsea++;
+      if (muestraNoDate.length < 8) {
+        muestraNoDate.push('fila ' + (i + 2) + ': ' + JSON.stringify(v) + ' [string, ' +
+          (parsearFechaCelda_(v) ? 'parsea' : '⛔ NO parsea') + ']');
+      }
+      return;
+    }
+    fmt.otro++;
+  });
+  Object.keys(fmt).forEach(function (k) { log('  ' + k + ': ' + fmt[k]); });
+  if (muestraNoDate.length) {
+    log('  muestra de lo que NO es Date:');
+    muestraNoDate.forEach(function (s) { log('    ' + s); });
+  }
+  var hayMezcla = (fmt.Date > 0 && (fmt.texto_parsea + fmt.texto_NO_parsea + fmt.numero) > 0);
+  if (hayMezcla) {
+    avisos.push('⛔ `Fecha` trae MEZCLA de `Date` y no-`Date` (' + fmt.Date + ' Date · ' +
+      fmt.texto_parsea + ' texto que parsea · ' + fmt.texto_NO_parsea + ' texto que NO parsea · ' +
+      fmt.numero + ' number). `R-02` veta una columna de fechas tipeadas a mano, y esto va ANTES ' +
+      'que cualquier total.');
+  }
+  if (fmt.texto_NO_parsea > 0) {
+    avisos.push('⛔ ' + fmt.texto_NO_parsea + ' celda(s) de `Fecha` son texto que `parsearFechaCelda_` ' +
+      'NO puede leer: esas filas quedan fuera de TODA ventana, en silencio.');
+  }
+
+  /* ── (c) La matriz ────────────────────────────────────────────────────────────────────── */
+  var esJM = condMedicionCc_('JM');
+  var esGCBA = condMedicionCc_('GCBA');
+  var tieneJDGAG = condMedicionCc_('JDGAG', '~=');
+  var nombreDiceJM = condMedicionCc_('JM', '~=');
+
+  function remJM(f) { return valorPasaFiltro_(f[col.remitente], esJM); }
+  function remGCBA(f) { return valorPasaFiltro_(f[col.remitente], esGCBA); }
+
+  /* ⭐ Los criterios 7, 8 y 9 los agrego yo y el reporte lo dice, con el motivo. `X-28` es la
+   * lección: se barrieron 13 propiedades y «0 de 13» NO significó «no hay regla» — significó que
+   * faltaba la propiedad correcta en la matriz. Un criterio ausente no se ve como un hueco. */
+  var criterios = [
+    { n: 1, nombre: 'Fecha en ventana, SIN otro corte (línea de base)',
+      pasa: function () { return true; } },
+    { n: 2, nombre: 'Fecha en ventana + Remitente = JM',
+      pasa: remJM },
+    { n: 3, nombre: 'Fecha en ventana + Remitente = GCBA  (positivo, NO !=JM)',
+      pasa: remGCBA },
+    { n: 4, nombre: 'RESIDUO — Fecha en ventana + Remitente ni JM ni GCBA',
+      pasa: function (f) { return !remJM(f) && !remGCBA(f); } },
+    { n: 5, nombre: 'Fecha en ventana + Remitente = JM + ID cuentas ~= JDGAG',
+      pasa: function (f) { return remJM(f) && valorPasaFiltro_(f[col.id_cuenta], tieneJDGAG); } },
+    /* ⚠ El criterio 6 del prompt es «pertenencia + nombre ~= JM». **La pertenencia NO es
+     * reproducible sobre esta solapa**: no hay `fecha_inicio`/`fecha_fin` por cuenta ni una
+     * solapa de cuentas de la que tomar la ventana prestada, así que `R-30` tampoco aplica. Lo
+     * que sí se reproduce —y es la mitad que `C-69` midió como fallando— es el corte POR NOMBRE.
+     * Se mide eso y el reporte dice que es media definición, no la entera. */
+    { n: 6, nombre: 'Fecha en ventana + Campaña ~= JM   ⚠ mitad del criterio imp_*: SIN pertenencia',
+      pasa: function (f) { return valorPasaFiltro_(f[col.campana], nombreDiceJM); } },
+    /* ⭐ 7 — agregado: `JDGAG` solo, sin `Remitente`. Es el único superviviente del barrido de
+     * `X-28` y hay que poder ver cuánto aporta el `Remitente` por encima de él. Sin este, la
+     * mejora del criterio 5 no se puede atribuir. */
+    { n: 7, nombre: 'Fecha en ventana + ID cuentas ~= JDGAG   (agregado: el superviviente de X-28, solo)',
+      pasa: function (f) { return valorPasaFiltro_(f[col.id_cuenta], tieneJDGAG); } },
+    /* ⭐ 8 — agregado: el residuo del ámbito DENTRO de JDGAG. Si el corte por `Remitente` deja
+     * afuera filas que `JDGAG` sí trae, esas filas son exactamente las que un alta publicaría de
+     * menos, y quedarían invisibles mirando sólo los totales. */
+    { n: 8, nombre: 'Fecha en ventana + JDGAG + Remitente ni JM ni GCBA   (agregado: el residuo DENTRO de JDGAG)',
+      pasa: function (f) {
+        return valorPasaFiltro_(f[col.id_cuenta], tieneJDGAG) && !remJM(f) && !remGCBA(f);
+      } },
+    /* ⭐ 9 — agregado: el control negativo del ámbito. `Remitente = JM` **y** el nombre NO dice
+     * JM: son las filas que el criterio viejo perdía y el nuevo gana. `C-69` dice que
+     * `3488-AGOJDGAG` («TE CUENTO | SALUD…») es exactamente ese caso, así que este criterio
+     * tiene que ser NO VACÍO en agosto o el corte por `Remitente` no está aportando nada. */
+    { n: 9, nombre: 'Fecha en ventana + Remitente = JM + Campaña !~= JM   (agregado: lo que el nombre perdía)',
+      pasa: function (f) {
+        return remJM(f) && !valorPasaFiltro_(f[col.campana], nombreDiceJM);
+      } }
+  ];
+
+  function medir(filas, criterio) {
+    var sel = filas.filter(criterio.pasa);
+    var cuentas = {};
+    sel.forEach(function (f) {
+      var c = normalizarValorDeclarado_(f[col.id_cuenta]);
+      cuentas[c === '' ? '(sin ID cuentas)' : c] = (cuentas[c === '' ? '(sin ID cuentas)' : c] || 0) + 1;
+    });
+    /* ⭐ La suma sale de `opSUMA`, la operación REAL del motor: trae gratis su distinción entre
+     * `0` (un cero escrito, que es un dato) y `sin_datos` (ninguna fila aportó número). */
+    var r = opSUMA({
+      valores: sel.map(function (f) { return f[col.base_barrida]; }),
+      campo_logico: 'lcc_base_barrida',
+      columna: indiceAColumnaLetra_(col.base_barrida),
+      base_id: '(base nueva CC)', solapa: 'Call Center - Métricas'
+    });
+    return {
+      n: criterio.n, nombre: criterio.nombre,
+      filas: sel.length,
+      cuentas_distintas: Object.keys(cuentas).length,
+      suma_base_barrida: r.valor === '' ? '(sin_datos)' : r.valor,
+      suma_numero: r.valor === '' ? null : Number(r.valor),
+      cuentas: cuentas
+    };
+  }
+
+  var resultado = {};
+  var identidadCierra = true;
+
+  MEDICION_CC_VENTANAS_.forEach(function (v) {
+    /* La ventana, por PUNTO. Se declara acá porque es definición de negocio, no del motor. */
+    var enVentana = datos.filter(function (f) {
+      var d = parsearFechaCelda_(f[col.fecha]);
+      if (!d) return false;
+      return d.getTime() >= v.desde.getTime() && d.getTime() <= v.hasta.getTime();
+    });
+
+    var medidos = criterios.map(function (c) { return medir(enVentana, c); });
+    var porN = {};
+    medidos.forEach(function (m) { porN[m.n] = m; });
+
+    /* ⭐ La identidad, ANTES de imprimir la matriz. */
+    var sumaFilas = porN[2].filas + porN[3].filas + porN[4].filas;
+    var s2 = porN[2].suma_numero || 0, s3 = porN[3].suma_numero || 0, s4 = porN[4].suma_numero || 0;
+    var sumaBB = s2 + s3 + s4;
+    var base1 = porN[1].suma_numero || 0;
+    var cierraFilas = (sumaFilas === porN[1].filas);
+    var cierraBB = (sumaBB === base1);
+
+    log('');
+    log('════ VENTANA ' + v.etiqueta + ' ════');
+    log('  filas con `Fecha` dentro de la ventana: ' + enVentana.length);
+    log('  -- identidad de control:  2 + 3 + 4  =  1 --');
+    log('     filas:          ' + porN[2].filas + ' + ' + porN[3].filas + ' + ' + porN[4].filas +
+        ' = ' + sumaFilas + '   vs criterio 1 = ' + porN[1].filas + '   ' + (cierraFilas ? '✅' : '⛔'));
+    log('     Base Barrida:   ' + s2 + ' + ' + s3 + ' + ' + s4 +
+        ' = ' + sumaBB + '   vs criterio 1 = ' + base1 + '   ' + (cierraBB ? '✅' : '⛔'));
+
+    if (!cierraFilas || !cierraBB) {
+      identidadCierra = false;
+      log('');
+      log('  ⛔⛔ LA IDENTIDAD NO CIERRA — ESO ES EL HALLAZGO Y LA MATRIZ NO SE IMPRIME.');
+      log('     Una matriz cuyos números no se suman entre sí es una tabla de números plausibles.');
+      log('     Para diagnosticar: mirar el censo de `Remitente` de arriba y el criterio 4.');
+      resultado[v.etiqueta] = { identidad: false, criterio_1: porN[1], criterio_2: porN[2],
+                                criterio_3: porN[3], criterio_4: porN[4] };
+      return;
+    }
+
+    log('');
+    log('  n  filas  cuentas  Base Barrida   criterio');
+    medidos.forEach(function (m) {
+      log('  ' + m.n + '   ' + m.filas + '\t' + m.cuentas_distintas + '\t' + m.suma_base_barrida +
+          '\t' + m.nombre);
+    });
+    log('');
+    log('  -- las cuentas de cada criterio (la lista es lo que muestra si 3289 entró donde no debía) --');
+    medidos.forEach(function (m) {
+      var lista = Object.keys(m.cuentas).sort().map(function (k) { return k + '×' + m.cuentas[k]; });
+      log('    ' + m.n + ': ' + (lista.length ? lista.join('  ·  ') : '(ninguna)'));
+    });
+
+    /* ⭐ El residuo, con sus valores CRUDOS: sin ellos «4 filas» no dice qué hay que arreglar. */
+    var residuo = enVentana.filter(criterios[3].pasa);
+    log('');
+    log('  -- criterio 4 · valores CRUDOS de `Remitente` en el residuo (' + residuo.length + ' filas) --');
+    if (!residuo.length) {
+      log('    (ninguna) — en esta ventana `JM` y `GCBA` sí particionan el universo.');
+    } else {
+      var crudos = {};
+      residuo.forEach(function (f) {
+        var c = f[col.remitente];
+        var k = (c === '' || c === null || c === undefined) ? '(vacía)' : JSON.stringify(c);
+        crudos[k] = (crudos[k] || 0) + 1;
+      });
+      Object.keys(crudos).forEach(function (k) { log('    ' + crudos[k] + '\t' + k); });
+    }
+
+    resultado[v.etiqueta] = { identidad: true, criterios: medidos };
+  });
+
+  /* ── (d) La sonda de las dos cuentas publicadas, SIN ventana ─────────────────────────── */
+  log('');
+  log('---- (d) SONDA · las dos cuentas publicadas, sobre toda la solapa y SIN ventana ----');
+  log('   ⚠ No es un criterio: es lo que la base tiene HOY para esas cuentas. El repo guarda');
+  log('      DOS valores distintos para 3488 en 14–20/08 (7.096 en C-69/X-37 y 6.851 en C-80/X-28),');
+  log('      y una tercera lectura de una base que se mueve NO los arbitra — sólo los ubica.');
+  var sonda = {};
+  MEDICION_CC_CUENTAS_PUBLICADAS_.forEach(function (idc) {
+    var cond = condMedicionCc_(idc);
+    var sel = datos.filter(function (f) { return valorPasaFiltro_(f[col.id_cuenta], cond); });
+    var r = opSUMA({
+      valores: sel.map(function (f) { return f[col.base_barrida]; }),
+      campo_logico: 'lcc_base_barrida', columna: indiceAColumnaLetra_(col.base_barrida),
+      base_id: '(base nueva CC)', solapa: 'Call Center - Métricas'
+    });
+    log('   ' + idc + ': ' + sel.length + ' fila(s) · Base Barrida = ' + (r.valor === '' ? '(sin_datos)' : r.valor));
+    sel.forEach(function (f) {
+      var d = parsearFechaCelda_(f[col.fecha]);
+      log('      · ' + JSON.stringify(String(f[col.campana])).slice(0, 50) +
+          '  Fecha=' + (d ? formatearFecha_(d) : JSON.stringify(f[col.fecha])) +
+          '  Remitente=' + JSON.stringify(f[col.remitente]) +
+          '  Base Barrida=' + JSON.stringify(f[col.base_barrida]));
+    });
+    sonda[idc] = { filas: sel.length, suma: r.valor };
+  });
+
+  /* ── (e) Control positivo ─────────────────────────────────────────────────────────────── */
+  log('');
+  log('---- (e) CONTROL POSITIVO · el criterio 6 tiene que traer 3289 en agosto (C-69) ----');
+  var agosto = resultado['14–20/08/2026'];
+  var cp = 'no se pudo evaluar (la identidad no cerró en agosto)';
+  if (agosto && agosto.identidad) {
+    var c6 = agosto.criterios.filter(function (m) { return m.n === 6; })[0];
+    var trajo3289 = Object.keys(c6.cuentas).some(function (k) { return k.indexOf('3289') !== -1; });
+    cp = trajo3289 ? 'PASA' : 'NO PASA';
+    log('   criterio 6 en agosto trae: ' + (Object.keys(c6.cuentas).join(', ') || '(ninguna)'));
+    log('   ' + (trajo3289 ? '✅ PASA — 3289 aparece, que es el modo de falla que C-69 midió.'
+                           : '⛔ NO PASA — 3289 NO aparece. El instrumento está leyendo otra cosa,'));
+    if (!trajo3289) {
+      log('      o la base cambió. En cualquier caso la matriz de arriba NO se puede citar todavía.');
+      avisos.push('⛔ El control positivo NO pasó: el criterio 6 no trajo 3289 en agosto. ' +
+        'Sin él, «no está» y «no miré» se ven igual y la matriz no es citable.');
+    }
+  } else {
+    log('   ' + cp);
+  }
+
+  /* ── Los avisos, ÚLTIMOS y después del veredicto ─────────────────────────────────────── */
+  log('');
+  log('==== QUÉ NO CUBRE ESTO ====');
+  log('  · Mide DEFINICIONES DE NEGOCIO sobre la base viva. NO prueba que el motor lea así:');
+  log('    la base no está dada de alta y ningún marcador la toca.');
+  log('  · NO elige ganador. Si algún criterio reproduce los dos números publicados, eso es una');
+  log('    observación; la decisión es del usuario.');
+  log('  · La pertenencia del criterio de los `imp_*` NO es reproducible acá (no hay solapa de');
+  log('    cuentas con fecha_inicio/fecha_fin), así que `R-30` no interviene: el criterio 6 es');
+  log('    MEDIA definición.');
+  log('  · Es una FOTO del ' + formatearFecha_(new Date()) + ' y responde por ese día.');
+  log('');
+  if (avisos.length) {
+    log('==== ⚠ AVISOS (' + avisos.length + ') ====');
+    avisos.forEach(function (a) { log('  ' + a); });
+  } else {
+    log('==== ⚠ AVISOS: ninguno ====');
+  }
+
+  return { ok: true, identidad_cierra: identidadCierra, censo_remitente: censoRem,
+           formato_fecha: fmt, ventanas: resultado, sonda: sonda,
+           control_positivo: cp, avisos: avisos, log: out.join('\n') };
+}
+
+
+/* ==========================================================================
+ * `2026-09-08_2` Parte C — LOS TRES `cc_*` QUE `V-126` Y `V-127` NO VALIDARON
+ *
+ * `V-126` y `V-127` validaron **`cc_base` y sólo `cc_base`**. Faltan `cc_contactados`,
+ * `cc_contact_pct` y `cc_campanias`.
+ *
+ * ⭐ **El recorte NO se vuelve a barrer.** `Fecha` en ventana + `Remitente = JM` ya está validado
+ * en las dos ventanas. Todo lo de acá se mide **sobre ese recorte**.
+ *
+ * ⭐⭐ QUÉ MITAD ES DEL MOTOR Y CUÁL ES DEFINICIÓN DE NEGOCIO (`CLAUDE.md` §4, reglas 2 y 4):
+ *   · **Del MOTOR, extraído y no reescrito:** `valorPasaFiltro_` (el único comparador),
+ *     `normalizarValorDeclarado_` (`R-10`), `parsearFechaCelda_`, `opSUMA` (con su distinción
+ *     entre `0` y `sin_datos`) y `opPCT`/`opRATIO`.
+ *   · **DEFINICIÓN DE NEGOCIO, escrita acá:** las nueve candidatas de `cc_campanias`, qué columna
+ *     mira cada una, y que la ventana corta por `Fecha` **como punto**.
+ *   ⇒ Un número de acá prueba que **la definición** produce ese valor. **NO prueba que el motor lo
+ *     lea así**: la base no está de alta y ningún marcador la toca.
+ *
+ * ⛔ **NO escribe ninguna hoja de registro** y **NO elige ganador.** Si dos candidatas aciertan las
+ * dos ventanas, **eso es el hallazgo** —significa que estas dos ventanas no las discriminan— y se
+ * dice, no se desempata.
+ *
+ * ⭐⭐ **EL CONTROL POSITIVO ES SINTÉTICO, Y ESE ES EL PUNTO.** `C-109` midió el costo de lo
+ * contrario: el control del instrumento anterior era **un defecto de la fuente vieja** y quedó
+ * inerte en cuanto el defecto dejó de existir. Acá los contadores se prueban contra casos
+ * **inventados**, que funcionan con la hoja limpia, sucia o vacía — y **con su mitad negativa**,
+ * porque un contador que devolviera siempre lo mismo pasaría sólo la mitad positiva. ⚠ Y se prueba
+ * **exactamente la misma función** que después corre sobre los datos: si fueran dos
+ * implementaciones, el control mediría otra cosa.
+ *
+ * ⚠ **Por qué las candidatas 2, 6 y 8 son TRES y no una.** El prompt advirtió que la hipótesis de
+ * *«tipos distintos»* se leyó de la columna `Campaña` (A), que es la que la sonda imprime, y no de
+ * `Tipo de llamado` (R). Son columnas distintas y **coinciden sólo porque el nombre de la campaña
+ * arranca con el tipo**. Se miden por separado — y la 6 es una tercera cosa más: lo que declaran
+ * los campos `columna` + `operacion` de `C-62` (`CUENTA_NO_VACIAS` sobre `R`), que **no** es contar
+ * valores distintos.
+ *
+ * SÓLO LECTURA. Público y sin parámetros, y devuelve por `Logger.log` además de por `return`.
+ * ========================================================================== */
+
+/** Valores esperados, y **de dónde sale cada uno**, porque no tienen el mismo peso.
+ *  ⛔ `null` significa **no hay valor publicado registrado en el repo** — no se inventa uno. */
+var MEDICION_CC_ESPERADOS_ = {
+  '24–31/07/2026': {
+    campanias: { valor: 2,    fuente: 'V-105 · exacto' },
+    contactados:{ valor: 1878, fuente: 'V-65 / V-105 · exacto' },
+    pct:        { valor: 31,   fuente: 'V-66 / V-105 · exacto' }
+  },
+  '14–20/08/2026': {
+    campanias: { valor: 3,    fuente: 'C-80 · ABIERTO — mismo caso que aporta el 6.851' },
+    contactados:{ valor: 1616, fuente: 'C-80 · ABIERTO' },
+    pct:        { valor: null, fuente: '⛔ NO HAY porcentaje publicado para esta ventana en el repo' }
+  }
+};
+
+/** Distintos NO vacíos, normalizando con `R-10` — el canónico del repo. Devuelve el mapa
+ *  valor→conteo, no sólo el número: un conteo sin desglose no deja ver si acertó por la razón
+ *  correcta. */
+function distintosCcNoVacios_(valores) {
+  var mapa = {};
+  for (var i = 0; i < valores.length; i++) {
+    var v = normalizarValorDeclarado_(valores[i]);
+    if (v === '') continue;
+    mapa[v] = (mapa[v] || 0) + 1;
+  }
+  return mapa;
+}
+
+/** Cuántas celdas NO están vacías. Distinto de contar distintos, y `C-62` declara ESTO en sus
+ *  campos `columna` + `operacion`. */
+function noVaciasCc_(valores) {
+  var n = 0;
+  for (var i = 0; i < valores.length; i++) {
+    if (normalizarValorDeclarado_(valores[i]) !== '') n++;
+  }
+  return n;
+}
+
+/** Cuántas celdas traen un número distinto de cero. Es lo que la NOTA de `C-62` describe. */
+function noCeroCc_(valores) {
+  var n = 0;
+  for (var i = 0; i < valores.length; i++) {
+    var v = valores[i];
+    if (v === '' || v === null || v === undefined) continue;
+    var x = Number(v);
+    if (!isNaN(x) && x !== 0) n++;
+  }
+  return n;
+}
+
+/** El prefijo de `Campaña` antes del primer `:` — `"Convocatoria: RDV - …"` → `"Convocatoria"`.
+ *  Sin `:` devuelve el valor entero: **de menos y nunca inventado** (`CLAUDE.md` §4, la asimetría
+ *  de los parsers — fabricar un nombre es peor que subcontar). */
+function prefijoCampaniaCc_(valor) {
+  var t = normalizarValorDeclarado_(valor);
+  var i = t.indexOf(':');
+  return i === -1 ? t : normalizarValorDeclarado_(t.slice(0, i));
+}
+
+/**
+ * ⭐⭐ CONTROL POSITIVO SINTÉTICO — corre ANTES de mirar un solo dato de la planilla, y **aborta**.
+ * Prueba las MISMAS funciones que después miden, sobre casos inventados: no depende del estado de
+ * la hoja, así que **no se apaga cuando los datos se arreglan** (`C-109`).
+ * Cada afirmación lleva su mitad negativa: sin ella, un contador que devolviera siempre lo mismo
+ * pasaría igual.
+ */
+function controlSinteticoCampaniasCc_() {
+  var fallas = [];
+  function af(cond, que) { if (!cond) fallas.push(que); }
+
+  var d = distintosCcNoVacios_(['a', 'b', 'a', '', '  b  ']);
+  af(Object.keys(d).length === 2, 'distintos: esperaba 2 sobre [a,b,a,vacía,"  b  "], dio ' + Object.keys(d).length);
+  af(d['a'] === 2 && d['b'] === 2, 'distintos: el desglose no cuenta bien (a=' + d['a'] + ', b=' + d['b'] + ')');
+  // negativa: si NO deduplicara, esto daría 3, no 1.
+  af(Object.keys(distintosCcNoVacios_(['x', 'x', 'x'])).length === 1, 'distintos: NO está deduplicando');
+  // negativa: una lista sólo de vacías tiene que dar 0, no 1.
+  af(Object.keys(distintosCcNoVacios_(['', '   ', null])).length === 0, 'distintos: cuenta las vacías');
+
+  af(noVaciasCc_(['x', '', 'y']) === 2, 'noVacias: esperaba 2');
+  af(noVaciasCc_(['', '', '']) === 0, 'noVacias: esperaba 0 sobre todas vacías');
+
+  af(noCeroCc_([5, 0, '', 3]) === 2, 'noCero: esperaba 2 sobre [5,0,vacía,3]');
+  af(noCeroCc_([0, 0]) === 0, 'noCero: esperaba 0 sobre [0,0]');
+  af(noCeroCc_(['texto', 4]) === 1, 'noCero: un texto no numérico no cuenta');
+
+  af(prefijoCampaniaCc_('Convocatoria: RDV - X') === 'Convocatoria', 'prefijo: no corta en el ":"');
+  af(prefijoCampaniaCc_('sin dos puntos') === 'sin dos puntos', 'prefijo: sin ":" tiene que devolver el valor entero');
+  // negativa: no puede cortar donde no hay separador ni devolver vacío.
+  af(prefijoCampaniaCc_('') === '', 'prefijo: sobre vacío tiene que dar vacío');
+
+  return fallas;
+}
+
+function medirCampaniasCallCenterBaseNueva() {
+  var out = [];
+  var avisos = [];
+  function log(s) { out.push(s); Logger.log(s); }
+
+  log('==== MEDICIÓN · cc_campanias / cc_contactados / cc_contact_pct ====');
+  log('sheet_id: ' + CENSO_PLANILLA_NUEVA_CC_ + '   ·   solapa: "Call Center - Métricas"');
+  log('fecha de lectura: ' + formatearFecha_(new Date()) + '   ⚠ es una FOTO de este día.');
+  log('recorte YA VALIDADO y no se vuelve a barrer: Fecha en ventana + Remitente = JM (V-126, V-127)');
+  log('⛔ SÓLO LECTURA · NO elige ganador.');
+  log('');
+
+  /* ── El control sintético primero, y aborta ─────────────────────────────────────────── */
+  log('---- CONTROL POSITIVO SINTÉTICO (no depende de los datos) ----');
+  var fallas = controlSinteticoCampaniasCc_();
+  if (fallas.length) {
+    log('  ⛔⛔ EL CONTROL NO PASA — no se mide nada. Fallas:');
+    fallas.forEach(function (f) { log('     · ' + f); });
+    return { ok: false, motivo: 'control sintético en rojo', fallas: fallas, log: out.join('\n') };
+  }
+  log('  ✅ pasa · 12 afirmaciones sobre las MISMAS funciones que miden, con sus mitades negativas');
+  log('');
+
+  var hoja;
+  try {
+    hoja = SpreadsheetApp.openById(CENSO_PLANILLA_NUEVA_CC_).getSheetByName('Call Center - Métricas');
+  } catch (e) {
+    log('⛔ NO SE PUDO ABRIR LA PLANILLA: ' + e.message);
+    return { ok: false, motivo: 'no se pudo abrir', log: out.join('\n') };
+  }
+  if (!hoja) {
+    log('⛔ La solapa "Call Center - Métricas" NO EXISTE.');
+    return { ok: false, motivo: 'no existe la solapa', log: out.join('\n') };
+  }
+
+  var nFilas = hoja.getLastRow();
+  var nCols = hoja.getLastColumn();
+  if (nFilas < 2) { log('⛔ sin filas de datos.'); return { ok: false, log: out.join('\n') }; }
+
+  /* ── Columnas por ENCABEZADO, nunca por la letra ────────────────────────────────────── */
+  var encNorm = hoja.getRange(1, 1, 1, nCols).getValues()[0].map(normalizarValorDeclarado_);
+  var pedidas = [
+    { campo: 'campana',      encabezado: 'Campaña',          letra_declarada: 'A' },
+    { campo: 'base_barrida', encabezado: 'Base Barrida',     letra_declarada: 'C' },
+    { campo: 'contactados',  encabezado: 'Contactados U',    letra_declarada: 'D' },
+    { campo: 'tipo',         encabezado: 'Tipo',             letra_declarada: 'I' },
+    { campo: 'fecha',        encabezado: 'Fecha',            letra_declarada: 'K' },
+    { campo: 'id_base',      encabezado: 'ID BASE',          letra_declarada: 'L' },
+    { campo: 'id_cuenta',    encabezado: 'ID cuentas',       letra_declarada: 'P' },
+    { campo: 'remitente',    encabezado: 'Remitente',        letra_declarada: 'Q' },
+    { campo: 'tipo_llamado', encabezado: 'Tipo de llamado',  letra_declarada: 'R' }
+  ];
+  var col = {};
+  var faltan = [];
+  log('---- resolución de columnas (POR ENCABEZADO; igualdad exacta tras R-10, nunca prefijo) ----');
+  pedidas.forEach(function (p) {
+    /* ⚠ Igualdad exacta y no `indexOf`: `Tipo` es prefijo de `Tipo de llamado`, y ése es
+     * literalmente el modo de falla del filtro por prefijo de `CLAUDE.md` §4. */
+    var idx = encNorm.indexOf(normalizarValorDeclarado_(p.encabezado));
+    if (idx === -1) { faltan.push(p.encabezado); log('  ⛔ ' + p.encabezado + ' → NO ESTÁ'); return; }
+    col[p.campo] = idx;
+    var letra = indiceAColumnaLetra_(idx);
+    log('  ' + (letra === p.letra_declarada ? '✅' : '⚠ ') + ' ' + p.encabezado + '  →  ' + letra +
+        (letra === p.letra_declarada ? '' : '   ⚠ el censo la declaraba en ' + p.letra_declarada));
+    if (letra !== p.letra_declarada) {
+      avisos.push('«' + p.encabezado + '» está en ' + letra + ' y el censo la declaraba en ' + p.letra_declarada);
+    }
+  });
+  if (faltan.length) {
+    log('');
+    log('⛔⛔ FALTAN COLUMNAS: ' + faltan.join(', ') + ' — la medición se detiene.');
+    return { ok: false, motivo: 'faltan columnas', faltan: faltan, log: out.join('\n') };
+  }
+
+  var datos = hoja.getRange(2, 1, nFilas - 1, nCols).getValues();
+  var esJM = condMedicionCc_('JM');
+  log('');
+  log('filas de datos: ' + datos.length);
+
+  /* ── Las nueve candidatas de `cc_campanias` ─────────────────────────────────────────── */
+  var candidatas = [
+    { n: 1, nombre: 'filas del recorte (línea de base)',
+      mide: function (f) { return { valor: f.length, desglose: null }; } },
+    { n: 2, nombre: '`Tipo de llamado` (R) — valores DISTINTOS',
+      mide: function (f) { var d = distintosCcNoVacios_(f.map(function (x) { return x[col.tipo_llamado]; }));
+                           return { valor: Object.keys(d).length, desglose: d }; } },
+    { n: 3, nombre: '`Campaña` (A) — valores DISTINTOS, valor COMPLETO',
+      mide: function (f) { var d = distintosCcNoVacios_(f.map(function (x) { return x[col.campana]; }));
+                           return { valor: Object.keys(d).length, desglose: d }; } },
+    { n: 4, nombre: 'filas con `Base Barrida` (C) ≠ 0   — lo que describe la NOTA de C-62',
+      mide: function (f) { return { valor: noCeroCc_(f.map(function (x) { return x[col.base_barrida]; })), desglose: null }; } },
+    { n: 5, nombre: '`ID BASE` (L) — valores DISTINTOS',
+      mide: function (f) { var d = distintosCcNoVacios_(f.map(function (x) { return x[col.id_base]; }));
+                           return { valor: Object.keys(d).length, desglose: d }; } },
+    /* ⭐ 6 — agregada: es lo que declaran los CAMPOS de `C-62` (`columna` = `Tipo de llamado`,
+     * `operacion` = `CUENTA_NO_VACIAS`), que **no es** contar distintos ni contar no-ceros. Se mide
+     * aparte para que se vea que las tres lecturas de `C-62` dan cosas distintas. ⚠ El censo del
+     * 08/09 midió que `R` tiene 1980 de 1980 con dato, así que **esto debería degenerar en la
+     * candidata 1** — y si no lo hace, ése es el hallazgo. */
+    { n: 6, nombre: '`CUENTA_NO_VACIAS` sobre `Tipo de llamado` (R)   — lo que declaran los CAMPOS de C-62',
+      mide: function (f) { return { valor: noVaciasCc_(f.map(function (x) { return x[col.tipo_llamado]; })), desglose: null }; } },
+    /* ⭐ 7 — agregada: **hay DOS columnas de tipo** en esta solapa —`Tipo` (I) y `Tipo de llamado`
+     * (R)— y nadie miró la primera. Dejarla afuera de la matriz sería el sesgo de `X-28`: una
+     * candidata ausente no se ve como un hueco, se ve como que no existía. */
+    { n: 7, nombre: '`Tipo` (I) — valores DISTINTOS   (agregada: hay DOS columnas de tipo)',
+      mide: function (f) { var d = distintosCcNoVacios_(f.map(function (x) { return x[col.tipo]; }));
+                           return { valor: Object.keys(d).length, desglose: d }; } },
+    /* ⭐ 8 — agregada, y es LA hipótesis que estaba realmente en juego: el tipo **derivado del
+     * nombre**, o sea el prefijo de `Campaña` antes del `:`. El prompt advirtió que el «2 y 3» se
+     * leyó de la columna A y no de la R; esto lo mide como lo que es. */
+    { n: 8, nombre: 'prefijo de `Campaña` (A) antes del `:` — DISTINTOS   (agregada: el tipo derivado del NOMBRE)',
+      mide: function (f) { var d = distintosCcNoVacios_(f.map(function (x) { return prefijoCampaniaCc_(x[col.campana]); }));
+                           return { valor: Object.keys(d).length, desglose: d }; } },
+    /* ⭐ 9 — agregada: la simétrica de la 4 sobre la otra métrica. Si el deck cuenta «campañas con
+     * actividad», el discriminador podría ser contactados y no base barrida, y las dos dan lo
+     * mismo salvo justo cuando difieren. */
+    { n: 9, nombre: 'filas con `Contactados U` (D) ≠ 0   (agregada: la simétrica de la 4)',
+      mide: function (f) { return { valor: noCeroCc_(f.map(function (x) { return x[col.contactados]; })), desglose: null }; } }
+  ];
+
+  var resultado = {};
+  var aciertaEnAmbas = {};
+  candidatas.forEach(function (c) { aciertaEnAmbas[c.n] = 0; });
+
+  MEDICION_CC_VENTANAS_.forEach(function (v) {
+    var recorte = datos.filter(function (f) {
+      var d = parsearFechaCelda_(f[col.fecha]);
+      if (!d) return false;
+      if (d.getTime() < v.desde.getTime() || d.getTime() > v.hasta.getTime()) return false;
+      return valorPasaFiltro_(f[col.remitente], esJM);
+    });
+    var esp = MEDICION_CC_ESPERADOS_[v.etiqueta];
+
+    log('');
+    log('════ VENTANA ' + v.etiqueta + ' ════');
+    log('  recorte (Fecha en ventana + Remitente = JM): ' + recorte.length + ' fila(s)');
+    /* ⚠ Guarda barata: si el recorte no da las 3 filas que V-126/V-127 midieron, la base se movió
+     * y todo lo de abajo mide otra cosa. Se avisa, no se calla. */
+    if (recorte.length !== 3) {
+      avisos.push('⛔ el recorte de ' + v.etiqueta + ' dio ' + recorte.length + ' filas y V-126/V-127 midieron 3: la base se movió');
+      log('  ⛔ V-126/V-127 midieron 3 filas acá. La base se movió — lo de abajo NO es comparable.');
+    }
+
+    /* --- cc_contactados y cc_contact_pct, con las operaciones REALES del motor --- */
+    var vBB  = recorte.map(function (f) { return f[col.base_barrida]; });
+    var vCon = recorte.map(function (f) { return f[col.contactados]; });
+    var rBB  = opSUMA({ valores: vBB, campo_logico: 'lcc_base_barrida', columna: indiceAColumnaLetra_(col.base_barrida),
+                        base_id: '(base nueva CC)', solapa: 'Call Center - Métricas' });
+    var rCon = opSUMA({ valores: vCon, campo_logico: 'lcc_contactados', columna: indiceAColumnaLetra_(col.contactados),
+                        base_id: '(base nueva CC)', solapa: 'Call Center - Métricas' });
+    var rPct = opPCT({ valoresNumerador: vCon, valoresDenominador: vBB,
+                       campo_logico: 'lcc_contactados/lcc_base_barrida',
+                       base_id: '(base nueva CC)', solapa: 'Call Center - Métricas' });
+    var pctCrudo = rPct.valor === '' ? null : rPct.valor;
+    var pctRed   = pctCrudo === null ? null : Math.round(pctCrudo);
+
+    function veredicto(medido, e) {
+      if (!e || e.valor === null) return '⛔ sin esperado en el repo';
+      return (medido === e.valor ? '✅ reproduce' : '⛔ NO reproduce') + '  (esperado ' + e.valor + ' · ' + e.fuente + ')';
+    }
+
+    log('');
+    log('  -- cc_base / cc_contactados / cc_contact_pct --');
+    log('     Base Barrida  = ' + (rBB.valor === '' ? '(sin_datos)' : rBB.valor) + '   [contexto: V-126/V-127]');
+    log('     Contactados U = ' + (rCon.valor === '' ? '(sin_datos)' : rCon.valor) + '   ' +
+        veredicto(rCon.valor === '' ? null : rCon.valor, esp.contactados));
+    log('     % contactados = ' + (pctCrudo === null ? '(sin_datos)' : (Math.round(pctCrudo * 100) / 100) + ' %  → redondeado ' + pctRed) +
+        '   ' + veredicto(pctRed, esp.pct));
+
+    log('');
+    log('  -- cc_campanias · las nueve candidatas (esperado: ' +
+        (esp.campanias.valor === null ? 'sin esperado' : esp.campanias.valor + ' · ' + esp.campanias.fuente) + ') --');
+    var medidas = candidatas.map(function (c) {
+      var r = c.mide(recorte);
+      var ok = (esp.campanias.valor !== null && r.valor === esp.campanias.valor);
+      if (ok) aciertaEnAmbas[c.n]++;
+      log('    ' + c.n + '  ' + (ok ? '✅' : '⛔') + '  = ' + r.valor + '\t' + c.nombre);
+      /* ⭐ El desglose va SIEMPRE que exista: un conteo sin desglose no deja ver si acertó por la
+       * razón correcta, y «2 y 3» las acierta cualquier cosa con la forma parecida. */
+      if (r.desglose) {
+        Object.keys(r.desglose).sort().forEach(function (k) {
+          log('         · ' + r.desglose[k] + '×  ' + JSON.stringify(k));
+        });
+      }
+      return { n: c.n, nombre: c.nombre, valor: r.valor, desglose: r.desglose, acierta: ok };
+    });
+
+    resultado[v.etiqueta] = {
+      filas_recorte: recorte.length,
+      base_barrida: rBB.valor, contactados: rCon.valor,
+      pct_crudo: pctCrudo, pct_redondeado: pctRed,
+      esperados: esp, candidatas: medidas
+    };
+  });
+
+  /* ── El veredicto sobre las candidatas: cuántas aciertan las DOS ─────────────────────── */
+  log('');
+  log('==== cc_campanias · qué candidatas aciertan las DOS ventanas ====');
+  var ganadoras = candidatas.filter(function (c) { return aciertaEnAmbas[c.n] === 2; });
+  if (!ganadoras.length) {
+    log('  ⛔ NINGUNA de las nueve acierta las dos. Eso es el hallazgo: falta una candidata, y');
+    log('     «ninguna de N» NO significa «no hay regla» — significa que la correcta no está en la');
+    log('     matriz. Es exactamente lo que pasó en X-28 con 13 propiedades.');
+  } else {
+    ganadoras.forEach(function (c) { log('  · candidata ' + c.n + ' — ' + c.nombre); });
+    if (ganadoras.length > 1) {
+      log('');
+      log('  ⛔⛔ ACIERTAN ' + ganadoras.length + ', Y ESO ES EL HALLAZGO: estas dos ventanas NO LAS');
+      log('     DISCRIMINAN. Hace falta una tercera ventana donde difieran. NO se desempata acá.');
+    } else {
+      log('');
+      log('  ⚠ Acierta UNA sola sobre DOS ventanas. Eso NO la elige: dos puntos de datos y una');
+      log('     candidata que pega es evidencia débil, y la decisión es del usuario.');
+    }
+  }
+
+  log('');
+  log('==== QUÉ NO CUBRE ESTO ====');
+  log('  · Mide DEFINICIONES DE NEGOCIO. NO prueba que el motor lea así: la base no está de alta.');
+  log('  · NO elige ganador de cc_campanias — ni cuando acierta una sola.');
+  log('  · El esperado de agosto (3 campañas, 1.616 contactados) sale de C-80, que está ABIERTO;');
+  log('    el de julio sale de V-105/V-65/V-66, que son exacto. NO tienen el mismo peso.');
+  log('  · Para el % de agosto NO hay valor publicado en el repo, y no se inventa uno.');
+  log('  · Es una FOTO del ' + formatearFecha_(new Date()) + '.');
+  log('');
+  if (avisos.length) {
+    log('==== ⚠ AVISOS (' + avisos.length + ') ====');
+    avisos.forEach(function (a) { log('  ' + a); });
+  } else {
+    log('==== ⚠ AVISOS: ninguno ====');
+  }
+
+  return { ok: true, ventanas: resultado, aciertan_las_dos: ganadoras.map(function (c) { return c.n; }),
+           avisos: avisos, log: out.join('\n') };
+}
