@@ -36,6 +36,7 @@ las dos escriben documentación y se pisan.
 | **0.5** | ⭐⭐ **`CLAUDE.md` §4 ordena parar al terminar cada paso** | `grep -n 'se avisa y se para' CLAUDE.md` | aparece, dentro de la lista numerada de §4 |
 | **0.6** | Los cinco documentos grandes son los que están medidos abajo | `ls -l CLAUDE.md docs/PLAN.md docs/BITACORA.md docs/REGLAS_NEGOCIO.md docs/PENDIENTES_consistencia.md` | ver tabla |
 | **0.7** | `docs/Prompts/` tiene los prompts copiados y `docs/Prompts/_archivo/` existe | `ls docs/Prompts \| wc -l` y `ls -d docs/Prompts/_archivo` | un número y el directorio |
+| **0.8** | ⭐ **`CLAUDE.md` justifica la prohibición de `--force` con una premisa falsa** | `grep -n 'dos herramientas' CLAUDE.md` | aparece, como motivo de la prohibición |
 
 **La tabla de tamaños de `0.6`, medida el 06/09 desde fuera de la sesión — reproducila, no la
 copies:**
@@ -91,6 +92,34 @@ conjuntos ordenados, no un conteo de bytes.
 
 ⛔ **Si el control no da, se revierte la parte entera.** No se ajusta el control.
 
+### ⭐⭐ Y una regla que SÍ cambia de enunciado, y es la única
+
+**`CLAUDE.md` §4, punto 1** dice hoy:
+
+> «1. Se termina un paso → **se avisa y se para.** No se avanza al siguiente por cuenta propia.»
+
+⛔ **Ésa es la regla que hace que Code frene después de cada paso**, y **el usuario decidió el
+06/09 que se cambia.** El nuevo enunciado:
+
+- **Se para al terminar la *parte*, no el paso.** Dentro de una parte, los pasos encadenan.
+- **Se para siempre** si aparece una decisión no escrita, una premisa vencida, o algo que exija
+  tocar algo congelado. Eso no cambia: **parar por falta de información sigue siendo obligatorio.**
+- **El punto 5** —*«si el working tree tiene cambios de más de un paso, parar y preguntar»*—
+  **se mantiene tal cual.**
+
+⚠ **Esta reescritura es la excepción explícita a «ninguna regla cambia de enunciado».** Va en su
+propio commit, separada del movimiento de texto, para que el `diff` de la Parte A siga siendo un
+movimiento puro y esta línea se pueda revertir sola.
+
+### ⚠ Y una premisa del archivo que es falsa, medida el 06/09
+
+`CLAUDE.md` justifica la prohibición de `git push --force` con que **el repo se edita desde dos
+herramientas**. ⛔ **No es cierto: sólo se edita el repo local.** El remoto es backup y el canal
+para que el chat de claude.ai pueda leer el código.
+
+**Corregir el motivo, no sólo la regla.** Y registrar en el reporte si algún otro enunciado del
+archivo se apoya en la misma premisa.
+
 ### Lo que NO se toca en esta parte
 
 - ⛔ **Ninguna regla cambia de enunciado.** Ni una palabra. Mover ≠ redactar.
@@ -132,6 +161,10 @@ Un commit.
    de control**: el título de `R-11` dice *«de viernes a viernes»* y su Addendum 1 define *«siete
    días, viernes a jueves»*. **Si el barrido no lo encuentra, el barrido no sirve** — arreglar el
    barrido, no agregarlo a mano.
+   ⚠ **Segundo control, del mismo tipo:** la premisa de las *«dos herramientas»* de la Parte A.
+   El barrido tiene que encontrar **enunciados apoyados en un hecho que ya no es cierto**, no sólo
+   pares de frases que se contradicen entre sí. Si sólo encuentra el primero, **declararlo**: la
+   clase 1 quedó cubierta a medias.
 2. **IDs rotos** — `D-NN`, `R-NN`, `S-NN`, `C-NN`, `V-NN` citados y no definidos, definidos dos
    veces, o superseded sin que el viejo lo diga.
 3. **Datos en dos fuentes de verdad** — el mismo número o la misma lista mantenidos en dos
@@ -218,4 +251,7 @@ Un commit.
 | Cuál enunciado gana en cada contradicción | ⛔ decide el usuario |
 | El texto de `R-11` | ⛔ `REGLAS_NEGOCIO.md` es append-only; el enunciado lo cambia el usuario |
 | Los catorce prompts del 04/09 | ⛔ no se reconstruyen de memoria |
-| Si `CLAUDE.md` §4 punto 1 —*«se avisa y se para»*— sigue vigente | ⛔ es la regla que hace que Code frene en cada paso. **Cambiarla es decisión del usuario, no de la auditoría** |
+
+⚠ **Y lo que sí quedó decidido el 06/09, para que no se vuelva a preguntar:** §4 punto 1 se
+cambia (Parte A), `--force` deja de estar prohibido y su motivo escrito se corrige (Parte A),
+y `verificador` y `cableador` quedan en **Opus**.

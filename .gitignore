@@ -28,3 +28,10 @@ docs/_fixtures/*
 # Cache de Python — los dos instrumentos de `tools/` son .py y un import genera .pyc
 __pycache__/
 *.pyc
+
+# `2026-09-08` — los assets de diseño pesados quedan FUERA de git, y es el mismo criterio que
+# `docs/_fixtures/*` de arriba: ahí se bloqueó la carpeta porque un `git add -A` arrastró dos
+# `.pptx` de decks reales. `design/capturas/` guarda los `.png` del panel —livianos y útiles en
+# el repo— y un `.pptx` de marca institucional de **43 MB**, que no es fuente y que en un repo
+# público es irreversible. Se bloquea por extensión y tamaño, no la carpeta: los `.png` siguen.
+design/**/*.pptx
