@@ -17599,3 +17599,189 @@ dependencia del estado**: exige que respondan **al caso más nuevo que los nombr
 historial **conserve el `contradice`**, que es lo que no cambia.
 
 **Suites: 97 bancos, exit 0 · 58 afirmaciones.** ⛔ Nada corrido, ningún `clasp push`.
+
+
+---
+
+## 2026-09-08 — La base nueva de Call Center: de cero a tres tokens validados
+
+**Prompts `2026-09-07_1`, `2026-09-07_2`, `2026-09-08_1` y `2026-09-08_2`.** Cuatro prompts, un
+solo objeto: una planilla que el usuario trajo el 07/09 y que el motor no conocía.
+
+### Qué se construyó — tres instrumentos, todos en `Auditoria.gs`
+
+| wrapper | qué contesta |
+|---|---|
+| `censarBaseNuevaCallCenterIVR()` | qué solapas tiene la planilla y qué forma tiene cada una |
+| `medirUniversoCallCenterBaseNueva()` | qué filas selecciona cada criterio de recorte candidato |
+| `medirCampaniasCallCenterBaseNueva()` | nueve maneras de contar `cc_campanias`, más contactados y % |
+
+Los tres **públicos, sin `_` y sin parámetros** (`CLAUDE.md` §2, las dos condiciones), los tres
+**sólo lectura**, y los tres **resuelven las columnas por encabezado y no por letra** — porque el
+`2026-09-07_1` dejó dicho que las letras que traía eran *«conteo sobre el orden pegado que no
+verificó nadie»*. ⭐ Corrida el 08/09: **las 22 letras declaradas resultaron correctas**, pero eso
+se sabe **porque se midió**, no porque se creyó.
+
+### ⭐⭐ Lo que quedó VALIDADO — `V-126`…`V-130`
+
+| token | 24–31/07 | 14–20/08 |
+|---|---|---|
+| `cc_base` | **6.011** | **6.851** |
+| `cc_contactados` | **1.878** | **1.616** |
+| `cc_contact_pct` | **31** | 24 — ⛔ sin testigo (`C-116`) |
+
+**El recorte es `Fecha` (K) en ventana + `Remitente` (Q) `= JM`**, y es la **misma forma** que
+`mail_entregados`: fecha propia + ámbito sobre columna propia. ⭐ `C-78` ya había medido que **ese
+mecanismo existía**; lo que faltaba era una solapa con la columna donde expresarlo, y `X-37` lo
+había escrito con todas las letras. **La base nueva la trae.**
+
+⭐ **Lo que hace fuerte a esto no es que un número pegue: pegan TRES sobre las mismas 3 filas.** Un
+recorte que acierta una columna puede estar trayendo filas equivocadas y compensando; que acierte
+`Base Barrida`, `Contactados` **y su cociente** es evidencia sobre las filas. `V-66` ya lo había
+usado así: con `Base enviada` el cociente daría 28 % y el deck dice 31.
+
+⚠ **Julio y agosto no pesan igual, y los casos lo dicen:** julio se contrasta contra casos
+`exacto`; agosto, contra `C-80`, que está **abierto**.
+
+### ⭐⭐ La contradicción documental `7.096` vs `6.851` — no era una contradicción (`C-107`)
+
+El repo guardaba **dos valores** para la misma cuenta y la misma ventana, y **no había con qué
+desempatarlos**: `7.096` en `C-69` y `X-37` (los dos **cerrados**), `6.851` en `C-80` y `X-28` (los
+dos **no cerrados**).
+
+La sonda mostró que **`3488-AGOJDGAG` tiene CUATRO filas, no tres**, y una es del **13/08**:
+
+```
+6.000 + 802 + 49        = 6.851   ·  las filas con Fecha EN la ventana  → el deck
+6.000 + 802 + 49 + 245  = 7.096   ·  las cuatro filas de la CUENTA      → C-69
+```
+
+⇒ **`C-69` midió por CUENTA y el deck publica por FECHA.** Los dos correctos sobre su propia
+pregunta. ⛔ **`looker/CC` no podía distinguirlas —no tiene columna temporal propia—**, y ésa es
+toda la explicación de por qué el repo guardó los dos números sin poder elegir.
+
+⭐ **Y la reconciliación cierra en las DOS columnas**: del lado de contactados la diferencia es
+**94**, y es **la misma fila** —`V-97` la midió en `245`/`94`—. Que las dos métricas se reconcilien
+por el mismo corte y con la misma fila es lo que descarta que el `6.851` haya salido bien por
+casualidad.
+
+### ⭐⭐ `C-80` y `X-28` se CIERRAN — y la premisa que los sostenía era un artefacto (`C-110`, `C-111`)
+
+`C-80` afirmaba que el Resumen Ejecutivo **mezcla dos universos**: mail e impresiones publican todo
+JM de la semana y Call Center publica **una cuenta, más angosta**. Su evidencia era un **factor
+16**: la pertenencia sobre `looker/CC` traía 18 y 21 cuentas —el gabinete entero— contra los 6.011
+publicados.
+
+⇒ ⛔ **El factor 16 no era del negocio: era la falta de una columna de fecha.** Con `Fecha` propia,
+*«todo JM de la semana»* **es** una sola cuenta —3 filas de 20 en julio, 3 de 13 en agosto— y
+reproduce los dos números. El bloque **no mira un universo más angosto**; mira el mismo que el resto
+de su lámina.
+
+⚠ **Y `X-28` no se cierra porque se haya discriminado, sino porque su pregunta pierde el
+referente**, que es una distinción que va escrita: dos ventanas **no separan** *«todo JM»* de *«la
+cuenta del encuentro»*, porque en las dos coinciden. Lo que cierra el caso es que **la carga de la
+prueba se dio vuelta** — `X-28` existía porque Call Center se comportaba distinto de sus vecinos de
+lámina, y ya no.
+
+⭐ **Los dos llevan su condición de reapertura escrita como EVENTO y no como fecha:** *el día que una
+ventana traiga más de una cuenta JM con filas en Call Center y el deck publique una sola*. Eso un
+censo lo puede mirar; *«hoy hay una sola cuenta»* vence solo.
+
+⛔ **Declarado y NO ejecutado:** `CONFIG_INFORMES.md` §4.7 y las decisiones `D-NN` **no se tocaron**.
+Un caso se escribe en el CSV; una decisión editorial es del prompt del alta.
+
+### ⛔ Lo único que quedó abierto — `cc_campanias` (`C-112`)
+
+Nueve candidatas medidas con su desglose. **Cuatro aciertan las dos ventanas**: `Tipo de llamado`
+distintos, `Campaña` distintos, `Tipo` distintos, y el prefijo de `Campaña`.
+
+⚠ **Y agosto no discrimina nada: las nueve dan 3.** Todo el poder de esta matriz está en julio,
+donde hay 3 filas y el deck publica 2. **Una sola ventana decide**, y eso baja el peso del *«acierta
+las dos»*.
+
+⭐⭐ **El desglose mostró lo que un conteo solo habría escondido: coinciden en el NÚMERO y difieren
+en el VALOR** (`C-114`). Las columnas tipadas dicen `Reconfirmación` / `IVR convocatoria`; el nombre
+de campaña dice `Confirmación` / `IVR Convocatoria`. **Dos familias que etiquetan la misma fila con
+palabras distintas.** Y `Tipo` (I) y `Tipo de llamado` (R) devuelven **exactamente lo mismo**: son
+redundantes entre sí sobre estas 6 filas.
+
+⭐ **Por qué falla todo lo que cuenta filas:** en julio las dos primeras filas son **la misma campaña
+enviada dos veces**, y `3.000 + 1.726 = 4.726`, que es la fila única de `looker/CC`. ⇒ **`looker/CC`
+agrega por campaña; la base nueva tiene una fila por FECHA DE ENVÍO.** El deck cuenta **campañas**,
+no envíos.
+
+⇒ ⛔ **`C-62` no se traslada** (`C-113`), y sus **dos** lecturas fallan julio por separado: los
+**campos** (`CUENTA_NO_VACIAS` sobre `Tipo de llamado`) dan 3 —el censo mide que esa columna tiene
+**1980 de 1980** con dato, así que contar no-vacías **es** contar filas—, y la **nota** (filas con
+valor ≠ 0) también, porque en la base nueva **no hay ninguna fila en cero**. **El cero era de
+`looker/CC`, no del negocio.** `C-62` no se retracta: su medición allá sigue siendo correcta.
+
+### ⛔ Y lo que los `V-` NO dicen, puesto en el índice y no sólo en un `.md` (`C-117`)
+
+Los criterios **2, 5 y 7** dan **exactamente lo mismo en las dos ventanas**: `ID cuentas ~= JDGAG`
+**solo, sin ningún `Remitente`**, reproduce los dos números. ⇒ Estas ventanas prueban que el corte
+por `Remitente` es **suficiente**; **no** prueban que sea **necesario**. Los argumentos a favor
+—`R-15`, el aviso de `X-28` sobre las 124 cuentas `JDGAG`, y que `GCBA` positivo da residuo
+visible— **son ajenos a estas dos ventanas**, y van escritos como tales.
+
+### Lo aprendido sobre el MÉTODO, que es la mitad que sobrevive al caso
+
+⭐⭐ **La QUINTA lección de `CLAUDE.md` §4 tuvo su primer caso medido** (`C-109`). El control
+positivo del segundo instrumento exigía que el criterio por nombre trajera `3289` en agosto —el modo
+de falla que `C-69` midió—. **No lo trajo, y no puede**: `3289` entraba a agosto **por pertenencia**,
+por la deriva de `fecha_fin` de `X-29`, y con `Fecha` propia una fila del 27/07 no cae en `14–20/08`
+por construcción. ⇒ **El control era un defecto de la fuente vieja y quedó inerte en cuanto el
+defecto dejó de existir** — se apagó justo cuando el sistema se arregló, que es exactamente lo que
+la lección pronosticaba.
+
+⇒ **El tercer instrumento nació con control positivo SINTÉTICO**: 12 afirmaciones sobre las **mismas
+funciones** que miden, cada una con su mitad negativa, que **abortan** antes de leer un dato. Se
+corrió acá **extrayendo las funciones reales de los `.gs`** —no reimplementándolas— más su control
+negativo. ⭐ **Y se puso rojo cazando un error de quien lo escribió**: la afirmación esperaba `b=3`
+sobre `['a','b','a','','  b  ']` y son **2**, porque `R-10` colapsa `'  b  '` a `'b'`. **Se corrigió
+la afirmación, no la función.**
+
+⭐ **`C-115` — el cruce caso → marcador no scopea por base.** `tools/generar-casos-por-marcador.js`
+lee **sólo** `caso_id`, `token_propuesto` y `estado`: **no lee `base` ni `solapa`**. Un caso `exacto`
+sobre `cc_base` en la base nueva es indistinguible, para ese cruce, de uno sobre un marcador que
+leyera `looker/CC`. **Hoy es inerte** —medido: **cero marcadores `cc_*` vivos** en
+`MARCADORES_2026-08-31.tsv`— y **deja de serlo con el alta**, que es su evento de vencimiento.
+
+⚠ Por eso `probar-guiones-grupos.js` **quedó en rojo a propósito** y `CASOS_POR_MARCADOR_` **no se
+regeneró**: es el ítem 39 de la cola y se hace **junto con el alta, después de su gate**.
+
+### La evidencia, y una corrección de método sobre cómo se guardó
+
+Los `.md`: `MEDICION_universo_call_center_2026-09-08.md` (+ su `ADDENDUM 1`),
+`MEDICION_cc_campanias_2026-09-08.md`, `CENSO_solapas_directa_acumulado_2026-09-07.md` y
+`CENSO_solapas_directa_acumulado_2026-09-08.md`.
+
+⛔ **El primer censo y la primera medición se escribieron con el log perdido**, porque la corrida
+vivió sólo en una conversación de claude.ai — que es **exactamente** lo que la fila de §7 dice que
+un `CENSO_*` viene a evitar. Se escribieron **declarando sus huecos fila por fila** y **sin
+completar nada de memoria**; los logs llegaron después y se volcaron.
+
+⭐ **Y las dos salidas de §7 se usaron distinto, a propósito:** la medición se completó con un
+**addendum fechado** —las dos corridas salieron idénticas, así que un archivo nuevo diría *«hubo
+otra medición»* y sería falso—, y el censo con un **archivo nuevo**, porque §7 dice literalmente
+*«uno nuevo por corrida de censo»*. Los originales **no se editaron**: sus tablas de faltantes
+quedan como registro de lo que cuesta que un log no llegue al repo.
+
+⭐ **Dos lecturas de la misma base con el mismo instrumento** (00:26 y 05:57) salieron **idénticas**.
+⚠ **Eso NO prueba que la base sea estable** —y sabemos que se mueve: la cuarta fila de `3488` del
+13/08 no estaba en la lectura del 22/08—: prueba que **el instrumento es determinista**, o sea que
+una diferencia futura será de la base y no del método.
+
+### Y tres hallazgos que aparecieron al pasar, anotados y no arreglados
+
+- ⭐ **Tres solapas que nadie había nombrado**, todas con `Remitente`: `Call Center - Campañas`
+  (2973×7, **con fecha propia** — segunda candidata para el mismo corte), `Consolidado` (3394×7) y
+  `Remitentes` (30×2, el mapeo `Mail → Remitente` que `R-15` describe a mano).
+- ⚠ **`Call - Google` tiene los acentos rotos en la planilla** —`CampaÃ±a`—, así que cualquier
+  comparación de texto contra esa solapa falla en silencio.
+- ⛔ **La premisa del `_1` sobre `M2 - Gráficos2` no se sostiene**: declaraba dos bloques *«de largo
+  distinto»* y el conteo por columna da **37 contra 36**.
+
+**Suites: 97 bancos · 1 en rojo, `probar-guiones-grupos.js`, por el CSV nuevo y de forma
+deliberada** (ítem 40). `clasp push` corrido; `node --check` OK; `git diff --stat` sobre
+`Auditoria.gs`: **970 insertions, 0 deletions**.
