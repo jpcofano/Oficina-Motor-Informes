@@ -17785,3 +17785,125 @@ una diferencia futura será de la base y no del método.
 **Suites: 97 bancos · 1 en rojo, `probar-guiones-grupos.js`, por el CSV nuevo y de forma
 deliberada** (ítem 40). `clasp push` corrido; `node --check` OK; `git diff --stat` sobre
 `Auditoria.gs`: **970 insertions, 0 deletions**.
+
+
+---
+
+## 2026-09-08 (tarde) — El alta de `acumulado` y el cableado de los tres `cc_*`
+
+**Prompts `2026-09-08_3` (parado) y `2026-09-08_4`.** El `_3` frenó en su Parte A **y el motivo
+es el hallazgo del día**; el `_4` lo reemplazó con las premisas corregidas.
+
+### ⛔⛔ Por qué paró el `_3`: `token_propuesto` no es descriptivo, es una CLAVE
+
+El `_3` temía que regenerar `CASOS_POR_MARCADOR_` **levantara `_revisar` de más**. Se midió en
+seco, sin escribir, y **da exactamente lo contrario**:
+
+| marcador | antes | regenerando |
+|---|---|---|
+| `cc_base` | `cerrado` | ⛔ **`abierto`** |
+| `cc_contactados` | `cerrado` | ⛔ **`abierto`** |
+| `cc_contact_pct` | `reformulado` | ⛔ **`abierto`** |
+
+⇒ Los tres tokens **recién validados** quedaban en `abierto`, y el banco exige `exacto` para
+habilitar. **Se habrían cableado y publicado entre guiones estando validados.**
+
+⭐⭐ **Y la causa es propia, del mismo día.** `C-115` y `C-117` son **casos de método** —uno sobre
+el scope del cruce, otro sobre la no unicidad del criterio— y **nombraron los tokens en
+`token_propuesto`**. El generador lee ese campo como *«qué marcador afirma este caso»*, no como
+*«de qué habla»*, así que `D-58` les adjudicó su estado.
+
+⚠ **En `C-109` se hizo bien** —dice `(caso de metodo - ningun token)`— **y en `C-115` y `C-117`
+mal, el mismo día.** Es la familia del filtro por prefijo: algo que parece descripción y resulta
+ser clave.
+
+### El corrector — `C-118`…`C-121`, en `casos_validacion_2026-09-08b.csv`
+
+Salida **(a)** del usuario: un caso nuevo y posterior. `cc_base`, `cc_contactados` y
+`cc_contact_pct` reafirman **`exacto`**; `cc_campanias` vuelve a **`abierto`**, que es lo que
+`C-112` dice y que sin corrector quedaba `cerrado` por mención.
+
+⛔ **No revalida nada:** no se midió nada nuevo y el testigo sigue siendo `V-126`…`V-130`.
+**`C-115` y `C-117` no se editan ni se retractan** — lo que dicen sigue siendo cierto; lo que
+cambia es cuál gana.
+
+⭐ **El desempate es el `.sort()` de los nombres de archivo** (*«orden = orden de fecha»*), así que
+`…-08b.csv` queda último — verificado antes de elegir el nombre. Y queda escrita la política del
+usuario: **los números se ajustan en las corridas siguientes**.
+
+⭐ **Al reemplazar la constante NO se redirigió el generador sobre `Auditoria.gs`**: emite una
+sección y el archivo tiene 11 mil líneas. Se recortó el bloque por sus bordes con dos guardas, y
+**una frenó una expectativa equivocada de quien escribía** —asumió 6 CSV y son 7—. Se verificó
+además que las **134 funciones de nivel superior quedan intactas**. Banco en **verde, exit 0**.
+
+### El alta — `base_id: 'acumulado'`, prefijo `acc_`, UNA solapa de 38
+
+- **`SEED_BASES_`** · `modo_periodo: 'filtrar'`, con la nota diciendo que **para esta solapa da
+  igual** porque `'propia'` lo fuerza (`D-52`), y que se elige `filtrar` por ser la dirección
+  segura para una solapa futura que se registre sin `'propia'`.
+- **`SEED_SOLAPAS_`** · `fila_encabezado: 1` **explícito**, porque `FILA_ENCABEZADO_POR_BASE_` no
+  tiene `acumulado` y `filaSolapa_` pondría `undefined`. Es el camino de `reuniones`, que tampoco
+  está en ese mapa.
+- **`SEED_MAPEO_ACUMULADO_`** · cuatro filas y no veintidós. ⭐ **Concatenado ANTES del `forEach`
+  que hace `fila.solapa = fila.hoja`**: después, las cuatro quedarían **sin `solapa`** y
+  `buscarMapeo` no las encontraría — **sin fallar**.
+- **`DIMENSIONES_.ambito`** · `jm → acc_remitente=JM`, `gcba → acc_remitente=GCBA`. ⛔ **Es la
+  única entrada del mapa que NO es la negación de su par**, y diverge a propósito de
+  `ivr_vocero != JM`: el censo midió **seis** valores en la columna, no dos, y con `!= JM` las
+  **104** filas que no son ninguno caerían en `gcba` **en silencio**.
+
+⭐ **El prefijo `acc_` no es estilo:** `cc_contactados` **ya es `campo_logico`** en
+`looker/resumen_metricas_dinamico` (T) y en `reuniones/Agenda JM` (W). Es el criterio de `lcc_`,
+con su motivo ya escrito allá.
+
+### El cableado — `cablearCallCenterAcumulado()`, con el gate de `C-115` implementado
+
+Tres filas en `jm`, familia `cc` —que no existía—, `dimensiones: ambito=jm`, **sin `_revisar`**
+por `D-60`.
+
+⭐⭐ **El gate corre ANTES de escribir una celda y aborta:** verifica que `SOLAPAS` tenga la fila
+en `fuente` con `ventana_ref = propia`, y resuelve los **cuatro** campos con `buscarMapeo`
+**contra esta base**. ⛔ Es lo único que distingue `Base Barrida` de `Base barrida` de
+`looker/CC`: **`R-10` colapsa los blancos y a simple vista son la misma columna**.
+
+Backup primero, y **relectura desde la hoja** al final comparando `base_id`, `solapa`,
+`campo_logico` y `formato` — no lo que se pidió escribir.
+
+⚠ **`cc_contact_pct` es derivado y comparte filas con sus insumos**, así que el cociente **se
+cumple por construcción**: va declarado y **no se presenta como control**.
+
+✅ **La corrida del usuario a las 17:26 en MODO SECO: el gate PASA.** `uso = fuente`,
+`ventana_ref = propia`, los cuatro campos resuelven contra `acumulado`, y las tres son **alta** —
+ninguna existía.
+
+### ⭐⭐ Y lo que el usuario preguntó al final, que corrige una afirmación de este mismo día
+
+**«¿cuál es la ventana? además, las bases se mueven».** Las dos correctas, y la segunda obliga a
+retirar algo:
+
+1. **`agosto_14_20` coincide exacto** con la medición. **`julio_24_30` es de SIETE días** y la
+   medición usó `24–31/07`, de ocho. ⭐ **Los tres números no cambian**, y se afirma sin volver a
+   medir: la sonda imprimió las filas una por una y las **3 filas JM de julio son del `24/07` y
+   del `27/07`** — ninguna del 31. Mismas filas ⇒ mismas sumas.
+2. ⛔ **Se RETIRA *«si da otra cosa es el cableado y no la base»*.** Era cierto el 08/09 —dos
+   lecturas con cinco horas de diferencia— y **no lo es semanas después**: `R-31` vuelve a
+   aplicar y **esta base se mueve** (la cuarta fila de `3488`, del 13/08, no estaba en la lectura
+   del 22/08).
+3. ⭐ **El control que sí separa las dos causas: correr el instrumento EL MISMO DÍA que la
+   corrida.** Instrumento y deck coinciden y difieren del testigo → se movió la base; el
+   instrumento da el testigo y el deck no → es el cableado. ⚠ El instrumento **ya avisa solo** si
+   el recorte deja de dar 3 filas —la mitad **ALTA** de `R-31`—; la mitad **CAMBIO** no mueve
+   filas y **sólo la ve esta comparación**.
+4. ⛔ **Y la semana en curso no sirve para verificar**: sin deck publicado no hay contra qué
+   comparar. Los dos períodos quedaron nombrados **por `periodo_id`** dentro del wrapper, donde
+   se leen justo antes de correr.
+
+### Higiene del repo
+
+⛔ **Un `.pptx` de marca institucional de 43 MB en `design/capturas/` va a `.gitignore`, no al
+repo.** Es el mismo criterio que ya está escrito para `docs/_fixtures/*`, que se bloqueó
+**porque un `git add -A` arrastró dos `.pptx` de decks reales**. Se bloquea por extensión —
+`design/**/*.pptx`— y no la carpeta: los ocho `.png` del panel siguen versionados.
+
+**Suites: 97 bancos, exit 0. `tools/listas.js`, exit 0. `clasp push` corrido dos veces, en su
+propio comando.** ⛔ **Falta la corrida**: esto escribió configuración y no publicó ningún número.

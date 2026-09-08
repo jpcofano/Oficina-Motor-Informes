@@ -7,8 +7,11 @@
 > (`CLAUDE.md` §4). Antes de usar una afirmación de acá **para decidir**, buscá el dato en la fuente
 > que lo produce.
 
-**Última actualización:** 2026-09-08, tras los cuatro prompts de la base nueva de Call Center
-(`2026-09-07_1`, `_2`, `2026-09-08_1`, `_2`).
+**Última actualización:** 2026-09-08 (tarde), tras los seis prompts de la base nueva de Call
+Center (`2026-09-07_1`, `_2`, `2026-09-08_1`…`_4`).
+
+⭐⭐ **El alta está APLICADA y el cableado está ESCRITO Y PUSHEADO. Falta apretar dos botones y
+correr.** Ver *«Lo que hay que correr»*, abajo.
 
 ---
 
@@ -23,7 +26,11 @@ que a `looker/CC` le faltaba: **columna de fecha propia (`Fecha`, K) y columna d
 | `cc_base` | **6.011** | **6.851** | `V-126` · `V-127` |
 | `cc_contactados` | **1.878** | **1.616** | `V-128` · `V-130` |
 | `cc_contact_pct` | **31** | 24 — ⛔ sin testigo | `V-129` · `C-116` |
-| `cc_campanias` | ⛔ **4 candidatas, sin criterio elegido** | | `C-112` |
+| `cc_campanias` | ⛔ **4 candidatas, sin criterio elegido** | | `C-112` · `C-121` |
+
+⭐ **Los tres están CABLEADOS** (`cablearCallCenterAcumulado()`, escrito y pusheado, **sin correr
+todavía**), sobre la base **`acumulado`** dada de alta con prefijo `acc_` y **una sola** de sus 38
+solapas. `cc_campanias` **no se cableó**.
 
 **El recorte es `Fecha` en ventana + `Remitente = JM`** — la misma forma que `mail_entregados`, que
 `C-78` ya había medido como el mecanismo existente. Lo que faltaba era la columna, y esta solapa la
@@ -43,7 +50,8 @@ que está **abierto**.
 | `C-109` | El control positivo inerte, como caso de método |
 | `C-113` | **`C-62` no se traslada** a la base nueva — sus **dos** lecturas fallan julio |
 | `C-114` | Las 4 candidatas son **dos familias que etiquetan la misma fila con palabras distintas** |
-| `C-115` | El cruce caso→marcador **no scopea por base** — hoy inerte, deja de serlo con el alta |
+| `C-115` | El cruce caso→marcador **no scopea por base** — ⛔ **ya NO es inerte: el alta lo despertó**, y por eso existe el gate |
+| `C-118`…`C-121` | ⭐⭐ **El corrector.** `token_propuesto` **no es descriptivo, es una CLAVE**: `C-115` y `C-117` son casos de método y **reclamaron** los tokens que mencionaban, dejándolos en `abierto`. Medido en seco antes de escribir |
 
 ⛔ **Declarado y NO ejecutado:** `CONFIG_INFORMES.md` §4.7 y las decisiones `D-NN` **no se tocaron**.
 Un caso se escribe en el CSV; una decisión editorial es del prompt del alta.
@@ -63,8 +71,35 @@ Un caso se escribe en el CSV; una decisión editorial es del prompt del alta.
 > Los tres instrumentos de Call Center **ya corrieron** y sus logs están volcados. Lo de abajo es lo
 > que sigue pendiente **de antes**.
 
-0. ⭐ **`clasp push` está al día** — corrido el 08/09 a las 06:16. `Auditoria.gs` con los tres
-   instrumentos nuevos ya vive en el proyecto de Apps Script.
+0. ⭐ **`clasp push` está al día** — última corrida 08/09. Los tres instrumentos, el alta y el
+   wrapper de cableado ya viven en el proyecto de Apps Script.
+
+⭐⭐ **LO PRIMERO, y es lo único que separa a Call Center de estar publicando:**
+
+- **A · `cablearCallCenterAcumulado()`** — escribe las tres filas de `MARCADORES`. Backup primero
+  y **relectura desde la hoja** al final. ✅ El **modo seco ya corrió el 08/09 17:26 y el gate de
+  `C-115` PASA**: `uso = fuente`, `ventana_ref = propia`, los cuatro `acc_*` resuelven contra
+  `acumulado` y no contra `looker/CC`; las tres son **alta**, ninguna existía.
+- **B · una corrida de `jm`**, y ⛔ **con `julio_24_30` o `agosto_14_20`, NO con la semana en
+  curso** — sin deck publicado no hay contra qué comparar (`D-59` deja la ventana a tu elección).
+
+  | período | esperado |
+  |---|---|
+  | `julio_24_30` | **6.011 / 1.878 / 31** |
+  | `agosto_14_20` | **6.851 / 1.616 / (24, sin testigo — `C-116`)** |
+
+  ⚠ **`julio_24_30` es de SIETE días y la medición usó `24–31/07`, de ocho. Los tres números no
+  cambian**: las 3 filas JM son del `24/07` y del `27/07`, ninguna del 31 — verificado fila por
+  fila en la sonda.
+
+- ⛔⛔ **Y NO vale *«si da otra cosa es el cableado»*.** Eso era cierto el 08/09 —dos lecturas con
+  cinco horas de diferencia— y **no lo es semanas después**: `R-31` vuelve a aplicar y **esta base
+  se mueve** (la cuarta fila de `3488`, del 13/08, no estaba en la lectura del 22/08).
+  ⭐ **Lo que sí separa las dos causas: correr `medirCampaniasCallCenterBaseNueva()` EL MISMO DÍA.**
+  Instrumento y deck coinciden y difieren del testigo → **se movió la base**; el instrumento da el
+  testigo y el deck no → **es el cableado**. ⚠ El instrumento avisa solo si el recorte deja de dar
+  3 filas —la mitad **ALTA** de `R-31`—; la mitad **CAMBIO** no mueve filas y sólo la ve esta
+  comparación.
 1. ⭐⭐ **Aplicar configuración**, y el control es **el corte por columna `D`**: verificar que `MAPEO`
    diga `fecha_periodo → D (Fecha)` para `reuniones / Agenda funcionarios`. **El seed ya la tiene**;
    la hipótesis medida es que **la hoja viva todavía corta por `E`**, porque el seed no repara lo ya
@@ -89,16 +124,21 @@ diciendo `SIN VALIDAR`. Es el caso del 26/08→01/09, que costó **ocho días en
 
 ---
 
-## ⚠ Una suite en rojo, a propósito
+## ✅ La suite roja se cerró — y el arreglo trajo el hallazgo del día
 
-**`probar-guiones-grupos.js`** — *«la constante dice 5 CSV y en disco hay 6»*. Lo causó el CSV del
-08/09 y **el banco está haciendo su trabajo**.
+**`probar-guiones-grupos.js` está en VERDE** (exit 0, verificado **sin tubería**).
+`CASOS_POR_MARCADOR_` regenerada desde los **7** CSV.
 
-⛔ **`CASOS_POR_MARCADOR_` NO se regeneró, y hoy es seguro no hacerlo:** medido sobre
-`MARCADORES_2026-08-31.tsv`, hay **cero marcadores `cc_*` vivos**, así que el cruce produce entradas
-**inertes**. ⭐ **Deja de ser inerte con el alta** (ítem 37): el día que existan marcadores con esos
-nombres, `D-60` les levanta el `_revisar`. ⇒ Se regenera **junto con el alta y después de su gate**
-— es el ítem **39** de la cola.
+⛔⛔ **Pero regenerar no era el trámite que parecía.** Medido **en seco antes de escribir**: dejaba
+`cc_base`, `cc_contactados` y `cc_contact_pct` en **`abierto`**, no en `exacto` — o sea que los tres
+se habrían cableado y **publicado entre guiones estando validados**. La causa es propia y del mismo
+día: `C-115` y `C-117`, **casos de método**, nombraron los tokens en `token_propuesto`, y el
+generador lee ese campo como *«qué marcador afirma este caso»*. Lo cerró el corrector
+`C-118`…`C-121` (CSV `2026-09-08b`, que gana el `.sort()` por nombre de archivo).
+
+⭐ **La lección, que es lo que sobrevive: `token_propuesto` no es descriptivo, es una CLAVE.** Un
+caso de método que **menciona** tokens **los reclama**. En `C-109` se hizo bien —dice `(caso de
+metodo - ningun token)`— y en `C-115`/`C-117` mal, el mismo día.
 
 ---
 
@@ -155,8 +195,11 @@ grep -o '^| `\[.\]` \*\*[0-9]*\*\*' docs/PLAN.md | grep -o '\[.\]' | sort | uniq
 ```
 
 ⭐ **Los cuatro nuevos son de Call Center: 37** (el alta + el cableado de los tres validados),
-**38** (`cc_campanias` sin criterio), **39** (regenerar `CASOS_POR_MARCADOR_` con el gate de
-`C-115`) y **40** (el `%` de agosto sin testigo).
+**38** (`cc_campanias` sin criterio), **39** (regenerar `CASOS_POR_MARCADOR_`) y **40** (el `%` de
+agosto sin testigo).
+
+✅ **El 39 se cerró el 08/09** con el corrector. ⭐ **El 37 está escrito y pusheado, y le falta la
+corrida** — no se tacha hasta que los tres números salgan en un deck.
 
 ---
 
@@ -164,7 +207,9 @@ grep -o '^| `\[.\]` \*\*[0-9]*\*\*' docs/PLAN.md | grep -o '\[.\]' | sort | uniq
 
 | afirmación | cómo lo sé |
 |---|---|
-| ⚠ Suites: **97 bancos, 1 en rojo** | **exit code**, corrido hoy. El rojo es `probar-guiones-grupos.js` y es **deliberado** (ítem 40) |
+| ✅ Suites: **97 bancos, exit 0** · `tools/listas.js` exit 0 | **exit code sin tubería**, corrido hoy |
+| ✅ el gate de `C-115` **pasa sobre la hoja viva** | corrida del usuario del 08/09 17:26, modo seco |
+| ⛔ las tres filas de `MARCADORES` **NO están escritas** | el modo seco no escribe. Falta `cablearCallCenterAcumulado()` |
 | ✅ el proyecto de Apps Script **está al día** | `clasp push` corrido el 08/09 06:16, en su **propio comando** después de leer el resultado |
 | ✅ los tres instrumentos de Call Center **corrieron** | logs del usuario del 08/09 (05:55, 05:57 y 07:05), volcados en los `MEDICION_*` y el `CENSO_*` |
 | ✅ **cero marcadores `cc_*` vivos** | `MARCADORES_2026-08-31.tsv`, medido — no supuesto |
