@@ -171,9 +171,24 @@ const iBackup = CUERPO.indexOf("backupMarcadores_('remitentes_acumulado')");
 /* ⛔ Cero filas no es «la columna está bien»: es que el gate no midió nada. */
 af('`G1` aborta con CERO filas — un cero sin denominador se lee como verde',
   /G1 NO PASA — la ventana devolvió CERO filas/.test(CUERPO));
-/* ⛔⛔ `R-02` excluye las derivadas como fuente: si el censo encontró fórmulas, el alta muere. */
-af('`G0` nombra el caso `derivada` aparte — `R-02` lo excluye como fuente',
-  /uso === 'derivada'/.test(CUERPO));
+/* ⛔⛔ **DADA VUELTA el 09/09, y el motivo va escrito porque el control estaba diciendo la
+ * verdad.** Hasta hoy esta afirmación exigía que `G0` nombrara el caso `derivada` aparte, por
+ * `R-02`. **El gate se RETIRÓ por decisión, con la medición delante:** las 38 solapas de
+ * `acumulado` son `IMPORTRANGE` de un mismo libro externo, así que *«tiene fórmulas ⇒ derivada»*
+ * dejaba afuera **la base entera** —incluida `Call Center - Métricas`, que ya es `fuente` y
+ * publica tres números validados—.
+ *
+ * ⭐ **No se afloja: se invierte Y se le sube la exigencia.** Donde había un gate que sobraba,
+ * ahora se exige el que faltaba — `campo_id_cuenta`, que es la diferencia entre publicar las
+ * filas de la campaña y publicar **el agregado de la ventana de todas**. Ese número sale
+ * plausible y la traza es lo único que lo delata. */
+af('⛔ `G0` YA NO rechaza por `derivada` — el gate de `R-02` se retiró el 09/09',
+  !/uso === 'derivada'/.test(CUERPO),
+  'si volvió, revisá por qué: dejaba afuera la base entera, `Call Center - Métricas` incluida');
+af('⭐ `G0` exige `SOLAPAS.campo_id_cuenta` — sin él se publica el AGREGADO de la ventana',
+  /campo_id_cuenta/.test(CUERPO) && /AGREGADO de la ventana/.test(CUERPO));
+af('⭐ `G0` exige que `MAPEO` resuelva también el campo de la cuenta',
+  /\[CAMPO_AMBITO_MAIL_, CAMPO_CUENTA_MAIL_, 'fecha_periodo'\]/.test(CUERPO));
 af('`G2` declara los DOS conteos aunque coincidan',
   /filas en la ventana — `digital\|Directa Mail`/.test(CUERPO));
 /* ⚠ Dos envíos del mismo día ordenados por fecha no se distinguen: la clave se debilita. */
@@ -223,6 +238,67 @@ console.log('8 · control negativo — que esto sepa ponerse rojo');
       'el control no distingue la solapa buena de la que el `_7` midió por error');
   }
 }
+
+console.log('');
+console.log('9 · ⭐ el ALTA que estas cinco filas necesitan, en el seed');
+/* ⭐⭐ Van acá y no en un banco aparte porque son **la misma pregunta**: sin estas filas del seed,
+ * las cinco de `MARCADORES` no resuelven. Separarlas dejaría dos controles que hay que acordarse
+ * de correr juntos. */
+const SEED_SOL = INSTALAR.slice(
+  INSTALAR.indexOf("filaSolapa_('acumulado', 'Call Center - Métricas'"),
+  INSTALAR.indexOf('Aplica SEED_SOLAPAS_ sobre la hoja SOLAPAS'));
+const filaDe = (nombre) => {
+  const i = SEED_SOL.indexOf("filaSolapa_('acumulado', '" + nombre + "'");
+  return i === -1 ? null : SEED_SOL.slice(i, SEED_SOL.indexOf('})]', i));
+};
+[['Remitentes', 'referencia'], ['Mail', 'fuente'], ['IVR', 'fuente'], ['SMS', 'fuente'],
+ ['Call Center - Campañas', 'fuente'], ['Mail x Sem x Rem', 'referencia'],
+ ['Herramientas x Semana', 'referencia']].forEach(function (par) {
+  const f = filaDe(par[0]);
+  af('`acumulado | ' + par[0] + '` está en el seed como `' + par[1] + '`',
+    !!f && f.indexOf("'" + par[1] + "'") !== -1, f ? 'está con otro uso' : 'no está');
+});
+/* ⛔⛔ La que decide el universo: sin `campo_id_cuenta` el marcador publica el agregado. */
+af('⛔ `Mail` declara `campo_id_cuenta: \'acm_id_cuenta\'` — sin eso publica el AGREGADO',
+  /campo_id_cuenta: 'acm_id_cuenta'/.test(filaDe('Mail') || ''));
+af('`Mail` declara `ventana_ref: \'propia\'` — tiene su propia `Fecha envio`',
+  /ventana_ref: 'propia'/.test(filaDe('Mail') || ''));
+/* ⛔ Banda en la fila 1, títulos en la 2: `fila_encabezado` va DECLARADO, nunca asumido. */
+['Mail x Sem x Rem', 'Herramientas x Semana'].forEach(function (n) {
+  af('⛔ `' + n + '` declara `fila_encabezado: 2` — tiene banda en la fila 1',
+    /fila_encabezado: 2/.test(filaDe(n) || ''));
+});
+/* ⛔ NEGATIVA — las tres «disponibles» no llevan `campo_id_cuenta`: declararlo exige mapear el
+ * campo, y mapear por las dudas es lo que este alta evita. */
+['IVR', 'SMS', 'Call Center - Campañas'].forEach(function (n) {
+  af('⛔ `' + n + '` NO declara `campo_id_cuenta` — queda DISPONIBLE, sin marcadores',
+    !/campo_id_cuenta/.test(filaDe(n) || ''));
+});
+
+console.log('');
+console.log('10 · ⭐ el `MAPEO` de `acumulado | Mail`, sobre el seed EFECTIVO');
+/* ⭐ Sobre el seed EFECTIVO —`tools/seed-mapeo.js`, que ejecuta el post-proceso real— y no sobre
+ * la lista cruda: es la diferencia entre *«el seed lo declara»* y *«esto llega a la hoja»*, y ya
+ * costó una vez (26/08, las cuatro celdas de `looker/CC` vacías). */
+const seedMapeo = require('./seed-mapeo.js');
+const mail = seedMapeo.leer(seedMapeo.fuente()).filas
+  .filter(function (f) { return f.base_id === 'acumulado' && f.solapa === 'Mail'; });
+const porCampo = {};
+mail.forEach(function (f) { porCampo[f.campo_logico] = f; });
+[[CAMPO, 'AI', 'Remitente'], ['acm_id_cuenta', 'A', 'ID cuentas'],
+ ['fecha_periodo', 'F', 'Fecha envio']].forEach(function (x) {
+  const f = porCampo[x[0]];
+  af('`' + x[0] + '` → col ' + x[1] + ' («' + x[2] + '»), en el seed EFECTIVO',
+    !!f && f.columna === x[1] && f.encabezado === x[2],
+    f ? f.columna + ' / ' + JSON.stringify(f.encabezado) : 'no llega a la hoja');
+});
+/* ⛔ NEGATIVA — `Mail remitente` (G) es la dirección CRUDA y no se mapea: mapearla sería dejar a
+ * mano el camino que este prompt viene a cerrar. */
+af('⛔ NO se mapea `Mail remitente` (G), que es la dirección cruda',
+  !mail.some(function (f) { return f.columna === 'G'; }),
+  mail.filter(function (f) { return f.columna === 'G'; }).map(function (f) { return f.campo_logico; }).join(','));
+af('⭐ se mapean TRES columnas y no más — no se mapea por las dudas',
+  mail.length === 3, mail.length + ': ' + mail.map(function (f) { return f.campo_logico; }).join(','));
 
 console.log('');
 console.log('══════════════════════════════════════════');

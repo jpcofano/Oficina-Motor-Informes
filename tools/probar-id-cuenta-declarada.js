@@ -112,20 +112,31 @@ const SANDBOX = new Function(`
   ${extraerFuncion(FUENTE, 'filaSolapa_')}
   ${extraerFuncion(FUENTE, 'filasSolapa_')}
   var SOLAPAS = ${extraerVar(FUENTE, 'SEED_SOLAPAS_')};
-  var MAPEO = []
-    .concat(${extraerVar(FUENTE, 'SEED_MAPEO_')})
-    .concat(${extraerVar(FUENTE, 'SEED_MAPEO_REUNIONES_')})
-    .concat(${extraerVar(FUENTE, 'SEED_MAPEO_DESGLOCE_')})
-    .concat(${extraerVar(FUENTE, 'SEED_MAPEO_DESGLOCE_REVISAR_')})
-    .concat(${extraerVar(FUENTE, 'SEED_MAPEO_CC_')});
   var TIPOS = ${extraerVar(FUENTE, 'TIPO_ESPERADO_POR_CAMPO_')};
   var ENCABEZADOS = ${extraerVar(FUENTE, 'ENCABEZADO_POR_MAPEO_')};
-  return { SOLAPAS: SOLAPAS, MAPEO: MAPEO, TIPOS: TIPOS, ENCABEZADOS: ENCABEZADOS };
+  return { SOLAPAS: SOLAPAS, TIPOS: TIPOS, ENCABEZADOS: ENCABEZADOS };
 `)();
 
-const { SOLAPAS, MAPEO, TIPOS, ENCABEZADOS } = SANDBOX;
-// La única línea reimplementada, y está declarada arriba.
-MAPEO.forEach((f) => { f.solapa = f.hoja; });
+const { SOLAPAS, TIPOS, ENCABEZADOS } = SANDBOX;
+
+/* ⛔⛔ `2026-09-09` — **ACÁ HABÍA UNA LISTA ENUMERADA DE CINCO `SEED_MAPEO*`, Y ESTABA VIEJA.**
+ * `SEED_MAPEO_ACUMULADO_` entró el 08/09 y **nadie la agregó a esta lista**, así que este banco
+ * estuvo **ciego a la base entera** — incluido el invariante de la §1, que es justo el que dice
+ * *«toda solapa que declara `campo_id_cuenta` tiene su fila de `MAPEO`»*. El síntoma fue el de
+ * siempre: **no falló, pasó**, midiendo un universo más chico del que decía medir.
+ *
+ * ⭐ **La salida no es agregar el sexto nombre: es dejar de enumerar.** `tools/seed-mapeo.js`
+ * **ejecuta el post-proceso real de `Instalar.gs`** —los `concat`, `solapa = hoja`,
+ * `tipo_esperado`, `encabezado`—, así que un séptimo array se incorpora solo. Es la misma
+ * corrección que el 26/08 le hizo a `probar-mapeo-cc.js`: *«afirma sobre el seed EFECTIVO, que es
+ * el único artefacto del que se puede decir "esto llega a la hoja"»*.
+ *
+ * ⭐ **Y con eso desaparece la única línea reimplementada que este banco declaraba**
+ * (`f.solapa = f.hoja`): el post-proceso real ya la hace.
+ *
+ * ⚠ **Y `seed-mapeo.js` ya estaba importado arriba**, para la §5: el banco tenía el seed efectivo
+ * a mano y la §1 seguía leyendo la lista enumerada de al lado. */
+const MAPEO = seedMapeo.leer(FUENTE).filas;
 
 const clave = (b, s, c) => b + '|' + s + '|' + c;
 const MAPA = {};

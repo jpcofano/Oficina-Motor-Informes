@@ -1920,7 +1920,26 @@ var SEED_MAPEO_ACUMULADO_ = [
   { base_id: 'acumulado', campo_logico: 'fecha_periodo', hoja: 'Call Center - Métricas', columna: 'K', encabezado: 'Fecha', notas: 'la ventana propia (D-52). Medido el 08/09: Date en las 1980 filas, cero texto y cero vacías, asi que R-02 no se activa' },
   { base_id: 'acumulado', campo_logico: 'acc_base_barrida', hoja: 'Call Center - Métricas', columna: 'C', encabezado: 'Base Barrida', notas: 'ES la Base discada del deck. V-126/V-127: 6.011 en 24-31/07 y 6.851 en 14-20/08, exacto. OJO: looker/CC escribe Base barrida con b minuscula y R-10 no distingue el case, asi que el encabezado NO alcanza para saber de que solapa se habla — manda base_id' },
   { base_id: 'acumulado', campo_logico: 'acc_contactados', hoja: 'Call Center - Métricas', columna: 'D', encabezado: 'Contactados U', notas: 'V-128/V-130: 1.878 y 1.616, exacto. Es tambien el numerador de cc_contact_pct' },
-  { base_id: 'acumulado', campo_logico: 'acc_remitente', hoja: 'Call Center - Métricas', columna: 'Q', encabezado: 'Remitente', notas: 'el corte JM/GCBA de Call Center, POSITIVO POR LOS DOS LADOS (C-108). Censo del 08/09: seis valores distintos — GCBA 1400, JM 476, ANUNCIO 88, vacia 10, #N/A 5, No se activo 1. Las 104 que no son ninguno de los dos quedan FUERA de ambos ambitos y se ven' }
+  { base_id: 'acumulado', campo_logico: 'acc_remitente', hoja: 'Call Center - Métricas', columna: 'Q', encabezado: 'Remitente', notas: 'el corte JM/GCBA de Call Center, POSITIVO POR LOS DOS LADOS (C-108). Censo del 08/09: seis valores distintos — GCBA 1400, JM 476, ANUNCIO 88, vacia 10, #N/A 5, No se activo 1. Las 104 que no son ninguno de los dos quedan FUERA de ambos ambitos y se ven' },
+
+  /* ⭐⭐ `2026-09-09_1` Parte 0.1 — `acumulado | Mail`, SÓLO lo que la Parte B necesita.
+   *
+   * ⭐ **No se mapean columnas por las dudas** (decisión del prompt): la solapa trae 36 columnas
+   * —métricas M-R, `semana` X, `Mail remitente` G— y acá entran **tres**, las que las cinco
+   * `camp_envN_rem` usan para resolver, ordenar y recortar. El resto se mapea el día que un
+   * marcador lo pida.
+   *
+   * ⚠ **Procedencia de las letras y los encabezados (`D-31`):** censo del 09/09, transcripto en
+   * `docs/Prompts/2026-09-09_1_…md` §0.1. **El log todavía no está volcado a
+   * `docs/CENSO_solapas_*`**, así que el testigo es una transcripción y no una copia. El control
+   * es `verificarEncabezadosDeMapeo()` contra la planilla viva, que es mejor testigo que
+   * cualquiera de las dos. */
+  { base_id: 'acumulado', campo_logico: 'acm_id_cuenta', hoja: 'Mail', columna: 'A', encabezado: 'ID cuentas', notas: 'lo declara SOLAPAS.campo_id_cuenta: es lo que hace que un marcador de campana lea SUS filas y no el agregado de la ventana (rama D-30 de Generador.gs)' },
+  { base_id: 'acumulado', campo_logico: 'fecha_periodo', hoja: 'Mail', columna: 'F', encabezado: 'Fecha envio', notas: 'la ventana propia, y ademas el separador de opFILA: sin este campo mapeado FILA no ordena y falla con FALTA:@fila_orden_no_mapeado' },
+  /* ⭐⭐ La columna del ámbito, y el motivo de todo el prompt: `Remitente` (AI) **ya dice `JM` o
+   * `GCBA`**, así que el ámbito sale de una columna y no de un literal de mail en el código.
+   * ⚠ Es una columna DISTINTA de `Mail remitente` (G), que trae la dirección cruda. */
+  { base_id: 'acumulado', campo_logico: 'acm_remitente', hoja: 'Mail', columna: 'AI', encabezado: 'Remitente', notas: 'el ambito ya normalizado a JM/GCBA. NO es Mail remitente (G), que trae la direccion cruda. Es lo que publica la columna Envio de L-047 (D1)' }
 ];
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_ACUMULADO_);
 
@@ -1947,6 +1966,8 @@ var TIPO_ESPERADO_POR_CAMPO_ = {
   // `2026-09-08_4` — los tres de la base `acumulado`. `lcc_*` no los declara y eso es una
   // omisión, no una decisión: `tipo_esperado` vacío significa «sin declarar» y no valida nada.
   acc_base_barrida: 'numero', acc_contactados: 'numero', acc_remitente: 'texto',
+  // `2026-09-09_1` — los dos de `acumulado | Mail`. `fecha_periodo` ya está declarado abajo.
+  acm_id_cuenta: 'texto', acm_remitente: 'texto',
   // identificadores y categóricos — texto
   figura: 'texto', barrio: 'texto', evento: 'texto', status: 'texto', estado: 'texto',
   comuna: 'texto', eje: 'texto', area: 'texto', campana: 'texto', campana_dig: 'texto',
@@ -2779,7 +2800,88 @@ var SEED_SOLAPAS_ = [].concat(
    * el bloque publica el mismo universo que el resto de su lámina. */
   [filaSolapa_('acumulado', 'Call Center - Métricas', 'fuente',
     'Call Center acumulado — 1981 x 22, censo del 08/09. Fecha propia (K) y Remitente (Q): recorta por sus fechas (ventana_ref=propia, D-52) y el ambito sale de columna (C-108). Fuente de cc_base, cc_contactados y cc_contact_pct',
-    { fila_encabezado: 1, ventana_ref: 'propia', filas_datos: 1980 })]
+    { fila_encabezado: 1, ventana_ref: 'propia', filas_datos: 1980 })],
+
+  /* ⭐⭐ `2026-09-09_1` Parte 0.1 — LAS SIETE SOLAPAS DE `acumulado` QUE FALTABAN.
+   *
+   * ⛔⛔ **EL ORDEN IMPORTA, Y ES LO PRIMERO QUE HAY QUE SABER: estas filas tienen que entrar
+   * ANTES de que `inventariarSolapasDeAcumulado()` cree las suyas.** El inventario da de alta con
+   * `uso = 'revisar'` (`Solapas.gs`), y después `usoAEscribir_` **conserva lo que dice la hoja**
+   * — `D-32`, y el gate es sobre `uso`, **no** sobre `origen`, así que un `revisar` que escribió
+   * una máquina hace diez segundos queda igual de protegido que una decisión humana.
+   * ⇒ **Si el inventario corre primero, el seed ya no las puede promover a `fuente` y hay que
+   * editar la celda a mano.** `usoAEscribir_` lo dice del otro lado: *«INSERTAR NUNCA ES
+   * DEGRADAR: una fila que no existe no tiene `uso` que proteger»*.
+   *
+   * ⛔ **El gate de `R-02` que un borrador anterior proponía se RETIRA, y el motivo está medido
+   * (09/09):** las 38 solapas de `acumulado` son `IMPORTRANGE` de un mismo libro externo, así que
+   * *«tiene fórmulas ⇒ derivada»* habría dejado afuera **la base entera**, incluida
+   * `Call Center - Métricas`, que ya es `fuente` y publica tres números validados.
+   * ⭐ **La distinción que sí importa:** `IMPORTRANGE` **desde otro libro** es un **espejo**
+   * —dato nuevo para este libro, puede ser fuente—; una fórmula que referencia **otra solapa del
+   * mismo libro** es **derivada**. El caso genuino acá es `M2 - Gráficos2`, que hace `LET`/`FILTER`
+   * sobre `M2 - Gráficos`, y **no se registra**.
+   *
+   * ⚠ **Las cuatro `fuente` se registran «por si llegan a necesitarse» (usuario, 09/09): quedan
+   * DISPONIBLES y este seed NO cablea ningún marcador sobre ellas.** Va escrito para que una
+   * solapa `fuente` sin marcadores no se lea después como un cableado que falta.
+   *
+   * ⚠ **Y la procedencia de estas letras y encabezados, porque `D-31` la exige:** salen de los
+   * censos del 09/09, transcriptos en `docs/Prompts/2026-09-09_1_…md` §0.1. **El log de esos
+   * censos todavía no está volcado a `docs/CENSO_solapas_*`** — hasta que lo esté, el testigo de
+   * estas filas es una transcripción, no una copia. */
+
+  /* `Remitentes` — el catálogo `Mail → Remitente`, 30 filas × 2. **Misma forma que
+   * `rdv | Comunas`**, que ya está registrada `uso = referencia`: una tabla de traducción que
+   * ningún marcador suma, y que `MARCADORES.catalogo` sabe leer con la forma `base/solapa`. */
+  [filaSolapa_('acumulado', 'Remitentes', 'referencia',
+    'El catalogo Mail -> Remitente, 30 x 2 (censo del 09/09). Misma forma que rdv|Comunas. Es lo que traduce una direccion a JM/GCBA sin literales en el codigo',
+    { fila_encabezado: 1, filas_datos: 30 })],
+
+  /* ⭐⭐ `Mail` — la fuente de las cinco `camp_envN_rem`, y la única de estas siete que este
+   * prompt cablea.
+   *
+   * ⛔⛔ **`campo_id_cuenta` NO es opcional acá, y sin él el número sale mal sin fallar.**
+   * `acumulado` no es `rdv` ni `digital`, así que sus marcadores caen en la **rama declarativa de
+   * `D-30`** (`Generador.gs`): con `campo_id_cuenta` y un ítem con cuenta, lee la base entera
+   * **sin ventana** y filtra por cuenta; **sin él**, cae a la rama general y publica **el agregado
+   * de la ventana de todas las campañas**. Es el universo equivocado, y el aviso de la traza es lo
+   * único que lo distingue.
+   *
+   * ⚠ **Y ése NO es el mismo universo que hoy tienen los otros 40 tokens de envío**, que salen de
+   * la **unión digital por cuenta** de `digital | Directa Mail` —recortada por ventana—. **Son dos
+   * caminos de lectura distintos**, y por eso la alineación se MIDE antes de mudar nada: es el gate
+   * de la Parte B. */
+  [filaSolapa_('acumulado', 'Mail', 'fuente',
+    'Mail acumulado — 6170 filas, censo del 09/09. Fecha propia (F) y Remitente (AI, ya normalizado a JM/GCBA): recorta por sus fechas y el ambito sale de columna, no de un literal. campo_id_cuenta declarado: sin el, un marcador de campana publica el agregado de la ventana (rama D-30)',
+    { fila_encabezado: 1, ventana_ref: 'propia', campo_id_cuenta: 'acm_id_cuenta', filas_datos: 6170 })],
+
+  /* Las tres de abajo quedan DISPONIBLES y sin marcadores. **No se les declara `campo_id_cuenta`**:
+   * declararlo exige mapear el campo, y mapear columnas por las dudas es lo que este prompt evita.
+   * Se declara el día que un marcador las lea. */
+  [filaSolapa_('acumulado', 'IVR', 'fuente',
+    'IVR acumulado — 197 filas, censo del 09/09. Vocero en G. DISPONIBLE y sin marcadores: se registra por si llega a necesitarse, no porque falte un cableado. OJO: looker|IVR espeja las mismas 197 filas y esta en uso=ignorar',
+    { fila_encabezado: 1, ventana_ref: 'propia', filas_datos: 197 })],
+
+  [filaSolapa_('acumulado', 'SMS', 'fuente',
+    'SMS acumulado — 103 filas, censo del 09/09. Remitente en U. DISPONIBLE y sin marcadores. OJO: looker|SMS espeja las mismas 103 filas y esta en uso=ignorar',
+    { fila_encabezado: 1, ventana_ref: 'propia', filas_datos: 103 })],
+
+  [filaSolapa_('acumulado', 'Call Center - Campañas', 'fuente',
+    'Call Center campanas — 2975 filas, censo del 09/09. Id cuentas C, nombre D, Remitente E, Herramienta G. DISPONIBLE y sin marcadores. Es un candidato NUEVO para cc_campanias (C-112) que la medicion del 04/09 no tenia: medirlo aparte antes de cablear',
+    { fila_encabezado: 1, filas_datos: 2975 })],
+
+  /* ⛔ Las dos de abajo tienen **banda en la fila 1 y títulos en la fila 2**, así que
+   * `fila_encabezado: 2` va DECLARADO y no asumido. Es cómo se rompe una solapa río abajo, y
+   * `SOLAPAS.firma_encabezado` existe justamente para que un `fila_encabezado` mal puesto se vea a
+   * simple vista. */
+  [filaSolapa_('acumulado', 'Mail x Sem x Rem', 'referencia',
+    'Enviados por semana y por ambito, bloques JM en A-D y GCBA en F-I (censo del 09/09). BANDA en la fila 1, titulos en la 2. Es grano semanal de Directa, agregado por semana y NO por campana: no cierra el bloqueante del grano temporal',
+    { fila_encabezado: 2, filas_datos: 92 })],
+
+  [filaSolapa_('acumulado', 'Herramientas x Semana', 'referencia',
+    'Call Center llamados, Mail entregados, SMS e IVR audiencia por ano/semana, mas JM ENVIADOS y GCBA ENVIADOS (censo del 09/09). BANDA en la fila 1, titulos en la 2. Agregado por semana y NO por campana',
+    { fila_encabezado: 2, filas_datos: 974 })]
 );
 
 /**
@@ -11932,6 +12034,10 @@ var SOLAPA_REM_ = 'Mail';
  *  col Q, con los literales `JM` y `GCBA`), así que `acm_` es *acumulado / Mail*. */
 var CAMPO_AMBITO_MAIL_ = 'acm_remitente';
 
+/** El campo lógico de la cuenta. **No es decoración: es lo que `SOLAPAS.campo_id_cuenta` declara**,
+ *  y sin él la rama de `D-30` no se activa y el marcador publica el agregado de la ventana. */
+var CAMPO_CUENTA_MAIL_ = 'acm_id_cuenta';
+
 /**
  * Las cinco. **`camp_env1_rem` ya existe** —hoy sobre `digital/Directa Mail` con
  * `mail_remitente`, publicando el mail crudo— y se **REESCRIBE**; las otras cuatro son alta.
@@ -12060,17 +12166,29 @@ function aplicarRemitentes20260908_(aplicar) {
     Logger.log('     uso = ' + JSON.stringify(decl.uso) + '   origen = ' + JSON.stringify(decl.origen) +
       '   fila_encabezado = ' + JSON.stringify(decl.fila_encabezado));
     var uso = normalizarValorDeclarado_(decl.uso);
-    if (uso === 'derivada') {
-      /* ⛔⛔ `R-02` excluye las derivadas como fuente. Si el censo en profundidad encontró
-       * fórmulas que referencian otra solapa, esto NO es un problema a resolver acá: el destrabe
-       * pasa a ser del equipo (`C-01`) y las cinco filas no salen de esta solapa. */
-      falta.push('la solapa está en `uso = derivada` — `R-02` la excluye como fuente. ' +
-        '⛔ El destrabe es del equipo (`C-01`), no de un cableado');
-    } else if (uso !== 'fuente') {
+    /* ⛔ **El gate de `R-02` que un borrador anterior tenía acá se RETIRÓ el 09/09, y el motivo
+     * está medido:** las 38 solapas de `acumulado` son `IMPORTRANGE` de un mismo libro externo,
+     * así que *«tiene fórmulas ⇒ derivada»* habría dejado afuera **la base entera**, incluida
+     * `Call Center - Métricas`, que ya es `fuente` y publica tres números validados.
+     * ⭐ La distinción que sí vale: `IMPORTRANGE` **desde otro libro** es un **espejo** —dato
+     * nuevo, puede ser fuente—; una fórmula que referencia **otra solapa del mismo libro** es
+     * **derivada**. Eso lo decide el alta, no este gate: acá sólo se exige `fuente`. */
+    if (uso !== 'fuente') {
       falta.push('la solapa está en `uso = ' + decl.uso + '` y tiene que estar en `fuente`');
     }
+    /* ⛔⛔ **`campo_id_cuenta` es la diferencia entre el universo correcto y uno plausible.**
+     * `acumulado` no es `rdv` ni `digital`, así que cae en la rama declarativa de `D-30`: con
+     * `campo_id_cuenta` y un ítem con cuenta lee la base entera **sin ventana** y filtra por
+     * cuenta; **sin él** cae a la rama general y publica **el agregado de la ventana de todas las
+     * campañas**. La traza lo dice, pero el número sale igual. */
+    var campoCuentaDecl = normalizarValorDeclarado_(decl.campo_id_cuenta);
+    if (campoCuentaDecl !== CAMPO_CUENTA_MAIL_) {
+      falta.push('`SOLAPAS.campo_id_cuenta` dice ' + JSON.stringify(decl.campo_id_cuenta) +
+        ' y tiene que decir `' + CAMPO_CUENTA_MAIL_ + '`: sin eso el marcador publica el ' +
+        'AGREGADO de la ventana en vez de las filas de su campaña');
+    }
   }
-  [CAMPO_AMBITO_MAIL_, 'fecha_periodo'].forEach(function (campo) {
+  [CAMPO_AMBITO_MAIL_, CAMPO_CUENTA_MAIL_, 'fecha_periodo'].forEach(function (campo) {
     var m = buscarMapeo(BASE_REM_, SOLAPA_REM_, campo);
     Logger.log('     ' + (campo + '                ').slice(0, 17) +
       (m.ok ? '✅ col ' + m.columna : '⛔ ' + m.motivo));
@@ -12083,19 +12201,19 @@ function aplicarRemitentes20260908_(aplicar) {
     falta.forEach(function (g) { Logger.log('     · ' + g); });
     Logger.log('');
     Logger.log('  ⭐ QUÉ FALTA, con todas las letras — es el TRABAJO 1 y son TRES cosas:');
-    Logger.log('     1 · `censarSolapasSinRegistrarEnProfundidad()` sobre `' + SOLAPA_REM_ + '`, y');
-    Logger.log('         **leer si tiene fórmulas**: una que referencie otra solapa la hace');
-    Logger.log('         DERIVADA y `R-02` la excluye. Ahí el alta muere y esto no se corre más.');
-    Logger.log('     2 · la fila de `SOLAPAS` con `uso = fuente`. ⛔⛔ OJO CON EL ORDEN:');
+    Logger.log('     1 · **Aplicar configuración** — el `SEED_SOLAPAS_` y el `SEED_MAPEO_` ya');
+    Logger.log('         traen las filas desde el `2026-09-09_1`. Es sembrarlas, no escribirlas.');
+    Logger.log('     2 · ⛔⛔ OJO CON EL ORDEN, y es lo único que puede arruinar el alta:');
     Logger.log('         `inventariarSolapas()` da de alta con **`uso = revisar`**, y después');
     Logger.log('         `usoAEscribir_` CONSERVA lo que dice la hoja — o sea que el seed **ya no');
     Logger.log('         la puede promover a `fuente`** y hay que editar la celda A MANO.');
     Logger.log('         ⭐ Si en cambio la fila del `SEED_SOLAPAS_` entra ANTES de que exista la');
     Logger.log('         fila, es un ALTA y el `uso` del seed entra tal cual (`D-32`).');
-    Logger.log('     3 · las filas de `MAPEO`, indexadas POR LETRA y con su `encabezado` COPIADO');
-    Logger.log('         del censo (`D-31`: el encabezado es testigo, nunca fallback):');
-    Logger.log('           · `' + CAMPO_AMBITO_MAIL_ + '` — la columna del ámbito (`JM`/`GCBA`)');
-    Logger.log('           · `fecha_periodo`       — sin ella el `separador` de `FILA` no ordena');
+    Logger.log('     3 · las tres filas de `MAPEO`, que el seed ya trae con su letra y su');
+    Logger.log('         `encabezado` (`D-31`: el encabezado es testigo, nunca fallback):');
+    Logger.log('           · `' + CAMPO_AMBITO_MAIL_ + '` (AI) — el ámbito ya normalizado a JM/GCBA');
+    Logger.log('           · `' + CAMPO_CUENTA_MAIL_ + '` (A) — sin él se publica el AGREGADO');
+    Logger.log('           · `fecha_periodo`  (F) — sin él el `separador` de `FILA` no ordena');
     return { ok: false, motivo: 'G0', detalle: falta };
   }
   Logger.log('     ✅ G0 pasa: la solapa es `fuente` y los dos campos resuelven contra `' + BASE_REM_ + '`.');

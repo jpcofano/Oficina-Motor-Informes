@@ -43,7 +43,33 @@ function leerFirmaEncabezado_(hojaSheet, fila) {
     .join(' · ');
 }
 
-function inventariarSolapas() {
+/**
+ * ⭐⭐ `2026-09-09_1` Parte 0.1 — **la variante ACOTADA a una base, y no es un parche.**
+ *
+ * ⛔ **`inventariarSolapas()` recorre las SIETE bases y se pasó de los 6 minutos** —murió por
+ * timeout el 09/09—. El costo no está en `SOLAPAS`: está en abrir siete libros ajenos y hacerle
+ * `getDataRange().getValues()` a **cada solapa de cada uno**. `acumulado` sola tiene 38.
+ *
+ * ⭐ **Cada alta futura va a necesitar esto**: el inventario completo sirve para una foto
+ * periódica, y un alta toca **una** base. Son dos preguntas y sólo una entra en el presupuesto.
+ *
+ * ⚠ **El comportamiento no cambia para la base que se recorre**: mismas columnas, mismo
+ * `uso = revisar` en el alta, misma protección de `origen = manual`. Lo único que cambia es
+ * **cuántas bases entran**.
+ *
+ * ⛔⛔ **Y el efecto colateral que hay que conocer antes de usarla:** las solapas registradas de
+ * las bases que NO se recorren **no se marcan `NO ENCONTRADA`**, porque no se las evaluó. Eso ya
+ * lo contemplaba el código —`basesEvaluadas`— y acotar el alcance lo vuelve la regla en vez de
+ * la excepción.
+ */
+function inventariarSolapasDeAcumulado() { return inventariarSolapasDeBase_('acumulado'); }
+
+function inventariarSolapasDeBase_(baseId) { return inventariarSolapas_(baseId); }
+
+function inventariarSolapas() { return inventariarSolapas_(null); }
+
+/** `soloBase` en `null` recorre todas — el comportamiento histórico, intacto. */
+function inventariarSolapas_(soloBase) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var hoja = ss.getSheetByName('SOLAPAS');
   if (!hoja) {
@@ -62,6 +88,7 @@ function inventariarSolapas() {
 
   Object.keys(bases).forEach(function (baseId) {
     var base = bases[baseId];
+    if (soloBase && baseId !== soloBase) return;
     if (!base.activo || !base.sheet_id) return;
 
     var libro;
