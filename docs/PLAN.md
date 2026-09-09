@@ -3152,6 +3152,70 @@ lectura literal —*«se validó una vez, listo»*— se la perderían**, y publ
 y **no el universo**, y estuvo a punto de habilitar tres levantamientos que no correspondían. Lo
 que lo evitó no fue esta regla sino un **gate de identidad sobre la hoja viva**.
 
+### `D-61` · El ámbito de Directa sale de una COLUMNA, y `acumulado` es la fuente preferida — 09/09/2026
+
+**Decisión del usuario, 09/09/2026.** Vale para los cuatro canales de Directa —Mail, SMS, IVR y
+Call Center— y tiene dos mitades que hay que leer juntas.
+
+#### La regla del ámbito
+
+| | de dónde sale el ámbito |
+|---|---|
+| **lo agregado** (totales por ámbito) | la columna de remitente/vocero, que **ya dice `JM` o `GCBA`** |
+| **lo no agregado** (el detalle de una campaña) | **no se filtra por ámbito**: entra todo lo que tenga el `Id cuentas` de lo que se está midiendo |
+
+⭐⭐ **Y eso disuelve un defecto que iba a quedar abierto.** Hay **dos** direcciones de Jorge Macri
+en circulación: `DIMENSIONES_` compara contra `jorge.macri@buenosaires.gob.ar`, y
+`acumulado | Barrios Priorizados` y `BP 2` traen `jmacri@buenosaires.gob.ar`. **Mientras el ámbito
+sea un literal de mail en el código, una dirección no contemplada manda envíos de JM a GCBA sin
+fallar y sin avisar.** Con la columna `Remitente` **no hay literal que mantener**.
+
+#### La preferencia, y **por qué** — que es lo que la hace revisable
+
+⭐⭐ **`acumulado` (*DGPLES - Directa acumulado*) es la fuente PREFERIDA para Mail, SMS, IVR y Call
+Center.** Trae más columnas que las solapas viejas y **separa los universos por columna propia**
+—`Remitente` / `Vocero`— en vez de por literal o por texto del nombre.
+
+⚠ **El motivo NO es que la base sea nueva: es que el ámbito sale de una columna en vez de un
+literal en código.** ⇒ **Si mañana una solapa vieja incorpora esa columna, la preferencia deja de
+aplicarle.** Escrito así a propósito: una preferencia sin criterio se vuelve un hábito, y un hábito
+no se puede revisar.
+
+#### Lo que la preferencia NO autoriza
+
+⛔ **No autoriza a mudar nada de arrastre.** Los 40 tokens de envío de `L-047`, los marcadores de
+IVR, los de SMS y los de Call Center pasan a ser **candidatos declarados** a mudarse, **no filas a
+tocar**. Cada mudanza **mueve números publicados** y va en su propio deck. La cola está en §2.
+
+⛔ **Y no autoriza a apagar la fuente vieja de un plumazo.** `looker | CC` está `uso = fuente`
+midiendo lo mismo que `acumulado | Call Center - Métricas` — dos fuentes para un número—, y la
+duplicación se resuelve **a favor de `acumulado`**; pero **primero hay que saber quién la lee**.
+⭐ **Medido el 09/09 sobre el snapshot de `MARCADORES` del 31/08: CERO marcadores leen
+`looker | CC`.** ⇒ la duplicación es **declarativa**, no de lectura, y cambiarle el `uso` sería
+inerte hoy. ⚠ El snapshot es del 31/08 y la hoja se movió después; **el cero se confirma con un
+snapshot nuevo antes de tocar la celda.**
+
+#### El corolario de esquema: **espejo** no es **derivada**
+
+⛔ **Un gate de `R-02` escrito como *«tiene fórmulas ⇒ derivada»* habría dejado afuera la base
+entera.** Las 38 solapas de `acumulado` son `IMPORTRANGE` de un mismo libro externo — incluida
+`Call Center - Métricas`, que ya es `fuente` y publica tres números validados.
+
+⭐ **La distinción que sí importa:**
+
+| forma | qué es | puede ser `fuente` |
+|---|---|---|
+| `IMPORTRANGE` desde **otro libro** | un **espejo** — dato nuevo para este libro | ✅ sí |
+| fórmula que referencia **otra solapa del mismo libro** | **derivada** | ⛔ no (`R-02`) |
+
+El caso genuino acá es `M2 - Gráficos2`, que hace `LET`/`FILTER` sobre `M2 - Gráficos`, y **no se
+registra**.
+
+**Supersede** la parte de `R-02` que se leía como *«toda fórmula es derivada»*; el resto de `R-02`
+sigue vigente.
+
+---
+
 ## 2 · Próximo (ordenado, con dependencias)
 
 ### ⭐⭐ LA COLA — 40 ítems, con casilla de resuelto (03/09/2026 · ampliada el 08/09)
@@ -3207,7 +3271,11 @@ que lo evitó no fue esta regla sino un **gate de identidad sobre la hoja viva**
 | `[x]` **39** | ✅ **CERRADO el 08/09** — ~~`probar-guiones-grupos.js` en rojo~~ — `CASOS_POR_MARCADOR_` no conoce el CSV del 08/09 | Lo dice el propio banco: *«la constante dice 5 CSV y en disco hay 6»*. ⛔ **NO se regeneró a propósito**, y hoy es seguro no hacerlo: **cero marcadores `cc_*` vivos** (medido sobre `MARCADORES_2026-08-31.tsv`), así que el cruce produce entradas **inertes**. ⭐ **Deja de ser inerte con el ítem 37**: el día que el alta cree marcadores con esos nombres, `D-60` les levanta el `_revisar`. ⇒ **Se regeneró el 08/09**, y ⛔ **no era el trámite que parecía:** medido en seco antes de escribir, dejaba a los tres tokens validados en **`abierto`** y no en `exacto` — se habrían cableado y **publicado entre guiones**. Causa: `C-115` y `C-117`, **casos de método**, nombraron los tokens en `token_propuesto`, que el generador lee como **clave** y no como descripción. Lo cerró el corrector `C-118`…`C-121` (`casos_validacion_2026-09-08b.csv`). Banco en **verde, exit 0 sin tubería** |
 | `[ ]` **40** | ⚠ **`cc_contact_pct` de agosto nace SIN VALIDAR** | `C-116`. Se mide **24 %** y **no hay ningún porcentaje publicado** para `14–20/08` en el repo — se buscó en el bloque `resumen_ejecutivo_jm` entero. **No se inventa un esperado.** Lo cierra un deck del equipo de esa ventana |
 | `[ ]` **41** | ⛔⛔ **`L-034` publica `/////` sobre tokens que TIENEN fila y resuelven en `L-031`** | **P0.** Los tres `cc_*`, más `Impresiones`, `Mails entregados`, `Aperturas (OR)` y `Atendidos` — los cuatro últimos **publicaban el 22/08**. ⭐⭐ **`-` → `/////` es la prueba limpia**: `-` es *«no había dato»* y `/////` es *«no se resolvió»*, así que el dato no lo explica; y no fue un corte, porque un tramo no alcanzado deja el token **crudo** —el mismo deck lo muestra en las láminas 21, 22 y 24—. ⇒ candidata: la resolución **por lámina** de `D-47`, que `CIERRE_POR_LAMINA` declaró *«sin verificar contra un deck»* esperando **SIN DATO**. ⛔ **No se le escriben filas: taparía el síntoma.** Evidencia: `MEDICION_columna_envio_2026-09-08.md` §3 y `PENDIENTES` P0 del 08/09 |
-| `[ ]` **42** | ⛔ **El ALTA de `acumulado \| Mail`, y recién después las cinco `camp_envN_rem`** | ⛔⛔ **Cambia de objeto el 08/09**: decía *«ninguna columna trae el ámbito»* midiendo `digital/Directa Mail`, y **la fuente es `acumulado \| Mail`** — donde el remitente ya viene normalizado a `JM`/`GCBA`, como `acc_remitente` en la solapa hermana. **El hueco no es de cableado: es de alta** — esa solapa no está en `SOLAPAS` ni en `MAPEO`. ⛔ **Su gate puede matarla:** si tiene fórmulas que referencian otra solapa es **derivada** y `R-02` la excluye (`censarSolapasSinRegistrarEnProfundidad()`); ahí el destrabe es del equipo (`C-01`). ⭐ El Trabajo 2 **ya está escrito y pusheado** — `aplicarRemitentes20260908()`, con `G0` que exige el alta y `G2` que verifica que las dos solapas **alineen envío por envío**, porque los otros 40 tokens leen `digital\|Directa Mail`. `CONFIG_INFORMES` §4.9 |
+| `[~]` **42** | 🟡 **El alta de `acumulado \| Mail` está ESCRITA en el seed; falta sembrarla** | ⭐ **09/09:** `SEED_SOLAPAS_` trae las siete solapas de `acumulado` y `SEED_MAPEO_` las tres columnas que la Parte B necesita —`acm_remitente` (AI), `acm_id_cuenta` (A), `fecha_periodo` (F)—. `aplicarRemitentes20260908()` ya escribe las cinco `camp_envN_rem` contra esa solapa. ⛔⛔ **Lo único que puede arruinarlo es el ORDEN:** `inventariarSolapasDeAcumulado()` da de alta con `uso = revisar` y después `usoAEscribir_` conserva lo de la hoja (`D-32`), así que **el seed va PRIMERO**. `D-61` · `CONFIG_INFORMES` §4.9 |
+| `[ ]` **43** | ⭐ **La COLA de mudanzas a `acumulado`, declarada y NO ejecutada** | `D-61` prefiere `acumulado` **y no autoriza a mudar de arrastre**: cada mudanza mueve números publicados y **va en su propio deck**. Los candidatos, con su destino: los **40** tokens de envío de `L-047` (`digital\|Directa Mail` → `acumulado\|Mail`) · los **15** `ivr_*` (`digital\|Directa IVR` → `acumulado\|IVR`) · los **2** de SMS (`digital\|Directa SMS` → `acumulado\|SMS`) · los `cc_*` que quedan. ⚠ **Y en el camino `B` de la Parte B quedan DOS solapas alimentando la misma tabla** —las cinco `_rem` en `acumulado` y los 40 en `digital`—: es la figura de la mudanza a medias de los `imp_*` y **se declara como deuda, no se absorbe** |
+| `[ ]` **44** | ⚠ **`looker \| CC` es `uso = fuente` midiendo lo mismo que `acumulado \| Call Center - Métricas`** | Dos fuentes para un número. `D-61` la resuelve **a favor de `acumulado`**. ⭐ **Medido el 09/09 sobre el snapshot del 31/08: CERO marcadores la leen** ⇒ la duplicación es **declarativa**, no de lectura, y cambiarle el `uso` sería **inerte hoy**. ⚠ El snapshot es del 31/08 y la hoja se movió: **confirmar el cero con un snapshot nuevo antes de tocar la celda**. ⚠ Y `looker\|IVR` (197) y `looker\|SMS` (103) espejan las mismas filas exactas que sus gemelas de `acumulado`, pero están en `ignorar` y no hacen daño |
+| `[ ]` **45** | ⭐ **`cc_campanias` tiene un candidato NUEVO que la medición del 04/09 no tenía** | `acumulado \| Call Center - Campañas` — 2.975 filas con `Id cuentas` (C), nombre (D) y `Remitente` (E): **un universo contable**, que es justo lo que a `C-112` le faltaba. ⛔ **No desempata solo:** hay que medirlo contra las dos ventanas testigo antes de cablear. La solapa ya está registrada `fuente` y **DISPONIBLE, sin marcadores** |
+| `[ ]` **46** | ⚠ **El grano semanal de impresiones DIGITALES** — reformulado el 09/09 | ⛔ **La afirmación vieja era más grande de lo cierto:** *«ninguna solapa guarda impresiones por semana»* se escribió el 30/08 midiendo `looker` y `digital`, y **para Directa es FALSA** — `acumulado` trae `Mail x Sem x Rem`, `Herramientas x Semana`, `Implementaciones` y una columna `semana` fila por fila en `Mail`. ⚠ **Eso NO cierra el bloqueante**: los agregados son **por semana y no por campaña**, y son Directa, no impresiones digitales. ⛔ **La pata digital queda EN ESPERA por decisión del usuario (09/09)**: declarada abierta con dueño, no medida acá y no dada por resuelta |
 
 #### PUBLICA MAL HOY
 

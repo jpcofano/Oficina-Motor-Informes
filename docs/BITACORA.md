@@ -18087,3 +18087,105 @@ mide `acumulado | Mail`**: esa solapa no está en ningún fixture ni en ningún 
 
 **Suites: 99 bancos, exit 0 · `tools/listas.js`, exit 0 · `clasp push` en su propio comando, después
 de leer el verde.** ⛔ **Falta la corrida.**
+
+
+---
+
+## `2026-09-09_1` Parte 0.1 — El alta de `acumulado`, el inventario acotado, y un banco que estaba ciego (09/09/2026)
+
+**La Parte 0.1 entera, más los ajustes que la decisión del usuario obliga sobre el wrapper del
+`_8`.** ⛔ **Las Partes 0.2, A, B y C esperan botones**: la medición es contra hojas vivas y no hay
+fixture de esta base.
+
+### `D-61` — el ámbito sale de una COLUMNA, y `acumulado` es la fuente preferida
+
+Decisión del usuario. **Vale para los cuatro canales de Directa** y tiene dos mitades:
+
+- **Lo agregado** toma el ámbito de la columna de remitente/vocero, que **ya dice `JM` o `GCBA`**.
+- **Lo no agregado** —el detalle de una campaña— **no se filtra por ámbito**: entra todo lo que
+  tenga el `Id cuentas` de lo que se está midiendo.
+
+⭐⭐ **Y eso disuelve un defecto que iba a quedar abierto:** hay **dos** direcciones de Jorge Macri
+en circulación —`DIMENSIONES_` compara contra `jorge.macri@…` y `acumulado | Barrios Priorizados`
+trae `jmacri@…`—. **Mientras el ámbito sea un literal en el código, una dirección no contemplada
+manda envíos de JM a GCBA sin fallar.** Con la columna no hay literal que mantener.
+
+⚠ **La razón de la preferencia va escrita porque es lo que la hace revisable:** no es que la base
+sea nueva, **es que el ámbito sale de una columna en vez de un literal**. Si mañana una solapa
+vieja incorpora esa columna, la preferencia deja de aplicarle.
+
+⛔ **Y no autoriza a mudar de arrastre.** Los 40 tokens de envío, los 15 `ivr_*` y los 2 de SMS
+pasan a ser **candidatos declarados** —ítem **43**—, no filas a tocar: cada mudanza mueve números
+publicados y va en su propio deck.
+
+### ⛔ El gate de `R-02` se retira, y la distinción que queda vale más
+
+Un borrador anterior proponía *«tiene fórmulas ⇒ derivada»*. **Habría dejado afuera la base
+entera:** las 38 solapas de `acumulado` son `IMPORTRANGE` de un mismo libro externo, incluida
+`Call Center - Métricas`, que ya es `fuente` y publica tres números validados.
+
+⭐ **`IMPORTRANGE` desde otro libro es un ESPEJO** —dato nuevo para este libro, puede ser fuente—;
+**una fórmula que referencia otra solapa del MISMO libro es DERIVADA**. El caso genuino acá es
+`M2 - Gráficos2`, que hace `LET`/`FILTER` sobre `M2 - Gráficos`, y **no se registra**.
+
+### ⛔⛔ Lo que decide el universo, y sin ello el número sale plausible
+
+`acumulado` **no es `rdv` ni `digital`**, así que sus marcadores caen en la **rama declarativa de
+`D-30`** (`Generador.gs`). Con `campo_id_cuenta` y un ítem con cuenta lee la base entera **sin
+ventana** y filtra por cuenta; **sin él** cae a la rama general y publica **el agregado de la
+ventana de todas las campañas**. La traza lo dice —*«se lee como AGREGADO GLOBAL»*— y **el número
+sale igual**.
+
+⇒ `acumulado | Mail` se registra **con `campo_id_cuenta: 'acm_id_cuenta'`**, y el `G0` del wrapper
+lo **exige**.
+
+⚠ **Y ése NO es el mismo universo que hoy tienen los otros 40 tokens de envío**, que salen de la
+**unión digital por cuenta** de `digital | Directa Mail`, **recortada por ventana**. **Son dos
+caminos de lectura distintos**, y por eso la alineación se MIDE antes de mudar: es el gate `G2`.
+
+### Lo que quedó escrito
+
+| | |
+|---|---|
+| `inventariarSolapasDeBase_(baseId)` + `inventariarSolapasDeAcumulado()` | ⛔ `inventariarSolapas()` recorre las **siete** bases y **murió por timeout el 09/09**. El costo no está en `SOLAPAS`: está en abrir siete libros ajenos y hacerle `getValues()` a cada solapa de cada uno. ⭐ **No es un parche: un alta toca UNA base** |
+| `SEED_SOLAPAS_` | las **siete** de `acumulado`. `Mail` `fuente` **con `campo_id_cuenta`** · `Remitentes` `referencia` (misma forma que `rdv \| Comunas`) · `IVR`, `SMS` y `Call Center - Campañas` `fuente` y **DISPONIBLES, sin marcadores** · las dos de banda con **`fila_encabezado: 2` declarado, no asumido** |
+| `SEED_MAPEO_` | **tres** columnas y nada más: `acm_remitente` (AI), `acm_id_cuenta` (A), `fecha_periodo` (F). ⛔ **NO se mapea `Mail remitente` (G)**, que es la dirección cruda |
+| el wrapper del `_8` | sin el gate de `derivada`; `G0` ahora exige **`campo_id_cuenta`** y que `MAPEO` resuelva el campo de la cuenta |
+
+⛔⛔ **EL ORDEN ES LO ÚNICO QUE PUEDE ARRUINAR EL ALTA, y ya estaba medido el 08/09:**
+`inventariarSolapas()` da de alta con `uso = 'revisar'`, y después `usoAEscribir_` **conserva lo
+que dice la hoja** (`D-32`, y el gate es sobre `uso`, **no** sobre `origen`). ⇒ **el seed va
+PRIMERO**; si el inventario corre antes, hay que editar la celda a mano.
+
+### ⭐⭐ El banco que se puso rojo destapó algo más grande que el cambio
+
+`probar-id-cuenta-declarada.js` se puso en rojo al declarar `campo_id_cuenta` en `Mail`. **La causa
+no era la fila nueva: era que el banco enumeraba CINCO arrays `SEED_MAPEO*` y no incluía
+`SEED_MAPEO_ACUMULADO_`**, que entró el 08/09.
+
+⛔ **Estuvo ciego a la base entera durante un día y no falló: pasó**, midiendo un universo más
+chico del que decía medir — incluido el invariante de su §1, que es justo *«toda solapa que declara
+`campo_id_cuenta` tiene su fila de `MAPEO`»*.
+
+⭐ **La salida no fue agregar el sexto nombre: fue dejar de enumerar.** Ahora lee el **seed
+EFECTIVO** vía `tools/seed-mapeo.js`, que ejecuta el post-proceso real, así que un séptimo array se
+incorpora solo. Es la misma corrección que el 26/08 le hizo a `probar-mapeo-cc.js`. **El banco pasó
+de 194 a 201 filas de `MAPEO`**, y ese salto es la medida de lo que no veía.
+
+### ⭐ Y el otro control que se puso rojo estaba diciendo la verdad
+
+La afirmación *«`G0` nombra el caso `derivada`»* cayó porque **el gate se retiró por decisión**.
+**No se aflojó: se dio vuelta con el motivo escrito y con la exigencia SUBIDA** — donde había un
+gate que sobraba, ahora se exige el que faltaba: `campo_id_cuenta`, que es la diferencia entre
+publicar las filas de la campaña y publicar el agregado de todas.
+
+### Dos correcciones que el prompt pedía y **ya estaban hechas**
+
+⚠ **Premisas vencidas, reportadas y no re-ejecutadas:** *«`HANDOFF` dice que las tres filas no
+están escritas»* y *«`CIERRE_POR_LAMINA` dice que cablear uno pinta las dos»* **se corrigieron el
+08/09**, en el `_7`. El ítem 37 ya está tachado y el ítem 15 ya está cerrado.
+
+⭐ **La tercera sí se hizo:** la reformulación del grano temporal — ítem **46**.
+
+**Suites: 99 bancos, exit 0 · `tools/listas.js`, exit 0 · `clasp push` en su propio comando,
+después de leer el verde.** ⛔ **Falta sembrar y correr.**

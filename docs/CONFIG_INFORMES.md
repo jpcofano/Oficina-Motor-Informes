@@ -1435,6 +1435,30 @@ los ocho; el parcial lo aplica `quitarRevisarDeMetaYGoogle()`.
 
 ### 4.9 `L-047` — la columna «Envío» publica el ÁMBITO, no el mail — 08/09/2026
 
+> ⭐⭐ **RESUELTO el 09/09 por `D-61`, y la regla creció: vale para los CUATRO canales.**
+>
+> | | de dónde sale el ámbito |
+> |---|---|
+> | **lo agregado** (totales por ámbito) | la columna de remitente/vocero, que **ya dice `JM` o `GCBA`** |
+> | **lo no agregado** (el detalle de una campaña) | **no se filtra por ámbito**: entra todo lo que tenga el `Id cuentas` de lo que se está midiendo |
+>
+> ⭐ **Y la fuente existe:** `acumulado | Mail` col **AI `Remitente`** · `acumulado | IVR` col
+> **G `Vocero`** · `acumulado | SMS` col **U `Remitente`** · `acumulado | Call Center - Campañas`
+> col **E `Remitente`**. Las cuatro traen el ámbito **ya normalizado**, sin literales.
+>
+> ⛔⛔ **Lo que esto DISUELVE, y es más que una comodidad:** hay **dos** direcciones de Jorge Macri
+> en circulación — `DIMENSIONES_` compara contra `jorge.macri@buenosaires.gob.ar`, y
+> `acumulado | Barrios Priorizados` y `BP 2` traen `jmacri@buenosaires.gob.ar`. **Mientras el
+> ámbito sea un literal de mail en el código, una dirección no contemplada manda envíos de JM a
+> GCBA sin fallar y sin avisar.** Con la columna **no hay literal que mantener**.
+>
+> ⚠ **Cambiar `DIMENSIONES_` NO se hace acá**: mueve números publicados de `L-031` y `L-032` y va
+> en su propio deck. Queda declarado en `D-61`.
+>
+> ⚠ **Y la razón de la preferencia va escrita porque es lo que la hace revisable:** no es que la
+> base sea nueva, **es que el ámbito sale de una columna en vez de un literal**. Si mañana una
+> solapa vieja incorpora esa columna, la preferencia deja de aplicarle.
+
 > ⛔⛔ **CORREGIDO el 08/09/2026, el mismo día, por el `2026-09-08_8`.** Lo que sigue abajo dice
 > *«el hueco es del DATO, no de la configuración»* y **es falso**. La medición es correcta y **está
 > hecha sobre la solapa equivocada**: barrió `digital/Directa Mail` cuando la fuente que el usuario
