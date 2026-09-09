@@ -18005,3 +18005,85 @@ hoja. *«La fila es ésta»* y *«la hoja quedó así»* son dos afirmaciones, y
 **Suites: 98 bancos, exit 0 · `tools/listas.js`, exit 0 · `clasp push` en su propio comando,
 después de leer el verde.** ⛔ **Falta la corrida**: esto escribió configuración y no publicó
 ningún número.
+
+---
+
+## `2026-09-08_8` — El gate del `_7` midió la solapa equivocada, y el alta que falta no es de cableado (08/09/2026)
+
+**Dos trabajos en orden, y el segundo no arranca si el primero no cierra.** El Trabajo 1 —el alta de
+`acumulado | Mail`— es de botones del usuario y **termina en reporte**. El Trabajo 2 —las cinco
+`camp_envN_rem`— está escrito, pusheado y **con su `G0` esperando el alta**.
+
+### ⛔⛔ La corrección, primero, porque es la premisa de todo lo demás
+
+El `G1` del `_7` barrió `digital/Directa Mail` —25 columnas, 0 candidatas— y concluyó *«la fuente no
+tiene el dato»*. **La fuente es otra:** `acumulado | Mail`, de *DGPLES - Directa acumulado*, la
+misma base que Call Center.
+
+⭐ **El error no fue el barrido: fue que el gate nombraba una CONCLUSIÓN —«no hay columna»— en vez
+de nombrar la solapa que tenía que abrir.** Un gate que no dice sobre qué mide, mide sobre lo que
+tiene a mano. **Los gates del `_8` imprimen `base|solapa` en cada línea que emiten.**
+
+⚠ **Y un defecto de forma del mismo barrido, independiente del anterior:** leyó **2.482 de 2.524**
+filas. Un *«ninguna columna trae `JM`/`GCBA`»* sobre el **98 %** no es un negativo firme. El gate
+imprimía los dos números y el reporte los separó de la afirmación — **un cero declarado sobre el
+98 % se lee como un cero sobre el 100 % si el denominador no viaja pegado**. Ahora van en la misma
+línea.
+
+### ⛔⛔ El hallazgo del turno: `inventariarSolapas()` da de alta con `uso = revisar`
+
+**Medido leyendo el código.** `Solapas.gs:100` escribe la fila nueva con `uso: 'revisar'` y
+`origen: 'auto'`; `usoAEscribir_` (`Instalar.gs`) dice *«la hoja dice algo distinto de lo que el
+seed quiere. **La hoja manda**»*.
+
+⇒ **Si la fila existe con `revisar`, un `SEED_SOLAPAS_` que diga `fuente` NO la promueve.** `D-32`
+protege el `uso` de la hoja y **no distingue una decisión humana de un `revisar` que escribió una
+máquina hace diez segundos**. Río abajo `buscarMapeo` rechaza todo lo que no sea `fuente`, así que
+la solapa queda **apagada** sin que nada falle.
+
+⭐⭐ **La salida es el ORDEN, y `usoAEscribir_` lo dice con todas las letras:** *«INSERTAR NUNCA ES
+DEGRADAR: una fila que no existe no tiene `uso` que proteger»*. **Si la fila del seed entra ANTES de
+que la fila exista, es un alta y el `uso` entra tal cual.** Si `inventariarSolapas()` corre primero,
+hay que **editar la celda a mano** — ninguna corrida la arregla.
+
+⚠ Es la misma figura que las ocho protegidas de `ESCRITORES.md` §2.2, con un agravante: allá el
+valor protegido **lo había decidido un humano**.
+
+### Lo que quedó escrito — Trabajo 2
+
+`aplicarRemitentes20260908()`, con `diagAplicarRemitentes20260908()` en modo seco. **Los tres gates
+corren antes de la primera escritura.**
+
+| gate | qué exige |
+|---|---|
+| **G0** | `SOLAPAS` declara `acumulado/Mail` como `fuente` y `MAPEO` resuelve `acm_remitente` y `fecha_periodo`. ⛔ Si no, **imprime exactamente qué falta**, incluida la trampa del orden de arriba. Y nombra `derivada` aparte: `R-02` la excluye como fuente y ahí **el alta muere** |
+| **G1** | la columna trae **`JM`/`GCBA` y nada más**. ⛔ Con **cero filas ABORTA**: un cero sin denominador se lee como verde |
+| **G2** | ⭐⭐ las dos solapas **alinean envío por envío**, por fecha y por los campos de corroboración comunes. Declara **los dos conteos aunque coincidan**, y avisa si hay **empates de fecha** o si **no hay ningún campo común** — ahí la clave se debilita y hay que decirlo |
+
+⛔⛔ **Por qué `G2` es el que importa:** los otros **40** tokens de envío de `L-047` son `FILA` sobre
+`digital | Directa Mail`. Si el remitente sale de otra solapa, `valor_fijo = 2` toma el segundo
+envío **de esa solapa**. ⇒ **la tabla quedaría completa y con el remitente de otro envío en cada
+fila** — peor que el `/////`, porque **no se ve mirando el deck**.
+
+⚠ **Y el límite queda declarado, no descubierto:** `G2` verifica la alineación **el día que se
+escribe la fila**, no en cada corrida. El control por corrida es cruzar la columna Envío contra
+`camp_envN_enviados`, que ya publica.
+
+⭐ **El orden NO se reimplementa.** `envioOrdenadoDeSolapa_` arma el `ctx` con `buscarMapeo` +
+`claveDeFila_` y ordena con **`filasOrdenadas_`, la que corre en producción**. Un `.sort()` propio
+acá sería el instrumento que reproduce lógica del motor y la reproduce peor, justo en la comparación
+de la que depende que la tabla no mezcle envíos.
+
+⛔ **Este wrapper NO hace el alta**, y es deliberado: `SOLAPAS`/`MAPEO` se siembran por su camino
+declarado (`ESCRITORES.md`) y **las letras de columna salen de un censo que todavía no corrió**.
+Adivinar una letra es inventar el faltante.
+
+### El control
+
+`tools/probar-remitentes-acumulado.js` — **37 afirmaciones**, con **dos negativas fuertes**: que
+ninguna de las cinco vuelva a `mail_remitente` (el mail crudo) y que ninguna vuelva a
+`digital/Directa Mail` (la solapa que el `_7` midió por error). ⚠ Su encabezado declara que **no
+mide `acumulado | Mail`**: esa solapa no está en ningún fixture ni en ningún censo del repo.
+
+**Suites: 99 bancos, exit 0 · `tools/listas.js`, exit 0 · `clasp push` en su propio comando, después
+de leer el verde.** ⛔ **Falta la corrida.**

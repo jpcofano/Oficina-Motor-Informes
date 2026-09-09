@@ -1,6 +1,84 @@
 
 ---
 
+## ⛔⛔ P0 · `inventariarSolapas()` da de alta con `uso = revisar`, y después el seed YA NO puede promoverla (08/09/2026)
+
+**Medido leyendo el código, no supuesto.** Es un orden de operaciones que rompe un alta **sin que
+nada falle**, y aparece justo en el camino que el `2026-09-08_8` propone para dar de alta
+`acumulado | Mail`.
+
+| paso | qué escribe |
+|---|---|
+| `inventariarSolapas()` (`Solapas.gs:100`) | la fila nueva con **`uso: 'revisar'`**, `origen: 'auto'` |
+| `usoAEscribir_` (`Instalar.gs`) | *«la hoja dice algo distinto de lo que el seed quiere. **La hoja manda**»* |
+
+⇒ **Si la fila existe con `revisar`, un `SEED_SOLAPAS_` que diga `fuente` NO la promueve.** `D-32`
+protege el `uso` de la hoja contra el seed, y no distingue una decisión humana de un `revisar`
+**que escribió una máquina hace diez segundos**.
+
+⭐⭐ **Las dos salidas, y la diferencia es el ORDEN:**
+
+1. **La fila del `SEED_SOLAPAS_` entra ANTES de que la fila exista** ⇒ es un **alta**, y
+   `usoAEscribir_` lo dice con todas las letras: *«INSERTAR NUNCA ES DEGRADAR: una fila que no
+   existe no tiene `uso` que proteger»*. El `uso` del seed entra tal cual. ✅
+2. **`inventariarSolapas()` corre primero** ⇒ hay que **editar la celda a mano**. Ninguna corrida
+   la arregla.
+
+⚠ **Es la misma figura que las ocho filas protegidas de `docs/ESCRITORES.md` §2.2** —*«el seed
+propone pisar decisiones y la hoja gana»*—, con un agravante: allá las ocho eran **decisiones
+humanas** y la protección estaba haciendo su trabajo. Acá el valor protegido **no lo decidió
+nadie**.
+
+⛔ **El síntoma es el de siempre: una corrida que termina bien y una hoja que no cambia.** Y río
+abajo, `buscarMapeo` rechaza todo lo que no sea `fuente`, así que la solapa queda **apagada** y los
+marcadores que la lean publican `«FALTA:…@solapa_no_fuente»`.
+
+⭐ **Lo accionable, y es una línea en el orden de los botones:** decidir el `uso` **antes** de
+registrar la fila. `censarSolapasSinRegistrarEnProfundidad()` es el que contesta si es `fuente` o
+`derivada`; recién con esa respuesta se escribe el seed, y **después** se registra.
+
+---
+
+## ⚠ P2 · `gcba_cc_base` tiene caso y sus dos hermanas no, habiendo nacido en la misma escritura (08/09/2026)
+
+`CASOS_POR_MARCADOR_` da `gcba_cc_base` → **`C-108` (`cerrado`)**, y **nada** para
+`gcba_cc_contactados` ni `gcba_cc_contact_pct`. Las tres las escribe la misma lista
+(`FILAS_GCBA_CC_`) en la misma corrida.
+
+⭐ **La causa está medida y no es un bug del generador: es cómo se escribió el caso.** `C-108` es un
+**caso de método** —*«el corte positivo por los dos lados particiona estas dos ventanas»*— y su
+`token_propuesto` dice literalmente `cc_base / gcba_cc_base`. **Nombró a dos y no a las otras dos**,
+así que el cruce le adjudicó exactamente los que menciona.
+
+⛔ **Es la misma familia que `C-115`/`C-117`, que costó el corrector `C-118`…`C-121` el mismo día:**
+*`token_propuesto` no es descriptivo, es una CLAVE — un caso de método que menciona tokens los
+reclama.*
+
+⚠ **Hoy es inofensivo y por eso va como P2:** `cerrado` **no habilita a `D-60`**, así que ninguna de
+las tres se queda sin su `_revisar`. **Lo que sí queda es un cruce que miente sobre qué está
+medido**: leer la tabla sugiere que `gcba_cc_base` tiene respaldo y sus hermanas no, y **las tres
+están exactamente igual de sin validar**.
+
+⭐ **Lo accionable:** cuando un caso de método mencione tokens, o los nombra **a todos** los de su
+familia o **a ninguno** —`C-109` lo hizo bien: dice `(caso de metodo - ningun token)`—. **No se
+arregla acá**: editar un CSV congelado es otro trabajo.
+
+---
+
+## ⚠ P2 · Un barrido sobre el 98 % de las filas no es un negativo firme (08/09/2026)
+
+El `G1` del `2026-09-08_7` concluyó *«ninguna de las 25 columnas trae `JM`/`GCBA`»* habiendo leído
+**2.482 de 2.524** filas. La conclusión resultó **irrelevante por otro motivo** —midió la solapa
+equivocada— pero el defecto de forma vale igual y es independiente:
+
+⭐ **Un barrido es entero, o declara su recorte en la misma frase que la conclusión.** El gate
+imprimía los dos números, y aun así el reporte los separó de la afirmación. **Un cero declarado
+sobre el 98 % se lee como un cero sobre el 100 %** si el denominador no viaja pegado.
+
+⚠ Los gates del `_8` imprimen `filas leídas: N de M` con el aviso al lado, en la misma línea.
+
+---
+
 ## ⛔⛔ P0 · `L-034` publica `/////` sobre tokens que TIENEN fila y resuelven en `L-031` (08/09/2026)
 
 **Medido sobre el deck del motor del 08/09 21:23 (`julio_24_30`, `sha256` `dfdaf6c1…`) cruzado

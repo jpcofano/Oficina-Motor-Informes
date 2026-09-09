@@ -1435,6 +1435,28 @@ los ocho; el parcial lo aplica `quitarRevisarDeMetaYGoogle()`.
 
 ### 4.9 `L-047` — la columna «Envío» publica el ÁMBITO, no el mail — 08/09/2026
 
+> ⛔⛔ **CORREGIDO el 08/09/2026, el mismo día, por el `2026-09-08_8`.** Lo que sigue abajo dice
+> *«el hueco es del DATO, no de la configuración»* y **es falso**. La medición es correcta y **está
+> hecha sobre la solapa equivocada**: barrió `digital/Directa Mail` cuando la fuente que el usuario
+> nombró es **`acumulado | Mail`**, de *DGPLES - Directa acumulado* — la misma base que Call Center.
+>
+> ⭐ **El error no fue el barrido: fue que el gate nombraba una CONCLUSIÓN —«no hay columna»— en
+> vez de nombrar la solapa que tenía que abrir.** Un gate que no dice sobre qué mide, mide sobre lo
+> que tiene a mano. Los gates del `_8` imprimen `base|solapa` en cada línea.
+>
+> ⭐ **El indicio de que el dato existe es fuerte y no es medición:** en esa base el remitente
+> **está normalizado** —`acc_remitente`, col Q de `Call Center - Métricas`— y `DIMENSIONES_.ambito`
+> la compara contra los literales `JM` y `GCBA`. **La solapa hermana no está medida.**
+>
+> ⚠ **Y una observación sobre el barrido mismo, que vale aunque hubiera sido la solapa correcta:**
+> leyó **2.482 de 2.524 filas**. Un *«ninguna columna trae `JM`/`GCBA`»* sobre el 98 % **no es un
+> negativo firme**. Un barrido es entero o declara su recorte.
+>
+> ⇒ **Lo que sigue vigente de la sección de abajo:** que la columna publica el **ámbito** y no el
+> mail; que es la misma condición que `DIMENSIONES_` aplica; y que **no se cablea el mail crudo**.
+> ⇒ **Lo que NO:** que el hueco sea del dato. **Es de alta**, y `acumulado | Mail` no está
+> registrada en `SOLAPAS` ni mapeada en `MAPEO`.
+
 **Decisión del usuario, 08/09/2026.** La primera columna de la tabla de *Desagregados · Mail* dice
 **`JM`** cuando el remitente es el mail de Jorge Macri y **`GCBA`** en cualquier otro caso. **No
 publica el mail.**
@@ -1461,10 +1483,28 @@ lectores independientes: de las **25 columnas** de la solapa, **ninguna** trae l
   base es del equipo—, no un alta de `MAPEO`. **Si hubiera una columna sin declarar, sería trabajo
   de una tarde; no la hay.**
 
-**Estado hoy:** `camp_env1_rem` existe y publica `jorge.macri@buenosaires.gob.ar`; las otras cuatro
-no tienen fila y salen `/////`. `aplicarTanda20260908()` lleva las cinco listas **con el
-`campo_logico` vacío a propósito** —lo llena su gate `G1` con la columna que encuentre— así que el
-día que la columna exista, el cableado es apretar un botón.
+**Estado hoy (actualizado el 08/09 por el `_8`):** `camp_env1_rem` existe y publica
+`jorge.macri@buenosaires.gob.ar`; las otras cuatro no tienen fila y salen `/////`.
+`aplicarRemitentes20260908()` **ya las lleva las cinco escritas contra `acumulado | Mail`**, con
+`campo_logico = acm_remitente`. ⛔ **No corre hasta que exista el alta**: su gate `G0` exige que
+`SOLAPAS` declare la solapa como `fuente` y que `MAPEO` resuelva `acm_remitente` y `fecha_periodo`,
+y si no están **dice exactamente qué falta**.
+
+⛔⛔ **Y hay un gate que puede matar el alta entera, no el cableado:** si `acumulado | Mail` tiene
+fórmulas que referencian otra solapa, es **derivada**, y `R-02` la excluye como fuente. Lo contesta
+`censarSolapasSinRegistrarEnProfundidad()`. **Si cae ahí, el destrabe pasa a ser del equipo
+(`C-01`) y las cinco filas no salen de esa solapa.**
+
+⛔⛔ **El riesgo que no desaparece aunque el alta salga bien, y por eso existe `G2`:** los otros
+**40** tokens de envío de esta lámina son `FILA` sobre `digital | Directa Mail`. Si el remitente
+sale de **otra solapa**, `valor_fijo = 2` toma el segundo envío **de esa solapa**, que no tiene por
+qué ser el segundo envío de la otra. ⇒ **la tabla quedaría completa y con el remitente de otro
+envío en cada fila**, que es **peor que el `/////`** porque no se ve mirando el deck.
+
+⚠ **Y `G2` verifica la alineación EL DÍA QUE SE ESCRIBE LA FILA, no en cada corrida.** Eso es un
+límite conocido y va declarado: una campaña futura con otro reparto de envíos podría desalinear sin
+que nada falle. **El control por corrida es cruzar la columna Envío contra `camp_envN_enviados`,
+que ya publica.**
 
 ⚠ **La medición completa, con su procedencia y sus huellas:**
 `docs/MEDICION_columna_envio_2026-09-08.md`.

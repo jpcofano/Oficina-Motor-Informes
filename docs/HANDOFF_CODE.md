@@ -7,7 +7,7 @@
 > (`CLAUDE.md` §4). Antes de usar una afirmación de acá **para decidir**, buscá el dato en la fuente
 > que lo produce.
 
-**Última actualización:** 2026-09-08 (noche), tras el `2026-09-08_7`.
+**Última actualización:** 2026-09-08 (noche), tras el `2026-09-08_8`.
 
 ⭐⭐ **Call Center PUBLICA.** El deck de `julio_24_30` del 08/09 21:23 trae
 **`6.011 · 1.878 · 31,2 %`** en `L-031`. ⛔ **Y midiendo eso apareció un P0 nuevo: `L-034` publica
@@ -59,22 +59,24 @@ gates **antes** de la primera escritura, backup, y **relectura desde la hoja**.
 | **C** | `L-034` | ⛔ **nada**, y ése es el resultado |
 | — | `cc_campanias` · `gcba_cc_campanias` | ⛔ hueco **deliberado**, `C-112` |
 
-### ⛔ `G1` — la columna «Envío» no tiene camino declarativo, y el hueco es del DATO
+### ⛔⛔ `G1` del `_7` MIDIÓ LA SOLAPA EQUIVOCADA — corregido el mismo día por el `_8`
 
-`D1` decidió que publique el **ámbito** (`JM`/`GCBA`), no el mail. Medido con **dos lectores que
-fallan distinto** —`leer_xlsx_por_referencia.py` y `openpyxl`, coinciden en 2.413 filas y 25
-encabezados— sobre `Seguimiento_Digital_2026-08-30.xlsx`, `sha256` verificado:
+Barrió `digital/Directa Mail` —25 columnas, 0 candidatas— y concluyó *«la fuente no tiene el
+dato»*. **La fuente es otra:** `acumulado | Mail`, de *DGPLES - Directa acumulado*, la misma base
+que Call Center.
 
-- **0 de 25** columnas traen literalmente `JM` o `GCBA`.
-- La única que **particiona** por ámbito es `G`, *Mail remitente* — **el mail crudo**.
-- ⛔ **`mail_area` NO discrimina**: 24 áreas, JM en **tres** (Jefatura de Gobierno 191, Seguridad
-  94, Salud 15), y *Jefatura de Gobierno* **no es exclusiva suya** (12 filas de otro remitente).
+⭐ **El error no fue el barrido: fue que el gate nombraba una CONCLUSIÓN —«no hay columna»— en vez
+de nombrar la solapa que tenía que abrir.** Un gate que no dice sobre qué mide, mide sobre lo que
+tiene a mano. Los gates del `_8` imprimen `base|solapa` en cada línea.
 
-⇒ **Lo destraba `C-01`** —una columna de ámbito en la base, que es del equipo—, **no** un alta de
-`MAPEO`. ⛔ **No se cableó el mail crudo**: llenaría el hueco con algo que el equipo no publica.
+⚠ **Y un defecto de forma del mismo barrido, independiente:** leyó **2.482 de 2.524** filas. Un
+*«ninguna columna trae `JM`/`GCBA`»* sobre el **98 %** no es un negativo firme.
 
-⭐ **Las cinco filas están listas con `campo_logico` VACÍO a propósito**: lo llena el gate con la
-columna que encuentre. El día que exista, es apretar un botón.
+⭐ **Lo que sigue vigente de esa medición:** `mail_area` no discrimina (24 áreas, JM en tres, y
+*Jefatura de Gobierno* no es exclusiva suya), y **no se cablea el mail crudo**.
+
+⇒ **El hueco no es de cableado: es de ALTA.** `acumulado | Mail` no está en `SOLAPAS` ni en
+`MAPEO`. Es el **ítem 42**.
 
 **Estado hoy en el deck:** fila 1 publica `jorge.macri@buenosaires.gob.ar`, filas 2–5 `/////`.
 
@@ -88,31 +90,63 @@ Quedó como **exige `jm`, reporta `secco`**. Está en `PENDIENTES` como P2.
 
 ## ⛔ LO QUE HAY QUE CORRER, Y ES TUYO
 
-0. ⭐ **`clasp push` está al día** — corrido el 08/09 a las 10:21, en su propio comando, después de
-   leer el verde de las suites.
+0. ⭐ **`clasp push` está al día** — corrido el 08/09 a las 11:38, en su propio comando, después de
+   leer el verde de las 99 suites.
 
-En este orden, **leyendo cada resultado antes del siguiente**:
+⭐⭐ **Son DOS trabajos y el segundo no arranca si el primero no cierra.** El `2026-09-08_7` dejó
+listo su botón; el `_8` agrega **el alta de `acumulado | Mail`**, que es del Trabajo 1.
 
-1. **`diagAplicarTanda20260908()`** — modo seco. Reporta y no escribe. ⭐ **Mirá primero qué dice
-   `G1`**: la predicción de disco es que **no pasa**. Si pasara, la columna de ámbito apareció y
-   eso es una novedad que cambia el ítem 42.
-2. **`aplicarTanda20260908()`** — escribe. Backup primero, relectura desde la hoja al final.
-3. **Corrida de `jm` con `periodo_id = julio_24_30`** — ⛔ **no el default de `R-11`**: es el único
-   período con testigo de Call Center.
-4. **`censarTokensSinLlaves()`** — escrito el 03/09, **nunca corrido**. Independiente de esta tanda.
-5. **`diagGuionesPorLamina()`** — sólo para tener la lista fechada. ⛔ **No corras
-   `aplicarGuionesValidados()`**: es el prompt siguiente.
+### Tanda del `_7` — ya está lista
+
+1. **`diagAplicarTanda20260908()`** — modo seco. Reporta y no escribe.
+2. **`aplicarTanda20260908()`** — escribe las tres `gcba_cc_*` y `camp_env4_fecha`.
+   ⛔ Sus cinco `camp_envN_rem` **no salen de ahí**: las reemplaza el wrapper del `_8`.
+
+### Trabajo 1 del `_8` — el ALTA de `acumulado | Mail`, y termina en REPORTE
+
+3. **`censarSolapasParaAlta()`** — qué solapas tiene `acumulado` y cuáles están `SIN REGISTRAR`.
+   ⭐ **Volcá la base entera**, no sólo `Mail`: si hay más sin registrar, es ahora que se ven.
+4. **`censarSolapasSinRegistrarEnProfundidad()`** sobre `Mail` — banda, títulos textuales **y si
+   tiene fórmulas**.
+   ⛔⛔ **Es el gate del alta, y puede matarla:** una solapa con fórmulas que referencian otra
+   solapa **es derivada**, y `R-02` la excluye como fuente. **Si `Mail` resulta derivada, las cinco
+   filas no salen de ahí y el destrabe pasa a ser del equipo (`C-01`).**
+5. ⛔⛔ **PARÁ ACÁ Y PASAME EL LOG.** Con los 36 encabezados y sus letras escribo las filas del
+   `SEED_SOLAPAS_` y del `SEED_MAPEO_`. **No las puedo escribir antes**: adivinar una letra es
+   inventar el faltante, y `D-31` exige que el `encabezado` se **copie** de un censo, no se tipee.
+
+⛔⛔ **Y OJO CON EL ORDEN, que es el hallazgo de anoche:** `inventariarSolapas()` da de alta la fila
+con **`uso = revisar`**, y después `usoAEscribir_` **conserva lo que dice la hoja** — o sea que el
+seed **ya no la puede promover a `fuente`** y hay que editar la celda a mano.
+⭐ **Si la fila del seed entra ANTES de que la fila exista, es un alta y el `uso` entra tal cual.**
+⇒ **No corras `inventariarSolapas()` todavía.**
+
+### Trabajo 2 del `_8` — ya está escrito y pusheado
+
+6. **`diagAplicarRemitentes20260908()`** — seco. Su `G0` exige el alta y **dice exactamente qué
+   falta** si no está.
+7. **`aplicarRemitentes20260908()`** — escribe las cinco `camp_envN_rem` contra `acumulado | Mail`.
+8. **Corrida de `jm` con `periodo_id = julio_24_30`** — ⛔ **no el default de `R-11`**.
+
+### Independientes de todo lo anterior
+
+9. **`censarTokensSinLlaves()`** — escrito el 03/09, **nunca corrido**.
+10. **`diagGuionesPorLamina()`** — sólo para tener la lista fechada. ⛔ **No corras
+    `aplicarGuionesValidados()`**: es el prompt siguiente.
 
 ### ⭐⭐ Lo que la corrida tiene que contestar
 
-- ⛔⛔ **¿Cambió algún valor que ya se publicaba?** **No debería cambiar ninguno** — los cuatro
-  bloques llenan `/////`. **Si se movió uno, parar.**
+- ⛔⛔ **¿Cambió algún valor que ya se publicaba?** **No debería cambiar ninguno.** Si se movió uno,
+  **parar**.
 - `L-031` tiene que seguir en **6.011 / 1.878 / 31,2 %**.
 - `L-032` — ¿`gcba_cc_base` y `gcba_cc_contactados` publican **entre guiones**, y son **distintos**
   de los de JM? Si dan lo mismo, el ámbito no discriminó.
 - `L-047` fila 4 — ¿la Fecha publica, o sigue `/////`?
-- `L-047` columna Envío — **esperado: sigue igual** (mail crudo en la fila 1, `/////` en las otras
-  cuatro). `G1` no pasó.
+- ⭐⭐ `L-047` columna Envío — **¿la fila 1 dice `JM`?** Hoy publica el mail de Jorge Macri.
+  ⛔ **Si dice `GCBA`, la alineación se corrió: revertir con el backup.**
+- ⛔ **¿Cada Envío se corresponde con su fila?** Cruzar contra `camp_envN_enviados`, que ya publica.
+  **Es la única forma de ver una desalineación**, y `G2` la verifica el día que se escribe la fila,
+  no en cada corrida.
 - `L-034` — ⛔ **no cambia nada acá**, y su `/////` es el hallazgo, no el hueco.
 
 ⛔ **Antes de levantar cualquier `_revisar`:** `revisarASinValidar_` **lo repone** si `notas` sigue
@@ -205,19 +239,20 @@ y `_7`. **Lo ejecutado no se renumera.**
 
 ---
 
-## La cola — **42 ítems, 14 cerrados**
+## La cola — **42 ítems, 15 cerrados**
 
-Vive en **`docs/PLAN.md` §2**, no acá. `[x]` 14 · `[~]` 3 · `[ ]` 25.
+Vive en **`docs/PLAN.md` §2**, no acá. `[x]` 15 · `[~]` 2 · `[ ]` 25.
 
 ```
 grep -o '^| `\[.\]` \*\*[0-9]*\*\*' docs/PLAN.md | grep -o '\[.\]' | sort | uniq -c
 ```
 
 - ✅ **El 37 se cerró**: la corrida lo publicó.
-- 🟡 **El 15 pasó a `[~]`**: la decisión existe (`D1`, `CONFIG_INFORMES` §4.9); lo que falta ya no
-  es decidir sino **poder escribirlo**. Se convirtió en el **42**.
-- ⛔ **41 nuevo, P0** — `L-034` publica `/////` sobre tokens que resuelven.
-- ⛔ **42 nuevo** — la columna «Envío» sin camino declarativo.
+- ✅ **El 15 se cerró**: la decisión existe y vive en `CONFIG_INFORMES` §4.9 (`D1`). ⭐ **Y el
+  remitente NO estaba sin normalizar: lo está, en otra solapa.**
+- ⛔ **41, P0** — `L-034` publica `/////` sobre tokens que resuelven.
+- ⛔ **42 — cambió de objeto el 08/09**: ya no es *«ninguna columna trae el ámbito»* sino **el ALTA
+  de `acumulado | Mail`**. El cableado que cuelga de él ya está escrito.
 
 ---
 
@@ -225,15 +260,18 @@ grep -o '^| `\[.\]` \*\*[0-9]*\*\*' docs/PLAN.md | grep -o '\[.\]' | sort | uniq
 
 | afirmación | cómo lo sé |
 |---|---|
-| ✅ Suites: **98 bancos, exit 0** · `tools/listas.js` exit 0 | **exit code sin tubería**, corrido hoy |
-| ✅ el proyecto de Apps Script **está al día** | `clasp push` 08/09 10:21, en su **propio comando** |
+| ✅ Suites: **99 bancos, exit 0** · `tools/listas.js` exit 0 | **exit code sin tubería**, corrido hoy |
+| ✅ el proyecto de Apps Script **está al día** | `clasp push` 08/09 11:38, en su **propio comando** |
 | ✅ las tres `cc_*` **están escritas y publican** | el deck del 08/09 21:23 — **6.011 · 1.878 · 31,2 %** en `L-031`. ⛔ Esto **deroga** lo que decía el handoff anterior |
 | ✅ `camp_env4_fecha` **está en la plantilla viva** | la fila 4 de `L-047` trae `/////` en Fecha y la 5 trae `-`: sólo un token presente y sin fila emite `/////` |
 | ✅ `L-047` **cierra su identidad interna** | 121.789 + 145.744 + 176.870 = **444.403**, el GLOBAL |
 | ⛔ `L-034` publica `/////` sobre tokens que resuelven | dos decks, con las dos huellas verificadas. **Ítem 41** |
-| ⛔ ninguna columna de `digital/Directa Mail` trae el ámbito | fixture del 30/08, `sha256` verificado, **dos lectores independientes** |
-| ⛔ las **nueve** filas de la tanda **NO están escritas** | el modo seco no escribe, y el wrapper todavía no corrió |
-| ⚠ si `G1` pasa sobre la hoja viva | **no lo sé con certeza**: la predicción es de un fixture del **30/08**. Lo contesta el botón 1 |
+| ⛔ ninguna columna de `digital/Directa Mail` trae el ámbito | fixture del 30/08, `sha256` verificado, **dos lectores independientes**. ⚠ Cierto y **sobre la solapa equivocada** |
+| ⛔ las **nueve** filas del `_7` **NO están escritas** | el modo seco no escribe, y el wrapper todavía no corrió |
+| ⛔ las **cinco** `camp_envN_rem` del `_8` tampoco | su `G0` exige un alta que **todavía no existe** |
+| ⛔ `inventariarSolapas()` da de alta con `uso = revisar`, y el seed **ya no la promueve** | leído en `Solapas.gs:100` y `usoAEscribir_`. **Cambia el orden de los botones** — `PENDIENTES` P0 del 08/09 |
+| ⚠ qué columnas tiene `acumulado \| Mail` | ⛔ **no lo sé, y nadie lo sabe**: 6154 × 36 es todo lo que hay (censo del 08/09, que dice *«nada sobre `Mail` ni `SMS`»*). **No hay fixture de esa base.** Lo contesta el botón 4 |
+| ⚠ si `acumulado \| Mail` es fuente o **derivada** | **no lo sé** — `R-02` la excluiría. Lo contesta `censarSolapasSinRegistrarEnProfundidad()` |
 | ⚠ qué le pasa a `L-034` exactamente | **no lo sé** — `D-47` es **candidata**, no causa demostrada |
 | ⚠ si `Remitente` es el criterio correcto | **no lo sé**: suficiente, no probado necesario (`C-117`) |
 | ⚠ qué cuenta `cc_campanias` | **no lo sé** — 4 candidatas indistinguibles (`C-112`) |
