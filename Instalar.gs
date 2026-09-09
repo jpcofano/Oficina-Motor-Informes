@@ -11431,3 +11431,467 @@ function cablearCallCenterAcumulado_(aplicar) {
   Logger.log('  ⛔ Falta la corrida: esto escribió configuración, no publicó ningún número.');
   return { ok: true, aplicado: true, marcadores: FILAS_CC_ACUMULADO_.length, backup: bk.nombre };
 }
+
+
+/* ==========================================================================
+ * `2026-09-08_7` — LA TANDA DEL 08/09, DE UN TIRÓN
+ *
+ * Cuatro bloques que **llenan `/////`** y por eso viajan en el mismo deck: ninguno mueve un
+ * número que ya se publicaba, así que no hay nada que atribuir (`CLAUDE.md` §4, *«un cambio por
+ * deck» es para lo que MUEVE un número, no para lo que LLENA un hueco*).
+ *
+ * ⭐⭐ **EL CONTROL DE LA CORRIDA ES EXACTAMENTE ÉSE: ningún valor que ya se publicaba puede
+ * cambiar.** Si se movió uno, no fue esta tanda — y hay que parar.
+ *
+ * ── Qué entra, y qué gate lo puede tumbar ──────────────────────────────────────────────
+ *   · **A** · las tres `gcba_cc_*` — copia de las de JM con `ambito=gcba`. `DIMENSIONES_` ya
+ *     declara `acc_remitente=GCBA` desde el `_4`, así que **no hay código nuevo**. Nacen con
+ *     `_revisar`: no tienen testigo publicado.
+ *   · **B** · `camp_env4_fecha` y las cinco `camp_envN_rem`, gate `G2` y gate `G1`.
+ *   · **C** · `L-034` — ⛔ **medido en disco y NO entra.** Ver el bloque de abajo.
+ *
+ * ⛔⛔ **POR QUÉ `L-034` NO SE ESCRIBE, Y ES EL DESENLACE QUE EL PROMPT MANDABA MIRAR PRIMERO.**
+ * El censo del 22/08 dice que la lámina 5 usa **los mismos nombres** que la 2 — `cc_base`,
+ * `cc_contactados`, `cc_contact_pct`—. Esas tres **ya tienen fila** y **publican en `L-031`**
+ * (6.011 · 1.878 · 31,2 % en el deck del 24-30/07). En `L-034` salen `/////`.
+ * ⇒ **No es un hueco de fila: es un token que existe y no resuelve.** Escribirle filas nuevas
+ * no arreglaría nada y taparía el síntoma.
+ *
+ * ⭐ **Y no son sólo los tres.** Cruzado contra el testigo del 22/08 (`sha256` cd6f0050…), en
+ * `L-034` **cuatro casilleros que PUBLICABAN pasaron a `/////`**: `Impresiones` (28.988.260),
+ * `Mails entregados` (538.276), `Aperturas (OR)` (210.707 (39.1%)) y `Atendidos`, que era `-`.
+ * ⚠ **`-` → `/////` es la prueba limpia**: `-` es *«se preguntó y no había dato»* y `/////` es
+ * *«no se resolvió»*, así que el cambio **no puede venir del dato** (`textoFaltante_`).
+ * ⚠ **Y no es una corrida cortada**: un tramo no alcanzado deja el token **crudo** `{{…}}`
+ * —las láminas 21, 22 y 24 del mismo deck lo muestran—, no `/////`.
+ * ⇒ La causa candidata es `D-47` (27/08), que hace que un token compartido entre láminas de
+ * universos distintos **se resuelva una vez por lámina**. `CIERRE_POR_LAMINA.md` lo dejó escrito
+ * como *«sin verificar contra un deck»* y declaró qué esperaba: *«lo esperable en `L-034` no es
+ * otro número: es SIN DATO»*. **Salió `/////`, no `-`.** Eso es el hallazgo, y tiene prompt
+ * propio.
+ *
+ * ⛔ SÓLO ESCRIBE `MARCADORES`. No toca `Fuentes.gs`, ni `DIMENSIONES_`, ni ninguna plantilla,
+ * ni ninguna planilla de terceros, ni una fila que no esté en las listas de abajo.
+ * ========================================================================== */
+
+var BASE_ENVIO_ = 'digital';
+var SOLAPA_ENVIO_ = 'Directa Mail';
+
+/**
+ * Las tres de GCBA. **Copia exacta de las de JM cambiando sólo `dimensiones`** (decisión del
+ * usuario, 08/09), y el molde vivo es `gcba_ivr_*`: misma familia, mismo `ambito=gcba`, mismo
+ * cociente con `/` en `campo_logico`.
+ *
+ * ⭐ **`_revisar` en las tres, y no es simetría**: `CASOS_POR_MARCADOR_` da `gcba_cc_base` en
+ * `cerrado` (`C-108`) y **nada** para las otras dos. Ninguno de los tres estados habilita a
+ * `D-60`, así que la marca es correcta y **no la va a levantar el próximo barrido**.
+ *
+ * ⚠ **El corte de GCBA es POSITIVO (`acc_remitente=GCBA`), no la negación de JM**, y por eso el
+ * residuo existe: de los seis valores de `Remitente`, **104 filas** no son ni `JM` ni `GCBA` y
+ * quedan fuera de los dos ámbitos **a propósito** (`C-108`). ⇒ `gcba_cc_base + cc_base` **no
+ * tiene por qué dar el total de la solapa**, y eso no es un bug.
+ */
+var FILAS_GCBA_CC_ = [
+  { marcador: 'gcba_cc_base', campo_logico: 'acc_base_barrida', operacion: 'SUMA',
+    formato: 'miles_revisar' },
+  { marcador: 'gcba_cc_contactados', campo_logico: 'acc_contactados', operacion: 'SUMA',
+    formato: 'miles_revisar' },
+  /* ⚠ El cociente va en `campo_logico` con `/`: la aritmética la hace `opPCT` en `Marcadores.gs`
+   * y **en ningún otro lado** (la regla de oro de `CLAUDE.md` §2). */
+  { marcador: 'gcba_cc_contact_pct', campo_logico: 'acc_contactados/acc_base_barrida',
+    operacion: 'PCT', formato: 'porcentaje_sin_signo_revisar' }
+];
+
+/**
+ * `camp_env4_fecha` — la fila que le falta a la columna Fecha de `L-047`.
+ *
+ * ⭐ **Copia de `camp_env5_fecha` cambiando sólo `valor_fijo`**, verificado contra el snapshot:
+ * los otros cuatro (`1`, `2`, `3`, `5`) son idénticos salvo ese campo.
+ *
+ * ⭐ **Que el token EXISTE en la plantilla está medido, no supuesto:** en el deck del 24-30/07 la
+ * fila 4 de la tabla de `L-047` trae `/////` en Fecha y la fila 5 trae `-`. Un `/////` sólo lo
+ * emite un token **presente y sin fila**; si las llaves no estuvieran, la celda saldría vacía.
+ */
+var FILA_ENV4_FECHA_ = { marcador: 'camp_env4_fecha', campo_logico: 'fecha_periodo',
+  operacion: 'FILA', valor_fijo: 4, formato: 'fecha' };
+
+/**
+ * Las cinco de la columna **Envío**. `camp_env1_rem` **ya existe y se REEMPLAZA** —hoy publica
+ * `jorge.macri@buenosaires.gob.ar`, el mail crudo—; las otras cuatro son alta.
+ *
+ * ⛔⛔ **Las cinco cuelgan del gate `G1`, y `G1` decide qué CAMPO leen.** La decisión del usuario
+ * (`D1`) es que esta columna publique el **ámbito** —`JM` para el mail de Jorge Macri, `GCBA`
+ * para cualquier otro—, y eso necesita **una columna que traiga ese valor**. `campo_logico`
+ * queda vacío a propósito: lo llena el gate con la columna que haya encontrado, o no se escribe
+ * ninguna de las cinco.
+ *
+ * ⛔ **NO se cablea el mail crudo como salida de compromiso.** Llenaría el hueco publicando algo
+ * que el equipo no publica, y **un hueco que parece cerrado es peor que un hueco**.
+ */
+var FILAS_ENVIO_REM_ = [1, 2, 3, 4, 5].map(function (n) {
+  return { marcador: 'camp_env' + n + '_rem', campo_logico: '', operacion: 'FILA',
+    valor_fijo: n, formato: 'texto' };
+});
+
+function diagAplicarTanda20260908() { return aplicarTanda20260908_(false); }
+function aplicarTanda20260908() { return aplicarTanda20260908_(true); }
+
+function aplicarTanda20260908_(aplicar) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('Tanda 2026-09-08 — ' + (aplicar ? 'ESCRIBE' : 'MODO SECO') + ' · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+
+  /* ⭐⭐ La ventana va en el ENCABEZADO, no al final. El testigo la toma del default de `R-11` y
+   * eso ya produjo una contradicción aparente entre dos números que eran los dos correctos: sin
+   * la ventana escrita arriba, dos lecturas de la misma hoja se leen como la misma pregunta. */
+  var v = resolverVentana({});
+  if (v && v.ok) {
+    Logger.log('  ventana del testigo: ' + v.desde + ' → ' + v.hasta + '   (' + (v.origen || '?') + ')');
+    Logger.log('  ⚠ Es la ventana que resuelve HOY, NO la de la corrida que hay que hacer después:');
+    Logger.log('     el deck va con `periodo_id = julio_24_30`, el único con testigo de Call Center.');
+  } else {
+    Logger.log('  ⚠ ventana del testigo: no resuelve — ' + ((v && v.motivo) || 'sin motivo'));
+  }
+  Logger.log('');
+  Logger.log('  ⛔ `L-034` NO entra: sus tres `cc_*` TIENEN fila y publican en `L-031`; el `/////`');
+  Logger.log('     de la lámina 5 es un token que existe y NO resuelve. Ver el encabezado.');
+  Logger.log('  ⛔ `cc_campanias` y `gcba_cc_campanias` NO entran (`C-112`, cuatro candidatas).');
+  Logger.log('  ⛔ Ningún `_revisar` se levanta acá: eso es el prompt siguiente.');
+  Logger.log('');
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe la hoja MARCADORES.'); return { ok: false }; }
+
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0].map(function (h) { return String(h == null ? '' : h).trim(); });
+  var iM = headers.indexOf('marcador');
+  if (iM === -1) { Logger.log('⛔ ABORTA: MARCADORES no tiene columna `marcador`.'); return { ok: false }; }
+
+  var existentes = {};
+  for (var f = 1; f < datos.length; f++) {
+    var nm = String(datos[f][iM] || '').trim();
+    if (nm) existentes[nm] = f + 1;
+  }
+  function celda(marcador, columna) {
+    var fi = existentes[marcador], ci = headers.indexOf(columna);
+    if (!fi || ci === -1) return null;
+    return String(datos[fi - 1][ci] == null ? '' : datos[fi - 1][ci]).trim();
+  }
+
+  /* ── 0 · TESTIGO ANTES ────────────────────────────────────────────────────────────────
+   * ⚠ Va **dentro** del wrapper y no como paso aparte: un testigo que corre en otra invocación
+   * mide otras condiciones (`CLAUDE.md` §4, las dos cachés). */
+  var enJuego = FILAS_GCBA_CC_.map(function (x) { return x.marcador; })
+    .concat([FILA_ENV4_FECHA_.marcador])
+    .concat(FILAS_ENVIO_REM_.map(function (x) { return x.marcador; }));
+  var testigoDe = function (rotulo) {
+    Logger.log('  ---- TESTIGO ' + rotulo + ' ----');
+    enJuego.forEach(function (n) {
+      Logger.log('     ' + (n + '                       ').slice(0, 24) +
+        (existentes[n]
+          ? 'fila ' + existentes[n] + '   ' + celda(n, 'base_id') + '/' + celda(n, 'solapa') +
+            '   ' + celda(n, 'campo_logico') + '   ' + celda(n, 'operacion') +
+            '   vf=' + celda(n, 'valor_fijo') + '   dim=' + (celda(n, 'dimensiones') || '(vacío)') +
+            '   ' + celda(n, 'formato')
+          : '⛔ SIN FILA  →  publica `/////`'));
+    });
+  };
+  testigoDe('ANTES');
+  Logger.log('');
+
+  /* ── 1 · LOS GATES — los tres ANTES de la primera escritura ──────────────────────────── */
+  var abortos = [];   // tumban toda la corrida
+  var bloqueado = {}; // tumban un bloque y dejan seguir al resto
+
+  /* ⭐ G0 — el gate de `C-115`, tal cual lo dejó `cablearCallCenterAcumulado_`. Se reusa entero:
+   * el riesgo es el mismo —que estas filas lean `looker/CC` en vez de la base nueva— y las dos
+   * solapas tienen columnas que a simple vista son la misma (`Base barrida` / `Base Barrida`). */
+  Logger.log('  ---- G0 · ¿el alta de `acumulado` está aplicada y apunta a la base NUEVA? ----');
+  var solapas = leerSolapas();
+  var decl = solapas[BASE_CC_ACUMULADO_] && solapas[BASE_CC_ACUMULADO_][SOLAPA_CC_ACUMULADO_];
+  if (!decl) {
+    abortos.push('`SOLAPAS` no tiene `' + BASE_CC_ACUMULADO_ + '/' + SOLAPA_CC_ACUMULADO_ +
+      '` — falta correr **Aplicar configuración**');
+  } else {
+    Logger.log('     uso = ' + JSON.stringify(decl.uso) + '   ventana_ref = ' + JSON.stringify(decl.ventana_ref));
+    if (String(decl.uso).trim() !== 'fuente') abortos.push('la solapa está en `uso = ' + decl.uso + '`');
+    if (String(decl.ventana_ref || '').trim().toLowerCase() !== VENTANA_PROPIA_) {
+      abortos.push('`ventana_ref` es ' + JSON.stringify(decl.ventana_ref) + ' y tiene que ser `' +
+        VENTANA_PROPIA_ + '`: sin eso la solapa publica el acumulado entero');
+    }
+  }
+  ['fecha_periodo', 'acc_base_barrida', 'acc_contactados', 'acc_remitente'].forEach(function (campo) {
+    var m = buscarMapeo(BASE_CC_ACUMULADO_, SOLAPA_CC_ACUMULADO_, campo);
+    Logger.log('     ' + (campo + '                ').slice(0, 17) +
+      (m.ok ? '✅ col ' + m.columna : '⛔ ' + m.motivo));
+    if (!m.ok) abortos.push('`MAPEO` no resuelve `' + campo + '` en `' + BASE_CC_ACUMULADO_ + '`: ' + m.motivo);
+  });
+  Logger.log('');
+  /* ⭐⭐ G1 — ¿EXISTE UN CAMINO DECLARATIVO PARA QUE LA COLUMNA «Envío» DIGA `JM`/`GCBA`?
+   *
+   * La decisión (`D1`) es que esa celda publique el **ámbito**. `MARCADORES` no sabe traducir un
+   * valor a otro: una fila `FILA` publica **lo que la celda dice**. ⇒ el camino existe **sólo si
+   * alguna columna de la solapa trae literalmente `JM` o `GCBA`**.
+   *
+   * ⭐ **Se barre la solapa ENTERA y se declara cuántas columnas se miraron.** Un cero sin el
+   * conteo al lado no se distingue de *«no miré»* (`CLAUDE.md` §4).
+   *
+   * ⚠ **Y se separan dos respuestas que se ven igual:** *no hay ninguna columna con esos valores*
+   * (⇒ el hueco es del dato, y lo destraba `C-01` con el equipo) y *hay una y `MAPEO` no la
+   * declara* (⇒ el hueco es de configuración y lo destraba un alta de `MAPEO`). Mandan a trabajos
+   * distintos. */
+  Logger.log('  ---- G1 · ¿hay una columna que diga `JM`/`GCBA` en `' + BASE_ENVIO_ + '/' + SOLAPA_ENVIO_ + '`? ----');
+  var campoRem = '';
+  var lect = (v && v.ok) ? leerFuente(BASE_ENVIO_, { desde: v.desde, hasta: v.hasta }, SOLAPA_ENVIO_) : null;
+  if (!lect || !lect.ok) {
+    bloqueado.rem = 'no se pudo leer la solapa: ' + ((lect && lect.motivo) || 'ventana sin resolver');
+  } else if (!lect.filas.length) {
+    /* ⛔ Cero filas NO es «no hay columna de ámbito»: es que el gate no midió nada. */
+    bloqueado.rem = 'la lectura devolvió CERO filas en la ventana — el gate no puede concluir';
+  } else {
+    var esAmbito = function (s) { var t = String(s == null ? '' : s).trim().toUpperCase(); return t === 'JM' || t === 'GCBA'; };
+    var candidatas = [];
+    lect.encabezados.forEach(function (h) {
+      var titulo = String(h == null ? '' : h).trim();
+      if (!titulo) return;
+      var conAmbito = 0;
+      for (var k = 0; k < lect.filas.length; k++) { if (esAmbito(lect.filas[k][titulo])) conAmbito++; }
+      if (conAmbito) candidatas.push({ titulo: titulo, filas: conAmbito });
+    });
+    Logger.log('     columnas barridas: ' + lect.encabezados.length +
+      '   filas leídas: ' + lect.filas.length + ' de ' + lect.filas_totales +
+      '   candidatas: ' + candidatas.length);
+
+    /* ⭐ De las candidatas, sólo sirve la que además esté en `MAPEO`: sin `campo_logico` no hay
+     * nada que escribir en la fila. */
+    var mapa = leerMapeo();
+    var porSolapa = (mapa[BASE_ENVIO_] && mapa[BASE_ENVIO_][SOLAPA_ENVIO_]) || {};
+    var tituloDeCampo = {};
+    Object.keys(porSolapa).forEach(function (campo) {
+      var col = porSolapa[campo] && porSolapa[campo].columna;
+      if (!col) return;
+      var idx = columnaLetraAIndice_(col);
+      var t = String(lect.encabezados[idx] == null ? '' : lect.encabezados[idx]).trim();
+      if (t) tituloDeCampo[t] = campo;
+    });
+    candidatas.forEach(function (c) {
+      var campo = tituloDeCampo[c.titulo] || '';
+      Logger.log('     ⭐ `' + c.titulo + '` — ' + c.filas + ' fila(s) con JM/GCBA   ' +
+        (campo ? 'MAPEO: `' + campo + '` ✅' : '⛔ NO está en MAPEO — el camino existe pero no está declarado'));
+      if (campo && !campoRem) campoRem = campo;
+    });
+    if (!candidatas.length) {
+      Logger.log('     ⛔ NINGUNA de las ' + lect.encabezados.length + ' columnas trae `JM`/`GCBA`.');
+      Logger.log('        ⇒ el hueco NO es de configuración: la fuente no tiene el dato. Lo');
+      Logger.log('        destraba el equipo (`C-01`), no un alta de `MAPEO`.');
+      bloqueado.rem = 'ninguna columna de la solapa trae `JM`/`GCBA` (barridas: ' + lect.encabezados.length + ')';
+    } else if (!campoRem) {
+      bloqueado.rem = 'hay columna con `JM`/`GCBA` pero ninguna está declarada en `MAPEO`';
+    }
+  }
+  if (bloqueado.rem) {
+    Logger.log('     ⛔⛔ G1 NO PASA — las CINCO `camp_envN_rem` no se escriben: ' + bloqueado.rem);
+    Logger.log('        ⚠ `camp_env1_rem` queda como está y **sigue publicando el mail crudo**.');
+    Logger.log('        ⛔ NO se cablea el mail como salida de compromiso: llenaría el hueco con');
+    Logger.log('        algo que el equipo no publica, y un hueco que parece cerrado es peor.');
+  } else {
+    Logger.log('     ✅ G1 pasa — las cinco leen `' + campoRem + '`.');
+  }
+  Logger.log('');
+
+  /* ⭐ G2 — ¿el token `camp_env4_fecha` está en la plantilla?
+   *
+   * ⚠ **Se exige en la plantilla del `informe_id` de la fila (`jm`) y se REPORTA `secco`.**
+   * El prompt pedía las dos, y el repo lo desmiente: los **220** marcadores son `informe_id = jm`
+   * —`camp_env1..5_fecha` incluidos—, así que exigir `secco` sería un gate que sólo puede fallar.
+   * Se deja el dato a la vista y no se bloquea con él. */
+  Logger.log('  ---- G2 · ¿`' + FILA_ENV4_FECHA_.marcador + '` está en la plantilla? ----');
+  var informes = leerInformes();
+  Object.keys(informes).forEach(function (id) {
+    var toks = tokensDePlantilla_(id);
+    var esta = !!(toks && toks.indexOf(FILA_ENV4_FECHA_.marcador) !== -1);
+    Logger.log('     ' + (id + '        ').slice(0, 8) + (toks ? toks.length + ' tokens   ' : 'no se pudo leer   ') +
+      (esta ? '✅ está' : '— no está') + (id === 'jm' ? '   ← el que decide' : '   (informativo)'));
+    if (id === 'jm' && !esta) {
+      bloqueado.env4 = 'el token no está en la plantilla de `jm`: escribirle fila no publica nada';
+    }
+  });
+  if (bloqueado.env4) Logger.log('     ⛔ G2 NO PASA para esa fila sola: ' + bloqueado.env4);
+  else Logger.log('     ✅ G2 pasa.');
+  Logger.log('');
+
+  if (abortos.length) {
+    Logger.log('  ⛔⛔ G0 NO PASA — no se escribe NADA. Motivos:');
+    abortos.forEach(function (g) { Logger.log('     · ' + g); });
+    return { ok: false, motivo: 'G0', detalle: abortos };
+  }
+
+  /* ── 2 · EL PLAN — qué sobrevivió a los gates ────────────────────────────────────────── */
+  var NOTA_ = '2026-09-08_7 — ';
+  var plan = [];
+  FILAS_GCBA_CC_.forEach(function (x) {
+    plan.push({ bloque: 'A', marcador: x.marcador, obj: {
+      marcador: x.marcador, familia: 'gcba', informe_id: 'jm',
+      base_id: BASE_CC_ACUMULADO_, solapa: SOLAPA_CC_ACUMULADO_,
+      campo_logico: x.campo_logico, periodo_ref: '', operacion: x.operacion,
+      valor_fijo: '', filtro: '', dimensiones: 'ambito=gcba', formato: x.formato,
+      catalogo: '', separador: '',
+      notas: NOTA_ + 'copia de su hermano de JM cambiando solo dimensiones. El corte lo aplica ' +
+        'DIMENSIONES_.ambito.gcba[acumulado|Call Center - Metricas] = acc_remitente=GCBA (C-108, ' +
+        'positivo por los dos lados: las 104 filas que no son ni JM ni GCBA quedan fuera de ' +
+        'ambos AMBITOS y se ven). Nace con _revisar: NO tiene testigo publicado, y ningun caso ' +
+        'lo habilita (gcba_cc_base esta cerrado por C-108, los otros dos sin caso).'
+    } });
+  });
+  if (!bloqueado.env4) {
+    plan.push({ bloque: 'B', marcador: FILA_ENV4_FECHA_.marcador, obj: {
+      marcador: FILA_ENV4_FECHA_.marcador, familia: 'camp', informe_id: 'jm',
+      base_id: BASE_ENVIO_, solapa: SOLAPA_ENVIO_,
+      campo_logico: FILA_ENV4_FECHA_.campo_logico, periodo_ref: '',
+      operacion: FILA_ENV4_FECHA_.operacion, valor_fijo: FILA_ENV4_FECHA_.valor_fijo,
+      filtro: '', dimensiones: '', formato: FILA_ENV4_FECHA_.formato,
+      catalogo: '', separador: 'fecha_periodo',
+      notas: NOTA_ + 'copia de camp_env5_fecha cambiando solo valor_fijo. El token entro a la ' +
+        'plantilla el 08/09 (usuario): hasta entonces la celda estaba combinada y el casillero ' +
+        'no existia, que es por que la tabla tenia 40 tokens y no 45.'
+    } });
+  }
+  if (!bloqueado.rem) {
+    FILAS_ENVIO_REM_.forEach(function (x) {
+      plan.push({ bloque: 'B', marcador: x.marcador, obj: {
+        marcador: x.marcador, familia: 'camp', informe_id: 'jm',
+        base_id: BASE_ENVIO_, solapa: SOLAPA_ENVIO_,
+        campo_logico: campoRem, periodo_ref: '', operacion: x.operacion,
+        valor_fijo: x.valor_fijo, filtro: '', dimensiones: '', formato: x.formato,
+        catalogo: '', separador: 'fecha_periodo',
+        notas: NOTA_ + 'la columna Envio publica el AMBITO, no el mail (D1, decision del ' +
+          'usuario 08/09). Lee ' + campoRem + ', que es la misma condicion que DIMENSIONES_ ' +
+          'aplica sobre digital|Directa Mail: si cambia el mail de JM cambian las dos cosas.'
+      } });
+    });
+  }
+
+  /* ⚠ La checklist de `CLAUDE.md` §2: ninguna clave del objeto puede faltar en la hoja, o el
+   * valor se pierde **sin fallar**. Se mira ANTES de escribir nada. */
+  var faltan = [];
+  plan.forEach(function (p) {
+    Object.keys(p.obj).forEach(function (k) {
+      if (headers.indexOf(k) === -1 && faltan.indexOf(k) === -1) faltan.push(k);
+    });
+  });
+  if (faltan.length) {
+    Logger.log('⛔ ABORTA: MARCADORES no tiene la(s) columna(s): ' + faltan.join(', '));
+    return { ok: false, motivo: 'columnas faltantes' };
+  }
+
+  Logger.log('  ---- EL PLAN ----');
+  plan.forEach(function (p) {
+    Logger.log('     ' + p.bloque + ' · ' + (existentes[p.marcador] ? 'REEMPLAZA (fila ' + existentes[p.marcador] + ')' : 'alta                ') +
+      '  ' + (p.marcador + '                       ').slice(0, 24) +
+      (p.obj.operacion + '      ').slice(0, 7) + p.obj.campo_logico +
+      '  → ' + p.obj.formato + (p.obj.dimensiones ? '  [' + p.obj.dimensiones + ']' : ''));
+  });
+  var noEscritos = [];
+  if (bloqueado.rem) FILAS_ENVIO_REM_.forEach(function (x) { noEscritos.push(x.marcador + ' — G1: ' + bloqueado.rem); });
+  if (bloqueado.env4) noEscritos.push(FILA_ENV4_FECHA_.marcador + ' — G2: ' + bloqueado.env4);
+  noEscritos.push('los de `L-034` — token que existe y NO resuelve, no hueco de fila (ver encabezado)');
+  noEscritos.push('cc_campanias · gcba_cc_campanias — `C-112` abierto, hueco DELIBERADO');
+  Logger.log('');
+  Logger.log('  ---- LO QUE NO SE ESCRIBE, Y POR QUÉ ----');
+  noEscritos.forEach(function (m) { Logger.log('     ⛔ ' + m); });
+  Logger.log('');
+  Logger.log('  a escribir: ' + plan.length + '   ·   sin escribir: ' + noEscritos.length);
+
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  MODO SECO — no se escribió nada. Para aplicar: `aplicarTanda20260908()`.');
+    return { ok: true, aplicado: false, a_escribir: plan.length, bloqueado: bloqueado };
+  }
+  if (!plan.length) { Logger.log('  ⓘ Los gates dejaron el plan vacío. Nada que hacer.'); return { ok: true, aplicado: false }; }
+
+  /* ── 3 · BACKUP PRIMERO, y un backup fallido aborta sin escribir una celda ───────────── */
+  var bk = backupMarcadores_('tanda20260908');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se escribió nada): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('');
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
+
+  plan.forEach(function (p) {
+    var valores = headers.map(function (h) { return (h in p.obj) ? p.obj[h] : ''; });
+    if (existentes[p.marcador]) hoja.getRange(existentes[p.marcador], 1, 1, headers.length).setValues([valores]);
+    else hoja.appendRow(valores);
+  });
+  SpreadsheetApp.flush();
+
+  /* ── 4 · RELECTURA DESDE LA HOJA — no desde lo que se pidió escribir ──────────────────
+   * ⭐⭐ Un escritor que informa lo que escribió no verifica nada (`CLAUDE.md` §4). Y en Sheets
+   * no es paranoia: la celda pasa por la interpretación automática de tipos. */
+  var releido = ss.getSheetByName('MARCADORES').getDataRange().getValues();
+  var hs = releido[0].map(function (h) { return String(h == null ? '' : h).trim(); });
+  var iMr = hs.indexOf('marcador');
+  var porNombre = {};
+  for (var r = 1; r < releido.length; r++) {
+    var n2 = String(releido[r][iMr] || '').trim();
+    if (n2) porNombre[n2] = releido[r];
+  }
+  /* ⚠ `valor_fijo` se compara como TEXTO: la hoja devuelve `4` como número y el objeto lo mandó
+   * como número, pero un `'04'` o un `'1/3'` volverían de otra forma — la comparación laxa es la
+   * que sobrevive a la coerción sin taparla. */
+  var revisadas = ['base_id', 'solapa', 'campo_logico', 'operacion', 'valor_fijo',
+    'filtro', 'dimensiones', 'formato', 'separador', 'informe_id'];
+  var malas = [];
+  Logger.log('');
+  Logger.log('  ---- RELECTURA desde la hoja, marcador por marcador ----');
+  plan.forEach(function (p) {
+    var fila = porNombre[p.marcador];
+    if (!fila) { malas.push(p.marcador + ': NO quedó en la hoja'); return; }
+    var linea = [];
+    revisadas.forEach(function (c) {
+      var ci = hs.indexOf(c);
+      var quedo = String(fila[ci] == null ? '' : fila[ci]).trim();
+      var pedi = String(p.obj[c] == null ? '' : p.obj[c]).trim();
+      if (quedo !== pedi) malas.push(p.marcador + ': `' + c + '` pedí ' + JSON.stringify(pedi) + ' y quedó ' + JSON.stringify(quedo));
+      if (c === 'campo_logico' || c === 'operacion' || c === 'formato' || c === 'dimensiones' || c === 'valor_fijo') {
+        linea.push(c + '=' + (quedo || '∅'));
+      }
+    });
+    Logger.log('     ' + (p.marcador + '                       ').slice(0, 24) + linea.join('  '));
+  });
+  if (malas.length) {
+    Logger.log('  ⛔⛔ LA RELECTURA NO COINCIDE — backup `' + bk.nombre + '`:');
+    malas.forEach(function (m) { Logger.log('     · ' + m); });
+    return { ok: false, motivo: 'relectura', detalle: malas, backup: bk.nombre };
+  }
+  Logger.log('     ✅ las ' + plan.length + ' quedaron como se pidieron, leídas DE LA HOJA.');
+
+  /* ── 5 · TESTIGO DESPUÉS ─────────────────────────────────────────────────────────────── */
+  datos = releido;
+  existentes = {};
+  for (var r2 = 1; r2 < releido.length; r2++) {
+    var n3 = String(releido[r2][iMr] || '').trim();
+    if (n3) existentes[n3] = r2 + 1;
+  }
+  headers = hs;
+  Logger.log('');
+  testigoDe('DESPUÉS');
+
+  /* ── 6 · QUÉ MIRAR EN EL DECK, declarado ANTES de correr ─────────────────────────────── */
+  Logger.log('');
+  Logger.log('  ⭐⭐ EL CONTROL DE LA CORRIDA — corré `jm` con `periodo_id = julio_24_30`:');
+  Logger.log('     ⛔⛔ NINGÚN valor que ya se publicaba puede cambiar. Si se movió uno, no fue');
+  Logger.log('        esta tanda: los cuatro bloques llenan `/////`. **Parar.**');
+  Logger.log('     · `L-031` tiene que seguir en 6.011 / 1.878 / 31,2 % (V-126, V-128, V-129).');
+  Logger.log('     · `L-032` — ¿`gcba_cc_base` y `gcba_cc_contactados` publican, ENTRE GUIONES,');
+  Logger.log('       y son DISTINTOS de los de JM? Si dan lo mismo, el ámbito no discriminó.');
+  Logger.log('     · `L-047` fila 4 — ¿la Fecha publica, o sigue `/////`?');
+  Logger.log('     · `L-047` columna Envío — ' + (bloqueado.rem
+    ? 'sigue con el mail crudo en la fila 1 y `/////` en las otras cuatro. **Esperado**: G1 no pasó.'
+    : '¿dice `JM` en la primera fila? Es el control positivo: su remitente es el mail de Jorge Macri.'));
+  Logger.log('     · `L-034` — ⛔ **no cambia nada acá**, y su `/////` es el hallazgo, no el hueco.');
+  Logger.log('');
+  Logger.log('  ⛔ Esto escribió configuración: no publicó ningún número. Falta la corrida.');
+  return { ok: true, aplicado: true, escritas: plan.length, bloqueado: bloqueado, backup: bk.nombre };
+}
