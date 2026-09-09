@@ -1,6 +1,77 @@
 
 ---
 
+## ⛔⛔ P0 · `L-034` publica `/////` sobre tokens que TIENEN fila y resuelven en `L-031` (08/09/2026)
+
+**Medido sobre el deck del motor del 08/09 21:23 (`julio_24_30`, `sha256` `dfdaf6c1…`) cruzado
+contra el deck testigo del 22/08 (`agosto_14_20`, `sha256` `cd6f0050…`, huella verificada).**
+
+| casillero de `L-034` | 22/08 | 08/09 |
+|---|---|---|
+| Impresiones | **28.988.260** | ⛔ `/////` |
+| Mails entregados | **538.276** | ⛔ `/////` |
+| Aperturas (OR) | **210.707 (39.1 %)** | ⛔ `///// (/////%)` |
+| Atendidos | **`-`** | ⛔ `/////` |
+| Base llamada · Llamados Contactados | `/////` | `/////` — y **ahora tienen fila** |
+
+Y en el **mismo deck**, `L-031` publica `6.011 · 1.878 · 31,2 %`.
+
+### Por qué NO es el dato, y NO es una corrida cortada
+
+- ⭐⭐ **`-` → `/////` es la prueba limpia.** `textoFaltante_` (`Generador.gs`) lo dice con todas
+  las letras: `-` es *«se preguntó bien y la respuesta fue vacía»* (`sin_datos`) y `/////` es
+  *«no hay fila, o no se resolvió»*. **Ningún cambio en el dato mueve un token de un símbolo al
+  otro.**
+- ⛔ **No fue el presupuesto.** Desde el 20/08 un tramo no alcanzado deja el token **crudo** —
+  `Desatendida.gs`: *«tapar sus crudos con `/////` diría "nadie lo cableó"»*— y el mismo deck lo
+  muestra: láminas 21, 22 y 24 con `{{camp_resp_insight}}`, `{{m2_clics_a}}`, `{{rrss_*}}`.
+  **`L-034` no está cruda: está resuelta a `/////`.**
+
+### La causa candidata, nombrada como candidata
+
+`D-47` (27/08) hace que un token compartido entre láminas de universos distintos **se resuelva una
+vez por lámina**. `CIERRE_POR_LAMINA.md` lo dejó anotado como *«sin verificar contra un deck»* y
+**declaró qué esperaba**: *«lo esperable en `L-034` no es otro número: es SIN DATO»*.
+
+⭐ **Salió `/////`, no `-`.** La resolución por lámina ocurre y devuelve **nada**, así que
+`textoFaltante_(!resultado)` cae al símbolo más ruidoso — la regla correcta ante ausencia de
+información, que acá **miente sobre la causa**: manda a cablear tokens que ya están cableados.
+
+⛔ **Es la familia del `/////` que no distinguía sus causas** (`CLAUDE.md` §4), un escalón más
+adentro: no es *«no se llegó»* contra *«nadie lo cableó»*, es **«se resolvió por lámina y no
+devolvió nada»** contra *«nadie lo cableó»*.
+
+### Qué NO hacer, y por qué está acá y no en un prompt de cableado
+
+⛔ **No se le escriben filas nuevas a `L-034`.** Un token que existe y no resuelve no se arregla
+con una fila: se **tapa** el síntoma, y el deck pasaría a publicar un número sobre un universo que
+nadie declaró. Por eso el `2026-09-08_7` **paró** en su Parte de medición y no escribió el bloque C.
+
+⚠ **Lo que esto NO dice:** no mide si `D-47` es correcto, sólo que su salida en esta lámina no es
+la declarada. Y las dos corridas son de períodos y temarios distintos — eso explica que los
+**números** cambien; **no** explica un cambio de símbolo.
+
+⭐ **Lo accionable:** un prompt propio que instrumente la resolución por lámina de `D-47` sobre
+`L-034` y conteste *¿por qué el resultado viene vacío?*. Evidencia completa en
+`docs/MEDICION_columna_envio_2026-09-08.md` §3.
+
+---
+
+## ⚠ P2 · «Las dos plantillas» no es una condición que se pueda exigir hoy (08/09/2026)
+
+El `2026-09-08_7` pedía como gate `G2` que `camp_env4_fecha` tuviera `{{` **en las dos plantillas**.
+⛔ **El repo lo desmiente:** los **220** marcadores de `MARCADORES` son `informe_id = jm` —los cinco
+`camp_envN_fecha` incluidos—, así que un gate que exigiera `secco` **sólo podría fallar**.
+
+⭐ **El gate quedó escrito como «exige `jm`, reporta `secco`»**, y el reporte no es decoración: el
+día que exista un marcador de `secco`, el log ya dice si el token está de ese lado.
+
+⚠ **La pregunta de fondo sigue abierta y no la resuelve este prompt:** *¿el informe `secco` va a
+tener marcadores propios, o comparte los de `jm`?* Hoy `INFORMES` declara los dos activos con
+familias distintas y **uno de los dos no tiene ni una fila**.
+
+---
+
 ## ⛔⛔ P0 · `camp_titulo` publica la campaña equivocada en `L-016` — **Parte 0, sólo lectura** (03/09/2026)
 
 **El hecho a explicar**, medido por el usuario sobre el `.pptx` de `secco` 28/08–03/09:

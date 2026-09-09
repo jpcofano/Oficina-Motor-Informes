@@ -1433,6 +1433,44 @@ los ocho; el parcial lo aplica `quitarRevisarDeMetaYGoogle()`.
 
 ---
 
+### 4.9 `L-047` — la columna «Envío» publica el ÁMBITO, no el mail — 08/09/2026
+
+**Decisión del usuario, 08/09/2026.** La primera columna de la tabla de *Desagregados · Mail* dice
+**`JM`** cuando el remitente es el mail de Jorge Macri y **`GCBA`** en cualquier otro caso. **No
+publica el mail.**
+
+⭐⭐ **Y es la MISMA condición que `DIMENSIONES_` ya aplica sobre `digital|Directa Mail`** —
+`ambito.jm` es `mail_remitente=jorge.macri@buenosaires.gob.ar` y `ambito.gcba` su negación. Eso no
+es una coincidencia cómoda: **si mañana cambia el mail de Jorge Macri, cambian las dos cosas o se
+desincronizan en silencio**, y el síntoma sería una tabla que dice `GCBA` mientras los `gcba_*` del
+Resumen Ejecutivo cuentan esa misma fila como JM. Quien toque una tiene que tocar la otra.
+
+⛔⛔ **HOY NO SE PUEDE ESCRIBIR, y el hueco es del DATO, no de la configuración.** Medido el
+08/09 sobre `docs/_fixtures/Seguimiento_Digital_2026-08-30.xlsx` (`sha256` verificado), con dos
+lectores independientes: de las **25 columnas** de la solapa, **ninguna** trae literalmente `JM` o
+`GCBA`. La única que particiona por ámbito es `G`, *Mail remitente* — **el mail crudo**.
+
+- ⛔ **`mail_area` (col `T`, «Área») era la candidata y NO discrimina:** trae 24 áreas de gobierno,
+  Jorge Macri aparece en **tres** (Jefatura de Gobierno 191, Seguridad 94, Salud 15) y *Jefatura de
+  Gobierno* **tampoco es exclusiva de JM** (12 filas de `baparticipacionciudadana@`). Falla en las
+  dos direcciones.
+- ⛔ **Y NO se cablea el mail crudo como salida de compromiso.** Llenaría el hueco publicando algo
+  que el equipo no publica, y **un hueco que parece cerrado es peor que un hueco**: el `/////` de
+  hoy manda a trabajar; un mail publicado no manda a nada.
+- ⭐ **Qué lo destraba, dicho con nombre:** una columna de ámbito en la base, que es `C-01` —la
+  base es del equipo—, no un alta de `MAPEO`. **Si hubiera una columna sin declarar, sería trabajo
+  de una tarde; no la hay.**
+
+**Estado hoy:** `camp_env1_rem` existe y publica `jorge.macri@buenosaires.gob.ar`; las otras cuatro
+no tienen fila y salen `/////`. `aplicarTanda20260908()` lleva las cinco listas **con el
+`campo_logico` vacío a propósito** —lo llena su gate `G1` con la columna que encuentre— así que el
+día que la columna exista, el cableado es apretar un botón.
+
+⚠ **La medición completa, con su procedencia y sus huellas:**
+`docs/MEDICION_columna_envio_2026-09-08.md`.
+
+---
+
 ## 5. Cómo se completa este documento
 
 A medida que el motor genere decks reales, cada **[?]** se resuelve y pasa a **[OK]**

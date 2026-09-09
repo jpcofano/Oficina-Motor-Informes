@@ -17907,3 +17907,101 @@ repo.** Es el mismo criterio que ya está escrito para `docs/_fixtures/*`, que s
 
 **Suites: 97 bancos, exit 0. `tools/listas.js`, exit 0. `clasp push` corrido dos veces, en su
 propio comando.** ⛔ **Falta la corrida**: esto escribió configuración y no publicó ningún número.
+
+---
+
+## `2026-09-08_7` — La tanda del 08/09, de un tirón: un botón, tres gates, y un P0 que apareció midiendo (08/09/2026)
+
+**Un solo wrapper** —`aplicarTanda20260908()`, con `diagAplicarTanda20260908()` en modo seco— en
+vez de partes que esperen turnos. Code hizo todo lo que puede hacer solo: medir sobre
+`docs/_fixtures/`, escribir, correr los controles, pushear y documentar. **Los botones son del
+usuario.**
+
+### ⛔⛔ Lo primero, porque cambia lo demás: `L-034` MANDÓ PARAR
+
+El prompt lo anticipaba en su Parte de medición y **se confirmó**. El censo del 22/08 dice que la
+lámina 5 usa **los mismos nombres** que la 2 —`cc_base`, `cc_contactados`, `cc_contact_pct`—; esas
+tres se cablearon el 08/09, **`L-031` publica `6.011 · 1.878 · 31,2 %`** y **`L-034` sale `/////`
+en el mismo deck**.
+
+⭐ **Y no son sólo los tres.** Cruzado contra el deck testigo del 22/08 (`sha256` `cd6f0050…`,
+huella verificada), **cuatro casilleros de `L-034` que PUBLICABAN pasaron a `/////`**:
+`Impresiones` (28.988.260), `Mails entregados` (538.276), `Aperturas (OR)` (210.707 (39,1 %)) y
+`Atendidos`, que era **`-`**.
+
+⭐⭐ **`-` → `/////` es la prueba limpia.** `textoFaltante_` lo dice con todas las letras: `-` es
+*«se preguntó bien y la respuesta fue vacía»* y `/////` es *«no hay fila, o no se resolvió»*.
+**Ningún cambio en el dato mueve un token de un símbolo al otro.** ⛔ Y no fue el presupuesto: un
+tramo no alcanzado deja el token **crudo**, y el mismo deck lo muestra en las láminas 21, 22 y 24
+(`{{m2_clics_a}}`, `{{rrss_*}}`). **`L-034` no está cruda: está resuelta a `/////`.**
+
+⇒ **Candidata: la resolución por lámina de `D-47`.** `CIERRE_POR_LAMINA` la había dejado *«sin
+verificar contra un deck»* **y declaró qué esperaba** — *«lo esperable en `L-034` no es otro
+número: es SIN DATO»*. **Salió `/////`.** ⛔ **No se le escribió ninguna fila**: un token que
+existe y no resuelve no se arregla con una fila, se **tapa**. Es el ítem **41**, P0.
+
+### ⛔ `G1` no pasa, y el hueco es del DATO, no de la configuración
+
+`D1` decidió que la columna «Envío» de `L-047` publique el **ámbito**. Medido con **dos lectores
+independientes** —`leer_xlsx_por_referencia.py` y `openpyxl`, que coinciden en 2.413 filas y 25
+encabezados— sobre el fixture del 30/08 con `sha256` verificado: **cero** de las 25 columnas trae
+literalmente `JM` o `GCBA`, y la única que particiona por ámbito es `Mail remitente` — **el mail
+crudo**.
+
+⛔ **`mail_area` era la candidata y NO discrimina**: 24 áreas de gobierno, Jorge Macri en **tres**
+(Jefatura de Gobierno 191, Seguridad 94, Salud 15), y *Jefatura de Gobierno* **tampoco es
+exclusiva de JM** (12 filas de otro remitente). Falla en las dos direcciones.
+
+⭐ **La distinción que hace el gate, y es la mitad que importa:** *no hay columna* (⇒ lo destraba
+el equipo, `C-01`) y *hay una y `MAPEO` no la declara* (⇒ un alta de una tarde) **se ven igual en
+un cero**. El gate las separa e imprime cuántas columnas barrió — un cero sin denominador no se
+distingue de *«no miré»*.
+
+⛔ **Y NO se cableó el mail crudo como salida de compromiso.** Llenaría el hueco publicando algo
+que el equipo no publica, y **un hueco que parece cerrado es peor que un hueco**.
+
+### ✅ `G2` — el token existe, y se midió desde el deck
+
+La tabla de `L-047`, leída **como tabla**: la fila 4 trae `/////` en Fecha y la fila 5 trae `-`.
+Un `/////` sólo lo emite un token **presente y sin fila** ⇒ `camp_env4_fecha` está en la plantilla
+viva, que es lo que `D2` declaraba. ✅ **Identidad interna que cierra:**
+121.789 + 145.744 + 176.870 = **444.403**, el GLOBAL.
+
+⚠ **Y una premisa del prompt que el repo desmiente, reportada en vez de aplicada:** `G2` pedía el
+token *«en las **dos** plantillas»*. Los **220** marcadores son `informe_id = jm`, así que exigir
+`secco` sería **un gate que sólo puede fallar**. Quedó como **exige `jm`, reporta `secco`**.
+
+### Lo que quedó escrito
+
+| | |
+|---|---|
+| **A** · las tres `gcba_cc_*` | copia de las de JM cambiando **sólo** `dimensiones`; `DIMENSIONES_.ambito.gcba` ya declaraba `acc_remitente=GCBA` desde el `_4` ⇒ **cero código nuevo**. Las tres con `_revisar` (`D4`) |
+| **B** · `camp_env4_fecha` | copia de `camp_env5_fecha` cambiando sólo `valor_fijo` |
+| **B** · las cinco `camp_envN_rem` | ⛔ **NO se escriben** — `G1`. Van en la lista con `campo_logico` **vacío a propósito**: lo llena el gate el día que la columna exista |
+| **C** · `L-034` | ⛔ **nada**, y ése es el resultado |
+| ⛔ `cc_campanias` · `gcba_cc_campanias` | hueco **deliberado**, `C-112` |
+
+⭐ **El `_revisar` de las tres no lo va a levantar el próximo barrido, y está verificado:**
+`CASOS_POR_MARCADOR_` da `gcba_cc_base` en **`cerrado`** (`C-108`) y **nada** para las otras dos.
+Ninguno de esos estados habilita a `D-60`.
+
+### El control, que no existía
+
+`tools/probar-tanda-20260908.js` — **41 afirmaciones** sobre las listas **reales** extraídas de
+`Instalar.gs` (evaluadas, no leídas con una regex: `FILAS_ENVIO_REM_` se construye con un `.map()`).
+Los formatos se prueban contra `formatearValorMarcador_` **extraída de `Generador.gs`**, así que un
+`entero_revisar` inventado se caza acá y no en el deck.
+
+⭐ **Tres afirmaciones NEGATIVAS son la mitad cara**, y se ponen rojas el día que alguien
+"complete" un hueco deliberado: que el `campo_logico` de las `_rem` esté **vacío**, que ningún
+`*_campanias` entre, que ninguna fila de `L-034` entre. ⚠ **Y los dos controles negativos EXIGEN
+que la mutación ocurra** — si el patrón no matchea, **falla** en vez de dar verde sobre el texto
+intacto.
+
+⚠ **Sobre qué artefacto afirma, declarado en su encabezado:** sobre las **listas**, no sobre la
+hoja. *«La fila es ésta»* y *«la hoja quedó así»* son dos afirmaciones, y la segunda la contesta la
+**relectura desde la hoja** que hace el wrapper.
+
+**Suites: 98 bancos, exit 0 · `tools/listas.js`, exit 0 · `clasp push` en su propio comando,
+después de leer el verde.** ⛔ **Falta la corrida**: esto escribió configuración y no publicó
+ningún número.
