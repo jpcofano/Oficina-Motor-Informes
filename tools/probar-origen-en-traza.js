@@ -80,6 +80,11 @@ function contexto(parchear) {
     despacharOperacion_: () => ({ ok: true, valor: 42, traza: 'ULTIMO fixture' }),
     parsearFechaCelda_: () => null,
     operacionNecesitaCatalogo_: () => false,
+    /* `2026-09-09_1` — la hermana OPCIONAL de la de arriba. Este banco no mide catálogos, así que
+     * las dos van en `false`: lo que le importa es que el despachador no tire por una función
+     * ausente. ⚠ Es la tercera enumeración del día que se quedó vieja al agregar algo — acá el
+     * síntoma fue ruidoso (`ReferenceError`) y por eso barato. */
+    operacionAdmiteCatalogo_: () => false,
     operacionNecesitaSeparador_: () => false,
     SEPARADOR_CONDICIONES_FILTRO_: 'Y'
   };

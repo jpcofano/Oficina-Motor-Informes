@@ -119,6 +119,22 @@ function resolverCatalogoDeMarcador_(fila) {
     catalogo: {
       lista: leido.barrios,
       resolver: parsearBarrio_,
+      /* ⭐⭐ `2026-09-09_1` camino A — **la TRADUCCIÓN viaja, y hasta hoy se perdía acá.**
+       * `catalogoBarriosDesdeBase_` devuelve `{ barrios, porBarrio }` —col A → col B— y este
+       * objeto sólo pasaba la lista. `LISTA` y `ELEMENTO` no la miran: **canonizan** un valor
+       * contra la lista y publican el canónico, que es otra operación.
+       * ⇒ Lo que faltaba para traducir `mail → JM/GCBA` era **pasar el mapa que ya estaba
+       * construido**, no leerlo de nuevo.
+       *
+       * ⚠ **El nombre `porBarrio` es del lector y no describe lo que hace acá**: la función es
+       * genérica —col A es la clave, col B el valor— y `rdv/Comunas` fue su primer uso, no su
+       * definición. Se renombra al cruzar esta frontera y no en `Parseo.gs`, porque allá el
+       * nombre sí describe a sus dos llamadores.
+       *
+       * ⚠ **Las claves vienen por `normalizar_`**, que pliega mayúsculas y acentos. Para un
+       * mail eso es exactamente lo que se quiere; para otra tabla puede no serlo, y por eso el
+       * consumidor normaliza con la MISMA función y no con otra. */
+      traduccion: leido.porBarrio || {},
       origen: baseId + '/' + solapa
     }
   };
@@ -1670,7 +1686,17 @@ function resolverMarcadores(informeId, opciones) {
      * ⚠ **Y por eso la condición pasa a preguntar por una PROPIEDAD y no por un nombre:** la
      * décima operación que use catálogo se va a olvidar de tocar esta línea, igual que se olvidó
      * la novena. */
-    if (operacionNecesitaCatalogo_(fila.operacion)) {
+    /* ⭐⭐ `2026-09-09_1` camino A — **dos preguntas distintas, y antes eran una.**
+     * `LISTA` y `ELEMENTO` **necesitan** catálogo: sin él no tienen contra qué canonizar y
+     * fallan. `FILA` lo **honra si la fila lo declara** y funciona igual sin él — son 45
+     * marcadores hoy y **ninguno** declara catálogo.
+     * ⛔ Meter `FILA` en `OPERACIONES_CON_CATALOGO_` habría hecho fallar a los 45 en la primera
+     * corrida, porque `resolverCatalogoDeMarcador_` devuelve error cuando la celda está vacía.
+     * ⭐ **Y si la declara y no resuelve, FALLA** — no se ignora en silencio: una celda escrita
+     * es una intención, y un catálogo que no abre publicaría el valor crudo. */
+    var declaraCatalogo = !!String(fila.catalogo || '').trim();
+    if (operacionNecesitaCatalogo_(fila.operacion) ||
+        (operacionAdmiteCatalogo_(fila.operacion) && declaraCatalogo)) {
       var cat = resolverCatalogoDeMarcador_(fila);
       if (!cat.ok) {
         base.estado = 'error';

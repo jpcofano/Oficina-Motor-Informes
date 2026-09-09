@@ -797,6 +797,27 @@ function operacionNecesitaCatalogo_(operacion) {
   return !!OPERACIONES_CON_CATALOGO_[String(operacion || '').trim()];
 }
 
+/**
+ * ⭐⭐ `2026-09-09_1` camino A — **las que HONRAN el catálogo si la fila lo declara, y funcionan
+ * igual sin él.**
+ *
+ * ⛔ **Es una lista distinta de la de arriba a propósito, no un descuido de no fusionarlas.**
+ * *«Lo necesito o fallo»* y *«lo uso si está»* son dos contratos, y meter `FILA` en el primero
+ * habría hecho fallar a los **45** marcadores que hoy la usan sin catálogo — `resolverCatalogoDeMarcador_`
+ * devuelve error cuando la celda está vacía.
+ *
+ * ⚠ **Y la asimetría que hay que conocer al agregar una tercera:** una operación de esta lista
+ * cambia lo que publica **según una celda de configuración**. Sin catálogo publica el valor
+ * crudo; con catálogo publica el traducido. **Eso es lo que la vuelve útil y también lo que la
+ * vuelve peligrosa**: la celda vacía no falla, así que un catálogo que alguien borra se lee como
+ * *«esta tabla no traduce»* y no como *«se perdió la traducción»*.
+ */
+var OPERACIONES_CON_CATALOGO_OPCIONAL_ = { FILA: true };
+
+function operacionAdmiteCatalogo_(operacion) {
+  return !!OPERACIONES_CON_CATALOGO_OPCIONAL_[String(operacion || '').trim()];
+}
+
 /* ===================== La décima: `FILA` (23/08/2026, `X-35`) ==========================
  *
  * **El campo X de la N-ésima FILA de una lista de entidades**, sin colapsar y con un orden
@@ -986,6 +1007,58 @@ function opFILA(ctx) {
   var clave = ctx.encabezado;
   var valor = (clave && (clave in elegida)) ? elegida[clave] : '';
 
+  /* ══════ ⭐⭐ `2026-09-09_1` camino A — LA TRADUCCIÓN POR CATÁLOGO ══════════════════════
+   *
+   * **Qué resuelve, y por qué acá y no mudando la fila de fuente.** La columna «Envío» de
+   * `L-047` tiene que publicar el **ámbito** (`JM`/`GCBA`) y `digital | Directa Mail` sólo trae
+   * la **dirección**. La traducción existe: `acumulado | Remitentes`, 30 filas `Mail → Remitente`.
+   *
+   * ⛔⛔ **La alternativa era mudar las cinco filas a `acumulado | Mail`, y se DESCARTÓ con
+   * motivo, no por preferencia** (decisión del usuario, 09/09): `camp_enviados`, `camp_or`,
+   * `camp_mail_clics` y `camp_ctor` tienen caso **`C-99` `exacto`** (04/09) y son el **GLOBAL**
+   * de esta misma tabla. Mudar cambia el universo del bloque —de *la ventana* a *todo el
+   * `Id cuentas`*, que es la rama declarativa de `D-30`—, y con eso el GLOBAL cambia y `C-99`
+   * deja de valer. **La preferencia de `D-61` no alcanza para invalidar un caso vigente.**
+   *
+   * ⭐ **Y quedarse acá tiene un beneficio que la mudanza no tenía: la alineación es por
+   * construcción.** Las cinco leen la misma solapa, la misma ventana y el mismo orden que los
+   * otros 40 tokens de la tabla, así que la fila 2 del deck no puede traer el remitente de otro
+   * envío. No hace falta un gate de alineación porque no hay dos listas que alinear.
+   *
+   * ⛔ **Un valor que el catálogo no cubre NO se publica ni crudo ni vacío: se RECHAZA.** Las dos
+   * salidas fáciles son peores que el `/////` — el crudo publica un mail donde el equipo publica
+   * un ámbito, y el vacío afirma que no había dato cuando lo había. Con el rechazo el valor sale
+   * vacío **con `rechazados`**, y el despachador lo baja a `REVISAR` → `---` (*«había filas y
+   * ninguna se pudo publicar»*, `R-18` addendum 1). **Se reusa el mecanismo de `LISTA`, no se
+   * inventa uno.**
+   *
+   * ⚠ **Se normaliza con `normalizar_`, la MISMA función con la que se construyeron las claves**
+   * en `catalogoBarriosDesdeBase_`. Dos normalizadores distintos a los dos lados de un mapa es
+   * cómo una tabla de traducción deja de matchear sin que nada falle. */
+  var rechazados = [];
+  if (ctx.catalogo && ctx.catalogo.traduccion) {
+    var crudoTrad = String(valor === null || valor === undefined ? '' : valor).trim();
+    var traducido = crudoTrad ? ctx.catalogo.traduccion[normalizar_(crudoTrad)] : '';
+    traducido = (traducido === null || traducido === undefined) ? '' : String(traducido).trim();
+    if (crudoTrad && !traducido) {
+      rechazados.push(crudoTrad);
+      return {
+        valor: '',
+        rechazados: rechazados,
+        filaElegida: elegida,
+        traza: 'FILA ' + n + ' de ' + total + ' · ⛔ **el catálogo `' +
+          (ctx.catalogo.origen || '(sin origen)') + '` no cubre ' + JSON.stringify(crudoTrad) +
+          '** — no se publica el crudo ni vacío: publicar el crudo pondría el valor de origen ' +
+          'donde va el traducido, y vacío afirmaría que no había dato. Agregar la fila al ' +
+          'catálogo, o sacarle el `catalogo` a este marcador.',
+        filas: total
+      };
+    }
+    /* Una celda vacía en la fuente **no es un rechazo**: es `sin_datos`, y ésa es una afirmación
+     * distinta —no había qué traducir—. Se deja pasar como vacío, sin `rechazados`. */
+    valor = traducido;
+  }
+
   var avisoEmpate = orden.empates
     ? ' ⚠ **' + orden.empates + ' empate(s) en `' + campoOrden + '` desempatados por orden de ' +
       'origen** — determinista y compartido por todos los marcadores de esta tabla, pero `R-32` ' +
@@ -1003,7 +1076,13 @@ function opFILA(ctx) {
     filaElegida: elegida,
     traza: 'FILA ' + n + ' de ' + total + ', ordenadas por `' + campoOrden + '`, campo "' +
       ctx.campo_logico + '" (col ' + ctx.columna + ') de ' + ctx.base_id +
-      (ctx.solapa ? '/' + ctx.solapa : '') + avisoEmpate + trazaDeVentana_(ctx),
+      (ctx.solapa ? '/' + ctx.solapa : '') +
+      /* ⭐ Que hubo traducción **va en la traza**: sin eso, un valor `JM` publicado se lee como
+       * si la columna de origen dijera `JM`, y la columna dice una dirección de mail. */
+      (ctx.catalogo && ctx.catalogo.traduccion
+        ? ' · traducido por el catálogo `' + (ctx.catalogo.origen || '(sin origen)') + '`'
+        : '') +
+      avisoEmpate + trazaDeVentana_(ctx),
     filas: total
   };
 }
