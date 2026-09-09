@@ -11895,3 +11895,413 @@ function aplicarTanda20260908_(aplicar) {
   Logger.log('  ⛔ Esto escribió configuración: no publicó ningún número. Falta la corrida.');
   return { ok: true, aplicado: true, escritas: plan.length, bloqueado: bloqueado, backup: bk.nombre };
 }
+
+
+/* ==========================================================================
+ * `2026-09-08_8` TRABAJO 2 — LAS CINCO `camp_envN_rem` DESDE `acumulado | Mail`
+ *
+ * ⛔⛔ **Corrige al `_7`, y la corrección va acá arriba porque es la premisa de todo lo demás.**
+ * El `G1` del `_7` barrió `digital/Directa Mail` —25 columnas, 0 candidatas— y concluyó *«la
+ * fuente no tiene el dato»*. **La fuente es otra:** `acumulado | Mail`, de *DGPLES - Directa
+ * acumulado*, la misma base que Call Center. ⭐ **El error no fue el barrido: fue que el gate
+ * nombraba una CONCLUSIÓN —«no hay columna»— en vez de nombrar la solapa que tenía que abrir.**
+ * Por eso los gates de abajo dicen `base|solapa` en cada línea que imprimen.
+ *
+ * ⛔⛔ **EL RIESGO QUE NO DESAPARECE, y es la razón de que `G2` exista.** Los otros 40 tokens de
+ * envío de `L-047` son `FILA` sobre **`digital | Directa Mail`**. Si el remitente sale de **otra
+ * solapa**, `valor_fijo = 2` toma **el segundo envío de esa solapa**, que no tiene por qué ser el
+ * segundo envío de la otra. ⇒ **la tabla quedaría completa y con el remitente de otro envío en
+ * cada fila.** Es **peor que el `/////`**, porque no se ve mirando el deck.
+ *
+ * ⛔ **Este wrapper NO hace el alta.** `SOLAPAS` y `MAPEO` se siembran por su camino declarado
+ * —`SEED_*` vía upsert, `docs/ESCRITORES.md`—, y las letras de columna salen de un censo que
+ * **todavía no se corrió**. `G0` exige que el alta esté y, si no está, **dice exactamente qué
+ * falta**. Escribir `MAPEO` desde acá sería un escritor no declarado, y adivinar una letra es
+ * inventar el faltante (`CLAUDE.md` §4).
+ * ========================================================================== */
+
+var BASE_REM_ = 'acumulado';
+var SOLAPA_REM_ = 'Mail';
+
+/** El campo lógico del ámbito en `acumulado | Mail`. **El nombre lo fija esta constante y el
+ *  `SEED_MAPEO_` lo copia**, no al revés: si los dos lo declararan por su cuenta, un renombre
+ *  dejaría al marcador buscando un campo que no existe y `buscarMapeo` fallaría con
+ *  `«FALTA:…»` — visible, pero una corrida tarde.
+ *
+ *  ⭐ Sigue la convención de la base: `acc_` es *acumulado / Call Center* (`acc_remitente`,
+ *  col Q, con los literales `JM` y `GCBA`), así que `acm_` es *acumulado / Mail*. */
+var CAMPO_AMBITO_MAIL_ = 'acm_remitente';
+
+/**
+ * Las cinco. **`camp_env1_rem` ya existe** —hoy sobre `digital/Directa Mail` con
+ * `mail_remitente`, publicando el mail crudo— y se **REESCRIBE**; las otras cuatro son alta.
+ *
+ * ⭐ **`_revisar` en las cinco, y el motivo está medido**: ningún caso las valida, y el
+ * diagnóstico del 08/09 dejó la regla explícita — **sin caso, el guión está bien**. Se levantan
+ * cuando una corrida las cruce contra el deck del equipo.
+ */
+var FILAS_ENVIO_REM_AMBITO_ = [1, 2, 3, 4, 5].map(function (n) {
+  return { marcador: 'camp_env' + n + '_rem', valor_fijo: n };
+});
+
+/**
+ * La lista ORDENADA de envíos de una solapa, armada **con las piezas del despachador** y no con
+ * un orden propio: `buscarMapeo` resuelve la columna, `claveDeFila_` la clave de lectura, y el
+ * orden lo hace **`filasOrdenadas_` (`Marcadores.gs`), que es la que corre en producción**.
+ *
+ * ⚠ Reimplementar el orden acá sería el instrumento que reproduce lógica del motor y la reproduce
+ * peor — y justo en la comparación de la que depende que la tabla no mezcle envíos.
+ */
+function envioOrdenadoDeSolapa_(baseId, solapa, ventana, campoOrden, camposExtra) {
+  var datos = leerFuente(baseId, ventana, solapa);
+  if (!datos.ok) return { ok: false, motivo: datos.motivo };
+
+  var mapOrden = buscarMapeo(baseId, solapa, campoOrden);
+  if (!mapOrden.ok) return { ok: false, motivo: mapOrden.motivo };
+
+  var claveOrden = claveDeFila_(datos.filas, campoOrden,
+    claveDeLecturaEnColumna_(baseId, solapa, mapOrden.columna));
+  var ctx = {
+    filas: datos.filas,
+    separador: campoOrden,
+    ordenPor: {
+      campo: campoOrden,
+      valores: datos.filas.map(function (o) {
+        var crudo = claveOrden && (claveOrden in o) ? o[claveOrden] : '';
+        return parsearFechaCelda_(crudo) || crudo;
+      })
+    }
+  };
+  var orden = filasOrdenadas_(ctx);
+
+  /* Los campos de corroboración: los que `MAPEO` resuelva. **Se declara cuáles entraron y cuáles
+   * no** — comparar sólo por fecha con dos envíos del mismo día no distingue nada, y un silencio
+   * ahí se lee como si la clave hubiera sido fuerte. */
+  var extras = {};
+  (camposExtra || []).forEach(function (campo) {
+    var m = buscarMapeo(baseId, solapa, campo);
+    if (m.ok) extras[campo] = claveDeFila_(datos.filas, campo, claveDeLecturaEnColumna_(baseId, solapa, m.columna));
+  });
+
+  var lista = orden.filas.map(function (f) {
+    var item = {};
+    Object.keys(extras).forEach(function (campo) {
+      item[campo] = normalizarValorDeclarado_(extras[campo] && (extras[campo] in f) ? f[extras[campo]] : '');
+    });
+    var crudo = claveOrden && (claveOrden in f) ? f[claveOrden] : '';
+    var fecha = parsearFechaCelda_(crudo);
+    item.orden = fecha ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'yyyy-MM-dd')
+                       : normalizarValorDeclarado_(crudo);
+    return item;
+  });
+
+  return { ok: true, lista: lista, empates: orden.empates,
+    filas_en_ventana: datos.filas.length, filas_totales: datos.filas_totales,
+    extras: Object.keys(extras) };
+}
+
+function diagAplicarRemitentes20260908() { return aplicarRemitentes20260908_(false); }
+function aplicarRemitentes20260908() { return aplicarRemitentes20260908_(true); }
+
+function aplicarRemitentes20260908_(aplicar) {
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('Remitentes desde `' + BASE_REM_ + ' | ' + SOLAPA_REM_ + '` — ' +
+    (aplicar ? 'ESCRIBE' : 'MODO SECO') + ' · ' + new Date().toISOString());
+  Logger.log('══════════════════════════════════════════════════════════════════════');
+  Logger.log('  ⛔ Este wrapper es el TRABAJO 2. No hace el alta: `SOLAPAS` y `MAPEO` se siembran');
+  Logger.log('     por su camino declarado. `G0` exige que ya esté, y dice qué falta si no.');
+  Logger.log('');
+
+  var v = resolverVentana({});
+  if (!v || !v.ok) {
+    Logger.log('  ⛔ ABORTA: la ventana no resuelve — ' + ((v && v.motivo) || 'sin motivo'));
+    return { ok: false, motivo: 'ventana' };
+  }
+  Logger.log('  ventana de ESTA medición: ' + v.desde + ' → ' + v.hasta + '   (' + (v.origen || '?') + ')');
+  Logger.log('  ⚠ Es la que resuelve HOY, NO la de la corrida: el deck va con `julio_24_30`.');
+  Logger.log('');
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hoja = ss.getSheetByName('MARCADORES');
+  if (!hoja) { Logger.log('⛔ ABORTA: no existe la hoja MARCADORES.'); return { ok: false }; }
+  var datos = hoja.getDataRange().getValues();
+  var headers = datos[0].map(function (h) { return String(h == null ? '' : h).trim(); });
+  var iM = headers.indexOf('marcador');
+  if (iM === -1) { Logger.log('⛔ ABORTA: MARCADORES no tiene columna `marcador`.'); return { ok: false }; }
+  var existentes = {};
+  for (var f = 1; f < datos.length; f++) {
+    var nm = String(datos[f][iM] || '').trim();
+    if (nm) existentes[nm] = f + 1;
+  }
+
+  /* ── TESTIGO ANTES ─────────────────────────────────────────────────────────────────── */
+  Logger.log('  ---- TESTIGO ANTES ----');
+  FILAS_ENVIO_REM_AMBITO_.forEach(function (x) {
+    var fi = existentes[x.marcador];
+    if (!fi) { Logger.log('     ' + (x.marcador + '              ').slice(0, 16) + '⛔ SIN FILA  →  publica `/////`'); return; }
+    var c = function (col) { var i = headers.indexOf(col); return i === -1 ? '?' : String(datos[fi - 1][i] || '').trim(); };
+    Logger.log('     ' + (x.marcador + '              ').slice(0, 16) + 'fila ' + fi + '   ' +
+      c('base_id') + '/' + c('solapa') + '   ' + c('campo_logico') + '   vf=' + c('valor_fijo') +
+      '   ' + c('formato'));
+  });
+  Logger.log('');
+
+  /* ── G0 · ¿EXISTE EL ALTA? ─────────────────────────────────────────────────────────────
+   * ⭐ El orden de las guardas es el de `cablearMinistros_`, y es asimétrico a propósito:
+   *   · `SOLAPAS`/`MAPEO` sin marcadores → **inerte**: nadie los lee.
+   *   · marcadores sin `SOLAPAS`/`MAPEO` → ⛔ **publica** el universo equivocado **sin fallar**. */
+  Logger.log('  ---- G0 · ¿`' + BASE_REM_ + ' | ' + SOLAPA_REM_ + '` está dada de alta? ----');
+  var falta = [];
+  var solapas = leerSolapas();
+  var decl = solapas[BASE_REM_] && solapas[BASE_REM_][SOLAPA_REM_];
+  if (!decl) {
+    falta.push('`SOLAPAS` no tiene la fila `' + BASE_REM_ + '/' + SOLAPA_REM_ + '` — falta el TRABAJO 1');
+  } else {
+    Logger.log('     uso = ' + JSON.stringify(decl.uso) + '   origen = ' + JSON.stringify(decl.origen) +
+      '   fila_encabezado = ' + JSON.stringify(decl.fila_encabezado));
+    var uso = normalizarValorDeclarado_(decl.uso);
+    if (uso === 'derivada') {
+      /* ⛔⛔ `R-02` excluye las derivadas como fuente. Si el censo en profundidad encontró
+       * fórmulas que referencian otra solapa, esto NO es un problema a resolver acá: el destrabe
+       * pasa a ser del equipo (`C-01`) y las cinco filas no salen de esta solapa. */
+      falta.push('la solapa está en `uso = derivada` — `R-02` la excluye como fuente. ' +
+        '⛔ El destrabe es del equipo (`C-01`), no de un cableado');
+    } else if (uso !== 'fuente') {
+      falta.push('la solapa está en `uso = ' + decl.uso + '` y tiene que estar en `fuente`');
+    }
+  }
+  [CAMPO_AMBITO_MAIL_, 'fecha_periodo'].forEach(function (campo) {
+    var m = buscarMapeo(BASE_REM_, SOLAPA_REM_, campo);
+    Logger.log('     ' + (campo + '                ').slice(0, 17) +
+      (m.ok ? '✅ col ' + m.columna : '⛔ ' + m.motivo));
+    if (!m.ok) falta.push('`MAPEO` no resuelve `' + campo + '` en `' + BASE_REM_ + '/' + SOLAPA_REM_ + '`');
+  });
+
+  if (falta.length) {
+    Logger.log('');
+    Logger.log('  ⛔⛔ G0 NO PASA — no se escribe NADA. Motivos:');
+    falta.forEach(function (g) { Logger.log('     · ' + g); });
+    Logger.log('');
+    Logger.log('  ⭐ QUÉ FALTA, con todas las letras — es el TRABAJO 1 y son TRES cosas:');
+    Logger.log('     1 · `censarSolapasSinRegistrarEnProfundidad()` sobre `' + SOLAPA_REM_ + '`, y');
+    Logger.log('         **leer si tiene fórmulas**: una que referencie otra solapa la hace');
+    Logger.log('         DERIVADA y `R-02` la excluye. Ahí el alta muere y esto no se corre más.');
+    Logger.log('     2 · la fila de `SOLAPAS` con `uso = fuente`. ⛔⛔ OJO CON EL ORDEN:');
+    Logger.log('         `inventariarSolapas()` da de alta con **`uso = revisar`**, y después');
+    Logger.log('         `usoAEscribir_` CONSERVA lo que dice la hoja — o sea que el seed **ya no');
+    Logger.log('         la puede promover a `fuente`** y hay que editar la celda A MANO.');
+    Logger.log('         ⭐ Si en cambio la fila del `SEED_SOLAPAS_` entra ANTES de que exista la');
+    Logger.log('         fila, es un ALTA y el `uso` del seed entra tal cual (`D-32`).');
+    Logger.log('     3 · las filas de `MAPEO`, indexadas POR LETRA y con su `encabezado` COPIADO');
+    Logger.log('         del censo (`D-31`: el encabezado es testigo, nunca fallback):');
+    Logger.log('           · `' + CAMPO_AMBITO_MAIL_ + '` — la columna del ámbito (`JM`/`GCBA`)');
+    Logger.log('           · `fecha_periodo`       — sin ella el `separador` de `FILA` no ordena');
+    return { ok: false, motivo: 'G0', detalle: falta };
+  }
+  Logger.log('     ✅ G0 pasa: la solapa es `fuente` y los dos campos resuelven contra `' + BASE_REM_ + '`.');
+  Logger.log('');
+  /* ── G1 · ¿LA COLUMNA TRAE `JM`/`GCBA` Y NADA MÁS? ─────────────────────────────────────
+   * ⚠ **Se mira el valor CRUDO al lado del normalizado, y no sólo el normalizado.** `'JM '` con
+   * espacio final ya apareció una vez en `Directa IVR` y **cayó en el ámbito contrario sin
+   * fallar**: `R-10` lo colapsa acá, pero el comparador de `DIMENSIONES_` no, y la celda que se
+   * publica es la cruda. Si crudo y normalizado difieren, se dice. */
+  Logger.log('  ---- G1 · ¿`' + CAMPO_AMBITO_MAIL_ + '` trae `JM`/`GCBA` en `' + BASE_REM_ + ' | ' + SOLAPA_REM_ + '`? ----');
+  var lecturaMail = envioOrdenadoDeSolapa_(BASE_REM_, SOLAPA_REM_, { desde: v.desde, hasta: v.hasta },
+    'fecha_periodo', [CAMPO_AMBITO_MAIL_, 'mail_enviados', 'acm_enviados', 'mail_campana']);
+  if (!lecturaMail.ok) {
+    Logger.log('     ⛔⛔ G1 NO PASA — no se pudo leer: ' + lecturaMail.motivo);
+    return { ok: false, motivo: 'G1: lectura', detalle: lecturaMail.motivo };
+  }
+  /* ⛔ **Cero filas no es «la columna está bien»: es que el gate no midió nada.** Un cero sin
+   * denominador se lee igual que un verde (`CLAUDE.md` §4). */
+  if (!lecturaMail.lista.length) {
+    Logger.log('     ⛔⛔ G1 NO PASA — la ventana devolvió CERO filas de ' + lecturaMail.filas_totales +
+      '. El gate no puede concluir nada sobre la columna.');
+    return { ok: false, motivo: 'G1: cero filas' };
+  }
+  var valores = {};
+  lecturaMail.lista.forEach(function (x) {
+    var val = x[CAMPO_AMBITO_MAIL_];
+    valores[val === '' ? '(vacía)' : val] = (valores[val === '' ? '(vacía)' : val] || 0) + 1;
+  });
+  Logger.log('     filas leídas: ' + lecturaMail.lista.length + ' de ' + lecturaMail.filas_totales +
+    '   ⚠ si el segundo número es mayor, el barrido NO es entero y se dice.');
+  Object.keys(valores).forEach(function (val) {
+    Logger.log('       ' + JSON.stringify(val) + '  ×' + valores[val]);
+  });
+  var ajenos = Object.keys(valores).filter(function (val) { return val !== 'JM' && val !== 'GCBA'; });
+  if (ajenos.length) {
+    Logger.log('     ⛔⛔ G1 NO PASA — la columna trae ' + ajenos.length + ' valor(es) que no son');
+    Logger.log('        `JM` ni `GCBA`: ' + ajenos.map(function (a) { return JSON.stringify(a); }).join(' · '));
+    Logger.log('        ⚠ Publicar eso pondría en la columna Envío algo que el equipo no publica.');
+    Logger.log('        ⛔ Y NO se escribe el mail crudo como salida de compromiso.');
+    return { ok: false, motivo: 'G1: valores ajenos', detalle: ajenos };
+  }
+  Logger.log('     ✅ G1 pasa: sólo `JM` y `GCBA`, ya normalizados en la fuente.');
+  Logger.log('');
+
+  /* ── G2 · ¿LAS DOS SOLAPAS ALINEAN ENVÍO POR ENVÍO? ────────────────────────────────────
+   * ⭐⭐ **Es el gate que importa, y el motivo está arriba**: los otros 40 tokens leen
+   * `digital|Directa Mail`, así que si el orden difiere la tabla sale **completa y con el
+   * remitente de otro envío en cada fila** — y eso no se ve mirando el deck. */
+  Logger.log('  ---- G2 · ¿`' + BASE_REM_ + '|' + SOLAPA_REM_ + '` alinea con `digital|Directa Mail`? ----');
+  var lecturaDig = envioOrdenadoDeSolapa_('digital', 'Directa Mail', { desde: v.desde, hasta: v.hasta },
+    'fecha_periodo', ['mail_enviados', 'mail_campana']);
+  if (!lecturaDig.ok) {
+    Logger.log('     ⛔⛔ G2 NO PASA — no se pudo leer `digital|Directa Mail`: ' + lecturaDig.motivo);
+    return { ok: false, motivo: 'G2: lectura', detalle: lecturaDig.motivo };
+  }
+
+  /* ⭐ Los dos conteos se declaran **aunque coincidan**: un cinco y un cinco declarados son un
+   * dato, un silencio no. */
+  Logger.log('     filas en la ventana — `digital|Directa Mail`: ' + lecturaDig.lista.length +
+    '   ·   `' + BASE_REM_ + '|' + SOLAPA_REM_ + '`: ' + lecturaMail.lista.length);
+  Logger.log('     campos de corroboración disponibles — digital: [' + lecturaDig.extras.join(', ') +
+    ']   ·   ' + BASE_REM_ + ': [' + lecturaMail.extras.join(', ') + ']');
+
+  var problemas = [];
+  if (lecturaDig.lista.length !== lecturaMail.lista.length) {
+    problemas.push('las dos solapas traen distinta cantidad de envíos en la misma ventana (' +
+      lecturaDig.lista.length + ' vs ' + lecturaMail.lista.length + ')');
+  }
+  /* ⚠ **Empates de fecha: la clave se debilita y hay que decirlo.** Dos envíos del mismo día
+   * ordenados por fecha quedan en un orden que sólo el desempate por posición decide, y comparar
+   * por fecha ahí **no prueba alineación**. */
+  if (lecturaDig.empates || lecturaMail.empates) {
+    problemas.push('hay empates de fecha (digital ' + lecturaDig.empates + ', ' + BASE_REM_ + ' ' +
+      lecturaMail.empates + '): con dos envíos del mismo día la fecha NO alcanza como clave');
+  }
+  var comunes = lecturaDig.extras.filter(function (c) { return lecturaMail.extras.indexOf(c) !== -1; });
+  if (!comunes.length) {
+    problemas.push('⚠ NO hay ningún campo de corroboración COMÚN a las dos solapas: la ' +
+      'comparación se apoya sólo en la fecha, y eso no distingue dos envíos del mismo día');
+  }
+  var n = Math.min(lecturaDig.lista.length, lecturaMail.lista.length);
+  Logger.log('     ---- envío por envío ----');
+  for (var i = 0; i < n; i++) {
+    var a = lecturaDig.lista[i], b = lecturaMail.lista[i];
+    var difs = [];
+    if (a.orden !== b.orden) difs.push('fecha ' + a.orden + ' ≠ ' + b.orden);
+    comunes.forEach(function (c) { if (a[c] !== b[c]) difs.push(c + ' ' + JSON.stringify(a[c]) + ' ≠ ' + JSON.stringify(b[c])); });
+    Logger.log('       ' + (i + 1) + ' · digital ' + a.orden + '   ·   ' + BASE_REM_ + ' ' + b.orden +
+      '   ámbito=' + JSON.stringify(b[CAMPO_AMBITO_MAIL_]) + (difs.length ? '   ⛔ ' + difs.join(' · ') : '   ✅'));
+    if (difs.length) problemas.push('envío ' + (i + 1) + ': ' + difs.join(' · '));
+  }
+
+  if (problemas.length) {
+    Logger.log('');
+    Logger.log('  ⛔⛔ G2 NO PASA — no se escribe NADA:');
+    problemas.forEach(function (p) { Logger.log('     · ' + p); });
+    Logger.log('     ⚠ Escribir igual dejaría la tabla COMPLETA y con el remitente de otro envío');
+    Logger.log('       en cada fila — peor que el `/////`, porque no se ve mirando el deck.');
+    Logger.log('     ⛔ Y NO se escribe el mail crudo como salida de compromiso.');
+    return { ok: false, motivo: 'G2', detalle: problemas };
+  }
+  Logger.log('     ✅ G2 pasa: los ' + n + ' envíos alinean' +
+    (comunes.length ? ' por fecha y por [' + comunes.join(', ') + ']' : ' por fecha') + '.');
+  Logger.log('');
+  /* ── EL PLAN ───────────────────────────────────────────────────────────────────────── */
+  var plan = FILAS_ENVIO_REM_AMBITO_.map(function (x) {
+    return { marcador: x.marcador, obj: {
+      marcador: x.marcador, familia: 'camp', informe_id: 'jm',
+      base_id: BASE_REM_, solapa: SOLAPA_REM_,
+      campo_logico: CAMPO_AMBITO_MAIL_, periodo_ref: '', operacion: 'FILA',
+      valor_fijo: x.valor_fijo, filtro: '', dimensiones: '', formato: 'texto_revisar',
+      catalogo: '', separador: 'fecha_periodo',
+      notas: '2026-09-08_8 — la columna Envio de L-047 publica el AMBITO, no el mail (D1). Sale ' +
+        'de ' + BASE_REM_ + '|' + SOLAPA_REM_ + ', donde el remitente ya viene normalizado a ' +
+        'JM/GCBA, y NO de digital|Directa Mail, que no tiene ninguna columna con ese valor ' +
+        '(medido el 08/09 sobre las 25, con dos lectores). ⚠ Los otros 40 tokens de envio leen ' +
+        'digital|Directa Mail: la alineacion envio por envio la verifico el gate G2 el dia que ' +
+        'se escribio esta fila, y NO se revalida en cada corrida. Nace con _revisar: ningun caso ' +
+        'la valida.'
+    } };
+  });
+
+  var faltanCols = [];
+  Object.keys(plan[0].obj).forEach(function (k) { if (headers.indexOf(k) === -1) faltanCols.push(k); });
+  if (faltanCols.length) {
+    Logger.log('⛔ ABORTA: MARCADORES no tiene la(s) columna(s): ' + faltanCols.join(', '));
+    return { ok: false, motivo: 'columnas faltantes' };
+  }
+
+  Logger.log('  ---- EL PLAN ----');
+  plan.forEach(function (p) {
+    Logger.log('     ' + (existentes[p.marcador] ? 'REEMPLAZA (fila ' + existentes[p.marcador] + ')' : 'alta                ') +
+      '  ' + (p.marcador + '              ').slice(0, 16) + BASE_REM_ + '/' + SOLAPA_REM_ +
+      '  ' + CAMPO_AMBITO_MAIL_ + '  FILA vf=' + p.obj.valor_fijo + '  → ' + p.obj.formato);
+  });
+  Logger.log('     ⚠ `camp_env1_rem` es REEMPLAZO, no alta: hoy publica el mail crudo desde');
+  Logger.log('       `digital/Directa Mail` y pasa a leer el ámbito desde la solapa nueva.');
+
+  if (!aplicar) {
+    Logger.log('');
+    Logger.log('  MODO SECO — no se escribió nada. Para aplicar: `aplicarRemitentes20260908()`.');
+    return { ok: true, aplicado: false, a_escribir: plan.length };
+  }
+
+  var bk = backupMarcadores_('remitentes_acumulado');
+  if (!bk.ok) {
+    Logger.log('  ⛔ ABORTA (no se escribió nada): backup — ' + bk.motivo);
+    return { ok: false, motivo: 'backup: ' + bk.motivo };
+  }
+  Logger.log('');
+  Logger.log('  ✅ backup: `' + bk.nombre + '`');
+
+  plan.forEach(function (p) {
+    var valores = headers.map(function (h) { return (h in p.obj) ? p.obj[h] : ''; });
+    if (existentes[p.marcador]) hoja.getRange(existentes[p.marcador], 1, 1, headers.length).setValues([valores]);
+    else hoja.appendRow(valores);
+  });
+  SpreadsheetApp.flush();
+
+  /* ── RELECTURA DESDE LA HOJA, marcador por marcador ────────────────────────────────────
+   * ⭐⭐ Un escritor que informa lo que escribió no verifica nada. Y en Sheets la relectura no es
+   * paranoia: la celda pasa por la interpretación automática de tipos —`valor_fijo` va entero
+   * pelado justamente por eso (`C-83`)—. */
+  var releido = ss.getSheetByName('MARCADORES').getDataRange().getValues();
+  var hs = releido[0].map(function (h) { return String(h == null ? '' : h).trim(); });
+  var iMr = hs.indexOf('marcador');
+  var porNombre = {};
+  for (var r = 1; r < releido.length; r++) {
+    var n3 = String(releido[r][iMr] || '').trim();
+    if (n3) porNombre[n3] = releido[r];
+  }
+  var revisadas = ['base_id', 'solapa', 'campo_logico', 'operacion', 'valor_fijo',
+    'filtro', 'dimensiones', 'formato', 'separador', 'informe_id'];
+  var malas = [];
+  Logger.log('');
+  Logger.log('  ---- RELECTURA desde la hoja ----');
+  plan.forEach(function (p) {
+    var fila = porNombre[p.marcador];
+    if (!fila) { malas.push(p.marcador + ': NO quedó en la hoja'); return; }
+    revisadas.forEach(function (c) {
+      var quedo = String(fila[hs.indexOf(c)] == null ? '' : fila[hs.indexOf(c)]).trim();
+      var pedi = String(p.obj[c] == null ? '' : p.obj[c]).trim();
+      if (quedo !== pedi) malas.push(p.marcador + ': `' + c + '` pedí ' + JSON.stringify(pedi) + ' y quedó ' + JSON.stringify(quedo));
+    });
+    Logger.log('     ' + (p.marcador + '              ').slice(0, 16) +
+      fila[hs.indexOf('base_id')] + '/' + fila[hs.indexOf('solapa')] + '   ' +
+      fila[hs.indexOf('campo_logico')] + '   vf=' + fila[hs.indexOf('valor_fijo')] +
+      '   ' + fila[hs.indexOf('formato')]);
+  });
+  if (malas.length) {
+    Logger.log('  ⛔⛔ LA RELECTURA NO COINCIDE — backup `' + bk.nombre + '`:');
+    malas.forEach(function (m) { Logger.log('     · ' + m); });
+    return { ok: false, motivo: 'relectura', detalle: malas, backup: bk.nombre };
+  }
+  Logger.log('     ✅ las cinco quedaron como se pidieron, leídas DE LA HOJA.');
+
+  Logger.log('');
+  Logger.log('  ⭐⭐ EL CONTROL DE LA CORRIDA — `jm` con `periodo_id = julio_24_30`:');
+  Logger.log('     · ¿La fila 1 de la columna Envío dice `JM`? Hoy publica el mail de Jorge Macri.');
+  Logger.log('       ⛔ **Si dice `GCBA`, la alineación se corrió: revertir con `' + bk.nombre + '`.**');
+  Logger.log('     · ¿Las cinco publican, ENTRE GUIONES?');
+  Logger.log('     · ⛔ ¿Cada Envío se corresponde con su fila? Cruzar contra `camp_envN_enviados`,');
+  Logger.log('       que ya publica. **Es la única forma de ver una desalineación.**');
+  Logger.log('     · ¿`camp_env4_fecha` publica? Se escribió en el `_7` y su corrida quedó pendiente.');
+  Logger.log('     · ⛔⛔ ¿Cambió algún otro valor? **No debería.** Si se movió uno, **parar**.');
+  Logger.log('');
+  Logger.log('  ⛔ Esto escribió configuración: no publicó ningún número. Falta la corrida.');
+  return { ok: true, aplicado: true, escritas: plan.length, backup: bk.nombre };
+}
