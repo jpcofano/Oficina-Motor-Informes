@@ -90,54 +90,58 @@ Quedó como **exige `jm`, reporta `secco`**. Está en `PENDIENTES` como P2.
 
 ## ⛔ LO QUE HAY QUE CORRER, Y ES TUYO
 
-0. ⭐ **`clasp push` está al día** — 09/09 12:08, en su propio comando, tras leer el verde de las
+0. ⭐ **`clasp push` está al día** — 09/09 12:48, en su propio comando, tras leer el verde de las
    99 suites.
 
-⛔⛔ **EL ORDEN DE LOS DOS PRIMEROS NO ES NEGOCIABLE, y es lo único que puede arruinar el alta.**
-`inventariarSolapasDeAcumulado()` da de alta con **`uso = 'revisar'`**, y después `usoAEscribir_`
-**conserva lo que dice la hoja** (`D-32`, y el gate es sobre `uso`, **no** sobre `origen`). ⇒ si el
-inventario corre primero, **el seed ya no puede promoverla a `fuente`** y hay que editar la celda a
-mano. `usoAEscribir_` lo dice del otro lado: *«INSERTAR NUNCA ES DEGRADAR»*.
+⛔⛔ **EL ORDEN DE LOS DOS PRIMEROS NO ES NEGOCIABLE.** `inventariarSolapasDeAcumulado()` da de alta
+con **`uso = 'revisar'`**, y después `usoAEscribir_` **conserva lo que dice la hoja** (`D-32`, y el
+gate es sobre `uso`, **no** sobre `origen`). ⇒ si el inventario corre primero, **el seed ya no la
+puede promover** y hay que editar la celda a mano.
 
 ### Primero el alta
 
-1. ⭐⭐ **Aplicar configuración** — siembra las **siete** solapas de `acumulado` y las **tres**
-   filas de `MAPEO`. **Va ANTES del inventario.**
+1. ⭐⭐ **Aplicar configuración** — siembra las **siete** solapas de `acumulado` (entre ellas
+   `Remitentes`, que es **el catálogo**) y las tres filas de `MAPEO`. **Va ANTES del inventario.**
 2. **`inventariarSolapasDeAcumulado()`** — el inventario **acotado a una base**.
    ⛔ **No corras `inventariarSolapas()`**: recorre las siete bases y **murió por timeout el 09/09**.
-3. ⭐ Verificar en `SOLAPAS` que `acumulado | Mail` quedó en **`uso = fuente`** y con
-   **`campo_id_cuenta = acm_id_cuenta`**. ⛔ Si dice `revisar`, el orden se invirtió: se arregla
-   editando esa celda.
+3. ⭐ Verificar en `SOLAPAS` que `acumulado | Remitentes` quedó en **`uso = referencia`**.
+   ⚠ `referencia` alcanza: el catálogo se abre con `abrirHoja`, que **no consulta `usoSolapa_`**.
 
-### Después las cinco filas
+### Después las cinco filas — camino `A`
 
-4. **`diagAplicarRemitentes20260908()`** — seco. Sus tres gates corren antes de escribir:
-   `G0` exige el alta · `G1` exige que `Remitente` (AI) traiga `JM`/`GCBA` y nada más · ⭐⭐ `G2`
-   exige que las dos solapas **alineen envío por envío**.
-5. **`aplicarRemitentes20260908()`** — escribe las cinco `camp_envN_rem`.
+4. **`diagAplicarRemitentes20260908()`** — seco. Tres gates antes de escribir:
+   `G0` el catálogo abre y trae entradas · `G1` traduce sólo a `JM`/`GCBA` ·
+   ⭐⭐ `G2` **COBERTURA**: si algún remitente de la ventana no está en las 30 filas, **PARA y lo
+   lista**. ⚠ Además mide la **divergencia** entre las dos solapas como **hallazgo**, sin bloquear.
+5. **`aplicarRemitentes20260908()`** — escribe. ⭐ **Congela primero los validados de `L-047`**; si
+   no puede congelar, **no escribe**.
 6. **`aplicarTanda20260908()`** — las tres `gcba_cc_*` y `camp_env4_fecha`, del `_7`, **todavía sin
-   correr**. (Su `diag` seco primero, si querés leerlo.)
+   correr**.
 7. **Corrida de `jm` con `periodo_id = julio_24_30`** — ⛔ **no el default de `R-11`**.
+8. ⭐⭐ **`verificarValidadosL047()`** — el gate de la Parte C. ⛔ **Si algún validado se movió,
+   revertir con el backup y reportar. Sin excepción.**
 
 ### Independientes
 
-8. **`censarTokensSinLlaves()`** — escrito el 03/09, **nunca corrido**.
-9. **`diagGuionesPorLamina()`** — sólo para tener la lista fechada. ⛔ **No corras
-   `aplicarGuionesValidados()`**.
+9. **`censarTokensSinLlaves()`** — escrito el 03/09, **nunca corrido**.
+10. **`diagGuionesPorLamina()`** — sólo para la lista fechada. ⛔ **No corras
+    `aplicarGuionesValidados()`**: este prompt **no levanta ningún `_revisar`**.
 
 ### ⭐⭐ Lo que la corrida tiene que contestar
 
-- ⛔⛔ **¿Cambió algún valor que ya se publicaba?** **No debería.** Si se movió uno, **parar**.
-- ⭐⭐ **¿La fila 1 de la columna Envío dice `JM`?** Hoy publica el mail de Jorge Macri. ⛔ **Si dice
-  `GCBA`, la alineación se corrió: revertir con el backup.**
-- ⛔ **¿Cada Envío se corresponde con su fila?** Cruzar contra `camp_envN_enviados`, que ya publica.
-  **Es la única forma de ver una desalineación**, y `G2` la verifica **el día que se escribe la
-  fila, no en cada corrida**.
+- ⛔⛔ **¿Cambió algún valor que ya se publicaba?** **No debería.** Lo mide el botón 8.
+- ⭐⭐ **¿La fila 1 de la columna Envío dice `JM`?** Hoy publica el mail de Jorge Macri.
+- ¿Las cinco publican, **entre guiones**?
+- ⛔ **Un `---` en esa columna es un remitente FUERA del catálogo**, no un error de lectura: el
+  valor está y no se pudo traducir. Se agrega la fila a `acumulado | Remitentes` y se corre de nuevo.
+- ⛔ **¿Cada Envío se corresponde con su fila?** Cruzar contra `camp_envN_enviados`. ⭐ Con el
+  camino `A` **alinean por construcción** —misma solapa, misma ventana, mismo orden—, así que un
+  desajuste acá sería un bug de `opFILA`, no de configuración.
 - `L-031` tiene que seguir en **6.011 / 1.878 / 31,2 %**.
 - `L-032` — ¿`gcba_cc_base` y `gcba_cc_contactados` publican **entre guiones** y **distintos** de
-  los de JM? Si dan lo mismo, el ámbito no discriminó.
+  los de JM?
 - `L-047` fila 4 — ¿la Fecha publica, o sigue `/////`?
-- `L-034` — ⛔ **no cambia nada acá**; su `/////` es el hallazgo (ítem 41), no el hueco.
+- `L-034` — ⛔ **no cambia nada acá**; su `/////` es el hallazgo (ítem 41).
 
 ⛔ **Antes de levantar cualquier `_revisar`:** `revisarASinValidar_` **lo repone** si `notas` sigue
 diciendo `SIN VALIDAR`.
@@ -229,9 +233,9 @@ y `_7`. **Lo ejecutado no se renumera.**
 
 ---
 
-## La cola — **46 ítems, 15 cerrados**
+## La cola — **47 ítems, 15 cerrados**
 
-Vive en **`docs/PLAN.md` §2**, no acá. `[x]` 15 · `[~]` 3 · `[ ]` 28.
+Vive en **`docs/PLAN.md` §2**, no acá. `[x]` 15 · `[~]` 4 · `[ ]` 28.
 
 ```
 grep -o '^| `\[.\]` \*\*[0-9]*\*\*' docs/PLAN.md | grep -o '\[.\]' | sort | uniq -c
@@ -242,8 +246,10 @@ grep -o '^| `\[.\]` \*\*[0-9]*\*\*' docs/PLAN.md | grep -o '\[.\]' | sort | uniq
   remitente NO estaba sin normalizar: lo está, en otra solapa.**
 - ⛔ **41, P0** — `L-034` publica `/////` sobre tokens que resuelven.
 - 🟡 **42 pasó a `[~]`**: el alta **está escrita en el seed**; falta sembrarla.
-- ⭐ **43 nuevo** — la **cola de mudanzas** a `acumulado`, declarada y NO ejecutada: los 40 tokens
-  de envío, los 15 `ivr_*`, los 2 de SMS. Cada una mueve números y va en su propio deck.
+- ⭐ **43** — la **cola de mudanzas**, ahora **con su condición de entrada**: un marcador se muda
+  sólo cuando exista un caso que valide su universo NUEVO, o cuando no tenga caso vigente que
+  romper. ⛔ Los 40 tokens de envío quedan **bloqueados por `C-99`**.
+- 🟡 **47 nuevo** — `opFILA` honra `catalogo`: escrito y pusheado, **sin correr**.
 - ⚠ **44 nuevo** — `looker | CC` duplica a `acumulado | Call Center - Métricas`. ⭐ **Medido: CERO
   marcadores la leen**, así que la duplicación es declarativa y apagarla sería inerte hoy.
 - ⭐ **45 nuevo** — `acumulado | Call Center - Campañas` es un **candidato nuevo para

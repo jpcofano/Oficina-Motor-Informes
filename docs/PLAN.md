@@ -3195,6 +3195,38 @@ duplicación se resuelve **a favor de `acumulado`**; pero **primero hay que sabe
 inerte hoy. ⚠ El snapshot es del 31/08 y la hoja se movió después; **el cero se confirma con un
 snapshot nuevo antes de tocar la celda.**
 
+#### ⭐⭐ El corolario que la primera aplicación obligó a escribir: **cuando la preferencia y un caso vigente chocan, GANA EL CASO**
+
+**Decisión del usuario, 09/09/2026, el mismo día y sobre el primer caso real.**
+
+**Qué pasó.** La preferencia decía *«las cinco `camp_envN_rem` se mudan a `acumulado | Mail`»*.
+⛔ **No se mudaron**, y no por gusto: `camp_enviados`, `camp_or`, `camp_mail_clics` y `camp_ctor`
+tienen caso **`C-99` `exacto`** (04/09) y son el **GLOBAL** de `L-047` —la suma del bloque de
+envíos—. La mudanza **cambia el universo del bloque**: de *«la ventana»* a *«todo el `Id
+cuentas`»*, que es la rama declarativa de `D-30`. ⇒ **el GLOBAL cambia y `C-99` deja de valer.**
+
+⭐⭐ **La regla, en una línea: una preferencia de fuente NO alcanza para invalidar un caso
+`exacto` vigente.** Un caso es un número **medido contra una referencia externa**; una preferencia
+es un criterio de diseño. Cuando se cruzan, **el que tiene evidencia manda**.
+
+⭐ **Y esto le da a la cola de mudanzas (§2, ítem 43) la condición de entrada que le faltaba para
+ser accionable:** cada marcador de esa cola se muda **sólo** cuando
+
+1. exista un caso que **valide su universo NUEVO**, o
+2. **no tenga caso vigente que romper**.
+
+⚠ **Sin esa condición, la cola era una lista de intenciones**: decía *qué* mudar y no *cuándo*, y
+la primera mudanza habría roto cuatro casos sin que nadie lo notara hasta comparar el deck.
+
+⛔ **Lo que esto NO dice:** que la mudanza esté mal. Dice que **primero se valida el universo
+nuevo y después se muda**, no al revés.
+
+⭐ **Y hay un beneficio de quedarse que la preferencia no contemplaba, y conviene tenerlo escrito
+porque puede repetirse:** las cinco filas leen ahora **la misma solapa, la misma ventana y el
+mismo orden** que los otros 40 tokens de su tabla, así que **alinean por construcción**. Mudarlas
+habría creado dos listas que hay que verificar que coincidan **en cada corrida**; quedarse elimina
+la pregunta en vez de contestarla.
+
 #### El corolario de esquema: **espejo** no es **derivada**
 
 ⛔ **Un gate de `R-02` escrito como *«tiene fórmulas ⇒ derivada»* habría dejado afuera la base
@@ -3272,7 +3304,8 @@ sigue vigente.
 | `[ ]` **40** | ⚠ **`cc_contact_pct` de agosto nace SIN VALIDAR** | `C-116`. Se mide **24 %** y **no hay ningún porcentaje publicado** para `14–20/08` en el repo — se buscó en el bloque `resumen_ejecutivo_jm` entero. **No se inventa un esperado.** Lo cierra un deck del equipo de esa ventana |
 | `[ ]` **41** | ⛔⛔ **`L-034` publica `/////` sobre tokens que TIENEN fila y resuelven en `L-031`** | **P0.** Los tres `cc_*`, más `Impresiones`, `Mails entregados`, `Aperturas (OR)` y `Atendidos` — los cuatro últimos **publicaban el 22/08**. ⭐⭐ **`-` → `/////` es la prueba limpia**: `-` es *«no había dato»* y `/////` es *«no se resolvió»*, así que el dato no lo explica; y no fue un corte, porque un tramo no alcanzado deja el token **crudo** —el mismo deck lo muestra en las láminas 21, 22 y 24—. ⇒ candidata: la resolución **por lámina** de `D-47`, que `CIERRE_POR_LAMINA` declaró *«sin verificar contra un deck»* esperando **SIN DATO**. ⛔ **No se le escriben filas: taparía el síntoma.** Evidencia: `MEDICION_columna_envio_2026-09-08.md` §3 y `PENDIENTES` P0 del 08/09 |
 | `[~]` **42** | 🟡 **El alta de `acumulado \| Mail` está ESCRITA en el seed; falta sembrarla** | ⭐ **09/09:** `SEED_SOLAPAS_` trae las siete solapas de `acumulado` y `SEED_MAPEO_` las tres columnas que la Parte B necesita —`acm_remitente` (AI), `acm_id_cuenta` (A), `fecha_periodo` (F)—. `aplicarRemitentes20260908()` ya escribe las cinco `camp_envN_rem` contra esa solapa. ⛔⛔ **Lo único que puede arruinarlo es el ORDEN:** `inventariarSolapasDeAcumulado()` da de alta con `uso = revisar` y después `usoAEscribir_` conserva lo de la hoja (`D-32`), así que **el seed va PRIMERO**. `D-61` · `CONFIG_INFORMES` §4.9 |
-| `[ ]` **43** | ⭐ **La COLA de mudanzas a `acumulado`, declarada y NO ejecutada** | `D-61` prefiere `acumulado` **y no autoriza a mudar de arrastre**: cada mudanza mueve números publicados y **va en su propio deck**. Los candidatos, con su destino: los **40** tokens de envío de `L-047` (`digital\|Directa Mail` → `acumulado\|Mail`) · los **15** `ivr_*` (`digital\|Directa IVR` → `acumulado\|IVR`) · los **2** de SMS (`digital\|Directa SMS` → `acumulado\|SMS`) · los `cc_*` que quedan. ⚠ **Y en el camino `B` de la Parte B quedan DOS solapas alimentando la misma tabla** —las cinco `_rem` en `acumulado` y los 40 en `digital`—: es la figura de la mudanza a medias de los `imp_*` y **se declara como deuda, no se absorbe** |
+| `[ ]` **43** | ⭐ **La COLA de mudanzas a `acumulado`, con su CONDICIÓN DE ENTRADA** | ⭐⭐ **La condición es lo que la vuelve accionable (09/09):** cada marcador se muda **sólo** cuando **(a)** exista un caso que valide su **universo NUEVO**, o **(b)** **no tenga caso vigente que romper**. ⛔ Sin eso era una lista de intenciones —decía *qué* mudar y no *cuándo*—, y la primera mudanza habría roto **cuatro** casos `exacto` sin que nadie lo notara hasta comparar el deck. **Los candidatos, con su destino:** los **40** tokens de envío de `L-047` (⛔ **bloqueados por `C-99`**) · los **15** `ivr_*` (`digital\|Directa IVR` → `acumulado\|IVR`) · los **2** de SMS · los `cc_*` que queden. ⚠ Y hoy **no hay dos solapas alimentando la tabla**: el camino `A` dejó las cinco `camp_envN_rem` en la solapa vieja, así que **alinean por construcción** |
+| `[~]` **47** | 🟡 **`opFILA` honra `catalogo` — escrito y pusheado, sin correr** | ⭐⭐ Es lo que habilita el camino `A`: las cinco `camp_envN_rem` leen `mail_remitente` —la dirección— y la **traducen** con `acumulado/Remitentes`. ⭐ **Dos mapas y no uno:** `LISTA`/`ELEMENTO` **necesitan** catálogo; `FILA` lo honra **si la fila lo declara**. Meter `FILA` en el primero habría hecho fallar a los **45** marcadores que hoy la usan sin catálogo. ⛔ Un valor fuera del catálogo **no publica ni el crudo ni vacío**: deja `rechazados` y baja a `REVISAR` → `---`. ⚠ **Falta la corrida**: la inertidad para los otros 40 tokens está probada en banco, no en un deck |
 | `[ ]` **44** | ⚠ **`looker \| CC` es `uso = fuente` midiendo lo mismo que `acumulado \| Call Center - Métricas`** | Dos fuentes para un número. `D-61` la resuelve **a favor de `acumulado`**. ⭐ **Medido el 09/09 sobre el snapshot del 31/08: CERO marcadores la leen** ⇒ la duplicación es **declarativa**, no de lectura, y cambiarle el `uso` sería **inerte hoy**. ⚠ El snapshot es del 31/08 y la hoja se movió: **confirmar el cero con un snapshot nuevo antes de tocar la celda**. ⚠ Y `looker\|IVR` (197) y `looker\|SMS` (103) espejan las mismas filas exactas que sus gemelas de `acumulado`, pero están en `ignorar` y no hacen daño |
 | `[ ]` **45** | ⭐ **`cc_campanias` tiene un candidato NUEVO que la medición del 04/09 no tenía** | `acumulado \| Call Center - Campañas` — 2.975 filas con `Id cuentas` (C), nombre (D) y `Remitente` (E): **un universo contable**, que es justo lo que a `C-112` le faltaba. ⛔ **No desempata solo:** hay que medirlo contra las dos ventanas testigo antes de cablear. La solapa ya está registrada `fuente` y **DISPONIBLE, sin marcadores** |
 | `[ ]` **46** | ⚠ **El grano semanal de impresiones DIGITALES** — reformulado el 09/09 | ⛔ **La afirmación vieja era más grande de lo cierto:** *«ninguna solapa guarda impresiones por semana»* se escribió el 30/08 midiendo `looker` y `digital`, y **para Directa es FALSA** — `acumulado` trae `Mail x Sem x Rem`, `Herramientas x Semana`, `Implementaciones` y una columna `semana` fila por fila en `Mail`. ⚠ **Eso NO cierra el bloqueante**: los agregados son **por semana y no por campaña**, y son Directa, no impresiones digitales. ⛔ **La pata digital queda EN ESPERA por decisión del usuario (09/09)**: declarada abierta con dueño, no medida acá y no dada por resuelta |

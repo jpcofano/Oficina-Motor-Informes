@@ -18189,3 +18189,97 @@ están escritas»* y *«`CIERRE_POR_LAMINA` dice que cablear uno pinta las dos»
 
 **Suites: 99 bancos, exit 0 · `tools/listas.js`, exit 0 · `clasp push` en su propio comando,
 después de leer el verde.** ⛔ **Falta sembrar y correr.**
+
+
+---
+
+## `2026-09-09_1` Parte B — Camino `A`: gana el caso, no la preferencia (09/09/2026)
+
+**Decisión del usuario sobre la bifurcación.** Las cinco `camp_envN_rem` **se quedan** en
+`digital | Directa Mail` y publican el ámbito **traduciendo** con `catalogo = acumulado/Remitentes`.
+El camino `B` —mudarlas— queda descartado para esta vuelta.
+
+### ⭐⭐ El motivo, que es lo que hay que dejar escrito y no la preferencia
+
+`camp_enviados`, `camp_or`, `camp_mail_clics` y `camp_ctor` tienen caso **`C-99` `exacto`** (04/09)
+y son el **GLOBAL** de `L-047`. Mudar el bloque cambia su universo —de *«la ventana»* a *«todo el
+`Id cuentas`»*, que es la rama declarativa de `D-30`— y **con eso el GLOBAL cambia y `C-99` deja de
+valer**.
+
+⇒ **`D-61` gana un corolario: una preferencia de fuente NO alcanza para invalidar un caso vigente.
+Cuando chocan, gana el caso.** Un caso es un número medido contra una referencia externa; una
+preferencia es un criterio de diseño. **Manda el que tiene evidencia.**
+
+⭐ **Y le da a la cola del ítem 43 la condición de entrada que le faltaba:** cada marcador se muda
+**sólo** cuando exista un caso que valide su **universo nuevo**, o cuando **no tenga caso vigente
+que romper**. ⛔ Sin eso la cola decía *qué* mudar y no *cuándo*, y la primera mudanza habría roto
+cuatro casos sin que nadie lo notara hasta comparar el deck.
+
+⭐ **Un beneficio de quedarse que la preferencia no contemplaba:** las cinco leen ahora la misma
+solapa, la misma ventana y el mismo orden que los otros 40 tokens de su tabla, así que **alinean
+por construcción**. Mudarlas habría creado dos listas que verificar **en cada corrida**; quedarse
+**elimina la pregunta en vez de contestarla**.
+
+### `opFILA` honra `catalogo` — y son DOS mapas, no uno
+
+⛔ **Meter `FILA` en `OPERACIONES_CON_CATALOGO_` habría hecho fallar a los 45 marcadores que hoy la
+usan sin catálogo**: `resolverCatalogoDeMarcador_` devuelve error con la celda vacía. *«Lo necesito
+o fallo»* y *«lo uso si está»* son **dos contratos**, y por eso hay un segundo mapa —
+`OPERACIONES_CON_CATALOGO_OPCIONAL_`— en vez de una condición suelta.
+
+⭐ **Lo que faltaba era pasar el mapa que ya existía.** `catalogoBarriosDesdeBase_` devuelve
+`{ barrios, porBarrio }` desde el 03/08, y el objeto que llegaba a la operación **sólo traía la
+lista**: `LISTA` y `ELEMENTO` **canonizan** contra la lista, que es otra operación. Ahora el
+catálogo viaja con su `traduccion`.
+
+⛔ **Un valor fuera del catálogo no publica ni el crudo ni vacío: se RECHAZA.** El crudo pondría un
+mail donde el equipo publica un ámbito; el vacío afirmaría que no había dato. Con `rechazados` el
+despachador lo baja a `REVISAR` → `---`. **Se reusa el mecanismo de `LISTA`, no se inventa uno.**
+⚠ Y una celda **vacía en la fuente** no es rechazo: es `sin_datos` (`-`), que es otra afirmación.
+
+### `G2` cambió de objeto, y eso es lo correcto
+
+Ya no mide **alineación** —no hay dos listas que alinear— sino **COBERTURA**: cuántos remitentes
+distintos trae la ventana, cuántos cubre el catálogo, y **para listando los que no**. ⭐ Los dos
+números se declaran **aunque coincidan**. ⛔ Cero filas o cero remitentes **aborta**: el gate no
+mediría nada.
+
+⚠ **Y la divergencia entre las dos solapas se mide igual, como HALLAZGO y no como gate**,
+distinguiendo *«se explica por los envíos fuera de la ventana»* de **«dicen cosas distintas del
+mismo envío»**, que es lo que habría que reportar aunque este prompt siga.
+
+### ⭐⭐ El gate nuevo que gobierna la Parte C: NADA VALIDADO SE MUEVE
+
+`congelarValidadosL047_()` resuelve y congela el valor de todo marcador con caso `exacto` vigente
+que toque la solapa de los envíos —el piso son los cuatro de `C-99`, y **el cruce lo AMPLÍA, no lo
+reemplaza**—.
+
+- ⭐ **Corre DENTRO del escritor y antes del backup**: una guarda que hay que acordarse de correr
+  aparte es una guarda que no corre.
+- ⛔ **Si no puede congelar, no se escribe.** Sin foto previa, *«nada validado se movió»* sería una
+  afirmación sin medir.
+- ⛔ **Congelar CERO aborta**: un cero se leería como *«no se movió nada»* sobre cuatro casos
+  vigentes.
+- `verificarValidadosL047()` compara después de la corrida, **sin umbral**: cualquier diferencia es
+  una validación rota, aunque el número nuevo parezca mejor.
+
+### El banco se dio vuelta, con el motivo y con MÁS exigencia
+
+Hasta ayer exigía que las cinco leyeran `acumulado | Mail` y que **ninguna** declarara
+`mail_remitente`. **Las dos eran correctas para el diseño de ese día.** Cambió la decisión, no el
+control. ⭐ Donde decía *«ninguna declara `mail_remitente`»* ahora exige algo **más fuerte**: que
+declare el campo **Y** el catálogo, **juntos** — el campo solo publicaría el mail crudo.
+
+⭐⭐ **Y la traducción se prueba sobre la `opFILA` REAL**, extraída de `Marcadores.gs`: la fila 1
+publica `JM`, un remitente fuera del catálogo deja `rechazados`, y **sin catálogo publica el crudo
+igual que siempre** — que es la afirmación que protege a los otros 40 tokens de la misma tabla.
+
+### ⚠ Y la tercera enumeración vieja del día
+
+`probar-origen-en-traza.js` stubea `operacionNecesitaCatalogo_` y **no conocía a su hermana nueva**:
+`ReferenceError` en la primera corrida. Van **tres** hoy —los cinco `SEED_MAPEO*`, el stub, y la
+lista de arrays del otro banco—. ⭐ **Ésta salió barata porque el síntoma fue ruidoso**; la de
+`SEED_MAPEO_ACUMULADO_` no lo fue: **pasó en verde midiendo menos**.
+
+**Suites: 99 bancos, exit 0 · `tools/listas.js`, exit 0 · `clasp push` en su propio comando,
+después de leer el verde.** ⛔ **Falta sembrar y correr.**
