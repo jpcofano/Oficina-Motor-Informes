@@ -12479,3 +12479,298 @@ function aplicarRemitentes20260908_(aplicar) {
   return { ok: true, aplicado: true, escritas: plan.length, backup: bk.nombre,
            congelados: Object.keys(congelado.foto).length };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-10_4` Parte C.2 — **`emin_lista` y `emin_encuentros`: SE SACAN LAS DOS MARCAS.**
+ *
+ * **Decisión explícita del usuario, 10/09/2026**, que es lo que `D-58` exige para la mitad que
+ * **quita**: los dos están en el grupo (c) —vigente `exacto` con `contradice` en el historial— y
+ * `D-58` sólo aplica sola la mitad que **agrega**.
+ *
+ * ⭐⭐ **Son DOS escrituras en la MISMA fila, y con una sola el levantamiento dura menos que un
+ * deck.** `revisarASinValidar_` (`Instalar.gs`) repone el `_revisar` a **toda** fila cuya celda
+ * `notas` contenga `SIN VALIDAR`, y las dos lo contienen. ⇒ sacar sólo el sufijo del `formato`
+ * deja el trabajo hecho hasta la corrida siguiente **sin que nada falle**.
+ *
+ * ⚠ **`notas` NO se vacía: se reescribe.** El texto que hay dice *«PROPUESTA, no verificada»* y eso
+ * **venció** —lo desmienten `C-106`, `V-137` y la corrida del 10/09, con 11 de 11 encuentros y las
+ * mismas fechas que el equipo—. Borrar la nota entera perdería el rastro de **por qué** estuvo
+ * marcado, que es justo lo que hace auditable a un levantamiento.
+ *
+ * ⛔ **`imp_prog` es el tercero del grupo (c) y NO se toca:** su marca es por universo y grano
+ * temporal (`D-58`), no por falta de caso.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+var EMIN_VALIDADOS_ = ['emin_lista', 'emin_encuentros'];
+
+var EMIN_NOTA_NUEVA_ =
+  'VALIDADO el 10/09/2026 contra el deck del equipo: 11 de 11 encuentros, mismo orden y mismas ' +
+  'fechas (V-137). El corte es por fecha_periodo = columna D, la FECHA DEL ENCUENTRO, confirmado ' +
+  'con corrida por C-106 el 07/09. || POR QUE ESTUVO MARCADO, que no se borra: nacio como ' +
+  '2026-09-01_4 Parte B, PROPUESTA no verificada, porque el fixture del 28/08 no llegaba a la ' +
+  'semana del informe y el unico control posible era una corrida. Esa corrida ocurrio. || ' +
+  'C-101 lo habia dado por universo equivocado el 06/09 sobre la ventana 28/08-03/09; NO se ' +
+  'retracta: son dos ventanas y dos criterios, y lo que V-137 prueba es que el criterio NUEVO ' +
+  'reproduce. || Se levanta la marca por decision del usuario del 10/09 (D-58, la mitad que QUITA ' +
+  'no se aplica sola).';
+
+/**
+ * El modo seco de C.2. ⛔ **Un `diag` que nadie mira no es un modo seco: es un paso más** — se lee
+ * antes de correr el que escribe.
+ */
+function diagLevantarEminValidados() {
+  var r = planLevantarEmin_();
+  Logger.log('== C.2 SECO · levantar emin_lista y emin_encuentros ==');
+  r.lineas.forEach(function (l) { Logger.log('   ' + l); });
+  Logger.log(r.ok ? '=> los gates pasan: ' + r.cambios.length + ' fila(s), 2 celdas cada una'
+                  : '⛔ NO se escribe: ' + r.motivo);
+  return r;
+}
+
+/** El plan, compartido por el seco y el que escribe. **Un solo criterio, no dos.** */
+function planLevantarEmin_() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) return { ok: false, motivo: 'no existe la hoja MARCADORES', lineas: [], cambios: [] };
+
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0];
+  var iM = h.indexOf('marcador'), iI = h.indexOf('informe_id'),
+      iF = h.indexOf('formato'), iN = h.indexOf('notas');
+  if (iM === -1 || iF === -1 || iN === -1) {
+    return { ok: false, motivo: 'MARCADORES no tiene marcador/formato/notas', lineas: [], cambios: [] };
+  }
+
+  var lineas = [], cambios = [], faltan = [];
+  EMIN_VALIDADOS_.forEach(function (nombre) {
+    var fila = -1;
+    for (var f = 1; f < datos.length; f++) {
+      if (String(datos[f][iM] || '').trim() === nombre) { fila = f; break; }
+    }
+    if (fila === -1) { faltan.push(nombre); lineas.push('⛔ ' + nombre + ': NO EXISTE la fila'); return; }
+
+    var formato = String(datos[fila][iF] || '').trim();
+    var notas = String(datos[fila][iN] || '');
+    var tieneMarca = formato.length > 8 && formato.slice(-8) === '_revisar';
+    var tieneSinValidar = notas.indexOf('SIN VALIDAR') !== -1;
+
+    lineas.push(nombre + ' (fila ' + (fila + 1) + ', informe_id=' + String(datos[fila][iI] || '') + ')');
+    lineas.push('   formato: «' + formato + '»' + (tieneMarca ? ' → «' + formato.slice(0, -8) + '»' : ' — ya sin marca'));
+    lineas.push('   notas contiene SIN VALIDAR: ' + tieneSinValidar + (tieneSinValidar ? ' → se REESCRIBE' : ' — nada que sacar'));
+
+    /* ⛔⛔ **Las dos van juntas o no va ninguna.** Sacar el sufijo sin tocar `notas` es el caso que
+     * `revisarASinValidar_` deshace en la corrida siguiente; tocar `notas` sin sacar el sufijo deja
+     * la marca puesta y pierde el rastro. Una operación a medias acá es peor que no hacerla. */
+    if (tieneMarca || tieneSinValidar) {
+      cambios.push({ nombre: nombre, fila: fila + 1,
+                     formato_antes: formato, formato_despues: tieneMarca ? formato.slice(0, -8) : formato,
+                     notas_antes: notas, notas_despues: EMIN_NOTA_NUEVA_ });
+    }
+  });
+
+  if (faltan.length) return { ok: false, motivo: 'faltan filas: ' + faltan.join(', '), lineas: lineas, cambios: [] };
+  if (!cambios.length) return { ok: false, motivo: 'nada que hacer: ninguna de las dos tiene marca ni SIN VALIDAR', lineas: lineas, cambios: [] };
+  return { ok: true, lineas: lineas, cambios: cambios, iF: iF, iN: iN };
+}
+
+/**
+ * El que escribe. **Backup en el log antes**, escritura de las **dos** celdas, y ⭐ **relectura
+ * DESDE LA HOJA** después: el escritor verifica **lo que quedó**, no lo que pidió escribir.
+ *
+ * ⛔ **El vaciado es el caso que lo vuelve obligatorio:** una celda que tenía que cambiar y
+ * conservó su valor viejo **publica lo anterior sin fallar**, y desde el lado del escritor la
+ * escritura «no hacía falta».
+ */
+function levantarEminValidados() {
+  var plan = planLevantarEmin_();
+  if (!plan.ok) { Logger.log('⛔ NO se escribe: ' + plan.motivo); return plan; }
+
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+
+  Logger.log('== BACKUP (lo que había ANTES) ==');
+  plan.cambios.forEach(function (c) {
+    Logger.log('   ' + c.nombre + ' · formato=«' + c.formato_antes + '»');
+    Logger.log('      notas=«' + c.notas_antes.slice(0, 200) + '…»');
+  });
+
+  plan.cambios.forEach(function (c) {
+    hoja.getRange(c.fila, plan.iF + 1).setValue(c.formato_despues);
+    hoja.getRange(c.fila, plan.iN + 1).setValue(c.notas_despues);
+  });
+  SpreadsheetApp.flush();
+
+  /* ⭐ La relectura sale de la HOJA, no del retorno de arriba. */
+  var datos = hoja.getDataRange().getValues();
+  var relectura = [], todoOk = true;
+  plan.cambios.forEach(function (c) {
+    var f = datos[c.fila - 1];
+    var formatoOk = String(f[plan.iF] || '').trim() === c.formato_despues;
+    var sinValidarSeFue = String(f[plan.iN] || '').indexOf('SIN VALIDAR') === -1;
+    if (!formatoOk || !sinValidarSeFue) todoOk = false;
+    relectura.push(c.nombre + ': formato=«' + String(f[plan.iF] || '') + '» ' + (formatoOk ? 'OK' : '⛔') +
+      ' · SIN VALIDAR se fue: ' + sinValidarSeFue + (sinValidarSeFue ? ' OK' : ' ⛔'));
+  });
+
+  Logger.log('== RELECTURA desde la hoja ==');
+  relectura.forEach(function (l) { Logger.log('   ' + l); });
+  Logger.log('=> ' + plan.cambios.length + ' de ' + EMIN_VALIDADOS_.length + ' filas · ' +
+    (plan.cambios.length * 2) + ' celdas · ' + (todoOk ? 'TODO QUEDÓ' : '⛔ ALGO NO QUEDÓ'));
+
+  return { ok: todoOk, filas: plan.cambios.length, celdas: plan.cambios.length * 2,
+           relectura: relectura };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-10_4` Parte C.3 — **`cc_campanias`: es un ALTA, no un cableado.**
+ *
+ * ⛔ La premisa del `_3` cayó al mirar la hoja viva: **no existe la fila**. Son celdas nuevas.
+ *
+ * **Candidata 2 — `Tipo de llamado` distintos — elegida por MODO DE FALLA y no por acierto**
+ * (`C-112`: nueve candidatas, cuatro aciertan las dos ventanas, y agosto no discrimina, así que
+ * todo el peso está en julio y **el acierto no desempata**):
+ *
+ *   · es columna **tipada**, y sus cadenas —`Convocatoria`, `IVR convocatoria`— ya las usa un
+ *     filtro **validado** (`V-91`/`S-01`). Un valor nuevo **sube el conteo de forma visible** en
+ *     vez de romper en silencio;
+ *   · ⛔ las que cuentan por **nombre de campaña** quedan descartadas por precedente medido:
+ *     `CENSO_ids_campanas` dice que el nombre **no sirve como clave** —cuatro solapas, cuatro
+ *     grafías, y una fila que trae el nombre de otra campaña—.
+ *
+ * **Nace con `_revisar`**, ⛔ **no porque el número sea dudoso sino porque la REGLA que elige es
+ * provisoria.** ⭐ **Condición de salida escrita:** el sufijo se quita el día que aparezca una
+ * tercera ventana donde las cuatro candidatas **difieran**, o que el equipo conteste.
+ *
+ * ⚠ **El gate que ya falló una vez:** que lea `acumulado`, **NO `looker/CC`** — el cruce
+ * caso → marcador no scopea por base, así que un caso de `cc_*` no protege contra leer la base
+ * equivocada.
+ *
+ * ⛔ **`gcba_cc_campanias` NO entra**: el usuario nombró uno.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** El modo seco de C.3. Imprime los gates y **no escribe**. */
+function diagAltaCcCampanias() {
+  var r = planAltaCcCampanias_();
+  Logger.log('== C.3 SECO · alta de cc_campanias ==');
+  r.lineas.forEach(function (l) { Logger.log('   ' + l); });
+  Logger.log(r.ok ? '=> los gates pasan: 1 fila de MAPEO + 1 fila de MARCADORES'
+                  : '⛔ NO se escribe: ' + r.motivo);
+  return r;
+}
+
+function planAltaCcCampanias_() {
+  var lineas = [];
+  var FILA_MAPEO = { base_id: 'acumulado', campo_logico: 'acc_tipo_llamado',
+    hoja: 'Call Center - Métricas', columna: 'R', encabezado: 'Tipo de llamado',
+    tipo_esperado: '', notas: '2026-09-10_4 C.3 - la columna que cuenta campanias de Call Center ' +
+      '(candidata 2 de C-112, elegida por modo de falla). encabezado es TESTIGO y nunca fallback: ' +
+      'los titulos se repiten entre solapas y un fallback por titulo acertaria a veces y erraria ' +
+      'en silencio (D-31).' };
+
+  var FILA_MARCADOR = { marcador: 'cc_campanias', familia: 'cc', informe_id: 'jm',
+    base_id: 'acumulado', solapa: 'Call Center - Métricas', campo_logico: 'acc_tipo_llamado',
+    periodo_ref: '', operacion: 'CUENTA_DISTINTOS', valor_fijo: '', filtro: '',
+    dimensiones: 'ambito=jm', formato: 'numero_revisar', catalogo: '', separador: '',
+    notas: 'ALTA del 10/09/2026, decision del usuario. Cuenta valores distintos de Tipo de llamado ' +
+      '(col R) sobre acumulado, con el mismo recorte que cc_base y cc_contactados: ambito=jm. || ' +
+      'CANDIDATA 2 de C-112, elegida por MODO DE FALLA y no por acierto: cuatro de las nueve ' +
+      'aciertan las dos ventanas y agosto no discrimina, asi que el acierto no desempata. Esta es ' +
+      'columna TIPADA y sus cadenas ya las usa un filtro validado (V-91/S-01): un valor nuevo sube ' +
+      'el conteo de forma visible en vez de romper en silencio. Las que cuentan por NOMBRE DE ' +
+      'CAMPANIA se descartaron por precedente medido - CENSO_ids_campanas: el nombre no sirve como ' +
+      'clave. || NACE CON _revisar Y NO PORQUE EL NUMERO SEA DUDOSO: la REGLA que elige es ' +
+      'provisoria. CONDICION DE SALIDA: se quita el dia que aparezca una tercera ventana donde las ' +
+      'cuatro candidatas DIFIERAN, o que el equipo conteste. || Lee acumulado, NO looker/CC.' };
+
+  /* ── Gate 1 · ⛔ la fila NO tiene que existir todavía ─────────────────────────────────── */
+  var hojaM = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hojaM) return { ok: false, motivo: 'no existe MARCADORES', lineas: lineas };
+  var datosM = hojaM.getDataRange().getValues();
+  var iMarc = datosM[0].indexOf('marcador');
+  var yaEsta = false;
+  for (var f = 1; f < datosM.length; f++) {
+    if (String(datosM[f][iMarc] || '').trim() === 'cc_campanias') yaEsta = true;
+  }
+  lineas.push('G1 · la fila cc_campanias YA existe: ' + yaEsta + (yaEsta ? ' ⛔' : ' OK, es un alta'));
+  if (yaEsta) return { ok: false, motivo: 'cc_campanias ya existe: esto es un ALTA, no un upsert', lineas: lineas };
+
+  /* ── Gate 2 · ⭐⭐ el ENCABEZADO REAL de la columna R, leído de la base ────────────────────
+   * ⛔ No se confía en la letra sola: `D-31` manda letra **y** encabezado, y el encabezado es
+   * TESTIGO —se verifica— y nunca fallback. Si la columna R no se llama `Tipo de llamado`, la
+   * base se movió y el alta **no se escribe**. */
+  var lectura = null;
+  try {
+    lectura = leerFuente('acumulado', { ok: true, desde: new Date(2026, 6, 24),
+                                        hasta: new Date(2026, 6, 31), origen: 'gate C.3' },
+                         'Call Center - Métricas');
+  } catch (e) {
+    return { ok: false, motivo: 'no pude leer la solapa: ' + e, lineas: lineas };
+  }
+  var enc = (lectura && lectura.encabezados) || [];
+  var real = String(enc[17] || '').trim();   // R es la 18ª columna, índice 17
+  lineas.push('G2 · encabezado real de la columna R: «' + real + '» (esperado «Tipo de llamado»)' +
+    (real === 'Tipo de llamado' ? ' OK' : ' ⛔'));
+  lineas.push('   ⚠ la solapa trae ' + enc.length + ' columnas — el gate mira UNA, y lo dice');
+  if (real !== 'Tipo de llamado') {
+    return { ok: false, motivo: 'la columna R no es `Tipo de llamado` sino «' + real +
+      '»: la base se movió y el alta NO se escribe', lineas: lineas };
+  }
+
+  /* ── Gate 3 · ⚠ que la base sea `acumulado` y no `looker/CC` ─────────────────────────────
+   * Es el gate que ya falló una vez, y va explícito aunque parezca redundante: el cruce
+   * caso → marcador **no scopea por base**, así que nada más lo protege. */
+  lineas.push('G3 · base_id de la fila nueva: ' + FILA_MARCADOR.base_id +
+    (FILA_MARCADOR.base_id === 'acumulado' ? ' OK — NO es looker/CC' : ' ⛔'));
+  if (FILA_MARCADOR.base_id !== 'acumulado') {
+    return { ok: false, motivo: 'la fila apunta a la base equivocada', lineas: lineas };
+  }
+
+  lineas.push('MAPEO   : ' + FILA_MAPEO.campo_logico + ' → col ' + FILA_MAPEO.columna +
+    ' («' + FILA_MAPEO.encabezado + '»)');
+  lineas.push('MARCADOR: cc_campanias · ' + FILA_MARCADOR.operacion + ' · ' +
+    FILA_MARCADOR.dimensiones + ' · ' + FILA_MARCADOR.formato);
+  return { ok: true, lineas: lineas, mapeo: FILA_MAPEO, marcador: FILA_MARCADOR };
+}
+
+/**
+ * El que escribe el alta. ⭐ **`MAPEO` primero y `MARCADORES` después**, que es el orden que no
+ * deja un marcador apuntando a un `campo_logico` que todavía no existe.
+ */
+function aplicarAltaCcCampanias() {
+  var plan = planAltaCcCampanias_();
+  if (!plan.ok) { Logger.log('⛔ NO se escribe: ' + plan.motivo); return plan; }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  Logger.log('== C.3 · escribiendo ==');
+
+  upsertPorClave_(ss.getSheetByName('MAPEO'), ['base_id', 'campo_logico'], [plan.mapeo]);
+  upsertPorClave_(ss.getSheetByName('MARCADORES'), ['marcador'], [plan.marcador]);
+  SpreadsheetApp.flush();
+
+  /* ⭐ Relectura DESDE LAS DOS HOJAS. */
+  var okMapeo = false, okMarc = false, detalle = [];
+  var dM = ss.getSheetByName('MAPEO').getDataRange().getValues();
+  var hM = dM[0];
+  for (var i = 1; i < dM.length; i++) {
+    if (String(dM[i][hM.indexOf('base_id')]).trim() === 'acumulado' &&
+        String(dM[i][hM.indexOf('campo_logico')]).trim() === 'acc_tipo_llamado') {
+      okMapeo = String(dM[i][hM.indexOf('columna')]).trim() === 'R';
+      detalle.push('MAPEO: col=«' + dM[i][hM.indexOf('columna')] + '» enc=«' +
+        dM[i][hM.indexOf('encabezado')] + '»');
+    }
+  }
+  var dC = ss.getSheetByName('MARCADORES').getDataRange().getValues();
+  var hC = dC[0];
+  for (var j = 1; j < dC.length; j++) {
+    if (String(dC[j][hC.indexOf('marcador')]).trim() === 'cc_campanias') {
+      okMarc = String(dC[j][hC.indexOf('base_id')]).trim() === 'acumulado' &&
+               String(dC[j][hC.indexOf('operacion')]).trim() === 'CUENTA_DISTINTOS' &&
+               String(dC[j][hC.indexOf('formato')]).trim() === 'numero_revisar';
+      detalle.push('MARCADORES: base=«' + dC[j][hC.indexOf('base_id')] + '» op=«' +
+        dC[j][hC.indexOf('operacion')] + '» formato=«' + dC[j][hC.indexOf('formato')] + '»');
+    }
+  }
+
+  Logger.log('== RELECTURA desde las hojas ==');
+  detalle.forEach(function (l) { Logger.log('   ' + l); });
+  Logger.log('=> 2 de 2 filas · MAPEO ' + (okMapeo ? 'OK' : '⛔') + ' · MARCADORES ' + (okMarc ? 'OK' : '⛔'));
+  return { ok: okMapeo && okMarc, filas: 2, detalle: detalle };
+}
