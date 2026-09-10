@@ -9427,12 +9427,12 @@ function verGlobalL047() {
  *
  * ⭐ `D-58` aplicado al generar: cuando dos casos hablan del mismo marcador, manda el
  * más nuevo. Y los `token_propuesto` con varios marcadores en una celda vienen
- * DESARMADOS —68 celdas, 335 referencias— porque contar celdas
+ * DESARMADOS —68 celdas, 337 referencias— porque contar celdas
  * en vez de marcadores da un número que no corresponde a nada.
  * ══════════════════════════════════════════════════════════════════════════════ */
 var CASOS_POR_MARCADOR_GENERADA_ = '2026-09-10';
 var CASOS_POR_MARCADOR_ARCHIVOS_ = 8;
-/* 163 marcadores · exacto 101 · contradice 10 · cerrado 12 · abierto 24 */
+/* 163 marcadores · exacto 101 · contradice 10 · cerrado 12 · abierto 22 */
 var CASOS_POR_MARCADOR_ = {
   'camp_alcance': { estado: 'cerrado', caso: 'C-94', csv: '2026-09-04', previos: ['abierto','contradice'] },
   'camp_aperturas': { estado: 'exacto', caso: 'V-113', csv: '2026-08-19', previos: [] },
@@ -9493,12 +9493,12 @@ var CASOS_POR_MARCADOR_ = {
   'ecv_insc_ivr': { estado: 'exacto', caso: 'V-42', csv: '2026-08-19', previos: ['exacto'] },
   'ecv_insc_mail': { estado: 'exacto', caso: 'V-39', csv: '2026-08-19', previos: ['exacto','exacto'] },
   'ecv_inscriptos': { estado: 'retractado', caso: 'C-28', csv: '2026-08-19', previos: ['exacto','exacto','exacto','exacto','exacto','exacto','exacto','exacto','contradice'] },
-  'emin_alcance': { estado: 'abierto', caso: 'C-123', csv: '2026-09-10', previos: [] },
+  'emin_alcance': { estado: 'aproximado', caso: 'C-132', csv: '2026-09-10', previos: ['abierto'] },
   'emin_alcance_semanal': { estado: 'exacto', caso: 'V-138', csv: '2026-09-10', previos: [] },
   'emin_aperturas': { estado: 'exacto', caso: 'V-138', csv: '2026-09-10', previos: [] },
   'emin_asistentes_szinny_0508': { estado: 'exacto', caso: 'V-51', csv: '2026-08-19', previos: [] },
   'emin_clics_ctor': { estado: 'exacto', caso: 'V-138', csv: '2026-09-10', previos: [] },
-  'emin_clics_ctr': { estado: 'abierto', caso: 'C-123', csv: '2026-09-10', previos: [] },
+  'emin_clics_ctr': { estado: 'aproximado', caso: 'C-133', csv: '2026-09-10', previos: ['abierto'] },
   'emin_ctor': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
   'emin_ctr': { estado: 'exacto', caso: 'C-102', csv: '2026-09-06', previos: [] },
   'emin_encuentros': { estado: 'exacto', caso: 'V-137', csv: '2026-09-10', previos: ['exacto','contradice','cerrado','exacto'] },
@@ -11331,3 +11331,252 @@ function medirCampaniasCallCenterBaseNueva() {
   return { ok: true, ventanas: resultado, aciertan_las_dos: ganadoras.map(function (c) { return c.n; }),
            avisos: avisos, log: out.join('\n') };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-10_4` Parte A — **EL CENSO POSICIONAL: en qué CAJA cae cada token.**
+ *
+ * ⛔⛔ **Por qué hace falta, y no es un diagnóstico más.** `C-126` midió que hay tokens en la caja
+ * equivocada —el número es correcto y el casillero no— y esa afirmación **tiene dos causas que
+ * mandan a trabajos opuestos**: la plantilla tiene el token de `b` en la caja de `a` (lo arregla el
+ * equipo, `C-01`), o el motor pinta el valor de `a` en la caja de `b` (es un bug). **Ninguna se
+ * distingue mirando el deck**, porque el texto aplanado de un `.pptx` no dice en qué casillero cae
+ * cada valor.
+ *
+ * ⭐ **No hace falta un lector nuevo: hay que dejar de tirar lo que el lector ya trae.**
+ * `piezasDeTextoDeSlide_` **ya devuelve `geo`**, y `diagTokensDeLamina_` la descarta al quedarse
+ * sólo con el nombre del token. Acá se reusa el mismo recorrido **verbatim** — reimplementarlo
+ * sería el instrumento que reproduce la lógica del motor y la reproduce peor.
+ *
+ * ⭐⭐ **Y las CAJAS SIN TOKEN son la mitad que importa: son los RÓTULOS.** Sin ellas el censo no
+ * puede decir en qué casillero cae nada — la palabra *Aperturas* vive en una caja distinta del
+ * número que rotula. Por eso se emiten las dos listas, **entrelazadas y ordenadas por `(y, x)`**,
+ * que es como se lee una lámina.
+ *
+ * ⛔ **No hay algoritmo de «rótulo más cercano», y es deliberado.** Emparejar automáticamente sería
+ * una inferencia más, y la inferencia es exactamente lo que este censo viene a sacar del medio. La
+ * tabla se imprime ordenada y la lee una persona.
+ *
+ * **Lo que contesta y ninguna corrida puede contestar:**
+ *   1. la caja **Alcance** del bloque digital de `L-012`: ¿token sin fila, o caja que la plantilla
+ *      no declara? Hoy no publica **ni un símbolo**, que es peor que un `/////`;
+ *   2. el par (3) de `C-126` en `L-018` — sus cajas salen `/////` en todo deck, antes y después;
+ *   3. si el cruce de `C-126` está también en `jm`, que **no se hereda**.
+ *
+ * ⭐ Y destraba `tools/probar-laminas-declaradas.js`, rojo porque su índice `POS.secco` no conoce
+ * `L-054` ni `L-055`. ⛔ **No se arregla copiando `orden_plantilla`** —`CLAUDE.md` §2: reportado y
+ * nunca autoritativo—: se arregla **midiendo**, que es lo que hace esto.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * ⭐ El sello de la plantilla, en la PRIMERA línea del censo.
+ *
+ * ⚠ **Un censo posicional es evidencia fechada y su fecha no es la de la corrida: es la de la
+ * PLANTILLA.** El 10/09 el usuario corrigió `C-126` a las 15:55 y las tres corridas del día son
+ * anteriores — un censo que no declare contra qué versión midió no se puede cruzar con nada.
+ */
+function selloDePlantilla_(plantillaId) {
+  try {
+    var f = DriveApp.getFileById(plantillaId);
+    return { ok: true, nombre: f.getName(), modificada: f.getLastUpdated() };
+  } catch (e) {
+    /* ⚠ Sin sello el censo SIGUE, y lo dice: la falta de metadata no invalida las coordenadas. */
+    return { ok: false, motivo: String(e && e.message ? e.message : e) };
+  }
+}
+
+/**
+ * El censo de una plantilla: por lámina, **todas** las cajas con su posición.
+ *
+ * Devuelve `{ ok, plantilla, laminas: [{ orden, escondida, piezas }], motivo }`.
+ * Cada pieza: `{ tokens, texto, geo, contenedor, objectId }`.
+ *
+ * ⛔ **Aborta y NO informa cero si el control 1 falla** — un censo ciego y un censo sin hallazgos
+ * se ven idénticos en un log.
+ */
+function censarCajasDeInforme_(informeId) {
+  var informe = leerInformes()[informeId];
+  if (!informe || !informe.plantilla_id) {
+    return { ok: false, motivo: 'informe sin plantilla_id: ' + informeId };
+  }
+
+  var sello = selloDePlantilla_(informe.plantilla_id);
+  var slides = SlidesApp.openById(informe.plantilla_id).getSlides();
+  var laminas = [];
+
+  for (var i = 0; i < slides.length; i++) {
+    var piezas = piezasDeTextoDeSlide_(slides[i]).map(function (p) {
+      var tokens = [];
+      var m;
+      RE_TOKEN_.lastIndex = 0;
+      while ((m = RE_TOKEN_.exec(p.texto)) !== null) tokens.push(m[1]);
+      return {
+        tokens: tokens,
+        texto: String(p.texto || '').replace(/\s+/g, ' ').trim(),
+        geo: p.geo,
+        contenedor: p.contenedor,
+        objectId: p.objectId
+      };
+    }).filter(function (p) { return p.texto !== '' || p.tokens.length; });
+
+    /* El orden es `(y, x)`: **como se lee una lámina**, no como el XML las guarda. Las dos listas
+     * van entrelazadas a propósito — separarlas rompe justo la vecindad que las hace legibles. */
+    piezas.sort(function (a, b) {
+      var ay = a.geo ? a.geo.y : 1e9, by = b.geo ? b.geo.y : 1e9;
+      if (ay !== by) return ay - by;
+      var ax = a.geo ? a.geo.x : 1e9, bx = b.geo ? b.geo.x : 1e9;
+      return ax - bx;
+    });
+
+    laminas.push({
+      orden: i + 1,
+      escondida: esLaminaEscondida_(slides[i]),
+      piezas: piezas,
+      con_token: piezas.filter(function (p) { return p.tokens.length; }).length,
+      sin_token: piezas.filter(function (p) { return !p.tokens.length; }).length
+    });
+  }
+
+  /* ── Control 1 · ⭐ EL CENSO VE LA POSICIÓN ────────────────────────────────────────────────
+   * ⛔⛔ Es **sintético y estructural**: no depende de que exista ningún defecto, porque el control
+   * positivo de un detector no puede ser el defecto que el detector busca — se apaga el día que el
+   * sistema se arregla (`CLAUDE.md` §4, la quinta forma).
+   * En cualquier lámina con más de una pieza tiene que haber **al menos dos `y` distintos**. Si
+   * todas dan el mismo `y`, o todas `null`, el censo está ciego y **aborta**. */
+  var conVarias = laminas.filter(function (l) { return l.piezas.length > 1; });
+  var vePosicion = conVarias.some(function (l) {
+    var ys = {};
+    l.piezas.forEach(function (p) { if (p.geo) ys[p.geo.y] = true; });
+    return Object.keys(ys).length > 1;
+  });
+  if (conVarias.length && !vePosicion) {
+    return { ok: false, motivo: 'control 1: el censo NO ve la posicion - ningun par de piezas ' +
+      'difiere en `y` en ninguna de las ' + conVarias.length + ' laminas con mas de una caja. ' +
+      'Un censo ciego y un censo sin hallazgos se ven identicos: se aborta sin informar cero.' };
+  }
+
+  return {
+    ok: true,
+    informe_id: informeId,
+    plantilla: sello,
+    total_laminas: slides.length,
+    escondidas: laminas.filter(function (l) { return l.escondida; })
+                       .map(function (l) { return l.orden; }),
+    laminas: laminas
+  };
+}
+
+/**
+ * ⭐ Control 2 · **el segundo lector.** La lista de tokens de cada lámina tiene que coincidir con
+ * la que devuelve `diagTokensDeLamina_`. Si difieren, ⛔ **el hallazgo es el lector** y no se cita
+ * ninguno de los dos hasta resolverlo.
+ *
+ * ⚠ **Y su límite, declarado y no escondido:** los dos comparten `piezasDeTextoDeSlide_`, así que
+ * **no fallan distinto en el RECORRIDO** — sólo en el filtrado. Cubre que el filtro esté bien, no
+ * que el recorrido lo esté. Un control que no dice qué no cubre se cita como si cubriera todo.
+ */
+function contrastarConSegundoLector_(informeId, censo) {
+  var difieren = [];
+  for (var i = 0; i < censo.laminas.length; i++) {
+    var l = censo.laminas[i];
+    var mios = {};
+    l.piezas.forEach(function (p) {
+      p.tokens.forEach(function (t) { mios[t] = true; });
+    });
+    var otro = diagTokensDeLamina_(informeId, l.orden);
+    if (!otro || !otro.ok) {
+      difieren.push({ orden: l.orden, motivo: (otro || {}).motivo });
+      continue;
+    }
+    var suyos = {};
+    (otro.tokens || []).forEach(function (t) { suyos[t.token] = true; });
+    var a = Object.keys(mios).sort().join('|');
+    var b = Object.keys(suyos).sort().join('|');
+    if (a !== b) difieren.push({ orden: l.orden, censo: a, diag: b });
+  }
+  return difieren;
+}
+
+/**
+ * ⭐ Control 3 · **el negativo.** Una lámina `rol = equipo` tiene que dar **cero tokens y más de
+ * cero piezas**. ⛔ Cero piezas es *«no estoy mirando»*, no *«no hay tokens»*, y las dos se ven
+ * igual en un conteo.
+ */
+function controlNegativoDeCenso_(informeId, censo) {
+  var reg = leerRegistro_('LAMINAS', 'lamina_id') || {};
+  var ordenes = [];
+  Object.keys(reg).forEach(function (k) {
+    var f = reg[k];
+    if (String(f.informe_id || '').trim() === informeId &&
+        String(f.rol || '').trim() === 'equipo') {
+      var n = Number(f.orden_plantilla);
+      if (n > 0) ordenes.push({ lamina_id: k, orden: n });
+    }
+  });
+  var fallas = [], mirados = 0;
+  ordenes.forEach(function (o) {
+    var l = censo.laminas[o.orden - 1];
+    if (!l) return;
+    mirados++;
+    var tok = 0;
+    l.piezas.forEach(function (p) { tok += p.tokens.length; });
+    if (tok > 0 || l.piezas.length === 0) {
+      fallas.push(o.lamina_id + ' (orden ' + o.orden + '): ' + tok + ' token(s), ' +
+        l.piezas.length + ' pieza(s)');
+    }
+  });
+  return { mirados: mirados, declaradas: ordenes.length, fallas: fallas };
+}
+
+/**
+ * El impresor. **Devuelve por `Logger.log`, no sólo por `return`**: el editor no muestra el valor
+ * de retorno, así que una función que sólo retorna es, desde ahí, una que no dice nada.
+ */
+function imprimirCensoDeCajas_(informeId) {
+  var censo = censarCajasDeInforme_(informeId);
+  if (!censo.ok) { Logger.log('⛔ ' + censo.motivo); return censo; }
+
+  var s = censo.plantilla;
+  Logger.log('== CENSO DE CAJAS · ' + informeId + ' ==');
+  Logger.log(s.ok
+    ? '   plantilla: ' + s.nombre + ' · modificada ' + s.modificada
+    : '   ⚠ sin sello: ' + s.motivo + ' - el censo sigue, las coordenadas no dependen de esto');
+  Logger.log('   laminas: ' + censo.total_laminas + ' · escondidas: ' +
+    (censo.escondidas.length ? censo.escondidas.join(', ') : 'ninguna'));
+
+  censo.laminas.forEach(function (l) {
+    Logger.log('');
+    Logger.log('-- lamina ' + l.orden + (l.escondida ? '  ESCONDIDA' : '') +
+      ' · ' + l.con_token + ' caja(s) con token · ' + l.sin_token + ' rotulo(s)');
+    l.piezas.forEach(function (p) {
+      var pos = p.geo ? ('[' + p.geo.y + ',' + p.geo.x + ']') : '[sin geo]';
+      Logger.log('   ' + pos + ' ' +
+        (p.tokens.length ? '{{' + p.tokens.join('}}{{') + '}}' : '·') +
+        '  «' + p.texto.slice(0, 70) + '»  ' + p.contenedor);
+    });
+  });
+
+  var dif = contrastarConSegundoLector_(informeId, censo);
+  var neg = controlNegativoDeCenso_(informeId, censo);
+  Logger.log('');
+  Logger.log('== CONTROLES ==');
+  Logger.log('   1 · ve la posicion: OK (si no, esto no se habria impreso)');
+  Logger.log('   2 · segundo lector: ' + (dif.length
+    ? 'DIFIEREN en ' + dif.length + ' lamina(s) => EL HALLAZGO ES EL LECTOR, no se cita ninguno: ' +
+      JSON.stringify(dif).slice(0, 300)
+    : 'OK, coincide en las ' + censo.laminas.length) +
+    '  ⚠ comparten `piezasDeTextoDeSlide_`: cubre el FILTRADO, no el recorrido');
+  Logger.log('   3 · negativo (`rol = equipo` => 0 tokens y >0 piezas): ' + (neg.fallas.length
+    ? 'FALLA: ' + neg.fallas.join(' · ')
+    : 'OK, ' + neg.mirados + ' de ' + neg.declaradas + ' declaradas'));
+  Logger.log('');
+  Logger.log('=> censadas ' + censo.laminas.length + ' de ' + censo.total_laminas + ' laminas.');
+  return censo;
+}
+
+/** ⭐ Wrapper público **sin argumentos** — Apps Script no lista en el desplegable ni las privadas
+ *  ni las que reciben argumentos, así que una función que falla cualquiera de las dos es una que
+ *  nadie puede correr. */
+function censarCajasSecco() { return imprimirCensoDeCajas_('secco'); }
+
+/** Ídem para `jm`. ⛔ El cruce de `C-126` en `jm` **no se hereda de `secco`**: se mide. */
+function censarCajasJm() { return imprimirCensoDeCajas_('jm'); }
