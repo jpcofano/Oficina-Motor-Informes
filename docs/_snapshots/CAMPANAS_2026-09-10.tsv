@@ -1,0 +1,16 @@
+periodo_id	campana_id	nombre	informe_id	base_id	tipo	desde	hasta	mostrar	id_cuenta	orden
+2026_agosto_21_27	3512-AGOSEGGJ	Operativo Movilidad Más Segura	jm	digital	destacada	14/08/2026	31/08/2026	sí	3512-AGOSEGGJ	
+2026_agosto_21_28	3512-AGOSEGGJ	Operativo Movilidad Más Segura	jm	digital	destacada	14/08/2026	31/08/2026	sí	3512-AGOSEGGJ	
+2026_julio_31_06	3576-AGOSEGGJ	Operativo Muro	secco	digital	destacada	28/08/2026	11/09/2026	sí	3576-AGOSEGGJ	1
+2026_julio_31_06	3545-AGOSEGAN	Fin de las mafias de los celulares robados	secco	digital	destacada	25/08/2026	2/09/2026	sí	3545-AGOSEGAN	2
+2026_agosto_28_03	3576-AGOSEGGJ	Operativo Muro	secco	digital	destacada	28/08/2026	11/09/2026	sí	3576-AGOSEGGJ	1
+2026_agosto_28_03	3545-AGOSEGAN	Fin de las mafias de los celulares robados	secco	digital	destacada	25/08/2026	2/09/2026	sí	3545-AGOSEGAN	2
+2026_agosto_28_03	3197-JUNJUSGC	Inscripciones al servicio penitenciario	jm	digital	destacada	18/06/2026	19/08/2026	no	3197-JUNJUSGC	3
+2026_agosto_28_04	3576-AGOSEGGJ	Operativo Muro	jm	digital	destacada	28/08/2026	11/09/2026	no	3576-AGOSEGGJ	1
+2026_agosto_28_04	3545-AGOSEGAN	Fin de las mafias de los celulares robados	jm	digital	destacada	25/08/2026	2/09/2026	sí	3545-AGOSEGAN	2
+2026_agosto_28_04	3197-JUNJUSGC	Inscripciones al servicio penitenciario	jm	digital	destacada	18/06/2026	19/08/2026	no	3197-JUNJUSGC	3
+2026_julio_24_30	3576-AGOSEGGJ	Operativo Muro	jm	digital	destacada	28/08/2026	30/09/2026	sí	3576-AGOSEGGJ	1
+2026_julio_24_30	3305-JULSEGGJ	Egreso de cadetes	jm	digital	destacada	14/07/2026	15/08/2026	no	3305-JULSEGGJ	1
+2026_julio_24_30	SIN_ID_operativo_de_saturacion_en_1	Operativo de saturación en 1-11-14	jm	digital	destacada			no		2
+2026_septiembre_04_10	3576-AGOSEGGJ	Operativo Muro	jm	digital	destacada	28/08/2026	30/09/2026	sí	3576-AGOSEGGJ	1
+2026_septiembre_04_10	3545-AGOSEGAN	Fin de las mafias de celulares	jm	digital	destacada	25/08/2026	30/09/2026	sí	3545-AGOSEGAN	2

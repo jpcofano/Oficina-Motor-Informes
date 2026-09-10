@@ -94,6 +94,49 @@ otra fila.
 | ⭐ `Tablero_carga_21-28ago_lectura_2026-08-29_2105.png` | 97.792 | `f841ba3931a9b3de3ad0cd7eb5ea5b23f4760f3c308a118ba6d442b28fc7b083` |
 | ⭐ `Tablero_carga_21-28ago_lectura_2026-08-30_1547.png` | 98.449 | `d01da8066d95de5f0e26619e4314fb81eb80f0c7bf9942673879d4393baf54e6` |
 | ⭐⭐ `Tablero_carga_21-28ago_lectura_2026-08-30_1800.png` | 98.224 | `f022d11526250aa4f1f06732429000c767741a55779ece3d8dc8e845a79611b4` |
+| ⭐⭐ `Fixture  (10-09) .zip` | 56.894.628 | `6afa745fbc41055214f79fd3333179bf48921daf2f887de19277ddb8c95e7620` |
+| ↳ `…Motor 12_03.pptx` (adentro) | 16.422.806 | `1d6f5015a61e3cd8db68ed84fc2176f6159601e4f10727ba697100af80cd750f` |
+| ↳ `Equipo 2026-09-10 12.08 …pptx` (adentro) | 40.615.675 | `4faf90902d623b7a6ffe8ff0a6150816838d5db4fc01928ec1c3061ec09af17e` |
+
+### ⭐⭐ `Fixture  (10-09) .zip` — el primero que NO trae ninguna base (10/09/2026)
+
+**Trae dos `.pptx` y nada más:** el deck que generó el motor para `secco` en la ventana
+**vie 04/09 – jue 10/09** y el que publicó el equipo la misma mañana. **Ninguna planilla.**
+
+⭐ **Eso cambia qué preguntas puede contestar, y conviene tenerlo escrito antes de citarlo:** habilita
+el cruce **producto contra producto** —que es lo que hizo `docs/VALIDACION_deck_secco_vs_equipo_2026-09-10.md`—
+y **no habilita ninguna medición contra la fuente**. Un caso medido sobre este fixture dice qué
+publicó cada lado, nunca de qué filas salió.
+
+⚠ **Las dos filas `↳` son de archivos que están DENTRO del `.zip`, no en la carpeta**, y van igual:
+son los artefactos contra los que se midió, y sin su huella un caso no es reproducible. Es la misma
+razón por la que existe la tabla.
+
+⚠ **Los nombres de adentro están puestos a mano al armar el zip**, así que **el sello `[en proceso]`
+no sobrevivió**: el del motor dice `Motor 12_03`. Y un `.pptx` exportado de Google Slides **no trae
+`docProps`** —verificado sobre éste: no existen `core.xml`, `app.xml` ni `custom.xml`—, así que
+**desde el archivo no se puede saber si la corrida cerró**. Lo contesta el nombre real en Drive.
+
+#### Y su juego de extractos, con sello `2026-09-10_1203`
+
+**Los números del deck se extrajeron a archivos propios**, para que un caso se pueda citar sin abrir
+el `.pptx`. Están en esta carpeta —locales, como todo lo demás— y **`2026-09-10_1203_LEEME.md` los
+explica**: un CSV de 1.585 filas con **coordenadas** (`…_numeros_deck_secco.csv`), los dos volcados
+lámina por lámina, y los dos scripts que los producen.
+
+⭐ **El sello es día y hora de LA CORRIDA, no de la extracción** — `1203`, que es la hora que
+responde por los números.
+
+⭐⭐ **El `LEEME` trae además los seis `sheet_id` de las bases con dueño, tamaño y fecha de último
+cambio, medidos con el conector el 10/09**, y cierra la pregunta que la sección de más abajo dejó
+abierta el 20/08: **el conector llega a la metadata de las seis**, y **el contenido no puede bajar
+por ese canal** —`download_file_content` devuelve base64 dentro de la respuesta y no escribe en
+disco—. La descarga sigue siendo a mano.
+
+⛔ **Y la advertencia operativa que salió de esa medición:** `looker` y `rdv` **se modificaron el
+mismo 10/09 DESPUÉS de la corrida** (13:36 y 13:45 contra las 12:03), así que un export de esas dos
+tomado hoy **es otra foto**. ⚠ `modifiedTime` mide **ediciones, no recálculos**: sirve para decir
+*«ésta se movió seguro»* y **no** para decir *«ésta no se movió»*.
 
 ### ⭐⭐ Séptima fila y siguientes — el 30/08, y las DOS primeras filas que no son planillas
 

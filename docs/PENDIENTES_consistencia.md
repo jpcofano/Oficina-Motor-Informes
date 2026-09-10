@@ -1,6 +1,117 @@
 
 ---
 
+## ⭐⭐ EL DIFF DE `D-60` EN SECO — qué movería, con nombres (10/09/2026)
+
+> Sale del `2026-09-10_2` Parte B. ⛔ **No se escribió una sola celda de `MARCADORES`** — ni una
+> marca puesta ni una levantada. Esta lista es para mirarla y decidir, no para aplicarla.
+>
+> **Cruce:** `MARCADORES_2026-09-10.tsv` (snapshot vivo, **237** marcadores, **89** con `_revisar`)
+> contra `CASOS_POR_MARCADOR_` regenerada hoy (**163** marcadores desde **8** CSV).
+
+### (a) LEVANTARÍA — con `_revisar` y caso `exacto` vigente · **17**
+
+| marcador | caso | CSV | formato hoy |
+|---|---|---|---|
+| `camp_ctor` | `V-134` | 2026-09-10 | `porcentaje_sin_signo_revisar` |
+| `camp_or` | `V-134` | 2026-09-10 | `porcentaje_sin_signo_revisar` |
+| `camp_enviados` | `V-134` | 2026-09-10 | `miles_revisar` |
+| `camp_mail_clics` | `V-134` | 2026-09-10 | `miles_revisar` |
+| `camp_google_clics` | `V-111` | 2026-08-19 | `miles_revisar` |
+| `camp_meta_clics` | `V-111` | 2026-08-19 | `miles_revisar` |
+| `camp_meta_impresiones` | `V-111` | 2026-08-19 | `miles_revisar` |
+| `camp_meta_vistas` | `V-111` | 2026-08-19 | `miles_revisar` |
+| `camp_prog_vistas` | `V-111` | 2026-08-19 | `miles_revisar` |
+| `emin_alcance_semanal` | `V-138` | 2026-09-10 | `miles_revisar` |
+| `emin_aperturas` | `V-138` | 2026-09-10 | `miles_revisar` |
+| `emin_clics_ctor` | `V-138` | 2026-09-10 | `miles_revisar` |
+| `emin_or` · `emin_ctor` · `emin_ctr` | `C-102` | 2026-09-06 | `porcentaje_sin_signo_revisar` |
+| `emin_encuentros` | `V-137` | 2026-09-10 | `miles_revisar` |
+| `emin_lista` | `V-137` | 2026-09-10 | `texto_revisar` |
+
+⚠ **Ocho de los diecisiete entran por casos escritos HOY** —`V-134`, `V-137`, `V-138`—, así que
+esta lista es más grande que la de ayer por medición nueva, no por haber aflojado nada.
+
+### (a-exc) el cruce los trae y **NO entran**, por decisión previa · **1**
+
+| marcador | caso | por qué no |
+|---|---|---|
+| `imp_prog` | `V-108` (exacto) | **`D-58`**: universo y grano temporal, no falta de caso |
+
+⭐ **Las otras dos excepciones no muerden hoy, y se dice para que el cero no se lea como olvido:**
+`post_habitantes1` y `post_alcance1` **no tienen caso** —caen en la lista de abajo—, y **no hay
+ningún `*_bench_*` con `_revisar` y caso**. Las tres siguen declaradas igual.
+
+### (b) PONDRÍA — marcador **limpio** con caso `contradice` · **4**
+
+| marcador | caso | CSV | formato hoy |
+|---|---|---|---|
+| ⛔ `u1_post_meta_alcance` | `X-43` | 2026-08-28 | `miles` |
+| `camp_env4_fecha` | `C-104` | 2026-09-06 | `fecha` |
+| `ecv_encuentros` | `C-02` | 2026-08-19 | `numero` |
+| `imp_google` | `A-06` | 2026-08-19 | `miles` |
+
+⛔⛔ **`u1_post_meta_alcance` es el caso que `CLAUDE.md` §4 nombra con todas las letras** —*«un
+marcador que un caso desmiente está publicando sin aviso»*— y **sigue exactamente igual** trece días
+después. La (b) no es opcional: sin ella el cruce corre en un solo sentido.
+
+⚠ **`camp_env4_fecha` cambió de estado desde el deck de las 12:11**, que lo publicaba en `/////`
+—sin fila—: hoy tiene fila y formato `fecha`. Alguien la escribió en el medio. Se anota porque una
+diferencia entre el deck y el snapshot del mismo día se explica sola una vez y se lee como bug diez
+veces.
+
+### (c) CHOCAN — vigente `exacto` con `contradice` en el historial · **3**
+
+| marcador | vigente | historial |
+|---|---|---|
+| `emin_lista` | `V-137` (10/09) | exacto, **contradice**, cerrado, exacto |
+| `emin_encuentros` | `V-137` (10/09) | exacto, **contradice**, cerrado, exacto |
+| `imp_prog` | `V-108` | aproximado, corrige, **contradice** |
+
+⛔ **Es la mitad insegura de `D-58` y se lista y se para.** Los tres dependen de que `D-60` valga en
+las dos direcciones, y eso **no se decide desde acá**.
+
+### Con `_revisar` y **sin ningún caso** · **44** — no se tocan, y van declarados
+
+`camp_google_vtr`, `camp_meta_vtr`, `camp_prog_vtr`, `camp_titulo`, `enc_alcance_pct`,
+`enc_alcance_potencial`, `enc_evento`, `enc_ll_contactados_pct`, `enc_ll_efectivos_pct`,
+`gcba_cc_contact_pct`, `gcba_cc_contactados`, `gcba_imp_google`, `gcba_imp_meta`, `gcba_imp_prog`,
+`post_alcance1-4`, `post_camp1-4`, `post_habitantes1-4`, `post_impresiones1-4`, `post_periodo1-4`,
+`post_vistas1-4`, `post_vtr1-4`, `u1_post_google_vtr`, `u1_post_meta_vtr`.
+
+⭐ **Un cero declarado es un dato; un cero silencioso no.** Estos 44 no aparecen en ningún grupo
+porque **nadie los midió**, no porque estén bien.
+
+---
+
+## ⛔ P1 · `probar-laminas-declaradas.js` en ROJO **diciendo la verdad** — su índice de posiciones no conoce `L-054` ni `L-055` (10/09/2026)
+
+**Estaba verde sobre evidencia vieja.** El banco lee **el snapshot más nuevo** de `LAMINAS`
+(`readdirSync(...).sort().pop()`), y hasta hoy el más nuevo era el del **31/08**. Al entrar
+`LAMINAS_2026-09-10.tsv` se puso rojo — que es lo que tenía que hacer.
+
+| | 31/08 | 10/09 |
+|---|---|---|
+| `secco` · sección `encuentro` | `L-004` · `L-005` · `L-006` · `L-007` · `L-008` | **`L-054` (8) · `L-008` (9) · `L-055` (10)** |
+
+**Lo cambió `2026-08-31_5`**: dio de alta `L-054` y `L-055` y sacó las filas de `L-004` a `L-007`.
+**Nadie dio vuelta el banco**, y el snapshot viejo lo tapaba.
+
+⛔ **La causa concreta del rojo no son las expectativas: es `POS.secco`.** Ese índice se arma como
+`L-001`…`L-029`, así que **`L-054` y `L-055` no tienen posición** y `laminasDeSeccion_` los descarta
+por `conSlide` — de ahí que la sección devuelva `["L-008"]` sola.
+
+⛔⛔ **Y NO se arregló acá a propósito.** `POS` son *«las posiciones REALES de las plantillas
+(medidas)»*, y las de `L-054`/`L-055` **no están medidas**. Ponerles `8` y `10` copiando
+`LAMINAS.orden_plantilla` sería usar como autoritativo el campo que `CLAUDE.md` §2 declara
+**reportado y nunca autoritativo** — y un índice inventado hace que el banco vuelva a verde
+**afirmando algo que nadie verificó**, que es peor que el rojo.
+
+⭐ **Lo que lo destraba:** el censo posicional de la Parte A del `2026-09-10_1`, que mide la
+plantilla viva. Hasta entonces el rojo es información correcta.
+
+---
+
 ## ⛔⛔ P0 · `inventariarSolapas()` da de alta con `uso = revisar`, y después el seed YA NO puede promoverla (08/09/2026)
 
 **Medido leyendo el código, no supuesto.** Es un orden de operaciones que rompe un alta **sin que

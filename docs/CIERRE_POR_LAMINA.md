@@ -1,7 +1,11 @@
-# CIERRE POR LÁMINA — `jm`
+# CIERRE POR LÁMINA — `jm` y `secco`
 
 > **Estado: vivo.** Se edita. Nace el 22/08/2026 con la Parte A del
 > `docs/Prompts/2026-08-22_27_cierre_por_lamina_y_call_center.md`.
+>
+> ⭐ **10/09/2026 — deja de ser sólo de `jm`.** La tabla de `secco` vive en su propia sección, al
+> final. El título decía `— jm` y era cierto hasta hoy; se mueve porque el documento pasó a cubrir
+> las dos plantillas, no porque estuviera mal.
 >
 > **Qué pregunta contesta, y es una que no tenía dueño:** *¿qué láminas ya están cerradas, y qué
 > le falta a cada una de las que no?* `D-38` dice que la fase `informe semanal` cierra cuando el
@@ -766,13 +770,67 @@ cuenta ahí no da `-`: da un número plausible cinco veces más chico.**
   testigo con dos encuentros tardó 192 s.
 - **Si una lámina 🟡 se ve bien.** 🟡 dice que el número está entendido, no que la caja lo muestre
   como corresponde.
-- **Nada sobre `secco`.** Este tablero es de `jm`. `secco` tiene 29 láminas y ninguna fila acá.
+- ~~**Nada sobre `secco`.** Este tablero es de `jm`. `secco` tiene 29 láminas y ninguna fila acá.~~
+  ⭐ **Vencida el 10/09/2026** — no se borra porque era cierta: `secco` ya tiene su sección abajo.
+  ⚠ Y el «29» también venció: hoy son **27** filas en `LAMINAS` (`2026-08-31_5` sacó `L-004`…`L-007`
+  y dio de alta `L-054` y `L-055`).
 - ⛔⛔ **Y una advertencia que cruza el tablero entero, `X-29`: la `fecha_fin` de una cuenta se
   extiende sola.** Medido entre los dos fixtures: **27 de 959 cuentas se extendieron**, mediana 21
   días, máximo **157**. La ventana **14–20/08** pasa de **14 a 32 cuentas**, y **18 entran sólo por
   la deriva**. Afecta a **todo lo que use `ventana_ref: 'Cuentas'`** — hoy `looker/DIGITAL` y
   `looker/CC`, o sea los ocho `imp_*`, los cuatro `cc_*` y sus `gcba_*`. **No rompe: agranda**, y
   ninguna verificación del motor lo puede ver porque el motor hace lo que se le pidió.
+
+---
+
+## `secco` — 27 láminas, y **ninguna ✅** (10/09/2026)
+
+> Nace con el `2026-09-10_2`, cubriendo la mitad documental que el `2026-09-10_1` dejó pendiente.
+> **Mismos cinco estados que arriba** y **ningún ✅**: el ✅ lo pone el usuario.
+>
+> **De dónde sale cada columna, porque no todas salen del mismo lado:** `sección`, `orden`,
+> `escondida` y `rol` de `LAMINAS_2026-09-10.tsv`; lo que publicó, del deck
+> `secco-20260910-121156` extraído celda por celda con coordenadas
+> (`docs/_fixtures/2026-09-10_1203_numeros_deck_secco.csv`); los veredictos, de
+> `docs/casos_validacion_2026-09-10.csv`.
+>
+> ⛔ **Lo que no está medido va ⛔ con «sin medir», nunca con una estimación.**
+
+**Las 8 de `rol = equipo` no entran al conteo**: el motor no las llena y eso está declarado en
+`LAMINAS`, no decidido acá — son `L-002`, `L-003`, `L-009`, `L-011`, `L-013`, `L-015`, `L-026`
+y `L-029`.
+
+| lámina | sección | est. | qué publicó el 10/09 | qué falta |
+|---|---|---|---|---|
+| `L-001` | portada | ⛔ | `///// de /////` | **cablear `fecha_dia` y `fecha_mes`** — sin fila |
+| `L-054` | encuentro | ⛔ | la portada del 1 a 1, con su barrio | **sin medir** — no hay caso que la cruce |
+| `L-008` | encuentro | ⛔ | **no se emitió** | es la lámina de los encuentros que **no** son «1 a 1» (usuario, 10/09). Esta semana no hubo. **Sin medir** |
+| `L-055` | encuentro | 🟡 | 20 valores · 5 entre guiones · 8 `/////` | ⭐ **tres identidades internas exactas** (`V-133`) y el bloque **PRE** entero contra el equipo (`V-136`). Falta: los 6 benchmarks `u1_bench_*`, «Usuarios alcanzados» y «Frecuencia estimada», los 8 sin fila |
+| `L-010` | comunicaciones_post | ⛔ | 2 valores · 4 entre guiones · 18 `-` · 4 `/////` | la columna **Período** sale `/////` en las 4 filas, y la fecha aparece bajo **Estado**. **Sin medir** contra el equipo |
+| `L-012` | ministros | 🟡 | 3 valores · 9 entre guiones | ⭐ bloque de **mail exacto** (`V-138`) y **11 de 11** encuentros (`V-137`). Falta: el bloque **digital** no cierra (`C-123`) y la caja **Alcance** **no tiene token** en la plantilla |
+| `L-014` | m2_status | 🟡 | 9 valores | ⭐ enviados y entregados **al dígito** (`V-139`); aperturas y clics difieren por lectura (`C-122`). Falta: nada cableado — falta **decidir** si `C-122` se cierra |
+| `L-016` | campana | ⛔ | el título de cada campaña | `camp_titulo` trae el sufijo `\| 25/8` que el equipo no publica — **ítem 9, frenado por instrucción** |
+| `L-017` | campana | ⛔ | título + período | **sin medir**: el objetivo de la comunicación sale vacío |
+| `L-018` | campana | ⛔ | 12 `/////` (6 por campaña) | **cablear** `camp_audiencia1-3` y `camp_formato1-3` — los seis **sin fila**. ⚠ Y sus cajas estaban **cruzadas** (`C-126`, corregido el 10/09, **sin verificar en corrida**) |
+| `L-019` | campana | ⛔ | sólo el título | **sin medir** — los formatos implementados no están cableados |
+| `L-020` | campana | 🟡 | 13 valores · 6 entre guiones | ⛔ **el hallazgo del día**: dos pares de cajas cruzadas (`C-126`). Corregido en la plantilla el 10/09 15:55; **la corrida que lo verifica no corrió** |
+| `L-021` | campana | 🟡 | 11 valores · 38 entre guiones · 2 `/////` | ⭐ **identidad interna 6 de 6** (`V-131`). Falta: `camp_dig_insight` sin fila, y ⛔ **el TOTALES del equipo no suma sus propias filas** (`C-124`), así que la comparación válida es fila por plataforma |
+| `L-022` | campana | 🟡 | 57 valores · 8 entre guiones · 16 `/////` | ⭐ **16 celdas al dígito** (`V-135`), el GLOBAL (`V-134`) y la identidad de envíos (`V-132`). Falta: 4 `camp_envN_rem` sin fila —**ítem 42**, el alta de `acumulado \| Mail`— y ⛔ `C-125`, un envío de más en «Operativo Muro» |
+| `L-023` | campana | ⛔ 🕳 | 26 tokens **crudos** y 4 `/////` | **escondida**: sus tokens quedan crudos por diseño (`C-130`). Nada de `camp_resp_*` está cableado |
+| `L-024` | analisis_datos | ⛔ | `///// 2026` | **cablear** el mes de la portada |
+| `L-025` | semana_jm_conversacion | ⛔ 🕳 | 13 crudos | **escondida**. Ningún `conv_*` cableado |
+| `L-027` | impacto_comunicacional | ⛔ 🕳 | 11 crudos | **escondida**. Ningún `rep_*` cableado |
+| `L-028` | impacto_comunicacional | ⛔ 🕳 | 9 crudos | **escondida**. Ningún `rrss_*` cableado |
+
+**Conteo — 19 láminas de `rol = motor`: 0 ✅ · 6 🟡 · 13 ⛔ · 0 ⏳ · 0 🚫.**
+
+🕳 acá significa **escondida en la plantilla**: sus tokens **no entran al mapa** de la etapa 2 y por
+eso quedan crudos aunque la corrida cierre (`C-130`). ⚠ **No es lo mismo que «sin cablear»**, y
+desde afuera se ven igual — es la pregunta que `C-130` deja abierta.
+
+⛔ **Lo que este tablero de `secco` NO contesta:** ninguna fila se verificó contra la **plantilla
+viva** — todo lo posicional sale de las plantillas **espejo** de `Plan Inicial/_archivo/`, que están
+viejas al menos en `L-010`. Lo destraba el censo de la Parte A del `2026-09-10_1`.
 
 ---
 
