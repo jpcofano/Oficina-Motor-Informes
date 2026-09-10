@@ -45,9 +45,15 @@ let CASOS = null, GENERADA = null, ARCHIVOS = null;
   const cuerpo = AUD.slice(i, AUD.indexOf('\n};', i) + 3);
   CASOS = {};
   cuerpo.split(/\r?\n/).forEach(l => {
-    const m = l.match(/'([a-z0-9_]+)': \{ estado: '([a-z_]*)', caso: '([A-Z]+-\d+)'.*previos: \[([^\]]*)\]/);
-    if (m) CASOS[m[1]] = { estado: m[2], caso: m[3],
-      previos: m[4] ? m[4].split(',').map(x => x.replace(/'/g, '').trim()) : [] };
+    /* ⭐ `2026-09-10` — se captura también `csv`, que ya estaba en la constante y nadie leía. Es
+     * lo que permite exigir **la propiedad** —«el caso vigente sale del CSV más nuevo que lo
+     * nombra»— en vez de un `caso_id` literal, que es lo que el proyecto mueve. Ver bloque H. */
+    /* ⚠ `csv: '([^']+)'` y NO `[\d-]+`: hay un archivo `2026-09-08b` —dos CSV el mismo día— y con
+     * el patrón de fecha esas cuatro filas no parseaban. Lo cazó el bloque B en la primera corrida,
+     * que es para lo que está: dos lectores del mismo texto que tienen que coincidir. */
+    const m = l.match(/'([a-z0-9_]+)': \{ estado: '([a-z_]*)', caso: '([A-Z]+-\d+)', csv: '([^']+)'.*previos: \[([^\]]*)\]/);
+    if (m) CASOS[m[1]] = { estado: m[2], caso: m[3], csv: m[4],
+      previos: m[5] ? m[5].split(',').map(x => x.replace(/'/g, '').trim()) : [] };
   });
   afirmar(Object.keys(CASOS).length > 100,
     'se parsearon ' + Object.keys(CASOS).length + ' marcadores de la constante');
@@ -259,10 +265,44 @@ console.log('\n═══ H · ⭐⭐ LA LISTA REAL — SIETE NOMBRES, NO «siete
    * ⛔ Perseguir el estado era atarse a lo que el proyecto mueve. ⇒ Lo que se exige ahora es lo
    * que **no depende del estado del día**: que su caso vigente **sea el más nuevo que los nombra**
    * y que **su historial siga registrado** — porque cruzan `contradice` y **dependen de `D-60`**. */
+  /* ⭐⭐ `2026-09-10` — **CUARTA vuelta de esta afirmación, y la última deja de perseguir un id.**
+   * Decía `caso === 'C-106'`, y se puso roja **diciendo la verdad**: `V-137` midió los mismos dos
+   * marcadores el 10/09 contra el deck del equipo —11 de 11 encuentros, mismo orden— y por `D-58`
+   * manda el más nuevo. ⛔ **El estado no cambió** —`exacto` antes y `exacto` ahora—: lo único que
+   * se movió fue **qué caso se cita**, que es exactamente lo que el comentario de arriba ya decía
+   * que NO había que fijar. Fijar el id era atarse a lo que el proyecto mueve, otra vez.
+   *
+   * ⭐ **Lo que se exige ahora es la PROPIEDAD, calculada, y es más exigente que el literal:** que
+   * el caso vigente venga del **CSV más nuevo que nombra a ese marcador**. Un `C-106` que
+   * sobreviviera a un caso posterior ahora **falla**, y con el literal habría pasado.
+   *
+   * ⭐⭐ **Y el escaneo es un SEGUNDO LECTOR que falla distinto:** busca el nombre completo en la
+   * celda `token_propuesto`, mientras el generador lo obtiene **desarmando** esa misma celda por
+   * `/`, ` vs `, `,` y llaves. Dos mecanismos, no dos implementaciones — si discrepan, el hallazgo
+   * es el lector. ⚠ Mira `token_propuesto` y **nada más**: el nombre aparece también en las notas,
+   * que no son clave de nada. */
+  const CSVS = fs.readdirSync(path.join(RAIZ, 'docs'))
+    .filter(f => /^casos_validacion_.*\.csv$/.test(f)).sort();
+  function csvMasNuevoQueNombra(marcador) {
+    const re = new RegExp('(^|[^a-z0-9_])' + marcador + '([^a-z0-9_]|$)');
+    let ultimo = null;
+    CSVS.forEach(f => {
+      const filas = CSV.parsear(fs.readFileSync(path.join(RAIZ, 'docs', f), 'utf8'));
+      const col = filas[0].indexOf('token_propuesto');
+      if (col === -1) return;
+      if (filas.slice(1).some(fila => re.test(String(fila[col] || '')))) ultimo = f;
+    });
+    /* La MISMA derivación de clave que el generador —`2026-09-08b` existe: dos CSV el mismo día—.
+     * ⚠ Compartir esta línea no le quita independencia al control: lo que tiene que fallar distinto
+     * es **cómo se encuentra el marcador en la celda**, y ahí uno escanea y el otro desarma. */
+    return ultimo ? ultimo.replace('casos_validacion_', '').replace('.csv', '') : null;
+  }
   ['emin_lista', 'emin_encuentros'].forEach(n => {
-    afirmar(CASOS[n] && CASOS[n].caso === 'C-106',
-      '⭐ `' + n + '` responde al caso más nuevo que lo nombra: ' + (CASOS[n] || {}).caso +
-      ' (' + (CASOS[n] || {}).estado + ')');
+    const fecha = csvMasNuevoQueNombra(n);
+    afirmar(!!(CASOS[n] && fecha && CASOS[n].csv === fecha),
+      '⭐⭐ `' + n + '` responde al CSV más nuevo que lo nombra — ' + fecha +
+      ' (cita ' + (CASOS[n] || {}).caso + ', ' + (CASOS[n] || {}).estado + ', de ' +
+      (CASOS[n] || {}).csv + ')');
     afirmar(CASOS[n] && CASOS[n].previos.indexOf('contradice') !== -1,
       '⛔⛔ y su historial CONSERVA el `contradice` ⇒ depende de la simetría de `D-60`');
   });
