@@ -11573,10 +11573,53 @@ function imprimirCensoDeCajas_(informeId) {
   return censo;
 }
 
+/* ⛔⛔ `2026-09-10_4 ADDENDUM 2` — **el censo se transporta PLANO, y no es cosmético.**
+ *
+ * La primera corrida por la API devolvió `"[profundidad máxima]"` en `tokens` y en `geo`: el
+ * serializador de `tools/api.js` corta la anidación, y `laminas[].piezas[].tokens[]` queda fuera
+ * de alcance. ⚠ **Y no falló**: devolvió un JSON perfectamente válido **sin el dato**, que es la
+ * forma más cara de no medir — un instrumento que no puede transportar su resultado no midió nada,
+ * y su salida se lee igual que una completa.
+ *
+ * ⭐ Por eso el censo se emite además como **una línea de texto por caja**: profundidad 2, la misma
+ * información, y lo que ya imprime `Logger.log` para quien lo corre desde el editor. **No es un
+ * segundo censo** — sale del mismo recorrido, sólo que aplanado al final. */
+function lineasDeCenso_(informeId) {
+  var censo = censarCajasDeInforme_(informeId);
+  if (!censo.ok) return { ok: false, motivo: censo.motivo };
+
+  var lineas = [];
+  censo.laminas.forEach(function (l) {
+    lineas.push('== lamina ' + l.orden + (l.escondida ? ' ESCONDIDA' : '') +
+      ' · ' + l.con_token + ' con token · ' + l.sin_token + ' rotulos');
+    l.piezas.forEach(function (p) {
+      lineas.push((p.geo ? (p.geo.y + ',' + p.geo.x) : 'sin-geo') + ' | ' +
+        (p.tokens.length ? p.tokens.join('+') : '-') + ' | ' +
+        p.texto.slice(0, 60) + ' | ' + p.contenedor);
+    });
+  });
+
+  var dif = contrastarConSegundoLector_(informeId, censo);
+  var neg = controlNegativoDeCenso_(informeId, censo);
+  return {
+    ok: true,
+    informe_id: informeId,
+    plantilla: censo.plantilla.ok ? censo.plantilla.nombre : 'SIN SELLO',
+    modificada: censo.plantilla.ok ? String(censo.plantilla.modificada) : '',
+    total_laminas: censo.total_laminas,
+    escondidas: censo.escondidas.join(','),
+    control_2_difieren: dif.length,
+    control_3_fallas: neg.fallas.length,
+    control_3_mirados: neg.mirados + ' de ' + neg.declaradas,
+    lineas: lineas
+  };
+}
+
 /** ⭐ Wrapper público **sin argumentos** — Apps Script no lista en el desplegable ni las privadas
  *  ni las que reciben argumentos, así que una función que falla cualquiera de las dos es una que
- *  nadie puede correr. */
-function censarCajasSecco() { return imprimirCensoDeCajas_('secco'); }
+ *  nadie puede correr. Imprime por `Logger.log` **y** devuelve plano, para que sirva por los dos
+ *  caminos: el editor y la API. */
+function censarCajasSecco() { imprimirCensoDeCajas_('secco'); return lineasDeCenso_('secco'); }
 
 /** Ídem para `jm`. ⛔ El cruce de `C-126` en `jm` **no se hereda de `secco`**: se mide. */
-function censarCajasJm() { return imprimirCensoDeCajas_('jm'); }
+function censarCajasJm() { imprimirCensoDeCajas_('jm'); return lineasDeCenso_('jm'); }

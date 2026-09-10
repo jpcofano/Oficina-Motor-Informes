@@ -57,7 +57,30 @@ const POS = {
         'L-053': 7, 'L-036': 8, 'L-037': 9, 'L-038': 10, 'L-039': 11, 'L-040': 12, 'L-041': 13,
         'L-042': 14, 'L-043': 15, 'L-044': 16, 'L-045': 17, 'L-046': 18, 'L-047': 19, 'L-048': 20,
         'L-049': 21, 'L-050': 22, 'L-051': 23 },
-  secco: Object.fromEntries(Array.from({ length: 29 }, (_, i) => ['L-' + String(i + 1).padStart(3, '0'), i]))
+  /* ⭐⭐ `2026-09-10` — **`secco` deja de ser `L-001`…`L-029` corridas, y las posiciones están
+   * MEDIDAS.** Este índice se puso rojo al entrar `LAMINAS_2026-09-10.tsv`: `2026-08-31_5` dio de
+   * alta `L-054` y `L-055` en el medio del bloque `encuentro` y sacó las filas de `L-004`…`L-007`,
+   * así que las dos nuevas **no tenían posición** y `laminasDeSeccion_` las descartaba por
+   * `conSlide` — la sección devolvía `["L-008"]` sola.
+   *
+   * ⛔ **No se copió `orden_plantilla`**: `CLAUDE.md` §2 lo declara *reportado y nunca
+   * autoritativo*, y un índice inventado deja el banco en verde **afirmando algo que nadie
+   * verificó**, que es peor que el rojo.
+   *
+   * ⭐ Sale de `censarCajasSecco()` corrido contra la plantilla VIVA el 10/09 (`SECCO_marcada`,
+   * modificada 15:55): **31 láminas**, y el bloque del medio identificado **por su contenido**:
+   *   · slide 8  → `{{enc_evento}}` + `{{ecv_barrio}}`            = `L-054`, la portada del 1 a 1
+   *   · slide 9  → «Estrategia de comunicación» + `ecv_insc_*`    = `L-008`, la que NO es 1 a 1
+   *   · slide 10 → «Uno a uno en {{ecv_barrio}} ({{ecv_fecha}})»  = `L-055`
+   * ⚠ `orden_plantilla` decía 8, 9 y 10 — **coincide**, y eso ahora es un dato medido y no la
+   * fuente. */
+  secco: (() => {
+    const p = {};
+    for (let i = 1; i <= 7; i++) p['L-' + String(i).padStart(3, '0')] = i - 1;   // slides 1..7
+    p['L-054'] = 7; p['L-008'] = 8; p['L-055'] = 9;                              // slides 8..10
+    for (let i = 9; i <= 29; i++) p['L-' + String(i).padStart(3, '0')] = i + 1;  // slides 11..31
+    return p;
+  })()
 };
 
 const ITEM_U1  = { clave: 'Parque Avellaneda', tipo: 'Uno a uno', etapa: '', id_cuenta: '3487-AGOJDGAG' };
@@ -96,8 +119,13 @@ console.log('1 · el conjunto completo de cada sección');
     '`jm encuentro` = [L-052, L-035, L-053], en orden de deck — ' + JSON.stringify(encJm));
 
   const encSec = todas('secco', 'encuentro');
-  afirmar(JSON.stringify(encSec) === JSON.stringify(['L-004', 'L-005', 'L-006', 'L-007', 'L-008']),
-    '`secco encuentro` = las cinco, 4-5-6-7-8 — ' + JSON.stringify(encSec));
+  /* ⭐⭐ `2026-09-10` — **esta afirmación se dio vuelta y GANÓ exigencia.** Decía «las cinco,
+   * 4-5-6-7-8» y se puso roja **diciendo la verdad**: `2026-08-31_5` sacó `L-004`…`L-007` del
+   * registro y dio de alta `L-054` y `L-055`. ⛔ Fijar cinco ids era atarse a lo que el proyecto
+   * mueve; lo que se exige ahora es **el ORDEN DE DECK medido** —portada, iceberg, resultados—,
+   * que es la propiedad de la que cuelga todo lo de abajo. */
+  afirmar(JSON.stringify(encSec) === JSON.stringify(['L-054', 'L-008', 'L-055']),
+    '⭐ `secco encuentro` = [L-054, L-008, L-055], en orden de deck — ' + JSON.stringify(encSec));
 
   // ⚠ §3 del `_11.2`: los dos bloques que CRECEN. Se afirma el número nuevo, no el viejo.
   afirmar(todas('jm', 'campana').length === 9,
@@ -126,12 +154,21 @@ console.log('\n2 · la condición del "1 a 1"');
     'y los dos llevan 2 láminas: el conteo NO cambia, cambia cuál — por eso el control 1 no alcanza');
 
   const u1s = bloqueDe(ctx, 'secco', 'encuentro', ITEM_U1);
-  afirmar(JSON.stringify(u1s) === JSON.stringify(['L-004', 'L-005']),
-    'en `secco`, `Uno a uno` → L-004 + L-005 — ' + JSON.stringify(u1s));
+  /* ⭐⭐ Y acá está lo que la vuelta destapa, que vale más que el cambio de ids: **`secco` pasó a
+   * tener la MISMA forma que `jm`** — el «1 a 1» recibe portada + resultados y **NO** el iceberg.
+   * ⭐ Es exactamente lo que el usuario declaró el 10/09: `L-008` es la lámina de los encuentros
+   * que **no** son «1 a 1». Antes las dos ramas de `secco` llevaban láminas distintas por
+   * numeración; ahora llevan la misma condición que `jm`, y eso se puede exigir. */
+  afirmar(JSON.stringify(u1s) === JSON.stringify(['L-054', 'L-055']),
+    '⭐ en `secco`, `Uno a uno` → portada + resultados, SIN el iceberg — ' + JSON.stringify(u1s));
 
   const tems = bloqueDe(ctx, 'secco', 'encuentro', ITEM_TEM);
-  afirmar(JSON.stringify(tems) === JSON.stringify(['L-006', 'L-007', 'L-008']),
-    'y `Encuentro Temático` → L-006 + L-007 + iceberg — ' + JSON.stringify(tems));
+  afirmar(JSON.stringify(tems) === JSON.stringify(['L-054', 'L-008']),
+    '⭐ y `Encuentro Temático` → portada + iceberg, SIN la de resultados — ' + JSON.stringify(tems));
+  /* ⛔⛔ El control que NO alcanza solo, y por eso va al lado: los dos llevan **2 láminas**. Un
+   * banco que mirara el total daría verde sin que nada se hubiera aplicado. Lo que cambia es CUÁL. */
+  afirmar(u1s.length === 2 && tems.length === 2 && u1s[1] !== tems[1],
+    '⛔⛔ los dos llevan 2 láminas y difieren en la SEGUNDA — el conteo no distingue, el id sí');
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════
@@ -153,9 +190,11 @@ console.log('\n3 · `tipo` vacío');
 
   // ⚠ El caso que el prompt marca: en secco, un `Primera persona` NO recibe la estrategia.
   const pp = bloqueDe(ctx, 'secco', 'encuentro', { clave: 'x', tipo: 'Primera persona' });
-  afirmar(pp.length >= 1 && JSON.stringify(pp) === JSON.stringify(['L-008']),
-    '⚠ en `secco`, `Primera persona` sólo recibe el iceberg — ' + JSON.stringify(pp) +
-    '. NO se queda sin bloque, así que el invariante no se rompe');
+  /* ⚠ `2026-09-10` — sigue sin recibir la de resultados, que es lo que esta afirmación vigila;
+   * lo que cambió es que ahora **también recibe la portada**, porque `L-054` no tiene condición. */
+  afirmar(pp.length >= 1 && JSON.stringify(pp) === JSON.stringify(['L-054', 'L-008']),
+    '⚠ en `secco`, `Primera persona` recibe portada + iceberg y NO la de resultados — ' +
+    JSON.stringify(pp) + '. NO se queda sin bloque, así que el invariante no se rompe');
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════
