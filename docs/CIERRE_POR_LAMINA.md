@@ -816,13 +816,44 @@ y `L-029`.
 | `L-020` | campana | 🟡 | 13 valores · 6 entre guiones | ⛔ **el hallazgo del día**: dos pares de cajas cruzadas (`C-126`). Corregido en la plantilla el 10/09 15:55; **la corrida que lo verifica no corrió** |
 | `L-021` | campana | 🟡 | 11 valores · 38 entre guiones · 2 `/////` | ⭐ **identidad interna 6 de 6** (`V-131`). Falta: `camp_dig_insight` sin fila, y ⛔ **el TOTALES del equipo no suma sus propias filas** (`C-124`), así que la comparación válida es fila por plataforma |
 | `L-022` | campana | 🟡 | 57 valores · 8 entre guiones · 16 `/////` | ⭐ **16 celdas al dígito** (`V-135`), el GLOBAL (`V-134`) y la identidad de envíos (`V-132`). Falta: 4 `camp_envN_rem` sin fila —**ítem 42**, el alta de `acumulado \| Mail`— y ⛔ `C-125`, un envío de más en «Operativo Muro» |
-| `L-023` | campana | ⛔ 🕳 | 26 tokens **crudos** y 4 `/////` | **escondida**: sus tokens quedan crudos por diseño (`C-130`). Nada de `camp_resp_*` está cableado |
+| `L-023` | campana | 🚫 🕳 | 13 crudos + 2 `/////` por copia | **fuera de alcance** (usuario, 10/09) — como `L-048` de `jm`. **15 tokens dormidos** |
 | `L-024` | analisis_datos | ⛔ | `///// 2026` | **cablear** el mes de la portada |
-| `L-025` | semana_jm_conversacion | ⛔ 🕳 | 13 crudos | **escondida**. Ningún `conv_*` cableado |
-| `L-027` | impacto_comunicacional | ⛔ 🕳 | 11 crudos | **escondida**. Ningún `rep_*` cableado |
-| `L-028` | impacto_comunicacional | ⛔ 🕳 | 9 crudos | **escondida**. Ningún `rrss_*` cableado |
+| `L-025` | semana_jm_conversacion | 🚫 🕳 | 13 crudos | **fuera de alcance** (usuario, 10/09) — ídem `L-050` de `jm`. **13 dormidos** |
+| `L-027` | impacto_comunicacional | 🚫 🕳 | 11 crudos | **fuera de alcance** (usuario, 10/09). **11 dormidos** |
+| `L-028` | impacto_comunicacional | 🚫 🕳 | 9 crudos | **fuera de alcance** (usuario, 10/09). **9 dormidos** |
 
-**Conteo — 19 láminas de `rol = motor`: 0 ✅ · 6 🟡 · 13 ⛔ · 0 ⏳ · 0 🚫.**
+**Conteo — 19 láminas de `rol = motor`: 0 ✅ · 6 🟡 · 9 ⛔ · 0 ⏳ · 4 🚫.**
+
+### 🚫 Las cuatro que **no tienen fila en `LAMINAS`** — cuentan aparte
+
+Existen en la plantilla y están **escondidas**, pero `2026-08-31_5` les sacó la fila al dar de alta
+`L-054` y `L-055`. **No entran en los 19** porque el registro no las declara; van acá para que el
+día que alguien las muestre no se lean como algo que se rompió.
+
+| lámina | qué es | est. | tokens dormidos |
+|---|---|---|---|
+| `L-004` | uno a uno en comunas — portada | 🚫 | **2** |
+| `L-005` | uno a uno en comunas — resultados | 🚫 | **7** |
+| `L-006` | encuentro temático — portada | 🚫 | **2** |
+| `L-007` | encuentro temático — estrategia | 🚫 | **9** |
+
+⭐ **Las nueve juntas tienen 68 tokens dormidos**, medido por lámina y sin contar la segunda copia
+de `L-023`: `2 + 7 + 2 + 9` en las de arriba y `15 + 13 + 0 + 11 + 9` en `L-023`, `L-025`, `L-026`,
+`L-027` y `L-028`.
+
+⚠ **El reproductor del prompt daba 63 y también es correcto: cuenta sólo los `{{token}}` crudos.**
+Los 5 de diferencia son `/////` —tokens que la barrida sí alcanzó porque están mapeados en otra
+lámina—: 1 en `L-004`, 2 en `L-005` y 2 en `L-023`. **Los dos números miden cosas distintas y los
+dos hacen falta**: 63 es lo que el deck muestra crudo, 68 es lo que hay que cablear.
+
+⛔ **Y el motivo de escribirlo, que es lo único accionable:** el día que alguna vuelva al alcance
+**sale entera en `/////`**, y eso se lee como *«se rompió algo»* si nadie anotó antes cuántos eran.
+
+⚠ **`L-026` va en 0 y no es un error de medición:** su lámina no tiene ningún token — publica `xx`
+escrito a mano. Es `rol = equipo`, así que tampoco estaba en los 19.
+
+⛔ **🚫 no es un ✅ anticipado ni un ⛔ postergado, y acá menos que nunca: nadie verificó ninguna de
+las nueve.** Si vuelven al alcance, vuelven como ⛔ y con esos 68 tokens por delante.
 
 🕳 acá significa **escondida en la plantilla**: sus tokens **no entran al mapa** de la etapa 2 y por
 eso quedan crudos aunque la corrida cierre (`C-130`). ⚠ **No es lo mismo que «sin cablear»**, y
@@ -838,6 +869,7 @@ viejas al menos en `L-010`. Lo destraba el censo de la Parte A del `2026-09-10_1
 
 | fecha | qué |
 |---|---|
+| 10/09/2026 | ⭐ **Nace la sección de `secco`** con el `2026-09-10_2`: 19 láminas de `rol = motor`, 0 ✅ · 6 🟡 · 13 ⛔. Y el mismo día el `_3` mueve **nueve a 🚫 por decisión del usuario** —`L-004`…`L-007`, `L-023`, `L-025`…`L-028`—, así que el conteo pasa a **0 ✅ · 6 🟡 · 9 ⛔ · 4 🚫** (las cuatro sin fila en `LAMINAS` cuentan aparte). ⛔ **68 tokens quedan dormidos** y están anotados por lámina: el día que alguna vuelva, sale entera en `/////` |
 | 22/08/2026 | Nace con la Parte A del `_27`. Estado inicial: 0 ✅ · 5 🟡 · 18 ⛔ |
 | 22/08/2026 | Parte C del `_27`. **Ninguna fila se movió de estado, y eso es el resultado**: la 2 y la 5 siguen ⛔. Lo que cambió es el *«qué falta»* — el Call Center pasó de *"sin cablear"* a **`MAPEO` escrito y cableado frenado por `X-28`**, que es un bloqueo con nombre en vez de un hueco. Y la 5 queda anotada como **pintada sin control**, para que no se cierre de arrastre el día que se cablee la 2 |
 | 26/08/2026 | ⛔⛔ **`L-036` publicaba dos columnas de Programmatic y ningún control lo veía.** La fila no cambia de estado —sigue 🟡— pero su *«qué falta»* cambia entero: lo que faltaba no era cablear sino **darse cuenta**. ⭐ Lo que lo destapó fue una pregunta del usuario sobre por qué `% VTR` acertaba y `Visualizaciones` no; medido, **`% VTR` tampoco acertaba**. ⭐⭐ Y deja una regla: **un control contra constantes caduca cada vez que la fuente respira; uno contra identidades internas no caduca nunca** (`CLAUDE.md` §4) |

@@ -1094,6 +1094,35 @@ ningún prompt**. Si algún día se decide cablearlos, se reabre explícitamente
 > decisión** (11 diferidos + 3 manuales), **2 abiertos** (`camp_bench_*`), y **el resto con
 > fuente conocida**, bloqueados sólo por la falta de filas de `jm` en `CAMPANAS`.
 
+#### ⭐ El envío de más de *Operativo Muro* SE CONSERVA — divergencia declarada, 10/09/2026
+
+**Decisión del usuario.** En el deck del 10/09 el motor publica **tres** envíos de *Operativo Muro*
+y el equipo **dos**: el del **02/09** —audiencia *«No apertores del envío de jm»*, 178.221 enviados,
+176.870 entregados, 64.042 aperturas— **el equipo lo poda**.
+
+⭐ **Se conserva, y el motivo es que el deck del motor cierra consigo mismo en los dos lugares:**
+
+```
+121.789 + 145.744 + 176.870 = 444.403   = el GLOBAL de L-022 = el «Entregados» de L-020
+ 31.138 +  55.326 +  64.042 = 150.506   = el «Aperturas»  de L-020
+```
+
+⛔ **Por qué NO se saca para igualar al equipo, que es la parte que hay que dejar escrita:** la poda
+es **editorial y manual** —el equipo eligió cuál sacar—. El motor no tiene ninguna regla que lo
+reproduzca, y **cualquier regla que se inventara para acertarle sería calibrar contra el resultado
+esperado**: un rodeo, no un mecanismo. Es exactamente la figura que `CLAUDE.md` §4 nombra —*cuando
+aparece un mecanismo para COMPENSAR el resultado de otro, la primera pregunta no es cuánto
+compensar*—.
+
+⚠ **Y si alguna vez se sacara, habría que sacarlo en LOS DOS LUGARES A LA VEZ** o el agregado de
+`L-020` deja de cuadrar con su propio desagregado de `L-022`. Las dos identidades de arriba son lo
+que hoy hace confiable a la lámina; una poda parcial las rompe.
+
+**Es una divergencia declarada, no un caso abierto.** No se cablea nada, no se le abre caso y **no
+se vuelve a levantar en cada revisión**. ⭐ **Se habla con el equipo** — que es de quién es la
+decisión editorial. Queda registrada en `docs/casos_validacion_2026-09-10.csv` como `C-125`, que la
+midió y la dejó como `contradice`; **esta decisión la explica y la cierra del lado del motor**.
+
 ### 2.6 Análisis / conversación X (slides 25, 27, 28)
 
 **[?]** `conv_*`, `rep_*`, `rrss_*` — **fuente sin identificar**. No están en ninguna de
