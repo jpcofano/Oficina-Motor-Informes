@@ -12953,3 +12953,191 @@ function aplicarC1() {
   return { ok: !fallas.length, escritas: plan.cambios.length, verificadas: ok,
            nombres: plan.cambios.map(function (c) { return c.marcador; }), fallas: fallas };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-11_4` Parte A — **el mail de campaña se muda a `acumulado | Mail`.**
+ *
+ * **Por qué, y no es «para poder filtrar»:** `looker | resumen_metricas_dinamico` **no tiene
+ * columna de remitente**, así que `R-05` es **inexpresable** desde ahí — publica una fila ya
+ * agregada por la fuente, sin grano de envío. Además `looker` es la base que `R-31` midió
+ * **inestable por CAMBIO**.
+ *
+ * ⭐ **El destino se eligió con dos mediciones, no por preferencia:**
+ *   · `acumulado | Mail` tiene **36** columnas —con `Remitente` como ETIQUETA— contra 25 de
+ *     `digital | Directa Mail` y **5** de `looker | MAIL`, que no tiene ni remitente ni fecha;
+ *   · `digital | Directa Mail` es **subconjunto**: 2.532 de sus 2.574 filas tienen par en
+ *     `acumulado | Mail` por `ID cuentas` + `Fecha envio`. **Lo que las distingue es el AÑO** —
+ *     las 3.687 que sobran son 2025 y 2024—, o sea que `Directa Mail` está recortada a 2026.
+ *
+ * ⛔⛔ **Los 40 `camp_envN_*` VAN en la misma tanda, y el motivo es la identidad de control:** si
+ * el GLOBAL leyera `acumulado | Mail` y sus 40 filas siguieran en `Directa Mail`,
+ * *«GLOBAL = suma de las filas con la etiqueta del primer envío»* **no podría cerrar nunca** — y
+ * es el único control de la lámina que no depende del deck del equipo.
+ *
+ * ⛔⛔ **Los `m2_*` y `mail_*` NO se mudan.** Suman **por ventana**, y el universo nuevo crece
+ * hacia atrás a 2024 y 2025: si alguno no filtra por fecha pasaría a sumar tres años **sin
+ * fallar**. ⇒ `digital | Directa Mail` **no** se marca `ignorar` y se declara qué queda leyéndola.
+ *
+ * ⚠ **Dos cosas del universo nuevo que quedan ESCRITAS y no arregladas acá:** una fila con
+ * `Fecha envio` **09/09/2027** —no afecta al «primer envío» pero sí a cualquier `ULTIMO` o `max`—
+ * y **41 filas sin fecha**, que no son cruzables.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Las 12 columnas. ⛔ LETRA Y ENCABEZADO siempre: el encabezado es TESTIGO (`D-31`) y sin él una
+ * inserción de columna mueve todo sin que nada falle. ⚠ El prompt pedía 8; los 48 marcadores que
+ * se mudan usan **10 campos** —`mail_or`, `mail_ctor` y `mail_segmentacion` no estaban en la
+ * lista— y sin ellos los `camp_envN_or`, `_ctor` y `_aud` quedarían sin mapeo. */
+var MAPEO_ACUM_MAIL_ = [
+  { campo_logico: 'mail_id_cuenta',      columna: 'A',  encabezado: 'ID cuentas' },
+  { campo_logico: 'fecha_periodo',       columna: 'F',  encabezado: 'Fecha envio' },
+  { campo_logico: 'mail_remitente',      columna: 'G',  encabezado: 'Mail remitente' },
+  { campo_logico: 'mail_campana',        columna: 'H',  encabezado: 'Nombre campaña | Directa' },
+  { campo_logico: 'mail_segmentacion',   columna: 'J',  encabezado: 'Segmentacion' },
+  { campo_logico: 'mail_enviados',       columna: 'M',  encabezado: 'Enviados' },
+  { campo_logico: 'mail_entregados',     columna: 'N',  encabezado: 'Entregados' },
+  { campo_logico: 'mail_aperturas',      columna: 'O',  encabezado: 'Aperturas' },
+  { campo_logico: 'mail_or',             columna: 'P',  encabezado: '% OR' },
+  { campo_logico: 'mail_clics',          columna: 'Q',  encabezado: 'Clics' },
+  { campo_logico: 'mail_ctor',           columna: 'R',  encabezado: '% CTOR' },
+  /* ⭐ La etiqueta, que es lo que `R-05` va a usar. Nombre propio para no pisar `mail_remitente`,
+   * que es la DIRECCIÓN: son dos columnas distintas y la diferencia es el punto — `jmacri@` (424)
+   * y `jorge.macri@` (384) suman 808, que es el conteo exacto de la etiqueta `JM`. */
+  { campo_logico: 'mail_remitente_etq',  columna: 'AI', encabezado: 'Remitente' }
+];
+
+/** Los cuatro que además cambian de operación: la fuente vieja daba una fila ya agregada. */
+var MUDANZA_A_SUMA_ = ['camp_enviados', 'camp_entregados', 'camp_aperturas', 'camp_mail_clics'];
+
+/** Qué marcadores se mudan: los 6 de `resumen_metricas_dinamico` y los `camp_env*`/`camp_dir_impl`
+ *  de `Directa Mail`. ⛔ Se calcula del estado REAL de la hoja, no de una lista escrita a mano que
+ *  envejece — pero se declara el conteo para que un cambio de tamaño se vea. */
+function planMudanzaMail_() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  if (!hoja) return { ok: false, motivo: 'no existe MARCADORES' };
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0];
+  var iM = h.indexOf('marcador'), iB = h.indexOf('base_id'), iS = h.indexOf('solapa'),
+      iO = h.indexOf('operacion');
+  if (iM < 0 || iB < 0 || iS < 0 || iO < 0) return { ok: false, motivo: 'faltan columnas en MARCADORES' };
+
+  var SEIS = { camp_enviados: 1, camp_entregados: 1, camp_aperturas: 1, camp_mail_clics: 1,
+               camp_or: 1, camp_ctor: 1 };
+  var mudan = [], quedanEnDirecta = [], lineas = [];
+
+  for (var f = 1; f < datos.length; f++) {
+    var nombre = String(datos[f][iM] || '').trim();
+    if (!nombre) continue;
+    var base = String(datos[f][iB] || '').trim(), sol = String(datos[f][iS] || '').trim();
+    var desde = base + ' | ' + sol;
+
+    var esSeis = (base === 'looker' && sol === 'resumen_metricas_dinamico' && SEIS[nombre]);
+    var esCamp = (base === 'digital' && sol === 'Directa Mail' &&
+                  (nombre.indexOf('camp_env') === 0 || nombre === 'camp_dir_impl'));
+
+    if (esSeis || esCamp) {
+      /* ⛔⛔ La fila se copia ENTERA y se le cambian tres celdas. `upsertPorClave_` reescribe la
+       * fila con `(h in obj) ? obj[h] : ''`, así que pasar sólo los campos tocados **blanquearía
+       * `formato`, `notas`, `filtro` y todo lo demás**. */
+      var obj = {};
+      for (var k = 0; k < h.length; k++) obj[h[k]] = datos[f][k];
+      obj.base_id = 'acumulado';
+      obj.solapa = 'Mail';
+      if (MUDANZA_A_SUMA_.indexOf(nombre) !== -1) obj.operacion = 'SUMA';
+      mudan.push(obj);
+      lineas.push('   ' + nombre + ': ' + desde + ' → acumulado | Mail' +
+        (MUDANZA_A_SUMA_.indexOf(nombre) !== -1 ? '  · ' + String(datos[f][iO]).trim() + ' → SUMA' : ''));
+    } else if (base === 'digital' && sol === 'Directa Mail') {
+      quedanEnDirecta.push(nombre);
+    }
+  }
+
+  return { ok: true, mudan: mudan, lineas: lineas,
+           quedan_en_directa: quedanEnDirecta.length, quedan: quedanEnDirecta };
+}
+
+/** El gate de las 12 columnas: el encabezado REAL de cada letra, leído de la solapa viva. */
+function gateColumnasAcumMail_() {
+  var datos = hojaCruda_('acumulado', 'Mail');
+  if (!datos || !datos.length) return { ok: false, motivo: 'no pude leer acumulado | Mail' };
+  var enc = datos[0];
+  function idx(L) {
+    L = String(L).toUpperCase();
+    return L.length === 1 ? L.charCodeAt(0) - 65
+                          : (L.charCodeAt(0) - 64) * 26 + (L.charCodeAt(1) - 65);
+  }
+  var malas = [], lineas = [];
+  MAPEO_ACUM_MAIL_.forEach(function (c) {
+    var real = String(enc[idx(c.columna)] || '').replace(/\s+/g, ' ').trim();
+    var ok = real === c.encabezado;
+    lineas.push('   ' + c.columna + ' · esperado «' + c.encabezado + '» · real «' + real + '» ' + (ok ? 'OK' : '⛔'));
+    if (!ok) malas.push(c.columna);
+  });
+  return { ok: !malas.length, malas: malas, lineas: lineas, columnas_solapa: enc.length };
+}
+
+/** Modo seco. ⛔ Se lee antes de escribir. */
+function diagMudanzaMail() {
+  var g = gateColumnasAcumMail_();
+  var p = planMudanzaMail_();
+  Logger.log('== MUDANZA SECO ==');
+  g.lineas.forEach(function (l) { Logger.log(l); });
+  if (p.ok) p.lineas.forEach(function (l) { Logger.log(l); });
+  var ok = g.ok && p.ok;
+  Logger.log(ok ? '=> ' + p.mudan.length + ' marcadores · ' + MAPEO_ACUM_MAIL_.length + ' filas de MAPEO'
+                : '⛔ NO se escribe');
+  return { ok: ok, gate_columnas: g, marcadores_que_mudan: p.ok ? p.mudan.length : 0,
+           detalle: p.lineas || [], quedan_en_directa: p.quedan_en_directa,
+           quedan: (p.quedan || []).slice(0, 70), motivo: g.ok ? (p.motivo || '') : 'gate de columnas' };
+}
+
+/** El que escribe. `MAPEO` primero, `MARCADORES` después, y relectura desde las dos hojas. */
+function aplicarMudanzaMail() {
+  var g = gateColumnasAcumMail_();
+  if (!g.ok) { Logger.log('⛔ gate de columnas: ' + g.malas.join(', ')); return { ok: false, motivo: 'gate de columnas' }; }
+  var p = planMudanzaMail_();
+  if (!p.ok) { Logger.log('⛔ ' + p.motivo); return p; }
+  if (!p.mudan.length) return { ok: false, motivo: 'cero marcadores para mudar — ya estaba hecho?' };
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var filasMapeo = MAPEO_ACUM_MAIL_.map(function (c) {
+    return { base_id: 'acumulado', solapa: 'Mail', campo_logico: c.campo_logico, hoja: 'Mail',
+             columna: c.columna, encabezado: c.encabezado, tipo_esperado: '',
+             notas: '2026-09-11_4 Parte A - alta para la mudanza del mail de campania. Letra Y ' +
+               'encabezado: el encabezado es TESTIGO (D-31) y nunca fallback.' };
+  });
+  upsertPorClave_(ss.getSheetByName('MAPEO'), ['base_id', 'campo_logico'], filasMapeo);
+  upsertPorClave_(ss.getSheetByName('MARCADORES'), ['marcador'], p.mudan);
+  SpreadsheetApp.flush();
+
+  /* Relectura desde las dos hojas. */
+  var dM = ss.getSheetByName('MAPEO').getDataRange().getValues(), hM = dM[0];
+  var okMapeo = 0;
+  for (var i = 1; i < dM.length; i++) {
+    if (String(dM[i][hM.indexOf('base_id')]).trim() === 'acumulado' &&
+        String(dM[i][hM.indexOf('solapa')]).trim() === 'Mail') okMapeo++;
+  }
+  var dC = ss.getSheetByName('MARCADORES').getDataRange().getValues(), hC = dC[0];
+  var okMarc = 0, fallas = [];
+  var esperados = {};
+  p.mudan.forEach(function (o) { esperados[o.marcador] = o; });
+  for (var j = 1; j < dC.length; j++) {
+    var n = String(dC[j][hC.indexOf('marcador')]).trim();
+    if (!esperados[n]) continue;
+    var base = String(dC[j][hC.indexOf('base_id')]).trim();
+    var sol = String(dC[j][hC.indexOf('solapa')]).trim();
+    var op = String(dC[j][hC.indexOf('operacion')]).trim();
+    var fmt = String(dC[j][hC.indexOf('formato')]).trim();
+    var bien = base === 'acumulado' && sol === 'Mail' &&
+      (MUDANZA_A_SUMA_.indexOf(n) === -1 || op === 'SUMA') &&
+      fmt === String(esperados[n].formato).trim();   /* ⭐ el formato NO se tocó */
+    if (bien) okMarc++; else fallas.push(n + ': ' + base + '|' + sol + ' op=' + op + ' fmt=' + fmt);
+  }
+
+  Logger.log('== RELECTURA ==');
+  Logger.log('   MAPEO acumulado|Mail: ' + okMapeo + ' filas (esperadas ' + MAPEO_ACUM_MAIL_.length + ')');
+  Logger.log('   MARCADORES mudados OK: ' + okMarc + ' de ' + p.mudan.length);
+  fallas.slice(0, 10).forEach(function (l) { Logger.log('   ⛔ ' + l); });
+  return { ok: okMapeo === MAPEO_ACUM_MAIL_.length && okMarc === p.mudan.length && !fallas.length,
+           mapeo_filas: okMapeo, marcadores: okMarc, de: p.mudan.length,
+           quedan_en_directa: p.quedan_en_directa, fallas: fallas.slice(0, 10) };
+}
