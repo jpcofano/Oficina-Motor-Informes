@@ -11738,3 +11738,99 @@ function diagUltimoDeck() {
   Logger.log('deck de ' + r.corrida_id + ': ' + (r.deck || r.motivo));
   return r;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐ `2026-09-11_2 ADDENDUM 1` punto 1 — **¿hay EMPATE en la fecha mínima?**
+ *
+ * La regla propuesta es *«el remitente de la campaña es el de la fila con `fecha_periodo`
+ * mínima»*. ⛔ **Si dos filas comparten esa fecha con remitentes distintos, la regla no decide**,
+ * y elegir en silencio es lo que convierte un empate en un número equivocado el día que aparezca.
+ *
+ * ⚠ **Agrupa por `ID Cuentas`, no por el nombre de campaña**, y eso no es un detalle: medido hoy,
+ * las tres filas de *Operativo Muro* **no comparten el nombre** —dos dicen `Operativo Muro` y la
+ * tercera `Operativo Muro | 25/8`— mientras que el deck las suma a las tres. El identificador de
+ * campaña es la cuenta (`D-30`), no el texto.
+ *
+ * Sólo lectura. Devuelve el resumen, no las filas.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function diagEmpateRemitente() {
+  var abiertoR = false, abiertoD = false;
+  try {
+    try { abrirCacheRegistros_(); abiertoR = true; } catch (e) {}
+    try { abrirCacheDatosHoja_(); abiertoD = true; } catch (e) {}
+
+    var ventana = { ok: true, desde: new Date(2026, 0, 1), hasta: new Date(2026, 11, 31),
+                    origen: 'diag empate' };
+    var lectura = leerFuente('digital', ventana, 'Directa Mail');
+    if (!lectura || !lectura.ok) return { ok: false, motivo: (lectura || {}).motivo };
+
+    var enc = lectura.encabezados || [];
+    function col(nombre) { return enc.indexOf(nombre); }
+    var iCta = col('ID Cuentas'), iF = col('Fecha envio'),
+        iRem = col('Mail remitente'), iCamp = col('Nombre campaña | Directa');
+    if (iCta < 0 || iF < 0 || iRem < 0) {
+      return { ok: false, motivo: 'faltan columnas: ID Cuentas/Fecha envio/Mail remitente' };
+    }
+
+    /* ⛔⛔ `leerFuente` devuelve cada fila como OBJETO indexado por encabezado, no como array.
+     * La primera versión de esto usaba `f[iCta]` —índice numérico— y devolvió **`cuentas: 0`**:
+     * un detector ciego, que en un log se lee exactamente igual que *«no hay empates»*. Por eso
+     * abajo hay un control positivo que ABORTA en vez de informar cero. */
+    var porCuenta = {};
+    (lectura.filas || []).forEach(function (f) {
+      var cta = String(f['ID Cuentas'] || '').trim();
+      if (!cta) return;
+      var fecha = f['Fecha envio'];
+      var ms = (fecha instanceof Date) ? fecha.getTime() : null;
+      if (ms === null) return;
+      if (!porCuenta[cta]) porCuenta[cta] = [];
+      porCuenta[cta].push({ ms: ms, rem: String(f['Mail remitente'] || '').trim(),
+                            camp: String(f['Nombre campaña | Directa'] || '').trim() });
+    });
+
+    var empates = [], conVarios = 0, total = 0, nombresDistintos = [];
+    Object.keys(porCuenta).forEach(function (cta) {
+      var fs = porCuenta[cta];
+      total++;
+      if (fs.length < 2) return;
+      conVarios++;
+      var min = Math.min.apply(null, fs.map(function (x) { return x.ms; }));
+      var enMin = fs.filter(function (x) { return x.ms === min; });
+      var rems = {};
+      enMin.forEach(function (x) { rems[x.rem] = true; });
+      if (Object.keys(rems).length > 1) {
+        empates.push(cta + ': ' + enMin.length + ' filas en la fecha mínima con ' +
+          Object.keys(rems).length + ' remitentes — ' + Object.keys(rems).join(' / '));
+      }
+      /* ⭐ La segunda señal, medida de paso: ¿las filas de una misma cuenta comparten el NOMBRE? */
+      var noms = {};
+      fs.forEach(function (x) { if (x.camp) noms[x.camp] = true; });
+      if (Object.keys(noms).length > 1) {
+        nombresDistintos.push(cta + ': ' + Object.keys(noms).join(' | '));
+      }
+    });
+
+    /* ⭐⭐ CONTROL POSITIVO, y no es opcional: hay un caso que YA SE SABE que está — la cuenta de
+     * *Operativo Muro* tiene TRES envíos y DOS nombres de campaña distintos. Si el detector no ve
+     * ninguna cuenta con varios envíos, no está midiendo: **aborta en vez de informar cero**. */
+    if (conVarios === 0) {
+      return { ok: false, motivo: 'CONTROL POSITIVO FALLÓ: cero cuentas con más de un envío, ' +
+        'y se sabe que Operativo Muro tiene tres. El detector no está leyendo — no se informa cero.',
+        cuentas: total };
+    }
+
+    return {
+      ok: true,
+      condiciones: 'cacheRegistros=' + abiertoR + ' cacheDatosHoja=' + abiertoD,
+      cuentas: total,
+      cuentas_con_varios_envios: conVarios,
+      EMPATES: empates.length,
+      detalle_empates: empates.slice(0, 20),
+      cuentas_con_nombre_distinto: nombresDistintos.length,
+      detalle_nombres: nombresDistintos.slice(0, 15)
+    };
+  } finally {
+    if (abiertoD) { try { cerrarCacheDatosHoja_(); } catch (e) {} }
+    if (abiertoR) { try { cerrarCacheRegistros_(); } catch (e) {} }
+  }
+}
