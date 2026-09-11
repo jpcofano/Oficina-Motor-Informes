@@ -12774,3 +12774,182 @@ function aplicarAltaCcCampanias() {
   Logger.log('=> 2 de 2 filas · MAPEO ' + (okMapeo ? 'OK' : '⛔') + ' · MARCADORES ' + (okMarc ? 'OK' : '⛔'));
   return { ok: okMapeo && okMarc, filas: 2, detalle: detalle };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-10_5` Parte A — **C.1: los tokens que ESCRIBE UNA PERSONA dejan de decir `/////`.**
+ *
+ * **Decisión del usuario, 10/09/2026.** Esas cajas publican **el nombre del token, sin llaves**,
+ * vía `operacion = TEXTO` + `valor_fijo` — un mecanismo que **ya existe** (`CONFIG_INFORMES` §4.3)
+ * y que no es código.
+ *
+ * ⛔ **El motivo está en `CLAUDE.md` §4 y es una pregunta, no una preferencia:** *«¿qué trabajo
+ * manda a hacer este glifo, y hay más de una causa que lleve a él? Si dos causas distintas
+ * comparten símbolo y piden acciones distintas, falta un símbolo.»* Hoy `/////` significa **«nadie
+ * lo cableó»** y manda a cablear cajas que **nadie va a cablear nunca**, porque ya se decidió que
+ * las escribe una persona.
+ *
+ * **Las cuatro familias, y las cuatro tienen decisión previa CON FECHA:**
+ *   · `camp_audiencia1-3` · `camp_formato1-3` — fuera de alcance (24/08, `jm`), replicada a `secco`;
+ *   · los seis `u1_bench_*` — `*_bench_*` congelados (04/09);
+ *   · `camp_bench_remitente` — diferido (07/08);
+ *   · `camp_dig_insight` · `camp_mail_insight` — `[MANUAL]` (08/08).
+ *
+ * ⛔⛔ **Los que NO entran, y cada uno por una causa DISTINTA — que es todo el punto de esto:**
+ *   · `u1_total_alcance` · `u1_total_frecuencia` → *«el dato no existe todavía»* (26/08). Darles
+ *     una fila de texto diría que alguien lo va a escribir, y nadie lo va a escribir;
+ *   · `emin_impresiones` → **la fuente no está identificada**: el equipo publica `1.037.621`, o
+ *     sea que el dato existe; lo medido es que **no está en ninguna solapa de `reuniones`**.
+ *     ⭐ Ahí `/////` **no miente**: manda a preguntarle al equipo, que es trabajo real;
+ *   · `camp_remitente` · los cuatro `camp_envN_rem` · `camp_env4_fecha` → **cableado REAL
+ *     pendiente** (ítem 42, el alta de `acumulado | Mail`). ⛔ Darles `TEXTO` los sacaría de la
+ *     cola con una etiqueta falsa, y **un token que sale de la cola mal etiquetado no vuelve
+ *     solo**: nadie lo cablea nunca y nadie sabe por qué;
+ *   · `fecha_dia` · `fecha_mes` · `post_formato1-4` → sin decisión citada;
+ *   · `periodo` → ⭐ **se resuelve por otro camino y NO publica `/////`**. Medido cruzando la lista
+ *     contra el deck: *«sin fila en `MARCADORES`»* y *«publica `/////`»* son **dos afirmaciones
+ *     distintas**, y sin ese cruce esta función le habría escrito una fila inerte.
+ *
+ * ⚠ **`informe_id = 'secco'` y NO `'*'`**, deliberado: `marcador` es clave única en `MARCADORES`,
+ * así que una fila `*` convertiría la decisión de un informe en la de los dos **sin medirlo**. Las
+ * cajas equivalentes de `jm` **siguen en `/////`**, y eso es lo esperado, no un olvido.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+var C1_TOKENS_ = [
+  /* fuera de alcance — 24/08/2026, decisión del usuario para `jm`, replicada a `secco` el 10/09 */
+  'camp_audiencia1', 'camp_audiencia2', 'camp_audiencia3',
+  'camp_formato1', 'camp_formato2', 'camp_formato3',
+  /* `*_bench_*` congelados — 04/09/2026 */
+  'u1_bench_google_ctr', 'u1_bench_google_vtr',
+  'u1_bench_meta_ctr', 'u1_bench_meta_vtr',
+  'u1_bench_prog_ctr', 'u1_bench_prog_vtr',
+  /* diferido — 07/08/2026 */
+  'camp_bench_remitente',
+  /* `[MANUAL]`, las escribe el equipo — 08/08/2026 */
+  'camp_dig_insight', 'camp_mail_insight'
+];
+
+/**
+ * El plan de C.1. ⭐ **El censo corre ACÁ ADENTRO**, no en la cabeza de quien escribe el prompt:
+ * la lista se cruza **token por token contra la plantilla viva**, nunca por prefijo — `camp_env`
+ * matchea `camp_enviados` y `post_` matchea `u1_post_`.
+ *
+ * ⛔ Y un marcador cuyo token **no está en ninguna lámina no falla**: resuelve, no encuentra dónde
+ * pintarse, no entra a `FALTANTES`, y queda como una fila que nadie va a poder explicar.
+ */
+function planC1_() {
+  var lineas = [], cambios = [], problemas = [];
+
+  /* ── Gate 1 · el censo: cada token existe, y en qué láminas ──────────────────────────── */
+  var censo = censarCajasDeInforme_('secco');
+  if (!censo.ok) return { ok: false, motivo: 'el censo no corrió: ' + censo.motivo, lineas: lineas };
+  lineas.push('censo: ' + censo.plantilla.nombre + ' · modificada ' + censo.plantilla.modificada);
+
+  var donde = {}, escondidas = {};
+  censo.escondidas.forEach(function (n) { escondidas[n] = true; });
+  censo.laminas.forEach(function (l) {
+    l.piezas.forEach(function (p) {
+      p.tokens.forEach(function (t) {
+        if (!donde[t]) donde[t] = [];
+        if (donde[t].indexOf(l.orden) === -1) donde[t].push(l.orden);
+      });
+    });
+  });
+
+  /* ── Gate 2 · ninguno puede tener fila ya ────────────────────────────────────────────────
+   * ⛔⛔ No es prolijidad: `upsertPorClave_` usa `marcador` como CLAVE ÚNICA, así que escribir
+   * sobre un token que ya tiene fila **la pisa entera** —`(h in obj) ? obj[h] : ''` blanquea lo
+   * que el objeto no traiga—. Un alta que pisa una fila existente no falla: la borra. */
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES');
+  var datos = hoja.getDataRange().getValues();
+  var iM = datos[0].indexOf('marcador');
+  var yaTiene = {};
+  for (var f = 1; f < datos.length; f++) {
+    var n = String(datos[f][iM] || '').trim();
+    if (n) yaTiene[n] = String(datos[f][datos[0].indexOf('informe_id')] || '').trim();
+  }
+
+  C1_TOKENS_.forEach(function (t) {
+    var ls = donde[t] || [];
+    var visibles = ls.filter(function (n) { return !escondidas[n]; });
+    var estado = [];
+    if (!ls.length) { problemas.push(t + ': NO está en la plantilla'); estado.push('SIN LAMINA'); }
+    if (ls.length && !visibles.length) { problemas.push(t + ': sólo en lámina escondida'); estado.push('SOLO ESCONDIDA'); }
+    if (t in yaTiene) { problemas.push(t + ': YA tiene fila (informe_id=' + yaTiene[t] + ')'); estado.push('YA TIENE FILA'); }
+
+    lineas.push('   ' + t + ' · láminas ' + JSON.stringify(ls) +
+      (ls.length > 1 ? '  ⚠ VIVE EN ' + ls.length + ' LÁMINAS: la fila lo pinta en todas' : '') +
+      (estado.length ? '  ⛔ ' + estado.join(' · ') : '  OK'));
+
+    if (!estado.length) {
+      cambios.push({ marcador: t, familia: t.split('_')[0], informe_id: 'secco',
+        base_id: '', solapa: '', campo_logico: '', periodo_ref: '',
+        operacion: 'TEXTO', valor_fijo: t, filtro: '', dimensiones: '',
+        formato: 'texto', catalogo: '', separador: '',
+        notas: 'C.1 del 2026-09-10_5, decision del usuario del 10/09/2026: esta caja LA ESCRIBE ' +
+          'UNA PERSONA, asi que publica el nombre del token en vez de /////. El motivo es de ' +
+          'simbolo y no de dato: ///// significa -nadie lo cableo- y mandaba a cablear una caja ' +
+          'que nadie va a cablear nunca. Dos causas distintas no pueden compartir simbolo si ' +
+          'piden trabajos distintos (CLAUDE.md 4). || informe_id=secco y NO * : marcador es clave ' +
+          'unica, asi que una fila * convertiria la decision de un informe en la de los dos sin ' +
+          'medirlo. Las cajas equivalentes de jm siguen en ///// y eso es lo esperado.' });
+    }
+  });
+
+  if (problemas.length) {
+    return { ok: false, motivo: 'gates: ' + problemas.join(' | '), lineas: lineas, cambios: [] };
+  }
+  return { ok: true, lineas: lineas, cambios: cambios };
+}
+
+/** El modo seco de C.1. ⛔ Un `diag` que nadie mira no es un modo seco: es un paso más. */
+function diagAplicarC1() {
+  var r = planC1_();
+  Logger.log('== C.1 SECO · ' + C1_TOKENS_.length + ' tokens ==');
+  r.lineas.forEach(function (l) { Logger.log(l); });
+  Logger.log(r.ok ? '=> los gates pasan: ' + r.cambios.length + ' de ' + C1_TOKENS_.length + ' filas'
+                  : '⛔ NO se escribe: ' + r.motivo);
+  return r;
+}
+
+/**
+ * El que escribe. ⛔ **Una sola aplicación**, no dos.
+ *
+ * ⭐ La relectura sale de la hoja; la verificación **independiente** la hace quien lo corre, por el
+ * export directo, donde no interviene ningún `.gs`.
+ */
+function aplicarC1() {
+  var plan = planC1_();
+  if (!plan.ok) { Logger.log('⛔ NO se escribe: ' + plan.motivo); return plan; }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  upsertPorClave_(ss.getSheetByName('MARCADORES'), ['marcador'], plan.cambios);
+  SpreadsheetApp.flush();
+
+  var datos = ss.getSheetByName('MARCADORES').getDataRange().getValues();
+  var h = datos[0];
+  var iM = h.indexOf('marcador'), iO = h.indexOf('operacion'),
+      iV = h.indexOf('valor_fijo'), iI = h.indexOf('informe_id');
+  var ok = 0, fallas = [];
+  plan.cambios.forEach(function (c) {
+    var visto = false;
+    for (var f = 1; f < datos.length; f++) {
+      if (String(datos[f][iM] || '').trim() !== c.marcador) continue;
+      visto = true;
+      var bien = String(datos[f][iO] || '').trim() === 'TEXTO' &&
+                 String(datos[f][iV] || '').trim() === c.marcador &&
+                 String(datos[f][iI] || '').trim() === 'secco';
+      if (bien) ok++;
+      else fallas.push(c.marcador + ': op=«' + datos[f][iO] + '» valor=«' + datos[f][iV] +
+        '» informe=«' + datos[f][iI] + '»');
+    }
+    if (!visto) fallas.push(c.marcador + ': NO QUEDÓ en la hoja');
+  });
+
+  Logger.log('== RELECTURA desde la hoja ==');
+  Logger.log('   ' + ok + ' de ' + plan.cambios.length + ' quedaron como se pidió');
+  fallas.forEach(function (l) { Logger.log('   ⛔ ' + l); });
+  Logger.log('=> ' + plan.cambios.length + ' de ' + C1_TOKENS_.length + ' tokens · ' +
+    (fallas.length ? '⛔ HAY FALLAS' : 'TODO QUEDÓ'));
+  return { ok: !fallas.length, escritas: plan.cambios.length, verificadas: ok,
+           nombres: plan.cambios.map(function (c) { return c.marcador; }), fallas: fallas };
+}
