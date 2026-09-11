@@ -12139,3 +12139,52 @@ function diagEnviosPorCampania() {
     empates_en_la_fecha_minima: empates,
     transiciones_primera_a_reenvio: pares };
 }
+
+/**
+ * ⭐ `2026-09-11_4` Parte B — **la mudanza en seco, SIN filtro.**
+ *
+ * ⛔⛔ Mudar y filtrar **mueven el mismo número en direcciones opuestas** —mudar lo deja en
+ * `444.403`, filtrar lo baja a `267.533`—. Juntos y a ciegas, una diferencia no se puede atribuir.
+ * Por eso esto corre **antes** de escribir el filtro, y por una llamada en vez de un deck.
+ *
+ * ⚠ Abre las DOS cachés, como `generarInforme`: sin ellas `buscarMapeo` relee `SOLAPAS` y `MAPEO`
+ * en cada llamada y la misma consulta pasa de ~80 s a más de 600 (factor 54, `CLAUDE.md` §4).
+ */
+function diagCampMuroSinFiltro() {
+  var abiertoR = false, abiertoD = false;
+  try {
+    try { abrirCacheRegistros_(); abiertoR = true; } catch (e) {}
+    try { abrirCacheDatosHoja_(); abiertoD = true; } catch (e) {}
+    var r = diagMarcadoresDeCuenta_('secco', '2026_septiembre_04_10', ['3576-AGOSEGGJ'], 'camp_');
+    /* ⚠ El retorno trae los resultados bajo `cuentas`, no bajo `resultados`: la primera versión
+     * devolvió `total: 0` — otro cero de detector, que se lee igual que «no hay». Se aplana. */
+    var out = [];
+    var lista = [];
+    if (r && r.cuentas) {
+      Object.keys(r.cuentas).forEach(function (c) {
+        var v = r.cuentas[c];
+        var arr = (v && v.resultados) ? v.resultados : (v && v.marcadores) ? v.marcadores : (v instanceof Array ? v : []);
+        arr.forEach(function (x) { lista.push(x); });
+      });
+    }
+    if (!lista.length && r) { out.push('FORMA: ' + JSON.stringify(r).slice(0, 900)); }
+    var SEIS = { camp_enviados: 1, camp_entregados: 1, camp_aperturas: 1, camp_mail_clics: 1,
+                 camp_or: 1, camp_ctor: 1, camp_dir_impl: 1 };
+    /* ⚠ Cada resultado es un STRING ya formateado —`camp_x = 39.290.312 · crudo=… · estado=ok`—,
+     * no un objeto. Adivinar la forma costó dos vueltas y en las dos el síntoma fue una lista
+     * vacía sobre 83 resultados reales: el cero que se lee como «no hay». */
+    lista.forEach(function (x) {
+      var t = String(x);
+      var n = t.split(' ')[0].trim();
+      if (SEIS[n]) out.push(t.slice(0, 120));
+    });
+    if (!out.length && lista.length) {
+      out.push('EJEMPLO (claves reales): ' + JSON.stringify(lista[0]).slice(0, 500));
+    }
+    return { ok: true, condiciones: 'cacheRegistros=' + abiertoR + ' cacheDatosHoja=' + abiertoD,
+             claves: r ? Object.keys(r).slice(0, 10) : [], total: (lista || []).length, seis: out };
+  } finally {
+    if (abiertoD) { try { cerrarCacheDatosHoja_(); } catch (e) {} }
+    if (abiertoR) { try { cerrarCacheRegistros_(); } catch (e) {} }
+  }
+}
