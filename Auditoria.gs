@@ -11977,3 +11977,165 @@ function diagValoresDeColumna_(baseId, nombreSolapa, letras, agujaCol, aguja) {
 function diagMailDeAcumulado() {
   return diagValoresDeColumna_('acumulado', 'Mail', 'G,AI,AF,AH', 'H', 'Operativo Muro');
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐ `2026-09-11_4 ADDENDUM 1` — **dos censos antes de elegir.** Sólo lectura, sin registrar nada.
+ *
+ * 1 · ¿las 2.574 filas de `digital | Directa Mail` son un SUBCONJUNTO de las 6.219 de
+ *     `acumulado | Mail`? Se cruza por `ID cuentas` + `Fecha envio`, y se declara `n de m`.
+ *     ⛔ Si hay filas de `Directa Mail` sin par, los universos están **cruzados** y mudar los 40
+ *     `camp_envN_*` rompería marcadores en vez de ampliarlos.
+ * 2 · ¿la regla del primer envío sirve **en general** o sólo en *Operativo Muro*?
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Clave de cruce: cuenta + fecha en `yyyy-mm-dd`. ⚠ La fecha viene como `Date` y compararla
+ *  como texto daría cero coincidencias sin fallar — el cero de un detector otra vez. */
+function claveMail_(cuenta, fecha) {
+  var d = (fecha instanceof Date) ? fecha : null;
+  if (!d) return null;
+  return String(cuenta).trim() + '‖' +
+    d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+}
+
+function hojaCruda_(baseId, nombre) {
+  var bases = leerRegistro_('BASES', 'base_id') || {};
+  var b = bases[baseId];
+  if (!b || !b.sheet_id) return null;
+  var h = SpreadsheetApp.openById(b.sheet_id).getSheetByName(nombre);
+  return h ? h.getDataRange().getValues() : null;
+}
+
+function topDe_(filas, i, cuantos) {
+  var c = {};
+  filas.forEach(function (f) {
+    var v = String(f[i] == null ? '' : f[i]).replace(/\s+/g, ' ').trim() || '(vacía)';
+    c[v] = (c[v] || 0) + 1;
+  });
+  return Object.keys(c).map(function (k) { return { v: k, n: c[k] }; })
+    .sort(function (a, b) { return b.n - a.n; })
+    .slice(0, cuantos || 6)
+    .map(function (p) { return p.v + ' = ' + p.n; });
+}
+
+/** Censo 1 — el cruce. */
+function diagCruceMailDirecta() {
+  var ac = hojaCruda_('acumulado', 'Mail');
+  var di = hojaCruda_('digital', 'Directa Mail');
+  if (!ac || !di) return { ok: false, motivo: 'no pude abrir alguna de las dos solapas' };
+
+  /* Índices por NOMBRE de encabezado, no por letra: las dos solapas tienen el mismo layout en
+   * A–U pero no hay por qué confiar en eso — se busca y si falta, se dice. */
+  function ix(enc, nombre) { return enc.indexOf(nombre); }
+  var eA = ac[0], eD = di[0];
+  var aC = ix(eA, 'ID cuentas'), aF = ix(eA, 'Fecha envio');
+  var dC = ix(eD, 'ID Cuentas'), dF = ix(eD, 'Fecha envio');
+  if (dC === -1) dC = ix(eD, 'ID cuentas');
+  if (aC === -1 || aF === -1 || dC === -1 || dF === -1) {
+    return { ok: false, motivo: 'faltan columnas de cruce · acumulado(' + aC + ',' + aF +
+      ') digital(' + dC + ',' + dF + ')' };
+  }
+
+  var enAcum = {};
+  for (var i = 1; i < ac.length; i++) {
+    var k = claveMail_(ac[i][aC], ac[i][aF]);
+    if (k) enAcum[k] = (enAcum[k] || 0) + 1;
+  }
+
+  var conPar = 0, sinPar = 0, sinFecha = 0, muestraSinPar = [];
+  var usadas = {};
+  for (var j = 1; j < di.length; j++) {
+    var k2 = claveMail_(di[j][dC], di[j][dF]);
+    if (!k2) { sinFecha++; continue; }
+    if (enAcum[k2]) { conPar++; usadas[k2] = true; }
+    else {
+      sinPar++;
+      if (muestraSinPar.length < 8) muestraSinPar.push(k2 + ' · ' + String(di[j][ix(eD, 'Nombre campaña | Directa')] || '').slice(0, 30));
+    }
+  }
+
+  /* ⭐ Si es subconjunto: qué distingue a las que SOBRAN en `acumulado`. */
+  var sobran = [], pareadas = [];
+  for (var q = 1; q < ac.length; q++) {
+    var k3 = claveMail_(ac[q][aC], ac[q][aF]);
+    if (k3 && usadas[k3]) pareadas.push(ac[q]); else sobran.push(ac[q]);
+  }
+
+  var cols = ['Estado', 'Tipo de mail', 'Área', 'año', 'Remitente', 'Herramienta'];
+  var distingue = {};
+  cols.forEach(function (nom) {
+    var i2 = ix(eA, nom);
+    if (i2 === -1) return;
+    distingue[nom] = { sobran: topDe_(sobran, i2, 5), pareadas: topDe_(pareadas, i2, 5) };
+  });
+
+  return { ok: true,
+    acumulado_filas: ac.length - 1, directa_filas: di.length - 1,
+    'directa_CON_par': conPar, 'directa_SIN_par': sinPar, directa_sin_fecha: sinFecha,
+    veredicto: sinPar === 0 ? 'SUBCONJUNTO: las ' + conPar + ' de Directa Mail tienen par'
+                            : 'UNIVERSOS CRUZADOS: ' + sinPar + ' filas de Directa Mail NO están en acumulado',
+    muestra_sin_par: muestraSinPar,
+    filas_que_sobran_en_acumulado: sobran.length,
+    que_las_distingue: distingue };
+}
+
+/** Censo 2 — cómo tienen envíos las campañas, últimos 6 meses. */
+function diagEnviosPorCampania() {
+  var ac = hojaCruda_('acumulado', 'Mail');
+  if (!ac) return { ok: false, motivo: 'no pude abrir acumulado | Mail' };
+  var e = ac[0];
+  var iC = e.indexOf('ID cuentas'), iF = e.indexOf('Fecha envio'), iR = e.indexOf('Remitente');
+  if (iC === -1 || iF === -1 || iR === -1) return { ok: false, motivo: 'faltan columnas' };
+
+  var corte = new Date(); corte.setMonth(corte.getMonth() - 6);
+  var minF = null, maxF = null, porCuenta = {}, consideradas = 0;
+  for (var i = 1; i < ac.length; i++) {
+    var f = ac[i][iF];
+    if (!(f instanceof Date) || f < corte) continue;
+    consideradas++;
+    if (!minF || f < minF) minF = f;
+    if (!maxF || f > maxF) maxF = f;
+    var c = String(ac[i][iC] || '').trim();
+    if (!c) continue;
+    if (!porCuenta[c]) porCuenta[c] = [];
+    porCuenta[c].push({ ms: f.getTime(), etq: String(ac[i][iR] || '').trim() });
+  }
+
+  var dist = { '1': 0, '2': 0, '3': 0, '4+': 0 };
+  var unaEtq = 0, variasEtq = 0, primeraEsMayoritaria = 0, primeraNoEsMayoritaria = 0;
+  var etiquetasDeReenvio = {}, empates = 0;
+  Object.keys(porCuenta).forEach(function (c) {
+    var fs = porCuenta[c];
+    dist[fs.length === 1 ? '1' : fs.length === 2 ? '2' : fs.length === 3 ? '3' : '4+']++;
+    if (fs.length < 2) return;
+    var etqs = {};
+    fs.forEach(function (x) { etqs[x.etq] = (etqs[x.etq] || 0) + 1; });
+    if (Object.keys(etqs).length === 1) { unaEtq++; return; }
+    variasEtq++;
+    var min = Math.min.apply(null, fs.map(function (x) { return x.ms; }));
+    var enMin = fs.filter(function (x) { return x.ms === min; });
+    var remsMin = {};
+    enMin.forEach(function (x) { remsMin[x.etq] = true; });
+    if (Object.keys(remsMin).length > 1) { empates++; return; }
+    var primera = enMin[0].etq;
+    var mayor = Object.keys(etqs).sort(function (a, b) { return etqs[b] - etqs[a]; })[0];
+    if (primera === mayor) primeraEsMayoritaria++; else primeraNoEsMayoritaria++;
+    fs.forEach(function (x) {
+      if (x.etq !== primera) etiquetasDeReenvio[primera + ' → ' + x.etq] = (etiquetasDeReenvio[primera + ' → ' + x.etq] || 0) + 1;
+    });
+  });
+
+  var pares = Object.keys(etiquetasDeReenvio).map(function (k) { return k + ' = ' + etiquetasDeReenvio[k]; })
+    .sort().slice(0, 20);
+
+  return { ok: true,
+    rango_real: (minF ? minF.toDateString() : '?') + ' → ' + (maxF ? maxF.toDateString() : '?'),
+    filas_consideradas: consideradas,
+    campanias: Object.keys(porCuenta).length,
+    distribucion_envios: dist,
+    con_varios_envios_UNA_etiqueta: unaEtq,
+    con_varios_envios_VARIAS_etiquetas: variasEtq,
+    primera_ES_mayoritaria: primeraEsMayoritaria,
+    primera_NO_es_mayoritaria: primeraNoEsMayoritaria,
+    empates_en_la_fecha_minima: empates,
+    transiciones_primera_a_reenvio: pares };
+}
