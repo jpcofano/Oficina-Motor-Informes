@@ -11686,3 +11686,55 @@ function diagEminAlcance() {
   Logger.log('   traza: ' + r.traza);
   return r;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-10_5` Parte B — **leer el DECK con posiciones, no el retorno de la corrida.**
+ *
+ * ⛔ `D-57`: la corrida es desatendida y **su retorno no es el veredicto** — puede volver
+ * `ok: true` con un `fallo` adentro. Lo que hay que mirar es `CORRIDAS` y **el deck**.
+ *
+ * ⛔⛔ **Y el deck se lee CON COORDENADAS, que es la única forma de contestar `C-126`:** la
+ * pregunta no es *«qué números salieron»* sino *«en qué CASILLERO cayó cada uno»*, y el texto
+ * aplanado de una presentación no lo dice. Es el mismo lector del censo de plantillas —
+ * `piezasDeTextoDeSlide_`, verbatim— apuntado a un deck generado.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function lineasDeDeck_(deckId) {
+  var pres;
+  try { pres = SlidesApp.openById(deckId); }
+  catch (e) { return { ok: false, motivo: 'no pude abrir el deck: ' + e }; }
+
+  var slides = pres.getSlides();
+  var lineas = [], escondidas = [];
+  for (var i = 0; i < slides.length; i++) {
+    if (esLaminaEscondida_(slides[i])) escondidas.push(i + 1);
+    var piezas = piezasDeTextoDeSlide_(slides[i]).filter(function (p) {
+      return String(p.texto || '').trim() !== '';
+    });
+    piezas.sort(function (a, b) {
+      var ay = a.geo ? a.geo.y : 1e9, by = b.geo ? b.geo.y : 1e9;
+      if (ay !== by) return ay - by;
+      return (a.geo ? a.geo.x : 1e9) - (b.geo ? b.geo.x : 1e9);
+    });
+    lineas.push('== slide ' + (i + 1) + (esLaminaEscondida_(slides[i]) ? ' ESCONDIDA' : ''));
+    piezas.forEach(function (p) {
+      lineas.push((p.geo ? (p.geo.y + ',' + p.geo.x) : 'sin-geo') + ' | ' +
+        String(p.texto).replace(/\s+/g, ' ').trim().slice(0, 90) + ' | ' + p.contenedor);
+    });
+  }
+  return { ok: true, deck: pres.getName(), total_slides: slides.length,
+           escondidas: escondidas.join(','), lineas: lineas };
+}
+
+/** El deck de la ÚLTIMA fila de `CORRIDAS`. ⭐ Sin argumentos, para que se pueda correr. */
+function diagUltimoDeck() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
+  if (!hoja) return { ok: false, motivo: 'no existe CORRIDAS' };
+  var datos = hoja.getDataRange().getValues();
+  var h = datos[0];
+  var iD = h.indexOf('deck_id'), iC = h.indexOf('corrida_id');
+  var fila = datos[datos.length - 1];
+  var r = lineasDeDeck_(String(fila[iD] || '').trim());
+  r.corrida_id = String(fila[iC] || '').trim();
+  Logger.log('deck de ' + r.corrida_id + ': ' + (r.deck || r.motivo));
+  return r;
+}
