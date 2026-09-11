@@ -11623,3 +11623,66 @@ function censarCajasSecco() { imprimirCensoDeCajas_('secco'); return lineasDeCen
 
 /** Ídem para `jm`. ⛔ El cruce de `C-126` en `jm` **no se hereda de `secco`**: se mide. */
 function censarCajasJm() { imprimirCensoDeCajas_('jm'); return lineasDeCenso_('jm'); }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-10_4 ADDENDUM 3` — **UN marcador, por el camino del motor y con SU preámbulo.**
+ *
+ * ⛔⛔ **Por qué existe, y está medido hoy:** llamar a `resolverMarcadores('secco')` desde afuera
+ * **murió a los 10 minutos**. No es que el motor sea lento: `generarInforme` enciende **DOS
+ * cachés** —`abrirCacheRegistros_()` y `abrirCacheDatosHoja_()`, con `try/finally`— que están
+ * **apagadas por defecto a propósito**, para que un diagnóstico pueda leer dos veces y ver un
+ * cambio. Sin ellas `buscarMapeo` relee `SOLAPAS` y `MAPEO` enteras en cada llamada.
+ *
+ * ⭐ `CLAUDE.md` §4 lo tiene medido con los tres números: **12 s con las dos cachés contra ≥325 s
+ * sin ninguna**, factor **54**. ⇒ **un instrumento que corre afuera mide otra cosa**, y encender
+ * «la que parece» es peor que no encender ninguna: produce un número que parece corregido.
+ *
+ * ⭐ Por eso esto **copia el preámbulo VERBATIM** y **declara bajo qué condiciones corrió**. Sin esa
+ * línea, el próximo resta contra los números viejos y repite el error.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function diagUnMarcador_(informeId, marcador) {
+  var t0 = new Date().getTime();
+  var abiertoR = false, abiertoD = false;
+  try {
+    try { abrirCacheRegistros_(); abiertoR = true; } catch (e) {}
+    try { abrirCacheDatosHoja_(); abiertoD = true; } catch (e) {}
+
+    var res = resolverMarcadores(informeId);
+    /* ⚠ `resolverMarcadores` devuelve `resultados` como ARRAY, no como mapa. La primera versión de
+     * esto usaba `res.valores[marcador]` y devolvió *«no está en el resultado»* sobre una corrida
+     * que había resuelto 179 marcadores — un accesor equivocado y un cero que se lee como hallazgo. */
+    var m = null;
+    (res && res.resultados ? res.resultados : []).forEach(function (x) {
+      if (String(x.marcador || '').trim() === marcador) m = x;
+    });
+
+    return {
+      ok: true,
+      /* ⭐ Las condiciones, en el retorno y no en un comentario: dos mediciones sólo se restan si
+       * corrieron igual, y eso hay que poder nombrarlo. */
+      condiciones: 'cacheRegistros=' + abiertoR + ' cacheDatosHoja=' + abiertoD +
+                   ' (el mismo preámbulo que generarInforme)',
+      segundos: Math.round((new Date().getTime() - t0) / 1000),
+      informe_id: informeId,
+      marcador: marcador,
+      valor: m ? m.valor : null,
+      estado: m ? m.estado : '(no está en el resultado)',
+      traza: m ? String(m.traza || '').slice(0, 400) : '',
+      origen: m ? String(m.origen || '').slice(0, 300) : '',
+      total_resueltos: res && res.resumen ? res.resumen.total : null
+    };
+  } finally {
+    if (abiertoD) { try { cerrarCacheDatosHoja_(); } catch (e) {} }
+    if (abiertoR) { try { cerrarCacheRegistros_(); } catch (e) {} }
+  }
+}
+
+/** Wrapper público **sin argumentos**: el `emin_alcance` de `secco`, que es el que está en duda. */
+function diagEminAlcance() {
+  var r = diagUnMarcador_('secco', 'emin_alcance');
+  Logger.log('== emin_alcance, por el camino del motor ==');
+  Logger.log('   condiciones: ' + r.condiciones);
+  Logger.log('   valor: ' + r.valor + ' · estado: ' + r.estado + ' · ' + r.segundos + ' s');
+  Logger.log('   traza: ' + r.traza);
+  return r;
+}
