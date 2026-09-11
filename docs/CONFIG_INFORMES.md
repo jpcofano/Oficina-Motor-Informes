@@ -1225,6 +1225,40 @@ que la corrida **no llegó a resolver**.
 `«FALTA:token»`, que sigue diciendo **cuál** token es y sigue siendo el modo de trabajo. Es lo que
 mantiene vivo `S-05` punto 3 (ver `docs/SUPUESTOS.md`).
 
+#### ⭐⭐ Las CAUSAS detrás de un `/////`, que no son una sola — 10 y 11/09/2026
+
+`/////` dice *«falta el token»* y **manda a cablear**. ⛔ El problema es que **varias causas
+distintas llegan al mismo glifo y piden trabajos opuestos**, que es la pregunta que `CLAUDE.md` §4
+exige hacerse al agregar cualquier símbolo: *¿qué trabajo manda a hacer esto, y hay más de una
+causa que lleve a él?*
+
+| causa | qué se hace | quién decide |
+|---|---|---|
+| **nadie lo cableó todavía** | cablearlo — es el caso para el que el símbolo se diseñó | la cola |
+| ⭐ **lo escribe una persona** | `operacion = TEXTO` + `valor_fijo` = el nombre del token, así la caja dice qué va ahí y deja de mandar a cablear | usuario, **10/09/2026** |
+| ⭐ **la fuente no está identificada** | `/////` **se queda, y no miente**: el dato existe —el equipo lo publica— pero no se sabe de dónde sale. Manda a **preguntarle al equipo**, que es trabajo real | medición |
+| ⭐ **el dato no existe todavía** | `/////` se queda. Darle una fila diría que alguien lo va a escribir, y nadie lo va a escribir | usuario, 26/08 |
+| ⭐⭐ **sin regla de cálculo conocida** | **no recibe fila y no vuelve a la cola** hasta que alguien defina la regla | usuario, **11/09/2026** |
+
+⭐ **La aplicada el 10/09 fueron 15 tokens de `secco`** —los seis de `L-018`, los seis `u1_bench_*`,
+`camp_bench_remitente` y los dos `*_insight`—, con `informe_id = secco` y **no `*`**: `marcador` es
+clave única, así que una fila `*` convertiría la decisión de un informe en la de los dos sin
+medirlo.
+
+⭐⭐ **Y la quinta nace con `L-010` de `secco`, 11/09/2026 — decisión del usuario: el FORMATO no se
+calcula, porque no se sabe cómo.** ⛔ Eso **no** es *«falta cablearlo»* ni *«lo escribe una
+persona»*: **es una causa distinta**, y mezclarla con cualquiera de las dos manda al trabajo
+equivocado — a cablear algo que nadie sabe calcular, o a declarar manual algo que sí tendría regla
+si alguien la definiera.
+
+⚠ **El mismo día el usuario corrigió TODOS los tokens de `L-010`** —estaban mal, heredados de
+`jm`— y **sacó `post_formato1-4`, que en `secco` no existen**. ⭐ Eso valida por el lado contrario
+la regla de `C.1`: esos cuatro **estuvieron en la lista de candidatos y quedaron afuera** por no
+tener decisión citada. Si se les hubiera escrito fila, hoy habría cuatro filas apuntando a tokens
+que ya no están en ninguna lámina — exactamente la fila que nadie puede explicar.
+
+⛔ **`L-010` no se diagnostica ni recibe controles** hasta que exista la regla.
+
 ### 4.4 bis · El anclaje de reuniones busca en dos pasos
 
 **Decisión del usuario, 20/08/2026**, implementada el mismo día. **[OK]** el mecanismo · **[?]** el número.
