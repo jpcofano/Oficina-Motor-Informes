@@ -11834,3 +11834,146 @@ function diagEmpateRemitente() {
     if (abiertoR) { try { cerrarCacheRegistros_(); } catch (e) {} }
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐ `2026-09-11_3` — **listar las solapas de una base SIN ESCRIBIR NADA.**
+ *
+ * ⛔ `inventariarSolapasDeBase_` no sirve para esto: **da de alta en `SOLAPAS`** con
+ * `uso = 'revisar'`, y una vez escrita esa fila el seed **ya no la puede promover** (`D-32`, y el
+ * gate mira `uso`, no `origen`) — o sea que un censo de sólo lectura hecho con esa función deja
+ * una decisión tomada por accidente y hay que editar la celda a mano.
+ *
+ * Esto abre, lee nombres y tamaños, y devuelve. **No toca ninguna hoja de registro.**
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function diagSolapasDeBase_(baseId) {
+  var bases = leerRegistro_('BASES', 'base_id') || {};
+  var b = bases[baseId];
+  if (!b || !b.sheet_id) return { ok: false, motivo: 'no existe la base o no tiene sheet_id: ' + baseId };
+
+  var ss;
+  try { ss = SpreadsheetApp.openById(b.sheet_id); }
+  catch (e) { return { ok: false, motivo: 'no pude abrir ' + baseId + ': ' + e }; }
+
+  var out = [];
+  ss.getSheets().forEach(function (h) {
+    out.push(h.getName() + ' | filas=' + h.getLastRow() + ' | cols=' + h.getLastColumn());
+  });
+  return { ok: true, base_id: baseId, nombre: ss.getName(), solapas: ss.getSheets().length,
+           lista: out };
+}
+
+/** ⭐ Las dos candidatas, en una sola llamada, para no elegir por interpretación. */
+function diagSolapasDeLasDosCandidatas() {
+  var r = { ok: true };
+  ['looker', 'acumulado'].forEach(function (id) {
+    var x = diagSolapasDeBase_(id);
+    r[id] = x.ok ? { nombre: x.nombre, solapas: x.solapas, lista: x.lista } : { error: x.motivo };
+    Logger.log(id + ': ' + (x.ok ? x.nombre + ' · ' + x.solapas + ' solapas' : x.motivo));
+  });
+  return r;
+}
+
+/**
+ * Censo de UNA solapa, sin pasar por `leerFuente` ni por `SOLAPAS`.
+ *
+ * ⛔ Hace falta porque la solapa que se quiere mirar **no está registrada**, y `leerFuente` exige
+ * que lo esté. Esto abre y lee; no declara nada.
+ */
+function diagCensarSolapaCruda_(baseId, nombreSolapa, muestras) {
+  var bases = leerRegistro_('BASES', 'base_id') || {};
+  var b = bases[baseId];
+  if (!b || !b.sheet_id) return { ok: false, motivo: 'no existe la base: ' + baseId };
+
+  var ss, hoja;
+  try {
+    ss = SpreadsheetApp.openById(b.sheet_id);
+    hoja = ss.getSheetByName(nombreSolapa);
+  } catch (e) { return { ok: false, motivo: String(e) }; }
+  if (!hoja) return { ok: false, motivo: 'la base no tiene la solapa «' + nombreSolapa + '»' };
+
+  var datos = hoja.getDataRange().getValues();
+  if (!datos.length) return { ok: false, motivo: 'solapa vacía' };
+
+  var enc = datos[0];
+  function L(i) { return i < 26 ? String.fromCharCode(65 + i)
+                                : String.fromCharCode(64 + Math.floor(i / 26)) + String.fromCharCode(65 + (i % 26)); }
+  var cabeceras = enc.map(function (x, i) { return L(i) + ' | ' + String(x).replace(/\s+/g, ' ').trim(); });
+
+  return { ok: true, base_id: baseId, solapa: nombreSolapa,
+           filas_con_encabezado: datos.length, filas_datos: datos.length - 1,
+           columnas: enc.length, encabezados: cabeceras,
+           muestra: (muestras ? datos.slice(1, 1 + muestras).map(function (f) {
+             return f.slice(0, 12).map(function (v) { return String(v).slice(0, 24); }).join(' · ');
+           }) : []) };
+}
+
+/**
+ * ⭐ `2026-09-11_3` puntos 2 y 3 — **valores distintos de una columna, y las filas de una campaña.**
+ * Sólo lectura, sobre una solapa que **no está registrada**: no pasa por `leerFuente` ni declara nada.
+ *
+ * ⛔ **Los conteos van con corte POSITIVO por los dos lados y con las vacías aparte**, que es la
+ * lección de `Call Center - Métricas`: su columna equivalente dio **seis** valores donde se
+ * esperaban dos —`ANUNCIO`, vacías, `#N/A`— y **104 filas no eran ni una cosa ni la otra**. Con un
+ * corte negativo (`!= JM`) esas 104 habrían sumado en silencio.
+ */
+function diagValoresDeColumna_(baseId, nombreSolapa, letras, agujaCol, aguja) {
+  var bases = leerRegistro_('BASES', 'base_id') || {};
+  var b = bases[baseId];
+  if (!b || !b.sheet_id) return { ok: false, motivo: 'no existe la base: ' + baseId };
+  var hoja = SpreadsheetApp.openById(b.sheet_id).getSheetByName(nombreSolapa);
+  if (!hoja) return { ok: false, motivo: 'no existe la solapa ' + nombreSolapa };
+
+  var datos = hoja.getDataRange().getValues();
+  var enc = datos[0];
+  function idx(L) {
+    L = String(L).toUpperCase();
+    return L.length === 1 ? L.charCodeAt(0) - 65
+                          : (L.charCodeAt(0) - 64) * 26 + (L.charCodeAt(1) - 65);
+  }
+
+  var salida = { ok: true, base_id: baseId, solapa: nombreSolapa,
+                 filas_datos: datos.length - 1, columnas: {} };
+
+  String(letras).split(',').forEach(function (L) {
+    L = L.trim(); if (!L) return;
+    var i = idx(L);
+    var cuenta = {}, vacias = 0;
+    for (var f = 1; f < datos.length; f++) {
+      var v = String(datos[f][i] == null ? '' : datos[f][i]).replace(/\s+/g, ' ').trim();
+      if (v === '') { vacias++; continue; }
+      cuenta[v] = (cuenta[v] || 0) + 1;
+    }
+    var pares = Object.keys(cuenta).map(function (k) { return { v: k, n: cuenta[k] }; })
+      .sort(function (a, b2) { return b2.n - a.n; });
+    salida.columnas[L + ' · ' + String(enc[i]).trim()] = {
+      distintos: pares.length,
+      vacias: vacias,
+      top: pares.slice(0, 12).map(function (p) { return p.v + ' = ' + p.n; })
+    };
+  });
+
+  /* Las filas que matchean una aguja en una columna concreta — para las tres de la campaña. */
+  if (aguja) {
+    var ia = idx(agujaCol);
+    var hits = [];
+    for (var g = 1; g < datos.length; g++) {
+      if (String(datos[g][ia] || '').indexOf(aguja) === -1) continue;
+      hits.push({
+        fecha: String(datos[g][idx('F')]),
+        remitente_dir: String(datos[g][idx('G')]),
+        campana: String(datos[g][idx('H')]),
+        remitente_etq: String(datos[g][idx('AI')]),
+        enviados: datos[g][idx('M')], entregados: datos[g][idx('N')],
+        aperturas: datos[g][idx('O')], clics: datos[g][idx('Q')]
+      });
+    }
+    salida.aguja = aguja; salida.filas_que_matchean = hits.length;
+    salida.filas = hits.slice(0, 12);
+  }
+  return salida;
+}
+
+/** Punto 2b y 3 del `2026-09-11_3`, sin argumentos. */
+function diagMailDeAcumulado() {
+  return diagValoresDeColumna_('acumulado', 'Mail', 'G,AI,AF,AH', 'H', 'Operativo Muro');
+}
