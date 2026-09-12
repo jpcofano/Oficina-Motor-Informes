@@ -1450,7 +1450,24 @@ function resolverPlantillaTexto_(fila, solapa, filas) {
  * otro **para con motivo propio**.
  *
  * ⚠ **Un marcador sin filtro con `TODAS:` es un no-op**, y eso es correcto: los dos conjuntos
- * coinciden. No hace falta prohibirlo y prohibirlo obligaría a sacar el prefijo al quitar el filtro. */
+ * coinciden. No hace falta prohibirlo y prohibirlo obligaría a sacar el prefijo al quitar el filtro.
+ *
+ * ⛔⛔ **SIN NINGÚN USUARIO VIVO DESDE EL 12/09/2026, y hay que saberlo antes de confiar en esta
+ * rama.** Su único uso era `camp_or` —`TODAS:acm_aperturas/acm_entregados`—, y el `2026-09-12_1` lo
+ * sacó: el equipo aclaró que en las láminas de **campaña** saca **la fila entera**, así que las dos
+ * mitades volvieron al mismo universo y la mezcla dejó de existir. Medido sobre `MARCADORES` del
+ * 12/09: `TODAS:` aparece **cero** veces.
+ *
+ * ⚠ **No se borra: se agregó por un motivo y el motivo puede volver** —el Resumen Ejecutivo sí usa
+ * la regla por métrica, y su P0 sigue abierto—. Lo que hay que evitar es leerlo como código
+ * probado: **hoy ninguna configuración lo recorre**, así que quien lo vuelva a usar **estrena** esta
+ * rama, no la reutiliza. ⭐ Es la misma figura que `SEPARADOR_ALTERNATIVAS_FILTRO_`, declarado y sin
+ * llamador desde el 30/08: *un camino completo y sin llamador se lee como un camino vivo*.
+ *
+ * ⭐ **Lo que SÍ sigue vivo es el desarme**, y por eso no es código muerto del todo: los tres
+ * lectores de `campo_logico` lo llaman en cada ratio, y `tools/probar-r05-primer-envio.js` verifica
+ * que ninguno quede crudo. Esa verificación **protege al próximo que use el prefijo**, no al uso de
+ * hoy. */
 var PREFIJO_OPERANDO_SIN_FILTRO_ = 'TODAS:';
 
 /** `{ campo, todas }` — el nombre del operando y si pidió saltear el filtro. */

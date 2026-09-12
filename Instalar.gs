@@ -13386,35 +13386,61 @@ function aplicarRenombreAcumMail() {
  * no `= JM` fijo**. Lo que `R-05` declara es qué filas son **válidas para esta campaña**, que es la
  * definición de restricción técnica.
  *
- * ⭐ **El reparto, y no es simétrico porque la métrica no lo es:**
+ * ⭐ ~~**El reparto, y no es simétrico porque la métrica no lo es:**~~
  *
  *   | marcador | filas |
  *   |---|---|
- *   | `camp_enviados` · `camp_entregados` · `camp_dir_impl` | **sólo las de la etiqueta del primer envío** |
- *   | `camp_aperturas` · `camp_mail_clics` | **TODAS** — un reenvío se abre y se clickea igual |
- *   | `camp_or` | **numerador TODAS / denominador FILTRADO** |
- *   | `camp_ctor` | las dos mitades TODAS — **no se toca** |
+ *   | ~~`camp_enviados` · `camp_entregados` · `camp_dir_impl`~~ | ~~**sólo las de la etiqueta del primer envío**~~ |
+ *   | ~~`camp_aperturas` · `camp_mail_clics`~~ | ~~**TODAS** — un reenvío se abre y se clickea igual~~ |
+ *   | ~~`camp_or`~~ | ~~**numerador TODAS / denominador FILTRADO**~~ |
+ *   | ~~`camp_ctor`~~ | ~~las dos mitades TODAS — **no se toca**~~ |
  *
- * ⛔⛔ **`camp_or` es el caso que obligó a agregar `TODAS:`**, y la decisión del usuario fue *«que
- * cierre la lámina, que haga la cuenta con los datos que ya tiene»*. Sin eso, el `% OR` publicado
- * no sería el cociente de las dos celdas que la lámina muestra al lado — y el lector que las divida
- * lo lee como defecto, con razón. **Es `C-124`.**
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⛔⛔ **CORREGIDO el 12/09/2026 (`2026-09-12_1`) — EL REPARTO ERA DE UNA REGLA MAL ATRIBUIDA.**
  *
- * ⚠ **Y el límite de esta variante va declarado, no descubierto:** mezcla universos por
- * construcción, así que **puede pasar de 100 %**. Medido el 11/09 sobre las 1.245 campañas
- * evaluables: **27 lo hacen**, hasta **900,2 %**. Con la cuenta del caso no pasa —56,3 %— pero el
- * día que una campaña del deck empiece con un envío chico y siga con reenvíos grandes, **va a
- * publicar un porcentaje imposible sin fallar**.
+ * **Lo que el equipo aclaró:** lo que dijeron por WhatsApp el 11/09 —*«los no apertores sólo se
+ * suman en aperturas y clics»*— **era para el RESUMEN EJECUTIVO**. En las láminas de **campaña**
+ * sacan **la fila entera**.
  *
- * ⭐ **Los números del caso, medidos por `medirR05Muro()` antes de escribir nada** (cuenta
- * `3576-AGOSEGGJ`, 3 filas, primer envío 28/08/2026, etiqueta `JM`, 2 de 3 filas):
+ * ⇒ **`R-05` no es una regla: son DOS, una por nivel**, y el equipo **no se contradice**. Lo que se
+ * había implementado acá era la regla del resumen aplicada al nivel campaña.
  *
- *       enviados    447.145 → 268.924      aperturas   150.506  (sin cambio)
- *       entregados  444.403 → 267.533      clics         1.376  (sin cambio)
- *       envíos            3 → 2            % OR   33,9 % → 56,3 %   % CTOR 0,9 % (sin cambio)
+ * ⭐⭐ **La regla de campaña es MÁS SIMPLE que la que reemplaza, y eso es el indicio de que es la
+ * correcta:** el filtro pasa de ser **por métrica** a ser **por fila**. Las seis métricas usan el
+ * **mismo** filtro relativo al primer envío, y **`TODAS:` desaparece del cableado**.
  *
- * ⚠ **`267.533` es el número que el prompt anticipaba**, llegado por otro camino: confirmación
- * independiente de que la regla implementada es la que el prompt describe.
+ *       GLOBAL = suma de las filas con la etiqueta del primer envío — para TODAS las métricas
+ *
+ * **Los números del caso, y los seis quedan idénticos al deck del equipo del 04/09 al 11/09:**
+ *
+ *       enviados    268.924  (sin cambio)     aperturas   150.506 → 86.464
+ *       entregados  267.533  (sin cambio)     clics         1.376 → 444
+ *       envíos            2  (sin cambio)     % OR   56,3 % → 32,3 %   % CTOR 0,9 % → 0,5 %
+ *
+ * ⚠ **Que coincidan con el equipo NO es el criterio de éxito**: el criterio es la regla del equipo
+ * aplicada al nivel correcto. La coincidencia es **consecuencia**, y si alguno no coincidiera se
+ * reportaría en vez de calibrarse.
+ *
+ * ⚠ **`camp_ctor` NO estaba en la tabla del prompt y entra igual**, porque su valor cambia como
+ * consecuencia: con aperturas en 86.464 y clics en 444, dejarlo sin filtro publicaría `0,9 %` al
+ * lado de dos celdas que dan `0,51 %`. **Es la misma identidad que este bloque existe para
+ * proteger**, aplicada a la sexta métrica. No es una decisión nueva.
+ *
+ * ⭐⭐ **Y se cae solo el pendiente de `camp_or > 100 %`:** numerador y denominador vuelven al
+ * **mismo universo**, así que las 27 campañas que podían llegar a `900,2 %` **dejan de poder**.
+ * Queda **resuelto por construcción**, no arreglado — nadie escribió una guarda.
+ *
+ * ⚠ **La fila del reenvío se sigue MOSTRANDO en el desagregado**, con sus cinco métricas propias.
+ * Lo que cambia es **qué suma el GLOBAL**.
+ *
+ * ⛔ **Sin cambios en lo demás:** corte positivo, relativo al primer envío, y aborta con marca ante
+ * empate, etiqueta vacía o fila sin fecha.
+ * ══════════════════════════════════════════════════════════════════════════════════════════
+ *
+ * ⭐ **Los números que midió `medirR05Muro()` el 11/09 antes de escribir nada** siguen siendo el
+ * testigo del universo (cuenta `3576-AGOSEGGJ`, 3 filas, primer envío 28/08/2026, etiqueta `JM`,
+ * 2 de 3 filas con esa etiqueta). ⚠ **`267.533` es el número que el prompt anticipaba**, llegado
+ * por otro camino: confirmación independiente de que la señal implementada es la que describe.
  * ══════════════════════════════════════════════════════════════════════════════════════════ */
 
 /** El filtro relativo, escrito una vez. ⛔ Positivo: declara qué entra. */
@@ -13422,21 +13448,30 @@ var FILTRO_R05_ = 'acm_remitente=@primer_envio';
 
 /** Qué recibe cada marcador. `null` en `filtro` significa **que tiene que quedar vacío**, y eso es
  *  una afirmación que el gate verifica — no «no lo toco». */
+/* ⭐⭐ `2026-09-12_1` — **EL FILTRO ES POR FILA, NO POR MÉTRICA.** Las seis van con el mismo, y por
+ * eso esta lista dejó de tener excepciones: en el nivel campaña el equipo saca **la fila entera**.
+ * ⚠ Una lista sin excepciones es más difícil de romper que una con cuatro casos distintos — y la
+ * versión anterior tenía cuatro, uno por fila. */
 var R05_REPARTO_ = [
   { marcador: 'camp_enviados',   filtro: FILTRO_R05_, campo_logico: null,
-    porque: 'enviados del primer envio: un reenvio es otro envio y no suma al alcance de la campania' },
+    porque: 'enviados del primer envio: la fila del reenvio no entra al GLOBAL' },
   { marcador: 'camp_entregados', filtro: FILTRO_R05_, campo_logico: null,
     porque: 'entregados del primer envio. 444.403 -> 267.533' },
   { marcador: 'camp_dir_impl',   filtro: FILTRO_R05_, campo_logico: null,
     porque: 'implementaciones = envios de la campania con la etiqueta del primer envio. 3 -> 2' },
-  { marcador: 'camp_aperturas',  filtro: null,        campo_logico: null,
-    porque: 'TODAS las filas: un reenvio se abre igual y esa apertura es de la campania' },
-  { marcador: 'camp_mail_clics', filtro: null,        campo_logico: null,
-    porque: 'TODAS las filas, mismo motivo que aperturas' },
-  { marcador: 'camp_or',         filtro: FILTRO_R05_, campo_logico: 'TODAS:acm_aperturas/acm_entregados',
-    porque: 'numerador TODAS / denominador FILTRADO, para que % OR sea el cociente de las dos celdas que la lamina publica' },
-  { marcador: 'camp_ctor',       filtro: null,        campo_logico: 'acm_clics/acm_aperturas',
-    porque: 'las dos mitades TODAS: no cambia de valor y se declara para que el cero sea medido y no un olvido' }
+  { marcador: 'camp_aperturas',  filtro: FILTRO_R05_, campo_logico: null,
+    porque: '12/09: la fila entera sale, tambien de aperturas. 150.506 -> 86.464' },
+  { marcador: 'camp_mail_clics', filtro: FILTRO_R05_, campo_logico: null,
+    porque: '12/09: la fila entera sale, tambien de clics. 1.376 -> 444' },
+  /* ⛔ `TODAS:` se saca del `campo_logico`: con las dos mitades en el mismo universo ya no hace
+   * falta, y dejarlo seria declarar una mezcla de universos que no existe. */
+  { marcador: 'camp_or',         filtro: FILTRO_R05_, campo_logico: 'acm_aperturas/acm_entregados',
+    porque: '12/09: las dos mitades FILTRADAS. 56,3 % -> 32,3 %, y deja de poder pasar de 100 %' },
+  /* ⚠ No estaba en la tabla del prompt y entra igual: su valor cambia como CONSECUENCIA. Con
+   * aperturas en 86.464 y clics en 444, dejarlo sin filtro publicaria 0,9 % al lado de dos celdas
+   * que dan 0,51 % — la identidad que todo este bloque existe para proteger. */
+  { marcador: 'camp_ctor',       filtro: FILTRO_R05_, campo_logico: 'acm_clics/acm_aperturas',
+    porque: '12/09: las dos mitades FILTRADAS, o la lamina deja de cerrar. 0,9 % -> 0,5 %' }
 ];
 
 function planR05_() {
