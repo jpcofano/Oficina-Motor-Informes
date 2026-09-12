@@ -13372,3 +13372,199 @@ function aplicarRenombreAcumMail() {
            renombradas: p.renombrar.length, borradas: p.borrar.length,
            marcadores_actualizados: p.marcadores.length };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-11_4` Parte C — **`R-05` cableada: el ámbito de una campaña sale de su PRIMER
+ * ENVÍO.**
+ *
+ * ⛔⛔ **Por qué el corte va en `filtro` y NO en `dimensiones`, que es el default de `CLAUDE.md`
+ * §2.** Una **dimensión** es un corte que alguien del equipo pediría **por nombre** —*«esto pero de
+ * GCBA»*— y se declara como `dimension=valor` contra `DIMENSIONES_`. Acá **no hay valor**: la
+ * etiqueta es distinta para cada campaña —`JM`, `GCBA`, `PC`, `SIGEHOS`, `EZ`— y **se resuelve
+ * contra las filas de esa campaña**. `ambito=jm` sería cablear el resultado de UNA campaña como si
+ * fuera la regla, que es exactamente lo que la decisión del usuario (11/09) prohíbe: **relativa,
+ * no `= JM` fijo**. Lo que `R-05` declara es qué filas son **válidas para esta campaña**, que es la
+ * definición de restricción técnica.
+ *
+ * ⭐ **El reparto, y no es simétrico porque la métrica no lo es:**
+ *
+ *   | marcador | filas |
+ *   |---|---|
+ *   | `camp_enviados` · `camp_entregados` · `camp_dir_impl` | **sólo las de la etiqueta del primer envío** |
+ *   | `camp_aperturas` · `camp_mail_clics` | **TODAS** — un reenvío se abre y se clickea igual |
+ *   | `camp_or` | **numerador TODAS / denominador FILTRADO** |
+ *   | `camp_ctor` | las dos mitades TODAS — **no se toca** |
+ *
+ * ⛔⛔ **`camp_or` es el caso que obligó a agregar `TODAS:`**, y la decisión del usuario fue *«que
+ * cierre la lámina, que haga la cuenta con los datos que ya tiene»*. Sin eso, el `% OR` publicado
+ * no sería el cociente de las dos celdas que la lámina muestra al lado — y el lector que las divida
+ * lo lee como defecto, con razón. **Es `C-124`.**
+ *
+ * ⚠ **Y el límite de esta variante va declarado, no descubierto:** mezcla universos por
+ * construcción, así que **puede pasar de 100 %**. Medido el 11/09 sobre las 1.245 campañas
+ * evaluables: **27 lo hacen**, hasta **900,2 %**. Con la cuenta del caso no pasa —56,3 %— pero el
+ * día que una campaña del deck empiece con un envío chico y siga con reenvíos grandes, **va a
+ * publicar un porcentaje imposible sin fallar**.
+ *
+ * ⭐ **Los números del caso, medidos por `medirR05Muro()` antes de escribir nada** (cuenta
+ * `3576-AGOSEGGJ`, 3 filas, primer envío 28/08/2026, etiqueta `JM`, 2 de 3 filas):
+ *
+ *       enviados    447.145 → 268.924      aperturas   150.506  (sin cambio)
+ *       entregados  444.403 → 267.533      clics         1.376  (sin cambio)
+ *       envíos            3 → 2            % OR   33,9 % → 56,3 %   % CTOR 0,9 % (sin cambio)
+ *
+ * ⚠ **`267.533` es el número que el prompt anticipaba**, llegado por otro camino: confirmación
+ * independiente de que la regla implementada es la que el prompt describe.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** El filtro relativo, escrito una vez. ⛔ Positivo: declara qué entra. */
+var FILTRO_R05_ = 'acm_remitente=@primer_envio';
+
+/** Qué recibe cada marcador. `null` en `filtro` significa **que tiene que quedar vacío**, y eso es
+ *  una afirmación que el gate verifica — no «no lo toco». */
+var R05_REPARTO_ = [
+  { marcador: 'camp_enviados',   filtro: FILTRO_R05_, campo_logico: null,
+    porque: 'enviados del primer envio: un reenvio es otro envio y no suma al alcance de la campania' },
+  { marcador: 'camp_entregados', filtro: FILTRO_R05_, campo_logico: null,
+    porque: 'entregados del primer envio. 444.403 -> 267.533' },
+  { marcador: 'camp_dir_impl',   filtro: FILTRO_R05_, campo_logico: null,
+    porque: 'implementaciones = envios de la campania con la etiqueta del primer envio. 3 -> 2' },
+  { marcador: 'camp_aperturas',  filtro: null,        campo_logico: null,
+    porque: 'TODAS las filas: un reenvio se abre igual y esa apertura es de la campania' },
+  { marcador: 'camp_mail_clics', filtro: null,        campo_logico: null,
+    porque: 'TODAS las filas, mismo motivo que aperturas' },
+  { marcador: 'camp_or',         filtro: FILTRO_R05_, campo_logico: 'TODAS:acm_aperturas/acm_entregados',
+    porque: 'numerador TODAS / denominador FILTRADO, para que % OR sea el cociente de las dos celdas que la lamina publica' },
+  { marcador: 'camp_ctor',       filtro: null,        campo_logico: 'acm_clics/acm_aperturas',
+    porque: 'las dos mitades TODAS: no cambia de valor y se declara para que el cero sea medido y no un olvido' }
+];
+
+function planR05_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hC = ss.getSheetByName('MARCADORES');
+  if (!hC) return { ok: false, problemas: ['no existe MARCADORES'] };
+
+  var d = hC.getDataRange().getValues(), h = d[0];
+  var iM = h.indexOf('marcador'), iB = h.indexOf('base_id'), iS = h.indexOf('solapa'),
+      iF = h.indexOf('filtro'), iCL = h.indexOf('campo_logico'), iD = h.indexOf('dimensiones');
+  if (iM < 0 || iF < 0 || iCL < 0) return { ok: false, problemas: ['faltan columnas en MARCADORES'] };
+
+  var problemas = [], lineas = [], cambios = [], sinCambio = [];
+
+  /* ⛔ Gate 1 — los dos campos que el filtro relativo necesita tienen que estar en `MAPEO`. Sin
+   * `acm_remitente` el filtro falla con `@filtro_campo_no_mapeado`; sin `fecha_periodo` no hay con
+   * qué ordenar. Se verifica ANTES de escribir: un filtro escrito sobre un campo que no mapea deja
+   * los tres marcadores rotos de una sola pasada. */
+  [['acm_remitente', 'la etiqueta del ámbito (col AI)'],
+   ['fecha_periodo', 'el orden del primer envío (col F)']].forEach(function (p) {
+    var m = buscarMapeo('acumulado', 'Mail', p[0]);
+    if (!m.ok) problemas.push('`' + p[0] + '` no está en MAPEO para acumulado|Mail — ' + p[1] + '. ' + m.motivo);
+    else lineas.push('   MAPEO ok · ' + p[0] + ' → col ' + m.columna);
+  });
+
+  var porNombre = {};
+  for (var f = 1; f < d.length; f++) {
+    var n = String(d[f][iM] || '').trim();
+    if (n) porNombre[n] = { fila: f + 1, datos: d[f] };
+  }
+
+  R05_REPARTO_.forEach(function (r) {
+    var x = porNombre[r.marcador];
+    if (!x) { problemas.push('no existe la fila de `' + r.marcador + '` en MARCADORES'); return; }
+
+    /* ⛔ Gate 2 — la fila tiene que estar ya mudada. Escribir `acm_remitente=@primer_envio` sobre
+     * un marcador que todavía lee `looker` o `digital` lo rompe con `@filtro_campo_no_mapeado`. */
+    var base = String(x.datos[iB] || '').trim(), sol = String(x.datos[iS] || '').trim();
+    if (base !== 'acumulado' || sol !== 'Mail') {
+      problemas.push('`' + r.marcador + '` lee ' + base + ' | ' + sol + ', no acumulado | Mail — la Parte A no está aplicada');
+      return;
+    }
+
+    /* ⛔ Gate 3 — no pisar una decisión ajena. Si la celda ya trae OTRO filtro, se reporta y no se
+     * toca: pisarlo borraría algo que alguien escribió y que no está en ningún otro lado. */
+    var filtroHoy = String(x.datos[iF] || '').trim();
+    var dimHoy = String(x.datos[iD] || '').trim();
+    if (dimHoy) {
+      problemas.push('`' + r.marcador + '` declara `dimensiones = ' + dimHoy + '` y un marcador con ' +
+        'dimensiones NO hereda ni compone igual: revisar a mano antes de escribir el filtro');
+      return;
+    }
+    var filtroPedido = r.filtro || '';
+    if (filtroHoy && filtroHoy !== filtroPedido) {
+      problemas.push('`' + r.marcador + '` ya tiene `filtro = ' + filtroHoy + '` y se le pediría «' +
+        (filtroPedido || '(vacío)') + '» — no se pisa una decisión que no está en ningún otro lado');
+      return;
+    }
+
+    /* ⛔⛔ `informe_id` VA, y no es prolijidad: `curarCamposMarcadores_` indexa la hoja por
+     * `marcador‖informe_id`, así que un cambio sin él busca la clave `camp_enviados‖` mientras la
+     * fila vive en `camp_enviados‖*`. **No falla con una excepción: cae en `sin_fila`**, el lote no
+     * escribe ninguna celda y el escritor lo reporta como claves inexistentes — mandando a revisar
+     * nombres de marcador que están perfectos. Se toma **de la fila**, no se escribe `'*'` a mano:
+     * un literal acá sería otra copia del valor que la hoja ya tiene. */
+    var c = { marcador: r.marcador, informe_id: String(x.datos[h.indexOf('informe_id')] || '') };
+    var tocaAlgo = false;
+    if (filtroHoy !== filtroPedido) { c.filtro = filtroPedido; tocaAlgo = true; }
+    if (r.campo_logico !== null) {
+      var clHoy = String(x.datos[iCL] || '').trim();
+      if (clHoy !== r.campo_logico) { c.campo_logico = r.campo_logico; tocaAlgo = true; }
+    }
+    if (tocaAlgo) {
+      cambios.push(c);
+      lineas.push('   ' + r.marcador +
+        (c.filtro !== undefined ? ' · filtro: «' + filtroHoy + '» → «' + c.filtro + '»' : '') +
+        (c.campo_logico !== undefined ? ' · campo_logico → «' + c.campo_logico + '»' : ''));
+    } else {
+      sinCambio.push(r.marcador);
+    }
+  });
+
+  return { ok: !problemas.length, problemas: problemas, lineas: lineas,
+           cambios: cambios, sin_cambio: sinCambio };
+}
+
+function diagAplicarR05() {
+  var p = planR05_();
+  Logger.log('== R-05 SECO ==');
+  (p.lineas || []).forEach(function (l) { Logger.log(l); });
+  if (p.sin_cambio && p.sin_cambio.length) Logger.log('   ya estaban como se pide: ' + p.sin_cambio.join(', '));
+  (p.problemas || []).forEach(function (l) { Logger.log('⛔ ' + l); });
+  Logger.log(p.ok ? '=> los gates pasan · ' + (p.cambios || []).length + ' fila(s) a tocar' : '⛔ NO se escribe');
+  return { ok: p.ok, lineas: p.lineas, problemas: p.problemas,
+           n_cambios: (p.cambios || []).length, sin_cambio: p.sin_cambio };
+}
+
+function aplicarR05() {
+  var p = planR05_();
+  if (!p.ok) { Logger.log('⛔ ' + p.problemas.join(' | ')); return { ok: false, problemas: p.problemas }; }
+  if (!p.cambios.length) {
+    /* ⛔ Una corrida que no hizo nada tiene que decirlo como tal, no informar cero y seguir con el
+     * paso siguiente: «ya estaba aplicado» es idempotencia y no éxito de esta corrida. */
+    Logger.log('⚠ cero cambios — ya estaba aplicado');
+    return { ok: true, sin_cambios: true, sin_cambio: p.sin_cambio };
+  }
+
+  var r = curarCamposMarcadores_(p.cambios);
+  if (!r.ok) { Logger.log('⛔ ' + r.motivo); return r; }
+  SpreadsheetApp.flush();
+
+  /* ⭐ RELECTURA desde la hoja — un escritor que informa lo que escribió no verifica nada. */
+  var d = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('MARCADORES').getDataRange().getValues();
+  var h = d[0], iM = h.indexOf('marcador'), iF = h.indexOf('filtro'), iCL = h.indexOf('campo_logico');
+  var esperado = {};
+  R05_REPARTO_.forEach(function (x) { esperado[x.marcador] = x; });
+  var mal = [], leido = [];
+  for (var f = 1; f < d.length; f++) {
+    var n = String(d[f][iM] || '').trim();
+    if (!(n in esperado)) continue;
+    var e = esperado[n];
+    var filtro = String(d[f][iF] || '').trim(), cl = String(d[f][iCL] || '').trim();
+    var okF = filtro === (e.filtro || '');
+    var okC = e.campo_logico === null ? true : cl === e.campo_logico;
+    if (!okF || !okC) mal.push(n);
+    leido.push((okF && okC ? '✅ ' : '⛔ ') + n + ' · filtro «' + filtro + '» · campo_logico «' + cl + '»');
+  }
+  leido.forEach(function (l) { Logger.log(l); });
+  if (mal.length) return { ok: false, motivo: 'la hoja no quedó como se pidió', mal: mal, leido: leido };
+  return { ok: true, escritos: p.cambios.length, sin_cambio: p.sin_cambio, leido: leido };
+}

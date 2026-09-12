@@ -128,11 +128,22 @@ function normalizar(valor) {
 
 /* ─────────────────────────── el cruce que deriva la causa ─────────────────────────── */
 
-/** Los campos lógicos que un marcador necesita resueltos: el propio, partido si es un ratio. */
+/** Los campos lógicos que un marcador necesita resueltos: el propio, partido si es un ratio.
+ *
+ * ⛔ **Se le saca el prefijo `TODAS:`** (`2026-09-11_4` Parte C): un operando de ratio puede
+ * declarar que no recibe el filtro del marcador, y eso **no cambia qué campo es** — cambia de qué
+ * filas lo saca. Sin sacarlo, el cruce contra `MAPEO` buscaría `TODAS:acm_aperturas`, no lo
+ * encontraría, y **el catálogo marcaría como rota una fila que el motor resuelve perfecto**.
+ * ⚠ El prefijo se escribe acá en vez de importarlo del `.gs` porque este archivo es el contra-qué
+ * del motor (`CLAUDE.md` §2): leerlo del código que audita lo volvería dependiente de él. El precio
+ * es que si el prefijo cambia, esto tiene que enterarse — y ése es justo el desajuste que
+ * `probar-r05-primer-envio.js` deja a la vista al probar el desarme real. */
 function camposDelMarcador(fila) {
   const campo = normalizar(fila.campo_logico);
   if (!campo) return [];
-  return campo.split('/').map(normalizar).filter(Boolean);
+  return campo.split('/')
+    .map((p) => normalizar(p).replace(/^TODAS:/, '').trim())
+    .filter(Boolean);
 }
 
 /**

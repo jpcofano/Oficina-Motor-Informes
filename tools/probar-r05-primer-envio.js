@@ -243,6 +243,42 @@ function desarmar(ctx, t) {
 }
 
 console.log('');
+console.log('7 bis · ⛔⛔ TODOS los lectores de `campo_logico` desarman el prefijo, no sólo uno');
+/* ⛔⛔ **Esta afirmación existe porque su ausencia costó una corrida.** El prefijo `TODAS:` entró
+ * en `partirCampoRatio_` y **no** en los otros dos lugares del despachador que parten
+ * `campo_logico` por `/` para resolver la solapa. Los dos mandaban `TODAS:acm_aperturas` a
+ * `buscarMapeo`, que no lo encuentra — y el síntoma **no fue un error legible**: la corrida
+ * devolvió una página HTML.
+ *
+ * ⚠ **Es una verificación de TEXTO y se dice.** No prueba comportamiento: prueba que ningún
+ * `split('/')[0]` sobre `campo_logico` quede sin pasar por `desarmarOperandoRatio_`. Es la forma de
+ * `tools/listas.js` —*cuando la duplicación es el diseño, lo que se hace es que el desajuste
+ * falle*— y su límite es que un cuarto lector escrito con otra sintaxis se le escapa. */
+{
+  const fuente = fs.readFileSync(path.join(RAIZ, 'Generador.gs'), 'utf8');
+  const lineas = fuente.split(/\r?\n/);
+  const crudos = [];
+  lineas.forEach((l, i) => {
+    if (l.indexOf('campo_logico') === -1) return;
+    if (l.indexOf("split('/')") === -1) return;
+    if (l.indexOf('desarmarOperandoRatio_') !== -1) return;
+    if (l.trim().indexOf('*') === 0 || l.trim().indexOf('//') === 0) return;  // comentarios
+    crudos.push('línea ' + (i + 1) + ': ' + l.trim().slice(0, 80));
+  });
+  afirmar(crudos.length === 0,
+    'ningún `campo_logico.split(\'/\')` de `Generador.gs` queda sin desarmar el prefijo',
+    crudos.length + ' cruda(s) — ' + crudos.join(' · ') +
+    ' → `buscarMapeo` recibiría «TODAS:campo» y el marcador caería mandando a mirar MAPEO');
+  /* ⭐ Y su control positivo: que el detector VEA algo. Si el patrón dejara de matchear, el cero de
+   * arriba sería un cero de detector ciego — indistinguible del éxito. */
+  const conDesarme = lineas.filter((l) =>
+    l.indexOf('desarmarOperandoRatio_') !== -1 && l.indexOf("split('/')") !== -1).length;
+  afirmar(conDesarme >= 2,
+    'y el detector ve: hay ' + conDesarme + ' línea(s) que sí desarman (esperadas ≥ 2)',
+    'si son menos, el patrón dejó de matchear y el cero de arriba no significa nada');
+}
+
+console.log('');
 console.log('8 · control negativo — CON MOTIVO: cuál cae y por qué');
 /* ⚠ La mutación se EXIGE: `contexto()` devuelve `null` si el parche no cambió nada, y entonces el
  * caso FALLA en vez de correr sobre el código intacto y dar verde sin probar. */

@@ -1461,27 +1461,30 @@ function desarmarOperandoRatio_(texto) {
 }
 
 function partirCampoRatio_(fila, solapa, filas, filasSinFiltro) {
-  var partes = String(fila.campo_logico || '').split('/');
-  if (partes.length !== 2 || !partes[0].trim() || !partes[1].trim()) {
+  /* ⭐ Se desarma **en el mismo `split`**, y no dos líneas después, a propósito: así no queda en el
+   * archivo ninguna línea que parta `campo_logico` sin desarmar el prefijo. `probar-r05-primer-envio.js`
+   * verifica justamente eso por texto, y una excepción para esta línea sería aflojar el control
+   * para que entre algo — que es lo que `CLAUDE.md` §4 prohíbe. */
+  var partes = String(fila.campo_logico || '').split('/').map(desarmarOperandoRatio_);
+  if (partes.length !== 2 || !partes[0].campo || !partes[1].campo) {
+    /* ⚠ El prefijo sin campo detrás —`TODAS:/acm_entregados`— cae acá y **no** en una rama propia:
+     * una rama que ninguna entrada puede alcanzar se lee como un camino vivo y no lo es. Lo que sí
+     * hace falta es que el motivo lo NOMBRE, o el mensaje manda a contar barras. */
+    var soloPrefijo = partes.filter(function (p) { return p.todas && !p.campo; }).length;
     return {
       ok: false,
       motivo: '«FALTA:' + fila.marcador + '@campo_logico_no_es_ratio» — `' + fila.operacion +
         '` espera "numerador/denominador" y recibió "' + fila.campo_logico + '"' +
-        (partes.length > 2 ? ' (tiene más de una barra)' : '')
+        (partes.length > 2 ? ' (tiene más de una barra)' : '') +
+        (soloPrefijo ? ' — hay ' + soloPrefijo + ' operando(s) con `' +
+          PREFIJO_OPERANDO_SIN_FILTRO_ + '` y ningún campo detrás' : '')
     };
   }
 
-  var opNum = desarmarOperandoRatio_(partes[0]);
-  var opDen = desarmarOperandoRatio_(partes[1]);
+  var opNum = partes[0];
+  var opDen = partes[1];
   var nombreNum = opNum.campo;
   var nombreDen = opDen.campo;
-  if (!nombreNum || !nombreDen) {
-    return {
-      ok: false,
-      motivo: '«FALTA:' + fila.marcador + '@operando_vacio» — `' + PREFIJO_OPERANDO_SIN_FILTRO_ +
-        '` quedó sin campo detrás en "' + fila.campo_logico + '"'
-    };
-  }
   /* ⛔ El gate: pedir el conjunto sin filtrar y no tenerlo **falla**. Caer al filtrado en silencio
    * publicaría un número correcto sacado del universo equivocado — el modo de falla más caro del
    * repo, y el único que no avisa. */
@@ -1652,7 +1655,18 @@ function resolverMarcadores(informeId, opciones) {
     var esRatio = ['RATIO', 'PCT'].indexOf(String(fila.operacion || '').trim()) !== -1;
     var partido = null;
     if (esRatio) {
-      var nombreNum = String(fila.campo_logico || '').split('/')[0].trim();
+      /* ⛔⛔ **Por `desarmarOperandoRatio_` y no por `split('/')[0]` pelado** (`2026-09-11_4` Parte
+       * C). El operando puede traer el prefijo `TODAS:`, y acá se necesita el **nombre del campo**
+       * para resolver la solapa. Con el prefijo adentro, `buscarMapeo` busca
+       * `TODAS:acm_aperturas`, **no lo encuentra, y el marcador cae con un motivo que manda a
+       * mirar `MAPEO`** — donde el campo está perfectamente declarado.
+       *
+       * ⚠ **Es la figura de `CLAUDE.md` §2 aplicada a un valor de configuración en vez de a una
+       * columna:** *agregar algo a una celda es tocar N lectores, no uno*. `campo_logico` lo parten
+       * por `/` **tres** lugares del motor —éste, el `campoOverride` de abajo y
+       * `partirCampoRatio_`— y el prefijo entró primero en uno solo. El síntoma no fue un error
+       * legible: la corrida devolvió una página HTML. */
+      var nombreNum = desarmarOperandoRatio_(String(fila.campo_logico || '').split('/')[0]).campo;
       if (!nombreNum) {
         base.estado = 'error';
         base.traza = '«FALTA:' + fila.marcador + '@campo_logico_no_es_ratio» — `' + fila.operacion +
@@ -1673,7 +1687,8 @@ function resolverMarcadores(informeId, opciones) {
     var nombreOp = String(fila.operacion || '').trim();
     var esPlantilla = (nombreOp === 'FILA_TEXTO' || nombreOp === 'GRUPO_TEXTO' ||
                        nombreOp === 'LISTA_TEXTO');
-    var campoOverride = esRatio ? String(fila.campo_logico).split('/')[0].trim()
+    /* ⛔ Mismo desarme que arriba, y por el mismo motivo: esto va a `buscarMapeo` como campo. */
+    var campoOverride = esRatio ? desarmarOperandoRatio_(String(fila.campo_logico).split('/')[0]).campo
       : (esPlantilla ? primerCampoDePlantilla_(fila.campo_logico) : null);
     if (esPlantilla && !campoOverride) {
       base.estado = 'error';
