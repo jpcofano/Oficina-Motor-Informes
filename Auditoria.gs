@@ -12436,3 +12436,184 @@ function medirOrSobre100() {
     'variante_B_supera_100pct': sobre100B,
     muestra_de_las_que_superan_100: muestraSobre100 };
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-11_1` punto 3 — **el censo del deck, sobre el texto COMPLETO.**
+ *
+ * ⛔⛔ **Por qué no se reusa `lineasDeDeck_`, que ya lee el deck con coordenadas:** trunca cada
+ * pieza a **90 caracteres**, y eso ya produjo un falso negativo medido —una caja con muchos tokens
+ * informaba menos `/////` de los que tenía—. Para **contar** hace falta el texto entero; para
+ * **ubicar** alcanza con las coordenadas. Son dos preguntas y este censo hace la primera.
+ *
+ * ⛔ **SÓLO LECTURA.** No escribe ninguna fila, no abre ningún caso.
+ *
+ * ⚠ **Y lo que un censo de símbolos NO puede contestar**, dicho acá y no al pie: un `/////` no
+ * distingue *«nadie lo cableó»* de *«la corrida no llegó»*. Por eso el censo **declara si la
+ * corrida se cortó**: si `terminada` es falso, los conteos de abajo no se leen como cobertura.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function censarDeckDeCorrida_(deckId) {
+  var pres;
+  try { pres = SlidesApp.openById(deckId); }
+  catch (e) { return { ok: false, motivo: 'no pude abrir el deck: ' + e }; }
+
+  var slides = pres.getSlides();
+  var porSlide = [], escondidas = [];
+  var tot = { huecos: 0, fallan: 0, sinDato: 0, revisar: 0, crudos: 0, cortes: 0 };
+  var crudosDistintos = {};
+
+  for (var i = 0; i < slides.length; i++) {
+    var esc = esLaminaEscondida_(slides[i]);
+    if (esc) escondidas.push(i + 1);
+    var txt = piezasDeTextoDeSlide_(slides[i]).map(function (p) { return String(p.texto || ''); }).join('\n');
+
+    /* ⚠ Cada símbolo con su patrón propio: contar `-` a secas daría cientos de falsos, porque el
+     * guion aparece en texto normal. `---` se exige como pieza suelta y `-1.234-` como número
+     * envuelto, que es la forma que `_revisar` publica. */
+    var huecos = (txt.match(/\/{5}/g) || []).length;
+    var fallan = (txt.match(/(^|\s)---(\s|$)/g) || []).length;
+    var sinDato = (txt.match(/(^|\s)-(\s|$)/g) || []).length;
+    var revisar = (txt.match(/-[\d][\d.,%\s]*-/g) || []).length;
+    var cortes = (txt.match(/»»»/g) || []).length;
+
+    var crudos = txt.match(/\{\{([a-zA-Z0-9_]+)\}\}/g) || [];
+    crudos.forEach(function (c) { crudosDistintos[c] = (crudosDistintos[c] || 0) + 1; });
+
+    tot.huecos += huecos; tot.fallan += fallan; tot.sinDato += sinDato;
+    tot.revisar += revisar; tot.crudos += crudos.length; tot.cortes += cortes;
+
+    if (huecos || fallan || crudos.length || cortes) {
+      porSlide.push('slide ' + (i + 1) + (esc ? ' ESCONDIDA' : '') +
+        ' · ///// ' + huecos + ' · --- ' + fallan + ' · crudos ' + crudos.length +
+        (cortes ? ' · »»» ' + cortes : '') +
+        (revisar ? ' · _revisar ' + revisar : ''));
+    }
+  }
+
+  return { ok: true, deck: pres.getName(), total_slides: slides.length,
+           escondidas: escondidas.join(',') || 'ninguna',
+           totales: tot,
+           slides_con_algo: porSlide,
+           crudos_distintos: Object.keys(crudosDistintos).sort() };
+}
+
+/** El censo del deck de la ÚLTIMA fila de `CORRIDAS`. ⭐ Sin argumentos, para que se pueda correr. */
+function censarUltimoDeckJm() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
+  if (!hoja) return { ok: false, motivo: 'no existe CORRIDAS' };
+  var datos = hoja.getDataRange().getValues(), h = datos[0];
+  var iD = h.indexOf('deck_id'), iC = h.indexOf('corrida_id'), iI = h.indexOf('informe_id'),
+      iT = h.indexOf('tokens_reemplazados'), iF = h.indexOf('faltantes');
+
+  /* ⛔ La ÚLTIMA de `jm`, no la última a secas: si entre medio corrió `secco`, censar la última
+   * daría el deck equivocado con un nombre parecido — el caso de *«¿estoy mirando lo que creo?»*. */
+  var fila = null;
+  for (var f = datos.length - 1; f >= 1; f--) {
+    if (String(datos[f][iI] || '').trim() === 'jm') { fila = datos[f]; break; }
+  }
+  if (!fila) return { ok: false, motivo: 'ninguna corrida de jm en CORRIDAS' };
+
+  var r = censarDeckDeCorrida_(String(fila[iD] || '').trim());
+  r.corrida_id = String(fila[iC] || '').trim();
+  r.tokens_reemplazados = fila[iT];
+  r.faltantes_declarados = String(fila[iF] || '').slice(0, 300);
+  return r;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐ `2026-09-11_1` punto 2 — **el par de implementaciones de `jm`, POR CASILLERO.**
+ *
+ * ⛔ Con el lector de coordenadas y no con el texto aplanado: la pregunta no es *«qué números
+ * salieron»* sino **«en qué casillero cayó cada uno»**, y un volcado plano no lo dice.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+function diagImplementacionesJm() {
+  var hoja = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('CORRIDAS');
+  var datos = hoja.getDataRange().getValues(), h = datos[0];
+  var iD = h.indexOf('deck_id'), iC = h.indexOf('corrida_id'), iI = h.indexOf('informe_id');
+  var fila = null;
+  for (var f = datos.length - 1; f >= 1; f--) {
+    if (String(datos[f][iI] || '').trim() === 'jm') { fila = datos[f]; break; }
+  }
+  if (!fila) return { ok: false, motivo: 'ninguna corrida de jm' };
+
+  var pres = SlidesApp.openById(String(fila[iD] || '').trim());
+  var slides = pres.getSlides();
+  var salida = [];
+  for (var i = 0; i < slides.length; i++) {
+    var piezas = piezasDeTextoDeSlide_(slides[i]);
+    var hay = piezas.some(function (p) { return /[Ii]mplementacion/.test(String(p.texto || '')); });
+    if (!hay) continue;
+    piezas.sort(function (a, b) {
+      var ay = a.geo ? a.geo.y : 1e9, by = b.geo ? b.geo.y : 1e9;
+      if (ay !== by) return ay - by;
+      return (a.geo ? a.geo.x : 1e9) - (b.geo ? b.geo.x : 1e9);
+    });
+    salida.push('== slide ' + (i + 1));
+    piezas.forEach(function (p) {
+      var t = String(p.texto || '').replace(/\s+/g, ' ').trim();
+      if (!t) return;
+      salida.push('  y=' + (p.geo ? Math.round(p.geo.y) : '?') +
+                  ' x=' + (p.geo ? Math.round(p.geo.x) : '?') + ' | ' + t.slice(0, 70));
+    });
+  }
+  return { ok: true, corrida_id: String(fila[iC] || '').trim(), lineas: salida };
+}
+
+/** `cc_campanias`, el que publica entre guiones. ⭐ Sin argumentos. */
+function diagCcCampanias() { return diagUnMarcador_('jm', 'cc_campanias'); }
+
+/**
+ * ⭐ `2026-09-11_1` punto 1 — **el discriminador de `cc_campanias`.** SÓLO LECTURA.
+ *
+ * ⛔⛔ La traza ya dice *«el filtro `acc_remitente=JM` → 0 de 13 filas»*, y eso **acusa al filtro sin
+ * probar nada**: 0 de 13 es exactamente lo que se ve tanto si el filtro está mal escrito como si esa
+ * semana no hubo Call Center de JM. **Son dos causas que mandan a trabajos opuestos** —corregir el
+ * corte contra no tocar nada— y el conteo solo no las separa.
+ *
+ * ⇒ Esto imprime **qué remitentes traen esas 13 filas**. Es la otra mitad del aviso que
+ * `CLAUDE.md` §4 pide: *tiene que hablar también cuando NO encuentra nada.*
+ *
+ * ⭐ **Control positivo:** el universo completo de la solapa tiene que traer `JM` —el censo del
+ * 08/09 midió 476—. Si no aparece en ningún lado, el lector está mal y el cero de la ventana no
+ * se puede citar.
+ */
+function diagCcCampaniasPorQue() {
+  var datos = hojaCruda_('acumulado', 'Call Center - Métricas');
+  if (!datos || !datos.length) return { ok: false, motivo: 'no pude leer la solapa' };
+  var e = datos[0];
+  var iR = e.indexOf('Remitente'), iF = e.indexOf('Fecha');
+  if (iR === -1 || iF === -1) return { ok: false, motivo: 'faltan columnas · Remitente=' + iR + ' Fecha=' + iF };
+
+  var desde = new Date(2026, 8, 4), hasta = new Date(2026, 8, 10, 23, 59, 59);
+  var enVentana = [], universo = {};
+  for (var i = 1; i < datos.length; i++) {
+    var v = String(datos[i][iR] == null ? '' : datos[i][iR]).replace(/\s+/g, ' ').trim() || '(vacía)';
+    universo[v] = (universo[v] || 0) + 1;
+    var f = datos[i][iF];
+    if (f instanceof Date && f >= desde && f <= hasta) enVentana.push(v);
+  }
+
+  var cuenta = {};
+  enVentana.forEach(function (v) { cuenta[v] = (cuenta[v] || 0) + 1; });
+  var fmt = function (o) {
+    return Object.keys(o).sort(function (a, b) { return o[b] - o[a]; })
+      .map(function (k) { return k + ' = ' + o[k]; });
+  };
+
+  /* ⛔ El control positivo aborta: sin `JM` en el universo, el cero de la ventana no distingue
+   * «no hubo esta semana» de «no sé leer esta columna». */
+  if (!universo['JM']) {
+    return { ok: false, motivo: '⛔ CONTROL POSITIVO FALLA: no veo ni una fila con Remitente = JM ' +
+      'en toda la solapa, y el censo del 08/09 midió 476. El lector está mal.',
+      universo_completo: fmt(universo) };
+  }
+
+  return { ok: true,
+    control_positivo: 'pasa — el universo trae JM = ' + universo['JM'] + ' fila(s)',
+    ventana: '2026-09-04 a 2026-09-10',
+    filas_en_la_ventana: enVentana.length,
+    remitentes_en_la_ventana: fmt(cuenta),
+    veredicto: cuenta['JM']
+      ? 'HAY ' + cuenta['JM'] + ' fila(s) JM en la ventana ⇒ el filtro está dejándolas afuera: es del CORTE'
+      : 'CERO filas JM en la ventana ⇒ el filtro está bien y NO HUBO Call Center de JM esa semana',
+    universo_completo: fmt(universo) };
+}
