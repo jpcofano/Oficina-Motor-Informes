@@ -1458,11 +1458,32 @@ function resolverPlantillaTexto_(fila, solapa, filas) {
  * mitades volvieron al mismo universo y la mezcla dejó de existir. Medido sobre `MARCADORES` del
  * 12/09: `TODAS:` aparece **cero** veces.
  *
- * ⚠ **No se borra: se agregó por un motivo y el motivo puede volver** —el Resumen Ejecutivo sí usa
- * la regla por métrica, y su P0 sigue abierto—. Lo que hay que evitar es leerlo como código
- * probado: **hoy ninguna configuración lo recorre**, así que quien lo vuelva a usar **estrena** esta
- * rama, no la reutiliza. ⭐ Es la misma figura que `SEPARADOR_ALTERNATIVAS_FILTRO_`, declarado y sin
- * llamador desde el 30/08: *un camino completo y sin llamador se lee como un camino vivo*.
+ * ⚠ **No se borra: se agregó por un motivo y el motivo puede volver.** Lo que hay que evitar es
+ * leerlo como código probado: **hoy ninguna configuración lo recorre**, así que quien lo vuelva a
+ * usar **estrena** esta rama, no la reutiliza. ⭐ Es la misma figura que
+ * `SEPARADOR_ALTERNATIVAS_FILTRO_`, declarado y sin llamador desde el 30/08: *un camino completo y
+ * sin llamador se lee como un camino vivo*.
+ *
+ * ── ⭐⭐ PARA QUÉ SE CREÓ Y QUÉ LO ESTRENARÍA (decisión del usuario, 12/09/2026) ──────────────
+ *
+ * ⛔ **Un mecanismo sin usuario que además no dice para qué existe es indistinguible de código
+ * muerto**, y el que venga después lo borra con razón. Por eso lo de abajo no es historia: es la
+ * condición que lo mantiene vivo.
+ *
+ * **Nació el 11/09** para la regla del nivel **campaña**, que en ese momento se creía que era
+ * *«operación distinta por métrica dentro de la misma tabla»* — enviados y entregados de un
+ * universo, aperturas y clics de otro. **Quedó sin usuario el 12/09**, cuando el equipo aclaró que
+ * en campaña el filtro es **por fila** y no por métrica.
+ *
+ * ⭐⭐ **Su candidato es el nivel RESUMEN EJECUTIVO, y no es una posibilidad teórica: su regla ya
+ * está confirmada por el equipo** (WhatsApp, 11/09) y **es exactamente la que `TODAS:` expresa** —
+ * del envío a no apertores **no** suman `Enviados` ni `Entregados`, y **sí** suman `Aperturas` y
+ * `Clics`. Es el mismo operando de dos universos dentro de un ratio que este prefijo resuelve.
+ *
+ * ⛔ **Y tiene fecha de resolución, en las dos direcciones:** está atado al **P0 del Resumen
+ * Ejecutivo** (`docs/PENDIENTES_consistencia.md`). El día que ese P0 se cierre, esto **se estrena**
+ * —si lo necesita, el mecanismo ya está y no hay que diseñarlo— **o se borra con el motivo
+ * escrito**. ⚠ **No puede quedar abierto una tercera vez.**
  *
  * ⭐ **Lo que SÍ sigue vivo es el desarme**, y por eso no es código muerto del todo: los tres
  * lectores de `campo_logico` lo llaman en cada ratio, y `tools/probar-r05-primer-envio.js` verifica

@@ -1,5 +1,90 @@
 ---
 
+## ⚠ `TODAS:` existe, no tiene usuario vivo, y tiene fecha de resolución (12/09/2026)
+
+> Decisión del usuario, 12/09/2026 (`2026-09-12_2`). ⛔ **Se queda: no se borra y no se estrena a la
+> fuerza.** Lo que este ítem evita es que envejezca sin que nadie lo note — que es cómo un mecanismo
+> declarado se convierte en código que el próximo borra con razón.
+
+**Qué es.** `PREFIJO_OPERANDO_SIN_FILTRO_` en `Generador.gs`: un operando de un `RATIO`/`PCT` puede
+declarar `TODAS:campo` y entonces **no recibe el filtro del marcador**, así que numerador y
+denominador pueden salir de **dos universos distintos**.
+
+| fecha | qué pasó |
+|---|---|
+| **11/09** | nace para `camp_or`, cuando se creía que la regla de **campaña** era *«operación distinta por métrica dentro de la misma tabla»* |
+| **12/09** | queda **sin usuario**: el equipo aclaró que en campaña el filtro es **por fila**, y las dos mitades volvieron al mismo universo |
+
+**Medido el 12/09 sobre el export directo de `MARCADORES`: `TODAS:` aparece cero veces.**
+
+### ⭐⭐ Su candidato, y no es teórico
+
+**El nivel RESUMEN EJECUTIVO.** Su regla **ya está confirmada por el equipo** (WhatsApp, 11/09) y
+**es exactamente la que `TODAS:` expresa**: del envío a no apertores **no** suman `Enviados` ni
+`Entregados`, y **sí** suman `Aperturas` y `Clics`. Es el mismo operando de dos universos dentro de
+un ratio que este prefijo resuelve — y el mecanismo **ya está escrito y probado**
+(`tools/probar-r05-primer-envio.js` §7 y §7 bis).
+
+### ⛔ La condición de salida, en las dos direcciones
+
+| si | entonces |
+|---|---|
+| el **P0 del Resumen Ejecutivo** lo necesita | ⭐ **se estrena** — el mecanismo ya está, no hay que diseñarlo |
+| el P0 **resuelve por otro camino** | ⛔ **se borra**, y el motivo va escrito |
+
+⛔⛔ **Sin plazo esto no sirve, y por eso queda ATADO al P0 del Resumen Ejecutivo** — no a una fecha
+del calendario, que nadie mira, sino a un evento que alguien va a tener que cerrar igual. **El día
+que ese P0 se cierre, `TODAS:` se estrena o se borra.**
+
+⚠ **No puede quedar abierto una tercera vez.** Ya lleva dos: nació sin usuario declarado y quedó sin
+usuario a las 24 horas. Una tercera lo convierte en lo que `CLAUDE.md` §4 nombra —*un camino completo
+y sin llamador se lee como un camino vivo*— con el agravante de que esta vez **está escrito que lo
+sabíamos**.
+
+---
+
+## ⚠ Una escritura que responde HTML es indistinguible de una que no corrió (12/09/2026)
+
+> ⛔ **No se arregla acá.** Se registra porque el modo de falla es del transporte, no del motor, y
+> **la única defensa que existe hoy es acordarse** — que es exactamente lo que esta entrada vuelve
+> innecesario.
+
+**El caso, medido hoy.** `aplicarR05` —que **escribe** cuatro celdas de `MARCADORES`— devolvió una
+página **HTML** en vez de JSON, con `HTTP 200`. `tools/api.js` **no reintentó, a propósito**, e
+imprimió el aviso correcto: *«mirá si la llamada llegó a correr antes de repetirla»*. ⭐ **Había
+corrido**: el export directo de `MARCADORES` mostró las cuatro celdas escritas.
+
+⛔⛔ **Lo que hace caro este modo de falla:** la respuesta HTML **no dice nada sobre si el código se
+ejecutó**. Las dos historias —*«murió antes de escribir»* y *«escribió y se perdió la respuesta»*—
+producen exactamente el mismo byte, y mandan a trabajos opuestos: repetir la llamada, o **no
+repetirla bajo ningún concepto**. Es la familia del glifo que miente sobre la causa, movida a la
+capa de transporte.
+
+⭐ **Lo accionable, y ya está funcionando: el default correcto es NO reintentar.** `--reintentar` es
+opt-in y lo pide quien sabe que la llamada no escribe. **Esa asimetría es la que salvó el día**: un
+reintento automático habría vuelto a ejecutar una escritura que ya había ocurrido.
+
+⭐⭐ **Y la verificación que resuelve la ambigüedad es siempre la misma y no depende del transporte:
+releer la hoja por el export directo.** No el retorno del escritor —que no llegó— ni el resumen del
+sembrador: **la hoja**. Cuesta un comando y contesta la única pregunta que importa.
+
+### Los casos de transporte, juntos por primera vez
+
+Van **tres** en dos días y **ninguno fue un error del motor**. Se agrupan acá porque el síntoma es
+el mismo —una página HTML donde tenía que haber JSON— y las causas son distintas:
+
+| qué llamaba | HTTP | causa real |
+|---|---|---|
+| `aplicarR05` (11/09) | **404**, reproducible | ⛔ **defecto propio**: `curarCamposMarcadores_` indexa por `marcador‖informe_id` y el lote no declaraba el `informe_id` (`*`). Corregido, dejó de pasar — ⚠ **el mecanismo por el que eso sale como HTML no se determinó** |
+| `diagCampMuroSinFiltro` (11/09) | **200**, reproducible | ⛔ **defecto propio**: el prefijo `TODAS:` llegaba crudo a `buscarMapeo` desde dos lectores sin desarmar. Corregido |
+| ⭐ `aplicarR05` (12/09) | **200**, una vez | **ninguna del motor** — la llamada corrió y escribió; se perdió la respuesta |
+
+⚠ **Y el que enseña es el tercero, porque es el único sin causa propia:** los dos primeros
+entrenaban a leer *«HTML ⇒ hay un bug mío»*, y eso **es falso como regla**. ⛔ **La primera pregunta
+ante un HTML no es «¿qué rompí?» sino «¿corrió o no corrió?»**, y se contesta mirando el artefacto
+—la hoja, `CORRIDAS`, la carpeta de salidas—, nunca la respuesta.
+
+
 ## ⚠ El equipo usa CRITERIOS DISTINTOS POR LÁMINA para el mismo envío, y no está escrito en ningún lado de su deck (12/09/2026)
 
 > Sale del `2026-09-12_1` Parte B. ⛔ **No se arregla acá** — la nota de la lámina la escribe el
@@ -40,7 +125,7 @@ inferencia de quien la anota, y **no falla: produce una conclusión perfectament
 números, sobre una premisa que nadie enunció**.
 
 
-## ⛔⛔ P0 · El Resumen Ejecutivo suma TODOS los envíos del período, no los de una campaña (11/09/2026)
+## ⛔⛔ P0 · El Resumen Ejecutivo — ¿aplica la regla POR MÉTRICA, que es la de su nivel? (11/09/2026, reenunciado el 12/09)
 
 > Sale del `2026-09-11_4` Parte D. ⛔ **No se midió y no se arregló acá**: se escribe para que exista
 > como pendiente antes de que alguien lea el Resumen Ejecutivo como validado.
@@ -82,6 +167,26 @@ implementa hoy la regla por métrica en ningún lado: `TODAS:` quedó **sin usua
 separa en **126 de 434** campañas multi-envío (**29 %**), y el Resumen Ejecutivo suma **6 envíos en
 `jm` y 59-70 en GCBA**, no 3. Sobre ese universo, el 71 % que la etiqueta no discrimina es mucho más
 dato que en una campaña sola.
+
+### ⛔⛔ La advertencia que frenó la medición hoy: LA VENTANA 04/09–10/09 NO DECIDE NADA
+
+**Los tres envíos de *Operativo Muro* son del 28/08, 29/08 y 02/09** — y **ninguno cae dentro de la
+ventana `04/09–10/09`**. ⇒ comparar el Resumen Ejecutivo contra el deck del equipo en esa ventana
+**no distingue la regla por métrica de la regla por fila de ninguna otra**: donde no hay reenvío,
+**todas las reglas dan el mismo número**.
+
+⛔ **Es la trampa de `Pruebas.gs:456` en su forma más cara**, porque acá el fixture es *el período*:
+un dato que satisface más de una afirmación no distingue entre ellas, y **el resultado se ve como una
+confirmación**. Una medición en esa ventana volvería `✅ coincide` sobre una pregunta que no se hizo.
+
+⭐ **Lo accionable, y es una precondición de la medición, no un detalle de ejecución: hace falta una
+ventana que CONTENGA un reenvío.** Antes de medir nada, el paso 0 es **elegir el período por ese
+criterio** —y declararlo—, no correr el de la semana porque es el que está a mano.
+
+⚠ **Y el corolario sobre qué se puede citar mientras tanto:** cualquier coincidencia entre el motor y
+el equipo en el Resumen Ejecutivo de `04/09–10/09` es **evidencia de que no hubo reenvíos esa
+semana**, no de que la regla esté bien aplicada. Son dos afirmaciones distintas y sólo una es
+publicable.
 
 ---
 
