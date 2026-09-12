@@ -18283,3 +18283,85 @@ lista de arrays del otro banco—. ⭐ **Ésta salió barata porque el síntoma 
 
 **Suites: 99 bancos, exit 0 · `tools/listas.js`, exit 0 · `clasp push` en su propio comando,
 después de leer el verde.** ⛔ **Falta sembrar y correr.**
+
+---
+
+## `2026-09-11_4` A.bis + `ADDENDUM 4` — Los nombres del seed mandan, y renombrar sin sembrar era la mitad de la operación (11/09/2026)
+
+**El trabajo del día hasta acá vive en cuatro commits sin entrada propia** —Parte 0 (`2b06364`),
+los dos censos del `ADDENDUM 1` (`c73d316`), Parte A (`248fbae`) y Parte B (`465d6fb`)—; esta
+entrada cubre A.bis y el `ADDENDUM 4`, que es la unidad que cerró y se verificó.
+
+### Qué pedía A.bis, y qué le faltaba
+
+`ADDENDUM 3` decidió que **los nombres del seed mandan**: los 10 `campo_logico` de
+`acumulado | Mail` pasan a la familia `acm_*` y los marcadores que los usan se actualizan **en el
+mismo acto**. El código estaba escrito. El `ADDENDUM 4` encontró **dos huecos**, y los dos eran de
+la clase que este repo ya nombró: *lo que un archivo declara no es lo que termina teniendo*.
+
+**1 · El comentario afirmaba un contrato que no existía.** Decía *«se renombran Y SE AGREGAN AL
+SEED»* y `aplicarRenombreAcumMail` **sólo tocaba la hoja**. ⛔ **Renombrar sin sembrar dejaba las 9
+peor que antes**: con `mail_*` el prefijo delataba que eran de otra solapa; con `acm_*` **sugiere
+falsamente que vienen del seed**, y un nombre que no está en el seed hay que sostenerlo a mano para
+siempre. ⇒ Las 9 entraron a `SEED_MAPEO_ACUMULADO_`, con **letra, encabezado y nota**. El seed pasa
+de **3 a 12** filas de esa solapa, medidas por `tools/seed-mapeo.js` sobre el post-proceso real.
+
+**2 · `MAPEO_ACUM_MAIL_` se había quedado con los 12 nombres viejos.** Una segunda corrida de
+`aplicarMudanzaMail()` **re-creaba las 12 filas `mail_*`** y volvía a dejar `A` y `AI` con dos
+nombres cada una — **sin fallar y sin que nada avise**. ⭐ Se corrigió la lista en vez de ponerle un
+gate a la función: *una función que se puede correr dos veces sin romper es mejor que una que hay
+que acordarse de no correr.*
+
+### ⛔⛔ Y un tercer hueco, que apareció al cerrar el primero: el gate simétrico
+
+El gate que había exigía que las dos **ganadoras** existieran antes de borrar las duplicadas. ⭐ Con
+las 9 recién sembradas, hacía falta el **opuesto**: que los 9 destinos del renombre **NO existan
+todavía**. Correr «Aplicar configuración» **antes** del renombre habría creado nueve claves
+duplicadas, y **`upsertPorClave_` no falla ante eso** — escribe sobre la primera y la otra queda de
+sombra. ⇒ **El orden correcto es renombre primero, sembrador después**, y ahora el orden equivocado
+para en seco en vez de dejar la hoja ilegible.
+
+### El banco, y el negativo que se cayó solo
+
+`tools/probar-seed-acum-mail.js` (nuevo, **11 afirmaciones**) hace fallar el desajuste entre las dos
+listas: **en las dos direcciones**, ningún `campo_logico` puede volver a `mail_*`, y ninguna columna
+puede llevar dos nombres. ⭐ **La duplicación es el diseño y no se borra** —es el argumento de
+`tools/listas.js`—; lo que se hace es que el desajuste **falle**.
+
+⚠ **Los cuatro negativos son sintéticos**: no dependen de que el bug del 11/09 siga vivo, así que el
+banco sigue midiendo con todo limpio. ⭐ **Y uno cayó en la primera corrida por la guarda de
+mutación**: el patrón copiaba el espaciado de alineación de la lista, que es del archivo y no de
+quien escribe la prueba. Pasó a regex. Sin esa guarda habría informado *«el negativo pasó»* sobre el
+código intacto — la tercera forma de control negativo vacío.
+
+### La verificación, por el export directo y no por el retorno del escritor
+
+| qué | resultado |
+|---|---|
+| filas de `MAPEO` en `acumulado \| Mail` | **12**, exactamente las 12 del seed |
+| con `campo_logico` `mail_*` | **0** |
+| columnas con dos nombres | **0** (eran 2: `A` y `AI`) |
+| filas sin encabezado (`D-31`) | **0** |
+| marcadores de `acumulado \| Mail` | **48**, los 48 resuelven contra una fila de `MAPEO` |
+| marcadores nombrando un campo `mail_*` | **0** |
+
+⭐ **El sembrador corrió DESPUÉS y no agregó nada** —`agregadas: 0 · cambiadas: 9`—: las 9 ya
+estaban y el seed acaba de tomar posesión de ellas. ⚠ **Y eso no se leyó del resumen**: el mismo
+sembrador informó *«agregadas: 0 · sin cambios: sí»* después de agregar siete filas, así que la
+cuenta salió de **re-exportar las dos hojas** y contar ahí.
+
+### ⭐ La Parte B otra vez — los siete reproducen al dígito
+
+```
+camp_entregados  = 444.403      camp_or    = -33.9-     (33,86700809850519)
+camp_enviados    = -447.145-    camp_ctor  = -0.9-      (0,9142492658100009)
+camp_aperturas   = 150.506      camp_dir_impl = 3
+camp_mail_clics  = -1.376-
+```
+
+**Los siete con `estado=ok`, ninguno `FALTA`.** ⛔ Era el control que importaba: *un renombre a
+medias no falla, publica `FALTA`.* Condiciones declaradas por el propio instrumento:
+`cacheRegistros=true cacheDatosHoja=true`, sobre 83 resultados.
+
+**Suites: 101 bancos, exit 0 · `tools/listas.js`, exit 0 · `clasp push` en su propio comando,
+después de leer el verde.** ⇒ Sigue la Parte C.
