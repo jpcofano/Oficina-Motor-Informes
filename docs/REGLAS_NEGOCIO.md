@@ -403,6 +403,45 @@ multi-envío: **8** y **9** respectivamente.
 
 **Aplicada desde:** `2026-09-11_4` Parte C, sobre `acumulado | Mail`.
 
+### ⭐⭐ SE PARTE POR NIVEL — aclaración del equipo, 12/09/2026
+
+⛔ **`R-05` no es una regla: son DOS, y el equipo no se contradice.** Lo de arriba se escribió como
+si hubiera una sola, y por eso durante un día pareció que el deck del equipo violaba su propia
+regla. **No la violaba.**
+
+| nivel | qué hace el equipo con la fila del reenvío |
+|---|---|
+| **Resumen Ejecutivo** (`L-002`, `L-003`) | **la deja**, pero sólo suma sus **aperturas y clics** — el filtro es **por métrica** |
+| ⭐ **Campaña** (el GLOBAL de `L-020`/`L-022`, `L-047`) | **saca la fila ENTERA** — el filtro es **por fila** |
+
+**Lo que el equipo dijo, y para qué nivel lo dijo:** la frase *«los no apertores sólo se suman en
+aperturas y clics»* —y sus dos hermanas del 11/09— **era del Resumen Ejecutivo**. La aclaración al
+usuario del **12/09/2026** dice que en las láminas de campaña **sacan la fila entera**.
+
+⭐ **La regla de campaña, entera, y es más simple que la del resumen:**
+
+```
+GLOBAL de campaña = suma de las filas con la etiqueta del primer envío — para TODAS las métricas
+```
+
+⚠ **La fila del reenvío se sigue MOSTRANDO en el desagregado**, con sus métricas propias. Lo que
+cambia es **qué suma el GLOBAL**. ⇒ el GLOBAL suma dos de tres filas **en las cinco columnas**, y
+los dos porcentajes derivados —`% OR` y `% CTOR`— salen de esos mismos números, así que la lámina
+cierra consigo misma sin ningún caso especial.
+
+⛔⛔ **Lo que esto enseña, y es lo que hay que conservar:** **una regla dicha en una conversación
+vale para el nivel del que se estaba hablando.** Extenderla a otro nivel es una inferencia de quien
+la anota, no algo que el equipo haya dicho — y produce exactamente lo que produjo acá: una
+conclusión escrita, publicada y con números, afirmando que el equipo se contradecía a sí mismo. ⚠ El
+caso `C-134` del CSV del 11/09 **es esa conclusión**, y queda corregido allá.
+
+⚠ **Y el límite del discriminador no cambia, ahora sobre las cinco métricas:** la etiqueta sólo
+discrimina en **126 de 434** campañas multi-envío (**29 %**). En las otras **308 la etiqueta no
+cambia** y el reenvío **entra sin fallar** — en las cinco columnas a la vez, no sólo en dos.
+
+**Aplicada desde:** `2026-09-12_1` Parte A. ⛔ **El Resumen Ejecutivo NO está tocado**: su nivel
+sigue sin medir y tiene P0 propio en `docs/PENDIENTES_consistencia.md`.
+
 ## R-06 — El `id_cuenta` manda; el nombre nunca decide pertenencia
 
 **Enunciado:** la pertenencia de una fila de canal (mail, digital, etc.) a una cuenta o

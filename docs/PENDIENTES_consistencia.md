@@ -1,5 +1,45 @@
 ---
 
+## ⚠ El equipo usa CRITERIOS DISTINTOS POR LÁMINA para el mismo envío, y no está escrito en ningún lado de su deck (12/09/2026)
+
+> Sale del `2026-09-12_1` Parte B. ⛔ **No se arregla acá** — la nota de la lámina la escribe el
+> usuario (`C-01`: la plantilla es del equipo).
+
+**El hecho, medido y confirmado por el equipo:** la **misma** fila de reenvío recibe **dos
+tratamientos distintos según la lámina**.
+
+| lámina | qué pasa con la fila del reenvío |
+|---|---|
+| **Resumen Ejecutivo** (`L-002`, `L-003`) | **queda**, y suma sólo en **aperturas y clics** |
+| **Campaña** (`L-020`/`L-022`, `L-047`) | **sale entera** |
+
+⛔⛔ **Y el deck no lo dice en ninguna parte.** Las dos láminas publican números con los mismos
+rótulos —*Entregados*, *Aperturas*, *Clics*— sobre el mismo universo de campañas, y **nada en el
+deck indica que el criterio cambió entre una y otra**. Un lector que sume las campañas del bloque
+de campaña y lo compare contra el Resumen Ejecutivo **encuentra una diferencia sin causa visible**.
+
+⭐ **Es por qué hubo que preguntar dos veces.** La primera respuesta del equipo —*«los no apertores
+sólo se suman en aperturas y clics»*— era **cierta y completa para el nivel del que estaban
+hablando**, y se anotó como si fuera la regla del sistema. El 11/09 se publicó una conclusión con
+números diciendo que el deck del equipo contradecía su propia regla (`C-134`); el 12/09 el equipo
+aclaró el nivel y **la contradicción desapareció sin que nadie cambiara nada del lado de ellos**.
+
+⭐⭐ **Lo accionable, y es lo que la vuelve barata de cerrar: la nota en la lámina existe para que la
+próxima vez no haga falta preguntar.** Una línea en cada una de las dos diciendo qué universo suma
+**convierte un criterio tácito en un dato del deck** — y el próximo que lo lea, sea del equipo o del
+motor, no tiene que reconstruirlo desde una conversación de WhatsApp.
+
+⚠ **Lo que este pendiente NO dice:** que el equipo esté equivocado. Los dos criterios son
+defendibles por separado —en el resumen las aperturas del reenvío son impacto real del período; en
+la campaña el reenvío es otra implementación— y **el motor ahora reproduce los dos**. Lo que falta
+es que **el deck los declare**.
+
+⭐ **Y la consecuencia de método, que vale más allá de este caso:** *una regla dicha en una
+conversación vale para el nivel del que se estaba hablando.* Extenderla a otro nivel es una
+inferencia de quien la anota, y **no falla: produce una conclusión perfectamente escrita, con
+números, sobre una premisa que nadie enunció**.
+
+
 ## ⛔⛔ P0 · El Resumen Ejecutivo suma TODOS los envíos del período, no los de una campaña (11/09/2026)
 
 > Sale del `2026-09-11_4` Parte D. ⛔ **No se midió y no se arregló acá**: se escribe para que exista
@@ -26,9 +66,42 @@ respuesta conocida —6 y 59-70— que nadie cruzó contra lo que publica.
 **Lo que destraba:** una medición propia sobre `L-002`/`L-003`, con su universo declarado. No entra
 en esta tanda por *un prompt, un objetivo*.
 
+### ⭐ Actualización 12/09/2026 — el pendiente cambia de forma, no de urgencia
+
+`R-05` **se partió por nivel**: el equipo aclaró que la regla que confirmó el 11/09 —*«los no
+apertores sólo se suman en aperturas y clics»*— **era la del Resumen Ejecutivo**, y que en campaña
+sacan la fila entera. ⇒ **lo que hay que medir acá dejó de ser *«¿aplica `R-05`?»* y pasó a ser
+*«¿aplica la regla POR MÉTRICA, que es la de este nivel?»***.
+
+⛔ **Eso no lo vuelve menos urgente, lo vuelve más concreto:** ahora hay una regla **enunciada por el
+equipo para exactamente estas dos láminas** y **nadie verificó si el motor la cumple**. El motor
+implementa hoy la regla por métrica en ningún lado: `TODAS:` quedó **sin usuario vivo** al sacarlo de
+`camp_or`. ⇒ si `L-002`/`L-003` tuvieran que aplicarla, **el mecanismo existe y está sin estrenar**.
+
+⚠ **Y el límite del discriminador aplica igual acá**, con el agravante del nivel: la etiqueta sólo
+separa en **126 de 434** campañas multi-envío (**29 %**), y el Resumen Ejecutivo suma **6 envíos en
+`jm` y 59-70 en GCBA**, no 3. Sobre ese universo, el 71 % que la etiqueta no discrimina es mucho más
+dato que en una campaña sola.
+
 ---
 
-## ⛔ P1 · `camp_or` puede publicar más de 100 % — condición escrita, no implementada (11/09/2026)
+## ✅ ~~P1 · `camp_or` puede publicar más de 100 %~~ — **RESUELTO POR CONSTRUCCIÓN el 12/09/2026**
+
+> ## ✅ RESUELTO POR CONSTRUCCIÓN — 12/09/2026, `2026-09-12_1` Parte A
+>
+> **Nadie escribió la guarda.** El equipo aclaró que en las láminas de **campaña** saca **la fila
+> entera**, así que `camp_or` pasó a `PCT acm_aperturas/acm_entregados` **con las dos mitades
+> filtradas**: numerador y denominador vuelven al **mismo universo** y **el porcentaje no puede
+> superar 100 % por construcción**. Las 27 campañas que podían llegar a `900,2 %` **dejan de
+> poder** — medido el 11/09: con las dos mitades filtradas, `> 100 %` ocurre en **0 de 1.245**.
+>
+> ⭐ **Se marca resuelto y NO se borra**, y el motivo es que la distinción importa: *resuelto por
+> construcción* no es *arreglado*. Si algún día vuelve a hacer falta un ratio de dos universos —el
+> **Resumen Ejecutivo** usa la regla por métrica y su P0 sigue abierto—, **la condición de abajo
+> vuelve a aplicar tal cual**, con su número y su reproductor intactos.
+>
+> ⚠ **Y lo que NO se resolvió:** nada de lo de abajo era falso. La mezcla de universos era correcta
+> **para la regla que se creía vigente**; lo que cambió fue la regla, no el análisis.
 
 > Sale del `2026-09-11_4` Parte C. ⛔ **No se implementa acá**: se registra como condición con su
 > número y su reproductor, que es lo que la vuelve vigilable.
