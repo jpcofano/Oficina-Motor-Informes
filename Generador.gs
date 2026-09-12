@@ -1049,6 +1049,109 @@ function primeraCondicionQueFalla_(condiciones, leerValor) {
   return null;
 }
 
+/* ⭐⭐ `R-05` (11/09/2026) — **el vocabulario de valores relativos.** Hoy tiene uno solo y eso es
+ * deliberado: `D-01` mide la extensibilidad, y un vocabulario que nace con cinco entradas «por si
+ * acaso» es cinco cosas que nadie midió. Cada entrada nueva tiene que traer su caso. */
+var VALOR_PRIMER_ENVIO_ = '@primer_envio';
+
+/**
+ * El valor de `claveCampo` en la fila de fecha mínima. **Pura**: recibe las filas y las dos claves
+ * ya resueltas, así que su control positivo arma los casos sin tocar ninguna planilla — el mismo
+ * criterio que `planDeLecturaPorCuenta_`.
+ *
+ * ⛔ Devuelve `{ ok: false, codigo, motivo }` en los tres casos que **no eligen**: sin fecha
+ * utilizable, empate con etiquetas distintas, y etiqueta vacía.
+ */
+function valorDelPrimerEnvio_(filas, claveCampo, claveFecha) {
+  var conFecha = [];
+  for (var i = 0; i < filas.length; i++) {
+    var d = parsearFechaCelda_(filas[i][claveFecha]);
+    if (d) conFecha.push({ ms: d.getTime(), fila: filas[i] });
+  }
+  if (!conFecha.length) {
+    return { ok: false, codigo: 'primer_envio_sin_fecha',
+      motivo: 'ninguna de las ' + filas.length + ' fila(s) tiene una `fecha_periodo` utilizable, ' +
+        'así que no hay «primer envío» que mirar' };
+  }
+
+  var min = conFecha[0].ms;
+  for (var j = 1; j < conFecha.length; j++) if (conFecha[j].ms < min) min = conFecha[j].ms;
+  var enMin = conFecha.filter(function (x) { return x.ms === min; });
+
+  var distintos = [];
+  enMin.forEach(function (x) {
+    var v = normalizarValorDeclarado_(x.fila[claveCampo]);
+    if (distintos.indexOf(v) === -1) distintos.push(v);
+  });
+
+  if (distintos.length > 1) {
+    /* ⛔ **Aborta, no elige.** Medido el 11/09: 8 campañas de 1.247. El día que aparezca una,
+     * elegir la primera del arreglo sería elegir por orden de la planilla. */
+    return { ok: false, codigo: 'empate_en_el_primer_envio',
+      motivo: 'la fecha mínima la comparten ' + enMin.length + ' fila(s) con etiquetas distintas (' +
+        distintos.join(' / ') + '): el empate aborta y no elige' };
+  }
+  if (distintos[0] === '') {
+    /* ⛔ Medido el 11/09: 9 campañas de 1.247. Una etiqueta vacía filtraría por «vacío» y dejaría
+     * adentro sólo las filas sin etiqueta — el corte por resta que la decisión prohíbe. */
+    return { ok: false, codigo: 'etiqueta_vacia_en_el_primer_envio',
+      motivo: 'el primer envío tiene la etiqueta vacía, así que no declara ningún ámbito' };
+  }
+  return { ok: true, valor: distintos[0], filas_en_la_minima: enMin.length,
+           con_fecha: conFecha.length, sin_fecha: filas.length - conFecha.length };
+}
+
+/**
+ * Reemplaza los valores relativos de las condiciones por el valor concreto que sale de `filas`.
+ * Muta `cond.valor` — las condiciones salen de un `parsearFiltro_` fresco en cada llamada.
+ */
+function resolverValorRelativo_(condiciones, resueltas, filas, fila, solapa) {
+  var planas = [];
+  condiciones.forEach(function (c) {
+    alternativasDeCondicion_(c).forEach(function (x) { planas.push(x); });
+  });
+  var relativas = planas.filter(function (c) { return String(c.valor).trim() === VALOR_PRIMER_ENVIO_; });
+  if (!relativas.length) return { ok: true, traza: '' };
+
+  /* ⛔ **Corte POSITIVO por los dos lados.** La etiqueta tiene 21 valores y 33 vacías: un `!=`
+   * mete todo lo demás adentro, y un `~=` matchearía `JM` dentro de otra etiqueta. */
+  var malOperador = relativas.filter(function (c) { return c.negado || c.op !== '='; })[0];
+  if (malOperador) {
+    return { ok: false, codigo: 'valor_relativo_con_corte_negativo',
+      motivo: '`' + VALOR_PRIMER_ENVIO_ + '` sólo se admite con `=`, y este filtro usa `' +
+        (malOperador.negado ? '!' : '') + malOperador.op + '` sobre `' + malOperador.campo +
+        '`. El corte es positivo por los dos lados: se declara qué entra, nunca qué sale' };
+  }
+
+  var mapFecha = buscarMapeo(fila.base_id, solapa, 'fecha_periodo');
+  if (!mapFecha.ok) {
+    return { ok: false, codigo: 'primer_envio_sin_fecha_mapeada',
+      motivo: '`' + VALOR_PRIMER_ENVIO_ + '` ordena por `fecha_periodo` y MAPEO no la tiene para ' +
+        fila.base_id + '/' + solapa + '. ' + mapFecha.motivo };
+  }
+  var claveFecha = claveDeFila_(filas, 'fecha_periodo',
+    claveDeLecturaEnColumna_(fila.base_id, solapa, mapFecha.columna));
+
+  var trazas = [];
+  for (var i = 0; i < relativas.length; i++) {
+    var cond = relativas[i];
+    var r = null;
+    for (var k = 0; k < resueltas.length; k++) {
+      if (resueltas[k].cond === cond) { r = resueltas[k]; break; }
+    }
+    if (!r) {
+      return { ok: false, codigo: 'valor_relativo_sin_columna',
+        motivo: 'no encontré la columna resuelta de `' + cond.campo + '` para el valor relativo' };
+    }
+    var v = valorDelPrimerEnvio_(filas, r.clave, claveFecha);
+    if (!v.ok) return { ok: false, codigo: v.codigo, motivo: v.motivo };
+    cond.valor = v.valor;
+    trazas.push('`' + cond.campo + '` = «' + v.valor + '» (del primer envío, por "' + claveFecha +
+      '"' + (v.sin_fecha ? ' · ' + v.sin_fecha + ' fila(s) sin fecha, no compiten' : '') + ')');
+  }
+  return { ok: true, traza: trazas.join(' · ') };
+}
+
 /**
  * Aplica el filtro de un marcador sobre las filas ya leídas.
  *
@@ -1144,6 +1247,32 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
     };
   }
 
+  /* ⭐⭐ `R-05` — **el valor esperado puede salir de las filas, no de la celda.**
+   *
+   * ⛔⛔ **Por qué hace falta un valor relativo y no alcanza con uno escrito.** `R-05` dice que una
+   * campaña pertenece al ámbito de **su primer envío**, y eso es distinto para cada campaña: la del
+   * caso empieza en `JM`, otras en `GCBA`, `PC`, `SIGEHOS`, `EZ`. Escribir `acm_remitente=JM` sería
+   * cablear el resultado de UNA campaña como si fuera la regla — y la decisión del usuario fue
+   * explícita: **relativa, no `= JM` fijo**.
+   *
+   * ⛔ **Y el corte es POSITIVO por los dos lados**, que es la otra mitad de la decisión: se declara
+   * qué entra, nunca qué sale. La etiqueta tiene **21 valores distintos y 33 celdas vacías**, así
+   * que un `!=` metería todo lo demás adentro. Por eso el valor relativo **sólo se admite con `=`**
+   * y un `!=`/`~=` falla con motivo propio.
+   *
+   * ⛔⛔ **Aborta, no elige**, en los dos casos que la decisión nombra, y los dos están medidos sobre
+   * el universo vivo (11/09/2026, 1.247 campañas multi-envío): **8 con empate** en la fecha mínima
+   * con etiquetas distintas y **9 con la etiqueta vacía** en el primer envío. Elegir en silencio
+   * convierte un empate en un número equivocado que nadie ve.
+   *
+   * ⚠ **El orden sale de `fecha_periodo`, que es el nombre de contrato (`S-02`)** y el mismo que
+   * `opFILA` y `opULTIMO` ya usan para ordenar. No es un parámetro: una perilla más sería una
+   * constante de negocio que nadie vuelve a mirar. */
+  var relativo = resolverValorRelativo_(f.condiciones, resueltas, filas, fila, solapa);
+  if (!relativo.ok) {
+    return { ok: false, motivo: '«FALTA:' + fila.marcador + '@' + relativo.codigo + '» — ' + relativo.motivo };
+  }
+
   var vacias = 0;
   var quedan = filas.filter(function (o) {
     resueltas.forEach(function (r) {
@@ -1178,7 +1307,11 @@ function aplicarFiltroDeMarcador_(textoFiltro, fila, solapa, filas, heredado) {
     // negado y **no pasa** el afirmativo, y esa asimetría explica diferencias que si no
     // parecen datos faltantes. Es el mismo criterio que `excluidas_por_valor` en `D-21`.
     // Con varias condiciones cuenta celdas, no filas — se dice en el texto.
-    traza: 'filtro `' + textoFiltro + '` ' + descripcion + ' → ' +
+    traza: 'filtro `' + textoFiltro + '` ' + descripcion +
+      /* ⭐ El valor relativo va en la traza SIEMPRE, no sólo cuando algo sale mal: el texto del
+       * filtro dice `@primer_envio` y no qué etiqueta ganó, así que sin esto dos campañas con
+       * universos distintos publican la misma traza. */
+      (relativo.traza ? ' · resuelto ' + relativo.traza : '') + ' → ' +
       quedan.length + ' de ' + filas.length + ' fila(s)' +
       (vacias ? ' · ' + vacias + (n === 1 ? ' con la celda vacía' : ' celda(s) vacía(s) en las columnas filtradas') : '') +
       desglose
@@ -1289,7 +1422,45 @@ function resolverPlantillaTexto_(fila, solapa, filas) {
   return { campos: campos, sin_mapeo: sinMapeo };
 }
 
-function partirCampoRatio_(fila, solapa, filas) {
+/* ⭐⭐ `2026-09-11_4` Parte C — **un operando de un RATIO puede declarar que NO recibe el filtro
+ * del marcador.**
+ *
+ * ⛔⛔ **El caso que lo pide, y no es una generalización especulativa.** `R-05` corta el universo
+ * de una campaña por la etiqueta de su primer envío, y **`camp_or` tiene sus dos mitades en lados
+ * opuestos del corte**: `% OR = aperturas / entregados`, donde **entregados suma sólo las filas del
+ * primer envío** y **aperturas suma TODAS**. Con un filtro por marcador y dos operandos sacados del
+ * mismo arreglo, eso es inexpresable: o se filtran los dos o ninguno, y **las dos opciones publican
+ * un `% OR` que no es el cociente de los dos números que la lámina muestra al lado**.
+ *
+ * ⚠ **Y eso no es un detalle estético: es `C-124`.** El lector que divida las dos celdas de la
+ * lámina y no llegue al porcentaje de la tercera lo lee como defecto — con razón. La decisión del
+ * usuario (11/09/2026) fue **«que cierre la lámina, que haga la cuenta con los datos que ya
+ * tiene»**, y los dos conjuntos **ya existen** en el despachador en ese punto: el de antes del
+ * filtro y el de después. Lo único que faltaba era poder nombrarlos.
+ *
+ * ⭐ **La forma es la de `FN:`**, que es el precedente del repo para una directiva con prefijo
+ * dentro de una celda de configuración: se lee sin abrir la documentación y es greppable.
+ *
+ *     campo_logico = TODAS:acm_aperturas/acm_entregados
+ *
+ * ⛔ **NO se permite cuando el camino recorta por ventana**, y falla en vez de degradar. El recorte
+ * por ventana es parte del **universo**, no del filtro; saltearlo devolvería un conjunto más ancho,
+ * y *un universo más ancho nunca es una degradación aceptable de uno recortado* (`CLAUDE.md` §4).
+ * La rama por cuenta —la que usan los `camp_*`— no recorta, así que el caso real entra; cualquier
+ * otro **para con motivo propio**.
+ *
+ * ⚠ **Un marcador sin filtro con `TODAS:` es un no-op**, y eso es correcto: los dos conjuntos
+ * coinciden. No hace falta prohibirlo y prohibirlo obligaría a sacar el prefijo al quitar el filtro. */
+var PREFIJO_OPERANDO_SIN_FILTRO_ = 'TODAS:';
+
+/** `{ campo, todas }` — el nombre del operando y si pidió saltear el filtro. */
+function desarmarOperandoRatio_(texto) {
+  var t = String(texto || '').trim();
+  var todas = t.indexOf(PREFIJO_OPERANDO_SIN_FILTRO_) === 0;
+  return { campo: todas ? t.slice(PREFIJO_OPERANDO_SIN_FILTRO_.length).trim() : t, todas: todas };
+}
+
+function partirCampoRatio_(fila, solapa, filas, filasSinFiltro) {
   var partes = String(fila.campo_logico || '').split('/');
   if (partes.length !== 2 || !partes[0].trim() || !partes[1].trim()) {
     return {
@@ -1300,8 +1471,30 @@ function partirCampoRatio_(fila, solapa, filas) {
     };
   }
 
-  var nombreNum = partes[0].trim();
-  var nombreDen = partes[1].trim();
+  var opNum = desarmarOperandoRatio_(partes[0]);
+  var opDen = desarmarOperandoRatio_(partes[1]);
+  var nombreNum = opNum.campo;
+  var nombreDen = opDen.campo;
+  if (!nombreNum || !nombreDen) {
+    return {
+      ok: false,
+      motivo: '«FALTA:' + fila.marcador + '@operando_vacio» — `' + PREFIJO_OPERANDO_SIN_FILTRO_ +
+        '` quedó sin campo detrás en "' + fila.campo_logico + '"'
+    };
+  }
+  /* ⛔ El gate: pedir el conjunto sin filtrar y no tenerlo **falla**. Caer al filtrado en silencio
+   * publicaría un número correcto sacado del universo equivocado — el modo de falla más caro del
+   * repo, y el único que no avisa. */
+  if ((opNum.todas || opDen.todas) && !filasSinFiltro) {
+    return {
+      ok: false,
+      motivo: '«FALTA:' + fila.marcador + '@sin_conjunto_sin_filtrar» — `' +
+        PREFIJO_OPERANDO_SIN_FILTRO_ + '` pide las filas de antes del filtro y el despachador no ' +
+        'las pasó. Pasa cuando el camino recorta por ventana: el recorte es parte del universo y ' +
+        'saltearlo devolvería un conjunto más ancho'
+    };
+  }
+
   var mapNum = buscarMapeo(fila.base_id, solapa, nombreNum);
   var mapDen = buscarMapeo(fila.base_id, solapa, nombreDen);
   if (!mapNum.ok || !mapDen.ok) {
@@ -1316,16 +1509,26 @@ function partirCampoRatio_(fila, solapa, filas) {
 
   var encNum = claveDeLecturaEnColumna_(fila.base_id, solapa, mapNum.columna);
   var encDen = claveDeLecturaEnColumna_(fila.base_id, solapa, mapDen.columna);
-  var extraer = function (encabezado) {
-    return filas.map(function (f) { return encabezado && (encabezado in f) ? f[encabezado] : ''; });
+  var extraer = function (encabezado, deTodas) {
+    var fuente = deTodas ? filasSinFiltro : filas;
+    return fuente.map(function (f) { return encabezado && (encabezado in f) ? f[encabezado] : ''; });
+  };
+  /* ⭐ El universo de cada operando va **en el nombre**, así que aparece en la traza de `opRATIO`
+   * sin tocar `Marcadores.gs`. Un ratio de dos universos que no los declara es indepurable: los dos
+   * números son plausibles y nada dice de dónde salió cada uno. */
+  var sello = function (op, n) {
+    return n + ' (col ' + op.columna + ')' +
+      (op.todas ? ' [' + filasSinFiltro.length + ' fila(s), SIN el filtro]'
+                : ' [' + filas.length + ' fila(s), filtradas]');
   };
 
   return {
     ok: true,
-    valoresNumerador: extraer(encNum),
-    valoresDenominador: extraer(encDen),
-    numeradorNombre: nombreNum + ' (col ' + mapNum.columna + ')',
-    denominadorNombre: nombreDen + ' (col ' + mapDen.columna + ')'
+    valoresNumerador: extraer(encNum, opNum.todas),
+    valoresDenominador: extraer(encDen, opDen.todas),
+    numeradorNombre: sello({ columna: mapNum.columna, todas: opNum.todas }, nombreNum),
+    denominadorNombre: sello({ columna: mapDen.columna, todas: opDen.todas }, nombreDen),
+    universos_distintos: opNum.todas !== opDen.todas
   };
 }
 
@@ -1544,6 +1747,11 @@ function resolverMarcadores(informeId, opciones) {
         : dims.condiciones;
     }
     var esPropio = filtroPropio !== '' || hayDimensiones;
+    /* ⭐ `2026-09-11_4` Parte C — el conjunto de ANTES del filtro, para el operando de ratio que
+     * declara `TODAS:`. Se toma acá y no se reconstruye después: reconstruirlo sería leer de nuevo
+     * y las dos lecturas podrían no coincidir. ⚠ Sólo sirve si este camino **no** recorta por
+     * ventana; el gate está abajo, donde se pasa. */
+    var filasAntesDelFiltro = datos.filas;
     var filtrado = aplicarFiltroDeMarcador_(filtroEfectivo, fila, solapa.solapa, datos.filas, !esPropio);
     if (!filtrado.ok) {
       base.estado = 'error';
@@ -1639,7 +1847,12 @@ function resolverMarcadores(informeId, opciones) {
     //            `SUMA` hermana sumaba 211.357 sobre las 7 filas recortadas. **Dos números
     //            del mismo marcador salidos de universos distintos.**
     if (esRatio) {
-      partido = partirCampoRatio_(fila, solapa.solapa, datos.filas);
+      /* ⛔ El conjunto sin filtrar se pasa **sólo si este camino no recortó por ventana**. Si
+       * recortó, `filasAntesDelFiltro` es más ancho que el universo del marcador y usarlo sería
+       * publicar un número de otro período. `partirCampoRatio_` falla con motivo propio cuando el
+       * `campo_logico` pide `TODAS:` y no lo recibe — nunca cae al filtrado en silencio. */
+      partido = partirCampoRatio_(fila, solapa.solapa, datos.filas,
+        datos.recortar_por_ventana ? null : filasAntesDelFiltro);
       if (!partido.ok) {
         base.estado = 'error';
         base.traza = partido.motivo + ' · ' + trazaVentana;

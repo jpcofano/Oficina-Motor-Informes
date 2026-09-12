@@ -12188,3 +12188,250 @@ function diagCampMuroSinFiltro() {
     if (abiertoR) { try { cerrarCacheRegistros_(); } catch (e) {} }
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐ `2026-09-11_4` Parte C — **la medición previa al filtro. SÓLO LECTURA, no escribe nada.**
+ *
+ * ⛔⛔ **Por qué hace falta antes de cablear:** la Parte C dice *«`camp_or` y `camp_ctor` se
+ * calculan con las cifras nuevas»*, y con `camp_or` eso **no es una sola cosa**. Su
+ * `campo_logico` es `acm_aperturas/acm_entregados`, y las dos mitades caen en lados opuestos de
+ * `R-05`: **el numerador suma TODAS las filas y el denominador sólo las de la etiqueta del primer
+ * envío.** ⛔ **El motor no puede hacer eso hoy:** `partirCampoRatio_` extrae los dos operandos
+ * del **mismo** arreglo de filas, ya filtrado. Un filtro, dos operandos.
+ *
+ * ⇒ Esto mide **las tres variantes** para que la decisión se tome con números y no con adjetivos.
+ *
+ * ⭐ **Control positivo, y comparte camino con lo que se mide:** los cinco valores SIN filtro
+ * tienen que reproducir los de la Parte B —`444.403 · 447.145 · 150.506 · 1.376 · 3`—. Si no lo
+ * hacen, **el lector está mal y ninguna de las tres variantes se puede citar**. ⛔ Aborta con la
+ * diferencia en vez de seguir: un lector roto no produce un dato dudoso, produce evidencia.
+ *
+ * ⚠ **Reimplementa la aritmética a propósito y lo dice** (`CLAUDE.md` §4): lo que se verifica acá
+ * es **la definición del negocio** —qué filas entran en cada mitad—, no el motor. El motor se mide
+ * después, por una corrida. Por eso el control positivo de arriba no es opcional.
+ *
+ * ⚠ **Universo:** la rama por cuenta lee **sin recorte por ventana** (`D-30`/`R-17`), así que acá
+ * también: todas las filas de la cuenta, todos los años.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Los siete de la Parte B, tal como quedaron validados. El control positivo compara contra esto. */
+var TESTIGO_PARTE_B_ = { enviados: 447145, entregados: 444403, aperturas: 150506, clics: 1376, envios: 3 };
+
+/** La cuenta del caso: `Operativo Muro` en `secco`. ⛔ Por `id_cuenta` (`D-30`/`R-06`), nunca por
+ *  nombre: las tres filas dicen `Operativo Muro`, `Operativo Muro` y `Operativo Muro | 25/8`. */
+var CUENTA_MURO_ = '3576-AGOSEGGJ';
+
+function numeroDe_(v) {
+  if (typeof v === 'number') return isNaN(v) ? 0 : v;
+  var s = String(v == null ? '' : v).replace(/\s/g, '').replace(/\./g, '').replace(/,/g, '.');
+  var n = Number(s);
+  return isNaN(n) ? 0 : n;
+}
+
+/**
+ * La regla de `R-05` sobre un conjunto de filas de UNA cuenta.
+ * ⛔ **Aborta, no elige**, en los dos casos que la decisión del usuario nombra: empate en la fecha
+ * mínima con etiquetas distintas, y etiqueta vacía en el primer envío.
+ */
+function etiquetaDelPrimerEnvio_(filas, iFecha, iEtq) {
+  var conFecha = filas.filter(function (f) { return f[iFecha] instanceof Date; });
+  if (!conFecha.length) return { ok: false, motivo: 'ninguna fila con Fecha envio utilizable' };
+
+  var min = null;
+  conFecha.forEach(function (f) { var t = f[iFecha].getTime(); if (min === null || t < min) min = t; });
+  var enMin = conFecha.filter(function (f) { return f[iFecha].getTime() === min; });
+
+  var etqs = {};
+  enMin.forEach(function (f) { etqs[String(f[iEtq] == null ? '' : f[iEtq]).replace(/\s+/g, ' ').trim()] = true; });
+  var distintas = Object.keys(etqs);
+  if (distintas.length > 1) {
+    return { ok: false, motivo: 'EMPATE en la fecha mínima con etiquetas distintas: ' + distintas.join(' / ') };
+  }
+  if (distintas[0] === '') {
+    return { ok: false, motivo: 'ETIQUETA VACÍA en el primer envío' };
+  }
+  return { ok: true, etiqueta: distintas[0], fecha_minima: new Date(min).toDateString(),
+           filas_en_la_minima: enMin.length };
+}
+
+function medirR05Muro() {
+  var datos = hojaCruda_('acumulado', 'Mail');
+  if (!datos || !datos.length) return { ok: false, motivo: 'no pude leer acumulado | Mail' };
+  var e = datos[0];
+  function ix(n) { return e.indexOf(n); }
+  var iC = ix('ID cuentas'), iF = ix('Fecha envio'), iEtq = ix('Remitente'),
+      iEnv = ix('Enviados'), iEnt = ix('Entregados'), iAp = ix('Aperturas'), iCl = ix('Clics');
+  var faltan = [];
+  [['ID cuentas', iC], ['Fecha envio', iF], ['Remitente', iEtq], ['Enviados', iEnv],
+   ['Entregados', iEnt], ['Aperturas', iAp], ['Clics', iCl]].forEach(function (p) {
+    if (p[1] === -1) faltan.push(p[0]);
+  });
+  if (faltan.length) return { ok: false, motivo: 'faltan columnas: ' + faltan.join(', ') };
+
+  var suyas = [];
+  for (var i = 1; i < datos.length; i++) {
+    if (String(datos[i][iC] == null ? '' : datos[i][iC]).trim() === CUENTA_MURO_) suyas.push(datos[i]);
+  }
+  if (!suyas.length) return { ok: false, motivo: 'cero filas para la cuenta ' + CUENTA_MURO_ };
+
+  function suma(filas, i) { return filas.reduce(function (a, f) { return a + numeroDe_(f[i]); }, 0); }
+
+  var todo = { enviados: suma(suyas, iEnv), entregados: suma(suyas, iEnt),
+               aperturas: suma(suyas, iAp), clics: suma(suyas, iCl), envios: suyas.length };
+
+  /* ⛔⛔ CONTROL POSITIVO — comparte camino con lo que se mide. Si los cinco sin filtro no
+   * reproducen la Parte B, el lector está mal y ninguna variante de abajo se puede citar. */
+  var difs = [];
+  Object.keys(TESTIGO_PARTE_B_).forEach(function (k) {
+    if (todo[k] !== TESTIGO_PARTE_B_[k]) {
+      difs.push(k + ': leí ' + todo[k] + ' y la Parte B validó ' + TESTIGO_PARTE_B_[k]);
+    }
+  });
+  if (difs.length) {
+    return { ok: false, motivo: '⛔ EL CONTROL POSITIVO FALLA — el lector no reproduce la Parte B',
+             diferencias: difs, filas_de_la_cuenta: suyas.length };
+  }
+
+  var r05 = etiquetaDelPrimerEnvio_(suyas, iF, iEtq);
+  if (!r05.ok) {
+    return { ok: false, motivo: '⛔ R-05 ABORTA para esta cuenta: ' + r05.motivo,
+             control_positivo: 'pasa — los cinco sin filtro reproducen la Parte B' };
+  }
+
+  var conEtq = suyas.filter(function (f) {
+    return String(f[iEtq] == null ? '' : f[iEtq]).replace(/\s+/g, ' ').trim() === r05.etiqueta;
+  });
+  var filtrado = { enviados: suma(conEtq, iEnv), entregados: suma(conEtq, iEnt),
+                   aperturas: suma(conEtq, iAp), clics: suma(conEtq, iCl), envios: conEtq.length };
+
+  function pct(n, d) { return d ? Math.round(n / d * 1000) / 10 : ''; }
+
+  /* El reparto que la Parte C declara, marcador por marcador. */
+  var publica = {
+    camp_enviados: filtrado.enviados,      // filtrado
+    camp_entregados: filtrado.entregados,  // filtrado
+    camp_dir_impl: filtrado.envios,        // filtrado
+    camp_aperturas: todo.aperturas,        // TODAS
+    camp_mail_clics: todo.clics            // TODAS
+  };
+
+  /* ⛔ Las tres lecturas de `camp_or`, que es lo que hay que decidir. */
+  var or = {
+    'A_numerador_TODAS_denominador_FILTRADO': pct(todo.aperturas, filtrado.entregados),
+    'B_las_dos_FILTRADAS': pct(filtrado.aperturas, filtrado.entregados),
+    'C_sin_filtro_como_hoy': pct(todo.aperturas, todo.entregados)
+  };
+  /* ⭐ `camp_ctor` = clics/aperturas, y las DOS mitades son «todas»: no necesita mecanismo nuevo
+   * y no cambia de valor. Se mide igual para dejarlo dicho con número. */
+  var ctor = {
+    'sin_filtro_las_dos_TODAS': pct(todo.clics, todo.aperturas),
+    'si_alguien_lo_filtrara': pct(filtrado.clics, filtrado.aperturas)
+  };
+
+  var lineas = [];
+  lineas.push('cuenta ' + CUENTA_MURO_ + ' · ' + suyas.length + ' fila(s), sin recorte por ventana');
+  lineas.push('R-05 · primer envío ' + r05.fecha_minima + ' · etiqueta «' + r05.etiqueta + '»' +
+    ' · filas en la mínima: ' + r05.filas_en_la_minima);
+  lineas.push('con esa etiqueta: ' + conEtq.length + ' de ' + suyas.length + ' fila(s)');
+  lineas.push('');
+  lineas.push('               TODAS        con la etiqueta');
+  ['enviados', 'entregados', 'aperturas', 'clics', 'envios'].forEach(function (k) {
+    lineas.push('  ' + (k + '          ').slice(0, 11) + ' ' +
+      ('            ' + todo[k]).slice(-10) + '   ' + ('            ' + filtrado[k]).slice(-10));
+  });
+
+  return { ok: true,
+    control_positivo: 'PASA — los cinco sin filtro reproducen la Parte B al dígito',
+    lineas: lineas,
+    etiqueta_del_primer_envio: r05.etiqueta,
+    fecha_minima: r05.fecha_minima,
+    filas_totales: suyas.length, filas_con_la_etiqueta: conEtq.length,
+    todas: todo, con_la_etiqueta: filtrado,
+    lo_que_publicaria_la_lamina: publica,
+    camp_or_las_tres_variantes: or,
+    camp_ctor: ctor };
+}
+
+/**
+ * ⭐ `2026-09-11_4` Parte C — **la consecuencia dura de la variante A de `camp_or`, en todo el
+ * universo y no sólo en la cuenta del caso.** SÓLO LECTURA.
+ *
+ * ⛔⛔ La variante A —numerador TODAS, denominador FILTRADO— es la única que hace cerrar la lámina
+ * consigo misma, **y mezcla universos por construcción**: cuenta aperturas de envíos cuyos
+ * entregados no están en el denominador. ⇒ **puede pasar de 100 %**, que es un número roto
+ * publicado sin fallar. Esto mide **en cuántas campañas reales pasa**.
+ *
+ * ⭐ Control positivo: la cuenta del caso (`3576-AGOSEGGJ`) tiene que aparecer en el barrido con
+ * `56,3 %`. Si no aparece, el barrido no está mirando las mismas filas que `medirR05Muro` y su
+ * cero no distingue «no pasa nunca» de «no miré».
+ */
+function medirOrSobre100() {
+  var datos = hojaCruda_('acumulado', 'Mail');
+  if (!datos || !datos.length) return { ok: false, motivo: 'no pude leer acumulado | Mail' };
+  var e = datos[0];
+  var iC = e.indexOf('ID cuentas'), iF = e.indexOf('Fecha envio'), iEtq = e.indexOf('Remitente'),
+      iEnt = e.indexOf('Entregados'), iAp = e.indexOf('Aperturas');
+  if (iC === -1 || iF === -1 || iEtq === -1 || iEnt === -1 || iAp === -1) {
+    return { ok: false, motivo: 'faltan columnas' };
+  }
+
+  var porCuenta = {};
+  for (var i = 1; i < datos.length; i++) {
+    var c = String(datos[i][iC] == null ? '' : datos[i][iC]).trim();
+    if (!c) continue;
+    if (!porCuenta[c]) porCuenta[c] = [];
+    porCuenta[c].push(datos[i]);
+  }
+
+  function suma(filas, k) { return filas.reduce(function (a, f) { return a + numeroDe_(f[k]); }, 0); }
+
+  var con1 = 0, abortan = 0, discrimina = 0, noDiscrimina = 0;
+  var sobre100A = 0, sobre100B = 0, evaluadas = 0, control = null;
+  var muestraSobre100 = [], motivosAborto = { empate: 0, vacia: 0, sin_fecha: 0 };
+
+  Object.keys(porCuenta).forEach(function (c) {
+    var fs = porCuenta[c];
+    if (fs.length < 2) { con1++; return; }
+    var r = etiquetaDelPrimerEnvio_(fs, iF, iEtq);
+    if (!r.ok) {
+      abortan++;
+      if (r.motivo.indexOf('EMPATE') === 0) motivosAborto.empate++;
+      else if (r.motivo.indexOf('ETIQUETA VACÍA') === 0) motivosAborto.vacia++;
+      else motivosAborto.sin_fecha++;
+      return;
+    }
+    var conEtq = fs.filter(function (f) {
+      return String(f[iEtq] == null ? '' : f[iEtq]).replace(/\s+/g, ' ').trim() === r.etiqueta;
+    });
+    if (conEtq.length === fs.length) noDiscrimina++; else discrimina++;
+
+    var entF = suma(conEtq, iEnt), apT = suma(fs, iAp), apF = suma(conEtq, iAp);
+    var entT = suma(fs, iEnt);
+    if (!entF || !entT) return;
+    evaluadas++;
+    var A = apT / entF * 100, B = apF / entF * 100;
+    if (A > 100) {
+      sobre100A++;
+      if (muestraSobre100.length < 8) {
+        muestraSobre100.push(c + ' · A=' + Math.round(A * 10) / 10 + '% · B=' + Math.round(B * 10) / 10 +
+          '% · ' + conEtq.length + ' de ' + fs.length + ' filas con «' + r.etiqueta + '»');
+      }
+    }
+    if (B > 100) sobre100B++;
+    if (c === CUENTA_MURO_) control = 'A=' + Math.round(A * 10) / 10 + '% · B=' + Math.round(B * 10) / 10 + '%';
+  });
+
+  return { ok: true,
+    control_positivo: control ? ('la cuenta del caso aparece: ' + control) :
+      '⛔ la cuenta del caso NO apareció en el barrido — el cero de abajo no significa nada',
+    ok_control: !!control,
+    campanias_totales: Object.keys(porCuenta).length,
+    con_un_solo_envio: con1,
+    multi_envio_que_ABORTAN: abortan, motivos_de_aborto: motivosAborto,
+    multi_envio_donde_el_filtro_DISCRIMINA: discrimina,
+    multi_envio_donde_NO_discrimina: noDiscrimina,
+    evaluadas_para_el_OR: evaluadas,
+    'variante_A_supera_100pct': sobre100A,
+    'variante_B_supera_100pct': sobre100B,
+    muestra_de_las_que_superan_100: muestraSobre100 };
+}
