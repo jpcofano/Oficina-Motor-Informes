@@ -1939,7 +1939,37 @@ var SEED_MAPEO_ACUMULADO_ = [
   /* ⭐⭐ La columna del ámbito, y el motivo de todo el prompt: `Remitente` (AI) **ya dice `JM` o
    * `GCBA`**, así que el ámbito sale de una columna y no de un literal de mail en el código.
    * ⚠ Es una columna DISTINTA de `Mail remitente` (G), que trae la dirección cruda. */
-  { base_id: 'acumulado', campo_logico: 'acm_remitente', hoja: 'Mail', columna: 'AI', encabezado: 'Remitente', notas: 'el ambito ya normalizado a JM/GCBA. NO es Mail remitente (G), que trae la direccion cruda. Es lo que publica la columna Envio de L-047 (D1)' }
+  { base_id: 'acumulado', campo_logico: 'acm_remitente', hoja: 'Mail', columna: 'AI', encabezado: 'Remitente', notas: 'el ambito ya normalizado a JM/GCBA. NO es Mail remitente (G), que trae la direccion cruda. Es lo que publica la columna Envio de L-047 (D1)' },
+
+  /* ⭐⭐ `2026-09-11_4 ADDENDUM 4` §1 — **las 9 que faltaban, y el motivo es que si no, el
+   * renombre las deja PEOR que antes.**
+   *
+   * La mudanza del mail de campaña dio de alta 12 filas de `acumulado | Mail` a mano, y A.bis las
+   * renombró a la familia `acm_*`. ⛔ **Renombrar sin sembrar es la mitad de la operación**: las
+   * 9 quedarían igual de huérfanas que cuando se llamaban `mail_*`, **pero con un nombre que
+   * sugiere falsamente que vienen del seed** — el prefijo dejaría de delatarlas. Un nombre que no
+   * está acá hay que sostenerlo a mano para siempre, y este repo ya midió cómo termina eso.
+   *
+   * ⚠ **Las tres que ya estaban arriba no se repiten** —`acm_id_cuenta` (A), `fecha_periodo` (F)
+   * y `acm_remitente` (AI)—: son las que A.bis usa como ganadoras al borrar las duplicadas.
+   *
+   * ⛔ **Letra Y encabezado** (`D-31`), copiados de `MAPEO_ACUM_MAIL_`, que a su vez los tomó del
+   * censo del 09/09 y los verifica contra la solapa viva en `gateColumnasAcumMail_`. El
+   * encabezado es **testigo, nunca fallback**.
+   *
+   * ⭐ **`acm_remitente_dir` (G) y `acm_remitente` (AI) son DOS columnas y por eso dos nombres:**
+   * G trae la dirección cruda —32 grafías distintas, `jmacri@` 424 + `jorge.macri@` 384— y AI la
+   * etiqueta ya normalizada, cuyo conteo de `JM` es exactamente **808**. Darles nombres parecidos
+   * sin distinguirlas es el error que esta nota previene. */
+  { base_id: 'acumulado', campo_logico: 'acm_remitente_dir', hoja: 'Mail', columna: 'G', encabezado: 'Mail remitente', notas: 'la DIRECCION cruda del remitente, no la etiqueta: 32 grafias distintas, jmacri@ 424 + jorge.macri@ 384 = 808 = el conteo de la etiqueta JM en AI. R-05 usa la ETIQUETA (acm_remitente, AI), nunca esta' },
+  { base_id: 'acumulado', campo_logico: 'acm_campana', hoja: 'Mail', columna: 'H', encabezado: 'Nombre campaña | Directa', notas: 'el nombre de la campania. OJO: NO sirve como clave — D-30/R-06 mandan que la pertenencia salga de acm_id_cuenta (A). Las tres filas de Operativo Muro dicen Operativo Muro, Operativo Muro y Operativo Muro | 25/8' },
+  { base_id: 'acumulado', campo_logico: 'acm_segmentacion', hoja: 'Mail', columna: 'J', encabezado: 'Segmentacion', notas: 'TEXTO, no metrica: es el nombre del segmento (Barrios cercanos, Vecinos de Villa...). Lo lee camp_envN_aud con ULTIMO/FILA. Una SUMA sobre esta columna publicaria sin dato sin fallar' },
+  { base_id: 'acumulado', campo_logico: 'acm_enviados', hoja: 'Mail', columna: 'M', encabezado: 'Enviados', notas: 'grano por ENVIO: la fuente vieja (looker/resumen_metricas_dinamico) traia una fila ya agregada, por eso los cuatro marcadores pasaron de ULTIMO a SUMA en la mudanza' },
+  { base_id: 'acumulado', campo_logico: 'acm_entregados', hoja: 'Mail', columna: 'N', encabezado: 'Entregados', notas: 'grano por ENVIO. Control medido el 11/09: 121.789 + 145.744 + 176.870 = 444.403, que es exactamente lo que publicaba camp_entregados desde la fuente vieja' },
+  { base_id: 'acumulado', campo_logico: 'acm_aperturas', hoja: 'Mail', columna: 'O', encabezado: 'Aperturas', notas: 'grano por ENVIO. R-05 NO la filtra: aperturas y clics suman TODAS las filas de la campania, solo enviados y entregados se cortan por la etiqueta del primer envio' },
+  { base_id: 'acumulado', campo_logico: 'acm_or', hoja: 'Mail', columna: 'P', encabezado: '% OR', notas: 'el % OR ya calculado por la fuente. camp_or NO lo lee: lo recalcula con PCT sobre acm_aperturas/acm_entregados, porque un promedio de porcentajes por envio no es el porcentaje del total' },
+  { base_id: 'acumulado', campo_logico: 'acm_clics', hoja: 'Mail', columna: 'Q', encabezado: 'Clics', notas: 'grano por ENVIO. Igual que aperturas: R-05 no la filtra' },
+  { base_id: 'acumulado', campo_logico: 'acm_ctor', hoja: 'Mail', columna: 'R', encabezado: '% CTOR', notas: 'el % CTOR ya calculado por la fuente. camp_ctor lo recalcula con PCT, mismo motivo que acm_or' }
 ];
 SEED_MAPEO_ = SEED_MAPEO_.concat(SEED_MAPEO_ACUMULADO_);
 
@@ -12985,24 +13015,38 @@ function aplicarC1() {
 
 /* Las 12 columnas. ⛔ LETRA Y ENCABEZADO siempre: el encabezado es TESTIGO (`D-31`) y sin él una
  * inserción de columna mueve todo sin que nada falle. ⚠ El prompt pedía 8; los 48 marcadores que
- * se mudan usan **10 campos** —`mail_or`, `mail_ctor` y `mail_segmentacion` no estaban en la
- * lista— y sin ellos los `camp_envN_or`, `_ctor` y `_aud` quedarían sin mapeo. */
+ * se mudan usan **10 campos** —`% OR`, `% CTOR` y `Segmentacion` no estaban en la lista— y sin
+ * ellos los `camp_envN_or`, `_ctor` y `_aud` quedarían sin mapeo.
+ *
+ * ⛔⛔ **`2026-09-11_4 ADDENDUM 4` §2 — esta lista decía `mail_*` y eso era una BOMBA DE RELOJERÍA,
+ * no un detalle de nombres.** A.bis renombró las 12 filas vivas a la familia `acm_*` del seed y
+ * borró las dos duplicadas; con los nombres viejos acá, **una segunda corrida de
+ * `aplicarMudanzaMail()` re-creaba las 12 filas `mail_*`** y volvía a dejar las columnas `A` y
+ * `AI` con **dos nombres cada una** — sin fallar y sin que nada avise, que es el modo de falla
+ * caro de este repo.
+ *
+ * ⭐ Se corrige la lista en vez de ponerle un gate a la función: **una función que se puede correr
+ * dos veces sin romper es mejor que una que hay que acordarse de no correr.** Con los nombres
+ * finales, el `upsertPorClave_` de una segunda corrida cae sobre las filas que ya existen.
+ *
+ * ⚠ **Esto NO afecta a A.bis:** `planRenombreAcumMail_` lee la hoja viva, no esta lista. */
 var MAPEO_ACUM_MAIL_ = [
-  { campo_logico: 'mail_id_cuenta',      columna: 'A',  encabezado: 'ID cuentas' },
+  { campo_logico: 'acm_id_cuenta',       columna: 'A',  encabezado: 'ID cuentas' },
   { campo_logico: 'fecha_periodo',       columna: 'F',  encabezado: 'Fecha envio' },
-  { campo_logico: 'mail_remitente',      columna: 'G',  encabezado: 'Mail remitente' },
-  { campo_logico: 'mail_campana',        columna: 'H',  encabezado: 'Nombre campaña | Directa' },
-  { campo_logico: 'mail_segmentacion',   columna: 'J',  encabezado: 'Segmentacion' },
-  { campo_logico: 'mail_enviados',       columna: 'M',  encabezado: 'Enviados' },
-  { campo_logico: 'mail_entregados',     columna: 'N',  encabezado: 'Entregados' },
-  { campo_logico: 'mail_aperturas',      columna: 'O',  encabezado: 'Aperturas' },
-  { campo_logico: 'mail_or',             columna: 'P',  encabezado: '% OR' },
-  { campo_logico: 'mail_clics',          columna: 'Q',  encabezado: 'Clics' },
-  { campo_logico: 'mail_ctor',           columna: 'R',  encabezado: '% CTOR' },
-  /* ⭐ La etiqueta, que es lo que `R-05` va a usar. Nombre propio para no pisar `mail_remitente`,
-   * que es la DIRECCIÓN: son dos columnas distintas y la diferencia es el punto — `jmacri@` (424)
-   * y `jorge.macri@` (384) suman 808, que es el conteo exacto de la etiqueta `JM`. */
-  { campo_logico: 'mail_remitente_etq',  columna: 'AI', encabezado: 'Remitente' }
+  { campo_logico: 'acm_remitente_dir',   columna: 'G',  encabezado: 'Mail remitente' },
+  { campo_logico: 'acm_campana',         columna: 'H',  encabezado: 'Nombre campaña | Directa' },
+  { campo_logico: 'acm_segmentacion',    columna: 'J',  encabezado: 'Segmentacion' },
+  { campo_logico: 'acm_enviados',        columna: 'M',  encabezado: 'Enviados' },
+  { campo_logico: 'acm_entregados',      columna: 'N',  encabezado: 'Entregados' },
+  { campo_logico: 'acm_aperturas',       columna: 'O',  encabezado: 'Aperturas' },
+  { campo_logico: 'acm_or',              columna: 'P',  encabezado: '% OR' },
+  { campo_logico: 'acm_clics',           columna: 'Q',  encabezado: 'Clics' },
+  { campo_logico: 'acm_ctor',            columna: 'R',  encabezado: '% CTOR' },
+  /* ⭐ La etiqueta, que es lo que `R-05` va a usar. Nombre propio para no pisar
+   * `acm_remitente_dir`, que es la DIRECCIÓN: son dos columnas distintas y la diferencia es el
+   * punto — `jmacri@` (424) y `jorge.macri@` (384) suman 808, que es el conteo exacto de la
+   * etiqueta `JM`. */
+  { campo_logico: 'acm_remitente',       columna: 'AI', encabezado: 'Remitente' }
 ];
 
 /** Los cuatro que además cambian de operación: la fuente vieja daba una fila ya agregada. */
@@ -13140,4 +13184,191 @@ function aplicarMudanzaMail() {
   return { ok: okMapeo === MAPEO_ACUM_MAIL_.length && okMarc === p.mudan.length && !fallas.length,
            mapeo_filas: okMapeo, marcadores: okMarc, de: p.mudan.length,
            quedan_en_directa: p.quedan_en_directa, fallas: fallas.slice(0, 10) };
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════
+ * ⭐⭐ `2026-09-11_4 ADDENDUM 3` A.bis — **los nombres del seed mandan.**
+ *
+ * **Decisión del usuario, 11/09/2026.** Los `acm_*` son los que el sembrador **reaplica en cada
+ * corrida de configuración**; un nombre que no está en el seed hay que sostenerlo a mano para
+ * siempre — y este repo ya midió lo que pasa cuando algo así queda sin dueño.
+ *
+ * ⛔ **Dos filas se BORRAN en vez de renombrarse**, y el motivo es mecánico: «Aplicar
+ * configuración» ya sembró `acm_id_cuenta` (A) y `acm_remitente` (AI), así que renombrar las mías
+ * a esos nombres crearía **dos filas con la misma clave**. Medido antes de tocar nada: son
+ * exactamente **2** las columnas con dos nombres — A y AI —; las otras 10 tienen uno solo.
+ *
+ * ⭐ **Y las 9 que no colisionan se renombran Y SE AGREGAN AL SEED**: renombrarlas sin sembrarlas
+ * las dejaría igual de huérfanas que antes, que es justo lo que la decisión quiere evitar.
+ *
+ * ⛔⛔ **`ADDENDUM 4` §1, 11/09/2026 — la segunda mitad de esa frase NO estaba hecha, y el
+ * comentario la afirmaba igual.** `aplicarRenombreAcumMail` toca la hoja y nada más; el seed
+ * seguía con 3 filas de `Mail`. Renombrar sin sembrar deja las 9 **peor que antes**: con el
+ * prefijo `mail_*` el nombre delataba que eran de otra solapa, y con `acm_*` **sugiere
+ * falsamente que vienen del seed**. Las 9 están ahora en `SEED_MAPEO_ACUMULADO_` — el alta se
+ * hizo **antes** de correr este renombre, que es lo que hace que el gate de abajo tenga sentido.
+ * Es la figura de `CLAUDE.md` §4: *un comentario que afirma un contrato es una premisa sin
+ * testigo*, y éste describía el diseño que se quería, no el que había.
+ *
+ * ⚠ `fecha_periodo` ya coincide con el seed: **no se toca**.
+ * ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+/** Los renombres. ⛔ `acm_remitente_dir` para la col G y `acm_remitente` para la AI: son dos
+ *  columnas distintas —dirección cruda contra etiqueta ya normalizada— y el seed lo dice con
+ *  todas las letras. Darles nombres parecidos sin distinguirlas sería el error que la nota
+ *  del seed previene. */
+var RENOMBRES_ACUM_MAIL_ = [
+  { de: 'mail_remitente',     a: 'acm_remitente_dir', col: 'G' },
+  { de: 'mail_campana',       a: 'acm_campana',       col: 'H' },
+  { de: 'mail_segmentacion',  a: 'acm_segmentacion',  col: 'J' },
+  { de: 'mail_enviados',      a: 'acm_enviados',      col: 'M' },
+  { de: 'mail_entregados',    a: 'acm_entregados',    col: 'N' },
+  { de: 'mail_aperturas',     a: 'acm_aperturas',     col: 'O' },
+  { de: 'mail_or',            a: 'acm_or',            col: 'P' },
+  { de: 'mail_clics',         a: 'acm_clics',         col: 'Q' },
+  { de: 'mail_ctor',          a: 'acm_ctor',          col: 'R' }
+];
+
+/** Las dos que se borran porque el seed ya las trae con otro nombre. */
+var BORRAR_ACUM_MAIL_ = [
+  { de: 'mail_id_cuenta',     gana: 'acm_id_cuenta',  col: 'A' },
+  { de: 'mail_remitente_etq', gana: 'acm_remitente',  col: 'AI' }
+];
+
+/** El mapa completo viejo → nuevo, para los marcadores. */
+function mapaRenombre_() {
+  var m = {};
+  RENOMBRES_ACUM_MAIL_.forEach(function (r) { m[r.de] = r.a; });
+  BORRAR_ACUM_MAIL_.forEach(function (r) { m[r.de] = r.gana; });
+  return m;
+}
+
+function planRenombreAcumMail_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hM = ss.getSheetByName('MAPEO'), hC = ss.getSheetByName('MARCADORES');
+  if (!hM || !hC) return { ok: false, motivo: 'falta MAPEO o MARCADORES' };
+
+  var dM = hM.getDataRange().getValues(), cab = dM[0];
+  var iB = cab.indexOf('base_id'), iS = cab.indexOf('solapa'), iCL = cab.indexOf('campo_logico'),
+      iCol = cab.indexOf('columna');
+  var mapa = mapaRenombre_();
+
+  var aRenombrar = [], aBorrar = [], lineas = [], problemas = [];
+  for (var f = 1; f < dM.length; f++) {
+    if (String(dM[f][iB]).trim() !== 'acumulado' || String(dM[f][iS]).trim() !== 'Mail') continue;
+    var n = String(dM[f][iCL]).trim();
+    var esBorrar = BORRAR_ACUM_MAIL_.some(function (r) { return r.de === n; });
+    var ren = RENOMBRES_ACUM_MAIL_.filter(function (r) { return r.de === n; })[0];
+    if (esBorrar) { aBorrar.push({ fila: f + 1, nombre: n, col: String(dM[f][iCol]).trim() }); }
+    else if (ren) { aRenombrar.push({ fila: f + 1, de: n, a: ren.a, col: String(dM[f][iCol]).trim() }); }
+  }
+
+  /* ⛔ Gate: las dos que ganan tienen que EXISTIR antes de borrar las mías. Borrar primero y
+   * descubrir después que el seed no estaba sembrado dejaría dos columnas sin mapeo. */
+  var existenLasDelSeed = {};
+  for (var g = 1; g < dM.length; g++) {
+    if (String(dM[g][iB]).trim() === 'acumulado' && String(dM[g][iS]).trim() === 'Mail') {
+      existenLasDelSeed[String(dM[g][iCL]).trim()] = String(dM[g][iCol]).trim();
+    }
+  }
+  BORRAR_ACUM_MAIL_.forEach(function (r) {
+    if (existenLasDelSeed[r.gana] !== r.col) {
+      problemas.push('la fila del seed «' + r.gana + '» NO existe en la col ' + r.col +
+        ' (está en «' + (existenLasDelSeed[r.gana] || 'ninguna') + '») — no se borra nada');
+    }
+  });
+
+  /* ⛔⛔ El gate SIMÉTRICO, y faltaba (`ADDENDUM 4`, 11/09/2026). El de arriba exige que las dos
+   * ganadoras **existan**; éste exige que los 9 destinos del renombre **NO existan todavía**.
+   *
+   * **El caso concreto que abre, y no es hipotético:** las 9 filas entraron a
+   * `SEED_MAPEO_ACUMULADO_` en el mismo commit que esto. Si alguien corre «Aplicar configuración»
+   * **antes** que este renombre, el sembrador crea las 9 `acm_*` al lado de las 9 `mail_*`, y
+   * entonces renombrar produciría **dos filas con la misma clave** `base_id` + `campo_logico` —
+   * exactamente la colisión que las dos de `BORRAR_ACUM_MAIL_` existen para evitar, multiplicada
+   * por nueve. ⚠ **`upsertPorClave_` no falla ante eso**: escribe sobre la primera que encuentra y
+   * la otra queda de sombra, así que el orden equivocado no se nota mirando la hoja.
+   *
+   * ⭐ **El orden correcto es: este renombre primero, el sembrador después** — y con este gate
+   * puesto, el orden equivocado **para en seco** en vez de dejar la hoja en un estado que nadie
+   * puede leer. */
+  aRenombrar.forEach(function (r) {
+    if (existenLasDelSeed[r.a] !== undefined) {
+      problemas.push('el destino «' + r.a + '» YA existe en MAPEO (col ' +
+        existenLasDelSeed[r.a] + ') — renombrar «' + r.de + '» crearía una clave duplicada. ' +
+        'Se sembró antes de renombrar: hay que borrar la fila «' + r.de + '» en vez de renombrarla');
+    }
+  });
+
+  /* Los marcadores que hay que actualizar. */
+  var dC = hC.getDataRange().getValues(), cabC = dC[0];
+  var jM = cabC.indexOf('marcador'), jB = cabC.indexOf('base_id'), jS = cabC.indexOf('solapa'),
+      jCL = cabC.indexOf('campo_logico');
+  var marcadores = [];
+  for (var k = 1; k < dC.length; k++) {
+    if (String(dC[k][jB]).trim() !== 'acumulado' || String(dC[k][jS]).trim() !== 'Mail') continue;
+    var cl = String(dC[k][jCL]).trim();
+    if (!cl) continue;
+    /* ⚠ `camp_or` y `camp_ctor` traen DOS campos separados por `/`: hay que reemplazar los dos
+     * y no el string entero, o la fórmula queda a medias y publica `FALTA`. */
+    var nuevo = cl.split('/').map(function (p) {
+      var t = p.trim();
+      return mapa[t] || t;
+    }).join('/');
+    if (nuevo !== cl) marcadores.push({ fila: k + 1, marcador: String(dC[k][jM]).trim(), de: cl, a: nuevo });
+  }
+
+  lineas.push('MAPEO · a renombrar: ' + aRenombrar.length + ' · a borrar: ' + aBorrar.length);
+  aRenombrar.forEach(function (r) { lineas.push('   ren ' + r.de + ' → ' + r.a + ' (col ' + r.col + ')'); });
+  aBorrar.forEach(function (r) { lineas.push('   del ' + r.nombre + ' (col ' + r.col + ') — gana la del seed'); });
+  lineas.push('MARCADORES · a actualizar: ' + marcadores.length);
+  marcadores.slice(0, 6).forEach(function (m2) { lineas.push('   ' + m2.marcador + ': ' + m2.de + ' → ' + m2.a); });
+
+  return { ok: !problemas.length, problemas: problemas, lineas: lineas,
+           renombrar: aRenombrar, borrar: aBorrar, marcadores: marcadores,
+           iCL: iCL, jCL: jCL };
+}
+
+function diagRenombreAcumMail() {
+  var p = planRenombreAcumMail_();
+  Logger.log('== A.bis SECO ==');
+  (p.lineas || []).forEach(function (l) { Logger.log(l); });
+  (p.problemas || []).forEach(function (l) { Logger.log('⛔ ' + l); });
+  Logger.log(p.ok ? '=> los gates pasan' : '⛔ NO se escribe');
+  return { ok: p.ok, lineas: p.lineas, problemas: p.problemas,
+           n_renombrar: (p.renombrar || []).length, n_borrar: (p.borrar || []).length,
+           n_marcadores: (p.marcadores || []).length };
+}
+
+function aplicarRenombreAcumMail() {
+  var p = planRenombreAcumMail_();
+  if (!p.ok) { Logger.log('⛔ ' + p.problemas.join(' | ')); return { ok: false, problemas: p.problemas }; }
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var hM = ss.getSheetByName('MAPEO'), hC = ss.getSheetByName('MARCADORES');
+
+  /* 1 · renombrar en MAPEO — celda a celda, sin reescribir la fila. */
+  p.renombrar.forEach(function (r) { hM.getRange(r.fila, p.iCL + 1).setValue(r.a); });
+  /* 2 · los marcadores, ANTES de borrar: si algo falla, ninguna fila queda apuntando al vacío. */
+  p.marcadores.forEach(function (m) { hC.getRange(m.fila, p.jCL + 1).setValue(m.a); });
+  /* 3 · borrar las dos duplicadas — ⛔ de abajo hacia arriba, o los índices se corren. */
+  p.borrar.map(function (b) { return b.fila; }).sort(function (a, b) { return b - a; })
+    .forEach(function (n) { hM.deleteRow(n); });
+  SpreadsheetApp.flush();
+
+  /* Relectura desde la hoja. */
+  var dM = hM.getDataRange().getValues(), cab = dM[0];
+  var iB = cab.indexOf('base_id'), iS = cab.indexOf('solapa'), iCL = cab.indexOf('campo_logico');
+  var quedanMail = [], total = 0;
+  for (var f = 1; f < dM.length; f++) {
+    if (String(dM[f][iB]).trim() !== 'acumulado' || String(dM[f][iS]).trim() !== 'Mail') continue;
+    total++;
+    var n = String(dM[f][iCL]).trim();
+    if (n.indexOf('mail_') === 0) quedanMail.push(n);
+  }
+  Logger.log('== RELECTURA ==');
+  Logger.log('   filas de acumulado|Mail: ' + total + ' · con nombre mail_*: ' + quedanMail.length);
+  return { ok: quedanMail.length === 0, filas_acum_mail: total, quedan_mail: quedanMail,
+           renombradas: p.renombrar.length, borradas: p.borrar.length,
+           marcadores_actualizados: p.marcadores.length };
 }
