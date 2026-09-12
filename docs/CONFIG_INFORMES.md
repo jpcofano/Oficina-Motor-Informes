@@ -1094,9 +1094,41 @@ ningún prompt**. Si algún día se decide cablearlos, se reabre explícitamente
 > decisión** (11 diferidos + 3 manuales), **2 abiertos** (`camp_bench_*`), y **el resto con
 > fuente conocida**, bloqueados sólo por la falta de filas de `jm` en `CAMPANAS`.
 
-#### ⭐ El envío de más de *Operativo Muro* SE CONSERVA — divergencia declarada, 10/09/2026
+#### ~~⭐ El envío de más de *Operativo Muro* SE CONSERVA — divergencia declarada, 10/09/2026~~
 
-**Decisión del usuario.** En el deck del 10/09 el motor publica **tres** envíos de *Operativo Muro*
+> ## ⛔⛔ DEROGADA el 11/09/2026 — el equipo confirmó `R-05` y el envío NO se conserva
+>
+> **Todo el bloque de abajo queda tachado y NO se borra**: fue la decisión vigente entre el 10 y el
+> 11/09, explica el deck de esas fechas, y **el error que contiene es la parte que hay que
+> conservar**.
+>
+> ### ⭐⭐ El error, que es de método y no de este caso
+>
+> La decisión se apoyaba en que **el deck del motor cierra consigo mismo en los dos lugares**. Y
+> cierra — **sobre un número duplicado**. ⛔ **Una identidad verifica COHERENCIA, no CORRECCIÓN**: las
+> dos sumas de abajo siguen siendo exactas hoy, y el total que producen cuenta dos veces a los
+> destinatarios del reenvío. `CLAUDE.md` §4 ya lo tenía escrito para `V-111` —*cierra con
+> Programmatic trayendo el acumulado*— y acá volvió a pasar con la identidad usada como **argumento
+> a favor de conservar**, que es el uso más engañoso que tiene.
+>
+> ⭐ **Y lo mismo explica algo que se había leído como confirmación:** que `444.403` coincidiera
+> **en las dos fuentes** —`looker | resumen_metricas_dinamico` y `acumulado | Mail`— no validaba
+> nada. **La fuente vieja ya acumulaba las tres filas**, no las sumaba el motor: las dos fuentes
+> coincidían porque decían lo mismo mal.
+>
+> ### Lo que rige ahora
+>
+> El equipo confirmó el criterio de `R-05` por WhatsApp —*«no lo sumamos en Entregados y Enviados.
+> El resto se acumula todo»*—, así que el envío del 02/09 **sale de enviados y entregados** y
+> **sigue sumando en aperturas y clics**. Cableado en el `2026-09-11_4` Parte C. El GLOBAL de
+> `L-022` pasa de `444.403` a `267.533` y el de `L-020` lo acompaña, así que las dos identidades
+> siguen cerrando — ahora sobre el número correcto.
+>
+> ⚠ **La frase *«se habla con el equipo»* del bloque tachado era lo correcto, y es lo que lo
+> resolvió.** Lo que estuvo mal no fue la vía: fue tratar la coherencia del deck como evidencia
+> mientras tanto.
+
+**Decisión del usuario.** ~~En el deck del 10/09 el motor publica **tres** envíos de *Operativo Muro*
 y el equipo **dos**: el del **02/09** —audiencia *«No apertores del envío de jm»*, 178.221 enviados,
 176.870 entregados, 64.042 aperturas— **el equipo lo poda**.
 
@@ -1121,7 +1153,7 @@ que hoy hace confiable a la lámina; una poda parcial las rompe.
 **Es una divergencia declarada, no un caso abierto.** No se cablea nada, no se le abre caso y **no
 se vuelve a levantar en cada revisión**. ⭐ **Se habla con el equipo** — que es de quién es la
 decisión editorial. Queda registrada en `docs/casos_validacion_2026-09-10.csv` como `C-125`, que la
-midió y la dejó como `contradice`; **esta decisión la explica y la cierra del lado del motor**.
+midió y la dejó como `contradice`; **esta decisión la explica y la cierra del lado del motor**.~~
 
 ### 2.6 Análisis / conversación X (slides 25, 27, 28)
 

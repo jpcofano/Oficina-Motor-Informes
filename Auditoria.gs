@@ -9427,19 +9427,20 @@ function verGlobalL047() {
  *
  * ⭐ `D-58` aplicado al generar: cuando dos casos hablan del mismo marcador, manda el
  * más nuevo. Y los `token_propuesto` con varios marcadores en una celda vienen
- * DESARMADOS —68 celdas, 337 referencias— porque contar celdas
+ * DESARMADOS —73 celdas, 344 referencias— porque contar celdas
  * en vez de marcadores da un número que no corresponde a nada.
  * ══════════════════════════════════════════════════════════════════════════════ */
-var CASOS_POR_MARCADOR_GENERADA_ = '2026-09-10';
-var CASOS_POR_MARCADOR_ARCHIVOS_ = 8;
-/* 163 marcadores · exacto 101 · contradice 10 · cerrado 12 · abierto 22 */
+var CASOS_POR_MARCADOR_GENERADA_ = '2026-09-12';
+var CASOS_POR_MARCADOR_ARCHIVOS_ = 9;
+/* 164 marcadores · exacto 102 · contradice 10 · cerrado 12 · abierto 22 */
 var CASOS_POR_MARCADOR_ = {
   'camp_alcance': { estado: 'cerrado', caso: 'C-94', csv: '2026-09-04', previos: ['abierto','contradice'] },
-  'camp_aperturas': { estado: 'exacto', caso: 'V-113', csv: '2026-08-19', previos: [] },
+  'camp_aperturas': { estado: 'exacto', caso: 'V-144', csv: '2026-09-11', previos: ['exacto'] },
   'camp_clics': { estado: 'exacto', caso: 'V-111', csv: '2026-08-19', previos: [] },
-  'camp_ctor': { estado: 'exacto', caso: 'V-134', csv: '2026-09-10', previos: ['exacto'] },
+  'camp_ctor': { estado: 'exacto', caso: 'V-144', csv: '2026-09-11', previos: ['exacto','exacto'] },
+  'camp_dir_impl': { estado: 'exacto', caso: 'V-144', csv: '2026-09-11', previos: [] },
   'camp_eje': { estado: 'exacto', caso: 'V-112', csv: '2026-08-19', previos: [] },
-  'camp_entregados': { estado: 'exacto', caso: 'V-113', csv: '2026-08-19', previos: [] },
+  'camp_entregados': { estado: 'exacto', caso: 'V-144', csv: '2026-09-11', previos: ['exacto'] },
   'camp_env1_aperturas': { estado: 'exacto', caso: 'V-135', csv: '2026-09-10', previos: [] },
   'camp_env1_clics': { estado: 'exacto', caso: 'V-135', csv: '2026-09-10', previos: [] },
   'camp_env1_entregados': { estado: 'exacto', caso: 'V-135', csv: '2026-09-10', previos: [] },
@@ -9457,20 +9458,20 @@ var CASOS_POR_MARCADOR_ = {
   'camp_env4_entregados': { estado: 'exacto', caso: 'V-135', csv: '2026-09-10', previos: [] },
   'camp_env4_enviados': { estado: 'exacto', caso: 'V-135', csv: '2026-09-10', previos: [] },
   'camp_env4_fecha': { estado: 'contradice', caso: 'C-104', csv: '2026-09-06', previos: [] },
-  'camp_enviados': { estado: 'exacto', caso: 'V-134', csv: '2026-09-10', previos: ['exacto'] },
+  'camp_enviados': { estado: 'exacto', caso: 'V-144', csv: '2026-09-11', previos: ['exacto','exacto'] },
   'camp_frecuencia': { estado: 'cerrado', caso: 'C-95', csv: '2026-09-04', previos: ['abierto'] },
   'camp_google_clics': { estado: 'exacto', caso: 'V-111', csv: '2026-08-19', previos: [] },
   'camp_google_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04', previos: [] },
   'camp_google_impresiones': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04', previos: ['exacto'] },
   'camp_google_vistas': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04', previos: ['exacto'] },
   'camp_impresiones': { estado: 'exacto', caso: 'V-111', csv: '2026-08-19', previos: [] },
-  'camp_mail_clics': { estado: 'exacto', caso: 'V-134', csv: '2026-09-10', previos: ['exacto'] },
+  'camp_mail_clics': { estado: 'exacto', caso: 'V-144', csv: '2026-09-11', previos: ['exacto','exacto'] },
   'camp_meta_clics': { estado: 'exacto', caso: 'V-111', csv: '2026-08-19', previos: [] },
   'camp_meta_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04', previos: [] },
   'camp_meta_frecuencia': { estado: 'cerrado', caso: 'C-96', csv: '2026-09-04', previos: ['abierto'] },
   'camp_meta_impresiones': { estado: 'exacto', caso: 'V-111', csv: '2026-08-19', previos: [] },
   'camp_meta_vistas': { estado: 'exacto', caso: 'V-111', csv: '2026-08-19', previos: [] },
-  'camp_or': { estado: 'exacto', caso: 'V-134', csv: '2026-09-10', previos: ['exacto'] },
+  'camp_or': { estado: 'exacto', caso: 'V-144', csv: '2026-09-11', previos: ['exacto','exacto'] },
   'camp_prog_clics': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04', previos: ['exacto'] },
   'camp_prog_ctr': { estado: 'abierto', caso: 'C-92', csv: '2026-09-04', previos: [] },
   'camp_prog_impresiones': { estado: 'abierto', caso: 'C-91', csv: '2026-09-04', previos: ['exacto'] },

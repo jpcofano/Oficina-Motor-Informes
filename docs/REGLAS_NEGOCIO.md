@@ -364,11 +364,44 @@ Cadetes GLOBAL:
 **Cómo se verifica:** reconstruir el agregado GLOBAL de una campaña con envíos JM y GCBA
 y confirmar que "enviados" cierra sumando solo JM y "aperturas" sumando los dos.
 
-**Si falla:** **marcada como hipótesis hasta que el equipo la confirme** — no está cerrada
+**Si falla:** ~~**marcada como hipótesis hasta que el equipo la confirme** — no está cerrada
 como las demás reglas de este archivo. Si el equipo dice que el universo también suma
 GCBA (o que las aperturas no), esta regla se deroga con fecha. La diferencia entre
 352.487 y 447.712 (sumar GCBA también en enviados) es la magnitud del error si se aplica
-mal.
+mal.~~
+
+### ⭐⭐ CERRADA — confirmada por el equipo el 11/09/2026, por WhatsApp
+
+La marca de hipótesis queda **tachada y no borrada**: vivió del 31/07 al 11/09 y explica por qué
+durante seis semanas nada se apoyó en esta regla.
+
+Lo que el equipo dijo, textual:
+
+> *«no lo sumamos en Entregados y Enviados. El resto se acumula todo»*
+> *«los no apertores sólo se suman en aperturas y clics»*
+> *«sino, estaría duplicando la base enviada»*
+
+⭐ **El motivo que dan es el mismo que la regla ya tenía escrito** —*sumar el universo del reenvío
+duplicaría destinatarios*—, y eso es lo que la cierra: no confirmaron un número, confirmaron el
+**criterio**.
+
+⛔⛔ **Confirmaron el CRITERIO, no la SEÑAL, y la distinción es la mitad operativa de esta regla.**
+El equipo dice *qué* no se suma —el reenvío— y **no dice cómo se reconoce un reenvío**. Esa segunda
+pregunta sigue abierta y está en `docs/PREGUNTAS_AL_EQUIPO.md`. Lo que el motor usa hoy es la
+etiqueta del **primer envío** (`Remitente`, col AI de `acumulado | Mail`), elegida por la fecha
+mínima de la campaña — una **implementación** del criterio, no algo que el equipo haya validado.
+
+⛔ **Y el límite de esa señal, con número:** el filtro **discrimina en 126 de 434** campañas
+multi-envío — el **29 %**. En las otras **308 la etiqueta no cambia entre el primer envío y los
+reenvíos**, así que el filtro las deja pasar enteras y **la duplicación vuelve sin fallar**. No es
+un defecto del cableado: es el techo de usar la etiqueta como señal, y por eso la pregunta de cómo
+se identifica un reenvío no es cosmética.
+
+⚠ **Los dos casos que no deciden abortan en vez de elegir** —empate en la fecha mínima con
+etiquetas distintas, y etiqueta vacía en el primer envío—. Medido el 11/09 sobre 1.247 campañas
+multi-envío: **8** y **9** respectivamente.
+
+**Aplicada desde:** `2026-09-11_4` Parte C, sobre `acumulado | Mail`.
 
 ## R-06 — El `id_cuenta` manda; el nombre nunca decide pertenencia
 

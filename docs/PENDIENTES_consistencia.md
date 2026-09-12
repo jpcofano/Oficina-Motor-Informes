@@ -1,3 +1,130 @@
+---
+
+## ⛔⛔ P0 · El Resumen Ejecutivo suma TODOS los envíos del período, no los de una campaña (11/09/2026)
+
+> Sale del `2026-09-11_4` Parte D. ⛔ **No se midió y no se arregló acá**: se escribe para que exista
+> como pendiente antes de que alguien lea el Resumen Ejecutivo como validado.
+
+`L-002` y `L-003` publican mail del **período entero**, no de una campaña. Los envíos que entran no
+son los **3** de *Operativo Muro*: son **6** en `jm` y **59-70** en GCBA.
+
+⭐ **Y no es especulación.** Las tres filas de `SEED_MAPEO_ACUMULADO_` que ya existían antes de esta
+tanda —`acm_id_cuenta` (A), `fecha_periodo` (F) y `acm_remitente` (AI)— nacieron en el
+`2026-09-09_1`, y **la nota de `acm_remitente` dice con todas las letras que alimenta la columna
+Envío de `L-047`**. **Misma solapa, mismo ámbito**: lo que `R-05` acaba de corregir para la campaña
+destacada toca exactamente el mismo dato que el Resumen Ejecutivo lee sin corregir.
+
+⛔ **Por qué es P0 y no un pendiente más:** `R-05` quedó cerrada el 11/09 y aplicada **sólo en el
+bloque de campaña**. Un lector razonable va a asumir que la regla rige en todo el deck. Mientras no
+se mida, **el Resumen Ejecutivo puede estar duplicando destinatarios con la regla ya confirmada al
+lado** — que es peor que antes de cerrarla, porque ahora hay una regla que lo contradice.
+
+⚠ **Lo que NO dice este pendiente:** si los números del Resumen Ejecutivo están mal. Dice que
+**nadie los midió contra `R-05`**, y que la pregunta *«¿cuántos envíos entran acá?»* tiene una
+respuesta conocida —6 y 59-70— que nadie cruzó contra lo que publica.
+
+**Lo que destraba:** una medición propia sobre `L-002`/`L-003`, con su universo declarado. No entra
+en esta tanda por *un prompt, un objetivo*.
+
+---
+
+## ⛔ P1 · `camp_or` puede publicar más de 100 % — condición escrita, no implementada (11/09/2026)
+
+> Sale del `2026-09-11_4` Parte C. ⛔ **No se implementa acá**: se registra como condición con su
+> número y su reproductor, que es lo que la vuelve vigilable.
+
+`camp_or` es `PCT TODAS:acm_aperturas/acm_entregados`: el numerador suma **todas** las filas de la
+campaña y el denominador **sólo las del primer envío**. ⭐ **Esa mezcla es correcta y es la decisión
+del usuario** —es lo único que hace que el `% OR` publicado sea el cociente de las dos celdas que la
+lámina muestra al lado—. ⛔ **Lo que no es correcto es publicarlo sin marca cuando se pasa de 100 %.**
+
+**La condición, escrita como condición y no como estado** —para que un censo pueda mirarla, en vez
+de que alguien tenga que acordarse:
+
+> **si `camp_or > 100`, el valor se publica con marca.**
+
+**Medido el 11/09/2026 sobre `acumulado | Mail`:**
+
+| qué | cuánto |
+|---|---|
+| campañas evaluables para el `% OR` | **1.245** |
+| de ésas, con la variante vigente **> 100 %** | ⛔ **27** |
+| el peor caso | **900,2 %** (`2198-OCTSEGGC`, 1 de 3 filas con la etiqueta) |
+| con las dos mitades filtradas, **> 100 %** | **0** |
+| *Operativo Muro*, la campaña del deck | **56,3 %** — no pasa |
+
+⚠ **Por qué pasa, y es por construcción:** si el primer envío es chico y los reenvíos grandes, las
+aperturas de todos los envíos se dividen por los entregados de uno solo. **No hay número de entrada
+inválido**: el cálculo es el pedido y el resultado es imposible igual.
+
+**Reproductor:** `medirOrSobre100()` en `Auditoria.gs`, por la API. Trae el conteo, la muestra de
+las que superan 100 % y su propio control positivo —la cuenta del caso tiene que aparecer con
+`A=56.3%`—, así que un cero suyo no se confunde con un detector ciego.
+
+---
+
+## ⭐⭐ Cuatro correcciones de MÉTODO del `2026-09-11_4` (11/09/2026)
+
+> ⛔ Ninguna se arregla acá. Se escriben porque las cuatro son formas de falla que ya costaron
+> tiempo en esta tanda y **no se ven leyendo el resultado**.
+
+### 1 · ⛔ El alta de `SOLAPAS` es PRECONDICIÓN de una mudanza, no documentación posterior
+
+El `2026-09-11_4` ponía el alta de `acumulado | Mail` en `SOLAPAS` en la **Parte D**, junto con la
+documentación. **El orden estaba mal y lo demostró una regresión en vivo:** después de mudar los 48
+marcadores, los siete dieron `estado=error` porque `acumulado | Mail` **no estaba en `SOLAPAS`** —
+`leerFuente` devuelve `[]` si `usoSolapa_(base, solapa) !== 'fuente'` (`Fuentes.gs:462`). Se
+destrabó corriendo «Aplicar configuración» (SOLAPAS 110 → 117, `uso = fuente`).
+
+⭐ **La regla, en una línea:** *mudar un marcador a una solapa que el registro no declara `fuente`
+no falla en el alta — falla en la lectura, después, y el síntoma es un `error` que manda a mirar el
+marcador.* ⇒ **el alta de `SOLAPAS` va ANTES de la primera escritura de `MAPEO`**, en la misma parte
+que la mudanza.
+
+### 2 · ⭐ `D-32` es una trampa de UN SOLO SENTIDO
+
+`inventariarSolapasDeBase_` da de alta con `uso = revisar`, y una vez escrita esa fila **el seed ya
+no la puede promover a `fuente`** (`D-32` protege `uso` de la siembra). ⇒ **si el inventario corre
+primero, la promoción hay que hacerla a mano y para siempre**; si el seed corre primero, no hay
+problema.
+
+⚠ **El orden importa y no hay nada que lo señale**: las dos secuencias terminan con la fila
+existiendo, y sólo una deja la solapa legible por el motor. Ya está anotado el P0 del 08/09 sobre el
+mismo mecanismo; esto agrega **por qué el orden es asimétrico**.
+
+### 3 · ⚠ El sembrador dijo *«agregadas: 0 · sin cambios: sí»* después de agregar siete filas
+
+Medido en esta tanda. **El resumen de «Aplicar configuración» no es un testigo de lo que quedó en la
+hoja**, y creerle es el mismo modo de falla que `CLAUDE.md` §4 nombra como *un escritor que informa
+lo que escribió no verifica nada*.
+
+⛔ **No se arregla acá** — es el sembrador y tiene dueño propio. Lo que se registra es **cómo
+esquivarlo mientras tanto**: contar por el export directo de la hoja, no por el resumen.
+
+**Reproductor:** correr «Aplicar configuración» (`menuAplicarConfiguracion_`), leer el resumen, y
+después re-exportar `MAPEO` y contar las filas de la solapa tocada. En esta tanda el resumen dijo
+`agregadas: 0 · cambiadas: 9` y el export confirmó las 12 filas correctas — **el segundo camino es
+el que responde**.
+
+### 4 · ⭐ `CLAUDE.md` §2 aplica igual a un VALOR de configuración que a una columna
+
+La regla dice *agregar una columna a una hoja de registro es tocar N lectores, no uno*. **Vale
+idéntico para un valor**: el prefijo `TODAS:` entró en `campo_logico` y **`campo_logico` lo parten
+por `/` TRES lugares de `Generador.gs`** — `partirCampoRatio_`, la guarda de aridad del despachador
+y el `campoOverride`. Entró en uno.
+
+⛔ **El síntoma no fue un error legible: la corrida devolvió una página HTML.** Los otros dos
+mandaban `TODAS:acm_aperturas` a `buscarMapeo`, que no lo encuentra — y el motivo habría mandado a
+mirar `MAPEO`, donde el campo está perfectamente declarado.
+
+⭐ **Lo que quedó hecho y sirve de molde:** `tools/probar-r05-primer-envio.js` verifica **por texto**
+que ningún `campo_logico.split('/')` de `Generador.gs` quede sin desarmar el prefijo, con su propio
+control positivo para que el cero no sea de un detector ciego. **Encontró un tercero** que la
+corrección a mano no había visto. ⚠ Y su límite está declarado: un cuarto lector escrito con otra
+sintaxis se le escapa.
+
+⇒ **La checklist de §2 —`grep -rn "<columna>" *.gs` y mirar los N lectores— se usa igual cuando lo
+que se agrega es un prefijo, un sufijo o un sigilo dentro de una celda.**
 
 ---
 
